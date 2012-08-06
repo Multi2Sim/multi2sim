@@ -1146,9 +1146,6 @@ void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 	int sbase = smrd->sbase*2;
 	int sbase_end;
 
-	/* TODO Handle the case where 'imm' is 0 */
-	assert(smrd->imm); 
-
 	/* S_LOAD_DWORD */
 	if (IN_RANGE(smrd->op, 0, 4))
 	{
@@ -1288,13 +1285,18 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 		fmt_str++;
 		if (is_token(fmt_str, "64_SVDST", &token_len))
 		{
-			/* For a currently unknown reason, VOP3b compare operations use the VDST field to indicate the address of the scalar destination.*/
-			operand_dump_series_scalar(operand_str, inst->micro_inst.vop3b.vdst, inst->micro_inst.vop3b.vdst + 1);
+			/* VOP3a compare operations use the VDST field to indicate the address of the scalar destination.*/
+			operand_dump_series_scalar(operand_str, inst->micro_inst.vop3a.vdst, inst->micro_inst.vop3a.vdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VDST", &token_len))
 		{
 			operand_dump_vector(operand_str, inst->micro_inst.vop3a.vdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "64_VDST", &token_len))
+		{
+			operand_dump_series_vector(operand_str, inst->micro_inst.vop3a.vdst, inst->micro_inst.vop3a.vdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "64_SDST", &token_len))
@@ -1307,9 +1309,19 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 			operand_dump(operand_str, inst->micro_inst.vop3a.src0);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
+		else if (is_token(fmt_str, "64_SRC0", &token_len))
+		{
+			operand_dump_series(operand_str, inst->micro_inst.vop3a.src0, inst->micro_inst.vop3a.src0 + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
 		else if (is_token(fmt_str, "SRC1", &token_len))
 		{
 			operand_dump(operand_str, inst->micro_inst.vop3a.src1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "64_SRC1", &token_len))
+		{
+			operand_dump_series(operand_str, inst->micro_inst.vop3a.src1, inst->micro_inst.vop3a.src1 + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SRC2", &token_len))
@@ -1447,6 +1459,13 @@ void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 				operand_dump(operand_str, vop1->src0);
 				str_printf(&inst_str, &str_size, "%s", operand_str);	
 			}
+		}
+		else if (is_token(fmt_str, "64_SRC0", &token_len))
+		{
+			assert(vop1->src0 != 0xFF);
+
+			operand_dump_series(operand_str, vop1->src0, vop1->src0 + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else
 		{
