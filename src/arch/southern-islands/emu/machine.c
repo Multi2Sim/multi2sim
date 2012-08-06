@@ -31,7 +31,7 @@ char *err_si_isa_note =
         "\tplease email development@multi2sim.org' to request support for it.\n";
 
 #define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
-	si_isa_inst->info->name, err_si_isa_note)
+	inst->info->name, err_si_isa_note)
 
 #define INST SI_INST_SMRD
 void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -365,6 +365,52 @@ void si_isa_S_MIN_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.i = (S0.i > S1.i) ? S0.i : S1.i, scc = 1 if S0 is max. */
+#define INST SI_INST_SOP2
+void si_isa_S_MAX_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	int s0 = 0;
+	int s1 = 0;
+
+	union si_reg_t max;
+	union si_reg_t s0_max;
+
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
+	if (INST.ssrc1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
+
+	/* Calculate the minimum operand. */
+	if (s0 > s1)
+	{
+		max.as_int = s0;
+		s0_max.as_uint = 1;
+	}
+	else
+	{
+		max.as_int = s1;
+		s0_max.as_uint = 0;
+	}
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, INST.sdst, max);
+	si_isa_write_sreg(work_item, SI_SCC, s0_max);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d) ", INST.sdst, max.as_int);
+		si_isa_debug("scc<=(%d) ", s0_max.as_uint);
+	}
+}
+#undef INST
+
 /* D.u = (S0.u > S1.u) ? S0.u : S1.u, scc = 1 if S0 is max. */
 #define INST SI_INST_SOP2
 void si_isa_S_MAX_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -571,6 +617,48 @@ void si_isa_S_OR_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *in
 }
 #undef INST
 
+/* D.u = S0.u ^ S1.u. scc = 1 if result is non-zero. */
+#define INST SI_INST_SOP2
+void si_isa_S_XOR_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	/* Assert no literal constants for a 64 bit instruction. */
+	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
+
+	unsigned int s0_lo;
+	unsigned int s0_hi;
+	unsigned int s1_lo;
+	unsigned int s1_hi;
+
+	union si_reg_t result_lo;
+	union si_reg_t result_hi;
+	union si_reg_t nonzero;
+
+	/* Load operands from registers. */
+	s0_lo = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
+	s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1).as_uint;
+	s1_lo = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
+	s1_hi = si_isa_read_sreg(work_item, INST.ssrc1 + 1).as_uint;
+
+	/* Bitwise OR the two operands and determine if the result is non-zero. */
+	result_lo.as_uint = s0_lo ^ s1_lo;
+	result_hi.as_uint = s0_hi ^ s1_hi;
+	nonzero.as_uint = result_lo.as_uint && result_hi.as_uint;
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, INST.sdst, result_lo);
+	si_isa_write_sreg(work_item, INST.sdst + 1, result_hi);
+	si_isa_write_sreg(work_item, SI_SCC, nonzero);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d) ", INST.sdst, result_lo.as_uint);
+		si_isa_debug("S%u<=(%d) ", INST.sdst + 1, result_hi.as_uint);
+		si_isa_debug("scc<=(%d) ", nonzero.as_uint);
+	}
+}
+#undef INST
+
 /* D.u = S0.u & ~S1.u. scc = 1 if result is non-zero. */
 #define INST SI_INST_SOP2
 void si_isa_S_ANDN2_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -610,6 +698,48 @@ void si_isa_S_ANDN2_B64_impl(struct si_work_item_t *work_item, struct si_inst_t 
 		si_isa_debug("S%u<=(%d)= ", INST.sdst, result_lo.as_uint);
 		si_isa_debug("S%u<=(%d)= ", INST.sdst + 1, result_hi.as_uint);
 		si_isa_debug("scc<=(%d)", nonzero.as_uint);
+	}
+}
+#undef INST
+
+/* D.u = ~(S0.u & S1.u). scc = 1 if result is non-zero. */
+#define INST SI_INST_SOP2
+void si_isa_S_NAND_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	/* Assert no literal constants for a 64 bit instruction. */
+	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
+
+	unsigned int s0_lo;
+	unsigned int s0_hi;
+	unsigned int s1_lo;
+	unsigned int s1_hi;
+
+	union si_reg_t result_lo;
+	union si_reg_t result_hi;
+	union si_reg_t nonzero;
+
+	/* Load operands from registers. */
+	s0_lo = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
+	s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1).as_uint;
+	s1_lo = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
+	s1_hi = si_isa_read_sreg(work_item, INST.ssrc1 + 1).as_uint;
+
+	/* Bitwise AND the two operands and determine if the result is non-zero. */
+	result_lo.as_uint = ~(s0_lo & s1_lo);
+	result_hi.as_uint = ~(s0_hi & s1_hi);
+	nonzero.as_uint = result_lo.as_uint && result_hi.as_uint;
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, INST.sdst, result_lo);
+	si_isa_write_sreg(work_item, INST.sdst + 1, result_hi);
+	si_isa_write_sreg(work_item, SI_SCC, nonzero);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d) ", INST.sdst, result_lo.as_uint);
+		si_isa_debug("S%u<=(%d) ", INST.sdst + 1, result_hi.as_uint);
+		si_isa_debug("scc<=(%d) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1054,6 +1184,40 @@ void si_isa_S_CMP_GE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* scc = (S0.i < S1.i). */
+#define INST SI_INST_SOPC
+void si_isa_S_CMP_LT_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	int s0 = 0;
+	int s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_int;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
+	if (INST.ssrc1 == 0xFF)
+		s1 = ((union si_reg_t)INST.lit_cnst).as_int;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
+
+	/* Compare the operands. */
+	result.as_uint = (s0 < s1);
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, SI_SCC, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("scc<=(%d) ", result.as_uint);
+	}
+}
+#undef INST
+
 /* scc = (S0.i <= S1.i). */
 #define INST SI_INST_SOPC
 void si_isa_S_CMP_LE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -1372,6 +1536,43 @@ void si_isa_V_READFIRSTLANE_B32_impl(struct si_work_item_t *work_item, struct si
 
 /* D.f = (float)S0.i. */
 #define INST SI_INST_VOP1
+void si_isa_V_CVT_F64_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	int s0;
+
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+	} value;
+	union si_reg_t result_lo;
+	union si_reg_t result_hi;
+
+	/* Load operand from register or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_reg(work_item, INST.src0).as_int;
+
+	/* Convert and separate value. */
+	value.as_double = (double)s0;
+
+	/* Write the results. */
+	result_lo.as_uint = value.as_reg[0];
+	result_hi.as_uint = value.as_reg[1];
+	si_isa_write_vreg(work_item, INST.vdst, result_lo);
+	si_isa_write_vreg(work_item, INST.vdst + 1, result_hi);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V[%u:+1]<=(%lgf) ", work_item->id, INST.vdst, value.as_double);
+	}
+}
+#undef INST
+
+/* D.f = (float)S0.i. */
+#define INST SI_INST_VOP1
 void si_isa_V_CVT_F32_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value;
@@ -1495,6 +1696,35 @@ void si_isa_V_CVT_I32_F32_impl(struct si_work_item_t *work_item, struct si_inst_
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, value.as_int);
+	}
+}
+#undef INST
+
+/* D.f = (float)S0.d. */
+#define INST SI_INST_VOP1
+void si_isa_V_CVT_F32_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+	} s0;
+	union si_reg_t value;
+
+	/* Load operand from registers. */
+	s0.as_reg[0] = si_isa_read_reg(work_item, INST.src0).as_uint;
+	s0.as_reg[1] = si_isa_read_reg(work_item, INST.src0 + 1).as_uint;
+
+	/* Cast to a single precision float */
+	value.as_float = (float)s0.as_double;
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, value);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst, value.as_float);
 	}
 }
 #undef INST
@@ -1724,6 +1954,43 @@ void si_isa_V_MUL_I32_I24_impl(struct si_work_item_t *work_item, struct si_inst_
 }
 #undef INST
 
+/* D.i = max(S0.i, S1.i). */
+#define INST SI_INST_VOP2
+void si_isa_V_MAX_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	int s0 = 0;
+	int s1 = 0;
+
+	union si_reg_t max;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_int;
+	else
+		s0 = si_isa_read_reg(work_item, INST.src0).as_int;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_int;
+
+	/* Calculate the minimum operand. */
+	if (s0 > s1)
+	{
+		max.as_int = s0;
+	}
+	else
+	{
+		max.as_int = s1;
+	}
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, max);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d)", work_item->id, INST.vdst, max.as_int);
+	}
+}
+#undef INST
+
 /* D.u = min(S0.u, S1.u). */
 #define INST SI_INST_VOP2
 void si_isa_V_MIN_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -1735,7 +2002,7 @@ void si_isa_V_MIN_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operands from registers or as a literal constant. */
 	if (INST.src0 == 0xFF)
-		s0 = ((union si_reg_t)INST.lit_cnst).as_uint & 0xFFFFFF;
+		s0 = ((union si_reg_t)INST.lit_cnst).as_uint;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
 	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
@@ -1772,7 +2039,7 @@ void si_isa_V_MAX_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operands from registers or as a literal constant. */
 	if (INST.src0 == 0xFF)
-		s0 = ((union si_reg_t)INST.lit_cnst).as_uint & 0xFFFFFF;
+		s0 = ((union si_reg_t)INST.lit_cnst).as_uint;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
 	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
@@ -2710,6 +2977,37 @@ void si_isa_V_CMP_NE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* vcc = (S0.u < S1.u). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_LT_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	unsigned int s0 = 0;
+	unsigned int s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_uint;
+	else
+		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
+
+	/* Compare the operands. */
+	result.as_uint = (s0 < s1);
+
+	/* Write the results. */
+	si_isa_bitmask_sreg(work_item, SI_VCC, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: vcc<=(%d) ", work_item->id_in_wavefront,
+			result.as_uint);
+	}
+}
+#undef INST
+
 /* vcc = (S0.u <= S1.u). */
 #define INST SI_INST_VOPC
 void si_isa_V_CMP_LE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -3278,6 +3576,168 @@ void si_isa_V_CMP_GE_U32_VOP3a_impl(struct si_work_item_t *work_item, struct si_
 	{
 		si_isa_debug("wf_id%d: S[%d:+1]<=(%d) ", work_item->id_in_wavefront,
 			INST.vdst, result.as_uint);
+	}
+}
+#undef INST
+
+/* D = S0.u >> S1.u[4:0]. */
+#define INST SI_INST_VOP3a
+void si_isa_V_LSHR_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	union
+	{
+		unsigned long long as_b64;
+		unsigned int as_reg[2];
+	} s0, value;
+	unsigned int s1;
+
+	union si_reg_t result_lo;
+	union si_reg_t result_hi;
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = si_isa_read_reg(work_item, INST.src0).as_uint;
+	s0.as_reg[1] = si_isa_read_reg(work_item, INST.src0 + 1).as_uint;
+	s1 = si_isa_read_reg(work_item, INST.src1).as_uint & 0x1F;
+
+	/* Apply negation modifiers. */
+	if(INST.neg & 1)
+		s0.as_b64 = -s0.as_b64;
+	if(INST.neg & 2)
+		s1 = -s1;
+
+	/* Shift s0. */
+	value.as_b64 = s0.as_b64 >> s1;
+
+	/* Write the results. */
+	result_lo.as_uint = value.as_reg[0];
+	result_hi.as_uint = value.as_reg[1];
+	si_isa_write_vreg(work_item, INST.vdst, result_lo);
+	si_isa_write_vreg(work_item, INST.vdst + 1, result_hi);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: S[%d]<=(%d) ", work_item->id_in_wavefront,
+			INST.vdst, result_lo.as_uint);
+		si_isa_debug("wf_id%d: S[%d]<=(%d) ", work_item->id_in_wavefront,
+			INST.vdst + 1, result_hi.as_uint);
+	}
+}
+#undef INST
+
+/* D.d = S0.d * S1.d. */
+#define INST SI_INST_VOP3a
+void si_isa_V_MUL_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+	} s0, s1, value;
+
+	union si_reg_t result_lo;
+	union si_reg_t result_hi;
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = si_isa_read_reg(work_item, INST.src0).as_uint;
+	s0.as_reg[1] = si_isa_read_reg(work_item, INST.src0 + 1).as_uint;
+	s1.as_reg[0] = si_isa_read_reg(work_item, INST.src1).as_uint;
+	s1.as_reg[1] = si_isa_read_reg(work_item, INST.src1 + 1).as_uint;
+
+	/* Multiply the operands, take into account special number cases. FIXME: finish special cases. */
+
+	/* s0 == NaN64 || s1 == NaN64 */
+	if (fpclassify(s0.as_double) == FP_NAN ||
+		fpclassify(s1.as_double) == FP_NAN)
+		/* value <-- NaN64 */
+		value.as_double = NAN;
+	/* s0 == +denormal, +0 */
+	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL ||
+		fpclassify(s1.as_double) == FP_ZERO) &&
+		!signbit(s0.as_double))
+	{
+		/* s1 == +-infinity */
+		if (isinf(s1.as_double))
+			/* value <-- NaN64 */
+			value.as_double = NAN;
+		/* s1 > 0 */
+		else if (!signbit(s1.as_double))
+			/* value <-- +0 */
+			value.as_double = +0;
+		/* s1 < 0 */
+		else if (!!signbit(s1.as_double))
+			/* value <-- -0 */
+			value.as_double = -0;
+	}
+	/* s0 == -denormal, -0 */
+	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL ||
+		fpclassify(s1.as_double) == FP_ZERO) &&
+		!!signbit(s0.as_double))
+	{
+		/* s1 == +-infinity */
+		if (isinf(s1.as_double))
+			/* value <-- NaN64 */
+			value.as_double = NAN;
+		/* s1 > 0 */
+		else if (!signbit(s1.as_double))
+			/* value <-- -0 */
+			value.as_double = -0;
+		/* s1 < 0 */
+		else if (!!signbit(s1.as_double))
+			/* value <-- +0 */
+			value.as_double = +0;
+	}
+	/* s0 == +infinity */
+	else if (fpclassify(s0.as_double) == FP_INFINITE &&
+			 !signbit(s0.as_double))
+	{
+		/* s1 == +-denormal, +-0 */
+		if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
+				 fpclassify(s1.as_double) == FP_ZERO)
+			/* value <-- NaN64 */
+			value.as_double = NAN;
+		/* s1 > 0 */
+		else if (!signbit(s1.as_double))
+			/* value <-- +infinity */
+			value.as_double = +INFINITY;
+		/* s1 < 0 */
+		else if (!!signbit(s1.as_double))
+			/* value <-- -infinity */
+			value.as_double = -INFINITY;
+	}
+	/* s0 == -infinity */
+	else if (fpclassify(s0.as_double) == FP_INFINITE &&
+			 !!signbit(s0.as_double))
+	{
+		/* s1 == +-denormal, +-0 */
+		if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
+				 fpclassify(s1.as_double) == FP_ZERO)
+			/* value <-- NaN64 */
+			value.as_double = NAN;
+		/* s1 > 0 */
+		else if (!signbit(s1.as_double))
+			/* value <-- -infinity */
+			value.as_double = -INFINITY;
+		/* s1 < 0 */
+		else if (!!signbit(s1.as_double))
+			/* value <-- +infinity */
+			value.as_double = +INFINITY;
+	}
+	else
+		value.as_double = s0.as_double * s1.as_double;
+
+	/* Write the results. */
+	result_lo.as_uint = value.as_reg[0];
+	result_hi.as_uint = value.as_reg[1];
+	si_isa_write_vreg(work_item, INST.vdst, result_lo);
+	si_isa_write_vreg(work_item, INST.vdst + 1, result_hi);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: S[%d:+1]<=(%lgf) ", work_item->id_in_wavefront,
+			INST.vdst, value.as_double);
 	}
 }
 #undef INST
