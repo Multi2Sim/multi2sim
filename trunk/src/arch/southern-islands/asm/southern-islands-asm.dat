@@ -474,6 +474,13 @@ DEFINST(V_LSHR_B64,
 	8
 )
 
+DEFINST(V_ADD_F64,
+	" v_add_f64    %64_VDST, %0NEG%64_SRC0, %1NEG%64_SRC1",
+	VOP3a,
+	356,
+	8
+)
+
 DEFINST(V_MUL_F64,
 	" v_mul_f64     %64_VDST, %0NEG%64_SRC0, %1NEG%64_SRC1",
 	VOP3a,
@@ -621,6 +628,13 @@ DEFINST(V_CVT_F32_F64,
 	4
 )
 
+DEFINST(V_CVT_F64_F32,
+	" v_cvt_f64_f32  %64_VDST, %SRC0",
+	VOP1,
+	16,
+	4
+)
+
 DEFINST(V_RCP_F32,
 	" v_rcp_f32     %VDST, %SRC0",
 	VOP1,
@@ -674,6 +688,20 @@ DEFINST(V_MUL_I32_I24,
 	" v_mul_i32_i24  %VDST, %SRC0, %VSRC1",
 	VOP2,
 	9,
+	4
+)
+
+DEFINST(V_MIN_F32,
+	" v_min_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	15,
+	4
+)
+
+DEFINST(V_MAX_F32,
+	" v_max_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	16,
 	4
 )
 

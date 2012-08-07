@@ -1443,6 +1443,11 @@ void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 			operand_dump_vector(operand_str, vop1->vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
+		else if (is_token(fmt_str, "64_VDST", &token_len))
+		{
+			operand_dump_series_vector(operand_str, vop1->vdst, vop1->vdst + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
 		else if (is_token(fmt_str, "SVDST", &token_len))
 		{
 			operand_dump_scalar(operand_str, vop1->vdst);

@@ -378,11 +378,11 @@ void si_isa_S_MAX_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
 	if (INST.ssrc0 == 0xFF)
-		s0 = INST.lit_cnst;
+		s0 = ((union si_reg_t)INST.lit_cnst).as_int;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
 	if (INST.ssrc1 == 0xFF)
-		s1 = INST.lit_cnst;
+		s1 = ((union si_reg_t)INST.lit_cnst).as_int;
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
 
@@ -424,11 +424,11 @@ void si_isa_S_MAX_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
 	if (INST.ssrc0 == 0xFF)
-		s0 = INST.lit_cnst;
+		s0 = ((union si_reg_t)INST.lit_cnst).as_uint;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
 	if (INST.ssrc1 == 0xFF)
-		s1 = INST.lit_cnst;
+		s1 = ((union si_reg_t)INST.lit_cnst).as_uint;
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
 
@@ -1029,7 +1029,7 @@ void si_isa_S_MOV_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operand from registers or as a literal constant. */
 	if (INST.ssrc0 == 0xFF)
-		s0.as_uint = INST.lit_cnst;
+		s0.as_uint = ((union si_reg_t)INST.lit_cnst).as_uint;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0);
 
@@ -1053,10 +1053,10 @@ void si_isa_S_NOT_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operand from registers or as a literal constant. */
 	if (INST.ssrc0 == 0xFF)
-		s0.as_uint = ~INST.lit_cnst;
+		s0.as_uint = ~((union si_reg_t)INST.lit_cnst).as_uint;
 	else
 		s0.as_uint = ~si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
-	nonzero.as_uint = !!s0.as_uint;
+	nonzero.as_uint = !!((union si_reg_t)INST.lit_cnst).as_uint;
 
 	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, s0);
@@ -1498,7 +1498,7 @@ void si_isa_V_MOV_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operand from register or as a literal constant. */
 	if (INST.src0 == 0xFF)
-		value.as_uint = INST.lit_cnst;
+		value.as_uint = ((union si_reg_t)INST.lit_cnst).as_uint;
 	else
 		value = si_isa_read_reg(work_item, INST.src0);
 
@@ -1550,7 +1550,7 @@ void si_isa_V_CVT_F64_I32_impl(struct si_work_item_t *work_item, struct si_inst_
 
 	/* Load operand from register or as a literal constant. */
 	if (INST.src0 == 0xFF)
-		s0 = INST.lit_cnst;
+		s0 = ((union si_reg_t)INST.lit_cnst).as_int;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_int;
 
@@ -1725,6 +1725,40 @@ void si_isa_V_CVT_F32_F64_impl(struct si_work_item_t *work_item, struct si_inst_
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst, value.as_float);
+	}
+}
+#undef INST
+
+/* D.d = (double)S0.f. */
+#define INST SI_INST_VOP1
+void si_isa_V_CVT_F64_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	float s0;
+
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+	} value;
+	union si_reg_t value_lo;
+	union si_reg_t value_hi;
+
+	/* Load operand from registers. */
+	s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+
+	/* Cast to a single precision float */
+	value.as_double = (double)s0;
+
+	/* Write the results. */
+	value_lo.as_uint = value.as_reg[0];
+	value_hi.as_uint = value.as_reg[1];
+	si_isa_write_vreg(work_item, INST.vdst, value_lo);
+	si_isa_write_vreg(work_item, INST.vdst + 1, value_hi);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V[%u:+1]<=(%lgf) ", work_item->id, INST.vdst, value.as_double);
 	}
 }
 #undef INST
@@ -1950,6 +1984,80 @@ void si_isa_V_MUL_I32_I24_impl(struct si_work_item_t *work_item, struct si_inst_
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("t%d: V%u<=(%d)", work_item->id, INST.vdst, product.as_int);
+	}
+}
+#undef INST
+
+/* D.f = min(S0.f, S1.f). */
+#define INST SI_INST_VOP2
+void si_isa_V_MIN_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	float s0 = 0;
+	float s1 = 0;
+
+	union si_reg_t min;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_float;
+	else
+		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
+
+	/* Calculate the minimum operand. */
+	if (s0 < s1)
+	{
+		min.as_float = s0;
+	}
+	else
+	{
+		min.as_float = s1;
+	}
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, min);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf)", work_item->id, INST.vdst, min.as_float);
+	}
+}
+#undef INST
+
+/* D.f = max(S0.f, S1.f). */
+#define INST SI_INST_VOP2
+void si_isa_V_MAX_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	float s0 = 0;
+	float s1 = 0;
+
+	union si_reg_t max;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_float;
+	else
+		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
+
+	/* Calculate the minimum operand. */
+	if (s0 > s1)
+	{
+		max.as_float = s0;
+	}
+	else
+	{
+		max.as_float = s1;
+	}
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, max);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf)", work_item->id, INST.vdst, max.as_float);
 	}
 }
 #undef INST
@@ -3625,11 +3733,10 @@ void si_isa_V_LSHR_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *
 }
 #undef INST
 
-/* D.d = S0.d * S1.d. */
+/* D.d = S0.d + S1.d. */
 #define INST SI_INST_VOP3a
-void si_isa_V_MUL_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+void si_isa_V_ADD_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	NOT_IMPL();
 	union
 	{
 		double as_double;
@@ -3645,7 +3752,103 @@ void si_isa_V_MUL_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	s1.as_reg[0] = si_isa_read_reg(work_item, INST.src1).as_uint;
 	s1.as_reg[1] = si_isa_read_reg(work_item, INST.src1 + 1).as_uint;
 
-	/* Multiply the operands, take into account special number cases. FIXME: finish special cases. */
+	/* Add the operands, take into account special number cases. */
+
+	/* s0 == NaN64 || s1 == NaN64 */
+	if (fpclassify(s0.as_double) == FP_NAN ||
+		fpclassify(s1.as_double) == FP_NAN)
+		/* value <-- NaN64 */
+		value.as_double = NAN;
+	/* s0,s1 == infinity */
+	else if (fpclassify(s0.as_double) == FP_INFINITE &&
+			 fpclassify(s1.as_double) == FP_INFINITE)
+		/* value <-- NaN64 */
+		value.as_double = NAN;
+	/* s0,!s1 == infinity */
+	else if (fpclassify(s0.as_double) == FP_INFINITE)
+		/* value <-- s0(+-infinity) */
+		value.as_double = s0.as_double;
+	/* s1,!s0 == infinity */
+	else if (fpclassify(s1.as_double) == FP_INFINITE)
+		/* value <-- s1(+-infinity) */
+		value.as_double = s1.as_double;
+	/* s0 == +-denormal, +-0 */
+	else if (fpclassify(s0.as_double) == FP_SUBNORMAL ||
+			 fpclassify(s0.as_double) == FP_ZERO)
+	{
+		/* s1 == +-denormal, +-0 */
+		if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			fpclassify(s1.as_double) == FP_ZERO)
+			/* s0 && s1 == -denormal, -0 */
+			if (!!signbit(s0.as_double) && !! signbit(s1.as_double))
+				/* value <-- -0 */
+				value.as_double = -0;
+			else
+				/* value <-- +0 */
+				value.as_double = +0;
+		/* s1 == F */
+		else
+			/* value <-- s1 */
+			value.as_double = s1.as_double;
+	}
+	/* s1 == +-denormal, +-0 */
+	else if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			 fpclassify(s1.as_double) == FP_ZERO)
+	{
+		/* s0 == +-denormal, +-0 */
+		if (fpclassify(s0.as_double) == FP_SUBNORMAL ||
+			fpclassify(s0.as_double) == FP_ZERO)
+			/* s0 && s1 == -denormal, -0 */
+			if (!!signbit(s0.as_double) && !! signbit(s1.as_double))
+				/* value <-- -0 */
+				value.as_double = -0;
+			else
+				/* value <-- +0 */
+				value.as_double = +0;
+		/* s0 == F */
+		else
+			/* value <-- s1 */
+			value.as_double = s0.as_double;
+	}
+	/* s0 && s1 == F */
+	else
+		value.as_double = s0.as_double + s1.as_double;
+
+	/* Write the results. */
+	result_lo.as_uint = value.as_reg[0];
+	result_hi.as_uint = value.as_reg[1];
+	si_isa_write_vreg(work_item, INST.vdst, result_lo);
+	si_isa_write_vreg(work_item, INST.vdst + 1, result_hi);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: S[%d:+1]<=(%lgf) ", work_item->id_in_wavefront,
+			INST.vdst, value.as_double);
+	}
+}
+#undef INST
+
+/* D.d = S0.d * S1.d. */
+#define INST SI_INST_VOP3a
+void si_isa_V_MUL_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	union
+	{
+		double as_double;
+		unsigned int as_reg[2];
+	} s0, s1, value;
+
+	union si_reg_t result_lo;
+	union si_reg_t result_hi;
+
+	/* Load operands from registers. */
+	s0.as_reg[0] = si_isa_read_reg(work_item, INST.src0).as_uint;
+	s0.as_reg[1] = si_isa_read_reg(work_item, INST.src0 + 1).as_uint;
+	s1.as_reg[0] = si_isa_read_reg(work_item, INST.src1).as_uint;
+	s1.as_reg[1] = si_isa_read_reg(work_item, INST.src1 + 1).as_uint;
+
+	/* Multiply the operands, take into account special number cases. */
 
 	/* s0 == NaN64 || s1 == NaN64 */
 	if (fpclassify(s0.as_double) == FP_NAN ||
