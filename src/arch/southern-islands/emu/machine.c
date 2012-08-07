@@ -3688,6 +3688,59 @@ void si_isa_V_CMP_GE_U32_VOP3a_impl(struct si_work_item_t *work_item, struct si_
 }
 #undef INST
 
+/* Median of three numbers. */
+#define INST SI_INST_VOP3a
+void si_isa_V_MED3_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	int s0;
+	int s1;
+	int s2;
+
+	union si_reg_t median;
+
+	/* Load operands from registers. */
+	s0 = si_isa_read_reg(work_item, INST.src0).as_int;
+	s1 = si_isa_read_reg(work_item, INST.src1).as_int;
+	s2 = si_isa_read_reg(work_item, INST.src2).as_int;
+
+	/* Apply negation modifiers. */
+	if(INST.neg & 1)
+		s0 = -s0;
+	if(INST.neg & 2)
+		s1 = -s1;
+	if(INST.neg & 4)
+		s2 = -s2;
+
+	/* Determine the median. */
+	if (isnan(s0) || isnan(s1) || isnan(s2))
+		/* min3(s0, s1, s2) */
+		median.as_int = (s0 < s1) ? ((s2 < s0) ? s2 : s0) : ((s2 < s1) ? s2 : s1);
+	/* max3(s0, s1, s2) == s0 */
+	else if (s0 > s1 && s0 > s2)
+		/* max(s1, s2) */
+		median.as_int = (s1 > s2) ? s1 : s2;
+	/* max3(s0, s1, s2) == s1 */
+	else if (s1 > s0 && s1 > s2)
+		/* max(s0, s2) */
+		median.as_int = (s0 > s2) ? s0 : s2;
+	/* max3(s0, s1, s2) == s2 */
+	else
+		/* max(s0, s1) */
+		median.as_int = (s0 > s1) ? s0 : s1;
+
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, median);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: V[%d]<=(%d) ", work_item->id_in_wavefront,
+			INST.vdst, median.as_int);
+	}
+}
+#undef INST
+
 /* D = S0.u >> S1.u[4:0]. */
 #define INST SI_INST_VOP3a
 void si_isa_V_LSHR_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
