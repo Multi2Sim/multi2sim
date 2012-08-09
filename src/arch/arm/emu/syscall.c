@@ -270,6 +270,83 @@ void arm_sys_call(struct arm_ctx_t *ctx)
 
 
 /*
+ * System call 'write' (code 4)
+ */
+
+static int arm_sys_write_impl(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int buf_ptr;
+	unsigned int count;
+
+	int guest_fd;
+	int host_fd;
+	int err;
+
+	struct arm_file_desc_t *desc;
+	void *buf;
+
+	struct pollfd fds;
+
+	/* Arguments */
+	guest_fd = regs->r0;
+	buf_ptr = regs->r1;
+	count = regs->r2;
+	arm_sys_debug("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
+		guest_fd, buf_ptr, count);
+
+	/* Get file descriptor */
+	desc = arm_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	if (!desc)
+		return -EBADF;
+	host_fd = desc->host_fd;
+	arm_sys_debug("  host_fd=%d\n", host_fd);
+
+	/* Allocate buffer */
+	buf = calloc(1, count);
+	if (!buf)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Read buffer from memory */
+	mem_read(mem, buf_ptr, count, buf);
+	arm_sys_debug_buffer("  buf", buf, count);
+
+	/* Poll the file descriptor to check if write is blocking */
+	fds.fd = host_fd;
+	fds.events = POLLOUT;
+	poll(&fds, 1, 0);
+
+	/* Non-blocking write */
+	if (fds.revents)
+	{
+		/* Host write */
+		err = write(host_fd, buf, count);
+		if (err == -1)
+			err = -errno;
+
+		/* Return written bytes */
+		free(buf);
+		return err;
+	}
+
+	/* Blocking write - suspend thread */
+	arm_sys_debug("  blocking write - process suspended\n");
+	ctx->wakeup_fd = guest_fd;
+	arm_ctx_set_status(ctx, arm_ctx_suspended | arm_ctx_write);
+	arm_emu_process_events_schedule();
+
+	/* Return value doesn't matter here. It will be overwritten when the
+	 * context wakes up after blocking call. */
+	free(buf);
+	return 0;
+}
+
+
+
+
+/*
  * System call 'brk' (code 45)
  */
 
@@ -336,6 +413,162 @@ static int arm_sys_brk_impl(struct arm_ctx_t *ctx)
 
 
 
+/*
+ * System call 'mmap' (code 90)
+ */
+
+#define SYS_MMAP_BASE_ADDRESS  0xb7fb0000
+
+static struct string_map_t sys_mmap_prot_map =
+{
+	6, {
+		{ "PROT_READ",       0x1 },
+		{ "PROT_WRITE",      0x2 },
+		{ "PROT_EXEC",       0x4 },
+		{ "PROT_SEM",        0x8 },
+		{ "PROT_GROWSDOWN",  0x01000000 },
+		{ "PROT_GROWSUP",    0x02000000 }
+	}
+};
+
+static struct string_map_t sys_mmap_flags_map =
+{
+	11, {
+		{ "MAP_SHARED",      0x01 },
+		{ "MAP_PRIVATE",     0x02 },
+		{ "MAP_FIXED",       0x10 },
+		{ "MAP_ANONYMOUS",   0x20 },
+		{ "MAP_GROWSDOWN",   0x00100 },
+		{ "MAP_DENYWRITE",   0x00800 },
+		{ "MAP_EXECUTABLE",  0x01000 },
+		{ "MAP_LOCKED",      0x02000 },
+		{ "MAP_NORESERVE",   0x04000 },
+		{ "MAP_POPULATE",    0x08000 },
+		{ "MAP_NONBLOCK",    0x10000 }
+	}
+};
+
+static int arm_sys_mmap(struct arm_ctx_t *ctx, unsigned int addr, unsigned int len,
+	int prot, int flags, int guest_fd, int offset)
+{
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int len_aligned;
+
+	int perm;
+	int host_fd;
+
+	struct arm_file_desc_t *desc;
+
+	/* Check that protection flags match in guest and host */
+	assert(PROT_READ == 1);
+	assert(PROT_WRITE == 2);
+	assert(PROT_EXEC == 4);
+
+	/* Check that mapping flags match */
+	assert(MAP_SHARED == 0x01);
+	assert(MAP_PRIVATE == 0x02);
+	assert(MAP_FIXED == 0x10);
+	assert(MAP_ANONYMOUS == 0x20);
+
+	/* Translate file descriptor */
+	desc = arm_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	host_fd = desc ? desc->host_fd : -1;
+	if (guest_fd > 0 && host_fd < 0)
+		fatal("%s: invalid guest descriptor", __FUNCTION__);
+
+	/* Permissions */
+	perm = mem_access_init;
+	perm |= prot & PROT_READ ? mem_access_read : 0;
+	perm |= prot & PROT_WRITE ? mem_access_write : 0;
+	perm |= prot & PROT_EXEC ? mem_access_exec : 0;
+
+	/* Flag MAP_ANONYMOUS.
+	 * If it is set, the 'fd' parameter is ignored. */
+	if (flags & MAP_ANONYMOUS)
+		host_fd = -1;
+
+	/* 'addr' and 'offset' must be aligned to page size boundaries.
+	 * 'len' is rounded up to page boundary. */
+	if (offset & ~MEM_PAGE_MASK)
+		fatal("%s: unaligned offset", __FUNCTION__);
+	if (addr & ~MEM_PAGE_MASK)
+		fatal("%s: unaligned address", __FUNCTION__);
+	len_aligned = ROUND_UP(len, MEM_PAGE_SIZE);
+
+	/* Find region for allocation */
+	if (flags & MAP_FIXED)
+	{
+		/* If MAP_FIXED is set, the 'addr' parameter must be obeyed, and is not just a
+		 * hint for a possible base address of the allocated range. */
+		if (!addr)
+			fatal("%s: no start specified for fixed mapping", __FUNCTION__);
+
+		/* Any allocated page in the range specified by 'addr' and 'len'
+		 * must be discarded. */
+		mem_unmap(mem, addr, len_aligned);
+	}
+	else
+	{
+		if (!addr || mem_map_space_down(mem, addr, len_aligned) != addr)
+			addr = SYS_MMAP_BASE_ADDRESS;
+		addr = mem_map_space_down(mem, addr, len_aligned);
+		if (addr == -1)
+			fatal("%s: out of guest memory", __FUNCTION__);
+	}
+
+	/* Allocation of memory */
+	mem_map(mem, addr, len_aligned, perm);
+
+	/* Host mapping */
+	if (host_fd >= 0)
+	{
+		char buf[MEM_PAGE_SIZE];
+
+		unsigned int last_pos;
+		unsigned int curr_addr;
+
+		int size;
+		int count;
+
+		/* Save previous position */
+		last_pos = lseek(host_fd, 0, SEEK_CUR);
+		lseek(host_fd, offset, SEEK_SET);
+
+		/* Read pages */
+		assert(len_aligned % MEM_PAGE_SIZE == 0);
+		assert(addr % MEM_PAGE_SIZE == 0);
+		curr_addr = addr;
+		for (size = len_aligned; size > 0; size -= MEM_PAGE_SIZE)
+		{
+			memset(buf, 0, MEM_PAGE_SIZE);
+			count = read(host_fd, buf, MEM_PAGE_SIZE);
+			if (count)
+				mem_access(mem, curr_addr, MEM_PAGE_SIZE, buf, mem_access_init);
+			curr_addr += MEM_PAGE_SIZE;
+		}
+
+		/* Return file to last position */
+		lseek(host_fd, last_pos, SEEK_SET);
+	}
+
+	/* Return mapped address */
+	return addr;
+}
+
+
+struct sim_user_desc
+{
+	unsigned int entry_number;
+	unsigned int base_addr;
+	unsigned int limit;
+	unsigned int seg_32bit:1;
+	unsigned int contents:2;
+	unsigned int read_exec_only:1;
+	unsigned int limit_in_pages:1;
+	unsigned int seg_not_present:1;
+	unsigned int useable:1;
+};
 
 /*
  * System call 'newuname' (code 122)
@@ -384,11 +617,229 @@ static int arm_sys_newuname_impl(struct arm_ctx_t *ctx)
 
 
 /*
+ * System call 'mmap2' (code 192)
+ */
+
+static int arm_sys_mmap2_impl(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+
+	unsigned int addr;
+	unsigned int len;
+
+	int prot;
+	int flags;
+	int offset;
+	int guest_fd;
+
+	char prot_str[MAX_STRING_SIZE];
+	char flags_str[MAX_STRING_SIZE];
+
+	/* Arguments */
+	addr = regs->r0;
+	len = regs->r1;
+	prot = regs->r2;
+	flags = regs->r3;
+	guest_fd = regs->r4;
+	offset = regs->r5;
+
+	/* Arm error handling for non-tls supported pointer mismatch */
+	if(!len)
+	{
+		len = 0x1000;
+	}
+
+	/* Debug */
+	arm_sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, guest_fd=%d, offset=0x%x\n",
+		addr, len, prot, flags, guest_fd, offset);
+	map_flags(&sys_mmap_prot_map, prot, prot_str, MAX_STRING_SIZE);
+	map_flags(&sys_mmap_flags_map, flags, flags_str, MAX_STRING_SIZE);
+	arm_sys_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
+
+	/* System calls 'mmap' and 'mmap2' only differ in the interpretation of
+	 * argument 'offset'. Here, it is given in memory pages. */
+	return arm_sys_mmap(ctx, addr, len, prot, flags, guest_fd, offset << MEM_PAGE_SHIFT);
+}
+
+
+
+
+/*
+ * System call 'stat64' (code 195)
+ */
+
+struct sim_stat64_t
+{
+	unsigned long long dev;  /* 0 8 */
+	unsigned int pad1;  /* 8 4 */
+	unsigned int __ino;  /* 12 4 */
+	unsigned int mode;  /* 16 4 */
+	unsigned int nlink;  /* 20 4 */
+	unsigned int uid;  /* 24 4 */
+	unsigned int gid;  /* 28 4 */
+	unsigned long long rdev;  /* 32 8 */
+	unsigned int pad2;  /* 40 4 */
+	long long size;  /* 44 8 */
+	unsigned int blksize;  /* 52 4 */
+	unsigned long long blocks;  /* 56 8 */
+	unsigned int atime;  /* 64 4 */
+	unsigned int atime_nsec;  /* 68 4 */
+	unsigned int mtime;  /* 72 4 */
+	unsigned int mtime_nsec;  /* 76 4 */
+	unsigned int ctime;  /* 80 4 */
+	unsigned int ctime_nsec;  /* 84 4 */
+	unsigned long long ino;  /* 88 8 */
+} __attribute__((packed));
+
+static void arm_sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host)
+{
+	M2S_HOST_GUEST_MATCH(sizeof(struct sim_stat64_t), 96);
+	memset(guest, 0, sizeof(struct sim_stat64_t));
+
+	guest->dev = host->st_dev;
+	guest->__ino = host->st_ino;
+	guest->mode = host->st_mode;
+	guest->nlink = host->st_nlink;
+	guest->uid = host->st_uid;
+	guest->gid = host->st_gid;
+	guest->rdev = host->st_rdev;
+	guest->size = host->st_size;
+	guest->blksize = host->st_blksize;
+	guest->blocks = host->st_blocks;
+	guest->atime = host->st_atime;
+	guest->mtime = host->st_mtime;
+	guest->ctime = host->st_ctime;
+	guest->ino = host->st_ino;
+
+	arm_sys_debug("  stat64 structure:\n");
+	arm_sys_debug("    dev=%lld, ino=%lld, mode=%d, nlink=%d\n",
+		guest->dev, guest->ino, guest->mode, guest->nlink);
+	arm_sys_debug("    uid=%d, gid=%d, rdev=%lld\n",
+		guest->uid, guest->gid, guest->rdev);
+	arm_sys_debug("    size=%lld, blksize=%d, blocks=%lld\n",
+		guest->size, guest->blksize, guest->blocks);
+}
+
+
+
+
+/*
+ * System call 'fstat64' (code 197)
+ */
+
+static int arm_sys_fstat64_impl(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	int fd;
+	int host_fd;
+	int err;
+
+	unsigned int statbuf_ptr;
+
+	struct stat statbuf;
+	struct sim_stat64_t sim_statbuf;
+
+	/* Arguments */
+	fd = regs->r0;
+	statbuf_ptr = regs->r1;
+	arm_sys_debug("  fd=%d, statbuf_ptr=0x%x\n", fd, statbuf_ptr);
+
+	/* Get host descriptor */
+	host_fd = arm_file_desc_table_get_host_fd(ctx->file_desc_table, fd);
+	arm_sys_debug("  host_fd=%d\n", host_fd);
+
+	/* Host call */
+	err = fstat(host_fd, &statbuf);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	arm_sys_stat_host_to_guest(&sim_statbuf, &statbuf);
+	mem_write(mem, statbuf_ptr, sizeof sim_statbuf, &sim_statbuf);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'getuid' (code 199)
+ */
+
+static int arm_sys_getuid_impl(struct arm_ctx_t *ctx)
+{
+	return getuid();
+}
+
+
+
+/*
+ * System call 'getgid' (code 200)
+ */
+
+static int arm_sys_getgid_impl(struct arm_ctx_t *ctx)
+{
+	return getgid();
+}
+
+
+
+
+/*
+ * System call 'geteuid' (code 201)
+ */
+
+static int arm_sys_geteuid_impl(struct arm_ctx_t *ctx)
+{
+	return geteuid();
+}
+
+
+
+
+/*
+ * System call 'getegid' (code 202)
+ */
+
+static int arm_sys_getegid_impl(struct arm_ctx_t *ctx)
+{
+	return getegid();
+}
+
+
+
+
+/*
+ * System call 'exit_group' (code 252)
+ */
+
+static int arm_sys_exit_group_impl(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+
+	int status;
+
+	/* Arguments */
+	status = regs->r0;
+	arm_sys_debug("  status=%d\n", status);
+
+	/* Finish */
+	arm_ctx_finish_group(ctx, status);
+	return 0;
+}
+
+
+
+
+/*
  * System call 'ARM_set_tls' (code 330)
  */
 
 static int arm_sys_ARM_set_tls_impl(struct arm_ctx_t *ctx)
 {
+
 	unsigned int newtls;
 
 	/* Arguments */
@@ -397,7 +848,56 @@ static int arm_sys_ARM_set_tls_impl(struct arm_ctx_t *ctx)
 	/* Set the tls value */
 	ctx->regs->cp15.c13_tls3 = newtls;
 
+
+	/*struct arm_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int uinfo_ptr;
+
+	struct sim_user_desc uinfo;
+
+	 Arguments
+	uinfo_ptr = regs->r0;
+	arm_sys_debug("  uinfo_ptr=0x%x\n", uinfo_ptr);
+
+	 Read structure
+	mem_read(mem, uinfo_ptr, sizeof uinfo, &uinfo);
+	arm_sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
+		uinfo.entry_number, uinfo.base_addr, uinfo.limit);
+	arm_sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
+		uinfo.seg_32bit, uinfo.contents, uinfo.read_exec_only);
+	arm_sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
+		uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
+	if (!uinfo.seg_32bit)
+		fatal("syscall set_thread_area: only 32-bit segments supported");
+
+	 Limit given in pages (4KB units)
+	if (uinfo.limit_in_pages)
+		uinfo.limit <<= 12;
+
+	if (uinfo.entry_number == -1)
+	{
+		if (ctx->glibc_segment_base)
+			fatal("%s: glibc segment already set", __FUNCTION__);
+
+		ctx->glibc_segment_base = uinfo.base_addr;
+		ctx->glibc_segment_limit = uinfo.limit;
+		uinfo.entry_number = 6;
+		mem_write(mem, uinfo_ptr, 4, &uinfo.entry_number);
+	}
+	else
+	{
+		if (uinfo.entry_number != 6)
+			fatal("%s: invalid entry number", __FUNCTION__);
+		if (!ctx->glibc_segment_base)
+			fatal("%s: glibc segment not set", __FUNCTION__);
+		ctx->glibc_segment_base = uinfo.base_addr;
+		ctx->glibc_segment_limit = uinfo.limit;
+	}
+*/
+	/* Return */
 	return 0;
+
 }
 
 
@@ -421,7 +921,6 @@ SYS_NOT_IMPL(restart_syscall)
 SYS_NOT_IMPL(exit)
 SYS_NOT_IMPL(fork)
 SYS_NOT_IMPL(read)
-SYS_NOT_IMPL(write)
 SYS_NOT_IMPL(open)
 SYS_NOT_IMPL(close)
 SYS_NOT_IMPL(waitpid)
@@ -607,17 +1106,11 @@ SYS_NOT_IMPL(ni_syscall_188)
 SYS_NOT_IMPL(ni_syscall_189)
 SYS_NOT_IMPL(vfork)
 SYS_NOT_IMPL(getrlimit)
-SYS_NOT_IMPL(mmap2)
 SYS_NOT_IMPL(truncate64)
 SYS_NOT_IMPL(ftruncate64)
 SYS_NOT_IMPL(stat64)
 SYS_NOT_IMPL(lstat64)
-SYS_NOT_IMPL(fstat64)
 SYS_NOT_IMPL(lchown)
-SYS_NOT_IMPL(getuid)
-SYS_NOT_IMPL(getgid)
-SYS_NOT_IMPL(geteuid)
-SYS_NOT_IMPL(getegid)
 SYS_NOT_IMPL(setreuid)
 SYS_NOT_IMPL(setregid)
 SYS_NOT_IMPL(getgroups)
@@ -667,7 +1160,6 @@ SYS_NOT_IMPL(io_submit)
 SYS_NOT_IMPL(io_cancel)
 SYS_NOT_IMPL(fadvise64)
 SYS_NOT_IMPL(ni_syscall_251)
-SYS_NOT_IMPL(exit_group)
 SYS_NOT_IMPL(lookup_dcookie)
 SYS_NOT_IMPL(epoll_create)
 SYS_NOT_IMPL(epoll_ctl)

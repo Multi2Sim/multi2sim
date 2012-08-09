@@ -514,17 +514,35 @@ struct arm_ctx_t *arm_ctx_create(void)
 void arm_ctx_free(struct arm_ctx_t *ctx)
 {
 
+	/* If context is not finished/zombie, finish it first.
+	 * This removes all references to current freed context. */
+	if (!arm_ctx_get_status(ctx, arm_ctx_finished | arm_ctx_zombie))
+		arm_ctx_finish(ctx, 0);
+
+	/* Remove context from finished contexts list. This should
+	 * be the only list the context is in right now. */
+	assert(!arm_emu_list_member(arm_emu_list_running, ctx));
+	assert(!arm_emu_list_member(arm_emu_list_suspended, ctx));
+	assert(!arm_emu_list_member(arm_emu_list_zombie, ctx));
+	assert(arm_emu_list_member(arm_emu_list_finished, ctx));
+	arm_emu_list_remove(arm_emu_list_finished, ctx);
+
 	/* Free private structures */
 	arm_regs_free(ctx->regs);
 
 	/* Check no more links */
-	assert(!ctx->num_links);
+
+	assert(ctx->num_links >= 0);
+		if (ctx->num_links)
+			ctx->num_links--;
+	/*assert(!ctx->num_links);*/
 
 	/* Free ELF file  */
 	if (ctx->elf_file)
 		elf_file_free(ctx->elf_file);
 
 	/* Free arguments */
+	fflush(NULL);
 	LINKED_LIST_FOR_EACH(ctx->args)
 	free(linked_list_get(ctx->args));
 	linked_list_free(ctx->args);
@@ -542,8 +560,47 @@ void arm_ctx_free(struct arm_ctx_t *ctx)
 
 	/* Free Memory */
 	mem_unlink(ctx->mem);
+	arm_file_desc_table_unlink(ctx->file_desc_table);
+
+	/* Remove context from contexts list and free */
+	arm_emu_list_remove(arm_emu_list_context, ctx);
+	arm_ctx_debug("context %d freed\n", ctx->pid);
 
 	free(ctx);
+}
+
+unsigned int arm_ctx_check_fault(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	unsigned int ret_val;
+
+	ret_val = 0;
+	switch (regs->pc)
+	{
+	case (0xffff0fe0 + 4):
+		arm_isa_inst_debug(
+			"  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n", regs->pc, regs->lr);
+		ret_val = 0xffff0fe0;
+		break;
+
+	case (0xffff0fc0 + 4):
+		arm_isa_inst_debug(
+			"  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n", regs->pc, regs->lr);
+		ret_val = 0xffff0fc0;
+		break;
+
+	case (0xffff0fa0 + 4):
+		arm_isa_inst_debug(
+			"  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n", regs->pc, regs->lr);
+		ret_val = 0xffff0fa0;
+		break;
+
+	default:
+		ret_val = 0;
+		break;
+	}
+
+	return (ret_val);
 }
 
 void arm_ctx_execute(struct arm_ctx_t *ctx)
@@ -553,13 +610,35 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 
 
 	unsigned char *buffer_ptr;
-
+	unsigned int fault_id;
 	int spec_mode;
 
 	/* Memory permissions should not be checked if the context is executing in
 	 * speculative mode. This will prevent guest segmentation faults to occur. */
 	spec_mode = arm_ctx_get_status(ctx, arm_ctx_spec_mode);
 	mem->safe = spec_mode ? 0 : mem_safe_mode;
+
+	/* Check for fault code execution in Arm */
+	fault_id = arm_ctx_check_fault(ctx);
+	if (fault_id)
+	{
+		ctx->regs->pc = ctx->regs->lr + 4;
+
+		/* Hard-coded structure for fault handle */
+		if(fault_id == 0xffff0fe0)
+		{
+			ctx->regs->r0 = 0x5bd4c0;
+		}
+		else if(fault_id == 0xffff0fc0)
+		{
+			ctx->regs->r3 = 0;
+		}
+		else if(fault_id == 0xffff0fa0)
+		{
+
+		}
+
+	}
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
@@ -593,6 +672,52 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 	/* Statistics */
 	arm_emu->inst_count++;
 }
+
+
+/* Finish a context group. This call does a subset of action of the 'arm_ctx_finish'
+ * call, but for all parent and child contexts sharing a memory map. */
+void arm_ctx_finish_group(struct arm_ctx_t *ctx, int status)
+{
+	struct arm_ctx_t *aux;
+
+	/* Get group parent */
+	if (ctx->group_parent)
+		ctx = ctx->group_parent;
+	assert(!ctx->group_parent);  /* Only one level */
+
+	/* Context already finished */
+	if (arm_ctx_get_status(ctx, arm_ctx_finished | arm_ctx_zombie))
+		return;
+
+	/* Finish all contexts in the group */
+	DOUBLE_LINKED_LIST_FOR_EACH(arm_emu, context, aux)
+	{
+		if (aux->group_parent != ctx && aux != ctx)
+			continue;
+
+		/* TODO: Thread support to be added for Arm */
+		/*
+		if (arm_ctx_get_status(aux, arm_ctx_zombie))
+			arm_ctx_set_status(aux, arm_ctx_finished);
+		if (arm_ctx_get_status(aux, arm_ctx_handler))
+			signal_handler_return(aux);
+		arm_ctx_host_thread_suspend_cancel(aux);
+		arm_ctx_host_thread_timer_cancel(aux);
+		*/
+
+		/* Child context of 'ctx' goes to state 'finished'.
+		 * Context 'ctx' goes to state 'zombie' or 'finished' if it has a parent */
+		if (aux == ctx)
+			arm_ctx_set_status(aux, aux->parent ? arm_ctx_zombie : arm_ctx_finished);
+		else
+			arm_ctx_set_status(aux, arm_ctx_finished);
+		aux->exit_code = status;
+	}
+
+	/* Process events */
+	arm_emu_process_events_schedule();
+}
+
 
 /* Finish a context. If the context has no parent, its status will be set
  * to 'arm_ctx_finished'. If it has, its status is set to 'arm_ctx_zombie', waiting for
