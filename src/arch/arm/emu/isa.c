@@ -57,6 +57,9 @@ static long long arm_inst_freq[ARM_INST_COUNT];
  * Register Load/Store Operations
  */
 
+
+
+
 unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 {
 	struct arm_inst_t *inst;
@@ -67,7 +70,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 	int rn_val;
 	unsigned int ret_addr;
 	unsigned int shift_val;
-	signed int rm_val;
+	int rm_val;
 
 	inst = &ctx->inst;
 
@@ -82,79 +85,244 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 		shift = ((offset >> 4) & (0x000000ff));
 		shift_val = ((shift >> 3) & 0x0000001f);
 
-		if(inst->dword.sdtr_ins.up_dn)
+		if(inst->dword.sdtr_ins.idx_typ) /* Pre- Indexed */
 		{
-			switch ((shift >> 1) & 0x00000003)
+
+			if (inst->dword.sdtr_ins.up_dn) /* Increment */
 			{
-			case (LSL):
-				ret_addr = rn_val + (rm_val << shift_val);
-				break;
+				switch ((shift >> 1) & 0x00000003)
+				{
+				case (LSL):
+					ret_addr = rn_val
+						+ (rm_val << shift_val);
+					break;
 
-			case (LSR):
-				ret_addr = rn_val + (rm_val >> shift_val);
-				break;
+				case (LSR):
+					ret_addr = rn_val
+						+ (rm_val >> shift_val);
+					break;
 
-			case (ASR):
-				ret_addr = rn_val + (rm_val /(int)(pow(2,shift_val)));
-				break;
+				case (ASR):
+					ret_addr = rn_val
+						+ (rm_val / (int) (pow(
+							2, shift_val)));
+					break;
 
-			case (ROR):
-				ret_addr = rn_val + arm_rotr(rm_val, shift_val);
-				break;
+				case (ROR):
+					ret_addr = rn_val + arm_rotr(
+						rm_val, shift_val);
+					break;
+				}
 			}
+			else /* Decrement */
+			{
+				switch ((shift >> 1) & 0x00000003)
+				{
+				case (LSL):
+					ret_addr = rn_val
+						- (rm_val << shift_val);
+					break;
+
+				case (LSR):
+					ret_addr = rn_val
+						- (rm_val >> shift_val);
+					break;
+
+				case (ASR):
+					ret_addr = rn_val
+						- (rm_val / (int) (pow(
+							2, shift_val)));
+					break;
+
+				case (ROR):
+					ret_addr = rn_val - arm_rotr(
+						rm_val, shift_val);
+					break;
+				}
+			}
+
+			if (inst->dword.sdtr_ins.wb)
+				arm_isa_reg_store(ctx, rn, ret_addr);
 		}
-		else
+
+		else	/* Post Indexed */
 		{
-			switch ((shift >> 1) & 0x00000003)
+			if (inst->dword.sdtr_ins.up_dn) /* Increment */
 			{
-			case (LSL):
-				ret_addr = rn_val - (rm_val << shift_val);
-				break;
+				switch ((shift >> 1) & 0x00000003)
+				{
+				case (LSL):
+					ret_addr = rn_val;
+					rn_val = ret_addr
+						+ (rm_val << shift_val);
+					break;
 
-			case (LSR):
-				ret_addr = rn_val - (rm_val >> shift_val);
-				break;
+				case (LSR):
+					ret_addr = rn_val;
+					rn_val = ret_addr
+						+ (rm_val >> shift_val);
+					break;
 
-			case (ASR):
-				ret_addr = rn_val - (rm_val / (int) (pow(
-					2, shift_val)));
-				break;
+				case (ASR):
+					ret_addr = rn_val;
+					rn_val = ret_addr
+						+ (rm_val / (int) (pow(
+							2, shift_val)));
+					break;
 
-			case (ROR):
-				ret_addr = rn_val - arm_rotr(rm_val, shift_val);
-				break;
+				case (ROR):
+					ret_addr = rn_val;
+					rn_val = ret_addr + arm_rotr(
+						rm_val, shift_val);
+					break;
+				}
 			}
+			else /* Decrement */
+			{
+				switch ((shift >> 1) & 0x00000003)
+				{
+				case (LSL):
+					ret_addr = rn_val;
+					rn_val = ret_addr
+						- (rm_val << shift_val);
+					break;
+
+				case (LSR):
+					ret_addr = rn_val;
+					rn_val = ret_addr
+						- (rm_val >> shift_val);
+					break;
+
+				case (ASR):
+					ret_addr = rn_val;
+					rn_val = ret_addr
+						- (rm_val / (int) (pow(
+							2, shift_val)));
+					break;
+
+				case (ROR):
+					ret_addr = rn_val;
+					rn_val = ret_addr - arm_rotr(
+						rm_val, shift_val);
+					break;
+				}
+			}
+			arm_isa_reg_store(ctx, rn, rn_val);
 		}
 	}
-	else
+	else /* Register Addressing */
 	{
-		if(!offset)
+		if(inst->dword.sdtr_ins.idx_typ) /* Pre-Indexed */
 		{
-			ret_addr = rn_val + 0;
-		}
-		else
-		{
-			if(inst->dword.sdtr_ins.up_dn)
+			if(!offset)
 			{
-				ret_addr = rn_val + offset;
+				ret_addr = rn_val + 0;
 			}
 			else
 			{
-				ret_addr = rn_val - offset;
+				if(inst->dword.sdtr_ins.up_dn) /* Increment */
+				{
+					ret_addr = rn_val + offset;
+				}
+				else /* Decrement */
+				{
+					ret_addr = rn_val - offset;
+				}
 			}
+
+			if (inst->dword.sdtr_ins.wb)
+				arm_isa_reg_store(ctx, rn, ret_addr);
 		}
-
+		else /* Post-Index */
+		{
+			if(!offset)
+			{
+				ret_addr = rn_val + 0;
+			}
+			else
+			{
+				if(inst->dword.sdtr_ins.up_dn) /* Increment */
+				{
+					ret_addr = rn_val;
+					rn_val = rn_val + offset;
+				}
+				else /* Decrement */
+				{
+					ret_addr = rn_val;
+					rn_val = rn_val - offset;
+				}
+			}
+			arm_isa_reg_store(ctx, rn, rn_val);
+		}
 	}
 
-	if(inst->dword.sdtr_ins.idx_typ)
-	{
-		if(inst->dword.sdtr_ins.wb)
-			arm_isa_reg_store(ctx, rn, ret_addr);
-	}
 
 	arm_isa_inst_debug("  ls/st addr = 0x%x\n", ret_addr);
 	return (ret_addr);
 }
+
+int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
+{
+	unsigned int imm4l;
+	unsigned int imm4h;
+	unsigned int immd8;
+	int rn_val;
+	unsigned int addr;
+
+	imm4l = ctx->inst.dword.hfwrd_imm_ins.imm_off_lo;
+	imm4h = ctx->inst.dword.hfwrd_imm_ins.imm_off_hi;
+
+	immd8 = (0x000000ff) & ((imm4h << 4) | (imm4l));
+	arm_isa_inst_debug("  imm8 offset = %d,  (0x%x)\n", immd8, immd8);
+
+
+	if(ctx->inst.dword.hfwrd_imm_ins.idx_typ) /* Pre-Indexed */
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.hfwrd_imm_ins.base_rn, &rn_val);
+
+		if(ctx->inst.dword.hfwrd_imm_ins.up_dn)
+		{
+			addr = rn_val + immd8;
+		}
+
+		else
+		{
+			addr = rn_val - immd8;
+		}
+
+		if (ctx->inst.dword.hfwrd_imm_ins.wb)
+		{
+			rn_val = addr;
+			arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm_ins.base_rn, rn_val);
+
+		}
+		arm_isa_inst_debug("  ld/str addr = %d,  (0x%x)\n", addr, addr);
+		return (addr);
+	}
+
+	else /* Post Indexed */
+	{
+		if(ctx->inst.dword.hfwrd_imm_ins.up_dn)
+		{
+			addr = rn_val;
+		}
+
+		else
+		{
+			addr = rn_val;
+		}
+
+		if (ctx->inst.dword.hfwrd_imm_ins.wb)
+		{
+			fatal("%s: Arm instruction not according to v7 ISA specification,"
+				" unpredictable behavior possible. Please check your "
+				"compiler flags.\n",__FUNCTION__);
+		}
+		arm_isa_inst_debug("  addr = %d,  (0x%x)\n", addr, addr);
+		return (addr);
+	}
+}
+
 
 int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_cat_t cat)
 {
@@ -166,6 +334,7 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 	unsigned int rs;
 	unsigned int shift_imm;
 	signed int rm_val;
+	signed int rs_val;
 
 	if (cat == immd)
 	{
@@ -184,22 +353,23 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 		if (shift & 0x00000001)
 		{
 			rs = (shift >> 4);
+			arm_isa_reg_load(ctx, rs, &rs_val);
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (LSL):
-					op_val = rm_val << rs;
+					op_val = rm_val << (rs_val & 0x000000ff);
 			break;
 
 			case (LSR):
-					op_val = rm_val >> rs;
+					op_val = rm_val >> (rs_val & 0x000000ff);
 			break;
 
 			case (ASR):
-					op_val = rm_val /(int)(pow(2,rs));
+					op_val = rm_val /(int)(pow(2,(rs_val & 0x000000ff)));
 			break;
 
 			case (ROR):
-					op_val = arm_rotr(rm_val, rs);
+					op_val = arm_rotr(rm_val, (rs_val & 0x000000ff));
 			break;
 			}
 		}
@@ -243,19 +413,30 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 	unsigned int cry_bit;
 	unsigned int cry_mask;
 	unsigned int rot_val;
+	unsigned int imm_8r;
+	int rs_val;
+
 	if (cat == immd)
 	{
 		imm = (op2 & (0x000000ff));
 		rotate = ((op2 >> 8) & 0x0000000f);
+		imm_8r = arm_rotr( imm , rotate);
 
-		cry_bit = rotate;
+		if(rotate == 0)
+		{
+			carry_ret = -1;
+		}
+		else
+		{
+			carry_ret = ((0x80000000) & imm_8r);
+		}
+		/*cry_bit = rotate;
 		cry_mask = (unsigned int)(pow(2,cry_bit));
 
 		if(cry_mask & imm)
 			carry_ret = 1;
 		else
-			carry_ret = 0;
-
+			carry_ret = 0;*/
 		arm_isa_inst_debug("  carry bit = %d, imm = 0x%x, rotate = %d\n",
 				carry_ret, imm, rotate);
 	}
@@ -270,29 +451,97 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 		if (shift & 0x00000001)
 		{
 			rs = (shift >> 4);
+			arm_isa_reg_load(ctx, rs, &rs_val);
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (LSL):
-				cry_bit = (32 - rs);
+				cry_bit = (32 - (rs_val & 0x000000ff));
 				cry_mask = (unsigned int)(pow(2,cry_bit));
+				if((rs_val & 0x000000ff) == 0)
+				{
+					carry_ret = -1;
+				}
+				else if ((rs_val & 0x000000ff) == 32)
+				{
+					carry_ret = (rm_val & 0x00000001);
+				}
+				else if ((rs_val & 0x000000ff) < 32)
+				{
+					if(cry_mask & rm_val)
+						carry_ret = 1;
+					else
+						carry_ret = 0;
+				}
 				break;
 
 			case (LSR):
-				cry_bit = (rs);
+				cry_bit = ((rs_val & 0x000000ff) - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
+				if((rs_val & 0x000000ff) == 0)
+				{
+					carry_ret = -1;
+				}
+				else if ((rs_val & 0x000000ff) == 32)
+				{
+					carry_ret = (rm_val & 0x80000000);
+				}
+				else if ((rs_val & 0x000000ff) < 32)
+				{
+					if(cry_mask & rm_val)
+						carry_ret = 1;
+					else
+						carry_ret = 0;
+				}
 				break;
 
 			case (ASR):
-				cry_bit = (rs);
+				cry_bit = ((rs_val & 0x000000ff) - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
+				if((rs_val & 0x000000ff) == 0)
+				{
+					carry_ret = -1;
+				}
+				else if ((rs_val & 0x000000ff) >= 32)
+				{
+					if(rm_val & 0x80000000)
+					{
+						carry_ret = 1;
+					}
+					else
+					{
+						carry_ret = 0;
+					}
+				}
+				else if ((rs_val & 0x000000ff) < 32)
+				{
+					if(cry_mask & rm_val)
+						carry_ret = 1;
+					else
+						carry_ret = 0;
+				}
 				break;
 
 			case (ROR):
-				cry_bit = (rs);
+				cry_bit = ((rs_val & 0x0000000f) - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
+				if((rs_val & 0x000000ff) == 0)
+				{
+					carry_ret = -1;
+				}
+				else if ((rs_val & 0x0000000f) == 0)
+				{
+					carry_ret = (rm_val & 0x80000000);
+				}
+				else
+				{
+					if(cry_mask & rm_val)
+						carry_ret = 1;
+					else
+						carry_ret = 0;
+				}
 				break;
 			}
-			rot_val = rs;
+			rot_val = rs_val;
 		}
 
 		else
@@ -302,30 +551,95 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 			case (LSL):
 				cry_bit = (32 - shift_imm);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
+				if(shift_imm == 0)
+				{
+					carry_ret = -1;
+				}
+				else
+				{
+					if(cry_mask & rm_val)
+						carry_ret = 1;
+					else
+						carry_ret = 0;
+				}
 				break;
 
 			case (LSR):
-				cry_bit = (shift_imm);
+				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
+				if(shift_imm == 0)
+				{
+					carry_ret = -1;
+				}
+				else
+				{
+					if(cry_mask & rm_val)
+						carry_ret = 1;
+					else
+						carry_ret = 0;
+				}
 				break;
 
 			case (ASR):
-				cry_bit = (shift_imm);
+				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
+				if(shift_imm == 0)
+				{
+					if (rm_val & (0x80000000))
+					{
+						carry_ret = 1;
+					}
+					else
+					{
+						carry_ret = 0;
+					}
+				}
+				else
+				{
+					if(cry_mask & rm_val)
+						carry_ret = 1;
+					else
+						carry_ret = 0;
+				}
 				break;
 
 			case (ROR):
-				cry_bit = (shift_imm);
+				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
+				if(shift_imm == 0)
+				{
+					if (rm_val & (0x00000001))
+					{
+						carry_ret = 1;
+					}
+					else
+					{
+						carry_ret = 0;
+					}
+				}
+				else
+				{
+					if(cry_mask & rm_val)
+						carry_ret = 1;
+					else
+						carry_ret = 0;
+				}
 				break;
 			}
 			rot_val = shift_imm;
 		}
 
-		if(cry_mask & rm_val)
-			carry_ret = 1;
+		if(shift_imm == 0)
+		{
+			carry_ret = -1;
+		}
 		else
-			carry_ret = 0;
+		{
+			if(cry_mask & rm_val)
+				carry_ret = 1;
+			else
+				carry_ret = 0;
+		}
 
 		arm_isa_inst_debug("  carry bit = %d, rm_val = 0x%x, rotate = %d\n",
 								carry_ret, rm_val, rot_val);
@@ -524,7 +838,6 @@ void arm_isa_reg_load(struct arm_ctx_t *ctx, unsigned int reg_no, int *value)
 
 
 
-
 /*
  * Branching Functions
  */
@@ -551,9 +864,19 @@ void arm_isa_branch(struct arm_ctx_t *ctx)
 
 	else if (ctx->inst.info->category == ARM_CAT_BAX)
 	{
-		arm_isa_reg_load(ctx, ctx->inst.dword.bax_ins.op0_rn, &rm_val);
-		ctx->regs->pc = rm_val + 4;
-		arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
+		if((ctx->inst.info->inst == ARM_INST_BLX))
+		{
+			arm_isa_reg_load(ctx, ctx->inst.dword.bax_ins.op0_rn, &rm_val);
+			arm_isa_reg_store(ctx, 14, ctx->regs->pc - 4);
+			ctx->regs->pc = (rm_val & 0xfffffffe) + 4;
+			arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
+		}
+		else
+		{
+			arm_isa_reg_load(ctx, ctx->inst.dword.bax_ins.op0_rn, &rm_val);
+			ctx->regs->pc = (rm_val & 0xfffffffe) + 4;
+			arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
+		}
 	}
 }
 
@@ -876,8 +1199,14 @@ void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, i
 {
 	int rd_val;
 	int rn_val;
+	int operand2;
 	unsigned int rd_val_safe;
+	unsigned long flags;
+	struct arm_regs_t *regs;
 	arm_isa_reg_load(ctx, rn, &rn_val);
+
+	regs = ctx->regs;
+	flags = 0;
 
 	if(!(ctx->inst.dword.dpr_ins.s_cond))
 	{
@@ -896,15 +1225,74 @@ void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, i
 	}
 	else
 	{
+		rd_val = rn_val - op2 - op3;
+		arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
 
+		operand2 = (-1 * (op2  + op3));
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		asm volatile (
+			"push %5\n\t"
+			"popf\n\t"
+			"mov %2, %%eax\n\t"
+			"add %%eax, %3\n\t"
+			"mov %3, %%eax\n\t"
+			"mov %%eax, %4\n\t"
+			"pushf\n\t"
+			"pop %0\n\t"
+			: "=g" (flags), "=m" (operand2)
+			  : "m" (operand2), "m" (rn_val), "m" (rd_val), "g" (flags)
+			    : "eax"
+		);
+
+		arm_isa_inst_debug("  flags = 0x%lx\n", flags);
+		if(flags & 0x00000001)
+		{
+			regs->cpsr.C = 1;
+		}
+		if(flags & 0x00008000)
+		{
+			regs->cpsr.v = 1;
+		}
+		if(flags & 0x00000040)
+		{
+			regs->cpsr.z = 1;
+		}
+		if(flags & 0x00000080)
+		{
+			regs->cpsr.n = 1;
+		}
+		if((operand2 == 0) && (rn_val == 0))
+		{
+			regs->cpsr.C = 1;
+		}
+
+		if(operand2 == 0)
+		{
+			regs->cpsr.C = 1;
+		}
+
+		arm_isa_reg_store(ctx, rd, rd_val);
+		arm_isa_cpsr_print(ctx);
 	}
 }
+
 
 void arm_isa_subtract_rev(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
 	unsigned int op3)
 {
 	int rd_val;
 	int rn_val;
+	int operand2;
+	unsigned long flags;
+	struct arm_regs_t *regs;;
+
+	regs = ctx->regs;
+	flags = 0;
 
 	arm_isa_reg_load(ctx, rn, &rn_val);
 
@@ -916,7 +1304,59 @@ void arm_isa_subtract_rev(struct arm_ctx_t *ctx, unsigned int rd, unsigned int r
 	}
 	else
 	{
+		rd_val = op2 - rn_val - op3;
+		arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
 
+		operand2 = (-1 * rn_val);
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		asm volatile (
+			"push %5\n\t"
+			"popf\n\t"
+			"mov %2, %%eax\n\t"
+			"add %%eax, %3\n\t"
+			"mov %3, %%eax\n\t"
+			"mov %%eax, %4\n\t"
+			"pushf\n\t"
+			"pop %0\n\t"
+			: "=g" (flags), "=m" (operand2)
+			  : "m" (operand2), "m" (op2), "m" (rd_val), "g" (flags)
+			    : "eax"
+		);
+
+		arm_isa_inst_debug("  flags = 0x%lx\n", flags);
+		if(flags & 0x00000001)
+		{
+			regs->cpsr.C = 1;
+		}
+		if(flags & 0x00008000)
+		{
+			regs->cpsr.v = 1;
+		}
+		if(flags & 0x00000040)
+		{
+			regs->cpsr.z = 1;
+		}
+		if(flags & 0x00000080)
+		{
+			regs->cpsr.n = 1;
+		}
+		if((operand2 == 0) && (rn_val == 0))
+		{
+			regs->cpsr.C = 1;
+		}
+
+		if(operand2 == 0)
+		{
+			regs->cpsr.C = 1;
+		}
+
+		arm_isa_reg_store(ctx, rd, rd_val);
+		arm_isa_cpsr_print(ctx);
 	}
 }
 
@@ -927,8 +1367,9 @@ void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op
 	int rd_val;
 	int rn_val;
 	struct arm_regs_t *regs;
-	unsigned int rd_val_safe;
+	unsigned long flags;
 
+	flags = 0;
 	regs = ctx->regs;
 	arm_isa_reg_load(ctx, rn, &rn_val);
 
@@ -940,39 +1381,45 @@ void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op
 	}
 	else
 	{
-		rd_val = rn_val + op2 + op3;
-		rd_val_safe = (unsigned int)rn_val + (unsigned int)op2 + (unsigned int)op3;
-		arm_isa_inst_debug("  r%d = r%d + %d\n", rd, rn, op2);
-		arm_isa_reg_store(ctx, rd, rd_val);
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
 		regs->cpsr.C = 0;
 		regs->cpsr.v = 0;
 
-		if(rd_val == 0)
-		{
-			regs->cpsr.z = 1;
-			regs->cpsr.n = 0;
-			regs->cpsr.C = 0;
-			regs->cpsr.v = 0;
-		}
-		if(rd_val < 0)
-		{
-			regs->cpsr.n = 1;
-			regs->cpsr.C = 0;
-			regs->cpsr.v = 0;
-		}
-		if (rd_val_safe > (0xffffffff))
+		asm volatile (
+			"push %5\n\t"
+			"popf\n\t"
+			"mov %2, %%eax\n\t"
+			"add %3, %%eax\n\t"
+			"mov %%eax, %4\n\t"
+			"pushf\n\t"
+			"pop %0\n\t"
+			: "=g" (flags), "=m" (rn_val)
+			  : "m" (rn_val), "m" (op2), "m" (rd_val), "g" (flags)
+			    : "eax"
+		);
+
+
+		if(flags & 0x00000001)
 		{
 			regs->cpsr.C = 1;
-			regs->cpsr.v = 0;
 		}
-
-		if (((rn_val >= 0 && rd_val < op2) || (rn_val < 0 && rd_val > op2)))
+		if(flags & 0x00008000)
 		{
 			regs->cpsr.v = 1;
 		}
+		if(flags & 0x00000040)
+		{
+			regs->cpsr.z = 1;
+		}
+		if(flags & 0x00000080)
+		{
+			regs->cpsr.n = 1;
+		}
+
+		arm_isa_inst_debug("  r%d = r%d + %d\n", rd, rn, op2);
+		arm_isa_reg_store(ctx, rd, rd_val);
 		arm_isa_cpsr_print(ctx);
 	}
 }
@@ -1012,12 +1459,60 @@ void arm_isa_syscall(struct arm_ctx_t *ctx)
 	{
 		ctx->regs->r7 = 330;
 	}
+	else if(ctx->regs->r7 == ARM_exit_group)
+	{
+		ctx->regs->r7 = 252;
+	}
 	arm_sys_call(ctx);
 	if(!ctx->regs->r0)
 		arm_isa_inst_debug("  System call code = %d\n", ctx->regs->r7);
 	else
 		arm_isa_inst_debug("  System call code = %d\n", ctx->regs->r7);
 }
+
+unsigned int arm_isa_invalid_addr_str(unsigned int addr)
+{
+	if (addr == 0x5bd4dc) 		/* Fault subroutine return address */
+	{
+		return 1;
+	}
+	else if (addr == 0x5bd080) 		/* Fault subroutine return address */
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value)
+{
+	if (addr == 0x5bd4dc) 		/* Fault subroutine return address */
+	{
+		*(value) = 0x8faf8;
+		return 1;
+	}
+	else if (addr == 0x5bd080)
+	{
+		return 1;
+	}
+	else if (addr == 0x5bd07c)
+	{
+		*(value) = 0;
+		return 1;
+	}
+	else if (addr == 0x5bd4d8)
+	{
+		*(value) = 0;
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 
 
 

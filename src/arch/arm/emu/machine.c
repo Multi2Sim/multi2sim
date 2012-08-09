@@ -48,12 +48,63 @@ void arm_isa_AND_reg_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_ANDS_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	int rn_val;
+	struct arm_regs_t *regs;
+	struct arm_regs_t prev_regs;
+
+	regs = ctx->regs;
+	prev_regs.cpsr = regs->cpsr;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, (operand2 & rn_val));
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		if ((operand2 & rn_val) == 0)
+		{
+			regs->cpsr.z = 1;
+			regs->cpsr.n = 0;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if((operand2 & rn_val) < 0)
+		{
+			regs->cpsr.n = 1;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, reg))
+		{
+			regs->cpsr.C = 1;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, reg) == -1)
+		{
+			regs->cpsr.C = prev_regs.cpsr.C;
+		}
+
+		arm_isa_cpsr_print(ctx);
+	}
 }
 
 void arm_isa_EOR_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	int rn_val;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, (operand2 ^ rn_val));
+	}
 }
 
 void arm_isa_EORS_reg_impl(struct arm_ctx_t *ctx)
@@ -63,17 +114,36 @@ void arm_isa_EORS_reg_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_SUB_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr_ins.dst_reg, ctx->inst.dword.dpr_ins.op1_reg,
+			operand2, 0);
+	}
 }
 
 void arm_isa_SUBS_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr_ins.dst_reg, ctx->inst.dword.dpr_ins.op1_reg,
+			operand2, 0);
+	}
 }
 
 void arm_isa_RSB_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		arm_isa_subtract_rev(ctx, ctx->inst.dword.dpr_ins.dst_reg,
+			ctx->inst.dword.dpr_ins.op1_reg, operand2, 0);
+	}
 }
 
 void arm_isa_RSBS_reg_impl(struct arm_ctx_t *ctx)
@@ -105,7 +175,17 @@ void arm_isa_ADDS_reg_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_ADC_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	int operand2;
+	unsigned int carry;
+
+	carry = ctx->regs->cpsr.C;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		arm_isa_add(ctx, ctx->inst.dword.dpr_ins.dst_reg, ctx->inst.dword.dpr_ins.op1_reg,
+			operand2, carry);
+	}
 }
 
 void arm_isa_ADCS_reg_impl(struct arm_ctx_t *ctx)
@@ -135,7 +215,41 @@ void arm_isa_RSCS_reg_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_TSTS_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	int rn_val;
+	struct arm_regs_t *regs;
+
+	regs = ctx->regs;
+	if(arm_isa_check_cond(ctx))
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		if ((operand2 & rn_val) == 0)
+		{
+			regs->cpsr.z = 1;
+			regs->cpsr.n = 0;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if((operand2 & rn_val) < 0)
+		{
+			regs->cpsr.n = 1;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, reg))
+		{
+			regs->cpsr.C = 1;
+			regs->cpsr.v = 0;
+		}
+		arm_isa_cpsr_print(ctx);
+	}
 }
 
 void arm_isa_TEQS_reg_impl(struct arm_ctx_t *ctx)
@@ -149,8 +263,11 @@ void arm_isa_CMPS_reg_impl(struct arm_ctx_t *ctx)
 	int rn_val;
 	int operand2;
 	int result;
+	int op2;
+	int rd_val;
+	unsigned long flags;
 
-
+	flags = 0;
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
 	{
@@ -159,30 +276,51 @@ void arm_isa_CMPS_reg_impl(struct arm_ctx_t *ctx)
 		result = rn_val - operand2;
 		arm_isa_inst_debug("  result = %d ; 0x%x\n", result, result);
 
+		op2 = (-1 * operand2);
+
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
-		regs->cpsr.C = 1;
+		regs->cpsr.C = 0;
 		regs->cpsr.v = 0;
 
-		if(result == 0)
+		asm volatile (
+			"push %5\n\t"
+			"popf\n\t"
+			"mov %2, %%eax\n\t"
+			"add %%eax, %3\n\t"
+			"mov %3, %%eax\n\t"
+			"pushf\n\t"
+			"pop %0\n\t"
+			: "=g" (flags), "=m" (op2)
+			  : "m" (op2), "m" (rn_val), "m" (rd_val), "g" (flags)
+			    : "eax"
+		);
+
+
+		if(flags & 0x00000001)
 		{
-			regs->cpsr.z = 1;
-			regs->cpsr.n = 0;
 			regs->cpsr.C = 1;
-			regs->cpsr.v = 0;
 		}
-		if (result < 0)
-		{
-			regs->cpsr.n = 1;
-			if(rn_val < operand2)
-				regs->cpsr.C = 0;
-			if((rn_val < 0) && (rn_val > (-1 * operand2)))
-				regs->cpsr.C = 1;
-			regs->cpsr.v = 0;
-		}
-		if (((rn_val >= 0 && result < operand2) || (rn_val < 0 && result > operand2)))
+		if(flags & 0x00008000)
 		{
 			regs->cpsr.v = 1;
+		}
+		if(flags & 0x00000040)
+		{
+			regs->cpsr.z = 1;
+		}
+		if(flags & 0x00000080)
+		{
+			regs->cpsr.n = 1;
+		}
+		if((operand2 == 0) && (rn_val == 0))
+		{
+			regs->cpsr.C = 1;
+		}
+
+		if(operand2 == 0)
+		{
+			regs->cpsr.C = 1;
 		}
 
 		arm_isa_cpsr_print(ctx);
@@ -209,7 +347,50 @@ void arm_isa_ORR_reg_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_ORRS_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	int rn_val;
+	struct arm_regs_t *regs;
+	struct arm_regs_t prev_regs;
+
+	regs = ctx->regs;
+	prev_regs.cpsr = regs->cpsr;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, (operand2 | rn_val));
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		if ((operand2 | rn_val) == 0)
+		{
+			regs->cpsr.z = 1;
+			regs->cpsr.n = 0;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if((operand2 | rn_val) < 0)
+		{
+			regs->cpsr.n = 1;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, reg))
+		{
+			regs->cpsr.C = 1;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, reg) == -1)
+		{
+			regs->cpsr.C = prev_regs.cpsr.C;
+		}
+
+		arm_isa_cpsr_print(ctx);
+	}
 }
 
 void arm_isa_MOV_reg_impl(struct arm_ctx_t *ctx)
@@ -226,9 +407,10 @@ void arm_isa_MOVS_reg_impl(struct arm_ctx_t *ctx)
 {
 	struct arm_regs_t *regs;
 	int operand2;
+	struct arm_regs_t prev_regs;
 
 	regs = ctx->regs;
-
+	prev_regs.cpsr = regs->cpsr;
 	if(arm_isa_check_cond(ctx))
 	{
 		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
@@ -238,6 +420,7 @@ void arm_isa_MOVS_reg_impl(struct arm_ctx_t *ctx)
 		regs->cpsr.n = 0;
 		regs->cpsr.C = 0;
 		regs->cpsr.v = 0;
+
 		if (operand2 == 0)
 		{
 			regs->cpsr.z = 1;
@@ -256,13 +439,39 @@ void arm_isa_MOVS_reg_impl(struct arm_ctx_t *ctx)
 			regs->cpsr.C = 1;
 			regs->cpsr.v = 0;
 		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, reg) == -1)
+		{
+			regs->cpsr.C = prev_regs.cpsr.C;
+		}
 	}
 	arm_isa_cpsr_print(ctx);
 }
 
 void arm_isa_BIC_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	int rd_val;
+	int rn_val;
+
+
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+
+		if(!(ctx->inst.dword.dpr_ins.s_cond))
+		{
+			rd_val = (rn_val) & (~(operand2)) ;
+			arm_isa_inst_debug("  r%d = r%d & (~%d)\n", ctx->inst.dword.dpr_ins.dst_reg,
+				ctx->inst.dword.dpr_ins.op1_reg, operand2);
+			arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, rd_val);
+		}
+		else
+		{
+
+		}
+	}
 }
 
 void arm_isa_BICS_reg_impl(struct arm_ctx_t *ctx)
@@ -272,7 +481,15 @@ void arm_isa_BICS_reg_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_MVN_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int operand2;
+	unsigned int result;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		result = (0xffffffff) ^ (operand2);
+		arm_isa_reg_store_safe(ctx, ctx->inst.dword.dpr_ins.dst_reg, result);
+	}
 }
 
 void arm_isa_MVNS_reg_impl(struct arm_ctx_t *ctx)
@@ -295,7 +512,50 @@ void arm_isa_AND_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_ANDS_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	int rn_val;
+	struct arm_regs_t *regs;
+	struct arm_regs_t prev_regs;
+
+	regs = ctx->regs;
+	prev_regs.cpsr = regs->cpsr;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, (operand2 & rn_val));
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		if ((operand2 & rn_val) == 0)
+		{
+			regs->cpsr.z = 1;
+			regs->cpsr.n = 0;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if((operand2 & rn_val) < 0)
+		{
+			regs->cpsr.n = 1;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, immd))
+		{
+			regs->cpsr.C = 1;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, immd) == -1)
+		{
+			regs->cpsr.C = prev_regs.cpsr.C;
+		}
+
+		arm_isa_cpsr_print(ctx);
+	}
 }
 
 void arm_isa_EOR_imm_impl(struct arm_ctx_t *ctx)
@@ -321,7 +581,13 @@ void arm_isa_SUB_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_SUBS_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr_ins.dst_reg, ctx->inst.dword.dpr_ins.op1_reg,
+			operand2, 0);
+	}
 }
 
 void arm_isa_RSB_imm_impl(struct arm_ctx_t *ctx)
@@ -337,7 +603,13 @@ void arm_isa_RSB_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_RSBS_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_subtract_rev(ctx, ctx->inst.dword.dpr_ins.dst_reg,
+			ctx->inst.dword.dpr_ins.op1_reg, operand2, 0);
+	}
 }
 
 void arm_isa_ADD_imm_impl(struct arm_ctx_t *ctx)
@@ -373,7 +645,17 @@ void arm_isa_SBC_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_SBCS_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	int operand2;
+	unsigned int carry;
+
+	carry = ctx->regs->cpsr.C;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr_ins.dst_reg, ctx->inst.dword.dpr_ins.op1_reg,
+			operand2, ~(carry));
+	}
 }
 
 void arm_isa_RSC_imm_impl(struct arm_ctx_t *ctx)
@@ -388,12 +670,89 @@ void arm_isa_RSCS_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_TSTS_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	struct arm_regs_t *regs;
+	struct arm_regs_t prev_regs;
+	int operand2;
+	int rn_val;
+
+	regs = ctx->regs;
+
+	prev_regs.cpsr = regs->cpsr;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		if ((operand2 & rn_val) == 0)
+		{
+			regs->cpsr.z = 1;
+			regs->cpsr.n = 0;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if((operand2 & rn_val) < 0)
+		{
+			regs->cpsr.n = 1;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, immd))
+		{
+			regs->cpsr.C = 1;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, immd) == -1)
+		{
+			regs->cpsr.C = prev_regs.cpsr.C;
+		}
+
+	}
+	arm_isa_cpsr_print(ctx);
 }
 
 void arm_isa_TEQS_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	int rn_val;
+	struct arm_regs_t *regs;
+
+	regs = ctx->regs;
+	if(arm_isa_check_cond(ctx))
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		if ((operand2 ^ rn_val) == 0)
+		{
+			regs->cpsr.z = 1;
+			regs->cpsr.n = 0;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if((operand2 ^ rn_val) < 0)
+		{
+			regs->cpsr.n = 1;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if(arm_isa_op2_carry(ctx, ctx->inst.dword.dpr_ins.op2, immd))
+		{
+			regs->cpsr.C = 1;
+			regs->cpsr.v = 0;
+		}
+		arm_isa_cpsr_print(ctx);
+	}
 }
 
 void arm_isa_CMPS_imm_impl(struct arm_ctx_t *ctx)
@@ -402,8 +761,11 @@ void arm_isa_CMPS_imm_impl(struct arm_ctx_t *ctx)
 	int rn_val;
 	int operand2;
 	int result;
+	int op2;
+	int rd_val;
+	unsigned long flags;
 
-
+	flags = 0;
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
 	{
@@ -412,34 +774,56 @@ void arm_isa_CMPS_imm_impl(struct arm_ctx_t *ctx)
 		result = rn_val - operand2;
 		arm_isa_inst_debug("  result = %d ; 0x%x\n", result, result);
 
+		op2 = (-1 * operand2);
+
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
-		regs->cpsr.C = 1;
+		regs->cpsr.C = 0;
 		regs->cpsr.v = 0;
 
-		if(result == 0)
+		asm volatile (
+			"push %5\n\t"
+			"popf\n\t"
+			"mov %2, %%eax\n\t"
+			"add %%eax, %3\n\t"
+			"mov %3, %%eax\n\t"
+			"pushf\n\t"
+			"pop %0\n\t"
+			: "=g" (flags), "=m" (op2)
+			  : "m" (op2), "m" (rn_val), "m" (rd_val), "g" (flags)
+			    : "eax"
+		);
+
+		arm_isa_inst_debug("  flags = 0x%lx\n", flags);
+		if(flags & 0x00000001)
 		{
-			regs->cpsr.z = 1;
-			regs->cpsr.n = 0;
 			regs->cpsr.C = 1;
-			regs->cpsr.v = 0;
 		}
-		if (result < 0)
-		{
-			regs->cpsr.n = 1;
-			if(rn_val < operand2)
-				regs->cpsr.C = 0;
-			if((rn_val < 0) && (rn_val > (-1 * operand2)))
-				regs->cpsr.C = 1;
-			regs->cpsr.v = 0;
-		}
-		if (((rn_val >= 0 && result < operand2) || (rn_val < 0 && result > operand2)))
+		if(flags & 0x00008000)
 		{
 			regs->cpsr.v = 1;
 		}
+		if(flags & 0x00000040)
+		{
+			regs->cpsr.z = 1;
+		}
+		if(flags & 0x00000080)
+		{
+			regs->cpsr.n = 1;
+		}
 
-		arm_isa_cpsr_print(ctx);
+		if((operand2 == 0) && (rn_val == 0))
+		{
+			regs->cpsr.C = 1;
+		}
+
+		if(operand2 == 0)
+		{
+			regs->cpsr.C = 1;
+		}
+
 	}
+	arm_isa_cpsr_print(ctx);
 }
 
 void arm_isa_CMNS_imm_impl(struct arm_ctx_t *ctx)
@@ -448,9 +832,11 @@ void arm_isa_CMNS_imm_impl(struct arm_ctx_t *ctx)
 	int rn_val;
 	int operand2;
 	int result;
-	unsigned int carry_res;
+	int op2;
+	int rd_val;
+	unsigned long flags;
 
-
+	flags = 0;
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
 	{
@@ -459,35 +845,42 @@ void arm_isa_CMNS_imm_impl(struct arm_ctx_t *ctx)
 
 		result = rn_val + operand2;
 		arm_isa_inst_debug("  result = %d ; 0x%x\n", result, result);
-		carry_res = (unsigned int)(rn_val + operand2);
 
+		op2 = operand2;
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
 		regs->cpsr.C = 0;
 		regs->cpsr.v = 0;
 
-		if(result == 0)
-		{
-			regs->cpsr.z = 1;
-			regs->cpsr.n = 0;
-			regs->cpsr.C = 0;
-			regs->cpsr.v = 0;
-		}
-		if (result < 0)
-		{
-			regs->cpsr.n = 1;
-			regs->cpsr.C = 0;
-			regs->cpsr.v = 0;
-		}
-		if (carry_res > (0xffffffff))
+		asm volatile (
+			"push %5\n\t"
+			"popf\n\t"
+			"mov %2, %%eax\n\t"
+			"add %3, %%eax\n\t"
+			"mov %%eax, %4\n\t"
+			"pushf\n\t"
+			"pop %0\n\t"
+			: "=g" (flags), "=m" (rn_val)
+			  : "m" (rn_val), "m" (op2), "m" (rd_val), "g" (flags)
+			    : "eax"
+		);
+
+
+		if(flags & 0x00000001)
 		{
 			regs->cpsr.C = 1;
-			regs->cpsr.v = 0;
 		}
-
-		if (((rn_val >= 0 && result < operand2) || (rn_val < 0 && result > operand2)))
+		if(flags & 0x00008000)
 		{
 			regs->cpsr.v = 1;
+		}
+		if(flags & 0x00000040)
+		{
+			regs->cpsr.z = 1;
+		}
+		if(flags & 0x00000080)
+		{
+			regs->cpsr.n = 1;
 		}
 		arm_isa_cpsr_print(ctx);
 	}
@@ -495,7 +888,15 @@ void arm_isa_CMNS_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_ORR_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	int rn_val;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, (operand2 | rn_val));
+	}
 }
 
 void arm_isa_ORRS_imm_impl(struct arm_ctx_t *ctx)
@@ -663,7 +1064,33 @@ void arm_isa_SMUL_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_UMULL_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned long long result;
+
+	int rm_val;
+	int rs_val;
+	unsigned int rdhi;
+	unsigned int rdlo;
+	unsigned int rs;
+	unsigned int rm;
+
+	arm_isa_reg_load(ctx, ctx->inst.dword.mul_ln_ins.op1_rs, &rs_val);
+	arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op0_rm, &rm_val);
+
+	arm_isa_inst_debug("  rm_val: 0x%x, rs_val: 0x%x\n", rm_val,rs_val);
+
+	rs =(unsigned int)rs_val;
+	rm =(unsigned int)rm_val;
+
+	result = (unsigned long long)rm*rs;
+	arm_isa_inst_debug("  result = 0x%llx\n", result);
+
+	rdhi = (0xffffffff00000000 & result) >> 32;
+	rdlo = 0x00000000ffffffff & result;
+
+	arm_isa_reg_store(ctx, ctx->inst.dword.mul_ln_ins.dst_hi, rdhi);
+	arm_isa_reg_store(ctx, ctx->inst.dword.mul_ln_ins.dst_lo, rdlo);
+
+
 }
 
 void arm_isa_UMULLS_impl(struct arm_ctx_t *ctx)
@@ -724,7 +1151,8 @@ void arm_isa_BX_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_BLX_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+			arm_isa_branch(ctx);
 }
 
 void arm_isa_LDRH_ptrm1_impl(struct arm_ctx_t *ctx)
@@ -964,7 +1392,26 @@ void arm_isa_STRD_prrp_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_CLZ_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int rm_val;
+	unsigned int i;
+	unsigned int zero_ct;
+
+	zero_ct = 0;
+	arm_isa_reg_load(ctx, ctx->inst.dword.hfwrd_reg_ins.off_reg, &rm_val);
+
+	for (i = 2147483648; i >= 1; i /= 2)
+	{
+		if((rm_val & (i)) == 0)
+		{
+			zero_ct += 1;
+		}
+		else
+		{
+			break;
+		}
+	}
+	arm_isa_inst_debug("  leading zero count = %d\n", zero_ct);
+	arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_reg_ins.dst_rd, zero_ct);
 }
 
 void arm_isa_LDRH_ptim1_impl(struct arm_ctx_t *ctx)
@@ -999,7 +1446,19 @@ void arm_isa_LDRH_prim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDRH_ofip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	int addr;
+	int value;
+	void *buf;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode3_imm(ctx);
+		mem_read(ctx->mem, addr, 4, buf);
+		value = value & (0x0000ffff);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm_ins.dst_rd, value);
+	}
 }
 
 void arm_isa_LDRH_prip_impl(struct arm_ctx_t *ctx)
@@ -1079,7 +1538,19 @@ void arm_isa_LDRSB_prim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDRSB_ofip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	int addr;
+	int value;
+	void *buf;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode3_imm(ctx);
+		mem_read(ctx->mem, addr, 1, buf);
+		value = value & (0xffffffff);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm_ins.dst_rd, value);
+	}
 }
 
 void arm_isa_LDRSB_prip_impl(struct arm_ctx_t *ctx)
@@ -1119,7 +1590,18 @@ void arm_isa_LDRSH_prim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDRSH_ofip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int addr;
+	int value;
+	void *buf;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode3_imm(ctx);
+		mem_read(ctx->mem, addr, 2, buf);
+		value = value & (0xffffffff);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm_ins.dst_rd, value);
+	}
 }
 
 void arm_isa_LDRSH_prip_impl(struct arm_ctx_t *ctx)
@@ -1159,7 +1641,20 @@ void arm_isa_LDRD_prim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDRD_ofip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int addr;
+	int value;
+	void *buf;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode3_imm(ctx);
+		mem_read(ctx->mem, addr, 4, buf);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm_ins.dst_rd, value);
+
+		mem_read(ctx->mem, addr + 4, 4, buf);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm_ins.dst_rd + 1, value);
+	}
 }
 
 void arm_isa_LDRD_prip_impl(struct arm_ctx_t *ctx)
@@ -1199,7 +1694,24 @@ void arm_isa_STRD_prim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STRD_ofip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode3_imm(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+
+		if(!(arm_isa_invalid_addr_str(addr)))
+			mem_write(ctx->mem, addr, 4, buf);
+
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd + 1, &value);
+
+		if(!(arm_isa_invalid_addr_str(addr + 4)))
+			mem_write(ctx->mem, addr + 4, 4, buf);
+	}
 }
 
 void arm_isa_STRD_prip_impl(struct arm_ctx_t *ctx)
@@ -1217,7 +1729,12 @@ void arm_isa_LDR_ptim_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		mem_read(ctx->mem, addr, 4, buf);
+
+		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		{
+			mem_read(ctx->mem, addr, 4, &value);
+		}
+
 		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
 	}
 }
@@ -1232,14 +1749,34 @@ void arm_isa_LDR_ptip_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		mem_read(ctx->mem, addr, 4, buf);
+
+		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		{
+			mem_read(ctx->mem, addr, 4, &value);
+		}
+
 		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
 	}
 }
 
 void arm_isa_LDR_ofim_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	unsigned int value;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+
+		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		{
+			mem_read(ctx->mem, addr, 4, &value);
+		}
+
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
+	}
 }
 
 void arm_isa_LDR_prim_impl(struct arm_ctx_t *ctx)
@@ -1253,7 +1790,12 @@ void arm_isa_LDR_prim_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		mem_read(ctx->mem, addr, 4, buf);
+
+		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		{
+			mem_read(ctx->mem, addr, 4, &value);
+		}
+
 		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
 	}
 }
@@ -1269,14 +1811,34 @@ void arm_isa_LDR_ofip_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		mem_read(ctx->mem, addr, 4, buf);
+
+		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		{
+			mem_read(ctx->mem, addr, 4, &value);
+		}
+
 		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
 	}
 }
 
 void arm_isa_LDR_prip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	unsigned int value;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+
+		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		{
+			mem_read(ctx->mem, addr, 4, &value);
+		}
+
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
+	}
 }
 
 void arm_isa_LDR_ptrmll_impl(struct arm_ctx_t *ctx)
@@ -1361,7 +1923,21 @@ void arm_isa_LDR_prrmrr_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDR_ofrpll_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	unsigned int value;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+
+		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		{
+			mem_read(ctx->mem, addr, 4, &value);
+		}
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
+	}
 }
 
 void arm_isa_LDR_ofrplr_impl(struct arm_ctx_t *ctx)
@@ -1406,12 +1982,36 @@ void arm_isa_STR_ptim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STR_ptip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+
+		if(!(arm_isa_invalid_addr_str(addr)))
+			mem_write(ctx->mem, addr, 4, buf);
+	}
 }
 
 void arm_isa_STR_ofim_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+
+		if(!(arm_isa_invalid_addr_str(addr)))
+			mem_write(ctx->mem, addr, 4, buf);
+	}
 }
 
 void arm_isa_STR_prim_impl(struct arm_ctx_t *ctx)
@@ -1425,7 +2025,8 @@ void arm_isa_STR_prim_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
-		mem_write(ctx->mem, addr, 4, buf);
+		if(!(arm_isa_invalid_addr_str(addr)))
+			mem_write(ctx->mem, addr, 4, buf);
 	}
 }
 
@@ -1440,7 +2041,9 @@ void arm_isa_STR_ofip_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
-		mem_write(ctx->mem, addr, 4, buf);
+
+		if(!(arm_isa_invalid_addr_str(addr)))
+			mem_write(ctx->mem, addr, 4, buf);
 	}
 }
 
@@ -1531,7 +2134,19 @@ void arm_isa_STR_prrmrr_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STR_ofrpll_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+
+		if(!(arm_isa_invalid_addr_str(addr)))
+			mem_write(ctx->mem, addr, 4, buf);
+	}
 }
 
 void arm_isa_STR_ofrplr_impl(struct arm_ctx_t *ctx)
@@ -1586,7 +2201,9 @@ void arm_isa_LDRB_ptip_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 		mem_read(ctx->mem, addr, 1, buf);
+		value = value & (0x000000ff);
 		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, (value));
+
 	}
 }
 
@@ -1612,13 +2229,29 @@ void arm_isa_LDRB_ofip_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 		mem_read(ctx->mem, addr, 1, buf);
+		value = value & (0x000000ff);
 		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, (value));
+
 	}
 }
 
 void arm_isa_LDRB_prip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	unsigned int addr;
+	void *buf = 0;
+	unsigned int value;
+
+	value = 0;
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		mem_read(ctx->mem, addr, 1, buf);
+		value = value & (0x000000ff);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, (value));
+
+	}
 }
 
 void arm_isa_LDRB_ptrmll_impl(struct arm_ctx_t *ctx)
@@ -1703,7 +2336,20 @@ void arm_isa_LDRB_prrmrr_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDRB_ofrpll_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	unsigned int value;
+
+
+	value = 0;
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		mem_read(ctx->mem, addr, 1, buf);
+		value = value & (0x000000ff);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, (value));
+	}
 }
 
 void arm_isa_LDRB_ofrplr_impl(struct arm_ctx_t *ctx)
@@ -1743,7 +2389,19 @@ void arm_isa_LDRB_prrprr_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STRB_ptim_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	value = 0;
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+		value = value & (0x000000ff);
+		mem_write(ctx->mem, addr, 1, buf);
+	}
 }
 
 void arm_isa_STRB_ptip_impl(struct arm_ctx_t *ctx)
@@ -1758,6 +2416,7 @@ void arm_isa_STRB_ptip_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+		value = value & (0x000000ff);
 		mem_write(ctx->mem, addr, 1, buf);
 	}
 }
@@ -1784,6 +2443,7 @@ void arm_isa_STRB_ofip_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+		value = value & (0x000000ff);
 		mem_write(ctx->mem, addr, 1, buf);
 	}
 
@@ -1876,7 +2536,19 @@ void arm_isa_STRB_prrmrr_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STRB_ofrpll_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	value = 0;
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+		value = value & (0x000000ff);
+		mem_write(ctx->mem, addr, 1, buf);
+	}
 }
 
 void arm_isa_STRB_ofrplr_impl(struct arm_ctx_t *ctx)
@@ -2136,7 +2808,9 @@ void arm_isa_LDMDA_uw_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDMIA_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	if(arm_isa_check_cond(ctx))
+		arm_isa_amode4s_ld(ctx);
 }
 
 void arm_isa_LDMIA_w_impl(struct arm_ctx_t *ctx)
@@ -2220,12 +2894,14 @@ void arm_isa_STMDA_uw_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STMIA_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+		arm_isa_amode4s_str(ctx);
 }
 
 void arm_isa_STMIA_w_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+		arm_isa_amode4s_str(ctx);
 }
 
 void arm_isa_STMIA_u_impl(struct arm_ctx_t *ctx)
