@@ -169,7 +169,7 @@ struct arm_signal_mask_table_t
 	unsigned long long pending;  /* Mask of pending signals */
 	unsigned long long blocked;  /* Mask of blocked signals */
 	unsigned long long backup;  /* Backup of blocked signals while suspended */
-	struct x86_regs_t *regs;  /* Backup of regs while executing handler */
+	struct arm_regs_t *regs;  /* Backup of regs while executing handler */
 	unsigned int pretcode;  /* Base address of a memory page allocated for retcode execution */
 };
 
@@ -187,6 +187,8 @@ struct arm_signal_handler_table_t
 		unsigned long long mask;
 	} sigaction[64];
 };
+
+void arm_signal_handler_return(struct arm_ctx_t *ctx);
 
 
 
@@ -282,6 +284,7 @@ enum arm_isa_op2_cat_t
 
 int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_cat_t cat);
 unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx);
+int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx);
 void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no,
 	int value);
 void arm_isa_reg_store_safe(struct arm_ctx_t *ctx, unsigned int reg_no,
@@ -303,6 +306,8 @@ void arm_isa_multiply(struct arm_ctx_t *ctx);
 int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op2_cat_t cat);
 
 void arm_isa_syscall(struct arm_ctx_t *ctx);
+unsigned int arm_isa_invalid_addr_str(unsigned int addr);
+unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value);
 
 
 
@@ -312,6 +317,7 @@ void arm_isa_syscall(struct arm_ctx_t *ctx);
  */
 
 #define ARM_set_tls 0xF0005
+#define ARM_exit_group 248
 
 #define arm_sys_debug(...) debug(arm_sys_debug_category, __VA_ARGS__)
 #define arm_sys_debug_buffer(...) debug_buffer(arm_sys_debug_category, __VA_ARGS__)
@@ -340,6 +346,11 @@ struct arm_ctx_t
 
 	/* Parent context */
 	struct arm_ctx_t *parent;
+
+
+	/* Context group initiator. There is only one group parent (if not NULL)
+	 * with many group children, no tree organization. */
+	struct arm_ctx_t *group_parent;
 
 	/* Context properties */
 	int status;
@@ -399,14 +410,25 @@ struct arm_ctx_t
 	struct arm_ctx_t *zombie_list_next, *zombie_list_prev;
 	struct arm_ctx_t *alloc_list_next, *alloc_list_prev;
 
+	/* For segmented memory access in glibc */
+	unsigned int glibc_segment_base;
+	unsigned int glibc_segment_limit;
+
+	/* Variables used to wake up suspended contexts. */
+	long long wakeup_time;  /* x86_emu_timer time to wake up (poll/nanosleep) */
+	int wakeup_fd;  /* File descriptor (read/write/poll) */
+	int wakeup_events;  /* Events for wake up (poll) */
+	int wakeup_pid;  /* Pid waiting for (waitpid) */
+	unsigned int wakeup_futex;  /* Address of futex where context is suspended */
+	unsigned int wakeup_futex_bitset;  /* Bit mask for selective futex wakeup */
+	long long wakeup_futex_sleep;  /* Assignment from x86_emu->futex_sleep_count */
+
 	/* Substructures */
 	struct mem_t *mem; /* Virtual Memory image */
 	struct arm_regs_t *regs; /* Logical register file */
 	struct arm_file_desc_table_t *file_desc_table;  /* File descriptor table */
 	struct signal_mask_table_t *signal_mask_table;
 	struct signal_handler_table_t *signal_handler_table;
-
-
 
 	/* Statistics */
 
@@ -449,12 +471,13 @@ void arm_ctx_execute(struct arm_ctx_t *ctx);
 void arm_ctx_free(struct arm_ctx_t *ctx);
 void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *full_path, int size);
 void arm_ctx_finish(struct arm_ctx_t *ctx, int status);
-
+void arm_ctx_finish_group(struct arm_ctx_t *ctx, int status);
 void arm_ctx_load_from_command_line(int argc, char **argv);
 void arm_ctx_load_from_ctx_config(struct config_t *config, char *section);
 
 void arm_ctx_ipc_report_handler(int event, void *data);
 
+unsigned int arm_ctx_check_fault(struct arm_ctx_t *ctx);
 
 enum arm_gpu_emulator_kind_t
 {

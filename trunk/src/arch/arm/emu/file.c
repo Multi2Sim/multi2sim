@@ -153,7 +153,6 @@ void arm_file_desc_table_dump(struct arm_file_desc_table_t *table, FILE *f)
 	fprintf(f, "  %d table entries, %d busy\n", list_count(table->arm_file_desc_list), busy);
 }
 
-
 int arm_file_desc_table_get_host_fd(struct arm_file_desc_table_t *table, int guest_fd)
 {
 	struct arm_file_desc_t *desc;
