@@ -270,6 +270,131 @@ void arm_sys_call(struct arm_ctx_t *ctx)
 
 
 /*
+ * System call 'close' (code 2)
+ */
+
+static int arm_sys_close_impl(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	struct arm_file_desc_t *fd;
+
+	int guest_fd;
+	int host_fd;
+
+	/* Arguments */
+	guest_fd = regs->r0;
+	arm_sys_debug("  guest_fd=%d\n", guest_fd);
+	host_fd = arm_file_desc_table_get_host_fd(ctx->file_desc_table, guest_fd);
+	arm_sys_debug("  host_fd=%d\n", host_fd);
+
+	/* Get file descriptor table entry. */
+	fd = arm_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	if (!fd)
+		return -EBADF;
+
+	/* Close host file descriptor only if it is valid and not stdin/stdout/stderr. */
+	if (host_fd > 2)
+		close(host_fd);
+
+	/* Free guest file descriptor. This will delete the host file if it's a virtual file. */
+	if (fd->kind == arm_file_desc_virtual)
+		arm_sys_debug("    host file '%s': temporary file deleted\n", fd->path);
+	arm_file_desc_table_entry_free(ctx->file_desc_table, fd->guest_fd);
+
+	/* Success */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'read' (code 3)
+ */
+
+static int arm_sys_read_impl(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int buf_ptr;
+	unsigned int count;
+
+	int guest_fd;
+	int host_fd;
+	int err;
+
+	void *buf;
+
+	struct arm_file_desc_t *fd;
+	struct pollfd fds;
+
+	/* Arguments */
+	guest_fd = regs->r0;
+	buf_ptr = regs->r1;
+	count = regs->r2;
+	arm_sys_debug("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
+		guest_fd, buf_ptr, count);
+
+	/* Get file descriptor */
+	fd = arm_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	if (!fd)
+		return -EBADF;
+	host_fd = fd->host_fd;
+	arm_sys_debug("  host_fd=%d\n", host_fd);
+
+	/* Allocate buffer */
+	buf = calloc(1, count);
+	if (!buf)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Poll the file descriptor to check if read is blocking */
+	fds.fd = host_fd;
+	fds.events = POLLIN;
+	err = poll(&fds, 1, 0);
+	if (err < 0)
+		fatal("%s: error executing 'poll'", __FUNCTION__);
+
+	/* Non-blocking read */
+	if (fds.revents || (fd->flags & O_NONBLOCK))
+	{
+		/* Host system call */
+		err = read(host_fd, buf, count);
+		if (err == -1)
+		{
+			free(buf);
+			return -errno;
+		}
+
+		/* Write in guest memory */
+		if (err > 0)
+		{
+			mem_write(mem, buf_ptr, err, buf);
+			arm_sys_debug_buffer("  buf", buf, err);
+		}
+
+		/* Return number of read bytes */
+		free(buf);
+		return err;
+	}
+
+	/* Blocking read - suspend thread */
+	arm_sys_debug("  blocking read - process suspended\n");
+	ctx->wakeup_fd = guest_fd;
+	ctx->wakeup_events = 1;  /* POLLIN */
+	arm_ctx_set_status(ctx, arm_ctx_suspended | arm_ctx_read);
+	arm_emu_process_events_schedule();
+
+	/* Free allocated buffer. Return value doesn't matter,
+	 * it will be overwritten when context wakes up from blocking call. */
+	free(buf);
+	return 0;
+}
+
+
+
+
+/*
  * System call 'write' (code 4)
  */
 
@@ -341,6 +466,121 @@ static int arm_sys_write_impl(struct arm_ctx_t *ctx)
 	 * context wakes up after blocking call. */
 	free(buf);
 	return 0;
+}
+
+
+
+
+/*
+ * System call 'open' (code 5)
+ */
+
+static struct string_map_t arm_sys_open_flags_map =
+{
+	16, {
+		{ "O_RDONLY",        00000000 },
+		{ "O_WRONLY",        00000001 },
+		{ "O_RDWR",          00000002 },
+		{ "O_CREAT",         00000100 },
+		{ "O_EXCL",          00000200 },
+		{ "O_NOCTTY",        00000400 },
+		{ "O_TRUNC",         00001000 },
+		{ "O_APPEND",        00002000 },
+		{ "O_NONBLOCK",      00004000 },
+		{ "O_SYNC",          00010000 },
+		{ "FASYNC",          00020000 },
+		{ "O_DIRECT",        00040000 },
+		{ "O_LARGEFILE",     00100000 },
+		{ "O_DIRECTORY",     00200000 },
+		{ "O_NOFOLLOW",      00400000 },
+		{ "O_NOATIME",       01000000 }
+	}
+};
+
+static int arm_sys_open_impl(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	struct arm_file_desc_t *desc;
+
+	unsigned int file_name_ptr;
+
+	int flags;
+	int mode;
+	int length;
+
+	char file_name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+	char temp_path[MAX_PATH_SIZE];
+	char flags_str[MAX_STRING_SIZE];
+
+	int host_fd;
+
+	/* Arguments */
+	file_name_ptr = regs->r0;
+	flags = regs->r1;
+	mode = regs->r2;
+	length = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
+	if (length >= MAX_PATH_SIZE)
+		fatal("syscall open: maximum path length exceeded");
+	arm_ctx_loader_get_full_path(ctx, file_name, full_path, sizeof full_path);
+	arm_sys_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
+		file_name, flags, mode);
+	arm_sys_debug("  fullpath='%s'\n", full_path);
+	map_flags(&arm_sys_open_flags_map, flags, flags_str, sizeof flags_str);
+	arm_sys_debug("  flags=%s\n", flags_str);
+
+	/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
+	if (arm_emu->arm_gpu_emulator == arm_gpu_emulator_evg)
+	{
+		/*evg_emu_libopencl_redirect(ctx, full_path, sizeof full_path);*/
+	}
+	else if (arm_emu->arm_gpu_emulator == arm_gpu_emulator_si)
+	{
+		/*si_emu_libopencl_redirect(ctx, full_path, sizeof full_path);*/
+	}
+	else
+	{
+		panic("invalid gpu emulator");
+	}
+
+	/* Virtual files */
+	if (!strncmp(full_path, "/proc/", 6))
+	{
+		/* File /proc/self/maps */
+		if (!strcmp(full_path, "/proc/self/maps"))
+		{
+			/* Create temporary file and open it. */
+			arm_ctx_gen_proc_self_maps(ctx, temp_path);
+			host_fd = open(temp_path, flags, mode);
+			assert(host_fd > 0);
+
+			/* Add file descriptor table entry. */
+			desc = arm_file_desc_table_entry_new(ctx->file_desc_table, arm_file_desc_virtual, host_fd, temp_path, flags);
+			arm_sys_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
+				temp_path, desc->guest_fd, desc->host_fd);
+			return desc->guest_fd;
+		}
+
+		/* Unhandled virtual file. Let the application read the contents of the host
+		 * version of the file as if it was a regular file. */
+		arm_sys_debug("    warning: unhandled virtual file\n");
+	}
+
+	/* Regular file. */
+	host_fd = open(full_path, flags, mode);
+	if (host_fd == -1)
+		return -errno;
+
+	/* File opened, create a new file descriptor. */
+	desc = arm_file_desc_table_entry_new(ctx->file_desc_table,
+		arm_file_desc_regular, host_fd, full_path, flags);
+	arm_sys_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
+		desc->guest_fd, desc->host_fd);
+
+	/* Return guest descriptor index */
+	return desc->guest_fd;
 }
 
 
@@ -555,6 +795,41 @@ static int arm_sys_mmap(struct arm_ctx_t *ctx, unsigned int addr, unsigned int l
 	/* Return mapped address */
 	return addr;
 }
+
+
+
+
+/*
+ * System call 'munmap' (code 91)
+ */
+
+static int arm_sys_munmap_impl(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int addr;
+	unsigned int size;
+	unsigned int size_aligned;
+
+	/* Arguments */
+	addr = regs->r0;
+	size = regs->r1;
+	arm_sys_debug("  addr=0x%x, size=0x%x\n", addr, size);
+
+	/* Restrictions */
+	if (addr & (MEM_PAGE_SIZE - 1))
+		fatal("%s: address not aligned", __FUNCTION__);
+
+	/* Unmap */
+	size_aligned = ROUND_UP(size, MEM_PAGE_SIZE);
+	mem_unmap(mem, addr, size_aligned);
+
+	/* Return */
+	return 0;
+}
+
+
 
 
 struct sim_user_desc
@@ -920,9 +1195,6 @@ static int arm_sys_ARM_set_tls_impl(struct arm_ctx_t *ctx)
 SYS_NOT_IMPL(restart_syscall)
 SYS_NOT_IMPL(exit)
 SYS_NOT_IMPL(fork)
-SYS_NOT_IMPL(read)
-SYS_NOT_IMPL(open)
-SYS_NOT_IMPL(close)
 SYS_NOT_IMPL(waitpid)
 SYS_NOT_IMPL(creat)
 SYS_NOT_IMPL(link)
@@ -1006,7 +1278,6 @@ SYS_NOT_IMPL(swapon)
 SYS_NOT_IMPL(reboot)
 SYS_NOT_IMPL(readdir)
 SYS_NOT_IMPL(mmap)
-SYS_NOT_IMPL(munmap)
 SYS_NOT_IMPL(truncate)
 SYS_NOT_IMPL(ftruncate)
 SYS_NOT_IMPL(fchmod)

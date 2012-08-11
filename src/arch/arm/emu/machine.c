@@ -625,7 +625,13 @@ void arm_isa_ADD_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_ADDS_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_add(ctx, ctx->inst.dword.dpr_ins.dst_reg, ctx->inst.dword.dpr_ins.op1_reg,
+			operand2, 0);
+	}
 }
 
 void arm_isa_ADC_imm_impl(struct arm_ctx_t *ctx)
@@ -1187,7 +1193,18 @@ void arm_isa_LDRH_prrm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDRH_ofrp_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int addr;
+	int value;
+	void *buf;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode3_imm(ctx);
+		mem_read(ctx->mem, addr, 4, buf);
+		value = value & (0x0000ffff);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm_ins.dst_rd, value);
+	}
 }
 
 void arm_isa_LDRH_prrp_impl(struct arm_ctx_t *ctx)
@@ -1426,7 +1443,18 @@ void arm_isa_LDRH_ptim2_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDRH_ptip1_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int addr;
+	int value;
+	void *buf;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode3_imm(ctx);
+		mem_read(ctx->mem, addr, 4, buf);
+		value = value & (0x0000ffff);
+		arm_isa_reg_store(ctx, ctx->inst.dword.hfwrd_imm_ins.dst_rd, value);
+	}
 }
 
 void arm_isa_LDRH_ptip2_impl(struct arm_ctx_t *ctx)
@@ -1478,7 +1506,19 @@ void arm_isa_STRH_ptim2_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STRH_ptip1_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+		value = value & (0x0000ffff);
+		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
+			mem_write(ctx->mem, addr, 2, buf);
+	}
 }
 
 void arm_isa_STRH_ptip2_impl(struct arm_ctx_t *ctx)
@@ -1498,7 +1538,19 @@ void arm_isa_STRH_prim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STRH_ofip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+		value = value & (0x0000ffff);
+		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
+			mem_write(ctx->mem, addr, 2, buf);
+	}
 }
 
 void arm_isa_STRH_prip_impl(struct arm_ctx_t *ctx)
@@ -1704,12 +1756,12 @@ void arm_isa_STRD_ofip_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode3_imm(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
 
-		if(!(arm_isa_invalid_addr_str(addr)))
+		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
 
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd + 1, &value);
 
-		if(!(arm_isa_invalid_addr_str(addr + 4)))
+		if(!(arm_isa_invalid_addr_str(addr + 4, value, ctx)))
 			mem_write(ctx->mem, addr + 4, 4, buf);
 	}
 }
@@ -1730,7 +1782,7 @@ void arm_isa_LDR_ptim_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 
-		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		if(!(arm_isa_invalid_addr_ldr(addr, buf, ctx)))
 		{
 			mem_read(ctx->mem, addr, 4, &value);
 		}
@@ -1750,7 +1802,7 @@ void arm_isa_LDR_ptip_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 
-		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		if(!(arm_isa_invalid_addr_ldr(addr, buf, ctx)))
 		{
 			mem_read(ctx->mem, addr, 4, &value);
 		}
@@ -1770,7 +1822,7 @@ void arm_isa_LDR_ofim_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 
-		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		if(!(arm_isa_invalid_addr_ldr(addr, buf, ctx)))
 		{
 			mem_read(ctx->mem, addr, 4, &value);
 		}
@@ -1791,7 +1843,7 @@ void arm_isa_LDR_prim_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 
-		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		if(!(arm_isa_invalid_addr_ldr(addr, buf, ctx)))
 		{
 			mem_read(ctx->mem, addr, 4, &value);
 		}
@@ -1812,7 +1864,7 @@ void arm_isa_LDR_ofip_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 
-		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		if(!(arm_isa_invalid_addr_ldr(addr, buf, ctx)))
 		{
 			mem_read(ctx->mem, addr, 4, &value);
 		}
@@ -1832,7 +1884,7 @@ void arm_isa_LDR_prip_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 
-		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		if(!(arm_isa_invalid_addr_ldr(addr, buf, ctx)))
 		{
 			mem_read(ctx->mem, addr, 4, &value);
 		}
@@ -1932,7 +1984,7 @@ void arm_isa_LDR_ofrpll_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 
-		if(!(arm_isa_invalid_addr_ldr(addr, buf)))
+		if(!(arm_isa_invalid_addr_ldr(addr, buf, ctx)))
 		{
 			mem_read(ctx->mem, addr, 4, &value);
 		}
@@ -1992,7 +2044,7 @@ void arm_isa_STR_ptip_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
 
-		if(!(arm_isa_invalid_addr_str(addr)))
+		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
 	}
 }
@@ -2009,7 +2061,7 @@ void arm_isa_STR_ofim_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
 
-		if(!(arm_isa_invalid_addr_str(addr)))
+		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
 	}
 }
@@ -2025,7 +2077,7 @@ void arm_isa_STR_prim_impl(struct arm_ctx_t *ctx)
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
-		if(!(arm_isa_invalid_addr_str(addr)))
+		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
 	}
 }
@@ -2042,7 +2094,7 @@ void arm_isa_STR_ofip_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
 
-		if(!(arm_isa_invalid_addr_str(addr)))
+		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
 	}
 }
@@ -2144,7 +2196,7 @@ void arm_isa_STR_ofrpll_impl(struct arm_ctx_t *ctx)
 		addr = arm_isa_get_addr_amode2(ctx);
 		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
 
-		if(!(arm_isa_invalid_addr_str(addr)))
+		if(!(arm_isa_invalid_addr_str(addr, value, ctx)))
 			mem_write(ctx->mem, addr, 4, buf);
 	}
 }
@@ -2209,12 +2261,38 @@ void arm_isa_LDRB_ptip_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDRB_ofim_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	unsigned int value;
+
+	value = 0;
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		mem_read(ctx->mem, addr, 1, buf);
+		value = value & (0x000000ff);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, (value));
+
+	}
 }
 
 void arm_isa_LDRB_prim_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	unsigned int value;
+
+	value = 0;
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		mem_read(ctx->mem, addr, 1, buf);
+		value = value & (0x000000ff);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, (value));
+
+	}
 }
 
 void arm_isa_LDRB_ofip_impl(struct arm_ctx_t *ctx)

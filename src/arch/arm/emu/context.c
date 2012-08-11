@@ -854,6 +854,10 @@ void arm_ctx_set_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
 	arm_ctx_update_status(ctx, ctx->status | status);
 }
 
+void arm_ctx_clear_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
+{
+	arm_ctx_update_status(ctx, ctx->status & ~status);
+}
 
 int arm_ctx_get_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
 {
@@ -938,6 +942,63 @@ void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *
 void arm_ctx_load_from_ctx_config(struct config_t *config, char *section)
 {
 }
+
+
+/* Generate virtual file '/proc/self/maps' and return it in 'path'. */
+void arm_ctx_gen_proc_self_maps(struct arm_ctx_t *ctx, char *path)
+{
+	uint32_t start, end;
+	enum mem_access_t perm, page_perm;
+	struct mem_page_t *page;
+	struct mem_t *mem = ctx->mem;
+	int fd;
+	FILE *f = NULL;
+
+	/* Create temporary file */
+	strcpy(path, "/tmp/m2s.XXXXXX");
+	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
+		fatal("ctx_gen_proc_self_maps: cannot create temporary file");
+
+	/* Get the first page */
+	end = 0;
+	for (;;)
+	{
+		/* Get start of next range */
+		page = mem_page_get_next(mem, end);
+		if (!page)
+			break;
+		start = page->tag;
+		end = page->tag;
+		perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
+
+		/* Get end of range */
+		for (;;)
+		{
+			page = mem_page_get(mem, end + MEM_PAGE_SIZE);
+			if (!page)
+				break;
+			page_perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
+			if (page_perm != perm)
+				break;
+			end += MEM_PAGE_SIZE;
+			perm = page_perm;
+		}
+
+		/* Dump range */
+		fprintf(f, "%08x-%08x %c%c%c%c 00000000 00:00", start, end + MEM_PAGE_SIZE,
+			perm & mem_access_read ? 'r' : '-',
+			perm & mem_access_write ? 'w' : '-',
+			perm & mem_access_exec ? 'x' : '-',
+			'p');
+		fprintf(f, "\n");
+	}
+
+	/* Close file */
+	fclose(f);
+}
+
+
+
 
 /*
  * IPC report
