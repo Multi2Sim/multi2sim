@@ -302,6 +302,7 @@ int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx)
 
 	else /* Post Indexed */
 	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.hfwrd_imm_ins.base_rn, &rn_val);
 		if(ctx->inst.dword.hfwrd_imm_ins.up_dn)
 		{
 			addr = rn_val;
@@ -970,7 +971,7 @@ int arm_isa_check_cond(struct arm_ctx_t *ctx)
 		ret_val =
 			(((regs->cpsr.n) & (regs->cpsr.v) & !(regs->cpsr.z))
 				| (!(regs->cpsr.n) & !(regs->cpsr.v)
-					& (regs->cpsr.z))) ? 1 : 0;
+					& !(regs->cpsr.z))) ? 1 : 0;
 		arm_isa_inst_debug(
 			"  Cond = GT\n");
 		break;
@@ -1470,13 +1471,26 @@ void arm_isa_syscall(struct arm_ctx_t *ctx)
 		arm_isa_inst_debug("  System call code = %d\n", ctx->regs->r7);
 }
 
-unsigned int arm_isa_invalid_addr_str(unsigned int addr)
+unsigned int arm_isa_invalid_addr_str(unsigned int addr, int value, struct arm_ctx_t *ctx)
 {
+
 	if (addr == 0x5bd4dc) 		/* Fault subroutine return address */
 	{
+		ctx->fault_addr = addr;
+		ctx->fault_value = value;
+		return 1;
+	}
+	else if (addr == 0x5bd4c8) 		/* Fault subroutine return address */
+	{
+		ctx->fault_addr = addr;
+		ctx->fault_value = value;
 		return 1;
 	}
 	else if (addr == 0x5bd080) 		/* Fault subroutine return address */
+	{
+		return 1;
+	}
+	else if (addr == 0x5bd4d8)
 	{
 		return 1;
 	}
@@ -1486,11 +1500,17 @@ unsigned int arm_isa_invalid_addr_str(unsigned int addr)
 	}
 }
 
-unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value)
+unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value, struct arm_ctx_t *ctx)
 {
 	if (addr == 0x5bd4dc) 		/* Fault subroutine return address */
 	{
-		*(value) = 0x8faf8;
+		if(ctx->fault_addr == addr)
+			*(value) = ctx->fault_value;
+		return 1;
+	}
+	else if (addr == 0x5bd4c8) 		/* Fault subroutine return address */
+	{
+		*(value) = 0x8fd6c;
 		return 1;
 	}
 	else if (addr == 0x5bd080)
