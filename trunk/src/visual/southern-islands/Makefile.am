@@ -1,7 +1,7 @@
 lib_LIBRARIES = libsouthernislands.a
 
-libsouthernislands_a_SOURCES =
-
+libsouthernislands_a_SOURCES = 
+	
 if HAVE_GTK
 libsouthernislands_a_SOURCES += \
 	\

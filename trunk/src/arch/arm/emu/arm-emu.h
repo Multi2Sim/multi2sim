@@ -208,8 +208,6 @@ enum arm_file_desc_kind_t
 	arm_file_desc_socket  /* Network socket */
 };
 
-
-/* File descriptor */
 struct arm_file_desc_t
 {
 	enum arm_file_desc_kind_t kind;  /* File type */
@@ -282,6 +280,7 @@ enum arm_isa_op2_cat_t
 	reg
 };
 
+
 int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_cat_t cat);
 unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx);
 int arm_isa_get_addr_amode3_imm(struct arm_ctx_t *ctx);
@@ -306,8 +305,8 @@ void arm_isa_multiply(struct arm_ctx_t *ctx);
 int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op2_cat_t cat);
 
 void arm_isa_syscall(struct arm_ctx_t *ctx);
-unsigned int arm_isa_invalid_addr_str(unsigned int addr);
-unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value);
+unsigned int arm_isa_invalid_addr_str(unsigned int addr, int value, struct arm_ctx_t *ctx);
+unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value, struct arm_ctx_t *ctx);
 
 
 
@@ -427,8 +426,12 @@ struct arm_ctx_t
 	struct mem_t *mem; /* Virtual Memory image */
 	struct arm_regs_t *regs; /* Logical register file */
 	struct arm_file_desc_table_t *file_desc_table;  /* File descriptor table */
-	struct signal_mask_table_t *signal_mask_table;
-	struct signal_handler_table_t *signal_handler_table;
+	struct arm_signal_mask_table_t *signal_mask_table;
+	struct arm_signal_handler_table_t *signal_handler_table;
+
+	/* Fault Management */
+	unsigned int fault_addr;
+	int fault_value;
 
 	/* Statistics */
 
@@ -466,6 +469,7 @@ extern int arm_loader_debug_category;
 
 int arm_ctx_get_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status);
 void arm_ctx_set_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status);
+void arm_ctx_clear_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status);
 
 void arm_ctx_execute(struct arm_ctx_t *ctx);
 void arm_ctx_free(struct arm_ctx_t *ctx);
@@ -474,7 +478,7 @@ void arm_ctx_finish(struct arm_ctx_t *ctx, int status);
 void arm_ctx_finish_group(struct arm_ctx_t *ctx, int status);
 void arm_ctx_load_from_command_line(int argc, char **argv);
 void arm_ctx_load_from_ctx_config(struct config_t *config, char *section);
-
+void arm_ctx_gen_proc_self_maps(struct arm_ctx_t *ctx, char *path);
 void arm_ctx_ipc_report_handler(int event, void *data);
 
 unsigned int arm_ctx_check_fault(struct arm_ctx_t *ctx);
