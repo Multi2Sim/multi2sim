@@ -26,3 +26,8 @@ int arm_cpu_run(void)
 {
 	return 0;
 }
+
+/* TODO: Implement the Arm cpu dump for the cycle accurate simulation */
+void arm_cpu_dump_summary(FILE *f)
+{
+}
