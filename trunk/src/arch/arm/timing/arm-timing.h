@@ -20,8 +20,16 @@
 #ifndef ARM_TIMING_H
 #define ARM_TIMING_H
 
+#include <time.h>
+#include <signal.h>
+#include <list.h>
+#include <linked-list.h>
+#include <repos.h>
+
+#include <mem-system.h>
+#include <arm-emu.h>
 
 int arm_cpu_run(void);
+void arm_cpu_dump_summary(FILE *f);
 
 #endif
-

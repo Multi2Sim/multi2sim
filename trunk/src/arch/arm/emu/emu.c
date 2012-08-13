@@ -18,7 +18,7 @@
  */
 
 #include <arm-emu.h>
-
+#include <arm-timing.h>
 
 
 /*
@@ -139,6 +139,37 @@ void arm_emu_done(void)
 	/*arm_isa_done();*/
 	arm_sys_done();
 }
+
+
+void arm_emu_dump_summary(FILE *f)
+{
+	double time_in_sec;
+	double inst_per_sec;
+
+	/* No statistic dump if there was no Arm simulation */
+	if (!arm_emu->inst_count)
+		return;
+
+	/* Functional simulation */
+	time_in_sec = (double) m2s_timer_get_value(arm_emu->timer) / 1.0e6;
+	inst_per_sec = time_in_sec > 0.0 ? (double) arm_emu->inst_count / time_in_sec : 0.0;
+	fprintf(f, "[ Arm ]\n");
+	fprintf(f, "SimType = %s\n", arm_emu_kind == arm_emu_kind_functional ?
+			"Functional" : "Detailed");
+	fprintf(f, "Time = %.2f\n", time_in_sec);
+	fprintf(f, "Instructions = %lld\n", arm_emu->inst_count);
+	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
+	fprintf(f, "Contexts = %d\n", arm_emu->running_list_max);
+	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
+
+	/* Detailed simulation */
+	if (arm_emu_kind == arm_emu_kind_detailed)
+		arm_cpu_dump_summary(f);
+
+	/* End */
+	fprintf(f, "\n");
+}
+
 
 void arm_emu_list_insert_head(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx)
 {
