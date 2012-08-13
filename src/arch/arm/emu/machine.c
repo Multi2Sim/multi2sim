@@ -2501,7 +2501,19 @@ void arm_isa_STRB_ptip_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STRB_ofim_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	value = 0;
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+		value = value & (0x000000ff);
+		mem_write(ctx->mem, addr, 1, buf);
+	}
 }
 
 void arm_isa_STRB_prim_impl(struct arm_ctx_t *ctx)

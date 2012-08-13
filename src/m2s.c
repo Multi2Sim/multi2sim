@@ -1257,6 +1257,9 @@ void m2s_dump_summary(FILE *f)
 	/* x86 */
 	x86_emu_dump_summary(f);
 
+	/* Arm */
+	arm_emu_dump_summary(f);
+
 	/* Evergreen */
 	evg_emu_dump_summary(f);
 

@@ -654,6 +654,50 @@ static int arm_sys_brk_impl(struct arm_ctx_t *ctx)
 
 
 /*
+ * System call 'gettimeofday' (code 78)
+ */
+
+static int arm_sys_gettimeofday_impl(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int tv_ptr;
+	unsigned int tz_ptr;
+
+	struct timeval tv;
+	struct timezone tz;
+
+	/* Arguments */
+	tv_ptr = regs->r0;
+	tz_ptr = regs->r1;
+	arm_sys_debug("  tv_ptr=0x%x, tz_ptr=0x%x\n", tv_ptr, tz_ptr);
+
+	/* Host call */
+	gettimeofday(&tv, &tz);
+
+	/* Write time value */
+	if (tv_ptr)
+	{
+		mem_write(mem, tv_ptr, 4, &tv.tv_sec);
+		mem_write(mem, tv_ptr + 4, 4, &tv.tv_usec);
+	}
+
+	/* Write time zone */
+	if (tz_ptr)
+	{
+		mem_write(mem, tz_ptr, 4, &tz.tz_minuteswest);
+		mem_write(mem, tz_ptr + 4, 4, &tz.tz_dsttime);
+	}
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
  * System call 'mmap' (code 90)
  */
 
@@ -1265,7 +1309,6 @@ SYS_NOT_IMPL(sethostname)
 SYS_NOT_IMPL(setrlimit)
 SYS_NOT_IMPL(old_getrlimit)
 SYS_NOT_IMPL(getrusage)
-SYS_NOT_IMPL(gettimeofday)
 SYS_NOT_IMPL(settimeofday)
 SYS_NOT_IMPL(getgroups16)
 SYS_NOT_IMPL(setgroups16)

@@ -574,6 +574,7 @@ int arm_emu_list_member(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
 void arm_emu_list_remove(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
 void arm_emu_list_insert_tail(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
 void arm_emu_list_insert_head(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
+void arm_emu_dump_summary(FILE *f);
 
 /* Global CPU emulator variable */
 extern struct arm_emu_t *arm_emu;
