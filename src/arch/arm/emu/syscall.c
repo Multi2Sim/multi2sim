@@ -907,9 +907,9 @@ static struct sim_utsname sim_utsname =
 {
 	"Linux",
 	"Multi2Sim",
-	"3.1.9-1.fc16.i686"
+	"3.1.9-1.fc16.armv7"
 	"#1 Fri Jan 13 16:37:42 UTC 2012",
-	"i686"
+	"armv7"
 	""
 };
 

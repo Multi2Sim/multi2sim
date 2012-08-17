@@ -1009,12 +1009,28 @@ void arm_isa_QDSUB_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_MRS_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int rd_val;
+	if (arm_isa_check_cond(ctx))
+	{
+		if(!(ctx->inst.dword.psr_ins.psr_loc))
+		{
+			rd_val = arm_isa_ret_cpsr_val(ctx);
+		}
+	}
+
+	arm_isa_reg_store(ctx, ctx->inst.dword.psr_ins.dst_reg, rd_val);
 }
 
 void arm_isa_MSR_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if (arm_isa_check_cond(ctx))
+	{
+		if(!(ctx->inst.dword.psr_ins.psr_loc))
+		{
+			arm_isa_set_cpsr_val(ctx,ctx->inst.dword.psr_ins.op2);
+		}
+	}
+
 }
 
 void arm_isa_MSR_imm_impl(struct arm_ctx_t *ctx)

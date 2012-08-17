@@ -334,8 +334,8 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 	unsigned int rm;
 	unsigned int rs;
 	unsigned int shift_imm;
-	signed int rm_val;
-	signed int rs_val;
+	int rm_val;
+	int rs_val;
 
 	if (cat == immd)
 	{
@@ -355,6 +355,7 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 		{
 			rs = (shift >> 4);
 			arm_isa_reg_load(ctx, rs, &rs_val);
+
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (LSL):
@@ -362,7 +363,7 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 			break;
 
 			case (LSR):
-					op_val = rm_val >> (rs_val & 0x000000ff);
+					op_val = ((unsigned int)rm_val) >> (rs_val & 0x000000ff) ;
 			break;
 
 			case (ASR):
@@ -377,6 +378,7 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 
 		else
 		{
+
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (LSL):
@@ -384,7 +386,7 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 			break;
 
 			case (LSR):
-					op_val = rm_val >> shift_imm;
+					op_val = ((unsigned int)rm_val) >> shift_imm;
 			break;
 
 			case (ASR):
@@ -1195,6 +1197,40 @@ void arm_isa_cpsr_print(struct arm_ctx_t *ctx)
 		ctx->regs->cpsr.v,ctx->regs->cpsr.q,ctx->regs->cpsr.mode);
 }
 
+
+unsigned int arm_isa_ret_cpsr_val(struct arm_ctx_t *ctx)
+{
+	unsigned int cpsr_val;
+
+	struct arm_regs_t *regs = ctx->regs;
+
+	cpsr_val = ((regs->cpsr.n << 31) | (regs->cpsr.z << 30)
+		| (regs->cpsr.C << 29) | (regs->cpsr.v) | (regs->cpsr.mode));
+
+	arm_isa_inst_debug("  cpsr = 0x%x\n",cpsr_val);
+
+	return (cpsr_val);
+
+}
+
+void arm_isa_set_cpsr_val(struct arm_ctx_t *ctx, unsigned int op2)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	int rd_val;
+	unsigned int rd_str;
+	unsigned int rd = op2 & 0x0000000f;
+	arm_isa_reg_load(ctx, rd, &rd_val);
+
+	rd_str = (unsigned int)(rd_val);
+	arm_isa_inst_debug("  rd_str = 0x%x\n",rd_str);
+	regs->cpsr.n = (rd_str & (0x80000000)) ? 1 : 0;
+	regs->cpsr.z = (rd_str & (0x40000000)) ? 1 : 0;
+	regs->cpsr.C = (rd_str & (0x20000000)) ? 1 : 0;
+	regs->cpsr.v = (rd_str & (0x10000000)) ? 1 : 0;
+	regs->cpsr.mode = (unsigned int)(rd_str & 0x000000ff);
+	arm_isa_cpsr_print(ctx);
+
+}
 void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
 	unsigned int op3)
 {
