@@ -295,6 +295,8 @@ int arm_isa_check_cond(struct arm_ctx_t *ctx);
 void arm_isa_amode4s_str(struct arm_ctx_t *ctx);
 void arm_isa_amode4s_ld(struct arm_ctx_t *ctx);
 void arm_isa_cpsr_print(struct arm_ctx_t *ctx);
+unsigned int arm_isa_ret_cpsr_val(struct arm_ctx_t *ctx);
+void arm_isa_set_cpsr_val(struct arm_ctx_t *ctx, unsigned int op2);
 void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
 	unsigned int op3);
 void arm_isa_subtract_rev(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
