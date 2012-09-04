@@ -1344,7 +1344,7 @@ void arm_isa_subtract_rev(struct arm_ctx_t *ctx, unsigned int rd, unsigned int r
 		rd_val = op2 - rn_val - op3;
 		arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
 
-		operand2 = (-1 * rn_val);
+		operand2 = (-1 * (rn_val + op3));
 
 		regs->cpsr.z = 0;
 		regs->cpsr.n = 0;
@@ -1423,7 +1423,7 @@ void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op
 		regs->cpsr.n = 0;
 		regs->cpsr.C = 0;
 		regs->cpsr.v = 0;
-
+		rn_val = rn_val + op3;
 		asm volatile (
 			"push %5\n\t"
 			"popf\n\t"
@@ -1538,6 +1538,7 @@ unsigned int arm_isa_invalid_addr_str(unsigned int addr, int value, struct arm_c
 
 unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value, struct arm_ctx_t *ctx)
 {
+	struct mem_page_t *page;
 	if (addr == 0x5bd4dc) 		/* Fault subroutine return address */
 	{
 		if(ctx->fault_addr == addr)
@@ -1563,6 +1564,35 @@ unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value, st
 		*(value) = 0;
 		return 1;
 	}
+	else if (addr == 0x8fd70)
+	{
+
+		page = mem_page_get(ctx->mem, addr);
+
+		if(!page)
+		{
+			*(value) = 0x81cc4;
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else if (addr == 0x8fda0)
+	{
+		page = mem_page_get(ctx->mem, addr);
+
+		if(!page)
+		{
+			*(value) = 0x76230;
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
 	else
 	{
 		return 0;
@@ -1570,6 +1600,38 @@ unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value, st
 }
 
 
+
+
+/* Arm call stack for Call debug */
+
+struct arm_isa_cstack_t* arm_isa_cstack_create(struct arm_ctx_t *ctx)
+{
+	struct arm_isa_cstack_t *cstack;
+
+	cstack = calloc(1, sizeof(struct arm_isa_cstack_t));
+	if (!cstack)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	cstack->top = -1;
+	return cstack;
+}
+
+void arm_isa_cstack_push(struct arm_ctx_t *ctx, char *str)
+{
+	struct arm_isa_cstack_t *cstack = ctx->cstack;
+
+	cstack->top = cstack->top + 1;
+	cstack->sym_name[cstack->top] = str;
+}
+
+char* arm_isa_cstack_pop(struct arm_ctx_t *ctx)
+{
+	struct arm_isa_cstack_t *cstack = ctx->cstack;
+
+	cstack->top = cstack->top - 1;
+
+	return (cstack->sym_name[cstack->top]);
+}
 
 
 
@@ -1583,8 +1645,8 @@ static void arm_isa_debug_call(struct arm_ctx_t *ctx)
 {
 
 	/* FIXME: Implement branch calling method for Arm */
-	/*
-	struct elf_symbol_t *from;
+
+	/*struct elf_symbol_t *from;
 	struct elf_symbol_t *to;
 
 	struct arm_regs_t *regs = ctx->regs;
@@ -1597,35 +1659,48 @@ static void arm_isa_debug_call(struct arm_ctx_t *ctx)
 		return;
 
 	 Call or return. Otherwise, exit
-	if (!strncmp(ctx->inst.info->fmt_str, "call", 4))
-		action = "call";
-	else if (!strncmp(ctx->inst.info->fmt_str, "ret", 3))
-		action = "ret";
+	if (!strncmp(ctx->inst.info->fmt_str, "B", 1))
+		action = "branch to";
+	else if (!strncmp(ctx->inst.info->fmt_str, "BL", 2))
+		action = "branch to";
+	else if (!strncmp(ctx->inst.info->fmt_str, "BX", 2))
+		action = "branch to";
+	else if (!strncmp(ctx->inst.info->fmt_str, "BAX", 3))
+		action = "branch to";
 	else
 		return;
 
 	 Debug it
-	for (i = 0; i < ctx->function_level; i++)
-		arm_isa_call_debug("| ");
-	from = elf_symbol_get_by_address(loader->elf_file, ctx->curr_eip, NULL);
-	to = elf_symbol_get_by_address(loader->elf_file, regs->eip, NULL);
-	if (from)
-		arm_isa_call_debug("%s", from->name);
-	else
-		arm_isa_call_debug("0x%x", ctx->curr_eip);
-	arm_isa_call_debug(" - %s to ", action);
-	if (to)
-		arm_isa_call_debug("%s", to->name);
-	else
-		arm_isa_call_debug("0x%x", regs->eip);
-	arm_isa_call_debug("\n");
+	from = elf_symbol_get_by_address(ctx->elf_file, ctx->curr_ip, NULL);
+	to = elf_symbol_get_by_address(ctx->elf_file, regs->pc, NULL);
 
-	 Change current level
-	if (strncmp(ctx->inst.format, "call", 4))
+	if(strcmp(from->name,to->name))
+	{
+		for (i = 0; i < ctx->function_level; i++)
+				arm_isa_call_debug("| ");
+
+		arm_isa_cstack_push(ctx, from->name);
+
+		if (from)
+			arm_isa_call_debug("%s", from->name);
+		else
+			arm_isa_call_debug("0x%x", ctx->curr_ip);
+		arm_isa_call_debug(" - %s to ", action);
+		if (to)
+			arm_isa_call_debug("%s", to->name);
+		else
+			arm_isa_call_debug("0x%x", regs->pc);
+		arm_isa_call_debug("\n");
+	}
+	  Change current level
+	if(!strcmp(ctx->cstack->sym_name[ctx->cstack->top],to->name))
+	{
 		ctx->function_level--;
-	else
-		ctx->function_level++;
-	*/
+		arm_isa_cstack_pop(ctx);
+	}
+	else if (strcmp(from->name,to->name))
+		ctx->function_level++;*/
+
 }
 
 /* FIXME - merge with ctx_execute */
