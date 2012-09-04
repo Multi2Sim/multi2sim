@@ -66,6 +66,7 @@ static char *arm_disasm_file_name = "";
 static char *arm_loader_debug_file_name = "";
 static char *arm_isa_debug_file_name = "";
 static char *arm_sys_debug_file_name = "";
+static char *arm_call_debug_file_name = "";
 
 static char *mem_debug_file_name = "";
 
@@ -923,6 +924,13 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Function calls debug file */
+		if (!strcmp(argv[argi], "--arm-debug-call"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			arm_call_debug_file_name = argv[++argi];
+			continue;
+		}
 
 		/*
 		 * Memory System Options
@@ -1419,6 +1427,7 @@ int main(int argc, char **argv)
 	arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
 	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);
+	arm_isa_call_debug_category = debug_new_category(arm_call_debug_file_name);
 	/* Trace */
 	trace_init(trace_file_name);
 	mem_trace_category = trace_new_category();
