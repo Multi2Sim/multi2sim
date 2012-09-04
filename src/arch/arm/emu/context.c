@@ -508,6 +508,9 @@ struct arm_ctx_t *arm_ctx_create(void)
 
 	ctx->file_desc_table = arm_file_desc_table_create();
 
+	/* Call Stack initialize */
+	ctx->cstack = arm_isa_cstack_create(ctx);
+
 	return ctx;
 }
 
@@ -561,6 +564,9 @@ void arm_ctx_free(struct arm_ctx_t *ctx)
 	/* Free Memory */
 	mem_unlink(ctx->mem);
 	arm_file_desc_table_unlink(ctx->file_desc_table);
+
+	/* Free Call Stack */
+	free(ctx->cstack);
 
 	/* Remove context from contexts list and free */
 	arm_emu_list_remove(arm_emu_list_context, ctx);

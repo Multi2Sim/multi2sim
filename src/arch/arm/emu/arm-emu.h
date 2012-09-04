@@ -311,6 +311,16 @@ unsigned int arm_isa_invalid_addr_str(unsigned int addr, int value, struct arm_c
 unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value, struct arm_ctx_t *ctx);
 
 
+#define CALL_STACK_SIZE 10000
+
+struct arm_isa_cstack_t
+{
+	char *sym_name[CALL_STACK_SIZE];
+	unsigned int top;
+};
+struct arm_isa_cstack_t* arm_isa_cstack_create(struct arm_ctx_t *ctx);
+void arm_isa_cstack_push(struct arm_ctx_t *ctx, char *str);
+char* arm_isa_cstack_pop(struct arm_ctx_t *ctx);
 
 
 /*
@@ -328,6 +338,8 @@ void arm_sys_init(void);
 void arm_sys_done(void);
 
 void arm_sys_call(struct arm_ctx_t *ctx);
+
+
 
 
 /*
@@ -415,8 +427,12 @@ struct arm_ctx_t
 	unsigned int glibc_segment_base;
 	unsigned int glibc_segment_limit;
 
+	/* When debugging function calls with 'arm_isa_debug_call', function call level. */
+	int function_level;
+
+
 	/* Variables used to wake up suspended contexts. */
-	long long wakeup_time;  /* x86_emu_timer time to wake up (poll/nanosleep) */
+	long long wakeup_time;  /* arm_emu_timer time to wake up (poll/nanosleep) */
 	int wakeup_fd;  /* File descriptor (read/write/poll) */
 	int wakeup_events;  /* Events for wake up (poll) */
 	int wakeup_pid;  /* Pid waiting for (waitpid) */
@@ -434,6 +450,9 @@ struct arm_ctx_t
 	/* Fault Management */
 	unsigned int fault_addr;
 	int fault_value;
+
+	/* Call Debug Stack */
+	struct arm_isa_cstack_t *cstack;
 
 	/* Statistics */
 
