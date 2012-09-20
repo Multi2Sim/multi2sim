@@ -453,6 +453,7 @@ DEFINST(or_r16_rm16, 0x0b, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(or_r32_rm32, 0x0b, SKIP, SKIP, REG, SKIP, 0)
 
 DEFINST(orpd_xmm_xmmm128, 0x0f, 0x56, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(orps_xmm_xmmm128, 0x0f, 0x56, SKIP, REG, SKIP, 0)
 
 DEFINST(out_imm8_al, 0xe6, SKIP, SKIP, SKIP, IB, 0)
 DEFINST(out_imm8_ax, 0xe7, SKIP, SKIP, SKIP, IB, x86_prefix_op)
@@ -715,6 +716,9 @@ DEFINST(xor_rm32_r32, 0x31, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(xor_r8_rm8, 0x32, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(xor_r16_rm16, 0x33, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(xor_r32_rm32, 0x33, SKIP, SKIP, REG, SKIP, 0)
+
+DEFINST(xorpd_xmm_xmmm128, 0x0f, 0x57, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(xorps_xmm_xmmm128, 0x0f, 0x57, SKIP, REG, SKIP, 0)
 
 DEFINST(xchg_ir16_ax, 0x90|INDEX, SKIP, SKIP, SKIP, SKIP, x86_prefix_op)
 DEFINST(xchg_ir32_eax, 0x90|INDEX, SKIP, SKIP, SKIP, SKIP, 0)
