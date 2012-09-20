@@ -481,17 +481,12 @@ void x86_isa_movss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movss_xmmm32_xmm_impl(struct x86_ctx_t *ctx)
 {
-	struct x86_regs_t *regs = ctx->regs;
 	unsigned char value[16];
 
-	/* xmm <= xmm: bits 127-32 of xmm set to 0.
+	/* xmm <= xmm: bits 127-32 unmodified.
 	 * m32 <= xmm: copy 32 bits to memory */
 	x86_isa_load_xmm(ctx, value);
-	memset(value + 4, 0, 12);
-	if (ctx->inst.modrm_mod == 3)
-		memcpy(&regs->xmm[ctx->inst.modrm_rm], value, 16);
-	else
-		x86_isa_store_xmmm32(ctx, value);
+	x86_isa_store_xmmm32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm32, 0, 0, 0);
 }
