@@ -377,7 +377,25 @@ void x86_isa_mulss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_pmovmskb_r32_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	union x86_xmm_reg_t src;
+	uint32_t r32;
+
+	x86_isa_load_xmmm128(ctx, src.as_uchar);
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"movdqu %1, %%xmm0\n\t"
+		"pmovmskb %%xmm0, %%eax\n\t"
+		"mov %%eax, %0"
+		: "=m" (r32)
+		: "m" (src)
+		: "xmm0", "eax"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_r32(ctx, r32);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -407,6 +425,36 @@ void x86_isa_movq_xmmm64_xmm_impl(struct x86_ctx_t *ctx)
 	memset(value, 0, 16);
 	if (ctx->inst.modrm_mod == 3)
 		memcpy(&regs->xmm[ctx->inst.modrm_rm], value, 16);
+	x86_isa_load_xmm(ctx, value);
+	x86_isa_store_xmmm64(ctx, value);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
+}
+
+
+void x86_isa_movsd_xmm_xmmm64_impl(struct x86_ctx_t *ctx)
+{
+	unsigned char value[16];
+
+	/* xmm <= m64: bits 127-64 of xmm set to 0.
+	 * xmm <= xmm: bits 127-64 unmodified */
+	if (ctx->inst.modrm_mod == 3)
+		x86_isa_load_xmm(ctx, value);
+	else
+		memset(value, 0, 16);
+	x86_isa_load_xmmm64(ctx, value);
+	x86_isa_store_xmm(ctx, value);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm64, 0, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
+void x86_isa_movsd_xmmm64_xmm_impl(struct x86_ctx_t *ctx)
+{
+	unsigned char value[16];
+
+	/* xmm <= xmm: bits 127-64 unmodified.
+	 * m64 <= xmm: copy 64 bits to memory */
 	x86_isa_load_xmm(ctx, value);
 	x86_isa_store_xmmm64(ctx, value);
 

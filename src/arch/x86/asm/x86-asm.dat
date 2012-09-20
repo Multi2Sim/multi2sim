@@ -402,6 +402,9 @@ DEFINST(movsb, 0xa4, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(movsw, 0xa5, SKIP, SKIP, SKIP, SKIP, x86_prefix_op)
 DEFINST(movsd, 0xa5, SKIP, SKIP, SKIP, SKIP, 0)
 
+DEFINST(movsd_xmm_xmmm64, 0x0f, 0x10, SKIP, REG, SKIP, x86_prefix_repnz)
+DEFINST(movsd_xmmm64_xmm, 0x0f, 0x11, SKIP, REG, SKIP, x86_prefix_repnz)
+
 DEFINST(movss_xmm_xmmm32, 0x0f, 0x10, SKIP, REG, SKIP, x86_prefix_rep)
 DEFINST(movss_xmmm32_xmm, 0x0f, 0x11, SKIP, REG, SKIP, x86_prefix_rep)
 
