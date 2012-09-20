@@ -88,7 +88,7 @@ void x86_emu_init(void)
 	evg_emu_init();
 	si_emu_init();
 
-#ifdef HAVE_GLUT_H
+#ifdef HAVE_GLUT
 	/* GLUT */
 	x86_glut_init();
 #endif

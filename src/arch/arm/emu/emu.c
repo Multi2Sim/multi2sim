@@ -87,10 +87,10 @@ void arm_emu_init(void)
 	/*evg_emu_init();
 	si_emu_init();
 */
-#ifdef HAVE_GLUT_H
+// #ifdef HAVE_GLUT_H
 	/* GLUT */
-	arm_glut_init();
-#endif
+// 	arm_glut_init();
+// #endif
 
 	/* TODO: Provide OpenGL and Fermi support for Arm when available */
 	/*
@@ -107,9 +107,9 @@ void arm_emu_done(void)
 {
 	struct arm_ctx_t *ctx;
 
-#ifdef HAVE_GLUT_H
-	arm_glut_done();
-#endif
+// #ifdef HAVE_GLUT_H
+// 	arm_glut_done();
+// #endif
 
 	/* TODO: Provide OpenGL and Fermi support for Arm when available */
 	/*
