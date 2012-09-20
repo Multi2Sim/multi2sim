@@ -228,6 +228,9 @@ void x86_isa_call_rel32_impl(struct x86_ctx_t *ctx)
 	ctx->target_eip = regs->eip + ctx->inst.imm.d;
 	regs->eip = ctx->target_eip;
 
+	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_store, regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_call, 0, 0, 0, 0, 0, 0, 0);
 }
 
@@ -241,6 +244,9 @@ void x86_isa_call_rm32_impl(struct x86_ctx_t *ctx)
 	x86_isa_mem_write(ctx, regs->esp, 4, &regs->eip);
 	regs->eip = ctx->target_eip;
 
+	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_store, regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_call, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
 }
 
