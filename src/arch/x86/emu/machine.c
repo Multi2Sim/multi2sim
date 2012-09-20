@@ -502,6 +502,35 @@ void x86_isa_dec_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_dec_rm16_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned short rm16 = x86_isa_load_rm16(ctx);
+	unsigned long flags = regs->eflags;
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"push %3\n\t"
+		"popf\n\t"
+		"mov %2, %%ax\n\t"
+		"dec %%ax\n\t"
+		"mov %%ax, %1\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		: "=g" (flags), "=g" (rm16)
+		: "g" (rm16), "g" (flags)
+		: "ax"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_rm16(ctx, rm16);
+	regs->eflags = flags;
+
+	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_rm16, 0, 0, x86_dep_rm16, x86_dep_zps, x86_dep_of, 0);
+}
+
+
 void x86_isa_dec_rm32_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
@@ -887,6 +916,35 @@ void x86_isa_inc_rm8_impl(struct x86_ctx_t *ctx)
 	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_rm8, 0, 0, x86_dep_rm8, 0, x86_dep_zps, x86_dep_of);
+}
+
+
+void x86_isa_inc_rm16_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned short rm16 = x86_isa_load_rm16(ctx);
+	unsigned long flags = regs->eflags;
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"push %3\n\t"
+		"popf\n\t"
+		"mov %2, %%ax\n\t"
+		"inc %%ax\n\t"
+		"mov %%ax, %1\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		: "=g" (flags), "=g" (rm16)
+		: "g" (rm16), "g" (flags)
+		: "ax"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_rm16(ctx, rm16);
+	regs->eflags = flags;
+
+	x86_uinst_new(ctx, x86_uinst_add, x86_dep_rm16, 0, 0, x86_dep_rm16, 0, x86_dep_zps, x86_dep_of);
 }
 
 
