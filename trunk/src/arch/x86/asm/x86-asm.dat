@@ -28,6 +28,7 @@ DEFINST(add_r8_rm8, 0x02, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(add_r16_rm16, 0x03, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(add_r32_rm32, 0x03, SKIP, SKIP, REG, SKIP, 0)
 
+DEFINST(addsd_xmm_xmmm64, 0x0f, 0x58, SKIP, REG, SKIP, x86_prefix_repnz)
 DEFINST(addss_xmm_xmmm32, 0x0f, 0x58, SKIP, REG, SKIP, x86_prefix_rep)
 
 DEFINST(and_al_imm8, 0x24, SKIP, SKIP, SKIP, IB, 0)
@@ -374,6 +375,9 @@ DEFINST(mov_sreg_rm16, 0x8e, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(mov_sreg_rm32, 0x8e, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(mov_rm16_sreg, 0x8c, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(mov_rm32_sreg, 0x8c, SKIP, SKIP, REG, SKIP, 0)
+
+DEFINST(movapd_xmm_xmmm128, 0x0f, 0x28, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(movapd_xmmm128_xmm, 0x0f, 0x29, SKIP, REG, SKIP, x86_prefix_op)
 
 DEFINST(movaps_xmm_xmmm128, 0x0f, 0x28, SKIP, REG, SKIP, 0)
 DEFINST(movaps_xmmm128_xmm, 0x0f, 0x29, SKIP, REG, SKIP, 0)
