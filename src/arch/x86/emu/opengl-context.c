@@ -75,11 +75,16 @@ struct x86_opengl_context_t *x86_opengl_context_create(void)
 		ctx->texture_matrix_stack[i] = x86_opengl_matrix_stack_create(GL_TEXTURE);
 	}
 	ctx->color_matrix_stack = x86_opengl_matrix_stack_create(GL_COLOR);
+	
 	/* FIXME: which one is the default current stack ? */
 	ctx->current_matrix_stack = ctx->modelview_matrix_stack;
 
 	/* Initialize vertex buffer */
 	ctx->vertex_buffer = x86_opengl_vertex_buffer_create();
+
+	/* Initialize current color */
+	GLfloat init_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+	x86_opengl_clamped_float_to_color_channel(init_color, ctx->current_color);
 
 	/* Return */
 	return ctx;

@@ -106,7 +106,7 @@ void x86_emu_done(void)
 {
 	struct x86_ctx_t *ctx;
 
-#ifdef HAVE_GLUT_H
+#ifdef HAVE_GLUT
 	x86_glut_done();
 #endif
 

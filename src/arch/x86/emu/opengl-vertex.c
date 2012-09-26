@@ -23,6 +23,20 @@ void x86_opengl_vertex_free(struct x86_opengl_vertex_t *vtx)
 	free(vtx);
 }
 
+void x86_opengl_vertex_set_color(GLchan *color, struct x86_opengl_vertex_t *vtx)
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+	{
+		vtx->color[i] = color[i];
+	}
+}
+
+int x86_opengl_vertex_get_color(struct x86_opengl_vertex_t *vtx)
+{
+	return ((vtx->color[0]) << 16) + ((vtx->color[1]) << 8) + vtx->color[2];
+}
+
 struct x86_opengl_vertex_group_t *x86_opengl_vertex_group_create(GLenum primitive_type)
 {
 	struct x86_opengl_vertex_group_t * vtxgp;
