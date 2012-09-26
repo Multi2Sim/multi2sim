@@ -1226,6 +1226,7 @@ static int x86_opengl_func_glVertex2f(struct x86_ctx_t *ctx)
 	struct x86_opengl_vertex_t *vertex;
 	/* x=x. y=y, z=0.0f, w= 1.0f */	
 	vertex = x86_opengl_vertex_create(func_args[0], func_args[1], (GLfloat)0.0f, (GLfloat)1.0f);
+	x86_opengl_vertex_set_color(x86_opengl_ctx->current_color, vertex);	
 	x86_opengl_vertex_buffer_add_vertex(x86_opengl_ctx->vertex_buffer, vertex);
 
 	/* Return */
@@ -1265,6 +1266,7 @@ static int x86_opengl_func_glVertex3f(struct x86_ctx_t *ctx)
 	struct x86_opengl_vertex_t *vertex;
 	/* x=x. y=y, z=z, w= 1.0f */
 	vertex = x86_opengl_vertex_create(func_args[0], func_args[1], func_args[2], (GLfloat)1.0f);
+	x86_opengl_vertex_set_color(x86_opengl_ctx->current_color, vertex);
 	x86_opengl_vertex_buffer_add_vertex(x86_opengl_ctx->vertex_buffer, vertex);
 
 	/* Return */
@@ -1281,7 +1283,7 @@ static int x86_opengl_func_glVertex3f(struct x86_ctx_t *ctx)
  */
 
 /* Bresenham's line algorithm */
-static void x86_opengl_drawline(GLint x1, GLint y1, GLint x2, GLint y2, GLint color)
+static void x86_opengl_draw_line(GLint x1, GLint y1, GLint x2, GLint y2, GLuint color)
 {
 
 	GLint s_x;
@@ -1291,6 +1293,7 @@ static void x86_opengl_drawline(GLint x1, GLint y1, GLint x2, GLint y2, GLint co
 
 	if (x1 == x2)
 	{
+		x86_opengl_debug("\t\tSlope = infinite\n");
 		s_y = y1 < y2 ? y1 : y2;
 		e_y = y1 > y2 ? y1: y2;
 		x86_glut_frame_buffer_pixel(x1, s_y, color);		
@@ -1302,9 +1305,6 @@ static void x86_opengl_drawline(GLint x1, GLint y1, GLint x2, GLint y2, GLint co
 		return;
 	}
 
-	GLfloat m = (y2 - y1) / (x2 - x1);
-	x86_opengl_debug("\t\tSlope = %f\n", m);
-
 	if (x1 < x2)
 	{
 		s_x = x1;
@@ -1315,8 +1315,11 @@ static void x86_opengl_drawline(GLint x1, GLint y1, GLint x2, GLint y2, GLint co
 		s_x = x2;
 		s_y = y2;
 		e_x = x1;
-		e_y = y1;		
+		e_y = y1;
 	}
+
+	GLfloat m = (GLfloat)(y2 - y1) / (x2 - x1);
+	x86_opengl_debug("\t\tSlope = %f\n", m);
 
 	if (m >= 0.0f && m < 1.0f)
 	{
@@ -1379,12 +1382,12 @@ static void x86_opengl_drawline(GLint x1, GLint y1, GLint x2, GLint y2, GLint co
 		while(x < e_x)
 		{
 			x++;
-			if ( e >= 0)
-				e -= incrE;
+			if ( e <= 0)
+				e += incrE;
 			else
 			{
 				y--;
-				e -= incrNE;
+				e += incrNE;
 			}
 			x86_glut_frame_buffer_pixel(x, y, color);
 		}
@@ -1400,7 +1403,7 @@ static void x86_opengl_drawline(GLint x1, GLint y1, GLint x2, GLint y2, GLint co
 		GLint x = s_x;
 		GLint y = s_y;
 		x86_glut_frame_buffer_pixel(x, y, color);
-		while(y > e_y)
+		while(x < e_x)
 		{
 			y--;
 			if ( e >= 0)
@@ -1415,16 +1418,384 @@ static void x86_opengl_drawline(GLint x1, GLint y1, GLint x2, GLint y2, GLint co
 	}
 }
 
+typedef GLint GLfixed;
+
+/**
+ * Convert float to int by rounding to nearest integer, away from zero.
+ */
+static inline int IROUND(float f)
+{
+   return (int) ((f >= 0.0F) ? (f + 0.5F) : (f - 0.5F));
+}
+
+#define SUB_PIXEL_BITS 4
+/*
+ * Fixed point arithmetic macros
+ */
+#ifndef FIXED_FRAC_BITS
+#define FIXED_FRAC_BITS 11
+#endif
+
+#define FIXED_SHIFT     FIXED_FRAC_BITS
+#define FIXED_ONE       (1 << FIXED_SHIFT)
+#define FIXED_HALF      (1 << (FIXED_SHIFT-1))
+#define FIXED_FRAC_MASK (FIXED_ONE - 1)
+#define FIXED_INT_MASK  (~FIXED_FRAC_MASK)
+#define FIXED_EPSILON   1
+#define FIXED_SCALE     ((float) FIXED_ONE)
+#define FIXED_DBL_SCALE ((double) FIXED_ONE)
+#define FloatToFixed(X) (IROUND((X) * FIXED_SCALE))
+#define FixedToDouble(X) ((X) * (1.0 / FIXED_DBL_SCALE))
+#define IntToFixed(I)   ((I) << FIXED_SHIFT)
+#define FixedToInt(X)   ((X) >> FIXED_SHIFT)
+#define FixedToUns(X)   (((unsigned int)(X)) >> FIXED_SHIFT)
+#define FixedCeil(X)    (((X) + FIXED_ONE - FIXED_EPSILON) & FIXED_INT_MASK)
+#define FixedFloor(X)   ((X) & FIXED_INT_MASK)
+#define FixedToFloat(X) ((X) * (1.0F / FIXED_SCALE))
+#define PosFloatToFixed(X)      FloatToFixed(X)
+#define SignedFloatToFixed(X)   FloatToFixed(X)
+
+struct x86_opengl_span_t
+{
+	/* Coord of first fragment in horizontal span/run */
+	GLint x;
+	GLint y;
+
+	/* Number of fragments in the span */
+	GLuint end;
+};
+
+static struct x86_opengl_span_t *x86_opengl_span_create()
+{
+	struct x86_opengl_span_t *spn;
+
+	spn = calloc(1, sizeof(struct x86_opengl_span_t));
+	if (!spn)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	return spn;
+}
+
+static void x86_opengl_span_free(struct x86_opengl_span_t *spn)
+{
+	free(spn);
+}
+
+struct x86_opengl_edge_t
+{
+	struct x86_opengl_vertex_t *vtx0; 	/* Y(vtx0) < Y(vtx1) */
+	struct x86_opengl_vertex_t *vtx1;
+	GLfloat dx;				/* X(vtx1) - X(vtx0) */
+	GLfloat dy;				/* Y(vtx1) - Y(vtx0) */
+	GLfloat dxdy;				/* dx/dy */
+	GLint fdxdy;				/* dx/dy in fixed-point */
+	GLfloat adjy;				/* adjust from v[0]->fy to fsy, scaled */
+	GLint fsx;				/* first sample point x coord */
+	GLint fsy;				/* first sample point y coord */
+	GLint fx0;				/* fixed pt X of lower endpoint */
+	GLint lines;				/* number of lines to be sampled on this edge */	
+};
+
+static struct x86_opengl_edge_t *x86_opengl_edge_create(struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1)
+{
+	struct x86_opengl_edge_t * edge;
+
+	edge = calloc(1, sizeof(struct x86_opengl_edge_t));
+	if (!edge)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	edge->vtx0 = vtx0;
+	edge->vtx1 = vtx1;
+	edge->dx = vtx1->x - vtx0->x;
+	edge->dy = vtx1->y - vtx0->y;
+	edge->dxdy = (GLfloat) edge->dx / edge->dy;
+	edge->fdxdy = SignedFloatToFixed(edge->dxdy);
+	x86_opengl_debug("\t\tEdge \t[%f, %f] - [%f, %f]\n\t\t\tdx = %f, dy = %f \n\t\t\tdxdy = %f, fdxdy = %d\n", 
+		vtx0->x, vtx0->y, vtx1->x, vtx1->y,
+		edge->dx, edge->dy,	edge->dxdy, edge->fdxdy);
+
+	/* Return */
+	return edge;
+}
+
+static void x86_opengl_edge_free(struct x86_opengl_edge_t *edge)
+{
+	free(edge);
+}
+
+static void x86_opengl_rasterizer_draw_tiangle(struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1, struct x86_opengl_vertex_t *vtx2)
+{
+	struct x86_opengl_edge_t *edge_major;
+	struct x86_opengl_edge_t *edge_top;
+	struct x86_opengl_edge_t *edge_buttom;
+
+	struct x86_opengl_vertex_t *vtx_max;
+	struct x86_opengl_vertex_t *vtx_mid;
+	struct x86_opengl_vertex_t *vtx_min;
+
+	struct x86_opengl_span_t *spn;
+
+	spn = x86_opengl_span_create();
+
+	GLfloat one_over_area;
+	GLfixed vtx_min_fx, vtx_min_fy;
+	GLfixed vtx_mid_fx, vtx_mid_fy;
+	GLfixed vtx_max_fy;
+	GLint scan_from_left_to_right;
+
+	const GLint snapMask = ~((FIXED_ONE / (1 << SUB_PIXEL_BITS)) - 1); /* for x/y coord snapping */
+
+	const GLfixed fy0 = FloatToFixed(vtx0->y - 0.5F) & snapMask;
+	const GLfixed fy1 = FloatToFixed(vtx1->y - 0.5F) & snapMask;
+	const GLfixed fy2 = FloatToFixed(vtx2->y - 0.5F) & snapMask;
+
+	/* Find the order of vertex */
+	if (fy0 <= fy1)
+	{
+		if (fy1 <= fy2)
+		{
+			/* y0 < y1 < y2 */
+			vtx_max = vtx2; vtx_mid = vtx1; vtx_min = vtx0;
+			vtx_max_fy = fy2; vtx_mid_fy = fy1; vtx_min_fy = fy0;
+
+		}
+		else if (fy2 <= fy0)
+		{
+			/* y2 < y0 < y1 */
+			vtx_max = vtx1; vtx_mid = vtx0; vtx_min = vtx2;
+			vtx_max_fy = fy1; vtx_mid_fy = fy0; vtx_min_fy = fy2;
+		}
+		else {
+			/* y0 < y2 < y1 */
+			vtx_max = vtx1; vtx_mid = vtx2; vtx_min = vtx0;
+			vtx_max_fy = fy1; vtx_mid_fy = fy2; vtx_min_fy = fy0;
+		}
+	}
+	else {
+		if (fy0 <= fy2)
+		{
+			/* y1 < y0 < y2 */
+			vtx_max = vtx2; vtx_mid = vtx0; vtx_min = vtx1;
+			vtx_max_fy = fy2; vtx_mid_fy = fy0; vtx_min_fy = fy1;
+		}
+		else if (fy2 <= fy1)
+		{
+			/* y2 < y1 < y0 */
+			vtx_max = vtx0; vtx_mid = vtx1; vtx_min = vtx2;
+			vtx_max_fy = fy0; vtx_mid_fy = fy1; vtx_min_fy = fy2;
+		}
+		else {
+			/* y1 < y2 < y0 */
+			vtx_max = vtx0; vtx_mid = vtx2; vtx_min = vtx1;
+			vtx_max_fy = fy0; vtx_mid_fy = fy2; vtx_min_fy = fy1;
+		}
+	}
+
+	vtx_min_fx = FloatToFixed(vtx_min->x + 0.5F) & snapMask;
+	vtx_mid_fx = FloatToFixed(vtx_mid->x + 0.5F) & snapMask;
+	// vtx_max_fx = FloatToFixed(vtx_max->x + 0.5F) & snapMask;
+
+	/* Create edges */
+	edge_major = x86_opengl_edge_create(vtx_max, vtx_min);
+	edge_top = x86_opengl_edge_create(vtx_max, vtx_mid);
+	edge_buttom = x86_opengl_edge_create(vtx_mid, vtx_min);
+
+	/* Compute area */	
+      	const GLfloat area = edge_major->dx * edge_buttom->dy - edge_buttom->dx * edge_major->dy;
+      	one_over_area = 1.0f / area;
+
+      	/* Edge setup */
+	edge_major->fsy = FixedCeil(vtx_min_fy);
+	edge_major->lines = FixedToInt(FixedCeil(vtx_max_fy - edge_major->fsy));
+	if (edge_major->lines > 0) {
+		edge_major->adjy = (GLfloat) (edge_major->fsy - vtx_min_fy);  /* SCALED! */
+		edge_major->fx0 = vtx_min_fx;
+		edge_major->fsx = edge_major->fx0 + (GLfixed) (edge_major->adjy * edge_major->dxdy);
+	}
+	else {
+		return;  /*CULLED*/
+	}
+
+	edge_top->fsy = FixedCeil(vtx_mid_fy);
+	edge_top->lines = FixedToInt(FixedCeil(vtx_max_fy - edge_top->fsy));
+	if (edge_top->lines > 0) {
+	edge_top->adjy = (GLfloat) (edge_top->fsy - vtx_mid_fy); /* SCALED! */
+	edge_top->fx0 = vtx_mid_fx;
+	edge_top->fsx = edge_top->fx0 + (GLfixed) (edge_top->adjy * edge_top->dxdy);
+	}
+
+	edge_buttom->fsy = FixedCeil(vtx_min_fy);
+	edge_buttom->lines = FixedToInt(FixedCeil(vtx_mid_fy - edge_buttom->fsy));
+	if (edge_buttom->lines > 0) {
+	edge_buttom->adjy = (GLfloat) (edge_buttom->fsy - vtx_min_fy);  /* SCALED! */
+	edge_buttom->fx0 = vtx_min_fx;
+	edge_buttom->fsx = edge_buttom->fx0 + (GLfixed) (edge_buttom->adjy * edge_buttom->dxdy);
+	}
+
+	/* Decide scan direction */
+	scan_from_left_to_right = (one_over_area < 0.0F);
+
+	GLint subTriangle;
+	GLfixed fxLeftEdge = 0, fxRightEdge = 0;
+	GLfixed fdxLeftEdge = 0, fdxRightEdge = 0;
+	GLfixed fError = 0, fdError = 0;
+
+	/* Setup order of edges */
+	for (subTriangle=0; subTriangle<=1; subTriangle++)
+	{
+		struct x86_opengl_edge_t *edge_left;
+		struct x86_opengl_edge_t *edge_right;
+		int setupLeft, setupRight;
+		int lines;
+
+		if (subTriangle==0) {
+			/* bottom half */
+			if (scan_from_left_to_right) {
+				edge_left = edge_major;
+				edge_right = edge_buttom;
+				lines = edge_right->lines;
+				setupLeft = 1;
+				setupRight = 1;
+			}
+			else {
+				edge_left = edge_buttom;
+				edge_right = edge_major;
+				lines = edge_left->lines;
+				setupLeft = 1;
+				setupRight = 1;
+			}
+		} 
+		else {
+			/* top half */
+			if (scan_from_left_to_right) 
+			{
+				edge_left = edge_major;
+				edge_right = edge_top;
+				lines = edge_right->lines;
+				setupLeft = 0;
+				setupRight = 1;
+			}
+			else {
+				edge_left = edge_top;
+				edge_right = edge_major;
+				lines = edge_left->lines;
+				setupLeft = 1;
+				setupRight = 0;
+			}
+			if (lines == 0)
+				return;
+		}
+
+		if (setupLeft && edge_left->lines > 0)
+		{
+			const struct x86_opengl_vertex_t *vtx_lower = edge_left->vtx0;
+			const GLfixed fsy = edge_left->fsy;
+			const GLfixed fsx = edge_left->fsx;  /* no fractional part */
+			const GLfixed fx = FixedCeil(fsx);  /* no fractional part */
+			const GLfixed adjx = (GLfixed) (fx - edge_left->fx0); /* SCALED! */
+			const GLfixed adjy = (GLfixed) edge_left->adjy;      /* SCALED! */
+			GLint idxOuter;
+			GLfloat dxOuter;
+			GLfixed fdxOuter;
+
+			fError = fx - fsx - FIXED_ONE;
+			fxLeftEdge = fsx - FIXED_EPSILON;
+			fdxLeftEdge = edge_left->fdxdy;
+			fdxOuter = FixedFloor(fdxLeftEdge - FIXED_EPSILON);
+			fdError = fdxOuter - fdxLeftEdge + FIXED_ONE;
+			idxOuter = FixedToInt(fdxOuter);
+			dxOuter = (GLfloat) idxOuter;
+			spn->y = FixedToInt(fsy);
+		
+			/* FIXME: Temporary reserved for interpolate module */
+			(void) dxOuter;
+			(void) adjx;
+			(void) adjy;
+			(void) vtx_lower;
+		}
+
+		if (setupRight && edge_right->lines>0) 
+		{
+			fxRightEdge = edge_right->fsx - FIXED_EPSILON;
+			fdxRightEdge = edge_right->fdxdy;
+		}
+
+		if (lines==0)
+			continue;
+
+		/* Rasterize setup */
+		while (lines > 0)
+		{
+			/* initialize the span interpolants to the leftmost value */
+			/* ff = fixed-pt fragment */
+			const GLint right = FixedToInt(fxRightEdge);
+			spn->x = FixedToInt(fxLeftEdge);
+			if (right <= spn->x)
+				spn->end = 0;
+			else
+				spn->end = right - spn->x;
+
+			/* This is where we actually generate fragments */
+			/* XXX the test for spn->y > 0 _shouldn't_ be needed but
+			* it fixes a problem on 64-bit Opterons (bug 4842).
+			*/
+			if (spn->end > 0 && spn->y >= 0)
+			{
+				const GLint len = spn->end - 1;
+				(void) len;
+				x86_opengl_debug("\t\tSpan: [%d, %d] with length %d\n", spn->x, spn->y, len);
+				int i;
+				for (i = 0; i < len; ++i)
+				{
+					x86_glut_frame_buffer_pixel(spn->x, spn->y, 0xffffff);
+					spn->x++;
+				}
+			}
+
+			/*
+			* Advance to the next scan line.  Compute the
+			* new edge coordinates, and adjust the
+			* pixel-center x coordinate so that it stays
+			* on or inside the major edge.
+			*/
+			spn->y++;
+			lines--;
+
+			fxLeftEdge += fdxLeftEdge;
+			fxRightEdge += fdxRightEdge;
+
+			fError += fdError;
+			if (fError >= 0) {
+			fError -= FIXED_ONE;
+
+			}
+		} /*while lines>0*/
+	}
+
+
+	/* Free edges */
+	x86_opengl_edge_free(edge_major);
+	x86_opengl_edge_free(edge_top);
+	x86_opengl_edge_free(edge_buttom);
+
+	/* Free span */
+	x86_opengl_span_free(spn);
+
+}
+
 static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 {
 	int i;
 	int j;
 	int width;
-	int height;	
+	int height;
+	int vtx_color;
 	struct x86_opengl_vertex_group_t *vtxgp = NULL;
 	struct x86_opengl_vertex_t *vtx = NULL;
-	struct x86_opengl_vertex_t *vtx_0 = NULL;
-	struct x86_opengl_vertex_t *vtx_1 = NULL;
+	struct x86_opengl_vertex_t *vtx0 = NULL;
+	struct x86_opengl_vertex_t *vtx1 = NULL;
+	struct x86_opengl_vertex_t *vtx2 = NULL;	
 	struct x86_opengl_matrix_t *mtx = NULL;
 	mtx = 	x86_opengl_context_get_current_matrix(x86_opengl_ctx);
 
@@ -1448,90 +1819,101 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 			/* Multiply Perspective Matrix */
 			vtx = list_get(vtxgp->vertex_list, j);
 			x86_opengl_matrix_mul_vertex(vtx, mtx);
+			/* Clipping */
+
 			/* Perspective division */
 			vtx->x /= vtx->w;
 			vtx->y /= vtx->w;
+			vtx->z /= vtx->w;
 			x86_opengl_debug("\t\tUpdated Vertex \t[%f, %f, %f, %f]\n", vtx->x, vtx->y, vtx->z, vtx->w);
 			/* To screen coordinate */			
 			vtx->x = (vtx->x + 1) * x86_opengl_ctx->viewport->width*0.5+ x86_opengl_ctx->viewport->x;
 			vtx->y = (vtx->y + 1) * x86_opengl_ctx->viewport->height*0.5+ x86_opengl_ctx->viewport->y;		
 			x86_opengl_debug("\t\tScreen position\t[%f, %f, %f, %f]\n", vtx->x, vtx->y, vtx->z, vtx->w);
 		}
-		for (j = 0; j < vtx_count; ++j)
+		/* Draw */
+		switch(vtxgp->primitive_type)
 		{
-			/* Draw */
-			switch(vtxgp->primitive_type)
+			case GL_POINTS:
 			{
-				case GL_POINTS:
+				for (j = 0; j < vtx_count; ++j)
 				{
 					vtx = list_get(vtxgp->vertex_list, j);
 					x86_opengl_debug("\t\tPoint position\t[%f, %f]\n", vtx->x, vtx->y);
-					x86_glut_frame_buffer_pixel(vtx->x, vtx->y, 0xffffff);
-					break;				
-				}
-				case GL_LINES:
-				{
-					for (j = 0; j < vtx_count / 2; ++j)
-					{
-						vtx_0 = list_get(vtxgp->vertex_list, 2*j);			
-						vtx_1 = list_get(vtxgp->vertex_list, 2*j+1);
-						x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx_0->x, vtx_0->y);
-						x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx_1->x, vtx_1->y);
-						x86_opengl_drawline(vtx_0->x, vtx_0->y, vtx_1->x, vtx_1->y, 0xffffff);
-					}
+					vtx_color = x86_opengl_vertex_get_color(vtx);
+					x86_glut_frame_buffer_pixel(vtx->x, vtx->y, vtx_color);
 					break;
 				}
-				case GL_LINE_LOOP:
-				{
-					for (j = 0; j < vtx_count; ++j)
-					{
-						vtx_0 = list_get(vtxgp->vertex_list, j);			
-						vtx_1 = list_get(vtxgp->vertex_list, (j+1) % vtx_count);
-						x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx_0->x, vtx_0->y);
-						x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx_1->x, vtx_1->y);				
-						x86_opengl_drawline(vtx_0->x, vtx_0->y, vtx_1->x, vtx_1->y, 0xffffff);
-					}				
-					break;
-				}
-				case GL_LINE_STRIP:
-				{
-					for (j = 0; j < vtx_count - 1; ++j)
-					{
-						vtx_0 = list_get(vtxgp->vertex_list, j);			
-						vtx_1 = list_get(vtxgp->vertex_list, j+1);
-						x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx_0->x, vtx_0->y);
-						x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx_1->x, vtx_1->y);				
-						x86_opengl_drawline(vtx_0->x, vtx_0->y, vtx_1->x, vtx_1->y, 0xffffff);
-					}
-					break;
-				}
-				case GL_TRIANGLES:
-				{
-					break;
-				}
-				case GL_TRIANGLE_STRIP:
-				{
-					break;
-				}
-				case GL_TRIANGLE_FAN:
-				{
-					break;
-				}
-				case GL_QUADS:
-				{
-					break;
-				}
-				case GL_QUAD_STRIP:
-				{
-					break;
-				}
-				case GL_POLYGON:
-				{
-					break;
-				}
-				default:
-					break;
 			}
+			case GL_LINES:
+			{
+				for (j = 0; j < vtx_count / 2; ++j)
+				{
+					vtx0 = list_get(vtxgp->vertex_list, 2*j);			
+					vtx1 = list_get(vtxgp->vertex_list, 2*j+1);
+					x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx0->x, vtx0->y);
+					x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx1->x, vtx1->y);
+					vtx_color = x86_opengl_vertex_get_color(vtx0);					
+					x86_opengl_draw_line(vtx0->x, vtx0->y, vtx1->x, vtx1->y, vtx_color);
+				}
+				break;
+			}
+			case GL_LINE_LOOP:
+			{
+				for (j = 0; j < vtx_count; ++j)
+				{
+					vtx0 = list_get(vtxgp->vertex_list, j);			
+					vtx1 = list_get(vtxgp->vertex_list, (j+1) % vtx_count);
+					x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx0->x, vtx0->y);
+					x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx1->x, vtx1->y);
+					vtx_color = x86_opengl_vertex_get_color(vtx0);
+					x86_opengl_draw_line(vtx0->x, vtx0->y, vtx1->x, vtx1->y, vtx_color);
+				}				
+				break;
+			}
+			case GL_LINE_STRIP:
+			{
+				for (j = 0; j < vtx_count - 1; ++j)
+				{
+					vtx0 = list_get(vtxgp->vertex_list, j);			
+					vtx1 = list_get(vtxgp->vertex_list, j+1);
+					x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx0->x, vtx0->y);
+					x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx1->x, vtx1->y);
+					vtx_color = x86_opengl_vertex_get_color(vtx0);
+					x86_opengl_draw_line(vtx0->x, vtx0->y, vtx1->x, vtx1->y, vtx_color);
+				}
+				break;
+			}
+			case GL_TRIANGLES:
+			{
+				vtx0 = list_get(vtxgp->vertex_list, 0);
+				vtx1 = list_get(vtxgp->vertex_list, 1);
+				vtx2 = list_get(vtxgp->vertex_list, 2);
+				x86_opengl_rasterizer_draw_tiangle(vtx0, vtx1, vtx2);
+				break;
+			}
+			case GL_TRIANGLE_STRIP:
+			{
+				break;
+			}
+			case GL_TRIANGLE_FAN:
+			{
+				break;
+			}
+			case GL_QUADS:
+			{
+				break;
+			}
+			case GL_QUAD_STRIP:
+			{
+				break;
+			}
+			case GL_POLYGON:
+			{
+				break;
+			}
+			default:
+				break;
 		}
 	}
 
@@ -1571,13 +1953,21 @@ static int x86_opengl_func_glColor3f(struct x86_ctx_t *ctx)
 	x86_opengl_debug("\targs_ptr=0x%x\n", args_ptr);
 
 	/* Get function info */
-	GLfloat func_args[3];
+	GLfloat func_args[4];
 	mem_read(mem, args_ptr, 3 * sizeof(GLfloat), func_args);
 	for (i = 0; i < 3; i++)
 		x86_opengl_debug("\t\targs[%d] = %f\n",
 			i, func_args[i]);
 
+	func_args[3] = 1.0f;
+
 	/* Set the current color */
+	x86_opengl_clamped_float_to_color_channel(func_args, x86_opengl_ctx->current_color);
+	x86_opengl_debug("\tCurrent Color RGBA [%d, %d, %d, %d]\n", 
+				x86_opengl_ctx->current_color[0],
+				x86_opengl_ctx->current_color[1],
+				x86_opengl_ctx->current_color[2],
+				x86_opengl_ctx->current_color[3]);
 
 	/* Return */
 	return 0;	

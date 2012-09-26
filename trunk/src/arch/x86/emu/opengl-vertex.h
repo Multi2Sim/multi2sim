@@ -22,6 +22,7 @@
 #include <x86-emu.h>
 #include <mem-system.h>
 #include <GL/glut.h>
+#include <opengl-color-channel.h>
 
 /* OpenGL vertex */
 struct x86_opengl_vertex_t
@@ -30,6 +31,7 @@ struct x86_opengl_vertex_t
 	GLfloat y;
 	GLfloat z;
 	GLfloat w;
+	GLchan color[4];
 };
 
 /* OpenGL vertex group */
@@ -49,6 +51,9 @@ struct x86_opengl_vertex_buffer_t
 	/* Points to current vertex group */
 	struct x86_opengl_vertex_group_t *current_vertex_group;
 };
+
+void x86_opengl_vertex_set_color(GLchan *color, struct x86_opengl_vertex_t *vtx);
+int x86_opengl_vertex_get_color(struct x86_opengl_vertex_t *vtx);
 
 struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w);
 void x86_opengl_vertex_free(struct x86_opengl_vertex_t *vtx);

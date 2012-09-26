@@ -134,6 +134,8 @@ struct x86_opengl_context_t
 	struct x86_opengl_matrix_stack_t *current_matrix_stack;					/* current matrix stack, points to one of above stacks */
 
 	struct x86_opengl_vertex_buffer_t *vertex_buffer;
+
+	GLchan current_color[4];
 };
 
 struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(void);

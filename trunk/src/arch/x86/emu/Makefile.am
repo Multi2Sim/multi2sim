@@ -37,6 +37,7 @@ libemu_a_SOURCES += \
 	opengl-matrix-stack.c \
 	opengl-buffers.c \
 	opengl-vertex.c \
+	opengl-color-channel.c \
 	opengl-viewport.c
 else
 libemu_a_SOURCES += \
