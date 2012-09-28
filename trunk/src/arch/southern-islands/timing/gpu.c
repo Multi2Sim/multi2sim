@@ -298,12 +298,12 @@ static void si_config_read(void)
 		si_gpu_fetch_latency);
 	si_gpu_decode_latency = config_read_int(gpu_config, section, "DecodeLatency", 
 		si_gpu_decode_latency);
-	si_gpu_simd_issue_width = config_read_int(gpu_config, section, "SIMDIssueWidth", 
-		si_gpu_simd_issue_width);
+	si_gpu_simd_width = config_read_int(gpu_config, section, "SIMDWidth",
+		si_gpu_simd_width);
 	si_gpu_simd_alu_latency = config_read_int(gpu_config, section, "SIMDALULatency", 
 		si_gpu_simd_alu_latency);
-	si_gpu_scalar_unit_issue_width= config_read_int(gpu_config, section, 
-		"ScalarUnitIssueWidth", si_gpu_scalar_unit_issue_width);
+	si_gpu_scalar_unit_width= config_read_int(gpu_config, section,
+		"ScalarUnitWidth", si_gpu_scalar_unit_width);
 	si_gpu_scalar_unit_alu_latency = config_read_int(gpu_config, section, 
 		"ScalarUnitALULatency", si_gpu_scalar_unit_alu_latency);
 	/*
@@ -411,11 +411,11 @@ static void si_config_dump(FILE *f)
 	fprintf(f, "MaxWorkGroupsPerWavefrontPool= %d\n", si_gpu_max_work_groups_per_wavefront_pool);
 	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n", si_gpu_max_wavefronts_per_wavefront_pool);
 	fprintf(f, "SIMDALULatency = %d\n", si_gpu_simd_alu_latency);
-	fprintf(f, "SIMDIssueWidth = %d\n", si_gpu_simd_issue_width);
+	fprintf(f, "SIMDWidth = %d\n", si_gpu_simd_width);
 	fprintf(f, "ScalarUnitALULatency = %d\n", si_gpu_scalar_unit_alu_latency);
-	fprintf(f, "ScalarUnitIssueWidth = %d\n", si_gpu_scalar_unit_issue_width);
+	fprintf(f, "ScalarUnitWidth = %d\n", si_gpu_scalar_unit_width);
 	fprintf(f, "BranchUnitLatency = %d\n", si_gpu_branch_unit_latency);
-//	fprintf(f, "BranchUnitIssueRate= %d\n", si_gpu_branch_unit_issue_rate);
+//	fprintf(f, "BranchUnitRate= %d\n", si_gpu_branch_unit_rate);
 	fprintf(f, "SchedulingPolicy = %s\n", map_value(&si_gpu_sched_policy_map, 
 		si_gpu_sched_policy));
 	fprintf(f, "\n");
