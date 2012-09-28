@@ -23,7 +23,7 @@
 /* Front-end parameters */
 int si_gpu_fetch_latency = 1;
 int si_gpu_decode_latency = 1;
-int si_gpu_decode_issue_width = 5;
+int si_gpu_decode_width = 5;
 
 int si_gpu_max_work_groups_per_wavefront_pool = 10;
 int si_gpu_max_wavefronts_per_wavefront_pool = 10;
@@ -53,30 +53,32 @@ struct si_compute_unit_t *si_compute_unit_create()
 	compute_unit->num_wavefront_pools = si_gpu_num_wavefront_pools;
 	compute_unit->wavefront_pools = calloc(compute_unit->num_wavefront_pools, 
 		sizeof(struct si_wavefront_pool_t*));
-	compute_unit->fetch_buffers = calloc(compute_unit->num_wavefront_pools, 
-		sizeof(struct si_fetch_buffer_t*));
 	compute_unit->simds = calloc(compute_unit->num_wavefront_pools, sizeof(struct si_simd_t*));
+	compute_unit->fetch_buffers = calloc(compute_unit->num_wavefront_pools, sizeof(struct si_fetch_buffer_t));
 
-	compute_unit->scalar_unit.read_buffer = linked_list_create();
-	compute_unit->scalar_unit.mem_exec_buffer = linked_list_create();
-	compute_unit->scalar_unit.mem_out_buffer = linked_list_create();
-	compute_unit->scalar_unit.alu_exec_buffer = linked_list_create();
-	compute_unit->scalar_unit.alu_out_buffer = linked_list_create();
+	compute_unit->scalar_unit.decode_buffer = linked_list_create();
+	compute_unit->scalar_unit.alu_read_buffer = linked_list_create();
+	compute_unit->scalar_unit.mem_read_buffer = linked_list_create();
+	compute_unit->scalar_unit.alu_buffer = linked_list_create();
+	compute_unit->scalar_unit.mem_buffer = linked_list_create();
 	compute_unit->scalar_unit.compute_unit = compute_unit;
 
+
+	compute_unit->branch_unit.decode_buffer = linked_list_create();
 	compute_unit->branch_unit.read_buffer = linked_list_create();
 	compute_unit->branch_unit.exec_buffer = linked_list_create();
-	compute_unit->branch_unit.out_buffer = linked_list_create();
 	compute_unit->branch_unit.compute_unit = compute_unit;
 
+
+	compute_unit->vector_mem_unit.decode_buffer = linked_list_create();
 	compute_unit->vector_mem_unit.read_buffer = linked_list_create();
-	compute_unit->vector_mem_unit.mem_exec_buffer = linked_list_create();
-	compute_unit->vector_mem_unit.mem_out_buffer = linked_list_create();
+	compute_unit->vector_mem_unit.mem_buffer = linked_list_create();
 	compute_unit->vector_mem_unit.compute_unit = compute_unit;
 
+
+	compute_unit->lds.decode_buffer = linked_list_create();
 	compute_unit->lds.read_buffer = linked_list_create();
-	compute_unit->lds.mem_exec_buffer = linked_list_create();
-	compute_unit->lds.mem_out_buffer = linked_list_create();
+	compute_unit->lds.mem_buffer = linked_list_create();
 	compute_unit->lds.compute_unit = compute_unit;
 
 	for (i = 0; i < compute_unit->num_wavefront_pools; i++) 
@@ -87,27 +89,24 @@ struct si_compute_unit_t *si_compute_unit_create()
 		compute_unit->wavefront_pools[i]->compute_unit = compute_unit;
 
 		/* Allocate and initialize fetch buffers */
-		compute_unit->fetch_buffers[i] = calloc(si_gpu_max_wavefronts_per_wavefront_pool, 
-			sizeof(struct si_fetch_buffer_t));
+		compute_unit->fetch_buffers[i] = calloc(1, sizeof(struct si_fetch_buffer_t));
 		if (!compute_unit->fetch_buffers[i])
 			fatal("%s: out of memory", __FUNCTION__);
 		compute_unit->fetch_buffers[i]->uops = calloc(
 			si_gpu_max_wavefronts_per_wavefront_pool, sizeof(struct si_uop_t *));
 		if (!compute_unit->fetch_buffers[i]->uops)
 			fatal("%s: out of memory", __FUNCTION__);
-		compute_unit->fetch_buffers[i]->cycle_fetched = calloc(
-			si_gpu_max_wavefronts_per_wavefront_pool, sizeof(long long int));
-		if (!compute_unit->fetch_buffers[i]->cycle_fetched)
-			fatal("%s: out of memory", __FUNCTION__);
+		compute_unit->fetch_buffers[i]->age_queue = linked_list_create();
 		compute_unit->fetch_buffers[i]->entries = si_gpu_max_wavefronts_per_wavefront_pool;
 
 		/* Allocate SIMD structures */
 		compute_unit->simds[i] = calloc(1, sizeof(struct si_simd_t));
 		if (!compute_unit->simds[i])
 			fatal("%s: out of memory", __FUNCTION__);
+		compute_unit->simds[i]->decode_buffer = linked_list_create();
 		compute_unit->simds[i]->read_buffer = linked_list_create();
-		compute_unit->simds[i]->alu_exec_buffer = linked_list_create();
-		compute_unit->simds[i]->alu_out_buffer = linked_list_create();
+		compute_unit->simds[i]->alu_entry_buffer = linked_list_create();
+		compute_unit->simds[i]->alu_buffer = linked_list_create();
 		compute_unit->simds[i]->compute_unit = compute_unit;
 	}
 
@@ -126,44 +125,46 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	int i;
 
 	/* Scalar Unit */
-	linked_list_free(compute_unit->scalar_unit.read_buffer);
-	linked_list_free(compute_unit->scalar_unit.mem_exec_buffer);
-	linked_list_free(compute_unit->scalar_unit.mem_out_buffer);
-	linked_list_free(compute_unit->scalar_unit.alu_exec_buffer);
-	linked_list_free(compute_unit->scalar_unit.alu_out_buffer);
+	linked_list_free(compute_unit->scalar_unit.decode_buffer);
+	linked_list_free(compute_unit->scalar_unit.alu_read_buffer);
+	linked_list_free(compute_unit->scalar_unit.mem_read_buffer);
+	linked_list_free(compute_unit->scalar_unit.alu_buffer);
+	linked_list_free(compute_unit->scalar_unit.mem_buffer);
 
 	/* Branch Unit */
+
+	linked_list_free(compute_unit->branch_unit.decode_buffer);
 	linked_list_free(compute_unit->branch_unit.read_buffer);
 	linked_list_free(compute_unit->branch_unit.exec_buffer);
-	linked_list_free(compute_unit->branch_unit.out_buffer);
 
 	/* Vector Memory Unit */
+	linked_list_free(compute_unit->vector_mem_unit.decode_buffer);
 	linked_list_free(compute_unit->vector_mem_unit.read_buffer);
-	linked_list_free(compute_unit->vector_mem_unit.mem_exec_buffer);
-	linked_list_free(compute_unit->vector_mem_unit.mem_out_buffer);
+	linked_list_free(compute_unit->vector_mem_unit.mem_buffer);
 
 	/* Local Data Share */
+	linked_list_free(compute_unit->lds.decode_buffer);
 	linked_list_free(compute_unit->lds.read_buffer);
-	linked_list_free(compute_unit->lds.mem_exec_buffer);
-	linked_list_free(compute_unit->lds.mem_out_buffer);
+	linked_list_free(compute_unit->lds.mem_buffer);
 
 	/* Compute unit */
 	for (i = 0; i < compute_unit->num_wavefront_pools; i++)
 	{
+		free(compute_unit->simds[i]->decode_buffer);
 		free(compute_unit->simds[i]->read_buffer);
-		free(compute_unit->simds[i]->alu_exec_buffer);
-		free(compute_unit->simds[i]->alu_out_buffer);
+		free(compute_unit->simds[i]->alu_entry_buffer);
+		free(compute_unit->simds[i]->alu_buffer);
 		free(compute_unit->simds[i]);
 
 		si_wavefront_pool_free(compute_unit->wavefront_pools[i]);
 
 		free(compute_unit->fetch_buffers[i]->uops);
-		free(compute_unit->fetch_buffers[i]->cycle_fetched);
+		linked_list_free(compute_unit->fetch_buffers[i]->age_queue);
 		free(compute_unit->fetch_buffers[i]);
 	}
+	free(compute_unit->fetch_buffers);
 	free(compute_unit->simds);
 	free(compute_unit->wavefront_pools);
-	free(compute_unit->fetch_buffers);
 	free(compute_unit->work_groups);  /* List of mapped work-groups */
 	mod_free(compute_unit->local_memory);
 	free(compute_unit);
@@ -263,56 +264,6 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit, st
 	si_trace("si.unmap_wg cu=%d wg=%d\n", compute_unit->id, work_group->id);
 }
 
-#include <limits.h>
-int *si_fetch_buffer_get_oldest(struct si_fetch_buffer_t *fetch_buffer)
-{
-	int *id_list;
-	long long int *age_list;
-	unsigned int i;
-
-	id_list = calloc(fetch_buffer->entries, sizeof(int));
-	if (!id_list)
-		fatal("%s: out of memory", __FUNCTION__);
-	age_list = calloc(fetch_buffer->entries, sizeof(long long int));
-	if (!age_list)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize lists */
-	for (i = 0; i < fetch_buffer->entries; i++)
-	{
-		id_list[i] = i;
-		if (!fetch_buffer->uops[i])
-			age_list[i] = LLONG_MAX;
-		else
-			age_list[i] = fetch_buffer->cycle_fetched[i];
-	}
-
-	/* Sort */
-	for (i = 1; i < fetch_buffer->entries; i++)
-	{
-		long long int cur_age = age_list[i];
-		int cur_idx = i;
-
-		while (cur_idx > 0 && cur_age < age_list[cur_idx-1])
-		{
-			long long int tmp_age = age_list[cur_idx-1];
-			age_list[cur_idx-1] = age_list[cur_idx];
-			age_list[cur_idx] = tmp_age;
-
-			int tmp_id = id_list[cur_idx-1];
-			id_list[cur_idx-1] = id_list[cur_idx];
-			id_list[cur_idx] = tmp_id;
-			
-			cur_idx--;
-		}
-	}
-
-	free(age_list);
-
-	return id_list;
-}
-
-
 void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wfp)
 {
 	int i, j;
@@ -335,11 +286,9 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wf
 		if (!wavefront || !wavefront->ready)
 			continue;
 
-		/* If there fetch buffer isn't empty, continue */
+		/* If their fetch buffer is occupied, move to the next available wavefront */
 		if(compute_unit->fetch_buffers[active_wfp]->uops[i])
 			continue;
-
-		/* The fetch buffer is empty, so fetch another instruction */
 
 		/* Emulate instruction */
 		si_wavefront_execute(wavefront);
@@ -394,9 +343,8 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wf
 
 		/* Insert uop to fetch buffer */
 		compute_unit->fetch_buffers[active_wfp]->uops[i] = uop;
-		compute_unit->fetch_buffers[active_wfp]->cycle_fetched[i] = si_gpu->cycle;
-
-		//printf("CYCLE[%lld]\t\tCompute Unit\t\tFETCH: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+		size_t index = i;
+		linked_list_add(compute_unit->fetch_buffers[active_wfp]->age_queue, (void*)index);
 	}
 }
 
@@ -409,37 +357,34 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 	struct si_uop_t *uop;
 	struct si_wavefront_t *wavefront;
 	int instructions_issued = 0;
-	int *search_order;
-	int i;
+	size_t i;
 
 	fetch_buffer = compute_unit->fetch_buffers[active_wfp];
 	scalar_unit = &compute_unit->scalar_unit;
 
-	search_order = si_fetch_buffer_get_oldest(fetch_buffer);
-
-	for (i = 0; i < compute_unit->fetch_buffers[active_wfp]->entries; i++)
+	LINKED_LIST_FOR_EACH(fetch_buffer->age_queue)
 	{
-		if (instructions_issued == si_gpu_decode_issue_width)
+		i = (size_t)linked_list_get(fetch_buffer->age_queue);
+
+		if (instructions_issued == si_gpu_decode_width)
 		{
 			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit, 
 			compute_unit->id);
 			break;
 		}
 
-		int next_oldest = search_order[i];
-
-		uop = compute_unit->fetch_buffers[active_wfp]->uops[next_oldest];
+		uop = compute_unit->fetch_buffers[active_wfp]->uops[i];
 
 		/* If the uop is NULL, no more instructions are ready to be decoded */
 		if (!uop)
 			break;
 
-		/* Skip any uops that have not yet completed the fetch */
+		/* If the uop is not ready, it is safe to assume none are. */
 		if (si_gpu->cycle < uop->fetch_ready)
-			continue;
+			break;
 
 		/* Decode */
-		wavefront = compute_unit->wavefront_pools[active_wfp]->wavefronts[next_oldest];
+		wavefront = compute_unit->wavefront_pools[active_wfp]->wavefronts[i];
 		assert(wavefront);
 
 		switch (wavefront->inst.info->fmt)
@@ -452,8 +397,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 					wavefront->inst.micro_inst.sopp.op < 10)
 			{
 				/* Continue if branch unit instruction buffer is not free */
-				if (linked_list_count(compute_unit->branch_unit.read_buffer) ==
-					si_gpu_branch_unit_issue_width)
+				if (linked_list_count(compute_unit->branch_unit.decode_buffer) >=
+					si_gpu_branch_unit_width*si_gpu_decode_latency)
 				{
 					si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
 						uop->id_in_compute_unit, compute_unit->id);
@@ -462,16 +407,16 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 
 				/* Decode uop and place it in branch unit instruction buffer */
 				uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-				linked_list_add(compute_unit->branch_unit.read_buffer, uop);
+				linked_list_add(compute_unit->branch_unit.decode_buffer, uop);
 
 				/* Remove uop from fetch buffer */
-				compute_unit->fetch_buffers[active_wfp]->uops[next_oldest] = NULL;
-				compute_unit->fetch_buffers[active_wfp]->cycle_fetched[next_oldest] =
-					LLONG_MAX;
+				fetch_buffer->uops[i] = NULL;
+				linked_list_remove(fetch_buffer->age_queue);
+				linked_list_prev(fetch_buffer->age_queue);
+
 
 				instructions_issued++;
 
-				//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> Branch Unit\n", si_gpu->cycle, uop->id);
 				break;
 			}
 		case SI_FMT_SOP1:
@@ -480,8 +425,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 		case SI_FMT_SOPK:
 		{
 			/* Continue if scalar unit instruction buffer is not free */
-			if (linked_list_count(scalar_unit->read_buffer) ==
-				si_gpu_scalar_unit_issue_width)
+			if (linked_list_count(scalar_unit->decode_buffer) >=
+				si_gpu_scalar_unit_width*si_gpu_decode_latency)
 			{
 				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id);
@@ -490,16 +435,15 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 
 			/* Decode uop and place it in scalar unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			linked_list_add(scalar_unit->read_buffer, uop);
+			linked_list_add(scalar_unit->decode_buffer, uop);
 
 			/* Remove uop from fetch buffer */
-			compute_unit->fetch_buffers[active_wfp]->uops[next_oldest] = NULL;
-			compute_unit->fetch_buffers[active_wfp]->cycle_fetched[next_oldest] = 
-				LLONG_MAX;
+			fetch_buffer->uops[i] = NULL;
+			linked_list_remove(fetch_buffer->age_queue);
+			linked_list_prev(fetch_buffer->age_queue);
 
 			instructions_issued++;
 
-			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> Scalar Unit[ALU]\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -507,8 +451,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 		case SI_FMT_SMRD:
 		{
 			/* Continue if scalar unit instruction buffer is not free */
-			if (linked_list_count(scalar_unit->read_buffer) ==
-				si_gpu_scalar_unit_issue_width)
+			if (linked_list_count(scalar_unit->decode_buffer) >=
+				si_gpu_scalar_unit_width*si_gpu_decode_latency)
 			{
 				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id);
@@ -517,16 +461,15 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 
 			/* Decode uop and place it in scalar unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			linked_list_add(scalar_unit->read_buffer, uop);
+			linked_list_add(scalar_unit->decode_buffer, uop);
 
 			/* Remove uop from fetch buffer */
-			compute_unit->fetch_buffers[active_wfp]->uops[next_oldest] = NULL;
-			compute_unit->fetch_buffers[active_wfp]->cycle_fetched[next_oldest] = 
-				LLONG_MAX;
+			fetch_buffer->uops[i] = NULL;
+			linked_list_remove(fetch_buffer->age_queue);
+			linked_list_prev(fetch_buffer->age_queue);
 
 			instructions_issued++;
 
-			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> Scalar Unit[MEM]\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -537,27 +480,26 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 		case SI_FMT_VOP3a:
 		case SI_FMT_VOP3b:
 		{
-			/* Continue if vector memory unit instruction buffer is not free */
-			if (linked_list_count(compute_unit->simds[active_wfp]->read_buffer) ==
-				si_gpu_simd_issue_width)
+			/* Continue if SIMD instruction buffer is not free */
+			if (linked_list_count(compute_unit->simds[active_wfp]->decode_buffer) >=
+				si_gpu_simd_width*si_gpu_decode_latency)
 			{
 				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id);
 				continue;
 			}
 
-			/* Decode uop and place it in vector memory unit instruction buffer */
+			/* Decode uop and place it in SIMD instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			linked_list_add(compute_unit->simds[active_wfp]->read_buffer, uop);
+			linked_list_add(compute_unit->simds[active_wfp]->decode_buffer, uop);
 
 			/* Remove uop from fetch buffer */
-			compute_unit->fetch_buffers[active_wfp]->uops[next_oldest] = NULL;
-			compute_unit->fetch_buffers[active_wfp]->cycle_fetched[next_oldest] = 
-				LLONG_MAX;
+			fetch_buffer->uops[i] = NULL;
+			linked_list_remove(fetch_buffer->age_queue);
+			linked_list_prev(fetch_buffer->age_queue);
 
 			instructions_issued++;
 
-			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> SIMD\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -565,8 +507,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 		case SI_FMT_MTBUF:
 		{
 			/* Continue if vector memory unit instruction buffer is not free */
-			if (linked_list_count(compute_unit->vector_mem_unit.read_buffer) ==
-				si_gpu_vector_mem_issue_width)
+			if (linked_list_count(compute_unit->vector_mem_unit.decode_buffer) >=
+				si_gpu_vector_mem_width*si_gpu_decode_latency)
 			{
 				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id);
@@ -575,16 +517,15 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 
 			/* Decode uop and place it in vector memory unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			linked_list_add(compute_unit->vector_mem_unit.read_buffer, uop);
+			linked_list_add(compute_unit->vector_mem_unit.decode_buffer, uop);
 
 			/* Remove uop from fetch buffer */
-			compute_unit->fetch_buffers[active_wfp]->uops[next_oldest] = NULL;
-			compute_unit->fetch_buffers[active_wfp]->cycle_fetched[next_oldest] = 
-				LLONG_MAX;
+			fetch_buffer->uops[i] = NULL;
+			linked_list_remove(fetch_buffer->age_queue);
+			linked_list_prev(fetch_buffer->age_queue);
 
 			instructions_issued++;
 
-			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> Vector Memory Unit\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -592,8 +533,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 		case SI_FMT_DS:
 		{
 			/* Continue if local data share instruction buffer is not free */
-			if (linked_list_count(compute_unit->lds.read_buffer) ==
-				si_gpu_lds_issue_width)
+			if (linked_list_count(compute_unit->lds.decode_buffer) >=
+				si_gpu_lds_width*si_gpu_decode_latency)
 			{
 				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id);
@@ -602,16 +543,15 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 
 			/* Decode uop and place it in local data share instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			linked_list_add(compute_unit->lds.read_buffer, uop);
+			linked_list_add(compute_unit->lds.decode_buffer, uop);
 
 			/* Remove uop from fetch buffer */
-			compute_unit->fetch_buffers[active_wfp]->uops[next_oldest] = NULL;
-			compute_unit->fetch_buffers[active_wfp]->cycle_fetched[next_oldest] =
-				LLONG_MAX;
+			fetch_buffer->uops[i] = NULL;
+			linked_list_remove(fetch_buffer->age_queue);
+			linked_list_prev(fetch_buffer->age_queue);
 
 			instructions_issued++;
 
-			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> LDS\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -625,8 +565,6 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 		si_trace("si.inst id=%lld cu=%d stg=\"d\"\n", uop->id_in_compute_unit, 
 			compute_unit->id);
 	}
-
-	free(search_order);
 }
 
 
@@ -638,6 +576,8 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 	int active_fetch_wfp;  /* Wavefront pool chosen to fetch this cycle */
 	int active_decode_wfp;  /* Wavefront pool chosen to decode this cycle */
 
+	/* Fetch from one wavefront pool each cycle in a round robin manner, and decode similarly
+	 *  shifted "fetch_latency" pools behind fetching. */
 	active_fetch_wfp = si_gpu->cycle % compute_unit->num_wavefront_pools;
 	active_decode_wfp = active_fetch_wfp - (si_gpu_fetch_latency % 
 			compute_unit->num_wavefront_pools);
