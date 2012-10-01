@@ -298,18 +298,16 @@ static void si_config_read(void)
 		si_gpu_fetch_latency);
 	si_gpu_decode_latency = config_read_int(gpu_config, section, "DecodeLatency", 
 		si_gpu_decode_latency);
-	si_gpu_simd_width = config_read_int(gpu_config, section, "SIMDWidth",
-		si_gpu_simd_width);
+	si_gpu_simd_issue_width = config_read_int(gpu_config, section, "SIMDIssueWidth", 
+		si_gpu_simd_issue_width);
 	si_gpu_simd_alu_latency = config_read_int(gpu_config, section, "SIMDALULatency", 
 		si_gpu_simd_alu_latency);
-	si_gpu_scalar_unit_width= config_read_int(gpu_config, section,
-		"ScalarUnitWidth", si_gpu_scalar_unit_width);
+	si_gpu_scalar_unit_issue_width= config_read_int(gpu_config, section, 
+		"ScalarUnitIssueWidth", si_gpu_scalar_unit_issue_width);
 	si_gpu_scalar_unit_alu_latency = config_read_int(gpu_config, section, 
 		"ScalarUnitALULatency", si_gpu_scalar_unit_alu_latency);
-	/*
 	si_gpu_branch_unit_issue_width = config_read_int(gpu_config, section, 
 		"BranchUnitIssueWidth", si_gpu_branch_unit_issue_width);
-	*/
 	si_gpu_branch_unit_latency = config_read_int(gpu_config, section, "BranchUnitLatency", 
 		si_gpu_branch_unit_latency);
 	gpu_sched_policy_str = config_read_string(gpu_config, section, "SchedulingPolicy", 
@@ -411,11 +409,11 @@ static void si_config_dump(FILE *f)
 	fprintf(f, "MaxWorkGroupsPerWavefrontPool= %d\n", si_gpu_max_work_groups_per_wavefront_pool);
 	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n", si_gpu_max_wavefronts_per_wavefront_pool);
 	fprintf(f, "SIMDALULatency = %d\n", si_gpu_simd_alu_latency);
-	fprintf(f, "SIMDWidth = %d\n", si_gpu_simd_width);
+	fprintf(f, "SIMDIssueWidth = %d\n", si_gpu_simd_issue_width);
 	fprintf(f, "ScalarUnitALULatency = %d\n", si_gpu_scalar_unit_alu_latency);
-	fprintf(f, "ScalarUnitWidth = %d\n", si_gpu_scalar_unit_width);
+	fprintf(f, "ScalarUnitIssueWidth = %d\n", si_gpu_scalar_unit_issue_width);
 	fprintf(f, "BranchUnitLatency = %d\n", si_gpu_branch_unit_latency);
-//	fprintf(f, "BranchUnitRate= %d\n", si_gpu_branch_unit_rate);
+	fprintf(f, "BranchUnitIssueWidth = %d\n", si_gpu_branch_unit_issue_width);
 	fprintf(f, "SchedulingPolicy = %s\n", map_value(&si_gpu_sched_policy_map, 
 		si_gpu_sched_policy));
 	fprintf(f, "\n");
@@ -436,7 +434,6 @@ static void si_config_dump(FILE *f)
 
 static void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
 {
-	//struct si_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
 	/* Assign current ND-Range */

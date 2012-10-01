@@ -4441,6 +4441,10 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct
 	struct si_buffer_resource_t buf_desc;
 	uint32_t buffer_addr;
 	union si_reg_t value;
+	struct si_wavefront_t *wavefront = work_item->wavefront;
+
+	/* Record access */
+	wavefront->global_mem_read = 1;
 
 	if (INST.offen)
 	{
@@ -4501,6 +4505,10 @@ void si_isa_T_BUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, str
 	struct si_buffer_resource_t buf_desc;
 	uint32_t buffer_addr;
 	union si_reg_t value;
+	struct si_wavefront_t *wavefront = work_item->wavefront;
+
+	/* Record access */
+	wavefront->global_mem_read = 1;
 
 	if (INST.offen)
 	{
@@ -4563,6 +4571,10 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struc
 	struct si_buffer_resource_t buf_desc;
 	uint32_t buffer_addr;
 	union si_reg_t value;
+	struct si_wavefront_t *wavefront = work_item->wavefront;
+
+	/* Record access */
+	wavefront->global_mem_write = 1;
 
 	if (INST.offen)
 	{
@@ -4623,6 +4635,10 @@ void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, st
 	struct si_buffer_resource_t buf_desc;
 	uint32_t buffer_addr;
 	union si_reg_t value;
+	struct si_wavefront_t *wavefront = work_item->wavefront;
+
+	/* Record access */
+	wavefront->global_mem_write = 1;
 
 	if (INST.offen)
 	{
