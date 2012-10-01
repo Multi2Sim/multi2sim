@@ -130,8 +130,8 @@ void si_reg_file_inverse_rename(struct si_compute_unit_t *compute_unit,
 struct si_fetch_buffer_t
 {
 	unsigned int entries;
+	long long int *cycle_fetched;
 	struct si_uop_t **uops;
-	struct linked_list_t *age_queue;
 };
 
 struct si_wavefront_pool_t
@@ -149,11 +149,10 @@ struct si_wavefront_pool_t
 struct si_branch_unit_t
 {
 	/* Queues */
-	struct linked_list_t *decode_buffer;  /* Instruction decoding */
+	struct linked_list_t *read_buffer; /* Register accesses */
 
-	struct linked_list_t *read_buffer;  /* Register accesses */
-
-	struct linked_list_t *exec_buffer; /* Pending branch operations */
+	struct linked_list_t *exec_buffer; /* Wavefronts pending for execution */
+	struct linked_list_t *out_buffer; /* Outstanding branch operations */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -164,14 +163,13 @@ struct si_branch_unit_t
 
 struct si_scalar_unit_t
 {
-	struct linked_list_t *decode_buffer;  /* Instruction decoding */
+	struct linked_list_t *read_buffer;  /* Register accesses */
 
-	struct linked_list_t *alu_read_buffer;  /* Register accesses */
-	struct linked_list_t *mem_read_buffer; /* Register accesses */
+	struct linked_list_t *alu_exec_buffer;  /* Wavefronts pending for ALU execution */
+	struct linked_list_t *alu_out_buffer;  /* Outstanding ALU operations */
 
-	struct linked_list_t *alu_buffer;  /* Pending ALU operations */
-
-	struct linked_list_t *mem_buffer;  /* Pending memory operations */
+	struct linked_list_t *mem_exec_buffer; /* Wavefronts pending for memory access */
+	struct linked_list_t *mem_out_buffer;  /* Outstanding memory operations */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -182,11 +180,10 @@ struct si_scalar_unit_t
 
 struct si_vector_mem_unit_t
 {
-	struct linked_list_t *decode_buffer;  /* Instruction decoding */
-
 	struct linked_list_t *read_buffer;  /* Register accesses */
 
-	struct linked_list_t *mem_buffer;  /* Pending memory operations */
+	struct linked_list_t *mem_exec_buffer; /* Wavefronts pending for memory access */
+	struct linked_list_t *mem_out_buffer;  /* Outstanding memory operations */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -197,15 +194,10 @@ struct si_vector_mem_unit_t
 
 struct si_simd_t
 {
-	struct linked_list_t *decode_buffer;  /* Instruction decoding */
+	struct linked_list_t *read_buffer;  /* Register accesses */
 
-	struct linked_list_t *read_buffer; /* Register accesses */
-
-	/* Wavefronts are subdivided into a number of subwavefronts. It takes
-	 * (#subwavefronts) cycles for a wavefront to enter the ALU. The next wavefront
-	 * will begin entry after this time period. */
-	struct linked_list_t *alu_entry_buffer;  /* Wavefronts entering ALU pipeline */
-	struct linked_list_t *alu_buffer;  /* Pending ALU operations */
+	struct linked_list_t *alu_exec_buffer;  /* Wavefronts pending for ALU execution */
+	struct linked_list_t *alu_out_buffer;  /* Outstanding ALU operations */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -216,11 +208,10 @@ struct si_simd_t
 
 struct si_lds_t
 {
-	struct linked_list_t *decode_buffer;  /* Instruction decoding */
-
 	struct linked_list_t *read_buffer;  /* Register accesses */
 
-	struct linked_list_t *mem_buffer;  /* Pending memory operations */
+	struct linked_list_t *mem_exec_buffer; /* Wavefronts pending for memory access */
+	struct linked_list_t *mem_out_buffer;  /* Outstanding memory operations */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -435,25 +426,25 @@ extern int si_gpu_local_mem_num_ports;
 
 extern int si_gpu_simd_alu_latency;
 extern int si_gpu_simd_reg_latency;
-extern int si_gpu_simd_width;
+extern int si_gpu_simd_issue_width;
 extern int si_gpu_simd_num_subwavefronts;
 
 extern int si_gpu_vector_mem_inflight_mem_accesses;
-extern int si_gpu_vector_mem_width;
+extern int si_gpu_vector_mem_issue_width;
 extern int si_gpu_vector_mem_reg_latency;
 
 extern int si_gpu_lds_inflight_mem_accesses;
-extern int si_gpu_lds_width;
+extern int si_gpu_lds_issue_width;
 extern int si_gpu_lds_reg_latency;
 
 extern int si_gpu_scalar_unit_inflight_mem_accesses;
 extern int si_gpu_scalar_unit_alu_latency;
 extern int si_gpu_scalar_unit_reg_latency;
-extern int si_gpu_scalar_unit_width;
+extern int si_gpu_scalar_unit_issue_width;
 
 extern int si_gpu_branch_unit_reg_latency;
 extern int si_gpu_branch_unit_latency;
-extern int si_gpu_branch_unit_width;
+extern int si_gpu_branch_unit_issue_width;
 
 //extern int si_gpu_branch_unit_issue_width;
 extern int si_gpu_branch_unit_latency;
