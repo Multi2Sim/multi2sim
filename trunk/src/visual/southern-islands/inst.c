@@ -127,7 +127,8 @@ struct string_map_t vi_si_inst_stage_name_map =
 
 
 struct vi_si_inst_t *vi_si_inst_create(char *name, long long id, int compute_unit_id, 
-	int work_group_id, int wavefront_id, enum vi_si_inst_stage_t stage, char *asm_code)
+	int wavefront_pool_id, int work_group_id, int wavefront_id, enum vi_si_inst_stage_t stage,
+        char *asm_code)
 
 {
 	struct vi_si_inst_t *inst;
@@ -141,6 +142,7 @@ struct vi_si_inst_t *vi_si_inst_create(char *name, long long id, int compute_uni
 	inst->name = str_set(NULL, name);
 	inst->id = id;
 	inst->compute_unit_id = compute_unit_id;
+	inst->wavefront_pool_id = wavefront_pool_id;
 	inst->work_group_id = work_group_id;
 	inst->wavefront_id = wavefront_id;
 	inst->stage = stage;
@@ -170,7 +172,8 @@ void vi_si_inst_get_markup(struct vi_si_inst_t *inst, char *buf, int size)
 	end_color = "</span>";
 
 	/* Instruction ID */
-	str_printf(&buf, &size, "%s<b>I-%lld</b>%s", begin_color, inst->id, end_color);
+	str_printf(&buf, &size, "%s<b>I-%lld WFP-%d</b>%s", begin_color, inst->id, 
+		inst->wavefront_pool_id, end_color);
 
 	/* Assembly */
 	if (inst->asm_code && *inst->asm_code)
