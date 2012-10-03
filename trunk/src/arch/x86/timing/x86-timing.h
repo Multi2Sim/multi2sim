@@ -156,8 +156,8 @@ struct x86_uop_t
 	int odep_count;
 
 	/* Physical mappings */
-	int ph_int_idep_count, ph_fp_idep_count;
-	int ph_int_odep_count, ph_fp_odep_count;
+	int ph_int_idep_count, ph_fp_idep_count, ph_xmm_idep_count;
+	int ph_int_odep_count, ph_fp_odep_count, ph_xmm_odep_count;
 	int ph_idep[X86_UINST_MAX_IDEPS];
 	int ph_odep[X86_UINST_MAX_ODEPS];
 	int ph_oodep[X86_UINST_MAX_ODEPS];
@@ -386,6 +386,7 @@ void x86_event_queue_recover(int core, int thread);
 
 #define X86_REG_FILE_MIN_INT_SIZE  (x86_dep_int_count + X86_UINST_MAX_ODEPS)
 #define X86_REG_FILE_MIN_FP_SIZE  (x86_dep_fp_count + X86_UINST_MAX_ODEPS)
+#define X86_REG_FILE_MIN_XMM_SIZE  (x86_dep_xmm_count + X86_UINST_MAX_ODEPS)
 
 extern char *x86_reg_file_kind_map[];
 extern enum x86_reg_file_kind_t
@@ -395,6 +396,7 @@ extern enum x86_reg_file_kind_t
 } x86_reg_file_kind;
 extern int x86_reg_file_int_size;
 extern int x86_reg_file_fp_size;
+extern int x86_reg_file_xmm_size;
 
 struct x86_phreg_t
 {
@@ -418,12 +420,19 @@ struct x86_reg_file_t
 	int fp_phreg_count;
 	int *fp_free_phreg;
 	int fp_free_phreg_count;
+	
+	/* XMM registers */
+	int xmm_rat[x86_dep_xmm_count];
+	struct x86_phreg_t *xmm_phreg;
+	int xmm_phreg_count;
+	int *xmm_free_phreg;
+	int xmm_free_phreg_count;
 };
 
 void x86_reg_file_init(void);
 void x86_reg_file_done(void);
 
-struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size);
+struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_size);
 void x86_reg_file_free(struct x86_reg_file_t *reg_file);
 
 void x86_reg_file_dump(int core, int thread, FILE *f);
@@ -598,6 +607,7 @@ struct x86_thread_t
 	int lsq_count;
 	int reg_file_int_count;
 	int reg_file_fp_count;
+	int reg_file_xmm_count;
 
 	/* Private structures */
 	struct list_t *fetch_queue;
@@ -660,10 +670,17 @@ struct x86_thread_t
 	long long reg_file_fp_reads;
 	long long reg_file_fp_writes;
 
+	long long reg_file_xmm_occupancy;
+	long long reg_file_xmm_full;
+	long long reg_file_xmm_reads;
+	long long reg_file_xmm_writes;
+
 	long long rat_int_reads;
 	long long rat_int_writes;
 	long long rat_fp_reads;
 	long long rat_fp_writes;
+	long long rat_xmm_reads;
+	long long rat_xmm_writes;
 
 	long long btb_reads;
 	long long btb_writes;
@@ -687,6 +704,7 @@ struct x86_core_t
 	int lsq_count;
 	int reg_file_int_count;
 	int reg_file_fp_count;
+	int reg_file_xmm_count;
 
 	/* Reorder Buffer */
 	struct list_t *rob;
@@ -738,6 +756,11 @@ struct x86_core_t
 	long long reg_file_fp_full;
 	long long reg_file_fp_reads;
 	long long reg_file_fp_writes;
+	
+	long long reg_file_xmm_occupancy;
+	long long reg_file_xmm_full;
+	long long reg_file_xmm_reads;
+	long long reg_file_xmm_writes;
 };
 
 

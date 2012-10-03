@@ -133,6 +133,8 @@ char *x86_config_help =
 	"      Number of integer physical register (if private, per-thread).\n"
 	"  RfFpSize = <entries> (Default = 40)\n"
 	"      Number of floating-point physical registers (if private, per-thread).\n"
+	"  RfXmmSize = <entries> (Default = 40)\n"
+	"      Number of XMM physical registers (if private, per-thread).\n"
 	"\n"
 	"Section '[ TraceCache ]':\n"
 	"\n"
@@ -335,6 +337,7 @@ static void x86_cpu_config_check(void)
 	x86_reg_file_kind = config_read_enum(config, section, "RfKind", x86_reg_file_kind_private, x86_reg_file_kind_map, 2);
 	x86_reg_file_int_size = config_read_int(config, section, "RfIntSize", 80);
 	x86_reg_file_fp_size = config_read_int(config, section, "RfFpSize", 40);
+	x86_reg_file_xmm_size = config_read_int(config, section, "RfXmmSize", 40);
 
 
 	/* Section '[ TraceCache ]' */

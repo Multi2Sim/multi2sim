@@ -172,7 +172,6 @@ void x86_checkpoint_save(char *path);
  * Microinstructions
  */
 
-
 /* Micro-instruction dependences.
  * WARNING: update 'x86_uinst_dep_name' if modified (uinst.c).
  * WARNING: also update 'x86_uinst_dep_map' if modified (uinst.c). */
@@ -250,9 +249,10 @@ enum x86_dep_t
 	x86_dep_xmm5 = 39,
 	x86_dep_xmm6 = 40,
 	x86_dep_xmm7 = 41,
+	x86_dep_xmm_data = 42,
 
 	x86_dep_xmm_first = x86_dep_xmm0,
-	x86_dep_xmm_last = x86_dep_xmm7,
+	x86_dep_xmm_last = x86_dep_xmm_data,
 	x86_dep_xmm_count = x86_dep_xmm_last - x86_dep_xmm_first + 1,
 
 
@@ -287,7 +287,7 @@ enum x86_dep_t
 	x86_dep_xmmm32 = 0x800,
 	x86_dep_xmmm64 = 0x801,
 	x86_dep_xmmm128 = 0x802,
-
+	
 	x86_dep_xmm = 0x900
 };
 

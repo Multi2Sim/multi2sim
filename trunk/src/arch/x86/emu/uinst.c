@@ -79,6 +79,7 @@ char *x86_uinst_dep_name[] =
 	"xmm5",  /* 39 */
 	"xmm6",  /* 40 */
 	"xmm7",  /* 41 */
+	"xmm_data"  /* 42 */
 };
 
 
@@ -201,8 +202,10 @@ static int x86_uinst_effaddr_emitted;
 
 
 /* If dependence 'index' in 'uinst' is a memory operand, return its size in bytes.
- * Otherwise, return 0. */
-static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
+ * Otherwise, return 0. 
+ * Also returns a regular dependence corresponding the memory dependence data type. */
+static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index, 
+		struct x86_ctx_t *ctx, enum x86_dep_t *mem_regular_dep)
 {
 	int dep;
 
@@ -216,9 +219,13 @@ static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index, struct x
 	case x86_dep_rm16:
 	case x86_dep_rm32:
 
-		/* The 'modrm_mod' field indicates whether it's actually a memory dependence
-		 * or a register. */
-		return ctx->inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_rm8);
+		/* The 'modrm_mod' field indicates whether it's actually a memory
+		 * dependence or a register. */
+		if(ctx->inst.modrm_mod == 3)
+			return 0;
+
+		PTR_ASSIGN(mem_regular_dep, x86_dep_data);
+		return 1 << (dep - x86_dep_rm8);
 
 	case x86_dep_mem8:
 	case x86_dep_mem16:
@@ -226,17 +233,25 @@ static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index, struct x
 	case x86_dep_mem64:
 	case x86_dep_mem128:
 
+		PTR_ASSIGN(mem_regular_dep, x86_dep_data);
 		return 1 << (dep - x86_dep_mem8);
 
 	case x86_dep_mem80:
 
+		PTR_ASSIGN(mem_regular_dep, x86_dep_data);
 		return 10;
 
 	case x86_dep_xmmm32:
 	case x86_dep_xmmm64:
 	case x86_dep_xmmm128:
+		
+		/* The 'modrm_mod' field indicates whether it's actually a memory
+		 * dependence or a register. */
+		if(ctx->inst.modrm_mod == 3)
+			return 0;
 
-		return ctx->inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_xmmm32 + 2);
+		PTR_ASSIGN(mem_regular_dep, x86_dep_xmm_data);
+		return 1 << (dep - x86_dep_xmmm32 + 2);
 
 	default:
 		return 0;
@@ -249,7 +264,7 @@ static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index, struct 
 	struct x86_uinst_t *new_uinst;
 
 	/* Check if it is a memory dependence */
-	if (!x86_uinst_mem_dep_size(uinst, index, ctx))
+	if (!x86_uinst_mem_dep_size(uinst, index, ctx, NULL))
 		return;
 
 	/* Record occurrence */
@@ -390,6 +405,7 @@ static int x86_uinst_add_idep(struct x86_uinst_t *uinst, enum x86_dep_t dep)
 static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
 {
 	struct x86_uinst_t *new_uinst;
+	enum x86_dep_t mem_regular_dep;
 	int mem_dep_size;
 	int dep;
 
@@ -400,7 +416,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x8
 		return;
 
 	/* Memory dependence */
-	mem_dep_size = x86_uinst_mem_dep_size(uinst, index, ctx);
+	mem_dep_size = x86_uinst_mem_dep_size(uinst, index, ctx, &mem_regular_dep);
 	if (mem_dep_size)
 	{
 		/* If uinst is 'move', just convert it into a 'store' */
@@ -421,13 +437,13 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x8
 		new_uinst = x86_uinst_create();
 		new_uinst->opcode = x86_uinst_store;
 		new_uinst->idep[0] = x86_dep_ea;
-		new_uinst->idep[1] = x86_dep_data;
+		new_uinst->idep[1] = mem_regular_dep;
 		new_uinst->address = x86_isa_effective_address(ctx);
 		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 
 		/* Output dependence of instruction is x86_dep_data */
-		uinst->dep[index] = x86_dep_data;
+		uinst->dep[index] = mem_regular_dep;
 		return;
 	}
 
@@ -439,6 +455,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x8
 static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
 {
 	struct x86_uinst_t *new_uinst;
+	enum x86_dep_t mem_regular_dep;
 	int mem_dep_size;
 	int dep;
 
@@ -449,7 +466,7 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, struct x8
 		return;
 	
 	/* Memory dependence */
-	mem_dep_size = x86_uinst_mem_dep_size(uinst, index, ctx);
+	mem_dep_size = x86_uinst_mem_dep_size(uinst, index, ctx, &mem_regular_dep);
 	if (mem_dep_size)
 	{
 		/* If uinst is 'move', just convert it into a 'load' */
@@ -467,13 +484,13 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, struct x8
 		new_uinst = x86_uinst_create();
 		new_uinst->opcode = x86_uinst_load;
 		new_uinst->idep[0] = x86_dep_ea;
-		new_uinst->odep[0] = x86_dep_data;
+		new_uinst->odep[0] = mem_regular_dep;
 		new_uinst->address = x86_isa_effective_address(ctx);
 		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 
 		/* Input dependence of instruction is converted into 'x86_dep_data' */
-		uinst->dep[index] = x86_dep_data;
+		uinst->dep[index] = mem_regular_dep;
 		return;
 	}
 

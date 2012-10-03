@@ -26,14 +26,17 @@ char *x86_reg_file_kind_map[] = { "Shared", "Private" };
 enum x86_reg_file_kind_t x86_reg_file_kind = x86_reg_file_kind_private;  /* Sharing policy for register file */
 int x86_reg_file_int_size = 80;  /* Per-thread integer register file size */
 int x86_reg_file_fp_size = 40;  /* Per-thread floating-point register file size */
+int x86_reg_file_xmm_size = 40;  /* Per-thread xmm register file size */
 
 
 
 
 /* Private variables and functions */
 
-static int x86_reg_file_int_local_size;  /* maximum number of registers allowed per thread */
+/* maximum number of registers allowed per thread */
+static int x86_reg_file_int_local_size;
 static int x86_reg_file_fp_local_size;
+static int x86_reg_file_xmm_local_size;
 
 
 /* Reclaim an integer physical register, and return its identifier. */
@@ -72,6 +75,22 @@ static int x86_reg_file_fp_reclaim(int core, int thread)
 }
 
 
+/* Reclaim an xmm physical register, and return its identifier. */
+static int x86_reg_file_xmm_reclaim(int core, int thread)
+{
+	int phreg;
+	struct x86_reg_file_t *reg_file = X86_THREAD.reg_file;
+
+	/* Obtain a register from the free list */
+	assert(reg_file->xmm_free_phreg_count > 0);
+	phreg = reg_file->xmm_free_phreg[reg_file->xmm_free_phreg_count - 1];
+	reg_file->xmm_free_phreg_count--;
+	X86_CORE.reg_file_xmm_count++;
+	X86_THREAD.reg_file_xmm_count++;
+	assert(!reg_file->xmm_phreg[phreg].busy);
+	assert(!reg_file->xmm_phreg[phreg].pending);
+	return phreg;
+}
 
 
 
@@ -114,6 +133,14 @@ static void x86_reg_file_init_thread(int core, int thread)
 		reg_file->fp_phreg[phreg].busy++;
 		reg_file->fp_rat[dep] = phreg;
 	}
+	
+	/* Initial mapping for xmm registers. */
+	for (dep = 0; dep < x86_dep_xmm_count; dep++)
+	{
+		phreg = x86_reg_file_xmm_reclaim(core, thread);
+		reg_file->xmm_phreg[phreg].busy++;
+		reg_file->xmm_rat[dep] = phreg;
+	}
 }
 
 
@@ -127,23 +154,28 @@ void x86_reg_file_init(void)
 		fatal("rf_int_size must be at least %d", X86_REG_FILE_MIN_INT_SIZE);
 	if (x86_reg_file_fp_size < X86_REG_FILE_MIN_FP_SIZE)
 		fatal("rf_fp_size must be at least %d", X86_REG_FILE_MIN_FP_SIZE);
+	if (x86_reg_file_xmm_size < X86_REG_FILE_MIN_XMM_SIZE)
+		fatal("rf_xmm_size must be at least %d", X86_REG_FILE_MIN_XMM_SIZE);
 	
 	/* Maximum size accessible to threads */
 	if (x86_reg_file_kind == x86_reg_file_kind_private)
 	{
 		x86_reg_file_int_local_size = x86_reg_file_int_size;
 		x86_reg_file_fp_local_size = x86_reg_file_fp_size;
+		x86_reg_file_xmm_local_size = x86_reg_file_xmm_size;
 	}
 	else
 	{
 		x86_reg_file_int_local_size = x86_reg_file_int_size * x86_cpu_num_threads;
 		x86_reg_file_fp_local_size = x86_reg_file_fp_size * x86_cpu_num_threads;
+		x86_reg_file_xmm_local_size = x86_reg_file_xmm_size * x86_cpu_num_threads;
 	}
 
 	/* Create and initialize register files */
 	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 	{
-		X86_THREAD.reg_file = x86_reg_file_create(x86_reg_file_int_local_size, x86_reg_file_fp_local_size);
+		X86_THREAD.reg_file = x86_reg_file_create(x86_reg_file_int_local_size,
+				x86_reg_file_fp_local_size, x86_reg_file_xmm_local_size);
 		x86_reg_file_init_thread(core, thread);
 	}
 }
@@ -159,7 +191,7 @@ void x86_reg_file_done(void)
 }
 
 
-struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size)
+struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_size)
 {
 	struct x86_reg_file_t *reg_file;
 	int phreg;
@@ -201,6 +233,22 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size)
 	for (phreg = 0; phreg < fp_size; phreg++)
 		reg_file->fp_free_phreg[phreg] = phreg;
 	
+	/* XMM register file */
+	reg_file->xmm_phreg_count = xmm_size;
+	reg_file->xmm_phreg = calloc(xmm_size, sizeof(struct x86_phreg_t));
+	if (!reg_file->xmm_phreg)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Free list */
+	reg_file->xmm_free_phreg_count = xmm_size;
+	reg_file->xmm_free_phreg = calloc(xmm_size, sizeof(int));
+	if (!reg_file->xmm_free_phreg)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize free list */
+	for (phreg = 0; phreg < xmm_size; phreg++)
+		reg_file->xmm_free_phreg[phreg] = phreg;
+
 	/* Return */
 	return reg_file;
 }
@@ -212,6 +260,8 @@ void x86_reg_file_free(struct x86_reg_file_t *reg_file)
 	free(reg_file->int_free_phreg);
 	free(reg_file->fp_phreg);
 	free(reg_file->fp_free_phreg);
+	free(reg_file->xmm_phreg);
+	free(reg_file->xmm_free_phreg);
 	free(reg_file);
 }
 
@@ -232,7 +282,7 @@ void x86_reg_file_dump(int core, int thread, FILE *f)
 			fprintf(f, "\n");
 	}
 
-	fprintf(f, "\nIteger Register Aliasing Table:\n");
+	fprintf(f, "\nInteger Register Aliasing Table:\n");
 	for (i = x86_dep_int_first; i <= x86_dep_int_last; i++)
 	{
 		fprintf(f, "  %2d->%-3d", i, X86_THREAD.reg_file->int_rat[i - x86_dep_int_first]);
@@ -269,6 +319,31 @@ void x86_reg_file_dump(int core, int thread, FILE *f)
 	fprintf(f, "fp_free_phreg_count  %d  # Number of free floating-point registers\n",
 		X86_THREAD.reg_file->fp_free_phreg_count);
 	fprintf(f, "\n");
+	
+	/* XMM register file */
+	fprintf(f, "XMM register file at core %d, thread %d\n", core, thread);
+	fprintf(f, "Format is [busy, pending], * = free\n");
+	for (i = 0; i < x86_reg_file_xmm_local_size; i++)
+	{
+		fprintf(f, "  %3d%c[%d-%d]", i, X86_THREAD.reg_file->xmm_phreg[i].busy ? ' ' : '*',
+			X86_THREAD.reg_file->xmm_phreg[i].busy,
+			X86_THREAD.reg_file->xmm_phreg[i].pending);
+		if (i % 5 == 4 && i != x86_reg_file_xmm_local_size - 1)
+			fprintf(f, "\n");
+	}
+
+	fprintf(f, "\nXMM Register Aliasing Table:\n");
+	for (i = x86_dep_xmm_first; i <= x86_dep_xmm_last; i++)
+	{
+		fprintf(f, "  %2d->%-3d", i, X86_THREAD.reg_file->xmm_rat[i - x86_dep_xmm_first]);
+		if ((i - x86_dep_xmm_first) % 8 == 7)
+			fprintf(f, "\n");
+	}
+
+	fprintf(f, "\n");
+	fprintf(f, "xmm_free_phreg_count  %d  # Number of free integer registers\n",
+		X86_THREAD.reg_file->xmm_free_phreg_count);
+	fprintf(f, "\n");
 }
 
 
@@ -285,17 +360,20 @@ void x86_reg_file_count_deps(struct x86_uop_t *uop)
 	int int_count;
 	int fp_count;
 	int flag_count;
+	int xmm_count;
 
 	/* Initialize */
 	uop->idep_count = 0;
 	uop->odep_count = 0;
 	uop->ph_int_idep_count = 0;
 	uop->ph_fp_idep_count = 0;
+	uop->ph_xmm_idep_count = 0;
 	uop->ph_int_odep_count = 0;
 	uop->ph_fp_odep_count = 0;
+	uop->ph_xmm_odep_count = 0;
 
 	/* Output dependences */
-	int_count = fp_count = flag_count = 0;
+	int_count = fp_count = flag_count = xmm_count = 0;
 	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
 	{
 		loreg = uop->uinst->odep[dep];
@@ -305,13 +383,16 @@ void x86_reg_file_count_deps(struct x86_uop_t *uop)
 			int_count++;
 		else if (X86_DEP_IS_FP_REG(loreg))
 			fp_count++;
+		else if (X86_DEP_IS_XMM_REG(loreg))
+			xmm_count++;
 	}
-	uop->odep_count = flag_count + int_count + fp_count;
+	uop->odep_count = flag_count + int_count + fp_count + xmm_count;
 	uop->ph_int_odep_count = flag_count && !int_count ? 1 : int_count;
 	uop->ph_fp_odep_count = fp_count;
+	uop->ph_xmm_odep_count = xmm_count;
 
 	/* Input dependences */
-	int_count = fp_count = flag_count = 0;
+	int_count = fp_count = flag_count = xmm_count = 0;
 	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++)
 	{
 		loreg = uop->uinst->idep[dep];
@@ -321,10 +402,13 @@ void x86_reg_file_count_deps(struct x86_uop_t *uop)
 			int_count++;
 		else if (X86_DEP_IS_FP_REG(loreg))
 			fp_count++;
+		else if (X86_DEP_IS_XMM_REG(loreg))
+			xmm_count++;
 	}
-	uop->idep_count = flag_count + int_count + fp_count;
+	uop->idep_count = flag_count + int_count + fp_count + xmm_count;
 	uop->ph_int_idep_count = flag_count + int_count;
 	uop->ph_fp_idep_count = fp_count;
+	uop->ph_xmm_idep_count = xmm_count;
 }
 
 
@@ -341,12 +425,16 @@ int x86_reg_file_can_rename(struct x86_uop_t *uop)
 			return 0;
 		if (X86_THREAD.reg_file_fp_count + uop->ph_fp_odep_count > x86_reg_file_fp_local_size)
 			return 0;
+		if (X86_THREAD.reg_file_xmm_count + uop->ph_xmm_odep_count > x86_reg_file_xmm_local_size)
+			return 0;
 	}
 	else
 	{
 		if (X86_CORE.reg_file_int_count + uop->ph_int_odep_count > x86_reg_file_int_local_size)
 			return 0;
 		if (X86_CORE.reg_file_fp_count + uop->ph_fp_odep_count > x86_reg_file_fp_local_size)
+			return 0;
+		if (X86_CORE.reg_file_xmm_count + uop->ph_xmm_odep_count > x86_reg_file_xmm_local_size)
 			return 0;
 	}
 
@@ -376,7 +464,7 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 		reg_file->fp_top_of_stack = (reg_file->fp_top_of_stack + 7) % 8;
 	}
 
-	/* Rename input int/FP registers */
+	/* Rename input int/FP/XMM registers */
 	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++)
 	{
 		loreg = uop->uinst->idep[dep];
@@ -397,13 +485,19 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			uop->ph_idep[dep] = phreg;
 			X86_THREAD.rat_fp_reads++;
 		}
+		else if (X86_DEP_IS_XMM_REG(loreg))
+		{
+			phreg = reg_file->xmm_rat[loreg - x86_dep_xmm_first];
+			uop->ph_idep[dep] = phreg;
+			X86_THREAD.rat_xmm_reads++;
+		}
 		else
 		{
 			uop->ph_idep[dep] = -1;
 		}
 	}
 
-	/* Rename output int/FP registers (not flags) */
+	/* Rename output int/FP/XMM registers (not flags) */
 	flag_phreg = -1;
 	flag_count = 0;
 	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
@@ -429,7 +523,6 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			uop->ph_oodep[dep] = ophreg;
 			reg_file->int_rat[loreg - x86_dep_int_first] = phreg;
 			X86_THREAD.rat_int_writes++;
-
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
 		{
@@ -448,6 +541,20 @@ void x86_reg_file_rename(struct x86_uop_t *uop)
 			uop->ph_oodep[dep] = ophreg;
 			reg_file->fp_rat[streg - x86_dep_fp_first] = phreg;
 			X86_THREAD.rat_fp_writes++;
+		}
+		else if (X86_DEP_IS_XMM_REG(loreg))
+		{
+			/* Reclaim a free xmm register */
+			phreg = x86_reg_file_xmm_reclaim(core, thread);
+			reg_file->xmm_phreg[phreg].busy++;
+			reg_file->xmm_phreg[phreg].pending = 1;
+			ophreg = reg_file->xmm_rat[loreg - x86_dep_xmm_first];
+
+			/* Allocate it */
+			uop->ph_odep[dep] = phreg;
+			uop->ph_oodep[dep] = ophreg;
+			reg_file->xmm_rat[loreg - x86_dep_xmm_first] = phreg;
+			X86_THREAD.rat_xmm_writes++;
 		}
 		else
 		{
@@ -497,6 +604,8 @@ int x86_reg_file_ready(struct x86_uop_t *uop)
 			return 0;
 		if (X86_DEP_IS_FP_REG(loreg) && reg_file->fp_phreg[phreg].pending)
 			return 0;
+		if (X86_DEP_IS_XMM_REG(loreg) && reg_file->xmm_phreg[phreg].pending)
+			return 0;
 	}
 	return 1;
 }
@@ -521,6 +630,8 @@ void x86_reg_file_write(struct x86_uop_t *uop)
 			reg_file->int_phreg[phreg].pending = 0;
 		else if (X86_DEP_IS_FP_REG(loreg))
 			reg_file->fp_phreg[phreg].pending = 0;
+		else if (X86_DEP_IS_XMM_REG(loreg))
+			reg_file->xmm_phreg[phreg].pending = 0;
 	}
 }
 
@@ -590,6 +701,26 @@ void x86_reg_file_undo(struct x86_uop_t *uop)
 			reg_file->fp_rat[streg - x86_dep_fp_first] = ophreg;
 			assert(reg_file->fp_phreg[ophreg].busy);
 		}
+		else if (X86_DEP_IS_XMM_REG(loreg))
+		{
+			/* Decrease busy counter and free if 0. */
+			assert(reg_file->xmm_phreg[phreg].busy > 0);
+			assert(!reg_file->xmm_phreg[phreg].pending);
+			reg_file->xmm_phreg[phreg].busy--;
+			if (!reg_file->xmm_phreg[phreg].busy)
+			{
+				assert(reg_file->xmm_free_phreg_count < x86_reg_file_xmm_local_size);
+				assert(X86_CORE.reg_file_xmm_count > 0 && X86_THREAD.reg_file_xmm_count > 0);
+				reg_file->xmm_free_phreg[reg_file->xmm_free_phreg_count] = phreg;
+				reg_file->xmm_free_phreg_count++;
+				X86_CORE.reg_file_xmm_count--;
+				X86_THREAD.reg_file_xmm_count--;
+			}
+
+			/* Return to previous mapping */
+			reg_file->xmm_rat[loreg - x86_dep_xmm_first] = ophreg;
+			assert(reg_file->xmm_phreg[ophreg].busy);
+		}
 		else
 		{
 			/* Not a valid dependence. */
@@ -658,6 +789,22 @@ void x86_reg_file_commit(struct x86_uop_t *uop)
 				X86_THREAD.reg_file_fp_count--;
 			}
 		}
+		else if (X86_DEP_IS_XMM_REG(loreg))
+		{
+			/* Decrease counter of previous mapping and free if 0. */
+			assert(reg_file->xmm_phreg[ophreg].busy > 0);
+			reg_file->xmm_phreg[ophreg].busy--;
+			if (!reg_file->xmm_phreg[ophreg].busy)
+			{
+				assert(!reg_file->xmm_phreg[ophreg].pending);
+				assert(reg_file->xmm_free_phreg_count < x86_reg_file_xmm_local_size);
+				assert(X86_CORE.reg_file_xmm_count > 0 && X86_THREAD.reg_file_xmm_count > 0);
+				reg_file->xmm_free_phreg[reg_file->xmm_free_phreg_count] = ophreg;
+				reg_file->xmm_free_phreg_count++;
+				X86_CORE.reg_file_xmm_count--;
+				X86_THREAD.reg_file_xmm_count--;
+			}
+		}
 		else
 		{
 			/* Not a valid dependence. */
@@ -692,6 +839,12 @@ void x86_reg_file_check_integrity(int core, int thread)
 		assert(!reg_file->fp_phreg[phreg].busy);
 		assert(!reg_file->fp_phreg[phreg].pending);
 	}
+	for (i = 0; i < reg_file->xmm_free_phreg_count; i++)
+	{
+		phreg = reg_file->xmm_free_phreg[i];
+		assert(!reg_file->xmm_phreg[phreg].busy);
+		assert(!reg_file->xmm_phreg[phreg].pending);
+	}
 
 	/* Check that all mapped registers are busy */
 	for (loreg = x86_dep_int_first; loreg <= x86_dep_int_last; loreg++)
@@ -703,6 +856,11 @@ void x86_reg_file_check_integrity(int core, int thread)
 	{
 		phreg = reg_file->fp_rat[loreg - x86_dep_fp_first];
 		assert(reg_file->fp_phreg[phreg].busy);
+	}
+	for (loreg = x86_dep_xmm_first; loreg <= x86_dep_xmm_last; loreg++)
+	{
+		phreg = reg_file->xmm_rat[loreg - x86_dep_xmm_first];
+		assert(reg_file->xmm_phreg[phreg].busy);
 	}
 
 	/* Check that all destination and previous destination
@@ -725,6 +883,11 @@ void x86_reg_file_check_integrity(int core, int thread)
 			{
 				assert(reg_file->fp_phreg[phreg].busy);
 				assert(reg_file->fp_phreg[ophreg].busy);
+			}
+			else if (X86_DEP_IS_XMM_REG(loreg))
+			{
+				assert(reg_file->xmm_phreg[phreg].busy);
+				assert(reg_file->xmm_phreg[ophreg].busy);
 			}
 			else
 			{
