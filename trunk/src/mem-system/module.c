@@ -261,7 +261,17 @@ void mod_lock_port(struct mod_t *mod, struct mod_stack_t *stack, int event)
 	if (mod->num_locked_ports >= mod->num_ports)
 	{
 		assert(!DOUBLE_LINKED_LIST_MEMBER(mod, port_waiting, stack));
-		DOUBLE_LINKED_LIST_INSERT_TAIL(mod, port_waiting, stack);
+
+		/* If the request to lock the port is down-up, give it priority since 
+		 * it is possibly holding up a large portion of the memory hierarchy */
+		if (stack->request_dir == mod_request_down_up)
+		{
+			DOUBLE_LINKED_LIST_INSERT_HEAD(mod, port_waiting, stack);
+		}
+		else 
+		{
+			DOUBLE_LINKED_LIST_INSERT_TAIL(mod, port_waiting, stack);
+		}
 		stack->port_waiting_list_event = event;
 		return;
 	}
@@ -778,4 +788,17 @@ void mod_stack_set_reply(struct mod_stack_t *stack, int reply)
 	{
 		stack->reply = reply;
 	}
+}
+
+/* Peer-peer transfers are always used when a block is in the owned state,
+ * otherwise it is based on a configuration argument */
+struct mod_t *mod_stack_set_peer(struct mod_t *peer, int state)
+{
+	void *ret = NULL;
+
+	if (state == cache_block_owned || mem_system_peer_transfers)
+		ret = peer;	
+
+	if (ret != NULL) printf("NOT NULL\n");
+	return ret;
 }
