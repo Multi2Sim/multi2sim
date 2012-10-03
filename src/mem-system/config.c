@@ -58,6 +58,8 @@ char *mem_config_help =
 	"  PageSize = <size>  (Default = 4096)\n"
 	"      Memory page size. Virtual addresses are translated into new physical\n"
 	"      addresses in ascending order at the granularity of the page size.\n"
+	"  PeerTransfers = <bool> (Default = transfers)\n"
+	"      Whether or not transfers between peer caches are used.\n"
 	"\n"
 	"Section [Module <name>] defines a generic memory module. This section is used to\n"
 	"declare both caches and main memory modules accessible from CPU cores or GPU\n"
@@ -155,6 +157,8 @@ char *mem_config_help =
 	"      Number of ports. The number of ports in a cache limits the number of\n"
 	"      concurrent hits. If an access is a miss, it remains in the MSHR while it\n"
 	"      is resolved, but releases the cache port.\n"
+	"  DirectoryLatency = <cycles> (Default = 1)\n"
+	"      Latency for a directory access in number of cycles.\n"
 	"\n"
 	"Section [Network <net>] defines an internal default interconnect, formed of a\n"
 	"single switch connecting all modules pointing to the network. For every module\n"
@@ -454,6 +458,9 @@ static void mem_config_read_general(struct config_t *config)
 	if ((mmu_page_size & (mmu_page_size - 1)))
 		fatal("%s: page size must be power of 2.\n%s",
 			mem_config_file_name, err_mem_config_note);
+
+	/* Peer transfers */
+	mem_system_peer_transfers = config_read_bool(config, section, "PeerTranfers", 1);
 }
 
 
@@ -619,6 +626,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	int assoc;
 	int block_size;
 	int latency;
+	int dir_latency;
 
 	char *policy_str;
 	enum cache_policy_t policy;
@@ -649,6 +657,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	assoc = config_read_int(config, buf, "Assoc", 2);
 	block_size = config_read_int(config, buf, "BlockSize", 256);
 	latency = config_read_int(config, buf, "Latency", 1);
+	dir_latency = config_read_int(config, buf, "DirectoryLatency", 1);
 	policy_str = config_read_string(config, buf, "Policy", "LRU");
 	mshr_size = config_read_int(config, buf, "MSHR", 16);
 	num_ports = config_read_int(config, buf, "Ports", 2);
@@ -667,6 +676,9 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (block_size < 4 || (block_size & (block_size - 1)))
 		fatal("%s: cache %s: block size must be power of two and at least 4.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
+	if (dir_latency < 1)
+		fatal("%s: cache %s: invalid value for variable 'DirectoryLatency'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (latency < 1)
 		fatal("%s: cache %s: invalid value for variable 'Latency'.\n%s",
@@ -687,6 +699,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	mod->dir_assoc = assoc;
 	mod->dir_num_sets = num_sets;
 	mod->dir_size = num_sets * assoc;
+	mod->dir_latency = dir_latency;
 
 	/* High network */
 	net_name = config_read_string(config, section, "HighNetwork", "");

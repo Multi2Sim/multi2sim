@@ -18,9 +18,6 @@
 
 #include <mem-system.h>
 
-/* FIXME Make this variable */
-#define DIR_ACCESS_CYCLES 4
-
 /* Events */
 
 int EV_MOD_NMOESI_LOAD;
@@ -208,7 +205,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 		/* Miss */
 		new_stack = mod_stack_create(stack->id, mod, stack->tag,
 			EV_MOD_NMOESI_LOAD_MISS, stack);
-		new_stack->peer = mod;
+		new_stack->peer = mod_stack_set_peer(mod, stack->state);
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
@@ -399,7 +396,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 		/* Miss - state=O/S/I/N */
 		new_stack = mod_stack_create(stack->id, mod, stack->tag,
 			EV_MOD_NMOESI_STORE_UNLOCK, stack);
-		new_stack->peer = mod;
+		new_stack->peer = mod_stack_set_peer(mod, stack->state);
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
@@ -605,12 +602,14 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 			new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 			esim_schedule_event(EV_MOD_NMOESI_MESSAGE, new_stack, 0);
 		}
-		/* All other states need to call read request  */
+		/* Modified and Owned states need to call read request because we've already
+		 * evicted the block so that the lower-level cache will have the latest value
+		 * before it becomes non-coherent */
 		else
 		{
 			new_stack = mod_stack_create(stack->id, mod, stack->tag,
 				EV_MOD_NMOESI_NC_STORE_MISS, stack);
-			new_stack->peer = mod;
+			new_stack->peer = mod_stack_set_peer(mod, stack->state);
 			new_stack->nc_write = 1;
 			new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 			new_stack->request_dir = mod_request_up_down;
@@ -886,7 +885,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		cache_access_block(mod->cache, stack->set, stack->way);
 
 		/* Access latency */
-		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, DIR_ACCESS_CYCLES);
+		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->dir_latency);
 		return;
 	}
 
@@ -1450,6 +1449,9 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				assert(dir_entry->owner != mod->low_net_node->index);
 			}
 
+			/* TODO If there is only sharers, should one of them
+			 *      send the data to mod instead of having target_mod do it? */
+
 			/* Send read request to owners other than mod for all sub-blocks. */
 			for (z = 0; z < dir->zsize; z++)
 			{
@@ -1484,7 +1486,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				if (dir_entry_tag >= stack->addr && 
 					dir_entry_tag < stack->addr + mod->block_size)
 				{
-					new_stack->peer = stack->mod;
+					new_stack->peer = mod_stack_set_peer(mod, stack->state);
 				}
 				new_stack->target_mod = owner;
 				new_stack->request_dir = mod_request_down_up;
@@ -1615,7 +1617,9 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		}
 
 		dir_entry_unlock(dir, stack->set, stack->way);
-		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, target_mod->latency);
+
+		int latency = stack->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
+		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, latency);
 		return;
 	}
 
@@ -1689,7 +1693,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 			/* Send this block (or subblock) to the peer */
 			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
 				EV_MOD_NMOESI_READ_REQUEST_DOWNUP_FINISH, stack);
-			new_stack->peer = stack->peer;
+			new_stack->peer = mod_stack_set_peer(stack->peer, stack->state);
 			new_stack->target_mod = stack->target_mod;
 			esim_schedule_event(EV_MOD_NMOESI_PEER_SEND, new_stack, 0);
 		}
@@ -1861,7 +1865,9 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		}
 
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
-		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, target_mod->latency);
+
+		int latency = stack->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
+		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, latency);
 		return;
 	}
 
@@ -2034,7 +2040,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		new_stack->except_mod = mod;
 		new_stack->set = stack->set;
 		new_stack->way = stack->way;
-		new_stack->peer = stack->peer;
+		new_stack->peer = mod_stack_set_peer(stack->peer, stack->state);
 		esim_schedule_event(EV_MOD_NMOESI_INVALIDATE, new_stack, 0);
 		return;
 	}
@@ -2072,7 +2078,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		{
 			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
 				EV_MOD_NMOESI_WRITE_REQUEST_UPDOWN_FINISH, stack);
-			new_stack->peer = mod;
+			new_stack->peer = mod_stack_set_peer(mod, stack->state);
 			new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
 			new_stack->request_dir = mod_request_up_down;
 			esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
@@ -2145,7 +2151,8 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		/* Unlock, reply_size is the data of the size of the requester's block. */
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 
-		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, target_mod->latency);
+		int latency = stack->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
+		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, latency);
 		return;
 	}
 
@@ -2191,7 +2198,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 				/* Send data to the peer */
 				new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
 					EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP_FINISH, stack);
-				new_stack->peer = stack->peer;
+				new_stack->peer = mod_stack_set_peer(stack->peer, stack->state);
 				new_stack->target_mod = stack->target_mod;
 
 				esim_schedule_event(EV_MOD_NMOESI_PEER_SEND, new_stack, 0);
@@ -2225,7 +2232,8 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		cache_set_block(target_mod->cache, stack->set, stack->way, 0, cache_block_invalid);
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 		
-		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, target_mod->latency);
+		int latency = stack->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
+		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, latency);
 		return;
 	}
 
@@ -2415,17 +2423,6 @@ void mod_handler_nmoesi_invalidate(int event, void *data)
 				new_stack->target_mod = sharer;
 				new_stack->request_dir = mod_request_down_up;
 
-				/* If there is a peer and this is a block that he is interested in,
-				 * and this sharer is the first sharer that is capable of 
-				 * sending data, send the data directly to the peer. */
-				/*
-				// FIXME Peer is getting propagated incorrectly during invalidation
-				if (stack->peer && first_sharer)
-                                {
-					new_stack->peer = stack->peer;
-					first_sharer = 0;
-				}
-				*/
 				esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
 				stack->pending++;
 			}

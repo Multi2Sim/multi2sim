@@ -408,6 +408,7 @@ struct mod_t
 	int block_size;
 	int log_block_size;
 	int latency;
+	int dir_latency;
 	int mshr_size;
 
 	/* Module level starting from entry points */
@@ -547,6 +548,7 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 void mod_free(struct mod_t *mod);
 void mod_dump(struct mod_t *mod, FILE *f);
 void mod_stack_set_reply(struct mod_stack_t *stack, int reply);
+struct mod_t *mod_stack_set_peer(struct mod_t *peer, int state);
 
 long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind, 
 	unsigned int addr, int *witness_ptr, struct linked_list_t *event_queue,
@@ -835,6 +837,7 @@ void mod_handler_local_mem_load(int event, void *data);
 void mod_handler_local_mem_store(int event, void *data);
 void mod_handler_local_mem_find_and_lock(int event, void *data);
 
+extern int mem_system_peer_transfers;
 
 
 /*
