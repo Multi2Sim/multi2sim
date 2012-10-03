@@ -101,7 +101,7 @@ struct clrt_object_t *clrt_object_find(void *data, struct clrt_object_t **prev_i
 	prev = NULL;
 
 	/* Iterate in list */
-	while (!object)
+	while (object)
 	{
 		if (object->data == data)
 		{
