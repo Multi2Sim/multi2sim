@@ -1460,7 +1460,11 @@ void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	struct si_wavefront_t *wavefront = work_item->wavefront;
 	struct si_work_group_t *work_group = work_item->work_group;
 
+	/* TODO Add new state to visualization tool for waiting
+	 * at barrier */
+
 	/* Suspend current wavefront at the barrier */
+	wavefront->barrier = 1;
 	assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
 	DOUBLE_LINKED_LIST_REMOVE(work_group, running, wavefront);
 	DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, barrier, wavefront);
@@ -1482,6 +1486,8 @@ void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		assert(work_group->barrier_list_count == 0);
 		si_isa_debug("%s completed barrier, waking up wavefronts\n",
 			work_group->name);
+
+		wavefront->barrier_cleared = 1;
 	}
 }
 
