@@ -533,7 +533,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
+			if (si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
 				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
 		}
 
