@@ -4,7 +4,9 @@ images = \
 	images/alu_engine.png \
 	images/cf_engine.png \
 	images/tex_engine.png \
+	images/engines.odg \
 	images/m2s-icon.png \
+	images/m2s-icon.xcf \
 	images/close.png \
 	images/close-sel.png \
 	\
@@ -28,6 +30,13 @@ EXTRA_DIST = \
 	tools/m2s-opencl-kc/Makefile \
 	tools/m2s-opencl-kc/misc.c \
 	tools/m2s-opencl-kc/misc.h \
+	\
+	tools/m2s-opengl-kc/misc.c \
+	tools/m2s-opengl-kc/misc.h \
+	tools/m2s-opengl-kc/debug.c \
+	tools/m2s-opengl-kc/debug.h \
+	tools/m2s-opengl-kc/m2s-opengl-kc.c \
+	tools/m2s-opengl-kc/Makefile \
 	\
 	tools/libm2s-glut/glut.c \
 	tools/libm2s-glut/Makefile \
@@ -59,6 +68,7 @@ EXTRA_DIST = \
 	\
 	tools/libm2s-cuda/m2s-cuda.h \
 	tools/libm2s-cuda/cuda.c \
+	tools/libm2s-cuda/cudart.c \
 	tools/libm2s-cuda/Makefile \
 	\
 	tools/barplot/barplot.py \
@@ -70,12 +80,20 @@ EXTRA_DIST = \
 	\
 	samples/cpuconfig.args-sort \
 	samples/ctxconfig.args-sort \
+	\
 	samples/test-args.c \
-	samples/test-args.x86 \
 	samples/test-sort.c \
+	samples/test-threads.c \
+	\
+	samples/test-args.x86 \
 	samples/test-sort.x86 \
 	samples/test-threads.x86 \
-	samples/test-threads.c \
+	\
+	samples/mesh_9_Route.txt \
+	samples/mesh_9_wo_R.txt \
+	\
+	samples/test-args.arm \
+	samples/test-sort.arm \
 	\
 	samples/memconfig-eg1/cpu-config \
 	samples/memconfig-eg1/mem-config \
