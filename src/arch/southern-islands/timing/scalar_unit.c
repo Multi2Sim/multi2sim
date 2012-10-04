@@ -11,8 +11,10 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 	struct si_uop_t *uop = NULL;
 	struct si_wavefront_t *wavefront;
 	struct si_work_group_t *work_group;
+	struct si_ndrange_t *ndrange;
 	int i;
 	int list_count;
+	int wavefront_id;
 
 	/* Process completed memory instructions */
 	list_count = linked_list_count(scalar_unit->mem_out_buffer);
@@ -65,10 +67,37 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 			/* Make the wavefront active again */
 			wavefront = uop->wavefront;
 			work_group = wavefront->work_group;
-			if (!wavefront->finished)
-				wavefront->ready = 1;
-			else
+			ndrange = work_group->ndrange;
+			if (wavefront->finished)
+			{
 				work_group->compute_unit_finished_count++;
+			}
+			else if (wavefront->barrier)
+			{
+				if (wavefront->barrier_cleared) 
+				{
+					/* All wavefronts have hit barrier */
+
+					wavefront->barrier_cleared = 0;
+
+					SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, 
+						wavefront_id)
+					{
+						wavefront = ndrange->wavefronts[wavefront_id];
+						wavefront->barrier = 0;
+						wavefront->ready = 1;
+					}
+	
+				}
+				else 
+				{
+					/* Wavefront is waiting at barrier */
+				}
+			}
+			else 
+			{
+				wavefront->ready = 1;
+			}
 
 			/* Check if wavefront finishes a work-group */
 			assert(work_group->compute_unit_finished_count <=

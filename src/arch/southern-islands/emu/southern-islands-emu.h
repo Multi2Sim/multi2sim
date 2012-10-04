@@ -807,8 +807,10 @@ struct si_wavefront_t
 	long long sched_when;  /* GPU cycle when wavefront was last scheduled */
 	struct si_wavefront_pool_t *wavefront_pool;
 
-	/* Ready to fetch next instruction (for timing simulation) */
-	unsigned int ready : 1;
+	/* Flags for timing simulation */
+	unsigned int ready : 1;  /* ready to fetch next instruction */
+	unsigned int barrier : 1;  /* blocked at barrier */
+	unsigned int barrier_cleared : 1;  /* last wavefront to hit the barrier clears it */
 
 	/* Statistics */
 	long long inst_count;  /* Total number of instructions */
