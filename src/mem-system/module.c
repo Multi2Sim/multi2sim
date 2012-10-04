@@ -794,11 +794,11 @@ void mod_stack_set_reply(struct mod_stack_t *stack, int reply)
  * otherwise it is based on a configuration argument */
 struct mod_t *mod_stack_set_peer(struct mod_t *peer, int state)
 {
-	void *ret = NULL;
+	struct mod_t *ret = NULL;
 
 	if (state == cache_block_owned || mem_system_peer_transfers)
 		ret = peer;	
 
-	if (ret != NULL) printf("NOT NULL\n");
 	return ret;
 }
+
