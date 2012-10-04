@@ -41,15 +41,27 @@ AC_ARG_ENABLE(glut,
 	[], [ enable_glut=yes ])
 
 # Check if GLUT is present
-have_glut=yes
-AC_CHECK_HEADER([GL/glut.h], [], [have_glut=no])
-AC_CHECK_HEADER([GL/gl.h], [], [have_glut=no])
-AC_CHECK_LIB([glut], [glutInit], [], [have_glut=no])
-AC_CHECK_LIB([GL], [glBegin], [], [have_glut=no])
-AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_glut=no])
+if test "$enable_glut" == "no"
+then
 
-if test x$have_glut == xno; then
-AC_MSG_WARN([
+	have_glut=no
+	AC_MSG_WARN([
+
+	The 'freeglut' library development explicitly disabled. Some features in
+	Multi2Sim will not be accessible.
+])
+
+else
+
+	have_glut=yes
+	AC_CHECK_HEADER([GL/glut.h], [], [have_glut=no])
+	AC_CHECK_HEADER([GL/gl.h], [], [have_glut=no])
+	AC_CHECK_LIB([glut], [glutInit], [], [have_glut=no])
+	AC_CHECK_LIB([GL], [glBegin], [], [have_glut=no])
+	AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_glut=no])
+
+	if test x$have_glut == xno; then
+		AC_MSG_WARN([
 	
 	The 'freeglut' library development package is missing in your system.
 	Please install the package and then retry. On Debian-based Linux
@@ -57,13 +69,8 @@ AC_MSG_WARN([
 
 		sudo apt-get install freeglut3-dev
 ])
-elif test x$enable_glut == xno; then
-AC_MSG_WARN([
 
-	The 'freeglut' library development package is present in your system,
-	but you explicitly disabled support for it. Some features in Multi2Sim
-	will not be accessible.
-])
+	fi
 fi
 
 # Define macro for Automake and gcc
