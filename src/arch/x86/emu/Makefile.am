@@ -32,13 +32,27 @@ libemu_a_SOURCES += \
 	glut-frame-buffer.c \
 	opengl.c \
 	opengl.dat \
+	\
 	opengl-context.c \
+	opengl-context.h \
+	\
 	opengl-matrix.c \
+	opengl-matrix.h \
+	\
 	opengl-matrix-stack.c \
+	opengl-matrix-stack.h \
+	\
 	opengl-buffers.c \
+	opengl-buffers.h \
+	\
 	opengl-vertex.c \
+	opengl-vertex.h \
+	\
 	opengl-color-channel.c \
-	opengl-viewport.c
+	opengl-color-channel.h \
+	\
+	opengl-viewport.c \
+	opengl-viewport.h
 else
 libemu_a_SOURCES += \
 	glut-missing.c \
