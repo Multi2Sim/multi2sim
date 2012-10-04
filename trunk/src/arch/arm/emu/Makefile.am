@@ -10,6 +10,7 @@ libemu_a_SOURCES = \
 	isa.c \
 	machine.c \
 	syscall.c \
+	syscall.dat \
 	signal.c 
 
 INCLUDES = @M2S_INCLUDES@
