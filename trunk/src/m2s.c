@@ -1101,7 +1101,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	if (si_emu_kind == si_emu_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
-			"\tPlease use option '--evg-sim detailed' as well.\n";
+			"\tPlease use option '--si-sim detailed' as well.\n";
 
 		if (*si_gpu_config_file_name)
 			fatal(msg, "--si-config");
@@ -1113,10 +1113,15 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 
 	/* Options that only make sense when there is at least one architecture
 	 * using detailed simulation. */
-	if (evg_emu_kind == evg_emu_kind_functional && x86_emu_kind == x86_emu_kind_functional)
+	if (evg_emu_kind == evg_emu_kind_functional
+		&& x86_emu_kind == x86_emu_kind_functional
+		&& si_emu_kind == si_emu_kind_functional
+		&& arm_emu_kind == arm_emu_kind_functional
+		&& frm_emu_kind == frm_emu_kind_functional)
 	{
-		char *msg = "option '%s' needs architectural CPU/GPU simulation.\n"
-			"\tPlease use option '--x86-sim detailed' or '--evg-sim detailed' as well.\n";
+		char *msg = "option '%s' needs architectural simulation.\n"
+			"\tPlease use option '--<arch>-sim detailed' as well, where <arch> is any\n"
+			"\tof the architectures supported in Multi2Sim.\n";
 
 		if (*mmu_report_file_name)
 			fatal(msg, "--mem-report");
