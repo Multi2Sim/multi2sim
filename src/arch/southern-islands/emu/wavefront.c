@@ -528,6 +528,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Stats */
 		si_emu->vector_mem_inst_count++;
 		wavefront->vector_mem_inst_count++;
+
+		/* Record access type */
+		if (inst->info->opcode >= 0 && inst->info->opcode < 4)
+			wavefront->global_mem_read = 1;
+		else if (inst->info->opcode >= 4 && inst->info->opcode < 8)
+			wavefront->global_mem_write = 1;
+		else 
+			fatal("%s: invalid mtbuf opcode", __FUNCTION__);
 	
 		/* Execute the instruction */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
