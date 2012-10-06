@@ -39,11 +39,11 @@ void *clrt_buffer_allocate(size_t size)
 	struct clrt_buffer_list_t *entry;
 
 	entry = (struct clrt_buffer_list_t *) malloc(sizeof (struct clrt_buffer_list_t));
-	if(entry == NULL)
+	if(!entry)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	entry->raw = malloc (size + MEMORY_ALIGN);
-	if (entry->raw == NULL)
+	if (!entry->raw)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	entry->aligned = (void *) (((size_t) entry->raw + MEMORY_ALIGN) & ~(MEMORY_ALIGN - 1));
@@ -58,12 +58,12 @@ void clrt_buffer_free(void *buffer)
 	struct clrt_buffer_list_t *list = buffer_list;
 	struct clrt_buffer_list_t *prev = NULL;
 
-	while (list != NULL)
+	while (list)
 	{
 		if (list->aligned == buffer)
 		{
 			free(list->raw);
-			if (prev != NULL)
+			if (prev)
 				prev = list->next;
 			else
 				buffer_list = list->next;
@@ -110,20 +110,20 @@ cl_mem clCreateBuffer(
 
 	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_CONTEXT;
 		return NULL;
 	}
 
-	if (((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR)) && host_ptr == NULL)
+	if (((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR)) && !host_ptr)
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_HOST_PTR;
 		return NULL;
 	}
 
 	mem = (struct _cl_mem *) malloc(sizeof (struct _cl_mem));
-	if (mem == NULL)
+	if (!mem)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	clrt_object_create(mem, CLRT_OBJECT_MEM, clrt_mem_free);

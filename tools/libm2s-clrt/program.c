@@ -85,16 +85,16 @@ cl_program clCreateProgramWithBinary(
 
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 
-	if (context == NULL)
+	if (!context)
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_CONTEXT;
 		return NULL;
 	}
 
-	if (device_list == NULL || num_devices == 0 || lengths == NULL || binaries == NULL)
+	if (!device_list || !num_devices || !lengths || !binaries)
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_VALUE;
 		return NULL;
 	}
@@ -102,40 +102,40 @@ cl_program clCreateProgramWithBinary(
 	/* Even though we don't support more than one device, we will in the future */
 	for (i = 0; i < num_devices; i++)
 	{
-		if (lengths[i] == 0 || binaries[i] == NULL)
+		if (!lengths[i] || !binaries[i])
 		{
-			if (errcode_ret != NULL)
+			if (errcode_ret)
 				*errcode_ret = CL_INVALID_VALUE;
-			if (binary_status != NULL)
+			if (binary_status)
 				binary_status[i] = CL_INVALID_VALUE;
 
 			return NULL;
 		}
-		if (device_list[i] == NULL)
+		if (!device_list[i])
 		{
-			if (errcode_ret != NULL)
+			if (errcode_ret)
 				*errcode_ret = CL_INVALID_DEVICE;
 			return NULL;
 		}
 	}
 
 	program = (struct _cl_program *) malloc(sizeof (struct _cl_program));
-	if (program == NULL)
+	if (!program)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	clrt_object_create(program, CLRT_OBJECT_PROGRAM, clrt_program_free);
 
 	program->elf_data = mmap(NULL, lengths[0], PROT_EXEC | PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if (program->elf_data == NULL)
+	if (!program->elf_data)
 		fatal("%s: out of memory", __FUNCTION__);
 	
 	program->size = lengths[0];
 	memcpy(program->elf_data, binaries[0], program->size);	
 
-	if (errcode_ret != NULL)
+	if (errcode_ret)
 		*errcode_ret = CL_SUCCESS;
 
-	if (binary_status != NULL)
+	if (binary_status)
 		binary_status[0] = CL_SUCCESS;
 
 	return program;

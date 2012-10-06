@@ -210,15 +210,15 @@ void init_workgroup(
 	workgroup->num_done = 0;
 	workgroup->cur_ctx = NULL;
 	workgroup->workitems = (struct fiber_t *) malloc(sizeof (struct fiber_t) * workgroup->num_items);
-	if (workgroup->workitems == NULL)
+	if (!workgroup->workitems)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	workgroup->workitem_data = (struct clrt_workitem_data_t **) malloc(sizeof (struct clrt_workitem_data_t *) * workgroup->num_items);
-	if (workgroup->workitem_data == NULL)
+	if (!workgroup->workitem_data)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	workgroup->all_stacks = (char *) malloc(STACK_SIZE * (workgroup->num_items + 1));
-	if (workgroup->all_stacks == NULL)
+	if (!workgroup->all_stacks)
 		fatal("%s: out of memory", __FUNCTION__);
 	workgroup->aligned_stacks = (char *) ((size_t) (workgroup->all_stacks + STACK_SIZE) & ~(STACK_SIZE - 1));
 
@@ -236,7 +236,7 @@ void init_workgroup(
 
 	/* set up params with local memory pointers sperate from those of other threads */
 	workgroup->stack_params = (size_t *) malloc(sizeof (size_t) * kernel->stack_param_words);
-	if (workgroup->stack_params == NULL)
+	if (!workgroup->stack_params)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	memcpy(workgroup->stack_params, kernel->stack_params, sizeof (size_t) * kernel->stack_param_words);
@@ -277,7 +277,7 @@ void *clrt_device_core_proc(void *ptr)
 	struct clrt_execution_t *exec = NULL;
 
 	pthread_mutex_lock(&device->lock);
-	while ((exec = has_work(device, &count)) != NULL)
+	while ((exec = has_work(device, &count)))
 	{
 		int num;
 		struct clrt_workgroup_data_t workgroup_data;
@@ -331,11 +331,11 @@ cl_int clGetDeviceIDs(
 		return CL_INVALID_DEVICE_TYPE;
 
 
-	if (m2s_device == NULL)
+	if (!m2s_device)
 	{
 		int i;
 		m2s_device = (struct _cl_device_id *) malloc(sizeof (struct _cl_device_id));
-		if (m2s_device == NULL)
+		if (!m2s_device)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		m2s_device->num_cores = 4; /*FIXME*/
@@ -348,7 +348,7 @@ cl_int clGetDeviceIDs(
 		pthread_cond_init(&m2s_device->done, NULL);
 
 		m2s_device->threads = (pthread_t *) malloc(sizeof (pthread_t) * m2s_device->num_cores);
-		if(m2s_device->threads == NULL)
+		if(!m2s_device->threads)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		for (i = 0; i < m2s_device->num_cores; i++)
@@ -363,11 +363,11 @@ cl_int clGetDeviceIDs(
 
 	/* If a device array is passed in, it must have a corresponding length and vice-versa
 	 * The client must also want either a count of the number of devices or the devices themselves */
-	if ((num_entries == 0 && devices != NULL) || (num_entries != 0 && devices == NULL) || (num_devices == NULL && devices == NULL))
+	if ((!num_entries && devices) || (num_entries && !devices) || (!num_devices && !devices))
 		return CL_INVALID_VALUE;
 
 	/* Client wants to know device count */
-	else if (num_entries == 0 && num_devices != NULL)
+	else if (!num_entries && num_devices)
 	{
 		*num_devices = 1;
 		return CL_SUCCESS;
@@ -376,7 +376,7 @@ cl_int clGetDeviceIDs(
 	/* Client wants list of devices populated */
 	else
 	{
-		if (num_devices != NULL)
+		if (num_devices)
 			*num_devices = 1;
 		devices[0] = m2s_device;
 

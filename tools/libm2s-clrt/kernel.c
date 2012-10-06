@@ -126,7 +126,7 @@ int stack_words(enum clrt_param_type_t param_type)
 	/* round up size to the nearest sizeof (size_t)-bytes. */
 	size = clrt_type_size(param_type);
 	rem = size % sizeof (size_t);
-	if (rem != 0)
+	if (rem)
 		rem = sizeof (size_t) - rem;
 	return (size + rem) / sizeof (size_t);
 }
@@ -178,13 +178,13 @@ cl_kernel clCreateKernel(
 
 	if (!clrt_object_verify(program, CLRT_OBJECT_PROGRAM))
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_PROGRAM;
 		return NULL;
 	}
 
 	kernel = (struct _cl_kernel *) malloc(sizeof (struct _cl_kernel));
-	if (kernel == NULL)
+	if (!kernel)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	clrt_object_create(kernel, CLRT_OBJECT_KERNEL, clrt_kernel_free);
@@ -194,7 +194,7 @@ cl_kernel clCreateKernel(
 	kernel->function = (clrt_function_t) get_function_info(inner_elf, kernel_name, &kernel->metadata, &meta_size);
 	kernel->num_params = (kernel->metadata[0] - 44) / 24;
 	kernel->param_info = (struct clrt_parameter_t *) malloc(sizeof (struct clrt_parameter_t) * kernel->num_params);
-	if (kernel->param_info == NULL)
+	if (!kernel->param_info)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	memset(kernel->param_info, 0, sizeof (struct clrt_parameter_t) * kernel->num_params);
@@ -243,7 +243,7 @@ cl_kernel clCreateKernel(
 				align_size = SSE_REG_SIZE_IN_WORDS;
 
 			remainder = stack_offset % align_size;
-			if (remainder != 0)
+			if (remainder)
 				stack_offset += align_size - remainder;
 
 			param_info->stack_offset = stack_offset;
@@ -261,13 +261,13 @@ cl_kernel clCreateKernel(
 	}
 
 	remainder = stack_offset % SSE_REG_SIZE_IN_WORDS;
-	if (remainder == 0)
+	if (!remainder)
 		kernel->stack_param_words = stack_offset;
 	else
 		kernel->stack_param_words = stack_offset + SSE_REG_SIZE_IN_WORDS - remainder;
 
 	kernel->stack_params = (size_t *) malloc(sizeof (size_t) * kernel->stack_param_words);
-	if (kernel->stack_params == NULL)
+	if (!kernel->stack_params)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	memset(kernel->stack_params, 0, sizeof (size_t) * kernel->stack_param_words);
@@ -325,12 +325,12 @@ cl_int clSetKernelArg(
 
 	assert(arg_index >= 0 && arg_index < kernel->num_params);
 	param_info = kernel->param_info + arg_index;
-	assert(param_info->size * sizeof (size_t) >= arg_size || arg_value == NULL);
+	assert(param_info->size * sizeof (size_t) >= arg_size || !arg_value);
 
-	assert((arg_value == NULL) == (param_info->mem_type == CLRT_MEM_LOCAL));
+	assert((!arg_value) == (param_info->mem_type == CLRT_MEM_LOCAL));
 
 	/* local memory */
-	if (arg_value == NULL)
+	if (!arg_value)
 		kernel->stack_params[param_info->stack_offset] = arg_size;
 	else if (param_info->mem_type == CLRT_MEM_GLOBAL || param_info->mem_type == CLRT_MEM_CONSTANT)
 	{

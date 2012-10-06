@@ -88,7 +88,7 @@ struct clrt_queue_item_t *clrt_queue_item_create(
 	struct clrt_queue_item_t *item;
 
 	item = (struct clrt_queue_item_t *) malloc(sizeof (struct clrt_queue_item_t));
-	if(item == NULL)
+	if(!item)
 		fatal("%s: out of memory", __FUNCTION__);
 	item->data = data;
 	item->action = action;
@@ -96,7 +96,7 @@ struct clrt_queue_item_t *clrt_queue_item_create(
 	item->wait_events = waits;
 	item->next = NULL;
 
-	if (done == NULL)
+	if (!done)
 		item->done_event = NULL;
 	else
 	{
@@ -112,9 +112,9 @@ void clrt_command_queue_enqueue(struct _cl_command_queue *queue,
 	struct clrt_queue_item_t *item)
 {
 	pthread_mutex_lock(&queue->lock);
-	if (queue->head == NULL)
+	if (!queue->head)
 	{
-		assert(queue->tail == NULL);
+		assert(!queue->tail);
 		queue->head = queue->tail = item;
 	}
 	else
@@ -136,7 +136,7 @@ void clrt_command_queue_free(void *data)
 	clrt_command_queue_enqueue(queue, item);
 	clFlush(queue);
 	pthread_join(queue->queue_thread, NULL);
-	assert(queue->head == NULL);
+	assert(!queue->head);
 	pthread_mutex_destroy(&queue->lock);
 	pthread_cond_destroy(&queue->cond_process);
 	free(queue);
@@ -151,7 +151,7 @@ struct clrt_queue_item_t *clrt_command_queue_dequeue(struct _cl_command_queue *q
 	
 	/* In order to procede, the list must be processable
 	 * and there must be at least one item present */
-	while (!queue->process || queue->head == NULL)
+	while (!queue->process || !queue->head)
 		pthread_cond_wait(&queue->cond_process, &queue->lock);
 	
 	/* Dequeue an Item */
@@ -159,13 +159,13 @@ struct clrt_queue_item_t *clrt_command_queue_dequeue(struct _cl_command_queue *q
 	queue->head = queue->head->next;
 	if (item == queue->tail)
 	{
-		assert(queue->head == NULL);
+		assert(!queue->head);
 		queue->tail = NULL;
 		queue->process = 0;
 	}
 
 	/* If we get the special termination item, return NULL */
-	if (item->data == NULL)
+	if (!item->data)
 	{
 		free(item);
 		item = NULL;
@@ -181,7 +181,7 @@ void clrt_command_queue_perform_item(struct clrt_queue_item_t *item)
 	if (item->num_wait_events > 0)
 		clWaitForEvents(item->num_wait_events, item->wait_events);
 	item->action(item->data);
-	if (item->done_event != NULL)
+	if (item->done_event)
 		clrt_event_set_status(item->done_event, CL_COMPLETE);
 }
 
@@ -193,7 +193,7 @@ void *clrt_command_queue_thread_proc(void *data)
 
 	queue  = (struct _cl_command_queue *) data;
 
-	while ((item = clrt_command_queue_dequeue(queue)) != NULL)
+	while ((item = clrt_command_queue_dequeue(queue)))
 	{
 		clrt_command_queue_perform_item(item);
 		free(item->data);
@@ -230,7 +230,7 @@ cl_command_queue clCreateCommandQueue(
 	/* check to see that context is valid */
 	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_CONTEXT;
 		return NULL;
 	}
@@ -244,13 +244,13 @@ cl_command_queue clCreateCommandQueue(
 		}
 	if (!has_device)
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_DEVICE;
 		return NULL;
 	}
 
 	queue = (struct _cl_command_queue *) malloc(sizeof (struct _cl_command_queue));
-	if(queue == NULL)
+	if(!queue)
 		fatal("%s: out of memory", __FUNCTION__);
 	queue->device = device;
 	queue->head = NULL;
@@ -261,7 +261,7 @@ cl_command_queue clCreateCommandQueue(
 	pthread_create(&queue->queue_thread, NULL, clrt_command_queue_thread_proc, queue);
 	clrt_object_create(queue, CLRT_OBJECT_COMMAND_QUEUE, clrt_command_queue_free);
 
-	if (errcode_ret != NULL)
+	if (errcode_ret)
 		*errcode_ret = CL_SUCCESS;
 
 	return queue;
@@ -351,7 +351,7 @@ cl_int clEnqueueReadBuffer(
 		return status;
 
 	transfer = (struct clrt_mem_transfer_t *) malloc(sizeof (struct clrt_mem_transfer_t));
-	if (transfer == NULL)
+	if (!transfer)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	transfer->src = (char *) buffer->buffer + offset;
@@ -442,7 +442,7 @@ cl_int clEnqueueWriteBuffer(
 		return status;
 
 	transfer = (struct clrt_mem_transfer_t *) malloc(sizeof (struct clrt_mem_transfer_t));
-	if (transfer == NULL)
+	if (!transfer)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	transfer->dst = (char *) buffer->buffer + offset;
@@ -526,7 +526,7 @@ cl_int clEnqueueCopyBuffer(
 		return CL_INVALID_MEM_OBJECT;
 	if ((src_buffer->size < src_offset + cb) || (dst_buffer->size < dst_offset + cb))
 		return CL_INVALID_VALUE;
-	if(cb == 0)
+	if(!cb)
 		return CL_INVALID_VALUE;
 	if((src_buffer == dst_buffer) && ((src_offset == dst_offset) || 
 		((src_offset < dst_offset) && (src_offset + cb > dst_offset)) ||
@@ -539,7 +539,7 @@ cl_int clEnqueueCopyBuffer(
 		return status;
 
 	transfer = (struct clrt_mem_transfer_t *) malloc(sizeof (struct clrt_mem_transfer_t));
-	if (transfer == NULL)
+	if (!transfer)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	transfer->dst = (char *) dst_buffer->buffer + dst_offset;
@@ -747,7 +747,7 @@ cl_int clEnqueueNDRangeKernel(
 	m2s_clrt_debug("\tevent = %p", event);
 
 	run = (struct clrt_execution_t *) malloc(sizeof (struct clrt_execution_t));
-	if (run == NULL)
+	if (!run)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
@@ -770,12 +770,12 @@ cl_int clEnqueueNDRangeKernel(
 	/* copy over dimensions */
 	run->dims = work_dim;
 	run->global = (size_t *) malloc(sizeof (size_t) * 3);
-	if (run->global == NULL)
+	if (!run->global)
 		fatal("%s: out of memory", __FUNCTION__);
 	memcpy(run->global, global_work_size, sizeof (size_t) * work_dim);
 
 	run->local = (size_t *) malloc(sizeof (size_t) * 3);
-	if (run->local == NULL)
+	if (!run->local)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	memcpy(run->local, local_work_size, sizeof (size_t) * work_dim);
@@ -789,7 +789,7 @@ cl_int clEnqueueNDRangeKernel(
 	run->num_groups = 1;
 	for (i = 0; i < 3; i++)
 	{
-		assert(run->global[i] % run->local[i] == 0);	
+		assert(!(run->global[i] % run->local[i]));	
 		
 		num_groups[i] = run->global[i] / run->local[i];
 		run->num_groups *= num_groups[i];
@@ -797,7 +797,7 @@ cl_int clEnqueueNDRangeKernel(
 	run->kernel = kernel;
 	run->next_group = 0;
 	run->group_starts = (size_t *) malloc(3 * sizeof (size_t) * run->num_groups);
-	if(run->group_starts == NULL)
+	if(!run->group_starts)
 		fatal("%s: out of memory", __FUNCTION__);
 	
 	pthread_mutex_init(&run->mutex, NULL);
@@ -815,7 +815,7 @@ cl_int clEnqueueNDRangeKernel(
 			}
 
 	kitem = (struct clrt_kernel_run_t *) malloc(sizeof (struct clrt_kernel_run_t));
-	if (kitem == NULL)
+	if (!kitem)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	kitem->device = command_queue->device;
