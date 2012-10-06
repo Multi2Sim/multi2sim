@@ -45,7 +45,7 @@ void clrt_wait(struct _cl_event *event)
 	if (event->queue)
 	{
 		pthread_mutex_lock(&event->queue->lock);
-		if (event->queue->head != NULL && event->queue->process == 0)
+		if (event->queue->head && !event->queue->process)
 		{
 			event->queue->process = 1;
 			pthread_cond_signal(&event->queue->cond_process);
@@ -85,7 +85,7 @@ struct _cl_event *clrt_event_create(struct _cl_command_queue *queue)
 	struct _cl_event *event;
 
 	event = (struct _cl_event *) malloc(sizeof (struct _cl_event));
-	if (event == NULL)
+	if (!event)
 		fatal("%s: out of memory", __FUNCTION__);
 	clrt_object_create(event, CLRT_OBJECT_EVENT, clrt_event_free);
 	
@@ -104,8 +104,8 @@ int clrt_event_wait_list_check(
 {
 	unsigned int i;
 
-	if ((event_list == NULL && num_events != 0) 
-		|| (event_list != NULL && num_events == 0))
+	if ((!event_list && num_events) 
+		|| (event_list && !num_events))
 		return CL_INVALID_EVENT_WAIT_LIST;
 
 	/* Verify that the parameter list is valid up-front */
@@ -135,7 +135,7 @@ cl_int clWaitForEvents(
 	m2s_clrt_debug("\tnum_events = %d", num_events);
 	m2s_clrt_debug("\tevent_list = %p", event_list);
 
-	if (num_events == 0 || event_list == NULL)
+	if (!num_events || !event_list)
 		return CL_INVALID_VALUE;
 
 	/* Verify that the parameter list is valid up-front */
@@ -176,13 +176,13 @@ cl_event clCreateUserEvent(
 	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
 
 	event = (struct _cl_event *) malloc(sizeof (struct _cl_event));
-	if (event == NULL)
+	if (!event)
 		fatal("%s: out of memory", __FUNCTION__);
 	
 	/* check to see that context is valid */
 	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_CONTEXT;
 		return NULL;
 	}
@@ -283,7 +283,7 @@ cl_int clFlush(
 
 	pthread_mutex_lock(&command_queue->lock);
 
-	if (command_queue->head != NULL && command_queue->process == 0)
+	if (command_queue->head && !command_queue->process)
 	{
 		command_queue->process = 1;
 		pthread_cond_signal(&command_queue->cond_process);
@@ -310,7 +310,7 @@ cl_int clFinish(
 	cl_event event = clrt_event_create(command_queue);
 
 	finish = (struct clrt_finish_t *) malloc(sizeof (struct clrt_finish_t));
-	if (finish == NULL)
+	if (!finish)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	item = clrt_queue_item_create(

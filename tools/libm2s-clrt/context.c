@@ -73,43 +73,43 @@ cl_context clCreateContext(
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) pfn_notify, 0);
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) user_data, 0);
 
-	if (m2s_platform == NULL)
+	if (!m2s_platform)
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_PLATFORM;		
 		return NULL;
 	}
 
-	if (devices == NULL || num_devices == 0)
+	if (!devices || !num_devices)
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_VALUE;
 		return NULL;
 	}
 
 	if (*devices != m2s_device)
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_DEVICE;
 		return NULL;
 	}
 	
 
 	context = (struct _cl_context *) malloc(sizeof (struct _cl_context));
-	if (context == NULL)
+	if (!context)
 		fatal("%s: out of memory", __FUNCTION__);
 	clrt_object_create(context, CLRT_OBJECT_CONTEXT, clrt_context_free);
 
 
 	context->num_devices = 1;
 	context->devices = (struct _cl_device_id **) malloc(sizeof (struct _cl_device_id *) * context->num_devices);
-	if (context->devices == NULL)
+	if (!context->devices)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	for (i = 0; i < context->num_devices; i++)
 		context->devices[i] = devices[i];
 
-	if (errcode_ret != NULL)
+	if (errcode_ret)
 		*errcode_ret = CL_SUCCESS;
 
 	return context;
@@ -133,14 +133,14 @@ cl_context clCreateContextFromType(
 
 	if (device_type == CL_DEVICE_TYPE_GPU || device_type == CL_DEVICE_TYPE_ACCELERATOR)
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_DEVICE_NOT_FOUND;
 		return NULL;
 	}
 
 	if (device_type != CL_DEVICE_TYPE_CPU && device_type != CL_DEVICE_TYPE_DEFAULT && device_type != CL_DEVICE_TYPE_ALL)
 	{
-		if (errcode_ret != NULL)
+		if (errcode_ret)
 			*errcode_ret = CL_INVALID_DEVICE_TYPE;
 	}
 
