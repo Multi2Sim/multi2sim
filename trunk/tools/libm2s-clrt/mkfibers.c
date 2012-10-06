@@ -15,9 +15,9 @@ void make_fiber(struct fiber_t *fiber, fiber_proc_t fiber_proc, int num_args, ..
 
 	params = &num_args + 1;
 
-	assert((int) params % sizeof (int) == 0);
-	assert((int) fiber->stack_bottom % sizeof (int) == 0);
-	assert(fiber->stack_size % sizeof (int) == 0);
+	assert(!((int) params % sizeof (int)));
+	assert(!((int) fiber->stack_bottom % sizeof (int)));
+	assert(!(fiber->stack_size % sizeof (int)));
 
 	stack_words = fiber->stack_size / sizeof (int);
 	stack_bottom = (int *) fiber->stack_bottom;
@@ -34,9 +34,9 @@ void make_fiber(struct fiber_t *fiber, fiber_proc_t fiber_proc, int num_args, ..
 void make_fiber_ex(struct fiber_t *fiber, fiber_proc_t fiber_proc, return_address_t return_proc, int arg_size, void *args)
 {
 	arg_size *= sizeof (size_t);
-	assert(arg_size % sizeof (size_t) == 0);
-	assert((size_t) fiber->stack_bottom % sizeof (size_t) == 0);
-	assert(fiber->stack_size % sizeof (size_t) == 0);
+	assert(!(arg_size % sizeof (size_t)));
+	assert(!((size_t) fiber->stack_bottom % sizeof (size_t)));
+	assert(!(fiber->stack_size % sizeof (size_t)));
 
 	memcpy((char *) fiber->stack_bottom + fiber->stack_size - arg_size, args, arg_size);
 

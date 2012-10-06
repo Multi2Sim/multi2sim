@@ -131,6 +131,7 @@ typedef void (*clrt_barrier_t)(int option);
 
 enum clrt_param_type_t
 {
+	CLRT_TYPE_INVALID = 0,
 	CLRT_TYPE_CHAR = 1,
 	CLRT_TYPE_SHORT = 2,
 	CLRT_TYPE_INT = 3,
@@ -169,6 +170,11 @@ enum clrt_param_type_t
 	CLRT_TYPE_DOUBLE8 = 36,
 	CLRT_TYPE_DOUBLE16 = 37
 };
+
+/*
+* Does not start with invalid as this is based on the ELF produced 
+* by the AMD APP SDK.
+*/
 
 enum clrt_memory_t
 {

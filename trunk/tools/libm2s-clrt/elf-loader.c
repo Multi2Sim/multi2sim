@@ -55,10 +55,10 @@ void *get_function_info(void *elf, const char *name, size_t **metadata, int *met
 	Elf32_Sym *dynsect_start;
 
 	fullname = (char *) malloc(strlen(name) + 100);
-	if (fullname == NULL)
+	if (!fullname)
 		fatal("%s: out of memory", __FUNCTION__);
 	metaname = (char *) malloc(strlen(name) + 100);
-	if (metaname == NULL)
+	if (!metaname)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	sprintf(fullname, "__OpenCL_%s_kernel", name);
@@ -89,14 +89,14 @@ void *get_function_info(void *elf, const char *name, size_t **metadata, int *met
 			strtab_size = section[i].sh_size;
 		}
 
-		if (strtab_start != 0 && dynsect_start != 0)
+		if (strtab_start && dynsect_start)
 			break;
 	}
 	
-	assert(dynsect_start != NULL);
-	assert(dynsect_size % sizeof (Elf32_Sym) == 0);
+	assert(dynsect_start);
+	assert(!(dynsect_size % sizeof (Elf32_Sym)));
 
-	assert(strtab_start != NULL);
+	assert(strtab_start);
 	assert(strtab_start[0] == '\0');
 	assert(strtab_start[strtab_size - 1] == '\0');
 

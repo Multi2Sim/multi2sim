@@ -79,10 +79,10 @@ cl_int clGetPlatformIDs(
 				version.major, version.minor, m2s_clrt_err_version);
 
 	/* Create the platform object if it has not already been made */
-	if (m2s_platform == NULL)
+	if (!m2s_platform)
 	{
 		m2s_platform = (struct _cl_platform_id *) malloc(sizeof (struct _cl_platform_id));
-		if (m2s_platform == NULL)
+		if (!m2s_platform)
 			fatal("%s: out of memory", __FUNCTION__);
 		m2s_platform->empty = 0;
 	}	
@@ -93,11 +93,11 @@ cl_int clGetPlatformIDs(
 
 	/* If an array is passed in, it must have a corresponding length
 	 * and the client must either want a count or a list of platforms */
-	if ((num_entries == 0 && platforms != NULL) || (num_entries != 0 && platforms == NULL) || (num_platforms == 0 && platforms == NULL))
+	if ((!num_entries && platforms) || (num_entries && !platforms) || (!num_platforms && !platforms))
 		return CL_INVALID_VALUE;
 
 	/* If they just want to know how many platforms there are, tell them */
-	else if (num_entries == 0 && num_platforms != NULL)
+	else if (!num_entries && num_platforms)
 	{
 		*num_platforms = 1;
 		return CL_SUCCESS;
@@ -106,7 +106,7 @@ cl_int clGetPlatformIDs(
 	/* The client wants the platform itself.  Also return the number of platforms inserted if they asked for it */
 	else
 	{
-		if (num_platforms != NULL)
+		if (num_platforms)
 			*num_platforms = 1;
 		*platforms = m2s_platform;
 	
