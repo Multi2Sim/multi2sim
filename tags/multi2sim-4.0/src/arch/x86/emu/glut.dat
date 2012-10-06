@@ -1,0 +1,4 @@
+X86_GLUT_DEFINE_CALL(init, 1)
+X86_GLUT_DEFINE_CALL(get_event, 2)
+X86_GLUT_DEFINE_CALL(new_window, 3)
+X86_GLUT_DEFINE_CALL(test_draw, 4)
