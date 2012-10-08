@@ -1,1 +1,56 @@
-Rafael Ubal (ubal@ece.neu.edu)
+================================================================================
+AUTHOR
+	Dana Schaa (dschaa@ece.neu.edu)
+
+DESCRIPTION
+
+	Dana is one of the authors of the AMD Southern Islands architectural
+	model, including the disassembler, functional simulator, timing
+	simulator, and visualization tool.
+
+	Dana has implemented the NMOESI coherence protocol, the mechanism used
+	in the memory hierarchy to communicate between caches shared by CPU and
+	GPU timing models.
+
+FILES
+	* All files in src/arch/southern-islands
+	* src/mem-system/directory.c
+	* src/mem-system/mem-system.c
+	* src/mem-system/config.c
+	* src/mem-system/local-mem-protocol.c
+	* src/mem-system/module.c
+	* src/mem-system/nmoesi-protocol.c
+
+================================================================================
+
+AUTHOR
+	Rustam Miftakhutdinov (rustam@mail.utexas.edu)
+
+DESCRIPTION
+
+	Rustam has implemented support for application checkpointing in the x86
+	emulator, adding options --x86-load-checkpoint, --x86-save-checkpoint,
+	and --x86-last-inst to the command-line interface.
+
+FILES
+	* src/arch/x86/emu/checkpoint.c
+	* src/arch/x86/emu/x86-emu.h
+
+
+================================================================================
+
+AUTHOR
+	Sudhanshu Shukla (sudhan@iitk.ac.in)
+
+DESCRIPTION
+	
+	Sudhanshu has implemented support for a set of SSE instructions in the
+	x86 emulator. He has implemented a register renaming mechanism for XMM
+	registers in the x86 timing simulator, and improved the algorithm of
+	micro-code generation for SSE instructions.
+
+FILES
+	* src/arch/x86/emu/machine-xmm.c
+	* src/arch/x86/emu/uinst.c
+	* src/arch/x86/timing/reg-file.c
+
