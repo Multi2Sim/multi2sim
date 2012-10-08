@@ -54,3 +54,17 @@ FILES
 	* src/arch/x86/emu/uinst.c
 	* src/arch/x86/timing/reg-file.c
 
+================================================================================
+AUTHOR
+	Zhongliang Chen (zhonchen@ece.neu.edu)
+
+DESCRIPTION
+
+	Zhongliang is one of the authors of the NVIDIA CUDA libraries and the 
+	NVIDIA Fermi architectural model. He has implemented the NVIDIA Fermi 
+	disassembler and functional simulator.
+
+FILES
+	* All files in src/arch/fermi
+	* All files in tools/libm2s-cuda
+
