@@ -19,10 +19,10 @@
 
 #include <math.h>
 
-#include <evergreen-emu.h>
-#include <mem-system.h>
-
 #include <arch/x86/emu/x86-emu.h>
+#include <mem-system/mem-system.h>
+
+#include "evergreen-emu.h"
 
 
 char *evg_err_isa_note =

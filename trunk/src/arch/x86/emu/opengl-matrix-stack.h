@@ -20,10 +20,14 @@
 
 #ifndef X86_OPENGL_MATRIX_STACK_H
 #define X86_OPENGL_MATRIX_STACK_H
-#include <x86-emu.h>
-#include <mem-system.h>
+
 #include <GL/gl.h>
-#include <opengl-matrix.h>
+
+#include <mem-system/mem-system.h>
+
+#include "opengl-matrix.h"
+#include "x86-emu.h"
+
 
 /* Maximum modelview matrix stack depth */
 #define MAX_MODELVIEW_STACK_DEPTH 32

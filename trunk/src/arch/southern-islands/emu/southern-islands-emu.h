@@ -24,15 +24,14 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <config.h>
-#include <debug.h>
-#include <elf-format.h>
-#include <linked-list.h>
-#include <list.h>
-#include <mhandle.h>
-#include <misc.h>
-
 #include <arch/southern-islands/asm/southern-islands-asm.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/config.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/elf-format.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/list.h>
 
 
 /* 

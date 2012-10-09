@@ -19,10 +19,10 @@
 
 #include <math.h>
 
-#include <fermi-emu.h>
-#include <mem-system.h>
 #include <arch/x86/emu/x86-emu.h>
+#include <mem-system/mem-system.h>
 
+#include "fermi-emu.h"
 
 
 char *frm_err_isa_note =

@@ -19,15 +19,18 @@
 
 #ifndef X86_OPENGL_CONTEXT_H
 #define X86_OPENGL_CONTEXT_H
-#include <x86-emu.h>
-#include <mem-system.h>
+
 #include <GL/glut.h>
 
-#include <opengl-buffers.h>
-#include <opengl-viewport.h>
-#include <opengl-matrix.h>
-#include <opengl-matrix-stack.h>
-#include <opengl-vertex.h>
+#include <mem-system/mem-system.h>
+
+#include "x86-emu.h"
+#include "opengl-buffers.h"
+#include "opengl-viewport.h"
+#include "opengl-matrix.h"
+#include "opengl-matrix-stack.h"
+#include "opengl-vertex.h"
+
  
 #define MAX_TEXTURE_COORD_UNITS 8
 #define MAX_TEXTURE_IMAGE_UNITS 16

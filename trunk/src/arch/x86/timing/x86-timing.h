@@ -22,12 +22,12 @@
 
 #include <time.h>
 #include <signal.h>
-#include <list.h>
-#include <linked-list.h>
-#include <repos.h>
 
 #include <arch/x86/emu/x86-emu.h>
-#include <mem-system.h>
+#include <lib/struct/list.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/repos.h>
+#include <mem-system/mem-system.h>
 
 
 

@@ -234,19 +234,11 @@ M2S_INCLUDES=" \
 \
 -I\$(top_srcdir)/src \
 \
--I\$(top_srcdir)/src/lib/esim \
--I\$(top_srcdir)/src/lib/mhandle \
--I\$(top_srcdir)/src/lib/misc \
--I\$(top_srcdir)/src/lib/struct \
-\
 -I\$(top_srcdir)/src/visual/common \
 -I\$(top_srcdir)/src/visual/evergreen \
 -I\$(top_srcdir)/src/visual/memory \
 -I\$(top_srcdir)/src/visual/southern-islands \
 -I\$(top_srcdir)/src/visual/x86 \
-\
--I\$(top_srcdir)/src/mem-system \
--I\$(top_srcdir)/src/network \
 \
 "
 

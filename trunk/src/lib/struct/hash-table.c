@@ -22,13 +22,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <debug.h>
-#include <hash-table.h>
-#include <mhandle.h>
+#include <lib/mhandle/mhandle.h>
+
+#include "debug.h"
+#include "hash-table.h"
 
 
 #define	HASH_TABLE_MIN_INITIAL_SIZE  5
-
 
 
 

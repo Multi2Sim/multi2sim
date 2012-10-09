@@ -17,8 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <evergreen-timing.h>
-#include <heap.h>
+#include <lib/struct/heap.h>
+
+#include "evergreen-timing.h"
 
 
 

@@ -19,9 +19,12 @@
 #ifndef X86_OPENGL_BUFFERS_H
 #define X86_OPENGL_BUFFERS_H
 
-#include <x86-emu.h>
-#include <mem-system.h>
 #include <GL/glut.h>
+
+#include <mem-system/mem-system.h>
+
+#include "x86-emu.h"
+
 
 #define COLOR_BUFFER_COUNT 4
 

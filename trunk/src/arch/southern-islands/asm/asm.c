@@ -17,13 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <misc.h>
 #include <assert.h>
 #include <string.h>
-#include <debug.h>
 #include <ctype.h>
-#include <elf-format.h>
-#include <mhandle.h>
+
+#include <lib/misc/misc.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/elf-format.h>
 
 #include "southern-islands-asm.h"
 

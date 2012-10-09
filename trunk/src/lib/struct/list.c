@@ -18,9 +18,11 @@
  */
 
 #include <stdlib.h>
-#include <mhandle.h>
-#include <debug.h>
-#include <list.h>
+
+#include <lib/mhandle/mhandle.h>
+
+#include "debug.h"
+#include "list.h"
 
 
 #define INLIST(X) (((X) + list->size) % list->size)

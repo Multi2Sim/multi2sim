@@ -19,9 +19,13 @@
 
 #ifndef X86_OPENGL_VIEWPORT
 #define X86_OPENGL_VIEWPORT
-#include <x86-emu.h>
-#include <mem-system.h>
+
 #include <GL/glut.h>
+
+#include <mem-system/mem-system.h>
+
+#include "x86-emu.h"
+
 
 /* OpenGL Viewport attribute */
 struct x86_opengl_viewport_attributes_t
