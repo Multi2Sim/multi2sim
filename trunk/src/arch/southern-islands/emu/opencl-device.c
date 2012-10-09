@@ -21,8 +21,8 @@
 #include <debug.h>
 #include <stdlib.h>
 
-#include <southern-islands-emu.h>
-#include <southern-islands-timing.h>
+#include <arch/southern-islands/emu/southern-islands-emu.h>
+#include <arch/southern-islands/timing/southern-islands-timing.h>
 #include <mem-system.h>
 #include <arch/x86/emu/x86-emu.h>
 

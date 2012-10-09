@@ -32,7 +32,7 @@
 #include <mhandle.h>
 #include <misc.h>
 
-#include <evergreen-asm.h>
+#include <arch/evergreen/asm/evergreen-asm.h>
 #include <mem-system.h>
 
 
@@ -1189,7 +1189,7 @@ extern evg_isa_inst_func_t *evg_isa_inst_func;
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	extern void evg_isa_##_name##_impl(struct evg_work_item_t *work_item, \
 			struct evg_inst_t *inst);
-#include <evergreen-asm.dat>
+#include <arch/evergreen/asm/evergreen-asm.dat>
 #undef DEFINST
 
 /* Access to constant memory */

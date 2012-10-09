@@ -19,8 +19,8 @@
 
 #include <hash-table.h>
 
-#include <southern-islands-asm.h>
-#include <southern-islands-emu.h>
+#include <arch/southern-islands/asm/southern-islands-asm.h>
+#include <arch/southern-islands/emu/southern-islands-emu.h>
 
 
 
