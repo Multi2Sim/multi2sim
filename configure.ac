@@ -231,6 +231,9 @@ AC_SUBST([CFLAGS])
 #
 
 M2S_INCLUDES=" \
+\
+-I\$(top_srcdir)/src \
+\
 -I\$(top_srcdir)/src/lib/esim \
 -I\$(top_srcdir)/src/lib/mhandle \
 -I\$(top_srcdir)/src/lib/misc \
@@ -251,10 +254,6 @@ M2S_INCLUDES=" \
 -I\$(top_srcdir)/src/arch/southern-islands/asm \
 -I\$(top_srcdir)/src/arch/southern-islands/emu \
 -I\$(top_srcdir)/src/arch/southern-islands/timing \
-\
--I\$(top_srcdir)/src/arch/x86/asm \
--I\$(top_srcdir)/src/arch/x86/emu \
--I\$(top_srcdir)/src/arch/x86/timing \
 \
 -I\$(top_srcdir)/src/visual/common \
 -I\$(top_srcdir)/src/visual/evergreen \

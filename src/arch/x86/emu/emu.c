@@ -18,8 +18,8 @@
  */
 
 #include <mem-system.h>
-#include <x86-emu.h>
-#include <x86-timing.h>
+#include <arch/x86/emu/x86-emu.h>
+#include <arch/x86/timing/x86-timing.h>
 
 
 /*

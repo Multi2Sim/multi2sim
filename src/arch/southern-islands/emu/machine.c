@@ -22,7 +22,7 @@
 
 #include <southern-islands-emu.h>
 #include <mem-system.h>
-#include <x86-emu.h>
+#include <arch/x86/emu/x86-emu.h>
 
 
 char *err_si_isa_note =

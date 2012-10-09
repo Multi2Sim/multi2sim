@@ -33,7 +33,6 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <signal.h>
-#include <x86-asm.h>
 #include <time.h>
 #include <timer.h>
 #include <pthread.h>
@@ -41,6 +40,8 @@
 #include <errno.h>
 #include <esim.h>
 #include <sys/time.h>
+
+#include <arch/x86/asm/x86-asm.h>
 
 #include <southern-islands-emu.h>
 #include <evergreen-emu.h>
@@ -508,7 +509,7 @@ extern unsigned short x86_isa_guest_fpcw;
 /* References to functions emulating x86 instructions */
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) \
 		void x86_isa_##name##_impl(struct x86_ctx_t *ctx);
-#include <x86-asm.dat>
+#include <arch/x86/asm/x86-asm.dat>
 #undef DEFINST
 
 void x86_isa_error(struct x86_ctx_t *ctx, char *fmt, ...);

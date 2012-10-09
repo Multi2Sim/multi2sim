@@ -20,7 +20,7 @@
 #include <heap.h>
 
 #include <evergreen-timing.h>
-#include <x86-emu.h>
+#include <arch/x86/emu/x86-emu.h>
 
 
 char *evg_faults_file_name = "";

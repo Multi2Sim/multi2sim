@@ -23,7 +23,7 @@
 
 #include <evergreen-emu.h>
 #include <mem-system.h>
-#include <x86-emu.h>
+#include <arch/x86/emu/x86-emu.h>
 
 
 struct evg_opencl_kernel_t *evg_opencl_kernel_create()
