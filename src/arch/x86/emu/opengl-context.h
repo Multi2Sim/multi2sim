@@ -24,7 +24,7 @@
 
 #include <mem-system/mem-system.h>
 
-#include "x86-emu.h"
+#include "emu.h"
 #include "opengl-buffers.h"
 #include "opengl-viewport.h"
 #include "opengl-matrix.h"

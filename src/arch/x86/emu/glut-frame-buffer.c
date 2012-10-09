@@ -21,7 +21,7 @@
 
 #include <mem-system/mem-system.h>
 
-#include "x86-emu.h"
+#include "emu.h"
 
 
 

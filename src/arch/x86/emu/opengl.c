@@ -22,7 +22,7 @@
 #include <mem-system/mem-system.h>
 
 #include "opengl-context.h"
-#include "x86-emu.h"
+#include "emu.h"
 
 
 static char *err_x86_opengl_code =

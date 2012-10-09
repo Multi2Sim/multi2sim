@@ -25,7 +25,7 @@
 #include <mem-system/mem-system.h>
 
 #include "opengl-vertex.h"
-#include "x86-emu.h"
+#include "emu.h"
 
 
 /* OpenGL: Different kinds of 4x4 transformation matrices */

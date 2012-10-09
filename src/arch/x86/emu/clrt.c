@@ -19,7 +19,7 @@
 
 #include <mem-system/mem-system.h>
 
-#include "x86-emu.h"
+#include "emu.h"
 
 
 static char *x86_clrt_err_call =

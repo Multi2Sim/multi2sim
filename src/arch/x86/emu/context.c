@@ -19,7 +19,7 @@
 
 #include <mem-system/mem-system.h>
 
-#include "x86-emu.h"
+#include "emu.h"
 
 
 int x86_ctx_debug_category;

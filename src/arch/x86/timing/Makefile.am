@@ -2,8 +2,6 @@ lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
 	\
-	x86-timing.h \
-	\
 	stg-fetch.c \
 	stg-decode.c \
 	stg-dispatch.c \
@@ -19,6 +17,7 @@ libtiming_a_SOURCES = \
 	reg-file.c \
 	rob.c \
 	sched.c \
+	timing.h \
 	trace-cache.c \
 	uop.c
 

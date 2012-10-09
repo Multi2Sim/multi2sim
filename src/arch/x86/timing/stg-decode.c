@@ -18,7 +18,7 @@
  */
 
 
-#include "x86-timing.h"
+#include "timing.h"
 
 
 static void x86_cpu_decode_thread(int core, int thread)

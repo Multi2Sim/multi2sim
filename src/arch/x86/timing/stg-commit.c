@@ -18,7 +18,7 @@
  */
 
 
-#include "x86-timing.h"
+#include "timing.h"
 
 
 static char *err_x86_cpu_commit_stall =
