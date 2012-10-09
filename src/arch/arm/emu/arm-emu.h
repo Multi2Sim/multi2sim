@@ -46,10 +46,10 @@
 #include <esim.h>
 #include <sys/time.h>
 #include <math.h>
-#include <arm-asm.h>
 
-#include <southern-islands-emu.h>
-#include <evergreen-emu.h>
+#include <arch/arm/asm/arm-asm.h>
+#include <arch/southern-islands/emu/southern-islands-emu.h>
+#include <arch/evergreen/emu/evergreen-emu.h>
 
 
 /* Some forward declarations */
@@ -271,7 +271,7 @@ typedef void (*arm_isa_inst_func_t)(struct arm_ctx_t *ctx);
 /* Declarations of function prototypes implementing Evergreen ISA */
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	extern void arm_isa_##_name##_impl(struct arm_ctx_t *ctx);
-#include <arm-asm.dat>
+#include <arch/arm/asm/arm-asm.dat>
 #undef DEFINST
 
 enum arm_isa_op2_cat_t

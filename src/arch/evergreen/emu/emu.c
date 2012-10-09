@@ -19,7 +19,7 @@
 
 #include <evergreen-emu.h>
 #include <mem-system.h>
-#include <evergreen-timing.h>
+#include <arch/evergreen/timing/evergreen-timing.h>
 
 #include <arch/x86/emu/x86-emu.h>
 

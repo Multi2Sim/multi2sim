@@ -53,7 +53,7 @@ void si_isa_init()
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size) \
 	extern void si_isa_##_name##_impl(struct si_work_item_t *work_item, struct si_inst_t *inst); \
 	si_isa_inst_func[SI_INST_##_name] = si_isa_##_name##_impl;
-#include <southern-islands-asm.dat>
+#include <arch/southern-islands/asm/southern-islands-asm.dat>
 #undef DEFINST
 
 	/* Repository of deferred tasks */

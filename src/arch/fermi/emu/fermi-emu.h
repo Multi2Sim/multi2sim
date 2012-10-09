@@ -29,7 +29,7 @@
 #include <misc.h>
 #include <elf-format.h>
 
-#include <fermi-asm.h>
+#include <arch/fermi/asm/fermi-asm.h>
 
 
 
@@ -662,7 +662,7 @@ extern frm_isa_inst_func_t *frm_isa_inst_func;
 #define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
         extern void frm_isa_##_name##_impl(struct frm_thread_t *thread, \
                         struct frm_inst_t *inst);
-#include <fermi-asm.dat>
+#include <arch/fermi/asm/fermi-asm.dat>
 #undef DEFINST
 
 /* Access to global memory */

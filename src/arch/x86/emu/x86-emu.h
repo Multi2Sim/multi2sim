@@ -43,9 +43,9 @@
 
 #include <arch/x86/asm/x86-asm.h>
 
-#include <southern-islands-emu.h>
-#include <evergreen-emu.h>
-#include <fermi-emu.h>
+#include <arch/southern-islands/emu/southern-islands-emu.h>
+#include <arch/evergreen/emu/evergreen-emu.h>
+#include <arch/fermi/emu/fermi-emu.h>
 
 
 /* Some forward declarations */

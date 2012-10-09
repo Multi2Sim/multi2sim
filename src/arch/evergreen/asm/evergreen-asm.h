@@ -567,7 +567,7 @@ enum evg_inst_enum
 
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _cf_inst, _flags) \
 	EVG_INST_##_name,
-#include <evergreen-asm.dat>
+#include "evergreen-asm.dat"
 #undef DEFINST
 	
 	/* Max */

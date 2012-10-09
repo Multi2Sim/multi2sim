@@ -17,16 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <southern-islands-asm.h>
-#include <evergreen-timing.h>
+#include <arch/southern-islands/asm/southern-islands-asm.h>
+#include <arch/evergreen/timing/evergreen-timing.h>
 #include <arch/x86/timing/x86-timing.h>
-#include <fermi-emu.h>
-#include <fermi-timing.h>
+#include <arch/fermi/emu/fermi-emu.h>
+#include <arch/fermi/timing/fermi-timing.h>
 #include <visual-common.h>
-#include <southern-islands-emu.h>
-#include <southern-islands-timing.h>
-#include <arm-emu.h>
-#include <arm-timing.h>
+#include <arch/southern-islands/emu/southern-islands-emu.h>
+#include <arch/southern-islands/timing/southern-islands-timing.h>
+#include <arch/arm/emu/arm-emu.h>
+#include <arch/arm/timing/arm-timing.h>
 #include <esim.h>
 
 
