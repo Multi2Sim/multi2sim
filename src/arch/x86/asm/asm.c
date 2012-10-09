@@ -20,11 +20,12 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <misc.h>
-#include <debug.h>
-#include <elf-format.h>
 
-#include <x86-asm.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/elf-format.h>
+
+#include "x86-asm.h"
 
 
 /* Flags used in asm.dat */

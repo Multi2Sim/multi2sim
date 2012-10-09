@@ -23,13 +23,13 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <linked-list.h>
-#include <list.h>
-#include <debug.h>
-#include <misc.h>
-#include <elf-format.h>
 
 #include <arch/fermi/asm/fermi-asm.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/elf-format.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/list.h>
 
 
 

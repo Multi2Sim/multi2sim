@@ -17,9 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <repos.h>
+#include <lib/struct/repos.h>
 
-#include <southern-islands-timing.h>
+#include "southern-islands-timing.h"
 
 
 /*

@@ -21,7 +21,8 @@
 #define EVERGREEN_ASM_H
 
 #include <stdio.h>
-#include <elf-format.h>
+
+#include <lib/struct/elf-format.h>
 
 
 /* Microcode Formats */

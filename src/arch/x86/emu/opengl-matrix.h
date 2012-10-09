@@ -19,10 +19,14 @@
 
 #ifndef X86_OPENGL_MATRIX_H
 #define X86_OPENGL_MATRIX_H
-#include <x86-emu.h>
-#include <mem-system.h>
+
 #include <GL/gl.h>
-#include <opengl-vertex.h>
+
+#include <mem-system/mem-system.h>
+
+#include "opengl-vertex.h"
+#include "x86-emu.h"
+
 
 /* OpenGL: Different kinds of 4x4 transformation matrices */
 enum x86_opengl_matrix_mode_t {

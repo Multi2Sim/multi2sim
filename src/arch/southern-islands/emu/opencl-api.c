@@ -18,11 +18,12 @@
  */
 
 #include <assert.h>
-#include <debug.h>
 
-#include <southern-islands-emu.h>
-#include <mem-system.h>
 #include <arch/x86/emu/x86-emu.h>
+#include <lib/struct/debug.h>
+#include <mem-system/mem-system.h>
+
+#include "southern-islands-emu.h"
 
 
 /* Required 'libm2s-opencl.so' version.

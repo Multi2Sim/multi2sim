@@ -19,12 +19,12 @@
 
 #include <stdlib.h>
 #include <assert.h>
-#include <debug.h>
 
-#include <fermi-emu.h>
 #include <arch/x86/emu/x86-emu.h>
-#include <mem-system.h>
+#include <lib/struct/debug.h>
+#include <mem-system/mem-system.h>
 
+#include "fermi-emu.h"
 
 
 /*

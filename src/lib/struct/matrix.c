@@ -19,9 +19,10 @@
 
 #include <stdlib.h>
 
-#include <debug.h>
-#include <matrix.h>
-#include <mhandle.h>
+#include <lib/mhandle/mhandle.h>
+
+#include "debug.h"
+#include "matrix.h"
 
 
 struct matrix_t

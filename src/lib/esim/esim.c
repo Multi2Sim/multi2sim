@@ -23,14 +23,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <debug.h>
-#include <esim.h>
-#include <heap.h>
-#include <linked-list.h>
-#include <list.h>
-#include <mhandle.h>
-#include <misc.h>
-#include <timer.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/heap.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/list.h>
+#include <lib/struct/timer.h>
+
+#include "esim.h"
 
 
 /* Number of in-flight events before a warning is shown (10k events) */

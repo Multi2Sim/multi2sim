@@ -17,8 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <mem-system.h>
-#include <x86-emu.h>
+#include <mem-system/mem-system.h>
+
+#include "x86-emu.h"
+
 
 int x86_loader_debug_category;
 

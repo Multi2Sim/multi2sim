@@ -27,14 +27,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <mhandle.h>
-#include <debug.h>
-#include <esim.h>
-#include <misc.h>
-#include <list.h>
-#include <linked-list.h>
-#include <hash-table.h>
-#include <config.h>
+#include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/hash-table.h>
+#include <lib/struct/config.h>
 
 
 

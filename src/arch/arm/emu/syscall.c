@@ -21,7 +21,6 @@
 #include <syscall.h>
 #include <time.h>
 #include <utime.h>
-
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
@@ -29,8 +28,8 @@
 #include <sys/stat.h>
 #include <sys/times.h>
 
-#include <mem-system.h>
-#include <mhandle.h>
+#include <lib/mhandle/mhandle.h>
+#include <mem-system/mem-system.h>
 #include <arm-emu.h>
 
 

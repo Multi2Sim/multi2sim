@@ -18,10 +18,11 @@
  */
 
 #include <stdio.h>
-#include <debug.h>
-#include <misc.h>
 
-#include <fermi-asm.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+
+#include "fermi-asm.h"
 
 
 

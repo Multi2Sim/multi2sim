@@ -17,8 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <x86-emu.h>
-#include <mem-system.h>
+#include <mem-system/mem-system.h>
+
+#include "x86-emu.h"
 
 
 static char *x86_clrt_err_call =

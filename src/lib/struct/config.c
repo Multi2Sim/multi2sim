@@ -20,13 +20,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <mhandle.h>
 #include <assert.h>
 
-#include <config.h>
-#include <debug.h>
-#include <hash-table.h>
-#include <linked-list.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/hash-table.h>
+#include <lib/struct/linked-list.h>
+
+#include "config.h"
 
 
 #define MAX_STRING_SIZE		1000

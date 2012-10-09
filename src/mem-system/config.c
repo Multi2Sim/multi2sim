@@ -16,14 +16,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#include <config.h>
-#include <misc.h>
-
-#include <mem-system.h>
 #include <arch/x86/timing/x86-timing.h>
 #include <arch/evergreen/timing/evergreen-timing.h>
 #include <arch/southern-islands/timing/southern-islands-timing.h>
+#include <lib/struct/config.h>
+#include <lib/misc/misc.h>
+
+#include "mem-system.h"
 
 
 /*

@@ -25,12 +25,10 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-
-/* Project headers */
-#include <list.h>
-#include <misc.h>
-#include <debug.h>
-#include <elf-format.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/list.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/elf-format.h>
 
 /* Shift operators */
 enum arm_op2_shift_t

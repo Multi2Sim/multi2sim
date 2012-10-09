@@ -17,14 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <config.h>
-#include <debug.h>
-#include <repos.h>
-#include <esim.h>
-#include <heap.h>
-
-#include <evergreen-timing.h>
 #include <arch/x86/emu/x86-emu.h>
+#include <lib/esim/esim.h>
+#include <lib/struct/config.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/repos.h>
+#include <lib/struct/heap.h>
+
+#include "evergreen-timing.h"
 
 
 

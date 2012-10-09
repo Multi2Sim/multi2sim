@@ -20,9 +20,12 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <zlib.h>
+
+#include <lib/struct/bin-config.h>
+#include <mem-system/mem-system.h>
+
 #include "x86-emu.h"
-#include "mem-system.h"
-#include "bin-config.h"
+
 
 void x86_checkpoint_load(char *file_name);
 void x86_checkpoint_save(char *file_name);

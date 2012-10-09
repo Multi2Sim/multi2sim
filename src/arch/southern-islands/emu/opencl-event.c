@@ -18,12 +18,14 @@
  */
 
 #include <assert.h>
-#include <debug.h>
 #include <stdlib.h>
 
-#include <southern-islands-emu.h>
-#include <mem-system.h>
+#include <arch/southern-islands/emu/southern-islands-emu.h>
 #include <arch/x86/emu/x86-emu.h>
+#include <lib/struct/debug.h>
+#include <mem-system/mem-system.h>
+
+#include "southern-islands-emu.h"
 
 
 struct si_opencl_event_t *si_opencl_event_create(enum si_opencl_event_kind_t kind)
