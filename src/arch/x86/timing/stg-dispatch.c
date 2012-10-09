@@ -18,7 +18,7 @@
  */
 
 
-#include "x86-timing.h"
+#include "timing.h"
 
 
 /* Return the reason why a thread cannot be dispatched. If it can,

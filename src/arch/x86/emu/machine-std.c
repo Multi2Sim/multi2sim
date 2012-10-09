@@ -18,7 +18,7 @@
  */
 
 
-#include "x86-emu.h"
+#include "emu.h"
 
 
 /* Macros defined to prevent accidental use of 'mem_<xx>' instructions */

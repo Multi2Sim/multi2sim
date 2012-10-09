@@ -23,7 +23,7 @@
 #include <time.h>
 #include <signal.h>
 
-#include <arch/x86/emu/x86-emu.h>
+#include <arch/x86/emu/emu.h>
 #include <lib/struct/list.h>
 #include <lib/struct/linked-list.h>
 #include <lib/struct/repos.h>

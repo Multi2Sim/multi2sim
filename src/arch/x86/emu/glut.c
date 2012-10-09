@@ -22,7 +22,7 @@
 
 #include <mem-system/mem-system.h>
 
-#include "x86-emu.h"
+#include "emu.h"
 
 
 static char *err_x86_glut_code =

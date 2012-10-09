@@ -25,7 +25,7 @@
 #include <lib/struct/debug.h>
 #include <lib/struct/elf-format.h>
 
-#include "x86-asm.h"
+#include "asm.h"
 
 
 /* Flags used in asm.dat */
@@ -87,7 +87,7 @@ static struct x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] =
 
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) \
 , { op_##name, op1, op2, op3, modrm, imm, pfx, #name, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-#include "x86-asm.dat"
+#include "asm.dat"
 #undef DEFINST
 
 };

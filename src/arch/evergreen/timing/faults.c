@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/x86/emu/x86-emu.h>
+#include <arch/x86/emu/emu.h>
 #include <lib/struct/heap.h>
 
 #include "evergreen-timing.h"

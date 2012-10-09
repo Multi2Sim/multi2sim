@@ -34,7 +34,7 @@
 #include <arch/evergreen/emu/evergreen-emu.h>
 #include <arch/fermi/emu/fermi-emu.h>
 #include <arch/southern-islands/emu/southern-islands-emu.h>
-#include <arch/x86/asm/x86-asm.h>
+#include <arch/x86/asm/asm.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/misc/misc.h>
@@ -508,7 +508,7 @@ extern unsigned short x86_isa_guest_fpcw;
 /* References to functions emulating x86 instructions */
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) \
 		void x86_isa_##name##_impl(struct x86_ctx_t *ctx);
-#include <arch/x86/asm/x86-asm.dat>
+#include <arch/x86/asm/asm.dat>
 #undef DEFINST
 
 void x86_isa_error(struct x86_ctx_t *ctx, char *fmt, ...);
