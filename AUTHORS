@@ -68,3 +68,16 @@ FILES
 	* All files in src/arch/fermi
 	* All files in tools/libm2s-cuda
 
+===============================================================================
+AUTHOR
+	Yash Ukidave (yukidave@ece.neu.edu)
+
+DESCRIPTION
+
+	Yash is one of the authors of the ARM CPU architectural model. He has
+	implemented the ARM disassembler and functional simulator for ARM v7
+	ISA.
+
+FILES
+	* All files in src/arch/arm
+
