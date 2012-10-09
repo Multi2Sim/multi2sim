@@ -21,8 +21,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#include <debug.h>
-#include <repos.h>
+
+#include "debug.h"
+#include "repos.h"
+
 
 struct objtail_t
 {

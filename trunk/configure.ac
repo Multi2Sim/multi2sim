@@ -1,5 +1,6 @@
-AC_INIT
-AM_INIT_AUTOMAKE(multi2sim, 4.0)
+AC_INIT([multi2sim], [4.0])
+AC_CONFIG_SRCDIR([src/m2s.c])
+AM_INIT_AUTOMAKE([nostdinc])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL

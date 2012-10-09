@@ -19,7 +19,7 @@
 
 #include <sys/mman.h>
 
-#include <mem-system.h>
+#include "mem-system.h"
 
 
 /* Total space allocated for memory pages */

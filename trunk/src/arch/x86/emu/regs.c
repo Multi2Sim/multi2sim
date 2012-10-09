@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <x86-emu.h>
+#include "x86-emu.h"
 
 
 struct x86_regs_t *x86_regs_create()

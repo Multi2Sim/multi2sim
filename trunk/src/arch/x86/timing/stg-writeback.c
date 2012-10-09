@@ -18,7 +18,7 @@
  */
 
 
-#include <x86-timing.h>
+#include "x86-timing.h"
 
 
 static void x86_cpu_writeback_core(int core)
