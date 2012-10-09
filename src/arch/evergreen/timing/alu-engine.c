@@ -17,9 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/struct/heap.h>
 
-#include <evergreen-timing.h>
-#include <heap.h>
+#include "evergreen-timing.h"
 
 
 int evg_gpu_alu_engine_inst_mem_latency = 2;  /* Latency of instruction memory */

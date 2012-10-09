@@ -21,35 +21,32 @@
 #define ARM_EMU_H
 
 
+#include <errno.h>
+#include <fcntl.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include <list.h>
-#include <debug.h>
-#include <misc.h>
-#include <elf-format.h>
-#include <mhandle.h>
-#include <debug.h>
-#include <config.h>
-#include <buffer.h>
-#include <list.h>
-#include <linked-list.h>
-#include <elf-format.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <assert.h>
+#include <poll.h>
+#include <pthread.h>
 #include <signal.h>
 #include <time.h>
-#include <timer.h>
-#include <pthread.h>
-#include <poll.h>
-#include <errno.h>
-#include <esim.h>
 #include <sys/time.h>
-#include <math.h>
 
 #include <arch/arm/asm/arm-asm.h>
 #include <arch/southern-islands/emu/southern-islands-emu.h>
 #include <arch/evergreen/emu/evergreen-emu.h>
+#include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/buffer.h>
+#include <lib/struct/config.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/elf-format.h>
+#include <lib/struct/list.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/timer.h>
 
 
 /* Some forward declarations */

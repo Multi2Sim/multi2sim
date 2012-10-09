@@ -20,9 +20,10 @@
 #include <math.h>
 #include <limits.h>
 
-#include <southern-islands-emu.h>
-#include <mem-system.h>
 #include <arch/x86/emu/x86-emu.h>
+#include <mem-system/mem-system.h>
+
+#include "southern-islands-emu.h"
 
 
 char *err_si_isa_note =

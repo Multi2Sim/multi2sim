@@ -21,7 +21,7 @@
 #define SOUTHERN_ISLANDS_TIMING_H
 
 #include <arch/southern-islands/emu/southern-islands-emu.h>
-#include <mem-system.h>
+#include <mem-system/mem-system.h>
 
 
 /*

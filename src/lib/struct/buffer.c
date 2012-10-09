@@ -19,8 +19,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <mhandle.h>
+
+#include <lib/mhandle/mhandle.h>
+
 #include "buffer.h"
+
 
 #define MIN(X,Y) ((X)<(Y)?(X):(Y))
 #define MAX(X,Y) ((X)>(Y)?(X):(Y))

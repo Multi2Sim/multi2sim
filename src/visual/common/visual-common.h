@@ -29,13 +29,13 @@
 #include <string.h>
 #include <zlib.h>
 
-#include <debug.h>
-#include <hash-table.h>
-#include <linked-list.h>
-#include <list.h>
-#include <matrix.h>
-#include <mhandle.h>
-#include <misc.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/hash-table.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/list.h>
+#include <lib/struct/matrix.h>
 
 
 /* Function to invoke visualization tool.

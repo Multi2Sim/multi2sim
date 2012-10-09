@@ -18,13 +18,15 @@
  */
 
 #include <assert.h>
-#include <debug.h>
 #include <stdlib.h>
 
 #include <arch/southern-islands/emu/southern-islands-emu.h>
 #include <arch/southern-islands/timing/southern-islands-timing.h>
-#include <mem-system.h>
 #include <arch/x86/emu/x86-emu.h>
+#include <lib/struct/debug.h>
+#include <mem-system/mem-system.h>
+
+#include "southern-islands-emu.h"
 
 
 /* Create a device */

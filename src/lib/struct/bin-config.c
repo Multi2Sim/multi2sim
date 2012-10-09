@@ -24,10 +24,12 @@
 #include <stdint.h>
 #include <zlib.h>
 #include <assert.h>
-#include <mhandle.h>
-#include <debug.h>
-#include <hash-table.h>
-#include <bin-config.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/hash-table.h>
+
+#include "bin-config.h"
 
 
 /*

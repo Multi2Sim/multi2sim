@@ -18,12 +18,12 @@
  */
 
 #include <assert.h>
-#include <debug.h>
-
-#include <evergreen-emu.h>
-#include <mem-system.h>
 
 #include <arch/x86/emu/x86-emu.h>
+#include <lib/struct/debug.h>
+#include <mem-system/mem-system.h>
+
+#include "evergreen-emu.h"
 
 
 /* Required 'libm2s-opencl.so' version.

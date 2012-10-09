@@ -17,10 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <hash-table.h>
-
 #include <arch/southern-islands/asm/southern-islands-asm.h>
 #include <arch/southern-islands/emu/southern-islands-emu.h>
+#include <lib/struct/hash-table.h>
 
 
 

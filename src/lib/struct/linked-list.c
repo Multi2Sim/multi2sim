@@ -17,11 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
 #include <assert.h>
-#include <mhandle.h>
-#include <debug.h>
-#include <linked-list.h>
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+
+#include "debug.h"
+#include "linked-list.h"
 
 
 /* Creation */

@@ -24,11 +24,12 @@
 #include <string.h>
 #include <zlib.h>
 
-#include <debug.h>
-#include <esim.h>
-#include <heap.h>
-#include <list.h>
-#include <mhandle.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/heap.h>
+#include <lib/struct/list.h>
+
+#include "esim.h"
 
 
 static gzFile *trace_file;

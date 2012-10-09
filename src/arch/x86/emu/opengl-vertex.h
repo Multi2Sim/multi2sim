@@ -19,10 +19,12 @@
 #ifndef X86_OPENGL_VERTEX_H
 #define X86_OPENGL_VERTEX_H
 
-#include <x86-emu.h>
-#include <mem-system.h>
 #include <GL/glut.h>
-#include <opengl-color-channel.h>
+
+#include <mem-system/mem-system.h>
+
+#include "opengl-color-channel.h"
+#include "x86-emu.h"
 
 /* OpenGL vertex */
 struct x86_opengl_vertex_t
