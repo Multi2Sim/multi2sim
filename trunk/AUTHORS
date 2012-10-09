@@ -81,3 +81,18 @@ DESCRIPTION
 FILES
 	* All files in src/arch/arm
 
+===============================================================================
+AUTHOR
+        Xiang Gong (xgong@ece.neu.edu)	
+
+DESCRIPTION
+
+	Xiang is one of the authors of the OpenGL libraries and OpenGL module.
+	He has implemented the shader disassembler and functional simulator for
+	OpenGL.
+
+FILES
+	* All files in src/tools/libm2s-opengl/
+	* All files in src/tools/m2s-opengl-kc/
+	* src/arch/x86/opengl*
+
