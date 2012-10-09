@@ -18,7 +18,7 @@
  */
 
 
-#include <x86-timing.h>
+#include "x86-timing.h"
 
 
 /*

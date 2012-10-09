@@ -17,7 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <opengl-context.h>
+#include "opengl-context.h"
+
 
 struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(void)
 {

@@ -22,10 +22,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/stat.h>
-#include <elf-format.h>
-#include <debug.h>
-#include <list.h>
 
+#include "debug.h"
+#include "elf-format.h"
+#include "list.h"
 
 
 
