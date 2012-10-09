@@ -19,7 +19,7 @@
 
 #include <southern-islands-asm.h>
 #include <evergreen-timing.h>
-#include <x86-timing.h>
+#include <arch/x86/timing/x86-timing.h>
 #include <fermi-emu.h>
 #include <fermi-timing.h>
 #include <visual-common.h>

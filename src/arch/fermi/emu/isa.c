@@ -18,7 +18,7 @@
  */
 
 #include <mem-system.h>
-#include <x86-emu.h>
+#include <arch/x86/emu/x86-emu.h>
 #include <fermi-emu.h>
 
 

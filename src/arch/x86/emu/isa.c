@@ -41,7 +41,7 @@ static x86_isa_inst_func_t x86_isa_inst_func[x86_opcode_count] =
 {
 	NULL /* for op_none */
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) , x86_isa_##name##_impl
-#include <x86-asm.dat>
+#include <arch/x86/asm/x86-asm.dat>
 #undef DEFINST
 };
 

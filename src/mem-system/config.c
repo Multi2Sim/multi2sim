@@ -21,7 +21,7 @@
 #include <misc.h>
 
 #include <mem-system.h>
-#include <x86-timing.h>
+#include <arch/x86/timing/x86-timing.h>
 #include <evergreen-timing.h>
 #include <southern-islands-timing.h>
 
