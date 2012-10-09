@@ -32,7 +32,7 @@
 #include <mhandle.h>
 #include <misc.h>
 
-#include "southern-islands-asm.h"
+#include <arch/southern-islands/asm/southern-islands-asm.h>
 
 
 /* 

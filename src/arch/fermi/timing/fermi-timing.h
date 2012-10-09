@@ -20,10 +20,6 @@
 #ifndef FERMI_TIMING_H
 #define FERMI_TIMING_H
 
-#include <fermi-emu.h>
-
-
-
 void frm_gpu_init(void);
 void frm_gpu_done(void);
 

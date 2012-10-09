@@ -44,7 +44,7 @@ void frm_isa_init()
 	/* Initialize */
 #define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
 	frm_isa_inst_func[FRM_INST_##_name] = frm_isa_##_name##_impl;
-#include <fermi-asm.dat>
+#include <arch/fermi/asm/fermi-asm.dat>
 #undef DEFINST
 }
 
