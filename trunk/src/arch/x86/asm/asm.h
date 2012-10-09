@@ -32,7 +32,7 @@ enum x86_opcode_t
 	x86_op_none = 0,
 
 #define DEFINST(name,op1,op2,op3,modrm,imm,prefixes) op_##name,
-#include "x86-asm.dat"
+#include "asm.dat"
 #undef DEFINST
 
 	x86_opcode_count

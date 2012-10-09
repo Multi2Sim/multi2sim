@@ -22,7 +22,7 @@
 
 #include <arch/southern-islands/emu/southern-islands-emu.h>
 #include <arch/southern-islands/timing/southern-islands-timing.h>
-#include <arch/x86/emu/x86-emu.h>
+#include <arch/x86/emu/emu.h>
 #include <lib/struct/debug.h>
 #include <mem-system/mem-system.h>
 

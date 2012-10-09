@@ -24,7 +24,7 @@
 #include <lib/struct/bin-config.h>
 #include <mem-system/mem-system.h>
 
-#include "x86-emu.h"
+#include "emu.h"
 
 
 void x86_checkpoint_load(char *file_name);

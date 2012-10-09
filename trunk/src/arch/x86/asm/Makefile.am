@@ -2,10 +2,9 @@ lib_LIBRARIES = libasm.a
 
 libasm_a_SOURCES = \
 	\
-	x86-asm.h \
-	x86-asm.dat \
-	\
-	asm.c
+	asm.c \
+	asm.dat \
+	asm.h
 
 INCLUDES = @M2S_INCLUDES@
 

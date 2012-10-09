@@ -23,7 +23,7 @@
 
 #include <mem-system/mem-system.h>
 
-#include "x86-emu.h"
+#include "emu.h"
 
 
 #define COLOR_BUFFER_COUNT 4

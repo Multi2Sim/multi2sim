@@ -26,7 +26,7 @@
 #include <mem-system/mem-system.h>
 
 #include "opengl-matrix.h"
-#include "x86-emu.h"
+#include "emu.h"
 
 
 /* Maximum modelview matrix stack depth */

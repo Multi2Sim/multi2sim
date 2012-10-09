@@ -25,7 +25,7 @@
 #include <arch/southern-islands/asm/southern-islands-asm.h>
 #include <arch/southern-islands/emu/southern-islands-emu.h>
 #include <arch/southern-islands/timing/southern-islands-timing.h>
-#include <arch/x86/timing/x86-timing.h>
+#include <arch/x86/timing/timing.h>
 #include <lib/esim/esim.h>
 #include <visual-common.h>
 
