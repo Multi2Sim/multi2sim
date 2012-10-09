@@ -17,7 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
- #include <opengl-viewport.h>
+#include "opengl-viewport.h"
+
  
 struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void)
 {

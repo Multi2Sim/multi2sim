@@ -57,7 +57,7 @@ void frm_disasm_init()
 	info->fmt = FRM_FMT_##_fmt; \
 	info->opcode = _opcode; \
 	info->size = 64;
-#include <fermi-asm.dat>
+#include "fermi-asm.dat"
 #undef DEFINST
 
 	for (i = 1; i < FRM_INST_COUNT; ++i)

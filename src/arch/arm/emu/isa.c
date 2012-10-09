@@ -18,7 +18,9 @@
  */
 
 #include <mem-system/mem-system.h>
-#include <arm-emu.h>
+
+#include "arm-emu.h"
+
 
 /* Debug categories */
 int arm_isa_call_debug_category;

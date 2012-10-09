@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <x86-timing.h>
+#include "x86-timing.h"
 
 
 void x86_cpu_recover(int core, int thread)

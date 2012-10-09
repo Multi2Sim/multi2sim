@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
- #include <opengl-color-channel.h>
+ #include "opengl-color-channel.h"
 
  void x86_opengl_clamped_float_to_color_channel(GLfloat *src, GLchan* dst)
  {

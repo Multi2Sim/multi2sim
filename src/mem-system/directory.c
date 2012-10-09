@@ -18,7 +18,7 @@
  */
 
 
-#include <mem-system.h>
+#include "mem-system.h"
 
 
 #define DIR_ENTRY_SHARERS_SIZE ((dir->num_nodes + 7) / 8)
