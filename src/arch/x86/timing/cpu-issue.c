@@ -17,10 +17,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
+#include <lib/struct/linked-list.h>
+#include <mem-system/mem-system.h>
+
 #include "cpu.h"
+#include "event-queue.h"
 #include "fu.h"
+#include "inst-queue.h"
+#include "load-store-queue.h"
 #include "reg-file.h"
-#include "timing.h"
 
 
 static int x86_cpu_issue_sq(int core, int thread, int quant)

@@ -17,15 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/x86/emu/emu.h>
+#include <lib/struct/config.h>
+#include <lib/struct/debug.h>
 #include <lib/struct/timer.h>
+#include <mem-system/mem-system.h>
 
 #include "bpred.h"
 #include "cpu.h"
+#include "event-queue.h"
+#include "fetch-queue.h"
 #include "fu.h"
+#include "inst-queue.h"
+#include "load-store-queue.h"
 #include "reg-file.h"
 #include "rob.h"
-#include "timing.h"
 #include "trace-cache.h"
+#include "uop-queue.h"
 
 
 /*

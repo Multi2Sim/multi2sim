@@ -17,10 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
+#include <lib/esim/esim.h>
 
 #include "cpu.h"
 #include "reg-file.h"
-#include "timing.h"
 #include "uop.h"
 
 

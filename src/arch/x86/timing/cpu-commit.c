@@ -17,14 +17,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <arch/x86/emu/context.h>
+#include <lib/esim/esim.h>
+#include <lib/struct/debug.h>
 
 #include "bpred.h"
 #include "cpu.h"
 #include "fu.h"
 #include "reg-file.h"
 #include "rob.h"
-#include "timing.h"
 #include "trace-cache.h"
 #include "uop.h"
 

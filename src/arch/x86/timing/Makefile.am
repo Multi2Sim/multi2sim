@@ -16,10 +16,20 @@ libtiming_a_SOURCES = \
 	cpu-sched.c \
 	cpu-writeback.c \
 	\
+	event-queue.c \
+	event-queue.h \
+	\
+	fetch-queue.c \
+	fetch-queue.h \
+	\
 	fu.c \
 	fu.h \
 	\
-	queues.c \
+	inst-queue.c \
+	inst-queue.h \
+	\
+	load-store-queue.c \
+	load-store-queue.h \
 	\
 	reg-file.c \
 	reg-file.h \
@@ -27,13 +37,14 @@ libtiming_a_SOURCES = \
 	rob.c \
 	rob.h \
 	\
-	timing.h \
-	\
 	trace-cache.c \
 	trace-cache.h \
 	\
 	uop.c \
-	uop.h
+	uop.h \
+	\
+	uop-queue.c \
+	uop-queue.h
 
 INCLUDES = @M2S_INCLUDES@
 
