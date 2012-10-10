@@ -2,8 +2,8 @@ M2S_ROOT = ../..
 
 AR = ar
 CC = gcc
-CFLAGS = -Wall -O3 -fPIC -m32 -I. -I$(M2S_ROOT)/src/lib/struct -I$(M2S_ROOT)/src/lib/mhandle \
-	-I$(M2S_ROOT)/src/lib/misc -I/usr/local/cuda/include
+CFLAGS = -Wall -O3 -fPIC -m32 -I. -Icuda_inc -I$(M2S_ROOT)/src \
+	-I$(M2S_ROOT)/src/lib/mhandle -I$(M2S_ROOT)/src/lib/misc -I$(M2S_ROOT)/src/lib/struct
 
 CUDA_OBJECTS = \
 	debug.o \
