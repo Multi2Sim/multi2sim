@@ -17,9 +17,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <lib/struct/elf-format.h>
 #include <mem-system/mem-system.h>
 
+#include "context.h"
 #include "emu.h"
+#include "file-desc.h"
+#include "loader.h"
+#include "regs.h"
 
 
 int x86_loader_debug_category;

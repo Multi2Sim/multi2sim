@@ -331,19 +331,22 @@ static void mem_config_gpu_default(struct config_t *config)
 	const int num_MMs = 4;
 
 	/* Not if we doing GPU functional simulation */
-	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	switch (x86_emu->gpu_kind)
 	{
+	case x86_emu_gpu_southern_islands:
+
 		if (si_emu_kind == si_emu_kind_functional)
 			return;
-	}
-	else if (x86_emu->gpu_emulator == gpu_emulator_evg)
-	{
+		break;
+
+	case x86_emu_gpu_evergreen:
+
 		if (evg_emu_kind == evg_emu_kind_functional)
 			return;
-	}
-	else
-	{
-		fatal("%s: invalid emulator\n", __FUNCTION__);		
+		break;
+
+	default:
+		panic("%s: invalid GPU emulator", __FUNCTION__);
 	}
 
 	/* Cache geometry for L1 */
@@ -366,8 +369,10 @@ static void mem_config_gpu_default(struct config_t *config)
 	assert(num_MMs == 4);
 
 	/* L1 caches and entries */
-	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	switch (x86_emu->gpu_kind)
 	{
+	case x86_emu_gpu_southern_islands:
+
 		SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 		{
 			snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
@@ -383,9 +388,10 @@ static void mem_config_gpu_default(struct config_t *config)
 			config_write_int(config, section, "ComputeUnit", compute_unit_id);
 			config_write_string(config, section, "Module", str);
 		}
-	}
-	else
-	{
+		break;
+	
+	case x86_emu_gpu_evergreen:
+
 		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 		{
 			snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
@@ -401,6 +407,10 @@ static void mem_config_gpu_default(struct config_t *config)
 			config_write_int(config, section, "ComputeUnit", compute_unit_id);
 			config_write_string(config, section, "Module", str);
 		}
+		break;
+	
+	default:
+		panic("%s: invalid GPU emulator", __FUNCTION__);
 	}
 
 	/* L2 caches */
@@ -1235,12 +1245,25 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	} *entry, *entry_list;
 
 	/* Allocate entry list */
-	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	switch (x86_emu->gpu_kind)
+	{
+	case x86_emu_gpu_southern_islands:
+
 		entry_list = calloc(si_gpu_num_compute_units, sizeof(struct entry_t));
-	else
+		if (!entry_list)
+			fatal("%s: out of memory", __FUNCTION__);
+		break;
+	
+	case x86_emu_gpu_evergreen:
+
 		entry_list = calloc(evg_gpu_num_compute_units, sizeof(struct entry_t));
-	if (!entry_list)
-		fatal("%s: out of memory", __FUNCTION__);
+		if (!entry_list)
+			fatal("%s: out of memory", __FUNCTION__);
+		break;
+	
+	default:
+		panic("%s: invalid GPU emulator", __FUNCTION__);
+	}
 
 	/* Read memory system entries */
 	for (section = config_section_first(config); section; section = config_section_next(config))
@@ -1265,12 +1288,24 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 			fatal("%s: entry %s: wrong or missing value for 'ComputeUnit'",
 				mem_config_file_name, entry_name);
 
-		/* Check bounds */
-		if (x86_emu->gpu_emulator == gpu_emulator_si)
-			num_compute_units = si_gpu_num_compute_units;
-		else
-			num_compute_units = evg_gpu_num_compute_units;
+		/* Get number of compute units */
+		switch (x86_emu->gpu_kind)
+		{
+		case x86_emu_gpu_southern_islands:
 
+			num_compute_units = si_gpu_num_compute_units;
+			break;
+		
+		case x86_emu_gpu_evergreen:
+
+			num_compute_units = evg_gpu_num_compute_units;
+			break;
+
+		default:
+			panic("%s: invalid GPU emulator", __FUNCTION__);
+		}
+
+		/* Check bounds */
 		if (compute_unit_id >= num_compute_units)
 		{
 			config_var_allow(config, section, "Module");
@@ -1294,21 +1329,30 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	}
 
 	/* Do not continue if we are doing GPU functional simulation */
-	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	switch (x86_emu->gpu_kind)
 	{
+	case x86_emu_gpu_southern_islands:
+		
 		if (si_emu_kind == si_emu_kind_functional)
 			goto out;
-	}
-	else
-	{
+		break;
+	
+	case x86_emu_gpu_evergreen:
+
 		if (evg_emu_kind == evg_emu_kind_functional)
 			goto out;
+		break;
+	
+	default:
+		panic("%s: invalid GPU emulation", __FUNCTION__);
 	}
 
 	/* Assign entry modules */
 	mem_debug("Assigning GPU entries to memory system:\n");
-	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	switch (x86_emu->gpu_kind)
 	{
+	case x86_emu_gpu_southern_islands:
+
 		SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 		{
 			/* Check that entry was set */
@@ -1326,15 +1370,13 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 			/* Assign module */
 			mod = config_read_ptr(config, buf, "ptr", NULL);
 			assert(mod);
-			if (x86_emu->gpu_emulator == gpu_emulator_si)
-				si_gpu->compute_units[compute_unit_id]->global_memory = mod;
-			else
-				evg_gpu->compute_units[compute_unit_id]->global_memory = mod;
+			si_gpu->compute_units[compute_unit_id]->global_memory = mod;
 			mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
 		}
-	}
-	else 
-	{
+		break;
+	
+	case x86_emu_gpu_evergreen:
+
 		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 		{
 			/* Check that entry was set */
@@ -1352,12 +1394,13 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 			/* Assign module */
 			mod = config_read_ptr(config, buf, "ptr", NULL);
 			assert(mod);
-			if (x86_emu->gpu_emulator == gpu_emulator_si)
-				si_gpu->compute_units[compute_unit_id]->global_memory = mod;
-			else
-				evg_gpu->compute_units[compute_unit_id]->global_memory = mod;
+			evg_gpu->compute_units[compute_unit_id]->global_memory = mod;
 			mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
 		}
+		break;
+	
+	default:
+		panic("%s: invalid GPU emulation", __FUNCTION__);
 	}
 
 	/* Debug */
@@ -1561,18 +1604,27 @@ static void mem_config_check_disjoint(void)
 	int core;
 	int thread;
 
-	/* No need if we do not have both CPU and GPU detailed simulation */
+	/* No need if no CPU simulation */
 	if (x86_emu_kind == x86_emu_kind_functional) 
 		return;
-	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	
+	/* No need if no GPU simulation */
+	switch (x86_emu->gpu_kind)
 	{
+	case x86_emu_gpu_southern_islands:
+
 		if (si_emu_kind == si_emu_kind_functional) 
 			return;
-	}
-	else
-	{
+		break;
+	
+	case x86_emu_gpu_evergreen:
+	
 		if (evg_emu_kind == evg_emu_kind_functional)
 			return;
+		break;
+	
+	default:
+		panic("%s: invalid GPU emulator", __FUNCTION__);
 	}
 
 	/* Color CPU modules */
@@ -1583,8 +1635,11 @@ static void mem_config_check_disjoint(void)
 	}
 
 	/* Check color of GPU modules */
-	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	switch (x86_emu->gpu_kind)
 	{
+
+	case x86_emu_gpu_southern_islands:
+
 		SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 		{
 			if (mem_config_check_mod_color(
@@ -1592,9 +1647,10 @@ static void mem_config_check_disjoint(void)
 				fatal("%s: non-disjoint CPU/GPU memory hierarchies",
 					mem_config_file_name);
 		}
-	}
-	else
-	{
+		break;
+	
+	case x86_emu_gpu_evergreen:
+
 		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 		{
 			if (mem_config_check_mod_color(
@@ -1602,6 +1658,10 @@ static void mem_config_check_disjoint(void)
 				fatal("%s: non-disjoint CPU/GPU memory hierarchies",
 					mem_config_file_name);
 		}
+		break;
+	
+	default:
+		panic("%s: invalid GPU emulation", __FUNCTION__);
 	}
 }
 
@@ -1687,23 +1747,31 @@ static void mem_config_calculate_mod_levels(void)
 	}
 
 	/* Check color of GPU modules */
-	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	switch (x86_emu->gpu_kind)
 	{
+	
+	case x86_emu_gpu_southern_islands:
+
 		if (si_emu_kind == si_emu_kind_detailed)
 		{
 			SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 				mem_config_set_mod_level(
 					si_gpu->compute_units[compute_unit_id]->global_memory, 1);
 		}
-	}
-	else
-	{
+		break;
+	
+	case x86_emu_gpu_evergreen:
+
 		if (evg_emu_kind == evg_emu_kind_detailed)
 		{
 			EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 				mem_config_set_mod_level(
 					evg_gpu->compute_units[compute_unit_id]->global_memory, 1);
 		}
+		break;
+	
+	default:
+		panic("%s: invalid GPU emulation", __FUNCTION__);
 	}
 
 	/* Debug */

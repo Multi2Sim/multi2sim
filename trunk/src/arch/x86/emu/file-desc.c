@@ -17,7 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "emu.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
+
+#include "file-desc.h"
 
 
 /*

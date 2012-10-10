@@ -18,10 +18,12 @@
  */
 
 #include <GL/glut.h>
+#include <pthread.h>
 
 #include <mem-system/mem-system.h>
 
-#include "emu.h"
+#include "glut.h"
+#include "glut-frame-buffer.h"
 
 
 

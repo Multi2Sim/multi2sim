@@ -20,6 +20,10 @@
 #include "emu.h"
 #include <mem-system/mem-system.h>
 #include <GL/gl.h>
+#include "context.h"
+#include "emu.h"
+#include "glut-frame-buffer.h"
+#include "opengl.h"
 #include "opengl-context.h"
 #include "opengl-rast.h"
 
