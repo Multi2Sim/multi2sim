@@ -31,9 +31,9 @@
 #include <errno.h>
 #include <sys/time.h>
 
-#include <arch/evergreen/emu/evergreen-emu.h>
-#include <arch/fermi/emu/fermi-emu.h>
-#include <arch/southern-islands/emu/southern-islands-emu.h>
+#include <arch/evergreen/emu/emu.h>
+#include <arch/fermi/emu/emu.h>
+#include <arch/southern-islands/emu/emu.h>
 #include <arch/x86/asm/asm.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>

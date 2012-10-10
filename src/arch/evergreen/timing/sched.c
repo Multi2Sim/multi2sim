@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "evergreen-timing.h"
+#include "timing.h"
 
 
 struct string_map_t evg_gpu_sched_policy_map =

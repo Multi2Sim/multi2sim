@@ -19,7 +19,7 @@
 
 #include <lib/struct/repos.h>
 
-#include "southern-islands-timing.h"
+#include "timing.h"
 
 
 /*

@@ -24,7 +24,7 @@
 #include <lib/struct/debug.h>
 #include <mem-system/mem-system.h>
 
-#include "southern-islands-emu.h"
+#include "emu.h"
 
 
 struct si_opencl_kernel_t *si_opencl_kernel_create()

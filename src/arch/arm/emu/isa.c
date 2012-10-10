@@ -19,7 +19,7 @@
 
 #include <mem-system/mem-system.h>
 
-#include "arm-emu.h"
+#include "emu.h"
 
 
 /* Debug categories */
@@ -39,7 +39,7 @@ static arm_isa_inst_func_t arm_isa_inst_func[ARM_INST_COUNT] =
 {
 	NULL /* for op_none */
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) , arm_isa_##_name##_impl
-#include <arch/arm/asm/arm-asm.dat>
+#include <arch/arm/asm/asm.dat>
 #undef DEFINST
 };
 

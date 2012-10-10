@@ -23,7 +23,7 @@
 #include <lib/struct/debug.h>
 #include <mem-system/mem-system.h>
 
-#include "southern-islands-emu.h"
+#include "emu.h"
 
 
 /* Required 'libm2s-opencl.so' version.

@@ -20,7 +20,7 @@
 #include <arch/x86/emu/emu.h>
 #include <mem-system/mem-system.h>
 
-#include "fermi-emu.h"
+#include "emu.h"
 
 
 
@@ -45,7 +45,7 @@ void frm_isa_init()
 	/* Initialize */
 #define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
 	frm_isa_inst_func[FRM_INST_##_name] = frm_isa_##_name##_impl;
-#include <arch/fermi/asm/fermi-asm.dat>
+#include <arch/fermi/asm/asm.dat>
 #undef DEFINST
 }
 

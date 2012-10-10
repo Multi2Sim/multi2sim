@@ -31,7 +31,7 @@ enum frm_fmt_enum
 
 #define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
 	FRM_FMT_##_fmt,
-#include "fermi-asm.dat"
+#include "asm.dat"
 #undef DEFINST
 
 	/* Max */
@@ -1206,7 +1206,7 @@ enum frm_inst_enum
 
 #define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
 	FRM_INST_##_name,
-#include "fermi-asm.dat"
+#include "asm.dat"
 #undef DEFINST
 
 	/* Max */

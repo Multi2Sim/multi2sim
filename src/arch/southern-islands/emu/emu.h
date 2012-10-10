@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <arch/southern-islands/asm/southern-islands-asm.h>
+#include <arch/southern-islands/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/misc/misc.h>
 #include <lib/struct/config.h>

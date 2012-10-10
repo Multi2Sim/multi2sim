@@ -34,9 +34,9 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include <arch/arm/asm/arm-asm.h>
-#include <arch/southern-islands/emu/southern-islands-emu.h>
-#include <arch/evergreen/emu/evergreen-emu.h>
+#include <arch/arm/asm/asm.h>
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/evergreen/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/misc/misc.h>
@@ -268,7 +268,7 @@ typedef void (*arm_isa_inst_func_t)(struct arm_ctx_t *ctx);
 /* Declarations of function prototypes implementing Evergreen ISA */
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	extern void arm_isa_##_name##_impl(struct arm_ctx_t *ctx);
-#include <arch/arm/asm/arm-asm.dat>
+#include <arch/arm/asm/asm.dat>
 #undef DEFINST
 
 enum arm_isa_op2_cat_t

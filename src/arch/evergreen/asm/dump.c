@@ -20,7 +20,7 @@
 #include <lib/misc/misc.h>
 #include <lib/struct/debug.h>
 
-#include "evergreen-asm.h"
+#include "asm.h"
 
 
 /*

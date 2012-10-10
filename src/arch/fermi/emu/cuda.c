@@ -20,7 +20,7 @@
 #include <arch/x86/emu/emu.h>
 #include <mem-system/mem-system.h>
 
-#include "fermi-emu.h"
+#include "emu.h"
 
 
 /* Debug */
