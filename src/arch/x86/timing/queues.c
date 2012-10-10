@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
+#include "cpu.h"
 #include "timing.h"
 #include "uop.h"
-
 
 
 
@@ -30,7 +31,9 @@ int x86_fetch_queue_size;
 
 void x86_fetch_queue_init()
 {
-	int core, thread;
+	int core;
+	int thread;
+
 	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 		X86_THREAD.fetch_queue = list_create_with_size(x86_fetch_queue_size);
 }
@@ -38,7 +41,9 @@ void x86_fetch_queue_init()
 
 void x86_fetch_queue_done()
 {
-	int core, thread;
+	int core;
+	int thread;
+
 	struct list_t *fetchq;
 	struct x86_uop_t *uop;
 

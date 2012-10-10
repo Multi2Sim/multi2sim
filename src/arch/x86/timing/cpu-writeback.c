@@ -18,6 +18,8 @@
  */
 
 
+#include "cpu.h"
+#include "reg-file.h"
 #include "timing.h"
 #include "uop.h"
 

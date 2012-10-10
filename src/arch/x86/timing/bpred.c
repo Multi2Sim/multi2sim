@@ -18,6 +18,8 @@
  */
 
 
+#include "bpred.h"
+#include "cpu.h"
 #include "timing.h"
 #include "uop.h"
 
@@ -27,8 +29,8 @@
 /* BTB Entry */
 struct btb_entry_t
 {
-	uint32_t source;  /* eip */
-	uint32_t target;  /* neip */
+	unsigned int source;  /* eip */
+	unsigned int target;  /* neip */
 	int counter;  /* LRU counter */
 };
 
@@ -152,7 +154,7 @@ struct x86_bpred_t *x86_bpred_create(char *name)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Return address stack */
-	bpred->ras = calloc(x86_bpred_ras_size, sizeof(uint32_t));
+	bpred->ras = calloc(x86_bpred_ras_size, sizeof(unsigned int));
 	if (!bpred->ras)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -167,7 +169,7 @@ struct x86_bpred_t *x86_bpred_create(char *name)
 	/* Two-level adaptive branch predictor */
 	if (x86_bpred_kind == x86_bpred_kind_twolevel || x86_bpred_kind == x86_bpred_kind_comb)
 	{
-		bpred->twolevel_bht = calloc(x86_bpred_twolevel_l1size, sizeof(uint32_t));
+		bpred->twolevel_bht = calloc(x86_bpred_twolevel_l1size, sizeof(unsigned int));
 		bpred->twolevel_pht = calloc(x86_bpred_twolevel_l2size * x86_bpred_twolevel_l2height, sizeof(char));
 		for (i = 0; i < x86_bpred_twolevel_l2size * x86_bpred_twolevel_l2height; i++)
 			bpred->twolevel_pht[i] = 2;
@@ -287,11 +289,11 @@ int x86_bpred_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
  * adaptive predictors, since they use global history. The prediction of the
  * primary branch is stored in the least significant bit (bit 0), whereas the prediction
  * of the last branch is stored in bit 'count-1'. */
-int x86_bpred_lookup_multiple(struct x86_bpred_t *bpred, uint32_t eip, int count)
+int x86_bpred_lookup_multiple(struct x86_bpred_t *bpred, unsigned int eip, int count)
 {
 	int i, pred, temp_pred;
-	uint32_t bht_index, pht_col;
-	uint32_t bhr;  /* branch history register = pht_row */
+	unsigned int bht_index, pht_col;
+	unsigned int bhr;  /* branch history register = pht_row */
 
 	/* First make a regular prediction. This updates the necessary fields in the
 	 * uop for a later call to x86_bpred_update, and makes the first prediction
@@ -321,7 +323,7 @@ void x86_bpred_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
 {
 	int taken;
 	char *pctr;  /* pointer to 2-bit counter */
-	uint32_t *pbhr;  /* pointer to branch history register */
+	unsigned int *pbhr;  /* pointer to branch history register */
 
 	assert(!uop->specmode);
 	assert(uop->flags & X86_UINST_CTRL);
@@ -377,7 +379,7 @@ void x86_bpred_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
 unsigned int x86_bpred_btb_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
 {
 	struct btb_entry_t *entry;
-	uint32_t way, set, target = 0;
+	unsigned int way, set, target = 0;
 	int hit = 0;
 
 	assert(uop->flags & X86_UINST_CTRL);
@@ -480,10 +482,10 @@ void x86_bpred_btb_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
  * This is useful for accessing the trace
  * cache. At that point, the uop is not ready to call x86_bpred_btb_lookup, since
  * functional simulation has not happened yet. */
-unsigned int x86_bpred_btb_next_branch(struct x86_bpred_t *bpred, uint32_t eip, uint32_t bsize)
+unsigned int x86_bpred_btb_next_branch(struct x86_bpred_t *bpred, unsigned int eip, unsigned int bsize)
 {
 	struct btb_entry_t *entry;
-	uint32_t limit;
+	unsigned int limit;
 	int set, way;
 
 	assert(!(bsize & (bsize - 1)));
