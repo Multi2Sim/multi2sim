@@ -17,8 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
+#include <arch/x86/emu/emu.h>
+#include <arch/x86/emu/regs.h>
+#include <lib/esim/esim.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
+
 #include "cpu.h"
-#include "timing.h"
 
 
 int x86_cpu_pipeline_empty(int core, int thread)
