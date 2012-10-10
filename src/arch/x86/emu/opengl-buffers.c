@@ -19,7 +19,6 @@
 
 #include "opengl-buffers.h"
 
-
 struct x86_opengl_render_buffer_t *x86_opengl_render_buffer_create(int width, int height)
 {
 	struct x86_opengl_render_buffer_t *rb;

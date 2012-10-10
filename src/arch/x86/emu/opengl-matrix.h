@@ -20,13 +20,11 @@
 #ifndef X86_OPENGL_MATRIX_H
 #define X86_OPENGL_MATRIX_H
 
-#include <GL/gl.h>
-
-#include <mem-system/mem-system.h>
-
-#include "opengl-vertex.h"
 #include "emu.h"
-
+#include <mem-system/mem-system.h>
+#include <GL/gl.h>
+ 
+#include "opengl-vertex.h"
 
 /* OpenGL: Different kinds of 4x4 transformation matrices */
 enum x86_opengl_matrix_mode_t {
@@ -51,5 +49,7 @@ void x86_opengl_matrix_free(struct x86_opengl_matrix_t *mtx);
 
 void x86_opengl_matrix_mul_matrix(struct x86_opengl_matrix_t *dst_mtx, struct x86_opengl_matrix_t *mtx_a, struct x86_opengl_matrix_t *mtx_b);
 void x86_opengl_matrix_mul_vertex(struct x86_opengl_vertex_t *vtx, struct x86_opengl_matrix_t *mtx);
+
+struct x86_opengl_matrix_t *x86_opengl_ortho_matrix_create(GLfloat left, GLfloat right, GLfloat buttom, GLfloat top, GLfloat nearval, GLfloat farval);
 
 #endif
