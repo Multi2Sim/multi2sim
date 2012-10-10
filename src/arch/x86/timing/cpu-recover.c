@@ -17,12 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
+#include <arch/x86/emu/regs.h>
+#include <lib/esim/esim.h>
+#include <lib/misc/misc.h>
+
 #include "cpu.h"
+#include "event-queue.h"
+#include "fetch-queue.h"
+#include "inst-queue.h"
+#include "load-store-queue.h"
 #include "reg-file.h"
 #include "rob.h"
-#include "timing.h"
 #include "trace-cache.h"
 #include "uop.h"
+#include "uop-queue.h"
 
 
 void x86_cpu_recover(int core, int thread)

@@ -17,8 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+
 #include "cpu.h"
-#include "timing.h"
 #include "trace-cache.h"
 #include "uop.h"
 
