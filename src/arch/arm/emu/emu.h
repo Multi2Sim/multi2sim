@@ -600,7 +600,6 @@ extern struct arm_emu_t *arm_emu;
 extern long long arm_emu_max_cycles;
 extern long long arm_emu_max_inst;
 extern long long arm_emu_max_time;
-extern char * arm_emu_last_inst_bytes;
 
 extern enum arm_emu_kind_t
 {

@@ -18,6 +18,7 @@
  */
 
 #include "timing.h"
+#include "uop.h"
 
 
 /* Global variables */
