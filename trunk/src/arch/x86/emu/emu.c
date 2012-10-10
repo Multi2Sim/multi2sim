@@ -316,12 +316,12 @@ static void *x86_emu_host_thread_suspend(void *arg)
 	}
 	else if (x86_ctx_get_status(ctx, x86_ctx_poll))
 	{
-		struct file_desc_t *fd;
+		struct x86_file_desc_t *fd;
 		struct pollfd host_fds;
 		int err, timeout;
 		
 		/* Get file descriptor */
-		fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
+		fd = x86_file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 		if (!fd)
 			fatal("syscall 'poll': invalid 'wakeup_fd'");
 
@@ -342,12 +342,12 @@ static void *x86_emu_host_thread_suspend(void *arg)
 	}
 	else if (x86_ctx_get_status(ctx, x86_ctx_read))
 	{
-		struct file_desc_t *fd;
+		struct x86_file_desc_t *fd;
 		struct pollfd host_fds;
 		int err;
 
 		/* Get file descriptor */
-		fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
+		fd = x86_file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 		if (!fd)
 			fatal("syscall 'read': invalid 'wakeup_fd'");
 
@@ -360,12 +360,12 @@ static void *x86_emu_host_thread_suspend(void *arg)
 	}
 	else if (x86_ctx_get_status(ctx, x86_ctx_write))
 	{
-		struct file_desc_t *fd;
+		struct x86_file_desc_t *fd;
 		struct pollfd host_fds;
 		int err;
 
 		/* Get file descriptor */
-		fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
+		fd = x86_file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 		if (!fd)
 			fatal("syscall 'write': invalid 'wakeup_fd'");
 
@@ -501,7 +501,7 @@ void x86_emu_process_events()
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
-				signal_handler_check_intr(ctx);
+				x86_signal_handler_check_intr(ctx);
 				ctx->signal_mask_table->blocked = ctx->signal_mask_table->backup;
 				x86_sys_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
 				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_sigsuspend);
@@ -518,7 +518,7 @@ void x86_emu_process_events()
 		{
 			uint32_t prevents = ctx->regs->ebx + 6;
 			uint16_t revents = 0;
-			struct file_desc_t *fd;
+			struct x86_file_desc_t *fd;
 			struct pollfd host_fds;
 			int err;
 
@@ -527,14 +527,14 @@ void x86_emu_process_events()
 				continue;
 
 			/* Get file descriptor */
-			fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
+			fd = x86_file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 			if (!fd)
 				fatal("syscall 'poll': invalid 'wakeup_fd'");
 
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
-				signal_handler_check_intr(ctx);
+				x86_signal_handler_check_intr(ctx);
 				x86_sys_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
 				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_poll);
 				continue;
@@ -593,7 +593,7 @@ void x86_emu_process_events()
 		/* Context suspended in a 'write' system call  */
 		if (x86_ctx_get_status(ctx, x86_ctx_write))
 		{
-			struct file_desc_t *fd;
+			struct x86_file_desc_t *fd;
 			int count, err;
 			uint32_t pbuf;
 			void *buf;
@@ -606,14 +606,14 @@ void x86_emu_process_events()
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
-				signal_handler_check_intr(ctx);
+				x86_signal_handler_check_intr(ctx);
 				x86_sys_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
 				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_write);
 				continue;
 			}
 
 			/* Get file descriptor */
-			fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
+			fd = x86_file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 			if (!fd)
 				fatal("syscall 'write': invalid 'wakeup_fd'");
 
@@ -654,7 +654,7 @@ void x86_emu_process_events()
 		/* Context suspended in 'read' system call */
 		if (x86_ctx_get_status(ctx, x86_ctx_read))
 		{
-			struct file_desc_t *fd;
+			struct x86_file_desc_t *fd;
 			uint32_t pbuf;
 			int count, err;
 			void *buf;
@@ -667,14 +667,14 @@ void x86_emu_process_events()
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
-				signal_handler_check_intr(ctx);
+				x86_signal_handler_check_intr(ctx);
 				x86_sys_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
 				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_read);
 				continue;
 			}
 
 			/* Get file descriptor */
-			fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
+			fd = x86_file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 			if (!fd)
 				fatal("syscall 'read': invalid 'wakeup_fd'");
 
@@ -797,7 +797,7 @@ void x86_emu_process_events()
 			 * already locked, the thread-unsafe version of 'x86_ctx_host_thread_suspend_cancel' is used. */
 			__x86_ctx_host_thread_suspend_cancel(ctx);
 			x86_emu->process_events_force = 1;
-			sim_sigset_add(&ctx->signal_mask_table->pending, sig[i]);
+			x86_sigset_add(&ctx->signal_mask_table->pending, sig[i]);
 
 			/* Calculate next occurrence */
 			ctx->itimer_value[i] = 0;
@@ -832,7 +832,7 @@ void x86_emu_process_events()
 	 */
 	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
 	{
-		signal_handler_check(ctx);
+		x86_signal_handler_check(ctx);
 	}
 
 	

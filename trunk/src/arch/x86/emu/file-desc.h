@@ -23,7 +23,7 @@
 #include <stdio.h>
 
 
-enum file_desc_kind_t
+enum x86_file_desc_kind_t
 {
 	file_desc_invalid = 0,
 	file_desc_regular,  /* Regular file */
@@ -36,9 +36,9 @@ enum file_desc_kind_t
 
 
 /* File descriptor */
-struct file_desc_t
+struct x86_file_desc_t
 {
-	enum file_desc_kind_t kind;  /* File type */
+	enum x86_file_desc_kind_t kind;  /* File type */
 	int guest_fd;  /* Guest file descriptor id */
 	int host_fd;  /* Equivalent open host file */
 	int flags;  /* O_xxx flags */
@@ -47,7 +47,7 @@ struct file_desc_t
 
 
 /* File descriptor table */
-struct file_desc_table_t
+struct x86_file_desc_table_t
 {
 	/* Number of extra contexts sharing table */
 	int num_links;
@@ -57,24 +57,24 @@ struct file_desc_table_t
 };
 
 
-struct file_desc_table_t *file_desc_table_create(void);
-void file_desc_table_free(struct file_desc_table_t *table);
+struct x86_file_desc_table_t *x86_file_desc_table_create(void);
+void x86_file_desc_table_free(struct x86_file_desc_table_t *table);
 
-struct file_desc_table_t *file_desc_table_link(struct file_desc_table_t *table);
-void file_desc_table_unlink(struct file_desc_table_t *table);
+struct x86_file_desc_table_t *x86_file_desc_table_link(struct x86_file_desc_table_t *table);
+void x86_file_desc_table_unlink(struct x86_file_desc_table_t *table);
 
-void file_desc_table_dump(struct file_desc_table_t *table, FILE *f);
+void x86_file_desc_table_dump(struct x86_file_desc_table_t *table, FILE *f);
 
-struct file_desc_t *file_desc_table_entry_get(struct file_desc_table_t *table, int index);
-struct file_desc_t *file_desc_table_entry_new(struct file_desc_table_t *table,
-	enum file_desc_kind_t kind, int host_fd, char *path, int flags);
-struct file_desc_t *file_desc_table_entry_new_guest_fd(struct file_desc_table_t *table,
-        enum file_desc_kind_t kind, int guest_fd, int host_fd, char *path, int flags);
-void file_desc_table_entry_free(struct file_desc_table_t *table, int index);
-void file_desc_table_entry_dump(struct file_desc_table_t *table, int index, FILE *f);
+struct x86_file_desc_t *x86_file_desc_table_entry_get(struct x86_file_desc_table_t *table, int index);
+struct x86_file_desc_t *x86_file_desc_table_entry_new(struct x86_file_desc_table_t *table,
+	enum x86_file_desc_kind_t kind, int host_fd, char *path, int flags);
+struct x86_file_desc_t *x86_file_desc_table_entry_new_guest_fd(struct x86_file_desc_table_t *table,
+        enum x86_file_desc_kind_t kind, int guest_fd, int host_fd, char *path, int flags);
+void x86_file_desc_table_entry_free(struct x86_file_desc_table_t *table, int index);
+void x86_file_desc_table_entry_dump(struct x86_file_desc_table_t *table, int index, FILE *f);
 
-int file_desc_table_get_host_fd(struct file_desc_table_t *table, int guest_fd);
-int file_desc_table_get_guest_fd(struct file_desc_table_t *table, int host_fd);
+int x86_file_desc_table_get_host_fd(struct x86_file_desc_table_t *table, int guest_fd);
+int x86_file_desc_table_get_guest_fd(struct x86_file_desc_table_t *table, int host_fd);
 
 
 #endif
