@@ -20,7 +20,7 @@
 #ifndef SOUTHERN_ISLANDS_TIMING_H
 #define SOUTHERN_ISLANDS_TIMING_H
 
-#include <arch/southern-islands/emu/southern-islands-emu.h>
+#include <arch/southern-islands/emu/emu.h>
 #include <mem-system/mem-system.h>
 
 

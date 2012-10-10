@@ -18,7 +18,7 @@
  */
 
 
-#include "evergreen-timing.h"
+#include "timing.h"
 
 
 /* Configuration parameters */

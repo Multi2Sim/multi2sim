@@ -31,7 +31,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <mem-system/mem-system.h>
 
-#include "arm-emu.h"
+#include "emu.h"
 
 
 /*

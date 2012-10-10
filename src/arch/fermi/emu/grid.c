@@ -19,7 +19,7 @@
 
 #include <arch/x86/emu/emu.h>
 
-#include "fermi-emu.h"
+#include "emu.h"
 
 
 struct frm_grid_t *frm_grid_create(struct frm_cuda_function_t *function)

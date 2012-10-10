@@ -24,7 +24,7 @@
 #include <lib/struct/debug.h>
 #include <mem-system/mem-system.h>
 
-#include "evergreen-emu.h"
+#include "emu.h"
 
 
 struct evg_opencl_mem_t *evg_opencl_mem_create()

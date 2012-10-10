@@ -19,7 +19,7 @@
 
 #include <lib/struct/heap.h>
 
-#include "evergreen-timing.h"
+#include "timing.h"
 
 
 int evg_gpu_alu_engine_inst_mem_latency = 2;  /* Latency of instruction memory */

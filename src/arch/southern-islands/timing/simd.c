@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "southern-islands-timing.h"
+#include "timing.h"
 
 
 int si_gpu_simd_alu_latency = 8;

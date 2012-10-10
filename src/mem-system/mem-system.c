@@ -18,7 +18,7 @@
 
 
 #include <arch/x86/timing/timing.h>
-#include <arch/evergreen/timing/evergreen-timing.h>
+#include <arch/evergreen/timing/timing.h>
 
 #include "mem-system.h"
 

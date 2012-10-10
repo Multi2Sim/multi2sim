@@ -19,7 +19,7 @@
 
 #include <arch/x86/emu/emu.h>
 
-#include "southern-islands-emu.h"
+#include "emu.h"
 
 
 /*

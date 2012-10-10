@@ -17,11 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/timing/southern-islands-timing.h>
+#include <arch/southern-islands/timing/timing.h>
 #include <arch/x86/emu/emu.h>
 #include <mem-system/mem-system.h>
 
-#include "southern-islands-emu.h"
+#include "emu.h"
 
 
 /*
