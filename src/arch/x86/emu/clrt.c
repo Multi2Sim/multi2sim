@@ -21,7 +21,6 @@
 
 #include "clrt.h"
 #include "context.h"
-#include "emu.h"
 #include "regs.h"
 
 

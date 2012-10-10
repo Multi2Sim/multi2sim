@@ -116,7 +116,8 @@ extern struct x86_emu_t *x86_emu;
 
 extern long long x86_emu_max_cycles;
 extern long long x86_emu_max_inst;
-extern char *x86_emu_last_inst_bytes;
+extern char x86_emu_last_inst_bytes[20];
+extern int x86_emu_last_inst_size;
 
 extern enum x86_emu_kind_t
 {
