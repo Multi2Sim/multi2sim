@@ -20,7 +20,11 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 
+#include "bpred.h"
+#include "cpu.h"
+#include "reg-file.h"
 #include "timing.h"
+#include "trace-cache.h"
 #include "uop.h"
 
 

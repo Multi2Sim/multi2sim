@@ -19,6 +19,9 @@
 
 #include <arch/x86/emu/context.h>
 
+#include "cpu.h"
+#include "reg-file.h"
+#include "rob.h"
 #include "timing.h"
 #include "uop.h"
 

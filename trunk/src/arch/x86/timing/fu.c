@@ -18,6 +18,7 @@
  */
 
 
+#include "cpu.h"
 #include "fu.h"
 #include "timing.h"
 
@@ -126,6 +127,7 @@ static enum x86_fu_class_t fu_class_table[x86_uinst_opcode_count] =
 void x86_fu_init()
 {
 	int core;
+
 	X86_CORE_FOR_EACH
 		X86_CORE.fu = calloc(1, sizeof(struct x86_fu_t));
 }
@@ -134,6 +136,7 @@ void x86_fu_init()
 void x86_fu_done()
 {
 	int core;
+
 	X86_CORE_FOR_EACH
 		free(X86_CORE.fu);
 }

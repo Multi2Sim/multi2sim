@@ -19,8 +19,13 @@
 
 #include <lib/struct/timer.h>
 
+#include "bpred.h"
+#include "cpu.h"
 #include "fu.h"
+#include "reg-file.h"
+#include "rob.h"
 #include "timing.h"
+#include "trace-cache.h"
 
 
 /*
