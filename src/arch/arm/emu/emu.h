@@ -51,7 +51,7 @@
 
 /* Some forward declarations */
 struct arm_ctx_t;
-struct file_desc_t;
+struct x86_file_desc_t;
 
 /* Arm Modes of Operation */
 #define ARM_MODE_USER 0x10

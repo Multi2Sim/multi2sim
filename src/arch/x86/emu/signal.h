@@ -22,7 +22,7 @@
 
 
 /* Every context (parent and children) has its own masks */
-struct signal_mask_table_t
+struct x86_signal_mask_table_t
 {
 	unsigned long long pending;  /* Mask of pending signals */
 	unsigned long long blocked;  /* Mask of blocked signals */
@@ -31,17 +31,17 @@ struct signal_mask_table_t
 	unsigned int pretcode;  /* Base address of a memory page allocated for retcode execution */
 };
 
-struct signal_mask_table_t *signal_mask_table_create(void);
-void signal_mask_table_free(struct signal_mask_table_t *table);
+struct x86_signal_mask_table_t *x86_signal_mask_table_create(void);
+void x86_signal_mask_table_free(struct x86_signal_mask_table_t *table);
 
 
-struct signal_handler_table_t
+struct x86_signal_handler_table_t
 {
 	/* Number of extra contexts sharing the table */
 	int num_links;
 
 	/* Signal handlers */
-	struct sim_sigaction
+	struct x86_sigaction_t
 	{
 		unsigned int handler;
 		unsigned int flags;
@@ -50,24 +50,24 @@ struct signal_handler_table_t
 	} sigaction[64];
 };
 
-struct signal_handler_table_t *signal_handler_table_create(void);
-void signal_handler_table_free(struct signal_handler_table_t *table);
+struct x86_signal_handler_table_t *x86_signal_handler_table_create(void);
+void x86_signal_handler_table_free(struct x86_signal_handler_table_t *table);
 
-struct signal_handler_table_t *signal_handler_table_link(struct signal_handler_table_t *table);
-void signal_handler_table_unlink(struct signal_handler_table_t *table);
+struct x86_signal_handler_table_t *x86_signal_handler_table_link(struct x86_signal_handler_table_t *table);
+void x86_signal_handler_table_unlink(struct x86_signal_handler_table_t *table);
 
-void signal_handler_run(struct x86_ctx_t *ctx, int sig);
-void signal_handler_return(struct x86_ctx_t *ctx);
-void signal_handler_check(struct x86_ctx_t *ctx);
-void signal_handler_check_intr(struct x86_ctx_t *ctx);
+void x86_signal_handler_run(struct x86_ctx_t *ctx, int sig);
+void x86_signal_handler_return(struct x86_ctx_t *ctx);
+void x86_signal_handler_check(struct x86_ctx_t *ctx);
+void x86_signal_handler_check_intr(struct x86_ctx_t *ctx);
 
-char *sim_signal_name(int signum);
-void sim_sigaction_dump(struct sim_sigaction *sim_sigaction, FILE *f);
-void sim_sigaction_flags_dump(unsigned int flags, FILE *f);
-void sim_sigset_dump(unsigned long long sim_sigset, FILE *f);
-void sim_sigset_add(unsigned long long *sim_sigset, int signal);
-void sim_sigset_del(unsigned long long *sim_sigset, int signal);
-int sim_sigset_member(unsigned long long *sim_sigset, int signal);
+char *x86_signal_name(int signum);
+void x86_sigaction_dump(struct x86_sigaction_t *sim_sigaction, FILE *f);
+void x86_sigaction_flags_dump(unsigned int flags, FILE *f);
+void x86_sigset_dump(unsigned long long sim_sigset, FILE *f);
+void x86_sigset_add(unsigned long long *sim_sigset, int signal);
+void x86_sigset_del(unsigned long long *sim_sigset, int signal);
+int x86_sigset_member(unsigned long long *sim_sigset, int signal);
 
 
 #endif

@@ -338,7 +338,7 @@ static int x86_sys_exit_impl(struct x86_ctx_t *ctx)
 static int x86_sys_close_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
-	struct file_desc_t *fd;
+	struct x86_file_desc_t *fd;
 
 	int guest_fd;
 	int host_fd;
@@ -346,11 +346,11 @@ static int x86_sys_close_impl(struct x86_ctx_t *ctx)
 	/* Arguments */
 	guest_fd = regs->ebx;
 	x86_sys_debug("  guest_fd=%d\n", guest_fd);
-	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, guest_fd);
+	host_fd = x86_file_desc_table_get_host_fd(ctx->file_desc_table, guest_fd);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Get file descriptor table entry. */
-	fd = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	fd = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 	if (!fd)
 		return -EBADF;
 
@@ -361,7 +361,7 @@ static int x86_sys_close_impl(struct x86_ctx_t *ctx)
 	/* Free guest file descriptor. This will delete the host file if it's a virtual file. */
 	if (fd->kind == file_desc_virtual)
 		x86_sys_debug("    host file '%s': temporary file deleted\n", fd->path);
-	file_desc_table_entry_free(ctx->file_desc_table, fd->guest_fd);
+	x86_file_desc_table_entry_free(ctx->file_desc_table, fd->guest_fd);
 
 	/* Success */
 	return 0;
@@ -387,7 +387,7 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 
 	void *buf;
 
-	struct file_desc_t *fd;
+	struct x86_file_desc_t *fd;
 	struct pollfd fds;
 
 	/* Arguments */
@@ -398,7 +398,7 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 		guest_fd, buf_ptr, count);
 
 	/* Get file descriptor */
-	fd = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	fd = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 	if (!fd)
 		return -EBADF;
 	host_fd = fd->host_fd;
@@ -471,7 +471,7 @@ static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 	int host_fd;
 	int err;
 
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 	void *buf;
 
 	struct pollfd fds;
@@ -484,7 +484,7 @@ static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 		guest_fd, buf_ptr, count);
 
 	/* Get file descriptor */
-	desc = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	desc = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 	if (!desc)
 		return -EBADF;
 	host_fd = desc->host_fd;
@@ -563,7 +563,7 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	unsigned int file_name_ptr;
 
@@ -619,7 +619,7 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 			assert(host_fd > 0);
 
 			/* Add file descriptor table entry. */
-			desc = file_desc_table_entry_new(ctx->file_desc_table, file_desc_virtual, host_fd, temp_path, flags);
+			desc = x86_file_desc_table_entry_new(ctx->file_desc_table, file_desc_virtual, host_fd, temp_path, flags);
 			x86_sys_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
 				temp_path, desc->guest_fd, desc->host_fd);
 			return desc->guest_fd;
@@ -636,7 +636,7 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 		return -errno;
 
 	/* File opened, create a new file descriptor. */
-	desc = file_desc_table_entry_new(ctx->file_desc_table,
+	desc = x86_file_desc_table_entry_new(ctx->file_desc_table,
 		file_desc_regular, host_fd, full_path, flags);
 	x86_sys_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
 		desc->guest_fd, desc->host_fd);
@@ -1034,7 +1034,7 @@ static int x86_sys_lseek_impl(struct x86_ctx_t *ctx)
 	fd = regs->ebx;
 	offset = regs->ecx;
 	origin = regs->edx;
-	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
+	host_fd = x86_file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  fd=%d, offset=0x%x, origin=0x%x\n",
 		fd, offset, origin);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
@@ -1203,7 +1203,7 @@ static int x86_sys_kill_impl(struct x86_ctx_t *ctx)
 	pid = regs->ebx;
 	sig = regs->ecx;
 	x86_sys_debug("  pid=%d, sig=%d (%s)\n", pid,
-		sig, sim_signal_name(sig));
+		sig, x86_signal_name(sig));
 
 	/* Find context. We assume program correctness, so fatal if context is
 	 * not found, rather than return error code. */
@@ -1212,7 +1212,7 @@ static int x86_sys_kill_impl(struct x86_ctx_t *ctx)
 		fatal("%s: invalid pid %d", __FUNCTION__, pid);
 
 	/* Send signal */
-	sim_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
+	x86_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
 	x86_ctx_host_thread_suspend_cancel(temp_ctx);
 	x86_emu_process_events_schedule();
 	x86_emu_process_events();
@@ -1335,15 +1335,15 @@ static int x86_sys_dup_impl(struct x86_ctx_t *ctx)
 	int host_fd;
 	int dup_host_fd;
 
-	struct file_desc_t *desc;
-	struct file_desc_t *dup_desc;
+	struct x86_file_desc_t *desc;
+	struct x86_file_desc_t *dup_desc;
 
 	/* Arguments */
 	guest_fd = regs->ebx;
 	x86_sys_debug("  guest_fd=%d\n", guest_fd);
 
 	/* Check that file descriptor is valid. */
-	desc = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	desc = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 	if (!desc)
 		return -EBADF;
 	host_fd = desc->host_fd;
@@ -1355,7 +1355,7 @@ static int x86_sys_dup_impl(struct x86_ctx_t *ctx)
 		return -errno;
 
 	/* Create a new entry in the file descriptor table. */
-	dup_desc = file_desc_table_entry_new(ctx->file_desc_table,
+	dup_desc = x86_file_desc_table_entry_new(ctx->file_desc_table,
 		file_desc_regular, dup_host_fd, desc->path, desc->flags);
 	dup_guest_fd = dup_desc->guest_fd;
 
@@ -1375,8 +1375,8 @@ static int x86_sys_pipe_impl(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	struct file_desc_t *read_desc;
-	struct file_desc_t *write_desc;
+	struct x86_file_desc_t *read_desc;
+	struct x86_file_desc_t *write_desc;
 
 	unsigned int fd_ptr;
 
@@ -1398,9 +1398,9 @@ static int x86_sys_pipe_impl(struct x86_ctx_t *ctx)
 		host_fd[0], host_fd[1]);
 
 	/* Create guest pipe */
-	read_desc = file_desc_table_entry_new(ctx->file_desc_table,
+	read_desc = x86_file_desc_table_entry_new(ctx->file_desc_table,
 		file_desc_pipe, host_fd[0], "", O_RDONLY);
-	write_desc = file_desc_table_entry_new(ctx->file_desc_table,
+	write_desc = x86_file_desc_table_entry_new(ctx->file_desc_table,
 		file_desc_pipe, host_fd[1], "", O_WRONLY);
 	x86_sys_debug("  guest pipe created: fd={%d, %d}\n",
 		read_desc->guest_fd, write_desc->guest_fd);
@@ -1558,7 +1558,7 @@ static int x86_sys_ioctl_impl(struct x86_ctx_t *ctx)
 	int guest_fd;
 	int err;
 
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	/* Arguments */
 	guest_fd = regs->ebx;
@@ -1568,7 +1568,7 @@ static int x86_sys_ioctl_impl(struct x86_ctx_t *ctx)
 		guest_fd, cmd, arg);
 
 	/* File descriptor */
-	desc = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	desc = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 	if (!desc)
 		return -EBADF;
 
@@ -1953,7 +1953,7 @@ static int x86_sys_mmap(struct x86_ctx_t *ctx, unsigned int addr, unsigned int l
 	int perm;
 	int host_fd;
 
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	/* Check that protection flags match in guest and host */
 	assert(PROT_READ == 1);
@@ -1967,7 +1967,7 @@ static int x86_sys_mmap(struct x86_ctx_t *ctx, unsigned int addr, unsigned int l
 	assert(MAP_ANONYMOUS == 0x20);
 
 	/* Translate file descriptor */
-	desc = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	desc = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 	host_fd = desc ? desc->host_fd : -1;
 	if (guest_fd > 0 && host_fd < 0)
 		fatal("%s: invalid guest descriptor", __FUNCTION__);
@@ -2145,7 +2145,7 @@ static int x86_sys_fchmod_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  fd=%d, mode=%d\n", fd, mode);
 
 	/* Get host descriptor */
-	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
+	host_fd = x86_file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Host call */
@@ -2266,7 +2266,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 
 		int host_fd;
 
-		struct file_desc_t *desc;
+		struct x86_file_desc_t *desc;
 
 		/* Read arguments */
 		mem_read(mem, args, 4, &family);
@@ -2294,7 +2294,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 			return -errno;
 
 		/* Create new file descriptor table entry. */
-		desc = file_desc_table_entry_new(ctx->file_desc_table,
+		desc = x86_file_desc_table_entry_new(ctx->file_desc_table,
 				file_desc_socket, host_fd, "", O_RDWR);
 		x86_sys_debug("    socket created: guest_fd=%d, host_fd=%d\n",
 			desc->guest_fd, desc->host_fd);
@@ -2310,7 +2310,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		unsigned int addr_ptr;
 		unsigned int addr_len;
 
-		struct file_desc_t *desc;
+		struct x86_file_desc_t *desc;
 
 		char buf[MAX_STRING_SIZE];
 
@@ -2340,7 +2340,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		x86_sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
 
 		/* Get file descriptor */
-		desc = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+		desc = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 		if (!desc)
 			return -EBADF;
 
@@ -2368,7 +2368,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		unsigned int addr_ptr;
 		unsigned int addr_len_ptr;
 
-		struct file_desc_t *desc;
+		struct x86_file_desc_t *desc;
 		struct sockaddr *addr;
 		socklen_t host_addr_len;
 
@@ -2379,7 +2379,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 			guest_fd, addr_ptr, addr_len_ptr);
 
 		/* Get file descriptor */
-		desc = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+		desc = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 		if (!desc)
 			return -EBADF;
 
@@ -2570,7 +2570,7 @@ static int x86_sys_getitimer_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_sigreturn_impl(struct x86_ctx_t *ctx)
 {
-	signal_handler_return(ctx);
+	x86_signal_handler_return(ctx);
 
 	x86_emu_process_events_schedule();
 	x86_emu_process_events();
@@ -2699,7 +2699,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 	/* Debug */
 	map_flags(&sys_clone_flags_map, flags, flags_str, MAX_STRING_SIZE);
 	x86_sys_debug("  flags=%s\n", flags_str);
-	x86_sys_debug("  exit_signal=%d (%s)\n", exit_signal, sim_signal_name(exit_signal));
+	x86_sys_debug("  exit_signal=%d (%s)\n", exit_signal, x86_signal_name(exit_signal));
 
 	/* New stack pointer defaults to current */
 	if (!new_esp)
@@ -2914,7 +2914,7 @@ static int x86_sys_llseek_impl(struct x86_ctx_t *ctx)
 	offset = ((long long) offset_high << 32) | offset_low;
 	result_ptr = regs->esi;
 	origin = regs->edi;
-	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
+	host_fd = x86_file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, result_ptr=0x%x, origin=0x%x\n",
 		fd, offset_high, offset_low, result_ptr, origin);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
@@ -2986,7 +2986,7 @@ static int x86_sys_getdents_impl(struct x86_ctx_t *ctx)
 	fd = regs->ebx;
 	pdirent = regs->ecx;
 	count = regs->edx;
-	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
+	host_fd = x86_file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  fd=%d, pdirent=0x%x, count=%d\n",
 		fd, pdirent, count);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
@@ -3096,7 +3096,7 @@ static int sim_fd_set_read(struct x86_ctx_t *ctx, uint32_t addr,
 			continue;
 
 		/* Obtain 'host_fd' */
-		host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, i);
+		host_fd = x86_file_desc_table_get_host_fd(ctx->file_desc_table, i);
 		if (host_fd < 0)
 			return 0;
 		FD_SET(host_fd, fds);
@@ -3131,7 +3131,7 @@ static void sim_fd_set_write(struct x86_ctx_t *ctx, unsigned int addr,
 			continue;
 
 		/* Obtain 'guest_fd' and write */
-		guest_fd = file_desc_table_get_guest_fd(ctx->file_desc_table, i);
+		guest_fd = x86_file_desc_table_get_guest_fd(ctx->file_desc_table, i);
 		assert(guest_fd >= 0);
 		nbyte = guest_fd >> 3;
 		nbit = guest_fd & 7;
@@ -3270,7 +3270,7 @@ static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
 	int host_fd;
 	int total_len;
 
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	unsigned int iovec_ptr;
 	unsigned int vlen;
@@ -3287,7 +3287,7 @@ static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
 		guest_fd, iovec_ptr, vlen);
 
 	/* Check file descriptor */
-	desc = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	desc = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 	if (!desc)
 		return -EBADF;
 	host_fd = desc->host_fd;
@@ -3787,7 +3787,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 
 	struct sim_pollfd_t guest_fds;
 	struct pollfd host_fds;
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	char events_str[MAX_STRING_SIZE];
 
@@ -3817,7 +3817,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  guest_fd=%d, events=%s\n", guest_fd, events_str);
 
 	/* Get file descriptor */
-	desc = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	desc = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 	if (!desc)
 		return -EBADF;
 	host_fd = desc->host_fd;
@@ -3898,7 +3898,7 @@ static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
 	unsigned int act_ptr;
 	unsigned int old_act_ptr;
 
-	struct sim_sigaction act;
+	struct x86_sigaction_t act;
 
 	/* Arguments */
 	sig = regs->ebx;
@@ -3907,7 +3907,7 @@ static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
 	sigsetsize = regs->esi;
 	x86_sys_debug("  sig=%d, act_ptr=0x%x, old_act_ptr=0x%x, sigsetsize=0x%x\n",
 		sig, act_ptr, old_act_ptr, sigsetsize);
-	x86_sys_debug("  signal=%s\n", sim_signal_name(sig));
+	x86_sys_debug("  signal=%s\n", x86_signal_name(sig));
 
 	/* Invalid signal */
 	if (sig < 1 || sig > 64)
@@ -3921,18 +3921,18 @@ static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
 		{
 			FILE *f = debug_file(x86_sys_debug_category);
 			x86_sys_debug("  act: ");
-			sim_sigaction_dump(&act, f);
+			x86_sigaction_dump(&act, f);
 			x86_sys_debug("\n    flags: ");
-			sim_sigaction_flags_dump(act.flags, f);
+			x86_sigaction_flags_dump(act.flags, f);
 			x86_sys_debug("\n    mask: ");
-			sim_sigset_dump(act.mask, f);
+			x86_sigset_dump(act.mask, f);
 			x86_sys_debug("\n");
 		}
 	}
 
 	/* Store previous sigaction */
 	if (old_act_ptr)
-		mem_write(mem, old_act_ptr, sizeof(struct sim_sigaction),
+		mem_write(mem, old_act_ptr, sizeof(struct x86_sigaction_t),
 			&ctx->signal_handler_table->sigaction[sig - 1]);
 
 	/* Make new sigaction effective */
@@ -3992,7 +3992,7 @@ static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 		if (debug_status(x86_sys_debug_category))
 		{
 			x86_sys_debug("  set=0x%llx ", set);
-			sim_sigset_dump(set, debug_file(x86_sys_debug_category));
+			x86_sigset_dump(set, debug_file(x86_sys_debug_category));
 			x86_sys_debug("\n");
 		}
 
@@ -4059,11 +4059,11 @@ static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
 	{
 		FILE *f = debug_file(x86_sys_debug_category);
 		x86_sys_debug("  old mask: ");
-		sim_sigset_dump(ctx->signal_mask_table->blocked, f);
+		x86_sigset_dump(ctx->signal_mask_table->blocked, f);
 		x86_sys_debug("\n  new mask: ");
-		sim_sigset_dump(new_set, f);
+		x86_sigset_dump(new_set, f);
 		x86_sys_debug("\n  pending:  ");
-		sim_sigset_dump(ctx->signal_mask_table->pending, f);
+		x86_sigset_dump(ctx->signal_mask_table->pending, f);
 		x86_sys_debug("\n");
 	}
 
@@ -4243,7 +4243,7 @@ static int x86_sys_ftruncate64_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  fd=%d, length=0x%x\n", fd, length);
 
 	/* Get host descriptor */
-	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
+	host_fd = x86_file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	err = ftruncate(host_fd, length);
@@ -4432,7 +4432,7 @@ static int x86_sys_fstat64_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  fd=%d, statbuf_ptr=0x%x\n", fd, statbuf_ptr);
 
 	/* Get host descriptor */
-	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
+	host_fd = x86_file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Host call */
@@ -4616,7 +4616,7 @@ static int x86_sys_getdents64_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  fd=%d, pdirent=0x%x, count=%d\n", fd, pdirent, count);
 
 	/* Get host descriptor */
-	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
+	host_fd = x86_file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
 	if (host_fd < 0)
 		return -EBADF;
@@ -4713,7 +4713,7 @@ static int x86_sys_fcntl64_impl(struct x86_ctx_t *ctx)
 	char *cmd_name;
 	char flags_str[MAX_STRING_SIZE];
 
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	/* Arguments */
 	guest_fd = regs->ebx;
@@ -4725,7 +4725,7 @@ static int x86_sys_fcntl64_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("    cmd=%s\n", cmd_name);
 
 	/* Get file descriptor table entry */
-	desc = file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
+	desc = x86_file_desc_table_entry_get(ctx->file_desc_table, guest_fd);
 	if (!desc)
 		return -EBADF;
 	if (desc->host_fd < 0)
@@ -5282,7 +5282,7 @@ static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
 	pid = regs->ecx;
 	sig = regs->edx;
 	x86_sys_debug("  tgid=%d, pid=%d, sig=%d (%s)\n",
-		tgid, pid, sig, sim_signal_name(sig));
+		tgid, pid, sig, x86_signal_name(sig));
 
 	/* Implementation restrictions. */
 	if (tgid == -1)
@@ -5295,7 +5295,7 @@ static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
 		fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
 
 	/* Send signal */
-	sim_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
+	x86_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
 	x86_ctx_host_thread_suspend_cancel(temp_ctx);
 	x86_emu_process_events_schedule();
 	x86_emu_process_events();

@@ -107,7 +107,7 @@ static struct x86_ctx_t *ctx_do_create()
 	/* Structures */
 	ctx->regs = x86_regs_create();
 	ctx->backup_regs = x86_regs_create();
-	ctx->signal_mask_table = signal_mask_table_create();
+	ctx->signal_mask_table = x86_signal_mask_table_create();
 
 	/* Return context */
 	return ctx;
@@ -129,8 +129,8 @@ struct x86_ctx_t *x86_ctx_create(void)
 	ctx->spec_mem = spec_mem_create(ctx->mem);
 
 	/* Signal handlers and file descriptor table */
-	ctx->signal_handler_table = signal_handler_table_create();
-	ctx->file_desc_table = file_desc_table_create();
+	ctx->signal_handler_table = x86_signal_handler_table_create();
+	ctx->file_desc_table = x86_file_desc_table_create();
 	
 	return ctx;
 }
@@ -157,8 +157,8 @@ struct x86_ctx_t *x86_ctx_clone(struct x86_ctx_t *ctx)
 	new->loader = x86_loader_link(ctx->loader);
 
 	/* Signal handlers and file descriptor table */
-	new->signal_handler_table = signal_handler_table_link(ctx->signal_handler_table);
-	new->file_desc_table = file_desc_table_link(ctx->file_desc_table);
+	new->signal_handler_table = x86_signal_handler_table_link(ctx->signal_handler_table);
+	new->file_desc_table = x86_file_desc_table_link(ctx->file_desc_table);
 
 	/* Libc segment */
 	new->glibc_segment_base = ctx->glibc_segment_base;
@@ -192,8 +192,8 @@ struct x86_ctx_t *x86_ctx_fork(struct x86_ctx_t *ctx)
 	new->loader = x86_loader_link(ctx->loader);
 
 	/* Signal handlers and file descriptor table */
-	new->signal_handler_table = signal_handler_table_create();
-	new->file_desc_table = file_desc_table_create();
+	new->signal_handler_table = x86_signal_handler_table_create();
+	new->file_desc_table = x86_file_desc_table_create();
 
 	/* Libc segment */
 	new->glibc_segment_base = ctx->glibc_segment_base;
@@ -226,13 +226,13 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	/* Free private structures */
 	x86_regs_free(ctx->regs);
 	x86_regs_free(ctx->backup_regs);
-	signal_mask_table_free(ctx->signal_mask_table);
+	x86_signal_mask_table_free(ctx->signal_mask_table);
 	spec_mem_free(ctx->spec_mem);
 
 	/* Unlink shared structures */
 	x86_loader_unlink(ctx->loader);
-	signal_handler_table_unlink(ctx->signal_handler_table);
-	file_desc_table_unlink(ctx->file_desc_table);
+	x86_signal_handler_table_unlink(ctx->signal_handler_table);
+	x86_file_desc_table_unlink(ctx->file_desc_table);
 	mem_unlink(ctx->mem);
 
 	/* Warn about unresolved attempts to access OpenCL library */
@@ -273,9 +273,9 @@ void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 
 	/* Signal masks */
 	fprintf(f, "  blocked signal mask: 0x%llx ", ctx->signal_mask_table->blocked);
-	sim_sigset_dump(ctx->signal_mask_table->blocked, f);
+	x86_sigset_dump(ctx->signal_mask_table->blocked, f);
 	fprintf(f, "\n  pending signals: 0x%llx ", ctx->signal_mask_table->pending);
-	sim_sigset_dump(ctx->signal_mask_table->pending, f);
+	x86_sigset_dump(ctx->signal_mask_table->pending, f);
 	fprintf(f, "\n");
 }
 
@@ -560,7 +560,7 @@ void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)
 		if (x86_ctx_get_status(aux, x86_ctx_zombie))
 			x86_ctx_set_status(aux, x86_ctx_finished);
 		if (x86_ctx_get_status(aux, x86_ctx_handler))
-			signal_handler_return(aux);
+			x86_signal_handler_return(aux);
 		x86_ctx_host_thread_suspend_cancel(aux);
 		x86_ctx_host_thread_timer_cancel(aux);
 
@@ -613,7 +613,7 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int status)
 	{
 		x86_sys_debug("  sending signal %d to pid %d\n",
 			ctx->exit_signal, ctx->parent->pid);
-		sim_sigset_add(&ctx->parent->signal_mask_table->pending,
+		x86_sigset_add(&ctx->parent->signal_mask_table->pending,
 			ctx->exit_signal);
 		x86_emu_process_events_schedule();
 	}
@@ -630,7 +630,7 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int status)
 
 	/* If we are in a signal handler, stop it. */
 	if (x86_ctx_get_status(ctx, x86_ctx_handler))
-		signal_handler_return(ctx);
+		x86_signal_handler_return(ctx);
 
 	/* Finish context */
 	x86_ctx_set_status(ctx, ctx->parent ? x86_ctx_zombie : x86_ctx_finished);
