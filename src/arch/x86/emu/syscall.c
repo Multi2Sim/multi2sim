@@ -17,21 +17,38 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
 #include <sched.h>
 #include <syscall.h>
 #include <time.h>
+#include <unistd.h>
 #include <utime.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/times.h>
 
+#include <arch/evergreen/emu/emu.h>
+#include <arch/fermi/emu/emu.h>
+#include <arch/southern-islands/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <mem-system/mem-system.h>
 
+#include "clrt.h"
 #include "emu.h"
+#include "file-desc.h"
+#include "glut.h"
+#include "isa.h"
+#include "loader.h"
+#include "opengl.h"
+#include "regs.h"
+#include "signal.h"
+#include "syscall.h"
 
 
 
@@ -576,17 +593,18 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  flags=%s\n", flags_str);
 
 	/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
-	if (x86_emu->gpu_emulator == gpu_emulator_evg)
+	switch (x86_emu->gpu_kind)
 	{
+	case x86_emu_gpu_evergreen:
 		evg_emu_libopencl_redirect(ctx, full_path, sizeof full_path);
-	}
-	else if (x86_emu->gpu_emulator == gpu_emulator_si)
-	{
+		break;
+	
+	case x86_emu_gpu_southern_islands:
 		si_emu_libopencl_redirect(ctx, full_path, sizeof full_path);
-	}
-	else 
-	{
-		panic("invalid gpu emulator");
+		break;
+	
+	default:
+		panic("%s: invalid GPU kind", __FUNCTION__);
 	}
 
 	/* Virtual files */
@@ -5323,13 +5341,18 @@ static int x86_sys_set_robust_list_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_opencl_impl(struct x86_ctx_t *ctx)
 {
-	if (x86_emu->gpu_emulator == gpu_emulator_evg)
+	switch (x86_emu->gpu_kind)
+	{
+	case x86_emu_gpu_evergreen:
 		return evg_opencl_api_run(ctx);
 
-	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	case x86_emu_gpu_southern_islands:
 		return si_opencl_api_run(ctx);
-
-	abort();
+	
+	default:
+		panic("%s: invalid GPU kind", __FUNCTION__);
+		return 0;
+	}
 }
 
 

@@ -19,7 +19,10 @@
 
 #include <mem-system/mem-system.h>
 
+#include "clrt.h"
+#include "context.h"
 #include "emu.h"
+#include "regs.h"
 
 
 static char *x86_clrt_err_call =

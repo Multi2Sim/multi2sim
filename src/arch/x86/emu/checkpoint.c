@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <zlib.h>
@@ -24,7 +25,11 @@
 #include <lib/struct/bin-config.h>
 #include <mem-system/mem-system.h>
 
+#include "context.h"
 #include "emu.h"
+#include "file-desc.h"
+#include "loader.h"
+#include "regs.h"
 
 
 void x86_checkpoint_load(char *file_name);
@@ -367,9 +372,10 @@ static void load_fd(struct file_desc_table_t *fdt)
 	int guest_fd, host_fd;
 	char *path;
 	
-	kind     = load_int32("kind");
+	kind = load_int32("kind");
 	guest_fd = load_int32("index");
-	if (kind != file_desc_regular) {
+	if (kind != file_desc_regular)
+	{
 		warning("Ignoring %s (non-regular file)", cfg_path());
 		return;
 	}
@@ -381,18 +387,21 @@ static void load_fd(struct file_desc_table_t *fdt)
 		flags & ~O_CREAT & ~O_EXCL & ~O_NOCTTY & ~O_TRUNC;
 
 	host_fd = open(path, new_flags);
-	if(host_fd < 0) {
+	if (host_fd < 0)
+	{
 		warning("Ignoring %s: could not open %s",
 			cfg_path(), path);
 		return;
 	}
 
-	if(new_flags != flags) {
+	if (new_flags != flags)
+	{
 		warning("Flags for %s changed from %x to %x",
 			cfg_path(), flags, new_flags);
 	}
 
-	if(offset > 0) {
+	if (offset > 0)
+	{
 		int ret_offset = lseek(host_fd, offset, SEEK_SET);
 		if(ret_offset != offset)
 			fatal("While loading %s, "
@@ -412,7 +421,8 @@ static void save_fds(struct file_desc_table_t *fdt)
 
 	cfg_push("file_descriptors");
 
-	for (i = 0; i < list_count(fdt->file_desc_list); i++) {
+	for (i = 0; i < list_count(fdt->file_desc_list); i++)
+	{
 		struct file_desc_t *fd;
 
 		fd = list_get(fdt->file_desc_list, i);
@@ -424,7 +434,8 @@ static void save_fds(struct file_desc_table_t *fdt)
 		save_str("path", fd->path);
 		save_int32("flags", fd->flags);
 		save_int32("kind", fd->kind);
-		if (fd->kind == file_desc_regular) {
+		if (fd->kind == file_desc_regular)
+		{
 			save_int32("offset",
 				lseek(fd->host_fd, 0, SEEK_CUR));
 		}
@@ -443,12 +454,16 @@ static void load_threads(struct x86_ctx_t *process_ctx)
 
 	first = 1;
 
-	while (cfg_next_child()) {
+	while (cfg_next_child())
+	{
 		struct x86_ctx_t *thread_ctx;
-		if (first) {
+		if (first)
+		{
 			thread_ctx = process_ctx;
 			first = 0;
-		} else {
+		}
+		else
+		{
 			thread_ctx = x86_ctx_clone(process_ctx);
 		}
 
@@ -471,7 +486,8 @@ static void save_threads(struct x86_ctx_t *process_ctx)
 	     thread_ctx;
 	     thread_ctx = thread_ctx->context_list_next) 
 	{
-		if (thread_ctx->pid == process_ctx->pid) {
+		if (thread_ctx->pid == process_ctx->pid)
+		{
 			save_thread(thread_ctx);
 		}
 	}
@@ -483,9 +499,12 @@ static void save_thread(struct x86_ctx_t *ctx)
 {
 	cfg_push_unique();
 
-	if (x86_ctx_get_status(ctx, x86_ctx_spec_mode)) {
+	if (x86_ctx_get_status(ctx, x86_ctx_spec_mode))
+	{
 		save_regs(ctx->backup_regs);
-	} else {
+	}
+	else
+	{
 		save_regs(ctx->regs);
 	}
 

@@ -17,7 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
+#include <lib/misc/misc.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+
+#include "context.h"
 #include "emu.h"
+#include "isa.h"
+#include "uinst.h"
 
 
 /*
@@ -221,7 +230,7 @@ static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index,
 
 		/* The 'modrm_mod' field indicates whether it's actually a memory
 		 * dependence or a register. */
-		if(ctx->inst.modrm_mod == 3)
+		if (ctx->inst.modrm_mod == 3)
 			return 0;
 
 		PTR_ASSIGN(mem_regular_dep, x86_dep_data);

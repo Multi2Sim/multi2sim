@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <arch/fermi/asm/asm.h>
+#include <arch/x86/emu/context.h>
 #include <lib/misc/misc.h>
 #include <lib/struct/debug.h>
 #include <lib/struct/elf-format.h>
@@ -35,6 +36,18 @@
 
 #define frm_cuda_debug(...) debug(frm_cuda_debug_category, __VA_ARGS__)
 extern int frm_cuda_debug_category;
+
+
+
+
+/*
+ * CUDA call
+ */
+
+int frm_cuda_call(struct x86_ctx_t *ctx);
+
+
+
 
 
 /*

@@ -18,6 +18,8 @@
  */
 
 #include <arch/x86/emu/emu.h>
+#include <lib/struct/timer.h>
+#include <mem-system/mem-system.h>
 
 #include "emu.h"
 
@@ -52,9 +54,9 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 	ndrange->uav_list = list_create();
 
 	/* Instruction histogram */
-	if (evg_emu_report_file)
+	if (si_emu_report_file)
 	{
-		ndrange->inst_histogram = calloc(EVG_INST_COUNT, sizeof(unsigned int));
+		ndrange->inst_histogram = calloc(SI_INST_COUNT, sizeof(unsigned int));
 		if (!ndrange->inst_histogram)
 			fatal("%s: out of memory", __FUNCTION__);
 	}
@@ -485,7 +487,7 @@ void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange)
 
 		   /* Write the buffer resource descriptor into the UAV table at offset 320
 			* with 32 bytes spacing */
-		   mem_write(si_emu->global_mem, UAV_TABLE_START + 320 + i*32, 16, &buf_desc);
+		   mem_write(si_emu->global_mem, UAV_TABLE_START + 320 + i * 32, 16, &buf_desc);
 	}
 }
 

@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "opengl.h"
 #include "opengl-buffers.h"
 
 struct x86_opengl_render_buffer_t *x86_opengl_render_buffer_create(int width, int height)

@@ -18,6 +18,7 @@
  */
 
 #include <arch/x86/emu/emu.h>
+#include <lib/esim/esim.h>
 
 #include "emu.h"
 

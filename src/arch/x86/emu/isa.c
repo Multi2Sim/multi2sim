@@ -17,9 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/struct/elf-format.h>
 #include <mem-system/mem-system.h>
 
 #include "emu.h"
+#include "isa.h"
+#include "loader.h"
+#include "machine.h"
+#include "regs.h"
+#include "uinst.h"
 
 
 /* Debug categories */
