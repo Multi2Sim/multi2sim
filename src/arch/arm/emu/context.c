@@ -19,7 +19,9 @@
 
 #include <mem-system/mem-system.h>
 
+#include "context.h"
 #include "emu.h"
+#include "file.h"
 
 
 int arm_loader_debug_category;

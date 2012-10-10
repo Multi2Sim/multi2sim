@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/arm/emu/context.h>
 #include <arch/arm/emu/emu.h>
 #include <arch/arm/timing/timing.h>
 #include <arch/evergreen/timing/timing.h>

@@ -31,7 +31,9 @@
 #include <lib/mhandle/mhandle.h>
 #include <mem-system/mem-system.h>
 
+#include "context.h"
 #include "emu.h"
+#include "file.h"
 
 
 /*
@@ -530,20 +532,6 @@ static int arm_sys_open_impl(struct arm_ctx_t *ctx)
 	arm_sys_debug("  fullpath='%s'\n", full_path);
 	map_flags(&arm_sys_open_flags_map, flags, flags_str, sizeof flags_str);
 	arm_sys_debug("  flags=%s\n", flags_str);
-
-	/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
-	if (arm_emu->arm_gpu_emulator == arm_gpu_emulator_evg)
-	{
-		/*evg_emu_libopencl_redirect(ctx, full_path, sizeof full_path);*/
-	}
-	else if (arm_emu->arm_gpu_emulator == arm_gpu_emulator_si)
-	{
-		/*si_emu_libopencl_redirect(ctx, full_path, sizeof full_path);*/
-	}
-	else
-	{
-		panic("invalid gpu emulator");
-	}
 
 	/* Virtual files */
 	if (!strncmp(full_path, "/proc/", 6))

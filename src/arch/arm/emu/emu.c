@@ -19,6 +19,7 @@
 
 #include <arch/arm/timing/timing.h>
 
+#include "context.h"
 #include "emu.h"
 
 
@@ -81,41 +82,13 @@ void arm_emu_init(void)
 
 	/* Initialize mutex for variables controlling calls to 'arm_emu_process_events()' */
 	pthread_mutex_init(&arm_emu->process_events_mutex, NULL);
-
-	/* Initialize GPU emulators */
-	arm_emu->arm_gpu_emulator = arm_gpu_emulator_evg;
-	/*evg_emu_init();
-	si_emu_init();
-*/
-// #ifdef HAVE_GLUT_H
-	/* GLUT */
-// 	arm_glut_init();
-// #endif
-
-	/* TODO: Provide OpenGL and Fermi support for Arm when available */
-	/*
-	OPENGL
-	arm_opengl_init();
-
-	 CUDA
-	frm_emu_init();
-	 */
 }
+
 
 /* Finalization */
 void arm_emu_done(void)
 {
 	struct arm_ctx_t *ctx;
-
-// #ifdef HAVE_GLUT_H
-// 	arm_glut_done();
-// #endif
-
-	/* TODO: Provide OpenGL and Fermi support for Arm when available */
-	/*
-	 Finalize Opengl
-	arm_opengl_done();
-	*/
 
 	/* Finish all contexts */
 	for (ctx = arm_emu->context_list_head; ctx; ctx = ctx->context_list_next)
