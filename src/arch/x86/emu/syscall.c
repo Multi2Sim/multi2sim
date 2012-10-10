@@ -40,7 +40,6 @@
 #include <mem-system/mem-system.h>
 
 #include "clrt.h"
-#include "emu.h"
 #include "file-desc.h"
 #include "glut.h"
 #include "isa.h"

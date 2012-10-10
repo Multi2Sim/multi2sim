@@ -591,10 +591,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--x86-last-inst"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_emu_last_inst_bytes = malloc(20);
-			if (!x86_emu_last_inst_bytes)
-				fatal("%s: out of memory", __FUNCTION__);
-			hex_str_to_byte_array(x86_emu_last_inst_bytes, argv[++argi], 20);
+			x86_emu_last_inst_size = hex_str_to_byte_array(x86_emu_last_inst_bytes,
+				argv[++argi], sizeof x86_emu_last_inst_bytes);
 			continue;
 		}
 
@@ -1491,7 +1489,6 @@ int main(int argc, char **argv)
 	if (x86_save_checkpoint_file_name[0])
 		x86_checkpoint_save(x86_save_checkpoint_file_name);
 
-	free(x86_emu_last_inst_bytes);
 	free(arm_emu_last_inst_bytes);
 
 	/* Restore default signal handlers */

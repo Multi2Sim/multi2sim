@@ -17,12 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
- #include "opengl-color-channel.h"
+#include "opengl-color-channel.h"
 
- void x86_opengl_clamped_float_to_color_channel(GLfloat *src, GLchan* dst)
- {
- 	dst[0] = (GLchan) src[0] * CHAN_MAX;
- 	dst[1] = (GLchan) src[1] * CHAN_MAX;
- 	dst[2] = (GLchan) src[2] * CHAN_MAX;
- 	dst[3] = (GLchan) src[3] * CHAN_MAX;
- }
+
+void x86_opengl_clamped_float_to_color_channel(GLfloat *src, GLchan* dst)
+{
+	dst[0] = (GLchan) src[0] * CHAN_MAX;
+	dst[1] = (GLchan) src[1] * CHAN_MAX;
+	dst[2] = (GLchan) src[2] * CHAN_MAX;
+	dst[3] = (GLchan) src[3] * CHAN_MAX;
+}

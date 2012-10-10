@@ -19,6 +19,7 @@
 
 #include "opengl-edge.h"
 
+
 struct x86_opengl_edge_t *x86_opengl_edge_create(struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1)
 {
 	struct x86_opengl_edge_t * edge;

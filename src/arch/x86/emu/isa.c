@@ -32,9 +32,6 @@
 int x86_isa_call_debug_category;
 int x86_isa_inst_debug_category;
 
-/* FIXME */
-char *x86_isa_inst_bytes;
-
 /* Variables used to preserve host state before running assembly */
 long x86_isa_host_flags;
 unsigned short x86_isa_guest_fpcw;

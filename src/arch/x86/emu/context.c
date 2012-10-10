@@ -308,7 +308,6 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 		mem_access(mem, regs->eip, 20, buffer_ptr, mem_access_exec);
 	}
 	mem->safe = mem_safe_mode;
-	x86_isa_inst_bytes = (char *) buffer_ptr;
 
 	/* Disassemble */
 	x86_disasm(buffer_ptr, regs->eip, &ctx->inst);
@@ -316,6 +315,12 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)",
 			regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
+
+	/* Stop if instruction matches last instruction bytes */
+	if (x86_emu_last_inst_size &&
+		x86_emu_last_inst_size == ctx->inst.size &&
+		!memcmp(x86_emu_last_inst_bytes, buffer_ptr, x86_emu_last_inst_size))
+		esim_finish = esim_finish_x86_last_inst;
 
 	/* Execute instruction */
 	x86_isa_execute_inst(ctx);

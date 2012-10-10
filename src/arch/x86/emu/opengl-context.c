@@ -19,6 +19,7 @@
 
 #include "opengl-context.h"
 
+
 struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(void)
 {
 	/* Variables */

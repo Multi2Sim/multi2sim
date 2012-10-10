@@ -19,6 +19,7 @@
 
 #include "opengl-rast-line.h"
 
+
 /* TODO: interpolate */
 /* Bresenham's line algorithm */
 void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1, GLint y1, GLint x2, GLint y2, GLuint color)

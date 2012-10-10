@@ -46,7 +46,8 @@
 /* Configuration parameters */
 long long x86_emu_max_inst = 0;
 long long x86_emu_max_cycles = 0;
-char * x86_emu_last_inst_bytes = 0;
+char x86_emu_last_inst_bytes[20];
+int x86_emu_last_inst_size = 0;
 enum x86_emu_kind_t x86_emu_kind = x86_emu_kind_functional;
 
 
@@ -872,16 +873,7 @@ int x86_emu_run(void)
 
 	/* Run an instruction from every running process */
 	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
-	{
 		x86_ctx_execute(ctx);
-
-		/* Stop if instruction matches last instruction bytes */
-		if (x86_emu_last_inst_bytes &&
-			!strncmp(x86_isa_inst_bytes,
-				x86_emu_last_inst_bytes,
-				strlen(x86_emu_last_inst_bytes)))
-			esim_finish = esim_finish_x86_last_inst;
-	}
 
 	/* Free finished contexts */
 	while (x86_emu->finished_list_head)
