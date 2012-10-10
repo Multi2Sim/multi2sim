@@ -20,8 +20,7 @@
 #ifndef X86_OPENGL_EDGE_H
 #define X86_OPENGL_EDGE_H
 #include <GL/glut.h>
-#include <mem-system/mem-system.h>
-#include "emu.h"
+#include "opengl.h"
 
 #include "opengl-vertex.h"
 #include "opengl-rast-config.h"
