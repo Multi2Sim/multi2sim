@@ -21,8 +21,9 @@
 #include <lib/esim/esim.h>
 #include <lib/struct/config.h>
 #include <lib/struct/debug.h>
-#include <lib/struct/repos.h>
 #include <lib/struct/heap.h>
+#include <lib/struct/repos.h>
+#include <lib/struct/timer.h>
 
 #include "timing.h"
 

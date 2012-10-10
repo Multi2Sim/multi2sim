@@ -25,6 +25,13 @@
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/timing/timing.h>
+#include <arch/x86/emu/checkpoint.h>
+#include <arch/x86/emu/clrt.h>
+#include <arch/x86/emu/glut.h>
+#include <arch/x86/emu/isa.h>
+#include <arch/x86/emu/loader.h>
+#include <arch/x86/emu/opengl.h>
+#include <arch/x86/emu/syscall.h>
 #include <arch/x86/timing/timing.h>
 #include <lib/esim/esim.h>
 #include <visual-common.h>
@@ -1446,7 +1453,7 @@ int main(int argc, char **argv)
 
 	/* Select the GPU emulator */
 	if (si_emulator)
-		x86_emu->gpu_emulator = gpu_emulator_si;
+		x86_emu->gpu_kind = x86_emu_gpu_southern_islands;
 
 	/* Initialization for detailed simulation */
 	if (x86_emu_kind == x86_emu_kind_detailed)

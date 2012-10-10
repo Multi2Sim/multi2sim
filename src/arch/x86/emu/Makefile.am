@@ -2,37 +2,63 @@ lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
 	\
-	isa.c \
 	checkpoint.c \
+	checkpoint.h \
+	\
 	clrt.c \
 	clrt.dat \
+	clrt.h \
+	\
 	context.c \
+	context.h \
 	\
 	emu.c \
 	emu.h \
 	\
-	file.c \
+	file-desc.c \
+	file-desc.h \
+	\
+	isa.c \
+	isa.h \
+	\
 	loader.c \
+	loader.h \
+	\
 	machine.c \
+	machine.h \
 	machine-ctrl.c \
 	machine-fp.c \
 	machine-rot.c \
 	machine-std.c \
 	machine-str.c \
 	machine-xmm.c \
+	\
 	regs.c \
+	regs.h \
+	\
 	signal.c \
+	signal.h \
+	\
 	syscall.c \
 	syscall.dat \
-	uinst.c
+	syscall.h \
+	\
+	uinst.c \
+	uinst.h
 
 if HAVE_GLUT_H
 libemu_a_SOURCES += \
+	\
 	glut.c \
 	glut.dat \
+	glut.h \
+	\
 	glut-frame-buffer.c \
+	glut-frame-buffer.h \
+	\
 	opengl.c \
 	opengl.dat \
+	opengl.h \
 	\
 	opengl-context.c \
 	opengl-context.h \
@@ -71,7 +97,11 @@ libemu_a_SOURCES += \
 	opengl-viewport.h
 else
 libemu_a_SOURCES += \
+	\
+	glut.h
 	glut-missing.c \
+	\
+	opengl.h \
 	opengl-missing.c
 endif
 

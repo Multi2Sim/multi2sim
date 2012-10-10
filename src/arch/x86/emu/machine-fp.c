@@ -18,6 +18,10 @@
  */
 
 #include "emu.h"
+#include "isa.h"
+#include "machine.h"
+#include "regs.h"
+#include "uinst.h"
 
 
 /* Macros defined to prevent accidental use of 'mem_<xx>' instructions */

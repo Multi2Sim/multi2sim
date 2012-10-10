@@ -17,9 +17,26 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/x86/emu/emu.h>
+#include <errno.h>
+#include <poll.h>
+#include <pthread.h>
+
+#include <arch/evergreen/emu/emu.h>
+#include <arch/fermi/emu/emu.h>
+#include <arch/southern-islands/emu/emu.h>
 #include <arch/x86/timing/timing.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/timer.h>
 #include <mem-system/mem-system.h>
+
+#include "emu.h"
+#include "file-desc.h"
+#include "glut.h"
+#include "isa.h"
+#include "opengl.h"
+#include "regs.h"
+#include "signal.h"
+#include "syscall.h"
 
 
 /*
@@ -84,7 +101,7 @@ void x86_emu_init(void)
 	pthread_mutex_init(&x86_emu->process_events_mutex, NULL);
 
 	/* Initialize GPU emulators */
-	x86_emu->gpu_emulator = gpu_emulator_evg;
+	x86_emu->gpu_kind = x86_emu_gpu_evergreen;
 	evg_emu_init();
 	si_emu_init();
 
@@ -93,7 +110,7 @@ void x86_emu_init(void)
 	x86_glut_init();
 #endif
 
-	/*OPENGL*/
+	/* OpenGL */
 	x86_opengl_init();
 
 	/* CUDA */
