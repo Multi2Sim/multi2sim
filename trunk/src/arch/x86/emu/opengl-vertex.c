@@ -19,7 +19,6 @@
 
 #include "opengl-vertex.h"
 
-
 struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
 	struct x86_opengl_vertex_t *vtx;
