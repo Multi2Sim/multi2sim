@@ -20,9 +20,9 @@
 #ifndef M2S_CUDA_H
 #define M2S_CUDA_H
 
-#include <cuda.h>
-#include <cuda_runtime_api.h>
-#include <crt/host_runtime.h>
+#include "cuda.h"
+#include "cuda_runtime_api.h"
+#include "crt/host_runtime.h"
 
 
 

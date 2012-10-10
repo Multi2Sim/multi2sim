@@ -165,7 +165,7 @@ void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 
 	/* FIXME: should extract cubin directly */
 	/* Search for string "\t.versio" */
-	for (i = 0; i < 100; ++i)
+	for (i = 0; i < 1000000; ++i)
 	{
 		if (fatbinData[i] == 0x6f69737265762e09)
 			break;
