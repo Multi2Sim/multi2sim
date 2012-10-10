@@ -17,29 +17,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <mem-system/mem-system.h>
-
-#include "context.h"
-#include "signal.h"
-#include "regs.h"
-#include "syscall.h"
+#ifndef ARCH_ARM_EMU_SYSCALL_H
+#define ARCH_ARM_EMU_SYSCALL_H
 
 
+#define ARM_set_tls 0xF0005
+#define ARM_exit_group 248
 
-/* Return from a signal handler */
-void arm_signal_handler_return(struct arm_ctx_t *ctx)
-{
-	/* Change context status */
-	if (!arm_ctx_get_status(ctx, arm_ctx_handler))
-		fatal("%s: not handling a signal", __FUNCTION__);
-	arm_ctx_clear_status(ctx, arm_ctx_handler);
+#define arm_sys_debug(...) debug(arm_sys_debug_category, __VA_ARGS__)
+#define arm_sys_debug_buffer(...) debug_buffer(arm_sys_debug_category, __VA_ARGS__)
+extern int arm_sys_debug_category;
 
-	/* Free signal frame */
-	mem_unmap(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE);
-	arm_sys_debug("  signal handler return code at 0x%x deallocated\n",
-		ctx->signal_mask_table->pretcode);
+void arm_sys_init(void);
+void arm_sys_done(void);
 
-	/* Restore saved register file and free backup */
-	arm_regs_copy(ctx->regs, ctx->signal_mask_table->regs);
-	arm_regs_free(ctx->signal_mask_table->regs);
-}
+void arm_sys_call(struct arm_ctx_t *ctx);
+
+
+
+
+#endif
+

@@ -17,15 +17,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
 #include <sched.h>
+#include <signal.h>
 #include <syscall.h>
 #include <time.h>
+#include <unistd.h>
 #include <utime.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/times.h>
 
 #include <lib/mhandle/mhandle.h>
@@ -34,6 +40,9 @@
 #include "context.h"
 #include "emu.h"
 #include "file.h"
+#include "isa.h"
+#include "regs.h"
+#include "syscall.h"
 
 
 /*

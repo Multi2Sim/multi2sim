@@ -17,29 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <mem-system/mem-system.h>
+#ifndef ARCH_ARM_EMU_MACHINE_H
+#define ARCH_ARM_EMU_MACHINE_H
 
-#include "context.h"
-#include "signal.h"
-#include "regs.h"
-#include "syscall.h"
+/* Table of functions implementing implementing the Evergreen ISA */
+typedef void (*arm_isa_inst_func_t)(struct arm_ctx_t *ctx);
+
+/* Declarations of function prototypes implementing Evergreen ISA */
+#define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
+	extern void arm_isa_##_name##_impl(struct arm_ctx_t *ctx);
+#include <arch/arm/asm/asm.dat>
+#undef DEFINST
 
 
+#endif
 
-/* Return from a signal handler */
-void arm_signal_handler_return(struct arm_ctx_t *ctx)
-{
-	/* Change context status */
-	if (!arm_ctx_get_status(ctx, arm_ctx_handler))
-		fatal("%s: not handling a signal", __FUNCTION__);
-	arm_ctx_clear_status(ctx, arm_ctx_handler);
-
-	/* Free signal frame */
-	mem_unmap(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE);
-	arm_sys_debug("  signal handler return code at 0x%x deallocated\n",
-		ctx->signal_mask_table->pretcode);
-
-	/* Restore saved register file and free backup */
-	arm_regs_copy(ctx->regs, ctx->signal_mask_table->regs);
-	arm_regs_free(ctx->signal_mask_table->regs);
-}

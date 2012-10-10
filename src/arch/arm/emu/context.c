@@ -17,11 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <lib/struct/timer.h>
 #include <mem-system/mem-system.h>
 
 #include "context.h"
 #include "emu.h"
 #include "file.h"
+#include "isa.h"
+#include "machine.h"
+#include "regs.h"
 
 
 int arm_loader_debug_category;
@@ -668,7 +675,6 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 	*/
 
 	mem->safe = mem_safe_mode;
-	arm_isa_inst_bytes = (char *) buffer_ptr;
 
 	/* Disassemble */
 	arm_disasm(buffer_ptr, (regs->pc - 4), &ctx->inst);
