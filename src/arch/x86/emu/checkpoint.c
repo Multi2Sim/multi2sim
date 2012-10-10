@@ -48,9 +48,9 @@ static void load_memory_data(struct mem_t *mem);
 static void save_memory_data(struct mem_t *mem);
 static void load_memory_range(struct mem_t *mem);
 static void save_memory_page(struct mem_page_t *page);
-static void load_fds(struct file_desc_table_t *fdt);
-static void load_fd(struct file_desc_table_t *fdt);
-static void save_fds(struct file_desc_table_t *fdt);
+static void load_fds(struct x86_file_desc_table_t *fdt);
+static void load_fd(struct x86_file_desc_table_t *fdt);
+static void save_fds(struct x86_file_desc_table_t *fdt);
 static void load_threads(struct x86_ctx_t *ctx);
 static void save_threads(struct x86_ctx_t *ctx);
 static void save_thread(struct x86_ctx_t *ctx);
@@ -353,7 +353,7 @@ static void save_memory_page(struct mem_page_t *page)
 	cfg_pop();
 }
 
-static void load_fds(struct file_desc_table_t *fdt)
+static void load_fds(struct x86_file_desc_table_t *fdt)
 {
 	cfg_descend("file_descriptors");
 
@@ -365,7 +365,7 @@ static void load_fds(struct file_desc_table_t *fdt)
 	cfg_pop();
 }
 
-static void load_fd(struct file_desc_table_t *fdt)
+static void load_fd(struct x86_file_desc_table_t *fdt)
 {
 	int kind, offset;
 	int flags, new_flags;
@@ -409,13 +409,13 @@ static void load_fd(struct file_desc_table_t *fdt)
 				cfg_path(), offset, path);
 	}
 
-	file_desc_table_entry_new_guest_fd(fdt, file_desc_regular,
+	x86_file_desc_table_entry_new_guest_fd(fdt, file_desc_regular,
 		guest_fd, host_fd, (char *)path, flags);
 
 	free(path);
 }
 
-static void save_fds(struct file_desc_table_t *fdt)
+static void save_fds(struct x86_file_desc_table_t *fdt)
 {
 	int i;
 
@@ -423,7 +423,7 @@ static void save_fds(struct file_desc_table_t *fdt)
 
 	for (i = 0; i < list_count(fdt->file_desc_list); i++)
 	{
-		struct file_desc_t *fd;
+		struct x86_file_desc_t *fd;
 
 		fd = list_get(fdt->file_desc_list, i);
 		if (!fd) continue; /* unused file descriptor */

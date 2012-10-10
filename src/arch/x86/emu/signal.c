@@ -30,7 +30,7 @@
 
 /* Signals */
 
-struct string_map_t signal_map =
+struct string_map_t x86_signal_map =
 {
 	31, {
 		{ "SIGHUP",           1 },
@@ -68,7 +68,7 @@ struct string_map_t signal_map =
 };
 
 
-struct string_map_t sigaction_flags_map =
+struct string_map_t x86_sigaction_flags_map =
 {
 	9, {
 		{ "SA_NOCLDSTOP",    0x00000001u },
@@ -84,13 +84,13 @@ struct string_map_t sigaction_flags_map =
 };
 
 
-char *sim_signal_name(int signum)
+char *x86_signal_name(int signum)
 {
-	return map_value(&signal_map, signum);
+	return map_value(&x86_signal_map, signum);
 }
 
 
-void sim_sigaction_dump(struct sim_sigaction *sim, FILE *f)
+void x86_sigaction_dump(struct x86_sigaction_t *sim, FILE *f)
 {
 	fprintf(f, "handler=0x%x, flags=0x%x, restorer=0x%x, mask=0x%llx",
 		sim->handler, sim->flags,
@@ -98,15 +98,15 @@ void sim_sigaction_dump(struct sim_sigaction *sim, FILE *f)
 }
 
 
-void sim_sigaction_flags_dump(uint32_t flags, FILE *f)
+void x86_sigaction_flags_dump(unsigned int flags, FILE *f)
 {
 	char buf[0x200];
-	map_flags(&sigaction_flags_map, flags, buf, 0x200);
+	map_flags(&x86_sigaction_flags_map, flags, buf, 0x200);
 	fprintf(f, "%s", buf);
 }
 
 
-int sim_sigset_member(unsigned long long *sim_sigset, int sig)
+int x86_sigset_member(unsigned long long *sim_sigset, int sig)
 {
 	if (sig < 1 || sig > 64)
 		return 0;
@@ -114,7 +114,7 @@ int sim_sigset_member(unsigned long long *sim_sigset, int sig)
 }
 
 
-void sim_sigset_add(unsigned long long *sim_sigset, int sig)
+void x86_sigset_add(unsigned long long *sim_sigset, int sig)
 {
 	if (sig < 1 || sig > 64)
 		return;
@@ -122,7 +122,7 @@ void sim_sigset_add(unsigned long long *sim_sigset, int sig)
 }
 
 
-void sim_sigset_del(unsigned long long *sim_sigset, int sig)
+void x86_sigset_del(unsigned long long *sim_sigset, int sig)
 {
 	if (sig < 1 || sig > 64)
 		return;
@@ -130,7 +130,7 @@ void sim_sigset_del(unsigned long long *sim_sigset, int sig)
 }
 
 
-void sim_sigset_dump(unsigned long long sim_sigset, FILE *f)
+void x86_sigset_dump(unsigned long long sim_sigset, FILE *f)
 {
 	int i;
 	char *comma = "", *name;
@@ -142,11 +142,11 @@ void sim_sigset_dump(unsigned long long sim_sigset, FILE *f)
 	fprintf(f, "{");
 	for (i = 1; i <= 64; i++)
 	{
-		if (sim_sigset_member(&sim_sigset, i))
+		if (x86_sigset_member(&sim_sigset, i))
 		{
 			if (i < 32)
 			{
-				name = map_value(&signal_map, i);
+				name = map_value(&x86_signal_map, i);
 				fprintf(f, "%s%s", comma, name);
 			}
 			else
@@ -166,12 +166,12 @@ void sim_sigset_dump(unsigned long long sim_sigset, FILE *f)
  * Signal Mask Table
  */
 
-struct signal_mask_table_t *signal_mask_table_create(void)
+struct x86_signal_mask_table_t *x86_signal_mask_table_create(void)
 {
-	struct signal_mask_table_t *table;
+	struct x86_signal_mask_table_t *table;
 
 	/* Create */
-	table = calloc(1, sizeof(struct signal_mask_table_t));
+	table = calloc(1, sizeof(struct x86_signal_mask_table_t));
 	if (!table)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -179,7 +179,7 @@ struct signal_mask_table_t *signal_mask_table_create(void)
 	return table;
 }
 
-void signal_mask_table_free(struct signal_mask_table_t *table)
+void x86_signal_mask_table_free(struct x86_signal_mask_table_t *table)
 {
 	free(table);
 }
@@ -191,12 +191,12 @@ void signal_mask_table_free(struct signal_mask_table_t *table)
  * Signal Handler Table
  */
 
-struct signal_handler_table_t *signal_handler_table_create(void)
+struct x86_signal_handler_table_t *x86_signal_handler_table_create(void)
 {
-	struct signal_handler_table_t *table;
+	struct x86_signal_handler_table_t *table;
 
 	/* Allocate */
-	table = calloc(1, sizeof(struct signal_handler_table_t));
+	table = calloc(1, sizeof(struct x86_signal_handler_table_t));
 	if (!table)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -205,27 +205,27 @@ struct signal_handler_table_t *signal_handler_table_create(void)
 }
 
 
-void signal_handler_table_free(struct signal_handler_table_t *table)
+void x86_signal_handler_table_free(struct x86_signal_handler_table_t *table)
 {
 	assert(!table->num_links);
 	free(table);
 }
 
 
-struct signal_handler_table_t *signal_handler_table_link(struct signal_handler_table_t *table)
+struct x86_signal_handler_table_t *x86_signal_handler_table_link(struct x86_signal_handler_table_t *table)
 {
 	table->num_links++;
 	return table;
 }
 
 
-void signal_handler_table_unlink(struct signal_handler_table_t *table)
+void x86_signal_handler_table_unlink(struct x86_signal_handler_table_t *table)
 {
 	assert(table->num_links >= 0);
 	if (table->num_links)
 		table->num_links--;
 	else
-		signal_handler_table_free(table);
+		x86_signal_handler_table_free(table);
 }
 
 
@@ -237,21 +237,21 @@ void signal_handler_table_unlink(struct signal_handler_table_t *table)
 
 
 /* Structure representing the signal stack frame */
-struct sim_sigframe
+struct x86_sigframe
 {
-	uint32_t pretcode;  /* Pointer to return code */
-	uint32_t sig;  /* Received signal */
+	unsigned int pretcode;  /* Pointer to return code */
+	unsigned int sig;  /* Received signal */
 
-	uint32_t gs, fs, es, ds;
-	uint32_t edi, esi, ebp, esp;
-	uint32_t ebx, edx, ecx, eax;
-	uint32_t trapno, err, eip, cs;
-	uint32_t eflags;
-	uint32_t esp_at_signal;
-	uint32_t ss;
-	uint32_t pfpstate;  /* Pointer to floating-point state */
-	uint32_t oldmask;
-	uint32_t cr2;
+	unsigned int gs, fs, es, ds;
+	unsigned int edi, esi, ebp, esp;
+	unsigned int ebx, edx, ecx, eax;
+	unsigned int trapno, err, eip, cs;
+	unsigned int eflags;
+	unsigned int esp_at_signal;
+	unsigned int ss;
+	unsigned int pfpstate;  /* Pointer to floating-point state */
+	unsigned int oldmask;
+	unsigned int cr2;
 };
 
 
@@ -261,14 +261,14 @@ struct sim_sigframe
  *     mov eax, 0x77
  *     int 0x80
  */
-static char signal_retcode[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
+static char x86_signal_retcode[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
 
 
 /* Run a signal handler */
-void signal_handler_run(struct x86_ctx_t *ctx, int sig)
+void x86_signal_handler_run(struct x86_ctx_t *ctx, int sig)
 {
-	uint32_t handler;
-	struct sim_sigframe sigframe;
+	unsigned int handler;
+	struct x86_sigframe sigframe;
 
 	/* Debug */
 	assert(IN_RANGE(sig, 1, 64));
@@ -287,7 +287,7 @@ void signal_handler_run(struct x86_ctx_t *ctx, int sig)
 	ctx->signal_mask_table->pretcode = mem_map_space(ctx->mem, MEM_PAGE_SIZE, MEM_PAGE_SIZE);
 	mem_map(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE, mem_access_exec | mem_access_init);
 	x86_sys_debug("  return code of signal handler allocated at 0x%x\n", ctx->signal_mask_table->pretcode);
-	mem_access(ctx->mem, ctx->signal_mask_table->pretcode, sizeof(signal_retcode), signal_retcode, mem_access_init);
+	mem_access(ctx->mem, ctx->signal_mask_table->pretcode, sizeof(x86_signal_retcode), x86_signal_retcode, mem_access_init);
 
 	/* Initialize stack frame */
 	sigframe.pretcode = ctx->signal_mask_table->pretcode;
@@ -335,7 +335,7 @@ void signal_handler_run(struct x86_ctx_t *ctx, int sig)
 
 
 /* Return from a signal handler */
-void signal_handler_return(struct x86_ctx_t *ctx)
+void x86_signal_handler_return(struct x86_ctx_t *ctx)
 {
 	/* Change context status */
 	if (!x86_ctx_get_status(ctx, x86_ctx_handler))
@@ -361,7 +361,7 @@ void signal_handler_return(struct x86_ctx_t *ctx)
  *    system call itself, which must be repeated.
  *   -If flag 'SA_RESTART' is not set, the return address is the instruction
  *    next to the system call, and register 'eax' is set to -EINTR. */
-void signal_handler_check_intr(struct x86_ctx_t *ctx)
+void x86_signal_handler_check_intr(struct x86_ctx_t *ctx)
 {
 	int sig;
 
@@ -372,8 +372,8 @@ void signal_handler_check_intr(struct x86_ctx_t *ctx)
 
 	/* Get signal number */
 	for (sig = 1; sig <= 64; sig++)
-		if (sim_sigset_member(&ctx->signal_mask_table->pending, sig) &&
-			!sim_sigset_member(&ctx->signal_mask_table->blocked, sig))
+		if (x86_sigset_member(&ctx->signal_mask_table->pending, sig) &&
+			!x86_sigset_member(&ctx->signal_mask_table->blocked, sig))
 			break;
 	assert(sig <= 64);
 
@@ -395,13 +395,13 @@ void signal_handler_check_intr(struct x86_ctx_t *ctx)
 	}
 
 	/* Run the signal handler */
-	signal_handler_run(ctx, sig);
-	sim_sigset_del(&ctx->signal_mask_table->pending, sig);
+	x86_signal_handler_run(ctx, sig);
+	x86_sigset_del(&ctx->signal_mask_table->pending, sig);
 
 }
 
 
-void signal_handler_check(struct x86_ctx_t *ctx)
+void x86_signal_handler_check(struct x86_ctx_t *ctx)
 {
 	int sig;
 
@@ -417,14 +417,12 @@ void signal_handler_check(struct x86_ctx_t *ctx)
 	 * be executed. */
 	for (sig = 1; sig <= 64; sig++)
 	{
-		if (sim_sigset_member(&ctx->signal_mask_table->pending, sig) &&
-			!sim_sigset_member(&ctx->signal_mask_table->blocked, sig))
+		if (x86_sigset_member(&ctx->signal_mask_table->pending, sig) &&
+			!x86_sigset_member(&ctx->signal_mask_table->blocked, sig))
 		{
-			signal_handler_run(ctx, sig);
-			sim_sigset_del(&ctx->signal_mask_table->pending, sig);
+			x86_signal_handler_run(ctx, sig);
+			x86_sigset_del(&ctx->signal_mask_table->pending, sig);
 			break;
 		}
 	}
 }
-
-

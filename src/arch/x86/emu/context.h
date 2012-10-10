@@ -131,9 +131,9 @@ struct x86_ctx_t
 	struct spec_mem_t *spec_mem;  /* Speculative memory */
 	struct x86_regs_t *regs;  /* Logical register file */
 	struct x86_regs_t *backup_regs;  /* Backup when entering in speculative mode */
-	struct file_desc_table_t *file_desc_table;  /* File descriptor table */
-	struct signal_mask_table_t *signal_mask_table;
-	struct signal_handler_table_t *signal_handler_table;
+	struct x86_file_desc_table_t *file_desc_table;  /* File descriptor table */
+	struct x86_signal_mask_table_t *signal_mask_table;
+	struct x86_signal_handler_table_t *signal_handler_table;
 
 
 	/* Statistics */

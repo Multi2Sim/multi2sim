@@ -33,13 +33,13 @@
  * Private Functions
  */
 
-struct file_desc_t *file_desc_create(enum file_desc_kind_t kind,
+struct x86_file_desc_t *x86_file_desc_create(enum x86_file_desc_kind_t kind,
 	int guest_fd, int host_fd, int flags, char *path)
 {
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	/* Allocate */
-	desc = calloc(1, sizeof(struct file_desc_t));
+	desc = calloc(1, sizeof(struct x86_file_desc_t));
 	if (!desc)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -62,7 +62,7 @@ struct file_desc_t *file_desc_create(enum file_desc_kind_t kind,
 }
 
 
-static void file_desc_free(struct file_desc_t *desc)
+static void x86_file_desc_free(struct x86_file_desc_t *desc)
 {
 	if (desc->path)
 		free(desc->path);
@@ -76,13 +76,13 @@ static void file_desc_free(struct file_desc_t *desc)
  * Public Functions
  */
 
-struct file_desc_table_t *file_desc_table_create(void)
+struct x86_file_desc_table_t *x86_file_desc_table_create(void)
 {
-	struct file_desc_table_t *table;
-	struct file_desc_t *desc;
+	struct x86_file_desc_table_t *table;
+	struct x86_file_desc_t *desc;
 
 	/* Allocate */
-	table = calloc(1, sizeof(struct file_desc_table_t));
+	table = calloc(1, sizeof(struct x86_file_desc_table_t));
 	if (!table)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -90,15 +90,15 @@ struct file_desc_table_t *file_desc_table_create(void)
 	table->file_desc_list = list_create();
 
 	/* Add stdin */
-	desc = file_desc_create(file_desc_std, 0, 0, 0, NULL);
+	desc = x86_file_desc_create(file_desc_std, 0, 0, 0, NULL);
 	list_add(table->file_desc_list, desc);
 
 	/* Add stdout */
-	desc = file_desc_create(file_desc_std, 1, 1, 0, NULL);
+	desc = x86_file_desc_create(file_desc_std, 1, 1, 0, NULL);
 	list_add(table->file_desc_list, desc);
 
 	/* Add stderr */
-	desc = file_desc_create(file_desc_std, 2, 2, 0, NULL);
+	desc = x86_file_desc_create(file_desc_std, 2, 2, 0, NULL);
 	list_add(table->file_desc_list, desc);
 
 	/* Return */
@@ -106,10 +106,10 @@ struct file_desc_table_t *file_desc_table_create(void)
 }
 
 
-void file_desc_table_free(struct file_desc_table_t *table)
+void x86_file_desc_table_free(struct x86_file_desc_table_t *table)
 {
 	int i;
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	/* Check no more links */
 	assert(!table->num_links);
@@ -119,7 +119,7 @@ void file_desc_table_free(struct file_desc_table_t *table)
 	{
 		desc = list_get(table->file_desc_list, i);
 		if (desc)
-			file_desc_free(desc);
+			x86_file_desc_free(desc);
 	}
 
 	/* Free list and table */
@@ -128,33 +128,33 @@ void file_desc_table_free(struct file_desc_table_t *table)
 }
 
 
-struct file_desc_table_t *file_desc_table_link(struct file_desc_table_t *fdt)
+struct x86_file_desc_table_t *x86_file_desc_table_link(struct x86_file_desc_table_t *fdt)
 {
 	fdt->num_links++;
 	return fdt;
 }
 
 
-void file_desc_table_unlink(struct file_desc_table_t *fdt)
+void x86_file_desc_table_unlink(struct x86_file_desc_table_t *fdt)
 {
 	assert(fdt->num_links >= 0);
 	if (fdt->num_links)
 		fdt->num_links--;
 	else
-		file_desc_table_free(fdt);
+		x86_file_desc_table_free(fdt);
 }
 
 
-void file_desc_table_dump(struct file_desc_table_t *table, FILE *f)
+void x86_file_desc_table_dump(struct x86_file_desc_table_t *table, FILE *f)
 {
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	int i;
 	int busy = 0;
 
 	for (i = 0; i < list_count(table->file_desc_list); i++)
 	{
-		file_desc_table_entry_dump(table, i, f);
+		x86_file_desc_table_entry_dump(table, i, f);
 		desc = list_get(table->file_desc_list, i);
 		if (desc)
 			busy++;
@@ -163,18 +163,18 @@ void file_desc_table_dump(struct file_desc_table_t *table, FILE *f)
 }
 
 
-int file_desc_table_get_host_fd(struct file_desc_table_t *table, int guest_fd)
+int x86_file_desc_table_get_host_fd(struct x86_file_desc_table_t *table, int guest_fd)
 {
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	desc = list_get(table->file_desc_list, guest_fd);
 	return desc ? desc->host_fd : -1;
 }
 
 
-int file_desc_table_get_guest_fd(struct file_desc_table_t *table, int host_fd)
+int x86_file_desc_table_get_guest_fd(struct x86_file_desc_table_t *table, int host_fd)
 {
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 	int i;
 
 	for (i = 0; i < list_count(table->file_desc_list); i++)
@@ -189,9 +189,9 @@ int file_desc_table_get_guest_fd(struct file_desc_table_t *table, int host_fd)
 }
 
 
-void file_desc_table_entry_dump(struct file_desc_table_t *table, int index, FILE *f)
+void x86_file_desc_table_entry_dump(struct x86_file_desc_table_t *table, int index, FILE *f)
 {
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	/* Invalid entry */
 	if (index < 0 || index >= list_count(table->file_desc_list))
@@ -212,21 +212,21 @@ void file_desc_table_entry_dump(struct file_desc_table_t *table, int index, FILE
 }
 
 
-struct file_desc_t *file_desc_table_entry_get(struct file_desc_table_t *table, int index)
+struct x86_file_desc_t *x86_file_desc_table_entry_get(struct x86_file_desc_table_t *table, int index)
 {
 	return list_get(table->file_desc_list, index);
 }
 
-struct file_desc_t *file_desc_table_entry_new(struct file_desc_table_t *table,
-	enum file_desc_kind_t kind, int host_fd, char *path, int flags)
+struct x86_file_desc_t *x86_file_desc_table_entry_new(struct x86_file_desc_table_t *table,
+	enum x86_file_desc_kind_t kind, int host_fd, char *path, int flags)
 {
-	return file_desc_table_entry_new_guest_fd(table, kind, -1, host_fd, path, flags);
+	return x86_file_desc_table_entry_new_guest_fd(table, kind, -1, host_fd, path, flags);
 }
 
-struct file_desc_t *file_desc_table_entry_new_guest_fd(struct file_desc_table_t *table,
-	enum file_desc_kind_t kind, int guest_fd, int host_fd, char *path, int flags)
+struct x86_file_desc_t *x86_file_desc_table_entry_new_guest_fd(struct x86_file_desc_table_t *table,
+	enum x86_file_desc_kind_t kind, int guest_fd, int host_fd, char *path, int flags)
 {
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	int i;
 
@@ -248,7 +248,7 @@ struct file_desc_t *file_desc_table_entry_new_guest_fd(struct file_desc_table_t 
 	}
 
 	/* Create guest file descriptor and return. */
-	desc = file_desc_create(kind, guest_fd, host_fd, flags, path);
+	desc = x86_file_desc_create(kind, guest_fd, host_fd, flags, path);
 	list_set(table->file_desc_list, guest_fd, desc);
 
 	/* Return */
@@ -256,9 +256,9 @@ struct file_desc_t *file_desc_table_entry_new_guest_fd(struct file_desc_table_t 
 }
 
 
-void file_desc_table_entry_free(struct file_desc_table_t *table, int index)
+void x86_file_desc_table_entry_free(struct x86_file_desc_table_t *table, int index)
 {
-	struct file_desc_t *desc;
+	struct x86_file_desc_t *desc;
 
 	/* Get file descriptor. If it is empty or out of range, exit. */
 	desc = list_get(table->file_desc_list, index);
@@ -275,5 +275,5 @@ void file_desc_table_entry_free(struct file_desc_table_t *table, int index)
 	
 	/* Free file descriptor and remove entry in table. */
 	list_set(table->file_desc_list, index, NULL);
-	file_desc_free(desc);
+	x86_file_desc_free(desc);
 }
