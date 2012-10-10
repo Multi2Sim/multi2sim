@@ -19,6 +19,7 @@
 
 #include <lib/struct/timer.h>
 
+#include "fu.h"
 #include "timing.h"
 
 

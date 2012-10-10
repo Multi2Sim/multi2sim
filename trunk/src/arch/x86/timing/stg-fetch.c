@@ -21,6 +21,7 @@
 #include <arch/x86/emu/regs.h>
 
 #include "timing.h"
+#include "uop.h"
 
 
 static int x86_cpu_can_fetch(int core, int thread)

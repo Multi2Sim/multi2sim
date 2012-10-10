@@ -30,7 +30,6 @@
 long long arm_emu_max_inst = 0;
 long long arm_emu_max_cycles = 0;
 long long arm_emu_max_time = 0;
-char * arm_emu_last_inst_bytes = 0;
 enum arm_emu_kind_t arm_emu_kind = arm_emu_kind_functional;
 
 /* Arm CPU Emulator */
@@ -292,16 +291,7 @@ int arm_emu_run(void)
 
 	/* Run an instruction from every running process */
 	for (ctx = arm_emu->running_list_head; ctx; ctx = ctx->running_list_next)
-	{
 		arm_ctx_execute(ctx);
-
-		/* Stop if instruction matches last instruction bytes */
-		if (arm_emu_last_inst_bytes &&
-			!strncmp(arm_isa_inst_bytes,
-				arm_emu_last_inst_bytes,
-				strlen(arm_emu_last_inst_bytes)))
-			esim_finish = esim_finish_arm_last_inst;
-	}
 
 	/* Free finished contexts */
 	while (arm_emu->finished_list_head)

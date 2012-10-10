@@ -1489,8 +1489,6 @@ int main(int argc, char **argv)
 	if (x86_save_checkpoint_file_name[0])
 		x86_checkpoint_save(x86_save_checkpoint_file_name);
 
-	free(arm_emu_last_inst_bytes);
-
 	/* Restore default signal handlers */
 	signal(SIGABRT, SIG_DFL);
 	signal(SIGINT, SIG_DFL);

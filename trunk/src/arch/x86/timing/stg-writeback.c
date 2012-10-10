@@ -19,6 +19,7 @@
 
 
 #include "timing.h"
+#include "uop.h"
 
 
 static void x86_cpu_writeback_core(int core)
