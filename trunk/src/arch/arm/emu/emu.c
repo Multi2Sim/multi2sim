@@ -18,9 +18,13 @@
  */
 
 #include <arch/arm/timing/timing.h>
+#include <lib/esim/esim.h>
+#include <lib/struct/timer.h>
+#include <mem-system/mem-system.h>
 
 #include "context.h"
 #include "emu.h"
+#include "syscall.h"
 
 
 /*

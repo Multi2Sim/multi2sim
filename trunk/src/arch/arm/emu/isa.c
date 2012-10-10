@@ -21,14 +21,15 @@
 
 #include "context.h"
 #include "emu.h"
+#include "isa.h"
+#include "machine.h"
+#include "regs.h"
+#include "syscall.h"
 
 
 /* Debug categories */
 int arm_isa_call_debug_category;
 int arm_isa_inst_debug_category;
-
-/* FIXME */
-char *arm_isa_inst_bytes;
 
 
 /* Table including references to functions in machine.c
@@ -106,9 +107,17 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 					break;
 
 				case (ASR):
+					/*
+					FIXME
+					RAFA - pow???
+					*/
+
+					abort(); // RAFA - code disabled
+					/*
 					ret_addr = rn_val
 						+ (rm_val / (int) (pow(
 							2, shift_val)));
+					*/
 					break;
 
 				case (ROR):
@@ -132,9 +141,16 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 					break;
 
 				case (ASR):
+					/* 
+					FIXME
+					RAFA - code disabled
+					*/
+					abort();
+					/*
 					ret_addr = rn_val
 						- (rm_val / (int) (pow(
 							2, shift_val)));
+					*/
 					break;
 
 				case (ROR):
@@ -167,10 +183,14 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 					break;
 
 				case (ASR):
+					/* FIXME - code disabled */
+					abort();
+					/*
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						+ (rm_val / (int) (pow(
 							2, shift_val)));
+					*/
 					break;
 
 				case (ROR):
@@ -197,10 +217,14 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 					break;
 
 				case (ASR):
+					/* FIXME - code disabled */
+					abort();
+					/*
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						- (rm_val / (int) (pow(
 							2, shift_val)));
+					*/
 					break;
 
 				case (ROR):
@@ -362,20 +386,24 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (LSL):
-					op_val = rm_val << (rs_val & 0x000000ff);
-			break;
+				op_val = rm_val << (rs_val & 0x000000ff);
+				break;
 
 			case (LSR):
-					op_val = ((unsigned int)rm_val) >> (rs_val & 0x000000ff) ;
-			break;
+				op_val = ((unsigned int)rm_val) >> (rs_val & 0x000000ff) ;
+				break;
 
 			case (ASR):
-					op_val = rm_val /(int)(pow(2,(rs_val & 0x000000ff)));
-			break;
+				/* FIXME - code disabled */
+				abort();
+				/*
+				op_val = rm_val /(int)(pow(2,(rs_val & 0x000000ff)));
+				*/
+				break;
 
 			case (ROR):
-					op_val = arm_rotr(rm_val, (rs_val & 0x000000ff));
-			break;
+				op_val = arm_rotr(rm_val, (rs_val & 0x000000ff));
+				break;
 			}
 		}
 
@@ -385,20 +413,24 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (LSL):
-					op_val = rm_val << shift_imm;
-			break;
+				op_val = rm_val << shift_imm;
+				break;
 
 			case (LSR):
-					op_val = ((unsigned int)rm_val) >> shift_imm;
-			break;
+				op_val = ((unsigned int)rm_val) >> shift_imm;
+				break;
 
 			case (ASR):
-					op_val = rm_val /(int)(pow(2,shift_imm));
-			break;
+				/* FIXME - code disabled */
+				abort();
+				/*
+				op_val = rm_val /(int)(pow(2,shift_imm));
+				*/
+				break;
 
 			case (ROR):
-					op_val = arm_rotr(rm_val, shift_imm);
-			break;
+				op_val = arm_rotr(rm_val, shift_imm);
+				break;
 			}
 		}
 	}
@@ -408,6 +440,7 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 
 int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op2_cat_t cat)
 {
+#if 0
 	unsigned int imm;
 	unsigned int rotate;
 	unsigned int shift;
@@ -461,6 +494,10 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (LSL):
+				/* FIXME - code disabled */
+				abort();
+
+				/*
 				cry_bit = (32 - (rs_val & 0x000000ff));
 				cry_mask = (unsigned int)(pow(2,cry_bit));
 				if((rs_val & 0x000000ff) == 0)
@@ -478,9 +515,14 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
+				*/
 				break;
 
 			case (LSR):
+				/* FIXME - code disabled */
+				abort();
+
+				/*
 				cry_bit = ((rs_val & 0x000000ff) - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
 				if((rs_val & 0x000000ff) == 0)
@@ -498,9 +540,15 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
+				*/
 				break;
 
 			case (ASR):
+
+				/* FIXME - code disabled */
+				abort();
+
+				/*
 				cry_bit = ((rs_val & 0x000000ff) - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
 				if((rs_val & 0x000000ff) == 0)
@@ -525,9 +573,14 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
+				*/
 				break;
 
 			case (ROR):
+				/* FIXME - code disabled */
+				abort();
+
+				/*
 				cry_bit = ((rs_val & 0x0000000f) - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
 				if((rs_val & 0x000000ff) == 0)
@@ -545,6 +598,7 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
+				*/
 				break;
 			}
 			rot_val = rs_val;
@@ -555,6 +609,9 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (LSL):
+				/* FIXME - code disabled */
+				abort();
+				/*
 				cry_bit = (32 - shift_imm);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
 				if(shift_imm == 0)
@@ -568,9 +625,13 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
+				*/
 				break;
 
 			case (LSR):
+				/* FIXME - code disabled */
+				abort();
+				/*
 				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
 				if(shift_imm == 0)
@@ -584,9 +645,13 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
+				*/
 				break;
 
 			case (ASR):
+				/* FIXME - code disabled */
+				abort();
+				/*
 				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
 				if(shift_imm == 0)
@@ -607,9 +672,13 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
+				*/
 				break;
 
 			case (ROR):
+				/* FIXME - code disabled */
+				abort();
+				/*
 				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(pow(2,cry_bit));
 				if(shift_imm == 0)
@@ -630,6 +699,7 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
+				*/
 				break;
 			}
 			rot_val = shift_imm;
@@ -652,6 +722,8 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 	}
 
 	return (carry_ret);
+#endif
+	return 0; // FIXME - REMOVE THIS LINE - RAFA
 }
 
 
@@ -1495,11 +1567,11 @@ void arm_isa_multiply(struct arm_ctx_t *ctx)
 
 void arm_isa_syscall(struct arm_ctx_t *ctx)
 {
-	if(ctx->regs->r7 == ARM_set_tls)
+	if (ctx->regs->r7 == ARM_set_tls)
 	{
 		ctx->regs->r7 = 330;
 	}
-	else if(ctx->regs->r7 == ARM_exit_group)
+	else if (ctx->regs->r7 == ARM_exit_group)
 	{
 		ctx->regs->r7 = 252;
 	}

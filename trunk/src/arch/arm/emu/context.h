@@ -20,6 +20,9 @@
 #ifndef ARCH_ARM_EMU_CONTEXT_H
 #define ARCH_ARM_EMU_CONTEXT_H
 
+#include <arch/arm/asm/asm.h>
+#include <lib/struct/config.h>
+
 #include "emu.h"
 
 
