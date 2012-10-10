@@ -18,7 +18,6 @@
  */
 
 #include "opengl-viewport.h"
-
  
 struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void)
 {
