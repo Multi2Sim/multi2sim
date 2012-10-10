@@ -840,22 +840,31 @@ void bit_map_dump(struct bit_map_t *bit_map, unsigned int where, unsigned int si
  * Other
  */
 
-void hex_str_to_byte_array(char *dest, char *str, int num)
+/* Convert hex string to byte array of 'size' bytes.
+ * Return the size of the byte array.
+ */
+int hex_str_to_byte_array(char *byte_array, char *str, int size)
 {
 	unsigned int byte;
-	char *end = dest + num - 1; /* extra byte for null terminator */
+	char *end = byte_array + size;
+	int length = 0;
 
 	while (str[0])
 	{
-		if (!str[1]) fatal("%s: hex string ended mid-byte", __FUNCTION__);
-		if (dest >= end) fatal("%s: hex string too long", __FUNCTION__);
+		/* Checks */
+		if (!str[1])
+			fatal("%s: hex string ended mid-byte", __FUNCTION__);
+		if (byte_array >= end)
+			fatal("%s: hex string too long", __FUNCTION__);
+
 		sscanf(str, "%2x", &byte);
-		dest[0] = (unsigned char)byte;
-		dest += 1;
+		byte_array[0] = (unsigned char) byte;
+		byte_array += 1;
+		length++;
 		str += 2;
 	}
 
-	dest[0] = 0;
+	return length;
 }
 
 

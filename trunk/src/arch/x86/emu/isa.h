@@ -24,8 +24,6 @@
 #include "regs.h"
 
 
-extern char *x86_isa_inst_bytes;
-
 #define x86_isa_call_debug(...) debug(x86_isa_call_debug_category, __VA_ARGS__)
 #define x86_isa_inst_debug(...) debug(x86_isa_inst_debug_category, __VA_ARGS__)
 

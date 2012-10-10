@@ -17,7 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <x86-emu.h>
+#include "opengl.h"
+
 
 static char *x86_opengl_err_missing =
 	"\tMulti2Sim has been compiled without support for OpenGL applicationn.\n"
