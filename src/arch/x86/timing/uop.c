@@ -18,6 +18,7 @@
  */
 
 #include "timing.h"
+#include "uop.h"
 
 
 #define UOP_MAGIC  0x10101010U

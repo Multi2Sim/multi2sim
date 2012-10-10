@@ -18,6 +18,7 @@
  */
 
 
+#include "fu.h"
 #include "timing.h"
 
 

@@ -20,6 +20,8 @@
 #ifndef ARCH_X86_EMU_UINST_H
 #define ARCH_X86_EMU_UINST_H
 
+#include "context.h"
+
 
 /* Micro-instruction dependences.
  * WARNING: update 'x86_uinst_dep_name' if modified (uinst.c).

@@ -19,7 +19,9 @@
 
 #include <arch/x86/emu/context.h>
 
+#include "fu.h"
 #include "timing.h"
+#include "uop.h"
 
 
 static char *err_x86_cpu_commit_stall =

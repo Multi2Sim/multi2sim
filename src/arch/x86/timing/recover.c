@@ -18,6 +18,7 @@
  */
 
 #include "timing.h"
+#include "uop.h"
 
 
 void x86_cpu_recover(int core, int thread)

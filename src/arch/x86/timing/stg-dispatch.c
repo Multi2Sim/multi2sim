@@ -20,6 +20,7 @@
 #include <arch/x86/emu/context.h>
 
 #include "timing.h"
+#include "uop.h"
 
 
 /* Return the reason why a thread cannot be dispatched. If it can,

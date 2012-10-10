@@ -11,7 +11,10 @@ libtiming_a_SOURCES = \
 	\
 	bpred.c \
 	cpu.c \
+	\
 	fu.c \
+	fu.h \
+	\
 	queues.c \
 	recover.c \
 	reg-file.c \
@@ -19,7 +22,9 @@ libtiming_a_SOURCES = \
 	sched.c \
 	timing.h \
 	trace-cache.c \
-	uop.c
+	\
+	uop.c \
+	uop.h
 
 INCLUDES = @M2S_INCLUDES@
 
