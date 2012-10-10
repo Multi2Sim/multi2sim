@@ -23,6 +23,9 @@
 
 #include "context.h"
 #include "emu.h"
+#include "isa.h"
+#include "machine.h"
+#include "regs.h"
 
 
 char *arm_err_isa_note =
@@ -40,7 +43,7 @@ void arm_isa_AND_reg_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	int rn_val;
 
-	if(arm_isa_check_cond(ctx))
+	if (arm_isa_check_cond(ctx))
 	{
 		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
 		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);

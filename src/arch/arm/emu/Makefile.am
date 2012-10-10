@@ -12,10 +12,17 @@ libemu_a_SOURCES = \
 	file.h \
 	\
 	regs.c \
+	regs.h \
+	\
 	isa.c \
+	isa.h \
+	\
 	machine.c \
+	machine.h \
+	\
 	syscall.c \
 	syscall.dat \
+	syscall.h \
 	\
 	signal.c \
 	signal.h

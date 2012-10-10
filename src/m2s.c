@@ -19,6 +19,8 @@
 
 #include <arch/arm/emu/context.h>
 #include <arch/arm/emu/emu.h>
+#include <arch/arm/emu/isa.h>
+#include <arch/arm/emu/syscall.h>
 #include <arch/arm/timing/timing.h>
 #include <arch/evergreen/timing/timing.h>
 #include <arch/fermi/emu/emu.h>
@@ -1439,6 +1441,7 @@ int main(int argc, char **argv)
 	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);
 	arm_isa_call_debug_category = debug_new_category(arm_call_debug_file_name);
+
 	/* Trace */
 	trace_init(trace_file_name);
 	mem_trace_category = trace_new_category();
