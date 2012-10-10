@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARM_EMU_H
-#define ARM_EMU_H
+#ifndef ARCH_ARM_EMU_EMU_H
+#define ARCH_ARM_EMU_EMU_H
 
 
 #include <errno.h>
@@ -156,99 +156,6 @@ void arm_regs_copy(struct arm_regs_t *dst, struct arm_regs_t *src);
 
 
 /*
- * System signals
- */
-
-
-/* Every contexts (parent and children) has its own masks */
-struct arm_signal_mask_table_t
-{
-	unsigned long long pending;  /* Mask of pending signals */
-	unsigned long long blocked;  /* Mask of blocked signals */
-	unsigned long long backup;  /* Backup of blocked signals while suspended */
-	struct arm_regs_t *regs;  /* Backup of regs while executing handler */
-	unsigned int pretcode;  /* Base address of a memory page allocated for retcode execution */
-};
-
-struct arm_signal_handler_table_t
-{
-	/* Number of extra contexts sharing the table */
-	int num_links;
-
-	/* Signal handlers */
-	struct arm_sim_sigaction
-	{
-		unsigned int handler;
-		unsigned int flags;
-		unsigned int restorer;
-		unsigned long long mask;
-	} sigaction[64];
-};
-
-void arm_signal_handler_return(struct arm_ctx_t *ctx);
-
-
-
-
-/*
- * File management
- */
-
-enum arm_file_desc_kind_t
-{
-	arm_file_desc_invalid = 0,
-	arm_file_desc_regular,  /* Regular arm_file */
-	arm_file_desc_std,  /* Standard input or output */
-	arm_file_desc_pipe,  /* A pipe */
-	arm_file_desc_virtual,  /* A virtual arm_file with artificial contents */
-	arm_file_desc_gpu,  /* GPU device */
-	arm_file_desc_socket  /* Network socket */
-};
-
-struct arm_file_desc_t
-{
-	enum arm_file_desc_kind_t kind;  /* File type */
-	int guest_fd;  /* Guest arm_file descriptor id */
-	int host_fd;  /* Equivalent open host arm_file */
-	int flags;  /* O_xxx flags */
-	char *path;  /* Associated path if applicable */
-};
-
-
-/* File descriptor table */
-struct arm_file_desc_table_t
-{
-	/* Number of extra contexts sharing table */
-	int num_links;
-
-	/* List of descriptors */
-	struct list_t *arm_file_desc_list;
-};
-
-
-struct arm_file_desc_table_t *arm_file_desc_table_create(void);
-void arm_file_desc_table_free(struct arm_file_desc_table_t *table);
-
-struct arm_file_desc_table_t *arm_file_desc_table_link(struct arm_file_desc_table_t *table);
-void arm_file_desc_table_unlink(struct arm_file_desc_table_t *table);
-
-void arm_file_desc_table_dump(struct arm_file_desc_table_t *table, FILE *f);
-
-struct arm_file_desc_t *arm_file_desc_table_entry_get(struct arm_file_desc_table_t *table, int index);
-struct arm_file_desc_t *arm_file_desc_table_entry_new(struct arm_file_desc_table_t *table,
-	enum arm_file_desc_kind_t kind, int host_fd, char *path, int flags);
-struct arm_file_desc_t *arm_file_desc_table_entry_new_guest_fd(struct arm_file_desc_table_t *table,
-        enum arm_file_desc_kind_t kind, int guest_fd, int host_fd, char *path, int flags);
-void arm_file_desc_table_entry_free(struct arm_file_desc_table_t *table, int index);
-void arm_file_desc_table_entry_dump(struct arm_file_desc_table_t *table, int index, FILE *f);
-
-int arm_file_desc_table_get_host_fd(struct arm_file_desc_table_t *table, int guest_fd);
-int arm_file_desc_table_get_guest_fd(struct arm_file_desc_table_t *table, int host_fd);
-
-
-
-
-/*
  * Machine & ISA
  */
 
@@ -339,176 +246,6 @@ void arm_sys_call(struct arm_ctx_t *ctx);
 
 
 
-/*
- * ARM Context
- */
-
-#define arm_ctx_debug(...) debug(arm_ctx_debug_category, __VA_ARGS__)
-extern int arm_ctx_debug_category;
-
-/* Event scheduled periodically to dump IPC statistics for a context */
-extern int EV_ARM_CTX_IPC_REPORT;
-
-struct arm_ctx_t
-{
-	/* Number of extra contexts using this loader */
-	int num_links;
-
-	/* Parent context */
-	struct arm_ctx_t *parent;
-
-
-	/* Context group initiator. There is only one group parent (if not NULL)
-	 * with many group children, no tree organization. */
-	struct arm_ctx_t *group_parent;
-
-	/* Context properties */
-	int status;
-	int pid;  /* Context ID */
-	int address_space_index;  /* Virtual memory address space index */
-
-	int exit_signal;  /* Signal to send parent when finished */
-	int exit_code;  /* For zombie contexts */
-
-	/* IPC report (for detailed simulation) */
-	FILE *ipc_report_file;
-	int ipc_report_interval;
-
-	/* Program data */
-	struct elf_file_t *elf_file;
-	struct linked_list_t *args;
-	struct linked_list_t *env;
-	char *exe;  /* Executable file name */
-	char *cwd;  /* Current working directory */
-	char *stdin_file;  /* File name for stdin */
-	char *stdout_file;  /* File name for stdout */
-
-	/* Stack */
-	unsigned int stack_base;
-	unsigned int stack_top;
-	unsigned int stack_size;
-	unsigned int environ_base;
-
-	/* Lowest address initialized */
-	unsigned int bottom;
-
-	/* Program entries */
-	unsigned int prog_entry;
-	unsigned int interp_prog_entry;
-
-	/* Program headers */
-	unsigned int phdt_base;
-	unsigned int phdr_count;
-
-	/* Random bytes */
-	unsigned int at_random_addr;
-	unsigned int at_random_addr_holder;
-
-	/* Instruction pointers */
-	unsigned int last_ip;  /* Address of last emulated instruction */
-	unsigned int curr_ip;  /* Address of currently emulated instruction */
-	unsigned int target_ip;  /* Target address for branch, even if not taken */
-
-	/* Currently emulated instruction */
-	struct arm_inst_t inst;
-
-	/* Links to contexts forming a linked list. */
-	struct arm_ctx_t *context_list_next, *context_list_prev;
-	struct arm_ctx_t *running_list_next, *running_list_prev;
-	struct arm_ctx_t *suspended_list_next, *suspended_list_prev;
-	struct arm_ctx_t *finished_list_next, *finished_list_prev;
-	struct arm_ctx_t *zombie_list_next, *zombie_list_prev;
-	struct arm_ctx_t *alloc_list_next, *alloc_list_prev;
-
-	/* For segmented memory access in glibc */
-	unsigned int glibc_segment_base;
-	unsigned int glibc_segment_limit;
-
-	/* When debugging function calls with 'arm_isa_debug_call', function call level. */
-	int function_level;
-
-
-	/* Variables used to wake up suspended contexts. */
-	long long wakeup_time;  /* arm_emu_timer time to wake up (poll/nanosleep) */
-	int wakeup_fd;  /* File descriptor (read/write/poll) */
-	int wakeup_events;  /* Events for wake up (poll) */
-	int wakeup_pid;  /* Pid waiting for (waitpid) */
-	unsigned int wakeup_futex;  /* Address of futex where context is suspended */
-	unsigned int wakeup_futex_bitset;  /* Bit mask for selective futex wakeup */
-	long long wakeup_futex_sleep;  /* Assignment from x86_emu->futex_sleep_count */
-
-	/* Substructures */
-	struct mem_t *mem; /* Virtual Memory image */
-	struct arm_regs_t *regs; /* Logical register file */
-	struct arm_file_desc_table_t *file_desc_table;  /* File descriptor table */
-	struct arm_signal_mask_table_t *signal_mask_table;
-	struct arm_signal_handler_table_t *signal_handler_table;
-
-	/* Fault Management */
-	unsigned int fault_addr;
-	int fault_value;
-
-	/* Call Debug Stack */
-	struct arm_isa_cstack_t *cstack;
-
-	/* Statistics */
-
-	/* Number of non-speculate instructions.
-	 * Updated by the architectural simulator at the commit stage. */
-	long long inst_count;
-};
-
-enum arm_ctx_status_t
-{
-	arm_ctx_running      = 0x00001,  /* it is able to run instructions */
-	arm_ctx_spec_mode    = 0x00002,  /* executing in speculative mode */
-	arm_ctx_suspended    = 0x00004,  /* suspended in a system call */
-	arm_ctx_finished     = 0x00008,  /* no more inst to execute */
-	arm_ctx_exclusive    = 0x00010,  /* executing in excl mode */
-	arm_ctx_locked       = 0x00020,  /* another context is running in excl mode */
-	arm_ctx_handler      = 0x00040,  /* executing a signal handler */
-	arm_ctx_sigsuspend   = 0x00080,  /* suspended after syscall 'sigsuspend' */
-	arm_ctx_nanosleep    = 0x00100,  /* suspended after syscall 'nanosleep' */
-	arm_ctx_poll         = 0x00200,  /* 'poll' system call */
-	arm_ctx_read         = 0x00400,  /* 'read' system call */
-	arm_ctx_write        = 0x00800,  /* 'write' system call */
-	arm_ctx_waitpid      = 0x01000,  /* 'waitpid' system call */
-	arm_ctx_zombie       = 0x02000,  /* zombie context */
-	arm_ctx_futex        = 0x04000,  /* suspended in a futex */
-	arm_ctx_alloc        = 0x08000,  /* allocated to a core/thread */
-	arm_ctx_callback     = 0x10000,  /* suspended after syscall with callback */
-	arm_ctx_none         = 0x00000
-};
-
-struct arm_ctx_t *arm_ctx_create();
-
-#define arm_loader_debug(...) debug(arm_loader_debug_category, __VA_ARGS__)
-extern int arm_loader_debug_category;
-
-int arm_ctx_get_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status);
-void arm_ctx_set_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status);
-void arm_ctx_clear_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status);
-
-void arm_ctx_execute(struct arm_ctx_t *ctx);
-void arm_ctx_free(struct arm_ctx_t *ctx);
-void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *full_path, int size);
-void arm_ctx_finish(struct arm_ctx_t *ctx, int status);
-void arm_ctx_finish_group(struct arm_ctx_t *ctx, int status);
-void arm_ctx_load_from_command_line(int argc, char **argv);
-void arm_ctx_load_from_ctx_config(struct config_t *config, char *section);
-void arm_ctx_gen_proc_self_maps(struct arm_ctx_t *ctx, char *path);
-void arm_ctx_ipc_report_handler(int event, void *data);
-
-unsigned int arm_ctx_check_fault(struct arm_ctx_t *ctx);
-
-enum arm_gpu_emulator_kind_t
-{
-	arm_gpu_emulator_evg = 0,
-	arm_gpu_emulator_si
-};
-
-
-
 
 /*
  * ARM CPU Emulator
@@ -573,9 +310,6 @@ struct arm_emu_t
 
 	/* Stats */
 	long long inst_count;  /* Number of emulated instructions */
-
-	/* Determines which GPU emulator will be called */
-	enum arm_gpu_emulator_kind_t arm_gpu_emulator;
 };
 
 enum arm_emu_list_kind_t

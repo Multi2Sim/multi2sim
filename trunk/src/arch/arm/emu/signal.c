@@ -19,7 +19,8 @@
 
 #include <mem-system/mem-system.h>
 
-#include "emu.h"
+#include "context.h"
+#include "signal.h"
 
 
 
@@ -28,7 +29,7 @@ void arm_signal_handler_return(struct arm_ctx_t *ctx)
 {
 	/* Change context status */
 	if (!arm_ctx_get_status(ctx, arm_ctx_handler))
-		fatal("signal_handler_return: not handling a signal");
+		fatal("%s: not handling a signal", __FUNCTION__);
 	arm_ctx_clear_status(ctx, arm_ctx_handler);
 
 	/* Free signal frame */
