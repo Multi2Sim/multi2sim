@@ -24,7 +24,7 @@
 #include <lib/struct/debug.h>
 #include <mem-system/mem-system.h>
 
-#include "evergreen-emu.h"
+#include "emu.h"
 
 
 /* Create a device */

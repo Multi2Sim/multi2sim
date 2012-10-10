@@ -375,7 +375,7 @@ enum si_inst_enum
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size) \
 	SI_INST_##_name,
 
-#include "southern-islands-asm.dat"
+#include "asm.dat"
 #undef DEFINST
 
 	/* Max */

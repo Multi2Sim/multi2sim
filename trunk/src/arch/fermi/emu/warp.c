@@ -19,7 +19,7 @@
 
 #include <lib/struct/hash-table.h>
 
-#include "fermi-emu.h"
+#include "emu.h"
 
 
 

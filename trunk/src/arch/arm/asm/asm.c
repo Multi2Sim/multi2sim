@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "arm-asm.h"
+#include "asm.h"
 
 
 void arm_disasm_init()
@@ -357,7 +357,7 @@ void arm_disasm_init()
 	}\
 	break;\
 	}
-#include "arm-asm.dat"
+#include "asm.dat"
 #undef DEFINST
 }
 

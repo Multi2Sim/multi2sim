@@ -19,7 +19,7 @@
 
 #include <mem-system/mem-system.h>
 
-#include "arm-emu.h"
+#include "emu.h"
 
 
 

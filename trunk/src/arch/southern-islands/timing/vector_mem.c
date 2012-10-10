@@ -19,7 +19,7 @@
 
 #include <mem-system/mem-system.h>
 
-#include "southern-islands-timing.h"
+#include "timing.h"
 
 
 int si_gpu_vector_mem_inflight_mem_accesses = 32;

@@ -17,11 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/evergreen/timing/evergreen-timing.h>
+#include <arch/evergreen/timing/timing.h>
 #include <arch/x86/emu/emu.h>
 #include <mem-system/mem-system.h>
 
-#include "evergreen-emu.h"
+#include "emu.h"
 
 /*
  * Global variables

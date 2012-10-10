@@ -348,7 +348,7 @@ enum arm_inst_enum
 
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	ARM_INST_##_name,
-#include "arm-asm.dat"
+#include "asm.dat"
 #undef DEFINST
 
 	/* Max */

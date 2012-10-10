@@ -17,8 +17,8 @@
  */
 
 #include <arch/x86/timing/timing.h>
-#include <arch/evergreen/timing/evergreen-timing.h>
-#include <arch/southern-islands/timing/southern-islands-timing.h>
+#include <arch/evergreen/timing/timing.h>
+#include <arch/southern-islands/timing/timing.h>
 #include <lib/struct/config.h>
 #include <lib/misc/misc.h>
 

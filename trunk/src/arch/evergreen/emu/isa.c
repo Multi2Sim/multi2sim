@@ -21,7 +21,7 @@
 #include <lib/struct/repos.h>
 #include <mem-system/mem-system.h>
 
-#include "evergreen-emu.h"
+#include "emu.h"
 
 
 /*
@@ -56,7 +56,7 @@ void evg_isa_init()
 	/* Initialize */
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	evg_isa_inst_func[EVG_INST_##_name] = evg_isa_##_name##_impl;
-#include <arch/evergreen/asm/evergreen-asm.dat>
+#include <arch/evergreen/asm/asm.dat>
 #undef DEFINST
 
 	/* Repository of deferred tasks */

@@ -19,7 +19,7 @@
 
 #include <lib/struct/repos.h>
 
-#include "evergreen-timing.h"
+#include "timing.h"
 
 
 /*

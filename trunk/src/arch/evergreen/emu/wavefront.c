@@ -19,7 +19,7 @@
 
 #include <lib/struct/hash-table.h>
 
-#include "evergreen-emu.h"
+#include "emu.h"
 
 
 /*

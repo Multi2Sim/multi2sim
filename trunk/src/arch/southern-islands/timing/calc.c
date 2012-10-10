@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "southern-islands-timing.h"
+#include "timing.h"
 
 
 char *si_gpu_calc_file_name = "";

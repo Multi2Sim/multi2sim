@@ -24,7 +24,7 @@
 #include <lib/struct/repos.h>
 #include <lib/struct/heap.h>
 
-#include "southern-islands-timing.h"
+#include "timing.h"
 
 
 
