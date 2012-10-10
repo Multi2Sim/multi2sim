@@ -19,12 +19,9 @@
 #ifndef X86_OPENGL_BUFFERS_H
 #define X86_OPENGL_BUFFERS_H
 
-#include <GL/glut.h>
-
 #include <mem-system/mem-system.h>
-
 #include "emu.h"
-
+#include <GL/glut.h>
 
 #define COLOR_BUFFER_COUNT 4
 
@@ -62,5 +59,6 @@ struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int 
 void x86_opengl_frame_buffer_free(struct x86_opengl_frame_buffer_t *fb);
 void x86_opengl_frame_buffer_clear(struct x86_opengl_frame_buffer_t *fb, GLbitfield mask);
 int x86_opengl_frame_buffer_resize(struct x86_opengl_frame_buffer_t *fb, int width, int height);
+
 
 #endif

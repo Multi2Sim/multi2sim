@@ -16,9 +16,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 #include "opengl-matrix.h"
-
 
 /* OpenGL identity matrix */
 static GLfloat Identity[16] = {
@@ -113,4 +111,36 @@ void x86_opengl_matrix_mul_vertex(struct x86_opengl_vertex_t *vtx, struct x86_op
 	vtx->y = temp[1];
 	vtx->z = temp[2];
 	vtx->w = temp[3];
+}
+
+struct x86_opengl_matrix_t *x86_opengl_ortho_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval)
+{
+	struct x86_opengl_matrix_t *mtx;
+
+	/* Allocate */
+	mtx = x86_opengl_matrix_create(MATRIX_3D_NO_ROT);
+
+	#define M(row,col)  mtx->matrix[col*4+row]
+	M(0,0) = 2.0F / (right-left);
+	M(0,1) = 0.0F;
+	M(0,2) = 0.0F;
+	M(0,3) = -(right+left) / (right-left);
+
+	M(1,0) = 0.0F;
+	M(1,1) = 2.0F / (top-bottom);
+	M(1,2) = 0.0F;
+	M(1,3) = -(top+bottom) / (top-bottom);
+
+	M(2,0) = 0.0F;
+	M(2,1) = 0.0F;
+	M(2,2) = -2.0F / (farval-nearval);
+	M(2,3) = -(farval+nearval) / (farval-nearval);
+
+	M(3,0) = 0.0F;
+	M(3,1) = 0.0F;
+	M(3,2) = 0.0F;
+	M(3,3) = 1.0F;
+	#undef M
+
+	return mtx;
 }
