@@ -22,6 +22,7 @@
 
 #include <GL/glut.h>
 #include "emu.h"
+#include "glut-frame-buffer.h" 
 #include "opengl-rast-config.h"
 #include "opengl-span.h"
 #include "opengl-edge.h" 

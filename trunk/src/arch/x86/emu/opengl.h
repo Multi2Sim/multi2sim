@@ -20,8 +20,16 @@
 #ifndef ARCH_X86_EMU_OPENGL_H
 #define ARCH_X86_EMU_OPENGL_H
 
-#include "context.h"
+#include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
+#include <arch/x86/emu/regs.h>
+#include <mem-system/mem-system.h>
 
+#include <GL/gl.h>
+
+#include "glut-frame-buffer.h"
+#include "opengl-context.h"
+#include "opengl-rast.h"
 
 /*
  * OPENGL system call interface
