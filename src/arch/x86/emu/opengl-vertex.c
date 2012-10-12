@@ -17,14 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
+
 #include "opengl.h"
 #include "opengl-vertex.h"
+
 
 struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
 	struct x86_opengl_vertex_t *vtx;
 
 	vtx = calloc(1, sizeof(struct x86_opengl_vertex_t));
+	if (!vtx)
+		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
 	vtx->x = x;

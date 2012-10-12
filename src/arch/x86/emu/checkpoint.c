@@ -23,7 +23,11 @@
 #include <unistd.h>
 #include <zlib.h>
 
+#include <lib/misc/misc.h>
 #include <lib/struct/bin-config.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/list.h>
 #include <mem-system/mem-system.h>
 
 #include "context.h"

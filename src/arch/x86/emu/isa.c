@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
 #include <lib/struct/elf-format.h>
 #include <mem-system/mem-system.h>
 

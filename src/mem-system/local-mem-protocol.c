@@ -20,6 +20,8 @@
 
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/linked-list.h>
 
 #include "mem-system.h"
 

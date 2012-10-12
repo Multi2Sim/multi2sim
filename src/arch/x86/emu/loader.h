@@ -20,6 +20,8 @@
 #ifndef ARCH_X86_EMU_LOADER_H
 #define ARCH_X86_EMU_LOADER_H
 
+#include <lib/struct/config.h>
+
 
 struct x86_loader_t
 {

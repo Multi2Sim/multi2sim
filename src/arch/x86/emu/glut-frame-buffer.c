@@ -20,6 +20,8 @@
 #include <GL/glut.h>
 #include <pthread.h>
 
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
 #include <mem-system/mem-system.h>
 
 #include "glut.h"

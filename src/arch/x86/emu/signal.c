@@ -21,6 +21,8 @@
 #include <errno.h>
 #include <signal.h>
 
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
 #include <mem-system/mem-system.h>
 
 #include "emu.h"

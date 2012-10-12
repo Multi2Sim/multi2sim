@@ -25,6 +25,7 @@
 #include <lib/struct/config.h>
 #include <lib/misc/misc.h>
 #include <network/net-system.h>
+#include <network/network.h>
 #include <network/node.h>
 #include <network/routing-table.h>
 

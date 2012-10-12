@@ -18,6 +18,10 @@
  */
 
 #include <assert.h>
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
 
 #include "mem-system.h"
 
@@ -26,7 +30,7 @@
  * Private Functions
  */
 
-static struct spec_mem_page_t *spec_mem_page_get(struct spec_mem_t *spec_mem, uint32_t addr)
+static struct spec_mem_page_t *spec_mem_page_get(struct spec_mem_t *spec_mem, unsigned int addr)
 {
 	struct spec_mem_page_t *page;
 	int index;
@@ -45,7 +49,7 @@ static struct spec_mem_page_t *spec_mem_page_get(struct spec_mem_t *spec_mem, ui
 }
 
 
-static struct spec_mem_page_t *spec_mem_page_create(struct spec_mem_t *spec_mem, uint32_t addr)
+static struct spec_mem_page_t *spec_mem_page_create(struct spec_mem_t *spec_mem, unsigned int addr)
 {
 	struct mem_t *mem = spec_mem->mem;
 	struct spec_mem_page_t *page;
@@ -75,12 +79,12 @@ static struct spec_mem_page_t *spec_mem_page_create(struct spec_mem_t *spec_mem,
 }
 
 
-static void spec_mem_access_aligned(struct spec_mem_t *spec_mem, uint32_t addr, int size,
+static void spec_mem_access_aligned(struct spec_mem_t *spec_mem, unsigned int addr, int size,
 	void *buf, enum mem_access_t access)
 {
 	struct mem_t *mem = spec_mem->mem;
 	struct spec_mem_page_t *page;
-	uint32_t offset;
+	unsigned int offset;
 
 	/* Get the memory page */
 	page = spec_mem_page_get(spec_mem, addr);
@@ -118,10 +122,10 @@ static void spec_mem_access_aligned(struct spec_mem_t *spec_mem, uint32_t addr, 
 }
 
 
-static void spec_mem_access(struct spec_mem_t *spec_mem, uint32_t addr, int size,
+static void spec_mem_access(struct spec_mem_t *spec_mem, unsigned int addr, int size,
 	void *buf, enum mem_access_t access)
 {
-	uint32_t offset;
+	unsigned int offset;
 	int chunksize;
 
 	while (size)
@@ -165,13 +169,13 @@ void spec_mem_free(struct spec_mem_t *spec_mem)
 }
 
 
-void spec_mem_read(struct spec_mem_t *spec_mem, uint32_t addr, int size, void *buf)
+void spec_mem_read(struct spec_mem_t *spec_mem, unsigned int addr, int size, void *buf)
 {
 	spec_mem_access(spec_mem, addr, size, buf, mem_access_read);
 }
 
 
-void spec_mem_write(struct spec_mem_t *spec_mem, uint32_t addr, int size, void *buf)
+void spec_mem_write(struct spec_mem_t *spec_mem, unsigned int addr, int size, void *buf)
 {
 	spec_mem_access(spec_mem, addr, size, buf, mem_access_write);
 }

@@ -17,10 +17,17 @@
  */
 
 #include <assert.h>
+#include <string.h>
 
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/list.h>
 #include <network/buffer.h>
 #include <network/link.h>
+#include <network/network.h>
 #include <network/node.h>
 
 #include "mem-system.h"
