@@ -20,7 +20,7 @@
 #include <assert.h>
 
 #include <arch/x86/emu/regs.h>
-#include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/misc/misc.h>
 
 #include "cpu.h"

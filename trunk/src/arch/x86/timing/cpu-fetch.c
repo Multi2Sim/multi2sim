@@ -19,6 +19,7 @@
 
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
+#include <lib/esim/trace.h>
 #include <mem-system/mem-system.h>
 
 #include "bpred.h"
