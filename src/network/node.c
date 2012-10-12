@@ -17,8 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <stdlib.h>
+
+#include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
+
 #include "buffer.h"
 #include "message.h"
+#include "net-system.h"
 #include "network.h"
 #include "node.h"
 #include "routing-table.h"
@@ -53,7 +63,7 @@ struct net_node_t *net_node_create(struct net_t *net,
 		panic("%s: invalid bandwidth", __FUNCTION__);
 	if (net_get_node_by_name(net, name))
 		fatal("%s: duplicated node name.\n%s", net->name,
-			err_net_node_name_duplicate);
+			net_err_node_name_duplicate);
 
 	/* Lists of ports */
 	node->output_buffer_list = list_create_with_size(4);

@@ -17,8 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
+
 #include "buffer.h"
 #include "link.h"
+#include "net-system.h"
 #include "network.h"
 #include "node.h"
 #include "routing-table.h"
@@ -485,7 +493,7 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table, s
 			{
 				if (link->virtual_channel <= vc_num)
 						fatal("Network %s: %s.to.%s: wrong virtual channel number is used in route \n %s",
-								routing_table->net->name, src_node->name, dst_node->name, err_net_config);
+								routing_table->net->name, src_node->name, dst_node->name, net_err_config);
 				struct net_buffer_t *vc_buffer;
 				vc_buffer = list_get(src_node->output_buffer_list, (buffer->index)+vc_num);
 				assert(vc_buffer->link == buffer->link);

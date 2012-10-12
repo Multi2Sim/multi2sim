@@ -25,6 +25,7 @@
 #include <arch/fermi/emu/emu.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/x86/timing/cpu.h>
+#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/struct/timer.h>
 #include <mem-system/mem-system.h>

@@ -20,9 +20,11 @@
 #include <arch/x86/timing/cpu.h>
 #include <arch/evergreen/timing/timing.h>
 #include <arch/southern-islands/timing/timing.h>
+#include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/struct/config.h>
 #include <lib/misc/misc.h>
+#include <network/net-system.h>
 #include <network/node.h>
 #include <network/routing-table.h>
 

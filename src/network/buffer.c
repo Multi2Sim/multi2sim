@@ -17,8 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <stdlib.h>
+
+#include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
+#include <lib/struct/linked-list.h>
+
 #include "buffer.h"
 #include "message.h"
+#include "net-system.h"
 #include "network.h"
 #include "node.h"
 
