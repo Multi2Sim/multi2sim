@@ -38,6 +38,7 @@
 #include <arch/x86/timing/cpu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
+#include <mem-system/mmu.h>
 #include <network/net-system.h>
 #include <visual-common.h>
 

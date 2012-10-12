@@ -26,7 +26,9 @@
 #include <lib/misc/misc.h>
 #include <lib/struct/debug.h>
 
+#include "directory.h"
 #include "mem-system.h"
+#include "mod-stack.h"
 
 
 #define DIR_ENTRY_SHARERS_SIZE ((dir->num_nodes + 7) / 8)
