@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include <arch/arm/timing/timing.h>
+#include <arch/arm/timing/cpu.h>
 #include <lib/esim/esim.h>
 #include <lib/struct/timer.h>
 #include <mem-system/mem-system.h>
