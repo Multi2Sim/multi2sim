@@ -22,6 +22,7 @@
 #include <lib/struct/debug.h>
 
 #include "network.h"
+#include "node.h"
 
 
 /*
@@ -422,3 +423,4 @@ void net_sim(char *debug_file_name)
 	mhandle_done();
 	exit(0);
 }
+
