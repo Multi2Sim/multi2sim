@@ -18,6 +18,7 @@
  */
 
 #include <arch/x86/emu/emu.h>
+#include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/struct/config.h>
 #include <lib/struct/debug.h>

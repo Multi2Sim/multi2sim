@@ -20,6 +20,7 @@
 #include <arch/southern-islands/timing/timing.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
+#include <lib/esim/esim.h>
 #include <lib/struct/timer.h>
 #include <mem-system/mem-system.h>
 

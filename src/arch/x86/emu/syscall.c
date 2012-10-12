@@ -36,6 +36,7 @@
 #include <arch/evergreen/emu/emu.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/southern-islands/emu/emu.h>
+#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <mem-system/mem-system.h>
 

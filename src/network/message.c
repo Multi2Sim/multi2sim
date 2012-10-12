@@ -17,9 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <stdlib.h>
+
+#include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
+
 #include "buffer.h"
 #include "link.h"
 #include "message.h"
+#include "net-system.h"
 #include "network.h"
 #include "node.h"
 #include "routing-table.h"
@@ -133,13 +142,13 @@ void net_event_handler(int event, void *data)
 		output_buffer = entry->output_buffer;
 		if (!output_buffer)
 			fatal("%s: no route from %s to %s.\n%s", net->name, src_node->name,
-				dst_node->name, err_net_no_route);
+				dst_node->name, net_err_no_route);
 		if (output_buffer->write_busy >= esim_cycle)
-			panic("%s: output buffer busy.\n%s", __FUNCTION__, err_net_can_send);
+			panic("%s: output buffer busy.\n%s", __FUNCTION__, net_err_can_send);
 		if (msg->size > output_buffer->size)
-			panic("%s: message does not fit in buffer.\n%s", __FUNCTION__, err_net_can_send);
+			panic("%s: message does not fit in buffer.\n%s", __FUNCTION__, net_err_can_send);
 		if (output_buffer->count + msg->size > output_buffer->size)
-			panic("%s: output buffer full.\n%s", __FUNCTION__, err_net_can_send);
+			panic("%s: output buffer full.\n%s", __FUNCTION__, net_err_can_send);
 
 		/* Insert in output buffer (1 cycle latency) */
 		net_buffer_insert(output_buffer, msg);
@@ -224,7 +233,7 @@ void net_event_handler(int event, void *data)
 		/* If destination input buffer is full, wait */
 		if (msg->size > input_buffer->size)
 			fatal("%s: message does not fit in buffer.\n%s",
-				net->name, err_net_large_message);
+				net->name, net_err_large_message);
 		if (input_buffer->count + msg->size > input_buffer->size)
 		{
 			net_buffer_wait(input_buffer, event, stack);
@@ -318,7 +327,7 @@ void net_event_handler(int event, void *data)
 		output_buffer = entry->output_buffer;
 		if (!output_buffer)
 			fatal("%s: no route from %s to %s.\n%s", net->name,
-				node->name, dst_node->name, err_net_no_route);
+				node->name, dst_node->name, net_err_no_route);
 		
 		/* If destination output buffer is busy, wait */
 		if (output_buffer->write_busy >= esim_cycle)
@@ -337,7 +346,7 @@ void net_event_handler(int event, void *data)
 		/* If destination output buffer is full, wait */
 		if (msg->size > output_buffer->size)
 			fatal("%s: message does not fit in buffer.\n%s",
-				net->name, err_net_large_message);
+				net->name, net_err_large_message);
 		if (output_buffer->count + msg->size > output_buffer->size)
 		{
 			net_debug("msg "

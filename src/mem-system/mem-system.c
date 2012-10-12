@@ -18,6 +18,7 @@
 
 
 #include <arch/evergreen/timing/timing.h>
+#include <lib/esim/esim.h>
 
 #include "mem-system.h"
 
