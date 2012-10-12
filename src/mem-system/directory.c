@@ -18,9 +18,13 @@
  */
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
 
 #include "mem-system.h"
 

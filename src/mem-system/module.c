@@ -17,8 +17,13 @@
  */
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/linked-list.h>
 
 #include "mem-system.h"
 

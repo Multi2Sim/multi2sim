@@ -19,16 +19,7 @@
 #ifndef MEM_SYSTEM_H
 #define MEM_SYSTEM_H
 
-#include <stdint.h>
 #include <stdio.h>
-
-#include <lib/mhandle/mhandle.h>
-#include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/list.h>
-#include <lib/struct/linked-list.h>
-#include <network/network.h>
-
 
 
 /*
