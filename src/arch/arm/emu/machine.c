@@ -19,7 +19,7 @@
 
 #include <math.h>
 
-#include <mem-system/mem-system.h>
+#include <mem-system/memory.h>
 
 #include "context.h"
 #include "emu.h"

@@ -28,7 +28,7 @@
 #include <lib/struct/debug.h>
 #include <lib/struct/linked-list.h>
 #include <lib/struct/list.h>
-#include <mem-system/mem-system.h>
+#include <mem-system/memory.h>
 
 #include "context.h"
 #include "emu.h"

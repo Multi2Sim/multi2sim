@@ -38,7 +38,7 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
-#include <mem-system/mem-system.h>
+#include <mem-system/memory.h>
 
 #include "clrt.h"
 #include "file-desc.h"

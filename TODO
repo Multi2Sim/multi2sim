@@ -34,3 +34,4 @@ Tools
 ********************************************************************************
 
 - M2S-Cluster: client kit test to check that runtime 'libm2s-opencl' compiles correctly.
+- M2S-Cluster: script checking that 'lib/mhandle/mhandle.h' is included in every file using 'malloc', 'calloc', or 'strdup'.

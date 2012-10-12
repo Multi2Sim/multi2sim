@@ -20,6 +20,7 @@
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/struct/heap.h>
+#include <mem-system/memory.h>
 
 #include "timing.h"
 

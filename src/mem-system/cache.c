@@ -24,6 +24,7 @@
 #include <lib/misc/misc.h>
 #include <lib/struct/debug.h>
 
+#include "cache.h"
 #include "mem-system.h"
 
 
