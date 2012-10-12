@@ -21,6 +21,7 @@
 
 #include <lib/struct/debug.h>
 #include <lib/struct/list.h>
+#include <mem-system/memory.h>
 
 #include "opengl.h"
 

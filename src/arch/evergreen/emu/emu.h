@@ -32,7 +32,7 @@
 #include <lib/struct/elf-format.h>
 #include <lib/struct/linked-list.h>
 #include <lib/struct/list.h>
-#include <mem-system/mem-system.h>
+#include <mem-system/memory.h>
 
 
 

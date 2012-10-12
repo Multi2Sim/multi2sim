@@ -23,7 +23,8 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/misc/misc.h>
 
-#include "mem-system.h"
+#include "memory.h"
+#include "spec-mem.h"
 
 
 /*

@@ -25,6 +25,7 @@
 #include <lib/struct/debug.h>
 #include <lib/struct/linked-list.h>
 
+#include "cache.h"
 #include "mem-system.h"
 
 

@@ -25,7 +25,7 @@
 #include <lib/misc/misc.h>
 #include <lib/struct/debug.h>
 
-#include "mem-system.h"
+#include "memory.h"
 
 
 /* Total space allocated for memory pages */

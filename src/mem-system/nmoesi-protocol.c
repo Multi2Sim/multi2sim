@@ -26,6 +26,7 @@
 #include <network/network.h>
 #include <network/node.h>
 
+#include "cache.h"
 #include "mem-system.h"
 
 
