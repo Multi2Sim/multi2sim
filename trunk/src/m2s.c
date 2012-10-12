@@ -21,7 +21,7 @@
 #include <arch/arm/emu/emu.h>
 #include <arch/arm/emu/isa.h>
 #include <arch/arm/emu/syscall.h>
-#include <arch/arm/timing/timing.h>
+#include <arch/arm/timing/cpu.h>
 #include <arch/evergreen/timing/timing.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/timing/timing.h>

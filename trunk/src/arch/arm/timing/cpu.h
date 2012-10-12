@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARM_TIMING_H
-#define ARM_TIMING_H
+#ifndef ARCH_ARM_TIMING_CPU_H
+#define ARCH_ARM_TIMING_CPU_H
 
 #include <stdio.h>
 
