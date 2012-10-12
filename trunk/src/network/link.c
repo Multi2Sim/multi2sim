@@ -17,7 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "buffer.h"
+#include "link.h"
+#include "message.h"
 #include "network.h"
+#include "node.h"
 
 
 struct net_link_t *net_link_create(struct net_t *net,
