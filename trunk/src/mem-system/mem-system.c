@@ -19,6 +19,7 @@
 
 #include <arch/evergreen/timing/timing.h>
 #include <lib/esim/esim.h>
+#include <network/network.h>
 
 #include "mem-system.h"
 

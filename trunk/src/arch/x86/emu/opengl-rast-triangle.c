@@ -17,7 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/struct/debug.h>
+
 #include "opengl-rast-triangle.h"
+
 
 void x86_opengl_rasterizer_draw_tiangle(struct x86_opengl_context_t *ctx, struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1, struct x86_opengl_vertex_t *vtx2)
 {
@@ -255,6 +258,7 @@ void x86_opengl_rasterizer_draw_tiangle(struct x86_opengl_context_t *ctx, struct
 			spn->z = zLeft;
 
 			x86_opengl_debug("\t\tSpan: Z = %d zStep = %d\n", spn->z, spn->zStep );
+
 			/* This is where we actually generate fragments */
 			if (spn->end > 0 && spn->y >= 0)
 			{

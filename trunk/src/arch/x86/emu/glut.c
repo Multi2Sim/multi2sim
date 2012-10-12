@@ -19,8 +19,13 @@
 
 #include <assert.h>
 #include <GL/glut.h>
+#include <stdlib.h>
 #include <time.h>
 
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/linked-list.h>
 #include <mem-system/mem-system.h>
 
 #include "context.h"

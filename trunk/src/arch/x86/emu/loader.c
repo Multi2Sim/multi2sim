@@ -21,7 +21,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
 #include <lib/struct/elf-format.h>
+#include <lib/struct/linked-list.h>
 #include <mem-system/mem-system.h>
 
 #include "context.h"
