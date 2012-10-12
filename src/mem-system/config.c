@@ -23,6 +23,8 @@
 #include <lib/esim/trace.h>
 #include <lib/struct/config.h>
 #include <lib/misc/misc.h>
+#include <network/node.h>
+#include <network/routing-table.h>
 
 #include "mem-system.h"
 

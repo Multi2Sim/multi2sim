@@ -17,6 +17,7 @@
  */
 
 #include <lib/esim/trace.h>
+#include <network/node.h>
 
 #include "mem-system.h"
 
