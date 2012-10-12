@@ -20,7 +20,8 @@
 #include <lib/misc/misc.h>
 #include <lib/struct/debug.h>
 #include <lib/struct/elf-format.h>
-#include <mem-system/mem-system.h>
+#include <mem-system/memory.h>
+#include <mem-system/spec-mem.h>
 
 #include "emu.h"
 #include "isa.h"

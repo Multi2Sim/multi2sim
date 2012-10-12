@@ -21,6 +21,7 @@
 #include <lib/esim/esim.h>
 #include <network/network.h>
 
+#include "cache.h"
 #include "mem-system.h"
 
 

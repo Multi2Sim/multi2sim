@@ -23,8 +23,9 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/struct/debug.h>
-#include <mem-system/mem-system.h>
+#include <mem-system/memory.h>
 
 #include "emu.h"
 

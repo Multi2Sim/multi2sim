@@ -29,7 +29,7 @@
 #include <network/node.h>
 #include <network/routing-table.h>
 
-#include "mem-system.h"
+#include "cache.h"
 
 
 /*

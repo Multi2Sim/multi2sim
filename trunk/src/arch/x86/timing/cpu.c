@@ -26,6 +26,7 @@
 #include <lib/struct/config.h>
 #include <lib/struct/debug.h>
 #include <lib/struct/timer.h>
+#include <mem-system/memory.h>
 #include <mem-system/mem-system.h>
 
 #include "bpred.h"
