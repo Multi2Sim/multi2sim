@@ -22,7 +22,11 @@
 #include <network/network.h>
 
 #include "cache.h"
+#include "command.h"
+#include "local-mem-protocol.h"
 #include "mem-system.h"
+#include "mmu.h"
+#include "nmoesi-protocol.h"
 
 
 /*

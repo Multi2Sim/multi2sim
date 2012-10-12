@@ -31,6 +31,7 @@
 #include <network/node.h>
 
 #include "cache.h"
+#include "directory.h"
 #include "mem-system.h"
 
 

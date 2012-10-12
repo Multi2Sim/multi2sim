@@ -26,6 +26,7 @@
 #include <lib/struct/timer.h>
 #include <mem-system/mem-system.h>
 #include <mem-system/memory.h>
+#include <mem-system/mmu.h>
 #include <mem-system/spec-mem.h>
 
 #include "emu.h"

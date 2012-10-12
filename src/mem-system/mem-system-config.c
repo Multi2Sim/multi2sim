@@ -30,6 +30,9 @@
 #include <network/routing-table.h>
 
 #include "cache.h"
+#include "command.h"
+#include "directory.h"
+#include "mmu.h"
 
 
 /*
@@ -1971,3 +1974,4 @@ void mem_system_config_read(void)
 	/* Dump configuration to trace file */
 	mem_config_trace();
 }
+

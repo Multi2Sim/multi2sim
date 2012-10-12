@@ -6,25 +6,32 @@ libmemsystem_a_SOURCES = \
 	cache.h \
 	\
 	command.c \
-	\
-	config.c \
+	command.h \
 	\
 	directory.c \
+	directory.h \
 	\
 	local-mem-protocol.c \
+	local-mem-protocol.h \
 	\
 	mem-system.c \
-	\
 	mem-system.h \
+	mem-system-config.c \
 	\
 	memory.c \
 	memory.h \
 	\
 	mmu.c \
+	mmu.h \
+	\
+	mod-stack.c \
+	mod-stack.h \
 	\
 	module.c \
+	module.h \
 	\
 	nmoesi-protocol.c \
+	nmoesi-protocol.h \
 	\
 	spec-mem.c \
 	spec-mem.h

@@ -22,7 +22,8 @@
 #include <lib/esim/trace.h>
 #include <lib/struct/debug.h>
 #include <lib/struct/linked-list.h>
-#include <mem-system/mem-system.h>
+#include <mem-system/mmu.h>
+#include <mem-system/module.h>
 
 #include "cpu.h"
 #include "event-queue.h"
