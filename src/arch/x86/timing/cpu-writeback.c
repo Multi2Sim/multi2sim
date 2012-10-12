@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 
 #include "cpu.h"
 #include "reg-file.h"

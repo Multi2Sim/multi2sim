@@ -1,5 +1,5 @@
 /*
- *  Libesim
+ *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ESIM_H
-#define ESIM_H
+#ifndef LIB_ESIM_ESIM_H
+#define LIB_ESIM_ESIM_H
 
 #include <stdint.h>
 #include <stdio.h>
@@ -124,26 +124,5 @@ void esim_empty(void);
 long long esim_real_time(void);
 
 
-
-
-/*
- * Simulation Trace
- */
-
-void trace_init(char *file_name);
-void trace_done(void);
-
-int trace_new_category(void);
-
-#define trace_status(category) ((category) ? __trace_status((category)) : 0)
-int __trace_status(int category);
-
-#define trace(category, ...) ((category) ? \
-	__trace((category), 1, __VA_ARGS__) : (void) 0)
-#define trace_header(category, ...) ((category) ? \
-	__trace((category), 0, __VA_ARGS__) : (void) 0)
-void __trace(int category, int print_cycle, char *fmt, ...)
-	__attribute__ ((format (printf, 3, 4)));
-
-
 #endif
+

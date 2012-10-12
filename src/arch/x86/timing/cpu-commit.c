@@ -21,6 +21,7 @@
 
 #include <arch/x86/emu/context.h>
 #include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/struct/debug.h>
 
 #include "bpred.h"

@@ -36,7 +36,7 @@
 #include <arch/x86/emu/opengl.h>
 #include <arch/x86/emu/syscall.h>
 #include <arch/x86/timing/cpu.h>
-#include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <visual-common.h>
 
 
