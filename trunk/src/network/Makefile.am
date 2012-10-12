@@ -10,7 +10,8 @@ libnetwork_a_SOURCES = \
 	message.c \
 	message.h \
 	\
-	netlib.c \
+	net-system.c \
+	net-system.h \
 	\
 	network.h \
 	network.c \

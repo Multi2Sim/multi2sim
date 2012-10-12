@@ -20,44 +20,8 @@
 #ifndef NETWORK_NETWORK_H
 #define NETWORK_NETWORK_H
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include <lib/esim/esim.h>
-#include <lib/mhandle/mhandle.h>
-#include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/list.h>
-#include <lib/struct/linked-list.h>
-#include <lib/struct/hash-table.h>
 #include <lib/struct/config.h>
 
-
-
-
-/*
- * Messages
- */
-
-extern char *err_net_end_nodes;
-extern char *err_net_no_route;
-extern char *err_net_large_message;
-extern char *err_net_node_name_duplicate;
-extern char *err_net_can_send;
-extern char *err_net_config;
-
-extern char *net_config_help;
-
-
-
-
-/*
- * Event-driven Simulation
- */
 
 /* Events */
 extern int EV_NET_SEND;
@@ -85,11 +49,6 @@ void net_stack_return(struct net_stack_t *stack);
 void net_event_handler(int event, void *data);
 
 
-
-
-/*
- * Network
- */
 
 #define NET_MSG_TABLE_SIZE 32
 
@@ -173,37 +132,5 @@ struct net_msg_t *net_try_send_ev(struct net_t *net, struct net_node_t *src_node
 
 void net_receive(struct net_t *net, struct net_node_t *node, struct net_msg_t *msg);
 
-
-
-
-/*
- * Main Library Functions (netlib.c)
- */
-
-/* Debug */
-#define net_debug(...) debug(net_debug_category, __VA_ARGS__)
-extern int net_debug_category;
-
-/* Configuration parameters */
-extern char *net_config_file_name;
-extern char *net_report_file_name;
-extern char *net_sim_network_name;
-
-extern long long net_max_cycles;
-extern double net_injection_rate;
-extern int net_msg_size;
-
-/* Functions */
-void net_init(void);
-void net_done(void);
-
-void net_load(char *file_name);
-
-struct net_t *net_find(char *name);
-struct net_t *net_find_first(void);
-struct net_t *net_find_next(void);
-
-void net_sim(char *debug_file_name);
-
-
 #endif
+

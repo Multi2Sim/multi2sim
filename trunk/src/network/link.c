@@ -17,6 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <stdlib.h>
+
+#include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+
 #include "buffer.h"
 #include "link.h"
 #include "message.h"

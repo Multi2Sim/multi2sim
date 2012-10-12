@@ -17,9 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <string.h>
+
+#include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
+
 #include "buffer.h"
 #include "link.h"
 #include "message.h"
+#include "net-system.h"
 #include "network.h"
 #include "node.h"
 #include "routing-table.h"
@@ -132,13 +142,13 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		def_bandwidth = config_read_int(config, section, "DefaultBandwidth", 0);
 		if (!def_input_buffer_size)
 			fatal("%s:%s: DefaultInputBufferSize: invalid/missing value.\n%s",
-				net->name, section, err_net_config);
+				net->name, section, net_err_config);
 		if (!def_output_buffer_size)
 			fatal("%s:%s: DefaultOutputBufferSize: invalid/missing value.\n%s",
-				net->name, section, err_net_config);
+				net->name, section, net_err_config);
 		if (!def_bandwidth)
 			fatal("%s:%s: DefaultBandwidth: invalid/missing value.\n%s",
-				net->name, section, err_net_config);
+				net->name, section, net_err_config);
 	}
 
 	/* Nodes */
@@ -174,7 +184,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		token = strtok(NULL, delim);
 		if (!node_name || token)
 			fatal("%s:%s: wrong format for node.\n%s",
-				net->name, section, err_net_config);
+				net->name, section, net_err_config);
 
 		/* Get properties */
 		node_type = config_read_string(config, section, "Type", "");
@@ -194,7 +204,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 				bandwidth, node_name);
 		else
 			fatal("%s:%s: Type: invalid/missing value.\n%s",
-				net->name, section, err_net_config);
+				net->name, section, net_err_config);
 	}
 
 
@@ -236,7 +246,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		token = strtok(NULL, delim);
 		if (!link_name || token)
 			fatal("%s: %s: bad format for link.\n%s",
-				name, section, err_net_config);
+				name, section, net_err_config);
 
 		/* Fields */
 		link_type = config_read_string(config, section, "Type", "Unidirectional");
@@ -251,10 +261,10 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 
 		if (!src_node)
 			fatal("%s: %s: %s: source node does not exist.\n%s",
-				name, section, src_node_name, err_net_config);
+				name, section, src_node_name, net_err_config);
 		if (!dst_node)
 			fatal("%s: %s: %s: destination node does not exist.\n%s",
-				name, section, dst_node_name, err_net_config);
+				name, section, dst_node_name, net_err_config);
 
 		if (v_channel_count >= 1)
 		{
@@ -269,7 +279,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 			}
 		}
 		else fatal("%s: %s: Unacceptable number of virtual channels \n %s",
-				name, section,err_net_config);
+				name, section,net_err_config);
 	}
 
 	/* initializing the routing table */
@@ -302,7 +312,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		token_endl = strtok(NULL, delim);
 		if (token_endl)
 			fatal("%s: %s: bad format for route.\n%s",
-				name, section, err_net_config);
+				name, section, net_err_config);
 
 		/*Routes*/
 		routing_type = 1;
@@ -339,7 +349,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 						vc_used = atoi(token);
 						if (vc_used < 0)
 							fatal("Network %s:%s: Unacceptable virtual channel format is chosen\n %s",
-									net->name, section, err_net_config);
+									net->name, section, net_err_config);
 					}
 
 					int name_check = strcmp(nxt_node_name, "---");
@@ -348,13 +358,13 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 					if (!nxt_node_r && name_check != 0)
 					{
 							fatal("Network %s:%s: Invalid node Name.\n %s",
-									net->name, section,err_net_config);
+									net->name, section,net_err_config);
 					}
 					if (nxt_node_r)
 					{
 						if (src_node_r == dst_node_r)
 							fatal("Network %s:%s: Invalid Routing format.\n %s",
-									net->name, section,err_net_config);
+									net->name, section,net_err_config);
 						else
 							if (vc_used > 0)
 								net_routing_table_route_update(net->routing_table,
@@ -662,11 +672,11 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 	/* No route to destination */
 	if (!output_buffer)
 		fatal("%s: no route between %s and %s.\n%s",
-			net->name, src_node->name, dst_node->name, err_net_no_route);
+			net->name, src_node->name, dst_node->name, net_err_no_route);
 
 	/* Message is too long */
 	if (size > output_buffer->size)
-		fatal("%s: message too long.\n%s", net->name, err_net_large_message);
+		fatal("%s: message too long.\n%s", net->name, net_err_large_message);
 
 	/* Output buffer is busy */
 	if (output_buffer->write_busy >= esim_cycle)
@@ -717,7 +727,7 @@ struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
 
 	/* Check nodes */
 	if (src_node->kind != net_node_end || dst_node->kind != net_node_end)
-		fatal("%s: not end nodes.\n%s", __FUNCTION__, err_net_end_nodes);
+		fatal("%s: not end nodes.\n%s", __FUNCTION__, net_err_end_nodes);
 
 	/* Create message */
 	msg = net_msg_create(net, src_node, dst_node, size);

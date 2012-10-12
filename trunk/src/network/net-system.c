@@ -18,9 +18,16 @@
  */
 
 #include <math.h>
+#include <string.h>
 
+#include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
 #include <lib/struct/debug.h>
+#include <lib/struct/hash-table.h>
+#include <lib/struct/list.h>
 
+#include "net-system.h"
 #include "network.h"
 #include "node.h"
 
@@ -99,35 +106,35 @@ char *net_config_help =
 	"\n"
 	"\n";
 
-char *err_net_end_nodes =
+char *net_err_end_nodes =
 	"\tAn attempt has been made to send a message from/to an intermediate\n"
 	"\tswitch or bus. Both the initial source and the final destination\n"
 	"\tof a network message have to be end nodes.\n";
 
-char *err_net_no_route =
+char *net_err_no_route =
 	"\tA message has been sent between two nodes with no possible route.\n"
 	"\tPlease redesign your network, considering that every pair of end\n"
 	"\tnodes sending messages to each other need to be connected with a\n"
 	"\tlink.\n";
 
-char *err_net_large_message =
+char *net_err_large_message =
 	"\tA message has been sent in a network where some input/output buffer\n"
 	"\tdoes not have enough capacity to hold it. Please redesign your\n"
 	"\tnetwork, considering that the size of each buffer should be at\n"
 	"\tleast as large as the largest possible message.\n";
 
-char *err_net_node_name_duplicate =
+char *net_err_node_name_duplicate =
 	"\tA node has been added to a network with a name duplicate. Please make\n"
 	"\tsure that all intermediate and end nodes of your network have\n"
 	"\tdifferent names.\n";
 
-char *err_net_config =
+char *net_err_config =
 	"\tA network is being loaded from an IniFile configuration file.\n"
 	"\tHowever, some feature of the provided file does not comply with the\n"
 	"\texpected format. Please run 'm2s --help-net-config' for a list of\n"
 	"\tpossible sections/variables in the network configuration file.\n";
 
-char *err_net_can_send =
+char *net_err_can_send =
 	"\tAn attempt has been detected of injecting a package in a network\n"
 	"\tfrom a source node that has no available space in its output\n"
 	"\tbuffer. This can be solved by making sure a message can be sent\n"
