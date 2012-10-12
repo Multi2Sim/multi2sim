@@ -26,6 +26,7 @@
 #include <lib/struct/list.h>
 
 #include "mem-system.h"
+#include "mmu.h"
 
 
 /*

@@ -24,6 +24,7 @@
 #include <lib/struct/linked-list.h>
 
 #include "mem-system.h"
+#include "mod-stack.h"
 
 
 /* Events */

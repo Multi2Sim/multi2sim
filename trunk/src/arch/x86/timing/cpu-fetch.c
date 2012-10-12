@@ -25,7 +25,8 @@
 #include <lib/misc/misc.h>
 #include <lib/struct/debug.h>
 #include <lib/struct/list.h>
-#include <mem-system/mem-system.h>
+#include <mem-system/mmu.h>
+#include <mem-system/module.h>
 
 #include "bpred.h"
 #include "cpu.h"
