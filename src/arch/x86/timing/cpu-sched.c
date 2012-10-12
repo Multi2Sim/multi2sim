@@ -21,7 +21,7 @@
 
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
-#include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/struct/debug.h>
 #include <lib/struct/list.h>
 

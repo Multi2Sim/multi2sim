@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/struct/list.h>
 
