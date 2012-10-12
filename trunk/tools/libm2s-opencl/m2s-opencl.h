@@ -23,9 +23,11 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <debug.h>
-#include <evergreen-emu.h>
-#include <CL/cl.h>
+
+#include <lib/struct/debug.h>
+
+#include "CL/cl.h"
+
 
 #define EVG_SYS_OPENCL_IMPL_VERSION_MAJOR		1
 #define EVG_SYS_OPENCL_IMPL_VERSION_MINOR		0
