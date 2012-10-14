@@ -17,43 +17,41 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-#include <stdlib.h>
+#ifndef ARCH_EVERGREEN_EMU_OPENCL_MEM_H
+#define ARCH_EVERGREEN_EMU_OPENCL_MEM_H
 
-#include <arch/x86/emu/emu.h>
-#include <lib/mhandle/mhandle.h>
-#include <lib/struct/debug.h>
-#include <mem-system/mem-system.h>
-
-#include "emu.h"
-#include "opencl.h"
-#include "opencl-mem.h"
-#include "opencl-repo.h"
-
-
-struct evg_opencl_mem_t *evg_opencl_mem_create()
+struct evg_opencl_image_format_t
 {
-	struct evg_opencl_mem_t *mem;
+	unsigned int image_channel_order;
+	unsigned int image_channel_data_type;
+};
 
-	/* Allocate */
-	mem = calloc(1, sizeof(struct evg_opencl_mem_t));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize */
-	mem->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
-		evg_opencl_object_mem);
-	mem->ref_count = 1;
-
-	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, mem);
-	return mem;
-}
-
-
-void evg_opencl_mem_free(struct evg_opencl_mem_t *mem)
+struct evg_opencl_mem_t
 {
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, mem);
-	free(mem);
-}
+	unsigned int id;
+	int ref_count;
+
+	unsigned int type;  /* 0 buffer, 1 2D image, 2 3D image */
+
+	unsigned int size;
+
+	/* Used for images only */
+	unsigned int height;
+	unsigned int width;
+	unsigned int depth;
+	unsigned int num_pixels;
+	unsigned int pixel_size;
+	unsigned int num_channels_per_pixel;
+
+	unsigned int flags;
+	unsigned int host_ptr;
+
+	unsigned int device_ptr;  /* Position assigned in device global memory */
+};
+
+struct evg_opencl_mem_t *evg_opencl_mem_create(void);
+void evg_opencl_mem_free(struct evg_opencl_mem_t *mem);
+
+
+#endif
 

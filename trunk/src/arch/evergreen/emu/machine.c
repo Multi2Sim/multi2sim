@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <math.h>
 
 #include <arch/x86/emu/emu.h>
@@ -29,6 +30,8 @@
 #include "isa.h"
 #include "machine.h"
 #include "ndrange.h"
+#include "opencl-kernel.h"
+#include "opencl-mem.h"
 #include "wavefront.h"
 #include "work-item.h"
 #include "work-group.h"

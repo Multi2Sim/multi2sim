@@ -18,9 +18,17 @@
  */
 
 #include <assert.h>
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/linked-list.h>
+#include <lib/struct/list.h>
 
 #include "emu.h"
 #include "wavefront.h"
+#include "work-item.h"
 
 
 

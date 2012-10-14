@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <arch/x86/emu/emu.h>
 #include <lib/struct/debug.h>
@@ -26,6 +27,10 @@
 
 #include "bin-file.h"
 #include "emu.h"
+#include "opencl.h"
+#include "opencl-kernel.h"
+#include "opencl-program.h"
+#include "opencl-repo.h"
 
 
 struct evg_opencl_kernel_t *evg_opencl_kernel_create()

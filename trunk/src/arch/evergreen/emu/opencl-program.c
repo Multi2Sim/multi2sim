@@ -21,10 +21,17 @@
 #include <stdlib.h>
 
 #include <arch/x86/emu/emu.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
 #include <lib/struct/debug.h>
+#include <lib/struct/list.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "opencl.h"
+#include "opencl-mem.h"
+#include "opencl-program.h"
+#include "opencl-repo.h"
 
 
 struct evg_opencl_program_t *evg_opencl_program_create()

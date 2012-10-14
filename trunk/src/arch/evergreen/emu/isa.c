@@ -17,7 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <stdlib.h>
+
 #include <arch/x86/emu/emu.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
+#include <lib/struct/linked-list.h>
 #include <lib/struct/repos.h>
 #include <mem-system/memory.h>
 
@@ -25,6 +32,7 @@
 #include "isa.h"
 #include "machine.h"
 #include "wavefront.h"
+#include "work-item.h"
 #include "work-group.h"
 
 

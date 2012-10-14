@@ -21,10 +21,14 @@
 #include <stdlib.h>
 
 #include <arch/x86/emu/emu.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/struct/debug.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "opencl.h"
+#include "opencl-platform.h"
+#include "opencl-repo.h"
 
 
 struct evg_opencl_platform_t *evg_opencl_platform_create()
@@ -53,7 +57,7 @@ void evg_opencl_platform_free(struct evg_opencl_platform_t *platform)
 }
 
 
-uint32_t evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
+unsigned int evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform, unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size)
 {
 	char *platform_profile = "FULL_PROFILE";
 	char *platform_version = "OpenCL 1.1 Multi2Sim-v" VERSION;
@@ -61,7 +65,7 @@ uint32_t evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform, ui
 	char *platform_vendor = "www.multi2sim.org";
 	char *platform_extensions = "";
 
-	uint32_t size_ret = 0;
+	unsigned int size_ret = 0;
 	char *info;
 
 	switch (name) {

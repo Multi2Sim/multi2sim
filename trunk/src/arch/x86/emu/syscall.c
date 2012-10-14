@@ -33,7 +33,7 @@
 #include <sys/time.h>
 #include <sys/times.h>
 
-#include <arch/evergreen/emu/emu.h>
+#include <arch/evergreen/emu/opencl.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
@@ -596,7 +596,7 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	switch (x86_emu->gpu_kind)
 	{
 	case x86_emu_gpu_evergreen:
-		evg_emu_libopencl_redirect(ctx, full_path, sizeof full_path);
+		evg_opencl_runtime_redirect(ctx, full_path, sizeof full_path);
 		break;
 	
 	case x86_emu_gpu_southern_islands:

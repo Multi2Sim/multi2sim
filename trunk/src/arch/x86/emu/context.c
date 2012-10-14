@@ -19,7 +19,7 @@
 
 #include <pthread.h>
 
-#include <arch/evergreen/emu/emu.h>
+#include <arch/evergreen/emu/opencl.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
@@ -243,7 +243,7 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	if (x86_emu->gpu_kind == x86_emu_gpu_evergreen)
 	{
 		if (ctx->libopencl_open_attempt)
-			evg_emu_libopencl_failed(ctx->pid);
+			evg_opencl_runtime_failed(ctx->pid);
 	}
 	else if (x86_emu->gpu_kind == x86_emu_gpu_southern_islands)
 	{

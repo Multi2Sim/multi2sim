@@ -17,43 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-#include <stdlib.h>
-
-#include <arch/x86/emu/emu.h>
-#include <lib/mhandle/mhandle.h>
-#include <lib/struct/debug.h>
-#include <mem-system/mem-system.h>
-
-#include "emu.h"
-#include "opencl.h"
-#include "opencl-mem.h"
-#include "opencl-repo.h"
+#ifndef ARCH_EVERGREEN_EMU_OPENCL_SAMPLER_H
+#define ARCH_EVERGREEN_EMU_OPENCL_SAMPLER_H
 
 
-struct evg_opencl_mem_t *evg_opencl_mem_create()
+struct evg_opencl_sampler_t
 {
-	struct evg_opencl_mem_t *mem;
+	unsigned int id;
+	int ref_count;
 
-	/* Allocate */
-	mem = calloc(1, sizeof(struct evg_opencl_mem_t));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
+	unsigned int normalized_coords;
+	unsigned int filter_mode;
+	unsigned int addressing_mode;
+};
 
-	/* Initialize */
-	mem->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
-		evg_opencl_object_mem);
-	mem->ref_count = 1;
-
-	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, mem);
-	return mem;
-}
+struct evg_opencl_sampler_t *evg_opencl_sampler_create(void);
+void evg_opencl_sampler_free(struct evg_opencl_sampler_t *sampler);
 
 
-void evg_opencl_mem_free(struct evg_opencl_mem_t *mem)
-{
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, mem);
-	free(mem);
-}
+#endif
 
