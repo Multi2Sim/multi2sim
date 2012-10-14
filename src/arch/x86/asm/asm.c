@@ -22,8 +22,8 @@
 #include <stdlib.h>
 
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/elf-format.h>
+#include <lib/util/debug.h>
+#include <lib/util/elf-format.h>
 
 #include "asm.h"
 

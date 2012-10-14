@@ -26,12 +26,12 @@
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/config.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/heap.h>
-#include <lib/struct/linked-list.h>
-#include <lib/struct/repos.h>
-#include <lib/struct/timer.h>
+#include <lib/util/config.h>
+#include <lib/util/debug.h>
+#include <lib/util/heap.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/repos.h>
+#include <lib/util/timer.h>
 
 #include "timing.h"
 

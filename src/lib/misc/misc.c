@@ -25,7 +25,7 @@
 #include <time.h>
 #include <sys/utsname.h>
 
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 #include <lib/mhandle/mhandle.h>
 
 #include "misc.h"

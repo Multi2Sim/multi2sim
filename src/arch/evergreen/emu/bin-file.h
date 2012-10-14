@@ -20,7 +20,7 @@
 #ifndef ARCH_EVERGREEN_EMU_BIN_FILE_H
 #define ARCH_EVERGREEN_EMU_BIN_FILE_H
 
-#include <lib/struct/elf-format.h>
+#include <lib/util/elf-format.h>
 
 
 /* Encoding dictionary entry header (as encoded in ELF file) */

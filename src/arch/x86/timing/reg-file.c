@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 
 #include "cpu.h"
 #include "reg-file.h"

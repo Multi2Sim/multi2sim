@@ -21,7 +21,7 @@
 #include <unistd.h>
 
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 #include <arch/evergreen/emu/bin-file.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/opencl-kernel.h>

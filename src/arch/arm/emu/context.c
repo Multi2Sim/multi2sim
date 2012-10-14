@@ -22,8 +22,8 @@
 #include <unistd.h>
 
 #include <lib/esim/esim.h>
-#include <lib/struct/linked-list.h>
-#include <lib/struct/timer.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
 #include "context.h"

@@ -21,7 +21,7 @@
 
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/struct/list.h>
+#include <lib/util/list.h>
 
 #include "cpu.h"
 #include "uop-queue.h"

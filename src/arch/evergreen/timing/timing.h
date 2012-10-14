@@ -23,7 +23,7 @@
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/work-item.h>
 #include <arch/evergreen/emu/wavefront.h>
-#include <lib/struct/config.h>
+#include <lib/util/config.h>
 #include <mem-system/mem-system.h>
 
 

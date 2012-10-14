@@ -22,7 +22,7 @@
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 
 #include "cache.h"
 #include "mem-system.h"
@@ -328,3 +328,4 @@ void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag)
 	block = &cache->sets[set].blocks[way];
 	block->transient_tag = tag;
 }
+

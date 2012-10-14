@@ -19,7 +19,7 @@
 
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
-#include <lib/struct/hash-table.h>
+#include <lib/util/hash-table.h>
 
 
 
