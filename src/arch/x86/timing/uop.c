@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/struct/debug.h>
-#include <lib/struct/list.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 
 #include "reg-file.h"
 #include "uop.h"

@@ -1,6 +1,6 @@
-lib_LIBRARIES = libstruct.a
+lib_LIBRARIES = libutil.a
 
-libstruct_a_SOURCES = \
+libutil_a_SOURCES = \
 	bin-config.c \
 	bin-config.h \
 	buffer.c \

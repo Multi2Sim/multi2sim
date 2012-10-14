@@ -22,7 +22,7 @@
 #include <ctype.h>
 
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 
 #include "asm.h"
 

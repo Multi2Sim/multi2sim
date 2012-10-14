@@ -20,7 +20,7 @@
 #include <assert.h>
 
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 
 #include "bpred.h"
 #include "cpu.h"

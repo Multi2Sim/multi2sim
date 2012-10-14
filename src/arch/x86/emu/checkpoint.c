@@ -24,10 +24,10 @@
 #include <zlib.h>
 
 #include <lib/misc/misc.h>
-#include <lib/struct/bin-config.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/linked-list.h>
-#include <lib/struct/list.h>
+#include <lib/util/bin-config.h>
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/list.h>
 #include <mem-system/memory.h>
 
 #include "context.h"

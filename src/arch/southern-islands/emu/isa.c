@@ -18,7 +18,7 @@
  */
 
 #include <arch/x86/emu/emu.h>
-#include <lib/struct/repos.h>
+#include <lib/util/repos.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"

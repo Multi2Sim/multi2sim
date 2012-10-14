@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 
-#include <lib/struct/elf-format.h>
+#include <lib/util/elf-format.h>
 
 
 /* Microcode Formats */

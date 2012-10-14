@@ -19,8 +19,8 @@
 
 #include <assert.h>
 
-#include <lib/struct/debug.h>
-#include <lib/struct/list.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <mem-system/memory.h>
 
 #include "opengl.h"

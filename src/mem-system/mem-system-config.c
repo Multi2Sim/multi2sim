@@ -22,7 +22,7 @@
 #include <arch/southern-islands/timing/timing.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <lib/struct/config.h>
+#include <lib/util/config.h>
 #include <lib/misc/misc.h>
 #include <network/net-system.h>
 #include <network/network.h>

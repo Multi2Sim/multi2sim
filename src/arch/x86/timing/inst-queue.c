@@ -20,7 +20,7 @@
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/struct/linked-list.h>
+#include <lib/util/linked-list.h>
 
 #include "cpu.h"
 #include "inst-queue.h"

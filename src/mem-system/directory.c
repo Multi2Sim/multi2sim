@@ -24,7 +24,7 @@
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 
 #include "directory.h"
 #include "mem-system.h"
@@ -317,3 +317,4 @@ void dir_entry_unlock(struct dir_t *dir, int x, int y)
 	/* Unlock entry */
 	dir_lock->lock = 0;
 }
+

@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 
 #include "opengl-edge.h"
 

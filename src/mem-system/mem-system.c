@@ -21,7 +21,7 @@
 #include <arch/evergreen/timing/timing.h>
 #include <lib/esim/esim.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 #include <network/network.h>
 
 #include "cache.h"

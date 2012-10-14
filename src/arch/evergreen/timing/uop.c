@@ -23,9 +23,9 @@
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/wavefront.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/linked-list.h>
-#include <lib/struct/repos.h>
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/repos.h>
 
 #include "timing.h"
 

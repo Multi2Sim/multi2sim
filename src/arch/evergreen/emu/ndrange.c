@@ -23,8 +23,8 @@
 #include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/timer.h>
+#include <lib/util/debug.h>
+#include <lib/util/timer.h>
 
 #include "bin-file.h"
 #include "emu.h"

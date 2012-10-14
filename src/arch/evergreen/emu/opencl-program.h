@@ -20,7 +20,7 @@
 #ifndef ARCH_EVERGREEN_EMU_OPENCL_PROGRAM_H
 #define ARCH_EVERGREEN_EMU_OPENCL_PROGRAM_H
 
-#include <lib/struct/elf-format.h>
+#include <lib/util/elf-format.h>
 
 
 struct evg_opencl_program_t

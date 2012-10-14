@@ -20,7 +20,7 @@
 #ifndef NETWORK_NETWORK_H
 #define NETWORK_NETWORK_H
 
-#include <lib/struct/config.h>
+#include <lib/util/config.h>
 
 
 /* Events */

@@ -25,8 +25,8 @@
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/linked-list.h>
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
 
 #include "timing.h"
 
