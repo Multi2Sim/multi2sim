@@ -21,7 +21,7 @@
 
 #include <arch/x86/emu/regs.h>
 #include <lib/esim/trace.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 
 #include "cpu.h"
 #include "event-queue.h"

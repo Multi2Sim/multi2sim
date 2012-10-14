@@ -26,7 +26,7 @@
 
 #include <arch/fermi/asm/asm.h>
 #include <arch/x86/emu/context.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/linked-list.h>

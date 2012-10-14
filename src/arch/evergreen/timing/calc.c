@@ -20,7 +20,7 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <arch/evergreen/emu/bin-file.h>
 #include <arch/evergreen/emu/ndrange.h>

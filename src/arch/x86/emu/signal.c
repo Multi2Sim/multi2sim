@@ -21,7 +21,7 @@
 #include <errno.h>
 #include <signal.h>
 
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 

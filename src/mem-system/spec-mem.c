@@ -21,7 +21,7 @@
 #include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 
 #include "memory.h"
 #include "spec-mem.h"
