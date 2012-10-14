@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 

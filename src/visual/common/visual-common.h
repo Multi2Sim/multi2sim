@@ -30,7 +30,7 @@
 #include <zlib.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/linked-list.h>

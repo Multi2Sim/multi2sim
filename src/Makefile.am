@@ -45,7 +45,6 @@ LDADD = \
 	$(top_builddir)/src/arch/fermi/asm/libasm.a \
 	\
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
-	$(top_builddir)/src/lib/misc/libmisc.a \
 	$(top_builddir)/src/lib/esim/libesim.a \
 	$(top_builddir)/src/lib/util/libutil.a
 
