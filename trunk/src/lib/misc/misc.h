@@ -25,7 +25,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <lib/struct/list.h>
+#include <lib/util/list.h>
 
 
 /* Maximum string size */

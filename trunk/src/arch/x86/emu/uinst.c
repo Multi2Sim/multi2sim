@@ -21,7 +21,7 @@
 
 #include <lib/misc/misc.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 
 #include "context.h"
 #include "emu.h"

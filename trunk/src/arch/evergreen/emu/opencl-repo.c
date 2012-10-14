@@ -22,8 +22,8 @@
 
 #include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/linked-list.h>
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
 #include <mem-system/mem-system.h>
 
 #include "opencl-command-queue.h"

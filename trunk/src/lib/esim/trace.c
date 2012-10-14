@@ -25,9 +25,9 @@
 #include <zlib.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/heap.h>
-#include <lib/struct/list.h>
+#include <lib/util/debug.h>
+#include <lib/util/heap.h>
+#include <lib/util/list.h>
 
 #include "esim.h"
 

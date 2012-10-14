@@ -31,11 +31,11 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/hash-table.h>
-#include <lib/struct/linked-list.h>
-#include <lib/struct/list.h>
-#include <lib/struct/matrix.h>
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/list.h>
+#include <lib/util/matrix.h>
 
 
 /* Function to invoke visualization tool.

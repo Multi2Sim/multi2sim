@@ -23,9 +23,9 @@
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/config.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/timer.h>
+#include <lib/util/config.h>
+#include <lib/util/debug.h>
+#include <lib/util/timer.h>
 #include <mem-system/memory.h>
 #include <mem-system/mmu.h>
 

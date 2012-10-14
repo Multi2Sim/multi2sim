@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 
 #include "bin-file.h"
 #include "emu.h"

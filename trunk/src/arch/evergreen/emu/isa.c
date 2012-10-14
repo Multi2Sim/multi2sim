@@ -23,9 +23,9 @@
 #include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/linked-list.h>
-#include <lib/struct/repos.h>
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/repos.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"

@@ -21,7 +21,7 @@
 #define ARCH_EVERGREEN_EMU_KERNEL_H
 
 #include <lib/misc/misc.h>
-#include <lib/struct/elf-format.h>
+#include <lib/util/elf-format.h>
 
 
 enum evg_opencl_mem_scope_t

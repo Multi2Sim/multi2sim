@@ -19,8 +19,8 @@
 
 #include <string.h>
 
-#include <lib/struct/debug.h>
-#include <lib/struct/list.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 
 #include "emu.h"
 #include "opengl-bin-file.h"

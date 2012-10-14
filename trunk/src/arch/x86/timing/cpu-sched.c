@@ -22,8 +22,8 @@
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/esim/trace.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/list.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 
 #include "cpu.h"
 

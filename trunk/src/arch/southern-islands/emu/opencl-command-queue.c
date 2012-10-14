@@ -22,7 +22,7 @@
 
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 #include <mem-system/mem-system.h>
 
 #include "emu.h"

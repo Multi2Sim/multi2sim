@@ -27,10 +27,10 @@
 #include <arch/fermi/asm/asm.h>
 #include <arch/x86/emu/context.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/elf-format.h>
-#include <lib/struct/linked-list.h>
-#include <lib/struct/list.h>
+#include <lib/util/debug.h>
+#include <lib/util/elf-format.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/list.h>
 
 
 

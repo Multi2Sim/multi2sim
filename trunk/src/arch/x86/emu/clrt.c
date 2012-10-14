@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
 #include "clrt.h"

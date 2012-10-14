@@ -26,8 +26,8 @@
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/hash-table.h>
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 
 #include "bin-config.h"
 

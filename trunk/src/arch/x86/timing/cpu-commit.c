@@ -22,7 +22,7 @@
 #include <arch/x86/emu/context.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <lib/struct/debug.h>
+#include <lib/util/debug.h>
 
 #include "bpred.h"
 #include "cpu.h"

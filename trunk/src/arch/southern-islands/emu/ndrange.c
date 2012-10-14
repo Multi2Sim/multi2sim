@@ -18,7 +18,7 @@
  */
 
 #include <arch/x86/emu/emu.h>
-#include <lib/struct/timer.h>
+#include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"

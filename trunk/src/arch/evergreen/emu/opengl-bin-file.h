@@ -20,7 +20,7 @@
 #ifndef ARCH_EVERGREEN_EMU_OPENGL_BIN_FILE_H
 #define ARCH_EVERGREEN_EMU_OPENGL_BIN_FILE_H
 
-#include <lib/struct/elf-format.h>
+#include <lib/util/elf-format.h>
 
 
 /* Shader types */

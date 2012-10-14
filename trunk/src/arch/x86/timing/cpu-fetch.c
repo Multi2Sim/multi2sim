@@ -23,8 +23,8 @@
 #include <arch/x86/emu/regs.h>
 #include <lib/esim/trace.h>
 #include <lib/misc/misc.h>
-#include <lib/struct/debug.h>
-#include <lib/struct/list.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <mem-system/mmu.h>
 #include <mem-system/module.h>
 

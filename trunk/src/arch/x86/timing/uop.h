@@ -21,7 +21,7 @@
 #define X86_ARCH_TIMING_UOP_H
 
 #include <arch/x86/emu/uinst.h>
-#include <lib/struct/linked-list.h>
+#include <lib/util/linked-list.h>
 
 
 struct x86_uop_t
