@@ -24,6 +24,7 @@
 #include <lib/struct/debug.h>
 #include <mem-system/memory.h>
 
+#include "bin-file.h"
 #include "emu.h"
 
 
