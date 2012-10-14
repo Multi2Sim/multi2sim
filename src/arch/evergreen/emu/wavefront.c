@@ -20,6 +20,10 @@
 #include <lib/struct/hash-table.h>
 
 #include "emu.h"
+#include "isa.h"
+#include "ndrange.h"
+#include "wavefront.h"
+#include "work-group.h"
 
 
 /*

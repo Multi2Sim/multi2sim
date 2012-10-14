@@ -26,6 +26,7 @@
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "ndrange.h"
 
 
 /* Required 'libm2s-opencl.so' version.

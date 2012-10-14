@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/evergreen/emu/opengl-bin-file.h>
 #include <arch/evergreen/timing/timing.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
@@ -24,7 +25,14 @@
 #include <lib/struct/timer.h>
 #include <mem-system/memory.h>
 
+#include "bin-file.h"
 #include "emu.h"
+#include "isa.h"
+#include "ndrange.h"
+#include "wavefront.h"
+#include "work-group.h"
+
+
 
 /*
  * Global variables

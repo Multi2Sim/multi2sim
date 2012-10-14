@@ -22,6 +22,10 @@
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "isa.h"
+#include "machine.h"
+#include "wavefront.h"
+#include "work-group.h"
 
 
 /*
