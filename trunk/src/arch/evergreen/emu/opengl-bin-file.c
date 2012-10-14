@@ -19,6 +19,7 @@
 
 
 #include "emu.h"
+#include "opengl-bin-file.h"
 
 
 

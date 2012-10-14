@@ -18,6 +18,7 @@
  */
 
 
+#include "bin-file.h"
 #include "emu.h"
 
 
@@ -245,7 +246,8 @@ struct pt_note_prog_info_entry_t
 
 
 /* Read next note at the current position of the PT_NOTE segment */
-static void evg_bin_file_read_note_header(struct evg_bin_file_t *bin_file, struct evg_bin_enc_dict_entry_t *enc_dict_entry)
+static void evg_bin_file_read_note_header(struct evg_bin_file_t *bin_file,
+	struct evg_bin_enc_dict_entry_t *enc_dict_entry)
 {
 	struct elf_buffer_t *buffer;
 

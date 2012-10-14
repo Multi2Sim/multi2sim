@@ -20,9 +20,18 @@
 #include <math.h>
 
 #include <arch/x86/emu/emu.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
 #include <mem-system/memory.h>
 
+#include "bin-file.h"
 #include "emu.h"
+#include "isa.h"
+#include "machine.h"
+#include "ndrange.h"
+#include "wavefront.h"
+#include "work-item.h"
+#include "work-group.h"
 
 
 char *evg_err_isa_note =
