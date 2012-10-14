@@ -17,6 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string.h>
+
+#include <lib/struct/debug.h>
+#include <lib/struct/list.h>
 
 #include "emu.h"
 #include "opengl-bin-file.h"
@@ -34,10 +38,10 @@ static void *search_elf_magic(void *ptr_buffer)
 {
 	const char ELF_magic[4]= {0x7F, 0x45, 0x4C, 0x46};
 
-	if(!ptr_buffer)
+	if (!ptr_buffer)
 		fatal("Invalid buffer!");
 
-	while(ptr_buffer)
+	while (ptr_buffer)
 	{
 		if (!memcmp(ptr_buffer, ELF_magic, sizeof(ELF_magic)))
 			return ptr_buffer;

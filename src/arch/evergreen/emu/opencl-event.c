@@ -22,10 +22,14 @@
 
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/struct/debug.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "opencl.h"
+#include "opencl-event.h"
+#include "opencl-repo.h"
 
 
 struct evg_opencl_event_t *evg_opencl_event_create(enum evg_opencl_event_kind_t kind)

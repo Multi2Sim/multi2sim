@@ -17,13 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <string.h>
+
 #include <arch/evergreen/emu/bin-file.h>
 #include <arch/evergreen/emu/ndrange.h>
+#include <arch/evergreen/emu/opencl-kernel.h>
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
 #include <lib/struct/heap.h>
+#include <lib/struct/linked-list.h>
 #include <mem-system/memory.h>
 
 #include "timing.h"

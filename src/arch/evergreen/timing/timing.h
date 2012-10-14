@@ -21,6 +21,9 @@
 #define EVERGREEN_TIMING_H
 
 #include <arch/evergreen/emu/emu.h>
+#include <arch/evergreen/emu/work-item.h>
+#include <arch/evergreen/emu/wavefront.h>
+#include <lib/struct/config.h>
 #include <mem-system/mem-system.h>
 
 

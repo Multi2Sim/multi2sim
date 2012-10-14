@@ -25,6 +25,8 @@
 #include <mem-system/mem-system.h>
 
 #include "emu.h"
+#include "opencl-repo.h"
+#include "opencl-sampler.h"
 
 
 struct evg_opencl_sampler_t *evg_opencl_sampler_create()
