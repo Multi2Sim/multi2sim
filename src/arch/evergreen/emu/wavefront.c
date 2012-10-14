@@ -17,13 +17,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
 #include <lib/struct/hash-table.h>
+#include <lib/struct/list.h>
 
 #include "emu.h"
 #include "isa.h"
 #include "ndrange.h"
 #include "wavefront.h"
 #include "work-group.h"
+#include "work-item.h"
 
 
 /*

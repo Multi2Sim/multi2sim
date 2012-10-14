@@ -21,10 +21,14 @@
 #include <stdlib.h>
 
 #include <arch/x86/emu/emu.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/struct/debug.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "opencl.h"
+#include "opencl-context.h"
+#include "opencl-repo.h"
 
 
 /* Create a context */
@@ -56,11 +60,12 @@ void evg_opencl_context_free(struct evg_opencl_context_t *context)
 }
 
 
-uint32_t evg_opencl_context_get_info(struct evg_opencl_context_t *context, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
+unsigned int evg_opencl_context_get_info(struct evg_opencl_context_t *context,
+	unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size)
 {
-	uint32_t num_devices = 1;
+	unsigned int num_devices = 1;
 
-	uint32_t size_ret = 0;
+	unsigned int size_ret = 0;
 	void *info = NULL;
 
 	switch (name)

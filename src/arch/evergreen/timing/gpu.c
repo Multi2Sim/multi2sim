@@ -17,14 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <arch/evergreen/emu/bin-file.h>
 #include <arch/evergreen/emu/ndrange.h>
+#include <arch/evergreen/emu/opencl-kernel.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
+#include <lib/misc/misc.h>
 #include <lib/struct/config.h>
 #include <lib/struct/debug.h>
 #include <lib/struct/heap.h>
+#include <lib/struct/linked-list.h>
 #include <lib/struct/repos.h>
 #include <lib/struct/timer.h>
 

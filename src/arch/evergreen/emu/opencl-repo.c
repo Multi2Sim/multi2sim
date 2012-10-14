@@ -21,10 +21,21 @@
 #include <stdlib.h>
 
 #include <arch/x86/emu/emu.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/struct/debug.h>
+#include <lib/struct/linked-list.h>
 #include <mem-system/mem-system.h>
 
-#include "emu.h"
+#include "opencl-command-queue.h"
+#include "opencl-context.h"
+#include "opencl-device.h"
+#include "opencl-event.h"
+#include "opencl-kernel.h"
+#include "opencl-mem.h"
+#include "opencl-platform.h"
+#include "opencl-program.h"
+#include "opencl-repo.h"
+#include "opencl-sampler.h"
 
 
 struct evg_opencl_repo_t
@@ -124,7 +135,7 @@ void *evg_opencl_repo_get_object_of_type(struct evg_opencl_repo_t *repo,
 {
 	struct linked_list_t *object_list = repo->object_list;
 	void *object;
-	uint32_t object_id;
+	unsigned int object_id;
 
 	/* Find object. Upper 16-bits of identifier contain its type. */
 	LINKED_LIST_FOR_EACH(object_list)

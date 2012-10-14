@@ -16,9 +16,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string.h>
 
 #include <arch/evergreen/timing/timing.h>
 #include <lib/esim/esim.h>
+#include <lib/misc/misc.h>
+#include <lib/struct/debug.h>
 #include <network/network.h>
 
 #include "cache.h"

@@ -19,12 +19,17 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <arch/x86/emu/emu.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/struct/debug.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "opencl.h"
+#include "opencl-device.h"
+#include "opencl-repo.h"
 
 
 /* Create a device */
@@ -55,17 +60,18 @@ void evg_opencl_device_free(struct evg_opencl_device_t *device)
 }
 
 
-uint32_t evg_opencl_device_get_info(struct evg_opencl_device_t *device, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
+unsigned int evg_opencl_device_get_info(struct evg_opencl_device_t *device,
+	unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size)
 {
-	uint32_t max_compute_units = 1;  /* FIXME */
-	uint32_t max_work_group_size = 256 * 256;  /* FIXME */
-	uint32_t max_work_item_dimensions = 3;  /* FIXME */
-	uint32_t max_work_item_sizes[3];  /* FIXME */
-	uint32_t local_mem_type = 1;  /* CL_LOCAL FIXME */
-	uint32_t local_mem_size = 32 * 1024;  /* FIXME */
-	uint32_t max_clock_frequency = 850;
-	uint64_t global_mem_size = 1ull << 31;  /* 2GB of global memory reported */
-	uint32_t image_support = 1;
+	unsigned int max_compute_units = 1;  /* FIXME */
+	unsigned int max_work_group_size = 256 * 256;  /* FIXME */
+	unsigned int max_work_item_dimensions = 3;  /* FIXME */
+	unsigned int max_work_item_sizes[3];  /* FIXME */
+	unsigned int local_mem_type = 1;  /* CL_LOCAL FIXME */
+	unsigned int local_mem_size = 32 * 1024;  /* FIXME */
+	unsigned int max_clock_frequency = 850;
+	unsigned long long global_mem_size = 1ull << 31;  /* 2GB of global memory reported */
+	unsigned int image_support = 1;
 
 	char *device_name = "Multi2Sim Virtual GPU Device";
 	char *device_vendor = "www.multi2sim.org";
@@ -76,7 +82,7 @@ uint32_t evg_opencl_device_get_info(struct evg_opencl_device_t *device, uint32_t
 	char *device_version = "OpenCL 1.1 ATI-Stream-v2.3 (451)";
 	char *driver_version = VERSION;
 
-	uint32_t size_ret = 0;
+	unsigned int size_ret = 0;
 	void *info = NULL;
 
 	switch (name)

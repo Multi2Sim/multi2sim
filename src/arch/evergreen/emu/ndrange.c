@@ -30,7 +30,13 @@
 #include "emu.h"
 #include "isa.h"
 #include "ndrange.h"
+#include "opencl.h"
+#include "opencl-command-queue.h"
+#include "opencl-kernel.h"
+#include "opencl-mem.h"
+#include "opencl-repo.h"
 #include "wavefront.h"
+#include "work-item.h"
 #include "work-group.h"
 
 
