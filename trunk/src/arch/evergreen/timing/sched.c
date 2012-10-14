@@ -21,7 +21,7 @@
 
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 

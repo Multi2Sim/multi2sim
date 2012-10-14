@@ -23,7 +23,7 @@
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/util/config.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <network/net-system.h>
 #include <network/network.h>
 #include <network/node.h>

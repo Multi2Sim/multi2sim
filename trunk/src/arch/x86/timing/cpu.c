@@ -22,7 +22,7 @@
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/timer.h>

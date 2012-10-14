@@ -22,7 +22,7 @@
 
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/wavefront.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/repos.h>

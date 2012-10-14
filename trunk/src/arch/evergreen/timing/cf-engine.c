@@ -24,7 +24,7 @@
 #include <arch/evergreen/emu/work-group.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 

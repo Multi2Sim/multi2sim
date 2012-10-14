@@ -20,7 +20,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 
 #include "bin-file.h"

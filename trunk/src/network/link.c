@@ -22,7 +22,7 @@
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/misc/misc.h>
+#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 
 #include "buffer.h"
