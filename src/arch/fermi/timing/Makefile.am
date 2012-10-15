@@ -2,7 +2,7 @@ lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
 	\
-	fermi-timing.h \
+	timing.h \
 	\
 	gpu.c
 
