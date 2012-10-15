@@ -22,19 +22,23 @@
 
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
+#include <lib/util/misc.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 
-#include "visual-evergreen.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "inst.h"
+#include "work-group.h"
 
 
 /*
  * Trace Line Processing Functions
  */
 
-
+struct vi_trace_line_t;
 static void vi_evg_gpu_new_ndrange(struct vi_evg_gpu_t *gpu,
 	struct vi_trace_line_t *trace_line)
 {
