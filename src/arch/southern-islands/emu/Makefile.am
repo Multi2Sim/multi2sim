@@ -2,9 +2,9 @@ lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
 	\
-	southern-islands-emu.h \
-	\
 	emu.c \
+	emu.h \
+	\
 	isa.c \
 	machine.c \
 	ndrange.c \
