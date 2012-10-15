@@ -18,7 +18,6 @@
 
 #include <string.h>
 
-#include <arch/evergreen/timing/timing.h>
 #include <lib/esim/esim.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>

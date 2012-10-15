@@ -24,10 +24,11 @@
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
 #include <arch/evergreen/emu/bin-file.h>
+#include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/opencl-kernel.h>
 
-#include "timing.h"
+#include "gpu.h"
 
 
 char *evg_gpu_calc_file_name = "";

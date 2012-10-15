@@ -29,7 +29,11 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include "timing.h"
+#include "cf-engine.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "periodic-report.h"
+#include "sched.h"
 
 
 /* Configuration parameters */
@@ -52,7 +56,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	int work_item_id;
 
 	/* Schedule wavefront */
-	wavefront = evg_compute_unit_schedule(compute_unit);
+	wavefront = evg_schedule(compute_unit);
 	if (!wavefront)
 		return;
 
@@ -306,7 +310,7 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void evg_compute_unit_run_cf_engine(struct evg_compute_unit_t *compute_unit)
+void evg_cf_engine_run(struct evg_compute_unit_t *compute_unit)
 {
 	/* Call CF Engine stages */
 	evg_cf_engine_complete(compute_unit);

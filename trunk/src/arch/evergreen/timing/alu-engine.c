@@ -30,7 +30,10 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include "timing.h"
+#include "alu-engine.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "periodic-report.h"
 
 
 int evg_gpu_alu_engine_inst_mem_latency = 2;  /* Latency of instruction memory */
@@ -411,7 +414,7 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void evg_compute_unit_run_alu_engine(struct evg_compute_unit_t *compute_unit)
+void evg_alu_engine_run(struct evg_compute_unit_t *compute_unit)
 {
 	/* If no wavefront to run, avoid entering loop */
 	if (!linked_list_count(compute_unit->alu_engine.pending_queue) &&

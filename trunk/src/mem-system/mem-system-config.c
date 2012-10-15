@@ -18,7 +18,9 @@
 
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/timing/cpu.h>
-#include <arch/evergreen/timing/timing.h>
+#include <arch/evergreen/emu/emu.h>
+#include <arch/evergreen/timing/compute-unit.h>
+#include <arch/evergreen/timing/gpu.h>
 #include <arch/southern-islands/timing/timing.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>

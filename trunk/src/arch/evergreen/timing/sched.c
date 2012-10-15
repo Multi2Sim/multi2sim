@@ -26,7 +26,9 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include "timing.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "sched.h"
 
 
 struct str_map_t evg_gpu_sched_policy_map =
@@ -129,7 +131,7 @@ static struct evg_wavefront_t *evg_schedule_greedy(struct evg_compute_unit_t *co
 /* Return a wavefront from the wavefront pool in the compute unit.
  * If a wavefront was found, it will be extracted from the wavefront pool.
  * If no valid candidate is found in the wavefront pool, the function returns NULL. */
-struct evg_wavefront_t *evg_compute_unit_schedule(struct evg_compute_unit_t *compute_unit)
+struct evg_wavefront_t *evg_schedule(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_wavefront_t *wavefront;
 
@@ -158,3 +160,4 @@ struct evg_wavefront_t *evg_compute_unit_schedule(struct evg_compute_unit_t *com
 	/* Scheduled wavefront */
 	return wavefront;
 }
+
