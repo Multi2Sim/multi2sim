@@ -22,9 +22,12 @@
 #include <arch/arm/emu/isa.h>
 #include <arch/arm/emu/syscall.h>
 #include <arch/arm/timing/cpu.h>
+#include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/isa.h>
 #include <arch/evergreen/emu/opencl.h>
-#include <arch/evergreen/timing/timing.h>
+#include <arch/evergreen/timing/faults.h>
+#include <arch/evergreen/timing/gpu.h>
+#include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/timing/timing.h>
 #include <arch/southern-islands/asm/asm.h>

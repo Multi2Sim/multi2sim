@@ -23,11 +23,14 @@
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
 #include <lib/esim/esim.h>
+#include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/string.h>
 
-#include "timing.h"
+#include "gpu.h"
+#include "periodic-report.h"
+#include "uop.h"
 
 
 /*

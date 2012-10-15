@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <arch/evergreen/emu/bin-file.h>
+#include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/opencl-kernel.h>
 #include <arch/evergreen/emu/wavefront.h>
@@ -33,7 +34,9 @@
 #include <lib/util/linked-list.h>
 #include <mem-system/memory.h>
 
-#include "timing.h"
+#include "compute-unit.h"
+#include "faults.h"
+#include "gpu.h"
 
 
 char *evg_faults_file_name = "";

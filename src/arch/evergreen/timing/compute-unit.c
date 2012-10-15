@@ -30,8 +30,12 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include "timing.h"
-
+#include "alu-engine.h"
+#include "cf-engine.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "periodic-report.h"
+#include "tex-engine.h"
 
 
 
@@ -261,9 +265,9 @@ void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, 
 void evg_compute_unit_run(struct evg_compute_unit_t *compute_unit)
 {
 	/* Run Engines */
-	evg_compute_unit_run_alu_engine(compute_unit);
-	evg_compute_unit_run_tex_engine(compute_unit);
-	evg_compute_unit_run_cf_engine(compute_unit);
+	evg_alu_engine_run(compute_unit);
+	evg_tex_engine_run(compute_unit);
+	evg_cf_engine_run(compute_unit);
 
 	/* Stats */
 	compute_unit->cycle++;

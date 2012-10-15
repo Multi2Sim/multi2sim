@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/wavefront.h>
 #include <lib/util/debug.h>
@@ -28,7 +29,9 @@
 #include <lib/util/repos.h>
 #include <lib/util/string.h>
 
-#include "timing.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "uop.h"
 
 
 /*
