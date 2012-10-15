@@ -19,8 +19,9 @@
 
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
+#include <visual/evergreen/gpu.h>
+#include <visual/evergreen/panel.h>
 #include <visual/memory/visual-memory.h>
-#include <visual/evergreen/visual-evergreen.h>
 #include <visual/southern-islands/visual-southern-islands.h>
 #include <visual/x86/visual-x86.h>
 

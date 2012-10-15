@@ -17,50 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef VISUAL_EVERGREEN_INST_H
+#define VISUAL_EVERGREEN_INST_H
 
-#ifndef VISUAL_EVERGREEN_H
-#define VISUAL_EVERGREEN_H
-
-#include <gtk/gtk.h>
-#include <stdio.h>
-
-#include <visual/common/visual.h>
-
-
-
-/*
- * Work-Group
- */
-
-struct vi_evg_work_group_t
-{
-	char *name;
-
-	int id;
-
-	int work_item_id_first;
-	int work_item_count;
-
-	int wavefront_id_first;
-	int wavefront_count;
-};
-
-struct vi_evg_work_group_t *vi_evg_work_group_create(char *name, int id, int work_item_id_first,
-	int work_item_count, int wavefront_id_first, int wavefront_count);
-void vi_evg_work_group_free(struct vi_evg_work_group_t *work_group);
-
-void vi_evg_work_group_get_name_short(char *work_group_name, char *buf, int size);
-void vi_evg_work_group_get_desc(char *work_group_name, char *buf, int size);
-
-void vi_evg_work_group_read_checkpoint(struct vi_evg_work_group_t *work_group, FILE *f);
-void vi_evg_work_group_write_checkpoint(struct vi_evg_work_group_t *work_group, FILE *f);
-
-
-
-
-/*
- * Instruction
- */
 
 enum vi_evg_inst_cat_t
 {
@@ -132,80 +91,5 @@ void vi_evg_inst_read_checkpoint(struct vi_evg_inst_t *inst, FILE *f);
 void vi_evg_inst_write_checkpoint(struct vi_evg_inst_t *inst, FILE *f);
 
 
-
-
-/*
- * Compute Unit
- */
-
-struct vi_evg_compute_unit_t
-{
-	char *name;
-
-	struct hash_table_t *work_group_table;
-	struct hash_table_t *inst_table;
-
-	/* Number of instructions created */
-	long long num_insts;
-};
-
-struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(char *name);
-void vi_evg_compute_unit_free(struct vi_evg_compute_unit_t *compute_unit);
-
-void vi_evg_compute_unit_read_checkpoint(struct vi_evg_compute_unit_t *compute_unit, FILE *f);
-void vi_evg_compute_unit_write_checkpoint(struct vi_evg_compute_unit_t *compute_unit, FILE *f);
-
-
-
-/*
- * GPU
- */
-
-struct vi_evg_gpu_t
-{
-	struct list_t *compute_unit_list;
-};
-
-
-extern struct vi_evg_gpu_t *vi_evg_gpu;
-
-void vi_evg_gpu_init(void);
-void vi_evg_gpu_done(void);
-
-
-
-
-/*
- * Panel
- */
-
-struct vi_evg_panel_t;
-
-struct vi_evg_panel_t *vi_evg_panel_create(void);
-void vi_evg_panel_free(struct vi_evg_panel_t *panel);
-
-void vi_evg_panel_refresh(struct vi_evg_panel_t *panel);
-
-GtkWidget *vi_evg_panel_get_widget(struct vi_evg_panel_t *panel);
-
-
-
-
-/*
- * Time Diagram
- */
-
-struct vi_evg_time_dia_t;
-
-struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *compute_unit);
-void vi_evg_time_dia_free(struct vi_evg_time_dia_t *time_dia);
-
-GtkWidget *vi_evg_time_dia_get_widget(struct vi_evg_time_dia_t *time_dia);
-
-void vi_evg_time_dia_go_to_cycle(struct vi_evg_time_dia_t *time_dia, long long cycle);
-void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia);
-
-
-
-
 #endif
+
