@@ -2,7 +2,7 @@ lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
 	\
-	fermi-emu.h \
+	emu.h \
 	\
 	emu.c \
 	isa.c \

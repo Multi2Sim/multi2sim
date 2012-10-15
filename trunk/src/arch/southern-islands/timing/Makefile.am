@@ -2,7 +2,7 @@ lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
 	\
-	southern-islands-timing.h \
+	timing.h \
 	\
 	branch_unit.c \
 	calc.c \
