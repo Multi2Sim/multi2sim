@@ -35,6 +35,7 @@
 #include <arch/southern-islands/timing/timing.h>
 #include <arch/x86/emu/checkpoint.h>
 #include <arch/x86/emu/clrt.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/glut.h>
 #include <arch/x86/emu/isa.h>
 #include <arch/x86/emu/loader.h>

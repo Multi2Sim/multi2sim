@@ -20,17 +20,6 @@
 #ifndef ARCH_X86_EMU_OPENGL_H
 #define ARCH_X86_EMU_OPENGL_H
 
-#include <arch/x86/emu/context.h>
-#include <arch/x86/emu/emu.h>
-#include <arch/x86/emu/regs.h>
-#include <mem-system/mem-system.h>
-
-#include <GL/gl.h>
-
-#include "glut-frame-buffer.h"
-#include "opengl-context.h"
-#include "opengl-rast.h"
-
 /*
  * OPENGL system call interface
  *
@@ -45,6 +34,7 @@ extern int x86_opengl_debug_category;
 void x86_opengl_init(void);
 void x86_opengl_done(void);
 
+struct x86_ctx_t;
 int x86_opengl_call(struct x86_ctx_t *ctx);
 
 
