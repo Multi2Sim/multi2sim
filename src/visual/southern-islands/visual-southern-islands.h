@@ -21,8 +21,10 @@
 #ifndef VISUAL_SOUTHERN_ISLANDS_H
 #define VISUAL_SOUTHERN_ISLANDS_H
 
+#include <gtk/gtk.h>
+#include <stdio.h>
 
-#include <visual-common.h>
+#include <visual/common/visual.h>
 
 
 

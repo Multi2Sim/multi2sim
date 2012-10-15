@@ -18,12 +18,16 @@
  */
 
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
+#include <visual/memory/visual-memory.h>
+#include <visual/evergreen/visual-evergreen.h>
+#include <visual/southern-islands/visual-southern-islands.h>
+#include <visual/x86/visual-x86.h>
 
-#include <visual-common.h>
-#include <visual-memory.h>
-#include <visual-evergreen.h>
-#include <visual-southern-islands.h>
-#include <visual-x86.h>
+#include "cycle-bar.h"
+#include "list.h"
+#include "state.h"
+#include "visual.h"
 
 
 

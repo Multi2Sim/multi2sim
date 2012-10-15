@@ -17,9 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/util/misc.h>
+#include <assert.h>
+#include <stdlib.h>
 
-#include <visual-memory.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
+#include <visual/common/trace.h>
+
+#include "visual-memory.h"
 
 
 static struct str_map_t vi_mod_block_state_map =

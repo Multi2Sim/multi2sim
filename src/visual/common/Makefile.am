@@ -1,24 +1,37 @@
 lib_LIBRARIES = libcommon.a
 
-libcommon_a_SOURCES = \
-	visual-common.h
-
 if HAVE_GTK
-libcommon_a_SOURCES += \
+libcommon_a_SOURCES = \
+	\
 	cycle-bar.c \
+	cycle-bar.h \
+	\
 	led.c \
+	led.h \
+	\
 	list.c \
+	list.h \
+	\
 	popup.c \
+	popup.h \
+	\
 	state.c \
+	state.h \
+	\
 	trace.c \
-	visual.c
+	trace.h \
+	\
+	visual.c \
+	visual.h
 
 AM_CFLAGS = @GTK_CFLAGS@
 
 else
 
-libcommon_a_SOURCES += \
-	visual-nogtk.c
+libcommon_a_SOURCES = \
+	\
+	visual-nogtk.c \
+	visual.h
 
 endif
 

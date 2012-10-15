@@ -235,12 +235,6 @@ M2S_INCLUDES=" \
 \
 -I\$(top_srcdir)/src \
 \
--I\$(top_srcdir)/src/visual/common \
--I\$(top_srcdir)/src/visual/evergreen \
--I\$(top_srcdir)/src/visual/memory \
--I\$(top_srcdir)/src/visual/southern-islands \
--I\$(top_srcdir)/src/visual/x86 \
-\
 "
 
 AC_SUBST(M2S_INCLUDES)

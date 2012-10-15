@@ -17,7 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-common.h>
+#include <gtk/gtk.h>
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
+
+#include "list.h"
+#include "popup.h"
 
 
 struct vi_list_item_t
@@ -91,6 +99,7 @@ struct vi_list_t
 static struct vi_list_item_t *vi_list_item_create(void)
 {
 	struct vi_list_item_t *item;
+
 	/* Allocate */
 	item = calloc(1, sizeof(struct vi_list_item_t));
 	if (!item)

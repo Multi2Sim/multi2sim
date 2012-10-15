@@ -21,7 +21,10 @@
 #ifndef VISUAL_X86_H
 #define VISUAL_X86_H
 
-#include <visual-common.h>
+#include <gtk/gtk.h>
+#include <stdio.h>
+
+#include <visual/common/visual.h>
 
 
 
