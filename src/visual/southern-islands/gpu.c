@@ -138,7 +138,7 @@ static void vi_si_gpu_new_inst(struct vi_si_gpu_t *gpu, struct vi_trace_line_t *
 	wavefront_pool_id = vi_trace_line_get_symbol_int(trace_line, "wfp");
 	work_group_id = vi_trace_line_get_symbol_int(trace_line, "wg");
 	wavefront_id = vi_trace_line_get_symbol_int(trace_line, "wf");
-	stage = map_string(&vi_si_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+	stage = str_map_string(&vi_si_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
 	asm_code = vi_trace_line_get_symbol(trace_line, "asm");
 
 	/* Create */
@@ -179,7 +179,7 @@ static void vi_si_gpu_inst(struct vi_si_gpu_t *gpu, struct vi_trace_line_t *trac
 	/* Fields */
 	inst_id = vi_trace_line_get_symbol_long_long(trace_line, "id");
 	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
-	stage = map_string(&vi_si_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+	stage = str_map_string(&vi_si_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
 
 	/* Get compute unit */
 	compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);

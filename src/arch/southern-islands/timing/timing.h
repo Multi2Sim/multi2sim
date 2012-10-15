@@ -392,7 +392,7 @@ extern unsigned int si_gpu_num_wavefront_pools;
 extern unsigned int si_gpu_num_stream_cores;
 extern unsigned int si_gpu_register_alloc_size;
 
-extern struct string_map_t si_gpu_register_alloc_granularity_map;
+extern struct str_map_t si_gpu_register_alloc_granularity_map;
 extern enum si_gpu_register_alloc_granularity_t
 {
 	si_gpu_register_alloc_invalid = 0,  /* For invalid user input */
@@ -403,7 +403,7 @@ extern enum si_gpu_register_alloc_granularity_t
 extern int si_gpu_max_work_groups_per_wavefront_pool;
 extern int si_gpu_max_wavefronts_per_wavefront_pool;
 
-extern struct string_map_t si_gpu_sched_policy_map;
+extern struct str_map_t si_gpu_sched_policy_map;
 extern enum si_gpu_sched_policy_t
 {
 	si_gpu_sched_invalid = 0,  /* For invalid user input */

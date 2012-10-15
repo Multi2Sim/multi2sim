@@ -112,10 +112,10 @@ struct vi_evg_inst_t
 	enum vi_evg_inst_stage_t stage;
 };
 
-extern struct string_map_t vi_evg_inst_cat_map;
-extern struct string_map_t vi_evg_inst_stage_map;
-extern struct string_map_t vi_evg_inst_stage_name_map;
-extern struct string_map_t vi_evg_inst_stage_color_map;
+extern struct str_map_t vi_evg_inst_cat_map;
+extern struct str_map_t vi_evg_inst_stage_map;
+extern struct str_map_t vi_evg_inst_stage_name_map;
+extern struct str_map_t vi_evg_inst_stage_color_map;
 
 struct vi_evg_inst_t *vi_evg_inst_create(char *name, long long id,
 	int compute_unit_id, int work_group_id, int wavefront_id,

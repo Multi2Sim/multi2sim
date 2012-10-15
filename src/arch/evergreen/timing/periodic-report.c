@@ -23,8 +23,9 @@
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
 #include <lib/esim/esim.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/file.h>
+#include <lib/util/string.h>
 
 #include "timing.h"
 
@@ -56,7 +57,7 @@ static enum evg_periodic_report_scope_t
 	evg_periodic_report_scope_count
 } evg_periodic_report_scope;
 
-static struct string_map_t evg_periodic_report_scope_map =
+static struct str_map_t evg_periodic_report_scope_map =
 {
 	evg_periodic_report_scope_count - 1,
 	{
@@ -146,7 +147,7 @@ void evg_periodic_report_config_read(struct config_t *config)
 	/* Wavefront set */
 	evg_periodic_report_scope_str = config_read_string(config, section,
 		"Scope", evg_periodic_report_scope_str);
-	evg_periodic_report_scope = map_string(&evg_periodic_report_scope_map,
+	evg_periodic_report_scope = str_map_string(&evg_periodic_report_scope_map,
 		evg_periodic_report_scope_str);
 	if (!evg_periodic_report_scope)
 		fatal("%s: [%s]: invalid value for 'Scope'",

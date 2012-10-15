@@ -22,6 +22,7 @@
 #include <ctype.h>
 
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/util/debug.h>
 
 #include "asm.h"
@@ -353,7 +354,7 @@ void *evg_inst_decode_tc(void *buf, struct evg_inst_t *inst)
  * Disassembler
  */
 
-struct string_map_t evg_pv_map = {
+struct str_map_t evg_pv_map = {
 	5, {
 		{ "PV.x", EVG_ALU_X },
 		{ "PV.y", EVG_ALU_Y },
@@ -363,7 +364,7 @@ struct string_map_t evg_pv_map = {
 	}
 };
 
-struct string_map_t evg_alu_map = {
+struct str_map_t evg_alu_map = {
 	5, {
 		{ "x", EVG_ALU_X },
 		{ "y", EVG_ALU_Y },
@@ -373,7 +374,7 @@ struct string_map_t evg_alu_map = {
 	}
 };
 
-struct string_map_t evg_bank_swizzle_map = {
+struct str_map_t evg_bank_swizzle_map = {
 	6, {
 		{ "", 0 },
 		{ "VEC_021", 1 },
@@ -384,7 +385,7 @@ struct string_map_t evg_bank_swizzle_map = {
 	}
 };
 
-struct string_map_t evg_rat_inst_map = {
+struct str_map_t evg_rat_inst_map = {
 	39, {
 		{ "NOP", 0 },
 		{ "STORE_TYPED", 1 },
@@ -429,7 +430,7 @@ struct string_map_t evg_rat_inst_map = {
 };
 
 
-struct string_map_t evg_cf_cond_map = {
+struct str_map_t evg_cf_cond_map = {
 	4, {
 		{ "ACTIVE", 0 },
 		{ "FALSE", 1 },
@@ -439,7 +440,7 @@ struct string_map_t evg_cf_cond_map = {
 };
 
 
-struct string_map_t evg_src_sel_map = {
+struct str_map_t evg_src_sel_map = {
 	31, {
 		{ "QA", 219 },  /* ALU_SRC_LDS_OQ_A */
 		{ "QB", 220 },  /* ALU_SRC_LDS_OQ_B */
@@ -476,7 +477,7 @@ struct string_map_t evg_src_sel_map = {
 };
 
 
-struct string_map_t evg_dst_sel_map = {
+struct str_map_t evg_dst_sel_map = {
 	7, {
 		{ "x", 0 },
 		{ "y", 1 },
@@ -488,7 +489,7 @@ struct string_map_t evg_dst_sel_map = {
 	}
 };
 
-struct string_map_t export_type_map = {
+struct str_map_t export_type_map = {
 	4, {
 		{ "PIX", 0 },
 		{ "POS", 1 },
@@ -562,7 +563,7 @@ static void evg_inst_dump_gpr_buf(int gpr, int rel, int chan, int im,
 	if (rel)
 	{
 		if (rel && IN_RANGE(im, 0, 3))
-			str_printf(buf_ptr, size_ptr, "%s[A0.%s]", gpr_str, map_value(&evg_alu_map, EVG_ALU_X + im));
+			str_printf(buf_ptr, size_ptr, "%s[A0.%s]", gpr_str, str_map_value(&evg_alu_map, EVG_ALU_X + im));
 		else if (im == 4)
 			str_printf(buf_ptr, size_ptr, "%s[AL]", gpr_str);
 		else if (im == 5)
@@ -575,7 +576,7 @@ static void evg_inst_dump_gpr_buf(int gpr, int rel, int chan, int im,
 
 	/* Vector element */
 	if (chan >= 0)
-		str_printf(buf_ptr, size_ptr, ".%s", map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, ".%s", str_map_value(&evg_alu_map, EVG_ALU_X + chan));
 }
 
 
@@ -738,28 +739,28 @@ void amd_inst_dump_op_src_buf(struct evg_inst_t *inst, int src_idx, char **buf_p
 	/* 128..159: Kcache constants in bank 0 */
 	if (IN_RANGE(sel, 128, 159))
 	{
-		str_printf(buf_ptr, size_ptr, "KC0[%d].%s", sel - 128, map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC0[%d].%s", sel - 128, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
 		goto end;
 	}
 
 	/* 160..191: Kcache constants in bank 1 */
 	if (IN_RANGE(sel, 160, 191))
 	{
-		str_printf(buf_ptr, size_ptr, "KC1[%d].%s", sel - 160, map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC1[%d].%s", sel - 160, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
 		goto end;
 	}
 
 	/* 256..287: Kcache constants in bank 2 */
 	if (IN_RANGE(sel, 256, 287))
 	{
-		str_printf(buf_ptr, size_ptr, "KC2[%d].%s", sel - 256, map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC2[%d].%s", sel - 256, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
 		goto end;
 	}
 
 	/* 288..319: Kcache constant in bank 3 */
 	if (IN_RANGE(sel, 288, 319))
 	{
-		str_printf(buf_ptr, size_ptr, "KC3[%d].%s", sel - 288, map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC3[%d].%s", sel - 288, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
 		goto end;
 	}
 
@@ -768,19 +769,19 @@ void amd_inst_dump_op_src_buf(struct evg_inst_t *inst, int src_idx, char **buf_p
 	{
 		assert(inst->alu_group);
 		str_printf(buf_ptr, size_ptr, "(0x%08x, %.9ef).%s", inst->alu_group->literal[chan].as_uint,
-			inst->alu_group->literal[chan].as_float, map_value(&evg_alu_map, EVG_ALU_X + chan));
+			inst->alu_group->literal[chan].as_float, str_map_value(&evg_alu_map, EVG_ALU_X + chan));
 		goto end;
 	}
 
 	/* ALU_SRC_PV */
 	if (sel == 254)
 	{
-		str_printf(buf_ptr, size_ptr, "PV.%s", map_value(&evg_alu_map, EVG_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "PV.%s", str_map_value(&evg_alu_map, EVG_ALU_X + chan));
 		goto end;
 	}
 
 	/* Other */
-	str_printf(buf_ptr, size_ptr, "%s", map_value(&evg_src_sel_map, sel));
+	str_printf(buf_ptr, size_ptr, "%s", str_map_value(&evg_src_sel_map, sel));
 
 end:
 	/* Second bracket for abs */
@@ -826,7 +827,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 	
 	/* VLIW slot */
 	if (slot >= 0)
-		str_printf(buf_ptr, size_ptr, "%s: ", map_value(&evg_alu_map, slot));
+		str_printf(buf_ptr, size_ptr, "%s: ", str_map_value(&evg_alu_map, slot));
 
 	/* Format */
 	fmt_str = inst->info->fmt_str;
@@ -877,7 +878,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 
 			/* EVG_ALU_WORD1_OP2 - 'bank_swizzle' field.
 			 * Common for EVG_ALU_WORD1_OP2 and EVG_ALU_WORD1_OP3 */
-			str_printf(buf_ptr, size_ptr, "%s", map_value(&evg_bank_swizzle_map, inst->words[1].alu_word1_op2.bank_swizzle));
+			str_printf(buf_ptr, size_ptr, "%s", str_map_value(&evg_bank_swizzle_map, inst->words[1].alu_word1_op2.bank_swizzle));
 			
 			/* EVG_ALU_WORD0 - 'pred_sel' field */
 			if (inst->words[0].alu_word0.pred_sel == 2)  /* PRED_SEL_ZERO */
@@ -945,7 +946,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			valid_pixel_mode = inst->words[1].cf_word1.valid_pixel_mode;
 			cf_cond = inst->words[1].cf_word1.cond;
 			if (valid_pixel_mode && cf_cond)
-				str_printf(buf_ptr, size_ptr, "CND(%s)", map_value(&evg_cf_cond_map, cf_cond));
+				str_printf(buf_ptr, size_ptr, "CND(%s)", str_map_value(&evg_cf_cond_map, cf_cond));
 		}
 		else if (evg_inst_is_token(fmt_str, "cf_const", &len))
 		{
@@ -1050,7 +1051,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		else if (evg_inst_is_token(fmt_str, "exp_type", &len))
 		{
 			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0);
-			str_printf(buf_ptr, size_ptr, "%s", map_value(&export_type_map, inst->words[0].cf_alloc_export_word0.type));
+			str_printf(buf_ptr, size_ptr, "%s", str_map_value(&export_type_map, inst->words[0].cf_alloc_export_word0.type));
 		}
 		else if (evg_inst_is_token(fmt_str, "exp_array_base", &len))
 		{
@@ -1165,12 +1166,12 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		else if (evg_inst_is_token(fmt_str, "exp_index_gpr", &len))
 		{
 			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
-			str_printf(buf_ptr, size_ptr, "%s", map_value(&evg_rat_inst_map, inst->words[0].cf_alloc_export_word0_rat.rat_inst));
+			str_printf(buf_ptr, size_ptr, "%s", str_map_value(&evg_rat_inst_map, inst->words[0].cf_alloc_export_word0_rat.rat_inst));
 		}
 		else if (evg_inst_is_token(fmt_str, "rat_inst", &len))
 		{
 			assert(inst->info->fmt[0] == EVG_FMT_CF_ALLOC_EXPORT_WORD0_RAT);
-			str_printf(buf_ptr, size_ptr, "%s", map_value(&evg_rat_inst_map, inst->words[0].cf_alloc_export_word0_rat.rat_inst));
+			str_printf(buf_ptr, size_ptr, "%s", str_map_value(&evg_rat_inst_map, inst->words[0].cf_alloc_export_word0_rat.rat_inst));
 
 		}
 		else if (evg_inst_is_token(fmt_str, "rat_id", &len))
@@ -1246,8 +1247,8 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			dst_sel_z = inst->words[1].vtx_word1_gpr.dst_sel_z;
 			dst_sel_w = inst->words[1].vtx_word1_gpr.dst_sel_w;
 			if (dst_sel_x != 0 || dst_sel_y != 1 || dst_sel_z != 2 || dst_sel_w != 3)
-				str_printf(buf_ptr, size_ptr, ".%s%s%s%s", map_value(&evg_dst_sel_map, dst_sel_x), map_value(&evg_dst_sel_map, dst_sel_y),
-					map_value(&evg_dst_sel_map, dst_sel_z), map_value(&evg_dst_sel_map, dst_sel_w));
+				str_printf(buf_ptr, size_ptr, ".%s%s%s%s", str_map_value(&evg_dst_sel_map, dst_sel_x), str_map_value(&evg_dst_sel_map, dst_sel_y),
+					str_map_value(&evg_dst_sel_map, dst_sel_z), str_map_value(&evg_dst_sel_map, dst_sel_w));
 		}
 		else if (evg_inst_is_token(fmt_str, "vtx_fetch_type", &len))
 		{
@@ -1257,7 +1258,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			fetch_type = inst->words[0].vtx_word0.fetch_type;
 			if (fetch_type)
 				str_printf(buf_ptr, size_ptr, "%sFETCH_TYPE(%s)", evg_inst_token_prefix(loop_idx, &nl),
-					map_value(&evg_fmt_vtx_fetch_type_map, fetch_type));
+					str_map_value(&evg_fmt_vtx_fetch_type_map, fetch_type));
 		}
 		else if (evg_inst_is_token(fmt_str, "vtx_fetch_whole_quad", &len))
 		{
@@ -1298,7 +1299,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields)
 				str_printf(buf_ptr, size_ptr, "%sFORMAT(%s)", evg_inst_token_prefix(loop_idx, &nl),
-					map_value(&evg_fmt_vtx_data_format_map, data_format));
+					str_map_value(&evg_fmt_vtx_data_format_map, data_format));
 		}
 		else if (evg_inst_is_token(fmt_str, "vtx_num_format", &len))
 		{
@@ -1310,7 +1311,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && num_format)
 				str_printf(buf_ptr, size_ptr, "%sNUM_FORMAT(%s)", evg_inst_token_prefix(loop_idx, &nl),
-					map_value(&evg_fmt_vtx_num_format_map, num_format));
+					str_map_value(&evg_fmt_vtx_num_format_map, num_format));
 		}
 		else if (evg_inst_is_token(fmt_str, "vtx_format_comp", &len))
 		{
@@ -1322,7 +1323,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && format_comp)
 				str_printf(buf_ptr, size_ptr, "%sFORMAT_COMP(%s)", evg_inst_token_prefix(loop_idx, &nl),
-					map_value(&evg_fmt_vtx_format_comp_map, format_comp));
+					str_map_value(&evg_fmt_vtx_format_comp_map, format_comp));
 		}
 		else if (evg_inst_is_token(fmt_str, "vtx_srf_mode", &len))
 		{
@@ -1334,7 +1335,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && srf_mode)
 				str_printf(buf_ptr, size_ptr, "%sSRF_MODE(%s)", evg_inst_token_prefix(loop_idx, &nl),
-					map_value(&evg_fmt_vtx_srf_mode_map, srf_mode));
+					str_map_value(&evg_fmt_vtx_srf_mode_map, srf_mode));
 		}
 		else if (evg_inst_is_token(fmt_str, "vtx_offset", &len))
 		{
@@ -1356,7 +1357,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			endian_swap = inst->words[2].vtx_word2.endian_swap;
 			if (!use_const_fields && endian_swap)
 				str_printf(buf_ptr, size_ptr, "%sENDIAN_SWAP(%s)", evg_inst_token_prefix(loop_idx, &nl),
-					map_value(&evg_fmt_vtx_endian_swap_map, endian_swap));
+					str_map_value(&evg_fmt_vtx_endian_swap_map, endian_swap));
 		}
 		else if (evg_inst_is_token(fmt_str, "vtx_cbns", &len))
 		{
@@ -1379,7 +1380,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 		else if (evg_inst_is_token(fmt_str, "lds_op", &len))
 		{
 			assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_LDS_IDX_OP);
-			str_printf(buf_ptr, size_ptr, "%s", map_value(&evg_fmt_lds_op_map,
+			str_printf(buf_ptr, size_ptr, "%s", str_map_value(&evg_fmt_lds_op_map,
 				inst->words[1].alu_word1_lds_idx_op.lds_op));
 		}
 		else if (evg_inst_is_token(fmt_str, "nl", &len))
@@ -1701,7 +1702,7 @@ void evg_alu_group_dump_buf(struct evg_alu_group_t *alu_group, char *buf, int si
 
 		/* Copy to output buffer */
 		str_printf(&buf, &size, "%s%s=\"%s\"", space,
-			map_value(&evg_alu_map, inst->alu), str_trimmed);
+			str_map_value(&evg_alu_map, inst->alu), str_trimmed);
 		space = " ";
 	}
 }
@@ -1730,7 +1731,7 @@ void evg_alu_group_dump_debug(struct evg_alu_group_t *alu_group, int count, int 
 		inst = &alu_group->inst[i];
 		evg_inst_dump_buf(inst, -1, 0, buf, sizeof buf);
 		str_single_spaces(no_spc_buf, buf, sizeof no_spc_buf);
-		fprintf(f, "%sinst.%s=\"%s\"", spc, map_value(&evg_alu_map, inst->alu), no_spc_buf);
+		fprintf(f, "%sinst.%s=\"%s\"", spc, str_map_value(&evg_alu_map, inst->alu), no_spc_buf);
 		spc = " ";
 	}
 }

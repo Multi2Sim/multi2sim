@@ -40,6 +40,8 @@
 #include <arch/x86/timing/cpu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
+#include <lib/util/file.h>
+#include <lib/util/misc.h>
 #include <mem-system/mmu.h>
 #include <network/net-system.h>
 #include <visual-common.h>
@@ -1269,7 +1271,7 @@ void m2s_dump_summary(FILE *f)
 	/* General statistics */
 	fprintf(f, "[ General ]\n");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
-	fprintf(f, "SimEnd = %s\n", map_value(&esim_finish_map, esim_finish));
+	fprintf(f, "SimEnd = %s\n", str_map_value(&esim_finish_map, esim_finish));
 
 	/* General detailed simulation statistics */
 	if (esim_cycle > 1)

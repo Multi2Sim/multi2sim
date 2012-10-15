@@ -27,6 +27,7 @@
 #include <arch/x86/timing/cpu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/misc.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 

@@ -21,14 +21,7 @@
 #define ARM_ASM_H
 
 #include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 
-#include <lib/util/misc.h>
-#include <lib/util/list.h>
-#include <lib/util/debug.h>
-#include <lib/util/elf-format.h>
 
 /* Shift operators */
 enum arm_op2_shift_t
@@ -503,7 +496,7 @@ unsigned int arm_rotr(unsigned int value, unsigned int shift);
 
 void arm_emu_disasm(char *path);
 
-void arm_disasm(void *buf, uint32_t ip, volatile struct arm_inst_t *inst);
+void arm_disasm(void *buf, unsigned int ip, volatile struct arm_inst_t *inst);
 
 void arm_inst_debug_dump(struct arm_inst_t *inst, FILE *f );
 

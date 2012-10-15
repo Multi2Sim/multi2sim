@@ -37,7 +37,7 @@
 void fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 void dump_buf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 
-struct string_map_t {
+struct str_map_t {
 	int count;
 	struct {
 		char *string;
@@ -48,9 +48,9 @@ struct string_map_t {
 void strccat(char *dest, char *src);
 void strccpy(char *dest, char *src, int size);
 
-char *map_value(struct string_map_t *map, int value);
-void map_value_string(struct string_map_t *map, int value, char *buf, int size);
-void map_flags(struct string_map_t *map, int flags, char *out, int size);
+char *str_map_value(struct str_map_t *map, int value);
+void str_map_value_buf(struct str_map_t *map, int value, char *buf, int size);
+void str_map_flags(struct str_map_t *map, int flags, char *out, int size);
 
 int write_buffer(char *file_name, void *buf, size_t size);
 void *read_buffer(char *file_name, size_t *psize);

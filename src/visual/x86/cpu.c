@@ -169,7 +169,7 @@ static void vi_x86_cpu_new_inst(struct vi_x86_cpu_t *cpu,
 	core_id = vi_trace_line_get_symbol_int(trace_line, "core");
 	asm_code = vi_trace_line_get_symbol(trace_line, "asm");
 	asm_micro_code = vi_trace_line_get_symbol(trace_line, "uasm");
-	stage = map_string(&vi_x86_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+	stage = str_map_string(&vi_x86_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
 	spec_mode = !strcmp(vi_trace_line_get_symbol(trace_line, "spec"), "t");
 
 	/* Create instruction */
@@ -210,7 +210,7 @@ static void vi_x86_cpu_inst(struct vi_x86_cpu_t *cpu,
 	/* Fields */
 	id = vi_trace_line_get_symbol_long_long(trace_line, "id");
 	core_id = vi_trace_line_get_symbol_int(trace_line, "core");
-	stage = map_string(&vi_x86_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+	stage = str_map_string(&vi_x86_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
 
 	/* Get core */
 	core = list_get(vi_x86_cpu->core_list, core_id);

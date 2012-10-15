@@ -39,7 +39,7 @@ struct mod_port_t
 };
 
 /* String map for access type */
-extern struct string_map_t mod_access_kind_map;
+extern struct str_map_t mod_access_kind_map;
 
 /* Access type */
 enum mod_access_kind_t

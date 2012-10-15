@@ -21,10 +21,11 @@
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <network/buffer.h>
 #include <network/link.h>
 #include <network/network.h>
@@ -240,7 +241,7 @@ static int mem_system_command_get_state(struct list_t *token_list,
 
 	/* Get state */
 	mem_system_command_expect(token_list, command_line);
-	state = map_string_case(&cache_block_state_map, str_token_list_first(token_list));
+	state = str_map_string_case(&cache_block_state_map, str_token_list_first(token_list));
 	if (!state && strcasecmp(str_token_list_first(token_list), "I"))
 		fatal("%s: invalid state.\n\t> %s",
 			__FUNCTION__, command_line);
@@ -262,7 +263,7 @@ static enum mod_access_kind_t mem_system_command_get_mod_access(struct list_t *t
 	snprintf(mod_access_name, sizeof mod_access_name, "%s", str_token_list_first(token_list));
 
 	/* Decode access */
-	mod_access = map_string_case(&mod_access_kind_map, mod_access_name);
+	mod_access = str_map_string_case(&mod_access_kind_map, mod_access_name);
 	if (!mod_access)
 		fatal("%s: %s: invalid access.\n\t> %s",
 			__FUNCTION__, mod_access_name, command_line);
@@ -501,7 +502,7 @@ void mem_system_end_command_handler(int event, void *data)
 		/* Output */
 		str_printf(&msg_str, &msg_size,
 			"check module %s, set %d, way %d - state %s, tag 0x%x",
-			mod->name, set, way, map_value(&cache_block_state_map, state), tag);
+			mod->name, set, way, str_map_value(&cache_block_state_map, state), tag);
 
 		/* Check */
 		cache_get_block(mod->cache, set, way, &tag_check, &state_check);
@@ -517,8 +518,8 @@ void mem_system_end_command_handler(int event, void *data)
 			test_failed = 1;
 			str_printf(&msg_detail_str, &msg_detail_size,
 				"\tstate %s found, but %s expected\n",
-				map_value(&cache_block_state_map, state_check),
-				map_value(&cache_block_state_map, state));
+				str_map_value(&cache_block_state_map, state_check),
+				str_map_value(&cache_block_state_map, state));
 		}
 	}
 

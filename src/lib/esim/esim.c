@@ -24,11 +24,11 @@
 #include <string.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/heap.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
+#include <lib/util/string.h>
 #include <lib/util/timer.h>
 
 #include "esim.h"
@@ -66,7 +66,7 @@ static char *esim_err_overload =
  * by signal handlers. This makes sure the variable resides in a memory location. */
 volatile enum esim_finish_t esim_finish = esim_finish_none;
 
-struct string_map_t esim_finish_map =
+struct str_map_t esim_finish_map =
 {
 	19, {
 		{ "ContextsFinished", esim_finish_ctx },

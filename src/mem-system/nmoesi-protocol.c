@@ -20,9 +20,10 @@
 
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/list.h>
+#include <lib/util/string.h>
 #include <network/network.h>
 #include <network/node.h>
 
@@ -760,7 +761,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		if (stack->hit)
 			mem_debug("    %lld 0x%x %s hit: set=%d, way=%d, state=%s\n", stack->id,
 				stack->tag, mod->name, stack->set, stack->way,
-				map_value(&cache_block_state_map, stack->state));
+				str_map_value(&cache_block_state_map, stack->state));
 
 		/* Statistics */
 		mod->accesses++;
@@ -888,7 +889,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				stack->set, stack->way));
 			mem_debug("    %lld 0x%x %s miss -> lru: set=%d, way=%d, state=%s\n",
 				stack->id, stack->tag, mod->name, stack->set, stack->way,
-				map_value(&cache_block_state_map, stack->state));
+				str_map_value(&cache_block_state_map, stack->state));
 		}
 
 
@@ -1010,7 +1011,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 			stack->set, stack->way));
 		mem_debug("  %lld %lld 0x%x %s evict (set=%d, way=%d, state=%s)\n", esim_cycle, stack->id,
 			stack->tag, mod->name, stack->set, stack->way,
-			map_value(&cache_block_state_map, stack->state));
+			str_map_value(&cache_block_state_map, stack->state));
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict\"\n",
 			stack->id, mod->name);
 
@@ -2397,7 +2398,7 @@ void mod_handler_nmoesi_invalidate(int event, void *data)
 		cache_get_block(mod->cache, stack->set, stack->way, &stack->tag, &stack->state);
 		mem_debug("  %lld %lld 0x%x %s invalidate (set=%d, way=%d, state=%s)\n", esim_cycle, stack->id,
 			stack->tag, mod->name, stack->set, stack->way,
-			map_value(&cache_block_state_map, stack->state));
+			str_map_value(&cache_block_state_map, stack->state));
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:invalidate\"\n",
 			stack->id, mod->name);
 

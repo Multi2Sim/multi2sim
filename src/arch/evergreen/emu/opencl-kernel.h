@@ -20,7 +20,7 @@
 #ifndef ARCH_EVERGREEN_EMU_KERNEL_H
 #define ARCH_EVERGREEN_EMU_KERNEL_H
 
-#include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/util/elf-format.h>
 
 

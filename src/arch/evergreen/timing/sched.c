@@ -21,14 +21,15 @@
 
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "timing.h"
 
 
-struct string_map_t evg_gpu_sched_policy_map =
+struct str_map_t evg_gpu_sched_policy_map =
 {
 		2, {
 			{ "RoundRobin", evg_gpu_sched_round_robin },

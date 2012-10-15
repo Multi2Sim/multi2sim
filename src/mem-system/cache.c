@@ -21,8 +21,9 @@
 
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "cache.h"
 #include "mem-system.h"
@@ -32,7 +33,7 @@
  * Public Variables
  */
 
-struct string_map_t cache_policy_map =
+struct str_map_t cache_policy_map =
 {
 	3, {
 		{ "LRU", cache_policy_lru },
@@ -41,7 +42,7 @@ struct string_map_t cache_policy_map =
 	}
 };
 
-struct string_map_t cache_block_state_map =
+struct str_map_t cache_block_state_map =
 {
 	6, {
 		{ "N", cache_block_noncoherent },
@@ -245,7 +246,7 @@ void cache_set_block(struct cache_t *cache, int set, int way, int tag, int state
 
 	mem_trace("mem.set_block cache=\"%s\" set=%d way=%d tag=0x%x state=\"%s\"\n",
 			cache->name, set, way, tag,
-			map_value(&cache_block_state_map, state));
+			str_map_value(&cache_block_state_map, state));
 
 	if (cache->policy == cache_policy_fifo
 		&& cache->sets[set].blocks[way].tag != tag)

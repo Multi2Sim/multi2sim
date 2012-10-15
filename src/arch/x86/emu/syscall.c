@@ -38,6 +38,7 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
 #include "clrt.h"
@@ -159,7 +160,7 @@ static int x86_sys_call_freq[x86_sys_code_count + 1];
 
 #define SIM_ERRNO_MAX		34
 
-static struct string_map_t x86_sys_error_code_map =
+static struct str_map_t x86_sys_error_code_map =
 {
 	34,
 	{
@@ -301,7 +302,7 @@ void x86_sys_call(struct x86_ctx_t *ctx)
 	/* Debug */
 	x86_sys_debug("  ret=(%d, 0x%x)", err, err);
 	if (err < 0 && err >= -SIM_ERRNO_MAX)
-		x86_sys_debug(", errno=%s)", map_value(&x86_sys_error_code_map, -err));
+		x86_sys_debug(", errno=%s)", str_map_value(&x86_sys_error_code_map, -err));
 	x86_sys_debug("\n");
 }
 
@@ -536,7 +537,7 @@ static int x86_sys_write_impl(struct x86_ctx_t *ctx)
  * System call 'open' (code 5)
  */
 
-static struct string_map_t sys_open_flags_map =
+static struct str_map_t sys_open_flags_map =
 {
 	16, {
 		{ "O_RDONLY",        00000000 },
@@ -589,7 +590,7 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
 		file_name, flags, mode);
 	x86_sys_debug("  fullpath='%s'\n", full_path);
-	map_flags(&sys_open_flags_map, flags, flags_str, sizeof flags_str);
+	str_map_flags(&sys_open_flags_map, flags, flags_str, sizeof flags_str);
 	x86_sys_debug("  flags=%s\n", flags_str);
 
 	/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
@@ -652,7 +653,7 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
  * System call 'waitpid' (code 7)
  */
 
-static struct string_map_t sys_waitpid_options_map =
+static struct str_map_t sys_waitpid_options_map =
 {
 	8, {
 		{ "WNOHANG",       0x00000001 },
@@ -685,7 +686,7 @@ static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
 	options = regs->edx;
 	x86_sys_debug("  pid=%d, pstatus=0x%x, options=0x%x\n",
 		pid, status_ptr, options);
-	map_flags(&sys_waitpid_options_map, options, options_str, sizeof options_str);
+	str_map_flags(&sys_waitpid_options_map, options, options_str, sizeof options_str);
 	x86_sys_debug("  options=%s\n", options_str);
 
 	/* Supported values for 'pid' */
@@ -1133,7 +1134,7 @@ static int x86_sys_utime_impl(struct x86_ctx_t *ctx)
  * System call 'access' (code 33)
  */
 
-static struct string_map_t sys_access_mode_map =
+static struct str_map_t sys_access_mode_map =
 {
 	3, {
 		{ "X_OK",  1 },
@@ -1170,7 +1171,7 @@ static int x86_sys_access_impl(struct x86_ctx_t *ctx)
 	x86_loader_get_full_path(ctx, file_name, full_path, sizeof full_path);
 
 	/* Debug */
-	map_flags(&sys_access_mode_map, mode, mode_str, sizeof mode_str);
+	str_map_flags(&sys_access_mode_map, mode, mode_str, sizeof mode_str);
 	x86_sys_debug("  file_name='%s', mode=0x%x\n", file_name, mode);
 	x86_sys_debug("  full_path='%s'\n", full_path);
 	x86_sys_debug("  mode=%s\n", mode_str);
@@ -1625,7 +1626,7 @@ static int x86_sys_getppid_impl(struct x86_ctx_t *ctx)
  * System call 'setrlimit' (code 75)
  */
 
-static struct string_map_t sys_rlimit_res_map =
+static struct str_map_t sys_rlimit_res_map =
 {
 	16, {
 
@@ -1669,7 +1670,7 @@ static int x86_sys_setrlimit_impl(struct x86_ctx_t *ctx)
 	/* Arguments */
 	res = regs->ebx;
 	rlim_ptr = regs->ecx;
-	res_str = map_value(&sys_rlimit_res_map, res);
+	res_str = str_map_value(&sys_rlimit_res_map, res);
 	x86_sys_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
 	x86_sys_debug("  res=%s\n", res_str);
 
@@ -1914,7 +1915,7 @@ static int x86_sys_readlink_impl(struct x86_ctx_t *ctx)
 
 #define SYS_MMAP_BASE_ADDRESS  0xb7fb0000
 
-static struct string_map_t sys_mmap_prot_map =
+static struct str_map_t sys_mmap_prot_map =
 {
 	6, {
 		{ "PROT_READ",       0x1 },
@@ -1926,7 +1927,7 @@ static struct string_map_t sys_mmap_prot_map =
 	}
 };
 
-static struct string_map_t sys_mmap_flags_map =
+static struct str_map_t sys_mmap_flags_map =
 {
 	11, {
 		{ "MAP_SHARED",      0x01 },
@@ -2082,8 +2083,8 @@ static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
 		"guest_fd=%d, offset=0x%x\n",
 		addr, len, prot, flags, guest_fd, offset);
-	map_flags(&sys_mmap_prot_map, prot, prot_str, sizeof prot_str);
-	map_flags(&sys_mmap_flags_map, flags, flags_str, sizeof flags_str);
+	str_map_flags(&sys_mmap_prot_map, prot, prot_str, sizeof prot_str);
+	str_map_flags(&sys_mmap_flags_map, flags, flags_str, sizeof flags_str);
 	x86_sys_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
 
 	/* Call */
@@ -2164,7 +2165,7 @@ static int x86_sys_fchmod_impl(struct x86_ctx_t *ctx)
  * System call 'socketcall' (code 102)
  */
 
-static struct string_map_t sys_socketcall_call_map =
+static struct str_map_t sys_socketcall_call_map =
 {
 	17, {
 		{ "SYS_SOCKET",		1 },
@@ -2187,7 +2188,7 @@ static struct string_map_t sys_socketcall_call_map =
 	}
 };
 
-static struct string_map_t sys_socket_family_map =
+static struct str_map_t sys_socket_family_map =
 {
 	29, {
 		{ "PF_UNSPEC",		0 },
@@ -2222,7 +2223,7 @@ static struct string_map_t sys_socket_family_map =
 	}
 };
 
-static struct string_map_t sys_socket_type_map =
+static struct str_map_t sys_socket_type_map =
 {
 	7, {
 		{ "SOCK_STREAM",	1 },
@@ -2247,7 +2248,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 	/* Arguments */
 	call = regs->ebx;
 	args = regs->ecx;
-	call_str = map_value(&sys_socketcall_call_map, call);
+	call_str = str_map_value(&sys_socketcall_call_map, call);
 	x86_sys_debug("  call=%d (%s), args=0x%x\n", call, call_str, args);
 
 	/* Process call */
@@ -2274,9 +2275,9 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		mem_read(mem, args + 8, 4, &protocol);
 
 		/* Debug */
-		family_str = map_value(&sys_socket_family_map, family);
+		family_str = str_map_value(&sys_socket_family_map, family);
 		snprintf(type_str, sizeof type_str, "%s%s%s",
-				map_value(&sys_socket_type_map, type & 0xff),
+				str_map_value(&sys_socket_type_map, type & 0xff),
 				type & 0x80000 ? "|SOCK_CLOEXEC" : "",
 				type & 0x800 ? "|SOCK_NONBLOCK" : "");
 		x86_sys_debug("  family=%d (%s)\n", family, family_str);
@@ -2336,7 +2337,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		/* Get 'sockaddr' structure, read family and data */
 		addr = (struct sockaddr *) &buf[0];
 		mem_read(mem, addr_ptr, addr_len, addr);
-		x86_sys_debug("    sockaddr.family=%s\n", map_value(&sys_socket_family_map, addr->sa_family));
+		x86_sys_debug("    sockaddr.family=%s\n", str_map_value(&sys_socket_family_map, addr->sa_family));
 		x86_sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
 
 		/* Get file descriptor */
@@ -2431,7 +2432,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
  * System call 'setitimer' (code 104)
  */
 
-static struct string_map_t sys_itimer_which_map =
+static struct str_map_t sys_itimer_which_map =
 {
 	3, {
 		{"ITIMER_REAL",		0},
@@ -2484,7 +2485,7 @@ static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
 	value_ptr = regs->ecx;
 	old_value_ptr = regs->edx;
 	x86_sys_debug("  which=%d (%s), value_ptr=0x%x, old_value_ptr=0x%x\n",
-		which, map_value(&sys_itimer_which_map, which), value_ptr, old_value_ptr);
+		which, str_map_value(&sys_itimer_which_map, which), value_ptr, old_value_ptr);
 
 	/* Get current time */
 	now = esim_real_time();
@@ -2540,7 +2541,7 @@ static int x86_sys_getitimer_impl(struct x86_ctx_t *ctx)
 	which = regs->ebx;
 	value_ptr = regs->ecx;
 	x86_sys_debug("  which=%d (%s), value_ptr=0x%x\n",
-		which, map_value(&sys_itimer_which_map, which), value_ptr);
+		which, str_map_value(&sys_itimer_which_map, which), value_ptr);
 
 	/* Get current time */
 	now = esim_real_time();
@@ -2609,7 +2610,7 @@ static int x86_sys_sigreturn_impl(struct x86_ctx_t *ctx)
 #define SIM_CLONE_NEWNET		0x40000000
 #define SIM_CLONE_IO			0x80000000
 
-static struct string_map_t sys_clone_flags_map =
+static struct str_map_t sys_clone_flags_map =
 {
 	23, {
 		{ "CLONE_VM", 0x00000100 },
@@ -2697,7 +2698,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 	flags &= ~0xff;
 
 	/* Debug */
-	map_flags(&sys_clone_flags_map, flags, flags_str, MAX_STRING_SIZE);
+	str_map_flags(&sys_clone_flags_map, flags, flags_str, MAX_STRING_SIZE);
 	x86_sys_debug("  flags=%s\n", flags_str);
 	x86_sys_debug("  exit_signal=%d (%s)\n", exit_signal, x86_signal_name(exit_signal));
 
@@ -2708,7 +2709,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 	/* Check not supported flags */
 	if (flags & ~sys_clone_supported_flags)
 	{
-		map_flags(&sys_clone_flags_map, flags & ~sys_clone_supported_flags,
+		str_map_flags(&sys_clone_flags_map, flags & ~sys_clone_supported_flags,
 			flags_str, MAX_STRING_SIZE);
 		fatal("%s: not supported flags: %s\n%s",
 			__FUNCTION__, flags_str, err_x86_sys_note);
@@ -3220,7 +3221,7 @@ static int x86_sys_select_impl(struct x86_ctx_t *ctx)
  * System call 'msync' (code 144)
  */
 
-static struct string_map_t sys_msync_flags_map =
+static struct str_map_t sys_msync_flags_map =
 {
 	3, {
 		{ "MS_ASYNC", 1 },
@@ -3244,7 +3245,7 @@ static int x86_sys_msync_impl(struct x86_ctx_t *ctx)
 	start = regs->ebx;
 	len = regs->ecx;
 	flags = regs->edx;
-	map_flags(&sys_msync_flags_map, flags, flags_str, sizeof flags_str);
+	str_map_flags(&sys_msync_flags_map, flags, flags_str, sizeof flags_str);
 	x86_sys_debug("  start=0x%x, len=0x%x, flags=0x%x\n", start, len, flags);
 	x86_sys_debug("  flags=%s\n", flags_str);
 
@@ -3671,7 +3672,7 @@ static int x86_sys_mremap_impl(struct x86_ctx_t *ctx)
  * System call 'clock_gettime' (code 165)
  */
 
-static struct string_map_t x86_sys_clock_gettime_clk_id_map =
+static struct str_map_t x86_sys_clock_gettime_clk_id_map =
 {
 	7, {
 		{ "CLOCK_REALTIME", 0 },
@@ -3704,7 +3705,7 @@ static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
 	/* Arguments */
 	clk_id = regs->ebx;
 	ts_ptr = regs->ecx;
-	clk_id_str = map_value(&x86_sys_clock_gettime_clk_id_map, clk_id);
+	clk_id_str = str_map_value(&x86_sys_clock_gettime_clk_id_map, clk_id);
 	x86_sys_debug("  clk_id=0x%x (%s), ts_ptr=0x%x\n",
 		clk_id, clk_id_str, ts_ptr);
 
@@ -3753,7 +3754,7 @@ static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
  * System call 'poll' (code 168)
  */
 
-static struct string_map_t sys_poll_event_map =
+static struct str_map_t sys_poll_event_map =
 {
 	6, {
 		{ "POLLIN",          0x0001 },
@@ -3813,7 +3814,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 	/* Read pollfd */
 	mem_read(mem, pfds, sizeof guest_fds, &guest_fds);
 	guest_fd = guest_fds.fd;
-	map_flags(&sys_poll_event_map, guest_fds.events, events_str, MAX_STRING_SIZE);
+	str_map_flags(&sys_poll_event_map, guest_fds.events, events_str, MAX_STRING_SIZE);
 	x86_sys_debug("  guest_fd=%d, events=%s\n", guest_fd, events_str);
 
 	/* Get file descriptor */
@@ -3950,7 +3951,7 @@ static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
  * System call 'rt_sigprocmask' (code 175)
  */
 
-static struct string_map_t sys_sigprocmask_how_map =
+static struct str_map_t sys_sigprocmask_how_map =
 {
 	3, {
 		{ "SIG_BLOCK",     0 },
@@ -3979,7 +3980,7 @@ static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 	sigsetsize = regs->esi;
 	x86_sys_debug("  how=0x%x, set_ptr=0x%x, old_set_ptr=0x%x, sigsetsize=0x%x\n",
 		how, set_ptr, old_set_ptr, sigsetsize);
-	x86_sys_debug("  how=%s\n", map_value(&sys_sigprocmask_how_map, how));
+	x86_sys_debug("  how=%s\n", str_map_value(&sys_sigprocmask_how_map, how));
 
 	/* Save old set */
 	old_set = ctx->signal_mask_table->blocked;
@@ -4137,7 +4138,7 @@ static int x86_sys_getrlimit_impl(struct x86_ctx_t *ctx)
 	/* Arguments */
 	res = regs->ebx;
 	rlim_ptr = regs->ecx;
-	res_str = map_value(&sys_rlimit_res_map, res);
+	res_str = str_map_value(&sys_rlimit_res_map, res);
 	x86_sys_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
 	x86_sys_debug("  res=%s\n", res_str);
 
@@ -4211,8 +4212,8 @@ static int x86_sys_mmap2_impl(struct x86_ctx_t *ctx)
 	/* Debug */
 	x86_sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, guest_fd=%d, offset=0x%x\n",
 		addr, len, prot, flags, guest_fd, offset);
-	map_flags(&sys_mmap_prot_map, prot, prot_str, MAX_STRING_SIZE);
-	map_flags(&sys_mmap_flags_map, flags, flags_str, MAX_STRING_SIZE);
+	str_map_flags(&sys_mmap_prot_map, prot, prot_str, MAX_STRING_SIZE);
+	str_map_flags(&sys_mmap_flags_map, flags, flags_str, MAX_STRING_SIZE);
 	x86_sys_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
 
 	/* System calls 'mmap' and 'mmap2' only differ in the interpretation of
@@ -4679,7 +4680,7 @@ static int x86_sys_getdents64_impl(struct x86_ctx_t *ctx)
  * System call 'fcntl64' (code 221)
  */
 
-static struct string_map_t sys_fcntl_cmp_map =
+static struct str_map_t sys_fcntl_cmp_map =
 {
 	15, {
 		{ "F_DUPFD", 0 },
@@ -4721,7 +4722,7 @@ static int x86_sys_fcntl64_impl(struct x86_ctx_t *ctx)
 	arg = regs->edx;
 	x86_sys_debug("  guest_fd=%d, cmd=%d, arg=0x%x\n",
 		guest_fd, cmd, arg);
-	cmd_name = map_value(&sys_fcntl_cmp_map, cmd);
+	cmd_name = str_map_value(&sys_fcntl_cmp_map, cmd);
 	x86_sys_debug("    cmd=%s\n", cmd_name);
 
 	/* Get file descriptor table entry */
@@ -4757,14 +4758,14 @@ static int x86_sys_fcntl64_impl(struct x86_ctx_t *ctx)
 			err = -errno;
 		else
 		{
-			map_flags(&sys_open_flags_map, err, flags_str, MAX_STRING_SIZE);
+			str_map_flags(&sys_open_flags_map, err, flags_str, MAX_STRING_SIZE);
 			x86_sys_debug("    ret=%s\n", flags_str);
 		}
 		break;
 
 	/* F_SETFL */
 	case 4:
-		map_flags(&sys_open_flags_map, arg, flags_str, MAX_STRING_SIZE);
+		str_map_flags(&sys_open_flags_map, arg, flags_str, MAX_STRING_SIZE);
 		x86_sys_debug("    arg=%s\n", flags_str);
 		desc->flags = arg;
 
@@ -4806,7 +4807,7 @@ static int x86_sys_gettid_impl(struct x86_ctx_t *ctx)
  * System call 'futex' (code 240)
  */
 
-static struct string_map_t sys_futex_cmd_map =
+static struct str_map_t sys_futex_cmd_map =
 {
 	13, {
 		{ "FUTEX_WAIT",              0 },
@@ -4864,7 +4865,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 	cmd = op & ~(256|128);
 	mem_read(mem, addr1, 4, &futex);
 	x86_sys_debug("  futex=%d, cmd=%d (%s)\n",
-		futex, cmd, map_value(&sys_futex_cmd_map, cmd));
+		futex, cmd, str_map_value(&sys_futex_cmd_map, cmd));
 
 	switch (cmd)
 	{
@@ -5024,7 +5025,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 
 	default:
 		fatal("%s: not implemented for cmd=%d (%s).\n%s",
-			__FUNCTION__, cmd, map_value(&sys_futex_cmd_map, cmd), err_x86_sys_note);
+			__FUNCTION__, cmd, str_map_value(&sys_futex_cmd_map, cmd), err_x86_sys_note);
 	}
 
 	/* Dead code */

@@ -30,12 +30,12 @@
 #include <zlib.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/matrix.h>
+#include <lib/util/string.h>
 
 
 /* Function to invoke visualization tool.

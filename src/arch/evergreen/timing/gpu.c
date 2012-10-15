@@ -25,11 +25,12 @@
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <lib/util/misc.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
+#include <lib/util/file.h>
 #include <lib/util/heap.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/misc.h>
 #include <lib/util/repos.h>
 #include <lib/util/timer.h>
 
@@ -135,7 +136,7 @@ int evg_gpu_num_stream_cores = 16;
 int evg_gpu_num_registers = 16384;
 int evg_gpu_register_alloc_size = 32;
 
-struct string_map_t evg_gpu_register_alloc_granularity_map =
+struct str_map_t evg_gpu_register_alloc_granularity_map =
 {
 	2, {
 		{ "Wavefront", evg_gpu_register_alloc_wavefront },
@@ -250,11 +251,11 @@ static void evg_config_read(void)
 	if (evg_gpu_num_registers % evg_gpu_register_alloc_size)
 		fatal("%s: 'NumRegisters' must be a multiple of 'RegisterAllocSize'.\n%s", evg_gpu_config_file_name, err_note);
 
-	evg_gpu_register_alloc_granularity = map_string_case(&evg_gpu_register_alloc_granularity_map, gpu_register_alloc_granularity_str);
+	evg_gpu_register_alloc_granularity = str_map_string_case(&evg_gpu_register_alloc_granularity_map, gpu_register_alloc_granularity_str);
 	if (evg_gpu_register_alloc_granularity == evg_gpu_register_alloc_invalid)
 		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s", evg_gpu_config_file_name, err_note);
 
-	evg_gpu_sched_policy = map_string_case(&evg_gpu_sched_policy_map, gpu_sched_policy_str);
+	evg_gpu_sched_policy = str_map_string_case(&evg_gpu_sched_policy_map, gpu_sched_policy_str);
 	if (evg_gpu_sched_policy == evg_gpu_sched_invalid)
 		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", evg_gpu_config_file_name, err_note);
 
@@ -352,11 +353,11 @@ static void evg_config_dump(FILE *f)
 	fprintf(f, "NumStreamCores = %d\n", evg_gpu_num_stream_cores);
 	fprintf(f, "NumRegisters = %d\n", evg_gpu_num_registers);
 	fprintf(f, "RegisterAllocSize = %d\n", evg_gpu_register_alloc_size);
-	fprintf(f, "RegisterAllocGranularity = %s\n", map_value(&evg_gpu_register_alloc_granularity_map, evg_gpu_register_alloc_granularity));
+	fprintf(f, "RegisterAllocGranularity = %s\n", str_map_value(&evg_gpu_register_alloc_granularity_map, evg_gpu_register_alloc_granularity));
 	fprintf(f, "WavefrontSize = %d\n", evg_emu_wavefront_size);
 	fprintf(f, "MaxWorkGroupsPerComputeUnit = %d\n", evg_gpu_max_work_groups_per_compute_unit);
 	fprintf(f, "MaxWavefrontsPerComputeUnit = %d\n", evg_gpu_max_wavefronts_per_compute_unit);
-	fprintf(f, "SchedulingPolicy = %s\n", map_value(&evg_gpu_sched_policy_map, evg_gpu_sched_policy));
+	fprintf(f, "SchedulingPolicy = %s\n", str_map_value(&evg_gpu_sched_policy_map, evg_gpu_sched_policy));
 	fprintf(f, "\n");
 
 	/* Local Memory */
