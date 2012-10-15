@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <m2s-clrt.h>
 
@@ -41,6 +42,27 @@ struct _cl_device_id *m2s_device = NULL;
 
 /*
  * Private Functions
+ */
+
+
+const char *FULL_PROFILE = "FULL_PROFILE";
+const char *VERSION = "OpenCL 1.1 Multi2Sim";
+const char *NAME = "CLRT";
+const char *VENDOR = "Multi2Sim";
+const char *EXTENSIONS = "";
+const char *DEVICE_NAME = "x86 CPU";
+const char *DRIVER_VERSION = "0.0";
+const char *DEVICE_VERSION = "OpenCL 1.1 Multi2Sim";
+
+
+cl_int populateString(const char *param, size_t param_value_size, void *param_value, size_t *param_value_size_ret)
+{
+	size_t size = strlen(param) + 1;
+	return populateParameter(param, size, param_value_size, param_value, param_value_size_ret);
+}
+
+/*
+ * Public Functions
  */
 
 cl_int clGetPlatformIDs(
@@ -114,10 +136,6 @@ cl_int clGetPlatformIDs(
 	}
 }
 
-/*
- * Public Functions
- */
-
 cl_int clGetPlatformInfo(
 	cl_platform_id platform,
 	cl_platform_info param_name,
@@ -125,7 +143,29 @@ cl_int clGetPlatformInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	if (platform != m2s_platform)
+		return CL_INVALID_PLATFORM;
+
+	switch (param_name)
+	{
+	case CL_PLATFORM_PROFILE:
+		return populateString(FULL_PROFILE, param_value_size, param_value, param_value_size_ret);
+
+	case CL_PLATFORM_VERSION:
+		return populateString(VERSION, param_value_size, param_value, param_value_size_ret);
+		
+	case CL_PLATFORM_NAME:
+		return populateString(NAME, param_value_size, param_value, param_value_size_ret);
+
+	case CL_PLATFORM_VENDOR:
+		return populateString(VENDOR, param_value_size, param_value, param_value_size_ret);
+
+	case CL_PLATFORM_EXTENSIONS:
+		return populateString(EXTENSIONS, param_value_size, param_value, param_value_size_ret);
+	
+	default:
+		return CL_INVALID_VALUE;
+	}
 	return 0;
 }
 
