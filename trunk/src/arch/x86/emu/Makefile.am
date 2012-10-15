@@ -98,7 +98,7 @@ libemu_a_SOURCES += \
 else
 libemu_a_SOURCES += \
 	\
-	glut.h
+	glut.h \
 	glut-missing.c \
 	\
 	opengl.h \
