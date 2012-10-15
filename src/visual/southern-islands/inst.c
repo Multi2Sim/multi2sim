@@ -20,7 +20,7 @@
 #include <visual-southern-islands.h>
 
 
-struct string_map_t vi_si_inst_stage_map =
+struct str_map_t vi_si_inst_stage_map =
 {
 	vi_si_inst_stage_count - 1,
 	{
@@ -53,7 +53,7 @@ struct string_map_t vi_si_inst_stage_map =
 };
 
 
-struct string_map_t vi_si_inst_stage_color_map =
+struct str_map_t vi_si_inst_stage_color_map =
 {
 	vi_si_inst_stage_count - 1,
 	{
@@ -93,7 +93,7 @@ struct string_map_t vi_si_inst_stage_color_map =
 };
 
 
-struct string_map_t vi_si_inst_stage_name_map =
+struct str_map_t vi_si_inst_stage_name_map =
 {
 	vi_si_inst_stage_count - 1,
 	{

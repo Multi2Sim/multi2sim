@@ -682,7 +682,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	num_ports = config_read_int(config, buf, "Ports", 2);
 
 	/* Checks */
-	policy = map_string_case(&cache_policy_map, policy_str);
+	policy = str_map_string_case(&cache_policy_map, policy_str);
 	if (policy == cache_policy_invalid)
 		fatal("%s: cache %s: %s: invalid block replacement policy.\n%s",
 			mem_config_file_name, mod_name,

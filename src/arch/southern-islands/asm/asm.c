@@ -21,10 +21,12 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <lib/util/misc.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "asm.h"
 
@@ -66,7 +68,7 @@ static struct si_inst_info_t *si_inst_info_ds[SI_INST_INFO_DS_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_mtbuf[SI_INST_INFO_MTBUF_OPCODE_SIZE];
 
 /* String maps for assembly dump. */
-struct string_map_t sdst_map = {
+struct str_map_t sdst_map = {
 	24, {
 		{ "reserved", 0 },
 		{ "reserved", 1 },
@@ -95,7 +97,7 @@ struct string_map_t sdst_map = {
 	}
 };
 
-struct string_map_t ssrc_map = {
+struct str_map_t ssrc_map = {
 	16, {
 		{ "0.5", 0 },
 		{ "-0.5", 1 },
@@ -116,7 +118,7 @@ struct string_map_t ssrc_map = {
 	}
 };
 
-struct string_map_t dfmt_map = {
+struct str_map_t dfmt_map = {
 	16, {
 		{ "invalid", 0 },
 		{ "BUF_DATA_FORMAT_8", 1 },
@@ -137,7 +139,7 @@ struct string_map_t dfmt_map = {
 	}
 };
 
-struct string_map_t nfmt_map = {
+struct str_map_t nfmt_map = {
 	14, {
 		{ "BUF_NUM_FMT_UNORM", 0 },
 		{ "BUF_NUM_FMT_SNORM", 1 },
@@ -610,7 +612,7 @@ void operand_dump(char* str, int operand)
 	else if (operand <= 127)
 	{
 		/* sdst special registers */
-		str_printf(&pstr, &str_size, "%s", map_value(&sdst_map, operand - 104));
+		str_printf(&pstr, &str_size, "%s", str_map_value(&sdst_map, operand - 104));
 	}
 	else if (operand <= 192)
 	{
@@ -628,7 +630,7 @@ void operand_dump(char* str, int operand)
 	}
 	else if (operand <= 255)
 	{
-		str_printf(&pstr, &str_size, "%s", map_value(&ssrc_map, operand - 240));
+		str_printf(&pstr, &str_size, "%s", str_map_value(&ssrc_map, operand - 240));
 	}
 	else if (operand <= 511)
 	{
@@ -1688,11 +1690,11 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int inst_size, unsigned
 		}
 		else if (is_token(fmt_str, "DFMT", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "%s", map_value(&dfmt_map, mtbuf->dfmt));
+			str_printf(&inst_str, &str_size, "%s", str_map_value(&dfmt_map, mtbuf->dfmt));
 		}
 		else if (is_token(fmt_str, "NFMT", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "%s", map_value(&nfmt_map, mtbuf->nfmt));	
+			str_printf(&inst_str, &str_size, "%s", str_map_value(&nfmt_map, mtbuf->nfmt));	
 		}
 		else
 		{

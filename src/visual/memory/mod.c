@@ -17,10 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/util/misc.h>
+
 #include <visual-memory.h>
 
 
-static struct string_map_t vi_mod_block_state_map =
+static struct str_map_t vi_mod_block_state_map =
 {
 	6, {
 		{ "I", 0 },
@@ -267,7 +269,7 @@ void vi_mod_block_set(struct vi_mod_t *mod, int set, int way,
 
 	block = &mod->blocks[set * mod->assoc + way];
 	block->tag = tag;
-	block->state = map_string(&vi_mod_block_state_map, state);
+	block->state = str_map_string(&vi_mod_block_state_map, state);
 }
 
 

@@ -102,21 +102,21 @@ enum evg_alu_enum
  * String maps
  */
 
-extern struct string_map_t evg_pv_map;
-extern struct string_map_t evg_alu_map;
-extern struct string_map_t evg_bank_swizzle_map;
-extern struct string_map_t evg_rat_inst_map;
-extern struct string_map_t evg_cf_cond_map;
-extern struct string_map_t evg_src_sel_map;
-extern struct string_map_t evg_dst_sel_map;
+extern struct str_map_t evg_pv_map;
+extern struct str_map_t evg_alu_map;
+extern struct str_map_t evg_bank_swizzle_map;
+extern struct str_map_t evg_rat_inst_map;
+extern struct str_map_t evg_cf_cond_map;
+extern struct str_map_t evg_src_sel_map;
+extern struct str_map_t evg_dst_sel_map;
 
-extern struct string_map_t evg_fmt_vtx_fetch_type_map;
-extern struct string_map_t evg_fmt_vtx_data_format_map;
-extern struct string_map_t evg_fmt_vtx_num_format_map;
-extern struct string_map_t evg_fmt_vtx_format_comp_map;
-extern struct string_map_t evg_fmt_vtx_srf_mode_map;
-extern struct string_map_t evg_fmt_vtx_endian_swap_map;
-extern struct string_map_t evg_fmt_lds_op_map;
+extern struct str_map_t evg_fmt_vtx_fetch_type_map;
+extern struct str_map_t evg_fmt_vtx_data_format_map;
+extern struct str_map_t evg_fmt_vtx_num_format_map;
+extern struct str_map_t evg_fmt_vtx_format_comp_map;
+extern struct str_map_t evg_fmt_vtx_srf_mode_map;
+extern struct str_map_t evg_fmt_vtx_endian_swap_map;
+extern struct str_map_t evg_fmt_lds_op_map;
 
 
 
@@ -526,7 +526,7 @@ struct evg_fmt_mem_gds_word2_t
 };
 
 
-extern struct string_map_t evg_inst_category_map;
+extern struct str_map_t evg_inst_category_map;
 
 enum evg_inst_category_enum
 {

@@ -19,8 +19,9 @@
 
 #include <assert.h>
 
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "bpred.h"
 #include "cpu.h"

@@ -18,6 +18,7 @@
  */
 
 #include <arch/x86/emu/emu.h>
+#include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"

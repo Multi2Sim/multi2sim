@@ -19,15 +19,17 @@
 
 #include <assert.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <zlib.h>
 
-#include <lib/util/misc.h>
 #include <lib/util/bin-config.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "context.h"

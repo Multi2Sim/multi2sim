@@ -21,8 +21,8 @@
 #define MEM_SYSTEM_CACHE_H
 
 
-extern struct string_map_t cache_policy_map;
-extern struct string_map_t cache_block_state_map;
+extern struct str_map_t cache_policy_map;
+extern struct str_map_t cache_block_state_map;
 
 enum cache_policy_t
 {

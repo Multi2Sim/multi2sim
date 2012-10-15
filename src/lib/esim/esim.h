@@ -30,7 +30,7 @@
 
 
 /* Reason for simulation end */
-extern struct string_map_t esim_finish_map;
+extern struct str_map_t esim_finish_map;
 
 extern volatile enum esim_finish_t
 {

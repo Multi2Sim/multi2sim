@@ -21,10 +21,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
+#include <lib/util/file.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "context.h"
@@ -85,7 +88,7 @@ static char *err_x86_ctx_ipc_report =
 	"\t'--cpu-sim detailed' in the command line to activate IPC reports.\n";
 
 
-static struct string_map_t elf_section_flags_map =
+static struct str_map_t elf_section_flags_map =
 {
 	3, {
 		{ "SHF_WRITE", 1 },
@@ -207,7 +210,7 @@ static void x86_loader_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *e
 		section = list_get(elf_file->section_list, i);
 
 		perm = mem_access_init | mem_access_read;
-		map_flags(&elf_section_flags_map, section->header->sh_flags, flags_str, sizeof(flags_str));
+		str_map_flags(&elf_section_flags_map, section->header->sh_flags, flags_str, sizeof(flags_str));
 		x86_loader_debug("  section %d: name='%s', offset=0x%x, addr=0x%x, size=%u, flags=%s\n",
 			i, section->name, section->header->sh_offset, section->header->sh_addr, section->header->sh_size, flags_str);
 
@@ -264,7 +267,7 @@ static void x86_loader_load_interp(struct x86_ctx_t *ctx)
 }
 
 
-static struct string_map_t elf_program_header_type_map = {
+static struct str_map_t elf_program_header_type_map = {
 	8, {
 		{ "PT_NULL",        0 },
 		{ "PT_LOAD",        1 },
@@ -324,7 +327,7 @@ static void x86_loader_load_program_headers(struct x86_ctx_t *ctx)
 			program_header->header, mem_access_init);
 
 		/* Debug */
-		map_value_string(&elf_program_header_type_map, program_header->header->p_type,
+		str_map_value_buf(&elf_program_header_type_map, program_header->header->p_type,
 			str, sizeof(str));
 		x86_loader_debug("  header loaded at 0x%x\n", phdt_base + i * phdr_size);
 		x86_loader_debug("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",

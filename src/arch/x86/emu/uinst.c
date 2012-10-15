@@ -19,9 +19,11 @@
 
 #include <assert.h>
 
-#include <lib/util/misc.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "context.h"
 #include "emu.h"
@@ -93,7 +95,7 @@ char *x86_uinst_dep_name[] =
 
 
 /* String map for the rest of the dependences */
-struct string_map_t x86_uinst_dep_map =
+struct str_map_t x86_uinst_dep_map =
 {
 	13, {
 		{ "*RM8*", x86_dep_rm8 },
@@ -513,7 +515,7 @@ static char *x86_uinst_dep_name_get(int dep)
 	if (X86_DEP_IS_VALID(dep))
 		return x86_uinst_dep_name[dep];
 	else
-		return map_value(&x86_uinst_dep_map, dep);
+		return str_map_value(&x86_uinst_dep_map, dep);
 }
 
 

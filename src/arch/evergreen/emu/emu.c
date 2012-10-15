@@ -22,8 +22,11 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/file.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 

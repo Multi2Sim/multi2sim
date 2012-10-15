@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/util/misc.h>
+
 #include <visual-x86.h>
 
 
@@ -557,14 +559,14 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 			label = gtk_bin_get_child(GTK_BIN(event_box));
 			if (inst)
 				gtk_label_set_markup(GTK_LABEL(label),
-					map_value(&vi_x86_inst_stage_name_map, inst->stage));
+					str_map_value(&vi_x86_inst_stage_name_map, inst->stage));
 			else
 				gtk_label_set_text(GTK_LABEL(label), NULL);
 
 			/* Color */
 			GdkColor color;
 			char *color_str;
-			color_str = inst ? map_value(&vi_x86_inst_stage_color_map, inst->stage) : "white";
+			color_str = inst ? str_map_value(&vi_x86_inst_stage_color_map, inst->stage) : "white";
 			gdk_color_parse(color_str, &color);
 			gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 		}

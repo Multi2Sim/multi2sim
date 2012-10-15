@@ -23,6 +23,8 @@
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/heap.h>
+#include <lib/util/file.h>
+#include <lib/util/misc.h>
 #include <lib/util/repos.h>
 #include <lib/util/timer.h>
 
@@ -195,7 +197,7 @@ unsigned int si_gpu_queue_properties = 2;  /* bit field, profiling enabled, no o
 
 unsigned int si_gpu_platform = 0;  /* FIXME */
 
-struct string_map_t si_gpu_register_alloc_granularity_map =
+struct str_map_t si_gpu_register_alloc_granularity_map =
 {
 	2, {
 		{ "Wavefront", si_gpu_register_alloc_wavefront },
@@ -333,12 +335,12 @@ static void si_config_read(void)
 	if (si_gpu_num_registers % si_gpu_register_alloc_size)
 		fatal("%s: 'NumRegisters' must be a multiple of 'RegisterAllocSize'.\n%s", 
 			si_gpu_config_file_name, err_note);
-	si_gpu_register_alloc_granularity = map_string_case(&si_gpu_register_alloc_granularity_map, 
+	si_gpu_register_alloc_granularity = str_map_string_case(&si_gpu_register_alloc_granularity_map, 
 		gpu_register_alloc_granularity_str);
 	if (si_gpu_register_alloc_granularity == si_gpu_register_alloc_invalid)
 		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s", 
 			si_gpu_config_file_name, err_note);
-	si_gpu_sched_policy = map_string_case(&si_gpu_sched_policy_map, 
+	si_gpu_sched_policy = str_map_string_case(&si_gpu_sched_policy_map, 
 		gpu_sched_policy_str);
 	if (si_gpu_sched_policy == si_gpu_sched_invalid)
 		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", si_gpu_config_file_name, 
@@ -405,7 +407,7 @@ static void si_config_dump(FILE *f)
 	fprintf(f, "NumRegisters = %d\n", si_gpu_num_registers);
 	fprintf(f, "RegisterAllocSize = %d\n", si_gpu_register_alloc_size);
 	fprintf(f, "RegisterAllocGranularity = %s\n", 
-		map_value(&si_gpu_register_alloc_granularity_map, 
+		str_map_value(&si_gpu_register_alloc_granularity_map, 
 		si_gpu_register_alloc_granularity));
 	fprintf(f, "WavefrontSize = %d\n", si_emu_wavefront_size);
 	fprintf(f, "MaxWorkGroupsPerWavefrontPool= %d\n", si_gpu_max_work_groups_per_wavefront_pool);
@@ -416,7 +418,7 @@ static void si_config_dump(FILE *f)
 	fprintf(f, "ScalarUnitIssueWidth = %d\n", si_gpu_scalar_unit_issue_width);
 	fprintf(f, "BranchUnitLatency = %d\n", si_gpu_branch_unit_latency);
 	fprintf(f, "BranchUnitIssueWidth = %d\n", si_gpu_branch_unit_issue_width);
-	fprintf(f, "SchedulingPolicy = %s\n", map_value(&si_gpu_sched_policy_map, 
+	fprintf(f, "SchedulingPolicy = %s\n", str_map_value(&si_gpu_sched_policy_map, 
 		si_gpu_sched_policy));
 	fprintf(f, "\n");
 

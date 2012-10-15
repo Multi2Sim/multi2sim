@@ -22,10 +22,11 @@
 
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/wavefront.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/misc.h>
 #include <lib/util/repos.h>
+#include <lib/util/string.h>
 
 #include "timing.h"
 
@@ -182,7 +183,7 @@ void evg_uop_list_free(struct linked_list_t *gpu_uop_list)
 
 void evg_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 {
-	static struct string_map_t gpu_uop_dep_map = {
+	static struct str_map_t gpu_uop_dep_map = {
 		4, {
 			{ "none", EVG_UOP_DEP_NONE },
 			{ "LDS", EVG_UOP_DEP_LDS },
@@ -200,7 +201,7 @@ void evg_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 		if (IN_RANGE(dep_list[i], EVG_UOP_DEP_REG_FIRST, EVG_UOP_DEP_REG_LAST))
 			sprintf(str, "R%d", dep_list[i] - EVG_UOP_DEP_REG_FIRST);
 		else
-			strcpy(str, map_value(&gpu_uop_dep_map, dep_list[i]));
+			strcpy(str, str_map_value(&gpu_uop_dep_map, dep_list[i]));
 		str_printf(&buf, &size, "%s%s", comma, str);
 		comma = ",";
 	}

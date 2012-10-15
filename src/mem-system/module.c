@@ -21,9 +21,10 @@
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "cache.h"
 #include "directory.h"
@@ -34,7 +35,7 @@
 
 
 /* String map for access type */
-struct string_map_t mod_access_kind_map =
+struct str_map_t mod_access_kind_map =
 {
 	3, {
 		{ "Load", mod_access_load },

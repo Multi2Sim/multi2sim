@@ -19,8 +19,8 @@
 
 #include <stdio.h>
 
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/string.h>
 
 #include "asm.h"
 

@@ -22,10 +22,13 @@
 
 #include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
+#include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/repos.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
@@ -95,7 +98,7 @@ void evg_isa_done()
 
 void evg_isa_const_mem_write(int bank, int vector, int elem, void *pvalue)
 {
-	uint32_t addr;
+	unsigned int addr;
 
 	/* Mark CB0[0..8].{x,y,z,w} positions as initialized */
 	if (!bank && vector < 9)
@@ -109,7 +112,7 @@ void evg_isa_const_mem_write(int bank, int vector, int elem, void *pvalue)
 
 void evg_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
 {
-	uint32_t addr;
+	unsigned int addr;
 
 	/* Warn if a position within CB[0..8].{x,y,z,w} is used uninitialized */
 	if (!bank && vector < 9 && !evg_emu->const_mem_cb0_init[vector * 4 + elem])
@@ -308,7 +311,7 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	if (IN_RANGE(sel, 160, 191))
 	{
 
-		uint32_t kcache_bank, kcache_mode, kcache_addr;
+		unsigned int kcache_bank, kcache_mode, kcache_addr;
 
 		assert(wavefront->cf_inst.info->fmt[0] == EVG_FMT_CF_ALU_WORD0
 			&& wavefront->cf_inst.info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
@@ -325,8 +328,8 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	/* QA and QA.pop */
 	if (sel == 219 || sel == 221)
 	{
-		uint32_t *pvalue;
-		pvalue = (uint32_t *) list_dequeue(work_item->lds_oqa);
+		unsigned int *pvalue;
+		pvalue = (unsigned int *) list_dequeue(work_item->lds_oqa);
 		if (!pvalue)
 			fatal("%s: LDS queue A is empty", __FUNCTION__);
 		value = *pvalue;
@@ -340,8 +343,9 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	/* QB and QB.pop */
 	if (sel == 220 || sel == 222)
 	{
-		uint32_t *pvalue;
-		pvalue = (uint32_t *) list_dequeue(work_item->lds_oqb);
+		unsigned int *pvalue;
+
+		pvalue = (unsigned int *) list_dequeue(work_item->lds_oqb);
 		if (!pvalue)
 			fatal("%s: LDS queue B is empty", __FUNCTION__);
 		value = *pvalue;
@@ -636,7 +640,7 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 			if (evg_isa_debugging())
 			{
 				evg_isa_debug("  i%d:%s", work_item->id,
-					map_value(&evg_pv_map, wt->inst->alu));
+					str_map_value(&evg_pv_map, wt->inst->alu));
 				if (wt->write_mask)
 				{
 					evg_isa_debug(",");

@@ -21,8 +21,9 @@
 #include <errno.h>
 #include <signal.h>
 
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
@@ -33,7 +34,7 @@
 
 /* Signals */
 
-struct string_map_t x86_signal_map =
+struct str_map_t x86_signal_map =
 {
 	31, {
 		{ "SIGHUP",           1 },
@@ -71,7 +72,7 @@ struct string_map_t x86_signal_map =
 };
 
 
-struct string_map_t x86_sigaction_flags_map =
+struct str_map_t x86_sigaction_flags_map =
 {
 	9, {
 		{ "SA_NOCLDSTOP",    0x00000001u },
@@ -89,7 +90,7 @@ struct string_map_t x86_sigaction_flags_map =
 
 char *x86_signal_name(int signum)
 {
-	return map_value(&x86_signal_map, signum);
+	return str_map_value(&x86_signal_map, signum);
 }
 
 
@@ -104,7 +105,7 @@ void x86_sigaction_dump(struct x86_sigaction_t *sim, FILE *f)
 void x86_sigaction_flags_dump(unsigned int flags, FILE *f)
 {
 	char buf[0x200];
-	map_flags(&x86_sigaction_flags_map, flags, buf, 0x200);
+	str_map_flags(&x86_sigaction_flags_map, flags, buf, 0x200);
 	fprintf(f, "%s", buf);
 }
 
@@ -149,7 +150,7 @@ void x86_sigset_dump(unsigned long long sim_sigset, FILE *f)
 		{
 			if (i < 32)
 			{
-				name = map_value(&x86_signal_map, i);
+				name = str_map_value(&x86_signal_map, i);
 				fprintf(f, "%s%s", comma, name);
 			}
 			else

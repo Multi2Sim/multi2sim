@@ -19,10 +19,17 @@
 
 #include <assert.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/elf-format.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
@@ -39,7 +46,7 @@ int arm_ctx_debug_category;
 
 int EV_ARM_CTX_IPC_REPORT;
 
-static struct string_map_t arm_ctx_status_map =
+static struct str_map_t arm_ctx_status_map =
 {
 	16, {
 		{ "running",      arm_ctx_running },
@@ -66,7 +73,7 @@ static struct string_map_t arm_ctx_status_map =
 #define LD_MAX_ENVIRON  0x10000  /* 16KB for environment */
 #define LD_STACK_SIZE  0x800000  /* 8MB stack size */
 
-static struct string_map_t elf_section_flags_map =
+static struct str_map_t elf_section_flags_map =
 {
 	3, {
 		{ "SHF_WRITE", 1 },
@@ -75,7 +82,7 @@ static struct string_map_t elf_section_flags_map =
 	}
 };
 
-static struct string_map_t elf_program_header_type_map = {
+static struct str_map_t elf_program_header_type_map = {
 	8, {
 		{ "PT_NULL",        0 },
 		{ "PT_LOAD",        1 },
@@ -94,7 +101,7 @@ static struct arm_ctx_t *arm_ctx_do_create()
 
 	/* Create context and set its value */
 	ctx = calloc(1, sizeof(struct arm_ctx_t));
-	if(!ctx)
+	if (!ctx)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
@@ -217,7 +224,7 @@ static void arm_ctx_loader_load_program_headers(struct arm_ctx_t *ctx)
 			program_header->header, mem_access_init);
 
 		/* Debug */
-		map_value_string(&elf_program_header_type_map, program_header->header->p_type,
+		str_map_value_buf(&elf_program_header_type_map, program_header->header->p_type,
 			str, sizeof(str));
 		arm_loader_debug("  header loaded at 0x%x\n", phdt_base + i * phdr_size);
 		arm_loader_debug("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
@@ -255,7 +262,7 @@ static void arm_ctx_loader_load_sections(struct arm_ctx_t *ctx, struct elf_file_
 		section = list_get(elf_file->section_list, i);
 
 		perm = mem_access_init | mem_access_read;
-		map_flags(&elf_section_flags_map, section->header->sh_flags,
+		str_map_flags(&elf_section_flags_map, section->header->sh_flags,
 			flags_str, sizeof(flags_str));
 		arm_loader_debug("  section %d: name='%s', offset=0x%x, addr=0x%x,"
 			" size=%u, flags=%s\n",
@@ -856,7 +863,7 @@ static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t s
 	if (debug_status(arm_ctx_debug_category) && (status_diff & ~arm_ctx_spec_mode))
 	{
 		char sstatus[200];
-		map_flags(&arm_ctx_status_map, ctx->status, sstatus, 200);
+		str_map_flags(&arm_ctx_status_map, ctx->status, sstatus, 200);
 		arm_ctx_debug("ctx %d changed status to %s\n",
 			ctx->pid, sstatus);
 	}

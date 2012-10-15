@@ -360,7 +360,7 @@ extern int evg_gpu_num_compute_units;
 extern int evg_gpu_num_registers;
 extern int evg_gpu_register_alloc_size;
 
-extern struct string_map_t evg_gpu_register_alloc_granularity_map;
+extern struct str_map_t evg_gpu_register_alloc_granularity_map;
 extern enum evg_gpu_register_alloc_granularity_t
 {
 	evg_gpu_register_alloc_invalid = 0,  /* For invalid user input */
@@ -371,7 +371,7 @@ extern enum evg_gpu_register_alloc_granularity_t
 extern int evg_gpu_max_work_groups_per_compute_unit;
 extern int evg_gpu_max_wavefronts_per_compute_unit;
 
-extern struct string_map_t evg_gpu_sched_policy_map;
+extern struct str_map_t evg_gpu_sched_policy_map;
 extern enum evg_gpu_sched_policy_t
 {
 	evg_gpu_sched_invalid = 0,  /* For invalid user input */

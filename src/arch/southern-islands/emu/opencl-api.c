@@ -22,6 +22,7 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/util/debug.h>
+#include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
@@ -597,7 +598,7 @@ int si_opencl_clReleaseCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
  * OpenCL call 'clCreateBuffer' (code 1014)
  */
 
-static struct string_map_t create_buffer_flags_map =
+static struct str_map_t create_buffer_flags_map =
 {
 	4,
 	{
@@ -624,7 +625,7 @@ int si_opencl_clCreateBuffer_impl(struct x86_ctx_t *ctx, int *argv)
 	int zero = 0;
 	void *buf;
 
-	map_flags(&create_buffer_flags_map, flags, flags_str, sizeof(flags_str));
+	str_map_flags(&create_buffer_flags_map, flags, flags_str, sizeof(flags_str));
 	si_opencl_debug("  context=0x%x, flags=%s, size=%d, host_ptr=0x%x, errcode_ret=0x%x\n",
 			context_id, flags_str, size, host_ptr, errcode_ret);
 
@@ -676,7 +677,7 @@ int si_opencl_clCreateBuffer_impl(struct x86_ctx_t *ctx, int *argv)
  * OpenCL call 'clCreateImage2D' (code 1016)
  */
 	
-static struct string_map_t si_opencl_create_image_flags_map =
+static struct str_map_t si_opencl_create_image_flags_map =
 {
 	6, {
 		{ "CL_MEM_READ_WRITE", 0x1 },
@@ -717,7 +718,7 @@ int si_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 	channel_order = image_format.image_channel_order;
 	channel_type = image_format.image_channel_data_type;
 
-	map_flags(&si_opencl_create_image_flags_map, flags, flags_str, sizeof(flags_str));
+	str_map_flags(&si_opencl_create_image_flags_map, flags, flags_str, sizeof(flags_str));
 	si_opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, "
 		"channel_type=0x%x, image_width=%u, image_height=%u, "
 		"image_row_pitch=%u, host_ptr=0x%x, errcode_ret=0x%x\n",
@@ -868,7 +869,7 @@ int si_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 	channel_order = image_format.image_channel_order;
 	channel_type = image_format.image_channel_data_type;
 
-	map_flags(&si_opencl_create_image_flags_map, flags, flags_str, sizeof(flags_str));
+	str_map_flags(&si_opencl_create_image_flags_map, flags, flags_str, sizeof(flags_str));
 	si_opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, channel_type=0x%x\n"
 			"  image_width=%u, image_height=%u, image_depth=%u\n"
 			"  image_row_pitch=%u, image_slice_pitch=%u, host_ptr=0x%x\n"
@@ -2122,7 +2123,7 @@ struct si_opencl_clEnqueueMapBuffer_args_t
 	unsigned int command_queue;  /* cl_command_queue command_queue */
 	unsigned int buffer;  /* cl_mem buffer */
 	unsigned int blocking_map;  /* cl_bool blocking_map */
-	unsigned int map_flags;  /* cl_map_flags map_flags */
+	unsigned int map_flags;  /* cl_map_flags str_map_flags */
 	unsigned int offset;  /* size_t offset */
 	unsigned int cb;  /* size_t cb */
 	unsigned int num_events_in_wait_list;  /* cl_uint num_events_in_wait_list */

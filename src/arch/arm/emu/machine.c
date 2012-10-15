@@ -19,6 +19,8 @@
 
 #include <math.h>
 
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
 #include "context.h"

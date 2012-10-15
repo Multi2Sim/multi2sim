@@ -17,30 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/util/debug.h>
-#include <mem-system/memory.h>
+#ifndef LIB_UTIL_FILE_H
+#define LIB_UTIL_FILE_H
 
-#include "context.h"
-#include "signal.h"
-#include "regs.h"
-#include "syscall.h"
+#include <stdio.h>
 
 
+FILE *file_open_for_read(char *file_name);
+FILE *file_open_for_write(char *file_name);
+void file_close(FILE *f);
 
-/* Return from a signal handler */
-void arm_signal_handler_return(struct arm_ctx_t *ctx)
-{
-	/* Change context status */
-	if (!arm_ctx_get_status(ctx, arm_ctx_handler))
-		fatal("%s: not handling a signal", __FUNCTION__);
-	arm_ctx_clear_status(ctx, arm_ctx_handler);
+int file_can_open_for_read(char *file_name);
+int file_can_open_for_write(char *file_name);
 
-	/* Free signal frame */
-	mem_unmap(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE);
-	arm_sys_debug("  signal handler return code at 0x%x deallocated\n",
-		ctx->signal_mask_table->pretcode);
+int file_read_line(FILE *f, char *line, int size);
+FILE *file_create_temp(char *ret_path, int ret_path_size);
 
-	/* Restore saved register file and free backup */
-	arm_regs_copy(ctx->regs, ctx->signal_mask_table->regs);
-	arm_regs_free(ctx->signal_mask_table->regs);
-}
+void file_full_path(char *file_name, char *default_path, char *full_path, int size);
+
+#endif
+

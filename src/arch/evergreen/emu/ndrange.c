@@ -22,8 +22,10 @@
 
 #include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
+#include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/timer.h>
 
 #include "bin-file.h"
