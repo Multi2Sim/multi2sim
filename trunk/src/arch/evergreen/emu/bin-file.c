@@ -20,8 +20,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/string.h>
 
 #include "bin-file.h"
 #include "emu.h"
@@ -44,7 +45,7 @@ struct pt_note_header_t
 };
 
 
-static struct string_map_t enc_dict_machine_map =
+static struct str_map_t enc_dict_machine_map =
 {
 	20, {
 		{ "R600",	0 },
@@ -71,7 +72,7 @@ static struct string_map_t enc_dict_machine_map =
 };
 
 
-static struct string_map_t pt_note_type_map = {
+static struct str_map_t pt_note_type_map = {
 	17, {
 		{ "ELF_NOTE_ATI_PROGINFO", 1 },
 		{ "ELF_NOTE_ATI_INPUTS", 2 },
@@ -94,7 +95,7 @@ static struct string_map_t pt_note_type_map = {
 };
 
 
-static struct string_map_t prog_info_entry_map = {
+static struct str_map_t prog_info_entry_map = {
 	129, {
 		{ "mmSQ_PGM_START_LS",			0xa234 },
 		{ "mmSQ_PGM_RESOURCES_LS",		0xa235 },
@@ -276,7 +277,7 @@ static void evg_bin_file_read_note_header(struct evg_bin_file_t *bin_file,
 		fatal("%s: error decoding note description", bin_file->elf_file->path);
 
 	/* Debug */
-	note_type_str = map_value(&pt_note_type_map, header->type);
+	note_type_str = str_map_value(&pt_note_type_map, header->type);
 	elf_debug("  note: type=%d (%s), descsz=%d\n",
 		header->type, note_type_str, header->descsz);
 		
@@ -301,7 +302,7 @@ static void evg_bin_file_read_note_header(struct evg_bin_file_t *bin_file,
 		{
 			prog_info_entry = desc + i * sizeof(struct pt_note_prog_info_entry_t);
 			elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
-				prog_info_entry->address, map_value(&prog_info_entry_map,
+				prog_info_entry->address, str_map_value(&prog_info_entry_map,
 				prog_info_entry->address), prog_info_entry->value);
 
 			/* Analyze entry */
@@ -580,7 +581,7 @@ static void evg_bin_file_read_enc_dict(struct evg_bin_file_t *bin_file)
 		enc_dict_entry = list_get(bin_file->enc_dict, i);
 		enc_dict_entry_header = enc_dict_entry->header;
 		snprintf(machine_str, sizeof(machine_str), "%d (%s)",
-			enc_dict_entry_header->d_machine, map_value(&enc_dict_machine_map,
+			enc_dict_entry_header->d_machine, str_map_value(&enc_dict_machine_map,
 			enc_dict_entry_header->d_machine - 1));
 		elf_debug("%3d %-15s 0x%-8x 0x%-8x %-10d 0x%-8x\n",
 			i, machine_str,

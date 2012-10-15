@@ -17,6 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <ctype.h>
+#include <string.h>
+
+#include <lib/util/debug.h>
+#include <lib/util/elf-format.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
+
 #include "asm.h"
 
 
@@ -1562,7 +1571,7 @@ void arm_inst_dump_REGS(char **inst_str_ptr, int *inst_str_size,
 	{
 		if(reg_list & (i))
 		{
-			str_printf(inst_str_ptr, inst_str_size, "r%d ",log_base2(i));
+			str_printf(inst_str_ptr, inst_str_size, "r%d ", log_base2(i));
 		}
 	}
 
@@ -1823,6 +1832,7 @@ void arm_elf_function_symbol(struct elf_file_t *elf_file, unsigned int inst_addr
 {
 	unsigned int i;
 	struct elf_symbol_t *symbol;
+
 	for ( i = 0; i < list_count(elf_file->symbol_table); i++)
 	{
 		symbol = (struct elf_symbol_t* )list_get(elf_file->symbol_table, i);

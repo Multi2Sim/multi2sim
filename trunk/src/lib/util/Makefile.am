@@ -5,6 +5,9 @@ libutil_a_SOURCES = \
 	bin-config.c \
 	bin-config.h \
 	\
+	bit-map.c \
+	bit-map.h \
+	\
 	buffer.c \
 	buffer.h \
 	\
@@ -16,6 +19,9 @@ libutil_a_SOURCES = \
 	\
 	elf-format.c \
 	elf-format.h \
+	\
+	file.c \
+	file.h \
 	\
 	hash-table.c \
 	hash-table.h \
@@ -37,6 +43,9 @@ libutil_a_SOURCES = \
 	\
 	repos.c \
 	repos.h \
+	\
+	string.c \
+	string.h \
 	\
 	timer.c \
 	timer.h

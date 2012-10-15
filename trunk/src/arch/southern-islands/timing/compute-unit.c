@@ -18,6 +18,7 @@
  */
 
 #include <lib/esim/trace.h>
+#include <lib/util/misc.h>
 
 #include "timing.h"
 

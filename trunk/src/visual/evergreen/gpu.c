@@ -148,8 +148,8 @@ static void vi_evg_gpu_new_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t
 	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
 	work_group_id = vi_trace_line_get_symbol_int(trace_line, "wg");
 	wavefront_id = vi_trace_line_get_symbol_int(trace_line, "wf");
-	cat = map_string(&vi_evg_inst_cat_map, vi_trace_line_get_symbol(trace_line, "cat"));
-	stage = map_string(&vi_evg_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+	cat = str_map_string(&vi_evg_inst_cat_map, vi_trace_line_get_symbol(trace_line, "cat"));
+	stage = str_map_string(&vi_evg_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
 	asm_code = vi_trace_line_get_symbol(trace_line, "asm");
 	asm_code_x = vi_trace_line_get_symbol(trace_line, "x");
 	asm_code_y = vi_trace_line_get_symbol(trace_line, "y");
@@ -196,7 +196,7 @@ static void vi_evg_gpu_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t *tr
 	/* Fields */
 	inst_id = vi_trace_line_get_symbol_long_long(trace_line, "id");
 	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
-	stage = map_string(&vi_evg_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+	stage = str_map_string(&vi_evg_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
 
 	/* Get compute unit */
 	compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);

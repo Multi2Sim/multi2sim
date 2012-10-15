@@ -23,9 +23,9 @@
 #include <time.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "context.h"

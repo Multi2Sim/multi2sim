@@ -22,8 +22,9 @@
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/string.h>
 
 #include "buffer.h"
 #include "link.h"

@@ -17,21 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MISC_H
-#define MISC_H
+#ifndef LIB_UTIL_MISC_H
+#define LIB_UTIL_MISC_H
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdarg.h>
 #include <stdio.h>
 
-#include <lib/util/list.h>
-
-
-/* Maximum string size */
-#define MAX_LONG_STRING_SIZE (1024 * 8)
-#define MAX_STRING_SIZE  200
-#define MAX_PATH_SIZE  200
 
 /* Min, Max */
 #ifndef MIN
@@ -175,122 +165,6 @@
 
 /* Safe pointer assignment for values returned in arguments passed by reference */
 #define PTR_ASSIGN(PTR, VALUE) if (PTR) *(PTR) = (VALUE)
-
-
-
-
-/*
- * Bitmap functions
- */
-
-struct bit_map_t;
-
-struct bit_map_t *bit_map_create(unsigned int size);
-void bit_map_free(struct bit_map_t *bit_map);
-
-void bit_map_set(struct bit_map_t *bit_map, unsigned int where, unsigned int size,
-	unsigned int value);
-unsigned int bit_map_get(struct bit_map_t *bit_map, unsigned int where, unsigned int size);
-int bit_map_count_ones(struct bit_map_t *bit_map, unsigned int where, unsigned int size);
-void bit_map_copy(struct bit_map_t *dst, unsigned int dst_where,
-	struct bit_map_t *src, unsigned int src_where, unsigned int size);
-void bit_map_dump(struct bit_map_t *bit_map, unsigned int where, unsigned int size, FILE *f);
-
-
-
-
-/*
- * String Maps
- */
-
-struct string_map_t
-{
-	int count;
-	struct {
-		char *string;
-		int value;
-	} map[];
-};
-
-int map_string(struct string_map_t *map, char *string);
-int map_string_case(struct string_map_t *map, char *s);
-char *map_value(struct string_map_t *map, int value);
-void map_value_string(struct string_map_t *map, int value, char *out, int length);
-void map_flags(struct string_map_t *map, int flags, char *out, int length);
-
-
-
-
-/*
- * Strings
- */
-
-void strccpy(char *dest, char *src, int size);
-void strccat(char *dest, char *src);
-void strdump(char *dest, char *src, int size);
-
-void str_single_spaces(char *dest, char *src, int size);
-
-int str_suffix(char *str, char *suffix);
-int str_prefix(char *str, char *prefix);
-
-void str_substr(char *dest, int dest_size, char *src, int src_pos, int src_count);
-
-void str_token(char *dest, int dest_size, char *src, int index, char *delim);
-
-/* Convert a string into an integer. The string can represent a number in
- * decimal or hexadecimal format, prepended with '0x'. */
-int str_to_int(char *str);
-
-/* Dump formatted string into a buffer with a specific size. Its size is then
- * decreased, and the buffer is advanced to the end of the dumped string.
- * This function is useful for being used in other functions that dump
- * several strings into a buffer, with the header
- *   obj_dump(struct obj_t *obj, char *buf, int size); */
-void str_printf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
-
-void str_read_from_file(FILE *f, char *buf, int buf_size);
-void str_write_to_file(FILE *f, char *buf);
-
-/* Dynamic creation and destruction of strings.
- * Function 'str_set' returns a copy of 'new_str', and frees the old string in
- * argument 'old_str' if it is not NULL.
- * Funciton 'str_free' frees the string in 'str' if it is not NULL. */
-char *str_set(char *old_str, char *new_str);
-char *str_free(char *str);
-
-
-
-/*
- * Token list
- */
-
-struct list_t *str_token_list_create(char *str, char *delim);
-void str_token_list_free(struct list_t *token_list);
-
-void str_token_list_shift(struct list_t *token_list);
-char *str_token_list_first(struct list_t *token_list);
-void str_token_list_dump(struct list_t *token_list, FILE *f);
-
-
-
-
-/*
- * File management
- */
-
-
-FILE *file_open_for_read(char *file_name);
-FILE *file_open_for_write(char *file_name);
-void file_close(FILE *f);
-
-int file_can_open_for_read(char *file_name);
-int file_can_open_for_write(char *file_name);
-
-int file_read_line(FILE *f, char *line, int size);
-FILE *file_create_temp(char *ret_path, int ret_path_size);
-
-void file_full_path(char *file_name, char *default_path, char *full_path, int size);
 
 
 

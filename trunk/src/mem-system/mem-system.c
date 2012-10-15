@@ -20,8 +20,10 @@
 
 #include <arch/evergreen/timing/timing.h>
 #include <lib/esim/esim.h>
-#include <lib/util/misc.h>
 #include <lib/util/debug.h>
+#include <lib/util/file.h>
+#include <lib/util/list.h>
+#include <lib/util/string.h>
 #include <network/network.h>
 
 #include "cache.h"
@@ -236,7 +238,7 @@ void mem_system_dump_report()
 		if (cache) {
 			fprintf(f, "Sets = %d\n", cache->num_sets);
 			fprintf(f, "Assoc = %d\n", cache->assoc);
-			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
+			fprintf(f, "Policy = %s\n", str_map_value(&cache_policy_map, cache->policy));
 		}
 		fprintf(f, "BlockSize = %d\n", mod->block_size);
 		fprintf(f, "Latency = %d\n", mod->latency);

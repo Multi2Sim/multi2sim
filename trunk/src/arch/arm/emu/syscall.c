@@ -36,6 +36,9 @@
 #include <sys/times.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "context.h"
@@ -154,7 +157,7 @@ static int arm_sys_call_freq[arm_sys_code_count + 1];
 #define SIM_ERRNO_MAX		34
 
 
-static struct string_map_t arm_sys_error_code_map =
+static struct str_map_t arm_sys_error_code_map =
 {
 	34,
 	{
@@ -274,7 +277,7 @@ void arm_sys_call(struct arm_ctx_t *ctx)
 	/* Debug */
 	arm_sys_debug("  ret=(%d, 0x%x)", err, err);
 	if (err < 0 && err >= -SIM_ERRNO_MAX)
-		arm_sys_debug(", errno=%s)", map_value(&arm_sys_error_code_map, -err));
+		arm_sys_debug(", errno=%s)", str_map_value(&arm_sys_error_code_map, -err));
 	arm_sys_debug("\n");
 }
 
@@ -487,7 +490,7 @@ static int arm_sys_write_impl(struct arm_ctx_t *ctx)
  * System call 'open' (code 5)
  */
 
-static struct string_map_t arm_sys_open_flags_map =
+static struct str_map_t arm_sys_open_flags_map =
 {
 	16, {
 		{ "O_RDONLY",        00000000 },
@@ -540,7 +543,7 @@ static int arm_sys_open_impl(struct arm_ctx_t *ctx)
 	arm_sys_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
 		file_name, flags, mode);
 	arm_sys_debug("  fullpath='%s'\n", full_path);
-	map_flags(&arm_sys_open_flags_map, flags, flags_str, sizeof flags_str);
+	str_map_flags(&arm_sys_open_flags_map, flags, flags_str, sizeof flags_str);
 	arm_sys_debug("  flags=%s\n", flags_str);
 
 	/* Virtual files */
@@ -701,7 +704,7 @@ static int arm_sys_gettimeofday_impl(struct arm_ctx_t *ctx)
 
 #define SYS_MMAP_BASE_ADDRESS  0xb7fb0000
 
-static struct string_map_t sys_mmap_prot_map =
+static struct str_map_t sys_mmap_prot_map =
 {
 	6, {
 		{ "PROT_READ",       0x1 },
@@ -713,7 +716,7 @@ static struct string_map_t sys_mmap_prot_map =
 	}
 };
 
-static struct string_map_t sys_mmap_flags_map =
+static struct str_map_t sys_mmap_flags_map =
 {
 	11, {
 		{ "MAP_SHARED",      0x01 },
@@ -969,8 +972,8 @@ static int arm_sys_mmap2_impl(struct arm_ctx_t *ctx)
 	/* Debug */
 	arm_sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, guest_fd=%d, offset=0x%x\n",
 		addr, len, prot, flags, guest_fd, offset);
-	map_flags(&sys_mmap_prot_map, prot, prot_str, MAX_STRING_SIZE);
-	map_flags(&sys_mmap_flags_map, flags, flags_str, MAX_STRING_SIZE);
+	str_map_flags(&sys_mmap_prot_map, prot, prot_str, MAX_STRING_SIZE);
+	str_map_flags(&sys_mmap_flags_map, flags, flags_str, MAX_STRING_SIZE);
 	arm_sys_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
 
 	/* System calls 'mmap' and 'mmap2' only differ in the interpretation of

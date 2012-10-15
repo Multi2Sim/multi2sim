@@ -30,7 +30,7 @@ void strccpy(char *dest, char *src, int size)
 }
 
 static char *unknown = "<unknown>";
-char *map_value(struct string_map_t *map, int value)
+char *str_map_value(struct str_map_t *map, int value)
 {
 	int i;
 	for (i = 0; i < map->count; i++)
@@ -40,7 +40,7 @@ char *map_value(struct string_map_t *map, int value)
 }
 
 
-void map_value_string(struct string_map_t *map, int value, char *buf, int size)
+void str_map_value_buf(struct str_map_t *map, int value, char *buf, int size)
 {
 	int i;
 	for (i = 0; i < map->count; i++) {
@@ -53,7 +53,7 @@ void map_value_string(struct string_map_t *map, int value, char *buf, int size)
 }
 
 
-void map_flags(struct string_map_t *map, int flags, char *out, int size)
+void str_map_flags(struct str_map_t *map, int flags, char *out, int size)
 {
 	int i;
 	char *comma = "", temp[size];
@@ -62,7 +62,7 @@ void map_flags(struct string_map_t *map, int flags, char *out, int size)
 	for (i = 0; i < 32; i++) {
 		if (flags & (1U << i)) {
 			strccat(out, comma);
-			map_value_string(map, 1U << i, temp, size);
+			str_map_value_buf(map, 1U << i, temp, size);
 			strccat(out, temp);
 			comma = "|";
 		}

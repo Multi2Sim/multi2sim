@@ -75,9 +75,9 @@ enum vi_x86_inst_stage_t
 	vi_x86_inst_stage_count
 };
 
-extern struct string_map_t vi_x86_inst_stage_map;
-extern struct string_map_t vi_x86_inst_stage_name_map;
-extern struct string_map_t vi_x86_inst_stage_color_map;
+extern struct str_map_t vi_x86_inst_stage_map;
+extern struct str_map_t vi_x86_inst_stage_name_map;
+extern struct str_map_t vi_x86_inst_stage_color_map;
 
 struct vi_x86_inst_t
 {

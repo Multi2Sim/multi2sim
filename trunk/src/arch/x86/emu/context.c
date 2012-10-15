@@ -23,6 +23,7 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/misc.h>
 #include <lib/util/timer.h>
 #include <mem-system/mem-system.h>
 #include <mem-system/memory.h>
@@ -67,7 +68,7 @@ static char *help_x86_ctx_ipc_report =
 	"\n";
 
 
-static struct string_map_t x86_ctx_status_map =
+static struct str_map_t x86_ctx_status_map =
 {
 	16, {
 		{ "running",      x86_ctx_running },
@@ -267,7 +268,7 @@ void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 	char status_str[MAX_STRING_SIZE];
 
 	fprintf(f, "  pid=%d\n", ctx->pid);
-	map_flags(&x86_ctx_status_map, ctx->status, status_str, sizeof status_str);
+	str_map_flags(&x86_ctx_status_map, ctx->status, status_str, sizeof status_str);
 	fprintf(f, "  status=%s\n", status_str);
 	if (!ctx->parent)
 		fprintf(f, "  parent=(null)\n");
@@ -420,7 +421,7 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 	if (debug_status(x86_ctx_debug_category) && (status_diff & ~x86_ctx_spec_mode))
 	{
 		char sstatus[200];
-		map_flags(&x86_ctx_status_map, ctx->status, sstatus, 200);
+		str_map_flags(&x86_ctx_status_map, ctx->status, sstatus, 200);
 		x86_ctx_debug("ctx %d changed status to %s\n",
 			ctx->pid, sstatus);
 	}

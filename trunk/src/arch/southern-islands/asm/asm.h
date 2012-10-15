@@ -72,21 +72,21 @@ enum si_fmt_enum
 
 /* TODO Replace with SI maps */
 /*
-extern struct string_map_t si_pv_map;
-extern struct string_map_t si_alu_map;
-extern struct string_map_t si_bank_swizzle_map;
-extern struct string_map_t si_rat_inst_map;
-extern struct string_map_t si_cf_cond_map;
-extern struct string_map_t si_src_sel_map;
-extern struct string_map_t si_dst_sel_map;
+extern struct str_map_t si_pv_map;
+extern struct str_map_t si_alu_map;
+extern struct str_map_t si_bank_swizzle_map;
+extern struct str_map_t si_rat_inst_map;
+extern struct str_map_t si_cf_cond_map;
+extern struct str_map_t si_src_sel_map;
+extern struct str_map_t si_dst_sel_map;
 
-extern struct string_map_t si_fmt_vtx_fetch_type_map;
-extern struct string_map_t si_fmt_vtx_data_format_map;
-extern struct string_map_t si_fmt_vtx_num_format_map;
-extern struct string_map_t si_fmt_vtx_format_comp_map;
-extern struct string_map_t si_fmt_vtx_srf_mode_map;
-extern struct string_map_t si_fmt_vtx_endian_swap_map;
-extern struct string_map_t si_fmt_lds_op_map;
+extern struct str_map_t si_fmt_vtx_fetch_type_map;
+extern struct str_map_t si_fmt_vtx_data_format_map;
+extern struct str_map_t si_fmt_vtx_num_format_map;
+extern struct str_map_t si_fmt_vtx_format_comp_map;
+extern struct str_map_t si_fmt_vtx_srf_mode_map;
+extern struct str_map_t si_fmt_vtx_endian_swap_map;
+extern struct str_map_t si_fmt_lds_op_map;
 */
 
 
@@ -307,7 +307,7 @@ struct si_fmt_exp_t
 
 
 
-extern struct string_map_t si_inst_category_map;
+extern struct str_map_t si_inst_category_map;
 
 enum si_inst_category_enum
 {

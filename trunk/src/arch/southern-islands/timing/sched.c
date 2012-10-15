@@ -20,7 +20,7 @@
 #include "timing.h"
 
 
-struct string_map_t si_gpu_sched_policy_map =
+struct str_map_t si_gpu_sched_policy_map =
 {
 		2, {
 			{ "RoundRobin", si_gpu_sched_round_robin },

@@ -17,30 +17,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/util/debug.h>
-#include <mem-system/memory.h>
+#ifndef LIB_UTIL_BIT_MAP_H
+#define LIB_UTIL_BIT_MAP_H
 
-#include "context.h"
-#include "signal.h"
-#include "regs.h"
-#include "syscall.h"
+#include <stdio.h>
 
 
+struct bit_map_t;
 
-/* Return from a signal handler */
-void arm_signal_handler_return(struct arm_ctx_t *ctx)
-{
-	/* Change context status */
-	if (!arm_ctx_get_status(ctx, arm_ctx_handler))
-		fatal("%s: not handling a signal", __FUNCTION__);
-	arm_ctx_clear_status(ctx, arm_ctx_handler);
+struct bit_map_t *bit_map_create(unsigned int size);
+void bit_map_free(struct bit_map_t *bit_map);
 
-	/* Free signal frame */
-	mem_unmap(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE);
-	arm_sys_debug("  signal handler return code at 0x%x deallocated\n",
-		ctx->signal_mask_table->pretcode);
+void bit_map_set(struct bit_map_t *bit_map, unsigned int where, unsigned int size,
+	unsigned int value);
+unsigned int bit_map_get(struct bit_map_t *bit_map, unsigned int where, unsigned int size);
+int bit_map_count_ones(struct bit_map_t *bit_map, unsigned int where, unsigned int size);
+void bit_map_copy(struct bit_map_t *dst, unsigned int dst_where,
+	struct bit_map_t *src, unsigned int src_where, unsigned int size);
+void bit_map_dump(struct bit_map_t *bit_map, unsigned int where, unsigned int size, FILE *f);
 
-	/* Restore saved register file and free backup */
-	arm_regs_copy(ctx->regs, ctx->signal_mask_table->regs);
-	arm_regs_free(ctx->signal_mask_table->regs);
-}
+#endif
+

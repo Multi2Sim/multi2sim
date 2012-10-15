@@ -22,9 +22,9 @@
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <lib/util/misc.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
+#include <lib/util/file.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 #include <mem-system/mmu.h>

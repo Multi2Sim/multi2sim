@@ -21,10 +21,12 @@
 #include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/misc.h>
+#include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 #include "emu.h"
 #include "isa.h"

@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/util/misc.h>
+
 #include <visual-memory.h>
 
 
@@ -545,7 +547,7 @@ static GtkWidget *accesses_label_get_widget(struct accesses_label_t *accesses_la
  */
 
 
-static struct string_map_t vi_mod_block_state_map =
+static struct str_map_t vi_mod_block_state_map =
 {
 	6, {
 		{ "I", 0 },
@@ -957,7 +959,7 @@ void vi_mod_widget_refresh(struct vi_mod_widget_t *mod_widget)
 			assert(IN_RANGE(set, 0, mod->num_sets - 1));
 			assert(IN_RANGE(way, 0, mod->assoc - 1));
 			block = &mod->blocks[set * mod->assoc + way];
-			state_str = map_value(&vi_mod_block_state_map, block->state);
+			state_str = str_map_value(&vi_mod_block_state_map, block->state);
 
 			/* Tag label */
 			snprintf(str, sizeof str, "0x%x (%s)", block->tag, state_str);
