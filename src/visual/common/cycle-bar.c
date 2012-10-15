@@ -17,9 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/util/misc.h>
+#include <stdlib.h>
 
-#include <visual-common.h>
+#include <lib/util/debug.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
+
+#include "cycle-bar.h"
+#include "state.h"
 
 
 static char cycle_bar_back_single_path[MAX_PATH_SIZE];

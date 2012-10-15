@@ -21,7 +21,9 @@
 #ifndef VISUAL_MEMORY_H
 #define VISUAL_MEMORY_H
 
-#include <visual-common.h>
+#include <gtk/gtk.h>
+
+#include <visual/common/visual.h>
 
 
 
@@ -137,6 +139,7 @@ struct vi_mod_t
 	struct hash_table_t *access_table;
 };
 
+struct vi_trace_line_t;
 struct vi_mod_t *vi_mod_create(struct vi_trace_line_t *trace_line);
 void vi_mod_free(struct vi_mod_t *mod);
 
