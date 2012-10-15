@@ -306,6 +306,9 @@ int clrt_object_release(void *object, enum clrt_object_type_t type, int err_code
 
 
 
+
+
+
 /*
  * Private Command Queue Items
  */
@@ -338,10 +341,38 @@ void clrt_command_queue_enqueue(struct _cl_command_queue *queue, struct clrt_que
  * Event function declrations
  */
 
-void clrt_event_set_status(struct _cl_event *event, int status);
+void clrt_event_set_status(struct _cl_event *event, cl_int status);
 struct _cl_event *clrt_event_create(struct _cl_command_queue *queue);
 int clrt_event_wait_list_check(unsigned int num_events, struct _cl_event * const *event_list);
 
+/*
+ * Helper Functions 
+ */
+
+/* populate a parameter as a response to OpenCL's many clGet*Info functions */
+cl_int populateParameter(
+	const void *value, 
+	size_t actual, 
+	size_t param_value_size, 
+	void *param_value, 
+	size_t *param_value_size_ret);
+
+/* get the number of properties in a properties list */
+size_t getPropertiesCount(const void *properties, size_t prop_size);
+
+/* copy a properties list */
+void copyProperties(void *dest, const void *src, size_t size, size_t numObjs);
+
+
+/* Platform strings (defined in platform.c) */
+extern const char *FULL_PROFILE;
+extern const char *VERSION;
+extern const char *NAME;
+extern const char *VENDOR;
+extern const char *EXTENSIONS;
+extern const char *DEVICE_NAME;
+extern const char *DRIVER_VERSION;
+extern const char *DEVICE_VERSION;
 
 
 
@@ -375,6 +406,8 @@ struct _cl_context
 {
 	int num_devices;
 	struct _cl_device_id **devices;
+	size_t prop_count;
+	cl_context_properties *props;
 };
 
 
@@ -383,6 +416,7 @@ struct _cl_command_queue
 	struct _cl_device_id *device;
 	struct clrt_queue_item_t *head;
 	struct clrt_queue_item_t *tail;
+	cl_command_queue_properties properties;
 	pthread_t queue_thread;
 	pthread_mutex_t lock;
 	pthread_cond_t cond_process;
@@ -418,11 +452,18 @@ struct _cl_kernel
 
 struct _cl_event
 {
-	int changed;
-	int status;
+//	int changed;
+	cl_int status;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 	struct _cl_command_queue *queue;
+	struct _cl_context *context;
+
+	/* Profiling Information */
+	cl_ulong time_queued;
+	cl_ulong time_submit;
+	cl_ulong time_start;
+	cl_ulong time_end;
 };
 
 

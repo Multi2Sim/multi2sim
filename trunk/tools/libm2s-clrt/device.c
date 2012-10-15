@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <string.h>
 #include <pthread.h>
+#include <limits.h>
 
 #include <m2s-clrt.h>
 
@@ -302,6 +303,50 @@ void *clrt_device_core_proc(void *ptr)
 }
 
 
+/* Used for clGet*Info functions, does standard checking */
+cl_int populateParameter(const void *value, size_t actual, size_t param_value_size, void *param_value, size_t *param_value_size_ret)
+{
+	if (param_value && actual > param_value_size)
+		return CL_INVALID_VALUE;
+	if (param_value_size_ret)
+		*param_value_size_ret = actual;
+	if (param_value)
+		memcpy(param_value, value, actual);
+	return CL_SUCCESS;
+}
+
+int dataIsZero(const char *data, size_t size)
+{
+	int i;
+	for (i = 0; i < size; i++)
+		if (data[i])
+			return 0;
+	return 1;
+}
+
+size_t getPropertiesCount(const void *properties, size_t prop_size)
+{
+	size_t size = 1; // There is always a 0 at the end.
+	const char *prop = (const char *)properties;
+	while (!dataIsZero(prop + size * prop_size, prop_size))
+		size++;
+	return size;
+}
+
+void copyProperties(void *dest, const void *src, size_t size, size_t numObjs)
+{
+	memcpy(dest, src, size * numObjs);
+}
+
+
+/* Determine the number of CPUs present */
+cl_uint getComputeUnitCount(cl_device_id device)
+{
+	if (device != m2s_device)
+		return 0;
+	else
+		return 4; /* TODO: Fix */
+}
 
 
 /*
@@ -338,7 +383,7 @@ cl_int clGetDeviceIDs(
 		if (!m2s_device)
 			fatal("%s: out of memory", __FUNCTION__);
 
-		m2s_device->num_cores = 4; /*FIXME*/
+		m2s_device->num_cores = getComputeUnitCount(m2s_device);
 		m2s_device->num_kernels = 0;
 		m2s_device->num_done = 0;
 		m2s_device->exec = NULL;
@@ -385,6 +430,8 @@ cl_int clGetDeviceIDs(
 }
 
 
+
+
 cl_int clGetDeviceInfo(
 	cl_device_id device,
 	cl_device_info param_name,
@@ -392,7 +439,607 @@ cl_int clGetDeviceInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	if (device != m2s_device)
+		return CL_INVALID_DEVICE;
+
+	switch (param_name)
+	{
+		case CL_DEVICE_ADDRESS_BITS:
+		{
+			cl_int bits = 8 * sizeof (void *);
+			return populateParameter(
+				&bits, 
+				sizeof bits, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_AVAILABLE:
+		{
+			cl_bool available = CL_TRUE;
+			return populateParameter(
+				&available, 
+				sizeof available, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_COMPILER_AVAILABLE:
+		{
+			cl_bool compiler = CL_FALSE;
+			return populateParameter(
+				&compiler, 
+				sizeof compiler, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		/* 0x1032 reserved for CL_DEVICE_DOUBLE_FP_CONFIG */
+		case 0x1032:
+		{
+			cl_device_fp_config fp_config = 
+				CL_FP_DENORM | 
+				CL_FP_INF_NAN | 
+				CL_FP_ROUND_TO_NEAREST | 
+				CL_FP_ROUND_TO_ZERO | 
+				CL_FP_ROUND_TO_INF | 
+				CL_FP_FMA | 
+				CL_FP_SOFT_FLOAT;
+
+			return populateParameter(
+				&fp_config, 
+				sizeof fp_config, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_ENDIAN_LITTLE:
+		{
+			cl_bool little = CL_TRUE;
+			return populateParameter(
+				&little, 
+				sizeof little, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_ERROR_CORRECTION_SUPPORT:
+		{
+			cl_bool correction = CL_FALSE;
+			return populateParameter(
+				&correction, 
+				sizeof correction, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_EXECUTION_CAPABILITIES:
+		{
+			cl_device_exec_capabilities capable = CL_EXEC_KERNEL;
+			return populateParameter(
+				&capable, 
+				sizeof capable, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_EXTENSIONS:
+			return populateParameter(
+				EXTENSIONS, 
+				strlen(EXTENSIONS) + 1, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+
+		case CL_DEVICE_GLOBAL_MEM_CACHE_SIZE:
+		{	
+			cl_int size = 0;
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_GLOBAL_MEM_CACHE_TYPE:
+		{
+			cl_device_mem_cache_type cache_type = CL_READ_WRITE_CACHE;
+			return populateParameter(
+				&cache_type, 
+				sizeof cache_type, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE:
+		{
+			cl_uint line_size = 0;
+			return populateParameter(
+				&line_size, 
+				sizeof line_size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_GLOBAL_MEM_SIZE:
+		{	
+			cl_int size = 0;
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+//		case CL_DEVICE_HALF_FP_CONFIG:
+//			return CL_SUCCESS;
+
+		case CL_DEVICE_HOST_UNIFIED_MEMORY:
+		{
+			cl_bool unified = CL_TRUE;
+			return populateParameter(
+				&unified, 
+				sizeof unified, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_IMAGE_SUPPORT:
+		{
+			cl_bool images = CL_FALSE;
+			return populateParameter(
+				&images, 
+				sizeof images, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_IMAGE2D_MAX_HEIGHT:
+		{	
+			cl_int size = 0;
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_IMAGE2D_MAX_WIDTH:
+		{	
+			cl_int size = 0;
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_IMAGE3D_MAX_DEPTH:
+		{	
+			cl_int size = 0;
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_IMAGE3D_MAX_HEIGHT:
+		{	
+			cl_int size = 0;
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_IMAGE3D_MAX_WIDTH:
+		{	
+			cl_int size = 0;
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_LOCAL_MEM_SIZE:
+		{
+			cl_ulong local = INT_MAX;
+			return populateParameter(
+				&local, 
+				sizeof local, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_LOCAL_MEM_TYPE:
+		{
+			cl_device_local_mem_type mem_type = CL_GLOBAL;
+			return populateParameter(
+				&mem_type, 
+				sizeof mem_type, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_CLOCK_FREQUENCY:
+		{	
+			cl_int mhz = 0;
+			return populateParameter(
+				&mhz, 
+				sizeof mhz, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_COMPUTE_UNITS:
+		{	
+			cl_int units = getComputeUnitCount(device);
+			return populateParameter(
+				&units, 
+				sizeof units, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_CONSTANT_ARGS:
+		{
+			cl_uint consts = 0;
+			return populateParameter(
+				&consts, 
+				sizeof consts, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE:
+		{
+			cl_ulong size = 0;
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_MEM_ALLOC_SIZE:
+		{
+			cl_ulong size = INT_MAX;	
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_PARAMETER_SIZE:
+		{
+			size_t size = sizeof (cl_long16);
+			return populateParameter(
+				&size, 
+				sizeof size, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_READ_IMAGE_ARGS:
+		{
+			cl_uint images = 0;
+			return populateParameter(
+				&images, 
+				sizeof images, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_SAMPLERS:
+		{	
+			cl_int samplers = 0;
+			return populateParameter(
+				&samplers, 
+				sizeof samplers, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_WORK_GROUP_SIZE:
+		{
+			size_t work_group_size = 1024;
+			return populateParameter(&work_group_size, 
+			                         sizeof work_group_size, 
+			                         param_value_size, 
+			                         param_value, 
+			                         param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS:
+		{
+			cl_uint dimensions = 3;
+			return populateParameter(&dimensions, 
+			                         sizeof dimensions, 
+			                         param_value_size, 
+			                         param_value, 
+			                         param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_WORK_ITEM_SIZES:
+		{
+			size_t max_work_items[] = {1024, 1024, 1024};
+			return populateParameter(&max_work_items,
+			                         sizeof max_work_items,
+			                         param_value_size,
+			                         param_value,
+			                         param_value_size_ret);
+		}
+
+		case CL_DEVICE_MAX_WRITE_IMAGE_ARGS:
+		{
+			cl_uint images = 0;
+			return populateParameter(&images, sizeof images, param_value_size, param_value, param_value_size_ret);
+		}
+
+		case CL_DEVICE_MEM_BASE_ADDR_ALIGN:
+		{
+			cl_uint base = sizeof (cl_float4);
+			return populateParameter(&base,
+						 sizeof base,
+						 param_value_size,
+						 param_value,
+						 param_value_size_ret);
+		}
+
+		case CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE:
+		{
+			cl_uint align = sizeof (cl_float4);
+			return populateParameter(&align,
+						 sizeof align,
+						 param_value_size,
+						 param_value,
+						 param_value_size_ret);
+		}
+
+		case CL_DEVICE_NAME:
+			return populateParameter(
+				DEVICE_NAME, 
+				strlen(DEVICE_NAME) + 1, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+
+		case CL_DEVICE_OPENCL_C_VERSION:
+			return populateParameter(
+				VERSION, 
+				strlen(VERSION) + 1, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+
+		case CL_DEVICE_PLATFORM:
+			return populateParameter(
+				&m2s_platform, 
+				sizeof m2s_platform, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+
+		case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR:
+		case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR:
+		{
+			cl_uint width = 16;
+			return populateParameter(
+				&width, 
+				sizeof width, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT:
+		case CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT:
+		{
+			cl_uint width = 16 / sizeof (cl_short);
+			return populateParameter(
+				&width, 
+				sizeof width, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT:
+		case CL_DEVICE_NATIVE_VECTOR_WIDTH_INT:
+		{
+			cl_uint width = 16 / sizeof (cl_int);
+			return populateParameter(
+				&width, 
+				sizeof width, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG:
+		case CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG:
+		{
+			cl_uint width = 16 / sizeof (cl_long);
+			return populateParameter(
+				&width, 
+				sizeof width, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT:
+		case CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT:
+		{
+			cl_uint width = 16 / sizeof (cl_float);
+			return populateParameter(
+				&width, 
+				sizeof width, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE:
+		case CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE:
+		{
+			cl_uint width = 0;
+			return populateParameter(
+				&width, 
+				sizeof width, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF:
+		case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF:
+		{
+			cl_uint width = 0;
+			return populateParameter(
+				&width, 
+				sizeof width, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_PROFILE:
+		{
+			return populateParameter(
+				FULL_PROFILE, 
+				strlen(FULL_PROFILE) + 1, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_PROFILING_TIMER_RESOLUTION:
+		{
+			size_t resolution = 0;
+			return populateParameter(
+				&resolution, 
+				sizeof resolution, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+/* #define CL_DEVICE_QUEUE_PROPERTIES                  0x102A */
+		case CL_DEVICE_QUEUE_PROPERTIES:
+		{
+			cl_command_queue_properties props = CL_QUEUE_PROFILING_ENABLE;
+			return populateParameter(
+				&props, 
+				sizeof props, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_SINGLE_FP_CONFIG:
+		{
+			cl_device_fp_config fp_config = 
+				CL_FP_DENORM | 
+				CL_FP_INF_NAN | 
+				CL_FP_ROUND_TO_NEAREST | 
+				CL_FP_ROUND_TO_ZERO | 
+				CL_FP_ROUND_TO_INF | 
+				CL_FP_FMA | 
+				CL_FP_SOFT_FLOAT;
+
+			return populateParameter(
+				&fp_config, 
+				sizeof fp_config, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_TYPE:
+		{
+			cl_device_type device_type = CL_DEVICE_TYPE_CPU;
+			return populateParameter(
+				&device_type, 
+				sizeof device_type, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+
+		}
+
+		case CL_DEVICE_VENDOR:
+		return populateParameter(
+				VENDOR, 
+				strlen(VENDOR) + 1, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+
+		case CL_DEVICE_VENDOR_ID:
+		{
+			cl_uint vendor_id = 0;
+			return populateParameter(	
+				&vendor_id, 
+				sizeof vendor_id, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+		}
+
+		case CL_DEVICE_VERSION:
+			return populateParameter(
+				DEVICE_VERSION, 
+				strlen(DEVICE_VERSION) + 1, 
+				param_value_size, 
+				param_value, 
+				param_value_size_ret);
+
+		case CL_DRIVER_VERSION:
+			return populateParameter(
+					DRIVER_VERSION, 
+					strlen(DRIVER_VERSION) + 1, 
+					param_value_size, 
+					param_value, 
+					param_value_size_ret);
+
+		default:
+			EVG_OPENCL_ARG_NOT_SUPPORTED(param_name)
+			return CL_INVALID_VALUE;
+	}
+
 	return 0;
 }
 

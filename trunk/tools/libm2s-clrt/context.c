@@ -68,7 +68,6 @@ cl_context clCreateContext(
 	m2s_clrt_debug("\tuser_data = %p", user_data);
 	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
 
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) properties, 0);
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) pfn_notify, 0);
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) user_data, 0);
@@ -108,6 +107,18 @@ cl_context clCreateContext(
 
 	for (i = 0; i < context->num_devices; i++)
 		context->devices[i] = devices[i];
+
+	if (properties)
+	{
+		context->prop_count = getPropertiesCount(properties, sizeof (cl_context_properties));
+		context->props = malloc(sizeof (cl_context_properties) * context->prop_count);
+		copyProperties(context->props, properties, sizeof (cl_context_properties), context->prop_count);
+	}
+	else
+	{
+		context->props = NULL;
+		context->prop_count = 0;
+	}
 
 	if (errcode_ret)
 		*errcode_ret = CL_SUCCESS;
@@ -177,7 +188,28 @@ cl_int clGetContextInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
+		return CL_INVALID_CONTEXT;
+
+	switch (param_name)
+	{
+		case CL_CONTEXT_REFERENCE_COUNT:
+		{
+			cl_int count = clrt_object_find(context, NULL)->ref_count;
+			return populateParameter(&count, sizeof count, param_value_size, param_value, param_value_size_ret);
+		}
+		
+		case CL_CONTEXT_DEVICES:
+			return populateParameter(context->devices, sizeof (cl_device_id) * context->num_devices, param_value_size, param_value, param_value_size_ret);
+		case CL_CONTEXT_PROPERTIES:
+			if (context->props)
+				return populateParameter(context->props, sizeof (cl_context_properties) * context->prop_count, param_value_size, param_value, param_value_size_ret);
+			else
+				return populateParameter(NULL, 0, param_value_size, param_value, param_value_size_ret);
+			return CL_SUCCESS;
+		default:
+			return CL_INVALID_VALUE;
+	}	
 	return 0;
 }
 
