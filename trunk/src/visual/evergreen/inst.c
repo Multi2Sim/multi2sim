@@ -23,7 +23,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
 
-#include "visual-evergreen.h"
+#include "inst.h"
 
 
 struct str_map_t vi_evg_inst_cat_map =

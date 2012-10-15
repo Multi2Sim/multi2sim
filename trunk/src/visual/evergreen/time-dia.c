@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <gtk/gtk.h>
 #include <stdio.h>
 
 #include <lib/mhandle/mhandle.h>
@@ -26,10 +27,11 @@
 #include <lib/util/matrix.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-
 #include <visual/common/state.h>
 
-#include "visual-evergreen.h"
+#include "compute-unit.h"
+#include "inst.h"
+#include "time-dia.h"
 
 
 #define VI_EVG_TIME_DIA_CELL_WIDTH			70

@@ -27,7 +27,9 @@
 #include <visual/common/cycle-bar.h>
 #include <visual/common/state.h>
 
-#include "visual-evergreen.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "work-group.h"
 
 
 struct vi_evg_work_group_t *vi_evg_work_group_create(char *name, int id,
