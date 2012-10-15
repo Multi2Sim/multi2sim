@@ -27,7 +27,10 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/string.h>
 
-#include "timing.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "periodic-report.h"
+#include "tex-engine.h"
 
 
 /* Configuration parameters */
@@ -255,7 +258,7 @@ static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void evg_compute_unit_run_tex_engine(struct evg_compute_unit_t *compute_unit)
+void evg_tex_engine_run(struct evg_compute_unit_t *compute_unit)
 {
 	/* If no wavefront to run, avoid entering loop */
 	if (!linked_list_count(compute_unit->tex_engine.pending_queue) &&
@@ -271,3 +274,4 @@ void evg_compute_unit_run_tex_engine(struct evg_compute_unit_t *compute_unit)
 	/* Stats */
 	compute_unit->tex_engine.cycle++;
 }
+

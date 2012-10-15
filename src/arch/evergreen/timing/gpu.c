@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <arch/evergreen/emu/bin-file.h>
+#include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/opencl-kernel.h>
 #include <arch/x86/emu/emu.h>
@@ -34,7 +35,12 @@
 #include <lib/util/repos.h>
 #include <lib/util/timer.h>
 
-#include "timing.h"
+#include "calc.h"
+#include "compute-unit.h"
+#include "faults.h"
+#include "gpu.h"
+#include "periodic-report.h"
+#include "sched.h"
 
 
 

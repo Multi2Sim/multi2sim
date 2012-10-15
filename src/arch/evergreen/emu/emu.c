@@ -18,7 +18,7 @@
  */
 
 #include <arch/evergreen/emu/opengl-bin-file.h>
-#include <arch/evergreen/timing/timing.h>
+#include <arch/evergreen/timing/gpu.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
