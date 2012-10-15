@@ -17,7 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-evergreen.h>
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
+#include <visual/evergreen/visual-evergreen.h>
 
 
 struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(char *name)

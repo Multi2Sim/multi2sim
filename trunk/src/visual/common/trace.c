@@ -17,7 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-common.h>
+#include <ctype.h>
+#include <gtk/gtk.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <zlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
+#include <lib/util/string.h>
+
+#include "visual.h"
 
 
 

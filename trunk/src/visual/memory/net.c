@@ -17,9 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/util/misc.h>
+#include <assert.h>
+#include <stdlib.h>
 
-#include <visual-memory.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <visual/common/trace.h>
+
+#include "visual-memory.h"
 
 
 /*

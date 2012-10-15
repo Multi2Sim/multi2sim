@@ -50,7 +50,7 @@
 #include <lib/util/misc.h>
 #include <mem-system/mmu.h>
 #include <network/net-system.h>
-#include <visual-common.h>
+#include <visual/common/visual.h>
 
 
 static char *ctx_debug_file_name = "";

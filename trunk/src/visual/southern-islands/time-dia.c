@@ -17,9 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/util/misc.h>
+#include <stdlib.h>
 
-#include <visual-southern-islands.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
+#include <lib/util/list.h>
+#include <lib/util/matrix.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
+#include <visual/common/state.h>
+
+#include "visual-southern-islands.h"
 
 
 #define VI_SI_TIME_DIA_CELL_WIDTH			70

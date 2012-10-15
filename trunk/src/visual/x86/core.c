@@ -17,7 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-x86.h>
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
+#include <lib/util/string.h>
+
+#include "visual-x86.h"
 
 
 /*

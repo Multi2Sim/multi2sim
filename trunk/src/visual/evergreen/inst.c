@@ -17,7 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-evergreen.h>
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/string.h>
+
+#include "visual-evergreen.h"
 
 
 struct str_map_t vi_evg_inst_cat_map =
