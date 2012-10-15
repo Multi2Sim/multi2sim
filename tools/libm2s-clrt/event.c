@@ -19,6 +19,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 #include <m2s-clrt.h>
 
@@ -26,8 +27,6 @@ struct clrt_finish_t
 {
 	char c;
 };
-
-
 
 
 /*
@@ -70,10 +69,42 @@ void clrt_event_free(void *data)
 }
 
 
-void clrt_event_set_status(struct _cl_event *event, int status)
+void clrt_event_set_status(struct _cl_event *event, cl_int status)
 {
 	pthread_mutex_lock(&event->mutex);
 	event->status = status;
+
+	if (event->queue && (event->queue->properties & CL_QUEUE_PROFILING_ENABLE))
+	{
+		struct timeval t;
+		gettimeofday(&t, NULL);
+		cl_ulong cltime = t.tv_sec;
+		cltime *= 1000000;
+		cltime += t.tv_usec;
+		cltime *= 1000;
+
+		/* If the framework has set the end time, but hasn't set any of the earlier ones
+		   then it will fall through the cases, setting those times too */
+		switch (status)
+		{
+		case CL_QUEUED:
+			if (!event->time_end)
+				event->time_end = cltime;
+
+		case CL_SUBMITTED:
+			if (!event->time_start)
+				event->time_start = cltime;
+
+		case CL_RUNNING:
+			if (!event->time_submit)
+				event->time_submit = cltime;
+
+		case CL_COMPLETE:
+			if (!event->time_queued)
+				event->time_queued = cltime;
+		}
+	}
+
 	if (status == CL_COMPLETE)
 		pthread_cond_broadcast(&event->cond);
 	pthread_mutex_unlock(&event->mutex);
@@ -92,6 +123,11 @@ struct _cl_event *clrt_event_create(struct _cl_command_queue *queue)
 
 	event->status = CL_QUEUED;
 	event->queue = queue;
+	event->context = NULL; // figure that out later
+	event->time_queued = 0;
+	event->time_submit = 0;
+	event->time_start = 0;
+	event->time_end = 0;
 	pthread_mutex_init(&event->mutex, NULL);
 	pthread_cond_init(&event->cond, NULL);
 	return event;
@@ -159,7 +195,33 @@ cl_int clGetEventInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	if (!clrt_object_verify(event, CLRT_OBJECT_EVENT))
+		return CL_INVALID_EVENT;
+
+	switch (param_name)
+	{
+		case CL_EVENT_COMMAND_QUEUE:
+			return populateParameter(&event->queue, sizeof event->queue, param_value_size, param_value, param_value_size_ret);
+
+		case CL_EVENT_CONTEXT:
+			EVG_OPENCL_ARG_NOT_SUPPORTED(param_name);
+			return CL_SUCCESS;
+
+		case CL_EVENT_COMMAND_TYPE:
+			EVG_OPENCL_ARG_NOT_SUPPORTED(param_name);
+			return CL_SUCCESS;
+
+		case CL_EVENT_COMMAND_EXECUTION_STATUS:
+			return populateParameter(&event->status, sizeof event->status, param_value_size, param_value, param_value_size_ret);
+
+		case CL_EVENT_REFERENCE_COUNT:
+		{
+			struct clrt_object_t *obj = clrt_object_find(event, NULL);
+			cl_uint count = obj->ref_count;
+			return populateParameter(&count, sizeof count, param_value_size, param_value, param_value_size_ret);
+		}		
+	}
+
 	return 0;
 }
 
@@ -190,7 +252,6 @@ cl_event clCreateUserEvent(
 	clrt_object_create(event, CLRT_OBJECT_EVENT, clrt_event_free);
 	
 	event->status = CL_QUEUED;
-	event->changed = CL_FALSE;
 	pthread_mutex_init(&event->mutex, NULL);
 	pthread_cond_init(&event->cond, NULL);
 	return event;
@@ -231,20 +292,15 @@ cl_int clSetUserEventStatus(
 	if (!clrt_object_verify(event, CLRT_OBJECT_EVENT) || event->queue)
 		return CL_INVALID_EVENT;
 
-	if (event->status > CL_COMPLETE)
+	if (execution_status != CL_COMPLETE && execution_status >= 0)
 		return CL_INVALID_VALUE;
 
-	if(event->changed == CL_TRUE)
+	if (event->status == CL_COMPLETE || event->status < 0)
 		return CL_INVALID_OPERATION;
 
-	if (execution_status <= CL_COMPLETE)
-	{
-		clrt_event_set_status(event, execution_status);
-		event->changed = CL_TRUE;
-		return CL_SUCCESS;
-	}
+	clrt_event_set_status(event, execution_status);
+	return CL_SUCCESS;
 
-	return CL_INVALID_VALUE;	
 }
 
 

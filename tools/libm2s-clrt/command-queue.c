@@ -77,6 +77,11 @@ void clrt_mem_transfer_action(void *data)
 	memcpy(transfer->dst, transfer->src, transfer->size);
 }
 
+void clrt_mem_map_action(void *data)
+{
+
+}
+
 struct clrt_queue_item_t *clrt_queue_item_create(
 	struct _cl_command_queue *queue, 
 	void *data, 
@@ -256,6 +261,7 @@ cl_command_queue clCreateCommandQueue(
 	queue->head = NULL;
 	queue->tail = NULL;
 	queue->process = 0;
+	queue->properties = properties;
 	pthread_mutex_init(&queue->lock, NULL);
 	pthread_cond_init(&queue->cond_process, NULL);
 	pthread_create(&queue->queue_thread, NULL, clrt_command_queue_thread_proc, queue);
@@ -677,8 +683,71 @@ void * clEnqueueMapBuffer(
 	cl_event *event,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	cl_int status;
+	struct clrt_queue_item_t *item;
+
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
+	m2s_clrt_debug("\tbuffer = %p", buffer);
+	m2s_clrt_debug("\tblocking_map = %d", blocking_map);
+	m2s_clrt_debug("\tmap_flags = %lld", map_flags);
+	m2s_clrt_debug("\toffset = %u", offset);
+	m2s_clrt_debug("\tcb = %u", cb);
+	m2s_clrt_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
+	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
+	m2s_clrt_debug("\tevent = %p", event);
+	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+
+	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
+	{
+		if (errcode_ret)
+			*errcode_ret = CL_INVALID_COMMAND_QUEUE;
+		return NULL;
+	}
+
+
+	if (!clrt_object_verify(buffer, CLRT_OBJECT_MEM))
+	{
+		if (errcode_ret)
+			*errcode_ret = CL_INVALID_MEM_OBJECT;
+		return NULL;
+	}
+
+	if ((status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list)) != CL_SUCCESS)
+	{
+		if (errcode_ret)
+			*errcode_ret = status;
+		return NULL;
+	}
+
+	if (offset + cb > buffer->size)
+	{
+		if (errcode_ret)
+			*errcode_ret = CL_INVALID_VALUE;
+		return NULL;
+	}
+
+	char *data = (char *)malloc(sizeof (char));
+	if (!data)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	item = clrt_queue_item_create(
+		command_queue,
+		data, /* Just need to pass in some heap object */
+		clrt_mem_map_action, 
+		event, 
+		num_events_in_wait_list, 
+		(struct _cl_event **) event_wait_list);
+
+	clrt_command_queue_enqueue(command_queue, item);
+	if (blocking_map)
+		clFinish(command_queue);
+
+	if (errcode_ret)
+		*errcode_ret = CL_SUCCESS;
+	
+	return (char *)buffer->buffer + offset;
 }
 
 
@@ -709,8 +778,41 @@ cl_int clEnqueueUnmapMemObject(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	cl_int status;
+	struct clrt_queue_item_t *item;
+
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
+	m2s_clrt_debug("\tmemobj = %p", memobj);
+	m2s_clrt_debug("\tmapped_ptr = %p", mapped_ptr);
+	m2s_clrt_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
+	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
+	m2s_clrt_debug("\tevent = %p", event);
+
+	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
+		return CL_INVALID_COMMAND_QUEUE;
+
+	if (!clrt_object_verify(memobj, CLRT_OBJECT_MEM))
+		return CL_INVALID_MEM_OBJECT;
+
+	if (memobj->buffer > mapped_ptr || memobj->buffer + memobj->size < mapped_ptr)
+		return CL_INVALID_VALUE;
+
+	/* Check events before they are needed */
+	status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	if (status != CL_SUCCESS)
+		return status;
+
+	item = clrt_queue_item_create(
+		command_queue,
+		malloc(1), /* the queue will free this memory after clrt_mem_map_aciton completes */ 
+		clrt_mem_map_action, 
+		event, 
+		num_events_in_wait_list, 
+		(struct _cl_event **) event_wait_list);
+
+	clrt_command_queue_enqueue(command_queue, item);
+	return CL_SUCCESS;
 }
 
 

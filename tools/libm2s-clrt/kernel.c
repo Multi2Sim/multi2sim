@@ -361,6 +361,7 @@ cl_int clGetKernelInfo(
 	return 0;
 }
 
+extern struct _cl_device_id *m2s_device;
 
 cl_int clGetKernelWorkGroupInfo(
 	cl_kernel kernel,
@@ -370,7 +371,48 @@ cl_int clGetKernelWorkGroupInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	if (!clrt_object_verify(kernel, CLRT_OBJECT_KERNEL))
+		return CL_INVALID_KERNEL;
+
+	if (device != m2s_device)
+		return CL_INVALID_DEVICE;
+
+	switch (param_name)
+	{
+		case CL_KERNEL_WORK_GROUP_SIZE:
+		{
+			size_t size = 1024;
+			return populateParameter(&size, sizeof size, param_value_size, param_value, param_value_size_ret);
+		}
+
+		case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
+		{
+			size_t size[] = {0, 0, 0};
+			return populateParameter(&size, sizeof size, param_value_size, param_value, param_value_size_ret);
+		}
+
+		case CL_KERNEL_LOCAL_MEM_SIZE:
+		{
+			cl_ulong size = 0;
+			return populateParameter(&size, sizeof size, param_value_size, param_value, param_value_size_ret);
+		}
+
+		case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
+		{
+			size_t mult = 1;
+			return populateParameter(&mult, sizeof mult, param_value_size, param_value, param_value_size_ret);
+		}
+
+		case CL_KERNEL_PRIVATE_MEM_SIZE:
+		{
+			cl_ulong size = 0;
+			return populateParameter(&size, sizeof size, param_value_size, param_value, param_value_size_ret);
+		}
+
+		default:
+			return CL_INVALID_VALUE;
+	}
+
 	return 0;
 }
 

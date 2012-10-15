@@ -92,7 +92,7 @@ struct clrt_object_t *clrt_object_find(void *data, struct clrt_object_t **prev_i
 {
 	struct clrt_object_t *object;
 	struct clrt_object_t *prev;
-
+	
 	/* Lock list */
 	pthread_mutex_lock(&clrt_object_list_mutex);
 
