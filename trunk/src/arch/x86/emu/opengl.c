@@ -19,11 +19,17 @@
 
 #include <assert.h>
 
+#include <arch/x86/emu/context.h>
+#include <arch/x86/emu/regs.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <mem-system/memory.h>
 
+#include "glut-frame-buffer.h"
 #include "opengl.h"
+#include "opengl-context.h"
+#include "opengl-rast-line.h"
+#include "opengl-rast-triangle.h"
 
 
 static char *err_x86_opengl_code =
