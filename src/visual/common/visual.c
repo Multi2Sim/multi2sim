@@ -25,7 +25,8 @@
 #include <visual/memory/panel.h>
 #include <visual/southern-islands/gpu.h>
 #include <visual/southern-islands/panel.h>
-#include <visual/x86/visual-x86.h>
+#include <visual/x86/cpu.h>
+#include <visual/x86/panel.h>
 
 #include "cycle-bar.h"
 #include "list.h"

@@ -28,7 +28,9 @@
 #include <lib/util/string.h>
 #include <visual/common/state.h>
 
-#include "visual-x86.h"
+#include "core.h"
+#include "inst.h"
+#include "time-dia.h"
 
 
 #define VI_X86_TIME_DIA_CELL_WIDTH			100

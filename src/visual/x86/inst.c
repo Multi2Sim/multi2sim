@@ -23,7 +23,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
 
-#include "visual-x86.h"
+#include "inst.h"
 
 
 struct str_map_t vi_x86_inst_stage_map =

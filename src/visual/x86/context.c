@@ -27,7 +27,8 @@
 #include <visual/common/cycle-bar.h>
 #include <visual/common/state.h>
 
-#include "visual-x86.h"
+#include "context.h"
+#include "cpu.h"
 
 
 struct vi_x86_context_t *vi_x86_context_create(char *name, int id, int parent_id)
