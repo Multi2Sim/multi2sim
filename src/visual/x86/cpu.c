@@ -18,16 +18,21 @@
  */
 
 #include <assert.h>
+#include <gtk/gtk.h>
 #include <string.h>
 
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 
-#include "visual-x86.h"
+#include "context.h"
+#include "core.h"
+#include "cpu.h"
+#include "inst.h"
 
 
 /*
