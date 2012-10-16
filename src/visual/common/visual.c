@@ -23,11 +23,13 @@
 #include <visual/evergreen/panel.h>
 #include <visual/memory/mem-system.h>
 #include <visual/memory/panel.h>
-#include <visual/southern-islands/visual-southern-islands.h>
+#include <visual/southern-islands/gpu.h>
+#include <visual/southern-islands/panel.h>
 #include <visual/x86/visual-x86.h>
 
 #include "cycle-bar.h"
 #include "list.h"
+#include "panel.h"
 #include "state.h"
 #include "visual.h"
 

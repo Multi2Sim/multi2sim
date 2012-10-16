@@ -23,7 +23,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
 
-#include "visual-southern-islands.h"
+#include "inst.h"
 
 
 struct str_map_t vi_si_inst_stage_map =

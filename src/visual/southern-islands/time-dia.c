@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <gtk/gtk.h>
 #include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
@@ -28,7 +29,9 @@
 #include <lib/util/string.h>
 #include <visual/common/state.h>
 
-#include "visual-southern-islands.h"
+#include "compute-unit.h"
+#include "inst.h"
+#include "time-dia.h"
 
 
 #define VI_SI_TIME_DIA_CELL_WIDTH			70
@@ -721,3 +724,4 @@ void vi_si_time_dia_refresh(struct vi_si_time_dia_t *time_dia)
 		|| top_offset_changed)
 		vi_si_time_dia_refresh_content(time_dia);
 }
+
