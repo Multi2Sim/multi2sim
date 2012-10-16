@@ -107,6 +107,7 @@ void clrt_event_set_status(struct _cl_event *event, cl_int status)
 
 	if (status == CL_COMPLETE)
 		pthread_cond_broadcast(&event->cond);
+
 	pthread_mutex_unlock(&event->mutex);
 }
 
@@ -275,7 +276,6 @@ cl_int clReleaseEvent(
 	/* Debug */
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tevent = %p", event);
-
 	return clrt_object_release(event, CLRT_OBJECT_EVENT, CL_INVALID_EVENT);
 }
 
@@ -322,8 +322,44 @@ cl_int clGetEventProfilingInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	if (!clrt_object_verify(event, CLRT_OBJECT_EVENT))
+		return CL_INVALID_EVENT;
+
+	if (!event->queue || !(event->queue->properties & CL_QUEUE_PROFILING_ENABLE))
+		return CL_PROFILING_INFO_NOT_AVAILABLE;
+
+	if (param_value_size_ret)
+		*param_value_size_ret = sizeof (cl_ulong);
+	
+	if (param_value)
+	{
+		if (param_value_size < sizeof (cl_ulong))
+			return CL_INVALID_VALUE;
+
+		switch (param_name)
+		{
+		case CL_PROFILING_COMMAND_QUEUED:
+			*(cl_ulong *)param_value = event->time_queued;
+			return CL_SUCCESS;
+
+		case CL_PROFILING_COMMAND_SUBMIT:
+			*(cl_ulong *)param_value = event->time_submit;
+			return CL_SUCCESS;
+
+		case CL_PROFILING_COMMAND_START:
+			*(cl_ulong *)param_value = event->time_start;
+			return CL_SUCCESS;
+
+		case CL_PROFILING_COMMAND_END:
+			*(cl_ulong *)param_value = event->time_end;
+			return CL_SUCCESS;
+
+		default:
+			return CL_INVALID_VALUE;
+		}
+	}	
+
+	return CL_SUCCESS;
 }
 
 
