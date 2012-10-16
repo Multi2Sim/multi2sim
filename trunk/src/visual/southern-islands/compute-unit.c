@@ -17,13 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <gtk/gtk.h>
 #include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 
-#include "visual-southern-islands.h"
+#include "compute-unit.h"
+#include "inst.h"
+#include "work-group.h"
 
 
 struct vi_si_compute_unit_t *vi_si_compute_unit_create(char *name)

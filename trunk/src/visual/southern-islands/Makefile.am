@@ -5,14 +5,23 @@ libsouthernislands_a_SOURCES =
 if HAVE_GTK
 libsouthernislands_a_SOURCES += \
 	\
-	visual-southern-islands.h \
-	\
 	compute-unit.c \
+	compute-unit.h \
+	\
 	gpu.c \
+	gpu.h \
+	\
 	inst.c \
+	inst.h \
+	\
 	panel.c \
+	panel.h \
+	\
 	time-dia.c \
-	work-group.c
+	time-dia.h \
+	\
+	work-group.c \
+	work-group.h
 
 AM_CFLAGS = @GTK_CFLAGS@
 
