@@ -84,10 +84,10 @@ Coding Guidelines
 
 * Memory allocation:
 
-	Dynamic memory allocation should be followed by a check that there was
-	enough virtual memory available. This affects malloc, calloc, strdup,
-	and strndup functions. Failing to allocate memory should cause a
-	standard fatal error, as follows:
+	Dynamic memory allocation should be followed by a check for allocation
+	success. This affects malloc, calloc, strdup, and strndup functions.
+	Failing to allocate memory should cause a standard error message calling
+	function 'fatal', as the code below shows:
 
 	void *buf;
 	char *s;
@@ -104,8 +104,8 @@ Coding Guidelines
 
 	Forward declarations should be avoided. A source file ".c" in a library
 	should have two sections (if used) declaring private and public
-	functions. Private functions should be declared in the order they are
-	used to avoid forward declarations. Public functions should be included
+	functions. Private functions should be defined before they are used
+	to avoid forward declarations. Public functions should be included
 	in the ".h" file associated with the ".c" source (or common for the
 	entire library). For example:
 
@@ -137,7 +137,7 @@ Coding Guidelines
 	}
 
 
-* Variables declaration
+* Variable declaration
 
 	Variables should be declared only at the beginning of code blocks (can
 	be primary or secondary code blocks). Variables declared for a code
@@ -169,7 +169,28 @@ Coding Guidelines
 			mem_debug("\t%s\n", net_name);
 			list_add(mem_system->net_list, net);
 		}
+	}
 
+
+* Function declaration:
+
+	When a function takes no input argument, its declaration should use the
+	'(void)' notation, instead of just '()'. If the header uses the empty
+	parentheses notation, the compiler sets no restrictions in the number of
+	arguments that the user can pass to the function. On the contrary, the
+	'(void)' notation forces the caller to make a call with zero arguments
+	to the function.
+	This affects the function declaration in a header file, a forward
+	declaration in a C file, and the header of the function definition in
+	the C file.
+	Example:
+
+		void say_hello(void);	/* Header file or forward declaration */
+
+		void say_hello(void)	/* Function implementation */
+		{
+			printf("Hello\n");
+		}
 
 
 * Spaces:
@@ -222,55 +243,198 @@ Coding Guidelines
 		short
 		int
 		long long
+	
+	Integer types 'long' and 'unsigned long' should be avoided, since they
+	compile to different sizes in 32- and 64-bit platforms.
+
+
+===============================================================================
+Header Files
+===============================================================================
+
+* Code organization:
+
+	After SVN Rev. 1087, most of the files in Multi2Sim are organized as
+	pairs of header ('.h') and source ('.c') files, with the main exception
+	being the Multi2Sim program entry 'src/m2s.c'.
+	Every public symbol (and preferably also private symbols) used in a pair
+	of header and source files should use a common prefix, unique for these
+	files. For example, prefix 'x86_inst_' is used in files
+	'src/arch/x86/emu/inst.h' and 'src/arch/x86/emu/inst.c'.
+
+* Structure of a source ('.c') file:
+
+	In each source file, the copyright notice should be followed by a set of
+	'#include' compiler directives. The source file should include only
+	those files containing symbols being used throughout the source, with
+	the objective of keeping dependence tree sizes down to a minimum. Please
+	avoid copying sets of '#include' directives upon creation of a new file,
+	and add instead one by one as their presence is required.
+	Compiler '#include' directives should be classified in three groups,
+	separated with one blank line:
+		1) Standard include files found in the default include directory
+		   for the compiler (assert.h, stdio.h, etc), using the notation
+		   based on '< >' brackets.
+		2) Include files located in other directories of the Multi2Sim
+		   tree. These files are expressed as a relative path to the
+		   'src' directory (this is the only additional default path
+		   assumed by the compiler), also using the '< >' bracket
+		   notation.
+		3) Include files located in the same directory as the source
+		   file, using the double quote '" "' notation.
+	In each of the groups above, header files should be listed
+	alphabetically.
+	Each source file should include all header files defining the symbols
+	used in its code, and not rely on a multiple inclusion (i.e., a header
+	file including another header file) for this purpose. In general, header
+	files will not include any other header file.
+	For example:
+
+	/*
+	 *  Multi2Sim
+	 *  Copyright (C) 2012
+	 *  [...]
+	 */
+
+		--- One blank line ---
+	
+	#include <assert.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+
+	#include <lib/mhandle/mhandle.h>
+	#include <lib/util/debug.h>
+	#include <lib/util/list.h>
+
+	#include "emu.h"
+	#include "inst.h"
+
+		--- Two blank lines ---
+	
+	[ Body of the source file ]
+
+		--- One blank line at the end of the file ---
+
+
+* Structure of a header ('.h') file:
+
+	The contents of a header file should always be guarded by an '#ifdef'
+	compiler directive that avoid multiple or recursive inclusions of it.
+	The symbol following '#ifdef' should be the equal to the path of the
+	header file relative to the simulator 'src' directory, replacing slashes
+	and dashes with underscores, and using capital letters.
+	For example:
+
+	/*
+	 *  Multi2Sim
+	 *  Copyright (C) 2012
+	 *  [...]
+	 */
+
+		--- One blank line ---
+
+	#ifndef ARCH_X86_EMU_CONTEXT_H
+	#define ARCH_X86_EMU_CONTEXT_H
+
+		--- Two blank lines ---
+
+	[ '#include' lines go here, with the same format and spacing as for
+	source files. But in most cases, there should be no '#include' here at
+	all! ]
+
+	[ Body of the header file, with structure, 'extern' variables, and
+	function declarations ]
+
+		--- Two blank lines ---
+
+	#endif
+
+
+* Avoiding multiple inclusions
+
+	The objective of avoiding multiple inclusions is keeping dependence
+	trees small, and thus speeding up compilation upon modification of
+	header files. A multiple inclusion occurs when a header file includes
+	another header file. In most cases, this situation can avoided with the
+	following techniques:
+
+	- If a structure defined in a header file contains a field defined as a
+	  pointer to a structure defined in a different header file, the
+	  compiler does not need the latter structure to be defined. For
+	  example, structure
+
+	  	struct x86_context_t
+		{
+			struct x86_inst_t *current_inst;
+		}
+	
+	  defined in file 'context.h' has a field of type 'struct x86_inst_t *'
+	  defined in 'inst.h'. However, 'inst.h' does not need to be included,
+	  since the compiler does not need to now the size of the substructure
+	  to reserve memory for a pointer to it.
+
+	- If a function defined in a header file contains an argument whose type
+	  is a pointer to a structure defined in a different header file, the
+	  latter need not be included either. Instead, a forward declaration of
+	  the structure suffices to get rid of the compiler warning. For
+	  example:
+
+	  	struct dram_device_t;
+		void dram_bank_create(struct dram_device_t *device);
+
+	  In the example above, function 'dram_bank_create' would be defined in
+	  a file named 'dram-bank.h', while structure 'struct dram_device_t'
+	  would be defined in 'dram-device.h'. However, the latter file does not
+	  need to be included as long as 'struct dram_device_t' is present as a
+	  forward declaration of the structure.
+
+
+	Exceptions:
+
+	- When a derived type (type declared with 'typedef') declared in a
+	  secondary header file is used as a member of a structure or argument
+	  of a function declared in a primary header file, the secondary header
+	  file should be included as an exception. This problem occurs often
+	  when type 'FILE *' is used in arguments of 'xxx_dump' functions. In
+	  this case, header file 'stdio.h' needs to be included.
+	
+	- When a primary file defines a structure using a field of type 'struct'
+	  (not a pointer) defined in a secondary header file, the secondary
+	  header file needs to be included. In this case, the compiler needs to
+	  know the exact size of the secondary structure to allocate space for
+	  the primary.
+	  For example, structure 'struct evg_bin_format_t' has a field of type
+	  'struct elf_buffer_t'. Thus, header file 'bin-format.h' needs to
+	  include 'elf-format.h'.
+
 
 
 ===============================================================================
 Dynamic Structures (Objects)
 ===============================================================================
 	
-	Every leaf directory in Multi2Sim's code tree compiles into a library
-	with one single header file exporting both its public and private
-	symbols. Public symbols are those used in *.c files from other
-	directories, while private symbols are used *.c files from within the
-	library.
 	Although Multi2Sim is written in C, its structure is based in a set of
 	dynamically allocated objects (a processor core, a hardware thread, a
 	micro-instruction, etc.), emulating the behavior of an object oriented
 	language.
 	An object is defined with a structure declaration (struct), one or more
 	constructor and destructor functions, and a set of other functions
-	updating or querying the object. The structure definition and function
-	headers are defined as part of the main and unique header file in a
-	directory, while the implementation of these functions (plus other
-	private functions, structures, and variables) is coded in a separate *.c
-	file.
+	updating or querying the state of the object.
+	The structure and function headers should be declared in the '.h' file
+	associated with the object, while the implementation of public functions
+	(plus other private functions, structures, and variables) should appear
+	in its associated '.c' file.
+	In general, every object should have its own pair of '.c' and '.h' files
+	implementing and encapsulating its behavior.
 	As an example, let us consider the object representing an x86
-	micro-instruction, called 'x86_uop_t', and defines in
+	micro-instruction, called 'x86_uop_t' and defined in
 
-		/src/arch/x86/timing
+		src/arch/x86/timing/uop.h
 	
-	The structure type and function header declarations are found in
-		
-		/src/arch/x86/timing/x86-timing.h
+	The implementation of the object is given in an independent the
+	associated C file in
 
-	in a section headed with a 4-line break and a 3-line comment:
-
-		[ 4 empty lines ]
-
-		/*
-		 * [ Description of object ]
-		 */
-		
-		[ Structure declaration ]
-		[ Header of constructor and destructor ]
-		[ Headers of the rest of the functions ]
-
-	The implementation of the object is given in an independent *.c file,
-	which includes only functions and variables related with the object. In
-	the case of the x86 micro-instruction object, the implementation *.c
-	file is
-
-		/src/arch/x86/timing/uop.c
+		src/arch/x86/timing/uop.c
 	
 	The constructor and destructor of all objects follow the same template.
 	An object constructor returns a pointer to a new allocated object, and
