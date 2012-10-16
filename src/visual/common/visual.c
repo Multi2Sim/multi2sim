@@ -30,7 +30,6 @@
 
 #include "cycle-bar.h"
 #include "list.h"
-#include "panel.h"
 #include "state.h"
 #include "visual.h"
 
