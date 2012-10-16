@@ -91,6 +91,7 @@ struct clrt_queue_item_t *clrt_queue_item_create(
 	cl_event *waits)
 {
 	struct clrt_queue_item_t *item;
+	int i;
 
 	item = (struct clrt_queue_item_t *) malloc(sizeof (struct clrt_queue_item_t));
 	if(!item)
@@ -101,15 +102,39 @@ struct clrt_queue_item_t *clrt_queue_item_create(
 	item->wait_events = waits;
 	item->next = NULL;
 
+	// the queue Item has a reference to all the prerequisite events
+	for (i = 0; i < num_wait; i++)
+		if (clRetainEvent(waits[i]) != CL_SUCCESS)
+			fatal("%s: clRetainEvent failed", __FUNCTION__);
+
 	if (!done)
 		item->done_event = NULL;
 	else
 	{
 		item->done_event = clrt_event_create(queue);
 		*done = item->done_event;
+		// and to the completion event
+		if (clRetainEvent(*done) != CL_SUCCESS)
+			fatal("%s: clRetainEvent failed", __FUNCTION__);
 	}
 	
 	return item;
+}
+
+
+void clrt_queue_item_free(struct clrt_queue_item_t *item)
+{
+	int i;
+	for (i = 0; i < item->num_wait_events; i++)
+		if (clReleaseEvent(item->wait_events[i]) != CL_SUCCESS)
+			fatal("%s: clReleaseEvent failed", __FUNCTION__);
+
+	if (item->done_event)
+		if (clReleaseEvent(item->done_event) != CL_SUCCESS)
+			fatal("%s: clReleaseEvent failed", __FUNCTION__);
+
+	free(item->data);
+	free(item);
 }
 
 
@@ -139,7 +164,8 @@ void clrt_command_queue_free(void *data)
 	queue = (struct _cl_command_queue *) data;
 	item = clrt_queue_item_create(NULL, NULL, NULL, NULL, 0, NULL);
 	clrt_command_queue_enqueue(queue, item);
-	clFlush(queue);
+	if (clFlush(queue) != CL_SUCCESS)
+		fatal("%s: clFlush failed", __FUNCTION__);
 	pthread_join(queue->queue_thread, NULL);
 	assert(!queue->head);
 	pthread_mutex_destroy(&queue->lock);
@@ -201,8 +227,7 @@ void *clrt_command_queue_thread_proc(void *data)
 	while ((item = clrt_command_queue_dequeue(queue)))
 	{
 		clrt_command_queue_perform_item(item);
-		free(item->data);
-		free(item);
+		clrt_queue_item_free(item);
 	}
 	return NULL;
 }
