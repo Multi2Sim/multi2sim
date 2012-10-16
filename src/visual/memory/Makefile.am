@@ -5,14 +5,23 @@ libmemory_a_SOURCES =
 if HAVE_GTK
 libmemory_a_SOURCES += \
 	\
-	visual-memory.h	\
-	\
 	mem-system.c \
+	mem-system.h \
+	\
 	mod-access.c \
+	mod-access.h \
+	\
 	mod.c \
+	mod.h \
+	\
 	mod-widget.c \
+	mod-widget.h \
+	\
 	net.c \
-	panel.c
+	net.h \
+	\
+	panel.c \
+	panel.h
 
 AM_CFLAGS = @GTK_CFLAGS@
 
