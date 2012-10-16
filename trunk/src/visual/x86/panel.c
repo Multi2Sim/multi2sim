@@ -29,7 +29,11 @@
 #include <visual/common/list.h>
 #include <visual/common/state.h>
 
-#include "visual-x86.h"
+#include "context.h"
+#include "core.h"
+#include "cpu.h"
+#include "panel.h"
+#include "time-dia.h"
 
 
 /*
