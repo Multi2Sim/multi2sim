@@ -18,76 +18,9 @@
  */
 
 
-#ifndef VISUAL_MEMORY_H
-#define VISUAL_MEMORY_H
+#ifndef VISUAL_MEMORY_MOD_H
+#define VISUAL_MEMORY_MOD_H
 
-#include <gtk/gtk.h>
-
-#include <visual/common/visual.h>
-
-
-
-/*
- * Memory System
- */
-
-struct vi_mem_system_t
-{
-	struct hash_table_t *mod_table;
-	struct hash_table_t *net_table;
-	struct hash_table_t *access_table;
-	struct list_t *mod_level_list;
-};
-
-
-extern struct vi_mem_system_t *vi_mem_system;
-
-
-void vi_mem_system_init(void);
-void vi_mem_system_done(void);
-
-
-
-
-/*
- * Memory Module Access
- */
-
-struct vi_mod_access_t
-{
-	char *name;
-	char *state;
-
-	unsigned int address;
-
-	/* An access is considered to be in a module as long as the access
-	 * is currently in any block of the module. For an access in a module,
-	 * this field gives the number of accesses (objects with same
-	 * 'name' field) located in different blocks of the module. */
-	int num_links;
-
-	long long creation_cycle;
-	long long state_update_cycle;
-};
-
-struct vi_mod_access_t *vi_mod_access_create(char *name, unsigned int address);
-void vi_mod_access_free(struct vi_mod_access_t *access);
-
-void vi_mod_access_set_state(struct vi_mod_access_t *access, char *state);
-
-void vi_mod_access_read_checkpoint(struct vi_mod_access_t *access, FILE *f);
-void vi_mod_access_write_checkpoint(struct vi_mod_access_t *access, FILE *f);
-
-void vi_mod_access_get_name_short(char *access_name, char *buf, int size);
-void vi_mod_access_get_name_long(char *access_name, char *buf, int size);
-void vi_mod_access_get_desc(char *access_name, char *buf, int size);
-
-
-
-
-/*
- * Memory Module
- */
 
 #define VI_MOD_DIR_ENTRY_SHARERS_SIZE(mod) (((mod)->num_sharers + 7) / 8)
 #define VI_MOD_DIR_ENTRY_SIZE(mod) (sizeof(struct vi_mod_dir_entry_t) + \
@@ -143,6 +76,7 @@ struct vi_trace_line_t;
 struct vi_mod_t *vi_mod_create(struct vi_trace_line_t *trace_line);
 void vi_mod_free(struct vi_mod_t *mod);
 
+struct vi_mod_access_t;
 void vi_mod_add_access(struct vi_mod_t *mod, int set, int way,
 	struct vi_mod_access_t *access);
 struct vi_mod_access_t *vi_mod_find_access(struct vi_mod_t *mod,
@@ -176,57 +110,5 @@ void vi_mod_dir_entry_read_checkpoint(struct vi_mod_t *mod, int x, int y, int z,
 void vi_mod_dir_entry_write_checkpoint(struct vi_mod_t *mod, int x, int y, int z, FILE *f);
 
 
-
-
-/*
- * Network
- */
-
-struct vi_net_t
-{
-	char *name;
-
-	struct list_t *node_list;
-};
-
-struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line);
-void vi_net_free(struct vi_net_t *net);
-
-void vi_net_attach_mod(struct vi_net_t *net, struct vi_mod_t *mod, int node_index);
-struct vi_mod_t *vi_net_get_mod(struct vi_net_t *net, int node_index);
-
-
-
-
-/*
- * Visual Memory System Panel
- */
-
-struct vi_mem_panel_t;
-
-struct vi_mem_panel_t *vi_mem_panel_create(void);
-void vi_mem_panel_free(struct vi_mem_panel_t *panel);
-
-void vi_mem_panel_refresh(struct vi_mem_panel_t *panel);
-
-GtkWidget *vi_mem_panel_get_widget(struct vi_mem_panel_t *panel);
-
-
-
-
-/*
- * Visual Module Widget
- */
-
-struct vi_mod_widget_t;
-
-struct vi_mod_widget_t *vi_mod_widget_create(char *name);
-void vi_mod_widget_free(struct vi_mod_widget_t *widget);
-
-void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget);
-
-GtkWidget *vi_mod_widget_get_widget(struct vi_mod_widget_t *widget);
-
-
-
 #endif
+
