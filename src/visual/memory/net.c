@@ -26,7 +26,7 @@
 #include <lib/util/misc.h>
 #include <visual/common/trace.h>
 
-#include "visual-memory.h"
+#include "net.h"
 
 
 /*

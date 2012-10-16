@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <gtk/gtk.h>
 #include <string.h>
 
 #include <lib/util/debug.h>
@@ -27,7 +28,10 @@
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 
-#include "visual-memory.h"
+#include "mem-system.h"
+#include "mod.h"
+#include "mod-access.h"
+#include "net.h"
 
 
 /*

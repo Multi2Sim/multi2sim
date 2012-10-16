@@ -29,7 +29,11 @@
 #include <visual/common/list.h>
 #include <visual/common/state.h>
 
-#include "visual-memory.h"
+#include "mem-system.h"
+#include "mod.h"
+#include "mod-access.h"
+#include "mod-widget.h"
+#include "panel.h"
 
 
 
