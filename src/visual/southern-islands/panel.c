@@ -30,7 +30,12 @@
 #include <visual/common/list.h>
 #include <visual/common/state.h>
 
-#include "visual-southern-islands.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "panel.h"
+#include "time-dia.h"
+#include "work-group.h"
+
 
 
 /*

@@ -23,11 +23,15 @@
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <visual/common/state.h>
 #include <visual/common/trace.h>
 
-#include "visual-southern-islands.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "inst.h"
+#include "work-group.h"
 
 
 /*
