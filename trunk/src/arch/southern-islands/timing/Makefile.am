@@ -14,7 +14,7 @@ libtiming_a_SOURCES = \
 	simd.c \
 	uop.c \
 	vector_mem.c \
-	wavefront_pool.c
+	instruction_buffer.c
 
 INCLUDES = @M2S_INCLUDES@
 
