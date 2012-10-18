@@ -20,9 +20,12 @@
 #ifndef SOUTHERN_ISLANDS_TIMING_H
 #define SOUTHERN_ISLANDS_TIMING_H
 
+#include <limits.h>
+
 #include <arch/southern-islands/emu/emu.h>
 #include <mem-system/mem-system.h>
 
+#define INST_NOT_FETCHED LLONG_MAX
 
 /*
  * GPU uop
@@ -50,7 +53,6 @@ struct si_work_item_uop_t
 	uint32_t local_mem_access_size[SI_MAX_LOCAL_MEM_ACCESSES_PER_INST];
 };
 
-
 /* Structure representing a GPU instruction fetched in common for a wavefront.
  * This is the structure passed from stage to stage in the compute unit pipeline. */
 struct si_uop_t
@@ -58,16 +60,20 @@ struct si_uop_t
 	/* Fields */
 	long long id;
 	long long id_in_compute_unit;
-	int wavefront_pool_id;
+	int inst_buffer_id;
 	struct si_wavefront_t *wavefront;        /* Wavefront it belongs to */
 	struct si_work_group_t *work_group;      /* Work-group it belongs to */
 	struct si_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
+	struct si_inst_buffer_entry_t *inst_buffer_entry;  /* IB entry where uop is located */
+	struct si_inst_t inst;
 
 	/* Flags */
 	unsigned int ready : 1;
-	unsigned int wavefront_last : 1;   /* Last instruction in the wavefront */
-	unsigned int global_mem_read : 1;
-	unsigned int global_mem_write : 1;
+	unsigned int wait_inst : 1;
+	unsigned int wavefront_last_inst : 1;   /* Last instruction in the wavefront */
+	unsigned int vector_mem_read : 1;
+	unsigned int vector_mem_write : 1;
+	unsigned int scalar_mem_read : 1;
 	unsigned int local_mem_read : 1;
 	unsigned int local_mem_write : 1;
 	unsigned int exec_mask_update : 1;
@@ -76,7 +82,6 @@ struct si_uop_t
 	long long fetch_ready;      /* Cycle when fetch completes */
 	long long decode_ready;     /* Cycle when decode completes */
 	long long read_ready;       /* Cycle when register access completes */
-	long long alu_ready;        /* Cycle when subwavefronts have entered the ALU pipeline */
 	long long execute_ready;    /* Cycle when execution completes */
 	long long writeback_ready;  /* Cycle when writeback completes */
 
@@ -92,6 +97,7 @@ struct si_uop_t
 	 * It should be always the last field of the structure. */
 	struct si_work_item_uop_t work_item_uop[0];
 };
+
 
 void si_uop_init(void);
 void si_uop_done(void);
@@ -127,32 +133,60 @@ int si_reg_file_rename(struct si_compute_unit_t *compute_unit,
 void si_reg_file_inverse_rename(struct si_compute_unit_t *compute_unit,
 	int physical_register, struct si_work_item_t **work_item, int *logical_register);
 
-struct si_fetch_buffer_t
+
+
+/*
+ * Instruction Buffer 
+ */
+
+struct si_inst_buffer_entry_t 
 {
-	unsigned int entries;
-	long long int *cycle_fetched;
-	struct si_uop_t **uops;
+	unsigned int valid : 1; /* Valid if wavefront assigned to entry */
+
+	int id_in_inst_buffer;
+	struct si_inst_buffer_t *inst_buffer;
+
+	struct si_wavefront_t *wavefront;
+	long long int cycle_fetched;
+	struct si_uop_t *uop;
+
+	/* Status (not mutually exclusive) */
+	unsigned int ready : 1;        /* Ready to fetch next instruction */
+	/* TOOD Break this into waiting for each memory type */
+	unsigned int wait_for_mem : 1; /* Waiting for memory instructions */
+	unsigned int at_barrier : 1;   /* Waiting at barrier for other wavefronts */
+	unsigned int wavefront_finished : 1; 
+
+	/* Outstanding memory accesses */
+	unsigned int vm_cnt;     /* Vector memory count */
+	unsigned int exp_cnt;    /* Export count */
+	unsigned int lgkm_cnt;   /* LDS, GDS, Constant, and message count */
 };
 
-struct si_wavefront_pool_t
+struct si_inst_buffer_t
 {
 	int id;
 
 	/* List of currently mapped wavefronts */
 	int wavefront_count;
-	struct si_wavefront_t **wavefronts;
+	//struct si_wavefront_t **wavefronts;
+	struct si_inst_buffer_entry_t **entries;
 
 	/* Compute unit */
 	struct si_compute_unit_t *compute_unit;
 };
 
+
+/* 
+ * Hardware Units 
+ */
+
 struct si_branch_unit_t
 {
 	/* Queues */
-	struct linked_list_t *read_buffer; /* Register accesses */
-
-	struct linked_list_t *exec_buffer; /* Wavefronts pending for execution */
-	struct linked_list_t *out_buffer; /* Outstanding branch operations */
+	struct list_t *decode_buffer; /* Decoded instructions */
+	struct list_t *read_buffer;   /* Register accesses */
+	struct list_t *exec_buffer;   /* Execution */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -163,13 +197,10 @@ struct si_branch_unit_t
 
 struct si_scalar_unit_t
 {
-	struct linked_list_t *read_buffer;  /* Register accesses */
-
-	struct linked_list_t *alu_exec_buffer;  /* Wavefronts pending for ALU execution */
-	struct linked_list_t *alu_out_buffer;  /* Outstanding ALU operations */
-
-	struct linked_list_t *mem_exec_buffer; /* Wavefronts pending for memory access */
-	struct linked_list_t *mem_out_buffer;  /* Outstanding memory operations */
+	struct list_t *decode_buffer;   /* Decoded instructions */
+	struct list_t *read_buffer;     /* Register accesses */
+	struct list_t *exec_buffer;     /* Execution (both ALU and MEM) */
+	struct list_t *inflight_buffer; /* Pending memory accesses */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -180,10 +211,10 @@ struct si_scalar_unit_t
 
 struct si_vector_mem_unit_t
 {
-	struct linked_list_t *read_buffer;  /* Register accesses */
-
-	struct linked_list_t *mem_exec_buffer; /* Wavefronts pending for memory access */
-	struct linked_list_t *mem_out_buffer;  /* Outstanding memory operations */
+	struct list_t *decode_buffer;   /* Decoded instructions */
+	struct list_t *read_buffer;     /* Register accesses */
+	struct list_t *exec_buffer;     /* Submitted memory accesses */
+	struct list_t *inflight_buffer; /* Pending for memory access */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -194,10 +225,9 @@ struct si_vector_mem_unit_t
 
 struct si_simd_t
 {
-	struct linked_list_t *read_buffer;  /* Register accesses */
-
-	struct linked_list_t *alu_exec_buffer;  /* Wavefronts pending for ALU execution */
-	struct linked_list_t *alu_out_buffer;  /* Outstanding ALU operations */
+	struct list_t *decode_buffer; /* Decoded instructions */
+	struct list_t *read_buffer;   /* Register accesses */
+	struct list_t *exec_buffer;   /* Execution */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -208,10 +238,10 @@ struct si_simd_t
 
 struct si_lds_t
 {
-	struct linked_list_t *read_buffer;  /* Register accesses */
-
-	struct linked_list_t *mem_exec_buffer; /* Wavefronts pending for memory access */
-	struct linked_list_t *mem_out_buffer;  /* Outstanding memory operations */
+	struct list_t *decode_buffer;   /* Decoded instructions */
+	struct list_t *read_buffer;     /* Register accesses */
+	struct list_t *exec_buffer;     /* Submitted memory accesses */
+	struct list_t *inflight_buffer; /* Pending for memory access */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -230,6 +260,7 @@ struct si_compute_unit_t
 	/* IDs */
 	int id;
 	long long uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
+	long long mem_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to mem uops */
 
 	/* Double linked list of compute units */
 	struct si_compute_unit_t *compute_unit_ready_list_prev;
@@ -237,26 +268,25 @@ struct si_compute_unit_t
 	struct si_compute_unit_t *compute_unit_busy_list_prev;
 	struct si_compute_unit_t *compute_unit_busy_list_next;
 
-	/* List of ready wavefront pools accepting work-groups */
-	struct si_wavefront_pool_t *wavefront_pool_ready_list_head;
-	struct si_wavefront_pool_t *wavefront_pool_ready_list_tail;
-	int wavefront_pool_ready_list_count;
-	int wavefront_pool_ready_list_max;
+	/* List of ready instruction buffers accepting work-groups */
+	//struct si_inst_buffer_t *inst_buffer_ready_list_head;
+	//struct si_inst_buffer_t *inst_buffer_ready_list_tail;
+	//int inst_buffer_ready_list_count;
+	//int inst_buffer_ready_list_max;
 
-	/* List of busy wavefront pools */
-	struct si_wavefront_pool_t *wavefront_pool_busy_list_head;
-	struct si_wavefront_pool_t *wavefront_pool_busy_list_tail;
-	int wavefront_pool_busy_list_count;
-	int wavefront_pool_busy_list_max;
+	/* List of busy instruction buffers */
+	//struct si_inst_buffer_t *inst_buffer_busy_list_head;
+	//struct si_inst_buffer_t *inst_buffer_busy_list_tail;
+	//int inst_buffer_busy_list_count;
+	//int inst_buffer_busy_list_max;
 
 	/* Entry points to memory hierarchy */
 	struct mod_t *global_memory;
 	struct mod_t *local_memory;
 
 	/* Hardware structures */
-	unsigned int num_wavefront_pools;
-	struct si_wavefront_pool_t **wavefront_pools;
-	struct si_fetch_buffer_t **fetch_buffers;
+	unsigned int num_inst_buffers;
+	struct si_inst_buffer_t **inst_buffers;
 	struct si_simd_t **simds;
 	/* TODO Make these into a configurable number of structures */
 	struct si_scalar_unit_t scalar_unit;
@@ -290,11 +320,11 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
 struct si_wavefront_t *si_compute_unit_schedule(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run(struct si_compute_unit_t *compute_unit);
 
-struct si_wavefront_pool_t *si_wavefront_pool_create();
-void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool);
-void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
+struct si_inst_buffer_t *si_inst_buffer_create();
+void si_inst_buffer_free(struct si_inst_buffer_t *inst_buffer);
+void si_inst_buffer_map_wavefronts(struct si_inst_buffer_t *inst_buffer, 
 	struct si_work_group_t *work_group);
-void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
+void si_inst_buffer_unmap_wavefronts(struct si_inst_buffer_t *inst_buffer, 
 	struct si_work_group_t *work_group);
 
 
@@ -302,7 +332,7 @@ void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_po
  * GPU Calculator
  */
 
-int si_calc_get_work_groups_per_wavefront_pool(int work_items_per_work_group,
+int si_calc_get_work_groups_per_inst_buffer(int work_items_per_work_group,
 	int registers_per_work_item, int local_mem_per_work_group);
 void si_calc_plot(void);
 
@@ -388,7 +418,7 @@ extern unsigned int si_gpu_platform;
 
 extern unsigned int si_gpu_num_compute_units;
 extern unsigned int si_gpu_num_registers;
-extern unsigned int si_gpu_num_wavefront_pools;
+extern unsigned int si_gpu_num_inst_buffers;
 extern unsigned int si_gpu_num_stream_cores;
 extern unsigned int si_gpu_register_alloc_size;
 
@@ -400,8 +430,8 @@ extern enum si_gpu_register_alloc_granularity_t
 	si_gpu_register_alloc_work_group
 } si_gpu_register_alloc_granularity;
 
-extern int si_gpu_max_work_groups_per_wavefront_pool;
-extern int si_gpu_max_wavefronts_per_wavefront_pool;
+extern int si_gpu_max_work_groups_per_inst_buffer;
+extern int si_gpu_max_wavefronts_per_inst_buffer;
 
 extern struct str_map_t si_gpu_sched_policy_map;
 extern enum si_gpu_sched_policy_t
@@ -416,7 +446,7 @@ extern char *si_gpu_calc_file_name;
 extern int si_gpu_fetch_latency;
 
 extern int si_gpu_decode_latency;
-extern int si_gpu_decode_issue_width;
+extern int si_gpu_decode_width;
 
 extern int si_gpu_local_mem_size;
 extern int si_gpu_local_mem_alloc_size;
@@ -426,28 +456,27 @@ extern int si_gpu_local_mem_num_ports;
 
 extern int si_gpu_simd_alu_latency;
 extern int si_gpu_simd_reg_latency;
-extern int si_gpu_simd_issue_width;
+extern int si_gpu_simd_width;
 extern int si_gpu_simd_num_subwavefronts;
 
 extern int si_gpu_vector_mem_inflight_mem_accesses;
-extern int si_gpu_vector_mem_issue_width;
+extern int si_gpu_vector_mem_width;
 extern int si_gpu_vector_mem_reg_latency;
+extern int si_gpu_vector_mem_exec_latency;
 
 extern int si_gpu_lds_inflight_mem_accesses;
-extern int si_gpu_lds_issue_width;
+extern int si_gpu_lds_width;
 extern int si_gpu_lds_reg_latency;
+extern int si_gpu_lds_exec_latency;
 
 extern int si_gpu_scalar_unit_inflight_mem_accesses;
-extern int si_gpu_scalar_unit_alu_latency;
+extern int si_gpu_scalar_unit_width;
 extern int si_gpu_scalar_unit_reg_latency;
-extern int si_gpu_scalar_unit_issue_width;
+extern int si_gpu_scalar_unit_exec_latency;
 
+extern int si_gpu_branch_unit_width;
 extern int si_gpu_branch_unit_reg_latency;
-extern int si_gpu_branch_unit_latency;
-extern int si_gpu_branch_unit_issue_width;
-
-//extern int si_gpu_branch_unit_issue_width;
-extern int si_gpu_branch_unit_latency;
+extern int si_gpu_branch_unit_exec_latency;
 
 struct si_gpu_t
 {
@@ -456,9 +485,9 @@ struct si_gpu_t
 
 	/* ND-Range running on it */
 	struct si_ndrange_t *ndrange;
-	int work_groups_per_wavefront_pool;
-	int wavefronts_per_wavefront_pool;
-	int work_items_per_wavefront_pool;
+	int work_groups_per_inst_buffer;
+	int wavefronts_per_inst_buffer;
+	int work_items_per_inst_buffer;
 	int work_groups_per_compute_unit;
 	int wavefronts_per_compute_unit;
 	int work_items_per_compute_unit;

@@ -40,8 +40,7 @@ struct str_map_t vi_si_inst_stage_map =
 		{ "bu-w", vi_si_inst_stage_branch_writeback },
 
 		{ "su-r", vi_si_inst_stage_scalar_read },
-		{ "su-a", vi_si_inst_stage_scalar_alu },
-		{ "su-m", vi_si_inst_stage_scalar_memory },
+		{ "su-e", vi_si_inst_stage_scalar_execute },
 		{ "su-w", vi_si_inst_stage_scalar_writeback },
 
 		{ "mem-r", vi_si_inst_stage_mem_read },
@@ -77,8 +76,7 @@ struct str_map_t vi_si_inst_stage_color_map =
 
 		/* Red */
 		{ "#FF8888", vi_si_inst_stage_scalar_read },
-		{ "#FF6666", vi_si_inst_stage_scalar_alu },
-		{ "#FF4444", vi_si_inst_stage_scalar_memory },
+		{ "#FF5555", vi_si_inst_stage_scalar_execute },
 		{ "#FF2222", vi_si_inst_stage_scalar_writeback },
 
 		/* Turquoise */
@@ -113,8 +111,7 @@ struct str_map_t vi_si_inst_stage_name_map =
 		{ "BW", vi_si_inst_stage_branch_writeback },
 
 		{ "SR", vi_si_inst_stage_scalar_read },
-		{ "SA", vi_si_inst_stage_scalar_alu },
-		{ "SM", vi_si_inst_stage_scalar_memory },
+		{ "SE", vi_si_inst_stage_scalar_execute },
 		{ "SW", vi_si_inst_stage_scalar_writeback },
 
 		{ "MR", vi_si_inst_stage_mem_read },
@@ -133,7 +130,7 @@ struct str_map_t vi_si_inst_stage_name_map =
 
 
 struct vi_si_inst_t *vi_si_inst_create(char *name, long long id, int compute_unit_id, 
-	int wavefront_pool_id, int work_group_id, int wavefront_id, enum vi_si_inst_stage_t stage,
+	int inst_buffer_id, int work_group_id, int wavefront_id, enum vi_si_inst_stage_t stage,
         char *asm_code)
 
 {
@@ -148,7 +145,7 @@ struct vi_si_inst_t *vi_si_inst_create(char *name, long long id, int compute_uni
 	inst->name = str_set(NULL, name);
 	inst->id = id;
 	inst->compute_unit_id = compute_unit_id;
-	inst->wavefront_pool_id = wavefront_pool_id;
+	inst->inst_buffer_id = inst_buffer_id;
 	inst->work_group_id = work_group_id;
 	inst->wavefront_id = wavefront_id;
 	inst->stage = stage;
@@ -178,8 +175,8 @@ void vi_si_inst_get_markup(struct vi_si_inst_t *inst, char *buf, int size)
 	end_color = "</span>";
 
 	/* Instruction ID */
-	str_printf(&buf, &size, "%s<b>I-%lld WFP-%d</b>%s", begin_color, inst->id, 
-		inst->wavefront_pool_id, end_color);
+	str_printf(&buf, &size, "%s<b>I-%lld IB-%d WF-%d</b>%s", begin_color, inst->id, 
+		inst->inst_buffer_id, inst->wavefront_id, end_color);
 
 	/* Assembly */
 	if (inst->asm_code && *inst->asm_code)

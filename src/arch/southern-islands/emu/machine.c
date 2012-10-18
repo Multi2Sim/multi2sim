@@ -44,6 +44,12 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si
 	//uint32_t m_size;
 	struct si_buffer_resource_t buf_desc;
 	int sbase;
+	struct si_wavefront_t *wavefront;
+       
+	wavefront = work_item->wavefront;
+	
+	/* Record access */
+	wavefront->scalar_mem_read = 1;
 
 	sbase = INST.sbase << 1;
 
@@ -115,15 +121,18 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst
 void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value[2];
-
 	uint32_t m_base;
 	uint32_t m_offset;
 	uint32_t m_addr;
-
 	struct si_mem_ptr_t mem_ptr;
-
 	int sbase;
 	int i;
+	struct si_wavefront_t *wavefront;
+       
+	wavefront = work_item->wavefront;
+	
+	/* Record access */
+	wavefront->scalar_mem_read = 1;
 
 	sbase = INST.sbase << 1;
 
@@ -162,15 +171,18 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct 
 void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value[4];
-
 	uint32_t m_base;
 	uint32_t m_offset;
 	uint32_t m_addr;
-
 	struct si_mem_ptr_t mem_ptr;
-
 	int sbase;
 	int i;
+	struct si_wavefront_t *wavefront;
+       
+	wavefront = work_item->wavefront;
+	
+	/* Record access */
+	wavefront->scalar_mem_read = 1;
 
 	sbase = INST.sbase << 1;
 
@@ -1462,8 +1474,7 @@ void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	struct si_wavefront_t *wavefront = work_item->wavefront;
 	struct si_work_group_t *work_group = work_item->work_group;
 
-	/* TODO Add new state to visualization tool for waiting
-	 * at barrier */
+	/* TODO Add new state to visualization tool for waiting at barrier */
 
 	/* Suspend current wavefront at the barrier */
 	wavefront->barrier = 1;
@@ -1488,14 +1499,13 @@ void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		assert(work_group->barrier_list_count == 0);
 		si_isa_debug("%s completed barrier, waking up wavefronts\n",
 			work_group->name);
-
-		wavefront->barrier_cleared = 1;
 	}
 }
 
 void si_isa_S_WAITCNT_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	/* Nothing to do in emulation */
+	work_item->wavefront->wait = 1;
 }
 
 /* D.u = S0.u. */
@@ -1637,16 +1647,6 @@ void si_isa_V_CVT_U32_F32_impl(struct si_work_item_t *work_item, struct si_inst_
 		fvalue = ((union si_reg_t)INST.lit_cnst).as_float;
 	else
 		fvalue = si_isa_read_reg(work_item, INST.src0).as_float;
-
-	/*
-	union si_reg_t test_value;
-	test_value.as_float = fvalue;
-	printf("fvalue: (%0x, %u, %ff), max_uint: (%u, %ff) -1(%ff), fvalue >= max_uint: %u\n",
-			test_value.as_uint, test_value.as_uint, test_value.as_float,
-			UINT_MAX, (float)UINT_MAX, (float)(UINT_MAX -1),
-			test_value.as_float >= UINT_MAX);
-	printf("int_max (%i, %ff), int_min(%i, %ff)\n", INT_MAX, (float)INT_MAX, INT_MIN, (float)INT_MIN);
-	*/
 
 	/* Handle special number cases and cast to an unsigned int */
 
