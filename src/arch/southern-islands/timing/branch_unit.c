@@ -24,64 +24,72 @@
 
 
 int si_gpu_branch_unit_reg_latency = 1;
-int si_gpu_branch_unit_latency = 4;
-int si_gpu_branch_unit_issue_width = 1;
+int si_gpu_branch_unit_exec_latency = 4;
+int si_gpu_branch_unit_width = 1;
 
 void si_branch_unit_writeback(struct si_branch_unit_t *branch_unit)
 {
 	struct si_uop_t *uop;
-	struct si_wavefront_t *wavefront;
-	int list_count;
+	int list_entries;
 
 	/* Process completed instructions */
-	list_count = linked_list_count(branch_unit->out_buffer);
-	linked_list_head(branch_unit->out_buffer);
-	for (int i = 0; i < list_count; i++)
+	list_entries = list_count(branch_unit->exec_buffer);
+
+	/* Sanity check the exec buffer */
+	assert(list_entries <= si_gpu_branch_unit_exec_latency * si_gpu_branch_unit_width);
+
+	for (int i = 0; i < list_entries; i++)
 	{
-		uop = linked_list_get(branch_unit->out_buffer);
+		uop = list_head(branch_unit->exec_buffer);
 		assert(uop);
 
 		if (uop->execute_ready <= si_gpu->cycle)
 		{
 			/* Access complete, remove the uop from the queue */
-			linked_list_remove(branch_unit->out_buffer);
+			list_remove(branch_unit->exec_buffer, uop);
 
-			si_trace("si.inst id=%lld cu=%d stg=\"bu-w\"\n", uop->id_in_compute_unit,
-				branch_unit->compute_unit->id);
+			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"bu-w\"\n", 
+				uop->id_in_compute_unit, branch_unit->compute_unit->id, 
+				uop->wavefront->id);
 
-			/* Make the wavefront active again */
-			wavefront = uop->wavefront;
-			wavefront->ready = 1;
+			/* Allow next instruction to be fetched */
+			uop->inst_buffer_entry->ready = 1;
+			uop->inst_buffer_entry->uop = NULL;
+			uop->inst_buffer_entry->cycle_fetched = INST_NOT_FETCHED;
 
 			/* Free uop */
 			if (si_tracing())
 				si_gpu_uop_trash_add(uop);
 			else
 				si_uop_free(uop);
+
+			/* Statistics */
+			branch_unit->inst_count++;
+			branch_unit->wavefront_count++;
+			si_gpu->last_complete_cycle = esim_cycle;
 		}
 		else
 		{
-			linked_list_next(branch_unit->out_buffer);
+			break;
 		}
 	}
-
-	/* Statistics */
-	si_gpu->last_complete_cycle = esim_cycle;
 }
 
 void si_branch_unit_execute(struct si_branch_unit_t *branch_unit)
 {
 	struct si_uop_t *uop;
-	int list_count;
-	int instructions_issued = 0;
+	int list_entries;
+	int instructions_processed = 0;
 
-	/* Look through the execution buffer looking for wavefronts ready to execute */
-	list_count = linked_list_count(branch_unit->exec_buffer);
-	linked_list_head(branch_unit->exec_buffer);
-	for (int i = 0; i < list_count; i++)
+	list_entries = list_count(branch_unit->read_buffer);
+
+	/* Sanity check the read buffer.  Register accesses are not pipelined, so
+	 * buffer size is not multiplied by the latency. */
+	assert(list_entries <= si_gpu_branch_unit_width);
+
+	for (int i = 0; i < list_entries; i++)
 	{
-		/* Peek at the first uop */
-		uop = linked_list_get(branch_unit->exec_buffer);
+		uop = list_head(branch_unit->read_buffer);
 		assert(uop);
 
 		/* Stop if the uop has not been fully read yet. It is safe
@@ -90,43 +98,41 @@ void si_branch_unit_execute(struct si_branch_unit_t *branch_unit)
 			break;
 
 		/* Stop if the issue width has been reached, stall */
-		if (instructions_issued == si_gpu_branch_unit_issue_width)
+		if (instructions_processed == si_gpu_branch_unit_width)
 		{
-			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
-				branch_unit->compute_unit->id);
+			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
+				uop->id_in_compute_unit, branch_unit->compute_unit->id, 
+				uop->wavefront->id);
 			break;
 		}
 
 		/* Branch */
-		uop->execute_ready = si_gpu->cycle +
-			si_gpu_branch_unit_latency;
+		uop->execute_ready = si_gpu->cycle + si_gpu_branch_unit_exec_latency;
 
 		/* Transfer the uop to the outstanding execution buffer */
-		linked_list_remove(branch_unit->exec_buffer);
-		linked_list_add(branch_unit->out_buffer, uop);
+		list_remove(branch_unit->read_buffer, uop);
+		list_enqueue(branch_unit->exec_buffer, uop);
 
-		instructions_issued++;
-		branch_unit->inst_count++;
-		branch_unit->wavefront_count++;
-
-		si_trace("si.inst id=%lld cu=%d stg=\"bu-e\"\n", uop->id_in_compute_unit,
-						branch_unit->compute_unit->id);
+		instructions_processed++;
+		si_trace("si.inst id=%lld cu=%d wf=%d stg=\"bu-e\"\n", uop->id_in_compute_unit,
+			branch_unit->compute_unit->id, uop->wavefront->id);
 	}
 }
 
 void si_branch_unit_read(struct si_branch_unit_t *branch_unit)
 {
 	struct si_uop_t *uop;
-	int instructions_issued = 0;
-	int list_count;
+	int instructions_processed = 0;
+	int list_entries;
 
-	/* Look through the read buffer looking for wavefronts ready to issue */
-	list_count = linked_list_count(branch_unit->read_buffer);
-	linked_list_head(branch_unit->read_buffer);
-	for (int i = 0; i < list_count; i++)
+	list_entries = list_count(branch_unit->decode_buffer);
+
+	/* Sanity check the decode buffer */
+	assert(list_entries <= si_gpu_decode_latency * si_gpu_decode_width);
+
+	for (int i = 0; i < list_entries; i++)
 	{
-		/* Peek at the first uop */
-		uop = linked_list_get(branch_unit->read_buffer);
+		uop = list_head(branch_unit->decode_buffer);
 		assert(uop);
 
 		/* Stop if the uop has not been fully decoded yet. It is safe
@@ -135,29 +141,32 @@ void si_branch_unit_read(struct si_branch_unit_t *branch_unit)
 			break;
 
 		/* Stop if the issue width has been reached, stall */
-		if (instructions_issued == si_gpu_branch_unit_issue_width)
+		if (instructions_processed == si_gpu_branch_unit_width)
 		{
-			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
-				branch_unit->compute_unit->id);
+			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
+				uop->id_in_compute_unit, branch_unit->compute_unit->id, 
+				uop->wavefront->id);
 			break;
 		}
 
-		/* Issue the uop if the exec_buffer is not full */
-		if (linked_list_count(branch_unit->exec_buffer) < si_gpu_branch_unit_issue_width)
+		/* Issue the uop if the read buffer is not full */
+		if (list_count(branch_unit->read_buffer) < si_gpu_branch_unit_width)
 		{
 			uop->read_ready = si_gpu->cycle + si_gpu_branch_unit_reg_latency;
-			linked_list_remove(branch_unit->read_buffer);
-			linked_list_add(branch_unit->exec_buffer, uop);
+			list_remove(branch_unit->decode_buffer, uop);
+			list_enqueue(branch_unit->read_buffer, uop);
 
-			instructions_issued++;
+			instructions_processed++;
 
-			si_trace("si.inst id=%lld cu=%d stg=\"bu-r\"\n", uop->id_in_compute_unit,
-					branch_unit->compute_unit->id);
+			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"bu-r\"\n", 
+				uop->id_in_compute_unit, branch_unit->compute_unit->id, 
+				uop->wavefront->id);
 		}
 		else
 		{
-			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
-				branch_unit->compute_unit->id);
+			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
+				uop->id_in_compute_unit, branch_unit->compute_unit->id, 
+				uop->wavefront->id);
 			break;
 		}
 	}

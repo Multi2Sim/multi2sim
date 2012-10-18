@@ -140,7 +140,7 @@ char *si_gpu_driver_version = VERSION;
 char *si_gpu_opencl_version = "OpenCL C 1.2";
 
 unsigned int si_gpu_num_compute_units = 32;
-unsigned int si_gpu_num_wavefront_pools = 4; /* Per CU */
+unsigned int si_gpu_num_inst_buffers = 4; /* Per CU */
 unsigned int si_gpu_num_stream_cores = 16; /* Per SIMD */
 unsigned int si_gpu_num_registers = 65536; /* Per SIMD */
 unsigned int si_gpu_register_alloc_size = 32;
@@ -282,8 +282,8 @@ static void si_config_read(void)
 	section = "Device";
 	si_gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", 
 		si_gpu_num_compute_units);
-	si_gpu_num_wavefront_pools = config_read_int(gpu_config, section, "NumWavefrontPools", 
-		si_gpu_num_wavefront_pools);
+	si_gpu_num_inst_buffers = config_read_int(gpu_config, section, "NumInstBuffers", 
+		si_gpu_num_inst_buffers);
 	si_gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", 
 		si_gpu_num_stream_cores);
 	si_gpu_num_registers = config_read_int(gpu_config, section, "NumRegisters", 
@@ -294,34 +294,34 @@ static void si_config_read(void)
 		"RegisterAllocGranularity", "WorkGroup");
 	si_emu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", 
 		si_emu_wavefront_size);
-	si_gpu_max_work_groups_per_wavefront_pool = config_read_int(gpu_config, section, 
-		"MaxWorkGroupsPerComputeUnit", si_gpu_max_work_groups_per_wavefront_pool);
-	si_gpu_max_wavefronts_per_wavefront_pool = config_read_int(gpu_config, section, 
-		"MaxWavefrontsPerComputeUnit", si_gpu_max_wavefronts_per_wavefront_pool);
+	si_gpu_max_work_groups_per_inst_buffer = config_read_int(gpu_config, section, 
+		"MaxWorkGroupsPerInstBuffer", si_gpu_max_work_groups_per_inst_buffer);
+	si_gpu_max_wavefronts_per_inst_buffer = config_read_int(gpu_config, section, 
+		"MaxWavefrontsPerInstBuffer", si_gpu_max_wavefronts_per_inst_buffer);
 	si_gpu_fetch_latency = config_read_int(gpu_config, section, "FetchLatency", 
 		si_gpu_fetch_latency);
 	si_gpu_decode_latency = config_read_int(gpu_config, section, "DecodeLatency", 
 		si_gpu_decode_latency);
-	si_gpu_simd_issue_width = config_read_int(gpu_config, section, "SIMDIssueWidth", 
-		si_gpu_simd_issue_width);
+	si_gpu_simd_width = config_read_int(gpu_config, section, "SIMDWidth", 
+		si_gpu_simd_width);
 	si_gpu_simd_alu_latency = config_read_int(gpu_config, section, "SIMDALULatency", 
 		si_gpu_simd_alu_latency);
-	si_gpu_scalar_unit_issue_width= config_read_int(gpu_config, section, 
-		"ScalarUnitIssueWidth", si_gpu_scalar_unit_issue_width);
-	si_gpu_scalar_unit_alu_latency = config_read_int(gpu_config, section, 
-		"ScalarUnitALULatency", si_gpu_scalar_unit_alu_latency);
-	si_gpu_branch_unit_issue_width = config_read_int(gpu_config, section, 
-		"BranchUnitIssueWidth", si_gpu_branch_unit_issue_width);
-	si_gpu_branch_unit_latency = config_read_int(gpu_config, section, "BranchUnitLatency", 
-		si_gpu_branch_unit_latency);
+	si_gpu_scalar_unit_width= config_read_int(gpu_config, section, 
+		"ScalarUnitWidth", si_gpu_scalar_unit_width);
+	si_gpu_scalar_unit_exec_latency = config_read_int(gpu_config, section, 
+		"ScalarUnitExecLatency", si_gpu_scalar_unit_exec_latency);
+	si_gpu_branch_unit_width = config_read_int(gpu_config, section, 
+		"BranchUnitWidth", si_gpu_branch_unit_width);
+	si_gpu_branch_unit_exec_latency = config_read_int(gpu_config, section, 
+		"BranchUnitExecLatency", si_gpu_branch_unit_exec_latency);
 	gpu_sched_policy_str = config_read_string(gpu_config, section, "SchedulingPolicy", 
 		"RoundRobin");
 
 	if (si_gpu_num_compute_units < 1)
 		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", si_gpu_config_file_name, 
 			err_note);
-	if (si_gpu_num_wavefront_pools < 1)
-		fatal("%s: invalid value for 'NumWavefrontPools'.\n%s", si_gpu_config_file_name, 
+	if (si_gpu_num_inst_buffers < 1)
+		fatal("%s: invalid value for 'NumInstBuffers'.\n%s", si_gpu_config_file_name, 
 			err_note);
 	if (si_gpu_num_stream_cores < 1)
 		fatal("%s: invalid value for 'NumStreamCores'.\n%s", si_gpu_config_file_name, 
@@ -348,11 +348,11 @@ static void si_config_read(void)
 	if (si_emu_wavefront_size < 1)
 		fatal("%s: invalid value for 'WavefrontSize'.\n%s", si_gpu_config_file_name, 
 			err_note);
-	if (si_gpu_max_work_groups_per_wavefront_pool < 1)
-		fatal("%s: invalid value for 'MaxWorkGroupsPerComputeUnit'.\n%s", 
+	if (si_gpu_max_work_groups_per_inst_buffer < 1)
+		fatal("%s: invalid value for 'MaxWorkGroupsPerInstBuffer'.\n%s", 
 			si_gpu_config_file_name, err_note);
-	if (si_gpu_max_wavefronts_per_wavefront_pool < 1)
-		fatal("%s: invalid value for 'MaxWavefrontsPerComputeUnit'.\n%s", 
+	if (si_gpu_max_wavefronts_per_inst_buffer < 1)
+		fatal("%s: invalid value for 'MaxWavefrontsPerInstBuffer'.\n%s", 
 			si_gpu_config_file_name, err_note);
 	
 	/* Local memory */
@@ -402,7 +402,7 @@ static void si_config_dump(FILE *f)
 	/* Device configuration */
 	fprintf(f, "[ Config.Device ]\n");
 	fprintf(f, "NumComputeUnits = %d\n", si_gpu_num_compute_units);
-	fprintf(f, "NumWavefrontPools = %d\n", si_gpu_num_wavefront_pools);
+	fprintf(f, "NumInstBuffers = %d\n", si_gpu_num_inst_buffers);
 	fprintf(f, "NumStreamCores = %d\n", si_gpu_num_stream_cores);
 	fprintf(f, "NumRegisters = %d\n", si_gpu_num_registers);
 	fprintf(f, "RegisterAllocSize = %d\n", si_gpu_register_alloc_size);
@@ -410,14 +410,14 @@ static void si_config_dump(FILE *f)
 		str_map_value(&si_gpu_register_alloc_granularity_map, 
 		si_gpu_register_alloc_granularity));
 	fprintf(f, "WavefrontSize = %d\n", si_emu_wavefront_size);
-	fprintf(f, "MaxWorkGroupsPerWavefrontPool= %d\n", si_gpu_max_work_groups_per_wavefront_pool);
-	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n", si_gpu_max_wavefronts_per_wavefront_pool);
+	fprintf(f, "MaxWorkGroupsPerInstBuffer = %d\n", si_gpu_max_work_groups_per_inst_buffer);
+	fprintf(f, "MaxWavefrontsPerInstBuffer = %d\n", si_gpu_max_wavefronts_per_inst_buffer);
 	fprintf(f, "SIMDALULatency = %d\n", si_gpu_simd_alu_latency);
-	fprintf(f, "SIMDIssueWidth = %d\n", si_gpu_simd_issue_width);
-	fprintf(f, "ScalarUnitALULatency = %d\n", si_gpu_scalar_unit_alu_latency);
-	fprintf(f, "ScalarUnitIssueWidth = %d\n", si_gpu_scalar_unit_issue_width);
-	fprintf(f, "BranchUnitLatency = %d\n", si_gpu_branch_unit_latency);
-	fprintf(f, "BranchUnitIssueWidth = %d\n", si_gpu_branch_unit_issue_width);
+	fprintf(f, "SIMDWidth = %d\n", si_gpu_simd_width);
+	fprintf(f, "ScalarUnitExecLatency = %d\n", si_gpu_scalar_unit_exec_latency);
+	fprintf(f, "ScalarUnitWidth = %d\n", si_gpu_scalar_unit_width);
+	fprintf(f, "BranchUnitExecLatency = %d\n", si_gpu_branch_unit_exec_latency);
+	fprintf(f, "BranchUnitWidth = %d\n", si_gpu_branch_unit_width);
 	fprintf(f, "SchedulingPolicy = %s\n", str_map_value(&si_gpu_sched_policy_map, 
 		si_gpu_sched_policy));
 	fprintf(f, "\n");
@@ -445,31 +445,31 @@ static void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
 	si_gpu->ndrange = ndrange;
 
 	/* Check that at least one work-group can be allocated per Wavefront Pool */
-	si_gpu->work_groups_per_wavefront_pool = si_calc_get_work_groups_per_wavefront_pool(
+	si_gpu->work_groups_per_inst_buffer = si_calc_get_work_groups_per_inst_buffer(
 		ndrange->kernel->local_size, 
 		ndrange->kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used,
 		ndrange->local_mem_top);
-	if (!si_gpu->work_groups_per_wavefront_pool)
+	if (!si_gpu->work_groups_per_inst_buffer)
 		fatal("work-group resources cannot be allocated to a compute unit.\n"
 			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"
 			"\tof registers, and amount of local memory. If the work-group size\n"
 			"\texceeds any of these limits, the ND-Range cannot be executed.\n");
 
 	/* Calculate limit of wavefronts and work-items per Wavefront Pool */
-	si_gpu->wavefronts_per_wavefront_pool = si_gpu->work_groups_per_wavefront_pool * 
+	si_gpu->wavefronts_per_inst_buffer = si_gpu->work_groups_per_inst_buffer * 
 		ndrange->wavefronts_per_work_group;
-	si_gpu->work_items_per_wavefront_pool = si_gpu->wavefronts_per_wavefront_pool * 
+	si_gpu->work_items_per_inst_buffer = si_gpu->wavefronts_per_inst_buffer * 
 		si_emu_wavefront_size;
 
 	/* Calculate limit of work groups, wavefronts and work-items per compute unit */
-	si_gpu->work_groups_per_compute_unit = si_gpu->work_groups_per_wavefront_pool * 
-		si_gpu_num_wavefront_pools;
-	si_gpu->wavefronts_per_compute_unit = si_gpu->wavefronts_per_wavefront_pool * 
-		si_gpu_num_wavefront_pools;
-	si_gpu->work_items_per_compute_unit = si_gpu->work_items_per_wavefront_pool * 
-		si_gpu_num_wavefront_pools;
-	assert(si_gpu->work_groups_per_wavefront_pool <= si_gpu_max_work_groups_per_wavefront_pool);
-	assert(si_gpu->wavefronts_per_wavefront_pool <= si_gpu_max_wavefronts_per_wavefront_pool);
+	si_gpu->work_groups_per_compute_unit = si_gpu->work_groups_per_inst_buffer * 
+		si_gpu_num_inst_buffers;
+	si_gpu->wavefronts_per_compute_unit = si_gpu->wavefronts_per_inst_buffer * 
+		si_gpu_num_inst_buffers;
+	si_gpu->work_items_per_compute_unit = si_gpu->work_items_per_inst_buffer * 
+		si_gpu_num_inst_buffers;
+	assert(si_gpu->work_groups_per_inst_buffer <= si_gpu_max_work_groups_per_inst_buffer);
+	assert(si_gpu->wavefronts_per_inst_buffer <= si_gpu_max_wavefronts_per_inst_buffer);
 
 	/* Reset architectural state */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
@@ -639,8 +639,8 @@ void si_gpu_uop_trash_empty(void)
 		uop = linked_list_get(si_gpu->trash_uop_list);
 		linked_list_remove(si_gpu->trash_uop_list);
 
-		si_trace("si.end_inst id=%lld cu=%d\n",
-			uop->id_in_compute_unit, uop->compute_unit->id);
+		si_trace("si.end_inst id=%lld cu=%d\n", uop->id_in_compute_unit, 
+			uop->compute_unit->id);
 
 		si_uop_free(uop);
 	}

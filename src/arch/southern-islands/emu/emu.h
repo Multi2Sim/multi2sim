@@ -691,7 +691,7 @@ struct si_work_group_t
 	/* Pointers to wavefronts and work-items */
 	struct si_work_item_t **work_items;  /* Pointer to first work_item in 'kernel->work_items' */
 	struct si_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
-	struct si_wavefront_pool_t *wavefront_pool;
+	struct si_inst_buffer_t *inst_buffer;
 
 	/* Double linked lists of work-groups */
 	struct si_work_group_t *pending_list_prev;
@@ -754,7 +754,6 @@ struct si_wavefront_t
 	char name[30];
 	int id;
 	int id_in_work_group;
-	int id_in_wavefront_pool;
 
 	/* IDs of work-items it contains */
 	int work_item_id_first;
@@ -765,9 +764,9 @@ struct si_wavefront_t
 	struct si_ndrange_t *ndrange;
 	struct si_work_group_t *work_group;
 
-	/* Instruction buffer */
-	void *inst_buf;	
-	void *inst_buf_start;	
+	/* Instruction buffer (code, not architectural instruction buffer) */
+	void *inst_buf;
+	void *inst_buf_start;
 
 	/* Current instruction */
 	struct si_inst_t inst;
@@ -782,11 +781,15 @@ struct si_wavefront_t
 	struct bit_map_t *pred;  /* work_item_count elements */
 
 	/* Flags updated during instruction execution */
-	unsigned int global_mem_read : 1;
-	unsigned int global_mem_write : 1;
+	unsigned int vector_mem_read : 1;
+	unsigned int vector_mem_write : 1;
+	unsigned int scalar_mem_read : 1;
 	unsigned int local_mem_read : 1;
 	unsigned int local_mem_write : 1;
 	unsigned int pred_mask_update : 1;
+	unsigned int wait : 1;
+	unsigned int barrier : 1;
+	unsigned int finished : 1;
 
 	/* Linked lists */
 	struct si_wavefront_t *running_list_next;
@@ -801,15 +804,10 @@ struct si_wavefront_t
 	long long emu_time_start;
 	long long emu_time_end;
 
-	/* Fields introduced for architectural simulation */
+	/* Fields introduced for timing simulation */
 	int id_in_compute_unit;
 	long long sched_when;  /* GPU cycle when wavefront was last scheduled */
-	struct si_wavefront_pool_t *wavefront_pool;
-
-	/* Flags for timing simulation */
-	unsigned int ready : 1;  /* ready to fetch next instruction */
-	unsigned int barrier : 1;  /* blocked at barrier */
-	unsigned int barrier_cleared : 1;  /* last wavefront to hit the barrier clears it */
+	struct si_inst_buffer_entry_t *inst_buffer_entry;
 
 	/* Statistics */
 	long long inst_count;  /* Total number of instructions */
@@ -819,8 +817,6 @@ struct si_wavefront_t
 	long long vector_alu_inst_count;
 	long long global_mem_inst_count;  
 	long long local_mem_inst_count;  
-
-	int finished;
 };
 
 #define SI_FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \

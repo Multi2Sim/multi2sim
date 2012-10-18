@@ -131,11 +131,16 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	assert(!DOUBLE_LINKED_LIST_MEMBER(work_group, finished, wavefront));
 
 	/* Reset instruction flags */
-	wavefront->global_mem_write = 0;
-	wavefront->global_mem_read = 0;
+	wavefront->vector_mem_write = 0;
+	wavefront->vector_mem_read = 0;
+	wavefront->scalar_mem_read = 0;
 	wavefront->local_mem_write = 0;
 	wavefront->local_mem_read = 0;
 	wavefront->pred_mask_update = 0;
+	wavefront->wait = 0;
+	wavefront->barrier = 0;
+
+	assert(!wavefront->finished);
 	
 	/* Grab the next instruction and update the pointer */
 	wavefront->inst_size = si_inst_decode(wavefront->inst_buf, &wavefront->inst);
@@ -499,6 +504,23 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		si_emu->vector_alu_inst_count++;
 		wavefront->vector_alu_inst_count++;
 
+		/* Record access type */
+		if ((inst->info->opcode >= 13 && inst->info->opcode < 16) ||
+			(inst->info->opcode >= 30 && inst->info->opcode < 32) ||
+			(inst->info->opcode >= 77 && inst->info->opcode < 80))
+		{
+			wavefront->local_mem_write = 1;
+		}
+		else if ((inst->info->opcode >= 54 && inst->info->opcode < 61) ||
+			(inst->info->opcode >= 118 && inst->info->opcode < 120))
+		{
+			wavefront->local_mem_read = 1;
+		}
+		else 
+		{
+			fatal("%s: unimplemented LDS opcode", __FUNCTION__);
+		}
+
 		/* Execute the instruction */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
@@ -532,9 +554,9 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 		/* Record access type */
 		if (inst->info->opcode >= 0 && inst->info->opcode < 4)
-			wavefront->global_mem_read = 1;
+			wavefront->vector_mem_read = 1;
 		else if (inst->info->opcode >= 4 && inst->info->opcode < 8)
-			wavefront->global_mem_write = 1;
+			wavefront->vector_mem_write = 1;
 		else 
 			fatal("%s: invalid mtbuf opcode", __FUNCTION__);
 	
