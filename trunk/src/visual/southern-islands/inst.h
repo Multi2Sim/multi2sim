@@ -36,8 +36,7 @@ enum vi_si_inst_stage_t
 	vi_si_inst_stage_branch_writeback,
 
 	vi_si_inst_stage_scalar_read,
-	vi_si_inst_stage_scalar_alu,
-	vi_si_inst_stage_scalar_memory,
+	vi_si_inst_stage_scalar_execute,
 	vi_si_inst_stage_scalar_writeback,
 
 	vi_si_inst_stage_simd_read,
@@ -64,7 +63,7 @@ struct vi_si_inst_t
 	long long id;
 
 	int compute_unit_id;
-	int wavefront_pool_id;
+	int inst_buffer_id;
 	int work_group_id;
 	int wavefront_id;
 
@@ -76,7 +75,7 @@ extern struct str_map_t vi_si_inst_stage_name_map;
 extern struct str_map_t vi_si_inst_stage_color_map;
 
 struct vi_si_inst_t *vi_si_inst_create(char *name, long long id,
-	int compute_unit_id, int wavefront_pool_id, int work_group_id, 
+	int compute_unit_id, int inst_buffer_id, int work_group_id, 
 	int wavefront_id, enum vi_si_inst_stage_t stage, char *asm_code);
 void vi_si_inst_free(struct vi_si_inst_t *inst);
 
