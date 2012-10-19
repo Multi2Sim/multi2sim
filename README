@@ -272,18 +272,22 @@ Header Files
 	and add instead one by one as their presence is required.
 	Compiler '#include' directives should be classified in three groups,
 	separated with one blank line:
+
 		1) Standard include files found in the default include directory
 		   for the compiler (assert.h, stdio.h, etc), using the notation
-		   based on '< >' brackets.
+		   based on '< >' brackets. The list of header files should be
+		   ordered alphabetically.
+
 		2) Include files located in other directories of the Multi2Sim
 		   tree. These files are expressed as a relative path to the
 		   'src' directory (this is the only additional default path
 		   assumed by the compiler), also using the '< >' bracket
-		   notation.
+		   notation. Files should be ordered alphabetically.
+
 		3) Include files located in the same directory as the source
-		   file, using the double quote '" "' notation.
-	In each of the groups above, header files should be listed
-	alphabetically.
+		   file, using the double quote '" "' notation. Files should be
+		   ordered alphabetically.
+
 	Each source file should include all header files defining the symbols
 	used in its code, and not rely on a multiple inclusion (i.e., a header
 	file including another header file) for this purpose. In general, header
