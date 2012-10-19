@@ -99,31 +99,22 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 			{
 				switch ((shift >> 1) & 0x00000003)
 				{
-				case (LSL):
+				case ARM_OPTR_LSL:
 					ret_addr = rn_val
 						+ (rm_val << shift_val);
 					break;
 
-				case (LSR):
+				case ARM_OPTR_LSR:
 					ret_addr = rn_val
 						+ (rm_val >> shift_val);
 					break;
 
-				case (ASR):
-					/*
-					FIXME
-					RAFA - pow???
-					*/
-
-					abort(); // RAFA - code disabled
-					/*
+				case ARM_OPTR_ASR:
 					ret_addr = rn_val
-						+ (rm_val / (int) (pow(
-							2, shift_val)));
-					*/
+						+ (rm_val / (1 << shift_val));
 					break;
 
-				case (ROR):
+				case ARM_OPTR_ROR:
 					ret_addr = rn_val + arm_rotr(
 						rm_val, shift_val);
 					break;
@@ -133,30 +124,22 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 			{
 				switch ((shift >> 1) & 0x00000003)
 				{
-				case (LSL):
+				case ARM_OPTR_LSL:
 					ret_addr = rn_val
 						- (rm_val << shift_val);
 					break;
 
-				case (LSR):
+				case ARM_OPTR_LSR:
 					ret_addr = rn_val
 						- (rm_val >> shift_val);
 					break;
 
-				case (ASR):
-					/* 
-					FIXME
-					RAFA - code disabled
-					*/
-					abort();
-					/*
+				case ARM_OPTR_ASR:
 					ret_addr = rn_val
-						- (rm_val / (int) (pow(
-							2, shift_val)));
-					*/
+						- (rm_val / (1 << shift_val));
 					break;
 
-				case (ROR):
+				case ARM_OPTR_ROR:
 					ret_addr = rn_val - arm_rotr(
 						rm_val, shift_val);
 					break;
@@ -173,30 +156,25 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 			{
 				switch ((shift >> 1) & 0x00000003)
 				{
-				case (LSL):
+				case ARM_OPTR_LSL:
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						+ (rm_val << shift_val);
 					break;
 
-				case (LSR):
+				case ARM_OPTR_LSR:
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						+ (rm_val >> shift_val);
 					break;
 
-				case (ASR):
-					/* FIXME - code disabled */
-					abort();
-					/*
+				case ARM_OPTR_ASR:
 					ret_addr = rn_val;
 					rn_val = ret_addr
-						+ (rm_val / (int) (pow(
-							2, shift_val)));
-					*/
+						+ (rm_val / (1 << shift_val));
 					break;
 
-				case (ROR):
+				case ARM_OPTR_ROR:
 					ret_addr = rn_val;
 					rn_val = ret_addr + arm_rotr(
 						rm_val, shift_val);
@@ -207,30 +185,25 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 			{
 				switch ((shift >> 1) & 0x00000003)
 				{
-				case (LSL):
+				case ARM_OPTR_LSL:
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						- (rm_val << shift_val);
 					break;
 
-				case (LSR):
+				case ARM_OPTR_LSR:
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						- (rm_val >> shift_val);
 					break;
 
-				case (ASR):
-					/* FIXME - code disabled */
-					abort();
-					/*
+				case ARM_OPTR_ASR:
 					ret_addr = rn_val;
 					rn_val = ret_addr
-						- (rm_val / (int) (pow(
-							2, shift_val)));
-					*/
+						- (rm_val / (1 << shift_val));
 					break;
 
-				case (ROR):
+				case ARM_OPTR_ROR:
 					ret_addr = rn_val;
 					rn_val = ret_addr - arm_rotr(
 						rm_val, shift_val);
@@ -388,23 +361,19 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (LSL):
+			case ARM_OPTR_LSL:
 				op_val = rm_val << (rs_val & 0x000000ff);
 				break;
 
-			case (LSR):
+			case ARM_OPTR_LSR:
 				op_val = ((unsigned int)rm_val) >> (rs_val & 0x000000ff) ;
 				break;
 
-			case (ASR):
-				/* FIXME - code disabled */
-				abort();
-				/*
-				op_val = rm_val /(int)(pow(2,(rs_val & 0x000000ff)));
-				*/
+			case ARM_OPTR_ASR:
+				op_val = rm_val / (1 << (rs_val & 0x000000ff));
 				break;
 
-			case (ROR):
+			case ARM_OPTR_ROR:
 				op_val = arm_rotr(rm_val, (rs_val & 0x000000ff));
 				break;
 			}
@@ -415,23 +384,19 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (LSL):
+			case ARM_OPTR_LSL:
 				op_val = rm_val << shift_imm;
 				break;
 
-			case (LSR):
+			case ARM_OPTR_LSR:
 				op_val = ((unsigned int)rm_val) >> shift_imm;
 				break;
 
-			case (ASR):
-				/* FIXME - code disabled */
-				abort();
-				/*
-				op_val = rm_val /(int)(pow(2,shift_imm));
-				*/
+			case ARM_OPTR_ASR:
+				op_val = rm_val /(1 << shift_imm);
 				break;
 
-			case (ROR):
+			case ARM_OPTR_ROR:
 				op_val = arm_rotr(rm_val, shift_imm);
 				break;
 			}
@@ -443,7 +408,6 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 
 int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op2_cat_t cat)
 {
-#if 0
 	unsigned int imm;
 	unsigned int rotate;
 	unsigned int shift;
@@ -472,13 +436,13 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 		{
 			carry_ret = ((0x80000000) & imm_8r);
 		}
-		/*cry_bit = rotate;
-		cry_mask = (unsigned int)(pow(2,cry_bit));
+		cry_bit = rotate;
+		cry_mask = (unsigned int)(1 << cry_bit);
 
 		if(cry_mask & imm)
 			carry_ret = 1;
 		else
-			carry_ret = 0;*/
+			carry_ret = 0;
 		arm_isa_inst_debug("  carry bit = %d, imm = 0x%x, rotate = %d\n",
 				carry_ret, imm, rotate);
 	}
@@ -496,13 +460,9 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 			arm_isa_reg_load(ctx, rs, &rs_val);
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (LSL):
-				/* FIXME - code disabled */
-				abort();
-
-				/*
+			case ARM_OPTR_LSL:
 				cry_bit = (32 - (rs_val & 0x000000ff));
-				cry_mask = (unsigned int)(pow(2,cry_bit));
+				cry_mask = (unsigned int)(1 << cry_bit);
 				if((rs_val & 0x000000ff) == 0)
 				{
 					carry_ret = -1;
@@ -518,16 +478,11 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
-				*/
 				break;
 
-			case (LSR):
-				/* FIXME - code disabled */
-				abort();
-
-				/*
+			case ARM_OPTR_LSR:
 				cry_bit = ((rs_val & 0x000000ff) - 1);
-				cry_mask = (unsigned int)(pow(2,cry_bit));
+				cry_mask = (unsigned int)(1 << cry_bit);
 				if((rs_val & 0x000000ff) == 0)
 				{
 					carry_ret = -1;
@@ -543,17 +498,11 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
-				*/
 				break;
 
-			case (ASR):
-
-				/* FIXME - code disabled */
-				abort();
-
-				/*
+			case ARM_OPTR_ASR:
 				cry_bit = ((rs_val & 0x000000ff) - 1);
-				cry_mask = (unsigned int)(pow(2,cry_bit));
+				cry_mask = (unsigned int)(1 << cry_bit);
 				if((rs_val & 0x000000ff) == 0)
 				{
 					carry_ret = -1;
@@ -576,16 +525,11 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
-				*/
 				break;
 
-			case (ROR):
-				/* FIXME - code disabled */
-				abort();
-
-				/*
+			case ARM_OPTR_ROR:
 				cry_bit = ((rs_val & 0x0000000f) - 1);
-				cry_mask = (unsigned int)(pow(2,cry_bit));
+				cry_mask = (unsigned int)(1 << cry_bit);
 				if((rs_val & 0x000000ff) == 0)
 				{
 					carry_ret = -1;
@@ -601,7 +545,6 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
-				*/
 				break;
 			}
 			rot_val = rs_val;
@@ -611,12 +554,9 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (LSL):
-				/* FIXME - code disabled */
-				abort();
-				/*
+			case ARM_OPTR_LSL:
 				cry_bit = (32 - shift_imm);
-				cry_mask = (unsigned int)(pow(2,cry_bit));
+				cry_mask = (unsigned int)(1 << cry_bit);
 				if(shift_imm == 0)
 				{
 					carry_ret = -1;
@@ -628,15 +568,11 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
-				*/
 				break;
 
-			case (LSR):
-				/* FIXME - code disabled */
-				abort();
-				/*
+			case ARM_OPTR_LSR:
 				cry_bit = (shift_imm - 1);
-				cry_mask = (unsigned int)(pow(2,cry_bit));
+				cry_mask = (unsigned int)(1 << cry_bit);
 				if(shift_imm == 0)
 				{
 					carry_ret = -1;
@@ -648,15 +584,11 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
-				*/
 				break;
 
-			case (ASR):
-				/* FIXME - code disabled */
-				abort();
-				/*
+			case ARM_OPTR_ASR:
 				cry_bit = (shift_imm - 1);
-				cry_mask = (unsigned int)(pow(2,cry_bit));
+				cry_mask = (unsigned int)(1 << cry_bit);
 				if(shift_imm == 0)
 				{
 					if (rm_val & (0x80000000))
@@ -675,15 +607,11 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
-				*/
 				break;
 
-			case (ROR):
-				/* FIXME - code disabled */
-				abort();
-				/*
+			case ARM_OPTR_ROR:
 				cry_bit = (shift_imm - 1);
-				cry_mask = (unsigned int)(pow(2,cry_bit));
+				cry_mask = (unsigned int)(1 << cry_bit);
 				if(shift_imm == 0)
 				{
 					if (rm_val & (0x00000001))
@@ -702,7 +630,6 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 					else
 						carry_ret = 0;
 				}
-				*/
 				break;
 			}
 			rot_val = shift_imm;
@@ -725,8 +652,6 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 	}
 
 	return (carry_ret);
-#endif
-	return 0; // FIXME - REMOVE THIS LINE - RAFA
 }
 
 
@@ -737,52 +662,52 @@ void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no, int value)
 	arm_isa_inst_debug("  r%d <= %d; (0x%x)\n", reg_no, value, value);
 	switch (reg_no)
 	{
-	case (r0):
+	case r0:
 		ctx->regs->r0 = value;
 		break;
-	case (r1):
+	case r1:
 		ctx->regs->r1 = value;
 		break;
-	case (r2):
+	case r2:
 		ctx->regs->r2 = value;
 		break;
-	case (r3):
+	case r3:
 		ctx->regs->r3 = value;
 		break;
-	case (r4):
+	case r4:
 		ctx->regs->r4 = value;
 		break;
-	case (r5):
+	case r5:
 		ctx->regs->r5 = value;
 		break;
-	case (r6):
+	case r6:
 		ctx->regs->r6 = value;
 		break;
-	case (r7):
+	case r7:
 		ctx->regs->r7 = value;
 		break;
-	case (r8):
+	case r8:
 		ctx->regs->r8 = value;
 		break;
-	case (r9):
+	case r9:
 		ctx->regs->r9 = value;
 		break;
-	case (r10):
+	case r10:
 		ctx->regs->sl = value;
 		break;
-	case (r11):
+	case r11:
 		ctx->regs->fp = value;
 		break;
-	case (r12):
+	case r12:
 		ctx->regs->ip = value;
 		break;
-	case (r13):
+	case r13:
 		ctx->regs->sp = value;
 		break;
-	case (r14):
+	case r14:
 		ctx->regs->lr = value;
 		break;
-	case (r15):
+	case r15:
 		ctx->regs->pc = value + 4;
 		break;
 	}
