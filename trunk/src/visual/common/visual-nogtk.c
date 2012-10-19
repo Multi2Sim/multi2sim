@@ -17,7 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-common.h>
+#include <lib/util/debug.h>
+
+#include "visual.h"
 
 
 void visual_run(char *file_name)
