@@ -12,7 +12,7 @@ libtiming_a_SOURCES = \
 	cf-engine.h \
 	\
 	compute-unit.c \
-	compute-unit.c \
+	compute-unit.h \
 	\
 	faults.c \
 	faults.h \
