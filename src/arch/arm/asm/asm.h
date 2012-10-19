@@ -26,10 +26,10 @@
 /* Shift operators */
 enum arm_op2_shift_t
 {
-	LSL = 0,
-	LSR,
-	ASR,
-	ROR
+	ARM_OPTR_LSL = 0,
+	ARM_OPTR_LSR,
+	ARM_OPTR_ASR,
+	ARM_OPTR_ROR
 };
 
 /* Condition Fields */

@@ -856,19 +856,19 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 			rs = (shift >> 4);
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (LSL):
+			case (ARM_OPTR_LSL):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , LSL r%d", rm, rs);
 			break;
 
-			case (LSR):
+			case (ARM_OPTR_LSR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , LSR r%d", rm, rs);
 			break;
 
-			case (ASR):
+			case (ARM_OPTR_ASR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , ASR r%d", rm, rs);
 			break;
 
-			case (ROR):
+			case (ARM_OPTR_ROR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , ROR r%d", rm, rs);
 			break;
 			}
@@ -878,22 +878,22 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (LSL):
+			case (ARM_OPTR_LSL):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , LSL #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
 			break;
 
-			case (LSR):
+			case (ARM_OPTR_LSR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , LSR #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
 			break;
 
-			case (ASR):
+			case (ARM_OPTR_ASR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , ASR #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
 			break;
 
-			case (ROR):
+			case (ARM_OPTR_ROR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , ROR #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
 			break;
@@ -1254,22 +1254,22 @@ void arm_amode2_disasm(char **inst_str_ptr, int *inst_str_size,
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (LSL):
+			case (ARM_OPTR_LSL):
 				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, lsl #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (LSR):
+			case (ARM_OPTR_LSR):
 				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, lsr #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (ASR):
+			case (ARM_OPTR_ASR):
 				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, asr #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (ROR):
+			case (ARM_OPTR_ROR):
 				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, ror #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
@@ -1279,22 +1279,22 @@ void arm_amode2_disasm(char **inst_str_ptr, int *inst_str_size,
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (LSL):
+			case (ARM_OPTR_LSL):
 				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, lsl #-%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (LSR):
+			case (ARM_OPTR_LSR):
 				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, lsr #-%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (ASR):
+			case (ARM_OPTR_ASR):
 				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, asr #-%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (ROR):
+			case (ARM_OPTR_ROR):
 				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, ror #-%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
