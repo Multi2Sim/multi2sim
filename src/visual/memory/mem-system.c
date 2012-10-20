@@ -21,6 +21,7 @@
 #include <gtk/gtk.h>
 #include <string.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>

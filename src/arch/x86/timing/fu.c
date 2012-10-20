@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <lib/mhandle/mhandle.h>
+
 #include "cpu.h"
 #include "fu.h"
 

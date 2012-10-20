@@ -20,6 +20,7 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
+#include <lib/mhandle/mhandle.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
