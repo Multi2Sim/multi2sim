@@ -24,6 +24,7 @@
 #include <arch/southern-islands/timing/timing.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
 #include <lib/util/misc.h>
 #include <network/net-system.h>

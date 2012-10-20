@@ -19,6 +19,7 @@
 
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/misc.h>
 

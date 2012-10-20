@@ -19,6 +19,7 @@
 
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/misc.h>
