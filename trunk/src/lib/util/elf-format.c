@@ -23,6 +23,8 @@
 #include <assert.h>
 #include <sys/stat.h>
 
+#include <lib/mhandle/mhandle.h>
+
 #include "debug.h"
 #include "elf-format.h"
 #include "list.h"

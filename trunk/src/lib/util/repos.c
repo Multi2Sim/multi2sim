@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include <lib/mhandle/mhandle.h>
+
 #include "debug.h"
 #include "repos.h"
 

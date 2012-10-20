@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/list.h>
