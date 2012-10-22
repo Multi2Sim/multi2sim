@@ -74,6 +74,11 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 	int i;
 	int list_entries;
 	int list_index = 0;
+	unsigned int complete;
+	struct si_ndrange_t *ndrange = si_gpu->ndrange;
+	struct si_work_group_t *work_group;
+	struct si_wavefront_t *wavefront;
+	int wavefront_id;
 
 	/* Process completed memory instructions */
 	list_entries = list_count(scalar_unit->exec_buffer);
@@ -112,11 +117,40 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 			uop->inst_buffer_entry->cycle_fetched = INST_NOT_FETCHED;
 
 			/* Check for "wait" instruction */
-			if (uop->wait_inst)
+			if (uop->mem_wait_inst)
 			{
 				/* If a wait instruction was executed and there are 
 				 * outstanding memory accesses, set the wavefront to waiting */
 				uop->inst_buffer_entry->wait_for_mem = 1;
+			}
+
+			/* Check for "barrier" instruction */
+			if (uop->barrier_wait_inst)
+			{
+				/* Set a flag to wait until all wavefronts have reached the
+				 * barrier */
+				uop->inst_buffer_entry->wait_for_barrier = 1;
+
+				/* Check if all wavefronts have reached the barrier */
+				complete = 1;
+				work_group = uop->wavefront->work_group;
+				SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+				{
+					wavefront = ndrange->wavefronts[wavefront_id];
+					
+					if (!wavefront->inst_buffer_entry->wait_for_barrier)
+						complete = 0;
+				}
+
+				/* If all wavefronts have reached the barrier, clear their flags */
+				if (complete)
+				{
+					SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+					{
+						wavefront = ndrange->wavefronts[wavefront_id];
+						wavefront->inst_buffer_entry->wait_for_barrier = 0;
+					}
+				}
 			}
 
 			/* Check for "end" instruction */

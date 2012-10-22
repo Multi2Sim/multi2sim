@@ -371,8 +371,16 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_ib
 			}
 			else
 			{
+				/* TODO Show a waiting state in visualization tool */
 				continue;
 			}
+		}
+
+		/* Wavefront is ready but waiting at barrier */
+		if (wavefront->inst_buffer_entry->wait_for_barrier)
+		{
+			/* TODO Show a waiting state in visualization tool */
+			continue;
 		}
 
 		/* If wavefront is ready, there should be no uop in the instruction buffer */
@@ -405,7 +413,8 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_ib
 		uop->local_mem_write = wavefront->local_mem_write;
 		uop->inst_buffer_entry = wavefront->inst_buffer_entry;
 		uop->wavefront_last_inst = wavefront->finished;
-		uop->wait_inst = wavefront->wait;
+		uop->mem_wait_inst = wavefront->mem_wait;
+		uop->barrier_wait_inst = wavefront->barrier;
 		assert(wavefront->work_group && uop->work_group);
 
 		/* Trace */
