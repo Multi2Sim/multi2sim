@@ -69,7 +69,8 @@ struct si_uop_t
 
 	/* Flags */
 	unsigned int ready : 1;
-	unsigned int wait_inst : 1;
+	unsigned int mem_wait_inst : 1;
+	unsigned int barrier_wait_inst : 1;
 	unsigned int wavefront_last_inst : 1;   /* Last instruction in the wavefront */
 	unsigned int vector_mem_read : 1;
 	unsigned int vector_mem_write : 1;
@@ -154,7 +155,7 @@ struct si_inst_buffer_entry_t
 	unsigned int ready : 1;              /* Ready to fetch next instruction */
 	/* TOOD Break wait_for_mem into waiting for each memory type */
 	unsigned int wait_for_mem : 1;       /* Waiting for memory instructions */
-	unsigned int wait_at_barrier : 1;    /* Waiting at barrier for other wavefronts */
+	unsigned int wait_for_barrier : 1;   /* Waiting at barrier for other wavefronts */
 	unsigned int wavefront_finished : 1; /* Wavefront has executed last instruction */
 
 	/* Outstanding memory accesses */

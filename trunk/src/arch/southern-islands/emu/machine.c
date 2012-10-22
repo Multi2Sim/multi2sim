@@ -1474,8 +1474,6 @@ void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	struct si_wavefront_t *wavefront = work_item->wavefront;
 	struct si_work_group_t *work_group = work_item->work_group;
 
-	/* TODO Add new state to visualization tool for waiting at barrier */
-
 	/* Suspend current wavefront at the barrier */
 	wavefront->barrier = 1;
 	assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
@@ -1505,7 +1503,7 @@ void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 void si_isa_S_WAITCNT_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	/* Nothing to do in emulation */
-	work_item->wavefront->wait = 1;
+	work_item->wavefront->mem_wait = 1;
 }
 
 /* D.u = S0.u. */

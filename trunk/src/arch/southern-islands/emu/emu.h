@@ -787,7 +787,7 @@ struct si_wavefront_t
 	unsigned int local_mem_read : 1;
 	unsigned int local_mem_write : 1;
 	unsigned int pred_mask_update : 1;
-	unsigned int wait : 1;
+	unsigned int mem_wait : 1;
 	unsigned int barrier : 1;
 	unsigned int finished : 1;
 
