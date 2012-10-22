@@ -151,11 +151,11 @@ struct si_inst_buffer_entry_t
 	struct si_uop_t *uop;
 
 	/* Status (not mutually exclusive) */
-	unsigned int ready : 1;        /* Ready to fetch next instruction */
-	/* TOOD Break this into waiting for each memory type */
-	unsigned int wait_for_mem : 1; /* Waiting for memory instructions */
-	unsigned int at_barrier : 1;   /* Waiting at barrier for other wavefronts */
-	unsigned int wavefront_finished : 1; 
+	unsigned int ready : 1;              /* Ready to fetch next instruction */
+	/* TOOD Break wait_for_mem into waiting for each memory type */
+	unsigned int wait_for_mem : 1;       /* Waiting for memory instructions */
+	unsigned int wait_at_barrier : 1;    /* Waiting at barrier for other wavefronts */
+	unsigned int wavefront_finished : 1; /* Wavefront has executed last instruction */
 
 	/* Outstanding memory accesses */
 	unsigned int vm_cnt;     /* Vector memory count */
@@ -169,7 +169,6 @@ struct si_inst_buffer_t
 
 	/* List of currently mapped wavefronts */
 	int wavefront_count;
-	//struct si_wavefront_t **wavefronts;
 	struct si_inst_buffer_entry_t **entries;
 
 	/* Compute unit */
@@ -191,7 +190,6 @@ struct si_branch_unit_t
 	struct si_compute_unit_t *compute_unit;
 
 	/* Statistics */
-	long long wavefront_count;
 	long long inst_count;
 };
 
@@ -205,7 +203,6 @@ struct si_scalar_unit_t
 	struct si_compute_unit_t *compute_unit;
 
 	/* Statistics */
-	long long wavefront_count;
 	long long inst_count;
 };
 
@@ -219,7 +216,6 @@ struct si_vector_mem_unit_t
 	struct si_compute_unit_t *compute_unit;
 
 	/* Statistics */
-	long long wavefront_count;
 	long long inst_count;
 };
 
@@ -232,7 +228,6 @@ struct si_simd_t
 	struct si_compute_unit_t *compute_unit;
 
 	/* Statistics */
-	long long wavefront_count;
 	long long inst_count;
 };
 
@@ -246,7 +241,6 @@ struct si_lds_t
 	struct si_compute_unit_t *compute_unit;
 
 	/* Statistics */
-	long long wavefront_count;
 	long long inst_count;
 };
 
@@ -268,18 +262,6 @@ struct si_compute_unit_t
 	struct si_compute_unit_t *compute_unit_busy_list_prev;
 	struct si_compute_unit_t *compute_unit_busy_list_next;
 
-	/* List of ready instruction buffers accepting work-groups */
-	//struct si_inst_buffer_t *inst_buffer_ready_list_head;
-	//struct si_inst_buffer_t *inst_buffer_ready_list_tail;
-	//int inst_buffer_ready_list_count;
-	//int inst_buffer_ready_list_max;
-
-	/* List of busy instruction buffers */
-	//struct si_inst_buffer_t *inst_buffer_busy_list_head;
-	//struct si_inst_buffer_t *inst_buffer_busy_list_tail;
-	//int inst_buffer_busy_list_count;
-	//int inst_buffer_busy_list_max;
-
 	/* Entry points to memory hierarchy */
 	struct mod_t *global_memory;
 	struct mod_t *local_memory;
@@ -298,13 +280,14 @@ struct si_compute_unit_t
 	long long cycle;
 	long long mapped_work_groups;
 	long long wavefront_count;
-	long long inst_count;
+	long long inst_count; /* Total instructions */
+	long long branch_inst_count;
 	long long scalar_alu_inst_count;
 	long long scalar_mem_inst_count;
-	long long vector_alu_inst_count;
+	/* TODO Have one SIMD inst count per SIMD unit */
+	long long simd_inst_count;
 	long long vector_mem_inst_count;
 	long long local_mem_inst_count;
-	long long global_mem_inst_count;
 
 	/* List of currently mapped work-groups */
 	int work_group_count;

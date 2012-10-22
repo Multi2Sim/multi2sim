@@ -67,7 +67,6 @@ void si_simd_writeback(struct si_simd_t *simd)
 
 			/* Statistics */
 			simd->inst_count++;
-			simd->wavefront_count++;
 			si_gpu->last_complete_cycle = esim_cycle;
 		}
 		else
