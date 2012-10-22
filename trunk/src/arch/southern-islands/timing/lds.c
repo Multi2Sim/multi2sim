@@ -104,7 +104,6 @@ void si_lds_writeback(struct si_lds_t *lds)
 
 			/* Statistics */
 			lds->inst_count++;
-			lds->wavefront_count++;
 			si_gpu->last_complete_cycle = esim_cycle;
 		}
 		else
