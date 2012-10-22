@@ -47,7 +47,6 @@ void barrier(int data)
 	struct fiber_t *sleep;
 	struct fiber_t *resume;
 
-	/* printf("Barrier called with %d\n", data); */
 	workgroup_data = get_workgroup_data();
 
 	sleep = workgroup_data->workitems + workgroup_data->cur_item;
@@ -218,10 +217,8 @@ void init_workgroup(
 	if (!workgroup->workitem_data)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	workgroup->all_stacks = (char *) malloc(STACK_SIZE * (workgroup->num_items + 1));
-	if (!workgroup->all_stacks)
-		fatal("%s: out of memory", __FUNCTION__);
-	workgroup->aligned_stacks = (char *) ((size_t) (workgroup->all_stacks + STACK_SIZE) & ~(STACK_SIZE - 1));
+	if (posix_memalign((void **)&workgroup->aligned_stacks, STACK_SIZE, STACK_SIZE * workgroup->num_items))
+		fatal("%s: aligned memory allocation failure", __FUNCTION__);
 
 	for (i = 0; i < workgroup->num_items; i++)
 	{
@@ -256,7 +253,7 @@ void destroy_workgroup(struct clrt_workgroup_data_t *workgroup, struct _cl_kerne
 
 	free(workgroup->workitems);
 	free(workgroup->workitem_data);
-	free(workgroup->all_stacks);
+	free(workgroup->aligned_stacks);
 	for (i = 0; i < kernel->num_params; i++)
 		if (kernel->param_info[i].mem_type == CLRT_MEM_LOCAL)
 		{
@@ -430,7 +427,7 @@ cl_int clGetDeviceIDs(
 }
 
 
-
+const char *DEVICE_EXTENSIONS = "cl_khr_fp64";
 
 cl_int clGetDeviceInfo(
 	cl_device_id device,
@@ -532,8 +529,8 @@ cl_int clGetDeviceInfo(
 
 		case CL_DEVICE_EXTENSIONS:
 			return populateParameter(
-				EXTENSIONS, 
-				strlen(EXTENSIONS) + 1, 
+				DEVICE_EXTENSIONS, 
+				strlen(DEVICE_EXTENSIONS) + 1, 
 				param_value_size, 
 				param_value, 
 				param_value_size_ret);

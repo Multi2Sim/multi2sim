@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <dlfcn.h>
 
 #include <m2s-clrt.h>
 
@@ -37,7 +38,9 @@ void clrt_program_free(void *data)
 	struct _cl_program *program;
 
 	program = (struct _cl_program *) data;
-	munmap(program->elf_data, program->size);
+	dlclose(program->handle);
+	unlink(program->filename);
+	free(program->filename);
 	free(program);
 }
 
@@ -125,12 +128,31 @@ cl_program clCreateProgramWithBinary(
 
 	clrt_object_create(program, CLRT_OBJECT_PROGRAM, clrt_program_free);
 
-	program->elf_data = mmap(NULL, lengths[0], PROT_EXEC | PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if (!program->elf_data)
-		fatal("%s: out of memory", __FUNCTION__);
+	uint32_t inner_size;
+	void *inner_start;
+	inner_start = get_inner_elf_addr(binaries[0], &inner_size);
 	
-	program->size = lengths[0];
-	memcpy(program->elf_data, binaries[0], program->size);	
+	if ((char *)inner_start + inner_size > (char *)binaries[0] + lengths[0] || (unsigned char *)inner_start < binaries[0])
+		fatal("%s: could not executable content", __FUNCTION__);
+
+	const char *tempname = "./XXXXXX.so"; /* initialize buffer for mkstemp to create a file in the cwd */
+	program->filename = malloc(strlen(tempname) + 1);
+	if (!program->filename)
+		fatal("%s: out of memory", __FUNCTION__);
+	strcpy(program->filename, tempname);
+
+	int handle = mkstemps(program->filename, 3);
+	if (handle == -1)
+		fatal("%s: could not create temporary file", __FUNCTION__);
+
+	if (write(handle, inner_start, inner_size) != inner_size)
+		fatal("%s: could not write to temporary file", __FUNCTION__);
+
+	close(handle);
+
+	program->handle = dlopen(program->filename, RTLD_NOW);
+	if (!program->handle)
+		fatal("%s: could not open ELF binary derived from program", __FUNCTION__);		
 
 	if (errcode_ret)
 		*errcode_ret = CL_SUCCESS;
