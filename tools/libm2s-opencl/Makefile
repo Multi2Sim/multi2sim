@@ -47,17 +47,17 @@ clean:
 bin-file.o: $(M2S_ROOT)/src/arch/evergreen/emu/bin-file.c
 	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/arch/evergreen/emu/bin-file.c -o bin-file.o
 
-debug.o: $(M2S_ROOT)/src/lib/struct/debug.c $(M2S_ROOT)/src/lib/struct/debug.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/debug.c -o debug.o
+debug.o: $(M2S_ROOT)/src/lib/util/debug.c $(M2S_ROOT)/src/lib/util/debug.h
+	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/util/debug.c -o debug.o
 
-elf-format.o: $(M2S_ROOT)/src/lib/struct/elf-format.c $(M2S_ROOT)/src/lib/struct/elf-format.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/elf-format.c -o elf-format.o
+elf-format.o: $(M2S_ROOT)/src/lib/util/elf-format.c $(M2S_ROOT)/src/lib/util/elf-format.h
+	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/util/elf-format.c -o elf-format.o
 
-list.o: $(M2S_ROOT)/src/lib/struct/list.c $(M2S_ROOT)/src/lib/struct/list.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/list.c -o list.o
+list.o: $(M2S_ROOT)/src/lib/util/list.c $(M2S_ROOT)/src/lib/util/list.h
+	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/util/list.c -o list.o
 
-misc.o: $(M2S_ROOT)/src/lib/misc/misc.c $(M2S_ROOT)/src/lib/misc/misc.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/misc/misc.c -o misc.o
+misc.o: $(M2S_ROOT)/src/lib/util/misc.c $(M2S_ROOT)/src/lib/util/misc.h
+	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/util/misc.c -o misc.o
 
 
 
