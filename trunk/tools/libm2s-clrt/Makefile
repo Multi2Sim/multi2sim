@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -Wall -Werror -O3 -fPIC -m32 -I. \
 	-I$(M2S_ROOT)/src/lib/struct \
 	-I$(M2S_ROOT)/src/lib/mhandle \
-	-I$(M2S_ROOT)/src/lib/misc
+	-I$(M2S_ROOT)/src/lib/misc -g
 ASM = nasm
 ASMFLAGS = -f elf32
 
