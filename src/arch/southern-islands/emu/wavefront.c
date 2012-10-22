@@ -138,7 +138,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	wavefront->local_mem_write = 0;
 	wavefront->local_mem_read = 0;
 	wavefront->pred_mask_update = 0;
-	wavefront->wait = 0;
+	wavefront->mem_wait = 0;
 	wavefront->barrier = 0;
 
 	assert(!wavefront->finished);
