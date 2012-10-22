@@ -116,8 +116,8 @@ void exit_fiber(struct fiber_t *dest);
  */
 
 Elf32_Shdr *get_section_header(void *elf, char *name);
-void *get_inner_elf_addr(void *outer_elf);
-void *get_function_info(void *elf, const char *name, size_t **metadata, int *meta_size);
+void *get_inner_elf_addr(const unsigned char *outer_elf, uint32_t *size);
+void *get_function_info(void *handle, const char *name, size_t **metadata);
 
 
 
@@ -223,7 +223,6 @@ struct clrt_workgroup_data_t
 	struct fiber_t *workitems;
 	struct clrt_workitem_data_t **workitem_data;
 	unsigned int *stack_params;
-	char *all_stacks;
 	char *aligned_stacks;
 };
 
@@ -433,8 +432,8 @@ struct _cl_mem
 
 struct _cl_program
 {
-	void *elf_data;
-	size_t size;
+	void *handle;
+	char *filename;
 };
 
 
@@ -452,7 +451,6 @@ struct _cl_kernel
 
 struct _cl_event
 {
-//	int changed;
 	cl_int status;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;

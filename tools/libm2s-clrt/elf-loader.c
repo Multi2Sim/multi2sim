@@ -4,14 +4,12 @@
 #include <string.h>
 #include <assert.h>
 #include <debug.h>
-
-
-
+#include <dlfcn.h>
 
 /*
  * Private functions
  */
-Elf32_Shdr *get_section_header(void *elf, char *name)
+Elf32_Shdr *get_section_header(const void *elf, char *name)
 {
 	int i;
 	char *strtab_start;
@@ -32,27 +30,22 @@ Elf32_Shdr *get_section_header(void *elf, char *name)
 }
 
 
-void *get_inner_elf_addr(void *outer_elf)
+void *get_inner_elf_addr(const unsigned char *outer_elf, uint32_t *size)
 {
 	Elf32_Shdr *text = get_section_header(outer_elf, ".text");
 	assert(text);
 	assert(text->sh_type == SHT_PROGBITS);
+	if (size)
+		*size = text->sh_size;
 	return (char *) outer_elf + text->sh_offset;	
 }
 
 
-void *get_function_info(void *elf, const char *name, size_t **metadata, int *meta_size)
+void *get_function_info(void *handle, const char *name, size_t **metadata)
 {
 	void *addr;
-	int i;
-	int dynsect_size;
-	int strtab_size;
 	char *fullname;
 	char *metaname;
-	char *strtab_start;
-	Elf32_Ehdr *elfheader;
-	Elf32_Shdr *section;
-	Elf32_Sym *dynsect_start;
 
 	fullname = (char *) malloc(strlen(name) + 100);
 	if (!fullname)
@@ -63,59 +56,9 @@ void *get_function_info(void *elf, const char *name, size_t **metadata, int *met
 
 	sprintf(fullname, "__OpenCL_%s_kernel", name);
 	sprintf(metaname, "__OpenCL_%s_metadata", name);
-	
-	elfheader = (Elf32_Ehdr *) elf;
 
-	/* fprintf(stderr, "Start of section header: %d\n", elfheader->e_shoff); */
-	assert(elfheader->e_shentsize == sizeof (Elf32_Shdr));
-
-	section = (Elf32_Shdr *) ((char *) elfheader + elfheader->e_shoff);	
-	dynsect_start = NULL;
-	dynsect_size = 0;
-
-	strtab_start = NULL;
-	strtab_size = 0;
-	for (i = 0; i < elfheader->e_shnum; i++)
-	{
-		if (section[i].sh_type == SHT_DYNSYM)
-		{
-			dynsect_start = (Elf32_Sym *) ((char *) elfheader + section[i].sh_offset);
-			dynsect_size = section[i].sh_size;
-		}
-
-		if (section[i].sh_type == SHT_STRTAB)
-		{
-			strtab_start = (char *) elfheader + section[i].sh_offset;
-			strtab_size = section[i].sh_size;
-		}
-
-		if (strtab_start && dynsect_start)
-			break;
-	}
-	
-	assert(dynsect_start);
-	assert(!(dynsect_size % sizeof (Elf32_Sym)));
-
-	assert(strtab_start);
-	assert(strtab_start[0] == '\0');
-	assert(strtab_start[strtab_size - 1] == '\0');
-
-	addr = NULL;
-	*metadata = NULL;
-	Elf32_Shdr *data = get_section_header(elfheader, ".data");
-	for (i = 0; i < dynsect_size / sizeof (Elf32_Sym); i++)
-	{
-		char *curstr;
-
-		curstr = strtab_start + dynsect_start[i].st_name;
-		if (!strcmp(fullname, curstr))
-			addr = (void *) ((char *) elfheader + dynsect_start[i].st_value);
-		if (!strcmp(metaname, curstr))
-		{
-			*metadata = (size_t *) ((char *) elfheader + dynsect_start[i].st_value + data->sh_offset - data->sh_addr);
-			*meta_size = dynsect_start[i].st_size;
-		}
-	}
+	*metadata = (size_t *)dlsym(handle, metaname);
+	addr = dlsym(handle, fullname);
 
 	free(fullname);
 	free(metaname);

@@ -20,15 +20,12 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <assert.h>
 
 #include <m2s-clrt.h>
 
 #define MEMORY_ALIGN 16 /* memory alignment for buffers */
-
-static struct clrt_buffer_list_t *buffer_list = NULL;
-
-
-
 
 /*
  * Private Functions
@@ -36,43 +33,16 @@ static struct clrt_buffer_list_t *buffer_list = NULL;
 
 void *clrt_buffer_allocate(size_t size)
 {
-	struct clrt_buffer_list_t *entry;
-
-	entry = (struct clrt_buffer_list_t *) malloc(sizeof (struct clrt_buffer_list_t));
-	if(!entry)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	entry->raw = malloc (size + MEMORY_ALIGN);
-	if (!entry->raw)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	entry->aligned = (void *) (((size_t) entry->raw + MEMORY_ALIGN) & ~(MEMORY_ALIGN - 1));
-	entry->next = buffer_list;
-	buffer_list = entry;
-	return entry->aligned;
+	void *ptr;
+	if (posix_memalign(&ptr, MEMORY_ALIGN, size) != 0)
+		return NULL;
+	return ptr;
 }
 
 
 void clrt_buffer_free(void *buffer)
 {
-	struct clrt_buffer_list_t *list = buffer_list;
-	struct clrt_buffer_list_t *prev = NULL;
-
-	while (list)
-	{
-		if (list->aligned == buffer)
-		{
-			free(list->raw);
-			if (prev)
-				prev = list->next;
-			else
-				buffer_list = list->next;
-			free(list);
-			break;
-		}
-		prev = list;
-		list = list->next;
-	}
+	free(buffer);
 }
 
 
@@ -136,6 +106,9 @@ cl_mem clCreateBuffer(
 
 	if ((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR))
 		memcpy(mem->buffer, host_ptr, size);
+
+	if (errcode_ret)
+		*errcode_ret = CL_SUCCESS;
 		
 	return mem;
 }

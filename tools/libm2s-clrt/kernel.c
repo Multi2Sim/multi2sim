@@ -161,9 +161,7 @@ cl_kernel clCreateKernel(
 	const char *kernel_name,
 	cl_int *errcode_ret)
 {
-	void *inner_elf;
 	int i;
-	int meta_size;
 	int stride;
 	int num_reg;
 	int stack_offset;
@@ -189,9 +187,7 @@ cl_kernel clCreateKernel(
 
 	clrt_object_create(kernel, CLRT_OBJECT_KERNEL, clrt_kernel_free);
 
-	inner_elf = get_inner_elf_addr(program->elf_data);
-
-	kernel->function = (clrt_function_t) get_function_info(inner_elf, kernel_name, &kernel->metadata, &meta_size);
+	kernel->function = (clrt_function_t) get_function_info(program->handle, kernel_name, &kernel->metadata);
 	kernel->num_params = (kernel->metadata[0] - 44) / 24;
 	kernel->param_info = (struct clrt_parameter_t *) malloc(sizeof (struct clrt_parameter_t) * kernel->num_params);
 	if (!kernel->param_info)
@@ -200,14 +196,7 @@ cl_kernel clCreateKernel(
 	memset(kernel->param_info, 0, sizeof (struct clrt_parameter_t) * kernel->num_params);
 
 	kernel->register_params = (struct clrt_reg_param_t *) clrt_buffer_allocate(sizeof (struct clrt_reg_param_t) * MAX_SSE_REG_PARAMS);
-	/* in AMD APP SDK 2.5, the stride is 6, in 2.6, 2.7 the stride is (sometimes?) 8 */
-	stride = 0;
-	if (meta_size == kernel->metadata[0])
-		stride = 6;
-	else
-		stride = 8;
-
-	assert(meta_size > 4 * (8 + stride * (kernel->num_params - 1) + 1));
+	stride = 8; /* The dlopen family of functions don't return the size, so we can't do this check */
 
 	num_reg = 0;
 	stack_offset = 0;
