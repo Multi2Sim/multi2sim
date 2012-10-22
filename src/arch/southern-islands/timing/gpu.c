@@ -596,8 +596,9 @@ void si_gpu_dump_report(void)
 		fprintf(f, "Instructions = %lld\n", compute_unit->inst_count);
 		fprintf(f, "Scalar ALU Instructions = %lld\n", compute_unit->scalar_alu_inst_count);
 		fprintf(f, "Scalar Mem Instructions = %lld\n", compute_unit->scalar_mem_inst_count);
-		fprintf(f, "Vector ALU Instructions = %lld\n", compute_unit->vector_alu_inst_count);
+		fprintf(f, "SIMD Instructions = %lld\n", compute_unit->simd_inst_count);
 		fprintf(f, "Vector Mem Instructions = %lld\n", compute_unit->vector_mem_inst_count);
+		fprintf(f, "Local Mem Instructions = %lld\n", compute_unit->local_mem_inst_count);
 		fprintf(f, "Cycles = %lld\n", compute_unit->cycle);
 		fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 		fprintf(f, "\n");

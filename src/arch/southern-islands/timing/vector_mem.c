@@ -109,7 +109,6 @@ void si_vector_mem_writeback(struct si_vector_mem_unit_t *vector_mem)
 
 			/* Statistics */
 			vector_mem->inst_count++;
-			vector_mem->wavefront_count++;
 
 			si_gpu->last_complete_cycle = esim_cycle;
 		}

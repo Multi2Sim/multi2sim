@@ -525,6 +525,9 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 				/* Decode uop */
 				uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
 				list_enqueue(compute_unit->branch_unit.decode_buffer, uop);
+
+				/* Statistics */
+				compute_unit->branch_inst_count++;
 			}
 			/* Scalar Unit */
 			else
@@ -542,6 +545,9 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 				/* Decode uop */
 				uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
 				list_enqueue(scalar_unit->decode_buffer, uop);
+
+				/* Statistics */
+				compute_unit->scalar_alu_inst_count++;
 			}
 
 			break;
@@ -564,6 +570,9 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
 			list_enqueue(scalar_unit->decode_buffer, uop);
 
+			/* Statistics */
+			compute_unit->scalar_alu_inst_count++;
+
 			break;
 		}
 
@@ -582,6 +591,9 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 			/* Decode uop */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
 			list_enqueue(scalar_unit->decode_buffer, uop);
+
+			/* Statistics */
+			compute_unit->scalar_mem_inst_count++;
 
 			break;
 		}
@@ -607,6 +619,9 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
 			list_enqueue(compute_unit->simds[active_ib]->decode_buffer, uop);
 
+			/* Statistics */
+			compute_unit->simd_inst_count++;
+
 			break;
 		}
 
@@ -627,6 +642,9 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
 			list_enqueue(compute_unit->vector_mem_unit.decode_buffer, uop);
 
+			/* Statistics */
+			compute_unit->vector_mem_inst_count++;
+
 			break;
 		}
 
@@ -646,6 +664,9 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
 			list_enqueue(compute_unit->lds.decode_buffer, uop);
 
+			/* Statistics */
+			compute_unit->local_mem_inst_count++;
+
 			break;
 		}
 
@@ -655,7 +676,10 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 		}
 		}
 
-		instructions_processed++;
+		instructions_processed++;  /* This cycle */
+
+		/* Statistics */
+		compute_unit->inst_count++;
 
 		/* Trace */
 		si_trace("si.inst id=%lld cu=%d wf=%d stg=\"d\"\n", uop->id_in_compute_unit, 

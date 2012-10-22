@@ -320,6 +320,11 @@ static char *m2s_help =
 	"      Use <file> as the returned kernel binary upon an OpenCL call to\n"
 	"      'clLoadProgramWithSource'.\n"
 	"\n"
+	"  --si-report <file>\n"
+	"      File to dump a report of the GPU pipeline, such as active execution engines,\n"
+	"      compute units occupancy, stream cores utilization, etc. Use together with a\n"
+	"      detailed GPU simulation (option '--evg-sim detailed').\n"
+	"\n"
 	"  --si-sim {functional|detailed}\n"
 	"      Functional (default) or detailed simulation for the AMD Southern Islands\n"
 	"      GPU model.\n"
@@ -852,6 +857,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			si_emu_opencl_binary_name = argv[++argi];
+			continue;
+		}
+
+		/* Southern Islands GPU timing report */
+		if (!strcmp(argv[argi], "--si-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_gpu_report_file_name = argv[++argi];
 			continue;
 		}
 

@@ -152,7 +152,6 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 
 			/* Statistics */
 			scalar_unit->inst_count++;
-			scalar_unit->wavefront_count++;
 			si_gpu->last_complete_cycle = esim_cycle;
 		}
 		else
