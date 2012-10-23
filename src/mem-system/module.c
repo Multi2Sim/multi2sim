@@ -40,7 +40,8 @@ struct str_map_t mod_access_kind_map =
 	3, {
 		{ "Load", mod_access_load },
 		{ "Store", mod_access_store },
-		{ "NCStore", mod_access_nc_store }
+		{ "NCStore", mod_access_nc_store },
+		{ "Prefetch", mod_access_prefetch }
 	}
 };
 

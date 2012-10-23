@@ -158,6 +158,7 @@ struct x86_thread_t
 	struct linked_list_t *iq;
 	struct linked_list_t *lq;
 	struct linked_list_t *sq;
+	struct linked_list_t *preq;
 	struct x86_bpred_t *bpred;  /* branch predictor */
 	struct x86_trace_cache_t *trace_cache;  /* trace cache */
 	struct x86_reg_file_t *reg_file;  /* physical register file */

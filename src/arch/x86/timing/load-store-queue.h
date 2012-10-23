@@ -38,7 +38,7 @@ void x86_lsq_recover(int core, int thread);
 
 void x86_lq_remove(int core, int thread);
 void x86_sq_remove(int core, int thread);
-
+void x86_preq_remove(int core, int thread);
 
 #endif
 
