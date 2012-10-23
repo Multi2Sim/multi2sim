@@ -1666,8 +1666,20 @@ void x86_isa_popf_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_prefetcht0_impl(struct x86_ctx_t *ctx)
+void x86_isa_prefetcht0_m8_impl(struct x86_ctx_t *ctx)
 {
+/* Checking this in disabled as the memory support for prefetching is still pending. */
+#if 0
+	unsigned int eff_addr;
+
+	/* prefetching makes sense only in a detailed simulation */
+	if (x86_emu_kind != x86_emu_kind_detailed)
+		return;
+
+	eff_addr = x86_isa_effective_address(ctx);
+	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_easeg, x86_dep_eabas, x86_dep_eaidx, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_prefetch, eff_addr, 1, x86_dep_aux, 0, 0, 0, 0, 0, 0);
+#endif
 }
 
 

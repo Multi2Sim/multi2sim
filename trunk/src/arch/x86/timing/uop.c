@@ -49,7 +49,7 @@ void x86_uop_free_if_not_queued(struct x86_uop_t *uop)
 {
 	/* Do not free if 'uop' is still enqueued */
 	if (uop->in_fetch_queue || uop->in_uop_queue || uop->in_iq ||
-		uop->in_lq || uop->in_sq ||
+		uop->in_lq || uop->in_sq || uop->in_preq ||
 		uop->in_rob || uop->in_event_queue ||
 		uop->in_uop_trace_list)
 	{
