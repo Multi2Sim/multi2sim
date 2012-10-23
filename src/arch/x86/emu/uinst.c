@@ -188,6 +188,7 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 
 	{ "load", X86_UINST_MEM },
 	{ "store", X86_UINST_MEM },
+	{ "prefetch", X86_UINST_MEM },
 
 	{ "call", X86_UINST_CTRL | X86_UINST_UNCOND },
 	{ "ret", X86_UINST_CTRL | X86_UINST_UNCOND },

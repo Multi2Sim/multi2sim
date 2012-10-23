@@ -234,6 +234,7 @@ enum x86_uinst_opcode_t
 
 	x86_uinst_load,
 	x86_uinst_store,
+	x86_uinst_prefetch,
 
 	x86_uinst_call,
 	x86_uinst_ret,

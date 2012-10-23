@@ -75,6 +75,7 @@ struct x86_uop_t
 	int in_iq : 1;
 	int in_lq : 1;
 	int in_sq : 1;
+	int in_preq : 1;
 	int in_event_queue : 1;
 	int in_rob : 1;
 	int in_uop_trace_list : 1;

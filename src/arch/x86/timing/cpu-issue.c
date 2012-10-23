@@ -152,6 +152,69 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 	return quant;
 }
 
+static int x86_cpu_issue_preq(int core, int thread, int quant)
+{
+	struct linked_list_t *preq = X86_THREAD.preq;
+	struct x86_uop_t *prefetch;
+ 
+	/* Process preq */
+	linked_list_head(preq);
+	while (!linked_list_is_end(preq) && quant)
+	{
+		/* Get element from prefetch queue. If it is not ready, go to the next one */
+		prefetch = linked_list_get(preq);
+		if (!prefetch->ready && !x86_reg_file_ready(prefetch))
+		{
+			linked_list_next(preq);
+			continue;
+		}
+		prefetch->ready = 1;
+
+		/* Check that memory system is accessible */
+		if (!mod_can_access(X86_THREAD.data_mod, prefetch->phy_addr))
+		{
+			linked_list_next(preq);
+			continue;
+		}
+
+		/* Remove from prefetch queue */
+		assert(prefetch->uinst->opcode == x86_uinst_prefetch);
+		x86_preq_remove(core, thread);
+
+		/* Access memory system */
+		mod_access(X86_THREAD.data_mod, mod_access_prefetch,
+			prefetch->phy_addr, NULL, X86_CORE.event_queue, prefetch);
+
+		/* The cache system will place the prefetch at the head of the
+		 * event queue when it is ready. For now, mark "in_event_queue" to
+		 * prevent the uop from being freed. */
+		prefetch->in_event_queue = 1;
+		prefetch->issued = 1;
+		prefetch->issue_when = x86_cpu->cycle;
+		
+		/* Instruction issued */
+		X86_CORE.issued[prefetch->uinst->opcode]++;
+		X86_CORE.lsq_reads++;
+		X86_CORE.reg_file_int_reads += prefetch->ph_int_idep_count;
+		X86_CORE.reg_file_fp_reads += prefetch->ph_fp_idep_count;
+		X86_THREAD.issued[prefetch->uinst->opcode]++;
+		X86_THREAD.lsq_reads++;
+		X86_THREAD.reg_file_int_reads += prefetch->ph_int_idep_count;
+		X86_THREAD.reg_file_fp_reads += prefetch->ph_fp_idep_count;
+		x86_cpu->issued[prefetch->uinst->opcode]++;
+		quant--;
+		
+		/* MMU statistics */
+		if (*mmu_report_file_name)
+			mmu_access_page(prefetch->phy_addr, mmu_access_read);
+
+		/* Trace */
+		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n",
+			prefetch->id_in_core, prefetch->core);
+	}
+	
+	return quant;
+}
 
 static int x86_cpu_issue_iq(int core, int thread, int quant)
 {
@@ -222,6 +285,8 @@ static int x86_cpu_issue_thread_lsq(int core, int thread, int quant)
 {
 	quant = x86_cpu_issue_lq(core, thread, quant);
 	quant = x86_cpu_issue_sq(core, thread, quant);
+	quant = x86_cpu_issue_preq(core, thread, quant);
+
 	return quant;
 }
 
