@@ -17,22 +17,37 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_EMU_MACHINE_H
-#define FERMI_EMU_MACHINE_H
+#include <stdlib.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+
+#include "cuda-memory.h"
+#include "cuda-object.h"
 
 
-/* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-struct frm_inst_t;
-typedef void (*frm_isa_inst_func_t)(struct frm_thread_t *thread, struct frm_inst_t *inst);
-extern frm_isa_inst_func_t *frm_isa_inst_func;
+struct frm_cuda_memory_t *frm_cuda_memory_create(void)
+{
+        struct frm_cuda_memory_t *mem;
 
-/* Declarations of function prototypes implementing Fermi ISA */
-#define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
-        extern void frm_isa_##_name##_impl(struct frm_thread_t *thread, \
-                        struct frm_inst_t *inst);
-#include <arch/fermi/asm/asm.dat>
-#undef DEFINST
+        /* Allocate */
+        mem = calloc(1, sizeof(struct frm_cuda_memory_t));
+        if (!mem)
+                fatal("%s: out of memory", __FUNCTION__);
+
+        /* Initialize */
+        mem->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_MEMORY);
+        mem->ref_count = 1;
+
+        /* Return */
+        frm_cuda_object_add(mem);
+        return mem;
+}
 
 
-#endif
+void frm_cuda_memory_free(struct frm_cuda_memory_t *mem)
+{
+        frm_cuda_object_remove(mem);
+        free(mem);
+}
 
