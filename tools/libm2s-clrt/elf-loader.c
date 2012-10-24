@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <debug.h>
+#include <util/debug.h>
 #include <dlfcn.h>
 
 /*
