@@ -17,6 +17,8 @@ Fermi
 ********************************************************************************
 
 - Remove MAX_STRING_SIZE from all names in grid, warp, etc. ('.h' files) and remove include of 'lib/util/string.h' in the headers.
+- Disassembler should output the same text as original Fermi disassembler (cuobjdump).
+- Emulator shouldn't load the PTX code from the x86 binary. Instead, it should read an external '.cubin' file and extract the ISA from there.
 
 
 ********************************************************************************
