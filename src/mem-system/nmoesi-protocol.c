@@ -1613,6 +1613,13 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 			dir_entry_set_sharer(dir, stack->set, stack->way, z, mod->low_net_node->index);
 			if (dir_entry->num_sharers > 1 || stack->nc_write || stack->shared)
 				shared = 1;
+
+			/* If the block is owned, non-coherent, or shared,  
+			 * mod (the higher-level cache) should never be exclusive */
+			if (stack->state == cache_block_owned || 
+				stack->state == cache_block_noncoherent ||
+				stack->state == cache_block_shared )
+				shared = 1;
 		}
 
 		/* If no sub-block requested by mod is shared by other cache, set mod
