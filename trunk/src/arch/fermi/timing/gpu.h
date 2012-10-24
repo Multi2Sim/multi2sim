@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_TIMING_H
-#define FERMI_TIMING_H
+#ifndef FERMI_TIMING_GPU_H
+#define FERMI_TIMING_GPU_H
 
 void frm_gpu_init(void);
 void frm_gpu_done(void);
