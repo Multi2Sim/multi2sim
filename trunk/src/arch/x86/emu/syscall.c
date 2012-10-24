@@ -34,7 +34,7 @@
 #include <sys/times.h>
 
 #include <arch/evergreen/emu/opencl.h>
-#include <arch/fermi/emu/emu.h>
+#include <arch/fermi/emu/cuda.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>

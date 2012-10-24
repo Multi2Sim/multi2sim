@@ -30,6 +30,7 @@
 #include <arch/evergreen/timing/faults.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
+#include <arch/fermi/emu/cuda.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/timing/gpu.h>
 #include <arch/southern-islands/asm/asm.h>

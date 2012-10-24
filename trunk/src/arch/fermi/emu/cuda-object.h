@@ -17,21 +17,27 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_EMU_MACHINE_H
-#define FERMI_EMU_MACHINE_H
+#ifndef FERMI_EMU_CUDA_OBJECT_H
+#define FERMI_EMU_CUDA_OBJECT_H
 
 
-/* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-struct frm_inst_t;
-typedef void (*frm_isa_inst_func_t)(struct frm_thread_t *thread, struct frm_inst_t *inst);
-extern frm_isa_inst_func_t *frm_isa_inst_func;
+enum frm_cuda_obj_t
+{
+        FRM_CUDA_OBJ_DEVICE = 1,
+        FRM_CUDA_OBJ_CONTEXT,
+        FRM_CUDA_OBJ_MODULE,
+        FRM_CUDA_OBJ_FUNCTION,
+        FRM_CUDA_OBJ_MEMORY,
+        FRM_CUDA_OBJ_STREAM
+};
 
-/* Declarations of function prototypes implementing Fermi ISA */
-#define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
-        extern void frm_isa_##_name##_impl(struct frm_thread_t *thread, \
-                        struct frm_inst_t *inst);
-#include <arch/fermi/asm/asm.dat>
-#undef DEFINST
+extern struct linked_list_t *frm_cuda_object_list;
+
+void frm_cuda_object_add(void *object);
+void frm_cuda_object_remove(void *object);
+void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id);
+unsigned int frm_cuda_object_new_id(enum frm_cuda_obj_t type);
+void frm_cuda_object_free_all(void);
 
 
 #endif

@@ -25,8 +25,11 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 
+#include "cuda-function.h"
+#include "cuda-function-arg.h"
 #include "emu.h"
 #include "grid.h"
 #include "isa.h"

@@ -17,21 +17,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_EMU_MACHINE_H
-#define FERMI_EMU_MACHINE_H
+#ifndef FERMI_EMU_CUDA_MODULE_H
+#define FERMI_EMU_CUDA_MODULE_H
 
 
-/* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-struct frm_inst_t;
-typedef void (*frm_isa_inst_func_t)(struct frm_thread_t *thread, struct frm_inst_t *inst);
-extern frm_isa_inst_func_t *frm_isa_inst_func;
+struct frm_cuda_module_t
+{
+	unsigned int id;
+	int ref_count;
 
-/* Declarations of function prototypes implementing Fermi ISA */
-#define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
-        extern void frm_isa_##_name##_impl(struct frm_thread_t *thread, \
-                        struct frm_inst_t *inst);
-#include <arch/fermi/asm/asm.dat>
-#undef DEFINST
+	unsigned int device_id;  /* Only one device allowed */
+	unsigned int context_id;
+
+	/* ELF binary */
+	struct elf_file_t *elf_file;
+};
+
+struct frm_cuda_module_t *frm_cuda_module_create(void);
+void frm_cuda_module_free(struct frm_cuda_module_t *module);
 
 
 #endif
