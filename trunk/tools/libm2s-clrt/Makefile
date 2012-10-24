@@ -1,11 +1,11 @@
 M2S_ROOT = ../..
+M2S_LIB = $(M2S_ROOT)/src/lib
 
 AR = ar
 CC = gcc
-CFLAGS = -Wall -Werror -O3 -fPIC -m32 -I. \
-	-I$(M2S_ROOT)/src/lib/struct \
-	-I$(M2S_ROOT)/src/lib/mhandle \
-	-I$(M2S_ROOT)/src/lib/misc -g
+CFLAGS = -Wall -Werror -O3 -fPIC -m32 -g -I. \
+	-I$(M2S_ROOT)/src \
+	-I$(M2S_LIB)
 ASM = nasm
 ASMFLAGS = -f elf32
 
@@ -57,17 +57,17 @@ clean:
 # Auxiliary targets
 #
 
-debug.o: $(M2S_ROOT)/src/lib/struct/debug.c $(M2S_ROOT)/src/lib/struct/debug.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/debug.c -o debug.o
+debug.o: $(M2S_LIB)/util/debug.c $(M2S_LIB)/util/debug.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/debug.c -o debug.o
 
-elf-format.o: $(M2S_ROOT)/src/lib/struct/elf-format.c $(M2S_ROOT)/src/lib/struct/elf-format.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/elf-format.c -o elf-format.o
+elf-format.o: $(M2S_LIB)/util/elf-format.c $(M2S_LIB)/util/elf-format.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/elf-format.c -o elf-format.o
 
-list.o: $(M2S_ROOT)/src/lib/struct/list.c $(M2S_ROOT)/src/lib/struct/list.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/list.c -o list.o
+list.o: $(M2S_LIB)/util/list.c $(M2S_LIB)/util/list.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/list.c -o list.o
 
-misc.o: $(M2S_ROOT)/src/lib/misc/misc.c $(M2S_ROOT)/src/lib/misc/misc.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/misc/misc.c -o misc.o
+misc.o: $(M2S_LIB)/util/misc.c $(M2S_LIB)/util/misc.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/misc.c -o misc.o
 
 
 
