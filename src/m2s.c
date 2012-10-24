@@ -31,7 +31,7 @@
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/emu/emu.h>
-#include <arch/fermi/timing/timing.h>
+#include <arch/fermi/timing/gpu.h>
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/timing/timing.h>

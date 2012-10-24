@@ -2,19 +2,30 @@ lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
 	\
-	emu.h \
+	cuda.c \
+	cuda.dat \
+	cuda-obj.c \
 	\
 	emu.c \
-	isa.c \
-	machine.c \
-	grid.c \
-	cuda.c \
-	cuda-obj.c \
-	threadblock.c \
-	warp.c \
-	thread.c \
+	emu.h \
 	\
-	cuda.dat
+	grid.c \
+	grid.h \
+	\
+	isa.c \
+	isa.h \
+	\
+	machine.c \
+	machine.h \
+	\
+	thread.c \
+	thread.h \
+	\
+	threadblock.c \
+	threadblock.h \
+	\
+	warp.c \
+	warp.h
 
 INCLUDES = @M2S_INCLUDES@
 

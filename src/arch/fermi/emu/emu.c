@@ -22,6 +22,7 @@
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "isa.h"
 
 
 /*
