@@ -26,7 +26,7 @@
 #include <pthread.h>
 #include <elf.h>
 
-#include <debug.h>
+#include <util/debug.h>
 #include <CL/cl.h>
 
 
