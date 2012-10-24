@@ -23,6 +23,8 @@
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "thread.h"
+#include "warp.h"
 
 
 char *frm_err_isa_note =

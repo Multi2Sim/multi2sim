@@ -17,12 +17,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
+
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
+#include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 
 #include "emu.h"
+#include "grid.h"
+#include "machine.h"
+#include "thread.h"
+#include "threadblock.h"
+#include "warp.h"
 
 
 
@@ -53,7 +62,7 @@ static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
 	{
 		int count;  /* 1st field hardcoded for comparison */
 		int list_index;
-		uint32_t branch_digest;
+		unsigned int branch_digest;
 	};
 	struct elem_t *elem;
 	struct list_t *list;

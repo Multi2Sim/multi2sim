@@ -17,13 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <stdlib.h>
+
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
+#include <lib/util/debug.h>
 #include <lib/util/misc.h>
 
 #include "emu.h"
+#include "grid.h"
+#include "isa.h"
+#include "thread.h"
+#include "threadblock.h"
+#include "warp.h"
 
 
 struct frm_grid_t *frm_grid_create(struct frm_cuda_function_t *function)

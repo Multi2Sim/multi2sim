@@ -2,9 +2,8 @@ lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
 	\
-	timing.h \
-	\
-	gpu.c
+	gpu.c \
+	gpu.h
 
 INCLUDES = @M2S_INCLUDES@
 
