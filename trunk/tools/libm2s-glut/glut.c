@@ -18,9 +18,9 @@
  */
 
 #include <m2s-glut.h>
-#include <debug.h>
-#include <list.h>
-#include <misc.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <unistd.h>
 
 

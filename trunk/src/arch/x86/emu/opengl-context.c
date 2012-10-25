@@ -89,6 +89,9 @@ struct x86_opengl_context_t *x86_opengl_context_create(void)
 	/* Initialize vertex buffer */
 	ctx->vertex_buffer = x86_opengl_vertex_buffer_create();
 
+	/* Initialize light */
+	ctx->light = x86_opengl_light_attrib_create();
+
 	/* Initialize current color */
 	GLfloat init_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 	x86_opengl_clamped_float_to_color_channel(init_color, ctx->current_color);
@@ -123,6 +126,9 @@ void x86_opengl_context_free(struct x86_opengl_context_t *ctx)
 
 	/* Free vertex buffer */
 	x86_opengl_vertex_buffer_free(ctx->vertex_buffer);
+
+	/* Free light */
+	x86_opengl_light_attrib_free(ctx->light);
 
 	free(ctx);
 }

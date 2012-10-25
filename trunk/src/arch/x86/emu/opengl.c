@@ -1351,7 +1351,7 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 				vtx0 = list_get(vtxgp->vertex_list, 0);
 				vtx1 = list_get(vtxgp->vertex_list, 1);
 				vtx2 = list_get(vtxgp->vertex_list, 2);
-				x86_opengl_rasterizer_draw_tiangle(x86_opengl_ctx, vtx0, vtx1, vtx2);
+				x86_opengl_rasterizer_draw_triangle(x86_opengl_ctx, vtx0, vtx1, vtx2);
 				break;
 			}
 			case GL_TRIANGLE_STRIP:

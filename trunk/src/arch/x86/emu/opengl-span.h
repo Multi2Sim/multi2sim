@@ -17,12 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_OPENGL_SPAN_H
-#define X86_OPENGL_SPAN_H
+#ifndef ARCH_X86_EMU_OPENGL_SPAN_H
+#define ARCH_X86_EMU_OPENGL_SPAN_H
 #include <GL/glut.h>
 #include <mem-system/mem-system.h>
 #include "emu.h"
 #include "opengl-rast-config.h"
+#include "opengl-context.h"
 
 struct x86_opengl_span_array_t
 {
@@ -38,9 +39,9 @@ struct x86_opengl_span_t
 	/* Number of fragments in the span */
 	GLuint end;
 
-	GLfloat attrStart[4];   /**< initial value */
-	GLfloat attrStepX[4];   /**< dvalue/dx */
-	GLfloat attrStepY[4];   /**< dvalue/dy */
+	GLfloat attrStart[FRAG_ATTRIB_MAX][4];   /**< initial value */
+	GLfloat attrStepX[FRAG_ATTRIB_MAX][4];   /**< dvalue/dx */
+	GLfloat attrStepY[FRAG_ATTRIB_MAX][4];   /**< dvalue/dy */
 
 	GLfixed red, redStep;
 	GLfixed green, greenStep;

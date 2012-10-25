@@ -1,9 +1,12 @@
 M2S_ROOT = ../..
+M2S_LIB = $(M2S_ROOT)/src/lib
 
 AR = ar
 CC = gcc
-CFLAGS = -Wall -O3 -fPIC -m32 -I. -I$(M2S_ROOT)/src/lib/struct -I$(M2S_ROOT)/src/lib/mhandle \
-	-I$(M2S_ROOT)/src/lib/misc
+CFLAGS = -Wall -O3 -fPIC -m32 -I. \
+	-I$(M2S_ROOT)/src \
+	-I$(M2S_LIB)
+
 
 OBJECTS = \
 	debug.o \
@@ -32,11 +35,11 @@ clean:
 # Auxiliary targets
 #
 
-debug.o: $(M2S_ROOT)/src/lib/struct/debug.c $(M2S_ROOT)/src/lib/struct/debug.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/debug.c -o debug.o
+debug.o: $(M2S_LIB)/util/debug.c $(M2S_LIB)/util/debug.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/debug.c -o debug.o
 
-list.o: $(M2S_ROOT)/src/lib/struct/list.c $(M2S_ROOT)/src/lib/struct/list.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/list.c -o list.o
+list.o: $(M2S_LIB)/util/list.c $(M2S_LIB)/util/list.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/list.c -o list.o
 
 
 

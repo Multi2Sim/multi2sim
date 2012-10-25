@@ -17,13 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_OPENGL_EDGE_H
-#define X86_OPENGL_EDGE_H
+#ifndef ARCH_X86_EMU_OPENGL_EDGE_H
+#define ARCH_X86_EMU_OPENGL_EDGE_H
 #include <GL/glut.h>
 #include "opengl.h"
 
 #include "opengl-vertex.h"
-#include "opengl-rast-config.h"
 
 struct x86_opengl_edge_t
 {

@@ -18,10 +18,6 @@
  */
 
 #include <m2s-opengl.h>
-#include <debug.h>
-#include <list.h>
-#include <misc.h>
-#include <unistd.h>
 
 
 
