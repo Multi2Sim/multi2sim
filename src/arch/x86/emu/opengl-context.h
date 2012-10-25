@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_OPENGL_CONTEXT_H
-#define X86_OPENGL_CONTEXT_H
+#ifndef ARCH_X86_EMU_OPENGL_CONTEXT_H
+#define ARCH_X86_EMU_OPENGL_CONTEXT_H
 
 #include <GL/glut.h>
 #include <mem-system/mem-system.h>
@@ -29,10 +29,35 @@
 #include "opengl-matrix.h"
 #include "opengl-matrix-stack.h"
 #include "opengl-vertex.h"
+#include "opengl-light.h"
 
 #define MAX_TEXTURE_COORD_UNITS 8
 #define MAX_TEXTURE_IMAGE_UNITS 16
 #define MAX_TEXTURE_UNITS ((MAX_TEXTURE_COORD_UNITS > MAX_TEXTURE_IMAGE_UNITS) ? MAX_TEXTURE_COORD_UNITS : MAX_TEXTURE_IMAGE_UNITS)
+
+#define MAX_VARYING	16
+
+enum x86_opengl_frag_attrib_t
+{
+	FRAG_ATTRIB_WPOS = 0,
+	FRAG_ATTRIB_COL0 = 1,
+	FRAG_ATTRIB_COL1 = 2,
+	FRAG_ATTRIB_FOGC = 3,
+	FRAG_ATTRIB_TEX0 = 4,
+	FRAG_ATTRIB_TEX1 = 5,
+	FRAG_ATTRIB_TEX2 = 6,
+	FRAG_ATTRIB_TEX3 = 7,
+	FRAG_ATTRIB_TEX4 = 8,
+	FRAG_ATTRIB_TEX5 = 9,
+	FRAG_ATTRIB_TEX6 = 10,
+	FRAG_ATTRIB_TEX7 = 11,
+	FRAG_ATTRIB_FACE = 12,  /**< front/back face */
+	FRAG_ATTRIB_PNTC = 13,  /**< sprite/point coord */
+	FRAG_ATTRIB_CLIP_DIST0 = 14,
+	FRAG_ATTRIB_CLIP_DIST1 = 15,
+	FRAG_ATTRIB_VAR0 = 16,  /**< shader varying */
+	FRAG_ATTRIB_MAX = (FRAG_ATTRIB_VAR0 + MAX_VARYING)
+};
 
 /* OpenGL context capability */
 struct x86_opengl_context_capability_t
@@ -135,6 +160,8 @@ struct x86_opengl_context_t
 	struct x86_opengl_matrix_stack_t *current_matrix_stack;					/* current matrix stack, points to one of above stacks */
 
 	struct x86_opengl_vertex_buffer_t *vertex_buffer;
+
+	struct x86_opengl_light_attrib_t *light;
 
 	GLchan current_color[4];
 };

@@ -1,13 +1,15 @@
 M2S_ROOT = ../..
+M2S_LIB = $(M2S_ROOT)/src/lib
 
 AR = ar
 CC = gcc
-CFLAGS = -Wall -O3 -fPIC -m32 -I. -I$(M2S_ROOT)/src/lib/struct -I$(M2S_ROOT)/src/lib/mhandle \
-	-I$(M2S_ROOT)/src/lib/misc
+CFLAGS = -Wall -O3 -fPIC -m32 -I. \
+	-I$(M2S_ROOT)/src
 
 OBJECTS = \
 	debug.o \
 	misc.o \
+	string.o \
 	list.o \
 	glut.o \
 	window.o
@@ -34,14 +36,17 @@ clean:
 # Auxiliary targets
 #
 
-debug.o: $(M2S_ROOT)/src/lib/struct/debug.c $(M2S_ROOT)/src/lib/struct/debug.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/debug.c -o debug.o
+debug.o: $(M2S_LIB)/util/debug.c $(M2S_LIB)/util/debug.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/debug.c -o debug.o
 
-misc.o: $(M2S_ROOT)/src/lib/misc/misc.c $(M2S_ROOT)/src/lib/misc/misc.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/misc/misc.c -o misc.o
+list.o: $(M2S_LIB)/util/list.c $(M2S_LIB)/util/list.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/list.c -o list.o
 
-list.o: $(M2S_ROOT)/src/lib/struct/list.c $(M2S_ROOT)/src/lib/struct/list.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/list.c -o list.o
+misc.o: $(M2S_LIB)/util/misc.c $(M2S_LIB)/util/misc.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/misc.c -o misc.o
+
+string.o: $(M2S_LIB)/util/string.c $(M2S_LIB)/util/string.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/string.c -o string.o
 
 
 
@@ -49,7 +54,7 @@ list.o: $(M2S_ROOT)/src/lib/struct/list.c $(M2S_ROOT)/src/lib/struct/list.h
 # M2S GLUT Library targets
 #
 
-glut.o: glut.c m2s-glut.h
+glut.o: glut.c m2s-glut.h 
 	$(CC) $(CFLAGS) -c glut.c -o glut.o
 
 window.o: window.c m2s-glut.h

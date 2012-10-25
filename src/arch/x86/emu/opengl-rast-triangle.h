@@ -17,19 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_OPENGL_RAST_TRIANGLE_H
-#define X86_OPENGL_RAST_TRIANGLE_H
+#ifndef ARCH_X86_EMU_OPENGL_RAST_TRIANGLE_H
+#define ARCH_X86_EMU_OPENGL_RAST_TRIANGLE_H
 
 #include <GL/glut.h>
 #include "emu.h"
 #include "glut-frame-buffer.h" 
-#include "opengl-rast-config.h"
 #include "opengl-span.h"
 #include "opengl-edge.h" 
-#include "opengl-context.h"
+#include "opengl-rast-config.h"
 
 #define MAX_GLUINT	0xffffffff
 
-void x86_opengl_rasterizer_draw_tiangle(struct x86_opengl_context_t *ctx, struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1, struct x86_opengl_vertex_t *vtx2);
+void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1, struct x86_opengl_vertex_t *vtx2);
 
 #endif

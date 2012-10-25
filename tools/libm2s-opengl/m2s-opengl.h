@@ -22,6 +22,10 @@
 #define M2S_OPENGL_H
 
 #include <GL/gl.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <unistd.h>
 
 /* System call for OpenGL runtime */
 #define X86_OPENGL_SYS_CODE  327

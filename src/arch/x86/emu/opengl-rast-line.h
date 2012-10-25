@@ -17,13 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_OPENGL_RAST_LINE_H
-#define X86_OPENGL_RAST_LINE_H
+#ifndef ARCH_X86_EMU_OPENGL_RAST_LINE_H
+#define ARCH_X86_EMU_OPENGL_RAST_LINE_H
 
 #include <GL/glut.h>
 #include "emu.h"
 #include "glut-frame-buffer.h"
-#include "opengl-rast-config.h"
 #include "opengl-span.h"
 #include "opengl-edge.h"
 #include "opengl-context.h"
