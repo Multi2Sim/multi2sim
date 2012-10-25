@@ -20,9 +20,10 @@
 #include <m2s-glut.h>
 
 #include <assert.h>
-#include <debug.h>
-#include <list.h>
-#include <misc.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 
 static struct list_t *x86_glut_window_list;

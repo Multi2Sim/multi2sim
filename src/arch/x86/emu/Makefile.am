@@ -59,6 +59,7 @@ libemu_a_SOURCES += \
 	opengl.c \
 	opengl.dat \
 	opengl.h \
+	opengl-config.h \
 	\
 	opengl-context.c \
 	opengl-context.h \
@@ -77,6 +78,9 @@ libemu_a_SOURCES += \
 	\
 	opengl-color-channel.c \
 	opengl-color-channel.h \
+	\
+	opengl-light.c \
+	opengl-light.h \
 	\
 	opengl-span.c \
 	opengl-span.h \

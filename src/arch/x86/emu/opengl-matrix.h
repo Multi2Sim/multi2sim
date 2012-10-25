@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_OPENGL_MATRIX_H
-#define X86_OPENGL_MATRIX_H
+#ifndef ARCH_X86_EMU_OPENGL_MATRIX_H
+#define ARCH_X86_EMU_OPENGL_MATRIX_H
 
 #include "emu.h"
 #include <mem-system/mem-system.h>
