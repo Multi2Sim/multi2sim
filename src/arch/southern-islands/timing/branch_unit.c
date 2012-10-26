@@ -22,17 +22,29 @@
 
 #include "timing.h"
 
+/* Configurable by user at runtime */
 
-int si_gpu_branch_unit_reg_latency = 1;
-int si_gpu_branch_unit_exec_latency = 4;
 int si_gpu_branch_unit_width = 1;
+
+int si_gpu_branch_unit_decode_buffer_size = 5;
+
+/*
+ * Register accesses are not pipelined, so buffer size is not
+ * multiplied by the latency.
+ */
+int si_gpu_branch_unit_read_latency = 1;
+int si_gpu_branch_unit_read_buffer_size = 1;
+
+/* Note that the SIMD ALU latency is the latency for one sub-wavefront
+ * to execute, not an entire wavefront.
+ */
+int si_gpu_branch_unit_exec_latency = 4;
 
 void si_branch_unit_writeback(struct si_branch_unit_t *branch_unit)
 {
 	struct si_uop_t *uop;
 	int list_entries;
 
-	/* Process completed instructions */
 	list_entries = list_count(branch_unit->exec_buffer);
 
 	/* Sanity check the exec buffer */
@@ -84,26 +96,21 @@ void si_branch_unit_execute(struct si_branch_unit_t *branch_unit)
 
 	/* Sanity check the read buffer.  Register accesses are not pipelined, so
 	 * buffer size is not multiplied by the latency. */
-	assert(list_entries <= si_gpu_branch_unit_width);
+	assert(list_entries <= si_gpu_branch_unit_read_buffer_size);
 
 	for (int i = 0; i < list_entries; i++)
 	{
 		uop = list_head(branch_unit->read_buffer);
 		assert(uop);
 
-		/* Stop if the uop has not been fully read yet. It is safe
-		 * to assume that no other uop is ready either */
-		if (si_gpu->cycle < uop->read_ready)
+		/* Stop if the issue width has been reached. */
+		if (instructions_processed == si_gpu_branch_unit_width)
 			break;
 
-		/* Stop if the issue width has been reached, stall */
-		if (instructions_processed == si_gpu_branch_unit_width)
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
-				uop->id_in_compute_unit, branch_unit->compute_unit->id, 
-				uop->wavefront->id);
+		/* Stop if the uop has not been fully read yet. It is safe
+		 * to assume that no other uop is ready either. */
+		if (si_gpu->cycle < uop->read_ready)
 			break;
-		}
 
 		/* Branch */
 		uop->execute_ready = si_gpu->cycle + si_gpu_branch_unit_exec_latency;
@@ -127,20 +134,24 @@ void si_branch_unit_read(struct si_branch_unit_t *branch_unit)
 	list_entries = list_count(branch_unit->decode_buffer);
 
 	/* Sanity check the decode buffer */
-	assert(list_entries <= si_gpu_decode_latency * si_gpu_decode_width);
+	assert(list_entries <= si_gpu_branch_unit_decode_buffer_size);
 
 	for (int i = 0; i < list_entries; i++)
 	{
 		uop = list_head(branch_unit->decode_buffer);
 		assert(uop);
 
+		/* Stop if the issue width has been reached. */
+		if (instructions_processed == si_gpu_branch_unit_width)
+			break;
+
 		/* Stop if the uop has not been fully decoded yet. It is safe
-		 * to assume that no other uop is ready either */
+		 * to assume that no other uop is ready either. */
 		if (si_gpu->cycle < uop->decode_ready)
 			break;
 
-		/* Stop if the issue width has been reached, stall */
-		if (instructions_processed == si_gpu_branch_unit_width)
+		/* Stop if the read buffer is full. */
+		if (list_count(branch_unit->read_buffer) >= si_gpu_branch_unit_read_buffer_size)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 				uop->id_in_compute_unit, branch_unit->compute_unit->id, 
@@ -148,26 +159,15 @@ void si_branch_unit_read(struct si_branch_unit_t *branch_unit)
 			break;
 		}
 
-		/* Issue the uop if the read buffer is not full */
-		if (list_count(branch_unit->read_buffer) < si_gpu_branch_unit_width)
-		{
-			uop->read_ready = si_gpu->cycle + si_gpu_branch_unit_reg_latency;
-			list_remove(branch_unit->decode_buffer, uop);
-			list_enqueue(branch_unit->read_buffer, uop);
+		uop->read_ready = si_gpu->cycle + si_gpu_branch_unit_read_latency;
+		list_remove(branch_unit->decode_buffer, uop);
+		list_enqueue(branch_unit->read_buffer, uop);
 
-			instructions_processed++;
+		instructions_processed++;
 
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"bu-r\"\n", 
-				uop->id_in_compute_unit, branch_unit->compute_unit->id, 
-				uop->wavefront->id);
-		}
-		else
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
-				uop->id_in_compute_unit, branch_unit->compute_unit->id, 
-				uop->wavefront->id);
-			break;
-		}
+		si_trace("si.inst id=%lld cu=%d wf=%d stg=\"bu-r\"\n",
+			uop->id_in_compute_unit, branch_unit->compute_unit->id,
+			uop->wavefront->id);
 	}
 }
 

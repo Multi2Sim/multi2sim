@@ -454,23 +454,29 @@ extern int si_gpu_simd_read_buffer_size;
 extern int si_gpu_simd_alu_latency;
 extern int si_gpu_simd_num_subwavefronts;
 
-extern int si_gpu_vector_mem_inflight_mem_accesses;
 extern int si_gpu_vector_mem_width;
-extern int si_gpu_vector_mem_reg_latency;
-extern int si_gpu_vector_mem_exec_latency;
+extern int si_gpu_vector_mem_decode_buffer_size;
+extern int si_gpu_vector_mem_read_latency;
+extern int si_gpu_vector_mem_read_buffer_size;
+extern int si_gpu_vector_mem_inflight_mem_accesses;
 
-extern int si_gpu_lds_inflight_mem_accesses;
 extern int si_gpu_lds_width;
-extern int si_gpu_lds_reg_latency;
-extern int si_gpu_lds_exec_latency;
+extern int si_gpu_lds_decode_buffer_size;
+extern int si_gpu_lds_read_latency;
+extern int si_gpu_lds_read_buffer_size;
+extern int si_gpu_lds_inflight_mem_accesses;
 
-extern int si_gpu_scalar_unit_inflight_mem_accesses;
 extern int si_gpu_scalar_unit_width;
-extern int si_gpu_scalar_unit_reg_latency;
+extern int si_gpu_scalar_unit_decode_buffer_size;
+extern int si_gpu_scalar_unit_read_latency;
+extern int si_gpu_scalar_unit_read_buffer_size;
 extern int si_gpu_scalar_unit_exec_latency;
+extern int si_gpu_scalar_unit_inflight_mem_accesses;
 
 extern int si_gpu_branch_unit_width;
-extern int si_gpu_branch_unit_reg_latency;
+extern int si_gpu_branch_unit_decode_buffer_size;
+extern int si_gpu_branch_unit_read_latency;
+extern int si_gpu_branch_unit_read_buffer_size;
 extern int si_gpu_branch_unit_exec_latency;
 
 struct si_gpu_t

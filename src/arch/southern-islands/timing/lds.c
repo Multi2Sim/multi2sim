@@ -22,11 +22,20 @@
 
 #include "timing.h"
 
+/* Configurable by user at runtime */
+
+int si_gpu_lds_width = 1;
+
+int si_gpu_lds_decode_buffer_size = 5;
+
+/*
+ * Register accesses are not pipelined, so buffer size is not
+ * multiplied by the latency.
+ */
+int si_gpu_lds_read_latency = 1;
+int si_gpu_lds_read_buffer_size = 1;
 
 int si_gpu_lds_inflight_mem_accesses = 32;
-int si_gpu_lds_exec_latency = 1;
-int si_gpu_lds_reg_latency = 1;
-int si_gpu_lds_width = 1;
 
 void si_lds_process_mem_accesses(struct si_lds_t *lds)
 {
@@ -75,7 +84,7 @@ void si_lds_writeback(struct si_lds_t *lds)
 	list_entries = list_count(lds->exec_buffer);
 
 	/* Sanity check the exec buffer */
-	assert(list_entries <= si_gpu_lds_exec_latency * si_gpu_lds_width);
+	assert(list_entries <= si_gpu_lds_width);
 
 	for (int i = 0; i < list_entries; i++)
 	{
@@ -128,26 +137,21 @@ void si_lds_execute(struct si_lds_t *lds)
 	
 	/* Sanity check the read buffer.  Register accesses are not pipelined, so
 	 * buffer size is not multiplied by the latency. */
-	assert(list_entries <= si_gpu_lds_width);
+	assert(list_entries <= si_gpu_lds_read_buffer_size);
 
 	for (i = 0; i < list_entries; i++)
 	{
 		uop = list_head(lds->read_buffer);
 		assert(uop);
 
-		/* Stop if the uop has not been fully read yet. It is safe
-		 * to assume that no other uop is ready either */
-		if (si_gpu->cycle < uop->read_ready)
+		/* Stop if the issue width has been reached. */
+		if (instructions_processed == si_gpu_lds_width)
 			break;
 
-		/* Stop if the issue width has been reached, stall */
-		if (instructions_processed == si_gpu_lds_width)
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id);
+		/* Stop if the uop has not been fully read yet. It is safe
+		 * to assume that no other uop is ready either. */
+		if (si_gpu->cycle < uop->read_ready)
 			break;
-		}
 
 		/* Sanity check uop */
 		assert(uop->local_mem_read || uop->local_mem_write);
@@ -156,11 +160,10 @@ void si_lds_execute(struct si_lds_t *lds)
 		assert(list_count(lds->inflight_buffer) <= si_gpu_lds_inflight_mem_accesses);
 
 		/* Sanity check exec buffer */
-		assert(list_count(lds->exec_buffer) <= si_gpu_lds_width * si_gpu_lds_exec_latency);
+		assert(list_count(lds->exec_buffer) <= si_gpu_lds_width);
 
 		/* If there is room in the outstanding memory buffer, issue the access */
-		if (list_count(lds->inflight_buffer) < si_gpu_lds_inflight_mem_accesses &&
-			list_count(lds->exec_buffer) < si_gpu_lds_width * si_gpu_lds_exec_latency)
+		if (list_count(lds->inflight_buffer) < si_gpu_lds_inflight_mem_accesses)
 		{
 			/* TODO replace this with a lightweight uop */
 			struct si_uop_t *mem_uop;
@@ -195,6 +198,7 @@ void si_lds_execute(struct si_lds_t *lds)
 			mem_uop->inst_buffer_entry->lgkm_cnt++;
 
 			/* Transfer the uop to the exec buffer */
+			uop->execute_ready = si_gpu->cycle + 1;
 			list_remove(lds->read_buffer, uop);
 			list_enqueue(lds->exec_buffer, uop);
 
@@ -227,20 +231,24 @@ void si_lds_read(struct si_lds_t *lds)
 	list_entries = list_count(lds->decode_buffer);
 
 	/* Sanity check the decode buffer */
-	assert(list_entries <= si_gpu_decode_latency * si_gpu_decode_width);
+	assert(list_entries <= si_gpu_lds_decode_buffer_size);
 
 	for (int i = 0; i < list_entries; i++)
 	{
 		uop = list_head(lds->decode_buffer);
 		assert(uop);
 
+		/* Stop if the width has been reached. */
+		if (instructions_processed == si_gpu_lds_width)
+			break;
+
 		/* Stop if the uop has not been fully decoded yet. It is safe
-		 * to assume that no other uop is ready either */
+		 * to assume that no other uop is ready either. */
 		if (si_gpu->cycle < uop->decode_ready)
 			break;
 
-		/* Stop if the width has been reached, stall */
-		if (instructions_processed == si_gpu_lds_width)
+		/* Stop if the read buffer is full. */
+		if (list_count(lds->read_buffer) >= si_gpu_lds_read_buffer_size)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 				uop->id_in_compute_unit, lds->compute_unit->id, 
@@ -248,26 +256,15 @@ void si_lds_read(struct si_lds_t *lds)
 			break;
 		}
 		
-		/* Issue the uop if the read buffer is not full */
-		if (list_count(lds->read_buffer) < si_gpu_lds_width)
-		{
-			uop->read_ready = si_gpu->cycle + si_gpu_lds_reg_latency;
-			list_remove(lds->decode_buffer, uop);
-			list_enqueue(lds->read_buffer, uop);
+		uop->read_ready = si_gpu->cycle + si_gpu_lds_read_latency;
+		list_remove(lds->decode_buffer, uop);
+		list_enqueue(lds->read_buffer, uop);
 
-			instructions_processed++;
+		instructions_processed++;
 
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"lds-r\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id);
-		}
-		else
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id);
-			break;
-		}
+		si_trace("si.inst id=%lld cu=%d wf=%d stg=\"lds-r\"\n",
+			uop->id_in_compute_unit, lds->compute_unit->id,
+			uop->wavefront->id);
 	}
 }
 
