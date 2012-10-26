@@ -95,6 +95,8 @@ struct si_compute_unit_t *si_compute_unit_create()
 		compute_unit->simds[i]->decode_buffer = list_create();
 		compute_unit->simds[i]->read_buffer = list_create();
 		compute_unit->simds[i]->exec_buffer = list_create();
+		compute_unit->simds[i]->subwavefront_pool =
+				calloc(1, sizeof(struct si_subwavefront_pool_t));
 		compute_unit->simds[i]->compute_unit = compute_unit;
 	}
 
@@ -159,6 +161,7 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 		list_free(compute_unit->simds[i]->decode_buffer);
 		list_free(compute_unit->simds[i]->read_buffer);
 		list_free(compute_unit->simds[i]->exec_buffer);
+		free(compute_unit->simds[i]->subwavefront_pool);
 		free(compute_unit->simds[i]);
 
 		si_inst_buffer_free(compute_unit->inst_buffers[i]);

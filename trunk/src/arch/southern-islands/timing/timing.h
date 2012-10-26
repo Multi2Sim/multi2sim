@@ -220,11 +220,20 @@ struct si_vector_mem_unit_t
 	long long inst_count;
 };
 
+struct si_subwavefront_pool_t
+{
+	struct si_uop_t *uop;
+	unsigned int num_subwavefronts_executed;
+};
+
 struct si_simd_t
 {
 	struct list_t *decode_buffer; /* Decoded instructions */
 	struct list_t *read_buffer;   /* Register accesses */
 	struct list_t *exec_buffer;   /* Execution */
+	struct si_subwavefront_pool_t
+		*subwavefront_pool;		  /* Keep track of the wavefront entering
+									 stream core pipelines. */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -438,9 +447,11 @@ extern int si_gpu_local_mem_latency;
 extern int si_gpu_local_mem_block_size;
 extern int si_gpu_local_mem_num_ports;
 
-extern int si_gpu_simd_alu_latency;
-extern int si_gpu_simd_reg_latency;
 extern int si_gpu_simd_width;
+extern int si_gpu_simd_decode_buffer_size;
+extern int si_gpu_simd_read_latency;
+extern int si_gpu_simd_read_buffer_size;
+extern int si_gpu_simd_alu_latency;
 extern int si_gpu_simd_num_subwavefronts;
 
 extern int si_gpu_vector_mem_inflight_mem_accesses;
