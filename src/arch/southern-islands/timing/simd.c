@@ -22,10 +22,21 @@
 
 #include "timing.h"
 
-
-int si_gpu_simd_alu_latency = 8;
-int si_gpu_simd_reg_latency = 1;
 int si_gpu_simd_width = 1;
+
+int si_gpu_simd_decode_buffer_size = 5;
+
+/*
+ * Register accesses are not pipelined, so buffer size is not
+ * multiplied by the latency.
+ */
+int si_gpu_simd_read_latency = 1;
+int si_gpu_simd_read_buffer_size = 1;
+
+/* Note that the SIMD ALU latency is the latency for one sub-wavefront
+ * to execute, not an entire wavefront.
+ */
+int si_gpu_simd_alu_latency = 8;
 int si_gpu_simd_num_subwavefronts = 4;
 
 void si_simd_writeback(struct si_simd_t *simd)
@@ -35,10 +46,6 @@ void si_simd_writeback(struct si_simd_t *simd)
 
 	/* Process completed ALU instructions */
 	list_entries = list_count(simd->exec_buffer);
-
-	/* Sanity check the exec buffer */
-	assert(list_entries <= (si_gpu_simd_alu_latency + si_gpu_simd_num_subwavefronts - 1) * 
-			si_gpu_simd_width);
 
 	for (int i = 0; i < list_entries; i++)
 	{
@@ -71,6 +78,8 @@ void si_simd_writeback(struct si_simd_t *simd)
 		}
 		else
 		{
+			/* The uop has not been fully executed yet. It is safe
+			 * to assume that no other uop is ready either */
 			break;
 		}
 	}
@@ -81,16 +90,59 @@ void si_simd_execute(struct si_simd_t *simd)
 	struct si_uop_t *uop;
 	int list_entries;
 	int instructions_processed = 0;
+	int num_subwavefronts;
+	int subwavefront_size = si_emu_wavefront_size / si_gpu_simd_num_subwavefronts;
 
-	/* Look through the ALU execution buffer looking for wavefronts ready to execute */
 	list_entries = list_count(simd->read_buffer);
 
-	/* Sanity check the read buffer.  Register accesses are not pipelined, so
-	 * buffer size is not multiplied by the latency. */
-	assert(list_entries <= si_gpu_simd_width);
+	/* Sanity check the read buffer. */
+	assert(list_entries <= si_gpu_simd_read_buffer_size);
 
-	for (int i = 0; i < list_entries; i++)
+	for(instructions_processed = 0; instructions_processed < si_gpu_simd_width;)
 	{
+		/* Check to see if there is a wavefront in the sub-wavefront pool. */
+		uop = simd->subwavefront_pool->uop;
+		if(uop)
+		{
+			/* Execute one sub-wavefront. */
+			simd->subwavefront_pool->num_subwavefronts_executed++;
+			instructions_processed++;
+
+			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"simd-e\"\n",
+					uop->id_in_compute_unit, simd->compute_unit->id,
+					uop->wavefront->id);
+
+			/* Check to see if the wavefront has finished all its
+			 * sub-wavefronts. If so remove the wavefront to make room
+			 * for the next, if not continue as no other wavefront can be issued.
+			 *
+			 * num_subwavefronts = ceil(work_item_count / subwavefront_size)
+			 * subwavefront_size = wavefront_size / num_subwavefronts
+			 */
+			num_subwavefronts = (uop->wavefront->work_item_count % subwavefront_size) ?
+					uop->wavefront->work_item_count / subwavefront_size + 1 :
+					uop->wavefront->work_item_count / subwavefront_size;
+			if(simd->subwavefront_pool->num_subwavefronts_executed >=
+					num_subwavefronts)
+			{
+				/* Remove the completed wavefront from the sub-wavefront pool.
+				 * It will be ready once this last sub-wavefront completes. */
+				uop->execute_ready = si_gpu->cycle + si_gpu_simd_alu_latency;
+				list_enqueue(simd->exec_buffer, uop);
+				simd->subwavefront_pool->uop = NULL;
+				simd->subwavefront_pool->num_subwavefronts_executed = 0;
+			}
+			else
+				continue;
+		}
+
+		/* Look to the read buffer looking for wavefronts
+		 * ready to issue to the sub-wavefront pool. */
+
+		/* Stop if there are no waiting wavefronts. */
+		if(!list_entries)
+			break;
+
 		uop = list_head(simd->read_buffer);
 		assert(uop);
 
@@ -99,39 +151,10 @@ void si_simd_execute(struct si_simd_t *simd)
 		if (si_gpu->cycle < uop->read_ready)
 			break;
 
-		/* Stop if the issue width has been reached, stall */
-		if (instructions_processed == si_gpu_simd_width)
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
-				uop->id_in_compute_unit, simd->compute_unit->id, 
-				uop->wavefront->id);
-			break;
-		}
-
-		/* Stall if exec buffer is full */
-		if (list_count(simd->exec_buffer) == 
-			(si_gpu_simd_alu_latency+si_gpu_simd_num_subwavefronts-1) * 
-			si_gpu_simd_width)
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
-				uop->id_in_compute_unit, simd->compute_unit->id, 
-				uop->wavefront->id);
-			break;
-		}
-
-		/* If the uop is ready to begin execution, set the ALU ready and execution
-		 * ready cycles */
-		uop->execute_ready = si_gpu->cycle + si_gpu_simd_num_subwavefronts + 
-			si_gpu_simd_alu_latency - 1;
-
+		/* Add the next wavefront. */
 		list_remove(simd->read_buffer, uop);
-		list_enqueue(simd->exec_buffer, uop);
-
-		instructions_processed++;
-
-		si_trace("si.inst id=%lld cu=%d wf=%d stg=\"simd-e\"\n", 
-			uop->id_in_compute_unit, simd->compute_unit->id, 
-			uop->wavefront->id);
+		simd->subwavefront_pool->uop = uop;
+		simd->subwavefront_pool->num_subwavefronts_executed = 0;
 	}
 }
 
@@ -144,7 +167,7 @@ void si_simd_read(struct si_simd_t *simd)
 	list_entries = list_count(simd->decode_buffer);
 
 	/* Sanity check the decode buffer */
-	assert(list_entries <= si_gpu_decode_latency * si_gpu_decode_width);
+	assert(list_entries <= si_gpu_simd_decode_buffer_size);
 
 	for (int i = 0; i < list_entries; i++)
 	{
@@ -156,7 +179,16 @@ void si_simd_read(struct si_simd_t *simd)
 		if (si_gpu->cycle < uop->decode_ready)
 			break;
 
-		/* Stop if the issue width has been reached, stall */
+		/* Stop if the read_buffer is full. */
+		if (list_count(simd->read_buffer) >= si_gpu_simd_read_buffer_size)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n",
+				uop->id_in_compute_unit,
+				simd->compute_unit->id);
+			break;
+		}
+
+		/* Stop if the issue width has been reached */
 		if (instructions_processed == si_gpu_simd_width)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
@@ -165,26 +197,15 @@ void si_simd_read(struct si_simd_t *simd)
 			break;
 		}
 
-		/* Issue the uop if the read buffer is not full */
-		if (list_count(simd->read_buffer) < si_gpu_simd_width)
-		{
-			uop->read_ready = si_gpu->cycle + si_gpu_simd_reg_latency;
-			list_remove(simd->decode_buffer, uop);
-			list_enqueue(simd->read_buffer, uop);
+		uop->read_ready = si_gpu->cycle + si_gpu_simd_read_latency;
+		list_remove(simd->decode_buffer, uop);
+		list_enqueue(simd->read_buffer, uop);
 
-			instructions_processed++;
+		instructions_processed++;
 
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"simd-r\"\n", 
-				uop->id_in_compute_unit, simd->compute_unit->id, 
-				uop->wavefront->id);
-		}
-		else
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
-				uop->id_in_compute_unit, simd->compute_unit->id, 
-				uop->wavefront->id);
-			break;
-		}
+		si_trace("si.inst id=%lld cu=%d wf=%d stg=\"simd-r\"\n",
+			uop->id_in_compute_unit, simd->compute_unit->id,
+			uop->wavefront->id);
 	}
 }
 
