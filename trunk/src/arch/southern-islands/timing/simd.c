@@ -22,6 +22,8 @@
 
 #include "timing.h"
 
+/* Configurable by user at runtime */
+
 int si_gpu_simd_width = 1;
 
 int si_gpu_simd_decode_buffer_size = 5;
@@ -44,8 +46,11 @@ void si_simd_writeback(struct si_simd_t *simd)
 	struct si_uop_t *uop;
 	int list_entries;
 
-	/* Process completed ALU instructions */
 	list_entries = list_count(simd->exec_buffer);
+
+	/* Sanity check alu buffer */
+	assert(list_count(simd->exec_buffer) <=
+			si_gpu_simd_width * si_gpu_simd_alu_latency);
 
 	for (int i = 0; i < list_entries; i++)
 	{
@@ -174,6 +179,10 @@ void si_simd_read(struct si_simd_t *simd)
 		uop = list_head(simd->decode_buffer);
 		assert(uop);
 
+		/* Stop if the issue width has been reached */
+		if (instructions_processed == si_gpu_simd_width)
+			break;
+
 		/* Stop if the uop has not been fully decoded yet. It is safe
 		 * to assume that no other uop is ready either */
 		if (si_gpu->cycle < uop->decode_ready)
@@ -185,15 +194,6 @@ void si_simd_read(struct si_simd_t *simd)
 			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n",
 				uop->id_in_compute_unit,
 				simd->compute_unit->id);
-			break;
-		}
-
-		/* Stop if the issue width has been reached */
-		if (instructions_processed == si_gpu_simd_width)
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
-				uop->id_in_compute_unit, simd->compute_unit->id, 
-				uop->wavefront->id);
 			break;
 		}
 
