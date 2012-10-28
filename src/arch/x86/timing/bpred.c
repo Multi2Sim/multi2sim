@@ -231,7 +231,7 @@ int x86_bpred_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
 	 * is a call, ret, jump, or conditional branch. Thus, branches other than
 	 * conditional ones are always predicted taken. */
 	assert(uop->flags & X86_UINST_CTRL);
-	if (uop->flags | X86_UINST_UNCOND)
+	if (uop->flags & X86_UINST_UNCOND)
 	{
 		uop->pred = 1;
 		return 1;
