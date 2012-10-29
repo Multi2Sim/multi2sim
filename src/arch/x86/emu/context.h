@@ -61,6 +61,9 @@ struct x86_ctx_t
 	/* Currently emulated instruction */
 	struct x86_inst_t inst;
 
+	/* Recorded virtual memory address for last emulated instruction */
+	unsigned int effective_address;
+
 	/* For emulation of string operations */
 	unsigned int str_op_esi;  /* Initial value for register 'esi' in string operation */
 	unsigned int str_op_edi;  /* Initial value for register 'edi' in string operation */
@@ -179,7 +182,8 @@ void x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx);
 void __x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx);
 void x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx);
 
-void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func,
+void x86_ctx_suspend(struct x86_ctx_t *ctx,
+	x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func,
 	void *can_wakeup_callback_data, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
 	void *wakeup_callback_data);
 
@@ -187,7 +191,7 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int status);
 void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status);
 void x86_ctx_execute(struct x86_ctx_t *ctx);
 
-void x86_ctx_set_eip(struct x86_ctx_t *ctx, uint32_t eip);
+void x86_ctx_set_eip(struct x86_ctx_t *ctx, unsigned int eip);
 void x86_ctx_recover(struct x86_ctx_t *ctx);
 
 struct x86_ctx_t *x86_ctx_get(int pid);
@@ -197,7 +201,8 @@ int x86_ctx_get_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status);
 void x86_ctx_set_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status);
 void x86_ctx_clear_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status);
 
-int x86_ctx_futex_wake(struct x86_ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t bitset);
+int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex,
+	unsigned int count, unsigned int bitset);
 void x86_ctx_exit_robust_list(struct x86_ctx_t *ctx);
 
 void x86_ctx_gen_proc_self_maps(struct x86_ctx_t *ctx, char *path);
