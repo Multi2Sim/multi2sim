@@ -352,7 +352,7 @@ static unsigned int x86_isa_linear_address(struct x86_ctx_t *ctx, unsigned int o
 /* Return the effective address obtained from the 'SIB' and 'disp' fields */
 unsigned int x86_isa_effective_address(struct x86_ctx_t *ctx)
 {
-	uint32_t addr;
+	unsigned int addr;
 
 	/* Check 'modrm_mod' field */
 	if (ctx->inst.modrm_mod == 3)
@@ -369,6 +369,12 @@ unsigned int x86_isa_effective_address(struct x86_ctx_t *ctx)
 	/* Add segment base */
 	addr = x86_isa_linear_address(ctx, addr);
 
+	/* Record effective address in context. This address is used later in the
+	 * generation of micro-instructions. We need to record it to avoid calling this
+	 * function again later, since the source register used to calculate the effective
+	 * address can be overwritten after the instruction emulation. */
+	ctx->effective_address = addr;
+
 	return addr;
 }
 
@@ -377,7 +383,7 @@ unsigned int x86_isa_effective_address(struct x86_ctx_t *ctx)
  * immediate field. */
 unsigned int x86_isa_moffs_address(struct x86_ctx_t *ctx)
 {
-	uint32_t addr;
+	unsigned int addr;
 
 	/* Immediate value as effective address. */
 	addr = ctx->inst.imm.d;
@@ -857,7 +863,6 @@ void x86_isa_done(void)
 }
 
 
-/* FIXME - merge with ctx_execute */
 void x86_isa_execute_inst(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
@@ -871,6 +876,9 @@ void x86_isa_execute_inst(struct x86_ctx_t *ctx)
 	ctx->last_eip = ctx->curr_eip;
 	ctx->curr_eip = regs->eip;
 	ctx->target_eip = 0;
+
+	/* Reset effective address */
+	ctx->effective_address = 0;
 
 	/* Debug */
 	if (debug_status(x86_isa_inst_debug_category))
