@@ -439,7 +439,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x8
 			{
 				uinst->opcode = x86_uinst_store;
 				uinst->dep[index] = x86_dep_none;
-				uinst->address = x86_isa_effective_address(ctx);
+				uinst->address = ctx->effective_address;
 				uinst->size = mem_dep_size;
 				return;
 			}
@@ -450,7 +450,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x8
 		new_uinst->opcode = x86_uinst_store;
 		new_uinst->idep[0] = x86_dep_ea;
 		new_uinst->idep[1] = mem_regular_dep;
-		new_uinst->address = x86_isa_effective_address(ctx);
+		new_uinst->address = ctx->effective_address;
 		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 
@@ -487,7 +487,7 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, struct x8
 		{
 			uinst->opcode = x86_uinst_load;
 			uinst->dep[index] = x86_dep_ea;
-			uinst->address = x86_isa_effective_address(ctx);
+			uinst->address = ctx->effective_address;
 			uinst->size = mem_dep_size;
 			return;
 		}
@@ -497,7 +497,7 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, struct x8
 		new_uinst->opcode = x86_uinst_load;
 		new_uinst->idep[0] = x86_dep_ea;
 		new_uinst->odep[0] = mem_regular_dep;
-		new_uinst->address = x86_isa_effective_address(ctx);
+		new_uinst->address = ctx->effective_address;
 		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 
@@ -560,7 +560,7 @@ void x86_uinst_free(struct x86_uinst_t *uinst)
 
 
 void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
-	enum x86_uinst_opcode_t opcode, uint32_t address, int size,
+	enum x86_uinst_opcode_t opcode, unsigned int address, int size,
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
 	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
 	enum x86_dep_t odep3)
@@ -568,11 +568,8 @@ void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
 	struct x86_uinst_t *uinst;
 	int i;
 
-	/* Do nothing for functional simulation */
-	if (x86_emu_kind == x86_emu_kind_functional)
-		return;
-	
 	/* Create uinst */
+	assert(x86_emu_kind == x86_emu_kind_detailed);
 	uinst = x86_uinst_create();
 	uinst->opcode = opcode;
 	uinst->idep[0] = idep0;

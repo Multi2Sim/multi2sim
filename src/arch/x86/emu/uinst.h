@@ -297,7 +297,7 @@ void __x86_uinst_new(struct x86_ctx_t *ctx, enum x86_uinst_opcode_t opcode,
 	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
 	enum x86_dep_t odep3);
 void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
-	enum x86_uinst_opcode_t opcode, uint32_t addr, int size,
+	enum x86_uinst_opcode_t opcode, unsigned int addr, int size,
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
 	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
 	enum x86_dep_t odep3);

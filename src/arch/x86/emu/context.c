@@ -338,7 +338,7 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 /* Force a new 'eip' value for the context. The forced value should be the same as
  * the current 'eip' under normal circumstances. If it is not, speculative execution
  * starts, which will end on the next call to 'x86_ctx_recover'. */
-void x86_ctx_set_eip(struct x86_ctx_t *ctx, uint32_t eip)
+void x86_ctx_set_eip(struct x86_ctx_t *ctx, unsigned int eip)
 {
 	/* Entering specmode */
 	if (ctx->regs->eip != eip && !x86_ctx_get_status(ctx, x86_ctx_spec_mode))
@@ -632,7 +632,7 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int status)
 	 * that pointer. Also wake up futexes in the robust list. */
 	if (ctx->clear_child_tid)
 	{
-		uint32_t zero = 0;
+		unsigned int zero = 0;
 		mem_write(ctx->mem, ctx->clear_child_tid, 4, &zero);
 		x86_ctx_futex_wake(ctx, ctx->clear_child_tid, 1, -1);
 	}
@@ -649,7 +649,7 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int status)
 }
 
 
-int x86_ctx_futex_wake(struct x86_ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t bitset)
+int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex, unsigned int count, unsigned int bitset)
 {
 	int wakeup_count = 0;
 	struct x86_ctx_t *wakeup_ctx;
@@ -686,7 +686,7 @@ int x86_ctx_futex_wake(struct x86_ctx_t *ctx, uint32_t futex, uint32_t count, ui
 
 void x86_ctx_exit_robust_list(struct x86_ctx_t *ctx)
 {
-	uint32_t next, lock_entry, offset, lock_word;
+	unsigned int next, lock_entry, offset, lock_word;
 
 	/* Read the offset from the list head. This is how the structure is
 	 * represented in the kernel:
@@ -728,7 +728,7 @@ void x86_ctx_exit_robust_list(struct x86_ctx_t *ctx)
 /* Generate virtual file '/proc/self/maps' and return it in 'path'. */
 void x86_ctx_gen_proc_self_maps(struct x86_ctx_t *ctx, char *path)
 {
-	uint32_t start, end;
+	unsigned int start, end;
 	enum mem_access_t perm, page_perm;
 	struct mem_page_t *page;
 	struct mem_t *mem = ctx->mem;
