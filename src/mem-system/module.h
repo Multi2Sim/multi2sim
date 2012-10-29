@@ -188,6 +188,9 @@ struct mod_t
 	long long nc_writes;
 	long long effective_nc_writes;
 	long long effective_nc_write_hits;
+	long long prefetches;
+	long long prefetch_aborts;
+	long long useless_prefetches;
 	long long evictions;
 
 	long long blocking_reads;
