@@ -30,6 +30,7 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/statfs.h>
 #include <sys/time.h>
 #include <sys/times.h>
 
@@ -2157,6 +2158,85 @@ static int x86_sys_fchmod_impl(struct x86_ctx_t *ctx)
 
 	/* Return */
 	return err;
+}
+
+
+
+
+/*
+ * System call 'statfs' (code 99)
+ */
+
+struct sim_statfs_t
+{					/* off	sz */
+	unsigned int type;		/* 0	4 */
+	unsigned int bsize;		/* 4	4 */
+	unsigned int blocks;		/* 8	4 */
+	unsigned int bfree;		/* 12	4 */
+	unsigned int bavail;		/* 16	4 */
+	unsigned int files;		/* 20	4 */
+	unsigned int ffree;		/* 24	4 */
+	unsigned int fsid[2];		/* 28	8 */
+	unsigned int namelen;		/* 36	4 */
+	unsigned int frsize;		/* 40	4 */
+	unsigned int flags;		/* 44	4 */
+	unsigned int spare[4];		/* 48	16 */
+};
+
+static void sim_statfs_host_to_guest(struct sim_statfs_t *host, struct statfs *guest)
+{
+	M2S_HOST_GUEST_MATCH(sizeof(*host), 64);
+	memset(host, 0, sizeof(*host));
+	host->type = guest->f_type;
+	host->bsize = guest->f_bsize;
+	host->blocks = guest->f_blocks;
+	host->bfree = guest->f_bfree;
+	host->bavail = guest->f_bavail;
+	host->files = guest->f_files;
+	host->ffree = guest->f_ffree;
+	memcpy(&host->fsid, &guest->f_fsid, MIN(sizeof host->fsid, sizeof guest->f_fsid));
+	host->namelen = guest->f_namelen;
+	host->frsize = guest->f_frsize;
+	host->flags = guest->f_flags;
+}
+
+static int x86_sys_statfs_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int path_ptr;
+	unsigned int statfs_buf_ptr;
+
+	char path[MAX_PATH_SIZE];
+
+	struct statfs statfs_buf;
+	struct sim_statfs_t sim_statfs_buf;
+
+	int length;
+	int err;
+
+	/* Arguments */
+	path_ptr = regs->ebx;
+	statfs_buf_ptr = regs->ecx;
+	x86_sys_debug("  path_ptr=0x%x, statsf_buf_ptr=0x%x\n",
+			path_ptr, statfs_buf_ptr);
+	
+	/* Read path */
+	length = mem_read_string(mem, path_ptr, sizeof path, path);
+	if (length == sizeof path)
+		fatal("%s: buffer too small", __FUNCTION__);
+	x86_sys_debug("  path='%s'\n", path);
+	
+	/* Host call */
+	err = statfs(path, &statfs_buf);
+	if (err == -1)
+		return -errno;
+	
+	/* Copy guest structure */
+	sim_statfs_host_to_guest(&sim_statfs_buf, &statfs_buf);
+	mem_write(mem, statfs_buf_ptr, sizeof sim_statfs_buf, &sim_statfs_buf);
+	return 0;
 }
 
 
@@ -5266,6 +5346,91 @@ static int x86_sys_clock_getres_impl(struct x86_ctx_t *ctx)
 
 
 /*
+ * System call 'statfs64' (code 268)
+ */
+
+struct sim_statfs64_t
+{					/* off	sz */
+	unsigned int type;		/* 0	4 */
+	unsigned int bsize;		/* 4	4 */
+	unsigned long long blocks;	/* 8	8 */
+	unsigned long long bfree;	/* 16	8 */
+	unsigned long long bavail;	/* 24	8 */
+	unsigned long long files;	/* 32	8 */
+	unsigned long long ffree;	/* 40	8 */
+	unsigned int fsid[2];		/* 48	8 */
+	unsigned int namelen;		/* 56	4 */
+	unsigned int frsize;		/* 60	4 */
+	unsigned int flags;		/* 64	4 */
+	unsigned int spare[4];		/* 68	16 */
+} __attribute__((packed));
+
+static void sim_statfs64_host_to_guest(struct sim_statfs64_t *host, struct statfs *guest)
+{
+	M2S_HOST_GUEST_MATCH(sizeof(*host), 84);
+	memset(host, 0, sizeof(*host));
+	host->type = guest->f_type;
+	host->bsize = guest->f_bsize;
+	host->blocks = guest->f_blocks;
+	host->bfree = guest->f_bfree;
+	host->bavail = guest->f_bavail;
+	host->files = guest->f_files;
+	host->ffree = guest->f_ffree;
+	memcpy(&host->fsid, &guest->f_fsid, MIN(sizeof host->fsid, sizeof guest->f_fsid));
+	host->namelen = guest->f_namelen;
+	host->frsize = guest->f_frsize;
+	host->flags = guest->f_flags;
+}
+
+static int x86_sys_statfs64_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int path_ptr;
+	unsigned int sz;
+	unsigned int statfs_buf_ptr;
+
+	char path[MAX_PATH_SIZE];
+
+	struct statfs statfs_buf;
+	struct sim_statfs64_t sim_statfs_buf;
+
+	int length;
+	int err;
+
+	/* Arguments */
+	path_ptr = regs->ebx;
+	sz = regs->ecx;
+	statfs_buf_ptr = regs->edx;
+	x86_sys_debug("  path_ptr=0x%x, sz=%d, statsf_buf_ptr=0x%x\n",
+			path_ptr, sz, statfs_buf_ptr);
+	
+	/* Check 'sz' argument */
+	if (sz != sizeof sim_statfs_buf)
+		fatal("%s: incompatible size of 'statfs' structure (sz = %d != %ld)\n",
+			__FUNCTION__, sz, sizeof sim_statfs_buf);
+
+	/* Read path */
+	length = mem_read_string(mem, path_ptr, sizeof path, path);
+	if (length == sizeof path)
+		fatal("%s: buffer too small", __FUNCTION__);
+	x86_sys_debug("  path='%s'\n", path);
+	
+	/* Host call */
+	err = statfs(path, &statfs_buf);
+	if (err == -1)
+		return -errno;
+	
+	/* Copy guest structure */
+	sim_statfs64_host_to_guest(&sim_statfs_buf, &statfs_buf);
+	mem_write(mem, statfs_buf_ptr, sizeof sim_statfs_buf, &sim_statfs_buf);
+	return 0;
+}
+
+
+
+/*
  * System call 'tgkill' (code 270)
  */
 
@@ -5497,7 +5662,6 @@ SYS_NOT_IMPL(fchown16)
 SYS_NOT_IMPL(getpriority)
 SYS_NOT_IMPL(setpriority)
 SYS_NOT_IMPL(ni_syscall_98)
-SYS_NOT_IMPL(statfs)
 SYS_NOT_IMPL(fstatfs)
 SYS_NOT_IMPL(ioperm)
 SYS_NOT_IMPL(syslog)
@@ -5617,7 +5781,6 @@ SYS_NOT_IMPL(timer_getoverrun)
 SYS_NOT_IMPL(timer_delete)
 SYS_NOT_IMPL(clock_settime)
 SYS_NOT_IMPL(clock_nanosleep)
-SYS_NOT_IMPL(statfs64)
 SYS_NOT_IMPL(fstatfs64)
 SYS_NOT_IMPL(utimes)
 SYS_NOT_IMPL(fadvise64_64)
