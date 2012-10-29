@@ -1668,7 +1668,7 @@ void x86_isa_popf_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_prefetcht0_m8_impl(struct x86_ctx_t *ctx)
 {
-/* Checking this in disabled as the memory support for prefetching is still pending. */
+/* Prefetching support is disabled as the memory support for prefetching is still incomplete. */
 #if 0
 	unsigned int eff_addr;
 

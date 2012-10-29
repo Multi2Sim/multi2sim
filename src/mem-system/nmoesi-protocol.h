@@ -44,6 +44,13 @@ extern int EV_MOD_NMOESI_NC_STORE_MISS;
 extern int EV_MOD_NMOESI_NC_STORE_UNLOCK;
 extern int EV_MOD_NMOESI_NC_STORE_FINISH;
 
+extern int EV_MOD_NMOESI_PREFETCH;
+extern int EV_MOD_NMOESI_PREFETCH_LOCK;
+extern int EV_MOD_NMOESI_PREFETCH_ACTION;
+extern int EV_MOD_NMOESI_PREFETCH_MISS;
+extern int EV_MOD_NMOESI_PREFETCH_UNLOCK;
+extern int EV_MOD_NMOESI_PREFETCH_FINISH;
+
 extern int EV_MOD_NMOESI_FIND_AND_LOCK;
 extern int EV_MOD_NMOESI_FIND_AND_LOCK_PORT;
 extern int EV_MOD_NMOESI_FIND_AND_LOCK_ACTION;
@@ -100,6 +107,7 @@ extern int EV_MOD_NMOESI_MESSAGE_FINISH;
 void mod_handler_nmoesi_find_and_lock(int event, void *data);
 void mod_handler_nmoesi_load(int event, void *data);
 void mod_handler_nmoesi_store(int event, void *data);
+void mod_handler_nmoesi_prefetch(int event, void *data);
 void mod_handler_nmoesi_nc_store(int event, void *data);
 void mod_handler_nmoesi_evict(int event, void *data);
 void mod_handler_nmoesi_write_request(int event, void *data);

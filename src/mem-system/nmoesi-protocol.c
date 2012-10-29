@@ -48,6 +48,13 @@ int EV_MOD_NMOESI_STORE_ACTION;
 int EV_MOD_NMOESI_STORE_UNLOCK;
 int EV_MOD_NMOESI_STORE_FINISH;
 
+int EV_MOD_NMOESI_PREFETCH;
+int EV_MOD_NMOESI_PREFETCH_LOCK;
+int EV_MOD_NMOESI_PREFETCH_ACTION;
+int EV_MOD_NMOESI_PREFETCH_MISS;
+int EV_MOD_NMOESI_PREFETCH_UNLOCK;
+int EV_MOD_NMOESI_PREFETCH_FINISH;
+
 int EV_MOD_NMOESI_NC_STORE;
 int EV_MOD_NMOESI_NC_STORE_LOCK;
 int EV_MOD_NMOESI_NC_STORE_WRITEBACK;
@@ -709,6 +716,196 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 	abort();
 }
 
+void mod_handler_nmoesi_prefetch(int event, void *data)
+{
+	struct mod_stack_t *stack = data;
+	struct mod_stack_t *new_stack;
+
+	struct mod_t *mod = stack->mod;
+
+
+	if (event == EV_MOD_NMOESI_PREFETCH)
+	{
+		struct mod_stack_t *master_stack;
+
+		mem_debug("%lld %lld 0x%x %s prefetch\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+		mem_trace("mem.new_access name=\"A-%lld\" type=\"store\" "
+			"state=\"%s:prefetch\" addr=0x%x\n",
+			stack->id, mod->name, stack->addr);
+
+		/* Record access */
+		mod_access_start(mod, stack, mod_access_prefetch);
+
+		/* Coalesce access */
+		master_stack = mod_can_coalesce(mod, mod_access_prefetch, stack->addr, stack);
+		if (master_stack)
+		{
+			/* doesn't make sense to prefetch as the block is already being fetched */
+			mod->useless_prefetches++;
+			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_FINISH, stack, 0);
+			/* Increment witness variable */
+			if (stack->witness_ptr)
+				(*stack->witness_ptr)++;
+
+			return;
+		}
+
+		/* Continue */
+		esim_schedule_event(EV_MOD_NMOESI_PREFETCH_LOCK, stack, 0);
+		return;
+	}
+
+
+	if (event == EV_MOD_NMOESI_PREFETCH_LOCK)
+	{
+		struct mod_stack_t *older_stack;
+
+		mem_debug("  %lld %lld 0x%x %s prefetch lock\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_lock\"\n",
+			stack->id, mod->name);
+
+		/* If there is any older write, wait for it */
+		older_stack = mod_in_flight_write(mod, stack);
+		if (older_stack)
+		{
+			mem_debug("    %lld wait for write %lld\n",
+				stack->id, older_stack->id);
+			mod_stack_wait_in_stack(stack, older_stack, EV_MOD_NMOESI_PREFETCH_LOCK);
+			return;
+		}
+
+		/* Call find and lock */
+		new_stack = mod_stack_create(stack->id, mod, stack->addr,
+			EV_MOD_NMOESI_PREFETCH_ACTION, stack);
+		new_stack->blocking = 0;
+		new_stack->prefetch = 1;
+		new_stack->retry = 0;
+		new_stack->witness_ptr = stack->witness_ptr;
+		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
+
+		/* Set witness variable to NULL so that retries from the same
+		 * stack do not increment it multiple times */
+		stack->witness_ptr = NULL;
+
+		return;
+	}
+
+	if (event == EV_MOD_NMOESI_PREFETCH_ACTION)
+	{
+		mem_debug("  %lld %lld 0x%x %s prefetch action\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_action\"\n",
+			stack->id, mod->name);
+
+		/* Error locking */
+		if (stack->err)
+		{
+			/* Don't want to ever retry prefetches if getting a lock failed. 
+			Effectively this means that prefetches are of low priority.
+			This can be improved to not retry only when the current lock
+			holder is writing to the block. */
+
+			mod->prefetch_aborts++;
+			mem_debug("    lock error, aborting prefetch\n");
+			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_FINISH, stack, 0);
+			return;
+		}
+
+		/* Hit */
+		if (stack->state)
+		{
+			/* block already in the cache */
+			mod->useless_prefetches++;
+			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_UNLOCK, stack, 0);
+			return;
+		}
+
+		/* Miss */
+		new_stack = mod_stack_create(stack->id, mod, stack->tag,
+			EV_MOD_NMOESI_PREFETCH_MISS, stack);
+		new_stack->peer = mod_stack_set_peer(mod, stack->state);
+		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
+		new_stack->request_dir = mod_request_up_down;
+		new_stack->prefetch = 1;
+		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
+		return;
+	}
+	if (event == EV_MOD_NMOESI_PREFETCH_MISS)
+	{
+		mem_debug("  %lld %lld 0x%x %s prefetch miss\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_miss\"\n",
+			stack->id, mod->name);
+
+		/* Error on read request. Unlock block and abort. */
+		if (stack->err)
+		{
+			/* Don't want to ever retry prefetches if read request failed. 
+			 * Effectively this means that prefetches are of low priority.
+			 * This can be improved depending on the reason for read request fail */
+
+			mod->prefetch_aborts++;
+			dir_entry_unlock(mod->dir, stack->set, stack->way);
+			mem_debug("    lock error, aborting prefetch\n");
+			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_FINISH, stack, 0);
+			return;
+		}
+
+		/* Set block state to excl/shared depending on return var 'shared'.
+		 * Also set the tag of the block. */
+		cache_set_block(mod->cache, stack->set, stack->way, stack->tag,
+			stack->shared ? cache_block_shared : cache_block_exclusive);
+
+		/* Continue */
+		esim_schedule_event(EV_MOD_NMOESI_PREFETCH_UNLOCK, stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_NMOESI_PREFETCH_UNLOCK)
+	{
+		mem_debug("  %lld %lld 0x%x %s prefetch unlock\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_unlock\"\n",
+			stack->id, mod->name);
+
+		/* Unlock directory entry */
+		dir_entry_unlock(mod->dir, stack->set, stack->way);
+
+		/* Continue */
+		esim_schedule_event(EV_MOD_NMOESI_PREFETCH_FINISH, stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_NMOESI_PREFETCH_FINISH)
+	{
+		mem_debug("%lld %lld 0x%x %s prefetch\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_finish\"\n",
+			stack->id, mod->name);
+		mem_trace("mem.end_access name=\"A-%lld\"\n",
+			stack->id);
+
+		/* Increment witness variable */
+                if (stack->witness_ptr) {
+                        (*stack->witness_ptr)++;
+		}
+
+		/* Return event queue element into event queue */
+		if (stack->event_queue && stack->event_queue_item)
+			linked_list_add(stack->event_queue, stack->event_queue_item);
+
+		/* Finish access */
+		mod_access_finish(mod, stack);
+
+		/* Return */
+		mod_stack_return(stack);
+		return;
+	}
+
+	abort();
+}
 
 void mod_handler_nmoesi_find_and_lock(int event, void *data)
 {
@@ -776,6 +973,10 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			if (stack->hit)
 				mod->read_hits++;
 		}
+		else if (stack->prefetch)
+		{
+		    mod->prefetches++;
+		}
 		else if (stack->nc_write)  /* Must go after read */
 		{
 			mod->nc_writes++;
@@ -832,6 +1033,10 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 				mod->no_retry_writes++;
 				if (stack->hit)
 					mod->no_retry_write_hits++;
+			}
+			else if (stack->prefetch)
+			{
+			    /* No retries currently for prefetches */
 			}
 			else if (stack->message)
 			{

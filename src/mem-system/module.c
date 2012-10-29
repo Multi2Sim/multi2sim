@@ -146,8 +146,10 @@ long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind,
 		{
 			event = EV_MOD_NMOESI_NC_STORE;
 		}
-		else
+		else if (access_kind == mod_access_prefetch)
 		{
+			event = EV_MOD_NMOESI_PREFETCH;
+		} else {
 			panic("%s: invalid access kind", __FUNCTION__);
 		}
 	}
@@ -562,8 +564,9 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 	{
 		for (stack = tail; stack; stack = stack->access_list_prev)
 		{
-			/* Only coalesce with groups of reads at the tail */
-			if (stack->access_kind != mod_access_load)
+			/* Only coalesce with groups of reads or prefetches at the tail */
+			if (stack->access_kind != mod_access_load &&
+			    stack->access_kind != mod_access_prefetch)
 				return NULL;
 
 			if (stack->addr >> mod->log_block_size ==
@@ -618,6 +621,24 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 		/* Coalesce */
 		return stack->master_stack ? stack->master_stack : stack;
 	}
+	case mod_access_prefetch:
+		/* Only coalesce with last access */
+		stack = tail;
+		if (!stack)
+			return NULL;
+
+		/* Only if it is a write */
+		if (stack->access_kind != mod_access_store)
+			return NULL;
+
+		/* Only if it is an access to the same block */
+		if (stack->addr >> mod->log_block_size != addr >> mod->log_block_size)
+			return NULL;
+		/* If there is an access to the same block, that means this prefetching
+		   is only an overhead. Return "true" at this point so that the caller
+		   can know of the other access and abort the prefetch. */
+		return stack;
+
 
 	default:
 		panic("%s: invalid access type", __FUNCTION__);
