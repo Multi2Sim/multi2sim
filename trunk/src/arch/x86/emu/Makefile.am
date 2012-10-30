@@ -59,7 +59,6 @@ libemu_a_SOURCES += \
 	opengl.c \
 	opengl.dat \
 	opengl.h \
-	opengl-config.h \
 	\
 	opengl-context.c \
 	opengl-context.h \
