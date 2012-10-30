@@ -689,15 +689,15 @@ static void x86_cpu_dump_report(void)
 
 	/* Dispatch stage */
 	fprintf(f, "; Dispatch stage\n");
-	x86_cpu_dump_uop_report(f, x86_cpu->dispatched, "Dispatch", x86_cpu_dispatch_width);
+	x86_cpu_dump_uop_report(f, x86_cpu->num_dispatched_uinst_array, "Dispatch", x86_cpu_dispatch_width);
 
 	/* Issue stage */
 	fprintf(f, "; Issue stage\n");
-	x86_cpu_dump_uop_report(f, x86_cpu->issued, "Issue", x86_cpu_issue_width);
+	x86_cpu_dump_uop_report(f, x86_cpu->num_issued_uinst_array, "Issue", x86_cpu_issue_width);
 
 	/* Commit stage */
 	fprintf(f, "; Commit stage\n");
-	x86_cpu_dump_uop_report(f, x86_cpu->committed, "Commit", x86_cpu_commit_width);
+	x86_cpu_dump_uop_report(f, x86_cpu->num_committed_uinst_array, "Commit", x86_cpu_commit_width);
 
 	/* Committed branches */
 	fprintf(f, "; Committed branches\n");
@@ -705,11 +705,11 @@ static void x86_cpu_dump_report(void)
 	fprintf(f, ";    Squashed - Number of mispredicted uops squashed from the ROB\n");
 	fprintf(f, ";    Mispred - Number of mispredicted branches in the correct path\n");
 	fprintf(f, ";    PredAcc - Prediction accuracy\n");
-	fprintf(f, "Commit.Branches = %lld\n", x86_cpu->branches);
-	fprintf(f, "Commit.Squashed = %lld\n", x86_cpu->squashed);
-	fprintf(f, "Commit.Mispred = %lld\n", x86_cpu->mispred);
-	fprintf(f, "Commit.PredAcc = %.4g\n", x86_cpu->branches ?
-		(double) (x86_cpu->branches - x86_cpu->mispred) / x86_cpu->branches : 0.0);
+	fprintf(f, "Commit.Branches = %lld\n", x86_cpu->num_branch_uinst);
+	fprintf(f, "Commit.Squashed = %lld\n", x86_cpu->num_squashed_uinst);
+	fprintf(f, "Commit.Mispred = %lld\n", x86_cpu->num_mispred_branch_uinst);
+	fprintf(f, "Commit.PredAcc = %.4g\n", x86_cpu->num_branch_uinst ?
+		(double) (x86_cpu->num_branch_uinst - x86_cpu->num_mispred_branch_uinst) / x86_cpu->num_branch_uinst : 0.0);
 	fprintf(f, "\n");
 	
 	/* Report for each core */
@@ -757,23 +757,23 @@ static void x86_cpu_dump_report(void)
 
 		/* Dispatch stage */
 		fprintf(f, "; Dispatch stage\n");
-		x86_cpu_dump_uop_report(f, X86_CORE.dispatched, "Dispatch", x86_cpu_dispatch_width);
+		x86_cpu_dump_uop_report(f, X86_CORE.num_dispatched_uinst_array, "Dispatch", x86_cpu_dispatch_width);
 
 		/* Issue stage */
 		fprintf(f, "; Issue stage\n");
-		x86_cpu_dump_uop_report(f, X86_CORE.issued, "Issue", x86_cpu_issue_width);
+		x86_cpu_dump_uop_report(f, X86_CORE.num_issued_uinst_array, "Issue", x86_cpu_issue_width);
 
 		/* Commit stage */
 		fprintf(f, "; Commit stage\n");
-		x86_cpu_dump_uop_report(f, X86_CORE.committed, "Commit", x86_cpu_commit_width);
+		x86_cpu_dump_uop_report(f, X86_CORE.num_committed_uinst_array, "Commit", x86_cpu_commit_width);
 
 		/* Committed branches */
 		fprintf(f, "; Committed branches\n");
-		fprintf(f, "Commit.Branches = %lld\n", X86_CORE.branches);
-		fprintf(f, "Commit.Squashed = %lld\n", X86_CORE.squashed);
-		fprintf(f, "Commit.Mispred = %lld\n", X86_CORE.mispred);
-		fprintf(f, "Commit.PredAcc = %.4g\n", X86_CORE.branches ?
-			(double) (X86_CORE.branches - X86_CORE.mispred) / X86_CORE.branches : 0.0);
+		fprintf(f, "Commit.Branches = %lld\n", X86_CORE.num_branch_uinst);
+		fprintf(f, "Commit.Squashed = %lld\n", X86_CORE.num_squashed_uinst);
+		fprintf(f, "Commit.Mispred = %lld\n", X86_CORE.num_mispred_branch_uinst);
+		fprintf(f, "Commit.PredAcc = %.4g\n", X86_CORE.num_branch_uinst ?
+			(double) (X86_CORE.num_branch_uinst - X86_CORE.num_mispred_branch_uinst) / X86_CORE.num_branch_uinst : 0.0);
 		fprintf(f, "\n");
 
 		/* Occupancy stats */
@@ -807,23 +807,23 @@ static void x86_cpu_dump_report(void)
 
 			/* Dispatch stage */
 			fprintf(f, "; Dispatch stage\n");
-			x86_cpu_dump_uop_report(f, X86_THREAD.dispatched, "Dispatch", x86_cpu_dispatch_width);
+			x86_cpu_dump_uop_report(f, X86_THREAD.num_dispatched_uinst_array, "Dispatch", x86_cpu_dispatch_width);
 
 			/* Issue stage */
 			fprintf(f, "; Issue stage\n");
-			x86_cpu_dump_uop_report(f, X86_THREAD.issued, "Issue", x86_cpu_issue_width);
+			x86_cpu_dump_uop_report(f, X86_THREAD.num_issued_uinst_array, "Issue", x86_cpu_issue_width);
 
 			/* Commit stage */
 			fprintf(f, "; Commit stage\n");
-			x86_cpu_dump_uop_report(f, X86_THREAD.committed, "Commit", x86_cpu_commit_width);
+			x86_cpu_dump_uop_report(f, X86_THREAD.num_committed_uinst_array, "Commit", x86_cpu_commit_width);
 
 			/* Committed branches */
 			fprintf(f, "; Committed branches\n");
-			fprintf(f, "Commit.Branches = %lld\n", X86_THREAD.branches);
-			fprintf(f, "Commit.Squashed = %lld\n", X86_THREAD.squashed);
-			fprintf(f, "Commit.Mispred = %lld\n", X86_THREAD.mispred);
-			fprintf(f, "Commit.PredAcc = %.4g\n", X86_THREAD.branches ?
-				(double) (X86_THREAD.branches - X86_THREAD.mispred) / X86_THREAD.branches : 0.0);
+			fprintf(f, "Commit.Branches = %lld\n", X86_THREAD.num_branch_uinst);
+			fprintf(f, "Commit.Squashed = %lld\n", X86_THREAD.num_squashed_uinst);
+			fprintf(f, "Commit.Mispred = %lld\n", X86_THREAD.num_mispred_branch_uinst);
+			fprintf(f, "Commit.PredAcc = %.4g\n", X86_THREAD.num_branch_uinst ?
+				(double) (X86_THREAD.num_branch_uinst - X86_THREAD.num_mispred_branch_uinst) / X86_THREAD.num_branch_uinst : 0.0);
 			fprintf(f, "\n");
 
 			/* Occupancy stats */
@@ -973,7 +973,7 @@ void x86_cpu_dump(FILE *f)
 	fprintf(f, "\n");
 	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", x86_cpu->last_dump);
 	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", x86_cpu->cycle - x86_cpu->last_dump > 0 ?
-		(double) (x86_cpu->inst - x86_cpu->last_committed) / (x86_cpu->cycle - x86_cpu->last_dump) : 0);
+		(double) (x86_cpu->num_committed_uinst - x86_cpu->last_committed) / (x86_cpu->cycle - x86_cpu->last_dump) : 0);
 	fprintf(f, "\n");
 
 	/* Cores */
@@ -1013,7 +1013,7 @@ void x86_cpu_dump(FILE *f)
 
 	/* Register last dump */
 	x86_cpu->last_dump = x86_cpu->cycle;
-	x86_cpu->last_committed = x86_cpu->inst;
+	x86_cpu->last_committed = x86_cpu->num_committed_uinst;
 }
 
 
@@ -1021,21 +1021,25 @@ void x86_cpu_dump_summary(FILE *f)
 {
 	double time_in_sec;
 	double inst_per_cycle;
+	double uinst_per_cycle;
 	double branch_acc;
 	double cycles_per_sec;
 
 	/* Calculate statistics */
 	time_in_sec = (double) m2s_timer_get_value(x86_emu->timer) / 1.0e6;
-	inst_per_cycle = x86_cpu->cycle ? (double) x86_cpu->inst / x86_cpu->cycle : 0.0;
-	branch_acc = x86_cpu->branches ? (double) (x86_cpu->branches - x86_cpu->mispred) / x86_cpu->branches : 0.0;
+	inst_per_cycle = x86_cpu->cycle ? (double) x86_cpu->num_committed_inst / x86_cpu->cycle : 0.0;
+	uinst_per_cycle = x86_cpu->cycle ? (double) x86_cpu->num_committed_uinst / x86_cpu->cycle : 0.0;
+	branch_acc = x86_cpu->num_branch_uinst ? (double) (x86_cpu->num_branch_uinst - x86_cpu->num_mispred_branch_uinst) / x86_cpu->num_branch_uinst : 0.0;
 	cycles_per_sec = time_in_sec > 0.0 ? (double) x86_cpu->cycle / time_in_sec : 0.0;
 
 	/* Print statistics */
 	fprintf(f, "Cycles = %lld\n", x86_cpu->cycle);
 	fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
-	fprintf(f, "FastForwardInstructions = %lld\n", x86_cpu->fast_forward_inst_count);
-	fprintf(f, "CommittedInstructions = %lld\n", x86_cpu->inst);
-	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
+	fprintf(f, "FastForwardInstructions = %lld\n", x86_cpu->num_fast_forward_inst);
+	fprintf(f, "CommittedInstructions = %lld\n", x86_cpu->num_committed_inst);
+	fprintf(f, "CommittedInstructionsPerCycle = %.4g\n", inst_per_cycle);
+	fprintf(f, "CommittedMicroInstructions = %lld\n", x86_cpu->num_committed_uinst);
+	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
 }
 
@@ -1168,7 +1172,7 @@ void x86_cpu_run_fast_forward(void)
 		x86_emu_run();
 
 	/* Record number of instructions in fast-forward execution. */
-	x86_cpu->fast_forward_inst_count = x86_emu->inst_count;
+	x86_cpu->num_fast_forward_inst = x86_emu->inst_count;
 
 	/* Output warning if simulation finished during fast-forward execution. */
 	if (esim_finish)
@@ -1190,7 +1194,7 @@ int x86_cpu_run(void)
 		x86_cpu_run_fast_forward();
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (x86_emu_max_inst && x86_cpu->inst >= x86_emu_max_inst)
+	if (x86_emu_max_inst && x86_cpu->num_committed_uinst >= x86_emu_max_inst)
 		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */

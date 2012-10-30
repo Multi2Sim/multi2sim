@@ -182,8 +182,8 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 
 		/* Insert into fetch queue */
 		list_add(X86_THREAD.fetch_queue, uop);
-		x86_cpu->fetched++;
-		X86_THREAD.fetched++;
+		x86_cpu->num_fetched_uinst++;
+		X86_THREAD.num_fetched_uinst++;
 		if (fetch_trace_cache)
 			X86_THREAD.trace_cache_queue_occ++;
 
@@ -401,7 +401,7 @@ static void x86_cpu_fetch_core(int core)
 					break;
 
 				/* Do not choose it if it is unfair */
-				if (X86_THREAD_IDX(new).committed > X86_THREAD.committed + 100000)
+				if (X86_THREAD_IDX(new).num_committed_uinst_array > X86_THREAD.num_committed_uinst_array + 100000)
 					continue;
 
 				/* Choose it if it is not stalled */

@@ -65,9 +65,9 @@ void x86_cpu_recover(int core, int thread)
 		/* Statistics */
 		if (uop->fetch_trace_cache)
 			X86_THREAD.trace_cache->squashed++;
-		X86_THREAD.squashed++;
-		X86_CORE.squashed++;
-		x86_cpu->squashed++;
+		X86_THREAD.num_squashed_uinst++;
+		X86_CORE.num_squashed_uinst++;
+		x86_cpu->num_squashed_uinst++;
 		
 		/* Undo map */
 		if (!uop->completed)

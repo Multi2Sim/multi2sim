@@ -104,9 +104,9 @@ static int x86_cpu_dispatch_thread(int core, int thread, int quant)
 		
 		/* Another instruction dispatched */
 		X86_CORE.dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
-		X86_THREAD.dispatched[uop->uinst->opcode]++;
-		X86_CORE.dispatched[uop->uinst->opcode]++;
-		x86_cpu->dispatched[uop->uinst->opcode]++;
+		X86_THREAD.num_dispatched_uinst_array[uop->uinst->opcode]++;
+		X86_CORE.num_dispatched_uinst_array[uop->uinst->opcode]++;
+		x86_cpu->num_dispatched_uinst_array[uop->uinst->opcode]++;
 		quant--;
 
 		/* Trace */
