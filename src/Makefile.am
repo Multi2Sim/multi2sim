@@ -1,5 +1,6 @@
 SUBDIRS = \
 	arch \
+	driver \
 	lib \
 	mem-system \
 	network \
@@ -43,6 +44,8 @@ LDADD = \
 	$(top_builddir)/src/arch/fermi/timing/libtiming.a \
 	$(top_builddir)/src/arch/fermi/emu/libemu.a \
 	$(top_builddir)/src/arch/fermi/asm/libasm.a \
+	\
+	$(top_builddir)/src/driver/x86/glut/libglut.a \
 	\
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/esim/libesim.a \
