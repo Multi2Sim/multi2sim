@@ -24,6 +24,7 @@
 #include <lib/util/list.h>
 
 #include "opengl.h"
+#include "opengl-matrix.h"
 #include "opengl-matrix-stack.h"
 
 

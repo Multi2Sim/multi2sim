@@ -21,7 +21,6 @@
 #define ARCH_X86_EMU_OPENGL_COLOR_CHANNEL_H
 
 #include <GL/glut.h>
-#include "opengl-rast-config.h"
 
 /* Each color channel has 8 bits by default */
 typedef GLubyte GLchan;

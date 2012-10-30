@@ -20,10 +20,8 @@
 #ifndef ARC_X86_EMU_OPENGL_LIGHT
 #define ARC_X86_EMU_OPENGL_LIGHT
 
-#include "context.h"
-#include "emu.h"
+
 #include <GL/gl.h>
-#include <mem-system/mem-system.h>
 
 #define MAX_LIGHTS			8
 

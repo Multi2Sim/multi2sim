@@ -23,8 +23,13 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
+#include "opengl-buffers.h"
 #include "opengl-context.h"
-
+#include "opengl-light.h"
+#include "opengl-matrix.h"
+#include "opengl-matrix-stack.h"
+#include "opengl-vertex.h"
+#include "opengl-viewport.h"
 
 struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(void)
 {

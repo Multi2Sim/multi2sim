@@ -23,11 +23,6 @@
 
 #include <GL/gl.h>
 
-#include <mem-system/mem-system.h>
-
-#include "opengl-matrix.h"
-#include "emu.h"
-
 
 /* Maximum modelview matrix stack depth */
 #define MAX_MODELVIEW_STACK_DEPTH 32
@@ -46,6 +41,7 @@ struct x86_opengl_matrix_stack_t
 	GLint max_depth;
 };
 
+struct x86_opengl_matrix_t;
 struct x86_opengl_matrix_stack_t *x86_opengl_matrix_stack_create(GLenum mode);
 void x86_opengl_matrix_stack_free(struct x86_opengl_matrix_stack_t *mtx_stack);
 int x86_opengl_matrix_stack_push(struct x86_opengl_matrix_stack_t *mtx_stack, struct x86_opengl_matrix_t *mtx);

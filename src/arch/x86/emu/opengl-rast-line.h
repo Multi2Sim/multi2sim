@@ -20,15 +20,11 @@
 #ifndef ARCH_X86_EMU_OPENGL_RAST_LINE_H
 #define ARCH_X86_EMU_OPENGL_RAST_LINE_H
 
-#include <GL/glut.h>
-#include "emu.h"
-#include "glut-frame-buffer.h"
-#include "opengl-span.h"
-#include "opengl-edge.h"
-#include "opengl-context.h"
 
+#include <GL/glut.h>
+
+struct x86_opengl_context_t;
 /* Bresenham's line algorithm */
 void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1, GLint y1, GLint x2, GLint y2, GLuint color);
 
 #endif
-

@@ -19,8 +19,7 @@
 #ifndef ARCH_X86_EMU_OPENGL_VERTEX_H
 #define ARCH_X86_EMU_OPENGL_VERTEX_H
 
-#include "emu.h"
-#include <mem-system/mem-system.h>
+
 #include <GL/gl.h>
 #include "opengl-color-channel.h"
  

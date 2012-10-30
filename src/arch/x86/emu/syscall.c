@@ -5408,7 +5408,7 @@ static int x86_sys_statfs64_impl(struct x86_ctx_t *ctx)
 	
 	/* Check 'sz' argument */
 	if (sz != sizeof sim_statfs_buf)
-		fatal("%s: incompatible size of 'statfs' structure (sz = %d != %ld)\n",
+		fatal("%s: incompatible size of 'statfs' structure (sz = %d != %d)\n",
 			__FUNCTION__, sz, sizeof sim_statfs_buf);
 
 	/* Read path */
