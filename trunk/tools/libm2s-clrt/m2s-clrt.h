@@ -204,7 +204,7 @@ struct clrt_workitem_data_t
 {
 	int workgroup_data;  /* 0x60 (Not actually part of AMD runtime, padding_0) */
 	int barrier_func;  /* 0x5c (function *) */
-	int padding_1;  /* 0x58 */
+	int local_reserved;  /* 0x58 (void *) */
 	int work_dim;  /* 0x54 */
 	int group_global[4];  /* [0x50, 0x44] */
 	int global_size[4];  /* [0x40, 0x34] */
@@ -446,6 +446,7 @@ struct _cl_kernel
 	int stack_param_words;
 	size_t *stack_params;
 	struct clrt_reg_param_t *register_params;
+	size_t local_reserved_bytes;
 };
 
 

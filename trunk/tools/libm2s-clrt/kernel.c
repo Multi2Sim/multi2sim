@@ -188,6 +188,7 @@ cl_kernel clCreateKernel(
 	clrt_object_create(kernel, CLRT_OBJECT_KERNEL, clrt_kernel_free);
 
 	kernel->function = (clrt_function_t) get_function_info(program->handle, kernel_name, &kernel->metadata);
+	kernel->local_reserved_bytes = kernel->metadata[1];
 	kernel->num_params = (kernel->metadata[0] - 44) / 24;
 	kernel->param_info = (struct clrt_parameter_t *) malloc(sizeof (struct clrt_parameter_t) * kernel->num_params);
 	if (!kernel->param_info)
