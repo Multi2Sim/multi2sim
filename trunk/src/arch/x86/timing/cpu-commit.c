@@ -120,23 +120,25 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 			
 		/* Statistics */
 		X86_THREAD.last_commit_cycle = x86_cpu->cycle;
-		X86_THREAD.committed[uop->uinst->opcode]++;
-		X86_CORE.committed[uop->uinst->opcode]++;
-		x86_cpu->committed[uop->uinst->opcode]++;
-		x86_cpu->inst++;
+		X86_THREAD.num_committed_uinst_array[uop->uinst->opcode]++;
+		X86_CORE.num_committed_uinst_array[uop->uinst->opcode]++;
+		x86_cpu->num_committed_uinst_array[uop->uinst->opcode]++;
+		x86_cpu->num_committed_uinst++;
 		ctx->inst_count++;
 		if (uop->fetch_trace_cache)
 			X86_THREAD.trace_cache->committed++;
+		if (!uop->mop_index)
+			x86_cpu->num_committed_inst++;
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			X86_THREAD.branches++;
-			X86_CORE.branches++;
-			x86_cpu->branches++;
+			X86_THREAD.num_branch_uinst++;
+			X86_CORE.num_branch_uinst++;
+			x86_cpu->num_branch_uinst++;
 			if (uop->neip != uop->pred_neip)
 			{
-				X86_THREAD.mispred++;
-				X86_CORE.mispred++;
-				x86_cpu->mispred++;
+				X86_THREAD.num_mispred_branch_uinst++;
+				X86_CORE.num_mispred_branch_uinst++;
+				x86_cpu->num_mispred_branch_uinst++;
 			}
 		}
 
