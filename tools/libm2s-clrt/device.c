@@ -169,7 +169,8 @@ void init_workitem(
 	int dims, 
 	const size_t *global, 
 	const size_t *local, 
-	struct clrt_workgroup_data_t *workgroup_data)
+	struct clrt_workgroup_data_t *workgroup_data,
+	void *local_reserved)
 {
 	int i;
 
@@ -183,6 +184,8 @@ void init_workitem(
 	workitem_data->workgroup_data = (int32_t) workgroup_data;
 	/* this probably won't work with 64-bit. */
 	workitem_data->barrier_func = (int32_t) &barrier_addr;
+	workitem_data->local_reserved = (int32_t) local_reserved;
+
 	workitem_data->work_dim = dims;
 	assert(dims > 0);
 	
@@ -191,6 +194,8 @@ void init_workitem(
 		workitem_data->global_size[i] = global[i];
 		workitem_data->local_size[i] = local[i];
 	}
+
+
 } 
 
 
@@ -202,6 +207,7 @@ void init_workgroup(
 	const size_t *local)
 {
 	int i;
+	void *local_reserved; /* TODO: this needs to be restructured */
 
 	workgroup->num_items = 1;
 	for (i = 0; i < dims; i++)
@@ -220,6 +226,12 @@ void init_workgroup(
 	if (posix_memalign((void **)&workgroup->aligned_stacks, STACK_SIZE, STACK_SIZE * workgroup->num_items))
 		fatal("%s: aligned memory allocation failure", __FUNCTION__);
 
+
+	if (kernel->local_reserved_bytes)
+		local_reserved = malloc(kernel->local_reserved_bytes);
+	else
+		local_reserved = NULL;
+
 	for (i = 0; i < workgroup->num_items; i++)
 	{
 		struct fiber_t *ctx;
@@ -229,7 +241,7 @@ void init_workgroup(
 		ctx->stack_bottom = workgroup->aligned_stacks + (i * STACK_SIZE);
 		ctx->stack_size = STACK_SIZE - sizeof (struct clrt_workitem_data_t);
 		workgroup->workitem_data[i] = (struct clrt_workitem_data_t *) ((char *) ctx->stack_bottom + ctx->stack_size);
-		init_workitem(workgroup->workitem_data[i], dims, global, local, workgroup);
+		init_workitem(workgroup->workitem_data[i], dims, global, local, workgroup, local_reserved);
 	}
 
 	/* set up params with local memory pointers sperate from those of other threads */
