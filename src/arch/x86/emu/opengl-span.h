@@ -19,11 +19,11 @@
 
 #ifndef ARCH_X86_EMU_OPENGL_SPAN_H
 #define ARCH_X86_EMU_OPENGL_SPAN_H
+
+
 #include <GL/glut.h>
-#include <mem-system/mem-system.h>
-#include "emu.h"
-#include "opengl-rast-config.h"
 #include "opengl-context.h"
+#include "opengl-rast-config.h"
 
 struct x86_opengl_span_array_t
 {

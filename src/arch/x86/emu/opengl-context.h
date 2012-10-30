@@ -20,16 +20,9 @@
 #ifndef ARCH_X86_EMU_OPENGL_CONTEXT_H
 #define ARCH_X86_EMU_OPENGL_CONTEXT_H
 
-#include <GL/glut.h>
-#include <mem-system/mem-system.h>
-#include "emu.h"
 
-#include "opengl-buffers.h"
-#include "opengl-viewport.h"
-#include "opengl-matrix.h"
-#include "opengl-matrix-stack.h"
-#include "opengl-vertex.h"
-#include "opengl-light.h"
+#include <GL/glut.h>
+#include "opengl-color-channel.h"
 
 #define MAX_TEXTURE_COORD_UNITS 8
 #define MAX_TEXTURE_IMAGE_UNITS 16
@@ -58,6 +51,21 @@ enum x86_opengl_frag_attrib_t
 	FRAG_ATTRIB_VAR0 = 16,  /**< shader varying */
 	FRAG_ATTRIB_MAX = (FRAG_ATTRIB_VAR0 + MAX_VARYING)
 };
+
+struct x86_opengl_frame_buffer_t;
+struct x86_opengl_frame_buffer_t;
+
+struct x86_opengl_viewport_attributes_t;
+
+struct x86_opengl_matrix_stack_t;
+struct x86_opengl_matrix_stack_t;
+struct x86_opengl_matrix_stack_t;
+struct x86_opengl_matrix_stack_t;
+struct x86_opengl_matrix_stack_t;
+
+struct x86_opengl_vertex_buffer_t;
+
+struct x86_opengl_light_attrib_t;
 
 /* OpenGL context capability */
 struct x86_opengl_context_capability_t

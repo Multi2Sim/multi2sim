@@ -23,6 +23,7 @@
 #include <lib/util/debug.h>
 
 #include "opengl-matrix.h"
+#include "opengl-vertex.h"
 
 
 /* OpenGL identity matrix */

@@ -20,6 +20,9 @@
 #ifndef X86_OPENGL_RAST_CONFIG_H
 #define X86_OPENGL_RAST_CONFIG_H
 
+
+#include <GL/glut.h>
+
 typedef GLint GLfixed;
 
 /* Convert float to int by rounding to nearest integer, away from zero */

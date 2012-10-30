@@ -20,12 +20,8 @@
 #ifndef ARCH_X86_EMU_OPENGL_VIEWPORT
 #define ARCH_X86_EMU_OPENGL_VIEWPORT
 
+
 #include <GL/glut.h>
-
-#include <mem-system/mem-system.h>
-
-#include "emu.h"
-
 
 /* OpenGL Viewport attribute */
 struct x86_opengl_viewport_attributes_t

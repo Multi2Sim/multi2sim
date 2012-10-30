@@ -17,8 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
+
 #include <lib/util/debug.h>
 
+#include "glut-frame-buffer.h"
+#include "opengl.h"
 #include "opengl-rast-line.h"
 
 
@@ -37,7 +41,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 		x86_opengl_debug("\t\tSlope = infinite\n");
 		s_y = y1 < y2 ? y1 : y2;
 		e_y = y1 > y2 ? y1: y2;
-		x86_glut_frame_buffer_pixel(x1, s_y, color);		
+		x86_glut_frame_buffer_pixel(x1, s_y, color);
 		while(s_y < e_y)
 		{ 
 			s_y++;

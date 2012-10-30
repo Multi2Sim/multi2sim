@@ -20,12 +20,9 @@
 #ifndef ARCH_X86_EMU_OPENGL_MATRIX_H
 #define ARCH_X86_EMU_OPENGL_MATRIX_H
 
-#include "emu.h"
-#include <mem-system/mem-system.h>
 #include <GL/gl.h>
  
-#include "opengl-vertex.h"
-
+struct x86_opengl_vertex_t;
 /* OpenGL: Different kinds of 4x4 transformation matrices */
 enum x86_opengl_matrix_mode_t {
 	MATRIX_GENERAL,		/* general 4x4 matrix */

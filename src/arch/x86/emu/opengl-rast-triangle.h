@@ -21,14 +21,11 @@
 #define ARCH_X86_EMU_OPENGL_RAST_TRIANGLE_H
 
 #include <GL/glut.h>
-#include "emu.h"
-#include "glut-frame-buffer.h" 
-#include "opengl-span.h"
-#include "opengl-edge.h" 
-#include "opengl-rast-config.h"
 
 #define MAX_GLUINT	0xffffffff
 
+struct x86_opengl_context_t;
+struct x86_opengl_vertex_t;
 void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1, struct x86_opengl_vertex_t *vtx2);
 
 #endif

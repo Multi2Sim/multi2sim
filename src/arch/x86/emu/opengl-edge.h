@@ -19,11 +19,11 @@
 
 #ifndef ARCH_X86_EMU_OPENGL_EDGE_H
 #define ARCH_X86_EMU_OPENGL_EDGE_H
+
+
 #include <GL/glut.h>
-#include "opengl.h"
 
-#include "opengl-vertex.h"
-
+struct x86_opengl_vertex_t;
 struct x86_opengl_edge_t
 {
 	struct x86_opengl_vertex_t *vtx0; 	/* Y(vtx0) < Y(vtx1) */
