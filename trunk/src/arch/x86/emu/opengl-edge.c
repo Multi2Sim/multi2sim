@@ -22,7 +22,9 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
+#include "opengl.h"
 #include "opengl-edge.h"
+#include "opengl-vertex.h"
 
 
 struct x86_opengl_edge_t *x86_opengl_edge_create(struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1)

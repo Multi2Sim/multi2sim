@@ -27,9 +27,15 @@
 
 #include "glut-frame-buffer.h"
 #include "opengl.h"
+#include "opengl-buffers.h"
 #include "opengl-context.h"
+#include "opengl-light.h"
+#include "opengl-matrix.h"
+#include "opengl-matrix-stack.h"
 #include "opengl-rast-line.h"
 #include "opengl-rast-triangle.h"
+#include "opengl-vertex.h"
+#include "opengl-viewport.h"
 
 
 static char *err_x86_opengl_code =

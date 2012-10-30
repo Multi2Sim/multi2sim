@@ -88,7 +88,6 @@ libemu_a_SOURCES += \
 	opengl-edge.c \
 	opengl-edge.h \
 	\
-	opengl-rast.h \
 	opengl-rast-config.h \
 	\
 	opengl-rast-line.c \
