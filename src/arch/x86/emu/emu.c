@@ -190,10 +190,10 @@ void x86_emu_dump_summary(FILE *f)
 	fprintf(f, "SimType = %s\n", x86_emu_kind == x86_emu_kind_functional ?
 			"Functional" : "Detailed");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
-	fprintf(f, "Instructions = %lld\n", x86_emu->inst_count);
-	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	fprintf(f, "Contexts = %d\n", x86_emu->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
+	fprintf(f, "EmulatedInstructions = %lld\n", x86_emu->inst_count);
+	fprintf(f, "EmulatedInstructionsPerSecond = %.0f\n", inst_per_sec);
 
 	/* Detailed simulation */
 	if (x86_emu_kind == x86_emu_kind_detailed)

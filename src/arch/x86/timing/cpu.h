@@ -176,15 +176,17 @@ struct x86_thread_t
 	struct mod_t *data_mod;  /* Entry for data */
 	struct mod_t *inst_mod;  /* Entry for instructions */
 
-	/* Statistics */
-	long long fetched;
-	long long dispatched[x86_uinst_opcode_count];
-	long long issued[x86_uinst_opcode_count];
-	long long committed[x86_uinst_opcode_count];
-	long long squashed;
-	long long branches;
-	long long mispred;
+	/* Cycle in which last micro-instruction committed */
 	long long last_commit_cycle;
+
+	/* Statistics */
+	long long num_fetched_uinst;
+	long long num_dispatched_uinst_array[x86_uinst_opcode_count];
+	long long num_issued_uinst_array[x86_uinst_opcode_count];
+	long long num_committed_uinst_array[x86_uinst_opcode_count];
+	long long num_squashed_uinst;
+	long long num_branch_uinst;
+	long long num_mispred_branch_uinst;
 	
 	/* Statistics for structures */
 	long long rob_occupancy;
@@ -266,12 +268,12 @@ struct x86_core_t
 
 	/* Stats */
 	long long dispatch_stall[x86_dispatch_stall_max];
-	long long dispatched[x86_uinst_opcode_count];
-	long long issued[x86_uinst_opcode_count];
-	long long committed[x86_uinst_opcode_count];
-	long long squashed;
-	long long branches;
-	long long mispred;
+	long long num_dispatched_uinst_array[x86_uinst_opcode_count];
+	long long num_issued_uinst_array[x86_uinst_opcode_count];
+	long long num_committed_uinst_array[x86_uinst_opcode_count];
+	long long num_squashed_uinst;
+	long long num_branch_uinst;
+	long long num_mispred_branch_uinst;
 	
 	/* Statistics for shared structures */
 	long long rob_occupancy;
@@ -314,9 +316,8 @@ struct x86_cpu_t
 	/* Array of cores */
 	struct x86_core_t *core;
 
-	/* Cycle and instruction counters */
+	/* Cycle counter */
 	long long cycle;
-	long long inst;
 
 	/* Some fields */
 	long long uop_id_counter;  /* Counter of uop ID assignment */
@@ -330,14 +331,16 @@ struct x86_cpu_t
 	struct linked_list_t *uop_trace_list;
 
 	/* Statistics */
-	long long fast_forward_inst_count;
-	long long fetched;
-	long long dispatched[x86_uinst_opcode_count];
-	long long issued[x86_uinst_opcode_count];
-	long long committed[x86_uinst_opcode_count];
-	long long squashed;
-	long long branches;
-	long long mispred;
+	long long num_fast_forward_inst;  /* Fast-forwarded x86 instructions */
+	long long num_fetched_uinst;
+	long long num_dispatched_uinst_array[x86_uinst_opcode_count];
+	long long num_issued_uinst_array[x86_uinst_opcode_count];
+	long long num_committed_uinst_array[x86_uinst_opcode_count];
+	long long num_committed_uinst;  /* Committed micro-instructions */
+	long long num_committed_inst;  /* Committed x86 instructions */
+	long long num_squashed_uinst;
+	long long num_branch_uinst;
+	long long num_mispred_branch_uinst;
 	double time;
 
 	/* For dumping */

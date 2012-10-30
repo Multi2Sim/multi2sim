@@ -69,15 +69,15 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 		store->issue_when = x86_cpu->cycle;
 	
 		/* Instruction issued */
-		X86_CORE.issued[store->uinst->opcode]++;
+		X86_CORE.num_issued_uinst_array[store->uinst->opcode]++;
 		X86_CORE.lsq_reads++;
 		X86_CORE.reg_file_int_reads += store->ph_int_idep_count;
 		X86_CORE.reg_file_fp_reads += store->ph_fp_idep_count;
-		X86_THREAD.issued[store->uinst->opcode]++;
+		X86_THREAD.num_issued_uinst_array[store->uinst->opcode]++;
 		X86_THREAD.lsq_reads++;
 		X86_THREAD.reg_file_int_reads += store->ph_int_idep_count;
 		X86_THREAD.reg_file_fp_reads += store->ph_fp_idep_count;
-		x86_cpu->issued[store->uinst->opcode]++;
+		x86_cpu->num_issued_uinst_array[store->uinst->opcode]++;
 		quant--;
 		
 		/* MMU statistics */
@@ -129,15 +129,15 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		load->issue_when = x86_cpu->cycle;
 		
 		/* Instruction issued */
-		X86_CORE.issued[load->uinst->opcode]++;
+		X86_CORE.num_issued_uinst_array[load->uinst->opcode]++;
 		X86_CORE.lsq_reads++;
 		X86_CORE.reg_file_int_reads += load->ph_int_idep_count;
 		X86_CORE.reg_file_fp_reads += load->ph_fp_idep_count;
-		X86_THREAD.issued[load->uinst->opcode]++;
+		X86_THREAD.num_issued_uinst_array[load->uinst->opcode]++;
 		X86_THREAD.lsq_reads++;
 		X86_THREAD.reg_file_int_reads += load->ph_int_idep_count;
 		X86_THREAD.reg_file_fp_reads += load->ph_fp_idep_count;
-		x86_cpu->issued[load->uinst->opcode]++;
+		x86_cpu->num_issued_uinst_array[load->uinst->opcode]++;
 		quant--;
 		
 		/* MMU statistics */
@@ -193,15 +193,15 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		prefetch->issue_when = x86_cpu->cycle;
 		
 		/* Instruction issued */
-		X86_CORE.issued[prefetch->uinst->opcode]++;
+		X86_CORE.num_issued_uinst_array[prefetch->uinst->opcode]++;
 		X86_CORE.lsq_reads++;
 		X86_CORE.reg_file_int_reads += prefetch->ph_int_idep_count;
 		X86_CORE.reg_file_fp_reads += prefetch->ph_fp_idep_count;
-		X86_THREAD.issued[prefetch->uinst->opcode]++;
+		X86_THREAD.num_issued_uinst_array[prefetch->uinst->opcode]++;
 		X86_THREAD.lsq_reads++;
 		X86_THREAD.reg_file_int_reads += prefetch->ph_int_idep_count;
 		X86_THREAD.reg_file_fp_reads += prefetch->ph_fp_idep_count;
-		x86_cpu->issued[prefetch->uinst->opcode]++;
+		x86_cpu->num_issued_uinst_array[prefetch->uinst->opcode]++;
 		quant--;
 		
 		/* MMU statistics */
@@ -261,15 +261,15 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 		x86_event_queue_insert(X86_CORE.event_queue, uop);
 		
 		/* Instruction issued */
-		X86_CORE.issued[uop->uinst->opcode]++;
+		X86_CORE.num_issued_uinst_array[uop->uinst->opcode]++;
 		X86_CORE.iq_reads++;
 		X86_CORE.reg_file_int_reads += uop->ph_int_idep_count;
 		X86_CORE.reg_file_fp_reads += uop->ph_fp_idep_count;
-		X86_THREAD.issued[uop->uinst->opcode]++;
+		X86_THREAD.num_issued_uinst_array[uop->uinst->opcode]++;
 		X86_THREAD.iq_reads++;
 		X86_THREAD.reg_file_int_reads += uop->ph_int_idep_count;
 		X86_THREAD.reg_file_fp_reads += uop->ph_fp_idep_count;
-		x86_cpu->issued[uop->uinst->opcode]++;
+		x86_cpu->num_issued_uinst_array[uop->uinst->opcode]++;
 		quant--;
 
 		/* Trace */
