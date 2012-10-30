@@ -249,8 +249,11 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
 
 		 src/arch/Makefile
+		 src/driver/Makefile
+		 src/lib/Makefile
 		 src/mem-system/Makefile
 		 src/network/Makefile
+		 src/visual/Makefile
 
 		 src/arch/arm/Makefile
 		 src/arch/arm/asm/Makefile
@@ -277,14 +280,15 @@ AC_CONFIG_FILES([Makefile
 		 src/arch/x86/emu/Makefile
 		 src/arch/x86/timing/Makefile
 
-		 src/visual/Makefile
+		 src/driver/x86/Makefile
+		 src/driver/x86/glut/Makefile
+
 		 src/visual/common/Makefile
 		 src/visual/evergreen/Makefile
 		 src/visual/memory/Makefile
 		 src/visual/southern-islands/Makefile
 		 src/visual/x86/Makefile
 
-		 src/lib/Makefile
 		 src/lib/esim/Makefile
                  src/lib/mhandle/Makefile
                  src/lib/util/Makefile
