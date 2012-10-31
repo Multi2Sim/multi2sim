@@ -24,6 +24,7 @@
 #include <lib/util/linked-list.h>
 #include <mem-system/mmu.h>
 #include <mem-system/module.h>
+#include <mem-system/cache.h>
 
 #include "cpu.h"
 #include "event-queue.h"
@@ -152,11 +153,41 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 	return quant;
 }
 
+static int x86_cpu_is_redundant_prefetch(int core, struct mod_t *mod, unsigned int phy_addr)
+{
+	int i, log_block_size;
+
+	assert(mod->kind == mod_kind_cache);
+	/* I think its ok to access the cache_t structure here since I'm 
+	 * just accessing a static parameter and not any dynamic property
+	 * or field of the cache. */
+	log_block_size = mod->cache->log_block_size;
+
+	for (i = 0; i < X86_CORE.prefetch_history.size; i++)
+	{
+		/* if both accesses refer to the same block, return true */
+		if ((phy_addr >> log_block_size) == 
+		    (X86_CORE.prefetch_history.table[i] >> log_block_size))
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static void x86_cpu_record_prefetch(int core, unsigned int phy_addr)
+{
+	int index = (++X86_CORE.prefetch_history.hindex) % X86_CORE.prefetch_history.size;
+	X86_CORE.prefetch_history.table[index] = phy_addr;
+	X86_CORE.prefetch_history.hindex = index;
+}
+
 static int x86_cpu_issue_preq(int core, int thread, int quant)
 {
 	struct linked_list_t *preq = X86_THREAD.preq;
 	struct x86_uop_t *prefetch;
- 
+
 	/* Process preq */
 	linked_list_head(preq);
 	while (!linked_list_is_end(preq) && quant)
@@ -168,6 +199,22 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 			linked_list_next(preq);
 			continue;
 		}
+
+		/* 
+		 * Make sure its not been prefetched recently. This is just to avoid unnecessary
+		 * memory traffic. Even though the cache will realise a "hit" on redundant 
+		 * prefetches, its still helpful to avoid going to the memory (cache). 
+		 */
+		if (x86_cpu_is_redundant_prefetch(core, X86_THREAD.data_mod, prefetch->phy_addr))
+		{
+			/* remove from queue. do not prefetch. */
+			assert(prefetch->uinst->opcode == x86_uinst_prefetch);
+			x86_preq_remove(core, thread);
+			prefetch->completed = 1;
+			x86_uop_free_if_not_queued(prefetch);
+			continue;
+		}
+
 		prefetch->ready = 1;
 
 		/* Check that memory system is accessible */
@@ -184,6 +231,9 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		/* Access memory system */
 		mod_access(X86_THREAD.data_mod, mod_access_prefetch,
 			prefetch->phy_addr, NULL, X86_CORE.event_queue, prefetch);
+
+		// record prefetched address
+		x86_cpu_record_prefetch(core, prefetch->phy_addr);
 
 		/* The cache system will place the prefetch at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
