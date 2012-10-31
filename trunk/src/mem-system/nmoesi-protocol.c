@@ -742,6 +742,9 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		if (master_stack)
 		{
 			/* doesn't make sense to prefetch as the block is already being fetched */
+		    	mem_debug("  %lld %lld 0x%x %s useless prefetch - already being fetched\n",
+				  esim_cycle, stack->id, stack->addr, mod->name);
+
 			mod->useless_prefetches++;
 			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_FINISH, stack, 0);
 			/* Increment witness variable */
@@ -817,6 +820,9 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		if (stack->state)
 		{
 			/* block already in the cache */
+		    	mem_debug("  %lld %lld 0x%x %s useless prefetch - cache hit\n",
+				  esim_cycle, stack->id, stack->addr, mod->name);
+
 			mod->useless_prefetches++;
 			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_UNLOCK, stack, 0);
 			return;
@@ -888,9 +894,8 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 			stack->id);
 
 		/* Increment witness variable */
-                if (stack->witness_ptr) {
+                if (stack->witness_ptr)
                         (*stack->witness_ptr)++;
-		}
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
