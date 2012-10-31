@@ -2197,7 +2197,6 @@ static void sim_statfs_host_to_guest(struct sim_statfs_t *host, struct statfs *g
 	memcpy(&host->fsid, &guest->f_fsid, MIN(sizeof host->fsid, sizeof guest->f_fsid));
 	host->namelen = guest->f_namelen;
 	host->frsize = guest->f_frsize;
-	host->flags = guest->f_flags;
 }
 
 static int x86_sys_statfs_impl(struct x86_ctx_t *ctx)
@@ -5379,7 +5378,6 @@ static void sim_statfs64_host_to_guest(struct sim_statfs64_t *host, struct statf
 	memcpy(&host->fsid, &guest->f_fsid, MIN(sizeof host->fsid, sizeof guest->f_fsid));
 	host->namelen = guest->f_namelen;
 	host->frsize = guest->f_frsize;
-	host->flags = guest->f_flags;
 }
 
 static int x86_sys_statfs64_impl(struct x86_ctx_t *ctx)
