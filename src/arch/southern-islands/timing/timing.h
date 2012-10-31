@@ -279,6 +279,7 @@ struct si_compute_unit_t
 	/* Hardware structures */
 	unsigned int num_inst_buffers;
 	struct si_inst_buffer_t **inst_buffers;
+	struct list_t **fetch_buffers;
 	struct si_simd_t **simds;
 	/* TODO Make these into a configurable number of structures */
 	struct si_scalar_unit_t scalar_unit;
