@@ -290,9 +290,8 @@ void mod_handler_nmoesi_load(int event, void *data)
 			stack->id);
 
 		/* Increment witness variable */
-                if (stack->witness_ptr) {
-                        (*stack->witness_ptr)++;
-		}
+		if (stack->witness_ptr)
+			(*stack->witness_ptr)++;
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
@@ -697,9 +696,8 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 			stack->id);
 
 		/* Increment witness variable */
-                if (stack->witness_ptr) {
-                        (*stack->witness_ptr)++;
-		}
+		if (stack->witness_ptr)
+			(*stack->witness_ptr)++;
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
@@ -741,12 +739,13 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		master_stack = mod_can_coalesce(mod, mod_access_prefetch, stack->addr, stack);
 		if (master_stack)
 		{
-			/* doesn't make sense to prefetch as the block is already being fetched */
-		    	mem_debug("  %lld %lld 0x%x %s useless prefetch - already being fetched\n",
+			/* Doesn't make sense to prefetch as the block is already being fetched */
+			mem_debug("  %lld %lld 0x%x %s useless prefetch - already being fetched\n",
 				  esim_cycle, stack->id, stack->addr, mod->name);
 
 			mod->useless_prefetches++;
 			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_FINISH, stack, 0);
+
 			/* Increment witness variable */
 			if (stack->witness_ptr)
 				(*stack->witness_ptr)++;
@@ -809,7 +808,6 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 			Effectively this means that prefetches are of low priority.
 			This can be improved to not retry only when the current lock
 			holder is writing to the block. */
-
 			mod->prefetch_aborts++;
 			mem_debug("    lock error, aborting prefetch\n");
 			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_FINISH, stack, 0);
@@ -820,7 +818,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		if (stack->state)
 		{
 			/* block already in the cache */
-		    	mem_debug("  %lld %lld 0x%x %s useless prefetch - cache hit\n",
+			mem_debug("  %lld %lld 0x%x %s useless prefetch - cache hit\n",
 				  esim_cycle, stack->id, stack->addr, mod->name);
 
 			mod->useless_prefetches++;
@@ -851,7 +849,6 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 			/* Don't want to ever retry prefetches if read request failed. 
 			 * Effectively this means that prefetches are of low priority.
 			 * This can be improved depending on the reason for read request fail */
-
 			mod->prefetch_aborts++;
 			dir_entry_unlock(mod->dir, stack->set, stack->way);
 			mem_debug("    lock error, aborting prefetch\n");
@@ -894,8 +891,8 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 			stack->id);
 
 		/* Increment witness variable */
-                if (stack->witness_ptr)
-                        (*stack->witness_ptr)++;
+		if (stack->witness_ptr)
+			(*stack->witness_ptr)++;
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
@@ -980,7 +977,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		}
 		else if (stack->prefetch)
 		{
-		    mod->prefetches++;
+			mod->prefetches++;
 		}
 		else if (stack->nc_write)  /* Must go after read */
 		{
@@ -1041,7 +1038,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			}
 			else if (stack->prefetch)
 			{
-			    /* No retries currently for prefetches */
+				/* No retries currently for prefetches */
 			}
 			else if (stack->message)
 			{

@@ -157,7 +157,13 @@ static int x86_cpu_is_redundant_prefetch(int core, struct mod_t *mod, unsigned i
 {
 	int i, log_block_size;
 
-	assert(mod->kind == mod_kind_cache);
+	if(mod->kind != mod_kind_cache)
+	{
+		/* Doesn't make much sense to prefetch if the memory being
+		 * accessed is not a cache memory. */
+		return 1;
+	}
+
 	/* I think its ok to access the cache_t structure here since I'm 
 	 * just accessing a static parameter and not any dynamic property
 	 * or field of the cache. */
@@ -165,7 +171,7 @@ static int x86_cpu_is_redundant_prefetch(int core, struct mod_t *mod, unsigned i
 
 	for (i = 0; i < X86_CORE.prefetch_history.size; i++)
 	{
-		/* if both accesses refer to the same block, return true */
+		/* If both accesses refer to the same block, return true */
 		if ((phy_addr >> log_block_size) == 
 		    (X86_CORE.prefetch_history.table[i] >> log_block_size))
 		{
@@ -232,7 +238,7 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		mod_access(X86_THREAD.data_mod, mod_access_prefetch,
 			prefetch->phy_addr, NULL, X86_CORE.event_queue, prefetch);
 
-		// record prefetched address
+		/* Record prefetched address */
 		x86_cpu_record_prefetch(core, prefetch->phy_addr);
 
 		/* The cache system will place the prefetch at the head of the

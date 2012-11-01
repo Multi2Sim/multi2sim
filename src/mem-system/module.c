@@ -634,6 +634,7 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 		/* Only if it is an access to the same block */
 		if (stack->addr >> mod->log_block_size != addr >> mod->log_block_size)
 			return NULL;
+
 		/* If there is an access to the same block, that means this prefetching
 		   is only an overhead. Return "true" at this point so that the caller
 		   can know of the other access and abort the prefetch. */
