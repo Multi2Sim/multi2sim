@@ -1674,6 +1674,9 @@ void x86_isa_prefetcht0_m8_impl(struct x86_ctx_t *ctx)
 	if (x86_emu_kind != x86_emu_kind_detailed)
 		return;
 
+	if (!x86_emu_process_prefetch_hints)
+		return;
+
 	eff_addr = x86_isa_effective_address(ctx);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_easeg, x86_dep_eabas, x86_dep_eaidx, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_prefetch, eff_addr, 1, x86_dep_aux, 0, 0, 0, 0, 0, 0);

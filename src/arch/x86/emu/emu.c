@@ -51,7 +51,7 @@ long long x86_emu_max_cycles = 0;
 char x86_emu_last_inst_bytes[20];
 int x86_emu_last_inst_size = 0;
 enum x86_emu_kind_t x86_emu_kind = x86_emu_kind_functional;
-
+int x86_emu_process_prefetch_hints = 0;
 
 /* x86 CPU Emulator */
 struct x86_emu_t *x86_emu;
