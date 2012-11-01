@@ -96,3 +96,18 @@ FILES
 	* All files in src/tools/m2s-opengl-kc/
 	* src/arch/x86/opengl*
 
+===============================================================================
+AUTHOR
+	Vaivaswatha N (sercvaivaswatha@ssl.serc.iisc.in)
+
+DESCRIPTION
+
+	Vaivaswatha has implemented support for x86 prefetching. 
+	He has added support for the x86 prefetch0 instruction and the memory 
+	system support for prefetch reqeuests.
+
+FILES
+	* src/mem-system/prefetch-history.c
+	* src/mem-system/nmoesi-protocol.c
+	* src/arch/x86/timing/cpu-issue.c
+	* src/arch/x86/emu/machine.c
