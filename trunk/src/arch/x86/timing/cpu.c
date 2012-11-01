@@ -29,6 +29,7 @@
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 #include <mem-system/mmu.h>
+#include <mem-system/prefetch-history.h>
 
 #include "bpred.h"
 #include "cpu.h"
@@ -93,9 +94,11 @@ char *x86_config_help =
 	"  PageSize = <size> (Default = 4kB)\n"
 	"      Memory page size in bytes.\n"
 	"  DataCachePerfect = {t|f} (Default = False)\n"
+	"  ProcessPrefetchHints = {t|f} (Default = True)\n"
+	"      If specified as false, the cpu will ignore any prefetch hints/instructions.\n"
 	"  PrefetchHistorySize = <size> (Default = 10)\n"
 	"      Number of past prefetches to keep track of, so as to avoid redundant prefetches\n"
-	"      from being issued to the cache module.\n"
+	"      from being issued from the cpu to the cache module.\n"
 	"  InstructionCachePerfect = {t|f} (Default = False)\n"
 	"      Set these options to true to simulate a perfect data/instruction caches,\n"
 	"      respectively, where every access results in a hit. If set to false, the\n"
@@ -259,8 +262,6 @@ enum x86_cpu_fetch_kind_t x86_cpu_fetch_kind;
 
 int x86_cpu_decode_width;
 
-int x86_cpu_prefetch_history_size;
-
 char *x86_cpu_dispatch_kind_map[] = { "Shared", "TimeSlice" };
 enum x86_cpu_dispatch_kind_t x86_cpu_dispatch_kind;
 int x86_cpu_dispatch_width;
@@ -322,7 +323,9 @@ static void x86_cpu_config_check(void)
 	x86_cpu_recover_penalty = config_read_int(config, section, "RecoverPenalty", 0);
 
 	mmu_page_size = config_read_int(config, section, "PageSize", 4096);
-	x86_cpu_prefetch_history_size = config_read_int(config, section, "PrefetchHistorySize", 10);
+
+	x86_emu_process_prefetch_hints = config_read_bool(config, section, "ProcessPrefetchHints", 1);
+	prefetch_history_size = config_read_int(config, section, "PrefetchHistorySize", 10);
 
 
 	/* Section '[ Pipeline ]' */
@@ -472,7 +475,8 @@ static void x86_cpu_config_dump(FILE *f)
 	fprintf(f, "RecoverKind = %s\n", x86_cpu_recover_kind_map[x86_cpu_recover_kind]);
 	fprintf(f, "RecoverPenalty = %d\n", x86_cpu_recover_penalty);
 	fprintf(f, "PageSize = %d\n", mmu_page_size);
-	fprintf(f, "PrefetchHistorySize = %d\n", x86_cpu_prefetch_history_size);
+	fprintf(f, "ProcessPrefetchHints = %d\n", x86_emu_process_prefetch_hints);
+	fprintf(f, "PrefetchHistorySize = %d\n", prefetch_history_size);
 	fprintf(f, "\n");
 
 	/* Pipeline */
@@ -880,34 +884,15 @@ static void x86_cpu_core_init(int core)
 	X86_CORE.thread = calloc(x86_cpu_num_threads, sizeof(struct x86_thread_t));
 	X86_THREAD_FOR_EACH
 		x86_cpu_thread_init(core, thread);
+
+	X86_CORE.prefetch_history = prefetch_history_create();
 }
 
-static void x86_prefetch_history_init(void)
+static void x86_cpu_core_done(int core)
 {
-	int core;
-
-	assert(x86_cpu_prefetch_history_size >= 1);
-	X86_CORE_FOR_EACH
-	{
-		X86_CORE.prefetch_history.size = x86_cpu_prefetch_history_size;
-		X86_CORE.prefetch_history.table = calloc(x86_cpu_prefetch_history_size, sizeof(unsigned));
-		if (!X86_CORE.prefetch_history.table)
-			fatal("%s: out of memory", __FUNCTION__);
-		X86_CORE.prefetch_history.hindex = -1;
-	}
+	free(X86_CORE.thread);
+	prefetch_history_free(X86_CORE.prefetch_history);
 }
-
-static void x86_prefetch_history_done(void)
-{
-	int core;
-
-	assert(x86_cpu_prefetch_history_size >= 1);
-	X86_CORE_FOR_EACH
-	{
-		free(X86_CORE.prefetch_history.table);
-	}
-}
-
 
 /*
  * Public Functions
@@ -955,7 +940,6 @@ void x86_cpu_init()
 	x86_lsq_init();
 	x86_event_queue_init();
 	x86_fu_init();
-	x86_prefetch_history_init();
 
 	/* Trace */
 	x86_trace_header("x86.init version=\"%d.%d\" num_cores=%d num_threads=%d\n",
@@ -987,11 +971,11 @@ void x86_cpu_done()
 	x86_trace_cache_done();
 	x86_reg_file_done();
 	x86_fu_done();
-	x86_prefetch_history_done();
 
 	/* Free processor */
 	X86_CORE_FOR_EACH
-		free(X86_CORE.thread);
+		x86_cpu_core_done(core);
+
 	free(x86_cpu->core);
 	free(x86_cpu);
 }

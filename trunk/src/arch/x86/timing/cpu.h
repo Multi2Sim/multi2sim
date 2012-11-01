@@ -73,8 +73,6 @@ extern enum x86_cpu_fetch_kind_t
 /* Decode stage */
 extern int x86_cpu_decode_width;
 
-extern int x86_cpu_prefetch_history_size;
-
 /* Dispatch stage */
 extern char *x86_cpu_dispatch_kind_map[];
 extern enum x86_cpu_dispatch_kind_t
@@ -244,6 +242,7 @@ struct x86_core_t
 	/* Shared structures */
 	struct linked_list_t *event_queue;
 	struct x86_fu_t *fu;
+	struct prefetch_history_t *prefetch_history;
 
 	/* Per core counters */
 	long long uop_id_counter;  /* Counter for uop ID assignment */
@@ -309,13 +308,6 @@ struct x86_core_t
 	long long reg_file_xmm_full;
 	long long reg_file_xmm_reads;
 	long long reg_file_xmm_writes;
-
-	struct prefetch_history_t
-	{
-		unsigned int *table;
-		int size;
-		int hindex;
-	} prefetch_history;
 };
 
 
