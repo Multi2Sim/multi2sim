@@ -34,7 +34,10 @@ libmemsystem_a_SOURCES = \
 	nmoesi-protocol.h \
 	\
 	spec-mem.c \
-	spec-mem.h
+	spec-mem.h \
+	\
+	prefetch-history.c \
+	prefetch-history.h
 
 INCLUDES = @M2S_INCLUDES@
 
