@@ -190,7 +190,7 @@ DEFINST(fdivr_m32, 0xd8, SKIP, SKIP, MEM|7, SKIP, 0)
 DEFINST(fdivr_m64, 0xdc, SKIP, SKIP, MEM|7, SKIP, 0)
 DEFINST(fdivr_st0_sti, 0xd8, 0xf8|INDEX, SKIP, SKIP, SKIP, 0)
 DEFINST(fdivr_sti_st0, 0xdc, 0xf0|INDEX, SKIP, SKIP, SKIP, 0)
-DEFINST(fdivrp_sti_st0, 0xdde, 0xf0|INDEX, SKIP, SKIP, SKIP, 0)
+DEFINST(fdivrp_sti_st0, 0xde, 0xf0|INDEX, SKIP, SKIP, SKIP, 0)
 
 DEFINST(fild_m16, 0xdf, SKIP, SKIP, MEM|0, SKIP, 0)
 DEFINST(fild_m32, 0xdb, SKIP, SKIP, MEM|0, SKIP, 0)
