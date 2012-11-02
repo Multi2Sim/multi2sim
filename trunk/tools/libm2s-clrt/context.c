@@ -195,7 +195,7 @@ cl_int clGetContextInfo(
 	{
 		case CL_CONTEXT_REFERENCE_COUNT:
 		{
-			cl_int count = clrt_object_find(context, NULL)->ref_count;
+			cl_int count = clrt_object_find(context, CLRT_OBJECT_CONTEXT)->ref_count;
 			return populateParameter(&count, sizeof count, param_value_size, param_value, param_value_size_ret);
 		}
 		

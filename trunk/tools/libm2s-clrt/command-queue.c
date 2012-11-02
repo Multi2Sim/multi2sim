@@ -105,7 +105,7 @@ struct clrt_queue_item_t *clrt_queue_item_create(
 	// the queue Item has a reference to all the prerequisite events
 	for (i = 0; i < num_wait; i++)
 		if (clRetainEvent(waits[i]) != CL_SUCCESS)
-			fatal("%s: clRetainEvent failed", __FUNCTION__);
+			fatal("%s: clRetainEvent failed on prerequisite event", __FUNCTION__);
 
 	if (!done)
 		item->done_event = NULL;
@@ -115,7 +115,7 @@ struct clrt_queue_item_t *clrt_queue_item_create(
 		*done = item->done_event;
 		// and to the completion event
 		if (clRetainEvent(*done) != CL_SUCCESS)
-			fatal("%s: clRetainEvent failed", __FUNCTION__);
+			fatal("%s: clRetainEvent failed on done event", __FUNCTION__);
 	}
 	
 	return item;
@@ -127,11 +127,13 @@ void clrt_queue_item_free(struct clrt_queue_item_t *item)
 	int i;
 	for (i = 0; i < item->num_wait_events; i++)
 		if (clReleaseEvent(item->wait_events[i]) != CL_SUCCESS)
-			fatal("%s: clReleaseEvent failed", __FUNCTION__);
+			fatal("%s: clReleaseEvent failed on prerequisite event", __FUNCTION__);
 
 	if (item->done_event)
+	{
 		if (clReleaseEvent(item->done_event) != CL_SUCCESS)
-			fatal("%s: clReleaseEvent failed", __FUNCTION__);
+			fatal("%s: clReleaseEvent failed on done event", __FUNCTION__);
+	}
 
 	free(item->data);
 	free(item);
@@ -156,16 +158,30 @@ void clrt_command_queue_enqueue(struct _cl_command_queue *queue,
 }
 
 
+void clrt_command_queue_flush(struct _cl_command_queue *command_queue)
+{
+	pthread_mutex_lock(&command_queue->lock);
+
+	if (command_queue->head && !command_queue->process)
+	{
+		command_queue->process = 1;
+		pthread_cond_signal(&command_queue->cond_process);
+	}
+
+	pthread_mutex_unlock(&command_queue->lock);
+
+}
+
 void clrt_command_queue_free(void *data)
 {
 	struct _cl_command_queue *queue;
 	struct clrt_queue_item_t *item;
 
 	queue = (struct _cl_command_queue *) data;
-	item = clrt_queue_item_create(NULL, NULL, NULL, NULL, 0, NULL);
+	item = clrt_queue_item_create(queue, NULL, NULL, NULL, 0, NULL);
+
 	clrt_command_queue_enqueue(queue, item);
-	if (clFlush(queue) != CL_SUCCESS)
-		fatal("%s: clFlush failed", __FUNCTION__);
+	clrt_command_queue_flush(queue);
 	pthread_join(queue->queue_thread, NULL);
 	assert(!queue->head);
 	pthread_mutex_destroy(&queue->lock);

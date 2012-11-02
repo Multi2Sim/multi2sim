@@ -20,11 +20,30 @@
 
 #include <assert.h>
 #include <m2s-clrt.h>
+#include <string.h>
 
+#include "thread-list.h"
+static struct clrt_thread_list_t *list = NULL;
 
-/* List of objects and mutex to protect it */
-static struct clrt_object_t *clrt_object_list_head = NULL;
-static pthread_mutex_t clrt_object_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+static struct clrt_thread_list_t *get_list(void)
+{
+	if (!list)
+		list = clrt_thread_list_create();
+	return list;
+}
+
+int print_object(void *context, void *data)
+{	
+	struct clrt_object_t *object = data;
+	printf("{%p, %d} ", object->data, object->type);
+	return 1;
+}
+
+void print_object_list(void)
+{
+	clrt_thread_list_visit(get_list(), print_object, NULL);
+	printf("\n\n");
+}
 
 
 
@@ -46,11 +65,7 @@ struct clrt_object_t *clrt_object_create(void *data, enum clrt_object_type_t typ
 	pthread_mutex_init(&object->ref_mutex, NULL);
 
 	/* Insert to object list */
-	pthread_mutex_lock(&clrt_object_list_mutex);
-	object->next = clrt_object_list_head;
-	clrt_object_list_head = object;
-	pthread_mutex_unlock(&clrt_object_list_mutex);
-
+	clrt_thread_list_insert(get_list(), object);
 	/* Return object */
 	return object;
 }
@@ -58,113 +73,67 @@ struct clrt_object_t *clrt_object_create(void *data, enum clrt_object_type_t typ
 
 void clrt_object_free(struct clrt_object_t *object)
 {
+	pthread_mutex_destroy(&object->ref_mutex);
+	memset(object, 0, sizeof (struct clrt_object_t));
 	free(object);
 }
 
 
-/* Find the next object of a given type, starting at the object following 'prev' in
- * the object list. If 'prev' is NULL, start at the object list head. This function
- * needs the object list mutex to be locked. */
-struct clrt_object_t *clrt_object_enumerate(struct clrt_object_t *prev,
-	enum clrt_object_type_t type)
+/* this is a helper function for clrt_object_find
+   It visits each of the elements in the OpenCL object list */
+int match_object(void *context, void *data)
 {
-	/* Starting point */
-	if (!prev)
-		prev = clrt_object_list_head;
-	else
-		prev = prev->next;
+	struct clrt_object_t *object = data; /* each list item is an OpenCL object wrapper */
+	struct clrt_object_context_t *ctx = context; /* the context as passed into list_visit */
 
-	/* Find next object of same type */
-	while (!prev)
-	{
-		if (prev->type == type)
-			return prev;
-		prev = prev->next;
-	}
+	if (object->data == ctx->target && object->type == ctx->type)
+		ctx->match = object;
 
-	/* No more objects of this type */
-	return NULL;
+	return !ctx->match;
 }
 
 
-/* Return the object (and its predecessor) containing 'data'. */
-struct clrt_object_t *clrt_object_find(void *data, struct clrt_object_t **prev_item)
+/* Return the object that matches data and type */
+struct clrt_object_t *clrt_object_find(void *data, enum clrt_object_type_t type)
 {
-	struct clrt_object_t *object;
-	struct clrt_object_t *prev;
-	
-	/* Lock list */
-	pthread_mutex_lock(&clrt_object_list_mutex);
+	struct clrt_object_context_t context;
+	context.target = data;
+	context.type = type;
+	context.match = NULL;
 
-	/* Head */
-	object = clrt_object_list_head;
-	prev = NULL;
-
-	/* Iterate in list */
-	while (object)
-	{
-		if (object->data == data)
-		{
-			if (prev_item)
-				*prev_item = prev;
-			pthread_mutex_unlock(&clrt_object_list_mutex);
-			return object;
-		}
-
-		/* Next */
-		prev = object;
-		object = object->next;
-	}
-
-	/* Not found, unlock and return */
-	pthread_mutex_unlock(&clrt_object_list_mutex);
-	return NULL;
+	clrt_thread_list_visit(get_list(), match_object, &context);
+	return context.match;
 }
-
 
 int clrt_object_ref_update(void *data, enum clrt_object_type_t type, int change)
 {
-	struct clrt_object_t *prev;
-	struct clrt_object_t *object = clrt_object_find(data, &prev);
+	struct clrt_object_t *object = clrt_object_find(data, type);
 
-	/* Object does not exist */
+	/* Does an object of the right type exist? */
 	if (!object)
 		return CL_INVALID_VALUE;
 
-	/* Lock mutex for references */
+	/* Protect code that accesses reference count with a lock */
 	pthread_mutex_lock(&object->ref_mutex);
+	object->ref_count += change; /* update the count */
+	int count = object->ref_count; /* capture value for use outside */
+	pthread_mutex_unlock(&object->ref_mutex);
 
-	/* Invalid data type */
-	if (object->type != type)
+	/* There are no more references to this object.  
+           No one has chnaged ref_count since unlock because 
+           no one has a reference to it anymore. */
+	if (!count)
 	{
-		pthread_mutex_unlock(&object->ref_mutex);
-		return CL_INVALID_VALUE;
-	}
+		/* remove it from the list */
+		if (!clrt_thread_list_remove(get_list(), object))
+			panic("%s: could not remove object that just existed", __FUNCTION__);
 
-	/* Update number of references */
-	object->ref_count += change;
-	if (object->ref_count < 0)
-		panic("%s: number of references is negative", __FUNCTION__);
-
-	/* Release data if no more references */
-	if (!object->ref_count)
-	{
-		pthread_mutex_unlock(&object->ref_mutex);
-
-		/* Destroy data and extract from object list */
 		object->destroy_func(object->data);
-		if (!prev)
-			clrt_object_list_head = object->next;
-		else
-			prev->next = object->next;
-
-		/* Free object */
 		clrt_object_free(object);
 	}
-	else
-		pthread_mutex_unlock(&object->ref_mutex);
+	else if (count < 0)
+		panic("%s: number of references is negative", __FUNCTION__);
 
-	/* Success */
 	return CL_SUCCESS;
 }
 
@@ -180,8 +149,8 @@ int clrt_object_verify(void *data, enum clrt_object_type_t type)
 		return 0;
 
 	/* Return whether object was found and type matches */
-	object = clrt_object_find(data, NULL);
-	return object && object->type == type;
+	object = clrt_object_find(data, type);
+	return (int)object;
 }
 
 

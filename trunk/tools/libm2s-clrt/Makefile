@@ -11,13 +11,12 @@ ASMFLAGS = -f elf32
 
 
 LIB_NAME = libm2s-clrt
-HEADER_NAME = m2s-clrt.h
+HEADER_NAME = m2s-clrt.h clrt-object.h thread-list.h
 
 OBJECTS = \
 	debug.o \
 	elf-format.o \
 	misc.o \
-	\
 	command-queue.o \
 	context.o \
 	device.o \
@@ -33,7 +32,8 @@ OBJECTS = \
 	elf-loader.o \
 	fibers.o \
 	mkfibers.o \
-	workgroupdata.o
+	workgroupdata.o \
+	thread-list.o
 
 all: $(LIB_NAME).so $(LIB_NAME).a
 
@@ -119,4 +119,7 @@ mkfibers.o: mkfibers.c
 
 workgroupdata.o: workgroupdata.s
 	$(ASM) $(ASMFLAGS) workgroupdata.s -o workgroupdata.o
+
+thread-list.o: thread-list.c $(HEADER_NAME)
+	$(CC) $(CFLAGS) -c thread-list.c -o thread-list.o
 
