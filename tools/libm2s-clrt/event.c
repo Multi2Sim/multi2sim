@@ -155,8 +155,6 @@ int clrt_event_wait_list_check(
 }
 
 
-
-
 /*
  * Public Functions 
  */
@@ -217,7 +215,7 @@ cl_int clGetEventInfo(
 
 		case CL_EVENT_REFERENCE_COUNT:
 		{
-			struct clrt_object_t *obj = clrt_object_find(event, NULL);
+			struct clrt_object_t *obj = clrt_object_find(event, CLRT_OBJECT_EVENT);
 			cl_uint count = obj->ref_count;
 			return populateParameter(&count, sizeof count, param_value_size, param_value, param_value_size_ret);
 		}		
@@ -265,7 +263,7 @@ cl_int clRetainEvent(
 	/* Debug */
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tevent = %p", event);
-	
+
 	return clrt_object_retain(event, CLRT_OBJECT_EVENT, CL_INVALID_EVENT);
 }
 

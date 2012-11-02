@@ -439,7 +439,7 @@ cl_int clGetDeviceIDs(
 }
 
 
-const char *DEVICE_EXTENSIONS = "cl_khr_fp64";
+const char *DEVICE_EXTENSIONS = "cl_khr_fp64 cl_khr_byte_addressable_store cl_khr_global_int32_base_atomics cl_khr_local_int32_base_atomics";
 
 cl_int clGetDeviceInfo(
 	cl_device_id device,
