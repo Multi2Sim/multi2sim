@@ -34,6 +34,11 @@ static char *err_frm_cudart_not_impl =
 	"\tTo request the implementation of a certain functionality,\n"
 	"\tplease email development@multi2sim.org.\n";
 
+static char *err_frm_cuda_native =
+	"\tYou are trying to run natively an application using the Multi2Sim CUDA driver\n"
+	"\tlibrary implementation ('libm2s-cuda'). Please run this program on top of\n"
+	"\tMulti2Sim.\n";
+
 
 
 
@@ -140,15 +145,9 @@ void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 	dim3 *gDim,
 	int *wSize)
 {
-	unsigned long long int *fatbinData;
-	char ptx_filename[MAX_STRING_SIZE];
-	FILE *ptx_file_ptr;
-	int ptx_eof;
 	char cubin_filename[MAX_STRING_SIZE];
-	char cubin_gen_cmd[MAX_STRING_SIZE];
 	CUmodule module;
 	int ret;
-	int i, j;
 
 	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 	cuda_debug(stdout, "\t(runtime) in: hostFun=%p\n", hostFun);
@@ -161,48 +160,17 @@ void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 	cuda_debug(stdout, "\t(runtime) in: gDim=%u %u %u\n", gDim->x, gDim->y, gDim->z);
 	cuda_debug(stdout, "\t(runtime) in: wSize=%d\n", *wSize);
 
-	fatbinData = *((unsigned long long int **)fatCubinHandle);
+	/* Get kernel binary name */
+	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cudaRegisterFunction, cubin_filename);
 
-	/* FIXME: should extract cubin directly */
-	/* Search for string "\t.versio" */
-	for (i = 0; i < 1000000; ++i)
-	{
-		if (fatbinData[i] == 0x6f69737265762e09)
-			break;
-	}
-
-	/* Save ptx file */
-	snprintf(ptx_filename, MAX_STRING_SIZE, "%s.ptx", deviceFun);
-	ptx_file_ptr = fopen(ptx_filename, "w");
-	if (ptx_file_ptr == NULL)
-		fatal("%s: cannot create ptx file", __FUNCTION__);
-	ptx_eof = 0;
-	for (; ; ++i)
-	{
-		for (j = 0; j < 8; ++j)
-		{
-			if ((char)((fatbinData[i] >> (8*j)) & 0xff) == '\0')
-			{
-				ptx_eof = 1;
-				break;
-			}
-			else
-				fprintf(ptx_file_ptr, "%c", (char)((fatbinData[i] >> (8*j)) & 0xff));
-		}
-		if (ptx_eof == 1)
-			break;
-	}
-	fclose(ptx_file_ptr);
-
-	/* Generate cubin file */
-	snprintf(cubin_filename, MAX_STRING_SIZE, "%s.cubin", deviceFun);
-	snprintf(cubin_gen_cmd, MAX_STRING_SIZE, "nvcc -o %s -arch=sm_20 -cubin %s", 
-		cubin_filename, ptx_filename);
-	ret = system(cubin_gen_cmd);
-	if (ret != 0)
-		fatal("%s: cannot generate cubin", __FUNCTION__);
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call FRM_CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			err_frm_cuda_native);
 
 	/* Load module */
+	printf("============%s\n", cubin_filename);
 	cuModuleLoad(&module, cubin_filename);
 
 	/* Get function */

@@ -780,3 +780,28 @@ static int frm_cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	return 0;
 }
 
+
+
+
+/*
+ * CUDA call - cudaRegisterFunction
+ *
+ * @param size_t ByteCount;
+ *      Size of memory copy in bytes.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+static int frm_cuda_func_cudaRegisterFunction(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	frm_cuda_debug("\tout: frm_emu_cuda_binary_name=%s\n", frm_emu_cuda_binary_name);
+
+	mem_write(mem, regs->ecx, MAX_STRING_SIZE, frm_emu_cuda_binary_name);
+
+	return 0;
+}
+
