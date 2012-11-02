@@ -111,3 +111,16 @@ FILES
 	* src/mem-system/nmoesi-protocol.c
 	* src/arch/x86/timing/cpu-issue.c
 	* src/arch/x86/emu/machine.c
+
+================================================================================
+AUTHOR
+	Mark Wilkening (wilkening.m@husky.neu.edu)
+
+DESCRIPTION
+
+	Mark is one of the authors of the AMD Southern Islands architectural
+	model, including the disassembler, functional simulator, timing
+	simulator, and visualization tool.
+
+FILES
+	* All files in src/arch/southern-islands
