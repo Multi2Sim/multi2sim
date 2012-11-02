@@ -170,7 +170,7 @@ void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 			err_frm_cuda_native);
 
 	/* Load module */
-	printf("============%s\n", cubin_filename);
+	cuda_debug(stdout, "\t(runtime) out: cubin_filename=%s\n", cubin_filename);
 	cuModuleLoad(&module, cubin_filename);
 
 	/* Get function */
