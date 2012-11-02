@@ -3,7 +3,7 @@ M2S_ROOT = ../..
 AR = ar
 CC = gcc
 CFLAGS = -Wall -O3 -fPIC -m32 -I. -Icuda_inc -I$(M2S_ROOT)/src \
-	-I$(M2S_ROOT)/src/lib/mhandle -I$(M2S_ROOT)/src/lib/misc -I$(M2S_ROOT)/src/lib/struct
+	-I$(M2S_ROOT)/src/lib/util
 
 CUDA_OBJECTS = \
 	debug.o \
@@ -35,17 +35,17 @@ clean:
 # Auxiliary targets
 #
 
-debug.o: $(M2S_ROOT)/src/lib/struct/debug.c $(M2S_ROOT)/src/lib/struct/debug.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/debug.c -o debug.o
+debug.o: $(M2S_ROOT)/src/lib/util/debug.c $(M2S_ROOT)/src/lib/util/debug.h
+	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/util/debug.c -o debug.o
 
-misc.o: $(M2S_ROOT)/src/lib/misc/misc.c $(M2S_ROOT)/src/lib/misc/misc.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/misc/misc.c -o misc.o
+misc.o: $(M2S_ROOT)/src/lib/util/misc.c $(M2S_ROOT)/src/lib/util/misc.h
+	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/util/misc.c -o misc.o
 
-linked-list.o: $(M2S_ROOT)/src/lib/struct/linked-list.c $(M2S_ROOT)/src/lib/struct/linked-list.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/linked-list.c -o linked-list.o
+linked-list.o: $(M2S_ROOT)/src/lib/util/linked-list.c $(M2S_ROOT)/src/lib/util/linked-list.h
+	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/util/linked-list.c -o linked-list.o
 
-list.o: $(M2S_ROOT)/src/lib/struct/list.c $(M2S_ROOT)/src/lib/struct/list.h
-	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/list.c -o list.o
+list.o: $(M2S_ROOT)/src/lib/util/list.c $(M2S_ROOT)/src/lib/util/list.h
+	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/util/list.c -o list.o
 
 
 
