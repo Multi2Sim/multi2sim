@@ -9,4 +9,5 @@ FRM_CUDA_DEFINE_CALL(cuMemGetInfo)
 FRM_CUDA_DEFINE_CALL(cuMemcpyDtoH)
 FRM_CUDA_DEFINE_CALL(cuMemcpyHtoD)
 FRM_CUDA_DEFINE_CALL(cuLaunchKernel)
+FRM_CUDA_DEFINE_CALL(cudaRegisterFunction)
 
