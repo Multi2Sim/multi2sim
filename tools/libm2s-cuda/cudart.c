@@ -149,16 +149,7 @@ void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 	CUmodule module;
 	int ret;
 
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: hostFun=%p\n", hostFun);
-	cuda_debug(stdout, "\t(runtime) in: deviceFun=%s\n", deviceFun);
-	cuda_debug(stdout, "\t(runtime) in: deviceName=%s\n", deviceName);
-	cuda_debug(stdout, "\t(runtime) in: thread_limit=%d\n", thread_limit);
-	cuda_debug(stdout, "\t(runtime) in: tid=%u %u %u\n", tid->x, tid->y, tid->z);
-	cuda_debug(stdout, "\t(runtime) in: bid=%u %u %u\n", bid->x, bid->y, bid->z);
-	cuda_debug(stdout, "\t(runtime) in: bDim=%u %u %u\n", bDim->x, bDim->y, bDim->z);
-	cuda_debug(stdout, "\t(runtime) in: gDim=%u %u %u\n", gDim->x, gDim->y, gDim->z);
-	cuda_debug(stdout, "\t(runtime) in: wSize=%d\n", *wSize);
+	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
 	/* Get kernel binary name */
 	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cudaRegisterFunction, cubin_filename);
@@ -427,13 +418,13 @@ cudaError_t CUDARTAPI cudaSetupArgument(const void *arg, size_t size, size_t off
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaFuncSetCacheConfig(const char *func, enum cudaFuncCache cacheConfig)
+cudaError_t CUDARTAPI cudaFuncSetCacheConfig(const void *func, enum cudaFuncCache cacheConfig)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaLaunch(const char *entry)
+cudaError_t CUDARTAPI cudaLaunch(const void *entry)
 {
 	CUdeviceptr **kernel_args;
 	int i;
@@ -461,7 +452,7 @@ cudaError_t CUDARTAPI cudaLaunch(const char *entry)
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaFuncGetAttributes(struct cudaFuncAttributes *attr, const char *func)
+cudaError_t CUDARTAPI cudaFuncGetAttributes(struct cudaFuncAttributes *attr, const void *func)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
@@ -672,13 +663,13 @@ cudaError_t CUDARTAPI cudaMemcpy2DArrayToArray(struct cudaArray *dst, size_t wOf
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaMemcpyToSymbol(const char *symbol, const void *src, size_t count, size_t offset __dv(0), enum cudaMemcpyKind kind __dv(cudaMemcpyHostToDevice))
+cudaError_t CUDARTAPI cudaMemcpyToSymbol(const void *symbol, const void *src, size_t count, size_t offset __dv(0), enum cudaMemcpyKind kind __dv(cudaMemcpyHostToDevice))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaMemcpyFromSymbol(void *dst, const char *symbol, size_t count, size_t offset __dv(0), enum cudaMemcpyKind kind __dv(cudaMemcpyDeviceToHost))
+cudaError_t CUDARTAPI cudaMemcpyFromSymbol(void *dst, const void *symbol, size_t count, size_t offset __dv(0), enum cudaMemcpyKind kind __dv(cudaMemcpyDeviceToHost))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
@@ -726,13 +717,13 @@ cudaError_t CUDARTAPI cudaMemcpy2DFromArrayAsync(void *dst, size_t dpitch, const
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaMemcpyToSymbolAsync(const char *symbol, const void *src, size_t count, size_t offset, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
+cudaError_t CUDARTAPI cudaMemcpyToSymbolAsync(const void *symbol, const void *src, size_t count, size_t offset, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaMemcpyFromSymbolAsync(void *dst, const char *symbol, size_t count, size_t offset, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
+cudaError_t CUDARTAPI cudaMemcpyFromSymbolAsync(void *dst, const void *symbol, size_t count, size_t offset, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
@@ -774,19 +765,19 @@ cudaError_t CUDARTAPI cudaMemset3DAsync(struct cudaPitchedPtr pitchedDevPtr, int
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaGetSymbolAddress(void **devPtr, const char *symbol)
+cudaError_t CUDARTAPI cudaGetSymbolAddress(void **devPtr, const void *symbol)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaGetSymbolSize(size_t *size, const char *symbol)
+cudaError_t CUDARTAPI cudaGetSymbolSize(size_t *size, const void *symbol)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaPointerGetAttributes(struct cudaPointerAttributes *attributes, void *ptr)
+cudaError_t CUDARTAPI cudaPointerGetAttributes(struct cudaPointerAttributes *attributes, const void *ptr)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
@@ -890,7 +881,7 @@ cudaError_t CUDARTAPI cudaGetTextureAlignmentOffset(size_t *offset, const struct
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaGetTextureReference(const struct textureReference **texref, const char *symbol)
+cudaError_t CUDARTAPI cudaGetTextureReference(const struct textureReference **texref, const void *symbol)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
@@ -902,7 +893,7 @@ cudaError_t CUDARTAPI cudaBindSurfaceToArray(const struct surfaceReference *surf
 	return cudaSuccess;
 }
 
-cudaError_t CUDARTAPI cudaGetSurfaceReference(const struct surfaceReference **surfref, const char *symbol)
+cudaError_t CUDARTAPI cudaGetSurfaceReference(const struct surfaceReference **surfref, const void *symbol)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;

@@ -17,12 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <m2s-cuda.h>
 #include <debug.h>
 #include <list.h>
 #include <misc.h>
-#include <string.h>
 #include <unistd.h>
+
+#include <m2s-cuda.h>
 
 /* Debug */
 int frm_cuda_debug = 0;
@@ -54,22 +54,6 @@ static char *err_frm_cuda_native =
  * Data Structures
  */
 
-#define CU_IPC_HANDLE_SIZE 64
-
-typedef struct CUipcEventHandle_st {
-    char reserved[CU_IPC_HANDLE_SIZE];
-} CUipcEventHandle;
-
-typedef struct CUipcMemHandle_st {
-    char reserved[CU_IPC_HANDLE_SIZE];
-} CUipcMemHandle;
-
-typedef enum CUsharedconfig_enum {
-    CU_SHARED_MEM_CONFIG_DEFAULT_BANK_SIZE    = 0x00, /**< set default shared memory bank size */
-    CU_SHARED_MEM_CONFIG_FOUR_BYTE_BANK_SIZE  = 0x01, /**< set shared memory bank width to four bytes */
-    CU_SHARED_MEM_CONFIG_EIGHT_BYTE_BANK_SIZE = 0x02  /**< set shared memory bank width to eight bytes */
-} CUsharedconfig;
-
 #define FRM_CUDA_VERSION_MAJOR	1
 #define FRM_CUDA_VERSION_MINOR	700
 
@@ -86,17 +70,15 @@ struct frm_cuda_version_t
  * Internal Functions
  */
 
-void set_debug_flag(void)
-{
-	frm_cuda_debug = !strcmp(getenv("LIBM2S_CUDA_DUMP"), "1");
-}
 
 void versionCheck(void)
 {
+	char *env;
 	struct frm_cuda_version_t version;
 	int ret;
 
-	set_debug_flag();
+	env = getenv("LIBM2S_CUDA_DUMP");
+	frm_cuda_debug = ((env[0] == '1') && (env[1] == '\0'));
 
 	cuda_debug(stdout, "CUDA driver internal function '%s'\n", __FUNCTION__);
 
