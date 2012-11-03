@@ -622,23 +622,18 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 		return stack->master_stack ? stack->master_stack : stack;
 	}
 	case mod_access_prefetch:
-		/* Only coalesce with last access */
-		stack = tail;
-		if (!stack)
-			return NULL;
-
-		/* Only if it is a write */
-		if (stack->access_kind != mod_access_store)
-			return NULL;
-
-		/* Only if it is an access to the same block */
-		if (stack->addr >> mod->log_block_size != addr >> mod->log_block_size)
-			return NULL;
-
-		/* If there is an access to the same block, that means this prefetching
-		   is only an overhead. Return "true" at this point so that the caller
-		   can know of the other access and abort the prefetch. */
-		return stack;
+		/* At this point, we know that there is another access (load/store)
+		 * to the same block already in flight. Just find and return it.
+		 * The caller may abort the prefetch since the block is already
+		 * being fetched. */
+		for (stack = tail; stack; stack = stack->access_list_prev)
+		{
+			if (stack->addr >> mod->log_block_size ==
+				addr >> mod->log_block_size)
+				return stack;
+		}
+		assert(!"Hash table wrongly reported another access to same block.\n");
+		break;
 
 
 	default:
