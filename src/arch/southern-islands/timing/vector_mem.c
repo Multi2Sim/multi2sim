@@ -27,7 +27,7 @@
 
 int si_gpu_vector_mem_width = 1;
 
-int si_gpu_vector_mem_decode_buffer_size = 5;
+int si_gpu_vector_mem_issue_buffer_size = 5;
 
 /*
  * Register accesses are not pipelined, so buffer size is not
@@ -243,14 +243,14 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 	int instructions_processed = 0;
 	int list_entries;
 
-	list_entries = list_count(vector_mem->decode_buffer);
+	list_entries = list_count(vector_mem->issue_buffer);
 
 	/* Sanity check the decode buffer */
-	assert(list_entries <= si_gpu_vector_mem_decode_buffer_size);
+	assert(list_entries <= si_gpu_vector_mem_issue_buffer_size);
 
 	for (int i = 0; i < list_entries; i++)
 	{
-		uop = list_head(vector_mem->decode_buffer);
+		uop = list_head(vector_mem->issue_buffer);
 		assert(uop);
 
 		/* Stop if the width has been reached. */
@@ -259,7 +259,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 
 		/* Stop if the uop has not been fully decoded yet. It is safe
 		 * to assume that no other uop is ready either */
-		if (si_gpu->cycle < uop->decode_ready)
+		if (si_gpu->cycle < uop->issue_ready)
 			break;
 
 		/* Stop if the read buffer is full. */
@@ -272,7 +272,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		}
 		
 		uop->read_ready = si_gpu->cycle + si_gpu_vector_mem_read_latency;
-		list_remove(vector_mem->decode_buffer, uop);
+		list_remove(vector_mem->issue_buffer, uop);
 		list_enqueue(vector_mem->read_buffer, uop);
 
 		instructions_processed++;

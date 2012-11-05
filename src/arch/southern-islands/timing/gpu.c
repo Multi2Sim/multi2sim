@@ -281,81 +281,297 @@ static void si_config_read(void)
 	
 	/* Device */
 	section = "Device";
-	si_gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", 
-		si_gpu_num_compute_units);
-	si_gpu_num_inst_buffers = config_read_int(gpu_config, section, "NumInstBuffers", 
-		si_gpu_num_inst_buffers);
-	si_gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", 
-		si_gpu_num_stream_cores);
-	si_gpu_num_registers = config_read_int(gpu_config, section, "NumRegisters", 
-		si_gpu_num_registers);
-	si_gpu_register_alloc_size = config_read_int(gpu_config, section, "RegisterAllocSize", 
-		si_gpu_register_alloc_size);
-	gpu_register_alloc_granularity_str = config_read_string(gpu_config, section, 
-		"RegisterAllocGranularity", "WorkGroup");
-	si_emu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", 
-		si_emu_wavefront_size);
-	si_gpu_max_work_groups_per_inst_buffer = config_read_int(gpu_config, section, 
-		"MaxWorkGroupsPerInstBuffer", si_gpu_max_work_groups_per_inst_buffer);
-	si_gpu_max_wavefronts_per_inst_buffer = config_read_int(gpu_config, section, 
-		"MaxWavefrontsPerInstBuffer", si_gpu_max_wavefronts_per_inst_buffer);
-	si_gpu_fetch_latency = config_read_int(gpu_config, section, "FetchLatency", 
-		si_gpu_fetch_latency);
-	si_gpu_decode_latency = config_read_int(gpu_config, section, "DecodeLatency", 
-		si_gpu_decode_latency);
-	si_gpu_simd_width = config_read_int(gpu_config, section, "SIMDWidth", 
-		si_gpu_simd_width);
-	si_gpu_simd_alu_latency = config_read_int(gpu_config, section, "SIMDALULatency", 
-		si_gpu_simd_alu_latency);
-	si_gpu_scalar_unit_width= config_read_int(gpu_config, section, 
-		"ScalarUnitWidth", si_gpu_scalar_unit_width);
-	si_gpu_scalar_unit_exec_latency = config_read_int(gpu_config, section, 
-		"ScalarUnitExecLatency", si_gpu_scalar_unit_exec_latency);
-	si_gpu_branch_unit_width = config_read_int(gpu_config, section, 
-		"BranchUnitWidth", si_gpu_branch_unit_width);
-	si_gpu_branch_unit_exec_latency = config_read_int(gpu_config, section, 
-		"BranchUnitExecLatency", si_gpu_branch_unit_exec_latency);
-	gpu_sched_policy_str = config_read_string(gpu_config, section, "SchedulingPolicy", 
-		"RoundRobin");
-
+	si_gpu_num_compute_units = config_read_int(
+			gpu_config, section, "NumComputeUnits", si_gpu_num_compute_units);
 	if (si_gpu_num_compute_units < 1)
-		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", si_gpu_config_file_name, 
-			err_note);
-	if (si_gpu_num_inst_buffers < 1)
-		fatal("%s: invalid value for 'NumInstBuffers'.\n%s", si_gpu_config_file_name, 
-			err_note);
-	if (si_gpu_num_stream_cores < 1)
-		fatal("%s: invalid value for 'NumStreamCores'.\n%s", si_gpu_config_file_name, 
-			err_note);
-	if (si_gpu_register_alloc_size < 1)
-		fatal("%s: invalid value for 'RegisterAllocSize'.\n%s", si_gpu_config_file_name, 
-			err_note);
-	if (si_gpu_num_registers < 1)
-		fatal("%s: invalid value for 'NumRegisters'.\n%s", si_gpu_config_file_name, 
-			err_note);
-	if (si_gpu_num_registers % si_gpu_register_alloc_size)
-		fatal("%s: 'NumRegisters' must be a multiple of 'RegisterAllocSize'.\n%s", 
-			si_gpu_config_file_name, err_note);
-	si_gpu_register_alloc_granularity = str_map_string_case(&si_gpu_register_alloc_granularity_map, 
-		gpu_register_alloc_granularity_str);
-	if (si_gpu_register_alloc_granularity == si_gpu_register_alloc_invalid)
-		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s", 
-			si_gpu_config_file_name, err_note);
-	si_gpu_sched_policy = str_map_string_case(&si_gpu_sched_policy_map, 
-		gpu_sched_policy_str);
-	if (si_gpu_sched_policy == si_gpu_sched_invalid)
-		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", si_gpu_config_file_name, 
-			err_note);
+			fatal("%s: invalid value for 'NumComputeUnits'.\n%s", si_gpu_config_file_name,
+				err_note);
+
+	si_emu_wavefront_size = config_read_int(
+			gpu_config, section, "WavefrontSize", si_emu_wavefront_size);
 	if (si_emu_wavefront_size < 1)
-		fatal("%s: invalid value for 'WavefrontSize'.\n%s", si_gpu_config_file_name, 
-			err_note);
+			fatal("%s: invalid value for 'WavefrontSize'.\n%s", si_gpu_config_file_name,
+				err_note);
+
+	si_gpu_num_stream_cores = config_read_int(
+			gpu_config, section, "NumStreamCores", si_gpu_num_stream_cores);
+	if (si_gpu_num_stream_cores < 1)
+			fatal("%s: invalid value for 'NumStreamCores'.\n%s", si_gpu_config_file_name,
+				err_note);
+
+	si_gpu_num_registers = config_read_int(
+			gpu_config, section, "NumRegisters", si_gpu_num_registers);
+	if (si_gpu_num_registers < 1)
+			fatal("%s: invalid value for 'NumRegisters'.\n%s", si_gpu_config_file_name,
+				err_note);
+
+	si_gpu_register_alloc_size = config_read_int(
+			gpu_config, section, "RegisterAllocSize", si_gpu_register_alloc_size);
+	if (si_gpu_register_alloc_size < 1)
+			fatal("%s: invalid value for 'RegisterAllocSize'.\n%s", si_gpu_config_file_name,
+				err_note);
+	if (si_gpu_num_registers % si_gpu_register_alloc_size)
+			fatal("%s: 'NumRegisters' must be a multiple of 'RegisterAllocSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	gpu_register_alloc_granularity_str = config_read_string(
+			gpu_config, section, "RegisterAllocGranularity", "WorkGroup");
+	si_gpu_register_alloc_granularity = str_map_string_case(&si_gpu_register_alloc_granularity_map,
+			gpu_register_alloc_granularity_str);
+	if (si_gpu_register_alloc_granularity == si_gpu_register_alloc_invalid)
+		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s",
+			si_gpu_config_file_name, err_note);
+
+
+	/* Compute Unit */
+	section = "ComputeUnit";
+	si_gpu_num_inst_buffers = config_read_int(
+				gpu_config, section, "NumInstBuffers", si_gpu_num_inst_buffers);
+	if (si_gpu_num_inst_buffers < 1)
+			fatal("%s: invalid value for 'NumInstBuffers'.\n%s", si_gpu_config_file_name,
+				err_note);
+	if (si_gpu_num_stream_cores % si_gpu_num_inst_buffers ||
+		si_emu_wavefront_size % (si_gpu_num_stream_cores / si_gpu_num_inst_buffers))
+			fatal("%s: invalid value for 'NumInstBuffers' or 'NumStreamCores'.\n%s", si_gpu_config_file_name,
+				err_note);
+	si_gpu_simd_num_subwavefronts = si_emu_wavefront_size / (si_gpu_num_stream_cores / si_gpu_num_inst_buffers);
+
+	si_gpu_max_work_groups_per_inst_buffer = config_read_int(
+			gpu_config, section, "MaxWorkGroupsPerInstBuffer", si_gpu_max_work_groups_per_inst_buffer);
 	if (si_gpu_max_work_groups_per_inst_buffer < 1)
-		fatal("%s: invalid value for 'MaxWorkGroupsPerInstBuffer'.\n%s", 
-			si_gpu_config_file_name, err_note);
+			fatal("%s: invalid value for 'MaxWorkGroupsPerInstBuffer'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_max_wavefronts_per_inst_buffer = config_read_int(
+			gpu_config, section, "MaxWavefrontsPerInstBuffer", si_gpu_max_wavefronts_per_inst_buffer);
 	if (si_gpu_max_wavefronts_per_inst_buffer < 1)
-		fatal("%s: invalid value for 'MaxWavefrontsPerInstBuffer'.\n%s", 
-			si_gpu_config_file_name, err_note);
+			fatal("%s: invalid value for 'MaxWavefrontsPerInstBuffer'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	gpu_sched_policy_str = config_read_string(gpu_config, section, "SchedulingPolicy",
+			"RoundRobin");
+	si_gpu_sched_policy = str_map_string_case(&si_gpu_sched_policy_map,
+			gpu_sched_policy_str);
+	if (si_gpu_sched_policy == si_gpu_sched_invalid)
+		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", si_gpu_config_file_name,
+			err_note);
+
+
+	si_gpu_fetch_latency = config_read_int(
+			gpu_config, section, "FetchLatency", si_gpu_fetch_latency);
+	if (si_gpu_fetch_latency < 1)
+			fatal("%s: invalid value for 'FetchLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_fetch_width = config_read_int(
+			gpu_config, section, "FetchWidth", si_gpu_fetch_width);
+	if (si_gpu_fetch_width < 1)
+			fatal("%s: invalid value for 'FetchWidth'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_fetch_buffer_size = config_read_int(
+			gpu_config, section, "FetchBufferSize", si_gpu_fetch_buffer_size);
+	if (si_gpu_fetch_buffer_size < si_gpu_fetch_width * si_gpu_fetch_latency)
+			fatal("%s: invalid value for 'FetchBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_decode_latency = config_read_int(
+			gpu_config, section, "DecodeLatency", si_gpu_decode_latency);
+	if (si_gpu_decode_latency < 1)
+			fatal("%s: invalid value for 'DecodeLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_decode_width = config_read_int(
+			gpu_config, section, "DecodeWidth", si_gpu_decode_width);
+	if (si_gpu_decode_width < 1)
+			fatal("%s: invalid value for 'DecodeWidth'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_decode_buffer_size = config_read_int(
+			gpu_config, section, "DecodeBufferSize", si_gpu_decode_buffer_size);
+	if (si_gpu_decode_buffer_size < si_gpu_decode_width * si_gpu_decode_latency)
+			fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_issue_latency = config_read_int(
+			gpu_config, section, "IssueLatency", si_gpu_issue_latency);
+	if (si_gpu_issue_latency < 1)
+			fatal("%s: invalid value for 'IssueLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_issue_width = config_read_int(
+			gpu_config, section, "IssueWidth", si_gpu_issue_width);
+	if (si_gpu_issue_width < 1)
+			fatal("%s: invalid value for 'IssueWidth'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	/* SIMD Unit */
+	section = "SIMDUnit";
+	si_gpu_simd_width = config_read_int(
+			gpu_config, section, "Width", si_gpu_simd_width);
+	if (si_gpu_simd_width < 1)
+			fatal("%s: invalid value for 'Width'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_simd_issue_buffer_size = config_read_int(
+			gpu_config, section, "IssueBufferSize", si_gpu_simd_issue_buffer_size);
+	if (si_gpu_simd_issue_buffer_size < si_gpu_issue_width * si_gpu_issue_latency)
+			fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_simd_read_latency = config_read_int(
+			gpu_config, section, "ReadLatency", si_gpu_simd_read_latency);
+	if (si_gpu_simd_read_latency < 1)
+			fatal("%s: invalid value for 'ReadLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_simd_read_buffer_size = config_read_int(
+			gpu_config, section, "ReadBufferSize", si_gpu_simd_read_buffer_size);
+	if (si_gpu_simd_read_buffer_size < si_gpu_simd_width * si_gpu_simd_read_latency)
+			fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_simd_alu_latency = config_read_int(
+			gpu_config, section, "StreamCoreLatency", si_gpu_simd_alu_latency);
+	if (si_gpu_simd_alu_latency < 1)
+			fatal("%s: invalid value for 'StreamCoreLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	/* Scalar Unit */
+	section = "ScalarUnit";
+	si_gpu_scalar_unit_width = config_read_int(
+			gpu_config, section, "Width", si_gpu_scalar_unit_width);
+	if (si_gpu_scalar_unit_width < 1)
+			fatal("%s: invalid value for 'Width'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_scalar_unit_issue_buffer_size = config_read_int(
+			gpu_config, section, "IssueBufferSize", si_gpu_scalar_unit_issue_buffer_size);
+	if (si_gpu_scalar_unit_issue_buffer_size < si_gpu_issue_width * si_gpu_issue_latency)
+			fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_scalar_unit_read_latency = config_read_int(
+			gpu_config, section, "ReadLatency", si_gpu_scalar_unit_read_latency);
+	if (si_gpu_scalar_unit_read_latency < 1)
+			fatal("%s: invalid value for 'ReadLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_scalar_unit_read_buffer_size = config_read_int(
+			gpu_config, section, "ReadBufferSize", si_gpu_scalar_unit_read_buffer_size);
+	if (si_gpu_scalar_unit_read_buffer_size < si_gpu_scalar_unit_width * si_gpu_scalar_unit_read_latency)
+			fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_scalar_unit_exec_latency = config_read_int(
+			gpu_config, section, "ALULatency", si_gpu_scalar_unit_exec_latency);
+	if (si_gpu_scalar_unit_exec_latency < 1)
+			fatal("%s: invalid value for 'ALULatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_scalar_unit_inflight_mem_accesses = config_read_int(
+			gpu_config, section, "MaxInflightMem", si_gpu_scalar_unit_inflight_mem_accesses);
+	if (si_gpu_scalar_unit_inflight_mem_accesses < 1)
+			fatal("%s: invalid value for 'MaxInflightMem'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	/* Branch Unit */
+	section = "BranchUnit";
+	si_gpu_branch_unit_width = config_read_int(
+			gpu_config, section, "Width", si_gpu_branch_unit_width);
+	if (si_gpu_branch_unit_width < 1)
+			fatal("%s: invalid value for 'Width'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_branch_unit_issue_buffer_size = config_read_int(
+			gpu_config, section, "IssueBufferSize", si_gpu_branch_unit_issue_buffer_size);
+	if (si_gpu_branch_unit_issue_buffer_size < si_gpu_issue_width * si_gpu_issue_latency)
+			fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_branch_unit_read_latency = config_read_int(
+			gpu_config, section, "ReadLatency", si_gpu_branch_unit_read_latency);
+	if (si_gpu_branch_unit_read_latency < 1)
+			fatal("%s: invalid value for 'ReadLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_branch_unit_read_buffer_size = config_read_int(
+			gpu_config, section, "ReadBufferSize", si_gpu_branch_unit_read_buffer_size);
+	if (si_gpu_branch_unit_read_buffer_size < si_gpu_branch_unit_width * si_gpu_branch_unit_read_latency)
+			fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_branch_unit_exec_latency = config_read_int(
+			gpu_config, section, "BranchLatency", si_gpu_branch_unit_exec_latency);
+	if (si_gpu_branch_unit_exec_latency < 1)
+			fatal("%s: invalid value for 'BranchLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	/* LDS Unit */
+	section = "LDSUnit";
+	si_gpu_lds_width = config_read_int(
+			gpu_config, section, "Width", si_gpu_lds_width);
+	if (si_gpu_lds_width < 1)
+			fatal("%s: invalid value for 'Width'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_lds_issue_buffer_size = config_read_int(
+			gpu_config, section, "IssueBufferSize", si_gpu_lds_issue_buffer_size);
+	if (si_gpu_lds_issue_buffer_size < si_gpu_issue_width * si_gpu_issue_latency)
+			fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_lds_read_latency = config_read_int(
+			gpu_config, section, "ReadLatency", si_gpu_lds_read_latency);
+	if (si_gpu_lds_read_latency < 1)
+			fatal("%s: invalid value for 'ReadLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_lds_read_buffer_size = config_read_int(
+			gpu_config, section, "ReadBufferSize", si_gpu_lds_read_buffer_size);
+	if (si_gpu_lds_read_buffer_size < si_gpu_lds_width * si_gpu_lds_read_latency)
+			fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_lds_inflight_mem_accesses = config_read_int(
+			gpu_config, section, "MaxInflightMem", si_gpu_lds_inflight_mem_accesses);
+	if (si_gpu_lds_inflight_mem_accesses < 1)
+			fatal("%s: invalid value for 'MaxInflightMem'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	/* VectorMem Unit */
+	section = "VectorMemUnit";
+	si_gpu_vector_mem_width = config_read_int(
+			gpu_config, section, "Width", si_gpu_vector_mem_width);
+	if (si_gpu_vector_mem_width < 1)
+			fatal("%s: invalid value for 'Width'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_vector_mem_issue_buffer_size = config_read_int(
+			gpu_config, section, "IssueBufferSize", si_gpu_vector_mem_issue_buffer_size);
+	if (si_gpu_vector_mem_issue_buffer_size < si_gpu_issue_width * si_gpu_issue_latency)
+			fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_vector_mem_read_latency = config_read_int(
+			gpu_config, section, "ReadLatency", si_gpu_vector_mem_read_latency);
+	if (si_gpu_vector_mem_read_latency < 1)
+			fatal("%s: invalid value for 'ReadLatency'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_vector_mem_read_buffer_size = config_read_int(
+			gpu_config, section, "ReadBufferSize", si_gpu_vector_mem_read_buffer_size);
+	if (si_gpu_vector_mem_read_buffer_size < si_gpu_vector_mem_width * si_gpu_vector_mem_read_latency)
+			fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
+				si_gpu_config_file_name, err_note);
+
+	si_gpu_vector_mem_inflight_mem_accesses = config_read_int(
+			gpu_config, section, "MaxInflightMem", si_gpu_vector_mem_inflight_mem_accesses);
+	if (si_gpu_vector_mem_inflight_mem_accesses < 1)
+			fatal("%s: invalid value for 'MaxInflightMem'.\n%s",
+				si_gpu_config_file_name, err_note);
 	
+
 	/* Local memory */
 	section = "LocalMemory";
 	si_gpu_local_mem_size = config_read_int(gpu_config, section, "Size", si_gpu_local_mem_size);

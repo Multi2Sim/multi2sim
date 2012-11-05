@@ -26,7 +26,7 @@
 
 int si_gpu_simd_width = 1;
 
-int si_gpu_simd_decode_buffer_size = 5;
+int si_gpu_simd_issue_buffer_size = 5;
 
 /*
  * Register accesses are not pipelined, so buffer size is not
@@ -95,23 +95,62 @@ void si_simd_execute(struct si_simd_t *simd)
 	struct si_uop_t *uop;
 	int list_entries;
 	int instructions_processed = 0;
-	int num_subwavefronts;
-	int subwavefront_size = si_emu_wavefront_size / si_gpu_simd_num_subwavefronts;
+
+	int unexecuted_wi_count;
+	unsigned int num_mapped;
+	unsigned int wi_start;
+	unsigned int wi_end;
+	unsigned int num_active;
+	//unsigned int num_not_issued;
+	unsigned int subwavefront_size = si_emu_wavefront_size / si_gpu_simd_num_subwavefronts;
 
 	list_entries = list_count(simd->read_buffer);
 
 	/* Sanity check the read buffer. */
 	assert(list_entries <= si_gpu_simd_read_buffer_size);
 
-	for(instructions_processed = 0; instructions_processed < si_gpu_simd_width;)
+	for (instructions_processed = 0; instructions_processed < si_gpu_simd_width;)
 	{
 		/* Check to see if there is a wavefront in the sub-wavefront pool. */
 		uop = simd->subwavefront_pool->uop;
-		if(uop)
+		if (uop)
 		{
+			/* Utilization Coefficient. */
+
+			/* A sub-wavefront is being executed. The only possible sources of under
+			 * utilization are unmapped work-items and inactive work items. */
+
+			/* First check stream cores with mapped work-items. */
+			unexecuted_wi_count = uop->wavefront->work_item_count - subwavefront_size * simd->subwavefront_pool->num_subwavefronts_executed;
+			num_mapped = (unexecuted_wi_count >= subwavefront_size) ? subwavefront_size : unexecuted_wi_count;
+			/* Consider all mapped functional units to determine how many are active. */
+			wi_start = subwavefront_size * simd->subwavefront_pool->num_subwavefronts_executed;
+			wi_end = subwavefront_size * simd->subwavefront_pool->num_subwavefronts_executed + num_mapped - 1;
+			num_active = 0;
+			for (int i = wi_start; i <= wi_end; i++)
+				if (si_isa_read_bitmask_sreg(uop->wavefront->work_items[i], SI_EXEC)) num_active++;
+
+			/* Consider all active, mapped and utilized functional units for all utilization
+			 * metrics of higher precedence than wki_util. Consider all active, utilized functional
+			 * units and all unmapped functional units for wki_util. Consider all active,
+			 * utilized functional units and all mapped yet inactive functional units for act_util.*/
+			simd->wkg_util->cycles_utilized += num_active;
+			simd->wkg_util->cycles_considered += num_active;
+			simd->wvf_util->cycles_utilized += num_active;
+			simd->wvf_util->cycles_considered += num_active;
+			simd->rdy_util->cycles_utilized += num_active;
+			simd->rdy_util->cycles_considered += num_active;
+			simd->occ_util->cycles_utilized += num_active;
+			simd->occ_util->cycles_considered += num_active;
+			simd->wki_util->cycles_utilized += num_active;
+			simd->wki_util->cycles_considered += num_active + (subwavefront_size - num_mapped);
+			simd->act_util->cycles_utilized += num_active;
+			simd->act_util->cycles_considered += num_mapped;
+
 			/* Execute one sub-wavefront. */
 			simd->subwavefront_pool->num_subwavefronts_executed++;
 			instructions_processed++;
+			unexecuted_wi_count -= subwavefront_size;
 
 			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"simd-e\"\n",
 					uop->id_in_compute_unit, simd->compute_unit->id,
@@ -120,15 +159,8 @@ void si_simd_execute(struct si_simd_t *simd)
 			/* Check to see if the wavefront has finished all its
 			 * sub-wavefronts. If so remove the wavefront to make room
 			 * for the next, if not continue as no other wavefront can be issued.
-			 *
-			 * num_subwavefronts = ceil(work_item_count / subwavefront_size)
-			 * subwavefront_size = wavefront_size / num_subwavefronts
 			 */
-			num_subwavefronts = (uop->wavefront->work_item_count % subwavefront_size) ?
-					uop->wavefront->work_item_count / subwavefront_size + 1 :
-					uop->wavefront->work_item_count / subwavefront_size;
-			if(simd->subwavefront_pool->num_subwavefronts_executed >=
-					num_subwavefronts)
+			if (unexecuted_wi_count <= 0)
 			{
 				/* Remove the completed wavefront from the sub-wavefront pool.
 				 * It will be ready once this last sub-wavefront completes. */
@@ -145,7 +177,7 @@ void si_simd_execute(struct si_simd_t *simd)
 		 * ready to issue to the sub-wavefront pool. */
 
 		/* Stop if there are no waiting wavefronts. */
-		if(!list_entries)
+		if (!list_entries)
 			break;
 
 		uop = list_head(simd->read_buffer);
@@ -161,6 +193,45 @@ void si_simd_execute(struct si_simd_t *simd)
 		simd->subwavefront_pool->uop = uop;
 		simd->subwavefront_pool->num_subwavefronts_executed = 0;
 	}
+
+	/* Utilization Coefficient. */
+
+	/* Check how many sub-wavefronts have been executed
+	 * and if the full SIMD width has been used. If not,
+	 * it could be from occ, rdy or wvf_util. */
+
+//	if (instructions_processed < si_gpu_simd_width)
+//	{
+		/* The utilized functional units have already been
+		 * considered for all util counters. Determine the number
+		 * of underutilized functional units from the lack of
+		 * issued sub-wavefronts. */
+//		num_not_issued = (si_gpu_simd_width - instructions_processed) * subwavefront_size;
+
+		/* Check if there is at least one wavefront mapped to the IB. If not, consider
+		 * wvf_util, otherwise consider either rdy or occ. */
+//		if (simd->compute_unit->inst_buffers[uop->inst_buffer_id]->wavefront_count)
+//		{
+			/* Check if there exists a wavefront with the appropriate instruction waiting to be
+			 * executed. If so, the underutilized functional units are considered in rdy,
+			 * otherwise they are considered in occ. A wavefront is waiting to be executed
+			 * if either it is waiting at the instruction buffer with a SIMD instruction next
+			 * or if it is not at the instruction buffer and its previous instruction was a SIMD
+			 * (meaning it is in the SIMD pipeline but has not reached execution). */
+//			for (int i = 0; i < simd->compute_unit->inst_buffers[uop->inst_buffer_id]->wavefront_count; i++)
+//				if (simd->compute_unit->inst_buffers[uop->inst_buffer_id]->entries[i]->ready &&
+//						simd->compute_unit->inst_buffers[uop->inst_buffer_id]->entries[i]->wavefront->)
+//				{
+
+//					break;
+//				}
+//		}
+//		else
+//		{
+
+//		}
+//	}
+
 }
 
 void si_simd_read(struct si_simd_t *simd)
@@ -169,14 +240,14 @@ void si_simd_read(struct si_simd_t *simd)
 	int list_entries;
 	int instructions_processed = 0;
 
-	list_entries = list_count(simd->decode_buffer);
+	list_entries = list_count(simd->issue_buffer);
 
 	/* Sanity check the decode buffer */
-	assert(list_entries <= si_gpu_simd_decode_buffer_size);
+	assert(list_entries <= si_gpu_simd_issue_buffer_size);
 
 	for (int i = 0; i < list_entries; i++)
 	{
-		uop = list_head(simd->decode_buffer);
+		uop = list_head(simd->issue_buffer);
 		assert(uop);
 
 		/* Stop if the issue width has been reached */
@@ -185,7 +256,7 @@ void si_simd_read(struct si_simd_t *simd)
 
 		/* Stop if the uop has not been fully decoded yet. It is safe
 		 * to assume that no other uop is ready either */
-		if (si_gpu->cycle < uop->decode_ready)
+		if (si_gpu->cycle < uop->issue_ready)
 			break;
 
 		/* Stop if the read_buffer is full. */
@@ -198,7 +269,7 @@ void si_simd_read(struct si_simd_t *simd)
 		}
 
 		uop->read_ready = si_gpu->cycle + si_gpu_simd_read_latency;
-		list_remove(simd->decode_buffer, uop);
+		list_remove(simd->issue_buffer, uop);
 		list_enqueue(simd->read_buffer, uop);
 
 		instructions_processed++;

@@ -82,6 +82,7 @@ struct si_uop_t
 	/* Timing */
 	long long fetch_ready;      /* Cycle when fetch completes */
 	long long decode_ready;     /* Cycle when decode completes */
+	long long issue_ready;     /* Cycle when issue completes */
 	long long read_ready;       /* Cycle when register access completes */
 	long long execute_ready;    /* Cycle when execution completes */
 	long long writeback_ready;  /* Cycle when writeback completes */
@@ -184,7 +185,7 @@ struct si_inst_buffer_t
 struct si_branch_unit_t
 {
 	/* Queues */
-	struct list_t *decode_buffer; /* Decoded instructions */
+	struct list_t *issue_buffer; /* Issued instructions */
 	struct list_t *read_buffer;   /* Register accesses */
 	struct list_t *exec_buffer;   /* Execution */
 
@@ -196,7 +197,7 @@ struct si_branch_unit_t
 
 struct si_scalar_unit_t
 {
-	struct list_t *decode_buffer;   /* Decoded instructions */
+	struct list_t *issue_buffer;   /* Issued instructions */
 	struct list_t *read_buffer;     /* Register accesses */
 	struct list_t *exec_buffer;     /* Execution (both ALU and MEM) */
 	struct list_t *inflight_buffer; /* Pending memory accesses */
@@ -209,7 +210,7 @@ struct si_scalar_unit_t
 
 struct si_vector_mem_unit_t
 {
-	struct list_t *decode_buffer;   /* Decoded instructions */
+	struct list_t *issue_buffer;   /* Issued instructions */
 	struct list_t *read_buffer;     /* Register accesses */
 	struct list_t *exec_buffer;     /* Submitted memory accesses */
 	struct list_t *inflight_buffer; /* Pending for memory access */
@@ -228,7 +229,7 @@ struct si_subwavefront_pool_t
 
 struct si_simd_t
 {
-	struct list_t *decode_buffer; /* Decoded instructions */
+	struct list_t *issue_buffer; /* Issued instructions */
 	struct list_t *read_buffer;   /* Register accesses */
 	struct list_t *exec_buffer;   /* Execution */
 	struct si_subwavefront_pool_t
@@ -239,11 +240,25 @@ struct si_simd_t
 
 	/* Statistics */
 	long long inst_count;
+
+	/* In order of highest to lowest precedence (scope). All utilized functional units are considered
+	 * for each level of scope. If a functional unit is not utilized in a cycle,
+	 * the specialized metric of the highest precedence whose characteristics are met is the
+	 * only specialized metric considered. The total utilization metric is always considered
+	 * for all functional units. */
+	struct si_util_t *wkg_util; /* Work group mapped to compute unit. */
+	struct si_util_t *wvf_util; /* Wavefront mapped to instruction buffer. */
+	struct si_util_t *rdy_util; /* Wavefront with appropriate next instruction (vector ALU) is on its way to execute. */
+	struct si_util_t *occ_util; /* Wavefront exists in the in the previous buffer ready to be executed. */
+	struct si_util_t *wki_util; /* Work item mapped to stream core. */
+	struct si_util_t *act_util; /* Work item mapped to stream core is active. */
+
+	struct si_util_t *tot_util; /* Total SIMD utilization. */
 };
 
 struct si_lds_t
 {
-	struct list_t *decode_buffer;   /* Decoded instructions */
+	struct list_t *issue_buffer;   /* Issued instructions */
 	struct list_t *read_buffer;     /* Register accesses */
 	struct list_t *exec_buffer;     /* Submitted memory accesses */
 	struct list_t *inflight_buffer; /* Pending for memory access */
@@ -253,6 +268,15 @@ struct si_lds_t
 	/* Statistics */
 	long long inst_count;
 };
+
+/* Utilization Coefficient */
+struct si_util_t
+{
+	long long cycles_utilized;
+	long long cycles_considered;
+};
+
+
 
 
 /*
@@ -280,6 +304,7 @@ struct si_compute_unit_t
 	unsigned int num_inst_buffers;
 	struct si_inst_buffer_t **inst_buffers;
 	struct list_t **fetch_buffers;
+	struct list_t **decode_buffers;
 	struct si_simd_t **simds;
 	/* TODO Make these into a configurable number of structures */
 	struct si_scalar_unit_t scalar_unit;
@@ -438,9 +463,15 @@ extern enum si_gpu_sched_policy_t
 extern char *si_gpu_calc_file_name;
 
 extern int si_gpu_fetch_latency;
+extern int si_gpu_fetch_width;
+extern int si_gpu_fetch_buffer_size;
 
 extern int si_gpu_decode_latency;
 extern int si_gpu_decode_width;
+extern int si_gpu_decode_buffer_size;
+
+extern int si_gpu_issue_latency;
+extern int si_gpu_issue_width;
 
 extern int si_gpu_local_mem_size;
 extern int si_gpu_local_mem_alloc_size;
@@ -449,33 +480,33 @@ extern int si_gpu_local_mem_block_size;
 extern int si_gpu_local_mem_num_ports;
 
 extern int si_gpu_simd_width;
-extern int si_gpu_simd_decode_buffer_size;
+extern int si_gpu_simd_issue_buffer_size;
 extern int si_gpu_simd_read_latency;
 extern int si_gpu_simd_read_buffer_size;
 extern int si_gpu_simd_alu_latency;
 extern int si_gpu_simd_num_subwavefronts;
 
 extern int si_gpu_vector_mem_width;
-extern int si_gpu_vector_mem_decode_buffer_size;
+extern int si_gpu_vector_mem_issue_buffer_size;
 extern int si_gpu_vector_mem_read_latency;
 extern int si_gpu_vector_mem_read_buffer_size;
 extern int si_gpu_vector_mem_inflight_mem_accesses;
 
 extern int si_gpu_lds_width;
-extern int si_gpu_lds_decode_buffer_size;
+extern int si_gpu_lds_issue_buffer_size;
 extern int si_gpu_lds_read_latency;
 extern int si_gpu_lds_read_buffer_size;
 extern int si_gpu_lds_inflight_mem_accesses;
 
 extern int si_gpu_scalar_unit_width;
-extern int si_gpu_scalar_unit_decode_buffer_size;
+extern int si_gpu_scalar_unit_issue_buffer_size;
 extern int si_gpu_scalar_unit_read_latency;
 extern int si_gpu_scalar_unit_read_buffer_size;
 extern int si_gpu_scalar_unit_exec_latency;
 extern int si_gpu_scalar_unit_inflight_mem_accesses;
 
 extern int si_gpu_branch_unit_width;
-extern int si_gpu_branch_unit_decode_buffer_size;
+extern int si_gpu_branch_unit_issue_buffer_size;
 extern int si_gpu_branch_unit_read_latency;
 extern int si_gpu_branch_unit_read_buffer_size;
 extern int si_gpu_branch_unit_exec_latency;
