@@ -73,6 +73,8 @@ struct cache_t
 	struct cache_set_t *sets;
 	unsigned int block_mask;
 	int log_block_size;
+
+	struct prefetcher_t *prefetcher;
 };
 
 

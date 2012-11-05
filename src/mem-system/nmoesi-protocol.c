@@ -31,6 +31,7 @@
 #include "directory.h"
 #include "mem-system.h"
 #include "mod-stack.h"
+#include "prefetcher.h"
 
 
 /* Events */
@@ -231,6 +232,10 @@ void mod_handler_nmoesi_load(int event, void *data)
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
+
+		/* The prefetcher may be interested in this miss */
+		prefetcher_access_miss(stack, mod);
+
 		return;
 	}
 
@@ -421,6 +426,10 @@ void mod_handler_nmoesi_store(int event, void *data)
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
+
+		/* The prefetcher may be interested in this miss */
+		prefetcher_access_miss(stack, mod);
+
 		return;
 	}
 
@@ -1727,6 +1736,10 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 			new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
 			new_stack->request_dir = mod_request_up_down;
 			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
+
+			/* The prefetcher may be interested in this miss */
+			prefetcher_access_miss(stack, target_mod);
+
 		}
 		return;
 	}
@@ -2311,6 +2324,12 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 			new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
 			new_stack->request_dir = mod_request_up_down;
 			esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
+
+			if (stack->state == cache_block_invalid)
+			{
+				/* The prefetcher may be interested in this miss */
+				prefetcher_access_miss(stack, target_mod);
+			}
 		}
 		else 
 		{

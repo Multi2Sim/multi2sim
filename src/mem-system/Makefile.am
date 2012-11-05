@@ -37,7 +37,10 @@ libmemsystem_a_SOURCES = \
 	spec-mem.h \
 	\
 	prefetch-history.c \
-	prefetch-history.h
+	prefetch-history.h \
+	\
+	prefetcher.c \
+	prefetcher.h
 
 INCLUDES = @M2S_INCLUDES@
 
