@@ -263,7 +263,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 					uop->wavefront->scalar_work_item->global_mem_access_addr;
 				mod_access(scalar_unit->compute_unit->global_memory,
 					mod_access_load, uop->global_mem_access_addr,
-					&mem_uop->global_mem_witness, NULL, NULL);
+					&mem_uop->global_mem_witness, NULL, NULL, NULL);
 
 				/* Increment outstanding memory access count */
 				mem_uop->inst_buffer_entry->lgkm_cnt++;
