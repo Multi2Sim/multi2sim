@@ -189,7 +189,7 @@ void si_lds_execute(struct si_lds_t *lds)
 
 					mod_access(lds->compute_unit->local_memory, access_type,
 						work_item_uop->local_mem_access_addr[j],
-						&mem_uop->local_mem_witness, NULL, NULL);
+						&mem_uop->local_mem_witness, NULL, NULL, NULL);
 					mem_uop->local_mem_witness--;
 				}
 			}

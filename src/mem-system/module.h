@@ -60,6 +60,16 @@ enum mod_kind_t
 	mod_kind_local_memory
 };
 
+/* Any info that clients (cpu/gpu) can pass
+ * to the memory system when mod_access() 
+ * is called. */
+struct mod_client_info_t
+{
+	/* This field is for use by the prefetcher. It is set
+	 * to the PC of the instruction accessing the module */
+	unsigned int prefetcher_eip;
+};
+
 /* Type of address range */
 enum mod_range_kind_t
 {
@@ -226,7 +236,7 @@ struct mod_t *mod_stack_set_peer(struct mod_t *peer, int state);
 
 long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind, 
 	unsigned int addr, int *witness_ptr, struct linked_list_t *event_queue,
-	void *event_queue_item);
+	void *event_queue_item, struct mod_client_info_t *client_info);
 int mod_can_access(struct mod_t *mod, unsigned int addr);
 
 int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr, int *way_ptr, 
