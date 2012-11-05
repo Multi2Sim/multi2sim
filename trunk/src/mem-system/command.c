@@ -428,7 +428,7 @@ void mem_system_command_handler(int event, void *data)
 		addr = mem_system_command_get_hex(token_list, command_line);
 
 		/* Access module */
-		mod_access(mod, access_kind, addr, NULL, NULL, NULL);
+		mod_access(mod, access_kind, addr, NULL, NULL, NULL, NULL);
 	}
 
 	/* Command not supported */

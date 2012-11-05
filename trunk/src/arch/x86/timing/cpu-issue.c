@@ -60,7 +60,7 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 
 		/* Issue store */
 		mod_access(X86_THREAD.data_mod, mod_access_store,
-			store->phy_addr, NULL, X86_CORE.event_queue, store);
+		       store->phy_addr, NULL, X86_CORE.event_queue, store, NULL);
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
@@ -120,7 +120,7 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 
 		/* Access memory system */
 		mod_access(X86_THREAD.data_mod, mod_access_load,
-			load->phy_addr, NULL, X86_CORE.event_queue, load);
+			load->phy_addr, NULL, X86_CORE.event_queue, load, NULL);
 
 		/* The cache system will place the load at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
@@ -201,7 +201,7 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 
 		/* Access memory system */
 		mod_access(X86_THREAD.data_mod, mod_access_prefetch,
-			prefetch->phy_addr, NULL, X86_CORE.event_queue, prefetch);
+			prefetch->phy_addr, NULL, X86_CORE.event_queue, prefetch, NULL);
 
 		/* Record prefetched address */
 		prefetch_history_record(X86_CORE.prefetch_history, prefetch->phy_addr);
