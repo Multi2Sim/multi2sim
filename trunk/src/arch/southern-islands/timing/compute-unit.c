@@ -30,6 +30,10 @@ int si_gpu_fetch_buffer_size = 10;
 
 int si_gpu_decode_latency = 1;
 int si_gpu_decode_width = 5;
+int si_gpu_decode_buffer_size = 10;
+
+int si_gpu_issue_latency = 1;
+int si_gpu_issue_width = 5;
 
 int si_gpu_max_work_groups_per_inst_buffer = 10;
 int si_gpu_max_wavefronts_per_inst_buffer = 10;
@@ -60,27 +64,29 @@ struct si_compute_unit_t *si_compute_unit_create()
 	compute_unit->inst_buffers = calloc(compute_unit->num_inst_buffers, 
 		sizeof(struct si_inst_buffer_t*));
 	compute_unit->fetch_buffers = calloc(compute_unit->num_inst_buffers,
-			sizeof(struct list_t*));;
+			sizeof(struct list_t*));
+	compute_unit->decode_buffers = calloc(compute_unit->num_inst_buffers,
+			sizeof(struct list_t*));
 	compute_unit->simds = calloc(compute_unit->num_inst_buffers, sizeof(struct si_simd_t*));
 
-	compute_unit->scalar_unit.decode_buffer = list_create();
+	compute_unit->scalar_unit.issue_buffer = list_create();
 	compute_unit->scalar_unit.read_buffer = list_create();
 	compute_unit->scalar_unit.exec_buffer = list_create();
 	compute_unit->scalar_unit.inflight_buffer = list_create();
 	compute_unit->scalar_unit.compute_unit = compute_unit;
 
-	compute_unit->branch_unit.decode_buffer = list_create();
+	compute_unit->branch_unit.issue_buffer = list_create();
 	compute_unit->branch_unit.read_buffer = list_create();
 	compute_unit->branch_unit.exec_buffer = list_create();
 	compute_unit->branch_unit.compute_unit = compute_unit;
 
-	compute_unit->vector_mem_unit.decode_buffer = list_create();
+	compute_unit->vector_mem_unit.issue_buffer = list_create();
 	compute_unit->vector_mem_unit.read_buffer = list_create();
 	compute_unit->vector_mem_unit.exec_buffer = list_create();
 	compute_unit->vector_mem_unit.inflight_buffer = list_create();
 	compute_unit->vector_mem_unit.compute_unit = compute_unit;
 
-	compute_unit->lds.decode_buffer = list_create();
+	compute_unit->lds.issue_buffer = list_create();
 	compute_unit->lds.read_buffer = list_create();
 	compute_unit->lds.exec_buffer = list_create();
 	compute_unit->lds.inflight_buffer = list_create();
@@ -93,17 +99,25 @@ struct si_compute_unit_t *si_compute_unit_create()
 		compute_unit->inst_buffers[i]->id = i;
 		compute_unit->inst_buffers[i]->compute_unit = compute_unit;
 		compute_unit->fetch_buffers[i] = list_create();
+		compute_unit->decode_buffers[i] = list_create();
 
 		/* Allocate SIMD structures */
 		compute_unit->simds[i] = calloc(1, sizeof(struct si_simd_t));
 		if (!compute_unit->simds[i])
 			fatal("%s: out of memory", __FUNCTION__);
-		compute_unit->simds[i]->decode_buffer = list_create();
+		compute_unit->simds[i]->issue_buffer = list_create();
 		compute_unit->simds[i]->read_buffer = list_create();
 		compute_unit->simds[i]->exec_buffer = list_create();
 		compute_unit->simds[i]->subwavefront_pool =
 				calloc(1, sizeof(struct si_subwavefront_pool_t));
 		compute_unit->simds[i]->compute_unit = compute_unit;
+		compute_unit->simds[i]->wkg_util = calloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->wvf_util = calloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->rdy_util = calloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->occ_util = calloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->wki_util = calloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->act_util = calloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->tot_util = calloc(1, sizeof(struct si_util_t));
 	}
 
 	compute_unit->work_groups = calloc(si_gpu_max_work_groups_per_inst_buffer * 
@@ -121,39 +135,39 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	int i;
 
 	/* Scalar Unit */
-	assert(!list_count(compute_unit->scalar_unit.decode_buffer));
+	assert(!list_count(compute_unit->scalar_unit.issue_buffer));
 	assert(!list_count(compute_unit->scalar_unit.read_buffer));
 	assert(!list_count(compute_unit->scalar_unit.exec_buffer));
 	assert(!list_count(compute_unit->scalar_unit.inflight_buffer));
-	list_free(compute_unit->scalar_unit.decode_buffer);
+	list_free(compute_unit->scalar_unit.issue_buffer);
 	list_free(compute_unit->scalar_unit.read_buffer);
 	list_free(compute_unit->scalar_unit.exec_buffer);
 	list_free(compute_unit->scalar_unit.inflight_buffer);
 
 	/* Branch Unit */
-	assert(!list_count(compute_unit->branch_unit.decode_buffer));
+	assert(!list_count(compute_unit->branch_unit.issue_buffer));
 	assert(!list_count(compute_unit->branch_unit.read_buffer));
 	assert(!list_count(compute_unit->branch_unit.exec_buffer));
-	list_free(compute_unit->branch_unit.decode_buffer);
+	list_free(compute_unit->branch_unit.issue_buffer);
 	list_free(compute_unit->branch_unit.read_buffer);
 	list_free(compute_unit->branch_unit.exec_buffer);
 
 	/* Vector Memory Unit */
-	assert(!list_count(compute_unit->vector_mem_unit.decode_buffer));
+	assert(!list_count(compute_unit->vector_mem_unit.issue_buffer));
 	assert(!list_count(compute_unit->vector_mem_unit.read_buffer));
 	assert(!list_count(compute_unit->vector_mem_unit.exec_buffer));
 	assert(!list_count(compute_unit->vector_mem_unit.inflight_buffer));
-	list_free(compute_unit->vector_mem_unit.decode_buffer);
+	list_free(compute_unit->vector_mem_unit.issue_buffer);
 	list_free(compute_unit->vector_mem_unit.read_buffer);
 	list_free(compute_unit->vector_mem_unit.exec_buffer);
 	list_free(compute_unit->vector_mem_unit.inflight_buffer);
 
 	/* Local Data Share */
-	assert(!list_count(compute_unit->lds.decode_buffer));
+	assert(!list_count(compute_unit->lds.issue_buffer));
 	assert(!list_count(compute_unit->lds.read_buffer));
 	assert(!list_count(compute_unit->lds.exec_buffer));
 	assert(!list_count(compute_unit->lds.inflight_buffer));
-	list_free(compute_unit->lds.decode_buffer);
+	list_free(compute_unit->lds.issue_buffer);
 	list_free(compute_unit->lds.read_buffer);
 	list_free(compute_unit->lds.exec_buffer);
 	list_free(compute_unit->lds.inflight_buffer);
@@ -161,21 +175,30 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	/* Compute unit */
 	for (i = 0; i < compute_unit->num_inst_buffers; i++)
 	{
-		assert(!list_count(compute_unit->simds[i]->decode_buffer));
+		assert(!list_count(compute_unit->simds[i]->issue_buffer));
 		assert(!list_count(compute_unit->simds[i]->read_buffer));
 		assert(!list_count(compute_unit->simds[i]->exec_buffer));
-		list_free(compute_unit->simds[i]->decode_buffer);
+		list_free(compute_unit->simds[i]->issue_buffer);
 		list_free(compute_unit->simds[i]->read_buffer);
 		list_free(compute_unit->simds[i]->exec_buffer);
 		free(compute_unit->simds[i]->subwavefront_pool);
+		free(compute_unit->simds[i]->wkg_util);
+		free(compute_unit->simds[i]->wvf_util);
+		free(compute_unit->simds[i]->rdy_util);
+		free(compute_unit->simds[i]->occ_util);
+		free(compute_unit->simds[i]->wki_util);
+		free(compute_unit->simds[i]->act_util);
+		free(compute_unit->simds[i]->tot_util);
 		free(compute_unit->simds[i]);
 
 		si_inst_buffer_free(compute_unit->inst_buffers[i]);
 		list_free(compute_unit->fetch_buffers[i]);
+		list_free(compute_unit->decode_buffers[i]);
 	}
 	free(compute_unit->simds);
 	free(compute_unit->inst_buffers);
 	free(compute_unit->fetch_buffers);
+	free(compute_unit->decode_buffers);
 	free(compute_unit->work_groups);  /* List of mapped work-groups */
 	mod_free(compute_unit->local_memory);
 	free(compute_unit);
@@ -437,17 +460,13 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_ib
 	}
 }
 
-
 /* Decode one instruction per hardware unit */
 void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_ib)
 {
-	struct si_scalar_unit_t *scalar_unit;
 	struct si_uop_t *uop;
 	struct si_wavefront_t *wavefront;
 	int instructions_processed = 0;
 	int i;
-
-	scalar_unit = &compute_unit->scalar_unit;
 
 	for (i = 0; i < list_count(compute_unit->fetch_buffers[active_ib]); i++)
 	{
@@ -461,6 +480,56 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 		/* Only decode a fixed number of instructions per cycle */
 		if (instructions_processed == si_gpu_decode_width)
 		{
+			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n",
+				uop->id_in_compute_unit, compute_unit->id, uop->wavefront->id);
+			continue;
+		}
+
+		/* Stop if decode buffer is full */
+		if (list_count(compute_unit->decode_buffers[active_ib]) ==
+			si_gpu_decode_buffer_size)
+		{
+			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n",
+				uop->id_in_compute_unit, compute_unit->id,
+				uop->wavefront->id);
+			break;
+		}
+
+		wavefront = uop->wavefront;
+		assert(wavefront);
+
+		/* Decode uop */
+		uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
+		list_remove(compute_unit->fetch_buffers[active_ib], uop);
+		list_enqueue(compute_unit->decode_buffers[active_ib], uop);
+
+		instructions_processed++;
+	}
+}
+
+/* Issue one instruction per hardware unit */
+void si_compute_unit_issue(struct si_compute_unit_t *compute_unit, int active_ib)
+{
+	struct si_scalar_unit_t *scalar_unit;
+	struct si_uop_t *uop;
+	struct si_wavefront_t *wavefront;
+	int instructions_processed = 0;
+	int i;
+
+	scalar_unit = &compute_unit->scalar_unit;
+
+	for (i = 0; i < list_count(compute_unit->decode_buffers[active_ib]); i++)
+	{
+		uop = list_head(compute_unit->decode_buffers[active_ib]);
+		assert(uop);
+
+		/* Skip all uops that have not yet completed the decode */
+		if (si_gpu->cycle < uop->decode_ready)
+			break;
+
+		/* Only decode a fixed number of instructions per cycle */
+		if (instructions_processed == si_gpu_issue_width)
+		{
 			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 				uop->id_in_compute_unit, compute_unit->id, uop->wavefront->id);
 			continue;
@@ -469,7 +538,7 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 		wavefront = uop->wavefront;
 		assert(wavefront);
 
-		/* Decode */
+		/* Issue */
 		switch (wavefront->inst.info->fmt)
 		{
 
@@ -481,8 +550,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 					wavefront->inst.micro_inst.sopp.op < 10)
 			{
 				/* Continue if branch unit decode buffer is full */
-				if (list_count(compute_unit->branch_unit.decode_buffer) ==
-					si_gpu_branch_unit_width)
+				if (list_count(compute_unit->branch_unit.issue_buffer) ==
+					si_gpu_branch_unit_issue_buffer_size)
 				{
 					si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 						uop->id_in_compute_unit, compute_unit->id, 
@@ -490,10 +559,10 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 					continue;
 				}
 
-				/* Decode uop */
-				uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-				list_remove(compute_unit->fetch_buffers[active_ib], uop);
-				list_enqueue(compute_unit->branch_unit.decode_buffer, uop);
+				/* Issue uop */
+				uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+				list_remove(compute_unit->decode_buffers[active_ib], uop);
+				list_enqueue(compute_unit->branch_unit.issue_buffer, uop);
 
 				/* Statistics */
 				compute_unit->branch_inst_count++;
@@ -502,8 +571,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 			else
 			{
 				/* Continue if scalar unit decode buffer is full */
-				if (list_count(scalar_unit->decode_buffer) == 
-					si_gpu_scalar_unit_width)
+				if (list_count(scalar_unit->issue_buffer) == 
+						si_gpu_scalar_unit_issue_buffer_size)
 				{
 					si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 						uop->id_in_compute_unit, compute_unit->id, 
@@ -511,10 +580,10 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 					continue;
 				}
 
-				/* Decode uop */
-				uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-				list_remove(compute_unit->fetch_buffers[active_ib], uop);
-				list_enqueue(scalar_unit->decode_buffer, uop);
+				/* Issue uop */
+				uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+				list_remove(compute_unit->decode_buffers[active_ib], uop);
+				list_enqueue(scalar_unit->issue_buffer, uop);
 
 				/* Statistics */
 				compute_unit->scalar_alu_inst_count++;
@@ -528,7 +597,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 		case SI_FMT_SOPK:
 		{
 			/* Continue if scalar unit decode buffer is full */
-			if (list_count(scalar_unit->decode_buffer) == si_gpu_scalar_unit_width)
+			if (list_count(scalar_unit->issue_buffer) ==
+					si_gpu_scalar_unit_issue_buffer_size)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -536,10 +606,10 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 				continue;
 			}
 
-			/* Decode uop */
-			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			list_remove(compute_unit->fetch_buffers[active_ib], uop);
-			list_enqueue(scalar_unit->decode_buffer, uop);
+			/* Issue uop */
+			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			list_remove(compute_unit->decode_buffers[active_ib], uop);
+			list_enqueue(scalar_unit->issue_buffer, uop);
 
 			/* Statistics */
 			compute_unit->scalar_alu_inst_count++;
@@ -551,7 +621,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 		case SI_FMT_SMRD:
 		{
 			/* Continue if scalar unit decode buffer is full */
-			if (list_count(scalar_unit->decode_buffer) == si_gpu_scalar_unit_width)
+			if (list_count(scalar_unit->issue_buffer) ==
+					si_gpu_scalar_unit_issue_buffer_size)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -559,10 +630,10 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 				continue;
 			}
 
-			/* Decode uop */
-			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			list_remove(compute_unit->fetch_buffers[active_ib], uop);
-			list_enqueue(scalar_unit->decode_buffer, uop);
+			/* Issue uop */
+			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			list_remove(compute_unit->decode_buffers[active_ib], uop);
+			list_enqueue(scalar_unit->issue_buffer, uop);
 
 			/* Statistics */
 			compute_unit->scalar_mem_inst_count++;
@@ -578,8 +649,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 		case SI_FMT_VOP3b:
 		{
 			/* Continue if SIMD decode buffer is full */
-			if (list_count(compute_unit->simds[active_ib]->decode_buffer) ==
-				si_gpu_simd_width)
+			if (list_count(compute_unit->simds[active_ib]->issue_buffer) ==
+					si_gpu_simd_issue_buffer_size)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -587,10 +658,10 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 				continue;
 			}
 
-			/* Decode uop */
-			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			list_remove(compute_unit->fetch_buffers[active_ib], uop);
-			list_enqueue(compute_unit->simds[active_ib]->decode_buffer, uop);
+			/* Issue uop */
+			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			list_remove(compute_unit->decode_buffers[active_ib], uop);
+			list_enqueue(compute_unit->simds[active_ib]->issue_buffer, uop);
 
 			/* Statistics */
 			compute_unit->simd_inst_count++;
@@ -602,8 +673,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 		case SI_FMT_MTBUF:
 		{
 			/* Continue if vector memory decode buffer is full */
-			if (list_count(compute_unit->vector_mem_unit.decode_buffer) ==
-				si_gpu_vector_mem_width)
+			if (list_count(compute_unit->vector_mem_unit.issue_buffer) ==
+					si_gpu_vector_mem_issue_buffer_size)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -611,10 +682,10 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 				continue;
 			}
 
-			/* Decode uop */
-			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			list_remove(compute_unit->fetch_buffers[active_ib], uop);
-			list_enqueue(compute_unit->vector_mem_unit.decode_buffer, uop);
+			/* Issue uop */
+			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			list_remove(compute_unit->decode_buffers[active_ib], uop);
+			list_enqueue(compute_unit->vector_mem_unit.issue_buffer, uop);
 
 			/* Statistics */
 			compute_unit->vector_mem_inst_count++;
@@ -626,7 +697,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 		case SI_FMT_DS:
 		{
 			/* Continue if LDS decode buffer is full */
-			if (list_count(compute_unit->lds.decode_buffer) == si_gpu_lds_width)
+			if (list_count(compute_unit->lds.issue_buffer) ==
+					si_gpu_lds_issue_buffer_size)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -634,10 +706,10 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_i
 				continue;
 			}
 
-			/* Decode uop */
-			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			list_remove(compute_unit->fetch_buffers[active_ib], uop);
-			list_enqueue(compute_unit->lds.decode_buffer, uop);
+			/* Issue uop */
+			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			list_remove(compute_unit->decode_buffers[active_ib], uop);
+			list_enqueue(compute_unit->lds.issue_buffer, uop);
 
 			/* Statistics */
 			compute_unit->local_mem_inst_count++;
@@ -670,15 +742,21 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 	int num_simds;
 	int active_fetch_ib;  /* Wavefront pool chosen to fetch this cycle */
 	int active_decode_ib;  /* Wavefront pool chosen to decode this cycle */
+	int active_issue_ib;  /* Wavefront pool chosen to issue this cycle */
 
 	active_fetch_ib = si_gpu->cycle % compute_unit->num_inst_buffers;
 	active_decode_ib = active_fetch_ib - (si_gpu_fetch_latency % 
 			compute_unit->num_inst_buffers);
 	active_decode_ib = (active_decode_ib < 0) ? 
 		compute_unit->num_inst_buffers + active_decode_ib : active_decode_ib;
+	active_issue_ib = active_decode_ib - (si_gpu_decode_latency %
+				compute_unit->num_inst_buffers);
+	active_issue_ib = (active_issue_ib < 0) ?
+			compute_unit->num_inst_buffers + active_issue_ib : active_issue_ib;
 
 	assert(active_fetch_ib >= 0 && active_fetch_ib < compute_unit->num_inst_buffers);
 	assert(active_decode_ib >= 0 && active_decode_ib < compute_unit->num_inst_buffers);
+	assert(active_issue_ib >= 0 && active_issue_ib < compute_unit->num_inst_buffers);
 
 	/* Run Engines */
 	num_simds = compute_unit->num_inst_buffers;
@@ -692,6 +770,9 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 	si_scalar_unit_run(&compute_unit->scalar_unit);
 
 	si_branch_unit_run(&compute_unit->branch_unit);
+
+	/* Run Issue */
+	si_compute_unit_issue(compute_unit, active_issue_ib);
 
 	/* Run Decode */
 	si_compute_unit_decode(compute_unit, active_decode_ib);
