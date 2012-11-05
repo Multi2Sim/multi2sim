@@ -27,7 +27,7 @@
 
 int si_gpu_scalar_unit_width = 1;
 
-int si_gpu_scalar_unit_decode_buffer_size = 5;
+int si_gpu_scalar_unit_issue_buffer_size = 5;
 
 /*
  * Register accesses are not pipelined, so buffer size is not
@@ -320,14 +320,14 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 	int list_entries;
 	int i;
 
-	list_entries = list_count(scalar_unit->decode_buffer);
+	list_entries = list_count(scalar_unit->issue_buffer);
 
 	/* Sanity check the decode buffer */
-	assert(list_entries <= si_gpu_scalar_unit_decode_buffer_size);
+	assert(list_entries <= si_gpu_scalar_unit_issue_buffer_size);
 
 	for (i = 0; i < list_entries; i++) 
 	{
-		uop = list_head(scalar_unit->decode_buffer);
+		uop = list_head(scalar_unit->issue_buffer);
 		assert(uop);
 
 		/* Stop if the issue width has been reached */
@@ -336,7 +336,7 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 
 		/* Stop if the uop has not been fully decoded yet. It is safe
 		 * to assume that no other uop is ready either */
-		if (si_gpu->cycle < uop->decode_ready)
+		if (si_gpu->cycle < uop->issue_ready)
 			break;
 
 		/* Stop if the read buffer is full. */
@@ -349,7 +349,7 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		}
 
 		uop->read_ready = si_gpu->cycle + si_gpu_scalar_unit_read_latency;
-		list_remove(scalar_unit->decode_buffer, uop);
+		list_remove(scalar_unit->issue_buffer, uop);
 		list_enqueue(scalar_unit->read_buffer, uop);
 
 		instructions_processed++;
