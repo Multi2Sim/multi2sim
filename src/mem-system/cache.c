@@ -27,6 +27,7 @@
 
 #include "cache.h"
 #include "mem-system.h"
+#include "prefetcher.h"
 
 
 /*
@@ -194,6 +195,8 @@ void cache_free(struct cache_t *cache)
 		free(cache->sets[set].blocks);
 	free(cache->sets);
 	free(cache->name);
+	if (cache->prefetcher)
+		prefetcher_free(cache->prefetcher);
 	free(cache);
 }
 
