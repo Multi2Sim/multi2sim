@@ -197,8 +197,8 @@ void net_config_load(void)
 
 	/* Open network configuration file */
 	config = config_create(net_config_file_name);
-	if (!config_load(config))
-		fatal("%s: cannot open network configuration file", net_config_file_name);
+	if (*net_config_file_name)
+		config_load(config);
 
 	/* Create a temporary list of network names found in configuration file */
 	net_name_list = list_create();

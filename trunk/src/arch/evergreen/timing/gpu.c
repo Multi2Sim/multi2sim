@@ -231,8 +231,8 @@ static void evg_config_read(void)
 
 	/* Load GPU configuration file */
 	gpu_config = config_create(evg_gpu_config_file_name);
-	if (*evg_gpu_config_file_name && !config_load(gpu_config))
-		fatal("%s: cannot load GPU configuration file", evg_gpu_config_file_name);
+	if (*evg_gpu_config_file_name)
+		config_load(gpu_config);
 	
 	/* Device */
 	section = "Device";
