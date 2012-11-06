@@ -22,8 +22,6 @@
 
 #include <lib/util/debug.h>
 #include <mem-system/mem-system.h>
-/* Ugly */
-#include <arch/x86/timing/uop.h>
 
 #include "prefetcher.h"
 #include "module.h"
@@ -62,19 +60,13 @@ void prefetcher_free(struct prefetcher_t *pref)
 	free(pref);
 }
 
-/* Currently works only for x86_uop_t being the event_queue_item
- * TODO: Need to fix this. */
 static void get_it_index_tag(struct prefetcher_t *pref, struct mod_stack_t *stack, 
 			     int *it_index, unsigned *tag)
 {
-	while (stack && stack->ret_stack)
-		stack = stack->ret_stack;
-
-	if (stack->event_queue && stack->event_queue_item)
+	if (stack->client_info)
 	{
-		struct x86_uop_t *uop = (struct x86_uop_t *) stack->event_queue_item;
-		*it_index = uop->eip % pref->it_size;
-		*tag = uop->eip;
+		*it_index = stack->client_info->prefetcher_eip % pref->it_size;
+		*tag = stack->client_info->prefetcher_eip;
 	}
 	else
 	{
@@ -193,9 +185,6 @@ void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *target_mod)
 {
 	int it_index;
 
-	/* Disabling prefetching as the code is not yet complete. */
-	return;
-
 	if (target_mod->kind != mod_kind_cache || !target_mod->cache->prefetcher)
 		return;
 
@@ -204,4 +193,26 @@ void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *target_mod)
 	if (it_index < 0)
 		    return;
 
+}
+
+void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *target_mod)
+{
+	int it_index = -1;
+
+	if (target_mod->kind != mod_kind_cache || !target_mod->cache->prefetcher)
+		return;
+
+	if (mod_block_get_prefetched(target_mod, stack->addr))
+	{
+		/* This block was prefetched. Now it has a real access. For the purposes
+		 * of the prefetcher heuristic, this is still a miss. Hence, update
+		 * the prefetcher tables. */
+		it_index = prefetcher_update_tables(stack, target_mod);
+	}
+
+	/* Clear the prefetched flag since we have a real access now */
+	mod_block_set_prefetched(target_mod, stack->addr, 0);
+
+	if (it_index < 0)
+		return;
 }

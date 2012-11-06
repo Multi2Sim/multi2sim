@@ -130,6 +130,7 @@ long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind,
 	stack->witness_ptr = witness_ptr;
 	stack->event_queue = event_queue;
 	stack->event_queue_item = event_queue_item;
+	stack->client_info = client_info;
 
 	/* Select initial CPU/GPU event */
 	if (mod->kind == mod_kind_cache || mod->kind == mod_kind_main_memory)
@@ -265,6 +266,29 @@ int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr,
 	return 1;
 }
 
+void mod_block_set_prefetched(struct mod_t *mod, unsigned int addr, int val)
+{
+	int set, way;
+
+	assert(mod->kind == mod_kind_cache && mod->cache != NULL);
+	if (mod->cache->prefetcher && mod_find_block(mod, addr, &set, &way, NULL, NULL))
+	{
+		mod->cache->sets[set].blocks[way].prefetched = val;
+	}
+}
+
+int mod_block_get_prefetched(struct mod_t *mod, unsigned int addr)
+{
+	int set, way;
+
+	assert(mod->kind == mod_kind_cache && mod->cache != NULL);
+	if (mod->cache->prefetcher && mod_find_block(mod, addr, &set, &way, NULL, NULL))
+	{
+		return mod->cache->sets[set].blocks[way].prefetched;
+	}
+
+	return 0;
+}
 
 /* Lock a port, and schedule event when done.
  * If there is no free port, the access is enqueued in the port
@@ -670,3 +694,18 @@ void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
 	mod->access_list_coalesced_count++;
 }
 
+struct mod_client_info_t *mod_client_info_create(void)
+{
+	struct mod_client_info_t *client_info;
+
+	/* Create object */
+	client_info = calloc(1, sizeof(struct mod_client_info_t));
+
+	/* Return */
+	return client_info;
+}
+
+void mod_client_info_free(struct mod_client_info_t *client_info)
+{
+	free(client_info);
+}

@@ -38,6 +38,7 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 {
 	struct x86_uop_t *store;
 	struct linked_list_t *sq = X86_THREAD.sq;
+	struct mod_client_info_t *client_info;
 
 	/* Process SQ */
 	linked_list_head(sq);
@@ -58,9 +59,13 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 		/* Remove store from store queue */
 		x86_sq_remove(core, thread);
 
+		/* create and fill the mod_client_info_t object */
+		client_info = mod_client_info_create();
+		client_info->prefetcher_eip = store->eip;
+
 		/* Issue store */
 		mod_access(X86_THREAD.data_mod, mod_access_store,
-		       store->phy_addr, NULL, X86_CORE.event_queue, store, NULL);
+		       store->phy_addr, NULL, X86_CORE.event_queue, store, client_info);
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
@@ -93,6 +98,7 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 {
 	struct linked_list_t *lq = X86_THREAD.lq;
 	struct x86_uop_t *load;
+	struct mod_client_info_t *client_info;
 
 	/* Process lq */
 	linked_list_head(lq);
@@ -118,9 +124,13 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		assert(load->uinst->opcode == x86_uinst_load);
 		x86_lq_remove(core, thread);
 
+		/* create and fill the mod_client_info_t object */
+		client_info = mod_client_info_create();
+		client_info->prefetcher_eip = load->eip;
+
 		/* Access memory system */
 		mod_access(X86_THREAD.data_mod, mod_access_load,
-			load->phy_addr, NULL, X86_CORE.event_queue, load, NULL);
+			load->phy_addr, NULL, X86_CORE.event_queue, load, client_info);
 
 		/* The cache system will place the load at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
