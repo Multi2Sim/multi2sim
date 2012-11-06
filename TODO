@@ -39,8 +39,9 @@ Southern Islands
 
 
 ********************************************************************************
-Tools
+M2S-Cluster
 ********************************************************************************
 
-- M2S-Cluster: client kit test to check that runtime 'libm2s-opencl' compiles correctly.
-- M2S-Cluster: script checking that 'lib/mhandle/mhandle.h' is included in every file using 'malloc', 'calloc', or 'strdup'.
+- Client kit test to check that runtime 'libm2s-opencl' compiles correctly.
+- Update documentation to reflect splitting directory 'samples' into 'local-tests' and 'remote-tests'.
+- Update document of 'm2s-cluster.sh' command 'import', to show that report files with the '*-report' suffix are imported (not prefix).

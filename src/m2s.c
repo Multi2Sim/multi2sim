@@ -1237,9 +1237,8 @@ void m2s_load_programs(int argc, char **argv)
 
 	/* Open file */
 	config = config_create(ctx_config_file_name);
-	if (!config_load(config))
-		fatal("%s: cannot open context configuration file",
-			ctx_config_file_name);
+	if (*ctx_config_file_name)
+		config_load(config);
 
 	/* Iterate through consecutive contexts */
 	for (id = 0; ; id++)

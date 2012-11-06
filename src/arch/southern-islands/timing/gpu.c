@@ -276,8 +276,8 @@ static void si_config_read(void)
 
 	/* Load GPU configuration file */
 	gpu_config = config_create(si_gpu_config_file_name);
-	if (*si_gpu_config_file_name && !config_load(gpu_config))
-		fatal("%s: cannot load GPU configuration file", si_gpu_config_file_name);
+	if (*si_gpu_config_file_name)
+		config_load(gpu_config);
 	
 	/* Device */
 	section = "Device";

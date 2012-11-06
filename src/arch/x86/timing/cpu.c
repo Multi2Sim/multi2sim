@@ -294,14 +294,12 @@ static char *x86_cpu_err_fast_forward =
 static void x86_cpu_config_check(void)
 {
 	struct config_t *config;
-	int err;
 	char *section;
 
 	/* Open file */
 	config = config_create(x86_config_file_name);
-	err = config_load(config);
-	if (!err && x86_config_file_name[0])
-		fatal("%s: cannot load CPU configuration file", x86_config_file_name);
+	if (*x86_config_file_name)
+		config_load(config);
 
 	
 	/* General configuration */
