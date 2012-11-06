@@ -302,7 +302,7 @@ void mem_system_dump_report()
 		fprintf(f, "NoRetryNCWrites = %lld\n", mod->no_retry_nc_writes);
 		fprintf(f, "NoRetryNCWriteHits = %lld\n", mod->no_retry_nc_write_hits);
 		fprintf(f, "NoRetryNCWriteMisses = %lld\n", mod->no_retry_nc_writes
-			- mod->no_retry_write_hits);
+			- mod->no_retry_nc_write_hits);
 		fprintf(f, "\n\n");
 	}
 
