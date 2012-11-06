@@ -28,6 +28,7 @@
 #include <lib/util/linked-list.h>
 
 #include "config.h"
+#include "debug.h"
 
 
 #define MAX_STRING_SIZE		1000
@@ -35,6 +36,15 @@
 
 #define ITEM_ALLOWED  ((void *) 1)
 #define ITEM_MANDATORY  ((void *) 2)
+
+
+/* Error message */
+static char *config_err_format =
+	"\tA syntax error was detected while parsing a configuration INI file.\n"
+	"\tThese files are formed of sections in brackets (e.g. '[ SectionName ]')\n"
+	"\tfollowed by pairs 'VariableName = Value'. Comments preceded with ';'\n"
+	"\tor '#' characters can be used, as well as blank lines. Please verify\n"
+	"\tthe integrity of your input file and retry.\n";
 
 
 /* Structure representing a configuration file.
@@ -69,13 +79,14 @@ struct config_t
 static void trim(char *dest, char *str)
 {
 	/* Copy left-trimmed string to 'dest' */
-	while (*str == ' ' || *str == '\n')
+	while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r')
 		str++;
 	snprintf(dest, MAX_STRING_SIZE, "%s", str);
 	
 	/* Create right-trimmed version of 'dest' */
 	str = dest + strlen(dest) - 1;
-	while (*dest && (*str == ' ' || *str == '\n')) {
+	while (*dest && (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r'))
+	{
 		*str = '\0';
 		str--;
 	}
@@ -108,18 +119,23 @@ static void get_item_from_section_var(char *section, char *var, char *item)
 
 	assert(section && *section);
 	trim(section_trim, section);
-	if (var && *var) {
+	if (var && *var)
+	{
 		trim(var_trim, var);
 		snprintf(item, MAX_STRING_SIZE, "%s\n%s", section_trim, var_trim);
-	} else
+	}
+	else
+	{
 		snprintf(item, MAX_STRING_SIZE, "%s", section_trim);
+	}
 }
 
 
 /* Return a variable name and its value from a string "<var>=<value>".
  * Both the returned variable and the value are trimmed.
- * If the input string format is wrong, two empty strings are returned. */
-static void get_var_value_from_item(char *item, char *var, char *value)
+ * If the input string format is wrong, a non-zero value is returned.
+ * Zero is returned on success. */
+static int get_var_value_from_item(char *item, char *var, char *value)
 {
 	char var_str[MAX_STRING_SIZE];
 	char value_str[MAX_STRING_SIZE];
@@ -128,10 +144,11 @@ static void get_var_value_from_item(char *item, char *var, char *value)
 	int equal_pos;
 
 	equal_ptr = index(item, '=');
-	if (!equal_ptr) {
+	if (!equal_ptr)
+	{
 		*var = '\0';
 		*value = '\0';
-		return;
+		return 1;
 	}
 
 	/* Equal sign found, split string */
@@ -144,19 +161,25 @@ static void get_var_value_from_item(char *item, char *var, char *value)
 	/* Return trimmed strings */
 	trim(var, var_str);
 	trim(value, value_str);
+	return 0;
 }
 
 
-static void config_insert_section(struct config_t *config, char *section)
+/* Return non-zero if the section already exists */
+static int config_insert_section(struct config_t *config, char *section)
 {
 	char section_trim[MAX_STRING_SIZE];
+	int err;
 
 	trim(section_trim, section);
-	hash_table_insert(config->items, section, (void *) 1);
+	err = !hash_table_insert(config->items, section, (void *) 1);
+
+	return err;
 }
 
 
-static void config_insert_var(struct config_t *config, char *section, char *var, char *value)
+/* Return non-zero if the variable already exists */
+static int config_insert_var(struct config_t *config, char *section, char *var, char *value)
 {
 	char item[MAX_STRING_SIZE];
 	char value_trim[MAX_STRING_SIZE];
@@ -167,17 +190,21 @@ static void config_insert_var(struct config_t *config, char *section, char *var,
 	/* Allocate new value */
 	trim(value_trim, value);
 	nvalue = strdup(value_trim);
+	if (!nvalue)
+		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Free previous value if variable existed */
 	ovalue = hash_table_get(config->items, item);
-	if (ovalue) {
+	if (ovalue)
+	{
 		free(ovalue);
 		hash_table_set(config->items, item, nvalue);
-		return;
+		return 1;
 	}
 
 	/* Insert new value */
 	hash_table_insert(config->items, item, nvalue);
+	return 0;
 }
 
 
@@ -194,21 +221,19 @@ struct config_t *config_create(char *filename)
 	
 	/* Config object */
 	config = calloc(1, sizeof(struct config_t));
-	if (!config) {
-		fprintf(stderr, "%s: out of memory\n", __FUNCTION__);
-		abort();
-	}
+	if (!config)
+		fatal("%s: out of memory", __FUNCTION__);
 	
-	/* Main hash table & file name*/
+	/* File name */
 	config->file_name = strdup(filename);
+	if (!config->file_name)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	config->items = hash_table_create(HASH_TABLE_SIZE, 0);
 	config->allowed_items = hash_table_create(HASH_TABLE_SIZE, 0);
 
-	/* Return created object */
-	if (!config->items || !config->file_name || !config->allowed_items) {
-		fprintf(stderr, "%s: out of memory\n", __FUNCTION__);
-		abort();
-	}
+	/* Return */
 	return config;
 }
 
@@ -248,63 +273,86 @@ char *config_get_file_name(struct config_t *config)
 }
 
 
-int config_load(struct config_t *config)
+void config_load(struct config_t *config)
 {
 	FILE *f;
 
-	char line[MAX_STRING_SIZE], line_trim[MAX_STRING_SIZE], *line_ptr;
+	char line[MAX_STRING_SIZE];
+	char line_trim[MAX_STRING_SIZE];
+	char *line_ptr;
 
 	char section[MAX_STRING_SIZE];
 	char var[MAX_STRING_SIZE];
 	char value[MAX_STRING_SIZE];
+
+	int line_num;
+	int err;
 	
 	/* Try to open file for reading */
 	f = fopen(config->file_name, "rt");
 	if (!f)
-		return 0;
+		fatal("%s: cannot open configuration file", config->file_name);
 	
 	/* Read lines */
 	section[0] = '\0';
-	while (!feof(f)) {
-	
+	line_num = 0;
+	while (!feof(f))
+	{
 		/* Read a line */
+		line_num++;
 		line_ptr = fgets(line, MAX_STRING_SIZE, f);
 		if (!line_ptr)
 			break;
+
+		/* Trim line */
 		trim(line_trim, line);
 
-		/* Comment */
-		if (line_trim[0] == ';')
+		/* Comment or blank line */
+		if (!line_trim[0] || line_trim[0] == ';' || line_trim[0] == '#')
 			continue;
 		
 		/* New "[ <section> ]" entry */
-		if (line_trim[0] == '[' && line_trim[strlen(line_trim) - 1] == ']') {
-			
+		if (line_trim[0] == '[' && line_trim[strlen(line_trim) - 1] == ']')
+		{
+			/* Get section name */
 			line_trim[0] = ' ';
 			line_trim[strlen(line_trim) - 1] = ' ';
 			trim(section, line_trim);
-			config_insert_section(config, section);
+
+			/* Insert section */
+			err = config_insert_section(config, section);
+			if (err)
+				fatal("%s: line %d: duplicated section '%s'.\n%s",
+					config->file_name, line_num, section, config_err_format);
+
+			/* Done for this line */
 			continue;
 		}
 
-		/* If there is no current section, ignore entry */
+		/* Check that there is an active section */
 		if (!section[0])
-			continue;
+			fatal("%s: line %d: section name expected.\n%s",
+				config->file_name, line_num, config_err_format);
 		
-		/* New "<var> = <value>" entry. If format is incorrect, ignore line. */
-		get_var_value_from_item(line_trim, var, value);
-		if (!var[0] || !value[0])
-			continue;
-		config_insert_var(config, section, var, value);
+		/* New "<var> = <value>" entry. */
+		err = get_var_value_from_item(line_trim, var, value);
+		if (err)
+			fatal("%s: line %d: invalid format.\n%s",
+				config->file_name, line_num, config_err_format);
+
+		/* New variable */
+		err = config_insert_var(config, section, var, value);
+		if (err)
+			fatal("%s: line %d: duplicated variable '%s'.\n%s",
+				config->file_name, line_num, var, config_err_format);
 	}
 	
-	/* close file */
+	/* Close file */
 	fclose(f);
-	return 1;
 }
 
 
-int config_save(struct config_t *config)
+void config_save(struct config_t *config)
 {
 	struct linked_list_t *section_list;
 	char *section;
@@ -314,7 +362,7 @@ int config_save(struct config_t *config)
 	/* Try to open file for writing */
 	f = fopen(config->file_name, "wt");
 	if (!f)
-		return 0;
+		fatal("%s: cannot save configuration file", config->file_name);
 	
 	/* Create a list with all sections first */
 	section_list = linked_list_create();
@@ -350,7 +398,6 @@ int config_save(struct config_t *config)
 	
 	/* close file */
 	fclose(f);
-	return 1;
 }
 
 
@@ -521,6 +568,7 @@ char *config_read_string(struct config_t *config, char *section, char *var, char
 int config_read_int(struct config_t *config, char *section, char *var, int def)
 {
 	char *result;
+
 	result = config_read_string(config, section, var, NULL);
 	return result ? atoi(result) : def;
 }
@@ -529,6 +577,7 @@ int config_read_int(struct config_t *config, char *section, char *var, int def)
 long long config_read_llint(struct config_t *config, char *section, char *var, long long def)
 {
 	char *result;
+
 	result = config_read_string(config, section, var, NULL);
 	return result ? atoll(result) : def;
 }
@@ -537,6 +586,7 @@ long long config_read_llint(struct config_t *config, char *section, char *var, l
 int config_read_bool(struct config_t *config, char *section, char *var, int def)
 {
 	char *result;
+
 	result = config_read_string(config, section, var, NULL);
 	if (!result)
 		return def;
@@ -552,6 +602,7 @@ double config_read_double(struct config_t *config, char *section, char *var, dou
 {
 	char *result;
 	double d;
+
 	result = config_read_string(config, section, var, NULL);
 	if (!result)
 		return def;
@@ -566,7 +617,8 @@ static void enumerate_map(char **map, int map_count)
 	char *comma = "";
 
 	fprintf(stderr, "Possible allowed values are { ");
-	for (i = 0; i < map_count; i++) {
+	for (i = 0; i < map_count; i++)
+	{
 		fprintf(stderr, "%s%s", comma, map[i]);
 		comma = ", ";
 	}

@@ -29,10 +29,9 @@ void config_free(struct config_t *config);
 /* Get the file name */
 char *config_get_file_name(struct config_t *config);
 
-/* Load and save configuration;
- * Return value: non-0=ok, 0=file access failure */
-int config_load(struct config_t *config);
-int config_save(struct config_t *config);
+/* Load/save configuration */
+void config_load(struct config_t *config);
+void config_save(struct config_t *config);
 
 /* Ask for section of variable existence */
 int config_section_exists(struct config_t *config, char *section);

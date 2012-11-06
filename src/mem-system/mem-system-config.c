@@ -1954,9 +1954,7 @@ void mem_system_config_read(void)
 	}
 	else
 	{
-		if (!config_load(config))
-			fatal("%s: cannot read memory system configuration file",
-				mem_config_file_name);
+		config_load(config);
 	}
 
 	/* Read general variables */
