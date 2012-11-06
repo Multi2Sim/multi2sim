@@ -222,6 +222,12 @@ void mod_handler_nmoesi_load(int event, void *data)
 		if (stack->state)
 		{
 			esim_schedule_event(EV_MOD_NMOESI_LOAD_UNLOCK, stack, 0);
+
+			/* The prefetcher may have prefetched this earlier and hence
+			 * this is a hit now. Let the prefetcher know of this hit
+			 * since without the prefetcher, this may have been a miss. */
+			prefetcher_access_hit(stack, mod);
+
 			return;
 		}
 
@@ -301,6 +307,10 @@ void mod_handler_nmoesi_load(int event, void *data)
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
 			linked_list_add(stack->event_queue, stack->event_queue_item);
+
+		/* Free the mod_client_info object, if any */
+		if (stack->client_info)
+			mod_client_info_free(stack->client_info);
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
@@ -416,6 +426,12 @@ void mod_handler_nmoesi_store(int event, void *data)
 			stack->state == cache_block_exclusive)
 		{
 			esim_schedule_event(EV_MOD_NMOESI_STORE_UNLOCK, stack, 0);
+
+			/* The prefetcher may have prefetched this earlier and hence
+			 * this is a hit now. Let the prefetcher know of this hit
+			 * since without the prefetcher, this may have been a miss. */
+			prefetcher_access_hit(stack, mod);
+
 			return;
 		}
 
@@ -476,6 +492,10 @@ void mod_handler_nmoesi_store(int event, void *data)
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
 			linked_list_add(stack->event_queue, stack->event_queue_item);
+
+		/* Free the mod_client_info object, if any */
+		if (stack->client_info)
+			mod_client_info_free(stack->client_info);
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
@@ -712,6 +732,10 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		if (stack->event_queue && stack->event_queue_item)
 			linked_list_add(stack->event_queue, stack->event_queue_item);
 
+		/* Free the mod_client_info object, if any */
+		if (stack->client_info)
+			mod_client_info_free(stack->client_info);
+
 		/* Finish access */
 		mod_access_finish(mod, stack);
 
@@ -870,6 +894,14 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		cache_set_block(mod->cache, stack->set, stack->way, stack->tag,
 			stack->shared ? cache_block_shared : cache_block_exclusive);
 
+		/* Mark the prefetched block as prefetched. This is needed to let the 
+		 * prefetcher know about an actual access to this block so that it
+		 * is aware of all misses as they would be without the prefetcher. 
+		 * TODO: The lower caches that will be filled because of this prefetch
+		 * do not know if it was a prefetch or not. Need to have a way to mark
+		 * them as prefetched too. */
+		mod_block_set_prefetched(mod, stack->addr, 1);
+
 		/* Continue */
 		esim_schedule_event(EV_MOD_NMOESI_PREFETCH_UNLOCK, stack, 0);
 		return;
@@ -906,6 +938,10 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
 			linked_list_add(stack->event_queue, stack->event_queue_item);
+
+		/* Free the mod_client_info object, if any */
+		if (stack->client_info)
+			mod_client_info_free(stack->client_info);
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
@@ -1724,6 +1760,12 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
 			}
 			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_UPDOWN_FINISH, stack, 0);
+
+			/* The prefetcher may have prefetched this earlier and hence
+			 * this is a hit now. Let the prefetcher know of this hit
+			 * since without the prefetcher, this may have been a miss. 
+			 * TODO: I'm not sure how relavant this is here for all states. */
+			prefetcher_access_hit(stack, target_mod);
 		}
 		else
 		{
@@ -2334,6 +2376,15 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		else 
 		{
 			fatal("Invalid cache block state: %d\n", stack->state);
+		}
+
+		if (stack->state != cache_block_invalid)
+		{
+			/* The prefetcher may have prefetched this earlier and hence
+			 * this is a hit now. Let the prefetcher know of this hit
+			 * since without the prefetcher, this may been a miss. 
+			 * TODO: I'm not sure how relavant this is here for all states. */
+			prefetcher_access_hit(stack, target_mod);
 		}
 
 		return;
