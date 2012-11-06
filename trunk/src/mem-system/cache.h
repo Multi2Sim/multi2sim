@@ -50,6 +50,7 @@ struct cache_block_t
 	int tag;
 	int transient_tag;
 	int way;
+	int prefetched;
 
 	enum cache_block_state_t state;
 };

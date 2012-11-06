@@ -60,6 +60,7 @@ struct mod_stack_t
 
 	struct linked_list_t *event_queue;
 	void *event_queue_item;
+	struct mod_client_info_t *client_info;
 
 	struct mod_t *mod;
 	struct mod_t *target_mod;
@@ -147,7 +148,7 @@ struct mod_stack_t
 };
 
 struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
-	unsigned int addr, int ret_event, void *ret_stack);
+		unsigned int addr, int ret_event, struct mod_stack_t *ret_stack);
 void mod_stack_return(struct mod_stack_t *stack);
 
 void mod_stack_wait_in_mod(struct mod_stack_t *stack,

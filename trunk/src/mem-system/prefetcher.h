@@ -77,5 +77,6 @@ struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_i
 void prefetcher_free(struct prefetcher_t *pref);
 
 void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *mod);
+void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *mod);
 
 #endif
