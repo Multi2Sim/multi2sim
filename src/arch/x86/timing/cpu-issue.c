@@ -60,7 +60,7 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 		x86_sq_remove(core, thread);
 
 		/* create and fill the mod_client_info_t object */
-		client_info = mod_client_info_create();
+		client_info = mod_client_info_create(X86_THREAD.data_mod);
 		client_info->prefetcher_eip = store->eip;
 
 		/* Issue store */
@@ -125,7 +125,7 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		x86_lq_remove(core, thread);
 
 		/* create and fill the mod_client_info_t object */
-		client_info = mod_client_info_create();
+		client_info = mod_client_info_create(X86_THREAD.data_mod);
 		client_info->prefetcher_eip = load->eip;
 
 		/* Access memory system */

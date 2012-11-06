@@ -310,7 +310,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 
 		/* Free the mod_client_info object, if any */
 		if (stack->client_info)
-			mod_client_info_free(stack->client_info);
+			mod_client_info_free(mod, stack->client_info);
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
@@ -495,7 +495,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 
 		/* Free the mod_client_info object, if any */
 		if (stack->client_info)
-			mod_client_info_free(stack->client_info);
+			mod_client_info_free(mod, stack->client_info);
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
@@ -734,7 +734,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 
 		/* Free the mod_client_info object, if any */
 		if (stack->client_info)
-			mod_client_info_free(stack->client_info);
+			mod_client_info_free(mod, stack->client_info);
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
@@ -941,7 +941,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 
 		/* Free the mod_client_info object, if any */
 		if (stack->client_info)
-			mod_client_info_free(stack->client_info);
+			mod_client_info_free(mod, stack->client_info);
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
