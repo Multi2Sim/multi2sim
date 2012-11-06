@@ -181,6 +181,11 @@ static int prefetcher_update_tables(struct mod_stack_t *stack, struct mod_t *tar
 	return it_index;
 }
 
+static void prefetcher_ghb_pc_cs(struct mod_t *mod, struct mod_stack_t *stack, int it_index)
+{
+
+}
+
 void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *target_mod)
 {
 	int it_index;
@@ -193,6 +198,9 @@ void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *target_mod)
 	if (it_index < 0)
 		    return;
 
+       /* Perform ghb based PC/CS prefetching
+        * (Program Counter based index, Constant Stride) */
+       prefetcher_ghb_pc_cs(target_mod, stack, it_index);
 }
 
 void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *target_mod)
@@ -208,11 +216,15 @@ void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *target_mod)
 		 * of the prefetcher heuristic, this is still a miss. Hence, update
 		 * the prefetcher tables. */
 		it_index = prefetcher_update_tables(stack, target_mod);
+
+		/* Clear the prefetched flag since we have a real access now */
+		mod_block_set_prefetched(target_mod, stack->addr, 0);
+
+		if (it_index < 0)
+			return;
+
+		/* Perform ghb based PC/CS prefetching
+		 * (Program Counter based index, Constant Stride) */
+		prefetcher_ghb_pc_cs(target_mod, stack, it_index);
 	}
-
-	/* Clear the prefetched flag since we have a real access now */
-	mod_block_set_prefetched(target_mod, stack->addr, 0);
-
-	if (it_index < 0)
-		return;
 }

@@ -25,6 +25,7 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
+#include <lib/util/repos.h>
 
 #include "cache.h"
 #include "directory.h"
@@ -87,6 +88,8 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	assert(!(block_size & (block_size - 1)) && block_size >= 4);
 	mod->log_block_size = log_base2(block_size);
 
+	mod->client_info_repos = repos_create(sizeof(struct mod_client_info_t), mod->name);
+
 	return mod;
 }
 
@@ -100,6 +103,7 @@ void mod_free(struct mod_t *mod)
 	if (mod->dir)
 		dir_free(mod->dir);
 	free(mod->ports);
+	repos_free(mod->client_info_repos);
 	free(mod->name);
 	free(mod);
 }
@@ -694,18 +698,18 @@ void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
 	mod->access_list_coalesced_count++;
 }
 
-struct mod_client_info_t *mod_client_info_create(void)
+struct mod_client_info_t *mod_client_info_create(struct mod_t *mod)
 {
 	struct mod_client_info_t *client_info;
 
 	/* Create object */
-	client_info = calloc(1, sizeof(struct mod_client_info_t));
+	client_info = repos_create_object(mod->client_info_repos);
 
 	/* Return */
 	return client_info;
 }
 
-void mod_client_info_free(struct mod_client_info_t *client_info)
+void mod_client_info_free(struct mod_t *mod, struct mod_client_info_t *client_info)
 {
-	free(client_info);
+	repos_free_object(mod->client_info_repos, client_info);
 }

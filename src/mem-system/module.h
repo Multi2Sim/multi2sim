@@ -172,6 +172,11 @@ struct mod_t
 	 * between 0 and 'access_list_count' at all times. */
 	int access_list_coalesced_count;
 
+	/* Clients (CPU/GPU) that use this module can fill in some
+	 * optional information in the mod_client_info_t structure.
+	 * Using a repos_t memory allocator for these structures. */
+	struct repos_t *client_info_repos;
+
 	/* Hash table of accesses */
 	struct
 	{
@@ -270,8 +275,8 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
 	struct mod_stack_t *stack);
 
-struct mod_client_info_t *mod_client_info_create(void);
-void mod_client_info_free(struct mod_client_info_t *client_info);
+struct mod_client_info_t *mod_client_info_create(struct mod_t *mod);
+void mod_client_info_free(struct mod_t *mod, struct mod_client_info_t *client_info);
 
 #endif
 
