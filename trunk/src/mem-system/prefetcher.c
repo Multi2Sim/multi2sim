@@ -255,6 +255,9 @@ static void prefetcher_ghb_pc_cs(struct mod_t *mod, struct mod_stack_t *stack, i
 		/* I'm not passing back the mod_client_info structure. If this needs to be 
 		 * passed in the future, make sure a copy is made (since the one that is
 		 * pointed to by stack->client_info may be freed early. */
+		mem_debug("  miss_addr 0x%x, prefetch_addr 0x%x, %s : prefetcher\n", stack->addr,
+			  prefetch_addr, mod->name);
+
 		mod_access(mod, mod_access_prefetch, prefetch_addr, NULL, NULL, NULL, NULL);
 	}
 }
@@ -291,6 +294,8 @@ void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *target_mod)
 		it_index = prefetcher_update_tables(stack, target_mod);
 
 		/* Clear the prefetched flag since we have a real access now */
+		mem_debug ("  addr 0x%x %s : clearing \"prefetched\" flag\n", 
+			   stack->addr, target_mod->name);
 		mod_block_set_prefetched(target_mod, stack->addr, 0);
 
 		if (it_index < 0)
