@@ -21,8 +21,9 @@
 #include <stdlib.h>
 
 #include <lib/util/debug.h>
-#include <mem-system/mem-system.h>
+#include <lib/util/string.h>
 
+#include "mem-system.h"
 #include "prefetcher.h"
 #include "module.h"
 #include "cache.h"
@@ -30,8 +31,16 @@
 #include "mod-stack.h"
 
 
+struct str_map_t prefetcher_type_map =
+{
+	2, {
+		{ "GHB_PC_CS", prefetcher_type_ghb_pc_cs },
+		{ "GHB_PC_DC", prefetcher_type_ghb_pc_dc },
+	}
+};
+
 struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_it_size,
-				       int prefetcher_lookup_depth)
+				       int prefetcher_lookup_depth, enum prefetcher_type_t type)
 {
 	struct prefetcher_t *pref;
 
@@ -47,6 +56,7 @@ struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_i
 	pref->ghb_size = prefetcher_ghb_size;
 	pref->it_size = prefetcher_it_size;
 	pref->lookup_depth = prefetcher_lookup_depth;
+	pref->type = type;
 	pref->ghb = calloc(prefetcher_ghb_size, sizeof(struct prefetcher_ghb_t));
 	pref->index_table = calloc(prefetcher_it_size, sizeof(struct prefetcher_it_t));
 	pref->ghb_head = -1;
@@ -183,6 +193,38 @@ static int prefetcher_update_tables(struct mod_stack_t *stack, struct mod_t *tar
 	return it_index;
 }
 
+static void prefetcher_do_prefetch(struct mod_t *mod, struct mod_stack_t *stack,
+				   unsigned int prefetch_addr)
+{
+	int set1, tag1, set2, tag2;
+
+	assert(prefetch_addr > 0);
+
+	/* Predicted prefetch_addr can go horribly wrong
+	 * sometimes. Since prefetches aren't supposed to
+	 * cause any kind of faults/exceptions, return. */
+	if (!mod_serves_address(mod, prefetch_addr))
+		return;
+
+	cache_decode_address(mod->cache, stack->addr, &set1, &tag1, NULL);
+	cache_decode_address(mod->cache, prefetch_addr, &set2, &tag2, NULL);
+
+	/* If the prefetch_addr is in the same block as the missed address
+	 * there is no point in prefetching. One scenario where this may
+	 * happen is when we see a stride smaller than block size because
+	 * of an eviction between the two accesses. */
+	if (set1 == set2 && tag1 == tag2)
+		return;
+
+	/* I'm not passing back the mod_client_info structure. If this needs to be 
+	 * passed in the future, make sure a copy is made (since the one that is
+	 * pointed to by stack->client_info may be freed early. */
+	mem_debug("  miss_addr 0x%x, prefetch_addr 0x%x, %s : prefetcher\n", stack->addr,
+		  prefetch_addr, mod->name);
+
+	mod_access(mod, mod_access_prefetch, prefetch_addr, NULL, NULL, NULL, NULL);
+}
+
 /* This function implements the GHB based PC/CS prefetching as described in the
  * 2005 paper by Nesbit and Smith. The index table lookup is based on the PC
  * of the instruction causing the miss. The GHB entries are looked at for finding
@@ -222,7 +264,7 @@ static void prefetcher_ghb_pc_cs(struct mod_t *mod, struct mod_stack_t *stack, i
 		prev_addr = cur_addr;
 		chain = pref->ghb[chain].next;
 
-		/* The lined list (history) is smaller than the lookup depth */
+		/* The linked list (history) is smaller than the lookup depth */
 		if (chain == -1)
 			break;
 
@@ -239,27 +281,93 @@ static void prefetcher_ghb_pc_cs(struct mod_t *mod, struct mod_stack_t *stack, i
 	}
 
 	if (prefetch_addr > 0)
+		prefetcher_do_prefetch(mod, stack, prefetch_addr);
+}
+
+/* This function implements the GHB based PC/DC prefetching as described in the
+ * 2005 paper by Nesbit and Smith. The index table lookup is based on the PC
+ * of the instruction causing the miss. The last three accesses are looked at
+ * to find the last two strides (deltas). The list is then looked up backwards
+ * to see if this pair of strides occurred earlier, if yes, the next stride
+ * is obtained from the history there. This stride decides the new prefetch_addr. */
+static void prefetcher_ghb_pc_dc(struct mod_t *mod, struct mod_stack_t *stack, int it_index)
+{
+	struct prefetcher_t *pref;
+	int chain, chain2, stride[PREFETCHER_LOOKUP_DEPTH_MAX], i, pref_stride;
+	unsigned int prev_addr, cur_addr, prefetch_addr = 0;
+
+	assert(mod->kind == mod_kind_cache && mod->cache != NULL);
+	pref = mod->cache->prefetcher;
+
+	chain = pref->index_table[it_index].ptr;
+
+	/* The lookup depth must be at least 2 - which essentially means
+	 * two strides have been seen so far, predict the next stride. */ 
+	assert(pref->lookup_depth >= 2 && pref->lookup_depth <= PREFETCHER_LOOKUP_DEPTH_MAX);
+
+	/* The table should've been updated before calling this function. */
+	assert(pref->ghb[chain].addr == stack->addr);
+
+	/* Collect "lookup_depth" number of strides (deltas).
+	 * This doesn't really make sense for a depth > 2, but
+	 * I'll just have the code here for generality. */
+	for (i = 0; i < pref->lookup_depth; i++)
 	{
-		int set1, tag1, set2, tag2;
+		prev_addr = pref->ghb[chain].addr;
+		chain = pref->ghb[chain].next;
 
-		cache_decode_address(mod->cache, stack->addr, &set1, &tag1, NULL);
-		cache_decode_address(mod->cache, prefetch_addr, &set2, &tag2, NULL);
-
-		/* If the prefetch_addr is in the same block as the missed address
-		 * there is no point in prefetching. One scenario where this may
-		 * happen is when we see a stride smaller than block size because
-		 * of an eviction between the two accesses. */
-		if (set1 == set2 && tag1 == tag2)
+		/* The chain isn't long enough */
+		if (chain == -1)
 			return;
 
-		/* I'm not passing back the mod_client_info structure. If this needs to be 
-		 * passed in the future, make sure a copy is made (since the one that is
-		 * pointed to by stack->client_info may be freed early. */
-		mem_debug("  miss_addr 0x%x, prefetch_addr 0x%x, %s : prefetcher\n", stack->addr,
-			  prefetch_addr, mod->name);
-
-		mod_access(mod, mod_access_prefetch, prefetch_addr, NULL, NULL, NULL, NULL);
+		cur_addr = pref->ghb[chain].addr;
+		stride[i] = prev_addr - cur_addr;
 	}
+
+	chain = pref->index_table[it_index].ptr;
+	chain = pref->ghb[chain].next;
+	assert(chain != -1);
+
+	/* "chain" now points to the second element of the list.
+	 * Try to match the stride array starting from here. */
+	while (chain != -1)
+	{
+		/* This really doesn't look realistic to implement in 
+		 * hardware. Too much time consuming I feel. */
+		chain2 = chain;
+		for (i = 0; i < pref->lookup_depth; i++)
+		{
+			prev_addr = pref->ghb[chain2].addr;
+			chain2 = pref->ghb[chain2].next;
+
+			/* The chain isn't long enough and we
+			 * haven't found a match till now. */
+			if (chain2 == -1)
+				return;
+
+			cur_addr = pref->ghb[chain2].addr;
+			if (stride[i] != prev_addr - cur_addr)
+				break;
+		}
+
+		/* If we traversed the above loop full, we have a match. */
+		if (i == pref->lookup_depth)
+		{
+		    cur_addr = pref->ghb[chain].addr;
+		    assert(pref->ghb[chain].prev != -1 && 
+			   pref->ghb[chain].prev_it_ghb == prefetcher_ptr_ghb);
+		    chain = pref->ghb[chain].prev;
+		    prev_addr = pref->ghb[chain].addr;
+		    pref_stride = prev_addr - cur_addr;
+		    prefetch_addr = stack->addr + pref_stride;
+		    break;
+		}
+
+		chain = pref->ghb[chain].next;
+	}
+
+	if (prefetch_addr > 0)
+		prefetcher_do_prefetch(mod, stack, prefetch_addr);
 }
 
 void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *target_mod)
@@ -274,9 +382,19 @@ void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *target_mod)
 	if (it_index < 0)
 		    return;
 
-       /* Perform ghb based PC/CS prefetching
-        * (Program Counter based index, Constant Stride) */
-       prefetcher_ghb_pc_cs(target_mod, stack, it_index);
+	if (target_mod->cache->prefetcher->type == prefetcher_type_ghb_pc_cs)
+	{
+		/* Perform ghb based PC/CS prefetching
+		 * (Program Counter based index, Constant Stride) */
+		prefetcher_ghb_pc_cs(target_mod, stack, it_index);
+	}
+	else
+	{
+		assert(target_mod->cache->prefetcher->type == prefetcher_type_ghb_pc_dc);
+		/* Perform ghb based PC/DC prefetching
+		 * (Program Counter based index, Delta Correlation) */
+		prefetcher_ghb_pc_dc(target_mod, stack, it_index);
+	}
 }
 
 void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *target_mod)
@@ -301,8 +419,18 @@ void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *target_mod)
 		if (it_index < 0)
 			return;
 
-		/* Perform ghb based PC/CS prefetching
-		 * (Program Counter based index, Constant Stride) */
-		prefetcher_ghb_pc_cs(target_mod, stack, it_index);
+		if (target_mod->cache->prefetcher->type == prefetcher_type_ghb_pc_cs)
+		{
+			/* Perform ghb based PC/CS prefetching
+			 * (Program Counter based index, Constant Stride) */
+			prefetcher_ghb_pc_cs(target_mod, stack, it_index);
+		}
+		else
+		{
+			assert(target_mod->cache->prefetcher->type == prefetcher_type_ghb_pc_dc);
+			/* Perform ghb based PC/DC prefetching
+			 * (Program Counter based index, Delta Correlation) */
+			prefetcher_ghb_pc_dc(target_mod, stack, it_index);
+		}
 	}
 }

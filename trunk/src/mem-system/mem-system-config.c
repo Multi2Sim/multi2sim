@@ -174,6 +174,10 @@ char *mem_config_help =
 	"  EnablePrefetcher = {t|f} (Default = False)\n"
 	"      Whether the hardware should automatically perform prefetching.\n"
 	"      The prefetcher related options below will be ignored if this is not true.\n"
+	"  PrefetcherType = {GHB_PC_CS|GHB_PC_DC} (Default GHB_PC_CS)\n"
+	"      Specify the type of global history buffer based prefetcher to use.\n"
+	"      GHB_PC_CS - Program Counter indexed, Constant Stride.\n"
+	"      GHB_PC_DC - Program Counter indexed, Delta Correlation.\n"
 	"  PrefetcherGHBSize = <size> (Default = 256)\n"
 	"      The hardware prefetcher does global history buffer based prefetching.\n"
 	"      This option specifies the size of the global history buffer.\n"
@@ -669,6 +673,8 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	int num_ports;
 
 	int enable_prefetcher;
+	char *prefetcher_type_str;
+	enum prefetcher_type_t prefetcher_type;
 	int prefetcher_ghb_size;
 	int prefetcher_it_size;
 	int prefetcher_lookup_depth;
@@ -701,6 +707,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	mshr_size = config_read_int(config, buf, "MSHR", 16);
 	num_ports = config_read_int(config, buf, "Ports", 2);
 	enable_prefetcher = config_read_bool(config, buf, "EnablePrefetcher", 0);
+	prefetcher_type_str = config_read_string(config, buf, "PrefetcherType", "GHB_PC_CS");
 	prefetcher_ghb_size = config_read_int(config, buf, "PrefetcherGHBSize", 256);
 	prefetcher_it_size = config_read_int(config, buf, "PrefetcherITSize", 64);
 	prefetcher_lookup_depth = config_read_int(config, buf, "PrefetcherLookupDepth", 2);
@@ -733,9 +740,14 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 		fatal("%s: cache %s: invalid value for variable 'Ports'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (enable_prefetcher)
-		if (prefetcher_ghb_size < 1 || prefetcher_it_size < 1 || prefetcher_lookup_depth < 2)
+	{
+		prefetcher_type = str_map_string_case(&prefetcher_type_map, prefetcher_type_str);
+		if (prefetcher_ghb_size < 1 || prefetcher_it_size < 1 ||
+		    prefetcher_type == prefetcher_type_invalid || prefetcher_lookup_depth < 2 || 
+		    prefetcher_lookup_depth > PREFETCHER_LOOKUP_DEPTH_MAX)
 			fatal("%s: cache %s: invalid prefetcher configuration.\n%s",
 			      mem_config_file_name, mod_name, err_mem_config_note);
+	}
 
 	/* Create module */
 	mod = mod_create(mod_name, mod_kind_cache, num_ports,
@@ -770,7 +782,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	/* Fill in prefetcher parameters */
 	if (enable_prefetcher)
 		mod->cache->prefetcher = prefetcher_create(prefetcher_ghb_size, prefetcher_it_size, 
-							   prefetcher_lookup_depth);
+							   prefetcher_lookup_depth, prefetcher_type);
 
 	/* Return */
 	return mod;
