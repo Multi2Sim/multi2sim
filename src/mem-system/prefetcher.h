@@ -28,9 +28,6 @@
  */
 
 
-extern int prefetcher_ghb_size;
-extern int prefetcher_it_size;
-
 /* Global history buffer. */
 struct prefetcher_ghb_t
 {
@@ -63,6 +60,7 @@ struct prefetcher_t
 {
 	int ghb_size;
 	int it_size;
+	int lookup_depth;
 
 	struct prefetcher_ghb_t *ghb;
 	struct prefetcher_it_t *index_table;
@@ -73,7 +71,8 @@ struct prefetcher_t
 struct mod_stack_t;
 struct mod_t;
 
-struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_it_size);
+struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_it_size,
+				       int prefetcher_lookup_depth);
 void prefetcher_free(struct prefetcher_t *pref);
 
 void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *mod);
