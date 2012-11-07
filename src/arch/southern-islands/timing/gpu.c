@@ -32,6 +32,11 @@
 #include "timing.h"
 
 
+static char *si_err_stall =
+	"\tThe Southern Islands GPU has not completed execution of any in-flight\n"
+	"\tinstruction for 1M cycles. Most likely, this means that a\n"
+	"\tdeadlock condition occurred in the management of some modeled\n"
+	"\tstructure (network, memory system, pipeline queues, etc.).\n";
 
 /*
  * Global variables
@@ -924,6 +929,13 @@ int si_gpu_run(void)
 	/* Stop if maximum number of GPU instructions exceeded */
 	if (si_emu_max_inst && si_emu->inst_count >= si_emu_max_inst)
 		esim_finish = esim_finish_si_max_inst;
+
+	/* Stop if there was a simulation stall */
+	if (esim_cycle - si_gpu->last_complete_cycle > 1000000)
+	{
+		warning("Southern Islands GPU simulation stalled.\n%s", si_err_stall);
+		esim_finish = esim_finish_stall;
+	}
 
 	/* Stop if any reason met */
 	if (esim_finish)
