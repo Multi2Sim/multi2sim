@@ -30,7 +30,8 @@
 #include "mod-stack.h"
 
 
-struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_it_size)
+struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_it_size,
+				       int prefetcher_lookup_depth)
 {
 	struct prefetcher_t *pref;
 
@@ -45,6 +46,7 @@ struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_i
 	assert(prefetcher_ghb_size >= 1 && prefetcher_it_size >= 1);
 	pref->ghb_size = prefetcher_ghb_size;
 	pref->it_size = prefetcher_it_size;
+	pref->lookup_depth = prefetcher_lookup_depth;
 	pref->ghb = calloc(prefetcher_ghb_size, sizeof(struct prefetcher_ghb_t));
 	pref->index_table = calloc(prefetcher_it_size, sizeof(struct prefetcher_it_t));
 	pref->ghb_head = -1;
@@ -181,9 +183,80 @@ static int prefetcher_update_tables(struct mod_stack_t *stack, struct mod_t *tar
 	return it_index;
 }
 
+/* This function implements the GHB based PC/CS prefetching as described in the
+ * 2005 paper by Nesbit and Smith. The index table lookup is based on the PC
+ * of the instruction causing the miss. The GHB entries are looked at for finding
+ * constant stride accesses. Based on this, prefetching is done. */
 static void prefetcher_ghb_pc_cs(struct mod_t *mod, struct mod_stack_t *stack, int it_index)
 {
+	struct prefetcher_t *pref;
+	int chain, stride, i;
+	unsigned int prev_addr, cur_addr, prefetch_addr = 0;
 
+	assert(mod->kind == mod_kind_cache && mod->cache != NULL);
+	pref = mod->cache->prefetcher;
+
+	chain = pref->index_table[it_index].ptr;
+
+	/* The lookup depth must be at least 2 - which essentially means
+	 * two strides have been seen so far, prefetch for the next. 
+	 * It doesn't really help to prefetch on a lookup of depth 1.
+	 * It is too low an accuracy and leads to lot of illegal and
+	 * redundant prefetches. Hence keeping the minimum at 2. */
+	assert(pref->lookup_depth >= 2);
+
+	/* The table should've been updated before calling this function. */
+	assert(pref->ghb[chain].addr == stack->addr);
+
+	/* If there's only one element in this linked list, nothing to do. */
+	if (pref->ghb[chain].next == -1)
+		return;
+
+	prev_addr = pref->ghb[chain].addr;
+	chain = pref->ghb[chain].next;
+	cur_addr = pref->ghb[chain].addr;
+	stride = prev_addr - cur_addr;
+
+	for (i = 2; i <= pref->lookup_depth; i++)
+	{
+		prev_addr = cur_addr;
+		chain = pref->ghb[chain].next;
+
+		/* The lined list (history) is smaller than the lookup depth */
+		if (chain == -1)
+			break;
+
+		cur_addr = pref->ghb[chain].addr;
+
+		/* The stride changed, can't prefetch */
+		if (stride != prev_addr - cur_addr)
+			break;
+
+		/* If this is the last iteration (we've seen as much history as
+		 * the lookup depth specified), then do a prefetch. */
+		if (i == pref->lookup_depth)
+			prefetch_addr = stack->addr + stride;
+	}
+
+	if (prefetch_addr > 0)
+	{
+		int set1, tag1, set2, tag2;
+
+		cache_decode_address(mod->cache, stack->addr, &set1, &tag1, NULL);
+		cache_decode_address(mod->cache, prefetch_addr, &set2, &tag2, NULL);
+
+		/* If the prefetch_addr is in the same block as the missed address
+		 * there is no point in prefetching. One scenario where this may
+		 * happen is when we see a stride smaller than block size because
+		 * of an eviction between the two accesses. */
+		if (set1 == set2 && tag1 == tag2)
+			return;
+
+		/* I'm not passing back the mod_client_info structure. If this needs to be 
+		 * passed in the future, make sure a copy is made (since the one that is
+		 * pointed to by stack->client_info may be freed early. */
+		mod_access(mod, mod_access_prefetch, prefetch_addr, NULL, NULL, NULL, NULL);
+	}
 }
 
 void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *target_mod)
@@ -205,7 +278,7 @@ void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *target_mod)
 
 void prefetcher_access_hit(struct mod_stack_t *stack, struct mod_t *target_mod)
 {
-	int it_index = -1;
+	int it_index;
 
 	if (target_mod->kind != mod_kind_cache || !target_mod->cache->prefetcher)
 		return;
