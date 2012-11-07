@@ -173,14 +173,16 @@ char *mem_config_help =
 	"      Latency for a directory access in number of cycles.\n"
 	"  EnablePrefetcher = {t|f} (Default = False)\n"
 	"      Whether the hardware should automatically perform prefetching.\n"
+	"      The prefetcher related options below will be ignored if this is not true.\n"
 	"  PrefetcherGHBSize = <size> (Default = 256)\n"
-    	"      The hardware prefetcher does global history buffer based prefetching.\n"
+	"      The hardware prefetcher does global history buffer based prefetching.\n"
 	"      This option specifies the size of the global history buffer.\n"
-	"      This option is ignored if EnablePrefetcher is not true.\n"
 	"  PrefetcherITSze = <size> (Default = 64)\n"
 	"      The hardware prefetcher does global history buffer based prefetching.\n"
 	"      This option specifies the size of the index table used.\n"
-	"      This option is ignored if EnablePrefetcher is not true.\n"
+	"  PrefetcherLookupDepth = <num> (Default = 2)\n"
+	"      This option specifies the history (pattern) depth upto which the\n"
+	"      prefetcher looks at the history to decide when to prefetch.\n"
 	"\n"
 	"Section [Network <net>] defines an internal default interconnect, formed of a\n"
 	"single switch connecting all modules pointing to the network. For every module\n"
@@ -669,6 +671,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	int enable_prefetcher;
 	int prefetcher_ghb_size;
 	int prefetcher_it_size;
+	int prefetcher_lookup_depth;
 
 	char *net_name;
 	char *net_node_name;
@@ -700,6 +703,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	enable_prefetcher = config_read_bool(config, buf, "EnablePrefetcher", 0);
 	prefetcher_ghb_size = config_read_int(config, buf, "PrefetcherGHBSize", 256);
 	prefetcher_it_size = config_read_int(config, buf, "PrefetcherITSze", 64);
+	prefetcher_lookup_depth = config_read_int(config, buf, "PrefetcherLookupDepth", 2);
 
 	/* Checks */
 	policy = str_map_string_case(&cache_policy_map, policy_str);
@@ -729,7 +733,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 		fatal("%s: cache %s: invalid value for variable 'Ports'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (enable_prefetcher)
-		if (prefetcher_ghb_size < 1 || prefetcher_it_size < 1)
+		if (prefetcher_ghb_size < 1 || prefetcher_it_size < 1 || prefetcher_lookup_depth < 2)
 			fatal("%s: cache %s: invalid prefetcher configuration.\n%s",
 			      mem_config_file_name, mod_name, err_mem_config_note);
 
@@ -765,7 +769,8 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 
 	/* Fill in prefetcher parameters */
 	if (enable_prefetcher)
-		mod->cache->prefetcher = prefetcher_create(prefetcher_ghb_size, prefetcher_it_size);
+		mod->cache->prefetcher = prefetcher_create(prefetcher_ghb_size, prefetcher_it_size, 
+							   prefetcher_lookup_depth);
 
 	/* Return */
 	return mod;
