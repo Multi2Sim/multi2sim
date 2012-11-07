@@ -27,6 +27,17 @@
  * Nesbit and Smith. 
  */
 
+extern struct str_map_t prefetcher_type_map;
+
+enum prefetcher_type_t
+{
+	prefetcher_type_invalid = 0,
+	prefetcher_type_ghb_pc_cs,
+	prefetcher_type_ghb_pc_dc,
+};
+
+/* Doesn't really make sense to have a big lookup depth */
+#define PREFETCHER_LOOKUP_DEPTH_MAX 4
 
 /* Global history buffer. */
 struct prefetcher_ghb_t
@@ -61,6 +72,7 @@ struct prefetcher_t
 	int ghb_size;
 	int it_size;
 	int lookup_depth;
+	enum prefetcher_type_t type;
 
 	struct prefetcher_ghb_t *ghb;
 	struct prefetcher_it_t *index_table;
@@ -72,7 +84,7 @@ struct mod_stack_t;
 struct mod_t;
 
 struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_it_size,
-				       int prefetcher_lookup_depth);
+				       int prefetcher_lookup_depth, enum prefetcher_type_t type);
 void prefetcher_free(struct prefetcher_t *pref);
 
 void prefetcher_access_miss(struct mod_stack_t *stack, struct mod_t *mod);
