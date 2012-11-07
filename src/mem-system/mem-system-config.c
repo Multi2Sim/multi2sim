@@ -177,7 +177,7 @@ char *mem_config_help =
 	"  PrefetcherGHBSize = <size> (Default = 256)\n"
 	"      The hardware prefetcher does global history buffer based prefetching.\n"
 	"      This option specifies the size of the global history buffer.\n"
-	"  PrefetcherITSze = <size> (Default = 64)\n"
+	"  PrefetcherITSize = <size> (Default = 64)\n"
 	"      The hardware prefetcher does global history buffer based prefetching.\n"
 	"      This option specifies the size of the index table used.\n"
 	"  PrefetcherLookupDepth = <num> (Default = 2)\n"
@@ -702,7 +702,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	num_ports = config_read_int(config, buf, "Ports", 2);
 	enable_prefetcher = config_read_bool(config, buf, "EnablePrefetcher", 0);
 	prefetcher_ghb_size = config_read_int(config, buf, "PrefetcherGHBSize", 256);
-	prefetcher_it_size = config_read_int(config, buf, "PrefetcherITSze", 64);
+	prefetcher_it_size = config_read_int(config, buf, "PrefetcherITSize", 64);
 	prefetcher_lookup_depth = config_read_int(config, buf, "PrefetcherLookupDepth", 2);
 
 	/* Checks */
