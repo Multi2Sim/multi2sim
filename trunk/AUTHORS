@@ -102,12 +102,14 @@ AUTHOR
 
 DESCRIPTION
 
-	Vaivaswatha has implemented support for x86 prefetching. 
-	He has added support for the x86 prefetch0 instruction and the memory 
-	system support for prefetch reqeuests.
+	Vaivaswatha has implemented support for prefetching. He has added
+	support for the x86 prefetch0 instruction, the memory system support for 
+	prefetch reqeuests and a global history buffer based hardware prefetcher
+	in the memory system.
 
 FILES
 	* src/mem-system/prefetch-history.c
+	* src/mem-system/prefetcher.c
 	* src/mem-system/nmoesi-protocol.c
 	* src/arch/x86/timing/cpu-issue.c
 	* src/arch/x86/emu/machine.c
