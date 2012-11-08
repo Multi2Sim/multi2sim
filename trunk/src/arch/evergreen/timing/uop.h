@@ -96,6 +96,9 @@ struct evg_uop_t
 	long long inst_mem_ready;  /* Cycle when instruction memory access completes */
 	int global_mem_witness;
 	int local_mem_witness;
+	/* Added for Profiling reports*/
+	int num_global_mem_read ;
+	int num_global_mem_write ;
 
 	/* ALU Engine - subwavefronts */
 	int subwavefront_count;

@@ -29,7 +29,9 @@
 
 #include "compute-unit.h"
 #include "gpu.h"
-#include "periodic-report.h"
+#include "instruction-interval-report.h"
+#include "cycle-interval-report.h"
+
 #include "tex-engine.h"
 
 
@@ -117,6 +119,10 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Stats */
 	compute_unit->inst_count++;
 	compute_unit->tex_engine.inst_count++;
+
+	if(evg_spatial_report_active)
+		evg_tex_report_new_inst(compute_unit);
+
 	if (evg_periodic_report_active)
 		evg_periodic_report_new_inst(uop);
 
@@ -203,7 +209,12 @@ static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 				&uop->global_mem_witness, NULL, NULL, NULL);
 			uop->global_mem_witness--;
 		}
+		uop->num_global_mem_read = uop->global_mem_witness;
+		if(evg_spatial_report_active)
+			evg_tex_report_global_mem_inflight(compute_unit,uop->num_global_mem_read);
+
 	}
+
 
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"tex-rd\"\n",
@@ -223,9 +234,14 @@ static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 	if (!uop)
 		return;
 
+
 	/* If the memory read did not complete, done. */
 	if (uop->global_mem_witness)
 		return;
+
+	/* Subtracted in this function which denotes accesses finished*/
+	if(evg_spatial_report_active)
+		evg_tex_report_global_mem_finish(compute_unit,uop->num_global_mem_read);
 
 	/* Extract from load queue. */
 	linked_list_remove(compute_unit->tex_engine.load_queue);
@@ -273,5 +289,8 @@ void evg_tex_engine_run(struct evg_compute_unit_t *compute_unit)
 
 	/* Stats */
 	compute_unit->tex_engine.cycle++;
+
+	/* Interval Reset Actions */
+	//evg_tex_engine_interval_update(compute_unit);
 }
 
