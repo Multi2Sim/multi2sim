@@ -126,3 +126,17 @@ DESCRIPTION
 
 FILES
 	* All files in src/arch/southern-islands
+	
+================================================================================
+AUTHOR
+	Perhaad Mistry (pmistry@ece.neu.edu)
+
+DESCRIPTION
+
+    Perhaad has worked on building binaries of benchmark suites and adding 
+    statistics reporting to the Evergreen architectural simulator
+    
+FILES
+	* src/arch/evergreen/*report*
+	
+================================================================================	

@@ -33,7 +33,8 @@
 #include "alu-engine.h"
 #include "compute-unit.h"
 #include "gpu.h"
-#include "periodic-report.h"
+#include "instruction-interval-report.h"
+#include "cycle-interval-report.h"
 
 
 int evg_gpu_alu_engine_inst_mem_latency = 2;  /* Latency of instruction memory */
@@ -108,12 +109,16 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	compute_unit->inst_count++;
 	compute_unit->alu_engine.inst_count++;
 	compute_unit->alu_engine.inst_slot_count += alu_group->inst_count;
+
 	if (uop->local_mem_read || uop->local_mem_write)
 		compute_unit->alu_engine.local_mem_slot_count += alu_group->inst_count;
 	assert(IN_RANGE(alu_group->inst_count, 1, 5));
 	compute_unit->alu_engine.vliw_slots[alu_group->inst_count - 1]++;
 	if (evg_periodic_report_active)
 		evg_periodic_report_new_inst(uop);
+	if(evg_spatial_report_active)
+		evg_alu_report_new_inst(compute_unit);
+
 
 	/* If instruction accesses local memory, record addresses. */
 	if (uop->local_mem_read || uop->local_mem_write)
@@ -430,5 +435,6 @@ void evg_alu_engine_run(struct evg_compute_unit_t *compute_unit)
 
 	/* Stats */
 	compute_unit->alu_engine.cycle++;
+
 }
 

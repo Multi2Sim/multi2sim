@@ -35,8 +35,9 @@
 #include "cf-engine.h"
 #include "compute-unit.h"
 #include "gpu.h"
-#include "periodic-report.h"
 #include "tex-engine.h"
+#include "instruction-interval-report.h"
+#include "cycle-interval-report.h"
 
 
 
@@ -272,5 +273,7 @@ void evg_compute_unit_run(struct evg_compute_unit_t *compute_unit)
 
 	/* Stats */
 	compute_unit->cycle++;
+	if(evg_spatial_report_active)
+		evg_cu_interval_update(compute_unit);
 }
 

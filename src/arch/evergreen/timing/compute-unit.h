@@ -76,6 +76,11 @@ struct evg_compute_unit_t
 	long long cycle;
 	long long inst_count;
 
+	/* Statistics for spatial report */
+	long long inflight_mem_accesses ;
+	long long interval_cycle;
+	FILE * spatial_report_file;
+
 	/* Ready wavefront pool.
 	 * It includes suspended wavefronts, but excludes wavefronts in
 	 * flight in the CF pipeline or running on the ALU/TEX Engines. */
@@ -100,6 +105,10 @@ struct evg_compute_unit_t
 		long long alu_clause_trigger_count;
 		long long tex_clause_trigger_count;
 		long long global_mem_write_count;
+
+		/* Spatial Interval Reports */
+		long long interval_inst_count;
+
 
 	} cf_engine;
 
@@ -133,6 +142,10 @@ struct evg_compute_unit_t
 		long long local_mem_slot_count;
 		long long vliw_slots[5];
 
+		/* Spatial Interval Reports */
+		long long interval_inst_count;
+
+
 	} alu_engine;
 
 	/* Fields for TEX Engine */
@@ -152,6 +165,9 @@ struct evg_compute_unit_t
 		long long wavefront_count;
 		long long cycle;
 		long long inst_count;
+
+		/* Spatial Interval Reports */
+		long long interval_inst_count;
 
 	} tex_engine;
 

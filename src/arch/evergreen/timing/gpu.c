@@ -40,7 +40,9 @@
 #include "compute-unit.h"
 #include "faults.h"
 #include "gpu.h"
-#include "periodic-report.h"
+#include "cycle-interval-report.h"
+#include "instruction-interval-report.h"
+
 #include "sched.h"
 
 
@@ -345,6 +347,8 @@ static void evg_config_read(void)
 	
 	/* Periodic report */
 	evg_periodic_report_config_read(gpu_config);
+	evg_spatial_report_config_read(gpu_config);
+
 
 	/* Close GPU configuration file */
 	config_check(gpu_config);
@@ -497,6 +501,9 @@ void evg_gpu_done()
 	/* Finalizations */
 	evg_uop_done();
 	evg_periodic_report_done();
+
+	if(evg_spatial_report_active)
+		evg_cu_spatial_report_done();
 
 	/* GPU-REL: read stack faults file */
 	evg_faults_done();

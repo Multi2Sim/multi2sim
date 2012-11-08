@@ -32,7 +32,8 @@
 #include "cf-engine.h"
 #include "compute-unit.h"
 #include "gpu.h"
-#include "periodic-report.h"
+#include "instruction-interval-report.h"
+#include "cycle-interval-report.h"
 #include "sched.h"
 
 
@@ -63,6 +64,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Emulate CF instruction */
 	evg_wavefront_execute(wavefront);
 	inst = &wavefront->cf_inst;
+
 
 	/* Create uop */
 	uop = evg_uop_create();
@@ -111,6 +113,11 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Stats */
 	compute_unit->inst_count++;
 	compute_unit->cf_engine.inst_count++;
+
+	if(evg_spatial_report_active)
+		evg_cf_report_new_inst(compute_unit);
+
+
 	if (uop->global_mem_write)
 		compute_unit->cf_engine.global_mem_write_count++;
 	if (uop->alu_clause_trigger)
