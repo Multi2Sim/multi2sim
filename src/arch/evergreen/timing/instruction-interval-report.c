@@ -29,7 +29,7 @@
 #include <lib/util/string.h>
 
 #include "gpu.h"
-#include "periodic-report.h"
+#include "instruction-interval-report.h"
 #include "uop.h"
 
 
@@ -240,7 +240,7 @@ void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
 	assert(f);
 
 	/* First entry - dump intro */
-	if (wavefront->periodic_report_vliw_bundle_count == evg_periodic_report_interval)
+	if (wavefront->periodic_report_vliw_bundle_count <= evg_periodic_report_interval)
 	{
 		fprintf(f, "Periodic Report for WG-%d/WF-%d (%s)\n\n",
 			wavefront->work_group->id, wavefront->id_in_work_group,
@@ -267,6 +267,7 @@ void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
 	wavefront->periodic_report_global_mem_reads = 0;
 	wavefront->periodic_report_global_mem_writes = 0;
 }
+
 
 
 /* Update periodic interval report statistics. This function is called every time
