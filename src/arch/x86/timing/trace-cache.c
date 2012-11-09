@@ -30,8 +30,10 @@
 #include "uop.h"
 
 
-/* Parameters */
+/* Debug */
+int x86_trace_cache_debug_category;
 
+/* Parameters */
 int x86_trace_cache_present;  /* Use trace cache */
 int x86_trace_cache_num_sets;  /* Number of sets */
 int x86_trace_cache_assoc;  /* Number of ways */
@@ -71,7 +73,7 @@ void x86_trace_cache_config_check(struct config_t *config)
 		fatal("%s: %s: Invalid value for 'BranchMax'",
 			file_name, section);
 	if (x86_trace_cache_branch_max > x86_trace_cache_trace_size)
-		fatal("%s: %s: 'BranchMax' must be equal or smaller than 'TraceSize'",
+		fatal("%s: %s: 'BranchMax' must be equal or less than 'TraceSize'",
 			file_name, section);
 	if (x86_trace_cache_branch_max > 31)
 		fatal("%s: %s: Maximum value for 'BranchMax' is 31",

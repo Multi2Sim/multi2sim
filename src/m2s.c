@@ -45,6 +45,7 @@
 #include <arch/x86/emu/opengl.h>
 #include <arch/x86/emu/syscall.h>
 #include <arch/x86/timing/cpu.h>
+#include <arch/x86/timing/trace-cache.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/util/file.h>
@@ -60,16 +61,17 @@ static char *ctx_config_file_name = "";
 static char *elf_debug_file_name = "";
 static char *trace_file_name = "";
 
-static char *x86_disasm_file_name = "";
-static char *x86_sys_debug_file_name = "";
-static char *x86_loader_debug_file_name = "";
 static char *x86_call_debug_file_name = "";
+static char *x86_clrt_debug_file_name = "";
+static char *x86_disasm_file_name = "";
+static char *x86_glut_debug_file_name = "";
 static char *x86_isa_debug_file_name = "";
 static char *x86_load_checkpoint_file_name = "";
-static char *x86_save_checkpoint_file_name = "";
-static char *x86_glut_debug_file_name = "";
+static char *x86_loader_debug_file_name = "";
 static char *x86_opengl_debug_file_name = "";
-static char *x86_clrt_debug_file_name = "";
+static char *x86_save_checkpoint_file_name = "";
+static char *x86_sys_debug_file_name = "";
+static char *x86_trace_cache_debug_file_name = "";
 
 static char *evg_disasm_file_name = "";
 static char *evg_isa_debug_file_name = "";
@@ -167,29 +169,32 @@ static char *m2s_help =
 	"      of an x86 program can be observed leveraging ELF symbols present in the\n"
 	"      program binary.\n"
 	"\n"
-	"  --x86-debug-loader <file>\n"
-	"      Dump debug information extending the analysis of the ELF program binary.\n"
-	"      This information shows which ELF sections and symbols are loaded to the\n"
-	"      initial program memory image.\n"
+	"  --x86-debug-clrt <file>\n"
+	"      Debug information for the newer implementation of the OpenCL runtime\n"
+	"      library (not available yet).\n"
 	"\n"
 	"  --x86-debug-glut <file>\n"
 	"      Debug information for GLUT runtime calls performed by an OpenGL program\n"
 	"      based on the GLUT library.\n"
 	"\n"
-	"  --x86-debug-clrt <file>\n"
-	"      Debug information for the newer implementation of the OpenCL runtime\n"
-	"      library (not available yet).\n"
-	"\n"
-	"  --x86-debug-opengl <file>\n"
-	"      Debug information for OpenGL runtime calls.\n"
+	"  --x86-debug-loader <file>\n"
+	"      Dump debug information extending the analysis of the ELF program binary.\n"
+	"      This information shows which ELF sections and symbols are loaded to the\n"
+	"      initial program memory image.\n"
 	"\n"
 	"  --x86-debug-isa\n"
 	"      Debug information for dynamic execution of x86 instructions. Updates on\n"
 	"      the processor state can be analyzed using this information.\n"
 	"\n"
+	"  --x86-debug-opengl <file>\n"
+	"      Debug information for OpenGL runtime calls.\n"
+	"\n"
 	"  --x86-debug-syscall\n"
 	"      Debug information for system calls performed by an x86 program, including\n"
 	"      system call code, arguments, and return value.\n"
+	"\n"
+	"  --x86-debug-trace-cache\n"
+	"      Debug information for trace cache.\n"
 	"\n"
 	"  --x86-disasm <file>\n"
 	"      Disassemble the x86 ELF file provided in <file>, using the internal x86\n"
@@ -444,7 +449,7 @@ static char *m2s_err_note =
 static void m2s_need_argument(int argc, char **argv, int argi)
 {
 	if (argi == argc - 1)
-		fatal("option '%s' required one argument.\n%s",
+		fatal("option %s requires one argument.\n%s",
 			argv[argi], m2s_err_note);
 }
 
@@ -454,6 +459,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	int argc = *argc_ptr;
 	int argi;
 	int arg_discard = 0;
+	int err;
 
 	char *net_sim_last_option = NULL;
 
@@ -505,7 +511,11 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-time"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			m2s_max_time = atoll(argv[++argi]);
+			m2s_max_time = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
+			argi++;
 			continue;
 		}
 
@@ -594,6 +604,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Trace cache debug file */
+		if (!strcmp(argv[argi], "--x86-debug-trace-cache"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_trace_cache_debug_file_name = argv[++argi];
+			continue;
+		}
+
 		/* x86 disassembler */
 		if (!strcmp(argv[argi], "--x86-disasm"))
 		{
@@ -630,7 +648,11 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--x86-max-cycles"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_emu_max_cycles = atoll(argv[++argi]);
+			x86_emu_max_cycles = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
+			argi++;
 			continue;
 		}
 
@@ -638,7 +660,11 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--x86-max-inst"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_emu_max_inst = atoll(argv[++argi]);
+			x86_emu_max_inst = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
+			argi++;
 			continue;
 		}
 
@@ -772,7 +798,11 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--evg-max-cycles"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			evg_emu_max_cycles = atoll(argv[++argi]);
+			evg_emu_max_cycles = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
+			argi++;
 			continue;
 		}
 
@@ -780,7 +810,11 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--evg-max-inst"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			evg_emu_max_inst = atoll(argv[++argi]);
+			evg_emu_max_inst = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
+			argi++;
 			continue;
 		}
 
@@ -1061,8 +1095,11 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			net_sim_last_option = argv[argi];
+			net_max_cycles = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
 			argi++;
-			net_max_cycles = atoll(argv[argi]);
 			continue;
 		}
 
@@ -1453,13 +1490,17 @@ int main(int argc, char **argv)
 
 	/* Debug */
 	debug_init();
-	x86_isa_inst_debug_category = debug_new_category(x86_isa_debug_file_name);
-	x86_isa_call_debug_category = debug_new_category(x86_call_debug_file_name);
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
-	x86_loader_debug_category = debug_new_category(x86_loader_debug_file_name);
-	x86_sys_debug_category = debug_new_category(x86_sys_debug_file_name);
+	x86_clrt_debug_category = debug_new_category(x86_clrt_debug_file_name);
 	x86_ctx_debug_category = debug_new_category(ctx_debug_file_name);
+	x86_glut_debug_category = debug_new_category(x86_glut_debug_file_name);
+	x86_isa_inst_debug_category = debug_new_category(x86_isa_debug_file_name);
+	x86_isa_call_debug_category = debug_new_category(x86_call_debug_file_name);
+	x86_loader_debug_category = debug_new_category(x86_loader_debug_file_name);
+	x86_opengl_debug_category = debug_new_category(x86_opengl_debug_file_name);
+	x86_sys_debug_category = debug_new_category(x86_sys_debug_file_name);
+	x86_trace_cache_debug_category = debug_new_category(x86_trace_cache_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);
 	evg_opencl_debug_category = debug_new_category(evg_opencl_debug_file_name);
 	evg_isa_debug_category = debug_new_category(evg_isa_debug_file_name);
@@ -1468,9 +1509,6 @@ int main(int argc, char **argv)
 	si_opencl_debug_category = debug_new_category(evg_opencl_debug_file_name);
 	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
 	frm_cuda_debug_category = debug_new_category(frm_cuda_debug_file_name);
-	x86_glut_debug_category = debug_new_category(x86_glut_debug_file_name);
-	x86_clrt_debug_category = debug_new_category(x86_clrt_debug_file_name);
-	x86_opengl_debug_category = debug_new_category(x86_opengl_debug_file_name);
 	arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
 	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);

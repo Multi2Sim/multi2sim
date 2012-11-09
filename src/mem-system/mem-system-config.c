@@ -869,6 +869,8 @@ static void mem_config_read_module_address_range(struct config_t *config,
 	char *token;
 	char *delim;
 
+	int err;
+
 	/* Read address range */
 	range_str = config_read_string(config, section, "AddressRange", "");
 	if (!*range_str)
@@ -899,7 +901,10 @@ static void mem_config_read_module_address_range(struct config_t *config,
 		/* Low bound */
 		if (!(token = strtok(NULL, delim)))
 			goto invalid_format;
-		mod->range.bounds.low = str_to_int(token);
+		mod->range.bounds.low = str_to_int(token, &err);
+		if (err)
+			fatal("%s: %s: invalid value '%s' in 'AddressRange'",
+				mem_config_file_name, mod->name, token);
 		if (mod->range.bounds.low % mod->block_size)
 			fatal("%s: %s: low address bound must be a multiple of block size.\n%s",
 				mem_config_file_name, mod->name, err_mem_config_note);
@@ -907,7 +912,10 @@ static void mem_config_read_module_address_range(struct config_t *config,
 		/* High bound */
 		if (!(token = strtok(NULL, delim)))
 			goto invalid_format;
-		mod->range.bounds.high = str_to_int(token);
+		mod->range.bounds.high = str_to_int(token, &err);
+		if (err)
+			fatal("%s: %s: invalid value '%s' in 'AddressRange'",
+				mem_config_file_name, mod->name, token);
 		if ((mod->range.bounds.high + 1) % mod->block_size)
 			fatal("%s: %s: high address bound must be a multiple of block size minus 1.\n%s",
 				mem_config_file_name, mod->name, err_mem_config_note);
@@ -928,7 +936,10 @@ static void mem_config_read_module_address_range(struct config_t *config,
 		/* Field <div> */
 		if (!(token = strtok(NULL, delim)))
 			goto invalid_format;
-		mod->range.interleaved.div = str_to_int(token);
+		mod->range.interleaved.div = str_to_int(token, &err);
+		if (err)
+			fatal("%s: %s: invalid value '%s' in 'AddressRange'",
+				mem_config_file_name, mod->name, token);
 		if (mod->range.interleaved.div < 1)
 			goto invalid_format;
 		if (mod->range.interleaved.div % mod->block_size)
@@ -942,7 +953,10 @@ static void mem_config_read_module_address_range(struct config_t *config,
 		/* Field <mod> */
 		if (!(token = strtok(NULL, delim)))
 			goto invalid_format;
-		mod->range.interleaved.mod = str_to_int(token);
+		mod->range.interleaved.mod = str_to_int(token, &err);
+		if (err)
+			fatal("%s: %s: invalid value '%s' in 'AddressRange'",
+				mem_config_file_name, mod->name, token);
 		if (mod->range.interleaved.mod < 1)
 			goto invalid_format;
 
@@ -953,7 +967,10 @@ static void mem_config_read_module_address_range(struct config_t *config,
 		/* Field <eq> */
 		if (!(token = strtok(NULL, delim)))
 			goto invalid_format;
-		mod->range.interleaved.eq = str_to_int(token);
+		mod->range.interleaved.eq = str_to_int(token, &err);
+		if (err)
+			fatal("%s: %s: invalid value '%s' in 'AddressRange'",
+				mem_config_file_name, mod->name, token);
 		if (mod->range.interleaved.eq >= mod->range.interleaved.mod)
 			goto invalid_format;
 
