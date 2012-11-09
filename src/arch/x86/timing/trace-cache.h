@@ -24,34 +24,64 @@
 
 #define X86_TRACE_CACHE_ENTRY_SIZE \
 	(sizeof(struct x86_trace_cache_entry_t) + \
-	sizeof(uint32_t) * x86_trace_cache_trace_size)
+	sizeof(unsigned int) * x86_trace_cache_trace_size)
 #define X86_TRACE_CACHE_ENTRY(SET, WAY) \
 	((struct x86_trace_cache_entry_t *) (((unsigned char *) trace_cache->entry) + \
 	X86_TRACE_CACHE_ENTRY_SIZE * ((SET) * x86_trace_cache_assoc + (WAY))))
 
 struct x86_trace_cache_entry_t
 {
-	int counter;  /* lru counter */
+	/* LRU counter */
+	int counter;
+
+	/* Address of the first instruction in the trace */
 	unsigned int tag;
-	int uop_count, mop_count;
-	int branch_mask, branch_flags, branch_count;
+
+	/* Number of micro- and macro-instructions in the cache line */
+	int uop_count;
+	int mop_count;
+
+	/*trace->branch_mask |= 1 << trace->branch_count;
+	trace->branch_flags |= taken << trace->branch_count;*/
+
+	/* Number of branches in the trace */
+	int branch_count;
+
+	/* Bit mask of 'branch_count' bits, with all bits set to one. */
+	int branch_mask;
+
+	/* Bit mask of 'branch_count' bits. A bit set to one represents a
+	 * taken branch. The MSB corresponds to the last branch in the trace.
+	 * The LSB corresponds to the first branch in the trace. */
+	int branch_flags;
+
+	/* Address of the instruction following the last instruction in the
+	 * trace. */
 	unsigned int fall_through;
+
+	/* Address of the target address of the last branch in the trace */
 	unsigned int target;
 
-	/* Last field. This is a list of 'x86_trace_cache_trace_size' elements containing
-	 * the addresses of the microinst located in the trace. Only in the case that
-	 * all macroinst are decoded into just one uop can this array be filled up. */
+	/* This field has to be the last in the structure.
+	 * It is a list composed of 'x86_trace_cache_trace_size' elements.
+	 * Each element contains the address of the micro-instructions in the trace.
+	 * Only if each single micro-instructions comes from a different macro-
+	 * instruction can this array be full. */
 	unsigned int mop_array[0];
 };
 
 struct x86_trace_cache_t
 {
-	/* Entries (sets * assoc) */
-	struct x86_trace_cache_entry_t *entry;
-	struct x86_trace_cache_entry_t *temp;  /* Temporary trace */
+	char *name;
 
-	/* Stats */
-	char name[20];
+	/* Trace cache lines ('sets' * 'assoc' elements) */
+	struct x86_trace_cache_entry_t *entry;
+
+	/* Temporary trace, progressively filled up in the commit stage,
+	 * and dumped into the trace cache when full. */
+	struct x86_trace_cache_entry_t *temp;
+
+	/* Statistics */
 	long long accesses;
 	long long hits;
 	long long committed;
@@ -68,16 +98,20 @@ extern int x86_trace_cache_trace_size;
 extern int x86_trace_cache_branch_max;
 extern int x86_trace_cache_queue_size;
 
+
+struct config_t;
+void x86_trace_cache_config_check(struct config_t *config);
+
 void x86_trace_cache_init(void);
 void x86_trace_cache_done(void);
 void x86_trace_cache_dump_report(struct x86_trace_cache_t *trace_cache, FILE *f);
 
-struct x86_trace_cache_t *x86_trace_cache_create(void);
+struct x86_trace_cache_t *x86_trace_cache_create(char *name);
 void x86_trace_cache_free(struct x86_trace_cache_t *trace_cache);
 
 void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_uop_t *uop);
-int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, uint32_t eip, int pred,
-	int *ptr_mop_count, uint32_t **ptr_mop_array, uint32_t *ptr_neip);
+int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, unsigned int eip, int pred,
+	int *ptr_mop_count, unsigned int **ptr_mop_array, unsigned int *ptr_neip);
 
 
 #endif
