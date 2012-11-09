@@ -73,7 +73,7 @@ static int x86_cpu_can_fetch(int core, int thread)
 }
 
 
-/* Execute in the simulation kernel a macro-instruction and create uops.
+/* Run the emulation of one x86 macro-instruction and create its uops.
  * If any of the uops is a control uop, this uop will be the return value of
  * the function. Otherwise, the first decoded uop is returned. */
 static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trace_cache)
@@ -214,9 +214,8 @@ static int x86_cpu_fetch_thread_trace_cache(int core, int thread)
 	unsigned int *mop_array;
 	unsigned int neip;
 
-	/* No trace cache, no space in the trace cache queue. */
-	if (!x86_trace_cache_present)
-		return 0;
+	/* No room in trace cache queue */
+	assert(x86_trace_cache_present);
 	if (X86_THREAD.trace_cache_queue_occ >= x86_trace_cache_queue_size)
 		return 0;
 	
@@ -273,7 +272,7 @@ static void x86_cpu_fetch_thread(int core, int thread)
 	int taken;
 
 	/* Try to fetch from trace cache first */
-	if (x86_cpu_fetch_thread_trace_cache(core, thread))
+	if (x86_trace_cache_present && x86_cpu_fetch_thread_trace_cache(core, thread))
 		return;
 	
 	/* If new block to fetch is not the same as the previously fetched (and stored)

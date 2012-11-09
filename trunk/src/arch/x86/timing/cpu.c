@@ -369,18 +369,6 @@ static void x86_cpu_config_check(void)
 	x86_reg_file_xmm_size = config_read_int(config, section, "RfXmmSize", 40);
 
 
-	/* Section '[ TraceCache ]' */
-
-	section = "TraceCache";
-
-	x86_trace_cache_present = config_read_bool(config, section, "Present", 0);
-	x86_trace_cache_num_sets = config_read_int(config, section, "Sets", 64);
-	x86_trace_cache_assoc = config_read_int(config, section, "Assoc", 4);
-	x86_trace_cache_trace_size = config_read_int(config, section, "TraceSize", 16);
-	x86_trace_cache_branch_max = config_read_int(config, section, "BranchMax", 3);
-	x86_trace_cache_queue_size = config_read_int(config, section, "QueueSize", 32);
-
-	
 	/* Functional Units */
 
 	section = "FunctionalUnits";
@@ -451,6 +439,9 @@ static void x86_cpu_config_check(void)
 	x86_bpred_twolevel_l1size = config_read_int(config, section, "TwoLevel.L1Size", 1);
 	x86_bpred_twolevel_l2size = config_read_int(config, section, "TwoLevel.L2Size", 1024);
 	x86_bpred_twolevel_hist_size = config_read_int(config, section, "TwoLevel.HistorySize", 8);
+
+	/* Trace Cache */
+	x86_trace_cache_config_check(config);
 
 	/* Close file */
 	config_check(config);
