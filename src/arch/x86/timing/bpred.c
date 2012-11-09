@@ -495,7 +495,8 @@ unsigned int x86_bpred_btb_next_branch(struct x86_bpred_t *bpred, unsigned int e
 
 	assert(!(bsize & (bsize - 1)));
 	limit = (eip + bsize) & ~(bsize - 1);
-	while (eip < limit) {
+	while (eip < limit)
+	{
 		set = eip & (x86_bpred_btb_sets - 1);
 		for (way = 0; way < x86_bpred_btb_assoc; way++)
 		{
