@@ -24,6 +24,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
+#include <mem-system/memory.h>
 
 #include "cpu.h"
 #include "trace-cache.h"
@@ -95,8 +96,8 @@ void x86_trace_cache_init(void)
 	/* Initialization */
 	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 	{
-		snprintf(name, sizeof name,"c%dt%d.trace_cache", core, thread);
-		X86_THREAD.trace_cache = x86_trace_cache_create(name);
+		snprintf(name, sizeof name,"Core[%d].Thread[%d].TraceCache", core, thread);
+		X86_THREAD.trace_cache = x86_trace_cache_create(name, &x86_cpu->core[core].thread[thread]);
 	}
 }
 
@@ -116,7 +117,7 @@ void x86_trace_cache_done(void)
 }
 
 
-struct x86_trace_cache_t *x86_trace_cache_create(char *name)
+struct x86_trace_cache_t *x86_trace_cache_create(char *name, struct x86_thread_t *thread)
 {
 	struct x86_trace_cache_t *trace_cache;
 	struct x86_trace_cache_entry_t *entry;
@@ -128,6 +129,9 @@ struct x86_trace_cache_t *x86_trace_cache_create(char *name)
 	trace_cache = calloc(1, sizeof(struct x86_trace_cache_t));
 	if (!trace_cache)
 		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	trace_cache->thread = thread;
 
 	/* Name */
 	trace_cache->name = strdup(name);
@@ -186,15 +190,98 @@ void x86_trace_cache_dump_report(struct x86_trace_cache_t *trace_cache, FILE *f)
 		trace_cache->hits / trace_cache->accesses : 0.0);
 	fprintf(f, "TraceCache.Committed = %lld\n", trace_cache->committed);
 	fprintf(f, "TraceCache.Squashed = %lld\n", trace_cache->squashed);
-	fprintf(f, "TraceCache.TraceLength = %.2g\n",
+	fprintf(f, "TraceCache.TraceLength = %.2f\n",
 		trace_cache->trace_length_count ? (double) trace_cache->trace_length_acc /
 			trace_cache->trace_length_count : 0);
 	fprintf(f, "\n");
 }
 
 
+/* Dump branch prediction sequence */
+static void x86_trace_cache_pred_dump(int pred, int num, FILE *f)
+{
+	int i;
+	char *comma;
+
+	comma = "";
+	fprintf(f, "(");
+	for (i = 0; i < num; i++)
+	{
+		fprintf(f, "%s%c", comma, pred & (1 << i) ? 'T' : 'n');
+		comma = "-";
+	}
+	fprintf(f, ")");
+}
+
+
+/* Dump trace line */
+static void x86_trace_cache_entry_dump(struct x86_trace_cache_t *trace_cache,
+	struct x86_trace_cache_entry_t *entry, FILE *f)
+{
+	struct mem_t *mem;
+	char *comma;
+	int i;
+
+	/* Get memory object for the thread */
+	assert(trace_cache->thread->ctx && trace_cache->thread->ctx->mem);
+	mem = trace_cache->thread->ctx->mem;
+
+	/* Tag and number of branches */
+	fprintf(f, "tag = 0x%x, ", entry->tag);
+
+	/* Branch flags */
+	fprintf(f, "branches = ");
+	x86_trace_cache_pred_dump(entry->branch_flags, entry->branch_count, f);
+	fprintf(f, "\n");
+
+	/* Fall-through and target address */
+	fprintf(f, "fall_through = 0x%x, ", entry->fall_through);
+	fprintf(f, "target = 0x%x\n", entry->target);
+
+	/* Macro-Instructions */
+	fprintf(f, "uops = %d, ", entry->uop_count);
+	fprintf(f, "mops = {");
+	comma = "";
+	for (i = 0; i < entry->mop_count; i++)
+	{
+		char mop_name[MAX_STRING_SIZE];
+		char *mop_name_end;
+		char mop_bytes[20];
+
+		unsigned int addr;
+
+		int mem_safe;
+		int mop_name_length;
+
+		struct x86_inst_t inst;
+
+		/* Disable memory safe mode */
+		mem_safe = mem->safe;
+		mem->safe = 0;
+
+		/* Read instruction */
+		addr = entry->mop_array[i];
+		mem_read(mem, addr, sizeof mop_bytes, mop_bytes);
+
+		/* Disassemble */
+		x86_disasm(mop_bytes, addr, &inst);
+
+		/* Extract instruction name */
+		mop_name_end = index(inst.format, '_');
+		mop_name_length = mop_name_end ? mop_name_end - inst.format : strlen(inst.format);
+		str_substr(mop_name, sizeof mop_name, inst.format, 0, mop_name_length);
+		fprintf(f, "%s%s", comma, mop_name);
+		comma = ", ";
+
+		/* Restore safe mode */
+		mem->safe = mem_safe;
+	}
+	fprintf(f, "}\n");
+}
+
+
 /* Flush temporary trace of committed instructions back into the trace cache */
-static void x86_trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
+static void x86_trace_cache_flush(struct x86_trace_cache_t *trace_cache)
 {
 	struct x86_trace_cache_entry_t *entry;
 	struct x86_trace_cache_entry_t *found_entry;
@@ -202,6 +289,7 @@ static void x86_trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
 
 	int set;
 	int way;
+	int found_way;
 
 	/* There must be something to commit */
 	if (!trace->uop_count)
@@ -222,6 +310,7 @@ static void x86_trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
 	/* Allocate new line for the trace. If trace is already in the cache,
 	 * do nothing. If there is any invalid entry, choose it. */
 	found_entry = NULL;
+	found_way = -1;
 	set = trace->tag % x86_trace_cache_num_sets;
 	for (way = 0; way < x86_trace_cache_assoc; way++)
 	{
@@ -232,6 +321,7 @@ static void x86_trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
 		if (!entry->tag)
 		{
 			found_entry = entry;
+			found_way = way;
 			break;
 		}
 
@@ -240,6 +330,7 @@ static void x86_trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
 			&& entry->branch_flags == trace->branch_flags)
 		{
 			found_entry = entry;
+			found_way = way;
 			break;
 		}
 	}
@@ -255,6 +346,7 @@ static void x86_trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
 			{
 				entry->counter = x86_trace_cache_assoc - 1;
 				found_entry = entry;
+				found_way = way;
 			}
 		}
 	}
@@ -262,12 +354,25 @@ static void x86_trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
 	/* Flush temporary trace and reset it. When flushing, all fields are
 	 * copied except for LRU counter. */
 	assert(found_entry);
+	assert(found_way >= 0);
 	trace->counter = found_entry->counter;
 	memcpy(found_entry, trace, X86_TRACE_CACHE_ENTRY_SIZE);
 	memset(trace_cache->temp, 0, X86_TRACE_CACHE_ENTRY_SIZE);
 
+	/* Debug */
+	if (x86_trace_cache_debugging())
+	{
+		FILE *f;
+
+		f = debug_file(x86_trace_cache_debug_category);
+		fprintf(f, "** Commit trace **\n");
+		fprintf(f, "Set = %d, Way = %d\n", set, found_way);
+		x86_trace_cache_entry_dump(trace_cache, found_entry, f);
+		fprintf(f, "\n");
+	}
+
 	/* Statistics */
-	trace_cache->trace_length_acc += trace->uop_count;
+	trace_cache->trace_length_acc += found_entry->uop_count;
 	trace_cache->trace_length_count++;
 }
 
@@ -286,7 +391,7 @@ void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_u
 	assert(uop->eip);
 	assert(uop->id == uop->mop_id);
 	if (trace->uop_count + uop->mop_count > x86_trace_cache_trace_size)
-		x86_trace_cache_flush_trace(trace_cache);
+		x86_trace_cache_flush(trace_cache);
 
 	/* If even after flushing the current trace, the number of micro-instructions
 	 * does not fit in a trace line, this macro-instruction cannot be stored. */
@@ -314,7 +419,7 @@ void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_u
 		trace->branch_count++;
 		trace->target = uop->target_neip;
 		if (trace->branch_count == x86_trace_cache_branch_max)
-			x86_trace_cache_flush_trace(trace_cache);
+			x86_trace_cache_flush(trace_cache);
 	}
 }
 
@@ -324,8 +429,24 @@ int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, unsigned int e
 {
 	struct x86_trace_cache_entry_t *entry;
 	struct x86_trace_cache_entry_t *found_entry;
-	int set, way;
+
 	unsigned int neip;
+
+	int set;
+	int way;
+	int taken;
+
+	FILE *f;
+
+	/* Debug */
+	if (x86_trace_cache_debugging())
+	{
+		f = debug_file(x86_trace_cache_debug_category);
+		fprintf(f, "** Lookup **\n");
+		fprintf(f, "eip = 0x%x, pred = ", eip);
+		x86_trace_cache_pred_dump(pred, x86_trace_cache_branch_max, f);
+		fprintf(f, "\n");
+	}
 
 	/* Look for trace cache line */
 	found_entry = NULL;
@@ -347,13 +468,28 @@ int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, unsigned int e
 
 	/* Miss */
 	if (!found_entry)
+	{
+		x86_trace_cache_debug("Miss\n");
+		x86_trace_cache_debug("\n");
 		return 0;
+	}
 	
 	/* Calculate address of the next instruction to fetch after this trace.
 	 * The 'neip' value will be the trace 'target' if the last instruction in
 	 * the trace is a branch and 'pred' predicts it taken. */
-	neip = entry->target && (pred & (1 << entry->branch_count)) ?
-		found_entry->target : found_entry->fall_through;
+	taken = found_entry->target && (pred & (1 << found_entry->branch_count));
+	neip = taken ? found_entry->target : found_entry->fall_through;
+
+	/* Debug */
+	if (x86_trace_cache_debugging())
+	{
+		f = debug_file(x86_trace_cache_debug_category);
+		fprintf(f, "Hit - Set = %d, Way = %d\n", set, way);
+		x86_trace_cache_entry_dump(trace_cache, found_entry, f);
+		fprintf(f, "Next trace prediction = %c\n", taken ? 'T' : 'n');
+		fprintf(f, "Next fetch address = 0x%x\n", neip);
+		fprintf(f, "\n");
+	}
 
 	/* Return fields. */
 	PTR_ASSIGN(ptr_mop_count, found_entry->mop_count);

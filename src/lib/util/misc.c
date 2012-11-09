@@ -156,14 +156,18 @@ void dump_bin(int x, int digits, FILE *f)
 {
 	int i;
 	char s[33];
-	if (!digits) {
-		fprintf(f, "0");
+
+	/* No digit */
+	if (!digits)
 		return;
-	}
+
+	/* Create string */
 	digits = MAX(MIN(digits, 32), 1);
 	for (i = 0; i < digits; i++)
 		s[i] = x & (1 << (digits - i - 1)) ? '1' : '0';
 	s[digits] = 0;
+
+	/* Print */
 	fprintf(f, "%s", s);
 }
 
