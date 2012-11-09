@@ -125,7 +125,7 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 		x86_cpu->num_committed_uinst_array[uop->uinst->opcode]++;
 		x86_cpu->num_committed_uinst++;
 		ctx->inst_count++;
-		if (uop->fetch_trace_cache)
+		if (uop->trace_cache)
 			X86_THREAD.trace_cache->committed++;
 		if (!uop->mop_index)
 			x86_cpu->num_committed_inst++;
@@ -174,7 +174,9 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 
 static void x86_cpu_commit_core(int core)
 {
-	int pass, quant, new;
+	int pass;
+	int quant;
+	int new;
 
 	/* Commit stage for core */
 	switch (x86_cpu_commit_kind)
@@ -216,6 +218,7 @@ static void x86_cpu_commit_core(int core)
 void x86_cpu_commit()
 {
 	int core;
+
 	x86_cpu->stage = "commit";
 	X86_CORE_FOR_EACH
 		x86_cpu_commit_core(core);

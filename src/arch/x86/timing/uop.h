@@ -31,7 +31,6 @@ struct x86_uop_t
 	enum x86_uinst_flag_t flags;
 
 	/* Name and sequence numbers */
-	char name[40];
 	long long magic;  /* Magic number for debugging */
 	long long id;  /* Unique ID */
 	long long id_in_core;  /* Unique ID in core */
@@ -42,7 +41,6 @@ struct x86_uop_t
 	int thread;
 
 	/* Fetch info */
-	int fetch_trace_cache;  /* True if uop comes from trace cache */
 	unsigned int eip;  /* Address of x86 macro-instruction */
 	unsigned int neip;  /* Address of next non-speculative x86 macro-instruction */
 	unsigned int pred_neip; /* Address of next predicted x86 macro-instruction (for branches) */
@@ -50,6 +48,7 @@ struct x86_uop_t
 	int specmode;
 	unsigned int fetch_address;  /* Physical address of memory access to fetch this instruction */
 	long long fetch_access;  /* Access identifier to fetch this instruction */
+	int trace_cache;  /* Flag telling if uop came from trace cache */
 
 	/* Fields associated with macroinstruction */
 	char mop_name[40];
@@ -102,6 +101,8 @@ struct x86_uop_t
 
 struct x86_uop_t *x86_uop_create(void);
 void x86_uop_free_if_not_queued(struct x86_uop_t *uop);
+void x86_uop_dump(struct x86_uop_t *uop, FILE *f);
+
 int x86_uop_exists(struct x86_uop_t *uop);
 
 void x86_uop_list_dump(struct list_t *uop_list, FILE *f);

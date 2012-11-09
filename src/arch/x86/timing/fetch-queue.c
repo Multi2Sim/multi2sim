@@ -66,12 +66,12 @@ struct x86_uop_t *x86_fetch_queue_remove(int core, int thread, int index)
 	assert(index >= 0 && index < list_count(fetchq));
 	uop = list_remove_at(fetchq, index);
 	uop->in_fetch_queue = 0;
-	if (!uop->fetch_trace_cache && !uop->mop_index)
+	if (!uop->trace_cache && !uop->mop_index)
 	{
 		X86_THREAD.fetchq_occ -= uop->mop_size;
 		assert(X86_THREAD.fetchq_occ >= 0);
 	}
-	if (uop->fetch_trace_cache)
+	if (uop->trace_cache)
 	{
 		X86_THREAD.trace_cache_queue_occ--;
 		assert(X86_THREAD.trace_cache_queue_occ >= 0);

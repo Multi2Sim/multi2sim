@@ -63,6 +63,21 @@ void x86_uop_free_if_not_queued(struct x86_uop_t *uop)
 }
 
 
+void x86_uop_dump(struct x86_uop_t *uop, FILE *f)
+{
+	/* Fields */
+	fprintf(f, "id=%lld, ", uop->id);
+	fprintf(f, "eip=0x%x, ", uop->eip);
+	fprintf(f, "spec_mode=%c, ", uop->specmode ? 't' : 'f');
+	fprintf(f, "trace_cache=%c, ", uop->trace_cache ? 't' : 'f');
+
+	/* Micro-instruction */
+	fprintf(f, "uinst='");
+	x86_uinst_dump(uop->uinst, f);
+	fprintf(f, "'");
+}
+
+
 /* Check whether this is a valid pointer to an allocated uop by checking
  * the magic number. */
 int x86_uop_exists(struct x86_uop_t *uop)
@@ -71,16 +86,16 @@ int x86_uop_exists(struct x86_uop_t *uop)
 }
 
 
-void x86_uop_list_dump(struct list_t *uop_list, FILE *f)
+void x86_uop_list_dump(struct list_t *list, FILE *f)
 {
 	struct x86_uop_t *uop;
 	int i;
 	
-	for (i = 0; i < list_count(uop_list); i++)
+	for (i = 0; i < list_count(list); i++)
 	{
-		uop = list_get(uop_list, i);
 		fprintf(f, "%3d. ", i);
-		x86_uinst_dump(uop->uinst, f);
+		uop = list_get(list, i);
+		x86_uop_dump(uop, f);
 		fprintf(f, "\n");
 	}
 }
