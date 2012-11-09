@@ -76,9 +76,32 @@ void str_substr(char *dest, int dest_size, char *src, int src_pos, int src_count
 
 void str_token(char *dest, int dest_size, char *src, int index, char *delim);
 
-/* Convert a string into an integer. The string can represent a number in
- * decimal or hexadecimal format, prepended with '0x'. */
-int str_to_int(char *str);
+/* Remove spaces from the beginning and end of string 'src'. The resulting string
+ * is placed in buffer 'dest' with a maximum capacity of 'size' bytes. The resulting
+ * string is always NULL-terminated. */
+void str_trim(char *dest, int size, char *src);
+
+/* Return a string corresponding to the error code passed in 'err'. The value in
+ * 'err' is the error code returned by 'str_xxx' functions. */
+char *str_error(int err);
+
+/* Convert a string 'str' into an integer, accepting the following modifiers.
+ * If conversion fails due to wrong formatting of 'str', an error code is returned
+ * in argument 'err' (can be NULL).
+ *
+ * String prefixes:
+ *   Prefix '0x' - Use base 16 for conversion.
+ *   Prefix '0' - Use base 8 for conversion.
+ * String suffixes:
+ *   Suffix 'k' - Multiply by 1024.
+ *   Suffix 'K' - Multiply by 1000.
+ *   Suffix 'm' - Multiply by 1024*1024.
+ *   Suffix 'M' - Multiply by 1000*1000.
+ *   Suffix 'g' - Multiply by 1024*1024*1024.
+ *   Suffix 'G' - Multiply by 1000*1000*1000.
+ */
+int str_to_int(char *str, int *err);
+long long str_to_llint(char *str, int *err);
 
 /* Dump formatted string into a buffer with a specific size. Its size is then
  * decreased, and the buffer is advanced to the end of the dumped string.

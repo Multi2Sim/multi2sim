@@ -17,6 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <ctype.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -210,6 +213,34 @@ void str_token_list_dump(struct list_t *token_list, FILE *f)
  * String functions
  */
 
+enum str_error_enum
+{
+	str_err_ok = 0,
+	str_err_base,
+	str_err_format,
+	str_err_range
+};
+
+static struct str_map_t str_error_map =
+{
+	4,
+	{
+		{ "OK", str_err_ok },
+		{ "Invalid base", str_err_base },
+		{ "Invalid format", str_err_format },
+		{ "Integer exceeds valid range", str_err_range }
+	}
+};
+
+
+/* Return the error message associated with an error code. */
+char *str_error(int err)
+{
+	
+	return str_map_value(&str_error_map, err);
+}
+
+
 void str_single_spaces(char *dest, char *src, int size)
 {
 	int spc = 0;
@@ -219,13 +250,17 @@ void str_single_spaces(char *dest, char *src, int size)
 		src++;
 	
 	/* Remove duplicated and final spaces */
-	while (*src) {
-		if (*src != ' ' && *src != '\n') {
-			if (spc && size) {
+	while (*src)
+	{
+		if (*src != ' ' && *src != '\n')
+		{
+			if (spc && size)
+			{
 				*dest++ = ' ';
 				size--;
 			}
-			if (size) {
+			if (size)
+			{
 				*dest++ = *src;
 				size--;
 			}
@@ -304,14 +339,465 @@ void str_token(char *dest, int dest_size, char *src, int index, char *delim)
 }
 
 
-int str_to_int(char *str)
+void str_trim(char *dest, int size, char *src)
 {
-	int result = 0;
+	int len;
+	int new_len;
+	int right_trim;
+	int left_trim;
+	int i;
 
-	if (!strncasecmp(str, "0x", 2))
-		sscanf(str + 2, "%x", &result);
+	/* Check valid 'size' */
+	if (size < 1)
+		panic("%s: invalid value for 'size'", __FUNCTION__);
+
+	/* Store original string length */
+	len = strlen(src);
+
+	/* Count characters to trim on the right */
+	right_trim = 0;
+	for (i = len - 1; i >= 0 && isspace(src[i]); i--)
+		right_trim++;
+	
+	/* Entire string is empty */
+	assert(right_trim <= len);
+	if (right_trim == len)
+	{
+		*dest = '\0';
+		return;
+	}
+
+	/* Count characters to trim on the left */
+	left_trim = 0;
+	for (i = 0; i < len && isspace(src[i]); i++)
+		left_trim++;
+	
+	/* New string length */
+	new_len = len - left_trim - right_trim;
+	new_len = MIN(new_len, size - 1);
+	assert(new_len > 0);
+
+	/* Create new string */
+	dest[new_len] = '\0';
+	for (i = 0; i < new_len; i++)
+		dest[i] = src[i + left_trim];
+}
+
+
+int str_digit_to_int(char digit, int base, int *err_ptr)
+{
+	int result;
+
+	/* Assume no error */
+	PTR_ASSIGN(err_ptr, str_err_ok);
+
+	/* Check base */
+	if (base != 2 && base != 8 && base != 10 && base != 16)
+	{
+		PTR_ASSIGN(err_ptr, str_err_base);
+		return 0;
+	}
+
+	/* Parse digit */
+	result = 0;
+	digit = tolower(digit);
+	if (digit >= '0' && digit <= '9')
+	{
+		result = digit - '0';
+	}
+	else if (digit >= 'a' && digit <= 'f')
+	{
+		result = digit - 'a' + 10;
+	}
 	else
-		sscanf(str, "%d", &result);
+	{
+		PTR_ASSIGN(err_ptr, str_err_format);
+		return 0;
+	}
+
+	/* Check digit range */
+	if (result >= base)
+	{
+		PTR_ASSIGN(err_ptr, str_err_format);
+		return 0;
+	}
+
+	/* Return */
+	return result;
+}
+
+
+int str_to_int(char *str, int *err_ptr)
+{
+	int sign;
+	int base;
+	int result;
+	int digit;
+	int num_digits;
+	int err;
+	int factor;
+	int len;
+
+	char trimmed[MAX_STRING_SIZE];
+
+	/* Remove spaces */
+	str_trim(trimmed, sizeof trimmed, str);
+	str = trimmed;
+
+	/* Assume no error initially */
+	PTR_ASSIGN(err_ptr, str_err_ok);
+
+	/* Base */
+	base = 10;
+	if (str_prefix(str, "0x"))
+	{
+		base = 16;
+		str += 2;
+	}
+	else if (str[0] == '0' && str[1])
+	{
+		base = 8;
+		str++;
+	}
+
+	/* Sign (only for base 10) */
+	sign = 1;
+	if (base == 10)
+	{
+		if (*str == '+')
+		{
+			sign = 1;
+			str++;
+		}
+		else if (*str == '-')
+		{
+			sign = -1;
+			str++;
+		}
+	}
+
+	/* Empty string */
+	if (!*str)
+	{
+		PTR_ASSIGN(err_ptr, str_err_format);
+		return 0;
+	}
+
+	/* Suffixes (only for base 10) */
+	factor = 0;
+	len = strlen(str);
+	assert(len > 0);
+	if (base == 10)
+	{
+		switch (str[len - 1])
+		{
+		case 'k':
+			factor = 1024;
+			str[len - 1] = '\0';
+			break;
+
+		case 'K':
+			factor = 1000;
+			str[len - 1] = '\0';
+			break;
+
+		case 'm':
+			factor = 1024 * 1024;
+			str[len - 1] = '\0';
+			break;
+
+		case 'M':
+			factor = 1000 * 1000;
+			str[len - 1] = '\0';
+			break;
+
+		case 'g':
+			factor = 1024 * 1024 * 1024;
+			str[len - 1] = '\0';
+			break;
+
+		case 'G':
+			factor = 1000 * 1000 * 1000;
+			str[len - 1] = '\0';
+			break;
+		}
+	}
+
+	/* Remove leading 0s */
+	while (*str == '0')
+		str++;
+	if (!*str)
+		return 0;
+
+	/* Start converting */
+	result = 0;
+	num_digits = 0;
+	while (*str)
+	{
+		/* Get one digit */
+		digit = str_digit_to_int(*str, base, &err);
+		num_digits++;
+		if (err)
+		{
+			PTR_ASSIGN(err_ptr, err);
+			return 0;
+		}
+
+		/* Prevent overflow in base 10 */
+		if (base == 10)
+		{
+			if (sign < 0 && INT_MIN / base > result)
+			{
+				PTR_ASSIGN(err_ptr, str_err_range);
+				return 0;
+			}
+			if (sign > 0 && INT_MAX / base < result)
+			{
+				PTR_ASSIGN(err_ptr, str_err_range);
+				return 0;
+			}
+		}
+
+		/* Multiply by base */
+		result *= base;
+
+		/* Prevent overflow in base 10 */
+		if (base == 10)
+		{
+			if (sign < 0 && INT_MIN + digit > result)
+			{
+				PTR_ASSIGN(err_ptr, str_err_range);
+				return 0;
+			}
+			if (sign > 0 && INT_MAX - digit < result)
+			{
+				PTR_ASSIGN(err_ptr, str_err_range);
+				return 0;
+			}
+		}
+
+		/* Add digit */
+		result += digit * sign;
+
+		/* Prevent overflow in hexadecimal (unsigned) */
+		if (base == 16 && num_digits > 8)
+		{
+			PTR_ASSIGN(err_ptr, str_err_range);
+			return 0;
+		}
+
+		/* Next character */
+		str++;
+	}
+
+	/* Multiplying factor */
+	if (base == 10 && factor)
+	{
+		/* Prevent overflow */
+		if (sign < 0 && INT_MIN / factor > result)
+		{
+			PTR_ASSIGN(err_ptr, str_err_range);
+			return 0;
+		}
+		if (sign > 0 && INT_MAX / factor < result)
+		{
+			PTR_ASSIGN(err_ptr, str_err_range);
+			return 0;
+		}
+
+		/* Multiply by factor */
+		result *= factor;
+	}
+
+	/* Return */
+	return result;
+}
+
+
+long long str_to_llint(char *str, int *err_ptr)
+{
+	int sign;
+	int base;
+	int digit;
+	int num_digits;
+	int err;
+	int factor;
+	int len;
+
+	long long result;
+
+	char trimmed[MAX_STRING_SIZE];
+
+	/* Remove spaces */
+	str_trim(trimmed, sizeof trimmed, str);
+	str = trimmed;
+
+	/* Assume no error initially */
+	PTR_ASSIGN(err_ptr, str_err_ok);
+
+	/* Base */
+	base = 10;
+	if (str_prefix(str, "0x"))
+	{
+		base = 16;
+		str += 2;
+	}
+	else if (str[0] == '0' && str[1])
+	{
+		base = 8;
+		str++;
+	}
+
+	/* Sign (only for base 10) */
+	sign = 1;
+	if (base == 10)
+	{
+		if (*str == '+')
+		{
+			sign = 1;
+			str++;
+		}
+		else if (*str == '-')
+		{
+			sign = -1;
+			str++;
+		}
+	}
+
+	/* Empty string */
+	if (!*str)
+	{
+		PTR_ASSIGN(err_ptr, str_err_format);
+		return 0;
+	}
+
+	/* Suffixes (only for base 10) */
+	factor = 0;
+	len = strlen(str);
+	assert(len > 0);
+	if (base == 10)
+	{
+		switch (str[len - 1])
+		{
+		case 'k':
+			factor = 1024;
+			str[len - 1] = '\0';
+			break;
+
+		case 'K':
+			factor = 1000;
+			str[len - 1] = '\0';
+			break;
+
+		case 'm':
+			factor = 1024 * 1024;
+			str[len - 1] = '\0';
+			break;
+
+		case 'M':
+			factor = 1000 * 1000;
+			str[len - 1] = '\0';
+			break;
+
+		case 'g':
+			factor = 1024 * 1024 * 1024;
+			str[len - 1] = '\0';
+			break;
+
+		case 'G':
+			factor = 1000 * 1000 * 1000;
+			str[len - 1] = '\0';
+			break;
+		}
+	}
+
+	/* Remove leading 0s */
+	while (*str == '0')
+		str++;
+	if (!*str)
+		return 0;
+
+	/* Start converting */
+	result = 0;
+	num_digits = 0;
+	while (*str)
+	{
+		/* Get one digit */
+		digit = str_digit_to_int(*str, base, &err);
+		num_digits++;
+		if (err)
+		{
+			PTR_ASSIGN(err_ptr, err);
+			return 0;
+		}
+
+		/* Prevent overflow in base 10 */
+		if (base == 10)
+		{
+			if (sign < 0 && LLONG_MIN / base > result)
+			{
+				PTR_ASSIGN(err_ptr, str_err_range);
+				return 0;
+			}
+			if (sign > 0 && LLONG_MAX / base < result)
+			{
+				PTR_ASSIGN(err_ptr, str_err_range);
+				return 0;
+			}
+		}
+
+		/* Multiply by base */
+		result *= base;
+
+		/* Prevent overflow in base 10 */
+		if (base == 10)
+		{
+			if (sign < 0 && LLONG_MIN + digit > result)
+			{
+				PTR_ASSIGN(err_ptr, str_err_range);
+				return 0;
+			}
+			if (sign > 0 && LLONG_MAX - digit < result)
+			{
+				PTR_ASSIGN(err_ptr, str_err_range);
+				return 0;
+			}
+		}
+
+		/* Add digit */
+		result += digit * sign;
+
+		/* Prevent overflow in hexadecimal (unsigned) */
+		if (base == 16 && num_digits > 16)
+		{
+			PTR_ASSIGN(err_ptr, str_err_range);
+			return 0;
+		}
+
+		/* Next character */
+		str++;
+	}
+
+	/* Multiplying factor */
+	if (base == 10 && factor)
+	{
+		/* Prevent overflow */
+		if (sign < 0 && LLONG_MIN / factor > result)
+		{
+			PTR_ASSIGN(err_ptr, str_err_range);
+			return 0;
+		}
+		if (sign > 0 && LLONG_MAX / factor < result)
+		{
+			PTR_ASSIGN(err_ptr, str_err_range);
+			return 0;
+		}
+
+		/* Multiply by factor */
+		result *= factor;
+	}
+
+	/* Return */
 	return result;
 }
 
