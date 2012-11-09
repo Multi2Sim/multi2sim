@@ -23,15 +23,14 @@
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-#include <lib/util/hash-table.h>
-#include <lib/util/linked-list.h>
 
 #include "config.h"
 #include "debug.h"
+#include "hash-table.h"
+#include "linked-list.h"
+#include "string.h"
 
 
-#define MAX_STRING_SIZE		1000
 #define HASH_TABLE_SIZE		100
 
 #define ITEM_ALLOWED  ((void *) 1)
@@ -76,23 +75,6 @@ struct config_t
  * Private Functions
  */
 
-static void trim(char *dest, char *str)
-{
-	/* Copy left-trimmed string to 'dest' */
-	while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r')
-		str++;
-	snprintf(dest, MAX_STRING_SIZE, "%s", str);
-	
-	/* Create right-trimmed version of 'dest' */
-	str = dest + strlen(dest) - 1;
-	while (*dest && (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r'))
-	{
-		*str = '\0';
-		str--;
-	}
-}
-
-
 /* Return a section and variable name from a string "<section>\n<var>" or "<secion>". In the
  * latter case, the variable name is returned as an empty string. */
 static void get_section_var_from_item(char *item, char *section, char *var)
@@ -118,10 +100,10 @@ static void get_item_from_section_var(char *section, char *var, char *item)
 	char section_trim[MAX_STRING_SIZE];
 
 	assert(section && *section);
-	trim(section_trim, section);
+	str_trim(section_trim, sizeof section_trim, section);
 	if (var && *var)
 	{
-		trim(var_trim, var);
+		str_trim(var_trim, sizeof var_trim, var);
 		snprintf(item, MAX_STRING_SIZE, "%s\n%s", section_trim, var_trim);
 	}
 	else
@@ -135,7 +117,8 @@ static void get_item_from_section_var(char *section, char *var, char *item)
  * Both the returned variable and the value are trimmed.
  * If the input string format is wrong, a non-zero value is returned.
  * Zero is returned on success. */
-static int get_var_value_from_item(char *item, char *var, char *value)
+static int get_var_value_from_item(char *item, char *var, int var_size,
+	char *value, int value_size)
 {
 	char var_str[MAX_STRING_SIZE];
 	char value_str[MAX_STRING_SIZE];
@@ -159,8 +142,8 @@ static int get_var_value_from_item(char *item, char *var, char *value)
 	value_str[strlen(item) - equal_pos - 1] = '\0';
 
 	/* Return trimmed strings */
-	trim(var, var_str);
-	trim(value, value_str);
+	str_trim(var, var_size, var_str);
+	str_trim(value, value_size, value_str);
 	return 0;
 }
 
@@ -171,7 +154,7 @@ static int config_insert_section(struct config_t *config, char *section)
 	char section_trim[MAX_STRING_SIZE];
 	int err;
 
-	trim(section_trim, section);
+	str_trim(section_trim, sizeof section_trim, section);
 	err = !hash_table_insert(config->items, section, (void *) 1);
 
 	return err;
@@ -188,7 +171,7 @@ static int config_insert_var(struct config_t *config, char *section, char *var, 
 	get_item_from_section_var(section, var, item);
 
 	/* Allocate new value */
-	trim(value_trim, value);
+	str_trim(value_trim, sizeof value_trim, value);
 	nvalue = strdup(value_trim);
 	if (!nvalue)
 		fatal("%s: out of memory", __FUNCTION__);
@@ -305,7 +288,7 @@ void config_load(struct config_t *config)
 			break;
 
 		/* Trim line */
-		trim(line_trim, line);
+		str_trim(line_trim, sizeof line_trim, line);
 
 		/* Comment or blank line */
 		if (!line_trim[0] || line_trim[0] == ';' || line_trim[0] == '#')
@@ -317,7 +300,7 @@ void config_load(struct config_t *config)
 			/* Get section name */
 			line_trim[0] = ' ';
 			line_trim[strlen(line_trim) - 1] = ' ';
-			trim(section, line_trim);
+			str_trim(section, sizeof section, line_trim);
 
 			/* Insert section */
 			err = config_insert_section(config, section);
@@ -335,7 +318,7 @@ void config_load(struct config_t *config)
 				config->file_name, line_num, config_err_format);
 		
 		/* New "<var> = <value>" entry. */
-		err = get_var_value_from_item(line_trim, var, value);
+		err = get_var_value_from_item(line_trim, var, sizeof var, value, sizeof value);
 		if (err)
 			fatal("%s: line %d: invalid format.\n%s",
 				config->file_name, line_num, config_err_format);
@@ -405,7 +388,7 @@ int config_section_exists(struct config_t *config, char *section)
 {
 	char section_trim[MAX_STRING_SIZE];
 
-	trim(section_trim, section);
+	str_trim(section_trim, sizeof section_trim, section);
 	return hash_table_get(config->items, section_trim) != NULL;
 }
 
@@ -569,17 +552,44 @@ int config_read_int(struct config_t *config, char *section, char *var, int def)
 {
 	char *result;
 
+	int value;
+	int err;
+
+	/* Read value */
 	result = config_read_string(config, section, var, NULL);
-	return result ? atoi(result) : def;
+	if (!result)
+		return def;
+
+	/* Convert */
+	value = str_to_int(result, &err);
+	if (err)
+		fatal("%s: Section [ %s ], variable %s = '%s': %s\n",
+			config_get_file_name(config), section, var, result, str_error(err));
+
+	/* Return */
+	return value;
 }
 
 
 long long config_read_llint(struct config_t *config, char *section, char *var, long long def)
 {
 	char *result;
+	long long value;
+	int err;
 
+	/* Read value */
 	result = config_read_string(config, section, var, NULL);
-	return result ? atoll(result) : def;
+	if (!result)
+		return def;
+	
+	/* Convert */
+	value = str_to_llint(result, &err);
+	if (err)
+		fatal("%s: Section [ %s ], variable %s = '%s': %s\n",
+			config_get_file_name(config), section, var, result, str_error(err));
+
+	/* Return */
+	return value;
 }
 
 
@@ -587,13 +597,25 @@ int config_read_bool(struct config_t *config, char *section, char *var, int def)
 {
 	char *result;
 
+	/* Read variable */
 	result = config_read_string(config, section, var, NULL);
 	if (!result)
 		return def;
-	if (!strcmp(result, "t") || !strcmp(result, "true") ||
-		!strcmp(result, "true") || !strcmp(result, "True") ||
-		!strcmp(result, "TRUE"))
+
+	/* True */
+	if (!strcasecmp(result, "t") || !strcasecmp(result, "True")
+		|| !strcasecmp(result, "On"))
 		return 1;
+	
+	/* False */
+	if (!strcasecmp(result, "f") || !strcasecmp(result, "False")
+		|| !strcasecmp(result, "Off"))
+		return 0;
+
+	/* Invalid value */
+	fatal("%s: Section [ %s ]: Invalid value for '%s'\n"
+		"\tPossible values are {t|True|On|f|False|Off}\n",
+		config_get_file_name(config), section, var);
 	return 0;
 }
 

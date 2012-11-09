@@ -21,6 +21,10 @@
 #define X86_ARCH_TIMING_TRACE_CACHE_H
 
 
+/* Debug */
+#define x86_trace_cache_debug(...) debug(x86_trace_cache_debug_category, __VA_ARGS__)
+extern int x86_trace_cache_debug_category;
+
 
 #define X86_TRACE_CACHE_ENTRY_SIZE \
 	(sizeof(struct x86_trace_cache_entry_t) + \
