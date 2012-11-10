@@ -188,8 +188,11 @@ void x86_trace_cache_dump_report(struct x86_trace_cache_t *trace_cache, FILE *f)
 	fprintf(f, "TraceCache.Hits = %lld\n", trace_cache->hits);
 	fprintf(f, "TraceCache.HitRatio = %.4g\n", trace_cache->accesses ? (double)
 		trace_cache->hits / trace_cache->accesses : 0.0);
-	fprintf(f, "TraceCache.Committed = %lld\n", trace_cache->committed);
-	fprintf(f, "TraceCache.Squashed = %lld\n", trace_cache->squashed);
+	fprintf(f, "TraceCache.Fetched = %lld\n", trace_cache->num_fetched_uinst);
+	fprintf(f, "TraceCache.Dispatched = %lld\n", trace_cache->num_dispatched_uinst);
+	fprintf(f, "TraceCache.Issued = %lld\n", trace_cache->num_issued_uinst);
+	fprintf(f, "TraceCache.Committed = %lld\n", trace_cache->num_committed_uinst);
+	fprintf(f, "TraceCache.Squashed = %lld\n", trace_cache->num_squashed_uinst);
 	fprintf(f, "TraceCache.TraceLength = %.2f\n",
 		trace_cache->trace_length_count ? (double) trace_cache->trace_length_acc /
 			trace_cache->trace_length_count : 0);

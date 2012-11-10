@@ -32,6 +32,7 @@
 #include "inst-queue.h"
 #include "load-store-queue.h"
 #include "reg-file.h"
+#include "trace-cache.h"
 
 
 static int x86_cpu_issue_sq(int core, int thread, int quant)
@@ -74,7 +75,7 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 		store->issued = 1;
 		store->issue_when = x86_cpu->cycle;
 	
-		/* Instruction issued */
+		/* Statistics */
 		X86_CORE.num_issued_uinst_array[store->uinst->opcode]++;
 		X86_CORE.lsq_reads++;
 		X86_CORE.reg_file_int_reads += store->ph_int_idep_count;
@@ -84,6 +85,10 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 		X86_THREAD.reg_file_int_reads += store->ph_int_idep_count;
 		X86_THREAD.reg_file_fp_reads += store->ph_fp_idep_count;
 		x86_cpu->num_issued_uinst_array[store->uinst->opcode]++;
+		if (store->trace_cache)
+			X86_THREAD.trace_cache->num_issued_uinst++;
+
+		/* One more instruction, update quantum. */
 		quant--;
 		
 		/* MMU statistics */
@@ -139,7 +144,7 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		load->issued = 1;
 		load->issue_when = x86_cpu->cycle;
 		
-		/* Instruction issued */
+		/* Statistics */
 		X86_CORE.num_issued_uinst_array[load->uinst->opcode]++;
 		X86_CORE.lsq_reads++;
 		X86_CORE.reg_file_int_reads += load->ph_int_idep_count;
@@ -149,6 +154,10 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		X86_THREAD.reg_file_int_reads += load->ph_int_idep_count;
 		X86_THREAD.reg_file_fp_reads += load->ph_fp_idep_count;
 		x86_cpu->num_issued_uinst_array[load->uinst->opcode]++;
+		if (load->trace_cache)
+			X86_THREAD.trace_cache->num_issued_uinst++;
+
+		/* One more instruction issued, update quantum. */
 		quant--;
 		
 		/* MMU statistics */
@@ -223,7 +232,7 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		prefetch->issued = 1;
 		prefetch->issue_when = x86_cpu->cycle;
 		
-		/* Instruction issued */
+		/* Statistics */
 		X86_CORE.num_issued_uinst_array[prefetch->uinst->opcode]++;
 		X86_CORE.lsq_reads++;
 		X86_CORE.reg_file_int_reads += prefetch->ph_int_idep_count;
@@ -233,6 +242,10 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		X86_THREAD.reg_file_int_reads += prefetch->ph_int_idep_count;
 		X86_THREAD.reg_file_fp_reads += prefetch->ph_fp_idep_count;
 		x86_cpu->num_issued_uinst_array[prefetch->uinst->opcode]++;
+		if (prefetch->trace_cache)
+			X86_THREAD.trace_cache->num_issued_uinst++;
+
+		/* One more instruction issued, update quantum. */
 		quant--;
 		
 		/* MMU statistics */
@@ -291,7 +304,7 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 		uop->when = x86_cpu->cycle + lat;
 		x86_event_queue_insert(X86_CORE.event_queue, uop);
 		
-		/* Instruction issued */
+		/* Statistics */
 		X86_CORE.num_issued_uinst_array[uop->uinst->opcode]++;
 		X86_CORE.iq_reads++;
 		X86_CORE.reg_file_int_reads += uop->ph_int_idep_count;
@@ -301,6 +314,10 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 		X86_THREAD.reg_file_int_reads += uop->ph_int_idep_count;
 		X86_THREAD.reg_file_fp_reads += uop->ph_fp_idep_count;
 		x86_cpu->num_issued_uinst_array[uop->uinst->opcode]++;
+		if (uop->trace_cache)
+			X86_THREAD.trace_cache->num_issued_uinst++;
+
+		/* One more instruction issued, update quantum. */
 		quant--;
 
 		/* Trace */

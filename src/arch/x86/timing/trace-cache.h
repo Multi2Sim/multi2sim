@@ -92,8 +92,11 @@ struct x86_trace_cache_t
 	/* Statistics */
 	long long accesses;
 	long long hits;
-	long long committed;
-	long long squashed;
+	long long num_fetched_uinst;
+	long long num_dispatched_uinst;
+	long long num_issued_uinst;
+	long long num_committed_uinst;
+	long long num_squashed_uinst;
 	long long trace_length_acc;
 	long long trace_length_count;
 };
