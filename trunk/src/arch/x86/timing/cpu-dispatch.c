@@ -28,6 +28,7 @@
 #include "load-store-queue.h"
 #include "reg-file.h"
 #include "rob.h"
+#include "trace-cache.h"
 #include "uop.h"
 
 
@@ -102,11 +103,15 @@ static int x86_cpu_dispatch_thread(int core, int thread, int quant)
 			X86_THREAD.lsq_writes++;
 		}
 		
-		/* Another instruction dispatched */
+		/* Statistics */
 		X86_CORE.dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
 		X86_THREAD.num_dispatched_uinst_array[uop->uinst->opcode]++;
 		X86_CORE.num_dispatched_uinst_array[uop->uinst->opcode]++;
 		x86_cpu->num_dispatched_uinst_array[uop->uinst->opcode]++;
+		if (uop->trace_cache)
+			X86_THREAD.trace_cache->num_dispatched_uinst++;
+		
+		/* Another instruction dispatched, update quantum. */
 		quant--;
 
 		/* Trace */
