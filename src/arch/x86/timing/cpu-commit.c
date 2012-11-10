@@ -126,7 +126,7 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 		x86_cpu->num_committed_uinst++;
 		ctx->inst_count++;
 		if (uop->trace_cache)
-			X86_THREAD.trace_cache->committed++;
+			X86_THREAD.trace_cache->num_committed_uinst++;
 		if (!uop->mop_index)
 			x86_cpu->num_committed_inst++;
 		if (uop->flags & X86_UINST_CTRL)
