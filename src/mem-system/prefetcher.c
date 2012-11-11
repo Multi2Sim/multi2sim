@@ -145,7 +145,7 @@ static int prefetcher_update_tables(struct mod_stack_t *stack, struct mod_t *tar
 		if (pref->index_table[it_index].tag != it_tag)
 		{
 			mem_debug("  %lld it_index = %d, old_tag = 0x%x, new_tag = 0x%x" 
-				  "prefetcher: replace index_table entry", stack->id, 
+				  "prefetcher: replace index_table entry\n", stack->id, 
 				  it_index, pref->index_table[it_index].tag, it_tag);
 
 			prev = pref->index_table[it_index].ptr;
@@ -204,7 +204,11 @@ static void prefetcher_do_prefetch(struct mod_t *mod, struct mod_stack_t *stack,
 	 * sometimes. Since prefetches aren't supposed to
 	 * cause any kind of faults/exceptions, return. */
 	if (!mod_serves_address(mod, prefetch_addr))
+	{
+		mem_debug("  miss_addr 0x%x, prefetch_addr 0x%x, %s : illegal prefetch\n", stack->addr,
+			  prefetch_addr, mod->name);
 		return;
+	}
 
 	cache_decode_address(mod->cache, stack->addr, &set1, &tag1, NULL);
 	cache_decode_address(mod->cache, prefetch_addr, &set2, &tag2, NULL);
