@@ -46,22 +46,16 @@ static char * spatial_report_filename = "report-cu-spatial";
 void evg_spatial_report_config_read(struct config_t *config)
 {
 	char *section;
-	//char *file_name;
 
 	/* Nothing if section or config is not present */
-	//if (config == NULL)
-	//		{
-	//		printf("Disabled spatial reports\n");
-	//		return ;
-	//		}
 
 	section = evg_spatial_report_section_name;
 	if (!config_section_exists(config, section))
 	{
-		printf("no spatial profiling");
+		/*no spatial profiling */
 		return;
 	}
-	printf("enable spatial\n");
+
 	/* Spatial reports are active */
 	evg_spatial_report_active = 1;
 
