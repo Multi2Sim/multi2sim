@@ -18,6 +18,7 @@
  */
 
 #include <arch/common/arch.h>
+#include <arch/common/arch-list.h>
 #include <arch/southern-islands/timing/timing.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
@@ -36,6 +37,7 @@
 
 
 struct si_emu_t *si_emu;
+struct arch_t *si_emu_arch;
 
 long long si_emu_max_cycles = 0;
 long long si_emu_max_inst = 0;
@@ -62,6 +64,10 @@ int si_emu_wavefront_size = 64;
 /* Initialize GPU kernel */
 void si_emu_init()
 {
+	/* Register architecture */
+	si_emu_arch = arch_list_register("SouthernIslands");
+	si_emu_arch->sim_kind = si_emu_sim_kind;
+
 	/* Open report file */
 	if (*si_emu_report_file_name)
 	{

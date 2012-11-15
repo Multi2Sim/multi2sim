@@ -457,6 +457,9 @@ static void evg_gpu_unmap_ndrange(void)
 
 void evg_gpu_init(void)
 {
+	/* Trace */
+	evg_trace_category = trace_new_category();
+
 	/* Try to open report file */
 	if (evg_gpu_report_file_name[0] && !file_can_open_for_write(evg_gpu_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",

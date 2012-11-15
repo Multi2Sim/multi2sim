@@ -58,14 +58,14 @@ struct arch_t *arch_create(char *name)
 
 void arch_free(struct arch_t *arch)
 {
+	free(arch->name);
 	free(arch);
 }
 
 
 void arch_dump(struct arch_t *arch, FILE *f)
 {
-	fprintf(f, "Architecture '%s'\n", arch->name);
-	fprintf(f, "SimKind = %s\n", arch->sim_kind_ptr ? str_map_value(&arch_sim_kind_map,
-			*arch->sim_kind_ptr) : "?");
+	fprintf(f, "** Architecture '%s' **\n", arch->name);
+	fprintf(f, "SimKind = %s\n", str_map_value(&arch_sim_kind_map, arch->sim_kind));
 	fprintf(f, "\n");
 }

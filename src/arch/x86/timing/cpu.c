@@ -899,6 +899,9 @@ void x86_cpu_init()
 {
 	int core;
 
+	/* Trace */
+	x86_trace_category = trace_new_category();
+
 	/* Analyze CPU configuration file */
 	x86_cpu_config_check();
 

@@ -97,6 +97,7 @@ extern char *evg_err_opencl_param_note;
 
 
 extern struct evg_emu_t *evg_emu;
+extern struct arch_t *evg_emu_arch;
 
 void evg_emu_init(void);
 void evg_emu_done(void);

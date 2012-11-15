@@ -1516,13 +1516,9 @@ int main(int argc, char **argv)
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);
 	arm_isa_call_debug_category = debug_new_category(arm_call_debug_file_name);
 
-	/* Trace */
-	trace_init(trace_file_name);
-	mem_trace_category = trace_new_category();
-	x86_trace_category = trace_new_category();
-
 	/* Initialization of libraries */
 	esim_init();
+	trace_init(trace_file_name);
 
 	/* Initialization for functional simulation */
 	arch_list_init();
@@ -1531,11 +1527,6 @@ int main(int argc, char **argv)
 	evg_emu_init();
 	si_emu_init();
 	frm_emu_init();
-
-	/* Network and memory system */
-	net_init();
-	mem_system_init();
-	mmu_init();
 
 	/* Select the GPU emulator - FIXME */
 	if (si_emulator)
@@ -1547,21 +1538,16 @@ int main(int argc, char **argv)
 
 	/* Initialization of Evergreen GPU */
 	if (evg_emu_sim_kind == arch_sim_kind_detailed)
-	{
-		evg_trace_category = trace_new_category();
 		evg_gpu_init();
-	}
 
 	/* Initialization of Southern Islands GPU */
 	if (si_emu_sim_kind == arch_sim_kind_detailed)
-	{
-		si_trace_category = trace_new_category();
 		si_gpu_init();
-	}
 
-	/* Parse memory system configuration. Do it after calls to 'xxx_cpu_init'
-	 * and 'xxx_gpu_init', now that architectures have been registered. */
-	mem_system_config_read();
+	/* Network and memory system */
+	net_init();
+	mem_system_init();
+	mmu_init();
 
 	/* Load architectural state checkpoint */
 	if (x86_load_checkpoint_file_name[0])
@@ -1612,13 +1598,12 @@ int main(int argc, char **argv)
 	net_done();
 
 	/* Finalization of architectures */
-	arch_list_dump(stdout); //////////
-	arch_list_done();
 	evg_emu_done();
 	si_emu_done();
 	frm_emu_done();
 	x86_emu_done();
 	arm_emu_done();
+	arch_list_done();
 
 	/* Finalization of Libraries */
 	esim_done();

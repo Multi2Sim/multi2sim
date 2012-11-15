@@ -1053,6 +1053,7 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, uint32_
 	char *line, int line_size);
 
 extern struct si_emu_t *si_emu;
+extern struct arch_t *si_emu_arch;
 
 void si_emu_init(void);
 void si_emu_done(void);
