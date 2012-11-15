@@ -2064,7 +2064,7 @@ void x86_isa_fucompp_impl(struct x86_ctx_t *ctx)
 	x86_isa_pop_fpu(ctx, NULL);
 	x86_isa_pop_fpu(ctx, NULL);
 
-	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_st1, 0, x86_dep_fpst, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
