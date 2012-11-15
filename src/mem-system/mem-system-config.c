@@ -16,6 +16,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/evergreen/emu/emu.h>
@@ -276,7 +277,7 @@ static void mem_config_cpu_default(struct config_t *config)
 	int thread;
 
 	/* Not if we are doing CPU functional simulation */
-	if (x86_emu_kind == x86_emu_kind_functional)
+	if (x86_emu_sim_kind == arch_sim_kind_functional)
 		return;
 
 	/* Cache geometry for L1 */
@@ -1249,7 +1250,7 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 	}
 
 	/* Stop here if we are doing CPU functional simulation */
-	if (x86_emu_kind == x86_emu_kind_functional)
+	if (x86_emu_sim_kind == arch_sim_kind_functional)
 		goto out;
 
 	/* Assign entry modules */
@@ -1677,7 +1678,7 @@ static void mem_config_check_disjoint(void)
 	int thread;
 
 	/* No need if no CPU simulation */
-	if (x86_emu_kind == x86_emu_kind_functional) 
+	if (x86_emu_sim_kind == arch_sim_kind_functional)
 		return;
 	
 	/* No need if no GPU simulation */
@@ -1809,7 +1810,7 @@ static void mem_config_calculate_mod_levels(void)
 	struct mod_t *mod;
 
 	/* Color CPU modules */
-	if (x86_emu_kind == x86_emu_kind_detailed)
+	if (x86_emu_sim_kind == arch_sim_kind_detailed)
 	{
 		X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 		{

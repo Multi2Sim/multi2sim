@@ -919,6 +919,7 @@ void x86_cpu_init()
 	X86_CORE_FOR_EACH
 		x86_cpu_core_init(core);
 
+	/* Components of an x86 CPU */
 	x86_reg_file_init();
 	x86_bpred_init();
 	x86_trace_cache_init();
@@ -1047,6 +1048,21 @@ void x86_cpu_dump_summary(FILE *f)
 	fprintf(f, "CommittedMicroInstructions = %lld\n", x86_cpu->num_committed_uinst);
 	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
+}
+
+
+void x86_cpu_mem_config_generate_default(struct config_t *config)
+{
+}
+
+
+void x86_cpu_mem_config_parse_entry(struct config_t *config, char *section)
+{
+}
+
+
+void x86_cpu_mem_config_check(struct config_t *config)
+{
 }
 
 

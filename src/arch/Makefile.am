@@ -1,5 +1,6 @@
 SUBDIRS = \
 	arm \
+	common \
 	evergreen \
 	fermi \
 	southern-islands \

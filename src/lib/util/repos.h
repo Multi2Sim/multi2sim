@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef REPOS_H
-#define REPOS_H
+#ifndef LIB_UTIL_REPOS_H
+#define LIB_UTIL_REPOS_H
 
 #include <stdio.h>
 

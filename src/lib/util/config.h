@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef LIB_UTIL_CONFIG_H
+#define LIB_UTIL_CONFIG_H
 
 struct config_t;
 

@@ -1,5 +1,5 @@
 /*
- *  Libstruct
+ *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,18 +17,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LIB_UTIL_BUFFER_H
-#define LIB_UTIL_BUFFER_H
+#ifndef ARCH_COMMON_ARCH_LIST_H
+#define ARCH_COMMON_ARCH_LIST_H
 
-struct buffer_t;
+#include <stdio.h>
 
-/* creation and destruction */
-struct buffer_t *buffer_create(int size);
-void buffer_free(struct buffer_t *buffer);
 
-/* read/write */
-int buffer_read(struct buffer_t *buffer, void *dest, int size);
-int buffer_write(struct buffer_t *buffer, void *src, int size);
-int buffer_count(struct buffer_t *buffer);
+void arch_list_init(void);
+void arch_list_done(void);
+void arch_list_dump(FILE *f);
+
+void arch_list_register(char *arch_name);
+
+enum arch_sim_kind_t;
+void arch_list_set_sim_kind(char *arch_name, enum arch_sim_kind_t *sim_kind_ptr);
+
 
 #endif
+

@@ -1,5 +1,5 @@
 /*
- *  Libstruct
+ *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,18 +17,35 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LIB_UTIL_BUFFER_H
-#define LIB_UTIL_BUFFER_H
+#ifndef ARCH_COMMON_ARCH_H
+#define ARCH_COMMON_ARCH_H
 
-struct buffer_t;
+#include <stdio.h>
 
-/* creation and destruction */
-struct buffer_t *buffer_create(int size);
-void buffer_free(struct buffer_t *buffer);
 
-/* read/write */
-int buffer_read(struct buffer_t *buffer, void *dest, int size);
-int buffer_write(struct buffer_t *buffer, void *src, int size);
-int buffer_count(struct buffer_t *buffer);
+extern struct str_map_t arch_sim_kind_map;
+
+enum arch_sim_kind_t
+{
+	arch_sim_kind_invalid = 0,
+	arch_sim_kind_functional,
+	arch_sim_kind_detailed
+};
+
+struct arch_t
+{
+	/* Name of architecture (x86, ARM, etc.) */
+	char *name;
+
+	/* Pointer to the variable representing the architecture simulation
+	 * kind. */
+	enum arch_sim_kind_t *sim_kind_ptr;
+};
+
+
+struct arch_t *arch_create(char *name);
+void arch_free(struct arch_t *arch);
+void arch_dump(struct arch_t *arch, FILE *f);
+
 
 #endif
