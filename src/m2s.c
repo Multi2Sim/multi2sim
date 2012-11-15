@@ -850,9 +850,9 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			m2s_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				evg_emu_kind = evg_emu_kind_functional;
+				evg_emu_sim_kind = arch_sim_kind_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				evg_emu_kind = evg_emu_kind_detailed;
+				evg_emu_sim_kind = arch_sim_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], m2s_err_note);
@@ -912,9 +912,9 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			m2s_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				si_emu_kind = si_emu_kind_functional;
+				si_emu_sim_kind = arch_sim_kind_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				si_emu_kind = si_emu_kind_detailed;
+				si_emu_sim_kind = arch_sim_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], m2s_err_note);
@@ -957,9 +957,9 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			m2s_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				frm_emu_kind = frm_emu_kind_functional;
+				frm_emu_sim_kind = arch_sim_kind_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				frm_emu_kind = frm_emu_kind_detailed;
+				frm_emu_sim_kind = arch_sim_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], m2s_err_note);
@@ -1162,7 +1162,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Options that only make sense for GPU detailed simulation */
-	if (evg_emu_kind == evg_emu_kind_functional)
+	if (evg_emu_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"\tPlease use option '--evg-sim detailed' as well.\n";
@@ -1180,7 +1180,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Options that only make sense for GPU detailed simulation */
-	if (si_emu_kind == si_emu_kind_functional)
+	if (si_emu_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"\tPlease use option '--si-sim detailed' as well.\n";
@@ -1195,11 +1195,11 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 
 	/* Options that only make sense when there is at least one architecture
 	 * using detailed simulation. */
-	if (evg_emu_kind == evg_emu_kind_functional
+	if (evg_emu_sim_kind == arch_sim_kind_functional
 		&& x86_emu_sim_kind == arch_sim_kind_functional
-		&& si_emu_kind == si_emu_kind_functional
-		&& arm_emu_kind == arm_emu_kind_functional
-		&& frm_emu_kind == frm_emu_kind_functional)
+		&& si_emu_sim_kind == arch_sim_kind_functional
+		&& arm_emu_sim_kind == arch_sim_kind_functional
+		&& frm_emu_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' needs architectural simulation.\n"
 			"\tPlease use option '--<arch>-sim detailed' as well, where <arch> is any\n"
@@ -1406,19 +1406,19 @@ void m2s_loop(void)
 			timing_running |= x86_cpu_run();
 
 		/* Evergreen GPU simulation */
-		if (evg_emu_kind == evg_emu_kind_functional)
+		if (evg_emu_sim_kind == arch_sim_kind_functional)
 			emu_running |= evg_emu_run();
 		else
 			timing_running |= evg_gpu_run();
 
 		/* Southern Islands GPU simulation */
-		if (si_emu_kind == si_emu_kind_functional)
+		if (si_emu_sim_kind == arch_sim_kind_functional)
 			emu_running |= si_emu_run();
 		else
 			timing_running |= si_gpu_run();
 
 		/* arm CPU simulation */
-		if (arm_emu_kind == arm_emu_kind_functional)
+		if (arm_emu_sim_kind == arch_sim_kind_functional)
 			emu_running |= arm_emu_run();
 		else
 			timing_running |= arm_cpu_run();
@@ -1546,14 +1546,14 @@ int main(int argc, char **argv)
 		x86_cpu_init();
 
 	/* Initialization of Evergreen GPU */
-	if (evg_emu_kind == evg_emu_kind_detailed)
+	if (evg_emu_sim_kind == arch_sim_kind_detailed)
 	{
 		evg_trace_category = trace_new_category();
 		evg_gpu_init();
 	}
 
 	/* Initialization of Southern Islands GPU */
-	if (si_emu_kind == si_emu_kind_detailed)
+	if (si_emu_sim_kind == arch_sim_kind_detailed)
 	{
 		si_trace_category = trace_new_category();
 		si_gpu_init();
@@ -1599,11 +1599,11 @@ int main(int argc, char **argv)
 		x86_cpu_done();
 
 	/* Finalization of Evergreen GPU */
-	if (evg_emu_kind == evg_emu_kind_detailed)
+	if (evg_emu_sim_kind == arch_sim_kind_detailed)
 		evg_gpu_done();
 
 	/* Finalization of Southern Islands GPU */
-	if (si_emu_kind == si_emu_kind_detailed)
+	if (si_emu_sim_kind == arch_sim_kind_detailed)
 		si_gpu_done();
 
 	/* Finalization of network and memory system */

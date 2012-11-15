@@ -66,11 +66,7 @@ struct frm_emu_t
 	long long inst_count;  /* Number of instructions executed by warps */
 };
 
-extern enum frm_emu_kind_t
-{
-	frm_emu_kind_functional,
-	frm_emu_kind_detailed
-} frm_emu_kind;
+extern enum arch_sim_kind_t frm_emu_sim_kind;
 
 extern long long frm_emu_max_cycles;
 extern long long frm_emu_max_inst;

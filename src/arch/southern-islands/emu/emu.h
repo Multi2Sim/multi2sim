@@ -1034,11 +1034,7 @@ struct si_emu_t
 };
 
 
-extern enum si_emu_kind_t
-{
-	si_emu_kind_functional,
-	si_emu_kind_detailed
-} si_emu_kind;
+extern enum arch_sim_kind_t si_emu_sim_kind;
 
 extern long long si_emu_max_cycles;
 extern long long si_emu_max_inst;

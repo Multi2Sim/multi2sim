@@ -365,13 +365,13 @@ static void mem_config_gpu_default(struct config_t *config)
 	{
 	case x86_emu_gpu_southern_islands:
 
-		if (si_emu_kind == si_emu_kind_functional)
+		if (si_emu_sim_kind == arch_sim_kind_functional)
 			return;
 		break;
 
 	case x86_emu_gpu_evergreen:
 
-		if (evg_emu_kind == evg_emu_kind_functional)
+		if (evg_emu_sim_kind == arch_sim_kind_functional)
 			return;
 		break;
 
@@ -1406,13 +1406,13 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	{
 	case x86_emu_gpu_southern_islands:
 		
-		if (si_emu_kind == si_emu_kind_functional)
+		if (si_emu_sim_kind == arch_sim_kind_functional)
 			goto out;
 		break;
 	
 	case x86_emu_gpu_evergreen:
 
-		if (evg_emu_kind == evg_emu_kind_functional)
+		if (evg_emu_sim_kind == arch_sim_kind_functional)
 			goto out;
 		break;
 	
@@ -1686,13 +1686,13 @@ static void mem_config_check_disjoint(void)
 	{
 	case x86_emu_gpu_southern_islands:
 
-		if (si_emu_kind == si_emu_kind_functional) 
+		if (si_emu_sim_kind == arch_sim_kind_functional) 
 			return;
 		break;
 	
 	case x86_emu_gpu_evergreen:
 	
-		if (evg_emu_kind == evg_emu_kind_functional)
+		if (evg_emu_sim_kind == arch_sim_kind_functional)
 			return;
 		break;
 	
@@ -1825,7 +1825,7 @@ static void mem_config_calculate_mod_levels(void)
 	
 	case x86_emu_gpu_southern_islands:
 
-		if (si_emu_kind == si_emu_kind_detailed)
+		if (si_emu_sim_kind == arch_sim_kind_detailed)
 		{
 			SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 				mem_config_set_mod_level(
@@ -1835,7 +1835,7 @@ static void mem_config_calculate_mod_levels(void)
 	
 	case x86_emu_gpu_evergreen:
 
-		if (evg_emu_kind == evg_emu_kind_detailed)
+		if (evg_emu_sim_kind == arch_sim_kind_detailed)
 		{
 			EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 				mem_config_set_mod_level(
