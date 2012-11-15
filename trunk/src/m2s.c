@@ -24,6 +24,8 @@
 #include <arch/arm/emu/isa.h>
 #include <arch/arm/emu/syscall.h>
 #include <arch/arm/timing/cpu.h>
+#include <arch/common/arch.h>
+#include <arch/common/arch-list.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/isa.h>
 #include <arch/evergreen/emu/opencl.h>
@@ -690,9 +692,9 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			m2s_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				x86_emu_kind = x86_emu_kind_functional;
+				x86_emu_sim_kind = arch_sim_kind_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				x86_emu_kind = x86_emu_kind_detailed;
+				x86_emu_sim_kind = arch_sim_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], m2s_err_note);
@@ -1146,7 +1148,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Options only allowed for x86 detailed simulation */
-	if (x86_emu_kind == x86_emu_kind_functional)
+	if (x86_emu_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional x86 simulation.\n"
 			"\tPlease use option '--x86-sim detailed' as well.\n";
@@ -1194,7 +1196,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	/* Options that only make sense when there is at least one architecture
 	 * using detailed simulation. */
 	if (evg_emu_kind == evg_emu_kind_functional
-		&& x86_emu_kind == x86_emu_kind_functional
+		&& x86_emu_sim_kind == arch_sim_kind_functional
 		&& si_emu_kind == si_emu_kind_functional
 		&& arm_emu_kind == arm_emu_kind_functional
 		&& frm_emu_kind == frm_emu_kind_functional)
@@ -1398,7 +1400,7 @@ void m2s_loop(void)
 		timing_running = 0;
 
 		/* x86 CPU simulation */
-		if (x86_emu_kind == x86_emu_kind_functional)
+		if (x86_emu_sim_kind == arch_sim_kind_functional)
 			emu_running |= x86_emu_run();
 		else
 			timing_running |= x86_cpu_run();
@@ -1456,7 +1458,7 @@ int main(int argc, char **argv)
 	/* Read command line */
 	m2s_read_command_line(&argc, argv);
 
-	/* CPU disassembler tool */
+	/* x86 disassembler tool */
 	if (*x86_disasm_file_name)
 		x86_disasm_file(x86_disasm_file_name);
 
@@ -1464,11 +1466,11 @@ int main(int argc, char **argv)
 	if (*evg_disasm_file_name)
 		evg_emu_disasm(evg_disasm_file_name);
 
-	/* SI disassembler tool */
+	/* Southern Islands disassembler tool */
 	if (*si_disasm_file_name)
 		si_disasm(si_disasm_file_name);
 
-	/* OpenGL disassembler tool */
+	/* Evergreen OpenGL disassembler tool */
 	if (*evg_opengl_disasm_file_name)
 		evg_emu_opengl_disasm(evg_opengl_disasm_file_name, evg_opengl_disasm_shader_index);
 
@@ -1476,7 +1478,7 @@ int main(int argc, char **argv)
 	if (*frm_disasm_file_name)
 		frm_emu_disasm(frm_disasm_file_name);
 
-	/* Arm disassembler tool */
+	/* ARM disassembler tool */
 	if (*arm_disasm_file_name)
 		arm_emu_disasm(arm_disasm_file_name);
 
@@ -1519,33 +1521,47 @@ int main(int argc, char **argv)
 	mem_trace_category = trace_new_category();
 	x86_trace_category = trace_new_category();
 
-	/* Initialization for functional simulation */
+	/* Initialization of libraries */
 	esim_init();
+
+	/* Initialization for functional simulation */
+	arch_list_init();
 	x86_emu_init();
 	arm_emu_init();
-	net_init();
+	evg_emu_init();
+	si_emu_init();
+	frm_emu_init();
 
-	/* Select the GPU emulator */
+	/* Network and memory system */
+	net_init();
+	mem_system_init();
+	mmu_init();
+
+	/* Select the GPU emulator - FIXME */
 	if (si_emulator)
 		x86_emu->gpu_kind = x86_emu_gpu_southern_islands;
 
-	/* Initialization for detailed simulation */
-	if (x86_emu_kind == x86_emu_kind_detailed)
+	/* Initialization of x86 CPU */
+	if (x86_emu_sim_kind == arch_sim_kind_detailed)
 		x86_cpu_init();
+
+	/* Initialization of Evergreen GPU */
 	if (evg_emu_kind == evg_emu_kind_detailed)
 	{
 		evg_trace_category = trace_new_category();
 		evg_gpu_init();
 	}
+
+	/* Initialization of Southern Islands GPU */
 	if (si_emu_kind == si_emu_kind_detailed)
 	{
 		si_trace_category = trace_new_category();
 		si_gpu_init();
 	}
 
-	/* Memory hierarchy initialization, done after we initialized CPU cores
-	 * and GPU compute units. */
-	mem_system_init();
+	/* Parse memory system configuration. Do it after calls to 'xxx_cpu_init'
+	 * and 'xxx_gpu_init', now that architectures have been registered. */
+	mem_system_config_read();
 
 	/* Load architectural state checkpoint */
 	if (x86_load_checkpoint_file_name[0])
@@ -1578,27 +1594,35 @@ int main(int argc, char **argv)
 	/* Dump statistics summary */
 	m2s_dump_summary(stderr);
 
-	/* Finalization of memory system */
-	mem_system_done();
-
-	/* Finalization of detailed CPU simulation */
-	if (x86_emu_kind == x86_emu_kind_detailed)
+	/* Finalization of x86 CPU */
+	if (x86_emu_sim_kind == arch_sim_kind_detailed)
 		x86_cpu_done();
 
-	/* Finalization of detailed GPU simulation */
+	/* Finalization of Evergreen GPU */
 	if (evg_emu_kind == evg_emu_kind_detailed)
 		evg_gpu_done();
 
-	/* Finalization of detailed GPU simulation */
+	/* Finalization of Southern Islands GPU */
 	if (si_emu_kind == si_emu_kind_detailed)
 		si_gpu_done();
 
-	/* Finalization */
+	/* Finalization of network and memory system */
+	mmu_done();
+	mem_system_done();
 	net_done();
-	esim_done();
-	trace_done();
+
+	/* Finalization of architectures */
+	arch_list_dump(stdout); //////////
+	arch_list_done();
+	evg_emu_done();
+	si_emu_done();
+	frm_emu_done();
 	x86_emu_done();
 	arm_emu_done();
+
+	/* Finalization of Libraries */
+	esim_done();
+	trace_done();
 	debug_done();
 	mhandle_done();
 

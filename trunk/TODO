@@ -2,14 +2,14 @@
 Memory System
 ********************************************************************************
 
-- Documentation for NMOESI - event diagrams.
+- Documentation on directories in memory hierarchy, especially on the meaning of Hits/Misses statistics in main memory.
+- New mechanism to assign entries into the memory hierarchy, that doesn't rely on the mem-system being aware of all architectures in the system. Call-back functions should be registered by each architecture to process [Entry xxx] sections of the memory configuration files.
 
 
 ********************************************************************************
 Network
 ********************************************************************************
 
-- Documentation for Virtual Channels.
 
 
 ********************************************************************************
@@ -27,6 +27,8 @@ x86
 
 - Documentation for checkpoints.
 - Documentation for XMM register renaming.
+- Documentation for prefetching.
+- Trace cache test in M2S-Cluster (m2s-client-kit/remote-tests/test-x86-trace-cache.sh) shows slowdowns for most benchmarks in any configuration of the trace cache. This is probably due to the bad behavior of the multiple branch prediction used instead of regular sophisticated predictors. Some debugging needs to be done here.
 
 
 
@@ -34,14 +36,6 @@ x86
 Southern Islands
 ********************************************************************************
 
-- Documentation
+- Review code to adhere to coding guidelines in README.
 
 
-
-********************************************************************************
-M2S-Cluster
-********************************************************************************
-
-- Client kit test to check that runtime 'libm2s-opencl' compiles correctly.
-- Update documentation to reflect splitting directory 'samples' into 'local-tests' and 'remote-tests'.
-- Update document of 'm2s-cluster.sh' command 'import', to show that report files with the '*-report' suffix are imported (not prefix).

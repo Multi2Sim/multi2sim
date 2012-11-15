@@ -13,6 +13,8 @@ m2s_SOURCES = m2s.c
 INCLUDES = @M2S_INCLUDES@
 
 LDADD = \
+	$(top_builddir)/src/arch/common/libcommon.a \
+	\
 	$(top_builddir)/src/arch/arm/timing/libtiming.a \
 	$(top_builddir)/src/arch/arm/emu/libemu.a \
 	$(top_builddir)/src/arch/arm/asm/libasm.a \

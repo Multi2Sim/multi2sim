@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <arch/common/arch.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
@@ -764,7 +765,7 @@ void x86_loader_load_from_ctx_config(struct config_t *config, char *section)
 			"IPCReportInterval", 100000);
 	if (*ipc_report_file_name)
 	{
-		if (x86_emu_kind == x86_emu_kind_functional)
+		if (x86_emu_sim_kind == arch_sim_kind_functional)
 			warning("%s: [%s]: value for 'IPCReport' ignored.\n%s",
 				config_file_name, section, err_x86_ctx_ipc_report);
 		else

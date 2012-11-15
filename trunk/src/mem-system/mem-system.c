@@ -63,6 +63,9 @@ void mem_system_init(void)
 	if (!mem_system)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Create list of architectures */
+	mem_system->arch_list = list_create();
+
 	/* Create network and module list */
 	mem_system->net_list = list_create();
 	mem_system->mod_list = list_create();
@@ -168,33 +171,27 @@ void mem_system_init(void)
 	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_PORT = esim_register_event_with_name(mod_handler_local_mem_find_and_lock, "mod_local_mem_find_and_lock_port");
 	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_ACTION = esim_register_event_with_name(mod_handler_local_mem_find_and_lock, "mod_local_mem_find_and_lock_action");
 	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_FINISH = esim_register_event_with_name(mod_handler_local_mem_find_and_lock, "mod_local_mem_find_and_lock_finish");
-
-	/* Read cache configuration file */
-	mem_system_config_read();
-
-	/* Initialize MMU */
-	mmu_init();
 }
 
 
 void mem_system_done(void)
 {
-	int i;
-
 	/* Dump report */
 	mem_system_dump_report();
 
-	/* Finalize MMU */
-	mmu_done();
+	/* Free registered architectures */
+	while (list_count(mem_system->arch_list))
+		free(list_pop(mem_system->arch_list));
+	list_free(mem_system->arch_list);
 
 	/* Free memory modules */
-	for (i = 0; i < list_count(mem_system->mod_list); i++)
-		mod_free(list_get(mem_system->mod_list, i));
+	while (list_count(mem_system->mod_list))
+		mod_free(list_pop(mem_system->mod_list));
 	list_free(mem_system->mod_list);
 
 	/* Free networks */
-	for (i = 0; i < list_count(mem_system->net_list); i++)
-		net_free(list_get(mem_system->net_list, i));
+	while (list_count(mem_system->net_list))
+		net_free(list_pop(mem_system->net_list));
 	list_free(mem_system->net_list);
 
 	/* Free memory system */
@@ -202,11 +199,34 @@ void mem_system_done(void)
 }
 
 
-void mem_system_dump_report()
+void mem_system_register_arch(char *name,
+		mem_system_config_generate_default_func_t config_generate_default_func,
+		mem_system_config_parse_entry_func_t config_parse_entry_func,
+		mem_system_config_check_func_t config_check_func)
+{
+	struct mem_system_arch_t *arch;
+
+	/* Create new registered architecture */
+	arch = calloc(1, sizeof(struct mem_system_arch_t));
+	if (!arch)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	arch->config_generate_default_func = config_generate_default_func;
+	arch->config_parse_entry_func = config_parse_entry_func;
+	arch->config_check_func = config_check_func;
+
+	/* Insert architecture to list */
+	list_add(mem_system->arch_list, arch);
+}
+
+
+void mem_system_dump_report(void)
 {
 	struct net_t *net;
 	struct mod_t *mod;
 	struct cache_t *cache;
+
 	FILE *f;
 
 	int i;

@@ -120,12 +120,7 @@ extern char x86_emu_last_inst_bytes[20];
 extern int x86_emu_last_inst_size;
 extern int x86_emu_process_prefetch_hints;
 
-extern enum x86_emu_kind_t
-{
-	x86_emu_kind_functional,
-	x86_emu_kind_detailed
-} x86_emu_kind;
-
+extern enum arch_sim_kind_t x86_emu_sim_kind;
 
 void x86_emu_init(void);
 void x86_emu_done(void);

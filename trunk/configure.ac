@@ -255,6 +255,8 @@ AC_CONFIG_FILES([Makefile
 		 src/network/Makefile
 		 src/visual/Makefile
 
+		 src/arch/common/Makefile
+
 		 src/arch/arm/Makefile
 		 src/arch/arm/asm/Makefile
 		 src/arch/arm/emu/Makefile
