@@ -103,15 +103,11 @@ void arm_emu_dump_summary(FILE *f);
 /* Global CPU emulator variable */
 extern struct arm_emu_t *arm_emu;
 
+extern enum arch_sim_kind_t arm_emu_sim_kind;
+
 extern long long arm_emu_max_cycles;
 extern long long arm_emu_max_inst;
 extern long long arm_emu_max_time;
-
-extern enum arm_emu_kind_t
-{
-	arm_emu_kind_functional,
-	arm_emu_kind_detailed
-} arm_emu_kind;
 
 void arm_emu_init(void);
 void arm_emu_done(void);

@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <arch/arm/timing/cpu.h>
+#include <arch/common/arch.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -40,7 +41,7 @@
 long long arm_emu_max_inst = 0;
 long long arm_emu_max_cycles = 0;
 long long arm_emu_max_time = 0;
-enum arm_emu_kind_t arm_emu_kind = arm_emu_kind_functional;
+enum arch_sim_kind_t arm_emu_sim_kind = arch_sim_kind_functional;
 
 /* Arm CPU Emulator */
 struct arm_emu_t *arm_emu;
@@ -136,7 +137,7 @@ void arm_emu_dump_summary(FILE *f)
 	time_in_sec = (double) m2s_timer_get_value(arm_emu->timer) / 1.0e6;
 	inst_per_sec = time_in_sec > 0.0 ? (double) arm_emu->inst_count / time_in_sec : 0.0;
 	fprintf(f, "[ Arm ]\n");
-	fprintf(f, "SimType = %s\n", arm_emu_kind == arm_emu_kind_functional ?
+	fprintf(f, "SimType = %s\n", arm_emu_sim_kind == arch_sim_kind_functional ?
 			"Functional" : "Detailed");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "Instructions = %lld\n", arm_emu->inst_count);
@@ -145,7 +146,7 @@ void arm_emu_dump_summary(FILE *f)
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
 
 	/* Detailed simulation */
-	if (arm_emu_kind == arm_emu_kind_detailed)
+	if (arm_emu_sim_kind == arch_sim_kind_detailed)
 		arm_cpu_dump_summary(f);
 
 	/* End */

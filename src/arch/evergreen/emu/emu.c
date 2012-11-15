@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
 #include <arch/evergreen/emu/opengl-bin-file.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/x86/emu/context.h>
@@ -54,7 +55,7 @@ long long evg_emu_max_cycles = 0;
 long long evg_emu_max_inst = 0;
 int evg_emu_max_kernels = 0;
 
-enum evg_emu_kind_t evg_emu_kind = evg_emu_kind_functional;
+enum arch_sim_kind_t evg_emu_sim_kind = arch_sim_kind_functional;
 
 char *evg_emu_opencl_binary_name = "";
 char *evg_emu_report_file_name = "";
@@ -153,7 +154,7 @@ void evg_emu_dump_summary(FILE *f)
 
 	/* Print statistics */
 	fprintf(f, "[ Evergreen ]\n");
-	fprintf(f, "SimType = %s\n", evg_emu_kind == evg_emu_kind_functional ?
+	fprintf(f, "SimType = %s\n", evg_emu_sim_kind == arch_sim_kind_functional ?
 			"Functional" : "Detailed");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
@@ -161,7 +162,7 @@ void evg_emu_dump_summary(FILE *f)
 	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 
 	/* Detailed simulation */
-	if (evg_emu_kind == evg_emu_kind_detailed)
+	if (evg_emu_sim_kind == arch_sim_kind_detailed)
 		evg_gpu_dump_summary(f);
 
 	/* End */
