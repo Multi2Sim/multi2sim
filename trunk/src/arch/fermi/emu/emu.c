@@ -18,6 +18,7 @@
  */
 
 #include <arch/common/arch.h>
+#include <arch/common/arch-list.h>
 #include <arch/fermi/asm/asm.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
@@ -40,6 +41,7 @@
 
 
 struct frm_emu_t *frm_emu;
+struct arch_t *frm_emu_arch;
 
 long long frm_emu_max_cycles = 0;
 long long frm_emu_max_inst = 0;
@@ -55,18 +57,19 @@ int frm_emu_warp_size = 32;
 
 
 
-/*
- * Fermi Emulator
- */
-
 
 void frm_emu_init(void)
 {
+	/* Register architecture */
+	frm_emu_arch = arch_list_register("Fermi");
+	frm_emu_arch->sim_kind = frm_emu_sim_kind;
+
         /* Allocate */
         frm_emu = calloc(1, sizeof(struct frm_emu_t));
         if (!frm_emu)
                 fatal("%s: out of memory", __FUNCTION__);
 
+        /* Initialize */
         frm_emu->const_mem = mem_create();
         frm_emu->const_mem->safe = 0;
         frm_emu->global_mem = mem_create();

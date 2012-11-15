@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #include <arch/common/arch.h>
+#include <arch/common/arch-list.h>
 #include <arch/x86/timing/cpu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
@@ -56,8 +57,9 @@ int x86_emu_last_inst_size = 0;
 enum arch_sim_kind_t x86_emu_sim_kind = arch_sim_kind_functional;
 int x86_emu_process_prefetch_hints = 0;
 
-/* x86 CPU Emulator */
+/* x86 emulator and architecture */
 struct x86_emu_t *x86_emu;
+struct arch_t *x86_emu_arch;
 
 
 
@@ -81,6 +83,10 @@ void x86_emu_init(void)
 	endian.as_uint = 0x33221100;
 	if (endian.as_uchar[0])
 		fatal("%s: host machine is not little endian", __FUNCTION__);
+
+	/* Register architecture */
+	x86_emu_arch = arch_list_register("x86");
+	x86_emu_arch->sim_kind = x86_emu_sim_kind;
 
 	/* Host types */
 	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);

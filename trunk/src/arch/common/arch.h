@@ -37,9 +37,8 @@ struct arch_t
 	/* Name of architecture (x86, ARM, etc.) */
 	char *name;
 
-	/* Pointer to the variable representing the architecture simulation
-	 * kind. */
-	enum arch_sim_kind_t *sim_kind_ptr;
+	/* Simulation kind - must be assigned externally */
+	enum arch_sim_kind_t sim_kind;
 };
 
 

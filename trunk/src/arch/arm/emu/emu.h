@@ -100,8 +100,8 @@ void arm_emu_list_insert_tail(enum arm_emu_list_kind_t list, struct arm_ctx_t *c
 void arm_emu_list_insert_head(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
 void arm_emu_dump_summary(FILE *f);
 
-/* Global CPU emulator variable */
 extern struct arm_emu_t *arm_emu;
+extern struct arch_t *arm_emu_arch;
 
 extern enum arch_sim_kind_t arm_emu_sim_kind;
 

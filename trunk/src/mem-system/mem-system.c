@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include <lib/esim/esim.h>
+#include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
@@ -53,6 +54,9 @@ struct mem_system_t *mem_system;
 
 void mem_system_init(void)
 {
+	/* Trace */
+	mem_trace_category = trace_new_category();
+
 	/* Try to open report file */
 	if (*mem_report_file_name && !file_can_open_for_write(mem_report_file_name))
 		fatal("%s: cannot open GPU cache report file",
@@ -171,6 +175,9 @@ void mem_system_init(void)
 	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_PORT = esim_register_event_with_name(mod_handler_local_mem_find_and_lock, "mod_local_mem_find_and_lock_port");
 	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_ACTION = esim_register_event_with_name(mod_handler_local_mem_find_and_lock, "mod_local_mem_find_and_lock_action");
 	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_FINISH = esim_register_event_with_name(mod_handler_local_mem_find_and_lock, "mod_local_mem_find_and_lock_finish");
+
+	/* Read configuration */
+	mem_system_config_read();
 }
 
 

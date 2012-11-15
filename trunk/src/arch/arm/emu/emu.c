@@ -21,6 +21,7 @@
 
 #include <arch/arm/timing/cpu.h>
 #include <arch/common/arch.h>
+#include <arch/common/arch-list.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -43,8 +44,9 @@ long long arm_emu_max_cycles = 0;
 long long arm_emu_max_time = 0;
 enum arch_sim_kind_t arm_emu_sim_kind = arch_sim_kind_functional;
 
-/* Arm CPU Emulator */
+/* ARM emulator and architecture */
 struct arm_emu_t *arm_emu;
+struct arch_t *arm_emu_arch;
 
 
 
@@ -73,6 +75,10 @@ void arm_emu_init(void)
 	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
 	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
 	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
+
+	/* Register architecture */
+	arm_emu_arch = arch_list_register("ARM");
+	arm_emu_arch->sim_kind = arm_emu_sim_kind;
 
 	/* Initialization */
 	arm_sys_init();

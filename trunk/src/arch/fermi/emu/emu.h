@@ -76,7 +76,9 @@ extern char *frm_emu_report_file_name;
 extern FILE *frm_emu_report_file;
 extern int frm_emu_warp_size;
 extern char *err_frm_cuda_note;
+
 extern struct frm_emu_t *frm_emu;
+extern struct arch_t *frm_emu_arch;
 
 void frm_emu_init(void);
 void frm_emu_done(void);
