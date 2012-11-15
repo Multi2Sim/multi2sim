@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
 #include <arch/southern-islands/timing/timing.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
@@ -40,7 +41,7 @@ long long si_emu_max_cycles = 0;
 long long si_emu_max_inst = 0;
 int si_emu_max_kernels = 0;
 
-enum si_emu_kind_t si_emu_kind = si_emu_kind_functional;
+enum arch_sim_kind_t si_emu_sim_kind = arch_sim_kind_functional;
 
 char *si_emu_opencl_binary_name = "";
 char *si_emu_report_file_name = "";
@@ -134,7 +135,7 @@ void si_emu_dump_summary(FILE *f)
 
 	/* Print statistics */
 	fprintf(f, "[ SouthernIslands ]\n");
-	fprintf(f, "SimType = %s\n", si_emu_kind == si_emu_kind_functional ?
+	fprintf(f, "SimType = %s\n", si_emu_sim_kind == arch_sim_kind_functional ?
 			"Functional" : "Detailed");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
@@ -142,7 +143,7 @@ void si_emu_dump_summary(FILE *f)
 	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 
 	/* Detailed simulation */
-	if (si_emu_kind == si_emu_kind_detailed)
+	if (si_emu_sim_kind == arch_sim_kind_detailed)
 		si_gpu_dump_summary(f);
 
 	/* End */

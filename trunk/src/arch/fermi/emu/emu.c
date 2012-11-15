@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
 #include <arch/fermi/asm/asm.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
@@ -44,7 +45,7 @@ long long frm_emu_max_cycles = 0;
 long long frm_emu_max_inst = 0;
 int frm_emu_max_functions = 0;
 
-enum frm_emu_kind_t frm_emu_kind = frm_emu_kind_functional;
+enum arch_sim_kind_t frm_emu_sim_kind = arch_sim_kind_functional;
 
 char *frm_emu_cuda_binary_name = "";
 char *frm_emu_report_file_name = "";

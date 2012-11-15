@@ -80,11 +80,7 @@ struct evg_emu_t
 };
 
 
-extern enum evg_emu_kind_t
-{
-	evg_emu_kind_functional,
-	evg_emu_kind_detailed
-} evg_emu_kind;
+extern enum arch_sim_kind_t evg_emu_sim_kind;
 
 extern long long evg_emu_max_cycles;
 extern long long evg_emu_max_inst;
