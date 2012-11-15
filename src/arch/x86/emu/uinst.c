@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -568,8 +569,8 @@ void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
 	struct x86_uinst_t *uinst;
 	int i;
 
-	/* Create uinst */
-	assert(x86_emu_kind == x86_emu_kind_detailed);
+	/* Create micro-instruction */
+	assert(x86_emu_sim_kind == arch_sim_kind_detailed);
 	uinst = x86_uinst_create();
 	uinst->opcode = opcode;
 	uinst->idep[0] = idep0;

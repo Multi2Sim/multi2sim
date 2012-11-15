@@ -17,17 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <poll.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <unistd.h>
 
-#include <arch/evergreen/emu/emu.h>
-#include <arch/fermi/emu/emu.h>
-#include <arch/southern-islands/emu/emu.h>
+#include <arch/common/arch.h>
 #include <arch/x86/timing/cpu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
@@ -50,7 +53,7 @@ long long x86_emu_max_inst = 0;
 long long x86_emu_max_cycles = 0;
 char x86_emu_last_inst_bytes[20];
 int x86_emu_last_inst_size = 0;
-enum x86_emu_kind_t x86_emu_kind = x86_emu_kind_functional;
+enum arch_sim_kind_t x86_emu_sim_kind = arch_sim_kind_functional;
 int x86_emu_process_prefetch_hints = 0;
 
 /* x86 CPU Emulator */
@@ -105,8 +108,6 @@ void x86_emu_init(void)
 
 	/* Initialize GPU emulators */
 	x86_emu->gpu_kind = x86_emu_gpu_evergreen;
-	evg_emu_init();
-	si_emu_init();
 
 #ifdef HAVE_GLUT
 	/* GLUT */
@@ -115,9 +116,6 @@ void x86_emu_init(void)
 
 	/* OpenGL */
 	x86_opengl_init();
-
-	/* CUDA */
-	frm_emu_init();
 }
 
 
@@ -142,11 +140,6 @@ void x86_emu_done(void)
 	while (x86_emu->context_list_head)
 		x86_ctx_free(x86_emu->context_list_head);
 	
-	/* Finalize GPU */
-	evg_emu_done();
-	si_emu_done();
-	frm_emu_done();
-
 	/* Free */
 	m2s_timer_free(x86_emu->timer);
 	free(x86_emu);
@@ -187,8 +180,7 @@ void x86_emu_dump_summary(FILE *f)
 	time_in_sec = (double) m2s_timer_get_value(x86_emu->timer) / 1.0e6;
 	inst_per_sec = time_in_sec > 0.0 ? (double) x86_emu->inst_count / time_in_sec : 0.0;
 	fprintf(f, "[ x86 ]\n");
-	fprintf(f, "SimType = %s\n", x86_emu_kind == x86_emu_kind_functional ?
-			"Functional" : "Detailed");
+	fprintf(f, "SimType = %s\n", str_map_value(&arch_sim_kind_map, x86_emu_sim_kind));
 	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "Contexts = %d\n", x86_emu->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
@@ -196,7 +188,7 @@ void x86_emu_dump_summary(FILE *f)
 	fprintf(f, "EmulatedInstructionsPerSecond = %.0f\n", inst_per_sec);
 
 	/* Detailed simulation */
-	if (x86_emu_kind == x86_emu_kind_detailed)
+	if (x86_emu_sim_kind == arch_sim_kind_detailed)
 		x86_cpu_dump_summary(f);
 
 	/* End */

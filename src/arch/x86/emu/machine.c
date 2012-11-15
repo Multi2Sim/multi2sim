@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
 #include <lib/util/misc.h>
 
 #include "emu.h"
@@ -1671,7 +1672,7 @@ void x86_isa_prefetcht0_m8_impl(struct x86_ctx_t *ctx)
 	unsigned int eff_addr;
 
 	/* prefetching makes sense only in a detailed simulation */
-	if (x86_emu_kind != x86_emu_kind_detailed)
+	if (x86_emu_sim_kind != arch_sim_kind_detailed)
 		return;
 
 	if (!x86_emu_process_prefetch_hints)
