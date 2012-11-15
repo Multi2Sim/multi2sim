@@ -807,8 +807,13 @@ void str_printf(char **pbuf, int *psize, char *fmt, ...)
 	va_list va;
 	int len;
 
-	if (*psize <= 1)
+	if (*psize <= 0)
 		return;
+	if (*psize == 1)
+	{
+		**pbuf = '\0';
+		return;
+	}
 	va_start(va, fmt);
 	len = vsnprintf(*pbuf, *psize, fmt, va);
 	if (len >= *psize)

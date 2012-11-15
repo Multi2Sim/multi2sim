@@ -111,8 +111,9 @@ void x86_emu_list_remove(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
 int x86_emu_list_member(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
 
 
-/* Global CPU emulator variable */
+/* x86 emulator and architecture */
 extern struct x86_emu_t *x86_emu;
+extern struct arch_t *x86_emu_arch;
 
 extern long long x86_emu_max_cycles;
 extern long long x86_emu_max_inst;

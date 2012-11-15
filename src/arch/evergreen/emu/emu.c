@@ -18,6 +18,7 @@
  */
 
 #include <arch/common/arch.h>
+#include <arch/common/arch-list.h>
 #include <arch/evergreen/emu/opengl-bin-file.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/x86/emu/context.h>
@@ -50,6 +51,7 @@
 
 
 struct evg_emu_t *evg_emu;
+struct arch_t *evg_emu_arch;
 
 long long evg_emu_max_cycles = 0;
 long long evg_emu_max_inst = 0;
@@ -66,16 +68,12 @@ int evg_emu_wavefront_size = 64;
 
 
 
-
-/*
- * GPU Kernel (Functional Simulator) Public Functions
- */
-
-
-
-/* Initialize GPU kernel */
-void evg_emu_init()
+void evg_emu_init(void)
 {
+	/* Register architecture */
+	evg_emu_arch = arch_list_register("Evergreen");
+	evg_emu_arch->sim_kind = evg_emu_sim_kind;
+
 	/* Open report file */
 	if (*evg_emu_report_file_name)
 	{
@@ -110,7 +108,6 @@ void evg_emu_init()
 }
 
 
-/* Finalize GPU kernel */
 void evg_emu_done()
 {
 	/* GPU report */

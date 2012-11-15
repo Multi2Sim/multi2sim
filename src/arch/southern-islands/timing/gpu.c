@@ -722,6 +722,9 @@ static void si_gpu_unmap_ndrange(void)
 
 void si_gpu_init(void)
 {
+	/* Trace */
+	si_trace_category = trace_new_category();
+
 	/* Try to open report file */
 	if (si_gpu_report_file_name[0] && !file_can_open_for_write(si_gpu_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",

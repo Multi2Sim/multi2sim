@@ -18,43 +18,76 @@
  */
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/hash-table.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 
 #include "arch.h"
 #include "arch-list.h"
 
 
-static struct hash_table_t *arch_list;
+struct list_t *arch_list;
+
 
 
 void arch_list_init(void)
 {
-	/* Create hash table with registered architectures */
-	arch_list = hash_table_create(0, 0);
+	arch_list = list_create();
 }
 
 
 void arch_list_done(void)
 {
-	hash_table_free(arch_list);
+	/* Free architectures */
+	while (list_count(arch_list))
+		arch_free(list_pop(arch_list));
+	list_free(arch_list);
 }
 
 
 void arch_list_dump(FILE *f)
 {
 	struct arch_t *arch;
-	char *arch_name;
+	int i;
 
-	HASH_TABLE_FOR_EACH(arch_list, arch_name, arch)
+	LIST_FOR_EACH(arch_list, i)
+	{
+		arch = list_get(arch_list, i);
 		arch_dump(arch, f);
+	}
 }
 
 
-void arch_list_register(char *arch_name)
+struct arch_t *arch_list_register(char *arch_name)
 {
+	struct arch_t *arch;
+
+	/* Check no duplicates */
+	arch = arch_list_get(arch_name);
+	if (arch)
+		fatal("%s: duplicated architecture", __FUNCTION__);
+
+	/* Create new architecture */
+	arch = arch_create(arch_name);
+
+	/* Add architecture and return */
+	list_add(arch_list, arch);
+	return arch;
 }
 
 
-void arch_list_set_sim_kind(char *arch_name, enum arch_sim_kind_t *sim_kind_ptr)
+struct arch_t *arch_list_get(char *arch_name)
 {
+	struct arch_t *arch;
+	int i;
+
+	/* Search architecture */
+	LIST_FOR_EACH(arch_list, i)
+	{
+		arch = list_get(arch_list, i);
+		if (!strcasecmp(arch->name, arch_name))
+			return arch;
+	}
+
+	/* Not found */
+	return NULL;
 }
