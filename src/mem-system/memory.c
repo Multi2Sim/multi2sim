@@ -114,12 +114,8 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, unsigned int addr, 
 	unsigned int index, tag;
 	struct mem_page_t *page;
 
-	/* Create new page */
-	page = calloc(1, sizeof(struct mem_page_t));
-	if (!page)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	page = xcalloc(1, sizeof(struct mem_page_t));
 	tag = addr & ~(MEM_PAGE_SIZE - 1);
 	index = (addr >> MEM_LOG_PAGE_SIZE) % MEM_PAGE_COUNT;
 	page->tag = tag;
@@ -195,11 +191,7 @@ void mem_copy(struct mem_t *mem, unsigned int dest, unsigned int src, int size)
 		if (page_src->data)
 		{
 			if (!page_dest->data)
-			{
-				page_dest->data = malloc(MEM_PAGE_SIZE);
-				if (!page_dest->data)
-					fatal("%s: out of memory", __FUNCTION__);
-			}
+				page_dest->data = xmalloc(MEM_PAGE_SIZE);
 			memcpy(page_dest->data, page_src->data, MEM_PAGE_SIZE);
 		}
 		else
@@ -241,11 +233,7 @@ void *mem_get_buffer(struct mem_t *mem, unsigned int addr, int size,
 	
 	/* Allocate and initialize page data if it does not exist yet. */
 	if (!page->data)
-	{
-		page->data = calloc(1, MEM_PAGE_SIZE);
-		if (!page->data)
-			fatal("%s: out of memory", __FUNCTION__);
-	}
+		page->data = xcalloc(1, MEM_PAGE_SIZE);
 	
 	/* Return pointer to page data */
 	return page->data + offset;
@@ -307,11 +295,7 @@ static void mem_access_page_boundary(struct mem_t *mem, unsigned int addr,
 	if (access == mem_access_write || access == mem_access_init)
 	{
 		if (!page->data)
-		{
-			page->data = calloc(1, MEM_PAGE_SIZE);
-			if (!page->data)
-				fatal("%s: out of memory", __FUNCTION__);
-		}
+			page->data = xcalloc(1, MEM_PAGE_SIZE);
 		memcpy(page->data + offset, buf, size);
 		return;
 	}
@@ -360,12 +344,8 @@ struct mem_t *mem_create()
 {
 	struct mem_t *mem;
 
-	/* Create */
-	mem = calloc(1, sizeof(struct mem_t));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	mem = xcalloc(1, sizeof(struct mem_t));
 	mem->safe = mem_safe_mode;
 
 	/* Return */

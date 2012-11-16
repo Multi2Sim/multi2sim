@@ -110,12 +110,8 @@ static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtl
 	/* Not found */
 	if (!page)
 	{
-		/* Create page */
-		page = calloc(1, sizeof(struct mmu_page_t));
-		if (!page)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Initialize */
+		page = xcalloc(1, sizeof(struct mmu_page_t));
 		page->vtl_addr = tag;
 		page->address_space_index = address_space_index;
 		page->phy_addr = list_count(mmu->page_list) << mmu_log_page_size;
@@ -176,12 +172,8 @@ void mmu_init()
 	mmu_log_page_size = log_base2(mmu_page_size);
 	mmu_page_mask = mmu_page_size - 1;
 
-	/* Create Memory Management Unit (MMU) */
-	mmu = calloc(1, sizeof(struct mmu_t));
-	if (!mmu)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	mmu = xcalloc(1, sizeof(struct mmu_t));
 	mmu->page_list = list_create_with_size(MMU_PAGE_LIST_SIZE);
 
 	/* Open report file */

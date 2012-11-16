@@ -134,17 +134,9 @@ struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int blo
 	struct cache_block_t *block;
 	unsigned int set, way;
 
-	/* Create cache */
-	cache = calloc(1, sizeof(struct cache_t));
-	if (!cache)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Name */
-	cache->name = strdup(name);
-	if (!cache->name)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	cache = xcalloc(1, sizeof(struct cache_t));
+	cache->name = xstrdup(name);
 	cache->num_sets = num_sets;
 	cache->block_size = block_size;
 	cache->assoc = assoc;
@@ -157,20 +149,12 @@ struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int blo
 	cache->log_block_size = log_base2(block_size);
 	cache->block_mask = block_size - 1;
 	
-	/* Create array of sets */
-	cache->sets = calloc(num_sets, sizeof(struct cache_set_t));
-	if (!cache->sets)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize array of sets */
+	cache->sets = xcalloc(num_sets, sizeof(struct cache_set_t));
 	for (set = 0; set < num_sets; set++)
 	{
-		/* Create array of blocks */
-		cache->sets[set].blocks = calloc(assoc, sizeof(struct cache_block_t));
-		if (!cache->sets[set].blocks)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Initialize array of blocks */
+		cache->sets[set].blocks = xcalloc(assoc, sizeof(struct cache_block_t));
 		cache->sets[set].way_head = &cache->sets[set].blocks[0];
 		cache->sets[set].way_tail = &cache->sets[set].blocks[assoc - 1];
 		for (way = 0; way < assoc; way++)
