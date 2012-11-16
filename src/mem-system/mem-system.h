@@ -39,25 +39,8 @@ extern int mem_trace_category;
 
 extern int mem_system_peer_transfers;
 
-struct config_t;
-typedef void (*mem_system_config_generate_default_func_t)(struct config_t *config);
-typedef void (*mem_system_config_parse_entry_func_t)(struct config_t *config, char *section);
-typedef void (*mem_system_config_check_func_t)(struct config_t *config);
-
-struct mem_system_arch_t
-{
-	mem_system_config_generate_default_func_t config_generate_default_func;
-	mem_system_config_parse_entry_func_t config_parse_entry_func;
-	mem_system_config_check_func_t config_check_func;
-};
-
-
 struct mem_system_t
 {
-	/* List of registered architectures -
-	 * each element is of type 'struct mem_system_arch_t' */
-	struct list_t *arch_list;
-
 	/* List of modules and networks */
 	struct list_t *mod_list;
 	struct list_t *net_list;
@@ -68,13 +51,6 @@ extern struct mem_system_t *mem_system;
 
 void mem_system_init(void);
 void mem_system_done(void);
-
-/* For each new architecture running a timing simulation, register functions
- * that interact with the memory hierarchy. */
-void mem_system_register_arch(char *name,
-		mem_system_config_generate_default_func_t config_generate_default_func,
-		mem_system_config_parse_entry_func_t config_parse_entry_func,
-		mem_system_config_check_func_t config_check_func);
 
 /* Parse memory hierarchy configuration file, or generate default if omitted.
  * Call after 'mem_system_init()'. */

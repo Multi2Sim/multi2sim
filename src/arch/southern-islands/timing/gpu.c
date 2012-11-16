@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
@@ -29,6 +30,7 @@
 #include <lib/util/repos.h>
 #include <lib/util/timer.h>
 
+#include "mem-config.h"
 #include "timing.h"
 
 
@@ -724,6 +726,11 @@ void si_gpu_init(void)
 {
 	/* Trace */
 	si_trace_category = trace_new_category();
+
+	/* Register functions for architecture */
+	si_emu_arch->mem_config_check_func = si_mem_config_check;
+	si_emu_arch->mem_config_default_func = si_mem_config_default;
+	si_emu_arch->mem_config_parse_entry_func = si_mem_config_parse_entry;
 
 	/* Try to open report file */
 	if (si_gpu_report_file_name[0] && !file_can_open_for_write(si_gpu_report_file_name))

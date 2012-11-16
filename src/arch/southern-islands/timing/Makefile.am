@@ -9,6 +9,10 @@ libtiming_a_SOURCES = \
 	compute-unit.c \
 	gpu.c \
 	lds.c \
+	\
+	mem-config.c \
+	mem-config.h \
+	\
 	scalar_unit.c \
 	sched.c \
 	simd.c \

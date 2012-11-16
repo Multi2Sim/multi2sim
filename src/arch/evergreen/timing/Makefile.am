@@ -25,6 +25,9 @@ libtiming_a_SOURCES = \
 	instruction-interval-report.c \
 	instruction-interval-report.h \
 	\
+	mem-config.c \
+	mem-config.h \
+	\
 	sched.c \
 	sched.h \
 	\

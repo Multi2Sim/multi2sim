@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
 #include <arch/evergreen/emu/bin-file.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
@@ -38,11 +39,11 @@
 
 #include "calc.h"
 #include "compute-unit.h"
+#include "cycle-interval-report.h"
 #include "faults.h"
 #include "gpu.h"
-#include "cycle-interval-report.h"
 #include "instruction-interval-report.h"
-
+#include "mem-config.h"
 #include "sched.h"
 
 
@@ -459,6 +460,11 @@ void evg_gpu_init(void)
 {
 	/* Trace */
 	evg_trace_category = trace_new_category();
+
+	/* Register functions for architecture */
+	evg_emu_arch->mem_config_check_func = evg_mem_config_check;
+	evg_emu_arch->mem_config_default_func = evg_mem_config_default;
+	evg_emu_arch->mem_config_parse_entry_func = evg_mem_config_parse_entry;
 
 	/* Try to open report file */
 	if (evg_gpu_report_file_name[0] && !file_can_open_for_write(evg_gpu_report_file_name))
