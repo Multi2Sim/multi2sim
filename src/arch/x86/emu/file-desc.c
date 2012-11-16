@@ -38,12 +38,8 @@ struct x86_file_desc_t *x86_file_desc_create(enum x86_file_desc_kind_t kind,
 {
 	struct x86_file_desc_t *desc;
 
-	/* Allocate */
-	desc = calloc(1, sizeof(struct x86_file_desc_t));
-	if (!desc)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	desc = xcalloc(1, sizeof(struct x86_file_desc_t));
 	desc->kind = kind;
 	desc->guest_fd = guest_fd;
 	desc->host_fd = host_fd;
@@ -51,11 +47,7 @@ struct x86_file_desc_t *x86_file_desc_create(enum x86_file_desc_kind_t kind,
 
 	/* Path */
 	if (path)
-	{
-		desc->path = strdup(path);
-		if (!desc->path)
-			fatal("%s: out of memory", __FUNCTION__);
-	}
+		desc->path = xstrdup(path);
 
 	/* Return */
 	return desc;
@@ -81,12 +73,8 @@ struct x86_file_desc_table_t *x86_file_desc_table_create(void)
 	struct x86_file_desc_table_t *table;
 	struct x86_file_desc_t *desc;
 
-	/* Allocate */
-	table = calloc(1, sizeof(struct x86_file_desc_table_t));
-	if (!table)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	table = xcalloc(1, sizeof(struct x86_file_desc_table_t));
 	table->file_desc_list = list_create();
 
 	/* Add stdin */

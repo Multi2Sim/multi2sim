@@ -407,12 +407,8 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 	host_fd = fd->host_fd;
 	x86_sys_debug("  host_fd=%d\n", host_fd);
 
-	/* Allocate buffer */
-	buf = calloc(1, count);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Poll the file descriptor to check if read is blocking */
+	buf = xcalloc(1, count);
 	fds.fd = host_fd;
 	fds.events = POLLIN;
 	err = poll(&fds, 1, 0);
@@ -493,12 +489,8 @@ static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 	host_fd = desc->host_fd;
 	x86_sys_debug("  host_fd=%d\n", host_fd);
 
-	/* Allocate buffer */
-	buf = calloc(1, count);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Read buffer from memory */
+	buf = xcalloc(1, count);
 	mem_read(mem, buf_ptr, count, buf);
 	x86_sys_debug_buffer("  buf", buf, count);
 
@@ -825,12 +817,8 @@ static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 		if (length >= sizeof arg_str)
 			fatal("%s: buffer too small", __FUNCTION__);
 
-		/* Duplicate */
-		arg = strdup(arg_str);
-		if (!arg)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Add to argument list */
+		arg = xstrdup(arg_str);
 		list_add(arg_list, arg);
 		x86_sys_debug("    argv[%d]='%s'\n", arg_list->count, arg);
 	}
@@ -2468,9 +2456,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		mem_read(mem, addr_len_ptr, 4, &addr_len);
 		x86_sys_debug("    addrlen=%d\n", addr_len);
 		host_addr_len = addr_len;
-		addr = malloc(addr_len);
-		if (!addr)
-			fatal("%s: out of memory", __FUNCTION__);
+		addr = xmalloc(addr_len);
 
 		/* Get peer name */
 		err = getpeername(desc->host_fd, addr, &host_addr_len);
@@ -3072,12 +3058,8 @@ static int x86_sys_getdents_impl(struct x86_ctx_t *ctx)
 		fd, pdirent, count);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
 
-	/* Allocate buffer */
-	buf = calloc(1, count);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Call host getdents */
+	buf = xcalloc(1, count);
 	nread = syscall(SYS_getdents, host_fd, buf, count);
 	if (nread == -1)
 		fatal("%s: host call failed", __FUNCTION__);
@@ -3388,12 +3370,8 @@ static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
 		mem_read(mem, iovec_ptr + 4, 4, &iov_len);
 		iovec_ptr += 8;
 
-		/* Allocate buffer */
-		buf = malloc(iov_len);
-		if (!buf)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Read buffer from memory and write it to file */
+		buf = xmalloc(iov_len);
 		mem_read(mem, iov_base, iov_len, buf);
 		len = write(host_fd, buf, iov_len);
 		if (len == -1)
@@ -4702,12 +4680,8 @@ static int x86_sys_getdents64_impl(struct x86_ctx_t *ctx)
 	if (host_fd < 0)
 		return -EBADF;
 
-	/* Allocate buffer */
-	buf = calloc(1, count);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Host call */
+	buf = xcalloc(1, count);
 	nread = syscall(SYS_getdents, host_fd, buf, count);
 	if (nread < 0)
 		fatal("%s: host call failed", __FUNCTION__);

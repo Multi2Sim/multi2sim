@@ -36,9 +36,7 @@ struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(voi
 	/* Variables */
  	struct x86_opengl_context_capability_t* cap;
 
- 	cap = calloc(1, sizeof(struct x86_opengl_context_capability_t));
-	if (!cap)
-		fatal("%s: out of memory", __FUNCTION__);
+ 	cap = xcalloc(1, sizeof(struct x86_opengl_context_capability_t));
 
 	/* Set up initial value for each capability, initial value for each capability is GL_FALSE, except GL_DITHER and GL_MULTISAMPLE */
 	memset(cap, 0, sizeof(struct x86_opengl_context_capability_t));
@@ -63,9 +61,7 @@ struct x86_opengl_context_t *x86_opengl_context_create(void)
 
 	/* Allocate */
 	struct x86_opengl_context_t *ctx;
-	ctx = calloc(1, sizeof(struct x86_opengl_context_t));
-	if(!ctx)
-		fatal("%s: out of memory", __FUNCTION__);
+	ctx = xcalloc(1, sizeof(struct x86_opengl_context_t));
 
 	/* Initialize frame buffers */
 	width = 0;  // FIXME

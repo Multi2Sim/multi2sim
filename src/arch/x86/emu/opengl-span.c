@@ -29,9 +29,7 @@ struct x86_opengl_span_t *x86_opengl_span_create()
 {
 	struct x86_opengl_span_t *spn;
 
-	spn = calloc(1, sizeof(struct x86_opengl_span_t));
-	if (!spn)
-		fatal("%s: out of memory", __FUNCTION__);
+	spn = xcalloc(1, sizeof(struct x86_opengl_span_t));
 
 	return spn;
 }

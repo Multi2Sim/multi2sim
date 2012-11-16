@@ -34,9 +34,7 @@ struct x86_opengl_matrix_stack_t *x86_opengl_matrix_stack_create(GLenum mode)
 	struct x86_opengl_matrix_t *mtx;
 
 	/* Allocate */
-	stack = calloc(1, sizeof(struct x86_opengl_matrix_stack_t));
-	if(!stack)
-		fatal("%s: out of memory", __FUNCTION__);
+	stack = xcalloc(1, sizeof(struct x86_opengl_matrix_stack_t));
 
 	mtx = x86_opengl_matrix_create(MATRIX_GENERAL);
 

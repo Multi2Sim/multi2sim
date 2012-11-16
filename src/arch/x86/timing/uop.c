@@ -32,12 +32,8 @@ struct x86_uop_t *x86_uop_create(void)
 {
 	struct x86_uop_t *uop;
 
-	/* Allocate */
-	uop = calloc(1, sizeof(struct x86_uop_t));
-	if (!uop)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	uop = xcalloc(1, sizeof(struct x86_uop_t));
 	uop->magic = UOP_MAGIC;
 
 	/* Return */

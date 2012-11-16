@@ -31,9 +31,7 @@ struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLflo
 {
 	struct x86_opengl_vertex_t *vtx;
 
-	vtx = calloc(1, sizeof(struct x86_opengl_vertex_t));
-	if (!vtx)
-		fatal("%s: out of memory", __FUNCTION__);
+	vtx = xcalloc(1, sizeof(struct x86_opengl_vertex_t));
 
 	/* Initialize */
 	vtx->x = x;
@@ -70,9 +68,7 @@ struct x86_opengl_vertex_group_t *x86_opengl_vertex_group_create(GLenum primitiv
 {
 	struct x86_opengl_vertex_group_t * vtxgp;
 
-	vtxgp = calloc(1, sizeof(struct x86_opengl_vertex_group_t));
-	if (!vtxgp)
-		fatal("%s: out of memory", __FUNCTION__);
+	vtxgp = xcalloc(1, sizeof(struct x86_opengl_vertex_group_t));
 
 	/* Initialize */
 	vtxgp->primitive_type = primitive_type;
@@ -103,9 +99,7 @@ struct x86_opengl_vertex_buffer_t *x86_opengl_vertex_buffer_create()
 {
 	struct x86_opengl_vertex_buffer_t *vtxbf;
 
-	vtxbf = calloc(1, sizeof(struct x86_opengl_vertex_buffer_t));
-	if (!vtxbf)
-		fatal("%s: out of memory", __FUNCTION__);
+	vtxbf = xcalloc(1, sizeof(struct x86_opengl_vertex_buffer_t));
 
 	/* Initialize */
 	vtxbf->vertex_groups = list_create();

@@ -204,38 +204,24 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 	struct x86_reg_file_t *reg_file;
 	int phreg;
 	
-	/* Create structure */
-	reg_file = calloc(1, sizeof(struct x86_reg_file_t));
-	if (!reg_file)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Integer register file */
+	reg_file = xcalloc(1, sizeof(struct x86_reg_file_t));
 	reg_file->int_phreg_count = int_size;
-	reg_file->int_phreg = calloc(int_size, sizeof(struct x86_phreg_t));
-	if (!reg_file->int_phreg)
-		fatal("%s: out of memory", __FUNCTION__);
+	reg_file->int_phreg = xcalloc(int_size, sizeof(struct x86_phreg_t));
 
 	/* Free list */
 	reg_file->int_free_phreg_count = int_size;
-	reg_file->int_free_phreg = calloc(int_size, sizeof(int));
-	if (!reg_file->int_free_phreg)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize free list */
+	reg_file->int_free_phreg = xcalloc(int_size, sizeof(int));
 	for (phreg = 0; phreg < int_size; phreg++)
 		reg_file->int_free_phreg[phreg] = phreg;
 
 	/* Floating-point register file */
 	reg_file->fp_phreg_count = fp_size;
-	reg_file->fp_phreg = calloc(fp_size, sizeof(struct x86_phreg_t));
-	if (!reg_file->fp_phreg)
-		fatal("%s: out of memory", __FUNCTION__);
+	reg_file->fp_phreg = xcalloc(fp_size, sizeof(struct x86_phreg_t));
 
 	/* Free list */
 	reg_file->fp_free_phreg_count = fp_size;
-	reg_file->fp_free_phreg = calloc(fp_size, sizeof(int));
-	if (!reg_file->fp_free_phreg)
-		fatal("%s: out of memory", __FUNCTION__);
+	reg_file->fp_free_phreg = xcalloc(fp_size, sizeof(int));
 
 	/* Initialize free list */
 	for (phreg = 0; phreg < fp_size; phreg++)
@@ -243,15 +229,11 @@ struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_si
 	
 	/* XMM register file */
 	reg_file->xmm_phreg_count = xmm_size;
-	reg_file->xmm_phreg = calloc(xmm_size, sizeof(struct x86_phreg_t));
-	if (!reg_file->xmm_phreg)
-		fatal("%s: out of memory", __FUNCTION__);
+	reg_file->xmm_phreg = xcalloc(xmm_size, sizeof(struct x86_phreg_t));
 
 	/* Free list */
 	reg_file->xmm_free_phreg_count = xmm_size;
-	reg_file->xmm_free_phreg = calloc(xmm_size, sizeof(int));
-	if (!reg_file->xmm_free_phreg)
-		fatal("%s: out of memory", __FUNCTION__);
+	reg_file->xmm_free_phreg = xcalloc(xmm_size, sizeof(int));
 
 	/* Initialize free list */
 	for (phreg = 0; phreg < xmm_size; phreg++)
