@@ -237,7 +237,7 @@ static void x86_loader_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *e
 			{
 				void *ptr;
 
-				ptr = calloc(1, section->header->sh_size);
+				ptr = xcalloc(1, section->header->sh_size);
 				mem_access(mem, section->header->sh_addr, section->header->sh_size,
 					ptr, mem_access_init);
 				free(ptr);
@@ -598,12 +598,8 @@ struct x86_loader_t *x86_loader_create(void)
 {
 	struct x86_loader_t *ld;
 
-	/* Allocate */
-	ld = calloc(1, sizeof(struct x86_loader_t));
-	if (!ld)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	ld = xcalloc(1, sizeof(struct x86_loader_t));
 	ld->args = linked_list_create();
 	ld->env = linked_list_create();
 

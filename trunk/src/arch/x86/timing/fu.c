@@ -132,7 +132,7 @@ void x86_fu_init()
 	int core;
 
 	X86_CORE_FOR_EACH
-		X86_CORE.fu = calloc(1, sizeof(struct x86_fu_t));
+		X86_CORE.fu = xcalloc(1, sizeof(struct x86_fu_t));
 }
 
 

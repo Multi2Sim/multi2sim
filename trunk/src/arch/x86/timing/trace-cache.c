@@ -125,29 +125,15 @@ struct x86_trace_cache_t *x86_trace_cache_create(char *name, struct x86_thread_t
 	int set;
 	int way;
 
-	/* Create trace cache */
-	trace_cache = calloc(1, sizeof(struct x86_trace_cache_t));
-	if (!trace_cache)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	trace_cache = xcalloc(1, sizeof(struct x86_trace_cache_t));
 	trace_cache->thread = thread;
 
-	/* Name */
-	trace_cache->name = strdup(name);
-	if (!trace_cache->name)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Entries */
-	trace_cache->entry = calloc(x86_trace_cache_num_sets * x86_trace_cache_assoc,
+	trace_cache->name = xstrdup(name);
+	trace_cache->entry = xcalloc(x86_trace_cache_num_sets * x86_trace_cache_assoc,
 		X86_TRACE_CACHE_ENTRY_SIZE);
-	if (!trace_cache->entry)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Temporary trace */
-	trace_cache->temp = calloc(1, X86_TRACE_CACHE_ENTRY_SIZE);
-	if (!trace_cache->temp)
-		fatal("%s: out of memory", __FUNCTION__);
+	trace_cache->temp = xcalloc(1, X86_TRACE_CACHE_ENTRY_SIZE);
 
 	/* Initialize LRU counter */
 	for (set = 0; set < x86_trace_cache_num_sets; set++)

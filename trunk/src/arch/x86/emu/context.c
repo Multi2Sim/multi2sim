@@ -95,12 +95,8 @@ static struct x86_ctx_t *ctx_do_create()
 {
 	struct x86_ctx_t *ctx;
 
-	/* Create context and set its status */
-	ctx = calloc(1, sizeof(struct x86_ctx_t));
-	if (!ctx)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	ctx = xcalloc(1, sizeof(struct x86_ctx_t));
 	ctx->pid = x86_emu->current_pid++;
 
 	/* Update status so that the context is inserted in the
@@ -797,12 +793,8 @@ void x86_ctx_ipc_report_schedule(struct x86_ctx_t *ctx)
 	FILE *f = ctx->loader->ipc_report_file;
 	int i;
 
-	/* Create new stack */
-	stack = calloc(1, sizeof(struct x86_ctx_ipc_report_stack_t));
-	if (!stack)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	stack = xcalloc(1, sizeof(struct x86_ctx_ipc_report_stack_t));
 	assert(ctx->loader->ipc_report_file);
 	assert(ctx->loader->ipc_report_interval > 0);
 	stack->pid = ctx->pid;

@@ -29,12 +29,8 @@ struct x86_regs_t *x86_regs_create()
 {
 	struct x86_regs_t *regs;
 
-	/* Allocate */
-	regs = calloc(1, sizeof(struct x86_regs_t));
-	if (!regs)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Return */
+	regs = xcalloc(1, sizeof(struct x86_regs_t));
 	return regs;
 }
 

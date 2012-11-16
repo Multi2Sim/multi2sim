@@ -545,9 +545,7 @@ struct x86_uinst_t *x86_uinst_create(void)
 {
 	struct x86_uinst_t *uinst;
 
-	uinst = calloc(1, sizeof(struct x86_uinst_t));
-	if (!uinst)
-		fatal("%s: out of memory", __FUNCTION__);
+	uinst = xcalloc(1, sizeof(struct x86_uinst_t));
 	uinst->idep = uinst->dep;
 	uinst->odep = &uinst->dep[X86_UINST_MAX_IDEPS];
 	return uinst;

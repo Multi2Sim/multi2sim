@@ -877,9 +877,7 @@ static char *load_str(char *key)
 		fatal("Null terminator not found in string (element: %s/%s)",
 			cfg_path(), key);
 
-	dup = strdup(value);
-	if (!dup)
-		fatal("%s: out of memory", __FUNCTION__);
+	dup = xstrdup(value);
 
 	return dup;
 }
@@ -909,9 +907,7 @@ static struct linked_list_t *load_str_list(char *key)
 	while(cfg_next_child()) {
 		char *dup;
 
-		dup = strdup(cfg_top()->key);
-		if (!dup)
-			fatal("%s: out of memory", __FUNCTION__);
+		dup = xstrdup(cfg_top()->key);
 
 		linked_list_add(ll, dup);
 		cfg_pop();
@@ -939,13 +935,9 @@ static struct cfg_stack_elem_t *cfg_stack_elem_create(
 {
 	struct cfg_stack_elem_t *ret;
 
-	ret = malloc(sizeof(struct cfg_stack_elem_t));
-	if (!ret)
-		fatal("%s: out of memory", __FUNCTION__);
+	ret = xmalloc(sizeof(struct cfg_stack_elem_t));
 	ret->elem = elem;
-	ret->key = strdup(key);
-	if (!ret->key)
-		fatal("%s: out of memory", __FUNCTION__);
+	ret->key = xstrdup(key);
 	ret->child_idx = -1;
 
 	return ret;

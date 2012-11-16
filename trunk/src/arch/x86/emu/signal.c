@@ -175,12 +175,8 @@ struct x86_signal_mask_table_t *x86_signal_mask_table_create(void)
 {
 	struct x86_signal_mask_table_t *table;
 
-	/* Create */
-	table = calloc(1, sizeof(struct x86_signal_mask_table_t));
-	if (!table)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Return */
+	table = xcalloc(1, sizeof(struct x86_signal_mask_table_t));
 	return table;
 }
 
@@ -200,12 +196,8 @@ struct x86_signal_handler_table_t *x86_signal_handler_table_create(void)
 {
 	struct x86_signal_handler_table_t *table;
 
-	/* Allocate */
-	table = calloc(1, sizeof(struct x86_signal_handler_table_t));
-	if (!table)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Return */
+	table = xcalloc(1, sizeof(struct x86_signal_handler_table_t));
 	return table;
 }
 

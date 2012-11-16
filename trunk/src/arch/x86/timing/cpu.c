@@ -871,7 +871,7 @@ static void x86_cpu_thread_init(int core, int thread)
 static void x86_cpu_core_init(int core)
 {
 	int thread;
-	X86_CORE.thread = calloc(x86_cpu_num_threads, sizeof(struct x86_thread_t));
+	X86_CORE.thread = xcalloc(x86_cpu_num_threads, sizeof(struct x86_thread_t));
 	X86_THREAD_FOR_EACH
 		x86_cpu_thread_init(core, thread);
 
@@ -911,20 +911,12 @@ void x86_cpu_init()
 	/* Analyze CPU configuration file */
 	x86_cpu_config_check();
 
-	/* Allocate CPU */
-	x86_cpu = calloc(1, sizeof(struct x86_cpu_t));
-	if (!x86_cpu)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	x86_cpu = xcalloc(1, sizeof(struct x86_cpu_t));
 	x86_cpu->uop_trace_list = linked_list_create();
 
-	/* Allocate cores */
-	x86_cpu->core = calloc(x86_cpu_num_cores, sizeof(struct x86_core_t));
-	if (!x86_cpu->core)
-		fatal("%s: out of memroy", __FUNCTION__);
-
 	/* Initialize cores */
+	x86_cpu->core = xcalloc(x86_cpu_num_cores, sizeof(struct x86_core_t));
 	X86_CORE_FOR_EACH
 		x86_cpu_core_init(core);
 

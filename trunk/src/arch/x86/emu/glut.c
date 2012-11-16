@@ -287,12 +287,8 @@ struct x86_glut_event_t *x86_glut_event_create(enum x86_glut_event_type_t type)
 {
 	struct x86_glut_event_t *event;
 
-	/* Allocate */
-	event = calloc(1, sizeof(struct x86_glut_event_t));
-	if (!event)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	event = xcalloc(1, sizeof(struct x86_glut_event_t));
 	event->type = type;
 
 	/* Return */
@@ -914,9 +910,7 @@ static int x86_glut_func_new_window(struct x86_ctx_t *ctx)
 	mem_read_string(mem, title_ptr, sizeof title, title);
 
 	/* Create window properties and read */
-	properties = calloc(1, sizeof(struct x86_glut_window_properties_t));
-	if (!properties)
-		fatal("%s: out of memory", __FUNCTION__);
+	properties = xcalloc(1, sizeof(struct x86_glut_window_properties_t));
 	mem_read(mem, properties_ptr, sizeof(struct x86_glut_window_properties_t),
 		properties);
 
@@ -935,9 +929,7 @@ static int x86_glut_func_new_window(struct x86_ctx_t *ctx)
 	/* Store values for 'x86_glut_window_properties' and 'x86_glut_window_title',
 	 * consumed by the secondary thread that creates the window. */
 	x86_glut_window_properties = properties;
-	x86_glut_window_title = strdup(title);
-	if (!x86_glut_window_title)
-		fatal("%s: out of memory", __FUNCTION__);
+	x86_glut_window_title = xstrdup(title);
 
 	/* Launch secondary thread for host GLUT calls. A secondary thread is needed
 	 * to cover the limitations of glutMainLoop, a function that does not return. */

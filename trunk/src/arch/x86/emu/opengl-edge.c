@@ -31,9 +31,7 @@ struct x86_opengl_edge_t *x86_opengl_edge_create(struct x86_opengl_vertex_t *vtx
 {
 	struct x86_opengl_edge_t * edge;
 
-	edge = calloc(1, sizeof(struct x86_opengl_edge_t));
-	if (!edge)
-		fatal("%s: out of memory", __FUNCTION__);
+	edge = xcalloc(1, sizeof(struct x86_opengl_edge_t));
 
 	/* Initialize */
 	edge->vtx0 = vtx0;

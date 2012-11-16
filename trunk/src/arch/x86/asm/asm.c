@@ -231,7 +231,7 @@ static void x86_opcode_info_insert(struct x86_opcode_info_t *info)
 
 	/* Insert */
 	for (i = 0; i < count; i++) {
-		elem = calloc(1, sizeof(struct x86_opcode_info_elem_t));
+		elem = xcalloc(1, sizeof(struct x86_opcode_info_elem_t));
 		elem->info = info;
 		x86_opcode_info_insert_at(table, elem, index + i);
 	}
