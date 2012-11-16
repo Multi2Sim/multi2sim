@@ -308,12 +308,8 @@ void vi_si_gpu_init(void)
 {
 	struct vi_trace_line_t *trace_line;
 
-	/* Allocate */
-	vi_si_gpu = calloc(1, sizeof(struct vi_si_gpu_t));
-	if (!vi_si_gpu)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	vi_si_gpu = xcalloc(1, sizeof(struct vi_si_gpu_t));
 	vi_si_gpu->compute_unit_list = list_create();
 
 	/* State file */

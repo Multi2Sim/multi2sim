@@ -39,12 +39,8 @@ struct vi_mod_access_t *vi_mod_access_create(char *name, unsigned int address)
 {
 	struct vi_mod_access_t *access;
 
-	/* Allocate */
-	access = calloc(1, sizeof(struct vi_mod_access_t));
-	if (!access)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	access = xcalloc(1, sizeof(struct vi_mod_access_t));
 	access->name = str_set(access->name, name);
 	access->address = address;
 	access->creation_cycle = vi_state_get_current_cycle();

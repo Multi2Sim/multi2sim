@@ -100,12 +100,8 @@ static struct vi_list_item_t *vi_list_item_create(void)
 {
 	struct vi_list_item_t *item;
 
-	/* Allocate */
-	item = calloc(1, sizeof(struct vi_list_item_t));
-	if (!item)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Return */
+	item = xcalloc(1, sizeof(struct vi_list_item_t));
 	return item;
 }
 
@@ -245,12 +241,8 @@ struct vi_list_popup_t *vi_list_popup_create(struct vi_list_t *list)
 {
 	struct vi_list_popup_t *popup;
 
-	/* Allocate */
-	popup = calloc(1, sizeof(struct vi_list_popup_t));
-	if (!popup)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	popup = xcalloc(1, sizeof(struct vi_list_popup_t));
 	popup->list = list;
 
 	int i;
@@ -409,15 +401,9 @@ struct vi_list_t *vi_list_create(char *title, int width, int height,
 {
 	struct vi_list_t *list;
 
-	/* Allocate */
-	list = calloc(1, sizeof(struct vi_list_t));
-	if (!list)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Title */
-	list->title = strdup(title);
-	if (!list->title)
-		fatal("%s: out of memory", __FUNCTION__);
+	list = xcalloc(1, sizeof(struct vi_list_t));
+	list->title = xstrdup(title);
 
 	/* Initialize */
 	list->elem_list = list_create();

@@ -100,13 +100,9 @@ struct net_t *net_create(char *name)
 {
 	struct net_t *net;
 
-	/* Create */
-	net = calloc(1, sizeof(struct net_t));
-	if (!net)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
-	net->name = strdup(name);
+	net = xcalloc(1, sizeof(struct net_t));
+	net->name = xstrdup(name);
 	net->node_list = list_create();
 	net->link_list = list_create();
 	net->routing_table = net_routing_table_create(net);

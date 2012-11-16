@@ -43,12 +43,8 @@ struct vi_net_node_t *vi_net_node_create(void)
 {
 	struct vi_net_node_t *node;
 
-	/* Allocate */
-	node = calloc(1, sizeof(struct vi_net_node_t));
-	if (!node)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Return */
+	node = xcalloc(1, sizeof(struct vi_net_node_t));
 	return node;
 }
 
@@ -74,16 +70,12 @@ struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line)
 
 	char *name;
 
-	/* Allocate */
-	net = calloc(1, sizeof(struct vi_net_t));
-	if (!net)
-		fatal("%s: out of memory", __FUNCTION__);
+	/* Initialize */
+	net = xcalloc(1, sizeof(struct vi_net_t));
 
 	/* Name */
 	name = vi_trace_line_get_symbol(trace_line, "name");
-	net->name = strdup(name);
-	if (!net->name)
-		fatal("%s: out of memory", __FUNCTION__);
+	net->name = xstrdup(name);
 
 	/* Node list */
 	num_nodes = vi_trace_line_get_symbol_int(trace_line, "num_nodes");

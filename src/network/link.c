@@ -42,12 +42,8 @@ struct net_link_t *net_link_create(struct net_t *net,
 	struct net_buffer_t *dst_buffer;
 	char name[MAX_STRING_SIZE];
 
-	/* Create */
-	link = calloc(1, sizeof(struct net_link_t));
-	if (!link)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Fields */
+	link = xcalloc(1, sizeof(struct net_link_t));
 	link->net = net;
 	link->src_node = src_node;
 	link->dst_node = dst_node;
@@ -65,7 +61,7 @@ struct net_link_t *net_link_create(struct net_t *net,
 			/* Name */
 			snprintf(name, sizeof(name), "link_<%s.%s>_<%s.%s>", src_node->name,
 				src_buffer->name, dst_node->name, dst_buffer->name);
-			link->name = strdup(name);
+			link->name = xstrdup(name);
 			link->src_buffer = src_buffer;
 			link->dst_buffer = dst_buffer;
 		}

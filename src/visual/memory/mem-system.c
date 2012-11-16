@@ -482,12 +482,8 @@ void vi_mem_system_init(void)
 		(vi_state_process_trace_line_func_t) vi_mem_system_access,
 		vi_mem_system);
 
-	/* Allocate */
-	vi_mem_system = calloc(1, sizeof(struct vi_mem_system_t));
-	if (!vi_mem_system)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	vi_mem_system = xcalloc(1, sizeof(struct vi_mem_system_t));
 	vi_mem_system->mod_table = hash_table_create(0, FALSE);
 	vi_mem_system->net_table = hash_table_create(0, FALSE);
 	vi_mem_system->access_table = hash_table_create(0, FALSE);

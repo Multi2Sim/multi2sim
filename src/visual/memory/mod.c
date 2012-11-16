@@ -65,16 +65,12 @@ struct vi_mod_t *vi_mod_create(struct vi_trace_line_t *trace_line)
 	int set;
 	int way;
 
-	/* Allocate */
-	mod = calloc(1, sizeof(struct vi_mod_t));
-	if (!mod)
-		fatal("%s: out of memory", __FUNCTION__);
+	/* Initialize */
+	mod = xcalloc(1, sizeof(struct vi_mod_t));
 
 	/* Name */
 	name = vi_trace_line_get_symbol(trace_line, "name");
-	mod->name = strdup(name);
-	if (!mod->name)
-		fatal("%s: out of memory", __FUNCTION__);
+	mod->name = xstrdup(name);
 
 	/* Get module parameters */
 	mod->num_sets = vi_trace_line_get_symbol_int(trace_line, "num_sets");
@@ -102,7 +98,7 @@ struct vi_mod_t *vi_mod_create(struct vi_trace_line_t *trace_line)
 		vi_net_attach_mod(mod->low_net, mod, mod->low_net_node_index);
 
 	/* Blocks */
-	mod->blocks = calloc(mod->num_sets * mod->assoc, sizeof(struct vi_mod_block_t));
+	mod->blocks = xcalloc(mod->num_sets * mod->assoc, sizeof(struct vi_mod_block_t));
 	for (set = 0; set < mod->num_sets; set++)
 	{
 		for (way = 0; way < mod->assoc; way++)
@@ -116,7 +112,7 @@ struct vi_mod_t *vi_mod_create(struct vi_trace_line_t *trace_line)
 			block->set = set;
 			block->way = way;
 			block->access_list = linked_list_create();
-			block->dir_entries = calloc(mod->num_sub_blocks, VI_MOD_DIR_ENTRY_SIZE(mod));
+			block->dir_entries = xcalloc(mod->num_sub_blocks, VI_MOD_DIR_ENTRY_SIZE(mod));
 
 			for (sub_block = 0; sub_block < mod->num_sub_blocks; sub_block++)
 			{

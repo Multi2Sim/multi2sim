@@ -491,12 +491,8 @@ struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *c
 {
 	struct vi_evg_time_dia_t *time_dia;
 
-	/* Allocate */
-	time_dia = calloc(1, sizeof(struct vi_evg_time_dia_t));
-	if (!time_dia)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	time_dia = xcalloc(1, sizeof(struct vi_evg_time_dia_t));
 	time_dia->compute_unit = compute_unit;
 
 	/* Content layout */
