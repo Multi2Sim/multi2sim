@@ -71,16 +71,10 @@ struct m2s_timer_t *m2s_timer_create(char *name)
 {
 	struct m2s_timer_t *timer;
 
-	/* Allocate */
-	timer = calloc(1, sizeof(struct m2s_timer_t));
-	if (!timer)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	timer = xcalloc(1, sizeof(struct m2s_timer_t));
 	timer->state = m2s_timer_state_stopped;
-	timer->name = strdup(name ? name : "");
-	if (!timer->name)
-		fatal("%s: out of memory", __FUNCTION__);
+	timer->name = xstrdup(name ? name : "");
 
 	/* Return */
 	return timer;

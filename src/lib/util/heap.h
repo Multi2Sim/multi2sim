@@ -21,9 +21,8 @@
 #define LIB_UTIL_HEAP_H
 
 /* error constants */
-#define HEAP_ENOMEM	1
-#define HEAP_EEMPTY	2
-#define HEAP_EELEM	3
+#define HEAP_EEMPTY	1
+#define HEAP_EELEM	2
 
 
 struct heap_t;
