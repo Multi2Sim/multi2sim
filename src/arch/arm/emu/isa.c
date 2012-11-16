@@ -1611,9 +1611,7 @@ struct arm_isa_cstack_t* arm_isa_cstack_create(struct arm_ctx_t *ctx)
 {
 	struct arm_isa_cstack_t *cstack;
 
-	cstack = calloc(1, sizeof(struct arm_isa_cstack_t));
-	if (!cstack)
-		fatal("%s: out of memory", __FUNCTION__);
+	cstack = xcalloc(1, sizeof(struct arm_isa_cstack_t));
 
 	cstack->top = -1;
 	return cstack;

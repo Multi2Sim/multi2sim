@@ -85,9 +85,7 @@ void arm_emu_init(void)
 	arm_disasm_init();
 
 	/* Allocate */
-	arm_emu = calloc(1, sizeof(struct arm_emu_t));
-	if (!arm_emu)
-		fatal("%s: out of memory", __FUNCTION__);
+	arm_emu = xcalloc(1, sizeof(struct arm_emu_t));
 
 	/* Event for context IPC reports */
 	EV_ARM_CTX_IPC_REPORT = esim_register_event_with_name(arm_ctx_ipc_report_handler, "arm_ctx_ipc_report");

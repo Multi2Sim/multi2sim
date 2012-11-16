@@ -51,30 +51,20 @@ struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
 	struct evg_ndrange_t *ndrange;
 
 	/* Allocate */
-	ndrange = calloc(1, sizeof(struct evg_ndrange_t));
-	if (!ndrange)
-		fatal("%s: out of memory", __FUNCTION__);
+	ndrange = xcalloc(1, sizeof(struct evg_ndrange_t));
 
 	/* Insert in ND-Range list of Evergreen emulator */
 	DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, ndrange, ndrange);
 
-	/* Name */
-	ndrange->name = strdup(kernel->name);
-	if (!ndrange->name)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	ndrange->name = xstrdup(kernel->name);
 	ndrange->kernel = kernel;
 	ndrange->local_mem_top = kernel->func_mem_local;
 	ndrange->id = evg_emu->ndrange_count++;
 
 	/* Instruction histogram */
 	if (evg_emu_report_file)
-	{
-		ndrange->inst_histogram = calloc(EVG_INST_COUNT, sizeof(unsigned int));
-		if (!ndrange->inst_histogram)
-			fatal("%s: out of memory", __FUNCTION__);
-	}
+		ndrange->inst_histogram = xcalloc(EVG_INST_COUNT, sizeof(unsigned int));
 
 	/* Return */
 	return ndrange;
@@ -260,9 +250,7 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	ndrange->work_group_count = kernel->group_count;
 	ndrange->work_group_id_first = 0;
 	ndrange->work_group_id_last = ndrange->work_group_count - 1;
-	ndrange->work_groups = calloc(ndrange->work_group_count, sizeof(void *));
-	if (!ndrange->work_groups)
-		fatal("%s: out of memory", __FUNCTION__);
+	ndrange->work_groups = xcalloc(ndrange->work_group_count, sizeof(void *));
 
 	/* Create work-groups */
 	for (gid = 0; gid < kernel->group_count; gid++)
@@ -277,9 +265,7 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	ndrange->wavefront_id_first = 0;
 	ndrange->wavefront_id_last = ndrange->wavefront_count - 1;
 	assert(ndrange->wavefronts_per_work_group > 0 && ndrange->wavefront_count > 0);
-	ndrange->wavefronts = calloc(ndrange->wavefront_count, sizeof(void *));
-	if (!ndrange->wavefronts)
-		fatal("%s: out of memory", __FUNCTION__);
+	ndrange->wavefronts = xcalloc(ndrange->wavefront_count, sizeof(void *));
 	for (wid = 0; wid < ndrange->wavefront_count; wid++)
 	{
 		gid = wid / ndrange->wavefronts_per_work_group;
@@ -298,9 +284,7 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	ndrange->work_item_count = kernel->global_size;
 	ndrange->work_item_id_first = 0;
 	ndrange->work_item_id_last = ndrange->work_item_count - 1;
-	ndrange->work_items = calloc(ndrange->work_item_count, sizeof(void *));
-	if (!ndrange->work_items)
-		fatal("%s: out of memory", __FUNCTION__);
+	ndrange->work_items = xcalloc(ndrange->work_item_count, sizeof(void *));
 
 	/* Create work-items */
 	tid = 0;

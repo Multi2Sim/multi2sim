@@ -36,12 +36,8 @@ struct evg_opencl_event_t *evg_opencl_event_create(enum evg_opencl_event_kind_t 
 {
 	struct evg_opencl_event_t *event;
 
-	/* Allocate */
-	event = calloc(1, sizeof(struct evg_opencl_event_t));
-	if (!event)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	event = xcalloc(1, sizeof(struct evg_opencl_event_t));
 	event->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_event);
 	event->ref_count = 1;

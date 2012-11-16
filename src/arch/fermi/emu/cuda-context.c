@@ -31,12 +31,8 @@ struct frm_cuda_context_t *frm_cuda_context_create()
 {
 	struct frm_cuda_context_t *context;
 
-	/* Allocate */
-	context = calloc(1, sizeof(struct frm_cuda_context_t));
-	if (!context)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	context = xcalloc(1, sizeof(struct frm_cuda_context_t));
 	context->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_CONTEXT);
 	context->ref_count = 1;
 

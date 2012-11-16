@@ -40,12 +40,8 @@ struct evg_opencl_kernel_t *evg_opencl_kernel_create()
 	struct evg_opencl_kernel_t *kernel;
 	int i;
 
-	/* Allocate */
-	kernel = calloc(1, sizeof(struct evg_opencl_kernel_t));
-	if (!kernel)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	kernel = xcalloc(1, sizeof(struct evg_opencl_kernel_t));
 	kernel->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_kernel);
 	kernel->ref_count = 1;
@@ -98,12 +94,8 @@ struct evg_opencl_kernel_arg_t *evg_opencl_kernel_arg_create(char *name)
 {
 	struct evg_opencl_kernel_arg_t *arg;
 
-	/* Allocate */
-	arg = calloc(1, sizeof(struct evg_opencl_kernel_arg_t) + strlen(name) + 1);
-	if (!arg)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	arg = xcalloc(1, sizeof(struct evg_opencl_kernel_arg_t) + strlen(name) + 1);
 	strcpy(arg->name, name);
 
 	/* Return */

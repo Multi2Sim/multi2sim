@@ -35,12 +35,8 @@ struct evg_opencl_platform_t *evg_opencl_platform_create()
 {
 	struct evg_opencl_platform_t *platform;
 
-	/* Allocate */
-	platform = calloc(1, sizeof(struct evg_opencl_platform_t));
-	if (!platform)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	platform = xcalloc(1, sizeof(struct evg_opencl_platform_t));
 	platform->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_platform);
 

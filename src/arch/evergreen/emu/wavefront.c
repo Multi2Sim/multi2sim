@@ -82,9 +82,7 @@ static void evg_wavefront_divergence_dump(struct evg_wavefront_t *wavefront, FIL
 		elem = hash_table_get(ht, str);
 		if (!elem)
 		{
-			elem = calloc(1, sizeof(struct elem_t));
-			if (!elem)
-				fatal("%s: out of memory", __FUNCTION__);
+			elem = xcalloc(1, sizeof(struct elem_t));
 
 			hash_table_insert(ht, str, elem);
 			elem->list_index = list_count(list);
@@ -148,12 +146,8 @@ struct evg_wavefront_t *evg_wavefront_create()
 {
 	struct evg_wavefront_t *wavefront;
 
-	/* Allocate */
-	wavefront = calloc(1, sizeof(struct evg_wavefront_t));
-	if (!wavefront)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	wavefront = xcalloc(1, sizeof(struct evg_wavefront_t));
 	wavefront->active_stack = bit_map_create(EVG_MAX_STACK_SIZE * evg_emu_wavefront_size);
 	wavefront->pred = bit_map_create(evg_emu_wavefront_size);
 	/* FIXME: Remove once loop state is part of stack */

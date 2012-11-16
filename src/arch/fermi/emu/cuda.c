@@ -573,9 +573,7 @@ static int frm_cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
 	frm_cuda_debug("\tin: ByteCount=%u\n", ByteCount);
 
 	/* Copy */
-	buf = malloc(ByteCount);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
+	buf = xmalloc(ByteCount);
 	mem_read(frm_emu->global_mem, srcDevice, ByteCount, buf);
 	mem_write(mem, dstHost, ByteCount, buf);
 	free(buf);
@@ -624,9 +622,7 @@ static int frm_cuda_func_cuMemcpyHtoD(struct x86_ctx_t *ctx)
 	frm_cuda_debug("\tin: ByteCount=%u\n", ByteCount);
 
 	/* Copy */
-	buf = malloc(ByteCount);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
+	buf = xmalloc(ByteCount);
 	mem_read(mem, srcHost, ByteCount, buf);
 	mem_write(frm_emu->global_mem, dstDevice, ByteCount, buf);
 	free(buf);

@@ -31,12 +31,8 @@ struct frm_cuda_device_t *frm_cuda_device_create()
 {
 	struct frm_cuda_device_t *device;
 
-	/* Allocate */
-	device = calloc(1, sizeof(struct frm_cuda_device_t));
-	if (!device)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	device = xcalloc(1, sizeof(struct frm_cuda_device_t));
 	device->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_DEVICE);
 
 	/* Return */

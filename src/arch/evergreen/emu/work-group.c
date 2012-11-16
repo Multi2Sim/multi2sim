@@ -43,12 +43,8 @@ struct evg_work_group_t *evg_work_group_create(void)
 {
 	struct evg_work_group_t *work_group;
 
-	/* Allocate */
-	work_group = calloc(1, sizeof(struct evg_work_group_t));
-	if (!work_group)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	work_group = xcalloc(1, sizeof(struct evg_work_group_t));
 	work_group->local_mem = mem_create();
 	work_group->local_mem->safe = 0;
 

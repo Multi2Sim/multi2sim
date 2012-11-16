@@ -63,12 +63,8 @@ int evg_isa_debug_category;
 /* Initialization */
 void evg_isa_init()
 {
-	/* Allocate instruction execution table */
-	evg_isa_inst_func = calloc(EVG_INST_COUNT, sizeof(evg_isa_inst_func_t));
-	if (!evg_isa_inst_func)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	evg_isa_inst_func = xcalloc(EVG_INST_COUNT, sizeof(evg_isa_inst_func_t));
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	evg_isa_inst_func[EVG_INST_##_name] = evg_isa_##_name##_impl;
 #include <arch/evergreen/asm/asm.dat>
