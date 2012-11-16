@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
@@ -38,6 +39,7 @@
 #include "fu.h"
 #include "inst-queue.h"
 #include "load-store-queue.h"
+#include "mem-config.h"
 #include "reg-file.h"
 #include "rob.h"
 #include "trace-cache.h"
@@ -102,8 +104,7 @@ char *x86_config_help =
 	"  InstructionCachePerfect = {t|f} (Default = False)\n"
 	"      Set these options to true to simulate a perfect data/instruction caches,\n"
 	"      respectively, where every access results in a hit. If set to false, the\n"
-	"      parameters of the caches are given in the cache system configuration file\n"
-	"      (option --cpu-cache-config <file>).\n"
+	"      parameters of the caches are given in the memory configuration file\n"
 	"\n"
 	"Section '[ Pipeline ]':\n"
 	"\n"
@@ -902,6 +903,11 @@ void x86_cpu_init()
 	/* Trace */
 	x86_trace_category = trace_new_category();
 
+	/* Register architecture */
+	x86_emu_arch->mem_config_check_func = x86_mem_config_check;
+	x86_emu_arch->mem_config_default_func = x86_mem_config_default;
+	x86_emu_arch->mem_config_parse_entry_func = x86_mem_config_parse_entry;
+
 	/* Analyze CPU configuration file */
 	x86_cpu_config_check();
 
@@ -1051,21 +1057,6 @@ void x86_cpu_dump_summary(FILE *f)
 	fprintf(f, "CommittedMicroInstructions = %lld\n", x86_cpu->num_committed_uinst);
 	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
-}
-
-
-void x86_cpu_mem_config_generate_default(struct config_t *config)
-{
-}
-
-
-void x86_cpu_mem_config_parse_entry(struct config_t *config, char *section)
-{
-}
-
-
-void x86_cpu_mem_config_check(struct config_t *config)
-{
 }
 
 

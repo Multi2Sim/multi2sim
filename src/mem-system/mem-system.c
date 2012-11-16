@@ -67,9 +67,6 @@ void mem_system_init(void)
 	if (!mem_system)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Create list of architectures */
-	mem_system->arch_list = list_create();
-
 	/* Create network and module list */
 	mem_system->net_list = list_create();
 	mem_system->mod_list = list_create();
@@ -186,11 +183,6 @@ void mem_system_done(void)
 	/* Dump report */
 	mem_system_dump_report();
 
-	/* Free registered architectures */
-	while (list_count(mem_system->arch_list))
-		free(list_pop(mem_system->arch_list));
-	list_free(mem_system->arch_list);
-
 	/* Free memory modules */
 	while (list_count(mem_system->mod_list))
 		mod_free(list_pop(mem_system->mod_list));
@@ -203,28 +195,6 @@ void mem_system_done(void)
 
 	/* Free memory system */
 	free(mem_system);
-}
-
-
-void mem_system_register_arch(char *name,
-		mem_system_config_generate_default_func_t config_generate_default_func,
-		mem_system_config_parse_entry_func_t config_parse_entry_func,
-		mem_system_config_check_func_t config_check_func)
-{
-	struct mem_system_arch_t *arch;
-
-	/* Create new registered architecture */
-	arch = calloc(1, sizeof(struct mem_system_arch_t));
-	if (!arch)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize */
-	arch->config_generate_default_func = config_generate_default_func;
-	arch->config_parse_entry_func = config_parse_entry_func;
-	arch->config_check_func = config_check_func;
-
-	/* Insert architecture to list */
-	list_add(mem_system->arch_list, arch);
 }
 
 
