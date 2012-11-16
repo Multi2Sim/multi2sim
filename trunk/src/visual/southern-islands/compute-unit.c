@@ -33,17 +33,9 @@ struct vi_si_compute_unit_t *vi_si_compute_unit_create(char *name)
 {
 	struct vi_si_compute_unit_t *compute_unit;
 
-	/* Allocate */
-	compute_unit = calloc(1, sizeof(struct vi_si_compute_unit_t));
-	if (!compute_unit)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Name */
-	compute_unit->name = strdup(name);
-	if (!name)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	compute_unit = xcalloc(1, sizeof(struct vi_si_compute_unit_t));
+	compute_unit->name = xstrdup(name);
 	compute_unit->work_group_table = hash_table_create(0, FALSE);
 	compute_unit->inst_table = hash_table_create(0, FALSE);
 

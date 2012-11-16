@@ -88,12 +88,8 @@ static struct vi_si_time_dia_window_t *vi_si_time_dia_window_create(
 
 	char str[MAX_STRING_SIZE];
 
-	/* Allocate */
-	time_dia_window = calloc(1, sizeof(struct vi_si_time_dia_window_t));
-	if (!time_dia_window)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	time_dia_window = xcalloc(1, sizeof(struct vi_si_time_dia_window_t));
 	time_dia_window->compute_unit = compute_unit;
 	time_dia_window->parent_toggle_button = parent_toggle_button;
 
@@ -224,12 +220,8 @@ static struct vi_cu_board_t *vi_cu_board_create(struct vi_si_compute_unit_t *com
 
 	char str[MAX_STRING_SIZE];
 
-	/* Allocate */
-	board = calloc(1, sizeof(struct vi_cu_board_t));
-	if (!board)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	board = xcalloc(1, sizeof(struct vi_cu_board_t));
 	board->compute_unit = compute_unit;
 
 	/* Frame */
@@ -324,12 +316,8 @@ static void vi_cu_board_refresh(struct vi_cu_board_t *board)
 	work_group_table = board->compute_unit->work_group_table;
 	HASH_TABLE_FOR_EACH(work_group_table, work_group_name, work_group)
 	{
-		/* Duplicate name */
-		work_group_name = strdup(work_group_name);
-		if (!work_group_name)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Add to list */
+		work_group_name = xstrdup(work_group_name);
 		vi_list_add(board->work_group_list, work_group_name);
 	}
 	vi_list_refresh(board->work_group_list);
@@ -391,12 +379,8 @@ struct vi_si_panel_t *vi_si_panel_create(void)
 
 	int i;
 
-	/* Allocate */
-	panel = calloc(1, sizeof(struct vi_si_panel_t));
-	if (!panel)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	panel = xcalloc(1, sizeof(struct vi_si_panel_t));
 	panel->board_list = list_create();
 
 	/* Frame */

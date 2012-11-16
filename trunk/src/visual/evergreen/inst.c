@@ -113,12 +113,8 @@ struct vi_evg_inst_t *vi_evg_inst_create(char *name, long long id,
 {
 	struct vi_evg_inst_t *inst;
 
-	/* Allocate */
-	inst = calloc(1, sizeof(struct vi_evg_inst_t));
-	if (!inst)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	inst = xcalloc(1, sizeof(struct vi_evg_inst_t));
 	inst->name = str_set(NULL, name);
 	inst->id = id;
 	inst->compute_unit_id = compute_unit_id;

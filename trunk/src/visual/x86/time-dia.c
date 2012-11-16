@@ -595,12 +595,8 @@ struct vi_x86_time_dia_t *vi_x86_time_dia_create(struct vi_x86_core_t *core)
 {
 	struct vi_x86_time_dia_t *time_dia;
 
-	/* Allocate */
-	time_dia = calloc(1, sizeof(struct vi_x86_time_dia_t));
-	if (!time_dia)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	time_dia = xcalloc(1, sizeof(struct vi_x86_time_dia_t));
 	time_dia->core = core;
 
 	/* Content layout */

@@ -108,21 +108,15 @@ struct vi_trace_line_t *vi_trace_line_create_from_file(FILE *f)
 	if (count != 4)
 		panic("%s: invalid format", __FUNCTION__);
 
-	/* Allocate */
-	line = calloc(1, sizeof(struct vi_trace_line_t));
-	if (!line)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	line = xcalloc(1, sizeof(struct vi_trace_line_t));
 	line->offset = offset;
 	line->line_num = line_num;
 	line->symbol_table = hash_table_create(13, FALSE);
 
 	/* Read command */
 	str_read_from_file(f, buf, sizeof buf);
-	line->command = strdup(buf);
-	if (!line->command)
-		fatal("%s: out of memory", __FUNCTION__);
+	line->command = xstrdup(buf);
 	
 	/* Number of symbols */
 	count = fread(&num_symbols, 1, 4, f);
@@ -138,9 +132,7 @@ struct vi_trace_line_t *vi_trace_line_create_from_file(FILE *f)
 		/* Read symbol */
 		str_read_from_file(f, symbol_name, sizeof symbol_name);
 		str_read_from_file(f, buf, sizeof buf);
-		symbol_value = strdup(buf);
-		if (!symbol_value)
-			fatal("%s: out of memory", __FUNCTION__);
+		symbol_value = xstrdup(buf);
 
 		/* Insert in symbol table */
 		hash_table_insert(line->symbol_table, symbol_name, symbol_value);
@@ -172,12 +164,8 @@ struct vi_trace_line_t *vi_trace_line_create_from_trace(struct vi_trace_t *trace
 	if (strlen(buf) == sizeof(buf) - 1)
 		fatal("%s: buffer too small", __FUNCTION__);
 
-	/* Allocate */
-	line = calloc(1, sizeof(struct vi_trace_line_t));
-	if (!line)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	line = xcalloc(1, sizeof(struct vi_trace_line_t));
 	trace->line_num++;
 	line->offset = offset;
 	line->line_num = trace->line_num;
@@ -193,9 +181,7 @@ struct vi_trace_line_t *vi_trace_line_create_from_trace(struct vi_trace_t *trace
 		*buf_ptr++ = '\0';
 	if (!strlen(line->command))
 		fatal("%s: line %d: invalid command", trace->name, trace->line_num);
-	line->command = strdup(line->command);
-	if (!line->command)
-		fatal("%s: out of memory", __FUNCTION__);
+	line->command = xstrdup(line->command);
 
 	/* Read symbols */
 	while (*buf_ptr)
@@ -232,12 +218,8 @@ struct vi_trace_line_t *vi_trace_line_create_from_trace(struct vi_trace_t *trace
 				*buf_ptr++ = '\0';
 		}
 
-		/* Duplicate value */
-		symbol_value = strdup(symbol_value);
-		if (!symbol_value)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Insert in symbol table */
+		symbol_value = xstrdup(symbol_value);
 		hash_table_insert(line->symbol_table, symbol_name, symbol_value);
 
 		/* Trailing blanks */
@@ -383,15 +365,9 @@ struct vi_trace_t *vi_trace_create(char *file_name)
 {
 	struct vi_trace_t *trace;
 
-	/* Allocate */
-	trace = calloc(1, sizeof(struct vi_trace_t));
-	if (!trace)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Name */
-	trace->name = strdup(file_name);
-	if (!trace->name)
-		fatal("%s: out of memory", __FUNCTION__);
+	/* Initialize */
+	trace = xcalloc(1, sizeof(struct vi_trace_t));
+	trace->name = xstrdup(file_name);
 
 	/* Open */
 	trace->f = gzopen(file_name, "r");

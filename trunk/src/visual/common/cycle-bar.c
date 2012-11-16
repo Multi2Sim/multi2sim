@@ -173,12 +173,8 @@ void vi_cycle_bar_init(vi_cycle_bar_refresh_func_t refresh_func, void *user_data
 {
 	char *m2s_images_path = "images";
 
-	/* Allocate */
-	vi_cycle_bar = calloc(1, sizeof(struct vi_cycle_bar_t));
-	if (!vi_cycle_bar)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	vi_cycle_bar = xcalloc(1, sizeof(struct vi_cycle_bar_t));
 	vi_cycle_bar->refresh_func = refresh_func;
 	vi_cycle_bar->refresh_func_arg = user_data;
 

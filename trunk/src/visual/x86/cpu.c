@@ -375,12 +375,8 @@ void vi_x86_cpu_init(void)
 {
 	struct vi_trace_line_t *trace_line;
 
-	/* Allocate */
-	vi_x86_cpu = calloc(1, sizeof(struct vi_x86_cpu_t));
-	if (!vi_x86_cpu)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	vi_x86_cpu = xcalloc(1, sizeof(struct vi_x86_cpu_t));
 	vi_x86_cpu->core_list = list_create();
 	vi_x86_cpu->context_table = hash_table_create(0, FALSE);
 

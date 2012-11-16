@@ -43,12 +43,8 @@ struct net_msg_t *net_msg_create(struct net_t *net, struct net_node_t *src_node,
 {
 	struct net_msg_t *msg;
 
-	/* Create */
-	msg = calloc(1, sizeof(struct net_msg_t));
-	if (!msg)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	msg = xcalloc(1, sizeof(struct net_msg_t));
 	msg->net = net;
 	msg->src_node = src_node;
 	msg->dst_node = dst_node;
@@ -80,12 +76,8 @@ struct net_stack_t *net_stack_create(struct net_t *net,
 {
 	struct net_stack_t *stack;
 
-	/* Create */
-	stack = calloc(1, sizeof(struct net_stack_t));
-	if (!stack)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	stack = xcalloc(1, sizeof(struct net_stack_t));
 	stack->net = net;
 	stack->ret_event = retevent;
 	stack->ret_stack = retstack;

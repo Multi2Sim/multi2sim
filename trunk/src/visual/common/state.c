@@ -54,12 +54,8 @@ struct vi_state_checkpoint_t *vi_state_checkpoint_create(long long cycle,
 {
 	struct vi_state_checkpoint_t *checkpoint;
 
-	/* Allocate */
-	checkpoint = calloc(1, sizeof(struct vi_state_checkpoint_t));
-	if (!checkpoint)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	checkpoint = xcalloc(1, sizeof(struct vi_state_checkpoint_t));
 	checkpoint->cycle = cycle;
 	checkpoint->unzipped_trace_file_offset = unzipped_trace_file_offset;
 	checkpoint->checkpoint_file_offset = checkpoint_file_offset;
@@ -94,12 +90,8 @@ struct vi_state_command_t *vi_state_command_create(
 {
 	struct vi_state_command_t *command;
 
-	/* Allocate */
-	command = calloc(1, sizeof(struct vi_state_command_t));
-	if (!command)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	command = xcalloc(1, sizeof(struct vi_state_command_t));
 	command->process_trace_line_func = process_trace_line_func;
 	command->user_data = user_data;
 
@@ -139,17 +131,9 @@ struct vi_state_category_t *vi_state_category_create(char *name,
 {
 	struct vi_state_category_t *category;
 
-	/* Allocate */
-	category = calloc(1, sizeof(struct vi_state_category_t));
-	if (!category)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Name */
-	category->name = strdup(name);
-	if (!category->name)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	category = xcalloc(1, sizeof(struct vi_state_category_t));
+	category->name = xstrdup(name);
 	category->read_checkpoint_func = read_checkpoint_func;
 	category->write_checkpoint_func = write_checkpoint_func;
 	category->user_data = user_data;
@@ -260,21 +244,15 @@ void vi_state_init(char *trace_file_name)
 	char buf[MAX_STRING_SIZE];
 
 	/* Create */
-	vi_state = calloc(1, sizeof(struct vi_state_t));
-	if (!vi_state)
-		fatal("%s: out of memory", __FUNCTION__);
+	vi_state = xcalloc(1, sizeof(struct vi_state_t));
 	
 	/* Create uncompressed trace file */
 	vi_state->unzipped_trace_file = file_create_temp(buf, sizeof buf);
-	vi_state->unzipped_trace_file_name = strdup(buf);
-	if (!vi_state->unzipped_trace_file_name)
-		fatal("%s: out of memory", __FUNCTION__);
+	vi_state->unzipped_trace_file_name = xstrdup(buf);
 
 	/* Create checkpoint file */
 	vi_state->checkpoint_file = file_create_temp(buf, sizeof buf);
-	vi_state->checkpoint_file_name = strdup(buf);
-	if (!vi_state->checkpoint_file_name)
-		fatal("%s: out of memory", __FUNCTION__);
+	vi_state->checkpoint_file_name = xstrdup(buf);
 
 	/* Initialize */
 	vi_state->checkpoint_list = list_create();
