@@ -179,12 +179,8 @@ struct net_routing_table_t *net_routing_table_create(struct net_t *net)
 {
 	struct net_routing_table_t *routing_table;
 
-	/* Create */
-	routing_table = calloc(1, sizeof(struct net_routing_table_t));
-	if (!routing_table)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Set fields */
+	routing_table = xcalloc(1, sizeof(struct net_routing_table_t));
 	routing_table->net = net;
 
 	/* Return */
@@ -217,10 +213,8 @@ void net_routing_table_initiate(struct net_routing_table_t *routing_table)
 	if (routing_table->entries)
 		panic("%s: network \"%s\": routing table already allocated", __FUNCTION__, net->name);
 	routing_table->dim = list_count(net->node_list);
-	routing_table->entries = calloc(routing_table->dim * routing_table->dim,
+	routing_table->entries = xcalloc(routing_table->dim * routing_table->dim,
 		sizeof(struct net_routing_table_entry_t));
-	if (!routing_table->entries)
-		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize table with infinite costs */
 	for (i = 0; i < net->node_count; i++)

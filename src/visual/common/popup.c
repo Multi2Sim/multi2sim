@@ -74,12 +74,8 @@ struct vi_popup_t *vi_popup_create(char *text)
 {
 	struct vi_popup_t *popup;
 
-	/* Allocate */
-	popup = calloc(1, sizeof(struct vi_popup_t));
-	if (!popup)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Create window */
+	popup = xcalloc(1, sizeof(struct vi_popup_t));
 	GtkWidget *window;
 	window = gtk_window_new(GTK_WINDOW_POPUP);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);

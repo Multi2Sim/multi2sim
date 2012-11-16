@@ -37,12 +37,8 @@ struct vi_si_work_group_t *vi_si_work_group_create(char *name, int id,
 {
 	struct vi_si_work_group_t *work_group;
 
-	/* Allocate */
-	work_group = calloc(1, sizeof(struct vi_si_work_group_t));
-	if (!work_group)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	work_group = xcalloc(1, sizeof(struct vi_si_work_group_t));
 	work_group->name = str_set(NULL, name);
 	work_group->id = id;
 	work_group->work_item_id_first = work_item_id_first;

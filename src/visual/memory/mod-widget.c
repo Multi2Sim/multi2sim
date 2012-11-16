@@ -242,17 +242,9 @@ static struct sharers_label_t *sharers_label_create(char *mod_name, int set, int
 
 	char str[MAX_STRING_SIZE];
 
-	/* Allocate */
-	sharers_label = calloc(1, sizeof(struct sharers_label_t));
-	if (!sharers_label)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Module name */
-	sharers_label->mod_name = strdup(mod_name);
-	if (!sharers_label->mod_name)
-		fatal("%s: out of memroy", __FUNCTION__);
-
 	/* Initialize */
+	sharers_label = xcalloc(1, sizeof(struct sharers_label_t));
+	sharers_label->mod_name = xstrdup(mod_name);
 	sharers_label->set = set;
 	sharers_label->way = way;
 
@@ -475,17 +467,9 @@ static struct accesses_label_t *accesses_label_create(char *mod_name, int set, i
 
 	char str[MAX_STRING_SIZE];
 
-	/* Allocate */
-	accesses_label = calloc(1, sizeof(struct accesses_label_t));
-	if (!accesses_label)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Module name */
-	accesses_label->mod_name = strdup(mod_name);
-	if (!accesses_label->mod_name)
-		fatal("%s: out of memroy", __FUNCTION__);
-
 	/* Initialize */
+	accesses_label = xcalloc(1, sizeof(struct accesses_label_t));
+	accesses_label->mod_name = xstrdup(mod_name);
 	accesses_label->set = set;
 	accesses_label->way = way;
 
@@ -650,15 +634,9 @@ struct vi_mod_widget_t *vi_mod_widget_create(char *name)
 {
 	struct vi_mod_widget_t *mod_widget;
 
-	/* Allocate */
-	mod_widget = calloc(1, sizeof(struct vi_mod_widget_t));
-	if (!mod_widget)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Name */
-	mod_widget->name = strdup(name);
-	if (!mod_widget->name)
-		fatal("%s: out of memory", __FUNCTION__);
+	/* Initialize */
+	mod_widget = xcalloc(1, sizeof(struct vi_mod_widget_t));
+	mod_widget->name = xstrdup(name);
 
 	/* Vertical box */
 	GtkWidget *vbox;
@@ -822,12 +800,8 @@ void vi_mod_widget_refresh(struct vi_mod_widget_t *mod_widget)
 	/* Add new accesses */
 	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
 	{
-		/* Access name */
-		access_name = strdup(access_name);
-		if (!access_name)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Insert new access */
+		access_name = xstrdup(access_name);
 		vi_list_add(mod_widget->access_list, access_name);
 	}
 	vi_list_refresh(mod_widget->access_list);

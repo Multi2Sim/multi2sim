@@ -45,14 +45,10 @@ struct net_node_t *net_node_create(struct net_t *net,
 {
 	struct net_node_t *node;
 
-	/* Create node */
-	node = calloc(1, sizeof(struct net_node_t));
-	if (!node)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Fields */
+	node = xcalloc(1, sizeof(struct net_node_t));
 	node->net = net;
-	node->name = strdup(name);
+	node->name = xstrdup(name);
 	node->kind = kind;
 	node->index = index;
 	node->user_data = user_data;

@@ -76,12 +76,8 @@ struct vi_led_t *vi_led_create(int radius)
 {
 	struct vi_led_t *led;
 
-	/* Allocate */
-	led = calloc(1, sizeof(struct vi_led_t));
-	if (!led)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	led = xcalloc(1, sizeof(struct vi_led_t));
 	gdk_color_parse("green", &led->color);
 
 	/* Drawing box */

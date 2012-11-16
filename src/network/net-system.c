@@ -229,9 +229,7 @@ void net_config_load(void)
 			continue;
 
 		/* Insert new network name */
-		net_name = strdup(net_name);
-		if (!net_name)
-			fatal("%s: out of memory", __FUNCTION__);
+		net_name = xstrdup(net_name);
 		list_add(net_name_list, net_name);
 	}
 
@@ -369,9 +367,7 @@ void net_sim(char *debug_file_name)
 		fatal("%s: network does not exist", net_sim_network_name);
 
 	/* Initialize */
-	inject_time = calloc(net->node_count, sizeof(double));
-	if (!inject_time)
-		fatal("%s: out of memory", __FUNCTION__);
+	inject_time = xcalloc(net->node_count, sizeof(double));
 
 	/* FIXME: error for no dest node in network */
 

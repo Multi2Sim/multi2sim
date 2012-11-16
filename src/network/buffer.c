@@ -42,17 +42,13 @@ struct net_buffer_t *net_buffer_create(struct net_t *net, struct net_node_t *nod
 {
 	struct net_buffer_t *buffer;
 
-	/* Create */
-	buffer = calloc(1, sizeof(struct net_buffer_t));
-	if (!buffer)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Fields */
+	buffer = xcalloc(1, sizeof(struct net_buffer_t));
 	buffer->msg_list = list_create();
 	buffer->wakeup_list = linked_list_create();
 	buffer->net = net;
 	buffer->node = node;
-	buffer->name = strdup(name);
+	buffer->name = xstrdup(name);
 	buffer->size = size;
 	if (size < 1)
 		panic("%s: invalid size", __FUNCTION__);
@@ -173,9 +169,7 @@ void net_buffer_wait(struct net_buffer_t *buffer, int event, void *stack)
 
 	/* Create new event-stack element */
 	assert(buffer->count > 0);
-	wakeup = malloc(sizeof(struct net_buffer_wakeup_t));
-	if (!wakeup)
-		fatal("%s: out of memory", __FUNCTION__);
+	wakeup = xmalloc(sizeof(struct net_buffer_wakeup_t));
 	
 	/* Add it to wakeup list */
 	wakeup->event = event;

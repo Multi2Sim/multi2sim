@@ -319,12 +319,8 @@ void vi_evg_gpu_init(void)
 {
 	struct vi_trace_line_t *trace_line;
 
-	/* Allocate */
-	vi_evg_gpu = calloc(1, sizeof(struct vi_evg_gpu_t));
-	if (!vi_evg_gpu)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	vi_evg_gpu = xcalloc(1, sizeof(struct vi_evg_gpu_t));
 	vi_evg_gpu->compute_unit_list = list_create();
 
 	/* State file */

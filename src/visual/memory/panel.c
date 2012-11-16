@@ -79,12 +79,8 @@ static struct vi_mod_window_t *vi_mod_window_create(struct vi_mod_t *mod, GtkWid
 
 	char str[MAX_STRING_SIZE];
 
-	/* Allocate */
-	mod_window = calloc(1, sizeof(struct vi_mod_window_t));
-	if (!mod_window)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	mod_window = xcalloc(1, sizeof(struct vi_mod_window_t));
 	mod_window->mod = mod;
 	mod_window->parent_toggle_button = parent_toggle_button;
 
@@ -201,12 +197,8 @@ static struct vi_mod_board_t *vi_mod_board_create(struct vi_mod_t *mod)
 
 	char str[MAX_STRING_SIZE];
 
-	/* Allocate */
-	board = calloc(1, sizeof(struct vi_mod_board_t));
-	if (!board)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	board = xcalloc(1, sizeof(struct vi_mod_board_t));
 	board->mod = mod;
 
 	/* Frame */
@@ -286,12 +278,8 @@ static void vi_mod_board_refresh(struct vi_mod_board_t *board)
 	/* Refresh access list */
 	HASH_TABLE_FOR_EACH(board->mod->access_table, access_name, access)
 	{
-		/* Duplicate name */
-		access_name = strdup(access_name);
-		if (!access_name)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Add to list */
+		access_name = xstrdup(access_name);
 		vi_list_add(board->access_list, access_name);
 	}
 	vi_list_refresh(board->access_list);
@@ -352,12 +340,8 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 	int layout_width;
 	int layout_height;
 
-	/* Allocate */
-	panel = calloc(1, sizeof(struct vi_mem_panel_t));
-	if (!panel)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	panel = xcalloc(1, sizeof(struct vi_mem_panel_t));
 	panel->board_list = list_create();
 
 	/* Layout */
