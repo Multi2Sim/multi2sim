@@ -297,6 +297,66 @@ char *mhandle_strdup(const char *s, char *at)
 }
 
 
+void *__xmalloc(size_t size, char *at)
+{
+	void *ptr;
+
+	ptr = malloc(size);
+	if (!ptr)
+	{
+		fprintf(stderr, "%s: out of memory", at);
+		abort();
+	}
+
+	return ptr;
+}
+
+
+void *__xcalloc(size_t nmemb, size_t size, char *at)
+{
+	void *ptr;
+
+	ptr = calloc(nmemb, size);
+	if (!ptr)
+	{
+		fprintf(stderr, "%s: out of memory", at);
+		abort();
+	}
+
+	return ptr;
+}
+
+
+void *__xrealloc(void *ptr, size_t size, char *at)
+{
+	void *new_ptr;
+
+	new_ptr = realloc(ptr, size);
+	if (!new_ptr)
+	{
+		fprintf(stderr, "%s: out of memory", at);
+		abort();
+	}
+
+	return new_ptr;
+}
+
+
+void *__xstrdup(const char *s, char *at)
+{
+	void *ptr;
+
+	ptr = strdup(s);
+	if (!ptr)
+	{
+		fprintf(stderr, "%s: out of memory", at);
+		abort();
+	}
+
+	return ptr;
+}
+
+
 void __mhandle_done()
 {
 	int i;
