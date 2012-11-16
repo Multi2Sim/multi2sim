@@ -30,16 +30,27 @@
 #ifdef MHANDLE
 
 #undef strdup
-#define free(X) (mhandle_free(X, MHANDLE_AT))
-#define malloc(X) (mhandle_malloc(X, MHANDLE_AT))
-#define calloc(X, Y) (mhandle_calloc(X, Y, MHANDLE_AT))
-#define realloc(X, Y) (mhandle_realloc(X, Y, MHANDLE_AT))
-#define strdup(X) (mhandle_strdup(X, MHANDLE_AT))
+#define free(x) (mhandle_free((x), MHANDLE_AT))
+#define malloc(sz) (mhandle_malloc((sz), MHANDLE_AT))
+#define calloc(nmemb, sz) (mhandle_calloc((nmemb), (sz), MHANDLE_AT))
+#define realloc(x, sz) (mhandle_realloc((x), (sz), MHANDLE_AT))
+#define strdup(x) (mhandle_strdup((x), MHANDLE_AT))
+
+#define xmalloc(sz) (mhandle_malloc((sz), MHANDLE_AT))
+#define xcalloc(nmemb, sz) (mhandle_calloc((nmemb), (sz), MHANDLE_AT))
+#define xrealloc(x, sz) (mhandle_realloc((x), (sz), MHANDLE_AT))
+#define xstrdup(x) (mhandle_strdup((x), MHANDLE_AT))
+
 #define mhandle_check() __mhandle_check(MHANDLE_AT)
 #define mhandle_done() __mhandle_done()
 #define mhandle_used_memory() __mhandle_used_memory()
 
 #else
+
+#define xmalloc(sz) (__xmalloc((sz), MHANDLE_AT))
+#define xcalloc(nmemb, sz) (__xcalloc((nmemb), (sz), MHANDLE_AT))
+#define xrealloc(x, sz) (__xrealloc((x), (sz), MHANDLE_AT))
+#define xstrdup(x) (__xstrdup((x), MHANDLE_AT))
 
 #define mhandle_check()
 #define mhandle_done()
@@ -48,11 +59,17 @@
 #endif
 
 
-void *mhandle_malloc(unsigned long size, char *at);
-void *mhandle_calloc(unsigned long nmemb, unsigned long size, char *at);
-void *mhandle_realloc(void *ptr, unsigned long size, char *at);
+
+void *mhandle_malloc(size_t size, char *at);
+void *mhandle_calloc(size_t nmemb, size_t size, char *at);
+void *mhandle_realloc(void *ptr, size_t size, char *at);
 char *mhandle_strdup(const char *s, char *at);
 void mhandle_free(void *ptr, char *at);
+
+void *__xmalloc(size_t size, char *at);
+void *__xcalloc(size_t nmemb, size_t size, char *at);
+void *__xrealloc(void *ptr, size_t size, char *at);
+void *__xstrdup(const char *s, char *at);
 
 void __mhandle_check(char *at);
 void __mhandle_done();
