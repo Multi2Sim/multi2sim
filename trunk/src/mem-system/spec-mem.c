@@ -61,7 +61,7 @@ static struct spec_mem_page_t *spec_mem_page_create(struct spec_mem_t *spec_mem,
 	index = (addr >> SPEC_MEM_LOG_PAGE_SIZE) % SPEC_MEM_PAGE_TABLE_SIZE;
 
 	/* Create page */
-	page = calloc(1, sizeof(struct spec_mem_page_t));
+	page = xcalloc(1, sizeof(struct spec_mem_page_t));
 	page->addr = addr;
 
 	/* Read initial contents of page. The read has to be done in unsafe mode,
@@ -157,7 +157,7 @@ struct spec_mem_t *spec_mem_create(struct mem_t *mem)
 	assert(MEM_PAGE_SIZE % SPEC_MEM_PAGE_SIZE == 0);
 
 	/* Create memory */
-	spec_mem = calloc(1, sizeof(struct spec_mem_t));
+	spec_mem = xcalloc(1, sizeof(struct spec_mem_t));
 	spec_mem->mem = mem;
 	return spec_mem;
 }
