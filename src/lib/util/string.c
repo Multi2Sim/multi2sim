@@ -121,21 +121,13 @@ struct list_t *str_token_list_create(char *str, char *delim)
 	/* Create list */
 	token_list = list_create();
 
-	/* Make a copy of 'str' */
-	str = strdup(str);
-	if (!str)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Split string into tokens */
+	str = xstrdup(str);
 	token = strtok(str, delim);
 	while (token)
 	{
-		/* Make a copy of token */
-		token = strdup(token);
-		if (!token)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Insert in token list */
+		token = xstrdup(token);
 		list_add(token_list, token);
 
 		/* Next token */
@@ -884,14 +876,7 @@ char *str_set(char *old_str, char *new_str)
 		new_str = "";
 
 	/* Duplicate */
-	new_str = strdup(new_str);
-	if (!new_str)
-	{
-		fprintf(stderr, "%s: out of memory", __FUNCTION__);
-		exit(1);
-	}
-
-	/* Return new string */
+	new_str = xstrdup(new_str);
 	return new_str;
 }
 

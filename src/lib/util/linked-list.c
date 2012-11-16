@@ -31,12 +31,8 @@ struct linked_list_t *linked_list_create()
 {
 	struct linked_list_t *list;
 
-	/* Create list */
-	list = calloc(1, sizeof(struct linked_list_t));
-	if (!list)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Return */
+	list = xcalloc(1, sizeof(struct linked_list_t));
 	return list;
 }
 
@@ -234,9 +230,7 @@ void linked_list_insert(struct linked_list_t *list, void *data)
 	struct linked_list_elem_t *elem;
 	
 	/* Create a new element */
-	elem = calloc(1, sizeof(struct linked_list_elem_t));
-	if (!elem)
-		fatal("%s: out of memory", __FUNCTION__);
+	elem = xcalloc(1, sizeof(struct linked_list_elem_t));
 	elem->data = data;
 	
 	/* Insert it */
@@ -387,12 +381,8 @@ void linked_list_sort(struct linked_list_t *list, int (*comp)(const void *, cons
 	if (!list->count)
 		return;
 	
-	/* Create an array for elements */
-	array = calloc(list->count, sizeof(struct linked_list_elem_t *));
-	if (!array)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Convert linked list into array */
+	array = xcalloc(list->count, sizeof(struct linked_list_elem_t *));
 	list->current = list->head;
 	for (i = 0; i < list->count; i++)
 	{

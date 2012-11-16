@@ -172,9 +172,7 @@ static int config_insert_var(struct config_t *config, char *section, char *var, 
 
 	/* Allocate new value */
 	str_trim(value_trim, sizeof value_trim, value);
-	nvalue = strdup(value_trim);
-	if (!nvalue)
-		fatal("%s: out of memory", __FUNCTION__);
+	nvalue = xstrdup(value_trim);
 
 	/* Free previous value if variable existed */
 	ovalue = hash_table_get(config->items, item);
@@ -202,17 +200,9 @@ struct config_t *config_create(char *filename)
 {
 	struct config_t *config;
 	
-	/* Config object */
-	config = calloc(1, sizeof(struct config_t));
-	if (!config)
-		fatal("%s: out of memory", __FUNCTION__);
-	
-	/* File name */
-	config->file_name = strdup(filename);
-	if (!config->file_name)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	config = xcalloc(1, sizeof(struct config_t));
+	config->file_name = xstrdup(filename);
 	config->items = hash_table_create(HASH_TABLE_SIZE, 0);
 	config->allowed_items = hash_table_create(HASH_TABLE_SIZE, 0);
 

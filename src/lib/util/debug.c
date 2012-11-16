@@ -57,9 +57,7 @@ void debug_init(void)
 	debug_category_list = list_create();
 
 	/* Create an invalid category at index 0 */
-	c = calloc(1, sizeof(struct debug_category_t));
-	if (!c)
-		fatal("%s: out of memory", __FUNCTION__);
+	c = xcalloc(1, sizeof(struct debug_category_t));
 	list_add(debug_category_list, c);
 }
 
@@ -93,16 +91,10 @@ int debug_new_category(char *file_name)
 	if (!file_name || !*file_name)
 		return 0;
 
-	/* Allocate */
-	c = calloc(1, sizeof(struct debug_category_t));
-	if (!c)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	c = xcalloc(1, sizeof(struct debug_category_t));
 	c->status = debug_status_on;
-	c->file_name = strdup(file_name);
-	if (!c->file_name)
-		fatal("%s: out of memory", __FUNCTION__);
+	c->file_name = xstrdup(file_name);
 
 	/* Assign file */
 	if (!strcmp(file_name, "stdout"))

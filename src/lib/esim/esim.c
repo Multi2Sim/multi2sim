@@ -147,17 +147,11 @@ struct esim_event_info_t *esim_event_info_create(int id,
 {
 	struct esim_event_info_t *event_info;
 
-	/* Allocate */
-	event_info = calloc(1, sizeof(struct esim_event_info_t));
-	if (!event_info)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	event_info = xcalloc(1, sizeof(struct esim_event_info_t));
 	event_info->id = id;
 	event_info->handler = handler;
-	event_info->name = strdup(name);
-	if (!event_info->name)
-		fatal("%s: out of memory", __FUNCTION__);
+	event_info->name = xstrdup(name);
 
 	/* Return */
 	return event_info;
@@ -188,12 +182,8 @@ struct esim_event_t *esim_event_create(int id, void *data)
 {
 	struct esim_event_t *event;
 
-	/* Allocate */
-	event = calloc(1, sizeof(struct esim_event_t));
-	if (!event)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	event = xcalloc(1, sizeof(struct esim_event_t));
 	event->id = id;
 	event->data = data;
 	

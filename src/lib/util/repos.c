@@ -55,12 +55,8 @@ struct repos_t *repos_create(int object_size, char *name)
 	if (object_size <= 0)
 		panic("%s: invalid object size", __FUNCTION__);
 
-	/* Allocate repository */
-	repos = calloc(1, sizeof(struct repos_t));
-	if (!repos)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	repos = xcalloc(1, sizeof(struct repos_t));
 	repos->id = random();
 	repos->name = name;
 	repos->object_size = object_size;
@@ -122,12 +118,8 @@ void *repos_create_object(struct repos_t *repos)
 	 * Insert it into the unallocated list head. */
 	if (!repos->dealloc_head)
 	{
-		/* Allocate */
-		obj = calloc(1, repos->object_size + sizeof(struct objtail_t));
-		if (!obj)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Initialize */
+		obj = xcalloc(1, repos->object_size + sizeof(struct objtail_t));
 		objtail = obj + repos->object_size;
 		objtail->id = repos->id;
 		repos->dealloc_head = obj;

@@ -83,9 +83,7 @@ void *read_buffer(char *file_name, int *psize)
 	alloc_size = size ? size : 1;
 	fseek(f, 0, SEEK_SET);
 
-	buf = malloc(alloc_size);
-	if (!buf)
-		return NULL;
+	buf = xmalloc(alloc_size);
 	read_size = fread(buf, 1, size, f);
 	if (psize)
 		*psize = read_size;

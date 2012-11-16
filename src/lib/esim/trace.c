@@ -65,9 +65,7 @@ void trace_init(char *file_name)
 	trace_category_list = list_create();
 
 	/* Create an invalid category at index 0 */
-	c = calloc(1, sizeof(struct trace_category_t));
-	if (!c)
-		fatal("%s: out of memory", __FUNCTION__);
+	c = xcalloc(1, sizeof(struct trace_category_t));
 	list_add(trace_category_list, c);
 }
 
@@ -97,12 +95,8 @@ int trace_new_category(void)
 	if (!trace_file)
 		return 0;
 
-	/* Allocate */
-	c = calloc(1, sizeof(struct trace_category_t));
-	if (!c)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	c = xcalloc(1, sizeof(struct trace_category_t));
 	c->status = trace_status_on;
 
 	/* Add to list and return index */

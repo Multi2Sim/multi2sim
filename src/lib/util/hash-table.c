@@ -48,17 +48,9 @@ struct hash_table_elem_t *hash_table_elem_create(char *key, void *data)
 {
 	struct hash_table_elem_t *elem;
 
-	/* Allocate */
-	elem = calloc(1, sizeof(struct hash_table_elem_t));
-	if (!elem)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Key */
-	elem->key = strdup(key);
-	if (!elem->key)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Data */
+	/* Initialize */
+	elem = xcalloc(1, sizeof(struct hash_table_elem_t));
+	elem->key = xstrdup(key);
 	elem->data = data;
 
 	/* Return */
@@ -132,9 +124,7 @@ static void hash_table_grow(struct hash_table_t *table)
 
 	/* Allocate new vector */
 	table->size = old_size * 2;
-	table->elem_vector = calloc(table->size, sizeof(void *));
-	if (!table->elem_vector)
-		fatal("%s: out of memory", __FUNCTION__);
+	table->elem_vector = xcalloc(table->size, sizeof(void *));
 
 	/* Move elements to new vector */
 	for (i = 0; i < old_size; i++)
@@ -181,22 +171,14 @@ struct hash_table_t *hash_table_create(int size, int case_sensitive)
 {
 	struct hash_table_t *table;
 
-	/* Create */
-	table = calloc(1, sizeof(struct hash_table_t));
-	if (!table)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Assign fields */
+	table = xcalloc(1, sizeof(struct hash_table_t));
 	table->size = size < HASH_TABLE_MIN_INITIAL_SIZE ? HASH_TABLE_MIN_INITIAL_SIZE : size;
 	table->case_sensitive = case_sensitive;
 	table->str_compare_func = case_sensitive ? strcmp : strcasecmp;
 
-	/* Vector of elements */
-	table->elem_vector = calloc(table->size, sizeof(void *));
-	if (!table->elem_vector)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Return */
+	table->elem_vector = xcalloc(table->size, sizeof(void *));
 	return table;
 }
 
