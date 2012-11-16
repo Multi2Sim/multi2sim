@@ -84,21 +84,20 @@ Coding Guidelines
 
 * Memory allocation:
 
-	Dynamic memory allocation should be followed by a check for allocation
-	success. This affects malloc, calloc, strdup, and strndup functions.
-	Failing to allocate memory should cause a standard error message calling
-	function 'fatal', as the code below shows:
+	Dynamic memory allocation should be done using functions xmalloc,
+	xcalloc, xrealloc, and xstrdup, defined in 'lib/mhandle/mhandle.h'.
+	These functions internally call their corresponding malloc, calloc,
+	realloc, and strdup, and check that they return a valid pointer, i.e.,
+	enough memory was available to be allocated. For example:
 
 	void *buf;
 	char *s;
 
-	buf = malloc(100);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
-	
-	s = strdup("hello");
-	if (!s)
-		fatal("%s: out of memory", __FUNCTION__);
+	buf = xmalloc(100);
+	s = xstrdup("hello");
+
+	This mechanism replaces the previous approach based on an explicit check
+	by the caller that the returned pointer is valid.
 
 * Forward declarations:
 
@@ -443,19 +442,15 @@ Dynamic Structures (Objects)
 	The constructor and destructor of all objects follow the same template.
 	An object constructor returns a pointer to a new allocated object, and
 	takes zero or more arguments, used for the object initialization. The
-	code in the constructor contains three sections: allocation,
-	initialization, and return, as follows:
+	code in the constructor contains two sections: initialization and
+	return, as shown in this example:
 	
 		struct my_struct_t *my_struct_create(int field1, int field2)
 		{
 			struct my_struct_t *my_struct;
 	
-			/* Create object */
-			my_struct = calloc(1, sizeof(struct my_struct_t));
-			if (!my_struct)
-				fatal("%s: out of memory", __FUNCTION__);
-	
 			/* Initialize */
+			my_struct = xcalloc(1, sizeof(struct my_struct_t));
 			my_struct->field1 = field1;
 			my_struct->field2 = field2;
 			my_struct->field3 = 100;
