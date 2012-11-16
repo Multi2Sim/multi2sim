@@ -65,7 +65,7 @@ void frm_emu_init(void)
 	frm_emu_arch->sim_kind = frm_emu_sim_kind;
 
         /* Allocate */
-        frm_emu = calloc(1, sizeof(struct frm_emu_t));
+        frm_emu = xcalloc(1, sizeof(struct frm_emu_t));
         if (!frm_emu)
                 fatal("%s: out of memory", __FUNCTION__);
 

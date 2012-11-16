@@ -39,12 +39,8 @@ struct evg_opencl_command_queue_t *evg_opencl_command_queue_create()
 {
 	struct evg_opencl_command_queue_t *command_queue;
 
-	/* Allocate */
-	command_queue = calloc(1, sizeof(struct evg_opencl_command_queue_t));
-	if (!command_queue)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	command_queue = xcalloc(1, sizeof(struct evg_opencl_command_queue_t));
 	command_queue->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_command_queue);
 	command_queue->ref_count = 1;
@@ -76,12 +72,8 @@ struct evg_opencl_command_t *evg_opencl_command_create(enum
 {
 	struct evg_opencl_command_t *command;
 
-	/* Allocate */
-	command = calloc(1, sizeof(struct evg_opencl_command_t));
-	if (!command)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	command = xcalloc(1, sizeof(struct evg_opencl_command_t));
 	command->type = type;
 
 	/* Return */

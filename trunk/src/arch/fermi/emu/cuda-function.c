@@ -32,12 +32,8 @@ struct frm_cuda_function_t *frm_cuda_function_create(void)
 {
 	struct frm_cuda_function_t *function;
 
-	/* Allocate */
-	function = calloc(1, sizeof(struct frm_cuda_function_t));
-	if (!function)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	function = xcalloc(1, sizeof(struct frm_cuda_function_t));
 	function->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_FUNCTION);
 	function->ref_count = 1;
 	function->arg_list = list_create();

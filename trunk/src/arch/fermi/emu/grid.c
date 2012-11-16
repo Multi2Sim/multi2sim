@@ -42,12 +42,8 @@ struct frm_grid_t *frm_grid_create(struct frm_cuda_function_t *function)
 {
 	struct frm_grid_t *grid;
 
-	/* Allocate */
-	grid = calloc(1, sizeof(struct frm_grid_t));
-	if (!grid)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	grid = xcalloc(1, sizeof(struct frm_grid_t));
 	DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, grid, grid);
 	grid->id = 0;
 	strncpy(grid->name, function->name, MAX_STRING_SIZE);
@@ -144,7 +140,7 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 	grid->threadblock_count = function->group_count;
 	grid->threadblock_id_first = 0;
 	grid->threadblock_id_last = grid->threadblock_count - 1;
-	grid->threadblocks = calloc(grid->threadblock_count, sizeof(void *));
+	grid->threadblocks = xcalloc(grid->threadblock_count, sizeof(void *));
 	for (bid = 0; bid < grid->threadblock_count; bid++)
 		grid->threadblocks[bid] = frm_threadblock_create();
 	
@@ -154,7 +150,7 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 	grid->warp_id_first = 0;
 	grid->warp_id_last = grid->warp_count - 1;
 	assert(grid->warps_per_threadblock > 0 && grid->warp_count > 0);
-	grid->warps = calloc(grid->warp_count, sizeof(void *));
+	grid->warps = xcalloc(grid->warp_count, sizeof(void *));
 	for (wid = 0; wid < grid->warp_count; wid++)
 	{
 		bid = wid / grid->warps_per_threadblock;
@@ -173,7 +169,7 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 	grid->thread_count = function->global_size;
 	grid->thread_id_first = 0;
 	grid->thread_id_last = grid->thread_count - 1;
-	grid->threads = calloc(grid->thread_count, sizeof(void *));
+	grid->threads = xcalloc(grid->thread_count, sizeof(void *));
 	tid = 0;
 	bid = 0;
 	for (bidz = 0; bidz < function->group_count3[2]; bidz++)

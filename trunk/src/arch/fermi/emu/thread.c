@@ -40,12 +40,8 @@ struct frm_thread_t *frm_thread_create()
 {
 	struct frm_thread_t *thread;
 
-	/* Allocate */
-	thread = calloc(1, sizeof(struct frm_thread_t));
-	if (!thread)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	thread = xcalloc(1, sizeof(struct frm_thread_t));
 	thread->write_task_list = linked_list_create();
 	thread->lds_oqa = list_create();
 	thread->lds_oqb = list_create();

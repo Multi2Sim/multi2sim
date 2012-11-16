@@ -34,12 +34,8 @@ struct evg_opencl_sampler_t *evg_opencl_sampler_create()
 {
 	struct evg_opencl_sampler_t *sampler;
 
-	/* Allocate */
-	sampler = calloc(1, sizeof(struct evg_opencl_sampler_t));
-	if (!sampler)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	sampler = xcalloc(1, sizeof(struct evg_opencl_sampler_t));
 	sampler->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_sampler);
 	sampler->ref_count = 1;

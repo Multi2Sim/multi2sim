@@ -39,12 +39,8 @@ struct evg_opencl_program_t *evg_opencl_program_create()
 	struct evg_opencl_program_t *program;
 	int i;
 
-	/* Allocate */
-	program = calloc(1, sizeof(struct evg_opencl_program_t));
-	if (!program)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	program = xcalloc(1, sizeof(struct evg_opencl_program_t));
 	program->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_program);
 	program->ref_count = 1;

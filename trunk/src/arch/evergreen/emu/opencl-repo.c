@@ -48,12 +48,8 @@ struct evg_opencl_repo_t *evg_opencl_repo_create(void)
 {
 	struct evg_opencl_repo_t *repo;
 
-	/* Allocate */
-	repo = calloc(1, sizeof(struct evg_opencl_repo_t));
-	if (!repo)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	repo = xcalloc(1, sizeof(struct evg_opencl_repo_t));
 	repo->object_list = linked_list_create();
 
 	/* Return */

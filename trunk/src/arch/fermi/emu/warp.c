@@ -84,9 +84,7 @@ static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
 		elem = hash_table_get(ht, str);
 		if (!elem)
 		{
-			elem = calloc(1, sizeof(struct elem_t));
-			if (!elem)
-				fatal("%s: out of memory", __FUNCTION__);
+			elem = xcalloc(1, sizeof(struct elem_t));
 
 			hash_table_insert(ht, str, elem);
 			elem->list_index = list_count(list);
@@ -149,12 +147,8 @@ struct frm_warp_t *frm_warp_create()
 {
 	struct frm_warp_t *warp;
 
-	/* Allocate */
-	warp = calloc(1, sizeof(struct frm_warp_t));
-	if (!warp)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	warp = xcalloc(1, sizeof(struct frm_warp_t));
 	warp->active_stack = bit_map_create(FRM_MAX_STACK_SIZE * frm_emu_warp_size);
 	warp->pred = bit_map_create(frm_emu_warp_size);
 	/* FIXME: Remove once loop state is part of stack */

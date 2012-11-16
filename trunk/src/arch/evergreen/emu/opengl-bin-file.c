@@ -69,9 +69,7 @@ static struct list_t *elf_file_list_create(void *ptr_buffer, size_t buf_size)
 	{
 		if (memcmp(ptr_copy, ELF_magic, sizeof(ELF_magic)) == 0)
 		{
-			offset = calloc(1, sizeof(int));
-			if (!offset)
-				fatal("%s: out of memory", __FUNCTION__);
+			offset = xcalloc(1, sizeof(int));
 			*offset = (int)(ptr_copy - ptr_buffer);
 			list_add(elf_file_list, offset);			
 		}
@@ -206,7 +204,7 @@ static struct elf_file_t *internal_elf_file_create(struct elf_file_t *external_e
 		{
 
 			elf_buffer_seek(&external_elf_file->buffer, external_section->header->sh_offset);
-			section_buf = calloc(1, external_section->header->sh_size);
+			section_buf = xcalloc(1, external_section->header->sh_size);
 			memcpy(section_buf, external_elf_file->buffer.ptr + external_elf_file->buffer.pos, external_section->header->sh_size);
 
 			internal_elf_offset = (int)(search_elf_magic(section_buf) - section_buf);
@@ -349,9 +347,7 @@ static struct evg_opengl_shader_t *amd_opengl_shader_create_from_buffer(void *pt
 	struct evg_opengl_shader_t *opengl_shader;
 
 	/* Create shader object */
-	opengl_shader = calloc(1,sizeof(struct evg_opengl_shader_t));
-	if (!opengl_shader)
-		fatal("%s: out of memory", __FUNCTION__);
+	opengl_shader = xcalloc(1,sizeof(struct evg_opengl_shader_t));
 
 	opengl_shader->external_elf_file = external_elf_file_create(ptr, size, elf_offset_list, elf_file_index, name);
 	opengl_shader->internal_elf_file = internal_elf_file_create(opengl_shader->external_elf_file);
@@ -388,15 +384,9 @@ struct evg_opengl_bin_file_t *evg_opengl_bin_file_create(void *ptr, int size, ch
 
 	int i;
 
-	/* Create structure */
-	bin_file = calloc(1, sizeof(struct evg_opengl_bin_file_t));
-	if (!bin_file)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Get binary file name */
-	bin_file->name = strdup(name);
-	if (!bin_file->name)
-		fatal("%s: out of memory", __FUNCTION__);
+	bin_file = xcalloc(1, sizeof(struct evg_opengl_bin_file_t));
+	bin_file->name = xstrdup(name);
 
 	/* Create elf file list contain all external ELF offset in the buffer */
 	elf_file_list = external_elf_file_list_create(ptr, size);

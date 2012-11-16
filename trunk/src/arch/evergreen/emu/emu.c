@@ -83,12 +83,8 @@ void evg_emu_init(void)
 				evg_emu_report_file_name);
 	}
 
-	/* Allocate */
-	evg_emu = calloc(1, sizeof(struct evg_emu_t));
-	if (!evg_emu)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	evg_emu = xcalloc(1, sizeof(struct evg_emu_t));
 	evg_emu->timer = m2s_timer_create("Evergreen GPU timer");
 	evg_emu->const_mem = mem_create();
 	evg_emu->const_mem->safe = 0;

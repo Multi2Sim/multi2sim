@@ -30,12 +30,8 @@ struct frm_cuda_memory_t *frm_cuda_memory_create(void)
 {
         struct frm_cuda_memory_t *mem;
 
-        /* Allocate */
-        mem = calloc(1, sizeof(struct frm_cuda_memory_t));
-        if (!mem)
-                fatal("%s: out of memory", __FUNCTION__);
-
         /* Initialize */
+        mem = xcalloc(1, sizeof(struct frm_cuda_memory_t));
         mem->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_MEMORY);
         mem->ref_count = 1;
 

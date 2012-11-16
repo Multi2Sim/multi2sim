@@ -41,15 +41,9 @@ struct arch_t *arch_create(char *name)
 {
 	struct arch_t *arch;
 
-	/* Allocate */
-	arch = calloc(1, sizeof(struct arch_t));
-	if (!arch)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
-	arch->name = strdup(name);
-	if (!arch->name)
-		fatal("%s: out of memory", __FUNCTION__);
+	arch = xcalloc(1, sizeof(struct arch_t));
+	arch->name = xstrdup(name);
 
 	/* Return */
 	return arch;

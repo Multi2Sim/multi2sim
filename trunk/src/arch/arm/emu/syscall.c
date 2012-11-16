@@ -358,12 +358,8 @@ static int arm_sys_read_impl(struct arm_ctx_t *ctx)
 	host_fd = fd->host_fd;
 	arm_sys_debug("  host_fd=%d\n", host_fd);
 
-	/* Allocate buffer */
-	buf = calloc(1, count);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Poll the file descriptor to check if read is blocking */
+	buf = xcalloc(1, count);
 	fds.fd = host_fd;
 	fds.events = POLLIN;
 	err = poll(&fds, 1, 0);
@@ -444,12 +440,8 @@ static int arm_sys_write_impl(struct arm_ctx_t *ctx)
 	host_fd = desc->host_fd;
 	arm_sys_debug("  host_fd=%d\n", host_fd);
 
-	/* Allocate buffer */
-	buf = calloc(1, count);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Read buffer from memory */
+	buf = xcalloc(1, count);
 	mem_read(mem, buf_ptr, count, buf);
 	arm_sys_debug_buffer("  buf", buf, count);
 

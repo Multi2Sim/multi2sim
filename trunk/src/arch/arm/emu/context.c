@@ -99,12 +99,8 @@ static struct arm_ctx_t *arm_ctx_do_create()
 {
 	struct arm_ctx_t *ctx;
 
-	/* Create context and set its value */
-	ctx = calloc(1, sizeof(struct arm_ctx_t));
-	if (!ctx)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	ctx = xcalloc(1, sizeof(struct arm_ctx_t));
 	ctx->pid = arm_emu->current_pid++;
 
 	/* Update status so that the context is inserted in the
@@ -128,12 +124,8 @@ static void arm_ctx_loader_add_args_vector(struct arm_ctx_t *ctx, int argc, char
 
 	for (i = 0; i < argc; i++)
 	{
-		/* Allocate */
-		arg = strdup(argv[i]);
-		if (!arg)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Add */
+		arg = xstrdup(argv[i]);
 		linked_list_add(ctx->args, arg);
 	}
 }
@@ -148,7 +140,7 @@ static void arm_ctx_loader_add_environ(struct arm_ctx_t *ctx, char *env)
 
 	/* Add variables from actual environment */
 	for (i = 0; environ[i]; i++)
-		linked_list_add(ctx->env, strdup(environ[i]));
+		linked_list_add(ctx->env, xstrdup(environ[i]));
 
 	/* Add the environment vars provided in 'env' */
 	while (env)
@@ -168,12 +160,12 @@ static void arm_ctx_loader_add_environ(struct arm_ctx_t *ctx, char *env)
 			if (!(next = strchr(env + 1, *env)))
 				fatal("%s: wrong format", __FUNCTION__);
 			*next = 0;
-			linked_list_add(ctx->env, strdup(env + 1));
+			linked_list_add(ctx->env, xstrdup(env + 1));
 			env = next + 1;
 			break;
 
 		default:
-			linked_list_add(ctx->env, strdup(env));
+			linked_list_add(ctx->env, xstrdup(env));
 			env = NULL;
 		}
 	}
@@ -291,7 +283,7 @@ static void arm_ctx_loader_load_sections(struct arm_ctx_t *ctx, struct elf_file_
 			{
 				void *ptr;
 
-				ptr = calloc(1, section->header->sh_size);
+				ptr = xcalloc(1, section->header->sh_size);
 				mem_access(mem, section->header->sh_addr,
 					section->header->sh_size,
 					ptr, mem_access_init);
@@ -486,9 +478,7 @@ void arm_ctx_loader_load_exe(struct arm_ctx_t *ctx, char *exe)
 	/* Load program into memory */
 	arm_ctx_loader_get_full_path(ctx, exe, exe_full_path, MAX_STRING_SIZE);
 	ctx->elf_file = elf_file_create_from_path(exe_full_path);
-	ctx->exe = strdup(exe_full_path);
-	if (!ctx->exe)
-		fatal("%s: out of memory", __FUNCTION__);
+	ctx->exe = xstrdup(exe_full_path);
 
 	/* Read sections and program entry */
 	arm_ctx_loader_load_sections(ctx, ctx->elf_file);
@@ -922,16 +912,10 @@ void arm_ctx_load_from_command_line(int argc, char **argv)
 	if (!ctx->cwd)
 		panic("%s: buffer too small", __FUNCTION__);
 
-	/* Duplicate */
-	ctx->cwd = strdup(ctx->cwd);
-	if (!ctx->cwd)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Redirections */
-	ctx->stdin_file = strdup("");
-	ctx->stdout_file = strdup("");
-	if (!ctx->stdin_file || !ctx->stdout_file)
-		fatal("%s: out of memory", __FUNCTION__);
+	ctx->cwd = xstrdup(ctx->cwd);
+	ctx->stdin_file = xstrdup("");
+	ctx->stdout_file = xstrdup("");
 
 	/* Load executable */
 	arm_ctx_loader_load_exe(ctx, argv[0]);

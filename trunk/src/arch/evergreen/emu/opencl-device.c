@@ -37,12 +37,8 @@ struct evg_opencl_device_t *evg_opencl_device_create()
 {
 	struct evg_opencl_device_t *device;
 
-	/* Allocate */
-	device = calloc(1, sizeof(struct evg_opencl_device_t));
-	if (!device)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	device = xcalloc(1, sizeof(struct evg_opencl_device_t));
 	device->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_device);
 

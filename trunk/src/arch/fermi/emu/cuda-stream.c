@@ -31,12 +31,8 @@ struct frm_cuda_stream_t *frm_cuda_stream_create(void)
 {
 	struct frm_cuda_stream_t *stream;
 
-	/* Allocate */
-	stream = calloc(1, sizeof(struct frm_cuda_stream_t));
-	if (!stream)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	stream = xcalloc(1, sizeof(struct frm_cuda_stream_t));
 	stream->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_STREAM);
 	stream->ref_count = 1;
 
