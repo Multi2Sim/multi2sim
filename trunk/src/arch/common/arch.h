@@ -23,6 +23,8 @@
 #include <stdio.h>
 
 
+struct config_t;
+
 extern struct str_map_t arch_sim_kind_map;
 
 enum arch_sim_kind_t
@@ -32,6 +34,11 @@ enum arch_sim_kind_t
 	arch_sim_kind_detailed
 };
 
+typedef void (*arch_mem_config_default_func_t)(struct config_t *config);
+typedef void (*arch_mem_config_parse_entry_func_t)(struct config_t *config, char *section);
+typedef void (*arch_mem_config_check_func_t)(struct config_t *config);
+
+
 struct arch_t
 {
 	/* Name of architecture (x86, ARM, etc.) */
@@ -39,6 +46,11 @@ struct arch_t
 
 	/* Simulation kind - must be assigned externally */
 	enum arch_sim_kind_t sim_kind;
+
+	/* Callback functions used in by the memory hierarchy */
+	arch_mem_config_default_func_t mem_config_default_func;
+	arch_mem_config_parse_entry_func_t mem_config_parse_entry_func;
+	arch_mem_config_check_func_t mem_config_check_func;
 };
 
 

@@ -357,12 +357,6 @@ void x86_cpu_done(void);
 void x86_cpu_dump(FILE *f);
 void x86_cpu_dump_summary(FILE *f);
 
-/* Memory hierarchy call-backs */
-struct config_t;
-void x86_cpu_mem_config_generate_default(struct config_t *config);
-void x86_cpu_mem_config_parse_entry(struct config_t *config, char *section);
-void x86_cpu_mem_config_check(struct config_t *config);
-
 void x86_cpu_update_occupancy_stats(void);
 
 int x86_cpu_pipeline_empty(int core, int thread);

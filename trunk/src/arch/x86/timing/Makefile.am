@@ -31,6 +31,9 @@ libtiming_a_SOURCES = \
 	load-store-queue.c \
 	load-store-queue.h \
 	\
+	mem-config.c \
+	mem-config.h \
+	\
 	reg-file.c \
 	reg-file.h \
 	\
