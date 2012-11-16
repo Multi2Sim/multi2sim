@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
 #include "prefetch-history.h"
@@ -73,26 +74,13 @@ struct prefetch_history_t *prefetch_history_create(void)
 {
 	struct prefetch_history_t *ph;
 
-	/* Create object */
-	ph = calloc(1, sizeof(struct prefetch_history_t));
-	if (!ph)
-		fatal("%s: out of memroy", __FUNCTION__);
-
 	/* Initialize */
-	assert(prefetch_history_size >= 0);
-	if (prefetch_history_size > 0)
-	{
-		ph->table = calloc(prefetch_history_size, sizeof(unsigned));
-		if (!ph->table)
-			fatal("%s: out of memroy", __FUNCTION__);
-	}
-	else
-	{
-		/* A 0 sized table means do not track history. */
-		ph->table = NULL;
-	}
-	ph->size = prefetch_history_size;
+	ph = xcalloc(1, sizeof(struct prefetch_history_t));
 	ph->hindex = -1;
+	assert(prefetch_history_size >= 0);
+	ph->size = prefetch_history_size;
+	if (prefetch_history_size > 0)
+		ph->table = xcalloc(prefetch_history_size, sizeof(unsigned));
 
 	/* Return */
 	return ph;
@@ -103,3 +91,4 @@ void prefetch_history_free(struct prefetch_history_t *pf)
 	free(pf->table);
 	free(pf);
 }
+

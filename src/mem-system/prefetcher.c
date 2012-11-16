@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
 
@@ -44,21 +45,17 @@ struct prefetcher_t *prefetcher_create(int prefetcher_ghb_size, int prefetcher_i
 {
 	struct prefetcher_t *pref;
 
-	/* Create object */
-	pref = calloc(1, sizeof(struct prefetcher_t));
-	if (!pref)
-		fatal("%s: out of memroy", __FUNCTION__);
-
 	/* Initialize */
 	/* The global history buffer and index table cannot be 0
 	 * if the prefetcher object is created. */
 	assert(prefetcher_ghb_size >= 1 && prefetcher_it_size >= 1);
+	pref = xcalloc(1, sizeof(struct prefetcher_t));
 	pref->ghb_size = prefetcher_ghb_size;
 	pref->it_size = prefetcher_it_size;
 	pref->lookup_depth = prefetcher_lookup_depth;
 	pref->type = type;
-	pref->ghb = calloc(prefetcher_ghb_size, sizeof(struct prefetcher_ghb_t));
-	pref->index_table = calloc(prefetcher_it_size, sizeof(struct prefetcher_it_t));
+	pref->ghb = xcalloc(prefetcher_ghb_size, sizeof(struct prefetcher_ghb_t));
+	pref->index_table = xcalloc(prefetcher_it_size, sizeof(struct prefetcher_it_t));
 	pref->ghb_head = -1;
 
 	/* Return */

@@ -62,12 +62,8 @@ void mem_system_init(void)
 		fatal("%s: cannot open GPU cache report file",
 			mem_report_file_name);
 
-	/* Create memory system */
-	mem_system = calloc(1, sizeof(struct mem_system_t));
-	if (!mem_system)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Create network and module list */
+	/* Initialize */
+	mem_system = xcalloc(1, sizeof(struct mem_system_t));
 	mem_system->net_list = list_create();
 	mem_system->mod_list = list_create();
 

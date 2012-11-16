@@ -882,12 +882,8 @@ static void mem_config_read_module_address_range(struct config_t *config,
 		return;
 	}
 
-	/* Duplicate string */
-	range_str = strdup(range_str);
-	if (!range_str)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Split in tokens */
+	range_str = xstrdup(range_str);
 	delim = " ";
 	token = strtok(range_str, delim);
 	if (!token)
@@ -1121,12 +1117,8 @@ static void mem_config_read_low_modules(struct config_t *config)
 			fatal("%s: [ %s ]: missing or invalid value for 'LowModules'.\n%s",
 				mem_config_file_name, buf, err_mem_config_note);
 
-		/* Create copy of low module name list */
-		low_mod_name_list = strdup(low_mod_name_list);
-		if (!low_mod_name_list)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* For each element in the list */
+		low_mod_name_list = xstrdup(low_mod_name_list);
 		delim = ", ";
 		for (low_mod_name = strtok(low_mod_name_list, delim);
 			low_mod_name; low_mod_name = strtok(NULL, delim))
@@ -1179,12 +1171,8 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		char inst_mod_name[MAX_STRING_SIZE];
 	} *entry, *entry_list;
 
-	/* Allocate entry list */
-	entry_list = calloc(x86_cpu_num_cores * x86_cpu_num_threads, sizeof(struct entry_t));
-	if (!entry_list)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Read memory system entries */
+	entry_list = xcalloc(x86_cpu_num_cores * x86_cpu_num_threads, sizeof(struct entry_t));
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
 		/* Section is a node */
@@ -1322,16 +1310,12 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	{
 	case x86_emu_gpu_southern_islands:
 
-		entry_list = calloc(si_gpu_num_compute_units, sizeof(struct entry_t));
-		if (!entry_list)
-			fatal("%s: out of memory", __FUNCTION__);
+		entry_list = xcalloc(si_gpu_num_compute_units, sizeof(struct entry_t));
 		break;
 	
 	case x86_emu_gpu_evergreen:
 
-		entry_list = calloc(evg_gpu_num_compute_units, sizeof(struct entry_t));
-		if (!entry_list)
-			fatal("%s: out of memory", __FUNCTION__);
+		entry_list = xcalloc(evg_gpu_num_compute_units, sizeof(struct entry_t));
 		break;
 	
 	default:
@@ -1956,12 +1940,8 @@ static void mem_config_read_commands(struct config_t *config)
 		if (!command_line)
 			break;
 
-		/* Duplicate command line to send as event data */
-		command_line = strdup(command_line);
-		if (!command_line)
-			fatal("%s: out of memory", __FUNCTION__);
-
 		/* Schedule event to process command */
+		command_line = xstrdup(command_line);
 		esim_schedule_event(EV_MEM_SYSTEM_COMMAND, command_line, 1);
 
 		/* Next command */

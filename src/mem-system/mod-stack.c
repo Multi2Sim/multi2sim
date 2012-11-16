@@ -37,12 +37,8 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 {
 	struct mod_stack_t *stack;
 
-	/* Create stack */
-	stack = calloc(1, sizeof(struct mod_stack_t));
-	if (!stack)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	stack = xcalloc(1, sizeof(struct mod_stack_t));
 	stack->id = id;
 	stack->mod = mod;
 	stack->addr = addr;

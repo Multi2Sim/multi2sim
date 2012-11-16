@@ -54,22 +54,10 @@ struct dir_t *dir_create(char *name, int xsize, int ysize, int zsize, int num_no
 	dir_entry_size = sizeof(struct dir_entry_t) + (num_nodes + 7) / 8;
 	dir_size = sizeof(struct dir_t) + dir_entry_size * xsize * ysize * zsize;
 
-	/* Create directory */
-	dir = calloc(1, dir_size);
-	if (!dir)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Name */
-	dir->name = strdup(name);
-	if (!dir->name)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Create locks */
-	dir->dir_lock = calloc(xsize * ysize, sizeof(struct dir_lock_t));
-	if (!dir->dir_lock)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	dir = xcalloc(1, dir_size);
+	dir->name = xstrdup(name);
+	dir->dir_lock = xcalloc(xsize * ysize, sizeof(struct dir_lock_t));
 	dir->num_nodes = num_nodes;
 	dir->xsize = xsize;
 	dir->ysize = ysize;

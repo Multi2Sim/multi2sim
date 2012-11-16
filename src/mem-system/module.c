@@ -58,26 +58,15 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 {
 	struct mod_t *mod;
 
-	/* Allocate */
-	mod = calloc(1, sizeof(struct mod_t));
-	if (!mod)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Name */
-	mod->name = strdup(name);
-	if (!mod->name)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	mod = xcalloc(1, sizeof(struct mod_t));
+	mod->name = xstrdup(name);
 	mod->kind = kind;
 	mod->latency = latency;
 
 	/* Ports */
 	mod->num_ports = num_ports;
-	mod->ports = calloc(num_ports, sizeof(struct mod_port_t));
-	if (!mod->ports)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	mod->ports = xcalloc(num_ports, sizeof(struct mod_port_t));
 
 	/* Lists */
 	mod->low_mod_list = linked_list_create();
