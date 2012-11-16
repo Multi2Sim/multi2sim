@@ -559,7 +559,7 @@ static void evg_bin_file_read_enc_dict(struct evg_bin_file_t *bin_file)
 	for (i = 0; i < enc_dict_entry_count; i++) {
 		
 		/* Create entry */
-		enc_dict_entry = calloc(1, sizeof(struct evg_bin_enc_dict_entry_t));
+		enc_dict_entry = xcalloc(1, sizeof(struct evg_bin_enc_dict_entry_t));
 		enc_dict_entry->header = elf_buffer_tell(buffer);
 		elf_buffer_read(buffer, NULL, sizeof(struct evg_bin_enc_dict_entry_header_t));
 		list_add(bin_file->enc_dict, enc_dict_entry);
@@ -756,7 +756,7 @@ struct evg_bin_file_t *evg_bin_file_create(void *ptr, int size, char *name)
 	struct evg_bin_file_t *bin_file;
 
 	/* Create structure */
-	bin_file = calloc(1, sizeof(struct evg_bin_file_t));
+	bin_file = xcalloc(1, sizeof(struct evg_bin_file_t));
 
 	/* Read and parse ELF file */
 	bin_file->elf_file = elf_file_create_from_buffer(ptr, size, name);

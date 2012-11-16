@@ -29,12 +29,8 @@ struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name)
 {
 	struct frm_cuda_function_arg_t *arg;
 
-	/* Allocate */
-	arg = calloc(1, sizeof(struct frm_cuda_function_arg_t) + strlen(name) + 1);
-	if (!arg)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	arg = xcalloc(1, sizeof(struct frm_cuda_function_arg_t) + strlen(name) + 1);
 	strncpy(arg->name, name, MAX_STRING_SIZE);
 
 	/* Return */

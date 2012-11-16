@@ -40,12 +40,8 @@ struct evg_work_item_t *evg_work_item_create()
 {
 	struct evg_work_item_t *work_item;
 
-	/* Allocate */
-	work_item = calloc(1, sizeof(struct evg_work_item_t));
-	if (!work_item)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	work_item = xcalloc(1, sizeof(struct evg_work_item_t));
 	work_item->write_task_list = linked_list_create();
 	work_item->lds_oqa = list_create();
 	work_item->lds_oqb = list_create();

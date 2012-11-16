@@ -29,9 +29,7 @@ struct arm_regs_t *arm_regs_create()
 {
 	struct arm_regs_t *regs;
 
-	regs = calloc(1, sizeof(struct arm_regs_t));
-	if(!regs)
-		fatal("%s: out of memory", __FUNCTION__);
+	regs = xcalloc(1, sizeof(struct arm_regs_t));
 
 	regs->cpsr.mode = ARM_MODE_USER;
 	return regs;

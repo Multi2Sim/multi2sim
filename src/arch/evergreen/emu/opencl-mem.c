@@ -35,12 +35,8 @@ struct evg_opencl_mem_t *evg_opencl_mem_create()
 {
 	struct evg_opencl_mem_t *mem;
 
-	/* Allocate */
-	mem = calloc(1, sizeof(struct evg_opencl_mem_t));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	mem = xcalloc(1, sizeof(struct evg_opencl_mem_t));
 	mem->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_mem);
 	mem->ref_count = 1;

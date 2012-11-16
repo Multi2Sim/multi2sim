@@ -40,12 +40,8 @@ struct frm_threadblock_t *frm_threadblock_create()
 {
 	struct frm_threadblock_t *threadblock;
 
-	/* Allocate */
-	threadblock = calloc(1, sizeof(struct frm_threadblock_t));
-	if (!threadblock)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	threadblock = xcalloc(1, sizeof(struct frm_threadblock_t));
 	threadblock->local_mem = mem_create();
 	threadblock->local_mem->safe = 0;
 

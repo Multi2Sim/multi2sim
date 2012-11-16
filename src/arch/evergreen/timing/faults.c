@@ -139,9 +139,7 @@ void evg_faults_init(void)
 			break;
 
 		/* Allocate new fault */
-		fault = calloc(1, sizeof(struct evg_fault_t));
-		if (!fault)
-			fatal("%s: out of memory", __FUNCTION__);
+		fault = xcalloc(1, sizeof(struct evg_fault_t));
 
 		/* Read <cycle> field */
 		line_ptr = strtok(line_ptr, delim);

@@ -685,9 +685,7 @@ int evg_opencl_clCreateBuffer_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* If 'host_ptr' was specified, copy buffer into device memory */
 	if (host_ptr) {
-		buf = malloc(size);
-		if (!buf)
-			fatal("%s: out of memory", __FUNCTION__);
+		buf = xmalloc(size);
 		mem_read(mem, host_ptr, size, buf);
 		mem_write(evg_emu->global_mem, opencl_mem->device_ptr, size, buf);
 		free(buf);
@@ -844,9 +842,7 @@ int evg_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 	/* If 'host_ptr' was specified, copy image into device memory */
 	if (host_ptr)
 	{
-		image = malloc(size);
-		if (!image)
-			fatal("%s: out of memory", __FUNCTION__);
+		image = xmalloc(size);
 
 		mem_read(mem, host_ptr, size, image);
 		mem_write(evg_emu->global_mem, opencl_mem->device_ptr, size, image);
@@ -999,9 +995,7 @@ int evg_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 	/* If 'host_ptr' was specified, copy image into device memory */
 	if (host_ptr)
 	{
-		image = malloc(size);
-		if (!image)
-			fatal("%s: out of memory", __FUNCTION__);
+		image = xmalloc(size);
 
 		mem_read(mem, host_ptr, size, image);
 		mem_write(evg_emu->global_mem, opencl_mem->device_ptr, size, image);
@@ -1179,9 +1173,7 @@ int evg_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 	evg_opencl_debug("    binaries[0] = 0x%x\n", binary);
 
 	/* Read binary */
-	buf = malloc(length);
-	if (!buf)
-		fatal("out of memory");
+	buf = xmalloc(length);
 	mem_read(mem, binary, length, buf);
 
 	/* Load ELF binary from guest memory */
@@ -1693,9 +1685,7 @@ void evg_opencl_clEnqueueReadBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 				evg_err_opencl_param_note);
 
 	/* Copy buffer from device memory to host memory */
-	buf = malloc(argv.cb);
-	if (!buf)
-		fatal("out of memory");
+	buf = xmalloc(argv.cb);
 	mem_read(evg_emu->global_mem, opencl_mem->device_ptr + argv.offset, argv.cb, buf);
 	mem_write(ctx->mem, argv.ptr, argv.cb, buf);
 	free(buf);
@@ -1796,9 +1786,7 @@ void evg_opencl_clEnqueueWriteBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 				evg_err_opencl_param_note);
 
 	/* Copy buffer from host memory to device memory */
-	buf = malloc(argv.cb);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
+	buf = xmalloc(argv.cb);
 	mem_read(ctx->mem, argv.ptr, argv.cb, buf);
 	mem_write(evg_emu->global_mem, opencl_mem->device_ptr + argv.offset, argv.cb, buf);
 	free(buf);
@@ -1899,9 +1887,7 @@ void evg_opencl_clEnqueueCopyBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 		fatal("%s: buffer storage exceeded\n%s", __FUNCTION__, evg_err_opencl_param_note);
 
 	/* Copy buffers */
-	buf = malloc(argv.cb);
-	if (!buf)
-		fatal("%s: out of memory", __FUNCTION__);
+	buf = xmalloc(argv.cb);
 	mem_read(evg_emu->global_mem, src_mem->device_ptr + argv.src_offset, argv.cb, buf);
 	mem_write(evg_emu->global_mem, dst_mem->device_ptr + argv.dst_offset, argv.cb, buf);
 	free(buf);
@@ -2028,12 +2014,8 @@ void evg_opencl_clEnqueueReadImage_wakeup(struct x86_ctx_t *ctx, void *data)
 		fatal("%s: Origin/region must match dimensions of image\n%s", 
 				__FUNCTION__, evg_err_opencl_param_note);
 
-	/* Copy image from device memory to host memory */
-	img = malloc(opencl_mem->size);
-	if (!img)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Read the entire image */
+	img = xmalloc(opencl_mem->size);
 	mem_read(evg_emu->global_mem, opencl_mem->device_ptr, opencl_mem->size, img);
 	mem_write(ctx->mem, argv.ptr, opencl_mem->size, img);
 	free(img);

@@ -192,20 +192,12 @@ static void evg_gpu_device_init()
 	struct evg_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
-	/* Create device */
-	evg_gpu = calloc(1, sizeof(struct evg_gpu_t));
-	if (!evg_gpu)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	evg_gpu = xcalloc(1, sizeof(struct evg_gpu_t));
 	evg_gpu->trash_uop_list = linked_list_create();
 
-	/* Create compute units */
-	evg_gpu->compute_units = calloc(evg_gpu_num_compute_units, sizeof(void *));
-	if (!evg_gpu->compute_units)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize compute units */
+	evg_gpu->compute_units = xcalloc(evg_gpu_num_compute_units, sizeof(void *));
 	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		evg_gpu->compute_units[compute_unit_id] = evg_compute_unit_create();

@@ -36,12 +36,8 @@ struct evg_opencl_context_t *evg_opencl_context_create()
 {
 	struct evg_opencl_context_t *context;
 
-	/* Allocate */
-	context = calloc(1, sizeof(struct evg_opencl_context_t));
-	if (!context)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	context = xcalloc(1, sizeof(struct evg_opencl_context_t));
 	context->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_context);
 	context->ref_count = 1;
