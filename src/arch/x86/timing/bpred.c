@@ -148,25 +148,15 @@ struct x86_bpred_t *x86_bpred_create(char *name)
 	int i;
 	int j;
 
-	/* Allocate */
-	bpred = calloc(1, sizeof(struct x86_bpred_t));
-	if (!bpred)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Name */
-	bpred->name = strdup(name);
-	if (!bpred->name)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Return address stack */
-	bpred->ras = calloc(x86_bpred_ras_size, sizeof(unsigned int));
-	if (!bpred->ras)
-		fatal("%s: out of memory", __FUNCTION__);
+	/* Initialize */
+	bpred = xcalloc(1, sizeof(struct x86_bpred_t));
+	bpred->name = xstrdup(name);
+	bpred->ras = xcalloc(x86_bpred_ras_size, sizeof(unsigned int));
 
 	/* Bimodal predictor */
 	if (x86_bpred_kind == x86_bpred_kind_bimod || x86_bpred_kind == x86_bpred_kind_comb)
 	{
-		bpred->bimod = calloc(x86_bpred_bimod_size, sizeof(char));
+		bpred->bimod = xcalloc(x86_bpred_bimod_size, sizeof(char));
 		for (i = 0; i < x86_bpred_bimod_size; i++)
 			bpred->bimod[i] = 2;
 	}
@@ -174,8 +164,8 @@ struct x86_bpred_t *x86_bpred_create(char *name)
 	/* Two-level adaptive branch predictor */
 	if (x86_bpred_kind == x86_bpred_kind_twolevel || x86_bpred_kind == x86_bpred_kind_comb)
 	{
-		bpred->twolevel_bht = calloc(x86_bpred_twolevel_l1size, sizeof(unsigned int));
-		bpred->twolevel_pht = calloc(x86_bpred_twolevel_l2size * x86_bpred_twolevel_l2height, sizeof(char));
+		bpred->twolevel_bht = xcalloc(x86_bpred_twolevel_l1size, sizeof(unsigned int));
+		bpred->twolevel_pht = xcalloc(x86_bpred_twolevel_l2size * x86_bpred_twolevel_l2height, sizeof(char));
 		for (i = 0; i < x86_bpred_twolevel_l2size * x86_bpred_twolevel_l2height; i++)
 			bpred->twolevel_pht[i] = 2;
 	}
@@ -183,13 +173,13 @@ struct x86_bpred_t *x86_bpred_create(char *name)
 	/* Choice predictor */
 	if (x86_bpred_kind == x86_bpred_kind_comb)
 	{
-		bpred->choice = calloc(x86_bpred_choice_size, sizeof(char));
+		bpred->choice = xcalloc(x86_bpred_choice_size, sizeof(char));
 		for (i = 0; i < x86_bpred_choice_size; i++)
 			bpred->choice[i] = 2;
 	}
 
 	/* Allocate BTB and assign LRU counters */
-	bpred->btb = calloc(x86_bpred_btb_sets * x86_bpred_btb_assoc, sizeof(struct btb_entry_t));
+	bpred->btb = xcalloc(x86_bpred_btb_sets * x86_bpred_btb_assoc, sizeof(struct btb_entry_t));
 	for (i = 0; i < x86_bpred_btb_sets; i++)
 		for (j = 0; j < x86_bpred_btb_assoc; j++)
 			BTB_ENTRY(i, j)->counter = j;

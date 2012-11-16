@@ -34,9 +34,7 @@ struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void)
 	struct x86_opengl_viewport_attributes_t *vpt;
 
 	/* Allocate */
-	vpt = calloc(1, sizeof(struct x86_opengl_viewport_attributes_t));
-	if(!vpt)
-		fatal("%s: out of memory", __FUNCTION__);
+	vpt = xcalloc(1, sizeof(struct x86_opengl_viewport_attributes_t));
 
 
 	/* Initialize */

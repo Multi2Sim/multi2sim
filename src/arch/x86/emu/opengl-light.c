@@ -29,12 +29,11 @@ struct x86_opengl_light_t *x86_opengl_light_create()
 {
 	struct x86_opengl_light_t *lgt;
 
-	lgt = calloc(1, sizeof(struct x86_opengl_light_t));
-	if(!lgt)
-		fatal("%s: out of memory", __FUNCTION__);	
+	/* Initialize */
+	lgt = xcalloc(1, sizeof(struct x86_opengl_light_t));
 
+	/* Return */
 	return lgt;
-
 }
 
 void x86_opengl_light_free(struct x86_opengl_light_t *lgt)
@@ -46,12 +45,8 @@ struct x86_opengl_light_model_t *x86_opengl_light_model_create()
 {
 	struct x86_opengl_light_model_t *lgt_mdl;
 
-	/* Allocate */
-	lgt_mdl = calloc(1, sizeof(struct x86_opengl_light_model_t));
-	if(!lgt_mdl)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	lgt_mdl = xcalloc(1, sizeof(struct x86_opengl_light_model_t));
 
 	/* Return */	
 	return lgt_mdl;
@@ -67,12 +62,8 @@ struct x86_opengl_light_attrib_t *x86_opengl_light_attrib_create()
 	int i;
 	struct x86_opengl_light_attrib_t *lgt_attrb;
 
-	/* Allocate */
-	lgt_attrb = calloc(1, sizeof(struct x86_opengl_light_attrib_t));
-	if(!lgt_attrb)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	lgt_attrb = xcalloc(1, sizeof(struct x86_opengl_light_attrib_t));
 	for (i = 0; i < MAX_LIGHTS; ++i)
 	{
 		lgt_attrb->Light[i] = x86_opengl_light_create();		

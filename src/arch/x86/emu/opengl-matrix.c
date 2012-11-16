@@ -38,14 +38,10 @@ struct x86_opengl_matrix_t *x86_opengl_matrix_create(enum x86_opengl_matrix_mode
 {
 	struct x86_opengl_matrix_t *mtx;
 
-	/* Allocate */
-	mtx = calloc(1, sizeof(struct x86_opengl_matrix_t));
-	if(!mtx)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	mtx = xcalloc(1, sizeof(struct x86_opengl_matrix_t));
 	mtx->matrix_mode = mode;
-	mtx->matrix = calloc(1, 4*4*sizeof(GLfloat));	/* 4x4 matrix */
+	mtx->matrix = xcalloc(1, 4*4*sizeof(GLfloat));	/* 4x4 matrix */
 	switch(mode)
 	{
 		case MATRIX_IDENTITY:

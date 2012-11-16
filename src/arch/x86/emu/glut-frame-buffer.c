@@ -50,12 +50,8 @@ static struct x86_glut_frame_buffer_t *x86_glut_frame_buffer;
 
 void x86_glut_frame_buffer_init(void)
 {
-	/* Allocate */
-	x86_glut_frame_buffer = calloc(1, sizeof(struct x86_glut_frame_buffer_t));
-	if (!x86_glut_frame_buffer)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	x86_glut_frame_buffer = xcalloc(1, sizeof(struct x86_glut_frame_buffer_t));
 	x86_glut_frame_buffer->flush_request = 1;
 }
 
@@ -105,12 +101,8 @@ void x86_glut_frame_buffer_resize(int width, int height)
 	if (x86_glut_frame_buffer->buffer)
 		free(x86_glut_frame_buffer->buffer);
 
-	/* Allocate new buffer */
-	x86_glut_frame_buffer->buffer = calloc(width * height, sizeof(int));
-	if (!x86_glut_frame_buffer->buffer)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Store new size */
+	x86_glut_frame_buffer->buffer = xcalloc(width * height, sizeof(int));
 	x86_glut_frame_buffer->width = width;
 	x86_glut_frame_buffer->height = height;
 

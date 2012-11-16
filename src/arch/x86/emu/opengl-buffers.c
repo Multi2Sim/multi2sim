@@ -30,15 +30,11 @@ struct x86_opengl_render_buffer_t *x86_opengl_render_buffer_create(int width, in
 {
 	struct x86_opengl_render_buffer_t *rb;
 
-	/* Allocate */
-	rb = calloc(1, sizeof(struct x86_opengl_render_buffer_t));
-	if(!rb)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	rb = xcalloc(1, sizeof(struct x86_opengl_render_buffer_t));
 	rb->width = width;
 	rb->height = height;
-	rb->buffer = calloc(1, width * height * sizeof(GLuint));
+	rb->buffer = xcalloc(1, width * height * sizeof(GLuint));
 
 	/* Return */	
 	return rb;
@@ -77,12 +73,8 @@ int x86_opengl_render_buffer_resize(struct x86_opengl_render_buffer_t *rb, int w
 	if (rb->buffer)
 		free(rb->buffer);
 
-	/* Allocate new buffer */
-	rb->buffer = calloc(width * height, sizeof(int));
-	if (!rb->buffer)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Store new size */
+	rb->buffer = xcalloc(width * height, sizeof(int));
 	rb->width = width;
 	rb->height = height;
 
@@ -96,12 +88,8 @@ struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int 
 	int i;
 	struct x86_opengl_frame_buffer_t *fb;
 
-	/* Allocate */
-	fb = calloc(1, sizeof(struct x86_opengl_frame_buffer_t));
-	if(!fb)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialization */
+	fb = xcalloc(1, sizeof(struct x86_opengl_frame_buffer_t));
 	fb->width = width;
 	fb->height = height;
 	for (i = 0; i < COLOR_BUFFER_COUNT; ++i)

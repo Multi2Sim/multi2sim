@@ -97,10 +97,8 @@ void x86_emu_init(void)
 	x86_sys_init();
 	x86_isa_init();
 
-	/* Allocate */
-	x86_emu = calloc(1, sizeof(struct x86_emu_t));
-	if (!x86_emu)
-		fatal("%s: out of memory", __FUNCTION__);
+	/* Create */
+	x86_emu = xcalloc(1, sizeof(struct x86_emu_t));
 
 	/* Event for context IPC reports */
 	EV_X86_CTX_IPC_REPORT = esim_register_event_with_name(x86_ctx_ipc_report_handler, "x86_ctx_ipc_report");
@@ -629,7 +627,7 @@ void x86_emu_process_events()
 			if (host_fds.revents) {
 				pbuf = ctx->regs->ecx;
 				count = ctx->regs->edx;
-				buf = malloc(count);
+				buf = xmalloc(count);
 				mem_read(ctx->mem, pbuf, count, buf);
 
 				count = write(fd->host_fd, buf, count);
@@ -691,7 +689,7 @@ void x86_emu_process_events()
 			{
 				pbuf = ctx->regs->ecx;
 				count = ctx->regs->edx;
-				buf = malloc(count);
+				buf = xmalloc(count);
 				
 				count = read(fd->host_fd, buf, count);
 				if (count < 0)
