@@ -39,9 +39,7 @@ struct bit_map_t *bit_map_create(unsigned int size)
 	unsigned int word_count;
 
 	word_count = (size + 31) / 32;
-	map = calloc(1, sizeof(struct bit_map_t) + word_count * 4);
-	if (!map)
-		return NULL;
+	map = xcalloc(1, sizeof(struct bit_map_t) + word_count * 4);
 	map->size = size;
 	map->word_count = word_count;
 	return map;

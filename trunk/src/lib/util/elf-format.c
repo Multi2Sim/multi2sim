@@ -177,7 +177,7 @@ static void elf_file_read_symbol_section(struct elf_file_t *elf_file, struct elf
 			continue;
 
 		/* Create symbol */
-		symbol = calloc(1, sizeof(struct elf_symbol_t));
+		symbol = xcalloc(1, sizeof(struct elf_symbol_t));
 		symbol->value = sym->st_value;
 		symbol->size = sym->st_size;
 		symbol->section = sym->st_shndx;
@@ -356,8 +356,6 @@ static void elf_file_read_section_headers(struct elf_file_t *elf_file)
 
 	/* Create section list */
 	elf_file->section_list = list_create();
-	if (!elf_file->section_list)
-		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Check section size and number */
 	buffer = &elf_file->buffer;
@@ -371,7 +369,7 @@ static void elf_file_read_section_headers(struct elf_file_t *elf_file)
 	for (i = 0; i < elf_header->e_shnum; i++)
 	{
 		/* Allocate section */
-		section = calloc(1, sizeof(struct elf_section_t));
+		section = xcalloc(1, sizeof(struct elf_section_t));
 		section->header = elf_buffer_tell(buffer);
 
 		/* Advance buffer */
@@ -452,7 +450,7 @@ static void elf_file_read_program_headers(struct elf_file_t *elf_file)
 	for (i = 0; i < elf_header->e_phnum; i++)
 	{
 		/* Allocate program header */
-		program_header = calloc(1, sizeof(struct elf_program_header_t));
+		program_header = xcalloc(1, sizeof(struct elf_program_header_t));
 		program_header->header = elf_buffer_tell(buffer);
 
 		/* Advance buffer */
@@ -492,16 +490,10 @@ static struct elf_file_t *elf_file_create_from_allocated_buffer(void *buffer, in
 
 	/* Create buffer */
 	elf_debug("**\n** Loading ELF file\n** %s\n**\n\n", path);
-	elf_file = calloc(1, sizeof(struct elf_file_t));
-	if (!elf_file)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Duplicate path string */
-	elf_file->path = strdup(path ? path : "");
-	if (!elf_file->path)
-		fatal("%s: out of memory", __FUNCTION__);
+	elf_file = xcalloc(1, sizeof(struct elf_file_t));
 
 	/* Initialize buffer */
+	elf_file->path = xstrdup(path ? path : "");
 	elf_file->buffer.ptr = buffer;
 	elf_file->buffer.size = size;
 	elf_file->buffer.pos = 0;
@@ -524,9 +516,7 @@ struct elf_file_t *elf_file_create_from_buffer(void *ptr, int size, char *name)
 	void *ptr_copy;
 
 	/* Make a copy of the buffer */
-	ptr_copy = malloc(size);
-	if (!ptr_copy)
-		fatal("%s: out of memory", __FUNCTION__);
+	ptr_copy = xmalloc(size);
 	memcpy(ptr_copy, ptr, size);
 
 	/* Create ELF */
@@ -555,12 +545,8 @@ struct elf_file_t *elf_file_create_from_path(char *path)
 	if (!f)
 		fatal("'%s': cannot open file", path);
 
-	/* Allocate buffer */
-	buffer = malloc(size);
-	if (!buffer)
-		fatal("'%s': out of memory reading file", path);
-
 	/* Read file contents */
+	buffer = xmalloc(size);
 	count = fread(buffer, 1, size, f);
 	if (count != size)
 		fatal("'%s': error reading file contents", path);

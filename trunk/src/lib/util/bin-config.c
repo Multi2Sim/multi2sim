@@ -42,12 +42,8 @@ static struct bin_config_elem_t *bin_config_elem_create(struct bin_config_t *bin
 {
 	struct bin_config_elem_t *elem;
 
-	/* Create */
-	elem = calloc(1, sizeof(struct bin_config_elem_t));
-	if (!elem)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	elem = xcalloc(1, sizeof(struct bin_config_elem_t));
 	elem->bin_config = bin_config;
 	elem->size = size;
 	elem->data = data;
@@ -221,15 +217,9 @@ struct bin_config_t *bin_config_create(char *file_name)
 {
 	struct bin_config_t *bin_config;
 
-	/* Create */
-	bin_config = calloc(1, sizeof(struct bin_config_t));
-	if (!bin_config)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize fields */
-	bin_config->file_name = strdup(file_name);
-	if (!bin_config->file_name)
-		fatal("%s: out of memory", __FUNCTION__);
+	bin_config = xcalloc(1, sizeof(struct bin_config_t));
+	bin_config->file_name = xstrdup(file_name);
 	
 	/* Return */
 	return bin_config;
@@ -260,9 +250,7 @@ struct bin_config_elem_t *bin_config_add(struct bin_config_t *bin_config,
 	if (data && size > 0)
 	{
 		/* Copy data */
-		data_copy = malloc(size);
-		if (!data_copy)
-			fatal("%s: out of memory", __FUNCTION__);
+		data_copy = xmalloc(size);
 		memcpy(data_copy, data, size);
 	}
 	else
@@ -460,17 +448,13 @@ static struct hash_table_t *bin_config_load_elem_list(struct bin_config_t *bin_c
 		/* Read variable */
 		var_len = 0;
 		gzread(f, &var_len, 4);
-		var = calloc(1, var_len + 1);
-		if (!var)
-			fatal("%s: out of memory", __FUNCTION__);
+		var = xcalloc(1, var_len + 1);
 		gzread(f, var, var_len);
 
 		/* Read data */
 		size = 0;
 		gzread(f, &size, 4);
-		data = malloc(size);
-		if (!data)
-			fatal("%s: out of memory", __FUNCTION__);
+		data = xmalloc(size);
 		gzread(f, data, size);
 
 		/* Create and add element */
