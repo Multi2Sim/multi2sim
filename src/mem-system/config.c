@@ -38,6 +38,7 @@
 #include "cache.h"
 #include "command.h"
 #include "directory.h"
+#include "mem-system.h"
 #include "mmu.h"
 #include "prefetcher.h"
 
@@ -46,7 +47,6 @@
  */
 
 char *mem_config_file_name = "";
-char *mem_report_file_name = "";
 
 char *mem_config_help =
 	"Option '--mem-config <file>' is used to configure the memory system. The\n"
@@ -1537,7 +1537,7 @@ static void mem_config_read_commands(struct config_t *config)
  * Public Functions
  */
 
-void mem_system_config_read(void)
+void mem_config_read(void)
 {
 	struct config_t *config;
 

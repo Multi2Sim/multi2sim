@@ -25,6 +25,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
 #include <mem-system/mem-system.h>
+#include <mem-system/module.h>
 
 #include "cpu.h"
 #include "mem-config.h"
