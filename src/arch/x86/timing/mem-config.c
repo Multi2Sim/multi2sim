@@ -19,8 +19,11 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/x86/emu/emu.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
+#include <lib/util/string.h>
 #include <mem-system/mem-system.h>
 
 #include "cpu.h"
@@ -29,6 +32,80 @@
 
 void x86_mem_config_default(struct config_t *config)
 {
+	char section[MAX_STRING_SIZE];
+	char str[MAX_STRING_SIZE];
+
+	int core;
+	int thread;
+
+	/* Only detailed simulation */
+	assert(x86_emu_sim_kind == arch_sim_kind_detailed);
+
+	/* Cache geometry for L1 */
+	strcpy(section, "CacheGeometry x86-geo-l1");
+	config_write_int(config, section, "Sets", 16);
+	config_write_int(config, section, "Assoc", 2);
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 1);
+	config_write_string(config, section, "Policy", "LRU");
+
+	/* Cache geometry for L2 */
+	strcpy(section, "CacheGeometry x86-geo-l2");
+	config_write_int(config, section, "Sets", 64);
+	config_write_int(config, section, "Assoc", 4);
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 10);
+	config_write_string(config, section, "Policy", "LRU");
+
+	/* L1 caches and entries */
+	X86_CORE_FOR_EACH
+	{
+		/* L1 cache */
+		snprintf(section, sizeof section, "Module x86-l1-%d", core);
+		config_write_string(config, section, "Type", "Cache");
+		config_write_string(config, section, "Geometry", "x86-geo-l1");
+		config_write_string(config, section, "LowNetwork", "x86-net-l1-l2");
+		config_write_string(config, section, "LowModules", "x86-l2");
+
+		/* Entry */
+		snprintf(str, sizeof str, "x86-l1-%d", core);
+		X86_THREAD_FOR_EACH
+		{
+			snprintf(section, sizeof section, "Entry x86-core-%d-thread-%d",
+				core, thread);
+			config_write_string(config, section, "Arch", "x86");
+			config_write_int(config, section, "Core", core);
+			config_write_int(config, section, "Thread", thread);
+			config_write_string(config, section, "Module", str);
+		}
+	}
+
+	/* L2 cache */
+	snprintf(section, sizeof section, "Module x86-l2");
+	config_write_string(config, section, "Type", "Cache");
+	config_write_string(config, section, "Geometry", "x86-geo-l2");
+	config_write_string(config, section, "HighNetwork", "x86-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "x86-net-l2-mm");
+	config_write_string(config, section, "LowModules", "x86-mm");
+
+	/* Main memory */
+	snprintf(section, sizeof section, "Module x86-mm");
+	config_write_string(config, section, "Type", "MainMemory");
+	config_write_string(config, section, "HighNetwork", "x86-net-l2-mm");
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 100);
+
+	/* Network connecting L1 caches and L2 */
+	snprintf(section, sizeof section, "Network x86-net-l1-l2");
+	config_write_int(config, section, "DefaultInputBufferSize", 144);
+	config_write_int(config, section, "DefaultOutputBufferSize", 144);
+	config_write_int(config, section, "DefaultBandwidth", 72);
+
+	/* Network connecting L2 cache and global memory */
+	snprintf(section, sizeof section, "Network x86-net-l2-mm");
+	config_write_int(config, section, "DefaultInputBufferSize", 528);
+	config_write_int(config, section, "DefaultOutputBufferSize", 528);
+	config_write_int(config, section, "DefaultBandwidth", 264);
 }
 
 

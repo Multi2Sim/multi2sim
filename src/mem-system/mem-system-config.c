@@ -264,220 +264,26 @@ static char *err_mem_connect =
 	"\tnecessary links in the network configuration file.\n";
 
 
-static void mem_config_cpu_default(struct config_t *config)
+static void mem_config_default(struct config_t *config)
 {
-	char section[MAX_STRING_SIZE];
-	char str[MAX_STRING_SIZE];
+	struct arch_t *arch;
+	int i;
 
-	int core;
-	int thread;
-
-	/* Not if we are doing CPU functional simulation */
-	if (x86_emu_sim_kind == arch_sim_kind_functional)
-		return;
-
-	/* Cache geometry for L1 */
-	strcpy(section, "CacheGeometry cpu-geo-l1");
-	config_write_int(config, section, "Sets", 16);
-	config_write_int(config, section, "Assoc", 2);
-	config_write_int(config, section, "BlockSize", 64);
-	config_write_int(config, section, "Latency", 1);
-	config_write_string(config, section, "Policy", "LRU");
-
-	/* Cache geometry for L2 */
-	strcpy(section, "CacheGeometry cpu-geo-l2");
-	config_write_int(config, section, "Sets", 64);
-	config_write_int(config, section, "Assoc", 4);
-	config_write_int(config, section, "BlockSize", 64);
-	config_write_int(config, section, "Latency", 10);
-	config_write_string(config, section, "Policy", "LRU");
-
-	/* L1 caches and entries */
-	X86_CORE_FOR_EACH
+	LIST_FOR_EACH(arch_list, i)
 	{
-		/* L1 cache */
-		snprintf(section, sizeof section, "Module cpu-l1-%d", core);
-		config_write_string(config, section, "Type", "Cache");
-		config_write_string(config, section, "Geometry", "cpu-geo-l1");
-		config_write_string(config, section, "LowNetwork", "cpu-net-l1-l2");
-		config_write_string(config, section, "LowModules", "cpu-l2");
+		/* Only for architectures in detailed simulation */
+		arch = list_get(arch_list, i);
+		if (arch->sim_kind == arch_sim_kind_functional)
+			continue;
 
-		/* Entry */
-		snprintf(str, sizeof str, "cpu-l1-%d", core);
-		X86_THREAD_FOR_EACH
-		{
-			snprintf(section, sizeof section, "Entry cpu-core-%d-thread-%d",
-				core, thread);
-			config_write_string(config, section, "Type", "CPU");
-			config_write_int(config, section, "Core", core);
-			config_write_int(config, section, "Thread", thread);
-			config_write_string(config, section, "DataModule", str);
-			config_write_string(config, section, "InstModule", str);
-		}
+		/* Architecture must have registered its 'mem_config_default' function */
+		if (!arch->mem_config_default_func)
+			panic("%s: architecture '%s' didn't register 'mem_config_default'",
+				__FUNCTION__, arch->name);
+
+		/* Make call back */
+		arch->mem_config_default_func(config);
 	}
-
-	/* L2 cache */
-	snprintf(section, sizeof section, "Module cpu-l2");
-	config_write_string(config, section, "Type", "Cache");
-	config_write_string(config, section, "Geometry", "cpu-geo-l2");
-	config_write_string(config, section, "HighNetwork", "cpu-net-l1-l2");
-	config_write_string(config, section, "LowNetwork", "cpu-net-l2-mm");
-	config_write_string(config, section, "LowModules", "cpu-mm");
-
-	/* Main memory */
-	snprintf(section, sizeof section, "Module cpu-mm");
-	config_write_string(config, section, "Type", "MainMemory");
-	config_write_string(config, section, "HighNetwork", "cpu-net-l2-mm");
-	config_write_int(config, section, "BlockSize", 64);
-	config_write_int(config, section, "Latency", 100);
-
-	/* Network connecting L1 caches and L2 */
-	snprintf(section, sizeof section, "Network cpu-net-l1-l2");
-	config_write_int(config, section, "DefaultInputBufferSize", 144);
-	config_write_int(config, section, "DefaultOutputBufferSize", 144);
-	config_write_int(config, section, "DefaultBandwidth", 72);
-
-	/* Network connecting L2 cache and global memory */
-	snprintf(section, sizeof section, "Network cpu-net-l2-mm");
-	config_write_int(config, section, "DefaultInputBufferSize", 528);
-	config_write_int(config, section, "DefaultOutputBufferSize", 528);
-	config_write_int(config, section, "DefaultBandwidth", 264);
-}
-
-
-static void mem_config_gpu_default(struct config_t *config)
-{
-	char section[MAX_STRING_SIZE];
-	char str[MAX_STRING_SIZE];
-
-	int compute_unit_id;
-	int l2_id;
-	int mm_id;
-	const int num_L2s = 4;
-	const int num_MMs = 4;
-
-	/* Not if we doing GPU functional simulation */
-	switch (x86_emu->gpu_kind)
-	{
-	case x86_emu_gpu_southern_islands:
-
-		if (si_emu_sim_kind == arch_sim_kind_functional)
-			return;
-		break;
-
-	case x86_emu_gpu_evergreen:
-
-		if (evg_emu_sim_kind == arch_sim_kind_functional)
-			return;
-		break;
-
-	default:
-		panic("%s: invalid GPU emulator", __FUNCTION__);
-	}
-
-	/* Cache geometry for L1 */
-	strcpy(section, "CacheGeometry gpu-geo-l1");
-	config_write_int(config, section, "Sets", 32);
-	config_write_int(config, section, "Assoc", 4);
-	config_write_int(config, section, "BlockSize", 64);
-	config_write_int(config, section, "Latency", 1);
-	config_write_string(config, section, "Policy", "LRU");
-
-	/* Cache geometry for L2 */
-	strcpy(section, "CacheGeometry gpu-geo-l2");
-	config_write_int(config, section, "Sets", 256);
-	config_write_int(config, section, "Assoc", 8);
-	config_write_int(config, section, "BlockSize", 256);
-	config_write_int(config, section, "Latency", 10);
-	config_write_string(config, section, "Policy", "LRU");
-
-	assert(num_L2s == 4);
-	assert(num_MMs == 4);
-
-	/* L1 caches and entries */
-	switch (x86_emu->gpu_kind)
-	{
-	case x86_emu_gpu_southern_islands:
-
-		SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-		{
-			snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
-			config_write_string(config, section, "Type", "Cache");
-			config_write_string(config, section, "Geometry", "gpu-geo-l1");
-			config_write_string(config, section, "LowNetwork", "gpu-net-l1-l2");
-			/* TODO Make this dynamic */
-			config_write_string(config, section, "LowModules", "gpu-l2-0 gpu-l2-1 gpu-l2-2 gpu-l2-3");
-
-			snprintf(section, sizeof section, "Entry gpu-cu-%d", compute_unit_id);
-			snprintf(str, sizeof str, "gpu-l1-%d", compute_unit_id);
-			config_write_string(config, section, "Type", "GPU");
-			config_write_int(config, section, "ComputeUnit", compute_unit_id);
-			config_write_string(config, section, "Module", str);
-		}
-		break;
-	
-	case x86_emu_gpu_evergreen:
-
-		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-		{
-			snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
-			config_write_string(config, section, "Type", "Cache");
-			config_write_string(config, section, "Geometry", "gpu-geo-l1");
-			config_write_string(config, section, "LowNetwork", "gpu-net-l1-l2");
-			/* TODO Make this dynamic */
-			config_write_string(config, section, "LowModules", "gpu-l2-0 gpu-l2-1 gpu-l2-2 gpu-l2-3");
-
-			snprintf(section, sizeof section, "Entry gpu-cu-%d", compute_unit_id);
-			snprintf(str, sizeof str, "gpu-l1-%d", compute_unit_id);
-			config_write_string(config, section, "Type", "GPU");
-			config_write_int(config, section, "ComputeUnit", compute_unit_id);
-			config_write_string(config, section, "Module", str);
-		}
-		break;
-	
-	default:
-		panic("%s: invalid GPU emulator", __FUNCTION__);
-	}
-
-	/* L2 caches */
-	for (l2_id = 0; l2_id < num_L2s; l2_id++) 
-	{
-		snprintf(section, sizeof section, "Module gpu-l2-%d", l2_id);
-		config_write_string(config, section, "Type", "Cache");
-		config_write_string(config, section, "Geometry", "gpu-geo-l2");
-		config_write_string(config, section, "HighNetwork", "gpu-net-l1-l2");
-		config_write_string(config, section, "LowNetwork", "gpu-net-l2-gm");
-		/* TODO Make this dynamic */
-		config_write_string(config, section, "LowModules", "gpu-gm-0 gpu-gm-1 gpu-gm-2 gpu-gm-3");
-
-		snprintf(str, sizeof str, "ADDR DIV %d MOD %d EQ %d", 256, num_L2s, l2_id);
-		config_write_string(config, section, "AddressRange", str);
-	}
-
-	/* Global memory */
-	for (mm_id = 0; mm_id < num_MMs; mm_id++) 
-	{
-		snprintf(section, sizeof section, "Module gpu-gm-%d", mm_id);
-		config_write_string(config, section, "Type", "MainMemory");
-		config_write_string(config, section, "HighNetwork", "gpu-net-l2-gm");
-		config_write_int(config, section, "BlockSize", 256);
-		config_write_int(config, section, "Latency", 100);
-
-		snprintf(str, sizeof str, "ADDR DIV %d MOD %d EQ %d", 256, num_MMs, mm_id);
-		config_write_string(config, section, "AddressRange", str);
-	}
-
-	/* Network connecting L1 caches and L2 */
-	snprintf(section, sizeof section, "Network gpu-net-l1-l2");
-	config_write_int(config, section, "DefaultInputBufferSize", 528);
-	config_write_int(config, section, "DefaultOutputBufferSize", 528);
-	config_write_int(config, section, "DefaultBandwidth", 264);
-
-	/* Network connecting L2 cache and global memory */
-	snprintf(section, sizeof section, "Network gpu-net-l2-gm");
-	config_write_int(config, section, "DefaultInputBufferSize", 528);
-	config_write_int(config, section, "DefaultOutputBufferSize", 528);
-	config_write_int(config, section, "DefaultBandwidth", 264);
 }
 
 
@@ -1233,10 +1039,10 @@ static void mem_config_read_entries(struct config_t *config)
 		if (arch->sim_kind == arch_sim_kind_functional)
 			continue;
 
-		/* Check that 'mem_config_check_func' has been registered. */
+		/* Check that 'mem_config_check' has been registered. */
 		if (!arch->mem_config_check_func)
-			panic("architecture '%s' has not property registered 'mem_config_check_func'",
-				arch->name);
+			panic("%s: architecture '%s' didn't register 'mem_config_check'",
+				__FUNCTION__, arch->name);
 
 		/* Make call-back */
 		arch->mem_config_check_func(config);
@@ -1735,17 +1541,13 @@ void mem_system_config_read(void)
 {
 	struct config_t *config;
 
-	/* Load memory system configuration file */
+	/* Load memory system configuration file. If no file name has been given
+	 * by the user, create a default configuration for each architecture. */
 	config = config_create(mem_config_file_name);
 	if (!*mem_config_file_name)
-	{
-		mem_config_cpu_default(config);
-		mem_config_gpu_default(config);
-	}
+		mem_config_default(config);
 	else
-	{
 		config_load(config);
-	}
 
 	/* Read general variables */
 	mem_config_read_general(config);
