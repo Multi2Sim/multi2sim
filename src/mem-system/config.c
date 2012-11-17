@@ -16,20 +16,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
-#include <arch/x86/emu/emu.h>
-#include <arch/x86/timing/cpu.h>
-#include <arch/evergreen/emu/emu.h>
-#include <arch/evergreen/timing/compute-unit.h>
-#include <arch/evergreen/timing/gpu.h>
-#include <arch/southern-islands/timing/timing.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <network/net-system.h>
 #include <network/network.h>
 #include <network/node.h>
@@ -40,6 +39,7 @@
 #include "directory.h"
 #include "mem-system.h"
 #include "mmu.h"
+#include "module.h"
 #include "prefetcher.h"
 
 /*
@@ -262,6 +262,11 @@ static char *err_mem_connect =
 	"\tAn external network is used that does not provide connectivity between\n"
 	"\ta memory module and an associated low/high module. Please add the\n"
 	"\tnecessary links in the network configuration file.\n";
+
+static char *err_mem_disjoint =
+	"\tIn current versions of Multi2Sim, it is not allowed having a memory\n"
+	"\tmodule shared for different architectures. Please make sure that\n"
+	"\tthe sets of modules accessible by different architectures are disjoint.\n";
 
 
 static void mem_config_default(struct config_t *config)
@@ -1193,113 +1198,53 @@ static void mem_config_check_routes(void)
 }
 
 
-/* Set a color for a module and all its lower-level modules */
-static void mem_config_set_mod_color(struct mod_t *mod, int color)
+/* Recursive test-and-set of module architecture. If module 'mod' or any of its lower-level
+ * modules is set to an architecture other than 'arch', return this other architecture.
+ * Otherwise, set the architecture of 'mod' and all its lower-level modules to 'arch', and
+ * return 'arch'. */
+static struct arch_t *mem_config_set_mod_arch(struct mod_t *mod, struct arch_t *arch)
 {
 	struct mod_t *low_mod;
-
-	/* Already set */
-	if (mod->color == color)
-		return;
-
-	/* Set color */
-	mod->color = color;
-	for (linked_list_head(mod->low_mod_list); !linked_list_is_end(mod->low_mod_list);
-		linked_list_next(mod->low_mod_list))
-	{
-		low_mod = linked_list_get(mod->low_mod_list);
-		mem_config_set_mod_color(low_mod, color);
-	}
-}
-
-
-/* Check if a module or any of its lower-level modules has a color */
-static int mem_config_check_mod_color(struct mod_t *mod, int color)
-{
-	struct mod_t *low_mod;
+	struct arch_t *low_mod_arch;
 
 	/* This module has the color */
-	if (mod->color == color)
-		return 1;
+	if (mod->arch)
+		return mod->arch;
 
 	/* Check lower-level modules */
-	for (linked_list_head(mod->low_mod_list); !linked_list_is_end(mod->low_mod_list);
-		linked_list_next(mod->low_mod_list))
+	LINKED_LIST_FOR_EACH(mod->low_mod_list)
 	{
 		low_mod = linked_list_get(mod->low_mod_list);
-		if (mem_config_check_mod_color(low_mod, color))
-			return 1;
+		low_mod_arch = mem_config_set_mod_arch(low_mod, arch);
+		if (low_mod_arch != arch)
+			return low_mod_arch;
 	}
 
-	/* Not found */
-	return 0;
+	/* Architecture was not set. Set it and return it. */
+	mod->arch = arch;
+	return arch;
 }
 
 
 static void mem_config_check_disjoint(void)
 {
-	int compute_unit_id;
-	int core;
-	int thread;
+	struct arch_t *arch;
+	struct arch_t *mod_arch;
+	struct mod_t *mod;
 
-	/* No need if no CPU simulation */
-	if (x86_emu_sim_kind == arch_sim_kind_functional)
-		return;
-	
-	/* No need if no GPU simulation */
-	switch (x86_emu->gpu_kind)
+	int i;
+
+	LIST_FOR_EACH(arch_list, i)
 	{
-	case x86_emu_gpu_southern_islands:
-
-		if (si_emu_sim_kind == arch_sim_kind_functional) 
-			return;
-		break;
-	
-	case x86_emu_gpu_evergreen:
-	
-		if (evg_emu_sim_kind == arch_sim_kind_functional)
-			return;
-		break;
-	
-	default:
-		panic("%s: invalid GPU emulator", __FUNCTION__);
-	}
-
-	/* Color CPU modules */
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
-	{
-		mem_config_set_mod_color(X86_THREAD.data_mod, 1);
-		mem_config_set_mod_color(X86_THREAD.inst_mod, 1);
-	}
-
-	/* Check color of GPU modules */
-	switch (x86_emu->gpu_kind)
-	{
-
-	case x86_emu_gpu_southern_islands:
-
-		SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+		arch = list_get(arch_list, i);
+		LINKED_LIST_FOR_EACH(arch->mem_entry_mod_list)
 		{
-			if (mem_config_check_mod_color(
-				si_gpu->compute_units[compute_unit_id]->global_memory, 1))
-				fatal("%s: non-disjoint CPU/GPU memory hierarchies",
-					mem_config_file_name);
+			mod = linked_list_get(arch->mem_entry_mod_list);
+			mod_arch = mem_config_set_mod_arch(mod, arch);
+			if (mod_arch != arch)
+				fatal("%s: architectures '%s' and '%s' share memory modules.\n%s",
+					mem_config_file_name, arch->name, mod_arch->name, err_mem_disjoint);
 		}
-		break;
-	
-	case x86_emu_gpu_evergreen:
-
-		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-		{
-			if (mem_config_check_mod_color(
-				evg_gpu->compute_units[compute_unit_id]->global_memory, 1))
-				fatal("%s: non-disjoint CPU/GPU memory hierarchies",
-					mem_config_file_name);
-		}
-		break;
-	
-	default:
-		panic("%s: invalid GPU emulation", __FUNCTION__);
 	}
 }
 
@@ -1367,49 +1312,21 @@ static void mem_config_set_mod_level(struct mod_t *mod, int level)
 
 static void mem_config_calculate_mod_levels(void)
 {
-	int compute_unit_id;
-	int core;
-	int thread;
+	struct mod_t *mod;
+	struct arch_t *arch;
+	
 	int i;
 
-	struct mod_t *mod;
-
-	/* Color CPU modules */
-	if (x86_emu_sim_kind == arch_sim_kind_detailed)
+	/* Start recursive level assignment with L1 modules (entries to memory)
+	 * for all architectures. */
+	LIST_FOR_EACH(arch_list, i)
 	{
-		X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+		arch = list_get(arch_list, i);
+		LINKED_LIST_FOR_EACH(arch->mem_entry_mod_list)
 		{
-			mem_config_set_mod_level(X86_THREAD.data_mod, 1);
-			mem_config_set_mod_level(X86_THREAD.inst_mod, 1);
+			mod = linked_list_get(arch->mem_entry_mod_list);
+			mem_config_set_mod_level(mod, 1);
 		}
-	}
-
-	/* Check color of GPU modules */
-	switch (x86_emu->gpu_kind)
-	{
-	
-	case x86_emu_gpu_southern_islands:
-
-		if (si_emu_sim_kind == arch_sim_kind_detailed)
-		{
-			SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-				mem_config_set_mod_level(
-					si_gpu->compute_units[compute_unit_id]->global_memory, 1);
-		}
-		break;
-	
-	case x86_emu_gpu_evergreen:
-
-		if (evg_emu_sim_kind == arch_sim_kind_detailed)
-		{
-			EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-				mem_config_set_mod_level(
-					evg_gpu->compute_units[compute_unit_id]->global_memory, 1);
-		}
-		break;
-	
-	default:
-		panic("%s: invalid GPU emulation", __FUNCTION__);
 	}
 
 	/* Debug */

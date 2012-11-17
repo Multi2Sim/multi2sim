@@ -186,9 +186,10 @@ struct mod_t
 		int bucket_list_max;
 	} access_hash_table[MOD_ACCESS_HASH_TABLE_SIZE];
 
-	/* For coloring algorithm used to check collisions between CPU and GPU
-	 * memory hierarchies. Remove when fused. */
-	int color;
+	/* Architecture accessing this module. For versions of Multi2Sim where it is
+	 * allowed to have multiple architectures sharing the same subset of the
+	 * memory hierarchy, the field is used to check this restriction. */
+	struct arch_t *arch;
 
 	/* Statistics */
 	long long accesses;
