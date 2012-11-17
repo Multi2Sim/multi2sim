@@ -100,7 +100,7 @@ static void get_item_from_section_var(char *section, char *var, char *item)
 	char section_trim[MAX_STRING_SIZE];
 
 	assert(section && *section);
-	str_trim(section_trim, sizeof section_trim, section);
+	str_single_spaces(section_trim, sizeof section_trim, section);
 	if (var && *var)
 	{
 		str_trim(var_trim, sizeof var_trim, var);
@@ -154,7 +154,7 @@ static int config_insert_section(struct config_t *config, char *section)
 	char section_trim[MAX_STRING_SIZE];
 	int err;
 
-	str_trim(section_trim, sizeof section_trim, section);
+	str_single_spaces(section_trim, sizeof section_trim, section);
 	err = !hash_table_insert(config->items, section, (void *) 1);
 
 	return err;
@@ -290,7 +290,7 @@ void config_load(struct config_t *config)
 			/* Get section name */
 			line_trim[0] = ' ';
 			line_trim[strlen(line_trim) - 1] = ' ';
-			str_trim(section, sizeof section, line_trim);
+			str_single_spaces(section, sizeof section, line_trim);
 
 			/* Insert section */
 			err = config_insert_section(config, section);
@@ -378,7 +378,7 @@ int config_section_exists(struct config_t *config, char *section)
 {
 	char section_trim[MAX_STRING_SIZE];
 
-	str_trim(section_trim, sizeof section_trim, section);
+	str_single_spaces(section_trim, sizeof section_trim, section);
 	return hash_table_get(config->items, section_trim) != NULL;
 }
 

@@ -71,7 +71,7 @@ int evg_emu_wavefront_size = 64;
 void evg_emu_init(void)
 {
 	/* Register architecture */
-	evg_emu_arch = arch_list_register("Evergreen");
+	evg_emu_arch = arch_list_register("Evergreen", "evg");
 	evg_emu_arch->sim_kind = evg_emu_sim_kind;
 
 	/* Open report file */

@@ -37,13 +37,14 @@ struct str_map_t arch_sim_kind_map =
 };
 
 
-struct arch_t *arch_create(char *name)
+struct arch_t *arch_create(char *name, char *prefix)
 {
 	struct arch_t *arch;
 
 	/* Initialize */
 	arch = xcalloc(1, sizeof(struct arch_t));
 	arch->name = xstrdup(name);
+	arch->prefix = xstrdup(prefix);
 
 	/* Return */
 	return arch;
@@ -53,6 +54,7 @@ struct arch_t *arch_create(char *name)
 void arch_free(struct arch_t *arch)
 {
 	free(arch->name);
+	free(arch->prefix);
 	free(arch);
 }
 

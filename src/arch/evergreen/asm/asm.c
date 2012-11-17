@@ -1645,7 +1645,7 @@ void evg_inst_dump_debug(struct evg_inst_t *inst, int count, int loop_idx, FILE 
 	char buf_no_spc[MAX_LONG_STRING_SIZE];
 
 	evg_inst_dump_buf(inst, -1, 0, buf, sizeof buf);
-	str_single_spaces(buf_no_spc, buf, sizeof buf_no_spc);
+	str_single_spaces(buf_no_spc, sizeof buf_no_spc, buf);
 	if (count >= 0)
 		fprintf(f, "cnt=%d ", count);
 	if (loop_idx >= 0)
@@ -1698,7 +1698,7 @@ void evg_alu_group_dump_buf(struct evg_alu_group_t *alu_group, char *buf, int si
 		/* Get instruction dump */
 		inst = &alu_group->inst[i];
 		evg_inst_dump_buf(inst, -1, 0, str, sizeof str);
-		str_single_spaces(str_trimmed, str, sizeof str_trimmed);
+		str_single_spaces(str_trimmed, sizeof str_trimmed, str);
 
 		/* Copy to output buffer */
 		str_printf(&buf, &size, "%s%s=\"%s\"", space,
@@ -1730,7 +1730,7 @@ void evg_alu_group_dump_debug(struct evg_alu_group_t *alu_group, int count, int 
 	{
 		inst = &alu_group->inst[i];
 		evg_inst_dump_buf(inst, -1, 0, buf, sizeof buf);
-		str_single_spaces(no_spc_buf, buf, sizeof no_spc_buf);
+		str_single_spaces(no_spc_buf, sizeof no_spc_buf, buf);
 		fprintf(f, "%sinst.%s=\"%s\"", spc, str_map_value(&evg_alu_map, inst->alu), no_spc_buf);
 		spc = " ";
 	}

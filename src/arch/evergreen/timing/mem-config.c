@@ -17,6 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/util/config.h>
+#include <lib/util/debug.h>
+#include <mem-system/mem-system.h>
+
+#include "compute-unit.h"
+#include "gpu.h"
 #include "mem-config.h"
 
 
@@ -27,9 +33,84 @@ void evg_mem_config_default(struct config_t *config)
 
 void evg_mem_config_parse_entry(struct config_t *config, char *section)
 {
+	char *file_name;
+	char *module_name;
+
+	int compute_unit_id;
+
+	struct evg_compute_unit_t *compute_unit;
+
+	/* Get configuration file name */
+	file_name = config_get_file_name(config);
+
+	/* Allow these sections in case we quit before reading them. */
+	config_var_allow(config, section, "Module");
+
+	/* Read compute unit */
+	compute_unit_id = config_read_int(config, section, "ComputeUnit", -1);
+	if (compute_unit_id < 0)
+		fatal("%s: section [%s]: invalid or missing value for 'ComputeUnit'",
+			file_name, section);
+
+	/* Check compute unit boundaries */
+	if (compute_unit_id >= evg_gpu_num_compute_units)
+	{
+		warning("%s: section [%s] ignored, referring to Evergreen compute unit %d.\n"
+			"\tThis section refers to a compute unit that does not currently exist.\n"
+			"\tPlease review your Evergreen configuration file if this is not the\n"
+			"\tdesired behavior.\n",
+			file_name, section, compute_unit_id);
+		return;
+	}
+
+	/* Check that entry has not been assigned before */
+	compute_unit = evg_gpu->compute_units[compute_unit_id];
+	if (compute_unit->global_memory)
+		fatal("%s: section [%s]: entry from compute unit %d already assigned.\n"
+			"\tA different [Entry <name>] section in the memory configuration file has already\n"
+			"\tassigned an entry for this particular compute unit. Please review your\n"
+			"\tconfiguration file to avoid duplicates.\n",
+			file_name, section, compute_unit_id);
+
+	/* Read module */
+	module_name = config_read_string(config, section, "Module", NULL);
+	if (!module_name)
+		fatal("%s: section [%s]: variable 'Module' missing.\n"
+			"\tPlease run use '--help-mem-config' for more information on the\n"
+			"\tconfiguration file format, or consult the Multi2Sim Guide.\n",
+			file_name, section);
+	
+	/* Assign module */
+	compute_unit->global_memory = mem_system_get_mod(module_name);
+	if (!compute_unit->global_memory)
+		fatal("%s: section [%s]: '%s' is not a valid module name.\n"
+			"\tThe given module name must match a module declared in a section\n"
+			"\t[Module <name>] in the memory configuration file.\n",
+			file_name, section, module_name);
+	
+	/* Debug */
+	mem_debug("\tEvergreen compute unit %d\n", compute_unit_id);
+	mem_debug("\t\tEntry -> %s\n", compute_unit->global_memory->name);
+	mem_debug("\n");
 }
 
 
 void evg_mem_config_check(struct config_t *config)
 {
+	struct evg_compute_unit_t *compute_unit;
+	int compute_unit_id;
+	char *file_name;
+
+	/* Check that all compute units have an entry to the memory hierarchy. */
+	file_name = config_get_file_name(config);
+	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		compute_unit = evg_gpu->compute_units[compute_unit_id];
+		if (!compute_unit->global_memory)
+			fatal("%s: Evergreen compute unit %d has no entry to memory.\n"
+				"\tPlease add a new [Entry <name>] section in your memory configuration\n"
+				"\tfile to associate this compute unit with a memory module.\n",
+				file_name, compute_unit_id);
+	}
 }
+
