@@ -35,8 +35,9 @@ void arch_list_done(void);
 
 void arch_list_dump(FILE *f);
 
-struct arch_t *arch_list_register(char *arch_name);
+struct arch_t *arch_list_register(char *arch_name, char *arch_prefix);
 struct arch_t *arch_list_get(char *arch_name);
+void arch_list_get_names(char *str, int size);
 
 
 #endif

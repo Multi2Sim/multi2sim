@@ -61,7 +61,7 @@ int frm_emu_warp_size = 32;
 void frm_emu_init(void)
 {
 	/* Register architecture */
-	frm_emu_arch = arch_list_register("Fermi");
+	frm_emu_arch = arch_list_register("Fermi", "frm");
 	frm_emu_arch->sim_kind = frm_emu_sim_kind;
 
         /* Allocate */

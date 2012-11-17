@@ -77,7 +77,7 @@ void arm_emu_init(void)
 	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
 
 	/* Register architecture */
-	arm_emu_arch = arch_list_register("ARM");
+	arm_emu_arch = arch_list_register("ARM", "arm");
 	arm_emu_arch->sim_kind = arm_emu_sim_kind;
 
 	/* Initialization */

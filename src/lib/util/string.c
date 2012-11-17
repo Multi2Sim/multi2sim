@@ -233,39 +233,52 @@ char *str_error(int err)
 }
 
 
-void str_single_spaces(char *dest, char *src, int size)
+/* Remove all duplicated spaces, tabs or new lines from the source string, and
+ * create a new string with just single spaces, and no spaces on its sides.
+ * As long as 'size' is greater than 0, the created string is guaranteed to be
+ * null-terminated. */
+void str_single_spaces(char *dest, int size, char *src)
 {
-	int spc = 0;
+	int prev_space;
+	int curr_space;
+
+	/* Nothing to do if invalid 'size' is given */
+	if (size < 1)
+		return;
 
 	/* Remove initial spaces */
-	while (*src == ' ' || *src == '\n')
+	while (isspace(*src))
 		src++;
 	
 	/* Remove duplicated and final spaces */
-	while (*src)
+	prev_space = 0;
+	while (*src && size > 1)
 	{
-		if (*src != ' ' && *src != '\n')
+		curr_space = isspace(*src);
+		if (!curr_space)
 		{
-			if (spc && size)
+			if (prev_space && size > 1)
 			{
-				*dest++ = ' ';
+				*dest = ' ';
 				size--;
+				dest++;
 			}
-			if (size)
+			if (size > 1)
 			{
-				*dest++ = *src;
+				*dest = *src;
 				size--;
+				dest++;
 			}
 		}
 
 		/* Next character */
-		spc = *src == ' ' || *src == '\n';
+		prev_space = curr_space;
 		src++;
 	}
 
 	/* Null-terminate */
-	if (size)
-		*dest = '\0';
+	assert(size > 0);
+	*dest = '\0';
 }
 
 /* Return 1 if 'suffix' is a suffix of 'str' */

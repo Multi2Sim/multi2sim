@@ -33,8 +33,8 @@ extern int evg_stack_debug_category;
 struct evg_work_item_uop_t
 {
 	/* For global memory accesses */
-	uint32_t global_mem_access_addr;
-	uint32_t global_mem_access_size;
+	unsigned int global_mem_access_addr;
+	unsigned int global_mem_access_size;
 
 	/* Flags */
 	unsigned int active : 1;  /* Active after instruction emulation */
@@ -42,8 +42,8 @@ struct evg_work_item_uop_t
 	/* Local memory access */
 	int local_mem_access_count;
 	enum mod_access_kind_t local_mem_access_kind[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	uint32_t local_mem_access_addr[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	uint32_t local_mem_access_size[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	unsigned int local_mem_access_addr[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	unsigned int local_mem_access_size[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
 };
 
 #define EVG_UOP_MAX_IDEP      (3 * 5)

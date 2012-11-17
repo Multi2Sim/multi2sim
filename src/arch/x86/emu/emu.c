@@ -85,7 +85,7 @@ void x86_emu_init(void)
 		fatal("%s: host machine is not little endian", __FUNCTION__);
 
 	/* Register architecture */
-	x86_emu_arch = arch_list_register("x86");
+	x86_emu_arch = arch_list_register("x86", "x86");
 	x86_emu_arch->sim_kind = x86_emu_sim_kind;
 
 	/* Host types */

@@ -44,6 +44,10 @@ struct arch_t
 	/* Name of architecture (x86, ARM, etc.) */
 	char *name;
 
+	/* Prefix used in command-line options and in code variables and functions.
+	 * E.g., 'evg' for Evergreen, or 'si' for Southern Islands. */
+	char *prefix;
+
 	/* Simulation kind - must be assigned externally */
 	enum arch_sim_kind_t sim_kind;
 
@@ -54,7 +58,7 @@ struct arch_t
 };
 
 
-struct arch_t *arch_create(char *name);
+struct arch_t *arch_create(char *name, char *prefix);
 void arch_free(struct arch_t *arch);
 void arch_dump(struct arch_t *arch, FILE *f);
 
