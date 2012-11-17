@@ -26,6 +26,7 @@
 
 #include "bpred.h"
 #include "cpu.h"
+#include "uop.h"
 
 
 #define BTB_ENTRY(SET, WAY) (&bpred->btb[(SET) * x86_bpred_btb_assoc + (WAY)])

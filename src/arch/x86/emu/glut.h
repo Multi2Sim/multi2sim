@@ -20,7 +20,8 @@
 #ifndef ARCH_X86_EMU_GLUT_H
 #define ARCH_X86_EMU_GLUT_H
 
-#include "context.h"
+/* Forward type declaration */
+struct x86_ctx_t;
 
 
 /*

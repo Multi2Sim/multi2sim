@@ -32,11 +32,13 @@
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
+#include "context.h"
 #include "emu.h"
 #include "file-desc.h"
 #include "glut.h"
 #include "isa.h"
 #include "opengl.h"
+#include "regs.h"
 #include "signal.h"
 #include "syscall.h"
 

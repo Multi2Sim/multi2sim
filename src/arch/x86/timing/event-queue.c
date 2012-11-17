@@ -23,6 +23,7 @@
 
 #include "cpu.h"
 #include "event-queue.h"
+#include "uop.h"
 
 
 void x86_event_queue_init()

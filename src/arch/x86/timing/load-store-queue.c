@@ -23,6 +23,7 @@
 
 #include "cpu.h"
 #include "load-store-queue.h"
+#include "uop.h"
 
 
 char *x86_lsq_kind_map[] = { "Shared", "Private" };

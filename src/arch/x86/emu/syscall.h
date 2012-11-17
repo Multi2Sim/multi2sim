@@ -22,7 +22,8 @@
 
 #include <stdio.h>
 
-#include "context.h"
+/* Forward type declarations */
+struct x86_ctx_t;
 
 
 #define x86_sys_debug(...) debug(x86_sys_debug_category, __VA_ARGS__)

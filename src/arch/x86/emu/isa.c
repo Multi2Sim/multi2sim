@@ -25,10 +25,12 @@
 #include <mem-system/memory.h>
 #include <mem-system/spec-mem.h>
 
+#include "context.h"
 #include "emu.h"
 #include "isa.h"
 #include "loader.h"
 #include "machine.h"
+#include "regs.h"
 #include "uinst.h"
 
 

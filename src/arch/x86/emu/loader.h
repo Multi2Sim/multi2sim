@@ -20,7 +20,8 @@
 #ifndef ARCH_X86_EMU_LOADER_H
 #define ARCH_X86_EMU_LOADER_H
 
-#include <lib/util/config.h>
+/* Forward type declarations */
+struct config_t;
 
 
 struct x86_loader_t

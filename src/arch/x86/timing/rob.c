@@ -24,6 +24,7 @@
 
 #include "cpu.h"
 #include "rob.h"
+#include "uop.h"
 
 
 
