@@ -17,8 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
+#include <arch/common/arch.h>
+#include <arch/evergreen/emu/emu.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
+#include <lib/util/string.h>
 #include <mem-system/mem-system.h>
 
 #include "compute-unit.h"
@@ -28,6 +33,88 @@
 
 void evg_mem_config_default(struct config_t *config)
 {
+	char section[MAX_STRING_SIZE];
+	char str[MAX_STRING_SIZE];
+
+	int compute_unit_id;
+	int l2_id;
+	int mm_id;
+
+	/* Only detailed simulation */
+	assert(evg_emu_sim_kind == arch_sim_kind_detailed);
+
+	/* Cache geometry for L1 */
+	snprintf(section, sizeof section, "CacheGeometry evg-geo-l1");
+	config_write_int(config, section, "Sets", 32);
+	config_write_int(config, section, "Assoc", 4);
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 1);
+	config_write_string(config, section, "Policy", "LRU");
+
+	/* Cache geometry for L2 */
+	snprintf(section, sizeof section, "CacheGeometry evg-geo-l2");
+	config_write_int(config, section, "Sets", 256);
+	config_write_int(config, section, "Assoc", 8);
+	config_write_int(config, section, "BlockSize", 256);
+	config_write_int(config, section, "Latency", 10);
+	config_write_string(config, section, "Policy", "LRU");
+
+	/* L1 caches and entries */
+	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		/* L1 cache */
+		snprintf(section, sizeof section, "Module evg-l1-%d", compute_unit_id);
+		config_write_string(config, section, "Type", "Cache");
+		config_write_string(config, section, "Geometry", "evg-geo-l1");
+		config_write_string(config, section, "LowNetwork", "evg-net-l1-l2");
+		config_write_string(config, section, "LowModules", "evg-l2-0 evg-l2-1 evg-l2-2 evg-l2-3");
+
+		/* Entry */
+		snprintf(section, sizeof section, "Entry evg-cu-%d", compute_unit_id);
+		snprintf(str, sizeof str, "evg-l1-%d", compute_unit_id);
+		config_write_string(config, section, "Arch", "Evergreen");
+		config_write_int(config, section, "ComputeUnit", compute_unit_id);
+		config_write_string(config, section, "Module", str);
+	}
+
+	/* L2 caches */
+	for (l2_id = 0; l2_id < 4; l2_id++) 
+	{
+		snprintf(section, sizeof section, "Module evg-l2-%d", l2_id);
+		config_write_string(config, section, "Type", "Cache");
+		config_write_string(config, section, "Geometry", "evg-geo-l2");
+		config_write_string(config, section, "HighNetwork", "evg-net-l1-l2");
+		config_write_string(config, section, "LowNetwork", "evg-net-l2-gm");
+		config_write_string(config, section, "LowModules", "evg-gm-0 evg-gm-1 evg-gm-2 evg-gm-3");
+
+		snprintf(str, sizeof str, "ADDR DIV 256 MOD 4 EQ %d", l2_id);
+		config_write_string(config, section, "AddressRange", str);
+	}
+
+	/* Global memory */
+	for (mm_id = 0; mm_id < 4; mm_id++) 
+	{
+		snprintf(section, sizeof section, "Module evg-gm-%d", mm_id);
+		config_write_string(config, section, "Type", "MainMemory");
+		config_write_string(config, section, "HighNetwork", "evg-net-l2-gm");
+		config_write_int(config, section, "BlockSize", 256);
+		config_write_int(config, section, "Latency", 100);
+
+		snprintf(str, sizeof str, "ADDR DIV 256 MOD 4 EQ %d", mm_id);
+		config_write_string(config, section, "AddressRange", str);
+	}
+
+	/* Network connecting L1 caches and L2 */
+	snprintf(section, sizeof section, "Network evg-net-l1-l2");
+	config_write_int(config, section, "DefaultInputBufferSize", 528);
+	config_write_int(config, section, "DefaultOutputBufferSize", 528);
+	config_write_int(config, section, "DefaultBandwidth", 264);
+
+	/* Network connecting L2 cache and global memory */
+	snprintf(section, sizeof section, "Network evg-net-l2-gm");
+	config_write_int(config, section, "DefaultInputBufferSize", 528);
+	config_write_int(config, section, "DefaultOutputBufferSize", 528);
+	config_write_int(config, section, "DefaultBandwidth", 264);
 }
 
 
