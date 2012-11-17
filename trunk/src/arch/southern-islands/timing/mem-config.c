@@ -172,6 +172,9 @@ void si_mem_config_parse_entry(struct config_t *config, char *section)
 			"\t[Module <name>] in the memory configuration file.\n",
 			file_name, section, module_name);
 	
+	/* Add modules to list of memory entries */
+	linked_list_add(si_emu_arch->mem_entry_mod_list, compute_unit->global_memory);
+	
 	/* Debug */
 	mem_debug("\tSouthern Islands compute unit %d\n", compute_unit_id);
 	mem_debug("\t\tEntry -> %s\n", compute_unit->global_memory->name);

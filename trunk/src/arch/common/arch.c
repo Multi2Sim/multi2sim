@@ -22,6 +22,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
 #include <lib/util/string.h>
 
 #include "arch.h"
@@ -45,6 +46,7 @@ struct arch_t *arch_create(char *name, char *prefix)
 	arch = xcalloc(1, sizeof(struct arch_t));
 	arch->name = xstrdup(name);
 	arch->prefix = xstrdup(prefix);
+	arch->mem_entry_mod_list = linked_list_create();
 
 	/* Return */
 	return arch;
@@ -55,6 +57,7 @@ void arch_free(struct arch_t *arch)
 {
 	free(arch->name);
 	free(arch->prefix);
+	linked_list_free(arch->mem_entry_mod_list);
 	free(arch);
 }
 

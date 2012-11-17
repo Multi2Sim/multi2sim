@@ -55,6 +55,10 @@ struct arch_t
 	arch_mem_config_default_func_t mem_config_default_func;
 	arch_mem_config_parse_entry_func_t mem_config_parse_entry_func;
 	arch_mem_config_check_func_t mem_config_check_func;
+
+	/* List of entry modules to the memory hierarchy. Each element of this list
+	 * is of type 'mod_t'. */
+	struct linked_list_t *mem_entry_mod_list;
 };
 
 
