@@ -75,7 +75,7 @@ void si_mem_config_parse_entry(struct config_t *config, char *section)
 	module_name = config_read_string(config, section, "Module", NULL);
 	if (!module_name)
 		fatal("%s: section [%s]: variable 'Module' missing.\n"
-			"\tPlease run use '--help-mem-config' for more information on the\n"
+			"\tPlease run use '--mem-help' for more information on the\n"
 			"\tconfiguration file format, or consult the Multi2Sim Guide.\n",
 			file_name, section);
 	
