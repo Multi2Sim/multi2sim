@@ -18,9 +18,7 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
-#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
@@ -34,7 +32,6 @@
 #include "emu.h"
 #include "isa.h"
 #include "machine.h"
-#include "wavefront.h"
 #include "work-item.h"
 #include "work-group.h"
 
@@ -67,7 +64,6 @@ void evg_isa_init()
 	evg_isa_inst_func = xcalloc(EVG_INST_COUNT, sizeof(evg_isa_inst_func_t));
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	evg_isa_inst_func[EVG_INST_##_name] = evg_isa_##_name##_impl;
-#include <arch/evergreen/asm/asm.dat>
 #undef DEFINST
 
 	/* Repository of deferred tasks */

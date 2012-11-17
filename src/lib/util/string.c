@@ -21,7 +21,6 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdarg.h>
-#include <string.h>
 
 #include <lib/mhandle/mhandle.h>
 

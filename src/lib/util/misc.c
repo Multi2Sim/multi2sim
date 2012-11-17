@@ -17,12 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
-#include <string.h>
-#include <time.h>
 #include <sys/utsname.h>
 
 #include <lib/mhandle/mhandle.h>

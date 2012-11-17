@@ -17,11 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
 #include <arch/common/arch.h>
-#include <lib/util/config.h>
-#include <lib/util/debug.h>
 #include <mem-system/mem-system.h>
 
 #include "mem-config.h"

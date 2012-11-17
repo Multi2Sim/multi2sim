@@ -21,19 +21,10 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
-#include <sched.h>
-#include <signal.h>
-#include <syscall.h>
-#include <time.h>
 #include <unistd.h>
-#include <utime.h>
-#include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/resource.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/times.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -42,7 +33,6 @@
 #include <mem-system/memory.h>
 
 #include "context.h"
-#include "emu.h"
 #include "file.h"
 #include "isa.h"
 #include "regs.h"
@@ -76,7 +66,6 @@ static char *err_arm_sys_note =
 static char *arm_sys_call_name[] =
 {
 #define DEFSYSCALL(name, code) #name,
-#include "syscall.dat"
 #undef DEFSYSCALL
 	""
 };

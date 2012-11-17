@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -26,9 +25,7 @@
 
 #include "mem-system.h"
 #include "prefetcher.h"
-#include "module.h"
 #include "cache.h"
-#include "nmoesi-protocol.h"
 #include "mod-stack.h"
 
 

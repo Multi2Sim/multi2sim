@@ -29,7 +29,6 @@
 #include "opengl.h"
 #include "opengl-buffers.h"
 #include "opengl-context.h"
-#include "opengl-light.h"
 #include "opengl-matrix.h"
 #include "opengl-matrix-stack.h"
 #include "opengl-rast-line.h"
@@ -64,7 +63,6 @@ char *x86_opengl_call_name[x86_opengl_call_count + 1] =
 {
 	NULL,
 #define X86_OPENGL_DEFINE_CALL(name, code) #name,
-#include "opengl.dat"
 #undef X86_OPENGL_DEFINE_CALL
 	NULL
 };

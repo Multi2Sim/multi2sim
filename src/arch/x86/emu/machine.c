@@ -23,7 +23,6 @@
 #include "emu.h"
 #include "isa.h"
 #include "machine.h"
-#include "regs.h"
 #include "syscall.h"
 #include "uinst.h"
 

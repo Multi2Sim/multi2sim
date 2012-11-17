@@ -16,7 +16,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <string.h>
 
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
@@ -32,7 +31,6 @@
 #include "config.h"
 #include "local-mem-protocol.h"
 #include "mem-system.h"
-#include "mmu.h"
 #include "module.h"
 #include "nmoesi-protocol.h"
 

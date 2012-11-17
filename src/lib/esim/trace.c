@@ -19,14 +19,10 @@
 
 #include <assert.h>
 #include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <zlib.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/heap.h>
 #include <lib/util/list.h>
 
 #include "esim.h"

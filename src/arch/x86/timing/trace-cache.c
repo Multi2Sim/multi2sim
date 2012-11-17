@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/x86/emu/context.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
@@ -28,7 +29,6 @@
 
 #include "cpu.h"
 #include "trace-cache.h"
-#include "uop.h"
 
 
 /* Debug */

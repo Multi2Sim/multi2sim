@@ -18,10 +18,7 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>

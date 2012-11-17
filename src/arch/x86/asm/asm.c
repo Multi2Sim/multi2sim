@@ -17,11 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <string.h>
 #include <assert.h>
-#include <stdlib.h>
 
-#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/list.h>
@@ -90,7 +87,6 @@ static struct x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] =
 
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) \
 , { op_##name, op1, op2, op3, modrm, imm, pfx, #name, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-#include "asm.dat"
 #undef DEFINST
 
 };

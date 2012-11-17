@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/esim/trace.h>
 #include <lib/util/misc.h>
@@ -31,7 +32,6 @@
 #include "reg-file.h"
 #include "rob.h"
 #include "trace-cache.h"
-#include "uop.h"
 #include "uop-queue.h"
 
 

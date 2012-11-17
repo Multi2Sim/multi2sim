@@ -29,7 +29,6 @@
 #include "reg-file.h"
 #include "rob.h"
 #include "trace-cache.h"
-#include "uop.h"
 
 
 /* Return the reason why a thread cannot be dispatched. If it can,

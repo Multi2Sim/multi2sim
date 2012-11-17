@@ -20,9 +20,7 @@
 #include <assert.h>
 
 #include <arch/x86/emu/context.h>
-#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
-#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
@@ -71,7 +69,6 @@ char *frm_cuda_call_name[frm_cuda_call_count + 1] =
 {
 	NULL,
 #define FRM_CUDA_DEFINE_CALL(name) #name,
-#include "cuda.dat"
 #undef FRM_CUDA_DEFINE_CALL
 	NULL
 };

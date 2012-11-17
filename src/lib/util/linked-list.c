@@ -18,11 +18,9 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
 
-#include "debug.h"
 #include "linked-list.h"
 
 

@@ -18,7 +18,6 @@
  */
 
 #include <arch/southern-islands/emu/emu.h>
-#include <lib/mhandle/mhandle.h>
 
 
 #define SI_BIN_FILE_NOT_SUPPORTED(__var) \

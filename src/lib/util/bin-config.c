@@ -18,15 +18,11 @@
  */
 
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdint.h>
 #include <zlib.h>
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 
 #include "bin-config.h"

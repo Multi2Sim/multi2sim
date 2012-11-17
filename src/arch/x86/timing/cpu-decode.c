@@ -25,7 +25,6 @@
 
 #include "cpu.h"
 #include "fetch-queue.h"
-#include "uop.h"
 #include "uop-queue.h"
 
 

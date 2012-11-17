@@ -21,8 +21,6 @@
 #include <arch/common/arch-list.h>
 #include <arch/evergreen/emu/opengl-bin-file.h>
 #include <arch/evergreen/timing/gpu.h>
-#include <arch/x86/emu/context.h>
-#include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -40,7 +38,6 @@
 #include "opencl-device.h"
 #include "opencl-platform.h"
 #include "opencl-repo.h"
-#include "wavefront.h"
 #include "work-group.h"
 
 

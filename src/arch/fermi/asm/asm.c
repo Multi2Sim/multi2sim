@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
 
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
@@ -57,7 +56,6 @@ void frm_disasm_init()
 	info->fmt = FRM_FMT_##_fmt; \
 	info->opcode = _opcode; \
 	info->size = 64;
-#include "asm.dat"
 #undef DEFINST
 
 	for (i = 1; i < FRM_INST_COUNT; ++i)

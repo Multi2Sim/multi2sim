@@ -17,10 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
 
 #include <arch/fermi/asm/asm.h>
-#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
@@ -48,7 +46,6 @@ void frm_isa_init()
 	frm_isa_inst_func = xcalloc(FRM_INST_COUNT, sizeof(frm_isa_inst_func_t));
 #define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
 	frm_isa_inst_func[FRM_INST_##_name] = frm_isa_##_name##_impl;
-#include <arch/fermi/asm/asm.dat>
 #undef DEFINST
 }
 

@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
@@ -27,7 +26,6 @@
 #include <lib/util/linked-list.h>
 
 #include "buffer.h"
-#include "message.h"
 #include "net-system.h"
 #include "network.h"
 #include "node.h"

@@ -30,7 +30,6 @@
 #include "reg-file.h"
 #include "rob.h"
 #include "trace-cache.h"
-#include "uop.h"
 
 
 static char *err_x86_cpu_commit_stall =

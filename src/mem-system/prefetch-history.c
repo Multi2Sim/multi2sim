@@ -18,10 +18,8 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 
 #include "prefetch-history.h"
 #include "module.h"
