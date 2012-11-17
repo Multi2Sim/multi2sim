@@ -208,8 +208,8 @@ char *mem_config_help =
 	"connection between a CPU core/thread or a GPU compute unit with a module in the\n"
 	"memory system.\n"
 	"\n"
-	"  Type = {CPU | GPU}\n"
-	"      Type of processing node that this entry refers to.\n"
+	"  Arch = { x86 | Evergreen | SouthernIslands | ... }\n"
+	"      CPU or GPU architecture affected by this entry.\n"
 	"  Core = <core>\n"
 	"      CPU core identifier. This is a value between 0 and the number of cores\n"
 	"      minus 1, as defined in the CPU configuration file. This variable should be\n"
@@ -222,16 +222,14 @@ char *mem_config_help =
 	"      units minus 1, as defined in the GPU configuration file. This variable\n"
 	"      should be omitted for CPU entries.\n"
 	"  DataModule = <mod>\n"
-	"      Module in the memory system that will serve as an entry to a CPU\n"
-	"      core/thread when reading/writing program data. The value in <mod>\n"
-	"      corresponds to a module defined in a section [Module <mod>]. Omitted for\n"
-	"      GPU entries.\n"
 	"  InstModule = <mod>\n"
-	"      Module serving as an entry to a CPU core/thread when fetching program\n"
-	"      instructions. Omitted for GPU entries.\n"
+	"      In architectures supporting separate data/instruction caches, modules used\n"
+	"      to access memory for each particular purpose.\n"
 	"  Module = <mod>\n"
-	"      Module serving as an entry to a GPU compute unit when reading/writing\n"
-	"      program data in the global memory scope. Omitted for CPU entries.\n"
+	"      Module used to access the memory hierarchy. For architectures supporting\n"
+	"      separate data/instruction caches, this variable can be used instead of\n"
+	"      'DataModule' and 'InstModule' to indicate that data and instruction caches\n"
+	"      are unified.\n"
 	"\n";
 
 
@@ -243,7 +241,7 @@ char *mem_config_help =
 #define MEM_SYSTEM_MAX_LEVELS  10
 
 static char *err_mem_config_note =
-	"\tPlease run 'm2s --help-mem-config' or consult the Multi2Sim Guide for\n"
+	"\tPlease run 'm2s --mem-help' or consult the Multi2Sim Guide for\n"
 	"\ta description of the memory system configuration file format.\n";
 
 static char *err_mem_config_net =
