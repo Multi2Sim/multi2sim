@@ -19,7 +19,6 @@
 
 #include <assert.h>
 #include <gtk/gtk.h>
-#include <string.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>

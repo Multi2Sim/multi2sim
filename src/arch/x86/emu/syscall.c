@@ -20,10 +20,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
-#include <sched.h>
 #include <syscall.h>
-#include <time.h>
-#include <unistd.h>
 #include <utime.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -38,7 +35,6 @@
 #include <arch/fermi/emu/cuda.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
-#include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
@@ -49,7 +45,6 @@
 #include "isa.h"
 #include "loader.h"
 #include "opengl.h"
-#include "regs.h"
 #include "signal.h"
 #include "syscall.h"
 
@@ -82,7 +77,6 @@ static char *err_x86_sys_note =
 static char *x86_sys_call_name[] =
 {
 #define DEFSYSCALL(name, code) #name,
-#include "syscall.dat"
 #undef DEFSYSCALL
 	""
 };

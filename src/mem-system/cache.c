@@ -17,11 +17,9 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 

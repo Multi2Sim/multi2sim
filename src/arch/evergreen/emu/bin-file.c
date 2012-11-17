@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <string.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -26,7 +25,6 @@
 #include <lib/util/string.h>
 
 #include "bin-file.h"
-#include "emu.h"
 
 
 #define EVG_BIN_FILE_NOT_SUPPORTED(__var) \

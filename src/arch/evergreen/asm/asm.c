@@ -71,7 +71,6 @@ void evg_disasm_init()
 	info->opcode = _opcode; \
 	info->flags = _flags; \
 	info->size = (EVG_FMT_##_fmt0 ? 1 : 0) + (EVG_FMT_##_fmt1 ? 1 : 0) + (EVG_FMT_##_fmt2 ? 1 : 0);
-#include "asm.dat"
 #undef DEFINST
 	
 	/* Tables of pointers to 'evg_inst_info' */

@@ -18,7 +18,6 @@
  */
 
 #include <gtk/gtk.h>
-#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>

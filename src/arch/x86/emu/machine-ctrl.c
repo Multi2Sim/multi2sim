@@ -21,7 +21,6 @@
 
 #include "emu.h"
 #include "isa.h"
-#include "regs.h"
 #include "uinst.h"
 
 

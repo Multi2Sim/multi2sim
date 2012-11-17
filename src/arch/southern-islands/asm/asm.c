@@ -18,12 +18,10 @@
  */
 
 #include <assert.h>
-#include <string.h>
 #include <ctype.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/elf-format.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
@@ -179,7 +177,6 @@ void si_disasm_init()
 	info->fmt = SI_FMT_##_fmt; \
 	info->opcode = _opcode; \
 	info->size = _size;
-#include "asm.dat"
 #undef DEFINST
 	
 	/* Tables of pointers to 'si_inst_info' */

@@ -23,6 +23,7 @@
 #include <arch/x86/emu/emu.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
 #include <lib/util/string.h>
 #include <mem-system/mem-system.h>
 #include <mem-system/module.h>
@@ -43,7 +44,7 @@ void x86_mem_config_default(struct config_t *config)
 	assert(x86_emu_sim_kind == arch_sim_kind_detailed);
 
 	/* Cache geometry for L1 */
-	strcpy(section, "CacheGeometry x86-geo-l1");
+	snprintf(section, sizeof section, "CacheGeometry x86-geo-l1");
 	config_write_int(config, section, "Sets", 16);
 	config_write_int(config, section, "Assoc", 2);
 	config_write_int(config, section, "BlockSize", 64);
@@ -51,7 +52,7 @@ void x86_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "Policy", "LRU");
 
 	/* Cache geometry for L2 */
-	strcpy(section, "CacheGeometry x86-geo-l2");
+	snprintf(section, sizeof section, "CacheGeometry x86-geo-l2");
 	config_write_int(config, section, "Sets", 64);
 	config_write_int(config, section, "Assoc", 4);
 	config_write_int(config, section, "BlockSize", 64);

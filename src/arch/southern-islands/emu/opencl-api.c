@@ -17,12 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
@@ -61,7 +58,6 @@ void si_opencl_debug_array(int nelem, int *array)
 /* List of OpenCL function names */
 char *si_opencl_func_name[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) #_name,
-#include "opencl.dat"
 #undef DEF_OPENCL_FUNC
 	""
 };
@@ -70,7 +66,6 @@ char *si_opencl_func_name[] = {
 /* Number of arguments for each OpenCL function */
 int si_opencl_func_argc[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) _argc,
-#include "opencl.dat"
 #undef DEF_OPENCL_FUNC
 	0
 };
@@ -86,7 +81,6 @@ int si_opencl_func_argc[] = {
 typedef int (*si_opencl_func_impl_t)(struct x86_ctx_t *ctx, int *argv);
 si_opencl_func_impl_t si_opencl_func_impl[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) si_opencl_##_name##_impl,
-#include "opencl.dat"
 #undef DEF_OPENCL_FUNC
 	NULL
 };

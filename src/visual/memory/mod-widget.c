@@ -18,14 +18,12 @@
  */
 
 #include <assert.h>
-#include <string.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
-#include <lib/util/string.h>
 #include <visual/common/cycle-bar.h>
 #include <visual/common/list.h>
 #include <visual/common/popup.h>

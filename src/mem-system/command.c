@@ -17,7 +17,6 @@
  */
 
 #include <assert.h>
-#include <string.h>
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>

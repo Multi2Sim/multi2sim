@@ -20,15 +20,12 @@
 #include <assert.h>
 #include <errno.h>
 #include <poll.h>
-#include <pthread.h>
-#include <stdio.h>
 #include <unistd.h>
 
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
 #include <arch/x86/timing/cpu.h>
 #include <lib/esim/esim.h>
-#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
@@ -40,7 +37,6 @@
 #include "glut.h"
 #include "isa.h"
 #include "opengl.h"
-#include "regs.h"
 #include "signal.h"
 #include "syscall.h"
 

@@ -20,7 +20,10 @@
 #ifndef ARCH_X86_EMU_UINST_H
 #define ARCH_X86_EMU_UINST_H
 
-#include "context.h"
+#include <stdio.h>
+
+/* Forward declaration */
+struct x86_ctx_t;
 
 
 /* Micro-instruction dependences.

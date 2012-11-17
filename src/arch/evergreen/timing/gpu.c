@@ -24,17 +24,14 @@
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/opencl-kernel.h>
-#include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
-#include <lib/util/heap.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
-#include <lib/util/repos.h>
 #include <lib/util/timer.h>
 
 #include "calc.h"

@@ -23,7 +23,6 @@
 #include <mem-system/memory.h>
 
 #include "context.h"
-#include "emu.h"
 #include "isa.h"
 #include "machine.h"
 #include "regs.h"
@@ -44,7 +43,6 @@ static arm_isa_inst_func_t arm_isa_inst_func[ARM_INST_COUNT] =
 {
 	NULL /* for op_none */
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) , arm_isa_##_name##_impl
-#include <arch/arm/asm/asm.dat>
 #undef DEFINST
 };
 

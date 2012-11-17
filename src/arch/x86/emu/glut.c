@@ -19,16 +19,12 @@
 
 #include <assert.h>
 #include <GL/glut.h>
-#include <stdlib.h>
-#include <time.h>
 
-#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
-#include "context.h"
 #include "emu.h"
 #include "glut.h"
 #include "glut-frame-buffer.h"
@@ -70,7 +66,6 @@ char *x86_glut_call_name[x86_glut_call_count + 1] =
 {
 	NULL,
 #define X86_GLUT_DEFINE_CALL(name, code) #name,
-#include "glut.dat"
 #undef X86_GLUT_DEFINE_CALL
 	NULL
 };

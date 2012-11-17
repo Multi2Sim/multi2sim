@@ -17,15 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <pthread.h>
 
 #include <arch/evergreen/emu/opencl.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
-#include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
-#include <mem-system/mem-system.h>
 #include <mem-system/memory.h>
 #include <mem-system/mmu.h>
 #include <mem-system/spec-mem.h>
@@ -34,7 +31,6 @@
 #include "file-desc.h"
 #include "isa.h"
 #include "loader.h"
-#include "regs.h"
 #include "signal.h"
 #include "syscall.h"
 

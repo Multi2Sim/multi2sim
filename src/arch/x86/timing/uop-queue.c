@@ -20,7 +20,6 @@
 #include <assert.h>
 
 #include <lib/esim/trace.h>
-#include <lib/mhandle/mhandle.h>
 #include <lib/util/list.h>
 
 #include "cpu.h"

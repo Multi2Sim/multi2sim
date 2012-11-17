@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <lib/util/linked-list.h>
+
 #include "cpu.h"
 #include "event-queue.h"
 

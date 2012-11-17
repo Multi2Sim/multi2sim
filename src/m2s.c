@@ -20,7 +20,6 @@
 #include <signal.h>
 
 #include <arch/arm/emu/context.h>
-#include <arch/arm/emu/emu.h>
 #include <arch/arm/emu/isa.h>
 #include <arch/arm/emu/syscall.h>
 #include <arch/arm/timing/cpu.h>
@@ -34,9 +33,6 @@
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/emu/cuda.h>
 #include <arch/fermi/emu/emu.h>
-#include <arch/fermi/timing/gpu.h>
-#include <arch/southern-islands/asm/asm.h>
-#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/timing/timing.h>
 #include <arch/x86/emu/checkpoint.h>
 #include <arch/x86/emu/clrt.h>

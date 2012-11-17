@@ -25,7 +25,6 @@
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/heap.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
