@@ -23,6 +23,7 @@
 #include <lib/util/list.h>
 
 #include "cpu.h"
+#include "uop.h"
 #include "uop-queue.h"
 
 

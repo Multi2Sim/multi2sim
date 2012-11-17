@@ -19,9 +19,11 @@
 
 #include <arch/common/arch.h>
 
+#include "context.h"
 #include "emu.h"
 #include "isa.h"
 #include "machine.h"
+#include "regs.h"
 #include "uinst.h"
 
 

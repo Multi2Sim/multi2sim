@@ -21,11 +21,13 @@
 #include <errno.h>
 #include <signal.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
+#include "context.h"
 #include "emu.h"
 #include "regs.h"
 #include "signal.h"

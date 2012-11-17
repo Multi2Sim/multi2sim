@@ -22,7 +22,9 @@
 
 #include <arch/x86/emu/uinst.h>
 
-#include "uop.h"
+
+/* Forward types */
+struct x86_uop_t;
 
 
 /* Error debug */
