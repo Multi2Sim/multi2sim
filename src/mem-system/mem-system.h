@@ -20,12 +20,6 @@
 #ifndef MEM_SYSTEM_H
 #define MEM_SYSTEM_H
 
-#include "module.h"
-
-
-extern char *mem_config_file_name;
-extern char *mem_config_help;
-
 extern char *mem_report_file_name;
 
 #define mem_debugging() debug_status(mem_debug_category)
@@ -52,10 +46,6 @@ extern struct mem_system_t *mem_system;
 void mem_system_init(void);
 void mem_system_done(void);
 
-/* Parse memory hierarchy configuration file, or generate default if omitted.
- * Call after 'mem_system_init()'. */
-void mem_system_config_read(void);
-
 void mem_system_dump_report(void);
 
 struct mod_t *mem_system_get_mod(char *mod_name);
@@ -63,3 +53,4 @@ struct net_t *mem_system_get_net(char *net_name);
 
 
 #endif
+

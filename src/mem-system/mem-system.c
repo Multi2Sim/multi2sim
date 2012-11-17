@@ -29,9 +29,11 @@
 
 #include "cache.h"
 #include "command.h"
+#include "config.h"
 #include "local-mem-protocol.h"
 #include "mem-system.h"
 #include "mmu.h"
+#include "module.h"
 #include "nmoesi-protocol.h"
 
 
@@ -44,6 +46,8 @@ int mem_trace_category;
 int mem_system_peer_transfers;
 
 struct mem_system_t *mem_system;
+
+char *mem_report_file_name = "";
 
 
 
@@ -170,7 +174,7 @@ void mem_system_init(void)
 	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_FINISH = esim_register_event_with_name(mod_handler_local_mem_find_and_lock, "mod_local_mem_find_and_lock_finish");
 
 	/* Read configuration */
-	mem_system_config_read();
+	mem_config_read();
 }
 
 

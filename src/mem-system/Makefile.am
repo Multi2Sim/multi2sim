@@ -8,6 +8,9 @@ libmemsystem_a_SOURCES = \
 	command.c \
 	command.h \
 	\
+	config.c \
+	config.h \
+	\
 	directory.c \
 	directory.h \
 	\
@@ -16,7 +19,6 @@ libmemsystem_a_SOURCES = \
 	\
 	mem-system.c \
 	mem-system.h \
-	mem-system-config.c \
 	\
 	memory.c \
 	memory.h \
