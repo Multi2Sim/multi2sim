@@ -18,11 +18,9 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
-#include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>

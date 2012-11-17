@@ -18,13 +18,10 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
-#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
-#include <mem-system/mem-system.h>
 
 #include "opencl-command-queue.h"
 #include "opencl-context.h"

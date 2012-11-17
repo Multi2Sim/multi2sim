@@ -18,15 +18,12 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
-#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
-#include "opencl.h"
 #include "opencl-platform.h"
 #include "opencl-repo.h"
 

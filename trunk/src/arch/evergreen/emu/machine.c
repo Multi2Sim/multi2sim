@@ -20,7 +20,6 @@
 #include <assert.h>
 #include <math.h>
 
-#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
@@ -35,7 +34,6 @@
 #include "ndrange.h"
 #include "opencl-kernel.h"
 #include "opencl-mem.h"
-#include "wavefront.h"
 #include "work-item.h"
 #include "work-group.h"
 

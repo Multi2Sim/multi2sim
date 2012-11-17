@@ -19,7 +19,6 @@
 
 #include <assert.h>
 #include <fcntl.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 #include <lib/esim/esim.h>
@@ -34,10 +33,8 @@
 #include <mem-system/memory.h>
 
 #include "context.h"
-#include "emu.h"
 #include "file.h"
 #include "isa.h"
-#include "machine.h"
 #include "regs.h"
 
 

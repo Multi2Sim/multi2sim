@@ -36,7 +36,6 @@
 #include "fetch-queue.h"
 #include "reg-file.h"
 #include "trace-cache.h"
-#include "uop.h"
 
 
 static int x86_cpu_can_fetch(int core, int thread)

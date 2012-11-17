@@ -20,7 +20,6 @@
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
 #include <arch/fermi/asm/asm.h>
-#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>

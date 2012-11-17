@@ -20,11 +20,8 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <stdarg.h>
-#include <sys/mman.h>
-#include <unistd.h>
 #include <zlib.h>
 
-#include <lib/mhandle/mhandle.h>
 #include <lib/util/bin-config.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>

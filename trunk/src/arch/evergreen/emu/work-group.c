@@ -18,16 +18,12 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
-#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
 #include "ndrange.h"
 #include "wavefront.h"
 #include "work-group.h"

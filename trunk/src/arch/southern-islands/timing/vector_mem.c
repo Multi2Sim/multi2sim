@@ -19,7 +19,6 @@
 
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <mem-system/mem-system.h>
 
 #include "timing.h"
 

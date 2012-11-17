@@ -17,17 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-#include <stdlib.h>
 
-#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/timing/timing.h>
-#include <arch/x86/emu/emu.h>
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
 
 
 /* Create a device */

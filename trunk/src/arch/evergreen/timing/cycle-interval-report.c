@@ -18,18 +18,12 @@
  */
 
 //#include <evergreen-timing.h>
-#include <assert.h>
 
-#include <arch/evergreen/emu/ndrange.h>
-#include <arch/evergreen/emu/wavefront.h>
-#include <arch/evergreen/emu/work-group.h>
 #include <lib/esim/esim.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
-#include <lib/util/string.h>
 
-#include "gpu.h"
 #include "uop.h"
 
 #include "cycle-interval-report.h"

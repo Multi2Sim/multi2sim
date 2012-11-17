@@ -18,8 +18,6 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
-#include <sys/mman.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>

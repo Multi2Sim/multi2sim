@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <math.h>
 
-#include <arch/x86/emu/emu.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 

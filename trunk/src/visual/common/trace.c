@@ -19,8 +19,6 @@
 
 #include <ctype.h>
 #include <gtk/gtk.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <zlib.h>
 
 #include <lib/mhandle/mhandle.h>
@@ -28,7 +26,6 @@
 #include <lib/util/hash-table.h>
 #include <lib/util/string.h>
 
-#include "visual.h"
 
 
 

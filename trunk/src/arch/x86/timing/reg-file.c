@@ -25,7 +25,6 @@
 #include "cpu.h"
 #include "reg-file.h"
 #include "rob.h"
-#include "uop.h"
 
 
 /* Global variables */

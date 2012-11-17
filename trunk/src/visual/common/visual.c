@@ -18,7 +18,6 @@
  */
 
 #include <lib/util/misc.h>
-#include <lib/util/string.h>
 #include <visual/evergreen/gpu.h>
 #include <visual/evergreen/panel.h>
 #include <visual/memory/mem-system.h>

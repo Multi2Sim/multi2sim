@@ -21,8 +21,6 @@
 #define X86_ARCH_TIMING_UOP_H
 
 #include <arch/x86/emu/uinst.h>
-#include <lib/util/linked-list.h>
-
 
 struct x86_uop_t
 {
@@ -105,6 +103,7 @@ void x86_uop_dump(struct x86_uop_t *uop, FILE *f);
 
 int x86_uop_exists(struct x86_uop_t *uop);
 
+struct linked_list_t;
 void x86_uop_list_dump(struct list_t *uop_list, FILE *f);
 void x86_uop_linked_list_dump(struct linked_list_t *uop_list, FILE *f);
 void x86_uop_linked_list_check_if_ready(struct linked_list_t *uop_list);

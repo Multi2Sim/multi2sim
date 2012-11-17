@@ -16,17 +16,14 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include <stdlib.h>
 
 #include <lib/util/debug.h>
 
 #include "glut-frame-buffer.h" 
 #include "opengl.h"
 #include "opengl-buffers.h"
-#include "opengl-context.h"
 #include "opengl-edge.h"
 #include "opengl-light.h"
-#include "opengl-rast-config.h"
 #include "opengl-rast-triangle.h"
 #include "opengl-span.h"
 #include "opengl-vertex.h"
