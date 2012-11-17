@@ -20,7 +20,9 @@
 #ifndef X86_ARCH_TIMING_BPRED_H
 #define X86_ARCH_TIMING_BPRED_H
 
-#include "uop.h"
+
+/* Forward types */
+struct x86_uop_t;
 
 
 extern char *x86_bpred_kind_map[];

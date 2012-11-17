@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 #include <arch/common/arch.h>
+#include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/file.h>

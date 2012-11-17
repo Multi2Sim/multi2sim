@@ -29,6 +29,7 @@
 
 #include "cpu.h"
 #include "trace-cache.h"
+#include "uop.h"
 
 
 /* Debug */

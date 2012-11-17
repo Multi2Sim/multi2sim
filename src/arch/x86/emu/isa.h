@@ -20,8 +20,10 @@
 #ifndef ARCH_X86_EMU_ISA_H
 #define ARCH_X86_EMU_ISA_H
 
-#include "context.h"
-#include "regs.h"
+#include <arch/x86/asm/asm.h>
+
+/* Forward type declarations */
+struct x86_ctx_t;
 
 
 #define x86_isa_call_debug(...) debug(x86_isa_call_debug_category, __VA_ARGS__)

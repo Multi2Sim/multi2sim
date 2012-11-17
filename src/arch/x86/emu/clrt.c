@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/x86/emu/context.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 

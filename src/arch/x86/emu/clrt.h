@@ -20,7 +20,8 @@
 #ifndef ARCH_X86_EMU_CLRT_H
 #define ARCH_X86_EMU_CLRT_H
 
-#include "context.h"
+/* Forward type declaration */
+struct x86_ctx_t;
 
 
 #define x86_clrt_debug(...) debug(x86_clrt_debug_category, __VA_ARGS__)

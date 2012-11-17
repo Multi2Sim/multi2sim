@@ -22,8 +22,6 @@
 
 #include <stdio.h>
 
-#include <lib/mhandle/mhandle.h>
-
 
 struct x86_regs_t
 {

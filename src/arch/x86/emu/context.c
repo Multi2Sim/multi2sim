@@ -27,10 +27,12 @@
 #include <mem-system/mmu.h>
 #include <mem-system/spec-mem.h>
 
+#include "context.h"
 #include "emu.h"
 #include "file-desc.h"
 #include "isa.h"
 #include "loader.h"
+#include "regs.h"
 #include "signal.h"
 #include "syscall.h"
 
