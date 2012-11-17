@@ -34,6 +34,7 @@
 #include "cache.h"
 #include "directory.h"
 #include "mem-system.h"
+#include "module.h"
 
 
 int EV_MEM_SYSTEM_COMMAND;

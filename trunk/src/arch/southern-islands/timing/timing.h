@@ -23,7 +23,7 @@
 #include <limits.h>
 
 #include <arch/southern-islands/emu/emu.h>
-#include <mem-system/mem-system.h>
+#include <mem-system/module.h>
 
 #define INST_NOT_FETCHED LLONG_MAX
 

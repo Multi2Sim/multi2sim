@@ -52,6 +52,8 @@
 #include <lib/esim/trace.h>
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
+#include <mem-system/config.h>
+#include <mem-system/mem-system.h>
 #include <mem-system/mmu.h>
 #include <network/net-system.h>
 #include <visual/common/visual.h>

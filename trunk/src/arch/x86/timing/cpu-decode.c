@@ -21,7 +21,7 @@
 
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
-#include <mem-system/mem-system.h>
+#include <mem-system/module.h>
 
 #include "cpu.h"
 #include "fetch-queue.h"
