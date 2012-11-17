@@ -65,7 +65,7 @@ int si_emu_wavefront_size = 64;
 void si_emu_init()
 {
 	/* Register architecture */
-	si_emu_arch = arch_list_register("SouthernIslands");
+	si_emu_arch = arch_list_register("SouthernIslands", "si");
 	si_emu_arch->sim_kind = si_emu_sim_kind;
 
 	/* Open report file */

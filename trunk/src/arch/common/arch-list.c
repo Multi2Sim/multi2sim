@@ -20,6 +20,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/string.h>
 
 #include "arch.h"
 #include "arch-list.h"
@@ -57,7 +58,7 @@ void arch_list_dump(FILE *f)
 }
 
 
-struct arch_t *arch_list_register(char *arch_name)
+struct arch_t *arch_list_register(char *arch_name, char *arch_prefix)
 {
 	struct arch_t *arch;
 
@@ -67,7 +68,7 @@ struct arch_t *arch_list_register(char *arch_name)
 		fatal("%s: duplicated architecture", __FUNCTION__);
 
 	/* Create new architecture */
-	arch = arch_create(arch_name);
+	arch = arch_create(arch_name, arch_prefix);
 
 	/* Add architecture and return */
 	list_add(arch_list, arch);
@@ -91,3 +92,24 @@ struct arch_t *arch_list_get(char *arch_name)
 	/* Not found */
 	return NULL;
 }
+
+
+/* Get a list of all possible names for architectures. This function is usefull
+ * to print an error message with the valid values for architectures when
+ * processing user input. */
+void arch_list_get_names(char *str, int size)
+{
+	struct arch_t *arch;
+	char *comma = "";
+	int i;
+
+	str_printf(&str, &size, "{");
+	LIST_FOR_EACH(arch_list, i)
+	{
+		arch = list_get(arch_list, i);
+		str_printf(&str, &size, "%s%s", comma, arch->name);
+		comma = "|";
+	}
+	str_printf(&str, &size, "}");
+}
+

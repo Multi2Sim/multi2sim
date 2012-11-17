@@ -67,7 +67,7 @@ void str_token_list_dump(struct list_t *token_list, FILE *f);
 #define MAX_STRING_SIZE  200
 #define MAX_PATH_SIZE  400
 
-void str_single_spaces(char *dest, char *src, int size);
+void str_single_spaces(char *dest, int size, char *src);
 
 int str_suffix(char *str, char *suffix);
 int str_prefix(char *str, char *prefix);

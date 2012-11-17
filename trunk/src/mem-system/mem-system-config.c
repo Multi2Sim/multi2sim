@@ -17,6 +17,7 @@
  */
 
 #include <arch/common/arch.h>
+#include <arch/common/arch-list.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/evergreen/emu/emu.h>
@@ -27,6 +28,7 @@
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <network/net-system.h>
 #include <network/network.h>
@@ -257,10 +259,6 @@ static char *err_mem_levels =
 static char *err_mem_block_size =
 	"\tBlock size in a cache must be greater or equal than its lower-level\n"
 	"\tcache for correct behavior of directories and coherence protocols.\n";
-
-static char *err_mem_ignored_entry =
-	"\tThis entry in the file will be ignored, because it refers to a\n"
-	"\tnon-existent CPU core/thread or GPU compute unit.\n";
 
 static char *err_mem_connect =
 	"\tAn external network is used that does not provide connectivity between\n"
@@ -1152,320 +1150,99 @@ static void mem_config_read_low_modules(struct config_t *config)
 }
 
 
-static void mem_config_read_cpu_entries(struct config_t *config)
+static void mem_config_read_entries(struct config_t *config)
 {
-	struct mod_t *mod;
-
 	char *section;
-	char *value;
 	char *entry_name;
+	char *arch_name;
 
-	char buf[MAX_STRING_SIZE];
+	char entry_name_trimmed[MAX_STRING_SIZE];
+	char arch_name_trimmed[MAX_STRING_SIZE];
+	char arch_list_names[MAX_STRING_SIZE];
 
-	int core;
-	int thread;
+	struct arch_t *arch;
 
-	struct entry_t
-	{
-		char data_mod_name[MAX_STRING_SIZE];
-		char inst_mod_name[MAX_STRING_SIZE];
-	} *entry, *entry_list;
+	int i;
 
-	/* Read memory system entries */
-	entry_list = xcalloc(x86_cpu_num_cores * x86_cpu_num_threads, sizeof(struct entry_t));
+	/* Debug */
+	mem_debug("Processing entries to the memory system:\n");
+	mem_debug("\n");
+
+	/* Read all [Entry <name>] sections */
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
-		/* Section is a node */
+		/* Discard if not an entry section */
 		if (strncasecmp(section, "Entry ", 6))
 			continue;
 
 		/* Name for the entry */
 		entry_name = section + 6;
-		if (!*entry_name)
-			fatal("%s: entry %s: bad name", mem_config_file_name, entry_name);
+		str_trim(entry_name_trimmed, sizeof entry_name_trimmed, entry_name);
+		if (!entry_name_trimmed[0])
+			fatal("%s: section [%s]: invalid entry name.\n%s",
+				mem_config_file_name, section, err_mem_config_note);
 
-		/* Get type */
-		value = config_read_string(config, section, "Type", "");
-		if (strcasecmp(value, "CPU") && strcasecmp(value, "GPU"))
-			fatal("%s: entry %s: wrong or missing value for 'Type'",
-				mem_config_file_name, entry_name);
+		/* Check if variable 'Type' is used in the section. This variable was used in
+		 * previous versions, now it is replaced with 'Arch'. */
+		if (config_var_exists(config, section, "Type"))
+			fatal("%s: section [%s]: Variable 'Type' is obsolete, use 'Arch' instead.\n%s",
+				mem_config_file_name, section, err_mem_config_note);
 
-		/* Only handle CPU */
-		if (strcasecmp(value, "CPU"))
-			continue;
+		/* Read architecture in variable 'Arch' */ 
+		arch_name = config_read_string(config, section, "Arch", NULL);
+		if (!arch_name)
+			fatal("%s: section [%s]: Variable 'Arch' is missing.\n%s",
+				mem_config_file_name, section, err_mem_config_note);
 
-		/* Read core */
-		core = config_read_int(config, section, "Core", -1);
-		if (core < 0)
-			fatal("%s: entry %s: wrong or missing value for 'Core'",
-				mem_config_file_name, entry_name);
-
-		/* Read thread */
-		thread = config_read_int(config, section, "Thread", -1);
-		if (thread < 0)
-			fatal("%s: entry %s: wrong or missing value for 'Thread'",
-				mem_config_file_name, entry_name);
-
-		/* Check bounds */
-		if (core >= x86_cpu_num_cores || thread >= x86_cpu_num_threads)
+		/* Get architecture */
+		str_trim(arch_name_trimmed, sizeof arch_name_trimmed, arch_name);
+		arch = arch_list_get(arch_name_trimmed);
+		if (!arch)
 		{
-			config_var_allow(config, section, "DataModule");
-			config_var_allow(config, section, "InstModule");
-			warning("%s: entry %s ignored.\n%s",
-				mem_config_file_name, entry_name, err_mem_ignored_entry);
-			continue;
+			arch_list_get_names(arch_list_names, sizeof arch_list_names);
+			fatal("%s: section [%s]: '%s' is an invalid value for 'Arch'.\n"
+				"\tPossible values are %s.\n%s",
+				mem_config_file_name, section, arch_name_trimmed,
+				arch_list_names, err_mem_config_note);
 		}
 
-		/* Check that entry was not assigned before */
-		entry = &entry_list[core * x86_cpu_num_threads + thread];
-		if (entry->data_mod_name[0])
-			fatal("%s: duplicated entry for CPU core %d - thread %d",
-				mem_config_file_name, core, thread);
+		/* An architecture with an entry in the memory configuration file must
+		 * undergo a detailed simulation. */
+		if (arch->sim_kind == arch_sim_kind_functional)
+			fatal("%s: section [%s]: %s architecture not under detailed simulation.\n"
+				"\tA CPU/GPU architecture uses functional simulation by default. Please\n"
+				"\tactivate detailed simulation for the %s architecture using command-line\n"
+				"\toption '--%s-sim detailed' to use this memory entry.\n",
+				mem_config_file_name, section, arch->name, arch->name, arch->prefix);
 
-		/* Get entry data module */
-		value = config_read_string(config, section, "DataModule", "");
-		if (!*value)
-			fatal("%s: entry %s: wrong or missing value for 'DataModule'",
-				mem_config_file_name, entry_name);
-		snprintf(entry->data_mod_name, MAX_STRING_SIZE, "%s", value);
+		/* Check that callback functions are valid */
+		if (!arch->mem_config_parse_entry_func)
+			fatal("%s: section [%s]: %s architecture does not support entries.\n"
+				"\tPlease contact development@multi2sim.org to report this problem.\n",
+				mem_config_file_name, section, arch->name);
 
-		/* Get entry instruction module */
-		value = config_read_string(config, section, "InstModule", "");
-		if (!*value)
-			fatal("%s: entry %s: wrong of missing value for 'InstModule'",
-				mem_config_file_name, entry_name);
-		snprintf(entry->inst_mod_name, MAX_STRING_SIZE, "%s", value);
+		/* Call function to process entry. Each architecture implements its own ways
+		 * to process entries to the memory hierarchy. */
+		arch->mem_config_parse_entry_func(config, section);
 	}
 
-	/* Stop here if we are doing CPU functional simulation */
-	if (x86_emu_sim_kind == arch_sim_kind_functional)
-		goto out;
-
-	/* Assign entry modules */
-	mem_debug("Assigning CPU entries to memory system:\n");
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+	/* After processing all [Entry <name>] sections, check that all architectures
+	 * satisfy their entries to the memory hierarchy. */
+	LIST_FOR_EACH(arch_list, i)
 	{
-		/* Check that entry was set */
-		entry = &entry_list[core * x86_cpu_num_threads + thread];
-		if (!*entry->data_mod_name)
-			fatal("%s: no entry given for CPU core %d - thread %d",
-				mem_config_file_name, core, thread);
-
-		/* Look for data module */
-		snprintf(buf, sizeof buf, "Module %s", entry->data_mod_name);
-		if (!config_section_exists(config, buf))
-			fatal("%s: invalid data module for CPU core %d - thread %d",
-				mem_config_file_name, core, thread);
-
-		/* Assign data module */
-		mod = config_read_ptr(config, buf, "ptr", NULL);
-		assert(mod);
-		X86_THREAD.data_mod = mod;
-		mem_debug("\tCPU core %d - thread %d - data -> %s\n",
-			core, thread, mod->name);
-
-		/* Look for instructions module */
-		snprintf(buf, sizeof buf, "Module %s", entry->inst_mod_name);
-		if (!config_section_exists(config, buf))
-			fatal("%s: invalid instructions module for CPU core %d - thread %d",
-				mem_config_file_name, core, thread);
-
-		/* Assign data module */
-		mod = config_read_ptr(config, buf, "ptr", NULL);
-		assert(mod);
-		X86_THREAD.inst_mod = mod;
-		mem_debug("\tCPU core %d - thread %d - instructions -> %s\n",
-			core, thread, mod->name);
-	}
-
-	/* Debug */
-	mem_debug("\n");
-
-out:
-	/* Free entry list */
-	free(entry_list);
-}
-
-
-static void mem_config_read_gpu_entries(struct config_t *config)
-{
-	struct mod_t *mod;
-
-	int compute_unit_id;
-
-	char *section;
-	char *value;
-	char *entry_name;
-	int num_compute_units;
-
-	char buf[MAX_STRING_SIZE];
-
-	struct entry_t
-	{
-		char mod_name[MAX_STRING_SIZE];
-	} *entry, *entry_list;
-
-	/* Allocate entry list */
-	switch (x86_emu->gpu_kind)
-	{
-	case x86_emu_gpu_southern_islands:
-
-		entry_list = xcalloc(si_gpu_num_compute_units, sizeof(struct entry_t));
-		break;
-	
-	case x86_emu_gpu_evergreen:
-
-		entry_list = xcalloc(evg_gpu_num_compute_units, sizeof(struct entry_t));
-		break;
-	
-	default:
-		panic("%s: invalid GPU emulator", __FUNCTION__);
-	}
-
-	/* Read memory system entries */
-	for (section = config_section_first(config); section; section = config_section_next(config))
-	{
-		/* Section is a node */
-		if (strncasecmp(section, "Entry ", 6))
+		/* Only architectures with detailed simulation */
+		arch = list_get(arch_list, i);
+		if (arch->sim_kind == arch_sim_kind_functional)
 			continue;
 
-		/* Name for the entry */
-		entry_name = section + 6;
-		if (!*entry_name)
-			fatal("%s: entry %s: bad name", mem_config_file_name, entry_name);
+		/* Check that 'mem_config_check_func' has been registered. */
+		if (!arch->mem_config_check_func)
+			panic("architecture '%s' has not property registered 'mem_config_check_func'",
+				arch->name);
 
-		/* Only handle GPU */
-		value = config_read_string(config, section, "Type", "");
-		if (strcasecmp(value, "GPU"))
-			continue;
-
-		/* Read compute unit */
-		compute_unit_id = config_read_int(config, section, "ComputeUnit", -1);
-		if (compute_unit_id < 0)
-			fatal("%s: entry %s: wrong or missing value for 'ComputeUnit'",
-				mem_config_file_name, entry_name);
-
-		/* Get number of compute units */
-		switch (x86_emu->gpu_kind)
-		{
-		case x86_emu_gpu_southern_islands:
-
-			num_compute_units = si_gpu_num_compute_units;
-			break;
-		
-		case x86_emu_gpu_evergreen:
-
-			num_compute_units = evg_gpu_num_compute_units;
-			break;
-
-		default:
-			panic("%s: invalid GPU emulator", __FUNCTION__);
-		}
-
-		/* Check bounds */
-		if (compute_unit_id >= num_compute_units)
-		{
-			config_var_allow(config, section, "Module");
-			warning("%s: entry %s ignored.\n%s",
-				mem_config_file_name, entry_name, err_mem_ignored_entry);
-			continue;
-		}
-
-		/* Check that entry was not assigned before */
-		entry = &entry_list[compute_unit_id];
-		if (entry->mod_name[0])
-			fatal("%s: duplicated entry for GPU compute unit %d",
-				mem_config_file_name, compute_unit_id);
-
-		/* Get entry data module */
-		value = config_read_string(config, section, "Module", "");
-		if (!*value)
-			fatal("%s: entry %s: wrong or missing value for 'Module'",
-				mem_config_file_name, entry_name);
-		snprintf(entry->mod_name, MAX_STRING_SIZE, "%s", value);
+		/* Make call-back */
+		arch->mem_config_check_func(config);
 	}
-
-	/* Do not continue if we are doing GPU functional simulation */
-	switch (x86_emu->gpu_kind)
-	{
-	case x86_emu_gpu_southern_islands:
-		
-		if (si_emu_sim_kind == arch_sim_kind_functional)
-			goto out;
-		break;
-	
-	case x86_emu_gpu_evergreen:
-
-		if (evg_emu_sim_kind == arch_sim_kind_functional)
-			goto out;
-		break;
-	
-	default:
-		panic("%s: invalid GPU emulation", __FUNCTION__);
-	}
-
-	/* Assign entry modules */
-	mem_debug("Assigning GPU entries to memory system:\n");
-	switch (x86_emu->gpu_kind)
-	{
-	case x86_emu_gpu_southern_islands:
-
-		SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-		{
-			/* Check that entry was set */
-			entry = &entry_list[compute_unit_id];
-			if (!*entry->mod_name)
-				fatal("%s: no entry given for GPU compute unit %d",
-					mem_config_file_name, compute_unit_id);
-
-			/* Look for module */
-			snprintf(buf, sizeof buf, "Module %s", entry->mod_name);
-			if (!config_section_exists(config, buf))
-				fatal("%s: invalid entry for compute unit %d",
-					mem_config_file_name, compute_unit_id);
-
-			/* Assign module */
-			mod = config_read_ptr(config, buf, "ptr", NULL);
-			assert(mod);
-			si_gpu->compute_units[compute_unit_id]->global_memory = mod;
-			mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
-		}
-		break;
-	
-	case x86_emu_gpu_evergreen:
-
-		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-		{
-			/* Check that entry was set */
-			entry = &entry_list[compute_unit_id];
-			if (!*entry->mod_name)
-				fatal("%s: no entry given for GPU compute unit %d",
-					mem_config_file_name, compute_unit_id);
-
-			/* Look for module */
-			snprintf(buf, sizeof buf, "Module %s", entry->mod_name);
-			if (!config_section_exists(config, buf))
-				fatal("%s: invalid entry for compute unit %d",
-					mem_config_file_name, compute_unit_id);
-
-			/* Assign module */
-			mod = config_read_ptr(config, buf, "ptr", NULL);
-			assert(mod);
-			evg_gpu->compute_units[compute_unit_id]->global_memory = mod;
-			mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
-		}
-		break;
-	
-	default:
-		panic("%s: invalid GPU emulation", __FUNCTION__);
-	}
-
-	/* Debug */
-	mem_debug("\n");
-
-out:
-	/* Free entry list */
-	free(entry_list);
 }
 
 
@@ -1984,9 +1761,9 @@ void mem_system_config_read(void)
 	/* Read low level caches */
 	mem_config_read_low_modules(config);
 
-	/* Read memory system entries */
-	mem_config_read_cpu_entries(config);
-	mem_config_read_gpu_entries(config);
+	/* Read entries from requesting devices (CPUs/GPUs) to memory system entries.
+	 * This is presented in [Entry <name>] sections in the configuration file. */
+	mem_config_read_entries(config);
 
 	/* Create switches in internal networks */
 	mem_config_create_switches(config);
