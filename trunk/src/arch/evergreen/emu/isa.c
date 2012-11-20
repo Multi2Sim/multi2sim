@@ -64,6 +64,7 @@ void evg_isa_init()
 	evg_isa_inst_func = xcalloc(EVG_INST_COUNT, sizeof(evg_isa_inst_func_t));
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	evg_isa_inst_func[EVG_INST_##_name] = evg_isa_##_name##_impl;
+#include <arch/evergreen/asm/asm.dat>
 #undef DEFINST
 
 	/* Repository of deferred tasks */

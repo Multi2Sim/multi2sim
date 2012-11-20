@@ -66,6 +66,7 @@ static char *err_arm_sys_note =
 static char *arm_sys_call_name[] =
 {
 #define DEFSYSCALL(name, code) #name,
+#include "syscall.dat"
 #undef DEFSYSCALL
 	""
 };
