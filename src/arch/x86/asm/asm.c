@@ -87,6 +87,7 @@ static struct x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] =
 
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) \
 , { op_##name, op1, op2, op3, modrm, imm, pfx, #name, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#include "asm.dat"
 #undef DEFINST
 
 };

@@ -177,6 +177,7 @@ void si_disasm_init()
 	info->fmt = SI_FMT_##_fmt; \
 	info->opcode = _opcode; \
 	info->size = _size;
+#include "asm.dat"
 #undef DEFINST
 	
 	/* Tables of pointers to 'si_inst_info' */
