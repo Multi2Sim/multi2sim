@@ -3,8 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <util/debug.h>
 #include <dlfcn.h>
+
+#include "debug.h"
+
 
 /*
  * Private functions

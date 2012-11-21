@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <m2s-clrt.h>
+#include "m2s-clrt.h"
 
 
 static char *m2s_clrt_err_version =

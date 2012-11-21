@@ -23,7 +23,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <m2s-clrt.h>
+#include "m2s-clrt.h"
+
+
 
 #define MEMORY_ALIGN 16 /* memory alignment for buffers */
 

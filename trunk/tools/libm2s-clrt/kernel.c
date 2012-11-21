@@ -23,7 +23,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include <m2s-clrt.h>
+#include "m2s-clrt.h"
+
+
 
 #define MAX_SSE_REG_PARAMS 4
 #define SSE_REG_SIZE_IN_WORDS (16 / sizeof (size_t))
