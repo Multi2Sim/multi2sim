@@ -20,7 +20,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-clrt.h>
+#include "m2s-clrt.h"
+
+
 
 extern struct _cl_pltaform_id *m2s_platform;
 extern struct _cl_device_id *m2s_device;

@@ -26,7 +26,8 @@
 #include <pthread.h>
 #include <limits.h>
 
-#include <m2s-clrt.h>
+#include "m2s-clrt.h"
+
 
 /* stack size and alignment of stack */
 #define STACK_SIZE 0x2000

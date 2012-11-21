@@ -22,7 +22,8 @@
 #include <string.h>
 #include <assert.h>
 
-#include <m2s-clrt.h>
+#include "m2s-clrt.h"
+
 
 struct clrt_mem_transfer_t
 {
