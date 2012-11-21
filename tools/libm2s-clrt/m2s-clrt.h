@@ -26,10 +26,12 @@
 #include <pthread.h>
 #include <elf.h>
 
-#include <util/debug.h>
 #include <CL/cl.h>
 
 #include "clrt-object.h"
+#include "debug.h"
+
+
 
 /*
  * Runtime System Calls

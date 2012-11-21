@@ -23,8 +23,7 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include <m2s-clrt.h>
-
+#include "m2s-clrt.h"
 
 
 

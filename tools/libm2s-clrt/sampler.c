@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-clrt.h>
+#include "m2s-clrt.h"
 
 
 cl_sampler clCreateSampler(

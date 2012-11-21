@@ -23,7 +23,8 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include <m2s-clrt.h>
+#include "m2s-clrt.h"
+
 
 
 /* Error messages */

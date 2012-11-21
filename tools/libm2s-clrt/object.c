@@ -19,10 +19,13 @@
 
 
 #include <assert.h>
-#include <m2s-clrt.h>
 #include <string.h>
 
+#include "m2s-clrt.h"
 #include "thread-list.h"
+
+
+
 static struct clrt_thread_list_t *list = NULL;
 
 static struct clrt_thread_list_t *get_list(void)
