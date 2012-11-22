@@ -23,6 +23,7 @@
 
 #include "m2s-clrt.h"
 #include "thread-list.h"
+#include "debug.h"
 
 
 

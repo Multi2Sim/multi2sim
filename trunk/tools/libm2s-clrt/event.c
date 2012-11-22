@@ -22,6 +22,7 @@
 #include <sys/time.h>
 
 #include "m2s-clrt.h"
+#include "debug.h"
 
 
 

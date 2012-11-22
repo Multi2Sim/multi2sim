@@ -22,6 +22,12 @@
 #include <string.h>
 
 #include "m2s-clrt.h"
+#include "debug.h"
+
+/* Add new devices types here */
+struct clrt_device_type_t *clcpu_create_device_type(void); /* for x86 CPU */
+/* Put their constructors into this array */
+clrt_device_type_create_t m2s_device_type_constructors[] = {clcpu_create_device_type};
 
 
 static char *m2s_clrt_err_version =
@@ -59,6 +65,18 @@ cl_int populateString(const char *param, size_t param_value_size, void *param_va
 {
 	size_t size = strlen(param) + 1;
 	return populateParameter(param, size, param_value_size, param_value, param_value_size_ret);
+}
+
+void visit_devices(device_visitor_t visitor, void *ctx)
+{
+	int i;
+	for (i = 0; i < m2s_platform->num_device_types; i++)
+	{
+		int j;
+		struct clrt_device_type_entry_t *entry = m2s_platform->entries + i;
+		for (j = 0; j < entry->num_devices; j++)
+			visitor(ctx, entry->devices[j], entry->device_type);
+	}
 }
 
 /*
@@ -103,15 +121,43 @@ cl_int clGetPlatformIDs(
 	/* Create the platform object if it has not already been made */
 	if (!m2s_platform)
 	{
+		int i;
+
 		m2s_platform = (struct _cl_platform_id *) malloc(sizeof (struct _cl_platform_id));
 		if (!m2s_platform)
 			fatal("%s: out of memory", __FUNCTION__);
-		m2s_platform->empty = 0;
+
+		m2s_platform->num_device_types = sizeof m2s_device_type_constructors / sizeof m2s_device_type_constructors[0];
+
+		
+		m2s_platform->entries = malloc(sizeof m2s_platform->entries[0] * m2s_platform->num_device_types);
+		if (!m2s_platform->entries)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* go through all the device types and initalize them and their devices */
+		for (i = 0; i < m2s_platform->num_device_types; i++)
+		{
+			int j;
+			struct clrt_device_type_entry_t *entry = m2s_platform->entries + i; 
+
+			/* construct the device type */
+			entry->device_type = m2s_device_type_constructors[i]();
+
+			/* query its device count */
+			entry->device_type->init_devices(0, NULL, &entry->num_devices);
+			
+			/* allocate enough memory for those devices */
+			entry->devices = malloc(sizeof entry->devices[0] * entry->num_devices);
+
+			/* populate */
+			entry->device_type->init_devices(entry->num_devices, entry->devices, NULL);
+
+			/* set the device type */
+			for (j = 0; j < entry->num_devices; j++)
+				entry->devices[i]->device_type = entry->device_type;
+
+		}
 	}	
-
-	
-
-	/* Implementation */
 
 	/* If an array is passed in, it must have a corresponding length
 	 * and the client must either want a count or a list of platforms */

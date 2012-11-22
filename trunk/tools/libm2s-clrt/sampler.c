@@ -21,6 +21,7 @@
 #include <stdio.h>
 
 #include "m2s-clrt.h"
+#include "debug.h"
 
 
 cl_sampler clCreateSampler(
