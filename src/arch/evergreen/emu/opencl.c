@@ -74,6 +74,7 @@ void evg_opencl_debug_array(int nelem, int *array)
 /* List of OpenCL function names */
 char *evg_opencl_func_name[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) #_name,
+#include "opencl.dat"
 #undef DEF_OPENCL_FUNC
 	""
 };
@@ -82,6 +83,7 @@ char *evg_opencl_func_name[] = {
 /* Number of arguments for each OpenCL function */
 int evg_opencl_func_argc[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) _argc,
+#include "opencl.dat"
 #undef DEF_OPENCL_FUNC
 	0
 };
@@ -97,6 +99,7 @@ int evg_opencl_func_argc[] = {
 typedef int (*evg_opencl_func_impl_t)(struct x86_ctx_t *ctx, int *argv);
 evg_opencl_func_impl_t evg_opencl_func_impl[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) evg_opencl_##_name##_impl,
+#include "opencl.dat"
 #undef DEF_OPENCL_FUNC
 	NULL
 };
