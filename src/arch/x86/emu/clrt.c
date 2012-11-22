@@ -49,6 +49,7 @@ char *x86_clrt_call_name[x86_clrt_call_count + 1] =
 {
 	NULL,
 #define X86_CLRT_DEFINE_CALL(name, code) #name,
+#include "clrt.dat"
 #undef X86_CLRT_DEFINE_CALL
 	NULL
 };

@@ -63,6 +63,7 @@ char *x86_opengl_call_name[x86_opengl_call_count + 1] =
 {
 	NULL,
 #define X86_OPENGL_DEFINE_CALL(name, code) #name,
+#include "opengl.dat"
 #undef X86_OPENGL_DEFINE_CALL
 	NULL
 };
