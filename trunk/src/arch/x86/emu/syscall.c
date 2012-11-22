@@ -79,6 +79,7 @@ static char *err_x86_sys_note =
 static char *x86_sys_call_name[] =
 {
 #define DEFSYSCALL(name, code) #name,
+#include "syscall.dat"
 #undef DEFSYSCALL
 	""
 };
