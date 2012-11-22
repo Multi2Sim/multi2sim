@@ -60,6 +60,7 @@ struct si_uop_t
 	/* Fields */
 	long long id;
 	long long id_in_compute_unit;
+	long long id_in_wavefront;
 	int inst_buffer_id;
 	struct si_wavefront_t *wavefront;        /* Wavefront it belongs to */
 	struct si_work_group_t *work_group;      /* Work-group it belongs to */
@@ -232,20 +233,20 @@ struct si_simd_t
 	struct list_t *issue_buffer; /* Issued instructions */
 	struct list_t *read_buffer;   /* Register accesses */
 	struct list_t *exec_buffer;   /* Execution */
-	struct si_subwavefront_pool_t
-		*subwavefront_pool;		  /* Keep track of the wavefront entering
+	struct si_subwavefront_pool_t *subwavefront_pool;  /* Keep track of the wavefront entering
 									 stream core pipelines. */
 
 	struct si_compute_unit_t *compute_unit;
+	struct si_inst_buffer_t *inst_buffer;
 
 	/* Statistics */
 	long long inst_count;
 
-	/* In order of highest to lowest precedence (scope). All utilized functional units are considered
-	 * for each level of scope. If a functional unit is not utilized in a cycle,
-	 * the specialized metric of the highest precedence whose characteristics are met is the
-	 * only specialized metric considered. The total utilization metric is always considered
-	 * for all functional units. */
+	/* In order of highest to lowest precedence (scope). All utilized functional 
+	 * units are considered for each level of scope. If a functional unit is not utilized 
+	 * in a cycle, the specialized metric of the highest precedence whose characteristics 
+	 * are met is the only specialized metric considered. The total utilization metric is 
+	 * always considered for all functional units. */
 	struct si_util_t *wkg_util; /* Work group mapped to compute unit. */
 	struct si_util_t *wvf_util; /* Wavefront mapped to instruction buffer. */
 	struct si_util_t *rdy_util; /* Wavefront with appropriate next instruction (vector ALU) is on its way to execute. */

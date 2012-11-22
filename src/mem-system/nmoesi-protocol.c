@@ -2147,6 +2147,11 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 					stack->tag, cache_block_shared);
 			}
 		}
+		else 
+		{
+			fatal("Unexpected reply type: %d\n", stack->reply);
+		}
+
 
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 
@@ -2427,7 +2432,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 			assert(dir_entry->num_sharers == 1);
 		}
 
-		/* Set states O/E/S/I->E */
+		/* Set state to exclusive */
 		cache_set_block(target_mod->cache, stack->set, stack->way,
 			stack->tag, cache_block_exclusive);
 

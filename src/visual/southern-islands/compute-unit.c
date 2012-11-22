@@ -113,7 +113,7 @@ void vi_si_compute_unit_read_checkpoint(struct vi_si_compute_unit_t *compute_uni
 	/* Read instructions */
 	for (i = 0; i < num_insts; i++)
 	{
-		inst = vi_si_inst_create(NULL, 0, 0, 0, 0, 0, 0, NULL);
+		inst = vi_si_inst_create(NULL, 0, 0, 0, 0, 0, 0, 0, NULL);
 		vi_si_inst_read_checkpoint(inst, f);
 		if (!hash_table_insert(compute_unit->inst_table, inst->name, inst))
 			panic("%s: invalid instruction in checkpoint", __FUNCTION__);

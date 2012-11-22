@@ -806,6 +806,7 @@ struct si_wavefront_t
 
 	/* Fields introduced for timing simulation */
 	int id_in_compute_unit;
+	int uop_id_counter;
 	long long sched_when;  /* GPU cycle when wavefront was last scheduled */
 	struct si_inst_buffer_entry_t *inst_buffer_entry;
 
