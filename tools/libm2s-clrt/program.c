@@ -24,27 +24,29 @@
 #include <dlfcn.h>
 
 #include "m2s-clrt.h"
-
-
+#include "debug.h"
 
 
 /*
  * Private Functions
  */
 
+extern struct _cl_platform_id *m2s_platform;
+
 void clrt_program_free(void *data)
 {
 	struct _cl_program *program;
 
 	program = (struct _cl_program *) data;
-	dlclose(program->handle);
-	unlink(program->filename);
-	free(program->filename);
+	int i;
+	for (i = 0; i < program->num_entries; i++)
+	{
+		dlclose(program->entries[i].handle);
+		unlink(program->entries[i].filename);
+		free(program->entries[i].filename);
+	}
 	free(program);
 }
-
-
-
 
 
 /*
@@ -101,25 +103,54 @@ cl_program clCreateProgramWithBinary(
 		return NULL;
 	}
 
-	/* Even though we don't support more than one device, we will in the future */
+	/* allocate enough room for all device types.  We don't know how many of them there will be */
+	struct clrt_device_type_t **device_types = malloc(sizeof device_types[0] * m2s_platform->num_device_types);
+	int num_device_types = 0;
+
 	for (i = 0; i < num_devices; i++)
 	{
-		if (!lengths[i] || !binaries[i])
-		{
-			if (errcode_ret)
-				*errcode_ret = CL_INVALID_VALUE;
-			if (binary_status)
-				binary_status[i] = CL_INVALID_VALUE;
+		int j;
 
-			return NULL;
-		}
-		if (!device_list[i])
+		/* make sure that the device is in our context */
+		int found = 0;
+		for (j = 0; j < context->num_devices; j++)
+			if (context->devices[j] == device_list[i])
+			{
+				found = 1;
+				break;
+			}
+		
+		if (!found)
 		{
 			if (errcode_ret)
 				*errcode_ret = CL_INVALID_DEVICE;
 			return NULL;
 		}
+
+		/* make sure the type of the binary matches */
+		if (!lengths[i] || !binaries[i] || !device_list[i]->device_type->valid_binary(lengths[i], binaries[i]))
+		{
+			if (binary_status[i])
+				binary_status[i] = CL_INVALID_VALUE;
+			if (errcode_ret)
+				*errcode_ret = CL_INVALID_VALUE;
+			
+			return NULL;
+		}
+
+		found = 0;
+		for (j = 0; j < num_device_types; j++)
+			if (device_types[j] == device_list[i]->device_type)
+			{
+				found = 1;
+				break;
+			}
+
+		if (!found)
+			device_types[num_device_types++] = device_list[i]->device_type;
 	}
+
+	
 
 	program = (struct _cl_program *) malloc(sizeof (struct _cl_program));
 	if (!program)
@@ -127,37 +158,47 @@ cl_program clCreateProgramWithBinary(
 
 	clrt_object_create(program, CLRT_OBJECT_PROGRAM, clrt_program_free);
 
-	uint32_t inner_size;
-	void *inner_start;
-	inner_start = get_inner_elf_addr(binaries[0], &inner_size);
-	
-	if ((char *)inner_start + inner_size > (char *)binaries[0] + lengths[0] || (unsigned char *)inner_start < binaries[0])
-		fatal("%s: could not executable content", __FUNCTION__);
+	program->num_entries = num_devices;
+	program->entries = malloc(sizeof program->entries[0] * num_devices);
 
-	const char *tempname = "./XXXXXX.so"; /* initialize buffer for mkstemp to create a file in the cwd */
-	program->filename = malloc(strlen(tempname) + 1);
-	if (!program->filename)
-		fatal("%s: out of memory", __FUNCTION__);
-	strcpy(program->filename, tempname);
+	for (i = 0; i < num_device_types; i++)
+	{
+		uint32_t inner_size;
+		void *inner_start;
+		struct clrt_device_program_t *cur = program->entries + i;
 
-	int handle = mkstemps(program->filename, 3);
-	if (handle == -1)
-		fatal("%s: could not create temporary file", __FUNCTION__);
+		inner_start = get_inner_elf_addr(binaries[i], &inner_size);
+		
+		if ((char *)inner_start + inner_size > (char *)binaries[i] + lengths[i] || (unsigned char *)inner_start < binaries[i])
+			fatal("%s: could not executable content", __FUNCTION__);
 
-	if (write(handle, inner_start, inner_size) != inner_size)
-		fatal("%s: could not write to temporary file", __FUNCTION__);
+		cur->filename = strdup("./XXXXXX.so");
+		if (!cur->filename)
+			fatal("%s: out of memory", __FUNCTION__);
 
-	close(handle);
+		int handle = mkstemps(cur->filename, 3);
+		if (handle == -1)
+			fatal("%s: could not create temporary file", __FUNCTION__);
 
-	program->handle = dlopen(program->filename, RTLD_NOW);
-	if (!program->handle)
-		fatal("%s: could not open ELF binary derived from program", __FUNCTION__);		
+		if (write(handle, inner_start, inner_size) != inner_size)
+			fatal("%s: could not write to temporary file", __FUNCTION__);
 
-	if (errcode_ret)
-		*errcode_ret = CL_SUCCESS;
+		close(handle);
 
-	if (binary_status)
-		binary_status[0] = CL_SUCCESS;
+		
+		cur->handle = dlopen(cur->filename, RTLD_NOW);
+		if (!cur->handle)
+			fatal("%s: could not open ELF binary derived from program", __FUNCTION__);		
+
+		if (errcode_ret)
+			*errcode_ret = CL_SUCCESS;
+
+		if (binary_status)
+			binary_status[0] = CL_SUCCESS;
+
+		cur->device_type = device_types[i];
+	}
+	free(device_types);
 
 	return program;
 }

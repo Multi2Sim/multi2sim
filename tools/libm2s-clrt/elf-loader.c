@@ -43,27 +43,4 @@ void *get_inner_elf_addr(const unsigned char *outer_elf, uint32_t *size)
 }
 
 
-void *get_function_info(void *handle, const char *name, size_t **metadata)
-{
-	void *addr;
-	char *fullname;
-	char *metaname;
-
-	fullname = (char *) malloc(strlen(name) + 100);
-	if (!fullname)
-		fatal("%s: out of memory", __FUNCTION__);
-	metaname = (char *) malloc(strlen(name) + 100);
-	if (!metaname)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	sprintf(fullname, "__OpenCL_%s_kernel", name);
-	sprintf(metaname, "__OpenCL_%s_metadata", name);
-
-	*metadata = (size_t *)dlsym(handle, metaname);
-	addr = dlsym(handle, fullname);
-
-	free(fullname);
-	free(metaname);
-	return addr;
-}
 

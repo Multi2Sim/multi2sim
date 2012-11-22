@@ -29,8 +29,7 @@
 #include <CL/cl.h>
 
 #include "clrt-object.h"
-#include "debug.h"
-
+#include "device-interface.h"
 
 
 /*
@@ -60,9 +59,6 @@ extern int m2s_clrt_native_mode;
 /* Debug */
 void m2s_clrt_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
-
-
-
 /*
  * Error macros
  */
@@ -88,40 +84,12 @@ extern char *m2s_clrt_err_param_note;
 	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, m2s_clrt_err_param_note); }
 
 
-
-
-/* 
- * Private Fiber definitions 
- */
-
-typedef void (*fiber_proc_t)(void);
-typedef void (*return_address_t)(void);
-
-struct fiber_t
-{
-	void *esp;
-	void *eip;
-	void *stack_bottom;
-	size_t stack_size;
-};
-
-void make_fiber(struct fiber_t *fiber, fiber_proc_t fiber_proc, int num_args, ...);
-void make_fiber_ex(struct fiber_t *fiber, fiber_proc_t fiber_proc, return_address_t return_proc, int arg_size, void *args);
-void switch_fiber(struct fiber_t *current, struct fiber_t *dest);
-void switch_fiber_cl(struct fiber_t *current, struct fiber_t *dest, void *reg_values);
-void exit_fiber(struct fiber_t *dest);
-
-
-
-
 /*
  * Private ELF-related definitions 
  */
 
 Elf32_Shdr *get_section_header(void *elf, char *name);
 void *get_inner_elf_addr(const unsigned char *outer_elf, uint32_t *size);
-void *get_function_info(void *handle, const char *name, size_t **metadata);
-
 
 
 
@@ -129,140 +97,9 @@ void *get_function_info(void *handle, const char *name, size_t **metadata);
  * Private OpenCL implementation definitions
  */
 
-typedef void (*clrt_function_t)(void);
-typedef void (*clrt_barrier_t)(int option);
-
-enum clrt_param_type_t
-{
-	CLRT_TYPE_INVALID = 0,
-	CLRT_TYPE_CHAR = 1,
-	CLRT_TYPE_SHORT = 2,
-	CLRT_TYPE_INT = 3,
-	CLRT_TYPE_LONG = 4,
-	CLRT_TYPE_FLOAT = 5,
-	CLRT_TYPE_DOUBLE = 6,
-	CLRT_TYPE_POINTER = 7,
-	CLRT_TYPE_CHAR2 = 8,
-	CLRT_TYPE_CHAR3 = 9,
-	CLRT_TYPE_CHAR4 = 10,
-	CLRT_TYPE_CHAR8 = 11,
-	CLRT_TYPE_CHAR16 = 12,
-	CLRT_TYPE_SHORT2 = 13,
-	CLRT_TYPE_SHORT3 = 14,
-	CLRT_TYPE_SHORT4 = 15,
-	CLRT_TYPE_SHORT8 = 16,
-	CLRT_TYPE_SHORT16 = 17,
-	CLRT_TYPE_INT2 = 18,
-	CLRT_TYPE_INT3 = 19,
-	CLRT_TYPE_INT4 = 20,
-	CLRT_TYPE_INT8 = 21,
-	CLRT_TYPE_INT16 = 22,
-	CLRT_TYPE_LONG2 = 23,
-	CLRT_TYPE_LONG3 = 24,
-	CLRT_TYPE_LONG4 = 25,
-	CLRT_TYPE_LONG8 = 26,
-	CLRT_TYPE_LONG16 = 27,
-	CLRT_TYPE_FLOAT2 = 28,
-	CLRT_TYPE_FLOAT3 = 29,
-	CLRT_TYPE_FLOAT4 = 30,
-	CLRT_TYPE_FLOAT8 = 31,
-	CLRT_TYPE_FLOAT16 = 32,
-	CLRT_TYPE_DOUBLE2 = 33,
-	CLRT_TYPE_DOUBLE3 = 34,
-	CLRT_TYPE_DOUBLE4 = 35,
-	CLRT_TYPE_DOUBLE8 = 36,
-	CLRT_TYPE_DOUBLE16 = 37
-};
-
-/*
-* Does not start with invalid as this is based on the ELF produced 
-* by the AMD APP SDK.
-*/
-
-enum clrt_memory_t
-{
-	CLRT_MEM_VALUE = 0,
-	CLRT_MEM_LOCAL = 1,
-	CLRT_MEM_CONSTANT = 2,
-	CLRT_MEM_GLOBAL = 3
-};
-
-struct clrt_parameter_t
-{
-	enum clrt_param_type_t param_type;
-	enum clrt_memory_t mem_type;
-	int is_set;
-	int stack_offset;
-	int is_stack;
-	int reg_offset;
-	int size;
-};
-
-struct clrt_reg_param_t
-{
-	int reg[4];
-};
-
-struct clrt_workitem_data_t
-{
-	int workgroup_data;  /* 0x60 (Not actually part of AMD runtime, padding_0) */
-	int barrier_func;  /* 0x5c (function *) */
-	int local_reserved;  /* 0x58 (void *) */
-	int work_dim;  /* 0x54 */
-	int group_global[4];  /* [0x50, 0x44] */
-	int global_size[4];  /* [0x40, 0x34] */
-	int local_size[4];  /* [0x30, 0x24] */
-	int group_id[4];  /* [0x20, 0x14] */
-	int global_id[4];  /* [0x10, 0x04] */
-};
-
-struct clrt_workgroup_data_t
-{
-	int num_done;
-	int num_items;
-	int cur_item;
-	struct fiber_t main_ctx;
-	struct fiber_t *cur_ctx;
-	struct fiber_t *workitems;
-	struct clrt_workitem_data_t **workitem_data;
-	unsigned int *stack_params;
-	char *aligned_stacks;
-};
-
-struct clrt_workgroup_data_t *get_workgroup_data(); 
-
-struct clrt_execution_t
-{
-	struct _cl_kernel *kernel;
-	int dims;
-	size_t *global;
-	size_t *local;
-
-	pthread_mutex_t mutex;
-	int num_groups;
-	volatile int next_group;
-	size_t *group_starts;
-};
-
-struct clrt_buffer_list_t
-{
-	struct clrt_buffer_list_t *next;
-	void *aligned;
-	void *raw;
-};
 
 void *clrt_buffer_allocate(size_t size);
 void clrt_buffer_free(void *buffer);
-
-
-
-
-/*
- * OpenCL Objects
- */
-
-
-
 
 
 /*
@@ -330,30 +167,85 @@ extern const char *DRIVER_VERSION;
 extern const char *DEVICE_VERSION;
 
 
-
 /*
  * OpenCL Types
  */
 
+
+struct clrt_device_type_entry_t
+{
+	struct clrt_device_type_t *device_type;
+	cl_uint num_devices;
+	cl_device_id *devices;
+};
+
+
 struct _cl_platform_id
 {
-	unsigned int empty;
+	int num_device_types;
+	struct clrt_device_type_entry_t *entries;
 };
 
 
 struct _cl_device_id
 {
-	volatile int num_kernels;
-	volatile int num_done;
+	/* OpenCL device properties */
+	cl_int address_bits;
+	cl_bool available;
+	cl_bool compiler_available;
+	cl_device_fp_config double_fp_config;
+	cl_bool endian_little;
+	cl_bool error_correction_support;
+	cl_device_exec_capabilities execution_capabilities;
+	const char *extensions;
+	cl_int global_mem_cache_size;
+	cl_device_mem_cache_type global_mem_cache_type;
+	cl_uint global_mem_cacheline_size;
+	cl_int global_mem_size;
+	cl_bool host_unified_memory;
+	cl_bool image_support;
+	cl_int image2d_max_height;
+	cl_int image2d_max_width;
+	cl_int image3d_max_depth;
+	cl_int image3d_max_height;
+	cl_int image3d_max_width;
+	cl_ulong local_mem_size;
+	cl_device_local_mem_type local_mem_type;
+	cl_int max_clock_frequency;
+	cl_int max_compute_units;
+	cl_uint max_constant_args;
+	cl_ulong max_constant_buffer_size;
+	cl_ulong max_mem_alloc_size;
+	size_t max_parameter_size;
+	cl_uint max_read_image_args;
+	cl_int max_samplers;
+	size_t max_work_group_size;
+	cl_uint max_work_item_dimensions;
+	size_t max_work_item_sizes[3];
+	cl_uint max_write_image_args;
+	cl_uint mem_base_addr_align;
+	cl_uint min_data_type_align_size;
+	const char *name;
+	const char *opencl_c_version;
+	cl_uint vector_width_char;
+	cl_uint vector_width_short;
+	cl_uint vector_width_int;
+	cl_uint vector_width_long;
+	cl_uint vector_width_float;
+	cl_uint vector_width_double;
+	cl_uint vector_width_half;
+	const char *profile;
+	size_t profiling_timer_resolution;
+	cl_command_queue_properties queue_properties;
+	cl_device_fp_config single_fp_config;
+	cl_device_type type;
+	const char *vendor;
+	cl_uint vendor_id;
+	const char *version;
 
-	volatile int num_cores;
-	pthread_t *threads;
-
-	pthread_mutex_t lock;
-	pthread_cond_t ready;
-	pthread_cond_t done;
-
-	struct clrt_execution_t *exec;
+	struct clrt_device_type_t *device_type;
+	/* Device-dependent implementation */
+	void *device;
 };
 
 
@@ -386,25 +278,30 @@ struct _cl_mem
 };
 
 
-struct _cl_program
+struct clrt_device_program_t
 {
+	struct clrt_device_type_t *device_type;
 	void *handle;
-	char *filename;
+	void *filename;
 };
 
+struct _cl_program
+{
+	int num_entries;
+	struct clrt_device_program_t *entries;
+};
+
+struct clrt_device_kernel_t
+{
+	struct clrt_device_type_t *device_type;
+	void *kernel;
+};
 
 struct _cl_kernel
 {
-	clrt_function_t function;
-	size_t *metadata;
-	unsigned int num_params;
-	struct clrt_parameter_t *param_info;
-	int stack_param_words;
-	size_t *stack_params;
-	struct clrt_reg_param_t *register_params;
-	size_t local_reserved_bytes;
+	int num_entries;
+	struct clrt_device_kernel_t *entries;
 };
-
 
 struct _cl_event
 {
@@ -426,6 +323,13 @@ struct _cl_sampler
 {
 	unsigned int id;
 };
+
+/* Device Visitor Type */
+typedef void (*device_visitor_t)(void *ctx, cl_device_id device, struct clrt_device_type_t *device_type);
+void visit_devices(device_visitor_t visitor, void *ctx);
+int verify_device(cl_device_id device);
+
+
 
 #endif
 
