@@ -109,24 +109,24 @@ DataModule = mod-cpu-l1-1
 InstModule = mod-cpu-l1-1
 
 [Entry gpu-cu-0]
-Arch = Evergreen
+Arch = SouthernIslands
 ComputeUnit = 0
 Module = mod-gpu-l1-0
 
 
 [Entry gpu-cu-1]
-Arch = Evergreen
+Arch = SouthernIslands
 ComputeUnit = 1
 Module = mod-gpu-l1-0
  
 
 [Entry gpu-cu-2]
-Arch = Evergreen
+Arch = SouthernIslands
 ComputeUnit = 2
 Module = mod-gpu-l1-1
  
 [Entry gpu-cu-3]
-Arch = Evergreen
+Arch = SouthernIslands
 ComputeUnit = 3
 Module = mod-gpu-l1-1
  
