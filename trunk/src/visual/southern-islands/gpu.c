@@ -145,6 +145,7 @@ static void vi_si_gpu_new_inst(struct vi_si_gpu_t *gpu, struct vi_trace_line_t *
 	int inst_buffer_id;
 	int work_group_id;
 	enum vi_si_inst_stage_t stage;
+	long long int uop_id_in_wavefront;
 
 	/* Fields */
 	inst_id = vi_trace_line_get_symbol_long_long(trace_line, "id");
@@ -154,11 +155,12 @@ static void vi_si_gpu_new_inst(struct vi_si_gpu_t *gpu, struct vi_trace_line_t *
 	wavefront_id = vi_trace_line_get_symbol_int(trace_line, "wf");
 	stage = str_map_string(&vi_si_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
 	asm_code = vi_trace_line_get_symbol(trace_line, "asm");
+	uop_id_in_wavefront = vi_trace_line_get_symbol_long_long(trace_line, "uop_id");
 
 	/* Create */
 	snprintf(inst_name, sizeof inst_name, "i-%lld", inst_id);
 	inst = vi_si_inst_create(inst_name, inst_id, compute_unit_id, inst_buffer_id, 
-		work_group_id, wavefront_id, stage, asm_code);
+		work_group_id, wavefront_id, stage, uop_id_in_wavefront, asm_code);
 
 	/* Get compute unit */
 	compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);
@@ -242,10 +244,7 @@ static void vi_si_gpu_end_inst(struct vi_si_gpu_t *gpu, struct vi_trace_line_t *
 	snprintf(inst_name, sizeof inst_name, "i-%lld", inst_id);
 	inst = hash_table_remove(compute_unit->inst_table, inst_name);
 	if (!inst)
-	{
-		printf("cu = %d, inst name = %s\n", compute_unit_id, inst_name);
 		panic("%s: invalid instruction", __FUNCTION__);
-	}
 	vi_si_inst_free(inst);
 }
 

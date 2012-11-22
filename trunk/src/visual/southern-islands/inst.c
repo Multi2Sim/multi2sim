@@ -33,6 +33,7 @@ struct str_map_t vi_si_inst_stage_map =
 
 		{ "f", vi_si_inst_stage_fetch },
 		{ "d", vi_si_inst_stage_decode },
+		{ "i", vi_si_inst_stage_issue },
 
 		{ "bu-r", vi_si_inst_stage_branch_read },
 		{ "bu-e", vi_si_inst_stage_branch_execute },
@@ -67,6 +68,7 @@ struct str_map_t vi_si_inst_stage_color_map =
 		/* Green */
 		{ "#88FF88", vi_si_inst_stage_fetch },
 		{ "#44FF44", vi_si_inst_stage_decode },
+		{ "#00FF00", vi_si_inst_stage_issue },
 
 		/* Orange */
 		{ "#FFBE00", vi_si_inst_stage_branch_read },
@@ -104,6 +106,7 @@ struct str_map_t vi_si_inst_stage_name_map =
 
 		{ "F", vi_si_inst_stage_fetch },
 		{ "D", vi_si_inst_stage_decode },
+		{ "I", vi_si_inst_stage_issue },
 
 		{ "BR", vi_si_inst_stage_branch_read },
 		{ "BE", vi_si_inst_stage_branch_execute },
@@ -130,7 +133,7 @@ struct str_map_t vi_si_inst_stage_name_map =
 
 struct vi_si_inst_t *vi_si_inst_create(char *name, long long id, int compute_unit_id, 
 	int inst_buffer_id, int work_group_id, int wavefront_id, enum vi_si_inst_stage_t stage,
-        char *asm_code)
+        long long int uop_id_in_wavefront, char *asm_code)
 
 {
 	struct vi_si_inst_t *inst;
@@ -143,6 +146,7 @@ struct vi_si_inst_t *vi_si_inst_create(char *name, long long id, int compute_uni
 	inst->inst_buffer_id = inst_buffer_id;
 	inst->work_group_id = work_group_id;
 	inst->wavefront_id = wavefront_id;
+	inst->uop_id_in_wavefront = uop_id_in_wavefront;
 	inst->stage = stage;
 
 	inst->asm_code = str_set(NULL, asm_code);
@@ -170,8 +174,8 @@ void vi_si_inst_get_markup(struct vi_si_inst_t *inst, char *buf, int size)
 	end_color = "</span>";
 
 	/* Instruction ID */
-	str_printf(&buf, &size, "%s<b>I-%lld IB-%d WF-%d</b>%s", begin_color, inst->id, 
-		inst->inst_buffer_id, inst->wavefront_id, end_color);
+	str_printf(&buf, &size, "%s<b>I-%lld IB-%d WF-%d UOP-%lld</b>%s", begin_color, inst->id, 
+		inst->inst_buffer_id, inst->wavefront_id, inst->uop_id_in_wavefront, end_color);
 
 	/* Assembly */
 	if (inst->asm_code && *inst->asm_code)

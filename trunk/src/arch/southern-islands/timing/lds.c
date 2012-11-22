@@ -25,8 +25,7 @@
 /* Configurable by user at runtime */
 
 int si_gpu_lds_width = 1;
-
-int si_gpu_lds_issue_buffer_size = 5;
+int si_gpu_lds_issue_buffer_size = 4;
 
 /*
  * Register accesses are not pipelined, so buffer size is not
@@ -40,8 +39,8 @@ int si_gpu_lds_inflight_mem_accesses = 32;
 void si_lds_process_mem_accesses(struct si_lds_t *lds)
 {
 	struct si_uop_t *uop = NULL;
-	int i;
 	int list_entries;
+	int i;
 	int list_index = 0;
 
 	/* Process completed memory instructions */
@@ -79,6 +78,8 @@ void si_lds_writeback(struct si_lds_t *lds)
 {
 	struct si_uop_t *uop = NULL;
 	int list_entries;
+	int i;
+	int list_index = 0;
 
 	/* Process completed memory instructions */
 	list_entries = list_count(lds->exec_buffer);
@@ -86,39 +87,39 @@ void si_lds_writeback(struct si_lds_t *lds)
 	/* Sanity check the exec buffer */
 	assert(list_entries <= si_gpu_lds_width);
 
-	for (int i = 0; i < list_entries; i++)
+	for (i = 0; i < list_entries; i++)
 	{
-		uop = list_head(lds->exec_buffer);
+		uop = list_get(lds->exec_buffer, list_index);
 		assert(uop);
 
-		if (uop->execute_ready <= si_gpu->cycle)
+        /* Uop is not ready */
+		if (si_gpu->cycle < uop->execute_ready)
 		{
-			/* Access complete, remove the uop from the queue */
-			list_remove(lds->exec_buffer, uop);
+            list_index++;
+			continue;
+        }
 
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"lds-w\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id);
+        /* Access complete, remove the uop from the queue */
+        list_remove(lds->exec_buffer, uop);
 
-			/* Allow next instruction to be fetched */
-			uop->inst_buffer_entry->ready = 1;
-			uop->inst_buffer_entry->uop = NULL;
-			uop->inst_buffer_entry->cycle_fetched = INST_NOT_FETCHED;
+        si_trace("si.inst id=%lld cu=%d wf=%d stg=\"lds-w\"\n", 
+            uop->id_in_compute_unit, lds->compute_unit->id, 
+            uop->wavefront->id);
 
-			/* Free uop */
-			if (si_tracing())
-				si_gpu_uop_trash_add(uop);
-			else
-				si_uop_free(uop);
+        /* Allow next instruction to be fetched */
+        uop->inst_buffer_entry->ready = 1;
+        uop->inst_buffer_entry->uop = NULL;
+        uop->inst_buffer_entry->cycle_fetched = INST_NOT_FETCHED;
 
-			/* Statistics */
-			lds->inst_count++;
-			si_gpu->last_complete_cycle = esim_cycle;
-		}
-		else
-		{
-			break;
-		}
+        /* Free uop */
+        if (si_tracing())
+            si_gpu_uop_trash_add(uop);
+        else
+            si_uop_free(uop);
+
+        /* Statistics */
+        lds->inst_count++;
+        si_gpu->last_complete_cycle = esim_cycle;
 	}
 }
 
@@ -132,6 +133,7 @@ void si_lds_execute(struct si_lds_t *lds)
 	int list_entries;
 	int i, j;
 	enum mod_access_kind_t access_type;
+    int list_index = 0;
 
 	list_entries = list_count(lds->read_buffer);
 	
@@ -141,17 +143,25 @@ void si_lds_execute(struct si_lds_t *lds)
 
 	for (i = 0; i < list_entries; i++)
 	{
-		uop = list_head(lds->read_buffer);
+		uop = list_get(lds->read_buffer, list_index);
 		assert(uop);
 
-		/* Stop if the issue width has been reached. */
+		/* Stall if the issue width has been reached. */
 		if (instructions_processed == si_gpu_lds_width)
-			break;
+        {
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+				uop->id_in_compute_unit, lds->compute_unit->id, 
+				uop->wavefront->id, uop->id_in_wavefront);
+			list_index++;
+            continue;
+        }
 
-		/* Stop if the uop has not been fully read yet. It is safe
-		 * to assume that no other uop is ready either. */
+		/* Uop is not ready yet */
 		if (si_gpu->cycle < uop->read_ready)
-			break;
+        {
+			list_index++;
+            continue;
+        }
 
 		/* Sanity check uop */
 		assert(uop->local_mem_read || uop->local_mem_write);
@@ -207,17 +217,18 @@ void si_lds_execute(struct si_lds_t *lds)
 
 			instructions_processed++;
 
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"lds-e\"\n", 
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"lds-e\"\n", 
 				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id);
+				uop->wavefront->id, uop->id_in_wavefront);
 		}
 		else
 		{
 			/* Memory unit is busy, try later */
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id);
-			break;
+				uop->wavefront->id, uop->id_in_wavefront);
+			list_index++;
+            continue;
 		}
 	}
 }
@@ -227,34 +238,45 @@ void si_lds_read(struct si_lds_t *lds)
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
+    int list_index = 0;
+    int i;
 
 	list_entries = list_count(lds->issue_buffer);
 
 	/* Sanity check the decode buffer */
 	assert(list_entries <= si_gpu_lds_issue_buffer_size);
 
-	for (int i = 0; i < list_entries; i++)
+	for (i = 0; i < list_entries; i++)
 	{
-		uop = list_head(lds->issue_buffer);
+		uop = list_get(lds->issue_buffer, list_index);
 		assert(uop);
 
-		/* Stop if the width has been reached. */
+		/* Stall if the width has been reached. */
 		if (instructions_processed == si_gpu_lds_width)
-			break;
-
-		/* Stop if the uop has not been fully decoded yet. It is safe
-		 * to assume that no other uop is ready either. */
-		if (si_gpu->cycle < uop->issue_ready)
-			break;
+        {
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+				uop->id_in_compute_unit, lds->compute_unit->id, 
+				uop->wavefront->id, uop->id_in_wavefront);
+			list_index++;
+            continue;
+        }
 
 		/* Stop if the read buffer is full. */
 		if (list_count(lds->read_buffer) >= si_gpu_lds_read_buffer_size)
 		{
-			si_trace("si.inst id=%lld cu=%d wf=%d stg=\"s\"\n", 
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id);
-			break;
+				uop->wavefront->id, uop->id_in_wavefront);
+			list_index++;
+            continue;
 		}
+
+		/* Uop is not ready yet */
+		if (si_gpu->cycle < uop->issue_ready)
+        {
+			list_index++;
+            continue;
+        }
 		
 		uop->read_ready = si_gpu->cycle + si_gpu_lds_read_latency;
 		list_remove(lds->issue_buffer, uop);
@@ -262,9 +284,9 @@ void si_lds_read(struct si_lds_t *lds)
 
 		instructions_processed++;
 
-		si_trace("si.inst id=%lld cu=%d wf=%d stg=\"lds-r\"\n",
-			uop->id_in_compute_unit, lds->compute_unit->id,
-			uop->wavefront->id);
+        si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"lds-r\"\n", 
+            uop->id_in_compute_unit, lds->compute_unit->id, 
+            uop->wavefront->id, uop->id_in_wavefront);
 	}
 }
 
