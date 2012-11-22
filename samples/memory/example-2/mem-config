@@ -69,21 +69,21 @@ DefaultBandwidth = 256
 
 
 [Entry core-0]
-Type = CPU
+Arch = x86
 Core = 0
 Thread = 0
 DataModule = mod-l1-0
 InstModule = mod-l1-0
 
 [Entry core-1]
-Type = CPU
+Arch = x86
 Core = 1
 Thread = 0
 DataModule = mod-l1-1
 InstModule = mod-l1-1
 
 [Entry core-2]
-Type = CPU
+Arch = x86
 Core = 2
 Thread = 0
 DataModule = mod-l1-2
