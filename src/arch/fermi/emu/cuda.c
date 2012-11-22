@@ -69,6 +69,7 @@ char *frm_cuda_call_name[frm_cuda_call_count + 1] =
 {
 	NULL,
 #define FRM_CUDA_DEFINE_CALL(name) #name,
+#include "cuda.dat"
 #undef FRM_CUDA_DEFINE_CALL
 	NULL
 };

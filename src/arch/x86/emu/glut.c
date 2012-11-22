@@ -67,6 +67,7 @@ char *x86_glut_call_name[x86_glut_call_count + 1] =
 {
 	NULL,
 #define X86_GLUT_DEFINE_CALL(name, code) #name,
+#include "glut.dat"
 #undef X86_GLUT_DEFINE_CALL
 	NULL
 };
