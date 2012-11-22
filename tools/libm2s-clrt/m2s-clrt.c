@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "m2s-clrt.h"
+#include "debug.h"
 
 
 

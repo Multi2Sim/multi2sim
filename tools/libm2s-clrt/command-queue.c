@@ -23,7 +23,9 @@
 #include <assert.h>
 
 #include "m2s-clrt.h"
+#include "debug.h"
 
+#define MAX_DIMS 3
 
 struct clrt_mem_transfer_t
 {
@@ -35,11 +37,13 @@ struct clrt_mem_transfer_t
 
 struct clrt_kernel_run_t
 {
-	struct clrt_execution_t *exec;
-	struct _cl_device_id *device;
+	cl_device_id device;
+	void *kernel; /* device-dependent kernel */
+	cl_uint work_dim; 
+	size_t global_work_offset[MAX_DIMS];
+	size_t global_work_size[MAX_DIMS];
+	size_t local_work_size[MAX_DIMS];
 };
-
-
 
 
 /*
@@ -48,26 +52,15 @@ struct clrt_kernel_run_t
 
 void clrt_kernel_run_action(void *data)
 {
-	struct clrt_kernel_run_t *run = (struct clrt_kernel_run_t *) data;
+	struct clrt_kernel_run_t *run = data;
 
-	pthread_mutex_lock(&run->device->lock);
-
-	run->device->num_kernels++;
-	run->device->num_done = 0;
-	run->device->exec = run->exec;
-	pthread_cond_broadcast(&run->device->ready);
-
-	while (run->device->num_done != run->device->num_cores)
-		pthread_cond_wait(&run->device->done, &run->device->lock);
-
-	pthread_mutex_unlock(&run->device->lock);
-
-	/* free the execution context */
-	free(run->exec->global);
-	free(run->exec->local);
-	free(run->exec->group_starts);
-	pthread_mutex_destroy(&run->exec->mutex);
-	free(run->exec);
+	run->device->device_type->execute_ndrange(
+		run->device->device,
+		run->kernel,
+		run->work_dim,
+		run->global_work_offset,
+		run->global_work_size,
+		run->local_work_size);
 }
 
 
@@ -95,8 +88,6 @@ struct clrt_queue_item_t *clrt_queue_item_create(
 	int i;
 
 	item = (struct clrt_queue_item_t *) malloc(sizeof (struct clrt_queue_item_t));
-	if(!item)
-		fatal("%s: out of memory", __FUNCTION__);
 	item->data = data;
 	item->action = action;
 	item->num_wait_events = num_wait;
@@ -869,14 +860,8 @@ cl_int clEnqueueNDRangeKernel(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
+	cl_int status;
 	int i;
-	int j;
-	int k;
-	int num_groups[3];
-	int status;
-	struct clrt_execution_t *run;
-	struct clrt_kernel_run_t *kitem;
-	struct clrt_queue_item_t *item;
 
 	/* Debug */
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
@@ -890,84 +875,54 @@ cl_int clEnqueueNDRangeKernel(
 	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
 	m2s_clrt_debug("\tevent = %p", event);
 
-	run = (struct clrt_execution_t *) malloc(sizeof (struct clrt_execution_t));
-	if (!run)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
 	if (!clrt_object_verify(kernel, CLRT_OBJECT_KERNEL))
 		return CL_INVALID_KERNEL;
 
-	for (i = 0; i < ((struct _cl_kernel *) kernel)->num_params; i++)
-		if (((struct _cl_kernel *) kernel)->param_info[i].is_set == 0)
-			return CL_INVALID_KERNEL_ARGS;
-
 	status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
-	if (work_dim > 3)
+	if (work_dim > MAX_DIMS)
 		return CL_INVALID_WORK_DIMENSION;
 
-	/* copy over dimensions */
-	run->dims = work_dim;
-	run->global = (size_t *) malloc(sizeof (size_t) * 3);
-	if (!run->global)
-		fatal("%s: out of memory", __FUNCTION__);
-	memcpy(run->global, global_work_size, sizeof (size_t) * work_dim);
+	struct clrt_kernel_run_t *run = malloc(sizeof *run);
+	memset(run, 0, sizeof *run);	
 
-	run->local = (size_t *) malloc(sizeof (size_t) * 3);
-	if (!run->local)
-		fatal("%s: out of memory", __FUNCTION__);
+	run->work_dim = work_dim;
 
-	memcpy(run->local, local_work_size, sizeof (size_t) * work_dim);
+	for (i = 0; i < kernel->num_entries; i++)
+		if (kernel->entries[i].device_type == command_queue->device->device_type)
+			run->kernel = kernel->entries[i].kernel;
 	
-	for (i = work_dim; i < 3; i++)
+	if (run->kernel == NULL)
+		return CL_INVALID_VALUE;
+
+	run->device = command_queue->device;
+
+	if (global_work_offset)
+		memcpy(run->global_work_offset, global_work_offset, sizeof (size_t) * work_dim);
+
+	memcpy(run->global_work_size, global_work_size, sizeof (size_t) * work_dim);
+
+	if (local_work_size)
+		memcpy(run->local_work_size, local_work_size, sizeof (size_t) * work_dim);
+	else
+		for (i = 0; i < work_dim; i++)
+			run->local_work_size[i] = 1;
+	
+	for (i = work_dim; i < MAX_DIMS; i++)
 	{
-		run->global[i] = 1;
-		run->local[i] = 1;
+		run->global_work_offset[i] = 0;
+		run->global_work_size[i] = 1;
+		run->local_work_size[i] = 1;
 	}
-
-	run->num_groups = 1;
-	for (i = 0; i < 3; i++)
-	{
-		assert(!(run->global[i] % run->local[i]));	
-		
-		num_groups[i] = run->global[i] / run->local[i];
-		run->num_groups *= num_groups[i];
-	}
-	run->kernel = kernel;
-	run->next_group = 0;
-	run->group_starts = (size_t *) malloc(3 * sizeof (size_t) * run->num_groups);
-	if(!run->group_starts)
-		fatal("%s: out of memory", __FUNCTION__);
 	
-	pthread_mutex_init(&run->mutex, NULL);
-	
-	for (i = 0; i < num_groups[2]; i++)
-		for (j = 0; j < num_groups[1]; j++)
-			for (k = 0; k < num_groups[0]; k++)
-			{
-				size_t *group_start;
-
-				group_start = run->group_starts + 3 * (i * num_groups[1] * num_groups[0] + j * num_groups[0] + k);
-				group_start[0] = run->local[0] * k;
-				group_start[1] = run->local[1] * j;
-				group_start[2] = run->local[2] * i;
-			}
-
-	kitem = (struct clrt_kernel_run_t *) malloc(sizeof (struct clrt_kernel_run_t));
-	if (!kitem)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	kitem->device = command_queue->device;
-	kitem->exec = run;
-
-	item = clrt_queue_item_create(
+	struct clrt_queue_item_t *item = clrt_queue_item_create(
 		command_queue,
-		kitem, 
+		run, 
 		clrt_kernel_run_action, 
 		event, 
 		num_events_in_wait_list, 

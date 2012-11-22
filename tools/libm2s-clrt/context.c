@@ -19,16 +19,12 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "m2s-clrt.h"
+#include "debug.h"
 
-
-
-extern struct _cl_pltaform_id *m2s_platform;
-extern struct _cl_device_id *m2s_device;
-
-
-
+extern struct _cl_platform_id *m2s_platform;
 
 /*
  * Private Functions
@@ -86,15 +82,7 @@ cl_context clCreateContext(
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_VALUE;
 		return NULL;
-	}
-
-	if (*devices != m2s_device)
-	{
-		if (errcode_ret)
-			*errcode_ret = CL_INVALID_DEVICE;
-		return NULL;
-	}
-	
+	}	
 
 	context = (struct _cl_context *) malloc(sizeof (struct _cl_context));
 	if (!context)
@@ -102,13 +90,22 @@ cl_context clCreateContext(
 	clrt_object_create(context, CLRT_OBJECT_CONTEXT, clrt_context_free);
 
 
-	context->num_devices = 1;
+	for (i = 0; i < num_devices; i++)
+	{
+		if (!verify_device(devices[i]))
+		{
+			if (errcode_ret)
+				*errcode_ret = CL_INVALID_DEVICE;
+			return NULL;
+		}
+	}
+
+	context->num_devices = num_devices;
 	context->devices = (struct _cl_device_id **) malloc(sizeof (struct _cl_device_id *) * context->num_devices);
 	if (!context->devices)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	for (i = 0; i < context->num_devices; i++)
-		context->devices[i] = devices[i];
+	memcpy(context->devices, devices, sizeof devices[0] * num_devices);
 
 	if (properties)
 	{
@@ -128,7 +125,6 @@ cl_context clCreateContext(
 	return context;
 }
 
-
 cl_context clCreateContextFromType(
 	const cl_context_properties *properties,
 	cl_device_type device_type,
@@ -144,20 +140,24 @@ cl_context clCreateContextFromType(
 	m2s_clrt_debug("\tuser_data = %p", user_data);
 	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
 
-	if (device_type == CL_DEVICE_TYPE_GPU || device_type == CL_DEVICE_TYPE_ACCELERATOR)
+
+	cl_uint num_devices;
+	clGetDeviceIDs(m2s_platform, device_type, 0, NULL, &num_devices);
+
+	if (num_devices == 0)
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_DEVICE_NOT_FOUND;
 		return NULL;
 	}
 
-	if (device_type != CL_DEVICE_TYPE_CPU && device_type != CL_DEVICE_TYPE_DEFAULT && device_type != CL_DEVICE_TYPE_ALL)
-	{
-		if (errcode_ret)
-			*errcode_ret = CL_INVALID_DEVICE_TYPE;
-	}
+	cl_device_id *devices = malloc(sizeof devices[0] * num_devices);
+	
+	clGetDeviceIDs(m2s_platform, device_type, num_devices, devices, NULL);
 
-	return clCreateContext(properties, 1, &m2s_device, NULL, NULL, errcode_ret);
+	cl_context context = clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
+	free(devices);
+	return context;
 }
 
 

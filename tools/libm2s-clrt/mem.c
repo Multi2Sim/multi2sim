@@ -24,6 +24,7 @@
 #include <assert.h>
 
 #include "m2s-clrt.h"
+#include "debug.h"
 
 
 
