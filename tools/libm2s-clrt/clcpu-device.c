@@ -6,19 +6,23 @@
 #include <assert.h>
 #include <string.h>
 
+#include <pthread.h>
 #include <CL/cl.h>
 
 
-#include "m2s-clrt.h"
 #include "clcpu.h"
 #include "clcpu-device.h"
 #include "clcpu-program.h"
 #include "debug.h"
 
 const char *DEVICE_EXTENSIONS = "cl_khr_fp64 cl_khr_byte_addressable_store cl_khr_global_int32_base_atomics cl_khr_local_int32_base_atomics";
+const char *DEVICE_NAME = "x86 CPU";
+const char *DRIVER_VERSION = "0.0";
+const char *DEVICE_VERSION = "OpenCL 1.1 Multi2Sim";
 
 /* stack size and alignment of stack */
 #define STACK_SIZE 0x2000
+#define MEM_ALIGN 16
 
 void barrier(int data)
 {
@@ -45,6 +49,8 @@ struct clrt_device_type_t *clcpu_create_device_type(void)
 	device_type->create_kernel = clcpu_device_type_create_kernel;
 	device_type->set_kernel_arg = clcpu_device_type_set_kernel_arg;
 	device_type->execute_ndrange = clcpu_device_exceute_ndrange;
+	device_type->check_kernel = clcpu_device_check_kernel;
+	device_type->kernel_destroy = clcpu_device_kernel_destroy;
 
 	return device_type;
 }
@@ -250,10 +256,11 @@ void init_workgroup(
 
 	memcpy(workgroup->stack_params, kernel->stack_params, sizeof (size_t) * kernel->stack_param_words);
 	for (i = 0; i < kernel->num_params; i++)
-		if (kernel->param_info[i].mem_type == CLRT_MEM_LOCAL)
+		if (kernel->param_info[i].mem_type == CLCPU_MEM_LOCAL)
 		{
 			int offset = kernel->param_info[i].stack_offset;
-			workgroup->stack_params[offset] = (size_t) clrt_buffer_allocate(kernel->stack_params[offset]);
+			if (posix_memalign((void **)(workgroup->stack_params + offset), MEM_ALIGN, kernel->stack_params[offset]))
+				fatal("%s: out of memory", __FUNCTION__);
 		}
 } 
 
@@ -336,12 +343,12 @@ void destroy_workgroup(struct clcpu_workgroup_data_t *workgroup, struct clcpu_ke
 	free(workgroup->workitem_data);
 	free(workgroup->aligned_stacks);
 	for (i = 0; i < kernel->num_params; i++)
-		if (kernel->param_info[i].mem_type == CLRT_MEM_LOCAL)
+		if (kernel->param_info[i].mem_type == CLCPU_MEM_LOCAL)
 		{
 			int offset;
 
 			offset = kernel->param_info[i].stack_offset;
-			clrt_buffer_free((void *) workgroup->stack_params[offset]);
+			free((void *) workgroup->stack_params[offset]);
 		}
 	free(workgroup->stack_params);
 }
@@ -422,7 +429,7 @@ cl_int clcpu_device_type_init_devices(
 
 	if (num_entries && devices)
 	{
-		struct _cl_device_id *cpu = malloc(sizeof *cpu);
+		cl_device_id cpu = malloc(sizeof *cpu);
 		clcpu_device_info_init(cpu);
 		cpu->device = clcpu_device_create();
 		devices[0] = cpu;

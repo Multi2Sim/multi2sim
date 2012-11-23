@@ -1,6 +1,8 @@
 #ifndef __CLCPU_DEVICE_H__
 #define __CLCPU_DEVICE_H__
 
+#include "fibers.h"
+
 typedef void (*clrt_barrier_t)(int option);
 
 struct clcpu_execution_t

@@ -53,9 +53,6 @@ enum m2s_clrt_call_t
 	m2s_clrt_call_count
 };
 
-/* Executing in native mode (vs. simulation mode on Multi2Sim) */
-extern int m2s_clrt_native_mode;
-
 /* Debug */
 void m2s_clrt_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
@@ -184,68 +181,6 @@ struct _cl_platform_id
 {
 	int num_device_types;
 	struct clrt_device_type_entry_t *entries;
-};
-
-
-struct _cl_device_id
-{
-	/* OpenCL device properties */
-	cl_int address_bits;
-	cl_bool available;
-	cl_bool compiler_available;
-	cl_device_fp_config double_fp_config;
-	cl_bool endian_little;
-	cl_bool error_correction_support;
-	cl_device_exec_capabilities execution_capabilities;
-	const char *extensions;
-	cl_int global_mem_cache_size;
-	cl_device_mem_cache_type global_mem_cache_type;
-	cl_uint global_mem_cacheline_size;
-	cl_int global_mem_size;
-	cl_bool host_unified_memory;
-	cl_bool image_support;
-	cl_int image2d_max_height;
-	cl_int image2d_max_width;
-	cl_int image3d_max_depth;
-	cl_int image3d_max_height;
-	cl_int image3d_max_width;
-	cl_ulong local_mem_size;
-	cl_device_local_mem_type local_mem_type;
-	cl_int max_clock_frequency;
-	cl_int max_compute_units;
-	cl_uint max_constant_args;
-	cl_ulong max_constant_buffer_size;
-	cl_ulong max_mem_alloc_size;
-	size_t max_parameter_size;
-	cl_uint max_read_image_args;
-	cl_int max_samplers;
-	size_t max_work_group_size;
-	cl_uint max_work_item_dimensions;
-	size_t max_work_item_sizes[3];
-	cl_uint max_write_image_args;
-	cl_uint mem_base_addr_align;
-	cl_uint min_data_type_align_size;
-	const char *name;
-	const char *opencl_c_version;
-	cl_uint vector_width_char;
-	cl_uint vector_width_short;
-	cl_uint vector_width_int;
-	cl_uint vector_width_long;
-	cl_uint vector_width_float;
-	cl_uint vector_width_double;
-	cl_uint vector_width_half;
-	const char *profile;
-	size_t profiling_timer_resolution;
-	cl_command_queue_properties queue_properties;
-	cl_device_fp_config single_fp_config;
-	cl_device_type type;
-	const char *vendor;
-	cl_uint vendor_id;
-	const char *version;
-
-	struct clrt_device_type_t *device_type;
-	/* Device-dependent implementation */
-	void *device;
 };
 
 

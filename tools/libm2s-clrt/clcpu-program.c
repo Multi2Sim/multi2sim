@@ -7,7 +7,6 @@
 
 #include "clcpu.h"
 #include "clcpu-program.h"
-#include "m2s-clrt.h"
 #include "debug.h"
 
 #define MAX_SSE_REG_PARAMS 4
@@ -243,6 +242,26 @@ void *clcpu_device_type_create_kernel(void *handle, const char *kernel_name, cl_
 	return kernel;
 }
 
+cl_int clcpu_device_check_kernel(void *k)
+{
+	int i;
+	struct clcpu_kernel_t *kernel = k;
+	for (i = 0; i < kernel->num_params; i++)
+		if (kernel->param_info[i].is_set == 0)
+			return CL_INVALID_VALUE;
+	return CL_SUCCESS;
+}
+
+void clcpu_device_kernel_destroy(void *k)
+{
+	struct clcpu_kernel_t *kernel = k;
+	free(kernel->param_info);
+	free(kernel->stack_params);
+	free(kernel->register_params);
+	memset(kernel, 0, sizeof *kernel);
+	free(kernel);
+}
+
 cl_int clcpu_device_type_set_kernel_arg(void *k, cl_uint arg_index, size_t arg_size, const void *arg_value)
 {
 	struct clcpu_kernel_t *kernel = k;
@@ -252,17 +271,17 @@ cl_int clcpu_device_type_set_kernel_arg(void *k, cl_uint arg_index, size_t arg_s
 	param_info = kernel->param_info + arg_index;
 	assert(param_info->size * sizeof (size_t) >= arg_size || !arg_value);
 
-	assert((!arg_value) == (param_info->mem_type == CLRT_MEM_LOCAL));
+	assert((!arg_value) == (param_info->mem_type == CLCPU_MEM_LOCAL));
 
 	/* local memory */
 	if (!arg_value)
 		kernel->stack_params[param_info->stack_offset] = arg_size;
-	else if (param_info->mem_type == CLRT_MEM_GLOBAL || param_info->mem_type == CLRT_MEM_CONSTANT)
+	else if (param_info->mem_type == CLCPU_MEM_GLOBAL || param_info->mem_type == CLCPU_MEM_CONSTANT)
 	{
-		struct _cl_mem *mem = *(cl_mem *) arg_value;
-		if (!clrt_object_verify(mem, CLRT_OBJECT_MEM))
+		void *addr = clrt_get_address_of_buffer_object(*(cl_mem *) arg_value);
+		if (!addr)
 			return CL_INVALID_MEM_OBJECT;
-		memcpy(kernel->stack_params + param_info->stack_offset, &mem->buffer, sizeof mem->buffer);
+		memcpy(kernel->stack_params + param_info->stack_offset, &addr, sizeof addr);
 	}
 	/* only works on Little-endian machines */
 	else if (param_info->is_stack)

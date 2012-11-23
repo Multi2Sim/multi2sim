@@ -56,9 +56,7 @@ const char *VERSION = "OpenCL 1.1 Multi2Sim";
 const char *NAME = "CLRT";
 const char *VENDOR = "Multi2Sim";
 const char *EXTENSIONS = "";
-const char *DEVICE_NAME = "x86 CPU";
-const char *DRIVER_VERSION = "0.0";
-const char *DEVICE_VERSION = "OpenCL 1.1 Multi2Sim";
+
 
 
 cl_int populateString(const char *param, size_t param_value_size, void *param_value, size_t *param_value_size_ret)

@@ -896,8 +896,11 @@ cl_int clEnqueueNDRangeKernel(
 	for (i = 0; i < kernel->num_entries; i++)
 		if (kernel->entries[i].device_type == command_queue->device->device_type)
 			run->kernel = kernel->entries[i].kernel;
-	
+
 	if (run->kernel == NULL)
+		return CL_INVALID_VALUE;
+
+	if (command_queue->device->device_type->check_kernel(run->kernel) != CL_SUCCESS)
 		return CL_INVALID_VALUE;
 
 	run->device = command_queue->device;
