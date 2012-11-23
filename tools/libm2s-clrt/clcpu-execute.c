@@ -26,10 +26,6 @@ void clcpu_device_exceute_ndrange(
 
 	struct clcpu_execution_t *run;
 
-	for (i = 0; i < kernel->num_params; i++)
-		if (kernel->param_info[i].is_set == 0)
-			fatal("%s: Invalid args", __FUNCTION__);
-
 	run = malloc(sizeof (struct clcpu_execution_t));
 	if (!run)
 		fatal("%s: out of memory", __FUNCTION__);

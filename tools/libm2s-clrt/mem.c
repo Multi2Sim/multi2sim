@@ -57,7 +57,13 @@ void clrt_mem_free(void *data)
 	free(mem);
 }
 
-
+void *clrt_get_address_of_buffer_object(cl_mem buffer)
+{
+	if (!clrt_object_verify(buffer, CLRT_OBJECT_MEM))
+		return NULL;
+	else
+		return buffer->buffer;
+}
 
 
 /*

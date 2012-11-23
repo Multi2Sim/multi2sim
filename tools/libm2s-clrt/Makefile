@@ -24,7 +24,9 @@ OBJS = \
 	event.o \
 	kernel.o \
 	list.o \
+	fibers.o \
 	m2s-clrt.o \
+	workgroupdata.o \
 	mem.o \
 	mhandle.o \
 	mkfibers.o \
