@@ -2,7 +2,6 @@
 #define __CLCPU_H__
 
 #include "device-interface.h"
-#include "fibers.h"
 
 struct clrt_device_type_t *clcpu_create_device_type(void);
 
@@ -35,6 +34,12 @@ void clcpu_device_exceute_ndrange(
 	const size_t *global_work_offset, 
 	const size_t *global_work_size, 
 	const size_t *local_work_size);
+
+cl_int clcpu_device_check_kernel(
+	void *kernel);
+
+void clcpu_device_kernel_destroy(
+	void *kernel);
 
 
 

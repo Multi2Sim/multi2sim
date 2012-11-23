@@ -53,10 +53,10 @@ enum clcpu_param_type_t
 
 enum clcpu_memory_t
 {
-	CLRT_MEM_VALUE = 0,
-	CLRT_MEM_LOCAL = 1,
-	CLRT_MEM_CONSTANT = 2,
-	CLRT_MEM_GLOBAL = 3
+	CLCPU_MEM_VALUE = 0,
+	CLCPU_MEM_LOCAL = 1,
+	CLCPU_MEM_CONSTANT = 2,
+	CLCPU_MEM_GLOBAL = 3
 };
 
 

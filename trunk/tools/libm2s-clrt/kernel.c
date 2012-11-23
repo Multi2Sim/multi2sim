@@ -34,6 +34,12 @@
 void clrt_kernel_free(void *data)
 {
 	struct _cl_kernel *kernel = data;
+	int i;
+	for (i = 0; i < kernel->num_entries; i++)
+	{
+		struct clrt_device_kernel_t *cur = kernel->entries + i;
+		cur->device_type->kernel_destroy(cur->kernel);
+	}
 	free(kernel->entries);
 	free(kernel);
 }
