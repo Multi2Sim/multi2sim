@@ -353,14 +353,9 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_ib
 			continue;
 
 		/* Fetch buffer full */
-		if (list_count(compute_unit->fetch_buffers[active_ib]) >= si_gpu_fetch_buffer_size)
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n",
-				wavefront->inst_buffer_entry->uop->id_in_compute_unit, 
-				compute_unit->id, wavefront->inst_buffer_entry->uop->wavefront->id,
-				uop->id_in_wavefront);
+        assert(list_count(compute_unit->fetch_buffers[active_ib]) <= si_gpu_fetch_buffer_size);
+        if (list_count(compute_unit->fetch_buffers[active_ib]) == si_gpu_fetch_buffer_size)
 			continue;
-		}
 
 		/* Wavefront is ready but waiting on outstanding memory instructions */
 		if (wavefront->inst_buffer_entry->wait_for_mem)
@@ -382,10 +377,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_ib
 		if (wavefront->inst_buffer_entry->wait_for_barrier)
 		{
 			/* TODO Show a waiting state in visualization tool */
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n",
-				wavefront->inst_buffer_entry->uop->id_in_compute_unit, 
-				compute_unit->id, wavefront->inst_buffer_entry->uop->wavefront->id,
-				uop->id_in_wavefront);
+			/* XXX uop is already freed */
 			continue;
 		}
 
