@@ -378,8 +378,11 @@ void str_trim(char *dest, int size, char *src)
 	
 	/* New string length */
 	new_len = len - left_trim - right_trim;
-	new_len = MIN(new_len, size - 1);
 	assert(new_len > 0);
+
+	/* Adjust to size of destination buffer */
+	new_len = MIN(new_len, size - 1);
+	assert(new_len >= 0);
 
 	/* Create new string */
 	dest[new_len] = '\0';
