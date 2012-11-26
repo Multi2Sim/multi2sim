@@ -23,19 +23,23 @@
 #include <GL/gl.h>
 #include "opengl-color-channel.h"
  
-#define R_COMP 0
-#define G_COMP 1
-#define B_COMP 2
-#define A_COMP 3
+
+#define X_COMP 0
+#define Y_COMP 1
+#define Z_COMP 2
+#define W_COMP 3
+
+#define R_COMP  X_COMP
+#define G_COMP Y_COMP
+#define B_COMP Z_COMP
+#define A_COMP W_COMP
 
 /* OpenGL vertex */
 struct x86_opengl_vertex_t
 {
-	GLfloat x;
-	GLfloat y;
-	GLfloat z;
-	GLfloat w;
+	GLfloat pos[4];
 	GLchan color[4];
+	GLfloat normal[4];
 };
 
 /* OpenGL vertex group */
@@ -43,6 +47,7 @@ struct x86_opengl_vertex_group_t
 {
 	/* Primitive type is defined in gl.h */
 	GLenum primitive_type;
+
 	/* Element in this list has data type x86_opengl_vertex_t */
 	struct list_t *vertex_list;
 };
@@ -56,11 +61,13 @@ struct x86_opengl_vertex_buffer_t
 	struct x86_opengl_vertex_group_t *current_vertex_group;
 };
 
+struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+void x86_opengl_vertex_free(struct x86_opengl_vertex_t *vtx);
+
 void x86_opengl_vertex_set_color(GLchan *color, struct x86_opengl_vertex_t *vtx);
 int x86_opengl_vertex_get_color(struct x86_opengl_vertex_t *vtx);
 
-struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w);
-void x86_opengl_vertex_free(struct x86_opengl_vertex_t *vtx);
+void x86_opengl_vertex_set_normal(GLfloat *nrml, struct x86_opengl_vertex_t *vtx);
 
 struct x86_opengl_vertex_group_t *x86_opengl_vertex_group_create(GLenum primitive_type);
 void x86_opengl_vertex_group_free(struct x86_opengl_vertex_group_t *vtxgp);

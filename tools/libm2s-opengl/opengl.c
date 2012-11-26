@@ -61,7 +61,13 @@ void glClearIndex( GLfloat c )
 
 void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glClearColor\n");
+	GLdouble sys_args[4];
+	sys_args[0] = (GLdouble) red;
+	sys_args[1] = (GLdouble) green;
+	sys_args[2] = (GLdouble) blue;
+	sys_args[3] = (GLdouble) alpha;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glClearColor, &sys_args);	
 }
 
 
@@ -383,7 +389,15 @@ void glFrustum( GLdouble left, GLdouble right,
                                    GLdouble bottom, GLdouble top,
                                    GLdouble near_val, GLdouble far_val )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glFrustum\n");
+	GLdouble sys_args[6];
+	sys_args[0] = (GLdouble) left;
+	sys_args[1] = (GLdouble) right;
+	sys_args[2] = (GLdouble) bottom;
+	sys_args[3] = (GLdouble) top;
+	sys_args[4] = (GLdouble) near_val;
+	sys_args[5] = (GLdouble) far_val;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glFrustum, &sys_args);
 }
 
 
@@ -402,13 +416,16 @@ void glViewport( GLint x, GLint y,
 
 void glPushMatrix( void )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glPushMatrix\n");
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glPushMatrix);
 }
 
 
 void glPopMatrix( void )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glPopMatrix\n");
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glPopMatrix);
+
 }
 
 
@@ -453,7 +470,14 @@ void glRotated( GLdouble angle,
 void glRotatef( GLfloat angle,
                                    GLfloat x, GLfloat y, GLfloat z )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glRotatef\n");
+	GLfloat sys_args[4];
+	sys_args[0] = (GLfloat) angle;
+	sys_args[1] = (GLfloat) x;
+	sys_args[2] = (GLfloat) y;
+	sys_args[3] = (GLfloat) z;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glRotatef, &sys_args);
+
 }
 
 
@@ -477,7 +501,13 @@ void glTranslated( GLdouble x, GLdouble y, GLdouble z )
 
 void glTranslatef( GLfloat x, GLfloat y, GLfloat z )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glTranslatef\n");
+	GLfloat sys_args[3];
+	sys_args[0] = (GLfloat) x;
+	sys_args[1] = (GLfloat) y;
+	sys_args[2] = (GLfloat) z;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glTranslatef, &sys_args);	
+
 }
 
 
@@ -496,26 +526,37 @@ void glDeleteLists( GLuint list, GLsizei range )
 
 GLuint glGenLists( GLsizei range )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glGenLists\n");
+	unsigned int sys_args[1];
+	sys_args[0] = (unsigned int) range;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glGenLists, &sys_args);	
 	return 0;
 }
 
 
 void glNewList( GLuint list, GLenum mode )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glNewList\n");
+	unsigned int sys_args[2];
+	sys_args[0] = (unsigned int) list;
+	sys_args[1] = (unsigned int) mode;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glNewList, &sys_args);	
 }
 
 
 void glEndList( void )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glEndList\n");
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glEndList);		
 }
 
 
 void glCallList( GLuint list )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glCallList\n");
+	unsigned int sys_args[1];
+	sys_args[0] = (unsigned int) list;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glCallList, &sys_args);
 }
 
 
@@ -713,7 +754,13 @@ void glNormal3d( GLdouble nx, GLdouble ny, GLdouble nz )
 
 void glNormal3f( GLfloat nx, GLfloat ny, GLfloat nz )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glNormal3f\n");
+	GLfloat sys_args[3];
+	sys_args[0] = (GLfloat) nx;
+	sys_args[1] = (GLfloat) ny;
+	sys_args[2] = (GLfloat) nz;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glNormal3f, &sys_args);	
+
 }
 
 
@@ -1483,7 +1530,11 @@ void glInterleavedArrays( GLenum format, GLsizei stride,
 
 void glShadeModel( GLenum mode )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glShadeModel\n");
+	unsigned int sys_args[1];
+	sys_args[0] = (unsigned int) mode;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glShadeModel, &sys_args);
+
 }
 
 
@@ -1502,7 +1553,12 @@ void glLighti( GLenum light, GLenum pname, GLint param )
 void glLightfv( GLenum light, GLenum pname,
                                  const GLfloat *params )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glLightfv\n");
+	unsigned int sys_args[3];
+	sys_args[0] = (unsigned int) light;
+	sys_args[1] = (unsigned int) pname;
+	sys_args[2] = (unsigned int) params;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glLightfv, &sys_args);
 }
 
 
@@ -1565,7 +1621,12 @@ void glMateriali( GLenum face, GLenum pname, GLint param )
 
 void glMaterialfv( GLenum face, GLenum pname, const GLfloat *params )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glMaterialfv\n");
+	unsigned int sys_args[3];
+	sys_args[0] = (unsigned int) face;
+	sys_args[1] = (unsigned int) pname;
+	sys_args[2] = (unsigned int) params;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glMaterialfv, &sys_args);
 }
 
 

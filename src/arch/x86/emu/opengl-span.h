@@ -23,7 +23,7 @@
 
 #include <GL/glut.h>
 #include "opengl-context.h"
-#include "opengl-rast-config.h"
+#include "opengl-rasterizer.h"
 
 struct x86_opengl_span_array_t
 {

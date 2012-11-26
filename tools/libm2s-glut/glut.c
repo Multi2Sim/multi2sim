@@ -447,7 +447,7 @@ void glutPostWindowRedisplay(int win)
 
 void glutSwapBuffers(void)
 {
-	__X86_GLUT_NOT_IMPL__
+	/* FIXME */
 }
 
 
@@ -693,13 +693,15 @@ void glutEntryFunc(void (*func)(int state))
 
 void glutVisibilityFunc(void (*func)(int state))
 {
-	__X86_GLUT_NOT_IMPL__
+	if (x86_glut_current_window)
+		x86_glut_current_window->visibility_func = func;	
 }
 
 
 void glutIdleFunc(void (*func)(void))
 {
-	__X86_GLUT_NOT_IMPL__
+	if (x86_glut_current_window)
+		x86_glut_current_window->idle_func = func;	
 }
 
 
@@ -717,7 +719,9 @@ void glutMenuStateFunc(void (*func)(int state))
 
 void glutSpecialFunc(void (*func)(int key, int x, int y))
 {
-	__X86_GLUT_NOT_IMPL__
+	if (x86_glut_current_window)
+		x86_glut_current_window->special_func = func;
+
 }
 
 

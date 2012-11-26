@@ -8,6 +8,7 @@ CFLAGS = -Wall -O3 -fPIC -m32 -I. \
 
 OBJECTS = \
 	debug.o \
+	mhandle.o \
 	misc.o \
 	string.o \
 	list.o \
@@ -41,6 +42,9 @@ debug.o: $(M2S_LIB)/util/debug.c $(M2S_LIB)/util/debug.h
 
 list.o: $(M2S_LIB)/util/list.c $(M2S_LIB)/util/list.h
 	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/list.c -o list.o
+
+mhandle.o: $(M2S_LIB)/mhandle/mhandle.c $(M2S_LIB)/mhandle/mhandle.h
+	$(CC) $(CFLAGS) -c $(M2S_LIB)/mhandle/mhandle.c -o mhandle.o
 
 misc.o: $(M2S_LIB)/util/misc.c $(M2S_LIB)/util/misc.h
 	$(CC) $(CFLAGS) -c $(M2S_LIB)/util/misc.c -o misc.o

@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -34,10 +35,13 @@ struct x86_opengl_matrix_stack_t *x86_opengl_matrix_stack_create(GLenum mode)
 
 	/* Allocate */
 	stack = xcalloc(1, sizeof(struct x86_opengl_matrix_stack_t));
-
-	mtx = x86_opengl_matrix_create(MATRIX_GENERAL);
+	if(!stack)
+		fatal("%s: out of memory", __FUNCTION__);
+	x86_opengl_debug("\tCreated Matrix Stack %p\n", stack);
 
 	/* Initialize */
+	/* Initially, each of the stacks contains an identity matrix */
+	mtx = x86_opengl_matrix_create(MATRIX_IDENTITY);
 	stack->stack = list_create();
 	list_add(stack->stack, mtx);
 	stack->depth = 0;
@@ -90,12 +94,30 @@ void x86_opengl_matrix_stack_free(struct x86_opengl_matrix_stack_t *mtx_stack)
 
 int x86_opengl_matrix_stack_push(struct x86_opengl_matrix_stack_t *mtx_stack, struct x86_opengl_matrix_t *mtx)
 {
+	int i;
+	int j;
+
 	if (mtx_stack->depth == mtx_stack->max_depth)
 		fatal("Stack overflow, max depth = %d\n", mtx_stack->max_depth);
-	x86_opengl_debug("\tpush: curr_depth = %d, max_depth = %d\n", 
-		mtx_stack->depth, mtx_stack->max_depth);
-	mtx_stack->depth += 1;
+	if (mtx == NULL)
+		fatal("Invalid Matrix\n");
+
+	/* Debug */
+	x86_opengl_debug("\tCurrrent stack %p, depth = %d, max_depth = %d\n", mtx_stack, mtx_stack->depth, mtx_stack->max_depth );
+	x86_opengl_debug("\tPushing: mtx = %p, mtx->matrix = %p\n", mtx, mtx->matrix);
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
 	list_push(mtx_stack->stack, mtx);
+	mtx_stack->depth += 1;
+
 	return 0;
 }
 
@@ -103,20 +125,73 @@ struct x86_opengl_matrix_t *x86_opengl_matrix_stack_pop(struct x86_opengl_matrix
 {
 	/* Variables */
 	struct x86_opengl_matrix_t *mtx;
+	int i;
+	int j;
 
 	/* Pop from stack */
 	if (mtx_stack->depth == 0 )
 		fatal("Stack underflow, max depth = %d\n", mtx_stack->max_depth);
-	x86_opengl_debug("\tpop: curr_depth = %d, max_depth = %d\n", 
-		mtx_stack->depth, mtx_stack->max_depth);
-
-	mtx_stack->depth -= 1;
 	mtx = list_pop(mtx_stack->stack);
 	if (mtx == NULL)
 		fatal("Empty stack!\n");
+	/* Debug info */
+	x86_opengl_debug("\tCurrrent stack %p, depth = %d, max_depth = %d\n", mtx_stack, mtx_stack->depth, mtx_stack->max_depth );
+	x86_opengl_debug("\tPoping: mtx = %p, mtx->matrix = %p\n", mtx, mtx->matrix);
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
 	x86_opengl_matrix_free(mtx);
+	mtx_stack->depth -= 1;
 
 	/* Return */
 	return mtx;
 }
 
+struct x86_opengl_matrix_t *x86_opengl_matrix_stack_top(struct x86_opengl_matrix_stack_t *mtx_stack)
+{
+	struct x86_opengl_matrix_t *mtx;
+	int i;
+	int j;
+	
+	mtx = list_top(mtx_stack->stack);
+	x86_opengl_debug("\t\tMatrix on top of stack: mtx = %p, mtx->matrix = %p\n", mtx, mtx->matrix);
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	return mtx;
+}
+
+struct x86_opengl_matrix_t *x86_opengl_matrix_stack_bottom(struct x86_opengl_matrix_stack_t *mtx_stack)
+{
+	struct x86_opengl_matrix_t *mtx;
+	int i;
+	int j;
+	
+	mtx = list_bottom(mtx_stack->stack);
+	x86_opengl_debug("\t\tMatrix on bottom of stack: mtx = %p, mtx->matrix = %p\n", mtx, mtx->matrix);
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	return mtx;	
+}

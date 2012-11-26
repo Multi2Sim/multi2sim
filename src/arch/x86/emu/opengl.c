@@ -29,10 +29,11 @@
 #include "opengl.h"
 #include "opengl-buffers.h"
 #include "opengl-context.h"
+#include "opengl-light.h"
+#include "opengl-material.h"
 #include "opengl-matrix.h"
 #include "opengl-matrix-stack.h"
-#include "opengl-rast-line.h"
-#include "opengl-rast-triangle.h"
+#include "opengl-rasterizer.h"
 #include "opengl-vertex.h"
 #include "opengl-viewport.h"
 
@@ -97,6 +98,7 @@ struct x86_opengl_context_t *x86_opengl_ctx;
 
 void x86_opengl_init(void)
 {
+	x86_opengl_debug("Initializing OpenGL context\n");
 	x86_opengl_ctx = x86_opengl_context_create();
 }
 
@@ -394,7 +396,7 @@ static int x86_opengl_func_glEnable(struct x86_ctx_t *ctx)
 	case GL_LIGHT0:
 
 		{
-			x86_opengl_ctx->context_cap->is_light0 = GL_TRUE;
+			x86_opengl_ctx->light->Light[0]->Enabled = GL_TRUE;
 			x86_opengl_debug("\tGL_LIGHT0 enabled!\n");
 			break;
 		}
@@ -402,7 +404,7 @@ static int x86_opengl_func_glEnable(struct x86_ctx_t *ctx)
 	case GL_LIGHT1:
 
 		{
-			x86_opengl_ctx->context_cap->is_light1 = GL_TRUE;
+			x86_opengl_ctx->light->Light[1]->Enabled = GL_TRUE;
 			x86_opengl_debug("\tGL_LIGHT1 enabled!\n");
 			break;
 		}
@@ -410,7 +412,7 @@ static int x86_opengl_func_glEnable(struct x86_ctx_t *ctx)
 	case GL_LIGHT2:
 
 		{
-			x86_opengl_ctx->context_cap->is_light2 = GL_TRUE;
+			x86_opengl_ctx->light->Light[2]->Enabled = GL_TRUE;
 			x86_opengl_debug("\tGL_LIGHT2 enabled!\n");
 			break;
 		}
@@ -418,7 +420,7 @@ static int x86_opengl_func_glEnable(struct x86_ctx_t *ctx)
 	case GL_LIGHT3:
 
 		{
-			x86_opengl_ctx->context_cap->is_light3 = GL_TRUE;
+			x86_opengl_ctx->light->Light[3]->Enabled = GL_TRUE;
 			x86_opengl_debug("\tGL_LIGHT3 enabled!\n");
 			break;
 		}
@@ -426,7 +428,7 @@ static int x86_opengl_func_glEnable(struct x86_ctx_t *ctx)
 	case GL_LIGHT4:
 
 		{
-			x86_opengl_ctx->context_cap->is_light4 = GL_TRUE;
+			x86_opengl_ctx->light->Light[4]->Enabled = GL_TRUE;
 			x86_opengl_debug("\tGL_LIGHT4 enabled!\n");
 			break;
 		}
@@ -434,7 +436,7 @@ static int x86_opengl_func_glEnable(struct x86_ctx_t *ctx)
 	case GL_LIGHT5:
 
 		{
-			x86_opengl_ctx->context_cap->is_light5 = GL_TRUE;
+			x86_opengl_ctx->light->Light[5]->Enabled = GL_TRUE;
 			x86_opengl_debug("\tGL_LIGHT5 enabled!\n");
 			break;
 		}
@@ -442,7 +444,7 @@ static int x86_opengl_func_glEnable(struct x86_ctx_t *ctx)
 	case GL_LIGHT6:
 
 		{
-			x86_opengl_ctx->context_cap->is_light6 = GL_TRUE;
+			x86_opengl_ctx->light->Light[6]->Enabled = GL_TRUE;
 			x86_opengl_debug("\tGL_LIGHT6 enabled!\n");
 			break;
 		}
@@ -450,7 +452,7 @@ static int x86_opengl_func_glEnable(struct x86_ctx_t *ctx)
 	case GL_LIGHT7:
 
 		{
-			x86_opengl_ctx->context_cap->is_light7 = GL_TRUE;
+			x86_opengl_ctx->light->Light[7]->Enabled = GL_TRUE;
 			x86_opengl_debug("\tGL_LIGHT7 enabled!\n");
 			break;
 		}
@@ -458,7 +460,7 @@ static int x86_opengl_func_glEnable(struct x86_ctx_t *ctx)
 	case GL_LIGHTING:
 
 		{
-			x86_opengl_ctx->context_cap->is_lighting = GL_TRUE;
+			x86_opengl_ctx->light->Enabled = GL_TRUE;
 			x86_opengl_debug("\tGL_LIGHTING enabled!\n");
 			break;
 		}
@@ -905,6 +907,7 @@ static int x86_opengl_func_glViewport(struct x86_ctx_t *ctx)
 		x86_opengl_ctx->viewport->width, x86_opengl_ctx->viewport->height);
 	x86_opengl_frame_buffer_resize(x86_opengl_ctx->read_buffer, 
 		x86_opengl_ctx->viewport->width, x86_opengl_ctx->viewport->height);
+	
 	x86_glut_frame_buffer_resize(x86_opengl_ctx->viewport->width, x86_opengl_ctx->viewport->height);
 
 	/* Return */
@@ -940,12 +943,14 @@ static int x86_opengl_func_glMatrixMode(struct x86_ctx_t *ctx)
 		case	GL_MODELVIEW:
 		{
 			x86_opengl_ctx->current_matrix_stack = x86_opengl_ctx->modelview_matrix_stack;
+			x86_opengl_debug("\t\tCurrent Matrix Stack = Modelview Matrix Stack\n");
 			break;
 		}
 			
 		case	GL_PROJECTION:
 		{
 			x86_opengl_ctx->current_matrix_stack = x86_opengl_ctx->projection_matrix_stack;
+			x86_opengl_debug("\t\tCurrent Matrix Stack = Projection Matrix Stack \n");
 			break;
 		}
 
@@ -953,12 +958,14 @@ static int x86_opengl_func_glMatrixMode(struct x86_ctx_t *ctx)
 		{
 			/* FIXME: choose which one? */
 			x86_opengl_ctx->current_matrix_stack = x86_opengl_ctx->texture_matrix_stack[0];
+			x86_opengl_debug("\t\tCurrent Matrix Stack = Texture Matrix Stack\n");
 			break;
 		}
 
 		case	GL_COLOR:
 		{
 			x86_opengl_ctx->current_matrix_stack = x86_opengl_ctx->color_matrix_stack;
+			x86_opengl_debug("\t\tCurrent Matrix Stack = Color Matrix Stack\n");
 			break;
 		}
 		default:
@@ -980,13 +987,31 @@ static int x86_opengl_func_glMatrixMode(struct x86_ctx_t *ctx)
 
 static int x86_opengl_func_glLoadIdentity(struct x86_ctx_t *ctx)
 {
-	/* Pop from current stack and free the matrix */
-	if (x86_opengl_ctx->current_matrix_stack->depth > 0)
-		x86_opengl_matrix_stack_pop(x86_opengl_ctx->current_matrix_stack);
+	struct x86_opengl_matrix_t *mtx_idt;
+	struct x86_opengl_matrix_t *mtx_curr;
 
-	/* Push identity matrix to the current matrix stack */
-	struct x86_opengl_matrix_t *mtx = x86_opengl_matrix_create(MATRIX_IDENTITY);
-	x86_opengl_matrix_stack_push(x86_opengl_ctx->current_matrix_stack, mtx);
+	int i;
+	int j;
+
+	/* Replace current matrix stack */
+	mtx_idt = x86_opengl_matrix_create(MATRIX_IDENTITY);
+	mtx_curr = x86_opengl_context_get_current_matrix(x86_opengl_ctx);
+
+	x86_opengl_matrix_copy(mtx_curr, mtx_idt);
+
+	x86_opengl_debug("\t\tCurr:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_curr->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	/* Free */
+	x86_opengl_matrix_free(mtx_idt);
 
 	/* Return */
 	return 0;	
@@ -1073,7 +1098,7 @@ static int x86_opengl_func_glOrtho(struct x86_ctx_t *ctx)
 	}
 
 	/* Free */
-	x86_opengl_matrix_free(mtx_ortho);
+	x86_opengl_ortho_matrix_free(mtx_ortho);
 
 	/* Return */
 	return 0;	
@@ -1173,6 +1198,8 @@ static int x86_opengl_func_glVertex2f(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
+	struct x86_opengl_matrix_t *mtx_mdlvw = NULL;
+	struct x86_opengl_matrix_t *mtx_prjct = NULL;
 
 	unsigned int args_ptr;
 	int i;
@@ -1192,10 +1219,29 @@ static int x86_opengl_func_glVertex2f(struct x86_ctx_t *ctx)
 	/* Add a vertex */
 	struct x86_opengl_vertex_t *vertex;
 
+	/* Set position */
 	/* x=x. y=y, z=0.0f, w= 1.0f */	
 	vertex = x86_opengl_vertex_create(func_args[0], func_args[1], (GLfloat)0.0f, (GLfloat)1.0f);
-	x86_opengl_vertex_set_color(x86_opengl_ctx->current_color, vertex);	
+	/* Set normal */
+	x86_opengl_vertex_set_normal(x86_opengl_ctx->current_normal, vertex);
+
+	mtx_mdlvw = x86_opengl_matrix_stack_top(x86_opengl_ctx->modelview_matrix_stack);
+	mtx_prjct = x86_opengl_matrix_stack_top(x86_opengl_ctx->projection_matrix_stack);
+
+	/* Multiply ModelView Matrix */
+	x86_opengl_matrix_mul_vertex(vertex, mtx_mdlvw);
+	/* Multiply Projection Matrix */
+	x86_opengl_matrix_mul_vertex(vertex, mtx_prjct);
+
+	/* Lighting or Coloring */
+	if (x86_opengl_ctx->light->Enabled)
+		x86_opengl_light_apply_all(vertex, x86_opengl_ctx->light);
+	else
+		x86_opengl_vertex_set_color(x86_opengl_ctx->current_color, vertex);
+	
+	/* Add vertex */
 	x86_opengl_vertex_buffer_add_vertex(x86_opengl_ctx->vertex_buffer, vertex);
+
 
 	/* Return */
 	return 0;	
@@ -1214,13 +1260,14 @@ static int x86_opengl_func_glVertex3f(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
+	struct x86_opengl_matrix_t *mtx_mdlvw = NULL;
+	struct x86_opengl_matrix_t *mtx_prjct = NULL;
 
 	unsigned int args_ptr;
 	int i;
 
 	/* Read arguments */
 	args_ptr = regs->ecx;
-
 	x86_opengl_debug("\targs_ptr=0x%x\n", args_ptr);
 
 	/* Get function info */
@@ -1232,9 +1279,27 @@ static int x86_opengl_func_glVertex3f(struct x86_ctx_t *ctx)
 
 	/* Add a vertex to vertex buffer */
 	struct x86_opengl_vertex_t *vertex;
-	/* x=x. y=y, z=z, w= 1.0f */
+
+	/* Set position */
+	/* x=x, y=y, z=z, w= 1.0f */
 	vertex = x86_opengl_vertex_create(func_args[0], func_args[1], func_args[2], (GLfloat)1.0f);
-	x86_opengl_vertex_set_color(x86_opengl_ctx->current_color, vertex);
+	/* Set normal */
+	x86_opengl_vertex_set_normal(x86_opengl_ctx->current_normal, vertex);
+
+	mtx_mdlvw = x86_opengl_matrix_stack_top(x86_opengl_ctx->modelview_matrix_stack);
+	mtx_prjct = x86_opengl_matrix_stack_top(x86_opengl_ctx->projection_matrix_stack);
+
+	/* Multiply ModelView Matrix */
+	x86_opengl_matrix_mul_vertex(vertex, mtx_mdlvw);
+	/* Multiply Projection Matrix */
+	x86_opengl_matrix_mul_vertex(vertex, mtx_prjct);
+
+	/* Lighting or Coloring */
+	if (x86_opengl_ctx->light->Enabled)
+		x86_opengl_light_apply_all(vertex, x86_opengl_ctx->light);
+	else
+		x86_opengl_vertex_set_color(x86_opengl_ctx->current_color, vertex);
+
 	x86_opengl_vertex_buffer_add_vertex(x86_opengl_ctx->vertex_buffer, vertex);
 
 	/* Return */
@@ -1254,6 +1319,7 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 {
 	int i;
 	int j;
+	// int k;
 	int width;
 	int height;
 	int vtx_color;
@@ -1262,8 +1328,9 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 	struct x86_opengl_vertex_t *vtx0 = NULL;
 	struct x86_opengl_vertex_t *vtx1 = NULL;
 	struct x86_opengl_vertex_t *vtx2 = NULL;	
-	struct x86_opengl_matrix_t *mtx = NULL;
-	mtx = 	x86_opengl_context_get_current_matrix(x86_opengl_ctx);
+	struct x86_opengl_vertex_t *vtx3 = NULL;	
+	// struct x86_opengl_matrix_t *mtx_mdlvw = NULL;
+	// struct x86_opengl_matrix_t *mtx_prjct = NULL;
 
 	int vtxgp_count = list_count(x86_opengl_ctx->vertex_buffer->vertex_groups); 
 
@@ -1273,6 +1340,8 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 	/* Draw pattern */
 	x86_glut_frame_buffer_get_size(&width, &height);
 	x86_opengl_debug("\t\tViewport \t[%d, %d, %d, %d]\n", x86_opengl_ctx->viewport->x, x86_opengl_ctx->viewport->y, x86_opengl_ctx->viewport->width, x86_opengl_ctx->viewport->height);
+	// mtx_mdlvw = x86_opengl_matrix_stack_top(x86_opengl_ctx->modelview_matrix_stack);
+	// mtx_prjct = x86_opengl_matrix_stack_top(x86_opengl_ctx->projection_matrix_stack);
 
 	for (i = 0; i < vtxgp_count; ++i)
 	{
@@ -1280,23 +1349,32 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 		int vtx_count = list_count(vtxgp->vertex_list);
 		for (j = 0; j < vtx_count; ++j)
 		{
-			/* Multiply ModelView Matrix */
-
-			/* Multiply Perspective Matrix */
 			vtx = list_get(vtxgp->vertex_list, j);
-			x86_opengl_matrix_mul_vertex(vtx, mtx);
+			/* Multiply ModelView Matrix */
+			// x86_opengl_matrix_mul_vertex(vtx, mtx_mdlvw);
+			/* Multiply Projection Matrix */
+			// x86_opengl_matrix_mul_vertex(vtx, mtx_prjct);
 			/* Clipping */
-
+			/* Lighting*/
+			// if (x86_opengl_ctx->light->Enabled)
+			// {
+			// 	for (k = 0; k < MAX_LIGHTS; ++k)
+			// 	{		
+			// 		x86_opengl_light_apply_all(vtx, x86_opengl_ctx->light);
+			// 	}
+			// }
 			/* Perspective division */
-			vtx->x /= vtx->w;
-			vtx->y /= vtx->w;
-			vtx->z /= vtx->w;
-			x86_opengl_debug("\t\tUpdated Vertex \t[%f, %f, %f, %f]\n", vtx->x, vtx->y, vtx->z, vtx->w);
+			vtx->pos[X_COMP] /= vtx->pos[W_COMP];
+			vtx->pos[Y_COMP] /= vtx->pos[W_COMP];
+			vtx->pos[Z_COMP] /= vtx->pos[W_COMP];
+			x86_opengl_debug("\t\tUpdated Vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
 			/* To screen coordinate */			
-			vtx->x = (vtx->x + 1) * x86_opengl_ctx->viewport->width*0.5+ x86_opengl_ctx->viewport->x;
-			vtx->y = (vtx->y + 1) * x86_opengl_ctx->viewport->height*0.5+ x86_opengl_ctx->viewport->y;		
-			vtx->z = vtx->z/2 + 0.5;
-			x86_opengl_debug("\t\tScreen position\t[%f, %f, %f, %f]\n", vtx->x, vtx->y, vtx->z, vtx->w);
+			vtx->pos[X_COMP] = (vtx->pos[X_COMP] + 1) * x86_opengl_ctx->viewport->width*0.5+ x86_opengl_ctx->viewport->x;
+			vtx->pos[Y_COMP] = (vtx->pos[Y_COMP] + 1) * x86_opengl_ctx->viewport->height*0.5+ x86_opengl_ctx->viewport->y;	
+			vtx->pos[Z_COMP] *= abs(x86_opengl_ctx->viewport->far - x86_opengl_ctx->viewport->near) / 2 
+				+ (x86_opengl_ctx->viewport->near + x86_opengl_ctx->viewport->far);
+			x86_opengl_debug("\t\tScreen position\t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
+			x86_glut_frame_buffer_pixel(vtx->pos[X_COMP], vtx->pos[Y_COMP], 255);
 		}
 		/* Draw */
 		switch(vtxgp->primitive_type)
@@ -1306,9 +1384,9 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 				for (j = 0; j < vtx_count; ++j)
 				{
 					vtx = list_get(vtxgp->vertex_list, j);
-					x86_opengl_debug("\t\tPoint position\t[%f, %f]\n", vtx->x, vtx->y);
+					x86_opengl_debug("\t\tPoint position\t[%f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP]);
 					vtx_color = x86_opengl_vertex_get_color(vtx);
-					x86_glut_frame_buffer_pixel(vtx->x, vtx->y, vtx_color);
+					x86_glut_frame_buffer_pixel(vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx_color);
 					break;
 				}
 			}
@@ -1318,10 +1396,10 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 				{
 					vtx0 = list_get(vtxgp->vertex_list, 2*j);			
 					vtx1 = list_get(vtxgp->vertex_list, 2*j+1);
-					x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx0->x, vtx0->y);
-					x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx1->x, vtx1->y);
+					x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx0->pos[X_COMP], vtx0->pos[Y_COMP]);
+					x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx1->pos[X_COMP], vtx1->pos[Y_COMP]);
 					vtx_color = x86_opengl_vertex_get_color(vtx0);					
-					x86_opengl_rasterizer_draw_line(x86_opengl_ctx, vtx0->x, vtx0->y, vtx1->x, vtx1->y, vtx_color);
+					x86_opengl_rasterizer_draw_line(x86_opengl_ctx,  vtx0->pos[X_COMP],  vtx0->pos[Y_COMP], vtx1->pos[X_COMP], vtx1->pos[Y_COMP], vtx_color);
 				}
 				break;
 			}
@@ -1331,10 +1409,10 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 				{
 					vtx0 = list_get(vtxgp->vertex_list, j);			
 					vtx1 = list_get(vtxgp->vertex_list, (j+1) % vtx_count);
-					x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx0->x, vtx0->y);
-					x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx1->x, vtx1->y);
+					x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx0->pos[X_COMP], vtx0->pos[Y_COMP]);
+					x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx1->pos[X_COMP], vtx1->pos[Y_COMP]);
 					vtx_color = x86_opengl_vertex_get_color(vtx0);
-					x86_opengl_rasterizer_draw_line(x86_opengl_ctx, vtx0->x, vtx0->y, vtx1->x, vtx1->y, vtx_color);
+					x86_opengl_rasterizer_draw_line(x86_opengl_ctx, vtx0->pos[X_COMP], vtx0->pos[Y_COMP], vtx1->pos[X_COMP], vtx1->pos[Y_COMP], vtx_color);
 				}				
 				break;
 			}
@@ -1344,10 +1422,10 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 				{
 					vtx0 = list_get(vtxgp->vertex_list, j);			
 					vtx1 = list_get(vtxgp->vertex_list, j+1);
-					x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx0->x, vtx0->y);
-					x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx1->x, vtx1->y);
+					x86_opengl_debug("\t\tLine starts \t[%f, %f]\n", vtx0->pos[X_COMP], vtx0->pos[Y_COMP]);
+					x86_opengl_debug("\t\tLine ends \t[%f, %f]\n", vtx1->pos[X_COMP], vtx1->pos[Y_COMP]);
 					vtx_color = x86_opengl_vertex_get_color(vtx0);
-					x86_opengl_rasterizer_draw_line(x86_opengl_ctx, vtx0->x, vtx0->y, vtx1->x, vtx1->y, vtx_color);
+					x86_opengl_rasterizer_draw_line(x86_opengl_ctx, vtx0->pos[X_COMP], vtx0->pos[Y_COMP], vtx1->pos[X_COMP], vtx1->pos[Y_COMP], vtx_color);
 				}
 				break;
 			}
@@ -1369,6 +1447,12 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 			}
 			case GL_QUADS:
 			{
+				vtx0 = list_get(vtxgp->vertex_list, 0);
+				vtx1 = list_get(vtxgp->vertex_list, 1);
+				vtx2 = list_get(vtxgp->vertex_list, 2);
+				vtx3 = list_get(vtxgp->vertex_list, 3);
+				x86_opengl_rasterizer_draw_triangle(x86_opengl_ctx, vtx0, vtx1, vtx2);
+				x86_opengl_rasterizer_draw_triangle(x86_opengl_ctx, vtx0, vtx2, vtx3);
 				break;
 			}
 			case GL_QUAD_STRIP:
@@ -1387,12 +1471,9 @@ static int x86_opengl_func_glFlush(struct x86_ctx_t *ctx)
 	/* Refresh host GLUT window */
 	x86_glut_frame_buffer_flush_request();	
 
-	/* Send to rasterizer to generate final image */
-
 	/* Clean old vertex buffer and create a new one */
 	x86_opengl_vertex_buffer_free(x86_opengl_ctx->vertex_buffer);
 	x86_opengl_ctx->vertex_buffer = x86_opengl_vertex_buffer_create();
-
 	/* Return */
 	return 0;	
 }
@@ -1416,7 +1497,6 @@ static int x86_opengl_func_glColor3f(struct x86_ctx_t *ctx)
 
 	/* Read arguments */
 	args_ptr = regs->ecx;
-
 	x86_opengl_debug("\targs_ptr=0x%x\n", args_ptr);
 
 	/* Get function info */
@@ -1440,3 +1520,676 @@ static int x86_opengl_func_glColor3f(struct x86_ctx_t *ctx)
 	return 0;	
 }
 
+/*
+ * OpenGL call #15 - glLightfv
+ *
+ * glLightfv - set light source parameters
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glLightfv(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct x86_opengl_light_t *lght;
+	struct x86_opengl_matrix_t *mtx;
+
+	unsigned int args[3];
+	unsigned int light;
+	unsigned int pname;
+	unsigned int params;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
+	light = args[0];
+	pname = args[1];
+	params = args[2];
+
+	/* Copy */
+	GLfloat *tmp_vctr;
+	if (pname == GL_AMBIENT || pname == GL_DIFFUSE || pname == GL_SPECULAR || pname == GL_POSITION)
+	{
+		tmp_vctr = xcalloc(1, 4 * sizeof(GLfloat));
+		mem_read(mem, params, 4 * sizeof(GLfloat), tmp_vctr);
+	} 
+	else if (pname == GL_SPOT_DIRECTION)
+	{
+		tmp_vctr = xcalloc(1, 4 * sizeof(GLfloat));
+		mem_read(mem, params, 3 * sizeof(GLfloat), tmp_vctr);
+	}
+	else
+	{
+		tmp_vctr = xcalloc(1, sizeof(GLfloat));
+		mem_read(mem, params, sizeof(GLfloat), tmp_vctr);
+	}
+	
+	/* Get Light index */
+	int lgt_idx = light % GL_LIGHT0;
+	lght = 	x86_opengl_ctx->light->Light[lgt_idx];
+
+	/* Debug info */
+	x86_opengl_debug("\tSetting Light %d, Pname = 0x%x\n", lgt_idx, pname);
+
+	int i;
+	x86_opengl_debug("\tParameters:");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug(" %f", tmp_vctr[i]);
+	}
+	x86_opengl_debug("\n");
+
+	/* Setting OpenGL lights */
+	switch(pname)
+	{
+		case GL_AMBIENT:
+		{
+			memcpy(lght->Ambient, tmp_vctr, 4 * sizeof(GLfloat));
+			x86_opengl_debug("\tAmbient = [%f, %f, %f, %f]\n", lght->Ambient[0], lght->Ambient[1], lght->Ambient[2], lght->Ambient[3]);
+			break;
+		}
+		case GL_DIFFUSE:
+		{
+			memcpy(lght->Diffuse, tmp_vctr, 4 * sizeof(GLfloat));
+			x86_opengl_debug("\tDiffuse = [%f, %f, %f, %f]\n", lght->Diffuse[0], lght->Diffuse[1], lght->Diffuse[2], lght->Diffuse[3]);
+			break;
+		}
+		case GL_SPECULAR:
+		{
+			memcpy(lght->Specular, tmp_vctr, 4 * sizeof(GLfloat));
+			x86_opengl_debug("\tSpecular = [%f, %f, %f, %f]\n", lght->Specular[0], lght->Specular[1], lght->Specular[2], lght->Specular[3]);
+			break;
+		}
+		case GL_POSITION:
+		{
+			/* Multiplied by ModelView matrix to translate to eye coordinate */
+			mtx = x86_opengl_matrix_stack_top(x86_opengl_ctx->modelview_matrix_stack);
+			x86_opengl_matrix_vector_mul_matrix(tmp_vctr, mtx->matrix, tmp_vctr);
+			memcpy(lght->EyePosition, tmp_vctr, 4 * sizeof(GLfloat));
+			x86_opengl_debug("\tEyePosition = [%f, %f, %f, %f]\n", lght->EyePosition[0], lght->EyePosition[1], lght->EyePosition[2], lght->EyePosition[3]);
+			break;
+		}
+		case GL_SPOT_DIRECTION:
+		{
+			/* Multiplied by ModelView matrix to translate to eye coordinate */
+			/* FIXME: invert or not ?*/
+			mtx = x86_opengl_matrix_stack_top(x86_opengl_ctx->modelview_matrix_stack);
+			if (x86_opengl_matrix_is_dirty(mtx))
+				x86_opengl_matrix_analyse(mtx);
+			x86_opengl_matrix_vector_mul_matrix(tmp_vctr, mtx->matrix, tmp_vctr);
+			memcpy(lght->SpotDirection, tmp_vctr, 4 * sizeof(GLfloat));
+			x86_opengl_debug("\tSpotDirection = [%f, %f, %f, %f]\n", lght->SpotDirection[0], lght->SpotDirection[1], lght->SpotDirection[2], lght->SpotDirection[3]);
+			break;
+		}
+		case GL_SPOT_EXPONENT:
+		{
+			memcpy(&lght->SpotExponent, tmp_vctr, sizeof(GLfloat));
+			x86_opengl_debug("\tSpotExponent = [%f]\n", lght->SpotExponent);
+			break;
+		}
+		case GL_SPOT_CUTOFF:
+		{
+			memcpy(&lght->SpotCutoff, tmp_vctr, sizeof(GLfloat));
+			x86_opengl_debug("\tSpotCutoff = [%f]\n", lght->SpotCutoff);
+			break;
+		}
+		case GL_CONSTANT_ATTENUATION:
+		{
+			memcpy(&lght->ConstantAttenuation, tmp_vctr, sizeof(GLfloat));
+			x86_opengl_debug("\tConstantAttenuation = [%f]\n", lght->ConstantAttenuation);
+			break;
+		}
+		case GL_LINEAR_ATTENUATION:
+		{
+			memcpy(&lght->LinearAttenuation, tmp_vctr, sizeof(GLfloat));
+			x86_opengl_debug("\tLinearAttenuation = [%f]\n", lght->LinearAttenuation);
+			break;
+		}
+		case GL_QUADRATIC_ATTENUATION:
+		{
+			memcpy(&lght->QuadraticAttenuation, tmp_vctr, sizeof(GLfloat));
+			x86_opengl_debug("\tQuadraticAttenuation = [%f]\n", lght->QuadraticAttenuation);
+			break;
+		}
+		default:
+			break;
+	}
+
+	/* Free */
+	free(tmp_vctr);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #16 - glGenLists
+ *
+ * glGenLists - generate a contiguous set of empty display lists.
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glGenLists(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[1];
+	unsigned int range;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, sizeof(unsigned int), args);
+	range = args[0];
+
+	x86_opengl_debug("\tRange = %d\n", range);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #17 - glNewList
+ *
+ * glNewList - create or replace a display list
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glNewList(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[2];
+	unsigned int list;
+	unsigned int mode;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+	list = args[0];
+	mode = args[1];
+
+	x86_opengl_debug("\tList ID = %d, Mode = 0x%x\n", list, mode);
+
+
+	/* Return */
+	return 0;
+}
+
+/*
+ * OpenGL call #18 - glEndList
+ *
+ * glEndList - create or replace a display list
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glEndList(struct x86_ctx_t *ctx)
+{
+
+	/* Return */
+	return 0;	
+}
+/*
+ * OpenGL call #19 - glMaterialfv
+ *
+ * glMaterialfv - specify material parameters for the lighting model
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glMaterialfv(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	GLfloat *mtrl_ptr;
+
+	unsigned int args[3];
+	unsigned int face;
+	unsigned int pname;
+	unsigned int params;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
+	face = args[0];
+	pname = args[1];
+	params = args[2];
+
+	/* Copy */
+	mtrl_ptr = xcalloc(1, 4 * sizeof(GLfloat));
+	if (pname == GL_SHININESS)
+		mem_read(mem, params, 1 * sizeof(GLfloat), mtrl_ptr);		
+	else
+		mem_read(mem, params, 4 * sizeof(GLfloat), mtrl_ptr);
+
+	x86_opengl_debug("\tface = 0x%x, pname = 0x%x\n", face, pname);
+
+	/* Setup material */
+	x86_opengl_material_setup(x86_opengl_ctx->light->Material, face, pname, mtrl_ptr);
+	
+	/* Free */
+	free(mtrl_ptr);
+
+	/* Return */
+	return 0;
+}
+
+/*
+ * OpenGL call #20 - glShadeModel
+ *
+ * glShadeModel - select flat or smooth shading
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glShadeModel(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[1];
+	unsigned int mode;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
+	mode = args[0];
+
+	/* Setup shade mode: FLAT or SMOOTH */
+	x86_opengl_ctx->light->ShadeModel = mode;
+
+	x86_opengl_debug("\tmode = 0x%x\n", mode);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #21 - glNormal3f
+ *
+ * glNormal3f - set the current normal vector
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glNormal3f(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[3];
+	GLfloat nx;
+	GLfloat ny;
+	GLfloat nz;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 3 * sizeof(GLfloat), args);
+	nx = args[0];
+	ny = args[1];
+	nz = args[2];
+
+	x86_opengl_debug("\tnx =%f, ny = %f, nz = %f\n", nx, ny, nz);
+
+	/* Set OpenGL context current normal */
+	x86_opengl_ctx->current_normal[0] = nx;
+	x86_opengl_ctx->current_normal[0] = ny;
+	x86_opengl_ctx->current_normal[0] = nz;
+	x86_opengl_ctx->current_normal[0] = 1.0f;
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #22 - glFrustum
+ *
+ * glFrustum - multiply the current matrix by a perspective matrix
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glFrustum(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	GLdouble args[6];
+
+	int i;
+	int j;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 6 * sizeof(GLdouble), args);
+
+	struct x86_opengl_matrix_t *mtx_frstm;
+	struct x86_opengl_matrix_t *mtx_curr;
+
+	GLdouble left = args[0];
+	GLdouble right = args[1];
+	GLdouble bottom = args[2];
+	GLdouble top = args[3];
+	GLdouble nearval = args[4];
+	GLdouble farval = args[5];
+
+	x86_opengl_debug("\targs = [%f, %f, %f, %f, %f, %f]\n", left, right, bottom, top, nearval, farval);
+
+	/* Initialize frustum matrix */
+	mtx_frstm = x86_opengl_frustum_matrix_create(left, right, bottom, top, nearval, farval);
+
+	x86_opengl_debug("\t\tFrustum:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_frstm->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	mtx_curr = x86_opengl_context_get_current_matrix(x86_opengl_ctx);
+	x86_opengl_debug("\t\tCurr:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_curr->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	/* Current matrix multiplies perspective matrix */
+	x86_opengl_matrix_mul_matrix(mtx_curr, mtx_curr, mtx_frstm);
+	x86_opengl_debug("\t\tCurr x Frustum:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_curr->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	/* Free */
+	x86_opengl_frustum_matrix_free(mtx_frstm);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #23 - glTranslatef
+ *
+ * glTranslatef - multiply the current matrix by a translation matrix
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glTranslatef(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct x86_opengl_matrix_t *mtx_trns;
+	struct x86_opengl_matrix_t *mtx_curr;
+
+	GLfloat args[3];
+	GLfloat x;
+	GLfloat y;
+	GLfloat z;
+
+	int i;
+	int j;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 3 * sizeof(GLfloat), args);
+	x = args[0];
+	y = args[1];
+	z = args[2];
+	x86_opengl_debug("\tTranslate x = %f, y = %f, z = %f\n", x, y, z);
+
+	/* Setup matrices */
+	mtx_trns = x86_opengl_translate_matrix_create(x, y, z);
+	mtx_curr = x86_opengl_context_get_current_matrix(x86_opengl_ctx);
+
+	x86_opengl_debug("\t\tTranslate:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_trns->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	x86_opengl_debug("\t\tCurr:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_curr->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+
+	/* Multiply */
+	x86_opengl_matrix_mul_matrix(mtx_curr, mtx_curr, mtx_trns);
+
+	x86_opengl_debug("\t\tCurr x Translate:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_curr->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	/* Free */
+	x86_opengl_translate_matrix_free(mtx_trns);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #24 - glPushMatrix
+ *
+ * glPushMatrix - push the current matrix
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glPushMatrix(struct x86_ctx_t *ctx)
+{
+	struct x86_opengl_matrix_t *mtx_curr;
+	struct x86_opengl_matrix_t *mtx_dulp;
+
+	/* Duplicate current matrix then push it to current matrix stack */
+	mtx_curr = x86_opengl_context_get_current_matrix(x86_opengl_ctx);
+	x86_opengl_debug("\t\tmtx_curr = %p, mtx_curr->matrix = %p\n", mtx_curr, mtx_curr->matrix );
+
+	mtx_dulp = x86_opengl_matrix_duplicate(mtx_curr);
+	x86_opengl_debug("\t\tmtx_dulp = %p, mtx_dulp->matix = %p\n", mtx_dulp, mtx_dulp->matrix );
+
+	x86_opengl_matrix_stack_push(x86_opengl_ctx->current_matrix_stack, mtx_dulp);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #25 - glPopMatrix
+ *
+ * glPopMatrix - pop the current matrix
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glPopMatrix(struct x86_ctx_t *ctx)
+{
+
+	/* Pop matrix from current matrix stack */
+	x86_opengl_matrix_stack_pop(x86_opengl_ctx->current_matrix_stack);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #26 - glRotatef
+ *
+ * glRotatef - multiply the current matrix by a rotation matrix
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glRotatef(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct x86_opengl_matrix_t *mtx_rot;
+	struct x86_opengl_matrix_t *mtx_curr;
+
+	GLfloat args[4];
+	GLfloat angle;
+	GLfloat x;
+	GLfloat y;
+	GLfloat z;
+
+	int i;
+	int j;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 4 * sizeof(GLfloat), args);
+	angle = args[0];
+	x = args[1];
+	y = args[2];
+	z = args[3];
+	x86_opengl_debug("\tRotate angle = %f, x = %f, y = %f, z = %f\n", angle, x, y, z);
+
+	/* Setup matrices */
+	mtx_rot = x86_opengl_rotate_matrix_create(angle, x, y, z);
+	mtx_curr = x86_opengl_context_get_current_matrix(x86_opengl_ctx);
+	x86_opengl_debug("\t\tRotate:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_rot->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	x86_opengl_debug("\t\tCurr:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_curr->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	/* Multiply */
+	x86_opengl_matrix_mul_matrix(mtx_curr, mtx_curr, mtx_rot);
+	x86_opengl_debug("\t\tCurr x Rotate:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_curr->matrix[j*4+i]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	/* Free */
+	x86_opengl_rotate_matrix_free(mtx_rot);
+
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #27 - glCallList
+ *
+ * glCallList - executes a display list
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glCallList(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	GLuint args[1];
+	GLuint list;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 1 * sizeof(GLuint), args);
+	list = args[0];
+
+	x86_opengl_debug("\tCalling list =%d\n", list);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #28 - glClearColor
+ *
+ * glClearColor - specify clear values for the color buffers
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glClearColor(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	GLfloat args[4];
+	GLfloat red;
+	GLfloat green;
+	GLfloat blue;
+	GLfloat alpha;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 4 * sizeof(GLfloat), args);
+	red = args[0];
+	green = args[1];
+	blue = args[2];
+	alpha = args[3];
+
+	x86_opengl_debug("\tClear color: RGBA = [%f, %f, %f, %f]\n", red, green, blue, alpha);
+
+	/* Set clear color */
+
+	/* Return */
+	return 0;	
+}

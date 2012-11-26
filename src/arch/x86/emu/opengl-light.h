@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARC_X86_EMU_OPENGL_LIGHT
-#define ARC_X86_EMU_OPENGL_LIGHT
+#ifndef ARC_X86_EMU_OPENGL_LIGHT_H
+#define ARC_X86_EMU_OPENGL_LIGHT_H
 
 
 #include <GL/gl.h>
@@ -29,6 +29,9 @@
 #define LIGHT_LOCAL_VIEWER	0x2
 #define LIGHT_POSITIONAL		0x4
 #define LIGHT_NEED_VERTICES	(LIGHT_POSITIONAL|LIGHT_LOCAL_VIEWER)
+
+struct x86_opengl_material_t;
+struct x86_opengl_vertex_t;
 
 struct x86_opengl_light_t
 {
@@ -80,7 +83,6 @@ struct x86_opengl_light_model_t
 				 *    or GL_SEPARATE_SPECULAR_COLOR */
 };
 
-
 struct x86_opengl_light_attrib_t
 {
 	struct x86_opengl_light_t *Light[MAX_LIGHTS];	/**< Array of light sources */
@@ -90,7 +92,7 @@ struct x86_opengl_light_attrib_t
 	* Front and back material values.
 	* Note: must call FLUSH_VERTICES() before using.
 	*/
-	// struct gl_material Material;
+	struct x86_opengl_material_t *Material;
 
 	GLboolean Enabled;			/**< Lighting enabled flag */
 	GLenum ShadeModel;			/**< GL_FLAT or GL_SMOOTH */
@@ -122,5 +124,7 @@ void x86_opengl_light_model_free(struct x86_opengl_light_model_t *lgt_mdl);
 
 struct x86_opengl_light_attrib_t *x86_opengl_light_attrib_create();
 void x86_opengl_light_attrib_free(struct x86_opengl_light_attrib_t *lgh_attrb);
+
+void x86_opengl_light_apply_all(struct x86_opengl_vertex_t *vtx, struct x86_opengl_light_attrib_t *lgt_attrb);
 
 #endif

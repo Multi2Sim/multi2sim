@@ -17,16 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <lib/util/list.h>
 
+#include "opengl.h"
 #include "opengl-buffers.h"
 #include "opengl-context.h"
 #include "opengl-light.h"
+#include "opengl-matrix.h"
 #include "opengl-matrix-stack.h"
 #include "opengl-vertex.h"
 #include "opengl-viewport.h"
+
 
 struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(void)
 {
@@ -94,6 +97,12 @@ struct x86_opengl_context_t *x86_opengl_context_create(void)
 	GLfloat init_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 	x86_opengl_clamped_float_to_color_channel(init_color, ctx->current_color);
 
+	/* Initialize current normal */
+	ctx->current_normal[X_COMP] = 0.0f;
+	ctx->current_normal[Y_COMP] = 0.0f;
+	ctx->current_normal[Z_COMP] = 1.0f;
+	ctx->current_normal[W_COMP] = 0.0f;
+
 	/* Return */
 	return ctx;
 }
@@ -138,7 +147,21 @@ struct x86_opengl_matrix_t *x86_opengl_context_get_current_matrix(struct x86_ope
 
 	/* Get current matrix */
 	mtx = list_get(ctx->current_matrix_stack->stack, ctx->current_matrix_stack->depth);
-
+	x86_opengl_debug("\t\tCurrent matrix ptr = %p\n", mtx);
 	/* Return */
 	return mtx;
+}
+
+struct x86_opengl_current_attrib_t *x86_opengl_current_attrib_create()
+{
+	struct x86_opengl_current_attrib_t *crnt;
+
+	crnt = xcalloc(1, sizeof(struct x86_opengl_current_attrib_t));
+
+	return crnt;
+}
+
+void x86_opengl_current_attrib_free(struct x86_opengl_current_attrib_t *crnt)
+{
+	free(crnt);
 }
