@@ -67,6 +67,7 @@ struct x86_glut_window_t
 	void (*dials_func)(int dial, int value);
 	void (*tablet_motion_func)(int x, int y);
 	void (*tablet_button_func)(int x, int y);
+	void (*idle_func)(void);
 
 	char *title;
 };

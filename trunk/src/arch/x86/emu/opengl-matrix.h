@@ -21,7 +21,69 @@
 #define ARCH_X86_EMU_OPENGL_MATRIX_H
 
 #include <GL/gl.h>
- 
+#include <math.h> 
+
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
+
+#ifndef M_E
+#define M_E (2.7182818284590452354)
+#endif
+
+#ifndef M_LOG2E
+#define M_LOG2E     (1.4426950408889634074)
+#endif
+
+#ifndef ONE_DIV_SQRT_LN2
+#define ONE_DIV_SQRT_LN2 (1.201122408786449815)
+#endif
+
+#ifndef FLT_MAX_EXP
+#define FLT_MAX_EXP 128
+#endif
+
+/* Degrees to radians conversion: */
+#define DEG2RAD (M_PI/180.0)
+
+/*
+ * Transform a point (column vector) by a matrix:   Q = M * P
+ */
+#define TRANSFORM_POINT( Q, M, P )					\
+   Q[0] = M[0] * P[0] + M[4] * P[1] + M[8] *  P[2] + M[12] * P[3];	\
+   Q[1] = M[1] * P[0] + M[5] * P[1] + M[9] *  P[2] + M[13] * P[3];	\
+   Q[2] = M[2] * P[0] + M[6] * P[1] + M[10] * P[2] + M[14] * P[3];	\
+   Q[3] = M[3] * P[0] + M[7] * P[1] + M[11] * P[2] + M[15] * P[3];
+
+
+#define TRANSFORM_POINT3( Q, M, P )				\
+   Q[0] = M[0] * P[0] + M[4] * P[1] + M[8] *  P[2] + M[12];	\
+   Q[1] = M[1] * P[0] + M[5] * P[1] + M[9] *  P[2] + M[13];	\
+   Q[2] = M[2] * P[0] + M[6] * P[1] + M[10] * P[2] + M[14];	\
+   Q[3] = M[3] * P[0] + M[7] * P[1] + M[11] * P[2] + M[15];
+
+
+/*
+ * Transform a normal (row vector) by a matrix:  [NX NY NZ] = N * MAT
+ */
+#define TRANSFORM_NORMAL( TO, N, MAT )				\
+do {								\
+   TO[0] = N[0] * MAT[0] + N[1] * MAT[1] + N[2] * MAT[2];	\
+   TO[1] = N[0] * MAT[4] + N[1] * MAT[5] + N[2] * MAT[6];	\
+   TO[2] = N[0] * MAT[8] + N[1] * MAT[9] + N[2] * MAT[10];	\
+} while (0)
+
+
+/**
+ * Transform a direction by a matrix.
+ */
+#define TRANSFORM_DIRECTION( TO, DIR, MAT )			\
+do {								\
+   TO[0] = DIR[0] * MAT[0] + DIR[1] * MAT[4] + DIR[2] * MAT[8];	\
+   TO[1] = DIR[0] * MAT[1] + DIR[1] * MAT[5] + DIR[2] * MAT[9];	\
+   TO[2] = DIR[0] * MAT[2] + DIR[1] * MAT[6] + DIR[2] * MAT[10];\
+} while (0)
+
 struct x86_opengl_vertex_t;
 /* OpenGL: Different kinds of 4x4 transformation matrices */
 enum x86_opengl_matrix_mode_t {
@@ -38,15 +100,34 @@ enum x86_opengl_matrix_mode_t {
 struct x86_opengl_matrix_t
 {
 	GLfloat *matrix;	/* Points to 4x4 GLfloat type arrays*/
+	GLfloat *matinv;	/* Points to 4x4 GLfloat type arrays*/
+	GLuint flags;
 	enum x86_opengl_matrix_mode_t matrix_mode;	
 };
 
 struct x86_opengl_matrix_t *x86_opengl_matrix_create(enum x86_opengl_matrix_mode_t mode);
 void x86_opengl_matrix_free(struct x86_opengl_matrix_t *mtx);
+struct x86_opengl_matrix_t *x86_opengl_matrix_duplicate(struct x86_opengl_matrix_t *mtx);
+void x86_opengl_matrix_copy(struct x86_opengl_matrix_t *mtx_dst, struct x86_opengl_matrix_t *mtx_src);
 
 void x86_opengl_matrix_mul_matrix(struct x86_opengl_matrix_t *dst_mtx, struct x86_opengl_matrix_t *mtx_a, struct x86_opengl_matrix_t *mtx_b);
+void x86_opengl_matrix_vector_mul_matrix( GLfloat *product, const GLfloat *m, const GLfloat *v );
 void x86_opengl_matrix_mul_vertex(struct x86_opengl_vertex_t *vtx, struct x86_opengl_matrix_t *mtx);
 
-struct x86_opengl_matrix_t *x86_opengl_ortho_matrix_create(GLfloat left, GLfloat right, GLfloat buttom, GLfloat top, GLfloat nearval, GLfloat farval);
+struct x86_opengl_matrix_t *x86_opengl_ortho_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval);
+void x86_opengl_ortho_matrix_free(struct x86_opengl_matrix_t *mtx);
+
+struct x86_opengl_matrix_t *x86_opengl_frustum_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval);
+void x86_opengl_frustum_matrix_free(struct x86_opengl_matrix_t *mtx);
+
+struct x86_opengl_matrix_t *x86_opengl_translate_matrix_create(GLfloat x, GLfloat y, GLfloat z);
+void x86_opengl_translate_matrix_free(struct x86_opengl_matrix_t *mtx);
+
+struct x86_opengl_matrix_t *x86_opengl_rotate_matrix_create(GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
+void x86_opengl_rotate_matrix_free(struct x86_opengl_matrix_t *mtx);
+
+GLboolean x86_opengl_matrix_invert(struct x86_opengl_matrix_t *mtx);
+GLboolean x86_opengl_matrix_is_dirty(const struct x86_opengl_matrix_t *mtx);
+void x86_opengl_matrix_analyse(struct x86_opengl_matrix_t *mtx);
 
 #endif

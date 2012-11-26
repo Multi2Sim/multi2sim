@@ -33,10 +33,9 @@ struct x86_opengl_viewport_attributes_t
 	GLsizei width;
 	GLsizei height;
 
-	/* FIXME: also found below in Mesa */
 	/* Depth buffer range */
-	// GLfloat Near;
-	// GLfloat Far;
+	GLfloat near;
+	GLfloat far;
 
 	/* Mapping transformation as a matrix. */
 	// GLmatrix _WindowMap; 

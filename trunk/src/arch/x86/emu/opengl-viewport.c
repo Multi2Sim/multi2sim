@@ -17,8 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 
 #include "opengl-viewport.h"
 
@@ -33,6 +35,8 @@ struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void)
 
 	/* Allocate */
 	vpt = xcalloc(1, sizeof(struct x86_opengl_viewport_attributes_t));
+	if(!vpt)
+		fatal("%s: out of memory", __FUNCTION__);
 
 
 	/* Initialize */
@@ -43,6 +47,9 @@ struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void)
 	vpt->y = 0;
 	vpt->width = width;
 	vpt->height = height;
+
+	vpt->near = 0.0f;
+	vpt->far = 1.0f;
 
 	/* Return */	
 	return vpt;

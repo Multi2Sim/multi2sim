@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
@@ -29,8 +28,10 @@ struct x86_opengl_render_buffer_t *x86_opengl_render_buffer_create(int width, in
 {
 	struct x86_opengl_render_buffer_t *rb;
 
-	/* Initialize */
+	/* Allocate */
 	rb = xcalloc(1, sizeof(struct x86_opengl_render_buffer_t));
+
+	/* Initialize */
 	rb->width = width;
 	rb->height = height;
 	rb->buffer = xcalloc(1, width * height * sizeof(GLuint));
@@ -66,14 +67,16 @@ int x86_opengl_render_buffer_resize(struct x86_opengl_render_buffer_t *rb, int w
 		return 0;
 	}
 
-	x86_opengl_debug("\tBuffer resized, W x H = %d x %d\n", width, height);
+	x86_opengl_debug("\t\tBuffer resized, W x H = %d x %d\n", width, height);
 
 	/* Free previous buffer */
 	if (rb->buffer)
 		free(rb->buffer);
 
+	/* Allocate new buffer */
+	rb->buffer = xcalloc(width * height, sizeof(GLuint));
+
 	/* Store new size */
-	rb->buffer = xcalloc(width * height, sizeof(int));
 	rb->width = width;
 	rb->height = height;
 
@@ -87,8 +90,10 @@ struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int 
 	int i;
 	struct x86_opengl_frame_buffer_t *fb;
 
-	/* Initialization */
+	/* Allocate */
 	fb = xcalloc(1, sizeof(struct x86_opengl_frame_buffer_t));
+
+	/* Initialization */
 	fb->width = width;
 	fb->height = height;
 	for (i = 0; i < COLOR_BUFFER_COUNT; ++i)
@@ -127,23 +132,23 @@ void x86_opengl_frame_buffer_clear(struct x86_opengl_frame_buffer_t *fb, GLbitfi
 	if (fb)
 		/* Clear buffers */
 		if (mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT))
-			x86_opengl_debug("\tInvalid mask!\n");
+			x86_opengl_debug("\t\tInvalid mask!\n");
 
 		if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) 
 		{
-			x86_opengl_debug("\tColor buffer cleared to %d\n", clear_value);
+			x86_opengl_debug("\t\tColor buffer cleared to %d\n", clear_value);
 	    		for (i = 0; i < COLOR_BUFFER_COUNT; ++i)
 				x86_opengl_render_buffer_clear(fb->color_buffer[i], clear_value);
 	  	}
 
 		if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) 
 		{
-			x86_opengl_debug("\tDepth buffer cleared to %d\n", clear_value);
+			x86_opengl_debug("\t\tDepth buffer cleared to %d\n", clear_value);
 	    		x86_opengl_render_buffer_clear(fb->depth_buffer, clear_value);
 		}
 
 		if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT) {
-			x86_opengl_debug("\tStencil buffer cleared to %d\n", clear_value);
+			x86_opengl_debug("\t\tStencil buffer cleared to %d\n", clear_value);
 	    		x86_opengl_render_buffer_clear(fb->stencil_buffer, clear_value);
 		}
 	

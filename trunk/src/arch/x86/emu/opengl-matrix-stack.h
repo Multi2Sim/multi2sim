@@ -42,10 +42,13 @@ struct x86_opengl_matrix_stack_t
 };
 
 struct x86_opengl_matrix_t;
+
 struct x86_opengl_matrix_stack_t *x86_opengl_matrix_stack_create(GLenum mode);
 void x86_opengl_matrix_stack_free(struct x86_opengl_matrix_stack_t *mtx_stack);
 int x86_opengl_matrix_stack_push(struct x86_opengl_matrix_stack_t *mtx_stack, struct x86_opengl_matrix_t *mtx);
 struct x86_opengl_matrix_t *x86_opengl_matrix_stack_pop(struct x86_opengl_matrix_stack_t *mtx_stack);
+struct x86_opengl_matrix_t *x86_opengl_matrix_stack_top(struct x86_opengl_matrix_stack_t *mtx_stack);
+struct x86_opengl_matrix_t *x86_opengl_matrix_stack_bottom(struct x86_opengl_matrix_stack_t *mtx_stack);
 
 #endif
 

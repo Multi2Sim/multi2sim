@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -33,18 +32,18 @@ struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLflo
 	vtx = xcalloc(1, sizeof(struct x86_opengl_vertex_t));
 
 	/* Initialize */
-	vtx->x = x;
-	vtx->y = y;
-	vtx->z = z;
-	vtx->w = w;
+	vtx->pos[X_COMP] = x;
+	vtx->pos[Y_COMP] = y;
+	vtx->pos[Z_COMP] = z;
+	vtx->pos[W_COMP] = w;
 
-	x86_opengl_debug("\t\tCreate vertex \t[%f, %f, %f, %f]\n", vtx->x, vtx->y, vtx->z, vtx->w);
+	x86_opengl_debug("\t\tCreate vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
 
 	return vtx;
 }
 void x86_opengl_vertex_free(struct x86_opengl_vertex_t *vtx)
 {
-	x86_opengl_debug("\t\tFree vertex \t[%f, %f, %f, %f]\n", vtx->x, vtx->y, vtx->z, vtx->w);
+	x86_opengl_debug("\t\tFree vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
 
 	free(vtx);
 }
@@ -61,6 +60,15 @@ void x86_opengl_vertex_set_color(GLchan *color, struct x86_opengl_vertex_t *vtx)
 int x86_opengl_vertex_get_color(struct x86_opengl_vertex_t *vtx)
 {
 	return ((vtx->color[0]) << 16) + ((vtx->color[1]) << 8) + vtx->color[2];
+}
+
+void x86_opengl_vertex_set_normal(GLfloat *nrml, struct x86_opengl_vertex_t *vtx)
+{
+	int i;
+	for (i = 0; i < 4; ++i)
+	{
+		vtx->normal[i] = nrml[i];
+	}	
 }
 
 struct x86_opengl_vertex_group_t *x86_opengl_vertex_group_create(GLenum primitive_type)
@@ -107,6 +115,7 @@ struct x86_opengl_vertex_buffer_t *x86_opengl_vertex_buffer_create()
 	/* Return */
 	return vtxbf;
 }
+
 void x86_opengl_vertex_buffer_free(struct x86_opengl_vertex_buffer_t *vtxbf)
 {
 	if (vtxbf)
@@ -127,7 +136,7 @@ void x86_opengl_vertex_buffer_add_vertex_group(struct x86_opengl_vertex_buffer_t
 
 void x86_opengl_vertex_buffer_add_vertex(struct x86_opengl_vertex_buffer_t *vtxbf, struct x86_opengl_vertex_t *vtx)
 {
-	x86_opengl_debug("\t\tAdd vertex \t[%f, %f, %f, %f]\n", vtx->x, vtx->y, vtx->z, vtx->w);
+	x86_opengl_debug("\t\tAdd vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
 
 	x86_opengl_vertex_group_add_vertex(vtxbf->current_vertex_group, vtx);
 }

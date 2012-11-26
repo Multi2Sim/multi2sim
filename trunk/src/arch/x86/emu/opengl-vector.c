@@ -17,14 +17,41 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_OPENGL_RAST_LINE_H
-#define ARCH_X86_EMU_OPENGL_RAST_LINE_H
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <math.h>
 
+#include "opengl-vector.h"
 
-#include <GL/glut.h>
+GLfloat *x86_opengl_vector_create(int len)
+{
+	GLfloat *vct;
 
-struct x86_opengl_context_t;
-/* Bresenham's line algorithm */
-void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1, GLint y1, GLint x2, GLint y2, GLuint color);
+	/* Malloc */
+	vct = xcalloc(1, len * sizeof(GLfloat));
 
-#endif
+	/* Return */
+	return vct;
+}
+
+void x86_opengl_vector_free(GLfloat *vct)
+{
+	free(vct);
+}
+
+/* Calculate the unit vector used in lighting module */
+/* Only 3 elements are used, the 4th is ignored */
+void x86_opengl_vector_unit(GLfloat *dst, GLfloat *p1, GLfloat *p2)
+{
+	if (p1[3] == 0 && p2[3] !=0)
+		ACC_SCALE_SCALAR_3V(dst, -1.0f, p1);
+	else if (p1[3] != 0 && p2[3] ==0)
+		COPY_3V(dst, p2);
+	else if (p1[3] == 0 && p2[3] == 0)
+		SUB_3V(dst, p2, p1);
+	else
+		SUB_3V(dst, p2, p1);
+	
+	NORMALIZE_3FV(dst);
+}
+
