@@ -16,15 +16,17 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#include <stdlib.h>
 
 #include <lib/util/debug.h>
 
 #include "glut-frame-buffer.h" 
 #include "opengl.h"
 #include "opengl-buffers.h"
+#include "opengl-context.h"
 #include "opengl-edge.h"
 #include "opengl-light.h"
-#include "opengl-rast-triangle.h"
+#include "opengl-rasterizer.h"
 #include "opengl-span.h"
 #include "opengl-vertex.h"
 
@@ -45,7 +47,7 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 {
 	struct x86_opengl_edge_t *edge_major;
 	struct x86_opengl_edge_t *edge_top;
-	struct x86_opengl_edge_t *edge_buttom;
+	struct x86_opengl_edge_t *edge_bottom;
 
 	struct x86_opengl_vertex_t *vtx_max;
 	struct x86_opengl_vertex_t *vtx_mid;
@@ -63,9 +65,9 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 
 	const GLint snapMask = ~((FIXED_ONE / (1 << SUB_PIXEL_BITS)) - 1); /* for x/y coord snapping */
 
-	const GLfixed fy0 = FloatToFixed(vtx0->y - 0.5F) & snapMask;
-	const GLfixed fy1 = FloatToFixed(vtx1->y - 0.5F) & snapMask;
-	const GLfixed fy2 = FloatToFixed(vtx2->y - 0.5F) & snapMask;
+	const GLfixed fy0 = FloatToFixed(vtx0->pos[Y_COMP] - 0.5F) & snapMask;
+	const GLfixed fy1 = FloatToFixed(vtx1->pos[Y_COMP] - 0.5F) & snapMask;
+	const GLfixed fy2 = FloatToFixed(vtx2->pos[Y_COMP] - 0.5F) & snapMask;
 
 	/* Find the order of vertex */
 	if (fy0 <= fy1)
@@ -109,25 +111,25 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 		}
 	}
 
-	vtx_min_fx = FloatToFixed(vtx_min->x + 0.5F) & snapMask;
-	vtx_mid_fx = FloatToFixed(vtx_mid->x + 0.5F) & snapMask;
-	vtx_max_fx = FloatToFixed(vtx_max->x + 0.5F) & snapMask;
+	vtx_min_fx = FloatToFixed(vtx_min->pos[X_COMP] + 0.5F) & snapMask;
+	vtx_mid_fx = FloatToFixed(vtx_mid->pos[X_COMP] + 0.5F) & snapMask;
+	vtx_max_fx = FloatToFixed(vtx_max->pos[X_COMP] + 0.5F) & snapMask;
 
 	/* Create edges */
 	edge_major = x86_opengl_edge_create(vtx_max, vtx_min);
 	edge_top = x86_opengl_edge_create(vtx_max, vtx_mid);
-	edge_buttom = x86_opengl_edge_create(vtx_mid, vtx_min);
+	edge_bottom = x86_opengl_edge_create(vtx_mid, vtx_min);
 
 	/* compute deltas for each edge:  vertex[upper] - vertex[lower] */
 	edge_major->dx = FixedToFloat(vtx_max_fx - vtx_min_fx);
 	edge_major->dy = FixedToFloat(vtx_max_fy - vtx_min_fy);
 	edge_top->dx = FixedToFloat(vtx_max_fx - vtx_mid_fx);
 	edge_top->dy = FixedToFloat(vtx_max_fy - vtx_mid_fy);
-	edge_buttom->dx = FixedToFloat(vtx_mid_fx - vtx_min_fx);
-	edge_buttom->dy = FixedToFloat(vtx_mid_fy - vtx_min_fy);
+	edge_bottom->dx = FixedToFloat(vtx_mid_fx - vtx_min_fx);
+	edge_bottom->dy = FixedToFloat(vtx_mid_fy - vtx_min_fy);
 
 	/* Compute area */	
-      	const GLfloat area = edge_major->dx * edge_buttom->dy - edge_buttom->dx * edge_major->dy;
+      	const GLfloat area = edge_major->dx * edge_bottom->dy - edge_bottom->dx * edge_major->dy;
       	one_over_area = 1.0f / area;
 
       	/* Edge setup */
@@ -141,7 +143,17 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 		edge_major->fsx = edge_major->fx0 + (GLfixed) (edge_major->adjy * edge_major->dxdy);
 	}
 	else
+	{
+		/* Free edges */
+		x86_opengl_edge_free(edge_major);
+		x86_opengl_edge_free(edge_top);
+		x86_opengl_edge_free(edge_bottom);
+
+		/* Free span*/
+		x86_opengl_span_free(spn);
 		return;  /*CULLED*/
+	}
+
 
 
 	edge_top->fsy = FixedCeil(vtx_mid_fy);
@@ -155,15 +167,15 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 		edge_top->fsx = edge_top->fx0 + (GLfixed) (edge_top->adjy * edge_top->dxdy);
 	}
 
-	edge_buttom->fsy = FixedCeil(vtx_min_fy);
-	edge_buttom->lines = FixedToInt(FixedCeil(vtx_mid_fy - edge_buttom->fsy));
-	if (edge_buttom->lines > 0)
+	edge_bottom->fsy = FixedCeil(vtx_min_fy);
+	edge_bottom->lines = FixedToInt(FixedCeil(vtx_mid_fy - edge_bottom->fsy));
+	if (edge_bottom->lines > 0)
 	{
-		edge_buttom->dxdy = edge_buttom->dx / edge_buttom->dy;
-		edge_buttom->fdxdy = SignedFloatToFixed(edge_buttom->dxdy);		
-		edge_buttom->adjy = (GLfloat) (edge_buttom->fsy - vtx_min_fy);  /* SCALED! */
-		edge_buttom->fx0 = vtx_min_fx;
-		edge_buttom->fsx = edge_buttom->fx0 + (GLfixed) (edge_buttom->adjy * edge_buttom->dxdy);
+		edge_bottom->dxdy = edge_bottom->dx / edge_bottom->dy;
+		edge_bottom->fdxdy = SignedFloatToFixed(edge_bottom->dxdy);		
+		edge_bottom->adjy = (GLfloat) (edge_bottom->fsy - vtx_min_fy);  /* SCALED! */
+		edge_bottom->fx0 = vtx_min_fx;
+		edge_bottom->fsx = edge_bottom->fx0 + (GLfixed) (edge_bottom->adjy * edge_bottom->dxdy);
 	}
 
 	/* Decide scan direction */
@@ -173,10 +185,10 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 	/* Interpolate depth */
 	if (ctx->context_cap->is_depth_test)
 	{
-		GLfloat edge_major_dz = vtx_max->z - vtx_min->z;
-		GLfloat edge_buttom_dz = vtx_mid->z - vtx_min->z;
-		spn->attrStepX[FRAG_ATTRIB_WPOS][2] = one_over_area * (edge_major_dz * edge_buttom->dy - edge_major->dy * edge_buttom_dz);
-		spn->attrStepY[FRAG_ATTRIB_WPOS][2] = one_over_area * (edge_major->dx * edge_buttom_dz - edge_major_dz * edge_buttom->dx);
+		GLfloat edge_major_dz = vtx_max->pos[Z_COMP] - vtx_min->pos[Z_COMP];
+		GLfloat edge_bottom_dz = vtx_mid->pos[Z_COMP] - vtx_min->pos[Z_COMP];
+		spn->attrStepX[FRAG_ATTRIB_WPOS][2] = one_over_area * (edge_major_dz * edge_bottom->dy - edge_major->dy * edge_bottom_dz);
+		spn->attrStepY[FRAG_ATTRIB_WPOS][2] = one_over_area * (edge_major->dx * edge_bottom_dz - edge_major_dz * edge_bottom->dx);
 		spn->zStep = SignedFloatToFixed(spn->attrStepX[FRAG_ATTRIB_WPOS][2]);
 	}
 
@@ -190,12 +202,12 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 		GLfloat eMaj_db = (GLfloat) (vtx_max->color[B_COMP] - vtx_min->color[B_COMP]);
 		GLfloat eBot_db = (GLfloat) (vtx_mid->color[B_COMP] - vtx_min->color[B_COMP]);
 
-		spn->attrStepX[FRAG_ATTRIB_COL0][0] = one_over_area * (eMaj_dr * edge_buttom->dy - edge_major->dy * eBot_dr);
-		spn->attrStepY[FRAG_ATTRIB_COL0][0] = one_over_area * (edge_major->dx * eBot_dr - eMaj_dr * edge_buttom->dx);
-		spn->attrStepX[FRAG_ATTRIB_COL0][1] = one_over_area * (eMaj_dg * edge_buttom->dy - edge_major->dy * eBot_dg);
-		spn->attrStepY[FRAG_ATTRIB_COL0][1] = one_over_area * (edge_major->dx * eBot_dg - eMaj_dg * edge_buttom->dx);
-		spn->attrStepX[FRAG_ATTRIB_COL0][2] = one_over_area * (eMaj_db * edge_buttom->dy - edge_major->dy * eBot_db);
-		spn->attrStepY[FRAG_ATTRIB_COL0][2] = one_over_area * (edge_major->dx * eBot_db - eMaj_db * edge_buttom->dx);
+		spn->attrStepX[FRAG_ATTRIB_COL0][0] = one_over_area * (eMaj_dr * edge_bottom->dy - edge_major->dy * eBot_dr);
+		spn->attrStepY[FRAG_ATTRIB_COL0][0] = one_over_area * (edge_major->dx * eBot_dr - eMaj_dr * edge_bottom->dx);
+		spn->attrStepX[FRAG_ATTRIB_COL0][1] = one_over_area * (eMaj_dg * edge_bottom->dy - edge_major->dy * eBot_dg);
+		spn->attrStepY[FRAG_ATTRIB_COL0][1] = one_over_area * (edge_major->dx * eBot_dg - eMaj_dg * edge_bottom->dx);
+		spn->attrStepX[FRAG_ATTRIB_COL0][2] = one_over_area * (eMaj_db * edge_bottom->dy - edge_major->dy * eBot_db);
+		spn->attrStepY[FRAG_ATTRIB_COL0][2] = one_over_area * (edge_major->dx * eBot_db - eMaj_db * edge_bottom->dx);
 
 		spn->redStep   = SignedFloatToFixed(spn->attrStepX[FRAG_ATTRIB_COL0][0]);
 		spn->greenStep = SignedFloatToFixed(spn->attrStepX[FRAG_ATTRIB_COL0][1]);
@@ -204,8 +216,8 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 		GLfloat eMaj_da = (GLfloat) (vtx_max->color[A_COMP] - vtx_min->color[A_COMP]);
 		GLfloat eBot_da = (GLfloat) (vtx_mid->color[A_COMP] - vtx_min->color[A_COMP]);
 
-		spn->attrStepX[FRAG_ATTRIB_COL0][3] = one_over_area * (eMaj_da * edge_buttom->dy - edge_major->dy * eBot_da);
-		spn->attrStepY[FRAG_ATTRIB_COL0][3] = one_over_area * (edge_major->dx * eBot_da - eMaj_da * edge_buttom->dx);	
+		spn->attrStepX[FRAG_ATTRIB_COL0][3] = one_over_area * (eMaj_da * edge_bottom->dy - edge_major->dy * eBot_da);
+		spn->attrStepY[FRAG_ATTRIB_COL0][3] = one_over_area * (edge_major->dx * eBot_da - eMaj_da * edge_bottom->dx);	
 		spn->alphaStep = SignedFloatToFixed(spn->attrStepX[FRAG_ATTRIB_COL0][3]);
 	}
 	else
@@ -244,13 +256,13 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 			/* bottom half */
 			if (scan_from_left_to_right) {
 				edge_left = edge_major;
-				edge_right = edge_buttom;
+				edge_right = edge_bottom;
 				lines = edge_right->lines;
 				setupLeft = 1;
 				setupRight = 1;
 			}
 			else {
-				edge_left = edge_buttom;
+				edge_left = edge_bottom;
 				edge_right = edge_major;
 				lines = edge_left->lines;
 				setupLeft = 1;
@@ -308,7 +320,7 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 			/* Interpolate Z */
 			if (ctx->context_cap->is_depth_test)
 			{
-				GLfloat z0 = vtx_lower->z;
+				GLfloat z0 = vtx_lower->pos[Z_COMP];
 				GLfloat tmp = (z0 * FIXED_SCALE + spn->attrStepX[FRAG_ATTRIB_WPOS][2] * adjx + spn->attrStepY[FRAG_ATTRIB_WPOS][2] * adjy) + FIXED_HALF;
 				if (tmp < MAX_GLUINT / 2)
 					zLeft = (GLfixed) tmp;
@@ -429,7 +441,8 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 			/* This is where we actually generate fragments */
 			if (spn->end > 0 && spn->y >= 0)
 			{
-				const GLint len = spn->end - 1;
+				/* Mesa len = spn->end -1 */
+				const GLint len = spn->end;
 				x86_opengl_debug("\t\tSpan from [%d, %d] with length %d\n", spn->x, spn->y, len);
 
 				/* Interpolate RGBA */
@@ -463,10 +476,18 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 					int color = (red << 16) + (green << 8)+ blue;
 					/* Depth Test */
 					// GLfixed z_val = spn->z;
-					if (ctx->draw_buffer->depth_buffer->buffer[spn->x * ctx->draw_buffer->depth_buffer->width + spn->y] < spn->z)
+					if (ctx->draw_buffer->depth_buffer->buffer[spn->y * ctx->draw_buffer->depth_buffer->width + spn->x] < spn->z)
 					{
-						ctx->draw_buffer->depth_buffer->buffer[spn->x * ctx->draw_buffer->depth_buffer->width + spn->y] = spn->z;
-						x86_glut_frame_buffer_pixel(spn->x, spn->y, color);
+						GLint idx = spn->y * ctx->draw_buffer->depth_buffer->width + spn->x;
+						if (idx <= ctx->draw_buffer->depth_buffer->width * ctx->draw_buffer->depth_buffer->height)
+						{
+							ctx->draw_buffer->depth_buffer->buffer[spn->y * ctx->draw_buffer->depth_buffer->width + spn->x] = spn->z;
+							x86_glut_frame_buffer_pixel(spn->x, spn->y, color);
+						}
+						else
+							x86_opengl_debug("\t\tOut of bound! [%d, %d] > [%d, %d]\n", 
+												spn->x, spn->y, 
+												ctx->draw_buffer->depth_buffer->width, ctx->draw_buffer->depth_buffer->height );
 					};
 
 					spn->z += spn->zStep;
@@ -529,9 +550,146 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struc
 	/* Free edges */
 	x86_opengl_edge_free(edge_major);
 	x86_opengl_edge_free(edge_top);
-	x86_opengl_edge_free(edge_buttom);
+	x86_opengl_edge_free(edge_bottom);
 
-	/* Free spn->*/
+	/* Free span*/
 	x86_opengl_span_free(spn);
 
+}
+
+/* TODO: use Mesa algorithm instead */
+/* Bresenham's line algorithm */
+void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1, GLint y1, GLint x2, GLint y2, GLuint color)
+{
+
+	GLint s_x;
+	GLint s_y;
+	GLint e_x;
+	GLint e_y;
+
+	if (x1 == x2)
+	{
+		x86_opengl_debug("\t\tSlope = infinite\n");
+		s_y = y1 < y2 ? y1 : y2;
+		e_y = y1 > y2 ? y1: y2;
+		x86_glut_frame_buffer_pixel(x1, s_y, color);
+		while(s_y < e_y)
+		{ 
+			s_y++;
+			x86_glut_frame_buffer_pixel(x1, s_y, color);				
+		}
+		return;
+	}
+
+	if (x1 < x2)
+	{
+		s_x = x1;
+		s_y = y1;
+		e_x = x2;
+		e_y = y2;
+	} else {
+		s_x = x2;
+		s_y = y2;
+		e_x = x1;
+		e_y = y1;
+	}
+
+	GLfloat m = (GLfloat)(y2 - y1) / (x2 - x1);
+	x86_opengl_debug("\t\tSlope = %f\n", m);
+
+	if (m >= 0.0f && m < 1.0f)
+	{
+		GLint dx = abs(e_x - s_x);
+		GLint dy = abs(e_y - s_y);
+		GLint e = 2*dy -dx;
+		GLint incrE = 2*dy;
+		GLint incrNE = 2*(dy-dx);
+		GLint x = s_x;
+		GLint y = s_y;
+		x86_glut_frame_buffer_pixel(x, y, color);
+		while(x < e_x)
+		{
+			x++;
+			if ( e <= 0)
+				e += incrE;
+			else
+			{
+				y++;
+				e += incrNE;
+			}
+			x86_glut_frame_buffer_pixel(x, y, color);
+		}
+	}
+
+	if ( m >= 1.0f )
+	{
+		GLint dx = abs(e_x - s_x);
+		GLint dy = abs(e_y - s_y);
+		GLint e = 2*dx -dy;
+		GLint incrE = 2*dx;
+		GLint incrNE = 2*(dx-dy);
+		GLint x = s_x;
+		GLint y = s_y;
+		x86_glut_frame_buffer_pixel(x, y, color);
+		while(y < e_y)
+		{
+			y++;
+			if ( e <= 0)
+				e += incrE;
+			else
+			{
+				x++;
+				e += incrNE;
+			}
+			x86_glut_frame_buffer_pixel(x, y, color);
+		}
+	}
+
+	if (m < 0.0f && m > -1.0f)
+	{
+		GLint dx = abs(e_x - s_x);
+		GLint dy = abs(e_y - s_y);
+		GLint e = 2*dy -dx;
+		GLint incrE = 2*dy;
+		GLint incrNE = 2*(dy-dx);
+		GLint x = s_x;
+		GLint y = s_y;
+		x86_glut_frame_buffer_pixel(x, y, color);
+		while(x < e_x)
+		{
+			x++;
+			if ( e <= 0)
+				e += incrE;
+			else
+			{
+				y--;
+				e += incrNE;
+			}
+			x86_glut_frame_buffer_pixel(x, y, color);
+		}
+	}
+
+	if (m <= -1.0f)
+	{
+		GLint dx = abs(e_x - s_x);
+		GLint dy = abs(e_y - s_y);
+		GLint e = 2*dx -dy;
+		GLint incrE = 2*dx;
+		GLint incrNE = 2*(dx-dy);
+		GLint x = s_x;
+		GLint y = s_y;
+		x86_glut_frame_buffer_pixel(x, y, color);
+		while(x < e_x)
+		{
+			y--;
+			if ( e >= 0)
+				e -= incrE;
+			else
+			{
+				x++;
+				e -= incrNE;
+			}
+			x86_glut_frame_buffer_pixel(x, y, color);
+		}
+	}
 }

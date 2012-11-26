@@ -17,13 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_OPENGL_RAST_CONFIG_H
-#define X86_OPENGL_RAST_CONFIG_H
-
+#ifndef ARCH_X86_EMU_OPENGL_RASTERIZER_H
+#define ARCH_X86_EMU_OPENGL_RASTERIZER_H
 
 #include <GL/glut.h>
 
 typedef GLint GLfixed;
+
+#define MAX_GLUINT	0xffffffff
 
 /* Convert float to int by rounding to nearest integer, away from zero */
 static inline int IROUND(float f)
@@ -58,5 +59,12 @@ static inline int IROUND(float f)
 #define FixedToFloat(X) ((X) * (1.0F / FIXED_SCALE))
 #define PosFloatToFixed(X)      FloatToFixed(X)
 #define SignedFloatToFixed(X)   FloatToFixed(X)
+
+struct x86_opengl_context_t;
+struct x86_opengl_vertex_t;
+
+void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1, struct x86_opengl_vertex_t *vtx2);
+/* Bresenham's line algorithm */
+void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1, GLint y1, GLint x2, GLint y2, GLuint color);
 
 #endif

@@ -17,8 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 
 #include "opengl-span.h"
 
@@ -28,6 +30,8 @@ struct x86_opengl_span_t *x86_opengl_span_create()
 	struct x86_opengl_span_t *spn;
 
 	spn = xcalloc(1, sizeof(struct x86_opengl_span_t));
+	if (!spn)
+		fatal("%s: out of memory", __FUNCTION__);
 
 	return spn;
 }

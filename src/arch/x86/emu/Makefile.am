@@ -72,11 +72,17 @@ libemu_a_SOURCES += \
 	opengl-buffers.c \
 	opengl-buffers.h \
 	\
+	opengl-vector.c \
+	opengl-vector.h \
+	\
 	opengl-vertex.c \
 	opengl-vertex.h \
 	\
 	opengl-color-channel.c \
 	opengl-color-channel.h \
+	\
+	opengl-material.c \
+	opengl-material.h \
 	\
 	opengl-light.c \
 	opengl-light.h \
@@ -87,13 +93,8 @@ libemu_a_SOURCES += \
 	opengl-edge.c \
 	opengl-edge.h \
 	\
-	opengl-rast-config.h \
-	\
-	opengl-rast-line.c \
-	opengl-rast-line.h \
-	\
-	opengl-rast-triangle.c \
-	opengl-rast-triangle.h \
+	opengl-rasterizer.c \
+	opengl-rasterizer.h \
 	\
 	opengl-viewport.c \
 	opengl-viewport.h

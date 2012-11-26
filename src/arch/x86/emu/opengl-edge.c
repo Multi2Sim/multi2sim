@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
@@ -35,7 +34,7 @@ struct x86_opengl_edge_t *x86_opengl_edge_create(struct x86_opengl_vertex_t *vtx
 	/* Initialize */
 	edge->vtx0 = vtx0;
 	edge->vtx1 = vtx1;
-	x86_opengl_debug("\t\tEdge \t[%f, %f] - [%f, %f]\n\n", vtx0->x, vtx0->y, vtx1->x, vtx1->y);
+	x86_opengl_debug("\t\tEdge \t[%f, %f] - [%f, %f]\n\n", vtx0->pos[X_COMP], vtx0->pos[Y_COMP], vtx1->pos[X_COMP], vtx1->pos[Y_COMP]);
 
 	/* Return */
 	return edge;
