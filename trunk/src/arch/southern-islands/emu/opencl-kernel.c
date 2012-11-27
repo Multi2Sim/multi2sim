@@ -20,7 +20,9 @@
 
 #include <mem-system/memory.h>
 
-#include "emu.h"
+#include <arch/southern-islands/emu/opencl-kernel.h>
+#include <arch/southern-islands/emu/opencl-api.h>
+#include <arch/southern-islands/emu/opencl-repo.h>
 
 
 struct si_opencl_kernel_t *si_opencl_kernel_create()

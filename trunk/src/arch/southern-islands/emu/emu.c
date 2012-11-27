@@ -19,14 +19,16 @@
 
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
-#include <arch/southern-islands/timing/timing.h>
 #include <arch/x86/emu/context.h>
 #include <lib/esim/esim.h>
 #include <lib/util/file.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/opencl-command-queue.h>
+#include <arch/southern-islands/timing/timing.h>
 
 
 /*

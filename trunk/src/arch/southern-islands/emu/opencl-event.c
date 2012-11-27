@@ -21,8 +21,8 @@
 #include <lib/esim/esim.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-
+#include <arch/southern-islands/emu/opencl-event.h>
+#include <arch/southern-islands/emu/opencl-repo.h>
 
 struct si_opencl_event_t *si_opencl_event_create(enum si_opencl_event_kind_t kind)
 {

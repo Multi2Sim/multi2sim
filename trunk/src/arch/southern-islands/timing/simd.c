@@ -21,6 +21,7 @@
 #include <lib/esim/trace.h>
 
 #include "timing.h"
+#include <arch/southern-islands/emu/isa.h>
 
 /* Configurable by user at runtime */
 
@@ -68,9 +69,9 @@ void si_simd_writeback(struct si_simd_t *simd)
 			uop->wavefront->id, uop->id_in_wavefront);
 
 		/* Allow next instruction to be fetched */
-		uop->inst_buffer_entry->ready = 1;
-		uop->inst_buffer_entry->uop = NULL;
-		uop->inst_buffer_entry->cycle_fetched = INST_NOT_FETCHED;
+		uop->wavefront_pool_entry->ready = 1;
+		uop->wavefront_pool_entry->uop = NULL;
+		uop->wavefront_pool_entry->cycle_fetched = INST_NOT_FETCHED;
 
 		/* Free uop */
 		if (si_tracing())
@@ -242,7 +243,7 @@ void si_simd_execute(struct si_simd_t *simd)
 
 		/* Check if there is at least one wavefront mapped to the IB. If not, consider
 		 * wvf_util, otherwise consider either rdy or occ. */
-//		if (simd->compute_unit->inst_buffers[uop->inst_buffer_id]->wavefront_count)
+//		if (simd->compute_unit->wavefront_pools[uop->wavefront_pool_id]->wavefront_count)
 //		{
 			/* Check if there exists a wavefront with the appropriate instruction waiting to be
 			 * executed. If so, the underutilized functional units are considered in rdy,
@@ -250,9 +251,9 @@ void si_simd_execute(struct si_simd_t *simd)
 			 * if either it is waiting at the instruction buffer with a SIMD instruction next
 			 * or if it is not at the instruction buffer and its previous instruction was a SIMD
 			 * (meaning it is in the SIMD pipeline but has not reached execution). */
-//			for (int i = 0; i < simd->compute_unit->inst_buffers[uop->inst_buffer_id]->wavefront_count; i++)
-//				if (simd->compute_unit->inst_buffers[uop->inst_buffer_id]->entries[i]->ready &&
-//						simd->compute_unit->inst_buffers[uop->inst_buffer_id]->entries[i]->wavefront->)
+//			for (int i = 0; i < simd->compute_unit->wavefront_pools[uop->wavefront_pool_id]->wavefront_count; i++)
+//				if (simd->compute_unit->wavefront_pools[uop->wavefront_pool_id]->entries[i]->ready &&
+//						simd->compute_unit->wavefront_pools[uop->wavefront_pool_id]->entries[i]->wavefront->)
 //				{
 
 //					break;
@@ -283,7 +284,7 @@ void si_simd_read(struct si_simd_t *simd)
 	{
 		uop = list_get(simd->issue_buffer, list_index);
 		assert(uop);
-		assert(uop->inst_buffer_entry->inst_buffer == simd->inst_buffer);	
+		assert(uop->wavefront_pool_entry->wavefront_pool == simd->wavefront_pool);	
 
 		/* Stop if the uop has not been fully decoded yet. It is safe
 		 * to assume that no other uop is ready either */

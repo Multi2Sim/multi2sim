@@ -17,8 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/emu/emu.h>
+#include <assert.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/string.h>
 
+#include <arch/southern-islands/asm/bin-file.h>
 
 #define SI_BIN_FILE_NOT_SUPPORTED(__var) \
 	fatal("%s: value 0x%x not supported for parameter '" #__var "'", __FUNCTION__, (__var))

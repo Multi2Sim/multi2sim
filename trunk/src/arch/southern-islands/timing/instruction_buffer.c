@@ -19,52 +19,53 @@
 
 
 #include "timing.h"
+#include <arch/southern-islands/emu/ndrange.h>
 
 
-struct si_inst_buffer_t *si_inst_buffer_create()
+struct si_wavefront_pool_t *si_wavefront_pool_create()
 {
-	struct si_inst_buffer_t *inst_buffer;
+	struct si_wavefront_pool_t *wavefront_pool;
 	int i;
 
 	/* Create */
-	inst_buffer = calloc(1, sizeof(struct si_inst_buffer_t));
-	if (!inst_buffer)
+	wavefront_pool = calloc(1, sizeof(struct si_wavefront_pool_t));
+	if (!wavefront_pool)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	inst_buffer->entries = calloc(si_gpu_max_wavefronts_per_inst_buffer, 
-		sizeof(struct si_inst_buffer_entry_t*));
-	if (!inst_buffer->entries)
+	wavefront_pool->entries = calloc(si_gpu_max_wavefronts_per_wavefront_pool, 
+		sizeof(struct si_wavefront_pool_entry_t*));
+	if (!wavefront_pool->entries)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	for (i = 0; i < si_gpu_max_wavefronts_per_inst_buffer; i++) 
+	for (i = 0; i < si_gpu_max_wavefronts_per_wavefront_pool; i++) 
 	{
-		inst_buffer->entries[i] = calloc(1, sizeof(struct si_inst_buffer_entry_t));
-		if (!inst_buffer->entries[i])
+		wavefront_pool->entries[i] = calloc(1, sizeof(struct si_wavefront_pool_entry_t));
+		if (!wavefront_pool->entries[i])
 			fatal("%s: out of memory", __FUNCTION__);
 
-		inst_buffer->entries[i]->id_in_inst_buffer = i;
-		inst_buffer->entries[i]->inst_buffer = inst_buffer;
+		wavefront_pool->entries[i]->id_in_wavefront_pool = i;
+		wavefront_pool->entries[i]->wavefront_pool = wavefront_pool;
 	}
 
-	inst_buffer->wavefront_count = 0;
+	wavefront_pool->wavefront_count = 0;
 
 	/* Return */
-	return inst_buffer;
+	return wavefront_pool;
 }
 
-void si_inst_buffer_free(struct si_inst_buffer_t *inst_buffer)
+void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool)
 {
 	int i;
 
-	for (i = 0; i < si_gpu_max_wavefronts_per_inst_buffer; i++) 
-		free(inst_buffer->entries[i]);
+	for (i = 0; i < si_gpu_max_wavefronts_per_wavefront_pool; i++) 
+		free(wavefront_pool->entries[i]);
 
-	free(inst_buffer->entries);
-	free(inst_buffer);
+	free(wavefront_pool->entries);
+	free(wavefront_pool);
 }
 
-void si_inst_buffer_map_wavefronts(struct si_inst_buffer_t *inst_buffer, 
+void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
 	struct si_work_group_t *work_group)
 {
 	struct si_ndrange_t *ndrange = work_group->ndrange;
@@ -74,26 +75,26 @@ void si_inst_buffer_map_wavefronts(struct si_inst_buffer_t *inst_buffer,
 	int i;
 
 	/* Determine starting ID for wavefronts in the instruction buffer */
-	wg_id_in_ib = work_group->id_in_compute_unit/si_gpu_num_inst_buffers;
+	wg_id_in_ib = work_group->id_in_compute_unit/si_gpu_num_wavefront_pools;
 	first_entry = wg_id_in_ib * ndrange->wavefronts_per_work_group;
 
 	/* Assign wavefronts a slot in the instruction buffer */
 	for (i = 0; i < ndrange->wavefronts_per_work_group; i++) 
 	{
 		wavefront = work_group->wavefronts[i];
-		wavefront->inst_buffer_entry = inst_buffer->entries[first_entry + i];
-		assert(!wavefront->inst_buffer_entry->valid);
+		wavefront->wavefront_pool_entry = wavefront_pool->entries[first_entry + i];
+		assert(!wavefront->wavefront_pool_entry->valid);
 
 		/* Set initial state */
-		wavefront->inst_buffer_entry->valid = 1;
-		wavefront->inst_buffer_entry->ready = 1;
-		wavefront->inst_buffer_entry->wavefront = wavefront;
+		wavefront->wavefront_pool_entry->valid = 1;
+		wavefront->wavefront_pool_entry->ready = 1;
+		wavefront->wavefront_pool_entry->wavefront = wavefront;
 
-		inst_buffer->wavefront_count++;
+		wavefront_pool->wavefront_count++;
 	}
 }
 
-void si_inst_buffer_unmap_wavefronts(struct si_inst_buffer_t *inst_buffer, 
+void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
 	struct si_work_group_t *work_group)
 {
 	struct si_ndrange_t *ndrange = work_group->ndrange;
@@ -102,20 +103,20 @@ void si_inst_buffer_unmap_wavefronts(struct si_inst_buffer_t *inst_buffer,
 	int i;
 
 	/* Reset mapped wavefronts */
-	assert(inst_buffer->wavefront_count >= ndrange->wavefronts_per_work_group);
+	assert(wavefront_pool->wavefront_count >= ndrange->wavefronts_per_work_group);
 
 	for (i = 0; i < ndrange->wavefronts_per_work_group; i++) 
 	{
 		wavefront = work_group->wavefronts[i];
-		wf_id_in_ib = wavefront->inst_buffer_entry->id_in_inst_buffer;
+		wf_id_in_ib = wavefront->wavefront_pool_entry->id_in_wavefront_pool;
 
 		/* TODO Add complete flag to slots in instruction buffer */
 		/* TODO Check that all slots are complete before setting to NULL */
-		assert(inst_buffer->entries[wf_id_in_ib]->wavefront);
-		assert(inst_buffer->entries[wf_id_in_ib]->wavefront->id == wavefront->id);
-		inst_buffer->entries[wf_id_in_ib]->valid = 0;
-		inst_buffer->entries[wf_id_in_ib]->wavefront_finished = 0;
-		inst_buffer->entries[wf_id_in_ib]->wavefront = NULL;
+		assert(wavefront_pool->entries[wf_id_in_ib]->wavefront);
+		assert(wavefront_pool->entries[wf_id_in_ib]->wavefront->id == wavefront->id);
+		wavefront_pool->entries[wf_id_in_ib]->valid = 0;
+		wavefront_pool->entries[wf_id_in_ib]->wavefront_finished = 0;
+		wavefront_pool->entries[wf_id_in_ib]->wavefront = NULL;
 	}
-	inst_buffer->wavefront_count -= ndrange->wavefronts_per_work_group;
+	wavefront_pool->wavefront_count -= ndrange->wavefronts_per_work_group;
 }

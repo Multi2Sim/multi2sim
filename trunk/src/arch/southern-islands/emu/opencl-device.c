@@ -18,9 +18,12 @@
  */
 
 
-#include <arch/southern-islands/timing/timing.h>
-#include <mem-system/memory.h>
 
+#include <lib/util/debug.h>
+#include <mem-system/memory.h>
+#include <arch/southern-islands/timing/timing.h>
+#include <arch/southern-islands/emu/opencl-device.h>
+#include <arch/southern-islands/emu/opencl-repo.h>
 
 
 /* Create a device */

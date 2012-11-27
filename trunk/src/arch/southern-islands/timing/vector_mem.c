@@ -21,6 +21,7 @@
 #include <lib/esim/trace.h>
 
 #include "timing.h"
+#include <arch/southern-islands/emu/ndrange.h>
 
 /* Configurable by user at runtime */
 
@@ -42,7 +43,7 @@ void si_vector_mem_process_mem_accesses(struct si_vector_mem_unit_t *vector_mem)
 	int i;
 	int list_entries;
 	int list_index = 0;
-	struct si_inst_buffer_entry_t *inst_buffer_entry;
+	struct si_wavefront_pool_entry_t *wavefront_pool_entry;
 
 	/* Process completed memory instructions */
 	list_entries = list_count(vector_mem->inflight_buffer);
@@ -57,10 +58,10 @@ void si_vector_mem_process_mem_accesses(struct si_vector_mem_unit_t *vector_mem)
 
 		if (!uop->global_mem_witness)
 		{
-			inst_buffer_entry = uop->inst_buffer_entry; 
+			wavefront_pool_entry = uop->wavefront_pool_entry; 
 
-			assert(inst_buffer_entry->vm_cnt > 0);
-			inst_buffer_entry->vm_cnt--;
+			assert(wavefront_pool_entry->vm_cnt > 0);
+			wavefront_pool_entry->vm_cnt--;
 
 			/* Access complete, remove the uop from the queue */
 			list_remove(vector_mem->inflight_buffer, uop);
@@ -111,9 +112,9 @@ void si_vector_mem_writeback(struct si_vector_mem_unit_t *vector_mem)
             uop->wavefront->id, uop->id_in_wavefront);
 
         /* Allow next instruction to be fetched */
-        uop->inst_buffer_entry->ready = 1;
-        uop->inst_buffer_entry->uop = NULL;
-        uop->inst_buffer_entry->cycle_fetched = INST_NOT_FETCHED;
+        uop->wavefront_pool_entry->ready = 1;
+        uop->wavefront_pool_entry->uop = NULL;
+        uop->wavefront_pool_entry->cycle_fetched = INST_NOT_FETCHED;
 
         /* Free uop */
         if (si_tracing())
@@ -186,7 +187,7 @@ void si_vector_mem_execute(struct si_vector_mem_unit_t *vector_mem)
 		        mem_uop = si_uop_create();
 		        mem_uop->wavefront = uop->wavefront;
 			mem_uop->compute_unit = uop->compute_unit;
-			mem_uop->inst_buffer_entry = uop->inst_buffer_entry;
+			mem_uop->wavefront_pool_entry = uop->wavefront_pool_entry;
 			mem_uop->vector_mem_read = uop->vector_mem_read;
 			mem_uop->vector_mem_write =  uop->vector_mem_write;
 			mem_uop->id_in_compute_unit = uop->compute_unit->mem_uop_id_counter++;
@@ -214,7 +215,7 @@ void si_vector_mem_execute(struct si_vector_mem_unit_t *vector_mem)
 			}
 
 			/* Increment outstanding memory access count */
-			uop->inst_buffer_entry->vm_cnt++;
+			uop->wavefront_pool_entry->vm_cnt++;
 
 			/* Transfer the uop to the exec buffer */
 			uop->execute_ready = si_gpu->cycle + 1;

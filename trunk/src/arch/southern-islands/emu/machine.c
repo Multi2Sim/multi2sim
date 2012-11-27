@@ -23,7 +23,7 @@
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
+#include <arch/southern-islands/emu/machine.h>
 
 
 char *err_si_isa_note =
@@ -1348,7 +1348,7 @@ void si_isa_S_BRANCH_impl(struct si_work_item_t *work_item, struct si_inst_t *in
 	int se_simm16;
 
 	/* Load the current program counter. */
-	pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
+	pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
 
 	/* Load the short constant operand and sign extend into an integer. */
 	simm16 = INST.simm16;
@@ -1358,7 +1358,7 @@ void si_isa_S_BRANCH_impl(struct si_work_item_t *work_item, struct si_inst_t *in
 	pc = pc + (se_simm16 * 4) + 4;
 
 	/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-	work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc - inst->info->size;
+	work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
 }
 #undef INST
 
@@ -1373,7 +1373,7 @@ void si_isa_S_CBRANCH_SCC0_impl(struct si_work_item_t *work_item, struct si_inst
 	if(!si_isa_read_sreg(work_item, SI_SCC).as_uint)
 	{
 		/* Load the current program counter. */
-		pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
+		pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
 
 		/* Load the short constant operand and sign extend into an integer. */
 		simm16 = INST.simm16;
@@ -1383,7 +1383,7 @@ void si_isa_S_CBRANCH_SCC0_impl(struct si_work_item_t *work_item, struct si_inst
 		pc = pc + (se_simm16 * 4) + 4;
 
 		/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-		work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc - inst->info->size;
+		work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
 	}
 }
 #undef INST
@@ -1399,7 +1399,7 @@ void si_isa_S_CBRANCH_SCC1_impl(struct si_work_item_t *work_item, struct si_inst
 	if(si_isa_read_sreg(work_item, SI_SCC).as_uint)
 	{
 		/* Load the current program counter. */
-		pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
+		pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
 
 		/* Load the short constant operand and sign extend into an integer. */
 		simm16 = INST.simm16;
@@ -1409,7 +1409,7 @@ void si_isa_S_CBRANCH_SCC1_impl(struct si_work_item_t *work_item, struct si_inst
 		pc = pc + (se_simm16 * 4) + 4;
 
 		/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-		work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc - inst->info->size;
+		work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
 	}
 }
 #undef INST
@@ -1425,7 +1425,7 @@ void si_isa_S_CBRANCH_VCCZ_impl(struct si_work_item_t *work_item, struct si_inst
 	if(si_isa_read_sreg(work_item, SI_VCCZ).as_uint)
 	{
 		/* Load the current program counter. */
-		pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
+		pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
 
 		/* Load the short constant operand and sign extend into an integer. */
 		simm16 = INST.simm16;
@@ -1435,7 +1435,7 @@ void si_isa_S_CBRANCH_VCCZ_impl(struct si_work_item_t *work_item, struct si_inst
 		pc = pc + (se_simm16 * 4) + 4;
 
 		/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-		work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc - inst->info->size;
+		work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
 	}
 }
 #undef INST
@@ -1451,7 +1451,7 @@ void si_isa_S_CBRANCH_EXECZ_impl(struct si_work_item_t *work_item, struct si_ins
 	if(si_isa_read_sreg(work_item, SI_EXECZ).as_uint)
 	{
 		/* Load the current program counter. */
-		pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
+		pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
 
 		/* Load the short constant operand and sign extend into an integer. */
 		simm16 = INST.simm16;
@@ -1461,7 +1461,7 @@ void si_isa_S_CBRANCH_EXECZ_impl(struct si_work_item_t *work_item, struct si_ins
 		pc = pc + (se_simm16 * 4) + 4;
 
 		/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-		work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc - inst->info->size;
+		work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
 	}
 }
 #undef INST

@@ -20,7 +20,10 @@
 
 #include <mem-system/memory.h>
 
-#include "emu.h"
+#include <arch/southern-islands/emu/opencl-program.h>
+#include <arch/southern-islands/emu/opencl-api.h>
+#include <arch/southern-islands/emu/opencl-mem.h>
+#include <arch/southern-islands/emu/opencl-repo.h>
 
 
 struct si_opencl_program_t *si_opencl_program_create()
