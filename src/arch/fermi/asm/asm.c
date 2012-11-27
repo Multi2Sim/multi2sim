@@ -21,7 +21,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
 
-#include "asm.h"
+#include "asm.h"  
 
 
 
@@ -39,7 +39,6 @@ static struct frm_inst_info_t *frm_inst_info_long[FRM_ISNT_INFO_LONG_SIZE]; /* 8
 
 /* Table containing names of all special registers */
 static char *frm_sr[FRM_SR_COUNT];
-
 
 void frm_disasm_init()
 {
@@ -188,15 +187,14 @@ void frm_inst_dump(FILE *f, char *str, int inst_str_size, unsigned char *buf, in
 
 void frm_inst_hex_dump(FILE *f, unsigned char *buf, int inst_index)
 {
-	int byte_index;
+	/* Print offset */
+	fprintf(f, "/*%04x*/     ", inst_index * 8);
 
-	fprintf(f, "Instruction Hex: ");
-	/* Print most significant byte first */
-	for (byte_index = 7; byte_index >= 0; --byte_index)
-	{
-		fprintf(f, "%02x", *(buf+8*inst_index+byte_index));
-	}
-	fprintf(f, "\n");
+	/* Dump instruction hexadecimal bytes */
+	fprintf(f, "/*0x");
+	fprintf(f, "%08x", * (unsigned int *) (buf + 8 * inst_index));
+	fprintf(f, "%08x", * (unsigned int *) (buf + 8 * inst_index + 4));
+	fprintf(f, "*/     ");
 }
 
 
