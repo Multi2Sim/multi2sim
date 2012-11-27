@@ -18,8 +18,7 @@
  */
 
 
-
-#include "emu.h"
+#include <arch/southern-islands/emu/opencl-repo.h>
 
 
 struct si_opencl_repo_t

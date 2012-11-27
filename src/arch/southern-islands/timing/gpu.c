@@ -26,6 +26,8 @@
 
 #include "mem-config.h"
 #include "timing.h"
+#include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/opencl-kernel.h>
 
 
 static char *si_err_stall =
@@ -142,7 +144,7 @@ char *si_gpu_driver_version = VERSION;
 char *si_gpu_opencl_version = "OpenCL C 1.2";
 
 unsigned int si_gpu_num_compute_units = 32;
-unsigned int si_gpu_num_inst_buffers = 4; /* Per CU */
+unsigned int si_gpu_num_wavefront_pools = 4; /* Per CU */
 unsigned int si_gpu_num_stream_cores = 16; /* Per SIMD */
 unsigned int si_gpu_num_registers = 65536; /* Per SIMD */
 unsigned int si_gpu_register_alloc_size = 32;
@@ -326,30 +328,30 @@ static void si_config_read(void)
 
 	/* Compute Unit */
 	section = "ComputeUnit";
-	si_gpu_num_inst_buffers = config_read_int(
-		gpu_config, section, "NumInstBuffers", si_gpu_num_inst_buffers);
-	if (si_gpu_num_inst_buffers < 1)
-		fatal("%s: invalid value for 'NumInstBuffers'.\n%s", si_gpu_config_file_name,
+	si_gpu_num_wavefront_pools = config_read_int(
+		gpu_config, section, "NumWavefrontPools", si_gpu_num_wavefront_pools);
+	if (si_gpu_num_wavefront_pools < 1)
+		fatal("%s: invalid value for 'NumWavefrontPools'.\n%s", si_gpu_config_file_name,
 			err_note);
-	if (si_gpu_num_stream_cores % si_gpu_num_inst_buffers ||
-		si_emu_wavefront_size % (si_gpu_num_stream_cores / si_gpu_num_inst_buffers))
-		fatal("%s: invalid value for 'NumInstBuffers' or 'NumStreamCores'.\n%s", 
+	if (si_gpu_num_stream_cores % si_gpu_num_wavefront_pools ||
+		si_emu_wavefront_size % (si_gpu_num_stream_cores / si_gpu_num_wavefront_pools))
+		fatal("%s: invalid value for 'NumWavefrontPools' or 'NumStreamCores'.\n%s",
 			si_gpu_config_file_name, err_note);
 	assert(si_emu_wavefront_size % si_gpu_num_stream_cores == 0);
 	si_gpu_simd_num_subwavefronts = si_emu_wavefront_size / si_gpu_num_stream_cores;
 
-	si_gpu_max_work_groups_per_inst_buffer = config_read_int(
-		gpu_config, section, "MaxWorkGroupsPerInstBuffer", 
-		si_gpu_max_work_groups_per_inst_buffer);
-	if (si_gpu_max_work_groups_per_inst_buffer < 1)
-		fatal("%s: invalid value for 'MaxWorkGroupsPerInstBuffer'.\n%s",
+	si_gpu_max_work_groups_per_wavefront_pool = config_read_int(
+		gpu_config, section, "MaxWorkGroupsPerWavefrontPool",
+		si_gpu_max_work_groups_per_wavefront_pool);
+	if (si_gpu_max_work_groups_per_wavefront_pool < 1)
+		fatal("%s: invalid value for 'MaxWorkGroupsPerWavefrontPool'.\n%s",
 			si_gpu_config_file_name, err_note);
 
-	si_gpu_max_wavefronts_per_inst_buffer = config_read_int(
-		gpu_config, section, "MaxWavefrontsPerInstBuffer", 
-		si_gpu_max_wavefronts_per_inst_buffer);
-	if (si_gpu_max_wavefronts_per_inst_buffer < 1)
-		fatal("%s: invalid value for 'MaxWavefrontsPerInstBuffer'.\n%s",
+	si_gpu_max_wavefronts_per_wavefront_pool = config_read_int(
+		gpu_config, section, "MaxWavefrontsPerWavefrontPool",
+		si_gpu_max_wavefronts_per_wavefront_pool);
+	if (si_gpu_max_wavefronts_per_wavefront_pool < 1)
+		fatal("%s: invalid value for 'MaxWavefrontsPerWavefrontPool'.\n%s",
 			si_gpu_config_file_name, err_note);
 
 	gpu_sched_policy_str = config_read_string(gpu_config, section, "SchedulingPolicy",
@@ -392,7 +394,7 @@ static void si_config_read(void)
 
 	/* If the decode latency is greater than the number of SIMDs, then the buffer
 	 * size must be larger. TODO Add a check for that situation. */
-	assert(si_gpu_decode_latency <= si_gpu_num_inst_buffers);
+	assert(si_gpu_decode_latency <= si_gpu_num_wavefront_pools);
 	si_gpu_decode_buffer_size = config_read_int(
 		gpu_config, section, "DecodeBufferSize", si_gpu_decode_buffer_size);
 	if (si_gpu_decode_buffer_size < si_gpu_decode_width)
@@ -633,7 +635,7 @@ static void si_config_dump(FILE *f)
 	/* Device configuration */
 	fprintf(f, "[ Config.Device ]\n");
 	fprintf(f, "NumComputeUnits = %d\n", si_gpu_num_compute_units);
-	fprintf(f, "NumInstBuffers = %d\n", si_gpu_num_inst_buffers);
+	fprintf(f, "NumWavefrontPools = %d\n", si_gpu_num_wavefront_pools);
 	fprintf(f, "NumStreamCores = %d\n", si_gpu_num_stream_cores);
 	fprintf(f, "NumRegisters = %d\n", si_gpu_num_registers);
 	fprintf(f, "RegisterAllocSize = %d\n", si_gpu_register_alloc_size);
@@ -641,8 +643,8 @@ static void si_config_dump(FILE *f)
 		str_map_value(&si_gpu_register_alloc_granularity_map, 
 		si_gpu_register_alloc_granularity));
 	fprintf(f, "WavefrontSize = %d\n", si_emu_wavefront_size);
-	fprintf(f, "MaxWorkGroupsPerInstBuffer = %d\n", si_gpu_max_work_groups_per_inst_buffer);
-	fprintf(f, "MaxWavefrontsPerInstBuffer = %d\n", si_gpu_max_wavefronts_per_inst_buffer);
+	fprintf(f, "MaxWorkGroupsPerWavefrontPool = %d\n", si_gpu_max_work_groups_per_wavefront_pool);
+	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n", si_gpu_max_wavefronts_per_wavefront_pool);
 	fprintf(f, "SIMDALULatency = %d\n", si_gpu_simd_alu_latency);
 	fprintf(f, "SIMDWidth = %d\n", si_gpu_simd_width);
 	fprintf(f, "ScalarUnitExecLatency = %d\n", si_gpu_scalar_unit_exec_latency);
@@ -676,31 +678,31 @@ static void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
 	si_gpu->ndrange = ndrange;
 
 	/* Check that at least one work-group can be allocated per Wavefront Pool */
-	si_gpu->work_groups_per_inst_buffer = si_calc_get_work_groups_per_inst_buffer(
+	si_gpu->work_groups_per_wavefront_pool = si_calc_get_work_groups_per_wavefront_pool(
 		ndrange->kernel->local_size, 
 		ndrange->kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used,
 		ndrange->local_mem_top);
-	if (!si_gpu->work_groups_per_inst_buffer)
+	if (!si_gpu->work_groups_per_wavefront_pool)
 		fatal("work-group resources cannot be allocated to a compute unit.\n"
 			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"
 			"\tof registers, and amount of local memory. If the work-group size\n"
 			"\texceeds any of these limits, the ND-Range cannot be executed.\n");
 
 	/* Calculate limit of wavefronts and work-items per Wavefront Pool */
-	si_gpu->wavefronts_per_inst_buffer = si_gpu->work_groups_per_inst_buffer * 
+	si_gpu->wavefronts_per_wavefront_pool = si_gpu->work_groups_per_wavefront_pool * 
 		ndrange->wavefronts_per_work_group;
-	si_gpu->work_items_per_inst_buffer = si_gpu->wavefronts_per_inst_buffer * 
+	si_gpu->work_items_per_wavefront_pool = si_gpu->wavefronts_per_wavefront_pool * 
 		si_emu_wavefront_size;
 
 	/* Calculate limit of work groups, wavefronts and work-items per compute unit */
-	si_gpu->work_groups_per_compute_unit = si_gpu->work_groups_per_inst_buffer * 
-		si_gpu_num_inst_buffers;
-	si_gpu->wavefronts_per_compute_unit = si_gpu->wavefronts_per_inst_buffer * 
-		si_gpu_num_inst_buffers;
-	si_gpu->work_items_per_compute_unit = si_gpu->work_items_per_inst_buffer * 
-		si_gpu_num_inst_buffers;
-	assert(si_gpu->work_groups_per_inst_buffer <= si_gpu_max_work_groups_per_inst_buffer);
-	assert(si_gpu->wavefronts_per_inst_buffer <= si_gpu_max_wavefronts_per_inst_buffer);
+	si_gpu->work_groups_per_compute_unit = si_gpu->work_groups_per_wavefront_pool * 
+		si_gpu_num_wavefront_pools;
+	si_gpu->wavefronts_per_compute_unit = si_gpu->wavefronts_per_wavefront_pool * 
+		si_gpu_num_wavefront_pools;
+	si_gpu->work_items_per_compute_unit = si_gpu->work_items_per_wavefront_pool * 
+		si_gpu_num_wavefront_pools;
+	assert(si_gpu->work_groups_per_wavefront_pool <= si_gpu_max_work_groups_per_wavefront_pool);
+	assert(si_gpu->wavefronts_per_wavefront_pool <= si_gpu_max_wavefronts_per_wavefront_pool);
 
 	/* Reset architectural state */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
@@ -811,7 +813,9 @@ void si_gpu_dump_report(void)
 	fprintf(f, "Instructions = %lld\n", si_emu->inst_count);
 	fprintf(f, "Scalar ALU Instructions = %lld\n", si_emu->scalar_alu_inst_count);
 	fprintf(f, "Scalar Mem Instructions = %lld\n", si_emu->scalar_mem_inst_count);
+	fprintf(f, "Branch Instructions = %lld\n", si_emu->branch_inst_count);
 	fprintf(f, "Vector ALU Instructions = %lld\n", si_emu->vector_alu_inst_count);
+	fprintf(f, "Local Memory Instructions = %lld\n", si_emu->local_mem_inst_count);
 	fprintf(f, "Vector Mem Instructions = %lld\n", si_emu->vector_mem_inst_count);
 	fprintf(f, "Cycles = %lld\n", si_gpu->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
@@ -834,6 +838,7 @@ void si_gpu_dump_report(void)
 		fprintf(f, "Instructions = %lld\n", compute_unit->inst_count);
 		fprintf(f, "Scalar ALU Instructions = %lld\n", compute_unit->scalar_alu_inst_count);
 		fprintf(f, "Scalar Mem Instructions = %lld\n", compute_unit->scalar_mem_inst_count);
+		fprintf(f, "Branch Instructions = %lld\n", compute_unit->branch_inst_count);
 		fprintf(f, "SIMD Instructions = %lld\n", compute_unit->simd_inst_count);
 		fprintf(f, "Vector Mem Instructions = %lld\n", compute_unit->vector_mem_inst_count);
 		fprintf(f, "Local Mem Instructions = %lld\n", compute_unit->local_mem_inst_count);

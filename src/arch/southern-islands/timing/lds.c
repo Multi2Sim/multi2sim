@@ -21,6 +21,7 @@
 #include <lib/esim/trace.h>
 
 #include "timing.h"
+#include <arch/southern-islands/emu/ndrange.h>
 
 /* Configurable by user at runtime */
 
@@ -56,8 +57,8 @@ void si_lds_process_mem_accesses(struct si_lds_t *lds)
 
 		if (!uop->local_mem_witness)
 		{
-			assert(uop->inst_buffer_entry->lgkm_cnt > 0);
-			uop->inst_buffer_entry->lgkm_cnt--;
+			assert(uop->wavefront_pool_entry->lgkm_cnt > 0);
+			uop->wavefront_pool_entry->lgkm_cnt--;
 
 			/* Access complete, remove the uop from the queue */
 			list_remove(lds->inflight_buffer, uop);
@@ -107,9 +108,9 @@ void si_lds_writeback(struct si_lds_t *lds)
             uop->wavefront->id);
 
         /* Allow next instruction to be fetched */
-        uop->inst_buffer_entry->ready = 1;
-        uop->inst_buffer_entry->uop = NULL;
-        uop->inst_buffer_entry->cycle_fetched = INST_NOT_FETCHED;
+        uop->wavefront_pool_entry->ready = 1;
+        uop->wavefront_pool_entry->uop = NULL;
+        uop->wavefront_pool_entry->cycle_fetched = INST_NOT_FETCHED;
 
         /* Free uop */
         if (si_tracing())
@@ -179,7 +180,7 @@ void si_lds_execute(struct si_lds_t *lds)
 			struct si_uop_t *mem_uop;
 		        mem_uop = si_uop_create();
 		        mem_uop->wavefront = uop->wavefront;
-			mem_uop->inst_buffer_entry = uop->inst_buffer_entry;
+			mem_uop->wavefront_pool_entry = uop->wavefront_pool_entry;
 			mem_uop->local_mem_read = uop->local_mem_read;
 			mem_uop->local_mem_write =  uop->local_mem_write;
 
@@ -205,7 +206,7 @@ void si_lds_execute(struct si_lds_t *lds)
 			}
 
 			/* Increment outstanding memory access count */
-			mem_uop->inst_buffer_entry->lgkm_cnt++;
+			mem_uop->wavefront_pool_entry->lgkm_cnt++;
 
 			/* Transfer the uop to the exec buffer */
 			uop->execute_ready = si_gpu->cycle + 1;

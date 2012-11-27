@@ -17,35 +17,26 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef SOUTHERN_ISLANDS_OPENCL_CONTEXT_H
+#define SOUTHERN_ISLANDS_OPENCL_CONTEXT_H
 
+#include <arch/southern-islands/emu/emu.h>
 
-#include <arch/southern-islands/emu/opencl-mem.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
-
-
-struct si_opencl_mem_t *si_opencl_mem_create()
+struct si_opencl_context_t
 {
-	struct si_opencl_mem_t *mem;
+	uint32_t id;
+	int ref_count;
 
-	/* Allocate */
-	mem = calloc(1, sizeof(struct si_opencl_mem_t));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
+	uint32_t platform_id;
+	uint32_t device_id;
+};
 
-	/* Initialize */
-	mem->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
-		si_opencl_object_mem);
-	mem->ref_count = 1;
+struct si_opencl_context_t *si_opencl_context_create(void);
+void si_opencl_context_free(struct si_opencl_context_t *context);
 
-	/* Return */
-	si_opencl_repo_add_object(si_emu->opencl_repo, mem);
-	return mem;
-}
+uint32_t si_opencl_context_get_info(struct si_opencl_context_t *context,
+	uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
+void si_opencl_context_set_properties(struct si_opencl_context_t *context,
+	struct mem_t *mem, uint32_t addr);
 
-
-void si_opencl_mem_free(struct si_opencl_mem_t *mem)
-{
-	si_opencl_repo_remove_object(si_emu->opencl_repo, mem);
-	free(mem);
-}
-
+#endif

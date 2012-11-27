@@ -17,35 +17,40 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef SOUTHERN_ISLANDS_OPENCL_MEM_H
+#define SOUTHERN_ISLANDS_OPENCL_MEM_H
 
+#include <arch/southern-islands/emu/emu.h>
 
-#include <arch/southern-islands/emu/opencl-mem.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
-
-
-struct si_opencl_mem_t *si_opencl_mem_create()
+struct si_opencl_mem_t
 {
-	struct si_opencl_mem_t *mem;
+	uint32_t id;
+	int ref_count;
 
-	/* Allocate */
-	mem = calloc(1, sizeof(struct si_opencl_mem_t));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
+	uint32_t type;  /* 0 buffer, 1 2D image, 2 3D image */
 
-	/* Initialize */
-	mem->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
-		si_opencl_object_mem);
-	mem->ref_count = 1;
+	uint32_t size;
 
-	/* Return */
-	si_opencl_repo_add_object(si_emu->opencl_repo, mem);
-	return mem;
-}
+	/* Used for images only */
+	uint32_t height;
+	uint32_t width;
+	uint32_t depth;
+	uint32_t num_pixels;
+	uint32_t pixel_size;
+	uint32_t num_channels_per_pixel;
 
+	/* Used for mapping only */
+	uint32_t map_flags;
+	uint32_t map_offset;
+	uint32_t map_cb;
 
-void si_opencl_mem_free(struct si_opencl_mem_t *mem)
-{
-	si_opencl_repo_remove_object(si_emu->opencl_repo, mem);
-	free(mem);
-}
+	uint32_t flags;
+	uint32_t host_ptr;
 
+	uint32_t device_ptr;  /* Position assigned in device global memory */
+};
+
+struct si_opencl_mem_t *si_opencl_mem_create(void);
+void si_opencl_mem_free(struct si_opencl_mem_t *mem);
+
+#endif

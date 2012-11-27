@@ -17,35 +17,30 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef SOUTHERN_ISLANDS_OPENCL_API_H
+#define SOUTHERN_ISLANDS_OPENCL_API_H
 
+/* Forward declaration */
+struct x86_ctx_t;
 
-#include <arch/southern-islands/emu/opencl-mem.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
+/* Function tables */
+extern char *si_opencl_func_name[];
+extern int si_opencl_func_argc[];
 
+/* Debugging */
+#define si_opencl_debug(...) debug(si_opencl_debug_category, __VA_ARGS__)
+extern int si_opencl_debug_category;
 
-struct si_opencl_mem_t *si_opencl_mem_create()
-{
-	struct si_opencl_mem_t *mem;
+/* Some constants */
+#define SI_OPENCL_FUNC_FIRST  1000
+#define SI_OPENCL_FUNC_LAST  1073
+#define SI_OPENCL_FUNC_COUNT  (si_OPENCL_FUNC_LAST - si_OPENCL_FUNC_FIRST + 1)
+#define SI_OPENCL_MAX_ARGS  14
 
-	/* Allocate */
-	mem = calloc(1, sizeof(struct si_opencl_mem_t));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
+int si_opencl_api_run(struct x86_ctx_t *ctx);
 
-	/* Initialize */
-	mem->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
-		si_opencl_object_mem);
-	mem->ref_count = 1;
+int si_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
+		void *argv_ptr, int argv_size);
+void si_opencl_api_return(struct x86_ctx_t *ctx, int value);
 
-	/* Return */
-	si_opencl_repo_add_object(si_emu->opencl_repo, mem);
-	return mem;
-}
-
-
-void si_opencl_mem_free(struct si_opencl_mem_t *mem)
-{
-	si_opencl_repo_remove_object(si_emu->opencl_repo, mem);
-	free(mem);
-}
-
+#endif

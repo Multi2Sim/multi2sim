@@ -70,9 +70,9 @@ void si_branch_unit_writeback(struct si_branch_unit_t *branch_unit)
             uop->wavefront->id, uop->id_in_wavefront);
 
         /* Allow next instruction to be fetched */
-        uop->inst_buffer_entry->ready = 1;
-        uop->inst_buffer_entry->uop = NULL;
-        uop->inst_buffer_entry->cycle_fetched = INST_NOT_FETCHED;
+        uop->wavefront_pool_entry->ready = 1;
+        uop->wavefront_pool_entry->uop = NULL;
+        uop->wavefront_pool_entry->cycle_fetched = INST_NOT_FETCHED;
 
         /* Free uop */
         if (si_tracing())

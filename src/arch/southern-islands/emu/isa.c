@@ -20,8 +20,7 @@
 #include <lib/util/repos.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-
+#include <arch/southern-islands/emu/isa.h>
 
 /* Repository of deferred tasks */
 struct repos_t *si_isa_write_task_repos;

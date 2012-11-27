@@ -26,7 +26,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include "asm.h"
+#include <arch/southern-islands/asm/asm.h>
 
 
 
