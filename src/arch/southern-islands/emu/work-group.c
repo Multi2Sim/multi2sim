@@ -21,6 +21,7 @@
 #include <mem-system/memory.h>
 
 #include "emu.h"
+#include "ndrange.h"
 
 
 

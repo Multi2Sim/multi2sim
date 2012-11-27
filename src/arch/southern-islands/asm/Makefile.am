@@ -6,7 +6,8 @@ libasm_a_SOURCES = \
 	asm.dat \
 	asm.h \
 	\
-	bin-file.c
+	bin-file.c \
+	bin-file.h
 
 INCLUDES = @M2S_INCLUDES@
 

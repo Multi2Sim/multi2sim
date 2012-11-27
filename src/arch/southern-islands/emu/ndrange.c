@@ -21,7 +21,12 @@
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
+#include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/opencl-api.h>
+#include <arch/southern-islands/emu/opencl-event.h>
+#include <arch/southern-islands/emu/opencl-kernel.h>
+#include <arch/southern-islands/emu/opencl-mem.h>
+#include <arch/southern-islands/emu/opencl-repo.h>
 
 
 /*
@@ -286,8 +291,8 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		/* Initialize wavefront program counter */
 		if (!kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.size)
 			fatal("%s: cannot load kernel code", __FUNCTION__);
-		wavefront->inst_buf_start = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
-		wavefront->inst_buf = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
+		wavefront->wavefront_pool_start = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
+		wavefront->wavefront_pool = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
 
 		/* Save work-group IDs in registers */
 		unsigned int user_sgpr = kernel->bin_file->enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;

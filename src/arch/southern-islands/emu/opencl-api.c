@@ -23,7 +23,18 @@
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
+#include <arch/southern-islands/emu/opencl-api.h>
+#include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/opencl-command-queue.h>
+#include <arch/southern-islands/emu/opencl-context.h>
+#include <arch/southern-islands/emu/opencl-device.h>
+#include <arch/southern-islands/emu/opencl-event.h>
+#include <arch/southern-islands/emu/opencl-kernel.h>
+#include <arch/southern-islands/emu/opencl-mem.h>
+#include <arch/southern-islands/emu/opencl-platform.h>
+#include <arch/southern-islands/emu/opencl-program.h>
+#include <arch/southern-islands/emu/opencl-repo.h>
+#include <arch/southern-islands/emu/opencl-sampler.h>
 
 
 /* Required 'libm2s-opencl.so' version.

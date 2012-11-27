@@ -20,8 +20,13 @@
 
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/debug.h>
 
-#include "emu.h"
+#include <arch/southern-islands/emu/opencl-command-queue.h>
+#include <arch/southern-islands/emu/opencl-api.h>
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/opencl-repo.h>
 
 
 /* Create a command queue */

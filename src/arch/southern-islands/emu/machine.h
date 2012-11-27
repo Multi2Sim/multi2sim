@@ -17,35 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef SOUTHERN_ISLANDS_MACHINE_H
+#define SOUTHERN_ISLANDS_MACHINE_H
 
+#include <arch/southern-islands/emu/isa.h>
 
-#include <arch/southern-islands/emu/opencl-mem.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
-
-
-struct si_opencl_mem_t *si_opencl_mem_create()
-{
-	struct si_opencl_mem_t *mem;
-
-	/* Allocate */
-	mem = calloc(1, sizeof(struct si_opencl_mem_t));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize */
-	mem->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
-		si_opencl_object_mem);
-	mem->ref_count = 1;
-
-	/* Return */
-	si_opencl_repo_add_object(si_emu->opencl_repo, mem);
-	return mem;
-}
-
-
-void si_opencl_mem_free(struct si_opencl_mem_t *mem)
-{
-	si_opencl_repo_remove_object(si_emu->opencl_repo, mem);
-	free(mem);
-}
-
+#endif

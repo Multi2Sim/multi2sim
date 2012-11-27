@@ -21,8 +21,7 @@
 #define SOUTHERN_ISLANDS_ASM_H
 
 #include <stdio.h>
-
-#include <lib/util/elf-format.h>
+#include <arch/southern-islands/asm/bin-file.h>
 
 
 /* Microcode Formats */
@@ -467,156 +466,6 @@ void si_inst_get_op_src(struct si_inst_t *inst, int src_idx,
 	int *sel, int *rel, int *chan, int *neg, int *abs);
 #endif
 
-
-/*
- * AMD Southern Islands Binary File (Internal ELF)
- */
-
-
-/* Encoding dictionary entry header (as encoded in ELF file) */
-struct si_bin_enc_dict_entry_header_t
-{
-	Elf32_Word d_machine;
-	Elf32_Word d_type;
-	Elf32_Off d_offset;  /* Offset for encoding data (PT_NOTE + PT_LOAD segments) */
-	Elf32_Word d_size;  /* Size of encoding data (PT_NOTE + PT_LOAD segments) */
-	Elf32_Word d_flags;
-};
-
-
-/* Constats embedded in the '.data' section */
-struct si_bin_enc_dict_entry_consts_t
-{
-	float float_consts[256][4];
-	unsigned int int_consts[32][4];
-	unsigned int bool_consts[32];
-};
-
-typedef enum _E_SC_USER_DATA_CLASS
-{
-
-    IMM_RESOURCE,               // immediate resource descriptor
-    IMM_SAMPLER,                // immediate sampler descriptor
-    IMM_CONST_BUFFER,           // immediate const buffer descriptor
-    IMM_VERTEX_BUFFER,          // immediate vertex buffer descriptor
-    IMM_UAV,                    // immediate UAV descriptor
-    IMM_ALU_FLOAT_CONST,        // immediate float const (scalar or vector)
-    IMM_ALU_BOOL32_CONST,       // 32 immediate bools packed into a single UINT
-    IMM_GDS_COUNTER_RANGE,      // immediate UINT with GDS address range for counters
-    IMM_GDS_MEMORY_RANGE,       // immediate UINT with GDS address range for storage
-    IMM_GWS_BASE,               // immediate UINT with GWS resource base offset
-    IMM_WORK_ITEM_RANGE,        // immediate HSAIL work item range
-    IMM_WORK_GROUP_RANGE,       // immediate HSAIL work group range
-    IMM_DISPATCH_ID,            // immediate HSAIL dispatch ID
-    IMM_SCRATCH_BUFFER,         // immediate HSAIL scratch buffer descriptor
-    IMM_HEAP_BUFFER,            // immediate HSAIL heap buffer descriptor
-    IMM_KERNEL_ARG,             // immediate HSAIL kernel argument
-    IMM_CONTEXT_BASE,           // immediate HSAIL context base-address
-    IMM_LDS_ESGS_SIZE,          // immediate LDS ESGS size used in on-chip GS
-    SUB_PTR_FETCH_SHADER,       // fetch shader subroutine pointer
-    PTR_RESOURCE_TABLE,         // flat/chunked resource table pointer
-
-    /* PTR_CONST_BUFFER_TABLE Moved to position 20 */
-    PTR_CONST_BUFFER_TABLE,     // flat/chunked const buffer table pointer
-
-    PTR_INTERNAL_RESOURCE_TABLE,// flat/chunked internal resource table pointer
-    PTR_SAMPLER_TABLE,          // flat/chunked sampler table pointer
-
-    /* PTR_CONST_BUFFER_TABLE Was originally here at position 22 */
-
-    /* PTR_UAV_TABLE Moved to position 23 */
-    PTR_UAV_TABLE,              // flat/chunked UAV resource table pointer
-
-    PTR_VERTEX_BUFFER_TABLE,    // flat/chunked vertex buffer table pointer
-    PTR_SO_BUFFER_TABLE,        // flat/chunked stream-out buffer table pointer
-
-    /* PTR_UAV_TABLE Was originally here at position 25 */
-
-    PTR_INTERNAL_GLOBAL_TABLE,  // internal driver table pointer
-    PTR_EXTENDED_USER_DATA,     // extended user data in video memory
-    PTR_INDIRECT_RESOURCE,      // pointer to resource indirection table
-    PTR_INDIRECT_INTERNAL_RESOURCE,// pointer to internal resource indirection table
-    PTR_INDIRECT_UAV,           // pointer to UAV indirection table
-    E_SC_USER_DATA_CLASS_LAST
-
-} E_SC_USER_DATA_CLASS;
-
-/* User Element entry */
-struct si_bin_enc_user_element_t
-{
-	unsigned int dataClass;
-	unsigned int apiSlot;
-	unsigned int startUserReg;
-	unsigned int userRegCount;
-};
-
-/* COMPUTE_PGM_RSRC2 */
-struct si_bin_compute_pgm_rsrc2_t
-{
-	unsigned int scrach_en 		: 1;
-	unsigned int user_sgpr 		: 5;
-	unsigned int trap_present 	: 1;
-	unsigned int tgid_x_en 		: 1;
-	unsigned int tgid_y_en 		: 1;
-	unsigned int tgid_z_en 		: 1;
-	unsigned int tg_size_en 	: 1;
-	unsigned int tidig_comp_cnt : 2;
-	unsigned int excp_en_msb 	: 2;
-	unsigned int lds_size 		: 9;
-	unsigned int excp_en 		: 7;
-	unsigned int 				: 1;
-};
-
-/* Encoding dictionary entry */
-struct si_bin_enc_dict_entry_t
-{
-	/* Header (pointer to ELF buffer contents) */
-	struct si_bin_enc_dict_entry_header_t *header;
-
-	/* Buffers containing PT_LOAD and PT_NOTE segments */
-	struct elf_buffer_t pt_load_buffer;
-	struct elf_buffer_t pt_note_buffer;
-
-	/* Buffers containing sections */
-	struct elf_buffer_t sec_text_buffer;
-	struct elf_buffer_t sec_data_buffer;
-	struct elf_buffer_t sec_symtab_buffer;
-	struct elf_buffer_t sec_strtab_buffer;
-
-	/* Constants extract from '.data' section */
-	struct si_bin_enc_dict_entry_consts_t *consts;
-
-	/* Info read from pt_notes */
-	int num_gpr_used;
-	int lds_size_used;
-	int stack_size_used;
-
-	unsigned int userElementCount;
-	struct si_bin_enc_user_element_t userElements[16];
-
-	struct si_bin_compute_pgm_rsrc2_t *compute_pgm_rsrc2;
-};
-
-
-/* Binary file */
-struct si_bin_file_t
-{
-	/* Associated ELF file */
-	struct elf_file_t *elf_file;
-
-	/* Encoding dictionary.
-	 * Elements are of type 'struct si_bin_enc_dict_entry_t'
-	 * Each element of the dictionary contains the binary for a different architecture
-	 * (Evergreen, x86, etc.) */
-	struct list_t *enc_dict;
-
-	/* Encoding dictionary entry containing the Southern Islands kernel.
-	 * This is a member of the 'enc_dict' list. */
-	struct si_bin_enc_dict_entry_t *enc_dict_entry_southern_islands;
-};
-
-struct si_bin_file_t *si_bin_file_create(void *ptr, int size, char *name);
-void si_bin_file_free(struct si_bin_file_t *bin);
 void si_disasm(char* path);
 int si_inst_decode(void *buf, struct si_inst_t *inst);
 
@@ -634,6 +483,9 @@ void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_ds(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+
+void si_inst_dump(struct si_inst_t *inst, int inst_size, void *wavefront_pool, uint32_t rel_addr,
+	char *line, int line_size);
 
 
 /* Table 8.5 in SI documentation */

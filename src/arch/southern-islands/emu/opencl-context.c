@@ -20,7 +20,10 @@
 
 #include <mem-system/memory.h>
 
-#include "emu.h"
+#include <arch/southern-islands/emu/opencl-context.h>
+#include <arch/southern-islands/emu/opencl-api.h>
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/opencl-repo.h>
 
 
 /* Create a context */

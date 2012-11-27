@@ -61,11 +61,11 @@ struct si_uop_t
 	long long id;
 	long long id_in_compute_unit;
 	long long id_in_wavefront;
-	int inst_buffer_id;
+	int wavefront_pool_id;
 	struct si_wavefront_t *wavefront;        /* Wavefront it belongs to */
 	struct si_work_group_t *work_group;      /* Work-group it belongs to */
 	struct si_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
-	struct si_inst_buffer_entry_t *inst_buffer_entry;  /* IB entry where uop is located */
+	struct si_wavefront_pool_entry_t *wavefront_pool_entry;  /* IB entry where uop is located */
 	struct si_inst_t inst;
 
 	/* Flags */
@@ -139,15 +139,15 @@ void si_reg_file_inverse_rename(struct si_compute_unit_t *compute_unit,
 
 
 /*
- * Instruction Buffer 
+ * Wavefront Pool 
  */
 
-struct si_inst_buffer_entry_t 
+struct si_wavefront_pool_entry_t 
 {
 	unsigned int valid : 1; /* Valid if wavefront assigned to entry */
 
-	int id_in_inst_buffer;
-	struct si_inst_buffer_t *inst_buffer;
+	int id_in_wavefront_pool;
+	struct si_wavefront_pool_t *wavefront_pool;
 
 	struct si_wavefront_t *wavefront;
 	long long int cycle_fetched;
@@ -166,13 +166,13 @@ struct si_inst_buffer_entry_t
 	unsigned int lgkm_cnt;   /* LDS, GDS, Constant, and message count */
 };
 
-struct si_inst_buffer_t
+struct si_wavefront_pool_t
 {
 	int id;
 
 	/* List of currently mapped wavefronts */
 	int wavefront_count;
-	struct si_inst_buffer_entry_t **entries;
+	struct si_wavefront_pool_entry_t **entries;
 
 	/* Compute unit */
 	struct si_compute_unit_t *compute_unit;
@@ -237,7 +237,7 @@ struct si_simd_t
 									 stream core pipelines. */
 
 	struct si_compute_unit_t *compute_unit;
-	struct si_inst_buffer_t *inst_buffer;
+	struct si_wavefront_pool_t *wavefront_pool;
 
 	/* Statistics */
 	long long inst_count;
@@ -302,8 +302,8 @@ struct si_compute_unit_t
 	struct mod_t *local_memory;
 
 	/* Hardware structures */
-	unsigned int num_inst_buffers;
-	struct si_inst_buffer_t **inst_buffers;
+	unsigned int num_wavefront_pools;
+	struct si_wavefront_pool_t **wavefront_pools;
 	struct list_t **fetch_buffers;
 	struct list_t **decode_buffers;
 	struct si_simd_t **simds;
@@ -340,11 +340,11 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
 struct si_wavefront_t *si_compute_unit_schedule(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run(struct si_compute_unit_t *compute_unit);
 
-struct si_inst_buffer_t *si_inst_buffer_create();
-void si_inst_buffer_free(struct si_inst_buffer_t *inst_buffer);
-void si_inst_buffer_map_wavefronts(struct si_inst_buffer_t *inst_buffer, 
+struct si_wavefront_pool_t *si_wavefront_pool_create();
+void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool);
+void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
 	struct si_work_group_t *work_group);
-void si_inst_buffer_unmap_wavefronts(struct si_inst_buffer_t *inst_buffer, 
+void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
 	struct si_work_group_t *work_group);
 
 
@@ -352,7 +352,7 @@ void si_inst_buffer_unmap_wavefronts(struct si_inst_buffer_t *inst_buffer,
  * GPU Calculator
  */
 
-int si_calc_get_work_groups_per_inst_buffer(int work_items_per_work_group,
+int si_calc_get_work_groups_per_wavefront_pool(int work_items_per_work_group,
 	int registers_per_work_item, int local_mem_per_work_group);
 void si_calc_plot(void);
 
@@ -438,7 +438,7 @@ extern unsigned int si_gpu_platform;
 
 extern unsigned int si_gpu_num_compute_units;
 extern unsigned int si_gpu_num_registers;
-extern unsigned int si_gpu_num_inst_buffers;
+extern unsigned int si_gpu_num_wavefront_pools;
 extern unsigned int si_gpu_num_stream_cores;
 extern unsigned int si_gpu_register_alloc_size;
 
@@ -450,8 +450,8 @@ extern enum si_gpu_register_alloc_granularity_t
 	si_gpu_register_alloc_work_group
 } si_gpu_register_alloc_granularity;
 
-extern int si_gpu_max_work_groups_per_inst_buffer;
-extern int si_gpu_max_wavefronts_per_inst_buffer;
+extern int si_gpu_max_work_groups_per_wavefront_pool;
+extern int si_gpu_max_wavefronts_per_wavefront_pool;
 
 extern struct str_map_t si_gpu_sched_policy_map;
 extern enum si_gpu_sched_policy_t
@@ -519,9 +519,9 @@ struct si_gpu_t
 
 	/* ND-Range running on it */
 	struct si_ndrange_t *ndrange;
-	int work_groups_per_inst_buffer;
-	int wavefronts_per_inst_buffer;
-	int work_items_per_inst_buffer;
+	int work_groups_per_wavefront_pool;
+	int wavefronts_per_wavefront_pool;
+	int work_items_per_wavefront_pool;
 	int work_groups_per_compute_unit;
 	int wavefronts_per_compute_unit;
 	int work_items_per_compute_unit;

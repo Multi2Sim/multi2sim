@@ -21,6 +21,7 @@
 #include <lib/esim/trace.h>
 
 #include "timing.h"
+#include <arch/southern-islands/emu/ndrange.h>
 
 
 /* Configurable by user at runtime */
@@ -59,8 +60,8 @@ void si_scalar_unit_process_mem_accesses(struct si_scalar_unit_t *scalar_unit)
 		if (!uop->global_mem_witness)
 		{
 
-			assert(uop->inst_buffer_entry->lgkm_cnt > 0);
-			uop->inst_buffer_entry->lgkm_cnt--;
+			assert(uop->wavefront_pool_entry->lgkm_cnt > 0);
+			uop->wavefront_pool_entry->lgkm_cnt--;
 
 			/* Access complete, remove the uop from the queue */
 			list_remove(scalar_unit->inflight_buffer, uop);
@@ -105,9 +106,9 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 			/* If this is the last instruction and there are outstanding
 			 * memory operations, wait for them to complete */
 			if (uop->wavefront_last_inst && 
-				(uop->inst_buffer_entry->lgkm_cnt || 
-				 uop->inst_buffer_entry->vm_cnt || 
-				 uop->inst_buffer_entry->exp_cnt)) 
+				(uop->wavefront_pool_entry->lgkm_cnt || 
+				 uop->wavefront_pool_entry->vm_cnt || 
+				 uop->wavefront_pool_entry->exp_cnt)) 
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 					uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
@@ -121,16 +122,16 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 			list_remove(scalar_unit->exec_buffer, uop);
 
 			/* Instruction is complete */
-			uop->inst_buffer_entry->ready = 1;
-			uop->inst_buffer_entry->uop = NULL;
-			uop->inst_buffer_entry->cycle_fetched = INST_NOT_FETCHED;
+			uop->wavefront_pool_entry->ready = 1;
+			uop->wavefront_pool_entry->uop = NULL;
+			uop->wavefront_pool_entry->cycle_fetched = INST_NOT_FETCHED;
 
 			/* Check for "wait" instruction */
 			if (uop->mem_wait_inst)
 			{
 				/* If a wait instruction was executed and there are 
 				 * outstanding memory accesses, set the wavefront to waiting */
-				uop->inst_buffer_entry->wait_for_mem = 1;
+				uop->wavefront_pool_entry->wait_for_mem = 1;
 			}
 
 			/* Check for "barrier" instruction */
@@ -138,7 +139,7 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 			{
 				/* Set a flag to wait until all wavefronts have reached the
 				 * barrier */
-				uop->inst_buffer_entry->wait_for_barrier = 1;
+				uop->wavefront_pool_entry->wait_for_barrier = 1;
 
 				/* Check if all wavefronts have reached the barrier */
 				complete = 1;
@@ -147,7 +148,7 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 				{
 					wavefront = ndrange->wavefronts[wavefront_id];
 					
-					if (!wavefront->inst_buffer_entry->wait_for_barrier)
+					if (!wavefront->wavefront_pool_entry->wait_for_barrier)
 						complete = 0;
 				}
 
@@ -157,7 +158,7 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 					SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
 					{
 						wavefront = ndrange->wavefronts[wavefront_id];
-						wavefront->inst_buffer_entry->wait_for_barrier = 0;
+						wavefront->wavefront_pool_entry->wait_for_barrier = 0;
 					}
 				}
 			}
@@ -168,7 +169,7 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 				/* If the uop completes the wavefront, set a bit so that the 
 				 * hardware wont try to fetch any more instructions for it */
 				uop->work_group->compute_unit_finished_count++;
-				uop->inst_buffer_entry->wavefront_finished = 1;
+				uop->wavefront_pool_entry->wavefront_finished = 1;
 
 				/* Check if wavefront finishes a work-group */
 				assert(uop->work_group);
@@ -264,7 +265,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 				mem_uop = si_uop_create();
 				mem_uop->wavefront = uop->wavefront;
 				mem_uop->compute_unit = uop->compute_unit;
-				mem_uop->inst_buffer_entry = uop->inst_buffer_entry;
+				mem_uop->wavefront_pool_entry = uop->wavefront_pool_entry;
 				mem_uop ->scalar_mem_read = uop->scalar_mem_read;
 				mem_uop->id_in_compute_unit = 
 					uop->compute_unit->mem_uop_id_counter++;
@@ -279,7 +280,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 					&mem_uop->global_mem_witness, NULL, NULL, NULL);
 
 				/* Increment outstanding memory access count */
-				mem_uop->inst_buffer_entry->lgkm_cnt++;
+				mem_uop->wavefront_pool_entry->lgkm_cnt++;
 
 				/* Transfer the uop to the exec buffer */
 				uop->execute_ready = si_gpu->cycle + 1;
