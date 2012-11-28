@@ -20,23 +20,21 @@
 #ifndef SOUTHERN_ISLANDS_OPENCL_CONTEXT_H
 #define SOUTHERN_ISLANDS_OPENCL_CONTEXT_H
 
-#include <arch/southern-islands/emu/emu.h>
-
 struct si_opencl_context_t
 {
-	uint32_t id;
+	unsigned int id;
 	int ref_count;
 
-	uint32_t platform_id;
-	uint32_t device_id;
+	unsigned int platform_id;
+	unsigned int device_id;
 };
 
 struct si_opencl_context_t *si_opencl_context_create(void);
 void si_opencl_context_free(struct si_opencl_context_t *context);
 
-uint32_t si_opencl_context_get_info(struct si_opencl_context_t *context,
-	uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
+unsigned int si_opencl_context_get_info(struct si_opencl_context_t *context,
+	unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size);
 void si_opencl_context_set_properties(struct si_opencl_context_t *context,
-	struct mem_t *mem, uint32_t addr);
+	struct mem_t *mem, unsigned int addr);
 
 #endif

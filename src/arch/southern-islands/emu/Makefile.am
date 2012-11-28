@@ -50,8 +50,13 @@ libemu_a_SOURCES = \
 	opencl-sampler.h \
 	\
 	wavefront.c \
+	wavefront.h \
+	\
 	work-group.c \
-	work-item.c
+	work-group.h \
+	\
+	work-item.c \
+	work-item.h
 
 INCLUDES = @M2S_INCLUDES@
 

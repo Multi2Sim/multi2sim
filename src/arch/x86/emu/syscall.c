@@ -32,6 +32,7 @@
 #include <sys/times.h>
 
 #include <arch/evergreen/emu/opencl.h>
+#include <arch/southern-islands/emu/opencl-api.h>
 #include <arch/fermi/emu/cuda.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>

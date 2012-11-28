@@ -17,9 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 #include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/work-group.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/misc.h>
 

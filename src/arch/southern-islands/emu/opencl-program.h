@@ -20,15 +20,15 @@
 #ifndef SOUTHERN_ISLANDS_OPENCL_PROGRAM_H
 #define SOUTHERN_ISLANDS_OPENCL_PROGRAM_H
 
-#include <arch/southern-islands/emu/emu.h>
+#include <lib/util/elf-format.h>
 
 struct si_opencl_program_t
 {
-	uint32_t id;
+	unsigned int id;
 	int ref_count;
 
-	uint32_t device_id;  /* Only one device allowed */
-	uint32_t context_id;
+	unsigned int device_id;  /* Only one device allowed */
+	unsigned int context_id;
 
 	/* ELF binary */
 	struct elf_file_t *elf_file;

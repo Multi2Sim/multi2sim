@@ -54,9 +54,9 @@ void si_opencl_device_free(struct si_opencl_device_t *device)
 }
 
 
-uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
+unsigned int si_opencl_device_get_info(struct si_opencl_device_t *device, unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size)
 {
-	uint32_t size_ret = 0;
+	unsigned int size_ret = 0;
 	void *info = NULL;
 
 	switch (name)

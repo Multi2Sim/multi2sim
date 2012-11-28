@@ -22,6 +22,44 @@
 
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/work-item.h>
+
+enum si_isa_write_task_kind_t
+{
+	SI_ISA_WRITE_TASK_NONE = 0,
+	SI_ISA_WRITE_TASK_WRITE_LDS,
+	SI_ISA_WRITE_TASK_WRITE_DEST,
+	SI_ISA_WRITE_TASK_PUSH_BEFORE,
+	SI_ISA_WRITE_TASK_SET_PRED
+};
+
+
+struct si_isa_write_task_t
+{
+	/* All */
+	enum si_isa_write_task_kind_t kind;
+	struct si_inst_t *inst;
+
+	/* When 'kind' == SI_ISA_WRITE_TASK_WRITE_DEST */
+	int gpr, rel, chan, index_mode, write_mask;
+	unsigned int value;
+
+	/* When 'kind' == SI_ISA_WRITE_TASK_WRITE_LDS */
+	unsigned int lds_addr;
+	unsigned int lds_value;
+        size_t   lds_value_size;
+
+	/* When 'kind' == GPU_ISA_WRITE_TASK_PRED_SET */
+	int cond;
+};
+
+/* Functions to handle deferred tasks */
+void si_isa_enqueue_write_lds(unsigned int addr, unsigned int value, size_t value_size);
+void si_isa_enqueue_write_dest(unsigned int value);
+void si_isa_enqueue_write_dest_float(float value);
+void si_isa_enqueue_push_before(void);
+void si_isa_enqueue_pred_set(int cond);
+void si_isa_write_task_commit(void);
 
 /* Macros for special registers */
 #define SI_M0 124
@@ -68,6 +106,9 @@ extern char *err_si_isa_note;
 #define SI_INST_MTBUF		inst->micro_inst.mtbuf
 /* FIXME Finish filling these in */
 
+
+void si_isa_init();
+void si_isa_done();
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
 typedef void (*si_isa_inst_func_t)(struct si_work_item_t *work_item, struct si_inst_t *inst);

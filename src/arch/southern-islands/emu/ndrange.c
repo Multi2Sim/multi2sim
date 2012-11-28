@@ -27,6 +27,10 @@
 #include <arch/southern-islands/emu/opencl-kernel.h>
 #include <arch/southern-islands/emu/opencl-mem.h>
 #include <arch/southern-islands/emu/opencl-repo.h>
+#include <arch/southern-islands/emu/opencl-command-queue.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
+#include <arch/southern-islands/emu/work-item.h>
 
 
 /*
