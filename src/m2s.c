@@ -35,7 +35,7 @@
 #include <arch/fermi/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/opencl-api.h>
-#include <arch/southern-islands/timing/timing.h>
+#include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/checkpoint.h>
 #include <arch/x86/emu/clrt.h>
 #include <arch/x86/emu/context.h>

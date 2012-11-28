@@ -21,9 +21,9 @@
 
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
-#include <arch/southern-islands/timing/timing.h>
 #include <arch/southern-islands/emu/opencl-device.h>
 #include <arch/southern-islands/emu/opencl-repo.h>
+#include <arch/southern-islands/timing/gpu.h>
 
 
 /* Create a device */
