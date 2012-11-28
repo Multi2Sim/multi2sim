@@ -19,7 +19,9 @@
 
 #include <lib/util/bit-map.h>
 
-#include "emu.h"
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-item.h>
 
 
 

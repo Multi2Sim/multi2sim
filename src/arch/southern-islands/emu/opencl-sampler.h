@@ -20,16 +20,14 @@
 #ifndef SOUTHERN_ISLANDS_OPENCL_SAMPLER_H
 #define SOUTHERN_ISLANDS_OPENCL_SAMPLER_H
 
-#include <arch/southern-islands/emu/emu.h>
-
 struct si_opencl_sampler_t
 {
-	uint32_t id;
+	unsigned int id;
 	int ref_count;
 
-	uint32_t normalized_coords;
-	uint32_t filter_mode;
-	uint32_t addressing_mode;
+	unsigned int normalized_coords;
+	unsigned int filter_mode;
+	unsigned int addressing_mode;
 };
 
 struct si_opencl_sampler_t *si_opencl_sampler_create(void);

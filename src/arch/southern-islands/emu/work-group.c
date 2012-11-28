@@ -20,8 +20,9 @@
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-#include "ndrange.h"
+#include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
 
 
 

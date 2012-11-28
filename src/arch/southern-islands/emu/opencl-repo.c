@@ -19,6 +19,15 @@
 
 
 #include <arch/southern-islands/emu/opencl-repo.h>
+#include <arch/southern-islands/emu/opencl-command-queue.h>
+#include <arch/southern-islands/emu/opencl-context.h>
+#include <arch/southern-islands/emu/opencl-device.h>
+#include <arch/southern-islands/emu/opencl-event.h>
+#include <arch/southern-islands/emu/opencl-kernel.h>
+#include <arch/southern-islands/emu/opencl-mem.h>
+#include <arch/southern-islands/emu/opencl-platform.h>
+#include <arch/southern-islands/emu/opencl-program.h>
+#include <arch/southern-islands/emu/opencl-sampler.h>
 
 
 struct si_opencl_repo_t
@@ -118,7 +127,7 @@ void *si_opencl_repo_get_object_of_type(struct si_opencl_repo_t *repo,
 {
 	struct linked_list_t *object_list = repo->object_list;
 	void *object;
-	uint32_t object_id;
+	unsigned int object_id;
 
 	/* Find object. Upper 16-bits of identifier contain its type. */
 	LINKED_LIST_FOR_EACH(object_list)

@@ -26,8 +26,14 @@
 #include <mem-system/memory.h>
 
 #include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opencl-command-queue.h>
+#include <arch/southern-islands/emu/opencl-repo.h>
+#include <arch/southern-islands/emu/opencl-platform.h>
+#include <arch/southern-islands/emu/opencl-device.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
 #include <arch/southern-islands/timing/timing.h>
 
 

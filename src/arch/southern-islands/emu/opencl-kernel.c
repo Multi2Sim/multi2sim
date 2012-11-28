@@ -23,6 +23,7 @@
 #include <arch/southern-islands/emu/opencl-kernel.h>
 #include <arch/southern-islands/emu/opencl-api.h>
 #include <arch/southern-islands/emu/opencl-repo.h>
+#include <arch/southern-islands/emu/opencl-program.h>
 
 
 struct si_opencl_kernel_t *si_opencl_kernel_create()
@@ -370,16 +371,16 @@ void si_opencl_kernel_load(struct si_opencl_kernel_t *kernel, char *kernel_name)
 }
 
 
-uint32_t si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel, uint32_t name,
-	struct mem_t *mem, uint32_t addr, uint32_t size)
+unsigned int si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel, unsigned int name,
+	struct mem_t *mem, unsigned int addr, unsigned int size)
 {
-	uint32_t size_ret = 0;
+	unsigned int size_ret = 0;
 	void *info = NULL;
 
-	uint64_t local_mem_size = 0;
-	uint32_t max_work_group_size = 256;  /* FIXME */
+	unsigned long long local_mem_size = 0;
+	unsigned int max_work_group_size = 256;  /* FIXME */
 
-	uint32_t compile_work_group_size[3];
+	unsigned int compile_work_group_size[3];
 	compile_work_group_size[0] = 1;  /* FIXME */
 	compile_work_group_size[1] = 1;  /* FIXME */
 	compile_work_group_size[2] = 1;  /* FIXME */

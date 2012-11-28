@@ -20,8 +20,6 @@
 #ifndef SOUTHERN_ISLANDS_OPENCL_EVENT_H
 #define SOUTHERN_ISLANDS_OPENCL_EVENT_H
 
-#include <arch/southern-islands/emu/emu.h>
-
 /* Forward declaration of x86 context used below in callback function. This
  * dependence would be removed if OpenCL API implementation was in 'arch/x86/emu'
  * instead. Is this a better option? */
@@ -62,7 +60,7 @@ enum si_opencl_event_status_t
 
 struct si_opencl_event_t
 {
-	uint32_t id;
+	unsigned int id;
 	int ref_count;
 	enum si_opencl_event_kind_t kind;
 	enum si_opencl_event_status_t status;
@@ -76,8 +74,8 @@ struct si_opencl_event_t
 struct si_opencl_event_t *si_opencl_event_create(enum si_opencl_event_kind_t kind);
 void si_opencl_event_free(struct si_opencl_event_t *event);
 
-uint32_t si_opencl_event_get_profiling_info(struct si_opencl_event_t *event, uint32_t name,
-	struct mem_t *mem, uint32_t addr, uint32_t size);
+unsigned int si_opencl_event_get_profiling_info(struct si_opencl_event_t *event, unsigned int name,
+	struct mem_t *mem, unsigned int addr, unsigned int size);
 long long si_opencl_event_timer(void);
 
 int si_opencl_event_can_wakeup(struct x86_ctx_t *ctx, void *data);

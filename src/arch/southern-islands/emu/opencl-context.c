@@ -22,7 +22,6 @@
 
 #include <arch/southern-islands/emu/opencl-context.h>
 #include <arch/southern-islands/emu/opencl-api.h>
-#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/opencl-repo.h>
 
 
@@ -55,11 +54,11 @@ void si_opencl_context_free(struct si_opencl_context_t *context)
 }
 
 
-uint32_t si_opencl_context_get_info(struct si_opencl_context_t *context, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
+unsigned int si_opencl_context_get_info(struct si_opencl_context_t *context, unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size)
 {
-	uint32_t num_devices = 1;
+	unsigned int num_devices = 1;
 
-	uint32_t size_ret = 0;
+	unsigned int size_ret = 0;
 	void *info = NULL;
 
 	switch (name)
@@ -92,10 +91,10 @@ uint32_t si_opencl_context_get_info(struct si_opencl_context_t *context, uint32_
 
 /* Read context properties from a null-terminated sequence of
  * 'cl_context_properties' elements in guest memory */
-void si_opencl_context_set_properties(struct si_opencl_context_t *context, struct mem_t *mem, uint32_t addr)
+void si_opencl_context_set_properties(struct si_opencl_context_t *context, struct mem_t *mem, unsigned int addr)
 {
-	uint32_t property;
-	uint32_t value;
+	unsigned int property;
+	unsigned int value;
 
 	while (addr)
 	{

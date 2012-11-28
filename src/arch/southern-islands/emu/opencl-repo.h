@@ -22,6 +22,9 @@
 
 #include <arch/southern-islands/emu/emu.h>
 
+/* Repository for 'struct si_isa_write_task_t' objects */
+extern struct repos_t *si_isa_write_task_repos;
+
 enum si_opencl_object_type_t
 {
 	si_opencl_object_invalid,
