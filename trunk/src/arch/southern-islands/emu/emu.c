@@ -142,7 +142,7 @@ void si_emu_dump_summary(FILE *f)
 	double time_in_sec;
 	double inst_per_sec;
 
-	/* If there was no Evergreen simulation, no summary */
+	/* If there was no Southern Islands simulation, no summary */
 	if (!si_emu->ndrange_count)
 		return;
 

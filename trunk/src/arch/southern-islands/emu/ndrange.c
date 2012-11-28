@@ -639,7 +639,7 @@ void si_ndrange_set_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_
 	if (status & si_ndrange_finished)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, finished_ndrange, ndrange);
 
-	/* Start/stop Evergreen timer depending on ND-Range states */
+	/* Start/stop Southern Islands timer depending on ND-Range states */
 	if (si_emu->running_ndrange_list_count)
 		m2s_timer_start(si_emu->timer);
 	else

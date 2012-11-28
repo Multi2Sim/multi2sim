@@ -526,7 +526,7 @@ static void si_bin_file_read_enc_dict(struct si_bin_file_t *bin_file)
 		elf_buffer_read(buffer, NULL, sizeof(struct si_bin_enc_dict_entry_header_t));
 		list_add(bin_file->enc_dict, enc_dict_entry);
 
-		/* Store encoding dictionary entry for Evergreen (code 9) */
+		/* Store encoding dictionary entry for Southern Islands (code 9) */
 		if (enc_dict_entry->header->d_machine == 9)
 		{
 			bin_file->enc_dict_entry_southern_islands = enc_dict_entry;
@@ -731,14 +731,14 @@ struct si_bin_file_t *si_bin_file_create(void *ptr, int size, char *name)
 	bin_file->elf_file = elf_file_create_from_buffer(ptr, size, name);
 
 	/* Read encoding dictionary.
-	 * Check that an Evergreen dictionary entry is present */
+	 * Check that a Southern Islands dictionary entry is present */
 	si_bin_file_read_enc_dict(bin_file);
 	if (!bin_file->enc_dict_entry_southern_islands)
 		fatal("%s: no encoding dictionary entry for Southern Islands.\n"
 			"\tThe OpenCL kernel binary that your application is trying to load does not\n"
-			"\tcontain Evergreen assembly code. Please make sure that a Cypress device\n"
+			"\tcontain Southern Islands assembly code. Please make sure that a Tahiti device\n"
 			"\tis selected when compiling the OpenCL kernel source. In some cases, even\n"
-			"\ta proper selection of this architecture causes Evergreen assembly not to\n"
+			"\ta proper selection of this architecture causes Southern Islands assembly not to\n"
 			"\tbe included if the APP SDK is not correctly installed when compiling your\n"
 			"\town kernel sources.\n",
 			bin_file->elf_file->path);
@@ -747,7 +747,7 @@ struct si_bin_file_t *si_bin_file_create(void *ptr, int size, char *name)
 	si_bin_file_read_segments(bin_file);
 	si_bin_file_read_sections(bin_file);
 
-	/* Read notes in PT_NOTE segment for Evergreen dictionary entry */
+	/* Read notes in PT_NOTE segment for Southern Islands dictionary entry */
 	si_bin_file_read_notes(bin_file, bin_file->enc_dict_entry_southern_islands);
 
 	/* Return */
