@@ -228,81 +228,81 @@ DefaultBandwidth = 264
 ; ---- Associating CUs with L1s ----
 
 [ Entry gpu-cu-0 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 0
 Module = l1-cu00
 
 [ Entry gpu-cu-1 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 1
 Module = l1-cu01
 
 [ Entry gpu-cu-2 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 2
 Module = l1-cu02
 
 [ Entry gpu-cu-3 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 3
 Module = l1-cu03
 
 [ Entry gpu-cu-4 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 4
 Module = l1-cu04
 
 [ Entry gpu-cu-5 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 5
 Module = l1-cu05
 
 [ Entry gpu-cu-6 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 6
 Module = l1-cu06
 
 [ Entry gpu-cu-7 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 7
 Module = l1-cu07
 
 [ Entry gpu-cu-8 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 8
 Module = l1-cu08
 
 [ Entry gpu-cu-9 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 9
 Module = l1-cu09
 
 [ Entry gpu-cu-10 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 10
 Module = l1-cu10
 
 [ Entry gpu-cu-11 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 11
 Module = l1-cu11
 
 [ Entry gpu-cu-12 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 12
 Module = l1-cu12
 
 [ Entry gpu-cu-13 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 13
 Module = l1-cu13
 
 [ Entry gpu-cu-14 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 14
 Module = l1-cu14
 
 [ Entry gpu-cu-15 ]
-Type = GPU
+Arch = SouthernIslands
 ComputeUnit = 15
 Module = l1-cu15
