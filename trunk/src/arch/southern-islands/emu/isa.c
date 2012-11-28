@@ -21,6 +21,7 @@
 #include <mem-system/memory.h>
 
 #include <arch/southern-islands/emu/isa.h>
+#include <arch/southern-islands/emu/work-item.h>
 #include <arch/southern-islands/emu/wavefront.h>
 
 /* Repository of deferred tasks */

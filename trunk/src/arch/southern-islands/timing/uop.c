@@ -18,8 +18,8 @@
  */
 
 #include <lib/util/repos.h>
+#include <arch/southern-islands/timing/uop.h>
 
-#include "timing.h"
 
 
 /*

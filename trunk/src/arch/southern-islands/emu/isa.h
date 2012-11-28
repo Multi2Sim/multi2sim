@@ -20,9 +20,7 @@
 #ifndef SOUTHERN_ISLANDS_ISA_H
 #define SOUTHERN_ISLANDS_ISA_H
 
-#include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
-#include <arch/southern-islands/emu/work-item.h>
 
 enum si_isa_write_task_kind_t
 {
@@ -109,6 +107,10 @@ extern char *err_si_isa_note;
 
 void si_isa_init();
 void si_isa_done();
+
+/* Forward declaration */
+struct si_work_item_t;
+union si_reg_t;
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
 typedef void (*si_isa_inst_func_t)(struct si_work_item_t *work_item, struct si_inst_t *inst);

@@ -20,8 +20,9 @@
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 
-#include "timing.h"
+#include <arch/southern-islands/timing/simd.h>
 #include <arch/southern-islands/emu/isa.h>
+#include <arch/southern-islands/timing/gpu.h>
 
 /* Configurable by user at runtime */
 

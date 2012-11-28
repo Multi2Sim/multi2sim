@@ -18,8 +18,10 @@
  */
 
 
-#include "timing.h"
+
 #include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/timing/wavefront-pool.h>
+#include <arch/southern-islands/timing/gpu.h>
 
 
 struct si_wavefront_pool_t *si_wavefront_pool_create()

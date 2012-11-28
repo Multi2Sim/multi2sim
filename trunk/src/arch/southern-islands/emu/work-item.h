@@ -22,6 +22,10 @@
 
 #define SI_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
+#include <arch/southern-islands/emu/isa.h>
+#include <lib/util/list.h>
+#include <arch/southern-islands/asm/asm.h>
+
 /* Structure describing a memory access definition */
 struct si_mem_access_t
 {
