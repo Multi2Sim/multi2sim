@@ -118,7 +118,7 @@ char *si_err_opencl_param_note =
 char *si_err_opencl_compiler =
 	"\tThe Multi2Sim implementation of the OpenCL interface does not support runtime\n"
 	"\tcompilation of kernel sources. To run OpenCL kernels, you should first compile\n"
-	"\tthem off-line using an Evergreen-compatible target device. Then, you have three\n"
+	"\tthem off-line using a Southern Islands-compatible target device. Then, you have three\n"
 	"\toptions to load them:\n"
 	"\t  1) Replace 'clCreateProgramWithSource' calls by 'clCreateProgramWithBinary'\n"
 	"\t     in your source files, referencing the pre-compiled kernel.\n"
