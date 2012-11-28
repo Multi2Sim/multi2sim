@@ -20,6 +20,8 @@
 #ifndef SOUTHERN_ISLANDS_WAVEFRONT_H
 #define SOUTHERN_ISLANDS_WAVEFRONT_H
 
+#include <arch/southern-islands/emu/isa.h>
+
 struct si_wavefront_t
 {
 	/* ID */

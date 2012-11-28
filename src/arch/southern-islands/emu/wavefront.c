@@ -23,6 +23,7 @@
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/work-group.h>
+#include <arch/southern-islands/emu/work-item.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/misc.h>
 

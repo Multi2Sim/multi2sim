@@ -25,7 +25,8 @@
 #include <lib/util/timer.h>
 
 #include "mem-config.h"
-#include "timing.h"
+#include <arch/southern-islands/timing/gpu.h>
+#include <arch/southern-islands/timing/calc.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opencl-kernel.h>
 

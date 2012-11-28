@@ -22,7 +22,9 @@
 #include <mem-system/mem-system.h>
 
 #include "mem-config.h"
-#include "timing.h"
+
+#include <arch/southern-islands/timing/gpu.h>
+#include <arch/southern-islands/timing/compute-unit.h>
 
 
 void si_mem_config_default(struct config_t *config)
