@@ -23,6 +23,9 @@
 #include <limits.h>
 
 #include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
+#include <arch/southern-islands/emu/work-item.h>
 #include <mem-system/module.h>
 
 #define INST_NOT_FETCHED LLONG_MAX

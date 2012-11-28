@@ -50,7 +50,7 @@ void si_opencl_platform_free(struct si_opencl_platform_t *platform)
 }
 
 
-uint32_t si_opencl_platform_get_info(struct si_opencl_platform_t *platform, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
+unsigned int si_opencl_platform_get_info(struct si_opencl_platform_t *platform, unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size)
 {
 	char *platform_profile = "FULL_PROFILE";
 	char *platform_version = "OpenCL 1.1 Multi2Sim-v" VERSION;
@@ -58,7 +58,7 @@ uint32_t si_opencl_platform_get_info(struct si_opencl_platform_t *platform, uint
 	char *platform_vendor = "www.multi2sim.org";
 	char *platform_extensions = "";
 
-	uint32_t size_ret = 0;
+	unsigned int size_ret = 0;
 	char *info;
 
 	switch (name) {

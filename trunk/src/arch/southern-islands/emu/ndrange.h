@@ -20,7 +20,6 @@
 #ifndef SOUTHERN_ISLANDS_NDRANGE_H
 #define SOUTHERN_ISLANDS_NDRANGE_H
 
-#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
 
 enum si_ndrange_status_t

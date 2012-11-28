@@ -20,7 +20,8 @@
 #ifndef SOUTHERN_ISLANDS_OPENCL_KERNEL_H
 #define SOUTHERN_ISLANDS_OPENCL_KERNEL_H
 
-#include <arch/southern-islands/emu/emu.h>
+#include <lib/util/string.h>
+#include <lib/util/elf-format.h>
 
 enum si_opencl_mem_scope_t
 {
@@ -57,12 +58,12 @@ struct si_opencl_kernel_arg_t
 
 	/* Argument fields as set in clSetKernelArg */
 	int set;  /* Set to true when it is assigned */
-	uint32_t size;
+	unsigned int size;
 
 	union
 	{
-		uint32_t ptr;
-		uint32_t value[4];
+		unsigned int ptr;
+		unsigned int value[4];
 	} data;
 
 	/* Last field - memory assigned variably */
@@ -71,9 +72,9 @@ struct si_opencl_kernel_arg_t
 
 struct si_opencl_kernel_t
 {
-	uint32_t id;
+	unsigned int id;
 	int ref_count;
-	uint32_t program_id;
+	unsigned int program_id;
 	char name[MAX_STRING_SIZE];
 	struct list_t *arg_list;
 
@@ -119,7 +120,7 @@ struct si_opencl_kernel_arg_t *si_opencl_kernel_arg_create(char *name);
 void si_opencl_kernel_arg_free(struct si_opencl_kernel_arg_t *arg);
 
 void si_opencl_kernel_load(struct si_opencl_kernel_t *kernel, char *kernel_name);
-uint32_t si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel, uint32_t name,
-	struct mem_t *mem, uint32_t addr, uint32_t size);
+unsigned int si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel, unsigned int name,
+	struct mem_t *mem, unsigned int addr, unsigned int size);
 
 #endif

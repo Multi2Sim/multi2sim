@@ -20,6 +20,12 @@
 #ifndef SOUTHERN_ISLANDS_OPENCL_API_H
 #define SOUTHERN_ISLANDS_OPENCL_API_H
 
+struct si_opencl_image_format_t
+{
+	unsigned int image_channel_order;
+	unsigned int image_channel_data_type;
+};
+
 /* Forward declaration */
 struct x86_ctx_t;
 

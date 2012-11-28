@@ -20,11 +20,9 @@
 #ifndef SOUTHERN_ISLANDS_OPENCL_PLATFORM_H
 #define SOUTHERN_ISLANDS_OPENCL_PLATFORM_H
 
-#include <arch/southern-islands/emu/emu.h>
-
 struct si_opencl_platform_t
 {
-	uint32_t id;
+	unsigned int id;
 };
 
 struct mem_t;  /* Forward declaration */
@@ -34,7 +32,7 @@ extern struct si_opencl_platform_t *si_opencl_platform;
 struct si_opencl_platform_t *si_opencl_platform_create(void);
 void si_opencl_platform_free(struct si_opencl_platform_t *platform);
 
-uint32_t si_opencl_platform_get_info(struct si_opencl_platform_t *platform,
-	uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
+unsigned int si_opencl_platform_get_info(struct si_opencl_platform_t *platform,
+	unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size);
 
 #endif

@@ -24,6 +24,9 @@
 #include <mem-system/memory.h>
 
 #include <arch/southern-islands/emu/machine.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
+#include <arch/southern-islands/emu/work-item.h>
 
 
 char *err_si_isa_note =

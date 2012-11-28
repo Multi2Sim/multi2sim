@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <string.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
