@@ -2,8 +2,8 @@ lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
 	\
-	branch_unit.c \
-	branch_unit.h \
+	branch-unit.c \
+	branch-unit.h \
 	\
 	calc.c \
 	calc.h \
@@ -14,26 +14,23 @@ libtiming_a_SOURCES = \
 	gpu.c \
 	gpu.h \
 	\
-	lds.c \
-	lds.h \
+	lds-unit.c \
+	lds-unit.h \
 	\
 	mem-config.c \
 	mem-config.h \
 	\
-	scalar_unit.c \
-	scalar_unit.h \
+	scalar-unit.c \
+	scalar-unit.h \
 	\
-	sched.c \
-	sched.h \
-	\
-	simd.c \
-	simd.h \
+	simd-unit.c \
+	simd-unit.h \
 	\
 	uop.c \
 	uop.h \
 	\
-	vector_mem.c \
-	vector_mem.h \
+	vector-mem-unit.c \
+	vector-mem-unit.h \
 	\
 	wavefront-pool.c \
 	wavefront-pool.h

@@ -276,7 +276,6 @@ static void si_config_read(void)
 		"\tdescription of the GPU configuration file format.";
 
 	char *gpu_register_alloc_granularity_str;
-	char *gpu_sched_policy_str;
 
 	/* Load GPU configuration file */
 	gpu_config = config_create(si_gpu_config_file_name);
@@ -354,14 +353,6 @@ static void si_config_read(void)
 	if (si_gpu_max_wavefronts_per_wavefront_pool < 1)
 		fatal("%s: invalid value for 'MaxWavefrontsPerWavefrontPool'.\n%s",
 			si_gpu_config_file_name, err_note);
-
-	gpu_sched_policy_str = config_read_string(gpu_config, section, "SchedulingPolicy",
-		"RoundRobin");
-	si_gpu_sched_policy = str_map_string_case(&si_gpu_sched_policy_map, gpu_sched_policy_str);
-	if (si_gpu_sched_policy == si_gpu_sched_invalid)
-		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", si_gpu_config_file_name,
-			err_note);
-
 
 	si_gpu_fetch_latency = config_read_int(
 		gpu_config, section, "FetchLatency", si_gpu_fetch_latency);
@@ -652,8 +643,6 @@ static void si_config_dump(FILE *f)
 	fprintf(f, "ScalarUnitWidth = %d\n", si_gpu_scalar_unit_width);
 	fprintf(f, "BranchUnitExecLatency = %d\n", si_gpu_branch_unit_exec_latency);
 	fprintf(f, "BranchUnitWidth = %d\n", si_gpu_branch_unit_width);
-	fprintf(f, "SchedulingPolicy = %s\n", str_map_value(&si_gpu_sched_policy_map, 
-		si_gpu_sched_policy));
 	fprintf(f, "\n");
 
 	/* Local Memory */
