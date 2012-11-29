@@ -18,6 +18,7 @@
  */
 
 
+#include <lib/mhandle/mhandle.h>
 #include <mem-system/memory.h>
 
 #include <arch/southern-islands/emu/opencl-platform.h>
@@ -28,12 +29,8 @@ struct si_opencl_platform_t *si_opencl_platform_create()
 {
 	struct si_opencl_platform_t *platform;
 
-	/* Allocate */
-	platform = calloc(1, sizeof(struct si_opencl_platform_t));
-	if (!platform)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	platform = xcalloc(1, sizeof(struct si_opencl_platform_t));
 	platform->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
 		si_opencl_object_platform);
 

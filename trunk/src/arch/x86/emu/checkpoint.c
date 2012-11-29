@@ -22,6 +22,7 @@
 #include <stdarg.h>
 #include <zlib.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/bin-config.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>

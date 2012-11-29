@@ -20,6 +20,7 @@
 
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/debug.h>
 
@@ -34,12 +35,8 @@ struct si_opencl_command_queue_t *si_opencl_command_queue_create()
 {
 	struct si_opencl_command_queue_t *command_queue;
 
-	/* Allocate */
-	command_queue = calloc(1, sizeof(struct si_opencl_command_queue_t));
-	if (!command_queue)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	command_queue = xcalloc(1, sizeof(struct si_opencl_command_queue_t));
 	command_queue->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
 		si_opencl_object_command_queue);
 	command_queue->ref_count = 1;
@@ -71,12 +68,8 @@ struct si_opencl_command_t *si_opencl_command_create(enum
 {
 	struct si_opencl_command_t *command;
 
-	/* Allocate */
-	command = calloc(1, sizeof(struct si_opencl_command_t));
-	if (!command)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	command = xcalloc(1, sizeof(struct si_opencl_command_t));
 	command->type = type;
 
 	/* Return */

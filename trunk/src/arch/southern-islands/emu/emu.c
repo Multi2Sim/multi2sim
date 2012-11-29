@@ -21,6 +21,7 @@
 #include <arch/common/arch-list.h>
 #include <arch/x86/emu/context.h>
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/file.h>
 #include <lib/util/misc.h> 
 #include <lib/util/timer.h>
@@ -90,12 +91,8 @@ void si_emu_init()
 				si_emu_report_file_name);
 	}
 
-	/* Allocate */
-	si_emu = calloc(1, sizeof(struct si_emu_t));
-	if (!si_emu)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	si_emu = xcalloc(1, sizeof(struct si_emu_t));
 	si_emu->timer = m2s_timer_create("Southern Islands GPU Timer");
 	si_emu->global_mem = mem_create();
 	si_emu->global_mem->safe = 0;

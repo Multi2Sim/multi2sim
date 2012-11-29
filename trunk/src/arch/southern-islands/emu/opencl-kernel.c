@@ -18,6 +18,7 @@
  */
 
 
+#include <lib/mhandle/mhandle.h>
 #include <mem-system/memory.h>
 
 #include <arch/southern-islands/emu/opencl-kernel.h>
@@ -30,12 +31,8 @@ struct si_opencl_kernel_t *si_opencl_kernel_create()
 {
 	struct si_opencl_kernel_t *kernel;
 
-	/* Allocate */
-	kernel = calloc(1, sizeof(struct si_opencl_kernel_t));
-	if (!kernel)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	kernel = xcalloc(1, sizeof(struct si_opencl_kernel_t));
 	kernel->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
 		si_opencl_object_kernel);
 	kernel->ref_count = 1;
@@ -76,12 +73,8 @@ struct si_opencl_kernel_arg_t *si_opencl_kernel_arg_create(char *name)
 {
 	struct si_opencl_kernel_arg_t *arg;
 
-	/* Allocate */
-	arg = calloc(1, sizeof(struct si_opencl_kernel_arg_t) + strlen(name) + 1);
-	if (!arg)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	arg = xcalloc(1, sizeof(struct si_opencl_kernel_arg_t) + strlen(name) + 1);
 	strcpy(arg->name, name);
 
 	/* Return */

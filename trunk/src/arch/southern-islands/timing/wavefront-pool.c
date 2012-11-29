@@ -18,6 +18,7 @@
  */
 
 
+#include <lib/mhandle/mhandle.h>
 
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/timing/wavefront-pool.h>
@@ -29,28 +30,17 @@ struct si_wavefront_pool_t *si_wavefront_pool_create()
 	struct si_wavefront_pool_t *wavefront_pool;
 	int i;
 
-	/* Create */
-	wavefront_pool = calloc(1, sizeof(struct si_wavefront_pool_t));
-	if (!wavefront_pool)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
-	wavefront_pool->entries = calloc(si_gpu_max_wavefronts_per_wavefront_pool, 
+	wavefront_pool = xcalloc(1, sizeof(struct si_wavefront_pool_t));
+	wavefront_pool->entries = xcalloc(si_gpu_max_wavefronts_per_wavefront_pool, 
 		sizeof(struct si_wavefront_pool_entry_t*));
-	if (!wavefront_pool->entries)
-		fatal("%s: out of memory", __FUNCTION__);
 
 	for (i = 0; i < si_gpu_max_wavefronts_per_wavefront_pool; i++) 
 	{
-		wavefront_pool->entries[i] = calloc(1, sizeof(struct si_wavefront_pool_entry_t));
-		if (!wavefront_pool->entries[i])
-			fatal("%s: out of memory", __FUNCTION__);
-
+		wavefront_pool->entries[i] = xcalloc(1, sizeof(struct si_wavefront_pool_entry_t));
 		wavefront_pool->entries[i]->id_in_wavefront_pool = i;
 		wavefront_pool->entries[i]->wavefront_pool = wavefront_pool;
 	}
-
-	wavefront_pool->wavefront_count = 0;
 
 	/* Return */
 	return wavefront_pool;

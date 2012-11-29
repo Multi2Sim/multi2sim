@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/repos.h>
 #include <mem-system/memory.h>
 
@@ -44,12 +45,8 @@ int si_isa_debug_category;
 /* Initialization */
 void si_isa_init()
 {
-	/* Allocate instruction execution table */
-	si_isa_inst_func = calloc(SI_INST_COUNT, sizeof(si_isa_inst_func_t));
-	if (!si_isa_inst_func)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	si_isa_inst_func = xcalloc(SI_INST_COUNT, sizeof(si_isa_inst_func_t));
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size) \
 	extern void si_isa_##_name##_impl(struct si_work_item_t *work_item, struct si_inst_t *inst); \
 	si_isa_inst_func[SI_INST_##_name] = si_isa_##_name##_impl;

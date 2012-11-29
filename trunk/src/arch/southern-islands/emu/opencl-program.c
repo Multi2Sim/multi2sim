@@ -18,6 +18,7 @@
  */
 
 
+#include <lib/mhandle/mhandle.h>
 #include <mem-system/memory.h>
 
 #include <arch/southern-islands/emu/opencl-program.h>
@@ -31,12 +32,8 @@ struct si_opencl_program_t *si_opencl_program_create()
 	struct si_opencl_program_t *program;
 	int i;
 
-	/* Allocate */
-	program = calloc(1, sizeof(struct si_opencl_program_t));
-	if (!program)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	program = xcalloc(1, sizeof(struct si_opencl_program_t));
 	program->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
 		si_opencl_object_program);
 	program->ref_count = 1;
