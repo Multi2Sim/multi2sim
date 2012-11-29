@@ -264,6 +264,7 @@ void config_load(struct config_t *config)
 	char value[MAX_STRING_SIZE];
 
 	int line_num;
+	int length;
 	int err;
 	
 	/* Try to open file for reading */
@@ -290,11 +291,12 @@ void config_load(struct config_t *config)
 			continue;
 		
 		/* New "[ <section> ]" entry */
-		if (line_trim[0] == '[' && line_trim[strlen(line_trim) - 1] == ']')
+		length = strlen(line_trim);
+		if (line_trim[0] == '[' && line_trim[length - 1] == ']')
 		{
 			/* Get section name */
 			line_trim[0] = ' ';
-			line_trim[strlen(line_trim) - 1] = ' ';
+			line_trim[length - 1] = ' ';
 			str_single_spaces(section, sizeof section, line_trim);
 
 			/* Insert section */
