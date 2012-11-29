@@ -233,17 +233,17 @@ static int get_isa_offset(struct si_opengl_shader_t *opengl_shader)
 
 	switch (opengl_shader->shader_kind)
 	{
-		case si_OPENGL_SHADER_VERTEX:
+		case SI_OPENGL_SHADER_VERTEX:
 		{
 			isa_offset = 4204;
 			break;
 		}
-		case si_OPENGL_SHADER_FRAGMENT:
+		case SI_OPENGL_SHADER_FRAGMENT:
 		{
 			isa_offset = 2844;
 			break;
 		}
-		case si_OPENGL_SHADER_GEOMETRY:
+		case SI_OPENGL_SHADER_GEOMETRY:
 		{
 			isa_offset = 3912;
 			break;
@@ -306,27 +306,27 @@ static int amd_opengl_shader_set_shader_kind(struct si_opengl_shader_t *opengl_s
 
 	if (internal_elf_file->header->e_flags == 0x1 && external_elf_file->header->e_flags == 0x1)
 	{
-		opengl_shader->shader_kind = si_OPENGL_SHADER_FRAGMENT;
+		opengl_shader->shader_kind = SI_OPENGL_SHADER_FRAGMENT;
 		return 1;
 	}
 	else if (internal_elf_file->header->e_flags == 0x2 && external_elf_file->header->e_flags == 0x2)
 	{
-		opengl_shader->shader_kind = si_OPENGL_SHADER_VERTEX;
+		opengl_shader->shader_kind = SI_OPENGL_SHADER_VERTEX;
 		return 1;
 	}
 	else if (internal_elf_file->header->e_flags == 0x3 && external_elf_file->header->e_flags == 0x3)
 	{
-		opengl_shader->shader_kind = si_OPENGL_SHADER_GEOMETRY;
+		opengl_shader->shader_kind = SI_OPENGL_SHADER_GEOMETRY;
 		return 1;
 	}
 	else if (internal_elf_file->header->e_flags == 0x5 && external_elf_file->header->e_flags == 0x5)
 	{
-		opengl_shader->shader_kind = si_OPENGL_SHADER_CONTROL;
+		opengl_shader->shader_kind = SI_OPENGL_SHADER_CONTROL;
 		return 1;
 	}
 	else if (internal_elf_file->header->e_flags == 0x6 && external_elf_file->header->e_flags == 0x6)
 	{
-		opengl_shader->shader_kind = si_OPENGL_SHADER_EVALUATION;
+		opengl_shader->shader_kind = SI_OPENGL_SHADER_EVALUATION;
 		return 1;
 	}
 	else
@@ -364,9 +364,6 @@ static void amd_opengl_shader_free(struct si_opengl_shader_t *opengl_shader)
 	internal_elf_file_free(opengl_shader->internal_elf_file);
 	free(opengl_shader);
 }
-
-
-
 
 /*
  * Public functions
