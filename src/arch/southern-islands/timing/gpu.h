@@ -116,14 +116,6 @@ extern enum si_gpu_register_alloc_granularity_t
 extern int si_gpu_max_work_groups_per_wavefront_pool;
 extern int si_gpu_max_wavefronts_per_wavefront_pool;
 
-extern struct str_map_t si_gpu_sched_policy_map;
-extern enum si_gpu_sched_policy_t
-{
-	si_gpu_sched_invalid = 0,  /* For invalid user input */
-	si_gpu_sched_round_robin,
-	si_gpu_sched_greedy
-} si_gpu_sched_policy;
-
 extern char *si_gpu_calc_file_name;
 
 extern int si_gpu_fetch_latency;

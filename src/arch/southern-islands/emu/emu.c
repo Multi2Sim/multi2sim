@@ -36,11 +36,11 @@
 #include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
-#include <arch/southern-islands/timing/branch_unit.h>
-#include <arch/southern-islands/timing/scalar_unit.h>
-#include <arch/southern-islands/timing/simd.h>
-#include <arch/southern-islands/timing/lds.h>
-#include <arch/southern-islands/timing/vector_mem.h>
+#include <arch/southern-islands/timing/branch-unit.h>
+#include <arch/southern-islands/timing/scalar-unit.h>
+#include <arch/southern-islands/timing/simd-unit.h>
+#include <arch/southern-islands/timing/lds-unit.h>
+#include <arch/southern-islands/timing/vector-mem-unit.h>
 #include <arch/southern-islands/timing/gpu.h>
 
 
