@@ -20,7 +20,7 @@
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 
-#include <arch/southern-islands/timing/simd.h>
+#include <arch/southern-islands/timing/simd-unit.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/timing/gpu.h>
 

@@ -20,9 +20,10 @@
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 
-#include <arch/southern-islands/timing/vector_mem.h>
+#include <arch/southern-islands/timing/vector-mem-unit.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/timing/gpu.h>
+
 
 /* Configurable by user at runtime */
 

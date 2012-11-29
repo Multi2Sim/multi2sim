@@ -68,37 +68,5 @@ EXTRA_DIST = \
 	\
 	tools/inifile/inifile.py \
 	\
-	samples/cpuconfig.args-sort \
-	samples/ctxconfig.args-sort \
-	\
-	samples/test-args.c \
-	samples/test-sort.c \
-	samples/test-threads.c \
-	\
-	samples/test-args.x86 \
-	samples/test-sort.x86 \
-	samples/test-threads.x86 \
-	\
-	samples/mesh_9_Route.txt \
-	samples/mesh_9_wo_R.txt \
-	\
-	samples/test-args.arm \
-	samples/test-sort.arm \
-	\
-	samples/memconfig-eg1/cpu-config \
-	samples/memconfig-eg1/mem-config \
-	\
-	samples/memconfig-eg2/cpu-config \
-	samples/memconfig-eg2/mem-config \
-	samples/memconfig-eg2/net-config \
-	\
-	samples/memconfig-eg3/cpu-config \
-	samples/memconfig-eg3/mem-config \
-	samples/memconfig-eg3/net-config \
-	\
-	samples/memconfig-eg4/cpu-config \
-	samples/memconfig-eg4/gpu-config \
-	samples/memconfig-eg4/mem-config \
-	\
 	${images}
 

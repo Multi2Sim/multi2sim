@@ -17,18 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/emu/ndrange.h>
 #include <lib/esim/trace.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include <arch/southern-islands/timing/compute-unit.h>
-#include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/timing/gpu.h>
-#include <arch/southern-islands/timing/scalar_unit.h>
-#include <arch/southern-islands/timing/branch_unit.h>
-#include <arch/southern-islands/timing/simd.h>
-#include <arch/southern-islands/timing/lds.h>
-#include <arch/southern-islands/timing/vector_mem.h>
+#include "branch-unit.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "lds-unit.h"
+#include "scalar-unit.h"
+#include "simd-unit.h"
+#include "vector-mem-unit.h"
+
 
 /* Front-end parameters */
 int si_gpu_fetch_latency = 1;
