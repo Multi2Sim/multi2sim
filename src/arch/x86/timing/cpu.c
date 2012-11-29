@@ -56,10 +56,10 @@
 /* Help message */
 
 char *x86_config_help =
-	"The CPU configuration file is a plain text file with the IniFile format, defining\n"
+	"The x86 CPU configuration file is a plain text INI file, defining\n"
 	"the parameters of the CPU model used for a detailed (architectural) simulation.\n"
-	"This configuration file is passed to Multi2Sim with option '--cpu-config <file>,\n"
-	"which must be accompanied by option '--cpu-sim detailed'.\n"
+	"This configuration file is passed to Multi2Sim with option '--x86-config <file>,\n"
+	"which must be accompanied by option '--x86-sim detailed'.\n"
 	"\n"
 	"The following is a list of the sections allowed in the CPU configuration file,\n"
 	"along with the list of variables for each section.\n"
