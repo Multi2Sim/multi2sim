@@ -85,6 +85,9 @@ static char *evg_stack_debug_file_name = "";
 
 static char *si_disasm_file_name = "";
 static char *si_isa_debug_file_name = "";
+static char *si_opengl_disasm_file_name = "";
+static int si_opengl_disasm_shader_index = 1;
+
 static int si_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
 static char *frm_disasm_file_name = "";
@@ -890,6 +893,17 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Souther Islands OpenGL shader binary disassembler */
+		if (!strcmp(argv[argi], "--si-disasm-opengl"))
+		{
+			if (argc != 4)
+				fatal("option '%s' requires two argument.\n%s",
+					argv[argi], m2s_err_note);
+			si_opengl_disasm_file_name = argv[++argi];
+			si_opengl_disasm_shader_index = atoi(argv[++argi]);
+			continue;
+		}
+
 		/* Southern Islands OpenCL binary */
 		if (!strcmp(argv[argi], "--si-kernel-binary"))
 		{
@@ -1221,6 +1235,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		fatal("option '--si-disasm' is incompatible with any other options.");
 	if (*evg_opengl_disasm_file_name && argc != 4)
 		fatal("option '--evg-disasm-opengl' is incompatible with any other options.");	
+	if (*si_opengl_disasm_file_name && argc != 4)
+		fatal("option '--evg-disasm-opengl' is incompatible with any other options.");	
 	if (*frm_disasm_file_name && argc > 3)
 		fatal("option '--frm-disasm' is incompatible with any other options.");
 	if (*x86_disasm_file_name && argc > 3)
@@ -1474,6 +1490,10 @@ int main(int argc, char **argv)
 	/* Evergreen OpenGL disassembler tool */
 	if (*evg_opengl_disasm_file_name)
 		evg_emu_opengl_disasm(evg_opengl_disasm_file_name, evg_opengl_disasm_shader_index);
+
+	/* Southern Islands OpenGL disassembler tool */
+	if (*si_opengl_disasm_file_name)
+		si_emu_opengl_disasm(si_opengl_disasm_file_name, si_opengl_disasm_shader_index);
 
 	/* Fermi disassembler tool */
 	if (*frm_disasm_file_name)

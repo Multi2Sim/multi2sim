@@ -49,6 +49,9 @@ libemu_a_SOURCES = \
 	opencl-sampler.c \
 	opencl-sampler.h \
 	\
+	opengl-bin-file.c \
+	opengl-bin-file.h \
+	\
 	wavefront.c \
 	wavefront.h \
 	\
