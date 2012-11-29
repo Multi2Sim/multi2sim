@@ -50,10 +50,10 @@
  */
 
 char *evg_gpu_config_help =
-	"The GPU configuration file is a plain text file in the IniFile format, defining\n"
+	"The Evergreen GPU configuration file is a plain text INI file defining\n"
 	"the parameters of the GPU model for a detailed (architectural) GPU configuration.\n"
-	"This file is passed to Multi2Sim with the '--gpu-config <file>' option, and\n"
-	"should always be used together with option '--gpu-sim detailed'.\n"
+	"This file is passed to Multi2Sim with the '--evg-config <file>' option, and\n"
+	"should always be used together with option '--evg-sim detailed'.\n"
 	"\n"
 	"The following is a list of the sections allowed in the GPU configuration file,\n"
 	"along with the list of variables for each section.\n"
@@ -215,7 +215,7 @@ static void evg_config_read(void)
 	struct config_t *gpu_config;
 	char *section;
 	char *err_note =
-		"\tPlease run 'm2s --help-gpu-config' or consult the Multi2Sim Guide for a\n"
+		"\tPlease run 'm2s --evg-help' or consult the Multi2Sim Guide for a\n"
 		"\tdescription of the GPU configuration file format.";
 
 	char *gpu_register_alloc_granularity_str;
