@@ -20,6 +20,7 @@
 #include <arch/common/arch.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
@@ -238,20 +239,12 @@ static void si_gpu_device_init()
 	struct si_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
-	/* Create device */
-	si_gpu = calloc(1, sizeof(struct si_gpu_t));
-	if (!si_gpu)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	si_gpu = xcalloc(1, sizeof(struct si_gpu_t));
 	si_gpu->trash_uop_list = linked_list_create();
 
-	/* Create compute units */
-	si_gpu->compute_units = calloc(si_gpu_num_compute_units, sizeof(void *));
-	if (!si_gpu->compute_units)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize compute units */
+	si_gpu->compute_units = xcalloc(si_gpu_num_compute_units, sizeof(void *));
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		si_gpu->compute_units[compute_unit_id] = si_compute_unit_create();

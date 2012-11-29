@@ -21,6 +21,7 @@
 #include <pthread.h>
 
 #include <arch/x86/emu/context.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <lib/util/debug.h>
 

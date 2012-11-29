@@ -19,6 +19,7 @@
 
 
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 #include <arch/southern-islands/emu/opencl-device.h>
@@ -31,12 +32,8 @@ struct si_opencl_device_t *si_opencl_device_create()
 {
 	struct si_opencl_device_t *device;
 
-	/* Allocate */
-	device = calloc(1, sizeof(struct si_opencl_device_t));
-	if (!device)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	device = xcalloc(1, sizeof(struct si_opencl_device_t));
 	device->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
 		si_opencl_object_device);
 

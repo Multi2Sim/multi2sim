@@ -18,6 +18,8 @@
  */
 
 
+#include <lib/mhandle/mhandle.h>
+
 #include <arch/southern-islands/emu/opencl-sampler.h>
 #include <arch/southern-islands/emu/opencl-repo.h>
 
@@ -26,12 +28,8 @@ struct si_opencl_sampler_t *si_opencl_sampler_create()
 {
 	struct si_opencl_sampler_t *sampler;
 
-	/* Allocate */
-	sampler = calloc(1, sizeof(struct si_opencl_sampler_t));
-	if (!sampler)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	sampler = xcalloc(1, sizeof(struct si_opencl_sampler_t));
 	sampler->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
 		si_opencl_object_sampler);
 	sampler->ref_count = 1;

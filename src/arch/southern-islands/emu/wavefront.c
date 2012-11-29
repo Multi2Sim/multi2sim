@@ -24,6 +24,8 @@
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <arch/southern-islands/emu/work-item.h>
+
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/misc.h>
 
@@ -38,12 +40,8 @@ struct si_wavefront_t *si_wavefront_create()
 {
 	struct si_wavefront_t *wavefront;
 
-	/* Allocate */
-	wavefront = calloc(1, sizeof(struct si_wavefront_t));
-	if (!wavefront)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	wavefront = xcalloc(1, sizeof(struct si_wavefront_t));
 	wavefront->pred = bit_map_create(si_emu_wavefront_size);
 	si_wavefront_sreg_init(wavefront);
 

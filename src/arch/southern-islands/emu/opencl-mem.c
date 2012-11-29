@@ -21,18 +21,15 @@
 
 #include <arch/southern-islands/emu/opencl-mem.h>
 #include <arch/southern-islands/emu/opencl-repo.h>
+#include <lib/mhandle/mhandle.h>
 
 
 struct si_opencl_mem_t *si_opencl_mem_create()
 {
 	struct si_opencl_mem_t *mem;
 
-	/* Allocate */
-	mem = calloc(1, sizeof(struct si_opencl_mem_t));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	mem = xcalloc(1, sizeof(struct si_opencl_mem_t));
 	mem->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
 		si_opencl_object_mem);
 	mem->ref_count = 1;

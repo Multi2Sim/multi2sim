@@ -36,6 +36,7 @@
 #include <arch/fermi/emu/cuda.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
