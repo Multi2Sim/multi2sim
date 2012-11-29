@@ -22,6 +22,7 @@
 #include <arch/x86/emu/context.h>
 #include <lib/esim/esim.h>
 #include <lib/util/file.h>
+#include <lib/util/misc.h> 
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
@@ -32,6 +33,7 @@
 #include <arch/southern-islands/emu/opencl-repo.h>
 #include <arch/southern-islands/emu/opencl-platform.h>
 #include <arch/southern-islands/emu/opencl-device.h>
+#include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <arch/southern-islands/timing/branch_unit.h>
@@ -316,6 +318,50 @@ void si_emu_disasm(char *path)
 
 	/* Free external ELF */
 	elf_file_free(elf_file);
+	si_disasm_done();
+
+	/* End */
+	mhandle_done();
+	exit(0);
+}
+
+/* GPU OpenGL disassembler tool */
+void si_emu_opengl_disasm(char *path, int opengl_shader_index)
+{
+	void *file_buffer;
+	int file_size;
+
+	struct si_opengl_bin_file_t *amd_opengl_bin;
+	struct si_opengl_shader_t *amd_opengl_shader;
+
+	/* Initialize disassembler */
+	si_disasm_init();
+
+	/* Load file into memory buffer */
+	file_buffer = read_buffer(path, &file_size);
+	if(!file_buffer)
+		fatal("%s:Invalid file!", path);
+
+	/* Analyze the file and initialize structure */	
+	amd_opengl_bin = si_opengl_bin_file_create(file_buffer, file_size, path);
+
+	free_buffer(file_buffer);
+
+	/* Basic info of the shader binary */
+	printf("This shader binary contains %d shaders\n\n", list_count(amd_opengl_bin->shader_list));
+	if (opengl_shader_index > list_count(amd_opengl_bin->shader_list) || opengl_shader_index <= 0 )
+	{
+		fatal("Shader index out of range! Please choose <index> from 1 ~ %d", list_count(amd_opengl_bin->shader_list));
+	}
+
+	/* Disassemble */
+	amd_opengl_shader = list_get(amd_opengl_bin->shader_list, opengl_shader_index - 1 );
+	printf("**\n** Disassembly for shader %d\n**\n\n", opengl_shader_index);
+	si_disasm_buffer(&amd_opengl_shader->isa_buffer, stdout);
+	printf("\n\n\n");
+
+	/* Free */
+	si_opengl_bin_file_free(amd_opengl_bin);
 	si_disasm_done();
 
 	/* End */
