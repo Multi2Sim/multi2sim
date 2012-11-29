@@ -75,7 +75,7 @@ char *x86_loader_help =
 	"      File to dump a report of the context performance. At specific\n"
 	"      intervals, the context IPC (instructions-per-cycle) value will be\n"
 	"      dumped in this file. This option must be specified together with\n"
-	"      command-line option '--cpu-sim detailed'.\n"
+	"      command-line option '--x86-sim detailed'.\n"
 	"  IPCReportInterval = <cycles>\n"
 	"      Interval in number of cycles that a new record will be added into\n"
 	"      the IPC report file.\n"
@@ -87,7 +87,7 @@ char *x86_loader_help =
 static char *err_x86_ctx_ipc_report =
 	"\tThe IPC report file has been specified for a context, but the\n"
 	"\tfunctional simulation does not track cycles. Please use option\n"
-	"\t'--cpu-sim detailed' in the command line to activate IPC reports.\n";
+	"\t'--x86-sim detailed' in the command line to activate IPC reports.\n";
 
 
 static struct str_map_t elf_section_flags_map =

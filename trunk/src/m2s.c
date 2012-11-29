@@ -1207,11 +1207,11 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			"\tof the architectures supported in Multi2Sim.\n";
 
 		if (*mmu_report_file_name)
+			fatal(msg, "--mem-report-access");
+		if (*mem_report_file_name)
 			fatal(msg, "--mem-report");
 		if (*mem_config_file_name)
 			fatal(msg, "--mem-config");
-		if (*mem_report_file_name)
-			fatal(msg, "--report-mem");
 	}
 
 	/* Other checks */
