@@ -28,6 +28,7 @@
 #include <arch/southern-islands/emu/opencl-platform.h>
 #include <arch/southern-islands/emu/opencl-program.h>
 #include <arch/southern-islands/emu/opencl-sampler.h>
+#include <lib/mhandle/mhandle.h>
 
 
 struct si_opencl_repo_t
@@ -40,12 +41,8 @@ struct si_opencl_repo_t *si_opencl_repo_create(void)
 {
 	struct si_opencl_repo_t *repo;
 
-	/* Allocate */
-	repo = calloc(1, sizeof(struct si_opencl_repo_t));
-	if (!repo)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	repo = xcalloc(1, sizeof(struct si_opencl_repo_t));
 	repo->object_list = linked_list_create();
 
 	/* Return */

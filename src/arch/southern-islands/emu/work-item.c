@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 
 #include <arch/southern-islands/emu/emu.h>
@@ -33,12 +34,8 @@ struct si_work_item_t *si_work_item_create()
 {
 	struct si_work_item_t *work_item;
 
-	/* Allocate */
-	work_item = calloc(1, sizeof(struct si_work_item_t));
-	if (!work_item)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	work_item = xcalloc(1, sizeof(struct si_work_item_t));
 	work_item->write_task_list = linked_list_create();
 	work_item->lds_oqa = list_create();
 	work_item->lds_oqb = list_create();

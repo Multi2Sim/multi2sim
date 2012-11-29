@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
@@ -35,12 +36,8 @@ struct si_work_group_t *si_work_group_create(char *name)
 {
 	struct si_work_group_t *work_group;
 
-	/* Allocate */
-	work_group = calloc(1, sizeof(struct si_work_group_t));
-	if (!work_group)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	work_group = xcalloc(1, sizeof(struct si_work_group_t));
 	work_group->local_mem = mem_create();
 	work_group->local_mem->safe = 0;
 

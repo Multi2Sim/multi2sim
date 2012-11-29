@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <arch/common/arch.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>

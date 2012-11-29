@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
@@ -41,20 +42,12 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 {
 	struct si_ndrange_t *ndrange;
 
-	/* Allocate */
-	ndrange = calloc(1, sizeof(struct si_ndrange_t));
-	if (!ndrange)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Insert in ND-Range list of SouthernIslands emulator */
+	ndrange = xcalloc(1, sizeof(struct si_ndrange_t));
 	DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, ndrange, ndrange);
 
-	/* Name */
-	ndrange->name = strdup(kernel->name);
-	if (!ndrange->name)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	ndrange->name = xstrdup(kernel->name);
 	ndrange->kernel = kernel;
 	ndrange->local_mem_top = kernel->func_mem_local;
 	ndrange->id = si_emu->ndrange_count++;
@@ -64,11 +57,7 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 
 	/* Instruction histogram */
 	if (si_emu_report_file)
-	{
-		ndrange->inst_histogram = calloc(SI_INST_COUNT, sizeof(unsigned int));
-		if (!ndrange->inst_histogram)
-			fatal("%s: out of memory", __FUNCTION__);
-	}
+		ndrange->inst_histogram = xcalloc(SI_INST_COUNT, sizeof(unsigned int));
 
 	/* Return */
 	return ndrange;
@@ -151,7 +140,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	ndrange->work_group_count = kernel->group_count;
 	ndrange->work_group_id_first = 0;
 	ndrange->work_group_id_last = ndrange->work_group_count - 1;
-	ndrange->work_groups = calloc(ndrange->work_group_count, sizeof(void *));
+	ndrange->work_groups = xcalloc(ndrange->work_group_count, sizeof(void *));
 	for (gid = 0; gid < kernel->group_count; gid++)
 	{
 		ndrange->work_groups[gid] = si_work_group_create();
@@ -164,8 +153,8 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	ndrange->wavefront_id_first = 0;
 	ndrange->wavefront_id_last = ndrange->wavefront_count - 1;
 	assert(ndrange->wavefronts_per_work_group > 0 && ndrange->wavefront_count > 0);
-	ndrange->wavefronts = calloc(ndrange->wavefront_count, sizeof(void *));
-	ndrange->scalar_work_items = calloc(ndrange->wavefront_count, sizeof(void *));
+	ndrange->wavefronts = xcalloc(ndrange->wavefront_count, sizeof(void *));
+	ndrange->scalar_work_items = xcalloc(ndrange->wavefront_count, sizeof(void *));
 	for (wid = 0; wid < ndrange->wavefront_count; wid++)
 	{
 		gid = wid / ndrange->wavefronts_per_work_group;
@@ -191,7 +180,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	ndrange->work_item_count = kernel->global_size;
 	ndrange->work_item_id_first = 0;
 	ndrange->work_item_id_last = ndrange->work_item_count - 1;
-	ndrange->work_items = calloc(ndrange->work_item_count, sizeof(void *));
+	ndrange->work_items = xcalloc(ndrange->work_item_count, sizeof(void *));
 	tid = 0;
 	gid = 0;
 	for (gidz = 0; gidz < kernel->group_count3[2]; gidz++)

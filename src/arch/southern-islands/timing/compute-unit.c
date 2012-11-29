@@ -19,6 +19,7 @@
 
 #include <arch/southern-islands/emu/ndrange.h>
 #include <lib/esim/trace.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
@@ -58,10 +59,8 @@ struct si_compute_unit_t *si_compute_unit_create()
 	char buf[MAX_STRING_SIZE];
 	int i;
 
-	/* Create */
-	compute_unit = calloc(1, sizeof(struct si_compute_unit_t));
-	if (!compute_unit)
-		fatal("%s: out of memory", __FUNCTION__);
+	/* Initialize */
+	compute_unit = xcalloc(1, sizeof(struct si_compute_unit_t));
 
 	/* Local memory */
 	snprintf(buf, sizeof buf, "LocalMemory[%d]", compute_unit->id);
@@ -70,13 +69,13 @@ struct si_compute_unit_t *si_compute_unit_create()
 
 	/* Hardware structures */
 	compute_unit->num_wavefront_pools = si_gpu_num_wavefront_pools;
-	compute_unit->wavefront_pools = calloc(compute_unit->num_wavefront_pools, 
+	compute_unit->wavefront_pools = xcalloc(compute_unit->num_wavefront_pools, 
 		sizeof(struct si_wavefront_pool_t*));
-	compute_unit->fetch_buffers = calloc(compute_unit->num_wavefront_pools,
+	compute_unit->fetch_buffers = xcalloc(compute_unit->num_wavefront_pools,
 			sizeof(struct list_t*));
-	compute_unit->decode_buffers = calloc(compute_unit->num_wavefront_pools,
+	compute_unit->decode_buffers = xcalloc(compute_unit->num_wavefront_pools,
 			sizeof(struct list_t*));
-	compute_unit->simds = calloc(compute_unit->num_wavefront_pools, sizeof(struct si_simd_t*));
+	compute_unit->simds = xcalloc(compute_unit->num_wavefront_pools, sizeof(struct si_simd_t*));
 
 	compute_unit->scalar_unit.issue_buffer = list_create();
 	compute_unit->scalar_unit.read_buffer = list_create();
@@ -111,30 +110,26 @@ struct si_compute_unit_t *si_compute_unit_create()
 		compute_unit->decode_buffers[i] = list_create();
 
 		/* Allocate SIMD structures */
-		compute_unit->simds[i] = calloc(1, sizeof(struct si_simd_t));
-		if (!compute_unit->simds[i])
-			fatal("%s: out of memory", __FUNCTION__);
+		compute_unit->simds[i] = xcalloc(1, sizeof(struct si_simd_t));
 		compute_unit->simds[i]->compute_unit = compute_unit;
 		compute_unit->simds[i]->wavefront_pool = compute_unit->wavefront_pools[i];
 		compute_unit->simds[i]->issue_buffer = list_create();
 		compute_unit->simds[i]->read_buffer = list_create();
 		compute_unit->simds[i]->exec_buffer = list_create();
 		compute_unit->simds[i]->subwavefront_pool =
-				calloc(1, sizeof(struct si_subwavefront_pool_t));
+				xcalloc(1, sizeof(struct si_subwavefront_pool_t));
 		compute_unit->simds[i]->compute_unit = compute_unit;
-		compute_unit->simds[i]->wkg_util = calloc(1, sizeof(struct si_util_t));
-		compute_unit->simds[i]->wvf_util = calloc(1, sizeof(struct si_util_t));
-		compute_unit->simds[i]->rdy_util = calloc(1, sizeof(struct si_util_t));
-		compute_unit->simds[i]->occ_util = calloc(1, sizeof(struct si_util_t));
-		compute_unit->simds[i]->wki_util = calloc(1, sizeof(struct si_util_t));
-		compute_unit->simds[i]->act_util = calloc(1, sizeof(struct si_util_t));
-		compute_unit->simds[i]->tot_util = calloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->wkg_util = xcalloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->wvf_util = xcalloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->rdy_util = xcalloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->occ_util = xcalloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->wki_util = xcalloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->act_util = xcalloc(1, sizeof(struct si_util_t));
+		compute_unit->simds[i]->tot_util = xcalloc(1, sizeof(struct si_util_t));
 	}
 
-	compute_unit->work_groups = calloc(si_gpu_max_work_groups_per_wavefront_pool * 
+	compute_unit->work_groups = xcalloc(si_gpu_max_work_groups_per_wavefront_pool * 
 		si_gpu_num_wavefront_pools, sizeof(void *));
-	if (!compute_unit->work_groups)
-		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Return */
 	return compute_unit;

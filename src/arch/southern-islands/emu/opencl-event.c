@@ -19,6 +19,7 @@
 
 
 #include <lib/esim/esim.h>
+#include <lib/mhandle/mhandle.h>
 #include <mem-system/memory.h>
 
 #include <arch/southern-islands/emu/opencl-event.h>
@@ -28,12 +29,8 @@ struct si_opencl_event_t *si_opencl_event_create(enum si_opencl_event_kind_t kin
 {
 	struct si_opencl_event_t *event;
 
-	/* Allocate */
-	event = calloc(1, sizeof(struct si_opencl_event_t));
-	if (!event)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	/* Initialize */
+	event = xcalloc(1, sizeof(struct si_opencl_event_t));
 	event->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
 		si_opencl_object_event);
 	event->ref_count = 1;
