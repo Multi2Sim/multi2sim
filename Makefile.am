@@ -66,17 +66,7 @@ EXTRA_DIST = \
 	tools/libm2s-opengl/opengl.c \
 	tools/libm2s-opengl/Makefile \
 	\
-	tools/libm2s-cuda/m2s-cuda.h \
-	tools/libm2s-cuda/cuda.c \
-	tools/libm2s-cuda/cudart.c \
-	tools/libm2s-cuda/Makefile \
-	\
-	tools/barplot/barplot.py \
-	\
 	tools/inifile/inifile.py \
-	\
-	tools/m2s-pipeline/m2s-pipeline.c \
-	tools/m2s-pipeline/Makefile \
 	\
 	samples/cpuconfig.args-sort \
 	samples/ctxconfig.args-sort \
