@@ -20,12 +20,15 @@
 #include <assert.h>
 
 #include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
+#include <mem-system/module.h>
 
 #include "branch-unit.h"
 #include "compute-unit.h"
@@ -33,7 +36,9 @@
 #include "lds-unit.h"
 #include "scalar-unit.h"
 #include "simd-unit.h"
+#include "uop.h"
 #include "vector-mem-unit.h"
+#include "wavefront-pool.h"
 
 
 /* Front-end parameters */

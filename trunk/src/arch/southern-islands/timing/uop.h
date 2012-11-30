@@ -17,17 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_UOP_H
-#define SOUTHERN_ISLANDS_UOP_H
+#ifndef ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
+#define ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
 
-#include <mem-system/module.h>
-#include <arch/southern-islands/emu/wavefront.h>
-#include <arch/southern-islands/emu/work-group.h>
 #include <arch/southern-islands/emu/work-item.h>
-#include <arch/southern-islands/timing/gpu.h>
-#include <arch/southern-islands/timing/wavefront-pool.h>
-#include <arch/southern-islands/emu/isa.h>
-#include <limits.h>
+#include <mem-system/module.h>
+
 
 #define INST_NOT_FETCHED LLONG_MAX
 

@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_CALC_H
-#define SOUTHERN_ISLANDS_CALC_H
+#ifndef ARCH_SOUTHERN_ISLANDS_TIMING_CALC_H
+#define ARCH_SOUTHERN_ISLANDS_TIMING_CALC_H
 
 int si_calc_get_work_groups_per_wavefront_pool(int work_items_per_work_group,
 	int registers_per_work_item, int local_mem_per_work_group);

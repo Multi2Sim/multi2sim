@@ -33,6 +33,7 @@
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/emu/cuda.h>
 #include <arch/fermi/emu/emu.h>
+#include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/opencl-api.h>

@@ -18,6 +18,7 @@
  */
 
 #include <arch/southern-islands/emu/emu.h>
+#include <lib/util/linked-list.h>
 #include <lib/util/repos.h>
 
 #include "uop.h"

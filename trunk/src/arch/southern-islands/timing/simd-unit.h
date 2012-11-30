@@ -17,10 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_SIMD_H
-#define SOUTHERN_ISLANDS_SIMD_H
-
-#include <arch/southern-islands/timing/uop.h>
+#ifndef ARCH_SOUTHERN_ISLANDS_TIMING_SIMD_UNIT_H
+#define ARCH_SOUTHERN_ISLANDS_TIMING_SIMD_UNIT_H
 
 struct si_subwavefront_pool_t
 {
