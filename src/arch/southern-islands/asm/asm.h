@@ -17,11 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_ASM_H
-#define SOUTHERN_ISLANDS_ASM_H
+#ifndef ARCH_SOUTHERN_ISLANDS_ASM_H
+#define ARCH_SOUTHERN_ISLANDS_ASM_H
 
 #include <stdio.h>
-#include <arch/southern-islands/asm/bin-file.h>
 
 
 /* Microcode Formats */
@@ -444,27 +443,9 @@ typedef void (*si_fmt_dump_func_t)(void *buf, FILE *);
 
 void si_disasm_init(void);
 void si_disasm_done(void);
+
+struct elf_buffer_t;
 void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f);
-
-#if 0
-/* TODO Remove? */
-void si_inst_slot_dump_buf(struct si_inst_t *inst, int count, int loop_idx, int slot, char *buf, int size);
-void si_inst_dump_buf(struct si_inst_t *inst, int count, int loop_idx, char *buf, int size);
-
-void si_inst_word_dump(void *buf, enum si_fmt_enum fmt, FILE *f);
-void si_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f);
-void si_inst_slot_dump(struct si_inst_t *inst, int count, int loop_idx, int slot, FILE *f);
-void si_inst_dump(struct si_inst_t *inst, int count, int loop_idx, FILE *f);
-void si_inst_dump_debug(struct si_inst_t *inst, int count, int loop_idx, FILE *f);
-void si_inst_words_dump(struct si_inst_t *inst, FILE *f);
-
-/* Copy instruction */
-void si_inst_copy(struct si_inst_t *dest, struct si_inst_t *src);
-
-/* Obtaining source operand fields for ALU instructions */
-void si_inst_get_op_src(struct si_inst_t *inst, int src_idx,
-	int *sel, int *rel, int *chan, int *neg, int *abs);
-#endif
 
 void si_disasm(char* path);
 int si_inst_decode(void *buf, struct si_inst_t *inst);
@@ -484,7 +465,7 @@ void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 void si_inst_dump_ds(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 
-void si_inst_dump(struct si_inst_t *inst, int inst_size, void *wavefront_pool, uint32_t rel_addr,
+void si_inst_dump(struct si_inst_t *inst, int inst_size, void *wavefront_pool, unsigned int rel_addr,
 	char *line, int line_size);
 
 
