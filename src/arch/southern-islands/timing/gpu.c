@@ -30,12 +30,15 @@
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
+#include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
 
-#include "mem-config.h"
-#include "gpu.h"
 #include "calc.h"
+#include "compute-unit.h"
+#include "gpu.h"
+#include "mem-config.h"
+#include "uop.h"
 
 
 static char *si_err_stall =

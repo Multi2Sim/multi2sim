@@ -17,13 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_GPU_H
-#define SOUTHERN_ISLANDS_GPU_H
+#ifndef ARCH_SOUTHERN_ISLANDS_TIMING_GPU_H
+#define ARCH_SOUTHERN_ISLANDS_TIMING_GPU_H
 
-#include <lib/util/linked-list.h>
-#include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/timing/compute-unit.h>
-#include <arch/southern-islands/timing/uop.h>
 
 /* Trace */
 #define si_tracing() trace_status(si_trace_category)

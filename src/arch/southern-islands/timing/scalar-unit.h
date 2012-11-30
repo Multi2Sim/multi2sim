@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_SCALAR_UNIT_H
-#define SOUTHERN_ISLANDS_SCALAR_UNIT_H
+#ifndef ARCH_SOUTHERN_ISLANDS_TIMING_SCALAR_UNIT_H
+#define ARCH_SOUTHERN_ISLANDS_TIMING_SCALAR_UNIT_H
 
 struct si_scalar_unit_t
 {

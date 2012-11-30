@@ -17,35 +17,33 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_COMPUTE_UNIT_H
-#define SOUTHERN_ISLANDS_COMPUTE_UNIT_H
+#ifndef ARCH_SOUTHERN_ISLANDS_TIMING_COMPUTE_UNIT_H
+#define ARCH_SOUTHERN_ISLANDS_TIMING_COMPUTE_UNIT_H
 
-#include <arch/southern-islands/timing/branch-unit.h>
-#include <arch/southern-islands/timing/scalar-unit.h>
-#include <arch/southern-islands/timing/simd-unit.h>
-#include <arch/southern-islands/timing/lds-unit.h>
-#include <arch/southern-islands/timing/vector-mem-unit.h>
-#include <arch/southern-islands/timing/wavefront-pool.h>
-#include <arch/southern-islands/emu/work-group.h>
+#include "branch-unit.h"
+#include "lds-unit.h"
+#include "scalar-unit.h"
+#include "vector-mem-unit.h"
 
-/*
- * Register file in Compute Unit
- */
 
 struct si_reg_file_t;
 
 void si_reg_file_init(struct si_compute_unit_t *compute_unit);
 void si_reg_file_done(struct si_compute_unit_t *compute_unit);
 
+struct si_work_group_t;
 void si_reg_file_map_work_group(struct si_compute_unit_t *compute_unit,
 	struct si_work_group_t *work_group);
 void si_reg_file_unmap_work_group(struct si_compute_unit_t *compute_unit,
 	struct si_work_group_t *work_group);
 
+struct si_work_item_t;
 int si_reg_file_rename(struct si_compute_unit_t *compute_unit,
 	struct si_work_item_t *work_item, int logical_register);
 void si_reg_file_inverse_rename(struct si_compute_unit_t *compute_unit,
 	int physical_register, struct si_work_item_t **work_item, int *logical_register);
+
+
 
 struct si_compute_unit_t
 {

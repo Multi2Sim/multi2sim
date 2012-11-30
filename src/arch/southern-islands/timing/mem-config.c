@@ -23,9 +23,12 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
 #include <lib/util/string.h>
 #include <mem-system/mem-system.h>
+#include <mem-system/module.h>
 
+#include "compute-unit.h"
 #include "mem-config.h"
 #include "gpu.h"
 #include "compute-unit.h"

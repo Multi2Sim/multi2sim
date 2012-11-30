@@ -20,6 +20,8 @@
 #include <assert.h>
 
 #include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
 #include <lib/mhandle/mhandle.h>
 
 #include "gpu.h"

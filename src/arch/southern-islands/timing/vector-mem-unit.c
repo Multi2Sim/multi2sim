@@ -18,15 +18,20 @@
  */
 
 #include <assert.h>
+#include <limits.h>
 
 #include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/wavefront.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
+#include "compute-unit.h"
 #include "gpu.h"
+#include "uop.h"
 #include "vector-mem-unit.h"
+#include "wavefront-pool.h"
 
 
 /* Configurable by user at runtime */
