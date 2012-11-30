@@ -18,14 +18,18 @@
  */
 
 #include <assert.h>
+#include <limits.h>
 
+#include <arch/southern-islands/emu/wavefront.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
 
 #include "branch-unit.h"
+#include "compute-unit.h"
 #include "gpu.h"
 #include "uop.h"
+#include "wavefront-pool.h"
 
 
 /* Configurable by user at runtime */

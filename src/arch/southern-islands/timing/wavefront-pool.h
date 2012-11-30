@@ -20,9 +20,6 @@
 #ifndef SOUTHERN_ISLANDS_WAVEFRONT_POOL_H
 #define SOUTHERN_ISLANDS_WAVEFRONT_POOL_H
 
-#include <arch/southern-islands/emu/wavefront.h>
-#include <arch/southern-islands/timing/compute-unit.h>
-#include <arch/southern-islands/timing/uop.h>
 
 struct si_wavefront_pool_entry_t 
 {
