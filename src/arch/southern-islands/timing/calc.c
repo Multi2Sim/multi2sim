@@ -30,7 +30,6 @@
 
 #include "calc.h"
 #include "gpu.h"
-#include "wavefront-pool.h"
 
 
 char *si_gpu_calc_file_name = "";

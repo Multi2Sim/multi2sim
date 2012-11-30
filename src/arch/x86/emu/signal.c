@@ -28,7 +28,6 @@
 #include <mem-system/memory.h>
 
 #include "context.h"
-#include "emu.h"
 #include "regs.h"
 #include "signal.h"
 #include "syscall.h"

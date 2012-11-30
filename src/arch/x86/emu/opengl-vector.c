@@ -18,7 +18,6 @@
  */
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <math.h>
 
 #include "opengl-vector.h"

@@ -21,7 +21,6 @@
 #include <math.h>
 #include <limits.h>
 
-#include <arch/southern-islands/asm/asm.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>

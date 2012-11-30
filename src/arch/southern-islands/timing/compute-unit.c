@@ -28,16 +28,11 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <mem-system/module.h>
 
-#include "branch-unit.h"
 #include "compute-unit.h"
 #include "gpu.h"
-#include "lds-unit.h"
-#include "scalar-unit.h"
 #include "simd-unit.h"
 #include "uop.h"
-#include "vector-mem-unit.h"
 #include "wavefront-pool.h"
 
 

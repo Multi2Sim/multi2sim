@@ -37,18 +37,12 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/emu/opencl-command-queue.h>
 #include <arch/southern-islands/emu/opencl-repo.h>
 #include <arch/southern-islands/emu/opencl-platform.h>
 #include <arch/southern-islands/emu/opencl-device.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
-#include <arch/southern-islands/timing/branch-unit.h>
-#include <arch/southern-islands/timing/scalar-unit.h>
-#include <arch/southern-islands/timing/simd-unit.h>
-#include <arch/southern-islands/timing/lds-unit.h>
-#include <arch/southern-islands/timing/vector-mem-unit.h>
 #include <arch/southern-islands/timing/gpu.h>
 
 
