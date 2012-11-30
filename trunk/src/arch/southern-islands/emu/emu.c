@@ -19,6 +19,7 @@
 
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
+#include <arch/southern-islands/asm/bin-file.h>
 #include <arch/x86/emu/context.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
