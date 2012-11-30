@@ -17,10 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_BIN_FILE_H
-#define SOUTHERN_ISLANDS_BIN_FILE_H
+#ifndef ARCH_SOUTHERN_ISLANDS_ASM_BIN_FILE_H
+#define ARCH_SOUTHERN_ISLANDS_ASM_BIN_FILE_H
 
 #include <lib/util/elf-format.h>
+
 
 /* Encoding dictionary entry header (as encoded in ELF file) */
 struct si_bin_enc_dict_entry_header_t

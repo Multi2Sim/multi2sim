@@ -18,6 +18,7 @@
  */
 
 #include <arch/common/arch.h>
+#include <arch/southern-islands/asm/bin-file.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
