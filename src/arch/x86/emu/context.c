@@ -17,12 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 
 #include <arch/evergreen/emu/opencl.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 #include <mem-system/mmu.h>

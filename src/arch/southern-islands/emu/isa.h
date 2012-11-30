@@ -17,10 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_ISA_H
-#define SOUTHERN_ISLANDS_ISA_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
 
-#include <arch/southern-islands/emu/emu.h>
 
 enum si_isa_write_task_kind_t
 {
@@ -124,6 +123,8 @@ union si_reg_t si_isa_read_reg(struct si_work_item_t *work_item, int reg);
 void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value);
 int si_isa_read_bitmask_sreg(struct si_work_item_t *work_item, int sreg);
 
+struct si_buffer_resource_t;
+struct si_mem_ptr_t;
 void si_isa_read_buf_res(struct si_work_item_t *work_item, struct si_buffer_resource_t *buf_desc, int sreg);
 void si_isa_read_mem_ptr(struct si_work_item_t *work_item, struct si_mem_ptr_t *mem_ptr, int sreg);
 int si_isa_get_num_elems(int data_format);

@@ -17,8 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_OPENCL_SAMPLER_H
-#define SOUTHERN_ISLANDS_OPENCL_SAMPLER_H
+#ifndef SARCH_OUTHERN_ISLANDS_OEMU_PENCL_SAMPLER_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_SAMPLER_H
+
 
 struct si_opencl_sampler_t
 {

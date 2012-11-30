@@ -17,10 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_OPENCL_PROGRAM_H
-#define SOUTHERN_ISLANDS_OPENCL_PROGRAM_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_PROGRAM_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_PROGRAM_H
 
-#include <lib/util/elf-format.h>
 
 struct si_opencl_program_t
 {
@@ -44,6 +43,7 @@ void si_opencl_program_free(struct si_opencl_program_t *program);
 void si_opencl_program_build(struct si_opencl_program_t *program);
 void si_opencl_program_initialize_constant_buffers(struct si_opencl_program_t *program);
 
+struct elf_buffer_t;
 void si_opencl_program_read_symbol(struct si_opencl_program_t *program, char *symbol_name,
 	struct elf_buffer_t *buffer);
 

@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_EVERGREEN_EMU_OPENGL_BIN_FILE_H
-#define ARCH_EVERGREEN_EMU_OPENGL_BIN_FILE_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_OPENGL_BIN_FILE_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_OPENGL_BIN_FILE_H
 
 #include <lib/util/elf-format.h>
 

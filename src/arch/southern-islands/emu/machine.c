@@ -17,16 +17,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <math.h>
 #include <limits.h>
 
+#include <arch/southern-islands/asm/asm.h>
+#include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include <arch/southern-islands/emu/machine.h>
-#include <arch/southern-islands/emu/wavefront.h>
-#include <arch/southern-islands/emu/work-group.h>
-#include <arch/southern-islands/emu/work-item.h>
+#include "emu.h"
+#include "isa.h"
+#include "machine.h"
+#include "wavefront.h"
+#include "work-group.h"
+#include "work-item.h"
 
 
 char *err_si_isa_note =
@@ -41,9 +46,9 @@ char *err_si_isa_note =
 void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value;
-	uint32_t m_offset;
-	uint32_t m_base;
-	//uint32_t m_size;
+	unsigned int m_offset;
+	unsigned int m_base;
+	//unsigned int m_size;
 	struct si_buffer_resource_t buf_desc;
 	int sbase;
 	struct si_wavefront_t *wavefront;
@@ -81,9 +86,9 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si
 void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value[4];
-	uint32_t m_base;
-	uint32_t m_offset;
-	uint32_t m_addr;
+	unsigned int m_base;
+	unsigned int m_offset;
+	unsigned int m_addr;
 	struct si_mem_ptr_t mem_ptr;
 	int sbase;
 	int i;
@@ -123,9 +128,9 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst
 void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value[2];
-	uint32_t m_base;
-	uint32_t m_offset;
-	uint32_t m_addr;
+	unsigned int m_base;
+	unsigned int m_offset;
+	unsigned int m_addr;
 	struct si_mem_ptr_t mem_ptr;
 	int sbase;
 	int i;
@@ -173,9 +178,9 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct 
 void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value[4];
-	uint32_t m_base;
-	uint32_t m_offset;
-	uint32_t m_addr;
+	unsigned int m_base;
+	unsigned int m_offset;
+	unsigned int m_addr;
 	struct si_mem_ptr_t mem_ptr;
 	int sbase;
 	int i;
@@ -4447,7 +4452,7 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct
 	int bytes_to_read;
 	int index;
 	struct si_buffer_resource_t buf_desc;
-	uint32_t buffer_addr;
+	unsigned int buffer_addr;
 	union si_reg_t value;
 
 	if (INST.offen)
@@ -4507,7 +4512,7 @@ void si_isa_T_BUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, str
 	int num_elems;
 	int index;
 	struct si_buffer_resource_t buf_desc;
-	uint32_t buffer_addr;
+	unsigned int buffer_addr;
 	union si_reg_t value;
 
 	if (INST.offen)
@@ -4569,7 +4574,7 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struc
 	int bytes_to_write;
 	int index;
 	struct si_buffer_resource_t buf_desc;
-	uint32_t buffer_addr;
+	unsigned int buffer_addr;
 	union si_reg_t value;
 
 	if (INST.offen)
@@ -4629,7 +4634,7 @@ void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, st
 	int num_elems;
 	int index;
 	struct si_buffer_resource_t buf_desc;
-	uint32_t buffer_addr;
+	unsigned int buffer_addr;
 	union si_reg_t value;
 
 	if (INST.offen)

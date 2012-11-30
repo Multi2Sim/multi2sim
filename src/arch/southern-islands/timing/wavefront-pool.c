@@ -17,12 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#include <lib/mhandle/mhandle.h>
+#include <assert.h>
 
 #include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/timing/wavefront-pool.h>
-#include <arch/southern-islands/timing/gpu.h>
+#include <lib/mhandle/mhandle.h>
+
+#include "gpu.h"
+#include "wavefront-pool.h"
 
 
 struct si_wavefront_pool_t *si_wavefront_pool_create()

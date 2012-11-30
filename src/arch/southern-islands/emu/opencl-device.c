@@ -17,14 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
-#include <arch/southern-islands/emu/opencl-device.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
 #include <arch/southern-islands/timing/gpu.h>
+
+#include "emu.h"
+#include "opencl-device.h"
+#include "opencl-repo.h"
 
 
 /* Create a device */

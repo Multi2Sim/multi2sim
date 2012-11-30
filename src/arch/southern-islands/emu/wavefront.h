@@ -17,10 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_WAVEFRONT_H
-#define SOUTHERN_ISLANDS_WAVEFRONT_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
 
-#include <arch/southern-islands/emu/isa.h>
+#include <arch/southern-islands/asm/asm.h>
+
 
 struct si_wavefront_t
 {

@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_WORK_GROUP_H
-#define SOUTHERN_ISLANDS_WORK_GROUP_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 
 enum si_work_group_status_t
 {

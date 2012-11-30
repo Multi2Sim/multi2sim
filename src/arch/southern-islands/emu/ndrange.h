@@ -17,10 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_NDRANGE_H
-#define SOUTHERN_ISLANDS_NDRANGE_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_H
 
-#include <arch/southern-islands/emu/isa.h>
+#include <stdio.h>
 
 enum si_ndrange_status_t
 {
@@ -102,7 +102,7 @@ struct si_ndrange_t
 
 	/* Local memory top to assign to local arguments.
 	 * Initially it is equal to the size of local variables in kernel function. */
-	uint32_t local_mem_top;
+	unsigned int local_mem_top;
 
 	/* UAV lists */
 	struct list_t *uav_list;
