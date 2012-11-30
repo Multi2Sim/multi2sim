@@ -24,7 +24,6 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 
-#include "emu.h"
 #include "wavefront.h"
 #include "work-item.h"
 
