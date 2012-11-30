@@ -17,10 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_OPENCL_REPO_H
-#define SOUTHERN_ISLANDS_OPENCL_REPO_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_REPO_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_REPO_H
 
-#include <arch/southern-islands/emu/emu.h>
 
 /* Repository for 'struct si_isa_write_task_t' objects */
 extern struct repos_t *si_isa_write_task_repos;

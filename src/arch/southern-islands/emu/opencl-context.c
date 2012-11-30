@@ -17,13 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include <arch/southern-islands/emu/opencl-context.h>
-#include <arch/southern-islands/emu/opencl-api.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
+#include "emu.h"
+#include "opencl-context.h"
+#include "opencl-api.h"
+#include "opencl-repo.h"
 
 
 /* Create a context */

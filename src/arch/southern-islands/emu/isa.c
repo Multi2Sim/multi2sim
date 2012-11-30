@@ -17,13 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <lib/util/repos.h>
 #include <mem-system/memory.h>
 
-#include <arch/southern-islands/emu/isa.h>
-#include <arch/southern-islands/emu/work-item.h>
-#include <arch/southern-islands/emu/wavefront.h>
+#include "emu.h"
+#include "isa.h"
+#include "wavefront.h"
+#include "work-item.h"
+
 
 /* Repository of deferred tasks */
 struct repos_t *si_isa_write_task_repos;
@@ -169,7 +174,7 @@ void si_isa_read_mem_ptr(struct si_work_item_t *work_item, struct si_mem_ptr_t *
 
 void si_isa_const_mem_write(int buffer, int offset, void *pvalue)
 {
-	uint32_t addr; 
+	unsigned int addr; 
 
 	assert(buffer < CONSTANT_BUFFERS);
 	assert(offset <= CONSTANT_BUFFER_SIZE - 4);
@@ -183,7 +188,7 @@ void si_isa_const_mem_write(int buffer, int offset, void *pvalue)
 
 void si_isa_const_mem_read(int buffer, int offset, void *pvalue)
 {
-	uint32_t addr; 
+	unsigned int addr; 
 
 	assert(buffer < CONSTANT_BUFFERS);
 	
@@ -231,9 +236,8 @@ int si_isa_get_num_elems(int data_format)
 	}
 
 	default:
-	{
 		fatal("%s: Invalid or unsupported data format", __FUNCTION__);
-	}
+
 	}
 
 	return num_elems;

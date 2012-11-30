@@ -17,22 +17,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <arch/southern-islands/asm/bin-file.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
-#include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/emu/opencl-api.h>
-#include <arch/southern-islands/emu/opencl-event.h>
-#include <arch/southern-islands/emu/opencl-kernel.h>
-#include <arch/southern-islands/emu/opencl-mem.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
-#include <arch/southern-islands/emu/opencl-command-queue.h>
-#include <arch/southern-islands/emu/wavefront.h>
-#include <arch/southern-islands/emu/work-group.h>
-#include <arch/southern-islands/emu/work-item.h>
+#include "emu.h"
+#include "isa.h"
+#include "ndrange.h"
+#include "opencl-api.h"
+#include "opencl-event.h"
+#include "opencl-kernel.h"
+#include "opencl-mem.h"
+#include "opencl-repo.h"
+#include "opencl-command-queue.h"
+#include "wavefront.h"
+#include "work-group.h"
+#include "work-item.h"
 
 
 /*

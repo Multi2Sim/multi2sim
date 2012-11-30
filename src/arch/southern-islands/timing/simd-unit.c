@@ -17,12 +17,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-
-#include <arch/southern-islands/timing/simd-unit.h>
+#include <lib/util/list.h>
+#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
-#include <arch/southern-islands/timing/gpu.h>
+
+#include "simd-unit.h"
+#include "gpu.h"
+
 
 /* Configurable by user at runtime */
 

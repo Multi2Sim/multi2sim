@@ -17,14 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_WORK_ITEM_H
-#define SOUTHERN_ISLANDS_WORK_ITEM_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
+
+#include <arch/southern-islands/asm/asm.h>
+
 
 #define SI_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
-#include <arch/southern-islands/emu/isa.h>
-#include <lib/util/list.h>
-#include <arch/southern-islands/asm/asm.h>
 
 /* Structure describing a memory access definition */
 struct si_mem_access_t

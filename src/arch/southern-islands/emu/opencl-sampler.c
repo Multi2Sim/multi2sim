@@ -20,8 +20,9 @@
 
 #include <lib/mhandle/mhandle.h>
 
-#include <arch/southern-islands/emu/opencl-sampler.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
+#include "emu.h"
+#include "opencl-sampler.h"
+#include "opencl-repo.h"
 
 
 struct si_opencl_sampler_t *si_opencl_sampler_create()

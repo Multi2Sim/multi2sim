@@ -17,11 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_OPENCL_KERNEL_H
-#define SOUTHERN_ISLANDS_OPENCL_KERNEL_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_KERNEL_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_KERNEL_H
 
 #include <lib/util/string.h>
 #include <lib/util/elf-format.h>
+
 
 enum si_opencl_mem_scope_t
 {
@@ -120,6 +121,8 @@ struct si_opencl_kernel_arg_t *si_opencl_kernel_arg_create(char *name);
 void si_opencl_kernel_arg_free(struct si_opencl_kernel_arg_t *arg);
 
 void si_opencl_kernel_load(struct si_opencl_kernel_t *kernel, char *kernel_name);
+
+struct mem_t;
 unsigned int si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel, unsigned int name,
 	struct mem_t *mem, unsigned int addr, unsigned int size);
 

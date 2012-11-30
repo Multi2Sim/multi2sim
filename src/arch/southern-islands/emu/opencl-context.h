@@ -17,8 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_OPENCL_CONTEXT_H
-#define SOUTHERN_ISLANDS_OPENCL_CONTEXT_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_CONTEXT_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_CONTEXT_H
+
 
 struct si_opencl_context_t
 {
@@ -32,6 +33,7 @@ struct si_opencl_context_t
 struct si_opencl_context_t *si_opencl_context_create(void);
 void si_opencl_context_free(struct si_opencl_context_t *context);
 
+struct mem_t;
 unsigned int si_opencl_context_get_info(struct si_opencl_context_t *context,
 	unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size);
 void si_opencl_context_set_properties(struct si_opencl_context_t *context,
