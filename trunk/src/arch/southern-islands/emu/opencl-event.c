@@ -17,13 +17,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include <arch/southern-islands/emu/opencl-event.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
+#include "emu.h"
+#include "opencl-event.h"
+#include "opencl-repo.h"
+
 
 struct si_opencl_event_t *si_opencl_event_create(enum si_opencl_event_kind_t kind)
 {

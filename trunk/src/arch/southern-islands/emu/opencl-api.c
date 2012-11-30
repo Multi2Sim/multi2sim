@@ -17,25 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include <arch/southern-islands/emu/opencl-api.h>
-#include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/emu/opencl-command-queue.h>
-#include <arch/southern-islands/emu/opencl-context.h>
-#include <arch/southern-islands/emu/opencl-device.h>
-#include <arch/southern-islands/emu/opencl-event.h>
-#include <arch/southern-islands/emu/opencl-kernel.h>
-#include <arch/southern-islands/emu/opencl-mem.h>
-#include <arch/southern-islands/emu/opencl-platform.h>
-#include <arch/southern-islands/emu/opencl-program.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
-#include <arch/southern-islands/emu/opencl-sampler.h>
+#include "emu.h"
+#include "opencl-api.h"
+#include "ndrange.h"
+#include "opencl-command-queue.h"
+#include "opencl-context.h"
+#include "opencl-device.h"
+#include "opencl-event.h"
+#include "opencl-kernel.h"
+#include "opencl-mem.h"
+#include "opencl-platform.h"
+#include "opencl-program.h"
+#include "opencl-repo.h"
+#include "opencl-sampler.h"
 
 
 /* Required 'libm2s-opencl.so' version.

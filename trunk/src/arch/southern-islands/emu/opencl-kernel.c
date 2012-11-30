@@ -17,14 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <arch/southern-islands/asm/bin-file.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <mem-system/memory.h>
 
-#include <arch/southern-islands/emu/opencl-kernel.h>
-#include <arch/southern-islands/emu/opencl-api.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
-#include <arch/southern-islands/emu/opencl-program.h>
+#include "emu.h"
+#include "opencl-kernel.h"
+#include "opencl-api.h"
+#include "opencl-repo.h"
+#include "opencl-program.h"
 
 
 struct si_opencl_kernel_t *si_opencl_kernel_create()

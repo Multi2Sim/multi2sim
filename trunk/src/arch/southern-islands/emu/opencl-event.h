@@ -17,8 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_OPENCL_EVENT_H
-#define SOUTHERN_ISLANDS_OPENCL_EVENT_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_EVENT_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_EVENT_H
+
 
 /* Forward declaration of x86 context used below in callback function. This
  * dependence would be removed if OpenCL API implementation was in 'arch/x86/emu'

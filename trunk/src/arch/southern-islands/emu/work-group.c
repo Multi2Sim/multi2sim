@@ -17,13 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/emu/wavefront.h>
-#include <arch/southern-islands/emu/work-group.h>
+#include "ndrange.h"
+#include "wavefront.h"
+#include "work-group.h"
 
 
 

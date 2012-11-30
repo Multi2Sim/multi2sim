@@ -17,20 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <arch/common/arch.h>
 #include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/opencl-kernel.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/config.h>
+#include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
 
 #include "mem-config.h"
-#include <arch/southern-islands/timing/gpu.h>
-#include <arch/southern-islands/timing/calc.h>
-#include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/emu/opencl-kernel.h>
+#include "gpu.h"
+#include "calc.h"
 
 
 static char *si_err_stall =

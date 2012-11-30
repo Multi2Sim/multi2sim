@@ -17,14 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 
 #include <arch/common/arch.h>
+#include <arch/southern-islands/emu/emu.h>
+#include <lib/util/config.h>
+#include <lib/util/debug.h>
+#include <lib/util/string.h>
 #include <mem-system/mem-system.h>
 
 #include "mem-config.h"
-
-#include <arch/southern-islands/timing/gpu.h>
-#include <arch/southern-islands/timing/compute-unit.h>
+#include "gpu.h"
+#include "compute-unit.h"
 
 
 void si_mem_config_default(struct config_t *config)

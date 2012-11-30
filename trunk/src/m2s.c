@@ -33,6 +33,7 @@
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/emu/cuda.h>
 #include <arch/fermi/emu/emu.h>
+#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/opencl-api.h>
 #include <arch/southern-islands/timing/gpu.h>
@@ -49,8 +50,10 @@
 #include <arch/x86/timing/trace-cache.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
+#include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <mem-system/config.h>
 #include <mem-system/mem-system.h>
 #include <mem-system/mmu.h>

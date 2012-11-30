@@ -17,33 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SOUTHERN_ISLANDS_EMU_H
-#define SOUTHERN_ISLANDS_EMU_H
+#ifndef ARCH_SOUTHERN_ISLANDS_EMU_EMU_H
+#define ARCH_SOUTHERN_ISLANDS_EMU_EMU_H
 
-#include <assert.h>
 #include <stdio.h>
-#include <unistd.h>
 
-#include <arch/southern-islands/asm/asm.h>
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/config.h>
-#include <lib/util/debug.h>
-#include <lib/util/elf-format.h>
-#include <lib/util/linked-list.h>
-#include <lib/util/list.h>
-#include <lib/util/string.h>
-
-
-/* 
- * Memory configuration 
- */
 
 #define UAV_TABLE_START 0
 #define UAV_TABLE_SIZE 1024
 #define CONSTANT_MEMORY_START (UAV_TABLE_START + UAV_TABLE_SIZE)
 #define CONSTANT_BUFFER_SIZE 1024
 #define CONSTANT_BUFFERS 2
-#define GLOBAL_MEMORY_START (CONSTANT_MEMORY_START + CONSTANT_BUFFERS*CONSTANT_BUFFER_SIZE)
+#define GLOBAL_MEMORY_START (CONSTANT_MEMORY_START + CONSTANT_BUFFERS * CONSTANT_BUFFER_SIZE)
 
 struct si_emu_t
 {

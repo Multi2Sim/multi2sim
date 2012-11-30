@@ -17,9 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <arch/southern-islands/emu/ndrange.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
@@ -855,9 +859,8 @@ void si_compute_unit_issue(struct si_compute_unit_t *compute_unit, int active_ib
 		}
 
 		default:
-		{
 			fatal("%s: instruction type not implemented", __FUNCTION__);
-		}
+
 		}
 
 		instructions_processed++;  /* This cycle */
