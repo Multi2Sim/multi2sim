@@ -25,7 +25,6 @@
 #include <arch/southern-islands/emu/work-group.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <lib/util/debug.h>
 #include <lib/util/list.h>
 
 #include "compute-unit.h"

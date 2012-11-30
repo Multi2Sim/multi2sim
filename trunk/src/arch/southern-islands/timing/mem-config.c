@@ -28,7 +28,6 @@
 #include <mem-system/mem-system.h>
 #include <mem-system/module.h>
 
-#include "compute-unit.h"
 #include "mem-config.h"
 #include "gpu.h"
 #include "compute-unit.h"
