@@ -336,6 +336,18 @@ static char *m2s_help =
 	"      Use <file> as the returned kernel binary upon an OpenCL call to\n"
 	"      'clLoadProgramWithSource'.\n"
 	"\n"
+	"  --si-max-cycles <cycles>\n"
+	"      Maximum number of cycles for the GPU detailed simulation. Use 0 (default)\n"
+	"      for no limit.\n"
+	"\n"
+	"  --si-max-inst <inst>\n"
+	"      Maximum number of ISA instructions. An instruction executed by an entire\n"
+	"      wavefront counts as 1 toward this limit. Use 0 (default) for no limit.\n"
+	"\n"
+	"  --si-max-kernels <kernels>\n"
+	"      Maximum number of Southern Islands kernels (0 for no maximum). After the\n"
+	"      last kernel finishes execution, the simulator will stop.\n"
+	"\n"
 	"  --si-report <file>\n"
 	"      File to dump a report of the GPU pipeline, such as active execution engines,\n"
 	"      compute units occupancy, stream cores utilization, etc. Use together with a\n"
@@ -913,6 +925,38 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			si_emu_opencl_binary_name = argv[++argi];
+			continue;
+		}
+
+		/* Maximum number of cycles */
+		if (!strcmp(argv[argi], "--si-max-cycles"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_emu_max_cycles = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
+			argi++;
+			continue;
+		}
+
+		/* Maximum number of instructions */
+		if (!strcmp(argv[argi], "--si-max-inst"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_emu_max_inst = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
+			argi++;
+			continue;
+		}
+
+		/* Maximum number of kernels */
+		if (!strcmp(argv[argi], "--si-max-kernels"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_emu_max_kernels = atoi(argv[++argi]);
 			continue;
 		}
 
