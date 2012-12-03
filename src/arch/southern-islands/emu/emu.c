@@ -121,6 +121,10 @@ void si_emu_done()
 	if (si_emu_report_file)
 		fclose(si_emu_report_file);
 
+	/* Free ND-Ranges */
+	while (si_emu->ndrange_list_count)
+		si_ndrange_free(si_emu->ndrange_list_head);
+
 	/* Free OpenCL objects */
 	si_opencl_repo_free_all_objects(si_emu->opencl_repo);
 	si_opencl_repo_free(si_emu->opencl_repo);

@@ -75,7 +75,9 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 {
 	/* Set event status to complete if an event was set. */
 	if(ndrange->event)
+	{
 		ndrange->event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
+	}
 
 	int i;
 
@@ -100,7 +102,9 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 
 	/* Free work-groups */
 	for (i = 0; i < ndrange->work_group_count; i++)
+	{
 		si_work_group_free(ndrange->work_groups[i]);
+	}
 	free(ndrange->work_groups);
 
 	/* Free wavefronts */
@@ -114,12 +118,16 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 
 	/* Free work-items */
 	for (i = 0; i < ndrange->work_item_count; i++)
+	{
 		si_work_item_free(ndrange->work_items[i]);
+	}
 	free(ndrange->work_items);
 
 	/* Free instruction histogram */
 	if (ndrange->inst_histogram)
+	{
 		free(ndrange->inst_histogram);
+	}
 
 	/* Free ndrange */
 	free(ndrange->name);
