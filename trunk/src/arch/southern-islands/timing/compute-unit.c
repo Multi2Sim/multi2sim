@@ -145,52 +145,58 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	int i;
 
 	/* Scalar Unit */
-	assert(!list_count(compute_unit->scalar_unit.issue_buffer));
-	assert(!list_count(compute_unit->scalar_unit.read_buffer));
-	assert(!list_count(compute_unit->scalar_unit.exec_buffer));
-	assert(!list_count(compute_unit->scalar_unit.inflight_buffer));
+	si_uop_list_free(compute_unit->scalar_unit.issue_buffer);
+	si_uop_list_free(compute_unit->scalar_unit.read_buffer);
+	si_uop_list_free(compute_unit->scalar_unit.exec_buffer);
+	si_uop_list_free(compute_unit->scalar_unit.inflight_buffer);
+
 	list_free(compute_unit->scalar_unit.issue_buffer);
 	list_free(compute_unit->scalar_unit.read_buffer);
 	list_free(compute_unit->scalar_unit.exec_buffer);
 	list_free(compute_unit->scalar_unit.inflight_buffer);
 
 	/* Branch Unit */
-	assert(!list_count(compute_unit->branch_unit.issue_buffer));
-	assert(!list_count(compute_unit->branch_unit.read_buffer));
-	assert(!list_count(compute_unit->branch_unit.exec_buffer));
+	si_uop_list_free(compute_unit->branch_unit.issue_buffer);
+	si_uop_list_free(compute_unit->branch_unit.read_buffer);
+	si_uop_list_free(compute_unit->branch_unit.exec_buffer);
+
 	list_free(compute_unit->branch_unit.issue_buffer);
 	list_free(compute_unit->branch_unit.read_buffer);
 	list_free(compute_unit->branch_unit.exec_buffer);
 
 	/* Vector Memory Unit */
-	assert(!list_count(compute_unit->vector_mem_unit.issue_buffer));
-	assert(!list_count(compute_unit->vector_mem_unit.read_buffer));
-	assert(!list_count(compute_unit->vector_mem_unit.exec_buffer));
-	assert(!list_count(compute_unit->vector_mem_unit.inflight_buffer));
+	si_uop_list_free(compute_unit->vector_mem_unit.issue_buffer);
+	si_uop_list_free(compute_unit->vector_mem_unit.read_buffer);
+	si_uop_list_free(compute_unit->vector_mem_unit.exec_buffer);
+	si_uop_list_free(compute_unit->vector_mem_unit.inflight_buffer);
+
 	list_free(compute_unit->vector_mem_unit.issue_buffer);
 	list_free(compute_unit->vector_mem_unit.read_buffer);
 	list_free(compute_unit->vector_mem_unit.exec_buffer);
 	list_free(compute_unit->vector_mem_unit.inflight_buffer);
 
 	/* Local Data Share */
-	assert(!list_count(compute_unit->lds.issue_buffer));
-	assert(!list_count(compute_unit->lds.read_buffer));
-	assert(!list_count(compute_unit->lds.exec_buffer));
-	assert(!list_count(compute_unit->lds.inflight_buffer));
+	si_uop_list_free(compute_unit->lds.issue_buffer);
+	si_uop_list_free(compute_unit->lds.read_buffer);
+	si_uop_list_free(compute_unit->lds.exec_buffer);
+	si_uop_list_free(compute_unit->lds.inflight_buffer);
+
 	list_free(compute_unit->lds.issue_buffer);
 	list_free(compute_unit->lds.read_buffer);
 	list_free(compute_unit->lds.exec_buffer);
 	list_free(compute_unit->lds.inflight_buffer);
 
-	/* Compute unit */
 	for (i = 0; i < compute_unit->num_wavefront_pools; i++)
 	{
-		assert(!list_count(compute_unit->simds[i]->issue_buffer));
-		assert(!list_count(compute_unit->simds[i]->read_buffer));
-		assert(!list_count(compute_unit->simds[i]->exec_buffer));
+		/* SIMDs */
+		si_uop_list_free(compute_unit->simds[i]->issue_buffer);
+		si_uop_list_free(compute_unit->simds[i]->read_buffer);
+		si_uop_list_free(compute_unit->simds[i]->exec_buffer);
+
 		list_free(compute_unit->simds[i]->issue_buffer);
 		list_free(compute_unit->simds[i]->read_buffer);
 		list_free(compute_unit->simds[i]->exec_buffer);
+
 		free(compute_unit->simds[i]->subwavefront_pool);
 		free(compute_unit->simds[i]->wkg_util);
 		free(compute_unit->simds[i]->wvf_util);
@@ -201,9 +207,15 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 		free(compute_unit->simds[i]->tot_util);
 		free(compute_unit->simds[i]);
 
-		si_wavefront_pool_free(compute_unit->wavefront_pools[i]);
+		/* Common for compute unit */
+
+		si_uop_list_free(compute_unit->fetch_buffers[i]);
+		si_uop_list_free(compute_unit->decode_buffers[i]);
+
 		list_free(compute_unit->fetch_buffers[i]);
 		list_free(compute_unit->decode_buffers[i]);
+
+		si_wavefront_pool_free(compute_unit->wavefront_pools[i]);
 	}
 	free(compute_unit->simds);
 	free(compute_unit->wavefront_pools);

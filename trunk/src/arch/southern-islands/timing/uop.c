@@ -18,7 +18,7 @@
  */
 
 #include <arch/southern-islands/emu/emu.h>
-#include <lib/util/linked-list.h>
+#include <lib/util/list.h>
 #include <lib/util/repos.h>
 
 #include "uop.h"
@@ -110,14 +110,13 @@ void si_uop_free(struct si_uop_t *gpu_uop)
 }
 
 
-void si_uop_list_free(struct linked_list_t *gpu_uop_list)
+void si_uop_list_free(struct list_t *uop_list)
 {
 	struct si_uop_t *uop;
-	while (linked_list_count(gpu_uop_list))
+	while (list_count(uop_list))
 	{
-		linked_list_head(gpu_uop_list);
-		uop = linked_list_get(gpu_uop_list);
+		uop = list_head(uop_list);
+		list_remove(uop_list, uop);
 		si_uop_free(uop);
-		linked_list_remove(gpu_uop_list);
 	}
 }
