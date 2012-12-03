@@ -103,10 +103,6 @@ void si_uop_done(void);
 struct si_uop_t *si_uop_create(void);
 void si_uop_free(struct si_uop_t *gpu_uop);
 
-void si_uop_list_free(struct linked_list_t *gpu_uop_list);
-void si_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count);
-
-void si_uop_save_exec_mask(struct si_uop_t *uop);
-void si_uop_debug_exec_mask(struct si_uop_t *uop);
+void si_uop_list_free(struct list_t *uop_list);
 
 #endif
