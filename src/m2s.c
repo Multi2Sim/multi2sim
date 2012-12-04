@@ -31,6 +31,7 @@
 #include <arch/evergreen/timing/faults.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
+#include <arch/fermi/asm/asm.h>
 #include <arch/fermi/emu/cuda.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/southern-islands/asm/asm.h>
@@ -1545,7 +1546,7 @@ int main(int argc, char **argv)
 
 	/* Fermi disassembler tool */
 	if (*frm_disasm_file_name)
-		frm_emu_disasm(frm_disasm_file_name);
+		frm_disasm(frm_disasm_file_name);
 
 	/* ARM disassembler tool */
 	if (*arm_disasm_file_name)

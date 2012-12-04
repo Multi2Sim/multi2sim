@@ -18,7 +18,12 @@
  */
 
 
+#include <string.h>
+
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/elf-format.h>
+#include <lib/util/list.h>
 #include <lib/util/string.h>
 
 #include "asm.h"  
@@ -117,6 +122,11 @@ void frm_disasm_init()
 }
 
 
+void frm_disasm_done(void)
+{
+}
+
+
 
 
 /* 
@@ -131,10 +141,15 @@ void frm_inst_dump(FILE *f, char *str, int inst_str_size, unsigned char *buf, in
 	char **inst_str_ptr;
 	char *fmt_str;
 
-	inst.addr = 8*inst_index;
+	inst.addr = 8 * inst_index;
 	for (byte_index = 0; byte_index < 8; ++byte_index)
 		inst.dword.bytes[byte_index] = *(buf+8*inst_index+byte_index);
 	frm_inst_decode(&inst);
+	
+	/* Check if instruction is supported */
+	if (!inst.info)
+		fatal("%s: instruction not supported (offset=0x%x)",
+			__FUNCTION__, inst.addr);
 
 	inst_str = str;
 	inst_str_ptr = &str;
@@ -180,21 +195,21 @@ void frm_inst_dump(FILE *f, char *str, int inst_str_size, unsigned char *buf, in
 			fatal("%c: token not recognized\n", *fmt_str);
 		++fmt_str;
 	}
-
-	fprintf(f, "%s\n", inst_str);
+    	
+	fprintf(f,"%s;\n", inst_str);
 }
 
 
 void frm_inst_hex_dump(FILE *f, unsigned char *buf, int inst_index)
 {
 	/* Print offset */
-	fprintf(f, "/*%04x*/     ", inst_index * 8);
+	fprintf(f, "\t/*%04x*/     ", inst_index * 8);
 
 	/* Dump instruction hexadecimal bytes */
 	fprintf(f, "/*0x");
 	fprintf(f, "%08x", * (unsigned int *) (buf + 8 * inst_index));
 	fprintf(f, "%08x", * (unsigned int *) (buf + 8 * inst_index + 4));
-	fprintf(f, "*/     ");
+	fprintf(f, "*/ \t");
 }
 
 
@@ -773,14 +788,22 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 			str_printf(inst_str_ptr, inst_str_size, ".W");
 		else
 			fatal("%d: FRM_FMT_INT_SHR.w not recognized", inst->dword.int_shr.w);
+
+		if (inst->dword.int_shr.s == 0)
+			;
+		else if (inst->dword.int_shr.s == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S");
+		else
+			fatal("%d: FRM_FMT_INT_SHR.w not recognized", inst->dword.int_shr.w);
 	}
 	else if (fmt == FRM_FMT_INT_SHL)
 	{
-		if (inst->dword.int_shl.u32 == 0)
+		/*if (inst->dword.int_shl.u32 == 0)
 			str_printf(inst_str_ptr, inst_str_size, ".U32");
 		else if (inst->dword.int_shl.u32 == 1)
 			;
-		else
+ 		else*/
+		if (inst->dword.int_shl.u32 != 0)
 			fatal("%d: FRM_FMT_INT_SHL.u32 not recognized", inst->dword.int_shl.u32);
 
 		if (inst->dword.int_shl.w == 0)
@@ -788,7 +811,14 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		else if (inst->dword.int_shl.w == 1)
 			str_printf(inst_str_ptr, inst_str_size, ".W");
 		else
-			fatal("%d: FRM_FMT_INT_SHL.w not recognized", inst->dword.int_shl.w);
+			fatal("%d: FRM_FMT_INT_SHl.w not recognized", inst->dword.int_shl.w);
+		
+		/*if (inst->dword.int_shl.s == 0)
+			;
+		else if (inst->dword.int_shl.s == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S");
+		else
+			fatal("%d: FRM_FMT_INT_SHL.w not recognized", inst->dword.int_shl.w);*/
 	}
 	else if (fmt == FRM_FMT_INT_LOP)
 	{
@@ -971,7 +1001,7 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		else if (inst->dword.conv_i2f.dtype == 1)
 			str_printf(inst_str_ptr, inst_str_size, ".F16");
 		else if (inst->dword.conv_i2f.dtype == 2)
-			;
+			str_printf(inst_str_ptr, inst_str_size, ".F32");
 		else if (inst->dword.conv_i2f.dtype == 3)
 			str_printf(inst_str_ptr, inst_str_size, ".F64");
 		else
@@ -1030,6 +1060,8 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 			str_printf(inst_str_ptr, inst_str_size, ".U");
 		else if (inst->dword.conv_i2i.stype_s == 1 && inst->dword.conv_i2i.stype_n != 0)
 			str_printf(inst_str_ptr, inst_str_size, ".S");
+		else if (inst->dword.conv_i2i.stype_s == 0 && inst->dword.conv_i2i.stype_n == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U");
 		else
 			fatal("%d: FRM_FMT_CONV_I2I.stype_s not recognized", inst->dword.conv_i2i.stype_s);
 
@@ -1771,7 +1803,10 @@ void frm_inst_dump_dst(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 	else
 		fatal("%d: fmt not recognized", fmt);
 
-	str_printf(inst_str_ptr, inst_str_size, "R%lld", dst);
+	if (dst != 63)
+		str_printf(inst_str_ptr, inst_str_size, "R%lld", dst);
+	else
+		str_printf(inst_str_ptr, inst_str_size, "RZ");
 }
 
 
@@ -1785,13 +1820,13 @@ void frm_inst_dump_P(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t 
 		P = inst->dword.fp_dsetp.P;
 	else if (fmt == FRM_FMT_INT_ISETP)
 		P = inst->dword.int_isetp.P;
-	else if (fmt == FRM_FMT_MISC_BAR)
-		P = inst->dword.misc_bar.P;
 	else if (fmt == FRM_FMT_MISC_VOTE)
 		P = inst->dword.misc_vote.P;
+	//else if (fmt == FRM_FMT_MISC_BAR)
+		//P = inst->dword.misc_bar.P;
 	else
 		fatal("%d: fmt not recognized", fmt);
-
+		
 	str_printf(inst_str_ptr, inst_str_size, "P%lld", P);
 }
 
@@ -1806,8 +1841,8 @@ void frm_inst_dump_Q(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t 
 		Q = inst->dword.fp_dsetp.Q;
 	else if (fmt == FRM_FMT_INT_ISETP)
 		Q = inst->dword.int_isetp.Q;
-	else if (fmt == FRM_FMT_MISC_BAR)
-		Q = inst->dword.misc_bar.Q;
+	//else if (fmt == FRM_FMT_MISC_BAR)
+		//Q = inst->dword.misc_bar.Q;
 	else if (fmt == FRM_FMT_MISC_VOTE)
 		Q = inst->dword.misc_vote.Q;
 	else
@@ -1911,7 +1946,10 @@ void frm_inst_dump_src1(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	else
 		fatal("%d: fmt not recognized", fmt);
 
-	str_printf(inst_str_ptr, inst_str_size, "R%lld", src1);
+	if (src1 != 63)
+		str_printf(inst_str_ptr, inst_str_size, "R%lld", src1);
+	else 	
+		str_printf(inst_str_ptr, inst_str_size, "RZ");
 }
 
 
@@ -1919,6 +1957,7 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 {
 	unsigned long long int bank_id;
 	unsigned long long int offset_in_bank;
+	unsigned long long int immediate_value;
 	char *sreg;
 
 	if (fmt == FRM_FMT_FP_FFMA)
@@ -1948,7 +1987,12 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	else if (fmt == FRM_FMT_FP_FADD)
 	{
 		if (inst->dword.fp_fadd.src2_mod == 0)
-			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.fp_fadd.src2 & 0x3f);
+		{
+			if (inst->dword.fp_fadd.neg_src2 == 1)			
+				str_printf(inst_str_ptr, inst_str_size, "-R%d", inst->dword.fp_fadd.src2 & 0x3f);
+			else
+				str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.fp_fadd.src2 & 0x3f);
+		}
 		else if (inst->dword.fp_fadd.src2_mod == 1)
 		{
 			bank_id = inst->dword.fp_fadd.src2 >> 16;
@@ -2133,7 +2177,13 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	else if (fmt == FRM_FMT_INT_IMAD)
 	{
 		if (inst->dword.int_imad.src2_mod == 0)
-			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_imad.src2 & 0x3f);
+		{
+			if ((inst->dword.int_imad.src2 & 0x3f) != 0x3f)
+				str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_imad.src2 & 0x3f);
+			else 
+				str_printf(inst_str_ptr, inst_str_size, "RZ");
+		}
+
 		else if (inst->dword.int_imad.src2_mod == 1)
 		{
 			bank_id = inst->dword.int_imad.src2 >> 16;
@@ -2181,7 +2231,14 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	else if (fmt == FRM_FMT_INT_IADD)
 	{
 		if (inst->dword.int_iadd.src2_mod == 0)
-			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_iadd.src2 & 0x3f);
+		{
+			if (inst->dword.int_iadd.src_mod == 1)	
+				str_printf(inst_str_ptr, inst_str_size, "-R%d", inst->dword.int_iadd.src2 & 0x3f);	
+			else if (inst->dword.int_iadd.src_mod == 0)	
+				str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_iadd.src2 & 0x3f);
+			else
+				fatal("%d: FRM_FMT_INT_IADD.src_mod not recognized", inst->dword.int_iadd.src_mod);
+		}
 		else if (inst->dword.int_iadd.src2_mod == 1)
 		{
 			bank_id = inst->dword.int_iadd.src2 >> 16;
@@ -2198,7 +2255,7 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		else if (inst->dword.int_iadd.src2_mod == 2)
 			;
 		else if (inst->dword.int_iadd.src2_mod == 3)
-			;
+			str_printf(inst_str_ptr, inst_str_size, "0x%x", inst->dword.int_iadd.src2);
 		else
 			fatal("%d: FRM_FMT_INT_IADD.src2_mod not recognized", inst->dword.int_iadd.src2_mod);
 	}
@@ -2289,12 +2346,18 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 			else if (bank_id != 0 && offset_in_bank == 0)
 				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
 			else
-				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
 		}
 		else if (inst->dword.int_shr.src2_mod == 2)
-			;
+		{
+			immediate_value = inst->dword.int_shl.src2 & 0xfffff;
+			str_printf(inst_str_ptr, inst_str_size, "%#llx", immediate_value);
+		}
 		else if (inst->dword.int_shr.src2_mod == 3)
-			;
+		{
+			immediate_value = inst->dword.int_shl.src2 & 0xfffff;
+			str_printf(inst_str_ptr, inst_str_size, "%#llx", immediate_value);
+		}
 		else
 			fatal("%d: FRM_FMT_INT_SHR.src2_mod not recognized", inst->dword.int_shr.src2_mod);
 	}
@@ -2305,7 +2368,7 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		else if (inst->dword.int_shl.src2_mod == 1)
 		{
 			bank_id = inst->dword.int_shl.src2 >> 16;
-			offset_in_bank= inst->dword.int_shl.src2 & 0xffff;
+			offset_in_bank= inst->dword.int_shl.src2 & 0xffff;					
 			if (bank_id == 0 && offset_in_bank == 0)
 				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
 			else if (bank_id == 0 && offset_in_bank != 0)
@@ -2316,9 +2379,15 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
 		}
 		else if (inst->dword.int_shl.src2_mod == 2)
-			;
+		{	
+			immediate_value = inst->dword.int_shl.src2 & 0xfffff;
+			str_printf(inst_str_ptr, inst_str_size, "%#llx", immediate_value);
+		}
 		else if (inst->dword.int_shl.src2_mod == 3)
-			;
+		{
+			immediate_value = inst->dword.int_shl.src2 & 0xfffff;			
+			str_printf(inst_str_ptr, inst_str_size, "%#llx", immediate_value);
+		}
 		else
 			fatal("%d: FRM_FMT_INT_SHL.src2_mod not recognized", inst->dword.int_shl.src2_mod);
 	}
@@ -2342,14 +2411,22 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		else if (inst->dword.int_lop.src2_mod == 2)
 			;
 		else if (inst->dword.int_lop.src2_mod == 3)
-			;
+		{
+			immediate_value = inst->dword.int_lop.src2 & 0xfffff;			
+			str_printf(inst_str_ptr, inst_str_size, "%#llx", immediate_value);
+		}	
 		else
 			fatal("%d: FRM_FMT_INT_LOP.src2_mod not recognized", inst->dword.int_lop.src2_mod);
 	}
 	else if (fmt == FRM_FMT_INT_ISETP)
 	{
 		if (inst->dword.int_isetp.src2_mod == 0)
-			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_isetp.src2 & 0x3f);
+		{
+			if ((inst->dword.int_isetp.src2 & 0x3f) != 0x3f)
+				str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_isetp.src2 & 0x3f);
+			else 
+				str_printf(inst_str_ptr, inst_str_size, "RZ");
+		}
 		else if (inst->dword.int_isetp.src2_mod == 1)
 		{
 			bank_id = inst->dword.int_isetp.src2 >> 16;
@@ -2556,8 +2633,8 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		sreg = frm_sr[inst->dword.misc_s2r.sreg];
 		str_printf(inst_str_ptr, inst_str_size, "%s", sreg);
 	}
-	else if (fmt == FRM_FMT_MISC_BAR)
-		str_printf(inst_str_ptr, inst_str_size, "%d", inst->dword.misc_bar.tcount);
+	//else if (fmt == FRM_FMT_MISC_BAR)
+		//str_printf(inst_str_ptr, inst_str_size, "%d", inst->dword.misc_bar.tcount);
 	else
 		fatal("%d: fmt not recognized", fmt);
 }
@@ -2570,7 +2647,12 @@ void frm_inst_dump_src3(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	else if (fmt == FRM_FMT_FP_DFMA)
 		str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.fp_dfma.src3);
 	else if (fmt == FRM_FMT_INT_IMAD)
-		str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_imad.src3);
+	{
+		if (inst->dword.int_imad.src3 != 63)			
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_imad.src3);
+		else 
+			str_printf(inst_str_ptr, inst_str_size, "RZ");
+	}
 	else if (fmt == FRM_FMT_INT_BFI)
 		str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_bfi.src3);
 	else if (fmt == FRM_FMT_INT_ICMP)
@@ -2667,10 +2749,8 @@ void frm_inst_dump_offset(char **inst_str_ptr, int *inst_str_size, struct frm_in
 	else
 		fatal("%d: fmt not recognized", fmt);
 
-	if (offset != 0)
+	if (offset)
 		str_printf(inst_str_ptr, inst_str_size, "+%#llx", offset);
-	else
-		;
 }
 
 
@@ -2759,5 +2839,52 @@ void frm_inst_get_op_src(struct frm_inst_t *inst, int src_idx,
 			*rel = inst->dword.int_imad.src3;
 		}
 	}
+}
+
+
+void frm_disasm(char *path)
+{
+	struct elf_file_t *elf_file;
+	struct elf_section_t *section;
+	int inst_index;
+	char inst_str[MAX_STRING_SIZE];
+	int i;
+
+	/* Initialization */
+	frm_disasm_init();
+
+	/* Load cubin file */
+	elf_file = elf_file_create_from_path(path);
+
+	for (i = 0; i < list_count(elf_file->section_list); ++i)
+	{
+		section = (struct elf_section_t *)list_get(elf_file->section_list, i);
+
+		/* Determine if section is .text.kernel_name */
+		if (!strncmp(section->name, ".text.", 6))
+		{
+			/* Decode and dump instructions */
+			printf("%s\n", section->name + 6);
+			for (inst_index = 0; inst_index < section->buffer.size/8; ++inst_index)
+			{
+				frm_inst_hex_dump(stdout, (unsigned char*)(section->buffer.ptr), inst_index);
+				frm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, (unsigned char*)(section->buffer.ptr), inst_index);
+			}
+		}
+		if (!strncmp(section->name, ".rodata", 7))
+		{
+			FILE *fp = fopen(".rodata", "wb");
+			fwrite(section->buffer.ptr, 1, section->buffer.size, fp);
+			fclose(fp);
+		}
+	}
+
+	/* Free external ELF */
+	elf_file_free(elf_file);
+        frm_disasm_done();
+
+        /* End */
+        mhandle_done();
+        exit(0);
 }
 
