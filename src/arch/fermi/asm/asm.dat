@@ -500,7 +500,8 @@ DEFINST(LEPC,
 	0x222)
 
 DEFINST(BAR, 
-	"%p BAR%e %d, %P, %a, %b, %Q", 
+	//"%p BAR%e %d, %P, %a, %b, %Q", 
+	"%p BAR%e %d, %a",
 	MISC_BAR, 
 	MISC, 
 	0x144)
