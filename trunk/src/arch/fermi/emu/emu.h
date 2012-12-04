@@ -86,7 +86,5 @@ void frm_emu_done(void);
 void frm_emu_libcuda_redirect(char *path, int size);
 void frm_emu_libcuda_failed(int pid);
 
-void frm_emu_disasm(char *path);
-
 #endif
 

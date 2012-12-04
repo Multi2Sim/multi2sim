@@ -448,7 +448,7 @@ struct frm_fmt_int_bfi_t
 struct frm_fmt_int_shr_t
 {
 	unsigned long long int op0 : 4; /* [3:0] */
-	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int s : 1; /* [4] */
 	unsigned long long int u32 : 1; /* [5] */
 	unsigned long long int __reserved1 : 3; /* [8:6] */
 	unsigned long long int w : 1; /* [9] */
@@ -1311,6 +1311,8 @@ struct frm_inst_t
 
 
 void frm_disasm_init(void);
+void frm_disasm_done(void);
+
 void frm_inst_dump(FILE *f, char *str, int inst_str_size, unsigned char *buf, int inst_index);
 void frm_inst_hex_dump(FILE *f, unsigned char *buf, int inst_index);
 
@@ -1336,6 +1338,8 @@ void frm_inst_get_op_src(struct frm_inst_t *inst, int src_idx,
         int *sel, int *rel, int *chan, int *neg, int *abs);
 
 void frm_inst_decode(struct frm_inst_t *inst);
+
+void frm_disasm(char *path);
 
 #endif
 
