@@ -27,19 +27,21 @@
 #define MHANDLE_TOSTRING(x) MHANDLE_STRINGIFY(x)
 #define MHANDLE_AT __FILE__ ":" MHANDLE_TOSTRING(__LINE__)
 
-#ifdef MHANDLE
 
 #undef strdup
-#define free(x) (mhandle_free((x), MHANDLE_AT))
-#define malloc(sz) (mhandle_malloc((sz), MHANDLE_AT))
-#define calloc(nmemb, sz) (mhandle_calloc((nmemb), (sz), MHANDLE_AT))
-#define realloc(x, sz) (mhandle_realloc((x), (sz), MHANDLE_AT))
-#define strdup(x) (mhandle_strdup((x), MHANDLE_AT))
+#define malloc(sz) __ERROR_USE_XMALLOC_INSTEAD__
+#define calloc(nmemb, sz) __ERROR_USE_XCALLOC_INSTEAD__
+#define realloc(x, sz) __ERROR_USE_XREALLOC_INSTEAD__
+#define strdup(x) __ERROR_USE_XSTRDUP_INSTEAD__
+
+
+#ifdef MHANDLE
 
 #define xmalloc(sz) (mhandle_malloc((sz), MHANDLE_AT))
 #define xcalloc(nmemb, sz) (mhandle_calloc((nmemb), (sz), MHANDLE_AT))
 #define xrealloc(x, sz) (mhandle_realloc((x), (sz), MHANDLE_AT))
 #define xstrdup(x) (mhandle_strdup((x), MHANDLE_AT))
+#define free(x) (mhandle_free((x), MHANDLE_AT))
 
 #define mhandle_check() __mhandle_check(MHANDLE_AT)
 #define mhandle_done() __mhandle_done()
