@@ -88,6 +88,27 @@ static void mem_system_command_get_string(struct list_t *token_list,
 	str_token_list_shift(token_list);
 }
 
+
+static long long mem_system_command_get_cycle(struct list_t *token_list,
+	char *command_line)
+{
+	int err;
+	long long cycle;
+
+	/* Read cycle */
+	mem_system_command_expect(token_list, command_line);
+	cycle = str_to_llint(str_token_list_first(token_list), &err);
+	if (err || cycle < 1)
+		fatal("%s: %s: invalid cycle number, integer >= 1 expected.\n\t> %s",
+			__FUNCTION__, str_token_list_first(token_list),
+			command_line);
+	
+	/* Shift token and return */
+	str_token_list_shift(token_list);
+	return cycle;
+}
+
+
 int mem_system_command_get_high_low(struct list_t *token_list, char *command_line)
 {
 	char *direction;
@@ -422,10 +443,21 @@ void mem_system_command_handler(int event, void *data)
 		struct mod_t *mod;
 		enum mod_access_kind_t access_kind;
 		unsigned int addr;
+		long long cycle;
 
+		/* Read fields */
 		mod = mem_system_command_get_mod(token_list, command_line);
+		cycle = mem_system_command_get_cycle(token_list, command_line);
 		access_kind = mem_system_command_get_mod_access(token_list, command_line);
 		addr = mem_system_command_get_hex(token_list, command_line);
+
+		/* If command is scheduled for later, exit */
+		if (cycle > esim_cycle)
+		{
+			str_token_list_free(token_list);
+			esim_schedule_event(EV_MEM_SYSTEM_COMMAND, data, cycle - esim_cycle);
+			return;
+		}
 
 		/* Access module */
 		mod_access(mod, access_kind, addr, NULL, NULL, NULL, NULL);

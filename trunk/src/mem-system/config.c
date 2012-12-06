@@ -1439,7 +1439,7 @@ static void mem_config_read_commands(struct config_t *config)
 
 		/* Schedule event to process command */
 		command_line = xstrdup(command_line);
-		esim_schedule_event(EV_MEM_SYSTEM_COMMAND, command_line, 1);
+		esim_schedule_event(EV_MEM_SYSTEM_COMMAND, command_line, 0);
 
 		/* Next command */
 		command_var_id++;
