@@ -58,6 +58,11 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 	ndrange->kernel = kernel;
 	ndrange->local_mem_top = kernel->func_mem_local;
 	ndrange->id = si_emu->ndrange_count++;
+	ndrange->num_vgprs = 
+		kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used;
+	ndrange->num_sgprs = 
+		kernel->bin_file->enc_dict_entry_southern_islands->compute_pgm_rsrc2->
+		user_sgpr;
 
 	/* Create the UAV-to-physical-address lookup lists */
 	ndrange->uav_list = list_create();
