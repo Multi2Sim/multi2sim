@@ -28,7 +28,7 @@
 #include "esim.h"
 
 
-static gzFile *trace_file;
+static gzFile trace_file;
 static struct list_t *trace_category_list;
 
 enum trace_status_t
