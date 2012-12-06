@@ -33,7 +33,7 @@
 struct vi_trace_t
 {
 	char *name;
-	gzFile *f;
+	gzFile f;
 
 	/* Last line number read from zip file with a call to
 	 * 'vi_trace_line_create_from_trace'. */
