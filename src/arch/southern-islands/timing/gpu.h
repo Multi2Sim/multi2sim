@@ -32,7 +32,7 @@ extern char *si_gpu_config_file_name;
 extern char *si_gpu_report_file_name;
 
 /* OpenCL Device Info */
-extern unsigned int si_gpu_device_type;
+extern unsigned long long si_gpu_device_type;
 extern unsigned int si_gpu_device_vendor_id;
 
 extern char *si_gpu_device_profile;

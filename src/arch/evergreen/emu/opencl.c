@@ -624,6 +624,32 @@ int evg_opencl_clReleaseCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
 
 
 /*
+ * OpenCL call 'clRetainCommandQueue' (code 1010)
+ */
+
+int evg_opencl_clRetainCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
+{
+	unsigned int command_queue_id = argv[0];  /* cl_command_queue command_queue */
+
+	struct evg_opencl_command_queue_t *command_queue;
+
+	evg_opencl_debug("  command_queue=0x%x\n", command_queue_id);
+
+	/* Check that the command queue argument is valid */
+	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_command_queue, command_queue_id);
+
+	/* Increase the reference count */
+	++command_queue->ref_count;
+
+	/* Return success */
+	return 0;
+}
+
+
+
+	
+/*
  * OpenCL call 'clCreateBuffer' (code 1014)
  */
 
@@ -1013,6 +1039,30 @@ int evg_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 
 
 /*
+ * OpenCL call 'clRetainMemObject' (code 1018)
+ */
+
+int evg_opencl_clRetainMemObject_impl(struct x86_ctx_t *ctx, int *argv)
+{
+	unsigned int mem_id = argv[0];  /* cl_mem memobj */
+
+	struct evg_opencl_mem_t *mem;
+
+	evg_opencl_debug("  memobj=0x%x\n", mem_id);
+	mem = evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_mem,
+			mem_id);
+
+	/* Increase the reference count */
+	++mem->ref_count;
+
+	/* Return success */
+	return 0;
+}
+
+
+
+
+/*
  * OpenCL call 'clReleaseMemObject' (code 1019)
  */
 
@@ -1192,6 +1242,30 @@ int evg_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Return program */
 	return program->id;
+}
+
+
+
+
+/*
+ * OpenCL call 'clRetainProgram' (code 1030)
+ */
+
+int evg_opencl_clRetainProgram_impl(struct x86_ctx_t *ctx, int *argv)
+{
+	unsigned int program_id = argv[0];  /* cl_program program */
+
+	struct evg_opencl_program_t *program;
+
+	evg_opencl_debug("  program=0x%x\n", program_id);
+	program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_program, program_id);
+
+	/* Increase the reference count */
+	++program->ref_count;
+	
+	/* Return success */
+	return 0;
 }
 
 
@@ -2381,11 +2455,9 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 	}
 
 __EVG_OPENCL_NOT_IMPL__(clRetainContext)
-__EVG_OPENCL_NOT_IMPL__(clRetainCommandQueue)
 __EVG_OPENCL_NOT_IMPL__(clGetCommandQueueInfo)
 __EVG_OPENCL_NOT_IMPL__(clSetCommandQueueProperty)
 __EVG_OPENCL_NOT_IMPL__(clCreateSubBuffer)
-__EVG_OPENCL_NOT_IMPL__(clRetainMemObject)
 __EVG_OPENCL_NOT_IMPL__(clGetSupportedImageFormats)
 __EVG_OPENCL_NOT_IMPL__(clGetMemObjectInfo)
 __EVG_OPENCL_NOT_IMPL__(clGetImageInfo)
@@ -2393,7 +2465,6 @@ __EVG_OPENCL_NOT_IMPL__(clSetMemObjectDestructorCallback)
 __EVG_OPENCL_NOT_IMPL__(clRetainSampler)
 __EVG_OPENCL_NOT_IMPL__(clReleaseSampler)
 __EVG_OPENCL_NOT_IMPL__(clGetSamplerInfo)
-__EVG_OPENCL_NOT_IMPL__(clRetainProgram)
 __EVG_OPENCL_NOT_IMPL__(clUnloadCompiler)
 __EVG_OPENCL_NOT_IMPL__(clGetProgramInfo)
 __EVG_OPENCL_NOT_IMPL__(clGetProgramBuildInfo)

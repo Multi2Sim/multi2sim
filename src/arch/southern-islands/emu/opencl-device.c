@@ -62,7 +62,7 @@ unsigned int si_opencl_device_get_info(struct si_opencl_device_t *device, unsign
 	{
 
 	case 0x1000:  /* CL_DEVICE_TYPE */
-		size_ret = 4;
+		size_ret = 8;
 		info = &si_gpu_device_type;
 		break;
 

@@ -583,6 +583,31 @@ int si_opencl_clCreateCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
 
 
 /*
+ * OpenCL call 'clRetainCommandQueue' (code 1010)
+ */
+
+int si_opencl_clRetainCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
+{
+   	unsigned int command_queue_id = argv[0];  /* cl_command_queue command_queue */
+
+	struct si_opencl_command_queue_t *command_queue;
+
+	si_opencl_debug("  command_queue=0x%x\n", command_queue_id);
+
+	/* Check that the command queue argument is valid */
+	command_queue = si_opencl_repo_get_object(si_emu->opencl_repo,
+			si_opencl_object_command_queue, command_queue_id);
+
+	/* Increase the reference count */
+	++command_queue->ref_count;
+
+	/* Return success */
+	return 0;
+}
+
+
+
+/*
  * OpenCL call 'clReleaseCommandQueue' (code 1009)
  */
 
@@ -993,6 +1018,30 @@ int si_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 
 
 /*
+ * OpenCL call 'clRetainMemObject' (code 1018)
+ */
+
+int si_opencl_clRetainMemObject_impl(struct x86_ctx_t *ctx, int *argv)
+{
+	unsigned int mem_id = argv[0];  /* cl_mem memobj */
+
+	struct si_opencl_mem_t *mem;
+
+	si_opencl_debug("  memobj=0x%x\n", mem_id);
+	mem = si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_mem,
+			mem_id);
+
+	/* Increase the reference count */
+	++mem->ref_count;
+
+	/* Return success */
+	return 0;
+}
+
+
+
+
+/*
  * OpenCL call 'clReleaseMemObject' (code 1019)
  */
 
@@ -1170,6 +1219,30 @@ int si_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Return program */
 	return program->id;
+}
+
+
+
+
+/*
+ * OpenCL call 'clRetainProgram' (code 1030)
+ */
+
+int si_opencl_clRetainProgram_impl(struct x86_ctx_t *ctx, int *argv)
+{
+	unsigned int program_id = argv[0];  /* cl_program program */
+
+	struct si_opencl_program_t *program;
+
+	si_opencl_debug("  program=0x%x\n", program_id);
+	program = si_opencl_repo_get_object(si_emu->opencl_repo,
+			si_opencl_object_program, program_id);
+
+	/* Increase the reference count */
+	++program->ref_count;
+	
+	/* Return success */
+	return 0;
 }
 
 
@@ -2550,11 +2623,9 @@ int si_opencl_clEnqueueNDRangeKernel_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 	}
 
 __SI_OPENCL_NOT_IMPL__(clRetainContext)
-__SI_OPENCL_NOT_IMPL__(clRetainCommandQueue)
 __SI_OPENCL_NOT_IMPL__(clGetCommandQueueInfo)
 __SI_OPENCL_NOT_IMPL__(clSetCommandQueueProperty)
 __SI_OPENCL_NOT_IMPL__(clCreateSubBuffer)
-__SI_OPENCL_NOT_IMPL__(clRetainMemObject)
 __SI_OPENCL_NOT_IMPL__(clGetSupportedImageFormats)
 __SI_OPENCL_NOT_IMPL__(clGetMemObjectInfo)
 __SI_OPENCL_NOT_IMPL__(clGetImageInfo)
@@ -2562,7 +2633,6 @@ __SI_OPENCL_NOT_IMPL__(clSetMemObjectDestructorCallback)
 __SI_OPENCL_NOT_IMPL__(clRetainSampler)
 __SI_OPENCL_NOT_IMPL__(clReleaseSampler)
 __SI_OPENCL_NOT_IMPL__(clGetSamplerInfo)
-__SI_OPENCL_NOT_IMPL__(clRetainProgram)
 __SI_OPENCL_NOT_IMPL__(clUnloadCompiler)
 __SI_OPENCL_NOT_IMPL__(clGetProgramInfo)
 __SI_OPENCL_NOT_IMPL__(clGetProgramBuildInfo)

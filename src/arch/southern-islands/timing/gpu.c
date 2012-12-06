@@ -140,7 +140,7 @@ char *si_gpu_report_file_name = "";
 int si_trace_category;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
-unsigned int si_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
+unsigned long long si_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
 unsigned int si_gpu_device_vendor_id = 1234; /* Completely arbitrary */
 
 char *si_gpu_device_profile = "FULL_PROFILE";

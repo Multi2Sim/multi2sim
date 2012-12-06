@@ -55,10 +55,13 @@ void evg_opencl_device_free(struct evg_opencl_device_t *device)
 unsigned int evg_opencl_device_get_info(struct evg_opencl_device_t *device,
 	unsigned int name, struct mem_t *mem, unsigned int addr, unsigned int size)
 {
+	unsigned long long device_type = (1 << 2);  /* FIXME */
+	unsigned int device_vendor_id = 1234;  /* FIXME */
 	unsigned int max_compute_units = 1;  /* FIXME */
 	unsigned int max_work_group_size = 256 * 256;  /* FIXME */
 	unsigned int max_work_item_dimensions = 3;  /* FIXME */
 	unsigned int max_work_item_sizes[3];  /* FIXME */
+	unsigned long long max_mem_alloc_size = (1ull << 32) / 4;  /* FIXME */
 	unsigned int local_mem_type = 1;  /* CL_LOCAL FIXME */
 	unsigned int local_mem_size = 32 * 1024;  /* FIXME */
 	unsigned int max_clock_frequency = 850;
@@ -79,6 +82,16 @@ unsigned int evg_opencl_device_get_info(struct evg_opencl_device_t *device,
 
 	switch (name)
 	{
+
+	case 0x1000:  /* CL_DEVICE_TYPE */
+		size_ret = 8;
+		info = &device_type;
+		break;
+
+	case 0x1001:  /* CL_DEVICE_VENDOR_ID */
+		size_ret = 4;
+		info = &device_vendor_id;
+		break;
 
 	case 0x1002:  /* CL_DEVICE_MAX_COMPUTE_UNITS */
 		size_ret = 4;
@@ -103,6 +116,11 @@ unsigned int evg_opencl_device_get_info(struct evg_opencl_device_t *device,
 		info = max_work_item_sizes;
 		break;
 	
+	case 0x1010:  /* CL_DEVICE_MAX_MEM_ALLOC_SIZE */
+		size_ret = 8;
+		info = &max_mem_alloc_size;
+		break;
+
 	case 0x100c:  /* CL_DEVICE_MAX_CLOCK_FREQUENCY */
 		size_ret = 4;
 		info = &max_clock_frequency;
