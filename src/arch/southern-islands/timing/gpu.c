@@ -670,10 +670,10 @@ static void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
 	si_gpu->ndrange = ndrange;
 
 	/* Check that at least one work-group can be allocated per Wavefront Pool */
-	si_gpu->work_groups_per_wavefront_pool = si_calc_get_work_groups_per_wavefront_pool(
-		ndrange->kernel->local_size, 
-		ndrange->kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used,
-		ndrange->local_mem_top);
+	si_gpu->work_groups_per_wavefront_pool = 
+		si_calc_get_work_groups_per_wavefront_pool(ndrange->kernel->local_size, 
+		ndrange->kernel->bin_file->enc_dict_entry_southern_islands->
+		num_vgpr_used, ndrange->local_mem_top);
 	if (!si_gpu->work_groups_per_wavefront_pool)
 		fatal("work-group resources cannot be allocated to a compute unit.\n"
 			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"

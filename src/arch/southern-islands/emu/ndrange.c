@@ -59,10 +59,9 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 	ndrange->local_mem_top = kernel->func_mem_local;
 	ndrange->id = si_emu->ndrange_count++;
 	ndrange->num_vgprs = 
-		kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used;
+		kernel->bin_file->enc_dict_entry_southern_islands->num_vgpr_used;
 	ndrange->num_sgprs = 
-		kernel->bin_file->enc_dict_entry_southern_islands->compute_pgm_rsrc2->
-		user_sgpr;
+		kernel->bin_file->enc_dict_entry_southern_islands->num_sgpr_used;
 
 	/* Create the UAV-to-physical-address lookup lists */
 	ndrange->uav_list = list_create();
@@ -308,7 +307,8 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		wavefront->wavefront_pool = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
 
 		/* Save work-group IDs in registers */
-		unsigned int user_sgpr = kernel->bin_file->enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
+		unsigned int user_sgpr = kernel->bin_file->
+			enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
 		wavefront->sreg[user_sgpr].as_int = wavefront->work_group->id_3d[0];
 		wavefront->sreg[user_sgpr + 1].as_int = wavefront->work_group->id_3d[1];
 		wavefront->sreg[user_sgpr + 2].as_int = wavefront->work_group->id_3d[2];

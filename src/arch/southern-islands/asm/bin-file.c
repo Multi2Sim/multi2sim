@@ -231,12 +231,9 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 			{
 
 			case 0x00002e13:  /* COMPUTE_PGM_RSRC2 */
-				enc_dict_entry->compute_pgm_rsrc2 = (struct si_bin_compute_pgm_rsrc2_t*)&prog_info_entry->value;
-				break;
-
-			case 0x80000080:  /* AMU_ABI_NUM_GPR_USED */
-				enc_dict_entry->num_gpr_used = prog_info_entry->value;
-				break;
+			enc_dict_entry->compute_pgm_rsrc2 = 
+				(struct si_bin_compute_pgm_rsrc2_t*)&prog_info_entry->value;
+			break;
 
 			case 0x80000082:  /* AMU_ABI_LDS_SIZE_USED */
 				enc_dict_entry->lds_size_used = prog_info_entry->value;
@@ -245,6 +242,7 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 			case 0x80000084:  /* AMU_ABI_STACK_SIZE_USED */
 				enc_dict_entry->stack_size_used = prog_info_entry->value;
 				break;
+
 			case 0x80001000:  /* AMU_ABI_USER_ELEMENT_COUNT */
 				enc_dict_entry->userElementCount = prog_info_entry->value;
 				i++;
@@ -275,7 +273,18 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 					i++;
 				}
 				break;
+
+			case 0x80001041:  /* NUM VGPRS */
+				enc_dict_entry->num_vgpr_used = prog_info_entry->value;
+				break;
+
+			case 0x80001042:  /* NUM SGPRS */
+				enc_dict_entry->num_sgpr_used = prog_info_entry->value;
+				break;
+
 			}
+
+
 		}
 		break;
 	}
