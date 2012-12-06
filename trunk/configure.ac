@@ -184,7 +184,7 @@ AC_ARG_ENABLE(debug,
 	case "${enableval}" in
 	yes)
 		debug=true
-		CFLAGS="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
+		CFLAGS="-msse2 -Wall -Werror -Wno-error=deprecated-declarations -DMHANDLE -g -O0 -std=gnu99"
 		;;
 	no)
 		;;
