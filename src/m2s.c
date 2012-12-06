@@ -333,6 +333,15 @@ static char *m2s_help =
 	"      Disassemble a Southern Islands kernel binary. This option is incompatible\n"
 	"      with othe command-line options.\n"
 	"\n"
+	"  --si-config <file>\n"
+	"      Configuration file for the Southern Islands GPU timing model, including\n"
+	"      parameters such as number of compute units, stream cores, or wavefront\n"
+	"      size. Type 'm2s --si-help' for details on the file format.\n"
+	"\n"
+	"  --si-help\n"
+	"      Display a help message describing the format of the Southern Islands GPU\n"
+	"      configuration file, passed with option '--si-config <file>'.\n"
+	"\n"
 	"  --si-kernel-binary <file>\n"
 	"      Use <file> as the returned kernel binary upon an OpenCL call to\n"
 	"      'clLoadProgramWithSource'.\n"
@@ -884,6 +893,13 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		/*
 		 * Southern Islands GPU Options
 		 */
+
+		/* Help for Southern Islands configuration file */
+		if (!strcmp(argv[argi], "--si-help"))
+		{
+			fprintf(stderr, "%s", si_gpu_config_help);
+			continue;
+		}
 
 		/* Southern Islands ISA debug file */
 		if (!strcmp(argv[argi], "--si-debug-isa"))
