@@ -715,7 +715,12 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 	struct x86_opcode_info_t *info = &x86_opcode_info_list[op];
 	char *fmt = info->fmt;
 	int word = 0;
+
+	/* Null-terminate output string in case 'fmt' is empty */
+	if (size)
+		*buf = '\0';
 	
+	/* Dump instruction */
 	while (*fmt)
 	{
 		if (is_next_word(fmt, "r8"))
