@@ -35,6 +35,10 @@ struct si_ndrange_t
 	char *name;
 	int id;  /* Sequential ndrange ID (given by si_emu->ndrange_count counter) */
 
+	/* Resources */
+	int num_vgprs;
+	int num_sgprs;
+
 	/* Status */
 	enum si_ndrange_status_t status;
 
