@@ -121,7 +121,8 @@ static void si_calc_plot_work_items_per_work_group(void)
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
 	local_mem_per_work_group = si_gpu->ndrange->local_mem_top;
 	registers_per_work_item = 
-		si_gpu->ndrange->kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used;
+		si_gpu->ndrange->kernel->bin_file->enc_dict_entry_southern_islands->
+		num_vgpr_used;
 	for (work_items_per_work_group = si_emu_wavefront_size;
 		work_items_per_work_group < (si_gpu_max_wavefronts_per_wavefront_pool * 
 		si_emu_wavefront_size);
@@ -224,7 +225,8 @@ static void si_calc_plot_registers_per_work_item(void)
 
 	/* Current data point */
 	registers_per_work_item = 
-		si_gpu->ndrange->kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used;
+		si_gpu->ndrange->kernel->bin_file->enc_dict_entry_southern_islands->
+		num_vgpr_used;
 	work_groups_per_wavefront_pool = si_calc_get_work_groups_per_wavefront_pool(
 		work_items_per_work_group, registers_per_work_item, local_mem_per_work_group);
 	wavefronts_per_wavefront_pool = work_groups_per_wavefront_pool * wavefronts_per_work_group;
@@ -286,7 +288,8 @@ static void si_calc_plot_local_mem_per_work_group(void)
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
 	registers_per_work_item = 
-		si_gpu->ndrange->kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used;
+		si_gpu->ndrange->kernel->bin_file->enc_dict_entry_southern_islands->
+		num_vgpr_used;
 	local_mem_step = MAX(1, si_gpu_local_mem_size / 32);
 	work_items_per_work_group = si_gpu->ndrange->kernel->local_size;
 	wavefronts_per_work_group = (work_items_per_work_group + si_emu_wavefront_size - 1) / 

@@ -137,7 +137,8 @@ struct si_bin_enc_dict_entry_t
 	struct si_bin_enc_dict_entry_consts_t *consts;
 
 	/* Info read from pt_notes */
-	int num_gpr_used;
+	int num_vgpr_used;
+	int num_sgpr_used;
 	int lds_size_used;
 	int stack_size_used;
 
