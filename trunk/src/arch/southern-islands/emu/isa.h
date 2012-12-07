@@ -20,6 +20,8 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
 
+#include <arch/southern-islands/asm/asm.h>
+
 
 enum si_isa_write_task_kind_t
 {
@@ -99,7 +101,7 @@ extern char *err_si_isa_note;
 #define SI_INST_VOPC		inst->micro_inst.vopc
 #define SI_INST_VOP3b		inst->micro_inst.vop3b
 #define SI_INST_VOP3a		inst->micro_inst.vop3a
-#define SI_INST_DS			inst->micro_inst.ds
+#define SI_INST_DS		inst->micro_inst.ds
 #define SI_INST_MTBUF		inst->micro_inst.mtbuf
 /* FIXME Finish filling these in */
 
@@ -115,6 +117,11 @@ union si_reg_t;
 typedef void (*si_isa_inst_func_t)(struct si_work_item_t *work_item, struct si_inst_t *inst);
 extern si_isa_inst_func_t *si_isa_inst_func;
 
+/* FIXME
+ * Some older compilers need the 'union' type to be not only declared but also defined
+ * to allow for the declaration below. This forces us to #include 'asm.h' from this file.
+ * To avoid this extra dependence, 'union' types below could be replaced by
+ * 'unsigned int', and then all callers updated accordingly. */
 union si_reg_t si_isa_read_sreg(struct si_work_item_t *work_item, int sreg);
 void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value);
 union si_reg_t si_isa_read_vreg(struct si_work_item_t *work_item, int vreg);
