@@ -1828,7 +1828,7 @@ void arm_inst_dump_RT(char **inst_str_ptr, int *inst_str_size,
  * Arm disassembler
  */
 
-void arm_elf_function_symbol(struct elf_file_t *elf_file, unsigned int inst_addr)
+unsigned int arm_elf_function_symbol(struct elf_file_t *elf_file, unsigned int inst_addr, unsigned int prev_symbol)
 {
 	unsigned int i;
 	struct elf_symbol_t *symbol;
@@ -1844,11 +1844,16 @@ void arm_elf_function_symbol(struct elf_file_t *elf_file, unsigned int inst_addr
 			}
 			else
 			{
-				printf ("\n%08x <%s>\n", symbol->value, symbol->name);
+				//if(prev_symbol != symbol->value)
+				{
+					printf ("\n%08x <%s>\n", symbol->value, symbol->name);
+					prev_symbol = symbol->value;
+				}
 				break;
 			}
 		}
 	}
+	return (prev_symbol);
 }
 
 unsigned int arm_dump_word_symbol(struct elf_file_t *elf_file, unsigned int inst_addr, void *inst_ptr)
@@ -1879,11 +1884,12 @@ void arm_emu_disasm(char *path)
 	char inst_str[MAX_STRING_SIZE];
 	int i;
 	unsigned int inst_index;
+	unsigned int prev_symbol;
 	void *inst_ptr;
 
 	/* Initialization */
 	arm_disasm_init();
-
+	inst_index = 0;
 	/* Find .text section which saves instruction bits */
 	elf_file = elf_file_create_from_path(path);
 
@@ -1901,7 +1907,7 @@ void arm_emu_disasm(char *path)
 			section->buffer.size; inst_ptr += 4)
 	{
 
-		arm_elf_function_symbol(elf_file, (section->header->sh_addr + inst_index));
+		prev_symbol = arm_elf_function_symbol(elf_file, (section->header->sh_addr + inst_index), prev_symbol);
 
 		arm_inst_hex_dump(stdout, inst_ptr, (section->header->sh_addr + inst_index));
 
