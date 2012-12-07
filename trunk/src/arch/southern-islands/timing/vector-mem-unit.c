@@ -94,8 +94,8 @@ void si_vector_mem_writeback(struct si_vector_mem_unit_t *vector_mem)
 {
 	struct si_uop_t *uop = NULL;
 	int list_entries;
-    int list_index = 0;
-    int i;
+	int list_index = 0;
+	int i;
 
 	/* Process completed memory instructions */
 	list_entries = list_count(vector_mem->exec_buffer);

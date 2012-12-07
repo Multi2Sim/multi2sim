@@ -195,7 +195,7 @@ void si_simd_execute(struct si_simd_t *simd)
 		uop = list_get(simd->read_buffer, list_index);
 		assert(uop);
 
-        /* Uop is not ready yet */
+		/* Uop is not ready yet */
 		if (si_gpu->cycle < uop->read_ready)
 		{
 			list_index++;
@@ -223,7 +223,7 @@ void si_simd_execute(struct si_simd_t *simd)
 			continue;
 		}
 
-        instructions_processed++;
+		instructions_processed++;
 
 		/* Add the next wavefront. */
 		list_remove(simd->read_buffer, uop);
