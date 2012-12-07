@@ -13,6 +13,7 @@ AC_CHECK_HEADERS([fcntl.h float.h stddef.h stdint.h stdlib.h string.h sys/ioctl.
 AC_CHECK_HEADER([elf.h], [AC_DEFINE([HAVE_ELF_H])], [AC_MSG_ERROR([cannot find header elf.h])])
 
 
+
 #
 # Check for ZLib
 #
@@ -184,7 +185,16 @@ AC_ARG_ENABLE(debug,
 	case "${enableval}" in
 	yes)
 		debug=true
-		CFLAGS="-msse2 -Wall -Werror -Wno-error=deprecated-declarations -DMHANDLE -g -O0 -std=gnu99"
+		
+		# Add flag '-Wno-error=deprecated-declarations' only if it is supported.
+		# This flag prevents warnings caused by newer GTK versions that would cause with -Werror
+		CFLAGS="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
+		AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+				[ AC_MSG_RESULT([yes]) ]
+				[ CFLAGS="$CFLAGS -Wno-error=deprecated-declarations" ],
+				[ AC_MSG_RESULT([no]) ]
+			)
 		;;
 	no)
 		;;
