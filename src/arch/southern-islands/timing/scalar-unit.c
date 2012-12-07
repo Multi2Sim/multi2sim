@@ -236,7 +236,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		uop = list_get(scalar_unit->read_buffer, list_index);
 		assert(uop);
 
-        /* Uop is not ready yet */
+		/* Uop is not ready yet */
 		if (si_gpu->cycle < uop->read_ready)
 		{
 			list_index++;
