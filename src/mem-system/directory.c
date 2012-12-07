@@ -246,6 +246,10 @@ int dir_entry_lock(struct dir_t *dir, int x, int y, int event, struct mod_stack_
 		{
 			lock_queue_iter = dir_lock->lock_queue;
 
+			/* FIXME - Code below is the queue insertion algorithm based on stack id.
+			 * This causes a deadlock when, for example, A-10 keeps retrying an up-down access and
+			 * gets always priority over A-20, which is waiting to finish a down-up access. */
+#if 0
 			while (stack->id > lock_queue_iter->id)
 			{
 				if (!lock_queue_iter->dir_lock_next)
@@ -253,6 +257,14 @@ int dir_entry_lock(struct dir_t *dir, int x, int y, int event, struct mod_stack_
 
 				lock_queue_iter = lock_queue_iter->dir_lock_next;
 			}
+#endif
+			/* ------------------------------------------------------------------------ */
+			/* FIXME - Replaced with code below, just inserting at the end of the queue.
+			 * But this seems to be what this function was doing before, isn't it? Why
+			 * weren't we happy with this policy? */
+			while (lock_queue_iter->dir_lock_next)
+				lock_queue_iter = lock_queue_iter->dir_lock_next;
+			/* ------------------------------------------------------------------------ */
 
 			if (!lock_queue_iter->dir_lock_next) 
 			{
@@ -284,6 +296,8 @@ int dir_entry_lock(struct dir_t *dir, int x, int y, int event, struct mod_stack_
 void dir_entry_unlock(struct dir_t *dir, int x, int y)
 {
 	struct dir_lock_t *dir_lock;
+	struct mod_stack_t *stack;
+	FILE *f;
 
 	/* Get lock */
 	assert(x < dir->xsize && y < dir->ysize);
@@ -292,8 +306,24 @@ void dir_entry_unlock(struct dir_t *dir, int x, int y)
 	/* Wake up first waiter */
 	if (dir_lock->lock_queue)
 	{
+		/* Debug */
+		f = debug_file(mem_debug_category);
+		if (f)
+		{
+			mem_debug("    A-%lld resumed", dir_lock->lock_queue->id);
+			if (dir_lock->lock_queue->dir_lock_next)
+			{
+				mem_debug(" - {");
+				for (stack = dir_lock->lock_queue->dir_lock_next; stack;
+						stack = stack->dir_lock_next)
+					mem_debug(" A-%lld", stack->id);
+				mem_debug(" } still waiting");
+			}
+			mem_debug("\n");
+		}
+
+		/* Wake up access */
 		esim_schedule_event(dir_lock->lock_queue->dir_lock_event, dir_lock->lock_queue, 1);
-		mem_debug("    0x%x access resumed\n", dir_lock->lock_queue->tag);
 		dir_lock->lock_queue = dir_lock->lock_queue->dir_lock_next;
 	}
 
