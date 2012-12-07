@@ -200,7 +200,9 @@ void esim_event_free(struct esim_event_t *event)
  * Private Functions
  */
 
-static void esim_drain_heap(void)
+/* Drain events in the heap. If this operation stalls after exceeding a limit
+ * in the number of events, return non-zero. Zero is success. */
+static int esim_drain_heap(void)
 {
 	int count = 0;
 
@@ -232,11 +234,15 @@ static void esim_drain_heap(void)
 		if (count == ESIM_MAX_FINALIZATION_EVENTS)
 		{
 			esim_dump(stderr, 20);
-			fatal("%s: number of finalization events exceeds %d.\n%s",
+			warning("%s: number of finalization events exceeds %d - stopped.\n%s",
 				__FUNCTION__, ESIM_MAX_FINALIZATION_EVENTS,
 				esim_err_finalization);
+			return 1;
 		}
 	}
+
+	/* Success */
+	return 0;
 }
 
 
@@ -489,9 +495,14 @@ void esim_process_all_events(void)
 {
 	struct esim_event_t *event;
 	struct esim_event_info_t *event_info;
+	int err;
 
 	/* Drain all previous events */
-	esim_drain_heap();
+	err = esim_drain_heap();
+
+	/* An stall while draining heap stops further processing. */
+	if (err)
+		return;
 
 	/* Schedule all events that were planned for the end of the simulation
 	 * using calls to 'esim_schedule_end_event'. */
