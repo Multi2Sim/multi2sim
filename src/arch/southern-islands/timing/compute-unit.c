@@ -158,6 +158,12 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	si_uop_list_free(compute_unit->scalar_unit.exec_buffer);
 	si_uop_list_free(compute_unit->scalar_unit.write_buffer);
 	si_uop_list_free(compute_unit->scalar_unit.inflight_buffer);
+	list_free(compute_unit->scalar_unit.issue_buffer);
+	list_free(compute_unit->scalar_unit.decode_buffer);
+	list_free(compute_unit->scalar_unit.read_buffer);
+	list_free(compute_unit->scalar_unit.exec_buffer);
+	list_free(compute_unit->scalar_unit.write_buffer);
+	list_free(compute_unit->scalar_unit.inflight_buffer);
 
 	/* Branch Unit */
 	si_uop_list_free(compute_unit->branch_unit.issue_buffer);
@@ -165,6 +171,11 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	si_uop_list_free(compute_unit->branch_unit.read_buffer);
 	si_uop_list_free(compute_unit->branch_unit.exec_buffer);
 	si_uop_list_free(compute_unit->branch_unit.write_buffer);
+	list_free(compute_unit->branch_unit.issue_buffer);
+	list_free(compute_unit->branch_unit.decode_buffer);
+	list_free(compute_unit->branch_unit.read_buffer);
+	list_free(compute_unit->branch_unit.exec_buffer);
+	list_free(compute_unit->branch_unit.write_buffer);
 
 	/* Vector Memory */
 	si_uop_list_free(compute_unit->vector_mem_unit.issue_buffer);
@@ -173,6 +184,12 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	si_uop_list_free(compute_unit->vector_mem_unit.exec_buffer);
 	si_uop_list_free(compute_unit->vector_mem_unit.write_buffer);
 	si_uop_list_free(compute_unit->vector_mem_unit.inflight_buffer);
+	list_free(compute_unit->vector_mem_unit.issue_buffer);
+	list_free(compute_unit->vector_mem_unit.decode_buffer);
+	list_free(compute_unit->vector_mem_unit.read_buffer);
+	list_free(compute_unit->vector_mem_unit.exec_buffer);
+	list_free(compute_unit->vector_mem_unit.write_buffer);
+	list_free(compute_unit->vector_mem_unit.inflight_buffer);
 
 	/* Local Data Share */
 	si_uop_list_free(compute_unit->lds.issue_buffer);
@@ -181,6 +198,12 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	si_uop_list_free(compute_unit->lds.exec_buffer);
 	si_uop_list_free(compute_unit->lds.write_buffer);
 	si_uop_list_free(compute_unit->lds.inflight_buffer);
+	list_free(compute_unit->lds.issue_buffer);
+	list_free(compute_unit->lds.decode_buffer);
+	list_free(compute_unit->lds.read_buffer);
+	list_free(compute_unit->lds.exec_buffer);
+	list_free(compute_unit->lds.write_buffer);
+	list_free(compute_unit->lds.inflight_buffer);
 
 	for (i = 0; i < compute_unit->num_wavefront_pools; i++)
 	{
@@ -188,6 +211,9 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 		si_uop_list_free(compute_unit->simds[i]->issue_buffer);
 		si_uop_list_free(compute_unit->simds[i]->decode_buffer);
 		si_uop_list_free(compute_unit->simds[i]->exec_buffer);
+		list_free(compute_unit->simds[i]->issue_buffer);
+		list_free(compute_unit->simds[i]->decode_buffer);
+		list_free(compute_unit->simds[i]->exec_buffer);
 
 		free(compute_unit->simds[i]->subwavefront_pool);
 		free(compute_unit->simds[i]->wkg_util);
@@ -202,7 +228,6 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 		/* Common for compute unit */
 
 		si_uop_list_free(compute_unit->fetch_buffers[i]);
-		si_uop_list_free(compute_unit->decode_buffers[i]);
 
 		list_free(compute_unit->fetch_buffers[i]);
 
