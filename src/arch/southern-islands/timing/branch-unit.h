@@ -23,9 +23,11 @@
 struct si_branch_unit_t
 {
 	/* Queues */
-	struct list_t *issue_buffer; /* Issued instructions */
-	struct list_t *read_buffer;   /* Register accesses */
+	struct list_t *issue_buffer;  /* Issued instructions */
+	struct list_t *decode_buffer; /* Decoded instructions */
+	struct list_t *read_buffer;   /* Register reads */
 	struct list_t *exec_buffer;   /* Execution */
+	struct list_t *write_buffer;  /* Register writes */
 
 	struct si_compute_unit_t *compute_unit;
 

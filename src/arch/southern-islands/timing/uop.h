@@ -76,12 +76,13 @@ struct si_uop_t
 	unsigned int exec_mask_update : 1;
 
 	/* Timing */
+	long long cycle_created;    /* Cycle when fetch completes */
 	long long fetch_ready;      /* Cycle when fetch completes */
 	long long decode_ready;     /* Cycle when decode completes */
-	long long issue_ready;     /* Cycle when issue completes */
+	long long issue_ready;      /* Cycle when issue completes */
 	long long read_ready;       /* Cycle when register access completes */
 	long long execute_ready;    /* Cycle when execution completes */
-	long long writeback_ready;  /* Cycle when writeback completes */
+	long long write_ready;      /* Cycle when writeback completes */
 
 	/* Witness memory accesses */
 	int global_mem_witness;
