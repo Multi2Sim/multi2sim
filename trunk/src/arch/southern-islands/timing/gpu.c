@@ -308,7 +308,6 @@ static void si_gpu_device_init()
 
 	/* Initialize */
 	si_gpu = xcalloc(1, sizeof(struct si_gpu_t));
-	si_gpu->trash_uop_list = linked_list_create();
 
 	/* Initialize compute units */
 	si_gpu->compute_units = xcalloc(si_gpu_num_compute_units, sizeof(void *));
@@ -416,7 +415,7 @@ static void si_config_read(void)
 
 	si_gpu_fetch_latency = config_read_int(
 		gpu_config, section, "FetchLatency", si_gpu_fetch_latency);
-	if (si_gpu_fetch_latency < 1)
+	if (si_gpu_fetch_latency < 0)
 		fatal("%s: invalid value for 'FetchLatency'.\n%s",
 			si_gpu_config_file_name, err_note);
 
@@ -430,34 +429,6 @@ static void si_config_read(void)
 		gpu_config, section, "FetchBufferSize", si_gpu_fetch_buffer_size);
 	if (si_gpu_fetch_buffer_size < si_gpu_fetch_width)
 		fatal("%s: invalid value for 'FetchBufferSize'.\n%s",
-			si_gpu_config_file_name, err_note);
-
-	si_gpu_decode_latency = config_read_int(
-		gpu_config, section, "DecodeLatency", si_gpu_decode_latency);
-	if (si_gpu_decode_latency < 1)
-		fatal("%s: invalid value for 'DecodeLatency'.\n%s",
-			si_gpu_config_file_name, err_note);
-
-	si_gpu_decode_width = config_read_int(
-		gpu_config, section, "DecodeWidth", si_gpu_decode_width);
-	if (si_gpu_decode_width < 1)
-		fatal("%s: invalid value for 'DecodeWidth'.\n%s",
-			si_gpu_config_file_name, err_note);
-
-	/* If the decode latency is greater than the number of SIMDs, then the buffer
-	 * size must be larger. TODO Add a check for that situation. */
-	assert(si_gpu_decode_latency <= si_gpu_num_wavefront_pools);
-	si_gpu_decode_buffer_size = config_read_int(
-		gpu_config, section, "DecodeBufferSize", si_gpu_decode_buffer_size);
-	if (si_gpu_decode_buffer_size < si_gpu_decode_width)
-		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
-			si_gpu_config_file_name, err_note);
-
-
-	si_gpu_issue_latency = config_read_int(
-		gpu_config, section, "IssueLatency", si_gpu_issue_latency);
-	if (si_gpu_issue_latency < 1)
-		fatal("%s: invalid value for 'IssueLatency'.\n%s",
 			si_gpu_config_file_name, err_note);
 
 	si_gpu_issue_width = config_read_int(
@@ -474,30 +445,16 @@ static void si_config_read(void)
 		fatal("%s: invalid value for 'Width'.\n%s",
 			si_gpu_config_file_name, err_note);
 
-	/* If the decode latency is greater than the number of SIMDs, then the buffer
-	 * size must be larger. TODO Add a check for that situation. */
-	si_gpu_simd_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", si_gpu_simd_issue_buffer_size);
-	if (si_gpu_simd_issue_buffer_size < si_gpu_simd_width)
-		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+	si_gpu_simd_decode_buffer_size = config_read_int(
+		gpu_config, section, "DecodeBufferSize", 
+		si_gpu_simd_decode_buffer_size);
+	if (si_gpu_simd_decode_buffer_size < si_gpu_simd_width)
+		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
 			si_gpu_config_file_name, err_note);
 
-	si_gpu_simd_read_latency = config_read_int(
-		gpu_config, section, "ReadLatency", si_gpu_simd_read_latency);
-	if (si_gpu_simd_read_latency < 1)
-		fatal("%s: invalid value for 'ReadLatency'.\n%s",
-			si_gpu_config_file_name, err_note);
-
-	si_gpu_simd_read_buffer_size = config_read_int(
-		gpu_config, section, "ReadBufferSize", si_gpu_simd_read_buffer_size);
-	/* Register reads are not pipelined */
-	if (si_gpu_simd_read_buffer_size < si_gpu_simd_width)
-		fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
-			si_gpu_config_file_name, err_note);
-
-	si_gpu_simd_alu_latency = config_read_int(
-		gpu_config, section, "StreamCoreLatency", si_gpu_simd_alu_latency);
-	if (si_gpu_simd_alu_latency < 1)
+	si_gpu_simd_exec_latency = config_read_int(
+		gpu_config, section, "StreamCoreLatency", si_gpu_simd_exec_latency);
+	if (si_gpu_simd_exec_latency < 0)
 		fatal("%s: invalid value for 'StreamCoreLatency'.\n%s",
 			si_gpu_config_file_name, err_note);
 
@@ -509,10 +466,12 @@ static void si_config_read(void)
 		fatal("%s: invalid value for 'Width'.\n%s",
 			si_gpu_config_file_name, err_note);
 
-	si_gpu_scalar_unit_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", si_gpu_scalar_unit_issue_buffer_size);
-	if (si_gpu_scalar_unit_issue_buffer_size < si_gpu_scalar_unit_width * si_gpu_issue_latency)
-		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+	si_gpu_scalar_unit_decode_buffer_size = config_read_int(
+		gpu_config, section, "DecodeBufferSize", 
+		si_gpu_scalar_unit_decode_buffer_size);
+	if (si_gpu_scalar_unit_decode_buffer_size < 
+		si_gpu_scalar_unit_width * si_gpu_scalar_unit_decode_latency)
+		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
 			si_gpu_config_file_name, err_note);
 
 	si_gpu_scalar_unit_read_latency = config_read_int(
@@ -530,7 +489,7 @@ static void si_config_read(void)
 
 	si_gpu_scalar_unit_exec_latency = config_read_int(
 		gpu_config, section, "ALULatency", si_gpu_scalar_unit_exec_latency);
-	if (si_gpu_scalar_unit_exec_latency < 1)
+	if (si_gpu_scalar_unit_exec_latency < 0)
 		fatal("%s: invalid value for 'ALULatency'.\n%s",
 			si_gpu_config_file_name, err_note);
 
@@ -548,11 +507,15 @@ static void si_config_read(void)
 		fatal("%s: invalid value for 'Width'.\n%s",
 			si_gpu_config_file_name, err_note);
 
-	si_gpu_branch_unit_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", si_gpu_branch_unit_issue_buffer_size);
-	if (si_gpu_branch_unit_issue_buffer_size < si_gpu_branch_unit_width * si_gpu_issue_latency)
-		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+	si_gpu_branch_unit_decode_buffer_size = config_read_int(
+		gpu_config, section, "DecodeBufferSize", 
+		si_gpu_branch_unit_decode_buffer_size);
+	if (si_gpu_branch_unit_decode_buffer_size < 
+		si_gpu_branch_unit_width * si_gpu_branch_unit_decode_latency)
+	{
+		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
 			si_gpu_config_file_name, err_note);
+	}
 
 	si_gpu_branch_unit_read_latency = config_read_int(
 		gpu_config, section, "ReadLatency", si_gpu_branch_unit_read_latency);
@@ -569,7 +532,7 @@ static void si_config_read(void)
 
 	si_gpu_branch_unit_exec_latency = config_read_int(
 		gpu_config, section, "BranchLatency", si_gpu_branch_unit_exec_latency);
-	if (si_gpu_branch_unit_exec_latency < 1)
+	if (si_gpu_branch_unit_exec_latency < 0)
 		fatal("%s: invalid value for 'BranchLatency'.\n%s",
 			si_gpu_config_file_name, err_note);
 
@@ -581,11 +544,14 @@ static void si_config_read(void)
 		fatal("%s: invalid value for 'Width'.\n%s",
 			si_gpu_config_file_name, err_note);
 
-	si_gpu_lds_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", si_gpu_lds_issue_buffer_size);
-	if (si_gpu_lds_issue_buffer_size < si_gpu_lds_width * si_gpu_issue_latency)
-		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+	si_gpu_lds_decode_buffer_size = config_read_int(
+		gpu_config, section, "DecodeBufferSize", si_gpu_lds_decode_buffer_size);
+	if (si_gpu_lds_decode_buffer_size < 
+		si_gpu_lds_width * si_gpu_lds_decode_latency)
+	{
+		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
 			si_gpu_config_file_name, err_note);
+	}
 
 	si_gpu_lds_read_latency = config_read_int(
 		gpu_config, section, "ReadLatency", si_gpu_lds_read_latency);
@@ -614,11 +580,15 @@ static void si_config_read(void)
 		fatal("%s: invalid value for 'Width'.\n%s",
 			si_gpu_config_file_name, err_note);
 
-	si_gpu_vector_mem_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", si_gpu_vector_mem_issue_buffer_size);
-	if (si_gpu_vector_mem_issue_buffer_size < si_gpu_vector_mem_width * si_gpu_issue_latency)
-		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
+	si_gpu_vector_mem_decode_buffer_size = config_read_int(
+		gpu_config, section, "DecodeBufferSize", 
+		si_gpu_vector_mem_decode_buffer_size);
+	if (si_gpu_vector_mem_decode_buffer_size < 
+		si_gpu_vector_mem_width * si_gpu_vector_mem_decode_latency)
+	{
+		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
 			si_gpu_config_file_name, err_note);
+	}
 
 	si_gpu_vector_mem_read_latency = config_read_int(
 		gpu_config, section, "ReadLatency", si_gpu_vector_mem_read_latency);
@@ -697,7 +667,7 @@ static void si_config_dump(FILE *f)
 	fprintf(f, "WavefrontSize = %d\n", si_emu_wavefront_size);
 	fprintf(f, "MaxWorkGroupsPerWavefrontPool = %d\n", si_gpu_max_work_groups_per_wavefront_pool);
 	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n", si_gpu_max_wavefronts_per_wavefront_pool);
-	fprintf(f, "SIMDALULatency = %d\n", si_gpu_simd_alu_latency);
+	fprintf(f, "SIMDExecLatency = %d\n", si_gpu_simd_exec_latency);
 	fprintf(f, "SIMDWidth = %d\n", si_gpu_simd_width);
 	fprintf(f, "ScalarUnitExecLatency = %d\n", si_gpu_scalar_unit_exec_latency);
 	fprintf(f, "ScalarUnitWidth = %d\n", si_gpu_scalar_unit_width);
@@ -821,10 +791,6 @@ void si_gpu_done()
 	}
 	free(si_gpu->compute_units);
 
-	/* List of removed instructions */
-	si_gpu_uop_trash_empty();
-	linked_list_free(si_gpu->trash_uop_list);
-
 	/* Free GPU */
 	free(si_gpu);
 
@@ -910,43 +876,17 @@ void si_gpu_dump_report(void)
 void si_gpu_dump_summary(FILE *f)
 {
 	double time_in_sec;
-	double inst_per_cycle;
 	double cycles_per_sec;
 
 	/* Calculate statistics */
 	time_in_sec = (double) m2s_timer_get_value(si_emu->timer) / 1.0e6;
-	inst_per_cycle = si_gpu->cycle ? (double) si_emu->inst_count / si_gpu->cycle : 0.0;
-	cycles_per_sec = time_in_sec > 0.0 ? (double) si_gpu->cycle / time_in_sec : 0.0;
+	cycles_per_sec = time_in_sec > 0.0 ? 
+		(double) si_gpu->cycle / time_in_sec : 0.0;
 
 	/* Print statistics */
 	fprintf(f, "Cycles = %lld\n", si_gpu->cycle);
-	//fprintf(f, "Simulated time at 880MHz: %f ms\n", si_gpu->cycle/880000.0);
-	//fprintf(f, "Simulated time at 1000MHz: %f ms\n", si_gpu->cycle/1000000.0);
-	fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
-	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
-}
-
-void si_gpu_uop_trash_empty(void)
-{
-	struct si_uop_t *uop;
-
-	while (si_gpu->trash_uop_list->count)
-	{
-		linked_list_head(si_gpu->trash_uop_list);
-		uop = linked_list_get(si_gpu->trash_uop_list);
-		linked_list_remove(si_gpu->trash_uop_list);
-
-		si_trace("si.end_inst id=%lld cu=%d\n", uop->id_in_compute_unit, 
-			uop->compute_unit->id);
-
-		si_uop_free(uop);
-	}
-}
-
-
-void si_gpu_uop_trash_add(struct si_uop_t *uop)
-{
-	linked_list_add(si_gpu->trash_uop_list, uop);
+	fprintf(f, "SimulatedCyclesPerSecond = %.0f\n", cycles_per_sec);
+	fprintf(f, "Time at 925MHz = %.3fms\n", si_gpu->cycle/925000.0);
 }
 
 
@@ -1015,9 +955,6 @@ int si_gpu_run(void)
 	if (esim_finish)
 		return 1;
 
-	/* Free instructions in trash */
-	si_gpu_uop_trash_empty();
-
 	/* Run one loop iteration on each busy compute unit */
 	for (compute_unit = si_gpu->compute_unit_busy_list_head; compute_unit;
 		compute_unit = compute_unit_next)
@@ -1042,7 +979,6 @@ int si_gpu_run(void)
 
 		/* Finalize and free ND-Range */
 		assert(si_ndrange_get_status(ndrange, si_ndrange_finished));
-		si_gpu_uop_trash_empty();
 		si_gpu_unmap_ndrange();
 		si_ndrange_free(ndrange);
 	}
