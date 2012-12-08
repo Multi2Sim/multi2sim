@@ -66,7 +66,6 @@ struct si_compute_unit_t
 	unsigned int num_wavefront_pools;
 	struct si_wavefront_pool_t **wavefront_pools;
 	struct list_t **fetch_buffers;
-	struct list_t **decode_buffers;
 	struct si_simd_t **simds;
 	/* TODO Make these into a configurable number of structures */
 	struct si_scalar_unit_t scalar_unit;
