@@ -37,7 +37,16 @@
 /* Configurable by user at runtime */
 
 int si_gpu_vector_mem_width = 1;
-int si_gpu_vector_mem_issue_buffer_size = 4;
+
+int si_gpu_vector_mem_issue_buffer_size = 1;
+
+int si_gpu_vector_mem_decode_latency = 1;
+int si_gpu_vector_mem_decode_buffer_size = 1;
+
+int si_gpu_vector_mem_exec_latency = 1;
+int si_gpu_vector_mem_exec_buffer_size = 1;
+
+int si_gpu_vector_mem_inflight_mem_accesses = 32;
 
 /*
  * Register accesses are not pipelined, so buffer size is not
@@ -46,7 +55,9 @@ int si_gpu_vector_mem_issue_buffer_size = 4;
 int si_gpu_vector_mem_read_latency = 1;
 int si_gpu_vector_mem_read_buffer_size = 1;
 
-int si_gpu_vector_mem_inflight_mem_accesses = 32;
+int si_gpu_vector_mem_write_latency = 1;
+int si_gpu_vector_mem_write_buffer_size = 1;
+
 
 void si_vector_mem_process_mem_accesses(struct si_vector_mem_unit_t *vector_mem)
 {
@@ -90,53 +101,101 @@ void si_vector_mem_process_mem_accesses(struct si_vector_mem_unit_t *vector_mem)
 
 }
 
-void si_vector_mem_writeback(struct si_vector_mem_unit_t *vector_mem)
+void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 {
 	struct si_uop_t *uop = NULL;
 	int list_entries;
-	int list_index = 0;
-	int i;
+    int list_index = 0;
+    int i;
 
 	/* Process completed memory instructions */
+	list_entries = list_count(vector_mem->write_buffer);
+
+	/* Sanity check the write buffer */
+	assert(list_entries <= si_gpu_vector_mem_write_buffer_size);
+
+	for (i = 0; i < list_entries; i++)
+	{
+		uop = list_get(vector_mem->write_buffer, list_index);
+		assert(uop);
+
+        /* Uop is not ready */
+		if (si_gpu->cycle < uop->write_ready)
+		{
+            list_index++;
+            continue;
+        }
+
+        /* Instruction complete, remove the uop from the queue */
+        list_remove(vector_mem->write_buffer, uop);
+
+        si_trace("si.end_inst id=%lld cu=%d\n", uop->id_in_compute_unit, 
+            uop->compute_unit->id);
+
+        /* Free uop */
+        si_uop_free(uop);
+
+        /* Statistics */
+        vector_mem->inst_count++;
+
+        si_gpu->last_complete_cycle = esim_cycle;
+	}
+}
+
+void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
+{
+	struct si_uop_t *uop;
+	int instructions_processed = 0;
+	int list_entries;
+    int list_index = 0;
+    int i;
+
 	list_entries = list_count(vector_mem->exec_buffer);
 
 	/* Sanity check the exec buffer */
-	assert(list_entries <= si_gpu_vector_mem_width);
+	assert(list_entries <= si_gpu_vector_mem_exec_buffer_size);
 
 	for (i = 0; i < list_entries; i++)
 	{
 		uop = list_get(vector_mem->exec_buffer, list_index);
 		assert(uop);
 
-        /* Uop is not ready */
-		if (si_gpu->cycle < uop->execute_ready)
-		{
+		/* Stall if the width has been reached. */
+		if (instructions_processed == si_gpu_vector_mem_width)
+        {
+            si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+                uop->id_in_compute_unit, vector_mem->compute_unit->id, 
+                uop->wavefront->id, uop->id_in_wavefront);
             list_index++;
             continue;
         }
 
-        /* Access complete, remove the uop from the queue */
-        list_remove(vector_mem->exec_buffer, uop);
+        /* Uop not ready yet */
+		if (si_gpu->cycle < uop->execute_ready)
+        {
+			list_index++;
+            continue;
+        }
+
+		/* Stall if the write buffer is full. */
+		if (list_count(vector_mem->write_buffer) >= si_gpu_vector_mem_write_buffer_size)
+		{
+            si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+                uop->id_in_compute_unit, vector_mem->compute_unit->id, 
+                uop->wavefront->id, uop->id_in_wavefront);
+			list_index++;
+            continue;
+		}
+		
+		uop->write_ready = si_gpu->cycle + si_gpu_vector_mem_write_latency;
+		list_remove(vector_mem->exec_buffer, uop);
+		list_enqueue(vector_mem->write_buffer, uop);
+
+		instructions_processed++;
 
         si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"mem-w\"\n", 
             uop->id_in_compute_unit, vector_mem->compute_unit->id, 
             uop->wavefront->id, uop->id_in_wavefront);
-
-        /* Allow next instruction to be fetched */
-        uop->wavefront_pool_entry->ready = 1;
-        uop->wavefront_pool_entry->uop = NULL;
-        uop->wavefront_pool_entry->cycle_fetched = INST_NOT_FETCHED;
-
-        /* Free uop */
-        if (si_tracing())
-            si_gpu_uop_trash_add(uop);
-        else
-            si_uop_free(uop);
-
-        /* Statistics */
-        vector_mem->inst_count++;
-
-        si_gpu->last_complete_cycle = esim_cycle;
 	}
 }
 
@@ -187,11 +246,11 @@ void si_vector_mem_execute(struct si_vector_mem_unit_t *vector_mem)
 			si_gpu_vector_mem_inflight_mem_accesses);
 
 		/* Sanity check exec buffer */
-		assert(list_count(vector_mem->exec_buffer) <= si_gpu_vector_mem_width);
+		assert(list_count(vector_mem->exec_buffer) <= si_gpu_vector_mem_exec_buffer_size);
 
 		/* If there is room in the outstanding memory buffer, issue the access */
-		if (list_count(vector_mem->inflight_buffer) < 
-			si_gpu_vector_mem_inflight_mem_accesses)
+		if (list_count(vector_mem->inflight_buffer) < si_gpu_vector_mem_inflight_mem_accesses &&
+                list_count(vector_mem->exec_buffer) < si_gpu_vector_mem_exec_buffer_size)
 		{
 			/* TODO replace this with a lightweight uop */
 			struct si_uop_t *mem_uop;
@@ -229,7 +288,7 @@ void si_vector_mem_execute(struct si_vector_mem_unit_t *vector_mem)
 			uop->wavefront_pool_entry->vm_cnt++;
 
 			/* Transfer the uop to the exec buffer */
-			uop->execute_ready = si_gpu->cycle + 1;
+			uop->execute_ready = si_gpu->cycle + si_gpu_vector_mem_exec_latency;
 			list_remove(vector_mem->read_buffer, uop);
 			list_enqueue(vector_mem->exec_buffer, uop);
 
@@ -262,14 +321,14 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
     int list_index = 0;
     int i;
 
-	list_entries = list_count(vector_mem->issue_buffer);
+	list_entries = list_count(vector_mem->decode_buffer);
 
 	/* Sanity check the decode buffer */
-	assert(list_entries <= si_gpu_vector_mem_issue_buffer_size);
+	assert(list_entries <= si_gpu_vector_mem_decode_buffer_size);
 
 	for (i = 0; i < list_entries; i++)
 	{
-		uop = list_get(vector_mem->issue_buffer, list_index);
+		uop = list_get(vector_mem->decode_buffer, list_index);
 		assert(uop);
 
 		/* Stall if the width has been reached. */
@@ -283,14 +342,15 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
         }
 
         /* Uop not ready yet */
-		if (si_gpu->cycle < uop->issue_ready)
+		if (si_gpu->cycle < uop->decode_ready)
         {
 			list_index++;
             continue;
         }
 
 		/* Stall if the read buffer is full. */
-		if (list_count(vector_mem->read_buffer) >= si_gpu_vector_mem_read_buffer_size)
+		if (list_count(vector_mem->read_buffer) >= 
+				si_gpu_vector_mem_read_buffer_size)
 		{
             si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
                 uop->id_in_compute_unit, vector_mem->compute_unit->id, 
@@ -300,7 +360,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		}
 		
 		uop->read_ready = si_gpu->cycle + si_gpu_vector_mem_read_latency;
-		list_remove(vector_mem->issue_buffer, uop);
+		list_remove(vector_mem->decode_buffer, uop);
 		list_enqueue(vector_mem->read_buffer, uop);
 
 		instructions_processed++;
@@ -311,12 +371,74 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 	}
 }
 
+void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
+{
+	struct si_uop_t *uop;
+	int instructions_processed = 0;
+	int list_entries;
+	int list_index = 0;
+	int i;
+
+	list_entries = list_count(vector_mem->issue_buffer);
+
+	/* Sanity check the issue buffer */
+	assert(list_entries <= si_gpu_vector_mem_issue_buffer_size);
+
+	for (i = 0; i < list_entries; i++)
+	{
+		uop = list_get(vector_mem->issue_buffer, list_index);
+		assert(uop);
+
+        /* Uop not ready yet */
+		if (si_gpu->cycle < uop->issue_ready)
+        {
+            list_index++;
+			continue;
+        }
+
+		/* Stall if the issue width has been reached. */
+		if (instructions_processed == si_gpu_vector_mem_width)
+        {
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+				uop->id_in_compute_unit, vector_mem->compute_unit->id, 
+				uop->wavefront->id, uop->id_in_wavefront);
+            list_index++;
+			continue;
+        }
+
+		assert(list_count(vector_mem->decode_buffer) <= 
+				si_gpu_vector_mem_decode_buffer_size);
+
+		/* Stall if the decode buffer is full. */
+		if (list_count(vector_mem->decode_buffer) == 
+				si_gpu_vector_mem_decode_buffer_size)
+		{
+            si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+                uop->id_in_compute_unit, vector_mem->compute_unit->id, 
+                uop->wavefront->id, uop->id_in_wavefront);
+            list_index++;
+			continue;
+		}
+
+		uop->decode_ready = si_gpu->cycle + si_gpu_vector_mem_decode_latency;
+		list_remove(vector_mem->issue_buffer, uop);
+		list_enqueue(vector_mem->decode_buffer, uop);
+
+		instructions_processed++;
+
+        si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"mem-d\"\n", 
+            uop->id_in_compute_unit, vector_mem->compute_unit->id, 
+            uop->wavefront->id, uop->id_in_wavefront);
+	}
+}
 
 void si_vector_mem_run(struct si_vector_mem_unit_t *vector_mem)
 {
 	/* Vector Memory stages */
 	si_vector_mem_process_mem_accesses(vector_mem);
-	si_vector_mem_writeback(vector_mem);
+	si_vector_mem_complete(vector_mem);
+	si_vector_mem_write(vector_mem);
 	si_vector_mem_execute(vector_mem);
 	si_vector_mem_read(vector_mem);
+	si_vector_mem_decode(vector_mem);
 }

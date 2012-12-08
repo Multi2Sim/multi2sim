@@ -35,30 +35,34 @@ struct si_util_t
 
 struct si_simd_t
 {
-	struct list_t *issue_buffer; /* Issued instructions */
-	struct list_t *read_buffer;   /* Register accesses */
+	int id_in_compute_unit;
+
+	struct list_t *issue_buffer;  /* Issued instructions */
+	struct list_t *decode_buffer; /* Decoded instructions */
 	struct list_t *exec_buffer;   /* Execution */
-	struct si_subwavefront_pool_t *subwavefront_pool;  /* Keep track of the wavefront entering
-									 stream core pipelines. */
+
+	struct si_subwavefront_pool_t *subwavefront_pool;  
+	struct si_wavefront_pool_t *wavefront_pool;
 
 	struct si_compute_unit_t *compute_unit;
-	struct si_wavefront_pool_t *wavefront_pool;
 
 	/* Statistics */
 	long long inst_count;
 
-	/* In order of highest to lowest precedence (scope). All utilized functional 
-	 * units are considered for each level of scope. If a functional unit is not utilized 
-	 * in a cycle, the specialized metric of the highest precedence whose characteristics 
-	 * are met is the only specialized metric considered. The total utilization metric is 
+	/* In order of highest to lowest precedence (scope). All utilized 
+	 * functional * units are considered for each level of scope. If a 
+	 * functional unit is not utilized in a cycle, the specialized metric 
+	 * of the highest precedence whose characteristics are met is the only 
+	 * specialized metric considered. The total utilization metric is 
 	 * always considered for all functional units. */
 	struct si_util_t *wkg_util; /* Work group mapped to compute unit. */
 	struct si_util_t *wvf_util; /* Wavefront mapped to instruction buffer. */
-	struct si_util_t *rdy_util; /* Wavefront with appropriate next instruction (vector ALU) is on its way to execute. */
-	struct si_util_t *occ_util; /* Wavefront exists in the in the previous buffer ready to be executed. */
+	struct si_util_t *rdy_util; /* Wavefront with appropriate next instruction 
+								 * (vector ALU) is on its way to execute. */
+	struct si_util_t *occ_util; /* Wavefront exists in the in the previous 
+								 * buffer ready to be executed. */
 	struct si_util_t *wki_util; /* Work item mapped to stream core. */
 	struct si_util_t *act_util; /* Work item mapped to stream core is active. */
-
 	struct si_util_t *tot_util; /* Total SIMD utilization. */
 };
 

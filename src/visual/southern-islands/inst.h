@@ -29,25 +29,27 @@ enum vi_si_inst_stage_t
 	vi_si_inst_stage_stalled,
 
 	vi_si_inst_stage_fetch,
-	vi_si_inst_stage_decode,
 	vi_si_inst_stage_issue,
 
+	vi_si_inst_stage_branch_decode,
 	vi_si_inst_stage_branch_read,
 	vi_si_inst_stage_branch_execute,
 	vi_si_inst_stage_branch_writeback,
 
+	vi_si_inst_stage_scalar_decode,
 	vi_si_inst_stage_scalar_read,
 	vi_si_inst_stage_scalar_execute,
 	vi_si_inst_stage_scalar_writeback,
 
-	vi_si_inst_stage_simd_read,
+	vi_si_inst_stage_simd_decode,
 	vi_si_inst_stage_simd_execute,
-	vi_si_inst_stage_simd_writeback,
 
+	vi_si_inst_stage_mem_decode,
 	vi_si_inst_stage_mem_read,
 	vi_si_inst_stage_mem_execute,
 	vi_si_inst_stage_mem_writeback,
 
+	vi_si_inst_stage_lds_decode,
 	vi_si_inst_stage_lds_read,
 	vi_si_inst_stage_lds_execute,
 	vi_si_inst_stage_lds_writeback,
@@ -78,8 +80,8 @@ extern struct str_map_t vi_si_inst_stage_color_map;
 
 struct vi_si_inst_t *vi_si_inst_create(char *name, long long id,
 	int compute_unit_id, int inst_buffer_id, int work_group_id, 
-	int wavefront_id, enum vi_si_inst_stage_t stage, long long int uop_id_in_wavefront,
-	char *asm_code);
+	int wavefront_id, enum vi_si_inst_stage_t stage, 
+	long long int uop_id_in_wavefront, char *asm_code);
 void vi_si_inst_free(struct vi_si_inst_t *inst);
 
 void vi_si_inst_get_markup(struct vi_si_inst_t *inst, char *buf, int size);

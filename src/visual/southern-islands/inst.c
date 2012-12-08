@@ -32,25 +32,27 @@ struct str_map_t vi_si_inst_stage_map =
 		{ "s", vi_si_inst_stage_stalled },
 
 		{ "f", vi_si_inst_stage_fetch },
-		{ "d", vi_si_inst_stage_decode },
 		{ "i", vi_si_inst_stage_issue },
 
+		{ "bu-d", vi_si_inst_stage_branch_decode },
 		{ "bu-r", vi_si_inst_stage_branch_read },
 		{ "bu-e", vi_si_inst_stage_branch_execute },
 		{ "bu-w", vi_si_inst_stage_branch_writeback },
 
+		{ "su-d", vi_si_inst_stage_scalar_decode },
 		{ "su-r", vi_si_inst_stage_scalar_read },
 		{ "su-e", vi_si_inst_stage_scalar_execute },
 		{ "su-w", vi_si_inst_stage_scalar_writeback },
 
+		{ "mem-d", vi_si_inst_stage_mem_decode },
 		{ "mem-r", vi_si_inst_stage_mem_read },
 		{ "mem-e", vi_si_inst_stage_mem_execute },
 		{ "mem-w", vi_si_inst_stage_mem_writeback },
 
-		{ "simd-r", vi_si_inst_stage_simd_read },
+		{ "simd-d", vi_si_inst_stage_simd_decode },
 		{ "simd-e", vi_si_inst_stage_simd_execute },
-		{ "simd-w", vi_si_inst_stage_simd_writeback },
 
+		{ "lds-d", vi_si_inst_stage_lds_decode },
 		{ "lds-r", vi_si_inst_stage_lds_read },
 		{ "lds-e", vi_si_inst_stage_lds_execute },
 		{ "lds-w", vi_si_inst_stage_lds_writeback },
@@ -67,30 +69,32 @@ struct str_map_t vi_si_inst_stage_color_map =
 
 		/* Green */
 		{ "#88FF88", vi_si_inst_stage_fetch },
-		{ "#44FF44", vi_si_inst_stage_decode },
 		{ "#00FF00", vi_si_inst_stage_issue },
 
 		/* Orange */
+		{ "#FFFE00", vi_si_inst_stage_branch_decode },
 		{ "#FFBE00", vi_si_inst_stage_branch_read },
 		{ "#FFA500", vi_si_inst_stage_branch_execute },
 		{ "#FF8C00", vi_si_inst_stage_branch_writeback },
 
 		/* Red */
+		{ "#FFBBBB", vi_si_inst_stage_scalar_decode },
 		{ "#FF8888", vi_si_inst_stage_scalar_read },
 		{ "#FF5555", vi_si_inst_stage_scalar_execute },
 		{ "#FF2222", vi_si_inst_stage_scalar_writeback },
 
 		/* Turquoise */
-		{ "#AFEEEE", vi_si_inst_stage_mem_read },
+		{ "#AFEEEE", vi_si_inst_stage_mem_decode },
+		{ "#08E8DE", vi_si_inst_stage_mem_read },
 		{ "#40E0D0", vi_si_inst_stage_mem_execute },
 		{ "#00CED1", vi_si_inst_stage_mem_writeback },
 
 		/* Purple */
-		{ "#DDA0DD", vi_si_inst_stage_simd_read },
+		{ "#DDA0DD", vi_si_inst_stage_simd_decode },
 		{ "#DA70D6", vi_si_inst_stage_simd_execute },
-		{ "#BA55D3", vi_si_inst_stage_simd_writeback },
 
 		/* Blue */
+		{ "#CCCCFF", vi_si_inst_stage_lds_decode },
 		{ "#97DEFB", vi_si_inst_stage_lds_read },
 		{ "#87CEFA", vi_si_inst_stage_lds_execute },
 		{ "#00BFFF", vi_si_inst_stage_lds_writeback },
@@ -105,25 +109,27 @@ struct str_map_t vi_si_inst_stage_name_map =
 		{ "x", vi_si_inst_stage_stalled },
 
 		{ "F", vi_si_inst_stage_fetch },
-		{ "D", vi_si_inst_stage_decode },
 		{ "I", vi_si_inst_stage_issue },
 
+		{ "BD", vi_si_inst_stage_branch_decode },
 		{ "BR", vi_si_inst_stage_branch_read },
 		{ "BE", vi_si_inst_stage_branch_execute },
 		{ "BW", vi_si_inst_stage_branch_writeback },
 
+		{ "SD", vi_si_inst_stage_scalar_decode },
 		{ "SR", vi_si_inst_stage_scalar_read },
 		{ "SE", vi_si_inst_stage_scalar_execute },
 		{ "SW", vi_si_inst_stage_scalar_writeback },
 
+		{ "MD", vi_si_inst_stage_mem_decode },
 		{ "MR", vi_si_inst_stage_mem_read },
 		{ "ME", vi_si_inst_stage_mem_execute },
 		{ "MW", vi_si_inst_stage_mem_writeback },
 
-		{ "VR", vi_si_inst_stage_simd_read },
+		{ "VD", vi_si_inst_stage_simd_decode },
 		{ "VE", vi_si_inst_stage_simd_execute },
-		{ "VW", vi_si_inst_stage_simd_writeback },
 
+		{ "LD", vi_si_inst_stage_lds_decode },
 		{ "LR", vi_si_inst_stage_lds_read },
 		{ "LE", vi_si_inst_stage_lds_execute },
 		{ "LW", vi_si_inst_stage_lds_writeback },
@@ -131,9 +137,10 @@ struct str_map_t vi_si_inst_stage_name_map =
 };
 
 
-struct vi_si_inst_t *vi_si_inst_create(char *name, long long id, int compute_unit_id, 
-	int inst_buffer_id, int work_group_id, int wavefront_id, enum vi_si_inst_stage_t stage,
-        long long int uop_id_in_wavefront, char *asm_code)
+struct vi_si_inst_t *vi_si_inst_create(char *name, long long id,
+	int compute_unit_id, int inst_buffer_id, int work_group_id, 
+	int wavefront_id, enum vi_si_inst_stage_t stage, 
+	long long int uop_id_in_wavefront, char *asm_code)
 
 {
 	struct vi_si_inst_t *inst;
@@ -174,8 +181,9 @@ void vi_si_inst_get_markup(struct vi_si_inst_t *inst, char *buf, int size)
 	end_color = "</span>";
 
 	/* Instruction ID */
-	str_printf(&buf, &size, "%s<b>I-%lld IB-%d WF-%d UOP-%lld</b>%s", begin_color, inst->id, 
-		inst->inst_buffer_id, inst->wavefront_id, inst->uop_id_in_wavefront, end_color);
+	str_printf(&buf, &size, "%s<b>I-%lld IB-%d WF-%d UOP-%lld</b>%s", 
+		begin_color, inst->id, inst->inst_buffer_id, inst->wavefront_id, 
+		inst->uop_id_in_wavefront, end_color);
 
 	/* Assembly */
 	if (inst->asm_code && *inst->asm_code)
