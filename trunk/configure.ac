@@ -12,11 +12,77 @@ AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([fcntl.h float.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h utime.h])
 AC_CHECK_HEADER([elf.h], [AC_DEFINE([HAVE_ELF_H])], [AC_MSG_ERROR([cannot find header elf.h])])
 
+# Checks for typedefs, structures, and compiler characteristics.
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_CHECK_MEMBERS([struct stat.st_blksize])
+AC_STRUCT_ST_BLOCKS
+AC_CHECK_MEMBERS([struct stat.st_rdev])
 
 
-#
-# Check for ZLib
-#
+# Checks for library functions.
+AC_FUNC_CHOWN
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
+AC_FUNC_MALLOC
+AC_FUNC_MMAP
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap select socket strcasecmp strchr strdup strncasecmp strtol utime])
+
+AC_CHECK_LIB([m], [sin])
+AC_CHECK_LIB([pthread], [pthread_create])
+
+
+##################
+# Test flag '-m32'
+##################
+
+saved_flags="$CFLAGS"
+CFLAGS="-m32"
+AC_MSG_CHECKING(for -m32 compiler flag)
+AC_LINK_IFELSE(
+	[
+		AC_LANG_PROGRAM(
+			[[#include <stdio.h>]],
+			[[int main() { printf("hello world\n"); return 0; }]]
+		)
+	],
+	[
+		AC_DEFINE([HAVE_M32_FLAG], [1])
+		AC_MSG_RESULT(yes)
+	],
+	[
+		AC_DEFINE([HAVE_M32_FLAG], [0])
+		AC_MSG_RESULT(no)
+		AC_MSG_WARN([
+
+	Your compiler does not support 32-bit compilation using the '-m32' flag.
+	This mode is needed to compile the Multi2Sim runtime libraries in
+	directory 'runtime', which you can later link with your OpenCL, OpenGL,
+	GLUT, ... guest programs.
+
+	This feature is not needed if you are just indenting to run pre-compiled
+	benchmarks. You need it only to compile your custom benchmarks that use
+	any of the Multi2Sim runtimes.
+
+	If you want to support this feature, please install the 32-bit gcc
+	libraries. For example, this can be done in Ubuntu 12.04 by running
+	command:
+
+		sudo apt-get install lib32gcc1
+]
+		)
+	]
+)
+CFLAGS="$saved_flags"
+AC_SUBST(HAVE_M32_FLAG)
+
+
+
+
+###########
+# Test ZLib
+###########
 
 have_zlib=yes
 AC_CHECK_HEADER([zlib.h], [AC_DEFINE([HAVE_ZLIB_H])], [have_zlib=no])
@@ -33,9 +99,11 @@ AC_MSG_ERROR([
 fi
 
 
-#
-# Check for GLUT
-#
+
+
+###########
+# Test GLUT
+###########
 
 # Check if the user explicitly disabled GLUT
 AC_ARG_ENABLE(glut,
@@ -83,32 +151,9 @@ fi
 
 
 
-# Checks for typedefs, structures, and compiler characteristics.
-AC_TYPE_OFF_T
-AC_TYPE_SIZE_T
-AC_CHECK_MEMBERS([struct stat.st_blksize])
-AC_STRUCT_ST_BLOCKS
-AC_CHECK_MEMBERS([struct stat.st_rdev])
-
-
-# Checks for library functions.
-AC_FUNC_CHOWN
-AC_FUNC_ERROR_AT_LINE
-AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
-AC_FUNC_MALLOC
-AC_FUNC_MMAP
-AC_FUNC_REALLOC
-AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap select socket strcasecmp strchr strdup strncasecmp strtol utime])
-
-AC_CHECK_LIB([m], [sin])
-AC_CHECK_LIB([pthread], [pthread_create])
-
-
-
-
-#
-# Check for GTK
-#
+##########
+# Test GTK
+##########
 
 have_gtk=no
 have_gtk_test=yes
@@ -174,9 +219,10 @@ AC_SUBST([PKGDATADIR])
 
 
 
-# ---------------------------------------------------------------------
+###################
 # Debug and profile
-# ---------------------------------------------------------------------
+###################
+
 debug=false
 CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG"
 AC_ARG_ENABLE(debug,
@@ -239,9 +285,10 @@ AC_ARG_ENABLE(no-strict-aliasing,
 AC_SUBST([CFLAGS])
 
 
-#
+
+##########
 # Includes
-#
+##########
 
 M2S_INCLUDES=" \
 \
@@ -253,9 +300,9 @@ AC_SUBST(M2S_INCLUDES)
 
 
 
-#
+###########
 # Makefiles
-#
+###########
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
