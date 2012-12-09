@@ -33,13 +33,15 @@ AC_CHECK_LIB([m], [sin])
 AC_CHECK_LIB([pthread], [pthread_create])
 
 
+
+
 ##################
 # Test flag '-m32'
 ##################
 
 saved_flags="$CFLAGS"
 CFLAGS="-m32"
-AC_MSG_CHECKING(for -m32 compiler flag)
+AC_MSG_CHECKING([for -m32 compiler flag])
 AC_LINK_IFELSE(
 	[
 		AC_LANG_PROGRAM(
@@ -52,7 +54,6 @@ AC_LINK_IFELSE(
 		AC_MSG_RESULT(yes)
 	],
 	[
-		AC_DEFINE([HAVE_M32_FLAG], [0])
 		AC_MSG_RESULT(no)
 		AC_MSG_WARN([
 
@@ -69,13 +70,45 @@ AC_LINK_IFELSE(
 	libraries. For example, this can be done in Ubuntu 12.04 by running
 	command:
 
-		sudo apt-get install lib32gcc1
-]
+		sudo apt-get install lib32gcc1]
 		)
 	]
 )
 CFLAGS="$saved_flags"
 AC_SUBST(HAVE_M32_FLAG)
+
+
+
+
+#############
+# Test OpenCL
+#############
+
+AC_MSG_CHECKING([for AMD OpenCL libraries])
+if test "x$AMDAPPSDKROOT" != "x"
+then
+	have_opencl=yes
+	AC_MSG_RESULT(yes)
+else
+	have_opencl=no
+	AC_MSG_RESULT(no)
+	AC_MSG_WARN([
+	
+	The AMD OpenCL SDK is not presently installed in your system, as
+	detected by the absence of the AMDAPPSDKROOT environment variable. The
+	headers and libraries provided by this package are needed to build the
+	command-line OpenCL kernel compiler provided by Multi2Sim.
+
+	This feature is only needed if you are intending to compile your own
+	OpenCL kernels, but not if you are using pre-compiled kernels available
+	on the benchmark suites. To enable this feature, you need to download
+	and install the AMD Catalyst GPU driver, as well as the AMD SDK.]
+	)
+fi
+
+# Conditional for Makefile.am
+AM_CONDITIONAL(HAVE_OPENCL, test x$have_opencl = xyes)
+
 
 
 
@@ -87,15 +120,16 @@ AC_SUBST(HAVE_M32_FLAG)
 have_zlib=yes
 AC_CHECK_HEADER([zlib.h], [AC_DEFINE([HAVE_ZLIB_H])], [have_zlib=no])
 AC_CHECK_LIB([z], [inflate], [], [have_zlib=no])
-if test x$have_zlib == xno; then
-AC_MSG_ERROR([
+if test x$have_zlib == xno
+then
+	AC_MSG_ERROR([
 	
 	The 'zlib' library development package is missing in your system.
 	Please install the package and then retry. On Debian-based Linux
 	distributions, you can run the following command:
 
-		sudo apt-get install zlib1g-dev
-])
+		sudo apt-get install zlib1g-dev]
+	)
 fi
 
 
@@ -118,8 +152,8 @@ then
 	AC_MSG_WARN([
 
 	The 'freeglut' library development explicitly disabled. Some features in
-	Multi2Sim will not be accessible.
-])
+	Multi2Sim will not be accessible.]
+	)
 
 else
 
@@ -130,24 +164,27 @@ else
 	AC_CHECK_LIB([GL], [glBegin], [], [have_glut=no])
 	AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_glut=no])
 
-	if test x$have_glut == xno; then
+	if test x$have_glut == xno
+	then
 		AC_MSG_WARN([
 	
 	The 'freeglut' library development package is missing in your system.
 	Please install the package and then retry. On Debian-based Linux
 	distributions, you can run the following command:
 
-		sudo apt-get install freeglut3-dev
-])
+		sudo apt-get install freeglut3-dev]
+	)
 
 	fi
 fi
 
 # Define macro for Automake and gcc
 AM_CONDITIONAL(HAVE_GLUT_H, test x$have_glut == xyes -a x$enable_glut == xyes)
-if test x$have_glut = xyes -a x$enable_glut = xyes; then
+if test x$have_glut = xyes -a x$enable_glut = xyes
+then
 	AC_DEFINE(HAVE_GLUT, [1])
 fi
+
 
 
 
@@ -165,43 +202,47 @@ AC_ARG_ENABLE(gtk,
 
 # Check if test for GTK is available
 ifdef([AM_PATH_GTK_3_0], [AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, )], [have_gtk_test=no] )
-if test x$have_gtk_test = xno; then
-AC_MSG_WARN([
+if test x$have_gtk_test = xno
+then
+	AC_MSG_WARN([
 	
 	The 'autoconf' tool could not interpret the macro checking for the
 	presence of the GTK development library (libgtk-3-dev) in your system.
 	Multi2Sim will be permanently compiled without support for GTK.
 	Before releasing a version with this configuration (running 'make dist'),
 	please install this package and rerun 'autoconf'. This will guarantee
-	that the conditional inclusion of GTK will depend on the user configuration.
-])
+	that the conditional inclusion of GTK will depend on the user configuration.]
+	)
 fi
 
 # Check if GTK is available
-if test x$have_gtk = xno; then
-AC_MSG_WARN([
+if test x$have_gtk = xno
+then
+	AC_MSG_WARN([
 
 	Multi2Sim will be compiled without support for GTK graphical applications.
 	Some features are disabled under this configuration, such as the GPU pipeline
 	debugger. To enable it, please install the development packages for GTK on
 	your system (e.g., package 'libgtk-3-dev' in Debian-based distributions),
-	and run './configure' again.
-])
+	and run './configure' again.]
+	)
 fi
 
 # Check if GTK is enabled
-if test x$enable_gtk = xno; then
-AC_MSG_WARN([
+if test x$enable_gtk = xno
+then
+	AC_MSG_WARN([
 
 	GTK is present in your system, but you have explicitly disabled support
 	for it. The GTK-based subset of Multi2Sim will not be available in the
-	generated executable.
-])
+	generated executable.]
+	)
 fi
 
 # Define macro for Automake and gcc
 AM_CONDITIONAL(HAVE_GTK, test x$have_gtk = xyes -a x$enable_gtk = xyes)
-if test x$have_gtk = xyes -a x$enable_gtk = xyes; then
+if test x$have_gtk = xyes -a x$enable_gtk = xyes
+then
 	AC_DEFINE(HAVE_GTK, [1])
 fi
 
@@ -283,6 +324,7 @@ AC_ARG_ENABLE(no-strict-aliasing,
 ],
 [])
 AC_SUBST([CFLAGS])
+
 
 
 
