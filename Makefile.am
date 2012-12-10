@@ -24,21 +24,6 @@ pkgdata_imagesdir = $(pkgdatadir)/images
 pkgdata_images_DATA = ${images}
 
 EXTRA_DIST = \
-	tools/m2s-opencl-kc/debug.c \
-	tools/m2s-opencl-kc/debug.h \
-	tools/m2s-opencl-kc/elfanalyze.c \
-	tools/m2s-opencl-kc/elfanalyze.h \
-	tools/m2s-opencl-kc/m2s-opencl-kc.c \
-	tools/m2s-opencl-kc/Makefile \
-	tools/m2s-opencl-kc/misc.c \
-	tools/m2s-opencl-kc/misc.h \
-	\
-	tools/m2s-opengl-kc/misc.c \
-	tools/m2s-opengl-kc/misc.h \
-	tools/m2s-opengl-kc/debug.c \
-	tools/m2s-opengl-kc/debug.h \
-	tools/m2s-opengl-kc/m2s-opengl-kc.c \
-	tools/m2s-opengl-kc/Makefile \
 	\
 	tools/libm2s-glut/glut.c \
 	tools/libm2s-glut/Makefile \
@@ -67,8 +52,6 @@ EXTRA_DIST = \
 	tools/libm2s-opengl/m2s-opengl.h \
 	tools/libm2s-opengl/opengl.c \
 	tools/libm2s-opengl/Makefile \
-	\
-	tools/inifile/inifile.py \
 	\
 	samples/arm/test-sort.c \
 	samples/arm/test-args.c \

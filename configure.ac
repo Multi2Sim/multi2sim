@@ -84,14 +84,39 @@ AC_SUBST(HAVE_M32_FLAG)
 # Test OpenCL
 #############
 
+# Run an OpenCL test program
 AC_MSG_CHECKING([for AMD OpenCL libraries])
+have_opencl=no
 if test "x$AMDAPPSDKROOT" != "x"
 then
-	have_opencl=yes
-	AC_MSG_RESULT(yes)
-else
-	have_opencl=no
-	AC_MSG_RESULT(no)
+	saved_cflags="$CFLAGS"
+	saved_ldflags="$LDFLAGS"
+	CFLAGS="-I$AMDAPPSDKROOT/include"
+	LDFLAGS="-L$AMDAPPSDKROOT/lib/x86 -L$AMDAPPSDKROOT/lib/x86_64 -lOpenCL"
+	AC_LINK_IFELSE(
+	[
+		AC_LANG_PROGRAM(
+			[[#include <CL/cl.h>]],
+			[[int main() {
+				cl_int ret;
+				cl_platform_id platform;
+				cl_uint num_platforms;
+				ret = clGetPlatformIDs(1, &platform, &num_platforms);
+			        return CL_SUCCESS;
+			}]]
+		)
+	],
+	[
+		have_opencl=yes
+	])
+	CFLAGS="$saved_cflags"
+	LDFLAGS="$saved_ldflags"
+fi
+
+# Warning if not
+AC_MSG_RESULT($have_opencl)
+if test "x$have_opencl" = "xno"
+then
 	AC_MSG_WARN([
 	
 	The AMD OpenCL SDK is not presently installed in your system, as
@@ -339,6 +364,7 @@ M2S_INCLUDES=" \
 "
 
 AC_SUBST(M2S_INCLUDES)
+
 
 
 
