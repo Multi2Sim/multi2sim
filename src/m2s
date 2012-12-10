@@ -1,0 +1,12 @@
+#!/bin/bash
+
+cat << EOF
+
+WARNING: All binaries generated in Multi2Sim's 'src' and 'tools' directories are
+now placed in 'multi2sim/bin'. A script showing this error message has been
+placed in 'multi2sim/src/m2s' temporarily to prevent accidental use of this
+path. Centralizing all binaries into one final directory is done as part of the
+Autotools integration process of all source code in 'tools'.
+
+EOF
+
