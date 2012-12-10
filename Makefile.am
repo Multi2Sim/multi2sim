@@ -1,4 +1,6 @@
-SUBDIRS = src
+SUBDIRS = \
+	src \
+	tools
 
 images = \
 	images/alu_engine.png \
