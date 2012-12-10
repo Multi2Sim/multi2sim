@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/list.h>
@@ -381,7 +382,7 @@ void main_compile_kernel()
 
 	/* Dump binary into file */
 	memset(bin_bits, 0, sizeof(bin_bits));
-	bin_bits[device_id] = malloc(bin_sizes[device_id]);
+	bin_bits[device_id] = xmalloc(bin_sizes[device_id]);
 	clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(bin_bits), bin_bits, NULL);
 	write_buffer(bin_file_name, bin_bits[device_id], bin_sizes[device_id]);
 	free(bin_bits[device_id]);
@@ -401,7 +402,8 @@ int read_device(char *device_str)
 
 	/* Try to interpret 'device_str' as a number */
 	device_id = strtol(device_str, &endptr, 10);
-	if (!*endptr) {
+	if (!*endptr)
+	{
 		if (device_id >= num_devices)
 			fatal("%d is not a valid device ID; use '-l' option for a list of valid IDs",
 				device_id);
@@ -409,7 +411,8 @@ int read_device(char *device_str)
 	}
 
 	/* 'device_str' is a string */
-	for (i = 0; i < num_devices; i++) {
+	for (i = 0; i < num_devices; i++)
+	{
 		clGetDeviceInfo(devices[i], CL_DEVICE_NAME, MAX_STRING_SIZE, name, NULL);
 		if (!strcasecmp(device_str, name))
 			return i;
@@ -426,7 +429,8 @@ int main(int argc, char **argv)
 	char *device_str = NULL;
 
 	/* No arguments */
-	if (argc == 1) {
+	if (argc == 1)
+	{
 		fprintf(stderr, syntax, argv[0]);
 		return 1;
 	}
@@ -464,10 +468,12 @@ int main(int argc, char **argv)
 	}
 
 	/* The only remaining argument should be the kernel to compile */
-	if (argc - optind > 1) {
+	if (argc - optind > 1)
+	{
 		fprintf(stderr, syntax, argv[0]);
 		return 1;
-	} else if (argc - optind == 1)
+	}
+	else if (argc - optind == 1)
 		kernel_file_name = argv[optind];
 	if (!kernel_file_name && !action_list_devices)
 		fatal("no kernel to compile");
@@ -498,7 +504,8 @@ int main(int argc, char **argv)
 		fatal("cannot get list of devices");
 	
 	/* Get selected device */
-	if (device_str) {
+	if (device_str)
+	{
 		device_id = read_device(device_str);
 		device = devices[device_id];
 	}
