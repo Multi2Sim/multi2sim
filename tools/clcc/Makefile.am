@@ -1,8 +1,8 @@
 if HAVE_OPENCL
 
-bin_PROGRAMS = m2s-clcc
+bin_PROGRAMS = $(top_builddir)/bin/m2s-clcc
 
-m2s_clcc_SOURCES = \
+__top_builddir__bin_m2s_clcc_SOURCES = \
 	clcc.c
 
 INCLUDES = @M2S_INCLUDES@
