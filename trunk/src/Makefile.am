@@ -6,9 +6,9 @@ SUBDIRS = \
 	network \
 	visual
 
-bin_PROGRAMS = m2s
+bin_PROGRAMS = $(top_builddir)/bin/m2s
 
-m2s_SOURCES = m2s.c
+__top_builddir__bin_m2s_SOURCES = m2s.c
 
 INCLUDES = @M2S_INCLUDES@
 
