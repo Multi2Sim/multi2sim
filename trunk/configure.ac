@@ -395,6 +395,9 @@ AC_CONFIG_FILES([Makefile
 		 src/lib/esim/Makefile
                  src/lib/mhandle/Makefile
                  src/lib/util/Makefile
+
+		 tools/Makefile
+		 tools/clcc/Makefile
 		 ])
 AC_OUTPUT
 

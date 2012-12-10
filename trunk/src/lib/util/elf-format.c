@@ -131,6 +131,19 @@ int elf_buffer_read(struct elf_buffer_t *buffer, void *ptr, int size)
 }
 
 
+/* Dump contents of buffer into file 'f'. The buffer is dumped at the current
+ * position of the file. */
+void elf_buffer_dump(struct elf_buffer_t *buffer, FILE *f)
+{
+	size_t size;
+
+	size = fwrite(buffer->ptr, 1, buffer->size, f);
+	if (size != buffer->size)
+		fatal("%s: couldn't dump buffer contents",
+			__FUNCTION__);
+}
+
+
 
 
 /*
@@ -142,6 +155,7 @@ static int elf_symbol_compare(const void *a, const void *b)
 {
 	const struct elf_symbol_t *symbol_a = a;
 	const struct elf_symbol_t *symbol_b = b;
+
 	if (symbol_a->value < symbol_b->value)
 		return -1;
 	else if (symbol_a->value > symbol_b->value)
@@ -232,7 +246,8 @@ static void elf_file_read_symbol_table(struct elf_file_t *elf_file)
 }
 
 
-struct elf_symbol_t *elf_symbol_get_by_address(struct elf_file_t *elf_file, uint32_t addr, uint32_t *offset_ptr)
+struct elf_symbol_t *elf_symbol_get_by_address(struct elf_file_t *elf_file,
+	unsigned int addr, unsigned int *offset_ptr)
 {
 	int min, max, mid;
 	struct elf_symbol_t *symbol;
