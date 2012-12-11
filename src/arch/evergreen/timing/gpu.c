@@ -713,7 +713,7 @@ int evg_gpu_run(void)
 		esim_finish = esim_finish_evg_max_inst;
 	
 	/* Stop if there was a simulation stall */
-	if (esim_cycle - evg_gpu->last_complete_cycle > 1000000)
+	if ((evg_gpu->cycle-evg_gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Evergreen GPU simulation stalled.\n%s",
 			evg_err_stall);
