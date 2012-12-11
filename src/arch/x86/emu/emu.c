@@ -112,7 +112,7 @@ void x86_emu_init(void)
 	/* Initialize GPU emulators */
 	x86_emu->gpu_kind = x86_emu_gpu_evergreen;
 
-#ifdef HAVE_GLUT
+#ifdef HAVE_OPENGL
 	/* GLUT */
 	x86_glut_init();
 #endif
@@ -127,7 +127,7 @@ void x86_emu_done(void)
 {
 	struct x86_ctx_t *ctx;
 
-#ifdef HAVE_GLUT
+#ifdef HAVE_OPENGL
 	x86_glut_done();
 #endif
 

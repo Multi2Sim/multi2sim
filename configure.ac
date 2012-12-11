@@ -160,54 +160,59 @@ fi
 
 
 
-###########
-# Test GLUT
-###########
+#############
+# Test OpenGL
+#############
 
-# Check if the user explicitly disabled GLUT
-AC_ARG_ENABLE(glut,
-	[  --enable-glut={yes|no}	Enable support for GLUT (default=yes)],
-	[], [ enable_glut=yes ])
+# Check if the user explicitly disabled OpenGL
+AC_ARG_ENABLE(opengl,
+	[  --enable-opengl={yes|no}	Enable support for OpenGL (default=yes)],
+	[], [ enable_opengl=yes ])
 
-# Check if GLUT is present
-if test "$enable_glut" == "no"
+# Check if OpenGL is present
+if test "$enable_opengl" == "no"
 then
 
-	have_glut=no
+	have_opengl=no
 	AC_MSG_WARN([
 
-	The 'freeglut' library development explicitly disabled. Some features in
+	The 'freeglut3' library development explicitly disabled. Some features in
 	Multi2Sim will not be accessible.]
 	)
 
 else
 
-	have_glut=yes
-	AC_CHECK_HEADER([GL/glut.h], [], [have_glut=no])
-	AC_CHECK_HEADER([GL/gl.h], [], [have_glut=no])
-	AC_CHECK_LIB([glut], [glutInit], [], [have_glut=no])
-	AC_CHECK_LIB([GL], [glBegin], [], [have_glut=no])
-	AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_glut=no])
+	have_opengl=yes
+	AC_CHECK_HEADER([GL/glut.h], [], [have_opengl=no])
+	AC_CHECK_HEADER([GL/gl.h], [], [have_opengl=no])
+	AC_CHECK_HEADER([GL/glu.h], [], [have_opengl=no])
+	AC_CHECK_HEADER([GL/glew.h], [], [have_opengl=no])
+	AC_CHECK_LIB([glut], [glutInit], [], [have_opengl=no])
+	AC_CHECK_LIB([GL], [glBegin], [], [have_opengl=no])
+	AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_opengl=no])
+	AC_CHECK_LIB([GLEW], [glewInit], [], [have_opengl=no])
 
-	if test x$have_glut == xno
+	if test "x$have_opengl" = "xno"
 	then
 		AC_MSG_WARN([
 	
-	The 'freeglut' library development package is missing in your system.
-	Please install the package and then retry. On Debian-based Linux
-	distributions, you can run the following command:
+	The OpenGL/glut/glew libraries are not installed in your system. These
+	libraries are needed to compile the simulation modules for OpenGL guest
+	programs, and to build the OpenGL shader compiler in 'tools/glcc'.
+	
+	In Ubuntu, you can install the package by using the following command:
 
-		sudo apt-get install freeglut3-dev]
+		sudo apt-get install freeglut3-dev libglew-dev]
 	)
 
 	fi
 fi
 
 # Define macro for Automake and gcc
-AM_CONDITIONAL(HAVE_GLUT_H, test x$have_glut == xyes -a x$enable_glut == xyes)
-if test x$have_glut = xyes -a x$enable_glut = xyes
+AM_CONDITIONAL(HAVE_OPENGL, test x$have_opengl == xyes -a x$enable_opengl == xyes)
+if test x$have_opengl = xyes -a x$enable_opengl = xyes
 then
-	AC_DEFINE(HAVE_GLUT, [1])
+	AC_DEFINE(HAVE_OPENGL, [1])
 fi
 
 
@@ -424,6 +429,7 @@ AC_CONFIG_FILES([Makefile
 
 		 tools/Makefile
 		 tools/clcc/Makefile
+		 tools/glcc/Makefile
 		 ])
 AC_OUTPUT
 

@@ -1,14 +1,36 @@
-#include <stdio.h>
-#include <unistd.h>
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/freeglut.h>
-#include "misc.h"
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
-#define		MAX_STRING_SIZE  200
+#include <lib/util/misc.h>
+#include <lib/util/string.h>
 
-#define		PROGRAM_BINARY_RETRIEVABLE_HINT 	0x8257
+
+#define PROGRAM_BINARY_RETRIEVABLE_HINT  0x8257
+
 
 static char *syntax =
 	"Syntax: %s [<options>] <Vertex/Fragment shader source file>\n"
@@ -70,10 +92,12 @@ void kernel_binary_analyze(const char *file_name)
 {
 	const char ELF_magic[4]={0x7F,0x45,0x4C,0x46};
 	char file_name_dest[MAX_STRING_SIZE];
+
 	// read shader binary file into a buffer
-	char *	file_buffer = NULL;
-	size_t	file_size;
-	file_buffer = (char*)read_buffer((char*)file_name, &file_size);
+	char *file_buffer = NULL;
+	int file_size;
+
+	file_buffer = (char*) read_buffer((char*) file_name, &file_size);
 
 	// find ELF magic in shader binary and dump 
 	int i;
@@ -442,11 +466,12 @@ int main(int argc, char *argv[])
 	char *CTShaderSource = NULL;
 	char *EVShaderSource = NULL;
 	char *GMShaderSource = NULL;
-	size_t VS_source_size;
-	size_t FS_source_size;
-	size_t CT_source_size;
-	size_t EV_source_size;
-	size_t GM_source_size;
+
+	int VS_source_size;
+	int FS_source_size;
+	int CT_source_size;
+	int EV_source_size;
+	int GM_source_size;
 
 	VSShaderSource = (GLchar*)read_buffer(vsfile, &VS_source_size);
 	FSShaderSource = (GLchar*)read_buffer(fsfile, &FS_source_size);
