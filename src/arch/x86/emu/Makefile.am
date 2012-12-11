@@ -46,7 +46,7 @@ libemu_a_SOURCES = \
 	uinst.c \
 	uinst.h
 
-if HAVE_GLUT_H
+if HAVE_OPENGL
 libemu_a_SOURCES += \
 	\
 	glut.c \
