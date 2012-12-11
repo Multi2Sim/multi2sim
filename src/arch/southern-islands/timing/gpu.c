@@ -886,7 +886,7 @@ void si_gpu_dump_summary(FILE *f)
 	/* Print statistics */
 	fprintf(f, "Cycles = %lld\n", si_gpu->cycle);
 	fprintf(f, "SimulatedCyclesPerSecond = %.0f\n", cycles_per_sec);
-	fprintf(f, "Time at 925MHz = %.3fms\n", si_gpu->cycle/925000.0);
+	//fprintf(f, "Time at 925MHz = %.3fms\n", si_gpu->cycle/925000.0);
 }
 
 
@@ -945,7 +945,7 @@ int si_gpu_run(void)
 		esim_finish = esim_finish_si_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if (esim_cycle - si_gpu->last_complete_cycle > 1000000)
+	if ((si_gpu->cycle-si_gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", si_err_stall);
 		esim_finish = esim_finish_stall;
