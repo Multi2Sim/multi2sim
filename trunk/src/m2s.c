@@ -90,6 +90,7 @@ static char *evg_stack_debug_file_name = "";
 
 static char *si_disasm_file_name = "";
 static char *si_isa_debug_file_name = "";
+static char *si_opencl_debug_file_name = "";
 static char *si_opengl_disasm_file_name = "";
 static int si_opengl_disasm_shader_index = 1;
 
@@ -328,6 +329,11 @@ static char *m2s_help =
 	"  --si-debug-isa <file>\n"
 	"      Debug information on the emulation of Southern Islands ISA instructions,\n"
 	"      including architectural state updates on registers and memory locations.\n"
+	"\n"
+	"  --si-debug-opencl <file>\n"
+	"      Dump debug information on OpenCL system calls performed by the x86 host\n"
+	"      program. The information includes OpenCL call code, arguments, and return\n"
+	"      values.\n"
 	"\n"
 	"  --si-disasm <file>\n"
 	"      Disassemble a Southern Islands kernel binary. This option is incompatible\n"
@@ -906,6 +912,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			si_isa_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* OpenCL debug file */
+		if (!strcmp(argv[argi], "--si-debug-opencl"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_opencl_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -1594,7 +1608,7 @@ int main(int argc, char **argv)
 	evg_isa_debug_category = debug_new_category(evg_isa_debug_file_name);
 	evg_stack_debug_category = debug_new_category(evg_stack_debug_file_name);  /* GPU-REL */
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
-	si_opencl_debug_category = debug_new_category(evg_opencl_debug_file_name);
+	si_opencl_debug_category = debug_new_category(si_opencl_debug_file_name);
 	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
 	frm_cuda_debug_category = debug_new_category(frm_cuda_debug_file_name);
 	arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
