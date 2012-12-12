@@ -393,6 +393,7 @@ AC_CONFIG_FILES([
 		 
 		runtime/Makefile
 		runtime/glut/Makefile
+		runtime/include/Makefile
 
                 src/Makefile
 
