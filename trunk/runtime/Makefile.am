@@ -1,2 +1,4 @@
 SUBDIRS = \
-	glut
+	glut \
+	include
+

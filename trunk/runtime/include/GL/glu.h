@@ -1,4 +1,4 @@
-#include <GL/gl.h>
+#include "gl.h"
 
 
 typedef struct GLUnurbs GLUnurbs;

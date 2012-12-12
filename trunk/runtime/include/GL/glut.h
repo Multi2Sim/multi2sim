@@ -1,6 +1,6 @@
 
-#include <CL/gl.h>
-#include <CL/glu.h>
+#include "gl.h"
+#include "glu.h"
 
 extern void *glutStrokeRoman;
 extern void *glutStrokeMonoRoman;
