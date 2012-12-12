@@ -142,7 +142,9 @@ long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind,
 		else if (access_kind == mod_access_prefetch)
 		{
 			event = EV_MOD_NMOESI_PREFETCH;
-		} else {
+		}
+		else 
+		{
 			panic("%s: invalid access kind", __FUNCTION__);
 		}
 	}

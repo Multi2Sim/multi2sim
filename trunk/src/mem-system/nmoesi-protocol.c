@@ -638,6 +638,18 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 			return;
 		}
 
+		/* Main memory modules are a special case */
+		if (mod->kind == mod_kind_main_memory)
+		{
+			/* For non-coherent stores, finding an E or M for the state of
+			 * a cache block in the directory still requires a message to 
+			 * the lower-level module so it can update its owner field.
+			 * These messages should not be sent if the module is a main
+			 * memory module. */
+			esim_schedule_event(EV_MOD_NMOESI_NC_STORE_UNLOCK, stack, 0);
+			return;
+		}
+
 		/* N/S are hit */
 		if (stack->state == cache_block_shared || stack->state == cache_block_noncoherent)
 		{
