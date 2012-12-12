@@ -1,4 +1,5 @@
 SUBDIRS = \
+	runtime \
 	src \
 	tools
 
@@ -94,4 +95,6 @@ EXTRA_DIST = \
 	samples/x86/test-threads.c \
 	\
 	${images}
+
+ACLOCAL_AMFLAGS = -I m4
 

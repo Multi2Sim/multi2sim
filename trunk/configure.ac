@@ -4,7 +4,10 @@ AM_INIT_AUTOMAKE([nostdinc])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
-AC_PROG_RANLIB
+
+# Libtool
+LT_INIT
+AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -29,8 +32,8 @@ AC_FUNC_MMAP
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap select socket strcasecmp strchr strdup strncasecmp strtol utime])
 
-AC_CHECK_LIB([m], [sin])
-AC_CHECK_LIB([pthread], [pthread_create])
+#AC_CHECK_LIB([m], [sin])
+#AC_CHECK_LIB([pthread], [pthread_create])
 
 
 
@@ -42,6 +45,7 @@ AC_CHECK_LIB([pthread], [pthread_create])
 saved_flags="$CFLAGS"
 CFLAGS="-m32"
 AC_MSG_CHECKING([for -m32 compiler flag])
+have_m32_flag="no"
 AC_LINK_IFELSE(
 	[
 		AC_LANG_PROGRAM(
@@ -50,12 +54,16 @@ AC_LINK_IFELSE(
 		)
 	],
 	[
-		AC_DEFINE([HAVE_M32_FLAG], [1])
-		AC_MSG_RESULT(yes)
-	],
-	[
-		AC_MSG_RESULT(no)
-		AC_MSG_WARN([
+		have_m32_flag="yes"
+	]
+)
+AC_MSG_RESULT($have_m32_flag)
+CFLAGS="$saved_flags"
+
+# Show warning
+if test "x$have_m32_flag" = "xno"
+then
+	AC_MSG_WARN([
 
 	Your compiler does not support 32-bit compilation using the '-m32' flag.
 	This mode is needed to compile the Multi2Sim runtime libraries in
@@ -71,11 +79,11 @@ AC_LINK_IFELSE(
 	command:
 
 		sudo apt-get install lib32gcc1]
-		)
-	]
-)
-CFLAGS="$saved_flags"
-AC_SUBST(HAVE_M32_FLAG)
+	)
+fi
+
+# Conditional for Makefile.am
+AM_CONDITIONAL(HAVE_M32_FLAG, test x$have_m32_flag = xyes)
 
 
 
@@ -144,7 +152,7 @@ AM_CONDITIONAL(HAVE_OPENCL, test x$have_opencl = xyes)
 
 have_zlib=yes
 AC_CHECK_HEADER([zlib.h], [AC_DEFINE([HAVE_ZLIB_H])], [have_zlib=no])
-AC_CHECK_LIB([z], [inflate], [], [have_zlib=no])
+#AC_CHECK_LIB([z], [inflate], [], [have_zlib=no])
 if test x$have_zlib == xno
 then
 	AC_MSG_ERROR([
@@ -187,10 +195,13 @@ else
 	AC_CHECK_HEADER([GL/gl.h], [], [have_opengl=no])
 	AC_CHECK_HEADER([GL/glu.h], [], [have_opengl=no])
 	AC_CHECK_HEADER([GL/glew.h], [], [have_opengl=no])
-	AC_CHECK_LIB([glut], [glutInit], [], [have_opengl=no])
-	AC_CHECK_LIB([GL], [glBegin], [], [have_opengl=no])
-	AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_opengl=no])
-	AC_CHECK_LIB([GLEW], [glewInit], [], [have_opengl=no])
+	#AC_CHECK_LIB([glut], [glutInit], [], [have_opengl=no])
+	#AC_CHECK_LIB([GL], [glBegin], [], [have_opengl=no])
+	#AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_opengl=no])
+	#AC_CHECK_LIB([GLEW], [glewInit], [], [have_opengl=no])
+
+	OPENGL_LDFLAGS="-lGL -lGLU -lGLEW -lglut"
+	AC_SUBST([OPENGL_LDFLAGS])
 
 	if test "x$have_opengl" = "xno"
 	then
@@ -377,59 +388,64 @@ AC_SUBST(M2S_INCLUDES)
 # Makefiles
 ###########
 
-AC_CONFIG_FILES([Makefile
-                 src/Makefile
+AC_CONFIG_FILES([
+		Makefile
+		 
+		runtime/Makefile
+		runtime/glut/Makefile
 
-		 src/arch/Makefile
-		 src/driver/Makefile
-		 src/lib/Makefile
-		 src/mem-system/Makefile
-		 src/network/Makefile
-		 src/visual/Makefile
+                src/Makefile
 
-		 src/arch/common/Makefile
+		src/arch/Makefile
+		src/driver/Makefile
+		src/lib/Makefile
+		src/mem-system/Makefile
+		src/network/Makefile
 
-		 src/arch/arm/Makefile
-		 src/arch/arm/asm/Makefile
-		 src/arch/arm/emu/Makefile
-		 src/arch/arm/timing/Makefile
+		src/visual/Makefile
+		src/visual/common/Makefile
+		src/visual/evergreen/Makefile
+		src/visual/memory/Makefile
+		src/visual/southern-islands/Makefile
+		src/visual/x86/Makefile
 
-		 src/arch/evergreen/Makefile
-		 src/arch/evergreen/asm/Makefile
-		 src/arch/evergreen/emu/Makefile
-		 src/arch/evergreen/timing/Makefile
+		src/arch/common/Makefile
 
-		 src/arch/fermi/Makefile
-		 src/arch/fermi/asm/Makefile
-		 src/arch/fermi/emu/Makefile
-		 src/arch/fermi/timing/Makefile
+		src/arch/arm/Makefile
+		src/arch/arm/asm/Makefile
+		src/arch/arm/emu/Makefile
+		src/arch/arm/timing/Makefile
 
-		 src/arch/southern-islands/Makefile
-		 src/arch/southern-islands/asm/Makefile
-		 src/arch/southern-islands/emu/Makefile
-		 src/arch/southern-islands/timing/Makefile
+		src/arch/evergreen/Makefile
+		src/arch/evergreen/asm/Makefile
+		src/arch/evergreen/emu/Makefile
+		src/arch/evergreen/timing/Makefile
 
-		 src/arch/x86/Makefile
-		 src/arch/x86/asm/Makefile
-		 src/arch/x86/emu/Makefile
-		 src/arch/x86/timing/Makefile
+		src/arch/fermi/Makefile
+		src/arch/fermi/asm/Makefile
+		src/arch/fermi/emu/Makefile
+		src/arch/fermi/timing/Makefile
 
-		 src/driver/x86/Makefile
-		 src/driver/x86/glut/Makefile
+		src/arch/southern-islands/Makefile
+		src/arch/southern-islands/asm/Makefile
+		src/arch/southern-islands/emu/Makefile
+		src/arch/southern-islands/timing/Makefile
 
-		 src/visual/common/Makefile
-		 src/visual/evergreen/Makefile
-		 src/visual/memory/Makefile
-		 src/visual/southern-islands/Makefile
-		 src/visual/x86/Makefile
+		src/arch/x86/Makefile
+		src/arch/x86/asm/Makefile
+		src/arch/x86/emu/Makefile
+		src/arch/x86/timing/Makefile
 
-		 src/lib/esim/Makefile
-                 src/lib/mhandle/Makefile
-                 src/lib/util/Makefile
+		src/driver/x86/Makefile
+		src/driver/x86/glut/Makefile
 
-		 tools/Makefile
-		 tools/clcc/Makefile
-		 tools/glcc/Makefile
-		 ])
+		src/lib/esim/Makefile
+                src/lib/mhandle/Makefile
+                src/lib/util/Makefile
+
+		tools/Makefile
+		tools/clcc/Makefile
+		tools/glcc/Makefile
+		])
 AC_OUTPUT
 
