@@ -17,9 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <GL/gl.h>
 #include <unistd.h>
 
+#include "../include/GL/gl.h"
 #include "api.h"
 #include "debug.h"
 #include "window.h"
