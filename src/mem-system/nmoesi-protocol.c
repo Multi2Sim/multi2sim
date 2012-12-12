@@ -2492,13 +2492,13 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		{
 			/* Exclusive and shared states send an ack */
 			stack->reply_size = 8;
-			mod_stack_set_reply(stack, reply_ack);
+			mod_stack_set_reply(ret, reply_ack);
 		}
 		else if (stack->state == cache_block_noncoherent)
 		{
 			/* Non-coherent state sends data */
 			stack->reply_size = target_mod->block_size + 8;
-			mod_stack_set_reply(stack, reply_ack_data);
+			mod_stack_set_reply(ret, reply_ack_data);
 		}
 		else if (stack->state == cache_block_modified || 
 			stack->state == cache_block_owned)
@@ -2507,7 +2507,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 			{
 				/* Modified or owned entries send data directly to peer 
 				 * if it exists */
-				mod_stack_set_reply(stack, reply_ack_data_sent_to_peer);
+				mod_stack_set_reply(ret, reply_ack_data_sent_to_peer);
 				stack->reply_size = 8;
 
 				/* This control path uses an intermediate stack that disappears, so 
@@ -2527,7 +2527,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 			else 
 			{
 				/* If peer does not exist, data is returned to mod */
-				mod_stack_set_reply(stack, reply_ack_data);
+				mod_stack_set_reply(ret, reply_ack_data);
 				stack->reply_size = target_mod->block_size + 8;
 			}
 		}
@@ -2551,8 +2551,8 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		/* Set state to I, unlock*/
 		cache_set_block(target_mod->cache, stack->set, stack->way, 0, cache_block_invalid);
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
-		
-		int latency = stack->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
+
+		int latency = ret->reply == reply_ack_data_sent_to_peer ? 0 : target_mod->latency;
 		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, latency);
 		return;
 	}
@@ -2607,12 +2607,6 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		else
 		{
 			net_receive(mod->high_net, mod->high_net_node, stack->msg);
-
-			if (stack->reply == reply_ack_data)
-			{
-				cache_set_block(mod->cache, stack->set, stack->way, stack->tag,
-					cache_block_modified);
-			}
 		}
 		
 
