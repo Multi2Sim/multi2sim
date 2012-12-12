@@ -1,4 +1,4 @@
-/*
+/* 
  *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -19,13 +19,13 @@
 
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include <GL/glu.h>
 #include <GL/freeglut.h>
+#include <GL/glu.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
-#include <lib/util/misc.h>
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/string.h>
 
 
@@ -33,52 +33,76 @@
 
 
 static char *syntax =
-	"Syntax: %s [<options>] <Vertex/Fragment shader source file>\n"
+	"Syntax: %s [<options>]\n"
 	"\tOptions:\n"
-	"\t-a           Dump intermediate ELF files\n"
-	"\t-v           Vertex shader source code\n"
-	"\t-f           Fragment shader source code\n"
-	"\t-e           Evaluation shader source code\n"
-	"\t-g           Geometry shader source code\n"
-	"\t-c           Control shader source code\n"
-	"\t-o           Output binary file name\n";
+	"\t-a\t\t\t\tDump intermediate ELF files\n"
+	"\t-v  <shader source file>\tVertex shader source code\n"
+	"\t-e  <shader source file>\tEvaluation shader source code\n"
+	"\t-c  <shader source file>\tControl shader source code\n"
+	"\t-g  <shader source file>\tGeometry shader source code\n"
+	"\t-f  <shader source file>\tFragment shader source code\n"
+	"\t-o\t\t\t\tOutput binary file name\n";
 
 
-int dump_intermediate = 0;  /* Dump intermediate files */
+int dump_intermediate = 0;	/* Dump intermediate files */
 
-int InitGLContext(int argc, char *argv[])
+/* For read shaders */
+void *read_buffer(char *file_name, int *psize)
 {
-	// Init
+	FILE *f;
+	void *buf;
+	int size;
+
+	f = fopen(file_name, "rb");
+	if (!f)
+		return NULL;
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	buf = xmalloc(size + 1);
+	memset(buf, 0, size + 1);
+	fread(buf, 1, size, f);
+	if (psize)
+		*psize = size;
+	return buf;
+}
+
+int opengl_context_init(int argc, char *argv[])
+{
+	/* Init */
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
-	glutInitContextVersion(4,1);
+	glutInitContextVersion(4, 1);
 	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
 	glutCreateWindow("OpenGL offline compiler");
 
-	// Platform & OpenGL infomation
-	const GLubyte *renderer = glGetString( GL_RENDERER );
-	const GLubyte *vendor = glGetString( GL_VENDOR );
-	const GLubyte *version = glGetString( GL_VERSION );
-	const GLubyte *glslVersion = glGetString( GL_SHADING_LANGUAGE_VERSION );
+	/* Platform & OpenGL infomation */
+	const GLubyte *renderer = glGetString(GL_RENDERER);
+	const GLubyte *vendor = glGetString(GL_VENDOR);
+	const GLubyte *version = glGetString(GL_VERSION);
+	const GLubyte *glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
 	GLint major, minor;
+
 	glGetIntegerv(GL_MAJOR_VERSION, &major);
 	glGetIntegerv(GL_MINOR_VERSION, &minor);
-	
+
 	printf("GL Vendor: %s\n", vendor);
 	printf("GL Renderer : %s\n", renderer);
 	printf("GL Version (string) : %s\n", version);
 	printf("GL Version (integer) : %d.%d\n", major, minor);
 	printf("GLSL Version : %s\n", glslVersion);
-	
+
 	GLenum err = glewInit();
+
 	if (GLEW_OK != err)
 	{
 		/* Problem: glewInit failed, something is seriously wrong. */
 		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
 		return -1;
 	}
-	
-	// Check if the ARB_get_program_binary is supported
+
+	/* Check if the ARB_get_program_binary is supported */
 	if (!GLEW_ARB_get_program_binary)
 	{
 		fprintf(stderr, "Need ARB_get_program_binary support!\n");
@@ -88,253 +112,165 @@ int InitGLContext(int argc, char *argv[])
 	return 0;
 }
 
-void kernel_binary_analyze(const char *file_name)
+void opengl_shader_binary_analyze(const char *file_name)
 {
-	const char ELF_magic[4]={0x7F,0x45,0x4C,0x46};
+	char ELF_MAGIC[4] = { 0x7F, 0x45, 0x4C, 0x46 };
 	char file_name_dest[MAX_STRING_SIZE];
+	char *file_buffer;
 
-	// read shader binary file into a buffer
-	char *file_buffer = NULL;
 	int file_size;
-
-	file_buffer = (char*) read_buffer((char*) file_name, &file_size);
-
-	// find ELF magic in shader binary and dump 
 	int i;
 	int count = 0;
-	for (i = 0; i < file_size - sizeof(ELF_magic); ++i)
+
+	FILE *f;
+	void *tmp_buf;
+
+	file_buffer = (char *) read_buffer((char *) file_name, &file_size);
+
+	/* Find ELF magic in shader binary and dump */
+	for (i = 0; i < file_size - sizeof(ELF_MAGIC); ++i)
 	{
-		if (memcmp(file_buffer,ELF_magic,sizeof(ELF_magic)) == 0)
+		if (memcmp(file_buffer, ELF_MAGIC, sizeof(ELF_MAGIC)) == 0)
 		{
-			printf("Find ELF Magic in position %d\n", i);
-			sprintf(file_name_dest, "%s.elf.%d", file_name, count);
+			printf("Find ELF Magic at position %d\n", i);
+			sprintf(file_name_dest, "%s.elf.%d", file_name,
+				count);
 			count++;
-
-			void* tmp_buf = (void*)malloc(file_size-i);
-			memcpy(tmp_buf, file_buffer, file_size-i);
-
-			FILE *f;
+			tmp_buf = (void *) xmalloc(file_size - i);
+			memcpy(tmp_buf, file_buffer, file_size - i);
 			f = fopen(file_name_dest, "wb");
-			fwrite(tmp_buf, file_size-i, 1, f);
+			fwrite(tmp_buf, file_size - i, 1, f);
 			free(tmp_buf);
-			fclose(f);	
+			fclose(f);
 		}
 		file_buffer++;
-
 	}
 }
 
-int MainGetBinary(const GLchar** vertexSource, const GLchar** fragmentSource, const GLchar** controlSource, const GLchar** evaluationSource, const GLchar** geometrySource, const char* outputfile)
+void opengl_check_compile_error(GLuint opengl_shader_id)
 {
+	char *log;
 	GLint result;
+	GLint logLen;
+	GLsizei written;
 
-	if ( !vertexSource || !fragmentSource)
+	/* Check compilation errors */
+	glGetShaderiv(opengl_shader_id, GL_COMPILE_STATUS, &result);
+	if (result == GL_FALSE)
 	{
+		fprintf(stderr, "Shader compilation failed!\n");
+
+		glGetShaderiv(opengl_shader_id, GL_INFO_LOG_LENGTH, &logLen);
+		if (logLen > 0)
+		{
+			log = (char *) xmalloc(logLen);
+			glGetShaderInfoLog(opengl_shader_id, logLen, &written,
+				log);
+			fprintf(stderr, "Shader log:\n%s", log);
+			free(log);
+			exit(1);
+		}
+	}
+}
+
+GLuint opengl_compile_shader(const GLchar ** opengl_shader_source,
+	GLenum opengl_shader_type)
+{
+	GLuint opengl_shader_id;
+
+	opengl_shader_id = glCreateShader(opengl_shader_type);
+	if (opengl_shader_id == 0)
+	{
+		fprintf(stderr, "Error creating shader.\n");
+		exit(1);
+	}
+	glShaderSource(opengl_shader_id, 1, opengl_shader_source, NULL);
+	glCompileShader(opengl_shader_id);
+	opengl_check_compile_error(opengl_shader_id);
+	return opengl_shader_id;
+}
+
+int opengl_shader_binary_generator(const GLchar ** opengl_vertex_source,
+	const GLchar ** opengl_fragment_source,
+	const GLchar ** opengl_tessellation_control_source,
+	const GLchar ** opengl_tessellation_evaluation_source,
+	const GLchar ** opengl_geometry_source, const char *outputfile)
+{
+	int i;
+	void *bin_buffer;
+	FILE *f;
+
+	GLuint opengl_vertex_shader_id = 0;
+	GLuint opengl_tessellation_control_shader_id = 0;
+	GLuint opengl_tessellation_evaluation_shader_id = 0;
+	GLuint opengl_geometry_shader_id = 0;
+	GLuint opengl_fragment_shader_id = 0;
+
+	GLint status;
+	GLint formats;
+	GLint logLen;
+	GLsizei written;
+	GLint bin_length;
+
+	if (!opengl_vertex_source || !opengl_fragment_source)
 		return -1;
-	}
 
-	// Compile Vertex Shader
-	GLuint vertShader = glCreateShader( GL_VERTEX_SHADER );
-	if( 0 == vertShader )
-	{
-		fprintf(stderr, "Error creating vertex shader.\n");
-		exit(1);
-	}
+	/* Compile shaders */
+	opengl_vertex_shader_id =
+		opengl_compile_shader(opengl_vertex_source, GL_VERTEX_SHADER);
+	if (opengl_tessellation_control_source)
+		opengl_tessellation_control_shader_id =
+			opengl_compile_shader
+			(opengl_tessellation_control_source,
+			GL_TESS_CONTROL_SHADER);
+	if (opengl_tessellation_evaluation_source)
+		opengl_tessellation_evaluation_shader_id =
+			opengl_compile_shader
+			(opengl_tessellation_evaluation_source,
+			GL_TESS_EVALUATION_SHADER);
+	if (opengl_geometry_source)
+		opengl_geometry_shader_id =
+			opengl_compile_shader(opengl_geometry_source,
+			GL_GEOMETRY_SHADER);
+	opengl_fragment_shader_id =
+		opengl_compile_shader(opengl_fragment_source,
+		GL_FRAGMENT_SHADER);
 
-	// printf("%s\n", vertexSource[0]);
-	glShaderSource( vertShader, 1, vertexSource, NULL );
-
-	glCompileShader( vertShader );
-	
-	glGetShaderiv( vertShader, GL_COMPILE_STATUS, &result );
-	if( GL_FALSE == result )
-	{
-		fprintf( stderr, "Vertex shader compilation failed!\n" );
-		GLint logLen;
-		glGetShaderiv( vertShader, GL_INFO_LOG_LENGTH, &logLen );
-		if( logLen > 0 )
-		{
-			char * log = (char *)malloc(logLen);
-			GLsizei written;
-			glGetShaderInfoLog(vertShader, logLen, &written, log);
-			fprintf(stderr, "Shader log:\n%s", log);
-			free(log);
-			exit(1);		
-		}
-	}
-
-	GLuint ctrlShader = 0;
-	GLuint evalShader = 0;
-	GLuint geomShader = 0;
-
-	// Compile Control Shader
-	if (controlSource)
-	{
-		ctrlShader = glCreateShader(GL_TESS_CONTROL_SHADER);
-
-		if( 0 == ctrlShader )
-		{
-			fprintf(stderr, "Error creating control shader.\n");
-			exit(1);
-		}
-		glShaderSource( ctrlShader, 1, controlSource, NULL );
-
-		glCompileShader( ctrlShader );
-		
-		glGetShaderiv( ctrlShader, GL_COMPILE_STATUS, &result );
-		if( GL_FALSE == result )
-		{
-			fprintf( stderr, "Control shader compilation failed!\n" );
-			GLint logLen;
-			glGetShaderiv( ctrlShader, GL_INFO_LOG_LENGTH, &logLen );
-			if( logLen > 0 )
-			{
-				char * log = (char *)malloc(logLen);
-				GLsizei written;
-				glGetShaderInfoLog(ctrlShader, logLen, &written, log);
-				fprintf(stderr, "Shader log:\n%s", log);
-				free(log);
-				exit(1);		
-			}
-		}
-	}
-
-	// Compile Evaluation Shader
-	if (evaluationSource)
-	{
-		evalShader = glCreateShader(GL_TESS_EVALUATION_SHADER);
-
-		if( 0 == evalShader )
-		{
-			fprintf(stderr, "Error creating evaluation shader.\n");
-			exit(1);
-		}
-		glShaderSource( evalShader, 1, evaluationSource, NULL );
-
-		glCompileShader( evalShader );
-		
-		glGetShaderiv( evalShader, GL_COMPILE_STATUS, &result );
-		if( GL_FALSE == result )
-		{
-			fprintf( stderr, "Evaluation shader compilation failed!\n" );
-			GLint logLen;
-			glGetShaderiv( evalShader, GL_INFO_LOG_LENGTH, &logLen );
-			if( logLen > 0 )
-			{
-				char * log = (char *)malloc(logLen);
-				GLsizei written;
-				glGetShaderInfoLog(evalShader, logLen, &written, log);
-				fprintf(stderr, "Shader log:\n%s", log);
-				free(log);
-				exit(1);		
-			}
-		}
-	}
-
-	// Compile Geometry Shader
-	if (geometrySource)
-	{
-		geomShader = glCreateShader(GL_GEOMETRY_SHADER);
-
-		if( 0 == geomShader )
-		{
-			fprintf(stderr, "Error creating geometry shader.\n");
-			exit(1);
-		}
-		glShaderSource( geomShader, 1, geometrySource, NULL );
-
-		glCompileShader( geomShader );
-		
-		glGetShaderiv( geomShader, GL_COMPILE_STATUS, &result );
-		if( GL_FALSE == result )
-		{
-			fprintf( stderr, "Geometry shader compilation failed!\n" );
-			GLint logLen;
-			glGetShaderiv( geomShader, GL_INFO_LOG_LENGTH, &logLen );
-			if( logLen > 0 )
-			{
-				char * log = (char *)malloc(logLen);
-				GLsizei written;
-				glGetShaderInfoLog(geomShader, logLen, &written, log);
-				fprintf(stderr, "Shader log:\n%s", log);
-				free(log);
-				exit(1);		
-			}
-		}
-	}	
-
-	// Compile Fragment Shader
-	GLuint fragShader = glCreateShader( GL_FRAGMENT_SHADER );
-	if( 0 == fragShader )
-	{
-		fprintf(stderr, "Error creating fragment shader.\n");
-		exit(1);
-	}
-
-	glShaderSource( fragShader, 1, fragmentSource, NULL );
-
-	glCompileShader( fragShader );
-	
-	glGetShaderiv( fragShader, GL_COMPILE_STATUS, &result );
-	if( GL_FALSE == result )
-	{
-		fprintf( stderr, "Fragment shader compilation failed!\n" );
-		GLint logLen;
-		glGetShaderiv( fragShader, GL_INFO_LOG_LENGTH, &logLen );
-		if( logLen > 0 )
-		{
-			char * log = (char *)malloc(logLen);
-			GLsizei written;
-			glGetShaderInfoLog(fragShader, logLen, &written, log);
-			fprintf(stderr, "Shader log:\n%s", log);
-			free(log);
-			exit(1);
-		}
-	}
-
-	// Create GL program
+	/* Create GL program */
 	GLuint glprogram = glCreateProgram();
-	if( 0 == glprogram )
+
+	if (glprogram == 0)
 	{
 		fprintf(stderr, "Error creating program object.\n");
 		exit(1);
 	}
 
-	// Attach Vert&Frag shader to program
-	glAttachShader(glprogram,vertShader);
+	/* Attach shaders to program */
+	glAttachShader(glprogram, opengl_vertex_shader_id);
+	if (opengl_tessellation_control_shader_id != 0)
+		glAttachShader(glprogram,
+			opengl_tessellation_control_shader_id);
+	if (opengl_tessellation_evaluation_shader_id != 0)
+		glAttachShader(glprogram,
+			opengl_tessellation_evaluation_shader_id);
+	if (opengl_geometry_shader_id != 0)
+		glAttachShader(glprogram, opengl_geometry_shader_id);
+	glAttachShader(glprogram, opengl_fragment_shader_id);
 
-	if (ctrlShader)
+	/* Link */
+	glProgramParameteri(glprogram, PROGRAM_BINARY_RETRIEVABLE_HINT,
+		GL_TRUE);
+	glLinkProgram(glprogram);
+
+	glGetProgramiv(glprogram, GL_LINK_STATUS, &status);
+	if (status == GL_FALSE)
 	{
-		glAttachShader(glprogram, ctrlShader);
-	}
-
-	if (evalShader)
-	{
-		glAttachShader(glprogram, evalShader);
-	}
-
-	if (geomShader)
-	{
-		glAttachShader(glprogram, geomShader);
-	}		
-
-	glAttachShader(glprogram,fragShader);
-
-	// Link
-	glProgramParameteri(glprogram, PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
-	glLinkProgram( glprogram );
-	GLint status;
-	glGetProgramiv( glprogram, GL_LINK_STATUS, &status );
-
-	if( GL_FALSE == status ) 
-	{
-		fprintf( stderr, "Failed to link shader program!\n" );
-		GLint logLen;
+		fprintf(stderr, "Failed to link shader program!\n");
 		glGetProgramiv(glprogram, GL_INFO_LOG_LENGTH, &logLen);
-		if( logLen > 0 )
+		if (logLen > 0)
 		{
-			char * log = (char *)malloc(logLen);
-			GLsizei written;
+			char *log = (char *) xmalloc(logLen);
+
 			glGetProgramInfoLog(glprogram, logLen, &written, log);
 			fprintf(stderr, "Program log: \n%s", log);
 			free(log);
@@ -342,53 +278,41 @@ int MainGetBinary(const GLchar** vertexSource, const GLchar** fragmentSource, co
 		}
 	}
 	else
-	{
-		glUseProgram( glprogram );
-	}
+		glUseProgram(glprogram);
 
-	// Dump binary
-	GLint formats = 0;
+	/* Dump binary */
 	glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &formats);
-	GLint *binaryFormats = calloc(formats, sizeof(GLint));
+	GLint *binaryFormats = xcalloc(formats, sizeof(GLint));
+
 	glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, binaryFormats);
-	int i;
 	for (i = 0; i < formats; i++)
 		printf("Format[%d]=%d\n", i, binaryFormats[i]);
 
-	GLint bin_length=0;
-	void *bin_buffer;
 
 	glGetProgramiv(glprogram, GL_PROGRAM_BINARY_LENGTH, &bin_length);
 	printf("Shader binary has %d bytes\n", bin_length);
-	bin_buffer = malloc(bin_length);
-	
-	GLsizei ret_bin_length=0;
-	GLenum ret_bin_fmt=0;
-	glGetProgramBinary(glprogram, bin_length, &ret_bin_length, &ret_bin_fmt, bin_buffer);
-	printf("Binary length = %d\n", ret_bin_length);
-	printf("Binary format = %d\n", ret_bin_fmt);
+	bin_buffer = xmalloc(bin_length);
 
-	FILE *f;
 	f = fopen(outputfile, "wb");
 	fwrite(bin_buffer, bin_length, 1, f);
 	fclose(f);
 
 	/* Process generated binary */
 	if (dump_intermediate)
-		kernel_binary_analyze(outputfile);
-	
+		opengl_shader_binary_analyze(outputfile);
+
 	free(bin_buffer);
 	return 0;
 }
 
 int main(int argc, char *argv[])
 {
-	// printf("%s\n", ELF_magic);
-	/* No arguments */
-	if (argc == 1) {
-		fprintf(stderr, syntax, argv[0]);
-		return 1;
-	}
+	int argi;
+	int VS_source_size;
+	int FS_source_size;
+	int CT_source_size;
+	int EV_source_size;
+	int GM_source_size;
 
 	char *vsfile = NULL;
 	char *fsfile = NULL;
@@ -396,57 +320,81 @@ int main(int argc, char *argv[])
 	char *evfile = NULL;
 	char *gmfile = NULL;
 	char *output = "shader.bin";
+	char *VSShaderSource = NULL;
+	char *FSShaderSource = NULL;
+	char *CTShaderSource = NULL;
+	char *EVShaderSource = NULL;
+	char *GMShaderSource = NULL;
 
-	int argi;
+	const GLchar **VSShaderArray = NULL;
+	const GLchar **CTShaderArray = NULL;
+	const GLchar **EVShaderArray = NULL;
+	const GLchar **GMShaderArray = NULL;
+	const GLchar **FSShaderArray = NULL;
+
+	/* No arguments */
+	if (argc == 1)
+	{
+		fprintf(stderr, syntax, argv[0]);
+		return 1;
+	}
+
 	for (argi = 1; argi < argc; argi++)
 	{
-		//  
-		if (!strcmp(argv[argi], "-a")) {
+		/* Dump intermediate ELF files */
+		if (!strcmp(argv[argi], "-a"))
+		{
 			argi++;
 			dump_intermediate = 1;
 			continue;
-		}			
-		// vertex source
-		if (!strcmp(argv[argi], "-v")) {
+		}
+		/* vertex source */
+		if (!strcmp(argv[argi], "-v"))
+		{
 			argi++;
 			vsfile = argv[argi];
 			continue;
-		}		
+		}
 
-		// fragment source
-		if (!strcmp(argv[argi], "-f")) {
+		/* fragment source */
+		if (!strcmp(argv[argi], "-f"))
+		{
 			argi++;
 			fsfile = argv[argi];
 			continue;
 		}
 
-		// control source
-		if (!strcmp(argv[argi], "-c")) {
+		/* control source */
+		if (!strcmp(argv[argi], "-c"))
+		{
 			argi++;
 			ctfile = argv[argi];
 			continue;
 		}
 
-		// evaluation source
-		if (!strcmp(argv[argi], "-e")) {
+		/* evaluation source */
+		if (!strcmp(argv[argi], "-e"))
+		{
 			argi++;
 			evfile = argv[argi];
 			continue;
 		}
 
-		// geometry source
-		if (!strcmp(argv[argi], "-g")) {
+		/* geometry source */
+		if (!strcmp(argv[argi], "-g"))
+		{
 			argi++;
 			gmfile = argv[argi];
 			continue;
 		}
 
-		// binary output name
-		if (!strcmp(argv[argi], "-o")) {
+		/* binary output name */
+		if (!strcmp(argv[argi], "-o"))
+		{
 			argi++;
 			output = argv[argi];
 			continue;
-		}		
+		}
 	}
 
 	if (vsfile == NULL && fsfile == NULL)
@@ -455,56 +403,56 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	if (InitGLContext(argc, argv))
+	if (opengl_context_init(argc, argv))
 	{
-		printf("Initilize Context Failed !\n");
+		printf("Initilize OpenGL Context Failed !\n");
 		return -1;
 	}
 
-	char *VSShaderSource = NULL;
-	char *FSShaderSource = NULL;
-	char *CTShaderSource = NULL;
-	char *EVShaderSource = NULL;
-	char *GMShaderSource = NULL;
+	VSShaderSource = (GLchar *) read_buffer(vsfile, &VS_source_size);
+	VSShaderArray = xmalloc(VS_source_size);
+	VSShaderArray[0] = VSShaderSource;
 
-	int VS_source_size;
-	int FS_source_size;
-	int CT_source_size;
-	int EV_source_size;
-	int GM_source_size;
-
-	VSShaderSource = (GLchar*)read_buffer(vsfile, &VS_source_size);
-	FSShaderSource = (GLchar*)read_buffer(fsfile, &FS_source_size);
-
-	const GLchar** CTShaderArray = NULL;
-	const GLchar** EVShaderArray = NULL;
-	const GLchar** GMShaderArray = NULL;
+	FSShaderSource = (GLchar *) read_buffer(fsfile, &FS_source_size);
+	FSShaderArray = xmalloc(FS_source_size);
+	FSShaderArray[0] = FSShaderSource;
 
 	if (ctfile != NULL)
 	{
-		CTShaderSource = (GLchar*)read_buffer(ctfile, &CT_source_size);
-		CTShaderArray = malloc(CT_source_size);
+		CTShaderSource =
+			(GLchar *) read_buffer(ctfile, &CT_source_size);
+		CTShaderArray = xmalloc(CT_source_size);
 		CTShaderArray[0] = CTShaderSource;
 	}
 
 	if (evfile != NULL)
 	{
-		EVShaderSource = (GLchar*)read_buffer(evfile, &EV_source_size);
-		EVShaderArray = malloc(EV_source_size);
+		EVShaderSource =
+			(GLchar *) read_buffer(evfile, &EV_source_size);
+		EVShaderArray = xmalloc(EV_source_size);
 		EVShaderArray[0] = EVShaderSource;
 	}
 
 	if (gmfile != NULL)
 	{
-		GMShaderSource = (GLchar*)read_buffer(gmfile, &GM_source_size);
-		GMShaderArray = malloc(GM_source_size);
+		GMShaderSource =
+			(GLchar *) read_buffer(gmfile, &GM_source_size);
+		GMShaderArray = xmalloc(GM_source_size);
 		GMShaderArray[0] = GMShaderSource;
 	}
 
-	const GLchar* VSShaderArray[] = {VSShaderSource};
-	const GLchar* FSShaderArray[] = {FSShaderSource};
+	opengl_shader_binary_generator(VSShaderArray, FSShaderArray,
+		CTShaderArray, EVShaderArray, GMShaderArray, output);
 
-	MainGetBinary(VSShaderArray, FSShaderArray, CTShaderArray, EVShaderArray, GMShaderArray, output);
+	/* Free */
+	free(VSShaderArray);
+	free(FSShaderArray);
+	if (CTShaderArray != NULL)
+		free(CTShaderArray);
+	if (EVShaderArray != NULL)
+		free(EVShaderArray);
+	if (GMShaderArray != NULL)
+		free(GMShaderArray);
 
 	return 0;
 }
