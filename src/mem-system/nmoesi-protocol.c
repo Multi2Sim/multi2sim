@@ -1333,6 +1333,10 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		assert(low_mod != mod);
 		assert(low_mod == mod_get_low_mod(mod, stack->tag));
 		assert(low_node && low_node->user_data == low_mod);
+
+		/* Update the cache state since it may have changed after its 
+		 * higher-level modules were invalidated */
+		cache_get_block(mod->cache, stack->set, stack->way, NULL, &stack->state);
 		
 		/* State = I */
 		if (stack->state == cache_block_invalid)
@@ -2597,9 +2601,20 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 		/* Receive message */
 		if (stack->request_dir == mod_request_up_down)
+		{
 			net_receive(mod->low_net, mod->low_net_node, stack->msg);
+		}
 		else
+		{
 			net_receive(mod->high_net, mod->high_net_node, stack->msg);
+
+			if (stack->reply == reply_ack_data)
+			{
+				cache_set_block(mod->cache, stack->set, stack->way, stack->tag,
+					cache_block_modified);
+			}
+		}
+		
 
 		/* Return */
 		mod_stack_return(stack);
