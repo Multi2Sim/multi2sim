@@ -1,0 +1,5 @@
+GLUT_DEFINE_CALL(init, 1)
+GLUT_DEFINE_CALL(get_event, 2)
+GLUT_DEFINE_CALL(new_window, 3)
+GLUT_DEFINE_CALL(test_draw, 4)
+
