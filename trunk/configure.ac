@@ -32,8 +32,119 @@ AC_FUNC_MMAP
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap select socket strcasecmp strchr strdup strncasecmp strtol utime])
 
-#AC_CHECK_LIB([m], [sin])
-#AC_CHECK_LIB([pthread], [pthread_create])
+
+
+
+
+#############################
+# Note on tests for libraries
+#############################
+
+# We avoid using macro AC_CHECK_LIB, because it automatically updates variable
+# LIBS, which is later used by any linker in the source tree. This is a problem
+# when compiling runtimes with the -m32 flags. If LIBS are added, and the system
+# has only the 64-bit versions, compilation fails.
+# Thus, we perform tests manually by using AC_LINK_IFELSE and AC_LANG_PROGRAM.
+# Then libraries are added only when generating the 'm2s' executable using
+# LDFLAGS.
+
+
+
+###############
+# Test for libm
+###############
+
+AC_CHECK_HEADER([math.h], [], [AC_MSG_ERROR([cannot find header math.h])])
+AC_MSG_CHECKING([for -lm])
+
+saved_ldflags="$LDFLAGS"
+LDFLAGS="-lm"
+AC_LINK_IFELSE(
+	[
+		AC_LANG_PROGRAM([[int sin();]], [[int main() {return sin();}]])
+	],
+	[
+		AC_MSG_RESULT(yes)
+	],
+	[
+		AC_MSG_RESULT(no)
+		AC_MSG_ERROR([
+	
+	The math library (libmath) is not present in your system. Please make
+	sure that your linker supports the -lm flag.]
+		)
+	]
+)
+LDFLAGS="$saved_ldflags"
+
+
+
+
+#####################
+# Test for libpthread
+#####################
+
+AC_CHECK_HEADER([pthread.h], [], [AC_MSG_ERROR([cannot find header pthread.h])])
+AC_MSG_CHECKING([for -lpthread])
+
+saved_ldflags="$LDFLAGS"
+LDFLAGS="-lpthread"
+AC_LINK_IFELSE(
+	[
+		AC_LANG_PROGRAM([[int pthread_create();]], [[int main() {return pthread_create();}]])
+	],
+	[
+		AC_MSG_RESULT(yes)
+	],
+	[
+		AC_MSG_RESULT(no)
+		AC_MSG_ERROR([
+
+	The POSIX threads library (libpthread) is not present in your system.
+	Please make sure that your linked supports the -lpthread flag.]
+		)
+	]
+)
+LDFLAGS="$saved_ldflags"
+
+
+
+
+###########
+# Test ZLib
+###########
+
+have_zlib=yes
+AC_CHECK_HEADER([zlib.h], [], [have_zlib=no])
+AC_MSG_CHECKING([for -lz])
+
+# Link a test program
+saved_ldflags="$LDFLAGS"
+LDFLAGS="-lz"
+AC_LINK_IFELSE(
+	[
+		AC_LANG_PROGRAM([[int inflate();]], [[int main() {return inflate();}]])
+	],
+	[],
+	[
+		have_zlib=no
+	]
+)
+LDFLAGS="$saved_ldflags"
+
+# Result
+AC_MSG_RESULT($have_zlib)
+if test x$have_zlib == xno
+then
+	AC_MSG_ERROR([
+	
+	The 'zlib' library development package is missing in your system.
+	Please install the package and then retry. In Ubuntu, the following
+	command is suggested:
+
+		sudo apt-get install zlib1g-dev]
+	)
+fi
 
 
 
@@ -145,29 +256,6 @@ AM_CONDITIONAL(HAVE_OPENCL, test x$have_opencl = xyes)
 
 
 
-
-###########
-# Test ZLib
-###########
-
-have_zlib=yes
-AC_CHECK_HEADER([zlib.h], [AC_DEFINE([HAVE_ZLIB_H])], [have_zlib=no])
-#AC_CHECK_LIB([z], [inflate], [], [have_zlib=no])
-if test x$have_zlib == xno
-then
-	AC_MSG_ERROR([
-	
-	The 'zlib' library development package is missing in your system.
-	Please install the package and then retry. On Debian-based Linux
-	distributions, you can run the following command:
-
-		sudo apt-get install zlib1g-dev]
-	)
-fi
-
-
-
-
 #############
 # Test OpenGL
 #############
@@ -184,34 +272,72 @@ then
 	have_opengl=no
 	AC_MSG_WARN([
 
-	The 'freeglut3' library development explicitly disabled. Some features in
-	Multi2Sim will not be accessible.]
+	Support for OpenGL has been explicitly disabled by a configuration flag.
+	Some features of Multi2Sim will be disabled.]
 	)
 
 else
 
+	# Assume that we have OpenGL
 	have_opengl=yes
+
+	# Check headers
 	AC_CHECK_HEADER([GL/glut.h], [], [have_opengl=no])
 	AC_CHECK_HEADER([GL/gl.h], [], [have_opengl=no])
 	AC_CHECK_HEADER([GL/glu.h], [], [have_opengl=no])
 	AC_CHECK_HEADER([GL/glew.h], [], [have_opengl=no])
-	#AC_CHECK_LIB([glut], [glutInit], [], [have_opengl=no])
-	#AC_CHECK_LIB([GL], [glBegin], [], [have_opengl=no])
-	#AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_opengl=no])
-	#AC_CHECK_LIB([GLEW], [glewInit], [], [have_opengl=no])
 
+	# Linker flags for OpenGL
 	OPENGL_LDFLAGS="-lGL -lGLU -lGLEW -lglut"
 	AC_SUBST([OPENGL_LDFLAGS])
 
+	# Test link using all OpenGL libraries
+	saved_ldflags="$LDFLAGS"
+	LDFLAGS="$OPENGL_LDFLAGS"
+	AC_MSG_CHECKING([for $OPENGL_LDFLAGS])
+	AC_LINK_IFELSE(
+		[
+			AC_LANG_PROGRAM(
+				[[
+					int glutInit();
+					int glBegin();
+					int gluOrtho2D();
+					int glewInit();
+				]],
+				[[
+					int main() {
+						glutInit();
+						glBegin();
+						gluOrtho2D();
+						glewInit();
+						return 0;
+					}
+				]]
+			)
+		],
+		[
+			AC_MSG_RESULT(yes)
+		],
+		[
+			AC_MSG_RESULT(no)
+			have_opengl=no
+		]
+	)
+	LDFLAGS="$saved_ldflags"
+
+	# Message if not present
 	if test "x$have_opengl" = "xno"
 	then
 		AC_MSG_WARN([
 	
-	The OpenGL/glut/glew libraries are not installed in your system. These
-	libraries are needed to compile the simulation modules for OpenGL guest
-	programs, and to build the OpenGL shader compiler in 'tools/glcc'.
-	
-	In Ubuntu, you can install the package by using the following command:
+	Your system lacks at least one of the graphics libraries required to
+	compile some features of Multi2Sim. These libraries are OpenGL, GLU,
+	GLUT, and GLEW. Please make sure that your linker supports flags
+
+		$OPENGL_LDFLAGS
+
+	In Ubuntu, the following command is suggested to install the missing
+	libraries:
 
 		sudo apt-get install freeglut3-dev libglew-dev]
 	)
