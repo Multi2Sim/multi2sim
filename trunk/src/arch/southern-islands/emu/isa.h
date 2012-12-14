@@ -20,8 +20,6 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
 
-#include <arch/southern-islands/asm/asm.h>
-
 
 enum si_isa_write_task_kind_t
 {
@@ -122,12 +120,12 @@ extern si_isa_inst_func_t *si_isa_inst_func;
  * to allow for the declaration below. This forces us to #include 'asm.h' from this file.
  * To avoid this extra dependence, 'union' types below could be replaced by
  * 'unsigned int', and then all callers updated accordingly. */
-union si_reg_t si_isa_read_sreg(struct si_work_item_t *work_item, int sreg);
-void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value);
-union si_reg_t si_isa_read_vreg(struct si_work_item_t *work_item, int vreg);
-void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, union si_reg_t value);
-union si_reg_t si_isa_read_reg(struct si_work_item_t *work_item, int reg);
-void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value);
+unsigned int si_isa_read_sreg(struct si_work_item_t *work_item, int sreg);
+void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, unsigned int value);
+unsigned int si_isa_read_vreg(struct si_work_item_t *work_item, int vreg);
+void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, unsigned int value);
+unsigned int si_isa_read_reg(struct si_work_item_t *work_item, int reg);
+void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, unsigned int value);
 int si_isa_read_bitmask_sreg(struct si_work_item_t *work_item, int sreg);
 
 struct si_buffer_resource_t;

@@ -379,7 +379,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			 * Execute on the first active work item from the least significant bit in EXEC.
 			 * (if exec is 0, execute work item 0) */
 			work_item = ndrange->work_items[wavefront->work_item_id_first];
-			if (si_isa_read_sreg(work_item, SI_EXEC).as_uint == 0 && si_isa_read_sreg(work_item, SI_EXEC + 1).as_uint == 0)
+			if (si_isa_read_sreg(work_item, SI_EXEC) == 0 && si_isa_read_sreg(work_item, SI_EXEC + 1) == 0)
 			{
 				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
 			}
