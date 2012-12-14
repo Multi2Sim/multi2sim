@@ -1,5 +1,5 @@
 /*
- *  Multi2Sim
+ *  Libstruct
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,29 +17,44 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-#ifndef M2S_OPENGL_H
-#define M2S_OPENGL_H
-
-#include <GL/gl.h>
-#include <lib/util/debug.h>
-#include <lib/util/list.h>
-#include <lib/util/misc.h>
-#include <unistd.h>
-
-/* System call for OpenGL runtime */
-#define X86_OPENGL_SYS_CODE  327
+#include "debug.h"
 
 
-/* List of OpenGL runtime calls */
-enum x86_opengl_call_t
+void fatal(char *fmt, ...)
 {
-	x86_opengl_call_invalid,
-#define X86_OPENGL_DEFINE_CALL(name, code) x86_opengl_call_##name = code,
-#include "../../src/arch/x86/emu/opengl.dat"
-#undef X86_OPENGL_DEFINE_CALL
-	x86_opengl_call_count
-};
+	va_list va;
+	va_start(va, fmt);
+	fprintf(stderr, "fatal: ");
+	vfprintf(stderr, fmt, va);
+	fprintf(stderr, "\n");
+	fflush(NULL);
+	exit(1);
+}
 
-#endif
+
+void panic(char *fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	fprintf(stderr, "panic: ");
+	vfprintf(stderr, fmt, va);
+	fprintf(stderr, "\n");
+	fflush(NULL);
+	abort();
+}
+
+
+void warning(char *fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	fprintf(stderr, "warning: ");
+	vfprintf(stderr, fmt, va);
+	fprintf(stderr, "\n");
+}
 
