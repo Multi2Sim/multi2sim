@@ -1,4 +1,5 @@
 SUBDIRS = \
 	glut \
+	opengl \
 	include
 

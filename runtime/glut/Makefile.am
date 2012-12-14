@@ -23,7 +23,5 @@ __top_builddir__lib_libm2s_glut_la_SOURCES = \
 
 AM_CFLAGS = -Wall -O2 -fPIC -m32
 
-INCLUDES = -I./include -I../opengl/include
-
 endif
 
