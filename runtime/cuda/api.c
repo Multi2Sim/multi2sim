@@ -17,12 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <debug.h>
-#include <list.h>
-#include <misc.h>
+#include "../include/cuda.h"
+#include "api.h"
+#include "debug.h"
+
+#include <stdio.h>
 #include <unistd.h>
 
-#include <m2s-cuda.h>
 
 /* Debug */
 int frm_cuda_debug = 0;

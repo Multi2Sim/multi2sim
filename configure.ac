@@ -518,6 +518,7 @@ AC_CONFIG_FILES([
 		Makefile
 		 
 		runtime/Makefile
+		runtime/cuda/Makefile
 		runtime/glut/Makefile
 		runtime/opengl/Makefile
 		runtime/include/Makefile
