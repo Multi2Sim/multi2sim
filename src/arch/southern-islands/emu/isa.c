@@ -75,14 +75,14 @@ void si_isa_done()
 
 /* Helper functions */
 
-union si_reg_t si_isa_read_sreg(struct si_work_item_t *work_item, int sreg)
+unsigned int si_isa_read_sreg(struct si_work_item_t *work_item, int sreg)
 {
-	return work_item->wavefront->sreg[sreg];
+	return work_item->wavefront->sreg[sreg].as_uint;
 }
 
-void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value)
+void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, unsigned int value)
 {
-	work_item->wavefront->sreg[sreg] = value;
+	work_item->wavefront->sreg[sreg].as_uint = value;
 
 	/* Update VCCZ and EXECZ if necessary. */
 	if (sreg == SI_VCC || sreg == SI_VCC + 1)
@@ -93,17 +93,17 @@ void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_
 														!work_item->wavefront->sreg[SI_EXEC + 1].as_uint;
 }
 
-union si_reg_t si_isa_read_vreg(struct si_work_item_t *work_item, int vreg)
+unsigned int si_isa_read_vreg(struct si_work_item_t *work_item, int vreg)
 {
-	return work_item->vreg[vreg];
+	return work_item->vreg[vreg].as_uint;
 }
 
-void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, union si_reg_t value)
+void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, unsigned int value)
 {
-	work_item->vreg[vreg] = value;
+	work_item->vreg[vreg].as_uint = value;
 }
 
-union si_reg_t si_isa_read_reg(struct si_work_item_t *work_item, int reg)
+unsigned int si_isa_read_reg(struct si_work_item_t *work_item, int reg)
 {
 	if (reg < 256)
 	{
@@ -115,7 +115,7 @@ union si_reg_t si_isa_read_reg(struct si_work_item_t *work_item, int reg)
 	}
 }
 
-void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value)
+void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, unsigned int value)
 {
 	unsigned int mask = 1;
 	unsigned int bitfield;
@@ -123,16 +123,16 @@ void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, union si_re
 	if (work_item->id_in_wavefront < 32)
 	{
 		mask <<= work_item->id_in_wavefront;
-		bitfield = si_isa_read_sreg(work_item, sreg).as_uint;
-		new_field.as_uint = (value.as_uint) ? bitfield | mask: bitfield & ~mask;
-		si_isa_write_sreg(work_item, sreg, new_field);
+		bitfield = si_isa_read_sreg(work_item, sreg);
+		new_field.as_uint = (value) ? bitfield | mask: bitfield & ~mask;
+		si_isa_write_sreg(work_item, sreg, new_field.as_uint);
 	}
 	else
 	{
 		mask <<= (work_item->id_in_wavefront - 32);
-		bitfield = si_isa_read_sreg(work_item, sreg + 1).as_uint;
-		new_field.as_uint = (value.as_uint) ? bitfield | mask: bitfield & ~mask;
-		si_isa_write_sreg(work_item, sreg + 1, new_field);
+		bitfield = si_isa_read_sreg(work_item, sreg + 1);
+		new_field.as_uint = (value) ? bitfield | mask: bitfield & ~mask;
+		si_isa_write_sreg(work_item, sreg + 1, new_field.as_uint);
 	}
 }
 
@@ -142,12 +142,12 @@ int si_isa_read_bitmask_sreg(struct si_work_item_t *work_item, int sreg)
 	if (work_item->id_in_wavefront < 32)
 	{
 		mask <<= work_item->id_in_wavefront;
-		return (si_isa_read_sreg(work_item, sreg).as_uint & mask) >> work_item->id_in_wavefront;
+		return (si_isa_read_sreg(work_item, sreg) & mask) >> work_item->id_in_wavefront;
 	}
 	else
 	{
 		mask <<= (work_item->id_in_wavefront - 32);
-		return (si_isa_read_sreg(work_item, sreg + 1).as_uint & mask) >> (work_item->id_in_wavefront - 32);
+		return (si_isa_read_sreg(work_item, sreg + 1) & mask) >> (work_item->id_in_wavefront - 32);
 	}
 }
 
