@@ -7,7 +7,7 @@ AC_PROG_INSTALL
 
 # Libtool
 LT_INIT
-AC_CONFIG_MACRO_DIR([m4])
+AC_PROG_LIBTOOL
 
 # Checks for header files.
 AC_HEADER_STDC
