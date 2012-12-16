@@ -109,6 +109,8 @@ void si_simd_execute(struct si_simd_t *simd)
 		uop = list_get(simd->decode_buffer, list_index);
 		assert(uop);
 
+		instructions_processed++;
+
         /* Uop is not ready yet */
 		if (si_gpu->cycle < uop->decode_ready)
 		{
@@ -117,7 +119,7 @@ void si_simd_execute(struct si_simd_t *simd)
 		}
 
 		/* Stall if the width has been reached */
-		if (instructions_processed == si_gpu_simd_width)
+		if (instructions_processed > si_gpu_simd_width)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, simd->compute_unit->id, 
@@ -146,7 +148,6 @@ void si_simd_execute(struct si_simd_t *simd)
         list_remove(simd->decode_buffer, uop);
         list_enqueue(simd->exec_buffer, uop);
 
-        instructions_processed++;
         si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"simd-e\"\n", 
             uop->id_in_compute_unit, simd->compute_unit->id, 
             uop->wavefront->id, uop->id_in_wavefront);
@@ -171,6 +172,8 @@ void si_simd_decode(struct si_simd_t *simd)
 		uop = list_get(simd->issue_buffer, list_index);
 		assert(uop);
 
+		instructions_processed++;
+
         /* Uop not ready yet */
 		if (si_gpu->cycle < uop->issue_ready)
         {
@@ -179,7 +182,7 @@ void si_simd_decode(struct si_simd_t *simd)
         }
 
 		/* Stall if the issue width has been reached. */
-		if (instructions_processed == si_gpu_simd_width)
+		if (instructions_processed > si_gpu_simd_width)
         {
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, simd->compute_unit->id, 
@@ -188,6 +191,7 @@ void si_simd_decode(struct si_simd_t *simd)
 			continue;
         }
 
+		/* Sanity check the decode buffer */
 		assert(list_count(simd->decode_buffer) <= 
 				si_gpu_simd_decode_buffer_size);
 
@@ -204,8 +208,6 @@ void si_simd_decode(struct si_simd_t *simd)
 		uop->decode_ready = si_gpu->cycle + si_gpu_simd_decode_latency;
 		list_remove(simd->issue_buffer, uop);
 		list_enqueue(simd->decode_buffer, uop);
-
-		instructions_processed++;
 
         si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"simd-d\"\n", 
             uop->id_in_compute_unit, simd->compute_unit->id, 

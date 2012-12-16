@@ -39,6 +39,7 @@ enum vi_si_inst_stage_t
 	vi_si_inst_stage_scalar_decode,
 	vi_si_inst_stage_scalar_read,
 	vi_si_inst_stage_scalar_execute,
+	vi_si_inst_stage_scalar_memory,
 	vi_si_inst_stage_scalar_writeback,
 
 	vi_si_inst_stage_simd_decode,
@@ -46,12 +47,12 @@ enum vi_si_inst_stage_t
 
 	vi_si_inst_stage_mem_decode,
 	vi_si_inst_stage_mem_read,
-	vi_si_inst_stage_mem_execute,
+	vi_si_inst_stage_mem_memory,
 	vi_si_inst_stage_mem_writeback,
 
 	vi_si_inst_stage_lds_decode,
 	vi_si_inst_stage_lds_read,
-	vi_si_inst_stage_lds_execute,
+	vi_si_inst_stage_lds_memory,
 	vi_si_inst_stage_lds_writeback,
 
 	vi_si_inst_stage_count

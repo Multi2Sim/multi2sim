@@ -25,9 +25,8 @@ struct si_vector_mem_unit_t
 	struct list_t *issue_buffer;  /* Issued instructions */
 	struct list_t *decode_buffer; /* Decoded instructions */
 	struct list_t *read_buffer;   /* Register reads */
-	struct list_t *exec_buffer;   /* Submitted memory accesses */
+	struct list_t *mem_buffer;    /* Submitted memory accesses */
 	struct list_t *write_buffer;  /* Register writes */
-	struct list_t *inflight_buffer; /* Pending for memory access */
 
 	struct si_compute_unit_t *compute_unit;
 
