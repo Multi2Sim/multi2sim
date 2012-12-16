@@ -42,11 +42,12 @@ struct str_map_t vi_si_inst_stage_map =
 		{ "su-d", vi_si_inst_stage_scalar_decode },
 		{ "su-r", vi_si_inst_stage_scalar_read },
 		{ "su-e", vi_si_inst_stage_scalar_execute },
+		{ "su-m", vi_si_inst_stage_scalar_memory },
 		{ "su-w", vi_si_inst_stage_scalar_writeback },
 
 		{ "mem-d", vi_si_inst_stage_mem_decode },
 		{ "mem-r", vi_si_inst_stage_mem_read },
-		{ "mem-e", vi_si_inst_stage_mem_execute },
+		{ "mem-m", vi_si_inst_stage_mem_memory },
 		{ "mem-w", vi_si_inst_stage_mem_writeback },
 
 		{ "simd-d", vi_si_inst_stage_simd_decode },
@@ -54,7 +55,7 @@ struct str_map_t vi_si_inst_stage_map =
 
 		{ "lds-d", vi_si_inst_stage_lds_decode },
 		{ "lds-r", vi_si_inst_stage_lds_read },
-		{ "lds-e", vi_si_inst_stage_lds_execute },
+		{ "lds-m", vi_si_inst_stage_lds_memory },
 		{ "lds-w", vi_si_inst_stage_lds_writeback },
 	}
 };
@@ -81,12 +82,13 @@ struct str_map_t vi_si_inst_stage_color_map =
 		{ "#FFBBBB", vi_si_inst_stage_scalar_decode },
 		{ "#FF8888", vi_si_inst_stage_scalar_read },
 		{ "#FF5555", vi_si_inst_stage_scalar_execute },
-		{ "#FF2222", vi_si_inst_stage_scalar_writeback },
+		{ "#FF2222", vi_si_inst_stage_scalar_memory },
+		{ "#FF0000", vi_si_inst_stage_scalar_writeback },
 
 		/* Turquoise */
 		{ "#AFEEEE", vi_si_inst_stage_mem_decode },
 		{ "#08E8DE", vi_si_inst_stage_mem_read },
-		{ "#40E0D0", vi_si_inst_stage_mem_execute },
+		{ "#48D1CC", vi_si_inst_stage_mem_memory },
 		{ "#00CED1", vi_si_inst_stage_mem_writeback },
 
 		/* Purple */
@@ -94,9 +96,9 @@ struct str_map_t vi_si_inst_stage_color_map =
 		{ "#DA70D6", vi_si_inst_stage_simd_execute },
 
 		/* Blue */
-		{ "#CCCCFF", vi_si_inst_stage_lds_decode },
+		{ "#A4D3EE", vi_si_inst_stage_lds_decode },
 		{ "#97DEFB", vi_si_inst_stage_lds_read },
-		{ "#87CEFA", vi_si_inst_stage_lds_execute },
+		{ "#87CEFA", vi_si_inst_stage_lds_memory },
 		{ "#00BFFF", vi_si_inst_stage_lds_writeback },
 	}
 };
@@ -119,11 +121,12 @@ struct str_map_t vi_si_inst_stage_name_map =
 		{ "SD", vi_si_inst_stage_scalar_decode },
 		{ "SR", vi_si_inst_stage_scalar_read },
 		{ "SE", vi_si_inst_stage_scalar_execute },
+		{ "SM", vi_si_inst_stage_scalar_memory },
 		{ "SW", vi_si_inst_stage_scalar_writeback },
 
 		{ "MD", vi_si_inst_stage_mem_decode },
 		{ "MR", vi_si_inst_stage_mem_read },
-		{ "ME", vi_si_inst_stage_mem_execute },
+		{ "MM", vi_si_inst_stage_mem_memory },
 		{ "MW", vi_si_inst_stage_mem_writeback },
 
 		{ "VD", vi_si_inst_stage_simd_decode },
@@ -131,7 +134,7 @@ struct str_map_t vi_si_inst_stage_name_map =
 
 		{ "LD", vi_si_inst_stage_lds_decode },
 		{ "LR", vi_si_inst_stage_lds_read },
-		{ "LE", vi_si_inst_stage_lds_execute },
+		{ "LM", vi_si_inst_stage_lds_memory },
 		{ "LW", vi_si_inst_stage_lds_writeback },
 	}
 };

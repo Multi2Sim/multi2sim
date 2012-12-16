@@ -493,11 +493,14 @@ static void si_config_read(void)
 		fatal("%s: invalid value for 'ALULatency'.\n%s",
 			si_gpu_config_file_name, err_note);
 
-	si_gpu_scalar_unit_inflight_mem_accesses = config_read_int(
-		gpu_config, section, "MaxInflightMem", si_gpu_scalar_unit_inflight_mem_accesses);
-	if (si_gpu_scalar_unit_inflight_mem_accesses < 1)
-		fatal("%s: invalid value for 'MaxInflightMem'.\n%s",
+	si_gpu_scalar_unit_exec_buffer_size= config_read_int(
+		gpu_config, section, "ExecBufferSize", 
+		si_gpu_scalar_unit_exec_buffer_size);
+	if (si_gpu_scalar_unit_exec_buffer_size < 1)
+	{
+		fatal("%s: invalid value for 'ExecBufferSize'.\n%s",
 			si_gpu_config_file_name, err_note);
+	}
 
 	/* Branch Unit */
 	section = "BranchUnit";
@@ -567,10 +570,13 @@ static void si_config_read(void)
 			si_gpu_config_file_name, err_note);
 
 	si_gpu_lds_inflight_mem_accesses = config_read_int(
-		gpu_config, section, "MaxInflightMem", si_gpu_lds_inflight_mem_accesses);
+		gpu_config, section, "MaxInflightMem", 
+		si_gpu_lds_inflight_mem_accesses);
 	if (si_gpu_lds_inflight_mem_accesses < 1)
+	{
 		fatal("%s: invalid value for 'MaxInflightMem'.\n%s",
 			si_gpu_config_file_name, err_note);
+	}
 
 	/* VectorMem Unit */
 	section = "VectorMemUnit";

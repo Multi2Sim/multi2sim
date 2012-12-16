@@ -95,17 +95,15 @@ struct si_compute_unit_t *si_compute_unit_create()
 	compute_unit->vector_mem_unit.issue_buffer = list_create();
 	compute_unit->vector_mem_unit.decode_buffer = list_create();
 	compute_unit->vector_mem_unit.read_buffer = list_create();
-	compute_unit->vector_mem_unit.exec_buffer = list_create();
+	compute_unit->vector_mem_unit.mem_buffer = list_create();
 	compute_unit->vector_mem_unit.write_buffer = list_create();
-	compute_unit->vector_mem_unit.inflight_buffer = list_create();
 	compute_unit->vector_mem_unit.compute_unit = compute_unit;
 
 	compute_unit->lds.issue_buffer = list_create();
 	compute_unit->lds.decode_buffer = list_create();
 	compute_unit->lds.read_buffer = list_create();
-	compute_unit->lds.exec_buffer = list_create();
+	compute_unit->lds.mem_buffer = list_create();
 	compute_unit->lds.write_buffer = list_create();
-	compute_unit->lds.inflight_buffer = list_create();
 	compute_unit->lds.compute_unit = compute_unit;
 
 	for (i = 0; i < compute_unit->num_wavefront_pools; i++) 
@@ -181,29 +179,25 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	si_uop_list_free(compute_unit->vector_mem_unit.issue_buffer);
 	si_uop_list_free(compute_unit->vector_mem_unit.decode_buffer);
 	si_uop_list_free(compute_unit->vector_mem_unit.read_buffer);
-	si_uop_list_free(compute_unit->vector_mem_unit.exec_buffer);
+	si_uop_list_free(compute_unit->vector_mem_unit.mem_buffer);
 	si_uop_list_free(compute_unit->vector_mem_unit.write_buffer);
-	si_uop_list_free(compute_unit->vector_mem_unit.inflight_buffer);
 	list_free(compute_unit->vector_mem_unit.issue_buffer);
 	list_free(compute_unit->vector_mem_unit.decode_buffer);
 	list_free(compute_unit->vector_mem_unit.read_buffer);
-	list_free(compute_unit->vector_mem_unit.exec_buffer);
+	list_free(compute_unit->vector_mem_unit.mem_buffer);
 	list_free(compute_unit->vector_mem_unit.write_buffer);
-	list_free(compute_unit->vector_mem_unit.inflight_buffer);
 
 	/* Local Data Share */
 	si_uop_list_free(compute_unit->lds.issue_buffer);
 	si_uop_list_free(compute_unit->lds.decode_buffer);
 	si_uop_list_free(compute_unit->lds.read_buffer);
-	si_uop_list_free(compute_unit->lds.exec_buffer);
+	si_uop_list_free(compute_unit->lds.mem_buffer);
 	si_uop_list_free(compute_unit->lds.write_buffer);
-	si_uop_list_free(compute_unit->lds.inflight_buffer);
 	list_free(compute_unit->lds.issue_buffer);
 	list_free(compute_unit->lds.decode_buffer);
 	list_free(compute_unit->lds.read_buffer);
-	list_free(compute_unit->lds.exec_buffer);
+	list_free(compute_unit->lds.mem_buffer);
 	list_free(compute_unit->lds.write_buffer);
-	list_free(compute_unit->lds.inflight_buffer);
 
 	for (i = 0; i < compute_unit->num_wavefront_pools; i++)
 	{
