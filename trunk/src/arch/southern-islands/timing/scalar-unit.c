@@ -44,9 +44,7 @@ int si_gpu_scalar_unit_decode_latency = 1;
 int si_gpu_scalar_unit_decode_buffer_size = 1;
 
 int si_gpu_scalar_unit_exec_latency = 4;
-int si_gpu_scalar_unit_exec_buffer_size = 4;
-
-int si_gpu_scalar_unit_inflight_mem_accesses = 32;
+int si_gpu_scalar_unit_exec_buffer_size = 16;
 
 /*
  * Register accesses are not pipelined, so buffer size is not
@@ -60,43 +58,6 @@ int si_gpu_scalar_unit_write_buffer_size = 1;
 
 
 
-
-void si_scalar_unit_process_mem_accesses(struct si_scalar_unit_t *scalar_unit)
-{
-	struct si_uop_t *uop = NULL;
-	int i;
-	int list_entries;
-	int list_index = 0;
-
-	/* Process completed memory instructions */
-	list_entries = list_count(scalar_unit->inflight_buffer);
-
-	assert(list_entries <= si_gpu_scalar_unit_inflight_mem_accesses);
-
-	for (i = 0; i < list_entries; i++)
-	{
-		uop = list_get(scalar_unit->inflight_buffer, list_index);
-		assert(uop);
-
-		if (!uop->global_mem_witness)
-		{
-			assert(uop->wavefront_pool_entry->lgkm_cnt > 0);
-			uop->wavefront_pool_entry->lgkm_cnt--;
-
-			/* Access complete, remove the uop from the queue */
-			list_remove(scalar_unit->inflight_buffer, uop);
-
-			/* Free uop */
-			si_uop_free(uop);
-
-			si_gpu->last_complete_cycle = esim_cycle;
-		}
-		else
-		{
-			list_index++;
-		}
-	}
-}
 
 void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 {
@@ -114,7 +75,7 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 	list_entries = list_count(scalar_unit->write_buffer);
 
 	/* Sanity check the write buffer */
-	assert(list_entries <= si_gpu_scalar_unit_write_latency * si_gpu_scalar_unit_width);
+	assert(list_entries <= si_gpu_scalar_unit_write_buffer_size);
 	
 	for (i = 0; i < list_entries; i++)
 	{
@@ -142,6 +103,13 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
             list_index++;
             continue;
         }
+
+		/* Decrement the outstanding memory access count */
+		if (uop->scalar_mem_read)
+		{
+			assert(uop->wavefront_pool_entry->lgkm_cnt > 0);
+			uop->wavefront_pool_entry->lgkm_cnt--;
+		}
 
         /* Access complete, remove the uop from the queue */
         list_remove(scalar_unit->write_buffer, uop);
@@ -209,7 +177,6 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
         si_trace("si.end_inst id=%lld cu=%d\n", uop->id_in_compute_unit, 
             uop->compute_unit->id);
 
-
         /* Free uop */
         si_uop_free(uop);
 
@@ -237,44 +204,92 @@ void si_scalar_unit_write(struct si_scalar_unit_t *scalar_unit)
 		uop = list_get(scalar_unit->exec_buffer, list_index);
 		assert(uop);
 
-        /* Uop is not ready yet */
-		if (si_gpu->cycle < uop->execute_ready)
-		{
-			list_index++;
-			continue;
-		}
-
-		/* Stall if the width has been reached */
-		if (instructions_processed == si_gpu_scalar_unit_width)
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
-				uop->wavefront->id, uop->id_in_wavefront);
-			list_index++;
-			continue;
-		}
-
-		assert(list_count(scalar_unit->write_buffer) <= si_gpu_scalar_unit_write_buffer_size);
-
-		/* Stall if the write buffer is full */
-		if (list_count(scalar_unit->write_buffer) == si_gpu_scalar_unit_write_buffer_size)
-		{
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
-				uop->wavefront->id, uop->id_in_wavefront);
-			list_index++;
-			continue;
-		}
-
-		uop->write_ready = si_gpu->cycle + si_gpu_scalar_unit_write_latency;
-		list_remove(scalar_unit->exec_buffer, uop);
-		list_enqueue(scalar_unit->write_buffer, uop);
-
 		instructions_processed++;
 
-		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"su-w\"\n", 
-			uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
-			uop->wavefront->id, uop->id_in_wavefront);
+		if (uop->scalar_mem_read)
+		{
+			/* Check if the access is complete */
+			if (uop->global_mem_witness)
+			{
+				list_index++;
+				continue;
+			}
+
+			/* Stall if the width has been reached */
+			if (instructions_processed > si_gpu_scalar_unit_width)
+			{
+				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+					uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
+					uop->wavefront->id, uop->id_in_wavefront);
+				list_index++;
+				continue;
+			}
+
+			/* Sanity check write buffer */
+			assert(list_count(scalar_unit->write_buffer) <= 
+				si_gpu_scalar_unit_write_buffer_size);
+
+			/* Stall if there is not room in the exec buffer */
+			if (list_count(scalar_unit->write_buffer) == 
+				si_gpu_scalar_unit_write_buffer_size)
+			{
+				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+					uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
+					uop->wavefront->id, uop->id_in_wavefront);
+				list_index++;
+				continue;
+			}
+			
+			uop->write_ready = si_gpu->cycle + si_gpu_scalar_unit_write_latency;
+			list_remove(scalar_unit->exec_buffer, uop);
+			list_enqueue(scalar_unit->write_buffer, uop);
+
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"su-w\"\n", 
+				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
+				uop->wavefront->id, uop->id_in_wavefront);
+		}
+		else /* ALU instruction */ 
+		{
+			/* Uop is not ready yet */
+			if (si_gpu->cycle < uop->execute_ready)
+			{
+				list_index++;
+				continue;
+			}
+
+			/* Stall if the width has been reached */
+			if (instructions_processed > si_gpu_scalar_unit_width)
+			{
+				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+					uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
+					uop->wavefront->id, uop->id_in_wavefront);
+				list_index++;
+				continue;
+			}
+
+			/* Sanity check write buffer */
+			assert(list_count(scalar_unit->write_buffer) <= 
+				si_gpu_scalar_unit_write_buffer_size);
+
+			/* Stall if the write buffer is full */
+			if (list_count(scalar_unit->write_buffer) == 
+				si_gpu_scalar_unit_write_buffer_size)
+			{
+				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+					uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
+					uop->wavefront->id, uop->id_in_wavefront);
+				list_index++;
+				continue;
+			}
+
+			uop->write_ready = si_gpu->cycle + si_gpu_scalar_unit_write_latency;
+			list_remove(scalar_unit->exec_buffer, uop);
+			list_enqueue(scalar_unit->write_buffer, uop);
+
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"su-w\"\n", 
+				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
+				uop->wavefront->id, uop->id_in_wavefront);
+		}
 	}
 }
 
@@ -288,14 +303,15 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 
 	list_entries = list_count(scalar_unit->read_buffer);
 
-	/* Sanity check the read buffer.  Register accesses are not pipelined, so
-	 * buffer size is not multiplied by the latency. */
+	/* Sanity check the read buffer. */
 	assert(list_entries <= si_gpu_scalar_unit_width);
 
 	for (i = 0; i < list_entries; i++)
 	{
 		uop = list_get(scalar_unit->read_buffer, list_index);
 		assert(uop);
+
+		instructions_processed++;
 
         /* Uop is not ready yet */
 		if (si_gpu->cycle < uop->read_ready)
@@ -305,7 +321,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		}
 
 		/* Stall if the width has been reached */
-		if (instructions_processed == si_gpu_scalar_unit_width)
+		if (instructions_processed > si_gpu_scalar_unit_width)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
@@ -314,90 +330,55 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			continue;
 		}
 
-		/* Memory instructions require another step */
-		if (uop->scalar_mem_read)
+		/* Sanity check exec buffer */
+		assert(list_count(scalar_unit->exec_buffer) <= 
+			si_gpu_scalar_unit_exec_buffer_size);
+
+		/* Stall if there is not room in the exec buffer */
+		if (list_count(scalar_unit->exec_buffer) == 
+			si_gpu_scalar_unit_exec_buffer_size)
 		{
-			/* Sanity check in-flight buffer */
-			assert(list_count(scalar_unit->inflight_buffer) <= 
-				si_gpu_scalar_unit_inflight_mem_accesses);
-
-			/* Sanity check exec buffer */
-			assert(list_count(scalar_unit->exec_buffer) <= si_gpu_scalar_unit_exec_buffer_size);
-
-			/* If there is room in the outstanding memory buffer, decode the access */
-			if ((list_count(scalar_unit->inflight_buffer) < 
-				si_gpu_scalar_unit_inflight_mem_accesses) &&
-				list_count(scalar_unit->exec_buffer) < si_gpu_scalar_unit_exec_buffer_size)
-			{
-				/* TODO replace this with a lightweight uop */
-				struct si_uop_t *mem_uop;
-				mem_uop = si_uop_create();
-				mem_uop->wavefront = uop->wavefront;
-				mem_uop->compute_unit = uop->compute_unit;
-				mem_uop->wavefront_pool_entry = uop->wavefront_pool_entry;
-				mem_uop ->scalar_mem_read = uop->scalar_mem_read;
-				mem_uop->id_in_compute_unit = 
-					uop->compute_unit->mem_uop_id_counter++;
-
-				/* Access global memory */
-				mem_uop->global_mem_witness--;
-				/* FIXME Get rid of dependence on wavefront here */
-				mem_uop->global_mem_access_addr =
-					uop->wavefront->scalar_work_item->global_mem_access_addr;
-				mod_access(scalar_unit->compute_unit->global_memory,
-					mod_access_load, uop->global_mem_access_addr,
-					&mem_uop->global_mem_witness, NULL, NULL, NULL);
-
-				/* Increment outstanding memory access count */
-				mem_uop->wavefront_pool_entry->lgkm_cnt++;
-
-				/* Transfer the uop to the exec buffer */
-				uop->execute_ready = si_gpu->cycle + si_gpu_scalar_unit_exec_latency;
-				list_remove(scalar_unit->read_buffer, uop);
-				list_enqueue(scalar_unit->exec_buffer, uop);
-
-				/* Add a mem_uop to the in-flight buffer */
-				list_enqueue(scalar_unit->inflight_buffer, mem_uop);
-
-				instructions_processed++;
-
-				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"su-e\"\n", 
-					uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
-					uop->wavefront->id, uop->id_in_wavefront);
-                continue;
-			}
-			else 
-			{
-				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-					uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
-					uop->wavefront->id, uop->id_in_wavefront);
-				list_index++;
-				continue;
-			}
-
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
+				uop->wavefront->id, uop->id_in_wavefront);
+			list_index++;
+			continue;
 		}
-		/* ALU Instruction */
-		else
+
+		if (uop->scalar_mem_read) 
 		{
-			/* Sanity check exec buffer */
-			assert(list_count(scalar_unit->exec_buffer) <= si_gpu_scalar_unit_exec_buffer_size);
+			/* Access global memory */
+			uop->global_mem_witness--;
+			/* FIXME Get rid of dependence on wavefront here */
+			uop->global_mem_access_addr =
+				uop->wavefront->scalar_work_item->global_mem_access_addr;
+			mod_access(scalar_unit->compute_unit->global_memory,
+				mod_access_load, uop->global_mem_access_addr,
+				&uop->global_mem_witness, NULL, NULL, NULL);
 
-			if (list_count(scalar_unit->exec_buffer) == si_gpu_scalar_unit_exec_buffer_size)
-			{
-				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-					uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
-					uop->wavefront->id, uop->id_in_wavefront);
-				list_index++;
-				continue;
-			}
+			/* Increment outstanding memory access count */
+			uop->wavefront_pool_entry->lgkm_cnt++;
 
-			uop->execute_ready = si_gpu->cycle + si_gpu_scalar_unit_exec_latency;
-
-			/* Transfer the uop to the outstanding execution buffer */
+			/* Transfer the uop to the execution buffer */
 			list_remove(scalar_unit->read_buffer, uop);
 			list_enqueue(scalar_unit->exec_buffer, uop);
 
-			instructions_processed++;
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+				"stg=\"su-m\"\n", uop->id_in_compute_unit, 
+				scalar_unit->compute_unit->id, uop->wavefront->id, 
+				uop->id_in_wavefront);
+			continue;
+
+		}
+		else /* ALU Instruction */
+		{
+			uop->execute_ready = si_gpu->cycle + 
+				si_gpu_scalar_unit_exec_latency;
+
+			/* Transfer the uop to the execution buffer */
+			list_remove(scalar_unit->read_buffer, uop);
+			list_enqueue(scalar_unit->exec_buffer, uop);
+
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"su-e\"\n", 
 				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
 				uop->wavefront->id, uop->id_in_wavefront);
@@ -424,6 +405,8 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		uop = list_get(scalar_unit->decode_buffer, list_index);
 		assert(uop);
 
+		instructions_processed++;
+
         /* Uop is not ready yet */
 		if (si_gpu->cycle < uop->decode_ready)
 		{
@@ -432,7 +415,7 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		}
 
 		/* Stall if the decode width has been reached */
-		if (instructions_processed == si_gpu_scalar_unit_width)
+		if (instructions_processed > si_gpu_scalar_unit_width)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
@@ -441,10 +424,12 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 			continue;
 		}
 
-		assert(list_count(scalar_unit->read_buffer) <= si_gpu_scalar_unit_read_buffer_size);
+		assert(list_count(scalar_unit->read_buffer) <= 
+			si_gpu_scalar_unit_read_buffer_size);
 
 		/* Stall if the read buffer is full */
-		if (list_count(scalar_unit->read_buffer) == si_gpu_scalar_unit_read_buffer_size)
+		if (list_count(scalar_unit->read_buffer) == 
+			si_gpu_scalar_unit_read_buffer_size)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
@@ -456,8 +441,6 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		uop->read_ready = si_gpu->cycle + si_gpu_scalar_unit_read_latency;
 		list_remove(scalar_unit->decode_buffer, uop);
 		list_enqueue(scalar_unit->read_buffer, uop);
-
-		instructions_processed++;
 
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"su-r\"\n", 
 			uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
@@ -483,6 +466,8 @@ void si_scalar_unit_decode(struct si_scalar_unit_t *scalar_unit)
 		uop = list_get(scalar_unit->issue_buffer, list_index);
 		assert(uop);
 
+		instructions_processed++;
+
         /* Uop not ready yet */
 		if (si_gpu->cycle < uop->issue_ready)
         {
@@ -491,7 +476,7 @@ void si_scalar_unit_decode(struct si_scalar_unit_t *scalar_unit)
         }
 
 		/* Stall if the issue width has been reached. */
-		if (instructions_processed == si_gpu_scalar_unit_width)
+		if (instructions_processed > si_gpu_scalar_unit_width)
         {
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
@@ -518,8 +503,6 @@ void si_scalar_unit_decode(struct si_scalar_unit_t *scalar_unit)
 		list_remove(scalar_unit->issue_buffer, uop);
 		list_enqueue(scalar_unit->decode_buffer, uop);
 
-		instructions_processed++;
-
         si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"su-d\"\n", 
             uop->id_in_compute_unit, scalar_unit->compute_unit->id, 
             uop->wavefront->id, uop->id_in_wavefront);
@@ -528,7 +511,6 @@ void si_scalar_unit_decode(struct si_scalar_unit_t *scalar_unit)
 
 void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit)
 {
-	si_scalar_unit_process_mem_accesses(scalar_unit);
 	si_scalar_unit_complete(scalar_unit);
 	si_scalar_unit_write(scalar_unit);
 	si_scalar_unit_execute(scalar_unit);
