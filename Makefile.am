@@ -26,34 +26,6 @@ pkgdata_images_DATA = ${images}
 
 EXTRA_DIST = \
 	\
-	tools/libm2s-glut/glut.c \
-	tools/libm2s-glut/Makefile \
-	tools/libm2s-glut/m2s-glut.h \
-	tools/libm2s-glut/window.c \
-	\
-	tools/libm2s-opencl/CL/cl_platform.h \
-	tools/libm2s-opencl/CL/cl_ext.h \
-	tools/libm2s-opencl/CL/opencl.h \
-	tools/libm2s-opencl/CL/cl.h \
-	tools/libm2s-opencl/CL/cl_gl.h \
-	tools/libm2s-opencl/CL/cl_gl_ext.h \
-	tools/libm2s-opencl/command-queue.c \
-	tools/libm2s-opencl/context.c \
-	tools/libm2s-opencl/device.c \
-	tools/libm2s-opencl/event.c \
-	tools/libm2s-opencl/kernel.c \
-	tools/libm2s-opencl/m2s-opencl.c \
-	tools/libm2s-opencl/m2s-opencl.h \
-	tools/libm2s-opencl/Makefile \
-	tools/libm2s-opencl/mem.c \
-	tools/libm2s-opencl/platform.c \
-	tools/libm2s-opencl/program.c \
-	tools/libm2s-opencl/sampler.c \
-	\
-	tools/libm2s-opengl/m2s-opengl.h \
-	tools/libm2s-opengl/opengl.c \
-	tools/libm2s-opengl/Makefile \
-	\
 	samples/arm/test-sort.c \
 	samples/arm/test-args.c \
 	samples/arm/test-sort \
