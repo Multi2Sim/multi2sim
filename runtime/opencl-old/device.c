@@ -20,57 +20,40 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-opencl.h>
+#include "../include/CL/cl.h"
+#include "api.h"
 
 
-cl_sampler clCreateSampler(
-	cl_context context,
-	cl_bool normalized_coords,
-	cl_addressing_mode addressing_mode,
-	cl_filter_mode filter_mode,
-	cl_int *errcode_ret)
+cl_int clGetDeviceIDs(
+	cl_platform_id platform,
+	cl_device_type device_type,
+	cl_uint num_entries,
+	cl_device_id *devices,
+	cl_uint *num_devices)
 {
 	unsigned int sys_args[5];
-	sys_args[0] = context->id;
-	sys_args[1] = (unsigned int) normalized_coords;
-	sys_args[2] = (unsigned int) addressing_mode;
-	sys_args[3] = (unsigned int) filter_mode;
-	sys_args[4] = (unsigned int) errcode_ret;
-	return (cl_sampler) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateSampler, sys_args);
+	sys_args[0] = (unsigned int) platform;
+	sys_args[1] = (unsigned int) device_type;
+	sys_args[2] = (unsigned int) num_entries;
+	sys_args[3] = (unsigned int) devices;
+	sys_args[4] = (unsigned int) num_devices;
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetDeviceIDs, sys_args);
 }
 
 
-cl_int clRetainSampler(
-	cl_sampler sampler)
-{
-	unsigned int sys_args[1];
-	sys_args[0] = (unsigned int) sampler;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clRetainSampler, sys_args);
-}
-
-
-cl_int clReleaseSampler(
-	cl_sampler sampler)
-{
-	unsigned int sys_args[1];
-	sys_args[0] = (unsigned int) sampler;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clReleaseSampler, sys_args);
-}
-
-
-cl_int clGetSamplerInfo(
-	cl_sampler sampler,
-	cl_sampler_info param_name,
+cl_int clGetDeviceInfo(
+	cl_device_id device,
+	cl_device_info param_name,
 	size_t param_value_size,
 	void *param_value,
 	size_t *param_value_size_ret)
 {
 	unsigned int sys_args[5];
-	sys_args[0] = (unsigned int) sampler;
+	sys_args[0] = (unsigned int) device;
 	sys_args[1] = (unsigned int) param_name;
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetSamplerInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetDeviceInfo, sys_args);
 }
 

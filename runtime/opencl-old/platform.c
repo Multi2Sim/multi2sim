@@ -20,7 +20,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-opencl.h>
+#include "../include/CL/cl.h"
+#include "api.h"
+#include "debug.h"
 
 
 cl_int clGetPlatformIDs(
@@ -38,22 +40,20 @@ cl_int clGetPlatformIDs(
 	/* An additional argument is added with the version information of this
 	 * OpenCL implementation. If Multi2Sim expects a later version, the
 	 * system call with fail and cause a fatal error. */
-	sys_args[3] = EVG_SYS_OPENCL_IMPL_VERSION;
+	sys_args[3] = OPENCL_RUNTIME_VERSION;
 
 	/* Perform system call */
-	ret = syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetPlatformIDs, sys_args);
+	ret = syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetPlatformIDs, sys_args);
 
 	/* Detect the case where an OpenCL program linked with 'libm2s-opencl' is
 	 * being run natively. */
-	if (ret == -1) {
-		fprintf(stderr, "error: OpenCL program cannot be run natively.\n"
+	if (ret == -1)
+		fatal("OpenCL program cannot be run natively.\n"
 			"\tThis is an error message provided by the Multi2Sim OpenCL library\n"
 			"\t(libm2s-opencl). Apparently, you are attempting to run natively a\n"
 			"\tprogram that was linked with this library. You should either run\n"
 			"\tit on top of Multi2Sim, or link it with the OpenCL library provided\n"
 			"\tin the ATI Stream SDK if you want to use your physical GPU device.\n");
-		abort();
-	}
 
 	/* Result */
 	return (cl_int) ret;
@@ -73,6 +73,6 @@ cl_int clGetPlatformInfo(
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetPlatformInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetPlatformInfo, sys_args);
 }
 

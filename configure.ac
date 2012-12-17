@@ -189,7 +189,7 @@ then
 	libraries. For example, this can be done in Ubuntu 12.04 by running
 	command:
 
-		sudo apt-get install lib32gcc1]
+		sudo apt-get install lib32gcc1 gcc-multilib]
 	)
 fi
 
@@ -520,6 +520,7 @@ AC_CONFIG_FILES([
 		runtime/Makefile
 		runtime/cuda/Makefile
 		runtime/glut/Makefile
+		runtime/opencl-old/Makefile
 		runtime/opengl/Makefile
 		runtime/include/Makefile
 
