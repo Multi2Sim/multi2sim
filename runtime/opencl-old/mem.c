@@ -20,7 +20,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-opencl.h>
+#include "../include/CL/cl.h"
+#include "api.h"
+#include "context.h"
 
 
 cl_mem clCreateBuffer(
@@ -36,7 +38,7 @@ cl_mem clCreateBuffer(
 	sys_args[2] = (unsigned int) size;
 	sys_args[3] = (unsigned int) host_ptr;
 	sys_args[4] = (unsigned int) errcode_ret;
-	return (cl_mem) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateBuffer, sys_args);
+	return (cl_mem) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateBuffer, sys_args);
 }
 
 
@@ -53,7 +55,7 @@ cl_mem clCreateSubBuffer(
 	sys_args[2] = (unsigned int) buffer_create_type;
 	sys_args[3] = (unsigned int) buffer_create_info;
 	sys_args[4] = (unsigned int) errcode_ret;
-	return (cl_mem) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateSubBuffer, sys_args);
+	return (cl_mem) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateSubBuffer, sys_args);
 }
 
 
@@ -76,7 +78,7 @@ cl_mem clCreateImage2D(
 	sys_args[5] = (unsigned int) image_row_pitch;
 	sys_args[6] = (unsigned int) host_ptr;
 	sys_args[7] = (unsigned int) errcode_ret;
-	return (cl_mem) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateImage2D, sys_args);
+	return (cl_mem) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateImage2D, sys_args);
 }
 
 
@@ -103,7 +105,7 @@ cl_mem clCreateImage3D(
 	sys_args[7] = (unsigned int) image_slice_pitch;
 	sys_args[8] = (unsigned int) host_ptr;
 	sys_args[9] = (unsigned int) errcode_ret;
-	return (cl_mem) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateImage3D, sys_args);
+	return (cl_mem) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateImage3D, sys_args);
 }
 
 
@@ -112,7 +114,7 @@ cl_int clRetainMemObject(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) memobj;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clRetainMemObject, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clRetainMemObject, sys_args);
 }
 
 
@@ -121,7 +123,7 @@ cl_int clReleaseMemObject(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) memobj;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clReleaseMemObject, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clReleaseMemObject, sys_args);
 }
 
 
@@ -140,7 +142,7 @@ cl_int clGetSupportedImageFormats(
 	sys_args[3] = (unsigned int) num_entries;
 	sys_args[4] = (unsigned int) image_formats;
 	sys_args[5] = (unsigned int) num_image_formats;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetSupportedImageFormats, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetSupportedImageFormats, sys_args);
 }
 
 
@@ -157,7 +159,7 @@ cl_int clGetMemObjectInfo(
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetMemObjectInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetMemObjectInfo, sys_args);
 }
 
 
@@ -174,7 +176,7 @@ cl_int clGetImageInfo(
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetImageInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetImageInfo, sys_args);
 }
 
 
@@ -187,7 +189,7 @@ cl_int clSetMemObjectDestructorCallback(
 	sys_args[0] = (unsigned int) memobj;
 	sys_args[1] = (unsigned int) pfn_notify;
 	sys_args[2] = (unsigned int) user_data;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clSetMemObjectDestructorCallback, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clSetMemObjectDestructorCallback, sys_args);
 }
 
 

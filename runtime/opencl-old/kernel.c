@@ -20,7 +20,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-opencl.h>
+#include "../include/CL/cl.h"
+#include "api.h"
+#include "program.h"
 
 
 cl_kernel clCreateKernel(
@@ -32,7 +34,7 @@ cl_kernel clCreateKernel(
 	sys_args[0] = program->id;
 	sys_args[1] = (unsigned int) kernel_name;
 	sys_args[2] = (unsigned int) errcode_ret;
-	return (cl_kernel) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateKernel, sys_args);
+	return (cl_kernel) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateKernel, sys_args);
 }
 
 
@@ -47,7 +49,7 @@ cl_int clCreateKernelsInProgram(
 	sys_args[1] = (unsigned int) num_kernels;
 	sys_args[2] = (unsigned int) kernels;
 	sys_args[3] = (unsigned int) num_kernels_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateKernelsInProgram, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateKernelsInProgram, sys_args);
 }
 
 
@@ -56,7 +58,7 @@ cl_int clRetainKernel(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) kernel;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clRetainKernel, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clRetainKernel, sys_args);
 }
 
 
@@ -65,7 +67,7 @@ cl_int clReleaseKernel(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) kernel;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clReleaseKernel, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clReleaseKernel, sys_args);
 }
 
 
@@ -80,7 +82,7 @@ cl_int clSetKernelArg(
 	sys_args[1] = (unsigned int) arg_index;
 	sys_args[2] = (unsigned int) arg_size;
 	sys_args[3] = (unsigned int) arg_value;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clSetKernelArg, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clSetKernelArg, sys_args);
 }
 
 
@@ -97,7 +99,7 @@ cl_int clGetKernelInfo(
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetKernelInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetKernelInfo, sys_args);
 }
 
 
@@ -116,6 +118,6 @@ cl_int clGetKernelWorkGroupInfo(
 	sys_args[3] = (unsigned int) param_value_size;
 	sys_args[4] = (unsigned int) param_value;
 	sys_args[5] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetKernelWorkGroupInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetKernelWorkGroupInfo, sys_args);
 }
 

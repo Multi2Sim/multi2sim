@@ -20,7 +20,10 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-opencl.h>
+#include "../include/CL/cl.h"
+#include "api.h"
+#include "context.h"
+#include "mhandle.h"
 
 
 cl_context clCreateContext(
@@ -34,7 +37,7 @@ cl_context clCreateContext(
 	cl_context context;
 
 	/* Create context */
-	context = calloc(1, sizeof(struct _cl_context));
+	context = xcalloc(1, sizeof(struct _cl_context));
 
 	/* System call */
 	unsigned int sys_args[6];
@@ -44,7 +47,7 @@ cl_context clCreateContext(
 	sys_args[3] = (unsigned int) pfn_notify;
 	sys_args[4] = (unsigned int) user_data;
 	sys_args[5] = (unsigned int) errcode_ret;
-	context->id = (unsigned int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateContext, sys_args);
+	context->id = (unsigned int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateContext, sys_args);
 
 	/* Return */
 	return context;
@@ -61,7 +64,7 @@ cl_context clCreateContextFromType(
 	cl_context context;
 
 	/* Create context */
-	context = calloc(1, sizeof(struct _cl_context));
+	context = xcalloc(1, sizeof(struct _cl_context));
 
 	unsigned int sys_args[5];
 	sys_args[0] = (unsigned int) properties;
@@ -69,7 +72,7 @@ cl_context clCreateContextFromType(
 	sys_args[2] = (unsigned int) pfn_notify;
 	sys_args[3] = (unsigned int) user_data;
 	sys_args[4] = (unsigned int) errcode_ret;
-	context->id = (unsigned int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateContextFromType, sys_args);
+	context->id = (unsigned int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateContextFromType, sys_args);
 
 	/* Return */
 	return context;
@@ -81,7 +84,7 @@ cl_int clRetainContext(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = context->id;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clRetainContext, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clRetainContext, sys_args);
 }
 
 
@@ -94,7 +97,7 @@ cl_int clReleaseContext(
 
 	/* System call */
 	sys_args[0] = context->id;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clReleaseContext, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clReleaseContext, sys_args);
 }
 
 
@@ -111,7 +114,7 @@ cl_int clGetContextInfo(
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetContextInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetContextInfo, sys_args);
 }
 
 

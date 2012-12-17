@@ -20,7 +20,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-opencl.h>
+#include "../include/CL/cl.h"
+#include "api.h"
+#include "context.h"
 
 
 cl_int clWaitForEvents(
@@ -30,7 +32,7 @@ cl_int clWaitForEvents(
 	unsigned int sys_args[2];
 	sys_args[0] = (unsigned int) num_events;
 	sys_args[1] = (unsigned int) event_list;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clWaitForEvents, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clWaitForEvents, sys_args);
 }
 
 
@@ -47,7 +49,7 @@ cl_int clGetEventInfo(
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetEventInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetEventInfo, sys_args);
 }
 
 
@@ -58,7 +60,7 @@ cl_event clCreateUserEvent(
 	unsigned int sys_args[2];
 	sys_args[0] = context->id;
 	sys_args[1] = (unsigned int) errcode_ret;
-	return (cl_event) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateUserEvent, sys_args);
+	return (cl_event) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateUserEvent, sys_args);
 }
 
 
@@ -67,7 +69,7 @@ cl_int clRetainEvent(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clRetainEvent, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clRetainEvent, sys_args);
 }
 
 
@@ -76,7 +78,7 @@ cl_int clReleaseEvent(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clReleaseEvent, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clReleaseEvent, sys_args);
 }
 
 
@@ -87,7 +89,7 @@ cl_int clSetUserEventStatus(
 	unsigned int sys_args[2];
 	sys_args[0] = (unsigned int) event;
 	sys_args[1] = (unsigned int) execution_status;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clSetUserEventStatus, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clSetUserEventStatus, sys_args);
 }
 
 
@@ -102,7 +104,7 @@ cl_int clSetEventCallback(
 	sys_args[1] = (unsigned int) command_exec_callback_type;
 	sys_args[2] = (unsigned int) pfn_notify;
 	sys_args[3] = (unsigned int) user_data;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clSetEventCallback, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clSetEventCallback, sys_args);
 }
 
 
@@ -119,7 +121,7 @@ cl_int clGetEventProfilingInfo(
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetEventProfilingInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetEventProfilingInfo, sys_args);
 }
 
 
@@ -128,7 +130,7 @@ cl_int clFlush(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) command_queue;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clFlush, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clFlush, sys_args);
 }
 
 
@@ -137,6 +139,6 @@ cl_int clFinish(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) command_queue;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clFinish, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clFinish, sys_args);
 }
 

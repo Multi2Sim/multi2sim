@@ -20,7 +20,12 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-opencl.h>
+#include "../include/CL/cl.h"
+#include "api.h"
+#include "context.h"
+#include "debug.h"
+#include "mhandle.h"
+#include "program.h"
 
 
 /*
@@ -38,7 +43,7 @@ cl_program clCreateProgramWithSource(
 	unsigned int sys_args[5];
 
 	/* Create program */
-	program = calloc(1, sizeof(struct _cl_program));
+	program = xcalloc(1, sizeof(struct _cl_program));
 	program->context = context;
 
 	/* FIXME
@@ -51,7 +56,7 @@ cl_program clCreateProgramWithSource(
 	sys_args[2] = (unsigned int) strings;
 	sys_args[3] = (unsigned int) lengths;
 	sys_args[4] = (unsigned int) errcode_ret;
-	program->id = (unsigned int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateProgramWithSource, sys_args);
+	program->id = (unsigned int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateProgramWithSource, sys_args);
 
 	/* Return */
 	return program;
@@ -71,10 +76,10 @@ cl_program clCreateProgramWithBinary(
 	unsigned int sys_args[7];
 
 	/* Check arguments */
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
+	OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 
 	/* Create program */
-	program = calloc(1, sizeof(struct _cl_program));
+	program = xcalloc(1, sizeof(struct _cl_program));
 	program->context = context;
 
 	/* Read binary */
@@ -88,7 +93,7 @@ cl_program clCreateProgramWithBinary(
 	sys_args[4] = (unsigned int) binaries;
 	sys_args[5] = (unsigned int) binary_status;
 	sys_args[6] = (unsigned int) errcode_ret;
-	program->id = (unsigned int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateProgramWithBinary, sys_args);
+	program->id = (unsigned int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateProgramWithBinary, sys_args);
 
 	/* Return */
 	return program;
@@ -100,7 +105,7 @@ cl_int clRetainProgram(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = program->id;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clRetainProgram, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clRetainProgram, sys_args);
 }
 
 
@@ -113,7 +118,7 @@ cl_int clReleaseProgram(
 
 	/* System call */
 	sys_args[0] = program->id;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clReleaseProgram, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clReleaseProgram, sys_args);
 }
 
 
@@ -132,13 +137,13 @@ cl_int clBuildProgram(
 	sys_args[3] = (unsigned int) options;
 	sys_args[4] = (unsigned int) pfn_notify;
 	sys_args[5] = (unsigned int) user_data;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clBuildProgram, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clBuildProgram, sys_args);
 }
 
 
 cl_int clUnloadCompiler()
 {
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clUnloadCompiler);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clUnloadCompiler);
 }
 
 
@@ -155,7 +160,7 @@ cl_int clGetProgramInfo(
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetProgramInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetProgramInfo, sys_args);
 }
 
 
@@ -174,6 +179,6 @@ cl_int clGetProgramBuildInfo(
 	sys_args[3] = (unsigned int) param_value_size;
 	sys_args[4] = (unsigned int) param_value;
 	sys_args[5] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetProgramBuildInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetProgramBuildInfo, sys_args);
 }
 

@@ -17,30 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2S_OPENCL_H
-#define M2S_OPENCL_H
-
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <lib/util/debug.h>
-
-#include "CL/cl.h"
+#ifndef RUNTIME_OPENCL_API_H
+#define RUNTIME_OPENCL_API_H
 
 
-#define EVG_SYS_OPENCL_IMPL_VERSION_MAJOR		1
-#define EVG_SYS_OPENCL_IMPL_VERSION_MINOR		0
-#define EVG_SYS_OPENCL_IMPL_VERSION_BUILD		0
-#define EVG_SYS_OPENCL_IMPL_VERSION			((EVG_SYS_OPENCL_IMPL_VERSION_MAJOR << 16) | \
-						(EVG_SYS_OPENCL_IMPL_VERSION_MINOR << 8) | \
-						EVG_SYS_OPENCL_IMPL_VERSION_BUILD)
+#define OPENCL_RUNTIME_VERSION_MAJOR		1
+#define OPENCL_RUNTIME_VERSION_MINOR		0
+#define OPENCL_RUNTIME_VERSION_BUILD		0
+#define OPENCL_RUNTIME_VERSION			((OPENCL_RUNTIME_VERSION_MAJOR << 16) | \
+						(OPENCL_RUNTIME_VERSION_MINOR << 8) | \
+						OPENCL_RUNTIME_VERSION_BUILD)
 
-#define SYS_CODE_OPENCL  325
-#define SYS_OPENCL_FUNC_FIRST  1000
-#define SYS_OPENCL_FUNC_LAST  1073
-#define SYS_OPENCL_FUNC_COUNT  74
-#define SYS_OPENCL_MAX_ARGS  14
+#define OPENCL_SYSCALL_CODE  325
+#define OPENCL_FUNC_FIRST  1000
+#define OPENCL_FUNC_LAST  1073
+#define OPENCL_FUNC_COUNT  74
+#define OPENCL_MAX_ARGS  14
 
 
 #define OPENCL_FUNC_clGetPlatformIDs                  1000
@@ -132,84 +124,22 @@
 
 /* Error macros */
 
-extern char *err_evg_opencl_note;
-extern char *err_evg_opencl_param_note;
+extern char *opencl_err_note;
+extern char *opencl_err_param_note;
 
-#define EVG_OPENCL_ARG_NOT_SUPPORTED(p) \
-	fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, p, err_evg_opencl_note);
-#define EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(p, v) \
-	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, (v), err_evg_opencl_param_note); }
-#define EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(p, v) \
-	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", __FUNCTION__, (v), err_evg_opencl_param_note); }
-#define EVG_OPENCL_ARG_NOT_SUPPORTED_LT(p, v) \
-	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", __FUNCTION__, (v), err_evg_opencl_param_note); }
-#define EVG_OPENCL_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
+#define OPENCL_ARG_NOT_SUPPORTED(p) \
+	fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, p, opencl_err_note);
+#define OPENCL_ARG_NOT_SUPPORTED_EQ(p, v) \
+	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, (v), opencl_err_param_note); }
+#define OPENCL_ARG_NOT_SUPPORTED_NEQ(p, v) \
+	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", __FUNCTION__, (v), opencl_err_param_note); }
+#define OPENCL_ARG_NOT_SUPPORTED_LT(p, v) \
+	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", __FUNCTION__, (v), opencl_err_param_note); }
+#define OPENCL_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: not supported for '" #p "' out of range [%d:%d]\n%s", \
-	__FUNCTION__, (min), (max), err_evg_opencl_param_note); }
-#define EVG_OPENCL_ARG_NOT_SUPPORTED_FLAG(p, flag, name) \
-	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, err_evg_opencl_param_note); }
-
-
-
-
-
-struct _cl_platform_id
-{
-	unsigned int id;
-};
-
-
-struct _cl_device_id
-{
-	unsigned int id;
-
-	cl_platform_id platform;
-};
-
-
-struct _cl_context
-{
-	unsigned int id;
-};
-
-
-struct _cl_command_queue
-{
-	unsigned int id;
-};
-
-
-struct _cl_mem
-{
-	unsigned int id;
-};
-
-
-struct _cl_program
-{
-	unsigned int id;
-
-	cl_context context;
-	struct evg_bin_file_t *amd_bin;
-};
-
-
-struct _cl_kernel
-{
-	unsigned int id;
-};
-
-
-struct _cl_event
-{
-	unsigned int id;
-};
-
-
-struct _cl_sampler
-{
-	unsigned int id;
-};
+	__FUNCTION__, (min), (max), opencl_err_param_note); }
+#define OPENCL_ARG_NOT_SUPPORTED_FLAG(p, flag, name) \
+	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, opencl_err_param_note); }
 
 
 #endif

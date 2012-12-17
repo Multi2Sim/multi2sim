@@ -20,7 +20,9 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include <m2s-opencl.h>
+#include "../include/CL/cl.h"
+#include "api.h"
+#include "context.h"
 
 
 cl_command_queue clCreateCommandQueue(
@@ -34,7 +36,7 @@ cl_command_queue clCreateCommandQueue(
 	sys_args[1] = (unsigned int) device;
 	sys_args[2] = (unsigned int) properties;
 	sys_args[3] = (unsigned int) errcode_ret;
-	return (cl_command_queue) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateCommandQueue, sys_args);
+	return (cl_command_queue) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clCreateCommandQueue, sys_args);
 }
 
 
@@ -43,7 +45,7 @@ cl_int clRetainCommandQueue(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) command_queue;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clRetainCommandQueue, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clRetainCommandQueue, sys_args);
 }
 
 
@@ -52,7 +54,7 @@ cl_int clReleaseCommandQueue(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) command_queue;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clReleaseCommandQueue, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clReleaseCommandQueue, sys_args);
 }
 
 
@@ -69,7 +71,7 @@ cl_int clGetCommandQueueInfo(
 	sys_args[2] = (unsigned int) param_value_size;
 	sys_args[3] = (unsigned int) param_value;
 	sys_args[4] = (unsigned int) param_value_size_ret;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetCommandQueueInfo, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clGetCommandQueueInfo, sys_args);
 }
 
 
@@ -84,7 +86,7 @@ cl_int clSetCommandQueueProperty(
 	sys_args[1] = (unsigned int) properties;
 	sys_args[2] = (unsigned int) enable;
 	sys_args[3] = (unsigned int) old_properties;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clSetCommandQueueProperty, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clSetCommandQueueProperty, sys_args);
 }
 
 
@@ -109,7 +111,7 @@ cl_int clEnqueueReadBuffer(
 	sys_args[6] = (unsigned int) num_events_in_wait_list;
 	sys_args[7] = (unsigned int) event_wait_list;
 	sys_args[8] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueReadBuffer, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueReadBuffer, sys_args);
 }
 
 
@@ -144,7 +146,7 @@ cl_int clEnqueueReadBufferRect(
 	sys_args[11] = (unsigned int) num_events_in_wait_list;
 	sys_args[12] = (unsigned int) event_wait_list;
 	sys_args[13] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueReadBufferRect, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueReadBufferRect, sys_args);
 }
 
 
@@ -169,7 +171,7 @@ cl_int clEnqueueWriteBuffer(
 	sys_args[6] = (unsigned int) num_events_in_wait_list;
 	sys_args[7] = (unsigned int) event_wait_list;
 	sys_args[8] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueWriteBuffer, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueWriteBuffer, sys_args);
 }
 
 
@@ -204,7 +206,7 @@ cl_int clEnqueueWriteBufferRect(
 	sys_args[11] = (unsigned int) num_events_in_wait_list;
 	sys_args[12] = (unsigned int) event_wait_list;
 	sys_args[13] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueWriteBufferRect, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueWriteBufferRect, sys_args);
 }
 
 
@@ -229,7 +231,7 @@ cl_int clEnqueueCopyBuffer(
 	sys_args[6] = (unsigned int) num_events_in_wait_list;
 	sys_args[7] = (unsigned int) event_wait_list;
 	sys_args[8] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueCopyBuffer, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueCopyBuffer, sys_args);
 }
 
 
@@ -262,7 +264,7 @@ cl_int clEnqueueCopyBufferRect(
 	sys_args[10] = (unsigned int) num_events_in_wait_list;
 	sys_args[11] = (unsigned int) event_wait_list;
 	sys_args[12] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueCopyBufferRect, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueCopyBufferRect, sys_args);
 }
 
 
@@ -291,7 +293,7 @@ cl_int clEnqueueReadImage(
 	sys_args[8] = (unsigned int) num_events_in_wait_list;
 	sys_args[9] = (unsigned int) event_wait_list;
 	sys_args[10] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueReadImage, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueReadImage, sys_args);
 }
 
 
@@ -320,7 +322,7 @@ cl_int clEnqueueWriteImage(
 	sys_args[8] = (unsigned int) num_events_in_wait_list;
 	sys_args[9] = (unsigned int) event_wait_list;
 	sys_args[10] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueWriteImage, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueWriteImage, sys_args);
 }
 
 
@@ -345,7 +347,7 @@ cl_int clEnqueueCopyImage(
 	sys_args[6] = (unsigned int) num_events_in_wait_list;
 	sys_args[7] = (unsigned int) event_wait_list;
 	sys_args[8] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueCopyImage, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueCopyImage, sys_args);
 }
 
 
@@ -370,7 +372,7 @@ cl_int clEnqueueCopyImageToBuffer(
 	sys_args[6] = (unsigned int) num_events_in_wait_list;
 	sys_args[7] = (unsigned int) event_wait_list;
 	sys_args[8] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueCopyImageToBuffer, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueCopyImageToBuffer, sys_args);
 }
 
 
@@ -395,7 +397,7 @@ cl_int clEnqueueCopyBufferToImage(
 	sys_args[6] = (unsigned int) num_events_in_wait_list;
 	sys_args[7] = (unsigned int) event_wait_list;
 	sys_args[8] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueCopyBufferToImage, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueCopyBufferToImage, sys_args);
 }
 
 
@@ -422,7 +424,7 @@ void * clEnqueueMapBuffer(
 	sys_args[7] = (unsigned int) event_wait_list;
 	sys_args[8] = (unsigned int) event;
 	sys_args[9] = (unsigned int) errcode_ret;
-	return (void *) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueMapBuffer, sys_args);
+	return (void *) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueMapBuffer, sys_args);
 }
 
 
@@ -453,7 +455,7 @@ void * clEnqueueMapImage(
 	sys_args[9] = (unsigned int) event_wait_list;
 	sys_args[10] = (unsigned int) event;
 	sys_args[11] = (unsigned int) errcode_ret;
-	return (void *) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueMapImage, sys_args);
+	return (void *) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueMapImage, sys_args);
 }
 
 
@@ -472,7 +474,7 @@ cl_int clEnqueueUnmapMemObject(
 	sys_args[3] = (unsigned int) num_events_in_wait_list;
 	sys_args[4] = (unsigned int) event_wait_list;
 	sys_args[5] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueUnmapMemObject, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueUnmapMemObject, sys_args);
 }
 
 
@@ -497,7 +499,7 @@ cl_int clEnqueueNDRangeKernel(
 	sys_args[6] = (unsigned int) num_events_in_wait_list;
 	sys_args[7] = (unsigned int) event_wait_list;
 	sys_args[8] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueNDRangeKernel, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueNDRangeKernel, sys_args);
 }
 
 
@@ -514,7 +516,7 @@ cl_int clEnqueueTask(
 	sys_args[2] = (unsigned int) num_events_in_wait_list;
 	sys_args[3] = (unsigned int) event_wait_list;
 	sys_args[4] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueTask, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueTask, sys_args);
 }
 
 
@@ -541,7 +543,7 @@ cl_int clEnqueueNativeKernel(
 	sys_args[7] = (unsigned int) num_events_in_wait_list;
 	sys_args[8] = (unsigned int) event_wait_list;
 	sys_args[9] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueNativeKernel, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueNativeKernel, sys_args);
 }
 
 
@@ -552,7 +554,7 @@ cl_int clEnqueueMarker(
 	unsigned int sys_args[2];
 	sys_args[0] = (unsigned int) command_queue;
 	sys_args[1] = (unsigned int) event;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueMarker, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueMarker, sys_args);
 }
 
 
@@ -565,7 +567,7 @@ cl_int clEnqueueWaitForEvents(
 	sys_args[0] = (unsigned int) command_queue;
 	sys_args[1] = (unsigned int) num_events;
 	sys_args[2] = (unsigned int) event_list;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueWaitForEvents, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueWaitForEvents, sys_args);
 }
 
 
@@ -574,6 +576,6 @@ cl_int clEnqueueBarrier(
 {
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) command_queue;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clEnqueueBarrier, sys_args);
+	return (cl_int) syscall(OPENCL_SYSCALL_CODE, OPENCL_FUNC_clEnqueueBarrier, sys_args);
 }
 
