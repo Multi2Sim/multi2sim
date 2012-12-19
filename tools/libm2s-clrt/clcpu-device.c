@@ -46,6 +46,16 @@ struct clcpu_workgroup_data_t *get_workgroup_data2(void)
 }
 
 
+void switch_fiber2(struct fiber_t *current, struct fiber_t *dest)
+{
+}
+
+
+void switch_fiber_cl2(struct fiber_t *current, struct fiber_t *dest, void *reg_values)
+{
+}
+
+
 void barrier(int data)
 {
 	struct clcpu_workgroup_data_t *workgroup_data;
@@ -208,9 +218,21 @@ void exit_work_item(void)
 {
 	struct clcpu_workgroup_data_t *workgroup_data;
 
+	void *new_esp;
+	void *new_eip;
+
 	workgroup_data = get_workgroup_data2();
 	workgroup_data->num_done++;
-	exit_fiber(&workgroup_data->main_ctx);
+
+	new_esp = workgroup_data->main_ctx.esp;
+	new_eip = workgroup_data->main_ctx.eip;
+
+	asm volatile (
+		"mov %0, %%esp\n\t"
+		"jmp *%1\n\t"
+		:
+		: "g" (new_esp), "g" (new_eip)
+	);
 }  
 
 
