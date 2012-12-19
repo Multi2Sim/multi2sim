@@ -4,16 +4,16 @@
 #include <syscall.h>
 #include <limits.h>
 #include <assert.h>
+#include <pthread.h>
 #include <string.h>
 
-#include <pthread.h>
-#include <CL/cl.h>
-
-
+#include "../include/CL/cl.h"
 #include "clcpu.h"
 #include "clcpu-device.h"
 #include "clcpu-program.h"
 #include "debug.h"
+#include "device.h"
+
 
 const char *DEVICE_EXTENSIONS = "cl_khr_fp64 cl_khr_byte_addressable_store cl_khr_global_int32_base_atomics cl_khr_local_int32_base_atomics";
 const char *DEVICE_NAME = "x86 CPU";
@@ -29,7 +29,7 @@ const char *DEVICE_VERSION = "OpenCL 1.1 Multi2Sim";
 #define OPENCL_WORK_GROUP_STACK_MASK  0xffffe000
 #define OPENCL_WORK_GROUP_DATA_OFFSET  -0x60
 
-struct clcpu_workgroup_data_t *get_workgroup_data2(void)
+struct clcpu_workgroup_data_t *get_workgroup_data(void)
 {
 	struct clcpu_workgroup_data_t *data;
 
@@ -46,13 +46,14 @@ struct clcpu_workgroup_data_t *get_workgroup_data2(void)
 }
 
 
+
 void barrier(int data)
 {
 	struct clcpu_workgroup_data_t *workgroup_data;
 	struct fiber_t *sleep;
 	struct fiber_t *resume;
 
-	workgroup_data = get_workgroup_data2();
+	workgroup_data = get_workgroup_data();
 
 	sleep = workgroup_data->workitems + workgroup_data->cur_item;
 	workgroup_data->cur_item = (workgroup_data->cur_item + 1) % workgroup_data->num_items;
@@ -142,7 +143,7 @@ void clcpu_device_info_init(cl_device_id cpu)
 	cpu->vector_width_float = 16 / sizeof (cl_float);
 	cpu->vector_width_double = 16 / sizeof (cl_double);
 	cpu->vector_width_half = 0;
-	cpu->profile = FULL_PROFILE;
+	cpu->profile = opencl_device_full_profile;
 	cpu->profiling_timer_resolution = 0;
 	cpu->queue_properties = CL_QUEUE_PROFILING_ENABLE;
 	cpu->single_fp_config = CL_FP_DENORM | 
@@ -153,9 +154,9 @@ void clcpu_device_info_init(cl_device_id cpu)
 				CL_FP_FMA | 
 				CL_FP_SOFT_FLOAT;
 	cpu->type = CL_DEVICE_TYPE_CPU;
-	cpu->vendor = VENDOR;
+	cpu->vendor = opencl_device_vendor;
 	cpu->vendor_id = 0;
-	cpu->version = DEVICE_VERSION;
+	cpu->version = opencl_device_opencl_c_version;
 }
 
 /* Check to see whether the device has been assigned work
@@ -208,7 +209,7 @@ void exit_work_item(void)
 {
 	struct clcpu_workgroup_data_t *workgroup_data;
 
-	workgroup_data = get_workgroup_data2();
+	workgroup_data = get_workgroup_data();
 	workgroup_data->num_done++;
 	exit_fiber(&workgroup_data->main_ctx);
 }  
