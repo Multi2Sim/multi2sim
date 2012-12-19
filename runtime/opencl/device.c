@@ -34,7 +34,7 @@
 extern struct _cl_platform_id *m2s_platform;
 
 const char *opencl_device_full_profile = "FULL_PROFILE";
-const char *opencl_device_version = "OpenCL 1.1 Multi2Sim";
+const char *opencl_device_opencl_c_version = "OpenCL 1.1 Multi2Sim";
 const char *opencl_device_name = "Multi2Sim OpenCL Runtime";
 const char *opencl_device_vendor = "Multi2Sim";
 const char *opencl_device_extensions = "";
