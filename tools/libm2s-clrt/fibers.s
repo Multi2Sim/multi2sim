@@ -1,14 +1,6 @@
 section .text
-global exit_fiber
 global switch_fiber
-global make_fiber
 global switch_fiber_cl
-
-; void exit_fiber(struct fiber_t *dest)
-exit_fiber:
-	mov eax, [esp + 4]		; move pointer to destination context into eax
-	mov esp, [eax]			; move stack pointer into esp
-	jmp [eax + 4]			; jump to address
 
 ; void switch_fiber_cl(struct fiber_t *current, struct fiber_t *dest, int32_t *reg_values)
 switch_fiber_cl:
