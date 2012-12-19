@@ -56,10 +56,7 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	thread-list.c \
 	thread-list.h \
 	\
-	fibers.h \
-	fibers.c
-	\
-	workgroupdata.c
+	fibers.h
 
 
 AM_CFLAGS = -Wall -O2 -fPIC -m32

@@ -46,13 +46,75 @@ struct clcpu_workgroup_data_t *get_workgroup_data2(void)
 }
 
 
-void switch_fiber2(struct fiber_t *current, struct fiber_t *dest)
+void switch_fiber(struct fiber_t *current, struct fiber_t *dest, void *reg_values)
 {
-}
+	asm volatile (
+		"push %%eax\n\t"		/* Push registers onto sp + 24 */
+		"push %%ebx\n\t"		/* sp + 20 */
+		"push %%ecx\n\t"		/* sp + 16 */
+		"push %%edx\n\t"		/* sp + 12 */
+		"push %%esi\n\t"		/* sp + 8 */
+		"push %%edi\n\t"		/* sp + 4 */
+		"push %%ebp\n\t"		/* sp */
 
+		"mov %0, %%eax\n\t"		/* eax <= current */
+		"mov %1, %%edx\n\t"		/* edx <= dest */
+		"mov %2, %%ecx\n\t"		/* ecx <= reg_values */
 
-void switch_fiber_cl2(struct fiber_t *current, struct fiber_t *dest, void *reg_values)
-{
+		"sub $0x80, %%esp\n\t"		/* Make room for SSE registers */
+		"movups %%xmm0, 0x0(%%esp)\n\t"
+		"movups %%xmm1, 0x10(%%esp)\n\t"
+		"movups %%xmm2, 0x20(%%esp)\n\t"
+		"movups %%xmm3, 0x30(%%esp)\n\t"
+		"movups %%xmm4, 0x40(%%esp)\n\t"
+		"movups %%xmm5, 0x50(%%esp)\n\t"
+		"movups %%xmm6, 0x60(%%esp)\n\t"
+		"movups %%xmm7, 0x70(%%esp)\n\t"
+	
+		"test %%ecx, %%ecx\n\t"			/* Skip if 'reg_values' is NULL */
+		"je opencl_switch_fiber_no_regs\n\t"
+
+		"movaps 0x0(%%ecx), %%xmm0\n\t"		/* AMD uses xmm0-xmm3 to pass in parameters */
+		"movaps 0x10(%%ecx), %%xmm1\n\t"
+		"movaps 0x20(%%ecx), %%xmm2\n\t"
+		"movaps 0x30(%%ecx), %%xmm3\n\t"
+
+		"\nopencl_switch_fiber_no_regs:\n\t"
+		"mov %%esp, (%%eax)\n\t"	/* current->esp <= esp */
+
+		"\nopencl_switch_fiber_done_backup:\n\t"
+		"call opencl_switch_fiber_get_pc\n\t"
+
+		"\nopencl_switch_fiber_get_pc:\n\t"
+		"pop %%ecx\n\t"			/* ecx <= eip at 'opencl_switch_fiber_get_pic' */
+		"add $opencl_switch_fiber_return - opencl_switch_fiber_get_pc, %%ecx\n\t"
+		"mov %%ecx, 0x4(%%eax)\n\t"	/* current->eip <== opencl_switch_fiber_return */
+
+		"mov (%%edx), %%esp\n\t"	/* esp <= dest->esp */
+		"jmp *0x4(%%edx)\n\t"		/* eip <= dest->eip */
+
+		"\nopencl_switch_fiber_return:\n\t"
+
+		"movups 0x0(%%esp), %%xmm0\n\t"
+		"movups 0x10(%%esp), %%xmm1\n\t"
+		"movups 0x20(%%esp), %%xmm2\n\t"
+		"movups 0x30(%%esp), %%xmm3\n\t"
+		"movups 0x40(%%esp), %%xmm4\n\t"
+		"movups 0x50(%%esp), %%xmm5\n\t"
+		"movups 0x60(%%esp), %%xmm6\n\t"
+		"movups 0x70(%%esp), %%xmm7\n\t"
+		"add $0x80, %%esp\n\t"
+	
+		"pop %%ebp\n\t"
+		"pop %%edi\n\t"
+		"pop %%esi\n\t"
+		"pop %%edx\n\t"
+		"pop %%ecx\n\t"
+		"pop %%ebx\n\t"
+		"pop %%eax\n\t"
+		:
+		: "g" (current), "g" (dest), "g" (reg_values)
+	);
 }
 
 
@@ -68,7 +130,7 @@ void barrier(int data)
 	workgroup_data->cur_item = (workgroup_data->cur_item + 1) % workgroup_data->num_items;
 
 	resume = workgroup_data->workitems + workgroup_data->cur_item;
-	switch_fiber(sleep, resume);
+	switch_fiber(sleep, resume, NULL);
 }
 
 static clrt_barrier_t barrier_addr = barrier;
@@ -376,7 +438,7 @@ void launch_work_group(
 
 	while (workgroup_data->num_items > workgroup_data->num_done)
 		for (workgroup_data->cur_item = 0; workgroup_data->cur_item < workgroup_data->num_items; workgroup_data->cur_item++)
-			switch_fiber_cl(&workgroup_data->main_ctx, workgroup_data->workitems + workgroup_data->cur_item, kernel->register_params);
+			switch_fiber(&workgroup_data->main_ctx, workgroup_data->workitems + workgroup_data->cur_item, kernel->register_params);
 }
 
 void destroy_workgroup(struct clcpu_workgroup_data_t *workgroup, struct clcpu_kernel_t *kernel)

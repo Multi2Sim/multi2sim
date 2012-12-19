@@ -6,8 +6,6 @@ CC = gcc
 DEBUG_CFLAGS = -Wall -Werror -O0 -g -DMHANDLE
 CFLAGS = -fPIC -m32 -I./include
 CFLAGS += $(DEBUG_CFLAGS)  ## Remove for no debugging
-ASM = nasm
-ASMFLAGS = -f elf32
 
 
 LIB_NAME = libm2s-clrt
@@ -24,7 +22,6 @@ OBJS = \
 	event.o \
 	kernel.o \
 	list.o \
-	fibers.o \
 	m2s-clrt.o \
 	workgroupdata.o \
 	mem.o \
@@ -61,9 +58,6 @@ depend:
 
 .c.o:
 	$(CC) $(CFLAGS) -c $*.c -o $@
-
-.s.o:
-	$(ASM) $(ASMFLAGS) $*.s -o $@
 
 
 
