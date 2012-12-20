@@ -23,6 +23,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "mhandle.h"
 
 
 extern struct _cl_platform_id *m2s_platform;
@@ -45,7 +46,7 @@ void clrt_context_free(void *data)
 
 
 /*
- * Public Functions
+ * OpenCL API
  */
 
 cl_context clCreateContext(
@@ -86,9 +87,7 @@ cl_context clCreateContext(
 		return NULL;
 	}	
 
-	context = (struct _cl_context *) malloc(sizeof (struct _cl_context));
-	if (!context)
-		fatal("%s: out of memory", __FUNCTION__);
+	context = xmalloc(sizeof (struct _cl_context));
 	clrt_object_create(context, CLRT_OBJECT_CONTEXT, clrt_context_free);
 
 
@@ -103,16 +102,13 @@ cl_context clCreateContext(
 	}
 
 	context->num_devices = num_devices;
-	context->devices = (struct _cl_device_id **) malloc(sizeof (struct _cl_device_id *) * context->num_devices);
-	if (!context->devices)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	context->devices = xmalloc(sizeof (struct _cl_device_id *) * context->num_devices);
 	memcpy(context->devices, devices, sizeof devices[0] * num_devices);
 
 	if (properties)
 	{
 		context->prop_count = getPropertiesCount(properties, sizeof (cl_context_properties));
-		context->props = malloc(sizeof (cl_context_properties) * context->prop_count);
+		context->props = xmalloc(sizeof (cl_context_properties) * context->prop_count);
 		copyProperties(context->props, properties, sizeof (cl_context_properties), context->prop_count);
 	}
 	else
@@ -153,7 +149,7 @@ cl_context clCreateContextFromType(
 		return NULL;
 	}
 
-	cl_device_id *devices = malloc(sizeof devices[0] * num_devices);
+	cl_device_id *devices = xmalloc(sizeof devices[0] * num_devices);
 	
 	clGetDeviceIDs(m2s_platform, device_type, num_devices, devices, NULL);
 

@@ -23,6 +23,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "mhandle.h"
 
 
 const char *opencl_platform_full_profile = "OpenCL Multi2Sim Platform Full Profile";
@@ -124,16 +125,11 @@ cl_int clGetPlatformIDs(
 	{
 		int i;
 
-		m2s_platform = (struct _cl_platform_id *) malloc(sizeof (struct _cl_platform_id));
-		if (!m2s_platform)
-			fatal("%s: out of memory", __FUNCTION__);
-
+		m2s_platform = xmalloc(sizeof (struct _cl_platform_id));
 		m2s_platform->num_device_types = sizeof m2s_device_type_constructors / sizeof m2s_device_type_constructors[0];
 
 		
-		m2s_platform->entries = malloc(sizeof m2s_platform->entries[0] * m2s_platform->num_device_types);
-		if (!m2s_platform->entries)
-			fatal("%s: out of memory", __FUNCTION__);
+		m2s_platform->entries = xmalloc(sizeof m2s_platform->entries[0] * m2s_platform->num_device_types);
 
 		/* go through all the device types and initalize them and their devices */
 		for (i = 0; i < m2s_platform->num_device_types; i++)
@@ -148,7 +144,7 @@ cl_int clGetPlatformIDs(
 			entry->device_type->init_devices(0, NULL, &entry->num_devices);
 			
 			/* allocate enough memory for those devices */
-			entry->devices = malloc(sizeof entry->devices[0] * entry->num_devices);
+			entry->devices = xmalloc(sizeof entry->devices[0] * entry->num_devices);
 
 			/* populate */
 			entry->device_type->init_devices(entry->num_devices, entry->devices, NULL);

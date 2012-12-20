@@ -25,6 +25,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "mhandle.h"
 
 
 /*
@@ -74,14 +75,11 @@ cl_kernel clCreateKernel(
 		return NULL;
 	}
 
-	cl_kernel kernel = (struct _cl_kernel *) malloc(sizeof (struct _cl_kernel));
-	if (!kernel)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	cl_kernel kernel = xmalloc(sizeof (struct _cl_kernel));
 	clrt_object_create(kernel, CLRT_OBJECT_KERNEL, clrt_kernel_free);
 
 	kernel->num_entries = program->num_entries;
-	kernel->entries = malloc(sizeof kernel->entries[0] * kernel->num_entries);
+	kernel->entries = xmalloc(sizeof kernel->entries[0] * kernel->num_entries);
 	int i;
 
 	for (i = 0; i < kernel->num_entries; i++)

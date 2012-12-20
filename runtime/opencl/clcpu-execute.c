@@ -1,3 +1,22 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -8,6 +27,7 @@
 #include "clcpu.h"
 #include "clcpu-program.h"
 #include "clcpu-device.h"
+#include "mhandle.h"
 
 void clcpu_device_exceute_ndrange(
 	void *dev,
@@ -26,9 +46,7 @@ void clcpu_device_exceute_ndrange(
 
 	struct clcpu_execution_t *run;
 
-	run = malloc(sizeof (struct clcpu_execution_t));
-	if (!run)
-		fatal("%s: out of memory", __FUNCTION__);
+	run = xmalloc(sizeof (struct clcpu_execution_t));
 
 	/* copy over dimensions */
 	run->dims = work_dim;
@@ -46,7 +64,7 @@ void clcpu_device_exceute_ndrange(
 	}
 	run->kernel = kernel;
 	run->next_group = 0;
-	run->group_starts = (size_t *) malloc(3 * sizeof (size_t) * run->num_groups);
+	run->group_starts = xmalloc(3 * sizeof (size_t) * run->num_groups);
 	if(!run->group_starts)
 		fatal("%s: out of memory", __FUNCTION__);
 	

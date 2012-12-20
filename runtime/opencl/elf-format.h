@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LIB_UTIL_ELF_FORMAT_H
-#define LIB_UTIL_ELF_FORMAT_H
+#ifndef RUNTIME_OPENCL_ELF_FORMAT_H
+#define RUNTIME_OPENCL_ELF_FORMAT_H
 
 #include <elf.h>
 #include <stdio.h>

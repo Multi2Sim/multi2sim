@@ -1,3 +1,22 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
@@ -13,6 +32,7 @@
 #include "clcpu-program.h"
 #include "debug.h"
 #include "device.h"
+#include "mhandle.h"
 
 
 const char *DEVICE_EXTENSIONS = "cl_khr_fp64 cl_khr_byte_addressable_store cl_khr_global_int32_base_atomics cl_khr_local_int32_base_atomics";
@@ -137,7 +157,7 @@ static clrt_barrier_t barrier_addr = barrier;
 
 struct clrt_device_type_t *clcpu_create_device_type(void)
 {
-	struct clrt_device_type_t *device_type = malloc(sizeof *device_type);
+	struct clrt_device_type_t *device_type = xmalloc(sizeof *device_type);
 	device_type->init_devices = clcpu_device_type_init_devices;
 	device_type->valid_binary = clcpu_device_type_is_valid_binary;
 	device_type->create_kernel = clcpu_device_type_create_kernel;
@@ -326,20 +346,16 @@ void init_workgroup(
 
 	workgroup->num_done = 0;
 	workgroup->cur_ctx = NULL;
-	workgroup->workitems = (struct fiber_t *) malloc(sizeof (struct fiber_t) * workgroup->num_items);
-	if (!workgroup->workitems)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	workgroup->workitem_data = (struct clcpu_workitem_data_t **) malloc(sizeof (struct clcpu_workitem_data_t *) * workgroup->num_items);
-	if (!workgroup->workitem_data)
-		fatal("%s: out of memory", __FUNCTION__);
+	workgroup->workitems = xmalloc(sizeof (struct fiber_t) * workgroup->num_items);
+	workgroup->workitem_data = xmalloc(sizeof (struct clcpu_workitem_data_t *) * workgroup->num_items);
 
 	if (posix_memalign((void **)&workgroup->aligned_stacks, OPENCL_WORK_GROUP_STACK_SIZE, OPENCL_WORK_GROUP_STACK_SIZE * workgroup->num_items))
 		fatal("%s: aligned memory allocation failure", __FUNCTION__);
+	mhandle_register_ptr(workgroup->aligned_stacks, OPENCL_WORK_GROUP_STACK_SIZE * workgroup->num_items);
 
 
 	if (kernel->local_reserved_bytes)
-		local_reserved = malloc(kernel->local_reserved_bytes);
+		local_reserved = xmalloc(kernel->local_reserved_bytes);
 	else
 		local_reserved = NULL;
 
@@ -356,10 +372,7 @@ void init_workgroup(
 	}
 
 	/* set up params with local memory pointers sperate from those of other threads */
-	workgroup->stack_params = (size_t *) malloc(sizeof (size_t) * kernel->stack_param_words);
-	if (!workgroup->stack_params)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	workgroup->stack_params = (size_t *) xmalloc(sizeof (size_t) * kernel->stack_param_words);
 	memcpy(workgroup->stack_params, kernel->stack_params, sizeof (size_t) * kernel->stack_param_words);
 	for (i = 0; i < kernel->num_params; i++)
 		if (kernel->param_info[i].mem_type == CLCPU_MEM_LOCAL)
@@ -367,6 +380,7 @@ void init_workgroup(
 			int offset = kernel->param_info[i].stack_offset;
 			if (posix_memalign((void **)(workgroup->stack_params + offset), OPENCL_WORK_GROUP_STACK_ALIGN, kernel->stack_params[offset]))
 				fatal("%s: out of memory", __FUNCTION__);
+			mhandle_register_ptr(*(void **) (workgroup->stack_params + offset), kernel->stack_params[offset]);
 		}
 } 
 
@@ -497,7 +511,7 @@ void *clcpu_device_core_proc(void *ptr)
 
 struct clcpu_device_t *clcpu_device_create(void)
 {
-	struct clcpu_device_t *cpu_device = malloc(sizeof *cpu_device);
+	struct clcpu_device_t *cpu_device = xmalloc(sizeof *cpu_device);
 
 	cpu_device->num_cores = get_cpu_thread_count();
 	cpu_device->num_kernels = 0;
@@ -508,7 +522,7 @@ struct clcpu_device_t *clcpu_device_create(void)
 	pthread_cond_init(&cpu_device->ready, NULL);
 	pthread_cond_init(&cpu_device->done, NULL);
 
-	cpu_device->threads = (pthread_t *) malloc(sizeof (pthread_t) * cpu_device->num_cores);
+	cpu_device->threads = xmalloc(sizeof (pthread_t) * cpu_device->num_cores);
 	if(!cpu_device->threads)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -535,7 +549,7 @@ cl_int clcpu_device_type_init_devices(
 
 	if (num_entries && devices)
 	{
-		cl_device_id cpu = malloc(sizeof *cpu);
+		cl_device_id cpu = xmalloc(sizeof *cpu);
 		clcpu_device_info_init(cpu);
 		cpu->device = clcpu_device_create();
 		devices[0] = cpu;

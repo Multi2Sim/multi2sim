@@ -11,6 +11,9 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	\
 	command-queue.c \
 	\
+	context.c \
+	context.h \
+	\
 	debug.c \
 	debug.h \
 	\
@@ -31,7 +34,6 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	clcpu.h \
 	clcpu-execute.c \
 	\
-	context.c \
 	kernel.c \
 	mem.c \
 	\
@@ -59,7 +61,8 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	fibers.h
 
 
-AM_CFLAGS = -Wall -O2 -fPIC -m32
+#AM_CFLAGS = -Wall -O2 -fPIC -m32 -DMHANDLE
+AM_CFLAGS = -m32
 
 endif
 
