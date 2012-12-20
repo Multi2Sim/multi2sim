@@ -23,6 +23,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "mhandle.h"
 
 
 void fatal(char *fmt, ...)

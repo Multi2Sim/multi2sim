@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2S_CLRT_H
-#define M2S_CLRT_H
+#ifndef RUNTIME_OPENCL_CLRT_H
+#define RUNTIME_OPENCL_CLRT_H
 
 #include <unistd.h>
 #include <stdio.h>

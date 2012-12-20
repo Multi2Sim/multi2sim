@@ -25,6 +25,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "mhandle.h"
 
 
 
@@ -101,10 +102,7 @@ cl_mem clCreateBuffer(
 		return NULL;
 	}
 
-	mem = (struct _cl_mem *) malloc(sizeof (struct _cl_mem));
-	if (!mem)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	mem = xmalloc(sizeof (struct _cl_mem));
 	clrt_object_create(mem, CLRT_OBJECT_MEM, clrt_mem_free);
 
 	/* Because of alignment reasons, we are going to 'cache' buffers even when the user

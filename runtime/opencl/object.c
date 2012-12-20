@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "clrt.h"
+#include "mhandle.h"
 #include "thread-list.h"
 #include "debug.h"
 #include "object.h"
@@ -57,12 +58,8 @@ struct clrt_object_t *clrt_object_create(void *data, enum clrt_object_type_t typ
 {
 	struct clrt_object_t *object;
 
-	/* Allocate */
-	object = (struct clrt_object_t *) malloc(sizeof (struct clrt_object_t));
-	if (!object)
-		fatal("%s: out of memory", __FUNCTION__);
-	
 	/* Initialize */
+	object = xmalloc(sizeof (struct clrt_object_t));
 	object->data = data;
 	object->destroy_func = destroy;
 	object->type = type;

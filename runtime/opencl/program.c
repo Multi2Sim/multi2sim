@@ -25,6 +25,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "mhandle.h"
 
 
 /*
@@ -104,7 +105,7 @@ cl_program clCreateProgramWithBinary(
 	}
 
 	/* allocate enough room for all device types.  We don't know how many of them there will be */
-	struct clrt_device_type_t **device_types = malloc(sizeof device_types[0] * m2s_platform->num_device_types);
+	struct clrt_device_type_t **device_types = xmalloc(sizeof device_types[0] * m2s_platform->num_device_types);
 	int num_device_types = 0;
 
 	for (i = 0; i < num_devices; i++)
@@ -152,14 +153,14 @@ cl_program clCreateProgramWithBinary(
 
 	
 
-	program = (struct _cl_program *) malloc(sizeof (struct _cl_program));
+	program = xmalloc(sizeof (struct _cl_program));
 	if (!program)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	clrt_object_create(program, CLRT_OBJECT_PROGRAM, clrt_program_free);
 
 	program->num_entries = num_devices;
-	program->entries = malloc(sizeof program->entries[0] * num_devices);
+	program->entries = xmalloc(sizeof program->entries[0] * num_devices);
 
 	for (i = 0; i < num_device_types; i++)
 	{
@@ -172,7 +173,7 @@ cl_program clCreateProgramWithBinary(
 		if ((char *)inner_start + inner_size > (char *)binaries[i] + lengths[i] || (unsigned char *)inner_start < binaries[i])
 			fatal("%s: could not executable content", __FUNCTION__);
 
-		cur->filename = strdup("./XXXXXX.so");
+		cur->filename = xstrdup("./XXXXXX.so");
 		if (!cur->filename)
 			fatal("%s: out of memory", __FUNCTION__);
 

@@ -1,3 +1,22 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <elf.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,6 +27,7 @@
 #include "clcpu.h"
 #include "clcpu-program.h"
 #include "debug.h"
+#include "mhandle.h"
 
 #define MAX_SSE_REG_PARAMS 4
 #define SSE_REG_SIZE_IN_WORDS (16 / sizeof (size_t))
@@ -129,13 +149,8 @@ void *get_function_info(void *handle, const char *name, size_t **metadata)
 	char *fullname;
 	char *metaname;
 
-	fullname = (char *) malloc(strlen(name) + 100);
-	if (!fullname)
-		fatal("%s: out of memory", __FUNCTION__);
-	metaname = (char *) malloc(strlen(name) + 100);
-	if (!metaname)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	fullname = xmalloc(strlen(name) + 100);
+	metaname = xmalloc(strlen(name) + 100);
 	sprintf(fullname, "__OpenCL_%s_kernel", name);
 	sprintf(metaname, "__OpenCL_%s_metadata", name);
 
@@ -155,7 +170,7 @@ void *clcpu_device_type_create_kernel(void *handle, const char *kernel_name, cl_
 	int stack_offset;
 	int remainder;
 
-	struct clcpu_kernel_t *kernel = malloc(sizeof *kernel);
+	struct clcpu_kernel_t *kernel = xmalloc(sizeof *kernel);
 	kernel->function = get_function_info(handle, kernel_name, &kernel->metadata);
 
 	if (!kernel->function)
@@ -167,13 +182,8 @@ void *clcpu_device_type_create_kernel(void *handle, const char *kernel_name, cl_
 
 	kernel->local_reserved_bytes = kernel->metadata[1];
 	kernel->num_params = (kernel->metadata[0] - 44) / 24;
-	kernel->param_info = malloc(sizeof kernel->param_info[0] * kernel->num_params);
-	if (!kernel->param_info)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	memset(kernel->param_info, 0, sizeof kernel->param_info[0] * kernel->num_params);
-
-	if(posix_memalign((void **)&kernel->register_params, MEMORY_ALIGN, sizeof kernel->register_params[0] * MAX_SSE_REG_PARAMS))
+	kernel->param_info = xcalloc(1, sizeof kernel->param_info[0] * kernel->num_params);
+	if (posix_memalign((void **)&kernel->register_params, MEMORY_ALIGN, sizeof kernel->register_params[0] * MAX_SSE_REG_PARAMS))
 		fatal("%s: could not allocate aligned memory", __FUNCTION__);
 
 	stride = 8; 
@@ -234,10 +244,7 @@ void *clcpu_device_type_create_kernel(void *handle, const char *kernel_name, cl_
 	else
 		kernel->stack_param_words = stack_offset + SSE_REG_SIZE_IN_WORDS - remainder;
 
-	kernel->stack_params = (size_t *) malloc(sizeof (size_t) * kernel->stack_param_words);
-	if (!kernel->stack_params)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	kernel->stack_params = xmalloc(sizeof (size_t) * kernel->stack_param_words);
 	memset(kernel->stack_params, 0, sizeof (size_t) * kernel->stack_param_words);
 	return kernel;
 }

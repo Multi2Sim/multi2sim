@@ -22,6 +22,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "mhandle.h"
 
 
 cl_sampler clCreateSampler(
