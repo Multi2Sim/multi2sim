@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MHANDLE_H
-#define MHANDLE_H
+#ifndef RUNTIME_OPENCL_MHANDLE_H
+#define RUNTIME_OPENCL_MHANDLE_H
 
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +46,7 @@
 #define mhandle_check() __mhandle_check(MHANDLE_AT)
 #define mhandle_done() __mhandle_done()
 #define mhandle_used_memory() __mhandle_used_memory()
+#define mhandle_register_ptr(ptr, size) __mhandle_register_ptr((ptr), (size), MHANDLE_AT)
 
 #else
 
@@ -57,6 +58,7 @@
 #define mhandle_check()
 #define mhandle_done()
 #define mhandle_used_memory() (0UL)
+#define mhandle_register_ptr(ptr, size, at)
 
 #endif
 
@@ -76,6 +78,12 @@ void *__xstrdup(const char *s, char *at);
 void __mhandle_check(char *at);
 void __mhandle_done();
 unsigned long __mhandle_used_memory();
+
+/* When memory has been allocated with a function other than those above, the
+ * pointer can be registered using 'mhandle_register_ptr' to prevent function
+ * 'free' from reporting invalid pointer errors. This pointer will not have the
+ * extra corruption bytes. */
+void __mhandle_register_ptr(void *ptr, unsigned long size, char *at);
 
 #endif
 

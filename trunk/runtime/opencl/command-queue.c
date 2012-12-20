@@ -24,6 +24,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "mhandle.h"
 
 
 #define MAX_DIMS 3
@@ -88,7 +89,7 @@ struct clrt_queue_item_t *clrt_queue_item_create(
 	struct clrt_queue_item_t *item;
 	int i;
 
-	item = (struct clrt_queue_item_t *) malloc(sizeof (struct clrt_queue_item_t));
+	item = xmalloc(sizeof (struct clrt_queue_item_t));
 	item->data = data;
 	item->action = action;
 	item->num_wait_events = num_wait;
@@ -288,9 +289,7 @@ cl_command_queue clCreateCommandQueue(
 		return NULL;
 	}
 
-	queue = (struct _cl_command_queue *) malloc(sizeof (struct _cl_command_queue));
-	if(!queue)
-		fatal("%s: out of memory", __FUNCTION__);
+	queue = xmalloc(sizeof (struct _cl_command_queue));
 	queue->device = device;
 	queue->head = NULL;
 	queue->tail = NULL;
@@ -390,10 +389,7 @@ cl_int clEnqueueReadBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	transfer = (struct clrt_mem_transfer_t *) malloc(sizeof (struct clrt_mem_transfer_t));
-	if (!transfer)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	transfer = xmalloc(sizeof (struct clrt_mem_transfer_t));
 	transfer->src = (char *) buffer->buffer + offset;
 	transfer->dst = (void *) ptr;
 	transfer->size = cb;
@@ -481,9 +477,7 @@ cl_int clEnqueueWriteBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	transfer = (struct clrt_mem_transfer_t *) malloc(sizeof (struct clrt_mem_transfer_t));
-	if (!transfer)
-		fatal("%s: out of memory", __FUNCTION__);
+	transfer = xmalloc(sizeof (struct clrt_mem_transfer_t));
 
 	transfer->dst = (char *) buffer->buffer + offset;
 	transfer->src = (void *) ptr;
@@ -578,10 +572,7 @@ cl_int clEnqueueCopyBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	transfer = (struct clrt_mem_transfer_t *) malloc(sizeof (struct clrt_mem_transfer_t));
-	if (!transfer)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	transfer = xmalloc(sizeof (struct clrt_mem_transfer_t));
 	transfer->dst = (char *) dst_buffer->buffer + dst_offset;
 	transfer->src = (void *) src_buffer->buffer + src_offset;
 	transfer->size = cb;
@@ -762,10 +753,7 @@ void * clEnqueueMapBuffer(
 		return NULL;
 	}
 
-	char *data = (char *)malloc(sizeof (char));
-	if (!data)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	char *data = xmalloc(sizeof (char));
 	item = clrt_queue_item_create(
 		command_queue,
 		data, /* Just need to pass in some heap object */
@@ -839,7 +827,7 @@ cl_int clEnqueueUnmapMemObject(
 
 	item = clrt_queue_item_create(
 		command_queue,
-		malloc(1), /* the queue will free this memory after clrt_mem_map_aciton completes */ 
+		xmalloc(1), /* the queue will free this memory after clrt_mem_map_aciton completes */ 
 		clrt_mem_map_action, 
 		event, 
 		num_events_in_wait_list, 
@@ -889,9 +877,7 @@ cl_int clEnqueueNDRangeKernel(
 	if (work_dim > MAX_DIMS)
 		return CL_INVALID_WORK_DIMENSION;
 
-	struct clrt_kernel_run_t *run = malloc(sizeof *run);
-	memset(run, 0, sizeof *run);	
-
+	struct clrt_kernel_run_t *run = xcalloc(1, sizeof *run);
 	run->work_dim = work_dim;
 
 	for (i = 0; i < kernel->num_entries; i++)

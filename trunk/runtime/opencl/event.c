@@ -23,6 +23,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "mhandle.h"
 
 
 
@@ -119,9 +120,7 @@ struct _cl_event *clrt_event_create(struct _cl_command_queue *queue)
 {
 	struct _cl_event *event;
 
-	event = (struct _cl_event *) malloc(sizeof (struct _cl_event));
-	if (!event)
-		fatal("%s: out of memory", __FUNCTION__);
+	event = xmalloc(sizeof (struct _cl_event));
 	clrt_object_create(event, CLRT_OBJECT_EVENT, clrt_event_free);
 	
 
@@ -239,9 +238,7 @@ cl_event clCreateUserEvent(
 	m2s_clrt_debug("\tcontext = %p", context);
 	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
 
-	event = (struct _cl_event *) malloc(sizeof (struct _cl_event));
-	if (!event)
-		fatal("%s: out of memory", __FUNCTION__);
+	event = xmalloc(sizeof (struct _cl_event));
 	
 	/* check to see that context is valid */
 	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
@@ -402,10 +399,7 @@ cl_int clFinish(
 
 	cl_event event = clrt_event_create(command_queue);
 
-	finish = (struct clrt_finish_t *) malloc(sizeof (struct clrt_finish_t));
-	if (!finish)
-		fatal("%s: out of memory", __FUNCTION__);
-
+	finish = xmalloc(sizeof (struct clrt_finish_t));
 	item = clrt_queue_item_create(
 		command_queue,
 		finish,

@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LIB_UTIL_DEBUG_H
-#define LIB_UTIL_DEBUG_H
+#ifndef RUNTIME_OPENCL_DEBUG_H
+#define RUNTIME_OPENCL_DEBUG_H
 
 /* Other messages */
 void warning(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
