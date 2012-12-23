@@ -23,7 +23,37 @@
 #include "clrt.h"
 #include "debug.h"
 #include "mhandle.h"
+#include "sampler.h"
 
+
+
+/*
+ * Public Functions
+ */
+
+struct opencl_sampler_t *opencl_sampler_create(void)
+{
+	struct opencl_sampler_t *sampler;
+
+	/* Initialize */
+	sampler = xcalloc(1, sizeof(struct opencl_sampler_t));
+
+	/* Return */
+	return sampler;
+}
+
+
+void opencl_sampler_free(struct opencl_sampler_t *sampler)
+{
+	free(sampler);
+}
+
+
+
+
+/*
+ * OpenCL API Functions
+ */
 
 cl_sampler clCreateSampler(
 	cl_context context,
@@ -32,7 +62,7 @@ cl_sampler clCreateSampler(
 	cl_filter_mode filter_mode,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -40,7 +70,7 @@ cl_sampler clCreateSampler(
 cl_int clRetainSampler(
 	cl_sampler sampler)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -48,7 +78,7 @@ cl_int clRetainSampler(
 cl_int clReleaseSampler(
 	cl_sampler sampler)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -60,7 +90,7 @@ cl_int clGetSamplerInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 

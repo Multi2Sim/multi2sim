@@ -22,11 +22,12 @@
 #include <string.h>
 
 #include "clrt.h"
+#include "context.h"
 #include "debug.h"
 #include "mhandle.h"
+#include "platform.h"
 
 
-extern struct _cl_platform_id *m2s_platform;
 
 
 /*
@@ -46,7 +47,32 @@ void clrt_context_free(void *data)
 
 
 /*
- * OpenCL API
+ * Public Functions
+ */
+
+
+struct opencl_context_t *opencl_context_create(void)
+{
+	struct opencl_context_t *context;
+
+	/* Initialize */
+	context = xcalloc(1, sizeof(struct opencl_context_t));
+
+	/* Return */
+	return context;
+}
+
+
+void opencl_context_free(struct opencl_context_t *context)
+{
+	free(context);
+}
+
+
+
+
+/*
+ * OpenCL API Functions
  */
 
 cl_context clCreateContext(
@@ -61,19 +87,19 @@ cl_context clCreateContext(
 	struct _cl_context *context;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tproperties = %p", properties);
-	m2s_clrt_debug("\tnum_devices = %u", num_devices);
-	m2s_clrt_debug("\tdevices = %p", devices);
-	m2s_clrt_debug("\tcallback = %p", pfn_notify);
-	m2s_clrt_debug("\tuser_data = %p", user_data);
-	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tproperties = %p", properties);
+	opencl_debug("\tnum_devices = %u", num_devices);
+	opencl_debug("\tdevices = %p", devices);
+	opencl_debug("\tcallback = %p", pfn_notify);
+	opencl_debug("\tuser_data = %p", user_data);
+	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) pfn_notify, 0);
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) user_data, 0);
 
-	if (!m2s_platform)
+	if (!opencl_platform)
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_PLATFORM;		
@@ -123,6 +149,7 @@ cl_context clCreateContext(
 	return context;
 }
 
+
 cl_context clCreateContextFromType(
 	const cl_context_properties *properties,
 	cl_device_type device_type,
@@ -131,16 +158,16 @@ cl_context clCreateContextFromType(
 	cl_int *errcode_ret)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tproperties = %p", properties);
-	m2s_clrt_debug("\tdevice_type = 0x%x", (int) device_type);
-	m2s_clrt_debug("\tcallback = %p", pfn_notify);
-	m2s_clrt_debug("\tuser_data = %p", user_data);
-	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tproperties = %p", properties);
+	opencl_debug("\tdevice_type = 0x%x", (int) device_type);
+	opencl_debug("\tcallback = %p", pfn_notify);
+	opencl_debug("\tuser_data = %p", user_data);
+	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
 
 	cl_uint num_devices;
-	clGetDeviceIDs(m2s_platform, device_type, 0, NULL, &num_devices);
+	clGetDeviceIDs(opencl_platform, device_type, 0, NULL, &num_devices);
 
 	if (num_devices == 0)
 	{
@@ -151,7 +178,7 @@ cl_context clCreateContextFromType(
 
 	cl_device_id *devices = xmalloc(sizeof devices[0] * num_devices);
 	
-	clGetDeviceIDs(m2s_platform, device_type, num_devices, devices, NULL);
+	clGetDeviceIDs(opencl_platform, device_type, num_devices, devices, NULL);
 
 	cl_context context = clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
 	free(devices);
@@ -163,8 +190,8 @@ cl_int clRetainContext(
 	cl_context context)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcontext = %p", context);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcontext = %p", context);
 
 	return clrt_object_retain(context, CLRT_OBJECT_CONTEXT, CL_INVALID_CONTEXT);
 }
@@ -174,8 +201,8 @@ cl_int clReleaseContext(
 	cl_context context)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcontext = %p", context);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcontext = %p", context);
 
 	return clrt_object_release(context, CLRT_OBJECT_CONTEXT, CL_INVALID_CONTEXT);
 }
@@ -212,5 +239,4 @@ cl_int clGetContextInfo(
 	}	
 	return 0;
 }
-
 

@@ -36,48 +36,48 @@
  */
 
 /* Version for the Multi2Sim Runtime library implementation */
-#define M2S_CLRT_VERSION_MAJOR  1
-#define M2S_CLRT_VERSION_MINOR  752
+#define OPENCL_VERSION_MAJOR  1
+#define OPENCL_VERSION_MINOR  752
 
 /* System call code to communicate with Multi2Sim */
-#define M2S_CLRT_SYS_CODE  329
+#define OPENCL_SYSCALL_CODE  329
 
 /* Function code to pass as a first argument of a system call */
-enum m2s_clrt_call_t
+enum opencl_call_t
 {
-	m2s_clrt_call_invalid,
-#define X86_CLRT_DEFINE_CALL(name, code) m2s_clrt_call_##name = code,
+	opencl_call_invalid,
+#define X86_CLRT_DEFINE_CALL(name, code) opencl_call_##name = code,
 #include "../../src/arch/x86/emu/clrt.dat"
 #undef X86_CLRT_DEFINE_CALL
-	m2s_clrt_call_count
+	opencl_call_count
 };
 
 /* Debug */
-void m2s_clrt_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void opencl_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 /*
  * Error macros
  */
 
-extern char *m2s_clrt_err_not_impl;
-extern char *m2s_clrt_err_note;
-extern char *m2s_clrt_err_param_note;
+extern char *opencl_err_not_impl;
+extern char *opencl_err_note;
+extern char *opencl_err_param_note;
 
-#define __M2S_CLRT_NOT_IMPL__  \
-	fatal("%s: OpenCL call not implemented.\n%s", __FUNCTION__, m2s_clrt_err_not_impl);
+#define __OPENCL_NOT_IMPL__  \
+	fatal("%s: OpenCL call not implemented.\n%s", __FUNCTION__, opencl_err_not_impl);
 #define EVG_OPENCL_ARG_NOT_SUPPORTED(p) \
-	fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, p, m2s_clrt_err_note);
+	fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, p, opencl_err_note);
 #define EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(p, v) \
-	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, (v), m2s_clrt_err_param_note); }
+	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, (v), opencl_err_param_note); }
 #define EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(p, v) \
-	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", __FUNCTION__, (v), m2s_clrt_err_param_note); }
+	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", __FUNCTION__, (v), opencl_err_param_note); }
 #define EVG_OPENCL_ARG_NOT_SUPPORTED_LT(p, v) \
-	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", __FUNCTION__, (v), m2s_clrt_err_param_note); }
+	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", __FUNCTION__, (v), opencl_err_param_note); }
 #define EVG_OPENCL_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: not supported for '" #p "' out of range [%d:%d]\n%s", \
-	__FUNCTION__, (min), (max), m2s_clrt_err_param_note); }
+	__FUNCTION__, (min), (max), opencl_err_param_note); }
 #define EVG_OPENCL_ARG_NOT_SUPPORTED_FLAG(p, flag, name) \
-	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, m2s_clrt_err_param_note); }
+	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, opencl_err_param_note); }
 
 
 /*
@@ -159,94 +159,10 @@ void copyProperties(void *dest, const void *src, size_t size, size_t numObjs);
  */
 
 
-struct clrt_device_type_entry_t
-{
-	struct clrt_device_type_t *device_type;
-	cl_uint num_devices;
-	cl_device_id *devices;
-};
-
-
-struct _cl_platform_id
-{
-	int num_device_types;
-	struct clrt_device_type_entry_t *entries;
-};
-
-
-struct _cl_context
-{
-	int num_devices;
-	struct _cl_device_id **devices;
-	size_t prop_count;
-	cl_context_properties *props;
-};
-
-
-struct _cl_command_queue
-{
-	struct _cl_device_id *device;
-	struct clrt_queue_item_t *head;
-	struct clrt_queue_item_t *tail;
-	cl_command_queue_properties properties;
-	pthread_t queue_thread;
-	pthread_mutex_t lock;
-	pthread_cond_t cond_process;
-	volatile int process;
-};
-
-
-struct _cl_mem
-{
-	void *buffer;
-	size_t size;
-};
-
-
-struct clrt_device_program_t
-{
-	struct clrt_device_type_t *device_type;
-	void *handle;
-	void *filename;
-};
-
-struct _cl_program
-{
-	int num_entries;
-	struct clrt_device_program_t *entries;
-};
-
 struct clrt_device_kernel_t
 {
 	struct clrt_device_type_t *device_type;
 	void *kernel;
-};
-
-struct _cl_kernel
-{
-	int num_entries;
-	struct clrt_device_kernel_t *entries;
-};
-
-struct _cl_event
-{
-	cl_int status;
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
-	struct _cl_command_queue *queue;
-	struct _cl_context *context;
-
-	/* Profiling Information */
-	cl_ulong time_queued;
-	cl_ulong time_submit;
-	cl_ulong time_start;
-	cl_ulong time_end;
-};
-
-
-struct _cl_sampler
-{
-	unsigned int id;
 };
 
 /* Device Visitor Type */

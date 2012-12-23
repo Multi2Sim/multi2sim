@@ -17,24 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_OPENCL_CONTEXT_H
-#define RUNTIME_OPENCL_CONTEXT_H
+#ifndef RUNTIME_OPENCL_KERNEL_H
+#define RUNTIME_OPENCL_KERNEL_H
 
 
-/* Context Object */
-#define opencl_context_t _cl_context
-struct _cl_context
+/* Kernel object */
+#define opencl_kernel_t _cl_kernel
+struct _cl_kernel
 {
-	int num_devices;
-	struct _cl_device_id **devices;
-	size_t prop_count;
-	cl_context_properties *props;
+	int num_entries;
+	struct clrt_device_kernel_t *entries;
 };
 
 
-struct opencl_context_t *opencl_context_create(void);
-void opencl_context_free(struct opencl_context_t *context);
-
+/* Create/free */
+struct opencl_kernel_t *opencl_kernel_create(void);
+void opencl_kernel_free(struct opencl_kernel_t *kernel);
 
 
 #endif

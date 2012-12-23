@@ -32,10 +32,19 @@ extern const char *opencl_device_driver_version;
 
 
 struct clrt_device_type_t;
+struct clrt_device_type_entry_t
+{
+	struct clrt_device_type_t *device_type;
+	cl_uint num_devices;
+	cl_device_id *devices;
+};
 
 
 
-/* The Device properties...known to both the device and OpenCL */
+
+
+/* Device object */
+#define opencl_device_t _cl_device_id
 struct _cl_device_id
 {
 	cl_int address_bits;
@@ -97,6 +106,13 @@ struct _cl_device_id
 	/* Don't set in driver.  Will be set by framework */
 	struct clrt_device_type_t *device_type;
 };
+
+
+struct opencl_device_t *opencl_device_create(void);
+void opencl_device_free(struct opencl_device_t *device);
+
+
+
 
 /* Interface that each device driver must implement */
 
@@ -161,7 +177,7 @@ typedef struct clrt_device_type_t *(*clrt_device_type_create_t)(void);
 void *clrt_get_address_of_buffer_object(cl_mem buffer);
 
 /* Executing in native mode (vs. simulation mode on Multi2Sim) */
-extern int m2s_clrt_native_mode;
+extern int opencl_native_mode;
 
 
 

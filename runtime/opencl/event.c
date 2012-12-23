@@ -22,7 +22,9 @@
 #include <sys/time.h>
 
 #include "clrt.h"
+#include "command-queue.h"
 #include "debug.h"
+#include "event.h"
 #include "mhandle.h"
 
 
@@ -157,8 +159,34 @@ int clrt_event_wait_list_check(
 }
 
 
+
+
 /*
  * Public Functions 
+ */
+
+struct opencl_event_t *opencl_event_create(void)
+{
+	struct opencl_event_t *event;
+
+	/* Initialize */
+	event = xcalloc(1, sizeof(struct opencl_event_t));
+
+	/* Return */
+	return event;
+}
+
+
+void opencl_event_free(struct opencl_event_t *event)
+{
+	free(event);
+}
+
+
+
+
+/*
+ * OpenCL API Functions
  */
 
 cl_int clWaitForEvents(
@@ -168,9 +196,9 @@ cl_int clWaitForEvents(
 	cl_uint i;
 	
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tnum_events = %d", num_events);
-	m2s_clrt_debug("\tevent_list = %p", event_list);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tnum_events = %d", num_events);
+	opencl_debug("\tevent_list = %p", event_list);
 
 	if (!num_events || !event_list)
 		return CL_INVALID_VALUE;
@@ -234,9 +262,9 @@ cl_event clCreateUserEvent(
 	struct _cl_event *event;
 	
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcontext = %p", context);
-	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcontext = %p", context);
+	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
 	event = xmalloc(sizeof (struct _cl_event));
 	
@@ -261,8 +289,8 @@ cl_int clRetainEvent(
 	cl_event event)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tevent = %p", event);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tevent = %p", event);
 
 	return clrt_object_retain(event, CLRT_OBJECT_EVENT, CL_INVALID_EVENT);
 }
@@ -272,8 +300,8 @@ cl_int clReleaseEvent(
 	cl_event event)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tevent = %p", event);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tevent = %p", event);
 	return clrt_object_release(event, CLRT_OBJECT_EVENT, CL_INVALID_EVENT);
 }
 
@@ -283,9 +311,9 @@ cl_int clSetUserEventStatus(
 	cl_int execution_status)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tevent = %p", event);
-	m2s_clrt_debug("\texecution_status = %d", execution_status);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tevent = %p", event);
+	opencl_debug("\texecution_status = %d", execution_status);
 
 	if (!clrt_object_verify(event, CLRT_OBJECT_EVENT) || event->queue)
 		return CL_INVALID_EVENT;
@@ -308,7 +336,7 @@ cl_int clSetEventCallback(
 	void (*pfn_notify)(cl_event , cl_int , void *),
 	void *user_data)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -365,8 +393,8 @@ cl_int clFlush(
 	cl_command_queue command_queue)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcommand_queue = %p", command_queue);
 
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
@@ -391,8 +419,8 @@ cl_int clFinish(
 	struct clrt_queue_item_t *item;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcommand_queue = %p", command_queue);
 
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
