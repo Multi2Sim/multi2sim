@@ -25,7 +25,9 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "kernel.h"
 #include "mhandle.h"
+#include "program.h"
 
 
 /*
@@ -46,8 +48,34 @@ void clrt_kernel_free(void *data)
 }
 
 
+
+
 /*
  * Public Functions 
+ */
+
+struct opencl_kernel_t *opencl_kernel_create(void)
+{
+	struct opencl_kernel_t *kernel;
+
+	/* Initialize */
+	kernel = xcalloc(1, sizeof(struct opencl_kernel_t));
+
+	/* Return */
+	return kernel;
+}
+
+
+void opencl_kernel_free(struct opencl_kernel_t *kernel)
+{
+	free(kernel);
+}
+
+
+
+
+/*
+ * OpenCL API Functions
  */
 
 cl_kernel clCreateKernel(
@@ -56,10 +84,10 @@ cl_kernel clCreateKernel(
 	cl_int *errcode_ret)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tprogram = %p", program);
-	m2s_clrt_debug("\tkernel_name = %s", kernel_name);
-	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tprogram = %p", program);
+	opencl_debug("\tkernel_name = %s", kernel_name);
+	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
 	if (!clrt_object_verify(program, CLRT_OBJECT_PROGRAM))
 	{
@@ -99,7 +127,7 @@ cl_int clCreateKernelsInProgram(
 	cl_kernel *kernels,
 	cl_uint *num_kernels_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -108,8 +136,8 @@ cl_int clRetainKernel(
 	cl_kernel kernel)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tkernel = %p", kernel);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tkernel = %p", kernel);
 
 	return clrt_object_retain(kernel, CLRT_OBJECT_KERNEL, CL_INVALID_KERNEL);
 }
@@ -119,8 +147,8 @@ cl_int clReleaseKernel(
 	cl_kernel kernel)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tkernel = %p", kernel);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tkernel = %p", kernel);
 
 	return clrt_object_release(kernel, CLRT_OBJECT_KERNEL, CL_INVALID_KERNEL);
 }
@@ -133,11 +161,11 @@ cl_int clSetKernelArg(
 	const void *arg_value)
 {	
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tkernel = %p", kernel);
-	m2s_clrt_debug("\targ_index = %d", arg_index);
-	m2s_clrt_debug("\ttarg_size = %u", arg_size);
-	m2s_clrt_debug("\targ_value = %p", arg_value);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tkernel = %p", kernel);
+	opencl_debug("\targ_index = %d", arg_index);
+	opencl_debug("\ttarg_size = %u", arg_size);
+	opencl_debug("\targ_value = %p", arg_value);
 
 	int i;
 
@@ -163,7 +191,7 @@ cl_int clGetKernelInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 

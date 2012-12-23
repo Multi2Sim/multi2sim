@@ -10,6 +10,17 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	clcpu-device.h \
 	\
 	command-queue.c \
+	command-queue.h \
+	\
+	clcpu.h \
+	\
+	clcpu-execute.c \
+	\
+	clcpu-program.c \
+	clcpu-program.h \
+	\
+	clrt.c \
+	clrt.h \
 	\
 	context.c \
 	context.h \
@@ -23,29 +34,12 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	elf-format.c \
 	elf-format.h \
 	\
-	event.c \
-	\
-	clrt.c \
-	clrt.h \
-	\
-	mkfibers.c \
-	program.c \
-	\
-	clcpu.h \
-	clcpu-execute.c \
-	\
-	kernel.c \
-	mem.c \
-	\
-	object.c \
-	object.h \
-	\
-	sampler.c \
-	\
-	clcpu-program.c \
-	clcpu-program.h \
-	\
 	elf-loader.c \
+	\
+	event.c \
+	event.h \
+	\
+	fibers.h \
 	\
 	list.c \
 	list.h \
@@ -53,12 +47,28 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	mhandle.c \
 	mhandle.h \
 	\
+	mkfibers.c \
+	\
+	program.c \
+	program.h \
+	\
+	kernel.c \
+	kernel.h \
+	\
+	mem.c \
+	mem.h \
+	\
+	object.c \
+	object.h \
+	\
+	sampler.c \
+	sampler.h \
+	\
 	platform.c \
+	platform.h \
 	\
 	thread-list.c \
-	thread-list.h \
-	\
-	fibers.h
+	thread-list.h
 
 
 #AM_CFLAGS = -Wall -O2 -fPIC -m32 -DMHANDLE

@@ -172,7 +172,7 @@ struct clrt_device_type_t *clcpu_create_device_type(void)
 
 int get_cpu_thread_count(void)
 {
-	if (m2s_clrt_native_mode)
+	if (opencl_native_mode)
 		return sysconf(_SC_NPROCESSORS_ONLN); /* Won't work in Multi2Sim */
 	else
 		return 4; /* TODO: Fix this */

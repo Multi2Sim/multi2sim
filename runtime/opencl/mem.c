@@ -25,6 +25,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "mem.h"
 #include "mhandle.h"
 
 
@@ -67,8 +68,34 @@ void *clrt_get_address_of_buffer_object(cl_mem buffer)
 }
 
 
+
+
 /*
  * Public Functions
+ */
+
+struct opencl_mem_t *opencl_mem_create(void)
+{
+	struct opencl_mem_t *mem;
+
+	/* Initialize */
+	mem = xcalloc(1, sizeof(struct opencl_mem_t));
+
+	/* Return */
+	return mem;
+}
+
+
+void opencl_mem_free(struct opencl_mem_t *mem)
+{
+	free(mem);
+}
+
+
+
+
+/*
+ * OpenCL API Functions
  */
 
 cl_mem clCreateBuffer(
@@ -81,12 +108,12 @@ cl_mem clCreateBuffer(
 	struct _cl_mem  *mem;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcontext = %p", context);
-	m2s_clrt_debug("\tflags = 0x%x", (int) flags);
-	m2s_clrt_debug("\tsize = %u", size);
-	m2s_clrt_debug("\thost_ptr = %p", host_ptr);
-	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcontext = %p", context);
+	opencl_debug("\tflags = 0x%x", (int) flags);
+	opencl_debug("\tsize = %u", size);
+	opencl_debug("\thost_ptr = %p", host_ptr);
+	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
 	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
 	{
@@ -128,7 +155,7 @@ cl_mem clCreateSubBuffer(
 	const void *buffer_create_info,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -143,7 +170,7 @@ cl_mem clCreateImage2D(
 	void *host_ptr,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -160,7 +187,7 @@ cl_mem clCreateImage3D(
 	void *host_ptr,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -187,7 +214,7 @@ cl_int clGetSupportedImageFormats(
 	cl_image_format *image_formats,
 	cl_uint *num_image_formats)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -199,7 +226,7 @@ cl_int clGetMemObjectInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -211,7 +238,7 @@ cl_int clGetImageInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -221,7 +248,7 @@ cl_int clSetMemObjectDestructorCallback(
 	void (*pfn_notify)(cl_mem memobj , void *user_data),
 	void *user_data)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 

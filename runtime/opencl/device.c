@@ -29,10 +29,8 @@
 #include "clrt.h"
 #include "debug.h"
 #include "mhandle.h"
+#include "platform.h"
 
-
-
-extern struct _cl_platform_id *m2s_platform;
 
 const char *opencl_device_full_profile = "FULL_PROFILE";
 const char *opencl_device_opencl_c_version = "OpenCL 1.1 Multi2Sim";
@@ -110,6 +108,24 @@ void device_matcher(void *ctx, cl_device_id device, struct clrt_device_type_t *d
  * Public Functions
  */
 
+struct opencl_device_t *opencl_device_create(void)
+{
+	struct opencl_device_t *device;
+
+	/* Initialize */
+	device = xcalloc(1, sizeof(struct opencl_device_t));
+
+	/* Return */
+	return device;
+}
+
+
+void opencl_device_free(struct opencl_device_t *device)
+{
+	free(device);
+}
+
+
 int clrt_is_valid_device_type(cl_device_type device_type)
 {
 	return device_type == CL_DEVICE_TYPE_ALL
@@ -120,6 +136,36 @@ int clrt_is_valid_device_type(cl_device_type device_type)
 			| CL_DEVICE_TYPE_DEFAULT));
 }
 
+struct has_device_info_t
+{
+	cl_device_id device;
+	int found;
+};
+
+void device_finder(void *ctx, cl_device_id device, struct clrt_device_type_t *device_type)
+{
+	struct has_device_info_t *info = ctx;
+	if (device == info->device)
+		info->found = 1;
+}
+
+int verify_device(cl_device_id device)
+{
+	struct has_device_info_t info;
+	info.device = device;
+	info.found = 0;	
+	visit_devices(device_finder, &info);
+	return info.found;
+}
+
+
+
+
+
+/*
+ * OpenCL API Functions
+ */
+
 cl_int clGetDeviceIDs(
 	cl_platform_id platform,
 	cl_device_type device_type,
@@ -128,14 +174,14 @@ cl_int clGetDeviceIDs(
 	cl_uint *num_devices)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tplatform = %p", platform);
-	m2s_clrt_debug("\tdevice_type = 0x%x", (int) device_type);
-	m2s_clrt_debug("\tnum_entries = %u", num_entries);
-	m2s_clrt_debug("\tdevices = %p", devices);
-	m2s_clrt_debug("\tnum_devices = %p", num_devices);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tplatform = %p", platform);
+	opencl_debug("\tdevice_type = 0x%x", (int) device_type);
+	opencl_debug("\tnum_entries = %u", num_entries);
+	opencl_debug("\tdevices = %p", devices);
+	opencl_debug("\tnum_devices = %p", num_devices);
 
-	if (platform != m2s_platform)
+	if (platform != opencl_platform)
 		return CL_INVALID_PLATFORM;
 
 	if (!clrt_is_valid_device_type(device_type))
@@ -163,27 +209,6 @@ cl_int clGetDeviceIDs(
 	return CL_SUCCESS;
 }
 
-struct has_device_info_t
-{
-	cl_device_id device;
-	int found;
-};
-
-void device_finder(void *ctx, cl_device_id device, struct clrt_device_type_t *device_type)
-{
-	struct has_device_info_t *info = ctx;
-	if (device == info->device)
-		info->found = 1;
-}
-
-int verify_device(cl_device_id device)
-{
-	struct has_device_info_t info;
-	info.device = device;
-	info.found = 0;	
-	visit_devices(device_finder, &info);
-	return info.found;
-}
 
 cl_int clGetDeviceInfo(
 	cl_device_id device,
@@ -499,8 +524,8 @@ cl_int clGetDeviceInfo(
 
 		case CL_DEVICE_PLATFORM:
 		return populateParameter(
-			&m2s_platform, 
-			sizeof m2s_platform, 
+			&opencl_platform, 
+			sizeof opencl_platform, 
 			param_value_size, 
 			param_value, 
 			param_value_size_ret);

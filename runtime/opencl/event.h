@@ -17,24 +17,31 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_OPENCL_CONTEXT_H
-#define RUNTIME_OPENCL_CONTEXT_H
+#ifndef RUNTIME_OPENCL_EVENT_H
+#define RUNTIME_OPENCL_EVENT_H
 
 
-/* Context Object */
-#define opencl_context_t _cl_context
-struct _cl_context
+/* Event object */
+#define opencl_event_t _cl_event
+struct _cl_event
 {
-	int num_devices;
-	struct _cl_device_id **devices;
-	size_t prop_count;
-	cl_context_properties *props;
+	cl_int status;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	struct _cl_command_queue *queue;
+	struct _cl_context *context;
+
+	/* Profiling Information */
+	cl_ulong time_queued;
+	cl_ulong time_submit;
+	cl_ulong time_start;
+	cl_ulong time_end;
 };
 
 
-struct opencl_context_t *opencl_context_create(void);
-void opencl_context_free(struct opencl_context_t *context);
-
+/* Create/free */
+struct opencl_event_t *opencl_event_create(void);
+void opencl_event_free(struct opencl_event_t *event);
 
 
 #endif

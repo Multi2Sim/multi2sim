@@ -24,15 +24,18 @@
 #include <dlfcn.h>
 
 #include "clrt.h"
+#include "context.h"
 #include "debug.h"
 #include "mhandle.h"
+#include "platform.h"
+#include "program.h"
+
 
 
 /*
  * Private Functions
  */
 
-extern struct _cl_platform_id *m2s_platform;
 
 void clrt_program_free(void *data)
 {
@@ -50,8 +53,35 @@ void clrt_program_free(void *data)
 }
 
 
+
+
 /*
  * Public Functions
+ */
+
+
+struct opencl_program_t *opencl_program_create(void)
+{
+	struct opencl_program_t *program;
+
+	/* Initialize */
+	program = xcalloc(1, sizeof(struct opencl_program_t));
+
+	/* Return */
+	return program;
+}
+
+
+void opencl_program_free(struct opencl_program_t *program)
+{
+	free(program);
+}
+
+
+
+
+/*
+ * OpenCL API Functions
  */
 
 cl_program clCreateProgramWithSource(
@@ -61,7 +91,7 @@ cl_program clCreateProgramWithSource(
 	const size_t *lengths,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -79,14 +109,14 @@ cl_program clCreateProgramWithBinary(
 	struct _cl_program *program;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcontext = %p", context);
-	m2s_clrt_debug("\tnum_devices = %u", num_devices);
-	m2s_clrt_debug("\tdevice_list = %p", device_list);
-	m2s_clrt_debug("\tlengths = %p", lengths);
-	m2s_clrt_debug("\tbinaries = %p", binaries);
-	m2s_clrt_debug("\tbinary_status = %p", binary_status);
-	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcontext = %p", context);
+	opencl_debug("\tnum_devices = %u", num_devices);
+	opencl_debug("\tdevice_list = %p", device_list);
+	opencl_debug("\tlengths = %p", lengths);
+	opencl_debug("\tbinaries = %p", binaries);
+	opencl_debug("\tbinary_status = %p", binary_status);
+	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 
@@ -105,7 +135,7 @@ cl_program clCreateProgramWithBinary(
 	}
 
 	/* allocate enough room for all device types.  We don't know how many of them there will be */
-	struct clrt_device_type_t **device_types = xmalloc(sizeof device_types[0] * m2s_platform->num_device_types);
+	struct clrt_device_type_t **device_types = xcalloc(opencl_platform->num_device_types, sizeof device_types[0]);
 	int num_device_types = 0;
 
 	for (i = 0; i < num_devices; i++)
@@ -209,8 +239,8 @@ cl_int clRetainProgram(
 	cl_program program)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tprogram = %p", program);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tprogram = %p", program);
 	
 	return clrt_object_retain(program, CLRT_OBJECT_PROGRAM, CL_INVALID_PROGRAM);
 }
@@ -220,8 +250,8 @@ cl_int clReleaseProgram(
 	cl_program program)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tprogram = %p", program);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tprogram = %p", program);
 
 	return clrt_object_release(program, CLRT_OBJECT_PROGRAM, CL_INVALID_PROGRAM);
 }
@@ -236,13 +266,13 @@ cl_int clBuildProgram(
 	void *user_data)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tprogram = %p", program);
-	m2s_clrt_debug("\tnum_devices = %u", num_devices);
-	m2s_clrt_debug("\tdevice_list = %p", device_list);
-	m2s_clrt_debug("\toptions = %p", options);
-	m2s_clrt_debug("\tcall back = %p", pfn_notify);
-	m2s_clrt_debug("\tuser_data = %p", user_data);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tprogram = %p", program);
+	opencl_debug("\tnum_devices = %u", num_devices);
+	opencl_debug("\tdevice_list = %p", device_list);
+	opencl_debug("\toptions = %p", options);
+	opencl_debug("\tcall back = %p", pfn_notify);
+	opencl_debug("\tuser_data = %p", user_data);
 
 	/* We only support loading binaries, so this shouldn't ever fail. */
 	return CL_SUCCESS;
@@ -251,7 +281,7 @@ cl_int clBuildProgram(
 
 cl_int clUnloadCompiler()
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -263,7 +293,7 @@ cl_int clGetProgramInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -276,7 +306,7 @@ cl_int clGetProgramBuildInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
