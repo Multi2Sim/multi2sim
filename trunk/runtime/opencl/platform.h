@@ -17,24 +17,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_OPENCL_CONTEXT_H
-#define RUNTIME_OPENCL_CONTEXT_H
+#ifndef RUNTIME_OPENCL_PLATFORM_H
+#define RUNTIME_OPENCL_PLATFORM_H
 
 
-/* Context Object */
-#define opencl_context_t _cl_context
-struct _cl_context
+/* Platform type. For name compatibility between OpenCL and Multi2Sim naming
+ * conventions, a pseudo-type is created with a macro. */
+#define opencl_platform_t _cl_platform_id
+struct _cl_platform_id
 {
-	int num_devices;
-	struct _cl_device_id **devices;
-	size_t prop_count;
-	cl_context_properties *props;
+	int num_device_types;
+	struct clrt_device_type_entry_t *entries;
 };
 
 
-struct opencl_context_t *opencl_context_create(void);
-void opencl_context_free(struct opencl_context_t *context);
 
+/* Global OpenCL platform */
+extern struct opencl_platform_t *opencl_platform;
+
+
+/* Create/free */
+struct opencl_platform_t *opencl_platform_create(void);
+void opencl_platform_free(struct opencl_platform_t *platform);
 
 
 #endif

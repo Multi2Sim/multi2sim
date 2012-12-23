@@ -23,7 +23,11 @@
 #include <assert.h>
 
 #include "clrt.h"
+#include "command-queue.h"
+#include "context.h"
 #include "debug.h"
+#include "kernel.h"
+#include "mem.h"
 #include "mhandle.h"
 
 
@@ -244,9 +248,32 @@ void *clrt_command_queue_thread_proc(void *data)
 
 
 
-
 /*
  * Public Functions
+ */
+
+struct opencl_command_queue_t *opencl_command_queue_create(void)
+{
+	struct opencl_command_queue_t *command_queue;
+
+	/* Initialize */
+	command_queue = xcalloc(1, sizeof(struct opencl_command_queue_t));
+
+	/* Return */
+	return command_queue;
+}
+
+
+void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
+{
+	free(command_queue);
+}
+
+
+
+
+/*
+ * OpenCL API Functions
  */
 
 
@@ -261,11 +288,11 @@ cl_command_queue clCreateCommandQueue(
 	struct _cl_command_queue *queue;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcontext = %p", context);
-	m2s_clrt_debug("\tdevice = %p", device);
-	m2s_clrt_debug("\tproperties = 0x%llx", (long long) properties);
-	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcontext = %p", context);
+	opencl_debug("\tdevice = %p", device);
+	opencl_debug("\tproperties = 0x%llx", (long long) properties);
+	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
 	/* check to see that context is valid */
 	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
@@ -311,7 +338,7 @@ cl_int clRetainCommandQueue(
 	cl_command_queue command_queue)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	opencl_debug("call '%s'", __FUNCTION__);
 
 	return clrt_object_retain(command_queue, CLRT_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
 }
@@ -321,7 +348,7 @@ cl_int clReleaseCommandQueue(
 	cl_command_queue command_queue)
 {
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	opencl_debug("call '%s'", __FUNCTION__);
 
 	return clrt_object_release(command_queue, CLRT_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
 }
@@ -334,7 +361,7 @@ cl_int clGetCommandQueueInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -345,7 +372,7 @@ cl_int clSetCommandQueueProperty(
 	cl_bool enable,
 	cl_command_queue_properties *old_properties)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -366,16 +393,16 @@ cl_int clEnqueueReadBuffer(
 	struct clrt_queue_item_t *item;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
-	m2s_clrt_debug("\tbuffer = %p", buffer);
-	m2s_clrt_debug("\tblocking_read = %u", blocking_read);
-	m2s_clrt_debug("\toffset = %u", offset);
-	m2s_clrt_debug("\tcopy bytes = %u", cb);
-	m2s_clrt_debug("\tpointer = %p", ptr);
-	m2s_clrt_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
-	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
-	m2s_clrt_debug("\tevent = %p", event);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcommand_queue = %p", command_queue);
+	opencl_debug("\tbuffer = %p", buffer);
+	opencl_debug("\tblocking_read = %u", blocking_read);
+	opencl_debug("\toffset = %u", offset);
+	opencl_debug("\tcopy bytes = %u", cb);
+	opencl_debug("\tpointer = %p", ptr);
+	opencl_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
+	opencl_debug("\tevent_wait_list = %p", event_wait_list);
+	opencl_debug("\tevent = %p", event);
 
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
@@ -433,7 +460,7 @@ cl_int clEnqueueReadBufferRect(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -454,16 +481,16 @@ cl_int clEnqueueWriteBuffer(
 	struct clrt_queue_item_t *item;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
-	m2s_clrt_debug("\tbuffer = %p", buffer);
-	m2s_clrt_debug("\tblocking_write = %u", blocking_write);
-	m2s_clrt_debug("\toffset = %u", offset);
-	m2s_clrt_debug("\tcopy bytes = %u", cb);
-	m2s_clrt_debug("\tpointer = %p", ptr);
-	m2s_clrt_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
-	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
-	m2s_clrt_debug("\tevent = %p", event);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcommand_queue = %p", command_queue);
+	opencl_debug("\tbuffer = %p", buffer);
+	opencl_debug("\tblocking_write = %u", blocking_write);
+	opencl_debug("\toffset = %u", offset);
+	opencl_debug("\tcopy bytes = %u", cb);
+	opencl_debug("\tpointer = %p", ptr);
+	opencl_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
+	opencl_debug("\tevent_wait_list = %p", event_wait_list);
+	opencl_debug("\tevent = %p", event);
 
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
@@ -520,7 +547,7 @@ cl_int clEnqueueWriteBufferRect(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -541,16 +568,16 @@ cl_int clEnqueueCopyBuffer(
 	struct clrt_queue_item_t *item;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
-	m2s_clrt_debug("\tsrc_buffer = %p", src_buffer);
-	m2s_clrt_debug("\tdst_buffer = %p", dst_buffer);
-	m2s_clrt_debug("\tsrc_offset = %u", src_offset);
-	m2s_clrt_debug("\tdst_offset = %u", dst_offset);
-	m2s_clrt_debug("\tcopy bytes = %u", cb);
-	m2s_clrt_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
-	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
-	m2s_clrt_debug("\tevent = %p", event);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcommand_queue = %p", command_queue);
+	opencl_debug("\tsrc_buffer = %p", src_buffer);
+	opencl_debug("\tdst_buffer = %p", dst_buffer);
+	opencl_debug("\tsrc_offset = %u", src_offset);
+	opencl_debug("\tdst_offset = %u", dst_offset);
+	opencl_debug("\tcopy bytes = %u", cb);
+	opencl_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
+	opencl_debug("\tevent_wait_list = %p", event_wait_list);
+	opencl_debug("\tevent = %p", event);
 
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
@@ -607,7 +634,7 @@ cl_int clEnqueueCopyBufferRect(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -625,7 +652,7 @@ cl_int clEnqueueReadImage(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -643,7 +670,7 @@ cl_int clEnqueueWriteImage(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -659,7 +686,7 @@ cl_int clEnqueueCopyImage(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -675,7 +702,7 @@ cl_int clEnqueueCopyImageToBuffer(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -691,7 +718,7 @@ cl_int clEnqueueCopyBufferToImage(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -712,17 +739,17 @@ void * clEnqueueMapBuffer(
 	struct clrt_queue_item_t *item;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
-	m2s_clrt_debug("\tbuffer = %p", buffer);
-	m2s_clrt_debug("\tblocking_map = %d", blocking_map);
-	m2s_clrt_debug("\tmap_flags = %lld", map_flags);
-	m2s_clrt_debug("\toffset = %u", offset);
-	m2s_clrt_debug("\tcb = %u", cb);
-	m2s_clrt_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
-	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
-	m2s_clrt_debug("\tevent = %p", event);
-	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcommand_queue = %p", command_queue);
+	opencl_debug("\tbuffer = %p", buffer);
+	opencl_debug("\tblocking_map = %d", blocking_map);
+	opencl_debug("\tmap_flags = %lld", map_flags);
+	opencl_debug("\toffset = %u", offset);
+	opencl_debug("\tcb = %u", cb);
+	opencl_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
+	opencl_debug("\tevent_wait_list = %p", event_wait_list);
+	opencl_debug("\tevent = %p", event);
+	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 	{
@@ -773,7 +800,7 @@ void * clEnqueueMapBuffer(
 }
 
 
-void * clEnqueueMapImage(
+void *clEnqueueMapImage(
 	cl_command_queue command_queue,
 	cl_mem image,
 	cl_bool blocking_map,
@@ -787,7 +814,7 @@ void * clEnqueueMapImage(
 	cl_event *event,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -803,13 +830,13 @@ cl_int clEnqueueUnmapMemObject(
 	cl_int status;
 	struct clrt_queue_item_t *item;
 
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
-	m2s_clrt_debug("\tmemobj = %p", memobj);
-	m2s_clrt_debug("\tmapped_ptr = %p", mapped_ptr);
-	m2s_clrt_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
-	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
-	m2s_clrt_debug("\tevent = %p", event);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcommand_queue = %p", command_queue);
+	opencl_debug("\tmemobj = %p", memobj);
+	opencl_debug("\tmapped_ptr = %p", mapped_ptr);
+	opencl_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
+	opencl_debug("\tevent_wait_list = %p", event_wait_list);
+	opencl_debug("\tevent = %p", event);
 
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
@@ -853,16 +880,16 @@ cl_int clEnqueueNDRangeKernel(
 	int i;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
-	m2s_clrt_debug("\tkernel = %p", kernel);
-	m2s_clrt_debug("\twork_dim = %u", work_dim);
-	m2s_clrt_debug("\tglobal_work_offset = %p", global_work_offset);
-	m2s_clrt_debug("\tglobal_work_size = %p", global_work_size);
-	m2s_clrt_debug("\tlocal_work_size = %p", local_work_size);
-	m2s_clrt_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
-	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
-	m2s_clrt_debug("\tevent = %p", event);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcommand_queue = %p", command_queue);
+	opencl_debug("\tkernel = %p", kernel);
+	opencl_debug("\twork_dim = %u", work_dim);
+	opencl_debug("\tglobal_work_offset = %p", global_work_offset);
+	opencl_debug("\tglobal_work_size = %p", global_work_size);
+	opencl_debug("\tlocal_work_size = %p", local_work_size);
+	opencl_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
+	opencl_debug("\tevent_wait_list = %p", event_wait_list);
+	opencl_debug("\tevent = %p", event);
 
 	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
@@ -931,7 +958,7 @@ cl_int clEnqueueTask(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -948,7 +975,7 @@ cl_int clEnqueueNativeKernel(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -957,7 +984,7 @@ cl_int clEnqueueMarker(
 	cl_command_queue command_queue,
 	cl_event *event)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -967,7 +994,7 @@ cl_int clEnqueueWaitForEvents(
 	cl_uint num_events,
 	const cl_event *event_list)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 
@@ -975,7 +1002,7 @@ cl_int clEnqueueWaitForEvents(
 cl_int clEnqueueBarrier(
 	cl_command_queue command_queue)
 {
-	__M2S_CLRT_NOT_IMPL__
+	__OPENCL_NOT_IMPL__
 	return 0;
 }
 

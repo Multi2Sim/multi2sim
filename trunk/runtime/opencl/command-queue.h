@@ -17,24 +17,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_OPENCL_CONTEXT_H
-#define RUNTIME_OPENCL_CONTEXT_H
+#ifndef RUNTIME_OPENCL_COMMAND_QUEUE_H
+#define RUNTIME_OPENCL_COMMAND_QUEUE_H
 
 
-/* Context Object */
-#define opencl_context_t _cl_context
-struct _cl_context
+/* Command queue object */
+#define opencl_command_queue_t _cl_command_queue
+struct _cl_command_queue
 {
-	int num_devices;
-	struct _cl_device_id **devices;
-	size_t prop_count;
-	cl_context_properties *props;
+	struct _cl_device_id *device;
+	struct clrt_queue_item_t *head;
+	struct clrt_queue_item_t *tail;
+	cl_command_queue_properties properties;
+	pthread_t queue_thread;
+	pthread_mutex_t lock;
+	pthread_cond_t cond_process;
+	volatile int process;
 };
 
 
-struct opencl_context_t *opencl_context_create(void);
-void opencl_context_free(struct opencl_context_t *context);
-
+/* Create/free */
+struct opencl_command_queue_t *opencl_command_queue_create(void);
+void opencl_command_queue_free(struct opencl_command_queue_t *command_queue);
 
 
 #endif

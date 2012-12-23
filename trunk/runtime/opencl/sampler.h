@@ -17,23 +17,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_OPENCL_CONTEXT_H
-#define RUNTIME_OPENCL_CONTEXT_H
+#ifndef RUNTIME_OPENCL_SAMPLER_H
+#define RUNTIME_OPENCL_SAMPLER_H
 
 
-/* Context Object */
-#define opencl_context_t _cl_context
-struct _cl_context
+/* Sampler object */
+#define opencl_sampler_t _cl_sampler
+struct _cl_sampler
 {
-	int num_devices;
-	struct _cl_device_id **devices;
-	size_t prop_count;
-	cl_context_properties *props;
+	unsigned int id;
 };
 
 
-struct opencl_context_t *opencl_context_create(void);
-void opencl_context_free(struct opencl_context_t *context);
+/* Create/free */
+struct opencl_sampler_t *opencl_sampler_create(void);
+void opencl_sampler_free(struct opencl_sampler_t *sampler);
 
 
 

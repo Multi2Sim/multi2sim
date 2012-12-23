@@ -24,6 +24,7 @@
 #include "clrt.h"
 #include "debug.h"
 #include "mhandle.h"
+#include "platform.h"
 
 
 const char *opencl_platform_full_profile = "OpenCL Multi2Sim Platform Full Profile";
@@ -39,21 +40,21 @@ struct clrt_device_type_t *clcpu_create_device_type(void); /* for x86 CPU */
 clrt_device_type_create_t m2s_device_type_constructors[] = {clcpu_create_device_type};
 
 
-static char *m2s_clrt_err_version =
+static char *opencl_err_version =
 	"\tYour OpenCL program is using a version of the Multi2Sim Runtime library\n"
 	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
 	"\tMulti2Sim OpenCL Runtime library ('libm2s-clrt').\n";
 
 
-struct m2s_clrt_version_t
+struct opencl_version_t
 {
 	int major;
 	int minor;
 };
 
-struct _cl_platform_id *m2s_platform = NULL;
-struct _cl_device_id *m2s_device = NULL;
+struct opencl_platform_t *opencl_platform = NULL;
+struct _cl_device_id *opencl_device = NULL;
 
 
 
@@ -72,17 +73,43 @@ cl_int populateString(const char *param, size_t param_value_size, void *param_va
 void visit_devices(device_visitor_t visitor, void *ctx)
 {
 	int i;
-	for (i = 0; i < m2s_platform->num_device_types; i++)
+	for (i = 0; i < opencl_platform->num_device_types; i++)
 	{
 		int j;
-		struct clrt_device_type_entry_t *entry = m2s_platform->entries + i;
+		struct clrt_device_type_entry_t *entry = opencl_platform->entries + i;
 		for (j = 0; j < entry->num_devices; j++)
 			visitor(ctx, entry->devices[j], entry->device_type);
 	}
 }
 
+
+
 /*
  * Public Functions
+ */
+
+struct opencl_platform_t *opencl_platform_create(void)
+{
+	struct opencl_platform_t *platform;
+
+	/* Initialize */
+	platform = xcalloc(1, sizeof(struct opencl_platform_t));
+
+	/* Return */
+	return platform;
+}
+
+
+void opencl_platform_free(struct opencl_platform_t *platform)
+{
+	free(platform);
+}
+
+
+
+
+/*
+ * OpenCL API Functions
  */
 
 cl_int clGetPlatformIDs(
@@ -90,52 +117,50 @@ cl_int clGetPlatformIDs(
 	cl_platform_id *platforms,
 	cl_uint *num_platforms)
 {
-	struct m2s_clrt_version_t version;
+	struct opencl_version_t version;
 	int ret;
 
 	/* Debug */
-	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tnum_entries = %d", num_entries);
-	m2s_clrt_debug("\tplatforms = %p", platforms);
-	m2s_clrt_debug("\tnum_platforms = %p", num_platforms);
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tnum_entries = %d", num_entries);
+	opencl_debug("\tplatforms = %p", platforms);
+	opencl_debug("\tnum_platforms = %p", num_platforms);
 
 	/* It can be assumed that this is the first OpenCL function called by
 	 * the host program. It is checked here whether we're running in native
 	 * or simulation mode. If it's simulation mode, Multi2Sim's version is
 	 * checked for compatibility with the runtime library version. */
-	ret = syscall(M2S_CLRT_SYS_CODE, m2s_clrt_call_init, &version);
+	ret = syscall(OPENCL_SYSCALL_CODE, opencl_call_init, &version);
 
 	/* If the system call returns error, we are in native mode. */
 	if (ret == -1)
-		m2s_clrt_native_mode = 1;
+		opencl_native_mode = 1;
 
 	/* On simulation mode, check Multi2sim version and Multi2Sim OpenCL
 	 * Runtime version compatibility. */
-	if (!m2s_clrt_native_mode)
-		if (version.major != M2S_CLRT_VERSION_MAJOR
-				|| version.minor < M2S_CLRT_VERSION_MINOR)
+	if (!opencl_native_mode)
+		if (version.major != OPENCL_VERSION_MAJOR
+				|| version.minor < OPENCL_VERSION_MINOR)
 			fatal("incompatible Multi2Sim Runtime version.\n"
 				"\tRuntime library v. %d.%d / "
 				"Host implementation v. %d.%d.\n%s",
-				M2S_CLRT_VERSION_MAJOR, M2S_CLRT_VERSION_MINOR,
-				version.major, version.minor, m2s_clrt_err_version);
+				OPENCL_VERSION_MAJOR, OPENCL_VERSION_MINOR,
+				version.major, version.minor, opencl_err_version);
 
 	/* Create the platform object if it has not already been made */
-	if (!m2s_platform)
+	if (!opencl_platform)
 	{
 		int i;
 
-		m2s_platform = xmalloc(sizeof (struct _cl_platform_id));
-		m2s_platform->num_device_types = sizeof m2s_device_type_constructors / sizeof m2s_device_type_constructors[0];
+		opencl_platform = xmalloc(sizeof (struct _cl_platform_id));
+		opencl_platform->num_device_types = sizeof m2s_device_type_constructors / sizeof m2s_device_type_constructors[0];
+		opencl_platform->entries = xcalloc(opencl_platform->num_device_types, sizeof opencl_platform->entries[0]);
 
-		
-		m2s_platform->entries = xmalloc(sizeof m2s_platform->entries[0] * m2s_platform->num_device_types);
-
-		/* go through all the device types and initalize them and their devices */
-		for (i = 0; i < m2s_platform->num_device_types; i++)
+		/* Go through all the device types and initialize them and their devices */
+		for (i = 0; i < opencl_platform->num_device_types; i++)
 		{
 			int j;
-			struct clrt_device_type_entry_t *entry = m2s_platform->entries + i; 
+			struct clrt_device_type_entry_t *entry = opencl_platform->entries + i; 
 
 			/* construct the device type */
 			entry->device_type = m2s_device_type_constructors[i]();
@@ -162,21 +187,19 @@ cl_int clGetPlatformIDs(
 		return CL_INVALID_VALUE;
 
 	/* If they just want to know how many platforms there are, tell them */
-	else if (!num_entries && num_platforms)
+	if (!num_entries && num_platforms)
 	{
 		*num_platforms = 1;
 		return CL_SUCCESS;
 	}
 
-	/* The client wants the platform itself.  Also return the number of platforms inserted if they asked for it */
-	else
-	{
-		if (num_platforms)
-			*num_platforms = 1;
-		*platforms = m2s_platform;
+	/* The client wants the platform itself. Also return the number of platforms inserted if they asked for it */
+	if (num_platforms)
+		*num_platforms = 1;
+	*platforms = opencl_platform;
 	
-		return CL_SUCCESS;
-	}
+	/* Success */
+	return CL_SUCCESS;
 }
 
 
@@ -187,7 +210,7 @@ cl_int clGetPlatformInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	if (platform != m2s_platform)
+	if (platform != opencl_platform)
 		return CL_INVALID_PLATFORM;
 
 	switch (param_name)
