@@ -95,9 +95,9 @@ cl_context clCreateContext(
 	opencl_debug("\tuser_data = %p", user_data);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) pfn_notify, 0);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) user_data, 0);
+	OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
+	OPENCL_ARG_NOT_SUPPORTED_NEQ((int) pfn_notify, 0);
+	OPENCL_ARG_NOT_SUPPORTED_NEQ((int) user_data, 0);
 
 	if (!opencl_platform)
 	{
@@ -114,7 +114,7 @@ cl_context clCreateContext(
 	}	
 
 	context = xmalloc(sizeof (struct _cl_context));
-	clrt_object_create(context, CLRT_OBJECT_CONTEXT, clrt_context_free);
+	opencl_object_create(context, OPENCL_OBJECT_CONTEXT, clrt_context_free);
 
 
 	for (i = 0; i < num_devices; i++)
@@ -193,7 +193,7 @@ cl_int clRetainContext(
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tcontext = %p", context);
 
-	return clrt_object_retain(context, CLRT_OBJECT_CONTEXT, CL_INVALID_CONTEXT);
+	return opencl_object_retain(context, OPENCL_OBJECT_CONTEXT, CL_INVALID_CONTEXT);
 }
 
 
@@ -204,7 +204,7 @@ cl_int clReleaseContext(
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tcontext = %p", context);
 
-	return clrt_object_release(context, CLRT_OBJECT_CONTEXT, CL_INVALID_CONTEXT);
+	return opencl_object_release(context, OPENCL_OBJECT_CONTEXT, CL_INVALID_CONTEXT);
 }
 
 
@@ -215,27 +215,31 @@ cl_int clGetContextInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
+	if (!opencl_object_verify(context, OPENCL_OBJECT_CONTEXT))
 		return CL_INVALID_CONTEXT;
 
 	switch (param_name)
 	{
-		case CL_CONTEXT_REFERENCE_COUNT:
-		{
-			cl_int count = clrt_object_find(context, CLRT_OBJECT_CONTEXT)->ref_count;
-			return populateParameter(&count, sizeof count, param_value_size, param_value, param_value_size_ret);
-		}
+
+	case CL_CONTEXT_REFERENCE_COUNT:
+	{
+		cl_int count = opencl_object_find(context, OPENCL_OBJECT_CONTEXT)->ref_count;
+		return populateParameter(&count, sizeof count, param_value_size,
+			param_value, param_value_size_ret);
+	}
 		
-		case CL_CONTEXT_DEVICES:
-			return populateParameter(context->devices, sizeof (cl_device_id) * context->num_devices, param_value_size, param_value, param_value_size_ret);
-		case CL_CONTEXT_PROPERTIES:
-			if (context->props)
-				return populateParameter(context->props, sizeof (cl_context_properties) * context->prop_count, param_value_size, param_value, param_value_size_ret);
-			else
-				return populateParameter(NULL, 0, param_value_size, param_value, param_value_size_ret);
-			return CL_SUCCESS;
-		default:
-			return CL_INVALID_VALUE;
+	case CL_CONTEXT_DEVICES:
+		return populateParameter(context->devices, sizeof (cl_device_id) *
+			context->num_devices, param_value_size, param_value, param_value_size_ret);
+	
+	case CL_CONTEXT_PROPERTIES:
+		if (context->props)
+			return populateParameter(context->props, sizeof (cl_context_properties)
+				* context->prop_count, param_value_size, param_value, param_value_size_ret);
+		return populateParameter(NULL, 0, param_value_size, param_value, param_value_size_ret);
+
+	default:
+		return CL_INVALID_VALUE;
 	}	
 	return 0;
 }

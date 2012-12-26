@@ -1,10 +1,10 @@
 if HAVE_M32_FLAG
 
-lib_LTLIBRARIES = $(top_builddir)/lib/libm2s-opencl.la
+lib_LTLIBRARIES = $(top_builddir)/lib/libm2s-opencl-old.la
 
-__top_builddir__lib_libm2s_opencl_la_LDFLAGS = -version-info 0:0:0
+__top_builddir__lib_libm2s_opencl_old_la_LDFLAGS = -version-info 0:0:0
 
-__top_builddir__lib_libm2s_opencl_la_SOURCES = \
+__top_builddir__lib_libm2s_opencl_old_la_SOURCES = \
 	\
 	api.c \
 	api.h \

@@ -23,9 +23,23 @@
 #include "mhandle.h"
 #include "thread-list.h"
 
-struct clrt_thread_list_t *clrt_thread_list_create(void)
+
+struct thread_list_node_t
 {
-	struct clrt_thread_list_t *list = xmalloc(sizeof (struct clrt_thread_list_t));
+	struct thread_list_node_t *next;
+	void *data;
+};
+
+
+struct thread_list_t
+{
+	struct thread_list_node_t *head;
+	pthread_rwlock_t lock;
+};
+
+struct thread_list_t *thread_list_create(void)
+{
+	struct thread_list_t *list = xmalloc(sizeof (struct thread_list_t));
 	list->head = NULL;
 	pthread_rwlock_init(&list->lock, NULL);
 
@@ -33,9 +47,9 @@ struct clrt_thread_list_t *clrt_thread_list_create(void)
 }
 
 
-void clrt_thread_list_free(struct clrt_thread_list_t *list)
+void thread_list_free(struct thread_list_t *list)
 {
-	struct clrt_thread_list_node_t *prev = NULL;
+	struct thread_list_node_t *prev = NULL;
 
 	pthread_rwlock_destroy(&list->lock);
 	
@@ -49,9 +63,9 @@ void clrt_thread_list_free(struct clrt_thread_list_t *list)
 }
 
 
-void clrt_thread_list_insert(struct clrt_thread_list_t *list, void *data)
+void thread_list_insert(struct thread_list_t *list, void *data)
 {
-	struct clrt_thread_list_node_t *node = xmalloc(sizeof (struct clrt_thread_list_node_t));
+	struct thread_list_node_t *node = xmalloc(sizeof (struct thread_list_node_t));
 	node->data = data;
 	/* prepend the current node to the beginning of the list */
 	pthread_rwlock_wrlock(&list->lock);
@@ -61,13 +75,13 @@ void clrt_thread_list_insert(struct clrt_thread_list_t *list, void *data)
 }
 
 
-int clrt_thread_list_remove(struct clrt_thread_list_t *list, void *data)
+int thread_list_remove(struct thread_list_t *list, void *data)
 {
 	int status = 0; /* not found */
-	struct clrt_thread_list_node_t *prev = NULL;
+	struct thread_list_node_t *prev = NULL;
 	pthread_rwlock_wrlock(&list->lock);
 
-	struct clrt_thread_list_node_t *cur = list->head;
+	struct thread_list_node_t *cur = list->head;
 	while (cur)
 	{
 		if (cur->data == data)
@@ -91,14 +105,19 @@ int clrt_thread_list_remove(struct clrt_thread_list_t *list, void *data)
 }
 
 
-void clrt_thread_list_visit(struct clrt_thread_list_t *list, clrt_thread_list_visitor visitor, void *context)
+void thread_list_visit(struct thread_list_t *list,
+	thread_list_visit_func_t visit_func, void *user_data)
 {
+	struct thread_list_node_t *node;
+
+	/* Lock */
 	pthread_rwlock_rdlock(&list->lock);
 
-	struct clrt_thread_list_node_t *cur = list->head;
+	/* Walk list */
+	node = list->head;
+	while (node && visit_func(node->data, user_data))
+		node = node->next;
 
-	while (cur && visitor(context, cur->data))
-		cur = cur->next;
-
+	/* Unlock */
 	pthread_rwlock_unlock(&list->lock);
 }
