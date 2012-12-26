@@ -34,8 +34,6 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	elf-format.c \
 	elf-format.h \
 	\
-	elf-loader.c \
-	\
 	event.c \
 	event.h \
 	\

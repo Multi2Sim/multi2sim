@@ -22,119 +22,178 @@
 #include <string.h>
 
 #include "clrt.h"
-#include "mhandle.h"
-#include "thread-list.h"
 #include "debug.h"
+#include "mhandle.h"
 #include "object.h"
+#include "thread-list.h"
+
+
+/* List of OpenCL objects */
+static struct thread_list_t *opencl_object_list;
+
+/* Flag set when this module has been initialized */
+static int opencl_object_initialized;
 
 
 
-static struct clrt_thread_list_t *list = NULL;
 
-static struct clrt_thread_list_t *get_list(void)
+/*
+ * Private Functions
+ */
+
+
+static void opencl_object_init(void)
 {
-	if (!list)
-		list = clrt_thread_list_create();
-	return list;
+	/* Ignore if already initialized */
+	if (opencl_object_initialized)
+		return;
+
+	/* Create object list */
+	opencl_object_list = thread_list_create();
+
+	/* Mark initialized */
+	opencl_object_initialized = 1;
 }
 
-int print_object(void *context, void *data)
-{	
-	struct clrt_object_t *object = data;
-	printf("{%p, %d} ", object->data, object->type);
+
+struct opencl_object_list_visit_match_data_t
+{
+	void *data;
+	enum opencl_object_type_t type;
+	struct opencl_object_t *object;
+};
+
+
+/* Thread-safe list visitor function stopping list walk when an object of a
+ * given type and data has been found. */
+int opencl_object_list_visit_match(void *elem, void *data)
+{
+	struct opencl_object_t *object = elem;
+	struct opencl_object_list_visit_match_data_t *match_data = data;
+
+	/* If object is found, stop walking list and return it. */
+	if (object->data == match_data->data && object->type == match_data->type)
+	{
+		match_data->object = object;
+		return 0;
+	}
+
+	/* Continue walking list */
 	return 1;
 }
 
-void print_object_list(void)
+
+#if 0
+static int opencl_object_list_visit_dump(void *elem, void *data)
 {
-	clrt_thread_list_visit(get_list(), print_object, NULL);
-	printf("\n\n");
+	struct opencl_object_t *object;
+	FILE *f;
+
+	/* Dump current element */
+	object = elem;
+	f = data;
+	fprintf(f, "{%p, %d} ", object->data, object->type);
+	
+	/* Continue visiting elements */
+	return 1;
 }
 
 
-
-struct clrt_object_t *clrt_object_create(void *data, enum clrt_object_type_t type,
-	clrt_object_destroy_func_t destroy)
+static void opencl_object_list_dump(FILE *f)
 {
-	struct clrt_object_t *object;
+	fprintf(f, "List of OpenCL objects:\n");
+	thread_list_visit(opencl_object_list, opencl_object_list_visit_dump, f);
+}
+#endif
+
+
+
+
+
+/*
+ * Public Functions
+ */
+
+struct opencl_object_t *opencl_object_create(void *data, enum opencl_object_type_t type,
+	opencl_object_free_func_t free_func)
+{
+	struct opencl_object_t *object;
+
+	opencl_object_init();
 
 	/* Initialize */
-	object = xmalloc(sizeof (struct clrt_object_t));
+	object = xcalloc(1, sizeof(struct opencl_object_t));
 	object->data = data;
-	object->destroy_func = destroy;
 	object->type = type;
+	object->free_func = free_func;
 	object->ref_count = 1;
 	pthread_mutex_init(&object->ref_mutex, NULL);
 
 	/* Insert to object list */
-	clrt_thread_list_insert(get_list(), object);
+	thread_list_insert(opencl_object_list, object);
+
 	/* Return object */
 	return object;
 }
 
 
-void clrt_object_free(struct clrt_object_t *object)
+void opencl_object_free(struct opencl_object_t *object)
 {
 	pthread_mutex_destroy(&object->ref_mutex);
-	memset(object, 0, sizeof (struct clrt_object_t));
 	free(object);
 }
 
 
-/* this is a helper function for clrt_object_find
-   It visits each of the elements in the OpenCL object list */
-int match_object(void *context, void *data)
-{
-	struct clrt_object_t *object = data; /* each list item is an OpenCL object wrapper */
-	struct clrt_object_context_t *ctx = context; /* the context as passed into list_visit */
-
-	if (object->data == ctx->target && object->type == ctx->type)
-		ctx->match = object;
-
-	return !ctx->match;
-}
-
-
 /* Return the object that matches data and type */
-struct clrt_object_t *clrt_object_find(void *data, enum clrt_object_type_t type)
+struct opencl_object_t *opencl_object_find(void *data, enum opencl_object_type_t type)
 {
-	struct clrt_object_context_t context;
-	context.target = data;
-	context.type = type;
-	context.match = NULL;
+	struct opencl_object_list_visit_match_data_t match_data;
 
-	clrt_thread_list_visit(get_list(), match_object, &context);
-	return context.match;
+	opencl_object_init();
+
+	/* Walk list */
+	match_data.data = data;
+	match_data.type = type;
+	match_data.object = NULL;
+	thread_list_visit(opencl_object_list, opencl_object_list_visit_match, &match_data);
+
+	/* Return found object */
+	return match_data.object;
 }
 
-int clrt_object_ref_update(void *data, enum clrt_object_type_t type, int change)
+int opencl_object_ref_update(void *data, enum opencl_object_type_t type, int change)
 {
-	struct clrt_object_t *object = clrt_object_find(data, type);
+	struct opencl_object_t *object;
+	int count;
 
-	/* Does an object of the right type exist? */
+	opencl_object_init();
+	
+	/* Find object */
+	object = opencl_object_find(data, type);
 	if (!object)
 		return CL_INVALID_VALUE;
 
 	/* Protect code that accesses reference count with a lock */
 	pthread_mutex_lock(&object->ref_mutex);
 	object->ref_count += change; /* update the count */
-	int count = object->ref_count; /* capture value for use outside */
+	count = object->ref_count; /* capture value for use outside */
 	pthread_mutex_unlock(&object->ref_mutex);
 
-	/* There are no more references to this object.  
-           No one has chnaged ref_count since unlock because 
-           no one has a reference to it anymore. */
+	/* There are no more references to this object. No one has changed
+	 * ref_count since unlock because no one has a reference to it anymore. */
 	if (!count)
 	{
-		/* remove it from the list */
-		if (!clrt_thread_list_remove(get_list(), object))
+		/* Remove it from the list */
+		if (!thread_list_remove(opencl_object_list, object))
 			panic("%s: could not remove object that just existed", __FUNCTION__);
 
-		object->destroy_func(object->data);
-		clrt_object_free(object);
+		object->free_func(object->data);
+		opencl_object_free(object);
 	}
 	else if (count < 0)
+	{
 		panic("%s: number of references is negative", __FUNCTION__);
+	}
 
 	return CL_SUCCESS;
 }
@@ -142,33 +201,34 @@ int clrt_object_ref_update(void *data, enum clrt_object_type_t type, int change)
 
 /* Check the type of an object. The function returns true if the object passed
  * in 'data' is a valid OpenCL object, and its type matches 'type'. */
-int clrt_object_verify(void *data, enum clrt_object_type_t type)
+int opencl_object_verify(void *data, enum opencl_object_type_t type)
 {
-	struct clrt_object_t *object;
+	struct opencl_object_t *object;
 
 	/* Invalid data */
 	if (!data)
 		return 0;
 
 	/* Return whether object was found and type matches */
-	object = clrt_object_find(data, type);
-	return (int)object;
+	object = opencl_object_find(data, type);
+	return !!object;
 }
 
 
 /* Increment the number of references of an object */
-int clrt_object_retain(void *data, enum clrt_object_type_t type, int err_code)
+int opencl_object_retain(void *data, enum opencl_object_type_t type, int err_code)
 {
-	if (clrt_object_ref_update(data, type, 1) != CL_SUCCESS)
+	if (opencl_object_ref_update(data, type, 1) != CL_SUCCESS)
 		return err_code;
 	return CL_SUCCESS;
 }
 
 
 /* Decrement the number of references of an object */
-int clrt_object_release(void *data, enum clrt_object_type_t type, int err_code)
+int opencl_object_release(void *data, enum opencl_object_type_t type, int err_code)
 {
-	if (clrt_object_ref_update(data, type, -1) != CL_SUCCESS)
+	if (opencl_object_ref_update(data, type, -1) != CL_SUCCESS)
 		return err_code;
 	return CL_SUCCESS;
 }
+

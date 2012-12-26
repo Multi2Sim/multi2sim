@@ -667,7 +667,7 @@ cl_int clGetDeviceInfo(
 			param_value_size_ret);
 
 		default:
-			EVG_OPENCL_ARG_NOT_SUPPORTED(param_name)
+			OPENCL_ARG_NOT_SUPPORTED(param_name)
 			return CL_INVALID_VALUE;
 	}
 
