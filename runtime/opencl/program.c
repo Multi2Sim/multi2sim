@@ -26,6 +26,8 @@
 #include "clrt.h"
 #include "context.h"
 #include "debug.h"
+#include "elf-format.h"
+#include "list.h"
 #include "mhandle.h"
 #include "platform.h"
 #include "program.h"
@@ -106,7 +108,9 @@ cl_program clCreateProgramWithBinary(
 	cl_int *errcode_ret)
 {
 	int i;
-	struct _cl_program *program;
+	struct opencl_program_t *program;
+	struct clrt_device_type_t **device_types;
+	int num_device_types;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -118,7 +122,7 @@ cl_program clCreateProgramWithBinary(
 	opencl_debug("\tbinary_status = %p", binary_status);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
+	OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 
 	if (!context)
 	{
@@ -134,23 +138,26 @@ cl_program clCreateProgramWithBinary(
 		return NULL;
 	}
 
-	/* allocate enough room for all device types.  We don't know how many of them there will be */
-	struct clrt_device_type_t **device_types = xcalloc(opencl_platform->num_device_types, sizeof device_types[0]);
-	int num_device_types = 0;
+	/* Allocate enough room for all device types.
+	 * We don't know how many of them there will be */
+	device_types = xcalloc(opencl_platform->num_device_types, sizeof device_types[0]);
+	num_device_types = 0;
 
 	for (i = 0; i < num_devices; i++)
 	{
+		int found;
 		int j;
 
-		/* make sure that the device is in our context */
-		int found = 0;
+		/* Device must be in context */
+		found = 0;
 		for (j = 0; j < context->num_devices; j++)
+		{
 			if (context->devices[j] == device_list[i])
 			{
 				found = 1;
 				break;
 			}
-		
+		}
 		if (!found)
 		{
 			if (errcode_ret)
@@ -158,7 +165,7 @@ cl_program clCreateProgramWithBinary(
 			return NULL;
 		}
 
-		/* make sure the type of the binary matches */
+		/* Make sure the type of the binary matches */
 		if (!lengths[i] || !binaries[i] || !device_list[i]->device_type->valid_binary(lengths[i], binaries[i]))
 		{
 			if (binary_status[i])
@@ -171,63 +178,78 @@ cl_program clCreateProgramWithBinary(
 
 		found = 0;
 		for (j = 0; j < num_device_types; j++)
+		{
 			if (device_types[j] == device_list[i]->device_type)
 			{
 				found = 1;
 				break;
 			}
-
+		}
 		if (!found)
 			device_types[num_device_types++] = device_list[i]->device_type;
 	}
 
 	
 
-	program = xmalloc(sizeof (struct _cl_program));
-	if (!program)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	clrt_object_create(program, CLRT_OBJECT_PROGRAM, clrt_program_free);
-
+	program = opencl_program_create();
+	opencl_object_create(program, OPENCL_OBJECT_PROGRAM, clrt_program_free);
 	program->num_entries = num_devices;
 	program->entries = xmalloc(sizeof program->entries[0] * num_devices);
-
 	for (i = 0; i < num_device_types; i++)
 	{
-		uint32_t inner_size;
-		void *inner_start;
-		struct clrt_device_program_t *cur = program->entries + i;
+		struct clrt_device_program_t *cur;
+		struct elf_file_t *elf_file;
+		struct elf_section_t *section;
 
-		inner_start = get_inner_elf_addr(binaries[i], &inner_size);
-		
-		if ((char *)inner_start + inner_size > (char *)binaries[i] + lengths[i] || (unsigned char *)inner_start < binaries[i])
-			fatal("%s: could not executable content", __FUNCTION__);
+		int section_index;
+		int found;
+		int f;
 
+		cur = program->entries + i;
+
+		/* Load ELF binary */
+		elf_file = elf_file_create_from_buffer((void *) binaries[i], lengths[i],
+			"OpenCL binary");
+
+		/* Find '.text' section */
+		found = 0;
+		LIST_FOR_EACH(elf_file->section_list, section_index)
+		{
+			section = list_get(elf_file->section_list, section_index);
+			if (!strcmp(section->name, ".text"))
+			{
+				found = 1;
+				break;
+			}
+		}
+
+		/* Section not found */
+		if (!found)
+			fatal("%s: no '.text' section in binary", __FUNCTION__);
+
+		/* Extract section to temporary file */
 		cur->filename = xstrdup("./XXXXXX.so");
-		if (!cur->filename)
-			fatal("%s: out of memory", __FUNCTION__);
-
-		int handle = mkstemps(cur->filename, 3);
-		if (handle == -1)
+		f = mkstemps(cur->filename, 3);
+		if (f == -1)
 			fatal("%s: could not create temporary file", __FUNCTION__);
-
-		if (write(handle, inner_start, inner_size) != inner_size)
+		if (write(f, section->buffer.ptr, section->buffer.size) != section->buffer.size)
 			fatal("%s: could not write to temporary file", __FUNCTION__);
+		close(f);
 
-		close(handle);
+		/* Close ELF external binary */
+		elf_file_free(elf_file);
 
-		
+		/* Load internal binary for dynamic linking */
+		cur->device_type = device_types[i];
 		cur->handle = dlopen(cur->filename, RTLD_NOW);
 		if (!cur->handle)
 			fatal("%s: could not open ELF binary derived from program", __FUNCTION__);		
 
+		/* Success */
 		if (errcode_ret)
 			*errcode_ret = CL_SUCCESS;
-
 		if (binary_status)
 			binary_status[0] = CL_SUCCESS;
-
-		cur->device_type = device_types[i];
 	}
 	free(device_types);
 
@@ -242,7 +264,7 @@ cl_int clRetainProgram(
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tprogram = %p", program);
 	
-	return clrt_object_retain(program, CLRT_OBJECT_PROGRAM, CL_INVALID_PROGRAM);
+	return opencl_object_retain(program, OPENCL_OBJECT_PROGRAM, CL_INVALID_PROGRAM);
 }
 
 
@@ -253,7 +275,7 @@ cl_int clReleaseProgram(
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tprogram = %p", program);
 
-	return clrt_object_release(program, CLRT_OBJECT_PROGRAM, CL_INVALID_PROGRAM);
+	return opencl_object_release(program, OPENCL_OBJECT_PROGRAM, CL_INVALID_PROGRAM);
 }
 
 

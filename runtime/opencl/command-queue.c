@@ -295,7 +295,7 @@ cl_command_queue clCreateCommandQueue(
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
 	/* check to see that context is valid */
-	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
+	if (!opencl_object_verify(context, OPENCL_OBJECT_CONTEXT))
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_CONTEXT;
@@ -325,7 +325,7 @@ cl_command_queue clCreateCommandQueue(
 	pthread_mutex_init(&queue->lock, NULL);
 	pthread_cond_init(&queue->cond_process, NULL);
 	pthread_create(&queue->queue_thread, NULL, clrt_command_queue_thread_proc, queue);
-	clrt_object_create(queue, CLRT_OBJECT_COMMAND_QUEUE, clrt_command_queue_free);
+	opencl_object_create(queue, OPENCL_OBJECT_COMMAND_QUEUE, clrt_command_queue_free);
 
 	if (errcode_ret)
 		*errcode_ret = CL_SUCCESS;
@@ -340,7 +340,7 @@ cl_int clRetainCommandQueue(
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
 
-	return clrt_object_retain(command_queue, CLRT_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
+	return opencl_object_retain(command_queue, OPENCL_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
 }
 
 
@@ -350,7 +350,7 @@ cl_int clReleaseCommandQueue(
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
 
-	return clrt_object_release(command_queue, CLRT_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
+	return opencl_object_release(command_queue, OPENCL_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
 }
 
 
@@ -404,9 +404,9 @@ cl_int clEnqueueReadBuffer(
 	opencl_debug("\tevent_wait_list = %p", event_wait_list);
 	opencl_debug("\tevent = %p", event);
 
-	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
+	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
-	if (!clrt_object_verify(buffer, CLRT_OBJECT_MEM))
+	if (!opencl_object_verify(buffer, OPENCL_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
 	if (buffer->size < offset + cb)
 		return CL_INVALID_VALUE;
@@ -492,9 +492,9 @@ cl_int clEnqueueWriteBuffer(
 	opencl_debug("\tevent_wait_list = %p", event_wait_list);
 	opencl_debug("\tevent = %p", event);
 
-	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
+	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
-	if (!clrt_object_verify(buffer, CLRT_OBJECT_MEM))
+	if (!opencl_object_verify(buffer, OPENCL_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
 	if (buffer->size < offset + cb)
 		return CL_INVALID_VALUE;
@@ -579,11 +579,11 @@ cl_int clEnqueueCopyBuffer(
 	opencl_debug("\tevent_wait_list = %p", event_wait_list);
 	opencl_debug("\tevent = %p", event);
 
-	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
+	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
-	if (!clrt_object_verify(src_buffer, CLRT_OBJECT_MEM))
+	if (!opencl_object_verify(src_buffer, OPENCL_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
-	if (!clrt_object_verify(dst_buffer, CLRT_OBJECT_MEM))
+	if (!opencl_object_verify(dst_buffer, OPENCL_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
 	if ((src_buffer->size < src_offset + cb) || (dst_buffer->size < dst_offset + cb))
 		return CL_INVALID_VALUE;
@@ -751,7 +751,7 @@ void * clEnqueueMapBuffer(
 	opencl_debug("\tevent = %p", event);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
-	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
+	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_COMMAND_QUEUE;
@@ -759,7 +759,7 @@ void * clEnqueueMapBuffer(
 	}
 
 
-	if (!clrt_object_verify(buffer, CLRT_OBJECT_MEM))
+	if (!opencl_object_verify(buffer, OPENCL_OBJECT_MEM))
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_MEM_OBJECT;
@@ -838,10 +838,10 @@ cl_int clEnqueueUnmapMemObject(
 	opencl_debug("\tevent_wait_list = %p", event_wait_list);
 	opencl_debug("\tevent = %p", event);
 
-	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
+	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
-	if (!clrt_object_verify(memobj, CLRT_OBJECT_MEM))
+	if (!opencl_object_verify(memobj, OPENCL_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
 
 	if (memobj->buffer > mapped_ptr || memobj->buffer + memobj->size < mapped_ptr)
@@ -891,10 +891,10 @@ cl_int clEnqueueNDRangeKernel(
 	opencl_debug("\tevent_wait_list = %p", event_wait_list);
 	opencl_debug("\tevent = %p", event);
 
-	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
+	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
-	if (!clrt_object_verify(kernel, CLRT_OBJECT_KERNEL))
+	if (!opencl_object_verify(kernel, OPENCL_OBJECT_KERNEL))
 		return CL_INVALID_KERNEL;
 
 	status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list);

@@ -89,7 +89,7 @@ cl_kernel clCreateKernel(
 	opencl_debug("\tkernel_name = %s", kernel_name);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
-	if (!clrt_object_verify(program, CLRT_OBJECT_PROGRAM))
+	if (!opencl_object_verify(program, OPENCL_OBJECT_PROGRAM))
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_PROGRAM;
@@ -104,7 +104,7 @@ cl_kernel clCreateKernel(
 	}
 
 	cl_kernel kernel = xmalloc(sizeof (struct _cl_kernel));
-	clrt_object_create(kernel, CLRT_OBJECT_KERNEL, clrt_kernel_free);
+	opencl_object_create(kernel, OPENCL_OBJECT_KERNEL, clrt_kernel_free);
 
 	kernel->num_entries = program->num_entries;
 	kernel->entries = xmalloc(sizeof kernel->entries[0] * kernel->num_entries);
@@ -139,7 +139,7 @@ cl_int clRetainKernel(
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tkernel = %p", kernel);
 
-	return clrt_object_retain(kernel, CLRT_OBJECT_KERNEL, CL_INVALID_KERNEL);
+	return opencl_object_retain(kernel, OPENCL_OBJECT_KERNEL, CL_INVALID_KERNEL);
 }
 
 
@@ -150,7 +150,7 @@ cl_int clReleaseKernel(
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tkernel = %p", kernel);
 
-	return clrt_object_release(kernel, CLRT_OBJECT_KERNEL, CL_INVALID_KERNEL);
+	return opencl_object_release(kernel, OPENCL_OBJECT_KERNEL, CL_INVALID_KERNEL);
 }
 
 
@@ -169,7 +169,7 @@ cl_int clSetKernelArg(
 
 	int i;
 
-	if (!clrt_object_verify(kernel, CLRT_OBJECT_KERNEL))
+	if (!opencl_object_verify(kernel, OPENCL_OBJECT_KERNEL))
 		return CL_INVALID_KERNEL;
 
 	for (i = 0; i < kernel->num_entries; i++)
@@ -204,7 +204,7 @@ cl_int clGetKernelWorkGroupInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	if (!clrt_object_verify(kernel, CLRT_OBJECT_KERNEL))
+	if (!opencl_object_verify(kernel, OPENCL_OBJECT_KERNEL))
 		return CL_INVALID_KERNEL;
 
 	if (!verify_device(device))

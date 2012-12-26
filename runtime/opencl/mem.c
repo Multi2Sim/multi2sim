@@ -61,7 +61,7 @@ void clrt_mem_free(void *data)
 
 void *clrt_get_address_of_buffer_object(cl_mem buffer)
 {
-	if (!clrt_object_verify(buffer, CLRT_OBJECT_MEM))
+	if (!opencl_object_verify(buffer, OPENCL_OBJECT_MEM))
 		return NULL;
 	else
 		return buffer->buffer;
@@ -115,7 +115,7 @@ cl_mem clCreateBuffer(
 	opencl_debug("\thost_ptr = %p", host_ptr);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
-	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
+	if (!opencl_object_verify(context, OPENCL_OBJECT_CONTEXT))
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_CONTEXT;
@@ -130,7 +130,7 @@ cl_mem clCreateBuffer(
 	}
 
 	mem = xmalloc(sizeof (struct _cl_mem));
-	clrt_object_create(mem, CLRT_OBJECT_MEM, clrt_mem_free);
+	opencl_object_create(mem, OPENCL_OBJECT_MEM, clrt_mem_free);
 
 	/* Because of alignment reasons, we are going to 'cache' buffers even when the user
          * specifies CL_MEM_UES_HOST_PTR */
@@ -195,14 +195,14 @@ cl_mem clCreateImage3D(
 cl_int clRetainMemObject(
 	cl_mem memobj)
 {
-	return clrt_object_retain(memobj, CLRT_OBJECT_MEM, CL_INVALID_MEM_OBJECT);
+	return opencl_object_retain(memobj, OPENCL_OBJECT_MEM, CL_INVALID_MEM_OBJECT);
 }
 
 
 cl_int clReleaseMemObject(
 	cl_mem memobj)
 {
-	return clrt_object_release(memobj, CLRT_OBJECT_MEM, CL_INVALID_MEM_OBJECT);
+	return opencl_object_release(memobj, OPENCL_OBJECT_MEM, CL_INVALID_MEM_OBJECT);
 }
 
 
