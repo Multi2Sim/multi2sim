@@ -109,7 +109,7 @@ cl_program clCreateProgramWithBinary(
 {
 	int i;
 	struct opencl_program_t *program;
-	struct clrt_device_type_t **device_types;
+	struct opencl_device_type_t **device_types;
 	int num_device_types;
 
 	/* Debug */
@@ -140,25 +140,16 @@ cl_program clCreateProgramWithBinary(
 
 	/* Allocate enough room for all device types.
 	 * We don't know how many of them there will be */
-	device_types = xcalloc(opencl_platform->num_device_types, sizeof device_types[0]);
+	device_types = xcalloc(opencl_platform->device_type_list->count, sizeof device_types[0]);
 	num_device_types = 0;
 
 	for (i = 0; i < num_devices; i++)
 	{
-		int found;
 		int j;
+		int found;
 
 		/* Device must be in context */
-		found = 0;
-		for (j = 0; j < context->num_devices; j++)
-		{
-			if (context->devices[j] == device_list[i])
-			{
-				found = 1;
-				break;
-			}
-		}
-		if (!found)
+		if (!opencl_context_has_device(context, device_list[i]))
 		{
 			if (errcode_ret)
 				*errcode_ret = CL_INVALID_DEVICE;
@@ -176,6 +167,7 @@ cl_program clCreateProgramWithBinary(
 			return NULL;
 		}
 
+		/* Add device type if not present already */
 		found = 0;
 		for (j = 0; j < num_device_types; j++)
 		{

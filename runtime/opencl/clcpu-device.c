@@ -30,6 +30,7 @@
 #include "clcpu.h"
 #include "clcpu-device.h"
 #include "clcpu-program.h"
+#include "clrt.h"
 #include "debug.h"
 #include "device.h"
 #include "mhandle.h"
@@ -155,9 +156,9 @@ void barrier(int data)
 
 static clrt_barrier_t barrier_addr = barrier;
 
-struct clrt_device_type_t *clcpu_create_device_type(void)
+struct opencl_device_type_t *clcpu_create_device_type(void)
 {
-	struct clrt_device_type_t *device_type = xmalloc(sizeof *device_type);
+	struct opencl_device_type_t *device_type = xmalloc(sizeof *device_type);
 	device_type->init_devices = clcpu_device_type_init_devices;
 	device_type->valid_binary = clcpu_device_type_is_valid_binary;
 	device_type->create_kernel = clcpu_device_type_create_kernel;
@@ -234,7 +235,7 @@ void clcpu_device_info_init(cl_device_id cpu)
 	cpu->vector_width_float = 16 / sizeof (cl_float);
 	cpu->vector_width_double = 16 / sizeof (cl_double);
 	cpu->vector_width_half = 0;
-	cpu->profile = opencl_device_full_profile;
+	cpu->profile = "PROFILE";
 	cpu->profiling_timer_resolution = 0;
 	cpu->queue_properties = CL_QUEUE_PROFILING_ENABLE;
 	cpu->single_fp_config = CL_FP_DENORM | 
@@ -245,10 +246,9 @@ void clcpu_device_info_init(cl_device_id cpu)
 				CL_FP_FMA | 
 				CL_FP_SOFT_FLOAT;
 	cpu->type = CL_DEVICE_TYPE_CPU;
-	cpu->vendor = opencl_device_vendor;
 	cpu->vendor_id = 0;
-	cpu->version = opencl_device_opencl_c_version;
-}
+} 
+
 
 /* Check to see whether the device has been assigned work
  * Assume that the calling thread owns device->lock */
@@ -463,6 +463,7 @@ void destroy_workgroup(struct clcpu_workgroup_data_t *workgroup, struct clcpu_ke
 	free(workgroup->workitem_data);
 	free(workgroup->aligned_stacks);
 	for (i = 0; i < kernel->num_params; i++)
+	{
 		if (kernel->param_info[i].mem_type == CLCPU_MEM_LOCAL)
 		{
 			int offset;
@@ -470,6 +471,7 @@ void destroy_workgroup(struct clcpu_workgroup_data_t *workgroup, struct clcpu_ke
 			offset = kernel->param_info[i].stack_offset;
 			free((void *) workgroup->stack_params[offset]);
 		}
+	}
 	free(workgroup->stack_params);
 }
 

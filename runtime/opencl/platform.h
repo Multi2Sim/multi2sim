@@ -26,8 +26,15 @@
 #define opencl_platform_t _cl_platform_id
 struct _cl_platform_id
 {
-	int num_device_types;
-	struct clrt_device_type_entry_t *entries;
+	/* List of device types - elements of type opencl_device_type_entry_t */
+	struct list_t *device_type_list;
+	
+	/* String properties */
+	char *full_profile;
+	char *version;
+	char *name;
+	char *vendor;
+	char *extensions;
 };
 
 
@@ -39,6 +46,11 @@ extern struct opencl_platform_t *opencl_platform;
 /* Create/free */
 struct opencl_platform_t *opencl_platform_create(void);
 void opencl_platform_free(struct opencl_platform_t *platform);
+
+/* Iterator through devices */
+typedef void (*opencl_platform_for_each_device_func_t)(struct opencl_device_t *device, void *user_data);
+void opencl_platform_for_each_device(struct opencl_platform_t *platform,
+	opencl_platform_for_each_device_func_t for_each_device_func, void *user_data);
 
 
 #endif

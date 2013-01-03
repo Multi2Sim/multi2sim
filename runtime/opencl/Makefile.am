@@ -66,7 +66,13 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	platform.h \
 	\
 	thread-list.c \
-	thread-list.h
+	thread-list.h \
+	\
+	x86-device.c \
+	x86-device.h \
+	\
+	x86-program.c \
+	x86-program.h
 
 
 #AM_CFLAGS = -Wall -O2 -fPIC -m32 -DMHANDLE
