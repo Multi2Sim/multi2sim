@@ -17,31 +17,5 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_OPENCL_CONTEXT_H
-#define RUNTIME_OPENCL_CONTEXT_H
-
-
-/* Context Object */
-#define opencl_context_t _cl_context
-struct _cl_context
-{
-	/* List of devices - elements of type opencl_device_t */
-	struct list_t *device_list;
-
-	/* Properties */
-	size_t prop_count;
-	cl_context_properties *props;
-};
-
-
-struct opencl_context_t *opencl_context_create(void);
-void opencl_context_free(struct opencl_context_t *context);
-
-/* Return TRUE if the device is associated with the context. */
-int opencl_context_has_device(struct opencl_context_t *context,
-	struct opencl_device_t *device);
-
-
-
-#endif
+#include "x86-program.h"
 

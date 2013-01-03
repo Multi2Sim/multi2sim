@@ -24,24 +24,9 @@
 #include "clrt.h"
 #include "context.h"
 #include "debug.h"
+#include "list.h"
 #include "mhandle.h"
 #include "platform.h"
-
-
-
-
-/*
- * Private Functions
- */
-
-void clrt_context_free(void *data)
-{
-	struct _cl_context *context; 
-
-	context = (struct _cl_context *) data;
-	free(context->devices);
-	free(context);
-}
 
 
 
@@ -57,6 +42,11 @@ struct opencl_context_t *opencl_context_create(void)
 
 	/* Initialize */
 	context = xcalloc(1, sizeof(struct opencl_context_t));
+	context->device_list = list_create();
+	
+	/* Register OpenCL object */
+	opencl_object_create(context, OPENCL_OBJECT_CONTEXT,
+		(opencl_object_free_func_t) opencl_context_free);
 
 	/* Return */
 	return context;
@@ -65,7 +55,25 @@ struct opencl_context_t *opencl_context_create(void)
 
 void opencl_context_free(struct opencl_context_t *context)
 {
+	list_free(context->device_list);
 	free(context);
+}
+
+
+int opencl_context_has_device(struct opencl_context_t *context,
+	struct opencl_device_t *device)
+{
+	int i;
+
+	/* Search */
+	LIST_FOR_EACH(context->device_list, i)
+	{
+		if (list_get(context->device_list, i) == device)
+			return 1;
+	}
+
+	/* Not found */
+	return 0;
 }
 
 
@@ -99,6 +107,7 @@ cl_context clCreateContext(
 	OPENCL_ARG_NOT_SUPPORTED_NEQ((int) pfn_notify, 0);
 	OPENCL_ARG_NOT_SUPPORTED_NEQ((int) user_data, 0);
 
+	/* Platform not initialized */
 	if (!opencl_platform)
 	{
 		if (errcode_ret)
@@ -106,6 +115,7 @@ cl_context clCreateContext(
 		return NULL;
 	}
 
+	/* No device given */
 	if (!devices || !num_devices)
 	{
 		if (errcode_ret)
@@ -113,10 +123,7 @@ cl_context clCreateContext(
 		return NULL;
 	}	
 
-	context = xmalloc(sizeof (struct _cl_context));
-	opencl_object_create(context, OPENCL_OBJECT_CONTEXT, clrt_context_free);
-
-
+	/* Check devices given */
 	for (i = 0; i < num_devices; i++)
 	{
 		if (!verify_device(devices[i]))
@@ -127,25 +134,26 @@ cl_context clCreateContext(
 		}
 	}
 
-	context->num_devices = num_devices;
-	context->devices = xmalloc(sizeof (struct _cl_device_id *) * context->num_devices);
-	memcpy(context->devices, devices, sizeof devices[0] * num_devices);
+	/* Create context */
+	context = opencl_context_create();
 
+	/* Add devices */
+	for (i = 0; i < num_devices; i++)
+		list_add(context->device_list, devices[i]);
+
+	/* Initialize context properties if given */
 	if (properties)
 	{
 		context->prop_count = getPropertiesCount(properties, sizeof (cl_context_properties));
 		context->props = xmalloc(sizeof (cl_context_properties) * context->prop_count);
 		copyProperties(context->props, properties, sizeof (cl_context_properties), context->prop_count);
 	}
-	else
-	{
-		context->props = NULL;
-		context->prop_count = 0;
-	}
 
+	/* Success */
 	if (errcode_ret)
 		*errcode_ret = CL_SUCCESS;
 
+	/* Return context */
 	return context;
 }
 
@@ -224,19 +232,23 @@ cl_int clGetContextInfo(
 	case CL_CONTEXT_REFERENCE_COUNT:
 	{
 		cl_int count = opencl_object_find(context, OPENCL_OBJECT_CONTEXT)->ref_count;
-		return populateParameter(&count, sizeof count, param_value_size,
+		return opencl_set_param(&count, sizeof count, param_value_size,
 			param_value, param_value_size_ret);
 	}
-		
+
+/*
+	FIXME - use device_list below
 	case CL_CONTEXT_DEVICES:
-		return populateParameter(context->devices, sizeof (cl_device_id) *
+		return opencl_set_param(context->devices, sizeof (cl_device_id) *
 			context->num_devices, param_value_size, param_value, param_value_size_ret);
 	
 	case CL_CONTEXT_PROPERTIES:
 		if (context->props)
-			return populateParameter(context->props, sizeof (cl_context_properties)
+			return opencl_set_param(context->props, sizeof (cl_context_properties)
 				* context->prop_count, param_value_size, param_value, param_value_size_ret);
-		return populateParameter(NULL, 0, param_value_size, param_value, param_value_size_ret);
+		return opencl_set_param(NULL, 0, param_value_size, param_value, param_value_size_ret);
+		FIXME - argument 'NULL' is not valid above.
+*/
 
 	default:
 		return CL_INVALID_VALUE;

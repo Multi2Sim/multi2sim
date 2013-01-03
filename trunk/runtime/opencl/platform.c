@@ -23,21 +23,15 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "list.h"
 #include "mhandle.h"
 #include "platform.h"
 
 
-const char *opencl_platform_full_profile = "OpenCL Multi2Sim Platform Full Profile";
-const char *opencl_platform_version = "1.0";  /* FIXME - compose with runtime version numbers */
-const char *opencl_platform_name = "Multi2Sim OpenCL Platform";
-const char *opencl_platform_vendor = "Multi2Sim";
-const char *opencl_platform_extensions = "";
-
-
 /* Add new devices types here */
-struct clrt_device_type_t *clcpu_create_device_type(void); /* for x86 CPU */
+struct opencl_device_type_t *clcpu_create_device_type(void); /* for x86 CPU */
 /* Put their constructors into this array */
-clrt_device_type_create_t m2s_device_type_constructors[] = {clcpu_create_device_type};
+opencl_device_type_create_t m2s_device_type_constructors[] = {clcpu_create_device_type};
 
 
 static char *opencl_err_version =
@@ -53,8 +47,8 @@ struct opencl_version_t
 	int minor;
 };
 
-struct opencl_platform_t *opencl_platform = NULL;
-struct _cl_device_id *opencl_device = NULL;
+struct opencl_platform_t *opencl_platform;
+struct _cl_device_id *opencl_device;
 
 
 
@@ -64,21 +58,19 @@ struct _cl_device_id *opencl_device = NULL;
  */
 
 
-cl_int populateString(const char *param, size_t param_value_size, void *param_value, size_t *param_value_size_ret)
+void opencl_platform_for_each_device(struct opencl_platform_t *platform,
+	opencl_platform_for_each_device_func_t for_each_device_func, void *user_data)
 {
-	size_t size = strlen(param) + 1;
-	return populateParameter(param, size, param_value_size, param_value, param_value_size_ret);
-}
+	struct opencl_device_type_entry_t *device_type;
 
-void visit_devices(device_visitor_t visitor, void *ctx)
-{
 	int i;
-	for (i = 0; i < opencl_platform->num_device_types; i++)
+	int j;
+
+	LIST_FOR_EACH(opencl_platform->device_type_list, i)
 	{
-		int j;
-		struct clrt_device_type_entry_t *entry = opencl_platform->entries + i;
-		for (j = 0; j < entry->num_devices; j++)
-			visitor(ctx, entry->devices[j], entry->device_type);
+		device_type = list_get(platform->device_type_list, i);
+		for (j = 0; j < device_type->num_devices; j++)
+			for_each_device_func(device_type->devices[j], user_data);
 	}
 }
 
@@ -91,9 +83,48 @@ void visit_devices(device_visitor_t visitor, void *ctx)
 struct opencl_platform_t *opencl_platform_create(void)
 {
 	struct opencl_platform_t *platform;
+	struct opencl_device_type_entry_t *entry;
+
+	int i;
+	int j;
+
+	int num_device_types;
 
 	/* Initialize */
 	platform = xcalloc(1, sizeof(struct opencl_platform_t));
+	platform->full_profile = "OpenCL Multi2Sim Platform Full Profile";
+	platform->version = "1.1";
+	platform->name = "Multi2Sim OpenCL Platform";
+	platform->vendor = "Multi2Sim";
+	platform->extensions = "";
+	
+	/* Initialize device types */
+	platform->device_type_list = list_create();
+
+	/* Go through all the device types and initialize them and their devices */
+	num_device_types = sizeof m2s_device_type_constructors / sizeof m2s_device_type_constructors[0];
+	for (i = 0; i < num_device_types; i++)
+	{
+		/* Construct the device type */
+		entry = xcalloc(1, sizeof(struct opencl_device_type_entry_t));
+		entry->device_type = m2s_device_type_constructors[i]();
+
+		/* Query its device count */
+		entry->device_type->init_devices(0, NULL, &entry->num_devices);
+			
+		/* Allocate enough memory for those devices */
+		entry->devices = xmalloc(sizeof entry->devices[0] * entry->num_devices);
+
+		/* Populate */
+		entry->device_type->init_devices(entry->num_devices, entry->devices, NULL);
+
+		/* Set the device type */
+		for (j = 0; j < entry->num_devices; j++)
+			entry->devices[i]->device_type = entry->device_type;
+
+		/* Add device type to list */
+		list_add(platform->device_type_list, entry);
+	}
 
 	/* Return */
 	return platform;
@@ -147,39 +178,9 @@ cl_int clGetPlatformIDs(
 				OPENCL_VERSION_MAJOR, OPENCL_VERSION_MINOR,
 				version.major, version.minor, opencl_err_version);
 
-	/* Create the platform object if it has not already been made */
+	/* Create platform if it doesn't exist yet */
 	if (!opencl_platform)
-	{
-		int i;
-
-		opencl_platform = xmalloc(sizeof (struct _cl_platform_id));
-		opencl_platform->num_device_types = sizeof m2s_device_type_constructors / sizeof m2s_device_type_constructors[0];
-		opencl_platform->entries = xcalloc(opencl_platform->num_device_types, sizeof opencl_platform->entries[0]);
-
-		/* Go through all the device types and initialize them and their devices */
-		for (i = 0; i < opencl_platform->num_device_types; i++)
-		{
-			int j;
-			struct clrt_device_type_entry_t *entry = opencl_platform->entries + i; 
-
-			/* construct the device type */
-			entry->device_type = m2s_device_type_constructors[i]();
-
-			/* query its device count */
-			entry->device_type->init_devices(0, NULL, &entry->num_devices);
-			
-			/* allocate enough memory for those devices */
-			entry->devices = xmalloc(sizeof entry->devices[0] * entry->num_devices);
-
-			/* populate */
-			entry->device_type->init_devices(entry->num_devices, entry->devices, NULL);
-
-			/* set the device type */
-			for (j = 0; j < entry->num_devices; j++)
-				entry->devices[i]->device_type = entry->device_type;
-
-		}
-	}	
+		opencl_platform = opencl_platform_create();
 
 	/* If an array is passed in, it must have a corresponding length
 	 * and the client must either want a count or a list of platforms */
@@ -210,39 +211,41 @@ cl_int clGetPlatformInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	if (platform != opencl_platform)
+	if (platform != opencl_platform || !opencl_platform)
 		return CL_INVALID_PLATFORM;
 
 	switch (param_name)
 	{
+
 	case CL_PLATFORM_PROFILE:
 
-		return populateString(opencl_platform_full_profile, param_value_size,
+		return opencl_set_string(opencl_platform->full_profile, param_value_size,
 			param_value, param_value_size_ret);
 
 	case CL_PLATFORM_VERSION:
 
-		return populateString(opencl_platform_version, param_value_size,
+		return opencl_set_string(opencl_platform->version, param_value_size,
 			param_value, param_value_size_ret);
 		
 	case CL_PLATFORM_NAME:
 
-		return populateString(opencl_platform_name, param_value_size,
+		return opencl_set_string(opencl_platform->name, param_value_size,
 			param_value, param_value_size_ret);
 
 	case CL_PLATFORM_VENDOR:
 
-		return populateString(opencl_platform_vendor, param_value_size,
+		return opencl_set_string(opencl_platform->vendor, param_value_size,
 			param_value, param_value_size_ret);
 
 	case CL_PLATFORM_EXTENSIONS:
 
-		return populateString(opencl_platform_extensions, param_value_size,
+		return opencl_set_string(opencl_platform->extensions, param_value_size,
 			param_value, param_value_size_ret);
 	
 	default:
 		return CL_INVALID_VALUE;
 	}
+
 	return 0;
 }
 
