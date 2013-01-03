@@ -25,6 +25,7 @@
 #include "command-queue.h"
 #include "debug.h"
 #include "event.h"
+#include "list.h"
 #include "mhandle.h"
 
 
@@ -50,7 +51,7 @@ void clrt_wait(struct _cl_event *event)
 	if (event->queue)
 	{
 		pthread_mutex_lock(&event->queue->lock);
-		if (event->queue->head && !event->queue->process)
+		if (event->queue->task_list->count && !event->queue->process)
 		{
 			event->queue->process = 1;
 			pthread_cond_signal(&event->queue->cond_process);
@@ -230,7 +231,8 @@ cl_int clGetEventInfo(
 	switch (param_name)
 	{
 		case CL_EVENT_COMMAND_QUEUE:
-			return populateParameter(&event->queue, sizeof event->queue, param_value_size, param_value, param_value_size_ret);
+			return opencl_set_param(&event->queue, sizeof event->queue,
+				param_value_size, param_value, param_value_size_ret);
 
 		case CL_EVENT_CONTEXT:
 			OPENCL_ARG_NOT_SUPPORTED(param_name);
@@ -241,13 +243,18 @@ cl_int clGetEventInfo(
 			return CL_SUCCESS;
 
 		case CL_EVENT_COMMAND_EXECUTION_STATUS:
-			return populateParameter(&event->status, sizeof event->status, param_value_size, param_value, param_value_size_ret);
+			return opencl_set_param(&event->status, sizeof event->status,
+				param_value_size, param_value, param_value_size_ret);
 
 		case CL_EVENT_REFERENCE_COUNT:
 		{
-			struct opencl_object_t *obj = opencl_object_find(event, OPENCL_OBJECT_EVENT);
-			cl_uint count = obj->ref_count;
-			return populateParameter(&count, sizeof count, param_value_size, param_value, param_value_size_ret);
+			struct opencl_object_t *object;
+			cl_uint count;
+			
+			object = opencl_object_find(event, OPENCL_OBJECT_EVENT);
+			count = object->ref_count;
+			return opencl_set_param(&count, sizeof count, param_value_size,
+				param_value, param_value_size_ret);
 		}		
 	}
 
@@ -401,7 +408,7 @@ cl_int clFlush(
 
 	pthread_mutex_lock(&command_queue->lock);
 
-	if (command_queue->head && !command_queue->process)
+	if (command_queue->task_list->count && !command_queue->process)
 	{
 		command_queue->process = 1;
 		pthread_cond_signal(&command_queue->cond_process);
@@ -416,7 +423,7 @@ cl_int clFinish(
 	cl_command_queue command_queue)
 {
 	struct clrt_finish_t *finish;
-	struct clrt_queue_item_t *item;
+	struct opencl_command_queue_task_t *task;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -428,15 +435,12 @@ cl_int clFinish(
 	cl_event event = clrt_event_create(command_queue);
 
 	finish = xmalloc(sizeof (struct clrt_finish_t));
-	item = clrt_queue_item_create(
-		command_queue,
-		finish,
-		clrt_finish_action, 
-		&event, 
-		0, 
-		NULL);
+	task = opencl_command_queue_task_create(
+		command_queue, finish,
+		clrt_finish_action, &event, 
+		0, NULL);
 
-	clrt_command_queue_enqueue(command_queue, item);
+	opencl_command_queue_enqueue(command_queue, task);
 
 	clrt_wait(event);
 

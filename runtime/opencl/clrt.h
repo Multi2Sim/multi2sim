@@ -80,6 +80,12 @@ extern char *opencl_err_param_note;
 	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, opencl_err_param_note); }
 
 
+/*
+ * Global Variables
+ */
+
+extern int opencl_native_mode;
+
 
 /*
  * Private OpenCL implementation definitions
@@ -88,33 +94,6 @@ extern char *opencl_err_param_note;
 
 void *clrt_buffer_allocate(size_t size);
 void clrt_buffer_free(void *buffer);
-
-
-/*
- * Private Command Queue Items
- */
-
-typedef void (*queue_action_t)(void *data);
-
-struct clrt_queue_item_t
-{
-	struct clrt_queue_item_t *next;
-	void *data;
-	queue_action_t action;
-	cl_event done_event;
-	int num_wait_events;
-	cl_event *wait_events;
-};
-
-struct clrt_queue_item_t *clrt_queue_item_create(
-	struct _cl_command_queue *queue, 
-	void *data, 
-	queue_action_t action, 
-	cl_event *done, 
-	int num_wait, 
-	cl_event *waits);
-void clrt_command_queue_enqueue(struct _cl_command_queue *queue, struct clrt_queue_item_t *item);
-
 
 
 /*
@@ -129,13 +108,12 @@ int clrt_event_wait_list_check(unsigned int num_events, struct _cl_event * const
  * Helper Functions 
  */
 
-/* populate a parameter as a response to OpenCL's many clGet*Info functions */
-cl_int populateParameter(
-	const void *value, 
-	size_t actual, 
-	size_t param_value_size, 
-	void *param_value, 
-	size_t *param_value_size_ret);
+/* Populate a parameter as a response to OpenCL's many clGet*Info functions */
+cl_int opencl_set_param(const void *src_value, size_t src_size,
+	size_t dest_size, void *dest_value, size_t *size_ret);
+cl_int opencl_set_string(const char *src_string, size_t dest_size,
+	void *dest_string, size_t *size_ret);
+int opencl_is_valid_device_type(cl_device_type device_type);
 
 /* get the number of properties in a properties list */
 size_t getPropertiesCount(const void *properties, size_t prop_size);
@@ -153,13 +131,12 @@ void copyProperties(void *dest, const void *src, size_t size, size_t numObjs);
 
 struct clrt_device_kernel_t
 {
-	struct clrt_device_type_t *device_type;
+	struct opencl_device_type_t *device_type;
 	void *kernel;
 };
 
 /* Device Visitor Type */
-typedef void (*device_visitor_t)(void *ctx, cl_device_id device, struct clrt_device_type_t *device_type);
-void visit_devices(device_visitor_t visitor, void *ctx);
+typedef void (*device_visitor_t)(void *ctx, cl_device_id device, struct opencl_device_type_t *device_type);
 int verify_device(cl_device_id device);
 
 

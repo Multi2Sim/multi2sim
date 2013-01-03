@@ -215,31 +215,36 @@ cl_int clGetKernelWorkGroupInfo(
 		case CL_KERNEL_WORK_GROUP_SIZE:
 		{
 			size_t size = 1024;
-			return populateParameter(&size, sizeof size, param_value_size, param_value, param_value_size_ret);
+			return opencl_set_param(&size, sizeof size, param_value_size,
+				param_value, param_value_size_ret);
 		}
 
 		case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
 		{
 			size_t size[] = {0, 0, 0};
-			return populateParameter(&size, sizeof size, param_value_size, param_value, param_value_size_ret);
+			return opencl_set_param(&size, sizeof size, param_value_size,
+				param_value, param_value_size_ret);
 		}
 
 		case CL_KERNEL_LOCAL_MEM_SIZE:
 		{
 			cl_ulong size = 0;
-			return populateParameter(&size, sizeof size, param_value_size, param_value, param_value_size_ret);
+			return opencl_set_param(&size, sizeof size, param_value_size,
+				param_value, param_value_size_ret);
 		}
 
 		case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
 		{
 			size_t mult = 1;
-			return populateParameter(&mult, sizeof mult, param_value_size, param_value, param_value_size_ret);
+			return opencl_set_param(&mult, sizeof mult, param_value_size,
+				param_value, param_value_size_ret);
 		}
 
 		case CL_KERNEL_PRIVATE_MEM_SIZE:
 		{
 			cl_ulong size = 0;
-			return populateParameter(&size, sizeof size, param_value_size, param_value, param_value_size_ret);
+			return opencl_set_param(&size, sizeof size, param_value_size,
+				param_value, param_value_size_ret);
 		}
 
 		default:

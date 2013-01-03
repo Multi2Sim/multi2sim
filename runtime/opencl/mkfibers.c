@@ -26,8 +26,6 @@
 
 
 
-void exit_work_item(void);
-
 void make_fiber(struct fiber_t *fiber, fiber_proc_t fiber_proc, int num_args, ...)
 {
 	int i;

@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,6 +92,41 @@ void opencl_debug(char *fmt, ...)
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 }
+
+
+cl_int opencl_set_param(const void *src_value, size_t src_size,
+	size_t dest_size, void *dest_value, size_t *size_ret)
+{
+	assert(src_value);
+	if (dest_value && src_size > dest_size)
+		return CL_INVALID_VALUE;
+	if (size_ret)
+		*size_ret = src_size;
+	if (dest_value)
+		memcpy(dest_value, src_value, src_size);
+	return CL_SUCCESS;
+}
+
+
+cl_int opencl_set_string(const char *src_string, size_t dest_size,
+	void *dest_string, size_t *size_ret)
+{
+	size_t src_size = strlen(src_string) + 1;
+	return opencl_set_param(src_string, src_size, dest_size,
+		dest_string, size_ret);
+}
+
+
+int opencl_is_valid_device_type(cl_device_type device_type)
+{
+	return device_type == CL_DEVICE_TYPE_ALL
+		|| (device_type & 
+			(CL_DEVICE_TYPE_GPU 
+			| CL_DEVICE_TYPE_CPU 
+			| CL_DEVICE_TYPE_ACCELERATOR 
+			| CL_DEVICE_TYPE_DEFAULT));
+}
+
 
 
 

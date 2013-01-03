@@ -23,7 +23,7 @@
 #include "device.h"
 
 
-struct clrt_device_type_t *clcpu_create_device_type(void);
+struct opencl_device_type_t *clcpu_create_device_type(void);
 
 
 cl_int clcpu_device_type_init_devices(

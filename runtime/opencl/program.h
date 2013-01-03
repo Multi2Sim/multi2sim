@@ -23,7 +23,7 @@
 
 struct clrt_device_program_t
 {
-	struct clrt_device_type_t *device_type;
+	struct opencl_device_type_t *device_type;
 	void *handle;
 	void *filename;
 };
