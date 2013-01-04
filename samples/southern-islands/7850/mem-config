@@ -1,7 +1,7 @@
 ; L1 cache is 16KB (1 per compute unit)
 [ CacheGeometry si-geo-l1 ]
-Sets = 4
-Assoc = 64
+Sets = 64
+Assoc = 4
 BlockSize = 64
 Latency = 1
 
