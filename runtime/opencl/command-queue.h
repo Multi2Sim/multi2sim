@@ -53,6 +53,9 @@ void opencl_command_queue_free(struct opencl_command_queue_t *command_queue);
 
 void opencl_command_queue_enqueue(struct opencl_command_queue_t *command_queue,
 	struct opencl_command_queue_task_t *task);
+struct opencl_command_queue_task_t *opencl_command_queue_dequeue(
+	struct opencl_command_queue_t *command_queue);
+void opencl_command_queue_flush(struct opencl_command_queue_t *command_queue);
 
 
 
