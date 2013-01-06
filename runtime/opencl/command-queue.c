@@ -26,6 +26,7 @@
 #include "command-queue.h"
 #include "context.h"
 #include "debug.h"
+#include "event.h"
 #include "kernel.h"
 #include "list.h"
 #include "mem.h"
@@ -34,17 +35,35 @@
 
 #define MAX_DIMS 3
 
-struct clrt_mem_transfer_t
+
+/*
+ * Call-back Functions for Command Queue Tasks
+ */
+
+
+/* Memory transfer */
+
+struct opencl_command_queue_task_mem_transfer_t
 {
 	void *dst;
 	void *src;
 	unsigned int size;
 };
 
-
-struct clrt_kernel_run_t
+static void opencl_command_queue_task_mem_transfer_action(void *user_data)
 {
-	cl_device_id device;
+	struct opencl_command_queue_task_mem_transfer_t *mem_transfer = user_data;
+
+	/* Transfer the data */
+	memcpy(mem_transfer->dst, mem_transfer->src, mem_transfer->size);
+}
+
+
+/* Run a kernel */
+
+struct opencl_command_queue_task_kernel_run_t
+{
+	struct opencl_device_t *device;
 	void *kernel; /* device-dependent kernel */
 	cl_uint work_dim; 
 	size_t global_work_offset[MAX_DIMS];
@@ -52,39 +71,38 @@ struct clrt_kernel_run_t
 	size_t local_work_size[MAX_DIMS];
 };
 
+static void opencl_command_queue_task_kernel_run_action(void *user_data)
+{
+	struct opencl_command_queue_task_kernel_run_t *kernel_run = user_data;
+
+	kernel_run->device->device_type->execute_ndrange(
+		kernel_run->device->device,
+		kernel_run->kernel,
+		kernel_run->work_dim,
+		kernel_run->global_work_offset,
+		kernel_run->global_work_size,
+		kernel_run->local_work_size);
+}
+
+
+/* Map a buffer */
+
+struct opencl_command_queue_task_mem_map_t
+{
+	int foo;
+};
+
+static void opencl_command_queue_task_mem_map_action(void *user_data)
+{
+
+}
+
 
 
 
 /*
- * Private Functions
+ * Command Queue Task
  */
-
-void clrt_kernel_run_action(void *data)
-{
-	struct clrt_kernel_run_t *run = data;
-
-	run->device->device_type->execute_ndrange(
-		run->device->device,
-		run->kernel,
-		run->work_dim,
-		run->global_work_offset,
-		run->global_work_size,
-		run->local_work_size);
-}
-
-
-void clrt_mem_transfer_action(void *data)
-{
-	struct clrt_mem_transfer_t *transfer;
-	transfer = (struct clrt_mem_transfer_t *) data;
-	memcpy(transfer->dst, transfer->src, transfer->size);
-}
-
-void clrt_mem_map_action(void *data)
-{
-
-}
-
 
 struct opencl_command_queue_task_t *opencl_command_queue_task_create(
 	struct opencl_command_queue_t *command_queue, 
@@ -138,56 +156,6 @@ void opencl_command_queue_task_free(struct opencl_command_queue_task_t *task)
 
 	/* Free */
 	free(task);
-}
-
-
-void opencl_command_queue_enqueue(struct opencl_command_queue_t *command_queue, 
-	struct opencl_command_queue_task_t *task)
-{
-	pthread_mutex_lock(&command_queue->lock);
-	list_add(command_queue->task_list, task);
-	pthread_mutex_unlock(&command_queue->lock);
-}
-
-
-void opencl_command_queue_flush(struct opencl_command_queue_t *command_queue)
-{
-	pthread_mutex_lock(&command_queue->lock);
-	if (command_queue->task_list->count && !command_queue->process)
-	{
-		command_queue->process = 1;
-		pthread_cond_signal(&command_queue->cond_process);
-	}
-	pthread_mutex_unlock(&command_queue->lock);
-
-}
-
-
-struct opencl_command_queue_task_t *opencl_command_queue_dequeue(struct opencl_command_queue_t *command_queue)
-{
-	struct opencl_command_queue_task_t *task;
-
-	pthread_mutex_lock(&command_queue->lock);
-	
-	/* In order to procede, the list must be processable
-	 * and there must be at least one item present */
-	while (!command_queue->process || !command_queue->task_list->count)
-		pthread_cond_wait(&command_queue->cond_process, &command_queue->lock);
-	
-	/* Dequeue an Item */
-	task = list_remove_at(command_queue->task_list, 0);
-	if (!command_queue->task_list->count)
-		command_queue->process = 0;
-
-	/* If we get the special termination item, return NULL */
-	if (!task->user_data)
-	{
-		opencl_command_queue_task_free(task);
-		task = NULL;
-	}
-
-	pthread_mutex_unlock(&command_queue->lock);
-	return task;
 }
 
 
@@ -266,6 +234,57 @@ void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
 }
 
 
+void opencl_command_queue_enqueue(struct opencl_command_queue_t *command_queue, 
+	struct opencl_command_queue_task_t *task)
+{
+	pthread_mutex_lock(&command_queue->lock);
+	list_add(command_queue->task_list, task);
+	pthread_mutex_unlock(&command_queue->lock);
+}
+
+
+void opencl_command_queue_flush(struct opencl_command_queue_t *command_queue)
+{
+	pthread_mutex_lock(&command_queue->lock);
+	if (command_queue->task_list->count && !command_queue->process)
+	{
+		command_queue->process = 1;
+		pthread_cond_signal(&command_queue->cond_process);
+	}
+	pthread_mutex_unlock(&command_queue->lock);
+
+}
+
+
+struct opencl_command_queue_task_t *opencl_command_queue_dequeue(struct opencl_command_queue_t *command_queue)
+{
+	struct opencl_command_queue_task_t *task;
+
+	pthread_mutex_lock(&command_queue->lock);
+	
+	/* In order to procede, the list must be processable
+	 * and there must be at least one item present */
+	while (!command_queue->process || !command_queue->task_list->count)
+		pthread_cond_wait(&command_queue->cond_process, &command_queue->lock);
+	
+	/* Dequeue an Item */
+	task = list_remove_at(command_queue->task_list, 0);
+	if (!command_queue->task_list->count)
+		command_queue->process = 0;
+
+	/* If we get the special termination item, return NULL */
+	if (!task->user_data)
+	{
+		opencl_command_queue_task_free(task);
+		task = NULL;
+	}
+
+	pthread_mutex_unlock(&command_queue->lock);
+	return task;
+}
+
+
+
 
 
 
@@ -325,7 +344,8 @@ cl_int clRetainCommandQueue(
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
 
-	return opencl_object_retain(command_queue, OPENCL_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
+	return opencl_object_retain(command_queue,
+		OPENCL_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
 }
 
 
@@ -335,7 +355,8 @@ cl_int clReleaseCommandQueue(
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
 
-	return opencl_object_release(command_queue, OPENCL_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
+	return opencl_object_release(command_queue,
+		OPENCL_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
 }
 
 
@@ -375,8 +396,8 @@ cl_int clEnqueueReadBuffer(
 {
 	int status;
 
-	struct clrt_mem_transfer_t *transfer;
 	struct opencl_command_queue_task_t *task;
+	struct opencl_command_queue_task_mem_transfer_t *mem_transfer;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -402,13 +423,14 @@ cl_int clEnqueueReadBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	transfer = xmalloc(sizeof (struct clrt_mem_transfer_t));
-	transfer->src = (char *) buffer->buffer + offset;
-	transfer->dst = (void *) ptr;
-	transfer->size = cb;
+	/* Create user data associated with command queue task */
+	mem_transfer = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_transfer_t));
+	mem_transfer->src = (char *) buffer->buffer + offset;
+	mem_transfer->dst = (void *) ptr;
+	mem_transfer->size = cb;
 
 	task = opencl_command_queue_task_create(command_queue,
-		transfer, clrt_mem_transfer_action, 
+		mem_transfer, opencl_command_queue_task_mem_transfer_action,
 		event, num_events_in_wait_list, 
 		(struct _cl_event **) event_wait_list);
 
@@ -462,8 +484,8 @@ cl_int clEnqueueWriteBuffer(
 {
 	int status;
 
-	struct clrt_mem_transfer_t *transfer;
 	struct opencl_command_queue_task_t *task;
+	struct opencl_command_queue_task_mem_transfer_t *mem_transfer;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -489,27 +511,24 @@ cl_int clEnqueueWriteBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	transfer = xmalloc(sizeof (struct clrt_mem_transfer_t));
+	/* Initialize data associated with the task */
+	mem_transfer = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_transfer_t));
+	mem_transfer->dst = (char *) buffer->buffer + offset;
+	mem_transfer->src = (void *) ptr;
+	mem_transfer->size = cb;
 
-	transfer->dst = (char *) buffer->buffer + offset;
-	transfer->src = (void *) ptr;
-	transfer->size = cb;
-
+	/* Create task and enqueue it */
 	task = opencl_command_queue_task_create(command_queue,
-		transfer, clrt_mem_transfer_action, 
+		mem_transfer, opencl_command_queue_task_mem_transfer_action,
 		event, num_events_in_wait_list, 
 		(struct _cl_event **) event_wait_list);
+	opencl_command_queue_enqueue(command_queue, task);
 
+	/* If it is a blocking write, wait for command queue completion */
 	if (blocking_write)
-	{
-		opencl_command_queue_enqueue(command_queue, task);
 		clFinish(command_queue);
-	}
-	else
-	{
-		opencl_command_queue_enqueue(command_queue, task);
-	}
-		
+
+	/* Success */
 	return CL_SUCCESS;
 }
 
@@ -548,8 +567,8 @@ cl_int clEnqueueCopyBuffer(
 {
 	int status;
 
-	struct clrt_mem_transfer_t *transfer;
 	struct opencl_command_queue_task_t *task;
+	struct opencl_command_queue_task_mem_transfer_t *mem_transfer;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -583,18 +602,20 @@ cl_int clEnqueueCopyBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	transfer = xmalloc(sizeof (struct clrt_mem_transfer_t));
-	transfer->dst = (char *) dst_buffer->buffer + dst_offset;
-	transfer->src = (void *) src_buffer->buffer + src_offset;
-	transfer->size = cb;
+	/* Initialize data associated with the task */
+	mem_transfer = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_transfer_t));
+	mem_transfer->dst = (char *) dst_buffer->buffer + dst_offset;
+	mem_transfer->src = (void *) src_buffer->buffer + src_offset;
+	mem_transfer->size = cb;
 
+	/* Create task and enqueue it */
 	task = opencl_command_queue_task_create(command_queue,
-		transfer, clrt_mem_transfer_action, 
+		mem_transfer, opencl_command_queue_task_mem_transfer_action,
 		event, num_events_in_wait_list, 
 		(struct _cl_event **) event_wait_list);
-
 	opencl_command_queue_enqueue(command_queue, task);
 		
+	/* Success */
 	return CL_SUCCESS;
 }
 
@@ -703,7 +724,7 @@ cl_int clEnqueueCopyBufferToImage(
 }
 
 
-void * clEnqueueMapBuffer(
+void *clEnqueueMapBuffer(
 	cl_command_queue command_queue,
 	cl_mem buffer,
 	cl_bool blocking_map,
@@ -716,7 +737,9 @@ void * clEnqueueMapBuffer(
 	cl_int *errcode_ret)
 {
 	cl_int status;
+
 	struct opencl_command_queue_task_t *task;
+	struct opencl_command_queue_task_mem_map_t *mem_map;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -759,19 +782,26 @@ void * clEnqueueMapBuffer(
 		return NULL;
 	}
 
-	char *data = xmalloc(sizeof (char));
-	task = opencl_command_queue_task_create(
-		command_queue, data, clrt_mem_map_action, event, 
-		num_events_in_wait_list, 
-		(struct _cl_event **) event_wait_list);
+	/* Initialize data associated with the task */
+	mem_map = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_map_t));
 
+	/* Create task and enqueue it */
+	task = opencl_command_queue_task_create(
+		command_queue, mem_map,
+		opencl_command_queue_task_mem_map_action,
+		event, num_events_in_wait_list, 
+		(struct opencl_event_t **) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, task);
+
+	/* If mapping is blocking, flush command queue */
 	if (blocking_map)
 		clFinish(command_queue);
 
+	/* Success */
 	if (errcode_ret)
 		*errcode_ret = CL_SUCCESS;
 	
+	/* Return mapped buffer */
 	return (char *) buffer->buffer + offset;
 }
 
@@ -804,7 +834,9 @@ cl_int clEnqueueUnmapMemObject(
 	cl_event *event)
 {
 	cl_int status;
+
 	struct opencl_command_queue_task_t *task;
+	struct opencl_command_queue_task_mem_map_t *mem_map;
 
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tcommand_queue = %p", command_queue);
@@ -828,13 +860,15 @@ cl_int clEnqueueUnmapMemObject(
 	if (status != CL_SUCCESS)
 		return status;
 
+	/* Initialize data associated with the task */
+	mem_map = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_map_t));
+
+	/* Create task and enqueue */
 	task = opencl_command_queue_task_create(
-		command_queue,
-		xmalloc(1), /* the queue will free this memory after clrt_mem_map_aciton completes */ 
-		clrt_mem_map_action, 
-		event, 
-		num_events_in_wait_list, 
-		(struct _cl_event **) event_wait_list);
+		command_queue, mem_map,
+		opencl_command_queue_task_mem_map_action,
+		event, num_events_in_wait_list, 
+		(struct opencl_event_t **) event_wait_list);
 
 	opencl_command_queue_enqueue(command_queue, task);
 	return CL_SUCCESS;
@@ -853,7 +887,10 @@ cl_int clEnqueueNDRangeKernel(
 	cl_event *event)
 {
 	cl_int status;
+
 	struct opencl_command_queue_task_t *task;
+	struct opencl_command_queue_task_kernel_run_t *kernel_run;
+
 	int i;
 
 	/* Debug */
@@ -868,62 +905,70 @@ cl_int clEnqueueNDRangeKernel(
 	opencl_debug("\tevent_wait_list = %p", event_wait_list);
 	opencl_debug("\tevent = %p", event);
 
+	/* Check valid command queue */
 	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
+	/* Check valid kernel */
 	if (!opencl_object_verify(kernel, OPENCL_OBJECT_KERNEL))
 		return CL_INVALID_KERNEL;
 
+	/* Check valid events */
 	status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
+	/* Check valid work dimensions */
 	if (work_dim > MAX_DIMS)
 		return CL_INVALID_WORK_DIMENSION;
 
-	struct clrt_kernel_run_t *run = xcalloc(1, sizeof *run);
-	run->work_dim = work_dim;
+	/* Allocate data associated with task */
+	kernel_run = xcalloc(1, sizeof(struct opencl_command_queue_task_kernel_run_t));
+	kernel_run->work_dim = work_dim;
+	kernel_run->device = command_queue->device;
 
+	/* Kernel to run */
 	for (i = 0; i < kernel->num_entries; i++)
 		if (kernel->entries[i].device_type == command_queue->device->device_type)
-			run->kernel = kernel->entries[i].kernel;
-
-	if (run->kernel == NULL)
+			kernel_run->kernel = kernel->entries[i].kernel;
+	if (!kernel_run->kernel)
 		return CL_INVALID_VALUE;
-
-	if (command_queue->device->device_type->check_kernel(run->kernel) != CL_SUCCESS)
+	if (command_queue->device->device_type->check_kernel(kernel_run->kernel) != CL_SUCCESS)
 		return CL_INVALID_VALUE;
-
-	run->device = command_queue->device;
-
-	if (global_work_offset)
-		memcpy(run->global_work_offset, global_work_offset, sizeof (size_t) * work_dim);
-
-	memcpy(run->global_work_size, global_work_size, sizeof (size_t) * work_dim);
-
-	if (local_work_size)
-		memcpy(run->local_work_size, local_work_size, sizeof (size_t) * work_dim);
-	else
-		for (i = 0; i < work_dim; i++)
-			run->local_work_size[i] = 1;
 	
-	for (i = work_dim; i < MAX_DIMS; i++)
+	/* Global work offset and size */
+	if (global_work_offset)
+		memcpy(kernel_run->global_work_offset, global_work_offset, sizeof(size_t) * work_dim);
+	memcpy(kernel_run->global_work_size, global_work_size, sizeof(size_t) * work_dim);
+
+	/* Local work size */
+	if (local_work_size)
 	{
-		run->global_work_offset[i] = 0;
-		run->global_work_size[i] = 1;
-		run->local_work_size[i] = 1;
+		memcpy(kernel_run->local_work_size, local_work_size, sizeof(size_t) * work_dim);
+	}
+	else
+	{
+		for (i = 0; i < work_dim; i++)
+			kernel_run->local_work_size[i] = 1;
 	}
 	
+	/* Unused dimensions */
+	for (i = work_dim; i < MAX_DIMS; i++)
+	{
+		kernel_run->global_work_offset[i] = 0;
+		kernel_run->global_work_size[i] = 1;
+		kernel_run->local_work_size[i] = 1;
+	}
+	
+	/* Create task and enqueue */
 	task = opencl_command_queue_task_create(
-		command_queue,
-		run, 
-		clrt_kernel_run_action, 
-		event, 
-		num_events_in_wait_list, 
-		(cl_event *) event_wait_list);
-
+		command_queue, kernel_run, 
+		opencl_command_queue_task_kernel_run_action,
+		event, num_events_in_wait_list, 
+		(struct opencl_event_t **) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, task);
 
+	/* Success */
 	return CL_SUCCESS;
 }
 
