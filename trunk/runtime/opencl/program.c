@@ -35,29 +35,6 @@
 
 
 /*
- * Private Functions
- */
-
-
-void clrt_program_free(void *data)
-{
-	struct _cl_program *program;
-
-	program = (struct _cl_program *) data;
-	int i;
-	for (i = 0; i < program->num_entries; i++)
-	{
-		dlclose(program->entries[i].handle);
-		unlink(program->entries[i].filename);
-		free(program->entries[i].filename);
-	}
-	free(program);
-}
-
-
-
-
-/*
  * Public Functions
  */
 
@@ -68,6 +45,11 @@ struct opencl_program_t *opencl_program_create(void)
 
 	/* Initialize */
 	program = xcalloc(1, sizeof(struct opencl_program_t));
+	program->entry_list = list_create();
+
+	/* Register OpenCL object */
+	opencl_object_create(program, OPENCL_OBJECT_PROGRAM,
+		(opencl_object_free_func_t) opencl_program_free);
 
 	/* Return */
 	return program;
@@ -76,6 +58,20 @@ struct opencl_program_t *opencl_program_create(void)
 
 void opencl_program_free(struct opencl_program_t *program)
 {
+	struct opencl_program_entry_t *entry;
+	int index;
+
+	/* Free program entries (per-device-type info) */
+	LIST_FOR_EACH(program->entry_list, index)
+	{
+		entry = list_get(program->entry_list, index);
+		dlclose(entry->handle);
+		unlink(entry->file_name);
+		free(entry->file_name);
+	}
+
+	/* Free program */
+	list_free(program->entry_list);
 	free(program);
 }
 
@@ -107,10 +103,9 @@ cl_program clCreateProgramWithBinary(
 	cl_int *binary_status,
 	cl_int *errcode_ret)
 {
-	int i;
 	struct opencl_program_t *program;
-	struct opencl_device_type_t **device_types;
-	int num_device_types;
+	
+	int i;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -122,8 +117,10 @@ cl_program clCreateProgramWithBinary(
 	opencl_debug("\tbinary_status = %p", binary_status);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
+	/* Supported arguments */
 	OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 
+	/* Check valid context */
 	if (!context)
 	{
 		if (errcode_ret)
@@ -131,6 +128,7 @@ cl_program clCreateProgramWithBinary(
 		return NULL;
 	}
 
+	/* Check valid arguments */
 	if (!device_list || !num_devices || !lengths || !binaries)
 	{
 		if (errcode_ret)
@@ -138,66 +136,53 @@ cl_program clCreateProgramWithBinary(
 		return NULL;
 	}
 
-	/* Allocate enough room for all device types.
-	 * We don't know how many of them there will be */
-	device_types = xcalloc(opencl_platform->device_type_list->count, sizeof device_types[0]);
-	num_device_types = 0;
+	/* Create program */
+	program = opencl_program_create();
 
+	/* Initialize program entries (per-device-type info) */
 	for (i = 0; i < num_devices; i++)
 	{
-		int j;
+		struct opencl_device_t *device;
+		struct opencl_program_entry_t *entry;
+
+		struct elf_file_t *elf_file;
+		struct elf_section_t *section;
+
+		int f;
 		int found;
+		int section_index;
+
+		/* Get current device */
+		device = device_list[i];
 
 		/* Device must be in context */
-		if (!opencl_context_has_device(context, device_list[i]))
+		if (!opencl_context_has_device(context, device))
 		{
 			if (errcode_ret)
 				*errcode_ret = CL_INVALID_DEVICE;
+			opencl_program_free(program);
 			return NULL;
 		}
 
 		/* Make sure the type of the binary matches */
-		if (!lengths[i] || !binaries[i] || !device_list[i]->device_type->valid_binary(lengths[i], binaries[i]))
+		if (!lengths[i] || !binaries[i] || !device->device_type->valid_binary(lengths[i], binaries[i]))
 		{
 			if (binary_status[i])
 				binary_status[i] = CL_INVALID_VALUE;
 			if (errcode_ret)
 				*errcode_ret = CL_INVALID_VALUE;
-			
+			opencl_program_free(program);
 			return NULL;
 		}
 
-		/* Add device type if not present already */
-		found = 0;
-		for (j = 0; j < num_device_types; j++)
-		{
-			if (device_types[j] == device_list[i]->device_type)
-			{
-				found = 1;
-				break;
-			}
-		}
-		if (!found)
-			device_types[num_device_types++] = device_list[i]->device_type;
-	}
+		/* If the device type if already present, skip */
+		if (list_index_of(program->entry_list, device->device_type) >= 0)
+			continue;
 
-	
-
-	program = opencl_program_create();
-	opencl_object_create(program, OPENCL_OBJECT_PROGRAM, clrt_program_free);
-	program->num_entries = num_devices;
-	program->entries = xmalloc(sizeof program->entries[0] * num_devices);
-	for (i = 0; i < num_device_types; i++)
-	{
-		struct clrt_device_program_t *cur;
-		struct elf_file_t *elf_file;
-		struct elf_section_t *section;
-
-		int section_index;
-		int found;
-		int f;
-
-		cur = program->entries + i;
+		/* Add a new program entry */
+		entry = xcalloc(1, sizeof(struct opencl_program_entry_t));
+		entry->device_type = device->device_type;
+		list_add(program->entry_list, entry);
 
 		/* Load ELF binary */
 		elf_file = elf_file_create_from_buffer((void *) binaries[i], lengths[i],
@@ -220,8 +205,8 @@ cl_program clCreateProgramWithBinary(
 			fatal("%s: no '.text' section in binary", __FUNCTION__);
 
 		/* Extract section to temporary file */
-		cur->filename = xstrdup("./XXXXXX.so");
-		f = mkstemps(cur->filename, 3);
+		entry->file_name = xstrdup("./XXXXXX.so");
+		f = mkstemps(entry->file_name, 3);
 		if (f == -1)
 			fatal("%s: could not create temporary file", __FUNCTION__);
 		if (write(f, section->buffer.ptr, section->buffer.size) != section->buffer.size)
@@ -232,9 +217,8 @@ cl_program clCreateProgramWithBinary(
 		elf_file_free(elf_file);
 
 		/* Load internal binary for dynamic linking */
-		cur->device_type = device_types[i];
-		cur->handle = dlopen(cur->filename, RTLD_NOW);
-		if (!cur->handle)
+		entry->handle = dlopen(entry->file_name, RTLD_NOW);
+		if (!entry->handle)
 			fatal("%s: could not open ELF binary derived from program", __FUNCTION__);		
 
 		/* Success */
@@ -243,8 +227,8 @@ cl_program clCreateProgramWithBinary(
 		if (binary_status)
 			binary_status[0] = CL_SUCCESS;
 	}
-	free(device_types);
 
+	/* Return program */
 	return program;
 }
 

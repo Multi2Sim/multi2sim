@@ -26,28 +26,9 @@
 #include "clrt.h"
 #include "debug.h"
 #include "kernel.h"
+#include "list.h"
 #include "mhandle.h"
 #include "program.h"
-
-
-/*
- * Private Functions 
- */
-
-void clrt_kernel_free(void *data)
-{
-	struct _cl_kernel *kernel = data;
-	int i;
-	for (i = 0; i < kernel->num_entries; i++)
-	{
-		struct clrt_device_kernel_t *cur = kernel->entries + i;
-		cur->device_type->kernel_destroy(cur->kernel);
-	}
-	free(kernel->entries);
-	free(kernel);
-}
-
-
 
 
 /*
@@ -60,6 +41,11 @@ struct opencl_kernel_t *opencl_kernel_create(void)
 
 	/* Initialize */
 	kernel = xcalloc(1, sizeof(struct opencl_kernel_t));
+	kernel->entry_list = list_create();
+
+	/* Register OpenCL object */
+	opencl_object_create(kernel, OPENCL_OBJECT_KERNEL,
+		(opencl_object_free_func_t) opencl_kernel_free);
 
 	/* Return */
 	return kernel;
@@ -68,6 +54,18 @@ struct opencl_kernel_t *opencl_kernel_create(void)
 
 void opencl_kernel_free(struct opencl_kernel_t *kernel)
 {
+	struct opencl_kernel_entry_t *entry;
+	int index;
+
+	/* Free kernel entries */
+	LIST_FOR_EACH(kernel->entry_list, index)
+	{
+		entry = list_get(kernel->entry_list, index);
+		entry->device_type->kernel_destroy(entry->kernel);
+	}
+
+	/* Free kernel */
+	list_free(kernel->entry_list);
 	free(kernel);
 }
 
@@ -83,12 +81,19 @@ cl_kernel clCreateKernel(
 	const char *kernel_name,
 	cl_int *errcode_ret)
 {
+	struct opencl_kernel_t *kernel;
+	struct opencl_kernel_entry_t *kernel_entry;
+	struct opencl_program_entry_t *program_entry;
+
+	int i;
+
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tprogram = %p", program);
 	opencl_debug("\tkernel_name = %s", kernel_name);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
+	/* Check valid program */
 	if (!opencl_object_verify(program, OPENCL_OBJECT_PROGRAM))
 	{
 		if (errcode_ret)
@@ -96,6 +101,7 @@ cl_kernel clCreateKernel(
 		return NULL;
 	}
 
+	/* Check valid kernel name */
 	if (!kernel_name)
 	{
 		if (errcode_ret)
@@ -103,20 +109,26 @@ cl_kernel clCreateKernel(
 		return NULL;
 	}
 
-	cl_kernel kernel = xmalloc(sizeof (struct _cl_kernel));
-	opencl_object_create(kernel, OPENCL_OBJECT_KERNEL, clrt_kernel_free);
+	/* Create kernel */
+	kernel = opencl_kernel_create();
 
-	kernel->num_entries = program->num_entries;
-	kernel->entries = xmalloc(sizeof kernel->entries[0] * kernel->num_entries);
-	int i;
-
-	for (i = 0; i < kernel->num_entries; i++)
+	/* Copy kernel entries from program entries */
+	LIST_FOR_EACH(program->entry_list, i)
 	{
-		struct clrt_device_kernel_t *cur = kernel->entries + i;
-		struct clrt_device_program_t *prog = program->entries + i;
-		cur->device_type = prog->device_type;
-		cur->kernel = cur->device_type->create_kernel(prog->handle, kernel_name, errcode_ret);
+		/* Get program entry to copy info from */
+		program_entry = list_get(program->entry_list, i);
+
+		/* Create kernel entry */
+		kernel_entry = xcalloc(1, sizeof(struct opencl_kernel_entry_t));
+		kernel_entry->device_type = program_entry->device_type;
+		kernel_entry->kernel = kernel_entry->device_type->create_kernel(program_entry->handle,
+			kernel_name, errcode_ret);
+
+		/* Add kernel entry */
+		list_add(kernel->entry_list, kernel_entry);
 	}
+
+	/* Return kernel */
 	return kernel;
 }
 
@@ -159,7 +171,11 @@ cl_int clSetKernelArg(
 	cl_uint arg_index,
 	size_t arg_size,
 	const void *arg_value)
-{	
+{
+	struct opencl_kernel_entry_t *entry;
+	cl_int status;
+	int i;
+
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tkernel = %p", kernel);
@@ -167,19 +183,21 @@ cl_int clSetKernelArg(
 	opencl_debug("\ttarg_size = %u", arg_size);
 	opencl_debug("\targ_value = %p", arg_value);
 
-	int i;
-
+	/* Check valid kernel */
 	if (!opencl_object_verify(kernel, OPENCL_OBJECT_KERNEL))
 		return CL_INVALID_KERNEL;
 
-	for (i = 0; i < kernel->num_entries; i++)
+	/* Set argument for all devices */
+	LIST_FOR_EACH(kernel->entry_list, i)
 	{
-		struct clrt_device_kernel_t *cur = kernel->entries + i;
-		cl_int status = cur->device_type->set_kernel_arg(cur->kernel, arg_index, arg_size, arg_value);
+		entry = list_get(kernel->entry_list, i);
+		status = entry->device_type->set_kernel_arg(entry->kernel,
+			arg_index, arg_size, arg_value);
 		if (status != CL_SUCCESS)
 			return status;
 	}
 
+	/* Success */
 	return 0;
 }
 
@@ -204,10 +222,12 @@ cl_int clGetKernelWorkGroupInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
+	/* Check valid kernel */
 	if (!opencl_object_verify(kernel, OPENCL_OBJECT_KERNEL))
 		return CL_INVALID_KERNEL;
 
-	if (!verify_device(device))
+	/* Check valid device */
+	if (!opencl_device_verify(device))
 		return CL_INVALID_DEVICE;
 
 	switch (param_name)

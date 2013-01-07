@@ -87,6 +87,23 @@ static void opencl_device_matcher(struct opencl_device_t *device, void *user_dat
 }
 
 
+struct opencl_device_finder_info_t
+{
+	struct opencl_device_t *device;
+	int found;
+};
+
+
+static void opencl_device_finder(struct opencl_device_t *device, void *user_data)
+{
+	struct opencl_device_finder_info_t *info = user_data;
+
+	if (device == info->device)
+		info->found = 1;
+}
+
+
+
 
 
 /*
@@ -117,27 +134,14 @@ void opencl_device_free(struct opencl_device_t *device)
 }
 
 
-struct has_device_info_t
+int opencl_device_verify(struct opencl_device_t *device)
 {
-	cl_device_id device;
-	int found;
-};
-
-void device_finder(struct opencl_device_t *device, void *user_data)
-{
-	struct has_device_info_t *info = user_data;
-
-	if (device == info->device)
-		info->found = 1;
-}
-
-int verify_device(cl_device_id device)
-{
-	struct has_device_info_t info;
+	struct opencl_device_finder_info_t info;
 
 	info.device = device;
 	info.found = 0;	
-	opencl_platform_for_each_device(opencl_platform, device_finder, &info);
+	opencl_platform_for_each_device(opencl_platform,
+		opencl_device_finder, &info);
 	return info.found;
 }
 
@@ -204,7 +208,7 @@ cl_int clGetDeviceInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	if (!verify_device(device))
+	if (!opencl_device_verify(device))
 		return CL_INVALID_DEVICE;
 
 	switch (param_name)

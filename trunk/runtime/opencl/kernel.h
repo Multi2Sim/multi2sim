@@ -21,12 +21,21 @@
 #define RUNTIME_OPENCL_KERNEL_H
 
 
+/* Kernel entries (one per device type) */
+struct opencl_kernel_entry_t
+{
+	struct opencl_device_type_t *device_type;
+	void *kernel;
+};
+
+
 /* Kernel object */
 #define opencl_kernel_t _cl_kernel
 struct _cl_kernel
 {
-	int num_entries;
-	struct clrt_device_kernel_t *entries;
+	/* List of kernel entries, including per-device-type info. Each element
+	 * is of type 'opencl_kernel_entry_t'. */
+	struct list_t *entry_list;
 };
 
 

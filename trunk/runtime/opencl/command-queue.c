@@ -890,6 +890,7 @@ cl_int clEnqueueNDRangeKernel(
 
 	struct opencl_command_queue_task_t *task;
 	struct opencl_command_queue_task_kernel_run_t *kernel_run;
+	struct opencl_kernel_entry_t *kernel_entry;
 
 	int i;
 
@@ -928,9 +929,12 @@ cl_int clEnqueueNDRangeKernel(
 	kernel_run->device = command_queue->device;
 
 	/* Kernel to run */
-	for (i = 0; i < kernel->num_entries; i++)
-		if (kernel->entries[i].device_type == command_queue->device->device_type)
-			kernel_run->kernel = kernel->entries[i].kernel;
+	LIST_FOR_EACH(kernel->entry_list, i)
+	{
+		kernel_entry = list_get(kernel->entry_list, i);
+		if (kernel_entry->device_type == command_queue->device->device_type)
+			kernel_run->kernel = kernel_entry->kernel;
+	}
 	if (!kernel_run->kernel)
 		return CL_INVALID_VALUE;
 	if (command_queue->device->device_type->check_kernel(kernel_run->kernel) != CL_SUCCESS)
