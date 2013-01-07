@@ -21,11 +21,12 @@
 #define RUNTIME_OPENCL_PROGRAM_H
 
 
-struct clrt_device_program_t
+/* Entry of a program associated with one device type. */
+struct opencl_program_entry_t
 {
 	struct opencl_device_type_t *device_type;
 	void *handle;
-	void *filename;
+	char *file_name;
 };
 
 
@@ -33,8 +34,8 @@ struct clrt_device_program_t
 #define opencl_program_t _cl_program
 struct _cl_program
 {
-	int num_entries;
-	struct clrt_device_program_t *entries;
+	/* Program entries, one per device type, of type 'opencl_program_entry_t' */
+	struct list_t *entry_list;
 };
 
 

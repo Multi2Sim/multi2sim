@@ -129,15 +129,8 @@ void copyProperties(void *dest, const void *src, size_t size, size_t numObjs);
  */
 
 
-struct clrt_device_kernel_t
-{
-	struct opencl_device_type_t *device_type;
-	void *kernel;
-};
-
 /* Device Visitor Type */
 typedef void (*device_visitor_t)(void *ctx, cl_device_id device, struct opencl_device_type_t *device_type);
-int verify_device(cl_device_id device);
 
 
 

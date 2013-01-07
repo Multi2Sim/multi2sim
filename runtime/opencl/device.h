@@ -105,6 +105,8 @@ struct _cl_device_id
 struct opencl_device_t *opencl_device_create(void);
 void opencl_device_free(struct opencl_device_t *device);
 
+int opencl_device_verify(struct opencl_device_t *device);
+
 
 
 /* Interface that each device driver must implement */
