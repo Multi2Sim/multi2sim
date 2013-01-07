@@ -103,6 +103,7 @@ cl_context clCreateContext(
 	opencl_debug("\tuser_data = %p", user_data);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
+	/* Supported combinations of arguments */
 	OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 	OPENCL_ARG_NOT_SUPPORTED_NEQ((int) pfn_notify, 0);
 	OPENCL_ARG_NOT_SUPPORTED_NEQ((int) user_data, 0);
@@ -126,7 +127,7 @@ cl_context clCreateContext(
 	/* Check devices given */
 	for (i = 0; i < num_devices; i++)
 	{
-		if (!verify_device(devices[i]))
+		if (!opencl_device_verify(devices[i]))
 		{
 			if (errcode_ret)
 				*errcode_ret = CL_INVALID_DEVICE;
