@@ -20,16 +20,18 @@
 #ifndef RUNTIME_OPENCL_EVENT_H
 #define RUNTIME_OPENCL_EVENT_H
 
+#include "clrt.h"
+
 
 /* Event object */
-#define opencl_event_t _cl_event
-struct _cl_event
+struct opencl_event_t
 {
 	cl_int status;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
-	struct _cl_command_queue *queue;
-	struct _cl_context *context;
+
+	struct opencl_command_queue_t *command_queue;
+	struct opencl_context_t *context;
 
 	/* Profiling Information */
 	cl_ulong time_queued;
@@ -40,8 +42,11 @@ struct _cl_event
 
 
 /* Create/free */
-struct opencl_event_t *opencl_event_create(void);
+struct opencl_event_t *opencl_event_create(struct opencl_command_queue_t *command_queue);
 void opencl_event_free(struct opencl_event_t *event);
+
+void opencl_event_set_status(struct opencl_event_t *event, cl_int status);
+void opencl_event_wait(struct opencl_event_t *event);
 
 
 #endif

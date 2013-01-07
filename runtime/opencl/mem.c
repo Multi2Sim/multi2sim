@@ -27,46 +27,11 @@
 #include "debug.h"
 #include "mem.h"
 #include "mhandle.h"
+#include "object.h"
 
 
-
-#define MEMORY_ALIGN 16 /* memory alignment for buffers */
-
-/*
- * Private Functions
- */
-
-void *clrt_buffer_allocate(size_t size)
-{
-	void *ptr;
-	if (posix_memalign(&ptr, MEMORY_ALIGN, size) != 0)
-		return NULL;
-	return ptr;
-}
-
-
-void clrt_buffer_free(void *buffer)
-{
-	free(buffer);
-}
-
-
-void clrt_mem_free(void *data)
-{
-	struct _cl_mem *mem = (struct _cl_mem *) data;
-
-	clrt_buffer_free(mem->buffer);
-	free(mem);
-}
-
-void *clrt_get_address_of_buffer_object(cl_mem buffer)
-{
-	if (!opencl_object_verify(buffer, OPENCL_OBJECT_MEM))
-		return NULL;
-	else
-		return buffer->buffer;
-}
-
+/* Memory alignment for buffers */
+#define MEMORY_ALIGN 16
 
 
 
@@ -80,6 +45,10 @@ struct opencl_mem_t *opencl_mem_create(void)
 
 	/* Initialize */
 	mem = xcalloc(1, sizeof(struct opencl_mem_t));
+	
+	/* Register OpenCL object */
+	opencl_object_create(mem, OPENCL_OBJECT_MEM,
+		(opencl_object_free_func_t) opencl_mem_free);
 
 	/* Return */
 	return mem;
@@ -88,7 +57,23 @@ struct opencl_mem_t *opencl_mem_create(void)
 
 void opencl_mem_free(struct opencl_mem_t *mem)
 {
+	/* Free buffer if initialized */
+	if (mem->buffer)
+		free(mem->buffer);
+	
+	/* Free memory object */
 	free(mem);
+}
+
+
+void *opencl_mem_get_buffer(struct opencl_mem_t *mem)
+{
+	/* Check memory object */
+	if (!opencl_object_verify(mem, OPENCL_OBJECT_MEM))
+		return NULL;
+
+	/* Return buffer */
+	return mem->buffer;
 }
 
 
@@ -105,7 +90,7 @@ cl_mem clCreateBuffer(
 	void *host_ptr,
 	cl_int *errcode_ret)
 {
-	struct _cl_mem  *mem;
+	struct opencl_mem_t *mem;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -115,6 +100,7 @@ cl_mem clCreateBuffer(
 	opencl_debug("\thost_ptr = %p", host_ptr);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
+	/* Check context */
 	if (!opencl_object_verify(context, OPENCL_OBJECT_CONTEXT))
 	{
 		if (errcode_ret)
@@ -122,28 +108,34 @@ cl_mem clCreateBuffer(
 		return NULL;
 	}
 
-	if (((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR)) && !host_ptr)
+	/* Check combination of arguments */
+	if (((flags & CL_MEM_USE_HOST_PTR) ||
+		(flags & CL_MEM_COPY_HOST_PTR)) && !host_ptr)
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_HOST_PTR;
 		return NULL;
 	}
 
-	mem = xmalloc(sizeof (struct _cl_mem));
-	opencl_object_create(mem, OPENCL_OBJECT_MEM, clrt_mem_free);
+	/* Create memory object */
+	mem = opencl_mem_create();
 
-	/* Because of alignment reasons, we are going to 'cache' buffers even when the user
-         * specifies CL_MEM_UES_HOST_PTR */
-
-	mem->buffer = clrt_buffer_allocate(size);
+	/* Because of alignment reasons, we are going to 'cache' buffers even
+	 * when the user specifies CL_MEM_USE_HOST_PTR */
 	mem->size = size;
+	if (posix_memalign(&mem->buffer, MEMORY_ALIGN, size))
+		fatal("%s: out of memory", __FUNCTION__);
+	mhandle_register_ptr(mem->buffer, mem->size);
 
+	/* Copy buffer contents */
 	if ((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR))
 		memcpy(mem->buffer, host_ptr, size);
 
+	/* Success */
 	if (errcode_ret)
 		*errcode_ret = CL_SUCCESS;
 		
+	/* Return memory object */
 	return mem;
 }
 
@@ -251,5 +243,4 @@ cl_int clSetMemObjectDestructorCallback(
 	__OPENCL_NOT_IMPL__
 	return 0;
 }
-
 

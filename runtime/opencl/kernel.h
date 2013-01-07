@@ -20,6 +20,8 @@
 #ifndef RUNTIME_OPENCL_KERNEL_H
 #define RUNTIME_OPENCL_KERNEL_H
 
+#include "clrt.h"
+
 
 /* Kernel entries (one per device type) */
 struct opencl_kernel_entry_t
@@ -30,8 +32,7 @@ struct opencl_kernel_entry_t
 
 
 /* Kernel object */
-#define opencl_kernel_t _cl_kernel
-struct _cl_kernel
+struct opencl_kernel_t
 {
 	/* List of kernel entries, including per-device-type info. Each element
 	 * is of type 'opencl_kernel_entry_t'. */

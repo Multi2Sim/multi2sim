@@ -28,6 +28,7 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "device.h"
 #include "mhandle.h"
 #include "platform.h"
 

@@ -27,8 +27,20 @@
 #include <elf.h>
 
 #include "../include/CL/cl.h"
-#include "device.h"
-#include "object.h"
+
+
+
+/* OpenCL pseudo-types */
+#define opencl_platform_t _cl_platform_id
+#define opencl_device_t _cl_device_id
+#define opencl_context_t _cl_context
+#define opencl_command_queue_t _cl_command_queue
+#define opencl_mem_t _cl_mem
+#define opencl_program_t _cl_program
+#define opencl_kernel_t _cl_kernel
+#define opencl_event_t _cl_event
+#define opencl_sampler_t _cl_sampler
+
 
 
 /*
@@ -96,13 +108,6 @@ void *clrt_buffer_allocate(size_t size);
 void clrt_buffer_free(void *buffer);
 
 
-/*
- * Event function declrations
- */
-
-void clrt_event_set_status(struct _cl_event *event, cl_int status);
-struct _cl_event *clrt_event_create(struct _cl_command_queue *queue);
-int clrt_event_wait_list_check(unsigned int num_events, struct _cl_event * const *event_list);
 
 /*
  * Helper Functions 
@@ -115,22 +120,13 @@ cl_int opencl_set_string(const char *src_string, size_t dest_size,
 	void *dest_string, size_t *size_ret);
 int opencl_is_valid_device_type(cl_device_type device_type);
 
+int opencl_event_wait_list_check(unsigned int num_events, const cl_event *event_list);
+
 /* get the number of properties in a properties list */
 size_t getPropertiesCount(const void *properties, size_t prop_size);
 
 /* copy a properties list */
 void copyProperties(void *dest, const void *src, size_t size, size_t numObjs);
-
-
-
-
-/*
- * OpenCL Types
- */
-
-
-/* Device Visitor Type */
-typedef void (*device_visitor_t)(void *ctx, cl_device_id device, struct opencl_device_type_t *device_type);
 
 
 
