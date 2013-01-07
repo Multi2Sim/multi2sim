@@ -27,71 +27,81 @@
 #include "event.h"
 #include "list.h"
 #include "mhandle.h"
-
-
-
-struct clrt_finish_t
-{
-	char c;
-};
+#include "object.h"
 
 
 /*
- * Private Functions 
+ * Call-back Functions for Command Queue Tasks
  */
 
-void clrt_finish_action(void *data)
+
+struct opencl_command_queue_task_finish_t
 {
-	/* do nothing. */
+	int foo;
+};
+
+static void opencl_command_queue_task_finish_action(void *user_data)
+{
+	struct opencl_command_queue_task_finish_t *finish = user_data;
+
+	free(finish);
 }
 
 
-void clrt_wait(struct _cl_event *event)
+
+
+/*
+ * Public Functions 
+ */
+
+struct opencl_event_t *opencl_event_create(struct opencl_command_queue_t *command_queue)
 {
-	if (event->queue)
-	{
-		pthread_mutex_lock(&event->queue->lock);
-		if (event->queue->task_list->count && !event->queue->process)
-		{
-			event->queue->process = 1;
-			pthread_cond_signal(&event->queue->cond_process);
-		}
-		pthread_mutex_unlock(&event->queue->lock);
-	}
-	pthread_mutex_lock(&event->mutex);
-	while (event->status != CL_COMPLETE)
-		pthread_cond_wait(&event->cond, &event->mutex);
-	pthread_mutex_unlock(&event->mutex);
+	struct opencl_event_t *event;
+
+	/* Initialize */
+	event = xcalloc(1, sizeof(struct opencl_event_t));
+	event->status = CL_QUEUED;
+	event->command_queue = command_queue;
+	pthread_mutex_init(&event->mutex, NULL);
+	pthread_cond_init(&event->cond, NULL);
+
+	/* Register OpenCL object */
+	opencl_object_create(event, OPENCL_OBJECT_EVENT,
+		(opencl_object_free_func_t) opencl_event_free);
+
+	/* Return */
+	return event;
 }
 
 
-void clrt_event_free(void *data)
+void opencl_event_free(struct opencl_event_t *event)
 {
-	struct _cl_event *event;
-
-	event = (struct _cl_event *) data;
 	pthread_mutex_destroy(&event->mutex);
 	pthread_cond_destroy(&event->cond);
 	free(event);
 }
 
 
-void clrt_event_set_status(struct _cl_event *event, cl_int status)
+void opencl_event_set_status(struct opencl_event_t *event, cl_int status)
 {
+	struct timeval t;
+
+	/* Lock and set new status */
 	pthread_mutex_lock(&event->mutex);
 	event->status = status;
 
-	if (event->queue && (event->queue->properties & CL_QUEUE_PROFILING_ENABLE))
+	/* Update times */
+	if (event->command_queue && (event->command_queue->properties & CL_QUEUE_PROFILING_ENABLE))
 	{
-		struct timeval t;
 		gettimeofday(&t, NULL);
 		cl_ulong cltime = t.tv_sec;
 		cltime *= 1000000;
 		cltime += t.tv_usec;
 		cltime *= 1000;
 
-		/* If the framework has set the end time, but hasn't set any of the earlier ones
-		   then it will fall through the cases, setting those times too */
+		/* If the framework has set the end time, but hasn't set any of
+		 * the earlier ones then it will fall through the cases, setting
+		 * those times too */
 		switch (status)
 		{
 		case CL_QUEUED:
@@ -112,75 +122,37 @@ void clrt_event_set_status(struct _cl_event *event, cl_int status)
 		}
 	}
 
+	/* If event completed, notify dependences */
 	if (status == CL_COMPLETE)
 		pthread_cond_broadcast(&event->cond);
 
+	/* Unlock */
 	pthread_mutex_unlock(&event->mutex);
 }
 
 
-struct _cl_event *clrt_event_create(struct _cl_command_queue *queue)
+void opencl_event_wait(struct opencl_event_t *event)
 {
-	struct _cl_event *event;
-
-	event = xmalloc(sizeof (struct _cl_event));
-	opencl_object_create(event, OPENCL_OBJECT_EVENT, clrt_event_free);
-	
-
-	event->status = CL_QUEUED;
-	event->queue = queue;
-	event->context = NULL; // figure that out later
-	event->time_queued = 0;
-	event->time_submit = 0;
-	event->time_start = 0;
-	event->time_end = 0;
-	pthread_mutex_init(&event->mutex, NULL);
-	pthread_cond_init(&event->cond, NULL);
-	return event;
-}
-
-
-int clrt_event_wait_list_check(
-	unsigned int num_events, 
-	struct _cl_event * const *event_list)
-{
-	unsigned int i;
-
-	if ((!event_list && num_events) 
-		|| (event_list && !num_events))
-		return CL_INVALID_EVENT_WAIT_LIST;
-
-	/* Verify that the parameter list is valid up-front */
-	for (i = 0; i < num_events; i++)
+	if (event->command_queue)
 	{
-		if (!opencl_object_verify(event_list[i], OPENCL_OBJECT_EVENT))
-			return CL_INVALID_EVENT_WAIT_LIST;
+		pthread_mutex_lock(&event->command_queue->lock);
+		if (event->command_queue->task_list->count && !event->command_queue->process)
+		{
+			event->command_queue->process = 1;
+			pthread_cond_signal(&event->command_queue->cond_process);
+		}
+		pthread_mutex_unlock(&event->command_queue->lock);
 	}
-	return CL_SUCCESS;
-}
 
+	/* Lock */
+	pthread_mutex_lock(&event->mutex);
 
+	/* Wait until event completes */
+	while (event->status != CL_COMPLETE)
+		pthread_cond_wait(&event->cond, &event->mutex);
 
-
-/*
- * Public Functions 
- */
-
-struct opencl_event_t *opencl_event_create(void)
-{
-	struct opencl_event_t *event;
-
-	/* Initialize */
-	event = xcalloc(1, sizeof(struct opencl_event_t));
-
-	/* Return */
-	return event;
-}
-
-
-void opencl_event_free(struct opencl_event_t *event)
-{
-	free(event);
+	/* Unlock */
+	pthread_mutex_unlock(&event->mutex);
 }
 
 
@@ -212,7 +184,7 @@ cl_int clWaitForEvents(
 	}
 
 	for (i = 0; i < num_events; i++)
-		clrt_wait(event_list[i]);
+		opencl_event_wait(event_list[i]);
 
 	return CL_SUCCESS;
 }
@@ -231,7 +203,7 @@ cl_int clGetEventInfo(
 	switch (param_name)
 	{
 		case CL_EVENT_COMMAND_QUEUE:
-			return opencl_set_param(&event->queue, sizeof event->queue,
+			return opencl_set_param(&event->command_queue, sizeof event->command_queue,
 				param_value_size, param_value, param_value_size_ret);
 
 		case CL_EVENT_CONTEXT:
@@ -266,16 +238,14 @@ cl_event clCreateUserEvent(
 	cl_context context,
 	cl_int *errcode_ret)
 {
-	struct _cl_event *event;
+	struct opencl_event_t *event;
 	
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tcontext = %p", context);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
-	event = xmalloc(sizeof (struct _cl_event));
-	
-	/* check to see that context is valid */
+	/* Check valid context */
 	if (!opencl_object_verify(context, OPENCL_OBJECT_CONTEXT))
 	{
 		if (errcode_ret)
@@ -283,11 +253,10 @@ cl_event clCreateUserEvent(
 		return NULL;
 	}
 
-	opencl_object_create(event, OPENCL_OBJECT_EVENT, clrt_event_free);
-	
-	event->status = CL_QUEUED;
-	pthread_mutex_init(&event->mutex, NULL);
-	pthread_cond_init(&event->cond, NULL);
+	/* Initialize event */
+	event = opencl_event_create(NULL);
+
+	/* Return event */
 	return event;
 }
 
@@ -322,16 +291,20 @@ cl_int clSetUserEventStatus(
 	opencl_debug("\tevent = %p", event);
 	opencl_debug("\texecution_status = %d", execution_status);
 
-	if (!opencl_object_verify(event, OPENCL_OBJECT_EVENT) || event->queue)
+	/* Check event */
+	if (!opencl_object_verify(event, OPENCL_OBJECT_EVENT) || event->command_queue)
 		return CL_INVALID_EVENT;
 
+	/* Check execution status */
 	if (execution_status != CL_COMPLETE && execution_status >= 0)
 		return CL_INVALID_VALUE;
-
 	if (event->status == CL_COMPLETE || event->status < 0)
 		return CL_INVALID_OPERATION;
 
-	clrt_event_set_status(event, execution_status);
+	/* Update event status */
+	opencl_event_set_status(event, execution_status);
+
+	/* Success */
 	return CL_SUCCESS;
 
 }
@@ -358,7 +331,7 @@ cl_int clGetEventProfilingInfo(
 	if (!opencl_object_verify(event, OPENCL_OBJECT_EVENT))
 		return CL_INVALID_EVENT;
 
-	if (!event->queue || !(event->queue->properties & CL_QUEUE_PROFILING_ENABLE))
+	if (!event->command_queue || !(event->command_queue->properties & CL_QUEUE_PROFILING_ENABLE))
 		return CL_PROFILING_INFO_NOT_AVAILABLE;
 
 	if (param_value_size_ret)
@@ -422,27 +395,29 @@ cl_int clFlush(
 cl_int clFinish(
 	cl_command_queue command_queue)
 {
-	struct clrt_finish_t *finish;
+	struct opencl_command_queue_task_finish_t *finish;
 	struct opencl_command_queue_task_t *task;
+	struct opencl_event_t *event;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tcommand_queue = %p", command_queue);
 
+	/* Check command queue */
 	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
-	cl_event event = clrt_event_create(command_queue);
+	/* Create event */
+	event = opencl_event_create(command_queue);
 
-	finish = xmalloc(sizeof (struct clrt_finish_t));
+	/* Create task and enqueue */
+	finish = xcalloc(1, sizeof(struct opencl_command_queue_task_finish_t));
 	task = opencl_command_queue_task_create(
-		command_queue, finish,
-		clrt_finish_action, &event, 
-		0, NULL);
-
+		command_queue, finish, opencl_command_queue_task_finish_action,
+		&event, 0, NULL);
 	opencl_command_queue_enqueue(command_queue, task);
 
-	clrt_wait(event);
+	opencl_event_wait(event);
 
 	clReleaseEvent(event);
 

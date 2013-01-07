@@ -24,8 +24,10 @@
 #include "clrt.h"
 #include "context.h"
 #include "debug.h"
+#include "device.h"
 #include "list.h"
 #include "mhandle.h"
+#include "object.h"
 #include "platform.h"
 
 

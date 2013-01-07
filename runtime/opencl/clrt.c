@@ -26,7 +26,9 @@
 
 #include "clrt.h"
 #include "debug.h"
+#include "event.h"
 #include "mhandle.h"
+#include "object.h"
 
 
 
@@ -126,6 +128,28 @@ int opencl_is_valid_device_type(cl_device_type device_type)
 			| CL_DEVICE_TYPE_ACCELERATOR 
 			| CL_DEVICE_TYPE_DEFAULT));
 }
+
+
+int opencl_event_wait_list_check(
+	unsigned int num_events, 
+	const cl_event *event_wait_list)
+{
+	int i;
+
+	if ((!event_wait_list && num_events) 
+		|| (event_wait_list && !num_events))
+		return CL_INVALID_EVENT_WAIT_LIST;
+
+	/* Verify that the parameter list is valid up-front */
+	for (i = 0; i < num_events; i++)
+	{
+		if (!opencl_object_verify(event_wait_list[i], OPENCL_OBJECT_EVENT))
+			return CL_INVALID_EVENT_WAIT_LIST;
+	}
+	return CL_SUCCESS;
+}
+
+
 
 
 
