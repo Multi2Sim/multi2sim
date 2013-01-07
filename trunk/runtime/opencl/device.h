@@ -167,10 +167,6 @@ struct opencl_device_type_t
 /* create a device type */
 typedef struct opencl_device_type_t *(*opencl_device_type_create_t)(void);
 
-/* Calls that the device can make to the OpenCL Runtime */
-
-void *clrt_get_address_of_buffer_object(cl_mem buffer);
-
 
 #endif
 

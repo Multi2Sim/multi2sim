@@ -27,7 +27,9 @@
 #include "clcpu.h"
 #include "clcpu-program.h"
 #include "debug.h"
+#include "mem.h"
 #include "mhandle.h"
+
 
 #define MAX_SSE_REG_PARAMS 4
 #define SSE_REG_SIZE_IN_WORDS (16 / sizeof (size_t))
@@ -285,7 +287,7 @@ cl_int clcpu_device_type_set_kernel_arg(void *k, cl_uint arg_index, size_t arg_s
 		kernel->stack_params[param_info->stack_offset] = arg_size;
 	else if (param_info->mem_type == CLCPU_MEM_GLOBAL || param_info->mem_type == CLCPU_MEM_CONSTANT)
 	{
-		void *addr = clrt_get_address_of_buffer_object(*(cl_mem *) arg_value);
+		void *addr = opencl_mem_get_buffer(*(cl_mem *) arg_value);
 		if (!addr)
 			return CL_INVALID_MEM_OBJECT;
 		memcpy(kernel->stack_params + param_info->stack_offset, &addr, sizeof addr);

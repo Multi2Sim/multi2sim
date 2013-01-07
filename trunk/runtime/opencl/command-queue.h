@@ -20,17 +20,15 @@
 #ifndef RUNTIME_OPENCL_COMMAND_QUEUE_H
 #define RUNTIME_OPENCL_COMMAND_QUEUE_H
 
+#include "clrt.h"
 
 
 /*
  * Command Queue
  */
-
 struct opencl_command_queue_task_t;
 
-/* Command queue object */
-#define opencl_command_queue_t _cl_command_queue
-struct _cl_command_queue
+struct opencl_command_queue_t
 {
 	struct opencl_device_t *device;
 
@@ -70,15 +68,15 @@ struct opencl_command_queue_task_t
 {
 	void *user_data;
 	opencl_command_queue_action_func_t action_func;
-	cl_event done_event;
+	struct opencl_event_t *done_event;
 	int num_wait_events;
-	cl_event *wait_events;
+	struct opencl_event_t **wait_events;
 };
 
 struct opencl_command_queue_task_t *opencl_command_queue_task_create(
 	struct opencl_command_queue_t *command_queue, 
 	void *user_data, opencl_command_queue_action_func_t action_func, 
-	cl_event *done, int num_wait, cl_event *waits);
+	cl_event *done_event_ptr, int num_wait, cl_event *waits);
 void opencl_command_queue_trask_free(struct opencl_command_queue_task_t *task);
 
 

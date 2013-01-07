@@ -26,11 +26,13 @@
 #include "command-queue.h"
 #include "context.h"
 #include "debug.h"
+#include "device.h"
 #include "event.h"
 #include "kernel.h"
 #include "list.h"
 #include "mem.h"
 #include "mhandle.h"
+#include "object.h"
 
 
 #define MAX_DIMS 3
@@ -107,7 +109,7 @@ static void opencl_command_queue_task_mem_map_action(void *user_data)
 struct opencl_command_queue_task_t *opencl_command_queue_task_create(
 	struct opencl_command_queue_t *command_queue, 
 	void *user_data, opencl_command_queue_action_func_t action_func, 
-	cl_event *done, int num_wait, cl_event *waits)
+	cl_event *done_event_ptr, int num_wait, cl_event *waits)
 {
 	struct opencl_command_queue_task_t *task;
 	int i;
@@ -125,11 +127,11 @@ struct opencl_command_queue_task_t *opencl_command_queue_task_create(
 			fatal("%s: clRetainEvent failed on prerequisite event", __FUNCTION__);
 
 	/* Completion event */
-	if (done)
+	if (done_event_ptr)
 	{
-		task->done_event = clrt_event_create(command_queue);
-		*done = task->done_event;
-		if (clRetainEvent(*done) != CL_SUCCESS)
+		task->done_event = opencl_event_create(command_queue);
+		*done_event_ptr = task->done_event;
+		if (clRetainEvent(*done_event_ptr) != CL_SUCCESS)
 			fatal("%s: clRetainEvent failed on done event", __FUNCTION__);
 	}
 
@@ -163,9 +165,10 @@ void opencl_command_queue_task_run(struct opencl_command_queue_task_t *task)
 {
 	if (task->num_wait_events > 0)
 		clWaitForEvents(task->num_wait_events, task->wait_events);
-	task->action_func(task->user_data);
+	if (task->action_func)
+		task->action_func(task->user_data);
 	if (task->done_event)
-		clrt_event_set_status(task->done_event, CL_COMPLETE);
+		opencl_event_set_status(task->done_event, CL_COMPLETE);
 }
 
 
@@ -419,7 +422,7 @@ cl_int clEnqueueReadBuffer(
 		return CL_INVALID_VALUE;
 	
 	/* Check events before they are needed */
-	status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
@@ -507,7 +510,7 @@ cl_int clEnqueueWriteBuffer(
 		return CL_INVALID_VALUE;
 	
 	/* Check events before they are needed */
-	status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
@@ -598,7 +601,7 @@ cl_int clEnqueueCopyBuffer(
 		return CL_MEM_COPY_OVERLAP;  
 	
 	/* Check events before they are needed */
-	status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
@@ -768,7 +771,8 @@ void *clEnqueueMapBuffer(
 		return NULL;
 	}
 
-	if ((status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list)) != CL_SUCCESS)
+	if ((status = opencl_event_wait_list_check(num_events_in_wait_list,
+			event_wait_list)) != CL_SUCCESS)
 	{
 		if (errcode_ret)
 			*errcode_ret = status;
@@ -856,7 +860,7 @@ cl_int clEnqueueUnmapMemObject(
 		return CL_INVALID_VALUE;
 
 	/* Check events before they are needed */
-	status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
@@ -915,7 +919,7 @@ cl_int clEnqueueNDRangeKernel(
 		return CL_INVALID_KERNEL;
 
 	/* Check valid events */
-	status = clrt_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 

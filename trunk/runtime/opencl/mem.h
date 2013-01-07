@@ -34,6 +34,8 @@ struct _cl_mem
 struct opencl_mem_t *opencl_mem_create(void);
 void opencl_mem_free(struct opencl_mem_t *mem);
 
+void *opencl_mem_get_buffer(struct opencl_mem_t *mem);
+
 
 
 #endif

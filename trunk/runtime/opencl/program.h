@@ -20,6 +20,8 @@
 #ifndef RUNTIME_OPENCL_PROGRAM_H
 #define RUNTIME_OPENCL_PROGRAM_H
 
+#include "clrt.h"
+
 
 /* Entry of a program associated with one device type. */
 struct opencl_program_entry_t
@@ -31,8 +33,7 @@ struct opencl_program_entry_t
 
 
 /* Program object */
-#define opencl_program_t _cl_program
-struct _cl_program
+struct opencl_program_t
 {
 	/* Program entries, one per device type, of type 'opencl_program_entry_t' */
 	struct list_t *entry_list;
