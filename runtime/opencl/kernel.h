@@ -34,6 +34,9 @@ struct opencl_kernel_entry_t
 /* Kernel object */
 struct opencl_kernel_t
 {
+	/* Program associated with kernel */
+	struct opencl_program_t *program;
+
 	/* List of kernel entries, including per-device-type info. Each element
 	 * is of type 'opencl_kernel_entry_t'. */
 	struct list_t *entry_list;

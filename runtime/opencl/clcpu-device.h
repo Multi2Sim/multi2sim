@@ -26,7 +26,7 @@ typedef void (*clrt_barrier_t)(int option);
 
 struct clcpu_execution_t
 {
-	struct clcpu_kernel_t *kernel;
+	struct opencl_x86_kernel_t *kernel;
 	int dims;
 	const size_t *global;
 	const size_t *local;

@@ -42,7 +42,7 @@ void clcpu_device_exceute_ndrange(
 	int k;
 	int num_groups[3];
 	struct clcpu_device_t *device = dev;
-	struct clcpu_kernel_t *kernel = kern;
+	struct opencl_x86_kernel_t *kernel = kern;
 
 	struct clcpu_execution_t *run;
 

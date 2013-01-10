@@ -20,5 +20,10 @@
 #ifndef RUNTIME_OPENCL_X86_PROGRAM_H
 #define RUNTIME_OPENCL_X86_PROGRAM_H
 
+#include "clrt.h"
+
+
+cl_bool x86_program_is_valid_binary(size_t length, const unsigned char *binary);
+
 
 #endif
