@@ -263,14 +263,15 @@ struct opencl_command_queue_task_t *opencl_command_queue_dequeue(struct opencl_c
 {
 	struct opencl_command_queue_task_t *task;
 
+	/* Lock */
 	pthread_mutex_lock(&command_queue->lock);
 	
-	/* In order to procede, the list must be processable
+	/* In order to proceed, the list must be processable
 	 * and there must be at least one item present */
 	while (!command_queue->process || !command_queue->task_list->count)
 		pthread_cond_wait(&command_queue->cond_process, &command_queue->lock);
 	
-	/* Dequeue an Item */
+	/* Dequeue an item */
 	task = list_remove_at(command_queue->task_list, 0);
 	if (!command_queue->task_list->count)
 		command_queue->process = 0;
@@ -282,6 +283,7 @@ struct opencl_command_queue_task_t *opencl_command_queue_dequeue(struct opencl_c
 		task = NULL;
 	}
 
+	/* Unlock */
 	pthread_mutex_unlock(&command_queue->lock);
 	return task;
 }
@@ -941,7 +943,7 @@ cl_int clEnqueueNDRangeKernel(
 	}
 	if (!kernel_run->kernel)
 		return CL_INVALID_VALUE;
-	if (command_queue->device->device_type->check_kernel(kernel_run->kernel) != CL_SUCCESS)
+	if (command_queue->device->device_type->arch_kernel_check_func(kernel_run->kernel) != CL_SUCCESS)
 		return CL_INVALID_VALUE;
 	
 	/* Global work offset and size */

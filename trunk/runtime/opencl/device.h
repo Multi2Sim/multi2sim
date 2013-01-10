@@ -32,11 +32,7 @@ struct opencl_device_type_entry_t
 };
 
 
-
-
-
 /* Device object */
-#define opencl_device_t _cl_device_id
 struct _cl_device_id
 {
 	cl_int address_bits;
@@ -119,22 +115,9 @@ typedef cl_int (*opencl_device_type_init_devices_t)(
 	cl_uint *num_devices);
 
 /* check if a binary blob is a valid program */
-typedef cl_bool (*opencl_device_type_is_valid_binary_t)(
+typedef cl_bool (*opencl_device_is_valid_binary_func_t)(
 	size_t length,
 	const unsigned char *binary);
-
-/* create a kernel object who's parameters can be set */
-typedef void *(*opencl_device_type_create_kernel_t)(
-	void *handle, 
-	const char *kernel_name, 
-	cl_int *errcode_ret);
-
-/* set the argument of a kernel */
-typedef cl_int (*opencl_device_type_set_kernel_arg_t)(
-	void *kernel, 
-	cl_uint arg_index, 
-	size_t arg_size, 
-	const void *arg_value);
 
 /* execute on a device */
 typedef void (*opencl_device_execute_ndrange_t)(
@@ -145,23 +128,38 @@ typedef void (*opencl_device_execute_ndrange_t)(
 	const size_t *global_work_size, 
 	const size_t *local_work_size);
 
-/* validate that a kernel has properly set parameters */
-typedef cl_int (*opencl_device_check_kernel_t)(
+/* create a kernel object who's parameters can be set */
+typedef void *(*opencl_device_arch_kernel_create_func_t)(
+	void *dlhandle,
+	const char *kernel_name,
+	cl_int *errcode_ret);
+
+/* Free an architecture-specific kernel. */
+typedef void (*opencl_device_arch_kernel_free_func_t)(
 	void *kernel);
 
-/* destroy a kernel object */
-typedef void (*opencl_device_kernel_destroy_t)(
+/* Verify that a kernel has properly set parameters */
+typedef cl_int (*opencl_device_arch_kernel_check_func_t)(
 	void *kernel);
+
+/* Set a kernel argument */
+typedef cl_int (*opencl_device_arch_kernel_set_arg_func_t)(
+	void *kernel,
+	cl_uint arg_index,
+	size_t arg_size,
+	const void *arg_value);
 
 struct opencl_device_type_t
 {
 	opencl_device_type_init_devices_t init_devices;	
-	opencl_device_type_is_valid_binary_t valid_binary;
-	opencl_device_type_create_kernel_t create_kernel;
-	opencl_device_type_set_kernel_arg_t set_kernel_arg;
+	opencl_device_is_valid_binary_func_t is_valid_binary;
 	opencl_device_execute_ndrange_t execute_ndrange;
-	opencl_device_check_kernel_t check_kernel;
-	opencl_device_kernel_destroy_t kernel_destroy;
+
+	/* Call-back functions for an architecture-specific kernel */
+	opencl_device_arch_kernel_create_func_t arch_kernel_create_func;
+	opencl_device_arch_kernel_free_func_t arch_kernel_free_func;
+	opencl_device_arch_kernel_check_func_t arch_kernel_check_func;
+	opencl_device_arch_kernel_set_arg_func_t arch_kernel_set_arg;
 };
 
 /* create a device type */

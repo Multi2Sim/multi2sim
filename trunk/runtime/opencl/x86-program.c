@@ -19,3 +19,10 @@
 
 #include "x86-program.h"
 
+
+cl_bool x86_program_is_valid_binary(size_t length, const unsigned char *binary)
+{
+	Elf32_Ehdr *h = (Elf32_Ehdr *) binary;
+
+	return h->e_machine == 0x7d2;
+}

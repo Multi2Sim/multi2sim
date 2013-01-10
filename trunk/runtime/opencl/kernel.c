@@ -63,7 +63,7 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 	LIST_FOR_EACH(kernel->entry_list, index)
 	{
 		entry = list_get(kernel->entry_list, index);
-		entry->device_type->kernel_destroy(entry->kernel);
+		entry->device_type->arch_kernel_free_func(entry->kernel);
 	}
 
 	/* Free kernel */
@@ -113,6 +113,7 @@ cl_kernel clCreateKernel(
 
 	/* Create kernel */
 	kernel = opencl_kernel_create();
+	kernel->program = program;
 
 	/* Copy kernel entries from program entries */
 	LIST_FOR_EACH(program->entry_list, i)
@@ -123,7 +124,7 @@ cl_kernel clCreateKernel(
 		/* Create kernel entry */
 		kernel_entry = xcalloc(1, sizeof(struct opencl_kernel_entry_t));
 		kernel_entry->device_type = program_entry->device_type;
-		kernel_entry->kernel = kernel_entry->device_type->create_kernel(program_entry->handle,
+		kernel_entry->kernel = kernel_entry->device_type->arch_kernel_create_func(program_entry->dlhandle,
 			kernel_name, errcode_ret);
 
 		/* Add kernel entry */
@@ -193,7 +194,7 @@ cl_int clSetKernelArg(
 	LIST_FOR_EACH(kernel->entry_list, i)
 	{
 		entry = list_get(kernel->entry_list, i);
-		status = entry->device_type->set_kernel_arg(entry->kernel,
+		status = entry->device_type->arch_kernel_set_arg(entry->kernel,
 			arg_index, arg_size, arg_value);
 		if (status != CL_SUCCESS)
 			return status;

@@ -28,7 +28,8 @@
 
 struct opencl_x86_device_exec_t
 {
-	struct clcpu_kernel_t *kernel;
+	struct opencl_x86_kernel_t *kernel;
+
 	int dims;
 	const size_t *global;
 	const size_t *local;

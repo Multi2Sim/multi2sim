@@ -29,11 +29,12 @@
 #include "../include/CL/cl.h"
 #include "clcpu.h"
 #include "clcpu-device.h"
-#include "clcpu-program.h"
 #include "clrt.h"
 #include "debug.h"
 #include "device.h"
 #include "mhandle.h"
+#include "x86-kernel.h"
+#include "x86-program.h"
 
 
 const char *DEVICE_EXTENSIONS = "cl_khr_fp64 cl_khr_byte_addressable_store cl_khr_global_int32_base_atomics cl_khr_local_int32_base_atomics";
@@ -160,12 +161,23 @@ struct opencl_device_type_t *clcpu_create_device_type(void)
 {
 	struct opencl_device_type_t *device_type = xmalloc(sizeof *device_type);
 	device_type->init_devices = clcpu_device_type_init_devices;
-	device_type->valid_binary = clcpu_device_type_is_valid_binary;
-	device_type->create_kernel = clcpu_device_type_create_kernel;
-	device_type->set_kernel_arg = clcpu_device_type_set_kernel_arg;
 	device_type->execute_ndrange = clcpu_device_exceute_ndrange;
-	device_type->check_kernel = clcpu_device_check_kernel;
-	device_type->kernel_destroy = clcpu_device_kernel_destroy;
+	device_type->is_valid_binary =
+			(opencl_device_is_valid_binary_func_t)
+			x86_program_is_valid_binary;
+
+	device_type->arch_kernel_create_func =
+			(opencl_device_arch_kernel_create_func_t)
+			opencl_x86_kernel_create;
+	device_type->arch_kernel_free_func =
+			(opencl_device_arch_kernel_free_func_t)
+			opencl_x86_kernel_free;
+	device_type->arch_kernel_check_func =
+			(opencl_device_arch_kernel_check_func_t)
+			opencl_x86_kernel_check;
+	device_type->arch_kernel_set_arg =
+			(opencl_device_arch_kernel_set_arg_func_t)
+			opencl_x86_kernel_set_arg;
 
 	return device_type;
 }
@@ -332,7 +344,7 @@ int get_next(struct clcpu_execution_t *exec)
 
 void init_workgroup(
 	struct clcpu_workgroup_data_t *workgroup, 
-	struct clcpu_kernel_t *kernel, 
+	struct opencl_x86_kernel_t *kernel, 
 	int dims, 
 	const size_t *global, 
 	const size_t *local)
@@ -378,7 +390,7 @@ void init_workgroup(
 	workgroup->stack_params = (size_t *) xmalloc(sizeof (size_t) * kernel->stack_param_words);
 	memcpy(workgroup->stack_params, kernel->stack_params, sizeof (size_t) * kernel->stack_param_words);
 	for (i = 0; i < kernel->num_params; i++)
-		if (kernel->param_info[i].mem_type == CLCPU_MEM_LOCAL)
+		if (kernel->param_info[i].mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
 		{
 			int offset = kernel->param_info[i].stack_offset;
 			if (posix_memalign((void **)(workgroup->stack_params + offset), OPENCL_WORK_GROUP_STACK_ALIGN, kernel->stack_params[offset]))
@@ -391,7 +403,7 @@ void init_workgroup(
 /* Blocking call to exceute a work group.
  * This code is function is run from within a core-assigned runtime thread */
 void launch_work_group(
-	struct clcpu_kernel_t *kernel, 
+	struct opencl_x86_kernel_t *kernel, 
 	int dims, 
 	const size_t *group_start, 
 	const size_t *global, 
@@ -451,14 +463,19 @@ void launch_work_group(
 	workgroup_data->num_done = 0;
 	/* make new contexts so that they start at the beginning of their functions again  */
 	for (i = 0; i < workgroup_data->num_items; i++)
-		make_fiber_ex(workgroup_data->workitems + i, kernel->function, exit_work_item, kernel->stack_param_words, workgroup_data->stack_params);
+		make_fiber_ex(workgroup_data->workitems + i, kernel->func,
+			exit_work_item, kernel->stack_param_words, workgroup_data->stack_params);
 
 	while (workgroup_data->num_items > workgroup_data->num_done)
-		for (workgroup_data->cur_item = 0; workgroup_data->cur_item < workgroup_data->num_items; workgroup_data->cur_item++)
-			switch_fiber(&workgroup_data->main_ctx, workgroup_data->workitems + workgroup_data->cur_item, kernel->register_params);
+		for (workgroup_data->cur_item = 0;
+				workgroup_data->cur_item < workgroup_data->num_items;
+				workgroup_data->cur_item++)
+			switch_fiber(&workgroup_data->main_ctx,
+					workgroup_data->workitems + workgroup_data->cur_item,
+					kernel->register_params);
 }
 
-void destroy_workgroup(struct clcpu_workgroup_data_t *workgroup, struct clcpu_kernel_t *kernel)
+void destroy_workgroup(struct clcpu_workgroup_data_t *workgroup, struct opencl_x86_kernel_t *kernel)
 {
 	int i;
 
@@ -467,7 +484,7 @@ void destroy_workgroup(struct clcpu_workgroup_data_t *workgroup, struct clcpu_ke
 	free(workgroup->aligned_stacks);
 	for (i = 0; i < kernel->num_params; i++)
 	{
-		if (kernel->param_info[i].mem_type == CLCPU_MEM_LOCAL)
+		if (kernel->param_info[i].mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
 		{
 			int offset;
 
