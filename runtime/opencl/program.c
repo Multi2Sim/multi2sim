@@ -67,7 +67,7 @@ void opencl_program_free(struct opencl_program_t *program)
 	LIST_FOR_EACH(program->entry_list, index)
 	{
 		entry = list_get(program->entry_list, index);
-		dlclose(entry->handle);
+		dlclose(entry->dlhandle);
 		unlink(entry->file_name);
 		free(entry->file_name);
 	}
@@ -167,7 +167,7 @@ cl_program clCreateProgramWithBinary(
 		}
 
 		/* Make sure the type of the binary matches */
-		if (!lengths[i] || !binaries[i] || !device->device_type->valid_binary(lengths[i], binaries[i]))
+		if (!lengths[i] || !binaries[i] || !device->device_type->is_valid_binary(lengths[i], binaries[i]))
 		{
 			if (binary_status[i])
 				binary_status[i] = CL_INVALID_VALUE;
@@ -219,8 +219,8 @@ cl_program clCreateProgramWithBinary(
 		elf_file_free(elf_file);
 
 		/* Load internal binary for dynamic linking */
-		entry->handle = dlopen(entry->file_name, RTLD_NOW);
-		if (!entry->handle)
+		entry->dlhandle = dlopen(entry->file_name, RTLD_NOW);
+		if (!entry->dlhandle)
 			fatal("%s: could not open ELF binary derived from program", __FUNCTION__);		
 
 		/* Success */

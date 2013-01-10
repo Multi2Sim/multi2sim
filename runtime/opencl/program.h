@@ -26,9 +26,15 @@
 /* Entry of a program associated with one device type. */
 struct opencl_program_entry_t
 {
+	/* Associated device */
 	struct opencl_device_type_t *device_type;
-	void *handle;
+
+	/* Temporary file where the internal ELF file was dumped */
 	char *file_name;
+
+	/* Handle returned by 'dlopen' when interpreting the internal
+	 * ELF file for dynamic linking. */
+	void *dlhandle;
 };
 
 

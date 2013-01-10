@@ -71,11 +71,13 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	x86-device.c \
 	x86-device.h \
 	\
+	x86-kernel.c \
+	x86-kernel.h \
+	\
 	x86-program.c \
 	x86-program.h
 
 
-#AM_CFLAGS = -Wall -O2 -fPIC -m32 -DMHANDLE
 AM_CFLAGS = -m32
 
 endif
