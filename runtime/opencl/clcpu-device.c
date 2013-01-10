@@ -349,9 +349,12 @@ void init_workgroup(
 	workgroup->workitems = xmalloc(sizeof (struct fiber_t) * workgroup->num_items);
 	workgroup->workitem_data = xmalloc(sizeof (struct clcpu_workitem_data_t *) * workgroup->num_items);
 
-	if (posix_memalign((void **)&workgroup->aligned_stacks, OPENCL_WORK_GROUP_STACK_SIZE, OPENCL_WORK_GROUP_STACK_SIZE * workgroup->num_items))
+	if (posix_memalign((void **) &workgroup->aligned_stacks,
+			OPENCL_WORK_GROUP_STACK_SIZE,
+			OPENCL_WORK_GROUP_STACK_SIZE * workgroup->num_items))
 		fatal("%s: aligned memory allocation failure", __FUNCTION__);
-	mhandle_register_ptr(workgroup->aligned_stacks, OPENCL_WORK_GROUP_STACK_SIZE * workgroup->num_items);
+	mhandle_register_ptr(workgroup->aligned_stacks,
+		OPENCL_WORK_GROUP_STACK_SIZE * workgroup->num_items);
 
 
 	if (kernel->local_reserved_bytes)
