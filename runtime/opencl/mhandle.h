@@ -58,7 +58,7 @@
 #define mhandle_check()
 #define mhandle_done()
 #define mhandle_used_memory() (0UL)
-#define mhandle_register_ptr(ptr, size, at)
+#define mhandle_register_ptr(ptr, size)
 
 #endif
 
