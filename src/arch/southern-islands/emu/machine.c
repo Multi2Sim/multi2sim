@@ -123,6 +123,13 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst
 }
 #undef INST
 
+#define iNST SI_INST_SMRD
+void si_isa_S_LOAD_DWORDX8_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 #define INST SI_INST_SMRD
 void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
@@ -1206,6 +1213,14 @@ void si_isa_S_CMP_EQ_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* scc = (S0.i > S1.i). */
+#define INST SI_INST_SOPC
+void si_isa_S_CMP_GT_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* scc = (S0.i >= S1.i). */
 #define INST SI_INST_SOPC
 void si_isa_S_CMP_GE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -1305,6 +1320,14 @@ void si_isa_S_CMP_LE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	{
 		si_isa_debug("scc<=(%d) ", result.as_uint);
 	}
+}
+#undef INST
+
+/* scc = (S0.u > S1.u). */
+#define INST SI_INST_SOPC
+void si_isa_S_CMP_GT_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -1534,6 +1557,13 @@ void si_isa_S_CBRANCH_EXECZ_impl(struct si_work_item_t *work_item, struct si_ins
 	}
 }
 #undef INST
+/* if(EXEC != 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
+#define INST SI_INST_SOPP
+void si_isa_S_CBRANCH_EXECNZ_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
 
 /* Suspend current wavefront at the barrier.
  * If all wavefronts in work-group reached the barrier, wake them up */
@@ -1615,6 +1645,14 @@ void si_isa_V_READFIRSTLANE_B32_impl(struct si_work_item_t *work_item, struct si
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, value.as_int);
 	}
+}
+#undef INST
+
+/* D.i = (int)S0.d. */
+#define INST SI_INST_VOP1
+void si_isa_V_CVT_I32_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -1847,6 +1885,38 @@ void si_isa_V_CVT_F64_F32_impl(struct si_work_item_t *work_item, struct si_inst_
 }
 #undef INST
 
+/* D.d = (double)S0.u. */
+#define INST SI_INST_VOP1
+void si_isa_V_CVT_F64_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.f = trunc(S0.f), return integer part of S0. */
+#define INST SI_INST_VOP1
+void si_isa_V_TRUNC_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.f = trunc(S0); if ((S0 < 0.0) && (S0 != D)) D += -1.0. */
+#define INST SI_INST_VOP1
+void si_isa_V_FLOOR_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.f = log2(S0.f). */
+#define INST SI_INST_VOP1
+void si_isa_V_LOG_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.f = 1.0 / S0.f. */
 #define INST SI_INST_VOP1
 void si_isa_V_RCP_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -1867,6 +1937,22 @@ void si_isa_V_RCP_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	{
 		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst, rcp.as_float);
 	}
+}
+#undef INST
+
+/* D.d = 1.0 / (S0.d). */
+#define INST SI_INST_VOP1
+void si_isa_V_RCP_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.f = 1.0 / sqrt(S0.f). */
+#define INST SI_INST_VOP1
+void si_isa_V_RSQ_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -1893,6 +1979,22 @@ void si_isa_V_SQRT_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 }
 #undef INST
 
+/* D.f = sin(S0.f) */
+#define INST SI_INST_VOP1
+void si_isa_V_SIN_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.f = cos(S0.f) */
+#define INST SI_INST_VOP1
+void si_isa_V_COS_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.f = sqrt(S0.f). */
 #define INST SI_INST_VOP1
 void si_isa_V_NOT_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -1913,6 +2015,37 @@ void si_isa_V_NOT_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	{
 		si_isa_debug("t%d: V%u<=(0x%x) ", work_item->id, INST.vdst, result.as_uint);
 	}
+}
+#undef INST
+
+/* D.u = position of first 1 in S0 from MSB; D=0xFFFFFFFF if S0==0. */
+#define INST SI_INST_VOP1
+void si_isa_V_FFBH_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+
+/* D.d = FRAC64(S0.d); */
+#define INST SI_INST_VOP1
+void si_isa_V_FRACT_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* VGPR[D.u + M0.u] = VGPR[S0.u]. */
+#define INST SI_INST_VOP1
+void si_isa_V_MOVRELD_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* VGPR[D.u] = VGPR[S0.u + M0.u]. */
+#define INST SI_INST_VOP1
+void si_isa_V_MOVRELS_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -2032,6 +2165,14 @@ void si_isa_V_SUBREV_F32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	{
 		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst, dif.as_float);
 	}
+}
+#undef INST
+
+/* D.f = S0.f * S1.f (DX9 rules, 0.0*x = 0.0). */
+#define INST SI_INST_VOP2
+void si_isa_V_MUL_LEGACY_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -2460,6 +2601,14 @@ void si_isa_V_OR_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *in
 }
 #undef INST
 
+/* D.u = S0.u ^ S1.u. */
+#define INST SI_INST_VOP2
+void si_isa_V_XOR_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.f = S0.f * S1.f + D.f. */
 #define INST SI_INST_VOP2
 void si_isa_V_MAC_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -2716,6 +2865,14 @@ void si_isa_V_MUL_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_ins
 }
 #undef INST
 
+/* D.f = S0. * S1.. */
+#define INST SI_INST_VOP3a
+void si_isa_V_MUL_I32_I24_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.f = max(S0.f, S1.f). */
 #define INST SI_INST_VOP3a
 void si_isa_V_MAX_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -2783,6 +2940,14 @@ void si_isa_V_MAD_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	{
 		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst, result.as_float);
 	}
+}
+#undef INST
+
+/* D.u = S0.u[23:0] * S1.u[23:0] + S2.u[31:0]. */
+#define INST SI_INST_VOP3a
+void si_isa_V_MAD_U32_U24_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -2898,6 +3063,56 @@ void si_isa_V_BFI_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.f = S0.f * S1.f + S2.f */
+#define INST SI_INST_VOP3a
+void si_isa_V_FMA_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.d = S0.d * S1.d + S2.d */
+#define INST SI_INST_VOP3a
+void si_isa_V_FMA_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* 0,S1} >> S2.u[4:0]) & 0xFFFFFFFF. */
+#define INST SI_INST_VOP3a
+void si_isa_V_ALIGNBIT_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/*
+ *D.d = Special case divide fixup and flags(s0.d = Quotient, s1.d = Denominator, s2.d = Numerator).
+ */
+#define INST SI_INST_VOP3a
+void si_isa_V_DIV_FIXUP_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.d = min(S0.d, S1.d). */
+#define INST SI_INST_VOP3a
+void si_isa_V_MIN_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.d = max(S0.d, S1.d). */
+#define INST SI_INST_VOP3a
+void si_isa_V_MAX_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.u = S0.u * S1.u. */
 #define INST SI_INST_VOP3a
 void si_isa_V_MUL_LO_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -2928,6 +3143,25 @@ void si_isa_V_MUL_LO_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, result.as_uint);
 	}
+}
+#undef INST
+
+/*
+ *D.d = Special case divide FMA with scale and flags(s0.d = Quotient, s1.d = Denominator,
+ *s2.d = Numerator).
+ */
+#define INST SI_INST_VOP3a
+void si_isa_V_DIV_FMAS_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.d = Look Up 2/PI (S0.d) with segment select S1.u[4:0]. */
+#define INST SI_INST_VOP3a
+void si_isa_V_TRIG_PREOP_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -2997,6 +3231,14 @@ void si_isa_V_MUL_LO_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* D.f = S0.f - floor(S0.f). */
+#define INST SI_INST_VOP3a
+void si_isa_V_FRACT_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* vcc = (S0.f < S1.f). */
 #define INST SI_INST_VOPC
 void si_isa_V_CMP_LT_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -3059,6 +3301,14 @@ void si_isa_V_CMP_GT_F32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* vcc = (S0.f >= S1.f). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_GE_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* vcc = !(S0.f > S1.f). */
 #define INST SI_INST_VOPC
 void si_isa_V_CMP_NGT_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -3118,6 +3368,54 @@ void si_isa_V_CMP_NEQ_F32_impl(struct si_work_item_t *work_item, struct si_inst_
 		si_isa_debug("wf_id%d: vcc<=(%d) ", work_item->id_in_wavefront,
 			result.as_uint);
 	}
+}
+#undef INST
+
+/* vcc = (S0.d < S1.d). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_LT_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* vcc = (S0.d == S1.d). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_EQ_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* vcc = (S0.d <= S1.d). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_LE_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* vcc = (S0.d > S1.d). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_GT_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* vcc = !(S0.d >= S1.d). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_NGE_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* vcc = !(S0.d == S1.d). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_NEQ_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -3276,6 +3574,14 @@ void si_isa_V_CMP_GE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* D = IEEE numeric class function specified in S1.u, performed on S0.d. */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_CLASS_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* vcc = (S0.u < S1.u). */
 #define INST SI_INST_VOPC
 void si_isa_V_CMP_LT_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -3306,6 +3612,13 @@ void si_isa_V_CMP_LT_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	}
 }
 #undef INST
+
+/* vcc = (S0.u == S1.u). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_EQ_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
 
 /* vcc = (S0.u <= S1.u). */
 #define INST SI_INST_VOPC
@@ -3366,6 +3679,14 @@ void si_isa_V_CMP_GT_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 		si_isa_debug("wf_id%d: vcc<=(%d) ", work_item->id_in_wavefront,
 			result.as_uint);
 	}
+}
+#undef INST
+
+/* D.u = (S0.f < S1.f). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_NE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -3437,6 +3758,13 @@ void si_isa_V_CMP_EQ_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_
 }
 #undef INST
 
+/* vcc = (S0.f <= S1.f). */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LE_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+
 /* D.u = (S0.f > S1.f). */
 #define INST SI_INST_VOP3a
 void si_isa_V_CMP_GT_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -3468,6 +3796,14 @@ void si_isa_V_CMP_GT_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_
 		si_isa_debug("wf_id%d: S[%d:+1]<=(%d) ", work_item->id_in_wavefront,
 			INST.vdst, result.as_uint);
 	}
+}
+#undef INST
+
+/* D.u = !(S0.f <= S1.f). */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_NLE_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -3536,6 +3872,54 @@ void si_isa_V_CMP_NLT_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si
 		si_isa_debug("wf_id%d: S[%d:+1]<=(%d) ", work_item->id_in_wavefront,
 			INST.vdst, result.as_uint);
 	}
+}
+#undef INST
+
+/* D.u = (S0 < S1) */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LT_F64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.u = (S0 == S1) */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_EQ_F64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.u = (S0 <= S1) */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LE_F64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.u = (S0 > S1) */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_GT_F64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.u = (S0 >= S1) */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_GE_F64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D.u = !(S0 < S1) */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_NLT_F64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -3743,6 +4127,22 @@ void si_isa_V_CMP_GE_I32_VOP3a_impl(struct si_work_item_t *work_item, struct si_
 }
 #undef INST
 
+/* D.u = (S0.i >= S1.i). Also write EXEC */
+#define INST_SI_INST_VOP3a
+void si_isa_V_CMPX_EQ_I32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D = IEEE numeric class function specified in S1.u, performed on S0.d. */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_CLASS_F64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.u = (S0.u < S1.u). */
 #define INST SI_INST_VOP3a
 void si_isa_V_CMP_LT_U32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -3910,6 +4310,14 @@ void si_isa_V_CMP_GE_U32_VOP3a_impl(struct si_work_item_t *work_item, struct si_
 		si_isa_debug("wf_id%d: S[%d:+1]<=(%d) ", work_item->id_in_wavefront,
 			INST.vdst, result.as_uint);
 	}
+}
+#undef INST
+
+/* D.u = (S0 < S1) */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LT_U64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -4223,6 +4631,14 @@ void si_isa_V_MUL_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.d = Look Up 2/PI (S0.d) with segment select S1.u[4:0]. */
+#define INST SI_INST_VOP3a
+void si_isa_V_LDEXP_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.u = S0.u + S1.u + VCC; VCC=carry-out (VOP3:sgpr=carry-out, S2.u=carry-in). */
 #define INST SI_INST_VOP3b
 void si_isa_V_ADDC_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -4260,6 +4676,25 @@ void si_isa_V_ADDC_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_in
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, sum.as_uint);
 		si_isa_debug("wf_id%d: vcc<=(%d) ", work_item->id_in_wavefront, carry_out.as_uint);
 	}
+}
+#undef INST
+
+/*
+ *D.d = Special case divide preop and flags(s0.d = Quotient, s1.d = Denominator, s2.d = Numerator)
+ *s0 must equal s1 or s2.
+ */
+#define INST SI_INST_VOP3b
+void si_isa_V_DIV_SCALE_F64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* DS[A] = (DS[A] >= D0 ? 0 : DS[A] + 1); uint increment.*/
+#define INST SI_INST_DS
+void si_isa_DS_INC_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -4653,6 +5088,20 @@ void si_isa_DS_READ_U16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 }
 #undef INST
 
+#define INST SI_INST_MUBUF
+void si_isa_BUFFER_LOAD_SBYTE_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+#define INST SI_INST_MUBUF
+void si_isa_BUFFER_ATOMIC_ADD_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 #define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
@@ -4898,6 +5347,13 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struc
 #undef INST
 
 #define INST SI_INST_MTBUF
+void si_isa_T_BUFFER_STORE_FORMAT_XY_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+#define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	assert(!INST.addr64);
@@ -4956,5 +5412,19 @@ void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, st
 	/* Record last memory access for the detailed simulator. */
 	work_item->global_mem_access_addr = buffer_addr;
 	work_item->global_mem_access_size = elem_size * num_elems;
+}
+#undef INST
+
+#define INST SI_INST_MIMG
+void si_isa_IMAGE_STORE_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+#define INST SI_INST_MIMG
+void si_isa_IMAGE_SAMPLE_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
