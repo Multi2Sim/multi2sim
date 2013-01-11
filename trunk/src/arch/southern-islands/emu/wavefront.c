@@ -147,7 +147,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	assert(!wavefront->finished);
 	
 	/* Grab the next instruction and update the pointer */
-	wavefront->inst_size = si_inst_decode(wavefront->wavefront_pool, &wavefront->inst);
+	wavefront->inst_size = si_inst_decode(wavefront->wavefront_pool, &wavefront->inst, 0);
 
 	/* Stats */
 	si_emu->inst_count++;
