@@ -434,7 +434,7 @@ DEFINST(LONGJMP,
 	0x227)
 
 DEFINST(SSY, 
-	"%p SSY %t", 
+	"SSY %t", 
 	CTRL_SSY, 
 	CTRL, 
 	0x187)
