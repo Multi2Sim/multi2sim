@@ -34,37 +34,41 @@
 /* Table containing information of all instructions */
 static struct si_inst_info_t si_inst_info[SI_INST_COUNT];
 
-/* Defnine the number of valid opcodes. */
-#define SI_INST_INFO_SOPP_OPCODE_SIZE 23
-#define SI_INST_INFO_SOPC_OPCODE_SIZE 17
-#define SI_INST_INFO_SOP1_OPCODE_SIZE 54
-#define SI_INST_INFO_SOPK_OPCODE_SIZE 22
-#define SI_INST_INFO_SOP2_OPCODE_SIZE 45
-#define SI_INST_INFO_SMRD_OPCODE_SIZE 32
-#define SI_INST_INFO_VOP3_OPCODE_SIZE 373
-#define SI_INST_INFO_VOPC_OPCODE_SIZE 248
-#define SI_INST_INFO_VOP1_OPCODE_SIZE 69
-#define SI_INST_INFO_VOP2_OPCODE_SIZE 50
-#define SI_INST_INFO_DS_OPCODE_SIZE 212
-#define SI_INST_INFO_MTBUF_OPCODE_SIZE 8
+/* Define the number of valid opcodes. */
+#define SI_INST_INFO_SOPP_MAX_VALUE 22
+#define SI_INST_INFO_SOPC_MAX_VALUE 16
+#define SI_INST_INFO_SOP1_MAX_VALUE 53
+#define SI_INST_INFO_SOPK_MAX_VALUE 21
+#define SI_INST_INFO_SOP2_MAX_VALUE 44
+#define SI_INST_INFO_SMRD_MAX_VALUE 31
+#define SI_INST_INFO_VOP3_MAX_VALUE 452
+#define SI_INST_INFO_VOPC_MAX_VALUE 247
+#define SI_INST_INFO_VOP1_MAX_VALUE 68
+#define SI_INST_INFO_VOP2_MAX_VALUE 49
+#define SI_INST_INFO_DS_MAX_VALUE 211
+#define SI_INST_INFO_MTBUF_MAX_VALUE 7
+#define SI_INST_INFO_MUBUF_MAX_VALUE 113
+#define SI_INST_INFO_MIMG_MAX_VALUE 96
 
 /* String lengths for printing assembly */
-#define MAX_OPERAND_STR_SIZE 10
+#define MAX_OPERAND_STR_SIZE 11
 #define MAX_DAT_STR_SIZE 31
 
 /* Pointers to 'si_inst_info' table indexed by instruction opcode */
-static struct si_inst_info_t *si_inst_info_sopp[SI_INST_INFO_SOPP_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_sopc[SI_INST_INFO_SOPC_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_sop1[SI_INST_INFO_SOP1_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_sopk[SI_INST_INFO_SOPK_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_sop2[SI_INST_INFO_SOP2_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_smrd[SI_INST_INFO_SMRD_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_vop3[SI_INST_INFO_VOP3_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_vopc[SI_INST_INFO_VOPC_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_vop1[SI_INST_INFO_VOP1_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_vop2[SI_INST_INFO_VOP2_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_ds[SI_INST_INFO_DS_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_mtbuf[SI_INST_INFO_MTBUF_OPCODE_SIZE];
+static struct si_inst_info_t *si_inst_info_sopp[SI_INST_INFO_SOPP_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_sopc[SI_INST_INFO_SOPC_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_sop1[SI_INST_INFO_SOP1_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_sopk[SI_INST_INFO_SOPK_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_sop2[SI_INST_INFO_SOP2_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_smrd[SI_INST_INFO_SMRD_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_vop3[SI_INST_INFO_VOP3_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_vopc[SI_INST_INFO_VOPC_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_vop1[SI_INST_INFO_VOP1_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_vop2[SI_INST_INFO_VOP2_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_ds[SI_INST_INFO_DS_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_mtbuf[SI_INST_INFO_MTBUF_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_mubuf[SI_INST_INFO_MUBUF_MAX_VALUE + 1];
+static struct si_inst_info_t *si_inst_info_mimg[SI_INST_INFO_MIMG_MAX_VALUE + 1];
 
 /* String maps for assembly dump. */
 struct str_map_t sdst_map = {
@@ -140,20 +144,20 @@ struct str_map_t dfmt_map = {
 
 struct str_map_t nfmt_map = {
 	14, {
-		{ "BUF_NUM_FMT_UNORM", 0 },
-		{ "BUF_NUM_FMT_SNORM", 1 },
-		{ "BUF_NUM_FMT_UNSCALED", 2 },
-		{ "BUF_NUM_FMT_SSCALED", 3 },
-		{ "BUF_NUM_FMT_UINT", 4 },
-		{ "BUF_NUM_FMT_SINT", 5 },
-		{ "BUF_NUM_FMT_SNORM_NZ", 6 },
-		{ "BUF_NUM_FMT_FLOAT", 7 },
+		{ "BUF_NUM_FORMAT_UNORM", 0 },
+		{ "BUF_NUM_FORMAT_SNORM", 1 },
+		{ "BUF_NUM_FORMAT_UNSCALED", 2 },
+		{ "BUF_NUM_FORMAT_SSCALED", 3 },
+		{ "BUF_NUM_FORMAT_UINT", 4 },
+		{ "BUF_NUM_FORMAT_SINT", 5 },
+		{ "BUF_NUM_FORMAT_SNORM_NZ", 6 },
+		{ "BUF_NUM_FORMAT_FLOAT", 7 },
 		{ "reserved", 8 },
-		{ "BUF_NUM_FMT_SRGB", 9 },
-		{ "BUF_NUM_FMT_UBNORM", 10 },
-		{ "BUF_NUM_FMT_UBNORM_NZ", 11 },
-		{ "BUF_NUM_FMT_UBINT", 12 },
-		{ "BUF_NUM_FMT_UBSCALED", 13 }
+		{ "BUF_NUM_FORMAT_SRGB", 9 },
+		{ "BUF_NUM_FORMAT_UBNORM", 10 },
+		{ "BUF_NUM_FORMAT_UBNORM_NZ", 11 },
+		{ "BUF_NUM_FORMAT_UBINT", 12 },
+		{ "BUF_NUM_FORMAT_UBSCALED", 13 }
 	}
 };
 
@@ -188,74 +192,86 @@ void si_disasm_init()
 
 		if (info->fmt == SI_FMT_SOPP)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOPP_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOPP_MAX_VALUE));
 			si_inst_info_sopp[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_SOPC)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOPC_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOPC_MAX_VALUE));
 			si_inst_info_sopc[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_SOP1)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOP1_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOP1_MAX_VALUE));
 			si_inst_info_sop1[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_SOPK)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOPK_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOPK_MAX_VALUE));
 			si_inst_info_sopk[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_SOP2)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOP2_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOP2_MAX_VALUE));
 			si_inst_info_sop2[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_SMRD) 
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SMRD_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SMRD_MAX_VALUE));
 			si_inst_info_smrd[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_VOP3a || info->fmt == SI_FMT_VOP3b)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP3_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP3_MAX_VALUE));
 			si_inst_info_vop3[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_VOPC)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOPC_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOPC_MAX_VALUE));
 			si_inst_info_vopc[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_VOP1)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP1_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP1_MAX_VALUE));
 			si_inst_info_vop1[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_VOP2)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP2_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP2_MAX_VALUE));
 			si_inst_info_vop2[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_DS)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_DS_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_DS_MAX_VALUE));
 			si_inst_info_ds[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_MTBUF)
 		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_MTBUF_OPCODE_SIZE - 1));
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_MTBUF_MAX_VALUE));
 			si_inst_info_mtbuf[info->opcode] = info;
+			continue;
+		}
+		else if (info->fmt == SI_FMT_MUBUF)
+		{
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_MUBUF_MAX_VALUE));
+			si_inst_info_mubuf[info->opcode] = info;
+			continue;
+		}
+		else if (info->fmt == SI_FMT_MIMG)
+		{
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_MIMG_MAX_VALUE));
+			si_inst_info_mimg[info->opcode] = info;
 			continue;
 		}
 		else 
@@ -277,8 +293,9 @@ void si_disasm_done()
  * Functions for decoding instructions
  */
 
-int si_inst_decode(void *buf, struct si_inst_t *inst) 
+int si_inst_decode(void *buf, struct si_inst_t *inst, unsigned int offset) 
 {
+
 	/* Zero-out instruction structure */
 	memset(inst, 0, sizeof(struct si_inst_t));
 
@@ -291,14 +308,16 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	if (inst->micro_inst.sopp.enc == 0x17F)
 	{
 		if (!si_inst_info_sopp[inst->micro_inst.sopp.op])
-			fatal("Unimplemented Instruction: SOPP:%d", inst->micro_inst.sopp.op);
+			fatal("Unimplemented Instruction: SOPP:%d  // %08X: %08X\n",
+			inst->micro_inst.sopp.op, offset, * (unsigned int *) buf);
 
 		inst->info = si_inst_info_sopp[inst->micro_inst.sopp.op];
 	}
 	else if (inst->micro_inst.sopc.enc == 0x17E)
 	{
 		if (!si_inst_info_sopc[inst->micro_inst.sopc.op])
-			fatal("Unimplemented Instruction: SOPC:%d", inst->micro_inst.sopc.op);
+			fatal("Unimplemented Instruction: SOPC:%d  // %08X: %08X\n",
+			inst->micro_inst.sopc.op, offset, * (unsigned int *) buf);
 
 		inst->info = si_inst_info_sopc[inst->micro_inst.sopc.op];
 
@@ -313,7 +332,8 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	else if (inst->micro_inst.sop1.enc == 0x17D)
 	{
 		if (!si_inst_info_sop1[inst->micro_inst.sop1.op])
-			fatal("Unimplemented Instruction: SOP1:%d", inst->micro_inst.sop1.op);
+			fatal("Unimplemented Instruction: SOP1:%d  // %08X: %08X\n",
+			inst->micro_inst.sop1.op, offset, * (unsigned int *) buf);
 
 		inst->info = si_inst_info_sop1[inst->micro_inst.sop1.op];
 
@@ -327,14 +347,16 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	else if (inst->micro_inst.sopk.enc == 0xB)
 	{
 		if (!si_inst_info_sopk[inst->micro_inst.sopk.op])
-			fatal("Unimplemented Instruction: SOPK:%d", inst->micro_inst.sopk.op);
+			fatal("Unimplemented Instruction: SOPK:%d  // %08X: %08X\n",
+			inst->micro_inst.sopk.op, offset, * (unsigned int *) buf);
 
 		inst->info = si_inst_info_sopk[inst->micro_inst.sopk.op];
 	}
 	else if (inst->micro_inst.sop2.enc == 0x2)
 	{
 		if (!si_inst_info_sop2[inst->micro_inst.sop2.op])
-			fatal("Unimplemented Instruction: SOP2:%d", inst->micro_inst.sop2.op);
+			fatal("Unimplemented Instruction: SOP2:%d  // %08X: %08X\n",
+			inst->micro_inst.sop2.op, offset, * (unsigned int *) buf);
 
 		inst->info = si_inst_info_sop2[inst->micro_inst.sop2.op];
 
@@ -349,7 +371,8 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	else if (inst->micro_inst.smrd.enc == 0x18) 
 	{
 		if (!si_inst_info_smrd[inst->micro_inst.smrd.op])
-			fatal("Unimplemented Instruction: SMRD:%d", inst->micro_inst.smrd.op);
+			fatal("Unimplemented Instruction: SMRD:%d  // %08X: %08X\n",
+			inst->micro_inst.smrd.op, offset, * (unsigned int *) buf);
 
 		inst->info = si_inst_info_smrd[inst->micro_inst.smrd.op];
 	}
@@ -360,14 +383,17 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 		memcpy(&inst->micro_inst, buf, inst_size);
 
 		if (!si_inst_info_vop3[inst->micro_inst.vop3a.op])
-			fatal("Unimplemented Instruction: VOP3:%d", inst->micro_inst.vop3a.op);
-
+			fatal("Unimplemented Instruction: VOP3:%d  // %08X: %08X %08X\n",
+				inst->micro_inst.vop3a.op, offset, * (unsigned int *) buf,
+				* (unsigned int *) (buf + 4));
+	
 		inst->info = si_inst_info_vop3[inst->micro_inst.vop3a.op];
 	}
 	else if (inst->micro_inst.vopc.enc == 0x3E)
 	{
 		if (!si_inst_info_vopc[inst->micro_inst.vopc.op])
-			fatal("Unimplemented Instruction: VOPC:%d", inst->micro_inst.vopc.op);
+			fatal("Unimplemented Instruction: VOPC:%d  // %08X: %08X\n",
+			inst->micro_inst.vopc.op, offset, * (unsigned int *) buf);
 
 		inst->info = si_inst_info_vopc[inst->micro_inst.vopc.op];
 
@@ -381,7 +407,8 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	else if (inst->micro_inst.vop1.enc == 0x3F)
 	{
 		if (!si_inst_info_vop1[inst->micro_inst.vop1.op])
-			fatal("Unimplemented Instruction: VOP1:%d", inst->micro_inst.vop1.op);
+			fatal("Unimplemented Instruction: VOP1:%d  // %08X: %08X\n",
+			inst->micro_inst.vop1.op, offset, * (unsigned int *) buf);
 
 		inst->info = si_inst_info_vop1[inst->micro_inst.vop1.op];
 
@@ -395,7 +422,8 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	else if (inst->micro_inst.vop2.enc == 0x0)
 	{
 		if (!si_inst_info_vop2[inst->micro_inst.vop2.op])
-			fatal("Unimplemented Instruction: VOP2:%d", inst->micro_inst.vop2.op);
+			fatal("Unimplemented Instruction: VOP2:%d  // %08X: %08X\n",
+			inst->micro_inst.vop2.op, offset, * (unsigned int *) buf);
 
 		inst->info = si_inst_info_vop2[inst->micro_inst.vop2.op];
 
@@ -413,7 +441,9 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 		memcpy(&inst->micro_inst, buf, inst_size);
 
 		if (!si_inst_info_ds[inst->micro_inst.ds.op])
-			fatal("Unimplemented Instruction: DS:%d", inst->micro_inst.ds.op);
+			fatal("Unimplemented Instruction: DS:%d  // %08X: %08X %08X\n",
+			inst->micro_inst.ds.op, offset, * (unsigned int *) buf,
+			* (unsigned int *) (buf + 4));
 
 		inst->info = si_inst_info_ds[inst->micro_inst.ds.op];
 	}
@@ -424,17 +454,48 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 		memcpy(&inst->micro_inst, buf, inst_size);
 
 		if (!si_inst_info_mtbuf[inst->micro_inst.mtbuf.op])
-			fatal("Unimplemented Instruction: MTBUF:%d", inst->micro_inst.mtbuf.op);
+			fatal("Unimplemented Instruction: MTBUF:%d  // %08X: %08X %08X\n",
+			inst->micro_inst.mtbuf.op, offset, * (unsigned int *) buf,
+			* (unsigned int *) (buf+4));
 
 		inst->info = si_inst_info_mtbuf[inst->micro_inst.mtbuf.op];
 	}
+	else if (inst->micro_inst.mubuf.enc == 0x38)
+	{
+		/* 64 bit instruction. */
+		inst_size = 8;
+		memcpy(&inst->micro_inst, buf, inst_size);
+
+		if(!si_inst_info_mubuf[inst->micro_inst.mubuf.op])
+			fatal("Unimplemented Instruction: MUBUF:%d  // %08X: %08X %08X\n",
+			inst->micro_inst.mubuf.op, offset, * (unsigned int *) buf,
+			* (unsigned int *) (buf+4));
+
+		inst->info = si_inst_info_mubuf[inst->micro_inst.mubuf.op];
+	}
+	else if (inst->micro_inst.mimg.enc == 0x3C)
+	{	
+		/* 64 bit instruction. */
+		inst_size = 8;
+		memcpy(&inst->micro_inst, buf, inst_size);
+
+		if(!si_inst_info_mimg[inst->micro_inst.mimg.op])
+			fatal("Unimplemented Instruction: MIMG:%d  // %08X: %08X %08X\n",
+			inst->micro_inst.mimg.op, offset, * (unsigned int *) buf,
+			* (unsigned int *) (buf+4));
+
+		inst->info = si_inst_info_mimg[inst->micro_inst.mimg.op];
+	}
 	else 
 	{
-		fatal("Unimplemented format. Instruction is: %08X\n", ((unsigned int*)buf)[0]);
+		fatal("Unimplemented format. Instruction is:  // %08X: %08X\n", offset,
+		((unsigned int*)buf)[0]);
 	}
 
 	return inst_size;
 }
+
+
 
 void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 {
@@ -446,8 +507,9 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 	int* next_label = &label_addr[0]; /* The next label to dump. */
 	int* end_label = &label_addr[0]; /* The address after the last label. */
 	
+
 	/* Read through instructions to find labels. */
-	while(inst_buf)
+	while (inst_buf)
 	{
 		struct si_inst_t inst;
 		int inst_size;
@@ -456,16 +518,17 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		memset(&inst, 0, sizeof(struct si_inst_t));
 
 		/* Decode instruction */
-		inst_size = si_inst_decode(inst_buf, &inst);
+		inst_size = si_inst_decode(inst_buf, &inst, rel_addr);
 
 		/* If ENDPGM, break. */
-		if (inst.info->fmt == SI_FMT_SOPP &&
-			inst.micro_inst.sopp.op == 1) break;
-
+		if (inst.info->fmt == SI_FMT_SOPP && inst.micro_inst.sopp.op == 1)
+		{
+			break;
+		}
 		/* If the instruction branches, insert the label into the sorted list. */
 		if (inst.info->fmt == SI_FMT_SOPP &&
 			(inst.micro_inst.sopp.op >= 2 && inst.micro_inst.sopp.op <= 9))
-		{
+		{	
 			short simm16 = inst.micro_inst.sopp.simm16;
 			int se_simm = simm16;
 			int label = rel_addr + (se_simm * 4) + 4;
@@ -473,23 +536,29 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 			/* Find position to insert label. */
 			int* t_label = &label_addr[0];
 			while(t_label < end_label && *t_label < label) t_label++;
-
-			/* Shift labels after position down. */
-			int* t2_label = end_label;
-			while(t2_label > t_label)
+			
+			if (label != *t_label || t_label == end_label)
 			{
-				*t2_label = *(t2_label - 1);
-				t2_label--;
-			}
-			end_label++;
 
-			/* Insert the new label. */
-			*t_label = label;
+				/* Shift labels after position down. */
+				int* t2_label = end_label;
+				while(t2_label > t_label)
+				{
+					*t2_label = *(t2_label - 1);
+					t2_label--;
+				}
+				end_label++;
+
+				/* Insert the new label. */
+				*t_label = label;
+			}
+
 		}
 
 		inst_buf += inst_size;
 		rel_addr += inst_size;
 	}
+
 
 	/* Reset to disassemble. */
 	inst_buf = buffer->ptr;
@@ -502,16 +571,17 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		int inst_size;
 
 		/* Parse the instruction */
-		inst_size = si_inst_decode(inst_buf, &inst);
+		inst_size = si_inst_decode(inst_buf, &inst, rel_addr);
 
 		inst_count++;
 
 		/* Dump a label if necessary. */
-		if (*next_label == rel_addr)
+		if (*next_label == rel_addr && next_label != end_label)
 		{
 			fprintf(f, "label_%04X:\n", rel_addr / 4);
 			next_label++;
 		}
+
 		
 		/* Dump the instruction */
 		int line_size = MAX_INST_STR_SIZE;
@@ -564,11 +634,19 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		{
 			si_inst_dump_mtbuf(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
+		else if (inst.info->fmt == SI_FMT_MUBUF)
+		{
+			si_inst_dump_mubuf(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+		}
+		else if (inst.info->fmt == SI_FMT_MIMG)
+		{
+			si_inst_dump_mimg(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+		}
 		else 
 		{
 			fatal("Unknown instruction: %08X\n", ((unsigned int*)inst_buf)[0]);
 		}
-		fprintf(f, "%s", line);
+		fprintf(f, " %s", line);
 
 
 		/* Break at end of program. */
@@ -595,6 +673,7 @@ static int is_token(char *fmt_str, char *token_str, int *token_len)
 	return !strncmp(fmt_str, token_str, *token_len) &&
 		!isalnum(fmt_str[*token_len]);
 }
+
 
 void operand_dump(char* str, int operand)
 {
@@ -653,7 +732,7 @@ void operand_dump_series(char* str, int operand, int operand_end)
 	{
 		str_printf(&pstr, &str_size, "s[%d:%d]", operand, operand_end);
 	}
-	else if (operand <= 127)
+	else if (operand <= 245)
 	{
 		if (operand >= 112 && operand <= 123)
 		{
@@ -677,6 +756,30 @@ void operand_dump_series(char* str, int operand, int operand_end)
 				case 126:
 					str_printf(&pstr, &str_size, "exec");
 					break;
+				case 128:
+					str_printf(&pstr, &str_size, "0");
+					break;
+				case 131:
+					str_printf(&pstr, &str_size, "3");
+					break;
+				case 208: 
+					str_printf(&pstr, &str_size, "-16");
+					break;
+				case 240:
+					str_printf(&pstr, &str_size, "0.5");
+					break;
+				case 242:
+					str_printf(&pstr, &str_size, "1.0");
+					break;
+				case 243:
+					str_printf(&pstr, &str_size, "-1.0");
+					break;
+				case 244:
+					str_printf(&pstr, &str_size, "2.0");
+					break;
+				case 245:
+					str_printf(&pstr, &str_size, "-2.0");
+					break;
 				default:
 					fatal("Unimplemented operand series: [%d:%d]", operand, operand_end);
 			}
@@ -697,12 +800,12 @@ void operand_dump_scalar(char* str, int operand)
 	operand_dump(str, operand);
 }
 
-void operand_dump_series_scalar(char* str, int operand, int operand_end)
+void operand_dump_series_scalar(char *str, int operand, int operand_end)
 {
 	operand_dump_series(str, operand, operand_end);
 }
 
-void operand_dump_vector(char* str, int operand)
+void operand_dump_vector(char *str, int operand)
 {
 	operand_dump(str, operand + 256); 
 }
@@ -726,9 +829,9 @@ void line_dump(char *inst_str, unsigned int rel_addr, void* buf, char* line, int
 		str_printf(&dat_str, &dat_str_size, "// %08X: %08X %08X", rel_addr, ((unsigned int*)buf)[0], ((unsigned int*)buf)[1]);
 	}
 
-	if(strlen(inst_str) <= 60)
+	if(strlen(inst_str) < 59)
 	{
-		str_printf(&line, &line_size, "%-60s%s\n", inst_str, inst_dat_str);
+		str_printf(&line, &line_size, "%-59s%s\n", inst_str, inst_dat_str);
 	}
 	else
 	{
@@ -802,6 +905,12 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, uint32_
 
 		si_inst_dump_mtbuf(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
+	
+	case SI_FMT_MUBUF:
+		
+		si_inst_dump_mubuf(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
 	default:	
 
 		fatal("Unknown instruction: %08X\n", ((unsigned int*)inst_buf)[0]);
@@ -1252,7 +1361,15 @@ void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 		}
 		else if (is_token(fmt_str, "OFFSET", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "%02x", smrd->offset);
+			if (smrd->imm)
+			{
+				str_printf(&inst_str, &str_size, "0x%02x", smrd->offset);
+			}
+			else
+			{
+				operand_dump_scalar(operand_str, smrd->offset);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
 		}
 		else
 		{
@@ -1273,6 +1390,7 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 	char *fmt_str = inst->info->fmt_str;
 	int token_len;
 	char operand_str[MAX_OPERAND_STR_SIZE];
+	
 	while (*fmt_str)
 	{
 		/* Literal */
@@ -1309,7 +1427,22 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 		else if (is_token(fmt_str, "SRC0", &token_len))
 		{
 			operand_dump(operand_str, inst->micro_inst.vop3a.src0);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			
+			if (!(IN_RANGE(inst->micro_inst.vop3a.op, 293, 298)) && !(IN_RANGE(inst->micro_inst.vop3a.op, 365, 366)))
+			{
+				if (inst->micro_inst.vop3a.abs & 1)
+				{
+					str_printf(&inst_str, &str_size, "abs(%s)", operand_str);
+				}
+				else
+				{
+					str_printf(&inst_str, &str_size, "%s", operand_str);
+				}
+			}
+			else
+			{
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
 		}
 		else if (is_token(fmt_str, "64_SRC0", &token_len))
 		{
@@ -1319,7 +1452,22 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 		else if (is_token(fmt_str, "SRC1", &token_len))
 		{
 			operand_dump(operand_str, inst->micro_inst.vop3a.src1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			
+			if (!(IN_RANGE(inst->micro_inst.vop3a.op, 293, 298)) && !(IN_RANGE(inst->micro_inst.vop3a.op, 365, 366)))
+			{
+				if (inst->micro_inst.vop3a.abs & 2)
+				{
+					str_printf(&inst_str, &str_size, "abs(%s)", operand_str);
+				}
+				else
+				{
+					str_printf(&inst_str, &str_size, "%s", operand_str);
+				}
+			}
+			else
+			{
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
 		}
 		else if (is_token(fmt_str, "64_SRC1", &token_len))
 		{
@@ -1329,7 +1477,22 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 		else if (is_token(fmt_str, "SRC2", &token_len))
 		{
 			operand_dump(operand_str, inst->micro_inst.vop3a.src2);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			
+			if (!(IN_RANGE(inst->micro_inst.vop3a.op, 293, 298)) && !(IN_RANGE(inst->micro_inst.vop3a.op, 365, 366)))
+			{
+				if (inst->micro_inst.vop3a.abs & 4)
+				{
+					str_printf(&inst_str, &str_size, "abs(%s)", operand_str);
+				}
+				else
+				{
+					str_printf(&inst_str, &str_size, "%s", operand_str);
+				}
+			}
+			else
+			{
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}			
 		}
 		else if (is_token(fmt_str, "64_SRC2", &token_len))
 		{
@@ -1402,9 +1565,23 @@ void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 				str_printf(&inst_str, &str_size, "%s", operand_str);	
 			}
 		}
+		else if (is_token(fmt_str, "64_SRC0", &token_len))
+		{
+			assert(vopc->src0 != 0xFF);
+
+			operand_dump_series(operand_str, vopc->src0, vopc->src0 + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
 		else if (is_token(fmt_str, "VSRC1", &token_len))
 		{
 			operand_dump_vector(operand_str, vopc->vsrc1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "64_VSRC1", &token_len))
+		{
+			assert(vopc->vsrc1 != 0xFF);
+
+			operand_dump_series_vector(operand_str, vopc->vsrc1, vopc->vsrc1 + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else
@@ -1706,6 +1883,194 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int inst_size, unsigned
 	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst_size);
 }
 
+void si_inst_dump_mubuf(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size)
+{
+	
+	struct si_fmt_mubuf_t *mubuf = &inst->micro_inst.mubuf;
+
+	int vdata_end;
+	switch(mubuf->op)
+	{
+		case 0:
+		case 4:
+		case 9:
+		case 50:
+			vdata_end = mubuf->vdata + 0;
+			break;
+		case 1:
+		case 5:
+			vdata_end = mubuf->vdata + 1;
+			break;
+		case 2:
+		case 6:
+			vdata_end = mubuf->vdata + 2;
+			break;
+		case 3:
+		case 7:
+			vdata_end = mubuf->vdata + 3;
+			break;
+	}
+	
+	int str_size = MAX_INST_STR_SIZE;
+	char orig_inst_str[MAX_INST_STR_SIZE];
+	char *inst_str = &orig_inst_str[0];
+	char *fmt_str = inst->info->fmt_str;
+	int token_len;
+	char operand_str[MAX_OPERAND_STR_SIZE];
+	while (*fmt_str)
+	{
+		/* Literal */
+		if (*fmt_str != '%')
+		{
+			str_printf(&inst_str, &str_size, "%c", *fmt_str);
+			fmt_str++;
+			continue;
+		}
+
+		/* Token */
+		fmt_str++;
+		if (is_token(fmt_str, "SERIES_VDATA", &token_len))
+		{
+			operand_dump_series_vector(operand_str, mubuf->vdata, vdata_end);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VADDR", &token_len))
+		{
+			if (mubuf->offen && mubuf->index)
+			{
+				operand_dump_series_vector(operand_str, mubuf->vaddr, mubuf->vaddr + 1);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+			else
+			{
+				operand_dump_vector(operand_str, mubuf->vaddr);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
+		else if (is_token(fmt_str, "SERIES_SRSRC", &token_len))
+		{
+			assert((mubuf->srsrc << 2) % 4 == 0);
+			operand_dump_series_scalar(operand_str, mubuf->srsrc << 2, (mubuf->srsrc << 2) + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "SOFFSET", &token_len))
+		{
+			assert(mubuf->soffset <= 103 ||
+				mubuf->soffset == 124 || 
+				(mubuf->soffset >= 128 && mubuf->soffset <= 208));
+			operand_dump_scalar(operand_str, mubuf->soffset);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "INDEX", &token_len))
+		{
+			if(mubuf->index)
+			{
+				str_printf(&inst_str, &str_size, " idxen");
+			}
+		}
+		else if (is_token(fmt_str, "OFFEN", &token_len))
+		{
+			if (mubuf->offen)
+			{
+				str_printf(&inst_str, &str_size, " offen");
+			}
+		}
+		else if (is_token(fmt_str, "OFFSET", &token_len))
+		{
+			if (mubuf->offset)
+			{
+				str_printf(&inst_str, &str_size, " offset:%d", mubuf->offset);
+			}
+		}
+		else
+		{
+			fatal("%s: token not recognized.", fmt_str);
+		}
+
+		fmt_str += token_len;
+	}
+
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst_size);
+}
+
+void si_inst_dump_mimg(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size)
+{
+	
+	struct si_fmt_mimg_t *mimg = &inst->micro_inst.mimg;
+
+	int str_size = MAX_INST_STR_SIZE;
+	char orig_inst_str[MAX_INST_STR_SIZE];
+	char *inst_str = &orig_inst_str[0];
+	char *fmt_str = inst->info->fmt_str;
+	int token_len;
+	char operand_str[MAX_OPERAND_STR_SIZE];
+
+
+	while (*fmt_str)
+	{
+		/* Literal */
+		if (*fmt_str != '%')
+		{
+			str_printf(&inst_str, &str_size, "%c", *fmt_str);
+			fmt_str++;
+			continue;
+		}
+	
+		/* Token */
+		fmt_str++;
+		if (is_token(fmt_str, "SERIES_VDATA", &token_len))
+		{
+			operand_dump_series_vector(operand_str, mimg->vdata, mimg->vdata + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VADDR", &token_len))
+		{
+			operand_dump_series_vector(operand_str, mimg->vaddr, mimg->vaddr + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "SERIES_SRSRC", &token_len))
+		{
+			assert((mimg->srsrc << 2) % 4 == 0);
+			operand_dump_series_scalar(operand_str, mimg->srsrc << 2, (mimg->srsrc << 2) + 7);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "SERIES_SSAMP", &token_len))
+		{
+			assert((mimg->ssamp << 2) % 4 == 0);
+			operand_dump_series_scalar(operand_str, mimg->ssamp << 2, (mimg->ssamp << 2) + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "DMASK", &token_len))
+		{
+			str_printf(&inst_str, &str_size, " dmask:0x%01x", mimg->dmask);
+		}
+		else if (is_token(fmt_str, "UNORM", &token_len))
+		{	
+			if (mimg->unorm)
+			{
+				str_printf(&inst_str, &str_size, " unorm");
+			}	
+		}
+		else if (is_token(fmt_str, "GLC", &token_len))
+		{
+			if (mimg->glc)
+			{
+				str_printf(&inst_str, &str_size, " glc");
+			}
+		}
+		else
+		{
+			fatal("%s: token not recognized.", fmt_str);	
+		}
+
+		fmt_str += token_len;
+	}
+
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst_size);
+	
+}
+
+
 /* GPU disassembler tool */
 void si_disasm(char *path)
 {
@@ -1742,7 +2107,7 @@ void si_disasm(char *path)
                         /* Get kernel name */
                         printf("**\n** Disassembly for '__kernel %s'\n**\n\n", kernel_name);
                         si_disasm_buffer(&amd_bin->enc_dict_entry_southern_islands->sec_text_buffer, stdout);
-                        printf("\n\n\n");
+		        printf("\n\n\n");
 
                         /* Free internal ELF */
                         si_bin_file_free(amd_bin);
