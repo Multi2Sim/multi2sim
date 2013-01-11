@@ -21,6 +21,7 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 
+#include "clcpu-device.h"
 #include "debug.h"
 #include "mem.h"
 #include "mhandle.h"
@@ -329,4 +330,74 @@ cl_int opencl_x86_kernel_set_arg(struct opencl_x86_kernel_t *kernel,
 	/* Label argument as set */
 	kernel->param_info[arg_index].is_set = 1;
 	return 0;
+}
+
+
+void opencl_x86_kernel_run(
+	struct clcpu_device_t *device,
+	struct opencl_x86_kernel_t *kernel,
+	cl_uint work_dim,
+	const size_t *global_work_offset,
+	const size_t *global_work_size,
+	const size_t *local_work_size)
+{
+	int i;
+	int j;
+	int k;
+	int num_groups[3];
+
+	struct clcpu_execution_t *run;
+
+	run = xmalloc(sizeof (struct clcpu_execution_t));
+
+	/* copy over dimensions */
+	run->dims = work_dim;
+	run->global = global_work_size;
+	run->local = local_work_size;
+
+
+	run->num_groups = 1;
+	for (i = 0; i < 3; i++)
+	{
+		assert(!(run->global[i] % run->local[i]));
+
+		num_groups[i] = run->global[i] / run->local[i];
+		run->num_groups *= num_groups[i];
+	}
+	run->kernel = kernel;
+	run->next_group = 0;
+	run->group_starts = xmalloc(3 * sizeof (size_t) * run->num_groups);
+	if(!run->group_starts)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	pthread_mutex_init(&run->mutex, NULL);
+
+	for (i = 0; i < num_groups[2]; i++)
+		for (j = 0; j < num_groups[1]; j++)
+			for (k = 0; k < num_groups[0]; k++)
+			{
+				size_t *group_start;
+
+				group_start = run->group_starts + 3 * (i * num_groups[1] * num_groups[0] + j * num_groups[0] + k);
+				group_start[0] = run->local[0] * k;
+				group_start[1] = run->local[1] * j;
+				group_start[2] = run->local[2] * i;
+			}
+
+	pthread_mutex_lock(&device->lock);
+
+	device->num_kernels++;
+	device->num_done = 0;
+	device->exec = run;
+	pthread_cond_broadcast(&device->ready);
+
+	while (device->num_done != device->num_cores)
+		pthread_cond_wait(&device->done, &device->lock);
+
+	pthread_mutex_unlock(&device->lock);
+
+	/* free the execution context */
+	free(run->group_starts);
+	pthread_mutex_destroy(&run->mutex);
+	free(run);
 }

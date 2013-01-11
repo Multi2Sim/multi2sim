@@ -14,11 +14,6 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	\
 	clcpu.h \
 	\
-	clcpu-execute.c \
-	\
-	clcpu-program.c \
-	clcpu-program.h \
-	\
 	clrt.c \
 	clrt.h \
 	\
