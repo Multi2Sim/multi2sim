@@ -21,10 +21,10 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 
-#include "clcpu-device.h"
 #include "debug.h"
 #include "mem.h"
 #include "mhandle.h"
+#include "x86-device.h"
 #include "x86-kernel.h"
 
 
@@ -334,8 +334,8 @@ cl_int opencl_x86_kernel_set_arg(struct opencl_x86_kernel_t *kernel,
 
 
 void opencl_x86_kernel_run(
-	struct clcpu_device_t *device,
 	struct opencl_x86_kernel_t *kernel,
+	struct opencl_x86_device_t *device,
 	cl_uint work_dim,
 	const size_t *global_work_offset,
 	const size_t *global_work_size,
@@ -346,9 +346,9 @@ void opencl_x86_kernel_run(
 	int k;
 	int num_groups[3];
 
-	struct clcpu_execution_t *run;
+	struct opencl_x86_device_exec_t *run;
 
-	run = xmalloc(sizeof (struct clcpu_execution_t));
+	run = xmalloc(sizeof(struct opencl_x86_device_exec_t));
 
 	/* copy over dimensions */
 	run->dims = work_dim;
