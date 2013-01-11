@@ -942,8 +942,8 @@ struct frm_fmt_ctrl_bra_t
 	unsigned long long int u : 1; /* [15] */
 	unsigned long long int lmt : 1; /* [16] */
 	unsigned long long int __reserved1 : 9; /* [25:17] */
-	unsigned long long int tgt : 20; /* [45:26] */
-	unsigned long long int __reserved2 : 12; /* [57:46] */
+	unsigned long long int tgt : 24; /* [49:26] */
+	unsigned long long int __reserved2 : 8; /* [57:50] */
 	unsigned long long int op1 : 6; /* [63:58] */
 };
 

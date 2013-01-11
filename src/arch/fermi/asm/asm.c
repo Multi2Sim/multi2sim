@@ -24,6 +24,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/string.h>
 
 #include "asm.h"  
@@ -387,9 +388,7 @@ void frm_inst_dump_pred(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	if (pred < 7)
 		str_printf(inst_str_ptr, inst_str_size, "@P%lld", pred);
 	else if (pred > 7)
-		str_printf(inst_str_ptr, inst_str_size, "@!P%lld", pred-8);
-	else
-		;
+		str_printf(inst_str_ptr, inst_str_size, "@!P%lld", pred - 8);
 }
 
 
@@ -2792,6 +2791,7 @@ void frm_inst_dump_target(char **inst_str_ptr, int *inst_str_size, struct frm_in
 	else
 		fatal("%d: fmt not recognized", fmt);
 
+	target = SEXT64(target, 24);
 	target += inst->addr + 8;
 	str_printf(inst_str_ptr, inst_str_size, "%#llx", target);
 }
@@ -2855,6 +2855,7 @@ void frm_disasm(char *path)
 
 	/* Load cubin file */
 	elf_file = elf_file_create_from_path(path);
+	printf("\n\tcode for sm_20\n");
 
 	for (i = 0; i < list_count(elf_file->section_list); ++i)
 	{
@@ -2864,12 +2865,13 @@ void frm_disasm(char *path)
 		if (!strncmp(section->name, ".text.", 6))
 		{
 			/* Decode and dump instructions */
-			printf("%s\n", section->name + 6);
+			printf("\t\tFunction : %s\n", section->name + 6);
 			for (inst_index = 0; inst_index < section->buffer.size/8; ++inst_index)
 			{
 				frm_inst_hex_dump(stdout, (unsigned char*)(section->buffer.ptr), inst_index);
 				frm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, (unsigned char*)(section->buffer.ptr), inst_index);
 			}
+			printf("\t\t.........................................\n\n\n");
 		}
 		if (!strncmp(section->name, ".rodata", 7))
 		{
@@ -2883,7 +2885,8 @@ void frm_disasm(char *path)
 	elf_file_free(elf_file);
         frm_disasm_done();
 
-        /* End */
+        
+	/*End */
         mhandle_done();
         exit(0);
 }
