@@ -448,7 +448,7 @@ struct elf_buffer_t;
 void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f);
 
 void si_disasm(char* path);
-int si_inst_decode(void *buf, struct si_inst_t *inst);
+int si_inst_decode(void *buf, struct si_inst_t *inst, unsigned int offset);
 
 /* Functions to dump individual instruction lines for decoded instructions. */
 #define MAX_INST_STR_SIZE 200
@@ -463,7 +463,9 @@ void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_ds(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_mubuf(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_mimg(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 
 void si_inst_dump(struct si_inst_t *inst, int inst_size, void *wavefront_pool, unsigned int rel_addr,
 	char *line, int line_size);
