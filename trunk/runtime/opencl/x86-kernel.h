@@ -23,6 +23,10 @@
 #include "clrt.h"
 
 
+/* Forward declarations */
+struct opencl_x86_device_t;
+
+
 /* Function executing x86 OpenCL kernel */
 typedef void (*opencl_x86_kernel_func_t)(void);
 
@@ -136,8 +140,8 @@ cl_int opencl_x86_kernel_set_arg(
 		const void *arg_value);
 
 void opencl_x86_kernel_run(
-		struct clcpu_device_t *device,
 		struct opencl_x86_kernel_t *kernel,
+		struct opencl_x86_device_t *device,
 		cl_uint work_dim,
 		const size_t *global_work_offset,
 		const size_t *global_work_size,

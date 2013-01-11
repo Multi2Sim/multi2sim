@@ -28,11 +28,11 @@
 
 #include "../include/CL/cl.h"
 #include "clcpu.h"
-#include "clcpu-device.h"
 #include "clrt.h"
 #include "debug.h"
 #include "device.h"
 #include "mhandle.h"
+#include "x86-device.h"
 #include "x86-kernel.h"
 #include "x86-program.h"
 
@@ -51,9 +51,9 @@ const char *DEVICE_VERSION = "OpenCL 1.1 Multi2Sim";
 #define OPENCL_WORK_GROUP_STACK_MASK  0xffffe000
 #define OPENCL_WORK_GROUP_DATA_OFFSET  -0x60
 
-struct clcpu_workgroup_data_t *get_workgroup_data(void)
+struct opencl_x86_device_work_group_data_t *get_workgroup_data(void)
 {
-	struct clcpu_workgroup_data_t *data;
+	struct opencl_x86_device_work_group_data_t *data;
 
 	asm volatile (
 		"lea " XSTR(OPENCL_WORK_GROUP_STACK_SIZE) "(%%esp), %%eax\n\t"
@@ -142,7 +142,7 @@ void switch_fiber(struct fiber_t *current, struct fiber_t *dest, void *reg_value
 
 void barrier(int data)
 {
-	struct clcpu_workgroup_data_t *workgroup_data;
+	struct opencl_x86_device_work_group_data_t *workgroup_data;
 	struct fiber_t *sleep;
 	struct fiber_t *resume;
 
@@ -155,6 +155,7 @@ void barrier(int data)
 	switch_fiber(sleep, resume, NULL);
 }
 
+typedef void (*clrt_barrier_t)(int option);
 static clrt_barrier_t barrier_addr = barrier;
 
 struct opencl_device_type_t *clcpu_create_device_type(void)
@@ -266,7 +267,7 @@ void clcpu_device_info_init(cl_device_id cpu)
 
 /* Check to see whether the device has been assigned work
  * Assume that the calling thread owns device->lock */
-struct clcpu_execution_t *has_work(struct clcpu_device_t *device, int *old_count)
+struct opencl_x86_device_exec_t *has_work(struct opencl_x86_device_t *device, int *old_count)
 {
 	while (device->num_kernels == *old_count)
 		pthread_cond_wait(&device->ready, &device->lock);
@@ -276,16 +277,16 @@ struct clcpu_execution_t *has_work(struct clcpu_device_t *device, int *old_count
 }
 
 void init_workitem(
-	struct clcpu_workitem_data_t *workitem_data, 
+	struct opencl_x86_device_work_item_data_t *workitem_data, 
 	int dims, 
 	const size_t *global, 
 	const size_t *local, 
-	struct clcpu_workgroup_data_t *workgroup_data,
+	struct opencl_x86_device_work_group_data_t *workgroup_data,
 	void *local_reserved)
 {
 	int i;
 
-	memset(workitem_data, 0, sizeof (struct clcpu_workitem_data_t));
+	memset(workitem_data, 0, sizeof (struct opencl_x86_device_work_item_data_t));
 	for (i = 0; i < 4; i++)
 	{
 		workitem_data->global_size[i] = 1;
@@ -312,7 +313,7 @@ void init_workitem(
 /* set the return address of a work item to point to this funciton. */
 void exit_work_item(void)
 {
-	struct clcpu_workgroup_data_t *workgroup_data;
+	struct opencl_x86_device_work_group_data_t *workgroup_data;
 
 	void *new_esp;
 	void *new_eip;
@@ -334,7 +335,7 @@ void exit_work_item(void)
 
 
 /* Get the next workgroup in an NDRange */
-int get_next(struct clcpu_execution_t *exec)
+int get_next(struct opencl_x86_device_exec_t *exec)
 {
 	int val;
 
@@ -345,7 +346,7 @@ int get_next(struct clcpu_execution_t *exec)
 }
 
 void init_workgroup(
-	struct clcpu_workgroup_data_t *workgroup, 
+	struct opencl_x86_device_work_group_data_t *workgroup, 
 	struct opencl_x86_kernel_t *kernel, 
 	int dims, 
 	const size_t *global, 
@@ -361,7 +362,7 @@ void init_workgroup(
 	workgroup->num_done = 0;
 	workgroup->cur_ctx = NULL;
 	workgroup->workitems = xmalloc(sizeof (struct fiber_t) * workgroup->num_items);
-	workgroup->workitem_data = xmalloc(sizeof (struct clcpu_workitem_data_t *) * workgroup->num_items);
+	workgroup->workitem_data = xmalloc(sizeof (struct opencl_x86_device_work_item_data_t *) * workgroup->num_items);
 
 	if (posix_memalign((void **) &workgroup->aligned_stacks,
 			OPENCL_WORK_GROUP_STACK_SIZE,
@@ -383,8 +384,8 @@ void init_workgroup(
 		/* properly initialize the stack and workgroup */
 		ctx = workgroup->workitems + i;
 		ctx->stack_bottom = workgroup->aligned_stacks + (i * OPENCL_WORK_GROUP_STACK_SIZE);
-		ctx->stack_size = OPENCL_WORK_GROUP_STACK_SIZE - sizeof (struct clcpu_workitem_data_t);
-		workgroup->workitem_data[i] = (struct clcpu_workitem_data_t *) ((char *) ctx->stack_bottom + ctx->stack_size);
+		ctx->stack_size = OPENCL_WORK_GROUP_STACK_SIZE - sizeof (struct opencl_x86_device_work_item_data_t);
+		workgroup->workitem_data[i] = (struct opencl_x86_device_work_item_data_t *) ((char *) ctx->stack_bottom + ctx->stack_size);
 		init_workitem(workgroup->workitem_data[i], dims, global, local, workgroup, local_reserved);
 	}
 
@@ -410,7 +411,7 @@ void launch_work_group(
 	const size_t *group_start, 
 	const size_t *global, 
 	const size_t *local, 
-	struct clcpu_workgroup_data_t *workgroup_data)
+	struct opencl_x86_device_work_group_data_t *workgroup_data)
 {
 	size_t i;
 	size_t j;
@@ -444,7 +445,7 @@ void launch_work_group(
 			{
 				size_t id;
 				int x;
-				struct clcpu_workitem_data_t *workitem_data;
+				struct opencl_x86_device_work_item_data_t *workitem_data;
 
 				id = i * local_size[1] * local_size[0] + j * local_size[0] + k;	
 				workitem_data = workgroup_data->workitem_data[id];
@@ -477,7 +478,7 @@ void launch_work_group(
 					kernel->register_params);
 }
 
-void destroy_workgroup(struct clcpu_workgroup_data_t *workgroup, struct opencl_x86_kernel_t *kernel)
+void destroy_workgroup(struct opencl_x86_device_work_group_data_t *workgroup, struct opencl_x86_kernel_t *kernel)
 {
 	int i;
 
@@ -503,14 +504,14 @@ void destroy_workgroup(struct clcpu_workgroup_data_t *workgroup, struct opencl_x
 void *clcpu_device_core_proc(void *ptr)
 {
 	int count = 0;
-	struct clcpu_device_t *device = ptr;
-	struct clcpu_execution_t *exec = NULL;
+	struct opencl_x86_device_t *device = ptr;
+	struct opencl_x86_device_exec_t *exec = NULL;
 
 	pthread_mutex_lock(&device->lock);
 	while ((exec = has_work(device, &count)))
 	{
 		int num;
-		struct clcpu_workgroup_data_t workgroup_data;
+		struct opencl_x86_device_work_group_data_t workgroup_data;
 
 		pthread_mutex_unlock(&device->lock);
 
@@ -533,9 +534,9 @@ void *clcpu_device_core_proc(void *ptr)
 
 
 
-struct clcpu_device_t *clcpu_device_create(void)
+struct opencl_x86_device_t *clcpu_device_create(void)
 {
-	struct clcpu_device_t *cpu_device = xmalloc(sizeof *cpu_device);
+	struct opencl_x86_device_t *cpu_device = xmalloc(sizeof *cpu_device);
 
 	cpu_device->num_cores = get_cpu_thread_count();
 	cpu_device->num_kernels = 0;
@@ -575,7 +576,7 @@ cl_int clcpu_device_type_init_devices(
 	{
 		cl_device_id cpu = xmalloc(sizeof *cpu);
 		clcpu_device_info_init(cpu);
-		cpu->device = clcpu_device_create();
+		cpu->arch_device = clcpu_device_create();
 		devices[0] = cpu;
 	}
 

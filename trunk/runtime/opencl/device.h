@@ -90,8 +90,10 @@ struct _cl_device_id
 	const char *version;
 	const char *driver_version;
 
-	/* Device-dependent implementation */
-	void *device;
+	/* Architecture-specific device of type 'opencl_XXX_device_t'.
+	 * This pointer is used to refence what would be a sub-class in an
+	 * object-oriented language. */
+	void *arch_device;
 
 	/* Don't set in driver.  Will be set by framework */
 	struct opencl_device_type_t *device_type;
@@ -119,16 +121,8 @@ typedef cl_bool (*opencl_device_is_valid_binary_func_t)(
 	size_t length,
 	const unsigned char *binary);
 
-/* execute on a device */
-typedef void (*opencl_device_arch_kernel_run_func_t)(
-	void *device,
-	void *kernel, 
-	cl_uint work_dim, 
-	const size_t *global_work_offset, 
-	const size_t *global_work_size, 
-	const size_t *local_work_size);
-
-/* create a kernel object who's parameters can be set */
+/* Create an architecture-specific kernel. Returns an object of type
+ * 'opencl_XXX_kernel_t'. */
 typedef void *(*opencl_device_arch_kernel_create_func_t)(
 	void *dlhandle,
 	const char *kernel_name,
@@ -136,18 +130,29 @@ typedef void *(*opencl_device_arch_kernel_create_func_t)(
 
 /* Free an architecture-specific kernel. */
 typedef void (*opencl_device_arch_kernel_free_func_t)(
-	void *kernel);
+	void *kernel);  /* Of type 'opencl_XXX_kernel_t' */
 
 /* Verify that a kernel has properly set parameters */
 typedef cl_int (*opencl_device_arch_kernel_check_func_t)(
-	void *kernel);
+	void *kernel);  /* Of type 'opencl_XXX_kernel_t' */
 
 /* Set a kernel argument */
 typedef cl_int (*opencl_device_arch_kernel_set_arg_func_t)(
-	void *kernel,
+	void *kernel,  /* Of type 'opencl_XXX_kernel_t' */
 	cl_uint arg_index,
 	size_t arg_size,
 	const void *arg_value);
+
+/* Run ND-Range on device */
+typedef void (*opencl_device_arch_kernel_run_func_t)(
+	void *kernel,  /* Of type 'opencl_XXX_kernel_t' */
+	void *arch_device,  /* Of type 'opencl_XXX_device_t' */
+	cl_uint work_dim,
+	const size_t *global_work_offset,
+	const size_t *global_work_size,
+	const size_t *local_work_size);
+
+
 
 struct opencl_device_type_t
 {

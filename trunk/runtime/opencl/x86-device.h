@@ -41,22 +41,6 @@ struct opencl_x86_device_exec_t
 };
 
 
-struct opencl_x86_device_t
-{
-	volatile int num_kernels;
-	volatile int num_done;
-
-	volatile int num_cores;
-	pthread_t *threads;
-
-	pthread_mutex_t lock;
-	pthread_cond_t ready;
-	pthread_cond_t done;
-
-	struct opencl_x86_device_exec_t *exec;
-};
-
-
 struct opencl_x86_device_work_item_data_t
 {
 	int workgroup_data;  /* 0x60 (Not actually part of AMD runtime, padding_0) */
@@ -85,5 +69,20 @@ struct opencl_x86_device_work_group_data_t
 };
 
 
-#endif
+struct opencl_x86_device_t
+{
+	volatile int num_kernels;
+	volatile int num_done;
 
+	volatile int num_cores;
+	pthread_t *threads;
+
+	pthread_mutex_t lock;
+	pthread_cond_t ready;
+	pthread_cond_t done;
+
+	struct opencl_x86_device_exec_t *exec;
+};
+
+
+#endif
