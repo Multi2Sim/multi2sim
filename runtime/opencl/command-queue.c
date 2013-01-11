@@ -77,7 +77,7 @@ static void opencl_command_queue_task_kernel_run_action(void *user_data)
 {
 	struct opencl_command_queue_task_kernel_run_t *kernel_run = user_data;
 
-	kernel_run->device->device_type->execute_ndrange(
+	kernel_run->device->device_type->arch_kernel_run_func(
 		kernel_run->device->device,
 		kernel_run->kernel,
 		kernel_run->work_dim,

@@ -161,7 +161,6 @@ struct opencl_device_type_t *clcpu_create_device_type(void)
 {
 	struct opencl_device_type_t *device_type = xmalloc(sizeof *device_type);
 	device_type->init_devices = clcpu_device_type_init_devices;
-	device_type->execute_ndrange = clcpu_device_exceute_ndrange;
 	device_type->is_valid_binary =
 			(opencl_device_is_valid_binary_func_t)
 			x86_program_is_valid_binary;
@@ -175,9 +174,12 @@ struct opencl_device_type_t *clcpu_create_device_type(void)
 	device_type->arch_kernel_check_func =
 			(opencl_device_arch_kernel_check_func_t)
 			opencl_x86_kernel_check;
-	device_type->arch_kernel_set_arg =
+	device_type->arch_kernel_set_arg_func =
 			(opencl_device_arch_kernel_set_arg_func_t)
 			opencl_x86_kernel_set_arg;
+	device_type->arch_kernel_run_func =
+			(opencl_device_arch_kernel_run_func_t)
+			opencl_x86_kernel_run;
 
 	return device_type;
 }
