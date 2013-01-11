@@ -194,7 +194,7 @@ cl_int clSetKernelArg(
 	LIST_FOR_EACH(kernel->entry_list, i)
 	{
 		entry = list_get(kernel->entry_list, i);
-		status = entry->device_type->arch_kernel_set_arg(entry->kernel,
+		status = entry->device_type->arch_kernel_set_arg_func(entry->kernel,
 			arg_index, arg_size, arg_value);
 		if (status != CL_SUCCESS)
 			return status;

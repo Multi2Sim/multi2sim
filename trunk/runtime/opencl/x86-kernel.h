@@ -118,14 +118,30 @@ struct opencl_x86_kernel_t
 };
 
 
-/* Create/free */
-struct opencl_x86_kernel_t *opencl_x86_kernel_create(void *handle,
-		char *name, cl_int *err_ptr);
-void opencl_x86_kernel_free(struct opencl_x86_kernel_t *kernel);
+struct opencl_x86_kernel_t *opencl_x86_kernel_create(
+		void *handle,
+		char *name,
+		cl_int *err_ptr);
 
-cl_int opencl_x86_kernel_check(struct opencl_x86_kernel_t *kernel);
-cl_int opencl_x86_kernel_set_arg(struct opencl_x86_kernel_t *kernel,
-		cl_uint arg_index, size_t arg_size, const void *arg_value);
+void opencl_x86_kernel_free(
+		struct opencl_x86_kernel_t *kernel);
+
+cl_int opencl_x86_kernel_check(
+		struct opencl_x86_kernel_t *kernel);
+
+cl_int opencl_x86_kernel_set_arg(
+		struct opencl_x86_kernel_t *kernel,
+		cl_uint arg_index,
+		size_t arg_size,
+		const void *arg_value);
+
+void opencl_x86_kernel_run(
+		struct clcpu_device_t *device,
+		struct opencl_x86_kernel_t *kernel,
+		cl_uint work_dim,
+		const size_t *global_work_offset,
+		const size_t *global_work_size,
+		const size_t *local_work_size);
 
 
 #endif

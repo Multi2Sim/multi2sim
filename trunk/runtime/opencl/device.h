@@ -120,7 +120,7 @@ typedef cl_bool (*opencl_device_is_valid_binary_func_t)(
 	const unsigned char *binary);
 
 /* execute on a device */
-typedef void (*opencl_device_execute_ndrange_t)(
+typedef void (*opencl_device_arch_kernel_run_func_t)(
 	void *device,
 	void *kernel, 
 	cl_uint work_dim, 
@@ -153,13 +153,13 @@ struct opencl_device_type_t
 {
 	opencl_device_type_init_devices_t init_devices;	
 	opencl_device_is_valid_binary_func_t is_valid_binary;
-	opencl_device_execute_ndrange_t execute_ndrange;
 
 	/* Call-back functions for an architecture-specific kernel */
 	opencl_device_arch_kernel_create_func_t arch_kernel_create_func;
 	opencl_device_arch_kernel_free_func_t arch_kernel_free_func;
 	opencl_device_arch_kernel_check_func_t arch_kernel_check_func;
-	opencl_device_arch_kernel_set_arg_func_t arch_kernel_set_arg;
+	opencl_device_arch_kernel_set_arg_func_t arch_kernel_set_arg_func;
+	opencl_device_arch_kernel_run_func_t arch_kernel_run_func;
 };
 
 /* create a device type */
