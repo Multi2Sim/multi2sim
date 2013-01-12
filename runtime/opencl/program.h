@@ -27,7 +27,12 @@
 struct opencl_program_entry_t
 {
 	/* Associated device */
-	struct opencl_device_type_t *device_type;
+	struct opencl_device_t *device;
+
+	/* FIXME - One program_entry_t should associate a device with a given
+	 * architecture-specific program 'opencl_xxx_program_t'. The fields
+	 * below are specific for x86, so they should to to
+	 * 'opencl_x86_program_t'. */
 
 	/* Temporary file where the internal ELF file was dumped */
 	char *file_name;
