@@ -30,7 +30,10 @@
 
 
 
-/* OpenCL pseudo-types */
+/*
+ * Types
+ */
+
 #define opencl_platform_t _cl_platform_id
 #define opencl_device_t _cl_device_id
 #define opencl_context_t _cl_context
@@ -40,6 +43,9 @@
 #define opencl_kernel_t _cl_kernel
 #define opencl_event_t _cl_event
 #define opencl_sampler_t _cl_sampler
+
+/* Generic call-back function */
+typedef void *(*opencl_callback_t)(void *);
 
 
 
