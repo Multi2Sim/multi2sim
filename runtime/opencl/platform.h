@@ -20,10 +20,11 @@
 #ifndef RUNTIME_OPENCL_PLATFORM_H
 #define RUNTIME_OPENCL_PLATFORM_H
 
+#include "opencl.h"
+
 
 /* Platform type. For name compatibility between OpenCL and Multi2Sim naming
  * conventions, a pseudo-type is created with a macro. */
-#define opencl_platform_t _cl_platform_id
 struct _cl_platform_id
 {
 	/* List of device types - elements of type opencl_device_type_entry_t */

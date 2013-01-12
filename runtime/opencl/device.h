@@ -20,7 +20,7 @@
 #ifndef RUNTIME_OPENCL_DEVICE_H
 #define RUNTIME_OPENCL_DEVICE_H
 
-#include "clrt.h"
+#include "opencl.h"
 
 
 struct opencl_device_type_t;

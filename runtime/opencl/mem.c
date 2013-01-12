@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "clrt.h"
 #include "debug.h"
 #include "mem.h"
 #include "mhandle.h"

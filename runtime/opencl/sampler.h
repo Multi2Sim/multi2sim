@@ -20,9 +20,10 @@
 #ifndef RUNTIME_OPENCL_SAMPLER_H
 #define RUNTIME_OPENCL_SAMPLER_H
 
+#include "opencl.h"
+
 
 /* Sampler object */
-#define opencl_sampler_t _cl_sampler
 struct _cl_sampler
 {
 	unsigned int id;

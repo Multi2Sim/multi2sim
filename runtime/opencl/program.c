@@ -23,7 +23,6 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#include "clrt.h"
 #include "context.h"
 #include "debug.h"
 #include "device.h"

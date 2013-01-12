@@ -20,9 +20,10 @@
 #ifndef RUNTIME_OPENCL_CONTEXT_H
 #define RUNTIME_OPENCL_CONTEXT_H
 
+#include "opencl.h"
+
 
 /* Context Object */
-#define opencl_context_t _cl_context
 struct _cl_context
 {
 	/* List of devices - elements of type opencl_device_t */

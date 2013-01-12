@@ -22,7 +22,7 @@
 
 #include <pthread.h>
 
-#include "clrt.h"
+#include "opencl.h"
 
 
 typedef void (*opencl_x86_device_fiber_func_t)(void);

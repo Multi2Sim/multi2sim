@@ -20,9 +20,9 @@
 #ifndef RUNTIME_OPENCL_MEM_H
 #define RUNTIME_OPENCL_MEM_H
 
+#include "opencl.h"
 
 /* Memory object */
-#define opencl_mem_t _cl_mem
 struct _cl_mem
 {
 	void *buffer;
