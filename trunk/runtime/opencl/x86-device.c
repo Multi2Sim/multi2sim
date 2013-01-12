@@ -26,6 +26,7 @@
 #include "mhandle.h"
 #include "x86-device.h"
 #include "x86-kernel.h"
+#include "x86-program.h"
 
 
 /*
@@ -618,6 +619,26 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 				CL_FP_SOFT_FLOAT;
 	parent->type = CL_DEVICE_TYPE_CPU;
 	parent->vendor_id = 0;
+
+	/* Initialize call-back functions */
+	parent->is_valid_binary =
+			(opencl_device_is_valid_binary_func_t)
+			x86_program_is_valid_binary;
+	parent->arch_kernel_create_func =
+			(opencl_device_arch_kernel_create_func_t)
+			opencl_x86_kernel_create;
+	parent->arch_kernel_free_func =
+			(opencl_device_arch_kernel_free_func_t)
+			opencl_x86_kernel_free;
+	parent->arch_kernel_check_func =
+			(opencl_device_arch_kernel_check_func_t)
+			opencl_x86_kernel_check;
+	parent->arch_kernel_set_arg_func =
+			(opencl_device_arch_kernel_set_arg_func_t)
+			opencl_x86_kernel_set_arg;
+	parent->arch_kernel_run_func =
+			(opencl_device_arch_kernel_run_func_t)
+			opencl_x86_kernel_run;
 
 	/* Initialize mutex and condition variables */
 	pthread_mutex_init(&device->lock, NULL);

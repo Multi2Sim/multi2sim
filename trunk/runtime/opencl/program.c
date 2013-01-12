@@ -107,6 +107,7 @@ cl_program clCreateProgramWithBinary(
 	struct opencl_program_t *program;
 	
 	int i;
+	int j;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -166,7 +167,8 @@ cl_program clCreateProgramWithBinary(
 		}
 
 		/* Make sure the type of the binary matches */
-		if (!lengths[i] || !binaries[i] || !device->device_type->is_valid_binary(lengths[i], binaries[i]))
+		if (!lengths[i] || !binaries[i] ||
+				!device->is_valid_binary(lengths[i], binaries[i]))
 		{
 			if (binary_status[i])
 				binary_status[i] = CL_INVALID_VALUE;
@@ -177,12 +179,18 @@ cl_program clCreateProgramWithBinary(
 		}
 
 		/* If the device type if already present, skip */
-		if (list_index_of(program->entry_list, device->device_type) >= 0)
+		LIST_FOR_EACH(program->entry_list, j)
+		{
+			entry = list_get(program->entry_list, j);
+			if (entry->device == device)
+				break;
+		}
+		if (j < list_count(program->entry_list))
 			continue;
 
 		/* Add a new program entry */
 		entry = xcalloc(1, sizeof(struct opencl_program_entry_t));
-		entry->device_type = device->device_type;
+		entry->device = device;
 		list_add(program->entry_list, entry);
 
 		/* Load ELF binary */
