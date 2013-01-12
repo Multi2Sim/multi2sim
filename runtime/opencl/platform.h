@@ -27,8 +27,8 @@
  * conventions, a pseudo-type is created with a macro. */
 struct _cl_platform_id
 {
-	/* List of device types - elements of type opencl_device_type_entry_t */
-	struct list_t *device_type_list;
+	/* List of devices */
+	struct list_t *device_list;
 	
 	/* String properties */
 	char *full_profile;

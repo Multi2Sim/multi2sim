@@ -66,7 +66,8 @@ static void opencl_command_queue_task_mem_transfer_action(void *user_data)
 struct opencl_command_queue_task_kernel_run_t
 {
 	struct opencl_device_t *device;
-	void *kernel; /* device-dependent kernel */
+	void *arch_kernel;  /* Of type 'opencl_xxx_kernel_t' */
+
 	cl_uint work_dim; 
 	size_t global_work_offset[MAX_DIMS];
 	size_t global_work_size[MAX_DIMS];
@@ -77,8 +78,8 @@ static void opencl_command_queue_task_kernel_run_action(void *user_data)
 {
 	struct opencl_command_queue_task_kernel_run_t *kernel_run = user_data;
 
-	kernel_run->device->device_type->arch_kernel_run_func(
-		kernel_run->kernel,
+	kernel_run->device->arch_kernel_run_func(
+		kernel_run->arch_kernel,
 		kernel_run->device->arch_device,
 		kernel_run->work_dim,
 		kernel_run->global_work_offset,
@@ -938,12 +939,12 @@ cl_int clEnqueueNDRangeKernel(
 	LIST_FOR_EACH(kernel->entry_list, i)
 	{
 		kernel_entry = list_get(kernel->entry_list, i);
-		if (kernel_entry->device_type == command_queue->device->device_type)
-			kernel_run->kernel = kernel_entry->kernel;
+		if (kernel_entry->device == command_queue->device)
+			kernel_run->arch_kernel = kernel_entry->arch_kernel;
 	}
-	if (!kernel_run->kernel)
+	if (!kernel_run->arch_kernel)
 		return CL_INVALID_VALUE;
-	if (command_queue->device->device_type->arch_kernel_check_func(kernel_run->kernel) != CL_SUCCESS)
+	if (command_queue->device->arch_kernel_check_func(kernel_run->arch_kernel) != CL_SUCCESS)
 		return CL_INVALID_VALUE;
 	
 	/* Global work offset and size */

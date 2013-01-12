@@ -6,13 +6,8 @@ __top_builddir__lib_libm2s_opencl_la_LDFLAGS = -version-info 0:0:0
 
 __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	\
-	clcpu-device.c \
-	clcpu-device.h \
-	\
 	command-queue.c \
 	command-queue.h \
-	\
-	clcpu.h \
 	\
 	context.c \
 	context.h \

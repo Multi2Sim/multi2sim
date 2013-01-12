@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_OPENCL_CLRT_H
-#define RUNTIME_OPENCL_CLRT_H
+#ifndef RUNTIME_OPENCL_OPENCL_H
+#define RUNTIME_OPENCL_OPENCL_H
 
 #include <unistd.h>
 #include <stdio.h>
@@ -70,8 +70,9 @@ enum opencl_call_t
 	opencl_call_count
 };
 
-/* Debug */
-void opencl_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+
+
+
 
 /*
  * Error macros
@@ -98,26 +99,22 @@ extern char *opencl_err_param_note;
 	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, opencl_err_param_note); }
 
 
+
+
 /*
  * Global Variables
  */
 
+/* Execution in native/simulated mode */
 extern int opencl_native_mode;
 
 
-/*
- * Private OpenCL implementation definitions
- */
-
-
-void *clrt_buffer_allocate(size_t size);
-void clrt_buffer_free(void *buffer);
-
-
 
 /*
- * Helper Functions 
+ * Public Functions 
  */
+
+void opencl_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 /* Populate a parameter as a response to OpenCL's many clGet*Info functions */
 cl_int opencl_set_param(const void *src_value, size_t src_size,
@@ -134,6 +131,8 @@ size_t getPropertiesCount(const void *properties, size_t prop_size);
 /* copy a properties list */
 void copyProperties(void *dest, const void *src, size_t size, size_t numObjs);
 
+void *clrt_buffer_allocate(size_t size);
+void clrt_buffer_free(void *buffer);
 
 
 #endif

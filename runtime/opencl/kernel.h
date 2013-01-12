@@ -23,11 +23,12 @@
 #include "opencl.h"
 
 
-/* Kernel entries (one per device type) */
+/* Kernel entries (one per device type). Each entry associated a device with
+ * an architecture-specific kernel of type 'opencl_xxx_kernel_t'. */
 struct opencl_kernel_entry_t
 {
-	struct opencl_device_type_t *device_type;
-	void *kernel;
+	struct opencl_device_t *device;
+	void *arch_kernel;  /* Of type 'opencl_xxx_kernel_t' */
 };
 
 

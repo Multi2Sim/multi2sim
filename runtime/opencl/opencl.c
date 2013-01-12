@@ -32,7 +32,9 @@
 
 
 
-/* Error messages */
+/*
+ * Global Variables
+ */
 
 char *opencl_err_not_impl =
 	"\tThis error message is reported by the Multi2Sim OpenCL Runtime library linked\n"
@@ -152,12 +154,8 @@ int opencl_event_wait_list_check(
 
 
 
-
-
-
-
 /*
- * OpenCL Interface Functions
+ * OpenCL API Functions
  */
 
 void *clGetExtensionFunctionAddress(

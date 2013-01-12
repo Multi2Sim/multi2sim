@@ -26,12 +26,7 @@
 #include "list.h"
 #include "mhandle.h"
 #include "platform.h"
-
-
-/* Add new devices types here */
-struct opencl_device_type_t *clcpu_create_device_type(void); /* for x86 CPU */
-/* Put their constructors into this array */
-opencl_device_type_create_t m2s_device_type_constructors[] = {clcpu_create_device_type};
+#include "x86-device.h"
 
 
 static char *opencl_err_version =
@@ -40,15 +35,14 @@ static char *opencl_err_version =
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
 	"\tMulti2Sim OpenCL Runtime library ('libm2s-clrt').\n";
 
-
 struct opencl_version_t
 {
 	int major;
 	int minor;
 };
 
+/* Global OpenCL platform */
 struct opencl_platform_t *opencl_platform;
-struct _cl_device_id *opencl_device;
 
 
 
@@ -58,19 +52,19 @@ struct _cl_device_id *opencl_device;
  */
 
 
-void opencl_platform_for_each_device(struct opencl_platform_t *platform,
-	opencl_platform_for_each_device_func_t for_each_device_func, void *user_data)
+void opencl_platform_for_each_device(
+	struct opencl_platform_t *platform,
+	opencl_platform_for_each_device_func_t for_each_device_func,
+	void *user_data)
 {
-	struct opencl_device_type_entry_t *device_type;
-
+	struct opencl_device_t *device;
 	int i;
-	int j;
 
-	LIST_FOR_EACH(opencl_platform->device_type_list, i)
+	/* Execute function for each device */
+	LIST_FOR_EACH(platform->device_list, i)
 	{
-		device_type = list_get(platform->device_type_list, i);
-		for (j = 0; j < device_type->num_devices; j++)
-			for_each_device_func(device_type->devices[j], user_data);
+		device = list_get(platform->device_list, i);
+		for_each_device_func(device, user_data);
 	}
 }
 
@@ -83,12 +77,7 @@ void opencl_platform_for_each_device(struct opencl_platform_t *platform,
 struct opencl_platform_t *opencl_platform_create(void)
 {
 	struct opencl_platform_t *platform;
-	struct opencl_device_type_entry_t *entry;
-
-	int i;
-	int j;
-
-	int num_device_types;
+	struct opencl_device_t *device;
 
 	/* Initialize */
 	platform = xcalloc(1, sizeof(struct opencl_platform_t));
@@ -97,34 +86,14 @@ struct opencl_platform_t *opencl_platform_create(void)
 	platform->name = "Multi2Sim OpenCL Platform";
 	platform->vendor = "Multi2Sim";
 	platform->extensions = "";
-	
-	/* Initialize device types */
-	platform->device_type_list = list_create();
 
-	/* Go through all the device types and initialize them and their devices */
-	num_device_types = sizeof m2s_device_type_constructors / sizeof m2s_device_type_constructors[0];
-	for (i = 0; i < num_device_types; i++)
-	{
-		/* Construct the device type */
-		entry = xcalloc(1, sizeof(struct opencl_device_type_entry_t));
-		entry->device_type = m2s_device_type_constructors[i]();
+	/* Initialize device list */
+	platform->device_list = list_create();
 
-		/* Query its device count */
-		entry->device_type->init_devices(0, NULL, &entry->num_devices);
-			
-		/* Allocate enough memory for those devices */
-		entry->devices = xmalloc(sizeof entry->devices[0] * entry->num_devices);
-
-		/* Populate */
-		entry->device_type->init_devices(entry->num_devices, entry->devices, NULL);
-
-		/* Set the device type */
-		for (j = 0; j < entry->num_devices; j++)
-			entry->devices[i]->device_type = entry->device_type;
-
-		/* Add device type to list */
-		list_add(platform->device_type_list, entry);
-	}
+	/* Add x86 device */
+	device = opencl_device_create();
+	device->arch_device = opencl_x86_device_create(device);
+	list_add(platform->device_list, device);
 
 	/* Return */
 	return platform;
@@ -133,6 +102,18 @@ struct opencl_platform_t *opencl_platform_create(void)
 
 void opencl_platform_free(struct opencl_platform_t *platform)
 {
+	struct opencl_device_t *device;
+	int index;
+
+	/* Free devices */
+	LIST_FOR_EACH(platform->device_list, index)
+	{
+		device = list_get(platform->device_list, index);
+		opencl_device_free(device);
+	}
+
+	/* Free platform */
+	list_free(platform->device_list);
 	free(platform);
 }
 
