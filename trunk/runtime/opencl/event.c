@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <sys/time.h>
 
-#include "clrt.h"
 #include "command-queue.h"
 #include "debug.h"
 #include "event.h"

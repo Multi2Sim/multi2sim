@@ -20,7 +20,7 @@
 #ifndef RUNTIME_OPENCL_X86_KERNEL_H
 #define RUNTIME_OPENCL_X86_KERNEL_H
 
-#include "clrt.h"
+#include "opencl.h"
 
 
 /* Forward declarations */

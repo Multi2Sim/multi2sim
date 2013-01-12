@@ -28,10 +28,10 @@
 
 #include "../include/CL/cl.h"
 #include "clcpu.h"
-#include "clrt.h"
 #include "debug.h"
 #include "device.h"
 #include "mhandle.h"
+#include "opencl.h"
 #include "x86-device.h"
 #include "x86-kernel.h"
 #include "x86-program.h"

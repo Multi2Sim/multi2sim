@@ -20,7 +20,7 @@
 #ifndef RUNTIME_OPENCL_COMMAND_QUEUE_H
 #define RUNTIME_OPENCL_COMMAND_QUEUE_H
 
-#include "clrt.h"
+#include "opencl.h"
 
 
 /*

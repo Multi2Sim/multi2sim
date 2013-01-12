@@ -20,7 +20,7 @@
 #ifndef RUNTIME_OPENCL_PROGRAM_H
 #define RUNTIME_OPENCL_PROGRAM_H
 
-#include "clrt.h"
+#include "opencl.h"
 
 
 /* Entry of a program associated with one device type. */
