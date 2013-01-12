@@ -171,8 +171,11 @@ static void *opencl_x86_kernel_get_func_info(void *dlhandle,
  */
 
 
-struct opencl_x86_kernel_t *opencl_x86_kernel_create(void *dlhandle,
-		char *func_name, cl_int *err_ptr)
+struct opencl_x86_kernel_t *opencl_x86_kernel_create(
+		struct opencl_kernel_t *parent,
+		void *dlhandle,
+		char *func_name,
+		cl_int *err_ptr)
 {
 	int i;
 	int stride;
@@ -184,6 +187,7 @@ struct opencl_x86_kernel_t *opencl_x86_kernel_create(void *dlhandle,
 
 	/* Initialize */
 	kernel = xcalloc(1, sizeof(struct opencl_x86_kernel_t));
+	kernel->parent = parent;
 	kernel->func = opencl_x86_kernel_get_func_info(dlhandle, func_name, &kernel->metadata);
 
 	/* Check valid kernel function name */

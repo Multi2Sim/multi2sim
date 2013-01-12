@@ -124,8 +124,8 @@ cl_kernel clCreateKernel(
 		/* Create kernel entry */
 		kernel_entry = xcalloc(1, sizeof(struct opencl_kernel_entry_t));
 		kernel_entry->device_type = program_entry->device_type;
-		kernel_entry->kernel = kernel_entry->device_type->arch_kernel_create_func(program_entry->dlhandle,
-			kernel_name, errcode_ret);
+		kernel_entry->kernel = kernel_entry->device_type->arch_kernel_create_func(kernel,
+			program_entry->dlhandle, kernel_name, errcode_ret);
 
 		/* Add kernel entry */
 		list_add(kernel->entry_list, kernel_entry);
