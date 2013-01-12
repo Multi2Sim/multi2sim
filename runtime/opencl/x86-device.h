@@ -22,8 +22,20 @@
 
 #include <pthread.h>
 
-#include "../include/CL/cl.h"
-#include "fibers.h"
+#include "clrt.h"
+
+
+typedef void (*opencl_x86_device_fiber_func_t)(void);
+typedef void (*opencl_x86_device_fiber_return_func_t)(void);
+
+
+struct opencl_x86_device_fiber_t
+{
+	void *esp;
+	void *eip;
+	void *stack_bottom;
+	unsigned int stack_size;
+};
 
 
 struct opencl_x86_device_exec_t
@@ -43,7 +55,7 @@ struct opencl_x86_device_exec_t
 
 struct opencl_x86_device_work_item_data_t
 {
-	int workgroup_data;  /* 0x60 (Not actually part of AMD runtime, padding_0) */
+	int work_group_data;  /* 0x60 (Not actually part of AMD runtime, padding_0) */
 	int barrier_func;  /* 0x5c (function *) */
 	int local_reserved;  /* 0x58 (void *) */
 	int work_dim;  /* 0x54 */
@@ -59,11 +71,14 @@ struct opencl_x86_device_work_group_data_t
 {
 	int num_done;
 	int num_items;
-	int cur_item;
-	struct fiber_t main_ctx;
-	struct fiber_t *cur_ctx;
-	struct fiber_t *workitems;
-	struct opencl_x86_device_work_item_data_t **workitem_data;
+	int current_item;
+
+	struct opencl_x86_device_fiber_t main_fiber;
+	struct opencl_x86_device_fiber_t *current_fiber;
+	struct opencl_x86_device_fiber_t *work_items;
+
+	struct opencl_x86_device_work_item_data_t **work_item_data;
+
 	unsigned int *stack_params;
 	char *aligned_stacks;
 };
@@ -71,6 +86,9 @@ struct opencl_x86_device_work_group_data_t
 
 struct opencl_x86_device_t
 {
+	/* Parent generic device object */
+	struct opencl_device_t *parent;
+
 	volatile int num_kernels;
 	volatile int num_done;
 
@@ -83,6 +101,33 @@ struct opencl_x86_device_t
 
 	struct opencl_x86_device_exec_t *exec;
 };
+
+
+
+struct opencl_x86_device_t *opencl_x86_device_create(
+		struct opencl_device_t *parent);
+void opencl_x86_device_free(
+		struct opencl_x86_device_t *device);
+
+void opencl_x86_device_make_fiber(
+		struct opencl_x86_device_fiber_t *fiber,
+		opencl_x86_device_fiber_func_t fiber_func,
+		int num_args,
+		...);
+void opencl_x86_device_make_fiber_ex(
+		struct opencl_x86_device_fiber_t *fiber,
+		opencl_x86_device_fiber_func_t fiber_func,
+		opencl_x86_device_fiber_return_func_t return_func,
+		int arg_size,
+		void *args);
+void opencl_x86_device_switch_fiber(
+		struct opencl_x86_device_fiber_t *current,
+		struct opencl_x86_device_fiber_t *dest,
+		void *reg_values);
+void opencl_x86_device_exit_fiber(void);
+void opencl_x86_device_barrier(int data);
+
+void *opencl_x86_device_core_func(struct opencl_x86_device_t *device);
 
 
 #endif

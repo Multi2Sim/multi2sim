@@ -110,6 +110,10 @@ struct opencl_x86_kernel_arg_t
  * opencl_kernel_t with information specific to x86. */
 struct opencl_x86_kernel_t
 {
+	/* Kernel object acting as parent object. */
+	struct opencl_kernel_t *parent;
+
+	/* Pointer to x86 function implementing one work-item's task. */
 	opencl_x86_kernel_func_t func;
 
 	size_t *metadata;
@@ -123,8 +127,9 @@ struct opencl_x86_kernel_t
 
 
 struct opencl_x86_kernel_t *opencl_x86_kernel_create(
-		void *handle,
-		char *name,
+		struct opencl_kernel_t *parent,
+		void *dlhandle,
+		char *func_name,
 		cl_int *err_ptr);
 
 void opencl_x86_kernel_free(
