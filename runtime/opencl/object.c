@@ -21,10 +21,10 @@
 #include <assert.h>
 #include <string.h>
 
-#include "clrt.h"
 #include "debug.h"
 #include "mhandle.h"
 #include "object.h"
+#include "opencl.h"
 #include "thread-list.h"
 
 

@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "clrt.h"
 #include "debug.h"
 #include "mhandle.h"
 #include "sampler.h"

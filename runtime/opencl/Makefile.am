@@ -14,9 +14,6 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	\
 	clcpu.h \
 	\
-	clrt.c \
-	clrt.h \
-	\
 	context.c \
 	context.h \
 	\
@@ -32,15 +29,11 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	event.c \
 	event.h \
 	\
-	fibers.h \
-	\
 	list.c \
 	list.h \
 	\
 	mhandle.c \
 	mhandle.h \
-	\
-	mkfibers.c \
 	\
 	program.c \
 	program.h \
@@ -53,6 +46,9 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	\
 	object.c \
 	object.h \
+	\
+	opencl.c \
+	opencl.h \
 	\
 	sampler.c \
 	sampler.h \

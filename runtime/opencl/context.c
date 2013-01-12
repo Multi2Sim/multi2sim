@@ -21,13 +21,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "clrt.h"
 #include "context.h"
 #include "debug.h"
 #include "device.h"
 #include "list.h"
 #include "mhandle.h"
 #include "object.h"
+#include "opencl.h"
 #include "platform.h"
 
 

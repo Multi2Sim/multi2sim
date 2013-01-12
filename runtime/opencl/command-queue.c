@@ -22,7 +22,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include "clrt.h"
 #include "command-queue.h"
 #include "context.h"
 #include "debug.h"
@@ -33,6 +32,7 @@
 #include "mem.h"
 #include "mhandle.h"
 #include "object.h"
+#include "opencl.h"
 
 
 #define MAX_DIMS 3

@@ -20,7 +20,7 @@
 #ifndef RUNTIME_OPENCL_KERNEL_H
 #define RUNTIME_OPENCL_KERNEL_H
 
-#include "clrt.h"
+#include "opencl.h"
 
 
 /* Kernel entries (one per device type) */

@@ -23,7 +23,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include "clrt.h"
 #include "debug.h"
 #include "device.h"
 #include "kernel.h"

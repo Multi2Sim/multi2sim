@@ -24,11 +24,11 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "clrt.h"
 #include "debug.h"
 #include "event.h"
 #include "mhandle.h"
 #include "object.h"
+#include "opencl.h"
 
 
 

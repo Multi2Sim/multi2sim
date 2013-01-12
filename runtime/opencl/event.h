@@ -20,7 +20,7 @@
 #ifndef RUNTIME_OPENCL_EVENT_H
 #define RUNTIME_OPENCL_EVENT_H
 
-#include "clrt.h"
+#include "opencl.h"
 
 
 /* Event object */
