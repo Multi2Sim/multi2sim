@@ -235,17 +235,17 @@ static int get_isa_offset(struct si_opengl_shader_t *opengl_shader)
 	{
 		case SI_OPENGL_SHADER_VERTEX:
 		{
-			isa_offset = 4204;
+			isa_offset = 2124;
 			break;
 		}
 		case SI_OPENGL_SHADER_FRAGMENT:
 		{
-			isa_offset = 2844;
+			isa_offset = 3436;
 			break;
 		}
 		case SI_OPENGL_SHADER_GEOMETRY:
 		{
-			isa_offset = 3912;
+			isa_offset = 3976;
 			break;
 		}
 		default:
@@ -255,9 +255,7 @@ static int get_isa_offset(struct si_opengl_shader_t *opengl_shader)
 	return isa_offset;
 }
 
-
-/* Set 'isa_buffer' element for a shader object, the shader object must have the 'shader_kind' element set first */
-static int amd_opengl_shader_set_isa_buffer(struct si_opengl_shader_t *opengl_shader)
+ /* Set 'isa_buffer' element for a shader object, the shader object must have the 'shader_kind' element set first */ static int amd_opengl_shader_set_isa_buffer(struct si_opengl_shader_t *opengl_shader)
 {
 	struct elf_section_t *internal_section;
 	int isa_offset;
@@ -276,7 +274,7 @@ static int amd_opengl_shader_set_isa_buffer(struct si_opengl_shader_t *opengl_sh
 
 				/* ISAs in '.text' section */
 				if (!strcmp(internal_section->name,".text"))
-				{					
+				{
 					isa_offset = get_isa_offset(opengl_shader);
 					elf_buffer_seek(&opengl_shader->internal_elf_file->buffer, internal_section->header->sh_offset);
 					

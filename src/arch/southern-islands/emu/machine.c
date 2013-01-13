@@ -1133,6 +1133,14 @@ void si_isa_S_NOT_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.u = PC + 4, PC = S0.u */
+#define INST SI_INST_SOP1
+void si_isa_S_SWAPPC_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.u = EXEC, EXEC = S0.u & EXEC. scc = 1 if the new value of EXEC is non-zero. */
 #define INST SI_INST_SOP1
 void si_isa_S_AND_SAVEEXEC_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -1603,6 +1611,14 @@ void si_isa_S_WAITCNT_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	/* Nothing to do in emulation */
 	work_item->wavefront->mem_wait = 1;
 }
+
+/* Do nothing */
+#define INST SI_INST_VOP1
+void si_isa_V_NOP_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	/* FIXME: Do nothing */
+}
+#undef INST
 
 /* D.u = S0.u. */
 #define INST SI_INST_VOP1
@@ -2167,6 +2183,15 @@ void si_isa_V_SUBREV_F32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	}
 }
 #undef INST
+
+/* D.f = S0.F * S1.f + D.f. */
+#define INST SI_INST_VOP2
+void si_isa_V_MAC_LEGACY_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+NOT_IMPL();
+}
+#undef INST
+
 
 /* D.f = S0.f * S1.f (DX9 rules, 0.0*x = 0.0). */
 #define INST SI_INST_VOP2
@@ -2740,6 +2765,14 @@ void si_isa_V_SUBREV_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, dif.as_uint);
 		si_isa_debug("wf_id%d: vcc<=(%d) ", work_item->id_in_wavefront, carry.as_uint);
 	}
+}
+#undef INST
+
+/* D = {flt32_to_flt16(S1.f),flt32_to_flt16(S0.f)}, with round-toward-zero. */
+#define INST SI_INST_VOP2
+void si_isa_V_CVT_PKRTZ_F16_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 
@@ -4690,6 +4723,30 @@ void si_isa_V_DIV_SCALE_F64_impl(struct si_work_item_t *work_item, struct si_ins
 }
 #undef INST
 
+/* D = P10 * S + P0 */
+#define INST SI_INST_VINTRP
+void si_isa_V_INTERP_P1_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D = P20 * S + D */
+#define INST SI_INST_VINTRP
+void si_isa_V_INTERP_P2_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+/* D = {P10,P20,P0}[S] */
+#define INST SI_INST_VINTRP
+void si_isa_V_INTERP_MOV_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* DS[A] = (DS[A] >= D0 ? 0 : DS[A] + 1); uint increment.*/
 #define INST SI_INST_DS
 void si_isa_DS_INC_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -5424,6 +5481,13 @@ void si_isa_IMAGE_STORE_impl(struct si_work_item_t *work_item, struct si_inst_t 
 
 #define INST SI_INST_MIMG
 void si_isa_IMAGE_SAMPLE_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+#define INST SI_INST_EXP
+void si_isa_EXPORT_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	NOT_IMPL();
 }
