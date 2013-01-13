@@ -182,29 +182,21 @@ void opencl_x86_device_switch_fiber(struct opencl_x86_device_fiber_t *current,
 		"movups %%xmm7, 0x70(%%esp)\n\t"
 
 		"test %%ecx, %%ecx\n\t"			/* Skip if 'reg_values' is NULL */
-		"je opencl_switch_fiber_no_regs\n\t"
+		"je 1f\n\t"				/* Jump to 'switch_fiber_no_regs' */
 
 		"movaps 0x0(%%ecx), %%xmm0\n\t"		/* AMD uses xmm0-xmm3 to pass in parameters */
 		"movaps 0x10(%%ecx), %%xmm1\n\t"
 		"movaps 0x20(%%ecx), %%xmm2\n\t"
 		"movaps 0x30(%%ecx), %%xmm3\n\t"
 
-		"\nopencl_switch_fiber_no_regs:\n\t"
+		"1:\n\t"			/* Former label 'switch_fiber_no_regs' */
 		"mov %%esp, (%%eax)\n\t"	/* current->esp <= esp */
-
-		"\nopencl_switch_fiber_done_backup:\n\t"
-		"call opencl_switch_fiber_get_pc\n\t"
-
-		"\nopencl_switch_fiber_get_pc:\n\t"
-		"pop %%ecx\n\t"			/* ecx <= eip at 'opencl_switch_fiber_get_pic' */
-		"add $opencl_switch_fiber_return - opencl_switch_fiber_get_pc, %%ecx\n\t"
-		"mov %%ecx, 0x4(%%eax)\n\t"	/* current->eip <== opencl_switch_fiber_return */
+		"movl $2f, 0x4(%%eax)\n\t"	/* current->eip <= label 'switch_fiber_return' */
 
 		"mov (%%edx), %%esp\n\t"	/* esp <= dest->esp */
 		"jmp *0x4(%%edx)\n\t"		/* eip <= dest->eip */
 
-		"\nopencl_switch_fiber_return:\n\t"
-
+		"2:\n\t"			/* Former label 'switch_fiber_return' */
 		"movups 0x0(%%esp), %%xmm0\n\t"
 		"movups 0x10(%%esp), %%xmm1\n\t"
 		"movups 0x20(%%esp), %%xmm2\n\t"
