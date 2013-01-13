@@ -166,6 +166,13 @@ DEFINST(S_NOT_B32,
 	4
 )
 
+DEFINST(S_SWAPPC_B64,
+	" s_swappc_b64  %64_SDST, %64_SSRC0",
+	SOP1,
+	33,
+	4
+)
+
 DEFINST(S_AND_SAVEEXEC_B64,
 	" s_and_saveexec_b64  %64_SDST, %64_SSRC0",
 	SOP1,
@@ -889,6 +896,13 @@ DEFINST(V_CMP_NE_U32,
 	4
 )
 
+DEFINST(V_NOP,
+	" v_nop",
+	VOP1,
+	0,
+	4
+)
+
 DEFINST(V_MOV_B32,
 	" v_mov_b32     %VDST, %SRC0",
 	VOP1,
@@ -1092,6 +1106,13 @@ DEFINST(V_SUBREV_F32,
 	4
 )
 
+DEFINST(V_MAC_LEGACY_F32,
+	" v_mac_legacy_f32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	6,
+	4
+)
+
 DEFINST(V_MUL_LEGACY_F32,
 	" v_mul_legacy_f32  %VDST, %SRC0, %VSRC1",
 	VOP2,
@@ -1225,6 +1246,34 @@ DEFINST(V_SUBREV_I32,
 	4
 )
 
+DEFINST(V_CVT_PKRTZ_F16_F32,
+	" v_cvt_pkrtz_f16_f32  %VDST, vcc, %SRC0, %VSRC1",
+	VOP2,
+	47,
+	4
+)
+
+DEFINST(V_INTERP_P1_F32,
+	" v_interp_p1_f32    %VDST, %VSRC_I_J, %ATTR, %ATTRCHAN",
+	VINTRP,
+	0,
+	4
+)
+
+DEFINST(V_INTERP_P2_F32,
+	" v_interp_p2_f32    %VDST, %VSRC_I_J, %ATTR, %ATTRCHAN",
+	VINTRP,
+	1,
+	4
+)
+
+DEFINST(V_INTERP_MOV_F32,
+	" v_interp_mov_f32    %VDST, %VSRC_I_J, %ATTR, %ATTRCHAN",
+	VINTRP,
+	2,
+	4
+)
+
 DEFINST(DS_INC_U32,
 	" ds_inc_u32    %ADDR, %DATA0",
 	DS,
@@ -1355,5 +1404,12 @@ DEFINST(IMAGE_SAMPLE,
 	" image_sample  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SERIES_SSAMP%DMASK%UNORM%GLC",
 	MIMG,
 	32,
+	8
+)
+
+DEFINST(EXPORT,
+	" export   %TGT, %VSRC0 %VSRC1 %VSRC2 %VSRC3",
+	EXP,
+	0,
 	8
 )

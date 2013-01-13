@@ -58,6 +58,9 @@ enum si_fmt_enum
 	/* Vector Memory Image Format */
 	SI_FMT_MIMG,
 
+	/* Export Formats */
+	SI_FMT_EXP,
+
 	/* Max */
 	SI_FMT_COUNT
 };
@@ -462,10 +465,12 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int inst_size, unsigned 
 void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_vintrp(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_ds(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_mubuf(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_mimg(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_exp(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 
 void si_inst_dump(struct si_inst_t *inst, int inst_size, void *wavefront_pool, unsigned int rel_addr,
 	char *line, int line_size);
