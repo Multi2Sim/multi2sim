@@ -14,6 +14,10 @@ AM_LIBTOOLFLAGS = --preserve-dup-deps
 INCLUDES = @M2S_INCLUDES@
 
 LDADD = \
+	$(top_builddir)/src/arch/x86/timing/libtiming.a \
+	$(top_builddir)/src/arch/x86/emu/libemu.a \
+	$(top_builddir)/src/arch/x86/asm/libasm.a \
+	\
 	$(top_builddir)/src/arch/arm/timing/libtiming.a \
 	$(top_builddir)/src/arch/arm/emu/libemu.a \
 	$(top_builddir)/src/arch/arm/asm/libasm.a \
@@ -25,10 +29,6 @@ LDADD = \
 	$(top_builddir)/src/arch/fermi/timing/libtiming.a \
 	$(top_builddir)/src/arch/fermi/emu/libemu.a \
 	$(top_builddir)/src/arch/fermi/asm/libasm.a \
-	\
-	$(top_builddir)/src/arch/x86/timing/libtiming.a \
-	$(top_builddir)/src/arch/x86/emu/libemu.a \
-	$(top_builddir)/src/arch/x86/asm/libasm.a \
 	\
 	$(top_builddir)/src/arch/southern-islands/timing/libtiming.a \
 	$(top_builddir)/src/arch/southern-islands/emu/libemu.a \
