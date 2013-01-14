@@ -22,8 +22,42 @@
 
 #include "opencl.h"
 
+/* Forward declarations */
+struct opencl_x86_device_t;
 
-cl_bool x86_program_is_valid_binary(size_t length, const unsigned char *binary);
+
+/* Program object */
+struct opencl_x86_program_t
+{
+	/* Parent generic program object */
+	struct opencl_program_t *parent;
+
+	/* Associated architecture-specific device */
+	struct opencl_x86_device_t *device;
+	
+	/* Temporary file where the internal ELF file was dumped */
+	char *file_name;
+
+	/* Handle returned by 'dlopen' when interpreting the internal
+	 * ELF file for dynamic linking. */
+	void *dlhandle;
+};
+
+
+struct opencl_x86_program_t *opencl_x86_program_create(
+		struct opencl_program_t *parent,
+		struct opencl_x86_device_t *device,
+		void *binary,
+		size_t length);
+
+void opencl_x86_program_free(
+		struct opencl_x86_program_t *program);
+
+/* Return true is a binary file is a valid x86 program binary. */
+int opencl_x86_program_valid_binary(
+	void *binary,
+	size_t length);
 
 
 #endif
+

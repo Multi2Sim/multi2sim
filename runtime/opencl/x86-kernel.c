@@ -26,6 +26,7 @@
 #include "mhandle.h"
 #include "x86-device.h"
 #include "x86-kernel.h"
+#include "x86-program.h"
 
 
 #define MEMORY_ALIGN 16
@@ -170,12 +171,10 @@ static void *opencl_x86_kernel_get_func_info(void *dlhandle,
  * Public Functions
  */
 
-
 struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 		struct opencl_kernel_t *parent,
-		void *dlhandle,
-		char *func_name,
-		cl_int *err_ptr)
+		struct opencl_x86_program_t *program,
+		char *func_name)
 {
 	int i;
 	int stride;
@@ -188,16 +187,15 @@ struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 	/* Initialize */
 	kernel = xcalloc(1, sizeof(struct opencl_x86_kernel_t));
 	kernel->parent = parent;
-	kernel->func = opencl_x86_kernel_get_func_info(dlhandle, func_name, &kernel->metadata);
+	kernel->program = program;
+	kernel->device = program->device;
+	kernel->func = opencl_x86_kernel_get_func_info(program->dlhandle,
+			func_name, &kernel->metadata);
 
 	/* Check valid kernel function name */
 	if (!kernel->func)
-	{
-		if (err_ptr)
-			*err_ptr = CL_INVALID_KERNEL_NAME;
-		free(kernel);
-		return NULL;
-	}
+		fatal("%s: %s: invalid kernel name", __FUNCTION__,
+				func_name);
 
 	kernel->local_reserved_bytes = kernel->metadata[1];
 	kernel->num_params = (kernel->metadata[0] - 44) / 24;
@@ -266,8 +264,10 @@ struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 	else
 		kernel->stack_param_words = stack_offset + SSE_REG_SIZE_IN_WORDS - remainder;
 
-	kernel->stack_params = xmalloc(sizeof (size_t) * kernel->stack_param_words);
-	memset(kernel->stack_params, 0, sizeof (size_t) * kernel->stack_param_words);
+	/* Reserve space for stack arguments */
+	kernel->stack_params = xcalloc(kernel->stack_param_words, sizeof(size_t));
+
+	/* Return */
 	return kernel;
 }
 
@@ -339,7 +339,6 @@ cl_int opencl_x86_kernel_set_arg(struct opencl_x86_kernel_t *kernel,
 
 void opencl_x86_kernel_run(
 	struct opencl_x86_kernel_t *kernel,
-	struct opencl_x86_device_t *device,
 	cl_uint work_dim,
 	const size_t *global_work_offset,
 	const size_t *global_work_size,
@@ -350,49 +349,52 @@ void opencl_x86_kernel_run(
 	int k;
 	int num_groups[3];
 
-	struct opencl_x86_device_exec_t *run;
+	struct opencl_x86_device_t *device = kernel->device;
+	struct opencl_x86_device_exec_t *exec;
 
-	run = xmalloc(sizeof(struct opencl_x86_device_exec_t));
+	/* Initialize execution information */
+	exec = xcalloc(1, sizeof(struct opencl_x86_device_exec_t));
+	exec->dims = work_dim;
+	exec->global = global_work_size;
+	exec->local = local_work_size;
 
-	/* copy over dimensions */
-	run->dims = work_dim;
-	run->global = global_work_size;
-	run->local = local_work_size;
-
-
-	run->num_groups = 1;
+	exec->num_groups = 1;
 	for (i = 0; i < 3; i++)
 	{
-		assert(!(run->global[i] % run->local[i]));
+		assert(!(exec->global[i] % exec->local[i]));
 
-		num_groups[i] = run->global[i] / run->local[i];
-		run->num_groups *= num_groups[i];
+		num_groups[i] = exec->global[i] / exec->local[i];
+		exec->num_groups *= num_groups[i];
 	}
-	run->kernel = kernel;
-	run->next_group = 0;
-	run->group_starts = xmalloc(3 * sizeof (size_t) * run->num_groups);
-	if(!run->group_starts)
+	exec->kernel = kernel;
+	exec->next_group = 0;
+	exec->group_starts = xmalloc(3 * sizeof (size_t) * exec->num_groups);
+	if(!exec->group_starts)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	pthread_mutex_init(&run->mutex, NULL);
+	pthread_mutex_init(&exec->mutex, NULL);
 
 	for (i = 0; i < num_groups[2]; i++)
+	{
 		for (j = 0; j < num_groups[1]; j++)
+		{
 			for (k = 0; k < num_groups[0]; k++)
 			{
 				size_t *group_start;
 
-				group_start = run->group_starts + 3 * (i * num_groups[1] * num_groups[0] + j * num_groups[0] + k);
-				group_start[0] = run->local[0] * k;
-				group_start[1] = run->local[1] * j;
-				group_start[2] = run->local[2] * i;
+				group_start = exec->group_starts + 3 * (i * num_groups[1] * num_groups[0] + j * num_groups[0] + k);
+				group_start[0] = exec->local[0] * k;
+				group_start[1] = exec->local[1] * j;
+				group_start[2] = exec->local[2] * i;
 			}
+		}
+	}
 
 	pthread_mutex_lock(&device->lock);
 
 	device->num_kernels++;
 	device->num_done = 0;
-	device->exec = run;
+	device->exec = exec;
 	pthread_cond_broadcast(&device->ready);
 
 	while (device->num_done != device->num_cores)
@@ -400,8 +402,9 @@ void opencl_x86_kernel_run(
 
 	pthread_mutex_unlock(&device->lock);
 
-	/* free the execution context */
-	free(run->group_starts);
-	pthread_mutex_destroy(&run->mutex);
-	free(run);
+	/* Free the execution context */
+	free(exec->group_starts);
+	pthread_mutex_destroy(&exec->mutex);
+	free(exec);
 }
+

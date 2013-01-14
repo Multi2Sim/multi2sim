@@ -60,20 +60,59 @@ struct opencl_program_t *opencl_program_create(void)
 void opencl_program_free(struct opencl_program_t *program)
 {
 	struct opencl_program_entry_t *entry;
+	struct opencl_device_t *device;
 	int index;
 
 	/* Free program entries (per-device-type info) */
 	LIST_FOR_EACH(program->entry_list, index)
 	{
+		/* Get entry */
 		entry = list_get(program->entry_list, index);
-		dlclose(entry->dlhandle);
-		unlink(entry->file_name);
-		free(entry->file_name);
+		device = entry->device;
+
+		/* Free architecture-specific program and entry*/
+		device->arch_program_free_func(entry->arch_program);
+		free(entry);
 	}
 
 	/* Free program */
 	list_free(program->entry_list);
 	free(program);
+}
+
+
+int opencl_program_has_device(struct opencl_program_t *program,
+		struct opencl_device_t *device)
+{
+	struct opencl_program_entry_t *entry;
+	int index;
+
+	/* Find device in program entries */
+	LIST_FOR_EACH(program->entry_list, index)
+	{
+		entry = list_get(program->entry_list, index);
+		if (entry->device == device)
+			return 1;
+	}
+
+	/* Device not found */
+	return 0;
+}
+
+
+struct opencl_program_entry_t *opencl_program_add(struct opencl_program_t *program,
+		struct opencl_device_t *device, void *arch_program)
+{
+	struct opencl_program_entry_t *entry;
+
+	/* Initialize new entry */
+	entry = xcalloc(1, sizeof(struct opencl_program_entry_t));
+	entry->device = device;
+	entry->arch_program = arch_program;
+
+	/* Add entry to the list and return */
+	list_add(program->entry_list, entry);
+	return entry;
 }
 
 
@@ -107,7 +146,6 @@ cl_program clCreateProgramWithBinary(
 	struct opencl_program_t *program;
 	
 	int i;
-	int j;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -145,14 +183,7 @@ cl_program clCreateProgramWithBinary(
 	for (i = 0; i < num_devices; i++)
 	{
 		struct opencl_device_t *device;
-		struct opencl_program_entry_t *entry;
-
-		struct elf_file_t *elf_file;
-		struct elf_section_t *section;
-
-		int f;
-		int found;
-		int section_index;
+		void *arch_program;  /* Of type 'opencl_xxx_program_t' */
 
 		/* Get current device */
 		device = device_list[i];
@@ -168,7 +199,8 @@ cl_program clCreateProgramWithBinary(
 
 		/* Make sure the type of the binary matches */
 		if (!lengths[i] || !binaries[i] ||
-				!device->is_valid_binary(lengths[i], binaries[i]))
+				!device->arch_program_valid_binary_func(
+				(void *) binaries[i], lengths[i]))
 		{
 			if (binary_status[i])
 				binary_status[i] = CL_INVALID_VALUE;
@@ -178,57 +210,17 @@ cl_program clCreateProgramWithBinary(
 			return NULL;
 		}
 
-		/* If the device type if already present, skip */
-		LIST_FOR_EACH(program->entry_list, j)
-		{
-			entry = list_get(program->entry_list, j);
-			if (entry->device == device)
-				break;
-		}
-		if (j < list_count(program->entry_list))
+		/* If the device is already present, skip */
+		if (opencl_program_has_device(program, device))
 			continue;
 
-		/* Add a new program entry */
-		entry = xcalloc(1, sizeof(struct opencl_program_entry_t));
-		entry->device = device;
-		list_add(program->entry_list, entry);
+		/* Create the architecture-specific program object. */
+		arch_program = device->arch_program_create_func(program,
+				device->arch_device, (void *) binaries[i], lengths[i]);
 
-		/* Load ELF binary */
-		elf_file = elf_file_create_from_buffer((void *) binaries[i], lengths[i],
-			"OpenCL binary");
-
-		/* Find '.text' section */
-		found = 0;
-		LIST_FOR_EACH(elf_file->section_list, section_index)
-		{
-			section = list_get(elf_file->section_list, section_index);
-			if (!strcmp(section->name, ".text"))
-			{
-				found = 1;
-				break;
-			}
-		}
-
-		/* Section not found */
-		if (!found)
-			fatal("%s: no '.text' section in binary", __FUNCTION__);
-
-		/* Extract section to temporary file */
-		entry->file_name = xstrdup("./XXXXXX.so");
-		f = mkstemps(entry->file_name, 3);
-		if (f == -1)
-			fatal("%s: could not create temporary file", __FUNCTION__);
-		if (write(f, section->buffer.ptr, section->buffer.size) != section->buffer.size)
-			fatal("%s: could not write to temporary file", __FUNCTION__);
-		close(f);
-
-		/* Close ELF external binary */
-		elf_file_free(elf_file);
-
-		/* Load internal binary for dynamic linking */
-		entry->dlhandle = dlopen(entry->file_name, RTLD_NOW);
-		if (!entry->dlhandle)
-			fatal("%s: could not open ELF binary derived from program", __FUNCTION__);		
+		/* Add pair of architecture-specific program and device to the
+		 * generic program object. */
+		opencl_program_add(program, device, arch_program);
 
 		/* Success */
 		if (errcode_ret)

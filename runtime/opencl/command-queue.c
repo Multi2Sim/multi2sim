@@ -67,7 +67,6 @@ struct opencl_command_queue_task_kernel_run_t
 {
 	struct opencl_device_t *device;
 	void *arch_kernel;  /* Of type 'opencl_xxx_kernel_t' */
-
 	cl_uint work_dim; 
 	size_t global_work_offset[MAX_DIMS];
 	size_t global_work_size[MAX_DIMS];
@@ -80,7 +79,6 @@ static void opencl_command_queue_task_kernel_run_action(void *user_data)
 
 	kernel_run->device->arch_kernel_run_func(
 		kernel_run->arch_kernel,
-		kernel_run->device->arch_device,
 		kernel_run->work_dim,
 		kernel_run->global_work_offset,
 		kernel_run->global_work_size,

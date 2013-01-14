@@ -25,6 +25,7 @@
 
 /* Forward declarations */
 struct opencl_x86_device_t;
+struct opencl_x86_program_t;
 
 
 /* Function executing x86 OpenCL kernel */
@@ -113,6 +114,10 @@ struct opencl_x86_kernel_t
 	/* Kernel object acting as parent object. */
 	struct opencl_kernel_t *parent;
 
+	/* Architecture-specific program and device */
+	struct opencl_x86_program_t *program;
+	struct opencl_x86_device_t *device;
+
 	/* Pointer to x86 function implementing one work-item's task. */
 	opencl_x86_kernel_func_t func;
 
@@ -128,9 +133,8 @@ struct opencl_x86_kernel_t
 
 struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 		struct opencl_kernel_t *parent,
-		void *dlhandle,
-		char *func_name,
-		cl_int *err_ptr);
+		struct opencl_x86_program_t *program,
+		char *func_name);
 
 void opencl_x86_kernel_free(
 		struct opencl_x86_kernel_t *kernel);
@@ -146,7 +150,6 @@ cl_int opencl_x86_kernel_set_arg(
 
 void opencl_x86_kernel_run(
 		struct opencl_x86_kernel_t *kernel,
-		struct opencl_x86_device_t *device,
 		cl_uint work_dim,
 		const size_t *global_work_offset,
 		const size_t *global_work_size,

@@ -612,10 +612,18 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->type = CL_DEVICE_TYPE_CPU;
 	parent->vendor_id = 0;
 
-	/* Initialize call-back functions */
-	parent->is_valid_binary =
-			(opencl_device_is_valid_binary_func_t)
-			x86_program_is_valid_binary;
+	/* Call-back functions for architecture-specific program */
+	parent->arch_program_create_func =
+			(opencl_device_arch_program_create_func_t)
+			opencl_x86_program_create;
+	parent->arch_program_free_func =
+			(opencl_device_arch_program_free_func_t)
+			opencl_x86_program_free;
+	parent->arch_program_valid_binary_func =
+			(opencl_device_arch_program_valid_binary_func_t)
+			opencl_x86_program_valid_binary;
+
+	/* Call-back functions for architecture-specific kernel */
 	parent->arch_kernel_create_func =
 			(opencl_device_arch_kernel_create_func_t)
 			opencl_x86_kernel_create;

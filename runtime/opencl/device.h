@@ -23,39 +23,54 @@
 #include "opencl.h"
 
 
-/* Call-back functions that each architecture-specific kernel, program, and
- * device has to implement. */
-
-/* Check if a binary blob is a valid program */
-typedef cl_bool (*opencl_device_is_valid_binary_func_t)(
-	size_t length,
-	const unsigned char *binary);
+/*
+ * Call-back functions for object 'opencl_xxx_device_t'
+ */
 
 /* Create an architecture-specific device. Returns an object of type
  * 'opencl_XXX_device_t'. */
 typedef void *(*opencl_device_arch_device_create_func_t)(
-		struct opencl_device_t *parent_device);
+		struct opencl_device_t *parent);
 
 /* Free an architecture-specific device. */
 typedef void *(*opencl_device_arch_device_free_func_t)(
 		void *device);  /* Of type 'opencl_XXX_device_t' */
 
+
+
+/*
+ * Call-back functions for object 'opencl_xxx_program_t'
+ */
+
 /* Create an architecture-specific program. Returns an object of type
  * 'opencl_XXX_program_t'. */
 typedef void *(*opencl_device_arch_program_create_func_t)(
-		struct opencl_program_t *parent_program);
+		struct opencl_program_t *parent,
+		void *arch_device,  /* Of type 'opencl_xxx_device_t' */
+		void *binary,
+		size_t length);
 
 /* Free an architecture-specific program. */
 typedef void *(*opencl_device_arch_program_free_func_t)(
 		void *program);  /* Of type 'opencl_XXX_program_t' */
 
+/* Check if a binary blob is a valid program */
+typedef cl_bool (*opencl_device_arch_program_valid_binary_func_t)(
+	void *binary,
+	size_t length);
+
+
+
+/*
+ * Call-back functions for object 'opencl_xxx_kernel_t'
+ */
+
 /* Create an architecture-specific kernel. Returns an object of type
  * 'opencl_XXX_kernel_t'. */
 typedef void *(*opencl_device_arch_kernel_create_func_t)(
 		struct opencl_kernel_t *parent,
-		void *dlhandle,
-		const char *kernel_name,
-		cl_int *errcode_ret);
+		void *arch_program,  /* Of type 'opencl_xxx_program_t' */
+		const char *kernel_name);
 
 /* Free an architecture-specific kernel. */
 typedef void (*opencl_device_arch_kernel_free_func_t)(
@@ -75,11 +90,11 @@ typedef cl_int (*opencl_device_arch_kernel_set_arg_func_t)(
 /* Run ND-Range on device */
 typedef void (*opencl_device_arch_kernel_run_func_t)(
 		void *kernel,  /* Of type 'opencl_XXX_kernel_t' */
-		void *arch_device,  /* Of type 'opencl_XXX_device_t' */
 		cl_uint work_dim,
 		const size_t *global_work_offset,
 		const size_t *global_work_size,
 		const size_t *local_work_size);
+
 
 
 /* Device object */
@@ -140,6 +155,11 @@ struct _cl_device_id
 	const char *version;
 	const char *driver_version;
 
+	/* Call-back functions for an architecture-specific program */
+	opencl_device_arch_program_create_func_t arch_program_create_func;
+	opencl_device_arch_program_free_func_t arch_program_free_func;
+	opencl_device_arch_program_valid_binary_func_t arch_program_valid_binary_func;
+
 	/* Call-back functions for an architecture-specific kernel */
 	opencl_device_arch_kernel_create_func_t arch_kernel_create_func;
 	opencl_device_arch_kernel_free_func_t arch_kernel_free_func;
@@ -147,11 +167,8 @@ struct _cl_device_id
 	opencl_device_arch_kernel_set_arg_func_t arch_kernel_set_arg_func;
 	opencl_device_arch_kernel_run_func_t arch_kernel_run_func;
 	
-	/* FIXME - Other call-back functions (reorganize) */
-	opencl_device_is_valid_binary_func_t is_valid_binary;
-
 	/* Architecture-specific device of type 'opencl_XXX_device_t'.
-	 * This pointer is used to refence what would be a sub-class in an
+	 * This pointer is used to reference what would be a sub-class in an
 	 * object-oriented language. */
 	void *arch_device;
 };

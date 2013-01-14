@@ -71,6 +71,24 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 }
 
 
+struct opencl_kernel_entry_t *opencl_kernel_add(struct opencl_kernel_t *kernel,
+		struct opencl_device_t *device, void *arch_kernel,
+		void *arch_program)
+{
+	struct opencl_kernel_entry_t *entry;
+
+	/* Initialize new entry */
+	entry = xcalloc(1, sizeof(struct opencl_kernel_entry_t));
+	entry->device = device;
+	entry->arch_kernel = arch_kernel;
+	entry->arch_program = arch_program;
+
+	/* Add entry and return */
+	list_add(kernel->entry_list, entry);
+	return entry;
+}
+
+
 
 
 /*
@@ -83,10 +101,7 @@ cl_kernel clCreateKernel(
 	cl_int *errcode_ret)
 {
 	struct opencl_kernel_t *kernel;
-	struct opencl_kernel_entry_t *kernel_entry;
-	struct opencl_program_entry_t *program_entry;
-
-	int i;
+	int index;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -114,20 +129,27 @@ cl_kernel clCreateKernel(
 	kernel = opencl_kernel_create();
 	kernel->program = program;
 
-	/* Copy kernel entries from program entries */
-	LIST_FOR_EACH(program->entry_list, i)
+	/* For each device listed in the generic program object, create an
+	 * architecture-specific kernel as well. */
+	LIST_FOR_EACH(program->entry_list, index)
 	{
-		/* Get program entry to copy info from */
-		program_entry = list_get(program->entry_list, i);
+		struct opencl_program_entry_t *entry;
+		struct opencl_device_t *device;
 
-		/* Create kernel entry */
-		kernel_entry = xcalloc(1, sizeof(struct opencl_kernel_entry_t));
-		kernel_entry->device = program_entry->device;
-		kernel_entry->arch_kernel = kernel_entry->device->arch_kernel_create_func(kernel,
-			program_entry->dlhandle, kernel_name, errcode_ret);
+		void *arch_program;
+		void *arch_kernel;
 
-		/* Add kernel entry */
-		list_add(kernel->entry_list, kernel_entry);
+		/* Get device and architecture-specific program */
+		entry = list_get(program->entry_list, index);
+		device = entry->device;
+		arch_program = entry->arch_program;
+
+		/* Create architecture-specific kernel */
+		arch_kernel = device->arch_kernel_create_func(kernel,
+			arch_program, kernel_name);
+
+		/* Add new entry to the generic kernel object */
+		opencl_kernel_add(kernel, device, arch_kernel, arch_program);
 	}
 
 	/* Return kernel */
