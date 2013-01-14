@@ -191,14 +191,15 @@ void m2s_dist_file(char *file_name, char *dist_path, char *non_dist_path,
 	snprintf(dist_path_abs, MAX_STRING_SIZE, "%s/%s/%s",
 		PACKAGE_DATA_DIR, dist_path, file_name);
 	f = fopen(dist_path_abs, "r");
-	if (f) {
+	if (f)
+	{
 		snprintf(buffer, size, "%s", dist_path_abs);
 		fclose(f);
 		return;
 	}
 
 	/* Look for file in non-distribution package.
-	 * Assuming that 'm2s-debug-pipeline' runs in '$(TOPDIR)/src/',
+	 * Assuming that the Multi2Sim executable is in '$(TOPDIR)/bin',
 	 * distribution file should be in '$(TOPDIR)/', i.e., one level higher. */
 	exe_name[0] = '\0';
 	len = readlink("/proc/self/exe", exe_name, MAX_STRING_SIZE);
@@ -209,17 +210,21 @@ void m2s_dist_file(char *file_name, char *dist_path, char *non_dist_path,
 	}
 	exe_name[len] = '\0';
 
+	/* Go up two levels */
 	levels = 2;
-	while (len && levels) {
+	while (len && levels)
+	{
 		if (exe_name[len - 1] == '/')
 			levels--;
 		exe_name[--len] = '\0';
 	}
 
+	/* Construct path */
 	snprintf(non_dist_path_abs, MAX_STRING_SIZE, "%s/%s/%s",
 		exe_name, non_dist_path, file_name);
 	f = fopen(non_dist_path_abs, "r");
-	if (f) {
+	if (f)
+	{
 		snprintf(buffer, size, "%s", non_dist_path_abs);
 		fclose(f);
 		return;
