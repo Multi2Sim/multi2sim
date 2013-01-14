@@ -1204,14 +1204,7 @@ void x86_isa_fldcw_m16_impl(struct x86_ctx_t *ctx)
 	/* Set value */
 	regs->fpu_ctrl = value;
 
-	__X86_ISA_FP_ASM_START__
-	asm volatile (
-		"fldcw %0\n\t"
-		:
-		: "m" (value)
-	);
-	__X86_ISA_FP_ASM_END__
-
+	/* Micro-instructions */
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_mem16, 0, 0, x86_dep_fpcw, 0, 0, 0);
 }
 
@@ -1966,16 +1959,10 @@ void x86_isa_fstcw_m16_impl(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned short value = regs->fpu_ctrl;
 
-	__X86_ISA_FP_ASM_START__
-	asm volatile (
-		"fnstcw %0\n\t"
-		:
-		: "m" (value)
-	);
-	__X86_ISA_FP_ASM_END__
-
+	/* Store value of FP control word */
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 2, &value);
 
+	/* Micro-instructions */
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_fpcw, 0, 0, x86_dep_mem32, 0, 0, 0);
 }
 
