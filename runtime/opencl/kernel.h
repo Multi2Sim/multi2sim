@@ -24,11 +24,13 @@
 
 
 /* Kernel entries (one per device type). Each entry associated a device with
- * an architecture-specific kernel of type 'opencl_xxx_kernel_t'. */
+ * an architecture-specific kernel of type 'opencl_xxx_kernel_t', as well as
+ * an architecture-specific program of type 'opencl_xxx_program_t'. */
 struct opencl_kernel_entry_t
 {
 	struct opencl_device_t *device;
 	void *arch_kernel;  /* Of type 'opencl_xxx_kernel_t' */
+	void *arch_program;  /* Of type 'opencl_xxx_program_t' */
 };
 
 
@@ -47,6 +49,11 @@ struct opencl_kernel_t
 /* Create/free */
 struct opencl_kernel_t *opencl_kernel_create(void);
 void opencl_kernel_free(struct opencl_kernel_t *kernel);
+
+/* Add an architecture-specific kernel associated with a device. */
+struct opencl_kernel_entry_t *opencl_kernel_add(struct opencl_kernel_t *kernel,
+		struct opencl_device_t *device, void *arch_kernel,
+		void *arch_program);
 
 
 #endif
