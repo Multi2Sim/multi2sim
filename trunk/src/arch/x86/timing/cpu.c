@@ -323,8 +323,6 @@ static void x86_cpu_config_check(void)
 	x86_cpu_recover_kind = config_read_enum(config, section, "RecoverKind", x86_cpu_recover_kind_writeback, x86_cpu_recover_kind_map, 2);
 	x86_cpu_recover_penalty = config_read_int(config, section, "RecoverPenalty", 0);
 
-	mmu_page_size = config_read_int(config, section, "PageSize", 4096);
-
 	x86_emu_process_prefetch_hints = config_read_bool(config, section, "ProcessPrefetchHints", 1);
 	prefetch_history_size = config_read_int(config, section, "PrefetchHistorySize", 10);
 
@@ -466,7 +464,6 @@ static void x86_cpu_config_dump(FILE *f)
 	fprintf(f, "ThreadSwitchPenalty = %d\n", x86_cpu_thread_switch_penalty);
 	fprintf(f, "RecoverKind = %s\n", x86_cpu_recover_kind_map[x86_cpu_recover_kind]);
 	fprintf(f, "RecoverPenalty = %d\n", x86_cpu_recover_penalty);
-	fprintf(f, "PageSize = %d\n", mmu_page_size);
 	fprintf(f, "ProcessPrefetchHints = %d\n", x86_emu_process_prefetch_hints);
 	fprintf(f, "PrefetchHistorySize = %d\n", prefetch_history_size);
 	fprintf(f, "\n");
