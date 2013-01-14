@@ -35,7 +35,6 @@ extern long x86_isa_host_flags;
 
 
 extern unsigned char x86_isa_host_fpenv[28];
-extern unsigned short x86_isa_guest_fpcw;
 
 #define __X86_ISA_FP_ASM_START__ asm volatile ( \
 	"pushf\n\t" \
@@ -44,14 +43,14 @@ extern unsigned short x86_isa_guest_fpcw;
 	"fnclex\n\t" /* clear host FP exceptions */ \
 	"fldcw %2\n\t" \
 	: "=m" (x86_isa_host_flags), "=m" (*x86_isa_host_fpenv) \
-	: "m" (x86_isa_guest_fpcw));
+	: "m" (ctx->regs->fpu_ctrl));
 
 #define __X86_ISA_FP_ASM_END__ asm volatile ( \
 	"push %0\n\t" \
 	"popf\n\t" \
 	"fnstcw %1\n\t" \
 	"fldenv %2\n\t" /* restore host FPU environment */ \
-	: "=m" (x86_isa_host_flags), "=m" (x86_isa_guest_fpcw) \
+	: "=m" (x86_isa_host_flags), "=m" (ctx->regs->fpu_ctrl) \
 	: "m" (*x86_isa_host_fpenv));
 
 

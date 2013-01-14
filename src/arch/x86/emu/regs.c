@@ -28,8 +28,11 @@ struct x86_regs_t *x86_regs_create()
 {
 	struct x86_regs_t *regs;
 
-	/* Return */
+	/* Initialize */
 	regs = xcalloc(1, sizeof(struct x86_regs_t));
+	regs->fpu_ctrl = 0x37f;  /* Default FP control word */
+
+	/* Return */
 	return regs;
 }
 
