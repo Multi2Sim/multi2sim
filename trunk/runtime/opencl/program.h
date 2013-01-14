@@ -29,17 +29,9 @@ struct opencl_program_entry_t
 	/* Associated device */
 	struct opencl_device_t *device;
 
-	/* FIXME - One program_entry_t should associate a device with a given
-	 * architecture-specific program 'opencl_xxx_program_t'. The fields
-	 * below are specific for x86, so they should to to
-	 * 'opencl_x86_program_t'. */
-
-	/* Temporary file where the internal ELF file was dumped */
-	char *file_name;
-
-	/* Handle returned by 'dlopen' when interpreting the internal
-	 * ELF file for dynamic linking. */
-	void *dlhandle;
+	/* Architecture-specific program object. The actual type of this
+	 * variable is 'opencl_xxx_program_t'. */
+	void *arch_program;
 };
 
 
@@ -54,6 +46,16 @@ struct opencl_program_t
 /* Create/free */
 struct opencl_program_t *opencl_program_create(void);
 void opencl_program_free(struct opencl_program_t *program);
+
+/* Return true if any of the program entries provides an architecture-specific
+ * program associated with a given device. */
+int opencl_program_has_device(struct opencl_program_t *program,
+		struct opencl_device_t *device);
+
+/* Add a new entry to the program with an architecture-specific program and its
+ * associated device. */
+struct opencl_program_entry_t *opencl_program_add(struct opencl_program_t *program,
+		struct opencl_device_t *device, void *arch_program);
 
 
 #endif
