@@ -40,7 +40,6 @@ int x86_isa_inst_debug_category;
 
 /* Variables used to preserve host state before running assembly */
 long x86_isa_host_flags;
-unsigned short x86_isa_guest_fpcw;
 unsigned char x86_isa_host_fpenv[28];
 
 
@@ -847,13 +846,6 @@ void x86_isa_init(void)
 {
 	x86_disasm_init();
 	x86_uinst_init();
-
-	/* Initialize default floating-point control word (FPCW) */
-	asm volatile (
-		"fstcw %0\n\t"
-		: "=m" (x86_isa_guest_fpcw)
-	);
-	x86_isa_guest_fpcw |= 0x3f;
 }
 
 
