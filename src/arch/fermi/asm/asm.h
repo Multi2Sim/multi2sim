@@ -510,6 +510,12 @@ struct frm_fmt_int_lop32i_t
 	unsigned long long int op1 : 6; /* [63:58] */
 };
 
+struct frm_fmt_int_flo_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
 struct frm_fmt_int_isetp_t
 {
 	unsigned long long int op0 : 4; /* [3:0] */
@@ -1243,6 +1249,7 @@ union frm_inst_dword_t
 	struct frm_fmt_int_lop32i_t int_lop32i;
 	struct frm_fmt_int_isetp_t int_isetp;
 	struct frm_fmt_int_icmp_t int_icmp;
+	struct frm_fmt_int_flo_t int_flo;
 	struct frm_fmt_conv_f2f_t conv_f2f;
 	struct frm_fmt_conv_f2i_t conv_f2i;
 	struct frm_fmt_conv_i2f_t conv_i2f;
@@ -1329,6 +1336,7 @@ void frm_inst_dump_R(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t 
 void frm_inst_dump_offset(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
 void frm_inst_dump_shamt(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
 void frm_inst_dump_target(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
+void frm_inst_dump_ccop(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
 
 /* Copy instruction */
 void frm_inst_copy(struct frm_inst_t *dest, struct frm_inst_t *src);
