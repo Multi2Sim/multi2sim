@@ -35,6 +35,7 @@
  * Initialization of disassembler
  */
 
+ 
 /* Table containing information of all instructions */
 static struct frm_inst_info_t frm_inst_info[FRM_INST_COUNT];
 
@@ -192,6 +193,8 @@ void frm_inst_dump(FILE *f, char *str, int inst_str_size, unsigned char *buf, in
 			frm_inst_dump_shamt(inst_str_ptr, &inst_str_size, &inst, inst.info->fmt);
 		else if (*fmt_str == 't')
 			frm_inst_dump_target(inst_str_ptr, &inst_str_size, &inst, inst.info->fmt);
+		else if (*fmt_str == 'C')
+			frm_inst_dump_ccop(inst_str_ptr, &inst_str_size, &inst, inst.info->fmt);
 		else
 			fatal("%c: token not recognized\n", *fmt_str);
 		++fmt_str;
@@ -287,6 +290,8 @@ void frm_inst_dump_pred(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	else if (fmt == FRM_FMT_INT_SHL)
 		pred = inst->dword.int_shl.pred;
 	else if (fmt == FRM_FMT_INT_LOP)
+		pred = inst->dword.int_lop.pred;
+	else if (fmt == FRM_FMT_INT_FLO)
 		pred = inst->dword.int_lop.pred;
 	else if (fmt == FRM_FMT_INT_LOP32I)
 		pred = inst->dword.int_lop32i.pred;
@@ -1045,7 +1050,7 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 			fatal("%d: FRM_FMT_CONV_I2I.dtype_s not recognized", inst->dword.conv_i2i.dtype_s);
 
 		if (inst->dword.conv_i2i.dtype_n == 0)
-			;
+			str_printf(inst_str_ptr, inst_str_size, "8");
 		else if (inst->dword.conv_i2i.dtype_n == 1)
 			str_printf(inst_str_ptr, inst_str_size, "16");
 		else if (inst->dword.conv_i2i.dtype_n == 2)
@@ -1065,13 +1070,13 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 			fatal("%d: FRM_FMT_CONV_I2I.stype_s not recognized", inst->dword.conv_i2i.stype_s);
 
 		if (inst->dword.conv_i2i.stype_n == 0)
-			;
+			str_printf(inst_str_ptr, inst_str_size, "8");
 		else if (inst->dword.conv_i2i.stype_n == 1)
-			str_printf(inst_str_ptr, inst_str_size, ".16");
+			str_printf(inst_str_ptr, inst_str_size, "16");
 		else if (inst->dword.conv_i2i.stype_n == 2)
-			;
+			str_printf(inst_str_ptr, inst_str_size, "32");
 		else if (inst->dword.conv_i2i.stype_n == 3)
-			str_printf(inst_str_ptr, inst_str_size, ".64");
+			str_printf(inst_str_ptr, inst_str_size, "64");
 		else
 			fatal("%d: FRM_FMT_CONV_I2I.stype_n not recognized", inst->dword.conv_i2i.stype_n);
 
@@ -1962,7 +1967,11 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	if (fmt == FRM_FMT_FP_FFMA)
 	{
 		if (inst->dword.fp_ffma.src2_mod == 0)
+		{
+			if (inst->dword.fp_ffma.neg_src2)
+				str_printf(inst_str_ptr, inst_str_size, "-");
 			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.fp_ffma.src2 & 0x3f);
+		}
 		else if (inst->dword.fp_ffma.src2_mod == 1)
 		{
 			bank_id = inst->dword.fp_ffma.src2 >> 16;
@@ -1987,10 +1996,9 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	{
 		if (inst->dword.fp_fadd.src2_mod == 0)
 		{
-			if (inst->dword.fp_fadd.neg_src2 == 1)			
-				str_printf(inst_str_ptr, inst_str_size, "-R%d", inst->dword.fp_fadd.src2 & 0x3f);
-			else
-				str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.fp_fadd.src2 & 0x3f);
+			if (inst->dword.fp_fadd.neg_src2)			
+				str_printf(inst_str_ptr, inst_str_size, "-");
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.fp_fadd.src2 & 0x3f);
 		}
 		else if (inst->dword.fp_fadd.src2_mod == 1)
 		{
@@ -2794,6 +2802,28 @@ void frm_inst_dump_target(char **inst_str_ptr, int *inst_str_size, struct frm_in
 	target = SEXT64(target, 24);
 	target += inst->addr + 8;
 	str_printf(inst_str_ptr, inst_str_size, "%#llx", target);
+}
+
+	
+static struct str_map_t frm_inst_ccop_map =
+{
+	4,
+	{
+		{ ".F", 0 },
+		{ ".LT", 1 },
+		{ ".EQ", 2 },
+		{ ".T", 15 }
+	}
+};
+
+
+void frm_inst_dump_ccop(char **buf_ptr, int *size_ptr, struct frm_inst_t *inst, enum frm_fmt_enum fmt)
+{
+        if (fmt == FRM_FMT_MISC_NOP)
+	{
+		str_printf(buf_ptr, size_ptr, "%s", str_map_value(&frm_inst_ccop_map,
+				inst->dword.misc_nop.ccop));
+	}
 }
 
 

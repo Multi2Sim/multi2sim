@@ -183,7 +183,11 @@ DEFINST(LOP32I,
 	INT, 
 	0x0e2)
 
-//DEFINST(FLO
+DEFINST(FLO,
+	"%p FLO",
+	INT_FLO,
+	INT,
+	0x1e3)
 
 //DEFINST(ISET
 
@@ -398,7 +402,7 @@ DEFINST(JMP,
 //DEFINST(JMX
 
 DEFINST(CAL, 
-	"%p CAL%e %t", 
+	"CAL%e %t", 
 	CTRL_CAL, 
 	CTRL, 
 	0x147)
@@ -476,7 +480,7 @@ DEFINST(EXIT,
  */
 
 DEFINST(NOP, 
-	"%p NOP%e CC, %i", 
+	"%p NOP%e CC%C", 
 	MISC_NOP, 
 	MISC, 
 	0x104)
