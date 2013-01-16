@@ -31,30 +31,6 @@
 #include "uop.h"
 #include "wavefront-pool.h"
 
-
-/* Configurable by user at runtime */
-
-int si_gpu_branch_unit_width = 1;
-
-int si_gpu_branch_unit_issue_buffer_size = 1;
-
-int si_gpu_branch_unit_decode_latency = 1;
-int si_gpu_branch_unit_decode_buffer_size = 1;
-
-int si_gpu_branch_unit_exec_latency = 1;
-int si_gpu_branch_unit_exec_buffer_size = 1;
-
-/*
- * Register accesses are not pipelined, so buffer size is not
- * multiplied by the latency.
- */
-int si_gpu_branch_unit_read_latency = 1;
-int si_gpu_branch_unit_read_buffer_size = 1;
-
-int si_gpu_branch_unit_write_latency = 1;
-int si_gpu_branch_unit_write_buffer_size = 1;
-
-
 void si_branch_unit_complete(struct si_branch_unit_t *branch_unit)
 {
 	struct si_uop_t *uop;

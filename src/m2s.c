@@ -155,10 +155,10 @@ static char *m2s_help =
 	"\n"
 	"  --trace <file>.gz\n"
 	"      Generate a trace file with debug information on the configuration of the\n"
-	"      modeled CPUs, GPUs, and memory system, as well as their dynamic simulation.\n"
-	"      The trace is a compressed plain-text file in format. The user should watch\n"
-	"      the size of the generated trace as simulation runs, since the trace file\n"
-	"      can quickly become extremely large.\n"
+	"      modeled CPUs, GPUs, and memory system, as well as their dynamic\n" 
+	"      simulation. The trace is a compressed plain-text file in format. The user\n"
+	"      should watch the size of the generated trace as simulation runs, since\n"
+	"      the trace file can quickly become extremely large.\n"
 	"\n"
 	"  --visual <file>.gz\n"
 	"      Run the Multi2Sim Visualization Tool. This option consumes a file\n"
@@ -250,7 +250,7 @@ static char *m2s_help =
 	"\n"
 	"  --x86-sim {functional|detailed}\n"
 	"      Choose a functional simulation (emulation) of an x86 program, versus\n"
-	"      a detailed (architectural) simulation. Simulation is functional by default.\n"
+	"      a detailed (architectural) simulation. Simulation is functional by\n" 	"      default.\n"
 	"\n"
 	"\n"
 	"================================================================================\n"
@@ -310,12 +310,13 @@ static char *m2s_help =
 	"\n"
 	"  --evg-report-kernel <file>\n"
 	"      File to dump report of a GPU device kernel emulation. The report includes\n"
-	"      statistics about type of instructions, VLIW packing, thread divergence, etc.\n"
+	"      statistics about type of instructions, VLIW packing, thread divergence,\n" 
+	"      etc.\n"
 	"\n"
 	"  --evg-report <file>\n"
-	"      File to dump a report of the GPU pipeline, such as active execution engines,\n"
-	"      compute units occupancy, stream cores utilization, etc. Use together with a\n"
-	"      detailed GPU simulation (option '--evg-sim detailed').\n"
+	"      File to dump a report of the GPU pipeline, such as active execution\n" 
+	"      engines, compute units occupancy, stream cores utilization, etc. Use\n"
+	"      together with a detailed GPU simulation (option '--evg-sim detailed').\n"
 	"\n"
 	"  --evg-sim {functional|detailed}\n"
 	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
@@ -344,6 +345,10 @@ static char *m2s_help =
 	"      parameters such as number of compute units, stream cores, or wavefront\n"
 	"      size. Type 'm2s --si-help' for details on the file format.\n"
 	"\n"
+	"  --si-dump-default-config <file>\n"
+	"      Dumps the default GPU configuration file used for timing simulation.\n"
+	"      This cannot be used with any other option.\n"	
+	"\n"
 	"  --si-help\n"
 	"      Display a help message describing the format of the Southern Islands GPU\n"
 	"      configuration file, passed with option '--si-config <file>'.\n"
@@ -365,9 +370,9 @@ static char *m2s_help =
 	"      last kernel finishes execution, the simulator will stop.\n"
 	"\n"
 	"  --si-report <file>\n"
-	"      File to dump a report of the GPU pipeline, such as active execution engines,\n"
-	"      compute units occupancy, stream cores utilization, etc. Use together with a\n"
-	"      detailed GPU simulation (option '--evg-sim detailed').\n"
+	"      File to dump a report of the GPU pipeline, such as active execution\n" 
+	"      engines, compute units occupancy, stream cores utilization, etc. Use\n"
+	"      together with a detailed GPU simulation (option '--si-sim detailed').\n"
 	"\n"
 	"  --si-sim {functional|detailed}\n"
 	"      Functional (default) or detailed simulation for the AMD Southern Islands\n"
@@ -463,10 +468,10 @@ static char *m2s_help =
 	"      together with option '--net-sim'.\n"
 	"\n"
 	"  --net-msg-size <size>\n"
-	"      For network simulation, packet size in bytes. An entire packet is assumed to\n"
-	"      fit in a node's buffer, but its transfer latency through a link will depend\n"
-	"      on the message size and the link bandwidth. This option must be used together\n"
-	"      with '--net-sim'.\n"
+	"      For network simulation, packet size in bytes. An entire packet is assumed\n" 
+	"      to fit in a node's buffer, but its transfer latency through a link will\n" 
+	"      depend on the message size and the link bandwidth. This option must be\n"
+	"      used together with '--net-sim'.\n"
 	"\n"
 	"  --net-report <file>\n"
 	"      File to dump detailed statistics for each network defined in the network\n"
@@ -931,6 +936,13 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Dump Southern Islands default configuration file */
+		if (!strcmp(argv[argi], "--si-dump-default-config"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_gpu_dump_default_config_file_name = argv[++argi];
+			continue;
+		}
 
 		/* Souther Islands disassembler */
 		if (!strcmp(argv[argi], "--si-disasm"))
@@ -1312,6 +1324,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		fatal("option '--evg-disasm' is incompatible with any other options.");
 	if (*si_disasm_file_name && argc > 3)
 		fatal("option '--si-disasm' is incompatible with any other options.");
+	if (*si_gpu_dump_default_config_file_name && argc > 3)
+		fatal("option '--si-dump-default-config' is incompatible with any other options.");
 	if (*evg_opengl_disasm_file_name && argc != 4)
 		fatal("option '--evg-disasm-opengl' is incompatible with any other options.");	
 	if (*si_opengl_disasm_file_name && argc != 4)
@@ -1589,6 +1603,10 @@ int main(int argc, char **argv)
 	/* Network simulation tool */
 	if (*net_sim_network_name)
 		net_sim(net_debug_file_name);
+
+	/* Southern Islands dump config file */
+	if (*si_gpu_dump_default_config_file_name)
+		si_gpu_dump_default_config(si_gpu_dump_default_config_file_name);
 
 	/* Debug */
 	debug_init();

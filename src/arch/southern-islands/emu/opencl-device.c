@@ -98,7 +98,7 @@ unsigned int si_opencl_device_get_info(struct si_opencl_device_t *device, unsign
 	case 0x100a:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT */
 	case 0x100b:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE */
 		size_ret = 4;
-		info = &si_gpu_num_stream_cores;
+		info = &si_gpu_simd_num_simd_lanes;
 		break;
 	
 	case 0x100c:  /* CL_DEVICE_MAX_CLOCK_FREQUENCY */
@@ -218,7 +218,7 @@ unsigned int si_opencl_device_get_info(struct si_opencl_device_t *device, unsign
 
 	case 0x1023:  /* CL_DEVICE_LOCAL_MEM_SIZE */
 		size_ret = 8;
-		info = &si_gpu_local_mem_size;
+		info = &si_gpu_lds_size;
 		break;
 
 	case 0x1024:  /* CL_DEVICE_ERROR_CORRECTION_SUPPORT */
@@ -313,7 +313,7 @@ unsigned int si_opencl_device_get_info(struct si_opencl_device_t *device, unsign
 	case 0x103a:  /* CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT */
 	case 0x103b:  /* CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE */
 		size_ret = 4;
-		info = &si_gpu_num_stream_cores;
+		info = &si_gpu_simd_num_simd_lanes;
 		break;
 
 	case 0x103c: /* CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF */

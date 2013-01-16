@@ -34,26 +34,6 @@
 #include "wavefront-pool.h"
 
 
-/* Configurable by user at runtime */
-
-int si_gpu_simd_width = 1;
-
-int si_gpu_simd_issue_buffer_size = 1;
-
-int si_gpu_simd_decode_latency = 1;
-int si_gpu_simd_decode_buffer_size = 1;
-
-/* The following three latencies are combined to make up the
- * latency of the SIMD ALU unit.  They are combined because one
- * uop is pipelined over the stages. */
-int si_gpu_simd_read_latency = 1;
-int si_gpu_simd_write_latency = 1;
-int si_gpu_simd_exec_latency = 6;
-
-int si_gpu_simd_exec_buffer_size = 2;
-int si_gpu_simd_num_subwavefronts = 4;
-
-
 void si_simd_complete(struct si_simd_t *simd)
 {
 	struct si_uop_t *uop;
@@ -141,8 +121,8 @@ void si_simd_execute(struct si_simd_t *simd)
             continue;
         }
 
-        uop->execute_ready = si_gpu->cycle + si_gpu_simd_read_latency + 
-			si_gpu_simd_exec_latency + si_gpu_simd_write_latency;
+		/* Includes time for pipelined read-exec-write of all subwavefronts */
+        uop->execute_ready = si_gpu->cycle + si_gpu_simd_exec_latency;
 
         /* Transfer the uop to the outstanding execution buffer */
         list_remove(simd->decode_buffer, uop);

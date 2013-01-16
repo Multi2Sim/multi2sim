@@ -34,28 +34,6 @@
 #include "wavefront-pool.h"
 
 
-/* Configurable by user at runtime */
-
-int si_gpu_lds_width = 1;
-
-int si_gpu_lds_issue_buffer_size = 1;
-
-int si_gpu_lds_decode_latency = 1;
-int si_gpu_lds_decode_buffer_size = 1;
-
-int si_gpu_lds_inflight_mem_accesses = 32;
-
-/*
- * Register accesses are not pipelined, so buffer size is not
- * multiplied by the latency.
- */
-int si_gpu_lds_read_latency = 1;
-int si_gpu_lds_read_buffer_size = 1;
-
-int si_gpu_lds_write_latency = 1;
-int si_gpu_lds_write_buffer_size = 1;
-
-
 void si_lds_complete(struct si_lds_t *lds)
 {
 	struct si_uop_t *uop = NULL;
@@ -110,7 +88,7 @@ void si_lds_write(struct si_lds_t *lds)
 	list_entries = list_count(lds->mem_buffer);
 
 	/* Sanity check the mem buffer */
-	assert(list_entries <= si_gpu_lds_inflight_mem_accesses);
+	assert(list_entries <= si_gpu_lds_max_inflight_mem_accesses);
 
 	for (i = 0; i < list_entries; i++)
 	{
@@ -207,10 +185,11 @@ void si_lds_mem(struct si_lds_t *lds)
 		assert(uop->local_mem_read || uop->local_mem_write);
 
 		/* Sanity check mem buffer */
-		assert(list_count(lds->mem_buffer) <= si_gpu_lds_inflight_mem_accesses);
+		assert(list_count(lds->mem_buffer) <= 
+			si_gpu_lds_max_inflight_mem_accesses);
 
 		/* Stall if there is no room in the memory buffer */
-		if (list_count(lds->mem_buffer) == si_gpu_lds_inflight_mem_accesses)
+		if (list_count(lds->mem_buffer) == si_gpu_lds_max_inflight_mem_accesses)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, lds->compute_unit->id, 

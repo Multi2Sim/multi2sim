@@ -37,28 +37,6 @@
 #include "uop.h"
 #include "wavefront-pool.h"
 
-/* Configurable by user at runtime */
-
-int si_gpu_vector_mem_width = 1;
-
-int si_gpu_vector_mem_issue_buffer_size = 1;
-
-int si_gpu_vector_mem_decode_latency = 1;
-int si_gpu_vector_mem_decode_buffer_size = 1;
-
-int si_gpu_vector_mem_inflight_mem_accesses = 32;
-
-/*
- * Register accesses are not pipelined, so buffer size is not
- * multiplied by the latency.
- */
-int si_gpu_vector_mem_read_latency = 1;
-int si_gpu_vector_mem_read_buffer_size = 1;
-
-int si_gpu_vector_mem_write_latency = 1;
-int si_gpu_vector_mem_write_buffer_size = 1;
-
-
 void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 {
 	struct si_uop_t *uop = NULL;
@@ -113,7 +91,7 @@ void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 	list_entries = list_count(vector_mem->mem_buffer);
 
 	/* Sanity check the mem buffer */
-	assert(list_entries <= si_gpu_vector_mem_inflight_mem_accesses);
+	assert(list_entries <= si_gpu_vector_mem_max_inflight_mem_accesses);
 
 	for (i = 0; i < list_entries; i++)
 	{
@@ -230,11 +208,11 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 		/* Sanity check mem buffer */
 		assert(list_count(vector_mem->mem_buffer) <= 
-			si_gpu_vector_mem_inflight_mem_accesses);
+			si_gpu_vector_mem_max_inflight_mem_accesses);
 
 		/* Stall if there is not room in the memory buffer */
 		if (list_count(vector_mem->mem_buffer) == 
-			si_gpu_vector_mem_inflight_mem_accesses)
+			si_gpu_vector_mem_max_inflight_mem_accesses)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, vector_mem->compute_unit->id, 

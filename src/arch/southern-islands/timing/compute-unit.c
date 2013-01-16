@@ -37,19 +37,6 @@
 
 #include "cycle-interval-report.h"
 
-/* Front-end parameters */
-int si_gpu_fetch_latency = 5;
-int si_gpu_fetch_width = 4;
-int si_gpu_fetch_buffer_size = 10;
-
-int si_gpu_issue_latency = 1;
-int si_gpu_issue_width = 5;
-int si_gpu_max_inst_issued_per_type = 1;
-
-int si_gpu_max_work_groups_per_wavefront_pool = 10;
-int si_gpu_max_wavefronts_per_wavefront_pool = 10;
-
-
 /*
  * Compute Unit
  */
@@ -66,8 +53,7 @@ struct si_compute_unit_t *si_compute_unit_create()
 	/* Local memory */
 	snprintf(buf, sizeof buf, "LocalMemory[%d]", compute_unit->id);
 	compute_unit->local_memory = mod_create(buf, mod_kind_local_memory,
-		si_gpu_local_mem_num_ports, si_gpu_local_mem_block_size, 
-		si_gpu_local_mem_latency);
+		si_gpu_lds_num_ports, si_gpu_lds_block_size, si_gpu_lds_latency);
 
 	/* Hardware structures */
 	compute_unit->num_wavefront_pools = si_gpu_num_wavefront_pools;
@@ -383,7 +369,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_fb
 		}
 
 		/* Only fetch a fixed number of instructions per cycle */
-		if (instructions_processed == si_gpu_fetch_width)
+		if (instructions_processed == si_gpu_fe_fetch_width)
 			continue;
 
 		/* Wavefront isn't ready (previous instruction is still in flight) */
@@ -431,9 +417,9 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_fb
 
 		/* Stall if fetch buffer full */
         assert(list_count(compute_unit->fetch_buffers[active_fb]) <= 
-				si_gpu_fetch_buffer_size);
+				si_gpu_fe_fetch_buffer_size);
         if (list_count(compute_unit->fetch_buffers[active_fb]) == 
-				si_gpu_fetch_buffer_size)
+				si_gpu_fe_fetch_buffer_size)
 		{
 			continue;
 		}
@@ -510,7 +496,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_fb
 		/* Access instruction cache. Record the time when the instruction 
 		 * will have been fetched, as per the latency of the instruction 
 		 * memory. */
-		uop->fetch_ready = si_gpu->cycle + si_gpu_fetch_latency;
+		uop->fetch_ready = si_gpu->cycle + si_gpu_fe_fetch_latency;
 
 		/* Insert into fetch buffer */
 		list_enqueue(compute_unit->fetch_buffers[active_fb], uop);
@@ -536,7 +522,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 	list_index = 0;
 
 	list_entries = list_count(compute_unit->fetch_buffers[active_fb]);
-	for (issued_insts = 0; issued_insts < si_gpu_max_inst_issued_per_type;
+	for (issued_insts = 0; issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
 		for (i = 0; i < list_entries; i++)
@@ -575,7 +561,8 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 				list_count(compute_unit->branch_unit.issue_buffer) < 
 					si_gpu_branch_unit_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+				oldest_uop->issue_ready = si_gpu->cycle + 
+					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], oldest_uop);
 				list_enqueue(compute_unit->branch_unit.issue_buffer, 
 					oldest_uop);
@@ -595,7 +582,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 	list_index = 0;
 
 	list_entries = list_count(compute_unit->fetch_buffers[active_fb]);
-	for (issued_insts = 0; issued_insts < si_gpu_max_inst_issued_per_type;
+	for (issued_insts = 0; issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
 		for (i = 0; i < list_entries; i++)
@@ -640,7 +627,8 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 				list_count(compute_unit->scalar_unit.issue_buffer) < 
 					si_gpu_scalar_unit_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+				oldest_uop->issue_ready = si_gpu->cycle + 
+					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], oldest_uop);
 				list_enqueue(compute_unit->scalar_unit.issue_buffer, 
 					oldest_uop);
@@ -667,7 +655,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 	list_index = 0;
 
 	list_entries = list_count(compute_unit->fetch_buffers[active_fb]);
-	for (issued_insts = 0; issued_insts < si_gpu_max_inst_issued_per_type;
+	for (issued_insts = 0; issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
 		for (i = 0; i < list_entries; i++)
@@ -704,7 +692,8 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 				list_count(compute_unit->simds[active_fb]->issue_buffer) < 
 					si_gpu_simd_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+				oldest_uop->issue_ready = si_gpu->cycle + 
+					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], oldest_uop);
 				list_enqueue(compute_unit->simds[active_fb]->issue_buffer, 
 					oldest_uop);
@@ -726,7 +715,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 	list_index = 0;
 
 	list_entries = list_count(compute_unit->fetch_buffers[active_fb]);
-	for (issued_insts = 0; issued_insts < si_gpu_max_inst_issued_per_type;
+	for (issued_insts = 0; issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
 		for (i = 0; i < list_entries; i++)
@@ -759,7 +748,8 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 				list_count(compute_unit->vector_mem_unit.issue_buffer) < 
 					si_gpu_vector_mem_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+				oldest_uop->issue_ready = si_gpu->cycle + 
+					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], oldest_uop);
 				list_enqueue(compute_unit->vector_mem_unit.issue_buffer, 
 					oldest_uop);
@@ -781,7 +771,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 	list_index = 0;
 
 	list_entries = list_count(compute_unit->fetch_buffers[active_fb]);
-	for (issued_insts = 0; issued_insts < si_gpu_max_inst_issued_per_type;
+	for (issued_insts = 0; issued_insts < si_gpu_fe_max_inst_issued_per_type;
 		issued_insts++)
 	{
 		for (i = 0; i < list_entries; i++)
@@ -814,7 +804,8 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 				list_count(compute_unit->lds.issue_buffer) < 
 					si_gpu_lds_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+				oldest_uop->issue_ready = si_gpu->cycle + 
+					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], oldest_uop);
 				list_enqueue(compute_unit->lds.issue_buffer, 
 					oldest_uop);
@@ -907,7 +898,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		}
 
 		/* Only issue a fixed number of instructions per cycle */
-		if (total_insts_issued == si_gpu_issue_width)
+		if (total_insts_issued == si_gpu_fe_issue_width)
 		{
 			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 				uop->id_in_compute_unit, compute_unit->id, uop->wavefront->id,
@@ -930,8 +921,9 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				uop->inst.micro_inst.sopp.op < 10)
 			{
 				/* Stall if max branch instructions already issued */
-				assert(branch_insts_issued <= si_gpu_max_inst_issued_per_type);
-				if (branch_insts_issued == si_gpu_max_inst_issued_per_type)
+				assert(branch_insts_issued <= 
+					si_gpu_fe_max_inst_issued_per_type);
+				if (branch_insts_issued == si_gpu_fe_max_inst_issued_per_type)
 				{
 					si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 						"stg=\"s\"\n", uop->id_in_compute_unit, 
@@ -953,7 +945,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 					continue;
 				}
 
-				uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+				uop->issue_ready = si_gpu->cycle + si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], uop);
 				list_enqueue(compute_unit->branch_unit.issue_buffer, uop);
 
@@ -964,8 +956,9 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 			else
 			{
 				/* Stall if max scalar instructions already issued */
-				assert(scalar_insts_issued <= si_gpu_max_inst_issued_per_type);
-				if (scalar_insts_issued == si_gpu_max_inst_issued_per_type)
+				assert(scalar_insts_issued <= 
+					si_gpu_fe_max_inst_issued_per_type);
+				if (scalar_insts_issued == si_gpu_fe_max_inst_issued_per_type)
 				{
 					si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 						"stg=\"s\"\n", uop->id_in_compute_unit, 
@@ -987,7 +980,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 					continue;
 				}
 
-				uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+				uop->issue_ready = si_gpu->cycle + si_gpu_fe_issue_latency;
 				list_remove(compute_unit->fetch_buffers[active_fb], uop);
 				list_enqueue(compute_unit->scalar_unit.issue_buffer, uop);
 
@@ -1003,8 +996,8 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		case SI_FMT_SOPK:
 		{
 			/* Stall if max scalar instructions already issued */
-			assert(scalar_insts_issued <= si_gpu_max_inst_issued_per_type);
-			if (scalar_insts_issued == si_gpu_max_inst_issued_per_type)
+			assert(scalar_insts_issued <= si_gpu_fe_max_inst_issued_per_type);
+			if (scalar_insts_issued == si_gpu_fe_max_inst_issued_per_type)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n",
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -1024,7 +1017,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			uop->issue_ready = si_gpu->cycle + si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], uop);
 			list_enqueue(compute_unit->scalar_unit.issue_buffer, uop);
 
@@ -1038,8 +1031,8 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		case SI_FMT_SMRD:
 		{
 			/* Stall if max scalar instructions already issued */
-			assert(scalar_insts_issued <= si_gpu_max_inst_issued_per_type);
-			if (scalar_insts_issued == si_gpu_max_inst_issued_per_type)
+			assert(scalar_insts_issued <= si_gpu_fe_max_inst_issued_per_type);
+			if (scalar_insts_issued == si_gpu_fe_max_inst_issued_per_type)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n",
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -1059,7 +1052,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			uop->issue_ready = si_gpu->cycle + si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], uop);
 			list_enqueue(compute_unit->scalar_unit.issue_buffer, uop);
 
@@ -1077,8 +1070,8 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		case SI_FMT_VOP3b:
 		{
 			/* Stall if max SIMD instructions already issued */
-			assert(simd_insts_issued <= si_gpu_max_inst_issued_per_type);
-			if (simd_insts_issued == si_gpu_max_inst_issued_per_type)
+			assert(simd_insts_issued <= si_gpu_fe_max_inst_issued_per_type);
+			if (simd_insts_issued == si_gpu_fe_max_inst_issued_per_type)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n",
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -1098,7 +1091,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			uop->issue_ready = si_gpu->cycle + si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], uop);
 			list_enqueue(compute_unit->simds[active_fb]->issue_buffer, uop);
 
@@ -1114,8 +1107,8 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		case SI_FMT_MTBUF:
 		{
 			/* Stall if max vector memory instructions already issued */
-			assert(mem_insts_issued <= si_gpu_max_inst_issued_per_type);
-			if (mem_insts_issued == si_gpu_max_inst_issued_per_type)
+			assert(mem_insts_issued <= si_gpu_fe_max_inst_issued_per_type);
+			if (mem_insts_issued == si_gpu_fe_max_inst_issued_per_type)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n",
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -1135,7 +1128,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			uop->issue_ready = si_gpu->cycle + si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], uop);
 			list_enqueue(compute_unit->vector_mem_unit.issue_buffer, uop);
 
@@ -1151,8 +1144,8 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		case SI_FMT_DS:
 		{
 			/* Stall if max LDS instructions already issued */
-			assert(lds_insts_issued <= si_gpu_max_inst_issued_per_type);
-			if (lds_insts_issued == si_gpu_max_inst_issued_per_type)
+			assert(lds_insts_issued <= si_gpu_fe_max_inst_issued_per_type);
+			if (lds_insts_issued == si_gpu_fe_max_inst_issued_per_type)
 			{
 				si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n",
 					uop->id_in_compute_unit, compute_unit->id, 
@@ -1172,7 +1165,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = si_gpu->cycle + si_gpu_issue_latency;
+			uop->issue_ready = si_gpu->cycle + si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], uop);
 			list_enqueue(compute_unit->lds.issue_buffer, uop);
 
