@@ -247,10 +247,11 @@ void si_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *full_path, int size)
 		{
 			fclose(f);
 			warning("path '%s' has been redirected to '%s'\n"
-				"\tYour application is trying to access the default OpenCL library, which is being\n"
-				"\tredirected by Multi2Sim to its own provided library. Though this should work,\n"
-				"\tthe safest way to simulate an OpenCL program is by linking it initially with\n"
-				"\t'libm2s-opencl.so'. See the Multi2Sim Guide for further details (www.multi2sim.org).\n",
+			"    Your application is trying to access the default OpenCL library, which\n"
+			"    is being redirected by Multi2Sim to its own provided library. Though\n"
+			"    this should work, the safest way to simulate an OpenCL program is by\n" 
+			"    linking it initially with libm2s-opencl.so'. See the Multi2Sim Guide for\n"
+			"    further details (www.multi2sim.org).\n",
 				fullpath_original, full_path);
 			ctx->libopencl_open_attempt = 0;
 		}
