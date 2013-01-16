@@ -26,13 +26,16 @@
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/config.h>
 
 #include "compute-unit.h"
 #include "gpu.h"
+
+#include "cycle-interval-report.h"
+
 #include "vector-mem-unit.h"
 #include "uop.h"
 #include "wavefront-pool.h"
-
 
 /* Configurable by user at runtime */
 
@@ -153,6 +156,27 @@ void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 
 		/* Access complete, remove the uop from the queue */
 		uop->write_ready = si_gpu->cycle + si_gpu_vector_mem_write_latency;
+
+		/* In the above context, access means any of the mod_access calls
+		 * in si_vector_mem_mem. Means all inflight accesses for uop are done
+		 */
+		if(si_spatial_report_active)
+		{
+			if (uop->vector_mem_write)
+			{
+				si_report_global_mem_finish(uop->compute_unit,
+						uop->num_global_mem_write);
+			}
+			else if (uop->vector_mem_read)
+			{
+				si_report_global_mem_finish(uop->compute_unit,
+						uop->num_global_mem_read);
+			}
+			else
+				fatal("%s: invalid access kind", __FUNCTION__);
+		}
+
+
 		list_remove(vector_mem->mem_buffer, uop);
 		list_enqueue(vector_mem->write_buffer, uop);
 
@@ -240,6 +264,24 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			uop->global_mem_witness--;
 		}
 
+		if(si_spatial_report_active)
+		{
+			if (uop->vector_mem_write)
+			{
+				uop->num_global_mem_write += uop->global_mem_witness;
+				si_report_global_mem_inflight(uop->compute_unit,
+						uop->num_global_mem_write);
+			}
+			else if (uop->vector_mem_read)
+			{
+				uop->num_global_mem_read += uop->global_mem_witness;
+				si_report_global_mem_inflight(uop->compute_unit,
+						uop->num_global_mem_read);
+			}
+			else
+				fatal("%s: invalid access kind", __FUNCTION__);
+		}
+
 		/* Increment outstanding memory access count */
 		uop->wavefront_pool_entry->lgkm_cnt++;
 
@@ -307,6 +349,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		}
 
 		uop->read_ready = si_gpu->cycle + si_gpu_vector_mem_read_latency;
+
 		list_remove(vector_mem->decode_buffer, uop);
 		list_enqueue(vector_mem->read_buffer, uop);
 

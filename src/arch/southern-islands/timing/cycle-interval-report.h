@@ -17,33 +17,35 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_EVERGREEN_SPATIAL_REPORT_H
-#define ARCH_EVERGREEN_SPATIAL_REPORT_H
+#ifndef ARCH_SOUTHERN_ISLANDS_SPATIAL_REPORT_H
+#define ARCH_SOUTHERN_ISLANDS_SPATIAL_REPORT_H
 
 /*
  * Public variable
  */
-extern int evg_spatial_report_active  ;
+extern int si_spatial_report_active  ;
 
-/* Called in fetch stage cf engine */
-void evg_cf_report_new_inst(struct evg_compute_unit_t *compute_unit);
 
-/* Called in fetch stage tex engine */
-void evg_tex_report_new_inst(struct evg_compute_unit_t *compute_unit);
 
-/* Called in fetch stage alu engine */
-void evg_alu_report_new_inst(struct evg_compute_unit_t *compute_unit);
+void si_report_new_inst(struct si_compute_unit_t *compute_unit);
 
-void evg_tex_report_global_mem_inflight( struct evg_compute_unit_t *compute_unit, int long long pending_accesses);
+void si_alu_report_new_inst(struct si_compute_unit_t *compute_unit);
 
-void evg_tex_report_global_mem_finish( struct evg_compute_unit_t *compute_unit, int long long completed_accesses);
+void si_report_mapped_work_group(struct si_compute_unit_t *compute_unit);
 
-void evg_cu_interval_update(struct evg_compute_unit_t *compute_unit);
+
+/* Used in vector unit to keep track of num of mem accesses in flight */
+void si_report_global_mem_inflight( struct si_compute_unit_t *compute_unit, int long long pending_accesses);
+
+void si_report_global_mem_finish( struct si_compute_unit_t *compute_unit, int long long completed_accesses);
 
 struct config_t;
-void evg_spatial_report_config_read(struct config_t *config);
 
-void evg_cu_spatial_report_done();
+void si_spatial_report_config_read(struct config_t *config);
+
+void si_cu_interval_update(struct si_compute_unit_t *compute_unit);
+
+void si_cu_spatial_report_done();
 
 
 #endif
