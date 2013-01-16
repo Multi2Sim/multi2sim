@@ -32,6 +32,10 @@ struct si_vector_mem_unit_t
 
 	/* Statistics */
 	long long inst_count;
+
+	/* Spatial profiling statistics*/
+	long long inflight_mem_accesses ;
+
 };
 
 #endif

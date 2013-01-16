@@ -88,6 +88,11 @@ struct si_uop_t
 	int global_mem_witness;
 	int local_mem_witness;
 	
+	/* Added for Profiling reports*/
+	int num_global_mem_read ;
+	int num_global_mem_write ;
+
+
 	/* Last scalar memory accesses */
 	unsigned int global_mem_access_addr;
 	unsigned int global_mem_access_size;
