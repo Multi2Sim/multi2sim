@@ -1,6 +1,6 @@
 EXTRA_DIST = \
 	\
-	CL\cl.h \
+	CL/cl.h \
 	\
 	cuda.h \
 	cuda_runtime_api.h \
