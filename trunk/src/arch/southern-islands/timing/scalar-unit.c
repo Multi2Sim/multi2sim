@@ -34,31 +34,6 @@
 #include "wavefront-pool.h"
 
 
-/* Configurable by user at runtime */
-
-int si_gpu_scalar_unit_width = 1;
-
-int si_gpu_scalar_unit_issue_buffer_size = 1;
-
-int si_gpu_scalar_unit_decode_latency = 1;
-int si_gpu_scalar_unit_decode_buffer_size = 1;
-
-int si_gpu_scalar_unit_exec_latency = 4;
-int si_gpu_scalar_unit_exec_buffer_size = 16;
-
-/*
- * Register accesses are not pipelined, so buffer size is not
- * multiplied by the latency.
- */
-int si_gpu_scalar_unit_read_latency = 1;
-int si_gpu_scalar_unit_read_buffer_size = 1;
-
-int si_gpu_scalar_unit_write_latency = 1;
-int si_gpu_scalar_unit_write_buffer_size = 1;
-
-
-
-
 void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 {
 	struct si_uop_t *uop = NULL;

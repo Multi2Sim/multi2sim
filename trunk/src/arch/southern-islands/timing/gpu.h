@@ -29,7 +29,9 @@ extern int si_trace_category;
 
 extern char *si_gpu_config_help;
 extern char *si_gpu_config_file_name;
+extern char *si_gpu_dump_default_config_file_name;
 extern char *si_gpu_report_file_name;
+extern char *si_gpu_calc_file_name;
 
 /* OpenCL Device Info */
 extern unsigned long long si_gpu_device_type;
@@ -95,12 +97,7 @@ extern unsigned int si_gpu_queue_properties;
 
 extern unsigned int si_gpu_platform;
 
-extern unsigned int si_gpu_num_compute_units;
-extern unsigned int si_gpu_num_registers;
-extern unsigned int si_gpu_num_wavefront_pools;
-extern unsigned int si_gpu_num_stream_cores;
 extern unsigned int si_gpu_register_alloc_size;
-
 extern struct str_map_t si_gpu_register_alloc_granularity_map;
 extern enum si_gpu_register_alloc_granularity_t
 {
@@ -109,55 +106,31 @@ extern enum si_gpu_register_alloc_granularity_t
 	si_gpu_register_alloc_work_group
 } si_gpu_register_alloc_granularity;
 
+/* User configurable options */
+
+extern int si_gpu_num_compute_units;
+extern int si_gpu_max_wavefronts_per_workgroup;
+
+extern int si_gpu_num_vector_registers;
+extern int si_gpu_num_scalar_registers;
+extern int si_gpu_num_wavefront_pools;
 extern int si_gpu_max_work_groups_per_wavefront_pool;
 extern int si_gpu_max_wavefronts_per_wavefront_pool;
 
-extern char *si_gpu_calc_file_name;
+extern int si_gpu_fe_fetch_latency;
+extern int si_gpu_fe_fetch_width;
+extern int si_gpu_fe_fetch_buffer_size;
+extern int si_gpu_fe_issue_latency;
+extern int si_gpu_fe_issue_width;
+extern int si_gpu_fe_max_inst_issued_per_type;
 
-extern int si_gpu_fetch_latency;
-extern int si_gpu_fetch_width;
-extern int si_gpu_fetch_buffer_size;
-
-extern int si_gpu_issue_width;
-extern int si_gpu_issue_latency;
-
-extern int si_gpu_local_mem_size;
-extern int si_gpu_local_mem_alloc_size;
-extern int si_gpu_local_mem_latency;
-extern int si_gpu_local_mem_block_size;
-extern int si_gpu_local_mem_num_ports;
-
+extern int si_gpu_simd_num_simd_lanes;
 extern int si_gpu_simd_width;
 extern int si_gpu_simd_issue_buffer_size;
 extern int si_gpu_simd_decode_latency;
 extern int si_gpu_simd_decode_buffer_size;
 extern int si_gpu_simd_exec_latency;
 extern int si_gpu_simd_exec_buffer_size;
-extern int si_gpu_simd_num_subwavefronts;
-
-extern int si_gpu_vector_mem_width;
-extern int si_gpu_vector_mem_issue_buffer_size;
-extern int si_gpu_vector_mem_decode_latency;
-extern int si_gpu_vector_mem_decode_buffer_size;
-extern int si_gpu_vector_mem_read_latency;
-extern int si_gpu_vector_mem_read_buffer_size;
-extern int si_gpu_vector_mem_exec_latency;
-extern int si_gpu_vector_mem_exec_buffer_size;
-extern int si_gpu_vector_mem_write_latency;
-extern int si_gpu_vector_mem_write_buffer_size;
-extern int si_gpu_vector_mem_inflight_mem_accesses;
-
-extern int si_gpu_lds_width;
-extern int si_gpu_lds_issue_buffer_size;
-extern int si_gpu_lds_decode_latency;
-extern int si_gpu_lds_decode_buffer_size;
-extern int si_gpu_lds_read_latency;
-extern int si_gpu_lds_read_buffer_size;
-extern int si_gpu_lds_exec_latency;
-extern int si_gpu_lds_exec_buffer_size;
-extern int si_gpu_lds_write_latency;
-extern int si_gpu_lds_write_buffer_size;
-extern int si_gpu_lds_inflight_mem_accesses;
 
 extern int si_gpu_scalar_unit_width;
 extern int si_gpu_scalar_unit_issue_buffer_size;
@@ -181,6 +154,36 @@ extern int si_gpu_branch_unit_exec_latency;
 extern int si_gpu_branch_unit_exec_buffer_size;
 extern int si_gpu_branch_unit_write_latency;
 extern int si_gpu_branch_unit_write_buffer_size;
+
+extern int si_gpu_lds_width;
+extern int si_gpu_lds_issue_buffer_size;
+extern int si_gpu_lds_decode_latency;
+extern int si_gpu_lds_decode_buffer_size;
+extern int si_gpu_lds_read_latency;
+extern int si_gpu_lds_read_buffer_size;
+extern int si_gpu_lds_exec_latency;
+extern int si_gpu_lds_exec_buffer_size;
+extern int si_gpu_lds_write_latency;
+extern int si_gpu_lds_write_buffer_size;
+extern int si_gpu_lds_max_inflight_mem_accesses;
+
+extern int si_gpu_vector_mem_width;
+extern int si_gpu_vector_mem_issue_buffer_size;
+extern int si_gpu_vector_mem_decode_latency;
+extern int si_gpu_vector_mem_decode_buffer_size;
+extern int si_gpu_vector_mem_read_latency;
+extern int si_gpu_vector_mem_read_buffer_size;
+extern int si_gpu_vector_mem_exec_latency;
+extern int si_gpu_vector_mem_exec_buffer_size;
+extern int si_gpu_vector_mem_write_latency;
+extern int si_gpu_vector_mem_write_buffer_size;
+extern int si_gpu_vector_mem_max_inflight_mem_accesses;
+
+extern int si_gpu_lds_size;
+extern int si_gpu_lds_alloc_size;
+extern int si_gpu_lds_latency;
+extern int si_gpu_lds_block_size;
+extern int si_gpu_lds_num_ports;
 
 struct si_gpu_t
 {
@@ -240,6 +243,7 @@ struct si_lds_t;
 void si_gpu_init(void);
 void si_gpu_done(void);
 
+void si_gpu_dump_default_config(char *filename);
 void si_gpu_dump_report(void);
 void si_gpu_dump_summary(FILE *f);
 
