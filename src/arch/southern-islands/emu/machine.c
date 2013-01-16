@@ -36,7 +36,7 @@
 char *err_si_isa_note =
 	"\tThe AMD Southern Islands instruction set is partially supported by\n" 
 	"\tMulti2Sim. If your program is using an unimplemented instruction,\n"
-        "\tplease email development@multi2sim.org' to request support for it.\n";
+	"\tplease email development@multi2sim.org' to request support for it.\n";
 
 #define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
 	inst->info->name, err_si_isa_note)
@@ -64,7 +64,7 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si
 
 	/* sgpr[dst] = read_dword_from_kcache(m_base, m_offset, m_size) */
 	m_base = buf_desc.base_addr;
-	m_offset = ((INST.imm) ? INST.offset: si_isa_read_sreg(work_item, INST.offset)) * 4;
+	m_offset = (INST.imm) ? (INST.offset*4): si_isa_read_sreg(work_item, INST.offset);
 	//m_size = (buf_desc.stride == 0) ? 1 : buf_desc.num_records;
 	
 	mem_read(si_emu->global_mem, m_base+m_offset, 4, &value);
@@ -78,55 +78,6 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si
 	/* Record last memory access for the detailed simulator. */
 	work_item->global_mem_access_addr = m_base+m_offset;
 	work_item->global_mem_access_size = 4;
-}
-#undef INST
-
-#define INST SI_INST_SMRD
-void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
-{
-	union si_reg_t value[4];
-	unsigned int m_base;
-	unsigned int m_offset;
-	unsigned int m_addr;
-	struct si_mem_ptr_t mem_ptr;
-	int sbase;
-	int i;
-
-        assert(INST.imm);
-
-	sbase = INST.sbase << 1;
-
-	si_isa_read_mem_ptr(work_item, &mem_ptr, sbase);
-
-	/* assert(uav_table_ptr.addr < UINT32_MAX) */
-
-	m_base = mem_ptr.addr;
-	m_offset = INST.offset * 4;
-	m_addr = m_base + m_offset; 
-
-	assert(!(m_addr & 0x3));
-
-	for (i = 0; i < 4; i++) 
-	{
-		mem_read(si_emu->global_mem, m_base + m_offset + i * 4, 4, &value[i]);
-		si_isa_write_sreg(work_item, INST.sdst+i, value[i].as_uint);
-	}	
-
-	if (debug_status(si_isa_debug_category))
-		for (i = 0; i < 4; i++) 
-			si_isa_debug("S%u<=(%d,%gf) ", INST.sdst+i, value[i].as_uint, 
-				value[i].as_float);
-
-	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = m_base+m_offset;
-	work_item->global_mem_access_size = 4 * 4;
-}
-#undef INST
-
-#define iNST SI_INST_SMRD
-void si_isa_S_LOAD_DWORDX8_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
-{
-	NOT_IMPL();
 }
 #undef INST
 
@@ -154,7 +105,7 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct 
 	/* assert(uav_table_ptr.addr < UINT32_MAX) */
 
 	m_base = mem_ptr.addr;
-	m_offset = ((INST.imm) ? INST.offset: si_isa_read_sreg(work_item, INST.offset)) * 4;
+	m_offset = (INST.imm) ? (INST.offset*4): si_isa_read_sreg(work_item, INST.offset);
 	m_addr = m_base + m_offset; 
 
 	assert(!(m_addr & 0x3));
@@ -204,7 +155,7 @@ void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct 
 	/* assert(uav_table_ptr.addr < UINT32_MAX) */
 
 	m_base = mem_ptr.addr;
-    m_offset = ((INST.imm) ? INST.offset: si_isa_read_sreg(work_item, INST.offset)) * 4;
+    m_offset = (INST.imm) ? (INST.offset*4): si_isa_read_sreg(work_item, INST.offset);
 	m_addr = m_base + m_offset;
 
 	assert(!(m_addr & 0x3));
@@ -229,6 +180,56 @@ void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct 
 	work_item->global_mem_access_size = 4 * 4;
 }
 #undef INST
+
+#define INST SI_INST_SMRD
+void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	union si_reg_t value[4];
+	unsigned int m_base;
+	unsigned int m_offset;
+	unsigned int m_addr;
+	struct si_mem_ptr_t mem_ptr;
+	int sbase;
+	int i;
+
+	assert(INST.imm);
+
+	sbase = INST.sbase << 1;
+
+	si_isa_read_mem_ptr(work_item, &mem_ptr, sbase);
+
+	/* assert(uav_table_ptr.addr < UINT32_MAX) */
+
+	m_base = mem_ptr.addr;
+	m_offset = INST.offset * 4;
+	m_addr = m_base + m_offset; 
+
+	assert(!(m_addr & 0x3));
+
+	for (i = 0; i < 4; i++) 
+	{
+		mem_read(si_emu->global_mem, m_base + m_offset + i * 4, 4, &value[i]);
+		si_isa_write_sreg(work_item, INST.sdst+i, value[i].as_uint);
+	}	
+
+	if (debug_status(si_isa_debug_category))
+		for (i = 0; i < 4; i++) 
+			si_isa_debug("S%u<=(%d,%gf) ", INST.sdst+i, value[i].as_uint, 
+				value[i].as_float);
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = m_base+m_offset;
+	work_item->global_mem_access_size = 4 * 4;
+}
+#undef INST
+
+#define iNST SI_INST_SMRD
+void si_isa_S_LOAD_DWORDX8_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 
 /* D.u = S0.u + S1.u. SCC = carry out. */
 #define INST SI_INST_SOP2
