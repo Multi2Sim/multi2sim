@@ -35,6 +35,7 @@
 #include "uop.h"
 #include "wavefront-pool.h"
 
+#include "cycle-interval-report.h"
 
 /* Front-end parameters */
 int si_gpu_fetch_latency = 5;
@@ -305,6 +306,8 @@ void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit,
 
 	/* Stats */
 	compute_unit->mapped_work_groups++;
+	if (si_spatial_report_active)
+		si_report_mapped_work_group(compute_unit);
 }
 
 
@@ -1244,5 +1247,9 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 
 	/* Stats */
 	compute_unit->cycle++;
+
+	if(si_spatial_report_active)
+		si_cu_interval_update(compute_unit);
+
 }
 

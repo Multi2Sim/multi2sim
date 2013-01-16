@@ -26,7 +26,7 @@
 
 #include "gpu.h"
 #include "wavefront-pool.h"
-
+#include "cycle-interval-report.h"
 
 struct si_wavefront_pool_t *si_wavefront_pool_create()
 {

@@ -1,6 +1,8 @@
 lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
+	cycle-interval-report.c \
+	cycle-interval-report.h	\
 	\
 	branch-unit.c \
 	branch-unit.h \
@@ -34,6 +36,7 @@ libtiming_a_SOURCES = \
 	\
 	wavefront-pool.c \
 	wavefront-pool.h
+
 
 INCLUDES = @M2S_INCLUDES@
 

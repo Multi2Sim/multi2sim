@@ -40,6 +40,7 @@
 #include "mem-config.h"
 #include "uop.h"
 
+#include "cycle-interval-report.h"
 
 static char *si_err_stall =
 	"\tThe Southern Islands GPU has not completed execution of any in-flight\n"
@@ -651,6 +652,9 @@ static void si_config_read(void)
 		fatal("%s: %s->Size cannot be smaller than %s->BlockSize * %s->Banks.\n%s", 
 			si_gpu_config_file_name, section, section, section, err_note);
 	
+	/* Cycle Interval report */
+	si_spatial_report_config_read(gpu_config);
+
 	
 	/* Close GPU configuration file */
 	config_check(gpu_config);
@@ -799,6 +803,10 @@ void si_gpu_done()
 
 	/* Free GPU */
 	free(si_gpu);
+
+	if(si_spatial_report_active)
+		si_cu_spatial_report_done();
+
 
 	/* Finalizations */
 	si_uop_done();

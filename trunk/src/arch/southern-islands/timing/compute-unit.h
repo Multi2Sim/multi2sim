@@ -89,6 +89,16 @@ struct si_compute_unit_t
 	/* List of currently mapped work-groups */
 	int work_group_count;
 	struct si_work_group_t **work_groups;
+
+	/* Compute Unit capacity state  (for concurrent CQ)*/
+	/* Statistics for spatial report */
+
+	/* Spatial profiling statistics */
+	long long interval_cycle;
+	long long interval_mapped_work_groups;
+	FILE * spatial_report_file;
+
+
 };
 
 struct si_compute_unit_t *si_compute_unit_create(void);

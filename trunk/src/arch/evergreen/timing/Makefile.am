@@ -1,7 +1,7 @@
 lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
-        cycle-interval-report.c \
+	cycle-interval-report.c \
 	cycle-interval-report.h \
 	\
 	alu-engine.c \
