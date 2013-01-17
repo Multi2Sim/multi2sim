@@ -3909,6 +3909,14 @@ void si_isa_V_CMP_NLT_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si
 }
 #undef INST
 
+/* Comparison Operations */
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_OP16_F64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.u = (S0 < S1) */
 #define INST SI_INST_VOP3a
 void si_isa_V_CMP_LT_F64_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
