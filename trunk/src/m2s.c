@@ -1634,6 +1634,13 @@ int main(int argc, char **argv)
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);
 	arm_isa_call_debug_category = debug_new_category(arm_call_debug_file_name);
 
+	/* Initialization of runtimes */
+	m2s_runtime_init();
+	m2s_runtime_register("OpenCL", "m2s-opencl");
+	m2s_runtime_register("GL", "m2s-opengl");
+	m2s_runtime_register("GLUT", "m2s-glut");
+	m2s_runtime_register("cuda", "m2s-cuda");
+
 	/* Initialization of libraries */
 	esim_init();
 	trace_init(trace_file_name);
@@ -1723,7 +1730,10 @@ int main(int argc, char **argv)
 	arm_emu_done();
 	arch_list_done();
 
-	/* Finalization of Libraries */
+	/* Finalization of runtimes */
+	m2s_runtime_done();
+
+	/* Finalization of libraries */
 	esim_done();
 	trace_done();
 	debug_done();

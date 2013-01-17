@@ -238,20 +238,6 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	x86_file_desc_table_unlink(ctx->file_desc_table);
 	mem_unlink(ctx->mem);
 
-	/* Warn about unresolved attempts to access OpenCL library */
-	if (x86_emu->gpu_kind == x86_emu_gpu_evergreen)
-	{
-		if (ctx->libopencl_open_attempt)
-			evg_opencl_runtime_failed(ctx->pid);
-	}
-	else if (x86_emu->gpu_kind == x86_emu_gpu_southern_islands)
-	{
-		if (ctx->libopencl_open_attempt)
-			si_emu_libopencl_failed(ctx->pid);
-	}
-	else 
-		panic("%s: invalid GPU emulation kind", __FUNCTION__);
-
 	/* Remove context from contexts list and free */
 	x86_emu_list_remove(x86_emu_list_context, ctx);
 	x86_ctx_debug("context %d freed\n", ctx->pid);

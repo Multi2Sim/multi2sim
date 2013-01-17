@@ -80,9 +80,6 @@ struct x86_ctx_t
 	unsigned int glibc_segment_base;
 	unsigned int glibc_segment_limit;
 
-	/* For the OpenCL library access */
-	int libopencl_open_attempt;
-
 	/* When debugging function calls with 'x86_isa_debug_call', function call level. */
 	int function_level;
 

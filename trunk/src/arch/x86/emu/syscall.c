@@ -590,21 +590,12 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  fullpath='%s'\n", full_path);
 	str_map_flags(&sys_open_flags_map, flags, flags_str, sizeof flags_str);
 	x86_sys_debug("  flags=%s\n", flags_str);
-
-	/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
-	switch (x86_emu->gpu_kind)
-	{
-	case x86_emu_gpu_evergreen:
-		evg_opencl_runtime_redirect(ctx, full_path, sizeof full_path);
-		break;
 	
-	case x86_emu_gpu_southern_islands:
-		si_emu_libopencl_redirect(ctx, full_path, sizeof full_path);
-		break;
-	
-	default:
-		panic("%s: invalid GPU kind", __FUNCTION__);
-	}
+	/* The dynamic linked uses the 'open' system call to open shared libraries.
+	 * We need to intercept here attempts to access runtime libraries and
+	 * redirect them to our own Multi2Sim runtimes. */
+	if (m2s_runtime_redirect(full_path, temp_path, sizeof temp_path))
+		snprintf(full_path, sizeof full_path, "%s", temp_path);
 
 	/* Virtual files */
 	if (!strncmp(full_path, "/proc/", 6))
