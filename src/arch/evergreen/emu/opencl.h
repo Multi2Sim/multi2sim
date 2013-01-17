@@ -44,9 +44,5 @@ int evg_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
 		void *argv_ptr, int argv_size);
 void evg_opencl_api_return(struct x86_ctx_t *ctx, int value);
 
-void evg_opencl_runtime_redirect(struct x86_ctx_t *ctx, char *path, int size);
-void evg_opencl_runtime_failed(int pid);
-
-
 #endif
 

@@ -107,9 +107,6 @@ void si_emu_dump_summary(FILE *f);
 
 int si_emu_run(void);
 
-void si_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *path, int size);
-void si_emu_libopencl_failed(int pid);
-
 void si_emu_disasm(char *path);
 void si_emu_opengl_disasm(char *path, int opengl_shader_index);
 
