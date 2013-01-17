@@ -31,6 +31,7 @@
 #include <lib/util/elf-format.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 
 
 
@@ -127,22 +128,6 @@ void kernel_binary_analyze_inner_elf(char *file_name)
 
 	/* Close ELF file */
 	elf_file_free(elf_file);
-}
-
-
-/* Return TRUE if 'suffix' is a suffix of 'str' */
-int str_suffix(char *str, char *suffix)
-{
-	int str_len;
-	int suffix_len;
-
-	str_len = strlen(str);
-	suffix_len = strlen(suffix);
-	if (str_len < suffix_len)
-		return 0;
-	if (strcmp(str + str_len - suffix_len, suffix))
-		return 0;
-	return 1;
 }
 
 
