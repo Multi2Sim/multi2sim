@@ -49,13 +49,6 @@ libemu_a_SOURCES = \
 if HAVE_OPENGL
 libemu_a_SOURCES += \
 	\
-	glut.c \
-	glut.dat \
-	glut.h \
-	\
-	glut-frame-buffer.c \
-	glut-frame-buffer.h \
-	\
 	opengl.c \
 	opengl.dat \
 	opengl.h \
@@ -100,9 +93,6 @@ libemu_a_SOURCES += \
 	opengl-viewport.h
 else
 libemu_a_SOURCES += \
-	\
-	glut.h \
-	glut-missing.c \
 	\
 	opengl.h \
 	opengl-missing.c

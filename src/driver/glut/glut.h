@@ -17,8 +17,35 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_X86_GLUT_GLUT_H
-#define DRIVER_X86_GLUT_GLUT_H
+#ifndef ARCH_X86_EMU_GLUT_H
+#define ARCH_X86_EMU_GLUT_H
+
+#include <pthread.h>
+
+
+/* Forward type declaration */
+struct x86_ctx_t;
+
+
+/*
+ * GLUT system call interface
+ *
+ * NOTE: for every new function or external variable added here, its
+ * implementation should be added in the regular 'glut-xx.c' files and also in
+ * 'glut-missing.c' to allow for correct compilation when the GLUT library is
+ * missing in the user's system.
+ */
+
+#define x86_glut_debug(...) debug(x86_glut_debug_category, __VA_ARGS__)
+extern int x86_glut_debug_category;
+
+extern pthread_mutex_t x86_glut_mutex;
+
+void x86_glut_init(void);
+void x86_glut_done(void);
+
+int x86_glut_call(struct x86_ctx_t *ctx);
+
 
 #endif
 
