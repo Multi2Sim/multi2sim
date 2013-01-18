@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_GLUT_FRAME_BUFFER_H
-#define ARCH_X86_EMU_GLUT_FRAME_BUFFER_H
+#ifndef DRIVER_GLUT_FRAME_BUFFER_H
+#define DRIVER_GLUT_FRAME_BUFFER_H
 
 
 void x86_glut_frame_buffer_init(void);

@@ -20,8 +20,9 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
+#include "material.h"
 #include "opengl.h"
-#include "opengl-material.h"
+
 
 struct x86_opengl_material_t *x86_opengl_material_create()
 {

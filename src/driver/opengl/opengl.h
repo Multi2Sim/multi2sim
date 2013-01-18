@@ -17,41 +17,27 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-
-#include "opengl-span.h"
+#ifndef DRIVER_OPENGL_OPENGL_H
+#define DRIVER_OPENGL_OPENGL_H
 
 
-struct x86_opengl_span_t *x86_opengl_span_create()
-{
-	struct x86_opengl_span_t *spn;
+/*
+ * OPENGL system call interface
+ *
+ * NOTE: any additional function added to this interface should be implemented
+ * both in 'opengl.c' and 'opengl-missing.c' to allow for correct compilation on
+ * systems lacking the OpenGL and GLUT libraries.
+ */
 
-	spn = xcalloc(1, sizeof(struct x86_opengl_span_t));
-	if (!spn)
-		fatal("%s: out of memory", __FUNCTION__);
+#define x86_opengl_debug(...) debug(x86_opengl_debug_category, __VA_ARGS__)
+extern int x86_opengl_debug_category;
 
-	return spn;
-}
+void x86_opengl_init(void);
+void x86_opengl_done(void);
 
-void x86_opengl_span_free(struct x86_opengl_span_t *spn)
-{
-	free(spn);
-}
+struct x86_ctx_t;
+int x86_opengl_call(struct x86_ctx_t *ctx);
 
-void x86_opengl_span_interpolate_z(struct x86_opengl_span_t *spn)
-{
-	const GLuint n = spn->end;
-	GLuint i;
 
-	/* Deep Z buffer, no fixed->int shift */
-	GLuint zval = spn->z;
-	GLuint *z = spn->array->z;
-	for (i = 0; i < n; i++) 
-	{
-		z[i] = zval;
-		zval += spn->zStep;
-	}
+#endif
 
-}

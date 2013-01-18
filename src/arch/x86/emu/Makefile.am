@@ -46,57 +46,5 @@ libemu_a_SOURCES = \
 	uinst.c \
 	uinst.h
 
-if HAVE_OPENGL
-libemu_a_SOURCES += \
-	\
-	opengl.c \
-	opengl.dat \
-	opengl.h \
-	\
-	opengl-context.c \
-	opengl-context.h \
-	\
-	opengl-matrix.c \
-	opengl-matrix.h \
-	\
-	opengl-matrix-stack.c \
-	opengl-matrix-stack.h \
-	\
-	opengl-buffers.c \
-	opengl-buffers.h \
-	\
-	opengl-vector.c \
-	opengl-vector.h \
-	\
-	opengl-vertex.c \
-	opengl-vertex.h \
-	\
-	opengl-color-channel.c \
-	opengl-color-channel.h \
-	\
-	opengl-material.c \
-	opengl-material.h \
-	\
-	opengl-light.c \
-	opengl-light.h \
-	\
-	opengl-span.c \
-	opengl-span.h \
-	\
-	opengl-edge.c \
-	opengl-edge.h \
-	\
-	opengl-rasterizer.c \
-	opengl-rasterizer.h \
-	\
-	opengl-viewport.c \
-	opengl-viewport.h
-else
-libemu_a_SOURCES += \
-	\
-	opengl.h \
-	opengl-missing.c
-endif
-
 INCLUDES = @M2S_INCLUDES@
 

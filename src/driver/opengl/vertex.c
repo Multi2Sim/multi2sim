@@ -22,7 +22,7 @@
 #include <lib/util/list.h>
 
 #include "opengl.h"
-#include "opengl-vertex.h"
+#include "vertex.h"
 
 
 struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w)

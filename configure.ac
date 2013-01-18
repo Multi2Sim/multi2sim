@@ -568,6 +568,7 @@ AC_CONFIG_FILES([
 		src/arch/x86/timing/Makefile
 
 		src/driver/glut/Makefile
+		src/driver/opengl/Makefile
 
 		src/lib/esim/Makefile
                 src/lib/mhandle/Makefile

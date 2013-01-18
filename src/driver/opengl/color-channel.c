@@ -17,44 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-
-#include "opengl-viewport.h"
+#include "color-channel.h"
 
 
-struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void)
+void x86_opengl_clamped_float_to_color_channel(GLfloat *src, GLchan* dst)
 {
-	int width;
-	int height;
-	
-	/* Variables */
-	struct x86_opengl_viewport_attributes_t *vpt;
-
-	/* Allocate */
-	vpt = xcalloc(1, sizeof(struct x86_opengl_viewport_attributes_t));
-	if(!vpt)
-		fatal("%s: out of memory", __FUNCTION__);
-
-
-	/* Initialize */
-	width = 0;  // FIXME
-	height = 0;  // FIXME
-
-	vpt->x = 0;
-	vpt->y = 0;
-	vpt->width = width;
-	vpt->height = height;
-
-	vpt->near = 0.0f;
-	vpt->far = 1.0f;
-
-	/* Return */	
-	return vpt;
-}
-
-void x86_opengl_viewport_free(struct x86_opengl_viewport_attributes_t *vpt)
-{
-	free(vpt);
+	dst[0] = (GLchan) src[0] * CHAN_MAX;
+	dst[1] = (GLchan) src[1] * CHAN_MAX;
+	dst[2] = (GLchan) src[2] * CHAN_MAX;
+	dst[3] = (GLchan) src[3] * CHAN_MAX;
 }

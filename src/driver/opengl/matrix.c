@@ -21,10 +21,11 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
+#include "matrix.h"
 #include "opengl.h"
-#include "opengl-matrix.h"
-#include "opengl-vector.h"
-#include "opengl-vertex.h"
+#include "vector.h"
+#include "vertex.h"
+
 
 #define MAT_FLAG_IDENTITY       0     /**< is an identity matrix flag.
                                        *   (Not actually used - the identity

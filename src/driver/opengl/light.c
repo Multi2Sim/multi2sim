@@ -21,11 +21,12 @@
 #include <lib/util/debug.h>
 #include <math.h>
 
+#include "light.h"
+#include "material.h"
 #include "opengl.h"
-#include "opengl-light.h"
-#include "opengl-material.h"
-#include "opengl-vertex.h"
-#include "opengl-vector.h"
+#include "vector.h"
+#include "vertex.h"
+
 
 struct x86_opengl_light_t *x86_opengl_light_create()
 {

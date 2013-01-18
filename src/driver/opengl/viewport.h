@@ -17,40 +17,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/mhandle/mhandle.h>
-#include <math.h>
+#ifndef DRIVER_OPENGL_VIEWPORT_H
+#define DRIVER_OPENGL_VIEWPORT_H
 
-#include "opengl-vector.h"
+#include <GL/glut.h>
 
-GLfloat *x86_opengl_vector_create(int len)
+
+/* OpenGL Viewport attribute */
+struct x86_opengl_viewport_attributes_t
 {
-	GLfloat *vct;
+	/* Position */
+	GLint x;
+	GLint y;
+	/* Size */
+	GLsizei width;
+	GLsizei height;
 
-	/* Malloc */
-	vct = xcalloc(1, len * sizeof(GLfloat));
+	/* Depth buffer range */
+	GLfloat near;
+	GLfloat far;
 
-	/* Return */
-	return vct;
-}
+	/* Mapping transformation as a matrix. */
+	// GLmatrix _WindowMap; 
+};
 
-void x86_opengl_vector_free(GLfloat *vct)
-{
-	free(vct);
-}
 
-/* Calculate the unit vector used in lighting module */
-/* Only 3 elements are used, the 4th is ignored */
-void x86_opengl_vector_unit(GLfloat *dst, GLfloat *p1, GLfloat *p2)
-{
-	if (p1[3] == 0 && p2[3] !=0)
-		ACC_SCALE_SCALAR_3V(dst, -1.0f, p1);
-	else if (p1[3] != 0 && p2[3] ==0)
-		COPY_3V(dst, p2);
-	else if (p1[3] == 0 && p2[3] == 0)
-		SUB_3V(dst, p2, p1);
-	else
-		SUB_3V(dst, p2, p1);
-	
-	NORMALIZE_3FV(dst);
-}
+struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void);
+void x86_opengl_viewport_free(struct x86_opengl_viewport_attributes_t *vpt);
 
+#endif
