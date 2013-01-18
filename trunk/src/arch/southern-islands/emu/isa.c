@@ -52,7 +52,7 @@ void si_isa_init()
 {
 	/* Initialize */
 	si_isa_inst_func = xcalloc(SI_INST_COUNT, sizeof(si_isa_inst_func_t));
-#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size) \
+#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	extern void si_isa_##_name##_impl(struct si_work_item_t *work_item, struct si_inst_t *inst); \
 	si_isa_inst_func[SI_INST_##_name] = si_isa_##_name##_impl;
 #include <arch/southern-islands/asm/asm.dat>
