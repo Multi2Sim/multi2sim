@@ -5,10 +5,6 @@ libemu_a_SOURCES = \
 	checkpoint.c \
 	checkpoint.h \
 	\
-	clrt.c \
-	clrt.dat \
-	clrt.h \
-	\
 	context.c \
 	context.h \
 	\

@@ -47,6 +47,7 @@ LDADD = \
 	$(top_builddir)/src/visual/common/libcommon.a \
 	\
 	$(top_builddir)/src/driver/glut/libglut.a \
+	$(top_builddir)/src/driver/opencl/libopencl.a \
 	$(top_builddir)/src/driver/opengl/libopengl.a \
 	\
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
