@@ -1,2 +1,2 @@
 SUBDIRS = \
-	x86
+	glut
