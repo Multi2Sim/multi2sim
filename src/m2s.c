@@ -40,7 +40,6 @@
 #include <arch/southern-islands/emu/opencl-api.h>
 #include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/checkpoint.h>
-#include <arch/x86/emu/clrt.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/isa.h>
@@ -49,6 +48,7 @@
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/trace-cache.h>
 #include <driver/glut/glut.h>
+#include <driver/opencl/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>

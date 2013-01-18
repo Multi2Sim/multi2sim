@@ -38,6 +38,7 @@
 #include <arch/fermi/emu/cuda.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <driver/glut/glut.h>
+#include <driver/opencl/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
@@ -47,7 +48,6 @@
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
-#include "clrt.h"
 #include "context.h"
 #include "emu.h"
 #include "file-desc.h"

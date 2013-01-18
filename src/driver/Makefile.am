@@ -1,3 +1,4 @@
 SUBDIRS = \
 	glut \
+	opencl \
 	opengl

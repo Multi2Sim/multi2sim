@@ -20,11 +20,11 @@
 #include <assert.h>
 
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/regs.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include "clrt.h"
-#include "regs.h"
+#include "opencl.h"
 
 
 static char *x86_clrt_err_call =
@@ -38,7 +38,7 @@ enum x86_clrt_call_t
 {
 	x86_clrt_call_invalid = 0,
 #define X86_CLRT_DEFINE_CALL(name, code) x86_clrt_call_##name = code,
-#include "clrt.dat"
+#include "opencl.dat"
 #undef X86_CLRT_DEFINE_CALL
 	x86_clrt_call_count
 };
@@ -49,7 +49,7 @@ char *x86_clrt_call_name[x86_clrt_call_count + 1] =
 {
 	NULL,
 #define X86_CLRT_DEFINE_CALL(name, code) #name,
-#include "clrt.dat"
+#include "opencl.dat"
 #undef X86_CLRT_DEFINE_CALL
 	NULL
 };
@@ -57,7 +57,7 @@ char *x86_clrt_call_name[x86_clrt_call_count + 1] =
 /* Forward declarations of OpenCL Runtime functions */
 #define X86_CLRT_DEFINE_CALL(name, code) \
 	static int x86_clrt_func_##name(struct x86_ctx_t *ctx);
-#include "clrt.dat"
+#include "opencl.dat"
 #undef X86_CLRT_DEFINE_CALL
 
 
@@ -67,7 +67,7 @@ static x86_clrt_func_t x86_clrt_func_table[x86_clrt_call_count + 1] =
 {
 	NULL,
 #define X86_CLRT_DEFINE_CALL(name, code) x86_clrt_func_##name,
-#include "clrt.dat"
+#include "opencl.dat"
 #undef X86_CLRT_DEFINE_CALL
 	NULL
 };
