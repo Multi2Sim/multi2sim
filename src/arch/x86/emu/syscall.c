@@ -37,6 +37,7 @@
 #include <arch/southern-islands/emu/opencl-api.h>
 #include <arch/fermi/emu/cuda.h>
 #include <arch/southern-islands/emu/emu.h>
+#include <driver/glut/glut.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -49,7 +50,6 @@
 #include "context.h"
 #include "emu.h"
 #include "file-desc.h"
-#include "glut.h"
 #include "isa.h"
 #include "loader.h"
 #include "opengl.h"
