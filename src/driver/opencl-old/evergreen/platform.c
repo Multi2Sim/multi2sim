@@ -19,13 +19,13 @@
 
 #include <assert.h>
 
+#include <arch/evergreen/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-#include "opencl-platform.h"
-#include "opencl-repo.h"
+#include "platform.h"
+#include "repo.h"
 
 
 struct evg_opencl_platform_t *evg_opencl_platform_create()

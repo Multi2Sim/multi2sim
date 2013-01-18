@@ -17,12 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <arch/evergreen/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 
-#include "emu.h"
-#include "opencl-mem.h"
-#include "opencl-repo.h"
+#include "mem.h"
+#include "repo.h"
 
 
 struct evg_opencl_mem_t *evg_opencl_mem_create()

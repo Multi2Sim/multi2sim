@@ -19,13 +19,13 @@
 
 #include <assert.h>
 
+#include <arch/evergreen/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-#include "opencl-device.h"
-#include "opencl-repo.h"
+#include "device.h"
+#include "repo.h"
 
 
 /* Create a device */

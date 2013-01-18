@@ -21,6 +21,10 @@
 #include <arch/common/arch-list.h>
 #include <arch/evergreen/emu/opengl-bin-file.h>
 #include <arch/evergreen/timing/gpu.h>
+#include <driver/opencl-old/evergreen/bin-file.h>
+#include <driver/opencl-old/evergreen/device.h>
+#include <driver/opencl-old/evergreen/platform.h>
+#include <driver/opencl-old/evergreen/repo.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -31,13 +35,9 @@
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
-#include "bin-file.h"
 #include "emu.h"
 #include "isa.h"
 #include "ndrange.h"
-#include "opencl-device.h"
-#include "opencl-platform.h"
-#include "opencl-repo.h"
 #include "work-group.h"
 
 

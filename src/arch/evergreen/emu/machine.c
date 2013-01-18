@@ -20,6 +20,9 @@
 #include <assert.h>
 #include <math.h>
 
+#include <driver/opencl-old/evergreen/bin-file.h>
+#include <driver/opencl-old/evergreen/kernel.h>
+#include <driver/opencl-old/evergreen/mem.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
@@ -27,13 +30,10 @@
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include "bin-file.h"
 #include "emu.h"
 #include "isa.h"
 #include "machine.h"
 #include "ndrange.h"
-#include "opencl-kernel.h"
-#include "opencl-mem.h"
 #include "work-item.h"
 #include "work-group.h"
 

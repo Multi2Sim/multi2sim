@@ -19,14 +19,14 @@
 
 #include <assert.h>
 
+#include <arch/evergreen/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-#include "opencl-event.h"
-#include "opencl-repo.h"
+#include "event.h"
+#include "repo.h"
 
 
 struct evg_opencl_event_t *evg_opencl_event_create(enum evg_opencl_event_kind_t kind)
