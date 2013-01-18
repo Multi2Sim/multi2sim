@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/southern-islands/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
@@ -26,11 +27,10 @@
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-#include "opencl-program.h"
-#include "opencl-api.h"
-#include "opencl-mem.h"
-#include "opencl-repo.h"
+#include "mem.h"
+#include "opencl.h"
+#include "program.h"
+#include "repo.h"
 
 
 struct si_opencl_program_t *si_opencl_program_create()

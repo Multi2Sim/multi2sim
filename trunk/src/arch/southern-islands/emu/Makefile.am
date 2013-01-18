@@ -14,41 +14,6 @@ libemu_a_SOURCES = \
 	ndrange.c \
 	ndrange.h \
 	\
-	opencl.dat \
-	\
-	opencl-api.c \
-	opencl-api.h \
-	\
-	opencl-command-queue.c \
-	opencl-command-queue.h \
-	\
-	opencl-context.c \
-	opencl-context.h \
-	\
-	opencl-device.c \
-	opencl-device.h \
-	\
-	opencl-event.c \
-	opencl-event.h \
-	\
-	opencl-kernel.c \
-	opencl-kernel.h \
-	\
-	opencl-mem.c \
-	opencl-mem.h \
-	\
-	opencl-platform.c \
-	opencl-platform.h \
-	\
-	opencl-program.c \
-	opencl-program.h \
-	\
-	opencl-repo.c \
-	opencl-repo.h \
-	\
-	opencl-sampler.c \
-	opencl-sampler.h \
-	\
 	opengl-bin-file.c \
 	opengl-bin-file.h \
 	\

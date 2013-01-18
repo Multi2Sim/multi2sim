@@ -23,16 +23,16 @@
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 
-#include "opencl-repo.h"
-#include "opencl-command-queue.h"
-#include "opencl-context.h"
-#include "opencl-device.h"
-#include "opencl-event.h"
-#include "opencl-kernel.h"
-#include "opencl-mem.h"
-#include "opencl-platform.h"
-#include "opencl-program.h"
-#include "opencl-sampler.h"
+#include "command-queue.h"
+#include "context.h"
+#include "device.h"
+#include "event.h"
+#include "kernel.h"
+#include "mem.h"
+#include "platform.h"
+#include "program.h"
+#include "repo.h"
+#include "sampler.h"
 
 
 struct si_opencl_repo_t
