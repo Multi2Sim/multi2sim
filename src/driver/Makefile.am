@@ -1,2 +1,3 @@
 SUBDIRS = \
-	glut
+	glut \
+	opengl

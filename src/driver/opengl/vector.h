@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
- #ifndef ARC_X86_EMU_OPENGL_VECTOR
- #define ARC_X86_EMU_OPENGL_VECTOR
+#ifndef DRIVER_OPENGL_VECTOR_H
+#define DRIVER_OPENGL_VECTOR_H
 
 
 #include <GL/glut.h>

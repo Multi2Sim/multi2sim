@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARC_X86_EMU_OPENGL_MATERIAL_H
-#define ARC_X86_EMU_OPENGL_MATERIAL_H
+#ifndef DRIVER_OPENGL_MATERIAL_H
+#define DRIVER_OPENGL_MATERIAL_H
 
 
 #include <GL/gl.h>

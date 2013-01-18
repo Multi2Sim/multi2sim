@@ -22,12 +22,12 @@
 #include <lib/util/list.h>
 
 #include "opengl.h"
-#include "opengl-buffers.h"
-#include "opengl-context.h"
-#include "opengl-light.h"
-#include "opengl-matrix-stack.h"
-#include "opengl-vertex.h"
-#include "opengl-viewport.h"
+#include "buffers.h"
+#include "context.h"
+#include "light.h"
+#include "matrix-stack.h"
+#include "vertex.h"
+#include "viewport.h"
 
 
 struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(void)

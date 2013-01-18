@@ -27,16 +27,16 @@
 #include <lib/util/list.h>
 #include <mem-system/memory.h>
 
+#include "buffers.h"
+#include "context.h"
+#include "light.h"
+#include "material.h"
+#include "matrix.h"
+#include "matrix-stack.h"
 #include "opengl.h"
-#include "opengl-buffers.h"
-#include "opengl-context.h"
-#include "opengl-light.h"
-#include "opengl-material.h"
-#include "opengl-matrix.h"
-#include "opengl-matrix-stack.h"
-#include "opengl-rasterizer.h"
-#include "opengl-vertex.h"
-#include "opengl-viewport.h"
+#include "rasterizer.h"
+#include "vertex.h"
+#include "viewport.h"
 
 
 static char *err_x86_opengl_code =

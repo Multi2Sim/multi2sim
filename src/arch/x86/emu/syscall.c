@@ -38,6 +38,7 @@
 #include <arch/fermi/emu/cuda.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <driver/glut/glut.h>
+#include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -52,7 +53,6 @@
 #include "file-desc.h"
 #include "isa.h"
 #include "loader.h"
-#include "opengl.h"
 #include "regs.h"
 #include "signal.h"
 #include "syscall.h"
