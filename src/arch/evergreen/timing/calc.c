@@ -23,10 +23,10 @@
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
-#include <arch/evergreen/emu/bin-file.h>
+#include <driver/opencl-old/evergreen/bin-file.h>
+#include <driver/opencl-old/evergreen/kernel.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
-#include <arch/evergreen/emu/opencl-kernel.h>
 
 #include "gpu.h"
 

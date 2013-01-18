@@ -17,12 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <arch/evergreen/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 
-#include "emu.h"
-#include "opencl-repo.h"
-#include "opencl-sampler.h"
+#include "repo.h"
+#include "sampler.h"
 
 
 struct evg_opencl_sampler_t *evg_opencl_sampler_create()

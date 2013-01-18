@@ -27,7 +27,6 @@
 #include <arch/common/arch-list.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/isa.h>
-#include <arch/evergreen/emu/opencl.h>
 #include <arch/evergreen/timing/faults.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
@@ -49,6 +48,7 @@
 #include <arch/x86/timing/trace-cache.h>
 #include <driver/glut/glut.h>
 #include <driver/opencl/opencl.h>
+#include <driver/opencl-old/evergreen/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>

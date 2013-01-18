@@ -19,14 +19,14 @@
 
 #include <assert.h>
 
+#include <arch/evergreen/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
+#include "context.h"
 #include "opencl.h"
-#include "opencl-context.h"
-#include "opencl-repo.h"
+#include "repo.h"
 
 
 /* Create a context */

@@ -19,17 +19,17 @@
 
 #include <assert.h>
 
+#include <arch/evergreen/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <mem-system/memory.h>
 
 #include "bin-file.h"
-#include "emu.h"
+#include "kernel.h"
 #include "opencl.h"
-#include "opencl-kernel.h"
-#include "opencl-program.h"
-#include "opencl-repo.h"
+#include "program.h"
+#include "repo.h"
 
 
 struct evg_opencl_kernel_t *evg_opencl_kernel_create()
