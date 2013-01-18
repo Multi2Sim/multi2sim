@@ -67,7 +67,7 @@ struct vi_si_inst_t
 	long long id;
 
 	int compute_unit_id;
-	int inst_buffer_id;
+	int wfp_id; /* Wavefront pool ID */
 	int work_group_id;
 	int wavefront_id;
 	long long int uop_id_in_wavefront;
@@ -80,7 +80,7 @@ extern struct str_map_t vi_si_inst_stage_name_map;
 extern struct str_map_t vi_si_inst_stage_color_map;
 
 struct vi_si_inst_t *vi_si_inst_create(char *name, long long id,
-	int compute_unit_id, int inst_buffer_id, int work_group_id, 
+	int compute_unit_id, int wfp_id, int work_group_id, 
 	int wavefront_id, enum vi_si_inst_stage_t stage, 
 	long long int uop_id_in_wavefront, char *asm_code);
 void vi_si_inst_free(struct vi_si_inst_t *inst);
