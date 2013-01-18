@@ -25,6 +25,7 @@
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
 #include <arch/x86/timing/cpu.h>
+#include <driver/glut/glut.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -36,7 +37,6 @@
 #include "context.h"
 #include "emu.h"
 #include "file-desc.h"
-#include "glut.h"
 #include "isa.h"
 #include "opengl.h"
 #include "regs.h"

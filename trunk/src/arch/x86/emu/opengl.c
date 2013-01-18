@@ -21,12 +21,12 @@
 
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
+#include <driver/glut/frame-buffer.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <mem-system/memory.h>
 
-#include "glut-frame-buffer.h"
 #include "opengl.h"
 #include "opengl-buffers.h"
 #include "opengl-context.h"

@@ -17,9 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <driver/glut/frame-buffer.h>
 #include <lib/util/debug.h>
 
-#include "glut-frame-buffer.h" 
 #include "opengl.h"
 #include "opengl-buffers.h"
 #include "opengl-edge.h"

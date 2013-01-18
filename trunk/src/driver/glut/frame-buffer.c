@@ -24,8 +24,8 @@
 #include <lib/util/misc.h>
 #include <lib/util/debug.h>
 
+#include "frame-buffer.h"
 #include "glut.h"
-#include "glut-frame-buffer.h"
 
 
 

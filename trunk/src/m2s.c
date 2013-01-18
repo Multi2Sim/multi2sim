@@ -43,13 +43,13 @@
 #include <arch/x86/emu/clrt.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
-#include <arch/x86/emu/glut.h>
 #include <arch/x86/emu/isa.h>
 #include <arch/x86/emu/loader.h>
 #include <arch/x86/emu/opengl.h>
 #include <arch/x86/emu/syscall.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/trace-cache.h>
+#include <driver/glut/glut.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
