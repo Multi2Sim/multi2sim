@@ -46,7 +46,7 @@ LDADD = \
 	$(top_builddir)/src/visual/x86/libx86.a \
 	$(top_builddir)/src/visual/common/libcommon.a \
 	\
-	$(top_builddir)/src/driver/x86/glut/libglut.a \
+	$(top_builddir)/src/driver/glut/libglut.a \
 	\
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/esim/libesim.a \
