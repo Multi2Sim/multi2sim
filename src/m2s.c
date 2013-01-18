@@ -36,7 +36,6 @@
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
-#include <arch/southern-islands/emu/opencl-api.h>
 #include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/checkpoint.h>
 #include <arch/x86/emu/context.h>
@@ -49,6 +48,7 @@
 #include <driver/glut/glut.h>
 #include <driver/opencl/opencl.h>
 #include <driver/opencl-old/evergreen/opencl.h>
+#include <driver/opencl-old/southern-islands/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>

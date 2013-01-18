@@ -24,10 +24,11 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/debug.h>
 
-#include <arch/southern-islands/emu/opencl-command-queue.h>
-#include <arch/southern-islands/emu/opencl-api.h>
 #include <arch/southern-islands/emu/emu.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
+
+#include "command-queue.h"
+#include "opencl.h"
+#include "repo.h"
 
 
 /* Create a command queue */

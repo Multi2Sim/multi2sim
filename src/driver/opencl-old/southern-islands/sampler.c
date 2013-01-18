@@ -17,32 +17,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 
-#include "emu.h"
-#include "opencl-mem.h"
-#include "opencl-repo.h"
+#include "repo.h"
+#include "sampler.h"
 
 
-struct si_opencl_mem_t *si_opencl_mem_create()
+struct si_opencl_sampler_t *si_opencl_sampler_create()
 {
-	struct si_opencl_mem_t *mem;
+	struct si_opencl_sampler_t *sampler;
 
 	/* Initialize */
-	mem = xcalloc(1, sizeof(struct si_opencl_mem_t));
-	mem->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
-		si_opencl_object_mem);
-	mem->ref_count = 1;
+	sampler = xcalloc(1, sizeof(struct si_opencl_sampler_t));
+	sampler->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
+		si_opencl_object_sampler);
+	sampler->ref_count = 1;
 
 	/* Return */
-	si_opencl_repo_add_object(si_emu->opencl_repo, mem);
-	return mem;
+	si_opencl_repo_add_object(si_emu->opencl_repo, sampler);
+	return sampler;
 }
 
-
-void si_opencl_mem_free(struct si_opencl_mem_t *mem)
+/* Free sampler */
+void si_opencl_sampler_free(struct si_opencl_sampler_t *sampler)
 {
-	si_opencl_repo_remove_object(si_emu->opencl_repo, mem);
-	free(mem);
+	si_opencl_repo_remove_object(si_emu->opencl_repo, sampler);
+	free(sampler);
 }
 

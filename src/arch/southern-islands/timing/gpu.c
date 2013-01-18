@@ -23,7 +23,7 @@
 #include <arch/southern-islands/asm/bin-file.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/emu/opencl-kernel.h>
+#include <driver/opencl-old/southern-islands/kernel.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>

@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/ndrange.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
@@ -27,19 +29,17 @@
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-#include "opencl-api.h"
-#include "ndrange.h"
-#include "opencl-command-queue.h"
-#include "opencl-context.h"
-#include "opencl-device.h"
-#include "opencl-event.h"
-#include "opencl-kernel.h"
-#include "opencl-mem.h"
-#include "opencl-platform.h"
-#include "opencl-program.h"
-#include "opencl-repo.h"
-#include "opencl-sampler.h"
+#include "command-queue.h"
+#include "context.h"
+#include "device.h"
+#include "event.h"
+#include "kernel.h"
+#include "mem.h"
+#include "opencl.h"
+#include "platform.h"
+#include "program.h"
+#include "repo.h"
+#include "sampler.h"
 
 
 /* Required 'libm2s-opencl.so' version.

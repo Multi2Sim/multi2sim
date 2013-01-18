@@ -19,14 +19,14 @@
 
 #include <assert.h>
 
+#include <arch/southern-islands/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-#include "opencl-context.h"
-#include "opencl-api.h"
-#include "opencl-repo.h"
+#include "context.h"
+#include "opencl.h"
+#include "repo.h"
 
 
 /* Create a context */
