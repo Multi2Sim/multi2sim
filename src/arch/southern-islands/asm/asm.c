@@ -211,14 +211,15 @@ void si_disasm_init()
 	assert(sizeof(union si_reg_t) == 4);
 
 	/* Read information about all instructions */
-#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size) \
+#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	info = &si_inst_info[SI_INST_##_name]; \
 	info->inst = SI_INST_##_name; \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->fmt = SI_FMT_##_fmt; \
 	info->opcode = _opcode; \
-	info->size = _size;
+	info->size = _size; \
+	info->flags = _flags;
 #include "asm.dat"
 #undef DEFINST
 
@@ -265,8 +266,16 @@ void si_disasm_init()
 		}
 		else if (info->fmt == SI_FMT_VOP3a || info->fmt == SI_FMT_VOP3b)
 		{
+			int i;
+
 			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP3_MAX_VALUE));
 			si_inst_info_vop3[info->opcode] = info;
+			if (info->flags & SI_INST_FLAG_OP8)
+				for (i = 1; i < 8; i++)
+					si_inst_info_vop3[info->opcode + i] = info;
+			if (info->flags & SI_INST_FLAG_OP16)
+				for (i = 1; i < 16; i++)
+					si_inst_info_vop3[info->opcode + i] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_VOPC)
@@ -431,19 +440,12 @@ int si_inst_decode(void *buf, struct si_inst_t *inst, unsigned int offset)
 		inst_size = 8;
 		memcpy(&inst->micro_inst, buf, inst_size);
 
-		if (IN_RANGE(inst->micro_inst.vop3a.op, 32, 47))
-		{
-			inst->info = si_inst_info_vop3[32];
-		}
-		else
-		{
-			if (!si_inst_info_vop3[inst->micro_inst.vop3a.op])
-				fatal("Unimplemented Instruction: VOP3:%d  // %08X: %08X %08X\n",
+		if (!si_inst_info_vop3[inst->micro_inst.vop3a.op])
+			fatal("Unimplemented Instruction: VOP3:%d  // %08X: %08X %08X\n",
 				inst->micro_inst.vop3a.op, offset, * (unsigned int *) buf,
 				* (unsigned int *) (buf + 4));
 
-			inst->info = si_inst_info_vop3[inst->micro_inst.vop3a.op];
-		}
+		inst->info = si_inst_info_vop3[inst->micro_inst.vop3a.op];
 	}
 	else if (inst->micro_inst.vopc.enc == 0x3E)
 	{
