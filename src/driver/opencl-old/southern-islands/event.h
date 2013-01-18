@@ -21,10 +21,10 @@
 #define ARCH_SOUTHERN_ISLANDS_EMU_OPENCL_EVENT_H
 
 
-/* Forward declaration of x86 context used below in callback function. This
- * dependence would be removed if OpenCL API implementation was in 'arch/x86/emu'
- * instead. Is this a better option? */
+/* Forward declarations */
 struct x86_ctx_t;
+struct mem_t;
+
 
 enum si_opencl_event_kind_t
 {

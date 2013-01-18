@@ -20,6 +20,12 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
+#include <driver/opencl-old/southern-islands/command-queue.h>
+#include <driver/opencl-old/southern-islands/event.h>
+#include <driver/opencl-old/southern-islands/kernel.h>
+#include <driver/opencl-old/southern-islands/mem.h>
+#include <driver/opencl-old/southern-islands/repo.h>
+#include <driver/opencl-old/southern-islands/opencl.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -30,12 +36,6 @@
 #include "emu.h"
 #include "isa.h"
 #include "ndrange.h"
-#include "opencl-api.h"
-#include "opencl-event.h"
-#include "opencl-kernel.h"
-#include "opencl-mem.h"
-#include "opencl-repo.h"
-#include "opencl-command-queue.h"
 #include "wavefront.h"
 #include "work-group.h"
 #include "work-item.h"

@@ -19,14 +19,14 @@
 
 #include <assert.h>
 
+#include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-#include "opencl-event.h"
-#include "opencl-repo.h"
+#include "event.h"
+#include "repo.h"
 
 
 struct si_opencl_event_t *si_opencl_event_create(enum si_opencl_event_kind_t kind)

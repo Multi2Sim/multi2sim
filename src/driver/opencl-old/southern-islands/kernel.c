@@ -20,16 +20,16 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
-#include "opencl-kernel.h"
-#include "opencl-api.h"
-#include "opencl-repo.h"
-#include "opencl-program.h"
+#include "kernel.h"
+#include "opencl.h"
+#include "program.h"
+#include "repo.h"
 
 
 struct si_opencl_kernel_t *si_opencl_kernel_create()

@@ -24,6 +24,9 @@
 #include <arch/common/arch-list.h>
 #include <arch/southern-islands/asm/bin-file.h>
 #include <arch/x86/emu/context.h>
+#include <driver/opencl-old/southern-islands/device.h>
+#include <driver/opencl-old/southern-islands/platform.h>
+#include <driver/opencl-old/southern-islands/repo.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -37,9 +40,6 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/emu/opencl-repo.h>
-#include <arch/southern-islands/emu/opencl-platform.h>
-#include <arch/southern-islands/emu/opencl-device.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
