@@ -348,32 +348,19 @@ enum si_inst_category_enum
 };
 
 
-#if 0
-/* TODO Replace these with SI flags for emulation */
 enum si_inst_flag_enum
 {
-	SI_INST_FLAG_NONE         = 0x0000,
-	SI_INST_FLAG_TRANS_ONLY   = 0x0001,  /* Only executable in transcendental unit */
-	SI_INST_FLAG_INC_LOOP_IDX = 0x0002,  /* CF inst increasing loop depth index */
-	SI_INST_FLAG_DEC_LOOP_IDX = 0x0004,  /* CF inst decreasing loop index */
-	SI_INST_FLAG_DST_INT      = 0x0008,  /* Inst with integer dest operand */
-	SI_INST_FLAG_DST_UINT     = 0x0010,  /* Inst with unsigned int dest op */
-	SI_INST_FLAG_DST_FLOAT    = 0x0020,  /* Inst with float dest op */
-	SI_INST_FLAG_ACT_MASK     = 0x0040,  /* Inst affects the active mask (control flow) */
-	SI_INST_FLAG_LDS          = 0x0080,  /* Access to local memory */
-	SI_INST_FLAG_MEM          = 0x0100,  /* Access to global memory */
-	SI_INST_FLAG_MEM_READ     = 0x0200,  /* Read to global memory */
-	SI_INST_FLAG_MEM_WRITE    = 0x0400,  /* Write to global memory */
-	SI_INST_FLAG_PRED_MASK    = 0x0800   /* Inst affects the predicate mask */
+	SI_INST_FLAG_NONE = 0x0000,
+	SI_INST_FLAG_OP8 = 0x0001,  /* Opcode represents 8 comparison instructions */
+	SI_INST_FLAG_OP16 = 0x0002  /* Opcode represents 16 comparison instructions */
 };
-#endif 
 
 
 enum si_inst_enum
 {
 	SI_INST_NONE = 0,
 
-#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size) \
+#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	SI_INST_##_name,
 
 #include "asm.dat"
@@ -416,8 +403,7 @@ struct si_inst_info_t
 	char *fmt_str;
 	enum si_fmt_enum fmt;  /* Word formats */
 	int opcode;  /* Operation code */
-	//enum si_inst_flag_enum flags;  /* Flag bitmap */
-	/* FIXME Can we add the size to the .dat file? */
+	enum si_inst_flag_enum flags;  /* Flag bitmap */
 	int size;  /* Size of microcode inst (bytes) */
 };
 
