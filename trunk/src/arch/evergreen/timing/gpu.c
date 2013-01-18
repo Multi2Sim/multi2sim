@@ -20,10 +20,10 @@
 #include <assert.h>
 
 #include <arch/common/arch.h>
-#include <arch/evergreen/emu/bin-file.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
-#include <arch/evergreen/emu/opencl-kernel.h>
+#include <driver/opencl-old/evergreen/bin-file.h>
+#include <driver/opencl-old/evergreen/kernel.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>

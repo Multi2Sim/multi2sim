@@ -19,6 +19,12 @@
 
 #include <assert.h>
 
+#include <driver/opencl-old/evergreen/bin-file.h>
+#include <driver/opencl-old/evergreen/command-queue.h>
+#include <driver/opencl-old/evergreen/kernel.h>
+#include <driver/opencl-old/evergreen/mem.h>
+#include <driver/opencl-old/evergreen/opencl.h>
+#include <driver/opencl-old/evergreen/repo.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
@@ -26,15 +32,9 @@
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
 
-#include "bin-file.h"
 #include "emu.h"
 #include "isa.h"
 #include "ndrange.h"
-#include "opencl.h"
-#include "opencl-command-queue.h"
-#include "opencl-kernel.h"
-#include "opencl-mem.h"
-#include "opencl-repo.h"
 #include "work-item.h"
 #include "work-group.h"
 

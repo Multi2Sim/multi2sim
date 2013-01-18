@@ -1,0 +1,4 @@
+SUBDIRS = \
+	evergreen \
+	southern-islands
+

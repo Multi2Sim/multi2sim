@@ -33,12 +33,12 @@
 #include <sys/time.h>
 #include <sys/times.h>
 
-#include <arch/evergreen/emu/opencl.h>
 #include <arch/southern-islands/emu/opencl-api.h>
 #include <arch/fermi/emu/cuda.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <driver/glut/glut.h>
 #include <driver/opencl/opencl.h>
+#include <driver/opencl-old/evergreen/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
