@@ -141,7 +141,7 @@ struct str_map_t vi_si_inst_stage_name_map =
 
 
 struct vi_si_inst_t *vi_si_inst_create(char *name, long long id,
-	int compute_unit_id, int inst_buffer_id, int work_group_id, 
+	int compute_unit_id, int wfp_id, int work_group_id, 
 	int wavefront_id, enum vi_si_inst_stage_t stage, 
 	long long int uop_id_in_wavefront, char *asm_code)
 
@@ -153,7 +153,7 @@ struct vi_si_inst_t *vi_si_inst_create(char *name, long long id,
 	inst->name = str_set(NULL, name);
 	inst->id = id;
 	inst->compute_unit_id = compute_unit_id;
-	inst->inst_buffer_id = inst_buffer_id;
+	inst->wfp_id = wfp_id;
 	inst->work_group_id = work_group_id;
 	inst->wavefront_id = wavefront_id;
 	inst->uop_id_in_wavefront = uop_id_in_wavefront;
@@ -184,8 +184,8 @@ void vi_si_inst_get_markup(struct vi_si_inst_t *inst, char *buf, int size)
 	end_color = "</span>";
 
 	/* Instruction ID */
-	str_printf(&buf, &size, "%s<b>I-%lld IB-%d WF-%d UOP-%lld</b>%s", 
-		begin_color, inst->id, inst->inst_buffer_id, inst->wavefront_id, 
+	str_printf(&buf, &size, "%s<b>I-%lld WFP-%d WF-%d UOP-%lld</b>%s", 
+		begin_color, inst->id, inst->wfp_id, inst->wavefront_id, 
 		inst->uop_id_in_wavefront, end_color);
 
 	/* Assembly */
@@ -211,6 +211,27 @@ void vi_si_inst_read_checkpoint(struct vi_si_inst_t *inst, FILE *f)
 	if (count != sizeof inst->stage)
 		panic("%s: cannot read checkpoint", __FUNCTION__);
 
+	/* Read wavefront pool ID */
+	count = fread(&inst->wfp_id, 1, sizeof inst->wfp_id, f);
+	if (count != sizeof inst->wfp_id)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* Read work group ID */
+	count = fread(&inst->work_group_id, 1, sizeof inst->work_group_id, f);
+	if (count != sizeof inst->work_group_id)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* Read wavefront ID */
+	count = fread(&inst->wavefront_id, 1, sizeof inst->wavefront_id, f);
+	if (count != sizeof inst->wavefront_id)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* Read UOP's ID in wavefront */
+	count = fread(&inst->uop_id_in_wavefront, 1, 
+		sizeof inst->uop_id_in_wavefront, f);
+	if (count != sizeof inst->uop_id_in_wavefront)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
 	/* Read assembly code */
 	str_read_from_file(f, asm_code, sizeof asm_code);
 	inst->asm_code = str_set(inst->asm_code, asm_code);
@@ -233,6 +254,27 @@ void vi_si_inst_write_checkpoint(struct vi_si_inst_t *inst, FILE *f)
 	/* Write stage */
 	count = fwrite(&inst->stage, 1, sizeof inst->stage, f);
 	if (count != sizeof inst->stage)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
+
+	/* Write wavefront pool ID */
+	count = fwrite(&inst->wfp_id, 1, sizeof inst->wfp_id, f);
+	if (count != sizeof inst->wfp_id)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
+
+	/* Write work group ID */
+	count = fwrite(&inst->work_group_id, 1, sizeof inst->work_group_id, f);
+	if (count != sizeof inst->work_group_id)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
+
+	/* Write wavefront ID */
+	count = fwrite(&inst->wavefront_id, 1, sizeof inst->wavefront_id, f);
+	if (count != sizeof inst->wavefront_id)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
+
+	/* Write UOP's ID in wavefront */
+	count = fwrite(&inst->uop_id_in_wavefront, 1, 
+		sizeof inst->uop_id_in_wavefront, f);
+	if (count != sizeof inst->uop_id_in_wavefront)
 		panic("%s: cannot write checkpoint", __FUNCTION__);
 
 	/* Write assembly code */
