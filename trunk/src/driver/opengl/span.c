@@ -17,32 +17,41 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_OPENGL_VIEWPORT
-#define ARCH_X86_EMU_OPENGL_VIEWPORT
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+
+#include "span.h"
 
 
-#include <GL/glut.h>
-
-/* OpenGL Viewport attribute */
-struct x86_opengl_viewport_attributes_t
+struct x86_opengl_span_t *x86_opengl_span_create()
 {
-	/* Position */
-	GLint x;
-	GLint y;
-	/* Size */
-	GLsizei width;
-	GLsizei height;
+	struct x86_opengl_span_t *spn;
 
-	/* Depth buffer range */
-	GLfloat near;
-	GLfloat far;
+	spn = xcalloc(1, sizeof(struct x86_opengl_span_t));
+	if (!spn)
+		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Mapping transformation as a matrix. */
-	// GLmatrix _WindowMap; 
-};
+	return spn;
+}
 
+void x86_opengl_span_free(struct x86_opengl_span_t *spn)
+{
+	free(spn);
+}
 
-struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void);
-void x86_opengl_viewport_free(struct x86_opengl_viewport_attributes_t *vpt);
+void x86_opengl_span_interpolate_z(struct x86_opengl_span_t *spn)
+{
+	const GLuint n = spn->end;
+	GLuint i;
 
-#endif
+	/* Deep Z buffer, no fixed->int shift */
+	GLuint zval = spn->z;
+	GLuint *z = spn->array->z;
+	for (i = 0; i < n; i++) 
+	{
+		z[i] = zval;
+		zval += spn->zStep;
+	}
+
+}

@@ -17,26 +17,30 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_OPENGL_COLOR_CHANNEL_H
-#define ARCH_X86_EMU_OPENGL_COLOR_CHANNEL_H
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 
-#include <GL/glut.h>
+#include "edge.h"
+#include "opengl.h"
+#include "vertex.h"
 
-/* Each color channel has 8 bits by default */
-typedef GLubyte GLchan;
 
-#define CHAN_MAX 255
-#define CHAN_MAXF 255.0F
-#define CHAN_TYPE GL_UNSIGNED_BYTE
+struct x86_opengl_edge_t *x86_opengl_edge_create(struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1)
+{
+	struct x86_opengl_edge_t * edge;
 
-#if CHAN_TYPE == GL_FLOAT
-#define ChanToFixed(X)  (X)
-#define FixedToChan(X)  (X)
-#else
-#define ChanToFixed(X)  IntToFixed(X)
-#define FixedToChan(X)  FixedToInt(X)
-#endif
+	edge = xcalloc(1, sizeof(struct x86_opengl_edge_t));
 
-void x86_opengl_clamped_float_to_color_channel(GLfloat *src, GLchan* dst);
+	/* Initialize */
+	edge->vtx0 = vtx0;
+	edge->vtx1 = vtx1;
+	x86_opengl_debug("\t\tEdge \t[%f, %f] - [%f, %f]\n\n", vtx0->pos[X_COMP], vtx0->pos[Y_COMP], vtx1->pos[X_COMP], vtx1->pos[Y_COMP]);
 
-#endif
+	/* Return */
+	return edge;
+}
+
+void x86_opengl_edge_free(struct x86_opengl_edge_t *edge)
+{
+	free(edge);
+}

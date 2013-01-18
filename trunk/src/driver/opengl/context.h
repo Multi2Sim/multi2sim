@@ -17,12 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_OPENGL_CONTEXT_H
-#define ARCH_X86_EMU_OPENGL_CONTEXT_H
-
+#ifndef DRIVER_OPENGL_CONTEXT_H
+#define DRIVER_OPENGL_CONTEXT_H
 
 #include <GL/glut.h>
-#include "opengl-color-channel.h"
+
+#include "color-channel.h"
+
 
 #define MAX_TEXTURE_COORD_UNITS 8
 #define MAX_TEXTURE_IMAGE_UNITS 16

@@ -20,13 +20,14 @@
 #include <driver/glut/frame-buffer.h>
 #include <lib/util/debug.h>
 
+#include "buffers.h"
+#include "edge.h"
+#include "light.h"
 #include "opengl.h"
-#include "opengl-buffers.h"
-#include "opengl-edge.h"
-#include "opengl-light.h"
-#include "opengl-rasterizer.h"
-#include "opengl-span.h"
-#include "opengl-vertex.h"
+#include "rasterizer.h"
+#include "span.h"
+#include "vertex.h"
+
 
 #ifndef CLAMP_INTERPOLANT
 #define CLAMP_INTERPOLANT(CHANNEL, CHANNELSTEP, LEN)		\
@@ -41,7 +42,9 @@ do {								\
 } while (0)
 #endif
 
-void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1, struct x86_opengl_vertex_t *vtx2)
+void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
+		struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1,
+		struct x86_opengl_vertex_t *vtx2)
 {
 	struct x86_opengl_edge_t *edge_major;
 	struct x86_opengl_edge_t *edge_top;

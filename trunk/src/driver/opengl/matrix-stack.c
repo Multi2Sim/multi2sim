@@ -22,9 +22,9 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
+#include "matrix.h"
+#include "matrix-stack.h"
 #include "opengl.h"
-#include "opengl-matrix.h"
-#include "opengl-matrix-stack.h"
 
 
 struct x86_opengl_matrix_stack_t *x86_opengl_matrix_stack_create(GLenum mode)

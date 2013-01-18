@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_OPENGL_MATRIX_H
-#define ARCH_X86_EMU_OPENGL_MATRIX_H
+#ifndef DRIVER_OPENGL_MATRIX_H
+#define DRIVER_OPENGL_MATRIX_H
 
 #include <GL/gl.h>
 #include <math.h> 
