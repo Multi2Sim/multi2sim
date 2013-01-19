@@ -195,28 +195,6 @@ void m2s_dist_file(char *file_name, char *dist_path, char *non_dist_path,
 
 
 /*
- * Management of runtimes
- */
-
-void m2s_runtime_init(void);
-void m2s_runtime_done(void);
-
-/* Register a runtime library, i.e., user-space library code linked with the
- * guest program running on Multi2Sim. When a system call 'open' accesses a file
- * with name 'lib_name' (e.g., "OpenCL"), it redirects it to
- * 'redirect_lib_name' (e.g., "m2s-opencl"). */
-void m2s_runtime_register(char *lib_name, char *redirect_lib_name);
-
-/* Function used in the 'open' system call to redirect a runtime. If 'path' is a
- * registered runtime, the function returns True and writes the redirection path
- * into 'redirect_path' of size 'redirect_path_size'. If 'path' is not a
- * registered runtime, the function returns False. */
-int m2s_runtime_redirect(char *path, char *redirect_path, int redirect_path_size);
-
-
-
-
-/*
  * Other
  */
 

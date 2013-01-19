@@ -43,9 +43,7 @@ __top_builddir__lib_libm2s_opencl_old_la_SOURCES = \
 	sampler.h
 
 
-
-
-AM_CFLAGS = -Wall -O2 -fPIC -m32
+AM_CFLAGS = -m32
 
 endif
 

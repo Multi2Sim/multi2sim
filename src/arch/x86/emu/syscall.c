@@ -33,6 +33,7 @@
 #include <sys/time.h>
 #include <sys/times.h>
 
+#include <arch/common/runtime.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <driver/cuda/cuda.h>
 #include <driver/glut/glut.h>
@@ -279,14 +280,37 @@ void x86_sys_dump(FILE *f)
 void x86_sys_call(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct runtime_t *runtime;
 
 	int code;
 	int err;
 
-	/* System call code */
+	/* Get system call code from 'eax' */
 	code = regs->eax;
+
+	/* Check for special system call codes outside of the standard range
+	 * defined in 'syscall.dat'. */
 	if (code < 1 || code >= x86_sys_code_count)
-		fatal("%s: invalid system call code (%d)", __FUNCTION__, code);
+	{
+		/* Check if it is a special code registered by a runtime ABI */
+		runtime = runtime_get_from_syscall_code(code);
+		if (!runtime)
+			fatal("%s: invalid system call code (%d)", __FUNCTION__, code);
+
+		/* Debug */
+		x86_sys_debug("%s runtime ABI call (code %d, inst %lld, pid %d)\n",
+			runtime->name, code, x86_emu->inst_count, ctx->pid);
+
+		/* Run runtime ABI call */
+		err = runtime_abi_call(runtime, ctx);
+
+		/* Set return value in 'eax'. */
+		regs->eax = err;
+
+		/* Debug and done */
+		x86_sys_debug("  ret=(%d, 0x%x)\n", err, err);
+		return;
+	}
 
 	/* Statistics */
 	x86_sys_call_freq[code]++;
@@ -594,7 +618,7 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	/* The dynamic linked uses the 'open' system call to open shared libraries.
 	 * We need to intercept here attempts to access runtime libraries and
 	 * redirect them to our own Multi2Sim runtimes. */
-	if (m2s_runtime_redirect(full_path, temp_path, sizeof temp_path))
+	if (runtime_redirect(full_path, temp_path, sizeof temp_path))
 		snprintf(full_path, sizeof full_path, "%s", temp_path);
 
 	/* Virtual files */
@@ -5463,85 +5487,6 @@ static int x86_sys_set_robust_list_impl(struct x86_ctx_t *ctx)
 	/* Set robust list */
 	ctx->robust_list_head = head;
 	return 0;
-}
-
-
-
-
-/*
- * System call 'opencl' (code 325)
- * Special system call code used by 'libm2s-opencl'
- */
-
-static int x86_sys_opencl_impl(struct x86_ctx_t *ctx)
-{
-	switch (x86_emu->gpu_kind)
-	{
-	case x86_emu_gpu_evergreen:
-		return evg_opencl_api_run(ctx);
-
-	case x86_emu_gpu_southern_islands:
-		return si_opencl_api_run(ctx);
-	
-	default:
-		panic("%s: invalid GPU kind", __FUNCTION__);
-		return 0;
-	}
-}
-
-
-
-
-/*
- * System call 'glut' (code 326)
- * Special system call code used by 'libm2s-glut'
- */
-
-static int x86_sys_glut_impl(struct x86_ctx_t *ctx)
-{
-	/* Run GLUT call */
-	return x86_glut_call(ctx);
-}
-
-
-
-
-/*
- * System call 'opengl' (code 327)
- * Special system call code used by 'libm2s-opengl'
- */
-
-static int x86_sys_opengl_impl(struct x86_ctx_t *ctx)
-{
-	/* Run OPENGL call */
-	return x86_opengl_call(ctx);
-}
-
-
-
-
-/*
- * System call 'cuda' (code 328)
- * Special system call code used by 'libm2s-cuda'
- */
-
-static int x86_sys_cuda_impl(struct x86_ctx_t *ctx)
-{
-	/* Run CUDA call */
-	return frm_cuda_call(ctx);
-}
-
-
-
-/*
- * System call 'clrt' (code 329)
- * Special system call code used by 'libm2s-clrt'
- */
-
-static int x86_sys_clrt_impl(struct x86_ctx_t *ctx)
-{
-	/* Run OpenCL Runtime call */
-	return x86_clrt_call(ctx);
 }
 
 

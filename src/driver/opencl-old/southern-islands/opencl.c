@@ -22,7 +22,9 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
+#include <driver/opencl-old/evergreen/opencl.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -168,6 +170,31 @@ char *si_err_opencl_version_note =
 #define SI_OPENCL_ARG_NOT_SUPPORTED_FLAG(p, flag, name) \
 	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", \
 		__FUNCTION__, si_err_opencl_param_note); }
+
+
+
+/*
+ * Common entry point for Southern Islands and Evergreen
+ */
+
+int x86_opencl_call(struct x86_ctx_t *ctx)
+{
+	switch (x86_emu->gpu_kind)
+	{
+	case x86_emu_gpu_evergreen:
+		return evg_opencl_api_run(ctx);
+
+	case x86_emu_gpu_southern_islands:
+		return si_opencl_api_run(ctx);
+	
+	default:
+		panic("%s: invalid GPU kind", __FUNCTION__);
+		return 0;
+	}
+}
+
+
+
 
 
 
