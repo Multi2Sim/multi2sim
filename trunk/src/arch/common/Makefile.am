@@ -6,7 +6,10 @@ libcommon_a_SOURCES = \
 	arch.h \
 	\
 	arch-list.c \
-	arch-list.h
+	arch-list.h \
+	\
+	runtime.c \
+	runtime.h
 
 INCLUDES = @M2S_INCLUDES@
 
