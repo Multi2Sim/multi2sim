@@ -17,36 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-
-#include "cuda-module.h"
-#include "cuda-object.h"
+#ifndef DRIVER_CUDA_MEMORY_H
+#define DRIVER_CUDA_EMMORY_H
 
 
-/* Create a module */
-struct frm_cuda_module_t *frm_cuda_module_create(void)
+struct frm_cuda_memory_t
 {
-	struct frm_cuda_module_t *module;
+        unsigned int id;
+        int ref_count;
 
-	/* Initialize */
-	module = xcalloc(1, sizeof(struct frm_cuda_module_t));
-	module->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_MODULE);
-	module->ref_count = 1;
+        unsigned int size;
+        unsigned int host_ptr;
+        unsigned int device_ptr;
+};
 
-	/* Return */
-	frm_cuda_object_add(module);
-	return module;
-}
+struct frm_cuda_memory_t *frm_cuda_memory_create(void);
+void frm_cuda_memory_free(struct frm_cuda_memory_t *mem);
 
 
-/* Free module */
-void frm_cuda_module_free(struct frm_cuda_module_t *module)
-{
-	if (module->elf_file)
-		elf_file_free(module->elf_file);
-	frm_cuda_object_remove(module);
-	free(module);
-}
+#endif
 

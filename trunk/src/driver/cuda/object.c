@@ -22,13 +22,13 @@
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 
-#include "cuda-context.h"
-#include "cuda-device.h"
-#include "cuda-function.h"
-#include "cuda-memory.h"
-#include "cuda-module.h"
-#include "cuda-object.h"
-#include "cuda-stream.h"
+#include "context.h"
+#include "device.h"
+#include "function.h"
+#include "memory.h"
+#include "module.h"
+#include "object.h"
+#include "stream.h"
 
 
 struct linked_list_t *frm_cuda_object_list;

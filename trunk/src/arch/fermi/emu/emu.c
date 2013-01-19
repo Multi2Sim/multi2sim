@@ -20,6 +20,8 @@
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
 #include <arch/fermi/asm/asm.h>
+#include <driver/cuda/device.h>
+#include <driver/cuda/object.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
@@ -28,8 +30,6 @@
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
-#include "cuda-device.h"
-#include "cuda-object.h"
 #include "emu.h"
 #include "isa.h"
 
