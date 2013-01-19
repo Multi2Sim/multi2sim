@@ -17,33 +17,30 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <lib/mhandle/mhandle.h>
 
-#include "cuda-device.h"
-#include "cuda-object.h"
+#include "memory.h"
+#include "object.h"
 
 
-/* Create a device */
-struct frm_cuda_device_t *frm_cuda_device_create()
+struct frm_cuda_memory_t *frm_cuda_memory_create(void)
 {
-	struct frm_cuda_device_t *device;
+        struct frm_cuda_memory_t *mem;
 
-	/* Initialize */
-	device = xcalloc(1, sizeof(struct frm_cuda_device_t));
-	device->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_DEVICE);
+        /* Initialize */
+        mem = xcalloc(1, sizeof(struct frm_cuda_memory_t));
+        mem->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_MEMORY);
+        mem->ref_count = 1;
 
-	/* Return */
-	frm_cuda_object_add(device);
-	return device;
+        /* Return */
+        frm_cuda_object_add(mem);
+        return mem;
 }
 
 
-/* Free device */
-void frm_cuda_device_free(struct frm_cuda_device_t *device)
+void frm_cuda_memory_free(struct frm_cuda_memory_t *mem)
 {
-	frm_cuda_object_remove(device);
-	free(device);
+        frm_cuda_object_remove(mem);
+        free(mem);
 }
-
 

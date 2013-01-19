@@ -17,10 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <lib/mhandle/mhandle.h>
 
-#include "cuda-function-arg.h"
+#include "function-arg.h"
 
 
 struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name)
@@ -28,8 +27,8 @@ struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name)
 	struct frm_cuda_function_arg_t *arg;
 
 	/* Initialize */
-	arg = xcalloc(1, sizeof(struct frm_cuda_function_arg_t) + strlen(name) + 1);
-	strncpy(arg->name, name, MAX_STRING_SIZE);
+	arg = xcalloc(1, sizeof(struct frm_cuda_function_arg_t));
+	arg->name = xstrdup(name);
 
 	/* Return */
 	return arg;
@@ -38,6 +37,7 @@ struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name)
 
 void frm_cuda_function_arg_free(struct frm_cuda_function_arg_t *arg)
 {
+	free(arg->name);
 	free(arg);
 }
 

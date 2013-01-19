@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_EMU_CUDA_DEVICE_H
-#define FERMI_EMU_CUDA_DEVICE_H
+#ifndef DRIVER_CUDA_DEVICE_H
+#define DRIVER_CUDA_DEVICE_H
 
 
 struct frm_cuda_device_t

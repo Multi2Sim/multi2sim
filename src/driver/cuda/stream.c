@@ -17,21 +17,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_EMU_CUDA_CONTEXT_H
-#define FERMI_EMU_CUDA_CONTEXT_H
+#include <lib/mhandle/mhandle.h>
+
+#include "stream.h"
+#include "object.h"
 
 
-struct frm_cuda_context_t
+/* Create a stream */
+struct frm_cuda_stream_t *frm_cuda_stream_create(void)
 {
-	unsigned int id;
-	int ref_count;
+	struct frm_cuda_stream_t *stream;
 
-	unsigned int device_id;
-};
+	/* Initialize */
+	stream = xcalloc(1, sizeof(struct frm_cuda_stream_t));
+	stream->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_STREAM);
+	stream->ref_count = 1;
 
-struct frm_cuda_context_t *frm_cuda_context_create(void);
-void frm_cuda_context_free(struct frm_cuda_context_t *context);
+	/* Return */
+	frm_cuda_object_add(stream);
+	return stream;
+}
 
 
-#endif
+/* Free stream */
+void frm_cuda_stream_free(struct frm_cuda_stream_t *stream)
+{
+	frm_cuda_object_remove(stream);
+	free(stream);
+}
 

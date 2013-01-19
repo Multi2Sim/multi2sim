@@ -17,17 +17,35 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_EMU_CUDA_H
-#define FERMI_EMU_CUDA_H
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/elf-format.h>
+
+#include "module.h"
+#include "object.h"
 
 
-#define frm_cuda_debug(...) debug(frm_cuda_debug_category, __VA_ARGS__)
-extern int frm_cuda_debug_category;
+/* Create a module */
+struct frm_cuda_module_t *frm_cuda_module_create(void)
+{
+	struct frm_cuda_module_t *module;
+
+	/* Initialize */
+	module = xcalloc(1, sizeof(struct frm_cuda_module_t));
+	module->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_MODULE);
+	module->ref_count = 1;
+
+	/* Return */
+	frm_cuda_object_add(module);
+	return module;
+}
 
 
-struct x86_ctx_t;
-int frm_cuda_call(struct x86_ctx_t *ctx);
-
-
-#endif
+/* Free module */
+void frm_cuda_module_free(struct frm_cuda_module_t *module)
+{
+	if (module->elf_file)
+		elf_file_free(module->elf_file);
+	frm_cuda_object_remove(module);
+	free(module);
+}
 

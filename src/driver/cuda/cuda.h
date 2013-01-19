@@ -17,22 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_EMU_CUDA_MEMORY_H
-#define FERMI_EMU_CUDA_MEMORY_H
+#ifndef DRIVER_CUDA_CUDA_H
+#define DRIVER_CUDA_CUDA_H
 
 
-struct frm_cuda_memory_t
-{
-        unsigned int id;
-        int ref_count;
+#define frm_cuda_debug(...) debug(frm_cuda_debug_category, __VA_ARGS__)
+extern int frm_cuda_debug_category;
 
-        unsigned int size;
-        unsigned int host_ptr;
-        unsigned int device_ptr;
-};
 
-struct frm_cuda_memory_t *frm_cuda_memory_create(void);
-void frm_cuda_memory_free(struct frm_cuda_memory_t *mem);
+struct x86_ctx_t;
+int frm_cuda_call(struct x86_ctx_t *ctx);
 
 
 #endif

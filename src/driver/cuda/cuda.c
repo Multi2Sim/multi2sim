@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/fermi/emu/emu.h>
+#include <arch/fermi/emu/grid.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
@@ -27,15 +29,13 @@
 #include <lib/util/list.h>
 #include <mem-system/memory.h>
 
+#include "context.h"
 #include "cuda.h"
-#include "cuda-context.h"
-#include "cuda-function.h"
-#include "cuda-function-arg.h"
-#include "cuda-memory.h"
-#include "cuda-module.h"
-#include "cuda-object.h"
-#include "emu.h"
-#include "grid.h"
+#include "function.h"
+#include "function-arg.h"
+#include "memory.h"
+#include "module.h"
+#include "object.h"
 
 
 /* Debug */

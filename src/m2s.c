@@ -31,7 +31,6 @@
 #include <arch/evergreen/timing/gpu.h>
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/asm/asm.h>
-#include <arch/fermi/emu/cuda.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
@@ -45,6 +44,7 @@
 #include <arch/x86/emu/syscall.h>
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/trace-cache.h>
+#include <driver/cuda/cuda.h>
 #include <driver/glut/glut.h>
 #include <driver/opencl/opencl.h>
 #include <driver/opencl-old/evergreen/opencl.h>
