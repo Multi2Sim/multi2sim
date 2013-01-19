@@ -25,6 +25,7 @@
 #include <arch/arm/timing/cpu.h>
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
+#include <arch/common/runtime.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/isa.h>
 #include <arch/evergreen/timing/faults.h>
@@ -1635,11 +1636,13 @@ int main(int argc, char **argv)
 	arm_isa_call_debug_category = debug_new_category(arm_call_debug_file_name);
 
 	/* Initialization of runtimes */
-	m2s_runtime_init();
-	m2s_runtime_register("OpenCL", "m2s-opencl");
-	m2s_runtime_register("GL", "m2s-opengl");
-	m2s_runtime_register("GLUT", "m2s-glut");
-	m2s_runtime_register("cuda", "m2s-cuda");
+	runtime_init();
+	runtime_register("Old OpenCL", "m2s-opencl-old", "m2s-opencl-old", 325,
+			(runtime_abi_func_t) x86_opencl_call);
+	runtime_register("GLUT", "GLUT", "m2s-glut", 326, (runtime_abi_func_t) x86_glut_call);
+	runtime_register("OpenCL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) x86_opengl_call);
+	runtime_register("CUDA", "cuda", "m2s-cuda", 328, (runtime_abi_func_t) frm_cuda_call);
+	runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) x86_clrt_call);
 
 	/* Initialization of libraries */
 	esim_init();
@@ -1731,7 +1734,7 @@ int main(int argc, char **argv)
 	arch_list_done();
 
 	/* Finalization of runtimes */
-	m2s_runtime_done();
+	runtime_done();
 
 	/* Finalization of libraries */
 	esim_done();
