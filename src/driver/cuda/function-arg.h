@@ -17,11 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_EMU_CUDA_FUNCTION_ARG_H
-#define FERMI_EMU_CUDA_FUNCTION_ARG_H
-
-#include <lib/util/string.h>
-
+#ifndef DRIVER_CUDA_FUNCTION_ARG_H
+#define DRIVER_CUDA_FUNCTION_ARG_H
 
 enum frm_cuda_mem_scope_t
 {
@@ -48,7 +45,7 @@ enum frm_cuda_function_arg_access_type_t
 struct frm_cuda_function_arg_t
 {
 	int id;
-	char name[MAX_STRING_SIZE];  /* FIXME */
+	char *name;
 
 	enum frm_cuda_function_arg_kind_t kind;
 	enum frm_cuda_mem_scope_t mem_scope;

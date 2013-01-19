@@ -17,27 +17,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef FERMI_EMU_CUDA_OBJECT_H
-#define FERMI_EMU_CUDA_OBJECT_H
+#ifndef DRIVER_CUDA_MODULE_H
+#define DRIVER_CUDA_MODULE_H
 
 
-enum frm_cuda_obj_t
+struct frm_cuda_module_t
 {
-        FRM_CUDA_OBJ_DEVICE = 1,
-        FRM_CUDA_OBJ_CONTEXT,
-        FRM_CUDA_OBJ_MODULE,
-        FRM_CUDA_OBJ_FUNCTION,
-        FRM_CUDA_OBJ_MEMORY,
-        FRM_CUDA_OBJ_STREAM
+	unsigned int id;
+	int ref_count;
+
+	unsigned int device_id;  /* Only one device allowed */
+	unsigned int context_id;
+
+	/* ELF binary */
+	struct elf_file_t *elf_file;
 };
 
-extern struct linked_list_t *frm_cuda_object_list;
-
-void frm_cuda_object_add(void *object);
-void frm_cuda_object_remove(void *object);
-void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id);
-unsigned int frm_cuda_object_new_id(enum frm_cuda_obj_t type);
-void frm_cuda_object_free_all(void);
+struct frm_cuda_module_t *frm_cuda_module_create(void);
+void frm_cuda_module_free(struct frm_cuda_module_t *module);
 
 
 #endif

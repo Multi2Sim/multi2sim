@@ -19,42 +19,31 @@
 
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/list.h>
 
-#include "cuda-function.h"
-#include "cuda-function-arg.h"
-#include "cuda-object.h"
+#include "device.h"
+#include "object.h"
 
 
-struct frm_cuda_function_t *frm_cuda_function_create(void)
+/* Create a device */
+struct frm_cuda_device_t *frm_cuda_device_create()
 {
-	struct frm_cuda_function_t *function;
+	struct frm_cuda_device_t *device;
 
 	/* Initialize */
-	function = xcalloc(1, sizeof(struct frm_cuda_function_t));
-	function->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_FUNCTION);
-	function->ref_count = 1;
-	function->arg_list = list_create();
+	device = xcalloc(1, sizeof(struct frm_cuda_device_t));
+	device->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_DEVICE);
 
 	/* Return */
-	frm_cuda_object_add(function);
-	return function;
+	frm_cuda_object_add(device);
+	return device;
 }
 
 
-void frm_cuda_function_free(struct frm_cuda_function_t *function)
+/* Free device */
+void frm_cuda_device_free(struct frm_cuda_device_t *device)
 {
-	int i;
-
-	/* Free arguments */
-	for (i = 0; i < list_count(function->arg_list); i++)
-		frm_cuda_function_arg_free((struct frm_cuda_function_arg_t *)list_get(function->arg_list, i));
-	list_free(function->arg_list);
-
-	/* FIXME: free ELF file */
-
-	/* Free function */
-	frm_cuda_object_remove(function);
-	free(function);
+	frm_cuda_object_remove(device);
+	free(device);
 }
+
 

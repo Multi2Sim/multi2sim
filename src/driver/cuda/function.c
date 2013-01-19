@@ -17,33 +17,43 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/list.h>
 
-#include "cuda-context.h"
-#include "cuda-object.h"
+#include "function.h"
+#include "function-arg.h"
+#include "object.h"
 
 
-/* Create a context */
-struct frm_cuda_context_t *frm_cuda_context_create()
+struct frm_cuda_function_t *frm_cuda_function_create(void)
 {
-	struct frm_cuda_context_t *context;
+	struct frm_cuda_function_t *function;
 
 	/* Initialize */
-	context = xcalloc(1, sizeof(struct frm_cuda_context_t));
-	context->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_CONTEXT);
-	context->ref_count = 1;
+	function = xcalloc(1, sizeof(struct frm_cuda_function_t));
+	function->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_FUNCTION);
+	function->ref_count = 1;
+	function->arg_list = list_create();
 
 	/* Return */
-	frm_cuda_object_add(context);
-	return context;
+	frm_cuda_object_add(function);
+	return function;
 }
 
 
-/* Free context */
-void frm_cuda_context_free(struct frm_cuda_context_t *context)
+void frm_cuda_function_free(struct frm_cuda_function_t *function)
 {
-	frm_cuda_object_remove(context);
-	free(context);
+	int i;
+
+	/* Free arguments */
+	for (i = 0; i < list_count(function->arg_list); i++)
+		frm_cuda_function_arg_free((struct frm_cuda_function_arg_t *)list_get(function->arg_list, i));
+	list_free(function->arg_list);
+
+	/* FIXME: free ELF file */
+
+	/* Free function */
+	frm_cuda_object_remove(function);
+	free(function);
 }
 

@@ -14,6 +14,13 @@ AM_LIBTOOLFLAGS = --preserve-dup-deps
 INCLUDES = @M2S_INCLUDES@
 
 LDADD = \
+	$(top_builddir)/src/driver/cuda/libcuda.a \
+	$(top_builddir)/src/driver/glut/libglut.a \
+	$(top_builddir)/src/driver/opencl/libopencl.a \
+	$(top_builddir)/src/driver/opencl-old/evergreen/libopencl.a \
+	$(top_builddir)/src/driver/opencl-old/southern-islands/libopencl.a \
+	$(top_builddir)/src/driver/opengl/libopengl.a \
+	\
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
 	$(top_builddir)/src/arch/x86/emu/libemu.a \
 	$(top_builddir)/src/arch/x86/asm/libasm.a \
@@ -45,12 +52,6 @@ LDADD = \
 	$(top_builddir)/src/visual/southern-islands/libsouthernislands.a \
 	$(top_builddir)/src/visual/x86/libx86.a \
 	$(top_builddir)/src/visual/common/libcommon.a \
-	\
-	$(top_builddir)/src/driver/glut/libglut.a \
-	$(top_builddir)/src/driver/opencl/libopencl.a \
-	$(top_builddir)/src/driver/opencl-old/evergreen/libopencl.a \
-	$(top_builddir)/src/driver/opencl-old/southern-islands/libopencl.a \
-	$(top_builddir)/src/driver/opengl/libopengl.a \
 	\
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/esim/libesim.a \

@@ -33,8 +33,8 @@
 #include <sys/time.h>
 #include <sys/times.h>
 
-#include <arch/fermi/emu/cuda.h>
 #include <arch/southern-islands/emu/emu.h>
+#include <driver/cuda/cuda.h>
 #include <driver/glut/glut.h>
 #include <driver/opencl/opencl.h>
 #include <driver/opencl-old/evergreen/opencl.h>

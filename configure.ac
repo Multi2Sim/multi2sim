@@ -567,6 +567,7 @@ AC_CONFIG_FILES([
 		src/arch/x86/emu/Makefile
 		src/arch/x86/timing/Makefile
 
+		src/driver/cuda/Makefile
 		src/driver/glut/Makefile
 		src/driver/opencl/Makefile
 		src/driver/opencl-old/Makefile

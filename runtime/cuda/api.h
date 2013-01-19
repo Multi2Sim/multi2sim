@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2S_CUDA_H
-#define M2S_CUDA_H
+#ifndef RUNTIME_CUDA_API_H
+#define RUNTIME_CUDA_API_H
 
 
 
@@ -39,7 +39,7 @@ enum frm_cuda_call_t
 {
 	frm_cuda_call_invalid,
 #define FRM_CUDA_DEFINE_CALL(name) frm_cuda_call_##name,
-#include "../../src/arch/fermi/emu/cuda.dat"
+#include "../../src/driver/cuda/cuda.dat"
 #undef FRM_CUDA_DEFINE_CALL
 	frm_cuda_call_count
 };

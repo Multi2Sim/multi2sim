@@ -17,33 +17,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#include <lib/mhandle/mhandle.h>
-
-#include "cuda-stream.h"
-#include "cuda-object.h"
+#ifndef DRIVER_CUDA_OBJECT_H
+#define DRIVER_CUDA_OBJECT_H
 
 
-/* Create a stream */
-struct frm_cuda_stream_t *frm_cuda_stream_create(void)
+enum frm_cuda_obj_t
 {
-	struct frm_cuda_stream_t *stream;
+        FRM_CUDA_OBJ_DEVICE = 1,
+        FRM_CUDA_OBJ_CONTEXT,
+        FRM_CUDA_OBJ_MODULE,
+        FRM_CUDA_OBJ_FUNCTION,
+        FRM_CUDA_OBJ_MEMORY,
+        FRM_CUDA_OBJ_STREAM
+};
 
-	/* Initialize */
-	stream = xcalloc(1, sizeof(struct frm_cuda_stream_t));
-	stream->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_STREAM);
-	stream->ref_count = 1;
+extern struct linked_list_t *frm_cuda_object_list;
 
-	/* Return */
-	frm_cuda_object_add(stream);
-	return stream;
-}
+void frm_cuda_object_add(void *object);
+void frm_cuda_object_remove(void *object);
+void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id);
+unsigned int frm_cuda_object_new_id(enum frm_cuda_obj_t type);
+void frm_cuda_object_free_all(void);
 
 
-/* Free stream */
-void frm_cuda_stream_free(struct frm_cuda_stream_t *stream)
-{
-	frm_cuda_object_remove(stream);
-	free(stream);
-}
+#endif
 
