@@ -114,11 +114,11 @@ void x86_emu_init(void)
 
 #ifdef HAVE_OPENGL
 	/* GLUT */
-	x86_glut_init();
+	glut_init();
 #endif
 
 	/* OpenGL */
-	x86_opengl_init();
+	opengl_init();
 }
 
 
@@ -128,11 +128,11 @@ void x86_emu_done(void)
 	struct x86_ctx_t *ctx;
 
 #ifdef HAVE_OPENGL
-	x86_glut_done();
+	glut_done();
 #endif
 
-	/* Finalize Opengl */
-	x86_opengl_done();
+	/* Finalize OpenGl */
+	opengl_done();
 
 	/* Finish all contexts */
 	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)

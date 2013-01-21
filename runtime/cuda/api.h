@@ -23,25 +23,25 @@
 
 
 /* Debug */
-extern int frm_cuda_debug;
+extern int cuda_debug;
 
-#define cuda_debug(stream, ...) (frm_cuda_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+#define cuda_debug(stream, ...) (cuda_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
 
 
 
 /* System call for CUDA driver */
-#define FRM_CUDA_SYS_CODE  328
+#define CUDA_SYS_CODE  328
 
 
 
 /* List of CUDA driver calls */
-enum frm_cuda_call_t
+enum cuda_call_t
 {
-	frm_cuda_call_invalid,
-#define FRM_CUDA_DEFINE_CALL(name) frm_cuda_call_##name,
+	cuda_call_invalid,
+#define CUDA_DEFINE_CALL(name) cuda_call_##name,
 #include "../../src/driver/cuda/cuda.dat"
-#undef FRM_CUDA_DEFINE_CALL
-	frm_cuda_call_count
+#undef CUDA_DEFINE_CALL
+	cuda_call_count
 };
 
 

@@ -34,21 +34,21 @@
 #define MAX_COLOR_STACK_DEPTH 32
 
 /* OpenGL Matrix Stack */
-struct x86_opengl_matrix_stack_t
+struct opengl_matrix_stack_t
 {
 	struct list_t *stack;
 	GLint depth;
 	GLint max_depth;
 };
 
-struct x86_opengl_matrix_t;
+struct opengl_matrix_t;
 
-struct x86_opengl_matrix_stack_t *x86_opengl_matrix_stack_create(GLenum mode);
-void x86_opengl_matrix_stack_free(struct x86_opengl_matrix_stack_t *mtx_stack);
-int x86_opengl_matrix_stack_push(struct x86_opengl_matrix_stack_t *mtx_stack, struct x86_opengl_matrix_t *mtx);
-struct x86_opengl_matrix_t *x86_opengl_matrix_stack_pop(struct x86_opengl_matrix_stack_t *mtx_stack);
-struct x86_opengl_matrix_t *x86_opengl_matrix_stack_top(struct x86_opengl_matrix_stack_t *mtx_stack);
-struct x86_opengl_matrix_t *x86_opengl_matrix_stack_bottom(struct x86_opengl_matrix_stack_t *mtx_stack);
+struct opengl_matrix_stack_t *opengl_matrix_stack_create(GLenum mode);
+void opengl_matrix_stack_free(struct opengl_matrix_stack_t *mtx_stack);
+int opengl_matrix_stack_push(struct opengl_matrix_stack_t *mtx_stack, struct opengl_matrix_t *mtx);
+struct opengl_matrix_t *opengl_matrix_stack_pop(struct opengl_matrix_stack_t *mtx_stack);
+struct opengl_matrix_t *opengl_matrix_stack_top(struct opengl_matrix_stack_t *mtx_stack);
+struct opengl_matrix_t *opengl_matrix_stack_bottom(struct opengl_matrix_stack_t *mtx_stack);
 
 #endif
 

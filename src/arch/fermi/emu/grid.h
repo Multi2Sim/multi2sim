@@ -23,6 +23,10 @@
 #include <lib/util/string.h>
 
 
+/* Forward declarations */
+struct cuda_function_t;
+
+
 enum frm_grid_status_t
 {
         frm_grid_pending             = 0x0001,
@@ -40,7 +44,7 @@ struct frm_grid_t
         enum frm_grid_status_t status;
 
 	/* CUDA function associated */
-	struct frm_cuda_function_t *function;
+	struct cuda_function_t *function;
 
 	/* Pointers to threadblocks, warps, and threads */
 	struct frm_threadblock_t **threadblocks;
@@ -94,7 +98,7 @@ struct frm_grid_t
 	int finished_list_max;
 };
 
-struct frm_grid_t *frm_grid_create(struct frm_cuda_function_t *function);
+struct frm_grid_t *frm_grid_create(struct cuda_function_t *function);
 void frm_grid_free(struct frm_grid_t *grid);
 int frm_grid_get_status(struct frm_grid_t *grid, enum frm_grid_status_t status);
 void frm_grid_set_status(struct frm_grid_t *grid, enum frm_grid_status_t status);

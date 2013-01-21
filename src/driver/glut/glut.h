@@ -36,15 +36,15 @@ struct x86_ctx_t;
  * missing in the user's system.
  */
 
-#define x86_glut_debug(...) debug(x86_glut_debug_category, __VA_ARGS__)
-extern int x86_glut_debug_category;
+#define glut_debug(...) debug(glut_debug_category, __VA_ARGS__)
+extern int glut_debug_category;
 
-extern pthread_mutex_t x86_glut_mutex;
+extern pthread_mutex_t glut_mutex;
 
-void x86_glut_init(void);
-void x86_glut_done(void);
+void glut_init(void);
+void glut_done(void);
 
-int x86_glut_call(struct x86_ctx_t *ctx);
+int glut_abi_call(struct x86_ctx_t *ctx);
 
 
 #endif

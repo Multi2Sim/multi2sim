@@ -24,25 +24,25 @@
 
 
 /* Create a stream */
-struct frm_cuda_stream_t *frm_cuda_stream_create(void)
+struct cuda_stream_t *cuda_stream_create(void)
 {
-	struct frm_cuda_stream_t *stream;
+	struct cuda_stream_t *stream;
 
 	/* Initialize */
-	stream = xcalloc(1, sizeof(struct frm_cuda_stream_t));
-	stream->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_STREAM);
+	stream = xcalloc(1, sizeof(struct cuda_stream_t));
+	stream->id = cuda_object_new_id(CUDA_OBJ_STREAM);
 	stream->ref_count = 1;
 
 	/* Return */
-	frm_cuda_object_add(stream);
+	cuda_object_add(stream);
 	return stream;
 }
 
 
 /* Free stream */
-void frm_cuda_stream_free(struct frm_cuda_stream_t *stream)
+void cuda_stream_free(struct cuda_stream_t *stream)
 {
-	frm_cuda_object_remove(stream);
+	cuda_object_remove(stream);
 	free(stream);
 }
 

@@ -21,7 +21,7 @@
 #define DRIVER_CUDA_CONTEXT_H
 
 
-struct frm_cuda_context_t
+struct cuda_context_t
 {
 	unsigned int id;
 	int ref_count;
@@ -29,8 +29,8 @@ struct frm_cuda_context_t
 	unsigned int device_id;
 };
 
-struct frm_cuda_context_t *frm_cuda_context_create(void);
-void frm_cuda_context_free(struct frm_cuda_context_t *context);
+struct cuda_context_t *cuda_context_create(void);
+void cuda_context_free(struct cuda_context_t *context);
 
 
 #endif

@@ -25,35 +25,35 @@
 #include "object.h"
 
 
-struct frm_cuda_function_t *frm_cuda_function_create(void)
+struct cuda_function_t *cuda_function_create(void)
 {
-	struct frm_cuda_function_t *function;
+	struct cuda_function_t *function;
 
 	/* Initialize */
-	function = xcalloc(1, sizeof(struct frm_cuda_function_t));
-	function->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_FUNCTION);
+	function = xcalloc(1, sizeof(struct cuda_function_t));
+	function->id = cuda_object_new_id(CUDA_OBJ_FUNCTION);
 	function->ref_count = 1;
 	function->arg_list = list_create();
 
 	/* Return */
-	frm_cuda_object_add(function);
+	cuda_object_add(function);
 	return function;
 }
 
 
-void frm_cuda_function_free(struct frm_cuda_function_t *function)
+void cuda_function_free(struct cuda_function_t *function)
 {
 	int i;
 
 	/* Free arguments */
 	for (i = 0; i < list_count(function->arg_list); i++)
-		frm_cuda_function_arg_free((struct frm_cuda_function_arg_t *)list_get(function->arg_list, i));
+		cuda_function_arg_free((struct cuda_function_arg_t *)list_get(function->arg_list, i));
 	list_free(function->arg_list);
 
 	/* FIXME: free ELF file */
 
 	/* Free function */
-	frm_cuda_object_remove(function);
+	cuda_object_remove(function);
 	free(function);
 }
 

@@ -24,13 +24,13 @@
 struct x86_ctx_t;
 
 
-#define x86_clrt_debug(...) debug(x86_clrt_debug_category, __VA_ARGS__)
-extern int x86_clrt_debug_category;
+#define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
+extern int opencl_debug_category;
 
-void x86_clrt_init(void);
-void x86_clrt_done(void);
+void opencl_init(void);
+void opencl_done(void);
 
-int x86_clrt_call(struct x86_ctx_t *ctx);
+int opencl_abi_call(struct x86_ctx_t *ctx);
 
 
 #endif

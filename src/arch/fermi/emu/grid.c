@@ -36,7 +36,7 @@
 #include "warp.h"
 
 
-struct frm_grid_t *frm_grid_create(struct frm_cuda_function_t *function)
+struct frm_grid_t *frm_grid_create(struct cuda_function_t *function)
 {
 	struct frm_grid_t *grid;
 
@@ -120,7 +120,7 @@ void frm_grid_clear_status(struct frm_grid_t *grid, enum frm_grid_status_t statu
 
 void frm_grid_setup_threads(struct frm_grid_t *grid)
 {
-	struct frm_cuda_function_t *function = grid->function;
+	struct cuda_function_t *function = grid->function;
 
 	struct frm_threadblock_t *threadblock;
 	struct frm_warp_t *warp;
@@ -312,7 +312,7 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 /* FIXME: constant memory should be member of 'frm_emu' or 'grid'? */
 void frm_grid_setup_const_mem(struct frm_grid_t *grid)
 {
-        struct frm_cuda_function_t *function = grid->function;
+        struct cuda_function_t *function = grid->function;
 
 	/* FIXME: built-in consts */
         frm_isa_const_mem_write(0x8, &function->local_size3[0]);
@@ -321,8 +321,8 @@ void frm_grid_setup_const_mem(struct frm_grid_t *grid)
 
 void frm_grid_setup_args(struct frm_grid_t *grid)
 {
-	struct frm_cuda_function_t *function = grid->function;
-	struct frm_cuda_function_arg_t *arg;
+	struct cuda_function_t *function = grid->function;
+	struct cuda_function_arg_t *arg;
 	int i;
 	int offset = 0x20;
 
@@ -333,15 +333,15 @@ void frm_grid_setup_args(struct frm_grid_t *grid)
 		assert(arg);
 
 		/* Process argument depending on its type */
-		if (arg->kind == FRM_CUDA_FUNCTION_ARG_KIND_POINTER)
+		if (arg->kind == CUDA_FUNCTION_ARG_KIND_POINTER)
 		{
-			if (arg->mem_scope == FRM_CUDA_MEM_SCOPE_GLOBAL)
+			if (arg->mem_scope == CUDA_MEM_SCOPE_GLOBAL)
 			{
                                 frm_isa_const_mem_write(offset, &(arg->value));
 				offset += 0x4;
 				continue;
 			}
-			else if (arg->mem_scope == FRM_CUDA_MEM_SCOPE_LOCAL)
+			else if (arg->mem_scope == CUDA_MEM_SCOPE_LOCAL)
 			{
 				offset += 0x4;
 				continue;

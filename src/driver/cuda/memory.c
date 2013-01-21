@@ -23,24 +23,24 @@
 #include "object.h"
 
 
-struct frm_cuda_memory_t *frm_cuda_memory_create(void)
+struct cuda_memory_t *cuda_memory_create(void)
 {
-        struct frm_cuda_memory_t *mem;
+        struct cuda_memory_t *mem;
 
         /* Initialize */
-        mem = xcalloc(1, sizeof(struct frm_cuda_memory_t));
-        mem->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_MEMORY);
+        mem = xcalloc(1, sizeof(struct cuda_memory_t));
+        mem->id = cuda_object_new_id(CUDA_OBJ_MEMORY);
         mem->ref_count = 1;
 
         /* Return */
-        frm_cuda_object_add(mem);
+        cuda_object_add(mem);
         return mem;
 }
 
 
-void frm_cuda_memory_free(struct frm_cuda_memory_t *mem)
+void cuda_memory_free(struct cuda_memory_t *mem)
 {
-        frm_cuda_object_remove(mem);
+        cuda_object_remove(mem);
         free(mem);
 }
 

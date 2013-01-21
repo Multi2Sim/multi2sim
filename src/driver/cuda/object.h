@@ -21,23 +21,23 @@
 #define DRIVER_CUDA_OBJECT_H
 
 
-enum frm_cuda_obj_t
+enum cuda_obj_t
 {
-        FRM_CUDA_OBJ_DEVICE = 1,
-        FRM_CUDA_OBJ_CONTEXT,
-        FRM_CUDA_OBJ_MODULE,
-        FRM_CUDA_OBJ_FUNCTION,
-        FRM_CUDA_OBJ_MEMORY,
-        FRM_CUDA_OBJ_STREAM
+        CUDA_OBJ_DEVICE = 1,
+        CUDA_OBJ_CONTEXT,
+        CUDA_OBJ_MODULE,
+        CUDA_OBJ_FUNCTION,
+        CUDA_OBJ_MEMORY,
+        CUDA_OBJ_STREAM
 };
 
-extern struct linked_list_t *frm_cuda_object_list;
+extern struct linked_list_t *cuda_object_list;
 
-void frm_cuda_object_add(void *object);
-void frm_cuda_object_remove(void *object);
-void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id);
-unsigned int frm_cuda_object_new_id(enum frm_cuda_obj_t type);
-void frm_cuda_object_free_all(void);
+void cuda_object_add(void *object);
+void cuda_object_remove(void *object);
+void *cuda_object_get(enum cuda_obj_t type, unsigned int id);
+unsigned int cuda_object_new_id(enum cuda_obj_t type);
+void cuda_object_free_all(void);
 
 
 #endif

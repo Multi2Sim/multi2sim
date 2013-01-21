@@ -25,22 +25,25 @@
 #include "vertex.h"
 
 
-struct x86_opengl_edge_t *x86_opengl_edge_create(struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1)
+struct opengl_edge_t *opengl_edge_create(struct opengl_vertex_t *vtx0,
+		struct opengl_vertex_t *vtx1)
 {
-	struct x86_opengl_edge_t * edge;
+	struct opengl_edge_t * edge;
 
-	edge = xcalloc(1, sizeof(struct x86_opengl_edge_t));
+	edge = xcalloc(1, sizeof(struct opengl_edge_t));
 
 	/* Initialize */
 	edge->vtx0 = vtx0;
 	edge->vtx1 = vtx1;
-	x86_opengl_debug("\t\tEdge \t[%f, %f] - [%f, %f]\n\n", vtx0->pos[X_COMP], vtx0->pos[Y_COMP], vtx1->pos[X_COMP], vtx1->pos[Y_COMP]);
+	opengl_debug("\t\tEdge \t[%f, %f] - [%f, %f]\n\n",
+			vtx0->pos[X_COMP], vtx0->pos[Y_COMP],
+			vtx1->pos[X_COMP], vtx1->pos[Y_COMP]);
 
 	/* Return */
 	return edge;
 }
 
-void x86_opengl_edge_free(struct x86_opengl_edge_t *edge)
+void opengl_edge_free(struct opengl_edge_t *edge)
 {
 	free(edge);
 }

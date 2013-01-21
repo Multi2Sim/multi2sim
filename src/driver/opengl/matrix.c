@@ -89,23 +89,23 @@ static GLfloat Identity[16] = {
 	0.0, 0.0, 0.0, 1.0
 };
 
-struct x86_opengl_matrix_t *x86_opengl_matrix_create(enum x86_opengl_matrix_mode_t mode)
+struct opengl_matrix_t *opengl_matrix_create(enum opengl_matrix_mode_t mode)
 {
-	x86_opengl_debug("\tCreating Matrix ... \n" );
-	struct x86_opengl_matrix_t *mtx;
+	opengl_debug("\tCreating Matrix ... \n" );
+	struct opengl_matrix_t *mtx;
 
 	/* Allocate */
-	mtx = xcalloc(1, sizeof(struct x86_opengl_matrix_t));
+	mtx = xcalloc(1, sizeof(struct opengl_matrix_t));
 	if(!mtx)
 		fatal("%s: out of memory", __FUNCTION__);
-	x86_opengl_debug("\t\tmtx ptr = %p\n", mtx);
+	opengl_debug("\t\tmtx ptr = %p\n", mtx);
 
 	/* Initialize */
 	mtx->matrix_mode = mode;
 	mtx->matrix = xcalloc(1, 16 * sizeof(GLfloat));	/* 4x4 matrix */
 	mtx->matinv = xcalloc(1, 16 * sizeof(GLfloat));	/* 4x4 matrix */
 
-	x86_opengl_debug("\t\tmtx->matrix ptr = %p\n", mtx->matrix);
+	opengl_debug("\t\tmtx->matrix ptr = %p\n", mtx->matrix);
 
 	switch(mode)
 	{
@@ -122,29 +122,29 @@ struct x86_opengl_matrix_t *x86_opengl_matrix_create(enum x86_opengl_matrix_mode
 	return mtx;
 }
 
-void x86_opengl_matrix_free(struct x86_opengl_matrix_t *mtx)
+void opengl_matrix_free(struct opengl_matrix_t *mtx)
 {
-	x86_opengl_debug("\tFreeing Matrix ... \n" );
-	x86_opengl_debug("\t\tmtx ptr = %p\n", mtx);
-	x86_opengl_debug("\t\tmtx->matrix ptr = %p\n", mtx->matrix);
+	opengl_debug("\tFreeing Matrix ... \n" );
+	opengl_debug("\t\tmtx ptr = %p\n", mtx);
+	opengl_debug("\t\tmtx->matrix ptr = %p\n", mtx->matrix);
 
 	free(mtx->matrix);
 	free(mtx->matinv);
 	free(mtx);
 }
 
-struct x86_opengl_matrix_t *x86_opengl_matrix_duplicate(struct x86_opengl_matrix_t *mtx_src)
+struct opengl_matrix_t *opengl_matrix_duplicate(struct opengl_matrix_t *mtx_src)
 {
 	if(!mtx_src)
 		fatal("%s: out of memory", __FUNCTION__);	
-	x86_opengl_debug("\tDuplicating Matrix ... \n" );
-	struct x86_opengl_matrix_t *mtx;
+	opengl_debug("\tDuplicating Matrix ... \n" );
+	struct opengl_matrix_t *mtx;
 
 	/* Allocate */
-	mtx = x86_opengl_matrix_create(mtx_src->matrix_mode);
+	mtx = opengl_matrix_create(mtx_src->matrix_mode);
 	if(!mtx)
 		fatal("%s: out of memory", __FUNCTION__);
-	x86_opengl_debug("\t\tmtx ptr = %p\n", mtx);
+	opengl_debug("\t\tmtx ptr = %p\n", mtx);
 
 	/* Duplicate */
 	memcpy(mtx->matrix, mtx_src->matrix, 16 * sizeof(GLfloat));
@@ -154,7 +154,7 @@ struct x86_opengl_matrix_t *x86_opengl_matrix_duplicate(struct x86_opengl_matrix
 	return mtx;
 }
 
-void x86_opengl_matrix_copy(struct x86_opengl_matrix_t *mtx_dst, struct x86_opengl_matrix_t *mtx_src)
+void opengl_matrix_copy(struct opengl_matrix_t *mtx_dst, struct opengl_matrix_t *mtx_src)
 {
 	/* Copy */
 	mtx_dst->matrix_mode = mtx_src->matrix_mode;
@@ -166,7 +166,7 @@ void x86_opengl_matrix_copy(struct x86_opengl_matrix_t *mtx_dst, struct x86_open
 #define A(row,col)  a[(col<<2)+row]
 #define B(row,col)  b[(col<<2)+row]
 #define P(row,col)  product[(col<<2)+row]
-static void x86_opengl_matrix_matmul4( GLfloat *product, const GLfloat *a, const GLfloat *b )
+static void opengl_matrix_matmul4( GLfloat *product, const GLfloat *a, const GLfloat *b )
 {
 	GLint i;
 	for (i = 0; i < 4; i++)
@@ -183,7 +183,7 @@ static void x86_opengl_matrix_matmul4( GLfloat *product, const GLfloat *a, const
 #undef P
 
 #define A(row,col)  m[(col<<2)+row]
-void x86_opengl_matrix_vector_mul_matrix( GLfloat *product, const GLfloat *v, const GLfloat *m)
+void opengl_matrix_vector_mul_matrix( GLfloat *product, const GLfloat *v, const GLfloat *m)
 {
 	product[0] = A(0,0) * v[0] + A(0,1) * v[1] + A(0,2) * v[2] + A(0,3) * v[3];
 	product[1] = A(1,0) * v[0] + A(1,1) * v[1] + A(1,2) * v[2] + A(1,3) * v[3];
@@ -192,12 +192,12 @@ void x86_opengl_matrix_vector_mul_matrix( GLfloat *product, const GLfloat *v, co
 }
 #undef A
 
-void x86_opengl_matrix_mul_matrix(struct x86_opengl_matrix_t *dst_mtx, struct x86_opengl_matrix_t *mtx_a, struct x86_opengl_matrix_t *mtx_b)
+void opengl_matrix_mul_matrix(struct opengl_matrix_t *dst_mtx, struct opengl_matrix_t *mtx_a, struct opengl_matrix_t *mtx_b)
 {
-	x86_opengl_matrix_matmul4(dst_mtx->matrix, mtx_a->matrix, mtx_b->matrix);
+	opengl_matrix_matmul4(dst_mtx->matrix, mtx_a->matrix, mtx_b->matrix);
 }
 
-void x86_opengl_matrix_mul_vertex(struct x86_opengl_vertex_t *vtx, struct x86_opengl_matrix_t *mtx)
+void opengl_matrix_mul_vertex(struct opengl_vertex_t *vtx, struct opengl_matrix_t *mtx)
 {
 	GLfloat temp[4];
 	temp[0] = vtx->pos[X_COMP];
@@ -205,7 +205,7 @@ void x86_opengl_matrix_mul_vertex(struct x86_opengl_vertex_t *vtx, struct x86_op
 	temp[2] = vtx->pos[Z_COMP];
 	temp[3] = vtx->pos[W_COMP];
 
-	x86_opengl_matrix_vector_mul_matrix(temp, temp, mtx->matrix);
+	opengl_matrix_vector_mul_matrix(temp, temp, mtx->matrix);
 
 	vtx->pos[X_COMP] = temp[0];
 	vtx->pos[Y_COMP] = temp[1];
@@ -214,12 +214,12 @@ void x86_opengl_matrix_mul_vertex(struct x86_opengl_vertex_t *vtx, struct x86_op
 }
 
 #define M(row,col)  mtx->matrix[col*4+row]
-struct x86_opengl_matrix_t *x86_opengl_ortho_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval)
+struct opengl_matrix_t *opengl_ortho_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval)
 {
-	struct x86_opengl_matrix_t *mtx;
+	struct opengl_matrix_t *mtx;
 
 	/* Allocate */
-	mtx = x86_opengl_matrix_create(MATRIX_3D_NO_ROT);
+	mtx = opengl_matrix_create(MATRIX_3D_NO_ROT);
 
 	M(0,0) = 2.0F / (right-left);
 	M(0,1) = 0.0F;
@@ -245,16 +245,16 @@ struct x86_opengl_matrix_t *x86_opengl_ortho_matrix_create(GLfloat left, GLfloat
 }
 #undef M
 
-void x86_opengl_ortho_matrix_free(struct x86_opengl_matrix_t *mtx)
+void opengl_ortho_matrix_free(struct opengl_matrix_t *mtx)
 {
-	x86_opengl_matrix_free(mtx);
+	opengl_matrix_free(mtx);
 }
 
 
 #define M(row,col)  mtx->matrix[col*4+row]
-struct x86_opengl_matrix_t *x86_opengl_frustum_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval)
+struct opengl_matrix_t *opengl_frustum_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval)
 {
-	struct x86_opengl_matrix_t *mtx;
+	struct opengl_matrix_t *mtx;
 	GLfloat x;
 	GLfloat y;
 	GLfloat a;
@@ -263,7 +263,7 @@ struct x86_opengl_matrix_t *x86_opengl_frustum_matrix_create(GLfloat left, GLflo
 	GLfloat d;
 
 	/* Allocate */
-	mtx = x86_opengl_matrix_create(MATRIX_PERSPECTIVE);
+	mtx = opengl_matrix_create(MATRIX_PERSPECTIVE);
 
 	/* Caculate perspective matrix */
 	x = (2.0F*nearval) / (right-left);
@@ -297,18 +297,18 @@ struct x86_opengl_matrix_t *x86_opengl_frustum_matrix_create(GLfloat left, GLflo
 }
 #undef M
 
-void x86_opengl_frustum_matrix_free(struct x86_opengl_matrix_t *mtx)
+void opengl_frustum_matrix_free(struct opengl_matrix_t *mtx)
 {
-	x86_opengl_matrix_free(mtx);
+	opengl_matrix_free(mtx);
 }
 
 #define M(row,col)  mtx->matrix[col*4+row]
-struct x86_opengl_matrix_t *x86_opengl_translate_matrix_create(GLfloat x, GLfloat y, GLfloat z)
+struct opengl_matrix_t *opengl_translate_matrix_create(GLfloat x, GLfloat y, GLfloat z)
 {
-	struct x86_opengl_matrix_t *mtx;
+	struct opengl_matrix_t *mtx;
 
 	/* Allocate */
-	mtx = x86_opengl_matrix_create(MATRIX_PERSPECTIVE);
+	mtx = opengl_matrix_create(MATRIX_PERSPECTIVE);
 
 	M(0,0) = 1.0F;
 	M(0,1) = 0.0F;  
@@ -335,20 +335,20 @@ struct x86_opengl_matrix_t *x86_opengl_translate_matrix_create(GLfloat x, GLfloa
 }
 #undef M
 
-void x86_opengl_translate_matrix_free(struct x86_opengl_matrix_t *mtx)
+void opengl_translate_matrix_free(struct opengl_matrix_t *mtx)
 {
-	x86_opengl_matrix_free(mtx);
+	opengl_matrix_free(mtx);
 }
 
 #define M(row,col)  mtx->matrix[col*4+row]
-struct x86_opengl_matrix_t *x86_opengl_rotate_matrix_create(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
+struct opengl_matrix_t *opengl_rotate_matrix_create(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
-	struct x86_opengl_matrix_t *mtx;
+	struct opengl_matrix_t *mtx;
 	GLfloat xx, yy, zz, xy, yz, zx, xs, ys, zs, one_c, s, c;
 	GLboolean optimized;
 
 	/* Allocate */
-	mtx = x86_opengl_matrix_create(MATRIX_3D);
+	mtx = opengl_matrix_create(MATRIX_3D);
 
 	s = (GLfloat) sin( angle * DEG2RAD );
 	c = (GLfloat) cos( angle * DEG2RAD );
@@ -523,15 +523,15 @@ struct x86_opengl_matrix_t *x86_opengl_rotate_matrix_create(GLfloat angle, GLflo
 }
 #undef M
 
-void x86_opengl_rotate_matrix_free(struct x86_opengl_matrix_t *mtx)
+void opengl_rotate_matrix_free(struct opengl_matrix_t *mtx)
 {
-	x86_opengl_matrix_free(mtx);
+	opengl_matrix_free(mtx);
 }
 
 #define MAT(m,r,c) (m)[(c)*4+(r)]
 
 #define SWAP_ROWS(a, b) { GLfloat *_tmp = a; (a)=(b); (b)=_tmp; }
-static GLboolean x86_opengl_invert_matrix_general(struct x86_opengl_matrix_t *mtx)
+static GLboolean opengl_invert_matrix_general(struct opengl_matrix_t *mtx)
 {
 	const GLfloat *m = mtx->matrix;
 	GLfloat *out = mtx->matinv;
@@ -644,7 +644,7 @@ static GLboolean x86_opengl_invert_matrix_general(struct x86_opengl_matrix_t *mt
 }
 #undef SWAP_ROWS
 
-static GLboolean x86_opengl_invert_matrix_3d_general(struct x86_opengl_matrix_t *mtx)
+static GLboolean opengl_invert_matrix_3d_general(struct opengl_matrix_t *mtx)
 {
 	const GLfloat *in = mtx->matrix;
 	GLfloat *out = mtx->matinv;
@@ -703,13 +703,13 @@ static GLboolean x86_opengl_invert_matrix_3d_general(struct x86_opengl_matrix_t 
 	return GL_TRUE;
 }
 
-static GLboolean x86_opengl_invert_matrix_3d(struct x86_opengl_matrix_t *mtx)
+static GLboolean opengl_invert_matrix_3d(struct opengl_matrix_t *mtx)
 {
 	const GLfloat *in = mtx->matrix;
 	GLfloat *out = mtx->matinv;
 
 	if (!TEST_MAT_FLAGS(mtx, MAT_FLAGS_ANGLE_PRESERVING))
-		return x86_opengl_invert_matrix_3d_general( mtx );
+		return opengl_invert_matrix_3d_general( mtx );
 
 	if (mtx->flags & MAT_FLAG_UNIFORM_SCALE)
 	{
@@ -777,13 +777,13 @@ static GLboolean x86_opengl_invert_matrix_3d(struct x86_opengl_matrix_t *mtx)
 	return GL_TRUE;
 }
 
-static GLboolean x86_opengl_invert_matrix_identity(struct x86_opengl_matrix_t *mtx)
+static GLboolean opengl_invert_matrix_identity(struct opengl_matrix_t *mtx)
 {
 	memcpy( mtx->matinv, Identity, sizeof(Identity) );
 	return GL_TRUE;
 }
 
-static GLboolean x86_opengl_invert_matrix_3d_no_rot(struct x86_opengl_matrix_t *mtx)
+static GLboolean opengl_invert_matrix_3d_no_rot(struct opengl_matrix_t *mtx)
 {
 	const GLfloat *in = mtx->matrix;
 	GLfloat *out = mtx->matinv;
@@ -806,7 +806,7 @@ static GLboolean x86_opengl_invert_matrix_3d_no_rot(struct x86_opengl_matrix_t *
 	return GL_TRUE;
 }
 
-static GLboolean x86_opengl_invert_matrix_2d_no_rot(struct x86_opengl_matrix_t *mtx)
+static GLboolean opengl_invert_matrix_2d_no_rot(struct opengl_matrix_t *mtx)
 {
 	const GLfloat *in = mtx->matrix;
 	GLfloat *out = mtx->matinv;
@@ -828,26 +828,26 @@ static GLboolean x86_opengl_invert_matrix_2d_no_rot(struct x86_opengl_matrix_t *
 }
 #undef MAT
 
-typedef GLboolean (*inv_mat_func)(struct x86_opengl_matrix_t *mtx);
+typedef GLboolean (*inv_mat_func)(struct opengl_matrix_t *mtx);
 
 static inv_mat_func inv_mat_tab[7] = {
-	x86_opengl_invert_matrix_general,
-	x86_opengl_invert_matrix_identity,
-	x86_opengl_invert_matrix_3d_no_rot,
+	opengl_invert_matrix_general,
+	opengl_invert_matrix_identity,
+	opengl_invert_matrix_3d_no_rot,
 	#if 0
 	/* Don't use this function for now - it fails when the projection matrix
 	* is premultiplied by a translation (ala Chromium's tilesort SPU).
 	*/
-	x86_opengl_invert_matrix_perspective,
+	opengl_invert_matrix_perspective,
 	#else
-	x86_opengl_invert_matrix_general,
+	opengl_invert_matrix_general,
 	#endif
-	x86_opengl_invert_matrix_3d,	
-	x86_opengl_invert_matrix_2d_no_rot,
-	x86_opengl_invert_matrix_3d
+	opengl_invert_matrix_3d,	
+	opengl_invert_matrix_2d_no_rot,
+	opengl_invert_matrix_3d
 };
 
-GLboolean x86_opengl_matrix_invert(struct x86_opengl_matrix_t *mtx)
+GLboolean opengl_matrix_invert(struct opengl_matrix_t *mtx)
 {
 	if (inv_mat_tab[mtx->matrix_mode](mtx))
 	{
@@ -862,7 +862,7 @@ GLboolean x86_opengl_matrix_invert(struct x86_opengl_matrix_t *mtx)
 	}	
 }
 
-GLboolean x86_opengl_matrix_is_dirty(const struct x86_opengl_matrix_t *mtx)
+GLboolean opengl_matrix_is_dirty(const struct opengl_matrix_t *mtx)
 {
 	return (mtx->flags & MAT_DIRTY) ? GL_TRUE : GL_FALSE;
 }
@@ -917,7 +917,7 @@ GLboolean x86_opengl_matrix_is_dirty(const struct x86_opengl_matrix_t *mtx)
  * 
  * This is expensive enough to only want to do it once.
  */
-static void x86_opengl_analyse_from_scratch( struct x86_opengl_matrix_t *mtx )
+static void opengl_analyse_from_scratch( struct opengl_matrix_t *mtx )
 {
 	const GLfloat *m = mtx->matrix;
 	GLuint mask = 0;
@@ -1037,42 +1037,42 @@ static void x86_opengl_analyse_from_scratch( struct x86_opengl_matrix_t *mtx )
  * 
  * This is the more common operation, hopefully.
  */
-static void x86_opengl_analyse_from_flags( struct x86_opengl_matrix_t *mtx )
+static void opengl_analyse_from_flags( struct opengl_matrix_t *mtx )
 {
-   const GLfloat *m = mtx->matrix;
+	const GLfloat *m = mtx->matrix;
 
-   if (TEST_MAT_FLAGS(mtx, 0)) {
-      mtx->matrix_mode = MATRIX_IDENTITY;
-   }
-   else if (TEST_MAT_FLAGS(mtx, (MAT_FLAG_TRANSLATION |
-				 MAT_FLAG_UNIFORM_SCALE |
-				 MAT_FLAG_GENERAL_SCALE))) {
-      if ( m[10]==1.0F && m[14]==0.0F ) {
-	 mtx->matrix_mode = MATRIX_2D_NO_ROT;
-      }
-      else {
-	 mtx->matrix_mode = MATRIX_3D_NO_ROT;
-      }
-   }
-   else if (TEST_MAT_FLAGS(mtx, MAT_FLAGS_3D)) {
-      if (                                 m[ 8]==0.0F
-            &&                             m[ 9]==0.0F
-            && m[2]==0.0F && m[6]==0.0F && m[10]==1.0F && m[14]==0.0F) {
-	 mtx->matrix_mode = MATRIX_2D;
-      }
-      else {
-	 mtx->matrix_mode = MATRIX_3D;
-      }
-   }
-   else if (                 m[4]==0.0F                 && m[12]==0.0F
-            && m[1]==0.0F                               && m[13]==0.0F
-            && m[2]==0.0F && m[6]==0.0F
-            && m[3]==0.0F && m[7]==0.0F && m[11]==-1.0F && m[15]==0.0F) {
-      mtx->matrix_mode = MATRIX_PERSPECTIVE;
-   }
-   else {
-      mtx->matrix_mode = MATRIX_GENERAL;
-   }
+	if (TEST_MAT_FLAGS(mtx, 0)) {
+		mtx->matrix_mode = MATRIX_IDENTITY;
+	}
+	else if (TEST_MAT_FLAGS(mtx, (MAT_FLAG_TRANSLATION |
+					MAT_FLAG_UNIFORM_SCALE |
+					MAT_FLAG_GENERAL_SCALE))) {
+		if ( m[10]==1.0F && m[14]==0.0F ) {
+			mtx->matrix_mode = MATRIX_2D_NO_ROT;
+		}
+		else {
+			mtx->matrix_mode = MATRIX_3D_NO_ROT;
+		}
+	}
+	else if (TEST_MAT_FLAGS(mtx, MAT_FLAGS_3D)) {
+		if (                                 m[ 8]==0.0F
+				&&                             m[ 9]==0.0F
+				&& m[2]==0.0F && m[6]==0.0F && m[10]==1.0F && m[14]==0.0F) {
+			mtx->matrix_mode = MATRIX_2D;
+		}
+		else {
+			mtx->matrix_mode = MATRIX_3D;
+		}
+	}
+	else if (                 m[4]==0.0F                 && m[12]==0.0F
+			&& m[1]==0.0F                               && m[13]==0.0F
+			&& m[2]==0.0F && m[6]==0.0F
+			&& m[3]==0.0F && m[7]==0.0F && m[11]==-1.0F && m[15]==0.0F) {
+		mtx->matrix_mode = MATRIX_PERSPECTIVE;
+	}
+	else {
+		mtx->matrix_mode = MATRIX_GENERAL;
+	}
 }
 
 /**
@@ -1085,20 +1085,20 @@ static void x86_opengl_analyse_from_flags( struct x86_opengl_matrix_t *mtx )
  * are dirty or not, respectively. If the matrix has an inverse and it's dirty
  * then calls matrix_invert(). Finally clears the dirty flags.
  */
-void x86_opengl_matrix_analyse(struct x86_opengl_matrix_t *mtx)
+void opengl_matrix_analyse(struct opengl_matrix_t *mtx)
 {
-   if (mtx->flags & MAT_DIRTY_TYPE)
-   {
-      if (mtx->flags & MAT_DIRTY_FLAGS)
-	 x86_opengl_analyse_from_scratch( mtx );
-      else
-	 x86_opengl_analyse_from_flags( mtx );
-   }
+	if (mtx->flags & MAT_DIRTY_TYPE)
+	{
+		if (mtx->flags & MAT_DIRTY_FLAGS)
+			opengl_analyse_from_scratch( mtx );
+		else
+			opengl_analyse_from_flags( mtx );
+	}
 
-   if (mtx->matinv && (mtx->flags & MAT_DIRTY_INVERSE)) {
-      x86_opengl_matrix_invert( mtx );
-      mtx->flags &= ~MAT_DIRTY_INVERSE;
-   }
+	if (mtx->matinv && (mtx->flags & MAT_DIRTY_INVERSE)) {
+		opengl_matrix_invert( mtx );
+		mtx->flags &= ~MAT_DIRTY_INVERSE;
+	}
 
-   mtx->flags &= ~(MAT_DIRTY_FLAGS | MAT_DIRTY_TYPE);
+	mtx->flags &= ~(MAT_DIRTY_FLAGS | MAT_DIRTY_TYPE);
 }

@@ -78,13 +78,13 @@
 
 #define ALL_MATERIAL_BITS	(FRONT_MATERIAL_BITS | BACK_MATERIAL_BITS)
 
-struct x86_opengl_material_t
+struct opengl_material_t
 {
 	GLfloat Attrib[MAT_ATTRIB_MAX][4];
 };
 
-struct x86_opengl_material_t *x86_opengl_material_create();
-void x86_opengl_material_free(struct x86_opengl_material_t * mtrl);
-int x86_opengl_material_setup(struct x86_opengl_material_t * mtrl, GLenum face, GLenum pname, const GLfloat *params);
+struct opengl_material_t *opengl_material_create();
+void opengl_material_free(struct opengl_material_t * mtrl);
+int opengl_material_setup(struct opengl_material_t * mtrl, GLenum face, GLenum pname, const GLfloat *params);
 
 #endif

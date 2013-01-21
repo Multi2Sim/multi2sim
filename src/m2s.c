@@ -69,15 +69,15 @@ static char *visual_file_name = "";
 static char *ctx_config_file_name = "";
 static char *elf_debug_file_name = "";
 static char *trace_file_name = "";
+static char *glut_debug_file_name = "";
+static char *opengl_debug_file_name = "";
 
 static char *x86_call_debug_file_name = "";
-static char *x86_clrt_debug_file_name = "";
+static char *opencl_debug_file_name = "";
 static char *x86_disasm_file_name = "";
-static char *x86_glut_debug_file_name = "";
 static char *x86_isa_debug_file_name = "";
 static char *x86_load_checkpoint_file_name = "";
 static char *x86_loader_debug_file_name = "";
-static char *x86_opengl_debug_file_name = "";
 static char *x86_save_checkpoint_file_name = "";
 static char *x86_sys_debug_file_name = "";
 static char *x86_trace_cache_debug_file_name = "";
@@ -98,7 +98,7 @@ static int si_opengl_disasm_shader_index = 1;
 static int si_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
 static char *frm_disasm_file_name = "";
-static char *frm_cuda_debug_file_name = "";
+static char *cuda_debug_file_name = "";
 static int frm_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
 static char *arm_disasm_file_name = "";
@@ -604,7 +604,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-x86-clrt"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_clrt_debug_file_name = argv[++argi];
+			opencl_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -612,7 +612,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--x86-debug-glut"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_glut_debug_file_name = argv[++argi];
+			glut_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -636,7 +636,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--x86-debug-opengl"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_opengl_debug_file_name = argv[++argi];
+			opengl_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -1037,7 +1037,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--frm-debug-cuda"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			frm_cuda_debug_file_name = argv[++argi];
+			cuda_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -1613,13 +1613,14 @@ int main(int argc, char **argv)
 	debug_init();
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
-	x86_clrt_debug_category = debug_new_category(x86_clrt_debug_file_name);
 	x86_ctx_debug_category = debug_new_category(ctx_debug_file_name);
-	x86_glut_debug_category = debug_new_category(x86_glut_debug_file_name);
+	glut_debug_category = debug_new_category(glut_debug_file_name);
+	opengl_debug_category = debug_new_category(opengl_debug_file_name);
+	opencl_debug_category = debug_new_category(opencl_debug_file_name);
+	cuda_debug_category = debug_new_category(cuda_debug_file_name);
 	x86_isa_inst_debug_category = debug_new_category(x86_isa_debug_file_name);
 	x86_isa_call_debug_category = debug_new_category(x86_call_debug_file_name);
 	x86_loader_debug_category = debug_new_category(x86_loader_debug_file_name);
-	x86_opengl_debug_category = debug_new_category(x86_opengl_debug_file_name);
 	x86_sys_debug_category = debug_new_category(x86_sys_debug_file_name);
 	x86_trace_cache_debug_category = debug_new_category(x86_trace_cache_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);
@@ -1629,7 +1630,6 @@ int main(int argc, char **argv)
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
 	si_opencl_debug_category = debug_new_category(si_opencl_debug_file_name);
 	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
-	frm_cuda_debug_category = debug_new_category(frm_cuda_debug_file_name);
 	arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
 	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);
@@ -1638,11 +1638,11 @@ int main(int argc, char **argv)
 	/* Initialization of runtimes */
 	runtime_init();
 	runtime_register("Old OpenCL", "m2s-opencl-old", "m2s-opencl-old", 325,
-			(runtime_abi_func_t) x86_opencl_call);
-	runtime_register("GLUT", "GLUT", "m2s-glut", 326, (runtime_abi_func_t) x86_glut_call);
-	runtime_register("OpenCL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) x86_opengl_call);
-	runtime_register("CUDA", "cuda", "m2s-cuda", 328, (runtime_abi_func_t) frm_cuda_call);
-	runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) x86_clrt_call);
+			(runtime_abi_func_t) opencl_old_abi_call);
+	runtime_register("GLUT", "GLUT", "m2s-glut", 326, (runtime_abi_func_t) glut_abi_call);
+	runtime_register("OpenCL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) opengl_abi_call);
+	runtime_register("CUDA", "cuda", "m2s-cuda", 328, (runtime_abi_func_t) cuda_abi_call);
+	runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) opencl_abi_call);
 
 	/* Initialization of libraries */
 	esim_init();

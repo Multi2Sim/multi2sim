@@ -24,11 +24,11 @@
 #include "glut.h"
 
 
-int x86_glut_debug_category;
+int glut_debug_category;
 
-pthread_mutex_t x86_glut_mutex;
+pthread_mutex_t glut_mutex;
 
-static char *x86_glut_err_missing =
+static char *glut_err_missing =
 	"\tMulti2Sim has been compiled without support for OpenGL graphics.\n"
 	"\tPlease install the OpenGL/GLUT/GLU/GLEW development libraries on\n"
 	"\tyour system and retry compilation.\n";
@@ -38,11 +38,11 @@ static char *x86_glut_err_missing =
  * Private Functions
  */
 
-#define __X86_GLUT_MISSING__  x86_glut_missing();
-static void x86_glut_missing(void)
+#define __GLUT_MISSING__  glut_missing();
+static void glut_missing(void)
 {
 	fatal("support for GLUT not available.\n%s",
-		x86_glut_err_missing);
+		glut_err_missing);
 }
 
 
@@ -52,21 +52,21 @@ static void x86_glut_missing(void)
  * Public Functions
  */
 
-void x86_glut_init(void)
+void glut_init(void)
 {
 	/* Silent missing feature */
 }
 
 
-void x86_glut_done(void)
+void glut_done(void)
 {
 	/* Silent missing feature */
 }
 
 
-int x86_glut_call(struct x86_ctx_t *ctx)
+int glut_call(struct x86_ctx_t *ctx)
 {
-	__X86_GLUT_MISSING__
+	__GLUT_MISSING__
 	return 0;
 }
 
@@ -77,50 +77,50 @@ int x86_glut_call(struct x86_ctx_t *ctx)
  * Frame Buffer
  */
 
-void x86_glut_frame_buffer_init(void)
+void glut_frame_buffer_init(void)
 {
 	/* Silent missing initialization */
 }
 
 
-void x86_glut_frame_buffer_done(void)
+void glut_frame_buffer_done(void)
 {
 	/* Silent missing finalization */
 }
 
 
-void x86_glut_frame_buffer_clear(void)
+void glut_frame_buffer_clear(void)
 {
-	__X86_GLUT_MISSING__
+	__GLUT_MISSING__
 }
 
 
-void x86_glut_frame_buffer_pixel(int x, int y, int color)
+void glut_frame_buffer_pixel(int x, int y, int color)
 {
-	__X86_GLUT_MISSING__
+	__GLUT_MISSING__
 }
 
 
-void x86_glut_frame_buffer_resize(int width, int height)
+void glut_frame_buffer_resize(int width, int height)
 {
-	__X86_GLUT_MISSING__
+	__GLUT_MISSING__
 }
 
 
-void x86_glut_frame_buffer_get_size(int *width, int *height)
+void glut_frame_buffer_get_size(int *width, int *height)
 {
-	__X86_GLUT_MISSING__
+	__GLUT_MISSING__
 }
 
 
-void x86_glut_frame_buffer_flush_request(void)
+void glut_frame_buffer_flush_request(void)
 {
-	__X86_GLUT_MISSING__
+	__GLUT_MISSING__
 }
 
 
-void x86_glut_frame_buffer_flush_if_requested(void)
+void glut_frame_buffer_flush_if_requested(void)
 {
-	__X86_GLUT_MISSING__
+	__GLUT_MISSING__
 }
 

@@ -37,6 +37,6 @@ typedef GLubyte GLchan;
 #define FixedToChan(X)  FixedToInt(X)
 #endif
 
-void x86_opengl_clamped_float_to_color_channel(GLfloat *src, GLchan* dst);
+void opengl_clamped_float_to_color_channel(GLfloat *src, GLchan* dst);
 
 #endif

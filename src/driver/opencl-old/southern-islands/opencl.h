@@ -46,7 +46,7 @@ extern int si_opencl_debug_category;
 
 /* Common entry point for Evergreen/Southern Islands.
  * FIXME - hacky thing to be removed soon. */
-int x86_opencl_call(struct x86_ctx_t *ctx);
+int opencl_old_abi_call(struct x86_ctx_t *ctx);
 
 int si_opencl_api_run(struct x86_ctx_t *ctx);
 

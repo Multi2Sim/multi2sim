@@ -81,16 +81,16 @@ void frm_emu_init(void)
 	frm_isa_init();
 
         /* Create device */
-        frm_cuda_object_list = linked_list_create();
-        frm_cuda_device_create();
+        cuda_object_list = linked_list_create();  /* FIXME - Should be in driver implementation */
+        cuda_device_create();  /* FIXME - should just call cuda_init() or similar */
 }
 
 
 void frm_emu_done(void)
 {
 	/* Free CUDA object list */
-	frm_cuda_object_free_all();
-	linked_list_free(frm_cuda_object_list);
+	cuda_object_free_all();
+	linked_list_free(cuda_object_list);
 
 	frm_isa_done();
 

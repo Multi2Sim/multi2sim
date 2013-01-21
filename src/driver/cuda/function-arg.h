@@ -20,42 +20,42 @@
 #ifndef DRIVER_CUDA_FUNCTION_ARG_H
 #define DRIVER_CUDA_FUNCTION_ARG_H
 
-enum frm_cuda_mem_scope_t
+enum cuda_mem_scope_t
 {
-	FRM_CUDA_MEM_SCOPE_NONE = 0,
-	FRM_CUDA_MEM_SCOPE_GLOBAL,
-	FRM_CUDA_MEM_SCOPE_LOCAL,
-	FRM_CUDA_MEM_SCOPE_PRIVATE,
-	FRM_CUDA_MEM_SCOPE_CONSTANT
+	CUDA_MEM_SCOPE_NONE = 0,
+	CUDA_MEM_SCOPE_GLOBAL,
+	CUDA_MEM_SCOPE_LOCAL,
+	CUDA_MEM_SCOPE_PRIVATE,
+	CUDA_MEM_SCOPE_CONSTANT
 };
 
-enum frm_cuda_function_arg_kind_t
+enum cuda_function_arg_kind_t
 {
-	FRM_CUDA_FUNCTION_ARG_KIND_VALUE = 1,
-	FRM_CUDA_FUNCTION_ARG_KIND_POINTER
+	CUDA_FUNCTION_ARG_KIND_VALUE = 1,
+	CUDA_FUNCTION_ARG_KIND_POINTER
 };
 
-enum frm_cuda_function_arg_access_type_t
+enum cuda_function_arg_access_type_t
 {
-	FRM_CUDA_FUNCTION_ARG_READ_ONLY = 1,
-	FRM_CUDA_FUNCTION_ARG_WRITE_ONLY,
-	FRM_CUDA_FUNCTION_ARG_READ_WRITE
+	CUDA_FUNCTION_ARG_READ_ONLY = 1,
+	CUDA_FUNCTION_ARG_WRITE_ONLY,
+	CUDA_FUNCTION_ARG_READ_WRITE
 };
 
-struct frm_cuda_function_arg_t
+struct cuda_function_arg_t
 {
 	int id;
 	char *name;
 
-	enum frm_cuda_function_arg_kind_t kind;
-	enum frm_cuda_mem_scope_t mem_scope;
-	enum frm_cuda_function_arg_access_type_t access_type;
+	enum cuda_function_arg_kind_t kind;
+	enum cuda_mem_scope_t mem_scope;
+	enum cuda_function_arg_access_type_t access_type;
 
 	unsigned int value;
 };
 
-struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name);
-void frm_cuda_function_arg_free(struct frm_cuda_function_arg_t *arg);
+struct cuda_function_arg_t *cuda_function_arg_create(char *name);
+void cuda_function_arg_free(struct cuda_function_arg_t *arg);
 
 
 #endif
