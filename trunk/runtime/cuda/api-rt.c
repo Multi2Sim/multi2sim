@@ -29,14 +29,14 @@
 
 /* Error messages */
 #define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", \
-	__FUNCTION__, err_frm_cudart_not_impl);
+	__FUNCTION__, cuda_rt_not_impl);
 
-static char *err_frm_cudart_not_impl =
+static char *cuda_rt_not_impl =
 	"\tMulti2Sim provides partial support for CUDA runtime library.\n"
 	"\tTo request the implementation of a certain functionality,\n"
 	"\tplease email development@multi2sim.org.\n";
 
-static char *err_frm_cuda_native =
+static char *cuda_err_native =
 	"\tYou are trying to run natively an application using the Multi2Sim CUDA driver\n"
 	"\tlibrary implementation ('libm2s-cuda'). Please run this program on top of\n"
 	"\tMulti2Sim.\n";
@@ -156,13 +156,13 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	/* Get kernel binary name */
 	/* FIXME - The system call should take another argument with the size of
 	 * 'cubin_filename'. */
-	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cudaRegisterFunction, cubin_filename);
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cudaRegisterFunction, cubin_filename);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
-	 * is running natively, system call FRM_CUDA_SYS_CODE is not supported. */
+	 * is running natively, system call CUDA_SYS_CODE is not supported. */
 	if (ret)
 		fatal("native execution not supported.\n%s",
-			err_frm_cuda_native);
+			cuda_err_native);
 
 	/* Load module */
 	cuda_debug(stdout, "\t(runtime) out: cubin_filename=%s\n", cubin_filename);

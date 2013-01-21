@@ -22,7 +22,7 @@
 #include "opengl.h"
 
 
-static char *x86_opengl_err_missing =
+static char *opengl_err_missing =
 	"\tMulti2Sim has been compiled without support for OpenGL applicationn.\n"
 	"\tThe OpenGL headers and OpenGL Utility Toolkit (GLUT) is required in\n"
 	"\tyour system to allow for simulation of guest OpenGL programs.\n"
@@ -32,34 +32,34 @@ static char *x86_opengl_err_missing =
 	"\t  3) Recompile the simulator: make clean && make\n";
 
 
-#define __X86_OPENGL_MISSING__  x86_opengl_missing();
-static void x86_opengl_missing(void)
+#define __OPENGL_MISSING__  opengl_missing();
+static void opengl_missing(void)
 {
 	fatal("support for OpenGL not available.\n%s",
-		x86_opengl_err_missing);
+		opengl_err_missing);
 }
 
 
 
 /* Satisfy external reference to debug category */
-int x86_opengl_debug_category;
+int opengl_debug_category;
 
 
-void x86_opengl_init(void)
+void opengl_init(void)
 {
 	/* Silent missing feature */
 }
 
 
-void x86_opengl_done(void)
+void opengl_done(void)
 {
 	/* Silent missing feature */
 }
 
 
-int x86_opengl_call(struct x86_ctx_t *ctx)
+int opengl_abi_call(struct x86_ctx_t *ctx)
 {
-	__X86_OPENGL_MISSING__
+	__OPENGL_MISSING__
 	return 0;
 }
 

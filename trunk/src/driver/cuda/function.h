@@ -24,7 +24,7 @@
 #include <lib/util/string.h>
 
 
-struct frm_cuda_function_t
+struct cuda_function_t
 {
 	int id;
 	char name[MAX_STRING_SIZE];  /* FIXME */
@@ -54,9 +54,9 @@ struct frm_cuda_function_t
 	struct frm_grid_t *grid;
 };
 
-struct frm_cuda_function_t *frm_cuda_function_create(void);
-void frm_cuda_function_free(struct frm_cuda_function_t *function);
-void frm_cuda_function_load(struct frm_cuda_function_t *function, char *function_name);
+struct cuda_function_t *cuda_function_create(void);
+void cuda_function_free(struct cuda_function_t *function);
+void cuda_function_load(struct cuda_function_t *function, char *function_name);
 
 
 #endif

@@ -30,15 +30,15 @@
 #include "viewport.h"
 
 
-struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(void)
+struct opengl_context_capability_t *opengl_context_capability_create(void)
 {
 	/* Variables */
- 	struct x86_opengl_context_capability_t* cap;
+ 	struct opengl_context_capability_t* cap;
 
- 	cap = xcalloc(1, sizeof(struct x86_opengl_context_capability_t));
+ 	cap = xcalloc(1, sizeof(struct opengl_context_capability_t));
 
 	/* Set up initial value for each capability, initial value for each capability is GL_FALSE, except GL_DITHER and GL_MULTISAMPLE */
-	memset(cap, 0, sizeof(struct x86_opengl_context_capability_t));
+	memset(cap, 0, sizeof(struct opengl_context_capability_t));
 	cap->is_dither = GL_TRUE;
 	cap->is_multisample = GL_TRUE;
 
@@ -46,12 +46,12 @@ struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(voi
 	return cap;
 }
 
-void x86_opengl_context_capability_free(struct x86_opengl_context_capability_t *cap)
+void opengl_context_capability_free(struct opengl_context_capability_t *cap)
 {
 	free(cap);
 }
 
-struct x86_opengl_context_t *x86_opengl_context_create(void)
+struct opengl_context_t *opengl_context_create(void)
 {
 	/* Variables */
 	int width;
@@ -59,42 +59,42 @@ struct x86_opengl_context_t *x86_opengl_context_create(void)
 	int i;
 
 	/* Allocate */
-	struct x86_opengl_context_t *ctx;
-	ctx = xcalloc(1, sizeof(struct x86_opengl_context_t));
+	struct opengl_context_t *ctx;
+	ctx = xcalloc(1, sizeof(struct opengl_context_t));
 
 	/* Initialize frame buffers */
 	width = 0;  // FIXME
 	height = 0;  // FIXME
-	ctx->draw_buffer = x86_opengl_frame_buffer_create(width, height);
-	ctx->read_buffer = x86_opengl_frame_buffer_create(width, height);
+	ctx->draw_buffer = opengl_frame_buffer_create(width, height);
+	ctx->read_buffer = opengl_frame_buffer_create(width, height);
 	
 	/* Initialize context capabilities */
-	ctx->context_cap = x86_opengl_context_capability_create();
+	ctx->context_cap = opengl_context_capability_create();
 
 	/* Initialize viewport */
-	ctx->viewport = x86_opengl_viewport_create();
+	ctx->viewport = opengl_viewport_create();
 
 	/* Initialize matrix stack */
-	ctx->modelview_matrix_stack = x86_opengl_matrix_stack_create(GL_MODELVIEW);
-	ctx->projection_matrix_stack = x86_opengl_matrix_stack_create(GL_PROJECTION);
+	ctx->modelview_matrix_stack = opengl_matrix_stack_create(GL_MODELVIEW);
+	ctx->projection_matrix_stack = opengl_matrix_stack_create(GL_PROJECTION);
 	for (i = 0; i < MAX_TEXTURE_STACK_DEPTH; i++)
 	{
-		ctx->texture_matrix_stack[i] = x86_opengl_matrix_stack_create(GL_TEXTURE);
+		ctx->texture_matrix_stack[i] = opengl_matrix_stack_create(GL_TEXTURE);
 	}
-	ctx->color_matrix_stack = x86_opengl_matrix_stack_create(GL_COLOR);
+	ctx->color_matrix_stack = opengl_matrix_stack_create(GL_COLOR);
 	
 	/* FIXME: which one is the default current stack ? */
 	ctx->current_matrix_stack = ctx->modelview_matrix_stack;
 
 	/* Initialize vertex buffer */
-	ctx->vertex_buffer = x86_opengl_vertex_buffer_create();
+	ctx->vertex_buffer = opengl_vertex_buffer_create();
 
 	/* Initialize light */
-	ctx->light = x86_opengl_light_attrib_create();
+	ctx->light = opengl_light_attrib_create();
 
 	/* Initialize current color */
 	GLfloat init_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-	x86_opengl_clamped_float_to_color_channel(init_color, ctx->current_color);
+	opengl_clamped_float_to_color_channel(init_color, ctx->current_color);
 
 	/* Initialize current normal */
 	ctx->current_normal[X_COMP] = 0.0f;
@@ -106,61 +106,61 @@ struct x86_opengl_context_t *x86_opengl_context_create(void)
 	return ctx;
 }
 
-void x86_opengl_context_free(struct x86_opengl_context_t *ctx)
+void opengl_context_free(struct opengl_context_t *ctx)
 {
 	/* Variables */
 	int i;
 
 	/* Free context capabilities*/
-	x86_opengl_context_capability_free(ctx->context_cap);
+	opengl_context_capability_free(ctx->context_cap);
 
 	/* Free framebuffers */
-	x86_opengl_frame_buffer_free(ctx->draw_buffer);
-	x86_opengl_frame_buffer_free(ctx->read_buffer);
+	opengl_frame_buffer_free(ctx->draw_buffer);
+	opengl_frame_buffer_free(ctx->read_buffer);
 
 	/* Free viewport */
-	x86_opengl_viewport_free(ctx->viewport);
+	opengl_viewport_free(ctx->viewport);
 
 	/* Free matrix stacks */
-	x86_opengl_matrix_stack_free(ctx->modelview_matrix_stack);
-	x86_opengl_matrix_stack_free(ctx->projection_matrix_stack);
+	opengl_matrix_stack_free(ctx->modelview_matrix_stack);
+	opengl_matrix_stack_free(ctx->projection_matrix_stack);
 	for (i = 0; i < MAX_TEXTURE_STACK_DEPTH; i++)
 	{
-		x86_opengl_matrix_stack_free(ctx->texture_matrix_stack[i]);	
+		opengl_matrix_stack_free(ctx->texture_matrix_stack[i]);	
 	}
-	x86_opengl_matrix_stack_free(ctx->color_matrix_stack);
+	opengl_matrix_stack_free(ctx->color_matrix_stack);
 
 	/* Free vertex buffer */
-	x86_opengl_vertex_buffer_free(ctx->vertex_buffer);
+	opengl_vertex_buffer_free(ctx->vertex_buffer);
 
 	/* Free light */
-	x86_opengl_light_attrib_free(ctx->light);
+	opengl_light_attrib_free(ctx->light);
 
 	free(ctx);
 }
 
-struct x86_opengl_matrix_t *x86_opengl_context_get_current_matrix(struct x86_opengl_context_t *ctx)
+struct opengl_matrix_t *opengl_context_get_current_matrix(struct opengl_context_t *ctx)
 {
 	/* Variables */
-	struct x86_opengl_matrix_t *mtx;
+	struct opengl_matrix_t *mtx;
 
 	/* Get current matrix */
 	mtx = list_get(ctx->current_matrix_stack->stack, ctx->current_matrix_stack->depth);
-	x86_opengl_debug("\t\tCurrent matrix ptr = %p\n", mtx);
+	opengl_debug("\t\tCurrent matrix ptr = %p\n", mtx);
 	/* Return */
 	return mtx;
 }
 
-struct x86_opengl_current_attrib_t *x86_opengl_current_attrib_create()
+struct opengl_current_attrib_t *opengl_current_attrib_create()
 {
-	struct x86_opengl_current_attrib_t *crnt;
+	struct opengl_current_attrib_t *crnt;
 
-	crnt = xcalloc(1, sizeof(struct x86_opengl_current_attrib_t));
+	crnt = xcalloc(1, sizeof(struct opengl_current_attrib_t));
 
 	return crnt;
 }
 
-void x86_opengl_current_attrib_free(struct x86_opengl_current_attrib_t *crnt)
+void opengl_current_attrib_free(struct opengl_current_attrib_t *crnt)
 {
 	free(crnt);
 }

@@ -64,7 +64,7 @@ typedef void *(*opencl_callback_t)(void *);
 enum opencl_call_t
 {
 	opencl_call_invalid,
-#define X86_CLRT_DEFINE_CALL(name, code) opencl_call_##name = code,
+#define OPENCL_DEFINE_CALL(name, code) opencl_call_##name = code,
 #include "../../src/driver/opencl/opencl.dat"
 #undef X86_CLRT_DEFINE_CALL
 	opencl_call_count

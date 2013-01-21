@@ -20,7 +20,7 @@
 #include "color-channel.h"
 
 
-void x86_opengl_clamped_float_to_color_channel(GLfloat *src, GLchan* dst)
+void opengl_clamped_float_to_color_channel(GLfloat *src, GLchan* dst)
 {
 	dst[0] = (GLchan) src[0] * CHAN_MAX;
 	dst[1] = (GLchan) src[1] * CHAN_MAX;

@@ -22,12 +22,12 @@
 #include "function-arg.h"
 
 
-struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name)
+struct cuda_function_arg_t *cuda_function_arg_create(char *name)
 {
-	struct frm_cuda_function_arg_t *arg;
+	struct cuda_function_arg_t *arg;
 
 	/* Initialize */
-	arg = xcalloc(1, sizeof(struct frm_cuda_function_arg_t));
+	arg = xcalloc(1, sizeof(struct cuda_function_arg_t));
 	arg->name = xstrdup(name);
 
 	/* Return */
@@ -35,7 +35,7 @@ struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name)
 }
 
 
-void frm_cuda_function_arg_free(struct frm_cuda_function_arg_t *arg)
+void cuda_function_arg_free(struct cuda_function_arg_t *arg)
 {
 	free(arg->name);
 	free(arg);

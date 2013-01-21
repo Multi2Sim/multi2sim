@@ -21,7 +21,7 @@
 #define DRIVER_CUDA_EMMORY_H
 
 
-struct frm_cuda_memory_t
+struct cuda_memory_t
 {
         unsigned int id;
         int ref_count;
@@ -31,8 +31,8 @@ struct frm_cuda_memory_t
         unsigned int device_ptr;
 };
 
-struct frm_cuda_memory_t *frm_cuda_memory_create(void);
-void frm_cuda_memory_free(struct frm_cuda_memory_t *mem);
+struct cuda_memory_t *cuda_memory_create(void);
+void cuda_memory_free(struct cuda_memory_t *mem);
 
 
 #endif

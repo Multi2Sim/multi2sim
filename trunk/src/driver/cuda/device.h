@@ -21,13 +21,13 @@
 #define DRIVER_CUDA_DEVICE_H
 
 
-struct frm_cuda_device_t
+struct cuda_device_t
 {
 	unsigned int id;
 };
 
-struct frm_cuda_device_t *frm_cuda_device_create(void);
-void frm_cuda_device_free(struct frm_cuda_device_t *device);
+struct cuda_device_t *cuda_device_create(void);
+void cuda_device_free(struct cuda_device_t *device);
 
 
 #endif

@@ -29,14 +29,14 @@
  * systems lacking the OpenGL and GLUT libraries.
  */
 
-#define x86_opengl_debug(...) debug(x86_opengl_debug_category, __VA_ARGS__)
-extern int x86_opengl_debug_category;
+#define opengl_debug(...) debug(opengl_debug_category, __VA_ARGS__)
+extern int opengl_debug_category;
 
-void x86_opengl_init(void);
-void x86_opengl_done(void);
+void opengl_init(void);
+void opengl_done(void);
 
 struct x86_ctx_t;
-int x86_opengl_call(struct x86_ctx_t *ctx);
+int opengl_abi_call(struct x86_ctx_t *ctx);
 
 
 #endif

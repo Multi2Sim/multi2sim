@@ -24,23 +24,23 @@
 #include "span.h"
 
 
-struct x86_opengl_span_t *x86_opengl_span_create()
+struct opengl_span_t *opengl_span_create()
 {
-	struct x86_opengl_span_t *spn;
+	struct opengl_span_t *spn;
 
-	spn = xcalloc(1, sizeof(struct x86_opengl_span_t));
+	spn = xcalloc(1, sizeof(struct opengl_span_t));
 	if (!spn)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	return spn;
 }
 
-void x86_opengl_span_free(struct x86_opengl_span_t *spn)
+void opengl_span_free(struct opengl_span_t *spn)
 {
 	free(spn);
 }
 
-void x86_opengl_span_interpolate_z(struct x86_opengl_span_t *spn)
+void opengl_span_interpolate_z(struct opengl_span_t *spn)
 {
 	const GLuint n = spn->end;
 	GLuint i;

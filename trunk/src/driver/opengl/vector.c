@@ -23,7 +23,7 @@
 #include "vector.h"
 
 
-GLfloat *x86_opengl_vector_create(int len)
+GLfloat *opengl_vector_create(int len)
 {
 	GLfloat *vct;
 
@@ -34,14 +34,14 @@ GLfloat *x86_opengl_vector_create(int len)
 	return vct;
 }
 
-void x86_opengl_vector_free(GLfloat *vct)
+void opengl_vector_free(GLfloat *vct)
 {
 	free(vct);
 }
 
 /* Calculate the unit vector used in lighting module */
 /* Only 3 elements are used, the 4th is ignored */
-void x86_opengl_vector_unit(GLfloat *dst, GLfloat *p1, GLfloat *p2)
+void opengl_vector_unit(GLfloat *dst, GLfloat *p1, GLfloat *p2)
 {
 	if (p1[3] == 0 && p2[3] !=0)
 		ACC_SCALE_SCALAR_3V(dst, -1.0f, p1);
