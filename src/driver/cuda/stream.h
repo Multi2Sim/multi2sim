@@ -21,7 +21,7 @@
 #define DRIVER_CUDA_STREAM_H
 
 
-struct frm_cuda_stream_t
+struct cuda_stream_t
 {
 	unsigned int id;
 	int ref_count;
@@ -30,8 +30,8 @@ struct frm_cuda_stream_t
 	unsigned int context_id;
 };
 
-struct frm_cuda_stream_t *frm_cuda_stream_create(void);
-void frm_cuda_stream_free(struct frm_cuda_stream_t *stream);
+struct cuda_stream_t *cuda_stream_create(void);
+void cuda_stream_free(struct cuda_stream_t *stream);
 
 
 #endif

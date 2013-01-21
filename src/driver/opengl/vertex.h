@@ -36,7 +36,7 @@
 #define A_COMP W_COMP
 
 /* OpenGL vertex */
-struct x86_opengl_vertex_t
+struct opengl_vertex_t
 {
 	GLfloat pos[4];
 	GLchan color[4];
@@ -44,38 +44,38 @@ struct x86_opengl_vertex_t
 };
 
 /* OpenGL vertex group */
-struct x86_opengl_vertex_group_t
+struct opengl_vertex_group_t
 {
 	/* Primitive type is defined in gl.h */
 	GLenum primitive_type;
 
-	/* Element in this list has data type x86_opengl_vertex_t */
+	/* Element in this list has data type opengl_vertex_t */
 	struct list_t *vertex_list;
 };
 
 /* OpenGL vertex buffer */
-struct x86_opengl_vertex_buffer_t
+struct opengl_vertex_buffer_t
 {
-	/* Element in this list has data type x86_opengl_vertex_group_t */
+	/* Element in this list has data type opengl_vertex_group_t */
 	struct list_t *vertex_groups;
 	/* Points to current vertex group */
-	struct x86_opengl_vertex_group_t *current_vertex_group;
+	struct opengl_vertex_group_t *current_vertex_group;
 };
 
-struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w);
-void x86_opengl_vertex_free(struct x86_opengl_vertex_t *vtx);
+struct opengl_vertex_t *opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+void opengl_vertex_free(struct opengl_vertex_t *vtx);
 
-void x86_opengl_vertex_set_color(GLchan *color, struct x86_opengl_vertex_t *vtx);
-int x86_opengl_vertex_get_color(struct x86_opengl_vertex_t *vtx);
+void opengl_vertex_set_color(GLchan *color, struct opengl_vertex_t *vtx);
+int opengl_vertex_get_color(struct opengl_vertex_t *vtx);
 
-void x86_opengl_vertex_set_normal(GLfloat *nrml, struct x86_opengl_vertex_t *vtx);
+void opengl_vertex_set_normal(GLfloat *nrml, struct opengl_vertex_t *vtx);
 
-struct x86_opengl_vertex_group_t *x86_opengl_vertex_group_create(GLenum primitive_type);
-void x86_opengl_vertex_group_free(struct x86_opengl_vertex_group_t *vtxgp);
+struct opengl_vertex_group_t *opengl_vertex_group_create(GLenum primitive_type);
+void opengl_vertex_group_free(struct opengl_vertex_group_t *vtxgp);
 
-struct x86_opengl_vertex_buffer_t *x86_opengl_vertex_buffer_create();
-void x86_opengl_vertex_buffer_free(struct x86_opengl_vertex_buffer_t *vtxbf);
-void x86_opengl_vertex_buffer_add_vertex_group(struct x86_opengl_vertex_buffer_t *vtxbf, struct x86_opengl_vertex_group_t *vtxgp);
-void x86_opengl_vertex_buffer_add_vertex(struct x86_opengl_vertex_buffer_t *vtxbf, struct x86_opengl_vertex_t *vtx);
+struct opengl_vertex_buffer_t *opengl_vertex_buffer_create();
+void opengl_vertex_buffer_free(struct opengl_vertex_buffer_t *vtxbf);
+void opengl_vertex_buffer_add_vertex_group(struct opengl_vertex_buffer_t *vtxbf, struct opengl_vertex_group_t *vtxgp);
+void opengl_vertex_buffer_add_vertex(struct opengl_vertex_buffer_t *vtxbf, struct opengl_vertex_t *vtx);
 
 #endif

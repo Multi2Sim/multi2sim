@@ -31,7 +31,7 @@
 
 #define MAX_VARYING	16
 
-enum x86_opengl_vertex_attrib_t
+enum opengl_vertex_attrib_t
 {
 	VERT_ATTRIB_POS = 0,
 	VERT_ATTRIB_WEIGHT = 1,
@@ -69,7 +69,7 @@ enum x86_opengl_vertex_attrib_t
 	VERT_ATTRIB_MAX = 33
 };
 
-enum x86_opengl_frag_attrib_t
+enum opengl_frag_attrib_t
 {
 	FRAG_ATTRIB_WPOS = 0,
 	FRAG_ATTRIB_COL0 = 1,
@@ -92,7 +92,7 @@ enum x86_opengl_frag_attrib_t
 };
 
 /* OpenGL context capability */
-struct x86_opengl_context_capability_t
+struct opengl_context_capability_t
 {
 	GLboolean is_alpha_test;
 	GLboolean is_auto_normal;
@@ -175,7 +175,7 @@ struct x86_opengl_context_capability_t
 	GLboolean is_vertex_program_two_side;
 };
 
-struct x86_opengl_current_attrib_t
+struct opengl_current_attrib_t
 {
 	GLfloat Attrib[VERT_ATTRIB_MAX][4];	/**< Position, color, texcoords, etc */
 	GLfloat RasterPos[4];
@@ -186,45 +186,45 @@ struct x86_opengl_current_attrib_t
 	GLboolean RasterPosValid;
 };
 
-struct x86_opengl_frame_buffer_t;
-struct x86_opengl_viewport_attributes_t;
-struct x86_opengl_matrix_stack_t;
-struct x86_opengl_vertex_buffer_t;
-struct x86_opengl_light_attrib_t;
+struct opengl_frame_buffer_t;
+struct opengl_viewport_attributes_t;
+struct opengl_matrix_stack_t;
+struct opengl_vertex_buffer_t;
+struct opengl_light_attrib_t;
 
 /* OpenGL context*/
-struct x86_opengl_context_t
+struct opengl_context_t
 {
-	struct x86_opengl_context_capability_t *context_cap;					/* context capabilities */
+	struct opengl_context_capability_t *context_cap;					/* context capabilities */
 
-	struct x86_opengl_frame_buffer_t *draw_buffer;						/* buffer for writing */
-	struct x86_opengl_frame_buffer_t *read_buffer;						/* buffer for reading */
+	struct opengl_frame_buffer_t *draw_buffer;						/* buffer for writing */
+	struct opengl_frame_buffer_t *read_buffer;						/* buffer for reading */
 
-	struct x86_opengl_viewport_attributes_t *viewport;						/* viewport attributes */
+	struct opengl_viewport_attributes_t *viewport;						/* viewport attributes */
 
-	struct x86_opengl_matrix_stack_t *modelview_matrix_stack;					/* modelview matrix stack */
-	struct x86_opengl_matrix_stack_t *projection_matrix_stack;					/* projection matrix stack */
-	struct x86_opengl_matrix_stack_t *texture_matrix_stack[MAX_TEXTURE_UNITS];		/* texture matrix stacks */
-	struct x86_opengl_matrix_stack_t *color_matrix_stack;					/* color matrix stack */
-	struct x86_opengl_matrix_stack_t *current_matrix_stack;					/* current matrix stack, points to one of above stacks */
+	struct opengl_matrix_stack_t *modelview_matrix_stack;					/* modelview matrix stack */
+	struct opengl_matrix_stack_t *projection_matrix_stack;					/* projection matrix stack */
+	struct opengl_matrix_stack_t *texture_matrix_stack[MAX_TEXTURE_UNITS];		/* texture matrix stacks */
+	struct opengl_matrix_stack_t *color_matrix_stack;					/* color matrix stack */
+	struct opengl_matrix_stack_t *current_matrix_stack;					/* current matrix stack, points to one of above stacks */
 
-	struct x86_opengl_vertex_buffer_t *vertex_buffer;
+	struct opengl_vertex_buffer_t *vertex_buffer;
 
-	struct x86_opengl_light_attrib_t *light;
+	struct opengl_light_attrib_t *light;
 
 	GLchan current_color[4];
 	GLfloat current_normal[4];
 };
 
-struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(void);
-void x86_opengl_context_capability_free(struct x86_opengl_context_capability_t *cap);
+struct opengl_context_capability_t *opengl_context_capability_create(void);
+void opengl_context_capability_free(struct opengl_context_capability_t *cap);
 
-struct x86_opengl_context_t *x86_opengl_context_create(void);
-void x86_opengl_context_free(struct x86_opengl_context_t *ctx);
+struct opengl_context_t *opengl_context_create(void);
+void opengl_context_free(struct opengl_context_t *ctx);
 
-struct x86_opengl_matrix_t *x86_opengl_context_get_current_matrix(struct x86_opengl_context_t *ctx);
+struct opengl_matrix_t *opengl_context_get_current_matrix(struct opengl_context_t *ctx);
 
-struct x86_opengl_current_attrib_t *x86_opengl_current_attrib_create();
-void x86_opengl_current_attrib_free(struct x86_opengl_current_attrib_t *crnt);
+struct opengl_current_attrib_t *opengl_current_attrib_create();
+void opengl_current_attrib_free(struct opengl_current_attrib_t *crnt);
 
 #endif

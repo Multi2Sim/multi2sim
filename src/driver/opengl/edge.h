@@ -23,11 +23,11 @@
 
 #include <GL/glut.h>
 
-struct x86_opengl_vertex_t;
-struct x86_opengl_edge_t
+struct opengl_vertex_t;
+struct opengl_edge_t
 {
-	struct x86_opengl_vertex_t *vtx0; 	/* Y(vtx0) < Y(vtx1) */
-	struct x86_opengl_vertex_t *vtx1;
+	struct opengl_vertex_t *vtx0; 	/* Y(vtx0) < Y(vtx1) */
+	struct opengl_vertex_t *vtx1;
 	GLfloat dx;				/* X(vtx1) - X(vtx0) */
 	GLfloat dy;				/* Y(vtx1) - Y(vtx0) */
 	GLfloat dxdy;				/* dx/dy */
@@ -39,7 +39,7 @@ struct x86_opengl_edge_t
 	GLint lines;				/* number of lines to be sampled on this edge */	
 };
 
-struct x86_opengl_edge_t *x86_opengl_edge_create(struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1);
-void x86_opengl_edge_free(struct x86_opengl_edge_t *edge);
+struct opengl_edge_t *opengl_edge_create(struct opengl_vertex_t *vtx0, struct opengl_vertex_t *vtx1);
+void opengl_edge_free(struct opengl_edge_t *edge);
 
 #endif

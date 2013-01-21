@@ -42,21 +42,21 @@ do {								\
 } while (0)
 #endif
 
-void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
-		struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1,
-		struct x86_opengl_vertex_t *vtx2)
+void opengl_rasterizer_draw_triangle(struct opengl_context_t *ctx,
+		struct opengl_vertex_t *vtx0, struct opengl_vertex_t *vtx1,
+		struct opengl_vertex_t *vtx2)
 {
-	struct x86_opengl_edge_t *edge_major;
-	struct x86_opengl_edge_t *edge_top;
-	struct x86_opengl_edge_t *edge_bottom;
+	struct opengl_edge_t *edge_major;
+	struct opengl_edge_t *edge_top;
+	struct opengl_edge_t *edge_bottom;
 
-	struct x86_opengl_vertex_t *vtx_max;
-	struct x86_opengl_vertex_t *vtx_mid;
-	struct x86_opengl_vertex_t *vtx_min;
+	struct opengl_vertex_t *vtx_max;
+	struct opengl_vertex_t *vtx_mid;
+	struct opengl_vertex_t *vtx_min;
 
-	struct x86_opengl_span_t *spn;
+	struct opengl_span_t *spn;
 
-	spn = x86_opengl_span_create();
+	spn = opengl_span_create();
 
 	GLfloat one_over_area;
 	GLfixed vtx_min_fx, vtx_min_fy;
@@ -117,9 +117,9 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 	vtx_max_fx = FloatToFixed(vtx_max->pos[X_COMP] + 0.5F) & snapMask;
 
 	/* Create edges */
-	edge_major = x86_opengl_edge_create(vtx_max, vtx_min);
-	edge_top = x86_opengl_edge_create(vtx_max, vtx_mid);
-	edge_bottom = x86_opengl_edge_create(vtx_mid, vtx_min);
+	edge_major = opengl_edge_create(vtx_max, vtx_min);
+	edge_top = opengl_edge_create(vtx_max, vtx_mid);
+	edge_bottom = opengl_edge_create(vtx_mid, vtx_min);
 
 	/* compute deltas for each edge:  vertex[upper] - vertex[lower] */
 	edge_major->dx = FixedToFloat(vtx_max_fx - vtx_min_fx);
@@ -146,12 +146,12 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 	else
 	{
 		/* Free edges */
-		x86_opengl_edge_free(edge_major);
-		x86_opengl_edge_free(edge_top);
-		x86_opengl_edge_free(edge_bottom);
+		opengl_edge_free(edge_major);
+		opengl_edge_free(edge_top);
+		opengl_edge_free(edge_bottom);
 
 		/* Free span*/
-		x86_opengl_span_free(spn);
+		opengl_span_free(spn);
 		return;  /*CULLED*/
 	}
 
@@ -181,7 +181,7 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 
 	/* Decide scan direction */
 	scan_from_left_to_right = (one_over_area < 0.0F);
-	x86_opengl_debug("\t\tScan from Left to Right= %d\n", scan_from_left_to_right);
+	opengl_debug("\t\tScan from Left to Right= %d\n", scan_from_left_to_right);
 
 	/* Interpolate depth */
 	if (ctx->context_cap->is_depth_test)
@@ -248,8 +248,8 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 	/* Setup order of edges */
 	for (subTriangle=0; subTriangle<=1; subTriangle++)
 	{
-		struct x86_opengl_edge_t *edge_left;
-		struct x86_opengl_edge_t *edge_right;
+		struct opengl_edge_t *edge_left;
+		struct opengl_edge_t *edge_right;
 		int setupLeft, setupRight;
 		int lines;
 
@@ -293,8 +293,8 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 
 		if (setupLeft && edge_left->lines > 0)
 		{
-			const struct x86_opengl_vertex_t *vtx_lower = edge_left->vtx1;
-			x86_opengl_debug("\t\tVertex Lower RGBA = [%d, %d, %d, %d]\n", vtx_lower->color[R_COMP], vtx_lower->color[G_COMP], vtx_lower->color[B_COMP], vtx_lower->color[A_COMP]);
+			const struct opengl_vertex_t *vtx_lower = edge_left->vtx1;
+			opengl_debug("\t\tVertex Lower RGBA = [%d, %d, %d, %d]\n", vtx_lower->color[R_COMP], vtx_lower->color[G_COMP], vtx_lower->color[B_COMP], vtx_lower->color[A_COMP]);
 			const GLfixed fsy = edge_left->fsy;
 			const GLfixed fsx = edge_left->fsx;  /* no fractional part */
 			const GLfixed fx = FixedCeil(fsx);  /* no fractional part */
@@ -304,8 +304,8 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 			GLfloat dxOuter;
 			GLfixed fdxOuter;
 
-			x86_opengl_debug("\t\tfsy = %d, fsx = %d\n", fsy, fsx);
-			x86_opengl_debug("\t\tfx = %d, adjx = %d, adjy = %d\n", fx, adjx, adjy);
+			opengl_debug("\t\tfsy = %d, fsx = %d\n", fsy, fsx);
+			opengl_debug("\t\tfx = %d, adjx = %d, adjy = %d\n", fx, adjx, adjy);
 
 
 			fError = fx - fsx - FIXED_ONE;
@@ -344,13 +344,13 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 								+ spn->attrStepX[FRAG_ATTRIB_COL0][2] * adjx
 								+ spn->attrStepY[FRAG_ATTRIB_COL0][2] * adjy) + FIXED_HALF;
 
-				x86_opengl_debug("\t\tVertex Lower R = %d, StepX_R = %f, StepY_R = %f\n", 
+				opengl_debug("\t\tVertex Lower R = %d, StepX_R = %f, StepY_R = %f\n", 
 					vtx_lower->color[R_COMP], spn->attrStepX[FRAG_ATTRIB_COL0][0], spn->attrStepY[FRAG_ATTRIB_COL0][0]);
 				
-				x86_opengl_debug("\t\tVertex Lower G = %d, StepX_G = %f, StepY_G = %f\n", 
+				opengl_debug("\t\tVertex Lower G = %d, StepX_G = %f, StepY_G = %f\n", 
 					vtx_lower->color[G_COMP], spn->attrStepX[FRAG_ATTRIB_COL0][1], spn->attrStepY[FRAG_ATTRIB_COL0][1]);
 
-				x86_opengl_debug("\t\tVertex Lower B = %d, StepX_B = %f, StepY_B = %f\n", 
+				opengl_debug("\t\tVertex Lower B = %d, StepX_B = %f, StepY_B = %f\n", 
 					vtx_lower->color[B_COMP], spn->attrStepX[FRAG_ATTRIB_COL0][2], spn->attrStepY[FRAG_ATTRIB_COL0][2]);
 
 				fdrOuter = SignedFloatToFixed(spn->attrStepY[FRAG_ATTRIB_COL0][0]
@@ -360,7 +360,7 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 				fdbOuter = SignedFloatToFixed(spn->attrStepY[FRAG_ATTRIB_COL0][2]
 									+ dxOuter * spn->attrStepX[FRAG_ATTRIB_COL0][2]);
 
-				x86_opengl_debug("\t\trLeft = %d, gLeft = %d, bLeft = %d\n", rLeft, gLeft, bLeft);
+				opengl_debug("\t\trLeft = %d, gLeft = %d, bLeft = %d\n", rLeft, gLeft, bLeft);
 
 				aLeft = (GLint)(ChanToFixed(vtx_lower->color[A_COMP])
 								+ spn->attrStepX[FRAG_ATTRIB_COL0][3] * adjx
@@ -404,10 +404,10 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 			fdaInner = fdaOuter + spn->alphaStep;
 		}
 			
-		x86_opengl_debug("\t\tfdrOuter = %d, fdrInner = %d\n", fdrOuter, fdrInner);
-		x86_opengl_debug("\t\tfdgOuter = %d, fdgInner = %d\n", fdgOuter, fdgInner);
-		x86_opengl_debug("\t\tfdbOuter = %d, fdbInner = %d\n", fdbOuter, fdbInner);
-		x86_opengl_debug("\t\trLeft = %d, gLeft = %d, bLeft = %d\n", rLeft, gLeft, bLeft);
+		opengl_debug("\t\tfdrOuter = %d, fdrInner = %d\n", fdrOuter, fdrInner);
+		opengl_debug("\t\tfdgOuter = %d, fdgInner = %d\n", fdgOuter, fdgInner);
+		opengl_debug("\t\tfdbOuter = %d, fdbInner = %d\n", fdbOuter, fdbInner);
+		opengl_debug("\t\trLeft = %d, gLeft = %d, bLeft = %d\n", rLeft, gLeft, bLeft);
 
 		/* Rasterize setup */
 		while (lines > 0)
@@ -426,7 +426,7 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 			if (ctx->context_cap->is_depth_test)
 			{
 				spn->z = zLeft;
-				x86_opengl_debug("\t\tSpan Z = %d zStep = %d\n", spn->z, spn->zStep );
+				opengl_debug("\t\tSpan Z = %d zStep = %d\n", spn->z, spn->zStep );
 			}
 
 			/* Interpolate RGBA */
@@ -444,7 +444,7 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 			{
 				/* Mesa len = spn->end -1 */
 				const GLint len = spn->end;
-				x86_opengl_debug("\t\tSpan from [%d, %d] with length %d\n", spn->x, spn->y, len);
+				opengl_debug("\t\tSpan from [%d, %d] with length %d\n", spn->x, spn->y, len);
 
 				/* Interpolate RGBA */
 				if (ctx->light->ShadeModel == GL_SMOOTH)
@@ -454,11 +454,11 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 					CLAMP_INTERPOLANT(blue, blueStep, len);
 					CLAMP_INTERPOLANT(alpha, alphaStep, len);
 
-					x86_opengl_debug("\t\tSpan RGBA [%d, %d, %d, %d]\n", FixedToChan(spn->red), 
+					opengl_debug("\t\tSpan RGBA [%d, %d, %d, %d]\n", FixedToChan(spn->red), 
 												         FixedToChan(spn->blue), 
 												         FixedToChan(spn->green), 
 												         FixedToChan(spn->alpha));
-					x86_opengl_debug("\t\tRGBA Step [%d, %d, %d, %d]\n", FixedToChan(spn->redStep), 
+					opengl_debug("\t\tRGBA Step [%d, %d, %d, %d]\n", FixedToChan(spn->redStep), 
 													     FixedToChan(spn->blueStep), 
 													     FixedToChan(spn->greenStep), 
 													     FixedToChan(spn->alphaStep));
@@ -483,10 +483,10 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 						if (idx <= ctx->draw_buffer->depth_buffer->width * ctx->draw_buffer->depth_buffer->height)
 						{
 							ctx->draw_buffer->depth_buffer->buffer[spn->y * ctx->draw_buffer->depth_buffer->width + spn->x] = spn->z;
-							x86_glut_frame_buffer_pixel(spn->x, spn->y, color);
+							glut_frame_buffer_pixel(spn->x, spn->y, color);
 						}
 						else
-							x86_opengl_debug("\t\tOut of bound! [%d, %d] > [%d, %d]\n", 
+							opengl_debug("\t\tOut of bound! [%d, %d] > [%d, %d]\n", 
 												spn->x, spn->y, 
 												ctx->draw_buffer->depth_buffer->width, ctx->draw_buffer->depth_buffer->height );
 					};
@@ -549,18 +549,18 @@ void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx,
 
 
 	/* Free edges */
-	x86_opengl_edge_free(edge_major);
-	x86_opengl_edge_free(edge_top);
-	x86_opengl_edge_free(edge_bottom);
+	opengl_edge_free(edge_major);
+	opengl_edge_free(edge_top);
+	opengl_edge_free(edge_bottom);
 
 	/* Free span*/
-	x86_opengl_span_free(spn);
+	opengl_span_free(spn);
 
 }
 
 /* TODO: use Mesa algorithm instead */
 /* Bresenham's line algorithm */
-void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1, GLint y1, GLint x2, GLint y2, GLuint color)
+void opengl_rasterizer_draw_line(struct opengl_context_t *ctx, GLint x1, GLint y1, GLint x2, GLint y2, GLuint color)
 {
 
 	GLint s_x;
@@ -570,14 +570,14 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 
 	if (x1 == x2)
 	{
-		x86_opengl_debug("\t\tSlope = infinite\n");
+		opengl_debug("\t\tSlope = infinite\n");
 		s_y = y1 < y2 ? y1 : y2;
 		e_y = y1 > y2 ? y1: y2;
-		x86_glut_frame_buffer_pixel(x1, s_y, color);
+		glut_frame_buffer_pixel(x1, s_y, color);
 		while(s_y < e_y)
 		{ 
 			s_y++;
-			x86_glut_frame_buffer_pixel(x1, s_y, color);				
+			glut_frame_buffer_pixel(x1, s_y, color);				
 		}
 		return;
 	}
@@ -596,7 +596,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 	}
 
 	GLfloat m = (GLfloat)(y2 - y1) / (x2 - x1);
-	x86_opengl_debug("\t\tSlope = %f\n", m);
+	opengl_debug("\t\tSlope = %f\n", m);
 
 	if (m >= 0.0f && m < 1.0f)
 	{
@@ -607,7 +607,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 		GLint incrNE = 2*(dy-dx);
 		GLint x = s_x;
 		GLint y = s_y;
-		x86_glut_frame_buffer_pixel(x, y, color);
+		glut_frame_buffer_pixel(x, y, color);
 		while(x < e_x)
 		{
 			x++;
@@ -618,7 +618,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 				y++;
 				e += incrNE;
 			}
-			x86_glut_frame_buffer_pixel(x, y, color);
+			glut_frame_buffer_pixel(x, y, color);
 		}
 	}
 
@@ -631,7 +631,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 		GLint incrNE = 2*(dx-dy);
 		GLint x = s_x;
 		GLint y = s_y;
-		x86_glut_frame_buffer_pixel(x, y, color);
+		glut_frame_buffer_pixel(x, y, color);
 		while(y < e_y)
 		{
 			y++;
@@ -642,7 +642,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 				x++;
 				e += incrNE;
 			}
-			x86_glut_frame_buffer_pixel(x, y, color);
+			glut_frame_buffer_pixel(x, y, color);
 		}
 	}
 
@@ -655,7 +655,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 		GLint incrNE = 2*(dy-dx);
 		GLint x = s_x;
 		GLint y = s_y;
-		x86_glut_frame_buffer_pixel(x, y, color);
+		glut_frame_buffer_pixel(x, y, color);
 		while(x < e_x)
 		{
 			x++;
@@ -666,7 +666,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 				y--;
 				e += incrNE;
 			}
-			x86_glut_frame_buffer_pixel(x, y, color);
+			glut_frame_buffer_pixel(x, y, color);
 		}
 	}
 
@@ -679,7 +679,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 		GLint incrNE = 2*(dx-dy);
 		GLint x = s_x;
 		GLint y = s_y;
-		x86_glut_frame_buffer_pixel(x, y, color);
+		glut_frame_buffer_pixel(x, y, color);
 		while(x < e_x)
 		{
 			y--;
@@ -690,7 +690,7 @@ void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1,
 				x++;
 				e -= incrNE;
 			}
-			x86_glut_frame_buffer_pixel(x, y, color);
+			glut_frame_buffer_pixel(x, y, color);
 		}
 	}
 }

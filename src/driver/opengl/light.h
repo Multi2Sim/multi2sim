@@ -30,13 +30,13 @@
 #define LIGHT_POSITIONAL		0x4
 #define LIGHT_NEED_VERTICES	(LIGHT_POSITIONAL|LIGHT_LOCAL_VIEWER)
 
-struct x86_opengl_material_t;
-struct x86_opengl_vertex_t;
+struct opengl_material_t;
+struct opengl_vertex_t;
 
-struct x86_opengl_light_t
+struct opengl_light_t
 {
-	// struct x86_opengl_light_t *next;	/**< double linked list with sentinel */
-	// struct x86_opengl_light_t *prev;
+	// struct opengl_light_t *next;	/**< double linked list with sentinel */
+	// struct opengl_light_t *prev;
 
 	GLfloat Ambient[4];		/**< ambient color */
 	GLfloat Diffuse[4];		/**< diffuse color */
@@ -74,7 +74,7 @@ struct x86_opengl_light_t
 /**
  * Light model state.
  */
-struct x86_opengl_light_model_t
+struct opengl_light_model_t
 {
 	GLfloat Ambient[4];		/**< ambient color */
 	GLboolean LocalViewer;	/**< Local (or infinite) view point? */
@@ -83,16 +83,16 @@ struct x86_opengl_light_model_t
 				 *    or GL_SEPARATE_SPECULAR_COLOR */
 };
 
-struct x86_opengl_light_attrib_t
+struct opengl_light_attrib_t
 {
-	struct x86_opengl_light_t *Light[MAX_LIGHTS];	/**< Array of light sources */
-	struct x86_opengl_light_model_t *Model;		/**< Lighting model */
+	struct opengl_light_t *Light[MAX_LIGHTS];	/**< Array of light sources */
+	struct opengl_light_model_t *Model;		/**< Lighting model */
 
 	/**
 	* Front and back material values.
 	* Note: must call FLUSH_VERTICES() before using.
 	*/
-	struct x86_opengl_material_t *Material;
+	struct opengl_material_t *Material;
 
 	GLboolean Enabled;			/**< Lighting enabled flag */
 	GLenum ShadeModel;			/**< GL_FLAT or GL_SMOOTH */
@@ -104,7 +104,7 @@ struct x86_opengl_light_attrib_t
 	GLenum ClampVertexColor;             /**< GL_TRUE, GL_FALSE, GL_FIXED_ONLY */
 	GLboolean _ClampVertexColor;
 
-	// struct x86_opengl_light_t EnabledList;         /**< List sentinel */
+	// struct opengl_light_t EnabledList;         /**< List sentinel */
 
 	/** 
 	* Derived state for optimizations: 
@@ -116,15 +116,15 @@ struct x86_opengl_light_attrib_t
 	/*@}*/
 };
 
-struct x86_opengl_light_t *x86_opengl_light_create();
-void x86_opengl_light_free(struct x86_opengl_light_t *lgt);
+struct opengl_light_t *opengl_light_create();
+void opengl_light_free(struct opengl_light_t *lgt);
 
-struct x86_opengl_light_model_t *x86_opengl_light_model_create();
-void x86_opengl_light_model_free(struct x86_opengl_light_model_t *lgt_mdl);
+struct opengl_light_model_t *opengl_light_model_create();
+void opengl_light_model_free(struct opengl_light_model_t *lgt_mdl);
 
-struct x86_opengl_light_attrib_t *x86_opengl_light_attrib_create();
-void x86_opengl_light_attrib_free(struct x86_opengl_light_attrib_t *lgh_attrb);
+struct opengl_light_attrib_t *opengl_light_attrib_create();
+void opengl_light_attrib_free(struct opengl_light_attrib_t *lgh_attrb);
 
-void x86_opengl_light_apply_all(struct x86_opengl_vertex_t *vtx, struct x86_opengl_light_attrib_t *lgt_attrb);
+void opengl_light_apply_all(struct opengl_vertex_t *vtx, struct opengl_light_attrib_t *lgt_attrb);
 
 #endif

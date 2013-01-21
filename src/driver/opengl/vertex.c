@@ -25,11 +25,11 @@
 #include "vertex.h"
 
 
-struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+struct opengl_vertex_t *opengl_vertex_create(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
-	struct x86_opengl_vertex_t *vtx;
+	struct opengl_vertex_t *vtx;
 
-	vtx = xcalloc(1, sizeof(struct x86_opengl_vertex_t));
+	vtx = xcalloc(1, sizeof(struct opengl_vertex_t));
 
 	/* Initialize */
 	vtx->pos[X_COMP] = x;
@@ -37,18 +37,18 @@ struct x86_opengl_vertex_t *x86_opengl_vertex_create(GLfloat x, GLfloat y, GLflo
 	vtx->pos[Z_COMP] = z;
 	vtx->pos[W_COMP] = w;
 
-	x86_opengl_debug("\t\tCreate vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
+	opengl_debug("\t\tCreate vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
 
 	return vtx;
 }
-void x86_opengl_vertex_free(struct x86_opengl_vertex_t *vtx)
+void opengl_vertex_free(struct opengl_vertex_t *vtx)
 {
-	x86_opengl_debug("\t\tFree vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
+	opengl_debug("\t\tFree vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
 
 	free(vtx);
 }
 
-void x86_opengl_vertex_set_color(GLchan *color, struct x86_opengl_vertex_t *vtx)
+void opengl_vertex_set_color(GLchan *color, struct opengl_vertex_t *vtx)
 {
 	int i;
 	for (i = 0; i < 4; ++i)
@@ -57,12 +57,12 @@ void x86_opengl_vertex_set_color(GLchan *color, struct x86_opengl_vertex_t *vtx)
 	}
 }
 
-int x86_opengl_vertex_get_color(struct x86_opengl_vertex_t *vtx)
+int opengl_vertex_get_color(struct opengl_vertex_t *vtx)
 {
 	return ((vtx->color[0]) << 16) + ((vtx->color[1]) << 8) + vtx->color[2];
 }
 
-void x86_opengl_vertex_set_normal(GLfloat *nrml, struct x86_opengl_vertex_t *vtx)
+void opengl_vertex_set_normal(GLfloat *nrml, struct opengl_vertex_t *vtx)
 {
 	int i;
 	for (i = 0; i < 4; ++i)
@@ -71,42 +71,42 @@ void x86_opengl_vertex_set_normal(GLfloat *nrml, struct x86_opengl_vertex_t *vtx
 	}	
 }
 
-struct x86_opengl_vertex_group_t *x86_opengl_vertex_group_create(GLenum primitive_type)
+struct opengl_vertex_group_t *opengl_vertex_group_create(GLenum primitive_type)
 {
-	struct x86_opengl_vertex_group_t * vtxgp;
+	struct opengl_vertex_group_t * vtxgp;
 
-	vtxgp = xcalloc(1, sizeof(struct x86_opengl_vertex_group_t));
+	vtxgp = xcalloc(1, sizeof(struct opengl_vertex_group_t));
 
 	/* Initialize */
 	vtxgp->primitive_type = primitive_type;
 	vtxgp->vertex_list = list_create();
 
-	x86_opengl_debug("\t\tPrimitive group type %d\n", primitive_type);
+	opengl_debug("\t\tPrimitive group type %d\n", primitive_type);
 
 	/* Return */	
 	return vtxgp;
 }
 
-void x86_opengl_vertex_group_free(struct x86_opengl_vertex_group_t *vtxgp)
+void opengl_vertex_group_free(struct opengl_vertex_group_t *vtxgp)
 {
 	/* Free vertices in the list */
 	while (list_count(vtxgp->vertex_list))
-		x86_opengl_vertex_free(list_remove_at(vtxgp->vertex_list, 0));	
+		opengl_vertex_free(list_remove_at(vtxgp->vertex_list, 0));	
 
 	list_free(vtxgp->vertex_list);
 	free(vtxgp);
 }
 
-static void x86_opengl_vertex_group_add_vertex(struct x86_opengl_vertex_group_t *vtxgp, struct x86_opengl_vertex_t *vtx)
+static void opengl_vertex_group_add_vertex(struct opengl_vertex_group_t *vtxgp, struct opengl_vertex_t *vtx)
 {
 	list_add(vtxgp->vertex_list, vtx);
 }
 
-struct x86_opengl_vertex_buffer_t *x86_opengl_vertex_buffer_create()
+struct opengl_vertex_buffer_t *opengl_vertex_buffer_create()
 {
-	struct x86_opengl_vertex_buffer_t *vtxbf;
+	struct opengl_vertex_buffer_t *vtxbf;
 
-	vtxbf = xcalloc(1, sizeof(struct x86_opengl_vertex_buffer_t));
+	vtxbf = xcalloc(1, sizeof(struct opengl_vertex_buffer_t));
 
 	/* Initialize */
 	vtxbf->vertex_groups = list_create();
@@ -116,27 +116,27 @@ struct x86_opengl_vertex_buffer_t *x86_opengl_vertex_buffer_create()
 	return vtxbf;
 }
 
-void x86_opengl_vertex_buffer_free(struct x86_opengl_vertex_buffer_t *vtxbf)
+void opengl_vertex_buffer_free(struct opengl_vertex_buffer_t *vtxbf)
 {
 	if (vtxbf)
 	{
 		while (list_count(vtxbf->vertex_groups))
-			x86_opengl_vertex_group_free(list_remove_at(vtxbf->vertex_groups, 0));
+			opengl_vertex_group_free(list_remove_at(vtxbf->vertex_groups, 0));
 
 		list_free(vtxbf->vertex_groups);
 		free(vtxbf);
 	}
 }
 
-void x86_opengl_vertex_buffer_add_vertex_group(struct x86_opengl_vertex_buffer_t *vtxbf, struct x86_opengl_vertex_group_t *vtxgp)
+void opengl_vertex_buffer_add_vertex_group(struct opengl_vertex_buffer_t *vtxbf, struct opengl_vertex_group_t *vtxgp)
 {
 	list_add(vtxbf->vertex_groups, vtxgp);
 	vtxbf->current_vertex_group = vtxgp;
 }
 
-void x86_opengl_vertex_buffer_add_vertex(struct x86_opengl_vertex_buffer_t *vtxbf, struct x86_opengl_vertex_t *vtx)
+void opengl_vertex_buffer_add_vertex(struct opengl_vertex_buffer_t *vtxbf, struct opengl_vertex_t *vtx)
 {
-	x86_opengl_debug("\t\tAdd vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
+	opengl_debug("\t\tAdd vertex \t[%f, %f, %f, %f]\n", vtx->pos[X_COMP], vtx->pos[Y_COMP], vtx->pos[Z_COMP], vtx->pos[W_COMP]);
 
-	x86_opengl_vertex_group_add_vertex(vtxbf->current_vertex_group, vtx);
+	opengl_vertex_group_add_vertex(vtxbf->current_vertex_group, vtx);
 }

@@ -177,7 +177,7 @@ char *si_err_opencl_version_note =
  * Common entry point for Southern Islands and Evergreen
  */
 
-int x86_opencl_call(struct x86_ctx_t *ctx)
+int opencl_old_abi_call(struct x86_ctx_t *ctx)
 {
 	switch (x86_emu->gpu_kind)
 	{

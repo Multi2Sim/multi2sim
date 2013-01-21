@@ -28,11 +28,11 @@
 #include "vertex.h"
 
 
-struct x86_opengl_light_t *x86_opengl_light_create()
+struct opengl_light_t *opengl_light_create()
 {
-	struct x86_opengl_light_t *lgt;
+	struct opengl_light_t *lgt;
 
-	lgt = xcalloc(1, sizeof(struct x86_opengl_light_t));
+	lgt = xcalloc(1, sizeof(struct opengl_light_t));
 
 	/* Initialize */
 	lgt->Ambient[R_COMP] = 0.0f;
@@ -60,17 +60,17 @@ struct x86_opengl_light_t *x86_opengl_light_create()
 
 }
 
-void x86_opengl_light_free(struct x86_opengl_light_t *lgt)
+void opengl_light_free(struct opengl_light_t *lgt)
 {
 	free(lgt);
 }
 
-struct x86_opengl_light_model_t *x86_opengl_light_model_create()
+struct opengl_light_model_t *opengl_light_model_create()
 {
-	struct x86_opengl_light_model_t *lgt_mdl;
+	struct opengl_light_model_t *lgt_mdl;
 
 	/* Allocate */
-	lgt_mdl = xcalloc(1, sizeof(struct x86_opengl_light_model_t));
+	lgt_mdl = xcalloc(1, sizeof(struct opengl_light_model_t));
 
 	/* Initialize */
 	lgt_mdl->Ambient[R_COMP] = 0.2f;
@@ -84,23 +84,23 @@ struct x86_opengl_light_model_t *x86_opengl_light_model_create()
 	return lgt_mdl;
 }
 
-void x86_opengl_light_model_free(struct x86_opengl_light_model_t *lgt_mdl)
+void opengl_light_model_free(struct opengl_light_model_t *lgt_mdl)
 {
 	free(lgt_mdl);
 }
 
-struct x86_opengl_light_attrib_t *x86_opengl_light_attrib_create()
+struct opengl_light_attrib_t *opengl_light_attrib_create()
 {
 	int i;
-	struct x86_opengl_light_attrib_t *lgt_attrb;
+	struct opengl_light_attrib_t *lgt_attrb;
 
 	/* Allocate */
-	lgt_attrb = xcalloc(1, sizeof(struct x86_opengl_light_attrib_t));
+	lgt_attrb = xcalloc(1, sizeof(struct opengl_light_attrib_t));
 
 	/* Initialize */
 	for (i = 0; i < MAX_LIGHTS; ++i)
 	{
-		lgt_attrb->Light[i] = x86_opengl_light_create();		
+		lgt_attrb->Light[i] = opengl_light_create();		
 	}
 	
 	/* Special setup for Light 0 */
@@ -114,29 +114,29 @@ struct x86_opengl_light_attrib_t *x86_opengl_light_attrib_create()
 	lgt_attrb->Light[0]->Specular[2]  = 1.0f;
 	lgt_attrb->Light[0]->Specular[3]  = 1.0f;
 
-	lgt_attrb->Model = x86_opengl_light_model_create();
-	lgt_attrb->Material = x86_opengl_material_create();
+	lgt_attrb->Model = opengl_light_model_create();
+	lgt_attrb->Material = opengl_material_create();
 	lgt_attrb->ShadeModel = GL_SMOOTH;
 
 	/* Return */	
 	return lgt_attrb;
 }
 
-void x86_opengl_light_attrib_free(struct x86_opengl_light_attrib_t *lgt_attrb)
+void opengl_light_attrib_free(struct opengl_light_attrib_t *lgt_attrb)
 {
 	int i;
 
 	for (i = 0; i < MAX_LIGHTS; ++i)
 	{
-		x86_opengl_light_free(lgt_attrb->Light[i]);		
+		opengl_light_free(lgt_attrb->Light[i]);		
 	}
-	x86_opengl_light_model_free(lgt_attrb->Model);
-	x86_opengl_material_free(lgt_attrb->Material);
+	opengl_light_model_free(lgt_attrb->Model);
+	opengl_material_free(lgt_attrb->Material);
 
 	free(lgt_attrb);
 }
 
-static GLfloat x86_opengl_light_attenuation(GLfloat k0, GLfloat k1, GLfloat k2, const GLfloat *v, const GLfloat *ppli)
+static GLfloat opengl_light_attenuation(GLfloat k0, GLfloat k1, GLfloat k2, const GLfloat *v, const GLfloat *ppli)
 {
 	GLfloat distance;
 	GLfloat denominator;
@@ -144,14 +144,14 @@ static GLfloat x86_opengl_light_attenuation(GLfloat k0, GLfloat k1, GLfloat k2, 
 	if (fabs(ppli[4] - 0.0f) < 0.0000001)
 	{
 		distance = sqrt((ppli[0] - v[0]) * (ppli[0] - v[0]) + (ppli[1] - v[1]) * (ppli[1] - v[1]) + (ppli[2] - v[2]) * (ppli[2] - v[2]));
-		x86_opengl_debug("\t\t\tDistance = %f\n", distance);
+		opengl_debug("\t\t\tDistance = %f\n", distance);
 		denominator = k0 + k1 * distance + k2 * distance * distance;
-		x86_opengl_debug("\t\t\tDenominator = %f\n", denominator);
+		opengl_debug("\t\t\tDenominator = %f\n", denominator);
 		if (distance != 0.0)
 			return 1.0f / denominator;
 		else
 		{
-			x86_opengl_debug("\t\tWarning: Distance = 0!\n");
+			opengl_debug("\t\tWarning: Distance = 0!\n");
 			return 0.0f;
 		}
 	}
@@ -159,13 +159,13 @@ static GLfloat x86_opengl_light_attenuation(GLfloat k0, GLfloat k1, GLfloat k2, 
 		return 1.0f;
 }
 
-static GLfloat x86_opengl_direction_mul(GLfloat *d1, GLfloat *d2)
+static GLfloat opengl_direction_mul(GLfloat *d1, GLfloat *d2)
 {
 	GLfloat direction = DOT3(d1, d2);
 	return( MAX2(direction, 0.0f));
 }
 
-static GLfloat x86_opengl_light_spot(GLfloat *ppli, GLfloat *v, GLfloat *sdli, GLfloat srli, GLfloat crli)
+static GLfloat opengl_light_spot(GLfloat *ppli, GLfloat *v, GLfloat *sdli, GLfloat srli, GLfloat crli)
 {
 	GLfloat spot_direction;
 	GLfloat unit_ppliv[4];
@@ -174,12 +174,12 @@ static GLfloat x86_opengl_light_spot(GLfloat *ppli, GLfloat *v, GLfloat *sdli, G
 	GLfloat spot_factor;
 
 	/* Get the unit vectors */
-	x86_opengl_vector_unit(unit_ppliv, ppli, v);
+	opengl_vector_unit(unit_ppliv, ppli, v);
 	COPY_3V(unit_sdli, sdli);
 	NORMALIZE_3FV(unit_sdli);
 
 	/* Calculate the direction */
-	spot_direction = x86_opengl_direction_mul(unit_ppliv, unit_sdli);
+	spot_direction = opengl_direction_mul(unit_ppliv, unit_sdli);
 	cos_crli = cos(crli);
 
 	if (fabs(crli - 180.0f) < 0.00000001f)
@@ -198,12 +198,12 @@ static GLfloat x86_opengl_light_spot(GLfloat *ppli, GLfloat *v, GLfloat *sdli, G
 	}
 }
 
-static GLint x86_opengl_light_fi(GLfloat *nrml, GLfloat *vct, GLfloat *ppli)
+static GLint opengl_light_fi(GLfloat *nrml, GLfloat *vct, GLfloat *ppli)
 {
 	GLfloat result;
 	GLfloat unit_v_to_ppli[4];
 
-	x86_opengl_vector_unit(unit_v_to_ppli, vct, ppli);
+	opengl_vector_unit(unit_v_to_ppli, vct, ppli);
 	result = DOT3(nrml, unit_v_to_ppli);
 	
 	if (MAX2(result, 0.0f) != 0)
@@ -212,15 +212,15 @@ static GLint x86_opengl_light_fi(GLfloat *nrml, GLfloat *vct, GLfloat *ppli)
 		return 0;
 }
 
-static void x86_opengl_light_hi(GLfloat *rslt, GLfloat *vct, GLfloat *ppli, GLfloat *pe, GLboolean vbs)
+static void opengl_light_hi(GLfloat *rslt, GLfloat *vct, GLfloat *ppli, GLfloat *pe, GLboolean vbs)
 {
 	GLfloat unit_v_to_ppli[4];
 	GLfloat unit_v_to_pe[4];
 	GLfloat unit[4] = { 0.0f, 0.0f, 1.0f, 0.0f};
 	GLfloat result[4];
 
-	x86_opengl_vector_unit(unit_v_to_ppli, vct, ppli);
-	x86_opengl_vector_unit(unit_v_to_pe, vct, pe);
+	opengl_vector_unit(unit_v_to_ppli, vct, ppli);
+	opengl_vector_unit(unit_v_to_pe, vct, pe);
 
 	if (vbs == GL_TRUE)
 		ADD_4V(result, unit_v_to_ppli, unit_v_to_pe);
@@ -230,12 +230,12 @@ static void x86_opengl_light_hi(GLfloat *rslt, GLfloat *vct, GLfloat *ppli, GLfl
 	COPY_4V(rslt, result);
 }
 
-void x86_opengl_light_apply_all(struct x86_opengl_vertex_t *vtx, struct x86_opengl_light_attrib_t *lgt_attrb)
+void opengl_light_apply_all(struct opengl_vertex_t *vtx, struct opengl_light_attrib_t *lgt_attrb)
 {
 	int i;
- 	struct x86_opengl_light_t *lgt;
- 	struct x86_opengl_material_t *mtrl;
- 	struct x86_opengl_light_model_t *mdl;
+ 	struct opengl_light_t *lgt;
+ 	struct opengl_material_t *mtrl;
+ 	struct opengl_light_model_t *mdl;
 
  	GLfloat color_final[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 	GLfloat color_const[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -282,25 +282,25 @@ void x86_opengl_light_apply_all(struct x86_opengl_vertex_t *vtx, struct x86_open
 	ACC_SCALE_4V(color_const, acm, acs);
 	ACC_4V(color_const, ecm);
 
-	x86_opengl_debug("\t\tMaterial Emission = [");
+	opengl_debug("\t\tMaterial Emission = [");
 	for (i = 0; i < 4; ++i)
-		x86_opengl_debug("%f ", ecm[i]);
-	x86_opengl_debug("]\n");
+		opengl_debug("%f ", ecm[i]);
+	opengl_debug("]\n");
 
-	x86_opengl_debug("\t\tMaterial Ambient = [");
+	opengl_debug("\t\tMaterial Ambient = [");
 	for (i = 0; i < 4; ++i)
-		x86_opengl_debug("%f ", acm[i]);
-	x86_opengl_debug("]\n");
+		opengl_debug("%f ", acm[i]);
+	opengl_debug("]\n");
 
-	x86_opengl_debug("\t\tModel Ambient of scene = [");
+	opengl_debug("\t\tModel Ambient of scene = [");
 	for (i = 0; i < 4; ++i)
-		x86_opengl_debug("%f ", acs[i]);
-	x86_opengl_debug("]\n");
+		opengl_debug("%f ", acs[i]);
+	opengl_debug("]\n");
 
-	x86_opengl_debug("\t\tColor const = [");
+	opengl_debug("\t\tColor const = [");
 	for (i = 0; i < 4; ++i)
-		x86_opengl_debug("%f ", color_const[i]);
-	x86_opengl_debug("]\n");
+		opengl_debug("%f ", color_const[i]);
+	opengl_debug("]\n");
 
 	/* Accumulation part comes from 8 lights */
 	for (i = 0; i < MAX_LIGHTS; ++i)
@@ -311,57 +311,57 @@ void x86_opengl_light_apply_all(struct x86_opengl_vertex_t *vtx, struct x86_open
 		if (lgt->Enabled)
 		{
 			/* Calculate the 1st part in lighting equation */
-			x86_opengl_debug("\t\tLight position= [");
+			opengl_debug("\t\tLight position= [");
 			for (i = 0; i < 4; ++i)
-				x86_opengl_debug("%f ", lgt->EyePosition[i]);
-			x86_opengl_debug("]\n");
+				opengl_debug("%f ", lgt->EyePosition[i]);
+			opengl_debug("]\n");
 
-			atti = x86_opengl_light_attenuation(lgt->ConstantAttenuation, lgt->LinearAttenuation, lgt->QuadraticAttenuation, vtx->pos, lgt->EyePosition);
-			x86_opengl_debug("\t\tAtti = %f\n", atti);
-			spoti = x86_opengl_light_spot(lgt->EyePosition, vtx->pos, lgt->SpotDirection, lgt->SpotExponent, lgt->SpotCutoff);
-			x86_opengl_debug("\t\tSpoti = %f\n", spoti);
+			atti = opengl_light_attenuation(lgt->ConstantAttenuation, lgt->LinearAttenuation, lgt->QuadraticAttenuation, vtx->pos, lgt->EyePosition);
+			opengl_debug("\t\tAtti = %f\n", atti);
+			spoti = opengl_light_spot(lgt->EyePosition, vtx->pos, lgt->SpotDirection, lgt->SpotExponent, lgt->SpotCutoff);
+			opengl_debug("\t\tSpoti = %f\n", spoti);
 			atti_mul_spoti = atti * spoti;
-			x86_opengl_debug("\t\tAtti * Spoti = %f\n", atti_mul_spoti);
+			opengl_debug("\t\tAtti * Spoti = %f\n", atti_mul_spoti);
 
 			/* Calculate the 2nd part in lighting equation */
 			acli = lgt->Ambient;
 			SCALE_4V(acm_mul_acli, acm, acli);
 			COPY_4V(intermidiate_color, acm_mul_acli);
-			x86_opengl_debug("\t\tAcm * Acli = [");
+			opengl_debug("\t\tAcm * Acli = [");
 			for (i = 0; i < 4; ++i)
-				x86_opengl_debug("%f ", acm_mul_acli[i]);
-			x86_opengl_debug("]\n");
+				opengl_debug("%f ", acm_mul_acli[i]);
+			opengl_debug("]\n");
 
 			/* Calculate the 3rd part in lighting equation */
 			dcli = lgt->Diffuse;
-			x86_opengl_debug("\t\tDcli = [");
+			opengl_debug("\t\tDcli = [");
 			SCALE_4V(dcm_mul_dcli, dcm, dcli);
 
 			for (i = 0; i < 4; ++i)
-				x86_opengl_debug("%f ", dcli[i]);
-			x86_opengl_debug("]\n");
-			x86_opengl_debug("\t\tDcm = [");
+				opengl_debug("%f ", dcli[i]);
+			opengl_debug("]\n");
+			opengl_debug("\t\tDcm = [");
 			for (i = 0; i < 4; ++i)
-				x86_opengl_debug("%f ", dcm[i]);
-			x86_opengl_debug("]\n");				
-			x86_opengl_debug("\t\tDcm * Dcli = [");
+				opengl_debug("%f ", dcm[i]);
+			opengl_debug("]\n");				
+			opengl_debug("\t\tDcm * Dcli = [");
 			for (i = 0; i < 4; ++i)
-				x86_opengl_debug("%f ", dcm_mul_dcli[i]);
-			x86_opengl_debug("]\n");
+				opengl_debug("%f ", dcm_mul_dcli[i]);
+			opengl_debug("]\n");
 
-			x86_opengl_vector_unit(unit_v_to_ppli, vtx->pos, lgt->EyePosition);
-			x86_opengl_debug("\t\tV -> Ppli = [");
+			opengl_vector_unit(unit_v_to_ppli, vtx->pos, lgt->EyePosition);
+			opengl_debug("\t\tV -> Ppli = [");
 			for (i = 0; i < 4; ++i)
-				x86_opengl_debug("%f ", unit_v_to_ppli[i]);
-			x86_opengl_debug("]\n");
+				opengl_debug("%f ", unit_v_to_ppli[i]);
+			opengl_debug("]\n");
 
 			dcm_mul_dcli_factor = DOT4(normal, unit_v_to_ppli);
-			x86_opengl_debug("\t\tNormal = [");
+			opengl_debug("\t\tNormal = [");
 			for (i = 0; i < 4; ++i)
-				x86_opengl_debug("%f ", normal[i]);
-			x86_opengl_debug("]\n");
+				opengl_debug("%f ", normal[i]);
+			opengl_debug("]\n");
 
-			x86_opengl_debug("\t\tFactor = %f\n" , dcm_mul_dcli_factor);
+			opengl_debug("\t\tFactor = %f\n" , dcm_mul_dcli_factor);
 
 			SELF_SCALE_SCALAR_4V(dcm_mul_dcli, dcm_mul_dcli_factor);
 			ACC_4V(intermidiate_color, dcm_mul_dcli);
@@ -369,16 +369,16 @@ void x86_opengl_light_apply_all(struct x86_opengl_vertex_t *vtx, struct x86_open
 			/* Calculate the 4th part in lighting equation */
 			scli = lgt->Specular;
 			SCALE_4V(scm_mul_scli, scm, scli);
-			x86_opengl_debug("\t\tScm * Scli = [");
+			opengl_debug("\t\tScm * Scli = [");
 			for (i = 0; i < 4; ++i)
-				x86_opengl_debug("%f ", dcm_mul_dcli[i]);
-			x86_opengl_debug("]\n");			
-			fi = x86_opengl_light_fi(normal, vtx->pos, lgt->EyePosition);
-			x86_opengl_light_hi(hi, vtx->pos, lgt->EyePosition, pe, vbs);
-			direction = x86_opengl_direction_mul(vtx->normal, hi);
+				opengl_debug("%f ", dcm_mul_dcli[i]);
+			opengl_debug("]\n");			
+			fi = opengl_light_fi(normal, vtx->pos, lgt->EyePosition);
+			opengl_light_hi(hi, vtx->pos, lgt->EyePosition, pe, vbs);
+			direction = opengl_direction_mul(vtx->normal, hi);
 			scm_mul_scli_factor = pow(direction, srm);
 			scm_mul_scli_factor *= fi;
-			x86_opengl_debug("\t\tScm * Scli factor = %f\n", scm_mul_scli_factor);
+			opengl_debug("\t\tScm * Scli factor = %f\n", scm_mul_scli_factor);
 			SELF_SCALE_SCALAR_4V(scm_mul_scli, scm_mul_scli_factor);
 
 			ACC_4V(intermidiate_color, scm_mul_scli);
@@ -389,10 +389,10 @@ void x86_opengl_light_apply_all(struct x86_opengl_vertex_t *vtx, struct x86_open
 
 	ADD_4V(color_final, color_const, color_accum);
 
-	x86_opengl_debug("\t\tFinal Vertex Color = [");
+	opengl_debug("\t\tFinal Vertex Color = [");
 	for (int i = 0; i < 4; ++i)
-		x86_opengl_debug("%f ", color_final[i]);
-	x86_opengl_debug("]\n");
+		opengl_debug("%f ", color_final[i]);
+	opengl_debug("]\n");
 
 	for (i = 0; i < 4; ++i)
 	{

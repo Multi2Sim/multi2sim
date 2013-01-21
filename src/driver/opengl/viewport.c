@@ -24,16 +24,16 @@
 #include "viewport.h"
 
 
-struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void)
+struct opengl_viewport_attributes_t *opengl_viewport_create(void)
 {
 	int width;
 	int height;
 	
 	/* Variables */
-	struct x86_opengl_viewport_attributes_t *vpt;
+	struct opengl_viewport_attributes_t *vpt;
 
 	/* Allocate */
-	vpt = xcalloc(1, sizeof(struct x86_opengl_viewport_attributes_t));
+	vpt = xcalloc(1, sizeof(struct opengl_viewport_attributes_t));
 	if(!vpt)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -54,7 +54,7 @@ struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void)
 	return vpt;
 }
 
-void x86_opengl_viewport_free(struct x86_opengl_viewport_attributes_t *vpt)
+void opengl_viewport_free(struct opengl_viewport_attributes_t *vpt)
 {
 	free(vpt);
 }

@@ -21,17 +21,17 @@
 #define DRIVER_GLUT_FRAME_BUFFER_H
 
 
-void x86_glut_frame_buffer_init(void);
-void x86_glut_frame_buffer_done(void);
+void glut_frame_buffer_init(void);
+void glut_frame_buffer_done(void);
 
-void x86_glut_frame_buffer_clear(void);
-void x86_glut_frame_buffer_pixel(int x, int y, int color);
+void glut_frame_buffer_clear(void);
+void glut_frame_buffer_pixel(int x, int y, int color);
 
-void x86_glut_frame_buffer_resize(int width, int height);
-void x86_glut_frame_buffer_get_size(int *width, int *height);
+void glut_frame_buffer_resize(int width, int height);
+void glut_frame_buffer_get_size(int *width, int *height);
 
-void x86_glut_frame_buffer_flush_request(void);
-void x86_glut_frame_buffer_flush_if_requested(void);
+void glut_frame_buffer_flush_request(void);
+void glut_frame_buffer_flush_if_requested(void);
 
 
 #endif

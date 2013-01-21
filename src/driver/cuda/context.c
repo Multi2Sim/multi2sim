@@ -25,25 +25,25 @@
 
 
 /* Create a context */
-struct frm_cuda_context_t *frm_cuda_context_create()
+struct cuda_context_t *cuda_context_create()
 {
-	struct frm_cuda_context_t *context;
+	struct cuda_context_t *context;
 
 	/* Initialize */
-	context = xcalloc(1, sizeof(struct frm_cuda_context_t));
-	context->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_CONTEXT);
+	context = xcalloc(1, sizeof(struct cuda_context_t));
+	context->id = cuda_object_new_id(CUDA_OBJ_CONTEXT);
 	context->ref_count = 1;
 
 	/* Return */
-	frm_cuda_object_add(context);
+	cuda_object_add(context);
 	return context;
 }
 
 
 /* Free context */
-void frm_cuda_context_free(struct frm_cuda_context_t *context)
+void cuda_context_free(struct cuda_context_t *context)
 {
-	frm_cuda_object_remove(context);
+	cuda_object_remove(context);
 	free(context);
 }
 

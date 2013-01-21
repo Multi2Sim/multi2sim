@@ -24,12 +24,12 @@
 #include "opengl.h"
 
 
-struct x86_opengl_material_t *x86_opengl_material_create()
+struct opengl_material_t *opengl_material_create()
 {
-	struct x86_opengl_material_t *mtrl;
+	struct opengl_material_t *mtrl;
 
 	/* Allocate */
-	mtrl = xcalloc(1, sizeof(struct x86_opengl_material_t));
+	mtrl = xcalloc(1, sizeof(struct opengl_material_t));
 
 	/* Initialize */
 	/* The initial ambient reflectance is (0.2, 0.2, 0.2, 1.0) */
@@ -96,14 +96,14 @@ struct x86_opengl_material_t *x86_opengl_material_create()
 	return mtrl;
 }
 
-void x86_opengl_material_free(struct x86_opengl_material_t *mtrl)
+void opengl_material_free(struct opengl_material_t *mtrl)
 {
 	free(mtrl);
 }
 
-int x86_opengl_material_setup(struct x86_opengl_material_t * mtrl, GLenum face, GLenum pname, const GLfloat *params)
+int opengl_material_setup(struct opengl_material_t * mtrl, GLenum face, GLenum pname, const GLfloat *params)
 {
-	x86_opengl_debug("\t\tSetting Material...\n");
+	opengl_debug("\t\tSetting Material...\n");
 
 	if(face == GL_FRONT_AND_BACK || face == GL_FRONT || face == GL_BACK)
 	{
@@ -115,7 +115,7 @@ int x86_opengl_material_setup(struct x86_opengl_material_t * mtrl, GLenum face, 
 					memcpy(mtrl->Attrib[MAT_ATTRIB_FRONT_AMBIENT], params, 4 * sizeof(GLfloat));
 				if(face == GL_BACK || face == GL_FRONT_AND_BACK)
 					memcpy(mtrl->Attrib[MAT_ATTRIB_BACK_AMBIENT], params, 4 * sizeof(GLfloat));
-				x86_opengl_debug("\t\tMaterial ambient = [%f, %f, %f, %f]\n",
+				opengl_debug("\t\tMaterial ambient = [%f, %f, %f, %f]\n",
 								mtrl->Attrib[MAT_ATTRIB_FRONT_AMBIENT][0], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_AMBIENT][1], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_AMBIENT][2], 
@@ -128,7 +128,7 @@ int x86_opengl_material_setup(struct x86_opengl_material_t * mtrl, GLenum face, 
 					memcpy(mtrl->Attrib[MAT_ATTRIB_FRONT_DIFFUSE], params, 4 * sizeof(GLfloat));
 				if(face == GL_BACK || face == GL_FRONT_AND_BACK)
 					memcpy(mtrl->Attrib[MAT_ATTRIB_BACK_DIFFUSE], params, 4 * sizeof(GLfloat));
-				x86_opengl_debug("\t\tMaterial diffuse = [%f, %f, %f, %f]\n",
+				opengl_debug("\t\tMaterial diffuse = [%f, %f, %f, %f]\n",
 								mtrl->Attrib[MAT_ATTRIB_FRONT_DIFFUSE][0], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_DIFFUSE][1], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_DIFFUSE][2], 
@@ -141,7 +141,7 @@ int x86_opengl_material_setup(struct x86_opengl_material_t * mtrl, GLenum face, 
 					memcpy(mtrl->Attrib[MAT_ATTRIB_FRONT_SPECULAR], params, 4 * sizeof(GLfloat));
 				if(face == GL_BACK || face == GL_FRONT_AND_BACK)
 					memcpy(mtrl->Attrib[MAT_ATTRIB_BACK_SPECULAR], params, 4 * sizeof(GLfloat));
-				x86_opengl_debug("\t\tMaterial specular = [%f, %f, %f, %f]\n",
+				opengl_debug("\t\tMaterial specular = [%f, %f, %f, %f]\n",
 								mtrl->Attrib[MAT_ATTRIB_FRONT_SPECULAR][0], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_SPECULAR][1], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_SPECULAR][2], 
@@ -154,7 +154,7 @@ int x86_opengl_material_setup(struct x86_opengl_material_t * mtrl, GLenum face, 
 					memcpy(mtrl->Attrib[MAT_ATTRIB_FRONT_EMISSION], params, 4 * sizeof(GLfloat));
 				if(face == GL_BACK || face == GL_FRONT_AND_BACK)
 					memcpy(mtrl->Attrib[MAT_ATTRIB_BACK_EMISSION], params, 4 * sizeof(GLfloat));
-				x86_opengl_debug("\t\tMaterial emission = [%f, %f, %f, %f]\n",
+				opengl_debug("\t\tMaterial emission = [%f, %f, %f, %f]\n",
 								mtrl->Attrib[MAT_ATTRIB_FRONT_EMISSION][0], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_EMISSION][1], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_EMISSION][2], 
@@ -175,12 +175,12 @@ int x86_opengl_material_setup(struct x86_opengl_material_t * mtrl, GLenum face, 
 				{
 					memcpy(mtrl->Attrib[MAT_ATTRIB_FRONT_AMBIENT], params, 4 * sizeof(GLfloat));
 					memcpy(mtrl->Attrib[MAT_ATTRIB_FRONT_DIFFUSE], params, 4 * sizeof(GLfloat));	
-					x86_opengl_debug("\t\tMaterial ambient = [%f, %f, %f, %f]\n",
+					opengl_debug("\t\tMaterial ambient = [%f, %f, %f, %f]\n",
 								mtrl->Attrib[MAT_ATTRIB_FRONT_AMBIENT][0], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_AMBIENT][1], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_AMBIENT][2], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_AMBIENT][3] );
-					x86_opengl_debug("\t\tMaterial diffuse = [%f, %f, %f, %f]\n",
+					opengl_debug("\t\tMaterial diffuse = [%f, %f, %f, %f]\n",
 								mtrl->Attrib[MAT_ATTRIB_FRONT_DIFFUSE][0], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_DIFFUSE][1], 
 								mtrl->Attrib[MAT_ATTRIB_FRONT_DIFFUSE][2], 

@@ -21,7 +21,7 @@
 #define DRIVER_CUDA_MODULE_H
 
 
-struct frm_cuda_module_t
+struct cuda_module_t
 {
 	unsigned int id;
 	int ref_count;
@@ -33,8 +33,8 @@ struct frm_cuda_module_t
 	struct elf_file_t *elf_file;
 };
 
-struct frm_cuda_module_t *frm_cuda_module_create(void);
-void frm_cuda_module_free(struct frm_cuda_module_t *module);
+struct cuda_module_t *cuda_module_create(void);
+void cuda_module_free(struct cuda_module_t *module);
 
 
 #endif

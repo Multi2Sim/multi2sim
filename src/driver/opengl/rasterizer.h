@@ -61,11 +61,11 @@ static inline int IROUND(float f)
 #define PosFloatToFixed(X)      FloatToFixed(X)
 #define SignedFloatToFixed(X)   FloatToFixed(X)
 
-struct x86_opengl_context_t;
-struct x86_opengl_vertex_t;
+struct opengl_context_t;
+struct opengl_vertex_t;
 
-void x86_opengl_rasterizer_draw_triangle(struct x86_opengl_context_t *ctx, struct x86_opengl_vertex_t *vtx0, struct x86_opengl_vertex_t *vtx1, struct x86_opengl_vertex_t *vtx2);
+void opengl_rasterizer_draw_triangle(struct opengl_context_t *ctx, struct opengl_vertex_t *vtx0, struct opengl_vertex_t *vtx1, struct opengl_vertex_t *vtx2);
 /* Bresenham's line algorithm */
-void x86_opengl_rasterizer_draw_line(struct x86_opengl_context_t *ctx, GLint x1, GLint y1, GLint x2, GLint y2, GLuint color);
+void opengl_rasterizer_draw_line(struct opengl_context_t *ctx, GLint x1, GLint y1, GLint x2, GLint y2, GLuint color);
 
 #endif

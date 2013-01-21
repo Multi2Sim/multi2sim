@@ -31,30 +31,30 @@
 #include "stream.h"
 
 
-struct linked_list_t *frm_cuda_object_list;
+struct linked_list_t *cuda_object_list;
 
 
 /* Add an CUDA object to object list */
-void frm_cuda_object_add(void *object)
+void cuda_object_add(void *object)
 {
-	linked_list_find(frm_cuda_object_list, object);
-	assert(frm_cuda_object_list->error_code);
-	linked_list_add(frm_cuda_object_list, object);
+	linked_list_find(cuda_object_list, object);
+	assert(cuda_object_list->error_code);
+	linked_list_add(cuda_object_list, object);
 }
 
 
 /* Remove an CUDA object from object list */
-void frm_cuda_object_remove(void *object)
+void cuda_object_remove(void *object)
 {
-	linked_list_find(frm_cuda_object_list, object);
-	assert(!frm_cuda_object_list->error_code);
-	linked_list_remove(frm_cuda_object_list);
+	linked_list_find(cuda_object_list, object);
+	assert(!cuda_object_list->error_code);
+	linked_list_remove(cuda_object_list);
 }
 
 
 /* Look for an CUDA object in the object list. The 'id' is the
  * first field for every object. */
-void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id)
+void *cuda_object_get(enum cuda_obj_t type, unsigned int id)
 {
 	void *object;
 	unsigned int object_id;
@@ -62,9 +62,9 @@ void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id)
 	if (id >> 16 != type)
 		fatal("%s: requested CUDA object of incorrect type",
 			__FUNCTION__);
-	LINKED_LIST_FOR_EACH(frm_cuda_object_list)
+	LINKED_LIST_FOR_EACH(cuda_object_list)
 	{
-		if (!(object = linked_list_get(frm_cuda_object_list)))
+		if (!(object = linked_list_get(cuda_object_list)))
 			panic("%s: empty object", __FUNCTION__);
 		object_id = * (unsigned int *) object;
 		if (object_id == id)
@@ -77,15 +77,15 @@ void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id)
 
 
 /* Get the oldest created CUDA object of the specified type */
-void *frm_cuda_object_get_type(enum frm_cuda_obj_t type)
+void *cuda_object_get_type(enum cuda_obj_t type)
 {
         void *object;
         unsigned int object_id;
 
         /* Find object */
-        LINKED_LIST_FOR_EACH(frm_cuda_object_list)
+        LINKED_LIST_FOR_EACH(cuda_object_list)
         {
-                if (!(object = linked_list_get(frm_cuda_object_list)))
+                if (!(object = linked_list_get(cuda_object_list)))
                         panic("%s: empty object", __FUNCTION__);
                 object_id = * (unsigned int *) object;
                 if (object_id >> 16 == type)
@@ -100,7 +100,7 @@ void *frm_cuda_object_get_type(enum frm_cuda_obj_t type)
 /* Assignment of CUDA object identifiers
  * An identifier is a 32-bit value, whose 16 most significant bits represent the
  * object type, while the 16 least significant bits represent a unique object ID. */
-unsigned int frm_cuda_object_new_id(enum frm_cuda_obj_t type)
+unsigned int cuda_object_new_id(enum cuda_obj_t type)
 {
 	static unsigned int cuda_current_object_id;
 	unsigned int id;
@@ -114,36 +114,36 @@ unsigned int frm_cuda_object_new_id(enum frm_cuda_obj_t type)
 
 
 /* Free all CUDA objects in the object list */
-void frm_cuda_object_free_all()
+void cuda_object_free_all()
 {
 	void *object;
 
 	/* Devices */
-	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_DEVICE)))
-		frm_cuda_device_free((struct frm_cuda_device_t *) object);
+	while ((object = cuda_object_get_type(CUDA_OBJ_DEVICE)))
+		cuda_device_free((struct cuda_device_t *) object);
 
 	/* Contexts */
-	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_CONTEXT)))
-		frm_cuda_context_free((struct frm_cuda_context_t *) object);
+	while ((object = cuda_object_get_type(CUDA_OBJ_CONTEXT)))
+		cuda_context_free((struct cuda_context_t *) object);
 
 	/* Modules */
-	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_MODULE)))
-		frm_cuda_module_free((struct frm_cuda_module_t *) object);
+	while ((object = cuda_object_get_type(CUDA_OBJ_MODULE)))
+		cuda_module_free((struct cuda_module_t *) object);
 
 	/* Functions */
-	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_FUNCTION)))
-		frm_cuda_function_free((struct frm_cuda_function_t *) object);
+	while ((object = cuda_object_get_type(CUDA_OBJ_FUNCTION)))
+		cuda_function_free((struct cuda_function_t *) object);
 
         /* Mems */
-        while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_MEMORY)))
-                frm_cuda_memory_free((struct frm_cuda_memory_t *) object);
+        while ((object = cuda_object_get_type(CUDA_OBJ_MEMORY)))
+                cuda_memory_free((struct cuda_memory_t *) object);
 
 	/* Streams */
-	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_STREAM)))
-		frm_cuda_stream_free((struct frm_cuda_stream_t *) object);
+	while ((object = cuda_object_get_type(CUDA_OBJ_STREAM)))
+		cuda_stream_free((struct cuda_stream_t *) object);
 
 	/* Any object left */
-	if (linked_list_count(frm_cuda_object_list))
+	if (linked_list_count(cuda_object_list))
 		panic("cuda_object_free_all: objects remaining in the list");
 }
 

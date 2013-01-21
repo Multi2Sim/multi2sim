@@ -24,7 +24,7 @@
 
 
 /* OpenGL Viewport attribute */
-struct x86_opengl_viewport_attributes_t
+struct opengl_viewport_attributes_t
 {
 	/* Position */
 	GLint x;
@@ -42,7 +42,7 @@ struct x86_opengl_viewport_attributes_t
 };
 
 
-struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_create(void);
-void x86_opengl_viewport_free(struct x86_opengl_viewport_attributes_t *vpt);
+struct opengl_viewport_attributes_t *opengl_viewport_create(void);
+void opengl_viewport_free(struct opengl_viewport_attributes_t *vpt);
 
 #endif

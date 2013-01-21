@@ -21,12 +21,12 @@
 #define DRIVER_CUDA_CUDA_H
 
 
-#define frm_cuda_debug(...) debug(frm_cuda_debug_category, __VA_ARGS__)
-extern int frm_cuda_debug_category;
+#define cuda_debug(...) debug(cuda_debug_category, __VA_ARGS__)
+extern int cuda_debug_category;
 
 
 struct x86_ctx_t;
-int frm_cuda_call(struct x86_ctx_t *ctx);
+int cuda_abi_call(struct x86_ctx_t *ctx);
 
 
 #endif

@@ -84,9 +84,9 @@ do {								\
    TO[2] = DIR[0] * MAT[2] + DIR[1] * MAT[6] + DIR[2] * MAT[10];\
 } while (0)
 
-struct x86_opengl_vertex_t;
+struct opengl_vertex_t;
 /* OpenGL: Different kinds of 4x4 transformation matrices */
-enum x86_opengl_matrix_mode_t {
+enum opengl_matrix_mode_t {
 	MATRIX_GENERAL,		/* general 4x4 matrix */
 	MATRIX_IDENTITY,		/* identity matrix */
 	MATRIX_3D_NO_ROT,		/* orthogonal projection and others... */
@@ -97,37 +97,37 @@ enum x86_opengl_matrix_mode_t {
 } ;
 
 /* OpenGL Matrix */
-struct x86_opengl_matrix_t
+struct opengl_matrix_t
 {
 	GLfloat *matrix;	/* Points to 4x4 GLfloat type arrays*/
 	GLfloat *matinv;	/* Points to 4x4 GLfloat type arrays*/
 	GLuint flags;
-	enum x86_opengl_matrix_mode_t matrix_mode;	
+	enum opengl_matrix_mode_t matrix_mode;	
 };
 
-struct x86_opengl_matrix_t *x86_opengl_matrix_create(enum x86_opengl_matrix_mode_t mode);
-void x86_opengl_matrix_free(struct x86_opengl_matrix_t *mtx);
-struct x86_opengl_matrix_t *x86_opengl_matrix_duplicate(struct x86_opengl_matrix_t *mtx);
-void x86_opengl_matrix_copy(struct x86_opengl_matrix_t *mtx_dst, struct x86_opengl_matrix_t *mtx_src);
+struct opengl_matrix_t *opengl_matrix_create(enum opengl_matrix_mode_t mode);
+void opengl_matrix_free(struct opengl_matrix_t *mtx);
+struct opengl_matrix_t *opengl_matrix_duplicate(struct opengl_matrix_t *mtx);
+void opengl_matrix_copy(struct opengl_matrix_t *mtx_dst, struct opengl_matrix_t *mtx_src);
 
-void x86_opengl_matrix_mul_matrix(struct x86_opengl_matrix_t *dst_mtx, struct x86_opengl_matrix_t *mtx_a, struct x86_opengl_matrix_t *mtx_b);
-void x86_opengl_matrix_vector_mul_matrix( GLfloat *product, const GLfloat *m, const GLfloat *v );
-void x86_opengl_matrix_mul_vertex(struct x86_opengl_vertex_t *vtx, struct x86_opengl_matrix_t *mtx);
+void opengl_matrix_mul_matrix(struct opengl_matrix_t *dst_mtx, struct opengl_matrix_t *mtx_a, struct opengl_matrix_t *mtx_b);
+void opengl_matrix_vector_mul_matrix( GLfloat *product, const GLfloat *m, const GLfloat *v );
+void opengl_matrix_mul_vertex(struct opengl_vertex_t *vtx, struct opengl_matrix_t *mtx);
 
-struct x86_opengl_matrix_t *x86_opengl_ortho_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval);
-void x86_opengl_ortho_matrix_free(struct x86_opengl_matrix_t *mtx);
+struct opengl_matrix_t *opengl_ortho_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval);
+void opengl_ortho_matrix_free(struct opengl_matrix_t *mtx);
 
-struct x86_opengl_matrix_t *x86_opengl_frustum_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval);
-void x86_opengl_frustum_matrix_free(struct x86_opengl_matrix_t *mtx);
+struct opengl_matrix_t *opengl_frustum_matrix_create(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat nearval, GLfloat farval);
+void opengl_frustum_matrix_free(struct opengl_matrix_t *mtx);
 
-struct x86_opengl_matrix_t *x86_opengl_translate_matrix_create(GLfloat x, GLfloat y, GLfloat z);
-void x86_opengl_translate_matrix_free(struct x86_opengl_matrix_t *mtx);
+struct opengl_matrix_t *opengl_translate_matrix_create(GLfloat x, GLfloat y, GLfloat z);
+void opengl_translate_matrix_free(struct opengl_matrix_t *mtx);
 
-struct x86_opengl_matrix_t *x86_opengl_rotate_matrix_create(GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
-void x86_opengl_rotate_matrix_free(struct x86_opengl_matrix_t *mtx);
+struct opengl_matrix_t *opengl_rotate_matrix_create(GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
+void opengl_rotate_matrix_free(struct opengl_matrix_t *mtx);
 
-GLboolean x86_opengl_matrix_invert(struct x86_opengl_matrix_t *mtx);
-GLboolean x86_opengl_matrix_is_dirty(const struct x86_opengl_matrix_t *mtx);
-void x86_opengl_matrix_analyse(struct x86_opengl_matrix_t *mtx);
+GLboolean opengl_matrix_invert(struct opengl_matrix_t *mtx);
+GLboolean opengl_matrix_is_dirty(const struct opengl_matrix_t *mtx);
+void opengl_matrix_analyse(struct opengl_matrix_t *mtx);
 
 #endif

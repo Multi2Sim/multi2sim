@@ -26,7 +26,7 @@
 #define COLOR_BUFFER_COUNT 4
 
 /* OpenGL render buffer */
-struct x86_opengl_render_buffer_t
+struct opengl_render_buffer_t
 {
 	GLuint width;
 	GLuint height;
@@ -39,26 +39,26 @@ struct x86_opengl_render_buffer_t
  * 1 depth buffer
  * 1 stencil buffer
  */
-struct x86_opengl_frame_buffer_t
+struct opengl_frame_buffer_t
 {
 	GLsizei width;
 	GLsizei height;
-	struct x86_opengl_render_buffer_t *color_buffer[COLOR_BUFFER_COUNT];
-	struct x86_opengl_render_buffer_t *depth_buffer;
-	struct x86_opengl_render_buffer_t *stencil_buffer;
+	struct opengl_render_buffer_t *color_buffer[COLOR_BUFFER_COUNT];
+	struct opengl_render_buffer_t *depth_buffer;
+	struct opengl_render_buffer_t *stencil_buffer;
 };
 
 /* OpenGL render buffer */
-struct x86_opengl_render_buffer_t *x86_opengl_render_buffer_create(int width, int height);
-void x86_opengl_render_buffer_free(struct x86_opengl_render_buffer_t *rb);
-void x86_opengl_render_buffer_clear(struct x86_opengl_render_buffer_t *rb, int clear_value);
-int x86_opengl_render_buffer_resize(struct x86_opengl_render_buffer_t *rb, int width, int height);
+struct opengl_render_buffer_t *opengl_render_buffer_create(int width, int height);
+void opengl_render_buffer_free(struct opengl_render_buffer_t *rb);
+void opengl_render_buffer_clear(struct opengl_render_buffer_t *rb, int clear_value);
+int opengl_render_buffer_resize(struct opengl_render_buffer_t *rb, int width, int height);
 
 /* OpenGL frame buffer */
-struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int height);
-void x86_opengl_frame_buffer_free(struct x86_opengl_frame_buffer_t *fb);
-void x86_opengl_frame_buffer_clear(struct x86_opengl_frame_buffer_t *fb, GLbitfield mask);
-int x86_opengl_frame_buffer_resize(struct x86_opengl_frame_buffer_t *fb, int width, int height);
+struct opengl_frame_buffer_t *opengl_frame_buffer_create(int width, int height);
+void opengl_frame_buffer_free(struct opengl_frame_buffer_t *fb);
+void opengl_frame_buffer_clear(struct opengl_frame_buffer_t *fb, GLbitfield mask);
+int opengl_frame_buffer_resize(struct opengl_frame_buffer_t *fb, int width, int height);
 
 
 #endif

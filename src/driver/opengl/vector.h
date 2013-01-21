@@ -561,8 +561,8 @@ NORMALIZE_3FV(GLfloat v[3])
    }
 }
 
-GLfloat *x86_opengl_vector_create(int len);
-void x86_opengl_vector_free(GLfloat *vct);
-void x86_opengl_vector_unit(GLfloat *dst, GLfloat *p1, GLfloat *p2);
+GLfloat *opengl_vector_create(int len);
+void opengl_vector_free(GLfloat *vct);
+void opengl_vector_unit(GLfloat *dst, GLfloat *p1, GLfloat *p2);
 
  #endif

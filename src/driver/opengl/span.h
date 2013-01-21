@@ -26,12 +26,12 @@
 #include "rasterizer.h"
 
 
-struct x86_opengl_span_array_t
+struct opengl_span_array_t
 {
 	GLuint  z[SWRAST_MAX_WIDTH];  /**< fragment Z coords */	
 };
 
-struct x86_opengl_span_t
+struct opengl_span_t
 {
 	/* Coord of first fragment in horizontal span/run */
 	GLint x;
@@ -50,13 +50,13 @@ struct x86_opengl_span_t
 	GLfixed alpha, alphaStep;
 	GLfixed z, zStep;
 
-	struct x86_opengl_span_array_t *array;
+	struct opengl_span_array_t *array;
 
 };
 
-struct x86_opengl_span_t *x86_opengl_span_create();
-void x86_opengl_span_free(struct x86_opengl_span_t *spn);
+struct opengl_span_t *opengl_span_create();
+void opengl_span_free(struct opengl_span_t *spn);
 
-void x86_opengl_span_interpolate_z(struct x86_opengl_span_t *spn);
+void opengl_span_interpolate_z(struct opengl_span_t *spn);
 
 #endif
