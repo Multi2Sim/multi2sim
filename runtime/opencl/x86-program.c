@@ -68,8 +68,8 @@ struct opencl_x86_program_t *opencl_x86_program_create(
 		fatal("%s: no '.text' section in binary", __FUNCTION__);
 
 	/* Extract section to temporary file */
-	program->file_name = xstrdup("./XXXXXX.so");
-	f = mkstemps(program->file_name, 3);
+	program->file_name = xstrdup("./tmp_XXXXXX");
+	f = mkstemp(program->file_name);
 	if (f == -1)
 		fatal("%s: could not create temporary file", __FUNCTION__);
 	if (write(f, section->buffer.ptr, section->buffer.size) != section->buffer.size)
