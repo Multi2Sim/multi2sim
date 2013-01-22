@@ -50,7 +50,7 @@ static struct opencl_x86_device_work_group_data_t
 		"lea " XSTR(OPENCL_WORK_GROUP_STACK_SIZE) "(%%esp), %%eax\n\t"
 		"and $" XSTR(OPENCL_WORK_GROUP_STACK_MASK) ", %%eax\n\t"
 		"mov " XSTR(OPENCL_WORK_GROUP_DATA_OFFSET) "(%%eax), %0\n\t"
-		: "=g" (data)
+		: "=r" (data)
 		:
 		: "eax"
 	);
