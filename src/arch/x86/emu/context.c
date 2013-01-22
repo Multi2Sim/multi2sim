@@ -654,10 +654,14 @@ int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex, unsigned int c
 
 		if (wakeup_ctx)
 		{
+			/* Wake up context */
 			x86_ctx_clear_status(wakeup_ctx, x86_ctx_suspended | x86_ctx_futex);
 			x86_sys_debug("  futex 0x%x: thread %d woken up\n", futex, wakeup_ctx->pid);
 			wakeup_count++;
 			count--;
+
+			/* Set system call return value */
+			wakeup_ctx->regs->eax = 0;
 		}
 		else
 		{
