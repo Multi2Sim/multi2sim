@@ -239,12 +239,21 @@ cl_int clGetContextInfo(
 			param_value, param_value_size_ret);
 	}
 
-/*
-	FIXME - use device_list below
 	case CL_CONTEXT_DEVICES:
-		return opencl_set_param(context->devices, sizeof (cl_device_id) *
-			context->num_devices, param_value_size, param_value, param_value_size_ret);
-	
+	{
+		int i;
+		int count = list_count(context->device_list);
+		cl_device_id *devices = xcalloc(count, sizeof (cl_device_id));
+		LIST_FOR_EACH(context->device_list, i)
+			devices[i] = list_get(context->device_list, i);
+
+		cl_int status = opencl_set_param(devices, sizeof (cl_device_id) *
+			count, param_value_size, param_value, param_value_size_ret);
+		free(devices);
+		return status;
+	}
+
+/*	
 	case CL_CONTEXT_PROPERTIES:
 		if (context->props)
 			return opencl_set_param(context->props, sizeof (cl_context_properties)
