@@ -115,6 +115,7 @@ cl_int opencl_set_param(const void *src_value, size_t src_size,
 cl_int opencl_set_string(const char *src_string, size_t dest_size,
 	void *dest_string, size_t *size_ret)
 {
+	assert(src_string);
 	size_t src_size = strlen(src_string) + 1;
 	return opencl_set_param(src_string, src_size, dest_size,
 		dest_string, size_ret);

@@ -592,6 +592,8 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->min_data_type_align_size = 1;
 	parent->name = "x86 CPU";
 	parent->opencl_c_version = VERSION;
+	parent->version = "1";
+	parent->driver_version = "1";
 	parent->vector_width_char = 16;
 	parent->vector_width_short = 16 / sizeof (cl_short);
 	parent->vector_width_int = 16 / sizeof (cl_int);
