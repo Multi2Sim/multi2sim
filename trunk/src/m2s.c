@@ -1639,7 +1639,7 @@ int main(int argc, char **argv)
 	runtime_init();
 	runtime_register("Old OpenCL", "m2s-opencl-old", "m2s-opencl-old", 325,
 			(runtime_abi_func_t) opencl_old_abi_call);
-	runtime_register("GLUT", "GLUT", "m2s-glut", 326, (runtime_abi_func_t) glut_abi_call);
+	runtime_register("GLUT", "glut", "m2s-glut", 326, (runtime_abi_func_t) glut_abi_call);
 	runtime_register("OpenCL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) opengl_abi_call);
 	runtime_register("CUDA", "cuda", "m2s-cuda", 328, (runtime_abi_func_t) cuda_abi_call);
 	runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) opencl_abi_call);
