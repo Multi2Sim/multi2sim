@@ -276,7 +276,8 @@ void opencl_x86_kernel_free(struct opencl_x86_kernel_t *kernel)
 {
 	free(kernel->param_info);
 	free(kernel->stack_params);
-	free(kernel->register_params);
+//TODO: get posix_memalign to work with mhandle
+//	free(kernel->register_params);
 	free(kernel);
 }
 
