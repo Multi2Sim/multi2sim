@@ -33,7 +33,7 @@ struct si_ndrange_t
 {
 	/* ID */
 	char *name;
-	int id;  /* Sequential ndrange ID (given by si_emu->ndrange_count counter) */
+	int id;  /* Sequential ND-Range ID (given by si_emu->ndrange_count counter) */
 
 	/* Resources */
 	int num_vgprs;
@@ -104,6 +104,10 @@ struct si_ndrange_t
 	int finished_list_count;
 	int finished_list_max;
 
+	/* Instruction memory containing Southern Islands ISA */
+	void *inst_buffer;
+	unsigned int inst_buffer_size;
+
 	/* Local memory top to assign to local arguments.
 	 * Initially it is equal to the size of local variables in kernel function. */
 	unsigned int local_mem_top;
@@ -128,6 +132,8 @@ void si_ndrange_clear_status(struct si_ndrange_t *work_group, enum si_ndrange_st
 
 void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
+void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange,
+		void *buf, int size, unsigned int pc);
 void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_args(struct si_ndrange_t *ndrange);
 

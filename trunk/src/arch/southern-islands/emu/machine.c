@@ -1418,22 +1418,15 @@ void si_isa_S_ENDPGM_impl(struct si_work_item_t *work_item, struct si_inst_t *in
 #define INST SI_INST_SOPP
 void si_isa_S_BRANCH_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	unsigned int pc;
 	short simm16;
 	int se_simm16;
-
-	/* Load the current program counter. */
-	pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
 
 	/* Load the short constant operand and sign extend into an integer. */
 	simm16 = INST.simm16;
 	se_simm16 = simm16;
 
-	/* Determine the program counter to branch to. */
-	pc = pc + (se_simm16 * 4) + 4;
-
-	/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-	work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
+	/* Relative jump */
+	work_item->wavefront->pc += se_simm16 * 4 + 4 - inst->info->size;
 }
 #undef INST
 
@@ -1441,50 +1434,37 @@ void si_isa_S_BRANCH_impl(struct si_work_item_t *work_item, struct si_inst_t *in
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_SCC0_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	unsigned int pc;
 	short simm16;
 	int se_simm16;
 
-	if(!si_isa_read_sreg(work_item, SI_SCC))
+	if (!si_isa_read_sreg(work_item, SI_SCC))
 	{
-		/* Load the current program counter. */
-		pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
-
 		/* Load the short constant operand and sign extend into an integer. */
 		simm16 = INST.simm16;
 		se_simm16 = simm16;
 
 		/* Determine the program counter to branch to. */
-		pc = pc + (se_simm16 * 4) + 4;
-
-		/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-		work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
+		work_item->wavefront->pc += se_simm16 * 4 + 4 - inst->info->size;
 	}
 }
 #undef INST
+
 
 /* if(SCC == 1) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_SCC1_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	unsigned int pc;
 	short simm16;
 	int se_simm16;
 
-	if(si_isa_read_sreg(work_item, SI_SCC))
+	if (si_isa_read_sreg(work_item, SI_SCC))
 	{
-		/* Load the current program counter. */
-		pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
-
 		/* Load the short constant operand and sign extend into an integer. */
 		simm16 = INST.simm16;
 		se_simm16 = simm16;
 
 		/* Determine the program counter to branch to. */
-		pc = pc + (se_simm16 * 4) + 4;
-
-		/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-		work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
+		work_item->wavefront->pc += se_simm16 * 4 + 4 - inst->info->size;
 	}
 }
 #undef INST
@@ -1493,24 +1473,17 @@ void si_isa_S_CBRANCH_SCC1_impl(struct si_work_item_t *work_item, struct si_inst
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_VCCZ_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	unsigned int pc;
 	short simm16;
 	int se_simm16;
 
 	if(si_isa_read_sreg(work_item, SI_VCCZ))
 	{
-		/* Load the current program counter. */
-		pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
-
 		/* Load the short constant operand and sign extend into an integer. */
 		simm16 = INST.simm16;
 		se_simm16 = simm16;
 
 		/* Determine the program counter to branch to. */
-		pc = pc + (se_simm16 * 4) + 4;
-
-		/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-		work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
+		work_item->wavefront->pc += se_simm16 * 4 + 4 - inst->info->size;
 	}
 }
 #undef INST
@@ -1519,53 +1492,42 @@ void si_isa_S_CBRANCH_VCCZ_impl(struct si_work_item_t *work_item, struct si_inst
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_VCCNZ_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	unsigned int pc;
 	short simm16;
 	int se_simm16;
 
-	if(!si_isa_read_sreg(work_item, SI_VCCZ))
+	if (!si_isa_read_sreg(work_item, SI_VCCZ))
 	{
-		/* Load the current program counter. */
-		pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
-
 		/* Load the short constant operand and sign extend into an integer. */
 		simm16 = INST.simm16;
 		se_simm16 = simm16;
 
 		/* Determine the program counter to branch to. */
-		pc = pc + (se_simm16 * 4) + 4;
-
-		/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-		work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
+		work_item->wavefront->pc += se_simm16 * 4 + 4 - inst->info->size;
 	}
 }
 #undef INST
+
 
 /* if(EXEC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_EXECZ_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	unsigned int pc;
 	short simm16;
 	int se_simm16;
 
-	if(si_isa_read_sreg(work_item, SI_EXECZ))
+	if (si_isa_read_sreg(work_item, SI_EXECZ))
 	{
-		/* Load the current program counter. */
-		pc = work_item->wavefront->wavefront_pool - work_item->wavefront->wavefront_pool_start;
-
 		/* Load the short constant operand and sign extend into an integer. */
 		simm16 = INST.simm16;
 		se_simm16 = simm16;
 
 		/* Determine the program counter to branch to. */
-		pc = pc + (se_simm16 * 4) + 4;
-
-		/* Set the new program counter. Account for automatically incrementing the pc after this instruction. */
-		work_item->wavefront->wavefront_pool = work_item->wavefront->wavefront_pool_start + pc - inst->info->size;
+		work_item->wavefront->pc += se_simm16 * 4 + 4 - inst->info->size;
 	}
 }
 #undef INST
+
+
 /* if(EXEC != 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_EXECNZ_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
