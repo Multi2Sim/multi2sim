@@ -251,9 +251,9 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 				for(int j = 0; j < 4 * enc_dict_entry->userElementCount; j++)
 				{
 					prog_info_entry = desc + i * sizeof(struct pt_note_prog_info_entry_t);
-								elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
-									prog_info_entry->address, str_map_value(&prog_info_entry_map,
-									prog_info_entry->address), prog_info_entry->value);
+					elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
+							prog_info_entry->address, str_map_value(&prog_info_entry_map,
+							prog_info_entry->address), prog_info_entry->value);
 					switch(j % 4)
 					{
 					case 0:
@@ -528,8 +528,8 @@ static void si_bin_file_read_enc_dict(struct si_bin_file_t *bin_file)
 	/* Read encoding dictionary entries */
 	bin_file->enc_dict = list_create();
 	elf_buffer_seek(buffer, program_header->header->p_offset);
-	for (i = 0; i < enc_dict_entry_count; i++) {
-		
+	for (i = 0; i < enc_dict_entry_count; i++)
+	{
 		/* Create entry */
 		enc_dict_entry = xcalloc(1, sizeof(struct si_bin_enc_dict_entry_t));
 		enc_dict_entry->header = elf_buffer_tell(buffer);
@@ -776,4 +776,3 @@ void si_bin_file_free(struct si_bin_file_t *bin_file)
 	elf_file_free(bin_file->elf_file);
 	free(bin_file);
 }
-

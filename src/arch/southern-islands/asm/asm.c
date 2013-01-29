@@ -990,7 +990,7 @@ void line_dump(char *inst_str, unsigned int rel_addr, void *buf, char *line, int
 	}
 }
 
-void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, uint32_t rel_addr, 
+void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigned int rel_addr,
 	char *line, int line_size)
 {
 	switch (inst->info->fmt)

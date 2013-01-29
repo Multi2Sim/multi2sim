@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/southern-islands/asm/bin-file.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/x86/emu/context.h>
@@ -2458,6 +2459,8 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 
 	struct si_ndrange_t *ndrange;
 
+	struct elf_buffer_t *elf_buffer;
+
 	int code;
 	int i;
 
@@ -2540,6 +2543,13 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	si_ndrange_setup_work_items(ndrange);
 	si_ndrange_setup_const_mem(ndrange);
 	si_ndrange_setup_args(ndrange);
+
+	/* Set up instruction memory */
+	/* Initialize wavefront instruction buffer and PC */
+	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer;
+	if (!elf_buffer->size)
+		fatal("%s: cannot load kernel code", __FUNCTION__);
+	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
 
 	/* Build UAV lists */
 	for (i = 0; i < list_count(kernel->arg_list); i++)
