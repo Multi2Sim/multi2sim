@@ -203,7 +203,7 @@ struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 	if (posix_memalign((void **) &kernel->register_params, MEMORY_ALIGN,
 			sizeof kernel->register_params[0] * MAX_SSE_REG_PARAMS))
 		fatal("%s: could not allocate aligned memory", __FUNCTION__);
-
+	mhandle_register_ptr(kernel->register_params, sizeof kernel->register_params[0] * MAX_SSE_REG_PARAMS);
 	stride = 8;
 	num_reg = 0;
 	stack_offset = 0;
@@ -276,8 +276,7 @@ void opencl_x86_kernel_free(struct opencl_x86_kernel_t *kernel)
 {
 	free(kernel->param_info);
 	free(kernel->stack_params);
-//TODO: get posix_memalign to work with mhandle
-//	free(kernel->register_params);
+	free(kernel->register_params);
 	free(kernel);
 }
 
