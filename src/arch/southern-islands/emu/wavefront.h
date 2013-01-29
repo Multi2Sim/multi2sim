@@ -39,9 +39,9 @@ struct si_wavefront_t
 	struct si_ndrange_t *ndrange;
 	struct si_work_group_t *work_group;
 
-	/* Instruction buffer (code, not architectural instruction buffer) */
-	void *wavefront_pool;
-	void *wavefront_pool_start;
+	/* Program counter. Offset in 'inst_buffer' where we can find the next
+	 * instruction to be executed. */
+	unsigned int pc;
 
 	/* Current instruction */
 	struct si_inst_t inst;

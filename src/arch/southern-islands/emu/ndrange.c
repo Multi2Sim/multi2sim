@@ -77,13 +77,11 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 
 void si_ndrange_free(struct si_ndrange_t *ndrange)
 {
-	/* Set event status to complete if an event was set. */
-	if(ndrange->event)
-	{
-		ndrange->event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
-	}
-
 	int i;
+
+	/* Set event status to complete if an event was set. */
+	if (ndrange->event)
+		ndrange->event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
 
 	/* Clear task from command queue */
 	if (ndrange->command_queue && ndrange->command)
@@ -132,6 +130,10 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 	{
 		free(ndrange->inst_histogram);
 	}
+
+	/* Free instruction buffer */
+	if (ndrange->inst_buffer)
+		free(ndrange->inst_buffer);
 
 	/* Free ndrange */
 	free(ndrange->name);
@@ -300,12 +302,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		snprintf(wavefront->name, sizeof(wavefront->name), "wavefront[i%d-i%d]",
 			wavefront->work_item_id_first, wavefront->work_item_id_last);
 
-		/* Initialize wavefront program counter */
-		if (!kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.size)
-			fatal("%s: cannot load kernel code", __FUNCTION__);
-		wavefront->wavefront_pool_start = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
-		wavefront->wavefront_pool = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
-
 		/* Save work-group IDs in registers */
 		unsigned int user_sgpr = kernel->bin_file->
 			enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
@@ -375,11 +371,38 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 }
 
 
+void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange, void *buf, int size,
+		unsigned int pc)
+{
+	struct si_wavefront_t *wavefront;
+	int wid;
+
+	/* Sanity */
+	if (ndrange->inst_buffer || ndrange->inst_buffer_size)
+		panic("%s: instruction buffer already set up", __FUNCTION__);
+	if (!size || pc >= size)
+		panic("%s: invalid value for size/pc", __FUNCTION__);
+
+	/* Allocate memory buffer */
+	assert(size);
+	ndrange->inst_buffer = xmalloc(size);
+	ndrange->inst_buffer_size = size;
+	memcpy(ndrange->inst_buffer, buf, size);
+
+	/* Initialize PC for all wavefronts */
+	/* Initialize the wavefronts */
+	for (wid = 0; wid < ndrange->wavefront_count; wid++)
+	{
+		wavefront = ndrange->wavefronts[wid];
+		wavefront->pc = pc;
+	}
+}
+
 
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 {
 	struct si_opencl_kernel_t *kernel = ndrange->kernel;
-	uint32_t zero = 0;
+	unsigned int zero = 0;
 	float f;
 	
        	/* CB0 bytes 0:15 */

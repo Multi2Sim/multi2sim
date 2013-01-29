@@ -338,7 +338,6 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_fb
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;
-	unsigned int rel_addr;
 	char inst_str[MAX_INST_STR_SIZE];
 	char inst_str_trimmed[MAX_INST_STR_SIZE];
 
@@ -455,10 +454,9 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_fb
 		/* Trace */
 		if (si_tracing())
 		{
-			rel_addr = wavefront->wavefront_pool - 
-				wavefront->wavefront_pool_start;
 			si_inst_dump(&wavefront->inst, wavefront->inst_size, 
-				wavefront->wavefront_pool, rel_addr, inst_str, sizeof inst_str);
+					wavefront->ndrange->inst_buffer + wavefront->pc,
+					wavefront->pc, inst_str, sizeof inst_str);
 			str_single_spaces(inst_str_trimmed, sizeof inst_str_trimmed, 
 				inst_str);
 			si_trace("si.new_inst id=%lld cu=%d ib=%d wg=%d wf=%d uop_id=%lld "
