@@ -15,7 +15,9 @@ INCLUDES = @M2S_INCLUDES@
 
 LDADD = \
 	$(top_builddir)/src/driver/cuda/libcuda.a \
+	$(top_builddir)/src/driver/glu/libglu.a \
 	$(top_builddir)/src/driver/glut/libglut.a \
+	$(top_builddir)/src/driver/glew/libglew.a \
 	$(top_builddir)/src/driver/opencl/libopencl.a \
 	$(top_builddir)/src/driver/opencl-old/evergreen/libopencl.a \
 	$(top_builddir)/src/driver/opencl-old/southern-islands/libopencl.a \
