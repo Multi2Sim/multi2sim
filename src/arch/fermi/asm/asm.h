@@ -370,7 +370,7 @@ struct frm_fmt_int_iadd_t
 	unsigned long long int __reserved1 : 1; /* [7] */
 	unsigned long long int src_mod : 2; /* [9:8] */
 	unsigned long long int pred : 4; /* [13:10] */
-	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int dst : 6; /* [19:14] */	
 	unsigned long long int src1 : 6; /* [25:20] */
 	unsigned long long int src2 : 20; /* [45:26] */
 	unsigned long long int src2_mod : 2; /* [47:46] */
@@ -483,7 +483,7 @@ struct frm_fmt_int_lop_t
 {
 	unsigned long long int op0 : 4; /* [3:0] */
 	unsigned long long int __reserved0 : 2; /* [5:4] */
-	unsigned long long int op : 2; /* [7:6] */
+	unsigned long long int op67 : 2; /* [7:6] */
 	unsigned long long int not_src2 : 1; /* [8] */
 	unsigned long long int not_src1 : 1; /* [9] */
 	unsigned long long int pred : 4; /* [13:10] */
@@ -500,7 +500,7 @@ struct frm_fmt_int_lop32i_t
 {
 	unsigned long long int op0 : 4; /* [3:0] */
 	unsigned long long int __reserved0 : 2; /* [5:4] */
-	unsigned long long int op : 2; /* [7:6] */
+	unsigned long long int op67 : 2; /* [7:6] */
 	unsigned long long int __reserved1 : 1; /* [8] */
 	unsigned long long int not_src1 : 1; /* [9] */
 	unsigned long long int pred : 4; /* [13:10] */
@@ -513,7 +513,23 @@ struct frm_fmt_int_lop32i_t
 struct frm_fmt_int_flo_t
 {
 	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int d: 1; /* [] */
+	unsigned long long int u32 : 1; /* [5:5] */
+	unsigned long long int e: 3; /* [] */
+	unsigned long long int pred : 5; /* [13:9] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int c: 10; /* [] */
 	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_int_iset_t
+{
+	unsigned long long int op0: 4; /* [3:0] */
+	unsigned long long int nothing: 54; /* [4:57] */
+	unsigned long long int op1: 6; /* [63:58] */
 };
 
 struct frm_fmt_int_isetp_t
@@ -1247,6 +1263,7 @@ union frm_inst_dword_t
 	struct frm_fmt_int_shl_t int_shl;
 	struct frm_fmt_int_lop_t int_lop;
 	struct frm_fmt_int_lop32i_t int_lop32i;
+	struct frm_fmt_int_iset_t int_iset;
 	struct frm_fmt_int_isetp_t int_isetp;
 	struct frm_fmt_int_icmp_t int_icmp;
 	struct frm_fmt_int_flo_t int_flo;
