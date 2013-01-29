@@ -69,7 +69,7 @@ DEFINST(FSETP,
 	"%p FSETP%e %P, %Q, %a, %b, %R", 
 	FP_FSETP, 
 	FP, 
-	0x040)
+	0x050)
 
 //RRO
 
@@ -184,12 +184,16 @@ DEFINST(LOP32I,
 	0x0e2)
 
 DEFINST(FLO,
-	"%p FLO",
+	"FLO%e %d, %b",
 	INT_FLO,
 	INT,
 	0x1e3)
 
-//DEFINST(ISET
+DEFINST(ISET,
+	"ISET",
+	INT_ISET,
+	INT,
+	0x043)
 
 DEFINST(ISETP, 
 	"%p ISETP%e %P, %Q, %a, %b, %R", 
