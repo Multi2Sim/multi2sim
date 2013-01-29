@@ -46,7 +46,9 @@
 #include <arch/x86/timing/cpu.h>
 #include <arch/x86/timing/trace-cache.h>
 #include <driver/cuda/cuda.h>
+#include <driver/glu/glu.h>
 #include <driver/glut/glut.h>
+#include <driver/glew/glew.h>
 #include <driver/opencl/opencl.h>
 #include <driver/opencl-old/evergreen/opencl.h>
 #include <driver/opencl-old/southern-islands/opencl.h>
@@ -69,7 +71,9 @@ static char *visual_file_name = "";
 static char *ctx_config_file_name = "";
 static char *elf_debug_file_name = "";
 static char *trace_file_name = "";
+static char *glu_debug_file_name = "";
 static char *glut_debug_file_name = "";
+static char *glew_debug_file_name = "";
 static char *opengl_debug_file_name = "";
 
 static char *x86_call_debug_file_name = "";
@@ -1330,7 +1334,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	if (*evg_opengl_disasm_file_name && argc != 4)
 		fatal("option '--evg-disasm-opengl' is incompatible with any other options.");	
 	if (*si_opengl_disasm_file_name && argc != 4)
-		fatal("option '--evg-disasm-opengl' is incompatible with any other options.");	
+		fatal("option '--si-disasm-opengl' is incompatible with any other options.");	
 	if (*frm_disasm_file_name && argc > 3)
 		fatal("option '--frm-disasm' is incompatible with any other options.");
 	if (*x86_disasm_file_name && argc > 3)
@@ -1614,7 +1618,9 @@ int main(int argc, char **argv)
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
 	x86_ctx_debug_category = debug_new_category(ctx_debug_file_name);
+	glu_debug_category = debug_new_category(glu_debug_file_name);
 	glut_debug_category = debug_new_category(glut_debug_file_name);
+	glew_debug_category = debug_new_category(glew_debug_file_name);
 	opengl_debug_category = debug_new_category(opengl_debug_file_name);
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	cuda_debug_category = debug_new_category(cuda_debug_file_name);
@@ -1643,6 +1649,8 @@ int main(int argc, char **argv)
 	runtime_register("OpenCL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) opengl_abi_call);
 	runtime_register("CUDA", "cuda", "m2s-cuda", 328, (runtime_abi_func_t) cuda_abi_call);
 	runtime_register("OpenCL", "OpenCL", "m2s-opencl", 329, (runtime_abi_func_t) opencl_abi_call);
+	runtime_register("GLEW", "GLEW", "m2s-glew", 330, (runtime_abi_func_t) glew_abi_call);
+	runtime_register("GLU", "GLU", "m2s-glu", 331, (runtime_abi_func_t) glu_abi_call);
 
 	/* Initialization of libraries */
 	esim_init();

@@ -519,6 +519,8 @@ AC_CONFIG_FILES([
 		 
 		runtime/Makefile
 		runtime/cuda/Makefile
+		runtime/glew/Makefile
+		runtime/glu/Makefile
 		runtime/glut/Makefile
 		runtime/opencl/Makefile
 		runtime/opencl-old/Makefile
@@ -568,7 +570,9 @@ AC_CONFIG_FILES([
 		src/arch/x86/timing/Makefile
 
 		src/driver/cuda/Makefile
+		src/driver/glu/Makefile
 		src/driver/glut/Makefile
+		src/driver/glew/Makefile
 		src/driver/opencl/Makefile
 		src/driver/opencl-old/Makefile
 		src/driver/opencl-old/evergreen/Makefile
@@ -576,8 +580,8 @@ AC_CONFIG_FILES([
 		src/driver/opengl/Makefile
 
 		src/lib/esim/Makefile
-                src/lib/mhandle/Makefile
-                src/lib/util/Makefile
+		src/lib/mhandle/Makefile
+		src/lib/util/Makefile
 
 		tools/Makefile
 		tools/clcc/Makefile
