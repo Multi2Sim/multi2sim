@@ -1,21 +1,21 @@
 /*
- *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+*  Multi2Sim
+*  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with this program; if not, write to the Free Software
+*  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
 
 #ifndef RUNTIME_INCLUDE_GL_GLUT_H
 #define RUNTIME_INCLUDE_GL_GLUT_H
@@ -33,6 +33,7 @@ extern void *glutBitmapHelvetica10;
 extern void *glutBitmapHelvetica12;
 extern void *glutBitmapHelvetica18;
 
+/* freeglut_std.h */
 void glutInit(int *pargc, char **argv);
 void glutInitWindowPosition(int x, int y);
 void glutInitWindowSize(int width, int height);
@@ -100,7 +101,7 @@ void glutEntryFunc(void (*callback) (int));
 void glutKeyboardUpFunc(void (*callback) (unsigned char, int, int));
 void glutSpecialUpFunc(void (*callback) (int, int, int));
 void glutJoystickFunc(void (*callback) (unsigned int, int, int, int),
-	int pollInterval);
+int pollInterval);
 void glutMenuStateFunc(void (*callback) (int));
 void glutMenuStatusFunc(void (*callback) (int, int, int));
 void glutOverlayDisplayFunc(void (*callback) (void));
@@ -132,12 +133,12 @@ void glutWireSphere(GLdouble radius, GLint slices, GLint stacks);
 void glutSolidSphere(GLdouble radius, GLint slices, GLint stacks);
 void glutWireCone(GLdouble base, GLdouble height, GLint slices, GLint stacks);
 void glutSolidCone(GLdouble base, GLdouble height, GLint slices,
-	GLint stacks);
+GLint stacks);
 
 void glutWireTorus(GLdouble innerRadius, GLdouble outerRadius, GLint sides,
-	GLint rings);
+GLint rings);
 void glutSolidTorus(GLdouble innerRadius, GLdouble outerRadius, GLint sides,
-	GLint rings);
+GLint rings);
 void glutWireDodecahedron(void);
 void glutSolidDodecahedron(void);
 void glutWireOctahedron(void);
@@ -172,5 +173,67 @@ void glutForceJoystickFunc(void);
 int glutExtensionSupported(const char *extension);
 void glutReportErrors(void);
 
+/* Freeglut_ext.h */
+void glutMainLoopEvent( void );
+void glutLeaveMainLoop( void );
+void glutExit ( void );
+void glutFullScreenToggle( void );
+void glutMouseWheelFunc( void (* callback)( int, int, int, int ) );
+void glutCloseFunc( void (* callback)( void ) );
+void glutWMCloseFunc( void (* callback)( void ) );
+
+void glutMenuDestroyFunc( void (* callback)( void ) );
+
+
+
+
+void glutSetOption ( GLenum option_flag, int value );
+int * glutGetModeValues(GLenum mode, int * size);
+
+void* glutGetWindowData( void );
+void glutSetWindowData(void* data);
+void* glutGetMenuData( void );
+void glutSetMenuData(void* data);
+
+
+
+
+int glutBitmapHeight( void* font );
+GLfloat glutStrokeHeight( void* font );
+void glutBitmapString( void* font, const unsigned char *string );
+void glutStrokeString( void* font, const unsigned char *string );
+
+
+
+
+void glutWireRhombicDodecahedron( void );
+void glutSolidRhombicDodecahedron( void );
+void glutWireSierpinskiSponge ( int num_levels, GLdouble offset[3], GLdouble scale );
+void glutSolidSierpinskiSponge ( int num_levels, GLdouble offset[3], GLdouble scale );
+void glutWireCylinder( GLdouble radius, GLdouble height, GLint slices, GLint stacks);
+void glutSolidCylinder( GLdouble radius, GLdouble height, GLint slices, GLint stacks);
+
+
+
+int glutJoystickGetNumAxes( int ident );
+int glutJoystickGetNumButtons( int ident );
+int glutJoystickNotWorking( int ident );
+float glutJoystickGetDeadBand( int ident, int axis );
+void glutJoystickSetDeadBand( int ident, int axis, float db );
+float glutJoystickGetSaturation( int ident, int axis );
+void glutJoystickSetSaturation( int ident, int axis, float st );
+void glutJoystickSetMinRange( int ident, float *axes );
+void glutJoystickSetMaxRange( int ident, float *axes );
+void glutJoystickSetCenter( int ident, float *axes );
+void glutJoystickGetMinRange( int ident, float *axes );
+void glutJoystickGetMaxRange( int ident, float *axes );
+void glutJoystickGetCenter( int ident, float *axes );
+
+
+
+
+void glutInitContextVersion( int majorVersion, int minorVersion );
+void glutInitContextFlags( int flags );
+void glutInitContextProfile( int profile );
 #endif
 

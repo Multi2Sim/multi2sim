@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "../include/GL/gl.h"
+#include "../include/GL/glew.h"
 #include "api.h"
 #include "debug.h"
 
@@ -70,7 +70,7 @@ struct glew_version_t
 };
 
 
-void glewInit(int *argcp, char **argv)
+GLenum glewInit(int *argcp, char **argv)
 {
 	struct glew_version_t version;
 
@@ -95,6 +95,8 @@ void glewInit(int *argcp, char **argv)
 
 	/* Initialize */
 	
+	/* Return */
+	return 0;
 }
 
  GLboolean glewIsSupported (const char* name)
