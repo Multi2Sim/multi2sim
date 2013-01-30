@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "../include/GL/gl.h"
+#include "../include/GL/glu.h"
 #include "api.h"
 #include "debug.h"
 

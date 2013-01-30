@@ -3323,8 +3323,6 @@ __attribute__ ((visibility("default")))
 	const GLfloat * params);
      typedef void (*PFNGLSPRITEPARAMETERISGIXPROC) (GLenum pname,
 	GLint param);
-     typedef void (*PFNGLSPRITEPARAMETERIVSGIXPROC) (GLenum pname,
-	const GLint * params);
      typedef void (*PFNGLPOINTPARAMETERFEXTPROC) (GLenum pname,
 	GLfloat param);
      typedef void (*PFNGLPOINTPARAMETERFVEXTPROC) (GLenum pname,

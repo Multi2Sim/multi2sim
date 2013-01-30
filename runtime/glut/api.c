@@ -836,14 +836,6 @@ int glutDeviceGet(GLenum type)
 	return 0;
 }
 
-
-int glutExtensionSupported(const char *name)
-{
-	__X86_GLUT_NOT_IMPL__
-	return 0;
-}
-
-
 int glutGetModifiers(void)
 {
 	__X86_GLUT_NOT_IMPL__
@@ -1036,13 +1028,6 @@ void glutVideoPan(int x, int y, int width, int height)
 	__X86_GLUT_NOT_IMPL__
 }
 
-
-void glutReportErrors(void)
-{
-	__X86_GLUT_NOT_IMPL__
-}
-
-
 void glutIgnoreKeyRepeat(int ignore)
 {
 	__X86_GLUT_NOT_IMPL__
@@ -1086,4 +1071,224 @@ int glutGameModeGet(GLenum mode)
 	return 0;
 }
 
+int glutExtensionSupported(const char *extension)
+{
+	__X86_GLUT_NOT_IMPL__
+	return 0;
+}
+
+void glutReportErrors(void)
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutMainLoopEvent( void )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutLeaveMainLoop( void )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutExit ( void )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutFullScreenToggle( void )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutMouseWheelFunc( void (* callback)( int, int, int, int ) )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutCloseFunc( void (* callback)( void ) )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutWMCloseFunc( void (* callback)( void ) )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutMenuDestroyFunc( void (* callback)( void ) )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutSetOption ( GLenum option_flag, int value )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+int * glutGetModeValues(GLenum mode, int * size)
+{
+	__X86_GLUT_NOT_IMPL__
+	return NULL;
+}
+
+void* glutGetWindowData( void )
+{
+	__X86_GLUT_NOT_IMPL__
+	return NULL;
+}
+
+void glutSetWindowData(void* data)
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void* glutGetMenuData( void )
+{
+	__X86_GLUT_NOT_IMPL__
+	return NULL;
+}
+
+void glutSetMenuData(void* data)
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+int glutBitmapHeight( void* font )
+{
+	__X86_GLUT_NOT_IMPL__
+	return 0;
+}
+
+GLfloat glutStrokeHeight( void* font )
+{
+	__X86_GLUT_NOT_IMPL__
+	return 0;
+}
+
+void glutBitmapString( void* font, const unsigned char *string )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutStrokeString( void* font, const unsigned char *string )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutWireRhombicDodecahedron( void )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutSolidRhombicDodecahedron( void )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutWireSierpinskiSponge ( int num_levels, GLdouble offset[3], GLdouble scale )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutSolidSierpinskiSponge ( int num_levels, GLdouble offset[3], GLdouble scale )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutWireCylinder( GLdouble radius, GLdouble height, GLint slices, GLint stacks)
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutSolidCylinder( GLdouble radius, GLdouble height, GLint slices, GLint stacks)
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+int glutJoystickGetNumAxes( int ident )
+{
+	__X86_GLUT_NOT_IMPL__
+	return 0;
+}
+
+int glutJoystickGetNumButtons( int ident )
+{
+	__X86_GLUT_NOT_IMPL__
+	return 0;
+}
+
+int glutJoystickNotWorking( int ident )
+{
+	__X86_GLUT_NOT_IMPL__
+	return 0;
+}
+
+float glutJoystickGetDeadBand( int ident, int axis )
+{
+	__X86_GLUT_NOT_IMPL__
+	return 0;
+}
+
+void glutJoystickSetDeadBand( int ident, int axis, float db )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+float glutJoystickGetSaturation( int ident, int axis )
+{
+	__X86_GLUT_NOT_IMPL__
+	return 0;
+}
+
+void glutJoystickSetSaturation( int ident, int axis, float st )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutJoystickSetMinRange( int ident, float *axes )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutJoystickSetMaxRange( int ident, float *axes )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutJoystickSetCenter( int ident, float *axes )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutJoystickGetMinRange( int ident, float *axes )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutJoystickGetMaxRange( int ident, float *axes )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutJoystickGetCenter( int ident, float *axes )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutInitContextVersion( int majorVersion, int minorVersion )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutInitContextFlags( int flags )
+{
+	__X86_GLUT_NOT_IMPL__
+}
+
+void glutInitContextProfile( int profile )
+{
+	__X86_GLUT_NOT_IMPL__
+}
 
