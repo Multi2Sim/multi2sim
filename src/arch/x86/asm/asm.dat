@@ -142,6 +142,7 @@ DEFINST(dec_ir32, 0x48|INDEX, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(div_rm8, 0xf6, SKIP, SKIP, 6, SKIP, 0)
 DEFINST(div_rm32, 0xf7, SKIP, SKIP, 6, SKIP, 0)
 
+DEFINST(divsd_xmm_xmmm64, 0x0f, 0x5e, SKIP, REG, SKIP, x86_prefix_repnz)
 DEFINST(divss_xmm_xmmm32, 0x0f, 0x5e, SKIP, REG, SKIP, x86_prefix_rep)
 
 DEFINST(f2xm1, 0xd9, 0xf0, SKIP, SKIP, SKIP, 0)
@@ -426,6 +427,9 @@ DEFINST(movzx_r32_rm8, 0x0f, 0xb6, SKIP, REG, SKIP, 0)
 DEFINST(movzx_r32_rm16, 0x0f, 0xb7, SKIP, REG, SKIP, 0)
 
 DEFINST(mul_rm32, 0xf7, SKIP, SKIP, 4, SKIP, 0)
+
+DEFINST(mulpd_xmm_xmmm128, 0x0f, 0x59, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(mulps_xmm_xmmm128, 0x0f, 0x59, SKIP, REG, SKIP, 0)
 
 DEFINST(mulsd_xmm_xmmm64, 0x0f, 0x59, SKIP, REG, SKIP, x86_prefix_repnz)
 DEFINST(mulss_xmm_xmmm32, 0x0f, 0x59, SKIP, REG, SKIP, x86_prefix_rep)
