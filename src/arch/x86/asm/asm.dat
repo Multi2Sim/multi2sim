@@ -689,6 +689,9 @@ DEFINST(sub_r32_rm32, 0x2b, SKIP, SKIP, REG, SKIP, 0)
 
 DEFINST(subsd_xmm_xmmm64, 0x0f, 0x5c, SKIP, REG, SKIP, x86_prefix_repnz)
 
+DEFINST(subpd_xmm_xmmm128, 0x0f, 0x5c, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(subps_xmm_xmmm128, 0x0f, 0x5c, SKIP, REG, SKIP, 0)
+
 DEFINST(subss_xmm_xmmm32, 0x0f, 0x5c, SKIP, REG, SKIP, x86_prefix_rep)
 
 DEFINST(test_al_imm8, 0xa8, SKIP, SKIP, SKIP, IB, 0)
