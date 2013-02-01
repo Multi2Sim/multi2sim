@@ -77,7 +77,19 @@ static struct x86_opcode_info_elem_t *x86_opcode_info_table[0x100];
 static struct x86_opcode_info_elem_t *x86_opcode_info_table_0f[0x100];
 
 /* List of possible prefixes */
-static unsigned char x86_prefixes[] = { 0xf0, 0xf2, 0xf3, 0x66, 0x67, 0x2e, 0x36, 0x3e, 0x26, 0x64, 0x65 };
+static unsigned char x86_prefixes[] = {
+	0xf0,  /* lock */
+	0xf2,  /* repnz */
+	0xf3,  /* rep */
+	0x66,  /* op */
+	0x67,  /* addr */
+	0x2e,  /* use cs */
+	0x36,  /* use ss */
+	0x3e,  /* use ds */
+	0x26,  /* use es */
+	0x64,  /* use fs */
+	0x65   /* use gs */
+};
 static unsigned char x86_byte_is_prefix[256];
 
 
