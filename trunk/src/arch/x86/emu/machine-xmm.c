@@ -1338,6 +1338,48 @@ void x86_isa_subss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_ucomiss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+	
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned long eflags = regs->eflags;
+
+	int spec_mode;
+
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+	x86_isa_load_xmmm32(ctx, src.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"push %3\n\t"
+			"popf\n\t"
+			"movdqu %2, %%xmm0\n\t"
+			"movdqu %0, %%xmm1\n\t"
+			"ucomiss %%xmm0, %%xmm1\n\t"
+			"movdqu %%xmm1, %0\n\t"
+			"pushf\n\t"
+			"pop %1\n\t"
+			: "=m" (dest), "=g" (eflags)
+			: "m" (src), "g" (eflags)
+			: "xmm0", "xmm1"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+	regs->eflags = eflags;
+
+	x86_uinst_new(ctx, x86_uinst_xmm_fp_comp, x86_dep_xmmm32, x86_dep_xmm, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
+}
+
+
 void x86_isa_unpckhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
 	union x86_xmm_reg_t dest;
