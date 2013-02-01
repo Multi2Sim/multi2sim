@@ -129,6 +129,9 @@ DEFINST(cpuid, 0x0f, 0xa2, SKIP, SKIP, SKIP, 0)
 
 DEFINST(cvtsd2ss_xmm_xmmm64, 0x0f, 0x5a, SKIP, REG, SKIP, x86_prefix_repnz)
 
+DEFINST(cvtsi2sd_xmm_rm32, 0x0f, 0x2a, SKIP, REG, SKIP, x86_prefix_repnz)
+DEFINST(cvtsi2ss_xmm_rm32, 0x0f, 0x2a, SKIP, REG, SKIP, x86_prefix_rep)
+
 DEFINST(cvttsd2si_r32_xmmm64, 0x0f, 0x2c, SKIP, REG, SKIP, x86_prefix_repnz)
 
 DEFINST(cvttss2si_r32_xmmm32, 0x0f, 0x2c, SKIP, REG, SKIP, x86_prefix_rep)
