@@ -446,6 +446,20 @@ void x86_isa_movdqu_xmmm128_xmm_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_movhlps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t xmm1;
+	union x86_xmm_reg_t xmm2;
+
+	x86_isa_load_xmm(ctx, xmm1.as_uchar);
+	x86_isa_load_xmmm128(ctx, xmm2.as_uchar);
+	xmm1.as_uint64[0] = xmm2.as_uint64[1];
+	x86_isa_store_xmm(ctx, xmm1.as_uchar);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_movhpd_xmm_m64_impl(struct x86_ctx_t *ctx)
 {
 	union x86_xmm_reg_t xmm;
@@ -476,7 +490,7 @@ void x86_isa_movlhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_load_xmm(ctx, xmm1.as_uchar);
 	x86_isa_load_xmmm128(ctx, xmm2.as_uchar);
-	xmm1.as_int64[1] = xmm2.as_uint64[0];
+	xmm1.as_uint64[1] = xmm2.as_uint64[0];
 	x86_isa_store_xmm(ctx, xmm1.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
@@ -1324,6 +1338,40 @@ void x86_isa_subss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_unpckhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	int spec_mode;
+
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+	x86_isa_load_xmmm128(ctx, src.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"movdqu %1, %%xmm0\n\t"
+			"movdqu %0, %%xmm1\n\t"
+			"unpckhps %%xmm0, %%xmm1\n\t"
+			"movdqu %%xmm1, %0\n\t"
+			: "=m" (dest)
+			: "m" (src)
+			: "xmm0", "xmm1"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_shuf, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_unpcklps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
 	union x86_xmm_reg_t dest;
@@ -1356,3 +1404,4 @@ void x86_isa_unpcklps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shuf, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
+
