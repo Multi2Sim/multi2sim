@@ -146,6 +146,74 @@ void x86_isa_cvtsd2ss_xmm_xmmm64_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_cvtsi2sd_xmm_rm32_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	unsigned int src;
+
+	int spec_mode;
+
+	src = x86_isa_load_rm32(ctx);
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"movdqu %0, %%xmm0\n\t"
+			"mov %1, %%eax\n\t"
+			"cvtsi2sd %%eax, %%xmm0\n\t"
+			"movdqu %%xmm0, %0\n\t"
+			: "=m" (dest)
+			: "m" (src)
+			: "xmm0", "eax"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmm, x86_dep_rm32, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
+void x86_isa_cvtsi2ss_xmm_rm32_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	unsigned int src;
+
+	int spec_mode;
+
+	src = x86_isa_load_rm32(ctx);
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"movdqu %0, %%xmm0\n\t"
+			"mov %1, %%eax\n\t"
+			"cvtsi2ss %%eax, %%xmm0\n\t"
+			"movdqu %%xmm0, %0\n\t"
+			: "=m" (dest)
+			: "m" (src)
+			: "xmm0", "eax"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmm, x86_dep_rm32, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_cvttsd2si_r32_xmmm64_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char xmm[16];
