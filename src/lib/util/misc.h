@@ -65,8 +65,14 @@
 
 
 /* Sign extension */
-#define SEXT32(X, B)		(((uint32_t)(X))&(1U<<(B-1))?((uint32_t)(X))|~((1U<<B)-1):(X))
-#define SEXT64(X, B)		(((uint64_t)(X))&(1ULL<<(B-1))?((uint64_t)(X))|~((1ULL<<B)-1):(X))
+#define SEXT32(X, B)		(((unsigned int) (X)) & (1U << ((B) - 1)) ? \
+					((unsigned int) (X)) | \
+					~((1U << (B)) - 1) : \
+					((unsigned int) (X)) & ((1U << (B)) - 1))
+#define SEXT64(X, B)		(((unsigned long long) (X)) & (1ULL << ((B) - 1)) ? \
+					((unsigned long long) (X)) | \
+					~((1ULL << (B)) - 1) : \
+					((unsigned long long) (X)) & ((1ULL << (B)) - 1))
 
 /* Extract bits from HI to LO from X */
 #define BITS32(X, HI, LO)	((((uint32_t)(X))>>(LO))&((1U<<((HI)-(LO)+1))-1))
