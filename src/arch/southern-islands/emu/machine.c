@@ -1336,7 +1336,33 @@ void si_isa_S_CMP_LE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 #define INST SI_INST_SOPC
 void si_isa_S_CMP_GT_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	unsigned int s0 = 0;
+	unsigned int s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1);
+
+	/* Compare the operands. */
+	result.as_uint = (s0 > s1);
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, SI_SCC, result.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("scc<=(%d) ", result.as_uint);
+	}
 }
 #undef INST
 
@@ -1962,7 +1988,35 @@ void si_isa_V_SQRT_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 #define INST SI_INST_VOP1
 void si_isa_V_SIN_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	union si_reg_t s0;
+	union si_reg_t result;
+
+	/* Load operand from register or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	
+	/* Normalize input  */
+	s0.as_float = s0.as_float / (2 * M_PI);
+
+	if (IN_RANGE(s0.as_float, -256, 256))
+	{
+		result.as_float = sinf(s0.as_float);
+	}
+	else
+	{
+		result.as_float = 0;
+	}
+	
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, result.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(0x%x) ", work_item->id, INST.vdst, result.as_uint);
+	}
 }
 #undef INST
 
@@ -1970,7 +2024,35 @@ void si_isa_V_SIN_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 #define INST SI_INST_VOP1
 void si_isa_V_COS_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	union si_reg_t s0;
+	union si_reg_t result;
+
+	/* Load operand from register or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	
+	/* Normalize input  */
+	s0.as_float = s0.as_float / (2 * M_PI);
+	
+	if (IN_RANGE(s0.as_float, -256, 256))
+	{
+		result.as_float = cosf(s0.as_float);
+	}
+	else
+	{
+		result.as_float = 1;
+	}
+	
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, result.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(0x%x) ", work_item->id, INST.vdst, result.as_uint);
+	}
 }
 #undef INST
 
@@ -2151,7 +2233,7 @@ void si_isa_V_SUBREV_F32_impl(struct si_work_item_t *work_item, struct si_inst_t
 #define INST SI_INST_VOP2
 void si_isa_V_MAC_LEGACY_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-NOT_IMPL();
+	NOT_IMPL();
 }
 #undef INST
 
@@ -2160,7 +2242,36 @@ NOT_IMPL();
 #define INST SI_INST_VOP2
 void si_isa_V_MUL_LEGACY_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	float s0 = 0;
+	float s1 = 0;
+
+	union si_reg_t product;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_float;
+	else
+		s0 = ((union si_reg_t)si_isa_read_reg(work_item, INST.src0)).as_float;
+	s1 = ((union si_reg_t)si_isa_read_vreg(work_item, INST.vsrc1)).as_float;
+
+	/* Calculate the product. */
+	if (s0 == 0 || s1 == 0)
+	{
+		product.as_float = 0.0;
+	}
+	else
+	{
+		product.as_float = s0 * s1;
+	}
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, product.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst, product.as_float);
+	}
 }
 #undef INST
 
@@ -2205,10 +2316,14 @@ void si_isa_V_MUL_I32_I24_impl(struct si_work_item_t *work_item, struct si_inst_
 
 	/* Load operands from registers or as a literal constant. */
 	if (INST.src0 == 0xFF)
-		s0 = INST.lit_cnst & 0xFFFFFF;
+		s0 = INST.lit_cnst;
 	else
-		s0 = si_isa_read_reg(work_item, INST.src0) & 0xFFFFFF;
-	s1 = si_isa_read_vreg(work_item, INST.vsrc1) & 0xFFFFFF;
+		s0 = si_isa_read_reg(work_item, INST.src0);
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1);
+
+	/* Truncate operands to 24-bit signed integers */
+	s0 = SEXT32(s0, 24);
+	s1 = SEXT32(s1, 24);
 
 	/* Calculate the product. */
 	product.as_int = s0 * s1;
@@ -2593,7 +2708,29 @@ void si_isa_V_OR_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *in
 #define INST SI_INST_VOP2
 void si_isa_V_XOR_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	unsigned int s0 = 0;
+	unsigned int s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_reg(work_item, INST.src0);
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1);
+
+	/* Bitwise OR the two operands. */
+	result.as_uint = s0 ^ s1;
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, result.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, result.as_uint);
+	}
 }
 #undef INST
 
@@ -2864,8 +3001,41 @@ void si_isa_V_MUL_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_ins
 /* D.f = S0. * S1.. */
 #define INST SI_INST_VOP3a
 void si_isa_V_MUL_I32_I24_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
-{
-	NOT_IMPL();
+{	
+	int s0 = 0;
+	int s1 = 0;
+
+	union si_reg_t product;
+
+	/* Load operands from registers or as a literal constant. */
+	s0 = si_isa_read_reg(work_item, INST.src0);
+	s1 = si_isa_read_reg(work_item, INST.src1);
+	
+	/* Truncate operands to 24-bit signed integers */
+	s0 = SEXT32(s0, 24);
+	s1 = SEXT32(s1, 24);
+
+	/* Apply absolute value and negation modifiers */
+	if (INST.abs & 1)
+		s0 = abs(s0);
+	if (INST.neg & 1)
+		s0 = -s0;
+	if (INST.abs & 2)
+		s1 = abs(s1);
+	if (INST.neg & 2)
+		s1 = -s1;
+
+	/* Calculate the product. */
+	product.as_int = s0 * s1;
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, product.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d)", work_item->id, INST.vdst, product.as_int);
+	}
 }
 #undef INST
 
@@ -3231,7 +3401,30 @@ void si_isa_V_MUL_LO_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 #define INST SI_INST_VOP3a
 void si_isa_V_FRACT_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	union si_reg_t s0;
+	union si_reg_t result;
+
+	/* Load operands from registers. */
+	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+
+	/* Apply negation modifiers. */
+	if (INST.abs & 1)
+		s0.as_float = fabsf(s0.as_float);
+
+	if (INST.neg & 1)
+		s0.as_float = -s0.as_float;
+	
+	/* Calculate the product. */
+	result.as_float = s0.as_float - floorf(s0.as_float);
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, result.as_uint);
+	
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, result.as_int);
+	}
 }
 #undef INST
 
