@@ -354,6 +354,45 @@ then
 fi
 
 
+#####################
+# Test Flex and Bison
+#####################
+
+# Message
+have_flex=no
+have_bison=no
+
+# Check Flex
+AC_PROG_LEX
+if test "x$LEX" = xflex
+then
+	have_flex=yes
+fi
+
+# Check Bison
+AC_PROG_YACC
+if test "x$YACC" != xyacc
+then
+	have_bison=yes
+fi
+
+# Define macro for Automake and gcc
+AM_CONDITIONAL(HAVE_FLEX_BISON, test x$have_flex = xyes -a x$have_bison = xyes)
+if test x$have_flex = xyes -a x$have_bison = xyes
+then
+	AC_DEFINE(HAVE_FLEX_BISON, [1])
+else
+	AC_MSG_WARN([
+
+	Tools 'flex' and/or 'bison' are missing in your system. Some modules in
+	Multi2Sim will not be built. In an Ubuntu distribution, you can install
+	these packages by running command
+
+		sudo apt-get install flex bison
+	]
+	)
+fi
+
 
 
 ##########
@@ -587,6 +626,7 @@ AC_CONFIG_FILES([
 		tools/Makefile
 		tools/clcc/Makefile
 		tools/glcc/Makefile
+		tools/si-as/Makefile
 		])
 AC_OUTPUT
 
