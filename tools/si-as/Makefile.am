@@ -1,0 +1,38 @@
+# Define these even if Flex/Bison are not present. Automake does not support
+# conditional definition of 'AM_YFLAGS'.
+BUILT_SOURCES = parser.h
+AM_YFLAGS = -d
+
+# Only if Flex and Bison are present
+if HAVE_FLEX_BISON
+
+bin_PROGRAMS = $(top_builddir)/bin/m2s-si-as
+
+__top_builddir__bin_m2s_si_as_SOURCES = \
+	\
+	inst.c \
+	inst.h \
+	\
+	inst-arg.c \
+	inst-arg.h \
+	\
+	label.c \
+	label.h \
+	\
+	lex.l \
+	parser.y \
+	\
+	stream.c \
+	stream.h \
+	\
+	task.c \
+	task.h
+
+INCLUDES = @M2S_INCLUDES@
+
+LDADD = \
+	$(top_builddir)/src/lib/util/libutil.a \
+	$(top_builddir)/src/lib/mhandle/libmhandle.a
+
+endif
+
