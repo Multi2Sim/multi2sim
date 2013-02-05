@@ -5324,7 +5324,7 @@ void si_isa_BUFFER_ATOMIC_ADD_impl(struct si_work_item_t *work_item, struct si_i
 #undef INST
 
 #define INST SI_INST_MTBUF
-void si_isa_T_BUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	assert(!INST.addr64);
 
@@ -5385,7 +5385,7 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct
 #undef INST
 
 #define INST SI_INST_MTBUF
-void si_isa_T_BUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	assert(!INST.addr64);
 
@@ -5446,7 +5446,7 @@ void si_isa_T_BUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item, struc
 #undef INST
 
 #define INST SI_INST_MTBUF
-void si_isa_T_BUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	assert(!INST.addr64);
 
@@ -5507,7 +5507,7 @@ void si_isa_T_BUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, str
 #undef INST
 
 #define INST SI_INST_MTBUF
-void si_isa_T_BUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	assert(!INST.addr64);
 
@@ -5568,14 +5568,14 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struc
 #undef INST
 
 #define INST SI_INST_MTBUF
-void si_isa_T_BUFFER_STORE_FORMAT_XY_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+void si_isa_TBUFFER_STORE_FORMAT_XY_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	NOT_IMPL();
 }
 #undef INST
 
 #define INST SI_INST_MTBUF
-void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+void si_isa_TBUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	assert(!INST.addr64);
 
