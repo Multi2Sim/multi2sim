@@ -727,7 +727,7 @@ void x86_isa_mulss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 void x86_isa_pmovmskb_r32_xmmm128_impl(struct x86_ctx_t *ctx)
 {
 	union x86_xmm_reg_t src;
-	uint32_t r32;
+	unsigned int r32;
 
 	x86_isa_load_xmmm128(ctx, src.as_uchar);
 
@@ -1035,6 +1035,32 @@ void x86_isa_xorps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_paddb_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+	x86_isa_load_xmmm128(ctx, src.as_uchar);
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"movdqu %1, %%xmm0\n\t"
+		"movdqu %0, %%xmm1\n\t"
+		"paddb %%xmm0, %%xmm1\n\t"
+		"movdqu %%xmm1, %0\n\t"
+		: "=m" (dest)
+		: "m" (src)
+		: "xmm0", "xmm1"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_add, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_paddd_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
 	union x86_xmm_reg_t dest;
@@ -1154,6 +1180,27 @@ void x86_isa_pcmpeqd_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 void x86_isa_pcmpistri_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+}
+
+
+void x86_isa_pextrw_r32_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t xmm;
+	unsigned char imm8;
+	unsigned int result;
+
+	/* Get 'xmm' source */
+	x86_isa_load_xmmm128(ctx, xmm.as_uchar);
+
+	/* Take the 3 LSB of 'imm8' */
+	imm8 = ctx->inst.imm.b & 0x7;
+
+	/* Select 2-byte word from 'xmm' pointed to by 'imm8',
+	 * and place it in the 2 LSBytes of 'result' */
+	result = xmm.as_ushort[imm8];
+	x86_isa_store_r32(ctx, result);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 

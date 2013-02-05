@@ -115,6 +115,9 @@ union x86_xmm_reg_t
 	unsigned char as_uchar[16];
 	signed char as_char[16];
 
+	unsigned short as_ushort[8];
+	signed short as_short[8];
+
 	unsigned int as_uint[4];
 	signed int as_int[4];
 
