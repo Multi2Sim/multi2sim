@@ -481,6 +481,7 @@ DEFINST(out_dx_eax, 0xef, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(outsb, 0x6e, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(outsd, 0x6f, SKIP, SKIP, SKIP, SKIP, 0)
 
+DEFINST(paddb_xmm_xmmm128, 0x0f, 0xfc, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(paddd_xmm_xmmm128, 0x0f, 0xfe, SKIP, REG, SKIP, x86_prefix_op)
 
 DEFINST(palignr_xmm_xmmm128_imm8, 0x0f, 0x3a, 0x0f, REG, IB, x86_prefix_op)
@@ -494,6 +495,8 @@ DEFINST(pcmpeqw_xmm_xmmm128, 0x0f, 0x75, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(pcmpeqd_xmm_xmmm128, 0x0f, 0x76, SKIP, REG, SKIP, x86_prefix_op)
 
 DEFINST(pcmpistri_xmm_xmmm128_imm8, 0x0f, 0x3a, 0x63, REG, IB, x86_prefix_op)
+
+DEFINST(pextrw_r32_xmmm128_imm8, 0x0f, 0xc5, SKIP, REG, IB, x86_prefix_op)
 
 DEFINST(pinsrb_xmm_r32m8_imm8, 0x0f, 0x3a, 0x20, REG, IB, x86_prefix_op)
 DEFINST(pinsrd_xmm_rm32_imm8, 0x0f, 0x3a, 0x22, REG, IB, x86_prefix_op)
