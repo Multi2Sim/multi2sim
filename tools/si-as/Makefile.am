@@ -1,12 +1,13 @@
 # Define these even if Flex/Bison are not present. Automake does not support
 # conditional definition of 'AM_YFLAGS'.
-BUILT_SOURCES = parser.h
 AM_YFLAGS = -d
 
 # Only if Flex and Bison are present
 if HAVE_FLEX_BISON
 
 bin_PROGRAMS = $(top_builddir)/bin/m2s-si-as
+
+BUILT_SOURCES = parser.h
 
 __top_builddir__bin_m2s_si_as_SOURCES = \
 	\
