@@ -599,6 +599,10 @@ AC_CONFIG_FILES([
 		src/arch/fermi/emu/Makefile
 		src/arch/fermi/timing/Makefile
 
+		src/arch/mips/Makefile
+		src/arch/mips/asm/Makefile
+		src/arch/mips/emu/Makefile
+
 		src/arch/southern-islands/Makefile
 		src/arch/southern-islands/asm/Makefile
 		src/arch/southern-islands/emu/Makefile
@@ -630,3 +634,4 @@ AC_CONFIG_FILES([
 		])
 AC_OUTPUT
 
+AC_CONFIG_MACRO_DIR([m4])

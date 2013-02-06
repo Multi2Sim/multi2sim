@@ -33,6 +33,7 @@
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/asm/asm.h>
 #include <arch/fermi/emu/emu.h>
+#include <arch/mips/asm/asm.h>
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
@@ -110,6 +111,8 @@ static char *arm_loader_debug_file_name = "";
 static char *arm_isa_debug_file_name = "";
 static char *arm_sys_debug_file_name = "";
 static char *arm_call_debug_file_name = "";
+
+static char *mips_disasm_file_name = "";
 
 static char *mem_debug_file_name = "";
 
@@ -400,6 +403,15 @@ static char *m2s_help =
 	"  --arm-debug-isa <file>\n"
 	"      Debug information for dynamic execution of Arm instructions. Updates on\n"
 	"      the processor state can be analyzed using this information.\n"
+	"\n"
+	"\n"
+	"================================================================================\n"
+	"MIPS Options\n"
+	"================================================================================\n"
+	"\n"
+	"  --mips-disasm <file>\n"
+	"      Disassemble an MIPS binary using Multi2Sim's internal disassembler. This\n"
+	"      option is incompatible with any other command-line option.\n"
 	"\n"
 	"\n"
 	"================================================================================\n"
@@ -1122,6 +1134,18 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+
+		/*
+		 * MIPS CPU Options
+		 */
+
+		/* Mips disassembler */
+		if (!strcmp(argv[argi], "--mips-disasm"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			mips_disasm_file_name = argv[++argi];
+			continue;
+		}
 		/*
 		 * Memory System Options
 		 */
@@ -1600,6 +1624,10 @@ int main(int argc, char **argv)
 	/* ARM disassembler tool */
 	if (*arm_disasm_file_name)
 		arm_emu_disasm(arm_disasm_file_name);
+
+	/* MIPS disassembler tool */
+	if (*mips_disasm_file_name)
+		mips_emu_disasm(mips_disasm_file_name);
 
 	/* Memory hierarchy visualization tool */
 	if (*visual_file_name)

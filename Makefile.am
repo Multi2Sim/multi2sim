@@ -30,6 +30,10 @@ EXTRA_DIST = \
 	samples/arm/test-args.c \
 	samples/arm/test-sort \
 	samples/arm/test-args \
+	samples/mips/test-sort.c \
+	samples/mips/test-args.c \
+	samples/mips/test-sort \
+	samples/mips/test-args \
 	samples/southern-islands/7970/mem-config \
 	samples/southern-islands/7970/si-config \
 	samples/southern-islands/7850/mem-config \
