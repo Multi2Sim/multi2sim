@@ -3,5 +3,6 @@ SUBDIRS = \
 	common \
 	evergreen \
 	fermi \
+	mips \
 	southern-islands \
 	x86
