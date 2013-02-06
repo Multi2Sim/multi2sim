@@ -140,3 +140,16 @@ FILES
 	* src/arch/evergreen/*report*
 	
 ================================================================================	
+AUTHOR
+	Fritz Previlon (previlon@ece.neu.edu)
+
+DESCRIPTION
+
+    Fritz has worked on the MIPS architecture, including diassembler,
+    emulator, and timing simulator.
+    
+FILES
+	* src/arch/mips/*
+	
+================================================================================	
+

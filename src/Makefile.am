@@ -39,6 +39,8 @@ LDADD = \
 	$(top_builddir)/src/arch/fermi/emu/libemu.a \
 	$(top_builddir)/src/arch/fermi/asm/libasm.a \
 	\
+	$(top_builddir)/src/arch/mips/asm/libasm.a \
+	\
 	$(top_builddir)/src/arch/southern-islands/timing/libtiming.a \
 	$(top_builddir)/src/arch/southern-islands/emu/libemu.a \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \

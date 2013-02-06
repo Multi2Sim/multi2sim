@@ -155,13 +155,30 @@ static int elf_symbol_compare(const void *a, const void *b)
 {
 	const struct elf_symbol_t *symbol_a = a;
 	const struct elf_symbol_t *symbol_b = b;
+	int bind_a;
+	int bind_b;
 
 	if (symbol_a->value < symbol_b->value)
 		return -1;
 	else if (symbol_a->value > symbol_b->value)
 		return 1;
 	else
-		return strcmp(symbol_a->name, symbol_b->name);
+	{
+		/* Sort symbol with the same address as per their
+		 * ST_BIND field in st_info (bits 4 to 8) */
+		bind_a = (symbol_a->info >> 4) & 0xf;
+		bind_b = (symbol_b->info >> 4) & 0xf;
+
+		if (bind_a < bind_b)
+			return -1;
+		else if (bind_a > bind_b)
+			return 1;
+		else
+		{
+			/* Sort alphabetically */
+			return strcmp(symbol_a->name, symbol_b->name);
+		}
+	}
 }
 
 
@@ -251,6 +268,7 @@ struct elf_symbol_t *elf_symbol_get_by_address(struct elf_file_t *elf_file,
 {
 	int min, max, mid;
 	struct elf_symbol_t *symbol;
+	struct elf_symbol_t *prev_symbol;
 
 	/* Empty symbol table */
 	if (!list_count(elf_file->symbol_table))
@@ -277,10 +295,22 @@ struct elf_symbol_t *elf_symbol_get_by_address(struct elf_file_t *elf_file,
 		}
 	}
 
-	/* Go backwards to find appropriate symbol */
+	/* Invalid symbol */
 	symbol = list_get(elf_file->symbol_table, min);
 	if (!symbol->value)
 		return NULL;
+
+	/* Go backwards to find first symbol with that address */
+	for (;;)
+	{
+		min--;
+		prev_symbol = list_get(elf_file->symbol_table, min);
+		if (!prev_symbol || prev_symbol->value != symbol->value)
+			break;
+		symbol = prev_symbol;
+	}
+
+	/* Return the symbol and its address */
 	if (offset_ptr)
 		*offset_ptr = addr - symbol->value;
 	return symbol;
