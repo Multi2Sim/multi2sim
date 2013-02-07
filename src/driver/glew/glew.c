@@ -100,13 +100,13 @@ static glew_abi_func_t glew_abi_table[glew_call_count + 1] =
 
 void glew_init(void)
 {
-
+	glew_debug("Initializing Glew...\n");
 }
 
 
 void glew_done(void)
 {
-
+	glew_debug("Finalizing Glew...\n");
 }
 
 
@@ -168,8 +168,8 @@ int glew_abi_call(struct x86_ctx_t *ctx)
  *	The return value is always 0.
  */
 
-#define X86_GLEW_RUNTIME_VERSION_MAJOR	1
-#define X86_GLEW_RUNTIME_VERSION_MINOR	690
+#define X86_GLEW_RUNTIME_VERSION_MAJOR	0
+#define X86_GLEW_RUNTIME_VERSION_MINOR	669
 
 struct glew_version_t
 {

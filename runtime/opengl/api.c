@@ -24,7 +24,8 @@
 #include "api.h"
 #include "debug.h"
 
-
+/* Debug */
+int opengl_debug = 0;
 
 /*
  * Error Messages
@@ -52,11 +53,10 @@ static char *opengl_err_not_impl =
 #define OPENGL_RUNTIME_VERSION_MAJOR	0
 #define OPENGL_RUNTIME_VERSION_MINOR	669
 
-struct opengl_version_t
-{
-	int major;
-	int minor;
-};
+/* OpenGL global variables */
+char opengl_get_string[50];
+int opengl_err_flag = GL_NO_ERROR;
+struct opengl_runtime_info_t gl_runtime_info = {0, 0, 4.3, "Multi2Sim", "OpenGL Emulator"};
 
 void glClearIndex( GLfloat c )
 {
@@ -66,7 +66,7 @@ void glClearIndex( GLfloat c )
 
 void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
 {
-	printf("glClearColor\n");
+	opengl_debug(stdout, "glClearColor\n");
 	GLdouble sys_args[4];
 	sys_args[0] = (GLdouble) red;
 	sys_args[1] = (GLdouble) green;
@@ -78,7 +78,7 @@ void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
 
 void glClear( GLbitfield mask )
 {
-	printf("glClear\n");
+	opengl_debug(stdout, "glClear\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glClear, &mask);
 }
 
@@ -199,21 +199,21 @@ void glGetClipPlane( GLenum plane, GLdouble *equation )
 
 void glDrawBuffer( GLenum mode )
 {
-	printf("glDrawBuffer\n");
+	opengl_debug(stdout, "glDrawBuffer\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDrawBuffer, &mode);
 }
 
 
 void glReadBuffer( GLenum mode )
 {
-	printf("glReadBuffer\n");
+	opengl_debug(stdout, "glReadBuffer\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glReadBuffer, &mode);
 }
 
 
 void glEnable( GLenum cap )
 {
-	printf("glEnable\n");
+	opengl_debug(stdout, "glEnable\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnable, &cap);
 }
 
@@ -300,15 +300,23 @@ GLint glRenderMode( GLenum mode )
 
 GLenum glGetError( void )
 {
-	__OPENGL_NOT_IMPL__
-	return 0;
+	return opengl_err_flag;
 }
 
 
-const GLubyte * glGetString( GLenum name )
+const GLubyte *glGetString( GLenum name )
 {
-	__OPENGL_NOT_IMPL__
-	return NULL;
+	switch(name)
+	{
+	case GL_VERSION:
+	{
+		sprintf(opengl_get_string, "%u.%u\n", gl_runtime_info.version_major, gl_runtime_info.version_minor);
+		return (const GLubyte *)opengl_get_string;
+	}
+	default:
+		return NULL;
+	}
+
 }
 
 
@@ -320,7 +328,7 @@ void glFinish( void )
 
 void glFlush( void )
 {
-	printf("glFlush\n");
+	opengl_debug(stdout, "glFlush\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glFlush);
 }
 
@@ -369,7 +377,7 @@ void glAccum( GLenum op, GLfloat value )
 
 void glMatrixMode( GLenum mode )
 {
-	printf("glMatrixMode\n");
+	opengl_debug(stdout, "glMatrixMode\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMatrixMode, &mode);
 }
 
@@ -378,7 +386,7 @@ void glOrtho( GLdouble left, GLdouble right,
                                  GLdouble bottom, GLdouble top,
                                  GLdouble near_val, GLdouble far_val )
 {
-	printf("glOrtho\n");
+	opengl_debug(stdout, "glOrtho\n");
 	GLdouble sys_args[6];
 	sys_args[0] = (GLdouble) left;
 	sys_args[1] = (GLdouble) right;
@@ -394,7 +402,7 @@ void glFrustum( GLdouble left, GLdouble right,
                                    GLdouble bottom, GLdouble top,
                                    GLdouble near_val, GLdouble far_val )
 {
-	printf("glFrustum\n");
+	opengl_debug(stdout, "glFrustum\n");
 	GLdouble sys_args[6];
 	sys_args[0] = (GLdouble) left;
 	sys_args[1] = (GLdouble) right;
@@ -409,7 +417,7 @@ void glFrustum( GLdouble left, GLdouble right,
 void glViewport( GLint x, GLint y,
                                     GLsizei width, GLsizei height )
 {
-	printf("glViewport\n");
+	opengl_debug(stdout, "glViewport\n");
 	GLint sys_args[4];
 	sys_args[0] = (GLint) x;
 	sys_args[1] = (GLint) y;
@@ -421,14 +429,14 @@ void glViewport( GLint x, GLint y,
 
 void glPushMatrix( void )
 {
-	printf("glPushMatrix\n");
+	opengl_debug(stdout, "glPushMatrix\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glPushMatrix);
 }
 
 
 void glPopMatrix( void )
 {
-	printf("glPopMatrix\n");
+	opengl_debug(stdout, "glPopMatrix\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glPopMatrix);
 
 }
@@ -436,7 +444,7 @@ void glPopMatrix( void )
 
 void glLoadIdentity( void )
 {
-	printf("glLoadIdentity\n");
+	opengl_debug(stdout, "glLoadIdentity\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glLoadIdentity);
 }
 
@@ -475,7 +483,7 @@ void glRotated( GLdouble angle,
 void glRotatef( GLfloat angle,
                                    GLfloat x, GLfloat y, GLfloat z )
 {
-	printf("glRotatef\n");
+	opengl_debug(stdout, "glRotatef\n");
 	GLfloat sys_args[4];
 	sys_args[0] = (GLfloat) angle;
 	sys_args[1] = (GLfloat) x;
@@ -506,7 +514,7 @@ void glTranslated( GLdouble x, GLdouble y, GLdouble z )
 
 void glTranslatef( GLfloat x, GLfloat y, GLfloat z )
 {
-	printf("glTranslatef\n");
+	opengl_debug(stdout, "glTranslatef\n");
 	GLfloat sys_args[3];
 	sys_args[0] = (GLfloat) x;
 	sys_args[1] = (GLfloat) y;
@@ -531,7 +539,7 @@ void glDeleteLists( GLuint list, GLsizei range )
 
 GLuint glGenLists( GLsizei range )
 {
-	printf("glGenLists\n");
+	opengl_debug(stdout, "glGenLists\n");
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) range;
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenLists, &sys_args);	
@@ -541,7 +549,7 @@ GLuint glGenLists( GLsizei range )
 
 void glNewList( GLuint list, GLenum mode )
 {
-	printf("glNewList\n");
+	opengl_debug(stdout, "glNewList\n");
 	unsigned int sys_args[2];
 	sys_args[0] = (unsigned int) list;
 	sys_args[1] = (unsigned int) mode;
@@ -551,14 +559,14 @@ void glNewList( GLuint list, GLenum mode )
 
 void glEndList( void )
 {
-	printf("glEndList\n");
+	opengl_debug(stdout, "glEndList\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEndList);		
 }
 
 
 void glCallList( GLuint list )
 {
-	printf("glCallList\n");
+	opengl_debug(stdout, "glCallList\n");
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) list;
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glCallList, &sys_args);
@@ -580,14 +588,14 @@ void glListBase( GLuint base )
 
 void glBegin( GLenum mode )
 {
-	printf("glBegin\n");
+	opengl_debug(stdout, "glBegin\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBegin, &mode);
 }
 
 
 void glEnd( void )
 {
-	printf("glEnd\n");
+	opengl_debug(stdout, "glEnd\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnd);
 }
 
@@ -600,7 +608,7 @@ void glVertex2d( GLdouble x, GLdouble y )
 
 void glVertex2f( GLfloat x, GLfloat y )
 {
-	printf("glVertex2f\n");
+	opengl_debug(stdout, "glVertex2f\n");
 	GLfloat sys_args[2];
 	sys_args[0] = (GLfloat) x;
 	sys_args[1] = (GLfloat) y;
@@ -628,7 +636,7 @@ void glVertex3d( GLdouble x, GLdouble y, GLdouble z )
 
 void glVertex3f( GLfloat x, GLfloat y, GLfloat z )
 {
-	printf("glVertex3f\n");
+	opengl_debug(stdout, "glVertex3f\n");
 	GLfloat sys_args[3];
 	sys_args[0] = (GLfloat) x;
 	sys_args[1] = (GLfloat) y;
@@ -759,7 +767,7 @@ void glNormal3d( GLdouble nx, GLdouble ny, GLdouble nz )
 
 void glNormal3f( GLfloat nx, GLfloat ny, GLfloat nz )
 {
-	printf("glNormal3f\n");
+	opengl_debug(stdout, "glNormal3f\n");
 	GLfloat sys_args[3];
 	sys_args[0] = (GLfloat) nx;
 	sys_args[1] = (GLfloat) ny;
@@ -885,7 +893,7 @@ void glColor3d( GLdouble red, GLdouble green, GLdouble blue )
 
 void glColor3f( GLfloat red, GLfloat green, GLfloat blue )
 {
-	printf("glColor3f\n");
+	opengl_debug(stdout, "glColor3f\n");
 	GLfloat sys_args[3];
 	sys_args[0] = (GLfloat) red;
 	sys_args[1] = (GLfloat) green;
@@ -1535,7 +1543,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride,
 
 void glShadeModel( GLenum mode )
 {
-	printf("glShadeModel\n");
+	opengl_debug(stdout, "glShadeModel\n");
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) mode;
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glShadeModel, &sys_args);
@@ -1558,7 +1566,7 @@ void glLighti( GLenum light, GLenum pname, GLint param )
 void glLightfv( GLenum light, GLenum pname,
                                  const GLfloat *params )
 {
-	printf("glLightfv\n");
+	opengl_debug(stdout, "glLightfv\n");
 	unsigned int sys_args[3];
 	sys_args[0] = (unsigned int) light;
 	sys_args[1] = (unsigned int) pname;
@@ -1626,7 +1634,7 @@ void glMateriali( GLenum face, GLenum pname, GLint param )
 
 void glMaterialfv( GLenum face, GLenum pname, const GLfloat *params )
 {
-	printf("glMaterialfv\n");
+	opengl_debug(stdout, "glMaterialfv\n");
 	unsigned int sys_args[3];
 	sys_args[0] = (unsigned int) face;
 	sys_args[1] = (unsigned int) pname;
@@ -3060,19 +3068,6 @@ GLsizei glGetDebugLogLengthMESA (GLhandleARB obj, GLenum logType, GLenum shaderT
 	return 0;
 }
 
-
-void glProgramCallbackMESA(GLenum target, GLprogramcallbackMESA callback, GLvoid *data)
-{
-	__OPENGL_NOT_IMPL__
-}
-
-
-void glGetProgramRegisterfvMESA(GLenum target, GLsizei len, const GLubyte *name, GLfloat *v)
-{
-	__OPENGL_NOT_IMPL__
-}
-
-
 void *glFramebufferTextureLayerEXT(GLenum target,
     GLenum attachment, GLuint texture, GLint level, GLint layer)
 {
@@ -3084,20 +3079,6 @@ void *glFramebufferTextureLayerEXT(GLenum target,
 void glBlendEquationSeparateATI( GLenum modeRGB, GLenum modeA )
 {
 	__OPENGL_NOT_IMPL__
-}
-
-
-void *glEGLImageTargetTexture2DOES (GLenum target, GLeglImageOES image)
-{
-	__OPENGL_NOT_IMPL__
-	return NULL;
-}
-
-
-void *glEGLImageTargetRenderbufferStorageOES (GLenum target, GLeglImageOES image)
-{
-	__OPENGL_NOT_IMPL__
-	return NULL;
 }
 
 /* GL/glext.h */
@@ -3474,7 +3455,7 @@ GLuint glCreateProgram (void)
 
 GLuint glCreateShader (GLenum type)
 {
-	__OPENGL_NOT_IMPL__
+	/* FIXME */
 	return 0;
 }
 
