@@ -25,6 +25,8 @@
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
 #include <arch/x86/timing/cpu.h>
+#include <driver/glew/glew.h>
+#include <driver/glu/glu.h>
 #include <driver/glut/glut.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
@@ -115,6 +117,10 @@ void x86_emu_init(void)
 #ifdef HAVE_OPENGL
 	/* GLUT */
 	glut_init();
+	/* GLEW */
+	glew_init();
+	/* GLU */
+	glu_init();
 #endif
 
 	/* OpenGL */
@@ -129,6 +135,8 @@ void x86_emu_done(void)
 
 #ifdef HAVE_OPENGL
 	glut_done();
+	glew_done();
+	glu_done();
 #endif
 
 	/* Finalize OpenGl */

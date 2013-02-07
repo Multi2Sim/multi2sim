@@ -632,6 +632,22 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* GLEW debug file */
+		if (!strcmp(argv[argi], "--x86-debug-glew"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			glew_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* GLU debug file */
+		if (!strcmp(argv[argi], "--x86-debug-glu"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			glu_debug_file_name = argv[++argi];
+			continue;
+		}
+
 		/* ISA debug file */
 		if (!strcmp(argv[argi], "--x86-debug-isa"))
 		{

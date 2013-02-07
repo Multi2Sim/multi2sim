@@ -43,7 +43,9 @@ struct glut_window_t
 	void (*tablet_motion_func)(int x, int y);
 	void (*tablet_button_func)(int x, int y);
 	void (*idle_func)(void);
-
+	void (*timer_func)(int value);
+	void (*close_func)(void (*callback)(void));
+	
 	char *title;
 };
 

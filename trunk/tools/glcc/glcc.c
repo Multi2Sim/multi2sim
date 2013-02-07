@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
 
 	if (vsfile == NULL && fsfile == NULL)
 	{
-		printf("Error, make sure there is at least 1 shader source\n");
+		printf("Error, need at least 1 vertex shader and 1 fragment shader\n");
 		exit(-1);
 	}
 
