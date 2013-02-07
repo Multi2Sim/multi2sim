@@ -328,6 +328,74 @@ void x86_isa_cvttss2si_r32_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_divpd_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	int spec_mode;
+
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+	x86_isa_load_xmmm128(ctx, src.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"movdqu %1, %%xmm0\n\t"
+			"movdqu %0, %%xmm1\n\t"
+			"divpd %%xmm0, %%xmm1\n\t"
+			"movdqu %%xmm1, %0\n\t"
+			: "=m" (dest)
+			: "m" (src)
+			: "xmm0", "xmm1"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_div, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
+void x86_isa_divps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	int spec_mode;
+
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+	x86_isa_load_xmmm128(ctx, src.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"movdqu %1, %%xmm0\n\t"
+			"movdqu %0, %%xmm1\n\t"
+			"divps %%xmm0, %%xmm1\n\t"
+			"movdqu %%xmm1, %0\n\t"
+			: "=m" (dest)
+			: "m" (src)
+			: "xmm0", "xmm1"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_div, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_divsd_xmm_xmmm64_impl(struct x86_ctx_t *ctx)
 {
 	union x86_xmm_reg_t dest;
