@@ -22,9 +22,25 @@
 #define RUNTIME_OPENGL_API_H
 
 
+/* Debug */
+extern int opengl_debug;
+
+#define opengl_debug(stream, ...) (opengl_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+
+
 /* System call for OpenGL runtime */
 #define OPENGL_SYSCALL_CODE  327
 
+struct opengl_runtime_info_t
+{
+	unsigned int version_major;
+	unsigned int version_minor;
+	unsigned int glsl_version;
+	char vendor[20];
+	char renderer[20];
+};
+
+extern struct opengl_runtime_info_t gl_runtime_info;
 
 /* List of OpenGL runtime calls */
 enum opengl_call_t
@@ -62,6 +78,8 @@ enum opengl_call_t
 
 	opengl_call_count
 };
+
+// GLuint glCreateShader (GLenum type);
 
 #endif
 

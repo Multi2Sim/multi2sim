@@ -17,14 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdio.h>
 #include <unistd.h>
 
 #include "../include/GL/gl.h"
+#include "../opengl/api.h"
 #include "api.h"
 #include "debug.h"
 #include "window.h"
 
 
+/* Debug */
+int glut_debug = 0;
 
 /*
  * Error Messages
@@ -708,7 +712,10 @@ void glutIdleFunc(void (*func)(void))
 
 void glutTimerFunc(unsigned int millis, void (*func)(int value), int value)
 {
-	__X86_GLUT_NOT_IMPL__
+	glut_debug(stdout, "Glut time function: millis %d, function %p", millis, func);
+	if (glut_current_window)
+		glut_current_window->timer_func = func;	
+
 }
 
 
@@ -1109,7 +1116,7 @@ void glutMouseWheelFunc( void (* callback)( int, int, int, int ) )
 
 void glutCloseFunc( void (* callback)( void ) )
 {
-	__X86_GLUT_NOT_IMPL__
+	glut_debug(stdout, "Glut close func: %p\n", callback);
 }
 
 void glutWMCloseFunc( void (* callback)( void ) )
@@ -1124,7 +1131,7 @@ void glutMenuDestroyFunc( void (* callback)( void ) )
 
 void glutSetOption ( GLenum option_flag, int value )
 {
-	__X86_GLUT_NOT_IMPL__
+	glut_debug(stdout, "Glut set option: flag %d, value %d", option_flag, value);
 }
 
 int * glutGetModeValues(GLenum mode, int * size)
@@ -1279,16 +1286,18 @@ void glutJoystickGetCenter( int ident, float *axes )
 
 void glutInitContextVersion( int majorVersion, int minorVersion )
 {
-	__X86_GLUT_NOT_IMPL__
+	gl_runtime_info.version_major = majorVersion;
+	gl_runtime_info.version_minor = minorVersion;
+	glut_debug(stdout, "Initialize OpenGL context version %d.%d\n", majorVersion, minorVersion);
 }
 
 void glutInitContextFlags( int flags )
 {
-	__X86_GLUT_NOT_IMPL__
+	glut_debug(stdout, "Initialize OpenGL context flags: %d\n", flags);
 }
 
 void glutInitContextProfile( int profile )
 {
-	__X86_GLUT_NOT_IMPL__
+	glut_debug(stdout, "Initialize OpenGL context profile: %d\n", profile);
 }
 

@@ -21,6 +21,10 @@
 #ifndef RUNTIME_GLUT_API_H
 #define RUNTIME_GLUT_API_H
 
+/* Debug */
+extern int glut_debug;
+
+#define glut_debug(stream, ...) (glut_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
 
 /* System call for GLUT runtime */
 #define GLUT_SYSCALL_CODE  326

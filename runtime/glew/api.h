@@ -22,6 +22,11 @@
 #define RUNTIME_GLEW_API_H
 
 
+/* Debug */
+extern int glew_debug;
+
+#define glew_debug(stream, ...) (glew_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+
 /* System call for glew runtime */
 #define GLEW_SYSCALL_CODE  330
 
