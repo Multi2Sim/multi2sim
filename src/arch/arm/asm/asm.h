@@ -22,6 +22,13 @@
 
 #include <stdio.h>
 
+/* Disassembly Mode */
+enum arm_disassembly_mode_t
+{
+	ARM_DISASM = 1,
+	THUMB_DISASM
+};
+
 
 /* Shift operators */
 enum arm_op2_shift_t

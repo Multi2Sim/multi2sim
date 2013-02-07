@@ -1875,11 +1875,77 @@ unsigned int arm_dump_word_symbol(struct elf_file_t *elf_file, unsigned int inst
 	return (word_flag);
 }
 
+int comp (const void *arg1,const void *arg2)
+{
+	struct elf_symbol_t *tmp1;
+	struct elf_symbol_t *tmp2;
+
+	tmp1 = (struct elf_symbol_t*)arg1;
+	tmp2 = (struct elf_symbol_t*)arg2;
+
+	return (tmp1->value - tmp2->value);
+}
+
+void arm_thumb_symbol_list_sort(struct list_t * thumb_symbol_list, struct elf_file_t *elf_file)
+{
+	struct elf_symbol_t *symbol;
+	unsigned int i;
+
+	for ( i = 0; i < list_count(elf_file->symbol_table); i++)
+		{
+			symbol = (struct elf_symbol_t* )list_get(elf_file->symbol_table, i);
+			if((!strncmp(symbol->name, "$t",2)) || (!strncmp(symbol->name, "$a",2)))
+			{
+				list_add(thumb_symbol_list, symbol);
+			}
+		}
+
+		list_sort(thumb_symbol_list, comp);
+
+}
+
+int arm_dissassembly_mode_tag(struct list_t * thumb_symbol_list, unsigned int addr)
+{
+	struct elf_symbol_t *symbol;
+
+	int disasm_mode;
+
+	unsigned int tag_index;
+	unsigned int i;
+
+	for (i = 0; i < list_count(thumb_symbol_list); ++i)
+	{
+		symbol = (struct elf_symbol_t*)list_get(thumb_symbol_list,i);
+		if(symbol->value > addr)
+		{
+			tag_index = i - 1;
+			break;
+		}
+		//printf("Symbol value = %x   %s\n", symbol->value, symbol->name);
+	}
+
+	symbol = (struct elf_symbol_t *) list_get(thumb_symbol_list, tag_index);
+
+	if(!strncmp(symbol->name, "$a",2))
+	{
+		disasm_mode = ARM_DISASM;
+	}
+	else if(!strncmp(symbol->name, "$t",2))
+	{
+		disasm_mode = THUMB_DISASM;
+	}
+
+	return(disasm_mode);
+}
 
 void arm_emu_disasm(char *path)
 {
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;
+
+	struct list_t *thumb_symbol_list;
+
+	static int disasm_mode;
 
 	char inst_str[MAX_STRING_SIZE];
 	int i;
@@ -1895,30 +1961,55 @@ void arm_emu_disasm(char *path)
 
 	for (i = 0; i < list_count(elf_file->section_list); ++i)
 	{
-		section = (struct elf_section_t *)list_get(elf_file->section_list, i);
+		section = (struct elf_section_t *) list_get(
+			elf_file->section_list, i);
 		if (!strncmp(section->name, ".text", 5))
 			break;
 	}
 	if (i == list_count(elf_file->section_list))
 		fatal(".text section not found!\n");
 
+	thumb_symbol_list = list_create();
+	arm_thumb_symbol_list_sort(thumb_symbol_list, elf_file);
+
 	/* Decode and dump instructions */
 	for (inst_ptr = section->buffer.ptr; inst_ptr < section->buffer.ptr +
-			section->buffer.size; inst_ptr += 4)
+			section->buffer.size; )
 	{
 
-		prev_symbol = arm_elf_function_symbol(elf_file, (section->header->sh_addr + inst_index), prev_symbol);
+		disasm_mode = arm_dissassembly_mode_tag(
+			thumb_symbol_list,
+			(section->header->sh_addr + inst_index));
 
-		arm_inst_hex_dump(stdout, inst_ptr, (section->header->sh_addr + inst_index));
+		if(disasm_mode == ARM_DISASM)
+		{
+			prev_symbol = arm_elf_function_symbol(
+				elf_file,
+				(section->header->sh_addr + inst_index),
+				prev_symbol);
 
-		if (!arm_dump_word_symbol(elf_file, (section->header->sh_addr + inst_index),
-			inst_ptr))
-			arm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, inst_ptr , inst_index,
+			arm_inst_hex_dump(
+				stdout, inst_ptr,
 				(section->header->sh_addr + inst_index));
 
-		inst_index += 4;
-	}
+			if (!arm_dump_word_symbol(elf_file, (section->header->sh_addr + inst_index),
+				inst_ptr))
+			{
+				arm_inst_dump(stdout, inst_str,	MAX_STRING_SIZE, inst_ptr,
+					inst_index, (section->header->sh_addr + inst_index));
+			}
+			/* Increment instruction buffer index by 4 for ARM mode */
+			inst_index += 4;
+			inst_ptr += 4;
+		}
 
+		else if(disasm_mode == THUMB_DISASM)
+		{
+			fatal("\n Thumb Mode Detected "
+				"\n Disassembly not supported currently, but will be :-)\n");
+		}
+
+	}
 	/* Free external ELF */
 	elf_file_free(elf_file);
 }
