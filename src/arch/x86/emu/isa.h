@@ -48,6 +48,7 @@ void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg, unsigned int v
 unsigned char x86_isa_load_rm8(struct x86_ctx_t *ctx);
 unsigned short x86_isa_load_rm16(struct x86_ctx_t *ctx);
 unsigned int x86_isa_load_rm32(struct x86_ctx_t *ctx);
+unsigned short x86_isa_load_r32m16(struct x86_ctx_t *ctx);
 unsigned long long x86_isa_load_m64(struct x86_ctx_t *ctx);
 void x86_isa_store_rm8(struct x86_ctx_t *ctx, unsigned char value);
 void x86_isa_store_rm16(struct x86_ctx_t *ctx, unsigned short value);
