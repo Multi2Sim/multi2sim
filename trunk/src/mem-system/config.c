@@ -305,7 +305,7 @@ static void mem_config_read_general(struct config_t *config)
 			mem_config_file_name, err_mem_config_note);
 
 	/* Peer transfers */
-	mem_system_peer_transfers = config_read_bool(config, section, "PeerTranfers", 1);
+	mem_system_peer_transfers = config_read_bool(config, section, "PeerTransfers", 1);
 }
 
 
