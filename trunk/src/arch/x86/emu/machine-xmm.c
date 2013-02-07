@@ -334,6 +334,40 @@ void x86_isa_cvtsi2ss_xmm_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_cvtss2sd_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	int spec_mode;
+
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+	x86_isa_load_xmmm32(ctx, src.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"movdqu %1, %%xmm0\n\t"
+			"movdqu %0, %%xmm1\n\t"
+			"cvtss2sd %%xmm0, %%xmm1\n\t"
+			"movdqu %%xmm1, %0\n\t"
+			: "=m" (dest)
+			: "m" (src)
+			: "xmm0", "xmm1"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm32, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_cvttsd2si_r32_xmmm64_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char xmm[16];
@@ -1333,6 +1367,24 @@ void x86_isa_pinsrb_xmm_r32m8_imm8_impl(struct x86_ctx_t *ctx)
 void x86_isa_pinsrd_xmm_rm32_imm8_impl(struct x86_ctx_t *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+}
+
+
+void x86_isa_pinsrw_xmm_r32m16_imm8_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t xmm;
+	unsigned short r32m16;
+	unsigned char imm8;
+	
+	x86_isa_load_xmm(ctx, xmm.as_uchar);
+	r32m16 = x86_isa_load_r32m16(ctx);
+	imm8 = ctx->inst.imm.b & 0x7;
+
+	/* Update word in 'xmm' */
+	xmm.as_ushort[imm8] = r32m16;
+	x86_isa_store_xmm(ctx, xmm.as_uchar);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmm, x86_dep_rm32, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 

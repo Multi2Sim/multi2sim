@@ -441,6 +441,19 @@ unsigned int x86_isa_load_rm32(struct x86_ctx_t *ctx)
 }
 
 
+unsigned short x86_isa_load_r32m16(struct x86_ctx_t *ctx)
+{
+	unsigned short value;
+
+	if (ctx->inst.modrm_mod == 0x03)
+		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_reg_eax);
+
+	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 2, &value);
+	x86_isa_inst_debug("  [0x%x]=0x%x", x86_isa_effective_address(ctx), value);
+	return value;
+}
+
+
 unsigned long long x86_isa_load_m64(struct x86_ctx_t *ctx)
 {
 	unsigned long long value;

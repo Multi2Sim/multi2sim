@@ -797,6 +797,17 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 			}
 			fmt += 5;
 		}
+		else if (is_next_word(fmt, "r32m16"))
+		{
+			if (inst->modrm_mod == 3)
+				str_printf(&buf, &size, "%s", x86_reg_name_get(inst->modrm_rm + x86_reg_eax));
+			else
+			{
+				str_printf(&buf, &size, "WORD PTR ");
+				x86_memory_address_dump_buf(inst, &buf, &size);
+			}
+			fmt += 6;
+		}
 		else if (is_next_word(fmt, "m"))
 		{
 			x86_memory_address_dump_buf(inst, &buf, &size);

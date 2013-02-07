@@ -138,6 +138,8 @@ DEFINST(cvtsd2ss_xmm_xmmm64, 0x0f, 0x5a, SKIP, REG, SKIP, x86_prefix_repnz)
 DEFINST(cvtsi2sd_xmm_rm32, 0x0f, 0x2a, SKIP, REG, SKIP, x86_prefix_repnz)
 DEFINST(cvtsi2ss_xmm_rm32, 0x0f, 0x2a, SKIP, REG, SKIP, x86_prefix_rep)
 
+DEFINST(cvtss2sd_xmm_xmmm32, 0x0f, 0x5a, SKIP, REG, SKIP, x86_prefix_rep)
+
 DEFINST(cvttsd2si_r32_xmmm64, 0x0f, 0x2c, SKIP, REG, SKIP, x86_prefix_repnz)
 
 DEFINST(cvttss2si_r32_xmmm32, 0x0f, 0x2c, SKIP, REG, SKIP, x86_prefix_rep)
@@ -506,6 +508,8 @@ DEFINST(pextrw_r32_xmmm128_imm8, 0x0f, 0xc5, SKIP, REG, IB, x86_prefix_op)
 
 DEFINST(pinsrb_xmm_r32m8_imm8, 0x0f, 0x3a, 0x20, REG, IB, x86_prefix_op)
 DEFINST(pinsrd_xmm_rm32_imm8, 0x0f, 0x3a, 0x22, REG, IB, x86_prefix_op)
+
+DEFINST(pinsrw_xmm_r32m16_imm8, 0x0f, 0xc4, SKIP, REG, IB, x86_prefix_op)
 
 DEFINST(pmovmskb_r32_xmmm128, 0x0f, 0xd7, SKIP, REG, SKIP, x86_prefix_op)
 
