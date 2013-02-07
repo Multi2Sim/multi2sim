@@ -678,6 +678,9 @@ DEFINST(shufps_xmm_xmmm128_imm8, 0x0f, 0xc6, SKIP, REG, IB, 0)
 DEFINST(shrd_rm32_r32_imm8, 0x0f, 0xac, SKIP, REG, IB, 0)
 DEFINST(shrd_rm32_r32_cl, 0x0f, 0xad, SKIP, REG, SKIP, 0)
 
+DEFINST(sqrtpd_xmm_xmmm128, 0x0f, 0x51, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(sqrtps_xmm_xmmm128, 0x0f, 0x51, SKIP, REG, SKIP, 0)
+
 DEFINST(sqrtss_xmm_xmmm32, 0x0f, 0x51, SKIP, REG, SKIP, x86_prefix_rep)
 
 DEFINST(std, 0xfd, SKIP, SKIP, SKIP, SKIP, 0)
