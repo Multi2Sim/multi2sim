@@ -49,6 +49,9 @@ DEFINST(and_r8_rm8, 0x22, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(and_r16_rm16, 0x23, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(and_r32_rm32, 0x23, SKIP, SKIP, REG, SKIP, 0)
 
+DEFINST(andpd_xmm_xmmm128, 0x0f, 0x54, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(andps_xmm_xmmm128, 0x0f, 0x54, SKIP, REG, SKIP, 0)
+
 DEFINST(bound_r16_rm32, 0x62, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(bound_r32_rm64, 0x62, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 
