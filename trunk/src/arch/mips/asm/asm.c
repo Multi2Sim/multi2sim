@@ -93,7 +93,7 @@ struct mips_inst_info_t *mips_asm_table_special2;
 struct mips_inst_info_t *mips_asm_table_special3;
 struct mips_inst_info_t *mips_asm_table_special3_bshfl;
 
-
+/* Build table of all the instructions */
 void mips_asm_init()
 {
 	/* Allocate storage for the instruction tables */
@@ -128,7 +128,7 @@ void mips_asm_init()
 	mips_asm_table_special3          = xcalloc(64, sizeof(struct mips_inst_info_t));
 	mips_asm_table_special3_bshfl    = xcalloc(64, sizeof(struct mips_inst_info_t));
 
-
+	/* Pointers to each table */
 	struct mips_inst_info_t *asm_table;
 	struct mips_inst_info_t *asm_table_special;
 	struct mips_inst_info_t *asm_table_special2;
@@ -158,7 +158,8 @@ void mips_asm_init()
 	struct mips_inst_info_t *asm_table_cop2;
 	struct mips_inst_info_t *asm_table_cop2_bc2;
 
-	/* Initiate values for the next tables */
+	/* Initiate values for the 'next_table', 'next_table_low' and 'next_table_high'
+	 * fields of the tables */
 	mips_asm_table[MIPS_OPCODE_SPECIAL].next_table =
 		mips_asm_table_special;
 	mips_asm_table[MIPS_OPCODE_SPECIAL].next_table_low                  = 0;
@@ -530,6 +531,7 @@ void mips_inst_decode(struct mips_inst_t *inst)
 }
 
 /*************************************************************************/
+/* Print the address of the instruction and the instruction in hex */
 void mips_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr)
 {
 	fprintf(f, "\n%8x:\t%08x \t", inst_addr, *(unsigned int *) inst_ptr);
@@ -715,7 +717,7 @@ void mips_inst_dump(FILE *f, char *str, int inst_str_size, void *inst_ptr,
 					break;
 				}
 			}
-
+			/* DONE WITH PSEUDO INSTRUCTIONS */
 
 			if (*fmt_str != '%')
 			{
@@ -1087,12 +1089,11 @@ void mips_inst_dump_CODE(char **inst_str_ptr, int *inst_str_size,
 /********************************************************************/
 void mips_emu_disasm(char *path)
 {
-	/* #define FRITZ_DEBUG */
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;
 	struct elf_symbol_t *symbol, *print_symbol;
+
 	char inst_str[MAX_STRING_SIZE];
-	unsigned int inst_index = 0;
 	int curr_sym;
 	int i;
 	void *inst_ptr;
@@ -1104,61 +1105,62 @@ void mips_emu_disasm(char *path)
 	/* Create an elf file from the executable */
 	elf_file = elf_file_create_from_path(path);
 
-	/* Get the sections from the elf file - stop at the '.text' section */
-	for (i = 0; i < list_count(elf_file->section_list); ++i)
+	/* Read Sections */
+	for (i=0; i < list_count(elf_file->section_list); i++)
 	{
-		section =
-			(struct elf_section_t *)
-			list_get(elf_file->section_list, i);
-		if (!strncmp(section->name, ".text", 5))
-			break;
-	}
-	if (i == list_count(elf_file->section_list))
-		fatal(".text section not found!\n");
+		/* Get section and skip it if it does not contain code */
+		section = list_get(elf_file->section_list, i);
+		if (!(section->header->sh_flags & SHF_EXECINSTR))
+			continue;
 
-	curr_sym = 0;
-	symbol = list_get(elf_file->symbol_table, curr_sym);
-	/* Decode and dump instructions */
-	for (inst_ptr = section->buffer.ptr; inst_ptr < section->buffer.ptr +
-		section->buffer.size; inst_ptr += 4)
-	{
-		/* Symbol */
-		while (symbol
-			&& symbol->value <
-			(section->header->sh_addr + inst_index))
+		/* Title */
+		printf("\n\nDisassembly of section %s:", section->name);
+		
+		curr_sym = 0;
+		symbol = list_get(elf_file->symbol_table, curr_sym);
+		
+		/* Decode and dump instructions */
+		for (inst_ptr = section->buffer.ptr; inst_ptr < section->buffer.ptr +
+			     section->buffer.size; inst_ptr += 4)
 		{
-			curr_sym++;
-			symbol = list_get(elf_file->symbol_table, curr_sym);
+			/* Symbol */
+			while (symbol
+			       && symbol->value <
+			       (section->header->sh_addr + section->buffer.pos))
+			{
+				curr_sym++;
+				symbol = list_get(elf_file->symbol_table, curr_sym);
+			}
+			if (symbol
+			    && symbol->value ==
+			    (section->header->sh_addr + section->buffer.pos))
+				printf("\n\n%08x <%s>:",
+				       section->header->sh_addr + section->buffer.pos,
+				       symbol->name);
+			
+			mips_inst_hex_dump(stdout, inst_ptr,
+					   (section->header->sh_addr + section->buffer.pos));
+			
+			mips_inst_dump(stdout, inst_str, MAX_STRING_SIZE, inst_ptr,
+				       section->buffer.pos, (section->header->sh_addr + section->buffer.pos),
+				       &print_symbol_address);
+			if (print_symbol_address != 0)
+			{
+				print_symbol = elf_symbol_get_by_address(elf_file,
+									 print_symbol_address, 0);
+				if (print_symbol->value == print_symbol_address)
+					printf(" <%s>", print_symbol->name);
+				else
+					printf(" <%s+0x%x>", print_symbol->name,
+					       print_symbol_address -
+					       print_symbol->value);
+				print_symbol_address = 0;
+			}
+						
+			section->buffer.pos += 4;
 		}
-		if (symbol
-			&& symbol->value ==
-			(section->header->sh_addr + inst_index))
-			printf("\n\n%08x <%s>:",
-				section->header->sh_addr + inst_index,
-				symbol->name);
-
-		mips_inst_hex_dump(stdout, inst_ptr,
-			(section->header->sh_addr + inst_index));
-
-		mips_inst_dump(stdout, inst_str, MAX_STRING_SIZE, inst_ptr,
-			inst_index, (section->header->sh_addr + inst_index),
-			&print_symbol_address);
-		if (print_symbol_address != 0)
-		{
-			print_symbol = elf_symbol_get_by_address(elf_file,
-				print_symbol_address, 0);
-			if (print_symbol->value == print_symbol_address)
-				printf(" <%s>", print_symbol->name);
-			else
-				printf(" <%s+0x%x>", print_symbol->name,
-					print_symbol_address -
-					print_symbol->value);
-			print_symbol_address = 0;
-		}
-
-		inst_index += 4;
 	}
-
+	printf("\n");
 	elf_file_free(elf_file);
 	mips_asm_done();
 }
