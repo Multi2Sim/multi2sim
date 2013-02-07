@@ -1,0 +1,17 @@
+/*
+ * DEFINST format for Thumb2
+ *      name: Instruction name
+ *      fmt_str: String representing the format for disassembly
+ *      cat: Instruction category
+ *		op1: Opcode 1
+ *		op2: Opcode 2		
+ *		op3: Opcode 3 		
+ */
+ 
+ DEFINST(LDR,
+	"j%target",
+	0x02,
+	0x00,
+	0x00,
+	0x00)
+ 
