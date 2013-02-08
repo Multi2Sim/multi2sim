@@ -25,9 +25,11 @@ libemu_a_SOURCES = \
 	machine-ctrl.c \
 	machine-fp.c \
 	machine-rot.c \
+	machine-sse.c \
+	machine-sse2.c \
+	machine-sse3.c \
 	machine-std.c \
 	machine-str.c \
-	machine-xmm.c \
 	\
 	regs.c \
 	regs.h \
