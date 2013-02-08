@@ -25,25 +25,41 @@
 
 #define X86_FU_RES_MAX  10
 
+
+/* WARNING:
+ * For every entry in this enumeration, array 'x86_fu_name' should be modified
+ * accordingly in 'fu.c'. Array 'x86_fu_res_pool' containing the default
+ * configuration for each functional unit should also be updated. */
 enum x86_fu_class_t
 {
 	x86_fu_none = 0,
 
-	x86_fu_intadd,
-	x86_fu_intmult,
-	x86_fu_intdiv,
+	x86_fu_int_add,
+	x86_fu_int_mult,
+	x86_fu_int_div,
+
 	x86_fu_effaddr,
 	x86_fu_logic,
 
-	x86_fu_fpsimple,
-	x86_fu_fpadd,
-	x86_fu_fpmult,
-	x86_fu_fpdiv,
-	x86_fu_fpcomplex,
+	x86_fu_float_simple,
+	x86_fu_float_add,
+	x86_fu_float_comp,
+	x86_fu_float_mult,
+	x86_fu_float_div,
+	x86_fu_float_complex,
 
-	x86_fu_xmm_int,
-	x86_fu_xmm_float,
+	x86_fu_xmm_int_add,
+	x86_fu_xmm_int_mult,
+	x86_fu_xmm_int_div,
+
 	x86_fu_xmm_logic,
+
+	x86_fu_xmm_float_add,
+	x86_fu_xmm_float_comp,
+	x86_fu_xmm_float_mult,
+	x86_fu_xmm_float_div,
+	x86_fu_xmm_float_conv,
+	x86_fu_xmm_float_complex,
 
 	x86_fu_count
 };
@@ -61,7 +77,6 @@ struct x86_fu_res_t
 	int count;
 	int oplat;
 	int issuelat;
-	char *name;
 };
 
 extern struct x86_fu_res_t x86_fu_res_pool[x86_fu_count];
@@ -71,6 +86,12 @@ void x86_fu_done(void);
 
 int x86_fu_reserve(struct x86_uop_t *uop);
 void x86_fu_release(int core);
+
+struct config_t;
+void x86_fu_config_read(struct config_t *config);
+void x86_fu_config_dump(FILE *f);
+
+void x86_fu_dump_report(struct x86_fu_t *fu, FILE *f);
 
 
 #endif
