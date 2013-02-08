@@ -190,19 +190,34 @@ char *x86_config_help =
 	"      <func_unit>.<field> = <value>\n"
 	"  where <func_unit> refers to a functional unit type, and <field> refers to a\n"
 	"  property of it. Possible values for <func_unit> are:\n"
+	"\n"
 	"      IntAdd      Integer adder\n"
 	"      IntMult     Integer multiplier\n"
 	"      IntDiv      Integer divider\n"
+	"\n"
 	"      EffAddr     Operator for effective address computations\n"
 	"      Logic       Operator for logic operations\n"
-	"      FpSimple    Simple floating-point operations\n"
-	"      FpAdd       Floating-point adder\n"
-	"      FpMult      Floating-point multiplier\n"
-	"      FpDiv       Floating-point divider\n"
-	"      FpComplex   Operator for complex floating-point computations\n"
-	"      XMMInt      XMM integer unit\n"
-	"      XMMFloat    XMM floating-point unit\n"
-	"      XMMLogic    XMM logic unit\n"
+	"\n"
+	"      FloatSimple    Simple floating-point operations\n"
+	"      FloatAdd       Floating-point adder\n"
+	"      FloatComp      Floating-point comparator\n"
+	"      FloatMult      Floating-point multiplier\n"
+	"      FloatDiv       Floating-point divider\n"
+	"      FloatComplex   Operator for complex floating-point computations\n"
+	"\n"
+	"      XMMIntAdd      XMM integer adder\n"
+	"      XMMIntMult     XMM integer multiplier\n"
+	"      XMMIntDiv      XMM integer Divider\n"
+	"\n"
+	"      XMMLogic       XMM logic operations\n"
+	"\n"
+	"      XMMFloatAdd       XMM floating-point adder\n"
+	"      XMMFloatComp      XMM floating-point comparator\n"
+	"      XMMFloatMult      XMM floating-point multiplier\n"
+	"      XMMFloatDiv       XMM floating-point divider\n"
+	"      XMMFloatConv      XMM floating-point converter\n"
+	"      XMMFloatComplex   Complex XMM floating-point operations\n"
+	"\n"
 	"  Possible values for <field> are:\n"
 	"      Count       Number of functional units of a given kind.\n"
 	"      OpLat       Latency of the operator.\n"
@@ -371,60 +386,7 @@ static void x86_cpu_config_check(void)
 
 
 	/* Functional Units */
-
-	section = "FunctionalUnits";
-
-	x86_fu_res_pool[x86_fu_intadd].count = config_read_int(config, section, "IntAdd.Count", 4);
-	x86_fu_res_pool[x86_fu_intadd].oplat = config_read_int(config, section, "IntAdd.OpLat", 2);
-	x86_fu_res_pool[x86_fu_intadd].issuelat = config_read_int(config, section, "IntAdd.IssueLat", 1);
-
-	x86_fu_res_pool[x86_fu_intmult].count = config_read_int(config, section, "IntMult.Count", 1);
-	x86_fu_res_pool[x86_fu_intmult].oplat = config_read_int(config, section, "IntMult.OpLat", 3);
-	x86_fu_res_pool[x86_fu_intmult].issuelat = config_read_int(config, section, "IntMult.IssueLat", 3);
-
-	x86_fu_res_pool[x86_fu_intdiv].count = config_read_int(config, section, "IntDiv.Count", 1);
-	x86_fu_res_pool[x86_fu_intdiv].oplat = config_read_int(config, section, "IntDiv.OpLat", 20);
-	x86_fu_res_pool[x86_fu_intdiv].issuelat = config_read_int(config, section, "IntDiv.IssueLat", 20);
-
-	x86_fu_res_pool[x86_fu_effaddr].count = config_read_int(config, section, "EffAddr.Count", 4);
-	x86_fu_res_pool[x86_fu_effaddr].oplat = config_read_int(config, section, "EffAddr.OpLat", 2);
-	x86_fu_res_pool[x86_fu_effaddr].issuelat = config_read_int(config, section, "EffAddr.IssueLat", 1);
-
-	x86_fu_res_pool[x86_fu_logic].count = config_read_int(config, section, "Logic.Count", 4);
-	x86_fu_res_pool[x86_fu_logic].oplat = config_read_int(config, section, "Logic.OpLat", 1);
-	x86_fu_res_pool[x86_fu_logic].issuelat = config_read_int(config, section, "Logic.IssueLat", 1);
-
-	x86_fu_res_pool[x86_fu_fpsimple].count = config_read_int(config, section, "FpSimple.Count", 2);
-	x86_fu_res_pool[x86_fu_fpsimple].oplat = config_read_int(config, section, "FpSimple.OpLat", 2);
-	x86_fu_res_pool[x86_fu_fpsimple].issuelat = config_read_int(config, section, "FpSimple.IssueLat", 2);
-
-	x86_fu_res_pool[x86_fu_fpadd].count = config_read_int(config, section, "FpAdd.Count", 2);
-	x86_fu_res_pool[x86_fu_fpadd].oplat = config_read_int(config, section, "FpAdd.OpLat", 5);
-	x86_fu_res_pool[x86_fu_fpadd].issuelat = config_read_int(config, section, "FpAdd.IssueLat", 5);
-
-	x86_fu_res_pool[x86_fu_fpmult].count = config_read_int(config, section, "FpMult.Count", 1);
-	x86_fu_res_pool[x86_fu_fpmult].oplat = config_read_int(config, section, "FpMult.OpLat", 10);
-	x86_fu_res_pool[x86_fu_fpmult].issuelat = config_read_int(config, section, "FpMult.IssueLat", 10);
-
-	x86_fu_res_pool[x86_fu_fpdiv].count = config_read_int(config, section, "FpDiv.Count", 1);
-	x86_fu_res_pool[x86_fu_fpdiv].oplat = config_read_int(config, section, "FpDiv.OpLat", 20);
-	x86_fu_res_pool[x86_fu_fpdiv].issuelat = config_read_int(config, section, "FpDiv.IssueLat", 20);
-
-	x86_fu_res_pool[x86_fu_fpcomplex].count = config_read_int(config, section, "FpComplex.Count", 1);
-	x86_fu_res_pool[x86_fu_fpcomplex].oplat = config_read_int(config, section, "FpComplex.OpLat", 40);
-	x86_fu_res_pool[x86_fu_fpcomplex].issuelat = config_read_int(config, section, "FpComplex.IssueLat", 40);
-
-	x86_fu_res_pool[x86_fu_xmm_int].count = config_read_int(config, section, "XMMInt.Count", 1);
-	x86_fu_res_pool[x86_fu_xmm_int].oplat = config_read_int(config, section, "XMMInt.OpLat", 2);
-	x86_fu_res_pool[x86_fu_xmm_int].issuelat = config_read_int(config, section, "XMMInt.IssueLat", 2);
-
-	x86_fu_res_pool[x86_fu_xmm_float].count = config_read_int(config, section, "XMMFloat.Count", 1);
-	x86_fu_res_pool[x86_fu_xmm_float].oplat = config_read_int(config, section, "XMMFloat.OpLat", 10);
-	x86_fu_res_pool[x86_fu_xmm_float].issuelat = config_read_int(config, section, "XMMFloat.IssueLat", 10);
-
-	x86_fu_res_pool[x86_fu_xmm_logic].count = config_read_int(config, section, "XMMLogic.Count", 1);
-	x86_fu_res_pool[x86_fu_xmm_logic].oplat = config_read_int(config, section, "XMMLogic.OpLat", 1);
-	x86_fu_res_pool[x86_fu_xmm_logic].issuelat = config_read_int(config, section, "XMMLogic.IssueLat", 1);
+	x86_fu_config_read(config);
 
 
 	/* Branch Predictor */
@@ -507,62 +469,8 @@ static void x86_cpu_config_dump(FILE *f)
 	fprintf(f, "\n");
 
 	/* Functional units */
-	fprintf(f, "[ Config.FunctionalUnits ]\n");
-
-	fprintf(f, "IntAdd.Count = %d\n", x86_fu_res_pool[x86_fu_intadd].count);
-	fprintf(f, "IntAdd.OpLat = %d\n", x86_fu_res_pool[x86_fu_intadd].oplat);
-	fprintf(f, "IntAdd.IssueLat = %d\n", x86_fu_res_pool[x86_fu_intadd].issuelat);
-
-	fprintf(f, "IntMult.Count = %d\n", x86_fu_res_pool[x86_fu_intmult].count);
-	fprintf(f, "IntMult.OpLat = %d\n", x86_fu_res_pool[x86_fu_intmult].oplat);
-	fprintf(f, "IntMult.IssueLat = %d\n", x86_fu_res_pool[x86_fu_intmult].issuelat);
-
-	fprintf(f, "IntDiv.Count = %d\n", x86_fu_res_pool[x86_fu_intdiv].count);
-	fprintf(f, "IntDiv.OpLat = %d\n", x86_fu_res_pool[x86_fu_intdiv].oplat);
-	fprintf(f, "IntDiv.IssueLat = %d\n", x86_fu_res_pool[x86_fu_intdiv].issuelat);
-
-	fprintf(f, "EffAddr.Count = %d\n", x86_fu_res_pool[x86_fu_effaddr].count);
-	fprintf(f, "EffAddr.OpLat = %d\n", x86_fu_res_pool[x86_fu_effaddr].oplat);
-	fprintf(f, "EffAddr.IssueLat = %d\n", x86_fu_res_pool[x86_fu_effaddr].issuelat);
-
-	fprintf(f, "Logic.Count = %d\n", x86_fu_res_pool[x86_fu_logic].count);
-	fprintf(f, "Logic.OpLat = %d\n", x86_fu_res_pool[x86_fu_logic].oplat);
-	fprintf(f, "Logic.IssueLat = %d\n", x86_fu_res_pool[x86_fu_logic].issuelat);
-
-	fprintf(f, "FpSimple.Count = %d\n", x86_fu_res_pool[x86_fu_fpsimple].count);
-	fprintf(f, "FpSimple.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpsimple].oplat);
-	fprintf(f, "FpSimple.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpsimple].issuelat);
-
-	fprintf(f, "FpAdd.Count = %d\n", x86_fu_res_pool[x86_fu_fpadd].count);
-	fprintf(f, "FpAdd.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpadd].oplat);
-	fprintf(f, "FpAdd.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpadd].issuelat);
-
-	fprintf(f, "FpMult.Count = %d\n", x86_fu_res_pool[x86_fu_fpmult].count);
-	fprintf(f, "FpMult.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpmult].oplat);
-	fprintf(f, "FpMult.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpmult].issuelat);
-
-	fprintf(f, "FpDiv.Count = %d\n", x86_fu_res_pool[x86_fu_fpdiv].count);
-	fprintf(f, "FpDiv.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpdiv].oplat);
-	fprintf(f, "FpDiv.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpdiv].issuelat);
-
-	fprintf(f, "FpComplex.Count = %d\n", x86_fu_res_pool[x86_fu_fpcomplex].count);
-	fprintf(f, "FpComplex.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpcomplex].oplat);
-	fprintf(f, "FpComplex.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpcomplex].issuelat);
-
-	fprintf(f, "XMMInt.Count = %d\n", x86_fu_res_pool[x86_fu_xmm_int].count);
-	fprintf(f, "XMMInt.OpLat = %d\n", x86_fu_res_pool[x86_fu_xmm_int].oplat);
-	fprintf(f, "XMMInt.IssueLat = %d\n", x86_fu_res_pool[x86_fu_xmm_int].issuelat);
-
-	fprintf(f, "XMMFloat.Count = %d\n", x86_fu_res_pool[x86_fu_xmm_int].count);
-	fprintf(f, "XMMFloat.OpLat = %d\n", x86_fu_res_pool[x86_fu_xmm_int].oplat);
-	fprintf(f, "XMMFloat.IssueLat = %d\n", x86_fu_res_pool[x86_fu_xmm_int].issuelat);
-
-	fprintf(f, "XMMLogic.Count = %d\n", x86_fu_res_pool[x86_fu_xmm_logic].count);
-	fprintf(f, "XMMLogic.OpLat = %d\n", x86_fu_res_pool[x86_fu_xmm_logic].oplat);
-	fprintf(f, "XMMLogic.IssueLat = %d\n", x86_fu_res_pool[x86_fu_xmm_logic].issuelat);
-
-	fprintf(f, "\n");
-
+	x86_fu_config_dump(f);
+	
 	/* Branch Predictor */
 	fprintf(f, "[ Config.BranchPredictor ]\n");
 	fprintf(f, "Kind = %s\n", x86_bpred_kind_map[x86_bpred_kind]);
@@ -626,13 +534,6 @@ static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix,
 	fprintf(f, "\n");
 }
 
-
-#define DUMP_FU_STAT(NAME, ITEM) { \
-	fprintf(f, "fu." #NAME ".Accesses = %lld\n", X86_CORE.fu->accesses[ITEM]); \
-	fprintf(f, "fu." #NAME ".Denied = %lld\n", X86_CORE.fu->denied[ITEM]); \
-	fprintf(f, "fu." #NAME ".WaitingTime = %.4g\n", X86_CORE.fu->accesses[ITEM] ? \
-		(double) X86_CORE.fu->waiting_time[ITEM] / X86_CORE.fu->accesses[ITEM] : 0.0); \
-}
 
 #define DUMP_DISPATCH_STAT(NAME) { \
 	fprintf(f, "Dispatch.Stall." #NAME " = %lld\n", X86_CORE.dispatch_stall[x86_dispatch_stall_##NAME]); \
@@ -720,21 +621,7 @@ static void x86_cpu_dump_report(void)
 		fprintf(f, "[ c%d ]\n\n", core);
 
 		/* Functional units */
-		fprintf(f, "; Functional unit pool\n");
-		fprintf(f, ";    Accesses - Number of uops issued to a f.u.\n");
-		fprintf(f, ";    Denied - Number of requests denied due to busy f.u.\n");
-		fprintf(f, ";    WaitingTime - Average number of waiting cycles to reserve f.u.\n");
-		DUMP_FU_STAT(IntAdd, x86_fu_intadd);
-		DUMP_FU_STAT(IntMult, x86_fu_intmult);
-		DUMP_FU_STAT(IntDiv, x86_fu_intdiv);
-		DUMP_FU_STAT(Effaddr, x86_fu_effaddr);
-		DUMP_FU_STAT(Logic, x86_fu_logic);
-		DUMP_FU_STAT(FPSimple, x86_fu_fpsimple);
-		DUMP_FU_STAT(FPAdd, x86_fu_fpadd);
-		DUMP_FU_STAT(FPMult, x86_fu_fpmult);
-		DUMP_FU_STAT(FPDiv, x86_fu_fpdiv);
-		DUMP_FU_STAT(FPComplex, x86_fu_fpcomplex);
-		fprintf(f, "\n");
+		x86_fu_dump_report(X86_CORE.fu, f);
 
 		/* Dispatch slots */
 		if (x86_cpu_dispatch_kind == x86_cpu_dispatch_kind_timeslice)

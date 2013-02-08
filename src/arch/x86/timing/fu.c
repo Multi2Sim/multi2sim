@@ -20,6 +20,8 @@
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/config.h>
+#include <lib/util/string.h>
 
 #include "cpu.h"
 #include "fu.h"
@@ -30,7 +32,74 @@
  */
 
 
-struct x86_fu_res_t x86_fu_res_pool[x86_fu_count];
+/* Default configuration for functional units. Fields are:
+ *	count - Number of units.
+ *	oplat - Latency from issue to completion.
+ *	issuelat - Latency from issue to next issue.
+ */
+struct x86_fu_res_t x86_fu_res_pool[x86_fu_count] =
+{
+	{ 0, 0, 0 },  /* Unused */
+
+	{ 4, 1, 1 },  /* x86_fu_int_add */
+	{ 2, 2, 2 },  /* x86_fu_int_mult */
+	{ 1, 5, 5 },  /* x86_fu_int_div */
+
+	{ 4, 2, 2 },  /* x86_fu_effaddr */
+	{ 4, 1, 1 },  /* x86_fu_logic */
+
+	{ 2, 2, 2 },  /* x86_fu_float_simple */
+	{ 2, 5, 5 },  /* x86_fu_float_add */
+	{ 2, 2, 2 },  /* x86_fu_float_comp */
+	{ 1, 10, 10 },  /* x86_fu_float_mult */
+	{ 1, 15, 15 },  /* x86_fu_float_div */
+	{ 1, 20, 20 },  /* x86_fu_float_complex */
+
+	{ 1, 1, 1 },  /* x86_fu_xmm_int_add */
+	{ 1, 2, 2 },  /* x86_fu_xmm_int_mult */
+	{ 1, 5, 5 },  /* x86_fu_xmm_int_div */
+
+	{ 1, 1, 1 },  /* x86_fu_xmm_logic */
+
+	{ 1, 5, 5 },  /* x86_fu_xmm_float_add */
+	{ 1, 2, 2 },  /* x86_fu_xmm_float_comp */
+	{ 1, 10, 10 },  /* x86_fu_xmm_float_mult */
+	{ 1, 15, 15 },  /* x86_fu_xmm_float_div */
+	{ 1, 5, 5 },  /* x86_fu_xmm_float_conv */
+	{ 1, 20, 20 }  /* x86_fu_xmm_float_complex */
+};
+
+char *x86_fu_name[x86_fu_count] =
+{
+	"<invalid>",
+
+	"IntAdd",
+	"IntMult",
+	"IntDiv",
+
+	"EffAddr",
+	"Logic",
+
+	"FloatSimple",
+	"FloatAdd",
+	"FloatComp",
+	"FloatMult",
+	"FloatDiv",
+	"FloatComplex",
+
+	"XMMIntAdd",
+	"XMMIntMult",
+	"XMMIntDiv",
+
+	"XMMLogic",
+	
+	"XMMFloatAdd",
+	"XMMFloatComp",
+	"XMMFloatMult",
+	"XMMFloatDiv",
+	"XMMFloatConv",
+	"XMMFloatComplex",
+};
 
 
 
@@ -47,10 +116,10 @@ static enum x86_fu_class_t fu_class_table[x86_uinst_opcode_count] =
 	x86_fu_none,  /* x86_uinst_nop */
 
 	x86_fu_none,  /* x86_uinst_move */
-	x86_fu_intadd,  /* x86_uinst_add */
-	x86_fu_intadd,  /* x86_uinst_sub */
-	x86_fu_intmult,  /* x86_uinst_mult */
-	x86_fu_intdiv,  /* x86_uinst_div */
+	x86_fu_int_add,  /* x86_uinst_add */
+	x86_fu_int_add,  /* x86_uinst_sub */
+	x86_fu_int_mult,  /* x86_uinst_mult */
+	x86_fu_int_div,  /* x86_uinst_div */
 	x86_fu_effaddr,  /* x86_uinst_effaddr */
 
 	x86_fu_logic,  /* x86_uinst_and */
@@ -61,23 +130,23 @@ static enum x86_fu_class_t fu_class_table[x86_uinst_opcode_count] =
 	x86_fu_logic,  /* x86_uinst_sign */
 
 	x86_fu_none,  /* x86_uinst_fp_move */
-	x86_fu_fpsimple,  /* x86_uinst_fp_sign */
-	x86_fu_fpsimple,  /* x86_uinst_fp_round */
+	x86_fu_float_simple,  /* x86_uinst_fp_sign */
+	x86_fu_float_simple,  /* x86_uinst_fp_round */
 
-	x86_fu_fpadd,  /* x86_uinst_fp_add */
-	x86_fu_fpadd,  /* x86_uinst_fp_sub */
-	x86_fu_fpadd,  /* x86_uinst_fp_comp */
-	x86_fu_fpmult,  /* x86_uinst_fp_mult */
-	x86_fu_fpdiv,  /* x86_uinst_fp_div */
+	x86_fu_float_add,  /* x86_uinst_fp_add */
+	x86_fu_float_add,  /* x86_uinst_fp_sub */
+	x86_fu_float_comp,  /* x86_uinst_fp_comp */
+	x86_fu_float_mult,  /* x86_uinst_fp_mult */
+	x86_fu_float_div,  /* x86_uinst_fp_div */
 
-	x86_fu_fpcomplex,  /* x86_uinst_fp_exp */
-	x86_fu_fpcomplex,  /* x86_uinst_fp_log */
-	x86_fu_fpcomplex,  /* x86_uinst_fp_sin */
-	x86_fu_fpcomplex,  /* x86_uinst_fp_cos */
-	x86_fu_fpcomplex,  /* x86_uinst_fp_sincos */
-	x86_fu_fpcomplex,  /* x86_uinst_fp_tan */
-	x86_fu_fpcomplex,  /* x86_uinst_fp_atan */
-	x86_fu_fpcomplex,  /* x86_uinst_fp_sqrt */
+	x86_fu_float_complex,  /* x86_uinst_fp_exp */
+	x86_fu_float_complex,  /* x86_uinst_fp_log */
+	x86_fu_float_complex,  /* x86_uinst_fp_sin */
+	x86_fu_float_complex,  /* x86_uinst_fp_cos */
+	x86_fu_float_complex,  /* x86_uinst_fp_sincos */
+	x86_fu_float_complex,  /* x86_uinst_fp_tan */
+	x86_fu_float_complex,  /* x86_uinst_fp_atan */
+	x86_fu_float_complex,  /* x86_uinst_fp_sqrt */
 
 	x86_fu_none,  /* x86_uinst_fp_push */
 	x86_fu_none,  /* x86_uinst_fp_pop */
@@ -89,23 +158,23 @@ static enum x86_fu_class_t fu_class_table[x86_uinst_opcode_count] =
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_shift */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_sign */
 
-	x86_fu_xmm_int,  /* x86_uinst_xmm_add */
-	x86_fu_xmm_int,  /* x86_uinst_xmm_sub */
-	x86_fu_xmm_int,  /* x86_uinst_xmm_comp */
-	x86_fu_xmm_int,  /* x86_uinst_xmm_mult */
-	x86_fu_xmm_int,  /* x86_uinst_xmm_div */
+	x86_fu_xmm_int_add,  /* x86_uinst_xmm_add */
+	x86_fu_xmm_int_add,  /* x86_uinst_xmm_sub */
+	x86_fu_xmm_int_add,  /* x86_uinst_xmm_comp */
+	x86_fu_xmm_int_mult,  /* x86_uinst_xmm_mult */
+	x86_fu_xmm_int_div,  /* x86_uinst_xmm_div */
 
-	x86_fu_xmm_float,  /* x86_uinst_xmm_fp_add */
-	x86_fu_xmm_float,  /* x86_uinst_xmm_fp_sub */
-	x86_fu_xmm_float,  /* x86_uinst_xmm_fp_comp */
-	x86_fu_xmm_float,  /* x86_uinst_xmm_fp_mult */
-	x86_fu_xmm_float,  /* x86_uinst_xmm_fp_div */
+	x86_fu_xmm_float_add,  /* x86_uinst_xmm_fp_add */
+	x86_fu_xmm_float_add,  /* x86_uinst_xmm_fp_sub */
+	x86_fu_xmm_float_comp,  /* x86_uinst_xmm_fp_comp */
+	x86_fu_xmm_float_mult,  /* x86_uinst_xmm_fp_mult */
+	x86_fu_xmm_float_div,  /* x86_uinst_xmm_fp_div */
 
-	x86_fu_xmm_float,  /* x86_uinst_xmm_fp_sqrt */
+	x86_fu_xmm_float_complex,  /* x86_uinst_xmm_fp_sqrt */
 
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_move */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_shuf */
-	x86_fu_xmm_float,  /* x86_uinst_xmm_conv */
+	x86_fu_xmm_float_conv,  /* x86_uinst_xmm_conv */
 
 	x86_fu_none,  /* x86_uinst_load */
 	x86_fu_none,  /* x86_uinst_store */
@@ -189,9 +258,77 @@ int x86_fu_reserve(struct x86_uop_t *uop)
 /* Release all functional units */
 void x86_fu_release(int core)
 {
-	int i, j;
+	int i;
+	int j;
+
 	for (i = 0; i < x86_fu_count; i++)
 		for (j = 0; j < x86_fu_res_pool[i].count; j++)
 			X86_CORE.fu->cycle_when_free[i][j] = 0;
+}
+
+
+void x86_fu_config_read(struct config_t *config)
+{
+	struct x86_fu_res_t *fu_res;
+
+	char buf[MAX_STRING_SIZE];
+	char *section;
+
+	int i;
+
+	section = "FunctionalUnits";
+	for (i = 1; i < x86_fu_count; i++)
+	{
+		fu_res = &x86_fu_res_pool[i];
+
+		snprintf(buf, sizeof buf, "%s.Count", x86_fu_name[i]);
+		fu_res->count = config_read_int(config, section, buf, fu_res->count);
+
+		snprintf(buf, sizeof buf, "%s.OpLat", x86_fu_name[i]);
+		fu_res->oplat = config_read_int(config, section, buf, fu_res->oplat);
+
+		snprintf(buf, sizeof buf, "%s.IssueLat", x86_fu_name[i]);
+		fu_res->issuelat = config_read_int(config, section, buf, fu_res->issuelat);
+	}
+}
+
+
+void x86_fu_config_dump(FILE *f)
+{
+	struct x86_fu_res_t *fu_res;
+	int i;
+
+	fprintf(f, "[ Config.FunctionalUnits ]\n");
+	for (i = 1; i < x86_fu_count; i++)
+	{
+		fu_res = &x86_fu_res_pool[i];
+		fprintf(f, "%s.Count = %d\n", x86_fu_name[i], fu_res->count);
+		fprintf(f, "%s.OpLat = %d\n", x86_fu_name[i], fu_res->oplat);
+		fprintf(f, "%s.IssueLat = %d\n", x86_fu_name[i], fu_res->issuelat);
+
+	}
+	fprintf(f, "\n");
+}
+
+
+void x86_fu_dump_report(struct x86_fu_t *fu, FILE *f)
+{
+	int i;
+
+	fprintf(f, "; Functional unit pool\n");
+	fprintf(f, ";    Accesses - Number of uops issued to a f.u.\n");
+	fprintf(f, ";    Denied - Number of requests denied due to busy f.u.\n");
+	fprintf(f, ";    WaitingTime - Average number of waiting cycles to reserve f.u.\n");
+
+	for (i = 1; i < x86_fu_count; i++)
+	{
+		fprintf(f, "fu.%s.Accesses = %lld\n", x86_fu_name[i], fu->accesses[i]);
+		fprintf(f, "fu.%s.Denied = %lld\n", x86_fu_name[i], fu->accesses[i]);
+		fprintf(f, "fu.%s.WaitingTime = %.4g\n", x86_fu_name[i], fu->accesses[i] ?
+			(double) fu->waiting_time[i] / fu->accesses[i] : 0.0);
+
+	}
+
+	fprintf(f, "\n");
 }
 
