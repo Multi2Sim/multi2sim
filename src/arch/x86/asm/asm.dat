@@ -368,6 +368,9 @@ DEFINST(lfence, 0x0f, 0xae, SKIP, 5, SKIP, 0)
 DEFINST(lodsb, 0xac, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(lodsd, 0xad, SKIP, SKIP, SKIP, SKIP, 0)
 
+DEFINST(maxpd_xmm_xmmm128, 0x0f, 0x5f, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(maxps_xmm_xmmm128, 0x0f, 0x5f, SKIP, REG, SKIP, 0)
+
 DEFINST(mov_rm8_r8, 0x88, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(mov_rm16_r16, 0x89, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(mov_rm32_r32, 0x89, SKIP, SKIP, REG, SKIP, 0)
@@ -691,6 +694,7 @@ DEFINST(shrd_rm32_r32_cl, 0x0f, 0xad, SKIP, REG, SKIP, 0)
 DEFINST(sqrtpd_xmm_xmmm128, 0x0f, 0x51, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(sqrtps_xmm_xmmm128, 0x0f, 0x51, SKIP, REG, SKIP, 0)
 
+DEFINST(sqrtsd_xmm_xmmm64, 0x0f, 0x51, SKIP, REG, SKIP, x86_prefix_repnz)
 DEFINST(sqrtss_xmm_xmmm32, 0x0f, 0x51, SKIP, REG, SKIP, x86_prefix_rep)
 
 DEFINST(std, 0xfd, SKIP, SKIP, SKIP, SKIP, 0)
