@@ -523,6 +523,8 @@ DEFINST(pop_ir32, 0x58|INDEX, SKIP, SKIP, SKIP, SKIP, 0)
 
 DEFINST(popf, 0x9d, SKIP, SKIP, SKIP, SKIP, 0)
 
+DEFINST(por_xmm_xmmm128, 0x0f, 0xeb, SKIP, REG, SKIP, x86_prefix_op)
+
 DEFINST(prefetcht0_m8, 0x0f, 0x18, SKIP, MEM|1, SKIP, 0)
 DEFINST(prefetcht1, 0x0f, 0x18, SKIP, MEM|2, SKIP, 0)
 DEFINST(prefetcht2, 0x0f, 0x18, SKIP, MEM|3, SKIP, 0)
