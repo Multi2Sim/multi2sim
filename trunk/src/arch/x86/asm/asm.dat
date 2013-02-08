@@ -535,6 +535,7 @@ DEFINST(pshufb_xmm_xmmm128, 0x0f, 0x38, 0x00, REG, SKIP, x86_prefix_op)
 DEFINST(pshufd_xmm_xmmm128_imm8, 0x0f, 0x70, SKIP, REG, IB, x86_prefix_op)
 
 DEFINST(pslld_xmm_xmmm128, 0x0f, 0xf2, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(pslld_xmmm128_imm8, 0x0f, 0x72, SKIP, 6, IB, x86_prefix_op)
 
 DEFINST(pslldq_xmmm128_imm8, 0x0f, 0x73, SKIP, 7, IB, x86_prefix_op)
 
