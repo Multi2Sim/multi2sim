@@ -145,8 +145,6 @@ struct mips_inst_t
 };
 
 void mips_inst_decode(struct mips_inst_t *inst);
-void mips_inst_table_populate(char *name, char *fmt_str, unsigned int op0, 
-			      unsigned int op1, unsigned int op2, unsigned int op3);
 
 void mips_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr);
 
