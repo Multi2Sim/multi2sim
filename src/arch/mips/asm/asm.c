@@ -128,36 +128,6 @@ void mips_asm_init()
 	mips_asm_table_special3          = xcalloc(64, sizeof(struct mips_inst_info_t));
 	mips_asm_table_special3_bshfl    = xcalloc(64, sizeof(struct mips_inst_info_t));
 
-	/* Pointers to each table */
-	struct mips_inst_info_t *asm_table;
-	struct mips_inst_info_t *asm_table_special;
-	struct mips_inst_info_t *asm_table_special2;
-	struct mips_inst_info_t *asm_table_special3;
-	struct mips_inst_info_t *asm_table_special3_bshfl;
-
-	struct mips_inst_info_t *asm_table_special_movci;
-	struct mips_inst_info_t *asm_table_special_srl;
-	struct mips_inst_info_t *asm_table_special_srlv;
-
-	struct mips_inst_info_t *asm_table_regimm;
-
-	struct mips_inst_info_t *asm_table_cop0_c0;
-	struct mips_inst_info_t *asm_table_cop0_notc0;
-	struct mips_inst_info_t *asm_table_cop0_notc0_mfmc0;
-
-	struct mips_inst_info_t *asm_table_cop1;
-	struct mips_inst_info_t *asm_table_cop1_bc1;
-	struct mips_inst_info_t *asm_table_cop1_s;
-	struct mips_inst_info_t *asm_table_cop1_s_movcf;
-	struct mips_inst_info_t *asm_table_cop1_d;
-	struct mips_inst_info_t *asm_table_cop1_d_movcf;
-	struct mips_inst_info_t *asm_table_cop1_w;
-	struct mips_inst_info_t *asm_table_cop1_l;
-	struct mips_inst_info_t *asm_table_cop1_ps;
-
-	struct mips_inst_info_t *asm_table_cop2;
-	struct mips_inst_info_t *asm_table_cop2_bc2;
-
 	/* Initiate values for the 'next_table', 'next_table_low' and 'next_table_high'
 	 * fields of the tables */
 	mips_asm_table[MIPS_OPCODE_SPECIAL].next_table =
@@ -270,215 +240,30 @@ void mips_asm_init()
 	mips_asm_table_special3[MIPS_OPCODE_SPECIAL3_BSHFL].next_table_high       = 10;
 
 	/* Build the tables from asm.dat */
+	struct mips_inst_info_t *current_table;
+	unsigned int table_arg[4];
+	int i = 0;	
+
 #define DEFINST(_name,_fmt_str,_op0,_op1,_op2,_op3)			\
-	switch (_op0) {							\
- case MIPS_OPCODE_SPECIAL:						\
-	 switch (_op1) {						\
-	 case MIPS_OPCODE_SPECIAL_MOVCI:				\
-		 asm_table_special_movci = &mips_asm_table_special_movci[_op2]; \
-			asm_table_special_movci->inst = MIPS_INST_##_name; \
-			asm_table_special_movci->name = #_name;		\
-			asm_table_special_movci->fmt_str = _fmt_str;	\
-			asm_table_special_movci->size = 4;		\
-			asm_table_special_movci->opcode = MIPS_INST_##_name; \
-			break;						\
-		case MIPS_OPCODE_SPECIAL_SRL:				\
-			asm_table_special_srl = &mips_asm_table_special_srl[_op2]; \
-			asm_table_special_srl->inst = MIPS_INST_##_name; \
-			asm_table_special_srl->name = #_name;		\
-			asm_table_special_srl->fmt_str = _fmt_str;	\
-			asm_table_special_srl->size = 4;		\
-			asm_table_special_srl->opcode = MIPS_INST_##_name; \
-			break;						\
-		case MIPS_OPCODE_SPECIAL_SRLV:				\
-			asm_table_special_srlv = &mips_asm_table_special_srlv[_op2]; \
-			asm_table_special_srlv->inst = MIPS_INST_##_name; \
-			asm_table_special_srlv->name = #_name;		\
-			asm_table_special_srlv->fmt_str = _fmt_str;	\
-			asm_table_special_srlv->size = 4;		\
-			asm_table_special_srlv->opcode = MIPS_INST_##_name; \
-			break;						\
-		default:						\
-			asm_table_special = &mips_asm_table_special[_op1]; \
-			asm_table_special->inst = MIPS_INST_##_name;	\
-			asm_table_special->name = #_name;		\
-			asm_table_special->fmt_str = _fmt_str;		\
-			asm_table_special->size = 4;			\
-			asm_table_special->opcode = MIPS_INST_##_name;	\
-			break;						\
+	current_table = mips_asm_table;					\
+	table_arg[0] = _op0;						\
+	table_arg[1] = _op1;						\
+	table_arg[2] = _op2;						\
+	table_arg[3] = _op3;						\
+	for(i=0;i<4;i++)						\
+		{							\
+			if (current_table[table_arg[i]].next_table)	\
+				{					\
+					current_table = current_table[table_arg[i]].next_table; \
+				}					\
+			else						\
+				break;					\
 		}							\
-		break;							\
-	case MIPS_OPCODE_SPECIAL2:					\
-		asm_table_special2 = &mips_asm_table_special2[_op1];	\
-		asm_table_special2->inst = MIPS_INST_##_name;		\
-		asm_table_special2->name = #_name;			\
-		asm_table_special2->fmt_str = _fmt_str;			\
-		asm_table_special2->size = 4;				\
-		asm_table_special2->opcode = MIPS_INST_##_name;		\
-		break;							\
-	case MIPS_OPCODE_SPECIAL3:					\
-		if (_op1 == MIPS_OPCODE_SPECIAL3_BSHFL) {		\
-			asm_table_special3_bshfl = &mips_asm_table_special3_bshfl[_op2]; \
-			asm_table_special3_bshfl->inst = MIPS_INST_##_name; \
-			asm_table_special3_bshfl->name = #_name;	\
-			asm_table_special3_bshfl->fmt_str = _fmt_str;	\
-			asm_table_special3_bshfl->size = 4;		\
-			asm_table_special3_bshfl->opcode = MIPS_INST_##_name; \
-		}							\
-		else {							\
-			asm_table_special3 = &mips_asm_table_special3[_op1]; \
-			asm_table_special3->inst = MIPS_INST_##_name;	\
-			asm_table_special3->name = #_name;		\
-			asm_table_special3->fmt_str = _fmt_str;		\
-			asm_table_special3->size = 4;			\
-			asm_table_special3->opcode = MIPS_INST_##_name;	\
-		}							\
-		break;							\
-	case MIPS_OPCODE_COP0:						\
-		switch (_op1) {						\
-		case MIPS_OPCODE_COP0_C0:				\
-			asm_table_cop0_c0 = &mips_asm_table_cop0_c0[_op2]; \
-			asm_table_cop0_c0->inst = MIPS_INST_##_name;	\
-			asm_table_cop0_c0->name = #_name;		\
-			asm_table_cop0_c0->fmt_str = _fmt_str;		\
-			asm_table_cop0_c0->size = 4;			\
-			asm_table_cop0_c0->opcode = MIPS_INST_##_name;	\
-			break;						\
-		case MIPS_OPCODE_COP0_NOTC0:				\
-			if (_op2 == MIPS_OPCODE_COP0_NOTC0_MFMC0) {	\
-				asm_table_cop0_notc0_mfmc0 = &mips_asm_table_cop0_notc0_mfmc0[_op3]; \
-				asm_table_cop0_notc0_mfmc0->inst = MIPS_INST_##_name; \
-				asm_table_cop0_notc0_mfmc0->name = #_name; \
-				asm_table_cop0_notc0_mfmc0->fmt_str = _fmt_str;	\
-				asm_table_cop0_notc0_mfmc0->size = 4;	\
-				asm_table_cop0_notc0_mfmc0->opcode = MIPS_INST_##_name; \
-			}						\
-			else {						\
-				asm_table_cop0_notc0 = &mips_asm_table_cop0_notc0[_op2]; \
-				asm_table_cop0_notc0->inst = MIPS_INST_##_name; \
-				asm_table_cop0_notc0->name = #_name;	\
-				asm_table_cop0_notc0->fmt_str = _fmt_str; \
-				asm_table_cop0_notc0->size = 4;		\
-				asm_table_cop0_notc0->opcode = MIPS_INST_##_name; \
-			}						\
-			break;						\
-		}							\
-		break;							\
-	case MIPS_OPCODE_COP1:						\
-		switch (_op1) {						\
-		case MIPS_OPCODE_COP1_BC1:				\
-			asm_table_cop1_bc1 = &mips_asm_table_cop1_bc1[_op2]; \
-			asm_table_cop1_bc1->inst = MIPS_INST_##_name;	\
-			asm_table_cop1_bc1->name = #_name;		\
-			asm_table_cop1_bc1->fmt_str = _fmt_str;		\
-			asm_table_cop1_bc1->size = 4;			\
-			asm_table_cop1_bc1->opcode = MIPS_INST_##_name;	\
-			break;						\
-		case MIPS_OPCODE_COP1_S:				\
-			if (_op2 == MIPS_OPCODE_COP1_S_MOVCF) {		\
-				asm_table_cop1_s_movcf = &mips_asm_table_cop1_s_movcf[_op3]; \
-				asm_table_cop1_s_movcf->inst = MIPS_INST_##_name; \
-				asm_table_cop1_s_movcf->name = #_name;	\
-				asm_table_cop1_s_movcf->fmt_str = _fmt_str; \
-				asm_table_cop1_s_movcf->size = 4;	\
-				asm_table_cop1_s_movcf->opcode = MIPS_INST_##_name; \
-			}						\
-			else {						\
-				asm_table_cop1_s = &mips_asm_table_cop1_s[_op2]; \
-				asm_table_cop1_s->inst = MIPS_INST_##_name; \
-				asm_table_cop1_s->name = #_name;	\
-				asm_table_cop1_s->fmt_str = _fmt_str;	\
-				asm_table_cop1_s->size = 4;		\
-				asm_table_cop1_s->opcode = MIPS_INST_##_name; \
-			}						\
-			break;						\
-		case MIPS_OPCODE_COP1_D:				\
-			if (_op2 == MIPS_OPCODE_COP1_D_MOVCF) {		\
-				asm_table_cop1_d_movcf = &mips_asm_table_cop1_d_movcf[_op3]; \
-				asm_table_cop1_d_movcf->inst = MIPS_INST_##_name; \
-				asm_table_cop1_d_movcf->name = #_name;	\
-				asm_table_cop1_d_movcf->fmt_str = _fmt_str; \
-				asm_table_cop1_d_movcf->size = 4;	\
-				asm_table_cop1_d_movcf->opcode = MIPS_INST_##_name; \
-			}						\
-			else {						\
-				asm_table_cop1_d = &mips_asm_table_cop1_d[_op2]; \
-				asm_table_cop1_d->inst = MIPS_INST_##_name; \
-				asm_table_cop1_d->name = #_name;	\
-				asm_table_cop1_d->fmt_str = _fmt_str;	\
-				asm_table_cop1_d->size = 4;		\
-				asm_table_cop1_d->opcode = MIPS_INST_##_name; \
-			}						\
-			break;						\
-		case MIPS_OPCODE_COP1_W:				\
-			asm_table_cop1_w = &mips_asm_table_cop1_w[_op2]; \
-			asm_table_cop1_w->inst = MIPS_INST_##_name;	\
-			asm_table_cop1_w->name = #_name;		\
-			asm_table_cop1_w->fmt_str = _fmt_str;		\
-			asm_table_cop1_w->size = 4;			\
-			asm_table_cop1_w->opcode = MIPS_INST_##_name;	\
-			break;						\
-		case MIPS_OPCODE_COP1_L:				\
-			asm_table_cop1_l = &mips_asm_table_cop1_l[_op2]; \
-			asm_table_cop1_l->inst = MIPS_INST_##_name;	\
-			asm_table_cop1_l->name = #_name;		\
-			asm_table_cop1_l->fmt_str = _fmt_str;		\
-			asm_table_cop1_l->size = 4;			\
-			asm_table_cop1_l->opcode = MIPS_INST_##_name;	\
-			break;						\
-		case MIPS_OPCODE_COP1_PS:				\
-			asm_table_cop1_ps = &mips_asm_table_cop1_ps[_op2]; \
-			asm_table_cop1_ps->inst = MIPS_INST_##_name;	\
-			asm_table_cop1_ps->name = #_name;		\
-			asm_table_cop1_ps->fmt_str = _fmt_str;		\
-			asm_table_cop1_ps->size = 4;			\
-			asm_table_cop1_ps->opcode = MIPS_INST_##_name;	\
-			break;						\
-		default:						\
-			asm_table_cop1 = &mips_asm_table_cop1[_op1]; \
-			asm_table_cop1->inst = MIPS_INST_##_name;	\
-			asm_table_cop1->name = #_name;		\
-			asm_table_cop1->fmt_str = _fmt_str;		\
-			asm_table_cop1->size = 4;			\
-			asm_table_cop1->opcode = MIPS_INST_##_name;	\
-	 break;								\
-}									\
-		break;							\
-	case MIPS_OPCODE_COP2:						\
-		if (_op1 == MIPS_OPCODE_COP2_BC2 ) {			\
-			asm_table_cop2_bc2 = &mips_asm_table_cop2_bc2[_op1]; \
-			asm_table_cop2_bc2->inst = MIPS_INST_##_name;	\
-			asm_table_cop2_bc2->name = #_name;		\
-			asm_table_cop2_bc2->fmt_str = _fmt_str;		\
-			asm_table_cop2_bc2->size = 4;			\
-			asm_table_cop2_bc2->opcode = MIPS_INST_##_name;	\
-		}							\
-		else {							\
-			asm_table_cop2 = &mips_asm_table_cop2[_op1];	\
-			asm_table_cop2->inst = MIPS_INST_##_name;	\
-			asm_table_cop2->name = #_name;			\
-			asm_table_cop2->fmt_str = _fmt_str;		\
-			asm_table_cop2->size = 4;			\
-			asm_table_cop2->opcode = MIPS_INST_##_name;	\
-		}							\
-		break;							\
-	case MIPS_OPCODE_REGIMM:					\
-		asm_table_regimm = &mips_asm_table_regimm[_op1];	\
-		asm_table_regimm->inst = MIPS_INST_##_name;		\
-		asm_table_regimm->name = #_name;			\
-		asm_table_regimm->fmt_str = _fmt_str;			\
-		asm_table_regimm->size = 4;				\
-		asm_table_regimm->opcode = MIPS_INST_##_name;		\
-		break;							\
-	default:							\
-		asm_table = &mips_asm_table[_op0];			\
-		asm_table->inst = MIPS_INST_##_name;			\
-		asm_table->name = #_name;				\
-		asm_table->fmt_str = _fmt_str;				\
-		asm_table->size = 4;					\
-		asm_table->opcode = MIPS_INST_##_name;			\
-		break;							\
-	}
+	current_table[table_arg[i]].inst = MIPS_INST_##_name;		\
+	current_table[table_arg[i]].name = #_name;			\
+	current_table[table_arg[i]].fmt_str = _fmt_str;			\
+	current_table[table_arg[i]].size = 4;				\
+	current_table[table_arg[i]].opcode = MIPS_INST_##_name;		       
 #include "asm.dat"
 #undef DEFINST
 }
@@ -488,7 +273,7 @@ void mips_inst_decode(struct mips_inst_t *inst)
 {
 	struct mips_inst_info_t *current_table;
 
-	/* We initially start with the first table mips_asm_table, with the
+	/* We start with the first table mips_asm_table, with the
 	 * opcode field as argument */
 	current_table = mips_asm_table;
 	int current_table_low = 26;
@@ -1092,7 +877,7 @@ void mips_emu_disasm(char *path)
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;
 	struct elf_symbol_t *symbol, *print_symbol;
-
+	
 	char inst_str[MAX_STRING_SIZE];
 	int curr_sym;
 	int i;
@@ -1101,7 +886,7 @@ void mips_emu_disasm(char *path)
 
 	/* Initializations - build tables of istructions */
 	mips_asm_init();
-
+	
 	/* Create an elf file from the executable */
 	elf_file = elf_file_create_from_path(path);
 
