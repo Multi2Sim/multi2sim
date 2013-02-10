@@ -99,34 +99,34 @@ void mips_asm_init()
 	/* Allocate storage for the instruction tables */
 	mips_asm_table                   = xcalloc(64, sizeof(struct mips_inst_info_t));
 	mips_asm_table_special           = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_special_movci     = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_special_srl       = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_special_srlv      = xcalloc(64, sizeof(struct mips_inst_info_t));
+	mips_asm_table_special_movci     = xcalloc(2, sizeof(struct mips_inst_info_t));
+	mips_asm_table_special_srl       = xcalloc(2, sizeof(struct mips_inst_info_t));
+	mips_asm_table_special_srlv      = xcalloc(2, sizeof(struct mips_inst_info_t));
 
-	mips_asm_table_regimm            = xcalloc(64, sizeof(struct mips_inst_info_t));
+	mips_asm_table_regimm            = xcalloc(32, sizeof(struct mips_inst_info_t));
 
-	mips_asm_table_cop0              = xcalloc(64, sizeof(struct mips_inst_info_t));
+	mips_asm_table_cop0              = xcalloc(32, sizeof(struct mips_inst_info_t));
 	mips_asm_table_cop0_c0           = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_cop0_notc0        = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_cop0_notc0_mfmc0  = xcalloc(64, sizeof(struct mips_inst_info_t));
+	mips_asm_table_cop0_notc0        = xcalloc(32, sizeof(struct mips_inst_info_t));
+	mips_asm_table_cop0_notc0_mfmc0  = xcalloc(2, sizeof(struct mips_inst_info_t));
 
-	mips_asm_table_cop1              = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_cop1_bc1          = xcalloc(64, sizeof(struct mips_inst_info_t));
+	mips_asm_table_cop1              = xcalloc(32, sizeof(struct mips_inst_info_t));
+	mips_asm_table_cop1_bc1          = xcalloc(4, sizeof(struct mips_inst_info_t));
 	mips_asm_table_cop1_s            = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_cop1_s_movcf      = xcalloc(64, sizeof(struct mips_inst_info_t));
+	mips_asm_table_cop1_s_movcf      = xcalloc(2, sizeof(struct mips_inst_info_t));
 	mips_asm_table_cop1_d            = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_cop1_d_movcf      = xcalloc(64, sizeof(struct mips_inst_info_t));
+	mips_asm_table_cop1_d_movcf      = xcalloc(2, sizeof(struct mips_inst_info_t));
 	mips_asm_table_cop1_w            = xcalloc(64, sizeof(struct mips_inst_info_t));
 	mips_asm_table_cop1_l            = xcalloc(64, sizeof(struct mips_inst_info_t));
 	mips_asm_table_cop1_ps           = xcalloc(64, sizeof(struct mips_inst_info_t));
 
-	mips_asm_table_cop2              = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_cop2_bc2          = xcalloc(64, sizeof(struct mips_inst_info_t));
+	mips_asm_table_cop2              = xcalloc(32, sizeof(struct mips_inst_info_t));
+	mips_asm_table_cop2_bc2          = xcalloc(4, sizeof(struct mips_inst_info_t));
 
 	mips_asm_table_special2          = xcalloc(64, sizeof(struct mips_inst_info_t));
 
 	mips_asm_table_special3          = xcalloc(64, sizeof(struct mips_inst_info_t));
-	mips_asm_table_special3_bshfl    = xcalloc(64, sizeof(struct mips_inst_info_t));
+	mips_asm_table_special3_bshfl    = xcalloc(32, sizeof(struct mips_inst_info_t));
 
 	/* Initiate values for the 'next_table', 'next_table_low' and 'next_table_high'
 	 * fields of the tables */
