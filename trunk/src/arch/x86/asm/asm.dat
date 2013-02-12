@@ -133,6 +133,10 @@ DEFINST(cmpxchg8b_m64, 0x0f, 0xc7, SKIP, MEM|1, SKIP, 0)
 
 DEFINST(cpuid, 0x0f, 0xa2, SKIP, SKIP, SKIP, 0)
 
+DEFINST(cvtdq2pd_xmm_xmmm64, 0x0f, 0xe6, SKIP, REG, SKIP, x86_prefix_rep)
+DEFINST(cvtdq2ps_xmm_xmmm128, 0x0f, 0x5b, SKIP, REG, SKIP, 0)
+
+DEFINST(cvtsd2si_r32_xmmm64, 0x0f, 0x2d, SKIP, REG, SKIP, x86_prefix_repnz)
 DEFINST(cvtsd2ss_xmm_xmmm64, 0x0f, 0x5a, SKIP, REG, SKIP, x86_prefix_repnz)
 
 DEFINST(cvtsi2sd_xmm_rm32, 0x0f, 0x2a, SKIP, REG, SKIP, x86_prefix_repnz)
@@ -576,6 +580,7 @@ DEFINST(psrldq_xmmm128_imm8, 0x0f, 0x73, SKIP, 3, IB, x86_prefix_op)
 DEFINST(psubb_xmm_xmmm128, 0x0f, 0xf8, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(psubw_xmm_xmmm128, 0x0f, 0xf9, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(psubd_xmm_xmmm128, 0x0f, 0xfa, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(psubq_xmm_xmmm128, 0x0f, 0xfb, SKIP, REG, SKIP, x86_prefix_op)
 
 DEFINST(ptest_xmm_xmmm128, 0x0f, 0x38, 0x17, REG, SKIP, x86_prefix_op)
 
@@ -775,6 +780,7 @@ DEFINST(test_rm8_r8, 0x84, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(test_rm16_r16, 0x85, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(test_rm32_r32, 0x85, SKIP, SKIP, REG, SKIP, 0)
 
+DEFINST(ucomisd_xmm_xmmm64, 0x0f, 0x2e, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(ucomiss_xmm_xmmm32, 0x0f, 0x2e, SKIP, REG, SKIP, 0)
 
 DEFINST(unpckhpd_xmm_xmmm128, 0x0f, 0x15, SKIP, REG, SKIP, x86_prefix_op)
