@@ -138,6 +138,93 @@ void x86_isa_andps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
+#define X86_ISA_CMPP_ASM(__inst) \
+	__X86_ISA_ASM_START__ \
+	asm volatile ( \
+		"movdqu %1, %%xmm0\n\t" \
+		"movdqu %0, %%xmm1\n\t" \
+		__inst " %%xmm0, %%xmm1\n\t" \
+		"movdqu %%xmm1, %0\n\t" \
+		: "=m" (dest) \
+		: "m" (src) \
+		: "xmm0", "xmm1" \
+	); \
+	__X86_ISA_ASM_END__
+
+void x86_isa_cmppd_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	int spec_mode;
+	int imm8 = ctx->inst.imm.b;
+
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+	x86_isa_load_xmmm128(ctx, src.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
+	{
+		switch (imm8)
+		{
+		case 0: X86_ISA_CMPP_ASM("cmpeqpd"); break;
+		case 1: X86_ISA_CMPP_ASM("cmpltpd"); break;
+		case 2: X86_ISA_CMPP_ASM("cmplepd"); break;
+		case 3: X86_ISA_CMPP_ASM("cmpunordpd"); break;
+		case 4: X86_ISA_CMPP_ASM("cmpneqpd"); break;
+		case 5: X86_ISA_CMPP_ASM("cmpnltpd"); break;
+		case 6: X86_ISA_CMPP_ASM("cmpnlepd"); break;
+		case 7: X86_ISA_CMPP_ASM("cmpordpd"); break;
+		default:
+			x86_isa_error(ctx, "%s: invalid value for 'imm8'",
+				__FUNCTION__);
+		}
+	}
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
+void x86_isa_cmpps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	int spec_mode;
+	int imm8 = ctx->inst.imm.b;
+
+	x86_isa_load_xmm(ctx, dest.as_uchar);
+	x86_isa_load_xmmm128(ctx, src.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
+	{
+		switch (imm8)
+		{
+		case 0: X86_ISA_CMPP_ASM("cmpeqps"); break;
+		case 1: X86_ISA_CMPP_ASM("cmpltps"); break;
+		case 2: X86_ISA_CMPP_ASM("cmpleps"); break;
+		case 3: X86_ISA_CMPP_ASM("cmpunordps"); break;
+		case 4: X86_ISA_CMPP_ASM("cmpneqps"); break;
+		case 5: X86_ISA_CMPP_ASM("cmpnltps"); break;
+		case 6: X86_ISA_CMPP_ASM("cmpnleps"); break;
+		case 7: X86_ISA_CMPP_ASM("cmpordps"); break;
+		default:
+			x86_isa_error(ctx, "%s: invalid value for 'imm8'",
+				__FUNCTION__);
+		}
+	}
+
+	x86_isa_store_xmm(ctx, dest.as_uchar);
+	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_cvtsi2ss_xmm_rm32_impl(struct x86_ctx_t *ctx)
 {
 	union x86_xmm_reg_t dest;
