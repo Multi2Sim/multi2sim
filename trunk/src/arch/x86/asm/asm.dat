@@ -124,6 +124,9 @@ DEFINST(cmp_r8_rm8, 0x3a, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(cmp_r16_rm16, 0x3b, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(cmp_r32_rm32, 0x3b, SKIP, SKIP, REG, SKIP, 0)
 
+DEFINST(cmppd_xmm_xmmm128_imm8, 0x0f, 0xc2, SKIP, REG, IB, x86_prefix_op)
+DEFINST(cmpps_xmm_xmmm128_imm8, 0x0f, 0xc2, SKIP, REG, IB, 0)
+
 DEFINST(cmpsb, 0xa6, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(cmpsd, 0xa7, SKIP, SKIP, SKIP, SKIP, 0)
 
