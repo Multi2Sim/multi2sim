@@ -155,6 +155,7 @@ static enum x86_fu_class_t fu_class_table[x86_uinst_opcode_count] =
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_or */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_xor */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_not */
+	x86_fu_xmm_logic,  /* x86_uinst_xmm_nand */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_shift */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_sign */
 

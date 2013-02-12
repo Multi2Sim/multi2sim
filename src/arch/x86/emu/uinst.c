@@ -161,12 +161,13 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "fpush", X86_UINST_FP },
 	{ "fpop", X86_UINST_FP },
 
-	{ "x-and", X86_UINST_XMM },
-	{ "x-or", X86_UINST_XMM },
-	{ "x-xor", X86_UINST_XMM },
-	{ "x-not", X86_UINST_XMM },
-	{ "x-shift", X86_UINST_XMM },
-	{ "x-sign", X86_UINST_XMM },
+	{ "x-and", X86_UINST_XMM },  /* x86_uinst_xmm_and */
+	{ "x-or", X86_UINST_XMM },  /* x86_uinst_xmm_or */
+	{ "x-xor", X86_UINST_XMM },  /* x86_uinst_xmm_xor */
+	{ "x-not", X86_UINST_XMM },  /* x86_uinst_xmm_not */
+	{ "x-nand", X86_UINST_XMM },  /* x86_uinst_xmm_nand */
+	{ "x-shift", X86_UINST_XMM },  /* x86_uinst_xmm_shift */
+	{ "x-sign", X86_UINST_XMM },  /* x86_uinst_xmm_sign */
 
 	{ "x-add", X86_UINST_XMM },
 	{ "x-sub", X86_UINST_XMM },
