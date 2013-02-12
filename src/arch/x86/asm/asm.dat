@@ -559,6 +559,11 @@ DEFINST(psllq_xmmm128_imm8, 0x0f, 0x73, SKIP, 6, IB, x86_prefix_op)
 
 DEFINST(pslldq_xmmm128_imm8, 0x0f, 0x73, SKIP, 7, IB, x86_prefix_op)
 
+DEFINST(psraw_xmmm128_imm8, 0x0f, 0x71, SKIP, 4, IB, x86_prefix_op)
+DEFINST(psraw_xmm_xmmm128, 0x0f, 0xe1, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(psrad_xmmm128_imm8, 0x0f, 0x72, SKIP, 4, IB, x86_prefix_op)
+DEFINST(psrad_xmm_xmmm128, 0x0f, 0xe2, SKIP, REG, SKIP, x86_prefix_op)
+
 DEFINST(psrldq_xmmm128_imm8, 0x0f, 0x73, SKIP, 3, IB, x86_prefix_op)
 
 DEFINST(psubb_xmm_xmmm128, 0x0f, 0xf8, SKIP, REG, SKIP, x86_prefix_op)
