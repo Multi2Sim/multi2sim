@@ -504,7 +504,6 @@ DEFINST(outsd, 0x6f, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(paddb_xmm_xmmm128, 0x0f, 0xfc, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(paddw_xmm_xmmm128, 0x0f, 0xfd, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(paddd_xmm_xmmm128, 0x0f, 0xfe, SKIP, REG, SKIP, x86_prefix_op)
-
 DEFINST(paddq_xmm_xmmm128, 0x0f, 0xd4, SKIP, REG, SKIP, x86_prefix_op)
 
 DEFINST(palignr_xmm_xmmm128_imm8, 0x0f, 0x3a, 0x0f, REG, IB, x86_prefix_op)
@@ -518,6 +517,11 @@ DEFINST(pause, 0x90, SKIP, SKIP, SKIP, SKIP, x86_prefix_rep)
 DEFINST(pcmpeqb_xmm_xmmm128, 0x0f, 0x74, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(pcmpeqw_xmm_xmmm128, 0x0f, 0x75, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(pcmpeqd_xmm_xmmm128, 0x0f, 0x76, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(pcmpeqq_xmm_xmmm128, 0x0f, 0x38, 0x29, REG, SKIP, x86_prefix_op)
+
+DEFINST(pcmpgtb_xmm_xmmm128, 0x0f, 0x64, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(pcmpgtw_xmm_xmmm128, 0x0f, 0x65, SKIP, REG, SKIP, x86_prefix_op)
+DEFINST(pcmpgtd_xmm_xmmm128, 0x0f, 0x66, SKIP, REG, SKIP, x86_prefix_op)
 
 DEFINST(pcmpistri_xmm_xmmm128_imm8, 0x0f, 0x3a, 0x63, REG, IB, x86_prefix_op)
 
