@@ -214,6 +214,7 @@ enum x86_uinst_opcode_t
 	x86_uinst_xmm_or,
 	x86_uinst_xmm_xor,
 	x86_uinst_xmm_not,
+	x86_uinst_xmm_nand,
 	x86_uinst_xmm_shift,
 	x86_uinst_xmm_sign,
 
