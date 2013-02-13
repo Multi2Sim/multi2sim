@@ -1226,7 +1226,33 @@ void si_isa_S_CMP_EQ_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 #define INST SI_INST_SOPC
 void si_isa_S_CMP_GT_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	int s0 = 0;
+	int s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0);
+	if (INST.ssrc1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1);
+
+	/* Compare the operands. */
+	result.as_uint = (s0 > s1);
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, SI_SCC, result.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("scc<=(%d) ", result.as_uint);
+	}
 }
 #undef INST
 
