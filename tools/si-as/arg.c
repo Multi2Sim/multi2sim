@@ -19,63 +19,62 @@
 
 #include <stdlib.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
-#include "inst-arg.h"
+#include "arg.h"
 
 
-struct si_inst_arg_t *si_inst_arg_create()
+struct si_arg_t *si_arg_create(void)
 {
-	struct si_inst_arg_t *inst_arg;
+	struct si_arg_t *arg;
 	
 	/* Allocate */
-	inst_arg = calloc(1, sizeof(struct si_inst_arg_t));
-	if (!inst_arg)
-		fatal("%s: out of memory", __FUNCTION__);
+	arg = xcalloc(1, sizeof(struct si_arg_t));
 	
 	/* Return */
-	return inst_arg;
+	return arg;
 	
 }
 
 
-void si_inst_arg_free(struct si_inst_arg_t *inst_arg)
+void si_arg_free(struct si_arg_t *inst_arg)
 {
 	free(inst_arg);
 }
 
 
-void si_inst_arg_dump(struct si_inst_arg_t *inst_arg, FILE *f)
+void si_arg_dump(struct si_arg_t *inst_arg, FILE *f)
 {
 	switch (inst_arg->type)
 	{
 	
-	case si_inst_arg_invalid:
+	case si_arg_invalid:
 		fprintf(f, "\tInvalid argument!\n");
 		break;
 		
-	case si_inst_arg_scalar_register:
+	case si_arg_scalar_register:
 		fprintf(f, "\tType: Scalar Register\n");
 		fprintf(f, "\tRegister ID: %d\n", inst_arg->value.scalar_register.id);
 		break;
 		
-	case si_inst_arg_vector_register:
+	case si_arg_vector_register:
 		fprintf(f, "\tType: Vector Register\n");
 		fprintf(f, "\tRegister ID: %d\n", inst_arg->value.vector_register.id);
 		break;
 		
-	case si_inst_arg_register_range:
+	case si_arg_register_range:
 		fprintf(f, "\tType: Register Range\n");
 		fprintf(f, "\tLow: %d\n", inst_arg->value.register_range.id_low);
 		fprintf(f, "\tHigh: %d\n", inst_arg->value.register_range.id_high);
 		break;
 			
-	case si_inst_arg_literal:
+	case si_arg_literal:
 		fprintf(f, "\tType: Literal\n");
 		fprintf(f, "\tValue: %d\n", inst_arg->value.literal.val);
 		break;
 		
-	case si_inst_arg_waitcnt:
+	case si_arg_waitcnt:
 	{
 		fprintf(f, "\tType: Waitcnt\n");
 		if(inst_arg->value.wait_cnt.vmcnt_active)
@@ -86,20 +85,20 @@ void si_inst_arg_dump(struct si_inst_arg_t *inst_arg, FILE *f)
 			fprintf(f, "\tlgkmcnt: %d\n", inst_arg->value.wait_cnt.lgkmcnt_value);			
 		break;
 	}
-	case si_inst_arg_special_register:
+	case si_arg_special_register:
 		fprintf(f, "\tType: Special Register\n");
-		if (inst_arg->value.special_register.type == si_inst_arg_special_register_vcc)
+		if (inst_arg->value.special_register.type == si_arg_special_register_vcc)
 			fprintf(f, "\tID: vcc\n");
-		else if (inst_arg->value.special_register.type == si_inst_arg_special_register_scc)
+		else if (inst_arg->value.special_register.type == si_arg_special_register_scc)
 			fprintf(f, "\tID: scc\n");
 		break;
 	
-	case si_inst_arg_mtype_register:
+	case si_arg_mtype_register:
 		fprintf(f, "\tType: M-Type\n");
 		fprintf(f, "\tID: %d\n", inst_arg->value.mtype_register.id);
 		break;
 	
-	case si_inst_arg_format:
+	case si_arg_format:
 		fprintf(f, "\tType: Format\n");
 		if (inst_arg->value.format.offen)
 			fprintf(f, "\toffen: True\n");
@@ -108,7 +107,7 @@ void si_inst_arg_dump(struct si_inst_arg_t *inst_arg, FILE *f)
 		fprintf(f, "\tData Format: %s\n", inst_arg->value.format.data_format);
 		fprintf(f, "\tNum Format: %s\n", inst_arg->value.format.num_format);
 		fprintf(f, "\tOffset: %d\n", inst_arg->value.format.offset);
-	case si_inst_arg_label:
+	case si_arg_label:
 		fprintf(f, "\tType: Label\n");
 		break;
 		

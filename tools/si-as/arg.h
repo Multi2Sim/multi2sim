@@ -19,29 +19,29 @@
 
 #include <stdio.h>
 
-enum si_inst_arg_type_t 
+enum si_arg_type_t 
 {
-	si_inst_arg_invalid = 0,
-	si_inst_arg_scalar_register,
-	si_inst_arg_vector_register,
-	si_inst_arg_register_range,
-	si_inst_arg_mtype_register,
-	si_inst_arg_special_register,
-	si_inst_arg_literal,
-	si_inst_arg_waitcnt,
-	si_inst_arg_label,
-	si_inst_arg_format	
+	si_arg_invalid = 0,
+	si_arg_scalar_register,
+	si_arg_vector_register,
+	si_arg_register_range,
+	si_arg_mtype_register,
+	si_arg_special_register,
+	si_arg_literal,
+	si_arg_waitcnt,
+	si_arg_label,
+	si_arg_format	
 };
 
-enum si_inst_arg_special_register_type_t
+enum si_arg_special_register_type_t
 {
-	si_inst_arg_special_register_vcc = 0,
-	si_inst_arg_special_register_scc
+	si_arg_special_register_vcc = 0,
+	si_arg_special_register_scc
 };
 
-struct si_inst_arg_t 
+struct si_arg_t 
 {
-	enum si_inst_arg_type_t type;
+	enum si_arg_type_t type;
 	
 	union
 	{
@@ -96,13 +96,13 @@ struct si_inst_arg_t
 		
 		struct
 		{
-			enum si_inst_arg_special_register_type_t type;
+			enum si_arg_special_register_type_t type;
 		} special_register;
 		
 	} value;
 };
 
-struct si_inst_arg_t *si_inst_arg_create(void);
-void si_inst_arg_free(struct si_inst_arg_t *inst_arg);
-void si_inst_arg_dump(struct si_inst_arg_t *inst_arg, FILE *f);
+struct si_arg_t *si_arg_create(void);
+void si_arg_free(struct si_arg_t *inst_arg);
+void si_arg_dump(struct si_arg_t *inst_arg, FILE *f);
 

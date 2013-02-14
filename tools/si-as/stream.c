@@ -17,10 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
+#include "dis-inst.h"
 #include "task.h"
-#include "inst.h"
 #include "stream.h"
 
 
@@ -33,9 +34,7 @@ struct si_stream_t *si_stream_create(char *fileName)
 	struct si_stream_t *stream;
 	
 	/* Allocate */
-	stream = calloc(1, sizeof(struct si_stream_t));
-	if (!stream)
-		fatal("%s: out of memory", __FUNCTION__);
+	stream = xcalloc(1, sizeof(struct si_stream_t));
 	
 	/* Initialize */
 	stream->out_file = fopen(fileName, "wr");
@@ -44,12 +43,19 @@ struct si_stream_t *si_stream_create(char *fileName)
 	return stream;
 }
 
-void si_stream_add_inst(struct si_stream_t *stream, struct si_inst_t *inst)
+
+void si_stream_free(struct si_stream_t *stream)
+{
+	free(stream);
+}
+
+
+void si_stream_add_inst(struct si_stream_t *stream, struct si_dis_inst_t *inst)
 {
 	unsigned long long inst_bytes;
 	int size = 0;
 	
-	size = si_inst_code_gen(inst, &inst_bytes);
+	size = si_dis_inst_code_gen(inst, &inst_bytes);
 	
 	if (size == 0)
 	{
