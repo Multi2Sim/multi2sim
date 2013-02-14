@@ -1,9 +1,30 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
 #include "inst.h"
 #include "inst-arg.h"
+
 
 struct str_map_t si_inst_opcode_map =
 {
@@ -52,24 +73,24 @@ struct str_map_t si_inst_opcode_map =
 };
 
 
-struct si_inst_t *si_inst_create(char *inst_str)
+struct si_inst_t *si_inst_create(char *name, struct list_t *arg_list)
 {
 	struct si_inst_t *inst;
 	
 	/* Allocate */
-	inst = calloc(1, sizeof(struct si_inst_t));
-	if (!inst)
-		fatal("%s: out of memory", __FUNCTION__);
+	inst = xcalloc(1, sizeof(struct si_inst_t));
 	
 	/* Initialize */
-	inst->arg_list = list_create();
+	inst->arg_list = arg_list;
+	if (!arg_list)
+		inst->arg_list = list_create();
 	
 	/* Look up our instruction string
 	 * int the string map and find the
 	 * the corresponding enumeration. Then,
 	 * set si_inst_t's opcode value to the
 	 * correct enumeration.				   */
-	inst->opcode = str_map_string(&si_inst_opcode_map, inst_str);
+	inst->opcode = str_map_string(&si_inst_opcode_map, name);
 	
 	/* Return */
 	return inst;
@@ -79,10 +100,15 @@ struct si_inst_t *si_inst_create(char *inst_str)
 void si_inst_free(struct si_inst_t *inst)
 {
 	int index;
+	struct si_inst_arg_t *arg;
 	
 	/* Free all argument object in the argument list */
 	for (index = 0; index < inst->arg_list->count; index++)
-		si_inst_arg_free(list_get(inst->arg_list, index));
+	LIST_FOR_EACH(inst->arg_list, index)
+	{
+		arg = list_get(inst->arg_list, index);
+		si_inst_arg_free(arg);
+	}
 	
 	/* Free argument list and instruction object */
 	list_free(inst->arg_list);
@@ -92,6 +118,7 @@ void si_inst_free(struct si_inst_t *inst)
 
 void si_inst_dump(struct si_inst_t *inst, FILE *f)
 {
+	struct si_inst_arg_t *arg;
 	int index;
 	
 	/* Dump instruction opcode */
@@ -99,10 +126,11 @@ void si_inst_dump(struct si_inst_t *inst, FILE *f)
 		str_map_value(&si_inst_opcode_map, inst->opcode));
 
 	/* Dump arguments */
-	for (index = 0; index < (inst->arg_list->count); index++)
+	LIST_FOR_EACH(inst->arg_list, index)
 	{
-		fprintf(f, "Argument %d:\n", index);
-		si_inst_arg_dump(list_get(inst->arg_list, index), stdout);
+		arg = list_get(inst->arg_list, index);
+		fprintf(f, "\targ %d: ", index);
+		si_inst_arg_dump(arg, f);
 	}
 }
 

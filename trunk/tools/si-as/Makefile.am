@@ -11,6 +11,9 @@ BUILT_SOURCES = parser.h
 
 __top_builddir__bin_m2s_si_as_SOURCES = \
 	\
+	id.c \
+	id.h \
+	\
 	inst.c \
 	inst.h \
 	\
@@ -20,14 +23,17 @@ __top_builddir__bin_m2s_si_as_SOURCES = \
 	label.c \
 	label.h \
 	\
-	lex.l \
-	parser.y \
+	main.c \
 	\
 	stream.c \
 	stream.h \
 	\
 	task.c \
-	task.h
+	task.h \
+	\
+	\
+	lex.l \
+	parser.y
 
 INCLUDES = @M2S_INCLUDES@
 
