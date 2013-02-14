@@ -11,14 +11,14 @@ BUILT_SOURCES = parser.h
 
 __top_builddir__bin_m2s_si_as_SOURCES = \
 	\
+	dis-inst.c \
+	dis-inst.h \
+	\
 	id.c \
 	id.h \
 	\
-	inst.c \
-	inst.h \
-	\
-	inst-arg.c \
-	inst-arg.h \
+	arg.c \
+	arg.h \
 	\
 	label.c \
 	label.h \
@@ -38,6 +38,7 @@ __top_builddir__bin_m2s_si_as_SOURCES = \
 INCLUDES = @M2S_INCLUDES@
 
 LDADD = \
+	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
 	$(top_builddir)/src/lib/util/libutil.a \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a
 

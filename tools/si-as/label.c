@@ -19,6 +19,7 @@
 
 #include <string.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 
@@ -31,13 +32,11 @@ struct si_label_t *si_label_create(char *id, long offset)
 	struct si_label_t *label;
 	
 	/* Allocate */
-	label = calloc(1, sizeof(struct si_label_t));
-	if (!label)
-		fatal("%s: out of memory", __FUNCTION__);
+	label = xcalloc(1, sizeof(struct si_label_t));
 	
 	/* Initialize the label's offset and ID */
 	label->offset = offset;
-	label->ID = strdup(id);
+	label->ID = xstrdup(id);
 	
 	/* Return */
 	return label;

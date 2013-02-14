@@ -26,9 +26,9 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
+#include "arg.h"
+#include "dis-inst.h"
 #include "id.h"
-#include "inst.h"
-#include "inst-arg.h"
 #include "label.h"
 #include "stream.h"
 #include "string.h"
@@ -50,10 +50,10 @@ struct si_stream_t *stream;
 %union {
 	int num;
 	struct si_id_t *id;
-	struct si_inst_t *inst;
+	struct si_dis_inst_t *inst;
 	struct si_label_t *label;
 	struct list_t *list;
-	struct si_inst_arg_t *arg;
+	struct si_arg_t *arg;
 }
 
  
@@ -96,7 +96,7 @@ rl_line
 
 	| rl_instr TOK_NEW_LINE
 	{
-		struct si_inst_t *inst;
+		struct si_dis_inst_t *inst;
 
 		/* Get instruction */
 		inst = $1;
@@ -104,11 +104,11 @@ rl_line
 		/* Print instruction */
 		line_num++;
 		printf("---------- Line %d ----------\n", line_num);
-		si_inst_dump(inst, stdout);
+		si_dis_inst_dump(inst, stdout);
 		//si_stream_add_inst(stream, $1);
 		
 		/* Free instruction */
-		si_inst_free(inst);
+		si_dis_inst_free(inst);
 	}
 
 	| rl_label TOK_NEW_LINE
@@ -141,7 +141,7 @@ rl_label
 rl_instr
 	: TOK_ID rl_arg_list 
 	{
-		struct si_inst_t *inst;
+		struct si_dis_inst_t *inst;
 		struct si_id_t *id;
 		struct list_t *arg_list;
 
@@ -150,7 +150,7 @@ rl_instr
 		arg_list = $2;
 		
 		/* Create instruction */
-		inst = si_inst_create(id->name, arg_list);
+		inst = si_dis_inst_create(id->name, arg_list);
 
 		/* Return instructions */
 		si_id_free(id);
@@ -192,14 +192,14 @@ rl_arg_list
 rl_arg
 	: TOK_GENERAL_REGISTER 
 	{
-		struct si_inst_arg_t *arg;
+		struct si_arg_t *arg;
 		struct si_id_t *id;
 
 		/* Get arguments */
 		id = $1;
 		
 		/* Create argument */
-		arg = si_inst_arg_create(); 
+		arg = si_arg_create(); 
 		
 		/* TOK_GENERAL_REGISTER is m0, v14, s9 etc.
 		   so we need to figure out 
@@ -210,17 +210,17 @@ rl_arg
 		/* Initialize */
 		if (id->name[0] == 's')
 		{
-			arg->type = si_inst_arg_scalar_register;
+			arg->type = si_arg_scalar_register;
 			arg->value.scalar_register.id = atoi(id->name + 1);
 		}
 		else if (id->name[0] == 'm')
 		{
-			arg->type = si_inst_arg_mtype_register;
+			arg->type = si_arg_mtype_register;
 			arg->value.scalar_register.id = atoi(id->name + 1);
 		}
 		else if (id->name[0] == 'v')
 		{
-			arg->type = si_inst_arg_vector_register;
+			arg->type = si_arg_vector_register;
 			arg->value.scalar_register.id = atoi(id->name + 1);
 		}
 		else
@@ -235,22 +235,22 @@ rl_arg
 
 	| TOK_SPECIAL_REGISTER
 	{
-		struct si_inst_arg_t *arg;
+		struct si_arg_t *arg;
 		struct si_id_t *id;
 
 		/* Read arguments */
 		id = $1;
 		
 		/* Create argument */
-		arg = si_inst_arg_create(); 
+		arg = si_arg_create(); 
 		
 		/* Initialize */
-		arg->type = si_inst_arg_special_register;
+		arg->type = si_arg_special_register;
 		
 		if (!strcmp(id->name, "vcc"))
-			arg->value.special_register.type = si_inst_arg_special_register_vcc;
+			arg->value.special_register.type = si_arg_special_register_vcc;
 		else if (!strcmp(id->name, "scc"))
-			arg->value.special_register.type = si_inst_arg_special_register_scc;
+			arg->value.special_register.type = si_arg_special_register_scc;
 		else
 			fatal("%s: invalid special register", id->name);
 		
@@ -261,7 +261,7 @@ rl_arg
 
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_COL TOK_DECIMAL TOK_CBRA  
 	{
-		struct si_inst_arg_t *arg;
+		struct si_arg_t *arg;
 		struct si_id_t *id;
 
 		int id_low;
@@ -273,10 +273,10 @@ rl_arg
 		id_high = $5;
 		
 		/* Create argument */
-		arg = si_inst_arg_create(); 
+		arg = si_arg_create(); 
 		
 		/* Initialize */
-		arg->type = si_inst_arg_register_range;
+		arg->type = si_arg_register_range;
 		arg->value.register_range.id_low = id_low;
 		arg->value.register_range.id_high = id_high;
 		
@@ -287,13 +287,13 @@ rl_arg
 
 	| TOK_DECIMAL
 	{
-		struct si_inst_arg_t *arg;
+		struct si_arg_t *arg;
 		
 		/* Create argument */
-		arg = si_inst_arg_create(); 
+		arg = si_arg_create(); 
 		
 		/* Initialize */
-		arg->type = si_inst_arg_literal;
+		arg->type = si_arg_literal;
 		
 		arg->value.literal.val = $1;
 		
@@ -303,7 +303,7 @@ rl_arg
 
 	| TOK_HEX
 	{
-		struct si_inst_arg_t *arg;
+		struct si_arg_t *arg;
 		struct si_id_t *id;
 		
 		unsigned int value;
@@ -312,10 +312,10 @@ rl_arg
 		id = $1;
 		
 		/* Create argument */
-		arg = si_inst_arg_create(); 
+		arg = si_arg_create(); 
 		
 		/* Initialize */
-		arg->type = si_inst_arg_literal;
+		arg->type = si_arg_literal;
 		sscanf(id->name, "%x", &value);
 		arg->value.literal.val = value;
 		
@@ -326,7 +326,7 @@ rl_arg
 
 	| TOK_DECIMAL TOK_ID TOK_ID TOK_COL TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
 	{
-		struct si_inst_arg_t *arg;
+		struct si_arg_t *arg;
 		struct si_id_t *id_offen;
 		struct si_id_t *id_format;
 		struct si_id_t *id_data_format;
@@ -339,10 +339,10 @@ rl_arg
 		id_num_format = $8;
 		
 		/* Create argument */
-		arg = si_inst_arg_create(); 	
+		arg = si_arg_create(); 	
 			
 		/* Initialize */		
-		arg->type = si_inst_arg_format;
+		arg->type = si_arg_format;
 		if (!strcmp(id_offen->name, "offen"))
 			arg->value.format.offen = 1;
 		
@@ -356,7 +356,7 @@ rl_arg
 
 	| TOK_ID
 	{
-		struct si_inst_arg_t *arg;
+		struct si_arg_t *arg;
 		struct si_task_t *task;
 		struct si_id_t *id;
 
@@ -364,8 +364,8 @@ rl_arg
 		id = $1;
 		
 		/* Create argument */
-		arg = si_inst_arg_create(); 
-		arg->type = si_inst_arg_label;
+		arg = si_arg_create(); 
+		arg->type = si_arg_label;
 		
 		/* Insert with an offset of 0, the binary generation function
 		 * must check for this, and update it with the OUTPUT file's offset */
@@ -403,7 +403,7 @@ rl_waitcnt_arg
 		$3->value.wait_cnt.lgkmcnt_active = $1->value.wait_cnt.lgkmcnt_active;
 		$3->value.wait_cnt.lgkmcnt_value = $1->value.wait_cnt.lgkmcnt_value;	
 		
-		si_inst_arg_free($1);
+		si_arg_free($1);
 		
 		$$ = $3;
 		
@@ -414,17 +414,17 @@ rl_waitcnt_elem
 
 	: TOK_ID TOK_OPAR TOK_DECIMAL TOK_CPAR
 	{
-		struct si_inst_arg_t *arg;
+		struct si_arg_t *arg;
 		struct si_id_t *id;
 
 		/* Read arguments */
 		id = $1;
 		
 		/* Create argument */
-		arg = si_inst_arg_create(); 
+		arg = si_arg_create(); 
 		
 		/* Initialize */
-		arg->type = si_inst_arg_waitcnt;
+		arg->type = si_arg_waitcnt;
 		
 		if (!strcmp(id->name, "vmcnt"))
 		{

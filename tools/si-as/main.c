@@ -69,6 +69,7 @@ int main(int argc, char **argv)
 	si_task_list_done();
 	si_label_table_done();
 	si_stream_close(stream);
+	si_stream_free(stream);
 
 	mhandle_done();
 	

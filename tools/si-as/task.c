@@ -19,6 +19,7 @@
 
 #include <string.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
@@ -32,13 +33,11 @@ struct si_task_t *si_task_create(char *ID, long offset)
 	struct si_task_t *task;
 	
 	/* Allocate */
-	task = calloc(1, sizeof(struct si_task_t));
-	if (!task)
-		fatal("%s: out of memory", __FUNCTION__);
+	task = xcalloc(1, sizeof(struct si_task_t));
 	
 	/* Initialize the task's offset and ID */
 	task->offset = offset;
-	task->ID = strdup(ID);
+	task->ID = xstrdup(ID);
 	
 	/* Return */
 	return task;
