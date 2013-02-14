@@ -18,57 +18,13 @@
  */
 
 #include <stdio.h>
+#include <arch/southern-islands/asm/asm.h>
 
-//Contains enumeration for supported
-//op-codes of S.I. architecture.
-//0 is deafaulted to invalid code.
-
-enum si_dis_inst_opcode_t
-{
-	si_dis_inst_opcode_invalid = 0,
-	si_dis_inst_opcode_s_mov_b32,
-	si_dis_inst_opcode_s_waitcnt, 
-	si_dis_inst_opcode_v_cvt_f32_u32,
-	si_dis_inst_opcode_v_rcp_f32,
-	si_dis_inst_opcode_v_mul_f32,
-	si_dis_inst_opcode_s_buffer_load_dwordx2,
-	si_dis_inst_opcode_v_cvt_u32_f32,
-	si_dis_inst_opcode_v_mul_lo_u32,
-	si_dis_inst_opcode_v_mul_hi_u32,
-	si_dis_inst_opcode_s_buffer_load_dword,
-	si_dis_inst_opcode_v_sub_i32,
-	si_dis_inst_opcode_v_cmp_ne_i32,
-	si_dis_inst_opcode_v_cndmask_b32,
-	si_dis_inst_opcode_s_min_u32,
-	si_dis_inst_opcode_v_add_i32,
-	si_dis_inst_opcode_v_mov_b32,
-	si_dis_inst_opcode_v_mul_i32_i24,
-	si_dis_inst_opcode_s_load_dwordx4,
-	si_dis_inst_opcode_v_mul_lo_i32,
-	si_dis_inst_opcode_v_cmp_ge_u32,
-	si_dis_inst_opcode_s_and_b64,
-	si_dis_inst_opcode_v_lshlrev_b32,
-	si_dis_inst_opcode_v_addc_u32,
-	si_dis_inst_opcode_tbuffer_store_format_x,
-	si_dis_inst_opcode_s_cbranch_vccz,
-	si_dis_inst_opcode_s_mul_i32,
-	si_dis_inst_opcode_s_lshl_b32,
-	si_dis_inst_opcode_v_readfirstlane_b32,
-	si_dis_inst_opcode_tbuffer_load_format_x,
-	si_dis_inst_opcode_ds_write_b32,
-	si_dis_inst_opcode_s_barrier,
-	si_dis_inst_opcode_s_cmp_eq_i32,
-	si_dis_inst_opcode_s_cbranch_scc1,
-	si_dis_inst_opcode_ds_read_b32,
-	si_dis_inst_opcode_s_add_i32,
-	si_dis_inst_opcode_v_mac_f32,
-	si_dis_inst_opcode_s_branch,
-	si_dis_inst_opcode_s_endpgm
-};
 
 struct si_dis_inst_t
 {
-	enum si_dis_inst_opcode_t opcode;
+	enum si_inst_opcode_t opcode;
+	struct si_inst_info_t *info;
 	struct list_t *arg_list;
 };
 

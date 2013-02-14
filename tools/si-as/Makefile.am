@@ -24,6 +24,7 @@ __top_builddir__bin_m2s_si_as_SOURCES = \
 	label.h \
 	\
 	main.c \
+	main.h \
 	\
 	stream.c \
 	stream.h \

@@ -17,59 +17,78 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdarg.h>
 #include <stdio.h>
 
+#include <arch/southern-islands/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
+#include "dis-inst.h"
 #include "label.h"
+#include "main.h"
 #include "parser.h"
 #include "stream.h"
 #include "task.h"
 
-extern void yyset_in(FILE *in_str);
-int yyparse(void);
+
+/* File name with assembly code */
+char *input_file_name;
+
+
+void yyerror(const char *s)
+{
+	fprintf(stderr, "%s:%d: error: %s\n",
+			input_file_name, yyget_lineno(), s);
+	exit(1);
+}
+
+
+void yyerror_fmt(char *fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	fprintf(stderr, "%s:%d: error: ", input_file_name, yyget_lineno());
+	vfprintf(stderr, fmt, va);
+	fprintf(stderr, "\n");
+	fflush(NULL);
+	exit(1);
+}
+
 
 int main(int argc, char **argv) 
 {
 	FILE *f;
-	char *file_name;
 
 	/* Check syntax */
 	if (argc != 2)
 		fatal("syntax: %s <file>", *argv);
 
 	/* Open input file */
-	file_name = argv[1];
-	f = fopen(file_name, "r");
+	input_file_name = argv[1];
+	f = fopen(input_file_name, "r");
 	if (!f)
-		fatal("%s: cannot open input file", file_name);
+		fatal("%s: cannot open input file", input_file_name);
 	
 	/* Open output file */
 	stream = si_stream_create("out.bin");
 		
-	/* Create the pending task list */
+	/* Initialize */
+	si_disasm_init();
+	si_dis_inst_init();
 	si_task_list_init();
-
-	/* Create the hash-table which will contain label offsets*/
 	si_label_table_init();
 
 	/* Parse input */
 	yyset_in(f);
 	yyparse();
 		
-	printf("-------------Dumping Label Table-------------\n");
-	si_label_table_dump(stdout);
-	printf("---------------------------------------------\n");
-		
-	printf("------------Dumping Pending Tasks------------\n");
-	si_task_list_dump(stdout);
-	printf("---------------------------------------------\n");
-		
 	si_task_list_done();
 	si_label_table_done();
 	si_stream_close(stream);
 	si_stream_free(stream);
+	si_dis_inst_done();
+	si_disasm_done();
 
 	mhandle_done();
 	

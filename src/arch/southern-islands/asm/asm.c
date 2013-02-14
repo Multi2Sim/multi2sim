@@ -30,8 +30,8 @@
 #include "bin-file.h"
 
 
-/* Table containing information of all instructions */
-static struct si_inst_info_t si_inst_info[SI_INST_COUNT];
+struct si_inst_info_t si_inst_info[SI_INST_COUNT];
+
 
 /* Define the number of valid opcodes. */
 #define SI_INST_INFO_SOPP_MAX_VALUE 22
@@ -2192,6 +2192,32 @@ void si_inst_dump_mtbuf(struct si_inst_t *inst, unsigned int inst_size, unsigned
 			assert((mtbuf->srsrc << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, mtbuf->srsrc << 2, (mtbuf->srsrc << 2) + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "MADDR", &token_len))
+		{
+			/* soffset */
+			assert(mtbuf->soffset <= 103 ||
+				mtbuf->soffset == 124 ||
+				(mtbuf->soffset >= 128 && mtbuf->soffset <= 208));
+			operand_dump_scalar(operand_str, mtbuf->soffset);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+
+			/* offen */
+			if (mtbuf->offen)
+				str_printf(&inst_str, &str_size, " offen");
+
+			/* index */
+			if (mtbuf->index)
+				str_printf(&inst_str, &str_size, " idxen");
+
+			/* offset */
+			if (mtbuf->offset)
+				str_printf(&inst_str, &str_size, " offset:%d", mtbuf->offset);
+
+			/* Format */
+			str_printf(&inst_str, &str_size, " format:[%s,%s]",
+					str_map_value(&dfmt_map, mtbuf->dfmt),
+					str_map_value(&nfmt_map, mtbuf->nfmt));
 		}
 		else if (is_token(fmt_str, "SOFFSET", &token_len))
 		{
