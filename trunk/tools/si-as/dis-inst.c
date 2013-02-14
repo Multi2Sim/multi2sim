@@ -17,68 +17,80 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/asm/asm.h>
+
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
-#include "inst.h"
-#include "inst-arg.h"
+#include "arg.h"
+#include "dis-inst.h"
 
 
-struct str_map_t si_inst_opcode_map =
+struct str_map_t si_dis_inst_opcode_map =
 {
 	39,
 	{
-		{ "s_mov_b32", si_inst_opcode_s_mov_b32 },
-		{ "s_waitcnt", si_inst_opcode_s_waitcnt },
-		{ "v_cvt_f32_u32", si_inst_opcode_v_cvt_f32_u32 },
-		{ "v_rcp_f32", si_inst_opcode_v_rcp_f32 },
-		{ "v_mul_f32", si_inst_opcode_v_mul_f32 },
-		{ "s_buffer_load_dwordx2", si_inst_opcode_s_buffer_load_dwordx2 },
-		{ "v_cvt_u32_f32", si_inst_opcode_v_cvt_u32_f32 },
-		{ "v_mul_lo_u32", si_inst_opcode_v_mul_lo_u32 },
-		{ "v_mul_hi_u32", si_inst_opcode_v_mul_hi_u32 },
-		{ "s_buffer_load_dword", si_inst_opcode_s_buffer_load_dword },
-		{ "v_sub_i32", si_inst_opcode_v_sub_i32 },
-		{ "v_cmp_ne_i32", si_inst_opcode_v_cmp_ne_i32 },
-		{ "v_cndmask_b32", si_inst_opcode_v_cndmask_b32 },
-		{ "s_min_u32", si_inst_opcode_s_min_u32 },
-		{ "v_sub_i32", si_inst_opcode_v_sub_i32 },
-		{ "v_add_i32", si_inst_opcode_v_add_i32 },
-		{ "v_mov_b32", si_inst_opcode_v_mov_b32 },
-		{ "v_mul_i32_i24", si_inst_opcode_v_mul_i32_i24 },
-		{ "s_load_dwordx4", si_inst_opcode_s_load_dwordx4 },
-		{ "v_mul_lo_i32", si_inst_opcode_v_mul_lo_i32 },
-		{ "v_cmp_ge_u32", si_inst_opcode_v_cmp_ge_u32 },
-		{ "s_and_b64", si_inst_opcode_s_and_b64 },
-		{ "v_lshlrev_b32", si_inst_opcode_v_lshlrev_b32 },
-		{ "v_addc_u32", si_inst_opcode_v_addc_u32 },
-		{ "tbuffer_store_format_x", si_inst_opcode_tbuffer_store_format_x },
-		{ "s_cbranch_vccz", si_inst_opcode_s_cbranch_vccz },
-		{ "s_mul_i32", si_inst_opcode_s_mul_i32 },
-		{ "s_lshl_b32", si_inst_opcode_s_lshl_b32 },
-		{ "v_readfirstlane_b32", si_inst_opcode_v_readfirstlane_b32 },
-		{ "tbuffer_load_format_x", si_inst_opcode_tbuffer_load_format_x },
-		{ "ds_write_b32", si_inst_opcode_ds_write_b32 },
-		{ "s_barrier", si_inst_opcode_s_barrier },
-		{ "s_cmp_eq_i32", si_inst_opcode_s_cmp_eq_i32 },
-		{ "s_cbranch_scc1", si_inst_opcode_s_cbranch_scc1 },
-		{ "ds_read_b32", si_inst_opcode_ds_read_b32 },
-		{ "s_add_i32", si_inst_opcode_s_add_i32 },
-		{ "v_mac_f32", si_inst_opcode_v_mac_f32 },
-		{ "s_branch", si_inst_opcode_s_branch },
-		{ "s_endpgm", si_inst_opcode_s_endpgm }
+		{ "s_mov_b32", si_dis_inst_opcode_s_mov_b32 },
+		{ "s_waitcnt", si_dis_inst_opcode_s_waitcnt },
+		{ "v_cvt_f32_u32", si_dis_inst_opcode_v_cvt_f32_u32 },
+		{ "v_rcp_f32", si_dis_inst_opcode_v_rcp_f32 },
+		{ "v_mul_f32", si_dis_inst_opcode_v_mul_f32 },
+		{ "s_buffer_load_dwordx2", si_dis_inst_opcode_s_buffer_load_dwordx2 },
+		{ "v_cvt_u32_f32", si_dis_inst_opcode_v_cvt_u32_f32 },
+		{ "v_mul_lo_u32", si_dis_inst_opcode_v_mul_lo_u32 },
+		{ "v_mul_hi_u32", si_dis_inst_opcode_v_mul_hi_u32 },
+		{ "s_buffer_load_dword", si_dis_inst_opcode_s_buffer_load_dword },
+		{ "v_sub_i32", si_dis_inst_opcode_v_sub_i32 },
+		{ "v_cmp_ne_i32", si_dis_inst_opcode_v_cmp_ne_i32 },
+		{ "v_cndmask_b32", si_dis_inst_opcode_v_cndmask_b32 },
+		{ "s_min_u32", si_dis_inst_opcode_s_min_u32 },
+		{ "v_sub_i32", si_dis_inst_opcode_v_sub_i32 },
+		{ "v_add_i32", si_dis_inst_opcode_v_add_i32 },
+		{ "v_mov_b32", si_dis_inst_opcode_v_mov_b32 },
+		{ "v_mul_i32_i24", si_dis_inst_opcode_v_mul_i32_i24 },
+		{ "s_load_dwordx4", si_dis_inst_opcode_s_load_dwordx4 },
+		{ "v_mul_lo_i32", si_dis_inst_opcode_v_mul_lo_i32 },
+		{ "v_cmp_ge_u32", si_dis_inst_opcode_v_cmp_ge_u32 },
+		{ "s_and_b64", si_dis_inst_opcode_s_and_b64 },
+		{ "v_lshlrev_b32", si_dis_inst_opcode_v_lshlrev_b32 },
+		{ "v_addc_u32", si_dis_inst_opcode_v_addc_u32 },
+		{ "tbuffer_store_format_x", si_dis_inst_opcode_tbuffer_store_format_x },
+		{ "s_cbranch_vccz", si_dis_inst_opcode_s_cbranch_vccz },
+		{ "s_mul_i32", si_dis_inst_opcode_s_mul_i32 },
+		{ "s_lshl_b32", si_dis_inst_opcode_s_lshl_b32 },
+		{ "v_readfirstlane_b32", si_dis_inst_opcode_v_readfirstlane_b32 },
+		{ "tbuffer_load_format_x", si_dis_inst_opcode_tbuffer_load_format_x },
+		{ "ds_write_b32", si_dis_inst_opcode_ds_write_b32 },
+		{ "s_barrier", si_dis_inst_opcode_s_barrier },
+		{ "s_cmp_eq_i32", si_dis_inst_opcode_s_cmp_eq_i32 },
+		{ "s_cbranch_scc1", si_dis_inst_opcode_s_cbranch_scc1 },
+		{ "ds_read_b32", si_dis_inst_opcode_ds_read_b32 },
+		{ "s_add_i32", si_dis_inst_opcode_s_add_i32 },
+		{ "v_mac_f32", si_dis_inst_opcode_v_mac_f32 },
+		{ "s_branch", si_dis_inst_opcode_s_branch },
+		{ "s_endpgm", si_dis_inst_opcode_s_endpgm }
 	}
 };
 
 
-struct si_inst_t *si_inst_create(char *name, struct list_t *arg_list)
+void si_dis_inst_init(void)
 {
-	struct si_inst_t *inst;
+}
+
+
+void si_dis_inst_done(void)
+{
+}
+
+
+struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
+{
+	struct si_dis_inst_t *inst;
 	
 	/* Allocate */
-	inst = xcalloc(1, sizeof(struct si_inst_t));
+	inst = xcalloc(1, sizeof(struct si_dis_inst_t));
 	
 	/* Initialize */
 	inst->arg_list = arg_list;
@@ -88,26 +100,26 @@ struct si_inst_t *si_inst_create(char *name, struct list_t *arg_list)
 	/* Look up our instruction string
 	 * int the string map and find the
 	 * the corresponding enumeration. Then,
-	 * set si_inst_t's opcode value to the
+	 * set si_dis_inst_t's opcode value to the
 	 * correct enumeration.				   */
-	inst->opcode = str_map_string(&si_inst_opcode_map, name);
+	inst->opcode = str_map_string(&si_dis_inst_opcode_map, name);
 	
 	/* Return */
 	return inst;
 }
 
 
-void si_inst_free(struct si_inst_t *inst)
+void si_dis_inst_free(struct si_dis_inst_t *inst)
 {
 	int index;
-	struct si_inst_arg_t *arg;
+	struct si_arg_t *arg;
 	
 	/* Free all argument object in the argument list */
 	for (index = 0; index < inst->arg_list->count; index++)
 	LIST_FOR_EACH(inst->arg_list, index)
 	{
 		arg = list_get(inst->arg_list, index);
-		si_inst_arg_free(arg);
+		si_arg_free(arg);
 	}
 	
 	/* Free argument list and instruction object */
@@ -116,21 +128,21 @@ void si_inst_free(struct si_inst_t *inst)
 }
 
 
-void si_inst_dump(struct si_inst_t *inst, FILE *f)
+void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 {
-	struct si_inst_arg_t *arg;
+	struct si_arg_t *arg;
 	int index;
 	
 	/* Dump instruction opcode */
 	fprintf(f, "Instruction op-code %d: %s\n", inst->opcode,
-		str_map_value(&si_inst_opcode_map, inst->opcode));
+		str_map_value(&si_dis_inst_opcode_map, inst->opcode));
 
 	/* Dump arguments */
 	LIST_FOR_EACH(inst->arg_list, index)
 	{
 		arg = list_get(inst->arg_list, index);
 		fprintf(f, "\targ %d: ", index);
-		si_inst_arg_dump(arg, f);
+		si_arg_dump(arg, f);
 	}
 }
 
@@ -148,20 +160,20 @@ void si_inst_dump(struct si_inst_t *inst, FILE *f)
 	
 
 	
-int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
+int si_dis_inst_code_gen(struct si_dis_inst_t *inst, unsigned long long *inst_bytes)
 {
-	struct si_inst_arg_t *arg;
+	struct si_arg_t *arg;
 	switch (inst->opcode)
 	{
 	/*----------------SOP1 Instructions----------------*/
-	case si_inst_opcode_s_mov_b32:
+	case si_dis_inst_opcode_s_mov_b32:
 
 		/* SOP1 op-code = 101111101 */
 		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 23, 381);
 
 		arg = list_get(inst->arg_list, 0);
 		/* If m0 is register, set to 124 */
-		if (arg->type == si_inst_arg_mtype_register)
+		if (arg->type == si_arg_mtype_register)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 22, 16, 124);
 		}
@@ -172,20 +184,20 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 		
 		arg = list_get(inst->arg_list, 1);
 		/* If second arg is a constant, set to 255 */
-		if (arg->type == si_inst_arg_literal)
+		if (arg->type == si_arg_literal)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 7, 0, 255);
 			*inst_bytes = SET_BITS_64(*inst_bytes, 63, 32, arg->value.literal.val);
 		}
 		
-		si_inst_arg_free(arg);
+		si_arg_free(arg);
 		
 		/* 64-bit */ 
 		return 8;
 		break;
 	/*--------------END SOP1 Instructions--------------*/
 	/*----------------SMRD Instructions----------------*/
-	case si_inst_opcode_s_buffer_load_dword:
+	case si_dis_inst_opcode_s_buffer_load_dword:
 		
 		/* SMRD op-code = 11000 */
 		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 27, 24);
@@ -195,33 +207,33 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 		
 		arg = list_get(inst->arg_list, 0);
 		/* SDST */ 
-		if (arg->type == si_inst_arg_scalar_register)
+		if (arg->type == si_arg_scalar_register)
 		{	
 			*inst_bytes = SET_BITS_64(*inst_bytes, 21, 15, arg->value.scalar_register.id);
 		} /* else other cases */
 		
 		arg = list_get(inst->arg_list, 1);
 		/* SBASE */
-		if (arg->type == si_inst_arg_register_range)
+		if (arg->type == si_arg_register_range)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 14, 9, ((arg->value.register_range.id_low & arg->value.register_range.id_high)>>1));
 		}
 		
 		/* Last arg is offset*/
 		arg = list_get(inst->arg_list, 2);
-		if (arg->type == si_inst_arg_literal)
+		if (arg->type == si_arg_literal)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 8, 1);
 			*inst_bytes = SET_BITS_64(*inst_bytes, 7, 0, arg->value.literal.val);
 		}
 		
-		si_inst_arg_free(arg);
+		si_arg_free(arg);
 		
 		/* 32-bit */ 
 		return 4;
 		break;
 		
-	case si_inst_opcode_s_buffer_load_dwordx2:
+	case si_dis_inst_opcode_s_buffer_load_dwordx2:
 		
 		/* SMRD op-code = 11000 */
 		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 27, 24);
@@ -231,10 +243,10 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 		
 		/* SDST */ 
 		arg = list_get(inst->arg_list, 0);
-		if (arg->type == si_inst_arg_scalar_register)
+		if (arg->type == si_arg_scalar_register)
 		{	
 			*inst_bytes = SET_BITS_64(*inst_bytes, 21, 15, arg->value.scalar_register.id);
-		} else if ( arg->type == si_inst_arg_register_range)
+		} else if ( arg->type == si_arg_register_range)
 		{
 			/* SGPR 96 = Range[14:15] ?? */
 			*inst_bytes = SET_BITS_64(*inst_bytes, 21, 15, 96);
@@ -242,20 +254,20 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 		
 		/* SBASE */
 		arg = list_get(inst->arg_list, 1);
-		if (arg->type == si_inst_arg_register_range)
+		if (arg->type == si_arg_register_range)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 14, 9, ((arg->value.register_range.id_low & arg->value.register_range.id_high)>>1));
 		}
 		
 		/* SBASE offset */
 		arg = list_get(inst->arg_list, 2);
-		if (arg->type == si_inst_arg_literal)
+		if (arg->type == si_arg_literal)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 8, 1);
 			*inst_bytes = SET_BITS_64(*inst_bytes, 7, 0, arg->value.literal.val);
 		}
 		
-		si_inst_arg_free(arg);
+		si_arg_free(arg);
 		
 		/* 32-bit */ 
 		return 4;
@@ -263,7 +275,7 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 	
 	/*--------------END SMRD Instructions--------------*/
 	/*----------------SOPP Instructions----------------*/
-	case si_inst_opcode_s_waitcnt:
+	case si_dis_inst_opcode_s_waitcnt:
 		
 		/* SOPP Encoding = 101111111 */
 		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 23, 383);
@@ -273,7 +285,7 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 		
 		
 		arg = list_get(inst->arg_list, 0);
-		if (arg->type == si_inst_arg_waitcnt)
+		if (arg->type == si_arg_waitcnt)
 		{
 			if (arg->value.wait_cnt.lgkmcnt_active)
 			{
@@ -291,13 +303,13 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 				
 		}
 		
-		si_inst_arg_free(arg);
+		si_arg_free(arg);
 		
 		/* 32-bit */ 
 		return 4;
 	/*--------------END SOPP Instructions--------------*/
 	/*----------------VOP1 Instructions----------------*/
-	case si_inst_opcode_v_cvt_f32_u32:
+	case si_dis_inst_opcode_v_cvt_f32_u32:
 		
 		/* VOP1 Encoding = 0111111 */
 		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 25, 63);
@@ -307,25 +319,25 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 		
 		/* Destinsation VGPR (Vector General-Purpose Register) */
 		arg = list_get(inst->arg_list, 0);
-		if (arg->type == si_inst_arg_vector_register)
+		if (arg->type == si_arg_vector_register)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 24, 17, arg->value.vector_register.id);
 		}
 		
 		/* Source */
 		arg = list_get(inst->arg_list, 1);
-		if (arg->type == si_inst_arg_scalar_register)
+		if (arg->type == si_arg_scalar_register)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 0, arg->value.scalar_register.id);
 		}
 		
-		si_inst_arg_free(arg);
+		si_arg_free(arg);
 		
 		/* 32-bit */ 
 		return 4;
 		break;
 		
-	case si_inst_opcode_v_rcp_f32:
+	case si_dis_inst_opcode_v_rcp_f32:
 		
 		/* VOP1 Encoding = 0111111 */
 		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 25, 63);
@@ -335,28 +347,28 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 		
 		/* Destinsation VGPR (Vector General-Purpose Register) */
 		arg = list_get(inst->arg_list, 0);
-		if (arg->type == si_inst_arg_vector_register)
+		if (arg->type == si_arg_vector_register)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 24, 17, arg->value.vector_register.id);
 		}
 		
 		/* Source */
 		arg = list_get(inst->arg_list, 1);
-		if (arg->type == si_inst_arg_vector_register)
+		if (arg->type == si_arg_vector_register)
 		{
 			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 0, arg->value.vector_register.id + 256);
 		}
-		si_inst_arg_free(arg);
+		si_arg_free(arg);
 		
 		/* 32-bit */ 
 		return 4;
 		break;
 	/*--------------END VOP1 Instructions--------------*/
 	/*----------------VOP2 Instructions---------------*/
-	case si_inst_opcode_v_mul_f32:
+	case si_dis_inst_opcode_v_mul_f32:
 	
 		arg = list_get(inst->arg_list, 1);
-		if (arg->type == si_inst_arg_literal)
+		if (arg->type == si_arg_literal)
 		{
 			/* Literal constant = 255 */
 			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 0, 255);
@@ -366,14 +378,14 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 			
 			/* Second src for instruction */
 			arg = list_get(inst->arg_list, 2);
-			if (arg->type == si_inst_arg_vector_register)
+			if (arg->type == si_arg_vector_register)
 			{
 				*inst_bytes = SET_BITS_64(*inst_bytes, 16, 9, arg->value.vector_register.id);
 			}
 			
 			arg = list_get(inst->arg_list, 0);
 			/* Destinsation VGPR (Vector General-Purpose Register) */
-			if (arg->type == si_inst_arg_vector_register)
+			if (arg->type == si_arg_vector_register)
 			{
 				*inst_bytes = SET_BITS_64(*inst_bytes, 24, 17, arg->value.vector_register.id);
 			}
@@ -384,7 +396,7 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 			/* Must be 0 */
 			*inst_bytes = SET_BITS_64(*inst_bytes, 31, 31, 0);
 			
-			si_inst_arg_free(arg);
+			si_arg_free(arg);
 		
 			/* 64-bit */ 
 			return 8;
@@ -393,7 +405,7 @@ int si_inst_code_gen(struct si_inst_t *inst, unsigned long long *inst_bytes)
 		}
 		break;
 	/*--------------END VOP3a Instructions-------------*/
-	case si_inst_opcode_s_cbranch_vccz:
+	case si_dis_inst_opcode_s_cbranch_vccz:
 	
 		/* To Be Finished */
 	
