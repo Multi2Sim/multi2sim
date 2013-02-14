@@ -71,26 +71,6 @@ enum si_fmt_enum
  * String maps
  */
 
-/* TODO Replace with SI maps */
-/*
-extern struct str_map_t si_pv_map;
-extern struct str_map_t si_alu_map;
-extern struct str_map_t si_bank_swizzle_map;
-extern struct str_map_t si_rat_inst_map;
-extern struct str_map_t si_cf_cond_map;
-extern struct str_map_t si_src_sel_map;
-extern struct str_map_t si_dst_sel_map;
-
-extern struct str_map_t si_fmt_vtx_fetch_type_map;
-extern struct str_map_t si_fmt_vtx_data_format_map;
-extern struct str_map_t si_fmt_vtx_num_format_map;
-extern struct str_map_t si_fmt_vtx_format_comp_map;
-extern struct str_map_t si_fmt_vtx_srf_mode_map;
-extern struct str_map_t si_fmt_vtx_endian_swap_map;
-extern struct str_map_t si_fmt_lds_op_map;
-*/
-
-
 
 /*
  * Structure of Microcode Format
@@ -310,7 +290,7 @@ struct si_fmt_exp_t
 
 extern struct str_map_t si_inst_category_map;
 
-enum si_inst_category_enum
+enum si_inst_category_t
 {
 	SI_INST_CAT_NONE = 0,
 
@@ -348,7 +328,7 @@ enum si_inst_category_enum
 };
 
 
-enum si_inst_flag_enum
+enum si_inst_flag_t
 {
 	SI_INST_FLAG_NONE = 0x0000,
 	SI_INST_FLAG_OP8 = 0x0001,  /* Opcode represents 8 comparison instructions */
@@ -356,7 +336,7 @@ enum si_inst_flag_enum
 };
 
 
-enum si_inst_enum
+enum si_inst_opcode_t
 {
 	SI_INST_NONE = 0,
 
@@ -397,15 +377,21 @@ union si_inst_microcode_t
 
 struct si_inst_info_t
 {
-	enum si_inst_enum inst;
-	enum si_inst_category_enum category;
+	enum si_inst_opcode_t inst;
+	enum si_inst_category_t category;
 	char *name;
 	char *fmt_str;
 	enum si_fmt_enum fmt;  /* Word formats */
 	int opcode;  /* Operation code */
-	enum si_inst_flag_enum flags;  /* Flag bitmap */
+	enum si_inst_flag_t flags;  /* Flag bitmap */
 	int size;  /* Size of microcode inst (bytes) */
 };
+
+
+/* Table containing information for all instructions, filled out with the
+ * fields found in 'asm.dat'. */
+extern struct si_inst_info_t si_inst_info[SI_INST_COUNT];
+
 
 union si_reg_t
 {

@@ -17,93 +17,97 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/asm/asm.h>
+#include <assert.h>
 
+#include <arch/southern-islands/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
 #include "arg.h"
 #include "dis-inst.h"
+#include "main.h"
 
 
-struct str_map_t si_dis_inst_opcode_map =
-{
-	39,
-	{
-		{ "s_mov_b32", si_dis_inst_opcode_s_mov_b32 },
-		{ "s_waitcnt", si_dis_inst_opcode_s_waitcnt },
-		{ "v_cvt_f32_u32", si_dis_inst_opcode_v_cvt_f32_u32 },
-		{ "v_rcp_f32", si_dis_inst_opcode_v_rcp_f32 },
-		{ "v_mul_f32", si_dis_inst_opcode_v_mul_f32 },
-		{ "s_buffer_load_dwordx2", si_dis_inst_opcode_s_buffer_load_dwordx2 },
-		{ "v_cvt_u32_f32", si_dis_inst_opcode_v_cvt_u32_f32 },
-		{ "v_mul_lo_u32", si_dis_inst_opcode_v_mul_lo_u32 },
-		{ "v_mul_hi_u32", si_dis_inst_opcode_v_mul_hi_u32 },
-		{ "s_buffer_load_dword", si_dis_inst_opcode_s_buffer_load_dword },
-		{ "v_sub_i32", si_dis_inst_opcode_v_sub_i32 },
-		{ "v_cmp_ne_i32", si_dis_inst_opcode_v_cmp_ne_i32 },
-		{ "v_cndmask_b32", si_dis_inst_opcode_v_cndmask_b32 },
-		{ "s_min_u32", si_dis_inst_opcode_s_min_u32 },
-		{ "v_sub_i32", si_dis_inst_opcode_v_sub_i32 },
-		{ "v_add_i32", si_dis_inst_opcode_v_add_i32 },
-		{ "v_mov_b32", si_dis_inst_opcode_v_mov_b32 },
-		{ "v_mul_i32_i24", si_dis_inst_opcode_v_mul_i32_i24 },
-		{ "s_load_dwordx4", si_dis_inst_opcode_s_load_dwordx4 },
-		{ "v_mul_lo_i32", si_dis_inst_opcode_v_mul_lo_i32 },
-		{ "v_cmp_ge_u32", si_dis_inst_opcode_v_cmp_ge_u32 },
-		{ "s_and_b64", si_dis_inst_opcode_s_and_b64 },
-		{ "v_lshlrev_b32", si_dis_inst_opcode_v_lshlrev_b32 },
-		{ "v_addc_u32", si_dis_inst_opcode_v_addc_u32 },
-		{ "tbuffer_store_format_x", si_dis_inst_opcode_tbuffer_store_format_x },
-		{ "s_cbranch_vccz", si_dis_inst_opcode_s_cbranch_vccz },
-		{ "s_mul_i32", si_dis_inst_opcode_s_mul_i32 },
-		{ "s_lshl_b32", si_dis_inst_opcode_s_lshl_b32 },
-		{ "v_readfirstlane_b32", si_dis_inst_opcode_v_readfirstlane_b32 },
-		{ "tbuffer_load_format_x", si_dis_inst_opcode_tbuffer_load_format_x },
-		{ "ds_write_b32", si_dis_inst_opcode_ds_write_b32 },
-		{ "s_barrier", si_dis_inst_opcode_s_barrier },
-		{ "s_cmp_eq_i32", si_dis_inst_opcode_s_cmp_eq_i32 },
-		{ "s_cbranch_scc1", si_dis_inst_opcode_s_cbranch_scc1 },
-		{ "ds_read_b32", si_dis_inst_opcode_ds_read_b32 },
-		{ "s_add_i32", si_dis_inst_opcode_s_add_i32 },
-		{ "v_mac_f32", si_dis_inst_opcode_v_mac_f32 },
-		{ "s_branch", si_dis_inst_opcode_s_branch },
-		{ "s_endpgm", si_dis_inst_opcode_s_endpgm }
-	}
-};
+/* Hash table indexed by an instruction name, returning the associated entry in
+ * 'si_inst_info' of type 'si_inst_info_t'. The name of the instruction is
+ * extracted from the first token of the format string. */
+struct hash_table_t *si_dis_inst_table;
 
 
 void si_dis_inst_init(void)
 {
+	struct si_inst_info_t *info;
+	struct list_t *tokens;
+
+	char *name;
+	int i;
+
+	/* Initialize hash table with instruction names. */
+	si_dis_inst_table = hash_table_create(SI_INST_COUNT, 1);
+	for (i = 0; i < SI_INST_COUNT; i++)
+	{
+		/* Get instruction info */
+		info = &si_inst_info[i];
+		if (!info->name || !info->fmt_str)
+			continue;
+
+		/* Split format string in tokens */
+		tokens = str_token_list_create(info->fmt_str, " ");
+		if (!list_count(tokens))
+			continue;
+
+		/* Insert */
+		name = list_get(tokens, 0);
+		hash_table_insert(si_dis_inst_table, name, info);
+		str_token_list_free(tokens);
+	}
 }
 
 
 void si_dis_inst_done(void)
 {
+	hash_table_free(si_dis_inst_table);
 }
 
 
 struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
 {
 	struct si_dis_inst_t *inst;
+	struct si_inst_info_t *info;
+	struct list_t *tokens;
 	
 	/* Allocate */
 	inst = xcalloc(1, sizeof(struct si_dis_inst_t));
 	
 	/* Initialize */
-	inst->arg_list = arg_list;
 	if (!arg_list)
-		inst->arg_list = list_create();
+		arg_list = list_create();
+	inst->arg_list = arg_list;
 	
-	/* Look up our instruction string
-	 * int the string map and find the
-	 * the corresponding enumeration. Then,
-	 * set si_dis_inst_t's opcode value to the
-	 * correct enumeration.				   */
-	inst->opcode = str_map_string(&si_dis_inst_opcode_map, name);
+	/* Look up instruction name */
+	info = hash_table_get(si_dis_inst_table, name);
+	if (!info)
+		yyerror_fmt("invalid instruction: %s", name);
+
+	/* Initialize opcode */
+	inst->info = info;
+	inst->opcode = info->opcode;
 	
+	/* Split format string in tokens, discarding instruction name */
+	tokens = str_token_list_create(info->fmt_str, ", ");
+	assert(tokens->count);
+	str_token_list_shift(tokens);
+
+	/* Check number of arguments */
+	if (arg_list->count != tokens->count)
+		yyerror_fmt("wrong number of arguments for %s", name);
+
+	/* Free token list for format string */
+	str_token_list_free(tokens);
+
 	/* Return */
 	return inst;
 }
@@ -134,8 +138,7 @@ void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 	int index;
 	
 	/* Dump instruction opcode */
-	fprintf(f, "Instruction op-code %d: %s\n", inst->opcode,
-		str_map_value(&si_dis_inst_opcode_map, inst->opcode));
+	fprintf(f, "Instruction %s\n", inst->info->name);
 
 	/* Dump arguments */
 	LIST_FOR_EACH(inst->arg_list, index)
@@ -162,6 +165,7 @@ void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 	
 int si_dis_inst_code_gen(struct si_dis_inst_t *inst, unsigned long long *inst_bytes)
 {
+#if 0
 	struct si_arg_t *arg;
 	switch (inst->opcode)
 	{
@@ -426,7 +430,8 @@ int si_dis_inst_code_gen(struct si_dis_inst_t *inst, unsigned long long *inst_by
 		break;
 		
 	};
-	
+#endif
+	return 0;
 	
 }
 

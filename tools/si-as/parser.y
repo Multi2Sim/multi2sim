@@ -30,6 +30,7 @@
 #include "dis-inst.h"
 #include "id.h"
 #include "label.h"
+#include "main.h"
 #include "stream.h"
 #include "string.h"
 #include "task.h"
@@ -42,7 +43,6 @@ extern char* yytext;
 extern int yylex(void);
 void yyerror(const char *s);
 
-int line_num = 1;
 struct si_stream_t *stream;
 
 %}
@@ -102,8 +102,6 @@ rl_line
 		inst = $1;
 
 		/* Print instruction */
-		line_num++;
-		printf("---------- Line %d ----------\n", line_num);
 		si_dis_inst_dump(inst, stdout);
 		//si_stream_add_inst(stream, $1);
 		
@@ -113,9 +111,6 @@ rl_line
 
 	| rl_label TOK_NEW_LINE
 	{
-		//$1->offset = si_stream_get_offset(stream);
-		line_num++;
-		printf("---------- Line %d ----------\n", line_num);
 	} 
 ;
 
@@ -460,12 +455,3 @@ rl_waitcnt_elem
 #define SET_BITS_64(X, HI, LO, V) \
 	(CLEAR_BITS_64((X), (HI), (LO)) | \
 	(TRUNCATE_BITS_64((V), (HI) - (LO) + 1) << (LO)))
-	
-void yyerror(const char *s)
-{
-
-	printf("ERROR Message: %s\n", s);
-	printf("Text input: %s\n", yytext);
-	exit(-1);    
-}
-

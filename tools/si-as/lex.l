@@ -101,7 +101,8 @@ TOK_TAG label_[0-9]+
 	return TOK_AMP;
 }
 
-"\n" { 
+"\n" {
+	yyset_lineno(yyget_lineno() + 1); 
 	return TOK_NEW_LINE;
 }
 
