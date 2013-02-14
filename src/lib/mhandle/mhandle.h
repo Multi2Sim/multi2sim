@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_OPENCL_MHANDLE_H
-#define RUNTIME_OPENCL_MHANDLE_H
+#ifndef LIB_MHANDLE_MHANDLE_H
+#define LIB_MHANDLE_MHANDLE_H
 
 #include <stdlib.h>
 #include <string.h>
