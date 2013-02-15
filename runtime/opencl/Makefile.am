@@ -24,6 +24,15 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	event.c \
 	event.h \
 	\
+	evg-device.c \
+	evg-device.h \
+	\
+	evg-kernel.c \
+	evg-kernel.h \
+	\
+	evg-program.c \
+	evg-program.h \
+	\
 	list.c \
 	list.h \
 	\
@@ -47,6 +56,15 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	\
 	sampler.c \
 	sampler.h \
+	\
+	si-device.c \
+	si-device.h \
+	\
+	si-kernel.c \
+	si-kernel.h \
+	\
+	si-program.c \
+	si-program.h \
 	\
 	platform.c \
 	platform.h \
