@@ -433,6 +433,9 @@ void si_inst_SSRC_dump(struct si_inst_t *inst, unsigned int ssrc, char *operand_
 void si_inst_64_SSRC_dump(struct si_inst_t *inst, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
 void si_inst_VOP3_SRC_dump(struct si_inst_t *inst, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size);
 void si_inst_VOP3_64_SRC_dump(struct si_inst_t *inst, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size);
+void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str, char **inst_str, int str_size);
+void si_inst_MADDR_dump(struct si_inst_t *inst, char *operand_str, char **inst_str, int str_size);
+void si_inst_DUG_dump(struct si_inst_t *inst, char *operand_str, char **inst_str, int str_size);
 
 void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
