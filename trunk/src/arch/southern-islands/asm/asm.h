@@ -431,6 +431,8 @@ int si_inst_decode(void *buf, struct si_inst_t *inst, unsigned int offset);
 void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned int rel_addr, void *buf, char *line, int line_size);
 void si_inst_SSRC_dump(struct si_inst_t *inst, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
 void si_inst_64_SSRC_dump(struct si_inst_t *inst, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
+void si_inst_SDST_dump(struct si_inst_t *inst, unsigned int sdst, char *operand_str, char **inst_str, int str_size);
+void si_inst_64_SDST_dump(struct si_inst_t *inst, unsigned int sdst, char *operand_str, char **inst_str, int str_size);
 
 void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
