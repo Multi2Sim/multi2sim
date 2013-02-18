@@ -705,7 +705,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 		else if (inst.info->fmt == SI_FMT_SMRD)
 		{
-			si_inst_dump_smrd(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_VOP3a || inst.info->fmt == SI_FMT_VOP3b)
 		{
@@ -729,7 +729,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 		else if (inst.info->fmt == SI_FMT_DS)
 		{
-			si_inst_dump_ds(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_MTBUF)
 		{
@@ -1024,7 +1024,7 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigne
 
 	case SI_FMT_SMRD:
 
-		si_inst_dump_smrd(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_VOP1:
@@ -1050,7 +1050,7 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigne
 
 	case SI_FMT_DS:
 
-		si_inst_dump_ds(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_MTBUF:
@@ -1246,6 +1246,145 @@ void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned i
 		else if (is_token(fmt_str, "SVDST", &token_len))
 		{
 			operand_dump_scalar(operand_str, inst->micro_inst.vop1.vdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if(is_token(fmt_str, "SMRD_SDST", &token_len))
+		{
+			operand_dump_scalar(operand_str, inst->micro_inst.smrd.sdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if(is_token(fmt_str, "SERIES_SDST", &token_len))
+		{
+			
+			/* The sbase field is missing the LSB, so multiply by 2 */
+			int sdst = inst->micro_inst.smrd.sdst;
+			int sdst_end;
+			int op = inst->micro_inst.smrd.op;
+
+			/* S_LOAD_DWORD */
+			if (IN_RANGE(op, 0, 4))
+			{
+				if (op != 0)
+				{
+					/* Multi-dword */
+					switch (op)
+					{
+						case 1:
+							sdst_end = sdst + 1;
+							break;
+						case 2:
+							sdst_end = sdst + 3;
+							break;
+						case 3:
+							sdst_end = sdst + 7;
+							break;
+						case 4:
+							sdst_end = sdst + 15;
+							break;
+						default:
+							assert("Invalid smrd opcode");
+					}
+				}
+			}
+			/* S_BUFFER_LOAD_DWORD */
+			else if (IN_RANGE(op, 8, 12))
+			{	
+				if (op != 8)
+				{
+					/* Multi-dword */
+					switch (op)
+					{
+						case 9:
+							sdst_end = sdst + 1;
+							break;
+						case 10:
+							sdst_end = sdst + 3;
+							break;
+						case 11:
+							sdst_end = sdst + 7;
+							break;
+						case 12:
+							sdst_end = sdst + 15;
+							break;
+						default:
+							assert("Invalid smrd opcode");
+					}
+				}
+			}
+			/* S_MEMTIME */
+			else if (op == 30)
+			{
+
+			}
+			/* S_DCACHE_INV */
+			else if (op == 31)
+			{
+
+			}
+
+			operand_dump_series_scalar(operand_str, sdst, sdst_end);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+
+		}
+		else if (is_token(fmt_str, "SERIES_SBASE", &token_len))
+		{
+			
+			/* The sbase field is missing the LSB, so multiply by 2 */
+			int sbase = inst->micro_inst.smrd.sbase * 2;
+			int sbase_end;
+			int op = inst->micro_inst.smrd.op;
+
+			/* S_LOAD_DWORD */
+			if (IN_RANGE(op, 0, 4))
+			{
+				/* SBASE specifies two consecutive SGPRs */
+				sbase_end = sbase + 1;
+			}
+			/* S_BUFFER_LOAD_DWORD */
+			else if (IN_RANGE(op, 8, 12))
+			{
+				/* SBASE specifies four consecutive SGPRs */
+				sbase_end = sbase + 3;
+			}
+			/* S_MEMTIME */
+			else if (op == 30)
+			{
+
+			}
+			/* S_DCACHE_INV */
+			else if (op == 31)
+			{
+
+			}
+
+			operand_dump_series_scalar(operand_str, sbase, sbase_end);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "OFFSET", &token_len))
+		{
+			if (inst->micro_inst.smrd.imm)
+			{
+				str_printf(&inst_str, &str_size, "0x%02x", inst->micro_inst.smrd.offset);
+			}
+			else
+			{
+				operand_dump_scalar(operand_str, inst->micro_inst.smrd.offset);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
+		else if (is_token(fmt_str, "DS_VDST", &token_len))
+		{
+			operand_dump_vector(operand_str, inst->micro_inst.ds.vdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "ADDR", &token_len))
+		{
+			operand_dump_vector(operand_str, inst->micro_inst.ds.addr);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "DATA0", &token_len))
+		{
+			operand_dump_vector(operand_str, inst->micro_inst.ds.data0);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else
