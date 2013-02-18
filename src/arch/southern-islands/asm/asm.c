@@ -713,15 +713,15 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 		else if (inst.info->fmt == SI_FMT_VOPC)
 		{
-			si_inst_dump_vopc(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_VOP1)
 		{
-			si_inst_dump_vop1(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_VOP2)
 		{
-			si_inst_dump_vop2(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_VINTRP)
 		{
@@ -1029,12 +1029,12 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigne
 
 	case SI_FMT_VOP1:
 
-		si_inst_dump_vop1(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_VOP2:
 
-		si_inst_dump_vop2(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_VOP3a:
@@ -1045,7 +1045,7 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigne
 
 	case SI_FMT_VOPC:
 
-		si_inst_dump_vopc(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_DS:
@@ -1098,19 +1098,6 @@ void si_inst_64_SSRC_dump(struct si_inst_t *inst, unsigned int ssrc, char *opera
 		operand_dump_series_scalar(operand_str, ssrc, ssrc + 1);
 		str_printf(inst_str, &str_size, "%s", operand_str);
 	}
-}
-
-
-void si_inst_SDST_dump(struct si_inst_t *inst, unsigned int sdst, char *operand_str, char **inst_str, int str_size)
-{
-	operand_dump_scalar(operand_str, sdst);
-	str_printf(inst_str, &str_size, "%s", operand_str);
-}
-
-void si_inst_64_SDST_dump(struct si_inst_t *inst, unsigned int sdst, char *operand_str, char **inst_str, int str_size)
-{
-	operand_dump_series_scalar(operand_str, sdst, sdst + 1);
-	str_printf(inst_str, &str_size, "%s", operand_str);
 }
 
 void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned int rel_addr, void *buf, char *line, int line_size)
@@ -1202,16 +1189,64 @@ void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned i
 			si_inst_64_SSRC_dump(inst, inst->micro_inst.sop2.ssrc1, operand_str, &inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "SDST", &token_len))
-		{
-			si_inst_SDST_dump(inst, inst->micro_inst.sop2.sdst, operand_str, &inst_str, str_size);
+		{	
+			operand_dump_scalar(operand_str, inst->micro_inst.sop2.sdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "64_SDST", &token_len))
 		{
-			si_inst_64_SDST_dump(inst, inst->micro_inst.sop2.sdst, operand_str, &inst_str, str_size);
+			operand_dump_series_scalar(operand_str, inst->micro_inst.sop2.sdst, inst->micro_inst.sop2.sdst + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SIMM16", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "0x%04x", inst->micro_inst.sopk.simm16);
+		}
+		else if (is_token(fmt_str, "SRC0", &token_len))
+		{
+			if (inst->micro_inst.vopc.src0 == 0xFF)
+			{
+				str_printf(&inst_str, &str_size, "0x%08x", inst->micro_inst.vopc.lit_cnst);
+			}
+			else
+			{
+				operand_dump(operand_str, inst->micro_inst.vopc.src0);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
+		else if (is_token(fmt_str, "64_SRC0", &token_len))
+		{
+			assert(inst->micro_inst.vopc.src0 != 0xFF);
+
+			operand_dump_series(operand_str, inst->micro_inst.vopc.src0, inst->micro_inst.vopc.src0 + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VSRC1", &token_len))
+		{
+			operand_dump_vector(operand_str, inst->micro_inst.vopc.vsrc1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "64_VSRC1", &token_len))
+		{
+			assert(inst->micro_inst.vopc.vsrc1 != 0xFF);
+
+			operand_dump_series_vector(operand_str, inst->micro_inst.vopc.vsrc1, inst->micro_inst.vopc.vsrc1 + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VDST", &token_len))
+		{
+			operand_dump_vector(operand_str, inst->micro_inst.vop1.vdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "64_VDST", &token_len))
+		{
+			operand_dump_series_vector(operand_str, inst->micro_inst.vop1.vdst, inst->micro_inst.vop1.vdst + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "SVDST", &token_len))
+		{
+			operand_dump_scalar(operand_str, inst->micro_inst.vop1.vdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else
 		{
