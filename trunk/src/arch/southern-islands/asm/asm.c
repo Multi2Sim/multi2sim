@@ -725,7 +725,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 		else if (inst.info->fmt == SI_FMT_VINTRP)
 		{
-			si_inst_dump_vintrp(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_DS)
 		{
@@ -745,7 +745,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 		else if (inst.info->fmt == SI_FMT_EXP)
 		{
-			si_inst_dump_exp(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else
 		{
@@ -1064,7 +1064,7 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigne
 		break;
 
 	case SI_FMT_EXP:
-		si_inst_dump_exp(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	default:
@@ -1386,6 +1386,78 @@ void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned i
 		{
 			operand_dump_vector(operand_str, inst->micro_inst.ds.data0);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VINTRP_VDST", &token_len))
+		{
+			operand_dump_vector(operand_str, inst->micro_inst.vintrp.vdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VSRC_I_J", &token_len))
+		{
+			operand_dump_vector(operand_str, inst->micro_inst.vintrp.vsrc);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "ATTR", &token_len))
+		{
+			str_printf(&inst_str, &str_size, "attr_%d", inst->micro_inst.vintrp.attr);
+		}
+		else if (is_token(fmt_str, "ATTRCHAN", &token_len))
+		{
+			switch (inst->micro_inst.vintrp.attrchan)
+			{
+				case 0:
+					str_printf(&inst_str, &str_size, "x");
+					break;
+				case 1:
+					str_printf(&inst_str, &str_size, "y");
+					break;
+				case 2:
+					str_printf(&inst_str, &str_size, "z");
+					break;
+				case 3:
+					str_printf(&inst_str, &str_size, "w");
+					break;
+				default:
+					break;
+			}
+		}
+		else if (is_token(fmt_str, "TGT", &token_len))
+		{
+			operand_dump_exp(operand_str, inst->micro_inst.exp.tgt);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "EXP_VSRC0", &token_len))
+		{
+			if (inst->micro_inst.exp.compr == 0 && (inst->micro_inst.exp.en && 0x0) == 0x0)
+			{
+				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc0);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+			/* FIXME: when exp->compr == 1, export float16 format */
+		}
+		else if (is_token(fmt_str, "EXP_VSRC1", &token_len))
+		{
+			if (inst->micro_inst.exp.compr == 0 && (inst->micro_inst.exp.en && 0x2) == 0x2)
+			{
+				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc1);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
+		else if (is_token(fmt_str, "EXP_VSRC2", &token_len))
+		{
+			if (inst->micro_inst.exp.compr == 0 && (inst->micro_inst.exp.en && 0x4) == 0x4)
+			{
+				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc2);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
+		else if (is_token(fmt_str, "EXP_VSRC3", &token_len))
+		{
+			if (inst->micro_inst.exp.compr == 0 && (inst->micro_inst.exp.en && 0x8) == 0x8)
+			{
+				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc3);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
 		}
 		else
 		{
