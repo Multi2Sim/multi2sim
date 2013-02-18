@@ -427,6 +427,11 @@ int si_inst_decode(void *buf, struct si_inst_t *inst, unsigned int offset);
 
 /* Functions to dump individual instruction lines for decoded instructions. */
 #define MAX_INST_STR_SIZE 200
+
+void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned int rel_addr, void *buf, char *line, int line_size);
+void si_inst_SSRC_dump(struct si_inst_t *inst, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
+void si_inst_64_SSRC_dump(struct si_inst_t *inst, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
+
 void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
