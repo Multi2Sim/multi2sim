@@ -367,7 +367,7 @@ DEFINST(S_LOAD_DWORDX8,
 )
 
 DEFINST(S_BUFFER_LOAD_DWORD,
-    " s_buffer_load_dword  %SDST, %SERIES_SBASE, %OFFSET",
+    " s_buffer_load_dword  %SMRD_SDST, %SERIES_SBASE, %OFFSET",
     SMRD, 
 	8,
 	4,
@@ -1448,7 +1448,7 @@ DEFINST(DS_WRITE_B16,
 )
 
 DEFINST(DS_READ_B32,
-	" ds_read_b32   %VDST, %ADDR",
+	" ds_read_b32   %DS_VDST, %ADDR",
 	DS,
 	54,
 	8,
@@ -1456,7 +1456,7 @@ DEFINST(DS_READ_B32,
 )
 
 DEFINST(DS_READ_I8,
-	" ds_read_i8    %VDST, %ADDR",
+	" ds_read_i8    %DS_VDST, %ADDR",
 	DS,
 	57,
 	8,
@@ -1464,7 +1464,7 @@ DEFINST(DS_READ_I8,
 )
 
 DEFINST(DS_READ_U8,
-	" ds_read_u8    %VDST, %ADDR",
+	" ds_read_u8    %DS_VDST, %ADDR",
 	DS,
 	58,
 	8,
@@ -1472,7 +1472,7 @@ DEFINST(DS_READ_U8,
 )
 
 DEFINST(DS_READ_I16,
-	" ds_read_i16   %VDST, %ADDR",
+	" ds_read_i16   %DS_VDST, %ADDR",
 	DS,
 	59,
 	8,
@@ -1480,7 +1480,7 @@ DEFINST(DS_READ_I16,
 )
 
 DEFINST(DS_READ_U16,
-	" ds_read_u16   %VDST, %ADDR",
+	" ds_read_u16   %DS_VDST, %ADDR",
 	DS,
 	60,
 	8,
