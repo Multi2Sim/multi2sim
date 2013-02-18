@@ -733,15 +733,15 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 		else if (inst.info->fmt == SI_FMT_MTBUF)
 		{
-			si_inst_dump_mtbuf(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_MUBUF)
 		{
-			si_inst_dump_mubuf(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_MIMG)
 		{
-			si_inst_dump_mimg(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_EXP)
 		{
@@ -1055,12 +1055,12 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigne
 
 	case SI_FMT_MTBUF:
 
-		si_inst_dump_mtbuf(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_MUBUF:
 
-		si_inst_dump_mubuf(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_EXP:
@@ -1170,6 +1170,73 @@ void si_inst_VOP3_64_SRC_dump(struct si_inst_t *inst, unsigned int src, int neg,
 			str_printf(inst_str, &str_size, "%s", operand_str);
 		}
 	}
+}
+void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str, char **inst_str, int str_size)
+{
+	int vdata_end;
+
+	switch (op)
+	{
+		case 0:
+		case 4:
+		case 9:
+		case 50:
+			vdata_end = vdata + 0;
+			break;
+		case 1:
+		case 5:
+			vdata_end = vdata + 1;
+			break;
+		case 2:
+		case 6:
+			vdata_end = vdata + 2;
+			break;
+		case 3:
+		case 7:
+			vdata_end = vdata + 3;
+			break;
+		default:
+			fatal("MUBUF/MTBUF opcode not recognized");
+	}
+
+	operand_dump_series_vector(operand_str, vdata, vdata_end);
+	str_printf(inst_str, &str_size, "%s", operand_str);
+}
+
+void si_inst_MADDR_dump(struct si_inst_t *inst, char *operand_str, char **inst_str, int str_size)
+{
+	/* soffset */
+	assert(inst->micro_inst.mtbuf.soffset <= 103 ||
+		inst->micro_inst.mtbuf.soffset == 124 ||
+		(inst->micro_inst.mtbuf.soffset >= 128 && inst->micro_inst.mtbuf.soffset <= 208));
+	operand_dump_scalar(operand_str, inst->micro_inst.mtbuf.soffset);
+	str_printf(inst_str, &str_size, "%s", operand_str);
+
+	/* offen */
+	if (inst->micro_inst.mtbuf.offen)
+		str_printf(inst_str, &str_size, " offen");
+
+	/* index */
+	if (inst->micro_inst.mtbuf.index)
+		str_printf(inst_str, &str_size, " idxen");
+
+	/* offset */
+	if (inst->micro_inst.mtbuf.offset)
+		str_printf(inst_str, &str_size, " offset:%d", inst->micro_inst.mtbuf.offset);
+}
+
+void si_inst_DUG_dump(struct si_inst_t *inst, char *operand_str, char **inst_str, int str_size)
+{
+	/* DMASK */
+	str_printf(inst_str, &str_size, " dmask:0x%01x", inst->micro_inst.mimg.dmask);
+	
+	/* UNORM */
+	if (inst->micro_inst.mimg.unorm)
+		str_printf(inst_str, &str_size, " unorm");
+	
+	/* GLC */
+	if (inst->micro_inst.mimg.glc)
+		str_printf(inst_str, &str_size, " glc");
 }
 
 void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned int rel_addr, void *buf, char *line, int line_size)
@@ -1545,6 +1612,86 @@ void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned i
 				default:
 					break;
 			}
+		}
+		else if (is_token(fmt_str, "MU_SERIES_VDATA", &token_len))
+		{
+			si_inst_SERIES_VDATA_dump(inst->micro_inst.mubuf.vdata, inst->micro_inst.mubuf.op, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "VADDR", &token_len))
+		{
+			if (inst->micro_inst.mtbuf.offen && inst->micro_inst.mtbuf.index)
+			{
+				operand_dump_series_vector(operand_str, inst->micro_inst.mtbuf.vaddr, inst->micro_inst.mtbuf.vaddr + 1);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+			else
+			{
+				operand_dump_vector(operand_str, inst->micro_inst.mtbuf.vaddr);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
+		else if (is_token(fmt_str, "MU_MADDR", &token_len))
+		{
+			si_inst_MADDR_dump(inst, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "MT_SERIES_VDATA", &token_len))
+		{
+			si_inst_SERIES_VDATA_dump(inst->micro_inst.mtbuf.vdata, inst->micro_inst.mtbuf.op, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "SERIES_SRSRC", &token_len))
+		{
+			assert((inst->micro_inst.mtbuf.srsrc << 2) % 4 == 0);
+			operand_dump_series_scalar(operand_str, inst->micro_inst.mtbuf.srsrc << 2, (inst->micro_inst.mtbuf.srsrc << 2) + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "MT_MADDR", &token_len))
+		{
+			si_inst_MADDR_dump(inst, operand_str, &inst_str, str_size);
+		
+			/* Format */
+			str_printf(&inst_str, &str_size, " format:[%s,%s]",
+					str_map_value(&dfmt_map, inst->micro_inst.mtbuf.dfmt),
+					str_map_value(&nfmt_map, inst->micro_inst.mtbuf.nfmt));
+		}
+		else if (is_token(fmt_str, "MIMG_SERIES_VDATA", &token_len))
+		{
+			operand_dump_series_vector(operand_str, inst->micro_inst.mimg.vdata, inst->micro_inst.mimg.vdata + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "MIMG_VADDR", &token_len))
+		{
+			operand_dump_series_vector(operand_str, inst->micro_inst.mimg.vaddr, inst->micro_inst.mimg.vaddr + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "MIMG_SERIES_SRSRC", &token_len))
+		{
+			assert((inst->micro_inst.mimg.srsrc << 2) % 4 == 0);
+			operand_dump_series_scalar(operand_str, inst->micro_inst.mimg.srsrc << 2, (inst->micro_inst.mimg.srsrc << 2) + 7);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "MIMG_DUG_SERIES_SRSRC", &token_len))
+		{
+			assert((inst->micro_inst.mimg.srsrc << 2) % 4 == 0);
+			operand_dump_series_scalar(operand_str, inst->micro_inst.mimg.srsrc << 2, (inst->micro_inst.mimg.srsrc << 2) + 7);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+
+			/* Call si_inst_DUG_dump to print dmask, unorm, and glc */
+			si_inst_DUG_dump(inst, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "MIMG_SERIES_SSAMP", &token_len))
+		{
+			assert((inst->micro_inst.mimg.ssamp << 2) % 4 == 0);
+			operand_dump_series_scalar(operand_str, inst->micro_inst.mimg.ssamp << 2, (inst->micro_inst.mimg.ssamp << 2) + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "MIMG_DUG_SERIES_SSAMP", &token_len))
+		{
+			assert((inst->micro_inst.mimg.ssamp << 2) % 4 == 0);
+			operand_dump_series_scalar(operand_str, inst->micro_inst.mimg.ssamp << 2, (inst->micro_inst.mimg.ssamp << 2) + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+			
+			/* Call si_inst_DUG_dump to print dmask, unorm, and glc */
+			si_inst_DUG_dump(inst, operand_str, &inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "TGT", &token_len))
 		{
