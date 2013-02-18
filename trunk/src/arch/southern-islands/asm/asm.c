@@ -709,7 +709,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 		else if (inst.info->fmt == SI_FMT_VOP3a || inst.info->fmt == SI_FMT_VOP3b)
 		{
-			si_inst_dump_vop3(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_VOPC)
 		{
@@ -1040,7 +1040,7 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigne
 	case SI_FMT_VOP3a:
 	case SI_FMT_VOP3b:
 
-		si_inst_dump_vop3(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_VOPC:
@@ -1097,6 +1097,78 @@ void si_inst_64_SSRC_dump(struct si_inst_t *inst, unsigned int ssrc, char *opera
 	{
 		operand_dump_series_scalar(operand_str, ssrc, ssrc + 1);
 		str_printf(inst_str, &str_size, "%s", operand_str);
+	}
+}
+
+void si_inst_VOP3_SRC_dump(struct si_inst_t *inst, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size)
+{
+	operand_dump(operand_str, src);
+
+	if (!(IN_RANGE(inst->micro_inst.vop3a.op, 293, 298)) && !(IN_RANGE(inst->micro_inst.vop3a.op, 365, 366)))
+	{
+		if ((inst->micro_inst.vop3a.neg & neg) && (inst->micro_inst.vop3a.abs & neg))
+		{
+			str_printf(inst_str, &str_size, "-abs(%s)", operand_str);
+		}
+		else if ((inst->micro_inst.vop3a.neg & neg) && !(inst->micro_inst.vop3a.abs & neg))
+		{
+			str_printf(inst_str, &str_size, "-%s", operand_str);
+		}
+		else if (!(inst->micro_inst.vop3a.neg & neg) && (inst->micro_inst.vop3a.abs & neg))
+		{
+			str_printf(inst_str, &str_size, "abs(%s)", operand_str);
+		}
+		else if (!(inst->micro_inst.vop3a.neg & neg) && !(inst->micro_inst.vop3a.abs & neg))
+		{
+			str_printf(inst_str, &str_size, "%s", operand_str);
+		}
+	}
+	else
+	{
+		if (inst->micro_inst.vop3a.neg & neg)
+		{
+			str_printf(inst_str, &str_size, "-%s", operand_str);
+		}
+		else if (!(inst->micro_inst.vop3a.neg & neg))
+		{
+			str_printf(inst_str, &str_size, "%s", operand_str);
+		}
+	}
+}
+
+void si_inst_VOP3_64_SRC_dump(struct si_inst_t *inst, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size)
+{
+	operand_dump_series(operand_str, src, src + 1);
+	
+	if (!(IN_RANGE(inst->micro_inst.vop3a.op, 293, 298)) && !(IN_RANGE(inst->micro_inst.vop3a.op, 365, 366)))
+	{
+		if ((inst->micro_inst.vop3a.neg & neg) && (inst->micro_inst.vop3a.abs & neg))
+		{
+			str_printf(inst_str, &str_size, "-abs(%s)", operand_str);
+		}
+		else if ((inst->micro_inst.vop3a.neg & neg) && !(inst->micro_inst.vop3a.abs & neg))
+		{
+			str_printf(inst_str, &str_size, "-%s", operand_str);
+		}
+		else if (!(inst->micro_inst.vop3a.neg & neg) && (inst->micro_inst.vop3a.abs & neg))
+		{
+			str_printf(inst_str, &str_size, "abs(%s)", operand_str);
+		}
+		else if (!(inst->micro_inst.vop3a.neg & neg) && !(inst->micro_inst.vop3a.abs & neg))
+		{
+			str_printf(inst_str, &str_size, "%s", operand_str);
+		}
+	}
+	else
+	{
+		if (inst->micro_inst.vop3a.neg & neg)
+		{
+			str_printf(inst_str, &str_size, "-%s", operand_str);
+		}
+		else if (!(inst->micro_inst.vop3a.neg & neg))
+		{
+			str_printf(inst_str, &str_size, "%s", operand_str);
+		}
 	}
 }
 
@@ -1248,12 +1320,65 @@ void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned i
 			operand_dump_scalar(operand_str, inst->micro_inst.vop1.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if(is_token(fmt_str, "SMRD_SDST", &token_len))
+		else if (is_token(fmt_str, "VOP3_64_SVDST", &token_len))
+		{
+			/* VOP3a compare operations use the VDST field to indicate the address of the scalar destination.*/
+			operand_dump_series_scalar(operand_str, inst->micro_inst.vop3a.vdst, inst->micro_inst.vop3a.vdst + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VOP3_VDST", &token_len))
+		{
+			operand_dump_vector(operand_str, inst->micro_inst.vop3a.vdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VOP3_64_VDST", &token_len))
+		{
+			operand_dump_series_vector(operand_str, inst->micro_inst.vop3a.vdst, inst->micro_inst.vop3a.vdst + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VOP3_64_SDST", &token_len))
+		{
+			operand_dump_series_scalar(operand_str, inst->micro_inst.vop3b.sdst, inst->micro_inst.vop3b.sdst + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VOP3_SRC0", &token_len))
+		{
+			si_inst_VOP3_SRC_dump(inst, inst->micro_inst.vop3a.src0, 1, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "VOP3_64_SRC0", &token_len))
+		{
+			si_inst_VOP3_64_SRC_dump(inst, inst->micro_inst.vop3a.src0, 1, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "VOP3_SRC1", &token_len))
+		{
+			si_inst_VOP3_SRC_dump(inst, inst->micro_inst.vop3a.src1, 2, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "VOP3_64_SRC1", &token_len))
+		{
+			si_inst_VOP3_64_SRC_dump(inst, inst->micro_inst.vop3a.src1, 2, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "VOP3_SRC2", &token_len))
+		{
+			si_inst_VOP3_SRC_dump(inst, inst->micro_inst.vop3a.src2, 4, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "VOP3_64_SRC2", &token_len))
+		{
+			si_inst_VOP3_64_SRC_dump(inst, inst->micro_inst.vop3a.src2, 4, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "VOP3_OP16", &token_len))
+		{
+			str_printf(&inst_str, &str_size, "%s", str_map_value(&OP16_map, (inst->micro_inst.vop3a.op & 15)));
+		}
+		else if (is_token(fmt_str, "VOP3_OP8", &token_len))
+		{
+			str_printf(&inst_str, &str_size, "%s", str_map_value(&OP8_map, (inst->micro_inst.vop3a.op & 15)));
+		}
+		else if (is_token(fmt_str, "SMRD_SDST", &token_len))
 		{
 			operand_dump_scalar(operand_str, inst->micro_inst.smrd.sdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if(is_token(fmt_str, "SERIES_SDST", &token_len))
+		else if (is_token(fmt_str, "SERIES_SDST", &token_len))
 		{
 			
 			/* The sbase field is missing the LSB, so multiply by 2 */
