@@ -31,53 +31,159 @@
 #include "main.h"
 
 
+
+/*
+ * Global Functions
+ */
+
 /* Hash table indexed by an instruction name, returning the associated entry in
  * 'si_inst_info' of type 'si_inst_info_t'. The name of the instruction is
  * extracted from the first token of the format string. */
-struct hash_table_t *si_dis_inst_table;
+struct hash_table_t *si_dis_inst_info_table;
 
 
 void si_dis_inst_init(void)
 {
-	struct si_inst_info_t *info;
-	struct list_t *tokens;
+	struct si_dis_inst_info_t *info;
+	struct si_dis_inst_info_t *prev_info;
+	struct si_inst_info_t *inst_info;
 
-	char *name;
 	int i;
 
 	/* Initialize hash table with instruction names. */
-	si_dis_inst_table = hash_table_create(SI_INST_COUNT, 1);
+	si_dis_inst_info_table = hash_table_create(SI_INST_COUNT, 1);
 	for (i = 0; i < SI_INST_COUNT; i++)
 	{
-		/* Get instruction info */
-		info = &si_inst_info[i];
-		if (!info->name || !info->fmt_str)
+		/* Instruction info from disassembler */
+		inst_info = &si_inst_info[i];
+		if (!inst_info->name || !inst_info->fmt_str)
 			continue;
 
-		/* Split format string in tokens */
-		tokens = str_token_list_create(info->fmt_str, " ");
-		if (!list_count(tokens))
-			continue;
+		/* Create instruction info object */
+		info = si_dis_inst_info_create(inst_info);
 
-		/* Insert */
-		name = list_get(tokens, 0);
-		hash_table_insert(si_dis_inst_table, name, info);
-		str_token_list_free(tokens);
+		/* Insert instruction info structure into hash table. There could
+		 * be already an instruction encoding with the same name. They
+		 * all formed a linked list. */
+		prev_info = hash_table_get(si_dis_inst_info_table, info->name);
+		if (prev_info)
+		{
+			info->next = prev_info;
+			hash_table_set(si_dis_inst_info_table, info->name, info);
+		}
+		else
+		{
+			hash_table_insert(si_dis_inst_info_table, info->name, info);
+		}
 	}
 }
 
 
 void si_dis_inst_done(void)
 {
-	hash_table_free(si_dis_inst_table);
+	struct si_dis_inst_info_t *info;
+	struct si_dis_inst_info_t *next_info;
+
+	char *name;
+
+	HASH_TABLE_FOR_EACH(si_dis_inst_info_table, name, info)
+	{
+		while (info)
+		{
+			next_info = info->next;
+			si_dis_inst_info_free(info);
+			info = next_info;
+		}
+	}
+	hash_table_free(si_dis_inst_info_table);
 }
+
+
+
+
+/*
+ * Object 'si_dis_inst_info_t'
+ */
+
+struct si_dis_inst_info_t *si_dis_inst_info_create(struct si_inst_info_t *inst_info)
+{
+	struct si_dis_inst_info_t *info;
+	struct si_formal_arg_t *arg;
+	enum si_formal_arg_token_t token;
+
+	int index;
+	char *token_str;
+
+	/* Initialize */
+	info = xcalloc(1, sizeof(struct si_dis_inst_info_t));
+	info->inst_info = inst_info;
+
+	/* Create list of tokens from format string */
+	info->tokens = str_token_list_create(inst_info->fmt_str, ", ");
+	assert(info->tokens->count);
+	info->name = list_get(info->tokens, 0);
+
+	/* Create list of formal arguments */
+	info->formal_arg_list = list_create_with_size(5);
+	for (index = 1; index < info->tokens->count; index++)
+	{
+		/* Get token from format string */
+		token_str = list_get(info->tokens, index);
+		token = str_map_string_case(&si_formal_arg_token_map, token_str);
+		if (!token)
+			warning("%s: unrecognized token: %s",
+				__FUNCTION__, token_str);
+
+		/* Add formal argument */
+		arg = si_formal_arg_create(token);
+		list_add(info->formal_arg_list, arg);
+	}
+
+	/* Return */
+	return info;
+}
+
+
+void si_dis_inst_info_free(struct si_dis_inst_info_t *info)
+{
+	struct si_formal_arg_t *arg;
+	int index;
+
+	/* Tokens */
+	str_token_list_free(info->tokens);
+
+	/* Formal arguments */
+	LIST_FOR_EACH(info->formal_arg_list, index)
+	{
+		arg = list_get(info->formal_arg_list, index);
+		si_formal_arg_free(arg);
+	}
+	list_free(info->formal_arg_list);
+
+	/* Free */
+	free(info);
+}
+
+
+
+
+/*
+ * Object 'dis_inst_t'
+ */
 
 
 struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
 {
 	struct si_dis_inst_t *inst;
-	struct si_inst_info_t *info;
+	struct si_dis_inst_info_t *info;
+
 	struct list_t *tokens;
+	struct si_arg_t *arg;
+
+	char err_str[MAX_STRING_SIZE];
+	char *token;
+
+	int index;
 	
 	/* Allocate */
 	inst = xcalloc(1, sizeof(struct si_dis_inst_t));
@@ -87,26 +193,60 @@ struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
 		arg_list = list_create();
 	inst->arg_list = arg_list;
 	
-	/* Look up instruction name */
-	info = hash_table_get(si_dis_inst_table, name);
+	/* Try to create the instruction following all possible encodings for
+	 * the same instruction name. */
+	snprintf(err_str, sizeof err_str, "invalid instruction: %s", name);
+	for (info = hash_table_get(si_dis_inst_info_table, name);
+			info; info = info->next)
+	{
+		/* Check number of arguments */
+		tokens = info->tokens;
+		if (arg_list->count != tokens->count - 1)
+		{
+			snprintf(err_str, sizeof err_str,
+				"invalid number of arguments for %s", name);
+			continue;
+		}
+
+		/* Check arguments */
+		err_str[0] = '\0';
+		LIST_FOR_EACH(arg_list, index)
+		{
+			/* Get actual argument */
+			arg = list_get(arg_list, index);
+
+			/* Get formal argument from instruction info */
+			token = list_get(info->tokens, index + 1);
+			assert(token);
+
+			/* Check possible tokens */
+			if (!strcmp(token, "\%SMRD_SDST"))
+			{
+				if (arg->type != si_arg_scalar_register)
+				{
+					snprintf(err_str, sizeof err_str,
+						"invalid type for argument %d", index + 1);
+					break;
+				}
+			}
+		}
+
+		/* Error while processing arguments */
+		if (err_str[0])
+			continue;
+	
+		/* All checks passed, instruction identified correctly as that
+		 * represented by 'info'. */
+		break;
+	}
+
+	/* Error identifying instruction */
 	if (!info)
-		yyerror_fmt("invalid instruction: %s", name);
+		fatal("%s", err_str);
 
 	/* Initialize opcode */
 	inst->info = info;
-	inst->opcode = info->opcode;
-	
-	/* Split format string in tokens, discarding instruction name */
-	tokens = str_token_list_create(info->fmt_str, ", ");
-	assert(tokens->count);
-	str_token_list_shift(tokens);
-
-	/* Check number of arguments */
-	if (arg_list->count != tokens->count)
-		yyerror_fmt("wrong number of arguments for %s", name);
-
-	/* Free token list for format string */
-	str_token_list_free(tokens);
+	inst->opcode = info->inst_info->opcode;
 
 	/* Return */
 	return inst;
@@ -119,7 +259,6 @@ void si_dis_inst_free(struct si_dis_inst_t *inst)
 	struct si_arg_t *arg;
 	
 	/* Free all argument object in the argument list */
-	for (index = 0; index < inst->arg_list->count; index++)
 	LIST_FOR_EACH(inst->arg_list, index)
 	{
 		arg = list_get(inst->arg_list, index);
@@ -144,7 +283,7 @@ void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 	LIST_FOR_EACH(inst->arg_list, index)
 	{
 		arg = list_get(inst->arg_list, index);
-		fprintf(f, "\targ %d: ", index);
+		fprintf(f, "\targ %d:\n", index);
 		si_arg_dump(arg, f);
 	}
 }
@@ -434,5 +573,4 @@ int si_dis_inst_code_gen(struct si_dis_inst_t *inst, unsigned long long *inst_by
 	return 0;
 	
 }
-
 

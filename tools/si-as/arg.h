@@ -106,3 +106,50 @@ struct si_arg_t *si_arg_create(void);
 void si_arg_free(struct si_arg_t *inst_arg);
 void si_arg_dump(struct si_arg_t *inst_arg, FILE *f);
 
+
+
+/*
+ * Object 'si_formal_arg_t'
+ */
+
+enum si_formal_arg_token_t
+{
+	si_formal_arg_token_invalid = 0,
+
+	si_formal_arg_token_64_sdst,
+	si_formal_arg_token_64_ssrc0,
+	si_formal_arg_token_64_ssrc1,
+	si_formal_arg_token_64_src0,
+	si_formal_arg_token_64_src1,
+	si_formal_arg_token_64_src2,
+	si_formal_arg_token_64_svdst,
+	si_formal_arg_token_64_vdst,
+	si_formal_arg_token_label,
+	si_formal_arg_token_offset,
+	si_formal_arg_token_sdst,
+	si_formal_arg_token_series_sbase,
+	si_formal_arg_token_series_sdst,
+	si_formal_arg_token_simm16,
+	si_formal_arg_token_smrd_sdst,
+	si_formal_arg_token_src0,
+	si_formal_arg_token_src1,
+	si_formal_arg_token_src2,
+	si_formal_arg_token_ssrc0,
+	si_formal_arg_token_ssrc1,
+	si_formal_arg_token_vdst,
+	si_formal_arg_token_wait_cnt,
+
+	si_formal_arg_token_count
+};
+
+extern struct str_map_t si_formal_arg_token_map;
+
+
+struct si_formal_arg_t
+{
+	enum si_formal_arg_token_t token;
+};
+
+struct si_formal_arg_t *si_formal_arg_create(int token);
+void si_formal_arg_free(struct si_formal_arg_t *arg);
+
