@@ -21,6 +21,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/string.h>
 
 #include "arg.h"
 
@@ -50,70 +51,121 @@ void si_arg_dump(struct si_arg_t *inst_arg, FILE *f)
 	{
 	
 	case si_arg_invalid:
-		fprintf(f, "\tInvalid argument!\n");
+		fprintf(f, "\t\tinvalid\n");
 		break;
 		
 	case si_arg_scalar_register:
-		fprintf(f, "\tType: Scalar Register\n");
-		fprintf(f, "\tRegister ID: %d\n", inst_arg->value.scalar_register.id);
+		fprintf(f, "\t\tscalar register\n");
+		fprintf(f, "\t\ts%d\n", inst_arg->value.scalar_register.id);
 		break;
 		
 	case si_arg_vector_register:
-		fprintf(f, "\tType: Vector Register\n");
-		fprintf(f, "\tRegister ID: %d\n", inst_arg->value.vector_register.id);
+		fprintf(f, "\t\tvector register\n");
+		fprintf(f, "\t\tv%d\n", inst_arg->value.vector_register.id);
 		break;
 		
 	case si_arg_register_range:
-		fprintf(f, "\tType: Register Range\n");
-		fprintf(f, "\tLow: %d\n", inst_arg->value.register_range.id_low);
-		fprintf(f, "\tHigh: %d\n", inst_arg->value.register_range.id_high);
+		fprintf(f, "\t\tregister range\n");
+		fprintf(f, "\t\ts[%d:%d]\n", inst_arg->value.register_range.id_low,
+			inst_arg->value.register_range.id_high);
 		break;
 			
 	case si_arg_literal:
-		fprintf(f, "\tType: Literal\n");
-		fprintf(f, "\tValue: %d\n", inst_arg->value.literal.val);
+		fprintf(f, "\t\tliteral constant\n");
+		fprintf(f, "\t\t0x%x (%d)\n", inst_arg->value.literal.val,
+			inst_arg->value.literal.val);
 		break;
 		
 	case si_arg_waitcnt:
 	{
-		fprintf(f, "\tType: Waitcnt\n");
-		if(inst_arg->value.wait_cnt.vmcnt_active)
-			fprintf(f, "\tvmcnt: %d\n", inst_arg->value.wait_cnt.vmcnt_value);
-		if(inst_arg->value.wait_cnt.expcnt_active)
-			fprintf(f, "\texpcnt: %d\n", inst_arg->value.wait_cnt.expcnt_value);
-		if(inst_arg->value.wait_cnt.lgkmcnt_active)
-			fprintf(f, "\tlgkmcnt: %d\n", inst_arg->value.wait_cnt.lgkmcnt_value);			
+		fprintf(f, "\t\twaitcnt\n");
+		fprintf(f, "\t\tvmcnt: %d\n", inst_arg->value.wait_cnt.vmcnt_value);
+		fprintf(f, "\t\texpcnt: %d\n", inst_arg->value.wait_cnt.expcnt_value);
+		fprintf(f, "\t\tlgkmcnt: %d\n", inst_arg->value.wait_cnt.lgkmcnt_value);			
 		break;
 	}
 	case si_arg_special_register:
-		fprintf(f, "\tType: Special Register\n");
+		fprintf(f, "\t\tspecial register\n");
 		if (inst_arg->value.special_register.type == si_arg_special_register_vcc)
-			fprintf(f, "\tID: vcc\n");
+			fprintf(f, "\t\tvcc\n");
 		else if (inst_arg->value.special_register.type == si_arg_special_register_scc)
-			fprintf(f, "\tID: scc\n");
+			fprintf(f, "\t\tscc\n");
 		break;
 	
 	case si_arg_mtype_register:
-		fprintf(f, "\tType: M-Type\n");
-		fprintf(f, "\tID: %d\n", inst_arg->value.mtype_register.id);
+		fprintf(f, "\t\tm-type register\n");
+		fprintf(f, "\t\tm%d\n", inst_arg->value.mtype_register.id);
 		break;
 	
 	case si_arg_format:
-		fprintf(f, "\tType: Format\n");
-		if (inst_arg->value.format.offen)
-			fprintf(f, "\toffen: True\n");
-		else
-			fprintf(f, "\toffen: False\n");
-		fprintf(f, "\tData Format: %s\n", inst_arg->value.format.data_format);
-		fprintf(f, "\tNum Format: %s\n", inst_arg->value.format.num_format);
-		fprintf(f, "\tOffset: %d\n", inst_arg->value.format.offset);
+		fprintf(f, "\t\tformat\n");
+		fprintf(f, "\t\toffen: %c\n", inst_arg->value.format.offen ? 't' : 'f');
+		fprintf(f, "\t\tdata format: %s\n", inst_arg->value.format.data_format);
+		fprintf(f, "\t\tnum format: %s\n", inst_arg->value.format.num_format);
+		fprintf(f, "\t\toffset: %d\n", inst_arg->value.format.offset);
+		break;
+
 	case si_arg_label:
-		fprintf(f, "\tType: Label\n");
+		fprintf(f, "\tlabel\n");
 		break;
 		
 	default:
-		fprintf(f, "Invalid arg type...\n");
+		panic("%s: invalid argument type", __FUNCTION__);
 		break;
 	}
+}
+
+
+
+
+/*
+ * Object 'si_formal_arg_t'
+ */
+
+struct str_map_t si_formal_arg_token_map =
+{
+	si_formal_arg_token_count,
+	{
+		{ "<invalid>", si_formal_arg_token_invalid },
+
+		{ "\%64_sdst", si_formal_arg_token_64_sdst },
+		{ "\%64_ssrc0", si_formal_arg_token_64_ssrc0 },
+		{ "\%64_ssrc1", si_formal_arg_token_64_ssrc1 },
+		{ "\%64_src0", si_formal_arg_token_64_src0 },
+		{ "\%64_src1", si_formal_arg_token_64_src1 },
+		{ "\%64_src2", si_formal_arg_token_64_src2 },
+		{ "\%64_svdst", si_formal_arg_token_64_svdst },
+		{ "\%64_vdst", si_formal_arg_token_64_vdst },
+		{ "\%label", si_formal_arg_token_label },
+		{ "\%offset", si_formal_arg_token_offset },
+		{ "\%sdst", si_formal_arg_token_sdst },
+		{ "\%series_sbase", si_formal_arg_token_series_sbase },
+		{ "\%series_sdst", si_formal_arg_token_series_sdst },
+		{ "\%simm16", si_formal_arg_token_simm16 },
+		{ "\%smrd_sdst", si_formal_arg_token_smrd_sdst },
+		{ "\%src0", si_formal_arg_token_src0 },
+		{ "\%src1", si_formal_arg_token_src1 },
+		{ "\%src2", si_formal_arg_token_src2 },
+		{ "\%ssrc0", si_formal_arg_token_ssrc0 },
+		{ "\%ssrc1", si_formal_arg_token_ssrc1 },
+		{ "\%vdst", si_formal_arg_token_vdst },
+		{ "\%wait_cnt", si_formal_arg_token_wait_cnt }
+	}
+};
+
+
+struct si_formal_arg_t *si_formal_arg_create(int token)
+{
+	struct si_formal_arg_t *arg;
+
+	arg = xcalloc(1, sizeof(struct si_formal_arg_t));
+	arg->token = token;
+	return arg;
+}
+
+
+void si_formal_arg_free(struct si_formal_arg_t *arg)
+{
+	free(arg);
 }
 
