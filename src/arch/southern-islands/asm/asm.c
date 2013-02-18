@@ -693,15 +693,15 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 		else if (inst.info->fmt == SI_FMT_SOP1)
 		{
-			si_inst_dump_sop1(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_SOPK)
 		{
-			si_inst_dump_sopk(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_SOP2)
 		{
-			si_inst_dump_sop2(&inst, inst_size, rel_addr, inst_buf, line, line_size);
+			si_inst_dump_new(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_SMRD)
 		{
@@ -1004,7 +1004,7 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigne
 
 	case SI_FMT_SOPK:
 
-		si_inst_dump_sopk(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_SOPP:
@@ -1014,12 +1014,12 @@ void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, unsigne
 
 	case SI_FMT_SOP1:
 
-		si_inst_dump_sop1(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_SOP2:
 
-		si_inst_dump_sop2(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		si_inst_dump_new(inst, inst_size, rel_addr, inst_buf, line, line_size);
 		break;
 
 	case SI_FMT_SMRD:
@@ -1091,13 +1091,26 @@ void si_inst_64_SSRC_dump(struct si_inst_t *inst, unsigned int ssrc, char *opera
 {		
 	if (ssrc == 0xFF)
 	{
-		str_printf(inst_str, &str_size, "0x%08x", inst->micro_inst.sop1.lit_cnst);
+		str_printf(inst_str, &str_size, "0x%08x", inst->micro_inst.sop2.lit_cnst);
 	}
 	else
 	{
 		operand_dump_series_scalar(operand_str, ssrc, ssrc + 1);
 		str_printf(inst_str, &str_size, "%s", operand_str);
 	}
+}
+
+
+void si_inst_SDST_dump(struct si_inst_t *inst, unsigned int sdst, char *operand_str, char **inst_str, int str_size)
+{
+	operand_dump_scalar(operand_str, sdst);
+	str_printf(inst_str, &str_size, "%s", operand_str);
+}
+
+void si_inst_64_SDST_dump(struct si_inst_t *inst, unsigned int sdst, char *operand_str, char **inst_str, int str_size)
+{
+	operand_dump_series_scalar(operand_str, sdst, sdst + 1);
+	str_printf(inst_str, &str_size, "%s", operand_str);
 }
 
 void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned int rel_addr, void *buf, char *line, int line_size)
@@ -1174,17 +1187,32 @@ void si_inst_dump_new(struct si_inst_t *inst, unsigned int inst_size, unsigned i
 		}
 		else if (is_token(fmt_str, "SSRC0", &token_len))
 		{	
-			si_inst_SSRC_dump(inst, inst->micro_inst.sopc.ssrc0, operand_str, &inst_str, str_size);
+			si_inst_SSRC_dump(inst, inst->micro_inst.sop2.ssrc0, operand_str, &inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "64_SSRC0", &token_len))
 		{
-			si_inst_64_SSRC_dump(inst, inst->micro_inst.sop1.ssrc0, operand_str, &inst_str, str_size);
+			si_inst_64_SSRC_dump(inst, inst->micro_inst.sop2.ssrc0, operand_str, &inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "SSRC1", &token_len))
 		{
-			si_inst_SSRC_dump(inst, inst->micro_inst.sopc.ssrc1, operand_str, &inst_str, str_size);
+			si_inst_SSRC_dump(inst, inst->micro_inst.sop2.ssrc1, operand_str, &inst_str, str_size);
 		}
-		
+		else if (is_token(fmt_str, "64_SSRC1", &token_len))
+		{
+			si_inst_64_SSRC_dump(inst, inst->micro_inst.sop2.ssrc1, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "SDST", &token_len))
+		{
+			si_inst_SDST_dump(inst, inst->micro_inst.sop2.sdst, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "64_SDST", &token_len))
+		{
+			si_inst_64_SDST_dump(inst, inst->micro_inst.sop2.sdst, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "SIMM16", &token_len))
+		{
+			str_printf(&inst_str, &str_size, "0x%04x", inst->micro_inst.sopk.simm16);
+		}
 		else
 		{
 			fatal("%s: token not recognized.", fmt_str);
