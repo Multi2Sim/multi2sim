@@ -11,14 +11,17 @@ BUILT_SOURCES = parser.h
 
 __top_builddir__bin_m2s_si_as_SOURCES = \
 	\
+	arg.c \
+	arg.h \
+	\
 	dis-inst.c \
 	dis-inst.h \
 	\
+	dis-inst-info.c \
+	dis-inst-info.h \
+	\
 	id.c \
 	id.h \
-	\
-	arg.c \
-	arg.h \
 	\
 	label.c \
 	label.h \
@@ -32,6 +35,8 @@ __top_builddir__bin_m2s_si_as_SOURCES = \
 	task.c \
 	task.h \
 	\
+	token.c \
+	token.h \
 	\
 	lex.l \
 	parser.y

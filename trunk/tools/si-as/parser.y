@@ -43,6 +43,9 @@ extern char* yytext;
 extern int yylex(void);
 void yyerror(const char *s);
 
+int yyget_lineno(void);
+void yyset_lineno(int line_number);
+
 struct si_stream_t *stream;
 
 %}
@@ -92,6 +95,7 @@ rl_input
 rl_line
 	: TOK_NEW_LINE
 	{
+		yyset_lineno(yyget_lineno() + 1); 
 	}
 
 	| rl_instr TOK_NEW_LINE
@@ -107,10 +111,15 @@ rl_line
 		
 		/* Free instruction */
 		si_dis_inst_free(inst);
+		
+		/* Next line */
+		yyset_lineno(yyget_lineno() + 1); 
 	}
 
 	| rl_label TOK_NEW_LINE
 	{
+		/* Next line */
+		yyset_lineno(yyget_lineno() + 1); 
 	} 
 ;
 
@@ -220,7 +229,7 @@ rl_arg
 		}
 		else
 		{
-			fatal("invalid register '%s'", id->name);
+			yyerror_fmt("invalid register: %s", id->name);
 		}
 	
 		/* Return */
@@ -259,21 +268,34 @@ rl_arg
 		struct si_arg_t *arg;
 		struct si_id_t *id;
 
-		int id_low;
-		int id_high;
+		int low;
+		int high;
 
 		/* Read arguments */
 		id = $1;
-		id_low = $3;
-		id_high = $5;
+		low = $3;
+		high = $5;
 		
 		/* Create argument */
 		arg = si_arg_create(); 
 		
 		/* Initialize */
-		arg->type = si_arg_register_range;
-		arg->value.register_range.id_low = id_low;
-		arg->value.register_range.id_high = id_high;
+		if (!strcmp(id->name, "s"))
+		{
+			arg->type = si_arg_scalar_register_series;
+			arg->value.scalar_register_series.low = low;
+			arg->value.scalar_register_series.high = high;
+		}
+		else if (!strcmp(id->name, "v"))
+		{
+			arg->type = si_arg_vector_register_series;
+			arg->value.vector_register_series.low = low;
+			arg->value.vector_register_series.high = high;
+		}
+		else
+		{
+			yyerror_fmt("invalid register series: %s", id->name);
+		}
 		
 		/* Return created argument */
 		si_id_free(id);

@@ -28,148 +28,9 @@
 
 #include "arg.h"
 #include "dis-inst.h"
+#include "dis-inst-info.h"
 #include "main.h"
-
-
-
-/*
- * Global Functions
- */
-
-/* Hash table indexed by an instruction name, returning the associated entry in
- * 'si_inst_info' of type 'si_inst_info_t'. The name of the instruction is
- * extracted from the first token of the format string. */
-struct hash_table_t *si_dis_inst_info_table;
-
-
-void si_dis_inst_init(void)
-{
-	struct si_dis_inst_info_t *info;
-	struct si_dis_inst_info_t *prev_info;
-	struct si_inst_info_t *inst_info;
-
-	int i;
-
-	/* Initialize hash table with instruction names. */
-	si_dis_inst_info_table = hash_table_create(SI_INST_COUNT, 1);
-	for (i = 0; i < SI_INST_COUNT; i++)
-	{
-		/* Instruction info from disassembler */
-		inst_info = &si_inst_info[i];
-		if (!inst_info->name || !inst_info->fmt_str)
-			continue;
-
-		/* Create instruction info object */
-		info = si_dis_inst_info_create(inst_info);
-
-		/* Insert instruction info structure into hash table. There could
-		 * be already an instruction encoding with the same name. They
-		 * all formed a linked list. */
-		prev_info = hash_table_get(si_dis_inst_info_table, info->name);
-		if (prev_info)
-		{
-			info->next = prev_info;
-			hash_table_set(si_dis_inst_info_table, info->name, info);
-		}
-		else
-		{
-			hash_table_insert(si_dis_inst_info_table, info->name, info);
-		}
-	}
-}
-
-
-void si_dis_inst_done(void)
-{
-	struct si_dis_inst_info_t *info;
-	struct si_dis_inst_info_t *next_info;
-
-	char *name;
-
-	HASH_TABLE_FOR_EACH(si_dis_inst_info_table, name, info)
-	{
-		while (info)
-		{
-			next_info = info->next;
-			si_dis_inst_info_free(info);
-			info = next_info;
-		}
-	}
-	hash_table_free(si_dis_inst_info_table);
-}
-
-
-
-
-/*
- * Object 'si_dis_inst_info_t'
- */
-
-struct si_dis_inst_info_t *si_dis_inst_info_create(struct si_inst_info_t *inst_info)
-{
-	struct si_dis_inst_info_t *info;
-	struct si_formal_arg_t *arg;
-	enum si_formal_arg_token_t token;
-
-	int index;
-	char *token_str;
-
-	/* Initialize */
-	info = xcalloc(1, sizeof(struct si_dis_inst_info_t));
-	info->inst_info = inst_info;
-
-	/* Create list of tokens from format string */
-	info->tokens = str_token_list_create(inst_info->fmt_str, ", ");
-	assert(info->tokens->count);
-	info->name = list_get(info->tokens, 0);
-
-	/* Create list of formal arguments */
-	info->formal_arg_list = list_create_with_size(5);
-	for (index = 1; index < info->tokens->count; index++)
-	{
-		/* Get token from format string */
-		token_str = list_get(info->tokens, index);
-		token = str_map_string_case(&si_formal_arg_token_map, token_str);
-		if (!token)
-			warning("%s: unrecognized token: %s",
-				__FUNCTION__, token_str);
-
-		/* Add formal argument */
-		arg = si_formal_arg_create(token);
-		list_add(info->formal_arg_list, arg);
-	}
-
-	/* Return */
-	return info;
-}
-
-
-void si_dis_inst_info_free(struct si_dis_inst_info_t *info)
-{
-	struct si_formal_arg_t *arg;
-	int index;
-
-	/* Tokens */
-	str_token_list_free(info->tokens);
-
-	/* Formal arguments */
-	LIST_FOR_EACH(info->formal_arg_list, index)
-	{
-		arg = list_get(info->formal_arg_list, index);
-		si_formal_arg_free(arg);
-	}
-	list_free(info->formal_arg_list);
-
-	/* Free */
-	free(info);
-}
-
-
-
-
-/*
- * Object 'dis_inst_t'
- */
+#include "token.h"
 
 
 struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
@@ -177,12 +38,10 @@ struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
 	struct si_dis_inst_t *inst;
 	struct si_dis_inst_info_t *info;
 
-	struct list_t *tokens;
 	struct si_arg_t *arg;
+	struct si_token_t *token;
 
 	char err_str[MAX_STRING_SIZE];
-	char *token;
-
 	int index;
 	
 	/* Allocate */
@@ -200,11 +59,11 @@ struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
 			info; info = info->next)
 	{
 		/* Check number of arguments */
-		tokens = info->tokens;
-		if (arg_list->count != tokens->count - 1)
+		if (arg_list->count != info->token_list->count)
 		{
 			snprintf(err_str, sizeof err_str,
-				"invalid number of arguments for %s", name);
+				"invalid number of arguments for %s (%d given, %d expected)",
+				name, arg_list->count, info->token_list->count - 1);
 			continue;
 		}
 
@@ -216,18 +75,15 @@ struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
 			arg = list_get(arg_list, index);
 
 			/* Get formal argument from instruction info */
-			token = list_get(info->tokens, index + 1);
+			token = list_get(info->token_list, index);
 			assert(token);
 
-			/* Check possible tokens */
-			if (!strcmp(token, "\%SMRD_SDST"))
+			/* Check that actual argument type is acceptable for token */
+			if (!si_token_is_arg_allowed(token, arg))
 			{
-				if (arg->type != si_arg_scalar_register)
-				{
-					snprintf(err_str, sizeof err_str,
-						"invalid type for argument %d", index + 1);
-					break;
-				}
+				snprintf(err_str, sizeof err_str,
+					"invalid type for argument %d", index + 1);
+				break;
 			}
 		}
 
@@ -242,7 +98,7 @@ struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
 
 	/* Error identifying instruction */
 	if (!info)
-		fatal("%s", err_str);
+		yyerror(err_str);
 
 	/* Initialize opcode */
 	inst->info = info;

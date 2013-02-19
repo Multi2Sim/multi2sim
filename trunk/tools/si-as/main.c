@@ -25,6 +25,7 @@
 #include <lib/util/debug.h>
 
 #include "dis-inst.h"
+#include "dis-inst-info.h"
 #include "label.h"
 #include "main.h"
 #include "parser.h"
@@ -75,7 +76,7 @@ int main(int argc, char **argv)
 		
 	/* Initialize */
 	si_disasm_init();
-	si_dis_inst_init();
+	si_dis_inst_info_init();
 	si_task_list_init();
 	si_label_table_init();
 
@@ -87,7 +88,7 @@ int main(int argc, char **argv)
 	si_label_table_done();
 	si_stream_close(stream);
 	si_stream_free(stream);
-	si_dis_inst_done();
+	si_dis_inst_info_done();
 	si_disasm_done();
 
 	mhandle_done();
