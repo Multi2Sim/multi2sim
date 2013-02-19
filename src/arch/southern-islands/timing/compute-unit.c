@@ -454,9 +454,9 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_fb
 		/* Trace */
 		if (si_tracing())
 		{
-			si_inst_dump(&wavefront->inst, wavefront->inst_size, 
+			si_inst_dump(&wavefront->inst, wavefront->inst_size, wavefront->pc,
 					wavefront->ndrange->inst_buffer + wavefront->pc,
-					wavefront->pc, inst_str, sizeof inst_str);
+					inst_str, sizeof inst_str);
 			str_single_spaces(inst_str_trimmed, sizeof inst_str_trimmed, 
 				inst_str);
 			si_trace("si.new_inst id=%lld cu=%d ib=%d wg=%d wf=%d uop_id=%lld "
