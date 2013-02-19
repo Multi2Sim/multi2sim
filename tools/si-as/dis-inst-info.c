@@ -1,0 +1,162 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <assert.h>
+
+#include <arch/southern-islands/asm/asm.h>
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
+#include <lib/util/list.h>
+#include <lib/util/string.h>
+
+#include "dis-inst-info.h"
+#include "token.h"
+
+
+/*
+ * Global Functions
+ */
+
+/* Hash table indexed by an instruction name, returning the associated entry in
+ * 'si_inst_info' of type 'si_inst_info_t'. The name of the instruction is
+ * extracted from the first token of the format string. */
+struct hash_table_t *si_dis_inst_info_table;
+
+
+void si_dis_inst_info_init(void)
+{
+	struct si_dis_inst_info_t *info;
+	struct si_dis_inst_info_t *prev_info;
+	struct si_inst_info_t *inst_info;
+
+	int i;
+
+	/* Initialize hash table with instruction names. */
+	si_dis_inst_info_table = hash_table_create(SI_INST_COUNT, 1);
+	for (i = 0; i < SI_INST_COUNT; i++)
+	{
+		/* Instruction info from disassembler */
+		inst_info = &si_inst_info[i];
+		if (!inst_info->name || !inst_info->fmt_str)
+			continue;
+
+		/* Create instruction info object */
+		info = si_dis_inst_info_create(inst_info);
+
+		/* Insert instruction info structure into hash table. There could
+		 * be already an instruction encoding with the same name. They
+		 * all formed a linked list. */
+		prev_info = hash_table_get(si_dis_inst_info_table, info->name);
+		if (prev_info)
+		{
+			info->next = prev_info;
+			hash_table_set(si_dis_inst_info_table, info->name, info);
+		}
+		else
+		{
+			hash_table_insert(si_dis_inst_info_table, info->name, info);
+		}
+	}
+}
+
+
+void si_dis_inst_info_done(void)
+{
+	struct si_dis_inst_info_t *info;
+	struct si_dis_inst_info_t *next_info;
+
+	char *name;
+
+	HASH_TABLE_FOR_EACH(si_dis_inst_info_table, name, info)
+	{
+		while (info)
+		{
+			next_info = info->next;
+			si_dis_inst_info_free(info);
+			info = next_info;
+		}
+	}
+	hash_table_free(si_dis_inst_info_table);
+}
+
+
+
+
+/*
+ * Object 'si_dis_inst_info_t'
+ */
+
+struct si_dis_inst_info_t *si_dis_inst_info_create(struct si_inst_info_t *inst_info)
+{
+	struct si_dis_inst_info_t *info;
+	struct si_token_t *token;
+	enum si_token_type_t token_type;
+
+	int index;
+	char *str_token;
+
+	/* Initialize */
+	info = xcalloc(1, sizeof(struct si_dis_inst_info_t));
+	info->inst_info = inst_info;
+
+	/* Create list of tokens from format string */
+	info->str_token_list = str_token_list_create(inst_info->fmt_str, ", ");
+	assert(info->str_token_list->count);
+	info->name = list_get(info->str_token_list, 0);
+
+	/* Create list of formal arguments */
+	info->token_list = list_create_with_size(5);
+	for (index = 1; index < info->str_token_list->count; index++)
+	{
+		/* Get token from format string */
+		str_token = list_get(info->str_token_list, index);
+		token_type = str_map_string_case(&si_token_map, str_token);
+		if (!token_type)
+			warning("%s: unrecognized token: %s",
+				__FUNCTION__, str_token);
+
+		/* Add formal argument */
+		token = si_token_create(token_type);
+		list_add(info->token_list, token);
+	}
+
+	/* Return */
+	return info;
+}
+
+
+void si_dis_inst_info_free(struct si_dis_inst_info_t *info)
+{
+	struct si_token_t *token;
+	int index;
+
+	/* Tokens */
+	str_token_list_free(info->str_token_list);
+	LIST_FOR_EACH(info->token_list, index)
+	{
+		token = list_get(info->token_list, index);
+		si_token_free(token);
+	}
+	list_free(info->token_list);
+
+	/* Free */
+	free(info);
+}
+

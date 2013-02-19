@@ -17,13 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef TOOLS_SI_AS_DIS_INST_H
+#define TOOLS_SI_AS_DIS_INST_H
+
 #include <stdio.h>
 #include <arch/southern-islands/asm/asm.h>
 
-
-/*
- * Object 'si_dis_inst_t'
- */
 
 struct si_dis_inst_t
 {
@@ -47,49 +46,5 @@ void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f);
  * could not be decoded */
 int si_dis_inst_code_gen(struct si_dis_inst_t *inst, unsigned long long *inst_bytes);
 
-
-
-
-/*
- * Object 'si_dis_inst_info_t'
- */
-
-/* Forward declaration */
-struct si_inst_info_t;
-
-/* Element of hash table 'si_dis_inst_info_table', index by an instruction
- * name. */
-struct si_dis_inst_info_t
-{
-	/* There can be multiple instruction encodings for the same instruction
-	 * name. This points to the next one in the list. */
-	struct si_dis_inst_info_t *next;
-
-	/* Associated info structure in disassembler */
-	struct si_inst_info_t *inst_info;
-
-	/* List of tokens in format string */
-	struct list_t *tokens;
-	char *name;  /* Token 0 of this list */
-
-	/* Formal arguments. Each element of the list is of type
-	 * 'si_formal_arg_t'. */
-	struct list_t *formal_arg_list;
-};
-
-struct si_dis_inst_info_t *si_dis_inst_info_create(struct si_inst_info_t *inst_info);
-void si_dis_inst_info_free(struct si_dis_inst_info_t *info);
-
-
-
-
-
-
-/*
- * Other global functions
- */
-
-/* Initialization of encoding tables */
-void si_dis_inst_init(void);
-void si_dis_inst_done(void);
+#endif
 

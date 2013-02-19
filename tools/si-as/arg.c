@@ -64,10 +64,16 @@ void si_arg_dump(struct si_arg_t *inst_arg, FILE *f)
 		fprintf(f, "\t\tv%d\n", inst_arg->value.vector_register.id);
 		break;
 		
-	case si_arg_register_range:
-		fprintf(f, "\t\tregister range\n");
-		fprintf(f, "\t\ts[%d:%d]\n", inst_arg->value.register_range.id_low,
-			inst_arg->value.register_range.id_high);
+	case si_arg_scalar_register_series:
+		fprintf(f, "\t\tscalar register series\n");
+		fprintf(f, "\t\ts[%d:%d]\n", inst_arg->value.scalar_register_series.low,
+			inst_arg->value.scalar_register_series.high);
+		break;
+			
+	case si_arg_vector_register_series:
+		fprintf(f, "\t\tvector register series\n");
+		fprintf(f, "\t\tv[%d:%d]\n", inst_arg->value.vector_register_series.low,
+			inst_arg->value.vector_register_series.high);
 		break;
 			
 	case si_arg_literal:
@@ -113,59 +119,5 @@ void si_arg_dump(struct si_arg_t *inst_arg, FILE *f)
 		panic("%s: invalid argument type", __FUNCTION__);
 		break;
 	}
-}
-
-
-
-
-/*
- * Object 'si_formal_arg_t'
- */
-
-struct str_map_t si_formal_arg_token_map =
-{
-	si_formal_arg_token_count,
-	{
-		{ "<invalid>", si_formal_arg_token_invalid },
-
-		{ "\%64_sdst", si_formal_arg_token_64_sdst },
-		{ "\%64_ssrc0", si_formal_arg_token_64_ssrc0 },
-		{ "\%64_ssrc1", si_formal_arg_token_64_ssrc1 },
-		{ "\%64_src0", si_formal_arg_token_64_src0 },
-		{ "\%64_src1", si_formal_arg_token_64_src1 },
-		{ "\%64_src2", si_formal_arg_token_64_src2 },
-		{ "\%64_svdst", si_formal_arg_token_64_svdst },
-		{ "\%64_vdst", si_formal_arg_token_64_vdst },
-		{ "\%label", si_formal_arg_token_label },
-		{ "\%offset", si_formal_arg_token_offset },
-		{ "\%sdst", si_formal_arg_token_sdst },
-		{ "\%series_sbase", si_formal_arg_token_series_sbase },
-		{ "\%series_sdst", si_formal_arg_token_series_sdst },
-		{ "\%simm16", si_formal_arg_token_simm16 },
-		{ "\%smrd_sdst", si_formal_arg_token_smrd_sdst },
-		{ "\%src0", si_formal_arg_token_src0 },
-		{ "\%src1", si_formal_arg_token_src1 },
-		{ "\%src2", si_formal_arg_token_src2 },
-		{ "\%ssrc0", si_formal_arg_token_ssrc0 },
-		{ "\%ssrc1", si_formal_arg_token_ssrc1 },
-		{ "\%vdst", si_formal_arg_token_vdst },
-		{ "\%wait_cnt", si_formal_arg_token_wait_cnt }
-	}
-};
-
-
-struct si_formal_arg_t *si_formal_arg_create(int token)
-{
-	struct si_formal_arg_t *arg;
-
-	arg = xcalloc(1, sizeof(struct si_formal_arg_t));
-	arg->token = token;
-	return arg;
-}
-
-
-void si_formal_arg_free(struct si_formal_arg_t *arg)
-{
-	free(arg);
 }
 
