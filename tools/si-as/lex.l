@@ -102,7 +102,6 @@ TOK_TAG label_[0-9]+
 }
 
 "\n" {
-	yyset_lineno(yyget_lineno() + 1); 
 	return TOK_NEW_LINE;
 }
 
