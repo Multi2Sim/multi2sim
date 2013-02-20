@@ -354,7 +354,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			else if (userElements[i].dataClass == 
 				PTR_CONST_BUFFER_TABLE)
 			{
-				si_wavefront_init_sreg_with_uav_table(wavefront,
+				si_wavefront_init_sreg_with_cb_table(wavefront,
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount);
 			}

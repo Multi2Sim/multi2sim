@@ -94,11 +94,4 @@ void si_work_item_free(struct si_work_item_t *work_item);
 void si_work_item_set_pred(struct si_work_item_t *work_item, int pred);
 int si_work_item_get_pred(struct si_work_item_t *work_item);
 
-void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, 
-	int sreg, unsigned int value);
-void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, 
-	int first_reg, int num_regs, int cb);
-void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
-	int first_reg, int num_regs);
-
 #endif

@@ -23,6 +23,7 @@
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
+#include <mem-system/memory.h>
 
 #include "emu.h"
 #include "wavefront.h"
@@ -387,6 +388,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		si_emu->vector_alu_inst_count++;
 		wavefront->vector_alu_inst_count++;
 
+		/* Special case: V_READFIRSTLANE_B32 */
 		if (inst->micro_inst.vop1.op == 2)
 		{
 			/* Instruction ignores execution mask and is only 
@@ -419,16 +421,19 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 				}
 			}
 		}
-	
-		/* Execute the instruction */
-		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		else
 		{
-			work_item = ndrange->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, 
-				work_item->id_in_wavefront))
+			/* Execute the instruction */
+			SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, 
+				work_item_id)
 			{
-				(*si_isa_inst_func[inst->info->inst])(work_item,
-					inst);
+				work_item = ndrange->work_items[work_item_id];
+				if(si_wavefront_work_item_active(wavefront, 
+					work_item->id_in_wavefront))
+				{
+					(*si_isa_inst_func[inst->info->inst])(
+						work_item, inst);
+				}
 			}
 		}
 
@@ -717,6 +722,8 @@ void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront,
 	wavefront->sreg[sreg].as_uint = value;
 }
 
+/* Puts a memory descriptor for a constant buffer (e.g. CB0) into sregs
+ * (requires 4 consecutive registers to store the 128-bit structure) */
 void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, 
 	int first_reg, int num_regs, int cb)
 {
@@ -731,6 +738,38 @@ void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront,
 	memcpy(&wavefront->sreg[first_reg], &res_desc, 16);
 }
 
+/* Puts a pointer to the constant buffer table into 2 consecutive sregs */
+void si_wavefront_init_sreg_with_cb_table(struct si_wavefront_t *wavefront,
+        int first_reg, int num_regs)
+{
+        /* Initialize constant buffer table */
+        /* FIXME Do this initialization somewhere more appropriate later */
+        struct si_buffer_resource_t res_desc_cb0;
+        struct si_buffer_resource_t res_desc_cb1;
+
+        memset(&res_desc_cb0, 0, sizeof res_desc_cb0);
+        memset(&res_desc_cb1, 0, sizeof res_desc_cb1);
+
+        res_desc_cb0.base_addr = CONSTANT_MEMORY_START;
+        res_desc_cb1.base_addr = CONSTANT_MEMORY_START + CONSTANT_BUFFER_SIZE;
+
+        mem_write(si_emu->global_mem, CONSTANT_BUFFER_TABLE_START, 16,
+                &res_desc_cb0);
+        mem_write(si_emu->global_mem, CONSTANT_BUFFER_TABLE_START+16, 16,
+                &res_desc_cb1);
+
+        struct si_mem_ptr_t mem_ptr;
+
+        assert(num_regs == 2);
+        assert(sizeof(struct si_mem_ptr_t) == 8);
+
+        mem_ptr.unused = 0;
+        mem_ptr.addr = CONSTANT_BUFFER_TABLE_START;
+
+	memcpy(&wavefront->sreg[first_reg], &mem_ptr, 8);
+}
+
+/* Puts a pointer to the UAV table into 2 consecutive sregs */
 void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
 	int first_reg, int num_regs)
 {
