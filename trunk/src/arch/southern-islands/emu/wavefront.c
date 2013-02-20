@@ -92,7 +92,8 @@ void si_wavefront_dump(struct si_wavefront_t *wavefront, FILE *f)
 		return;
 	
 	/* Dump wavefront statistics in GPU report */
-	fprintf(f, "[ NDRange[%d].Wavefront[%d] ]\n\n", ndrange->id, wavefront->id);
+	fprintf(f, "[ NDRange[%d].Wavefront[%d] ]\n\n", ndrange->id, 
+		wavefront->id);
 
 	fprintf(f, "Name = %s\n", wavefront->name);
 	fprintf(f, "WorkGroup = %d\n", work_group->id);
@@ -101,9 +102,10 @@ void si_wavefront_dump(struct si_wavefront_t *wavefront, FILE *f)
 	fprintf(f, "WorkItemCount = %d\n", wavefront->work_item_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "Inst_Count = %lld\n", wavefront->inst_count);
-	fprintf(f, "Global_Mem_Inst_Count = %lld\n", wavefront->global_mem_inst_count);
-	fprintf(f, "Local_Mem_Inst_Count = %lld\n", wavefront->local_mem_inst_count);
+	fprintf(f, "InstCount = %lld\n", wavefront->inst_count);
+	fprintf(f, "GlobalMemInstCount = %lld\n", 
+		wavefront->global_mem_inst_count);
+	fprintf(f, "LDSInstCount = %lld\n", wavefront->lds_inst_count);
 	fprintf(f, "\n");
 
 	/* FIXME Count instruction statistics here */
@@ -137,8 +139,8 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	wavefront->vector_mem_write = 0;
 	wavefront->vector_mem_read = 0;
 	wavefront->scalar_mem_read = 0;
-	wavefront->local_mem_write = 0;
-	wavefront->local_mem_read = 0;
+	wavefront->lds_write = 0;
+	wavefront->lds_read = 0;
 	wavefront->pred_mask_update = 0;
 	wavefront->mem_wait = 0;
 	wavefront->barrier = 0;
@@ -146,8 +148,9 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	assert(!wavefront->finished);
 	
 	/* Grab the instruction at PC and update the pointer */
-	wavefront->inst_size = si_inst_decode(ndrange->inst_buffer + wavefront->pc,
-			&wavefront->inst, 0);
+	wavefront->inst_size = si_inst_decode(
+		ndrange->inst_buffer + wavefront->pc,
+		&wavefront->inst, 0);
 
 	/* Stats */
 	si_emu->inst_count++;
@@ -229,7 +232,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 		/* Stats */
 		if (wavefront->inst.micro_inst.sopp.op > 1 &&
-						wavefront->inst.micro_inst.sopp.op < 10)
+			wavefront->inst.micro_inst.sopp.op < 10)
 		{
 			si_emu->branch_inst_count++;
 			wavefront->branch_inst_count++;
@@ -353,8 +356,12 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
-				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+			if(si_wavefront_work_item_active(wavefront, 
+				work_item->id_in_wavefront))
+			{
+				(*si_isa_inst_func[inst->info->inst])(work_item,
+					inst);
+			}
 		}
 
 		if (debug_status(si_isa_debug_category))
@@ -382,21 +389,31 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 		if (inst->micro_inst.vop1.op == 2)
 		{
-			/* Instruction ignores execution mask and is only executed on one work item.
-			 * Execute on the first active work item from the least significant bit in EXEC.
-			 * (if exec is 0, execute work item 0) */
-			work_item = ndrange->work_items[wavefront->work_item_id_first];
-			if (si_isa_read_sreg(work_item, SI_EXEC) == 0 && si_isa_read_sreg(work_item, SI_EXEC + 1) == 0)
+			/* Instruction ignores execution mask and is only 
+			 * executed on one work item. Execute on the first 
+			 * active work item from the least significant bit 
+			 * in EXEC. (if exec is 0, execute work item 0) */
+			work_item = ndrange->work_items[
+				wavefront->work_item_id_first];
+			if (si_isa_read_sreg(work_item, SI_EXEC) == 0 && 
+				si_isa_read_sreg(work_item, SI_EXEC + 1) == 0)
 			{
-				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+				(*si_isa_inst_func[inst->info->inst])(work_item,
+					inst);
 			}
 			else {
-				SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+				SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, 
+					work_item_id)
 				{
-					work_item = ndrange->work_items[work_item_id];
-					if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
+					work_item = ndrange->
+						work_items[work_item_id];
+					if(si_wavefront_work_item_active(
+						wavefront, 
+						work_item->id_in_wavefront))
 					{
-						(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+						(*si_isa_inst_func[
+						 	inst->info->inst])(
+							work_item, inst);
 						break;
 					}
 				}
@@ -407,8 +424,12 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
-				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+			if(si_wavefront_work_item_active(wavefront, 
+				work_item->id_in_wavefront))
+			{
+				(*si_isa_inst_func[inst->info->inst])(work_item,
+					inst);
+			}
 		}
 
 		if (debug_status(si_isa_debug_category))
@@ -438,8 +459,12 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
-				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+			if(si_wavefront_work_item_active(wavefront, 
+				work_item->id_in_wavefront))
+			{
+				(*si_isa_inst_func[inst->info->inst])(work_item,
+					inst);
+			}
 		}
 
 		if (debug_status(si_isa_debug_category))
@@ -469,8 +494,12 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
-				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+			if(si_wavefront_work_item_active(wavefront, 
+				work_item->id_in_wavefront))
+			{
+				(*si_isa_inst_func[inst->info->inst])(work_item,
+					inst);
+			}
 		}
 
 		if (debug_status(si_isa_debug_category))
@@ -500,8 +529,12 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
-				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+			if(si_wavefront_work_item_active(wavefront, 
+				work_item->id_in_wavefront))
+			{
+				(*si_isa_inst_func[inst->info->inst])(work_item,
+					inst);
+			}
 		}
 
 		if (debug_status(si_isa_debug_category))
@@ -524,20 +557,21 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		}
 
 		/* Stats */
-		si_emu->local_mem_inst_count++;
-		wavefront->local_mem_inst_count++;
+		si_emu->lds_inst_count++;
+		wavefront->lds_inst_count++;
 
 		/* Record access type */
 		if ((inst->info->opcode >= 13 && inst->info->opcode < 16) ||
 			(inst->info->opcode >= 30 && inst->info->opcode < 32) ||
 			(inst->info->opcode >= 77 && inst->info->opcode < 80))
 		{
-			wavefront->local_mem_write = 1;
+			wavefront->lds_write = 1;
 		}
-		else if ((inst->info->opcode >= 54 && inst->info->opcode < 61) ||
+		else if (
+			(inst->info->opcode >= 54 && inst->info->opcode < 61) ||
 			(inst->info->opcode >= 118 && inst->info->opcode < 120))
 		{
-			wavefront->local_mem_read = 1;
+			wavefront->lds_read = 1;
 		}
 		else 
 		{
@@ -548,8 +582,12 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
-				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+			if(si_wavefront_work_item_active(wavefront, 
+				work_item->id_in_wavefront))
+			{
+				(*si_isa_inst_func[inst->info->inst])(work_item,
+					inst);
+			}
 		}
 
 		if (debug_status(si_isa_debug_category))
@@ -588,8 +626,12 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
-			if (si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
-				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+			if (si_wavefront_work_item_active(wavefront, 
+				work_item->id_in_wavefront))
+			{
+				(*si_isa_inst_func[inst->info->inst])(work_item,
+					inst);
+			}
 		}
 
 		if (debug_status(si_isa_debug_category))
@@ -611,26 +653,38 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	/* Check if wavefront finished kernel execution */
 	if (wavefront->finished)
 	{
-		assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
-		assert(!DOUBLE_LINKED_LIST_MEMBER(work_group, finished, wavefront));
+		assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, 
+			wavefront));
+		assert(!DOUBLE_LINKED_LIST_MEMBER(work_group, finished, 
+			wavefront));
 		DOUBLE_LINKED_LIST_REMOVE(work_group, running, wavefront);
 		DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, finished, wavefront);
 
 		/* Check if work-group finished kernel execution */
-		if (work_group->finished_list_count == work_group->wavefront_count)
+		if (work_group->finished_list_count == 
+			work_group->wavefront_count)
 		{
-			assert(DOUBLE_LINKED_LIST_MEMBER(ndrange, running, work_group));
-			assert(!DOUBLE_LINKED_LIST_MEMBER(ndrange, finished, work_group));
-			si_work_group_clear_status(work_group, si_work_group_running);
-			si_work_group_set_status(work_group, si_work_group_finished);
+			assert(DOUBLE_LINKED_LIST_MEMBER(ndrange, running, 
+				work_group));
+			assert(!DOUBLE_LINKED_LIST_MEMBER(ndrange, finished, 
+				work_group));
+			si_work_group_clear_status(work_group, 
+				si_work_group_running);
+			si_work_group_set_status(work_group, 
+				si_work_group_finished);
 
 			/* Check if ND-Range finished kernel execution */
-			if (ndrange->finished_list_count == ndrange->work_group_count)
+			if (ndrange->finished_list_count == 
+				ndrange->work_group_count)
 			{
-				assert(DOUBLE_LINKED_LIST_MEMBER(si_emu, running_ndrange, ndrange));
-				assert(!DOUBLE_LINKED_LIST_MEMBER(si_emu, finished_ndrange, ndrange));
-				si_ndrange_clear_status(ndrange, si_ndrange_running);
-				si_ndrange_set_status(ndrange, si_ndrange_finished);
+				assert(DOUBLE_LINKED_LIST_MEMBER(si_emu, 
+					running_ndrange, ndrange));
+				assert(!DOUBLE_LINKED_LIST_MEMBER(si_emu, 
+					finished_ndrange, ndrange));
+				si_ndrange_clear_status(ndrange, 
+					si_ndrange_running);
+				si_ndrange_set_status(ndrange, 
+					si_ndrange_finished);
 			}
 		}
 	}
@@ -639,27 +693,32 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	wavefront->pc += wavefront->inst_size;
 }
 
-int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, int id_in_wavefront) {
+int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, 
+	int id_in_wavefront) 
+{
 	int mask = 1;
 	if(id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
-		return (wavefront->sreg[SI_EXEC].as_uint & mask) >> id_in_wavefront;
+		return (wavefront->sreg[SI_EXEC].as_uint & mask) >> 
+			id_in_wavefront;
 	}
 	else
 	{
 		mask <<= (id_in_wavefront - 32);
-		return (wavefront->sreg[SI_EXEC + 1].as_uint & mask) >> (id_in_wavefront - 32);
+		return (wavefront->sreg[SI_EXEC + 1].as_uint & mask) >> 
+			(id_in_wavefront - 32);
 	}
 }
 
-void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, int sreg, unsigned int value)
+void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, 
+	int sreg, unsigned int value)
 {
 	wavefront->sreg[sreg].as_uint = value;
 }
 
-void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, int first_reg, int num_regs, 
-	int cb)
+void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, 
+	int first_reg, int num_regs, int cb)
 {
 	struct si_buffer_resource_t res_desc;
 
@@ -672,8 +731,8 @@ void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, int first_
 	memcpy(&wavefront->sreg[first_reg], &res_desc, 16);
 }
 
-void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, int first_reg, 
-	int num_regs)
+void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
+	int first_reg, int num_regs)
 {
 	struct si_mem_ptr_t mem_ptr;
 

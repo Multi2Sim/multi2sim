@@ -52,28 +52,28 @@ void si_lds_complete(struct si_lds_t *lds)
 		uop = list_get(lds->write_buffer, list_index);
 		assert(uop);
 
-        /* Uop is not ready */
+		/* Uop is not ready */
 		if (si_gpu->cycle < uop->write_ready)
 		{
-            list_index++;
+			list_index++;
 			continue;
-        }
+		}
 
-        /* Access complete, remove the uop from the queue */
-        list_remove(lds->write_buffer, uop);
+		/* Access complete, remove the uop from the queue */
+		list_remove(lds->write_buffer, uop);
 
 		assert(uop->wavefront_pool_entry->lgkm_cnt > 0);
 		uop->wavefront_pool_entry->lgkm_cnt--;
 
-        si_trace("si.end_inst id=%lld cu=%d\n", uop->id_in_compute_unit, 
-            uop->compute_unit->id);
+		si_trace("si.end_inst id=%lld cu=%d\n", uop->id_in_compute_unit,
+			uop->compute_unit->id);
 
-        /* Free uop */
-        si_uop_free(uop);
+		/* Free uop */
+		si_uop_free(uop);
 
-        /* Statistics */
-        lds->inst_count++;
-        si_gpu->last_complete_cycle = esim_cycle;
+		/* Statistics */
+		lds->inst_count++;
+		si_gpu->last_complete_cycle = esim_cycle;
 	}
 }
 
@@ -82,8 +82,8 @@ void si_lds_write(struct si_lds_t *lds)
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
-    int list_index = 0;
-    int i;
+	int list_index = 0;
+	int i;
 
 	list_entries = list_count(lds->mem_buffer);
 
@@ -98,33 +98,37 @@ void si_lds_write(struct si_lds_t *lds)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (uop->local_mem_witness)
+		if (uop->lds_witness)
 		{
 			list_index++;
-            continue;
+			continue;
 		}
 
 		/* Stall if the width has been reached */
 		if (instructions_processed > si_gpu_lds_width)
-        {
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id, uop->id_in_wavefront);
+		{
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+				"stg=\"s\"\n", uop->id_in_compute_unit, 
+				lds->compute_unit->id, uop->wavefront->id, 
+				uop->id_in_wavefront);
 			list_index++;
-            continue;
-        }
+			continue;
+		}
 
 		/* Sanity check the write buffer */
-		assert(list_count(lds->write_buffer) <= si_gpu_lds_write_buffer_size);
+		assert(list_count(lds->write_buffer) <= 
+			si_gpu_lds_write_buffer_size);
 
 		/* Stop if the write buffer is full */
-		if (list_count(lds->write_buffer) >= si_gpu_lds_write_buffer_size)
+		if (list_count(lds->write_buffer) >= 
+			si_gpu_lds_write_buffer_size)
 		{
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id, uop->id_in_wavefront);
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+				"stg=\"s\"\n", uop->id_in_compute_unit, 
+				lds->compute_unit->id, uop->wavefront->id, 
+				uop->id_in_wavefront);
 			list_index++;
-            continue;
+			continue;
 		}
 
 		/* Access complete, remove the uop from the queue */
@@ -134,9 +138,10 @@ void si_lds_write(struct si_lds_t *lds)
 
 		instructions_processed++;
 
-        si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"lds-w\"\n", 
-            uop->id_in_compute_unit, lds->compute_unit->id, 
-            uop->wavefront->id, uop->id_in_wavefront);
+		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+			"stg=\"lds-w\"\n", uop->id_in_compute_unit, 
+			lds->compute_unit->id, uop->wavefront->id, 
+			uop->id_in_wavefront);
 	}
 }
 
@@ -150,7 +155,7 @@ void si_lds_mem(struct si_lds_t *lds)
 	int list_entries;
 	int i, j;
 	enum mod_access_kind_t access_type;
-    int list_index = 0;
+	int list_index = 0;
 
 	list_entries = list_count(lds->read_buffer);
 	
@@ -166,56 +171,69 @@ void si_lds_mem(struct si_lds_t *lds)
 
 		/* Uop is not ready yet */
 		if (si_gpu->cycle < uop->read_ready)
-        {
+        	{
 			list_index++;
-            continue;
-        }
+			continue;
+        	}
 
 		/* Stall if the width has been reached. */
 		if (instructions_processed > si_gpu_lds_width)
-        {
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
+		{
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+				"stg=\"s\"\n", uop->id_in_compute_unit, 
+				lds->compute_unit->id, 
 				uop->wavefront->id, uop->id_in_wavefront);
 			list_index++;
-            continue;
-        }
+			continue;
+		}
 
 		/* Sanity check uop */
-		assert(uop->local_mem_read || uop->local_mem_write);
+		assert(uop->lds_read || uop->lds_write);
 
 		/* Sanity check mem buffer */
 		assert(list_count(lds->mem_buffer) <= 
 			si_gpu_lds_max_inflight_mem_accesses);
 
 		/* Stall if there is no room in the memory buffer */
-		if (list_count(lds->mem_buffer) == si_gpu_lds_max_inflight_mem_accesses)
+		if (list_count(lds->mem_buffer) == 
+			si_gpu_lds_max_inflight_mem_accesses)
 		{
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id, uop->id_in_wavefront);
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+				"stg=\"s\"\n", uop->id_in_compute_unit, 
+				lds->compute_unit->id, uop->wavefront->id, 
+				uop->id_in_wavefront);
 			list_index++;
-            continue;
+			continue;
 		}
 
 		/* Access local memory */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
 			work_item = si_gpu->ndrange->work_items[work_item_id];
-			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
-			for (j = 0; j < work_item_uop->local_mem_access_count; j++)
-			{
-				if (work_item->local_mem_access_type[j] == 1)
-					access_type = mod_access_load;
-				else if (work_item->local_mem_access_type[j] == 2)
-					access_type = mod_access_store;
-				else
-					fatal("%s: invalid lds access type", __FUNCTION__);
+			work_item_uop = 
+				&uop->work_item_uop[work_item->id_in_wavefront];
 
-				mod_access(lds->compute_unit->local_memory, access_type,
-					work_item_uop->local_mem_access_addr[j],
-					&uop->local_mem_witness, NULL, NULL, NULL);
-				uop->local_mem_witness--;
+			for (j = 0; j < work_item_uop->lds_access_count; j++)
+			{
+				if (work_item->lds_access_type[j] == 1)
+				{
+					access_type = mod_access_load;
+				}
+				else if (work_item->lds_access_type[j] == 2)
+				{
+					access_type = mod_access_store;
+				}
+				else
+				{
+					fatal("%s: invalid lds access type", 
+						__FUNCTION__);
+				}
+
+				mod_access(lds->compute_unit->lds_module, 
+					access_type, 
+					work_item_uop->lds_access_addr[j],
+					&uop->lds_witness, NULL, NULL, NULL);
+				uop->lds_witness--;
 			}
 		}
 
@@ -226,9 +244,10 @@ void si_lds_mem(struct si_lds_t *lds)
 		list_remove(lds->read_buffer, uop);
 		list_enqueue(lds->mem_buffer, uop);
 
-		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"lds-m\"\n", 
-			uop->id_in_compute_unit, lds->compute_unit->id, 
-			uop->wavefront->id, uop->id_in_wavefront);
+		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+			"stg=\"lds-m\"\n", uop->id_in_compute_unit, 
+			lds->compute_unit->id, uop->wavefront->id, 
+			uop->id_in_wavefront);
 	}
 }
 
@@ -237,8 +256,8 @@ void si_lds_read(struct si_lds_t *lds)
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
-    int list_index = 0;
-    int i;
+	int list_index = 0;
+	int i;
 
 	list_entries = list_count(lds->decode_buffer);
 
@@ -254,38 +273,41 @@ void si_lds_read(struct si_lds_t *lds)
 
 		/* Stall if the width has been reached. */
 		if (instructions_processed > si_gpu_lds_width)
-        {
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id, uop->id_in_wavefront);
+		{
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+				"stg=\"s\"\n", uop->id_in_compute_unit, 
+				lds->compute_unit->id, uop->wavefront->id, 
+				uop->id_in_wavefront);
 			list_index++;
-            continue;
-        }
+			continue;
+		}
 
 		/* Stop if the read buffer is full. */
 		if (list_count(lds->read_buffer) >= si_gpu_lds_read_buffer_size)
 		{
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id, uop->id_in_wavefront);
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+				"stg=\"s\"\n", uop->id_in_compute_unit, 
+				lds->compute_unit->id, uop->wavefront->id, 
+				uop->id_in_wavefront);
 			list_index++;
-            continue;
+			continue;
 		}
 
 		/* Uop is not ready yet */
 		if (si_gpu->cycle < uop->decode_ready)
-        {
+		{
 			list_index++;
-            continue;
-        }
+			continue;
+		}
 		
 		uop->read_ready = si_gpu->cycle + si_gpu_lds_read_latency;
 		list_remove(lds->decode_buffer, uop);
 		list_enqueue(lds->read_buffer, uop);
 
-        si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"lds-r\"\n", 
-            uop->id_in_compute_unit, lds->compute_unit->id, 
-            uop->wavefront->id, uop->id_in_wavefront);
+		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+			"stg=\"lds-r\"\n", uop->id_in_compute_unit, 
+			lds->compute_unit->id, uop->wavefront->id, 
+			uop->id_in_wavefront);
 	}
 }
 
@@ -309,34 +331,37 @@ void si_lds_decode(struct si_lds_t *lds)
 
 		instructions_processed++;
 
-        /* Uop not ready yet */
+		/* Uop not ready yet */
 		if (si_gpu->cycle < uop->issue_ready)
-        {
-            list_index++;
+		{
+			list_index++;
 			continue;
-        }
+		}
 
 		/* Stall if the issue width has been reached. */
 		if (instructions_processed > si_gpu_lds_width)
-        {
-			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-				uop->id_in_compute_unit, lds->compute_unit->id, 
-				uop->wavefront->id, uop->id_in_wavefront);
-            list_index++;
+		{
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+				"stg=\"s\"\n", uop->id_in_compute_unit, 
+				lds->compute_unit->id, uop->wavefront->id, 
+				uop->id_in_wavefront);
+			list_index++;
 			continue;
-        }
+		}
 
 		/* Sanity check the decode buffer */
 		assert(list_count(lds->decode_buffer) <= 
-				si_gpu_lds_decode_buffer_size);
+			si_gpu_lds_decode_buffer_size);
 
 		/* Stall if the decode buffer is full. */
-		if (list_count(lds->decode_buffer) == si_gpu_lds_decode_buffer_size)
+		if (list_count(lds->decode_buffer) == 
+			si_gpu_lds_decode_buffer_size)
 		{
-            si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
-                uop->id_in_compute_unit, lds->compute_unit->id, 
-                uop->wavefront->id, uop->id_in_wavefront);
-            list_index++;
+			si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+				"stg=\"s\"\n", uop->id_in_compute_unit, 
+				lds->compute_unit->id, uop->wavefront->id, 
+				uop->id_in_wavefront);
+			list_index++;
 			continue;
 		}
 
@@ -344,9 +369,10 @@ void si_lds_decode(struct si_lds_t *lds)
 		list_remove(lds->issue_buffer, uop);
 		list_enqueue(lds->decode_buffer, uop);
 
-        si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"lds-d\"\n", 
-            uop->id_in_compute_unit, lds->compute_unit->id, 
-            uop->wavefront->id, uop->id_in_wavefront);
+		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+			"stg=\"lds-d\"\n", uop->id_in_compute_unit, 
+			lds->compute_unit->id, uop->wavefront->id, 
+			uop->id_in_wavefront);
 	}
 }
 

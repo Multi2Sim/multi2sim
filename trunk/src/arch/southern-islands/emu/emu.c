@@ -86,10 +86,13 @@ void si_emu_init()
 	/* Open report file */
 	if (*si_emu_report_file_name)
 	{
-		si_emu_report_file = file_open_for_write(si_emu_report_file_name);
+		si_emu_report_file = file_open_for_write(
+			si_emu_report_file_name);
 		if (!si_emu_report_file)
-			fatal("%s: cannot open report for Southern Islands emulator",
-				si_emu_report_file_name);
+		{
+			fatal("%s: cannot open report for Southern Islands "
+				"emulator", si_emu_report_file_name);
+		}
 	}
 
 	/* Initialize */
@@ -98,7 +101,6 @@ void si_emu_init()
 	si_emu->global_mem = mem_create();
 	si_emu->global_mem->safe = 0;
 
-	/* CB0 and CB1 are going to map to the beginning of the virtual address space */
 	si_emu->global_mem_top = GLOBAL_MEMORY_START;
 
 	/* Initialize disassembler (decoding tables...) */
@@ -152,12 +154,13 @@ void si_emu_dump_summary(FILE *f)
 
 	/* Calculate statistics */
 	time_in_sec = (double) m2s_timer_get_value(si_emu->timer) / 1.0e6;
-	inst_per_sec = time_in_sec > 0.0 ? (double) si_emu->inst_count / time_in_sec : 0.0;
+	inst_per_sec = time_in_sec > 0.0 ? 
+		(double) si_emu->inst_count / time_in_sec : 0.0;
 
 	/* Print statistics */
 	fprintf(f, "[ SouthernIslands ]\n");
-	fprintf(f, "SimType = %s\n", si_emu_sim_kind == arch_sim_kind_functional ?
-			"Functional" : "Detailed");
+	fprintf(f, "SimType = %s\n", si_emu_sim_kind == 
+		arch_sim_kind_functional ?  "Functional" : "Detailed");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
 	fprintf(f, "Instructions = %lld\n", si_emu->inst_count);
@@ -199,15 +202,22 @@ void si_emu_disasm(char *path)
 			continue;
 
 		/* If symbol is '__OpenCL_XXX_kernel', it points to internal ELF */
-		if (str_prefix(symbol->name, "__OpenCL_") && str_suffix(symbol->name, "_kernel"))
+		if (str_prefix(symbol->name, "__OpenCL_") && 
+			str_suffix(symbol->name, "_kernel"))
 		{
 			/* Decode internal ELF */
-			str_substr(kernel_name, sizeof(kernel_name), symbol->name, 9, strlen(symbol->name) - 16);
-			amd_bin = si_bin_file_create(section->buffer.ptr + symbol->value, symbol->size, kernel_name);
+			str_substr(kernel_name, sizeof(kernel_name), 
+				symbol->name, 9, strlen(symbol->name) - 16);
+			amd_bin = si_bin_file_create(
+				section->buffer.ptr + symbol->value, 
+				symbol->size, kernel_name);
 
 			/* Get kernel name */
-			printf("**\n** Disassembly for '__kernel %s'\n**\n\n", kernel_name);
-			si_disasm_buffer(&amd_bin->enc_dict_entry_southern_islands->sec_text_buffer, stdout);
+			printf("**\n** Disassembly for '__kernel %s'\n**\n\n", 
+				kernel_name);
+			si_disasm_buffer(&amd_bin->
+				enc_dict_entry_southern_islands->
+				sec_text_buffer, stdout);
 			printf("\n\n\n");
 
 			/* Free internal ELF */
@@ -247,14 +257,18 @@ void si_emu_opengl_disasm(char *path, int opengl_shader_index)
 	free_buffer(file_buffer);
 
 	/* Basic info of the shader binary */
-	printf("This shader binary contains %d shaders\n\n", list_count(amd_opengl_bin->shader_list));
-	if (opengl_shader_index > list_count(amd_opengl_bin->shader_list) || opengl_shader_index <= 0 )
+	printf("This shader binary contains %d shaders\n\n", 
+		list_count(amd_opengl_bin->shader_list));
+	if (opengl_shader_index > list_count(amd_opengl_bin->shader_list) || 
+		opengl_shader_index <= 0 )
 	{
-		fatal("Shader index out of range! Please choose <index> from 1 ~ %d", list_count(amd_opengl_bin->shader_list));
+		fatal("Shader index out of range! Please choose <index> "
+			"from 1 ~ %d", list_count(amd_opengl_bin->shader_list));
 	}
 
 	/* Disassemble */
-	amd_opengl_shader = list_get(amd_opengl_bin->shader_list, opengl_shader_index - 1 );
+	amd_opengl_shader = list_get(amd_opengl_bin->shader_list, 
+		opengl_shader_index - 1 );
 	printf("**\n** Disassembly for shader %d\n**\n\n", opengl_shader_index);
 	si_disasm_buffer(&amd_opengl_shader->isa_buffer, stdout);
 	printf("\n\n\n");
@@ -281,8 +295,8 @@ int si_emu_run(void)
 	struct si_wavefront_t *wavefront;
 	struct si_wavefront_t *wavefront_next;
 
-	/* For efficiency when no Southern Islands emulation is selected, exit here
-	 * if the list of existing ND-Ranges is empty. */
+	/* For efficiency when no Southern Islands emulation is selected, 
+	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!si_emu->ndrange_list_count)
 		return 0;
 
@@ -292,8 +306,10 @@ int si_emu_run(void)
 		/* Set all ready work-groups to running */
 		while ((work_group = ndrange->pending_list_head))
 		{
-			si_work_group_clear_status(work_group, si_work_group_pending);
-			si_work_group_set_status(work_group, si_work_group_running);
+			si_work_group_clear_status(work_group, 
+				si_work_group_pending);
+			si_work_group_set_status(work_group, 
+				si_work_group_running);
 		}
 
 		/* Set is in state 'running' */
@@ -303,20 +319,24 @@ int si_emu_run(void)
 
 	/* Run one instruction of each wavefront in each work-group of each
 	 * ND-Range that is in status 'running'. */
-	for (ndrange = si_emu->running_ndrange_list_head; ndrange; ndrange = ndrange_next)
+	for (ndrange = si_emu->running_ndrange_list_head; ndrange; 
+		ndrange = ndrange_next)
 	{
-		/* Save next ND-Range in state 'running'. This is done because the state
-		 * might change during the execution of the ND-Range. */
+		/* Save next ND-Range in state 'running'. This is done because 
+		 * the state might change during the execution of the 
+		 * ND-Range. */
 		ndrange_next = ndrange->running_ndrange_list_next;
 
 		/* Execute an instruction from each work-group */
-		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
+		for (work_group = ndrange->running_list_head; work_group; 
+			work_group = work_group_next)
 		{
 			/* Save next running work-group */
 			work_group_next = work_group->running_list_next;
 
 			/* Run an instruction from each wavefront */
-			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next)
+			for (wavefront = work_group->running_list_head; 
+				wavefront; wavefront = wavefront_next)
 			{
 				/* Save next running wavefront */
 				wavefront_next = wavefront->running_list_next;
@@ -334,8 +354,11 @@ int si_emu_run(void)
 		si_ndrange_dump(ndrange, si_emu_report_file);
 
 		/* Stop if maximum number of kernels reached */
-		if (si_emu_max_kernels && si_emu->ndrange_count >= si_emu_max_kernels)
+		if (si_emu_max_kernels && si_emu->ndrange_count >= 
+			si_emu_max_kernels)
+		{
 			esim_finish = esim_finish_si_max_kernels;
+		}
 
 		/* Extract from list of finished ND-Ranges and free */
 		si_ndrange_free(ndrange);

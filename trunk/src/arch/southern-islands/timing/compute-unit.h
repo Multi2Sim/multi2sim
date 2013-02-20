@@ -49,8 +49,7 @@ struct si_compute_unit_t
 {
 	/* IDs */
 	int id;
-	long long uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
-	long long mem_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to mem uops */
+	long long uop_id_counter;  
 
 	/* Double linked list of compute units */
 	struct si_compute_unit_t *compute_unit_ready_list_prev;
@@ -60,18 +59,18 @@ struct si_compute_unit_t
 
 	/* Entry points to memory hierarchy */
 	struct mod_t *global_memory;
-	struct mod_t *local_memory;
+	struct mod_t *lds_module;
 
 	/* Hardware structures */
 	unsigned int num_wavefront_pools;
 	struct si_wavefront_pool_t **wavefront_pools;
 	struct list_t **fetch_buffers;
-	struct si_simd_t **simds;
+	struct si_simd_t **simd_units;
 	/* TODO Make these into a configurable number of structures */
 	struct si_scalar_unit_t scalar_unit;
 	struct si_branch_unit_t branch_unit;
 	struct si_vector_mem_unit_t vector_mem_unit;
-	struct si_lds_t lds;
+	struct si_lds_t lds_unit;
 
 	/* Statistics */
 	long long cycle;
@@ -84,7 +83,7 @@ struct si_compute_unit_t
 	/* TODO Have one SIMD inst count per SIMD unit */
 	long long simd_inst_count;
 	long long vector_mem_inst_count;
-	long long local_mem_inst_count;
+	long long lds_inst_count;
 
 	/* List of currently mapped work-groups */
 	int work_group_count;

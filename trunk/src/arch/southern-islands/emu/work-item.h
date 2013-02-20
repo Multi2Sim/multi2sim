@@ -23,7 +23,7 @@
 #include <arch/southern-islands/asm/asm.h>
 
 
-#define SI_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
+#define SI_MAX_LDS_ACCESSES_PER_INST  2
 
 
 /* Structure describing a memory access definition */
@@ -65,11 +65,11 @@ struct si_work_item_t
 	unsigned int global_mem_access_addr;
 	unsigned int global_mem_access_size;
 
-	/* Last local memory access */
-	int local_mem_access_count;  /* Number of local memory access performed by last instruction */
-	unsigned int local_mem_access_addr[SI_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	unsigned int local_mem_access_size[SI_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	int local_mem_access_type[SI_MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
+	/* Last LDS access */
+	int lds_access_count;  /* Number of LDS access by last instruction */
+	unsigned int lds_access_addr[SI_MAX_LDS_ACCESSES_PER_INST];
+	unsigned int lds_access_size[SI_MAX_LDS_ACCESSES_PER_INST];
+	int lds_access_type[SI_MAX_LDS_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
 };
 
 #define SI_FOREACH_WORK_ITEM_IN_NDRANGE(NDRANGE, WORK_ITEM_ID) \
@@ -94,10 +94,11 @@ void si_work_item_free(struct si_work_item_t *work_item);
 void si_work_item_set_pred(struct si_work_item_t *work_item, int pred);
 int si_work_item_get_pred(struct si_work_item_t *work_item);
 
-void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, int sreg, unsigned int value);
-void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, int first_reg, int num_regs,
-	int cb);
-void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, int first_reg,
-	int num_regs);
+void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, 
+	int sreg, unsigned int value);
+void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, 
+	int first_reg, int num_regs, int cb);
+void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
+	int first_reg, int num_regs);
 
 #endif
