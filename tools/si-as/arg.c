@@ -51,46 +51,56 @@ void si_arg_dump(struct si_arg_t *inst_arg, FILE *f)
 	{
 	
 	case si_arg_invalid:
+
 		fprintf(f, "\t\tinvalid\n");
 		break;
 		
 	case si_arg_scalar_register:
+
 		fprintf(f, "\t\tscalar register\n");
 		fprintf(f, "\t\ts%d\n", inst_arg->value.scalar_register.id);
 		break;
 		
 	case si_arg_vector_register:
+
 		fprintf(f, "\t\tvector register\n");
 		fprintf(f, "\t\tv%d\n", inst_arg->value.vector_register.id);
 		break;
 		
 	case si_arg_scalar_register_series:
+
 		fprintf(f, "\t\tscalar register series\n");
 		fprintf(f, "\t\ts[%d:%d]\n", inst_arg->value.scalar_register_series.low,
 			inst_arg->value.scalar_register_series.high);
 		break;
 			
 	case si_arg_vector_register_series:
+
 		fprintf(f, "\t\tvector register series\n");
 		fprintf(f, "\t\tv[%d:%d]\n", inst_arg->value.vector_register_series.low,
 			inst_arg->value.vector_register_series.high);
 		break;
 			
 	case si_arg_literal:
+
 		fprintf(f, "\t\tliteral constant\n");
 		fprintf(f, "\t\t0x%x (%d)\n", inst_arg->value.literal.val,
 			inst_arg->value.literal.val);
 		break;
 		
 	case si_arg_waitcnt:
-	{
+
 		fprintf(f, "\t\twaitcnt\n");
-		fprintf(f, "\t\tvmcnt: %d\n", inst_arg->value.wait_cnt.vmcnt_value);
-		fprintf(f, "\t\texpcnt: %d\n", inst_arg->value.wait_cnt.expcnt_value);
-		fprintf(f, "\t\tlgkmcnt: %d\n", inst_arg->value.wait_cnt.lgkmcnt_value);			
+		fprintf(f, "\t\tvmcnt: active=%d, value=%d\n", inst_arg->value.wait_cnt.vmcnt_active,
+				inst_arg->value.wait_cnt.vmcnt_value);
+		fprintf(f, "\t\texpcnt: active=%d, value=%d\n", inst_arg->value.wait_cnt.expcnt_active,
+				inst_arg->value.wait_cnt.expcnt_value);
+		fprintf(f, "\t\tlgkmcnt: active=%d, value=%d\n", inst_arg->value.wait_cnt.lgkmcnt_active,
+				inst_arg->value.wait_cnt.lgkmcnt_value);
 		break;
-	}
+
 	case si_arg_special_register:
+
 		fprintf(f, "\t\tspecial register\n");
 		if (inst_arg->value.special_register.type == si_arg_special_register_vcc)
 			fprintf(f, "\t\tvcc\n");
@@ -99,11 +109,13 @@ void si_arg_dump(struct si_arg_t *inst_arg, FILE *f)
 		break;
 	
 	case si_arg_mtype_register:
+
 		fprintf(f, "\t\tm-type register\n");
 		fprintf(f, "\t\tm%d\n", inst_arg->value.mtype_register.id);
 		break;
 	
 	case si_arg_format:
+
 		fprintf(f, "\t\tformat\n");
 		fprintf(f, "\t\toffen: %c\n", inst_arg->value.format.offen ? 't' : 'f');
 		fprintf(f, "\t\tdata format: %s\n", inst_arg->value.format.data_format);

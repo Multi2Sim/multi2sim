@@ -88,6 +88,28 @@
 #define SETBITVALUE32(X, B, V)	((V) ? SETBIT32((X),(B)) : CLEARBIT32((X),(B)))
 #define SETBITVALUE64(X, B, V)	((V) ? SETBIT64((X),(B)) : CLEARBIT64((X),(B)))
 
+#define CLEAR_BITS_32(X, HI, LO) \
+	((unsigned int) (X) & (((1ull << (LO)) - 1) \
+	| ~((1ull << ((HI) + 1)) - 1)))
+
+#define TRUNCATE_BITS_32(X, NUM) \
+	((unsigned int) (X) & ((1ull << (NUM)) - 1))
+
+#define SET_BITS_32(X, HI, LO, V) \
+	(CLEAR_BITS_32((X), (HI), (LO)) | \
+	(TRUNCATE_BITS_32((V), (HI) - (LO) + 1) << (LO)))
+
+#define CLEAR_BITS_64(X, HI, LO) \
+	((unsigned long long) (X) & (((1ull << (LO)) - 1) \
+	| ~((1ull << ((HI) + 1)) - 1)))
+
+#define TRUNCATE_BITS_64(X, NUM) \
+	((unsigned long long) (X) & ((1ull << (NUM)) - 1))
+
+#define SET_BITS_64(X, HI, LO, V) \
+	(CLEAR_BITS_64((X), (HI), (LO)) | \
+	(TRUNCATE_BITS_64((V), (HI) - (LO) + 1) << (LO)))
+
 
 /* Bitmaps manipulation */
 #define BITMAP_TYPE(NAME, SIZE) \

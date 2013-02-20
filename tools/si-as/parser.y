@@ -109,7 +109,6 @@ rl_line
 		si_dis_inst_gen(inst);
 		si_dis_inst_dump(inst, stdout);
 		//si_stream_add_inst(stream, $1);
-		exit(1); ////
 		
 		/* Free instruction */
 		si_dis_inst_free(inst);
@@ -468,14 +467,3 @@ rl_waitcnt_elem
 ;
 
 %%
-
-#define CLEAR_BITS_64(X, HI, LO) \
-	((unsigned long long) (X) & (((1ull << (LO)) - 1) \
-	| ~((1ull << ((HI) + 1)) - 1)))
-
-#define TRUNCATE_BITS_64(X, NUM) \
-	((unsigned long long) (X) & ((1ull << (NUM)) - 1))
-
-#define SET_BITS_64(X, HI, LO, V) \
-	(CLEAR_BITS_64((X), (HI), (LO)) | \
-	(TRUNCATE_BITS_64((V), (HI) - (LO) + 1) << (LO)))
