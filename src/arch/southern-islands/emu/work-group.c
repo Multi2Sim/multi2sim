@@ -40,8 +40,8 @@ struct si_work_group_t *si_work_group_create(char *name)
 
 	/* Initialize */
 	work_group = xcalloc(1, sizeof(struct si_work_group_t));
-	work_group->local_mem = mem_create();
-	work_group->local_mem->safe = 0;
+	work_group->lds_module = mem_create();
+	work_group->lds_module->safe = 0;
 
 	/* Return */
 	return work_group;
@@ -50,7 +50,7 @@ struct si_work_group_t *si_work_group_create(char *name)
 
 void si_work_group_free(struct si_work_group_t *work_group)
 {
-	mem_free(work_group->local_mem);
+	mem_free(work_group->lds_module);
 	free(work_group);
 }
 

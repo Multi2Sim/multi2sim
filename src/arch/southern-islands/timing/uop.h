@@ -41,11 +41,11 @@ struct si_work_item_uop_t
 	/* Flags */
 	unsigned int active : 1;  /* Active after instruction emulation */
 
-	/* Local memory access */
-	int local_mem_access_count;
-	enum mod_access_kind_t local_mem_access_kind[SI_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	unsigned int local_mem_access_addr[SI_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	unsigned int local_mem_access_size[SI_MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	/* LDS accesses */
+	int lds_access_count;
+	enum mod_access_kind_t lds_access_kind[SI_MAX_LDS_ACCESSES_PER_INST];
+	unsigned int lds_access_addr[SI_MAX_LDS_ACCESSES_PER_INST];
+	unsigned int lds_access_size[SI_MAX_LDS_ACCESSES_PER_INST];
 };
 
 /* Structure representing a GPU instruction fetched in common for a wavefront.
@@ -57,9 +57,9 @@ struct si_uop_t
 	long long id_in_compute_unit;
 	long long id_in_wavefront;
 	int wavefront_pool_id;
-	struct si_wavefront_t *wavefront;        /* Wavefront it belongs to */
-	struct si_work_group_t *work_group;      /* Work-group it belongs to */
-	struct si_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
+	struct si_wavefront_t *wavefront;       /* Wavefront it belongs to */
+	struct si_work_group_t *work_group;     /* Work-group it belongs to */
+	struct si_compute_unit_t *compute_unit; /* Compute unit it belongs to */
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;  /* IB entry where uop is located */
 	struct si_inst_t inst;
 
@@ -67,12 +67,12 @@ struct si_uop_t
 	unsigned int ready : 1;
 	unsigned int mem_wait_inst : 1;
 	unsigned int barrier_wait_inst : 1;
-	unsigned int wavefront_last_inst : 1;   /* Last instruction in the wavefront */
+	unsigned int wavefront_last_inst : 1;   /* Last instruction in the WF */
 	unsigned int vector_mem_read : 1;
 	unsigned int vector_mem_write : 1;
 	unsigned int scalar_mem_read : 1;
-	unsigned int local_mem_read : 1;
-	unsigned int local_mem_write : 1;
+	unsigned int lds_read : 1;
+	unsigned int lds_write : 1;
 	unsigned int exec_mask_update : 1;
 
 	/* Timing */
@@ -86,7 +86,7 @@ struct si_uop_t
 
 	/* Witness memory accesses */
 	int global_mem_witness;
-	int local_mem_witness;
+	int lds_witness;
 	
 	/* Added for Profiling reports*/
 	int num_global_mem_read ;

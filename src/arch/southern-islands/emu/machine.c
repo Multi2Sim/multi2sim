@@ -4966,7 +4966,7 @@ void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	}
 	else
 	{
-		mem_write(work_item->work_group->local_mem, addr, 4, &data0);
+		mem_write(work_item->work_group->lds_module, addr, 4, &data0);
 	}
 
 	/* Print isa debug information. */
@@ -4983,10 +4983,10 @@ void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	}
 	else
 	{
-		work_item->local_mem_access_count = 1;
-		work_item->local_mem_access_type[0] = 2;
-		work_item->local_mem_access_addr[0] = addr;
-		work_item->local_mem_access_size[0] = 4;
+		work_item->lds_access_count = 1;
+		work_item->lds_access_type[0] = 2;
+		work_item->lds_access_addr[0] = addr;
+		work_item->lds_access_size[0] = 4;
 	}
 }
 #undef INST
@@ -5012,7 +5012,7 @@ void si_isa_DS_WRITE_B8_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	}
 	else
 	{
-		mem_write(work_item->work_group->local_mem, addr, 1, &data0);
+		mem_write(work_item->work_group->lds_module, addr, 1, &data0);
 	}
 
 	/* Print isa debug information. */
@@ -5029,10 +5029,10 @@ void si_isa_DS_WRITE_B8_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	}
 	else
 	{
-		work_item->local_mem_access_count = 1;
-		work_item->local_mem_access_type[0] = 2;
-		work_item->local_mem_access_addr[0] = addr;
-		work_item->local_mem_access_size[0] = 1;
+		work_item->lds_access_count = 1;
+		work_item->lds_access_type[0] = 2;
+		work_item->lds_access_addr[0] = addr;
+		work_item->lds_access_size[0] = 1;
 	}
 }
 #undef INST
@@ -5046,7 +5046,8 @@ void si_isa_DS_WRITE_B16_impl(struct si_work_item_t *work_item, struct si_inst_t
 
 	/* Load address and data from registers. */
 	addr = si_isa_read_vreg(work_item, INST.addr);
-	data0 = ((union si_reg_t)si_isa_read_vreg(work_item, INST.data0)).as_short[0];
+	data0 = ((union si_reg_t)si_isa_read_vreg(work_item, INST.data0)).
+		as_short[0];
 
 	/* Global data store not supported */
 	assert(!INST.gds);
@@ -5058,7 +5059,7 @@ void si_isa_DS_WRITE_B16_impl(struct si_work_item_t *work_item, struct si_inst_t
 	}
 	else
 	{
-		mem_write(work_item->work_group->local_mem, addr, 2, &data0);
+		mem_write(work_item->work_group->lds_module, addr, 2, &data0);
 	}
 
 	/* Print isa debug information. */
@@ -5075,17 +5076,18 @@ void si_isa_DS_WRITE_B16_impl(struct si_work_item_t *work_item, struct si_inst_t
 	}
 	else
 	{
-		work_item->local_mem_access_count = 1;
-		work_item->local_mem_access_type[0] = 2;
-		work_item->local_mem_access_addr[0] = addr;
-		work_item->local_mem_access_size[0] = 2;
+		work_item->lds_access_count = 1;
+		work_item->lds_access_type[0] = 2;
+		work_item->lds_access_addr[0] = addr;
+		work_item->lds_access_size[0] = 2;
 	}
 }
 #undef INST
 
 /* R = DS[A]; Dword read. */
 #define INST SI_INST_DS
-void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item, 
+	struct si_inst_t *inst)
 {
 	unsigned int addr;
 	union si_reg_t data;
@@ -5103,7 +5105,8 @@ void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	}
 	else
 	{
-		mem_read(work_item->work_group->local_mem, addr, 4, &data.as_uint);
+		mem_read(work_item->work_group->lds_module, addr, 4, 
+			&data.as_uint);
 	}
 
 	/* Write results. */
@@ -5112,7 +5115,8 @@ void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_uint);
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, 
+			data.as_uint);
 	}
 
 	/* Record last memory access for the detailed simulator. */
@@ -5123,17 +5127,18 @@ void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	}
 	else
 	{
-		work_item->local_mem_access_count = 1;
-		work_item->local_mem_access_type[0] = 1;
-		work_item->local_mem_access_addr[0] = addr;
-		work_item->local_mem_access_size[0] = 4;
+		work_item->lds_access_count = 1;
+		work_item->lds_access_type[0] = 1;
+		work_item->lds_access_addr[0] = addr;
+		work_item->lds_access_size[0] = 4;
 	}
 }
 #undef INST
 
 /* R = signext(DS[A][7:0]}; signed byte read. */
 #define INST SI_INST_DS
-void si_isa_DS_READ_I8_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+void si_isa_DS_READ_I8_impl(struct si_work_item_t *work_item, 
+	struct si_inst_t *inst)
 {
 	unsigned int addr;
 	union si_reg_t data;
@@ -5151,7 +5156,8 @@ void si_isa_DS_READ_I8_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	}
 	else
 	{
-		mem_read(work_item->work_group->local_mem, addr, 1, &data.as_byte[0]);
+		mem_read(work_item->work_group->lds_module, addr, 1, 
+			&data.as_byte[0]);
 	}
 
 	/* Extend the sign. */
@@ -5163,7 +5169,8 @@ void si_isa_DS_READ_I8_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_int);
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, 
+			data.as_int);
 	}
 
 	/* Record last memory access for the detailed simulator. */
@@ -5174,10 +5181,10 @@ void si_isa_DS_READ_I8_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	}
 	else
 	{
-		work_item->local_mem_access_count = 1;
-		work_item->local_mem_access_type[0] = 1;
-		work_item->local_mem_access_addr[0] = addr;
-		work_item->local_mem_access_size[0] = 1;
+		work_item->lds_access_count = 1;
+		work_item->lds_access_type[0] = 1;
+		work_item->lds_access_addr[0] = addr;
+		work_item->lds_access_size[0] = 1;
 	}
 }
 #undef INST
@@ -5202,7 +5209,8 @@ void si_isa_DS_READ_U8_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	}
 	else
 	{
-		mem_read(work_item->work_group->local_mem, addr, 1, &data.as_ubyte[0]);
+		mem_read(work_item->work_group->lds_module, addr, 1, 
+			&data.as_ubyte[0]);
 	}
 
 	/* Make sure to use only bits [7:0]. */
@@ -5214,7 +5222,8 @@ void si_isa_DS_READ_U8_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_uint);
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, 
+			data.as_uint);
 	}
 
 	/* Record last memory access for the detailed simulator. */
@@ -5225,10 +5234,10 @@ void si_isa_DS_READ_U8_impl(struct si_work_item_t *work_item, struct si_inst_t *
 	}
 	else
 	{
-		work_item->local_mem_access_count = 1;
-		work_item->local_mem_access_type[0] = 1;
-		work_item->local_mem_access_addr[0] = addr;
-		work_item->local_mem_access_size[0] = 1;
+		work_item->lds_access_count = 1;
+		work_item->lds_access_type[0] = 1;
+		work_item->lds_access_addr[0] = addr;
+		work_item->lds_access_size[0] = 1;
 	}
 }
 #undef INST
@@ -5253,7 +5262,8 @@ void si_isa_DS_READ_I16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	}
 	else
 	{
-		mem_read(work_item->work_group->local_mem, addr, 2, &data.as_short[0]);
+		mem_read(work_item->work_group->lds_module, addr, 2, 
+			&data.as_short[0]);
 	}
 
 	/* Extend the sign. */
@@ -5265,7 +5275,8 @@ void si_isa_DS_READ_I16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_int);
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, 
+			data.as_int);
 	}
 
 	/* Record last memory access for the detailed simulator. */
@@ -5276,10 +5287,10 @@ void si_isa_DS_READ_I16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	}
 	else
 	{
-		work_item->local_mem_access_count = 1;
-		work_item->local_mem_access_type[0] = 1;
-		work_item->local_mem_access_addr[0] = addr;
-		work_item->local_mem_access_size[0] = 2;
+		work_item->lds_access_count = 1;
+		work_item->lds_access_type[0] = 1;
+		work_item->lds_access_addr[0] = addr;
+		work_item->lds_access_size[0] = 2;
 	}
 }
 #undef INST
@@ -5304,7 +5315,8 @@ void si_isa_DS_READ_U16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	}
 	else
 	{
-		mem_read(work_item->work_group->local_mem, addr, 2, &data.as_ushort[0]);
+		mem_read(work_item->work_group->lds_module, addr, 2, 
+			&data.as_ushort[0]);
 	}
 
 	/* Make sure to use only bits [15:0]. */
@@ -5316,7 +5328,8 @@ void si_isa_DS_READ_U16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_uint);
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, 
+			data.as_uint);
 	}
 
 	/* Record last memory access for the detailed simulator. */
@@ -5327,10 +5340,10 @@ void si_isa_DS_READ_U16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	}
 	else
 	{
-		work_item->local_mem_access_count = 1;
-		work_item->local_mem_access_type[0] = 1;
-		work_item->local_mem_access_addr[0] = addr;
-		work_item->local_mem_access_size[0] = 2;
+		work_item->lds_access_count = 1;
+		work_item->lds_access_type[0] = 1;
+		work_item->lds_access_addr[0] = addr;
+		work_item->lds_access_size[0] = 2;
 	}
 }
 #undef INST

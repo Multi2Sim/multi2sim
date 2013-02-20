@@ -50,7 +50,7 @@ struct si_wavefront_t
 	/* Pointer to work_items */
 	struct si_work_item_t *scalar_work_item;
 	struct si_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
-	union si_reg_t sreg[256];  /* Scalar registers--used by scalar work items */
+	union si_reg_t sreg[256];  /* Scalar registers */
 
 	/* Predicate mask */
 	struct bit_map_t *pred;  /* work_item_count elements */
@@ -59,8 +59,8 @@ struct si_wavefront_t
 	unsigned int vector_mem_read : 1;
 	unsigned int vector_mem_write : 1;
 	unsigned int scalar_mem_read : 1;
-	unsigned int local_mem_read : 1;
-	unsigned int local_mem_write : 1;
+	unsigned int lds_read : 1;
+	unsigned int lds_write : 1;
 	unsigned int pred_mask_update : 1;
 	unsigned int mem_wait : 1;
 	unsigned int barrier : 1;
@@ -93,7 +93,7 @@ struct si_wavefront_t
 	long long vector_mem_inst_count;
 	long long vector_alu_inst_count;
 	long long global_mem_inst_count;
-	long long local_mem_inst_count;
+	long long lds_inst_count;
 };
 
 #define SI_FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \
@@ -115,6 +115,7 @@ void si_wavefront_stack_push(struct si_wavefront_t *wavefront);
 void si_wavefront_stack_pop(struct si_wavefront_t *wavefront, int count);
 void si_wavefront_execute(struct si_wavefront_t *wavefront);
 
-int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, int id_in_wavefront);
+int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, 
+	int id_in_wavefront);
 
 #endif

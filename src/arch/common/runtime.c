@@ -31,16 +31,17 @@
 static struct list_t *runtime_list;
 
 static char *runtime_err_redirect_current =
-		"\tThe dynamic linker of your application seems to be accessing a runtime library.\n"
-		"\tA copy of this runtime library has been found in the current working directory,\n"
-		"\tand this copy will be used by the linker. As a safer and portable option,\n"
-		"\tplease link your guest program statically with the corresponding runtime.\n";
+	"\tThe dynamic linker of your application seems to be accessing a \n"
+	"\truntime library. A copy of this runtime library has been found \n"
+	"\tin the current working directory, and this copy will be used by\n"
+	"\tthe linker. As a safer and portable option, please link your \n"
+	"\tguest program statically with the corresponding runtime.\n";
 
 static char *runtime_err_redirect_root =
-		"\tThe dynamic linker of your application seems to be accessing a runtime library.\n"
-		"\tA copy of this runtime library has been found in '$(TOPDIR)/lib/.libs', while\n"
-		"\trunning Multi2Sim from its build tree root. As a safer and portable option,\n"
-		"\tplease link your guest program statically with the corresponding runtime.\n";
+	"\tThe dynamic linker of your application seems to be accessing a runtime library.\n"
+	"\tA copy of this runtime library has been found in '$(TOPDIR)/lib/.libs', while\n"
+	"\trunning Multi2Sim from its build tree root. As a safer and portable option,\n"
+	"\tplease link your guest program statically with the corresponding runtime.\n";
 
 
 
