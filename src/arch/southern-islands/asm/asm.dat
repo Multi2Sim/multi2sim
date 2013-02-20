@@ -343,39 +343,39 @@ DEFINST(S_BARRIER,
 )
 
 DEFINST(S_WAITCNT,
-    " s_waitcnt     %WAIT_CNT",
-    SOPP,
+	" s_waitcnt     %WAIT_CNT",
+	SOPP,
 	12,
 	4,
 	0
 )
 
 DEFINST(S_LOAD_DWORDX4,
-    " s_load_dwordx4  %SERIES_SDST, %SERIES_SBASE, %OFFSET",
-    SMRD,
+	" s_load_dwordx4  %SERIES_SDST, %SERIES_SBASE, %OFFSET",
+	SMRD,
 	2,
 	4,
 	0
 )
 
 DEFINST(S_LOAD_DWORDX8,
-    " s_load_dwordx8  %SERIES_SDST, %SERIES_SBASE, %OFFSET",
-    SMRD,
+	" s_load_dwordx8  %SERIES_SDST, %SERIES_SBASE, %OFFSET",
+	SMRD,
 	3,
 	4,
 	0
 )
 
 DEFINST(S_BUFFER_LOAD_DWORD,
-    " s_buffer_load_dword  %SMRD_SDST, %SERIES_SBASE, %OFFSET",
-    SMRD, 
+	" s_buffer_load_dword  %SMRD_SDST, %SERIES_SBASE, %OFFSET",
+	SMRD, 
 	8,
 	4,
 	0
 )
 
 DEFINST(S_BUFFER_LOAD_DWORDX2,
-    " s_buffer_load_dwordx2  %SERIES_SDST, %SERIES_SBASE, %OFFSET",
+	" s_buffer_load_dwordx2  %SERIES_SDST, %SERIES_SBASE, %OFFSET",
 	SMRD,
 	9,
 	4,
@@ -383,7 +383,7 @@ DEFINST(S_BUFFER_LOAD_DWORDX2,
 )
 
 DEFINST(S_BUFFER_LOAD_DWORDX4,
-    " s_buffer_load_dwordx4  %SERIES_SDST, %SERIES_SBASE, %OFFSET",
+	" s_buffer_load_dwordx4  %SERIES_SDST, %SERIES_SBASE, %OFFSET",
 	SMRD,
 	10,
 	4,

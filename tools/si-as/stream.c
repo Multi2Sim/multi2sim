@@ -52,6 +52,7 @@ void si_stream_free(struct si_stream_t *stream)
 
 void si_stream_add_inst(struct si_stream_t *stream, struct si_dis_inst_t *inst)
 {
+#if 0
 	unsigned long long inst_bytes;
 	int size = 0;
 	
@@ -69,6 +70,7 @@ void si_stream_add_inst(struct si_stream_t *stream, struct si_dis_inst_t *inst)
 		stream->offset += size;
 		fwrite(&inst_bytes , size , 1, stream->out_file);
 	}
+#endif
 }
 
 long si_stream_get_offset(struct si_stream_t *stream)

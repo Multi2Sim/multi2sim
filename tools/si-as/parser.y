@@ -106,8 +106,10 @@ rl_line
 		inst = $1;
 
 		/* Print instruction */
+		si_dis_inst_gen(inst);
 		si_dis_inst_dump(inst, stdout);
 		//si_stream_add_inst(stream, $1);
+		exit(1); ////
 		
 		/* Free instruction */
 		si_dis_inst_free(inst);

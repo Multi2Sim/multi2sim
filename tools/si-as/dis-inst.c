@@ -130,17 +130,34 @@ void si_dis_inst_free(struct si_dis_inst_t *inst)
 void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 {
 	struct si_arg_t *arg;
-	int index;
+	unsigned int word;
+	
+	int i;
+	int j;
 	
 	/* Dump instruction opcode */
 	fprintf(f, "Instruction %s\n", inst->info->name);
 
 	/* Dump arguments */
-	LIST_FOR_EACH(inst->arg_list, index)
+	LIST_FOR_EACH(inst->arg_list, i)
 	{
-		arg = list_get(inst->arg_list, index);
-		fprintf(f, "\targ %d:\n", index);
+		arg = list_get(inst->arg_list, i);
+		fprintf(f, "\targ %d:\n", i);
 		si_arg_dump(arg, f);
+	}
+
+	/* Empty instruction bits */
+	if (!inst->size)
+		return;
+
+	/* Print words */
+	for (i = 0; i < inst->size / 4; i++)
+	{
+		word = * (int *) inst->inst_bytes.bytes;
+		printf("\tword %d:  hex = { %08x },  bin = {", i, word);
+		for (j = 0; j < 32; j++)
+			printf("%s%d", j % 4 ? "" : " ", (word >> (31 - j)) & 1);
+		printf(" }\n");
 	}
 }
 
@@ -158,8 +175,112 @@ void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 	
 
 	
-int si_dis_inst_code_gen(struct si_dis_inst_t *inst, unsigned long long *inst_bytes)
+void si_dis_inst_gen(struct si_dis_inst_t *inst)
 {
+	union si_inst_microcode_t *inst_bytes;
+	struct si_inst_info_t *inst_info;
+	struct si_dis_inst_info_t *info;
+
+	struct si_arg_t *arg;
+	struct si_token_t *token;
+
+	int index;
+
+	/* Initialize */
+	inst_bytes = &inst->inst_bytes;
+	info = inst->info;
+	assert(info);
+	inst_info = info->inst_info;
+
+	/* By default, the instruction has 4 bytes. It will be extended upon
+	 * the presence of a literal constant in its arguments. */
+	inst->size = 4;
+
+	/* Instruction opcode */
+	switch (inst_info->fmt)
+	{
+
+	/* Opcode in [26:22], encoding in [31:27] */
+	case SI_FMT_SMRD:
+		inst_bytes->smrd.enc = 0x18;
+		inst_bytes->smrd.op = inst_info->opcode;
+		break;
+
+	default:
+		fatal("%s: unsupported format", __FUNCTION__);
+	}
+
+	/* Arguments */
+	assert(inst->arg_list->count == info->token_list->count);
+	LIST_FOR_EACH(inst->arg_list, index)
+	{
+		/* Get argument */
+		arg = list_get(inst->arg_list, index);
+		token = list_get(info->token_list, index);
+		assert(arg);
+		assert(token);
+
+		/* Check token */
+		switch (token->type)
+		{
+		
+		case si_token_offset:
+
+			/* Depends of argument type */
+			switch (arg->type)
+			{
+
+			case si_arg_literal:
+
+				inst_bytes->smrd.imm = 1;
+				inst_bytes->smrd.offset = arg->value.literal.val;
+				/* FIXME - check valid range of literal */
+				break;
+			
+			case si_arg_scalar_register:
+
+				inst_bytes->smrd.offset = arg->value.scalar_register.id;
+				break;
+
+			default:
+				panic("%s: invalid argument type for 'offset' token",
+					__FUNCTION__);
+			}
+			break;
+
+		case si_token_series_sbase:
+
+			/* Check that low register is multiple of 2 */
+			if (arg->value.scalar_register_series.low % 2)
+				yyerror_fmt("base register must be multiple of 2");
+
+			/* Restrictions for high register */
+			switch (inst_info->inst)
+			{
+			case SI_INST_S_BUFFER_LOAD_DWORD:
+
+				/* High register must be low plus 3 */
+				if (arg->value.scalar_register_series.high !=
+						arg->value.scalar_register_series.low + 3)
+					yyerror("register series must be s[low:low+3]");
+				break;
+			default:
+				fatal("%s: unsupported opcode for 'series_sbase' token: %d",
+					__FUNCTION__, inst_info->inst);
+			}
+
+			/* Encode */
+			inst_bytes->smrd.sbase = arg->value.scalar_register_series.low / 2;
+			break;
+
+		case si_token_smrd_sdst:
+			inst_bytes->smrd.sdst = arg->value.scalar_register.id;
+			break;
+
+		default:
+			fatal("%s: unsupported token", __FUNCTION__);
+		}
+	}
 #if 0
 	struct si_arg_t *arg;
 	switch (inst->opcode)
@@ -426,7 +547,5 @@ int si_dis_inst_code_gen(struct si_dis_inst_t *inst, unsigned long long *inst_by
 		
 	};
 #endif
-	return 0;
-	
 }
 
