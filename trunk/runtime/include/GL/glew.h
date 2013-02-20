@@ -469,31 +469,6 @@
 
 #endif /* GL_ARB_vertex_buffer_object */
 
-typedef unsigned int GLenum;
-typedef unsigned int GLbitfield;
-typedef unsigned int GLuint;
-typedef int GLint;
-typedef int GLsizei;
-typedef unsigned char GLboolean;
-typedef signed char GLbyte;
-typedef short GLshort;
-typedef unsigned char GLubyte;
-typedef unsigned short GLushort;
-typedef unsigned long GLulong;
-typedef float GLfloat;
-typedef float GLclampf;
-typedef double GLdouble;
-typedef double GLclampd;
-typedef void GLvoid;
-typedef int64_t GLint64EXT;
-typedef uint64_t GLuint64EXT;
-
-typedef GLint64EXT GLint64;
-typedef GLuint64EXT GLuint64;
-typedef struct __GLsync *GLsync;
-
-typedef char GLchar;
-
 extern void glAccum (GLenum op, GLfloat value);
 extern void glAlphaFunc (GLenum func, GLclampf ref);
 extern GLboolean glAreTexturesResident (GLsizei n, const GLuint *textures, GLboolean *residences);
