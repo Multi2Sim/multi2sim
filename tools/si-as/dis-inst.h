@@ -29,6 +29,10 @@ struct si_dis_inst_t
 	enum si_inst_opcode_t opcode;
 	struct si_dis_inst_info_t *info;
 	struct list_t *arg_list;
+
+	/* Instruction bytes generated */
+	union si_inst_microcode_t inst_bytes;
+	int size;  /* Number of bytes */
 };
 
 
@@ -40,11 +44,7 @@ struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list);
 void si_dis_inst_free(struct si_dis_inst_t *inst);
 void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f);
 
-/* This function generates the assembly code for instruction 'inst' into
- * buffer 'inst_bytes. The returned value is the number of
- *  bytes of the generated instruction, or 0 if the inst
- * could not be decoded */
-int si_dis_inst_code_gen(struct si_dis_inst_t *inst, unsigned long long *inst_bytes);
+void si_dis_inst_gen(struct si_dis_inst_t *inst);
 
 #endif
 
