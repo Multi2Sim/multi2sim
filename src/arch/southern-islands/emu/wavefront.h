@@ -118,4 +118,13 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront);
 int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, 
 	int id_in_wavefront);
 
+void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, 
+	int sreg, unsigned int value);
+void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, 
+	int first_reg, int num_regs, int cb);
+void si_wavefront_init_sreg_with_cb_table(struct si_wavefront_t *wavefront,
+        int first_reg, int num_regs);
+void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
+	int first_reg, int num_regs);
+
 #endif

@@ -5378,7 +5378,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct 
 
 	if (INST.offen)
 	{
-		offset = si_isa_read_vreg(work_item, INST.vaddr);
+		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
 		if (INST.index)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
@@ -5438,7 +5438,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item, struct
 
 	if (INST.offen)
 	{
-		offset = si_isa_read_vreg(work_item, INST.vaddr);
+		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
 		if (INST.index)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
@@ -5499,7 +5499,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, stru
 
 	if (INST.offen)
 	{
-		offset = si_isa_read_vreg(work_item, INST.vaddr);
+		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
 		if (INST.index)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
@@ -5561,7 +5561,7 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struct
 
 	if (INST.offen)
 	{
-		offset = si_isa_read_vreg(work_item, INST.vaddr);
+		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
 		if (INST.index)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
@@ -5628,7 +5628,7 @@ void si_isa_TBUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, str
 
 	if (INST.offen)
 	{
-		offset = si_isa_read_vreg(work_item, INST.vaddr);
+		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
 		if (INST.index)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
