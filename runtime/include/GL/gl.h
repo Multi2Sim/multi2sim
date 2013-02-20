@@ -8316,9 +8316,6 @@ typedef void ( * PFNGLWINDOWPOS3IPROC) (GLint x, GLint y, GLint z);
 typedef void ( * PFNGLWINDOWPOS3IVPROC) (const GLint *p);
 typedef void ( * PFNGLWINDOWPOS3SPROC) (GLshort x, GLshort y, GLshort z);
 typedef void ( * PFNGLWINDOWPOS3SVPROC) (const GLshort *p);
-typedef ptrdiff_t GLintptr;
-typedef ptrdiff_t GLsizeiptr;
-
 typedef void ( * PFNGLBEGINQUERYPROC) (GLenum target, GLuint id);
 typedef void ( * PFNGLBINDBUFFERPROC) (GLenum target, GLuint buffer);
 typedef void ( * PFNGLBUFFERDATAPROC) (GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage);
@@ -8841,8 +8838,6 @@ typedef void ( * PFNGLPROGRAMUNIFORMMATRIX4X3DVPROC) (GLuint program, GLint loca
 typedef void ( * PFNGLPROGRAMUNIFORMMATRIX4X3FVPROC) (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 typedef void ( * PFNGLUSEPROGRAMSTAGESPROC) (GLuint pipeline, GLbitfield stages, GLuint program);
 typedef void ( * PFNGLVALIDATEPROGRAMPIPELINEPROC) (GLuint pipeline);
-typedef char GLcharARB;
-typedef unsigned int GLhandleARB;
 
 typedef void ( * PFNGLATTACHOBJECTARBPROC) (GLhandleARB containerObj, GLhandleARB obj);
 typedef void ( * PFNGLCOMPILESHADERARBPROC) (GLhandleARB shaderObj);
@@ -8970,8 +8965,6 @@ typedef void ( * PFNGLWEIGHTSVARBPROC) (GLint size, GLshort *weights);
 typedef void ( * PFNGLWEIGHTUBVARBPROC) (GLint size, GLubyte *weights);
 typedef void ( * PFNGLWEIGHTUIVARBPROC) (GLint size, GLuint *weights);
 typedef void ( * PFNGLWEIGHTUSVARBPROC) (GLint size, GLushort *weights);
-typedef ptrdiff_t GLintptrARB;
-typedef ptrdiff_t GLsizeiptrARB;
 
 typedef void ( * PFNGLBINDBUFFERARBPROC) (GLenum target, GLuint buffer);
 typedef void ( * PFNGLBUFFERDATAARBPROC) (GLenum target, GLsizeiptrARB size, const GLvoid* data, GLenum usage);
