@@ -35,12 +35,14 @@ struct si_wavefront_pool_t *si_wavefront_pool_create()
 
 	/* Initialize */
 	wavefront_pool = xcalloc(1, sizeof(struct si_wavefront_pool_t));
-	wavefront_pool->entries = xcalloc(si_gpu_max_wavefronts_per_wavefront_pool, 
+	wavefront_pool->entries = xcalloc(
+		si_gpu_max_wavefronts_per_wavefront_pool, 
 		sizeof(struct si_wavefront_pool_entry_t*));
 
 	for (i = 0; i < si_gpu_max_wavefronts_per_wavefront_pool; i++) 
 	{
-		wavefront_pool->entries[i] = xcalloc(1, sizeof(struct si_wavefront_pool_entry_t));
+		wavefront_pool->entries[i] = xcalloc(1, 
+			sizeof(struct si_wavefront_pool_entry_t));
 		wavefront_pool->entries[i]->id_in_wavefront_pool = i;
 		wavefront_pool->entries[i]->wavefront_pool = wavefront_pool;
 	}
@@ -77,7 +79,8 @@ void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool
 	for (i = 0; i < ndrange->wavefronts_per_work_group; i++) 
 	{
 		wavefront = work_group->wavefronts[i];
-		wavefront->wavefront_pool_entry = wavefront_pool->entries[first_entry + i];
+		wavefront->wavefront_pool_entry = 
+			wavefront_pool->entries[first_entry + i];
 		assert(!wavefront->wavefront_pool_entry->valid);
 
 		/* Set initial state */
@@ -89,8 +92,8 @@ void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool
 	}
 }
 
-void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
-	struct si_work_group_t *work_group)
+void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t 
+	*wavefront_pool, struct si_work_group_t *work_group)
 {
 	struct si_ndrange_t *ndrange = work_group->ndrange;
 	struct si_wavefront_t *wavefront;
@@ -98,17 +101,20 @@ void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_po
 	int i;
 
 	/* Reset mapped wavefronts */
-	assert(wavefront_pool->wavefront_count >= ndrange->wavefronts_per_work_group);
+	assert(wavefront_pool->wavefront_count >= 
+		ndrange->wavefronts_per_work_group);
 
 	for (i = 0; i < ndrange->wavefronts_per_work_group; i++) 
 	{
 		wavefront = work_group->wavefronts[i];
-		wf_id_in_ib = wavefront->wavefront_pool_entry->id_in_wavefront_pool;
+		wf_id_in_ib = 
+			wavefront->wavefront_pool_entry->id_in_wavefront_pool;
 
 		/* TODO Add complete flag to slots in instruction buffer */
-		/* TODO Check that all slots are complete before setting to NULL */
+		/* TODO Check that all slots are complete before setting NULL */
 		assert(wavefront_pool->entries[wf_id_in_ib]->wavefront);
-		assert(wavefront_pool->entries[wf_id_in_ib]->wavefront->id == wavefront->id);
+		assert(wavefront_pool->entries[wf_id_in_ib]->wavefront->id == 
+			wavefront->id);
 		wavefront_pool->entries[wf_id_in_ib]->valid = 0;
 		wavefront_pool->entries[wf_id_in_ib]->wavefront_finished = 0;
 		wavefront_pool->entries[wf_id_in_ib]->wavefront = NULL;

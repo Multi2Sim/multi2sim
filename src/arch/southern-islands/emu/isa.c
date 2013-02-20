@@ -80,17 +80,24 @@ unsigned int si_isa_read_sreg(struct si_work_item_t *work_item, int sreg)
 	return work_item->wavefront->sreg[sreg].as_uint;
 }
 
-void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, unsigned int value)
+void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, 
+	unsigned int value)
 {
 	work_item->wavefront->sreg[sreg].as_uint = value;
 
 	/* Update VCCZ and EXECZ if necessary. */
 	if (sreg == SI_VCC || sreg == SI_VCC + 1)
-		work_item->wavefront->sreg[SI_VCCZ].as_uint = !work_item->wavefront->sreg[SI_VCC].as_uint &
-														!work_item->wavefront->sreg[SI_VCC + 1].as_uint;
+	{
+		work_item->wavefront->sreg[SI_VCCZ].as_uint = 
+			!work_item->wavefront->sreg[SI_VCC].as_uint &
+			!work_item->wavefront->sreg[SI_VCC + 1].as_uint;
+	}
 	if (sreg == SI_EXEC || sreg == SI_EXEC + 1)
-		work_item->wavefront->sreg[SI_EXECZ].as_uint = !work_item->wavefront->sreg[SI_EXEC].as_uint &
-														!work_item->wavefront->sreg[SI_EXEC + 1].as_uint;
+	{
+		work_item->wavefront->sreg[SI_EXECZ].as_uint = 
+			!work_item->wavefront->sreg[SI_EXEC].as_uint &
+			!work_item->wavefront->sreg[SI_EXEC + 1].as_uint;
+	}
 }
 
 unsigned int si_isa_read_vreg(struct si_work_item_t *work_item, int vreg)
@@ -98,7 +105,8 @@ unsigned int si_isa_read_vreg(struct si_work_item_t *work_item, int vreg)
 	return work_item->vreg[vreg].as_uint;
 }
 
-void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, unsigned int value)
+void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, 
+	unsigned int value)
 {
 	work_item->vreg[vreg].as_uint = value;
 }
@@ -115,7 +123,8 @@ unsigned int si_isa_read_reg(struct si_work_item_t *work_item, int reg)
 	}
 }
 
-void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, unsigned int value)
+void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, 
+	unsigned int value)
 {
 	unsigned int mask = 1;
 	unsigned int bitfield;
@@ -142,29 +151,35 @@ int si_isa_read_bitmask_sreg(struct si_work_item_t *work_item, int sreg)
 	if (work_item->id_in_wavefront < 32)
 	{
 		mask <<= work_item->id_in_wavefront;
-		return (si_isa_read_sreg(work_item, sreg) & mask) >> work_item->id_in_wavefront;
+		return (si_isa_read_sreg(work_item, sreg) & mask) >> 
+			work_item->id_in_wavefront;
 	}
 	else
 	{
 		mask <<= (work_item->id_in_wavefront - 32);
-		return (si_isa_read_sreg(work_item, sreg + 1) & mask) >> (work_item->id_in_wavefront - 32);
+		return (si_isa_read_sreg(work_item, sreg + 1) & mask) >> 
+			(work_item->id_in_wavefront - 32);
 	}
 }
 
 /* Initialize a buffer resource descriptor */
-void si_isa_read_buf_res(struct si_work_item_t *work_item, struct si_buffer_resource_t *buf_desc, int sreg)
+void si_isa_read_buf_res(struct si_work_item_t *work_item, 
+	struct si_buffer_resource_t *buf_desc, int sreg)
 {
 	assert(buf_desc);
 
-	memcpy(buf_desc, &work_item->wavefront->sreg[sreg].as_uint, sizeof(unsigned int)*4);
+	memcpy(buf_desc, &work_item->wavefront->sreg[sreg].as_uint, 
+		sizeof(unsigned int)*4);
 }
 
 /* Initialize a buffer resource descriptor */
-void si_isa_read_mem_ptr(struct si_work_item_t *work_item, struct si_mem_ptr_t *mem_ptr, int sreg)
+void si_isa_read_mem_ptr(struct si_work_item_t *work_item, 
+	struct si_mem_ptr_t *mem_ptr, int sreg)
 {
 	assert(mem_ptr);
 
-	memcpy(mem_ptr, &work_item->wavefront->sreg[sreg].as_uint, sizeof(unsigned int)*2);
+	memcpy(mem_ptr, &work_item->wavefront->sreg[sreg].as_uint, 
+		sizeof(unsigned int)*2);
 }
 
 

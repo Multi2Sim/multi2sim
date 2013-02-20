@@ -78,11 +78,12 @@ static void si_uop_add_src_idep(struct si_uop_t *uop, struct si_inst_t *inst, in
 void si_uop_init()
 {
 	/* GPU uop repository.
-	 * The size assigned for each 'si_uop_t' is equals to the baseline structure size plus the
-	 * size of a 'si_work_item_uop_t' element for each work-item in the wavefront. */
-	gpu_uop_repos = repos_create(sizeof(struct si_uop_t) + sizeof(struct si_work_item_uop_t)
+	 * The size assigned for each 'si_uop_t' is equals to the 
+	 * baseline structure size plus the size of a 'si_work_item_uop_t' 
+	 * element for each work-item in the wavefront. */
+	gpu_uop_repos = repos_create(sizeof(struct si_uop_t) + 
+		sizeof(struct si_work_item_uop_t)
 		* si_emu_wavefront_size, "gpu_uop_repos");
-	
 }
 
 

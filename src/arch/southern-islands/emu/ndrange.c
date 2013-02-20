@@ -59,16 +59,21 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 	ndrange->local_mem_top = kernel->func_mem_local;
 	ndrange->id = si_emu->ndrange_count++;
 	ndrange->num_vgprs = 
-		kernel->bin_file->enc_dict_entry_southern_islands->num_vgpr_used;
+		kernel->bin_file->enc_dict_entry_southern_islands->
+		num_vgpr_used;
 	ndrange->num_sgprs = 
-		kernel->bin_file->enc_dict_entry_southern_islands->num_sgpr_used;
+		kernel->bin_file->enc_dict_entry_southern_islands->
+		num_sgpr_used;
 
 	/* Create the UAV-to-physical-address lookup lists */
 	ndrange->uav_list = list_create();
 
 	/* Instruction histogram */
 	if (si_emu_report_file)
-		ndrange->inst_histogram = xcalloc(SI_INST_COUNT, sizeof(unsigned int));
+	{
+		ndrange->inst_histogram = xcalloc(SI_INST_COUNT, 
+			sizeof(unsigned int));
+	}
 
 	/* Return */
 	return ndrange;
@@ -86,7 +91,8 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 	/* Clear task from command queue */
 	if (ndrange->command_queue && ndrange->command)
 	{
-		si_opencl_command_queue_complete(ndrange->command_queue, ndrange->command);
+		si_opencl_command_queue_complete(ndrange->command_queue, 
+			ndrange->command);
 		si_opencl_command_free(ndrange->command);
 	}
 
@@ -169,13 +175,19 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	}
 
 	/* Array of wavefronts */
-	ndrange->wavefronts_per_work_group = (kernel->local_size + si_emu_wavefront_size - 1) / si_emu_wavefront_size;
-	ndrange->wavefront_count = ndrange->wavefronts_per_work_group * ndrange->work_group_count;
+	ndrange->wavefronts_per_work_group = 
+		(kernel->local_size + si_emu_wavefront_size - 1) / 
+		si_emu_wavefront_size;
+	ndrange->wavefront_count = ndrange->wavefronts_per_work_group * 
+		ndrange->work_group_count;
 	ndrange->wavefront_id_first = 0;
 	ndrange->wavefront_id_last = ndrange->wavefront_count - 1;
-	assert(ndrange->wavefronts_per_work_group > 0 && ndrange->wavefront_count > 0);
+	assert(ndrange->wavefronts_per_work_group > 0 && 
+		ndrange->wavefront_count > 0);
 	ndrange->wavefronts = xcalloc(ndrange->wavefront_count, sizeof(void *));
-	ndrange->scalar_work_items = xcalloc(ndrange->wavefront_count, sizeof(void *));
+	ndrange->scalar_work_items = xcalloc(ndrange->wavefront_count, 
+		sizeof(void *));
+
 	for (wid = 0; wid < ndrange->wavefront_count; wid++)
 	{
 		gid = wid / ndrange->wavefronts_per_work_group;
@@ -184,7 +196,8 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		work_group = ndrange->work_groups[gid];
 
 		wavefront->id = wid;
-		wavefront->id_in_work_group = wid % ndrange->wavefronts_per_work_group;
+		wavefront->id_in_work_group = wid % 
+			ndrange->wavefronts_per_work_group;
 		wavefront->ndrange = ndrange;
 		wavefront->work_group = work_group;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, running, wavefront);
@@ -299,40 +312,63 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	{
 		/* Assign names to wavefronts */
 		wavefront = ndrange->wavefronts[wid];
-		snprintf(wavefront->name, sizeof(wavefront->name), "wavefront[i%d-i%d]",
-			wavefront->work_item_id_first, wavefront->work_item_id_last);
+		snprintf(wavefront->name, sizeof(wavefront->name), 
+			"wavefront[i%d-i%d]",
+			wavefront->work_item_id_first, 
+			wavefront->work_item_id_last);
 
 		/* Save work-group IDs in registers */
 		unsigned int user_sgpr = kernel->bin_file->
-			enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
-		wavefront->sreg[user_sgpr].as_int = wavefront->work_group->id_3d[0];
-		wavefront->sreg[user_sgpr + 1].as_int = wavefront->work_group->id_3d[1];
-		wavefront->sreg[user_sgpr + 2].as_int = wavefront->work_group->id_3d[2];
+			enc_dict_entry_southern_islands->
+			compute_pgm_rsrc2->user_sgpr;
+		wavefront->sreg[user_sgpr].as_int = 
+			wavefront->work_group->id_3d[0];
+		wavefront->sreg[user_sgpr + 1].as_int = 
+			wavefront->work_group->id_3d[1];
+		wavefront->sreg[user_sgpr + 2].as_int = 
+			wavefront->work_group->id_3d[2];
 
 		/* Initialize Constant Buffers */
-		unsigned int userElementCount = kernel->bin_file->enc_dict_entry_southern_islands->userElementCount;
-		struct si_bin_enc_user_element_t* userElements = kernel->bin_file->enc_dict_entry_southern_islands->userElements;
+		unsigned int userElementCount = 
+			kernel->bin_file->enc_dict_entry_southern_islands->
+			userElementCount;
+		struct si_bin_enc_user_element_t* userElements = 
+			kernel->bin_file->enc_dict_entry_southern_islands->
+			userElements;
 		for (int i = 0; i < userElementCount; i++)
 		{
 			if (userElements[i].dataClass == IMM_CONST_BUFFER)
 			{
-				si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
+				si_wavefront_init_sreg_with_cb(wavefront, 
+					userElements[i].startUserReg, 
+					userElements[i].userRegCount, 
+					userElements[i].apiSlot);
 			}
 			else if (userElements[i].dataClass == IMM_UAV)
 			{
-				si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
+				si_wavefront_init_sreg_with_cb(wavefront, 
+					userElements[i].startUserReg, 
+					userElements[i].userRegCount, 
+					userElements[i].apiSlot);
 			}
-			else if (userElements[i].dataClass == PTR_CONST_BUFFER_TABLE)
+			else if (userElements[i].dataClass == 
+				PTR_CONST_BUFFER_TABLE)
 			{
-				si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
+				si_wavefront_init_sreg_with_uav_table(wavefront,
+					userElements[i].startUserReg, 
+					userElements[i].userRegCount);
 			}
 			else if (userElements[i].dataClass == PTR_UAV_TABLE)
 			{
-				si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
+				si_wavefront_init_sreg_with_uav_table(wavefront,
+					userElements[i].startUserReg, 
+					userElements[i].userRegCount);
 			}
 			else
 			{
-				fatal("Unimplemented User Element: dataClass:%d", userElements[i].dataClass);
+				fatal("Unimplemented User Element: "
+					"dataClass:%d", 
+					userElements[i].dataClass);
 			}
 		}
 
@@ -343,29 +379,38 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	}
 
 	/* Debug */
-	si_isa_debug("local_size = %d (%d,%d,%d)\n", kernel->local_size, kernel->local_size3[0],
-		kernel->local_size3[1], kernel->local_size3[2]);
-	si_isa_debug("global_size = %d (%d,%d,%d)\n", kernel->global_size, kernel->global_size3[0],
-		kernel->global_size3[1], kernel->global_size3[2]);
-	si_isa_debug("group_count = %d (%d,%d,%d)\n", kernel->group_count, kernel->group_count3[0],
-		kernel->group_count3[1], kernel->group_count3[2]);
+	si_isa_debug("local_size = %d (%d,%d,%d)\n", kernel->local_size, 
+		kernel->local_size3[0], kernel->local_size3[1], 
+		kernel->local_size3[2]);
+	si_isa_debug("global_size = %d (%d,%d,%d)\n", kernel->global_size, 
+		kernel->global_size3[0], kernel->global_size3[1], 
+		kernel->global_size3[2]);
+	si_isa_debug("group_count = %d (%d,%d,%d)\n", kernel->group_count, 
+		kernel->group_count3[0], kernel->group_count3[1], 
+		kernel->group_count3[2]);
 	si_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
-	si_isa_debug("wavefronts_per_work_group = %d\n", ndrange->wavefronts_per_work_group);
+	si_isa_debug("wavefronts_per_work_group = %d\n", 
+		ndrange->wavefronts_per_work_group);
 	si_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   lid lid2 lid1 lid0  wavefront            work-group\n");
 	for (tid = 0; tid < ndrange->work_item_count; tid++)
 	{
 		work_item = ndrange->work_items[tid];
 		wavefront = work_item->wavefront;
 		work_group = work_item->work_group;
-		si_isa_debug("%4d %4d %4d %4d  ", work_item->id, work_item->id_3d[2],
-			work_item->id_3d[1], work_item->id_3d[0]);
-		si_isa_debug("%4d %4d %4d %4d  ", work_group->id, work_group->id_3d[2],
-			work_group->id_3d[1], work_group->id_3d[0]);
+		si_isa_debug("%4d %4d %4d %4d  ", work_item->id, 
+			work_item->id_3d[2], work_item->id_3d[1], 
+			work_item->id_3d[0]);
+		si_isa_debug("%4d %4d %4d %4d  ", work_group->id, 
+			work_group->id_3d[2], work_group->id_3d[1], 
+			work_group->id_3d[0]);
 		si_isa_debug("%4d %4d %4d %4d  ", work_item->id_in_work_group, 
-			work_item->id_in_work_group_3d[2], work_item->id_in_work_group_3d[1], 
+			work_item->id_in_work_group_3d[2], 
+			work_item->id_in_work_group_3d[1], 
 			work_item->id_in_work_group_3d[0]);
-		si_isa_debug("%20s.%-4d  ", wavefront->name, work_item->id_in_wavefront);
-		si_isa_debug("%20s.%-4d\n", work_group->name, work_item->id_in_work_group);
+		si_isa_debug("%20s.%-4d  ", wavefront->name, 
+			work_item->id_in_wavefront);
+		si_isa_debug("%20s.%-4d\n", work_group->name, 
+			work_item->id_in_work_group);
 	}
 
 }
@@ -405,19 +450,19 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	unsigned int zero = 0;
 	float f;
 	
-       	/* CB0 bytes 0:15 */
-        
+	/* CB0 bytes 0:15 */
+
 	/* Global work size for the {x,y,z} dimensions */
 	si_isa_const_mem_write(0, 0, &kernel->global_size3[0]);
 	si_isa_const_mem_write(0, 4, &kernel->global_size3[1]);
 	si_isa_const_mem_write(0, 8, &kernel->global_size3[2]);
 
-        /* Number of work dimensions */
+	/* Number of work dimensions */
 	si_isa_const_mem_write(0, 12, &kernel->work_dim);
 
-       	/* CB0 bytes 16:31 */
+	/* CB0 bytes 16:31 */
 
-        /* Local work size for the {x,y,z} dimensions */
+	/* Local work size for the {x,y,z} dimensions */
 	si_isa_const_mem_write(0, 16, &kernel->local_size3[0]);
 	si_isa_const_mem_write(0, 20, &kernel->local_size3[1]);
 	si_isa_const_mem_write(0, 24, &kernel->local_size3[2]);
@@ -425,7 +470,7 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	/* 0  */
 	si_isa_const_mem_write(0, 28, &zero);
 
-       	/* CB0 bytes 32:47 */
+	/* CB0 bytes 32:47 */
 
 	/* Global work size {x,y,z} / local work size {x,y,z} */
 	si_isa_const_mem_write(0, 32, &kernel->group_count3[0]);
@@ -435,9 +480,10 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	/* 0  */
 	si_isa_const_mem_write(0, 44, &zero);
 
-       	/* CB0 bytes 48:63 */
+	/* CB0 bytes 48:63 */
 
-	/* FIXME Offset to private memory ring (0 if private memory is not emulated) */
+	/* FIXME Offset to private memory ring (0 if private memory is 
+	 * not emulated) */
 
 	/* FIXME Private memory allocated per work_item */
 
@@ -447,18 +493,20 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	/* 0  */
 	si_isa_const_mem_write(0, 60, &zero);
 
-       	/* CB0 bytes 64:79 */
+	/* CB0 bytes 64:79 */
 
-	/* FIXME Offset to local memory ring (0 if local memory is not emulated) */
+	/* FIXME Offset to local memory ring (0 if local memory is 
+	 * not emulated) */
 
 	/* FIXME Local memory allocated per group */
 
 	/* 0 */
 	si_isa_const_mem_write(0, 72, &zero);
 
-	/* FIXME Pointer to location in global buffer where math library tables start. */
-        	
-       	/* CB0 bytes 80:95 */
+	/* FIXME Pointer to location in global buffer where math library 
+	 * tables start. */
+
+	/* CB0 bytes 80:95 */
 
 	/* 0.0 as IEEE-32bit float - required for math library. */
 	f = 0.0f;
@@ -476,7 +524,7 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	f = 2.0f;
 	si_isa_const_mem_write(0, 92, &f);
 	
-       	/* CB0 bytes 96:111 */
+	/* CB0 bytes 96:111 */
 
 	/* Global offset for the {x,y,z} dimension of the work_item spawn */
 	si_isa_const_mem_write(0, 96, &zero);
@@ -486,7 +534,7 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	/* Global single dimension flat offset: x * y * z */
 	si_isa_const_mem_write(0, 108, &zero);
 
-       	/* CB0 bytes 112:127 */
+	/* CB0 bytes 112:127 */
 
 	/* Group offset for the {x,y,z} dimensions of the work_item spawn */
 	si_isa_const_mem_write(0, 112, &zero);
@@ -496,7 +544,7 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	/* Group single dimension flat offset, x * y * z */
 	si_isa_const_mem_write(0, 124, &zero);
 
-       	/* CB0 bytes 128:143 */
+	/* CB0 bytes 128:143 */
 
 	/* FIXME Offset in the global buffer where data segment exists */
 	/* FIXME Offset in buffer for printf support */
@@ -515,20 +563,22 @@ void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange)
 
 	for (i = 0; i < list_count(ndrange->uav_list); i++)
 	{
-		   /* Get the memory object for the buffer */
-		   mem_obj = list_get(ndrange->uav_list, i);
+		/* Get the memory object for the buffer */
+		mem_obj = list_get(ndrange->uav_list, i);
 
-		   /* Get the address of the buffer in global memory */
-		   buffer_addr = mem_obj->device_ptr;
+		/* Get the address of the buffer in global memory */
+		buffer_addr = mem_obj->device_ptr;
 
-		   /* Initialize the buffer resource descriptor for this UAV */
-		   buf_desc.base_addr = buffer_addr;
+		/* Initialize the buffer resource descriptor for this UAV */
+		buf_desc.base_addr = buffer_addr;
 
-		   assert(UAV_TABLE_START + 320 + i*32 <= UAV_TABLE_START + UAV_TABLE_SIZE - 32);
+		assert(UAV_TABLE_START + 320 + i*32 <= 
+			UAV_TABLE_START + UAV_TABLE_SIZE - 32);
 
-		   /* Write the buffer resource descriptor into the UAV table at offset 320
-			* with 32 bytes spacing */
-		   mem_write(si_emu->global_mem, UAV_TABLE_START + 320 + i * 32, 16, &buf_desc);
+		/* Write the buffer resource descriptor into the UAV 
+		* table at offset 320 with 32 bytes spacing */
+		mem_write(si_emu->global_mem, UAV_TABLE_START + 320 + i * 32, 
+			16, &buf_desc);
 	}
 }
 
@@ -548,7 +598,8 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 
 		/* Check that argument was set */
 		if (!arg->set)
-			fatal("kernel '%s': argument '%s' has not been assigned with 'clKernelSetArg'.",
+			fatal("kernel '%s': argument '%s' has not been "
+				"assigned with 'clKernelSetArg'.",
 				kernel->name, arg->name);
 
 		/* Process argument depending on its type */
@@ -560,10 +611,11 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 			/* Value copied directly into device constant memory */
 			for (j = 0; j < arg->size/4; j++)
 			{
-				si_isa_const_mem_write(1, (cb_index*4)*4+j, &arg->data.value[j]);
-				si_opencl_debug("    arg %d: value '0x%x' loaded into "
-						"CB1[%d][%d]\n", i, arg->data.value[j], 
-						cb_index, j);
+				si_isa_const_mem_write(1, (cb_index*4)*4+j, 
+					&arg->data.value[j]);
+				si_opencl_debug("    arg %d: value '0x%x' "
+					"loaded into CB1[%d][%d]\n", i, 
+					arg->data.value[j], cb_index, j);
 			}
 			cb_index++;
 			break;
@@ -580,14 +632,18 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 				struct si_opencl_mem_t *mem;
 
 				/* Pointer in __global scope.
-				 * Argument value is a pointer to an 'opencl_mem' object.
-				 * It is translated first into a device memory pointer. */
-				mem = si_opencl_repo_get_object(si_emu->opencl_repo,
+				 * Argument value is a pointer to an 
+				 * 'opencl_mem' object. It is translated first 
+				 * into a device memory pointer. */
+				mem = si_opencl_repo_get_object(
+					si_emu->opencl_repo,
 					si_opencl_object_mem, arg->data.ptr);
-				si_isa_const_mem_write(1, (cb_index*4)*4, &mem->device_ptr);
-				si_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d],"
-					" device_ptr=0x%x\n", i, arg->data.ptr, cb_index,
-					mem->device_ptr);
+				si_isa_const_mem_write(1, (cb_index*4)*4, 
+					&mem->device_ptr);
+				si_opencl_debug("    arg %d: opencl_mem id "
+					"0x%x loaded into CB1[%d],"
+					" device_ptr=0x%x\n", i, arg->data.ptr,
+					cb_index, mem->device_ptr);
 				cb_index++;
 				break;
 			}
@@ -595,9 +651,12 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 			case SI_OPENCL_MEM_SCOPE_LOCAL:
 			{
 				/* Pointer in __local scope.
-				 * Argument value is always NULL, just assign space for it. */
-				si_isa_const_mem_write(1, (cb_index*4)*4, &ndrange->local_mem_top);
-				si_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
+				 * Argument value is always NULL, just assign 
+				 * space for it. */
+				si_isa_const_mem_write(1, (cb_index*4)*4, 
+					&ndrange->local_mem_top);
+				si_opencl_debug("    arg %d: %d bytes reserved "
+					"in local memory at 0x%x\n",
 					i, arg->size, ndrange->local_mem_top);
 				ndrange->local_mem_top += arg->size;
 				cb_index++;
@@ -606,8 +665,9 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 
 			default:
 			{
-				fatal("%s: argument in memory scope %d not supported",
-					__FUNCTION__, arg->mem_scope);
+				fatal("%s: argument in memory scope %d not "
+					"supported", __FUNCTION__, 
+					arg->mem_scope);
 			}
 
 			}
@@ -652,24 +712,29 @@ void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f)
 	}
 }
 
-int si_ndrange_get_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status)
+int si_ndrange_get_status(struct si_ndrange_t *ndrange, 
+	enum si_ndrange_status_t status)
 {
 	return (ndrange->status & status) > 0;
 }
 
 
-void si_ndrange_set_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status)
+void si_ndrange_set_status(struct si_ndrange_t *ndrange, 
+	enum si_ndrange_status_t status)
 {
 	/* Get only the new bits */
 	status &= ~ndrange->status;
 
 	/* Add ND-Range to lists */
 	if (status & si_ndrange_pending)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, pending_ndrange, ndrange);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, pending_ndrange, 
+			ndrange);
 	if (status & si_ndrange_running)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, running_ndrange, ndrange);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, running_ndrange, 
+			ndrange);
 	if (status & si_ndrange_finished)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, finished_ndrange, ndrange);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, finished_ndrange, 
+			ndrange);
 
 	/* Start/stop Southern Islands timer depending on ND-Range states */
 	if (si_emu->running_ndrange_list_count)
@@ -682,7 +747,8 @@ void si_ndrange_set_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_
 }
 
 
-void si_ndrange_clear_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status)
+void si_ndrange_clear_status(struct si_ndrange_t *ndrange, 
+	enum si_ndrange_status_t status)
 {
 	/* Get only the bits that are set */
 	status &= ndrange->status;

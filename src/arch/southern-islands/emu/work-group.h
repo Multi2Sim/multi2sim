@@ -52,8 +52,10 @@ struct si_work_group_t
 	int wavefront_count;
 
 	/* Pointers to wavefronts and work-items */
-	struct si_work_item_t **work_items;  /* Pointer to first work_item in 'kernel->work_items' */
-	struct si_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
+	struct si_work_item_t **work_items;  /* Pointer to first work_item in 
+						'kernel->work_items' */
+	struct si_wavefront_t **wavefronts;  /* Pointer to first wavefront in 
+						'kernel->wavefronts' */
 	struct si_wavefront_pool_t *wavefront_pool;
 
 	/* Double linked lists of work-groups */
@@ -84,10 +86,11 @@ struct si_work_group_t
 
 	/* Fields introduced for architectural simulation */
 	int id_in_compute_unit;
-	int compute_unit_finished_count;  /* like 'finished_list_count', but when WF reaches Complete stage */
+	int compute_unit_finished_count;  /* like 'finished_list_count', but 
+					     when WF reaches Complete stage */
 
-	/* Local memory */
-	struct mem_t *local_mem;
+	/* LDS */
+	struct mem_t *lds_module;
 };
 
 #define SI_FOR_EACH_WORK_GROUP_IN_NDRANGE(NDRANGE, WORK_GROUP_ID) \
@@ -99,8 +102,11 @@ struct si_work_group_t *si_work_group_create();
 void si_work_group_free(struct si_work_group_t *work_group);
 void si_work_group_dump(struct si_work_group_t *work_group, FILE *f);
 
-int si_work_group_get_status(struct si_work_group_t *work_group, enum si_work_group_status_t status);
-void si_work_group_set_status(struct si_work_group_t *work_group, enum si_work_group_status_t status);
-void si_work_group_clear_status(struct si_work_group_t *work_group, enum si_work_group_status_t status);
+int si_work_group_get_status(struct si_work_group_t *work_group, 
+	enum si_work_group_status_t status);
+void si_work_group_set_status(struct si_work_group_t *work_group, 
+	enum si_work_group_status_t status);
+void si_work_group_clear_status(struct si_work_group_t *work_group, 
+	enum si_work_group_status_t status);
 
 #endif

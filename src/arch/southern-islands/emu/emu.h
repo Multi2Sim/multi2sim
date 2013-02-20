@@ -70,13 +70,13 @@ struct si_emu_t
 
 	/* Statistics */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
-	long long inst_count;  /* Number of instructions executed by wavefronts */
-	long long scalar_alu_inst_count;  /* Number of scalar ALU instructions executed */
-	long long scalar_mem_inst_count;  /* Number of scalar memory instructions executed */
-	long long branch_inst_count; /* Number of branch instructions executed */
-	long long vector_alu_inst_count;  /* Number of vector ALU instructions executed */
-	long long local_mem_inst_count; /* Number of LDS instructions executed */
-	long long vector_mem_inst_count;  /* Number of scalar memory instructions executed */
+	long long inst_count;  /* Number of instructions executed by a WF */
+	long long scalar_alu_inst_count;  /* Scalar ALU instructions executed */
+	long long scalar_mem_inst_count;  /* Scalar mem instructions executed */
+	long long branch_inst_count;  /* Branch instructions executed */
+	long long vector_alu_inst_count;  /* Vector ALU instructions executed */
+	long long lds_inst_count;  /* LDS instructions executed */
+	long long vector_mem_inst_count;  /* Vector mem instructions executed */
 };
 
 /* Forward declaration */
