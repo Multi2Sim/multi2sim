@@ -24,6 +24,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/string.h>
 
 #include "arg.h"
@@ -161,20 +162,7 @@ void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 	}
 }
 
-#define CLEAR_BITS_64(X, HI, LO) \
-	((unsigned long long) (X) & (((1ull << (LO)) - 1) \
-	| ~(((HI) < 63 ? 1ull << ((HI) + 1) : 0ull) - 1)))
 
-#define TRUNCATE_BITS_64(X, NUM) \
-	((unsigned long long) (X) & ((1ull << (NUM)) - 1))
-
-#define SET_BITS_64(X, HI, LO, V) \
-	(CLEAR_BITS_64((X), (HI), (LO)) | \
-	(TRUNCATE_BITS_64((V), (HI) - (LO) + 1) << (LO)))
-
-	
-
-	
 void si_dis_inst_gen(struct si_dis_inst_t *inst)
 {
 	union si_inst_microcode_t *inst_bytes;
@@ -200,10 +188,18 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 	switch (inst_info->fmt)
 	{
 
-	/* Opcode in [26:22], encoding in [31:27] */
+	/* encoding in [31:27], op in [26:22] */
 	case SI_FMT_SMRD:
+
 		inst_bytes->smrd.enc = 0x18;
 		inst_bytes->smrd.op = inst_info->opcode;
+		break;
+
+	/* encoding in [31:23], op in [22:16],  */
+	case SI_FMT_SOPP:
+
+		inst_bytes->sopp.enc = 0x17f;
+		inst_bytes->sopp.op = inst_info->opcode;
 		break;
 
 	default:
@@ -252,11 +248,20 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 
 			/* Check that low register is multiple of 2 */
 			if (arg->value.scalar_register_series.low % 2)
-				yyerror_fmt("base register must be multiple of 2");
+				yyerror("base register must be multiple of 2");
 
 			/* Restrictions for high register */
 			switch (inst_info->inst)
 			{
+
+			case SI_INST_S_LOAD_DWORDX4:
+
+				/* High register must be low plus 1 */
+				if (arg->value.scalar_register_series.high !=
+						arg->value.scalar_register_series.low + 1)
+					yyerror("register series must be s[low:low+3]");
+				break;
+
 			case SI_INST_S_BUFFER_LOAD_DWORD:
 
 				/* High register must be low plus 3 */
@@ -264,17 +269,88 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 						arg->value.scalar_register_series.low + 3)
 					yyerror("register series must be s[low:low+3]");
 				break;
+
 			default:
-				fatal("%s: unsupported opcode for 'series_sbase' token: %d",
-					__FUNCTION__, inst_info->inst);
+				fatal("%s: unsupported opcode for 'series_sbase' token: %s",
+						__FUNCTION__, info->name);
 			}
 
 			/* Encode */
 			inst_bytes->smrd.sbase = arg->value.scalar_register_series.low / 2;
 			break;
 
+		case si_token_series_sdst:
+
+			/* Restrictions for high register */
+			switch (inst_info->inst)
+			{
+
+			case SI_INST_S_LOAD_DWORDX4:
+
+				/* High register must be low plus 3 */
+				if (arg->value.scalar_register_series.high !=
+						arg->value.scalar_register_series.low + 3)
+					yyerror("register series must be s[low:low+3]");
+				break;
+
+			default:
+				fatal("%s: unsupported opcode for 'series_sdst' token: %s",
+						__FUNCTION__, info->name);
+			}
+
+			/* Encode */
+			inst_bytes->smrd.sdst = arg->value.scalar_register_series.low;
+			break;
+
 		case si_token_smrd_sdst:
+
+			/* Encode */
 			inst_bytes->smrd.sdst = arg->value.scalar_register.id;
+			break;
+
+		case si_token_wait_cnt:
+
+			/* vmcnt(x) */
+			if (arg->value.wait_cnt.vmcnt_active)
+			{
+				if (!IN_RANGE(arg->value.wait_cnt.vmcnt_value, 0, 0xe))
+					yyerror("invalid value for vmcnt");
+				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+						3, 0, arg->value.wait_cnt.vmcnt_value);
+			}
+			else
+			{
+				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+						3, 0, 0xf);
+			}
+
+			/* lgkmcnt(x) */
+			if (arg->value.wait_cnt.lgkmcnt_active)
+			{
+				if (!IN_RANGE(arg->value.wait_cnt.lgkmcnt_value, 0, 0x1e))
+					yyerror("invalid value for lgkmcnt");
+				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+						12, 8, arg->value.wait_cnt.lgkmcnt_value);
+			}
+			else
+			{
+				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+						12, 8, 0x1f);
+			}
+
+			/* expcnt(x) */
+			if (arg->value.wait_cnt.expcnt_active)
+			{
+				if (!IN_RANGE(arg->value.wait_cnt.expcnt_value, 0, 0x6))
+					yyerror("invalid value for expcnt");
+				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+						6, 4, arg->value.wait_cnt.expcnt_value);
+			}
+			else
+			{
+				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
+						6, 4, 0x7);
+			}
 			break;
 
 		default:
