@@ -33,7 +33,7 @@ extern long offset;
 TOK_DECIMAL [+-]?[0-9]+
 TOK_OBRA "["
 TOK_CBRA "]"
-TOK_COL ":"
+TOK_COLON ":"
 TOK_COMMA ","
 TOK_OPAR "("
 TOK_CPAR ")"
@@ -69,8 +69,8 @@ TOK_TAG label_[0-9]+
 	return TOK_OBRA;
 }
 
-{TOK_COL} { 
-	return TOK_COL;
+{TOK_COLON} { 
+	return TOK_COLON;
 }
 
 {TOK_CBRA} {   
@@ -85,6 +85,10 @@ TOK_TAG label_[0-9]+
 {TOK_SPECIAL_REGISTER} {
 	yylval.id = si_id_create(yytext);
 	return TOK_SPECIAL_REGISTER;
+}
+
+"format" {
+	return TOK_FORMAT;
 }
 
 {TOK_ID} {   
