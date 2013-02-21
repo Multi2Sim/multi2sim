@@ -33,14 +33,18 @@ enum si_arg_type_t
 	si_arg_mtype_register,
 	si_arg_special_register,
 	si_arg_literal,
+	si_arg_literal_float,
 	si_arg_waitcnt,
 	si_arg_label,
-	si_arg_format
+	si_arg_mt_addr
 };
 
+/* NOTE: modify string map 'si_arg_special_register_map' in asm.c together
+ * with this enumeration. */
 enum si_arg_special_register_type_t
 {
-	si_arg_special_register_vcc = 0,
+	si_arg_special_register_invalid = 0,
+	si_arg_special_register_vcc,
 	si_arg_special_register_scc
 };
 
@@ -76,9 +80,14 @@ struct si_arg_t
 		
 		struct
 		{
-			unsigned int val;
+			int val;
 		} literal;
 		
+		struct
+		{
+			float val;
+		} literal_float;
+
 		struct
 		{
 			int vmcnt_active;
@@ -98,12 +107,12 @@ struct si_arg_t
 		
 		struct
 		{
+			struct si_arg_t *offset;
 			char *data_format;
 			char *num_format;
 			
 			int offen;
-			int offset;
-		} format;
+		} mt_addr;
 		
 		struct
 		{
@@ -114,8 +123,17 @@ struct si_arg_t
 };
 
 struct si_arg_t *si_arg_create(void);
-struct si_arg_t *si_arg_create_format(int offen, char *data_format, char *num_format);
 void si_arg_free(struct si_arg_t *inst_arg);
+
+struct si_arg_t *si_arg_create_literal(int value);
+struct si_arg_t *si_arg_create_literal_float(float value);
+struct si_arg_t *si_arg_create_scalar_register(char *name);
+struct si_arg_t *si_arg_create_vector_register(char *name);
+struct si_arg_t *si_arg_create_special_register(char *name);
+struct si_arg_t *si_arg_create_mt_addr(struct si_arg_t *offset,
+		int offen, char *data_format, char *num_format);
+
+int si_arg_encode_operand(struct si_arg_t *arg);
 
 void si_arg_dump(struct si_arg_t *inst_arg, FILE *f);
 

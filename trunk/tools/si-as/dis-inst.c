@@ -266,21 +266,28 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 		case si_token_mt_maddr:
 		{
 			int err;
+			int offset;
+
+			/* Offset */
+			offset = si_arg_encode_operand(arg->value.mt_addr.offset);
+			if (!IN_RANGE(offset, 0, 253))
+				yyerror("invalid offset");
+			inst_bytes->mtbuf.soffset = offset;
 
 			/* Data format */
 			inst_bytes->mtbuf.dfmt = str_map_string_err(&si_inst_dfmt_map,
-					arg->value.format.data_format, &err);
+					arg->value.mt_addr.data_format, &err);
 			if (err)
-				yyerror_fmt("invalid data format: %s", arg->value.format.data_format);
+				yyerror_fmt("invalid data format: %s", arg->value.mt_addr.data_format);
 
 			/* Number format */
 			inst_bytes->mtbuf.nfmt = str_map_string_err(&si_inst_nfmt_map,
-					arg->value.format.num_format, &err);
+					arg->value.mt_addr.num_format, &err);
 			if (err)
-				yyerror_fmt("invalid number format: %s", arg->value.format.num_format);
+				yyerror_fmt("invalid number format: %s", arg->value.mt_addr.num_format);
 
 			/* offen */
-			inst_bytes->mtbuf.offen = arg->value.format.offen;
+			inst_bytes->mtbuf.offen = arg->value.mt_addr.offen;
 
 			break;
 		}
@@ -317,8 +324,15 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			{
 
 			case SI_INST_TBUFFER_LOAD_FORMAT_X:
+			case SI_INST_TBUFFER_STORE_FORMAT_X:
 
 				high_must = low;
+				break;
+
+			case SI_INST_TBUFFER_LOAD_FORMAT_XY:
+			case SI_INST_TBUFFER_STORE_FORMAT_XY:
+
+				high_must = low + 1;
 				break;
 
 			default:
@@ -451,29 +465,19 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 
 		case si_token_src0:
 
-			switch (arg->type)
+			if (arg->type == si_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
 			{
-
-			case si_arg_scalar_register:
-
-				inst_bytes->vopc.src0 = arg->value.scalar_register.id;
-				break;
-
-			case si_arg_vector_register:
-
-				inst_bytes->vopc.src0 = arg->value.vector_register.id + 256;
-				break;
-
-			case si_arg_literal:
-
+				/* Literal constant other than [-16...64] is encoded by adding
+				 * four more bits to the instruction. */
+				if (inst->size == 8)
+					yyerror("only one literal allowed");
 				inst->size = 8;
 				inst_bytes->vopc.src0 = 0xff;
 				inst_bytes->vopc.lit_cnst = arg->value.literal.val;
-				break;
-
-			default:
-				panic("%s: invalid argument type for token 'src0'",
-					__FUNCTION__);
+			}
+			else
+			{
+				inst_bytes->vopc.src0 = si_arg_encode_operand(arg);
 			}
 			break;
 

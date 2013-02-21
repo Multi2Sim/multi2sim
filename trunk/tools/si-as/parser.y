@@ -52,6 +52,7 @@ struct si_stream_t *stream;
 
 %union {
 	int num;
+	float num_float;
 	struct si_id_t *id;
 	struct si_dis_inst_t *inst;
 	struct si_label_t *label;
@@ -63,14 +64,16 @@ struct si_stream_t *stream;
 
 
 
-%token<id> TOK_GENERAL_REGISTER
+%token<id> TOK_SCALAR_REGISTER
+%token<id> TOK_VECTOR_REGISTER
 %token<id> TOK_SPECIAL_REGISTER
 %token<num> TOK_DECIMAL
+%token<id> TOK_HEX
+%token<num_float> TOK_FLOAT
+%right<id> TOK_ID
 %right TOK_COMMA
 %right TOK_COLON
 %token TOK_FORMAT
-%token<id> TOK_HEX
-%right<id> TOK_ID
 %left TOK_OBRA
 %token TOK_CBRA
 %token TOK_OPAR
@@ -80,6 +83,7 @@ struct si_stream_t *stream;
 
 %type<inst> rl_instr
 %type<list> rl_arg_list
+%type<arg> rl_operand
 %type<arg> rl_arg
 %type<label> rl_label
 %type<arg> rl_waitcnt_elem
@@ -195,74 +199,50 @@ rl_arg_list
 	}
 ;
 
-rl_arg
-	: TOK_GENERAL_REGISTER 
+
+rl_operand
+	: TOK_SCALAR_REGISTER
 	{
-		struct si_arg_t *arg;
-		struct si_id_t *id;
-
-		/* Get arguments */
-		id = $1;
-		
-		/* Create argument */
-		arg = si_arg_create(); 
-		
-		/* TOK_GENERAL_REGISTER is m0, v14, s9 etc.
-		   so we need to figure out 
-		   what kind of TOK_GENERAL_REGISTER it is and 
-		   split the string to get the 
-		   register identifier. */
-		
-		/* Initialize */
-		if (id->name[0] == 's')
-		{
-			arg->type = si_arg_scalar_register;
-			arg->value.scalar_register.id = atoi(id->name + 1);
-		}
-		else if (id->name[0] == 'm')
-		{
-			arg->type = si_arg_mtype_register;
-			arg->value.scalar_register.id = atoi(id->name + 1);
-		}
-		else if (id->name[0] == 'v')
-		{
-			arg->type = si_arg_vector_register;
-			arg->value.scalar_register.id = atoi(id->name + 1);
-		}
-		else
-		{
-			yyerror_fmt("invalid register: %s", id->name);
-		}
-	
-		/* Return */
-		si_id_free(id);
-		$$ = arg;
+		$$ = si_arg_create_scalar_register($1->name);
+		si_id_free($1);
 	}
-
+	
+	| TOK_VECTOR_REGISTER
+	{
+		$$ = si_arg_create_vector_register($1->name); 
+		si_id_free($1);
+	}
+	
 	| TOK_SPECIAL_REGISTER
 	{
-		struct si_arg_t *arg;
-		struct si_id_t *id;
+		$$ = si_arg_create_special_register($1->name); 
+		si_id_free($1);
+	}
+	
+	| TOK_DECIMAL
+	{
+		$$ = si_arg_create_literal($1);
+	}
 
-		/* Read arguments */
-		id = $1;
-		
-		/* Create argument */
-		arg = si_arg_create(); 
-		
-		/* Initialize */
-		arg->type = si_arg_special_register;
-		
-		if (!strcmp(id->name, "vcc"))
-			arg->value.special_register.type = si_arg_special_register_vcc;
-		else if (!strcmp(id->name, "scc"))
-			arg->value.special_register.type = si_arg_special_register_scc;
-		else
-			fatal("%s: invalid special register", id->name);
-		
-		/* Return */
-		si_id_free(id);
-		$$ = arg;
+	| TOK_HEX
+	{
+		int value;
+
+		sscanf($1->name, "%x", &value);
+		$$ = si_arg_create_literal(value); 
+		si_id_free($1);
+	}
+
+	| TOK_FLOAT
+	{
+		$$ = si_arg_create_literal_float($1);
+	}	
+
+
+rl_arg
+	: rl_operand
+	{
+		$$ = $1;
 	}
 
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA  
@@ -304,46 +284,7 @@ rl_arg
 		$$ = arg;
 	}
 
-	| TOK_DECIMAL
-	{
-		struct si_arg_t *arg;
-		
-		/* Create argument */
-		arg = si_arg_create(); 
-		
-		/* Initialize */
-		arg->type = si_arg_literal;
-		
-		arg->value.literal.val = $1;
-		
-		/* Return created argument */
-		$$ = arg;
-	}
-
-	| TOK_HEX
-	{
-		struct si_arg_t *arg;
-		struct si_id_t *id;
-		
-		unsigned int value;
-
-		/* Read arguments */
-		id = $1;
-		
-		/* Create argument */
-		arg = si_arg_create(); 
-		
-		/* Initialize */
-		arg->type = si_arg_literal;
-		sscanf(id->name, "%x", &value);
-		arg->value.literal.val = value;
-		
-		/* Return */
-		si_id_free(id);
-		$$ = arg;
-	}
-
-	| TOK_DECIMAL TOK_ID TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
+	| rl_operand TOK_ID TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
 	{
 		struct si_arg_t *arg;
 		struct si_id_t *id_offen;
@@ -359,7 +300,7 @@ rl_arg
 		
 		/* Create argument */
 		offen = !strcmp(id_offen->name, "offen");
-		arg = si_arg_create_format(offen, id_data_format->name,
+		arg = si_arg_create_mt_addr($1, offen, id_data_format->name,
 				id_num_format->name);	
 			
 		/* Return */
