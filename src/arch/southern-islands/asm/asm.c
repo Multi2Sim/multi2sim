@@ -1323,7 +1323,7 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 							sdst_end = sdst + 15;
 							break;
 						default:
-							assert("Invalid smrd opcode");
+							fatal("Invalid smrd opcode");
 					}
 				}
 			}
@@ -1348,19 +1348,23 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 							sdst_end = sdst + 15;
 							break;
 						default:
-							assert("Invalid smrd opcode");
+							fatal("Invalid smrd opcode");
 					}
 				}
 			}
 			/* S_MEMTIME */
 			else if (op == 30)
 			{
-
+				fatal("S_MEMTIME instruction not currently supported");
 			}
 			/* S_DCACHE_INV */
 			else if (op == 31)
 			{
-
+				fatal("S_DCACHE_INV instruction not currently supported");
+			}
+			else
+			{
+				fatal("Invalid smrd opcode");
 			}
 
 			operand_dump_series_scalar(operand_str, sdst, sdst_end);
@@ -1390,12 +1394,16 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 			/* S_MEMTIME */
 			else if (op == 30)
 			{
-
+				fatal("S_MEMTIME instruction not currently supported");
 			}
 			/* S_DCACHE_INV */
 			else if (op == 31)
 			{
-
+				fatal("S_DCACHE_INV instruction not currently supported");
+			}
+			else
+			{
+				fatal("Invalid smrd opcode");
 			}
 
 			operand_dump_series_scalar(operand_str, sbase, sbase_end);
