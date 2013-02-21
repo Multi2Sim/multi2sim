@@ -288,10 +288,11 @@ int opengl_shader_binary_generator(const GLchar ** opengl_vertex_source,
 	for (i = 0; i < formats; i++)
 		printf("Format[%d]=%d\n", i, binaryFormats[i]);
 
-
 	glGetProgramiv(glprogram, GL_PROGRAM_BINARY_LENGTH, &bin_length);
 	printf("Shader binary has %d bytes\n", bin_length);
 	bin_buffer = xmalloc(bin_length);
+
+	glGetProgramBinary(glprogram, bin_length, NULL, (GLenum*)binaryFormats, bin_buffer);
 
 	f = fopen(outputfile, "wb");
 	fwrite(bin_buffer, bin_length, 1, f);
