@@ -20,6 +20,7 @@
 %{
 
 #include "id.h"
+#include "main.h"
 #include "parser.h"
 
 extern long offset;
@@ -30,59 +31,51 @@ extern long offset;
 %option nounput
 %option noinput
 
-TOK_DECIMAL [+-]?[0-9]+
-TOK_OBRA "["
-TOK_CBRA "]"
-TOK_COLON ":"
-TOK_COMMA ","
-TOK_OPAR "("
-TOK_CPAR ")"
-TOK_AMP "&"
-
-TOK_GENERAL_REGISTER [msv][0-9]+
-TOK_SPECIAL_REGISTER vcc|scc
-TOK_ID [a-zA-Z_][a-zA-Z0-9_]*
-TOK_COMMENT "// "[0-9A-Z]+": "[0-9A-Z]+" "*[0-9A-Z]* 
-TOK_HEX 0x[0-9a-z]+
-TOK_TAG label_[0-9]+
-
 %%
 
-{TOK_COMMA} { 
+"," { 
 	return TOK_COMMA;
 }
 
-{TOK_DECIMAL} {
-	yylval.num = atoi(yytext);
-	return TOK_DECIMAL;
-}
-
-{TOK_OPAR} { 
+"(" { 
 	return TOK_OPAR;
 }
 
-{TOK_CPAR} { 
+")" { 
 	return TOK_CPAR;
 }
 
-{TOK_OBRA} { 
+"[" { 
 	return TOK_OBRA;
 }
 
-{TOK_COLON} { 
+":" { 
 	return TOK_COLON;
 }
 
-{TOK_CBRA} {   
+"]" {   
 	return TOK_CBRA;
 }
  
-{TOK_GENERAL_REGISTER} { 
-	yylval.id = si_id_create(yytext);
-	return TOK_GENERAL_REGISTER;
+"&" {
+	return TOK_AMP;
 }
 
-{TOK_SPECIAL_REGISTER} {
+"\n" {
+	return TOK_NEW_LINE;
+}
+
+s[0-9]+ {
+	yylval.id = si_id_create(yytext);
+	return TOK_SCALAR_REGISTER;
+}
+
+v[0-9]+ {
+	yylval.id = si_id_create(yytext);
+	return TOK_VECTOR_REGISTER;
+}
+
+vcc|scc {
 	yylval.id = si_id_create(yytext);
 	return TOK_SPECIAL_REGISTER;
 }
@@ -91,33 +84,37 @@ TOK_TAG label_[0-9]+
 	return TOK_FORMAT;
 }
 
-{TOK_ID} {   
+[a-zA-Z_][a-zA-Z0-9_]* {   
 	yylval.id = si_id_create(yytext);
 	return TOK_ID; 
 }
 
-{TOK_HEX} { 
+0x[0-9a-z]+ { 
 	yylval.id = si_id_create(yytext);
 	return TOK_HEX;	
 }
 
-{TOK_AMP} {
-	return TOK_AMP;
+[+-]?[0-9]+"."[0-9]+ {
+	yylval.num_float = atof(yytext);
+	return TOK_FLOAT;
 }
 
-"\n" {
-	return TOK_NEW_LINE;
+[+-]?[0-9]+ {
+	yylval.num = atoi(yytext);
+	return TOK_DECIMAL;
 }
 
-{TOK_COMMENT} {
+"//"[^\n]* {
+	/* Ignore comments */
 }
 
 [\t ] {
+	/* Ignore tabs and spaces */
 }
 
 . {
-	fprintf(stderr, "error: unexpected character: %s\n", yytext);
-	exit(1);
+	/* Lexical error */
+	yyerror_fmt("unexpected character: %s\n", yytext);
 }
 
 %%
