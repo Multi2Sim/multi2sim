@@ -74,7 +74,7 @@ void x86_isa_addps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_store_xmm(ctx, dest.as_uchar);
 
-	x86_uinst_new(ctx, x86_uinst_xmm_add, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_xmm_fp_add, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -184,7 +184,7 @@ void x86_isa_cmppd_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 	}
 
 	x86_isa_store_xmm(ctx, dest.as_uchar);
-	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_xmm_fp_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -221,7 +221,7 @@ void x86_isa_cmpps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 	}
 
 	x86_isa_store_xmm(ctx, dest.as_uchar);
-	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_xmm_fp_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -320,7 +320,7 @@ void x86_isa_divps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_store_xmm(ctx, dest.as_uchar);
 
-	x86_uinst_new(ctx, x86_uinst_xmm_div, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_xmm_fp_div, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -632,7 +632,7 @@ void x86_isa_mulps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_store_xmm(ctx, dest.as_uchar);
 
-	x86_uinst_new(ctx, x86_uinst_xmm_mult, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_xmm_fp_mult, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -884,7 +884,7 @@ void x86_isa_subps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_store_xmm(ctx, dest.as_uchar);
 
-	x86_uinst_new(ctx, x86_uinst_xmm_sub, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_xmm_fp_sub, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
