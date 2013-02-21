@@ -39,9 +39,35 @@ struct si_arg_t *si_arg_create(void)
 }
 
 
-void si_arg_free(struct si_arg_t *inst_arg)
+struct si_arg_t *si_arg_create_format(int offen, char *data_format, char *num_format)
 {
-	free(inst_arg);
+	struct si_arg_t *arg;
+
+	arg = si_arg_create();
+	arg->type = si_arg_format;
+	arg->value.format.offen = offen;
+	arg->value.format.data_format = xstrdup(data_format);
+	arg->value.format.num_format = xstrdup(num_format);
+
+	return arg;
+}
+
+
+void si_arg_free(struct si_arg_t *arg)
+{
+	switch (arg->type)
+	{
+	case si_arg_format:
+
+		free(arg->value.format.data_format);
+		free(arg->value.format.num_format);
+		break;
+
+	default:
+		break;
+	}
+
+	free(arg);
 }
 
 

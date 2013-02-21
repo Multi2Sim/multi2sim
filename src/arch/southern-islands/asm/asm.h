@@ -71,6 +71,15 @@ enum si_fmt_enum
  * String maps
  */
 
+extern struct str_map_t si_inst_sdst_map;
+extern struct str_map_t si_inst_ssrc_map;
+extern struct str_map_t si_inst_dfmt_map;
+extern struct str_map_t si_inst_nfmt_map;
+extern struct str_map_t si_inst_OP16_map;
+extern struct str_map_t si_inst_OP8_map;
+
+
+
 
 /*
  * Structure of Microcode Format

@@ -114,7 +114,9 @@ struct si_arg_t
 };
 
 struct si_arg_t *si_arg_create(void);
+struct si_arg_t *si_arg_create_format(int offen, char *data_format, char *num_format);
 void si_arg_free(struct si_arg_t *inst_arg);
+
 void si_arg_dump(struct si_arg_t *inst_arg, FILE *f);
 
 
