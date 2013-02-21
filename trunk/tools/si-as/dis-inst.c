@@ -154,7 +154,7 @@ void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 	/* Print words */
 	for (i = 0; i < inst->size / 4; i++)
 	{
-		word = * (int *) inst->inst_bytes.bytes;
+		word = * (int *) &inst->inst_bytes.bytes[i * 4];
 		printf("\tword %d:  hex = { %08x },  bin = {", i, word);
 		for (j = 0; j < 32; j++)
 			printf("%s%d", j % 4 ? "" : " ", (word >> (31 - j)) & 1);
@@ -188,6 +188,14 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 	switch (inst_info->fmt)
 	{
 
+	/* encoding in [31:26], op in [18:16] */
+	case SI_FMT_MTBUF:
+
+		inst->size = 8;
+		inst_bytes->mtbuf.enc = 0x3a;
+		inst_bytes->mtbuf.op = inst_info->opcode;
+		break;
+
 	/* encoding in [31:27], op in [26:22] */
 	case SI_FMT_SMRD:
 
@@ -195,11 +203,46 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 		inst_bytes->smrd.op = inst_info->opcode;
 		break;
 
-	/* encoding in [31:23], op in [22:16],  */
+	/* encoding in [31:23], op in [15:8] */
+	case SI_FMT_SOP1:
+
+		inst_bytes->sop1.enc = 0x17d;
+		inst_bytes->sop1.op = inst_info->opcode;
+		break;
+
+	/* encoding in [31:30], op in [29:23] */
+	case SI_FMT_SOP2:
+
+		inst_bytes->sop2.enc = 0x2;
+		inst_bytes->sop2.op = inst_info->opcode;
+		break;
+
+	/* encoding in [31:23], op in [22:16] */
 	case SI_FMT_SOPP:
 
 		inst_bytes->sopp.enc = 0x17f;
 		inst_bytes->sopp.op = inst_info->opcode;
+		break;
+
+	/* encoding in [31:25], op in [16:9] */
+	case SI_FMT_VOP1:
+
+		inst_bytes->vop1.enc = 0x3f;
+		inst_bytes->vop1.op = inst_info->opcode;
+		break;
+
+	/* encoding in [31], op in [30:25] */
+	case SI_FMT_VOP2:
+
+		inst_bytes->vop2.enc = 0x0;
+		inst_bytes->vop2.op = inst_info->opcode;
+		break;
+
+	/* encoding in [31:26], op in [25:17] */
+	case SI_FMT_VOP3a:
+
+		inst_bytes->vop3a.enc = 0x34;
+		inst_bytes->vop3a.op = inst_info->opcode;
 		break;
 
 	default:
@@ -220,6 +263,78 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 		switch (token->type)
 		{
 		
+		case si_token_mt_maddr:
+		{
+			int err;
+
+			/* Data format */
+			inst_bytes->mtbuf.dfmt = str_map_string_err(&si_inst_dfmt_map,
+					arg->value.format.data_format, &err);
+			if (err)
+				yyerror_fmt("invalid data format: %s", arg->value.format.data_format);
+
+			/* Number format */
+			inst_bytes->mtbuf.nfmt = str_map_string_err(&si_inst_nfmt_map,
+					arg->value.format.num_format, &err);
+			if (err)
+				yyerror_fmt("invalid number format: %s", arg->value.format.num_format);
+
+			/* offen */
+			inst_bytes->mtbuf.offen = arg->value.format.offen;
+
+			break;
+		}
+
+		case si_token_mt_series_vdata:
+		{
+			int low = 0;
+			int high = 0;
+			int high_must = 0;
+
+			/* Get registers */
+			switch (arg->type)
+			{
+
+			case si_arg_vector_register:
+
+				low = arg->value.vector_register.id;
+				high = low;
+				break;
+
+			case si_arg_vector_register_series:
+
+				low = arg->value.vector_register_series.low;
+				high = arg->value.vector_register_series.high;
+				break;
+
+			default:
+				panic("%s: invalid argument type for token 'mt_series_vdata'",
+						__FUNCTION__);
+			}
+
+			/* Restriction in vector register range */
+			switch (inst_info->inst)
+			{
+
+			case SI_INST_TBUFFER_LOAD_FORMAT_X:
+
+				high_must = low;
+				break;
+
+			default:
+				fatal("%s: MUBUF/MTBUF instruction not recognized: %s",
+						__FUNCTION__, info->name);
+			}
+
+			/* Check range */
+			if (high != high_must)
+				yyerror_fmt("invalid register range: v[%d:%d]", low, high);
+
+			/* Encode */
+			inst_bytes->mtbuf.vdata = low;
+			break;
+		}
+
 		case si_token_offset:
 
 			/* Depends of argument type */
@@ -239,9 +354,15 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				break;
 
 			default:
-				panic("%s: invalid argument type for 'offset' token",
+				panic("%s: invalid argument type for token 'offset'",
 					__FUNCTION__);
 			}
+			break;
+
+		case si_token_sdst:
+
+			/* Encode */
+			inst_bytes->sop2.sdst = arg->value.scalar_register.id;
 			break;
 
 		case si_token_series_sbase:
@@ -302,10 +423,137 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			inst_bytes->smrd.sdst = arg->value.scalar_register_series.low;
 			break;
 
+		case si_token_series_srsrc:
+		{
+			int low = arg->value.scalar_register_series.low;
+			int high = arg->value.scalar_register_series.high;
+
+			/* Base register must be multiple of 4 */
+			if (low % 4)
+				yyerror_fmt("low register must be multiple of 4 in s[%d:%d]",
+						low, high);
+
+			/* High register must be low + 3 */
+			if (high != low + 3)
+				yyerror_fmt("register series must span 4 registers in s[%d:%d]",
+						low, high);
+
+			/* Encode */
+			inst_bytes->mtbuf.srsrc = low >> 2;
+			break;
+		}
+
 		case si_token_smrd_sdst:
 
 			/* Encode */
 			inst_bytes->smrd.sdst = arg->value.scalar_register.id;
+			break;
+
+		case si_token_src0:
+
+			switch (arg->type)
+			{
+
+			case si_arg_scalar_register:
+
+				inst_bytes->vopc.src0 = arg->value.scalar_register.id;
+				break;
+
+			case si_arg_vector_register:
+
+				inst_bytes->vopc.src0 = arg->value.vector_register.id + 256;
+				break;
+
+			case si_arg_literal:
+
+				inst->size = 8;
+				inst_bytes->vopc.src0 = 0xff;
+				inst_bytes->vopc.lit_cnst = arg->value.literal.val;
+				break;
+
+			default:
+				panic("%s: invalid argument type for token 'src0'",
+					__FUNCTION__);
+			}
+			break;
+
+		case si_token_ssrc0:
+
+			switch (arg->type)
+			{
+
+			case si_arg_scalar_register:
+
+				inst_bytes->sop2.ssrc0 = arg->value.scalar_register.id;
+				break;
+
+			case si_arg_literal:
+
+				inst->size = 8;
+				inst_bytes->sop2.ssrc0 = 0xff;
+				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
+				break;
+
+			default:
+				panic("%s: invalid argument type for token 'ssrc0'",
+					__FUNCTION__);
+			}
+			break;
+
+		case si_token_ssrc1:
+
+			switch (arg->type)
+			{
+
+			case si_arg_scalar_register:
+
+				inst_bytes->sop2.ssrc1 = arg->value.scalar_register.id;
+				break;
+
+			case si_arg_literal:
+
+				inst->size = 8;
+				inst_bytes->sop2.ssrc1 = 0xff;
+				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
+				break;
+
+			default:
+				panic("%s: invalid argument type for token 'ssrc0'",
+					__FUNCTION__);
+			}
+			break;
+
+		case si_token_vaddr:
+
+			switch (arg->type)
+			{
+
+			case si_arg_vector_register:
+
+				inst_bytes->mtbuf.vaddr = arg->value.vector_register.id;
+				break;
+
+			default:
+				panic("%s: invalid argument type for token 'ssrc0'",
+					__FUNCTION__);
+			}
+			break;
+
+		case si_token_vcc:
+
+			/* Not encoded */
+			break;
+
+		case si_token_vdst:
+
+			/* Encode */
+			inst_bytes->vop1.vdst = arg->value.vector_register.id;
+			break;
+
+		case si_token_vsrc1:
+
+			/* Encode */
+			inst_bytes->vopc.vsrc1 = arg->value.vector_register.id;
 			break;
 
 		case si_token_wait_cnt:
@@ -354,7 +602,8 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			break;
 
 		default:
-			fatal("%s: unsupported token", __FUNCTION__);
+			fatal("%s: unsupported token for argument %d",
+					__FUNCTION__, index + 1);
 		}
 	}
 #if 0

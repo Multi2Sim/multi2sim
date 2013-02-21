@@ -74,7 +74,7 @@ static struct si_inst_info_t *si_inst_info_mimg[SI_INST_INFO_MIMG_MAX_VALUE + 1]
 static struct si_inst_info_t *si_inst_info_exp[SI_INST_INFO_EXP_MAX_VALUE + 1];
 
 /* String maps for assembly dump. */
-struct str_map_t sdst_map = {
+struct str_map_t si_inst_sdst_map = {
 	24, {
 			{"reserved", 0},
 			{"reserved", 1},
@@ -103,7 +103,7 @@ struct str_map_t sdst_map = {
 		}
 };
 
-struct str_map_t ssrc_map = {
+struct str_map_t si_inst_ssrc_map = {
 	16, {
 			{"0.5", 0},
 			{"-0.5", 1},
@@ -124,7 +124,7 @@ struct str_map_t ssrc_map = {
 		}
 };
 
-struct str_map_t dfmt_map = {
+struct str_map_t si_inst_dfmt_map = {
 	16, {
 			{"invalid", 0},
 			{"BUF_DATA_FORMAT_8", 1},
@@ -145,7 +145,7 @@ struct str_map_t dfmt_map = {
 		}
 };
 
-struct str_map_t nfmt_map = {
+struct str_map_t si_inst_nfmt_map = {
 	14, {
 			{"BUF_NUM_FORMAT_UNORM", 0},
 			{"BUF_NUM_FORMAT_SNORM", 1},
@@ -164,7 +164,7 @@ struct str_map_t nfmt_map = {
 		}
 };
 
-struct str_map_t OP16_map = {
+struct str_map_t si_inst_OP16_map = {
 	16, {
 			{"f", 0},
 			{"lt", 1},
@@ -185,7 +185,7 @@ struct str_map_t OP16_map = {
 		}
 };
 
-struct str_map_t OP8_map = {
+struct str_map_t si_inst_OP8_map = {
 	8, {
 			{"f", 0},
 			{"lt", 1},
@@ -729,7 +729,7 @@ void operand_dump(char *str, int operand)
 	else if (operand <= 127)
 	{
 		/* sdst special registers */
-		str_printf(&pstr, &str_size, "%s", str_map_value(&sdst_map, operand - 104));
+		str_printf(&pstr, &str_size, "%s", str_map_value(&si_inst_sdst_map, operand - 104));
 	}
 	else if (operand <= 192)
 	{
@@ -747,7 +747,7 @@ void operand_dump(char *str, int operand)
 	}
 	else if (operand <= 255)
 	{
-		str_printf(&pstr, &str_size, "%s", str_map_value(&ssrc_map, operand - 240));
+		str_printf(&pstr, &str_size, "%s", str_map_value(&si_inst_ssrc_map, operand - 240));
 	}
 	else if (operand <= 511)
 	{
@@ -1283,11 +1283,11 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 		}
 		else if (is_token(fmt_str, "VOP3_OP16", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "%s", str_map_value(&OP16_map, (inst->micro_inst.vop3a.op & 15)));
+			str_printf(&inst_str, &str_size, "%s", str_map_value(&si_inst_OP16_map, (inst->micro_inst.vop3a.op & 15)));
 		}
 		else if (is_token(fmt_str, "VOP3_OP8", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "%s", str_map_value(&OP8_map, (inst->micro_inst.vop3a.op & 15)));
+			str_printf(&inst_str, &str_size, "%s", str_map_value(&si_inst_OP8_map, (inst->micro_inst.vop3a.op & 15)));
 		}
 		else if (is_token(fmt_str, "SMRD_SDST", &token_len))
 		{
@@ -1507,8 +1507,8 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 		
 			/* Format */
 			str_printf(&inst_str, &str_size, " format:[%s,%s]",
-					str_map_value(&dfmt_map, inst->micro_inst.mtbuf.dfmt),
-					str_map_value(&nfmt_map, inst->micro_inst.mtbuf.nfmt));
+					str_map_value(&si_inst_dfmt_map, inst->micro_inst.mtbuf.dfmt),
+					str_map_value(&si_inst_nfmt_map, inst->micro_inst.mtbuf.nfmt));
 		}
 		else if (is_token(fmt_str, "MIMG_SERIES_VDATA", &token_len))
 		{

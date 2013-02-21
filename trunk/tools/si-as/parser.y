@@ -67,7 +67,8 @@ struct si_stream_t *stream;
 %token<id> TOK_SPECIAL_REGISTER
 %token<num> TOK_DECIMAL
 %right TOK_COMMA
-%right TOK_COL
+%right TOK_COLON
+%token TOK_FORMAT
 %token<id> TOK_HEX
 %right<id> TOK_ID
 %left TOK_OBRA
@@ -125,7 +126,7 @@ rl_line
 ;
 
 rl_label
-	: TOK_ID TOK_COL
+	: TOK_ID TOK_COLON
 	{ 
 		struct si_label_t *label;
 		struct si_id_t *id;
@@ -264,7 +265,7 @@ rl_arg
 		$$ = arg;
 	}
 
-	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_COL TOK_DECIMAL TOK_CBRA  
+	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA  
 	{
 		struct si_arg_t *arg;
 		struct si_id_t *id;
@@ -342,31 +343,27 @@ rl_arg
 		$$ = arg;
 	}
 
-	| TOK_DECIMAL TOK_ID TOK_ID TOK_COL TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
+	| TOK_DECIMAL TOK_ID TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
 	{
 		struct si_arg_t *arg;
 		struct si_id_t *id_offen;
-		struct si_id_t *id_format;
 		struct si_id_t *id_data_format;
 		struct si_id_t *id_num_format;
+		
+		int offen;
 
 		/* Read arguments */
 		id_offen = $2;
-		id_format = $3;
 		id_data_format = $6;
 		id_num_format = $8;
 		
 		/* Create argument */
-		arg = si_arg_create(); 	
+		offen = !strcmp(id_offen->name, "offen");
+		arg = si_arg_create_format(offen, id_data_format->name,
+				id_num_format->name);	
 			
-		/* Initialize */		
-		arg->type = si_arg_format;
-		if (!strcmp(id_offen->name, "offen"))
-			arg->value.format.offen = 1;
-		
 		/* Return */
 		si_id_free(id_offen);
-		si_id_free(id_format);
 		si_id_free(id_data_format);
 		si_id_free(id_num_format);
 		$$ = arg;

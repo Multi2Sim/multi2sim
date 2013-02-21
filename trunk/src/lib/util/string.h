@@ -36,10 +36,15 @@ struct str_map_t
 	} map[];
 };
 
-int str_map_string(struct str_map_t *map, char *string);
+int str_map_string(struct str_map_t *map, char *s);
+int str_map_string_err(struct str_map_t *map, char *s, int *err_ptr);
+
 int str_map_string_case(struct str_map_t *map, char *s);
+int str_map_string_case_err(struct str_map_t *map, char *s, int *err_ptr);
+
 char *str_map_value(struct str_map_t *map, int value);
 void str_map_value_buf(struct str_map_t *map, int value, char *buf, int size);
+
 void str_map_flags(struct str_map_t *map, int flags, char *out, int length);
 
 

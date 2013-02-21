@@ -35,25 +35,55 @@
  * String maps
  */
 
-
-int str_map_string(struct str_map_t *map, char *string)
+int str_map_string_err(struct str_map_t *map, char *string, int *err_ptr)
 {
 	int i;
+
+	/* No error */
+	if (err_ptr)
+		*err_ptr = 0;
+
+	/* Find string in map */
 	for (i = 0; i < map->count; i++)
 		if (!strcmp(string, map->map[i].string))
 			return map->map[i].value;
+
+	/* Error */
+	if (err_ptr)
+		*err_ptr = 1;
 	return 0;
 }
 
 
-/* Map string ignoring case */
-int str_map_string_case(struct str_map_t *map, char *s)
+int str_map_string(struct str_map_t *map, char *string)
+{
+	return str_map_string_err(map, string, NULL);
+}
+
+
+int str_map_string_case_err(struct str_map_t *map, char *s, int *err_ptr)
 {
 	int i;
+
+	/* No error */
+	if (err_ptr)
+		*err_ptr = 0;
+
+	/* Find string in map */
 	for (i = 0; i < map->count; i++)
 		if (!strcasecmp(s, map->map[i].string))
 			return map->map[i].value;
+
+	/* Error */
+	if (err_ptr)
+		*err_ptr = 1;
 	return 0;
+}
+
+
+int str_map_string_case(struct str_map_t *map, char *s)
+{
+	return str_map_string_case_err(map, s, NULL);
 }
 
 
