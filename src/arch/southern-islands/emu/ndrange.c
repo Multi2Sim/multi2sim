@@ -343,6 +343,10 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount, 
 					userElements[i].apiSlot);
+				si_isa_debug("s[%d:%d] <= IMM_CONST_BUFFER\n",
+					userElements[i].startUserReg,
+					userElements[i].startUserReg + 
+					userElements[i].userRegCount - 1);
 			}
 			else if (userElements[i].dataClass == IMM_UAV)
 			{
@@ -350,6 +354,10 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount, 
 					userElements[i].apiSlot);
+				si_isa_debug("s[%d:%d] <= IMM_UAV\n",
+					userElements[i].startUserReg,
+					userElements[i].startUserReg + 
+					userElements[i].userRegCount - 1);
 			}
 			else if (userElements[i].dataClass == 
 				PTR_CONST_BUFFER_TABLE)
@@ -357,12 +365,27 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 				si_wavefront_init_sreg_with_cb_table(wavefront,
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount);
+				si_isa_debug("s[%d:%d] <= "
+					"PTR_CONST_BUFFER_TABLE\n",
+					userElements[i].startUserReg,
+					userElements[i].startUserReg + 
+					userElements[i].userRegCount - 1);
 			}
 			else if (userElements[i].dataClass == PTR_UAV_TABLE)
 			{
 				si_wavefront_init_sreg_with_uav_table(wavefront,
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount);
+				si_isa_debug("s[%d:%d] <= PTR_UAV_TABLE\n",
+					userElements[i].startUserReg,
+					userElements[i].startUserReg + 
+					userElements[i].userRegCount - 1);
+			}
+			else if (userElements[i].dataClass == 
+				PTR_INTERNAL_GLOBAL_TABLE)
+			{
+				fatal("PTR_INTERNAL_GLOBAL_TABLE not "
+					"supported");
 			}
 			else
 			{
