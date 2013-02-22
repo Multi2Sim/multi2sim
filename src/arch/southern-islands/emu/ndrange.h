@@ -125,6 +125,7 @@ struct si_ndrange_t
 struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel);
 void si_ndrange_free(struct si_ndrange_t *ndrange);
 void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f);
+void si_ndrange_dump_initialized_state(struct si_ndrange_t *ndrange);
 
 int si_ndrange_get_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status);
 void si_ndrange_set_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);

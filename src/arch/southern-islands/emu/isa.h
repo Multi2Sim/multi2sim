@@ -101,7 +101,7 @@ extern char *err_si_isa_note;
 #define SI_INST_VOP3a		inst->micro_inst.vop3a
 #define SI_INST_DS		inst->micro_inst.ds
 #define SI_INST_MTBUF		inst->micro_inst.mtbuf
-/* FIXME Finish filling these in */
+#define SI_INST_MUBUF		inst->micro_inst.mubuf
 
 
 void si_isa_init();

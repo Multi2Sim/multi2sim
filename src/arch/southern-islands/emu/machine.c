@@ -50,6 +50,7 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item,
 
 	unsigned int m_offset;
 	unsigned int m_base;
+	unsigned int addr;
 
 	/* unsigned int m_size; */
 	struct si_buffer_resource_t buf_desc;
@@ -74,7 +75,9 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item,
 		INST.offset);
 	/* m_size = (buf_desc.stride == 0) ? 1 : buf_desc.num_records; */
 
-	mem_read(si_emu->global_mem, m_base + m_offset, 4, &value);
+	addr = m_base + m_offset;
+
+	mem_read(si_emu->global_mem, addr, 4, &value);
 
 	/* Store the data in the destination register */
 	si_isa_write_sreg(work_item, INST.sdst, value.as_uint);
@@ -82,12 +85,12 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item,
 	/* FIXME Set value based on type */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%u,%gf)", INST.sdst, value.as_uint,
-			value.as_float);
+		si_isa_debug("S%u<=(%u)(%u,%gf)", INST.sdst, addr, 
+			value.as_uint, value.as_float);
 	}
 
 	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = m_base + m_offset;
+	work_item->global_mem_access_addr = addr;
 	work_item->global_mem_access_size = 4;
 }
 #undef INST
@@ -100,7 +103,7 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item,
 
 	unsigned int m_base;
 	unsigned int m_offset;
-	unsigned int m_addr;
+	unsigned int addr;
 
 	struct si_mem_ptr_t mem_ptr;
 	struct si_wavefront_t *wavefront;
@@ -123,14 +126,13 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item,
 	m_offset =
 		(INST.imm) ? (INST.offset * 4) : si_isa_read_sreg(work_item,
 		INST.offset);
-	m_addr = m_base + m_offset;
+	addr = m_base + m_offset;
 
-	assert(!(m_addr & 0x3));
+	assert(!(addr & 0x3));
 
 	for (i = 0; i < 2; i++)
 	{
-		mem_read(si_emu->global_mem, m_base + m_offset + i * 4, 4,
-			&value[i]);
+		mem_read(si_emu->global_mem, addr + i * 4, 4, &value[i]);
 		si_isa_write_sreg(work_item, INST.sdst + i, value[i].as_uint);
 	}
 
@@ -139,13 +141,13 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item,
 	{
 		for (i = 0; i < 2; i++)
 		{
-			si_isa_debug("S%u<=(%u,%gf) ", INST.sdst + i,
+			si_isa_debug("S%u<=(%u)(%u,%gf) ", INST.sdst + i, addr,
 				value[i].as_uint, value[i].as_float);
 		}
 	}
 
 	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = m_base + m_offset;
+	work_item->global_mem_access_addr = addr;
 	work_item->global_mem_access_size = 4 * 2;
 }
 #undef INST
@@ -158,7 +160,7 @@ void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 
 	unsigned int m_base;
 	unsigned int m_offset;
-	unsigned int m_addr;
+	unsigned int addr;
 
 	struct si_mem_ptr_t mem_ptr;
 	struct si_wavefront_t *wavefront;
@@ -181,13 +183,13 @@ void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 	m_offset =
 		(INST.imm) ? (INST.offset * 4) : si_isa_read_sreg(work_item,
 		INST.offset);
-	m_addr = m_base + m_offset;
+	addr = m_base + m_offset;
 
-	assert(!(m_addr & 0x3));
+	assert(!(addr & 0x3));
 
 	for (i = 0; i < 4; i++)
 	{
-		mem_read(si_emu->global_mem, m_base + m_offset + i * 4, 4,
+		mem_read(si_emu->global_mem, addr + i * 4, 4,
 			&value[i]);
 		si_isa_write_sreg(work_item, INST.sdst + i, value[i].as_uint);
 	}
@@ -197,13 +199,13 @@ void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 	{
 		for (i = 0; i < 4; i++)
 		{
-			si_isa_debug("S%u<=(%u,%gf) ", INST.sdst + i,
+			si_isa_debug("S%u<=(%u)(%u,%gf) ", INST.sdst + i, addr,
 				value[i].as_uint, value[i].as_float);
 		}
 	}
 
 	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = m_base + m_offset;
+	work_item->global_mem_access_addr = addr;
 	work_item->global_mem_access_size = 4 * 4;
 }
 #undef INST
@@ -5763,7 +5765,67 @@ void si_isa_DS_READ_U16_impl(struct si_work_item_t *work_item,
 void si_isa_BUFFER_LOAD_SBYTE_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	assert(!INST.addr64);
+	assert(!INST.glc);
+	assert(!INST.slc);
+	assert(!INST.tfe);
+	assert(!INST.lds);
+
+	struct si_buffer_resource_t buf_desc;
+	union si_reg_t value;
+
+	unsigned int addr;
+	unsigned int base;
+	unsigned int mem_offset = 0;
+	unsigned int inst_offset = 0;
+	unsigned int off_vgpr = 0;
+	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int idx_vgpr = 0;
+
+	int bytes_to_read = 1;
+
+	/* srsrc is in units of 4 registers */
+	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc * 4);
+
+	/* Figure 8.1 from SI ISA defines address calculation */
+	base = buf_desc.base_addr;
+	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
+	inst_offset = INST.offset;
+
+	/* Table 8.3 from SI ISA */
+	if (!INST.idxen && INST.offen)
+	{
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && !INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	addr = base + mem_offset + inst_offset + off_vgpr + 
+		stride * (idx_vgpr + work_item->id_in_wavefront);
+
+	mem_read(si_emu->global_mem, addr, bytes_to_read, &value);
+	
+	/* Sign extend */
+	value.as_int = (int) value.as_byte[0];
+
+	si_isa_write_vreg(work_item, INST.vdata, value.as_uint);
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = bytes_to_read;
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%u)(%d) ", work_item->id,
+			INST.vdata, addr, value.as_int);
+	}
 }
 #undef INST
 
@@ -5781,64 +5843,72 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item,
 {
 	assert(!INST.addr64);
 
-	unsigned int offset;
+	struct si_buffer_resource_t buf_desc;
+	union si_reg_t value;
+
 	int elem_size;
 	int num_elems;
 	int bytes_to_read;
-	int index;
-	struct si_buffer_resource_t buf_desc;
-	unsigned int buffer_addr;
-	union si_reg_t value;
 
-	if (INST.offen)
-	{
-		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
-
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
-	}
-	else
-	{
-		offset = INST.offset;
-
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr);
-	}
+	unsigned int addr;
+	unsigned int base;
+	unsigned int mem_offset = 0;
+	unsigned int inst_offset = 0;
+	unsigned int off_vgpr = 0;
+	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
 	num_elems = si_isa_get_num_elems(INST.dfmt);
-
-	/* If num_elems is greater than 1, we need to see how the
-	 * destination register is handled */
-	assert(num_elems == 1);
-
 	bytes_to_read = elem_size * num_elems;
+
+	assert(num_elems == 1);
+	assert(elem_size == 4);
 
 	/* srsrc is in units of 4 registers */
 	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc * 4);
 
-	buffer_addr = offset;
-	if (INST.idxen)
+	/* Figure 8.1 from SI ISA defines address calculation */
+	base = buf_desc.base_addr;
+	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
+	inst_offset = INST.offset;
+
+	/* Table 8.3 from SI ISA */
+	if (!INST.idxen && INST.offen)
 	{
-		buffer_addr += buf_desc.stride * (index +
-			work_item->id_in_wavefront);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && !INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
 	}
 
-	mem_read(si_emu->global_mem, buffer_addr, bytes_to_read, &value);
+	addr = base + mem_offset + inst_offset + off_vgpr + 
+		stride * (idx_vgpr + work_item->id_in_wavefront);
+
+	mem_read(si_emu->global_mem, addr, bytes_to_read, &value);
 
 	si_isa_write_vreg(work_item, INST.vdata, value.as_uint);
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = bytes_to_read;
 
 	/* TODO Print value based on type */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("t%d: V%u<=(%u)(%u,%gf) ", work_item->id,
-			INST.vdata, buffer_addr, value.as_uint,
-			value.as_float);
+			INST.vdata, addr, value.as_uint, value.as_float);
+		if (INST.offen)
+			si_isa_debug("offen ");
+		if (INST.idxen)
+			si_isa_debug("idxen ");
 	}
-
-	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = buffer_addr;
-	work_item->global_mem_access_size = elem_size * num_elems;
 }
 #undef INST
 
@@ -5848,50 +5918,58 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item,
 {
 	assert(!INST.addr64);
 
-	unsigned int offset;
-	int elem_size;
-	int num_elems;
-	int index;
 	struct si_buffer_resource_t buf_desc;
-	unsigned int buffer_addr;
 	union si_reg_t value;
 
-	if (INST.offen)
-	{
-		offset = si_isa_read_vreg(work_item,
-			INST.vaddr) + INST.offset;
+	int i;
+	int elem_size;
+	int num_elems;
+	int bytes_to_read;
 
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
-	}
-	else
-	{
-		offset = INST.offset;
-
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr);
-	}
+	unsigned int addr;
+	unsigned int base;
+	unsigned int mem_offset = 0;
+	unsigned int inst_offset = 0;
+	unsigned int off_vgpr = 0;
+	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
 	num_elems = si_isa_get_num_elems(INST.dfmt);
+	bytes_to_read = elem_size * num_elems;
 
-	/* Four Dwords are read. */
 	assert(num_elems == 2);
 	assert(elem_size == 4);
 
 	/* srsrc is in units of 4 registers */
 	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc * 4);
 
-	for (unsigned int i = 0; i < 2; i++)
-	{
-		buffer_addr = offset + 4 * i;
-		if (INST.idxen)
-		{
-			buffer_addr += buf_desc.stride * (index +
-				work_item->id_in_wavefront);
-		}
+	/* Figure 8.1 from SI ISA defines address calculation */
+	base = buf_desc.base_addr;
+	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
+	inst_offset = INST.offset;
 
-		mem_read(si_emu->global_mem, buffer_addr, 4, &value);
+	/* Table 8.3 from SI ISA */
+	if (!INST.idxen && INST.offen)
+	{
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && !INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	addr = base + mem_offset + inst_offset + off_vgpr + 
+		stride * (idx_vgpr + work_item->id_in_wavefront);
+
+	for (i = 0; i < 2; i++)
+	{
+		mem_read(si_emu->global_mem, addr+4*i, 4, &value);
 
 		si_isa_write_vreg(work_item, INST.vdata + i, value.as_uint);
 
@@ -5899,14 +5977,14 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item,
 		if (debug_status(si_isa_debug_category))
 		{
 			si_isa_debug("t%d: V%u<=(%u)(%u,%gf) ", work_item->id,
-				INST.vdata + i, buffer_addr, value.as_uint,
+				INST.vdata + i, addr, value.as_uint,
 				value.as_float);
 		}
 	}
 
 	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = buffer_addr;
-	work_item->global_mem_access_size = elem_size * num_elems;
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = bytes_to_read;
 }
 #undef INST
 
@@ -5916,50 +5994,58 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 {
 	assert(!INST.addr64);
 
-	unsigned int offset;
-	int elem_size;
-	int num_elems;
-	int index;
 	struct si_buffer_resource_t buf_desc;
-	unsigned int buffer_addr;
 	union si_reg_t value;
 
-	if (INST.offen)
-	{
-		offset = si_isa_read_vreg(work_item,
-			INST.vaddr) + INST.offset;
+	int i;
+	int elem_size;
+	int num_elems;
+	int bytes_to_read;
 
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
-	}
-	else
-	{
-		offset = INST.offset;
-
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr);
-	}
+	unsigned int addr;
+	unsigned int base;
+	unsigned int mem_offset = 0;
+	unsigned int inst_offset = 0;
+	unsigned int off_vgpr = 0;
+	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
 	num_elems = si_isa_get_num_elems(INST.dfmt);
+	bytes_to_read = elem_size * num_elems;
 
-	/* Four Dwords are read. */
 	assert(num_elems == 4);
 	assert(elem_size == 4);
 
 	/* srsrc is in units of 4 registers */
 	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc * 4);
 
-	for (unsigned int i = 0; i < 4; i++)
-	{
-		buffer_addr = offset + 4 * i;
-		if (INST.idxen)
-		{
-			buffer_addr += buf_desc.stride * (index +
-				work_item->id_in_wavefront);
-		}
+	/* Figure 8.1 from SI ISA defines address calculation */
+	base = buf_desc.base_addr;
+	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
+	inst_offset = INST.offset;
 
-		mem_read(si_emu->global_mem, buffer_addr, 4, &value);
+	/* Table 8.3 from SI ISA */
+	if (!INST.idxen && INST.offen)
+	{
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && !INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	addr = base + mem_offset + inst_offset + off_vgpr + 
+		stride * (idx_vgpr + work_item->id_in_wavefront);
+
+	for (i = 0; i < 4; i++)
+	{
+		mem_read(si_emu->global_mem, addr+4*i, 4, &value);
 
 		si_isa_write_vreg(work_item, INST.vdata + i, value.as_uint);
 
@@ -5967,14 +6053,14 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 		if (debug_status(si_isa_debug_category))
 		{
 			si_isa_debug("t%d: V%u<=(%u)(%u,%gf) ", work_item->id,
-				INST.vdata + i, buffer_addr, value.as_uint,
+				INST.vdata + i, addr, value.as_uint,
 				value.as_float);
 		}
 	}
 
 	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = buffer_addr;
-	work_item->global_mem_access_size = elem_size * num_elems;
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = bytes_to_read;
 }
 #undef INST
 
@@ -5984,65 +6070,69 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item,
 {
 	assert(!INST.addr64);
 
-	unsigned int offset;
+	struct si_buffer_resource_t buf_desc;
+	union si_reg_t value;
+
 	int elem_size;
 	int num_elems;
 	int bytes_to_write;
-	int index;
-	struct si_buffer_resource_t buf_desc;
-	unsigned int buffer_addr;
-	union si_reg_t value;
 
-	if (INST.offen)
-	{
-		offset = si_isa_read_vreg(work_item,
-			INST.vaddr) + INST.offset;
-
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
-	}
-	else
-	{
-		offset = INST.offset;
-
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr);
-	}
+	unsigned int addr;
+	unsigned int base;
+	unsigned int mem_offset = 0;
+	unsigned int inst_offset = 0;
+	unsigned int off_vgpr = 0;
+	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
 	num_elems = si_isa_get_num_elems(INST.dfmt);
-
-	/* If num_elems is greater than 1, we need to see how the
-	 * destination register is handled */
-	assert(num_elems == 1);
-
 	bytes_to_write = elem_size * num_elems;
+
+	assert(num_elems == 1);
+	assert(elem_size == 4);
 
 	/* srsrc is in units of 4 registers */
 	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc * 4);
 
-	buffer_addr = offset;
-	if (INST.idxen)
+	/* Figure 8.1 from SI ISA defines address calculation */
+	base = buf_desc.base_addr;
+	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
+	inst_offset = INST.offset;
+
+	/* Table 8.3 from SI ISA */
+	if (!INST.idxen && INST.offen)
 	{
-		buffer_addr += buf_desc.stride * (index +
-			work_item->id_in_wavefront);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
 	}
+	else if (INST.idxen && !INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	addr = base + mem_offset + inst_offset + off_vgpr + 
+		stride * (idx_vgpr + work_item->id_in_wavefront);
 
 	value.as_uint = si_isa_read_vreg(work_item, INST.vdata);
 
-	mem_write(si_emu->global_mem, buffer_addr, bytes_to_write, &value);
+	mem_write(si_emu->global_mem, addr, bytes_to_write, &value);
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = bytes_to_write;
 
 	/* TODO Print value based on type */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("t%d: (%u)<=V%u(%u,%gf) ", work_item->id,
-			buffer_addr, INST.vdata, value.as_uint,
+			addr, INST.vdata, value.as_uint,
 			value.as_float);
 	}
-
-	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = buffer_addr;
-	work_item->global_mem_access_size = elem_size * num_elems;
 }
 #undef INST
 
@@ -6060,66 +6150,72 @@ void si_isa_TBUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 {
 	assert(!INST.addr64);
 
-	unsigned int offset;
-	int elem_size;
-	int num_elems;
-	int index;
 	struct si_buffer_resource_t buf_desc;
-	unsigned int buffer_addr;
 	union si_reg_t value;
 
-	if (INST.offen)
-	{
-		offset = si_isa_read_vreg(work_item,
-			INST.vaddr) + INST.offset;
+	int elem_size;
+	int num_elems;
+	int bytes_to_write;
 
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
-	}
-	else
-	{
-		offset = INST.offset;
-
-		if (INST.idxen)
-			index = si_isa_read_vreg(work_item, INST.vaddr);
-	}
+	unsigned int addr;
+	unsigned int base;
+	unsigned int mem_offset = 0;
+	unsigned int inst_offset = 0;
+	unsigned int off_vgpr = 0;
+	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
 	num_elems = si_isa_get_num_elems(INST.dfmt);
+	bytes_to_write = elem_size * num_elems;
 
-	/* Four Dwords are stored. */
 	assert(num_elems == 4);
 	assert(elem_size == 4);
 
 	/* srsrc is in units of 4 registers */
 	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc * 4);
 
+	/* Figure 8.1 from SI ISA defines address calculation */
+	base = buf_desc.base_addr;
+	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
+	inst_offset = INST.offset;
+
+	/* Table 8.3 from SI ISA */
+	if (!INST.idxen && INST.offen)
+	{
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && !INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	addr = base + mem_offset + inst_offset + off_vgpr + 
+		stride * (idx_vgpr + work_item->id_in_wavefront);
+
 	for (unsigned int i = 0; i < 4; i++)
 	{
-
-		buffer_addr = offset + 4 * i;
-		if (INST.idxen)
-		{
-			buffer_addr += buf_desc.stride * (index +
-				work_item->id_in_wavefront);
-		}
-
 		value.as_uint = si_isa_read_vreg(work_item, INST.vdata + i);
 
-		mem_write(si_emu->global_mem, buffer_addr, 4, &value);
+		mem_write(si_emu->global_mem, addr+4*i, 4, &value);
 
 		/* TODO Print value based on type */
 		if (debug_status(si_isa_debug_category))
 		{
 			si_isa_debug("t%d: (%u)<=V%u(%u,%gf) ", work_item->id,
-				buffer_addr, INST.vdata + i, value.as_uint,
+				addr, INST.vdata+i, value.as_uint,
 				value.as_float);
 		}
 	}
 
 	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = buffer_addr;
-	work_item->global_mem_access_size = elem_size * num_elems;
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = bytes_to_write;
 }
 #undef INST
 
