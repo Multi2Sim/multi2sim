@@ -84,6 +84,18 @@ vcc|scc {
 	return TOK_FORMAT;
 }
 
+"offen" {
+	return TOK_OFFEN;
+}
+
+"idxen" {
+	return TOK_IDXEN;
+}
+
+"offset" {
+	return TOK_OFFSET;
+}
+
 [a-zA-Z_][a-zA-Z0-9_]* {   
 	yylval.id = si_id_create(yytext);
 	return TOK_ID; 

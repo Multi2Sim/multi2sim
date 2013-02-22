@@ -223,7 +223,7 @@ struct si_fmt_mtbuf_t
 {
         unsigned int offset   : 12;  /*  [11:0] */
         unsigned int offen    : 1;   /*     12  */
-        unsigned int index    : 1;   /*     13  */
+        unsigned int idxen    : 1;   /*     13  */
         unsigned int glc      : 1;   /*     14  */
         unsigned int addr64   : 1;   /*     15  */
         unsigned int op       : 3;   /* [18:16] */

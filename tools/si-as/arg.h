@@ -30,13 +30,14 @@ enum si_arg_type_t
 	si_arg_vector_register,
 	si_arg_scalar_register_series,
 	si_arg_vector_register_series,
-	si_arg_mtype_register,
+	si_arg_mem_register,
 	si_arg_special_register,
 	si_arg_literal,
 	si_arg_literal_float,
 	si_arg_waitcnt,
 	si_arg_label,
-	si_arg_mt_addr
+	si_arg_maddr,
+	si_arg_maddr_qual
 };
 
 /* NOTE: modify string map 'si_arg_special_register_map' in asm.c together
@@ -103,16 +104,28 @@ struct si_arg_t
 		struct
 		{
 			int id;
-		} mtype_register;
+		} mem_register;
 		
 		struct
 		{
-			struct si_arg_t *offset;
+			/* Sub-argument of type 'vector', 'scalar', 'literal',
+			 * or 'literal_float'. */
+			struct si_arg_t *soffset;
+
+			/* Sub-argument of type 'maddr_qual'
+			 * (memory address qualifier) */
+			struct si_arg_t *qual;
+
 			char *data_format;
 			char *num_format;
-			
+		} maddr;
+
+		struct
+		{
 			int offen;
-		} mt_addr;
+			int idxen;
+			int offset;
+		} maddr_qual;
 		
 		struct
 		{
@@ -130,8 +143,9 @@ struct si_arg_t *si_arg_create_literal_float(float value);
 struct si_arg_t *si_arg_create_scalar_register(char *name);
 struct si_arg_t *si_arg_create_vector_register(char *name);
 struct si_arg_t *si_arg_create_special_register(char *name);
-struct si_arg_t *si_arg_create_mt_addr(struct si_arg_t *offset,
-		int offen, char *data_format, char *num_format);
+struct si_arg_t *si_arg_create_maddr(struct si_arg_t *soffset,
+		struct si_arg_t *qual, char *data_format, char *num_format);
+struct si_arg_t *si_arg_create_maddr_qual(void);
 
 int si_arg_encode_operand(struct si_arg_t *arg);
 

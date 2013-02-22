@@ -1066,7 +1066,7 @@ void si_inst_MADDR_dump(struct si_inst_t *inst, char *operand_str, char **inst_s
 		str_printf(inst_str, &str_size, " offen");
 
 	/* index */
-	if (inst->micro_inst.mtbuf.index)
+	if (inst->micro_inst.mtbuf.idxen)
 		str_printf(inst_str, &str_size, " idxen");
 
 	/* offset */
@@ -1476,7 +1476,7 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 		}
 		else if (is_token(fmt_str, "VADDR", &token_len))
 		{
-			if (inst->micro_inst.mtbuf.offen && inst->micro_inst.mtbuf.index)
+			if (inst->micro_inst.mtbuf.offen && inst->micro_inst.mtbuf.idxen)
 			{
 				operand_dump_series_vector(operand_str, inst->micro_inst.mtbuf.vaddr, inst->micro_inst.mtbuf.vaddr + 1);
 				str_printf(&inst_str, &str_size, "%s", operand_str);

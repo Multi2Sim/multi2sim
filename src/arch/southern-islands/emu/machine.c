@@ -5380,14 +5380,14 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct 
 	{
 		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
 	}
 	else
 	{
 		offset = INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr);
 	}
 
@@ -5404,7 +5404,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct 
 	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc*4);
 
 	buffer_addr = offset;
-	if (INST.index)
+	if (INST.idxen)
 		buffer_addr += buf_desc.stride * (index + work_item->id_in_wavefront);
 
 	mem_read(si_emu->global_mem, buffer_addr, bytes_to_read, &value);
@@ -5440,14 +5440,14 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item, struct
 	{
 		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
 	}
 	else
 	{
 		offset = INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr);
 	}
 
@@ -5464,7 +5464,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item, struct
 	for(unsigned int i = 0; i < 2; i++)
 	{
 		buffer_addr = offset + 4*i;
-		if (INST.index)
+		if (INST.idxen)
 			buffer_addr += buf_desc.stride * (index + work_item->id_in_wavefront);
 
 		mem_read(si_emu->global_mem, buffer_addr, 4, &value);
@@ -5501,14 +5501,14 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, stru
 	{
 		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
 	}
 	else
 	{
 		offset = INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr);
 	}
 
@@ -5525,7 +5525,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, stru
 	for(unsigned int i = 0; i < 4; i++)
 	{
 		buffer_addr = offset + 4*i;
-		if (INST.index)
+		if (INST.idxen)
 			buffer_addr += buf_desc.stride * (index + work_item->id_in_wavefront);
 
 		mem_read(si_emu->global_mem, buffer_addr, 4, &value);
@@ -5563,14 +5563,14 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struct
 	{
 		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
 	}
 	else
 	{
 		offset = INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr);
 	}
 
@@ -5587,7 +5587,7 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struct
 	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc*4);
 
 	buffer_addr = offset;
-	if (INST.index)
+	if (INST.idxen)
 		buffer_addr += buf_desc.stride * (index + work_item->id_in_wavefront);
 
 	value.as_uint = si_isa_read_vreg(work_item, INST.vdata);
@@ -5630,14 +5630,14 @@ void si_isa_TBUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, str
 	{
 		offset = si_isa_read_vreg(work_item, INST.vaddr) + INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr + 1);
 	}
 	else
 	{
 		offset = INST.offset;
 
-		if (INST.index)
+		if (INST.idxen)
 			index = si_isa_read_vreg(work_item, INST.vaddr);
 	}
 
@@ -5655,7 +5655,7 @@ void si_isa_TBUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, str
 	{
 
 		buffer_addr = offset + 4*i;
-		if (INST.index)
+		if (INST.idxen)
 			buffer_addr += buf_desc.stride * (index + work_item->id_in_wavefront);
 
 		value.as_uint = si_isa_read_vreg(work_item, INST.vdata + i);

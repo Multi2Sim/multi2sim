@@ -19,6 +19,7 @@
 
 %{
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,6 +75,9 @@ struct si_stream_t *stream;
 %right TOK_COMMA
 %right TOK_COLON
 %token TOK_FORMAT
+%token TOK_OFFEN
+%token TOK_IDXEN
+%token TOK_OFFSET
 %left TOK_OBRA
 %token TOK_CBRA
 %token TOK_OPAR
@@ -85,6 +89,7 @@ struct si_stream_t *stream;
 %type<list> rl_arg_list
 %type<arg> rl_operand
 %type<arg> rl_arg
+%type<arg> rl_maddr_qual
 %type<label> rl_label
 %type<arg> rl_waitcnt_elem
 %type<arg> rl_waitcnt_arg
@@ -284,27 +289,26 @@ rl_arg
 		$$ = arg;
 	}
 
-	| rl_operand TOK_ID TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
+	| rl_operand rl_maddr_qual TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
 	{
 		struct si_arg_t *arg;
-		struct si_id_t *id_offen;
+		struct si_arg_t *soffset;
+		struct si_arg_t *qual;
+
 		struct si_id_t *id_data_format;
 		struct si_id_t *id_num_format;
-		
-		int offen;
 
 		/* Read arguments */
-		id_offen = $2;
+		soffset = $1;
+		qual = $2;
 		id_data_format = $6;
 		id_num_format = $8;
-		
+
 		/* Create argument */
-		offen = !strcmp(id_offen->name, "offen");
-		arg = si_arg_create_mt_addr($1, offen, id_data_format->name,
-				id_num_format->name);	
+		arg = si_arg_create_maddr(soffset, qual,
+			id_data_format->name, id_num_format->name);	
 			
 		/* Return */
-		si_id_free(id_offen);
 		si_id_free(id_data_format);
 		si_id_free(id_num_format);
 		$$ = arg;
@@ -338,6 +342,46 @@ rl_arg
 		/* The return value is given by 'rl_waitcnt_arg's definition */
 	}
 ;
+
+rl_maddr_qual
+
+	: 
+	{
+		$$ = si_arg_create_maddr_qual();
+	}
+
+	| rl_maddr_qual TOK_OFFEN
+	{
+		struct si_arg_t *qual = $1;
+
+		assert(qual->type == si_arg_maddr_qual);
+		if (qual->value.maddr_qual.offen)
+			yyerror("redundant qualifier 'offen'");
+		qual->value.maddr_qual.offen = 1;
+		$$ = qual;
+	}
+
+	| rl_maddr_qual TOK_IDXEN
+	{
+		struct si_arg_t *qual = $1;
+
+		assert(qual->type == si_arg_maddr_qual);
+		if (qual->value.maddr_qual.idxen)
+			yyerror("redundant qualifier 'idxen'");
+		qual->value.maddr_qual.idxen = 1;
+		$$ = qual;
+	}
+
+	| rl_maddr_qual TOK_OFFSET TOK_COLON TOK_DECIMAL
+	{
+		struct si_arg_t *qual = $1;
+		int offset = $4;
+
+		assert(qual->type == si_arg_maddr_qual);
+		qual->value.maddr_qual.offset = offset;
+		/* FIXME - check range of 'offset' */
+		$$ = qual;
+	}
 
 rl_waitcnt_arg
 

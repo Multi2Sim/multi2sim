@@ -89,7 +89,7 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 	{
 
 	case si_token_mt_maddr:
-		return arg->type == si_arg_mt_addr;
+		return arg->type == si_arg_maddr;
 
 	case si_token_mt_series_vdata:
 		return arg->type == si_arg_vector_register ||
