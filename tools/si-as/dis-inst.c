@@ -143,8 +143,9 @@ void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 	LIST_FOR_EACH(inst->arg_list, i)
 	{
 		arg = list_get(inst->arg_list, i);
-		fprintf(f, "\targ %d:\n", i);
+		fprintf(f, "\targ %d: ", i);
 		si_arg_dump(arg, f);
+		fprintf(f, "\n");
 	}
 
 	/* Empty instruction bits */
@@ -265,29 +266,35 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 		
 		case si_token_mt_maddr:
 		{
+			struct si_arg_t *qual;
+
 			int err;
-			int offset;
+			int soffset;
 
 			/* Offset */
-			offset = si_arg_encode_operand(arg->value.mt_addr.offset);
-			if (!IN_RANGE(offset, 0, 253))
+			soffset = si_arg_encode_operand(arg->value.maddr.soffset);
+			if (!IN_RANGE(soffset, 0, 253))
 				yyerror("invalid offset");
-			inst_bytes->mtbuf.soffset = offset;
+			inst_bytes->mtbuf.soffset = soffset;
 
 			/* Data format */
 			inst_bytes->mtbuf.dfmt = str_map_string_err(&si_inst_dfmt_map,
-					arg->value.mt_addr.data_format, &err);
+					arg->value.maddr.data_format, &err);
 			if (err)
-				yyerror_fmt("invalid data format: %s", arg->value.mt_addr.data_format);
+				yyerror_fmt("invalid data format: %s", arg->value.maddr.data_format);
 
 			/* Number format */
 			inst_bytes->mtbuf.nfmt = str_map_string_err(&si_inst_nfmt_map,
-					arg->value.mt_addr.num_format, &err);
+					arg->value.maddr.num_format, &err);
 			if (err)
-				yyerror_fmt("invalid number format: %s", arg->value.mt_addr.num_format);
+				yyerror_fmt("invalid number format: %s", arg->value.maddr.num_format);
 
-			/* offen */
-			inst_bytes->mtbuf.offen = arg->value.mt_addr.offen;
+			/* Qualifiers */
+			qual = arg->value.maddr.qual;
+			assert(qual->type == si_arg_maddr_qual);
+			inst_bytes->mtbuf.offen = qual->value.maddr_qual.offen;
+			inst_bytes->mtbuf.idxen = qual->value.maddr_qual.idxen;
+			inst_bytes->mtbuf.offset = qual->value.maddr_qual.offset;
 
 			break;
 		}
@@ -610,271 +617,5 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 					__FUNCTION__, index + 1);
 		}
 	}
-#if 0
-	struct si_arg_t *arg;
-	switch (inst->opcode)
-	{
-	/*----------------SOP1 Instructions----------------*/
-	case si_dis_inst_opcode_s_mov_b32:
-
-		/* SOP1 op-code = 101111101 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 23, 381);
-
-		arg = list_get(inst->arg_list, 0);
-		/* If m0 is register, set to 124 */
-		if (arg->type == si_arg_mtype_register)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 22, 16, 124);
-		}
-		/* other cases here TBD else if () */
-		
-		/* smov_b32 op-code = 3 */ 	
-		*inst_bytes = SET_BITS_64(*inst_bytes, 15, 8, 3);
-		
-		arg = list_get(inst->arg_list, 1);
-		/* If second arg is a constant, set to 255 */
-		if (arg->type == si_arg_literal)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 7, 0, 255);
-			*inst_bytes = SET_BITS_64(*inst_bytes, 63, 32, arg->value.literal.val);
-		}
-		
-		si_arg_free(arg);
-		
-		/* 64-bit */ 
-		return 8;
-		break;
-	/*--------------END SOP1 Instructions--------------*/
-	/*----------------SMRD Instructions----------------*/
-	case si_dis_inst_opcode_s_buffer_load_dword:
-		
-		/* SMRD op-code = 11000 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 27, 24);
-		
-		/* s_buffer_load_dword = 8 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 26, 22, 8);
-		
-		arg = list_get(inst->arg_list, 0);
-		/* SDST */ 
-		if (arg->type == si_arg_scalar_register)
-		{	
-			*inst_bytes = SET_BITS_64(*inst_bytes, 21, 15, arg->value.scalar_register.id);
-		} /* else other cases */
-		
-		arg = list_get(inst->arg_list, 1);
-		/* SBASE */
-		if (arg->type == si_arg_register_range)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 14, 9, ((arg->value.register_range.id_low & arg->value.register_range.id_high)>>1));
-		}
-		
-		/* Last arg is offset*/
-		arg = list_get(inst->arg_list, 2);
-		if (arg->type == si_arg_literal)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 8, 1);
-			*inst_bytes = SET_BITS_64(*inst_bytes, 7, 0, arg->value.literal.val);
-		}
-		
-		si_arg_free(arg);
-		
-		/* 32-bit */ 
-		return 4;
-		break;
-		
-	case si_dis_inst_opcode_s_buffer_load_dwordx2:
-		
-		/* SMRD op-code = 11000 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 27, 24);
-		
-		/* s_buffer_load_dwordx2 op-code = 9 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 26, 22, 9);
-		
-		/* SDST */ 
-		arg = list_get(inst->arg_list, 0);
-		if (arg->type == si_arg_scalar_register)
-		{	
-			*inst_bytes = SET_BITS_64(*inst_bytes, 21, 15, arg->value.scalar_register.id);
-		} else if ( arg->type == si_arg_register_range)
-		{
-			/* SGPR 96 = Range[14:15] ?? */
-			*inst_bytes = SET_BITS_64(*inst_bytes, 21, 15, 96);
-		}
-		
-		/* SBASE */
-		arg = list_get(inst->arg_list, 1);
-		if (arg->type == si_arg_register_range)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 14, 9, ((arg->value.register_range.id_low & arg->value.register_range.id_high)>>1));
-		}
-		
-		/* SBASE offset */
-		arg = list_get(inst->arg_list, 2);
-		if (arg->type == si_arg_literal)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 8, 1);
-			*inst_bytes = SET_BITS_64(*inst_bytes, 7, 0, arg->value.literal.val);
-		}
-		
-		si_arg_free(arg);
-		
-		/* 32-bit */ 
-		return 4;
-		break;
-	
-	/*--------------END SMRD Instructions--------------*/
-	/*----------------SOPP Instructions----------------*/
-	case si_dis_inst_opcode_s_waitcnt:
-		
-		/* SOPP Encoding = 101111111 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 23, 383);
-		
-		/* s_waitcnt op-code = 12 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 22, 16, 12);
-		
-		
-		arg = list_get(inst->arg_list, 0);
-		if (arg->type == si_arg_waitcnt)
-		{
-			if (arg->value.wait_cnt.lgkmcnt_active)
-			{
-				/* unused */
-				*inst_bytes = SET_BITS_64(*inst_bytes, 15, 13, 0);
-				/* unused */
-				*inst_bytes = SET_BITS_64(*inst_bytes, 7, 7, 0);
-				/* lgkmcnt input */
-				*inst_bytes = SET_BITS_64(*inst_bytes, 12, 8, 0);
-				/* vm count ! how is this found? ! */
-				*inst_bytes = SET_BITS_64(*inst_bytes, 3, 0, 15);
-				/* export/mem-write-data count */
-				*inst_bytes = SET_BITS_64(*inst_bytes, 6, 4, 7);
-			}
-				
-		}
-		
-		si_arg_free(arg);
-		
-		/* 32-bit */ 
-		return 4;
-	/*--------------END SOPP Instructions--------------*/
-	/*----------------VOP1 Instructions----------------*/
-	case si_dis_inst_opcode_v_cvt_f32_u32:
-		
-		/* VOP1 Encoding = 0111111 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 25, 63);
-		
-		/* v_cvt_f32_u32 op-code =  6 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 16, 9, 6);
-		
-		/* Destinsation VGPR (Vector General-Purpose Register) */
-		arg = list_get(inst->arg_list, 0);
-		if (arg->type == si_arg_vector_register)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 24, 17, arg->value.vector_register.id);
-		}
-		
-		/* Source */
-		arg = list_get(inst->arg_list, 1);
-		if (arg->type == si_arg_scalar_register)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 0, arg->value.scalar_register.id);
-		}
-		
-		si_arg_free(arg);
-		
-		/* 32-bit */ 
-		return 4;
-		break;
-		
-	case si_dis_inst_opcode_v_rcp_f32:
-		
-		/* VOP1 Encoding = 0111111 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 25, 63);
-		
-		/* v_rcp_f32 op-code =  42 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 16, 9, 42);
-		
-		/* Destinsation VGPR (Vector General-Purpose Register) */
-		arg = list_get(inst->arg_list, 0);
-		if (arg->type == si_arg_vector_register)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 24, 17, arg->value.vector_register.id);
-		}
-		
-		/* Source */
-		arg = list_get(inst->arg_list, 1);
-		if (arg->type == si_arg_vector_register)
-		{
-			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 0, arg->value.vector_register.id + 256);
-		}
-		si_arg_free(arg);
-		
-		/* 32-bit */ 
-		return 4;
-		break;
-	/*--------------END VOP1 Instructions--------------*/
-	/*----------------VOP2 Instructions---------------*/
-	case si_dis_inst_opcode_v_mul_f32:
-	
-		arg = list_get(inst->arg_list, 1);
-		if (arg->type == si_arg_literal)
-		{
-			/* Literal constant = 255 */
-			*inst_bytes = SET_BITS_64(*inst_bytes, 8, 0, 255);
-			
-			/* Literal Value */
-			*inst_bytes = SET_BITS_64(*inst_bytes, 63, 32, arg->value.literal.val);
-			
-			/* Second src for instruction */
-			arg = list_get(inst->arg_list, 2);
-			if (arg->type == si_arg_vector_register)
-			{
-				*inst_bytes = SET_BITS_64(*inst_bytes, 16, 9, arg->value.vector_register.id);
-			}
-			
-			arg = list_get(inst->arg_list, 0);
-			/* Destinsation VGPR (Vector General-Purpose Register) */
-			if (arg->type == si_arg_vector_register)
-			{
-				*inst_bytes = SET_BITS_64(*inst_bytes, 24, 17, arg->value.vector_register.id);
-			}
-			
-			/* v_mul_f32 op-code = 8 */
-			*inst_bytes = SET_BITS_64(*inst_bytes, 30, 25, 8);
-		
-			/* Must be 0 */
-			*inst_bytes = SET_BITS_64(*inst_bytes, 31, 31, 0);
-			
-			si_arg_free(arg);
-		
-			/* 64-bit */ 
-			return 8;
-		} else {
-			return 0;
-		}
-		break;
-	/*--------------END VOP3a Instructions-------------*/
-	case si_dis_inst_opcode_s_cbranch_vccz:
-	
-		/* To Be Finished */
-	
-		/* SOPP op-code = 101111111 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 31, 23, 383);
-		
-		//arg = list_get(inst->arg_list, 0);
-		
-		/* s_cbranch_vccz op-code = 6 */
-		*inst_bytes = SET_BITS_64(*inst_bytes, 22, 16, 6);
-		
-		/* The arg should always be a label which 
-		   will be */
-		return 0;
-		break;
-	default:
-		return 0;
-		break;
-		
-	};
-#endif
 }
 

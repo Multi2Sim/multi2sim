@@ -123,17 +123,28 @@ struct si_arg_t *si_arg_create_special_register(char *name)
 }
 
 
-struct si_arg_t *si_arg_create_mt_addr(struct si_arg_t *offset,
-		int offen, char *data_format, char *num_format)
+struct si_arg_t *si_arg_create_maddr(struct si_arg_t *soffset,
+		struct si_arg_t *qual, char *data_format, char *num_format)
 {
 	struct si_arg_t *arg;
 
 	arg = si_arg_create();
-	arg->type = si_arg_mt_addr;
-	arg->value.mt_addr.offset = offset;
-	arg->value.mt_addr.offen = offen;
-	arg->value.mt_addr.data_format = xstrdup(data_format);
-	arg->value.mt_addr.num_format = xstrdup(num_format);
+	arg->type = si_arg_maddr;
+	arg->value.maddr.soffset = soffset;
+	arg->value.maddr.qual = qual;
+	arg->value.maddr.data_format = xstrdup(data_format);
+	arg->value.maddr.num_format = xstrdup(num_format);
+
+	return arg;
+}
+
+
+struct si_arg_t *si_arg_create_maddr_qual(void)
+{
+	struct si_arg_t *arg;
+
+	arg = si_arg_create();
+	arg->type = si_arg_maddr_qual;
 
 	return arg;
 }
@@ -144,11 +155,12 @@ void si_arg_free(struct si_arg_t *arg)
 	switch (arg->type)
 	{
 
-	case si_arg_mt_addr:
+	case si_arg_maddr:
 
-		free(arg->value.mt_addr.data_format);
-		free(arg->value.mt_addr.num_format);
-		si_arg_free(arg->value.mt_addr.offset);
+		free(arg->value.maddr.data_format);
+		free(arg->value.maddr.num_format);
+		si_arg_free(arg->value.maddr.soffset);
+		si_arg_free(arg->value.maddr.qual);
 		break;
 
 	default:
@@ -246,85 +258,104 @@ void si_arg_dump(struct si_arg_t *arg, FILE *f)
 	
 	case si_arg_invalid:
 
-		fprintf(f, "\t\tinvalid\n");
+		fprintf(f, "<invalid>");
 		break;
 		
 	case si_arg_scalar_register:
 
-		fprintf(f, "\t\tscalar register\n");
-		fprintf(f, "\t\ts%d\n", arg->value.scalar_register.id);
+		fprintf(f, "<sreg> s%d", arg->value.scalar_register.id);
 		break;
 		
 	case si_arg_vector_register:
 
-		fprintf(f, "\t\tvector register\n");
-		fprintf(f, "\t\tv%d\n", arg->value.vector_register.id);
+		fprintf(f, "<vreg> v%d", arg->value.vector_register.id);
 		break;
 		
 	case si_arg_scalar_register_series:
 
-		fprintf(f, "\t\tscalar register series\n");
-		fprintf(f, "\t\ts[%d:%d]\n", arg->value.scalar_register_series.low,
+		fprintf(f, "<sreg_series> s[%d:%d]",
+			arg->value.scalar_register_series.low,
 			arg->value.scalar_register_series.high);
 		break;
 			
 	case si_arg_vector_register_series:
 
-		fprintf(f, "\t\tvector register series\n");
-		fprintf(f, "\t\tv[%d:%d]\n", arg->value.vector_register_series.low,
+		fprintf(f, "<vreg_series> v[%d:%d]",
+			arg->value.vector_register_series.low,
 			arg->value.vector_register_series.high);
 		break;
 			
 	case si_arg_literal:
+	{
+		int value;
 
-		fprintf(f, "\t\tliteral constant\n");
-		fprintf(f, "\t\t0x%x (%d)\n", arg->value.literal.val,
-			arg->value.literal.val);
+		value = arg->value.literal.val;
+		fprintf(f, "<const> %d", value);
+		if (value)
+			fprintf(f, " (0x%x)", value);
 		break;
+	}
 		
 	case si_arg_literal_float:
 
-		fprintf(f, "\t\tliteral float\n");
-		fprintf(f, "\t\t%g\n", arg->value.literal_float.val);
+		fprintf(f, "<const_float> %g", arg->value.literal_float.val);
 		break;
 
 	case si_arg_waitcnt:
+	{
+		char buf[MAX_STRING_SIZE];
 
-		fprintf(f, "\t\twaitcnt\n");
-		fprintf(f, "\t\tvmcnt: active=%d, value=%d\n", arg->value.wait_cnt.vmcnt_active,
-				arg->value.wait_cnt.vmcnt_value);
-		fprintf(f, "\t\texpcnt: active=%d, value=%d\n", arg->value.wait_cnt.expcnt_active,
-				arg->value.wait_cnt.expcnt_value);
-		fprintf(f, "\t\tlgkmcnt: active=%d, value=%d\n", arg->value.wait_cnt.lgkmcnt_active,
-				arg->value.wait_cnt.lgkmcnt_value);
+		fprintf(f, "<waitcnt>");
+
+		snprintf(buf, sizeof buf, "%d", arg->value.wait_cnt.vmcnt_value);
+		fprintf(f, " vmcnt=%s", arg->value.wait_cnt.vmcnt_active ? buf : "x");
+
+		snprintf(buf, sizeof buf, "%d", arg->value.wait_cnt.expcnt_value);
+		fprintf(f, " expcnt=%s", arg->value.wait_cnt.expcnt_active ? buf : "x");
+
+		snprintf(buf, sizeof buf, "%d", arg->value.wait_cnt.lgkmcnt_value);
+		fprintf(f, " lgkmcnt=%s", arg->value.wait_cnt.lgkmcnt_active ? buf : "x");
+
 		break;
+	}
 
 	case si_arg_special_register:
 
-		fprintf(f, "\t\tspecial register\n");
-		if (arg->value.special_register.type == si_arg_special_register_vcc)
-			fprintf(f, "\t\tvcc\n");
-		else if (arg->value.special_register.type == si_arg_special_register_scc)
-			fprintf(f, "\t\tscc\n");
+		fprintf(f, "<special_reg> %s", str_map_value(&si_arg_special_register_map,
+				arg->value.special_register.type));
 		break;
 	
-	case si_arg_mtype_register:
+	case si_arg_mem_register:
 
-		fprintf(f, "\t\tm-type register\n");
-		fprintf(f, "\t\tm%d\n", arg->value.mtype_register.id);
+		fprintf(f, "<mreg> m%d", arg->value.mem_register.id);
 		break;
 	
-	case si_arg_mt_addr:
+	case si_arg_maddr:
 
-		fprintf(f, "\t\tmt_addr\n");
-		//fprintf(f, "\t\toffset: %d\n", inst_arg->value.format.offset);
-		fprintf(f, "\t\toffen: %c\n", arg->value.mt_addr.offen ? 't' : 'f');
-		fprintf(f, "\t\tdata format: %s\n", arg->value.mt_addr.data_format);
-		fprintf(f, "\t\tnum format: %s\n", arg->value.mt_addr.num_format);
+		fprintf(f, "<maddr>");
+
+		fprintf(f, " soffs={");
+		si_arg_dump(arg->value.maddr.soffset, f);
+		fprintf(f, "}");
+
+		fprintf(f, " qual={");
+		si_arg_dump(arg->value.maddr.qual, f);
+		fprintf(f, "}");
+
+		fprintf(f, " dfmt=%s", arg->value.maddr.data_format);
+		fprintf(f, " nfmt=%s", arg->value.maddr.num_format);
+
+		break;
+
+	case si_arg_maddr_qual:
+
+		fprintf(f, "offen=%c", arg->value.maddr_qual.offen ? 't' : 'f');
+		fprintf(f, " idxen=%c", arg->value.maddr_qual.idxen ? 't' : 'f');
+		fprintf(f, " offset=%d", arg->value.maddr_qual.offset);
 		break;
 
 	case si_arg_label:
-		fprintf(f, "\tlabel\n");
+		fprintf(f, "<label>");
 		break;
 		
 	default:
