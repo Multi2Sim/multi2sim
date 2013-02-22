@@ -2588,6 +2588,9 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	}
 	si_ndrange_init_uav_table(ndrange);
 
+	/* Debugging */
+	si_ndrange_dump_initialized_state(ndrange);
+
 	/* Save in kernel */
 	kernel->ndrange = ndrange;
 

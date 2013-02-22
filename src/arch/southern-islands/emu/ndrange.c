@@ -328,7 +328,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		wavefront->sreg[user_sgpr + 2].as_int = 
 			wavefront->work_group->id_3d[2];
 
-		/* Initialize Constant Buffers */
+		/* Initialize sreg pointers to internal data structures */
 		unsigned int userElementCount = 
 			kernel->bin_file->enc_dict_entry_southern_islands->
 			userElementCount;
@@ -343,10 +343,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount, 
 					userElements[i].apiSlot);
-				si_isa_debug("s[%d:%d] <= IMM_CONST_BUFFER\n",
-					userElements[i].startUserReg,
-					userElements[i].startUserReg + 
-					userElements[i].userRegCount - 1);
 			}
 			else if (userElements[i].dataClass == IMM_UAV)
 			{
@@ -354,10 +350,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount, 
 					userElements[i].apiSlot);
-				si_isa_debug("s[%d:%d] <= IMM_UAV\n",
-					userElements[i].startUserReg,
-					userElements[i].startUserReg + 
-					userElements[i].userRegCount - 1);
 			}
 			else if (userElements[i].dataClass == 
 				PTR_CONST_BUFFER_TABLE)
@@ -365,21 +357,12 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 				si_wavefront_init_sreg_with_cb_table(wavefront,
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount);
-				si_isa_debug("s[%d:%d] <= "
-					"PTR_CONST_BUFFER_TABLE\n",
-					userElements[i].startUserReg,
-					userElements[i].startUserReg + 
-					userElements[i].userRegCount - 1);
 			}
 			else if (userElements[i].dataClass == PTR_UAV_TABLE)
 			{
 				si_wavefront_init_sreg_with_uav_table(wavefront,
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount);
-				si_isa_debug("s[%d:%d] <= PTR_UAV_TABLE\n",
-					userElements[i].startUserReg,
-					userElements[i].startUserReg + 
-					userElements[i].userRegCount - 1);
 			}
 			else if (userElements[i].dataClass == 
 				PTR_INTERNAL_GLOBAL_TABLE)
@@ -414,7 +397,8 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	si_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
 	si_isa_debug("wavefronts_per_work_group = %d\n", 
 		ndrange->wavefronts_per_work_group);
-	si_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   lid lid2 lid1 lid0  wavefront            work-group\n");
+	si_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   "
+		"lid lid2 lid1 lid0  wavefront            work-group\n");
 	for (tid = 0; tid < ndrange->work_item_count; tid++)
 	{
 		work_item = ndrange->work_items[tid];
@@ -439,8 +423,8 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 }
 
 
-void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange, void *buf, int size,
-		unsigned int pc)
+void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange, void *buf, 
+	int size, unsigned int pc)
 {
 	struct si_wavefront_t *wavefront;
 	int wid;
@@ -577,8 +561,10 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange)
 {
 	int i;
-	uint32_t buffer_addr;
-	struct si_opencl_mem_t *mem_obj;
+
+	/* XXX The resource descriptor appears to be set to 0 */
+	//uint32_t buffer_addr;
+	//struct si_opencl_mem_t *mem_obj;
 	struct si_buffer_resource_t buf_desc;
 
 	/* Zero-out the buffer resource descriptor */
@@ -587,13 +573,13 @@ void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange)
 	for (i = 0; i < list_count(ndrange->uav_list); i++)
 	{
 		/* Get the memory object for the buffer */
-		mem_obj = list_get(ndrange->uav_list, i);
+		//mem_obj = list_get(ndrange->uav_list, i);
 
 		/* Get the address of the buffer in global memory */
-		buffer_addr = mem_obj->device_ptr;
+		//buffer_addr = mem_obj->device_ptr;
 
 		/* Initialize the buffer resource descriptor for this UAV */
-		buf_desc.base_addr = buffer_addr;
+		//buf_desc.base_addr = buffer_addr;
 
 		assert(UAV_TABLE_START + 320 + i*32 <= 
 			UAV_TABLE_START + UAV_TABLE_SIZE - 32);
@@ -786,4 +772,111 @@ void si_ndrange_clear_status(struct si_ndrange_t *ndrange,
 
 	/* Update status */
 	ndrange->status &= ~status;
+}
+
+void si_ndrange_dump_initialized_state(struct si_ndrange_t *ndrange)
+{
+	struct si_opencl_kernel_t *kernel;
+	struct si_opencl_mem_t *mem_obj;
+
+	int i;
+
+	kernel = ndrange->kernel;
+
+	/* Dump address ranges */
+	si_isa_debug("\n");
+	si_isa_debug("-------------------------------------------\n");
+	si_isa_debug("|Memory Space   |    Start   |     End    |\n");
+	si_isa_debug("-------------------------------------------\n");
+	si_isa_debug("| UAV table     | %10u | %10u |\n", 
+		UAV_TABLE_START,
+		UAV_TABLE_START+UAV_TABLE_SIZE-1);
+	si_isa_debug("| CB table      | %10u | %10u |\n", 
+		CONSTANT_BUFFER_TABLE_START,
+		CONSTANT_BUFFER_TABLE_START+CONSTANT_BUFFER_TABLE_SIZE-1);
+	si_isa_debug("| Constant mem  | %10u | %10u |\n", 
+		CONSTANT_MEMORY_START,
+		CONSTANT_MEMORY_START+CONSTANT_MEMORY_SIZE-1);
+	si_isa_debug("| Global mem    | %10u | %10u |\n", 
+		GLOBAL_MEMORY_START, (1U << 31)-1);
+	si_isa_debug("-------------------------------------------\n");
+	si_isa_debug("\n");
+
+	/* Dump mapping of internal data structures */
+	unsigned int userElementCount = 
+		kernel->bin_file->enc_dict_entry_southern_islands->
+		userElementCount;
+	struct si_bin_enc_user_element_t* userElements = 
+		kernel->bin_file->enc_dict_entry_southern_islands->
+		userElements;
+	for (int i = 0; i < userElementCount; i++)
+	{
+		if (userElements[i].dataClass == IMM_CONST_BUFFER)
+		{
+			si_isa_debug("s[%d:%d] <= IMM_CONST_BUFFER\n",
+				userElements[i].startUserReg,
+				userElements[i].startUserReg + 
+				userElements[i].userRegCount - 1);
+		}
+		else if (userElements[i].dataClass == IMM_UAV)
+		{
+			si_isa_debug("s[%d:%d] <= IMM_UAV\n",
+				userElements[i].startUserReg,
+				userElements[i].startUserReg + 
+				userElements[i].userRegCount - 1);
+		}
+		else if (userElements[i].dataClass == 
+			PTR_CONST_BUFFER_TABLE)
+		{
+			si_isa_debug("s[%d:%d] <= "
+				"PTR_CONST_BUFFER_TABLE\n",
+				userElements[i].startUserReg,
+				userElements[i].startUserReg + 
+				userElements[i].userRegCount - 1);
+		}
+		else if (userElements[i].dataClass == PTR_UAV_TABLE)
+		{
+			si_isa_debug("s[%d:%d] <= PTR_UAV_TABLE\n",
+				userElements[i].startUserReg,
+				userElements[i].startUserReg + 
+				userElements[i].userRegCount - 1);
+		}
+		else if (userElements[i].dataClass == 
+			PTR_INTERNAL_GLOBAL_TABLE)
+		{
+			si_isa_debug("s[%d:%d] <= PTR_INTERNAL_GLOBAL_TABLE\n",
+				userElements[i].startUserReg,
+				userElements[i].startUserReg + 
+				userElements[i].userRegCount - 1);
+		}
+		else
+		{
+			fatal("Unimplemented User Element: "
+				"dataClass:%d", 
+				userElements[i].dataClass);
+		}
+	}
+	si_isa_debug("\n");
+
+	/* Dump constant buffers */
+	for (i = 0; i < CONSTANT_BUFFERS; i++)
+	{
+		si_isa_debug("CB[%d] mapped to address range %d:%d\n", i,
+			CONSTANT_MEMORY_START+i*CONSTANT_BUFFER_SIZE,
+			CONSTANT_MEMORY_START+(i+1)*CONSTANT_BUFFER_SIZE-1);
+	}
+	si_isa_debug("\n");
+
+	/* Dump UAV list */
+	for (i = 0; i < list_count(ndrange->uav_list); i++)
+	{
+		/* Get the memory object for the buffer */
+		mem_obj = list_get(ndrange->uav_list, i);
+
+		/* Dump the start address of the buffer */
+		si_isa_debug("UAV[%d] mapped to address range %d:%d\n", i,
+			mem_obj->device_ptr, 
+			mem_obj->device_ptr + mem_obj->size - 1);
+	}
+	si_isa_debug("\n");
 }
