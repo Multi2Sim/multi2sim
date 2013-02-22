@@ -22,6 +22,10 @@
 
 #include <stdio.h>
 
+/* Forward declarations */
+struct si_symbol_t;
+
+
 enum si_arg_type_t 
 {
 	si_arg_invalid = 0,
@@ -131,6 +135,11 @@ struct si_arg_t
 		{
 			enum si_arg_special_register_type_t type;
 		} special_register;
+
+		struct
+		{
+			struct si_symbol_t *symbol;
+		} label;
 		
 	} value;
 };
@@ -146,6 +155,7 @@ struct si_arg_t *si_arg_create_special_register(char *name);
 struct si_arg_t *si_arg_create_maddr(struct si_arg_t *soffset,
 		struct si_arg_t *qual, char *data_format, char *num_format);
 struct si_arg_t *si_arg_create_maddr_qual(void);
+struct si_arg_t *si_arg_create_label(struct si_symbol_t *symbol);
 
 int si_arg_encode_operand(struct si_arg_t *arg);
 

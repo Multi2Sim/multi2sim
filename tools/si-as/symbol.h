@@ -17,30 +17,43 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef TOOLS_SI_AS_SYMBOL_H
+#define TOOLS_SI_AS_SYMBOL_H
+
 #include <stdio.h>
 
-extern struct hash_table_t *label_table;
 
-struct si_label_t
+/*
+ * Global
+ */
+
+extern struct hash_table_t *si_symbol_table;
+
+void si_symbol_table_init(void);
+void si_symbol_table_done(void);
+
+void si_symbol_table_dump(FILE *f);
+
+
+
+/*
+ * Symbol
+ */
+
+struct si_symbol_t
 {
-	long offset;
-	char *ID;
+	char *name;
+	int value;
+
+	/* True if the symbol definition has been found already. False when
+	 * the symbol has been found as a forward declaration. */
+	int defined;
 };
 
-/* Returns a pointer to an si_label_table_t object
- * initialized with label ID = 'ID' and offset 'offset' */
-struct si_label_t *si_label_create(char *ID, long offset);
+struct si_symbol_t *si_symbol_create(char *name);
+void si_symbol_free(struct si_symbol_t *symbol);
 
-void si_label_free(struct si_label_t *label);
-void si_label_dump(struct si_label_t *label, FILE *f);
+void si_symbol_dump(struct si_symbol_t *symbol, FILE *f);
 
-/***********Label Table Functions***********/
-
-void si_label_table_init(void);
-void si_label_table_done(void);
-void si_label_table_dump(FILE *f);
-/* Returns 0 if a failure occured, otherwise creates a label object and inserts it */
-int si_label_table_insert(struct si_label_t *label);
-/* Returns a pointer to an si_label_t struct corresponding to the key 'ID' */
-struct si_label_t *si_label_table_get(char *ID);
+#endif
 
