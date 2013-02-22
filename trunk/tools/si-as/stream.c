@@ -25,20 +25,17 @@
 #include "stream.h"
 
 
-/* Global output stream */
-struct si_stream_t *stream;
+/*
+ * Stream Object
+ */
 
-
-struct si_stream_t *si_stream_create(char *fileName)
+struct si_stream_t *si_stream_create(int size)
 {
 	struct si_stream_t *stream;
 	
-	/* Allocate */
 	stream = xcalloc(1, sizeof(struct si_stream_t));
-	
-	/* Initialize */
-	stream->out_file = fopen(fileName, "wr");
-	stream->offset = 0;
+	stream->buf = xcalloc(1, size);
+	stream->size = size;
 	
 	return stream;
 }
@@ -46,44 +43,31 @@ struct si_stream_t *si_stream_create(char *fileName)
 
 void si_stream_free(struct si_stream_t *stream)
 {
+	free(stream->buf);
 	free(stream);
 }
 
 
 void si_stream_add_inst(struct si_stream_t *stream, struct si_dis_inst_t *inst)
 {
-#if 0
-	unsigned long long inst_bytes;
-	int size = 0;
-	
-	size = si_dis_inst_code_gen(inst, &inst_bytes);
-	
-	if (size == 0)
-	{
-		printf("BINARY: Could not decode!\n");
-	} else 
-	{
-		if (size == 4)
-			fprintf(stdout, "BINARY: %lx\n", (unsigned long) inst_bytes);
-		else if (size == 8)
-			fprintf(stdout, "BINARY: %016llx\n", inst_bytes);
-		stream->offset += size;
-		fwrite(&inst_bytes , size , 1, stream->out_file);
-	}
-#endif
 }
 
-long si_stream_get_offset(struct si_stream_t *stream)
+
+
+/*
+ * Global
+ */
+
+struct si_stream_t *si_out_stream;
+
+void si_stream_init(void)
 {
-	return (stream->offset);
-}
-void si_stream_resolve_task(struct si_stream_t *stream, struct si_task_t *task)
-{
-	/* Go to task's offset and replace bits 0-16 with label_tabel's offset - task's offset */
+	si_out_stream = si_stream_create(1 << 20);  /* 2KB */
 }
 
-void si_stream_close(struct si_stream_t *stream)
+
+void si_stream_done(void)
 {
-	fclose(stream->out_file);
+	si_stream_free(si_out_stream);
 }
 

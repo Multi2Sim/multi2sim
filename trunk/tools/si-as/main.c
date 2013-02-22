@@ -26,10 +26,10 @@
 
 #include "dis-inst.h"
 #include "dis-inst-info.h"
-#include "label.h"
 #include "main.h"
 #include "parser.h"
 #include "stream.h"
+#include "symbol.h"
 #include "task.h"
 
 
@@ -71,23 +71,20 @@ int main(int argc, char **argv)
 	if (!f)
 		fatal("%s: cannot open input file", input_file_name);
 	
-	/* Open output file */
-	stream = si_stream_create("out.bin");
-		
 	/* Initialize */
 	si_disasm_init();
 	si_dis_inst_info_init();
 	si_task_list_init();
-	si_label_table_init();
+	si_symbol_table_init();
+	si_stream_init();
 
 	/* Parse input */
 	yyset_in(f);
 	yyparse();
 		
 	si_task_list_done();
-	si_label_table_done();
-	si_stream_close(stream);
-	si_stream_free(stream);
+	si_symbol_table_done();
+	si_stream_done();
 	si_dis_inst_info_done();
 	si_disasm_done();
 

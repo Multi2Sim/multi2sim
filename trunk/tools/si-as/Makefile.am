@@ -23,14 +23,14 @@ __top_builddir__bin_m2s_si_as_SOURCES = \
 	id.c \
 	id.h \
 	\
-	label.c \
-	label.h \
-	\
 	main.c \
 	main.h \
 	\
 	stream.c \
 	stream.h \
+	\
+	symbol.c \
+	symbol.h \
 	\
 	task.c \
 	task.h \

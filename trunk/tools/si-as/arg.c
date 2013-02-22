@@ -150,6 +150,17 @@ struct si_arg_t *si_arg_create_maddr_qual(void)
 }
 
 
+struct si_arg_t *si_arg_create_label(struct si_symbol_t *symbol)
+{
+	struct si_arg_t *arg;
+
+	arg = si_arg_create();
+	arg->type = si_arg_label;
+
+	return arg;
+}
+
+
 void si_arg_free(struct si_arg_t *arg)
 {
 	switch (arg->type)

@@ -25,16 +25,18 @@
 #include <string.h>
 
 #include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 
 #include "arg.h"
 #include "dis-inst.h"
 #include "id.h"
-#include "label.h"
 #include "main.h"
 #include "stream.h"
 #include "string.h"
+#include "symbol.h"
 #include "task.h"
+
 
 #define YYERROR_VERBOSE
 
@@ -90,7 +92,6 @@ struct si_stream_t *stream;
 %type<arg> rl_operand
 %type<arg> rl_arg
 %type<arg> rl_maddr_qual
-%type<label> rl_label
 %type<arg> rl_waitcnt_elem
 %type<arg> rl_waitcnt_arg
 
@@ -136,21 +137,28 @@ rl_line
 
 rl_label
 	: TOK_ID TOK_COLON
-	{ 
-		struct si_label_t *label;
-		struct si_id_t *id;
+	{
+		struct si_id_t *id = $1;
+		struct si_symbol_t *symbol;
 
-		/* Get arguments */
-		id = $1;
+		/* Check if symbol exists */
+		symbol = hash_table_get(si_symbol_table, id->name);
+		if (symbol && symbol->defined)
+			yyerror_fmt("multiply defined label: %s", id->name);
 
-		/* Create label */
-		label = si_label_create(id->name, 0);
-		if (!si_label_table_insert(label))
-			fatal("failed to insert label '%s'", id->name);
-		
-		/* Return label */
+		/* Create if it does not exists */
+		if (!symbol)
+		{
+			symbol = si_symbol_create(id->name);
+			hash_table_insert(si_symbol_table, id->name, symbol);
+		}
+
+		/* Define symbol */
+		symbol->defined = 1;
+		symbol->value = si_out_stream->offset;
+
+		/* End */
 		si_id_free(id);
-		$$ = label;
 	}
 
 rl_instr
@@ -317,20 +325,20 @@ rl_arg
 	| TOK_ID
 	{
 		struct si_arg_t *arg;
-		struct si_task_t *task;
 		struct si_id_t *id;
+		struct si_symbol_t *symbol;
 
-		/* Read arguments */
+		/* Get symbol or create it */
 		id = $1;
+		symbol = hash_table_get(si_symbol_table, id->name);
+		if (!symbol)
+		{
+			symbol = si_symbol_create(id->name);
+			hash_table_insert(si_symbol_table, id->name, symbol);
+		}
 		
 		/* Create argument */
-		arg = si_arg_create(); 
-		arg->type = si_arg_label;
-		
-		/* Insert with an offset of 0, the binary generation function
-		 * must check for this, and update it with the OUTPUT file's offset */
-		task = si_task_create(id->name, si_stream_get_offset(stream));
-		si_task_list_add(task);
+		arg = si_arg_create_label(symbol);
 
 		/* Return */
 		si_id_free(id);
