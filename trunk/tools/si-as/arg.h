@@ -50,7 +50,8 @@ enum si_arg_special_register_type_t
 {
 	si_arg_special_register_invalid = 0,
 	si_arg_special_register_vcc,
-	si_arg_special_register_scc
+	si_arg_special_register_scc,
+	si_arg_special_register_exec
 };
 
 struct si_arg_t 

@@ -52,7 +52,7 @@ void si_symbol_dump(struct si_symbol_t *symbol, FILE *f)
 {
 	char buf[MAX_STRING_SIZE];
 
-	fprintf(f, "name='%s'", symbol->name);
+	fprintf(f, "name='%s', ", symbol->name);
 
 	snprintf(buf, sizeof buf, "%d", symbol->value);
 	fprintf(f, "value=%s", symbol->defined ? buf : "?");

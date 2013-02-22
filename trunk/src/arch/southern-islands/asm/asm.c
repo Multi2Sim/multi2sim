@@ -73,6 +73,32 @@ static struct si_inst_info_t *si_inst_info_mubuf[SI_INST_INFO_MUBUF_MAX_VALUE + 
 static struct si_inst_info_t *si_inst_info_mimg[SI_INST_INFO_MIMG_MAX_VALUE + 1];
 static struct si_inst_info_t *si_inst_info_exp[SI_INST_INFO_EXP_MAX_VALUE + 1];
 
+
+struct str_map_t si_inst_fmt_map =
+{
+	18,
+	{
+		{ "<invalid>", SI_FMT_NONE },
+		{ "sop2", SI_FMT_SOP2 },
+		{ "sopk", SI_FMT_SOPK },
+		{ "sop1", SI_FMT_SOP1 },
+		{ "sopc", SI_FMT_SOPC },
+		{ "sopp", SI_FMT_SOPP },
+		{ "smrc", SI_FMT_SMRD },
+		{ "vop2", SI_FMT_VOP2 },
+		{ "vop1", SI_FMT_VOP1 },
+		{ "vopc", SI_FMT_VOPC },
+		{ "vop3a", SI_FMT_VOP3a },
+		{ "vop3b", SI_FMT_VOP3b },
+		{ "vintrp", SI_FMT_VINTRP },
+		{ "ds", SI_FMT_DS },
+		{ "mubuf", SI_FMT_MUBUF },
+		{ "mtbuf", SI_FMT_MTBUF },
+		{ "mimg", SI_FMT_MIMG },
+		{ "exp", SI_FMT_EXP }
+	}
+};
+
 /* String maps for assembly dump. */
 struct str_map_t si_inst_sdst_map = {
 	24, {

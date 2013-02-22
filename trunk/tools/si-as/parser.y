@@ -111,17 +111,11 @@ rl_line
 
 	| rl_instr TOK_NEW_LINE
 	{
-		struct si_dis_inst_t *inst;
+		struct si_dis_inst_t *inst = $1;
 
-		/* Get instruction */
-		inst = $1;
-
-		/* Print instruction */
-		si_dis_inst_gen(inst);
-		si_dis_inst_dump(inst, stdout);
-		//si_stream_add_inst(stream, $1);
-		
-		/* Free instruction */
+		/* Generate code */
+		si_stream_add_inst(si_out_stream, inst);
+		//si_dis_inst_dump(inst, stdout);
 		si_dis_inst_free(inst);
 		
 		/* Next line */
@@ -397,11 +391,6 @@ rl_waitcnt_arg
 
 	| rl_waitcnt_elem TOK_AMP rl_waitcnt_arg
 	{
-		/* $1 returns a new waitcnt arg object, and
-   		   $2 returns a new object as well, pick one
-		   to merge the two waitcnt args and free the
-		   other.								   */
-		   
 		$3->value.wait_cnt.vmcnt_active = $1->value.wait_cnt.vmcnt_active;
 		$3->value.wait_cnt.vmcnt_value = $1->value.wait_cnt.vmcnt_value;		
 		
@@ -412,9 +401,7 @@ rl_waitcnt_arg
 		$3->value.wait_cnt.lgkmcnt_value = $1->value.wait_cnt.lgkmcnt_value;	
 		
 		si_arg_free($1);
-		
 		$$ = $3;
-		
 	}
 ;
 

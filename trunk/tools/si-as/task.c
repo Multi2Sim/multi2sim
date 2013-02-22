@@ -17,18 +17,26 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <string.h>
 
+#include <arch/southern-islands/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 
+#include "main.h"
+#include "stream.h"
+#include "symbol.h"
 #include "task.h"
 
 
-struct list_t *task_list;
+/*
+ * Task Object
+ */
 
-struct si_task_t *si_task_create(char *ID, long offset)
+struct si_task_t *si_task_create(int offset, struct si_symbol_t *symbol)
 {
 	struct si_task_t *task;
 	
@@ -37,7 +45,7 @@ struct si_task_t *si_task_create(char *ID, long offset)
 	
 	/* Initialize the task's offset and ID */
 	task->offset = offset;
-	task->ID = xstrdup(ID);
+	task->symbol = symbol;
 	
 	/* Return */
 	return task;
@@ -46,44 +54,78 @@ struct si_task_t *si_task_create(char *ID, long offset)
 
 void si_task_free(struct si_task_t *task)
 {
-	free(task->ID);
 	free(task);
 }
 
+
 void si_task_dump(struct si_task_t *task, FILE *f)
 {
-	fprintf(f, "\tTask ID: %s\n", task->ID);
-	fprintf(f, "\tTask Offset: %ld\n", task->offset);
+	fprintf(f, "offset=%d, symbol={", task->offset);
+	si_symbol_dump(task->symbol, f);
+	fprintf(f, "}");
 }
 
-/***********Task List Functions***********/
+
+void si_task_process(struct si_task_t *task)
+{
+	struct si_symbol_t *label;
+	union si_inst_microcode_t *inst;
+
+	/* Check whether symbol is resolved */
+	label = task->symbol;
+	if (!label->defined)
+		yyerror_fmt("undefined label: %s", label->name);
+
+	/* Resolve label */
+	assert(IN_RANGE(task->offset, 0, si_out_stream->offset - 4));
+	inst = si_out_stream->buf + task->offset;
+	inst->sopp.simm16 = (label->value - task->offset) / 4 - 1;
+}
+
+
+
+
+/*
+ * Global Functions
+ */
+
+struct list_t *si_task_list;
+
 		
 void si_task_list_init(void)
 {							  
-	task_list = list_create();
+	si_task_list = list_create();
 }
 
-void si_task_list_add(struct si_task_t *task)
-{
-	list_add(task_list, task);
-}
 
 void si_task_list_done(void)
 {
-	int index; 
+	int index;
 	
-	for (index = 0; index < task_list->count; index++)
-		si_task_free(list_get(task_list, index));
-	
-	list_free(task_list);
+	LIST_FOR_EACH(si_task_list, index)
+		si_task_free(list_get(si_task_list, index));
+	list_free(si_task_list);
 }
+
 
 void si_task_list_dump(FILE *f)
 {
-	int index; 
+	int index;
 	
-	for (index = 0; index < task_list->count; index++)
+	fprintf(f, "Task list:\n");
+	LIST_FOR_EACH(si_task_list, index)
 	{
-		si_task_dump(list_get(task_list, index), stdout);
+		fprintf(f, "\ttask %d: ", index);
+		si_task_dump(list_get(si_task_list, index), f);
+		fprintf(f, "\n");
 	}
+}
+
+
+void si_task_list_process(void)
+{
+	int index;
+
+	LIST_FOR_EACH(si_task_list, index)
+		si_task_process(list_get(si_task_list, index));
 }

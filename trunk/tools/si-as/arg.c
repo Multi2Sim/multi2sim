@@ -31,10 +31,11 @@
 
 struct str_map_t si_arg_special_register_map =
 {
-	2,
+	3,
 	{
 		{ "vcc", si_arg_special_register_vcc },
-		{ "scc", si_arg_special_register_scc }
+		{ "scc", si_arg_special_register_scc },
+		{ "exec", si_arg_special_register_exec }
 	}
 };
 
@@ -156,6 +157,7 @@ struct si_arg_t *si_arg_create_label(struct si_symbol_t *symbol)
 
 	arg = si_arg_create();
 	arg->type = si_arg_label;
+	arg->value.label.symbol = symbol;
 
 	return arg;
 }
@@ -238,22 +240,67 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 		break;
 	}
 
+	/* Encode the low register */
+	case si_arg_scalar_register_series:
+	{
+		int id;
+
+		id = arg->value.scalar_register_series.low;
+		if (IN_RANGE(id, 0, 103))
+			return id;
+
+		yyerror_fmt("invalid scalar register: s%d", id);
+		break;
+	}
+
 	case si_arg_vector_register:
 	{
 		int id;
 
 		id = arg->value.vector_register.id;
 		if (IN_RANGE(id, 0, 255))
-			return id;
+			return id + 256;
 
 		yyerror_fmt("invalid vector register: v%d", id);
 		break;
 	}
 
-	/* FIXME - special registers missing here */
+	/* Encode the low register */
+	case si_arg_vector_register_series:
+	{
+		int id;
+
+		id = arg->value.vector_register_series.low;
+		if (IN_RANGE(id, 0, 255))
+			return id + 256;
+
+		yyerror_fmt("invalid vector register: v%d", id);
+		break;
+	}
+
+	/* Special register */
+	case si_arg_special_register:
+	{
+		switch (arg->value.special_register.type)
+		{
+		case si_arg_special_register_vcc:
+			return 106;
+
+		case si_arg_special_register_exec:
+			return 126;
+
+		case si_arg_special_register_scc:
+			return 253;
+
+		default:
+			yyerror_fmt("%s: unsupported special register (code=%d)",
+				__FUNCTION__, arg->value.special_register.type);
+		}
+		break;
+	}
 
 	default:
-		yyerror("invalid operand");
+		yyerror_fmt("invalid operand (code %d)", arg->type);
 		break;
 	}
 

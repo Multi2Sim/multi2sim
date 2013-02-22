@@ -50,6 +50,7 @@ enum si_token_type_t
 	si_token_vaddr,
 	si_token_vcc,
 	si_token_vdst,
+	si_token_vop3_64_svdst,
 	si_token_vop3_src0,
 	si_token_vop3_src1,
 	si_token_vop3_src2,

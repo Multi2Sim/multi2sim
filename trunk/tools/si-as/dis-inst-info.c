@@ -128,9 +128,9 @@ struct si_dis_inst_info_t *si_dis_inst_info_create(struct si_inst_info_t *inst_i
 		/* Get token from format string */
 		str_token = list_get(info->str_token_list, index);
 		token_type = str_map_string_case(&si_token_map, str_token);
-		if (!token_type)
+		/*if (!token_type)
 			warning("%s: unrecognized token: %s",
-				__FUNCTION__, str_token);
+				__FUNCTION__, str_token);*/
 
 		/* Add formal argument */
 		token = si_token_create(token_type);
