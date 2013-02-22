@@ -81,7 +81,11 @@ int main(int argc, char **argv)
 	/* Parse input */
 	yyset_in(f);
 	yyparse();
-		
+
+	/* Process tasks */
+	si_task_list_process();
+
+	/* Finalize */
 	si_task_list_done();
 	si_symbol_table_done();
 	si_stream_done();

@@ -42,8 +42,8 @@ struct si_stream_t
 struct si_stream_t *si_stream_create(int size);
 void si_stream_free(struct si_stream_t *stream);
 
-void si_stream_add_inst(struct si_stream_t *stream, struct si_dis_inst_t *inst);
-void si_stream_add_label(struct si_stream_t *stream, char *name);
+void si_stream_add_inst(struct si_stream_t *stream,
+		struct si_dis_inst_t *inst);
 
 
 

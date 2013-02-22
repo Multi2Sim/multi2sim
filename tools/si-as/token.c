@@ -18,9 +18,11 @@
  */
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <lib/util/string.h>
 
 #include "arg.h"
+#include "main.h"
 #include "token.h"
 
 
@@ -55,6 +57,7 @@ struct str_map_t si_token_map =
 		{ "\%ssrc1", si_token_ssrc1 },
 		{ "\%vaddr", si_token_vaddr },
 		{ "\%vdst", si_token_vdst },
+		{ "\%vop3_64_svdst", si_token_vop3_64_svdst },
 		{ "\%vop3_src0", si_token_vop3_src0 },
 		{ "\%vop3_src1", si_token_vop3_src1 },
 		{ "\%vop3_src2", si_token_vop3_src2 },
@@ -88,6 +91,18 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 	switch (token->type)
 	{
 
+	case si_token_64_sdst:
+		return arg->type == si_arg_scalar_register_series ||
+				arg->type == si_arg_special_register;
+
+	case si_token_64_ssrc0:
+	case si_token_64_ssrc1:
+		return arg->type == si_arg_scalar_register_series ||
+				arg->type == si_arg_literal;
+	
+	case si_token_label:
+		return arg->type == si_arg_label;
+
 	case si_token_mt_maddr:
 		return arg->type == si_arg_maddr;
 
@@ -96,10 +111,15 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 			arg->type == si_arg_vector_register_series;
 
 	case si_token_offset:
+		return arg->type == si_arg_literal ||
+			arg->type == si_arg_scalar_register;
+
 	case si_token_ssrc0:
 	case si_token_ssrc1:
 		return arg->type == si_arg_literal ||
-			arg->type == si_arg_scalar_register;
+				arg->type == si_arg_literal_float ||
+				arg->type == si_arg_scalar_register ||
+				arg->type == si_arg_special_register;
 
 	case si_token_series_sdst:
 	case si_token_series_sbase:
@@ -125,6 +145,9 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 	case si_token_vsrc1:
 		return arg->type == si_arg_vector_register;
 
+	case si_token_vop3_64_svdst:
+		return arg->type == si_arg_scalar_register_series;
+
 	case si_token_vop3_src0:
 	case si_token_vop3_src1:
 	case si_token_vop3_src2:
@@ -140,6 +163,8 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 		return arg->type == si_arg_waitcnt;
 	
 	default:
+		yyerror_fmt("%s: unsupported token (code = %d)",
+				__FUNCTION__, token->type);
 		return 0;
 	}
 }

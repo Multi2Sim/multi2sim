@@ -75,7 +75,7 @@ v[0-9]+ {
 	return TOK_VECTOR_REGISTER;
 }
 
-vcc|scc {
+vcc|scc|exec {
 	yylval.id = si_id_create(yytext);
 	return TOK_SPECIAL_REGISTER;
 }

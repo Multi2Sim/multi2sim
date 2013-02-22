@@ -23,7 +23,9 @@
 #include <stdio.h>
 
 
-/* Microcode Formats */
+/* Microcode Formats
+ * NOTE: Update string map 'si_inst_fmt_map' if new elements are added
+ * to this enumeration. */
 enum si_fmt_enum
 {
 	SI_FMT_NONE = 0,
@@ -71,6 +73,7 @@ enum si_fmt_enum
  * String maps
  */
 
+extern struct str_map_t si_inst_fmt_map;
 extern struct str_map_t si_inst_sdst_map;
 extern struct str_map_t si_inst_ssrc_map;
 extern struct str_map_t si_inst_dfmt_map;
