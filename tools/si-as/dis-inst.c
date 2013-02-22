@@ -31,6 +31,9 @@
 #include "dis-inst.h"
 #include "dis-inst-info.h"
 #include "main.h"
+#include "stream.h"
+#include "symbol.h"
+#include "task.h"
 #include "token.h"
 
 
@@ -138,6 +141,9 @@ void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f)
 	
 	/* Dump instruction opcode */
 	fprintf(f, "Instruction %s\n", inst->info->name);
+	fprintf(f, "\tformat=%s, size=%d\n",
+			str_map_value(&si_inst_fmt_map, inst->info->inst_info->fmt),
+			inst->size);
 
 	/* Dump arguments */
 	LIST_FOR_EACH(inst->arg_list, i)
@@ -181,9 +187,10 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 	assert(info);
 	inst_info = info->inst_info;
 
-	/* By default, the instruction has 4 bytes. It will be extended upon
-	 * the presence of a literal constant in its arguments. */
-	inst->size = 4;
+	/* By default, the instruction has the number of bytes specified by its
+	 * format. 4-bit instructions could be extended later to 8 bits upon
+	 * the presence of a literal constant. */
+	inst->size = inst_info->size;
 
 	/* Instruction opcode */
 	switch (inst_info->fmt)
@@ -192,7 +199,6 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 	/* encoding in [31:26], op in [18:16] */
 	case SI_FMT_MTBUF:
 
-		inst->size = 8;
 		inst_bytes->mtbuf.enc = 0x3a;
 		inst_bytes->mtbuf.op = inst_info->opcode;
 		break;
@@ -263,6 +269,56 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 		/* Check token */
 		switch (token->type)
 		{
+
+		case si_token_64_sdst:
+		{
+			int low;
+			int high;
+
+			/* Check range if scalar register range given */
+			if (arg->type == si_arg_scalar_register_series)
+			{
+				low = arg->value.scalar_register_series.low;
+				high = arg->value.scalar_register_series.high;
+				if (high != low + 1)
+					yyerror("register series must be s[x:x+1]");
+			}
+			
+			/* Encode */
+			inst_bytes->sop2.sdst = si_arg_encode_operand(arg);
+			break;
+		}
+
+		case si_token_64_ssrc0:
+		{
+			int value;
+
+			if (arg->type == si_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
+			{
+				/* Literal constant other than [-16...64] is encoded by adding
+				 * four more bits to the instruction. */
+				if (inst->size == 8)
+					yyerror("only one literal allowed");
+				inst->size = 8;
+				inst_bytes->sop2.ssrc0 = 0xff;
+				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
+			}
+			else
+			{
+				/* Check range of scalar registers */
+				if (arg->type == si_arg_scalar_register_series &&
+						arg->value.scalar_register_series.high !=
+						arg->value.scalar_register_series.low + 1)
+					yyerror("invalid scalar register series, s[x:x+1] expected");
+
+				/* Encode */
+				value = si_arg_encode_operand(arg);
+				if (!IN_RANGE(value, 0, 255))
+					yyerror("invalid argument type");
+				inst_bytes->sop2.ssrc0 = value;
+			}
+			break;
+		}
 		
 		case si_token_mt_maddr:
 		{
@@ -296,6 +352,28 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			inst_bytes->mtbuf.idxen = qual->value.maddr_qual.idxen;
 			inst_bytes->mtbuf.offset = qual->value.maddr_qual.offset;
 
+			break;
+		}
+
+		case si_token_label:
+		{
+			struct si_symbol_t *label;
+			struct si_task_t *task;
+
+			assert(arg->type == si_arg_label);
+			label = arg->value.label.symbol;
+			if (label->defined)
+			{
+				inst_bytes->sopp.simm16 = (label->value -
+						si_out_stream->offset) / 4 - 1;
+			}
+			else
+			{
+				/* We create a task to complete this instruction once the
+				 * label is defined. */
+				task = si_task_create(si_out_stream->offset, label);
+				list_add(si_task_list, task);
+			}
 			break;
 		}
 
@@ -349,7 +427,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 
 			/* Check range */
 			if (high != high_must)
-				yyerror_fmt("invalid register range: v[%d:%d]", low, high);
+				yyerror_fmt("invalid register series: v[%d:%d]", low, high);
 
 			/* Encode */
 			inst_bytes->mtbuf.vdata = low;
@@ -401,7 +479,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* High register must be low plus 1 */
 				if (arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 1)
-					yyerror("register series must be s[low:low+3]");
+					yyerror("register series must be s[x:x+3]");
 				break;
 
 			case SI_INST_S_BUFFER_LOAD_DWORD:
@@ -409,7 +487,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* High register must be low plus 3 */
 				if (arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 3)
-					yyerror("register series must be s[low:low+3]");
+					yyerror("register series must be s[x:x+3]");
 				break;
 
 			default:
@@ -489,50 +567,52 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			break;
 
 		case si_token_ssrc0:
+		{
+			int value;
 
-			switch (arg->type)
+			if (arg->type == si_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
 			{
-
-			case si_arg_scalar_register:
-
-				inst_bytes->sop2.ssrc0 = arg->value.scalar_register.id;
-				break;
-
-			case si_arg_literal:
-
+				/* Literal constant other than [-16...64] is encoded by adding
+				 * four more bits to the instruction. */
+				if (inst->size == 8)
+					yyerror("only one literal allowed");
 				inst->size = 8;
 				inst_bytes->sop2.ssrc0 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
-				break;
-
-			default:
-				panic("%s: invalid argument type for token 'ssrc0'",
-					__FUNCTION__);
+			}
+			else
+			{
+				value = si_arg_encode_operand(arg);
+				if (!IN_RANGE(value, 0, 255))
+					yyerror("invalid argument type");
+				inst_bytes->sop2.ssrc0 = value;
 			}
 			break;
+		}
 
 		case si_token_ssrc1:
+		{
+			int value;
 
-			switch (arg->type)
+			if (arg->type == si_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
 			{
-
-			case si_arg_scalar_register:
-
-				inst_bytes->sop2.ssrc1 = arg->value.scalar_register.id;
-				break;
-
-			case si_arg_literal:
-
+				/* Literal constant other than [-16...64] is encoded by adding
+				 * four more bits to the instruction. */
+				if (inst->size == 8)
+					yyerror("only one literal allowed");
 				inst->size = 8;
 				inst_bytes->sop2.ssrc1 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
-				break;
-
-			default:
-				panic("%s: invalid argument type for token 'ssrc0'",
-					__FUNCTION__);
+			}
+			else
+			{
+				value = si_arg_encode_operand(arg);
+				if (!IN_RANGE(value, 0, 255))
+					yyerror("invalid argument type");
+				inst_bytes->sop2.ssrc1 = value;
 			}
 			break;
+		}
 
 		case si_token_vaddr:
 
@@ -561,9 +641,42 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			inst_bytes->vop1.vdst = arg->value.vector_register.id;
 			break;
 
+		case si_token_vop3_64_svdst:
+		{
+			int low;
+			int high;
+
+			/* Check range of series */
+			low = arg->value.scalar_register_series.low;
+			high = arg->value.scalar_register_series.high;
+			assert(arg->type == si_arg_scalar_register_series);
+			if (high != low + 1)
+				yyerror("register series must be s[low:low+1]");
+
+			/* Encode */
+			inst_bytes->vop3a.vdst = low;
+			break;
+		}
+
+		case si_token_vop3_src0:
+
+			inst_bytes->vop3a.src0 = si_arg_encode_operand(arg);
+			break;
+
+		case si_token_vop3_src1:
+
+			inst_bytes->vop3a.src1 = si_arg_encode_operand(arg);
+			break;
+
+		case si_token_vop3_src2:
+
+			inst_bytes->vop3a.src2 = si_arg_encode_operand(arg);
+			break;
+
 		case si_token_vsrc1:
 
 			/* Encode */
+			assert(arg->type == si_arg_vector_register);
 			inst_bytes->vopc.vsrc1 = arg->value.vector_register.id;
 			break;
 
@@ -613,8 +726,8 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			break;
 
 		default:
-			fatal("%s: unsupported token for argument %d",
-					__FUNCTION__, index + 1);
+			fatal("%s: line %d: unsupported token for argument %d",
+					__FUNCTION__, yyget_lineno(), index + 1);
 		}
 	}
 }

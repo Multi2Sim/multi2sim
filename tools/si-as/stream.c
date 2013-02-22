@@ -19,8 +19,10 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/elf-format.h>
 
 #include "dis-inst.h"
+#include "main.h"
 #include "task.h"
 #include "stream.h"
 
@@ -48,8 +50,29 @@ void si_stream_free(struct si_stream_t *stream)
 }
 
 
-void si_stream_add_inst(struct si_stream_t *stream, struct si_dis_inst_t *inst)
+void si_stream_add_inst(struct si_stream_t *stream,
+		struct si_dis_inst_t *inst)
 {
+	/* Generate code for instruction */
+	si_dis_inst_gen(inst);
+
+	/* Size of stream exceeded */
+	if (stream->offset + inst->size > stream->size)
+		yyerror("output stream size exceeded");
+
+	/* Add instruction */
+	memcpy(stream->buf + stream->offset, inst->inst_bytes.bytes, inst->size);
+	stream->offset += inst->size;
+}
+
+
+void si_stream_dump(struct si_stream_t *stream, FILE *f)
+{
+	struct elf_buffer_t buffer;
+
+	buffer.ptr = stream->buf;
+	buffer.size = stream->offset;
+	si_disasm_buffer(&buffer, f);
 }
 
 
@@ -68,6 +91,7 @@ void si_stream_init(void)
 
 void si_stream_done(void)
 {
+	si_stream_dump(si_out_stream, stdout);
 	si_stream_free(si_out_stream);
 }
 
