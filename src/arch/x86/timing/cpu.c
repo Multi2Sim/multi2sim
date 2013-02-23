@@ -1088,7 +1088,8 @@ int x86_cpu_run(void)
 		x86_cpu_run_fast_forward();
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (x86_emu_max_inst && x86_cpu->num_committed_inst >= x86_emu_max_inst)
+	if (x86_emu_max_inst && x86_cpu->num_committed_inst >=
+			x86_emu_max_inst - x86_cpu_fast_forward_count)
 		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
