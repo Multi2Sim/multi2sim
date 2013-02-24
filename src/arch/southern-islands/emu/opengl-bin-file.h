@@ -56,9 +56,6 @@ struct si_opengl_bin_file_t
 	/* List of shaders associated with binary file.
 	 * Elements are of type 'struct si_opengl_shader_t' */
 	struct list_t *shader_list;
-
-	/* NEED or NOT ? */
-	// struct si_opengl_shader_t *amd_opengl_shader;
 };
 
 struct si_opengl_bin_file_t *si_opengl_bin_file_create(void *ptr, int size, char *name);

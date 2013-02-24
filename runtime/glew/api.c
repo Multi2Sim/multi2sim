@@ -19,7 +19,6 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <dlfcn.h>
 
 #include "api.h"
 #include "../include/GL/glew.h"

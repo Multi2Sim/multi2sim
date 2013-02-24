@@ -31,8 +31,14 @@ libopengl_a_SOURCES = \
 	opengl.dat \
 	opengl.h \
 	\
+	program.c \
+	program.h \
+	\
 	rasterizer.c \
 	rasterizer.h \
+	\
+	shader.c \
+	shader.h \
 	\
 	span.c \
 	span.h \
@@ -42,6 +48,12 @@ libopengl_a_SOURCES = \
 	\
 	vertex.c \
 	vertex.h \
+	\
+	vertex-array.c \
+	vertex-array.h \
+	\
+	vertex-buffer.c \
+	vertex-buffer.h \
 	\
 	viewport.c \
 	viewport.h

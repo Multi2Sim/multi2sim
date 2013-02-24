@@ -1004,6 +1004,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Southern Islands OpenGL binary */
+		if (!strcmp(argv[argi], "--si-shader-binary"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_emu_opengl_binary_name = argv[++argi];
+			continue;
+		}
+
 		/* Maximum number of cycles */
 		if (!strcmp(argv[argi], "--si-max-cycles"))
 		{

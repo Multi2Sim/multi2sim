@@ -631,6 +631,9 @@ void glut_init(void)
 	glut_event_list = linked_list_create();
 }
 
+/* Forward declaration */
+static struct glut_window_properties_t *glut_window_properties;
+static char *glut_window_title;
 
 void glut_done(void)
 {
@@ -647,6 +650,10 @@ void glut_done(void)
 		glut_event_free(event);
 	}
 	linked_list_free(glut_event_list);
+
+	/* Free glut window property and title */
+	free(glut_window_properties);
+	free(glut_window_title);
 
 	/* Free frame buffer */
 	glut_frame_buffer_done();

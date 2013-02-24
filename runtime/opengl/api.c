@@ -25,10 +25,10 @@
 #include "debug.h"
 
 /* Debug */
-int opengl_debug = 0;
+int opengl_debug = 1;
 
 /*
- * Error Messages
+\n * Error Messages
  */
 
 #define __OPENGL_NOT_IMPL__  fatal("%s: not implemented.\n%s", \
@@ -66,7 +66,7 @@ void glClearIndex( GLfloat c )
 
 void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
 {
-	opengl_debug(stdout, "glClearColor\n");
+	opengl_debug(stdout, "\nglClearColor\n");
 	GLdouble sys_args[4];
 	sys_args[0] = (GLdouble) red;
 	sys_args[1] = (GLdouble) green;
@@ -78,7 +78,7 @@ void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
 
 void glClear( GLbitfield mask )
 {
-	opengl_debug(stdout, "glClear\n");
+	opengl_debug(stdout, "\nglClear\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glClear, &mask);
 }
 
@@ -199,21 +199,21 @@ void glGetClipPlane( GLenum plane, GLdouble *equation )
 
 void glDrawBuffer( GLenum mode )
 {
-	opengl_debug(stdout, "glDrawBuffer\n");
+	opengl_debug(stdout, "\nglDrawBuffer\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDrawBuffer, &mode);
 }
 
 
 void glReadBuffer( GLenum mode )
 {
-	opengl_debug(stdout, "glReadBuffer\n");
+	opengl_debug(stdout, "\nglReadBuffer\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glReadBuffer, &mode);
 }
 
 
 void glEnable( GLenum cap )
 {
-	opengl_debug(stdout, "glEnable\n");
+	opengl_debug(stdout, "\nglEnable\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnable, &cap);
 }
 
@@ -328,7 +328,7 @@ void glFinish( void )
 
 void glFlush( void )
 {
-	opengl_debug(stdout, "glFlush\n");
+	opengl_debug(stdout, "\nglFlush\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glFlush);
 }
 
@@ -377,7 +377,7 @@ void glAccum( GLenum op, GLfloat value )
 
 void glMatrixMode( GLenum mode )
 {
-	opengl_debug(stdout, "glMatrixMode\n");
+	opengl_debug(stdout, "\nglMatrixMode\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMatrixMode, &mode);
 }
 
@@ -386,7 +386,7 @@ void glOrtho( GLdouble left, GLdouble right,
                                  GLdouble bottom, GLdouble top,
                                  GLdouble near_val, GLdouble far_val )
 {
-	opengl_debug(stdout, "glOrtho\n");
+	opengl_debug(stdout, "\nglOrtho\n");
 	GLdouble sys_args[6];
 	sys_args[0] = (GLdouble) left;
 	sys_args[1] = (GLdouble) right;
@@ -402,7 +402,7 @@ void glFrustum( GLdouble left, GLdouble right,
                                    GLdouble bottom, GLdouble top,
                                    GLdouble near_val, GLdouble far_val )
 {
-	opengl_debug(stdout, "glFrustum\n");
+	opengl_debug(stdout, "\nglFrustum\n");
 	GLdouble sys_args[6];
 	sys_args[0] = (GLdouble) left;
 	sys_args[1] = (GLdouble) right;
@@ -417,7 +417,7 @@ void glFrustum( GLdouble left, GLdouble right,
 void glViewport( GLint x, GLint y,
                                     GLsizei width, GLsizei height )
 {
-	opengl_debug(stdout, "glViewport\n");
+	opengl_debug(stdout, "\nglViewport\n");
 	GLint sys_args[4];
 	sys_args[0] = (GLint) x;
 	sys_args[1] = (GLint) y;
@@ -429,14 +429,14 @@ void glViewport( GLint x, GLint y,
 
 void glPushMatrix( void )
 {
-	opengl_debug(stdout, "glPushMatrix\n");
+	opengl_debug(stdout, "\nglPushMatrix\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glPushMatrix);
 }
 
 
 void glPopMatrix( void )
 {
-	opengl_debug(stdout, "glPopMatrix\n");
+	opengl_debug(stdout, "\nglPopMatrix\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glPopMatrix);
 
 }
@@ -444,7 +444,7 @@ void glPopMatrix( void )
 
 void glLoadIdentity( void )
 {
-	opengl_debug(stdout, "glLoadIdentity\n");
+	opengl_debug(stdout, "\nglLoadIdentity\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glLoadIdentity);
 }
 
@@ -483,7 +483,7 @@ void glRotated( GLdouble angle,
 void glRotatef( GLfloat angle,
                                    GLfloat x, GLfloat y, GLfloat z )
 {
-	opengl_debug(stdout, "glRotatef\n");
+	opengl_debug(stdout, "\nglRotatef\n");
 	GLfloat sys_args[4];
 	sys_args[0] = (GLfloat) angle;
 	sys_args[1] = (GLfloat) x;
@@ -514,7 +514,7 @@ void glTranslated( GLdouble x, GLdouble y, GLdouble z )
 
 void glTranslatef( GLfloat x, GLfloat y, GLfloat z )
 {
-	opengl_debug(stdout, "glTranslatef\n");
+	opengl_debug(stdout, "\nglTranslatef\n");
 	GLfloat sys_args[3];
 	sys_args[0] = (GLfloat) x;
 	sys_args[1] = (GLfloat) y;
@@ -539,7 +539,7 @@ void glDeleteLists( GLuint list, GLsizei range )
 
 GLuint glGenLists( GLsizei range )
 {
-	opengl_debug(stdout, "glGenLists\n");
+	opengl_debug(stdout, "\nglGenLists\n");
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) range;
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenLists, &sys_args);	
@@ -549,7 +549,7 @@ GLuint glGenLists( GLsizei range )
 
 void glNewList( GLuint list, GLenum mode )
 {
-	opengl_debug(stdout, "glNewList\n");
+	opengl_debug(stdout, "\nglNewList\n");
 	unsigned int sys_args[2];
 	sys_args[0] = (unsigned int) list;
 	sys_args[1] = (unsigned int) mode;
@@ -559,14 +559,14 @@ void glNewList( GLuint list, GLenum mode )
 
 void glEndList( void )
 {
-	opengl_debug(stdout, "glEndList\n");
+	opengl_debug(stdout, "\nglEndList\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEndList);		
 }
 
 
 void glCallList( GLuint list )
 {
-	opengl_debug(stdout, "glCallList\n");
+	opengl_debug(stdout, "\nglCallList\n");
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) list;
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glCallList, &sys_args);
@@ -588,14 +588,14 @@ void glListBase( GLuint base )
 
 void glBegin( GLenum mode )
 {
-	opengl_debug(stdout, "glBegin\n");
+	opengl_debug(stdout, "\nglBegin\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBegin, &mode);
 }
 
 
 void glEnd( void )
 {
-	opengl_debug(stdout, "glEnd\n");
+	opengl_debug(stdout, "\nglEnd\n");
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnd);
 }
 
@@ -608,7 +608,7 @@ void glVertex2d( GLdouble x, GLdouble y )
 
 void glVertex2f( GLfloat x, GLfloat y )
 {
-	opengl_debug(stdout, "glVertex2f\n");
+	opengl_debug(stdout, "\nglVertex2f\n");
 	GLfloat sys_args[2];
 	sys_args[0] = (GLfloat) x;
 	sys_args[1] = (GLfloat) y;
@@ -636,7 +636,7 @@ void glVertex3d( GLdouble x, GLdouble y, GLdouble z )
 
 void glVertex3f( GLfloat x, GLfloat y, GLfloat z )
 {
-	opengl_debug(stdout, "glVertex3f\n");
+	opengl_debug(stdout, "\nglVertex3f\n");
 	GLfloat sys_args[3];
 	sys_args[0] = (GLfloat) x;
 	sys_args[1] = (GLfloat) y;
@@ -767,7 +767,7 @@ void glNormal3d( GLdouble nx, GLdouble ny, GLdouble nz )
 
 void glNormal3f( GLfloat nx, GLfloat ny, GLfloat nz )
 {
-	opengl_debug(stdout, "glNormal3f\n");
+	opengl_debug(stdout, "\nglNormal3f\n");
 	GLfloat sys_args[3];
 	sys_args[0] = (GLfloat) nx;
 	sys_args[1] = (GLfloat) ny;
@@ -893,7 +893,7 @@ void glColor3d( GLdouble red, GLdouble green, GLdouble blue )
 
 void glColor3f( GLfloat red, GLfloat green, GLfloat blue )
 {
-	opengl_debug(stdout, "glColor3f\n");
+	opengl_debug(stdout, "\nglColor3f\n");
 	GLfloat sys_args[3];
 	sys_args[0] = (GLfloat) red;
 	sys_args[1] = (GLfloat) green;
@@ -1523,7 +1523,13 @@ void glArrayElement( GLint i )
 
 void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglDrawArrays\n");
+
+	unsigned int sys_args[3];
+	sys_args[0] = (unsigned int) mode;
+	sys_args[1] = (unsigned int) first;
+	sys_args[2] = (unsigned int) count;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDrawArrays, &sys_args);
 }
 
 
@@ -1543,7 +1549,7 @@ void glInterleavedArrays( GLenum format, GLsizei stride,
 
 void glShadeModel( GLenum mode )
 {
-	opengl_debug(stdout, "glShadeModel\n");
+	opengl_debug(stdout, "\nglShadeModel\n");
 	unsigned int sys_args[1];
 	sys_args[0] = (unsigned int) mode;
 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glShadeModel, &sys_args);
@@ -1566,7 +1572,7 @@ void glLighti( GLenum light, GLenum pname, GLint param )
 void glLightfv( GLenum light, GLenum pname,
                                  const GLfloat *params )
 {
-	opengl_debug(stdout, "glLightfv\n");
+	opengl_debug(stdout, "\nglLightfv\n");
 	unsigned int sys_args[3];
 	sys_args[0] = (unsigned int) light;
 	sys_args[1] = (unsigned int) pname;
@@ -1634,7 +1640,7 @@ void glMateriali( GLenum face, GLenum pname, GLint param )
 
 void glMaterialfv( GLenum face, GLenum pname, const GLfloat *params )
 {
-	opengl_debug(stdout, "glMaterialfv\n");
+	opengl_debug(stdout, "\nglMaterialfv\n");
 	unsigned int sys_args[3];
 	sys_args[0] = (unsigned int) face;
 	sys_args[1] = (unsigned int) pname;
@@ -3351,7 +3357,12 @@ void glGetQueryObjectuiv (GLuint id, GLenum pname, GLuint *params)
 
 void glBindBuffer (GLenum target, GLuint buffer)
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglBindBuffer\n");
+
+	unsigned int sys_args[2];
+	sys_args[0] = (unsigned int) target;
+	sys_args[1] = (unsigned int) buffer;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBindBuffer, &sys_args);
 }
 
 void glDeleteBuffers (GLsizei n, const GLuint *buffers)
@@ -3361,7 +3372,16 @@ void glDeleteBuffers (GLsizei n, const GLuint *buffers)
 
 void glGenBuffers (GLsizei n, GLuint *buffers)
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglGenBuffers\n");
+
+	int i;
+	unsigned int sys_args[2];
+	sys_args[0] = (unsigned int) n;
+	sys_args[1] = (unsigned int) buffers;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenBuffers, &sys_args);
+
+	for (i = 0; i < n; ++i)
+		opengl_debug(stdout, "glGenBuffers: Buffer #%d ID = %d\n", n, buffers[n]);	
 }
 
 GLboolean glIsBuffer (GLuint buffer)
@@ -3372,7 +3392,15 @@ GLboolean glIsBuffer (GLuint buffer)
 
 void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage)
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglBufferData\n");
+
+	unsigned int sys_args[4];
+	sys_args[0] = (unsigned int) target;
+	sys_args[1] = (unsigned int) size;
+	sys_args[2] = (unsigned int) data;
+	sys_args[3] = (unsigned int) usage;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBufferData, &sys_args);
+
 }
 
 void glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data)
@@ -3434,7 +3462,13 @@ void glStencilMaskSeparate (GLenum face, GLuint mask)
 
 void glAttachShader (GLuint program, GLuint shader)
 {
-	__OPENGL_NOT_IMPL__
+	unsigned int sys_args[2];
+
+	sys_args[0] = (unsigned int) program;
+	sys_args[1] = (unsigned int) shader;
+
+	opengl_debug(stdout, "\nglAttachShader\n");
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glAttachShader, &sys_args);
 }
 
 void glBindAttribLocation (GLuint program, GLuint index, const GLchar *name)
@@ -3444,19 +3478,41 @@ void glBindAttribLocation (GLuint program, GLuint index, const GLchar *name)
 
 void glCompileShader (GLuint shader)
 {
-	__OPENGL_NOT_IMPL__
+	/* FIXME: Currently user need to load binary*/
+	opengl_debug(stdout, "\nglCompileShader\n");
 }
 
 GLuint glCreateProgram (void)
 {
-	__OPENGL_NOT_IMPL__
-	return 0;
+	int ret;
+	opengl_debug(stdout, "\nglCreateProgram\n");
+
+	ret = syscall(OPENGL_SYSCALL_CODE, opengl_call_glCreateProgram, NULL);
+
+	opengl_debug(stdout, "glCreateProgram ID = %d\n", ret);
+	return ret;
+
 }
 
 GLuint glCreateShader (GLenum type)
 {
-	/* FIXME */
-	return 0;
+	int ret;
+	unsigned int sys_args[1];
+
+	sys_args[0] = (unsigned int) type;
+
+	opengl_debug(stdout, "\nglCreateShader\n");
+	if(type == GL_VERTEX_SHADER || type == GL_TESS_CONTROL_SHADER || type == GL_TESS_EVALUATION_SHADER || type == GL_GEOMETRY_SHADER || type == GL_FRAGMENT_SHADER)
+	{
+		ret = syscall(OPENGL_SYSCALL_CODE, opengl_call_glCreateShader, &sys_args);
+		opengl_debug(stdout, "glCreateShader ID = %d\n", ret);
+		return ret;
+	}
+	else 
+	{
+		opengl_err_flag = GL_INVALID_ENUM;
+		return 0;
+	}
 }
 
 void glDeleteProgram (GLuint program)
@@ -3481,7 +3537,11 @@ void glDisableVertexAttribArray (GLuint index)
 
 void glEnableVertexAttribArray (GLuint index)
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglEnableVertexAttribArray\n");
+
+	unsigned int sys_args[1];
+	sys_args[0] = (unsigned int) index;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnableVertexAttribArray, &sys_args);
 }
 
 void glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name)
@@ -3580,17 +3640,24 @@ GLboolean glIsShader (GLuint shader)
 
 void glLinkProgram (GLuint program)
 {
-	__OPENGL_NOT_IMPL__
+	/* FIXME: currently users need to load binary */
+	opengl_debug(stdout, "\nglLinkProgram\n");
 }
 
 void glShaderSource (GLuint shader, GLsizei count, const GLchar* *string, const GLint *length)
 {
-	__OPENGL_NOT_IMPL__
+	/* FIXME: currently users need to load binary */
+	opengl_debug(stdout,"\nglShaderSource\n");
 }
 
 void glUseProgram (GLuint program)
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglUseProgram\n");
+
+	unsigned int sys_args[1];
+
+	sys_args[0] = (unsigned int) program;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glUseProgram, &sys_args);
 }
 
 void glUniform1f (GLint location, GLfloat v0)
@@ -3875,7 +3942,17 @@ void glVertexAttrib4usv (GLuint index, const GLushort *v)
 
 void glVertexAttribPointer (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer)
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglVertexAttribPointer\n");
+
+	unsigned int sys_args[6];
+	sys_args[0] = (unsigned int) index;
+	sys_args[1] = (unsigned int) size;
+	sys_args[2] = (unsigned int) type;
+	sys_args[3] = (unsigned int) normalized;
+	sys_args[4] = (unsigned int) stride;
+	sys_args[5] = (unsigned int) pointer;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glVertexAttribPointer, &sys_args);
+
 }
 
 void glUniformMatrix2x3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -5242,7 +5319,13 @@ void glTexBufferARB (GLenum target, GLenum internalformat, GLuint buffer)
 
 void glBindVertexArray (GLuint array)
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglBindVertexArray\n");
+
+	unsigned int sys_args[1];
+
+	sys_args[0] = (unsigned int) array;
+
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBindVertexArray, &sys_args);
 }
 
 void glDeleteVertexArrays (GLsizei n, const GLuint *arrays)
@@ -5252,7 +5335,16 @@ void glDeleteVertexArrays (GLsizei n, const GLuint *arrays)
 
 void glGenVertexArrays (GLsizei n, GLuint *arrays)
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglGenVertexArrays\n");
+
+	int i;
+	unsigned int sys_args[2];
+	sys_args[0] = (unsigned int) n;
+	sys_args[1] = (unsigned int) arrays;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenVertexArrays, &sys_args);
+
+	for (i = 0; i < n; ++i)
+		opengl_debug(stdout, "glGenVertexArrays: Array #%d ID = %d\n", n, arrays[n]);
 }
 
 GLboolean glIsVertexArray (GLuint array)

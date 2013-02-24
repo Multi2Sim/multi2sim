@@ -21,10 +21,14 @@
 
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <driver/glut/frame-buffer.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
+#include <lib/util/hash-table.h>
 #include <mem-system/memory.h>
 
 #include "buffers.h"
@@ -34,8 +38,12 @@
 #include "matrix.h"
 #include "matrix-stack.h"
 #include "opengl.h"
+#include "program.h"
 #include "rasterizer.h"
+#include "shader.h"
 #include "vertex.h"
+#include "vertex-array.h"
+#include "vertex-buffer.h"
 #include "viewport.h"
 
 
@@ -96,6 +104,11 @@ static opengl_func_t opengl_func_table[opengl_call_count + 1] =
 
 /* OpenGL Context */
 struct opengl_context_t *opengl_ctx;
+
+static void opengl_set_error(int error)
+{
+	opengl_ctx->gl_error	= error;
+}
 
 void opengl_init(void)
 {
@@ -2192,6 +2205,571 @@ static int opengl_func_glClearColor(struct x86_ctx_t *ctx)
 	opengl_debug("\tClear color: RGBA = [%f, %f, %f, %f]\n", red, green, blue, alpha);
 
 	/* Set clear color */
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #29 - glCreateShader
+ *
+ * glCreateShader - Creates a shader object
+ *
+ * @return
+ *	The function returns the shader handle
+ */
+
+static int opengl_func_glCreateShader(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_shader_t *shdr;
+
+	unsigned int args[1];
+	unsigned int type;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
+	type = args[0];
+
+	opengl_debug("\ttype = 0x%x\n", type);
+
+	shdr = opengl_shader_create(type);
+	opengl_shader_repo_add(opengl_ctx->shader_repo, shdr);
+
+	return shdr->id;
+}
+
+/*
+ * OpenGL call #30 - glCreateProgram
+ *
+ * glCreateProgram - Creates a program object
+ *
+ * @return
+ *	The function always returns program ID
+ */
+
+static int opengl_func_glCreateProgram(struct x86_ctx_t *ctx)
+{
+	struct opengl_program_t *prg;
+	struct si_opengl_bin_file_t *si_shader_binary;
+	void *file_buffer;
+	int file_size;
+
+	prg = opengl_program_create();
+
+	/* Load shader binary to program */
+	if (!*si_emu_opengl_binary_name)
+		fatal("Shader source compilation not supported.");
+	else
+	{
+		/* Load file into memory buffer */
+		file_buffer = read_buffer(si_emu_opengl_binary_name, &file_size);
+		if(!file_buffer)
+			fatal("%s:Invalid file!", si_emu_opencl_binary_name);
+
+		/* Create shader binary object and attach to program*/
+		si_shader_binary = si_opengl_bin_file_create(file_buffer, file_size, si_emu_opengl_binary_name);
+		opengl_debug("\tCreated Shader Binary [%p] from file: %s\n", si_shader_binary, si_emu_opengl_binary_name);
+		prg->si_shader_binary = si_shader_binary;
+		opengl_debug("\tShader binary [%p] attached to program #%d [%p]\n",si_shader_binary, prg->id, prg);
+		free_buffer(file_buffer);
+	}
+
+	opengl_program_repo_add(opengl_ctx->program_repo, prg);
+
+	return prg->id;
+}
+
+/*
+ * OpenGL call #31 - glAttachShader
+ *
+ * glAttachShader - Attaches a shader object to a program object
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glAttachShader(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_shader_t *shdr;
+	struct opengl_program_t *prg;
+
+	unsigned int args[2];
+	unsigned int program;
+	unsigned int shader;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+	program = args[0];
+	shader = args[1];
+
+	/* Attach shader to program */
+	prg = opengl_program_repo_get(opengl_ctx->program_repo, program);
+	shdr = opengl_shader_repo_get(opengl_ctx->shader_repo, shader);
+	
+	opengl_program_attach_shader(prg, shdr);
+
+	opengl_debug("\tShader #%d attached to Program #%d\n", shader, program);
+
+	return 0;
+}
+
+/*
+ * OpenGL call #32 - glUseProgram
+ *
+ * glUseProgram - Installs a program object as part of current rendering state
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glUseProgram(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_program_t *prg;
+
+	unsigned int args[1];
+	unsigned int pid;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
+	pid = args[0];
+
+	/* Bind program to currect rendering state */
+	prg = opengl_program_repo_get(opengl_ctx->program_repo, pid);
+	opengl_ctx->current_program = prg;
+	opengl_debug("\tUse Program #%d [%p]\n", pid, prg);
+
+	return 0;
+}
+
+/*
+ * OpenGL call #33 - glGenVertexArrays
+ *
+ * glGenVertexArrays - generate vertex array object names
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glGenVertexArrays(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[2];
+	unsigned int n;
+	unsigned int arrays;
+
+	GLint *arrays_ptr;
+	struct opengl_vertex_array_obj_t *vao;
+	int i;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+	n = args[0];
+	arrays = args[1];
+
+	opengl_debug("\tGenerating %d VAO IDs, saving to arrays [0x%x]\n", n, arrays);
+
+	/* Create Vertex Arrays */
+	arrays_ptr = xcalloc(1, n*sizeof(GLint));
+
+	for (i = 0; i < n; ++i)
+	{
+		vao = opengl_vertex_array_obj_create();
+		opengl_vertex_array_obj_repo_add(opengl_ctx->vao_repo, vao);
+		arrays_ptr[i] = vao->id;
+		opengl_debug("\tVAO ID arrays[%d] = %d\n", i, arrays_ptr[i]);
+	}
+
+	/* Return */
+	/* FIXME: not working? */
+	mem_write(mem, arrays, n*sizeof(GLint), arrays_ptr);
+	
+	free(arrays_ptr);
+
+	return 0;
+}
+
+/*
+ * OpenGL call #34 - glBindVertexArray
+ *
+ * glBindVertexArray - bind a vertex array object
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glBindVertexArray(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_vertex_array_obj_t *vao;
+
+	unsigned int args[1];
+	unsigned int array;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
+	array = args[0];
+
+	/* Get and bind */
+	vao = opengl_vertex_array_obj_repo_get(opengl_ctx->vao_repo, array);
+	opengl_ctx->array_attrib->curr_vao = vao;
+
+	opengl_debug("\tVAO ID #%d bound to OpenGL context\n", vao->id);
+
+	/* Return */
+	return 0;
+}
+
+/*
+ * OpenGL call #35 - glGenBuffers
+ *
+ * glGenBuffers - generate buffer object names
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glGenBuffers(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[2];
+	unsigned int n;
+	unsigned int buffers;
+
+	int i;
+	struct opengl_vertex_buffer_obj_t *vbo;
+	GLint *buffers_ptr;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+	n = args[0];
+	buffers = args[1];
+
+	opengl_debug("\tGenerating %d VBO IDs, saving to buffers [0x%x]\n", n, buffers);
+
+	/* Create Vertex Buffers */
+	buffers_ptr = xcalloc(1, n*sizeof(GLint));
+
+	for (i = 0; i < n; ++i)
+	{
+		vbo = opengl_vertex_buffer_obj_create();
+		opengl_vertex_buffer_obj_repo_add(opengl_ctx->vbo_repo, vbo);
+		buffers_ptr[i] = vbo->id;
+		opengl_debug("\tVBO ID buffers[%d] = %d\n", i, buffers_ptr[i]);
+	}
+
+	/* Return */
+	mem_write(mem, buffers, n*sizeof(GLint), buffers_ptr);
+	
+	free(buffers_ptr);
+
+	return 0;
+}
+
+/*
+ * OpenGL call #36 - glBindBuffer
+ *
+ * glBindBuffer - bind a named buffer object
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glBindBuffer(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	/* FIXME: only list VBO right now , should add more buffer objects */
+	struct opengl_vertex_buffer_obj_t *vbo;
+
+	unsigned int args[2];
+	unsigned int target;
+	unsigned int buffer;	
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+	target = args[0];
+	buffer = args[1];
+
+	switch(target)
+	{
+		case GL_ARRAY_BUFFER:
+		{
+			if (buffer == 0)
+			{
+				opengl_ctx->array_attrib->curr_vbo = NULL;	
+				opengl_debug("\tClear GL_ARRAY_BUFFER binding point\n");
+			}
+			else
+			{
+				opengl_debug("\tBinding VBO ID #%d ( data target: VAO ID #%d )\n", buffer, opengl_ctx->array_attrib->curr_vao->id);
+				vbo = opengl_vertex_buffer_obj_repo_get(opengl_ctx->vbo_repo, buffer);
+				opengl_ctx->array_attrib->curr_vbo = vbo;
+			}
+			break;
+		}
+		default:
+			break;
+	}
+
+	return 0;
+}
+
+/*
+ * OpenGL call #37 - glBufferData
+ *
+ * glBufferData - creates and initializes a buffer object's data store
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glBufferData(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	/* FIXME: only list VBO right now , should add more buffer objects */
+	struct opengl_vertex_buffer_obj_t *vbo;
+
+	unsigned int args[4];
+	unsigned int target;
+	unsigned int size;
+	unsigned int data;
+	unsigned int usage;
+	void *tmp_buf;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 4 * sizeof(unsigned int), args);
+	target = args[0];
+	size = args[1];
+	data = args[2];
+	usage = args[3];
+
+	/* Copy data to a temporary buffer */
+	tmp_buf = xcalloc(1, size);
+	mem_read(mem, data, size, tmp_buf);
+
+	switch(target)
+	{
+		case GL_ARRAY_BUFFER:
+		{
+			opengl_debug("\tCopy data to VBO ID #%d \n", opengl_ctx->array_attrib->curr_vao->id);
+			/* Get current bound VBO */
+			vbo = opengl_ctx->array_attrib->curr_vbo;
+			/* Copy data into VBO */
+			opengl_vertex_buffer_obj_data(vbo, size, tmp_buf, usage);
+			break;
+		}
+		default:
+			break;
+	}
+
+	free(tmp_buf);
+
+	return 0;
+}
+
+/*
+ * OpenGL call #38 - glVertexAttribPointer
+ *
+ * glVertexAttribPointer - define an array of generic vertex attribute data
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glVertexAttribPointer(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_vertex_array_obj_t *vao;
+	struct opengl_vertex_buffer_obj_t *vbo;
+	struct opengl_vertex_client_array_t *vtx_attrib;
+
+	unsigned int args[6];
+	unsigned int index;
+	unsigned int size;
+	unsigned int type;
+	unsigned int normalized;
+	unsigned int stride;
+	unsigned int pointer;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 6 * sizeof(unsigned int), args);
+	index = args[0];
+	size = args[1];
+	type = args[2];
+	normalized = args[3];
+	stride = args[4];
+	pointer = args[5];
+
+	/* Copy data in curr_vbo to curr_vao->vtx_attrib */
+	vao = opengl_ctx->array_attrib->curr_vao;
+	vbo = opengl_ctx->array_attrib->curr_vbo;
+
+	/* GL error */
+	if (!vbo && pointer == 0x0)
+	{
+		opengl_set_error(GL_INVALID_OPERATION);
+		opengl_debug("\tWarning: No VBO attached to GL_ARRAY_BUFFER binding point\n");
+		return 0;
+	}
+
+	if (index >= GL_MAX_VERTEX_ATTRIB_BINDINGS)
+	{
+		opengl_debug("\tWarning: index >= GL_MAX_VERTEX_ATTRIB_BINDINGS\n");
+		return 0;
+	}
+
+	vtx_attrib = &vao->vtx_attrib[index];
+	vtx_attrib->size = size;
+	vtx_attrib->type = type;
+	vtx_attrib->stride = stride;
+	vtx_attrib->enabled = GL_FALSE;
+	vtx_attrib->normalized = normalized;
+	vtx_attrib->ptr = vbo->data;
+	vtx_attrib->vbo = vbo;
+
+	return 0;
+}
+
+/*
+ * OpenGL call #39 - glEnableVertexAttribArray
+ *
+ * glEnableVertexAttribArray - Enable or disable a generic vertex attribute array
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glEnableVertexAttribArray(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_vertex_array_obj_t *vao;
+	struct opengl_vertex_client_array_t *vtx_attrib;
+
+	unsigned int args[1];
+	unsigned int index;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
+	index = args[0];
+
+	/* Enable Vertex Attrib Array */	
+	vao = opengl_ctx->array_attrib->curr_vao;
+	vtx_attrib = &vao->vtx_attrib[index];
+
+	if (vtx_attrib)
+		vtx_attrib->enabled = GL_TRUE;
+
+	opengl_debug("\tVAO #%d [%p] -> Vertex Attribute Array #%d enabled\n", vao->id, vao, index);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #40 - glDrawArrays
+ *
+ * glDrawArrays - render primitives from array data
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[3];
+	unsigned int mode;
+	unsigned int first;
+	unsigned int count;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
+	mode = args[0];
+	first = args[1];
+	count = args[2];
+
+	/* Send data to GPU and initialize rendering */
+	switch(mode)
+	{
+		case GL_POINTS:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_POINTS, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_LINE_STRIP:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_LINE_STRIP, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_LINE_LOOP:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_LINE_LOOP, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_LINES:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_LINES, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_LINE_STRIP_ADJACENCY:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_LINE_STRIP_ADJACENCY, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_LINES_ADJACENCY:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_LINES_ADJACENCY, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_TRIANGLE_STRIP:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_TRIANGLE_STRIP, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_TRIANGLE_FAN:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_TRIANGLE_FAN, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_TRIANGLES:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_TRIANGLES, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_TRIANGLE_STRIP_ADJACENCY:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_TRIANGLE_STRIP_ADJACENCY, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_TRIANGLES_ADJACENCY:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_TRIANGLES_ADJACENCY, first = %d, count = %d\n", first, count);
+			break;
+		}
+		case GL_PATCHES:
+		{
+			opengl_debug("\tglDrawArrays mode = GL_PATCHES, first = %d, count = %d\n", first, count);
+			break;
+		}
+		default:
+			break;
+	}
 
 	/* Return */
 	return 0;	

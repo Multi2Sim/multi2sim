@@ -191,19 +191,24 @@ struct opengl_viewport_attributes_t;
 struct opengl_matrix_stack_t;
 struct opengl_vertex_buffer_t;
 struct opengl_light_attrib_t;
+struct opengl_program_t;
+struct opengl_vertex_array_obj_t;
+struct opengl_vertex_buffer_obj_t;
 
 /* OpenGL context*/
 struct opengl_context_t
 {
+	int gl_error;
+
 	struct opengl_context_capability_t *context_cap;					/* context capabilities */
 
 	struct opengl_frame_buffer_t *draw_buffer;						/* buffer for writing */
 	struct opengl_frame_buffer_t *read_buffer;						/* buffer for reading */
 
-	struct opengl_viewport_attributes_t *viewport;						/* viewport attributes */
+	struct opengl_viewport_attributes_t *viewport;					/* viewport attributes */
 
-	struct opengl_matrix_stack_t *modelview_matrix_stack;					/* modelview matrix stack */
-	struct opengl_matrix_stack_t *projection_matrix_stack;					/* projection matrix stack */
+	struct opengl_matrix_stack_t *modelview_matrix_stack;				/* modelview matrix stack */
+	struct opengl_matrix_stack_t *projection_matrix_stack;				/* projection matrix stack */
 	struct opengl_matrix_stack_t *texture_matrix_stack[MAX_TEXTURE_UNITS];		/* texture matrix stacks */
 	struct opengl_matrix_stack_t *color_matrix_stack;					/* color matrix stack */
 	struct opengl_matrix_stack_t *current_matrix_stack;					/* current matrix stack, points to one of above stacks */
@@ -212,8 +217,17 @@ struct opengl_context_t
 
 	struct opengl_light_attrib_t *light;
 
+	struct linked_list_t *shader_repo;							/* Shader repository contains all program objects*/
+	struct linked_list_t *program_repo;							/* Program repository contains all program objects */
+	struct linked_list_t *vao_repo;								/* VAO repository contains all VAO */
+	struct linked_list_t *vbo_repo;							/* VBO repository contains all VBO */
+
+	/* Objects currently bind to OpenGL context */
 	GLchan current_color[4];
 	GLfloat current_normal[4];
+	struct opengl_program_t *current_program;
+
+	struct opengl_vertex_array_attrib_t *array_attrib;					/* Binding points for VAO and VBO */
 };
 
 struct opengl_context_capability_t *opengl_context_capability_create(void);

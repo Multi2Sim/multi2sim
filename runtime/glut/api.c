@@ -440,7 +440,7 @@ void glutDestroyWindow(int win)
 
 void glutPostRedisplay(void)
 {
-	__X86_GLUT_NOT_IMPL__
+	/* FIXME : mark the current window as needing to be redisplayed */
 }
 
 

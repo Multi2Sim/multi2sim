@@ -75,11 +75,20 @@ enum opengl_call_t
 	opengl_call_glRotatef,
 	opengl_call_glCallList,
 	opengl_call_glClearColor,
-
+	opengl_call_glCreateShader,
+	opengl_call_glCreateProgram,
+	opengl_call_glAttachShader,
+	opengl_call_glUseProgram,
+	opengl_call_glGenVertexArrays,
+	opengl_call_glBindVertexArray,
+	opengl_call_glGenBuffers,
+	opengl_call_glBindBuffer,
+	opengl_call_glBufferData,
+	opengl_call_glVertexAttribPointer,
+	opengl_call_glEnableVertexAttribArray,
+	opengl_call_glDrawArrays,
 	opengl_call_count
 };
-
-// GLuint glCreateShader (GLenum type);
 
 #endif
 
