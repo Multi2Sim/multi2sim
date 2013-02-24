@@ -255,7 +255,8 @@ static int get_isa_offset(struct si_opengl_shader_t *opengl_shader)
 	return isa_offset;
 }
 
- /* Set 'isa_buffer' element for a shader object, the shader object must have the 'shader_kind' element set first */ static int amd_opengl_shader_set_isa_buffer(struct si_opengl_shader_t *opengl_shader)
+ /* Set 'isa_buffer' element for a shader object, the shader object must set 'shader_kind' element first */ 
+static int amd_opengl_shader_set_isa_buffer(struct si_opengl_shader_t *opengl_shader)
 {
 	struct elf_section_t *internal_section;
 	int isa_offset;
@@ -335,10 +336,10 @@ static int amd_opengl_shader_set_shader_kind(struct si_opengl_shader_t *opengl_s
 	return 1;
 }
 
-
-/* Given a buffer and buffer size, a list contains all external ELF magic bytes offset and an index, and the file name loaded into the buffer
+/* Given a buffer and buffer size, a list contains all external ELF magic bytes 
+ * offset and an index, and the file name loaded into the buffer
  * Create an corresponding si_opengl_shader_t object and return it */
-static struct si_opengl_shader_t *amd_opengl_shader_create_from_buffer(void *ptr, int size, struct list_t *elf_offset_list, int elf_file_index, char *name)
+static struct si_opengl_shader_t *amd_opengl_shader_create_from_buffer_old(void *ptr, int size, struct list_t *elf_offset_list, int elf_file_index, char *name)
 {
 	struct si_opengl_shader_t *opengl_shader;
 
@@ -355,6 +356,21 @@ static struct si_opengl_shader_t *amd_opengl_shader_create_from_buffer(void *ptr
 	return opengl_shader;
 }
 
+static struct si_opengl_shader_t *amd_opengl_shader_create_from_buffer_new(void *ptr, int size, struct list_t *elf_offset_list, int elf_file_index, char *name)
+{
+	struct si_opengl_shader_t *opengl_shader;
+	int *offset;
+
+	/* Create shader object */
+	opengl_shader = xcalloc(1,sizeof(struct si_opengl_shader_t));
+
+	offset = list_get(elf_offset_list, elf_file_index);
+	opengl_shader->internal_elf_file = elf_file_create_from_buffer(ptr + *offset, size - *offset, name);
+
+	/* Return */
+	return opengl_shader;
+
+}
 
 static void amd_opengl_shader_free(struct si_opengl_shader_t *opengl_shader)
 {
@@ -370,38 +386,108 @@ static void amd_opengl_shader_free(struct si_opengl_shader_t *opengl_shader)
 /* Create si_opengl_bin_file_t object based on a file buffer, the corresponding buffer size and the name of the file */
 struct si_opengl_bin_file_t *si_opengl_bin_file_create(void *ptr, int size, char *name)
 {
+	struct elf_file_t *si_bin_elf;
+	struct elf_section_t *si_binary_section;
+	void *section_buf;
+	struct list_t *elf_pos_list;
+
 	struct si_opengl_bin_file_t *bin_file;
 	struct si_opengl_shader_t *opengl_shader;
-
 	struct list_t *elf_file_list;
-
+	void *elf_pos;
 	int i;
+	int j;
 
 	/* Get binary file name */
 	bin_file = xcalloc(1, sizeof(struct si_opengl_bin_file_t));
 	bin_file->name = xstrdup(name);
 
-	/* Create elf file list contain all external ELF offset in the buffer */
-	elf_file_list = external_elf_file_list_create(ptr, size);
-
-	/* Initialize shader list */
-	bin_file->shader_list = list_create();
-
-	/* Find external/internal ELF files associated with a shader and insert into shader list */
-	for (i = 0; i < list_count(elf_file_list); ++i)
+	/* AMD's driver changed the shader binary to standard ELF
+	 * The internal ELF files, which contains the ISAs, are now embedded in the "internal" section
+	 */
+	elf_pos = search_elf_magic(ptr);
+	if (elf_pos == ptr)
 	{
-		/* Initialize shader */
-		opengl_shader = amd_opengl_shader_create_from_buffer(ptr, size, elf_file_list, i, name);
-		
-		/* Add shader to shader list */
-		list_add(bin_file->shader_list, opengl_shader);
+		si_bin_elf = elf_file_create_from_buffer(ptr, size, name);
+
+		for (i = 0; i < list_count(si_bin_elf->section_list); i++)
+		{
+			si_binary_section = list_get(si_bin_elf->section_list, i);
+
+			/* ISAs in '.internal' section */
+			if (!strcmp(si_binary_section->name,".internal"))
+			{
+				/* Copy date of this section into a buffer */
+				elf_buffer_seek(&si_bin_elf->buffer, si_binary_section->header->sh_offset);
+				section_buf = xcalloc(1, si_binary_section->header->sh_size);
+				memcpy(section_buf, si_bin_elf->buffer.ptr + si_bin_elf->buffer.pos, si_binary_section->header->sh_size);
+
+				/* Find all internal ELF position*/
+				elf_pos_list = elf_file_list_create(section_buf, si_binary_section->header->sh_size);
+
+				bin_file->shader_list = list_create();
+
+				for (j = 0; j < list_count(elf_pos_list); ++j)
+				{
+					/* Initialize shader */
+					opengl_shader = amd_opengl_shader_create_from_buffer_new(section_buf, si_binary_section->header->sh_size, elf_pos_list, j, name);
+					opengl_shader->external_elf_file = elf_file_create_from_buffer(ptr, size, name);
+
+					/* FIXME: temporary solution */
+					switch(j)
+					{
+						case 0:
+							opengl_shader->shader_kind = SI_OPENGL_SHADER_VERTEX;
+							break;
+						case 1:
+							opengl_shader->shader_kind = SI_OPENGL_SHADER_FRAGMENT;
+							break;
+						default:
+							break;			
+					}
+
+					if(!amd_opengl_shader_set_isa_buffer(opengl_shader))
+						fatal("Set ISA info fail!");
+
+					/* Add shader to shader list */
+					list_add(bin_file->shader_list, opengl_shader);
+
+				}
+
+				/* Free */
+				elf_file_list_free(elf_pos_list);
+				free(section_buf);
+
+			}
+		}
+
+		elf_file_free(si_bin_elf);
+		/* Return */
+		return bin_file;
 	}
+	else
+	{
+		/* Create elf file list contain all external ELF offset in the buffer */
+		elf_file_list = external_elf_file_list_create(ptr, size);
 
+		/* Initialize shader list */
+		bin_file->shader_list = list_create();
 
-	/* Free elf file list */
-	external_elf_file_list_free(elf_file_list);
+		/* Find external/internal ELF files associated with a shader and insert into shader list */
+		for (i = 0; i < list_count(elf_file_list); ++i)
+		{
+			/* Initialize shader */
+			opengl_shader = amd_opengl_shader_create_from_buffer_old(ptr, size, elf_file_list, i, name);
+			
+			/* Add shader to shader list */
+			list_add(bin_file->shader_list, opengl_shader);
+		}
 
-	return bin_file;
+		/* Free elf file list */
+		external_elf_file_list_free(elf_file_list);
+
+		return bin_file;		
+	}
 }
 
 void si_opengl_bin_file_free(struct si_opengl_bin_file_t *bin_file)

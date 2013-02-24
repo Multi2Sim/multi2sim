@@ -25,8 +25,12 @@
 #include "buffers.h"
 #include "context.h"
 #include "light.h"
+#include "program.h"
+#include "shader.h"
 #include "matrix-stack.h"
 #include "vertex.h"
+#include "vertex-array.h"
+#include "vertex-buffer.h"
 #include "viewport.h"
 
 
@@ -92,6 +96,18 @@ struct opengl_context_t *opengl_context_create(void)
 	/* Initialize light */
 	ctx->light = opengl_light_attrib_create();
 
+	/* Initialize shader objects table */
+	ctx->shader_repo = opengl_shader_repo_create();
+
+	/* Initialize program objects table */
+	ctx->program_repo = opengl_program_repo_create();
+
+	/* Initialize VAO table */
+	ctx->vao_repo = opengl_vertex_array_obj_repo_create();
+
+	/* Initialize VBO table */
+	ctx->vbo_repo = opengl_vertex_buffer_obj_repo_create();
+
 	/* Initialize current color */
 	GLfloat init_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 	opengl_clamped_float_to_color_channel(init_color, ctx->current_color);
@@ -101,6 +117,9 @@ struct opengl_context_t *opengl_context_create(void)
 	ctx->current_normal[Y_COMP] = 0.0f;
 	ctx->current_normal[Z_COMP] = 1.0f;
 	ctx->current_normal[W_COMP] = 0.0f;
+
+	/* Initialize VAO/VBO binding point */
+	ctx->array_attrib = opengl_vertex_array_attrib_create();
 
 	/* Return */
 	return ctx;
@@ -136,6 +155,21 @@ void opengl_context_free(struct opengl_context_t *ctx)
 	/* Free light */
 	opengl_light_attrib_free(ctx->light);
 
+	/* Free shader objects table */
+	opengl_shader_repo_free(ctx->shader_repo);
+
+	/* Free program objects table*/
+	opengl_program_repo_free(ctx->program_repo);
+
+	/* Free VAO table */
+	opengl_vertex_array_obj_repo_free(ctx->vao_repo);
+
+	/* Free VBO table */
+	opengl_vertex_buffer_obj_repo_free(ctx->vbo_repo);
+
+	/* Free VAO/VBO binding points */
+	opengl_vertex_array_attrib_free(ctx->array_attrib);
+
 	free(ctx);
 }
 
@@ -147,6 +181,7 @@ struct opengl_matrix_t *opengl_context_get_current_matrix(struct opengl_context_
 	/* Get current matrix */
 	mtx = list_get(ctx->current_matrix_stack->stack, ctx->current_matrix_stack->depth);
 	opengl_debug("\t\tCurrent matrix ptr = %p\n", mtx);
+	
 	/* Return */
 	return mtx;
 }
