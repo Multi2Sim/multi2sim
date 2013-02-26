@@ -32,7 +32,7 @@ struct opengl_vertex_buffer_obj_t;
 
 struct opengl_vertex_client_array_t
 {
-	GLint size;
+	GLint size; /* the number of components per generic vertex attribute */
 	GLenum type;
 	GLenum format;
 	GLsizei	 stride;
@@ -74,6 +74,8 @@ void opengl_vertex_array_obj_repo_free(struct linked_list_t *vao_repo);
 struct opengl_vertex_array_obj_t *opengl_vertex_array_obj_repo_get(struct linked_list_t *vao_repo, int id);
 void opengl_vertex_array_obj_repo_add(struct linked_list_t *vao_repo, struct opengl_vertex_array_obj_t *vao);
 int opengl_vertex_array_obj_repo_remove(struct linked_list_t *vao_repo, struct opengl_vertex_array_obj_t *vao);
+
+void opengl_vertex_client_array_set_element_size(struct opengl_vertex_client_array_t *vtx_attib, GLint size, GLenum type);
 
 struct opengl_vertex_array_attrib_t *opengl_vertex_array_attrib_create();
 void opengl_vertex_array_attrib_free(struct opengl_vertex_array_attrib_t *vao_attrib);

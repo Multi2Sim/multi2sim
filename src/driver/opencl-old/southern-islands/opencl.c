@@ -2458,6 +2458,8 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	struct si_opencl_command_t *task;
 
 	struct si_ndrange_t *ndrange;
+	int global_size3[3];
+	int local_size3[3];
 
 	struct elf_buffer_t *elf_buffer;
 
@@ -2471,60 +2473,28 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	/* Get kernel */
 	kernel = si_opencl_repo_get_object(si_emu->opencl_repo,
 			si_opencl_object_kernel, argv.kernel_id);
-	kernel->work_dim = argv.work_dim;
 
 	/* Global work sizes */
-	kernel->global_size3[1] = 1;
-	kernel->global_size3[2] = 1;
+	global_size3[1] = 1;
+	global_size3[2] = 1;
 	for (i = 0; i < argv.work_dim; i++)
 	{
-		mem_read(ctx->mem, argv.global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
+		mem_read(ctx->mem, argv.global_work_size_ptr + i * 4, 4, &global_size3[i]);
 	}
-	kernel->global_size = kernel->global_size3[0] * kernel->global_size3[1] * kernel->global_size3[2];
-	si_opencl_debug("    global_work_size=");
-	si_opencl_debug_array(argv.work_dim, kernel->global_size3);
-	si_opencl_debug("\n");
 
 	/* Local work sizes.
 	 * If no pointer provided, assign the same as global size - FIXME: can be done better. */
-	memcpy(kernel->local_size3, kernel->global_size3, 12);
+	memcpy(local_size3, global_size3, 12);
 	if (argv.local_work_size_ptr)
 	{
 		for (i = 0; i < argv.work_dim; i++)
 		{
-			mem_read(ctx->mem, argv.local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
-			if (kernel->local_size3[i] < 1)
+			mem_read(ctx->mem, argv.local_work_size_ptr + i * 4, 4, &local_size3[i]);
+			if (local_size3[i] < 1)
 				fatal("%s: local work size must be greater than 0.\n%s",
 						__FUNCTION__, si_err_opencl_param_note);
 		}
 	}
-	kernel->local_size = kernel->local_size3[0] * kernel->local_size3[1] * kernel->local_size3[2];
-	si_opencl_debug("    local_work_size=");
-	si_opencl_debug_array(argv.work_dim, kernel->local_size3);
-	si_opencl_debug("\n");
-
-	/* Check valid global/local sizes */
-	if (kernel->global_size3[0] < 1 || kernel->global_size3[1] < 1
-			|| kernel->global_size3[2] < 1)
-		fatal("%s: invalid global size.\n%s", __FUNCTION__, si_err_opencl_param_note);
-	if (kernel->local_size3[0] < 1 || kernel->local_size3[1] < 1
-			|| kernel->local_size3[2] < 1)
-		fatal("%s: invalid local size.\n%s", __FUNCTION__, si_err_opencl_param_note);
-
-	/* Check divisibility of global by local sizes */
-	if ((kernel->global_size3[0] % kernel->local_size3[0])
-			|| (kernel->global_size3[1] % kernel->local_size3[1])
-			|| (kernel->global_size3[2] % kernel->local_size3[2]))
-		fatal("%s: global work sizes must be multiples of local sizes.\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
-
-	/* Calculate number of groups */
-	for (i = 0; i < 3; i++)
-		kernel->group_count3[i] = kernel->global_size3[i] / kernel->local_size3[i];
-	kernel->group_count = kernel->group_count3[0] * kernel->group_count3[1] * kernel->group_count3[2];
-	si_opencl_debug("    group_count=");
-	si_opencl_debug_array(argv.work_dim, kernel->group_count3);
-	si_opencl_debug("\n");
 
 	/* Event */
 	if (argv.event_ptr)
@@ -2539,7 +2509,8 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	}
 
 	/* Setup ND-Range */
-	ndrange = si_ndrange_create(kernel);
+	ndrange = si_ndrange_create(global_size3, local_size3, argv.work_dim);
+	si_ndrange_setup_kernel(ndrange, kernel);
 	si_ndrange_setup_work_items(ndrange);
 	si_ndrange_setup_const_mem(ndrange);
 	si_ndrange_setup_args(ndrange);

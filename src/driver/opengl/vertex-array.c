@@ -169,6 +169,54 @@ int opengl_vertex_array_obj_repo_remove(struct linked_list_t *vao_repo, struct o
 	}
 }
 
+void opengl_vertex_client_array_set_element_size(struct opengl_vertex_client_array_t *vtx_attib, GLint size, GLenum type)
+{
+	if (!vtx_attib->normalized)
+	{
+		switch(type)
+		{
+		case GL_FLOAT:
+			vtx_attib->element_size = size*sizeof(GLfloat);
+			break;
+		case GL_DOUBLE:
+			vtx_attib->element_size = size*sizeof(GLdouble);
+			break;
+		case GL_BYTE:
+			vtx_attib->element_size = size*sizeof(GLbyte);
+			break;
+		case GL_UNSIGNED_BYTE:
+			vtx_attib->element_size = size*sizeof(GLubyte);
+			break;
+		case GL_SHORT:
+			vtx_attib->element_size = size*sizeof(GLshort);
+			break;
+		case GL_UNSIGNED_SHORT:
+			vtx_attib->element_size = size*sizeof(GLushort);
+			break;
+		case GL_INT:
+			vtx_attib->element_size = size*sizeof(GLint);
+			break;
+		case GL_UNSIGNED_INT:
+			vtx_attib->element_size = size*sizeof(GLuint);
+			break;
+		case GL_INT_2_10_10_10_REV:
+			if (size!=4)
+				fatal("size must be 4 when type = GL_INT_2_10_10_10_REV\n");
+			vtx_attib->element_size = size*sizeof(GLuint);
+			break;
+		case GL_UNSIGNED_INT_2_10_10_10_REV:
+			if (size!=4)
+				fatal("size must be 4 when type GL_INT_2_10_10_10_REV\n");
+			vtx_attib->element_size = size*sizeof(GLuint);
+			break;
+		default:
+			vtx_attib->element_size = size*sizeof(GLfloat);
+			break;
+		}
+	}
+}
+
+
 struct opengl_vertex_array_attrib_t *opengl_vertex_array_attrib_create()
 {
 	struct opengl_vertex_array_obj_t *default_vao;

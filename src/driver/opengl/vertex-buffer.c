@@ -80,6 +80,9 @@ void opengl_vertex_buffer_obj_data(struct opengl_vertex_buffer_obj_t *vbo, GLsiz
 	/* Allocate */
 	vbo->data = xcalloc(1, size);
 
+	/* Record data size info */
+	vbo->data_size = size;
+	
 	/* Save a local copy */
 	memcpy(vbo->data, data, size);
 
