@@ -383,9 +383,9 @@ void opencl_x86_kernel_run(
 				size_t *group_start;
 
 				group_start = exec->group_starts + 3 * (i * num_groups[1] * num_groups[0] + j * num_groups[0] + k);
-				group_start[0] = exec->local[0] * k;
-				group_start[1] = exec->local[1] * j;
-				group_start[2] = exec->local[2] * i;
+				group_start[0] = exec->local[0] * k + global_work_offset[0];
+				group_start[1] = exec->local[1] * j + global_work_offset[1];
+				group_start[2] = exec->local[2] * i + global_work_offset[2];
 			}
 		}
 	}
