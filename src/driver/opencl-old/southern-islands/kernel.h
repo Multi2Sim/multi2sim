@@ -93,19 +93,20 @@ struct si_opencl_kernel_t
 	FILE *func_file;
 	char func_file_name[MAX_PATH_SIZE];
 
-	/* Number of work dimensions */
-	int work_dim;
+	/* Moved to si_ndrange_conf_t */
+	// /* Number of work dimensions */
+	// int work_dim;
 
-	/* 3D Counters */
-	int global_size3[3];  /* Total number of work_items */
-	int local_size3[3];  /* Number of work_items in a group */
-	int group_count3[3];  /* Number of work_item groups */
+	// /* 3D Counters */
+	// int global_size3[3];  /* Total number of work_items */
+	// int local_size3[3];  /* Number of work_items in a group */
+	// int group_count3[3];  /* Number of work_item groups */
 
-	/* 1D Counters. Each counter is equal to the multiplication
-	 * of each component in the corresponding 3D counter. */
-	int global_size;
-	int local_size;
-	int group_count;
+	// /* 1D Counters. Each counter is equal to the multiplication
+	//  * of each component in the corresponding 3D counter. */
+	// int global_size;
+	// int local_size;
+	// int group_count;
 
 	/* UAV lists */
 	struct list_t *constant_buffer_list;

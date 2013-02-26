@@ -29,6 +29,23 @@ enum si_ndrange_status_t
 	si_ndrange_finished		= 0x0004
 };
 
+struct si_ndrange_conf_t
+{
+	/* Number of work dimensions */
+	int work_dim;
+
+	/* 3D Counters */
+	int global_size3[3];  /* Total number of work_items */
+	int local_size3[3];  /* Number of work_items in a group */
+	int group_count3[3];  /* Number of work_item groups */
+
+	/* 1D Counters. Each counter is equal to the multiplication
+	 * of each component in the corresponding 3D counter. */
+	int global_size;
+	int local_size;
+	int group_count;
+};
+
 struct si_ndrange_t
 {
 	/* ID */
@@ -51,6 +68,9 @@ struct si_ndrange_t
 	/* Command queue and command queue task associated */
 	struct si_opencl_command_queue_t *command_queue;
 	struct si_opencl_command_t *command;
+
+	/* NDrange configuration for initialization */
+	struct si_ndrange_conf_t *ndrange_conf;
 
 	/* Pointers to work-groups, wavefronts, and work_items */
 	struct si_work_group_t **work_groups;
@@ -122,7 +142,10 @@ struct si_ndrange_t
 	unsigned int *inst_histogram;
 };
 
-struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel);
+struct si_ndrange_conf_t *si_ndrange_conf_create(int *param_global_size3, int *param_local_size3, int param_work_dim);
+void si_ndrange_conf_free(struct si_ndrange_conf_t *ndrange_conf);
+
+struct si_ndrange_t *si_ndrange_create(int *global_size3, int *local_size3, int work_dim);
 void si_ndrange_free(struct si_ndrange_t *ndrange);
 void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f);
 void si_ndrange_dump_initialized_state(struct si_ndrange_t *ndrange);
@@ -131,6 +154,7 @@ int si_ndrange_get_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t
 void si_ndrange_set_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);
 void si_ndrange_clear_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);
 
+void si_ndrange_setup_kernel(struct si_ndrange_t *ndrange, struct si_opencl_kernel_t *kernel);
 void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange,

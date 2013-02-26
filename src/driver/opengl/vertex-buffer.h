@@ -31,6 +31,7 @@ struct opengl_vertex_buffer_obj_t
 	GLint 			ref_count;
 	GLboolean		delete_pending;
 	void*			data;
+	GLsizeiptr		data_size;
 	GLenum		usage;
 };
 
