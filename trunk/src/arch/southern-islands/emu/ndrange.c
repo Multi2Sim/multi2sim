@@ -40,12 +40,13 @@
 #include "work-group.h"
 #include "work-item.h"
 
-
 /*
  * GPU ND-Range
  */
 
-struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
+extern void si_opencl_debug_array(int nelem, int *array);
+
+struct si_ndrange_t *si_ndrange_create(int *global_size3, int *local_size3, int work_dim)
 {
 	struct si_ndrange_t *ndrange;
 
@@ -53,20 +54,11 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 	ndrange = xcalloc(1, sizeof(struct si_ndrange_t));
 	DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, ndrange, ndrange);
 
-	/* Initialize */
-	ndrange->name = xstrdup(kernel->name);
-	ndrange->kernel = kernel;
-	ndrange->local_mem_top = kernel->func_mem_local;
-	ndrange->id = si_emu->ndrange_count++;
-	ndrange->num_vgprs = 
-		kernel->bin_file->enc_dict_entry_southern_islands->
-		num_vgpr_used;
-	ndrange->num_sgprs = 
-		kernel->bin_file->enc_dict_entry_southern_islands->
-		num_sgpr_used;
-
 	/* Create the UAV-to-physical-address lookup lists */
 	ndrange->uav_list = list_create();
+
+	/* Create ND-Range configuration */
+	ndrange->ndrange_conf = si_ndrange_conf_create(global_size3, local_size3, work_dim);
 
 	/* Instruction histogram */
 	if (si_emu_report_file)
@@ -78,7 +70,6 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 	/* Return */
 	return ndrange;
 }
-
 
 void si_ndrange_free(struct si_ndrange_t *ndrange)
 {
@@ -107,6 +98,9 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 
 	/* Free lists */
 	list_free(ndrange->uav_list);
+
+	/* Free ND-Range configuration */
+	si_ndrange_conf_free(ndrange->ndrange_conf);
 
 	/* Free work-groups */
 	for (i = 0; i < ndrange->work_group_count; i++)
@@ -146,10 +140,96 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 	free(ndrange);
 }
 
+struct si_ndrange_conf_t *si_ndrange_conf_create(int *param_global_size3, int *param_local_size3, int param_work_dim)
+{
+	struct si_ndrange_conf_t *ndrange_conf;
+	int i;
+
+	/* Ndrange configuration */
+	ndrange_conf = xcalloc(1, sizeof(struct si_ndrange_conf_t));
+
+	/* Default value */
+	ndrange_conf->global_size3[1] = 1;
+	ndrange_conf->global_size3[2] = 1;
+	ndrange_conf->local_size3[1] = 1;
+	ndrange_conf->local_size3[2] = 1;
+
+	/* Global work sizes */
+	for (i = 0; i < param_work_dim; i++)
+	{
+		ndrange_conf->global_size3[i] = param_global_size3[i];
+	}
+	ndrange_conf->global_size = ndrange_conf->global_size3[0] * ndrange_conf->global_size3[1] * ndrange_conf->global_size3[2];
+	si_opencl_debug("    global_work_size=");
+	si_opencl_debug_array(param_work_dim, ndrange_conf->global_size3);
+	si_opencl_debug("\n");
+
+	/* Local work sizes */
+	for (i = 0; i < param_work_dim; i++)
+	{
+		ndrange_conf->local_size3[i] = param_local_size3[i];
+		if (ndrange_conf->local_size3[i] < 1)
+			fatal("%s: local work size must be greater than 0.\n%s",
+					__FUNCTION__, si_err_opencl_param_note);
+	}
+	ndrange_conf->local_size = ndrange_conf->local_size3[0] * ndrange_conf->local_size3[1] * ndrange_conf->local_size3[2];
+	si_opencl_debug("    local_work_size=");
+	si_opencl_debug_array(param_work_dim, ndrange_conf->local_size3);
+	si_opencl_debug("\n");
+
+	/* Check valid global/local sizes */
+	if (ndrange_conf->global_size3[0] < 1 || ndrange_conf->global_size3[1] < 1
+			|| ndrange_conf->global_size3[2] < 1)
+		fatal("%s: invalid global size.\n%s", __FUNCTION__, si_err_opencl_param_note);
+	if (ndrange_conf->local_size3[0] < 1 || ndrange_conf->local_size3[1] < 1
+			|| ndrange_conf->local_size3[2] < 1)
+		fatal("%s: invalid local size.\n%s", __FUNCTION__, si_err_opencl_param_note);
+
+	/* Check divisibility of global by local sizes */
+	if ((ndrange_conf->global_size3[0] % ndrange_conf->local_size3[0])
+			|| (ndrange_conf->global_size3[1] % ndrange_conf->local_size3[1])
+			|| (ndrange_conf->global_size3[2] % ndrange_conf->local_size3[2]))
+		fatal("%s: global work sizes must be multiples of local sizes.\n%s",
+				__FUNCTION__, si_err_opencl_param_note);
+
+	/* Calculate number of groups */
+	for (i = 0; i < 3; i++)
+		ndrange_conf->group_count3[i] = ndrange_conf->global_size3[i] / ndrange_conf->local_size3[i];
+	ndrange_conf->group_count = ndrange_conf->group_count3[0] * ndrange_conf->group_count3[1] * ndrange_conf->group_count3[2];
+	si_opencl_debug("    group_count=");
+	si_opencl_debug_array(param_work_dim, ndrange_conf->group_count3);
+	si_opencl_debug("\n");
+
+	/* Return */
+	return ndrange_conf;
+}
+
+void si_ndrange_conf_free(struct si_ndrange_conf_t *ndrange_conf)
+{
+	/* Free */
+	free(ndrange_conf);
+}
+
+void si_ndrange_setup_kernel(struct si_ndrange_t *ndrange, struct si_opencl_kernel_t *kernel)
+{
+	/* Initialize */
+	ndrange->name = xstrdup(kernel->name);
+	ndrange->kernel = kernel;
+	ndrange->local_mem_top = kernel->func_mem_local;
+	ndrange->id = si_emu->ndrange_count++;
+	ndrange->num_vgprs = 
+		kernel->bin_file->enc_dict_entry_southern_islands->
+		num_vgpr_used;
+	ndrange->num_sgprs = 
+		kernel->bin_file->enc_dict_entry_southern_islands->
+		num_sgpr_used;
+}
+
 
 void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 {
 	struct si_opencl_kernel_t *kernel = ndrange->kernel;
+	struct si_ndrange_conf_t *ndrange_conf = ndrange->ndrange_conf;
 
 	struct si_work_group_t *work_group;
 	struct si_wavefront_t *wavefront;
@@ -164,11 +244,11 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	int lid;  /* Local ID iterator */
 
 	/* Array of work-groups */
-	ndrange->work_group_count = kernel->group_count;
+	ndrange->work_group_count = ndrange_conf->group_count;
 	ndrange->work_group_id_first = 0;
 	ndrange->work_group_id_last = ndrange->work_group_count - 1;
 	ndrange->work_groups = xcalloc(ndrange->work_group_count, sizeof(void *));
-	for (gid = 0; gid < kernel->group_count; gid++)
+	for (gid = 0; gid < ndrange_conf->group_count; gid++)
 	{
 		ndrange->work_groups[gid] = si_work_group_create();
 		work_group = ndrange->work_groups[gid];
@@ -176,7 +256,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 
 	/* Array of wavefronts */
 	ndrange->wavefronts_per_work_group = 
-		(kernel->local_size + si_emu_wavefront_size - 1) / 
+		(ndrange_conf->local_size + si_emu_wavefront_size - 1) / 
 		si_emu_wavefront_size;
 	ndrange->wavefront_count = ndrange->wavefronts_per_work_group * 
 		ndrange->work_group_count;
@@ -211,17 +291,17 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	}
 
 	/* Array of work-items */
-	ndrange->work_item_count = kernel->global_size;
+	ndrange->work_item_count = ndrange_conf->global_size;
 	ndrange->work_item_id_first = 0;
 	ndrange->work_item_id_last = ndrange->work_item_count - 1;
 	ndrange->work_items = xcalloc(ndrange->work_item_count, sizeof(void *));
 	tid = 0;
 	gid = 0;
-	for (gidz = 0; gidz < kernel->group_count3[2]; gidz++)
+	for (gidz = 0; gidz < ndrange_conf->group_count3[2]; gidz++)
 	{
-		for (gidy = 0; gidy < kernel->group_count3[1]; gidy++)
+		for (gidy = 0; gidy < ndrange_conf->group_count3[1]; gidy++)
 		{
-			for (gidx = 0; gidx < kernel->group_count3[0]; gidx++)
+			for (gidx = 0; gidx < ndrange_conf->group_count3[0]; gidx++)
 			{
 				/* Assign work-group ID */
 				work_group = ndrange->work_groups[gid];
@@ -234,8 +314,8 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 
 				/* First, last, and number of work-items in work-group */
 				work_group->work_item_id_first = tid;
-				work_group->work_item_id_last = tid + kernel->local_size;
-				work_group->work_item_count = kernel->local_size;
+				work_group->work_item_id_last = tid + ndrange_conf->local_size;
+				work_group->work_item_count = ndrange_conf->local_size;
 				work_group->work_items = &ndrange->work_items[tid];
 				snprintf(work_group->name, sizeof(work_group->name), "work-group[i%d-i%d]",
 					work_group->work_item_id_first, work_group->work_item_id_last);
@@ -247,11 +327,11 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 				work_group->wavefronts = &ndrange->wavefronts[work_group->wavefront_id_first];
 				/* Iterate through work-items */
 				lid = 0;
-				for (lidz = 0; lidz < kernel->local_size3[2]; lidz++)
+				for (lidz = 0; lidz < ndrange_conf->local_size3[2]; lidz++)
 				{
-					for (lidy = 0; lidy < kernel->local_size3[1]; lidy++)
+					for (lidy = 0; lidy < ndrange_conf->local_size3[1]; lidy++)
 					{
-						for (lidx = 0; lidx < kernel->local_size3[0]; lidx++)
+						for (lidx = 0; lidx < ndrange_conf->local_size3[0]; lidx++)
 						{
 							/* Wavefront ID */
 							wid = gid * ndrange->wavefronts_per_work_group +
@@ -265,9 +345,9 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 							work_item->ndrange = ndrange;
 
 							/* Global IDs */
-							work_item->id_3d[0] = gidx * kernel->local_size3[0] + lidx;
-							work_item->id_3d[1] = gidy * kernel->local_size3[1] + lidy;
-							work_item->id_3d[2] = gidz * kernel->local_size3[2] + lidz;
+							work_item->id_3d[0] = gidx * ndrange_conf->local_size3[0] + lidx;
+							work_item->id_3d[1] = gidy * ndrange_conf->local_size3[1] + lidy;
+							work_item->id_3d[2] = gidz * ndrange_conf->local_size3[2] + lidz;
 							work_item->id = tid;
 
 							/* Local IDs */
@@ -385,15 +465,15 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	}
 
 	/* Debug */
-	si_isa_debug("local_size = %d (%d,%d,%d)\n", kernel->local_size, 
-		kernel->local_size3[0], kernel->local_size3[1], 
-		kernel->local_size3[2]);
-	si_isa_debug("global_size = %d (%d,%d,%d)\n", kernel->global_size, 
-		kernel->global_size3[0], kernel->global_size3[1], 
-		kernel->global_size3[2]);
-	si_isa_debug("group_count = %d (%d,%d,%d)\n", kernel->group_count, 
-		kernel->group_count3[0], kernel->group_count3[1], 
-		kernel->group_count3[2]);
+	si_isa_debug("local_size = %d (%d,%d,%d)\n", ndrange_conf->local_size, 
+		ndrange_conf->local_size3[0], ndrange_conf->local_size3[1], 
+		ndrange_conf->local_size3[2]);
+	si_isa_debug("global_size = %d (%d,%d,%d)\n", ndrange_conf->global_size, 
+		ndrange_conf->global_size3[0], ndrange_conf->global_size3[1], 
+		ndrange_conf->global_size3[2]);
+	si_isa_debug("group_count = %d (%d,%d,%d)\n", ndrange_conf->group_count, 
+		ndrange_conf->group_count3[0], ndrange_conf->group_count3[1], 
+		ndrange_conf->group_count3[2]);
 	si_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
 	si_isa_debug("wavefronts_per_work_group = %d\n", 
 		ndrange->wavefronts_per_work_group);
@@ -453,26 +533,26 @@ void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange, void *buf,
 
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 {
-	struct si_opencl_kernel_t *kernel = ndrange->kernel;
+	struct si_ndrange_conf_t *ndrange_conf = ndrange->ndrange_conf;
 	unsigned int zero = 0;
 	float f;
 	
 	/* CB0 bytes 0:15 */
 
 	/* Global work size for the {x,y,z} dimensions */
-	si_isa_const_mem_write(0, 0, &kernel->global_size3[0]);
-	si_isa_const_mem_write(0, 4, &kernel->global_size3[1]);
-	si_isa_const_mem_write(0, 8, &kernel->global_size3[2]);
+	si_isa_const_mem_write(0, 0, &ndrange_conf->global_size3[0]);
+	si_isa_const_mem_write(0, 4, &ndrange_conf->global_size3[1]);
+	si_isa_const_mem_write(0, 8, &ndrange_conf->global_size3[2]);
 
 	/* Number of work dimensions */
-	si_isa_const_mem_write(0, 12, &kernel->work_dim);
+	si_isa_const_mem_write(0, 12, &ndrange_conf->work_dim);
 
 	/* CB0 bytes 16:31 */
 
 	/* Local work size for the {x,y,z} dimensions */
-	si_isa_const_mem_write(0, 16, &kernel->local_size3[0]);
-	si_isa_const_mem_write(0, 20, &kernel->local_size3[1]);
-	si_isa_const_mem_write(0, 24, &kernel->local_size3[2]);
+	si_isa_const_mem_write(0, 16, &ndrange_conf->local_size3[0]);
+	si_isa_const_mem_write(0, 20, &ndrange_conf->local_size3[1]);
+	si_isa_const_mem_write(0, 24, &ndrange_conf->local_size3[2]);
 
 	/* 0  */
 	si_isa_const_mem_write(0, 28, &zero);
@@ -480,9 +560,9 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	/* CB0 bytes 32:47 */
 
 	/* Global work size {x,y,z} / local work size {x,y,z} */
-	si_isa_const_mem_write(0, 32, &kernel->group_count3[0]);
-	si_isa_const_mem_write(0, 36, &kernel->group_count3[1]);
-	si_isa_const_mem_write(0, 40, &kernel->group_count3[2]);
+	si_isa_const_mem_write(0, 32, &ndrange_conf->group_count3[0]);
+	si_isa_const_mem_write(0, 36, &ndrange_conf->group_count3[1]);
+	si_isa_const_mem_write(0, 40, &ndrange_conf->group_count3[2]);
 
 	/* 0  */
 	si_isa_const_mem_write(0, 44, &zero);

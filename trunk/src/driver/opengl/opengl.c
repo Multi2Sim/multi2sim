@@ -22,6 +22,7 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <driver/glut/frame-buffer.h>
 #include <lib/mhandle/mhandle.h>
@@ -2639,7 +2640,10 @@ static int opengl_func_glVertexAttribPointer(struct x86_ctx_t *ctx)
 	vtx_attrib->normalized = normalized;
 	vtx_attrib->ptr = vbo->data;
 	vtx_attrib->vbo = vbo;
+	opengl_vertex_client_array_set_element_size(vtx_attrib, size, type);
+	vtx_attrib->max_element = vbo->data_size / vtx_attrib->element_size;
 
+	/* Return */
 	return 0;
 }
 
@@ -2693,6 +2697,14 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
+	struct si_ndrange_t *ndrange;
+	struct elf_buffer_t *elf_buffer;
+	struct opengl_vertex_array_obj_t *curr_vao;
+	struct opengl_vertex_client_array_t *vca;
+	int global_size[3];
+	int local_size[3];
+	int workdim;
+
 	unsigned int args[3];
 	unsigned int mode;
 	unsigned int first;
@@ -2704,7 +2716,40 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 	first = args[1];
 	count = args[2];
 
-	/* Send data to GPU and initialize rendering */
+	/* Vertex Shader */
+	global_size[0] = count;
+	global_size[1] = 1;
+	global_size[2] = 1;
+
+	local_size[0] = global_size[0];
+	local_size[1] = global_size[1];
+	local_size[2] = global_size[2];
+
+	workdim = 1;
+
+	ndrange = si_ndrange_create(global_size, local_size, workdim);
+
+	/* Setup NDrange instruction memory */
+	elf_buffer = opengl_program_get_shader(opengl_ctx->current_program, SI_OPENGL_SHADER_VERTEX);
+	if (!elf_buffer->size)
+		fatal("%s: cannot load shader code", __FUNCTION__);
+	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
+
+	/* Check enabled Vertex Attribute Array */
+	curr_vao = opengl_ctx->array_attrib->curr_vao;
+	for (int i = 0; i < GL_MAX_VERTEX_ATTRIB_BINDINGS; ++i)
+	{
+		vca = &curr_vao->vtx_attrib[i];
+		if (vca->enabled)
+		{
+			/* Expand Vertex Attribute Array when vertex_attrib->size != 4 */
+
+		}
+	}
+
+	si_ndrange_set_status(ndrange, si_ndrange_pending);
+
+
 	switch(mode)
 	{
 		case GL_POINTS:
@@ -2750,6 +2795,7 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 		case GL_TRIANGLES:
 		{
 			opengl_debug("\tglDrawArrays mode = GL_TRIANGLES, first = %d, count = %d\n", first, count);
+			/* Expand */
 			break;
 		}
 		case GL_TRIANGLE_STRIP_ADJACENCY:
