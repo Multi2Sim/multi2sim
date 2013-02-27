@@ -23,7 +23,10 @@
 
 #include <GL/glut.h>
 
+#ifndef GL_MAX_VERTEX_ATTRIB_BINDINGS
 #define GL_MAX_VERTEX_ATTRIB_BINDINGS 32
+#endif
+
 #define OPENGL_ATTACHED_BUFFER_ID_TABLE_INIT_SIZE 16
 
 struct linked_list_t;
