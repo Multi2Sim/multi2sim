@@ -229,23 +229,28 @@ int runtime_redirect(char *path, char *redirect_path, int redirect_path_size)
 	 */
 	LIST_FOR_EACH(runtime_list, index)
 	{
+		int matches_lib;
+		int matches_redirect_lib;
+
 		/* Get runtime */
 		runtime = list_get(runtime_list, index);
 
 		/* Check if path matches the original runtime name (e.g., 'libOpenCL.so'),
 		 * or the runtime it should be redirected to (e.g., 'libm2s-opencl.so'). */
-		if (!runtime_file_matches_lib(file_name, runtime->redirect_lib_name) &&
-				!runtime_file_matches_lib(file_name, runtime->lib_name))
+		matches_lib = runtime_file_matches_lib(file_name, runtime->lib_name);
+		matches_redirect_lib = runtime_file_matches_lib(file_name, runtime->redirect_lib_name);
+		if (!matches_lib && !matches_redirect_lib)
 			continue;
 
-		/* First, try to open the exact path provided. */
-		if (!access(path, R_OK))
+		/* If a Multi2Sim runtime was given directly, try first to open the
+		 * original path provided. */
+		if (matches_redirect_lib && !access(path, R_OK))
 		{
 			runtime->open_attempt = 0;
 			return 0;  /* No redirection */
 		}
 
-		/* If this failed, try to open file in current path. */
+		/* If this failed, try to open Multi2Sim runtime in current path. */
 		if (!getcwd(current_dir, sizeof current_dir))
 			fatal("%s: buffer too small", __FUNCTION__);
 		snprintf(buf, sizeof buf, "%s/lib%s.so", current_dir,
