@@ -615,7 +615,7 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	str_map_flags(&sys_open_flags_map, flags, flags_str, sizeof flags_str);
 	x86_sys_debug("  flags=%s\n", flags_str);
 	
-	/* The dynamic linked uses the 'open' system call to open shared libraries.
+	/* The dynamic linker uses the 'open' system call to open shared libraries.
 	 * We need to intercept here attempts to access runtime libraries and
 	 * redirect them to our own Multi2Sim runtimes. */
 	if (runtime_redirect(full_path, temp_path, sizeof temp_path))
@@ -3085,7 +3085,10 @@ static int x86_sys_getdents_impl(struct x86_ctx_t *ctx)
 
 	/* No more entries */
 	if (!nread)
+	{
+		free(buf);
 		return 0;
+	}
 
 	/* Copy to host memory */
 	host_offs = 0;
@@ -5464,6 +5467,86 @@ static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
 
 
 /*
+ * System call 'openat' (code 295)
+ */
+
+static int x86_sys_openat_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct x86_file_desc_t *desc;
+
+	unsigned int path_ptr;
+
+	char path[MAX_STRING_SIZE];
+	char full_path[MAX_STRING_SIZE];
+	char temp_path[MAX_STRING_SIZE];
+	char flags_str[MAX_STRING_SIZE];
+
+	int dirfd;
+	int flags;
+	int mode;
+	int length;
+	int host_fd;
+
+	/* Arguments */
+	dirfd = regs->ebx;
+	path_ptr = regs->ecx;
+	flags = regs->edx;
+	mode = regs->esi;
+
+	/* Debug */
+	str_map_flags(&sys_open_flags_map, flags, flags_str, sizeof flags_str);
+	x86_sys_debug("  dirfd=%d, path_ptr=0x%x, flags=0x%x %s, mode=0x%x\n",
+		dirfd, path_ptr, flags, flags_str, mode);
+
+	/* Read path */
+	length = mem_read_string(mem, path_ptr, sizeof path, path);
+	if (length == sizeof path)
+		fatal("%s: buffer too small", __FUNCTION__);
+	x86_sys_debug("  path='%s'\n", path);
+
+	/* Implemented cases:
+	 * dirfd = AT_FDCWD (-100), path is relative -> path is relative to current directory.
+	 * path is absolute -> dirfd ignored
+	 * dirfd != AT_FDCWD, path is relative -> path is relative to 'difd' (not implemented)
+	 */
+	if (dirfd != -100 && path[0] != '/')
+		fatal("%s: difd != AT_FDCWD with relative path not implemented", __FUNCTION__);
+
+	/* Full path */
+	x86_loader_get_full_path(ctx, path, full_path, sizeof full_path);
+	x86_sys_debug("  full_path='%s'\n", full_path);
+
+	/* The dynamic linker uses the 'open' system call to open shared libraries.
+	 * We need to intercept here attempts to access runtime libraries and
+	 * redirect them to our own Multi2Sim runtimes. */
+	if (runtime_redirect(full_path, temp_path, sizeof temp_path))
+		snprintf(full_path, sizeof full_path, "%s", temp_path);
+
+	/* Virtual files */
+	if (!strncmp(full_path, "/proc/", 6))
+		fatal("%s: virtual files not supported", __FUNCTION__);
+
+	/* Regular file. */
+	host_fd = open(full_path, flags, mode);
+	if (host_fd == -1)
+		return -errno;
+
+	/* File opened, create a new file descriptor. */
+	desc = x86_file_desc_table_entry_new(ctx->file_desc_table,
+		file_desc_regular, host_fd, full_path, flags);
+	x86_sys_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
+		desc->guest_fd, desc->host_fd);
+
+	/* Return guest descriptor index */
+	return desc->guest_fd;
+}
+
+
+
+
+/*
  * System call 'set_robust_list' (code 311)
  */
 
@@ -5718,7 +5801,6 @@ SYS_NOT_IMPL(inotify_init)
 SYS_NOT_IMPL(inotify_add_watch)
 SYS_NOT_IMPL(inotify_rm_watch)
 SYS_NOT_IMPL(migrate_pages)
-SYS_NOT_IMPL(openat)
 SYS_NOT_IMPL(mkdirat)
 SYS_NOT_IMPL(mknodat)
 SYS_NOT_IMPL(fchownat)

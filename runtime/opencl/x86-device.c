@@ -616,30 +616,30 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 
 	/* Call-back functions for architecture-specific program */
 	parent->arch_program_create_func =
-			(opencl_device_arch_program_create_func_t)
+			(opencl_arch_program_create_func_t)
 			opencl_x86_program_create;
 	parent->arch_program_free_func =
-			(opencl_device_arch_program_free_func_t)
+			(opencl_arch_program_free_func_t)
 			opencl_x86_program_free;
 	parent->arch_program_valid_binary_func =
-			(opencl_device_arch_program_valid_binary_func_t)
+			(opencl_arch_program_valid_binary_func_t)
 			opencl_x86_program_valid_binary;
 
 	/* Call-back functions for architecture-specific kernel */
 	parent->arch_kernel_create_func =
-			(opencl_device_arch_kernel_create_func_t)
+			(opencl_arch_kernel_create_func_t)
 			opencl_x86_kernel_create;
 	parent->arch_kernel_free_func =
-			(opencl_device_arch_kernel_free_func_t)
+			(opencl_arch_kernel_free_func_t)
 			opencl_x86_kernel_free;
 	parent->arch_kernel_check_func =
-			(opencl_device_arch_kernel_check_func_t)
+			(opencl_arch_kernel_check_func_t)
 			opencl_x86_kernel_check;
 	parent->arch_kernel_set_arg_func =
-			(opencl_device_arch_kernel_set_arg_func_t)
+			(opencl_arch_kernel_set_arg_func_t)
 			opencl_x86_kernel_set_arg;
 	parent->arch_kernel_run_func =
-			(opencl_device_arch_kernel_run_func_t)
+			(opencl_arch_kernel_run_func_t)
 			opencl_x86_kernel_run;
 
 	/* Initialize mutex and condition variables */
