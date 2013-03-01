@@ -145,6 +145,7 @@ cl_kernel clCreateKernel(
 		arch_program = entry->arch_program;
 
 		/* Create architecture-specific kernel */
+		assert(device->arch_kernel_create_func);
 		arch_kernel = device->arch_kernel_create_func(kernel,
 			arch_program, kernel_name);
 

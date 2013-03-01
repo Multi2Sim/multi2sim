@@ -119,7 +119,6 @@ struct opencl_device_t *opencl_device_create(void)
 	device = xcalloc(1, sizeof(struct opencl_device_t));
 	device->full_profile = "FULL_PROFILE";
 	device->opencl_c_version = "OpenCL 1.1 Multi2Sim";
-	device->name = "Multi2Sim OpenCL Runtime";
 	device->vendor = "Multi2Sim";
 	device->extensions = "";
 	device->driver_version = "1.0";
