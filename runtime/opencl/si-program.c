@@ -17,6 +17,35 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "mhandle.h"
 #include "si-program.h"
 
 
+struct opencl_si_program_t *opencl_si_program_create(
+		struct opencl_program_t *parent,
+		struct opencl_si_device_t *device,
+		void *binary,
+		size_t length)
+{
+	struct opencl_si_program_t *program;
+
+	/* Initialize */
+	program = xcalloc(1, sizeof(struct opencl_si_program_t));
+
+	/* Return */
+	return program;
+}
+
+void opencl_si_program_free(struct opencl_si_program_t *program)
+{
+	free(program);
+}
+
+/* Return true is a binary file is a valid SI program binary. */
+int opencl_si_program_valid_binary(
+	void *binary,
+	size_t length)
+{
+	Elf32_Ehdr *h = (Elf32_Ehdr *) binary;
+	return h->e_machine == 0x3fd;
+}
