@@ -46,7 +46,7 @@ struct str_map_t si_token_map =
 		{ "\%offset", si_token_offset },
 		{ "\%sdst", si_token_sdst },
 		{ "\%series_sbase", si_token_series_sbase },
-		{ "\%series_sdst", si_token_series_sdst },
+		{"\%series_sdst", si_token_series_sdst },
 		{ "\%series_srsrc", si_token_series_srsrc },
 		{ "\%simm16", si_token_simm16 },
 		{ "\%smrd_sdst", si_token_smrd_sdst },
@@ -98,7 +98,8 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 	case si_token_64_ssrc0:
 	case si_token_64_ssrc1:
 		return arg->type == si_arg_scalar_register_series ||
-				arg->type == si_arg_literal;
+				arg->type == si_arg_literal ||
+				arg->type == si_arg_special_register;
 	
 	case si_token_label:
 		return arg->type == si_arg_label;
@@ -131,7 +132,13 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 		return arg->type == si_arg_scalar_register;
 
 	case si_token_src0:
+
+		/* Token 'src' does not accept 'abs' function */
+		if (arg->abs)
+			return 0;
+
 		return arg->type == si_arg_literal ||
+			arg->type == si_arg_literal_float ||
 			arg->type == si_arg_vector_register ||
 			arg->type == si_arg_scalar_register;
 
@@ -146,12 +153,14 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 		return arg->type == si_arg_vector_register;
 
 	case si_token_vop3_64_svdst:
-		return arg->type == si_arg_scalar_register_series;
+		return arg->type == si_arg_scalar_register_series ||
+			arg->type == si_arg_special_register;
 
 	case si_token_vop3_src0:
 	case si_token_vop3_src1:
 	case si_token_vop3_src2:
 		return arg->type == si_arg_literal ||
+			arg->type == si_arg_literal_float ||
 			arg->type == si_arg_vector_register ||
 			arg->type == si_arg_scalar_register;
 	
