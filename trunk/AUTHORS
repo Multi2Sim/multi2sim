@@ -152,4 +152,13 @@ FILES
 	* src/arch/mips/*
 	
 ================================================================================	
+AUTHOR
+	Shu Chen (chen.sh@husky.neu.edu)
+
+DESCRIPTION
+
+	Shu has worked on the DRAM model.
+
+FILES
+	* src/dram/*
 
