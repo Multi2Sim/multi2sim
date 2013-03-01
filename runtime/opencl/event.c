@@ -21,32 +21,13 @@
 #include <stdio.h>
 #include <sys/time.h>
 
+#include "command.h"
 #include "command-queue.h"
 #include "debug.h"
 #include "event.h"
 #include "list.h"
 #include "mhandle.h"
 #include "object.h"
-
-
-/*
- * Call-back Functions for Command Queue Tasks
- */
-
-
-struct opencl_command_queue_task_finish_t
-{
-	int foo;
-};
-
-static void opencl_command_queue_task_finish_action(void *user_data)
-{
-	struct opencl_command_queue_task_finish_t *finish = user_data;
-
-	free(finish);
-}
-
-
 
 
 /*
@@ -132,15 +113,18 @@ void opencl_event_set_status(struct opencl_event_t *event, cl_int status)
 
 void opencl_event_wait(struct opencl_event_t *event)
 {
-	if (event->command_queue)
+	struct opencl_command_queue_t *command_queue;
+
+	command_queue = event->command_queue;
+	if (command_queue)
 	{
-		pthread_mutex_lock(&event->command_queue->lock);
-		if (event->command_queue->task_list->count && !event->command_queue->process)
+		pthread_mutex_lock(&command_queue->lock);
+		if (command_queue->command_list->count && !command_queue->process)
 		{
-			event->command_queue->process = 1;
-			pthread_cond_signal(&event->command_queue->cond_process);
+			command_queue->process = 1;
+			pthread_cond_signal(&command_queue->cond_process);
 		}
-		pthread_mutex_unlock(&event->command_queue->lock);
+		pthread_mutex_unlock(&command_queue->lock);
 	}
 
 	/* Lock */
@@ -380,7 +364,7 @@ cl_int clFlush(
 
 	pthread_mutex_lock(&command_queue->lock);
 
-	if (command_queue->task_list->count && !command_queue->process)
+	if (command_queue->command_list->count && !command_queue->process)
 	{
 		command_queue->process = 1;
 		pthread_cond_signal(&command_queue->cond_process);
@@ -394,8 +378,7 @@ cl_int clFlush(
 cl_int clFinish(
 	cl_command_queue command_queue)
 {
-	struct opencl_command_queue_task_finish_t *finish;
-	struct opencl_command_queue_task_t *task;
+	struct opencl_command_t *command;
 	struct opencl_event_t *event;
 
 	/* Debug */
@@ -406,20 +389,13 @@ cl_int clFinish(
 	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
-	/* Create event */
-	event = opencl_event_create(command_queue);
-
-	/* Create task and enqueue */
-	finish = xcalloc(1, sizeof(struct opencl_command_queue_task_finish_t));
-	task = opencl_command_queue_task_create(
-		command_queue, finish, opencl_command_queue_task_finish_action,
-		&event, 0, NULL);
-	opencl_command_queue_enqueue(command_queue, task);
-
+	/* Create NOP command and wait for it */
+	command = opencl_command_create_nop(command_queue, &event, 0, NULL);
+	opencl_command_queue_enqueue(command_queue, command);
 	opencl_event_wait(event);
 
+	/* Free event and return */
 	clReleaseEvent(event);
-
 	return CL_SUCCESS;	
 }
 
