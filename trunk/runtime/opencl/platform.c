@@ -36,6 +36,14 @@ static char *opencl_err_version =
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
 	"\tMulti2Sim OpenCL Runtime library ('libm2s-clrt').\n";
 
+static char *opencl_err_native =
+	"\tYou are running on the real machine an OpenCL program linked with\n"
+	"\tMulti2Sim's OpenCL runtime (libm2s-opencl). In native mode, the only\n"
+	"\tdevice visible to the application is the x86 CPU. If you want to see\n"
+	"\tadditional devices, please run your application on Multi2Sim. If you want\n"
+	"\tto run your program using native libraries, please compile it with flag\n"
+	"\t'-lOpenCL' instead of '-lm2s-opencl'.\n";
+
 struct opencl_version_t
 {
 	int major;
@@ -96,10 +104,14 @@ struct opencl_platform_t *opencl_platform_create(void)
 	device->arch_device = opencl_x86_device_create(device);
 	list_add(platform->device_list, device);
 
-	/* Add Southern Islands device */
-	device = opencl_device_create();
-	device->arch_device = opencl_si_device_create(device);
-	list_add(platform->device_list, device);
+	/* Devices other than x86 CPU are added only on simulated mode */
+	if (!opencl_native_mode)
+	{
+		/* Add Southern Islands device */
+		device = opencl_device_create();
+		device->arch_device = opencl_si_device_create(device);
+		list_add(platform->device_list, device);
+	}
 
 	/* Return */
 	return platform;
@@ -152,11 +164,16 @@ cl_int clGetPlatformIDs(
 
 	/* If the system call returns error, we are in native mode. */
 	if (ret == -1)
+	{
 		opencl_native_mode = 1;
+		warning("Multi2Sim OpenCL library running on native mode.\n%s",
+				opencl_err_native);
+	}
 
 	/* On simulation mode, check Multi2sim version and Multi2Sim OpenCL
 	 * Runtime version compatibility. */
 	if (!opencl_native_mode)
+	{
 		if (version.major != OPENCL_VERSION_MAJOR
 				|| version.minor < OPENCL_VERSION_MINOR)
 			fatal("incompatible Multi2Sim Runtime version.\n"
@@ -164,6 +181,7 @@ cl_int clGetPlatformIDs(
 				"Host implementation v. %d.%d.\n%s",
 				OPENCL_VERSION_MAJOR, OPENCL_VERSION_MINOR,
 				version.major, version.minor, opencl_err_version);
+	}
 
 	/* Create platform if it doesn't exist yet */
 	if (!opencl_platform)

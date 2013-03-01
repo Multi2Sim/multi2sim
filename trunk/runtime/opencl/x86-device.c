@@ -614,6 +614,11 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->type = CL_DEVICE_TYPE_CPU;
 	parent->vendor_id = 0;
 
+	/* Call-back functions for architecture-specific device */
+	parent->arch_device_free_func =
+			(opencl_arch_device_free_func_t)
+			opencl_x86_device_free;
+
 	/* Call-back functions for architecture-specific program */
 	parent->arch_program_create_func =
 			(opencl_arch_program_create_func_t)
