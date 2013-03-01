@@ -26,14 +26,14 @@
 /*
  * Command Queue
  */
-struct opencl_command_queue_task_t;
+struct opencl_command_t;
 
 struct opencl_command_queue_t
 {
 	struct opencl_device_t *device;
 
-	/* List of tasks - elements of type opencl_command_queue_task_t */
-	struct list_t *task_list;
+	/* List of commands - elements of type opencl_command_t */
+	struct list_t *command_list;
 	
 	cl_command_queue_properties properties;
 
@@ -50,37 +50,10 @@ struct opencl_command_queue_t *opencl_command_queue_create(void);
 void opencl_command_queue_free(struct opencl_command_queue_t *command_queue);
 
 void opencl_command_queue_enqueue(struct opencl_command_queue_t *command_queue,
-	struct opencl_command_queue_task_t *task);
-struct opencl_command_queue_task_t *opencl_command_queue_dequeue(
-	struct opencl_command_queue_t *command_queue);
+		struct opencl_command_t *command);
+struct opencl_command_t *opencl_command_queue_dequeue(
+		struct opencl_command_queue_t *command_queue);
 void opencl_command_queue_flush(struct opencl_command_queue_t *command_queue);
 
 
-
-
-/*
- * Command Queue Task
- */
-
-typedef void (*opencl_command_queue_action_func_t)(void *user_data);
-
-struct opencl_command_queue_task_t
-{
-	void *user_data;
-	opencl_command_queue_action_func_t action_func;
-	struct opencl_event_t *done_event;
-	int num_wait_events;
-	struct opencl_event_t **wait_events;
-};
-
-struct opencl_command_queue_task_t *opencl_command_queue_task_create(
-	struct opencl_command_queue_t *command_queue, 
-	void *user_data, opencl_command_queue_action_func_t action_func, 
-	cl_event *done_event_ptr, int num_wait, cl_event *waits);
-void opencl_command_queue_trask_free(struct opencl_command_queue_task_t *task);
-
-
-
-
 #endif
-

@@ -22,6 +22,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "command.h"
 #include "command-queue.h"
 #include "context.h"
 #include "debug.h"
@@ -35,158 +36,16 @@
 #include "opencl.h"
 
 
-#define MAX_DIMS 3
-
-
-/*
- * Call-back Functions for Command Queue Tasks
- */
-
-
-/* Memory transfer */
-
-struct opencl_command_queue_task_mem_transfer_t
-{
-	void *dst;
-	void *src;
-	unsigned int size;
-};
-
-static void opencl_command_queue_task_mem_transfer_action(void *user_data)
-{
-	struct opencl_command_queue_task_mem_transfer_t *mem_transfer = user_data;
-
-	/* Transfer the data */
-	memcpy(mem_transfer->dst, mem_transfer->src, mem_transfer->size);
-}
-
-
-/* Run a kernel */
-
-struct opencl_command_queue_task_kernel_run_t
-{
-	struct opencl_device_t *device;
-	void *arch_kernel;  /* Of type 'opencl_xxx_kernel_t' */
-	cl_uint work_dim; 
-	size_t global_work_offset[MAX_DIMS];
-	size_t global_work_size[MAX_DIMS];
-	size_t local_work_size[MAX_DIMS];
-};
-
-static void opencl_command_queue_task_kernel_run_action(void *user_data)
-{
-	struct opencl_command_queue_task_kernel_run_t *kernel_run = user_data;
-
-	kernel_run->device->arch_kernel_run_func(
-		kernel_run->arch_kernel,
-		kernel_run->work_dim,
-		kernel_run->global_work_offset,
-		kernel_run->global_work_size,
-		kernel_run->local_work_size);
-}
-
-
-/* Map a buffer */
-
-struct opencl_command_queue_task_mem_map_t
-{
-	int foo;
-};
-
-static void opencl_command_queue_task_mem_map_action(void *user_data)
-{
-
-}
-
-
-
-
-/*
- * Command Queue Task
- */
-
-struct opencl_command_queue_task_t *opencl_command_queue_task_create(
-	struct opencl_command_queue_t *command_queue, 
-	void *user_data, opencl_command_queue_action_func_t action_func, 
-	cl_event *done_event_ptr, int num_wait, cl_event *waits)
-{
-	struct opencl_command_queue_task_t *task;
-	int i;
-
-	/* Initialize */
-	task = xcalloc(1, sizeof(struct opencl_command_queue_task_t));
-	task->user_data = user_data;
-	task->action_func = action_func;
-	task->num_wait_events = num_wait;
-	task->wait_events = waits;
-
-	/* The task has a reference to all the prerequisite events */
-	for (i = 0; i < num_wait; i++)
-		if (clRetainEvent(waits[i]) != CL_SUCCESS)
-			fatal("%s: clRetainEvent failed on prerequisite event", __FUNCTION__);
-
-	/* Completion event */
-	if (done_event_ptr)
-	{
-		task->done_event = opencl_event_create(command_queue);
-		*done_event_ptr = task->done_event;
-		if (clRetainEvent(*done_event_ptr) != CL_SUCCESS)
-			fatal("%s: clRetainEvent failed on done event", __FUNCTION__);
-	}
-
-	/* Return task */
-	return task;
-}
-
-
-void opencl_command_queue_task_free(struct opencl_command_queue_task_t *task)
-{
-	int i;
-
-	/* Release events */
-	for (i = 0; i < task->num_wait_events; i++)
-		if (clReleaseEvent(task->wait_events[i]) != CL_SUCCESS)
-			fatal("%s: clReleaseEvent failed on prerequisite event", __FUNCTION__);
-
-	/* Completion event */
-	if (task->done_event)
-	{
-		if (clReleaseEvent(task->done_event) != CL_SUCCESS)
-			fatal("%s: clReleaseEvent failed on done event", __FUNCTION__);
-	}
-
-	/* Free */
-	free(task);
-}
-
-
-void opencl_command_queue_task_run(struct opencl_command_queue_task_t *task)
-{
-	if (task->num_wait_events > 0)
-		clWaitForEvents(task->num_wait_events, task->wait_events);
-	if (task->action_func)
-		task->action_func(task->user_data);
-	if (task->done_event)
-		opencl_event_set_status(task->done_event, CL_COMPLETE);
-}
-
-
-
-
-/*
- * Command Queue
- */
-
 static void *opencl_command_queue_thread_func(void *user_data)
 {
 	struct opencl_command_queue_t *command_queue = user_data;
-	struct opencl_command_queue_task_t *task;
+	struct opencl_command_t *command;
 
-	/* Execute tasks sequentially */
-	while ((task = opencl_command_queue_dequeue(command_queue)))
+	/* Execute commands sequentially */
+	while ((command = opencl_command_queue_dequeue(command_queue)))
 	{
-		opencl_command_queue_task_run(task);
-		opencl_command_queue_task_free(task);
+		opencl_command_run(command);
+		opencl_command_free(command);
 	}
 
 	/* End */
@@ -200,7 +59,7 @@ struct opencl_command_queue_t *opencl_command_queue_create(void)
 
 	/* Initialize */
 	command_queue = xcalloc(1, sizeof(struct opencl_command_queue_t));
-	command_queue->task_list = list_create();
+	command_queue->command_list = list_create();
 	pthread_mutex_init(&command_queue->lock, NULL);
 	pthread_cond_init(&command_queue->cond_process, NULL);
 
@@ -219,15 +78,14 @@ struct opencl_command_queue_t *opencl_command_queue_create(void)
 
 void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
 {
-	struct opencl_command_queue_task_t *task;
+	struct opencl_command_t *command;
 
-	task = opencl_command_queue_task_create(command_queue,
-		NULL, NULL, NULL, 0, NULL);
-
-	opencl_command_queue_enqueue(command_queue, task);
+	/* Create NOP command and flush queue */
+	command = opencl_command_create_nop(command_queue, NULL, 0, NULL);
+	opencl_command_queue_enqueue(command_queue, command);
 	opencl_command_queue_flush(command_queue);
 	pthread_join(command_queue->queue_thread, NULL);
-	assert(!command_queue->task_list->count);
+	assert(!command_queue->command_list->count);
 
 	pthread_mutex_destroy(&command_queue->lock);
 	pthread_cond_destroy(&command_queue->cond_process);
@@ -237,10 +95,10 @@ void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
 
 
 void opencl_command_queue_enqueue(struct opencl_command_queue_t *command_queue, 
-	struct opencl_command_queue_task_t *task)
+	struct opencl_command_t *command)
 {
 	pthread_mutex_lock(&command_queue->lock);
-	list_add(command_queue->task_list, task);
+	list_add(command_queue->command_list, command);
 	pthread_mutex_unlock(&command_queue->lock);
 }
 
@@ -248,7 +106,7 @@ void opencl_command_queue_enqueue(struct opencl_command_queue_t *command_queue,
 void opencl_command_queue_flush(struct opencl_command_queue_t *command_queue)
 {
 	pthread_mutex_lock(&command_queue->lock);
-	if (command_queue->task_list->count && !command_queue->process)
+	if (command_queue->command_list->count && !command_queue->process)
 	{
 		command_queue->process = 1;
 		pthread_cond_signal(&command_queue->cond_process);
@@ -258,33 +116,33 @@ void opencl_command_queue_flush(struct opencl_command_queue_t *command_queue)
 }
 
 
-struct opencl_command_queue_task_t *opencl_command_queue_dequeue(struct opencl_command_queue_t *command_queue)
+struct opencl_command_t *opencl_command_queue_dequeue(struct opencl_command_queue_t *command_queue)
 {
-	struct opencl_command_queue_task_t *task;
+	struct opencl_command_t *command;
 
 	/* Lock */
 	pthread_mutex_lock(&command_queue->lock);
 	
 	/* In order to proceed, the list must be processable
 	 * and there must be at least one item present */
-	while (!command_queue->process || !command_queue->task_list->count)
+	while (!command_queue->process || !command_queue->command_list->count)
 		pthread_cond_wait(&command_queue->cond_process, &command_queue->lock);
 	
 	/* Dequeue an item */
-	task = list_remove_at(command_queue->task_list, 0);
-	if (!command_queue->task_list->count)
+	command = list_remove_at(command_queue->command_list, 0);
+	if (!command_queue->command_list->count)
 		command_queue->process = 0;
 
-	/* If we get the special termination item, return NULL */
-	if (!task->user_data)
+	/* If we get an 'end' command, return NULL */
+	if (command->type == opencl_command_end)
 	{
-		opencl_command_queue_task_free(task);
-		task = NULL;
+		opencl_command_free(command);
+		command = NULL;
 	}
 
 	/* Unlock */
 	pthread_mutex_unlock(&command_queue->lock);
-	return task;
+	return command;
 }
 
 
@@ -400,8 +258,7 @@ cl_int clEnqueueReadBuffer(
 {
 	int status;
 
-	struct opencl_command_queue_task_t *task;
-	struct opencl_command_queue_task_mem_transfer_t *mem_transfer;
+	struct opencl_command_t *command;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -427,27 +284,14 @@ cl_int clEnqueueReadBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	/* Create user data associated with command queue task */
-	mem_transfer = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_transfer_t));
-	mem_transfer->src = (char *) buffer->buffer + offset;
-	mem_transfer->dst = (void *) ptr;
-	mem_transfer->size = cb;
+	/* Create command */
+	command = opencl_command_create_mem_transfer(ptr, (char *) buffer->buffer + offset, cb,
+			command_queue, event, num_events_in_wait_list, (cl_event *) event_wait_list);
+	opencl_command_queue_enqueue(command_queue, command);
 
-	task = opencl_command_queue_task_create(command_queue,
-		mem_transfer, opencl_command_queue_task_mem_transfer_action,
-		event, num_events_in_wait_list, 
-		(struct _cl_event **) event_wait_list);
-
+	/* Flush command queue if blocking */
 	if (blocking_read)
-	{
-		opencl_command_queue_enqueue(command_queue, task);
 		clFinish(command_queue);
-
-	}
-	else
-	{
-		opencl_command_queue_enqueue(command_queue, task);
-	}
 
 	return CL_SUCCESS;
 
@@ -486,10 +330,8 @@ cl_int clEnqueueWriteBuffer(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
+	struct opencl_command_t *command;
 	int status;
-
-	struct opencl_command_queue_task_t *task;
-	struct opencl_command_queue_task_mem_transfer_t *mem_transfer;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -515,18 +357,10 @@ cl_int clEnqueueWriteBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	/* Initialize data associated with the task */
-	mem_transfer = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_transfer_t));
-	mem_transfer->dst = (char *) buffer->buffer + offset;
-	mem_transfer->src = (void *) ptr;
-	mem_transfer->size = cb;
-
-	/* Create task and enqueue it */
-	task = opencl_command_queue_task_create(command_queue,
-		mem_transfer, opencl_command_queue_task_mem_transfer_action,
-		event, num_events_in_wait_list, 
-		(struct _cl_event **) event_wait_list);
-	opencl_command_queue_enqueue(command_queue, task);
+	/* Create command */
+	command = opencl_command_create_mem_transfer(buffer->buffer + offset, (void *) ptr, cb,
+			command_queue, event, num_events_in_wait_list, (cl_event *) event_wait_list);
+	opencl_command_queue_enqueue(command_queue, command);
 
 	/* If it is a blocking write, wait for command queue completion */
 	if (blocking_write)
@@ -569,10 +403,8 @@ cl_int clEnqueueCopyBuffer(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
+	struct opencl_command_t *command;
 	int status;
-
-	struct opencl_command_queue_task_t *task;
-	struct opencl_command_queue_task_mem_transfer_t *mem_transfer;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -606,18 +438,12 @@ cl_int clEnqueueCopyBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	/* Initialize data associated with the task */
-	mem_transfer = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_transfer_t));
-	mem_transfer->dst = (char *) dst_buffer->buffer + dst_offset;
-	mem_transfer->src = (void *) src_buffer->buffer + src_offset;
-	mem_transfer->size = cb;
-
-	/* Create task and enqueue it */
-	task = opencl_command_queue_task_create(command_queue,
-		mem_transfer, opencl_command_queue_task_mem_transfer_action,
-		event, num_events_in_wait_list, 
-		(struct _cl_event **) event_wait_list);
-	opencl_command_queue_enqueue(command_queue, task);
+	/* Initialize data associated with the command */
+	command = opencl_command_create_mem_transfer(dst_buffer->buffer + dst_offset,
+			src_buffer->buffer + src_offset, cb,
+			command_queue, event, num_events_in_wait_list,
+			(cl_event *) event_wait_list);
+	opencl_command_queue_enqueue(command_queue, command);
 		
 	/* Success */
 	return CL_SUCCESS;
@@ -740,10 +566,8 @@ void *clEnqueueMapBuffer(
 	cl_event *event,
 	cl_int *errcode_ret)
 {
+	struct opencl_command_t *command;
 	cl_int status;
-
-	struct opencl_command_queue_task_t *task;
-	struct opencl_command_queue_task_mem_map_t *mem_map;
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -787,16 +611,11 @@ void *clEnqueueMapBuffer(
 		return NULL;
 	}
 
-	/* Initialize data associated with the task */
-	mem_map = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_map_t));
-
-	/* Create task and enqueue it */
-	task = opencl_command_queue_task_create(
-		command_queue, mem_map,
-		opencl_command_queue_task_mem_map_action,
-		event, num_events_in_wait_list, 
-		(struct opencl_event_t **) event_wait_list);
-	opencl_command_queue_enqueue(command_queue, task);
+	/* Create command */
+	command = opencl_command_create_map_buffer(
+			command_queue, event, num_events_in_wait_list,
+			(cl_event *) event_wait_list);
+	opencl_command_queue_enqueue(command_queue, command);
 
 	/* If mapping is blocking, flush command queue */
 	if (blocking_map)
@@ -838,10 +657,8 @@ cl_int clEnqueueUnmapMemObject(
 	const cl_event *event_wait_list,
 	cl_event *event)
 {
+	struct opencl_command_t *command;
 	cl_int status;
-
-	struct opencl_command_queue_task_t *task;
-	struct opencl_command_queue_task_mem_map_t *mem_map;
 
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tcommand_queue = %p", command_queue);
@@ -865,17 +682,12 @@ cl_int clEnqueueUnmapMemObject(
 	if (status != CL_SUCCESS)
 		return status;
 
-	/* Initialize data associated with the task */
-	mem_map = xcalloc(1, sizeof(struct opencl_command_queue_task_mem_map_t));
+	/* Initialize data associated with the command */
+	command = opencl_command_create_unmap_buffer(command_queue, event,
+			num_events_in_wait_list, (cl_event *) event_wait_list);
+	opencl_command_queue_enqueue(command_queue, command);
 
-	/* Create task and enqueue */
-	task = opencl_command_queue_task_create(
-		command_queue, mem_map,
-		opencl_command_queue_task_mem_map_action,
-		event, num_events_in_wait_list, 
-		(struct opencl_event_t **) event_wait_list);
-
-	opencl_command_queue_enqueue(command_queue, task);
+	/* Success */
 	return CL_SUCCESS;
 }
 
@@ -893,10 +705,11 @@ cl_int clEnqueueNDRangeKernel(
 {
 	cl_int status;
 
-	struct opencl_command_queue_task_t *task;
-	struct opencl_command_queue_task_kernel_run_t *kernel_run;
+	struct opencl_device_t *device;
+	struct opencl_command_t *command;
 	struct opencl_kernel_entry_t *kernel_entry;
 
+	void *arch_kernel;
 	int i;
 
 	/* Debug */
@@ -925,57 +738,30 @@ cl_int clEnqueueNDRangeKernel(
 		return status;
 
 	/* Check valid work dimensions */
-	if (work_dim > MAX_DIMS)
+	if (work_dim > 3)
 		return CL_INVALID_WORK_DIMENSION;
 
-	/* Allocate data associated with task */
-	kernel_run = xcalloc(1, sizeof(struct opencl_command_queue_task_kernel_run_t));
-	kernel_run->work_dim = work_dim;
-	kernel_run->device = command_queue->device;
-
 	/* Kernel to run */
+	arch_kernel = NULL;
+	device = command_queue->device;
 	LIST_FOR_EACH(kernel->entry_list, i)
 	{
 		kernel_entry = list_get(kernel->entry_list, i);
-		if (kernel_entry->device == command_queue->device)
-			kernel_run->arch_kernel = kernel_entry->arch_kernel;
+		if (kernel_entry->device == device)
+			arch_kernel = kernel_entry->arch_kernel;
 	}
-	if (!kernel_run->arch_kernel)
+	if (!arch_kernel)
 		return CL_INVALID_VALUE;
-	if (command_queue->device->arch_kernel_check_func(kernel_run->arch_kernel) != CL_SUCCESS)
+	if (device->arch_kernel_check_func(arch_kernel) != CL_SUCCESS)
 		return CL_INVALID_VALUE;
 	
-	/* Global work offset and size */
-	if (global_work_offset)
-		memcpy(kernel_run->global_work_offset, global_work_offset, sizeof(size_t) * work_dim);
-	memcpy(kernel_run->global_work_size, global_work_size, sizeof(size_t) * work_dim);
-
-	/* Local work size */
-	if (local_work_size)
-	{
-		memcpy(kernel_run->local_work_size, local_work_size, sizeof(size_t) * work_dim);
-	}
-	else
-	{
-		for (i = 0; i < work_dim; i++)
-			kernel_run->local_work_size[i] = 1;
-	}
-	
-	/* Unused dimensions */
-	for (i = work_dim; i < MAX_DIMS; i++)
-	{
-		kernel_run->global_work_offset[i] = 0;
-		kernel_run->global_work_size[i] = 1;
-		kernel_run->local_work_size[i] = 1;
-	}
-	
-	/* Create task and enqueue */
-	task = opencl_command_queue_task_create(
-		command_queue, kernel_run, 
-		opencl_command_queue_task_kernel_run_action,
-		event, num_events_in_wait_list, 
-		(struct opencl_event_t **) event_wait_list);
-	opencl_command_queue_enqueue(command_queue, task);
+	/* Create command */
+	command = opencl_command_create_launch_kernel(device, arch_kernel, work_dim,
+			(size_t *) global_work_offset,
+			(size_t *) global_work_size,
+			(size_t *) local_work_size,
+			command_queue, event, num_events_in_wait_list, (cl_event *) event_wait_list);
+	opencl_command_queue_enqueue(command_queue, command);
 
 	/* Success */
 	return CL_SUCCESS;

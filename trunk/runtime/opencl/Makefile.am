@@ -6,6 +6,9 @@ __top_builddir__lib_libm2s_opencl_la_LDFLAGS = -version-info 1:0:0 -lpthread -ld
 
 __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	\
+	command.c \
+	command.h \
+	\
 	command-queue.c \
 	command-queue.h \
 	\

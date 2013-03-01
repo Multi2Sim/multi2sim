@@ -53,7 +53,7 @@ int dataIsZero(const char *data, size_t size)
 
 size_t getPropertiesCount(const void *properties, size_t prop_size)
 {
-	size_t size = 1; // There is always a 0 at the end.
+	size_t size = 1;  /* There is always a 0 at the end. */
 	const char *prop = (const char *)properties;
 	while (!dataIsZero(prop + size * prop_size, prop_size))
 		size++;
