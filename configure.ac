@@ -574,6 +574,7 @@ AC_CONFIG_FILES([
 		src/lib/Makefile
 		src/mem-system/Makefile
 		src/network/Makefile
+		src/dram/Makefile
 
 		src/visual/Makefile
 		src/visual/common/Makefile
