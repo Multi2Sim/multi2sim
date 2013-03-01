@@ -120,7 +120,7 @@ struct si_fmt_sopc_t
         unsigned int ssrc0    : 8;  /*   [7:0] */
         unsigned int ssrc1    : 8;  /*  [15:8] */
         unsigned int op       : 7;  /* [22:16] */
-        unsigned int enc      : 9;  /* [31:32] */
+        unsigned int enc      : 9;  /* [31:23] */
         unsigned int lit_cnst : 32; /* [63:32] */
 };
 
