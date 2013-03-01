@@ -548,7 +548,7 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->address_bits = 8 * sizeof (void *);
 	parent->available = CL_TRUE;
 	parent->compiler_available = CL_FALSE;
-	parent->double_fp_config =	CL_FP_DENORM | 
+	parent->double_fp_config = CL_FP_DENORM |
 				CL_FP_INF_NAN | 
 				CL_FP_ROUND_TO_NEAREST | 
 				CL_FP_ROUND_TO_ZERO | 
@@ -590,7 +590,7 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->max_write_image_args = 0;
 	parent->mem_base_addr_align = sizeof (cl_float4);
 	parent->min_data_type_align_size = 1;
-	parent->name = "x86 CPU";
+	parent->name = "Multi2Sim 32-bit x86 CPU Model";
 	parent->opencl_c_version = VERSION;
 	parent->version = "1";
 	parent->driver_version = "1";
@@ -673,5 +673,6 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 
 void opencl_x86_device_free(struct opencl_x86_device_t *device)
 {
+	free(device->threads);
+	free(device);
 }
-

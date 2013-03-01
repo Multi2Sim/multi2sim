@@ -31,10 +31,8 @@ struct opencl_si_device_t
 
 
 
-struct opencl_si_device_t *opencl_si_device_create(
-		struct opencl_device_t *parent);
-void opencl_si_device_free(
-		struct opencl_si_device_t *device);
+struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *parent);
+void opencl_si_device_free(struct opencl_si_device_t *device);
 
 #endif
 

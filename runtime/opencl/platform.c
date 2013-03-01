@@ -26,6 +26,7 @@
 #include "list.h"
 #include "mhandle.h"
 #include "platform.h"
+#include "si-device.h"
 #include "x86-device.h"
 
 
@@ -93,6 +94,11 @@ struct opencl_platform_t *opencl_platform_create(void)
 	/* Add x86 device */
 	device = opencl_device_create();
 	device->arch_device = opencl_x86_device_create(device);
+	list_add(platform->device_list, device);
+
+	/* Add Southern Islands device */
+	device = opencl_device_create();
+	device->arch_device = opencl_si_device_create(device);
 	list_add(platform->device_list, device);
 
 	/* Return */
