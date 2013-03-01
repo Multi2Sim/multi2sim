@@ -86,6 +86,7 @@ struct si_stream_t *stream;
 %token TOK_CPAR
 %token TOK_NEW_LINE
 %left TOK_AMP
+%token TOK_ABS
 
 %type<inst> rl_instr
 %type<list> rl_arg_list
@@ -115,7 +116,7 @@ rl_line
 
 		/* Generate code */
 		si_stream_add_inst(si_out_stream, inst);
-		//si_dis_inst_dump(inst, stdout);
+		si_dis_inst_dump(inst, stdout);
 		si_dis_inst_free(inst);
 		
 		/* Next line */
@@ -291,6 +292,30 @@ rl_arg
 		$$ = arg;
 	}
 
+	| TOK_ABS TOK_OPAR rl_arg TOK_CPAR
+	{
+		struct si_arg_t *arg = $3;
+
+		/* Activate absolute value flag */
+		arg->abs = 1;
+
+		/* Check valid application of 'abs' */
+		switch (arg->type)
+		{
+		case si_arg_scalar_register:
+		case si_arg_scalar_register_series:
+		case si_arg_vector_register:
+		case si_arg_vector_register_series:
+			break;
+
+		default:
+			yyerror("abs() function not allowed for argument");
+		}
+
+		/* Return */
+		$$ = arg;
+	}
+
 	| rl_operand rl_maddr_qual TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
 	{
 		struct si_arg_t *arg;
@@ -391,14 +416,20 @@ rl_waitcnt_arg
 
 	| rl_waitcnt_elem TOK_AMP rl_waitcnt_arg
 	{
-		$3->value.wait_cnt.vmcnt_active = $1->value.wait_cnt.vmcnt_active;
-		$3->value.wait_cnt.vmcnt_value = $1->value.wait_cnt.vmcnt_value;		
+		if ($3->value.wait_cnt.vmcnt_active && $1->value.wait_cnt.vmcnt_active)
+			yyerror("duplicate 'vmcnt' token");
+		$3->value.wait_cnt.vmcnt_active += $1->value.wait_cnt.vmcnt_active;
+		$3->value.wait_cnt.vmcnt_value += $1->value.wait_cnt.vmcnt_value;		
 		
-		$3->value.wait_cnt.expcnt_active = $1->value.wait_cnt.expcnt_active;
-		$3->value.wait_cnt.expcnt_value = $1->value.wait_cnt.expcnt_value;	
+		if ($3->value.wait_cnt.expcnt_active && $1->value.wait_cnt.expcnt_active)
+			yyerror("duplicate 'expcnt' token");
+		$3->value.wait_cnt.expcnt_active += $1->value.wait_cnt.expcnt_active;
+		$3->value.wait_cnt.expcnt_value += $1->value.wait_cnt.expcnt_value;	
 		
-		$3->value.wait_cnt.lgkmcnt_active = $1->value.wait_cnt.lgkmcnt_active;
-		$3->value.wait_cnt.lgkmcnt_value = $1->value.wait_cnt.lgkmcnt_value;	
+		if ($3->value.wait_cnt.lgkmcnt_active && $1->value.wait_cnt.lgkmcnt_active)
+			yyerror("duplicate 'lgkmcnt' token");
+		$3->value.wait_cnt.lgkmcnt_active += $1->value.wait_cnt.lgkmcnt_active;
+		$3->value.wait_cnt.lgkmcnt_value += $1->value.wait_cnt.lgkmcnt_value;	
 		
 		si_arg_free($1);
 		$$ = $3;

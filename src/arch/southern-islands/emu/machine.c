@@ -211,6 +211,13 @@ void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 #undef INST
 
 #define INST SI_INST_SMRD
+void si_isa_S_LOAD_DWORDX2_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+
+#define INST SI_INST_SMRD
 void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {

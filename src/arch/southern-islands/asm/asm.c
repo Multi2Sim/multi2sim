@@ -84,7 +84,7 @@ struct str_map_t si_inst_fmt_map =
 		{ "sop1", SI_FMT_SOP1 },
 		{ "sopc", SI_FMT_SOPC },
 		{ "sopp", SI_FMT_SOPP },
-		{ "smrc", SI_FMT_SMRD },
+		{ "smrd", SI_FMT_SMRD },
 		{ "vop2", SI_FMT_VOP2 },
 		{ "vop1", SI_FMT_VOP1 },
 		{ "vopc", SI_FMT_VOPC },

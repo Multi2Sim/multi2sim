@@ -202,12 +202,40 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 		inst_bytes->mtbuf.enc = 0x3a;
 		inst_bytes->mtbuf.op = inst_info->opcode;
 		break;
+	
+	/* encoding in [:], op in [] */
+	case SI_FMT_MUBUF:
+		
+		inst_bytes->mubuf.enc = 0x38;
+		inst_bytes->mubuf.op = inst_info->opcode;
+		break;
+
+	/* encoding in [:], op in [] */
+	case SI_FMT_MIMG:
+		
+		inst_bytes->mimg.enc = 0x3c;
+		inst_bytes->mimg.op = inst_info->opcode;
+		break;
 
 	/* encoding in [31:27], op in [26:22] */
 	case SI_FMT_SMRD:
 
 		inst_bytes->smrd.enc = 0x18;
 		inst_bytes->smrd.op = inst_info->opcode;
+		break;
+	
+	/* encoding in [:], op in [] */
+	case SI_FMT_DS:
+		
+		inst_bytes->ds.enc = 0x36;
+		inst_bytes->ds.op = inst_info->opcode;
+		break;
+
+	/* encoding in [31:23], op in [22:16] */
+	case SI_FMT_SOPC:
+		
+		inst_bytes->sopc.enc = 0x17e;
+		inst_bytes->sopc.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31:23], op in [15:8] */
@@ -230,6 +258,20 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 		inst_bytes->sopp.enc = 0x17f;
 		inst_bytes->sopp.op = inst_info->opcode;
 		break;
+	
+	/* encoding in [:], op in [] */
+	case SI_FMT_SOPK:
+		
+		inst_bytes->sopk.enc = 0xb;
+		inst_bytes->sopk.op = inst_info->opcode;
+		break;
+
+	/* encoding in [:], op in [] */
+	case SI_FMT_VOPC:
+		
+		inst_bytes->vopc.enc = 0x3e;
+		inst_bytes->vopc.op = inst_info->opcode;
+		break;
 
 	/* encoding in [31:25], op in [16:9] */
 	case SI_FMT_VOP1:
@@ -250,6 +292,20 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 
 		inst_bytes->vop3a.enc = 0x34;
 		inst_bytes->vop3a.op = inst_info->opcode;
+		break;
+
+	/* encoding in [:], op in [] */
+	case SI_FMT_VINTRP:
+		
+		inst_bytes->vintrp.enc = 0x32;
+		inst_bytes->vintrp.op = inst_info->opcode;
+		break;
+
+	/* encoding in [:], op in [] */
+	case SI_FMT_EXP:
+		
+		inst_bytes->exp.enc = 0x3e;
+		/* No opcode: only 1 instruction */
 		break;
 
 	default:
@@ -316,6 +372,37 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				if (!IN_RANGE(value, 0, 255))
 					yyerror("invalid argument type");
 				inst_bytes->sop2.ssrc0 = value;
+			}
+			break;
+		}
+
+		case si_token_64_ssrc1:
+		{
+			int value;
+
+			if (arg->type == si_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
+			{
+				/* Literal constant other than [-16...64] is encoded by adding
+				 * four more bits to the instruction. */
+				if (inst->size == 8)
+					yyerror("only one literal allowed");
+				inst->size = 8;
+				inst_bytes->sop2.ssrc1 = 0xff;
+				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
+			}
+			else
+			{
+				/* Check range of scalar registers */
+				if (arg->type == si_arg_scalar_register_series &&
+						arg->value.scalar_register_series.high !=
+						arg->value.scalar_register_series.low + 1)
+					yyerror("invalid scalar register series, s[x:x+1] expected");
+
+				/* Encode */
+				value = si_arg_encode_operand(arg);
+				if (!IN_RANGE(value, 0, 255))
+					yyerror("invalid argument type");
+				inst_bytes->sop2.ssrc1 = value;
 			}
 			break;
 		}
@@ -420,6 +507,12 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				high_must = low + 1;
 				break;
 
+			case SI_INST_TBUFFER_LOAD_FORMAT_XYZW:
+			case SI_INST_TBUFFER_STORE_FORMAT_XYZW:
+
+				high_must = low + 3;
+				break;
+
 			default:
 				fatal("%s: MUBUF/MTBUF instruction not recognized: %s",
 						__FUNCTION__, info->name);
@@ -474,15 +567,17 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			switch (inst_info->inst)
 			{
 
+			case SI_INST_S_LOAD_DWORDX2:
 			case SI_INST_S_LOAD_DWORDX4:
 
 				/* High register must be low plus 1 */
 				if (arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 1)
-					yyerror("register series must be s[x:x+3]");
+					yyerror("register series must be s[x:x+1]");
 				break;
 
 			case SI_INST_S_BUFFER_LOAD_DWORD:
+			case SI_INST_S_BUFFER_LOAD_DWORDX2:
 
 				/* High register must be low plus 3 */
 				if (arg->value.scalar_register_series.high !=
@@ -504,6 +599,15 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			/* Restrictions for high register */
 			switch (inst_info->inst)
 			{
+
+			case SI_INST_S_LOAD_DWORDX2:
+			case SI_INST_S_BUFFER_LOAD_DWORDX2:
+
+				/* High register must be low plus 1 */
+				if (arg->value.scalar_register_series.high !=
+						arg->value.scalar_register_series.low + 1)
+					yyerror("register series must be s[low:low+1]");
+				break;
 
 			case SI_INST_S_LOAD_DWORDX4:
 
@@ -646,31 +750,44 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			int low;
 			int high;
 
-			/* Check range of series */
-			low = arg->value.scalar_register_series.low;
-			high = arg->value.scalar_register_series.high;
-			assert(arg->type == si_arg_scalar_register_series);
-			if (high != low + 1)
-				yyerror("register series must be s[low:low+1]");
+			/* If operand is a scalar register series, check range */
+			if (arg->type == si_arg_scalar_register_series)
+			{
+				low = arg->value.scalar_register_series.low;
+				high = arg->value.scalar_register_series.high;
+				if (high != low + 1)
+					yyerror("register series must be s[low:low+1]");
+			}
 
 			/* Encode */
-			inst_bytes->vop3a.vdst = low;
+			inst_bytes->vop3a.vdst = si_arg_encode_operand(arg);
 			break;
 		}
 
 		case si_token_vop3_src0:
 
 			inst_bytes->vop3a.src0 = si_arg_encode_operand(arg);
+			if (arg->abs)
+				inst_bytes->vop3a.abs |= 0x1;
 			break;
 
 		case si_token_vop3_src1:
 
 			inst_bytes->vop3a.src1 = si_arg_encode_operand(arg);
+			if (arg->abs)
+				inst_bytes->vop3a.abs |= 0x2;
 			break;
 
 		case si_token_vop3_src2:
 
 			inst_bytes->vop3a.src2 = si_arg_encode_operand(arg);
+			if (arg->abs)
+				inst_bytes->vop3a.abs |= 0x4;
+			break;
+
+		case si_token_vop3_vdst:
+			
+			inst_bytes->vop3a.vdst = arg->value.vector_register.id;
 			break;
 
 		case si_token_vsrc1:
@@ -681,7 +798,6 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			break;
 
 		case si_token_wait_cnt:
-
 			/* vmcnt(x) */
 			if (arg->value.wait_cnt.vmcnt_active)
 			{

@@ -37,6 +37,10 @@ extern long offset;
 	return TOK_COMMA;
 }
 
+"abs" {
+	return TOK_ABS;
+}
+
 "(" { 
 	return TOK_OPAR;
 }

@@ -57,6 +57,7 @@ enum si_arg_special_register_type_t
 struct si_arg_t 
 {
 	enum si_arg_type_t type;
+	int abs;  /* Absolute value */
 	
 	union
 	{
