@@ -81,6 +81,9 @@ struct _cl_device_id
 	const char *version;
 	const char *driver_version;
 
+	/* Call-back functions for an architecture-specific device */
+	opencl_arch_device_free_func_t arch_device_free_func;
+
 	/* Call-back functions for an architecture-specific program */
 	opencl_arch_program_create_func_t arch_program_create_func;
 	opencl_arch_program_free_func_t arch_program_free_func;

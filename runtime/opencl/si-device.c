@@ -37,6 +37,8 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	parent->type = CL_DEVICE_TYPE_GPU;
 
 	/* Call-back functions for device */
+	parent->arch_device_free_func = (opencl_arch_device_free_func_t)
+		opencl_si_device_free;
 
 	/* Call-back functions for kernel */
 	parent->arch_kernel_create_func = (opencl_arch_kernel_create_func_t)
