@@ -618,6 +618,21 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->arch_device_free_func =
 			(opencl_arch_device_free_func_t)
 			opencl_x86_device_free;
+	parent->arch_device_mem_alloc_func =
+			(opencl_arch_device_mem_alloc_func_t)
+			opencl_x86_device_mem_alloc;
+	parent->arch_device_mem_free_func =
+			(opencl_arch_device_mem_free_func_t)
+			opencl_x86_device_mem_free;
+	parent->arch_device_mem_read_func =
+			(opencl_arch_device_mem_read_func_t)
+			opencl_x86_device_mem_read;
+	parent->arch_device_mem_write_func =
+			(opencl_arch_device_mem_write_func_t)
+			opencl_x86_device_mem_write;
+	parent->arch_device_mem_copy_func =
+			(opencl_arch_device_mem_copy_func_t)
+			opencl_x86_device_mem_copy;
 
 	/* Call-back functions for architecture-specific program */
 	parent->arch_program_create_func =
@@ -680,4 +695,42 @@ void opencl_x86_device_free(struct opencl_x86_device_t *device)
 {
 	free(device->threads);
 	free(device);
+}
+
+
+void *opencl_x86_device_mem_alloc(size_t size)
+{
+	void *ptr;
+
+	if (posix_memalign(&ptr, 16, size))
+		fatal("%s: out of memory", __FUNCTION__);
+	mhandle_register_ptr(ptr, size);
+	return ptr;
+}
+
+
+void opencl_x86_device_mem_free(void *ptr)
+{
+	free(ptr);
+}
+
+
+void opencl_x86_device_mem_read(void *host_ptr, void *device_ptr, size_t size)
+{
+	/* Host and device are the same for x86 CPU */
+	memcpy(host_ptr, device_ptr, size);
+}
+
+
+void opencl_x86_device_mem_write(void *device_ptr, void *host_ptr, size_t size)
+{
+	/* Host and device are the same for x86 CPU */
+	memcpy(device_ptr, host_ptr, size);
+}
+
+
+void opencl_x86_device_mem_copy(void *device_dest_ptr, void *device_src_ptr, size_t size)
+{
+	/* Host and device are the same for x86 CPU */
+	memcpy(device_dest_ptr, device_src_ptr, size);
 }

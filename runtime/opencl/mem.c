@@ -23,14 +23,13 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "context.h"
 #include "debug.h"
+#include "device.h"
+#include "list.h"
 #include "mem.h"
 #include "mhandle.h"
 #include "object.h"
-
-
-/* Memory alignment for buffers */
-#define MEMORY_ALIGN 16
 
 
 
@@ -57,8 +56,8 @@ struct opencl_mem_t *opencl_mem_create(void)
 void opencl_mem_free(struct opencl_mem_t *mem)
 {
 	/* Free buffer if initialized */
-	if (mem->buffer)
-		free(mem->buffer);
+	if (mem->device_ptr)
+		free(mem->device_ptr);
 	
 	/* Free memory object */
 	free(mem);
@@ -72,7 +71,7 @@ void *opencl_mem_get_buffer(struct opencl_mem_t *mem)
 		return NULL;
 
 	/* Return buffer */
-	return mem->buffer;
+	return mem->device_ptr;
 }
 
 
@@ -89,6 +88,7 @@ cl_mem clCreateBuffer(
 	void *host_ptr,
 	cl_int *errcode_ret)
 {
+	struct opencl_device_t *device;
 	struct opencl_mem_t *mem;
 
 	/* Debug */
@@ -116,19 +116,25 @@ cl_mem clCreateBuffer(
 		return NULL;
 	}
 
+	/* Get device */
+	if (context->device_list->count != 1)
+		fatal("%s: only supported for contexts with 1 associated device",
+				__FUNCTION__);
+	device = list_get(context->device_list, 0);
+
 	/* Create memory object */
 	mem = opencl_mem_create();
 
 	/* Because of alignment reasons, we are going to 'cache' buffers even
 	 * when the user specifies CL_MEM_USE_HOST_PTR */
+	assert(device->arch_device_mem_alloc_func);
+	mem->device_ptr = device->arch_device_mem_alloc_func(size);
 	mem->size = size;
-	if (posix_memalign(&mem->buffer, MEMORY_ALIGN, size))
-		fatal("%s: out of memory", __FUNCTION__);
-	mhandle_register_ptr(mem->buffer, mem->size);
 
 	/* Copy buffer contents */
+	assert(device->arch_device_mem_write_func);
 	if ((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR))
-		memcpy(mem->buffer, host_ptr, size);
+		device->arch_device_mem_write_func(mem->device_ptr, host_ptr, size);
 
 	/* Success */
 	if (errcode_ret)

@@ -30,7 +30,9 @@ enum opencl_command_type_t
 	opencl_command_invalid = 0,
 	opencl_command_nop,
 	opencl_command_end,
-	opencl_command_mem_transfer,
+	opencl_command_mem_read,
+	opencl_command_mem_write,
+	opencl_command_mem_copy,
 	opencl_command_map_buffer,
 	opencl_command_unmap_buffer,
 	opencl_command_launch_kernel
@@ -46,13 +48,28 @@ struct opencl_command_t
 	struct opencl_event_t *done_event;
 	struct opencl_event_t **wait_events;
 
+	struct opencl_command_queue_t *command_queue;
+	struct opencl_device_t *device;
+
 	union
 	{
 		struct {
-			void *dst;
-			void *src;
+			void *host_ptr;  /* Destination */
+			void *device_ptr;  /* Source */
 			unsigned int size;
-		} mem_transfer;
+		} mem_read;
+
+		struct {
+			void *device_ptr;  /* Destination */
+			void *host_ptr;  /* Source */
+			unsigned int size;
+		} mem_write;
+
+		struct {
+			void *device_dest_ptr;
+			void *device_src_ptr;
+			unsigned int size;
+		} mem_copy;
 
 		struct {
 			struct opencl_device_t *device;
@@ -86,9 +103,27 @@ struct opencl_command_t *opencl_command_create_end(
 		int num_wait_events,
 		struct opencl_event_t **wait_events);
 
-struct opencl_command_t *opencl_command_create_mem_transfer(
-		void *dst,
-		void *src,
+struct opencl_command_t *opencl_command_create_mem_read(
+		void *host_ptr,
+		void *device_ptr,
+		unsigned int size,
+		struct opencl_command_queue_t *command_queue,
+		struct opencl_event_t **done_event_ptr,
+		int num_wait_events,
+		struct opencl_event_t **wait_events);
+
+struct opencl_command_t *opencl_command_create_mem_write(
+		void *device_ptr,
+		void *host_ptr,
+		unsigned int size,
+		struct opencl_command_queue_t *command_queue,
+		struct opencl_event_t **done_event_ptr,
+		int num_wait_events,
+		struct opencl_event_t **wait_events);
+
+struct opencl_command_t *opencl_command_create_mem_copy(
+		void *device_dest_ptr,
+		void *device_src_ptr,
 		unsigned int size,
 		struct opencl_command_queue_t *command_queue,
 		struct opencl_event_t **done_event_ptr,
