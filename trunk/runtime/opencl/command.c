@@ -22,18 +22,46 @@
 #include <string.h>
 
 #include "command.h"
+#include "command-queue.h"
 #include "debug.h"
 #include "device.h"
 #include "event.h"
 #include "mhandle.h"
 
 
-/* Memory transfer */
-static void opencl_command_run_mem_transfer(struct opencl_command_t *command)
+/* Memory read */
+static void opencl_command_run_mem_read(struct opencl_command_t *command)
 {
-	/* Transfer the data */
-	memcpy(command->u.mem_transfer.dst, command->u.mem_transfer.src,
-			command->u.mem_transfer.size);
+	struct opencl_device_t *device = command->device;
+
+	assert(device->arch_device_mem_read_func);
+	device->arch_device_mem_read_func(command->u.mem_read.host_ptr,
+			command->u.mem_read.device_ptr,
+			command->u.mem_read.size);
+}
+
+
+/* Memory write */
+static void opencl_command_run_mem_write(struct opencl_command_t *command)
+{
+	struct opencl_device_t *device = command->device;
+
+	assert(device->arch_device_mem_write_func);
+	device->arch_device_mem_write_func(command->u.mem_write.device_ptr,
+			command->u.mem_write.host_ptr,
+			command->u.mem_write.size);
+}
+
+
+/* Memory read */
+static void opencl_command_run_mem_copy(struct opencl_command_t *command)
+{
+	struct opencl_device_t *device = command->device;
+
+	assert(device->arch_device_mem_copy_func);
+	device->arch_device_mem_copy_func(command->u.mem_copy.device_dest_ptr,
+			command->u.mem_copy.device_src_ptr,
+			command->u.mem_copy.size);
 }
 
 
@@ -85,6 +113,8 @@ struct opencl_command_t *opencl_command_create(
 	command = xcalloc(1, sizeof(struct opencl_command_t));
 	command->type = type;
 	command->func = func;
+	command->command_queue = command_queue;
+	command->device = command_queue->device;
 	command->num_wait_events = num_wait_events;
 	command->wait_events = wait_events;
 
@@ -129,9 +159,9 @@ struct opencl_command_t *opencl_command_create_end(
 }
 
 
-struct opencl_command_t *opencl_command_create_mem_transfer(
-		void *dst,
-		void *src,
+struct opencl_command_t *opencl_command_create_mem_read(
+		void *host_ptr,
+		void *device_ptr,
 		unsigned int size,
 		struct opencl_command_queue_t *command_queue,
 		struct opencl_event_t **done_event_ptr,
@@ -141,13 +171,63 @@ struct opencl_command_t *opencl_command_create_mem_transfer(
 	struct opencl_command_t *command;
 
 	/* Initialize */
-	command = opencl_command_create(opencl_command_mem_transfer,
-			opencl_command_run_mem_transfer,
+	command = opencl_command_create(opencl_command_mem_read,
+			opencl_command_run_mem_read,
 			command_queue, done_event_ptr, num_wait_events,
 			wait_events);
-	command->u.mem_transfer.dst = dst;
-	command->u.mem_transfer.src = src;
-	command->u.mem_transfer.size = size;
+	command->u.mem_read.host_ptr = host_ptr;
+	command->u.mem_read.device_ptr = device_ptr;
+	command->u.mem_read.size = size;
+
+	/* Return */
+	return command;
+}
+
+
+struct opencl_command_t *opencl_command_create_mem_write(
+		void *device_ptr,
+		void *host_ptr,
+		unsigned int size,
+		struct opencl_command_queue_t *command_queue,
+		struct opencl_event_t **done_event_ptr,
+		int num_wait_events,
+		struct opencl_event_t **wait_events)
+{
+	struct opencl_command_t *command;
+
+	/* Initialize */
+	command = opencl_command_create(opencl_command_mem_write,
+			opencl_command_run_mem_write,
+			command_queue, done_event_ptr, num_wait_events,
+			wait_events);
+	command->u.mem_write.device_ptr = device_ptr;
+	command->u.mem_write.host_ptr = host_ptr;
+	command->u.mem_write.size = size;
+
+	/* Return */
+	return command;
+}
+
+
+struct opencl_command_t *opencl_command_create_mem_copy(
+		void *device_dest_ptr,
+		void *device_src_ptr,
+		unsigned int size,
+		struct opencl_command_queue_t *command_queue,
+		struct opencl_event_t **done_event_ptr,
+		int num_wait_events,
+		struct opencl_event_t **wait_events)
+{
+	struct opencl_command_t *command;
+
+	/* Initialize */
+	command = opencl_command_create(opencl_command_mem_copy,
+			opencl_command_run_mem_copy,
+			command_queue, done_event_ptr, num_wait_events,
+			wait_events);
+	command->u.mem_copy.device_dest_ptr = device_dest_ptr;
+	command->u.mem_copy.device_src_ptr = device_src_ptr;
+	command->u.mem_copy.size = size;
 
 	/* Return */
 	return command;

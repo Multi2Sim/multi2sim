@@ -25,7 +25,7 @@
 /* Memory object */
 struct _cl_mem
 {
-	void *buffer;
+	void *device_ptr;
 	size_t size;
 };
 

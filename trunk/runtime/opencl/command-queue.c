@@ -285,7 +285,7 @@ cl_int clEnqueueReadBuffer(
 		return status;
 
 	/* Create command */
-	command = opencl_command_create_mem_transfer(ptr, (char *) buffer->buffer + offset, cb,
+	command = opencl_command_create_mem_read(ptr, buffer->device_ptr + offset, cb,
 			command_queue, event, num_events_in_wait_list, (cl_event *) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, command);
 
@@ -358,7 +358,7 @@ cl_int clEnqueueWriteBuffer(
 		return status;
 
 	/* Create command */
-	command = opencl_command_create_mem_transfer(buffer->buffer + offset, (void *) ptr, cb,
+	command = opencl_command_create_mem_write(buffer->device_ptr + offset, (void *) ptr, cb,
 			command_queue, event, num_events_in_wait_list, (cl_event *) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, command);
 
@@ -426,9 +426,9 @@ cl_int clEnqueueCopyBuffer(
 		return CL_INVALID_MEM_OBJECT;
 	if ((src_buffer->size < src_offset + cb) || (dst_buffer->size < dst_offset + cb))
 		return CL_INVALID_VALUE;
-	if(!cb)
+	if (!cb)
 		return CL_INVALID_VALUE;
-	if((src_buffer == dst_buffer) && ((src_offset == dst_offset) || 
+	if ((src_buffer == dst_buffer) && ((src_offset == dst_offset) || 
 		((src_offset < dst_offset) && (src_offset + cb > dst_offset)) ||
 		((src_offset > dst_offset) && (dst_offset + cb > src_offset))))
 		return CL_MEM_COPY_OVERLAP;  
@@ -438,9 +438,9 @@ cl_int clEnqueueCopyBuffer(
 	if (status != CL_SUCCESS)
 		return status;
 
-	/* Initialize data associated with the command */
-	command = opencl_command_create_mem_transfer(dst_buffer->buffer + dst_offset,
-			src_buffer->buffer + src_offset, cb,
+	/* Create command */
+	command = opencl_command_create_mem_copy(dst_buffer->device_ptr + dst_offset,
+			src_buffer->device_ptr + src_offset, cb,
 			command_queue, event, num_events_in_wait_list,
 			(cl_event *) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, command);
@@ -626,7 +626,7 @@ void *clEnqueueMapBuffer(
 		*errcode_ret = CL_SUCCESS;
 	
 	/* Return mapped buffer */
-	return (char *) buffer->buffer + offset;
+	return (char *) buffer->device_ptr + offset;
 }
 
 
@@ -674,7 +674,7 @@ cl_int clEnqueueUnmapMemObject(
 	if (!opencl_object_verify(memobj, OPENCL_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
 
-	if (memobj->buffer > mapped_ptr || memobj->buffer + memobj->size < mapped_ptr)
+	if (memobj->device_ptr > mapped_ptr || memobj->device_ptr + memobj->size < mapped_ptr)
 		return CL_INVALID_VALUE;
 
 	/* Check events before they are needed */
