@@ -449,36 +449,5 @@ void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str, ch
 void si_inst_MADDR_dump(struct si_inst_t *inst, char *operand_str, char **inst_str, int str_size);
 void si_inst_DUG_dump(struct si_inst_t *inst, char *operand_str, char **inst_str, int str_size);
 
-/* Table 8.5 in SI documentation */
-struct si_buffer_resource_t
-{
-	unsigned long long base_addr : 48;   /*    [47:0] */
-	unsigned int stride          : 14;   /*   [61:48] */
-	unsigned int cache_swizzle   : 1;    /*       62  */
-	unsigned int swizzle_enable  : 1;    /*       63  */
-	unsigned int num_records     : 32;   /*   [95:64] */
-	unsigned int dst_sel_x       : 3;    /*   [98:96] */
-	unsigned int dst_sel_y       : 3;    /*  [101:99] */
-	unsigned int dst_sel_z       : 3;    /* [104:102] */
-	unsigned int dst_sel_w       : 3;    /* [107:105] */
-	unsigned int num_format      : 3;    /* [110:108] */
-	unsigned int data_format     : 4;    /* [114:111] */
-	unsigned int elem_size       : 2;    /* [116:115] */
-	unsigned int index_stride    : 2;    /* [118:117] */
-	unsigned int add_tid_enable  : 1;    /*      119  */
-	unsigned int reserved        : 1;    /*      120  */
-	unsigned int hash_enable     : 1;    /*      121  */
-	unsigned int heap            : 1;    /*      122  */
-	unsigned int unused          : 3;    /* [125:123] */
-	unsigned int type            : 2;    /* [127:126] */
-};
-
-/* Pointers get stored in 2 consecutive 32-bit registers */
-struct si_mem_ptr_t
-{
-	unsigned long long addr : 48;
-	unsigned int unused     : 16;
-};
-
 #endif
 

@@ -164,7 +164,7 @@ int si_isa_read_bitmask_sreg(struct si_work_item_t *work_item, int sreg)
 
 /* Initialize a buffer resource descriptor */
 void si_isa_read_buf_res(struct si_work_item_t *work_item, 
-	struct si_buffer_resource_t *buf_desc, int sreg)
+	struct si_buffer_desc_t *buf_desc, int sreg)
 {
 	assert(buf_desc);
 
@@ -192,13 +192,29 @@ void si_isa_const_mem_write(int buffer, int offset, void *pvalue)
 {
 	unsigned int addr; 
 
-	assert(buffer < CONSTANT_BUFFERS);
-	assert(offset <= CONSTANT_BUFFER_SIZE - 4);
+	assert(buffer < si_emu_num_mapped_const_buffers);
+	assert(offset <= SI_EMU_CONSTANT_BUFFER_SIZE - 4);
 
-	addr = CONSTANT_MEMORY_START + buffer*CONSTANT_BUFFER_SIZE + offset;
+	addr = SI_EMU_CONSTANT_MEMORY_START + 
+		buffer*SI_EMU_CONSTANT_BUFFER_SIZE + offset;
 
 	/* Write */
-    mem_write(si_emu->global_mem, addr, 4, pvalue);
+	mem_write(si_emu->global_mem, addr, 4, pvalue);
+}
+
+void si_isa_const_mem_write_size(int buffer, int offset, void *pvalue, 
+	unsigned int size)
+{
+	unsigned int addr; 
+
+	assert(buffer < si_emu_num_mapped_const_buffers);
+	assert(offset <= SI_EMU_CONSTANT_BUFFER_SIZE - size);
+
+	addr = SI_EMU_CONSTANT_MEMORY_START + 
+		buffer*SI_EMU_CONSTANT_BUFFER_SIZE + offset;
+
+	/* Write */
+	mem_write(si_emu->global_mem, addr, size, pvalue);
 }
 
 
@@ -206,9 +222,10 @@ void si_isa_const_mem_read(int buffer, int offset, void *pvalue)
 {
 	unsigned int addr; 
 
-	assert(buffer < CONSTANT_BUFFERS);
+	assert(buffer < si_emu_num_mapped_const_buffers);
 	
-	addr = CONSTANT_MEMORY_START + buffer*CONSTANT_BUFFER_SIZE + offset;
+	addr = SI_EMU_CONSTANT_MEMORY_START + 
+		buffer*SI_EMU_CONSTANT_BUFFER_SIZE + offset;
 
         /* Read */
         mem_read(si_emu->global_mem, addr, 4, pvalue);

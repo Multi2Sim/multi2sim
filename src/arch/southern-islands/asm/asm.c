@@ -1055,6 +1055,7 @@ void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str, ch
 		case 0:
 		case 4:
 		case 9:
+		case 24:
 		case 50:
 			vdata_end = vdata + 0;
 			break;
@@ -1499,6 +1500,11 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 		else if (is_token(fmt_str, "MU_SERIES_VDATA", &token_len))
 		{
 			si_inst_SERIES_VDATA_dump(inst->micro_inst.mubuf.vdata, inst->micro_inst.mubuf.op, operand_str, &inst_str, str_size);
+		}
+		else if (is_token(fmt_str, "MU_GLC", &token_len))
+		{
+			if (inst->micro_inst.mubuf.glc)
+				str_printf(&inst_str, &str_size, "glc");
 		}
 		else if (is_token(fmt_str, "VADDR", &token_len))
 		{

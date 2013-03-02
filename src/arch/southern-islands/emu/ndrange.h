@@ -94,7 +94,7 @@ struct si_ndrange_t
 	int work_group_count;
 
 	/* Size of work-groups */
-	int wavefronts_per_work_group;  /* = ceil(local_size / si_emu_wavefront_size) */
+	int wavefronts_per_work_group; /* ceil(local_size/si_emu_wavefront_size) */
 
 	/* List of ND-Ranges */
 	struct si_ndrange_t *ndrange_list_prev;
@@ -129,16 +129,14 @@ struct si_ndrange_t
 	unsigned int inst_buffer_size;
 
 	/* Local memory top to assign to local arguments.
-	 * Initially it is equal to the size of local variables in kernel function. */
+	 * Initially it is equal to the size of local variables in 
+	 * kernel function. */
 	unsigned int local_mem_top;
-
-	/* UAV lists */
-	struct list_t *uav_list;
 
 	/* Statistics */
 
-	/* Histogram of executed instructions. Only allocated if the kernel report
-	 * option is active. */
+	/* Histogram of executed instructions. Only allocated if the kernel 
+	 * report option is active. */
 	unsigned int *inst_histogram;
 };
 
