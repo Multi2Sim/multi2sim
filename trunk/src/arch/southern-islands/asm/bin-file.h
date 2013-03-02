@@ -64,19 +64,14 @@ typedef enum _E_SC_USER_DATA_CLASS
     IMM_CONTEXT_BASE,           // immediate HSAIL context base-address
     IMM_LDS_ESGS_SIZE,          // immediate LDS ESGS size used in on-chip GS
     SUB_PTR_FETCH_SHADER,       // fetch shader subroutine pointer
-    PTR_RESOURCE_TABLE,         // flat/chunked resource table pointer
-    /* PTR_CONST_BUFFER_TABLE Moved to position 20 based on .isa output */
-    PTR_CONST_BUFFER_TABLE,     // flat/chunked const buffer table pointer
+    PTR_RESOURCE_TABLE = 17,    // flat/chunked resource table pointer
+    PTR_CONST_BUFFER_TABLE = 20,// flat/chunked const buffer table pointer
     PTR_INTERNAL_RESOURCE_TABLE,// flat/chunked internal resource table pointer
     PTR_SAMPLER_TABLE,          // flat/chunked sampler table pointer
-    /* PTR_CONST_BUFFER_TABLE was originally here at position 22 */
-    /* PTR_UAV_TABLE moved to position 23 based on .isa output */
-    PTR_UAV_TABLE,              // flat/chunked UAV resource table pointer
+    PTR_UAV_TABLE = 23,         // flat/chunked UAV resource table pointer
     PTR_INTERNAL_GLOBAL_TABLE,  // internal driver table pointer
     PTR_VERTEX_BUFFER_TABLE,    // flat/chunked vertex buffer table pointer
     PTR_SO_BUFFER_TABLE,        // flat/chunked stream-out buffer table pointer
-    /* PTR_UAV_TABLE was originally here at position 25 */
-    /* PTR_INTERNAL_GLOBAL_TABLE was originally here at position 26 */
     PTR_EXTENDED_USER_DATA,     // extended user data in video memory
     PTR_INDIRECT_RESOURCE,      // pointer to resource indirection table
     PTR_INDIRECT_INTERNAL_RESOURCE,// pointer to internal resource indirection table

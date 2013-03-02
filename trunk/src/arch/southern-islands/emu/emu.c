@@ -375,7 +375,6 @@ struct si_buffer_desc_t si_emu_create_buffer_desc(
 	struct si_opencl_kernel_arg_t *arg)
 {
 	struct si_buffer_desc_t buf_desc;
-	struct si_opencl_mem_t *mem_obj;
 
 	enum si_opencl_kernel_arg_data_type_t data_type;
 
@@ -477,14 +476,9 @@ struct si_buffer_desc_t si_emu_create_buffer_desc(
 	assert(data_format != -1);
 
 	assert(arg->pointer.mem_obj_id);
-	mem_obj = si_opencl_repo_get_object(si_emu->opencl_repo,
-		si_opencl_object_mem, arg->pointer.mem_obj_id);
-	/* FIXME I believe that base address should be 0 unless there is an
-	 * offset provided in one of the unknown metadata fields. 
-	 * However, I'm not completely sure how the UAV mapping works
-	 * (which should probably go in CB1), so we'll set the base
-	 * address here, and store 0 in CB1. */
-	buf_desc.base_addr = mem_obj->device_ptr;
+	/* FIXME For now, storing the device_ptr in the UAV table and
+	 * setting the descriptor base address to zero */
+	buf_desc.base_addr = 0;
 	buf_desc.num_format = num_format;
 	buf_desc.data_format = data_format;
 	buf_desc.elem_size = elem_size;
@@ -513,17 +507,11 @@ void si_emu_insert_into_uav_table(struct si_buffer_desc_t buf_desc,
 }
 
 /* Store an entry in the UAV table */
-void si_emu_set_uav_table_entry(int uav, unsigned int addr)
+void si_emu_set_uav_table_entry(int uav, unsigned int addr, 
+	struct si_buffer_desc_t buf_desc)
 {
-	struct si_buffer_desc_t buf_desc;
-        memset(&buf_desc, 0, sizeof buf_desc);
-
 	assert(sizeof(struct si_buffer_desc_t) == 16);
 	assert(uav < SI_EMU_MAX_NUM_UAVS);  
-
-	/* NOTE This may be just an address instead of a resource
-	 * descriptor, but either way it should work */
-	buf_desc.base_addr = addr;
 
         mem_write(si_emu->global_mem, SI_EMU_UAV_TABLE_START+uav*32, 16,
                 &buf_desc);
@@ -535,15 +523,12 @@ void si_emu_set_uav_table_entry(int uav, unsigned int addr)
 struct si_buffer_desc_t si_emu_get_uav_table_entry(int uav)
 {
 	struct si_buffer_desc_t buf_desc;
-        memset(&buf_desc, 0, sizeof buf_desc);
 
 	assert(uav < SI_EMU_MAX_NUM_UAVS);  
 	assert(si_emu->valid_uav_list[uav]);
 
         mem_read(si_emu->global_mem, SI_EMU_UAV_TABLE_START+uav*32, 16,
                 &buf_desc);
-
-	assert(buf_desc.base_addr >= SI_EMU_GLOBAL_MEMORY_START);
 
 	return buf_desc;
 }
@@ -554,15 +539,12 @@ unsigned int si_emu_get_uav_base_addr(int uav)
 	unsigned int base_addr; 
 
 	struct si_buffer_desc_t buf_desc;
-        memset(&buf_desc, 0, sizeof buf_desc);
 
 	assert(uav < SI_EMU_MAX_NUM_UAVS);  
 	assert(si_emu->valid_uav_list[uav]);
 
         mem_read(si_emu->global_mem, SI_EMU_UAV_TABLE_START+uav*32, 16,
                 &buf_desc);
-
-	assert(buf_desc.base_addr >= SI_EMU_GLOBAL_MEMORY_START);
 
 	base_addr = (unsigned int)buf_desc.base_addr;
 
