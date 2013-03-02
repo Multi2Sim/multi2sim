@@ -437,10 +437,10 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 		}
 
 		/* Stall if fetch buffer full */
-        assert(list_count(compute_unit->fetch_buffers[active_fb]) <= 
-				si_gpu_fe_fetch_buffer_size);
-        if (list_count(compute_unit->fetch_buffers[active_fb]) == 
-				si_gpu_fe_fetch_buffer_size)
+		assert(list_count(compute_unit->fetch_buffers[active_fb]) <= 
+					si_gpu_fe_fetch_buffer_size);
+		if (list_count(compute_unit->fetch_buffers[active_fb]) == 
+					si_gpu_fe_fetch_buffer_size)
 		{
 			continue;
 		}

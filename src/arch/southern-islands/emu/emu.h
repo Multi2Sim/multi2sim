@@ -22,16 +22,84 @@
 
 #include <stdio.h>
 
+#include <driver/opencl-old/southern-islands/kernel.h>
 
-#define UAV_TABLE_START 0
-#define UAV_TABLE_SIZE 1024
-#define CONSTANT_BUFFER_TABLE_START (UAV_TABLE_START + UAV_TABLE_SIZE) 
-#define CONSTANT_BUFFER_TABLE_SIZE 1024
-#define CONSTANT_MEMORY_START (CONSTANT_BUFFER_TABLE_START + CONSTANT_BUFFER_TABLE_SIZE)
-#define CONSTANT_BUFFER_SIZE 1024
-#define CONSTANT_BUFFERS 2
-#define CONSTANT_MEMORY_SIZE (CONSTANT_BUFFER_SIZE * CONSTANT_BUFFERS)
-#define GLOBAL_MEMORY_START (CONSTANT_MEMORY_START + CONSTANT_MEMORY_SIZE)
+#define SI_EMU_UAV_TABLE_START 0
+#define SI_EMU_MAX_NUM_UAVS 16
+#define SI_EMU_UAV_TABLE_SIZE (SI_EMU_MAX_NUM_UAVS * 32)
+#define SI_EMU_CONSTANT_BUFFER_TABLE_START (SI_EMU_UAV_TABLE_START + SI_EMU_UAV_TABLE_SIZE)
+#define SI_EMU_CONSTANT_BUFFER_TABLE_SIZE 1024
+#define SI_EMU_CONSTANT_MEMORY_START (SI_EMU_CONSTANT_BUFFER_TABLE_START + SI_EMU_CONSTANT_BUFFER_TABLE_SIZE)
+#define SI_EMU_CONSTANT_BUFFER_SIZE 1024
+#define SI_EMU_MAX_CONSTANT_BUFFERS 16 
+#define SI_EMU_CONSTANT_MEMORY_SIZE (SI_EMU_CONSTANT_BUFFER_SIZE * SI_EMU_MAX_CONSTANT_BUFFERS)
+#define SI_EMU_GLOBAL_MEMORY_START (SI_EMU_CONSTANT_MEMORY_START + SI_EMU_CONSTANT_MEMORY_SIZE)
+
+#define SI_EMU_CALC_CB_ADDR(cb_num) (SI_EMU_CONSTANT_MEMORY_START + SI_EMU_CONSTANT_BUFFER_SIZE*cb_num)
+
+
+extern int si_emu_num_mapped_const_buffers;
+
+enum si_buf_desc_data_fmt_t
+{
+	SI_BUF_DESC_DATA_FMT_INVALID = 0,
+	SI_BUF_DESC_DATA_FMT_8,
+	SI_BUF_DESC_DATA_FMT_16,
+	SI_BUF_DESC_DATA_FMT_8_8,
+	SI_BUF_DESC_DATA_FMT_32,
+	SI_BUF_DESC_DATA_FMT_16_16,
+	SI_BUF_DESC_DATA_FMT_10_11_11,
+	SI_BUF_DESC_DATA_FMT_10_10_10_2,
+	SI_BUF_DESC_DATA_FMT_2_10_10_10,
+	SI_BUF_DESC_DATA_FMT_8_8_8_8,
+	SI_BUF_DESC_DATA_FMT_32_32,
+	SI_BUF_DESC_DATA_FMT_16_16_16_16,
+	SI_BUF_DESC_DATA_FMT_32_32_32,
+	SI_BUF_DESC_DATA_FMT_32_32_32_32
+};
+
+enum si_buf_desc_num_fmt_t
+{
+	SI_BUF_DESC_NUM_FMT_UNORM = 0,
+	SI_BUF_DESC_NUM_FMT_SNORM,
+	SI_BUF_DESC_NUM_FMT_USCALED,
+	SI_BUF_DESC_NUM_FMT_SSCALED,
+	SI_BUF_DESC_NUM_FMT_UINT,
+	SI_BUF_DESC_NUM_FMT_SINT,
+	SI_BUF_DESC_NUM_FMT_SNORM_OGL,
+	SI_BUF_DESC_NUM_FMT_FLOAT
+};
+
+/* Table 8.5 in SI documentation */
+struct si_buffer_desc_t
+{
+	unsigned long long base_addr : 48;   /*    [47:0] */
+	unsigned int stride          : 14;   /*   [61:48] */
+	unsigned int cache_swizzle   : 1;    /*       62  */
+	unsigned int swizzle_enable  : 1;    /*       63  */
+	unsigned int num_records     : 32;   /*   [95:64] */
+	unsigned int dst_sel_x       : 3;    /*   [98:96] */
+	unsigned int dst_sel_y       : 3;    /*  [101:99] */
+	unsigned int dst_sel_z       : 3;    /* [104:102] */
+	unsigned int dst_sel_w       : 3;    /* [107:105] */
+	unsigned int num_format      : 3;    /* [110:108] */
+	unsigned int data_format     : 4;    /* [114:111] */
+	unsigned int elem_size       : 2;    /* [116:115] */
+	unsigned int index_stride    : 2;    /* [118:117] */
+	unsigned int add_tid_enable  : 1;    /*      119  */
+	unsigned int reserved        : 1;    /*      120  */
+	unsigned int hash_enable     : 1;    /*      121  */
+	unsigned int heap            : 1;    /*      122  */
+	unsigned int unused          : 3;    /* [125:123] */
+	unsigned int type            : 2;    /* [127:126] */
+};
+
+/* Pointers get stored in 2 consecutive 32-bit registers */
+struct si_mem_ptr_t
+{
+	unsigned long long addr : 48;
+	unsigned int unused     : 16;
+};
 
 struct si_emu_t
 {
@@ -70,6 +138,9 @@ struct si_emu_t
 	/* Global memory */
 	struct mem_t *global_mem;
 	unsigned int global_mem_top;
+
+	/* List of set UAVs */
+	int valid_uav_list[SI_EMU_MAX_NUM_UAVS];
 
 	/* Statistics */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
@@ -114,5 +185,12 @@ int si_emu_run(void);
 void si_emu_disasm(char *path);
 void si_emu_opengl_disasm(char *path, int opengl_shader_index);
 
+struct si_buffer_desc_t si_emu_create_buffer_desc(
+	struct si_opencl_kernel_arg_t *arg);
+void si_emu_insert_into_uav_table(struct si_buffer_desc_t buf_desc,
+	struct si_opencl_kernel_arg_t *arg);
+void si_emu_set_uav_table_entry(int uav, unsigned int addr);
+struct si_buffer_desc_t si_emu_get_uav_table_entry(int uav);
+unsigned int si_emu_get_uav_base_addr(int uav);
 #endif
 

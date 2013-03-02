@@ -54,9 +54,6 @@ struct si_ndrange_t *si_ndrange_create(int *global_size3, int *local_size3, int 
 	ndrange = xcalloc(1, sizeof(struct si_ndrange_t));
 	DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, ndrange, ndrange);
 
-	/* Create the UAV-to-physical-address lookup lists */
-	ndrange->uav_list = list_create();
-
 	/* Create ND-Range configuration */
 	ndrange->ndrange_conf = si_ndrange_conf_create(global_size3, local_size3, work_dim);
 
@@ -95,9 +92,6 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 	/* Extract from ND-Range list in Southern Islands emulator */
 	assert(DOUBLE_LINKED_LIST_MEMBER(si_emu, ndrange, ndrange));
 	DOUBLE_LINKED_LIST_REMOVE(si_emu, ndrange, ndrange);
-
-	/* Free lists */
-	list_free(ndrange->uav_list);
 
 	/* Free ND-Range configuration */
 	si_ndrange_conf_free(ndrange->ndrange_conf);
@@ -215,7 +209,7 @@ void si_ndrange_setup_kernel(struct si_ndrange_t *ndrange, struct si_opencl_kern
 	/* Initialize */
 	ndrange->name = xstrdup(kernel->name);
 	ndrange->kernel = kernel;
-	ndrange->local_mem_top = kernel->func_mem_local;
+	ndrange->local_mem_top = kernel->mem_size_local;
 	ndrange->id = si_emu->ndrange_count++;
 	ndrange->num_vgprs = 
 		kernel->bin_file->enc_dict_entry_southern_islands->
@@ -426,7 +420,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			}
 			else if (userElements[i].dataClass == IMM_UAV)
 			{
-				si_wavefront_init_sreg_with_cb(wavefront, 
+				si_wavefront_init_sreg_with_uav(wavefront, 
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount, 
 					userElements[i].apiSlot);
@@ -440,20 +434,21 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			}
 			else if (userElements[i].dataClass == PTR_UAV_TABLE)
 			{
-				si_wavefront_init_sreg_with_uav_table(wavefront,
+				si_wavefront_init_sreg_with_uav_table(
+					wavefront,
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount);
 			}
 			else if (userElements[i].dataClass == 
 				PTR_INTERNAL_GLOBAL_TABLE)
 			{
-				fatal("PTR_INTERNAL_GLOBAL_TABLE not "
-					"supported");
+				fatal("%s: PTR_INTERNAL_GLOBAL_TABLE not "
+					"supported", __FUNCTION__);
 			}
 			else
 			{
-				fatal("Unimplemented User Element: "
-					"dataClass:%d", 
+				fatal("%s: Unimplemented User Element: "
+					"dataClass:%d", __FUNCTION__,
 					userElements[i].dataClass);
 			}
 		}
@@ -477,6 +472,9 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	si_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
 	si_isa_debug("wavefronts_per_work_group = %d\n", 
 		ndrange->wavefronts_per_work_group);
+	si_isa_debug("\n");
+
+#if 0
 	si_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   "
 		"lid lid2 lid1 lid0  wavefront            work-group\n");
 	for (tid = 0; tid < ndrange->work_item_count; tid++)
@@ -499,6 +497,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		si_isa_debug("%20s.%-4d\n", work_group->name, 
 			work_item->id_in_work_group);
 	}
+#endif
 
 }
 
@@ -638,46 +637,13 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	/* FIXME Size of the printf buffer */
 }
 
-void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange)
-{
-	int i;
-
-	/* XXX The resource descriptor appears to be set to 0 */
-	//uint32_t buffer_addr;
-	//struct si_opencl_mem_t *mem_obj;
-	struct si_buffer_resource_t buf_desc;
-
-	/* Zero-out the buffer resource descriptor */
-	memset(&buf_desc, 0, 16);
-
-	for (i = 0; i < list_count(ndrange->uav_list); i++)
-	{
-		/* Get the memory object for the buffer */
-		//mem_obj = list_get(ndrange->uav_list, i);
-
-		/* Get the address of the buffer in global memory */
-		//buffer_addr = mem_obj->device_ptr;
-
-		/* Initialize the buffer resource descriptor for this UAV */
-		//buf_desc.base_addr = buffer_addr;
-
-		assert(UAV_TABLE_START + 320 + i*32 <= 
-			UAV_TABLE_START + UAV_TABLE_SIZE - 32);
-
-		/* Write the buffer resource descriptor into the UAV 
-		* table at offset 320 with 32 bytes spacing */
-		mem_write(si_emu->global_mem, UAV_TABLE_START + 320 + i * 32, 
-			16, &buf_desc);
-	}
-}
-
 void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 {
 	struct si_opencl_kernel_t *kernel = ndrange->kernel;
 	struct si_opencl_kernel_arg_t *arg;
+	struct si_opencl_mem_t *mem_obj;
+
 	int i;
-	int j;
-	int cb_index = 0;
 
 	/* Kernel arguments */
 	for (i = 0; i < list_count(kernel->arg_list); i++)
@@ -687,9 +653,11 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 
 		/* Check that argument was set */
 		if (!arg->set)
+		{
 			fatal("kernel '%s': argument '%s' has not been "
 				"assigned with 'clKernelSetArg'.",
 				kernel->name, arg->name);
+		}
 
 		/* Process argument depending on its type */
 		switch (arg->kind)
@@ -697,76 +665,70 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 
 		case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
 		{
-			/* Value copied directly into device constant memory */
-			for (j = 0; j < arg->size/4; j++)
-			{
-				si_isa_const_mem_write(1, (cb_index*4)*4+j, 
-					&arg->data.value[j]);
-				si_opencl_debug("    arg %d: value '0x%x' "
-					"loaded into CB1[%d][%d]\n", i, 
-					arg->data.value[j], cb_index, j);
-			}
-			cb_index++;
+			/* Value copied directly into device constant 
+			 * memory */
+			assert(arg->size);
+			si_isa_const_mem_write_size(
+				arg->value.constant_buffer_num, 
+				arg->value.constant_offset,
+				arg->value.value, 
+				arg->size);
 			break;
 		}
 
 		case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
 		{
-			switch (arg->mem_scope)
-			{
-
-			case SI_OPENCL_MEM_SCOPE_CONSTANT:
-			case SI_OPENCL_MEM_SCOPE_GLOBAL:
-			{
-				struct si_opencl_mem_t *mem;
-
-				/* Pointer in __global scope.
-				 * Argument value is a pointer to an 
-				 * 'opencl_mem' object. It is translated first 
-				 * into a device memory pointer. */
-				mem = si_opencl_repo_get_object(
-					si_emu->opencl_repo,
-					si_opencl_object_mem, arg->data.ptr);
-				si_isa_const_mem_write(1, (cb_index*4)*4, 
-					&mem->device_ptr);
-				si_opencl_debug("    arg %d: opencl_mem id "
-					"0x%x loaded into CB1[%d],"
-					" device_ptr=0x%x\n", i, arg->data.ptr,
-					cb_index, mem->device_ptr);
-				cb_index++;
-				break;
-			}
-
-			case SI_OPENCL_MEM_SCOPE_LOCAL:
+			if (arg->pointer.mem_type == 
+				SI_OPENCL_KERNEL_ARG_MEM_TYPE_HW_LOCAL)
 			{
 				/* Pointer in __local scope.
-				 * Argument value is always NULL, just assign 
+				 * Argument value is always NULL, just assign
 				 * space for it. */
-				si_isa_const_mem_write(1, (cb_index*4)*4, 
+				si_isa_const_mem_write(
+					arg->pointer.constant_buffer_num,
+					arg->pointer.constant_offset, 
 					&ndrange->local_mem_top);
-				si_opencl_debug("    arg %d: %d bytes reserved "
-					"in local memory at 0x%x\n",
-					i, arg->size, ndrange->local_mem_top);
+
+				si_opencl_debug("    arg %d: %d bytes reserved"
+					" in local memory at 0x%x\n", i, 
+					arg->size, ndrange->local_mem_top);
+
 				ndrange->local_mem_top += arg->size;
-				cb_index++;
-				break;
 			}
-
-			default:
+			else
 			{
-				fatal("%s: argument in memory scope %d not "
-					"supported", __FUNCTION__, 
-					arg->mem_scope);
+				/* XXX Need to figure out what value goes in
+				 * CB1 and what value goes in 
+				 * buf_desc.base_addr. For now, putting UAV
+				 * offset in CB1 and setting base_addr to 0 */
+				mem_obj = si_opencl_repo_get_object(
+						si_emu->opencl_repo,
+						si_opencl_object_mem, 
+						arg->pointer.mem_obj_id);
+				si_isa_const_mem_write(
+					arg->pointer.constant_buffer_num, 
+					arg->pointer.constant_offset, 
+					&mem_obj->device_ptr);
 			}
+			break;
+		}
 
-			}
+		case SI_OPENCL_KERNEL_ARG_KIND_IMAGE:
+		{
+			assert(0);
+			break;
+		}
 
+		case SI_OPENCL_KERNEL_ARG_KIND_SAMPLER:
+		{
+			assert(0);
 			break;
 		}
 
 		default:
 		{
-			fatal("%s: argument type not reconized", __FUNCTION__);
+			fatal("%s: argument type not reconized", 
+				__FUNCTION__);
 		}
 
 		}
@@ -856,107 +818,236 @@ void si_ndrange_clear_status(struct si_ndrange_t *ndrange,
 
 void si_ndrange_dump_initialized_state(struct si_ndrange_t *ndrange)
 {
-	struct si_opencl_kernel_t *kernel;
-	struct si_opencl_mem_t *mem_obj;
-
 	int i;
+	struct si_buffer_desc_t buf_desc;
+	struct si_opencl_kernel_t *kernel;
+	struct si_opencl_kernel_arg_t *arg;
 
 	kernel = ndrange->kernel;
 
-	/* Dump address ranges */
 	si_isa_debug("\n");
-	si_isa_debug("-------------------------------------------\n");
-	si_isa_debug("|Memory Space   |    Start   |     End    |\n");
-	si_isa_debug("-------------------------------------------\n");
-	si_isa_debug("| UAV table     | %10u | %10u |\n", 
-		UAV_TABLE_START,
-		UAV_TABLE_START+UAV_TABLE_SIZE-1);
-	si_isa_debug("| CB table      | %10u | %10u |\n", 
-		CONSTANT_BUFFER_TABLE_START,
-		CONSTANT_BUFFER_TABLE_START+CONSTANT_BUFFER_TABLE_SIZE-1);
-	si_isa_debug("| Constant mem  | %10u | %10u |\n", 
-		CONSTANT_MEMORY_START,
-		CONSTANT_MEMORY_START+CONSTANT_MEMORY_SIZE-1);
-	si_isa_debug("| Global mem    | %10u | %10u |\n", 
-		GLOBAL_MEMORY_START, (1U << 31)-1);
-	si_isa_debug("-------------------------------------------\n");
+	si_isa_debug("================ Initialization Summary ================"
+		"\n");
 	si_isa_debug("\n");
 
-	/* Dump mapping of internal data structures */
+	/* Dump address ranges */
+	si_isa_debug("\t-------------------------------------------\n");
+	si_isa_debug("\t| Memory Space  |    Start   |     End    |\n");
+	si_isa_debug("\t-------------------------------------------\n");
+	si_isa_debug("\t| UAV table     | %10u | %10u |\n", 
+		SI_EMU_UAV_TABLE_START,
+		SI_EMU_UAV_TABLE_START+SI_EMU_UAV_TABLE_SIZE-1);
+	si_isa_debug("\t| CB table      | %10u | %10u |\n", 
+		SI_EMU_CONSTANT_BUFFER_TABLE_START,
+		SI_EMU_CONSTANT_BUFFER_TABLE_START+
+		SI_EMU_CONSTANT_BUFFER_TABLE_SIZE-1);
+	si_isa_debug("\t| Constant mem  | %10u | %10u |\n", 
+		SI_EMU_CONSTANT_MEMORY_START,
+		SI_EMU_CONSTANT_MEMORY_START+SI_EMU_CONSTANT_MEMORY_SIZE-1);
+	si_isa_debug("\t| Global mem    | %10u | %10u |\n", 
+		SI_EMU_GLOBAL_MEMORY_START, 0xFFFFFFFFU);
+	si_isa_debug("\t-------------------------------------------\n");
+	si_isa_debug("\n");
+
+	/* Dump SREG initialization */
 	unsigned int userElementCount = 
 		kernel->bin_file->enc_dict_entry_southern_islands->
 		userElementCount;
 	struct si_bin_enc_user_element_t* userElements = 
 		kernel->bin_file->enc_dict_entry_southern_islands->
 		userElements;
+	si_isa_debug("Scalar register initialization prior to execution:\n");
+	si_isa_debug("\t-------------------------------------------\n");
+	si_isa_debug("\t|  Registers  |   Initialization Value    |\n");
+	si_isa_debug("\t-------------------------------------------\n");
 	for (int i = 0; i < userElementCount; i++)
 	{
 		if (userElements[i].dataClass == IMM_CONST_BUFFER)
 		{
-			si_isa_debug("s[%d:%d] <= IMM_CONST_BUFFER\n",
-				userElements[i].startUserReg,
-				userElements[i].startUserReg + 
-				userElements[i].userRegCount - 1);
+
+			if (userElements[i].userRegCount > 1)
+			{
+				/* FIXME Replace CB calculation with value
+				 * from CB table once it's implemented */
+				si_isa_debug("\t| SREG[%2d:%2d] |  CB%1d "
+					"desc   (%10u)  |\n", 
+					userElements[i].startUserReg,  
+					userElements[i].startUserReg + 
+					userElements[i].userRegCount - 1, 
+					userElements[i].apiSlot, 
+					SI_EMU_CALC_CB_ADDR(
+						userElements[i].apiSlot));  
+			}
+			else
+			{
+				/* FIXME Replace CB calculation with value
+				 * from CB table once it's implemented */
+				si_isa_debug("\t| SREG[%2d]    |  CB%1d "
+					"desc   (%10u)  |\n", 
+					userElements[i].startUserReg,  
+					userElements[i].apiSlot, 
+					SI_EMU_CALC_CB_ADDR(
+						userElements[i].apiSlot));  
+			}
 		}
 		else if (userElements[i].dataClass == IMM_UAV)
 		{
-			si_isa_debug("s[%d:%d] <= IMM_UAV\n",
-				userElements[i].startUserReg,
+			si_isa_debug("\t| SREG[%2d:%2d] |  UAV%-2d "
+				"desc (%10u)  |\n", 
+				userElements[i].startUserReg,  
 				userElements[i].startUserReg + 
-				userElements[i].userRegCount - 1);
+				userElements[i].userRegCount - 1, 
+				userElements[i].apiSlot, 
+				si_emu_get_uav_base_addr(
+					userElements[i].apiSlot));
 		}
 		else if (userElements[i].dataClass == 
 			PTR_CONST_BUFFER_TABLE)
 		{
-			si_isa_debug("s[%d:%d] <= "
-				"PTR_CONST_BUFFER_TABLE\n",
-				userElements[i].startUserReg,
+			si_isa_debug("\t| SREG[%2d:%2d] |  CONSTANT BUFFER "
+				"TABLE    |\n", 
+				userElements[i].startUserReg,  
 				userElements[i].startUserReg + 
 				userElements[i].userRegCount - 1);
 		}
 		else if (userElements[i].dataClass == PTR_UAV_TABLE)
 		{
-			si_isa_debug("s[%d:%d] <= PTR_UAV_TABLE\n",
-				userElements[i].startUserReg,
+			si_isa_debug("\t| SREG[%2d:%2d] |  UAV "
+				"TABLE                |\n", 
+				userElements[i].startUserReg,  
 				userElements[i].startUserReg + 
 				userElements[i].userRegCount - 1);
 		}
-		else if (userElements[i].dataClass == 
-			PTR_INTERNAL_GLOBAL_TABLE)
+		else 
 		{
-			si_isa_debug("s[%d:%d] <= PTR_INTERNAL_GLOBAL_TABLE\n",
-				userElements[i].startUserReg,
-				userElements[i].startUserReg + 
-				userElements[i].userRegCount - 1);
-		}
-		else
-		{
-			fatal("Unimplemented User Element: "
-				"dataClass:%d", 
-				userElements[i].dataClass);
+			assert(0);
 		}
 	}
+	si_isa_debug("\t-------------------------------------------\n");
+	si_isa_debug("\n");
+
+	/* Dump constant buffer 1 (argument mapping) */
+	si_isa_debug("Constant buffer 1 initialization (kernel arguments):\n");
+	si_isa_debug("\t-------------------------------------------\n");
+	si_isa_debug("\t| CB1 Idx | Arg # |   Size   |    Name    |\n");
+	si_isa_debug("\t-------------------------------------------\n");
+	for (i = 0; i < list_count(kernel->arg_list); i++)
+	{
+		arg = list_get(kernel->arg_list, i);
+		assert(arg);
+
+		/* Check that argument was set */
+		if (!arg->set)
+		{
+			fatal("kernel '%s': argument '%s' has not been "
+				"assigned with 'clKernelSetArg'.",
+				kernel->name, arg->name);
+		}
+
+		/* Process argument depending on its type */
+		switch (arg->kind)
+		{
+
+		case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
+		{
+			/* Value copied directly into device constant 
+			 * memory */
+			assert(arg->size);
+			si_isa_debug("\t| CB1[%2d] | %5d | %8d | %-10s |\n", 
+				arg->pointer.constant_offset/4, i, arg->size,
+				arg->name);
+
+			break;
+		}
+
+		case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
+		{
+			if (arg->pointer.mem_type != 
+				SI_OPENCL_KERNEL_ARG_MEM_TYPE_HW_LOCAL)
+			{
+				si_isa_debug("\t| CB1[%2d] | %5d | %8d | %-10s"
+					" |\n", arg->pointer.constant_offset/4,
+					i, arg->size,
+					arg->name);
+			}
+			else
+			{
+				assert(0);
+			}
+			break;
+		}
+
+		case SI_OPENCL_KERNEL_ARG_KIND_IMAGE:
+		{
+			assert(0);
+			break;
+		}
+
+		case SI_OPENCL_KERNEL_ARG_KIND_SAMPLER:
+		{
+			assert(0);
+			break;
+		}
+
+		default:
+		{
+			fatal("%s: argument type not reconized", 
+				__FUNCTION__);
+		}
+
+		}
+	}	
+	si_isa_debug("\t-------------------------------------------\n");
 	si_isa_debug("\n");
 
 	/* Dump constant buffers */
-	for (i = 0; i < CONSTANT_BUFFERS; i++)
+	si_isa_debug("Constant buffer mappings into global memory:\n");
+	si_isa_debug("\t--------------------------------------\n");
+	si_isa_debug("\t|  CB  |        Address Range        |\n");
+	si_isa_debug("\t--------------------------------------\n");
+	for (i = 0; i < si_emu_num_mapped_const_buffers; i++)
 	{
-		si_isa_debug("CB[%d] mapped to address range %d:%d\n", i,
-			CONSTANT_MEMORY_START+i*CONSTANT_BUFFER_SIZE,
-			CONSTANT_MEMORY_START+(i+1)*CONSTANT_BUFFER_SIZE-1);
+		si_isa_debug("\t| CB%-2d |   [%10u:%10u]   |\n", i,
+			SI_EMU_CALC_CB_ADDR(i),
+			SI_EMU_CALC_CB_ADDR(i)+SI_EMU_CONSTANT_BUFFER_SIZE-1);
 	}
+	si_isa_debug("\t--------------------------------------\n");
 	si_isa_debug("\n");
 
-	/* Dump UAV list */
-	for (i = 0; i < list_count(ndrange->uav_list); i++)
+	/* Dump UAVs */
+	si_isa_debug("Initialized UAVs:\n");
+	si_isa_debug("\t-------------------------------------------\n");
+	si_isa_debug("\t|  UAV  |    Address   |    Arg Name      |\n");
+	si_isa_debug("\t-------------------------------------------\n");
+	for (i = 0; i < list_count(kernel->arg_list); i++)
 	{
-		/* Get the memory object for the buffer */
-		mem_obj = list_get(ndrange->uav_list, i);
+		arg = list_get(kernel->arg_list, i);
+		assert(arg);
 
-		/* Dump the start address of the buffer */
-		si_isa_debug("UAV[%d] mapped to address range %d:%d\n", i,
-			mem_obj->device_ptr, 
-			mem_obj->device_ptr + mem_obj->size - 1);
-	}
+		/* Check that argument was set */
+		if (!arg->set)
+		{
+			fatal("kernel '%s': argument '%s' has not been "
+				"assigned with 'clKernelSetArg'.",
+				kernel->name, arg->name);
+		}
+
+		/* Process argument depending on its type */
+		if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER &&
+			arg->pointer.mem_type != 
+			SI_OPENCL_KERNEL_ARG_MEM_TYPE_HW_LOCAL)
+		{
+			buf_desc = si_emu_get_uav_table_entry(
+				arg->pointer.buffer_num);
+
+			si_isa_debug("\t| UAV%-2d | %10u   |    %-12s  |\n",
+				arg->pointer.buffer_num, 
+				(unsigned int)buf_desc.base_addr,
+				arg->name);
+		}
+	}	
+	si_isa_debug("\t-------------------------------------------\n");
 	si_isa_debug("\n");
+	si_isa_debug("========================================================"
+		"\n");
 }

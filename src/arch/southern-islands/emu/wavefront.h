@@ -65,6 +65,7 @@ struct si_wavefront_t
 	unsigned int mem_wait : 1;
 	unsigned int barrier : 1;
 	unsigned int finished : 1;
+	unsigned int vector_mem_glc : 1;
 
 	/* Linked lists */
 	struct si_wavefront_t *running_list_next;
@@ -126,5 +127,7 @@ void si_wavefront_init_sreg_with_cb_table(struct si_wavefront_t *wavefront,
         int first_reg, int num_regs);
 void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
 	int first_reg, int num_regs);
+void si_wavefront_init_sreg_with_uav(struct si_wavefront_t *wavefront,
+	int first_reg, int num_regs, int uav);
 
 #endif
