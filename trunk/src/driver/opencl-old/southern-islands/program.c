@@ -130,7 +130,8 @@ void si_opencl_program_read_symbol(struct si_opencl_program_t *program, char *sy
 }
 
 
-void si_opencl_program_initialize_constant_buffers(struct si_opencl_program_t *program)
+void si_opencl_program_initialize_constant_buffers(
+	struct si_opencl_program_t *program)
 {
 	struct elf_file_t *elf_file;
 	struct elf_symbol_t *elf_symbol;
@@ -143,7 +144,8 @@ void si_opencl_program_initialize_constant_buffers(struct si_opencl_program_t *p
 
 	/* We can't tell how many constant buffers exist in advance, but we
 	 * know they should be enumerated, starting with '2'.  This loop
-	 * searches until a constant buffer matching the format is not found. */
+	 * searches until a constant buffer matching the format is not 
+	 * found. */
 	for (i = 2; i < 25; i++) 
 	{
 		/* Create string of symbol name */
@@ -159,9 +161,11 @@ void si_opencl_program_initialize_constant_buffers(struct si_opencl_program_t *p
 			elf_symbol->name, elf_symbol->size);
 
 		/* Read the elf symbol into a buffer */
-		si_opencl_program_read_symbol(program, elf_symbol->name, &elf_buffer);
+		si_opencl_program_read_symbol(program, elf_symbol->name, 
+			&elf_buffer);
 
-		/* Create a memory object and copy the constant buffer data to it */
+		/* Create a memory object and copy the constant buffer 
+		 * data to it */
 		mem = si_opencl_mem_create();
 		mem->type = 0;  /* FIXME */
 		mem->size = elf_buffer.size;
@@ -173,7 +177,8 @@ void si_opencl_program_initialize_constant_buffers(struct si_opencl_program_t *p
 		si_emu->global_mem_top += mem->size;
 
 		/* Copy constant buffer into device memory */
-		mem_write(si_emu->global_mem, mem->device_ptr, mem->size, elf_buffer.ptr);
+		mem_write(si_emu->global_mem, mem->device_ptr, mem->size, 
+			elf_buffer.ptr);
 
 		/* Add the memory object to the constant buffer list */
 		list_set(program->constant_buffer_list, i, mem);

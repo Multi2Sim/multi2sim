@@ -75,6 +75,8 @@ struct si_uop_t
 	unsigned int lds_write : 1;
 	unsigned int exec_mask_update : 1;
 
+	unsigned int glc : 1;
+
 	/* Timing */
 	long long cycle_created;    /* Cycle when fetch completes */
 	long long fetch_ready;      /* Cycle when fetch completes */

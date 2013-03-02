@@ -214,7 +214,7 @@ int si_opencl_api_run(struct x86_ctx_t *ctx)
 	assert(IN_RANGE(code, SI_OPENCL_FUNC_FIRST, SI_OPENCL_FUNC_LAST));
 	
 	/* Call function */
-	si_opencl_debug("%s\n", si_opencl_func_name[code - SI_OPENCL_FUNC_FIRST]);
+	si_opencl_debug("%s\n", si_opencl_func_name[code-SI_OPENCL_FUNC_FIRST]);
 	ret = si_opencl_func_impl[code - SI_OPENCL_FUNC_FIRST](ctx, argv);
 
 	/* Return OpencL result */
@@ -226,7 +226,7 @@ int si_opencl_api_run(struct x86_ctx_t *ctx)
  * of the x86 context stack and registers. The value returned by the function
  * is the OpenCL function code identified by register 'ebx'. */
 int si_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
-		void *argv_ptr, int argv_size)
+	void *argv_ptr, int argv_size)
 {
 	struct mem_t *mem = ctx->mem;
 	struct x86_regs_t *regs = ctx->regs;
@@ -238,9 +238,12 @@ int si_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
 
 	/* Read function code */
 	func_code = regs->ebx;
-	if (func_code < SI_OPENCL_FUNC_FIRST || func_code > SI_OPENCL_FUNC_LAST)
+	if (func_code < SI_OPENCL_FUNC_FIRST || 
+		func_code > SI_OPENCL_FUNC_LAST)
+	{
 		fatal("%s: invalid OpenCL function code - %d\n",
 			__FUNCTION__, func_code);
+	}
 
 	/* Get number of arguments */
 	argc = si_opencl_func_argc[func_code - SI_OPENCL_FUNC_FIRST];
@@ -258,9 +261,10 @@ int si_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
 }
 
 
-/* Set return value of an OpenCL API call. This needs to be done explicitly when
- * a context gets suspended during the execution of the OpenCL call, and later the
- * wake-up call-back routine finishes the OpenCL call execution. */
+/* Set return value of an OpenCL API call. This needs to be done explicitly 
+ * when a context gets suspended during the execution of the OpenCL call, 
+ * and later the wake-up call-back routine finishes the OpenCL call 
+ * execution. */
 void si_opencl_api_return(struct x86_ctx_t *ctx, int value)
 {
 	ctx->regs->eax = value;
@@ -286,20 +290,31 @@ int si_opencl_clGetPlatformIDs_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Check 'libm2s-opencl' version */
 	if (opencl_impl_version < si_SYS_OPENCL_IMPL_VERSION)
-		fatal("wrong Multi2Sim OpenCL library version (provided=%d.%d.%d, required=%d.%d.%d).\n%s",
-			opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build,
-			si_SYS_OPENCL_IMPL_VERSION_MAJOR, si_SYS_OPENCL_IMPL_VERSION_MINOR,
-			si_SYS_OPENCL_IMPL_VERSION_BUILD, si_err_opencl_version_note);
+	{
+		fatal("wrong Multi2Sim OpenCL library version "
+			"(provided=%d.%d.%d, required=%d.%d.%d).\n%s",
+			opencl_impl_version_major, opencl_impl_version_minor, 
+			opencl_impl_version_build, 
+			si_SYS_OPENCL_IMPL_VERSION_MAJOR, 
+			si_SYS_OPENCL_IMPL_VERSION_MINOR,
+			si_SYS_OPENCL_IMPL_VERSION_BUILD, 
+			si_err_opencl_version_note);
+	}
 	si_opencl_debug("  'libm2s-opencl' version: %d.%d.%d\n",
-		opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build);
+		opencl_impl_version_major, opencl_impl_version_minor, 
+		opencl_impl_version_build);
 
 	/* Get platform id */
-	si_opencl_debug("  num_entries=%d, platforms=0x%x, num_platforms=0x%x, version=0x%x\n",
-		num_entries, platforms, num_platforms, opencl_impl_version);
+	si_opencl_debug("  num_entries=%d, platforms=0x%x, "
+		"num_platforms=0x%x, version=0x%x\n", num_entries, platforms, 
+		num_platforms, opencl_impl_version);
 	if (num_platforms)
 		mem_write(ctx->mem, num_platforms, 4, &one);
 	if (platforms && num_entries > 0)
-		mem_write(ctx->mem, platforms, 4, &si_emu->opencl_platform->id);
+	{
+		mem_write(ctx->mem, platforms, 4, 
+			&si_emu->opencl_platform->id);
+	}
 	
 	/* Return success */
 	return 0;
@@ -323,7 +338,8 @@ int si_opencl_clGetPlatformInfo_impl(struct x86_ctx_t *ctx, int *argv)
 	struct si_opencl_platform_t *platform;
 	unsigned int size_ret;
 
-	si_opencl_debug("  platform=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
+	si_opencl_debug("  platform=0x%x, param_name=0x%x, "
+		"param_value_size=0x%x,\n"
 		"  param_value=0x%x, param_value_size_ret=0x%x\n",
 		platform_id, param_name, param_value_size, param_value,
 		param_value_size_ret);
@@ -371,8 +387,8 @@ int si_opencl_clGetDeviceIDs_impl(struct x86_ctx_t *ctx, int *argv)
 	/* Return 'id' of the only existing device */
 	if (devices && num_entries > 0)
 	{
-		device = si_opencl_repo_get_object_of_type(si_emu->opencl_repo,
-			si_opencl_object_device);
+		device = si_opencl_repo_get_object_of_type(
+			si_emu->opencl_repo, si_opencl_object_device);
 		if (!device)
 			panic("%s: no device", __FUNCTION__);
 		mem_write(ctx->mem, devices, 4, &device->id);
@@ -400,7 +416,8 @@ int si_opencl_clGetDeviceInfo_impl(struct x86_ctx_t *ctx, int *argv)
 	struct si_opencl_device_t *device;
 	unsigned int size_ret;
 
-	si_opencl_debug("  device=0x%x, param_name=0x%x, param_value_size=%d\n"
+	si_opencl_debug("  device=0x%x, param_name=0x%x, "
+			"param_value_size=%d\n"
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			device_id, param_name, param_value_size, param_value,
 			param_value_size_ret);
@@ -441,7 +458,8 @@ int si_opencl_clCreateContext_impl(struct x86_ctx_t *ctx, int *argv)
 
 	si_opencl_debug("  properties=0x%x, num_devices=%d, devices=0x%x\n"
 			"pfn_notify=0x%x, user_data=0x%x, errcode_ret=0x%x\n",
-			properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
+			properties, num_devices, devices, pfn_notify, 
+			user_data, errcode_ret);
 	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(pfn_notify, 0);
 	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 	SI_OPENCL_ARG_NOT_SUPPORTED_EQ(devices, 0);
@@ -451,7 +469,10 @@ int si_opencl_clCreateContext_impl(struct x86_ctx_t *ctx, int *argv)
 	device = si_opencl_repo_get_object(si_emu->opencl_repo,
 			si_opencl_object_device, device_id);
 	if (!device)
-		fatal("%s: invalid device\n%s", __FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: invalid device\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 
 	/* Create context and return id */
 	context = si_opencl_context_create();
@@ -486,9 +507,11 @@ int si_opencl_clCreateContextFromType_impl(struct x86_ctx_t *ctx, int *argv)
 
 	int zero = 0;
 
-	si_opencl_debug("  properties=0x%x, device_type=0x%x, pfn_notify=0x%x,\n"
+	si_opencl_debug("  properties=0x%x, device_type=0x%x, "
+			"pfn_notify=0x%x,\n"
 			"  user_data=0x%x, errcode_ret=0x%x\n",
-			properties, device_type, pfn_notify, user_data, errcode_ret);
+			properties, device_type, pfn_notify, user_data, 
+			errcode_ret);
 	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(pfn_notify, 0);
 
 	/* Get device */
@@ -553,9 +576,11 @@ int si_opencl_clGetContextInfo_impl(struct x86_ctx_t *ctx, int *argv)
 	struct si_opencl_context_t *context;
 	unsigned int size_ret = 0;
 
-	si_opencl_debug("  context=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
+	si_opencl_debug("  context=0x%x, param_name=0x%x, "
+			"param_value_size=0x%x,\n"
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
-			context_id, param_name, param_value_size, param_value, param_value_size_ret);
+			context_id, param_name, param_value_size, param_value,
+			param_value_size_ret);
 
 	context = si_opencl_repo_get_object(si_emu->opencl_repo,
 		si_opencl_object_context, context_id);
@@ -586,12 +611,15 @@ int si_opencl_clCreateCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
 
 	int zero = 0;
 
-	si_opencl_debug("  context=0x%x, device=0x%x, properties=0x%x, errcode_ret=0x%x\n",
-			context_id, device_id, properties, errcode_ret);
+	si_opencl_debug("  context=0x%x, device=0x%x, properties=0x%x, "
+		"errcode_ret=0x%x\n", context_id, device_id, properties, 
+		errcode_ret);
 
 	/* Check that context and device are valid */
-	si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_context, context_id);
-	si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_device, device_id);
+	si_opencl_repo_get_object(si_emu->opencl_repo, 
+		si_opencl_object_context, context_id);
+	si_opencl_repo_get_object(si_emu->opencl_repo, 
+		si_opencl_object_device, device_id);
 
 	/* Create command queue and return id */
 	command_queue = si_opencl_command_queue_create();
@@ -692,20 +720,31 @@ int si_opencl_clCreateBuffer_impl(struct x86_ctx_t *ctx, int *argv)
 	int zero = 0;
 	void *buf;
 
-	str_map_flags(&create_buffer_flags_map, flags, flags_str, sizeof(flags_str));
-	si_opencl_debug("  context=0x%x, flags=%s, size=%d, host_ptr=0x%x, errcode_ret=0x%x\n",
-			context_id, flags_str, size, host_ptr, errcode_ret);
+	str_map_flags(&create_buffer_flags_map, flags, flags_str, 
+		sizeof(flags_str));
+	si_opencl_debug("  context=0x%x, flags=%s, size=%d, host_ptr=0x%x, "
+		"errcode_ret=0x%x\n", context_id, flags_str, size, host_ptr, 
+		errcode_ret);
 
 	/* Check flags */
 	if ((flags & 0x10) && host_ptr)
-		fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with CL_MEM_USE_HOST_PTR\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with "
+			"CL_MEM_USE_HOST_PTR\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 	if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
-		fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' "
+			"!= NULL\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 	if ((flags & 0x20) && !host_ptr)  /* CL_MEM_COPY_HOST_PTR */
-		fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' "
+			"!= NULL\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 
 	/* Create memory object */
 	mem = si_opencl_mem_create();
@@ -783,23 +822,34 @@ int si_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 	channel_order = image_format.image_channel_order;
 	channel_type = image_format.image_channel_data_type;
 
-	str_map_flags(&si_opencl_create_image_flags_map, flags, flags_str, sizeof(flags_str));
+	str_map_flags(&si_opencl_create_image_flags_map, flags, flags_str, 
+		sizeof(flags_str));
 	si_opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, "
 		"channel_type=0x%x, image_width=%u, image_height=%u, "
 		"image_row_pitch=%u, host_ptr=0x%x, errcode_ret=0x%x\n",
-		context_id, flags_str, channel_order, channel_type, image_width,
-		image_height, image_row_pitch, host_ptr, errcode_ret_ptr);
+		context_id, flags_str, channel_order, channel_type, 
+		image_width, image_height, image_row_pitch, host_ptr, 
+		errcode_ret_ptr);
 
 	/* Check flags */
 	if ((flags & 0x10) && host_ptr)
-		fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with CL_MEM_USE_HOST_PTR\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with "
+			"CL_MEM_USE_HOST_PTR\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 	if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
-		fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' "
+			"!= NULL\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 	if ((flags & 0x20) && !host_ptr)  /* CL_MEM_COPY_HOST_PTR */
-		fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' "
+			"!= NULL\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 
 	/* Evaluate image channel order */
 	switch(channel_order)
@@ -818,7 +868,8 @@ int si_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 
 	default:
 		fatal("%s: image channel order %u not supported\n%s",
-			__FUNCTION__, channel_order, si_err_opencl_param_note);
+			__FUNCTION__, channel_order, 
+			si_err_opencl_param_note);
 	}
 
 	/* Evaluate image channel type */
@@ -850,8 +901,9 @@ int si_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 	}
 	else if (image_row_pitch < image_width*pixel_size)
 	{
-		fatal("%s: image_row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
-				__FUNCTION__, si_err_opencl_param_note);
+		fatal("%s: image_row_pitch must be 0 or >= image_width "
+			"* size of element in bytes\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
 	}
 
 	/* Create memory object */
@@ -871,7 +923,8 @@ int si_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 	/* Assign position in device global memory */
 	mem->device_ptr = si_emu->global_mem_top;
 	si_emu->global_mem_top += size;
-	si_opencl_debug("  creating device ptr at %u, for %u bytes\n", mem->device_ptr, size);
+	si_opencl_debug("  creating device ptr at %u, for %u bytes\n", 
+		mem->device_ptr, size);
 
 	/* If 'host_ptr' was specified, copy image into device memory */
 	if (host_ptr)
@@ -932,24 +985,37 @@ int si_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 	channel_order = image_format.image_channel_order;
 	channel_type = image_format.image_channel_data_type;
 
-	str_map_flags(&si_opencl_create_image_flags_map, flags, flags_str, sizeof(flags_str));
-	si_opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, channel_type=0x%x\n"
-			"  image_width=%u, image_height=%u, image_depth=%u\n"
-			"  image_row_pitch=%u, image_slice_pitch=%u, host_ptr=0x%x\n"
-			"  errcode_ret=0x%x\n",
-			context_id, flags_str, channel_order, channel_type, image_width, image_height, image_depth, 
-			image_row_pitch, image_slice_pitch, host_ptr, errcode_ret_ptr);
+	str_map_flags(&si_opencl_create_image_flags_map, flags, flags_str, 
+		sizeof(flags_str));
+	si_opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, "
+		"channel_type=0x%x\n"
+		"  image_width=%u, image_height=%u, image_depth=%u\n"
+		"  image_row_pitch=%u, image_slice_pitch=%u, host_ptr=0x%x\n"
+		"  errcode_ret=0x%x\n",
+		context_id, flags_str, channel_order, channel_type, 
+		image_width, image_height, image_depth, 
+		image_row_pitch, image_slice_pitch, host_ptr, 
+		errcode_ret_ptr);
 
 	/* Check flags */
 	if ((flags & 0x10) && host_ptr)
-		fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with CL_MEM_USE_HOST_PTR\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with "
+			"CL_MEM_USE_HOST_PTR\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 	if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
-		fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' "
+			"!= NULL\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 	if ((flags & 0x20) && !host_ptr)  /* CL_MEM_COPY_HOST_PTR */
-		fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' "
+			"!= NULL\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 
 	/* Evaluate image channel order */
 	switch(channel_order)
@@ -969,7 +1035,8 @@ int si_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 
 	default:
 		fatal("%s: image channel order %u not supported\n%s",
-				__FUNCTION__, channel_order, si_err_opencl_param_note);
+			__FUNCTION__, channel_order, 
+			si_err_opencl_param_note);
 	}
 
 	/* Evaluate image channel type */
@@ -990,21 +1057,23 @@ int si_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 
 	default:
 		fatal("%s: image channel type %u not supported\n%s",
-				__FUNCTION__, channel_type, si_err_opencl_param_note);
+			__FUNCTION__, channel_type, si_err_opencl_param_note);
 	}
 
 	/* Determine image geometry */
 	if (image_row_pitch == 0)
 		image_row_pitch = image_width*pixel_size;
 	else if (image_row_pitch < image_width*pixel_size)
-		fatal("%s: image_row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
-				__FUNCTION__, si_err_opencl_param_note);
+		fatal("%s: image_row_pitch must be 0 or >= "
+			"image_width * size of element in bytes\n%s", 
+			__FUNCTION__, si_err_opencl_param_note);
 
 	if (image_slice_pitch == 0)
 		image_slice_pitch = image_row_pitch*image_height;
 	else if (image_slice_pitch < image_row_pitch*image_height)
-		fatal("%s: image_slice_pitch must be 0 or >= image_row_pitch * image_height\n%s", 
-				__FUNCTION__, si_err_opencl_param_note);
+		fatal("%s: image_slice_pitch must be 0 or >= "
+			"image_row_pitch * image_height\n%s", 
+			__FUNCTION__, si_err_opencl_param_note);
 
 	/* Create memory object */
 	size = image_slice_pitch*image_depth;
@@ -1056,8 +1125,8 @@ int si_opencl_clRetainMemObject_impl(struct x86_ctx_t *ctx, int *argv)
 	struct si_opencl_mem_t *mem;
 
 	si_opencl_debug("  memobj=0x%x\n", mem_id);
-	mem = si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_mem,
-			mem_id);
+	mem = si_opencl_repo_get_object(si_emu->opencl_repo, 
+		si_opencl_object_mem, mem_id);
 
 	/* Increase the reference count */
 	++mem->ref_count;
@@ -1080,7 +1149,8 @@ int si_opencl_clReleaseMemObject_impl(struct x86_ctx_t *ctx, int *argv)
 	struct si_opencl_mem_t *mem;
 
 	si_opencl_debug("  memobj=0x%x\n", mem_id);
-	mem = si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_mem, mem_id);
+	mem = si_opencl_repo_get_object(si_emu->opencl_repo, 
+		si_opencl_object_mem, mem_id);
 
 	/* Release object */
 	assert(mem->ref_count > 0);
@@ -1214,8 +1284,10 @@ int si_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Get device and context */
 	mem_read(ctx->mem, device_list, 4, &device_id);
-	si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_device, device_id);
-	si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_context, context_id);
+	si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_device,
+		device_id);
+	si_opencl_repo_get_object(si_emu->opencl_repo, 
+		si_opencl_object_context, context_id);
 
 	/* Create program */
 	program = si_opencl_program_create();
@@ -1234,7 +1306,8 @@ int si_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 	snprintf(name, sizeof(name), "clProgram<%d>.externalELF", program->id);
 	program->elf_file = elf_file_create_from_buffer(buf, length, name);
 
-	/* Search ELF binary to see if there are any constant buffers encoded inside */
+	/* Search ELF binary to see if there are any constant buffers 
+	 * encoded inside */
 	si_opencl_program_initialize_constant_buffers(program);
 
 	free(buf);
@@ -1321,18 +1394,24 @@ int si_opencl_clBuildProgram_impl(struct x86_ctx_t *ctx, int *argv)
 
 	options_str[0] = 0;
 	if (options)
-		mem_read_string(ctx->mem, options, MAX_STRING_SIZE, options_str);
+	{
+		mem_read_string(ctx->mem, options, MAX_STRING_SIZE, 
+			options_str);
+	}
 
-	si_opencl_debug("  program=0x%x, num_devices=%d, device_list=0x%x, options=0x%x\n"
+	si_opencl_debug("  program=0x%x, num_devices=%d, device_list=0x%x, " 
+			"options=0x%x\n"
 			"  pfn_notify=0x%x, user_data=0x%x, options='%s'\n",
-			program_id, num_devices, device_list, options, pfn_notify,
-			user_data, options_str);
+			program_id, num_devices, device_list, options, 
+			pfn_notify, user_data, options_str);
 	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(pfn_notify, 0);
 	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(user_data, 0);
 	if (options_str[0])
+	{
 		warning("%s: clBuildProgram: option string '%s' ignored\n",
 				__FUNCTION__, options_str);
+	}
 
 	/* Get program */
 	program = si_opencl_repo_get_object(si_emu->opencl_repo,
@@ -1373,8 +1452,11 @@ int si_opencl_clCreateKernel_impl(struct x86_ctx_t *ctx, int *argv)
 
 	si_opencl_debug("  program=0x%x, kernel_name=0x%x, errcode_ret=0x%x\n",
 			program_id, kernel_name, errcode_ret);
-	if (mem_read_string(ctx->mem, kernel_name, MAX_STRING_SIZE, kernel_name_str) == MAX_STRING_SIZE)
+	if (mem_read_string(ctx->mem, kernel_name, MAX_STRING_SIZE, 
+		kernel_name_str) == MAX_STRING_SIZE)
+	{
 		fatal("%s: 'kernel_name' string is too long", __FUNCTION__);
+	}
 	si_opencl_debug("    kernel_name='%s'\n", kernel_name_str);
 
 	/* Get program */
@@ -1382,13 +1464,16 @@ int si_opencl_clCreateKernel_impl(struct x86_ctx_t *ctx, int *argv)
 			si_opencl_object_program, program_id);
 
 	/* Create the kernel */
-	kernel = si_opencl_kernel_create();
+	kernel = si_opencl_kernel_create(kernel_name_str);
 	kernel->program_id = program_id;
 
 	/* Program must be built */
 	if (!program->elf_file)
-		fatal("%s: program should be first built with clBuildProgram.\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+	{
+		fatal("%s: program should be first built with "
+			"clBuildProgram.\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 
 	/* Load kernel */
 	si_opencl_kernel_load(kernel, kernel_name_str);
@@ -1452,42 +1537,81 @@ int si_opencl_clSetKernelArg_impl(struct x86_ctx_t *ctx, int *argv)
 	struct si_opencl_kernel_t *kernel;
 	struct si_opencl_kernel_arg_t *arg;
 
-	si_opencl_debug("  kernel_id=0x%x, arg_index=%d, arg_size=%d, arg_value=0x%x\n",
-			kernel_id, arg_index, arg_size, arg_value);
+	si_opencl_debug("  kernel_id=0x%x, arg_index=%d, arg_size=%d, "
+		"arg_value=0x%x\n", kernel_id, arg_index, arg_size, arg_value);
 
 	/* Check */
 	kernel = si_opencl_repo_get_object(si_emu->opencl_repo,
 			si_opencl_object_kernel, kernel_id);
-	if (arg_value)
-		SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(arg_size, 4);
 	if (arg_index >= list_count(kernel->arg_list))
 		fatal("%s: argument index out of bounds.\n%s", __FUNCTION__,
-				si_err_opencl_param_note);
+			si_err_opencl_param_note);
 
-	/* Copy to kernel object */
+	if (arg_size >= SI_OPENCL_KERNEL_ARG_MAX_SIZE)
+		fatal("%s: kernel argument is too large.\n%s", __FUNCTION__,
+			si_err_opencl_param_note);
+
+	/* XXX Need to implement as described in Metadata.pdf */
+	/* 1) Scalar arguments are stored in CB1 at offset specified by
+	 *    metadata.  If the argument is over 4-bytes, it gets stored in
+	 *    successive elements of the vector register.  16-byte aligned.
+	 * 2) 32-bit pointer arguments store the offset into the memory space
+	 *    in the first 4-bytes (VERIFY with descriptors). 16-byte aligned.
+	 * 3) 64-bit pointers are the same as 32-bit, except that the upper
+	 *    32-bits are stored in the second 32-bits of the CB.
+	 * 4) Aggregate arguments (structs and unions) are similar to scalar
+	 *    arguments.
+	 */
+
+	/* Copy to kernel argument to OpenCL structure */
 	arg = list_get(kernel->arg_list, arg_index);
 	assert(arg);
 	arg->set = 1;
-	arg->size = arg_size;
+
 	if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_VALUE)
 	{
 		assert(arg_value);
-		mem_read(ctx->mem, arg_value, arg_size, &arg->data.value[0]);
+		mem_read(ctx->mem, arg_value, arg_size, 
+			&arg->value.value[0]);
 	}
-	else 
+	else if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER)
 	{
-		/* Pointer type */
-		if (arg->mem_scope != SI_OPENCL_MEM_SCOPE_LOCAL)
+		/* Global memory that we know how to handle */
+		if ((arg->pointer.mem_type == 
+			SI_OPENCL_KERNEL_ARG_MEM_TYPE_GLOBAL) ||
+			(arg->pointer.mem_type == 
+			SI_OPENCL_KERNEL_ARG_MEM_TYPE_UAV) || 
+			(arg->pointer.mem_type == 
+			SI_OPENCL_KERNEL_ARG_MEM_TYPE_HW_CONSTANT))
+
 		{
 			assert(arg_size == 4);
-			mem_read(ctx->mem, arg_value, arg_size, &arg->data.ptr);
+			mem_read(ctx->mem, arg_value, arg_size, 
+				&arg->pointer.mem_obj_id);
+		}
+		/* Local memory */
+		else if (arg->pointer.mem_type == 
+			SI_OPENCL_KERNEL_ARG_MEM_TYPE_HW_LOCAL)
+		{
+			if (arg_value)
+			{
+				/* If OpenCL argument scope is __local, 
+				 * argument value must be NULL */
+				fatal("%s: value for local arguments must "
+					"be NULL.\n%s", __FUNCTION__, 
+					si_err_opencl_param_note);
+			}
+
+			/* Do nothing */
+		}
+		/* Types that we don't know how to handle yet */
+		else
+		{
+			fatal("%s: Unexpected mem type.\n%s", __FUNCTION__,
+			si_err_opencl_param_note);
 		}
 	}
 
-	/* If OpenCL argument scope is __local, argument value must be NULL */
-	if (arg->mem_scope == SI_OPENCL_MEM_SCOPE_LOCAL && arg_value)
-		fatal("%s: value for local arguments must be NULL.\n%s", __FUNCTION__,
-				si_err_opencl_param_note);
 
 	/* Return success */
 	return 0;
@@ -1923,7 +2047,8 @@ void si_opencl_clEnqueueWriteBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	/* Copy buffer from host memory to device memory */
 	buf = xmalloc(argv.cb);
 	mem_read(ctx->mem, argv.ptr, argv.cb, buf);
-	mem_write(si_emu->global_mem, mem->device_ptr + argv.offset, argv.cb, buf);
+	mem_write(si_emu->global_mem, mem->device_ptr + argv.offset, 
+		argv.cb, buf);
 	free(buf);
 
 	/* Event */
@@ -1967,7 +2092,7 @@ int si_opencl_clEnqueueWriteBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 
 	/* Get command queue */
 	command_queue = si_opencl_repo_get_object(si_emu->opencl_repo,
-			si_opencl_object_command_queue, argv->command_queue);
+		si_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
 	x86_ctx_suspend(ctx, si_opencl_command_queue_can_wakeup, command_queue,
@@ -2019,13 +2144,19 @@ void si_opencl_clEnqueueCopyBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 			si_opencl_object_mem, argv.dst_buffer);
 
 	/* Check that device buffer storage is not exceeded */
-	if (argv.src_offset + argv.cb > src_mem->size || argv.dst_offset + argv.cb > dst_mem->size)
-		fatal("%s: buffer storage exceeded\n%s", __FUNCTION__, si_err_opencl_param_note);
+	if (argv.src_offset + argv.cb > src_mem->size || 
+		argv.dst_offset + argv.cb > dst_mem->size)
+	{
+		fatal("%s: buffer storage exceeded\n%s", __FUNCTION__, 
+			si_err_opencl_param_note);
+	}
 
 	/* Copy buffers */
 	buf = xmalloc(argv.cb);
-	mem_read(si_emu->global_mem, src_mem->device_ptr + argv.src_offset, argv.cb, buf);
-	mem_write(si_emu->global_mem, dst_mem->device_ptr + argv.dst_offset, argv.cb, buf);
+	mem_read(si_emu->global_mem, src_mem->device_ptr + argv.src_offset, 
+		argv.cb, buf);
+	mem_write(si_emu->global_mem, dst_mem->device_ptr + argv.dst_offset, 
+		argv.cb, buf);
 	free(buf);
 
 	/* Event */
@@ -2448,20 +2579,19 @@ struct si_opencl_clEnqueueNDRangeKernel_args_t
 void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 {
 	struct si_opencl_clEnqueueNDRangeKernel_args_t argv;
-
 	struct si_opencl_kernel_t *kernel;
 	struct si_opencl_event_t *event = NULL;
 	struct si_opencl_kernel_arg_t *arg;
-	struct si_opencl_mem_t *mem;
-
 	struct si_opencl_command_queue_t *command_queue;
 	struct si_opencl_command_t *task;
-
 	struct si_ndrange_t *ndrange;
 	int global_size3[3];
 	int local_size3[3];
 
 	struct elf_buffer_t *elf_buffer;
+
+	struct si_buffer_desc_t buf_desc;
+
 
 	int code;
 	int i;
@@ -2479,20 +2609,20 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	global_size3[2] = 1;
 	for (i = 0; i < argv.work_dim; i++)
 	{
-		mem_read(ctx->mem, argv.global_work_size_ptr + i * 4, 4, &global_size3[i]);
+		mem_read(ctx->mem, argv.global_work_size_ptr + i * 4, 4, 
+			&global_size3[i]);
 	}
 
 	/* Local work sizes.
-	 * If no pointer provided, assign the same as global size - FIXME: can be done better. */
+	 * If no pointer provided, assign the same as global size 
+	 * FIXME: can be done better. */
 	memcpy(local_size3, global_size3, 12);
 	if (argv.local_work_size_ptr)
 	{
 		for (i = 0; i < argv.work_dim; i++)
 		{
-			mem_read(ctx->mem, argv.local_work_size_ptr + i * 4, 4, &local_size3[i]);
-			if (local_size3[i] < 1)
-				fatal("%s: local work size must be greater than 0.\n%s",
-						__FUNCTION__, si_err_opencl_param_note);
+			mem_read(ctx->mem, argv.local_work_size_ptr + i * 4, 
+				4, &local_size3[i]);
 		}
 	}
 
@@ -2517,7 +2647,8 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 
 	/* Set up instruction memory */
 	/* Initialize wavefront instruction buffer and PC */
-	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer;
+	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->
+		sec_text_buffer;
 	if (!elf_buffer->size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
 	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
@@ -2527,7 +2658,8 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	{
 		arg = list_get(kernel->arg_list, i);
 
-		/* If argument is an image, add it to the appropriate UAV list */
+		/* If argument is an image, add it to the appropriate 
+		 * UAV list */
 		if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_IMAGE)
 		{
 			/*FIXME*/
@@ -2536,28 +2668,38 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 			mem = si_opencl_repo_get_object(si_emu->opencl_repo,
 					si_opencl_object_mem, arg->value);
 
-			if (arg->access_type == SI_OPENCL_KERNEL_ARG_READ_ONLY)
-				list_set(kernel->uav_read_list, arg->uav, mem);
-			else if (arg->access_type == SI_OPENCL_KERNEL_ARG_WRITE_ONLY)
-				list_set(kernel->uav_write_list, arg->uav, mem);
+			if (arg->access_type == 
+				SI_OPENCL_KERNEL_ARG_READ_ONLY)
+			{
+				list_set(kernel->uav_read_list, arg->uav, 
+					mem);
+			}
+			else if (arg->access_type == 
+				SI_OPENCL_KERNEL_ARG_WRITE_ONLY)
+			{
+				list_set(kernel->uav_write_list, arg->uav,
+			       		mem);
+			}
 			else
-				fatal("%s: unsupported image access type (%d)\n", __FUNCTION__,
-						arg->access_type);
+			{
+				fatal("%s: unsupported image access type "
+					"(%d)\n", __FUNCTION__,
+					arg->access_type);
+			}
 			*/
 		}
 
 		/* Add the uav to the UAV list. */
 		if(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER)
 		{
-			if (arg->mem_scope != SI_OPENCL_MEM_SCOPE_LOCAL)
+			if (arg->pointer.mem_type == 
+				SI_OPENCL_KERNEL_ARG_MEM_TYPE_UAV)
 			{
-				mem = si_opencl_repo_get_object(si_emu->opencl_repo,
-						si_opencl_object_mem, arg->data.ptr);
-				list_add(ndrange->uav_list, mem);
+				buf_desc = si_emu_create_buffer_desc(arg);
+				si_emu_insert_into_uav_table(buf_desc, arg);
 			}
 		}
 	}
-	si_ndrange_init_uav_table(ndrange);
 
 	/* Debugging */
 	si_ndrange_dump_initialized_state(ndrange);
@@ -2565,15 +2707,17 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	/* Save in kernel */
 	kernel->ndrange = ndrange;
 
-	/* Set ND-Range status to 'pending'. This makes it immediately a candidate for
-	 * execution, whether we have functional or detailed simulation. */
+	/* Set ND-Range status to 'pending'. This makes it immediately a 
+	 * candidate for execution, whether we have functional or 
+	 * detailed simulation. */
 	si_ndrange_set_status(ndrange, si_ndrange_pending);
 
 	/* Associate NDRange event */
 	ndrange->event = event;
 
 	/* Create command queue task */
-	task = si_opencl_command_create(si_opencl_command_queue_task_ndrange_kernel);
+	task = si_opencl_command_create(
+		si_opencl_command_queue_task_ndrange_kernel);
 	task->u.ndrange_kernel.ndrange = ndrange;
 
 	/* Enqueue task */

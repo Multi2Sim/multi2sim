@@ -23,10 +23,13 @@
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
 #include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/context.h>
 #include <driver/opencl-old/southern-islands/device.h>
 #include <driver/opencl-old/southern-islands/platform.h>
 #include <driver/opencl-old/southern-islands/repo.h>
+#include <driver/opencl-old/southern-islands/kernel.h>
+#include <driver/opencl-old/southern-islands/mem.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -37,13 +40,12 @@
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
-#include <arch/southern-islands/emu/emu.h>
-#include <arch/southern-islands/emu/isa.h>
-#include <arch/southern-islands/emu/ndrange.h>
-#include <arch/southern-islands/emu/opengl-bin-file.h>
-#include <arch/southern-islands/emu/wavefront.h>
-#include <arch/southern-islands/emu/work-group.h>
-#include <arch/southern-islands/timing/gpu.h>
+#include "emu.h"
+#include "isa.h"
+#include "ndrange.h"
+#include "opengl-bin-file.h"
+#include "wavefront.h"
+#include "work-group.h"
 
 
 /*
@@ -67,7 +69,7 @@ FILE *si_emu_report_file = NULL;
 
 int si_emu_wavefront_size = 64;
 
-
+int si_emu_num_mapped_const_buffers = 2;  /* CB0, CB1 by default */
 
 
 
@@ -102,7 +104,7 @@ void si_emu_init()
 	si_emu->global_mem = mem_create();
 	si_emu->global_mem->safe = 0;
 
-	si_emu->global_mem_top = GLOBAL_MEMORY_START;
+	si_emu->global_mem_top = SI_EMU_GLOBAL_MEMORY_START;
 
 	/* Initialize disassembler (decoding tables...) */
 	si_disasm_init();
@@ -367,4 +369,202 @@ int si_emu_run(void)
 
 	/* Return TRUE */
 	return 1;
+}
+
+struct si_buffer_desc_t si_emu_create_buffer_desc(
+	struct si_opencl_kernel_arg_t *arg)
+{
+	struct si_buffer_desc_t buf_desc;
+	struct si_opencl_mem_t *mem_obj;
+
+	enum si_opencl_kernel_arg_data_type_t data_type;
+
+	int num_elems;	
+
+	int num_format = -1;
+	int data_format = -1;
+	int elem_size;
+
+	assert(sizeof(buf_desc) == 16);
+	assert(arg);
+
+	/* Zero-out the buffer resource descriptor */
+	memset(&buf_desc, 0, 16);
+
+	num_format = SI_BUF_DESC_DATA_FMT_INVALID;
+	data_format = SI_BUF_DESC_DATA_FMT_INVALID;
+
+	num_elems = arg->pointer.num_elems;
+	data_type = arg->pointer.data_type;
+	
+	if (data_type == SI_OPENCL_KERNEL_ARG_DATA_TYPE_I8)
+	{
+		num_format = SI_BUF_DESC_NUM_FMT_SINT;
+		if (num_elems == 1)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_8;
+		}
+		else if (num_elems == 2)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_8_8;
+		}
+		else if (num_elems == 4)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_8_8_8_8;
+		}
+		elem_size = 1 * num_elems;
+	}
+	else if (data_type == SI_OPENCL_KERNEL_ARG_DATA_TYPE_I16)
+	{
+		num_format = SI_BUF_DESC_NUM_FMT_SINT;
+		if (num_elems == 1)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_16;
+		}
+		else if (num_elems == 2)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_16_16;
+		}
+		else if (num_elems == 4)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_16_16_16_16;
+		}
+		elem_size = 2 * num_elems;
+	}
+	else if (data_type == SI_OPENCL_KERNEL_ARG_DATA_TYPE_I32)
+	{
+		num_format = SI_BUF_DESC_NUM_FMT_SINT;
+		if (num_elems == 1)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32;
+		}
+		else if (num_elems == 2)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32;
+		}
+		else if (num_elems == 3)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
+		}
+		else if (num_elems == 4)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
+		}
+		elem_size = 4 * num_elems;
+	}
+	else if (data_type == SI_OPENCL_KERNEL_ARG_DATA_TYPE_FLOAT)
+	{
+		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
+		if (num_elems == 1)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32;
+		}
+		else if (num_elems == 2)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32;
+		}
+		else if (num_elems == 3)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
+		}
+		else if (num_elems == 4)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
+		}
+		elem_size = 4 * num_elems;
+	}
+	assert(num_format != -1); 
+	assert(data_format != -1);
+
+	assert(arg->pointer.mem_obj_id);
+	mem_obj = si_opencl_repo_get_object(si_emu->opencl_repo,
+		si_opencl_object_mem, arg->pointer.mem_obj_id);
+	/* FIXME I believe that base address should be 0 unless there is an
+	 * offset provided in one of the unknown metadata fields. 
+	 * However, I'm not completely sure how the UAV mapping works
+	 * (which should probably go in CB1), so we'll set the base
+	 * address here, and store 0 in CB1. */
+	buf_desc.base_addr = mem_obj->device_ptr;
+	buf_desc.num_format = num_format;
+	buf_desc.data_format = data_format;
+	buf_desc.elem_size = elem_size;
+
+	return buf_desc;
+}
+
+void si_emu_insert_into_uav_table(struct si_buffer_desc_t buf_desc,
+	struct si_opencl_kernel_arg_t *arg)
+{
+	unsigned int buffer_num;
+
+	assert(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER);
+	buffer_num = arg->pointer.buffer_num;
+
+	assert(buffer_num < SI_EMU_MAX_NUM_UAVS);
+	assert(SI_EMU_UAV_TABLE_START + buffer_num*32 <= 
+		SI_EMU_UAV_TABLE_START + SI_EMU_UAV_TABLE_SIZE - 32);
+
+	/* Write the buffer resource descriptor into the UAV at
+	 * 'buffer_num' offset */
+	mem_write(si_emu->global_mem, SI_EMU_UAV_TABLE_START + buffer_num*32,
+		sizeof(buf_desc), &buf_desc);
+
+	si_emu->valid_uav_list[buffer_num] = 1;
+}
+
+/* Store an entry in the UAV table */
+void si_emu_set_uav_table_entry(int uav, unsigned int addr)
+{
+	struct si_buffer_desc_t buf_desc;
+        memset(&buf_desc, 0, sizeof buf_desc);
+
+	assert(sizeof(struct si_buffer_desc_t) == 16);
+	assert(uav < SI_EMU_MAX_NUM_UAVS);  
+
+	/* NOTE This may be just an address instead of a resource
+	 * descriptor, but either way it should work */
+	buf_desc.base_addr = addr;
+
+        mem_write(si_emu->global_mem, SI_EMU_UAV_TABLE_START+uav*32, 16,
+                &buf_desc);
+
+	si_emu->valid_uav_list[uav] = 1;
+}
+
+/* Retrieve an entry in the UAV table */
+struct si_buffer_desc_t si_emu_get_uav_table_entry(int uav)
+{
+	struct si_buffer_desc_t buf_desc;
+        memset(&buf_desc, 0, sizeof buf_desc);
+
+	assert(uav < SI_EMU_MAX_NUM_UAVS);  
+	assert(si_emu->valid_uav_list[uav]);
+
+        mem_read(si_emu->global_mem, SI_EMU_UAV_TABLE_START+uav*32, 16,
+                &buf_desc);
+
+	assert(buf_desc.base_addr >= SI_EMU_GLOBAL_MEMORY_START);
+
+	return buf_desc;
+}
+
+/* Get base address for a UAV */
+unsigned int si_emu_get_uav_base_addr(int uav)
+{
+	unsigned int base_addr; 
+
+	struct si_buffer_desc_t buf_desc;
+        memset(&buf_desc, 0, sizeof buf_desc);
+
+	assert(uav < SI_EMU_MAX_NUM_UAVS);  
+	assert(si_emu->valid_uav_list[uav]);
+
+        mem_read(si_emu->global_mem, SI_EMU_UAV_TABLE_START+uav*32, 16,
+                &buf_desc);
+
+	assert(buf_desc.base_addr >= SI_EMU_GLOBAL_MEMORY_START);
+
+	base_addr = (unsigned int)buf_desc.base_addr;
+
+	return base_addr;
 }

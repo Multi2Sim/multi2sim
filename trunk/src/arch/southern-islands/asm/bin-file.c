@@ -94,54 +94,206 @@ static struct str_map_t pt_note_type_map = {
 
 
 static struct str_map_t prog_info_entry_map = {
-	34, {
-		{ "mmSQ_PGM_START_LS",			0xa234 },
-		{ "mmSQ_PGM_RESOURCES_LS",		0xa235 },
-		{ "mmSQ_PGM_RESOURCES_2_LS",		0xa236 },
-		{ "mmSPI_THREAD_GROUPING",		0xa1b2 },
-		{ "mmSQ_DYN_GPR_CNTL_PS_FLUSH_REQ",	0x2363 },
-		{ "mmSQ_GPR_RESOURCE_MGMT_1",		0x2301 },
-		{ "mmSQ_GPR_RESOURCE_MGMT_3__EG",	0x2303 },
-		{ "mmSPI_GPR_MGMT",			0xa1be },
-		{ "mmSPI_WAVE_MGMT_1",			0xa1c1 },
-		{ "mmSPI_WAVE_MGMT_2",			0xa1c2 },
-		{ "mmSQ_THREAD_RESOURCE_MGMT__EG",	0x2306 },
-		{ "mmSQ_THREAD_RESOURCE_MGMT_2__EG",	0x2307 },
-		{ "mmSPI_COMPUTE_INPUT_CNTL",		0xa1ba },
-		{ "mmSQ_LDS_ALLOC",			0xa23a },
-		{ "COMPUTE_PGM_RSRC2",		0x2e13},
-		{ "AMU_ABI_CS_MAX_SCRATCH_REGS",	0x80000002 },
-		{ "AMU_ABI_CS_NUM_SHARED_GPR_USER",	0x80000003 },
-		{ "AMU_ABI_CS_NUM_SHARED_GPR_TOTAL",	0x80000004 },
-		{ "AMU_ABI_NUM_THREAD_PER_GROUP",	0x80000006 },
-		{ "AMU_ABI_NUM_THREAD_PER_GROUP_X",	0x8000001c },
-		{ "AMU_ABI_NUM_THREAD_PER_GROUP_Y",	0x8000001d },
-		{ "AMU_ABI_NUM_THREAD_PER_GROUP_Z",	0x8000001e },
-		{ "AMU_ABI_TOTAL_NUM_THREAD_GROUP",	0x80000007 },
-		{ "AMU_ABI_NUM_WAVEFRONT_PER_SIMD",	0x8000000a },
-		{ "AMU_ABI_IS_MAX_NUM_WAVE_PER_SIMD",	0x8000000b },
-		{ "AMU_ABI_SET_BUFFER_FOR_NUM_GROUP",	0x8000000c },
-		{ "AMU_ABI_RAT_OP_IS_USED",		0x8000001f },
-		{ "AMU_ABI_RAT_ATOMIC_OP_IS_USED",	0x80000020 },
-		{ "AMU_ABI_WAVEFRONT_SIZE",		0x80000078 },
-		{ "AMU_ABI_NUM_GPR_AVAIL",		0x80000079 },
-		{ "AMU_ABI_NUM_GPR_USED",		0x80000080 },
-		{ "AMU_ABI_LDS_SIZE_AVAIL",		0x80000081 },
-		{ "AMU_ABI_LDS_SIZE_USED",		0x80000082 },
-		{ "AMU_ABI_STACK_SIZE_AVAIL",		0x80000083 },
-		{ "AMU_ABI_STACK_SIZE_USED",		0x80000084 },
+	176, {
+		{ "mmSQ_DYN_GPR_CNTL_PS_FLUSH_REQ",          0x00002363 },
+		{ "mmSQ_GPR_RESOURCE_MGMT_1",                0x00002301 },
+		{ "mmSQ_GPR_RESOURCE_MGMT_3__EG",            0x00002303 },
+		{ "mmSQ_THREAD_RESOURCE_MGMT__EG",           0x00002306 },
+		{ "mmSQ_THREAD_RESOURCE_MGMT_2__EG",         0x00002307 },
+		{ "COMPUTE_PGM_RSRC2",                       0x00002e13 },
+		{ "mmSPI_THREAD_GROUPING",                   0x0000a1b2 },
+		{ "mmSPI_COMPUTE_INPUT_CNTL",                0x0000a1ba },
+		{ "mmSPI_GPR_MGMT",                          0x0000a1be },
+		{ "mmSPI_WAVE_MGMT_1",                       0x0000a1c1 },
+		{ "mmSPI_WAVE_MGMT_2",                       0x0000a1c2 },
+		{ "mmSQ_LDS_ALLOC",                          0x0000a23a },
+		{ "mmSQ_PGM_START_LS",                       0x0000a234 },
+		{ "mmSQ_PGM_RESOURCES_LS",                   0x0000a235 },
+		{ "mmSQ_PGM_RESOURCES_2_LS",                 0x0000a236 },
+		{ "AMU_ABI_PS_INPUT_COUNT",                  0x80000000 },
+		{ "AMU_ABI_PS_INPUT_SPARSE",                 0x80000001 },
+		{ "AMU_ABI_CS_MAX_SCRATCH_REGS",             0x80000002 },
+		{ "AMU_ABI_CS_NUM_SHARED_GPR_USER",          0x80000003 },
+		{ "AMU_ABI_CS_NUM_SHARED_GPR_TOTAL",         0x80000004 },
+    		{ "AMU_ABI_ECS_SETUP_MODE",                  0x80000005 },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP",            0x80000006 },
+		{ "AMU_ABI_TOTAL_NUM_THREAD_GROUP",          0x80000007 },
+		{ "AMU_ABI_MAX_WAVEFRONT_PER_SIMD",          0x80000009 },
+		{ "AMU_ABI_NUM_WAVEFRONT_PER_SIMD",          0x8000000a },
+		{ "AMU_ABI_IS_MAX_NUM_WAVE_PER_SIMD",        0x8000000b },
+		{ "AMU_ABI_SET_BUFFER_FOR_NUM_GROUP",        0x8000000c },
+		{ "AMU_ABI_VS_OUTPUT_COUNT",                 0x8000000d },
+		{ "AMU_ABI_VS_OUTPUT_SPARSE",                0x8000000e },
+		{ "AMU_ABI_VS_INPUT_COUNT",                  0x8000000f },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER0",  0x80000010 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER1",  0x80000011 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER2",  0x80000012 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER3",  0x80000013 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER4",  0x80000014 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER5",  0x80000015 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER6",  0x80000016 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER7",  0x80000017 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER8",  0x80000018 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER9",  0x80000019 },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER10", 0x8000001a },
+		{ "AMU_ABI_SET_BUFFER_FOR_UAV_RET_BUFFER11", 0x8000001b },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP_X",          0x8000001c },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP_Y",          0x8000001d },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP_Z",          0x8000001e },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP_X",          0x8000001c },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP_Y",          0x8000001d },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP_Z",          0x8000001e },
+		{ "AMU_ABI_TOTAL_NUM_THREAD_GROUP",          0x80000007 },
+		{ "AMU_ABI_NUM_WAVEFRONT_PER_SIMD",          0x8000000a },
+		{ "AMU_ABI_IS_MAX_NUM_WAVE_PER_SIMD",        0x8000000b },
+		{ "AMU_ABI_SET_BUFFER_FOR_NUM_GROUP",        0x8000000c },
+		{ "AMU_ABI_RAT_OP_IS_USED",                  0x8000001f },
+		{ "AMU_ABI_RAT_ATOMIC_OP_IS_USED",           0x80000020 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER",            0x80000021 },
+		{ "AMU_ABI_NUM_GLOBAL_UAV",                  0x80000022 },
+		{ "AMU_ABI_NUM_GLOBAL_RETURN_BUFFER",        0x80000023 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_SIZE",       0x80000024 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_SIZE_SHORT", 0x80000025 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_SIZE_BYTE",  0x80000026 },
+		{ "AMU_ABI_EXTENDED_CACHING",                0x80000027 },
+		{ "AMU_ABI_OFFSET_TO_UAV0",                  0x80000030 },
+		{ "AMU_ABI_OFFSET_TO_UAV1",                  0x80000031 },
+		{ "AMU_ABI_OFFSET_TO_UAV2",                  0x80000032 },
+		{ "AMU_ABI_OFFSET_TO_UAV3",                  0x80000033 },
+		{ "AMU_ABI_OFFSET_TO_UAV4",                  0x80000034 },
+		{ "AMU_ABI_OFFSET_TO_UAV5",                  0x80000035 },
+		{ "AMU_ABI_OFFSET_TO_UAV6",                  0x80000036 },
+		{ "AMU_ABI_OFFSET_TO_UAV7",                  0x80000037 },
+		{ "AMU_ABI_OFFSET_TO_UAV8",                  0x80000038 },
+		{ "AMU_ABI_OFFSET_TO_UAV9",                  0x80000039 },
+		{ "AMU_ABI_OFFSET_TO_UAV10",                 0x8000003a },
+		{ "AMU_ABI_OFFSET_TO_UAV11",                 0x8000003b },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV0",       0x80000040 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV1",       0x80000041 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV2",       0x80000042 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV3",       0x80000043 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV4",       0x80000044 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV5",       0x80000045 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV6",       0x80000046 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV7",       0x80000047 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV8",       0x80000048 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV9",       0x80000049 },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV10",      0x8000004a },
+		{ "AMU_ABI_UNCACHED_FETCH_CONST_UAV11",      0x8000004b },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV0",         0x80000050 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV1",         0x80000051 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV2",         0x80000052 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV3",         0x80000053 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV4",         0x80000054 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV5",         0x80000055 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV6",         0x80000056 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV7",         0x80000057 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV8",         0x80000058 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV9",         0x80000059 },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV10",        0x8000005a },
+		{ "AMU_ABI_CACHED_FETCH_CONST_UAV11",        0x8000005b },
+		{ "AMU_ABI_GLOBAL_RETURN_FETCH_CONST0",      0x80000060 },
+		{ "AMU_ABI_GLOBAL_RETURN_FETCH_CONST1",      0x80000061 },
+		{ "AMU_ABI_GLOBAL_RETURN_FETCH_CONST2",      0x80000062 },
+		{ "AMU_ABI_GLOBAL_RETURN_FETCH_CONST3",      0x80000063 },
+		{ "AMU_ABI_GLOBAL_RETURN_FETCH_CONST4",      0x80000064 },
+		{ "AMU_ABI_GLOBAL_RETURN_FETCH_CONST5",      0x80000065 },
+		{ "AMU_ABI_GLOBAL_RETURN_FETCH_CONST6",      0x80000066 },
+		{ "AMU_ABI_GLOBAL_RETURN_FETCH_CONST7",      0x80000067 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_TYPE0",      0x80000070 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_TYPE1",      0x80000071 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_TYPE2",      0x80000072 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_TYPE3",      0x80000073 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_TYPE4",      0x80000074 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_TYPE5",      0x80000075 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_TYPE6",      0x80000076 },
+		{ "AMU_ABI_GLOBAL_RETURN_BUFFER_TYPE7",      0x80000077 },
+		{ "AMU_ABI_WAVEFRONT_SIZE",                  0x80000078 },
+		{ "AMU_ABI_NUM_GPR_AVAIL",                   0x80000079 },
+		{ "AMU_ABI_NUM_GPR_USED",                    0x80000080 },
+		{ "AMU_ABI_LDS_SIZE_AVAIL",                  0x80000081 },
+		{ "AMU_ABI_LDS_SIZE_USED",                   0x80000082 },
+		{ "AMU_ABI_STACK_SIZE_AVAIL",                0x80000083 },
+		{ "AMU_ABI_STACK_SIZE_USED",                 0x80000084 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV0",       0x80000090 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV1",       0x80000091 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV2",       0x80000092 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV3",       0x80000093 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV4",       0x80000094 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV5",       0x80000095 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV6",       0x80000096 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV7",       0x80000097 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV8",       0x80000098 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV9",       0x80000099 },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV10",      0x8000009a },
+		{ "AMU_ABI_CACHED_FETCH_CONST64_UAV11",      0x8000009b },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV0",      0x800000a0 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV1",      0x800000a1 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV2",      0x800000a2 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV3",      0x800000a3 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV4",      0x800000a4 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV5",      0x800000a5 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV6",      0x800000a6 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV7",      0x800000a7 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV8",      0x800000a8 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV9",      0x800000a9 },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV10",     0x800000aa },
+		{ "AMU_ABI_CACHED_FETCH_CONST128_UAV11",     0x800000ab },
 
 		/* Southern Islands Related Fields */
 
-		{ "AMU_ABI_USER_ELEMENT_COUNT",     0x80001000 },
-		{ "AMU_ABI_USER_ELEMENTS_0_DWORD0", 0x80001001 },
-		{ "AMU_ABI_USER_ELEMENTS_0_DWORD1", 0x80001002 },
-		{ "AMU_ABI_USER_ELEMENTS_0_DWORD2", 0x80001003 },
-		{ "AMU_ABI_USER_ELEMENTS_0_DWORD3", 0x80001004 }
-		/*... 16 sets of user elements ...  0x80001040*/
-
+		{ "AMU_ABI_USER_ELEMENT_COUNT",              0x80001000 },
+		{ "AMU_ABI_USER_ELEMENTS_0_DWORD0",          0x80001001 },
+		{ "AMU_ABI_USER_ELEMENTS_0_DWORD1",          0x80001002 },
+		{ "AMU_ABI_USER_ELEMENTS_0_DWORD2",          0x80001003 },
+		{ "AMU_ABI_USER_ELEMENTS_0_DWORD3",          0x80001004 },
+		/*... 16 sets of user elements ...           0x80001040*/
+		{ "AMU_ABI_USER_ELEMENTS_15_DWORD3",         0x80001040 },
+		{ "AMU_ABI_SI_NUM_VGPRS",                    0x80001041 },
+		{ "AMU_ABI_SI_NUM_SGPRS",                    0x80001042 },
+		{ "AMU_ABI_SI_FLOAT_MODE",                   0x80001043 },
+		{ "AMU_ABI_SI_IEEE_MODE",                    0x80001044 },
+		{ "AMU_ABI_SI_SCRATCH_SIZE",                 0x80001045 },
+		{ "AMU_ABI_POS_FLOAT_LOCATION",              0x80001046 },
+		{ "AMU_ABI_EXPORT_PATCH_CODE_SIZE",          0x80001047 },
+		{ "AMU_ABI_EXPORT_PATCH_OFFSET_0",           0x80001048 },
+		{ "AMU_ABI_EXPORT_PATCH_OFFSET_1",           0x80001049 },
+		{ "AMU_ABI_EXPORT_PATCH_OFFSET_2",           0x8000104a },
+		{ "AMU_ABI_EXPORT_PATCH_OFFSET_3",           0x8000104b },
+		{ "AMU_ABI_EXPORT_PATCH_OFFSET_4",           0x8000104c },
+		{ "AMU_ABI_EXPORT_PATCH_OFFSET_5",           0x8000104d },
+		{ "AMU_ABI_EXPORT_PATCH_OFFSET_6",           0x8000104e },
+		{ "AMU_ABI_EXPORT_PATCH_OFFSET_7",           0x8000104f },
+		/* From 0x80001100 to 0x8000123f, there are 320 entries
+		 * of the format: 
+		 * AMU_ABI_EXPORT_PATCH_CODE_EXPORT0_FMT0_DWORD0
+		 * AMU_ABI_EXPORT_PATCH_CODE_EXPORT0_FMT0_DWORD1
+		 * AMU_ABI_EXPORT_PATCH_CODE_EXPORT0_FMT0_DWORD2
+		 * AMU_ABI_EXPORT_PATCH_CODE_EXPORT0_FMT0_DWORD3
+		 * AMU_ABI_EXPORT_PATCH_CODE_EXPORT0_FMT1_DWORD0
+		 * ...
+		 * AMU_ABI_EXPORT_PATCH_CODE_EXPORT7_FMT9_DWORD3
+		 */
+		{ "AMU_ABI_VS_IN_SEMANTICS_0",                0x80001800 },
+		/*", There are 32 input semantics */
+		{ "AMU_ABI_VS_IN_SEMANTICS_31",               0x8000181f },
+		{ "AMU_ABI_VS_OUT_SEMANTICS_0",               0x80001820 },
+		/*", There are 32 output semantics */
+		{ "AMU_ABI_VS_OUT_SEMANTICS_31",              0x8000183f },
+		{ "AMU_ABI_DX9_TEX_CUBE_MASK",                0x80001840 },
+		{ "AMU_ABI_ORDERED_APPEND_ENABLE",            0x80001841 },
+		{ "AMU_ABI_SI_VGPR_COMP_CNT",                 0x80001842 },
+		{ "AMU_ABI_UAV_RESOURCE_MASK_0",              0x80001843 },
+		/* There are 32 UAV masks */
+		{ "AMU_ABI_UAV_RESOURCE_MASK_31",             0x80001862 },
+		{ "AMU_ABI_SI_NUM_SGPRS_AVAIL",               0x80001863 },
+		{ "AMU_ABI_SI_NUM_VGPRS_AVAIL",               0x80001864 }
 	}
 };
+
+
+
+
 
 
 struct pt_note_data_segment_desc_t
@@ -713,8 +865,10 @@ static void si_bin_file_read_sections(struct si_bin_file_t *bin_file)
 			|| !enc_dict_entry->sec_data_buffer.size
 			|| !enc_dict_entry->sec_symtab_buffer.size
 			|| !enc_dict_entry->sec_strtab_buffer.size)
-			fatal("%s: some section was not found: .text .data .symtab .strtab",
-				__FUNCTION__);
+		{
+			fatal("%s: some section was not found: .text .data"
+				" .symtab .strtab", __FUNCTION__);
+		}
 	}
 
 	/* Finish */
@@ -744,21 +898,25 @@ struct si_bin_file_t *si_bin_file_create(void *ptr, int size, char *name)
 	 * Check that a Southern Islands dictionary entry is present */
 	si_bin_file_read_enc_dict(bin_file);
 	if (!bin_file->enc_dict_entry_southern_islands)
-		fatal("%s: no encoding dictionary entry for Southern Islands.\n"
-			"\tThe OpenCL kernel binary that your application is trying to load does not\n"
-			"\tcontain Southern Islands assembly code. Please make sure that a Tahiti device\n"
-			"\tis selected when compiling the OpenCL kernel source. In some cases, even\n"
-			"\ta proper selection of this architecture causes Southern Islands assembly not to\n"
-			"\tbe included if the APP SDK is not correctly installed when compiling your\n"
-			"\town kernel sources.\n",
+		fatal(
+	"%s: no encoding dictionary entry for Southern Islands.\n"
+	"\tThe OpenCL kernel binary that your application is trying to load\n"
+	"\tdoes not contain Southern Islands assembly code. Please make\n" 
+	"\tsure that a Tahiti device is selected when compiling the OpenCL\n"
+	"\tkernel source. In some cases, even a proper selection of this\n"
+	"\tarchitecture causes Southern Islands assembly not to be included\n"
+	"\tif the APP SDK is not correctly installed when compiling your\n"
+	"\town kernel sources.\n", 
 			bin_file->elf_file->path);
 	
 	/* Read segments and sections */
 	si_bin_file_read_segments(bin_file);
 	si_bin_file_read_sections(bin_file);
 
-	/* Read notes in PT_NOTE segment for Southern Islands dictionary entry */
-	si_bin_file_read_notes(bin_file, bin_file->enc_dict_entry_southern_islands);
+	/* Read notes in PT_NOTE segment for Southern Islands 
+	 * dictionary entry */
+	si_bin_file_read_notes(bin_file, bin_file->
+		enc_dict_entry_southern_islands);
 
 	/* Return */
 	return bin_file;
@@ -769,7 +927,9 @@ void si_bin_file_free(struct si_bin_file_t *bin_file)
 {
 	/* Free encoding dictionary */
 	while (list_count(bin_file->enc_dict))
+	{
 		free(list_remove_at(bin_file->enc_dict, 0));
+	}
 	list_free(bin_file->enc_dict);
 
 	/* Free rest */

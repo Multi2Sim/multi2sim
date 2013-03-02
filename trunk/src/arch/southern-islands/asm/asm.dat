@@ -1,3 +1,7 @@
+/*
+ * SOP2
+ */
+
 DEFINST(S_ADD_U32,
 	" s_add_u32     %SDST, %SSRC0, %SSRC1",
 	SOP2,
@@ -142,6 +146,10 @@ DEFINST(S_MUL_I32,
 	0
 )
 
+/*
+ * SOPK
+ */
+
 DEFINST(S_MOVK_I32,
 	" s_movk_i32    %SDST, %SIMM16",
 	SOPK,
@@ -165,6 +173,10 @@ DEFINST(S_MULK_I32,
 	4,
 	0
 )
+
+/*
+ * SOP1
+ */
 
 DEFINST(S_MOV_B32,
 	" s_mov_b32     %SDST, %SSRC0",
@@ -205,6 +217,10 @@ DEFINST(S_AND_SAVEEXEC_B64,
 	4,
 	0
 )
+
+/*
+ * SOPC
+ */
 
 DEFINST(S_CMP_EQ_I32,
 	" s_cmp_eq_i32  %SSRC0, %SSRC1",
@@ -269,6 +285,10 @@ DEFINST(S_CMP_LE_U32,
 	4,
 	0
 )
+
+/*
+ * SOPP
+ */
 
 DEFINST(S_ENDPGM,
 	" s_endpgm",
@@ -350,6 +370,10 @@ DEFINST(S_WAITCNT,
 	0
 )
 
+/*
+ * SMRD
+ */
+
 DEFINST(S_LOAD_DWORDX2,
 	" s_load_dwordx2  %SERIES_SDST, %SERIES_SBASE, %OFFSET",
 	SMRD,
@@ -397,6 +421,605 @@ DEFINST(S_BUFFER_LOAD_DWORDX4,
 	4,
 	0
 )
+
+/*
+ * VOP2
+ */
+
+DEFINST(V_CNDMASK_B32,
+	" v_cndmask_b32  %VDST, %SRC0, %VSRC1, vcc",
+	VOP2,
+	0,
+	4,
+	0
+)
+
+DEFINST(V_ADD_F32,
+	" v_add_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	3,
+	4,
+	0
+)
+
+DEFINST(V_SUB_F32,
+	" v_sub_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	4,
+	4,
+	0
+)
+
+DEFINST(V_SUBREV_F32,
+	" v_subrev_f32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	5,
+	4,
+	0
+)
+
+DEFINST(V_MAC_LEGACY_F32,
+	" v_mac_legacy_f32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	6,
+	4,
+	0
+)
+
+DEFINST(V_MUL_LEGACY_F32,
+	" v_mul_legacy_f32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	7,
+	4,
+	0
+)
+
+DEFINST(V_MUL_F32,
+	" v_mul_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	8,
+	4,
+	0
+)
+
+DEFINST(V_MUL_I32_I24,
+	" v_mul_i32_i24  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	9,
+	4,
+	0
+)
+
+DEFINST(V_MIN_F32,
+	" v_min_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	15,
+	4,
+	0
+)
+
+DEFINST(V_MAX_F32,
+	" v_max_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	16,
+	4,
+	0
+)
+
+DEFINST(V_MAX_I32,
+	" v_max_i32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	18,
+	4,
+	0
+)
+
+DEFINST(V_MIN_U32,
+	" v_min_u32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	19,
+	4,
+	0
+)
+
+DEFINST(V_MAX_U32,
+	" v_max_u32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	20,
+	4,
+	0
+)
+
+DEFINST(V_LSHRREV_B32,
+	" v_lshrrev_b32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	22,
+	4,
+	0
+)
+
+DEFINST(V_ASHRREV_I32,
+	" v_ashrrev_i32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	24,
+	4,
+	0
+)
+
+DEFINST(V_LSHL_B32,
+	" v_lshl_b32    %VDST, %SRC0, %VSRC1",
+	VOP2,
+	25,
+	4,
+	0
+)
+
+DEFINST(V_LSHLREV_B32,
+	" v_lshlrev_b32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	26,
+	4,
+	0
+)
+
+DEFINST(V_AND_B32,
+	" v_and_b32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	27,
+	4,
+	0
+)
+
+DEFINST(V_OR_B32,
+	" v_or_b32      %VDST, %SRC0, %VSRC1",
+	VOP2,
+	28,
+	4,
+	0
+)
+
+DEFINST(V_XOR_B32,
+	" v_xor_b32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	29,
+	4,
+	0
+)
+
+DEFINST(V_MAC_F32,
+	" v_mac_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	31,
+	4,
+	0
+)
+
+DEFINST(V_ADD_I32,
+	" v_add_i32     %VDST, vcc, %SRC0, %VSRC1",
+	VOP2,
+	37,
+	4,
+	0
+)
+
+DEFINST(V_SUB_I32,
+	" v_sub_i32     %VDST, vcc, %SRC0, %VSRC1",
+	VOP2,
+	38,
+	4,
+	0
+)
+
+DEFINST(V_SUBREV_I32,
+	" v_subrev_i32  %VDST, vcc, %SRC0, %VSRC1",
+	VOP2,
+	39,
+	4,
+	0
+)
+
+DEFINST(V_CVT_PKRTZ_F16_F32,
+	" v_cvt_pkrtz_f16_f32  %VDST, vcc, %SRC0, %VSRC1",
+	VOP2,
+	47,
+	4,
+	0
+)
+
+/*
+ * VOP1
+ */
+
+DEFINST(V_NOP,
+	" v_nop",
+	VOP1,
+	0,
+	4,
+	0
+)
+
+DEFINST(V_MOV_B32,
+	" v_mov_b32     %VDST, %SRC0",
+	VOP1,
+	1,
+	4,
+	0
+)
+
+DEFINST(V_READFIRSTLANE_B32,
+	" v_readfirstlane_b32  %SVDST, %SRC0",
+	VOP1,
+	2,
+	4,
+	0
+)
+
+DEFINST(V_CVT_I32_F64,
+	" v_cvt_i32_f64  %64_VDST, %64_SRC0",
+	VOP1,
+	3,
+	4,
+	0
+)
+
+DEFINST(V_CVT_F64_I32,
+	" v_cvt_f64_i32  %64_VDST, %SRC0",
+	VOP1,
+	4,
+	4,
+	0
+)
+
+DEFINST(V_CVT_F32_I32,
+	" v_cvt_f32_i32  %VDST, %SRC0",
+	VOP1,
+	5,
+	4,
+	0
+)
+
+DEFINST(V_CVT_F32_U32,
+	" v_cvt_f32_u32  %VDST, %SRC0",
+	VOP1,
+	6,
+	4,
+	0
+)
+
+DEFINST(V_CVT_U32_F32,
+	" v_cvt_u32_f32  %VDST, %SRC0",
+	VOP1,
+	7,
+	4,
+	0
+)
+
+DEFINST(V_CVT_I32_F32,
+	" v_cvt_i32_f32  %VDST, %SRC0",
+	VOP1,
+	8,
+	4,
+	0
+)
+
+DEFINST(V_CVT_F32_F64,
+	" v_cvt_f32_f64  %VDST, %64_SRC0",
+	VOP1,
+	15,
+	4,
+	0
+)
+
+DEFINST(V_CVT_F64_F32,
+	" v_cvt_f64_f32  %64_VDST, %SRC0",
+	VOP1,
+	16,
+	4,
+	0
+)
+
+DEFINST(V_CVT_F64_U32,
+	" v_cvt_f64_u32  %64_VDST, %64_SRC0",
+	VOP1,
+	22,
+	4,
+	0
+)
+
+DEFINST(V_TRUNC_F32,
+	" v_trunc_f32   %VDST, %SRC0",
+	VOP1,
+	33,
+	4,
+	0
+)
+
+DEFINST(V_FLOOR_F32,
+	" v_floor_f32   %VDST, %SRC0",
+	VOP1,
+	36,
+	4,
+	0
+)
+
+DEFINST(V_LOG_F32,
+	" v_log_f32     %VDST, %SRC0",
+	VOP1,
+	39,
+	4,
+	0
+)
+
+DEFINST(V_RCP_F32,
+	" v_rcp_f32     %VDST, %SRC0",
+	VOP1,
+	42,
+	4,
+	0
+)
+
+DEFINST(V_RCP_F64,
+	" v_rcp_f64     %64_VDST, %64_SRC0",
+	VOP1,
+	47,
+	4,
+	0
+)
+
+DEFINST(V_RSQ_F64,
+	" v_rsq_f64     %64_VDST, %64_SRC0",
+	VOP1,
+	49,
+	4,
+	0
+)
+
+DEFINST(V_SQRT_F32,
+	" v_sqrt_f32    %VDST, %SRC0",
+	VOP1,
+	51,
+	4,
+	0
+)
+
+DEFINST(V_SIN_F32,
+	" v_sin_f32     %VDST, %SRC0",
+	VOP1,
+	53,
+	4,
+	0
+)
+
+DEFINST(V_COS_F32,
+	" v_cos_f32     %VDST, %SRC0",
+	VOP1,
+	54,
+	4,
+	0
+)
+
+DEFINST(V_NOT_B32,
+	" v_not_b32    %VDST, %SRC0",
+	VOP1,
+	55,
+	4,
+	0
+)
+
+DEFINST(V_FFBH_U32,
+	" v_ffbh_u32    %VDST, %SRC0",
+	VOP1,
+	57,
+	4,
+	0
+)
+
+DEFINST(V_FRACT_F64,
+	" v_fract_f64   %VDST, %SRC0 CHECKME",
+	VOP1,
+	62,
+	4,
+	0
+)
+
+DEFINST(V_MOVRELD_B32,
+	" v_movreld_b32  %VDST, %SRC0",
+	VOP1,
+	66,
+	4,
+	0
+)
+
+DEFINST(V_MOVRELS_B32,
+	" v_movrels_b32  %VDST, %SRC0",
+	VOP1,
+	67,
+	4,
+	0
+)
+
+/* 
+ * VOPC 
+ */
+DEFINST(V_CMP_LT_F32,
+	" v_cmp_lt_f32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	1,
+	4,
+	0
+)
+
+DEFINST(V_CMP_GT_F32,
+	" v_cmp_gt_f32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	4,
+	4,
+	0
+)
+
+DEFINST(V_CMP_GE_F32,
+	" v_cmp_ge_f32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	6,
+	4,
+	0
+)
+
+DEFINST(V_CMP_NGT_F32,
+	" v_cmp_ngt_f32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	11,
+	4,
+	0
+)
+
+DEFINST(V_CMP_NEQ_F32,
+	" v_cmp_neq_f32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	13,
+	4,
+	0
+)
+
+DEFINST(V_CMP_LT_F64,
+	" v_cmp_lt_f64  vcc, %64_SRC0, %64_VSRC1",
+	VOPC,
+	33,
+	4,
+	0
+)
+
+DEFINST(V_CMP_EQ_F64,
+	" v_cmp_eq_f64  vcc, %64_SRC0, %64_VSRC1",
+	VOPC,
+	34,
+	4,
+	0
+)
+
+DEFINST(V_CMP_LE_F64,
+	" v_cmp_le_f64  vcc, %64_SRC0, %64_VSRC1",
+	VOPC,
+	35,
+	4,
+	0
+)
+
+DEFINST(V_CMP_GT_F64,
+	" v_cmp_gt_f64  vcc, %64_SRC0, %64_VSRC1",
+	VOPC,
+	36,
+	4,
+	0
+)
+
+DEFINST(V_CMP_NGE_F64,
+	" v_cmp_nge_f64  vcc, %64_SRC0, %64_VSRC1",
+	VOPC,
+	41,
+	4,
+	0
+)
+
+DEFINST(V_CMP_NEQ_F64,
+	" v_cmp_neq_f64  vcc, %64_SRC0, %64_VSRC1",
+	VOPC,
+	45,
+	4,
+	0
+)
+
+DEFINST(V_CMP_LT_I32,
+	" v_cmp_lt_i32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	129,
+	4,
+	0
+)
+
+DEFINST(V_CMP_EQ_I32,
+	" v_cmp_eq_i32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	130,
+	4,
+	0
+)
+
+DEFINST(V_CMP_GT_I32,
+	" v_cmp_gt_i32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	132,
+	4,
+	0
+)
+
+DEFINST(V_CMP_NE_I32,
+	" v_cmp_ne_i32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	133,
+	4,
+	0
+)
+
+DEFINST(V_CMP_GE_I32,
+	" v_cmp_ge_i32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	134,
+	4,
+	0
+)
+
+DEFINST(V_CMP_CLASS_F64,
+	" v_cmp_class_f64  vcc, %64_SRC0, %64_VSRC1",
+	VOPC,
+	168,
+	4,
+	0
+)
+
+DEFINST(V_CMP_LT_U32,
+	" v_cmp_lt_u32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	193,
+	4,
+	0
+)
+
+DEFINST(V_CMP_EQ_U32,
+	" v_cmp_eq_u32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	194,
+	4,
+	0
+)
+
+DEFINST(V_CMP_LE_U32,
+	" v_cmp_le_u32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	195,
+	4,
+	0
+)
+
+DEFINST(V_CMP_GT_U32,
+	" v_cmp_gt_u32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	196,
+	4,
+	0
+)
+
+DEFINST(V_CMP_NE_U32,
+	" v_cmp_ne_u32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	197,
+	4,
+	0
+)
+
+/*
+ * VOP3a 
+ */
 
 DEFINST(V_CNDMASK_B32_VOP3a,
 	" v_cndmask_b32  %VOP3_VDST, %VOP3_SRC0, %VOP3_SRC1, %VOP3_64_SRC2",
@@ -799,6 +1422,10 @@ DEFINST(V_LDEXP_F64,
 	0
 )
 
+/*
+ * VOP3b 
+ */
+
 DEFINST(V_ADDC_U32_VOP3b,
 	" v_addc_u32    %VOP3_VDST, %VOP3_64_SDST, %VOP3_SRC0, %VOP3_SRC1, %VOP3_64_SRC2",
 	VOP3b,
@@ -815,589 +1442,9 @@ DEFINST(V_DIV_SCALE_F64,
 	0
 )
 
-DEFINST(V_CMP_LT_F32,
-	" v_cmp_lt_f32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	1,
-	4,
-	0
-)
-
-DEFINST(V_CMP_GT_F32,
-	" v_cmp_gt_f32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	4,
-	4,
-	0
-)
-
-DEFINST(V_CMP_GE_F32,
-	" v_cmp_ge_f32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	6,
-	4,
-	0
-)
-
-DEFINST(V_CMP_NGT_F32,
-	" v_cmp_ngt_f32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	11,
-	4,
-	0
-)
-
-DEFINST(V_CMP_NEQ_F32,
-	" v_cmp_neq_f32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	13,
-	4,
-	0
-)
-
-DEFINST(V_CMP_LT_F64,
-	" v_cmp_lt_f64  vcc, %64_SRC0, %64_VSRC1",
-	VOPC,
-	33,
-	4,
-	0
-)
-
-DEFINST(V_CMP_EQ_F64,
-	" v_cmp_eq_f64  vcc, %64_SRC0, %64_VSRC1",
-	VOPC,
-	34,
-	4,
-	0
-)
-
-DEFINST(V_CMP_LE_F64,
-	" v_cmp_le_f64  vcc, %64_SRC0, %64_VSRC1",
-	VOPC,
-	35,
-	4,
-	0
-)
-
-DEFINST(V_CMP_GT_F64,
-	" v_cmp_gt_f64  vcc, %64_SRC0, %64_VSRC1",
-	VOPC,
-	36,
-	4,
-	0
-)
-
-DEFINST(V_CMP_NGE_F64,
-	" v_cmp_nge_f64  vcc, %64_SRC0, %64_VSRC1",
-	VOPC,
-	41,
-	4,
-	0
-)
-
-DEFINST(V_CMP_NEQ_F64,
-	" v_cmp_neq_f64  vcc, %64_SRC0, %64_VSRC1",
-	VOPC,
-	45,
-	4,
-	0
-)
-
-DEFINST(V_CMP_LT_I32,
-	" v_cmp_lt_i32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	129,
-	4,
-	0
-)
-
-DEFINST(V_CMP_EQ_I32,
-	" v_cmp_eq_i32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	130,
-	4,
-	0
-)
-
-DEFINST(V_CMP_GT_I32,
-	" v_cmp_gt_i32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	132,
-	4,
-	0
-)
-
-DEFINST(V_CMP_NE_I32,
-	" v_cmp_ne_i32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	133,
-	4,
-	0
-)
-
-DEFINST(V_CMP_GE_I32,
-	" v_cmp_ge_i32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	134,
-	4,
-	0
-)
-
-DEFINST(V_CMP_CLASS_F64,
-	" v_cmp_class_f64  vcc, %64_SRC0, %64_VSRC1",
-	VOPC,
-	168,
-	4,
-	0
-)
-
-DEFINST(V_CMP_LT_U32,
-	" v_cmp_lt_u32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	193,
-	4,
-	0
-)
-
-DEFINST(V_CMP_EQ_U32,
-	" v_cmp_eq_u32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	194,
-	4,
-	0
-)
-
-DEFINST(V_CMP_LE_U32,
-	" v_cmp_le_u32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	195,
-	4,
-	0
-)
-
-DEFINST(V_CMP_GT_U32,
-	" v_cmp_gt_u32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	196,
-	4,
-	0
-)
-
-DEFINST(V_CMP_NE_U32,
-	" v_cmp_ne_u32  vcc, %SRC0, %VSRC1",
-	VOPC,
-	197,
-	4,
-	0
-)
-
-DEFINST(V_NOP,
-	" v_nop",
-	VOP1,
-	0,
-	4,
-	0
-)
-
-DEFINST(V_MOV_B32,
-	" v_mov_b32     %VDST, %SRC0",
-	VOP1,
-	1,
-	4,
-	0
-)
-
-DEFINST(V_READFIRSTLANE_B32,
-	" v_readfirstlane_b32  %SVDST, %SRC0",
-	VOP1,
-	2,
-	4,
-	0
-)
-
-DEFINST(V_CVT_I32_F64,
-	" v_cvt_i32_f64  %64_VDST, %64_SRC0",
-	VOP1,
-	3,
-	4,
-	0
-)
-
-DEFINST(V_CVT_F64_I32,
-	" v_cvt_f64_i32  %64_VDST, %SRC0",
-	VOP1,
-	4,
-	4,
-	0
-)
-
-DEFINST(V_CVT_F32_I32,
-	" v_cvt_f32_i32  %VDST, %SRC0",
-	VOP1,
-	5,
-	4,
-	0
-)
-
-DEFINST(V_CVT_F32_U32,
-	" v_cvt_f32_u32  %VDST, %SRC0",
-	VOP1,
-	6,
-	4,
-	0
-)
-
-DEFINST(V_CVT_U32_F32,
-	" v_cvt_u32_f32  %VDST, %SRC0",
-	VOP1,
-	7,
-	4,
-	0
-)
-
-DEFINST(V_CVT_I32_F32,
-	" v_cvt_i32_f32  %VDST, %SRC0",
-	VOP1,
-	8,
-	4,
-	0
-)
-
-DEFINST(V_CVT_F32_F64,
-	" v_cvt_f32_f64  %VDST, %64_SRC0",
-	VOP1,
-	15,
-	4,
-	0
-)
-
-DEFINST(V_CVT_F64_F32,
-	" v_cvt_f64_f32  %64_VDST, %SRC0",
-	VOP1,
-	16,
-	4,
-	0
-)
-
-DEFINST(V_CVT_F64_U32,
-	" v_cvt_f64_u32  %64_VDST, %64_SRC0",
-	VOP1,
-	22,
-	4,
-	0
-)
-
-DEFINST(V_TRUNC_F32,
-	" v_trunc_f32   %VDST, %SRC0",
-	VOP1,
-	33,
-	4,
-	0
-)
-
-DEFINST(V_FLOOR_F32,
-	" v_floor_f32   %VDST, %SRC0",
-	VOP1,
-	36,
-	4,
-	0
-)
-
-DEFINST(V_LOG_F32,
-	" v_log_f32     %VDST, %SRC0",
-	VOP1,
-	39,
-	4,
-	0
-)
-
-DEFINST(V_RCP_F32,
-	" v_rcp_f32     %VDST, %SRC0",
-	VOP1,
-	42,
-	4,
-	0
-)
-
-DEFINST(V_RCP_F64,
-	" v_rcp_f64     %64_VDST, %64_SRC0",
-	VOP1,
-	47,
-	4,
-	0
-)
-
-DEFINST(V_RSQ_F64,
-	" v_rsq_f64     %64_VDST, %64_SRC0",
-	VOP1,
-	49,
-	4,
-	0
-)
-
-DEFINST(V_SQRT_F32,
-	" v_sqrt_f32    %VDST, %SRC0",
-	VOP1,
-	51,
-	4,
-	0
-)
-
-DEFINST(V_SIN_F32,
-	" v_sin_f32     %VDST, %SRC0",
-	VOP1,
-	53,
-	4,
-	0
-)
-
-DEFINST(V_COS_F32,
-	" v_cos_f32     %VDST, %SRC0",
-	VOP1,
-	54,
-	4,
-	0
-)
-
-DEFINST(V_NOT_B32,
-	" v_not_b32    %VDST, %SRC0",
-	VOP1,
-	55,
-	4,
-	0
-)
-
-DEFINST(V_FFBH_U32,
-	" v_ffbh_u32    %VDST, %SRC0",
-	VOP1,
-	57,
-	4,
-	0
-)
-
-DEFINST(V_FRACT_F64,
-	" v_fract_f64   %VDST, %SRC0 CHECKME",
-	VOP1,
-	62,
-	4,
-	0
-)
-
-DEFINST(V_MOVRELD_B32,
-	" v_movreld_b32  %VDST, %SRC0",
-	VOP1,
-	66,
-	4,
-	0
-)
-
-DEFINST(V_MOVRELS_B32,
-	" v_movrels_b32  %VDST, %SRC0",
-	VOP1,
-	67,
-	4,
-	0
-)
-
-DEFINST(V_CNDMASK_B32,
-	" v_cndmask_b32  %VDST, %SRC0, %VSRC1, vcc",
-	VOP2,
-	0,
-	4,
-	0
-)
-
-DEFINST(V_ADD_F32,
-	" v_add_f32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	3,
-	4,
-	0
-)
-
-DEFINST(V_SUB_F32,
-	" v_sub_f32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	4,
-	4,
-	0
-)
-
-DEFINST(V_SUBREV_F32,
-	" v_subrev_f32  %VDST, %SRC0, %VSRC1",
-	VOP2,
-	5,
-	4,
-	0
-)
-
-DEFINST(V_MAC_LEGACY_F32,
-	" v_mac_legacy_f32  %VDST, %SRC0, %VSRC1",
-	VOP2,
-	6,
-	4,
-	0
-)
-
-DEFINST(V_MUL_LEGACY_F32,
-	" v_mul_legacy_f32  %VDST, %SRC0, %VSRC1",
-	VOP2,
-	7,
-	4,
-	0
-)
-
-DEFINST(V_MUL_F32,
-	" v_mul_f32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	8,
-	4,
-	0
-)
-
-DEFINST(V_MUL_I32_I24,
-	" v_mul_i32_i24  %VDST, %SRC0, %VSRC1",
-	VOP2,
-	9,
-	4,
-	0
-)
-
-DEFINST(V_MIN_F32,
-	" v_min_f32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	15,
-	4,
-	0
-)
-
-DEFINST(V_MAX_F32,
-	" v_max_f32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	16,
-	4,
-	0
-)
-
-DEFINST(V_MAX_I32,
-	" v_max_i32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	18,
-	4,
-	0
-)
-
-DEFINST(V_MIN_U32,
-	" v_min_u32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	19,
-	4,
-	0
-)
-
-DEFINST(V_MAX_U32,
-	" v_max_u32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	20,
-	4,
-	0
-)
-
-DEFINST(V_LSHRREV_B32,
-	" v_lshrrev_b32  %VDST, %SRC0, %VSRC1",
-	VOP2,
-	22,
-	4,
-	0
-)
-
-DEFINST(V_ASHRREV_I32,
-	" v_ashrrev_i32  %VDST, %SRC0, %VSRC1",
-	VOP2,
-	24,
-	4,
-	0
-)
-
-DEFINST(V_LSHL_B32,
-	" v_lshl_b32    %VDST, %SRC0, %VSRC1",
-	VOP2,
-	25,
-	4,
-	0
-)
-
-DEFINST(V_LSHLREV_B32,
-	" v_lshlrev_b32  %VDST, %SRC0, %VSRC1",
-	VOP2,
-	26,
-	4,
-	0
-)
-
-DEFINST(V_AND_B32,
-	" v_and_b32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	27,
-	4,
-	0
-)
-
-DEFINST(V_OR_B32,
-	" v_or_b32      %VDST, %SRC0, %VSRC1",
-	VOP2,
-	28,
-	4,
-	0
-)
-
-DEFINST(V_XOR_B32,
-	" v_xor_b32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	29,
-	4,
-	0
-)
-
-DEFINST(V_MAC_F32,
-	" v_mac_f32     %VDST, %SRC0, %VSRC1",
-	VOP2,
-	31,
-	4,
-	0
-)
-
-DEFINST(V_ADD_I32,
-	" v_add_i32     %VDST, vcc, %SRC0, %VSRC1",
-	VOP2,
-	37,
-	4,
-	0
-)
-
-DEFINST(V_SUB_I32,
-	" v_sub_i32     %VDST, vcc, %SRC0, %VSRC1",
-	VOP2,
-	38,
-	4,
-	0
-)
-
-DEFINST(V_SUBREV_I32,
-	" v_subrev_i32  %VDST, vcc, %SRC0, %VSRC1",
-	VOP2,
-	39,
-	4,
-	0
-)
-
-DEFINST(V_CVT_PKRTZ_F16_F32,
-	" v_cvt_pkrtz_f16_f32  %VDST, vcc, %SRC0, %VSRC1",
-	VOP2,
-	47,
-	4,
-	0
-)
+/*
+ * VINTRP
+ */
 
 DEFINST(V_INTERP_P1_F32,
 	" v_interp_p1_f32    %VINTRP_VDST, %VSRC_I_J, %ATTR, %ATTRCHAN",
@@ -1422,6 +1469,10 @@ DEFINST(V_INTERP_MOV_F32,
 	4,
 	0
 )
+
+/*
+ * DS
+ */
 
 DEFINST(DS_INC_U32,
 	" ds_inc_u32    %ADDR, %DATA0",
@@ -1495,10 +1546,22 @@ DEFINST(DS_READ_U16,
 	0
 )
 
+/*
+ * MUBUF
+ */
+
 DEFINST(BUFFER_LOAD_SBYTE,
 	" buffer_load_sbyte  %MU_SERIES_VDATA, %VADDR, %SERIES_SRSRC, %MU_MADDR",
 	MUBUF,
 	9,
+	8,
+	0
+)
+
+DEFINST(BUFFER_STORE_BYTE,
+	" buffer_store_byte  %MU_SERIES_VDATA, %VADDR, %SERIES_SRSRC, %MU_MADDR %MU_GLC",
+	MUBUF,
+	24,
 	8,
 	0
 )
@@ -1510,6 +1573,10 @@ DEFINST(BUFFER_ATOMIC_ADD,
 	8,
 	0
 )
+
+/*
+ * MTBUF
+ */
 
 DEFINST(TBUFFER_LOAD_FORMAT_X,
 	" tbuffer_load_format_x  %MT_SERIES_VDATA, %VADDR, %SERIES_SRSRC, %MT_MADDR",
@@ -1559,6 +1626,10 @@ DEFINST(TBUFFER_STORE_FORMAT_XYZW,
 	0
 )
 
+/*
+ * MIMG
+ */
+
 DEFINST(IMAGE_STORE,
 	" image_store   %MIMG_SERIES_VDATA, %MIMG_VADDR, %MIMG_DUG_SERIES_SRSRC",
 	MIMG,
@@ -1574,6 +1645,10 @@ DEFINST(IMAGE_SAMPLE,
 	8,
 	0
 )
+
+/* 
+ * EXP
+ */
 
 DEFINST(EXPORT,
 	" export  %TGT, %EXP_VSRC0, %EXP_VSRC1, %EXP_VSRC2, %EXP_VSRC3",
