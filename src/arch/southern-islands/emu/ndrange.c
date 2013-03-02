@@ -413,6 +413,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		{
 			if (userElements[i].dataClass == IMM_CONST_BUFFER)
 			{
+				/* Store CB pointer in sregs */
 				si_wavefront_init_sreg_with_cb(wavefront, 
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount, 
@@ -420,6 +421,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			}
 			else if (userElements[i].dataClass == IMM_UAV)
 			{
+				/* Store UAV pointer in sregs */
 				si_wavefront_init_sreg_with_uav(wavefront, 
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount, 
@@ -428,16 +430,29 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			else if (userElements[i].dataClass == 
 				PTR_CONST_BUFFER_TABLE)
 			{
+				/* Store CB table in sregs */
 				si_wavefront_init_sreg_with_cb_table(wavefront,
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount);
 			}
 			else if (userElements[i].dataClass == PTR_UAV_TABLE)
 			{
+				/* Store UAV table in sregs */
 				si_wavefront_init_sreg_with_uav_table(
 					wavefront,
 					userElements[i].startUserReg, 
 					userElements[i].userRegCount);
+			}
+			else if (userElements[i].dataClass == IMM_SAMPLER)
+			{
+				/* Store sampler in sregs */
+				assert(0);
+			}
+			else if (userElements[i].dataClass == 
+				PTR_RESOURCE_TABLE)
+			{
+				/* Store resource table in sregs */
+				assert(0);
 			}
 			else if (userElements[i].dataClass == 
 				PTR_INTERNAL_GLOBAL_TABLE)
@@ -841,6 +856,10 @@ void si_ndrange_dump_initialized_state(struct si_ndrange_t *ndrange)
 		SI_EMU_CONSTANT_BUFFER_TABLE_START,
 		SI_EMU_CONSTANT_BUFFER_TABLE_START+
 		SI_EMU_CONSTANT_BUFFER_TABLE_SIZE-1);
+	si_isa_debug("\t| RSRC table    | %10u | %10u |\n", 
+		SI_EMU_RESOURCE_TABLE_START,
+		SI_EMU_RESOURCE_TABLE_START+
+		SI_EMU_RESOURCE_TABLE_SIZE-1);
 	si_isa_debug("\t| Constant mem  | %10u | %10u |\n", 
 		SI_EMU_CONSTANT_MEMORY_START,
 		SI_EMU_CONSTANT_MEMORY_START+SI_EMU_CONSTANT_MEMORY_SIZE-1);

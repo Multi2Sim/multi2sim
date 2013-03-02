@@ -2658,10 +2658,9 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	{
 		arg = list_get(kernel->arg_list, i);
 
-		/* If argument is an image, add it to the appropriate 
-		 * UAV list */
 		if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_IMAGE)
 		{
+			/* Add the image to the resource table */
 			/*FIXME*/
 			assert(0);
 			/*
@@ -2689,9 +2688,9 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 			*/
 		}
 
-		/* Add the uav to the UAV list. */
 		if(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER)
 		{
+			/* Add the uav to the UAV table */
 			if (arg->pointer.mem_type == 
 				SI_OPENCL_KERNEL_ARG_MEM_TYPE_UAV)
 			{
