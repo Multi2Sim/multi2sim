@@ -104,10 +104,14 @@ struct opencl_x86_device_t
 
 
 
-struct opencl_x86_device_t *opencl_x86_device_create(
-		struct opencl_device_t *parent);
-void opencl_x86_device_free(
-		struct opencl_x86_device_t *device);
+struct opencl_x86_device_t *opencl_x86_device_create(struct opencl_device_t *parent);
+void opencl_x86_device_free(struct opencl_x86_device_t *device);
+
+void *opencl_x86_device_mem_alloc(size_t size);
+void opencl_x86_device_mem_free(void *ptr);
+void opencl_x86_device_mem_read(void *host_ptr, void *device_ptr, size_t size);
+void opencl_x86_device_mem_write(void *device_ptr, void *host_ptr, size_t size);
+void opencl_x86_device_mem_copy(void *device_dest_ptr, void *device_src_ptr, size_t size);
 
 void opencl_x86_device_make_fiber(
 		struct opencl_x86_device_fiber_t *fiber,

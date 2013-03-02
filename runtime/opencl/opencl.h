@@ -111,8 +111,37 @@ typedef void *(*opencl_arch_device_create_func_t)(
 		struct opencl_device_t *parent);
 
 /* Free an architecture-specific device. */
-typedef void *(*opencl_arch_device_free_func_t)(
+typedef void (*opencl_arch_device_free_func_t)(
 		void *device);  /* Of type 'opencl_XXX_device_t' */
+
+/* Allocate device memory. The function returns a device pointer.
+ * If the device is the x86 CPU, the pointer can be dereferenced
+ * normally. If not, the value is just a 32-bit address used by
+ * device-specific functions. */
+typedef void *(*opencl_arch_device_mem_alloc_func_t)(
+		size_t size);
+
+/* Free device memory */
+typedef void (*opencl_arch_device_mem_free_func_t)(
+		void *device_ptr);
+
+/* Read from device memory */
+typedef void (*opencl_arch_device_mem_read_func_t)(
+		void *host_ptr,
+		void *device_ptr,
+		unsigned int size);
+
+/* Write into device memory */
+typedef void (*opencl_arch_device_mem_write_func_t)(
+		void *device_ptr,
+		void *host_ptr,
+		unsigned int size);
+
+/* Copy device memory */
+typedef void (*opencl_arch_device_mem_copy_func_t)(
+		void *device_dest_ptr,
+		void *device_src_ptr,
+		unsigned int size);
 
 
 
@@ -129,7 +158,7 @@ typedef void *(*opencl_arch_program_create_func_t)(
 		size_t length);
 
 /* Free an architecture-specific program. */
-typedef void *(*opencl_arch_program_free_func_t)(
+typedef void (*opencl_arch_program_free_func_t)(
 		void *program);  /* Of type 'opencl_XXX_program_t' */
 
 /* Check if a binary blob is a valid program */
