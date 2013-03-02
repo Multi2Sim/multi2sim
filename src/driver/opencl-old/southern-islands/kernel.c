@@ -245,9 +245,6 @@ static void si_opencl_kernel_load_metadata_v2(
 			arg = si_opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = SI_OPENCL_KERNEL_ARG_KIND_IMAGE;
 
-			fatal("%s: Need to read image metadata\n", 
-				__FUNCTION__);
-
 			/* Set the dimension */
 			if (!strcmp(line_ptrs[2], "2D"))
 			{
@@ -462,9 +459,6 @@ static void si_opencl_kernel_load_metadata_v3(
 			/* Create input image argument */
 			arg = si_opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = SI_OPENCL_KERNEL_ARG_KIND_IMAGE;
-
-			fatal("%s: Need to read image metadata\n", 
-				__FUNCTION__);
 
 			/* Set the dimension */
 			if (!strcmp(line_ptrs[2], "2D"))
