@@ -34,6 +34,9 @@ struct opencl_si_program_t
 
 	/* Associated architecture-specific device */
 	struct opencl_si_device_t *device;
+
+	/* Analyzed ELF file */
+	struct elf_file_t *elf_file;
 };
 
 
@@ -41,7 +44,7 @@ struct opencl_si_program_t *opencl_si_program_create(
 		struct opencl_program_t *parent,
 		struct opencl_si_device_t *device,
 		void *binary,
-		size_t length);
+		unsigned int length);
 
 void opencl_si_program_free(
 		struct opencl_si_program_t *program);
@@ -49,7 +52,7 @@ void opencl_si_program_free(
 /* Return true is a binary file is a valid SI program binary. */
 int opencl_si_program_valid_binary(
 	void *binary,
-	size_t length);
+	unsigned int length);
 
 
 #endif

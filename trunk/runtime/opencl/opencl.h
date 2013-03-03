@@ -156,7 +156,7 @@ typedef void *(*opencl_arch_program_create_func_t)(
 		struct opencl_program_t *parent,
 		void *arch_device,  /* Of type 'opencl_xxx_device_t' */
 		void *binary,
-		size_t length);
+		unsigned int length);
 
 /* Free an architecture-specific program. */
 typedef void (*opencl_arch_program_free_func_t)(
@@ -165,7 +165,7 @@ typedef void (*opencl_arch_program_free_func_t)(
 /* Check if a binary blob is a valid program */
 typedef cl_bool (*opencl_arch_program_valid_binary_func_t)(
 	void *binary,
-	size_t length);
+	unsigned int length);
 
 
 

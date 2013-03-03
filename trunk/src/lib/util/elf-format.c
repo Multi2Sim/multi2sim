@@ -331,6 +331,30 @@ struct elf_symbol_t *elf_symbol_get_by_name(struct elf_file_t *elf_file, char *n
 }
 
 
+int elf_symbol_read_content(struct elf_file_t *elf_file, struct elf_symbol_t *symbol,
+		struct elf_buffer_t *elf_buffer)
+{
+	struct elf_section_t *section;
+
+	/* Initialize buffer */
+	assert(elf_buffer);
+	elf_buffer->ptr = NULL;
+	elf_buffer->size = 0;
+	elf_buffer->pos = 0;
+
+	/* Get section where the symbol is pointing */
+	section = list_get(elf_file->section_list, symbol->section);
+	if (!section || symbol->value + symbol->size > section->header->sh_size)
+		return 0;
+
+	/* Update buffer */
+	elf_buffer->ptr = section->buffer.ptr + symbol->value;
+	elf_buffer->size = symbol->size;
+	elf_buffer->pos = 0;
+	return 1;
+}
+
+
 
 
 /*

@@ -48,7 +48,7 @@ struct opencl_x86_program_t *opencl_x86_program_create(
 		struct opencl_program_t *parent,
 		struct opencl_x86_device_t *device,
 		void *binary,
-		size_t length);
+		unsigned int length);
 
 void opencl_x86_program_free(
 		struct opencl_x86_program_t *program);
@@ -56,7 +56,7 @@ void opencl_x86_program_free(
 /* Return true is a binary file is a valid x86 program binary. */
 int opencl_x86_program_valid_binary(
 	void *binary,
-	size_t length);
+	unsigned int length);
 
 
 #endif
