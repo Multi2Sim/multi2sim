@@ -128,13 +128,14 @@ cl_mem clCreateBuffer(
 	/* Because of alignment reasons, we are going to 'cache' buffers even
 	 * when the user specifies CL_MEM_USE_HOST_PTR */
 	assert(device->arch_device_mem_alloc_func);
-	mem->device_ptr = device->arch_device_mem_alloc_func(size);
+	mem->device_ptr = device->arch_device_mem_alloc_func(device->arch_device, size);
 	mem->size = size;
 
 	/* Copy buffer contents */
 	assert(device->arch_device_mem_write_func);
 	if ((flags & CL_MEM_USE_HOST_PTR) || (flags & CL_MEM_COPY_HOST_PTR))
-		device->arch_device_mem_write_func(mem->device_ptr, host_ptr, size);
+		device->arch_device_mem_write_func(device->arch_device,
+				mem->device_ptr, host_ptr, size);
 
 	/* Success */
 	if (errcode_ret)

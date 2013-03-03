@@ -53,21 +53,17 @@ typedef void *(*opencl_callback_t)(void *);
  * Runtime System Calls
  */
 
-/* Version for the Multi2Sim Runtime library implementation */
-#define OPENCL_VERSION_MAJOR  1
-#define OPENCL_VERSION_MINOR  752
-
 /* System call code to communicate with Multi2Sim */
 #define OPENCL_SYSCALL_CODE  329
 
 /* Function code to pass as a first argument of a system call */
-enum opencl_call_t
+enum opencl_abi_call_t
 {
-	opencl_call_invalid,
-#define OPENCL_DEFINE_CALL(name, code) opencl_call_##name = code,
+	opencl_abi_invalid,
+#define OPENCL_ABI_CALL(name, code) opencl_abi_##name = code,
 #include "../../src/driver/opencl/opencl.dat"
-#undef X86_CLRT_DEFINE_CALL
-	opencl_call_count
+#undef OPENCL_ABI_CALL
+	opencl_abi_call_count
 };
 
 
@@ -119,26 +115,31 @@ typedef void (*opencl_arch_device_free_func_t)(
  * normally. If not, the value is just a 32-bit address used by
  * device-specific functions. */
 typedef void *(*opencl_arch_device_mem_alloc_func_t)(
+		void *device,  /* Of type 'opencl_xxx_device_t' */
 		size_t size);
 
 /* Free device memory */
 typedef void (*opencl_arch_device_mem_free_func_t)(
+		void *device,  /* Of type 'opencl_xxx_device_t' */
 		void *device_ptr);
 
 /* Read from device memory */
 typedef void (*opencl_arch_device_mem_read_func_t)(
+		void *device,  /* Of type 'opencl_xxx_device_t' */
 		void *host_ptr,
 		void *device_ptr,
 		unsigned int size);
 
 /* Write into device memory */
 typedef void (*opencl_arch_device_mem_write_func_t)(
+		void *device,  /* Of type 'opencl_xxx_device_t' */
 		void *device_ptr,
 		void *host_ptr,
 		unsigned int size);
 
 /* Copy device memory */
 typedef void (*opencl_arch_device_mem_copy_func_t)(
+		void *device,  /* Of type 'opencl_xxx_device_t' */
 		void *device_dest_ptr,
 		void *device_src_ptr,
 		unsigned int size);

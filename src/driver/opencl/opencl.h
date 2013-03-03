@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_CLRT_H
-#define ARCH_X86_EMU_CLRT_H
+#ifndef DRIVER_OPENCL_H
+#define DRIVER_OPENCL_H
 
 /* Forward type declaration */
 struct x86_ctx_t;

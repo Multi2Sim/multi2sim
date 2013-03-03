@@ -686,6 +686,11 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 		pthread_setaffinity_np(device->threads[i], sizeof cpu_set, &cpu_set);
 	}
 
+	/* Obtain device unique ID from the driver. The system call will fail
+	 * on native mode, and assign -1 to the ID. */
+	parent->id = syscall(OPENCL_SYSCALL_CODE, opencl_abi_get_device_id,
+			"x86");
+
 	/* Return */
 	return device;
 }
@@ -698,7 +703,8 @@ void opencl_x86_device_free(struct opencl_x86_device_t *device)
 }
 
 
-void *opencl_x86_device_mem_alloc(size_t size)
+void *opencl_x86_device_mem_alloc(struct opencl_x86_device_t *device,
+		unsigned int size)
 {
 	void *ptr;
 
@@ -709,27 +715,31 @@ void *opencl_x86_device_mem_alloc(size_t size)
 }
 
 
-void opencl_x86_device_mem_free(void *ptr)
+void opencl_x86_device_mem_free(struct opencl_x86_device_t *device,
+		void *ptr)
 {
 	free(ptr);
 }
 
 
-void opencl_x86_device_mem_read(void *host_ptr, void *device_ptr, size_t size)
+void opencl_x86_device_mem_read(struct opencl_x86_device_t *device,
+		void *host_ptr, void *device_ptr, unsigned int size)
 {
 	/* Host and device are the same for x86 CPU */
 	memcpy(host_ptr, device_ptr, size);
 }
 
 
-void opencl_x86_device_mem_write(void *device_ptr, void *host_ptr, size_t size)
+void opencl_x86_device_mem_write(struct opencl_x86_device_t *device,
+		void *device_ptr, void *host_ptr, unsigned int size)
 {
 	/* Host and device are the same for x86 CPU */
 	memcpy(device_ptr, host_ptr, size);
 }
 
 
-void opencl_x86_device_mem_copy(void *device_dest_ptr, void *device_src_ptr, size_t size)
+void opencl_x86_device_mem_copy(struct opencl_x86_device_t *device,
+		void *device_dest_ptr, void *device_src_ptr, unsigned int size)
 {
 	/* Host and device are the same for x86 CPU */
 	memcpy(device_dest_ptr, device_src_ptr, size);
