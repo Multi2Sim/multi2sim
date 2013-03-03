@@ -185,15 +185,15 @@ typedef void (*opencl_arch_kernel_free_func_t)(
 		void *kernel);  /* Of type 'opencl_XXX_kernel_t' */
 
 /* Verify that a kernel has properly set parameters */
-typedef cl_int (*opencl_arch_kernel_check_func_t)(
+typedef int (*opencl_arch_kernel_check_func_t)(
 		void *kernel);  /* Of type 'opencl_XXX_kernel_t' */
 
 /* Set a kernel argument */
-typedef cl_int (*opencl_arch_kernel_set_arg_func_t)(
+typedef int (*opencl_arch_kernel_set_arg_func_t)(
 		void *kernel,  /* Of type 'opencl_XXX_kernel_t' */
-		cl_uint arg_index,
-		size_t arg_size,
-		const void *arg_value);
+		int arg_index,
+		unsigned int arg_size,
+		void *arg_value);
 
 /* Run ND-Range on device */
 typedef void (*opencl_arch_kernel_run_func_t)(
