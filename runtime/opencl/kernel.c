@@ -217,7 +217,7 @@ cl_int clSetKernelArg(
 	{
 		entry = list_get(kernel->entry_list, i);
 		status = entry->device->arch_kernel_set_arg_func(entry->arch_kernel,
-			arg_index, arg_size, arg_value);
+			arg_index, arg_size, (void *) arg_value);
 		if (status != CL_SUCCESS)
 			return status;
 	}
