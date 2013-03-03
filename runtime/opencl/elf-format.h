@@ -107,6 +107,12 @@ struct elf_symbol_t *elf_symbol_get_by_address(struct elf_file_t *elf_file,
 	unsigned int addr, unsigned int *offset_ptr);
 struct elf_symbol_t *elf_symbol_get_by_name(struct elf_file_t *elf_file, char *name);
 
+/* Read the content in a section pointed to by a symbol value and size. If the
+ * symbol points to an invalid section or its value/size point to an invalid
+ * part of the section, the function returns FALSE. Otherwise, TRUE. */
+int elf_symbol_read_content(struct elf_file_t *elf_file, struct elf_symbol_t *symbol,
+		struct elf_buffer_t *elf_buffer);
+
 struct elf_file_t *elf_file_create_from_buffer(void *ptr, int size, char *name);
 struct elf_file_t *elf_file_create_from_path(char *path);
 void elf_file_free(struct elf_file_t *elf_file);
