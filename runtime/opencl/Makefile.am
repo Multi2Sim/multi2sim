@@ -42,6 +42,9 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	mhandle.c \
 	mhandle.h \
 	\
+	misc.c \
+	misc.h \
+	\
 	program.c \
 	program.h \
 	\
@@ -57,6 +60,9 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	opencl.c \
 	opencl.h \
 	\
+	platform.c \
+	platform.h \
+	\
 	sampler.c \
 	sampler.h \
 	\
@@ -69,8 +75,8 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	si-program.c \
 	si-program.h \
 	\
-	platform.c \
-	platform.h \
+	string.c \
+	string.h \
 	\
 	thread-list.c \
 	thread-list.h \
