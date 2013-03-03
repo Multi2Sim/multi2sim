@@ -91,6 +91,10 @@ struct opencl_si_arg_t
 			unsigned int token_3;
 			unsigned int token_4;
 			unsigned int offset;  /* Token 5 */
+
+			/* Actual value set by the user */
+			void *ptr;
+			int size;
 		} value;
 
 		struct {
@@ -103,14 +107,25 @@ struct opencl_si_arg_t
 			enum opencl_si_arg_access_t access;  /* Token 9 */
 			unsigned int token_10;
 			unsigned int token_11;
+
+			/* Actual value set by user. This is a pointer in device
+			 * memory (local or global scope), do not dereference. */
+			void *device_ptr;
+			int size;
 		} pointer;
 	} u;
 
-	/* Actual value given by user */
-	int set;  /* TRUE if argument was set with clSetKernelArg */
-	int size;
-	void *ptr;
+	/* Flag indicating whether user set a value for the argument with a
+	 * call to 'clSetKernelArg'. */
+	int set;
 };
+
+
+struct opencl_si_arg_t *opencl_si_arg_create(enum opencl_si_arg_type_t type,
+		char *name);
+void opencl_si_arg_free(struct opencl_si_arg_t *arg);
+
+void opencl_si_arg_set_value(struct opencl_si_arg_t *arg, void *ptr, int size);
 
 
 
@@ -144,13 +159,13 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel);
 
 void opencl_si_kernel_debug(struct opencl_si_kernel_t *kernel);
 
-cl_int opencl_si_kernel_check(struct opencl_si_kernel_t *kernel);
+int opencl_si_kernel_check(struct opencl_si_kernel_t *kernel);
 
-cl_int opencl_si_kernel_set_arg(
+int opencl_si_kernel_set_arg(
 		struct opencl_si_kernel_t *kernel,
-		cl_uint arg_index,
-		size_t arg_size,
-		const void *arg_value);
+		int arg_index,
+		unsigned int arg_size,
+		void *arg_value);
 
 void opencl_si_kernel_run(
 		struct opencl_si_kernel_t *kernel,

@@ -17,10 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include "debug.h"
 #include "elf-format.h"
 #include "list.h"
+#include "mem.h"
 #include "mhandle.h"
+#include "object.h"
 #include "si-kernel.h"
 #include "si-program.h"
 #include "string.h"
@@ -87,8 +91,38 @@ struct opencl_si_arg_t *opencl_si_arg_create(enum opencl_si_arg_type_t type,
 
 void opencl_si_arg_free(struct opencl_si_arg_t *arg)
 {
+	switch (arg->type)
+	{
+	case opencl_si_arg_type_value:
+
+		if (arg->u.value.ptr)
+			free(arg->u.value.ptr);
+		break;
+
+	case opencl_si_arg_type_pointer:
+
+		break;
+
+	default:
+		panic("%s: invalid argument type", __FUNCTION__);
+	}
+
 	free(arg->name);
 	free(arg);
+}
+
+
+void opencl_si_arg_set_value(struct opencl_si_arg_t *arg, void *ptr, int size)
+{
+	/* Check that value was not set yet */
+	assert(arg->type == opencl_si_arg_type_value);
+	if (arg->set)
+		fatal("%s: argument already set", __FUNCTION__);
+
+	/* Allocate and set */
+	arg->u.value.ptr = xmalloc(size);
+	arg->u.value.size = size;
+	memcpy(arg->u.value.ptr, ptr, size);
 }
 
 
@@ -341,20 +375,71 @@ void opencl_si_kernel_debug(struct opencl_si_kernel_t *kernel)
 }
 
 
-cl_int opencl_si_kernel_check(struct opencl_si_kernel_t *kernel)
+int opencl_si_kernel_check(struct opencl_si_kernel_t *kernel)
 {
 	warning("%s: not implemented", __FUNCTION__);
 	return 0;
 }
 
 
-cl_int opencl_si_kernel_set_arg(
+int opencl_si_kernel_set_arg(
 		struct opencl_si_kernel_t *kernel,
-		cl_uint arg_index,
-		size_t arg_size,
-		const void *arg_value)
+		int arg_index,
+		unsigned int arg_size,
+		void *arg_value)
 {
-	warning("%s: not implemented", __FUNCTION__);
+	struct opencl_si_arg_t *arg;
+	struct opencl_mem_t *mem;
+
+	/* Check valid argument index */
+	arg = list_get(kernel->arg_list, arg_index);
+	if (!arg)
+		fatal("%s: invalid argument index (%d)\n",
+				__FUNCTION__, arg_index);
+
+	/* Value */
+	if (arg->type == opencl_si_arg_type_value)
+	{
+		opencl_si_arg_set_value(arg, arg_value, arg_size);
+	}
+
+	/* Pointer in global memory */
+	else if (arg->type == opencl_si_arg_type_pointer &&
+			arg->u.pointer.scope == opencl_si_arg_scope_uav)
+	{
+		/* Check size - must be size of a pointer to an cl_mem object */
+		if (arg_size != 4)
+			fatal("%s: argument %d size not 4 for global memory",
+					__FUNCTION__, arg_index);
+
+		/* Search cl_mem object */
+		mem = * (struct opencl_mem_t **) arg_value;
+		if (!opencl_object_verify(mem, OPENCL_OBJECT_MEM))
+			fatal("%s: argument %d is not a cl_mem object",
+					__FUNCTION__, arg_index);
+
+		/* The actual value is the device pointer */
+		arg->u.pointer.device_ptr = mem->device_ptr;
+		arg->u.pointer.size = mem->size;
+	}
+
+	/* Pointer in local memory */
+	else if (arg->type == opencl_si_arg_type_pointer &&
+			arg->u.pointer.scope == opencl_si_arg_scope_hl)
+	{
+		/* Argument value must be NULL */
+		if (arg_value)
+			fatal("%s: argument %d value not NULL for local memory",
+					__FUNCTION__, arg_index);
+	}
+
+	/* Not recognized */
+	else
+	{
+		fatal("%s: unsupported argument %d type",
+				__FUNCTION__, arg_index);
+	}
+
 	return 0;
 }
 
