@@ -1,1 +1,5 @@
-OPENCL_DEFINE_CALL(init, 1)
+OPENCL_ABI_CALL(init, 1)
+OPENCL_ABI_CALL(get_device_id, 2)
+OPENCL_ABI_CALL(mem_alloc, 3)
+OPENCL_ABI_CALL(mem_read, 4)
+OPENCL_ABI_CALL(mem_write, 5)

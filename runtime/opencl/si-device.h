@@ -34,11 +34,17 @@ struct opencl_si_device_t
 struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *parent);
 void opencl_si_device_free(struct opencl_si_device_t *device);
 
-void *opencl_si_device_mem_alloc(size_t size);
-void opencl_si_device_mem_free(void *ptr);
-void opencl_si_device_mem_read(void *host_ptr, void *device_ptr, size_t size);
-void opencl_si_device_mem_write(void *device_ptr, void *host_ptr, size_t size);
-void opencl_si_device_mem_copy(void *device_dest_ptr, void *device_src_ptr, size_t size);
+void *opencl_si_device_mem_alloc(struct opencl_si_device_t *device,
+		unsigned int size);
+void opencl_si_device_mem_free(struct opencl_si_device_t *device,
+		void *ptr);
+void opencl_si_device_mem_read(struct opencl_si_device_t *device,
+		void *host_ptr, void *device_ptr, unsigned int size);
+void opencl_si_device_mem_write(struct opencl_si_device_t *device,
+		void *device_ptr, void *host_ptr, unsigned int size);
+void opencl_si_device_mem_copy(struct opencl_si_device_t *device,
+		void *device_dest_ptr, void *device_src_ptr,
+		unsigned int size);
 
 #endif
 

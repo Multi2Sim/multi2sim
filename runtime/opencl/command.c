@@ -35,7 +35,9 @@ static void opencl_command_run_mem_read(struct opencl_command_t *command)
 	struct opencl_device_t *device = command->device;
 
 	assert(device->arch_device_mem_read_func);
-	device->arch_device_mem_read_func(command->u.mem_read.host_ptr,
+	device->arch_device_mem_read_func(
+			device->arch_device,
+			command->u.mem_read.host_ptr,
 			command->u.mem_read.device_ptr,
 			command->u.mem_read.size);
 }
@@ -47,7 +49,9 @@ static void opencl_command_run_mem_write(struct opencl_command_t *command)
 	struct opencl_device_t *device = command->device;
 
 	assert(device->arch_device_mem_write_func);
-	device->arch_device_mem_write_func(command->u.mem_write.device_ptr,
+	device->arch_device_mem_write_func(
+			device->arch_device,
+			command->u.mem_write.device_ptr,
 			command->u.mem_write.host_ptr,
 			command->u.mem_write.size);
 }
@@ -59,7 +63,9 @@ static void opencl_command_run_mem_copy(struct opencl_command_t *command)
 	struct opencl_device_t *device = command->device;
 
 	assert(device->arch_device_mem_copy_func);
-	device->arch_device_mem_copy_func(command->u.mem_copy.device_dest_ptr,
+	device->arch_device_mem_copy_func(
+			device->arch_device,
+			command->u.mem_copy.device_dest_ptr,
 			command->u.mem_copy.device_src_ptr,
 			command->u.mem_copy.size);
 }
