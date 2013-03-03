@@ -81,6 +81,10 @@ struct _cl_device_id
 	const char *version;
 	const char *driver_version;
 
+	/* Identifier returned by the OpenCL driver when running in simulation
+	 * mode. The value of this field is -1 when running in native mdoe. */
+	int id;
+
 	/* Call-back functions for an architecture-specific device */
 	opencl_arch_device_free_func_t arch_device_free_func;
 	opencl_arch_device_mem_alloc_func_t arch_device_mem_alloc_func;

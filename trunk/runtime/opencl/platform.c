@@ -142,6 +142,12 @@ void opencl_platform_free(struct opencl_platform_t *platform)
  * OpenCL API Functions
  */
 
+/* Version for the OpenCL runtime.
+ * NOTE: when modifying the values of these two macros, the same values should
+ * be reflected in 'src/driver/opencl/opencl.c'. */
+#define OPENCL_VERSION_MAJOR  1
+#define OPENCL_VERSION_MINOR  1403
+
 cl_int clGetPlatformIDs(
 	cl_uint num_entries,
 	cl_platform_id *platforms,
@@ -160,7 +166,7 @@ cl_int clGetPlatformIDs(
 	 * the host program. It is checked here whether we're running in native
 	 * or simulation mode. If it's simulation mode, Multi2Sim's version is
 	 * checked for compatibility with the runtime library version. */
-	ret = syscall(OPENCL_SYSCALL_CODE, opencl_call_init, &version);
+	ret = syscall(OPENCL_SYSCALL_CODE, opencl_abi_init, &version);
 
 	/* If the system call returns error, we are in native mode. */
 	if (ret == -1)
