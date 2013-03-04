@@ -24,6 +24,7 @@
 #include <arch/x86/emu/regs.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
@@ -535,58 +536,266 @@ static int opencl_abi_si_kernel_create_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenCL ABI call #9 - si_kernel_set_arg
+ * OpenCL ABI call #9 - si_kernel_set_arg_value
  *
- * Set a kernel argument.
+ * Set a kernel argument with a basic type (cl_char, cl_int, cl_float, ...).
  *
  * @param int kernel_id
  *
  * 	Kernel ID, as returned by ABI call 'si_kernel_create'
  *
- * @param int arg_index
+ * @param int index
  *
  * 	Argument index to set.
  *
- * @param void *arg_value
+ * @param void *value
  *
- * 	Argument value. If the argument type expected is a 'cl_mem' object, this
- * 	value is a memory address in device memory, equal to the 'device_ptr'
- * 	field in the memory object. This particular case differs from the behavior
- * 	of the runtime call to 'clSetKernelArg'.
- * 	In all other cases, the value is equal to what is passed to
- * 	'clSetKernelArg'.
+ * 	Value of the argument. This is a pointer to host memory. The memory
+ * 	pointed to by this variable will be copied internally, keeping a copy of
+ * 	the argument for future use.
  *
- * @param unsigned int arg_size
+ * @param unsigned int size
  *
- * 	Argument size. For 'cl_mem' objects, this is the amount of memory allocated
- * 	in the device. This case differs from the value passed to 'clSetKernelArg'
- * 	(which would be always 4). In all other cases, the value is equal to what is
- * 	passed to 'clSetKernelArg'.
+ * 	Argument size. This size must match the size encoded in the kernel
+ * 	metadata for this particular argument.
  *
  * @return int
  *
  *	Unique kernel ID.
  */
 
-static int opencl_abi_si_kernel_set_arg_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
 	int kernel_id;
 
-	unsigned int arg_index;
-	unsigned int arg_value;
-	unsigned int arg_size;
+	unsigned int index;
+	unsigned int value;
+	unsigned int size;
 
 	/* Arguments */
 	kernel_id = regs->ecx;
-	arg_index = regs->edx;
-	arg_value = regs->esi;
-	arg_size = regs->edi;
-	opencl_debug("\tkernel_id=%d, arg_index=%d\n", kernel_id, arg_index);
-	opencl_debug("\targ_value=0x%x, arg_size=%u\n", arg_value, arg_size);
+	index = regs->edx;
+	value = regs->esi;
+	size = regs->edi;
+	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
+	opencl_debug("\tvalue=0x%x, size=%u\n", value, size);
 
-	/* Return kernel ID */
-	opencl_debug("\treturned kernel ID = %d\n", kernel_id);
+	/* No return value */
 	return 0;
 }
+
+
+
+
+/*
+ * OpenCL ABI call #10 - si_kernel_set_arg_mem
+ *
+ * Set a kernel argument of type 'cl_mem'.
+ *
+ * @param int kernel_id
+ *
+ * 	Kernel ID, as returned by ABI call 'si_kernel_create'
+ *
+ * @param int index
+ *
+ * 	Argument index to set.
+ *
+ * @param void *device_ptr
+ *
+ * 	Pointer to device global memory where the memory object was allocated
+ * 	with a previous call to 'si_mem_alloc'.
+ *
+ * @param unsigned int size
+ *
+ * 	Size allocated in global memory for this object.
+ *
+ * @return int
+ *
+ *	Unique kernel ID.
+ */
+
+static int opencl_abi_si_kernel_set_arg_mem_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	int kernel_id;
+
+	unsigned int index;
+	unsigned int device_ptr;
+	unsigned int size;
+
+	/* Arguments */
+	kernel_id = regs->ecx;
+	index = regs->edx;
+	device_ptr = regs->esi;
+	size = regs->edi;
+	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
+	opencl_debug("\tdevice_ptr=0x%x, size=%u\n", device_ptr, size);
+
+	/* No return value */
+	return 0;
+}
+
+
+
+
+/*
+ * OpenCL ABI call #11 - si_kernel_set_arg_image
+ *
+ * Set a kernel argument of type 'cl_image'.
+ *
+ * @param int kernel_id
+ *
+ * 	Kernel ID, as returned by ABI call 'si_kernel_create'
+ *
+ * @param int index
+ *
+ * 	Argument index to set.
+ *
+ * @param [...] FIXME - not decided yet
+ *
+ * @return int
+ *
+ *	Unique kernel ID.
+ */
+
+static int opencl_abi_si_kernel_set_arg_image_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	int kernel_id;
+	unsigned int index;
+
+	/* Arguments */
+	kernel_id = regs->ecx;
+	index = regs->edx;
+	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
+
+	/* No return value */
+	return 0;
+}
+
+
+
+
+/*
+ * OpenCL ABI call #12 - si_kernel_set_arg_sampler
+ *
+ * Set a kernel argument of type 'cl_sampler'.
+ *
+ * @param int kernel_id
+ *
+ * 	Kernel ID, as returned by ABI call 'si_kernel_create'
+ *
+ * @param int index
+ *
+ * 	Argument index to set.
+ *
+ * @param [...] FIXME - not decided yet
+ *
+ * @return int
+ *
+ *	Unique kernel ID.
+ */
+
+static int opencl_abi_si_kernel_set_arg_sampler_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	int kernel_id;
+	unsigned int index;
+
+	/* Arguments */
+	kernel_id = regs->ecx;
+	index = regs->edx;
+	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
+
+	/* No return value */
+	return 0;
+}
+
+
+
+
+/*
+ * OpenCL ABI call #13 - si_kernel_launch
+ *
+ * Create an ND-Range executing this kernel and place all its work-groups in the
+ * Southern Islands GPU scheduling queue. The x86 context performing this call
+ * suspends until the ND-Range completely finishes execution.
+ *
+ * @param int kernel_id
+ *
+ * 	Kernel ID, as returned by ABI call 'si_kernel_create'
+ *
+ * @param int work_dim
+ *
+ * 	Number of work dimensions. This is an integer number between 1 and 3,
+ * 	which determines the number of elements of the following arrays.
+ *
+ * @param unsigned int *global_offset
+ *
+ *	Array of 'work_dim' integers containing global offsets.
+ *
+ * @param unsigned int *global_size
+ *
+ *	Array of 'work_dim' integers containing the ND-Range global size in each
+ *	dimension.
+ *
+ * @param unsigned int *local_size
+ *
+ *	Array of 'work_dim' integers containing the local size in each
+ *	dimension.
+ *
+ * @param [...] FIXME - not decided yet
+ *
+ * @return int
+ *
+ *	Unique kernel ID.
+ */
+
+static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	int kernel_id;
+	int work_dim;
+	int i;
+
+	unsigned int global_offset_ptr;
+	unsigned int global_size_ptr;
+	unsigned int local_size_ptr;
+
+	unsigned int global_offset[3];
+	unsigned int global_size[3];
+	unsigned int local_size[3];
+
+	/* Arguments */
+	kernel_id = regs->ecx;
+	work_dim = regs->edx;
+	global_offset_ptr = regs->esi;
+	global_size_ptr = regs->edi;
+	local_size_ptr = regs->ebp;
+	opencl_debug("\tkernel_id=%d, work_dim=%d\n", kernel_id, work_dim);
+	opencl_debug("\tglobal_offset_ptr=0x%x, global_size_ptr=0x%x, local_size_ptr=0x%x\n",
+		global_offset_ptr, global_size_ptr, local_size_ptr);
+	
+	/* Debug */
+	assert(IN_RANGE(work_dim, 1, 3));
+	mem_read(mem, global_offset_ptr, work_dim * 4, global_offset);
+	mem_read(mem, global_size_ptr, work_dim * 4, global_size);
+	mem_read(mem, local_size_ptr, work_dim * 4, local_size);
+	for (i = 0; i < work_dim; i++)
+		opencl_debug("\tglobal_offset[%d] = %u\n", i, global_offset[i]);
+	for (i = 0; i < work_dim; i++)
+		opencl_debug("\tglobal_size[%d] = %u\n", i, global_size[i]);
+	for (i = 0; i < work_dim; i++)
+		opencl_debug("\tlocal_size[%d] = %u\n", i, local_size[i]);
+
+	/* No return value */
+	return 0;
+}
+

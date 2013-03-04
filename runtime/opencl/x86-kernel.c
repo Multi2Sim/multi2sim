@@ -339,10 +339,10 @@ int opencl_x86_kernel_set_arg(struct opencl_x86_kernel_t *kernel,
 
 void opencl_x86_kernel_run(
 	struct opencl_x86_kernel_t *kernel,
-	cl_uint work_dim,
-	const size_t *global_work_offset,
-	const size_t *global_work_size,
-	const size_t *local_work_size)
+	int work_dim,
+	unsigned int *global_work_offset,
+	unsigned int *global_work_size,
+	unsigned int *local_work_size)
 {
 	int i;
 	int j;
