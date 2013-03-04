@@ -31,6 +31,21 @@ void opencl_si_program_list_init(void);
 void opencl_si_program_list_done(void);
 
 
+/*
+ * Constant Buffer
+ */
+
+struct opencl_si_constant_buffer_t
+{
+	int id;  /* Constant buffer ID (2-24) */
+	unsigned int device_ptr;
+};
+
+struct opencl_si_constant_buffer_t *opencl_si_constant_buffer_create(int id,
+		unsigned int device_ptr);
+void opencl_si_constant_buffer_free(struct opencl_si_constant_buffer_t *constant_buffer);
+
+
 
 /*
  * OpenCL Southern Islands Program
@@ -40,10 +55,21 @@ void opencl_si_program_list_done(void);
 struct opencl_si_program_t
 {
 	int id;
+	
+	/* ELF binary */
+	struct elf_file_t *elf_file;
+
+	/* Constant buffers are shared by all kernels compiled in the
+	 * same binary. This list is comprised of elements of type
+	 * 'opencl_si_constant_buffer_t'. */
+	struct list_t *constant_buffer_list;
 };
 
 struct opencl_si_program_t *opencl_si_program_create(void);
 void opencl_si_program_free(struct opencl_si_program_t *program);
+
+void opencl_si_program_set_binary(struct opencl_si_program_t *program,
+		void *buf, unsigned int size);
 
 
 #endif

@@ -453,11 +453,13 @@ static int opencl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
 static int opencl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct opencl_si_program_t *program;
 
 	int program_id;
-
 	unsigned int bin_ptr;
 	unsigned int bin_size;
+
+	void *buf;
 
 	/* Arguments */
 	program_id = regs->ecx;
@@ -465,6 +467,18 @@ static int opencl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
 	bin_size = regs->esi;
 	opencl_debug("\tprogram_id=%d, bin_ptr=0x%x, size=%u\n",
 			program_id, bin_ptr, bin_size);
+
+	/* Get program */
+	program = list_get(opencl_si_program_list, program_id);
+	if (!program)
+		fatal("%s: invalid program ID (%d)",
+				__FUNCTION__, program_id);
+
+	/* Set the binary */
+	buf = xmalloc(bin_size);
+	mem_read(ctx->mem, bin_ptr, bin_size, buf);
+	opencl_si_program_set_binary(program, buf, bin_size);
+	free(buf);
 
 	/* No return value */
 	return 0;
@@ -590,9 +604,11 @@ static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenCL ABI call #10 - si_kernel_set_arg_mem
+ * OpenCL ABI call #10 - si_kernel_set_arg_pointer
  *
- * Set a kernel argument of type 'cl_mem'.
+ * Set a kernel argument of type 'cl_mem', or local memory. In general, any
+ * argument that uses the 'pointer' name as first token in the metadata entry of
+ * the kernel binary.
  *
  * @param int kernel_id
  *
@@ -604,19 +620,25 @@ static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
  *
  * @param void *device_ptr
  *
- * 	Pointer to device global memory where the memory object was allocated
- * 	with a previous call to 'si_mem_alloc'.
+ *	If the argument represents a 'cl_mem' object in global memory, pointer
+ *	to device memory containing the data, as returned by a previous call to
+ *	'si_mem_alloc'.
+ *	If the argument is a variable in local memory, the purpose of the call
+ *	is just allocating space for it, so this value should be NULL.
  *
  * @param unsigned int size
  *
- * 	Size allocated in global memory for this object.
+ *	If the argument represents a 'cl_mem' object, size allocated in global
+ *	memory for the object.
+ *	If the argument is a variable in local memory, number of bytes to be
+ *	allocated in the device local memory.
  *
  * @return int
  *
  *	Unique kernel ID.
  */
 
-static int opencl_abi_si_kernel_set_arg_mem_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_kernel_set_arg_pointer_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
