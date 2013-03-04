@@ -96,6 +96,9 @@ struct opencl_si_kernel_t
 
 	/* List of arguments */
 	struct list_t *arg_list;
+
+	/* ID in driver */
+	int id;
 };
 
 

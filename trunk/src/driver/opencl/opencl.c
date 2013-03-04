@@ -23,10 +23,13 @@
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "opencl.h"
+#include "si-kernel.h"
+#include "si-program.h"
 
 
 static char *opencl_err_abi_call =
@@ -107,6 +110,18 @@ int opencl_abi_call(struct x86_ctx_t *ctx)
 }
 
 
+void opencl_init(void)
+{
+}
+
+
+void opencl_done(void)
+{
+	opencl_si_program_list_done();
+	opencl_si_kernel_list_done();
+}
+
+
 
 
 /*
@@ -114,7 +129,7 @@ int opencl_abi_call(struct x86_ctx_t *ctx)
  *
  * Returns the version of the OpenCL driver.
  *
- * @param struct opencl_vection_t *version
+ * @param struct opencl_version_t *version
  *
  * 	The driver returns its version information in this argument, with a
  * 	data structure formed of two integer fields:
@@ -173,10 +188,6 @@ static int opencl_abi_init_impl(struct x86_ctx_t *ctx)
  * OpenCL ABI call #2 - si_mem_alloc
  *
  * Allocates memory in the Southern Islands device.
- *
- * @param int device_id
- *
- *	Device ID return by ABI call 'get_device_id'.
  *
  * @param unsigned int size
  *
@@ -384,5 +395,198 @@ static int opencl_abi_si_mem_copy_impl(struct x86_ctx_t *ctx)
 	free(buf);
 
 	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * OpenCL ABI call #6 - si_program_create
+ *
+ * Create a Southern Islands program object and return a unique identifier
+ * for it.
+ *
+ * @return int
+ *
+ *	Unique program ID.
+ */
+
+static int opencl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
+{
+	struct opencl_si_program_t *program;
+
+	/* Create program */
+	program = opencl_si_program_create();
+	opencl_debug("\tnew program ID = %d\n", program->id);
+
+	/* Return program ID */
+	return program->id;
+}
+
+
+
+
+/*
+ * OpenCL ABI call #7 - si_program_set_binary
+ *
+ * Associate a binary to a Southern Islands program.
+ *
+ * @param int program_id
+ *
+ * 	Program ID, as returned by a previous ABI call to 'si_program_create'.
+ *
+ * @param void *buf
+ *
+ * 	Pointer to the memory space where the program binary can be found.
+ *
+ * @param unsigned int size
+ *
+ * 	Size of the program binary
+ *
+ * @return void
+ *
+ *	No return value.
+ */
+
+static int opencl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	int program_id;
+
+	unsigned int bin_ptr;
+	unsigned int bin_size;
+
+	/* Arguments */
+	program_id = regs->ecx;
+	bin_ptr = regs->edx;
+	bin_size = regs->esi;
+	opencl_debug("\tprogram_id=%d, bin_ptr=0x%x, size=%u\n",
+			program_id, bin_ptr, bin_size);
+
+	/* No return value */
+	return 0;
+}
+
+
+
+/*
+ * OpenCL ABI call #8 - si_kernel_create
+ *
+ * Create a Southern Islands kernel object and return a unique identifier
+ * for it.
+ *
+ * @param int program_id
+ *
+ * 	Program ID, as returned by ABI call 'si_program_create'
+ *
+ * @param char *func_name
+ *
+ * 	Kernel function name in the program.
+ *
+ * @return int
+ *
+ *	Unique kernel ID.
+ */
+
+static int opencl_abi_si_kernel_create_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	struct opencl_si_kernel_t *kernel;
+	struct opencl_si_program_t *program;
+
+	unsigned int func_name_ptr;
+
+	int program_id;
+	int size;
+
+	char func_name[MAX_STRING_SIZE];
+
+	/* Arguments */
+	program_id = regs->ecx;
+	func_name_ptr = regs->edx;
+	opencl_debug("\tprogram_id=%d, func_name_ptr=0x%x\n",
+			program_id, func_name_ptr);
+
+	/* Read function name */
+	size = mem_read_string(mem, func_name_ptr, sizeof func_name, func_name);
+	if (size == sizeof func_name)
+		fatal("%s: buffer too small", __FUNCTION__);
+	opencl_debug("\tfunc_name='%s'\n", func_name);
+
+	/* Get program object */
+	program = list_get(opencl_si_program_list, program_id);
+	if (!program)
+		fatal("%s: invalid program ID (%d)",
+				__FUNCTION__, program_id);
+
+	/* Create kernel */
+	kernel = opencl_si_kernel_create(program, func_name);
+	opencl_debug("\tnew kernel ID = %d\n", kernel->id);
+
+	/* Return kernel ID */
+	return kernel->id;
+}
+
+
+
+
+/*
+ * OpenCL ABI call #9 - si_kernel_set_arg
+ *
+ * Set a kernel argument.
+ *
+ * @param int kernel_id
+ *
+ * 	Kernel ID, as returned by ABI call 'si_kernel_create'
+ *
+ * @param int arg_index
+ *
+ * 	Argument index to set.
+ *
+ * @param void *arg_value
+ *
+ * 	Argument value. If the argument type expected is a 'cl_mem' object, this
+ * 	value is a memory address in device memory, equal to the 'device_ptr'
+ * 	field in the memory object. This particular case differs from the behavior
+ * 	of the runtime call to 'clSetKernelArg'.
+ * 	In all other cases, the value is equal to what is passed to
+ * 	'clSetKernelArg'.
+ *
+ * @param unsigned int arg_size
+ *
+ * 	Argument size. For 'cl_mem' objects, this is the amount of memory allocated
+ * 	in the device. This case differs from the value passed to 'clSetKernelArg'
+ * 	(which would be always 4). In all other cases, the value is equal to what is
+ * 	passed to 'clSetKernelArg'.
+ *
+ * @return int
+ *
+ *	Unique kernel ID.
+ */
+
+static int opencl_abi_si_kernel_set_arg_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	int kernel_id;
+
+	unsigned int arg_index;
+	unsigned int arg_value;
+	unsigned int arg_size;
+
+	/* Arguments */
+	kernel_id = regs->ecx;
+	arg_index = regs->edx;
+	arg_value = regs->esi;
+	arg_size = regs->edi;
+	opencl_debug("\tkernel_id=%d, arg_index=%d\n", kernel_id, arg_index);
+	opencl_debug("\targ_value=0x%x, arg_size=%u\n", arg_value, arg_size);
+
+	/* Return kernel ID */
+	opencl_debug("\treturned kernel ID = %d\n", kernel_id);
 	return 0;
 }

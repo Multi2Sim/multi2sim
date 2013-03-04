@@ -1708,6 +1708,9 @@ int main(int argc, char **argv)
 	runtime_register("GLEW", "GLEW", "m2s-glew", 330, (runtime_abi_func_t) glew_abi_call);
 	runtime_register("GLU", "GLU", "m2s-glu", 331, (runtime_abi_func_t) glu_abi_call);
 
+	/* Initialization of drivers */
+	opencl_init();
+
 	/* Initialization of libraries */
 	esim_init();
 	trace_init(trace_file_name);
@@ -1799,6 +1802,9 @@ int main(int argc, char **argv)
 
 	/* Finalization of runtimes */
 	runtime_done();
+
+	/* Finalization of drivers */
+	opencl_done();
 
 	/* Finalization of libraries */
 	esim_done();
