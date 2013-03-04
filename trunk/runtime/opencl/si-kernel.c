@@ -43,33 +43,21 @@ static struct str_map_t opencl_si_arg_type_map =
 	}
 };
 
-static struct str_map_t opencl_si_arg_data_type_map =
-{
-	2,
-	{
-		{ "float", opencl_si_arg_data_type_float },
-		{ "u32", opencl_si_arg_data_type_u32 }
-	}
-};
-
 
 static struct str_map_t opencl_si_arg_scope_map =
 {
-	2,
+	10,
 	{
+		{ "g", opencl_si_arg_scope_g },
+		{ "p", opencl_si_arg_scope_p },
+		{ "local", opencl_si_arg_scope_local },
 		{ "uav", opencl_si_arg_scope_uav },
-		{ "hl", opencl_si_arg_scope_hl }
-	}
-};
-
-
-static struct str_map_t opencl_si_arg_access_map =
-{
-	3,
-	{
-		{ "RO", opencl_si_arg_access_ro },
-		{ "WO", opencl_si_arg_access_wo },
-		{ "RW", opencl_si_arg_access_rw }
+		{ "c", opencl_si_arg_scope_c },
+		{ "r", opencl_si_arg_scope_r },
+		{ "hl", opencl_si_arg_scope_hl },
+		{ "hp", opencl_si_arg_scope_hp },
+		{ "hc", opencl_si_arg_scope_hc },
+		{ "hr", opencl_si_arg_scope_hr }
 	}
 };
 
@@ -91,38 +79,8 @@ struct opencl_si_arg_t *opencl_si_arg_create(enum opencl_si_arg_type_t type,
 
 void opencl_si_arg_free(struct opencl_si_arg_t *arg)
 {
-	switch (arg->type)
-	{
-	case opencl_si_arg_type_value:
-
-		if (arg->u.value.ptr)
-			free(arg->u.value.ptr);
-		break;
-
-	case opencl_si_arg_type_pointer:
-
-		break;
-
-	default:
-		panic("%s: invalid argument type", __FUNCTION__);
-	}
-
 	free(arg->name);
 	free(arg);
-}
-
-
-void opencl_si_arg_set_value(struct opencl_si_arg_t *arg, void *ptr, int size)
-{
-	/* Check that value was not set yet */
-	assert(arg->type == opencl_si_arg_type_value);
-	if (arg->set)
-		fatal("%s: argument already set", __FUNCTION__);
-
-	/* Allocate and set */
-	arg->u.value.ptr = xmalloc(size);
-	arg->u.value.size = size;
-	memcpy(arg->u.value.ptr, ptr, size);
 }
 
 
@@ -131,36 +89,6 @@ void opencl_si_arg_debug(struct opencl_si_arg_t *arg)
 	opencl_debug("\ttype = %s", str_map_value(&opencl_si_arg_type_map,
 			arg->type));
 	opencl_debug("\tname = '%s'", arg->name);
-	opencl_debug("\tdata_type = %s", str_map_value(&opencl_si_arg_data_type_map,
-			arg->data_type));
-
-	switch (arg->type)
-	{
-	case opencl_si_arg_type_value:
-
-		opencl_debug("\ttoken_3 = %u", arg->u.value.token_3);
-		opencl_debug("\ttoken_4 = %u", arg->u.value.token_4);
-		opencl_debug("\toffset = %u", arg->u.value.offset);
-		break;
-
-	case opencl_si_arg_type_pointer:
-
-		opencl_debug("\ttoken_3 = %u", arg->u.pointer.token_3);
-		opencl_debug("\ttoken_4 = %u", arg->u.pointer.token_4);
-		opencl_debug("\toffset = %u", arg->u.pointer.offset);
-		opencl_debug("\tscope = %s", str_map_value(&opencl_si_arg_scope_map,
-				arg->u.pointer.scope));
-		opencl_debug("\tscope_id = %u", arg->u.pointer.scope_id);
-		opencl_debug("\ttoken_8 = %u", arg->u.pointer.token_8);
-		opencl_debug("\taccess = %s", str_map_value(&opencl_si_arg_access_map,
-				arg->u.pointer.access));
-		opencl_debug("\ttoken_10 = %u", arg->u.pointer.token_10);
-		opencl_debug("\ttoken_11 = %u", arg->u.pointer.token_11);
-		break;
-
-	default:
-		panic("%s: invalid argument type", __FUNCTION__);
-	}
 }
 
 
@@ -206,61 +134,18 @@ static void opencl_si_kernel_metadata_line(struct opencl_si_kernel_t *kernel,
 		arg = opencl_si_arg_create(opencl_si_arg_type_pointer, token);
 		str_token_list_shift(token_list);
 
-		/* Token 2 - Data type */
-		token = str_token_list_first(token_list);
-		arg->data_type = str_map_string_err(&opencl_si_arg_data_type_map, token, &err);
+		/* Skip tokens 2-5 */
 		str_token_list_shift(token_list);
-		if (err)
-			fatal("%s: unsupported data type: %s", __FUNCTION__, line);
-
-		/* Token 3 - Unknown */
-		token = str_token_list_first(token_list);
-		arg->u.pointer.token_3 = atoi(token);
 		str_token_list_shift(token_list);
-
-		/* Token 4 - Unknown */
-		token = str_token_list_first(token_list);
-		arg->u.pointer.token_4 = atoi(token);
 		str_token_list_shift(token_list);
-
-		/* Token 5 - Offset */
-		token = str_token_list_first(token_list);
-		arg->u.pointer.offset = atoi(token);
 		str_token_list_shift(token_list);
 
 		/* Token 6 - Scope */
 		token = str_token_list_first(token_list);
-		arg->u.pointer.scope = str_map_string_err(&opencl_si_arg_scope_map, token, &err);
+		arg->scope = str_map_string_err(&opencl_si_arg_scope_map, token, &err);
 		str_token_list_shift(token_list);
 		if (err)
 			fatal("%s: unknown scope: %s", __FUNCTION__, line);
-
-		/* Token 7 - Scope ID */
-		token = str_token_list_first(token_list);
-		arg->u.pointer.scope_id = atoi(token);
-		str_token_list_shift(token_list);
-
-		/* Token 8 - Unknown */
-		token = str_token_list_first(token_list);
-		arg->u.pointer.token_8 = atoi(token);
-		str_token_list_shift(token_list);
-
-		/* Token 9 - Access */
-		token = str_token_list_first(token_list);
-		arg->u.pointer.access = str_map_string_err(&opencl_si_arg_access_map, token, &err);
-		str_token_list_shift(token_list);
-		if (err)
-			fatal("%s: unknown access: %s", __FUNCTION__, line);
-
-		/* Token 10 - Unknown */
-		token = str_token_list_first(token_list);
-		arg->u.pointer.token_10 = atoi(token);
-		str_token_list_shift(token_list);
-
-		/* Token 11 - Unknown */
-		token = str_token_list_first(token_list);
-		arg->u.pointer.token_11 = atoi(token);
-		str_token_list_shift(token_list);
 
 		/* Add argument */
 		list_add(kernel->arg_list, arg);
@@ -273,28 +158,6 @@ static void opencl_si_kernel_metadata_line(struct opencl_si_kernel_t *kernel,
 		str_token_list_shift(token_list);
 		token = str_token_list_first(token_list);
 		arg = opencl_si_arg_create(opencl_si_arg_type_value, token);
-		str_token_list_shift(token_list);
-
-		/* Token 2 - Data type */
-		token = str_token_list_first(token_list);
-		arg->data_type = str_map_string_err(&opencl_si_arg_data_type_map, token, &err);
-		str_token_list_shift(token_list);
-		if (err)
-			fatal("%s: unsupported data type: %s", __FUNCTION__, line);
-
-		/* Token 3 - Unknown */
-		token = str_token_list_first(token_list);
-		arg->u.value.token_3 = atoi(token);
-		str_token_list_shift(token_list);
-
-		/* Token 4 - Unknown */
-		token = str_token_list_first(token_list);
-		arg->u.value.token_4 = atoi(token);
-		str_token_list_shift(token_list);
-
-		/* Token 5 - Offset */
-		token = str_token_list_first(token_list);
-		arg->u.value.offset = atoi(token);
 		str_token_list_shift(token_list);
 
 		/* Add argument */
@@ -391,21 +254,23 @@ int opencl_si_kernel_set_arg(
 	struct opencl_si_arg_t *arg;
 	struct opencl_mem_t *mem;
 
+	void *ptr;
+	unsigned int size;
+
 	/* Check valid argument index */
 	arg = list_get(kernel->arg_list, arg_index);
 	if (!arg)
 		fatal("%s: invalid argument index (%d)\n",
 				__FUNCTION__, arg_index);
 
-	/* Value */
-	if (arg->type == opencl_si_arg_type_value)
-	{
-		opencl_si_arg_set_value(arg, arg_value, arg_size);
-	}
+	/* By default, use argument value and size given by the user. */
+	ptr = arg_value;
+	size = arg_size;
 
-	/* Pointer in global memory */
-	else if (arg->type == opencl_si_arg_type_pointer &&
-			arg->u.pointer.scope == opencl_si_arg_scope_uav)
+	/* If the argument is a pointer to global memory, access the memory object
+	 * and get the associated device pointer. */
+	if (arg->type == opencl_si_arg_type_pointer &&
+			arg->scope == opencl_si_arg_scope_uav)
 	{
 		/* Check size - must be size of a pointer to an cl_mem object */
 		if (arg_size != 4)
@@ -419,27 +284,15 @@ int opencl_si_kernel_set_arg(
 					__FUNCTION__, arg_index);
 
 		/* The actual value is the device pointer */
-		arg->u.pointer.device_ptr = mem->device_ptr;
-		arg->u.pointer.size = mem->size;
+		ptr = mem->device_ptr;
+		size = mem->size;
 	}
 
-	/* Pointer in local memory */
-	else if (arg->type == opencl_si_arg_type_pointer &&
-			arg->u.pointer.scope == opencl_si_arg_scope_hl)
-	{
-		/* Argument value must be NULL */
-		if (arg_value)
-			fatal("%s: argument %d value not NULL for local memory",
-					__FUNCTION__, arg_index);
-	}
+	/* Perform ABI call to set up argument */
+	/* FIXME */
+	printf("Set argument: ptr = %p, size = %u\n", ptr, size); ///////
 
-	/* Not recognized */
-	else
-	{
-		fatal("%s: unsupported argument %d type",
-				__FUNCTION__, arg_index);
-	}
-
+	/* Success */
 	return 0;
 }
 
