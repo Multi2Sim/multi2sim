@@ -170,84 +170,9 @@ static int opencl_abi_init_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenCL ABI call #2 - get_device_id
+ * OpenCL ABI call #2 - si_mem_alloc
  *
- * Returns a unique integer identifier of an OpenCL device, given a string that
- * represents it. The returned identifier can be used in later ABI calls to
- * refer to the device.
- *
- * @param char *name
- *
- * 	String representing the device name. Valid values are:
- * 		"x86"
- * 		"Evergreen"
- * 		"Southern Islands"
- *
- * @return
- *	int
- *
- *	Integer value other than 0 with a unique device identifier. If the
- *	device name is invalid, the ABI call returns 0.
- */
-
-/* List of OpenCL device identifiers */
-enum opencl_device_id_t
-{
-	opencl_device_invalid = 0,
-
-	opencl_device_x86,
-	opencl_device_evergreen,
-	opencl_device_southern_islands,
-
-	opencl_device_count
-};
-
-static struct str_map_t opencl_device_map =
-{
-	3,
-	{
-		{ "x86", opencl_device_x86 },
-		{ "Evergreen", opencl_device_evergreen },
-		{ "Southern Islands", opencl_device_southern_islands }
-	}
-};
-
-static int opencl_abi_get_device_id_impl(struct x86_ctx_t *ctx)
-{
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
-
-	unsigned int name_ptr;
-	char name[MAX_STRING_SIZE];
-
-	int size;
-	int id;
-
-	/* Arguments */
-	name_ptr = regs->ecx;
-	opencl_debug("\tname_ptr=0x%x\n", name_ptr);
-
-	/* Read device name */
-	size = mem_read_string(mem, name_ptr, sizeof name, name);
-	if (size == sizeof name)
-		fatal("%s: buffer too small", __FUNCTION__);
-
-	/* Return identifier */
-	opencl_debug("\tname='%s'\n", name);
-	id = str_map_string(&opencl_device_map, name);
-	opencl_debug("\tdevice ID returned = %d\n", id);
-
-	/* Return */
-	return id;
-}
-
-
-
-
-/*
- * OpenCL ABI call #3 - mem_alloc
- *
- * Allocates memory in the device.
+ * Allocates memory in the Southern Islands device.
  *
  * @param int device_id
  *
@@ -264,44 +189,26 @@ static int opencl_abi_get_device_id_impl(struct x86_ctx_t *ctx)
  *	ABI calls taking device pointers as input arguments.
  */
 
-static int opencl_abi_mem_alloc_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_mem_alloc_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	int device_id;
 	unsigned int size;
-	char *device_name;
-
 	unsigned int device_ptr;
 
 	/* Arguments */
-	device_id = regs->ecx;
-	size = regs->edx;
-	device_name = str_map_value(&opencl_device_map, device_id);
-	opencl_debug("\tdevice_id = %d ('%s')\n", device_id, device_name);
+	size = regs->ecx;
 	opencl_debug("\tsize = %u\n", size);
 
 	/* For now, memory allocation in device memory is done by just incrementing
 	 * a pointer to the top of the global memory space. Since memory deallocation
 	 * is not implemented, "holes" in the memory space are not considered. */
-	switch (device_id)
-	{
-
-	case opencl_device_southern_islands:
-
-		device_ptr = si_emu->global_mem_top;
-		si_emu->global_mem_top += size;
-		break;
-
-	default:
-		device_ptr = 0;
-		fatal("%s: not implemented for device = %d ('%s')",
-				__FUNCTION__, device_id, device_name);
-	}
-
-	/* Return device pointer */
+	device_ptr = si_emu->global_mem_top;
+	si_emu->global_mem_top += size;
 	opencl_debug("\t%d bytes of device memory allocated at 0x%x\n",
 			size, device_ptr);
+
+	/* Return device pointer */
 	return device_ptr;
 }
 
@@ -309,13 +216,9 @@ static int opencl_abi_mem_alloc_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenCL ABI call #4 - mem_read
+ * OpenCL ABI call #3 - si_mem_read
  *
- * Read memory from device into host memory space.
- *
- * @param int device_id
- *
- *	Device ID return by ABI call 'get_device_id'.
+ * Read memory from Southern Islands device into host memory space.
  *
  * @param void *host_ptr
  *
@@ -334,55 +237,36 @@ static int opencl_abi_mem_alloc_impl(struct x86_ctx_t *ctx)
  *	The function does not have any return value.
  */
 
-static int opencl_abi_mem_read_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_mem_read_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	int device_id;
 	unsigned int host_ptr;
 	unsigned int device_ptr;
 	unsigned int size;
 
-	char *device_name;
 	void *buf;
 
 	/* Arguments */
-	device_id = regs->ecx;
-	host_ptr = regs->edx;
-	device_ptr = regs->esi;
-	size = regs->edi;
-
-	/* Debug */
-	device_name = str_map_value(&opencl_device_map, device_id);
-	opencl_debug("\tdevice_id = %d ('%s')\n", device_id, device_name);
+	host_ptr = regs->ecx;
+	device_ptr = regs->edx;
+	size = regs->esi;
 	opencl_debug("\thost_ptr = 0x%x, device_ptr = 0x%x, size = %d bytes\n",
 			host_ptr, device_ptr, size);
 
-	/* Action depends on device */
-	switch (device_id)
-	{
-	case opencl_device_southern_islands:
+	/* Check memory range */
+	if (device_ptr + size > si_emu->global_mem_top)
+		fatal("%s: accessing device memory not allocated",
+				__FUNCTION__);
 
-		/* Check memory range */
-		if (device_ptr + size > si_emu->global_mem_top)
-			fatal("%s: accessing device memory not allocated",
-					__FUNCTION__);
+	/* Read memory from device to host */
+	buf = xmalloc(size);
+	mem_read(si_emu->global_mem, device_ptr, size, buf);
+	mem_write(mem, host_ptr, size, buf);
+	free(buf);
 
-		/* Read memory from device to host */
-		buf = xmalloc(size);
-		mem_read(si_emu->global_mem, device_ptr, size, buf);
-		mem_write(mem, host_ptr, size, buf);
-		free(buf);
-
-		/* Done */
-		break;
-
-	default:
-		fatal("%s: not implemented for device = %d ('%s')",
-				__FUNCTION__, device_id, device_name);
-	}
-
+	/* Return */
 	return 0;
 }
 
@@ -390,13 +274,9 @@ static int opencl_abi_mem_read_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenCL ABI call #5 - mem_write
+ * OpenCL ABI call #4 - si_mem_write
  *
- * Write memory from host into device memory space.
- *
- * @param int device_id
- *
- *	Device ID return by ABI call 'get_device_id'.
+ * Write memory from host into Southern Islands device.
  *
  * @param void *device_ptr
  *
@@ -415,54 +295,94 @@ static int opencl_abi_mem_read_impl(struct x86_ctx_t *ctx)
  *	The function does not have any return value.
  */
 
-static int opencl_abi_mem_write_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_mem_write_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	int device_id;
 	unsigned int device_ptr;
 	unsigned int host_ptr;
 	unsigned int size;
 
-	char *device_name;
 	void *buf;
 
 	/* Arguments */
-	device_id = regs->ecx;
-	device_ptr = regs->edx;
-	host_ptr = regs->esi;
-	size = regs->edi;
-
-	/* Debug */
-	device_name = str_map_value(&opencl_device_map, device_id);
-	opencl_debug("\tdevice_id = %d ('%s')\n", device_id, device_name);
+	device_ptr = regs->ecx;
+	host_ptr = regs->edx;
+	size = regs->esi;
 	opencl_debug("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n",
 			device_ptr, host_ptr, size);
 
-	/* Action depends on device */
-	switch (device_id)
-	{
-	case opencl_device_southern_islands:
+	/* Check memory range */
+	if (device_ptr + size > si_emu->global_mem_top)
+		fatal("%s: accessing device memory not allocated",
+				__FUNCTION__);
 
-		/* Check memory range */
-		if (device_ptr + size > si_emu->global_mem_top)
-			fatal("%s: accessing device memory not allocated",
-					__FUNCTION__);
+	/* Write memory from host to device */
+	buf = xmalloc(size);
+	mem_read(mem, host_ptr, size, buf);
+	mem_write(si_emu->global_mem, device_ptr, size, buf);
+	free(buf);
 
-		/* Write memory from host to device */
-		buf = xmalloc(size);
-		mem_read(mem, host_ptr, size, buf);
-		mem_write(si_emu->global_mem, device_ptr, size, buf);
-		free(buf);
+	/* Return */
+	return 0;
+}
 
-		/* Done */
-		break;
 
-	default:
-		fatal("%s: not implemented for device = %d ('%s')",
-				__FUNCTION__, device_id, device_name);
-	}
 
+
+/*
+ * OpenCL ABI call #5 - si_mem_copy
+ *
+ * Copy memory across two different regions of the Southern Islands device
+ * memory space.
+ *
+ * @param void *dest_ptr
+ *
+ * 	Destination pointer in device memory.
+ *
+ * @param void *src_ptr
+ *
+ * 	Source pointer in device memory.
+ *
+ * @param unsigned int size
+ *
+ * 	Number of bytes to read.
+ *
+ * @return void
+ *
+ *	The function does not have any return value.
+ */
+
+static int opencl_abi_si_mem_copy_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int dest_ptr;
+	unsigned int src_ptr;
+	unsigned int size;
+
+	void *buf;
+
+	/* Arguments */
+	dest_ptr = regs->ecx;
+	src_ptr = regs->edx;
+	size = regs->esi;
+	opencl_debug("\tdest_ptr = 0x%x, src_ptr = 0x%x, size = %d bytes\n",
+			dest_ptr, src_ptr, size);
+
+	/* Check memory range */
+	if (src_ptr + size > si_emu->global_mem_top ||
+			dest_ptr + size > si_emu->global_mem_top)
+		fatal("%s: accessing device memory not allocated",
+				__FUNCTION__);
+
+	/* Write memory from host to device */
+	buf = xmalloc(size);
+	mem_read(si_emu->global_mem, src_ptr, size, buf);
+	mem_write(si_emu->global_mem, dest_ptr, size, buf);
+	free(buf);
+
+	/* Return */
 	return 0;
 }
