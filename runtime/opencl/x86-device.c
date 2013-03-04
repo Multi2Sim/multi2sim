@@ -686,11 +686,6 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 		pthread_setaffinity_np(device->threads[i], sizeof cpu_set, &cpu_set);
 	}
 
-	/* Obtain device unique ID from the driver. The system call will fail
-	 * on native mode, and assign -1 to the ID. */
-	parent->id = syscall(OPENCL_SYSCALL_CODE, opencl_abi_get_device_id,
-			"x86");
-
 	/* Return */
 	return device;
 }

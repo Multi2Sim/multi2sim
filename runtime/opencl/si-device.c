@@ -71,11 +71,6 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	parent->arch_program_valid_binary_func = (opencl_arch_program_valid_binary_func_t)
 			opencl_si_program_valid_binary;
 
-	/* Obtain device unique ID from the driver. The system call will fail
-	 * on native mode, and assign -1 to the ID. */
-	parent->id = syscall(OPENCL_SYSCALL_CODE, opencl_abi_get_device_id,
-			"Southern Islands");
-
 	/* Return */
 	return device;
 }
@@ -94,7 +89,7 @@ void *opencl_si_device_mem_alloc(struct opencl_si_device_t *device,
 
 	/* Request device memory to driver */
 	device_ptr = (void *) syscall(OPENCL_SYSCALL_CODE,
-			opencl_abi_mem_alloc, device->parent->id, size);
+			opencl_abi_si_mem_alloc, size);
 
 	return device_ptr;
 }
@@ -111,8 +106,8 @@ void opencl_si_device_mem_read(struct opencl_si_device_t *device,
 		void *host_ptr, void *device_ptr, unsigned int size)
 {
 	/* Invoke 'mem_read' ABI call */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_mem_read,
-			device->parent->id, host_ptr, device_ptr, size);
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_mem_read,
+			host_ptr, device_ptr, size);
 }
 
 
@@ -120,8 +115,8 @@ void opencl_si_device_mem_write(struct opencl_si_device_t *device,
 		void *device_ptr, void *host_ptr, unsigned int size)
 {
 	/* Invoke 'mem_write' ABI call */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_mem_write,
-			device->parent->id, device_ptr, host_ptr, size);
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_mem_write,
+			device_ptr, host_ptr, size);
 }
 
 

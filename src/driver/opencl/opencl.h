@@ -17,18 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENCL_H
-#define DRIVER_OPENCL_H
+#ifndef DRIVER_OPENCL_ABI_H
+#define DRIVER_OPENCL_ABI_H
 
 /* Forward type declaration */
 struct x86_ctx_t;
 
-
 #define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
 extern int opencl_debug_category;
-
-void opencl_init(void);
-void opencl_done(void);
 
 int opencl_abi_call(struct x86_ctx_t *ctx);
 
