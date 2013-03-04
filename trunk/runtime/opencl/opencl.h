@@ -198,10 +198,10 @@ typedef int (*opencl_arch_kernel_set_arg_func_t)(
 /* Run ND-Range on device */
 typedef void (*opencl_arch_kernel_run_func_t)(
 		void *kernel,  /* Of type 'opencl_XXX_kernel_t' */
-		cl_uint work_dim,
-		const size_t *global_work_offset,
-		const size_t *global_work_size,
-		const size_t *local_work_size);
+		int work_dim,
+		unsigned int *global_work_offset,
+		unsigned int *global_work_size,
+		unsigned int *local_work_size);
 
 
 

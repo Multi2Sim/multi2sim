@@ -74,10 +74,10 @@ struct opencl_command_t
 		struct {
 			struct opencl_device_t *device;
 			void *arch_kernel;  /* Of type 'opencl_xxx_kernel_t' */
-			cl_uint work_dim;
-			size_t global_work_offset[3];
-			size_t global_work_size[3];
-			size_t local_work_size[3];
+			int work_dim;
+			unsigned int global_work_offset[3];
+			unsigned int global_work_size[3];
+			unsigned int local_work_size[3];
 		} launch_kernel;
 	} u;
 };
@@ -145,10 +145,10 @@ struct opencl_command_t *opencl_command_create_unmap_buffer(
 struct opencl_command_t *opencl_command_create_launch_kernel(
 		struct opencl_device_t *device,
 		void *arch_kernel,  /* of type 'opencl_xxx_kernel_t' */
-		cl_uint work_dim,
-		size_t *global_work_offset,
-		size_t *global_work_size,
-		size_t *local_work_size,
+		int work_dim,
+		unsigned int *global_work_offset,
+		unsigned int *global_work_size,
+		unsigned int *local_work_size,
 		struct opencl_command_queue_t *command_queue,
 		struct opencl_event_t **done_event_ptr,
 		int num_wait_events,
