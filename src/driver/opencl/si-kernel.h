@@ -20,6 +20,8 @@
 #ifndef DRIVER_OPENCL_SI_KERNEL_H
 #define DRIVER_OPENCL_SI_KERNEL_H
 
+#include <lib/util/elf-format.h>
+
 
 /*
  * Kernel List
@@ -32,8 +34,22 @@ void opencl_si_kernel_list_done(void);
 
 
 
+
 /*
- * OpenCL Southern Islands Kernel
+ * Argument
+ */
+
+struct opencl_si_arg_t
+{
+};
+
+struct opencl_si_arg_t *opencl_si_arg_create(void);
+void opencl_si_arg_free(struct opencl_si_arg_t *arg);
+
+
+
+/*
+ * Kernel
  */
 
 
@@ -41,7 +57,18 @@ struct opencl_si_kernel_t
 {
 	int id;
 	char *name;
+
+	/* Program that kernel belongs to */
 	struct opencl_si_program_t *program;
+
+	/* List of kernel arguments. Each element of the list is of type
+	 * 'struct opencl_si_arg_t'. */
+	struct list_t *arg_list;
+
+	/* Excerpts of program binary */
+	struct elf_buffer_t metadata_buffer;
+	struct elf_buffer_t header_buffer;
+	struct elf_buffer_t kernel_buffer;
 };
 
 struct opencl_si_kernel_t *opencl_si_kernel_create(struct opencl_si_program_t *program,
