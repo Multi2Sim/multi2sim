@@ -42,18 +42,6 @@ enum opencl_si_arg_type_t
 };
 
 
-/* NOTE: when adding new fields, update string map 'opencl_si_arg_data_type_map'
- * in 'runtime/opencl/si-kernel.c'.
- * NOTE: enumeration with same name in 'src/driver/opencl' should match exactly.
- * Increate runtime/driver major version if changed. */
-enum opencl_si_arg_data_type_t
-{
-	opencl_si_arg_data_type_invalid = 0,
-	opencl_si_arg_data_type_float,
-	opencl_si_arg_data_type_u32
-};
-
-
 /* NOTE: update string map 'opencl_si_arg_scope_map' in 'runtime/opencl/si-kernel.c'
  * when modifying this.
  * NOTE: enumeration with same name in 'src/driver/opencl' should match exactly.
@@ -61,71 +49,32 @@ enum opencl_si_arg_data_type_t
 enum opencl_si_arg_scope_t
 {
 	opencl_si_arg_scope_invalid = 0,
+	opencl_si_arg_scope_g,  /* Global memory */
+	opencl_si_arg_scope_p,  /* Private memory */
+	opencl_si_arg_scope_local,  /* Local memory */
 	opencl_si_arg_scope_uav,  /* Global memory */
-	opencl_si_arg_scope_hl  /* Local memory */
-};
-
-
-/* NOTE: update string map 'opencl_si_arg_access_map' in 'runtime/opencl/si-kernel.c'
- * when modifying this.
- * NOTE: enumeration with same name in 'src/driver/opencl' should match exactly.
- * Increate runtime/driver major version if changed. */
-enum opencl_si_arg_access_t
-{
-	opencl_si_arg_access_invalid = 0,
-	opencl_si_arg_access_ro,  /* Read only */
-	opencl_si_arg_access_wo,  /* Write only */
-	opencl_si_arg_access_rw  /* Read/write */
+	opencl_si_arg_scope_c,  /* Constant memory */
+	opencl_si_arg_scope_r,  /* GDS */
+	opencl_si_arg_scope_hl,  /* Hardware local */
+	opencl_si_arg_scope_hp,  /* Hardware private */
+	opencl_si_arg_scope_hc,  /* Hardware constant */
+	opencl_si_arg_scope_hr  /* Hardware GDS */
 };
 
 
 struct opencl_si_arg_t
 {
-	enum opencl_si_arg_type_t type;  /* Token 0 */
-	char *name;  /* Token 1 */
-	enum opencl_si_arg_data_type_t data_type;  /* Token 2 */
+	enum opencl_si_arg_type_t type;
+	char *name;
 
-	union
-	{
-		struct {
-			unsigned int token_3;
-			unsigned int token_4;
-			unsigned int offset;  /* Token 5 */
-
-			/* Actual value set by the user */
-			void *ptr;
-			int size;
-		} value;
-
-		struct {
-			unsigned int token_3;
-			unsigned int token_4;
-			unsigned int offset;  /* Token 5 */
-			enum opencl_si_arg_scope_t scope;  /* Token 6 */
-			unsigned int scope_id;  /* Token 7 */
-			unsigned int token_8;
-			enum opencl_si_arg_access_t access;  /* Token 9 */
-			unsigned int token_10;
-			unsigned int token_11;
-
-			/* Actual value set by user. This is a pointer in device
-			 * memory (local or global scope), do not dereference. */
-			void *device_ptr;
-			int size;
-		} pointer;
-	} u;
-
-	/* Flag indicating whether user set a value for the argument with a
-	 * call to 'clSetKernelArg'. */
-	int set;
+	/* For argument of type 'pointer', scope. */
+	enum opencl_si_arg_scope_t scope;
 };
 
 
 struct opencl_si_arg_t *opencl_si_arg_create(enum opencl_si_arg_type_t type,
 		char *name);
 void opencl_si_arg_free(struct opencl_si_arg_t *arg);
-
-void opencl_si_arg_set_value(struct opencl_si_arg_t *arg, void *ptr, int size);
 
 
 
