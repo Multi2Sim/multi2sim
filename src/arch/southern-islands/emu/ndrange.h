@@ -60,7 +60,7 @@ struct si_ndrange_t
 	enum si_ndrange_status_t status;
 
 	/* Event */
-	struct si_opencl_event_t* event;
+	struct si_opencl_event_t *event;
 
 	/* OpenCL kernel associated */
 	struct si_opencl_kernel_t *kernel;

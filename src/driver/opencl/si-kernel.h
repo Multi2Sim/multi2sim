@@ -17,20 +17,36 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENCL_OPENCL_H
-#define DRIVER_OPENCL_OPENCL_H
+#ifndef DRIVER_OPENCL_SI_KERNEL_H
+#define DRIVER_OPENCL_SI_KERNEL_H
 
-/* Forward type declaration */
-struct x86_ctx_t;
 
-#define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
-extern int opencl_debug_category;
+/*
+ * Kernel List
+ */
 
-int opencl_abi_call(struct x86_ctx_t *ctx);
+extern struct list_t *opencl_si_kernel_list;
 
-void opencl_init(void);
-void opencl_done(void);
+void opencl_si_kernel_list_init(void);
+void opencl_si_kernel_list_done(void);
 
+
+
+/*
+ * OpenCL Southern Islands Kernel
+ */
+
+
+struct opencl_si_kernel_t
+{
+	int id;
+	char *name;
+	struct opencl_si_program_t *program;
+};
+
+struct opencl_si_kernel_t *opencl_si_kernel_create(struct opencl_si_program_t *program,
+		char *name);
+void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel);
 
 #endif
 

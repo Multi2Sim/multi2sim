@@ -37,6 +37,9 @@ struct opencl_si_program_t
 
 	/* Analyzed ELF file */
 	struct elf_file_t *elf_file;
+
+	/* Identifier return by driver */
+	int id;
 };
 
 

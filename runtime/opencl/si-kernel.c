@@ -204,6 +204,10 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(
 		opencl_si_kernel_metadata_line(kernel, line);
 	}
 
+	/* Create kernel object in driver */
+	kernel->id = syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_kernel_create,
+			program->id, func_name);
+
 	/* Dump debug info and return */
 	opencl_si_kernel_debug(kernel);
 	return kernel;
