@@ -293,8 +293,8 @@ int opencl_si_kernel_set_arg(
 	}
 
 	/* Perform ABI call to set up argument */
+	opencl_debug("\tvalue=%p, size=%u\n", ptr, size);
 	/* FIXME */
-	printf("Set argument: ptr = %p, size = %u\n", ptr, size); ///////
 
 	/* Success */
 	return 0;
@@ -303,11 +303,13 @@ int opencl_si_kernel_set_arg(
 
 void opencl_si_kernel_run(
 		struct opencl_si_kernel_t *kernel,
-		cl_uint work_dim,
-		const size_t *global_work_offset,
-		const size_t *global_work_size,
-		const size_t *local_work_size)
+		int work_dim,
+		unsigned int *global_work_offset,
+		unsigned int *global_work_size,
+		unsigned int *local_work_size)
 {
-	warning("%s: not implemented", __FUNCTION__);
+	/* ABI call */
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_kernel_launch, kernel->id,
+		work_dim, global_work_offset, global_work_size, local_work_size);
 }
 

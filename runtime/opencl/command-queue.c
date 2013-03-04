@@ -757,10 +757,13 @@ cl_int clEnqueueNDRangeKernel(
 	
 	/* Create command */
 	command = opencl_command_create_launch_kernel(device, arch_kernel, work_dim,
-			(size_t *) global_work_offset,
-			(size_t *) global_work_size,
-			(size_t *) local_work_size,
-			command_queue, event, num_events_in_wait_list, (cl_event *) event_wait_list);
+			(unsigned int *) global_work_offset,
+			(unsigned int *) global_work_size,
+			(unsigned int *) local_work_size,
+			command_queue,
+			event,
+			num_events_in_wait_list,
+			(cl_event *) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, command);
 
 	/* Success */
