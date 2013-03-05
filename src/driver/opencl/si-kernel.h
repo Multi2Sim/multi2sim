@@ -39,11 +39,115 @@ void opencl_si_kernel_list_done(void);
  * Argument
  */
 
-struct opencl_si_arg_t
+enum opencl_si_arg_type_t
 {
+	opencl_si_arg_type_invalid = 0,
+	opencl_si_arg_value,
+	opencl_si_arg_pointer,
+	opencl_si_arg_image,
+	opencl_si_arg_sampler
 };
 
-struct opencl_si_arg_t *opencl_si_arg_create(void);
+enum opencl_si_arg_access_type_t
+{
+	opencl_si_arg_access_type_invalid = 0,
+	opencl_si_arg_read_only,
+	opencl_si_arg_write_only,
+	opencl_si_arg_read_write
+};
+
+enum opencl_si_arg_scope_t
+{
+	opencl_si_arg_scope_invalid = 0,
+	opencl_si_arg_global,
+	opencl_si_arg_emu_private,
+	opencl_si_arg_emu_local,
+	opencl_si_arg_uav,
+	opencl_si_arg_emu_constant,
+	opencl_si_arg_emu_gds,
+	opencl_si_arg_hw_local,
+	opencl_si_arg_hw_private,
+	opencl_si_arg_hw_constant,
+	opencl_si_arg_hw_gds
+};
+
+enum opencl_si_arg_data_type_t
+{
+	opencl_si_arg_data_type_invalid = 0,
+	opencl_si_arg_i1,
+	opencl_si_arg_i8,
+	opencl_si_arg_i16,
+	opencl_si_arg_i32,
+	opencl_si_arg_i64,
+	opencl_si_arg_u1,
+	opencl_si_arg_u8,
+	opencl_si_arg_u16,
+	opencl_si_arg_u32,
+	opencl_si_arg_u64,
+	opencl_si_arg_float,
+	opencl_si_arg_double,
+	opencl_si_arg_struct,
+	opencl_si_arg_union,
+	opencl_si_arg_event,
+	opencl_si_arg_opaque
+};
+
+#define OPENCL_SI_ARG_MAX_SIZE  64
+struct opencl_si_arg_value_t
+{
+	enum opencl_si_arg_data_type_t data_type;
+	int num_elems;
+	int constant_buffer_num;
+	int constant_offset;
+	unsigned int value[OPENCL_SI_ARG_MAX_SIZE];
+};
+
+struct opencl_si_arg_pointer_t
+{
+	enum opencl_si_arg_data_type_t data_type;
+	int num_elems;
+	int constant_buffer_num;
+	int constant_offset;
+	enum opencl_si_arg_scope_t scope;
+	int buffer_num;
+	int alignment;
+	enum opencl_si_arg_access_type_t access_type;
+};
+
+struct opencl_si_arg_image_t
+{
+	int dimension;  /* 2 or 3 */
+	enum opencl_si_arg_access_type_t access_type;
+	int uav;
+	int constant_buffer_num;
+	int constant_offset;
+};
+
+struct opencl_si_arg_sampler_t
+{
+	int id;
+	unsigned int location;
+	int value;
+};
+
+struct opencl_si_arg_t
+{
+	enum opencl_si_arg_type_t type;
+	char *name;
+	int set;  /* Set to true when it is assigned */
+	int size; /* Inferred from metadata or user calls */
+
+	union
+	{
+		struct opencl_si_arg_value_t value;
+		struct opencl_si_arg_pointer_t pointer;
+		struct opencl_si_arg_image_t image;
+		struct opencl_si_arg_sampler_t sampler;
+	};
+};
+
+struct opencl_si_arg_t *opencl_si_arg_create(enum opencl_si_arg_type_t type,
+		char *name);
 void opencl_si_arg_free(struct opencl_si_arg_t *arg);
 
 
@@ -69,6 +173,13 @@ struct opencl_si_kernel_t
 	struct elf_buffer_t metadata_buffer;
 	struct elf_buffer_t header_buffer;
 	struct elf_buffer_t kernel_buffer;
+
+	/* Memory requirements */
+	int mem_size_local;
+	int mem_size_private;
+
+	/* Kernel function metadata */
+	int func_uniqueid;  /* Id of kernel function */
 };
 
 struct opencl_si_kernel_t *opencl_si_kernel_create(struct opencl_si_program_t *program,

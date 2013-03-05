@@ -57,7 +57,7 @@ void str_map_flags(struct str_map_t *map, int flags, char *out, int length);
 struct list_t *str_token_list_create(char *str, char *delim);
 void str_token_list_free(struct list_t *token_list);
 
-void str_token_list_shift(struct list_t *token_list);
+char *str_token_list_shift(struct list_t *token_list);
 char *str_token_list_first(struct list_t *token_list);
 void str_token_list_dump(struct list_t *token_list, FILE *f);
 
