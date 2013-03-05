@@ -36,28 +36,12 @@
 
 static struct str_map_t opencl_si_arg_type_map =
 {
-	2,
+	4,
 	{
-		{ "value", opencl_si_arg_type_value },
-		{ "pointer", opencl_si_arg_type_pointer }
-	}
-};
-
-
-static struct str_map_t opencl_si_arg_scope_map =
-{
-	10,
-	{
-		{ "g", opencl_si_arg_scope_g },
-		{ "p", opencl_si_arg_scope_p },
-		{ "local", opencl_si_arg_scope_local },
-		{ "uav", opencl_si_arg_scope_uav },
-		{ "c", opencl_si_arg_scope_c },
-		{ "r", opencl_si_arg_scope_r },
-		{ "hl", opencl_si_arg_scope_hl },
-		{ "hp", opencl_si_arg_scope_hp },
-		{ "hc", opencl_si_arg_scope_hc },
-		{ "hr", opencl_si_arg_scope_hr }
+		{ "value", opencl_si_arg_value },
+		{ "pointer", opencl_si_arg_pointer },
+		{ "image", opencl_si_arg_image },
+		{ "sampler", opencl_si_arg_sampler }
 	}
 };
 
@@ -105,7 +89,6 @@ static void opencl_si_kernel_metadata_line(struct opencl_si_kernel_t *kernel,
 	struct opencl_si_arg_t *arg;
 
 	char *token;
-	int err;
 
 	/* Split line in tokens */
 	token_list = str_token_list_create(line, ":;");
@@ -131,21 +114,7 @@ static void opencl_si_kernel_metadata_line(struct opencl_si_kernel_t *kernel,
 		/* Token 1 - Name */
 		str_token_list_shift(token_list);
 		token = str_token_list_first(token_list);
-		arg = opencl_si_arg_create(opencl_si_arg_type_pointer, token);
-		str_token_list_shift(token_list);
-
-		/* Skip tokens 2-5 */
-		str_token_list_shift(token_list);
-		str_token_list_shift(token_list);
-		str_token_list_shift(token_list);
-		str_token_list_shift(token_list);
-
-		/* Token 6 - Scope */
-		token = str_token_list_first(token_list);
-		arg->scope = str_map_string_err(&opencl_si_arg_scope_map, token, &err);
-		str_token_list_shift(token_list);
-		if (err)
-			fatal("%s: unknown scope: %s", __FUNCTION__, line);
+		arg = opencl_si_arg_create(opencl_si_arg_pointer, token);
 
 		/* Add argument */
 		list_add(kernel->arg_list, arg);
@@ -157,7 +126,7 @@ static void opencl_si_kernel_metadata_line(struct opencl_si_kernel_t *kernel,
 		/* Token 1 - Name */
 		str_token_list_shift(token_list);
 		token = str_token_list_first(token_list);
-		arg = opencl_si_arg_create(opencl_si_arg_type_value, token);
+		arg = opencl_si_arg_create(opencl_si_arg_value, token);
 		str_token_list_shift(token_list);
 
 		/* Add argument */
@@ -258,43 +227,50 @@ int opencl_si_kernel_set_arg(
 	struct opencl_si_arg_t *arg;
 	struct opencl_mem_t *mem;
 
-	void *ptr;
-	unsigned int size;
-
 	/* Check valid argument index */
 	arg = list_get(kernel->arg_list, arg_index);
 	if (!arg)
 		fatal("%s: invalid argument index (%d)\n",
 				__FUNCTION__, arg_index);
 
-	/* By default, use argument value and size given by the user. */
-	ptr = arg_value;
-	size = arg_size;
-
-	/* If the argument is a pointer to global memory, access the memory object
-	 * and get the associated device pointer. */
-	if (arg->type == opencl_si_arg_type_pointer &&
-			arg->scope == opencl_si_arg_scope_uav)
+	/* Perform ABI call depending on the argument type */
+	switch (arg->type)
 	{
-		/* Check size - must be size of a pointer to an cl_mem object */
-		if (arg_size != 4)
-			fatal("%s: argument %d size not 4 for global memory",
-					__FUNCTION__, arg_index);
 
-		/* Search cl_mem object */
-		mem = * (struct opencl_mem_t **) arg_value;
-		if (!opencl_object_verify(mem, OPENCL_OBJECT_MEM))
-			fatal("%s: argument %d is not a cl_mem object",
-					__FUNCTION__, arg_index);
+	case opencl_si_arg_value:
 
-		/* The actual value is the device pointer */
-		ptr = mem->device_ptr;
-		size = mem->size;
+		/* ABI call */
+		syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_kernel_set_arg_value,
+				kernel->id, arg_index, arg_value, arg_size);
+		break;
+
+	case opencl_si_arg_pointer:
+
+		/* If an argument value is given, it should be a 'cl_mem' object.
+		 * We need to obtain the 'device_ptr' of the allocated memory
+		 * associated with it. */
+		if (arg_value)
+		{
+			mem = * (struct opencl_mem_t **) arg_value;
+			if (!opencl_object_verify(mem, OPENCL_OBJECT_MEM))
+				fatal("%s: argument %d is not a cl_mem object",
+						__FUNCTION__, arg_index);
+			if (arg_size != 4)
+				fatal("%s: cl_mem argument %d expects size 4 (%d given)",
+						__FUNCTION__, arg_index, arg_size);
+			arg_value = mem->device_ptr;
+			arg_size = mem->size;
+		}
+
+		/* ABI call */
+		syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_kernel_set_arg_pointer,
+				kernel->id, arg_index, arg_value, arg_size);
+		break;
+
+	default:
+		fatal("%s: argument type not supported (%d)",
+				__FUNCTION__, arg->type);
 	}
-
-	/* Perform ABI call to set up argument */
-	opencl_debug("\tvalue=%p, size=%u\n", ptr, size);
-	/* FIXME */
 
 	/* Success */
 	return 0;
