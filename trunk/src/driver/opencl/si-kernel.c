@@ -111,6 +111,20 @@ struct opencl_si_arg_t *opencl_si_arg_create(enum opencl_si_arg_type_t type,
 
 void opencl_si_arg_free(struct opencl_si_arg_t *arg)
 {
+	/* Specific fields per type */
+	switch (arg->type)
+	{
+	case opencl_si_arg_value:
+
+		if (arg->value.value_ptr)
+			free(arg->value.value_ptr);
+		break;
+
+	default:
+		break;
+	}
+
+	/* Rest */
 	free(arg->name);
 	free(arg);
 }
@@ -336,7 +350,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 				opencl_si_arg_get_data_size(arg->value.data_type);
 
 			/* Debug */
-			opencl_debug("Argument '%s' - value stored in constant "
+			opencl_debug("\targument '%s' - value stored in constant "
 				"buffer %d at offset %d\n",
 				arg->name, arg->value.constant_buffer_num,
 				arg->value.constant_offset);
@@ -422,7 +436,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 			arg->size = 4;
 
 			/* Debug */
-			opencl_debug("Argument '%s' - Pointer stored in constant "
+			opencl_debug("\targument '%s' - Pointer stored in constant "
 				"buffer %d at offset %d\n",
 				arg->name, arg->pointer.constant_buffer_num,
 				arg->pointer.constant_offset);
