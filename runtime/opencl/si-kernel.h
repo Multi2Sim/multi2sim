@@ -37,28 +37,10 @@ struct opencl_si_program_t;
 enum opencl_si_arg_type_t
 {
 	opencl_si_arg_type_invalid = 0,
-	opencl_si_arg_type_value,
-	opencl_si_arg_type_pointer
-};
-
-
-/* NOTE: update string map 'opencl_si_arg_scope_map' in 'runtime/opencl/si-kernel.c'
- * when modifying this.
- * NOTE: enumeration with same name in 'src/driver/opencl' should match exactly.
- * Increase runtime/driver major version if changed. */
-enum opencl_si_arg_scope_t
-{
-	opencl_si_arg_scope_invalid = 0,
-	opencl_si_arg_scope_g,  /* Global memory */
-	opencl_si_arg_scope_p,  /* Private memory */
-	opencl_si_arg_scope_local,  /* Local memory */
-	opencl_si_arg_scope_uav,  /* Global memory */
-	opencl_si_arg_scope_c,  /* Constant memory */
-	opencl_si_arg_scope_r,  /* GDS */
-	opencl_si_arg_scope_hl,  /* Hardware local */
-	opencl_si_arg_scope_hp,  /* Hardware private */
-	opencl_si_arg_scope_hc,  /* Hardware constant */
-	opencl_si_arg_scope_hr  /* Hardware GDS */
+	opencl_si_arg_value,
+	opencl_si_arg_pointer,
+	opencl_si_arg_image,
+	opencl_si_arg_sampler
 };
 
 
@@ -66,9 +48,6 @@ struct opencl_si_arg_t
 {
 	enum opencl_si_arg_type_t type;
 	char *name;
-
-	/* For argument of type 'pointer', scope. */
-	enum opencl_si_arg_scope_t scope;
 };
 
 

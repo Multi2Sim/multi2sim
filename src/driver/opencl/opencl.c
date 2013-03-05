@@ -562,9 +562,9 @@ static int opencl_abi_si_kernel_create_impl(struct x86_ctx_t *ctx)
  *
  * 	Argument index to set.
  *
- * @param void *value
+ * @param void *host_ptr
  *
- * 	Value of the argument. This is a pointer to host memory. The memory
+ *	Address in host memory containing the value of the argument. The memory
  * 	pointed to by this variable will be copied internally, keeping a copy of
  * 	the argument for future use.
  *
@@ -581,20 +581,43 @@ static int opencl_abi_si_kernel_create_impl(struct x86_ctx_t *ctx)
 static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct opencl_si_kernel_t *kernel;
+	struct opencl_si_arg_t *arg;
 
 	int kernel_id;
 
 	unsigned int index;
-	unsigned int value;
+	unsigned int host_ptr;
 	unsigned int size;
 
 	/* Arguments */
 	kernel_id = regs->ecx;
 	index = regs->edx;
-	value = regs->esi;
+	host_ptr = regs->esi;
 	size = regs->edi;
 	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
-	opencl_debug("\tvalue=0x%x, size=%u\n", value, size);
+	opencl_debug("\thost_ptr=0x%x, size=%u\n", host_ptr, size);
+
+	/* Get kernel */
+	kernel = list_get(opencl_si_kernel_list, kernel_id);
+	if (!kernel)
+		fatal("%s: invalid kernel ID (%d)",
+				__FUNCTION__, kernel_id);
+
+	/* Get argument */
+	arg = list_get(kernel->arg_list, index);
+	if (!arg || arg->type != opencl_si_arg_value)
+		fatal("%s: invalid argument %d type",
+				__FUNCTION__, index);
+
+	/* Check valid size */
+	if (size != arg->size)
+		fatal("%s: argument %d: size %d expected, %d found",
+				__FUNCTION__, index, arg->size, size);
+
+	/* Save value */
+	arg->value.value_ptr = xmalloc(size);
+	mem_read(ctx->mem, host_ptr, size, arg->value.value_ptr);
 
 	/* No return value */
 	return 0;
@@ -641,6 +664,8 @@ static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
 static int opencl_abi_si_kernel_set_arg_pointer_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct opencl_si_kernel_t *kernel;
+	struct opencl_si_arg_t *arg;
 
 	int kernel_id;
 
@@ -655,6 +680,22 @@ static int opencl_abi_si_kernel_set_arg_pointer_impl(struct x86_ctx_t *ctx)
 	size = regs->edi;
 	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
 	opencl_debug("\tdevice_ptr=0x%x, size=%u\n", device_ptr, size);
+
+	/* Get kernel */
+	kernel = list_get(opencl_si_kernel_list, kernel_id);
+	if (!kernel)
+		fatal("%s: invalid kernel ID (%d)",
+				__FUNCTION__, kernel_id);
+
+	/* Get argument */
+	arg = list_get(kernel->arg_list, index);
+	if (!arg || arg->type != opencl_si_arg_pointer)
+		fatal("%s: invalid argument %d type",
+				__FUNCTION__, index);
+
+	/* Record size and value */
+	arg->size = size;
+	arg->pointer.device_ptr = device_ptr;
 
 	/* No return value */
 	return 0;
@@ -695,6 +736,9 @@ static int opencl_abi_si_kernel_set_arg_image_impl(struct x86_ctx_t *ctx)
 	index = regs->edx;
 	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
 
+	/* Not yet */
+	fatal("%s: not implemented", __FUNCTION__);
+
 	/* No return value */
 	return 0;
 }
@@ -733,6 +777,9 @@ static int opencl_abi_si_kernel_set_arg_sampler_impl(struct x86_ctx_t *ctx)
 	kernel_id = regs->ecx;
 	index = regs->edx;
 	opencl_debug("\tkernel_id=%d, index=%d\n", kernel_id, index);
+
+	/* Not yet */
+	fatal("%s: not implemented", __FUNCTION__);
 
 	/* No return value */
 	return 0;

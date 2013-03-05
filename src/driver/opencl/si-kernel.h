@@ -92,18 +92,21 @@ enum opencl_si_arg_data_type_t
 	opencl_si_arg_opaque
 };
 
-#define OPENCL_SI_ARG_MAX_SIZE  64
 struct opencl_si_arg_value_t
 {
+	/* Metadata info */
 	enum opencl_si_arg_data_type_t data_type;
 	int num_elems;
 	int constant_buffer_num;
 	int constant_offset;
-	unsigned int value[OPENCL_SI_ARG_MAX_SIZE];
+
+	/* Value set by user */
+	void *value_ptr;
 };
 
 struct opencl_si_arg_pointer_t
 {
+	/* Metadata info */
 	enum opencl_si_arg_data_type_t data_type;
 	int num_elems;
 	int constant_buffer_num;
@@ -112,6 +115,9 @@ struct opencl_si_arg_pointer_t
 	int buffer_num;
 	int alignment;
 	enum opencl_si_arg_access_type_t access_type;
+
+	/* Value set by user */
+	unsigned int device_ptr;
 };
 
 struct opencl_si_arg_image_t
