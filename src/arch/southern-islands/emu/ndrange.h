@@ -41,6 +41,11 @@ struct si_ndrange_t
 	/* Event */
 	struct si_opencl_event_t *event;
 
+	/* Call-back function run right before freeing ND-Range, using the value in
+	 * 'free_notify_data' as an argument. */
+	void (*free_notify_func)(void *);
+	void *free_notify_data;
+
 	/* Command queue and command queue task associated */
 	struct si_opencl_command_queue_t *command_queue;
 	struct si_opencl_command_t *command;
@@ -137,6 +142,11 @@ struct si_ndrange_t
 struct si_ndrange_t *si_ndrange_create(char *name);
 void si_ndrange_free(struct si_ndrange_t *ndrange);
 void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f);
+
+/* Set up call-back function to be run right before the ND-Range is freed.
+ * Useful for host/device synchronization. */
+void si_ndrange_set_free_notify_func(struct si_ndrange_t *ndrange,
+		void (*func)(void *), void *user_data);
 
 /* Functions to set up ND-Range after initialization */
 void si_ndrange_setup_size(struct si_ndrange_t *ndrange,
