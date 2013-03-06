@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <limits.h>
+
 #include "debug.h"
 #include "device.h"
 #include "mhandle.h"
@@ -34,8 +36,74 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	device->parent = parent;
 
 	/* Initialize parent device */
+	parent->address_bits = 32;
+	parent->available = CL_TRUE;
+	parent->compiler_available = CL_FALSE;
+	parent->double_fp_config = CL_FP_DENORM |
+				CL_FP_INF_NAN | 
+				CL_FP_ROUND_TO_NEAREST | 
+				CL_FP_ROUND_TO_ZERO | 
+				CL_FP_ROUND_TO_INF | 
+				CL_FP_FMA | 
+				CL_FP_SOFT_FLOAT;
+	parent->endian_little = CL_TRUE;
+	parent->error_correction_support = CL_FALSE;
+	parent->execution_capabilities = CL_EXEC_KERNEL;
+	parent->extensions = "cl_khr_fp64 cl_khr_byte_addressable_store "
+			"cl_khr_global_int32_base_atomics "
+			"cl_khr_local_int32_base_atomics";
+	parent->global_mem_cache_size = 0;
+	parent->global_mem_cache_type = CL_READ_WRITE_CACHE;
+	parent->global_mem_cacheline_size = 0;
+	parent->global_mem_size = 0;
+	parent->host_unified_memory = CL_TRUE;
+	parent->image_support = CL_FALSE;
+	parent->image2d_max_height = 0;
+	parent->image2d_max_width = 0;
+	parent->image3d_max_depth = 0;
+	parent->image3d_max_height = 0;
+	parent->image3d_max_width = 0;
+	parent->local_mem_size = INT_MAX;
+	parent->local_mem_type = CL_GLOBAL;
+	parent->max_clock_frequency = 0;
+	parent->max_compute_units = 32;  /* FIXME - call timing simulator */
+	parent->max_constant_args = 0;
+	parent->max_constant_buffer_size = 0;
+	parent->max_mem_alloc_size = INT_MAX;
+	parent->max_parameter_size = sizeof (cl_ulong16);
+	parent->max_read_image_args = 0;
+	parent->max_samplers = 0;
+	parent->max_work_group_size = 1024;
+	parent->max_work_item_dimensions = 3;
+	parent->max_work_item_sizes[0] = 1024;
+	parent->max_work_item_sizes[1] = 1024;
+	parent->max_work_item_sizes[2] = 1024;
+	parent->max_write_image_args = 0;
+	parent->mem_base_addr_align = sizeof (cl_float4);
+	parent->min_data_type_align_size = 1;
 	parent->name = "Multi2Sim Southern Islands GPU Model";
+	parent->opencl_c_version = VERSION;
+	parent->version = "1";
+	parent->driver_version = "1";
+	parent->vector_width_char = 16;
+	parent->vector_width_short = 16 / sizeof (cl_short);
+	parent->vector_width_int = 16 / sizeof (cl_int);
+	parent->vector_width_long = 16 / sizeof (cl_long);
+	parent->vector_width_float = 16 / sizeof (cl_float);
+	parent->vector_width_double = 16 / sizeof (cl_double);
+	parent->vector_width_half = 0;
+	parent->profile = "PROFILE";
+	parent->profiling_timer_resolution = 0;
+	parent->queue_properties = CL_QUEUE_PROFILING_ENABLE;
+	parent->single_fp_config = CL_FP_DENORM | 
+				CL_FP_INF_NAN | 
+				CL_FP_ROUND_TO_NEAREST | 
+				CL_FP_ROUND_TO_ZERO | 
+				CL_FP_ROUND_TO_INF | 
+				CL_FP_FMA | 
+				CL_FP_SOFT_FLOAT;
 	parent->type = CL_DEVICE_TYPE_GPU;
+	parent->vendor_id = 0;
 
 	/* Call-back functions for device */
 	parent->arch_device_free_func = (opencl_arch_device_free_func_t)
@@ -98,7 +166,8 @@ void *opencl_si_device_mem_alloc(struct opencl_si_device_t *device,
 void opencl_si_device_mem_free(struct opencl_si_device_t *device,
 		void *ptr)
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	/* Invoke 'mem_free' ABI call */
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_mem_free, ptr);
 }
 
 
