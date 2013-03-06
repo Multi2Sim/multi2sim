@@ -652,9 +652,6 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->arch_kernel_free_func =
 			(opencl_arch_kernel_free_func_t)
 			opencl_x86_kernel_free;
-	parent->arch_kernel_check_func =
-			(opencl_arch_kernel_check_func_t)
-			opencl_x86_kernel_check;
 	parent->arch_kernel_set_arg_func =
 			(opencl_arch_kernel_set_arg_func_t)
 			opencl_x86_kernel_set_arg;

@@ -90,8 +90,6 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel);
 
 void opencl_si_kernel_debug(struct opencl_si_kernel_t *kernel);
 
-int opencl_si_kernel_check(struct opencl_si_kernel_t *kernel);
-
 int opencl_si_kernel_set_arg(
 		struct opencl_si_kernel_t *kernel,
 		int arg_index,

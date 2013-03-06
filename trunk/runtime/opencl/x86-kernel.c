@@ -281,20 +281,6 @@ void opencl_x86_kernel_free(struct opencl_x86_kernel_t *kernel)
 }
 
 
-int opencl_x86_kernel_check(struct opencl_x86_kernel_t *kernel)
-{
-	int i;
-
-	/* Check that all arguments are set */
-	for (i = 0; i < kernel->num_params; i++)
-		if (!kernel->param_info[i].is_set)
-			return CL_INVALID_VALUE;
-
-	/* Success */
-	return CL_SUCCESS;
-}
-
-
 int opencl_x86_kernel_set_arg(struct opencl_x86_kernel_t *kernel,
 		int arg_index, unsigned int arg_size, void *arg_value)
 {
@@ -351,6 +337,12 @@ void opencl_x86_kernel_run(
 
 	struct opencl_x86_device_t *device = kernel->device;
 	struct opencl_x86_device_exec_t *exec;
+
+	/* Check that all arguments are set */
+	for (i = 0; i < kernel->num_params; i++)
+		if (!kernel->param_info[i].is_set)
+			fatal("%s: argument %d not set",
+				__FUNCTION__, i);
 
 	/* Initialize execution information */
 	exec = xcalloc(1, sizeof(struct opencl_x86_device_exec_t));
