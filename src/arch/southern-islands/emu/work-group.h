@@ -93,7 +93,7 @@ struct si_work_group_t
 	struct mem_t *lds_module;
 };
 
-#define SI_FOR_EACH_WORK_GROUP_IN_NDRANGE(NDRANGE, WORK_GROUP_ID) \
+#define SI_FOREACH_WORK_GROUP_IN_NDRANGE(NDRANGE, WORK_GROUP_ID) \
 	for ((WORK_GROUP_ID) = (NDRANGE)->work_group_id_first; \
 		(WORK_GROUP_ID) <= (NDRANGE)->work_group_id_last; \
 		(WORK_GROUP_ID)++)

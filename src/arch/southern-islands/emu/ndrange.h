@@ -29,32 +29,11 @@ enum si_ndrange_status_t
 	si_ndrange_finished		= 0x0004
 };
 
-struct si_ndrange_conf_t
-{
-	/* Number of work dimensions */
-	int work_dim;
-
-	/* 3D Counters */
-	int global_size3[3];  /* Total number of work_items */
-	int local_size3[3];  /* Number of work_items in a group */
-	int group_count3[3];  /* Number of work_item groups */
-
-	/* 1D Counters. Each counter is equal to the multiplication
-	 * of each component in the corresponding 3D counter. */
-	int global_size;
-	int local_size;
-	int group_count;
-};
-
 struct si_ndrange_t
 {
 	/* ID */
 	char *name;
 	int id;  /* Sequential ND-Range ID (given by si_emu->ndrange_count counter) */
-
-	/* Resources */
-	int num_vgprs;
-	int num_sgprs;
 
 	/* Status */
 	enum si_ndrange_status_t status;
@@ -69,8 +48,19 @@ struct si_ndrange_t
 	struct si_opencl_command_queue_t *command_queue;
 	struct si_opencl_command_t *command;
 
-	/* NDrange configuration for initialization */
-	struct si_ndrange_conf_t *ndrange_conf;
+	/* Number of work dimensions */
+	int work_dim;
+
+	/* 3D work size counters */
+	int global_size3[3];  /* Total number of work_items */
+	int local_size3[3];  /* Number of work_items in a group */
+	int group_count3[3];  /* Number of work_item groups */
+
+	/* 1D work size counters. Each counter is equal to the multiplication
+	 * of each component in the corresponding 3D counter. */
+	int global_size;
+	int local_size;
+	int group_count;
 
 	/* Pointers to work-groups, wavefronts, and work_items */
 	struct si_work_group_t **work_groups;
@@ -140,25 +130,30 @@ struct si_ndrange_t
 	unsigned int *inst_histogram;
 };
 
-struct si_ndrange_conf_t *si_ndrange_conf_create(int *param_global_size3, int *param_local_size3, int param_work_dim);
-void si_ndrange_conf_free(struct si_ndrange_conf_t *ndrange_conf);
 
-struct si_ndrange_t *si_ndrange_create(int *global_size3, int *local_size3, int work_dim);
+struct si_ndrange_t *si_ndrange_create(char *name);
 void si_ndrange_free(struct si_ndrange_t *ndrange);
 void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f);
 void si_ndrange_dump_initialized_state(struct si_ndrange_t *ndrange);
 
+/* Functions to set up ND-Range after initialization */
+void si_ndrange_setup_size(struct si_ndrange_t *ndrange,
+		unsigned int *global_size,
+		unsigned int *local_size,
+		int work_dim);
+void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange,
+		void *buf, int size, unsigned int pc);
+
+/* Functions to set up OpenCL ND-Range state */
+void si_ndrange_setup_kernel(struct si_ndrange_t *ndrange, struct si_opencl_kernel_t *kernel);
+void si_ndrange_setup_opencl_state(struct si_ndrange_t *ndrange);
+void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
+void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange);
+void si_ndrange_setup_args(struct si_ndrange_t *ndrange);
+
 int si_ndrange_get_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status);
 void si_ndrange_set_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);
 void si_ndrange_clear_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);
-
-void si_ndrange_setup_kernel(struct si_ndrange_t *ndrange, struct si_opencl_kernel_t *kernel);
-void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange);
-void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
-void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange,
-		void *buf, int size, unsigned int pc);
-void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange);
-void si_ndrange_setup_args(struct si_ndrange_t *ndrange);
 
 /* Access to constant memory */
 void si_isa_const_mem_write(int buffer, int offset, void *pvalue);

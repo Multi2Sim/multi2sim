@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/southern-islands/asm/bin-file.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -777,6 +778,13 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(struct opencl_si_program_t *p
 	opencl_debug("\tkernel symbol: offset=0x%x, size=%u\n",
 			kernel_symbol->value, kernel->kernel_buffer.size);
 
+	/* Create and parse kernel binary (internal ELF).
+	 * The internal ELF is contained in the buffer pointer to by
+	 * the 'kernel' symbol. */
+	snprintf(symbol_name, sizeof symbol_name, "kernel<%s>.InternalELF", name);
+	kernel->bin_file = si_bin_file_create(kernel->kernel_buffer.ptr,
+		kernel->kernel_buffer.size, symbol_name);
+
 	/* Load metadata */
 	opencl_si_kernel_load_metadata(kernel);
 
@@ -795,6 +803,7 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 	list_free(kernel->arg_list);
 
 	/* Rest */
+	si_bin_file_free(kernel->bin_file);
 	free(kernel->name);
 	free(kernel);
 }
