@@ -97,7 +97,6 @@ struct _cl_device_id
 	/* Call-back functions for an architecture-specific kernel */
 	opencl_arch_kernel_create_func_t arch_kernel_create_func;
 	opencl_arch_kernel_free_func_t arch_kernel_free_func;
-	opencl_arch_kernel_check_func_t arch_kernel_check_func;
 	opencl_arch_kernel_set_arg_func_t arch_kernel_set_arg_func;
 	opencl_arch_kernel_run_func_t arch_kernel_run_func;
 	

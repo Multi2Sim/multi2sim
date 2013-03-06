@@ -139,9 +139,6 @@ struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 void opencl_x86_kernel_free(
 		struct opencl_x86_kernel_t *kernel);
 
-int opencl_x86_kernel_check(
-		struct opencl_x86_kernel_t *kernel);
-
 int opencl_x86_kernel_set_arg(
 		struct opencl_x86_kernel_t *kernel,
 		int arg_index,
