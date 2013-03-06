@@ -358,10 +358,8 @@ int si_emu_run(void)
 
 		/* Stop if maximum number of kernels reached */
 		if (si_emu_max_kernels && si_emu->ndrange_count >= 
-			si_emu_max_kernels)
-		{
+				si_emu_max_kernels)
 			esim_finish = esim_finish_si_max_kernels;
-		}
 
 		/* Extract from list of finished ND-Ranges and free */
 		si_ndrange_free(ndrange);
@@ -371,31 +369,21 @@ int si_emu_run(void)
 	return 1;
 }
 
-struct si_buffer_desc_t si_emu_create_buffer_desc(
-	struct si_opencl_kernel_arg_t *arg)
+void si_emu_create_buffer_desc(int num_elems,
+		enum si_opencl_kernel_arg_data_type_t data_type,
+		struct si_buffer_desc_t *buffer_desc)
 {
-	struct si_buffer_desc_t buf_desc;
-
-	enum si_opencl_kernel_arg_data_type_t data_type;
-
-	int num_elems;	
-
 	int num_format = -1;
 	int data_format = -1;
 	int elem_size;
 
-	assert(sizeof(buf_desc) == 16);
-	assert(arg);
-
 	/* Zero-out the buffer resource descriptor */
-	memset(&buf_desc, 0, 16);
+	assert(sizeof(*buffer_desc) == 16);
+	memset(buffer_desc, 0, 16);
 
 	num_format = SI_BUF_DESC_DATA_FMT_INVALID;
 	data_format = SI_BUF_DESC_DATA_FMT_INVALID;
 
-	num_elems = arg->pointer.num_elems;
-	data_type = arg->pointer.data_type;
-	
 	if (data_type == SI_OPENCL_KERNEL_ARG_DATA_TYPE_I8)
 	{
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
@@ -475,36 +463,32 @@ struct si_buffer_desc_t si_emu_create_buffer_desc(
 	assert(num_format != -1); 
 	assert(data_format != -1);
 
-	assert(arg->pointer.mem_obj_id);
 	/* FIXME For now, storing the device_ptr in the UAV table and
 	 * setting the descriptor base address to zero */
-	buf_desc.base_addr = 0;
-	buf_desc.num_format = num_format;
-	buf_desc.data_format = data_format;
-	buf_desc.elem_size = elem_size;
-
-	return buf_desc;
+	buffer_desc->base_addr = 0;
+	buffer_desc->num_format = num_format;
+	buffer_desc->data_format = data_format;
+	buffer_desc->elem_size = elem_size;
 }
 
-void si_emu_insert_into_uav_table(struct si_buffer_desc_t buf_desc,
-	struct si_opencl_kernel_arg_t *arg)
+
+void si_emu_insert_into_uav_table(struct si_buffer_desc_t *buffer_desc,
+	int buffer_num)
 {
-	unsigned int buffer_num;
-
-	assert(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER);
-	buffer_num = arg->pointer.buffer_num;
-
-	assert(buffer_num < SI_EMU_MAX_NUM_UAVS);
-	assert(SI_EMU_UAV_TABLE_START + buffer_num*32 <= 
+	assert(IN_RANGE(buffer_num, 0, SI_EMU_MAX_NUM_UAVS - 1));
+	assert(SI_EMU_UAV_TABLE_START + buffer_num * 32 <=
 		SI_EMU_UAV_TABLE_START + SI_EMU_UAV_TABLE_SIZE - 32);
 
 	/* Write the buffer resource descriptor into the UAV at
 	 * 'buffer_num' offset */
-	mem_write(si_emu->global_mem, SI_EMU_UAV_TABLE_START + buffer_num*32,
-		sizeof(buf_desc), &buf_desc);
+	mem_write(si_emu->global_mem, SI_EMU_UAV_TABLE_START + buffer_num * 32,
+		sizeof(struct si_buffer_desc_t), buffer_desc);
 
+	/* FIXME - what if we launch another kernel later? Should we
+	 * reset this flag at the end of emulation? */
 	si_emu->valid_uav_list[buffer_num] = 1;
 }
+
 
 /* Store an entry in the UAV table */
 void si_emu_set_uav_table_entry(int uav, unsigned int addr, 

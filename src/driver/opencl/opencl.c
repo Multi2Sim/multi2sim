@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/southern-islands/asm/bin-file.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/x86/emu/context.h>
@@ -616,7 +617,12 @@ static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
 		fatal("%s: argument %d: size %d expected, %d found",
 				__FUNCTION__, index, arg->size, size);
 
+	/* Free a possible previous value */
+	if (arg->value.value_ptr)
+		free(arg->value.value_ptr);
+
 	/* Save value */
+	arg->set = 1;
 	arg->value.value_ptr = xmalloc(size);
 	mem_read(ctx->mem, host_ptr, size, arg->value.value_ptr);
 
@@ -695,6 +701,7 @@ static int opencl_abi_si_kernel_set_arg_pointer_impl(struct x86_ctx_t *ctx)
 				__FUNCTION__, index);
 
 	/* Record size and value */
+	arg->set = 1;
 	arg->size = size;
 	arg->pointer.device_ptr = device_ptr;
 
@@ -832,6 +839,7 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 	struct mem_t *mem = ctx->mem;
 	struct opencl_si_kernel_t *kernel;
 	struct si_ndrange_t *ndrange;
+	struct elf_buffer_t *elf_buffer;
 
 	int kernel_id;
 	int work_dim;
@@ -873,15 +881,26 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 		fatal("%s: invalid kernel ID (%d)",
 				__FUNCTION__, kernel_id);
 
-	/* Set up ND-Range */
+	/* Create ND-Range */
 	ndrange = si_ndrange_create(kernel->name);
 	si_ndrange_setup_size(ndrange, global_size, local_size, work_dim);
-	//si_ndrange_setup_kernel(ndrange, kernel);
-	//si_ndrange_setup_work_items(ndrange);
-	//si_ndrange_setup_const_mem(ndrange);
-	//si_ndrange_setup_args(ndrange);
+
+	/* Set up initial state and arguments */
+	opencl_si_kernel_setup_ndrange_state(kernel, ndrange);
+	opencl_si_kernel_setup_ndrange_args(kernel, ndrange);
+
+	/* Set up instruction memory */
+	/* Initialize wavefront instruction buffer and PC */
+	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer;
+	if (!elf_buffer->size)
+		fatal("%s: cannot load kernel code", __FUNCTION__);
+	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
+
+	/* Set ND-Range status to 'pending'. This makes it immediately a
+	 * candidate for execution, whether we have functional or
+	 * detailed simulation. */
+	si_ndrange_set_status(ndrange, si_ndrange_pending);
 
 	/* No return value */
 	return 0;
 }
-
