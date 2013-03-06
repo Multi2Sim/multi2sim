@@ -187,6 +187,7 @@ int opencl_object_ref_update(void *data, enum opencl_object_type_t type, int cha
 		if (!thread_list_remove(opencl_object_list, object))
 			panic("%s: could not remove object that just existed", __FUNCTION__);
 
+		assert(object->free_func);
 		object->free_func(object->data);
 		opencl_object_free(object);
 	}
