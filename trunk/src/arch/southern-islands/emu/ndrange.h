@@ -41,9 +41,6 @@ struct si_ndrange_t
 	/* Event */
 	struct si_opencl_event_t *event;
 
-	/* OpenCL kernel associated */
-	struct si_opencl_kernel_t *kernel;
-
 	/* Command queue and command queue task associated */
 	struct si_opencl_command_queue_t *command_queue;
 	struct si_opencl_command_t *command;
@@ -123,6 +120,12 @@ struct si_ndrange_t
 	 * kernel function. */
 	unsigned int local_mem_top;
 
+	/* Number of register used by each work-item. This fields determines
+	 * how many work-groups can be allocated per compute unit, among
+	 * others. */
+	unsigned int num_vgpr_used;
+	unsigned int num_sgpr_used;
+
 	/* Statistics */
 
 	/* Histogram of executed instructions. Only allocated if the kernel 
@@ -134,7 +137,6 @@ struct si_ndrange_t
 struct si_ndrange_t *si_ndrange_create(char *name);
 void si_ndrange_free(struct si_ndrange_t *ndrange);
 void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f);
-void si_ndrange_dump_initialized_state(struct si_ndrange_t *ndrange);
 
 /* Functions to set up ND-Range after initialization */
 void si_ndrange_setup_size(struct si_ndrange_t *ndrange,
@@ -143,13 +145,6 @@ void si_ndrange_setup_size(struct si_ndrange_t *ndrange,
 		int work_dim);
 void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange,
 		void *buf, int size, unsigned int pc);
-
-/* Functions to set up OpenCL ND-Range state */
-void si_ndrange_setup_kernel(struct si_ndrange_t *ndrange, struct si_opencl_kernel_t *kernel);
-void si_ndrange_setup_opencl_state(struct si_ndrange_t *ndrange);
-void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
-void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange);
-void si_ndrange_setup_args(struct si_ndrange_t *ndrange);
 
 int si_ndrange_get_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status);
 void si_ndrange_set_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);

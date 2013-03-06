@@ -2626,11 +2626,8 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	/* Setup ND-Range */
 	ndrange = si_ndrange_create(kernel->name);
 	si_ndrange_setup_size(ndrange, global_size3, local_size3, argv.work_dim);
-
-	si_ndrange_setup_kernel(ndrange, kernel);
-	si_ndrange_setup_opencl_state(ndrange);
-	si_ndrange_setup_const_mem(ndrange);
-	si_ndrange_setup_args(ndrange);
+	si_opencl_kernel_setup_ndrange_state(kernel, ndrange);
+	si_opencl_kernel_setup_ndrange_args(kernel, ndrange);
 
 	/* Set up instruction memory */
 	/* Initialize wavefront instruction buffer and PC */
@@ -2688,10 +2685,7 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	}
 
 	/* Debugging */
-	si_ndrange_dump_initialized_state(ndrange);
-
-	/* Save in kernel */
-	kernel->ndrange = ndrange;
+	si_opencl_kernel_debug_ndrange_state(kernel, ndrange);
 
 	/* Set ND-Range status to 'pending'. This makes it immediately a 
 	 * candidate for execution, whether we have functional or 
