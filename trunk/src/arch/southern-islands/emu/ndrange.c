@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/emu/work-item.h>
 #include <driver/opencl-old/southern-islands/command-queue.h>
 #include <driver/opencl-old/southern-islands/event.h>
 #include <driver/opencl-old/southern-islands/kernel.h>
@@ -41,32 +42,50 @@
 #include "work-item.h"
 
 /*
- * GPU ND-Range
+ * Private
  */
 
-extern void si_opencl_debug_array(int nelem, int *array);
+static void si_ndrange_debug_array(int nelem, int *array)
+{
+	char *comma = "";
+	int i;
 
-struct si_ndrange_t *si_ndrange_create(int *global_size3, int *local_size3, int work_dim)
+	si_opencl_debug("{");
+	for (i = 0; i < nelem; i++)
+	{
+		si_opencl_debug("%s%d", comma, array[i]);
+		comma = ", ";
+	}
+	si_opencl_debug("}");
+}
+
+
+
+
+/*
+ * Public Functions
+ */
+
+struct si_ndrange_t *si_ndrange_create(char *name)
 {
 	struct si_ndrange_t *ndrange;
 
-	/* Insert in ND-Range list of SouthernIslands emulator */
+	/* Initialize */
 	ndrange = xcalloc(1, sizeof(struct si_ndrange_t));
-	DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, ndrange, ndrange);
+	ndrange->id = si_emu->ndrange_count++;
 
-	/* Create ND-Range configuration */
-	ndrange->ndrange_conf = si_ndrange_conf_create(global_size3, local_size3, work_dim);
+	/* Insert in ND-Range list of SouthernIslands emulator */
+	DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, ndrange, ndrange);
 
 	/* Instruction histogram */
 	if (si_emu_report_file)
-	{
 		ndrange->inst_histogram = xcalloc(SI_INST_COUNT, 
 			sizeof(unsigned int));
-	}
 
 	/* Return */
 	return ndrange;
 }
+
 
 void si_ndrange_free(struct si_ndrange_t *ndrange)
 {
@@ -93,14 +112,9 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 	assert(DOUBLE_LINKED_LIST_MEMBER(si_emu, ndrange, ndrange));
 	DOUBLE_LINKED_LIST_REMOVE(si_emu, ndrange, ndrange);
 
-	/* Free ND-Range configuration */
-	si_ndrange_conf_free(ndrange->ndrange_conf);
-
 	/* Free work-groups */
 	for (i = 0; i < ndrange->work_group_count; i++)
-	{
 		si_work_group_free(ndrange->work_groups[i]);
-	}
 	free(ndrange->work_groups);
 
 	/* Free wavefronts */
@@ -114,16 +128,12 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 
 	/* Free work-items */
 	for (i = 0; i < ndrange->work_item_count; i++)
-	{
 		si_work_item_free(ndrange->work_items[i]);
-	}
 	free(ndrange->work_items);
 
 	/* Free instruction histogram */
 	if (ndrange->inst_histogram)
-	{
 		free(ndrange->inst_histogram);
-	}
 
 	/* Free instruction buffer */
 	if (ndrange->inst_buffer)
@@ -134,97 +144,9 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 	free(ndrange);
 }
 
-struct si_ndrange_conf_t *si_ndrange_conf_create(int *param_global_size3, int *param_local_size3, int param_work_dim)
+
+static void si_ndrange_setup_arrays(struct si_ndrange_t *ndrange)
 {
-	struct si_ndrange_conf_t *ndrange_conf;
-	int i;
-
-	/* Ndrange configuration */
-	ndrange_conf = xcalloc(1, sizeof(struct si_ndrange_conf_t));
-
-	/* Default value */
-	ndrange_conf->global_size3[1] = 1;
-	ndrange_conf->global_size3[2] = 1;
-	ndrange_conf->local_size3[1] = 1;
-	ndrange_conf->local_size3[2] = 1;
-
-	/* Global work sizes */
-	for (i = 0; i < param_work_dim; i++)
-	{
-		ndrange_conf->global_size3[i] = param_global_size3[i];
-	}
-	ndrange_conf->global_size = ndrange_conf->global_size3[0] * ndrange_conf->global_size3[1] * ndrange_conf->global_size3[2];
-	si_opencl_debug("    global_work_size=");
-	si_opencl_debug_array(param_work_dim, ndrange_conf->global_size3);
-	si_opencl_debug("\n");
-
-	/* Local work sizes */
-	for (i = 0; i < param_work_dim; i++)
-	{
-		ndrange_conf->local_size3[i] = param_local_size3[i];
-		if (ndrange_conf->local_size3[i] < 1)
-			fatal("%s: local work size must be greater than 0.\n%s",
-					__FUNCTION__, si_err_opencl_param_note);
-	}
-	ndrange_conf->local_size = ndrange_conf->local_size3[0] * ndrange_conf->local_size3[1] * ndrange_conf->local_size3[2];
-	si_opencl_debug("    local_work_size=");
-	si_opencl_debug_array(param_work_dim, ndrange_conf->local_size3);
-	si_opencl_debug("\n");
-
-	/* Check valid global/local sizes */
-	if (ndrange_conf->global_size3[0] < 1 || ndrange_conf->global_size3[1] < 1
-			|| ndrange_conf->global_size3[2] < 1)
-		fatal("%s: invalid global size.\n%s", __FUNCTION__, si_err_opencl_param_note);
-	if (ndrange_conf->local_size3[0] < 1 || ndrange_conf->local_size3[1] < 1
-			|| ndrange_conf->local_size3[2] < 1)
-		fatal("%s: invalid local size.\n%s", __FUNCTION__, si_err_opencl_param_note);
-
-	/* Check divisibility of global by local sizes */
-	if ((ndrange_conf->global_size3[0] % ndrange_conf->local_size3[0])
-			|| (ndrange_conf->global_size3[1] % ndrange_conf->local_size3[1])
-			|| (ndrange_conf->global_size3[2] % ndrange_conf->local_size3[2]))
-		fatal("%s: global work sizes must be multiples of local sizes.\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
-
-	/* Calculate number of groups */
-	for (i = 0; i < 3; i++)
-		ndrange_conf->group_count3[i] = ndrange_conf->global_size3[i] / ndrange_conf->local_size3[i];
-	ndrange_conf->group_count = ndrange_conf->group_count3[0] * ndrange_conf->group_count3[1] * ndrange_conf->group_count3[2];
-	si_opencl_debug("    group_count=");
-	si_opencl_debug_array(param_work_dim, ndrange_conf->group_count3);
-	si_opencl_debug("\n");
-
-	/* Return */
-	return ndrange_conf;
-}
-
-void si_ndrange_conf_free(struct si_ndrange_conf_t *ndrange_conf)
-{
-	/* Free */
-	free(ndrange_conf);
-}
-
-void si_ndrange_setup_kernel(struct si_ndrange_t *ndrange, struct si_opencl_kernel_t *kernel)
-{
-	/* Initialize */
-	ndrange->name = xstrdup(kernel->name);
-	ndrange->kernel = kernel;
-	ndrange->local_mem_top = kernel->mem_size_local;
-	ndrange->id = si_emu->ndrange_count++;
-	ndrange->num_vgprs = 
-		kernel->bin_file->enc_dict_entry_southern_islands->
-		num_vgpr_used;
-	ndrange->num_sgprs = 
-		kernel->bin_file->enc_dict_entry_southern_islands->
-		num_sgpr_used;
-}
-
-
-void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
-{
-	struct si_opencl_kernel_t *kernel = ndrange->kernel;
-	struct si_ndrange_conf_t *ndrange_conf = ndrange->ndrange_conf;
-
 	struct si_work_group_t *work_group;
 	struct si_wavefront_t *wavefront;
 	struct si_work_item_t *work_item;
@@ -238,11 +160,11 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	int lid;  /* Local ID iterator */
 
 	/* Array of work-groups */
-	ndrange->work_group_count = ndrange_conf->group_count;
+	ndrange->work_group_count = ndrange->group_count;
 	ndrange->work_group_id_first = 0;
 	ndrange->work_group_id_last = ndrange->work_group_count - 1;
 	ndrange->work_groups = xcalloc(ndrange->work_group_count, sizeof(void *));
-	for (gid = 0; gid < ndrange_conf->group_count; gid++)
+	for (gid = 0; gid < ndrange->group_count; gid++)
 	{
 		ndrange->work_groups[gid] = si_work_group_create();
 		work_group = ndrange->work_groups[gid];
@@ -250,7 +172,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 
 	/* Array of wavefronts */
 	ndrange->wavefronts_per_work_group = 
-		(ndrange_conf->local_size + si_emu_wavefront_size - 1) / 
+		(ndrange->local_size + si_emu_wavefront_size - 1) /
 		si_emu_wavefront_size;
 	ndrange->wavefront_count = ndrange->wavefronts_per_work_group * 
 		ndrange->work_group_count;
@@ -285,17 +207,17 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	}
 
 	/* Array of work-items */
-	ndrange->work_item_count = ndrange_conf->global_size;
+	ndrange->work_item_count = ndrange->global_size;
 	ndrange->work_item_id_first = 0;
 	ndrange->work_item_id_last = ndrange->work_item_count - 1;
 	ndrange->work_items = xcalloc(ndrange->work_item_count, sizeof(void *));
 	tid = 0;
 	gid = 0;
-	for (gidz = 0; gidz < ndrange_conf->group_count3[2]; gidz++)
+	for (gidz = 0; gidz < ndrange->group_count3[2]; gidz++)
 	{
-		for (gidy = 0; gidy < ndrange_conf->group_count3[1]; gidy++)
+		for (gidy = 0; gidy < ndrange->group_count3[1]; gidy++)
 		{
-			for (gidx = 0; gidx < ndrange_conf->group_count3[0]; gidx++)
+			for (gidx = 0; gidx < ndrange->group_count3[0]; gidx++)
 			{
 				/* Assign work-group ID */
 				work_group = ndrange->work_groups[gid];
@@ -308,8 +230,8 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 
 				/* First, last, and number of work-items in work-group */
 				work_group->work_item_id_first = tid;
-				work_group->work_item_id_last = tid + ndrange_conf->local_size;
-				work_group->work_item_count = ndrange_conf->local_size;
+				work_group->work_item_id_last = tid + ndrange->local_size;
+				work_group->work_item_count = ndrange->local_size;
 				work_group->work_items = &ndrange->work_items[tid];
 				snprintf(work_group->name, sizeof(work_group->name), "work-group[i%d-i%d]",
 					work_group->work_item_id_first, work_group->work_item_id_last);
@@ -321,11 +243,11 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 				work_group->wavefronts = &ndrange->wavefronts[work_group->wavefront_id_first];
 				/* Iterate through work-items */
 				lid = 0;
-				for (lidz = 0; lidz < ndrange_conf->local_size3[2]; lidz++)
+				for (lidz = 0; lidz < ndrange->local_size3[2]; lidz++)
 				{
-					for (lidy = 0; lidy < ndrange_conf->local_size3[1]; lidy++)
+					for (lidy = 0; lidy < ndrange->local_size3[1]; lidy++)
 					{
-						for (lidx = 0; lidx < ndrange_conf->local_size3[0]; lidx++)
+						for (lidx = 0; lidx < ndrange->local_size3[0]; lidx++)
 						{
 							/* Wavefront ID */
 							wid = gid * ndrange->wavefronts_per_work_group +
@@ -339,9 +261,9 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 							work_item->ndrange = ndrange;
 
 							/* Global IDs */
-							work_item->id_3d[0] = gidx * ndrange_conf->local_size3[0] + lidx;
-							work_item->id_3d[1] = gidy * ndrange_conf->local_size3[1] + lidy;
-							work_item->id_3d[2] = gidz * ndrange_conf->local_size3[2] + lidz;
+							work_item->id_3d[0] = gidx * ndrange->local_size3[0] + lidx;
+							work_item->id_3d[1] = gidy * ndrange->local_size3[1] + lidy;
+							work_item->id_3d[2] = gidz * ndrange->local_size3[2] + lidz;
 							work_item->id = tid;
 
 							/* Local IDs */
@@ -356,17 +278,13 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 							work_item->wavefront = ndrange->wavefronts[wid];
 
 							/* First, last, and number of work-items in wavefront */
-							if (!wavefront->work_item_count) {
+							if (!wavefront->work_item_count)
+							{
 								wavefront->work_item_id_first = tid;
 								wavefront->work_items = &ndrange->work_items[tid];
 							}
 							wavefront->work_item_count++;
 							wavefront->work_item_id_last = tid;
-
-							/* Save local IDs in registers */
-							work_item->vreg[0].as_int = lidx;  /* V0 */
-							work_item->vreg[1].as_int = lidy;  /* V1 */
-							work_item->vreg[2].as_int = lidz;  /* V2 */
 
 							/* Next work-item */
 							tid++;
@@ -386,13 +304,136 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	{
 		/* Assign names to wavefronts */
 		wavefront = ndrange->wavefronts[wid];
-		snprintf(wavefront->name, sizeof(wavefront->name), 
+		snprintf(wavefront->name, sizeof(wavefront->name),
 			"wavefront[i%d-i%d]",
-			wavefront->work_item_id_first, 
+			wavefront->work_item_id_first,
 			wavefront->work_item_id_last);
+	}
+
+	/* Debug */
+	si_isa_debug("local_size = %d (%d,%d,%d)\n", ndrange->local_size,
+		ndrange->local_size3[0], ndrange->local_size3[1],
+		ndrange->local_size3[2]);
+	si_isa_debug("global_size = %d (%d,%d,%d)\n", ndrange->global_size,
+		ndrange->global_size3[0], ndrange->global_size3[1],
+		ndrange->global_size3[2]);
+	si_isa_debug("group_count = %d (%d,%d,%d)\n", ndrange->group_count,
+		ndrange->group_count3[0], ndrange->group_count3[1],
+		ndrange->group_count3[2]);
+	si_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
+	si_isa_debug("wavefronts_per_work_group = %d\n",
+		ndrange->wavefronts_per_work_group);
+	si_isa_debug("\n");
+}
+
+
+void si_ndrange_setup_size(struct si_ndrange_t *ndrange,
+		unsigned int *global_size,
+		unsigned int *local_size,
+		int work_dim)
+{
+	int i;
+
+	/* Default value */
+	ndrange->global_size3[1] = 1;
+	ndrange->global_size3[2] = 1;
+	ndrange->local_size3[1] = 1;
+	ndrange->local_size3[2] = 1;
+
+	/* Global work sizes */
+	for (i = 0; i < work_dim; i++)
+		ndrange->global_size3[i] = global_size[i];
+	ndrange->global_size = ndrange->global_size3[0] *
+			ndrange->global_size3[1] * ndrange->global_size3[2];
+
+	/* Debug */
+	si_opencl_debug("\tglobal_work_size=");
+	si_ndrange_debug_array(work_dim, ndrange->global_size3);
+	si_opencl_debug("\n");
+
+	/* Local work sizes */
+	for (i = 0; i < work_dim; i++)
+	{
+		ndrange->local_size3[i] = local_size[i];
+		if (ndrange->local_size3[i] < 1)
+			fatal("%s: local work size must be greater than 0.\n%s",
+					__FUNCTION__, si_err_opencl_param_note);
+	}
+	ndrange->local_size = ndrange->local_size3[0] * ndrange->local_size3[1] * ndrange->local_size3[2];
+
+	/* Debug */
+	si_opencl_debug("\tlocal_work_size=");
+	si_ndrange_debug_array(work_dim, ndrange->local_size3);
+	si_opencl_debug("\n");
+
+	/* Check valid global/local sizes */
+	if (ndrange->global_size3[0] < 1 || ndrange->global_size3[1] < 1
+			|| ndrange->global_size3[2] < 1)
+		fatal("%s: invalid global size.\n%s", __FUNCTION__, si_err_opencl_param_note);
+	if (ndrange->local_size3[0] < 1 || ndrange->local_size3[1] < 1
+			|| ndrange->local_size3[2] < 1)
+		fatal("%s: invalid local size.\n%s", __FUNCTION__, si_err_opencl_param_note);
+
+	/* Check divisibility of global by local sizes */
+	if ((ndrange->global_size3[0] % ndrange->local_size3[0])
+			|| (ndrange->global_size3[1] % ndrange->local_size3[1])
+			|| (ndrange->global_size3[2] % ndrange->local_size3[2]))
+		fatal("%s: global work sizes must be multiples of local sizes.\n%s",
+				__FUNCTION__, si_err_opencl_param_note);
+
+	/* Calculate number of groups */
+	for (i = 0; i < 3; i++)
+		ndrange->group_count3[i] = ndrange->global_size3[i] / ndrange->local_size3[i];
+	ndrange->group_count = ndrange->group_count3[0] * ndrange->group_count3[1] * ndrange->group_count3[2];
+
+	/* Debug */
+	si_opencl_debug("\tgroup_count=");
+	si_ndrange_debug_array(work_dim, ndrange->group_count3);
+	si_opencl_debug("\n");
+
+	/* Allocate work-group, wavefront, and work-item arrays */
+	si_ndrange_setup_arrays(ndrange);
+}
+
+
+void si_ndrange_setup_kernel(struct si_ndrange_t *ndrange, struct si_opencl_kernel_t *kernel)
+{
+	/* Initialize */
+	ndrange->kernel = kernel;
+}
+
+
+void si_ndrange_setup_opencl_state(struct si_ndrange_t *ndrange)
+{
+	struct si_opencl_kernel_t *kernel = ndrange->kernel;
+	struct si_wavefront_t *wavefront;
+	struct si_work_item_t *work_item;
+
+	int work_item_id;
+	int wavefront_id;
+	int i;
+
+	unsigned int user_sgpr;
+	unsigned int user_element_count;
+	struct si_bin_enc_user_element_t *user_elements;
+
+	/* Save local IDs in registers */
+	SI_FOREACH_WORK_ITEM_IN_NDRANGE(ndrange, work_item_id)
+	{
+		work_item = ndrange->work_items[work_item_id];
+		work_item->vreg[0].as_int = work_item->id_in_work_group_3d[0];  /* V0 */
+		work_item->vreg[1].as_int = work_item->id_in_work_group_3d[1];  /* V1 */
+		work_item->vreg[2].as_int = work_item->id_in_work_group_3d[2];  /* V2 */
+	}
+
+	/* Initialize the wavefronts */
+	SI_FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id)
+	{
+		/* Get wavefront */
+		wavefront = ndrange->wavefronts[wavefront_id];
 
 		/* Save work-group IDs in registers */
-		unsigned int user_sgpr = kernel->bin_file->
+		user_sgpr = kernel->bin_file->
 			enc_dict_entry_southern_islands->
 			compute_pgm_rsrc2->user_sgpr;
 		wavefront->sreg[user_sgpr].as_int = 
@@ -403,58 +444,56 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			wavefront->work_group->id_3d[2];
 
 		/* Initialize sreg pointers to internal data structures */
-		unsigned int userElementCount = 
-			kernel->bin_file->enc_dict_entry_southern_islands->
+		user_element_count = kernel->bin_file->enc_dict_entry_southern_islands->
 			userElementCount;
-		struct si_bin_enc_user_element_t* userElements = 
-			kernel->bin_file->enc_dict_entry_southern_islands->
+		user_elements = kernel->bin_file->enc_dict_entry_southern_islands->
 			userElements;
-		for (int i = 0; i < userElementCount; i++)
+		for (i = 0; i < user_element_count; i++)
 		{
-			if (userElements[i].dataClass == IMM_CONST_BUFFER)
+			if (user_elements[i].dataClass == IMM_CONST_BUFFER)
 			{
 				/* Store CB pointer in sregs */
 				si_wavefront_init_sreg_with_cb(wavefront, 
-					userElements[i].startUserReg, 
-					userElements[i].userRegCount, 
-					userElements[i].apiSlot);
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount,
+					user_elements[i].apiSlot);
 			}
-			else if (userElements[i].dataClass == IMM_UAV)
+			else if (user_elements[i].dataClass == IMM_UAV)
 			{
 				/* Store UAV pointer in sregs */
 				si_wavefront_init_sreg_with_uav(wavefront, 
-					userElements[i].startUserReg, 
-					userElements[i].userRegCount, 
-					userElements[i].apiSlot);
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount,
+					user_elements[i].apiSlot);
 			}
-			else if (userElements[i].dataClass == 
+			else if (user_elements[i].dataClass ==
 				PTR_CONST_BUFFER_TABLE)
 			{
 				/* Store CB table in sregs */
 				si_wavefront_init_sreg_with_cb_table(wavefront,
-					userElements[i].startUserReg, 
-					userElements[i].userRegCount);
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount);
 			}
-			else if (userElements[i].dataClass == PTR_UAV_TABLE)
+			else if (user_elements[i].dataClass == PTR_UAV_TABLE)
 			{
 				/* Store UAV table in sregs */
 				si_wavefront_init_sreg_with_uav_table(
 					wavefront,
-					userElements[i].startUserReg, 
-					userElements[i].userRegCount);
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount);
 			}
-			else if (userElements[i].dataClass == IMM_SAMPLER)
+			else if (user_elements[i].dataClass == IMM_SAMPLER)
 			{
 				/* Store sampler in sregs */
 				assert(0);
 			}
-			else if (userElements[i].dataClass == 
+			else if (user_elements[i].dataClass ==
 				PTR_RESOURCE_TABLE)
 			{
 				/* Store resource table in sregs */
 				assert(0);
 			}
-			else if (userElements[i].dataClass == 
+			else if (user_elements[i].dataClass ==
 				PTR_INTERNAL_GLOBAL_TABLE)
 			{
 				fatal("%s: PTR_INTERNAL_GLOBAL_TABLE not "
@@ -464,7 +503,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			{
 				fatal("%s: Unimplemented User Element: "
 					"dataClass:%d", __FUNCTION__,
-					userElements[i].dataClass);
+					user_elements[i].dataClass);
 			}
 		}
 
@@ -473,47 +512,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		wavefront->sreg[SI_EXEC + 1].as_int = 0xFFFFFFFF;
 		wavefront->sreg[SI_EXECZ].as_int = 0;
 	}
-
-	/* Debug */
-	si_isa_debug("local_size = %d (%d,%d,%d)\n", ndrange_conf->local_size, 
-		ndrange_conf->local_size3[0], ndrange_conf->local_size3[1], 
-		ndrange_conf->local_size3[2]);
-	si_isa_debug("global_size = %d (%d,%d,%d)\n", ndrange_conf->global_size, 
-		ndrange_conf->global_size3[0], ndrange_conf->global_size3[1], 
-		ndrange_conf->global_size3[2]);
-	si_isa_debug("group_count = %d (%d,%d,%d)\n", ndrange_conf->group_count, 
-		ndrange_conf->group_count3[0], ndrange_conf->group_count3[1], 
-		ndrange_conf->group_count3[2]);
-	si_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
-	si_isa_debug("wavefronts_per_work_group = %d\n", 
-		ndrange->wavefronts_per_work_group);
-	si_isa_debug("\n");
-
-#if 0
-	si_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   "
-		"lid lid2 lid1 lid0  wavefront            work-group\n");
-	for (tid = 0; tid < ndrange->work_item_count; tid++)
-	{
-		work_item = ndrange->work_items[tid];
-		wavefront = work_item->wavefront;
-		work_group = work_item->work_group;
-		si_isa_debug("%4d %4d %4d %4d  ", work_item->id, 
-			work_item->id_3d[2], work_item->id_3d[1], 
-			work_item->id_3d[0]);
-		si_isa_debug("%4d %4d %4d %4d  ", work_group->id, 
-			work_group->id_3d[2], work_group->id_3d[1], 
-			work_group->id_3d[0]);
-		si_isa_debug("%4d %4d %4d %4d  ", work_item->id_in_work_group, 
-			work_item->id_in_work_group_3d[2], 
-			work_item->id_in_work_group_3d[1], 
-			work_item->id_in_work_group_3d[0]);
-		si_isa_debug("%20s.%-4d  ", wavefront->name, 
-			work_item->id_in_wavefront);
-		si_isa_debug("%20s.%-4d\n", work_group->name, 
-			work_item->id_in_work_group);
-	}
-#endif
-
 }
 
 
@@ -547,26 +545,25 @@ void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange, void *buf,
 
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 {
-	struct si_ndrange_conf_t *ndrange_conf = ndrange->ndrange_conf;
 	unsigned int zero = 0;
 	float f;
 	
 	/* CB0 bytes 0:15 */
 
 	/* Global work size for the {x,y,z} dimensions */
-	si_isa_const_mem_write(0, 0, &ndrange_conf->global_size3[0]);
-	si_isa_const_mem_write(0, 4, &ndrange_conf->global_size3[1]);
-	si_isa_const_mem_write(0, 8, &ndrange_conf->global_size3[2]);
+	si_isa_const_mem_write(0, 0, &ndrange->global_size3[0]);
+	si_isa_const_mem_write(0, 4, &ndrange->global_size3[1]);
+	si_isa_const_mem_write(0, 8, &ndrange->global_size3[2]);
 
 	/* Number of work dimensions */
-	si_isa_const_mem_write(0, 12, &ndrange_conf->work_dim);
+	si_isa_const_mem_write(0, 12, &ndrange->work_dim);
 
 	/* CB0 bytes 16:31 */
 
 	/* Local work size for the {x,y,z} dimensions */
-	si_isa_const_mem_write(0, 16, &ndrange_conf->local_size3[0]);
-	si_isa_const_mem_write(0, 20, &ndrange_conf->local_size3[1]);
-	si_isa_const_mem_write(0, 24, &ndrange_conf->local_size3[2]);
+	si_isa_const_mem_write(0, 16, &ndrange->local_size3[0]);
+	si_isa_const_mem_write(0, 20, &ndrange->local_size3[1]);
+	si_isa_const_mem_write(0, 24, &ndrange->local_size3[2]);
 
 	/* 0  */
 	si_isa_const_mem_write(0, 28, &zero);
@@ -574,9 +571,9 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	/* CB0 bytes 32:47 */
 
 	/* Global work size {x,y,z} / local work size {x,y,z} */
-	si_isa_const_mem_write(0, 32, &ndrange_conf->group_count3[0]);
-	si_isa_const_mem_write(0, 36, &ndrange_conf->group_count3[1]);
-	si_isa_const_mem_write(0, 40, &ndrange_conf->group_count3[2]);
+	si_isa_const_mem_write(0, 32, &ndrange->group_count3[0]);
+	si_isa_const_mem_write(0, 36, &ndrange->group_count3[1]);
+	si_isa_const_mem_write(0, 40, &ndrange->group_count3[2]);
 
 	/* 0  */
 	si_isa_const_mem_write(0, 44, &zero);
@@ -659,6 +656,10 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 	struct si_opencl_mem_t *mem_obj;
 
 	int i;
+
+	/* Initial top of local memory is determined by the static local memory
+	 * specified in the kernel binary. */
+	ndrange->local_mem_top = kernel->mem_size_local;
 
 	/* Kernel arguments */
 	for (i = 0; i < list_count(kernel->arg_list); i++)
@@ -771,7 +772,7 @@ void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f)
 	fprintf(f, "WorkItemCount = %d\n", ndrange->work_item_count);
 
 	/* Work-groups */
-	SI_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
+	SI_FOREACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
 	{
 		work_group = ndrange->work_groups[work_group_id];
 		si_work_group_dump(work_group, f);
@@ -988,10 +989,6 @@ void si_ndrange_dump_initialized_state(struct si_ndrange_t *ndrange)
 					" |\n", arg->pointer.constant_offset/4,
 					i, arg->size,
 					arg->name);
-			}
-			else
-			{
-				assert(0);
 			}
 			break;
 		}

@@ -59,21 +59,6 @@
 /* Debug info */
 int si_opencl_debug_category;
 
-void si_opencl_debug_array(int nelem, int *array)
-{
-	char *comma = "";
-	int i;
-
-	si_opencl_debug("{");
-	for (i = 0; i < nelem; i++)
-	{
-		si_opencl_debug("%s%d", comma, array[i]);
-		comma = ", ";
-	}
-	si_opencl_debug("}");
-}
-
-
 /* List of OpenCL function names */
 char *si_opencl_func_name[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) #_name,
@@ -2585,8 +2570,8 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	struct si_opencl_command_queue_t *command_queue;
 	struct si_opencl_command_t *task;
 	struct si_ndrange_t *ndrange;
-	int global_size3[3];
-	int local_size3[3];
+	unsigned int global_size3[3];
+	unsigned int local_size3[3];
 
 	struct elf_buffer_t *elf_buffer;
 
@@ -2639,9 +2624,11 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	}
 
 	/* Setup ND-Range */
-	ndrange = si_ndrange_create(global_size3, local_size3, argv.work_dim);
+	ndrange = si_ndrange_create(kernel->name);
+	si_ndrange_setup_size(ndrange, global_size3, local_size3, argv.work_dim);
+
 	si_ndrange_setup_kernel(ndrange, kernel);
-	si_ndrange_setup_work_items(ndrange);
+	si_ndrange_setup_opencl_state(ndrange);
 	si_ndrange_setup_const_mem(ndrange);
 	si_ndrange_setup_args(ndrange);
 

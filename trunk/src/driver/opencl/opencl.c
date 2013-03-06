@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/ndrange.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/util/debug.h>
@@ -829,6 +830,8 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
+	struct opencl_si_kernel_t *kernel;
+	struct si_ndrange_t *ndrange;
 
 	int kernel_id;
 	int work_dim;
@@ -863,6 +866,20 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 		opencl_debug("\tglobal_size[%d] = %u\n", i, global_size[i]);
 	for (i = 0; i < work_dim; i++)
 		opencl_debug("\tlocal_size[%d] = %u\n", i, local_size[i]);
+
+	/* Get kernel */
+	kernel = list_get(opencl_si_kernel_list, kernel_id);
+	if (!kernel)
+		fatal("%s: invalid kernel ID (%d)",
+				__FUNCTION__, kernel_id);
+
+	/* Set up ND-Range */
+	ndrange = si_ndrange_create(kernel->name);
+	si_ndrange_setup_size(ndrange, global_size, local_size, work_dim);
+	//si_ndrange_setup_kernel(ndrange, kernel);
+	//si_ndrange_setup_work_items(ndrange);
+	//si_ndrange_setup_const_mem(ndrange);
+	//si_ndrange_setup_args(ndrange);
 
 	/* No return value */
 	return 0;
