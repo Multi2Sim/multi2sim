@@ -37,9 +37,9 @@ static void opencl_command_run_mem_read(struct opencl_command_t *command)
 	assert(device->arch_device_mem_read_func);
 	device->arch_device_mem_read_func(
 			device->arch_device,
-			command->u.mem_read.host_ptr,
-			command->u.mem_read.device_ptr,
-			command->u.mem_read.size);
+			command->mem_read.host_ptr,
+			command->mem_read.device_ptr,
+			command->mem_read.size);
 }
 
 
@@ -51,9 +51,9 @@ static void opencl_command_run_mem_write(struct opencl_command_t *command)
 	assert(device->arch_device_mem_write_func);
 	device->arch_device_mem_write_func(
 			device->arch_device,
-			command->u.mem_write.device_ptr,
-			command->u.mem_write.host_ptr,
-			command->u.mem_write.size);
+			command->mem_write.device_ptr,
+			command->mem_write.host_ptr,
+			command->mem_write.size);
 }
 
 
@@ -65,9 +65,9 @@ static void opencl_command_run_mem_copy(struct opencl_command_t *command)
 	assert(device->arch_device_mem_copy_func);
 	device->arch_device_mem_copy_func(
 			device->arch_device,
-			command->u.mem_copy.device_dest_ptr,
-			command->u.mem_copy.device_src_ptr,
-			command->u.mem_copy.size);
+			command->mem_copy.device_dest_ptr,
+			command->mem_copy.device_src_ptr,
+			command->mem_copy.size);
 }
 
 
@@ -88,12 +88,13 @@ static void opencl_command_run_unmap_buffer(struct opencl_command_t *command)
 /* Run a kernel */
 static void opencl_command_run_launch_kernel(struct opencl_command_t *command)
 {
-	command->u.launch_kernel.device->arch_kernel_run_func(
-			command->u.launch_kernel.arch_kernel,
-			command->u.launch_kernel.work_dim,
-			command->u.launch_kernel.global_work_offset,
-			command->u.launch_kernel.global_work_size,
-			command->u.launch_kernel.local_work_size);
+	assert(command->launch_kernel.device->arch_kernel_run_func);
+	command->launch_kernel.device->arch_kernel_run_func(
+			command->launch_kernel.arch_kernel,
+			command->launch_kernel.work_dim,
+			command->launch_kernel.global_work_offset,
+			command->launch_kernel.global_work_size,
+			command->launch_kernel.local_work_size);
 }
 
 
@@ -181,9 +182,9 @@ struct opencl_command_t *opencl_command_create_mem_read(
 			opencl_command_run_mem_read,
 			command_queue, done_event_ptr, num_wait_events,
 			wait_events);
-	command->u.mem_read.host_ptr = host_ptr;
-	command->u.mem_read.device_ptr = device_ptr;
-	command->u.mem_read.size = size;
+	command->mem_read.host_ptr = host_ptr;
+	command->mem_read.device_ptr = device_ptr;
+	command->mem_read.size = size;
 
 	/* Return */
 	return command;
@@ -206,9 +207,9 @@ struct opencl_command_t *opencl_command_create_mem_write(
 			opencl_command_run_mem_write,
 			command_queue, done_event_ptr, num_wait_events,
 			wait_events);
-	command->u.mem_write.device_ptr = device_ptr;
-	command->u.mem_write.host_ptr = host_ptr;
-	command->u.mem_write.size = size;
+	command->mem_write.device_ptr = device_ptr;
+	command->mem_write.host_ptr = host_ptr;
+	command->mem_write.size = size;
 
 	/* Return */
 	return command;
@@ -231,9 +232,9 @@ struct opencl_command_t *opencl_command_create_mem_copy(
 			opencl_command_run_mem_copy,
 			command_queue, done_event_ptr, num_wait_events,
 			wait_events);
-	command->u.mem_copy.device_dest_ptr = device_dest_ptr;
-	command->u.mem_copy.device_src_ptr = device_src_ptr;
-	command->u.mem_copy.size = size;
+	command->mem_copy.device_dest_ptr = device_dest_ptr;
+	command->mem_copy.device_src_ptr = device_src_ptr;
+	command->mem_copy.size = size;
 
 	/* Return */
 	return command;
@@ -283,28 +284,28 @@ struct opencl_command_t *opencl_command_create_launch_kernel(
 	command = opencl_command_create(opencl_command_launch_kernel,
 			opencl_command_run_launch_kernel, command_queue, done_event_ptr,
 			num_wait_events, wait_events);
-	command->u.launch_kernel.device = device;
-	command->u.launch_kernel.arch_kernel = arch_kernel;
-	command->u.launch_kernel.work_dim = work_dim;
+	command->launch_kernel.device = device;
+	command->launch_kernel.arch_kernel = arch_kernel;
+	command->launch_kernel.work_dim = work_dim;
 
 	/* Work sizes */
 	assert(work_dim < 3);
 	assert(global_work_size);
 	for (i = 0; i < work_dim; i++)
 	{
-		command->u.launch_kernel.global_work_offset[i] = global_work_offset ?
+		command->launch_kernel.global_work_offset[i] = global_work_offset ?
 				global_work_offset[i] : 0;
-		command->u.launch_kernel.global_work_size[i] = global_work_size[i];
-		command->u.launch_kernel.local_work_size[i] = local_work_size ?
+		command->launch_kernel.global_work_size[i] = global_work_size[i];
+		command->launch_kernel.local_work_size[i] = local_work_size ?
 				local_work_size[i] : 1;
 	}
 
 	/* Unused dimensions */
 	for (i = work_dim; i < 3; i++)
 	{
-		command->u.launch_kernel.global_work_offset[i] = 0;
-		command->u.launch_kernel.global_work_size[i] = 1;
-		command->u.launch_kernel.local_work_size[i] = 1;
+		command->launch_kernel.global_work_offset[i] = 0;
+		command->launch_kernel.global_work_size[i] = 1;
+		command->launch_kernel.local_work_size[i] = 1;
 	}
 
 	/* Return */

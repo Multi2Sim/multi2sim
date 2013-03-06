@@ -752,6 +752,9 @@ cl_int clEnqueueNDRangeKernel(
 	}
 	if (!arch_kernel)
 		return CL_INVALID_VALUE;
+
+	/* Check kernel */
+	assert(device->arch_kernel_check_func);
 	if (device->arch_kernel_check_func(arch_kernel) != CL_SUCCESS)
 		return CL_INVALID_VALUE;
 	
