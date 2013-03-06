@@ -23,6 +23,7 @@
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -833,6 +834,52 @@ static int opencl_abi_si_kernel_set_arg_sampler_impl(struct x86_ctx_t *ctx)
  *	Unique kernel ID.
  */
 
+struct opencl_abi_si_kernel_launch_info_t
+{
+	struct opencl_si_kernel_t *kernel;
+	struct si_ndrange_t *ndrange;
+	int finished;
+};
+
+static void opencl_abi_si_kernel_launch_finish(void *user_data)
+{
+	struct opencl_abi_si_kernel_launch_info_t *info = user_data;
+	struct opencl_si_kernel_t *kernel = info->kernel;
+	struct si_ndrange_t *ndrange = info->ndrange;
+
+	/* Debug */
+	opencl_debug("ND-Range %d running kernel '%s' finished\n",
+			ndrange->id, kernel->name);
+
+	/* Set 'finished' flag in launch info */
+	info->finished = 1;
+
+	/* Force the x86 emulator to check which suspended contexts can wakeup,
+	 * based on their new state. */
+	x86_emu_process_events_schedule();
+}
+
+
+static int opencl_abi_si_kernel_launch_can_wakeup(struct x86_ctx_t *ctx,
+		void *user_data)
+{
+	struct opencl_abi_si_kernel_launch_info_t *info = user_data;
+
+	/* NOTE: the ND-Range has been freed at this point if it finished
+	 * execution, so field 'info->ndrange' should not be accessed. We
+	 * use flag 'info->finished' instead. */
+	return info->finished;
+}
+
+static void opencl_abi_si_kernel_launch_wakeup(struct x86_ctx_t *ctx,
+		void *user_data)
+{
+	struct opencl_abi_si_kernel_launch_info_t *info = user_data;
+
+	/* Free info object */
+	free(info);
+}
+
 static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
@@ -840,6 +887,7 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 	struct opencl_si_kernel_t *kernel;
 	struct si_ndrange_t *ndrange;
 	struct elf_buffer_t *elf_buffer;
+	struct opencl_abi_si_kernel_launch_info_t *info;
 
 	int kernel_id;
 	int work_dim;
@@ -892,14 +940,24 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 	/* Set up instruction memory */
 	/* Initialize wavefront instruction buffer and PC */
 	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer;
+	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
 	if (!elf_buffer->size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
-	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
+
+	/* Set up call-back function to be run when ND-Range finishes. */
+	info = xcalloc(1, sizeof(struct opencl_abi_si_kernel_launch_info_t));
+	info->kernel = kernel;
+	info->ndrange = ndrange;
+	si_ndrange_set_free_notify_func(ndrange, opencl_abi_si_kernel_launch_finish, info);
 
 	/* Set ND-Range status to 'pending'. This makes it immediately a
 	 * candidate for execution, whether we have functional or
 	 * detailed simulation. */
 	si_ndrange_set_status(ndrange, si_ndrange_pending);
+
+	/* Suspend x86 context until ND-Range finishes */
+	x86_ctx_suspend(ctx, opencl_abi_si_kernel_launch_can_wakeup, info,
+			opencl_abi_si_kernel_launch_wakeup, info);
 
 	/* No return value */
 	return 0;
