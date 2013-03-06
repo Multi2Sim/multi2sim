@@ -62,6 +62,7 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 	LIST_FOR_EACH(kernel->entry_list, index)
 	{
 		entry = list_get(kernel->entry_list, index);
+		assert(entry->device->arch_kernel_free_func);
 		entry->device->arch_kernel_free_func(entry->arch_kernel);
 	}
 
@@ -216,6 +217,7 @@ cl_int clSetKernelArg(
 	LIST_FOR_EACH(kernel->entry_list, i)
 	{
 		entry = list_get(kernel->entry_list, i);
+		assert(entry->device->arch_kernel_set_arg_func);
 		status = entry->device->arch_kernel_set_arg_func(entry->arch_kernel,
 			arg_index, arg_size, (void *) arg_value);
 		if (status != CL_SUCCESS)

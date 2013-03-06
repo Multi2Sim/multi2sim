@@ -72,6 +72,7 @@ void opencl_program_free(struct opencl_program_t *program)
 		device = entry->device;
 
 		/* Free architecture-specific program and entry*/
+		assert(device->arch_program_free_func);
 		device->arch_program_free_func(entry->arch_program);
 		free(entry);
 	}
@@ -217,6 +218,7 @@ cl_program clCreateProgramWithBinary(
 			continue;
 
 		/* Create the architecture-specific program object. */
+		assert(device->arch_program_create_func);
 		arch_program = device->arch_program_create_func(program,
 				device->arch_device, (void *) binaries[i], lengths[i]);
 

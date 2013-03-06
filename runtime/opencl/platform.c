@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
@@ -70,6 +71,7 @@ void opencl_platform_for_each_device(
 	int i;
 
 	/* Execute function for each device */
+	assert(for_each_device_func);
 	LIST_FOR_EACH(platform->device_list, i)
 	{
 		device = list_get(platform->device_list, i);

@@ -79,7 +79,7 @@ struct opencl_command_t
 			unsigned int global_work_size[3];
 			unsigned int local_work_size[3];
 		} launch_kernel;
-	} u;
+	};
 };
 
 

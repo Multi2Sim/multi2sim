@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -115,6 +116,7 @@ void thread_list_visit(struct thread_list_t *list,
 
 	/* Walk list */
 	node = list->head;
+	assert(visit_func);
 	while (node && visit_func(node->data, user_data))
 		node = node->next;
 
