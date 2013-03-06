@@ -904,3 +904,39 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 	/* No return value */
 	return 0;
 }
+
+
+
+
+/*
+ * OpenCL ABI call #14 - si_mem_free
+ *
+ * Deallocated memory in Southern Islands global memory scope.
+ *
+ * @param unsigned int device_ptr
+ *
+ * 	Memory address in device global memory returned previously by a call to
+ *	'si_mem_alloc'.
+ *
+ * @return void
+ *
+ *	No value is returned.
+ */
+
+static int opencl_abi_si_mem_free_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int device_ptr;
+
+	/* Arguments */
+	device_ptr = regs->ecx;
+	opencl_debug("\tdevice_ptr = %u\n", device_ptr);
+
+	/* For now, this call is ignored. No deallocation of global memory can
+	 * happen. */
+
+	/* Return device pointer */
+	return device_ptr;
+}
+

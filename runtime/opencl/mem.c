@@ -55,9 +55,13 @@ struct opencl_mem_t *opencl_mem_create(void)
 
 void opencl_mem_free(struct opencl_mem_t *mem)
 {
+	struct opencl_device_t *device = mem->device;
+
 	/* Free buffer if initialized */
+	assert(device->arch_device_mem_free_func);
 	if (mem->device_ptr)
-		free(mem->device_ptr);
+		device->arch_device_mem_free_func(device->arch_device,
+				mem->device_ptr);
 	
 	/* Free memory object */
 	free(mem);
@@ -129,6 +133,7 @@ cl_mem clCreateBuffer(
 	 * when the user specifies CL_MEM_USE_HOST_PTR */
 	assert(device->arch_device_mem_alloc_func);
 	mem->device_ptr = device->arch_device_mem_alloc_func(device->arch_device, size);
+	mem->device = device;
 	mem->size = size;
 
 	/* Copy buffer contents */

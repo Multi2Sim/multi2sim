@@ -238,7 +238,7 @@ cl_int clGetDeviceInfo(
 			param_value, 
 			param_value_size_ret);
 
-		/* 0x1032 reserved for CL_DEVICE_DOUBLE_FP_CONFIG */
+	/* 0x1032 reserved for CL_DEVICE_DOUBLE_FP_CONFIG */
 	case 0x1032:
 		return opencl_set_param(
 			&device->double_fp_config, 

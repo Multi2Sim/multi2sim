@@ -25,7 +25,12 @@
 /* Memory object */
 struct _cl_mem
 {
+	/* Pointer in device memory. Technically, there should be an array of
+	 * devices and device pointers, but only one allowed in this
+	 * implementation. */
+	struct opencl_device_t *device;
 	void *device_ptr;
+
 	size_t size;
 };
 
