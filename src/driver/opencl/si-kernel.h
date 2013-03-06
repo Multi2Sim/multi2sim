@@ -180,6 +180,9 @@ struct opencl_si_kernel_t
 	struct elf_buffer_t header_buffer;
 	struct elf_buffer_t kernel_buffer;
 
+	/* AMD Kernel binary (internal ELF) */
+	struct si_bin_file_t *bin_file;
+
 	/* Memory requirements */
 	int mem_size_local;
 	int mem_size_private;

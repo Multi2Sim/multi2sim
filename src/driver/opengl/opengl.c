@@ -2701,8 +2701,8 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 	struct elf_buffer_t *elf_buffer;
 	struct opengl_vertex_array_obj_t *curr_vao;
 	struct opengl_vertex_client_array_t *vca;
-	int global_size[3];
-	int local_size[3];
+	unsigned int global_size[3];
+	unsigned int local_size[3];
 	int workdim;
 
 	unsigned int args[3];
@@ -2727,7 +2727,8 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 
 	workdim = 1;
 
-	ndrange = si_ndrange_create(global_size, local_size, workdim);
+	ndrange = si_ndrange_create("VertexShader");
+	si_ndrange_setup_size(ndrange, global_size, local_size, workdim);
 
 	/* Setup NDrange instruction memory */
 	elf_buffer = opengl_program_get_shader(opengl_ctx->current_program, SI_OPENGL_SHADER_VERTEX);
