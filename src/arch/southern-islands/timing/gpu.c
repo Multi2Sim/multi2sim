@@ -1090,8 +1090,7 @@ static void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
 	si_gpu->work_groups_per_wavefront_pool = 
 		si_calc_get_work_groups_per_wavefront_pool(
 			ndrange->local_size, 
-			ndrange->kernel->bin_file->
-			enc_dict_entry_southern_islands->num_vgpr_used, 
+			ndrange->num_vgpr_used,
 			ndrange->local_mem_top);
 
 	if (!si_gpu->work_groups_per_wavefront_pool)

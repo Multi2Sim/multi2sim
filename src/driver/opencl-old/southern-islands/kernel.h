@@ -187,9 +187,6 @@ struct si_opencl_kernel_t
 	/* UAV lists */
 	struct list_t *constant_buffer_list;
 
-	/* State of the running kernel */
-	struct si_ndrange_t *ndrange;
-	
 	/* Variable sized declaration */
 	char name[0];
 };
@@ -202,6 +199,14 @@ void si_opencl_kernel_arg_free(struct si_opencl_kernel_arg_t *arg);
 
 void si_opencl_kernel_load(struct si_opencl_kernel_t *kernel, 
 	char *kernel_name);
+
+struct si_ndrange_t;
+void si_opencl_kernel_setup_ndrange_state(struct si_opencl_kernel_t *kernel,
+		struct si_ndrange_t *ndrange);
+void si_opencl_kernel_setup_ndrange_args(struct si_opencl_kernel_t *kernel,
+		struct si_ndrange_t *ndrange);
+void si_opencl_kernel_debug_ndrange_state(struct si_opencl_kernel_t *kernel,
+		struct si_ndrange_t *ndrange);
 
 struct mem_t;
 unsigned int si_opencl_kernel_get_work_group_info(
