@@ -184,10 +184,6 @@ typedef void *(*opencl_arch_kernel_create_func_t)(
 typedef void (*opencl_arch_kernel_free_func_t)(
 		void *kernel);  /* Of type 'opencl_XXX_kernel_t' */
 
-/* Verify that a kernel has properly set parameters */
-typedef int (*opencl_arch_kernel_check_func_t)(
-		void *kernel);  /* Of type 'opencl_XXX_kernel_t' */
-
 /* Set a kernel argument */
 typedef int (*opencl_arch_kernel_set_arg_func_t)(
 		void *kernel,  /* Of type 'opencl_XXX_kernel_t' */

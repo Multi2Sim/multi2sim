@@ -124,8 +124,6 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 			opencl_si_kernel_create;
 	parent->arch_kernel_free_func = (opencl_arch_kernel_free_func_t)
 			opencl_si_kernel_free;
-	parent->arch_kernel_check_func = (opencl_arch_kernel_check_func_t)
-			opencl_si_kernel_check;
 	parent->arch_kernel_set_arg_func = (opencl_arch_kernel_set_arg_func_t)
 			opencl_si_kernel_set_arg;
 	parent->arch_kernel_run_func = (opencl_arch_kernel_run_func_t)
