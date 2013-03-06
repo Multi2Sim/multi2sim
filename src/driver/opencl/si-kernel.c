@@ -20,6 +20,12 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/isa.h>
+#include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
+#include <arch/southern-islands/emu/work-item.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -806,4 +812,334 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 	si_bin_file_free(kernel->bin_file);
 	free(kernel->name);
 	free(kernel);
+}
+
+
+void opencl_si_kernel_setup_ndrange_state(struct opencl_si_kernel_t *kernel,
+		struct si_ndrange_t *ndrange)
+{
+	struct si_wavefront_t *wavefront;
+	struct si_work_item_t *work_item;
+	struct si_bin_enc_user_element_t *user_elements;
+
+	int work_item_id;
+	int wavefront_id;
+	int i;
+
+	unsigned int user_sgpr;
+	unsigned int user_element_count;
+	unsigned int zero = 0;
+
+	float f;
+
+	/* Save local IDs in registers */
+	SI_FOREACH_WORK_ITEM_IN_NDRANGE(ndrange, work_item_id)
+	{
+		work_item = ndrange->work_items[work_item_id];
+		work_item->vreg[0].as_int = work_item->id_in_work_group_3d[0];  /* V0 */
+		work_item->vreg[1].as_int = work_item->id_in_work_group_3d[1];  /* V1 */
+		work_item->vreg[2].as_int = work_item->id_in_work_group_3d[2];  /* V2 */
+	}
+
+	/* Initialize the wavefronts */
+	SI_FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id)
+	{
+		/* Get wavefront */
+		wavefront = ndrange->wavefronts[wavefront_id];
+
+		/* Save work-group IDs in registers */
+		user_sgpr = kernel->bin_file->
+			enc_dict_entry_southern_islands->
+			compute_pgm_rsrc2->user_sgpr;
+		wavefront->sreg[user_sgpr].as_int =
+			wavefront->work_group->id_3d[0];
+		wavefront->sreg[user_sgpr + 1].as_int =
+			wavefront->work_group->id_3d[1];
+		wavefront->sreg[user_sgpr + 2].as_int =
+			wavefront->work_group->id_3d[2];
+
+		/* Initialize sreg pointers to internal data structures */
+		user_element_count = kernel->bin_file->enc_dict_entry_southern_islands->
+			userElementCount;
+		user_elements = kernel->bin_file->enc_dict_entry_southern_islands->
+			userElements;
+		for (i = 0; i < user_element_count; i++)
+		{
+			if (user_elements[i].dataClass == IMM_CONST_BUFFER)
+			{
+				/* Store CB pointer in sregs */
+				si_wavefront_init_sreg_with_cb(wavefront,
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount,
+					user_elements[i].apiSlot);
+			}
+			else if (user_elements[i].dataClass == IMM_UAV)
+			{
+				/* Store UAV pointer in sregs */
+				si_wavefront_init_sreg_with_uav(wavefront,
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount,
+					user_elements[i].apiSlot);
+			}
+			else if (user_elements[i].dataClass ==
+				PTR_CONST_BUFFER_TABLE)
+			{
+				/* Store CB table in sregs */
+				si_wavefront_init_sreg_with_cb_table(wavefront,
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount);
+			}
+			else if (user_elements[i].dataClass == PTR_UAV_TABLE)
+			{
+				/* Store UAV table in sregs */
+				si_wavefront_init_sreg_with_uav_table(
+					wavefront,
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount);
+			}
+			else if (user_elements[i].dataClass == IMM_SAMPLER)
+			{
+				/* Store sampler in sregs */
+				assert(0);
+			}
+			else if (user_elements[i].dataClass ==
+				PTR_RESOURCE_TABLE)
+			{
+				/* Store resource table in sregs */
+				assert(0);
+			}
+			else if (user_elements[i].dataClass ==
+				PTR_INTERNAL_GLOBAL_TABLE)
+			{
+				fatal("%s: PTR_INTERNAL_GLOBAL_TABLE not "
+					"supported", __FUNCTION__);
+			}
+			else
+			{
+				fatal("%s: Unimplemented User Element: "
+					"dataClass:%d", __FUNCTION__,
+					user_elements[i].dataClass);
+			}
+		}
+
+		/* Initialize the execution mask */
+		wavefront->sreg[SI_EXEC].as_int = 0xffffffff;
+		wavefront->sreg[SI_EXEC + 1].as_int = 0xffffffff;
+		wavefront->sreg[SI_EXECZ].as_int = 0;
+	}
+
+	/* CB0 bytes 0:15 */
+
+	/* Global work size for the {x,y,z} dimensions */
+	si_isa_const_mem_write(0, 0, &ndrange->global_size3[0]);
+	si_isa_const_mem_write(0, 4, &ndrange->global_size3[1]);
+	si_isa_const_mem_write(0, 8, &ndrange->global_size3[2]);
+
+	/* Number of work dimensions */
+	si_isa_const_mem_write(0, 12, &ndrange->work_dim);
+
+	/* CB0 bytes 16:31 */
+
+	/* Local work size for the {x,y,z} dimensions */
+	si_isa_const_mem_write(0, 16, &ndrange->local_size3[0]);
+	si_isa_const_mem_write(0, 20, &ndrange->local_size3[1]);
+	si_isa_const_mem_write(0, 24, &ndrange->local_size3[2]);
+
+	/* 0  */
+	si_isa_const_mem_write(0, 28, &zero);
+
+	/* CB0 bytes 32:47 */
+
+	/* Global work size {x,y,z} / local work size {x,y,z} */
+	si_isa_const_mem_write(0, 32, &ndrange->group_count3[0]);
+	si_isa_const_mem_write(0, 36, &ndrange->group_count3[1]);
+	si_isa_const_mem_write(0, 40, &ndrange->group_count3[2]);
+
+	/* 0  */
+	si_isa_const_mem_write(0, 44, &zero);
+
+	/* CB0 bytes 48:63 */
+
+	/* FIXME Offset to private memory ring (0 if private memory is
+	 * not emulated) */
+
+	/* FIXME Private memory allocated per work_item */
+
+	/* 0  */
+	si_isa_const_mem_write(0, 56, &zero);
+
+	/* 0  */
+	si_isa_const_mem_write(0, 60, &zero);
+
+	/* CB0 bytes 64:79 */
+
+	/* FIXME Offset to local memory ring (0 if local memory is
+	 * not emulated) */
+
+	/* FIXME Local memory allocated per group */
+
+	/* 0 */
+	si_isa_const_mem_write(0, 72, &zero);
+
+	/* FIXME Pointer to location in global buffer where math library
+	 * tables start. */
+
+	/* CB0 bytes 80:95 */
+
+	/* 0.0 as IEEE-32bit float - required for math library. */
+	f = 0.0f;
+	si_isa_const_mem_write(0, 80, &f);
+
+	/* 0.5 as IEEE-32bit float - required for math library. */
+	f = 0.5f;
+	si_isa_const_mem_write(0, 84, &f);
+
+	/* 1.0 as IEEE-32bit float - required for math library. */
+	f = 1.0f;
+	si_isa_const_mem_write(0, 88, &f);
+
+	/* 2.0 as IEEE-32bit float - required for math library. */
+	f = 2.0f;
+	si_isa_const_mem_write(0, 92, &f);
+
+	/* CB0 bytes 96:111 */
+
+	/* Global offset for the {x,y,z} dimension of the work_item spawn */
+	si_isa_const_mem_write(0, 96, &zero);
+	si_isa_const_mem_write(0, 100, &zero);
+	si_isa_const_mem_write(0, 104, &zero);
+
+	/* Global single dimension flat offset: x * y * z */
+	si_isa_const_mem_write(0, 108, &zero);
+
+	/* CB0 bytes 112:127 */
+
+	/* Group offset for the {x,y,z} dimensions of the work_item spawn */
+	si_isa_const_mem_write(0, 112, &zero);
+	si_isa_const_mem_write(0, 116, &zero);
+	si_isa_const_mem_write(0, 120, &zero);
+
+	/* Group single dimension flat offset, x * y * z */
+	si_isa_const_mem_write(0, 124, &zero);
+
+	/* CB0 bytes 128:143 */
+
+	/* FIXME Offset in the global buffer where data segment exists */
+	/* FIXME Offset in buffer for printf support */
+	/* FIXME Size of the printf buffer */
+}
+
+
+void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
+		struct si_ndrange_t *ndrange)
+{
+	struct opencl_si_arg_t *arg;
+	int index;
+
+	/* Initial top of local memory is determined by the static local memory
+	 * specified in the kernel binary. Number of vector and scalar registers
+	 * used by the kernel recorded as well. */
+	ndrange->local_mem_top = kernel->mem_size_local;
+	ndrange->num_sgpr_used = kernel->bin_file->
+			enc_dict_entry_southern_islands->num_sgpr_used;
+	ndrange->num_vgpr_used = kernel->bin_file->
+			enc_dict_entry_southern_islands->num_vgpr_used;
+
+	/* Kernel arguments */
+	LIST_FOR_EACH(kernel->arg_list, index)
+	{
+		arg = list_get(kernel->arg_list, index);
+		assert(arg);
+
+		/* Check that argument was set */
+		if (!arg->set)
+			fatal("%s: kernel '%s': argument '%s' not set",
+				__FUNCTION__, kernel->name, arg->name);
+
+		/* Process argument depending on its type */
+		switch (arg->type)
+		{
+
+		case opencl_si_arg_value:
+
+			/* Value copied directly into device constant
+			 * memory */
+			assert(arg->size);
+			si_isa_const_mem_write_size(
+				arg->value.constant_buffer_num,
+				arg->value.constant_offset,
+				arg->value.value_ptr,
+				arg->size);
+			break;
+
+		case opencl_si_arg_pointer:
+
+			switch (arg->pointer.scope)
+			{
+
+			case opencl_si_arg_hw_local:
+
+				/* Pointer in __local scope.
+				 * Argument value is always NULL, just assign
+				 * space for it. */
+				si_isa_const_mem_write(
+					arg->pointer.constant_buffer_num,
+					arg->pointer.constant_offset,
+					&ndrange->local_mem_top);
+
+				opencl_debug("\targument %d: %u bytes reserved"
+					" in local memory at 0x%x\n", index,
+					arg->size, ndrange->local_mem_top);
+
+				ndrange->local_mem_top += arg->size;
+
+				break;
+
+			case opencl_si_arg_uav:
+			{
+				struct si_buffer_desc_t buffer_desc;
+
+				/* XXX Need to figure out what value goes in
+				 * CB1 and what value goes in
+				 * buf_desc.base_addr. For now, putting UAV
+				 * offset in CB1 and setting base_addr to 0 */
+				si_isa_const_mem_write(
+					arg->pointer.constant_buffer_num,
+					arg->pointer.constant_offset,
+					&arg->pointer.device_ptr);
+
+				/* Update UAV table */
+				si_emu_create_buffer_desc(arg->pointer.num_elems,
+						arg->pointer.data_type, &buffer_desc);
+				si_emu_insert_into_uav_table(&buffer_desc,
+						arg->pointer.buffer_num);
+
+				break;
+			}
+
+			default:
+
+				fatal("%s: not implemented memory scope",
+						__FUNCTION__);
+			}
+
+			break;
+
+		case opencl_si_arg_image:
+
+			fatal("%s: type 'image' not implemented", __FUNCTION__);
+			break;
+
+		case opencl_si_arg_sampler:
+
+			fatal("%s: type 'sampler' not implemented", __FUNCTION__);
+			break;
+
+		default:
+
+			fatal("%s: argument type not recognized (%d)",
+				__FUNCTION__, arg->type);
+
+		}
+	}
 }

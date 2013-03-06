@@ -292,10 +292,11 @@ int si_emu_run(void);
 void si_emu_disasm(char *path);
 void si_emu_opengl_disasm(char *path, int opengl_shader_index);
 
-struct si_buffer_desc_t si_emu_create_buffer_desc(
-	struct si_opencl_kernel_arg_t *arg);
-void si_emu_insert_into_uav_table(struct si_buffer_desc_t buf_desc,
-	struct si_opencl_kernel_arg_t *arg);
+void si_emu_create_buffer_desc(int num_elems,
+		enum si_opencl_kernel_arg_data_type_t data_type,
+		struct si_buffer_desc_t *buffer_desc);
+void si_emu_insert_into_uav_table(struct si_buffer_desc_t *buffer_desc,
+	int buffer_num);
 unsigned int si_emu_get_uav_base_addr(int uav);
 struct si_buffer_desc_t si_emu_get_uav_table_entry(int uav);
 void si_emu_set_uav_table_entry(int uav, unsigned int addr, 

@@ -2575,9 +2575,6 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 
 	struct elf_buffer_t *elf_buffer;
 
-	struct si_buffer_desc_t buf_desc;
-
-
 	int code;
 	int i;
 
@@ -2678,8 +2675,12 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 			if (arg->pointer.mem_type == 
 				SI_OPENCL_KERNEL_ARG_MEM_TYPE_UAV)
 			{
-				buf_desc = si_emu_create_buffer_desc(arg);
-				si_emu_insert_into_uav_table(buf_desc, arg);
+				struct si_buffer_desc_t buffer_desc;
+
+				si_emu_create_buffer_desc(arg->pointer.num_elems,
+						arg->pointer.data_type, &buffer_desc);
+				si_emu_insert_into_uav_table(&buffer_desc,
+						arg->pointer.buffer_num);
 			}
 		}
 	}
