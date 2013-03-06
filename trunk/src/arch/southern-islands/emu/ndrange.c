@@ -90,6 +90,10 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 {
 	int i;
 
+	/* Run free notify call-back */
+	if (ndrange->free_notify_func)
+		ndrange->free_notify_func(ndrange->free_notify_data);
+
 	/* Set event status to complete if an event was set. */
 	if (ndrange->event)
 		ndrange->event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
@@ -450,6 +454,15 @@ void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f)
 		si_work_group_dump(work_group, f);
 	}
 }
+
+
+void si_ndrange_set_free_notify_func(struct si_ndrange_t *ndrange,
+		void (*func)(void *), void *user_data)
+{
+	ndrange->free_notify_func = func;
+	ndrange->free_notify_data = user_data;
+}
+
 
 int si_ndrange_get_status(struct si_ndrange_t *ndrange, 
 	enum si_ndrange_status_t status)
