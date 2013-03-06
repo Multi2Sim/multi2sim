@@ -42,8 +42,14 @@ static void *opencl_command_queue_thread_func(void *user_data)
 	struct opencl_command_t *command;
 
 	/* Execute commands sequentially */
-	while ((command = opencl_command_queue_dequeue(command_queue)))
+	for (;;)
 	{
+		/* Get command */
+		command = opencl_command_queue_dequeue(command_queue);
+		if (!command)
+			break;
+
+		/* Run it */
 		opencl_command_run(command);
 		opencl_command_free(command);
 	}
@@ -80,8 +86,8 @@ void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
 {
 	struct opencl_command_t *command;
 
-	/* Create NOP command and flush queue */
-	command = opencl_command_create_nop(command_queue, NULL, 0, NULL);
+	/* Create END command and flush queue */
+	command = opencl_command_create_end(command_queue, NULL, 0, NULL);
 	opencl_command_queue_enqueue(command_queue, command);
 	opencl_command_queue_flush(command_queue);
 	pthread_join(command_queue->queue_thread, NULL);
