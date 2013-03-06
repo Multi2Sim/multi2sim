@@ -171,7 +171,7 @@ cl_int clGetPlatformIDs(
 	ret = syscall(OPENCL_SYSCALL_CODE, opencl_abi_init, &version);
 
 	/* If the system call returns error, we are in native mode. */
-	if (ret == -1)
+	if (ret == -1 && !opencl_native_mode)
 	{
 		opencl_native_mode = 1;
 		warning("Multi2Sim OpenCL library running on native mode.\n%s",
