@@ -41,10 +41,11 @@
 
 
 static char *syntax =
-	"Syntax: %s [<options>] <kernel.cl>\n"
+	"Syntax: %s [<options>] <kernel>.cl\n"
 	"\tOptions:\n"
 	"\t-l            Print list of available devices\n"
 	"\t-d <dev>      Select target device for compilation\n"
+	"\t-o <file>     Specify output file (default is <kernel>.bin)\n"
 	"\t-a            Dump intermediate files\n"
 	"\t-e            ELF verbose\n"
 	"\t-g            No optimizations (flags '-O0 -g' added)\n"
@@ -76,12 +77,13 @@ void main_list_devices(FILE *f)
 	char name[MAX_STRING_SIZE], vendor[MAX_STRING_SIZE];
 
 	/* List devices */
-	fprintf(f, "\n ID    Name, Vendor\n");
+	fprintf(f, "\n ID   Name, Vendor\n");
 	fprintf(f, "----  ----------------------------------------------------\n");
-	for (i = 0; i < num_devices; i++) {
+	for (i = 0; i < num_devices; i++)
+	{
 		clGetDeviceInfo(devices[i], CL_DEVICE_NAME, MAX_STRING_SIZE, name, NULL);
 		clGetDeviceInfo(devices[i], CL_DEVICE_VENDOR, MAX_STRING_SIZE, vendor, NULL);
-		fprintf(f, " %2d    %s %s\n", i, name, vendor);
+		fprintf(f, " %2d  %s, %s\n", i, name, vendor);
 	}
 	fprintf(f, "----------------------------------------------------------\n");
 	fprintf(f, "\t%d devices available\n\n", num_devices);
@@ -312,7 +314,10 @@ void main_compile_kernel()
 	len = strlen(kernel_file_name);
 	if (len > extlen && !strcmp(&kernel_file_name[len - extlen], kernel_file_ext))
 		kernel_file_prefix[len - extlen] = 0;
-	snprintf(bin_file_name, MAX_STRING_SIZE, "%s.bin", kernel_file_prefix);
+
+	/* Assign output file name if it was not specified with option '-o' */
+	if (!bin_file_name[0])
+		snprintf(bin_file_name, MAX_STRING_SIZE, "%s.bin", kernel_file_prefix);
 	
 	/* Read the program source */
 	program_source = read_buffer(kernel_file_name, &size);
@@ -383,6 +388,8 @@ int read_device(char *device_str)
 {
 	char *endptr;
 	char name[MAX_STRING_SIZE];
+	char *token;
+	char *delim;
 	int i;
 
 	/* Try to interpret 'device_str' as a number */
@@ -395,12 +402,15 @@ int read_device(char *device_str)
 		return device_id;
 	}
 
-	/* 'device_str' is a string */
+	/* 'device_str' is a string. If the given name matches any of the tokens
+	 * in the device name, that device will be selected (first occurrence). */
 	for (i = 0; i < num_devices; i++)
 	{
-		clGetDeviceInfo(devices[i], CL_DEVICE_NAME, MAX_STRING_SIZE, name, NULL);
-		if (!strcasecmp(device_str, name))
-			return i;
+		clGetDeviceInfo(devices[i], CL_DEVICE_NAME, sizeof name, name, NULL);
+		delim = ", ";
+		for (token = strtok(name, " ,"); token; token = strtok(NULL, delim))
+			if (!strcasecmp(device_str, token))
+				return i;
 	}
 	fatal("'%s' is not a valid device name; use '-l' for a list of supported devices",
 		device_str);
@@ -421,7 +431,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Process options */
-	while ((opt = getopt(argc, argv, "ld:aeg")) != -1)
+	while ((opt = getopt(argc, argv, "ld:aego:")) != -1)
 	{
 		switch (opt)
 		{
@@ -432,6 +442,10 @@ int main(int argc, char **argv)
 
 		case 'd':
 			device_str = optarg;
+			break;
+
+		case 'o':
+			snprintf(bin_file_name, sizeof bin_file_name, "%s", optarg);
 			break;
 
 		case 'a':
