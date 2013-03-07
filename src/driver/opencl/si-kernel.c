@@ -1325,6 +1325,12 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		}
 		elem_size = 4 * num_elems;
 	}
+	else if (data_type == opencl_si_arg_struct)
+	{
+		num_format = SI_BUF_DESC_NUM_FMT_UINT;
+		data_format = SI_BUF_DESC_DATA_FMT_8;
+		elem_size = 1;
+	}
 	else 
 	{
 		fatal("%s: Invalid data type for SI buffer (%d)", 
