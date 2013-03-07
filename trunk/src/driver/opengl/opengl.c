@@ -4849,7 +4849,7 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 			{
 				mem_write(si_emu->global_mem, gpu_mem->device_ptr, vca->vbo->data_size, vca->vbo->data);
 				opengl_debug("\tCopy %d byte from data [%p] saved in VBO #%d [%p] to GPU global memory\n", 
-					vca->vbo->data_size, vca->vbo->data, vca->vbo->id, vca->vbo);				
+					(int) vca->vbo->data_size, vca->vbo->data, vca->vbo->id, vca->vbo);				
 			}
 		}
 	}
@@ -10836,7 +10836,7 @@ static int opengl_func_glVertexAttribPointer(struct x86_ctx_t *ctx)
 	vtx_attrib->stride = stride;
 	vtx_attrib->enabled = GL_FALSE;
 	vtx_attrib->normalized = normalized;
-	vtx_attrib->ptr = (void *)pointer;	/* This is actually an offset ? */
+	vtx_attrib->ptr = pointer;	/* This is actually an offset ? */
 	vtx_attrib->vbo = vbo;
 	opengl_vertex_client_array_set_element_size(vtx_attrib, size, type);
 	vtx_attrib->max_element = vbo->data_size / vtx_attrib->element_size;
