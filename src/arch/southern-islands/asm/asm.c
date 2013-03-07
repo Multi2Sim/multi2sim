@@ -49,7 +49,7 @@ struct si_inst_info_t si_inst_info[SI_INST_COUNT];
 #define SI_INST_INFO_MTBUF_MAX_VALUE 7
 #define SI_INST_INFO_MUBUF_MAX_VALUE 113
 #define SI_INST_INFO_MIMG_MAX_VALUE 96
-#define SI_INST_INFO_EXP_MAX_VALUE  1
+#define SI_INST_INFO_EXP_MAX_VALUE  0
 
 /* String lengths for printing assembly */
 #define MAX_OPERAND_STR_SIZE 11
@@ -920,7 +920,7 @@ void operand_dump_exp(char *str, int operand)
 	else if (operand <= 63)
 	{
 		/* EXP_PARAM */
-		str_printf(&pstr, &str_size, "exp_param_%d", operand - 32);
+		str_printf(&pstr, &str_size, "exp_prm_%d", operand - 32);
 	}
 }
 
@@ -1587,37 +1587,25 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size, unsigned int r
 			operand_dump_exp(operand_str, inst->micro_inst.exp.tgt);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (is_token(fmt_str, "EXP_VSRC0", &token_len))
+		else if (is_token(fmt_str, "EXP_VSRCs", &token_len))
 		{
 			if (inst->micro_inst.exp.compr == 0 && (inst->micro_inst.exp.en && 0x0) == 0x0)
 			{
 				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc0);
-				str_printf(&inst_str, &str_size, "%s", operand_str);
-			}
-			/* FIXME: when exp->compr == 1, export float16 format */
-		}
-		else if (is_token(fmt_str, "EXP_VSRC1", &token_len))
-		{
-			if (inst->micro_inst.exp.compr == 0 && (inst->micro_inst.exp.en && 0x2) == 0x2)
-			{
+				str_printf(&inst_str, &str_size, "[%s ", operand_str);
 				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc1);
-				str_printf(&inst_str, &str_size, "%s", operand_str);
-			}
-		}
-		else if (is_token(fmt_str, "EXP_VSRC2", &token_len))
-		{
-			if (inst->micro_inst.exp.compr == 0 && (inst->micro_inst.exp.en && 0x4) == 0x4)
-			{
+				str_printf(&inst_str, &str_size, "%s ", operand_str);
 				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc2);
-				str_printf(&inst_str, &str_size, "%s", operand_str);
-			}
-		}
-		else if (is_token(fmt_str, "EXP_VSRC3", &token_len))
-		{
-			if (inst->micro_inst.exp.compr == 0 && (inst->micro_inst.exp.en && 0x8) == 0x8)
-			{
+				str_printf(&inst_str, &str_size, "%s ", operand_str);
 				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc3);
-				str_printf(&inst_str, &str_size, "%s", operand_str);
+				str_printf(&inst_str, &str_size, "%s]", operand_str);
+			}
+			else if (inst->micro_inst.exp.compr == 1 && (inst->micro_inst.exp.en && 0x0) == 0x0)
+			{
+				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc0);
+				str_printf(&inst_str, &str_size, "[%s ", operand_str);
+				operand_dump_vector(operand_str, inst->micro_inst.exp.vsrc1);
+				str_printf(&inst_str, &str_size, "%s]", operand_str);
 			}
 		}
 		else

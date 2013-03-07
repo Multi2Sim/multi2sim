@@ -95,6 +95,7 @@ struct si_wavefront_t
 	long long vector_alu_inst_count;
 	long long global_mem_inst_count;
 	long long lds_inst_count;
+	long long export_inst_count;
 };
 
 #define SI_FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \

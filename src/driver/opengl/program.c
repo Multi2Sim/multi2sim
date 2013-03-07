@@ -20,6 +20,12 @@
 #include <assert.h>
 
 #include <arch/southern-islands/emu/opengl-bin-file.h>
+#include <arch/southern-islands/emu/isa.h>
+#include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/emu/work-group.h>
+#include <arch/southern-islands/emu/work-item.h>
+
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
@@ -130,7 +136,8 @@ void opengl_program_attach_shader(struct opengl_program_t *prg,
 				{
 					shdr->isa_buffer = xcalloc(1, shader->isa_buffer.size);
 					memcpy(shdr->isa_buffer, shader->isa_buffer.ptr, shader->isa_buffer.size);
-					opengl_debug("\tSet Shader ISA buffer: copy %d byte from binary [%p] in program #%d [%p]\n", shader->isa_buffer.size, prg->si_shader_binary, prg->id, prg);
+					opengl_debug("\tSet Shader ISA buffer: copy %d byte from binary [%p] in program #%d [%p]\n", 
+						shader->isa_buffer.size, prg->si_shader_binary, prg->id, prg);
 				}
 			}
 			break;
@@ -145,7 +152,8 @@ void opengl_program_attach_shader(struct opengl_program_t *prg,
 				{
 					shdr->isa_buffer = xcalloc(1, shader->isa_buffer.size);
 					memcpy(shdr->isa_buffer, shader->isa_buffer.ptr, shader->isa_buffer.size);
-					opengl_debug("\tSet Shader ISA buffer: copy %d byte from binary [%p] in program #%d [%p]\n", shader->isa_buffer.size, prg->si_shader_binary, prg->id, prg);
+					opengl_debug("\tSet Shader ISA buffer: copy %d byte from binary [%p] in program #%d [%p]\n", 
+						shader->isa_buffer.size, prg->si_shader_binary, prg->id, prg);
 				}
 			}
 			break;
@@ -160,7 +168,8 @@ void opengl_program_attach_shader(struct opengl_program_t *prg,
 				{
 					shdr->isa_buffer = xcalloc(1, shader->isa_buffer.size);
 					memcpy(shdr->isa_buffer, shader->isa_buffer.ptr, shader->isa_buffer.size);
-					opengl_debug("\tSet Shader ISA buffer: copy %d byte from binary [%p] in program #%d [%p]\n", shader->isa_buffer.size, prg->si_shader_binary, prg->id, prg);
+					opengl_debug("\tSet Shader ISA buffer: copy %d byte from binary [%p] in program #%d [%p]\n",
+					 shader->isa_buffer.size, prg->si_shader_binary, prg->id, prg);
 				}
 			}
 			break;
@@ -241,6 +250,160 @@ void opengl_program_unbind(struct opengl_program_t *prg, struct opengl_context_t
 		opengl_debug("\tProgram #%d [%p] bind to OpenGL context [%p]\n", prg->id, prg, ctx);
 	}
 }
+
+void opengl_program_setup_ndrange_state(struct opengl_program_t *prg,
+		struct si_ndrange_t *ndrange)
+{
+	struct si_wavefront_t *wavefront;
+	struct si_work_item_t *work_item;
+
+	int work_item_id;
+	int wavefront_id;
+
+	unsigned int user_sgpr=0;
+	unsigned int zero = 0;
+
+	float f;
+
+	/* Save local IDs in registers */
+	SI_FOREACH_WORK_ITEM_IN_NDRANGE(ndrange, work_item_id)
+	{
+		work_item = ndrange->work_items[work_item_id];
+		work_item->vreg[0].as_int = work_item->id_in_work_group_3d[0];  /* V0 */
+		work_item->vreg[1].as_int = work_item->id_in_work_group_3d[1];  /* V1 */
+		work_item->vreg[2].as_int = work_item->id_in_work_group_3d[2];  /* V2 */
+	}
+
+	/* Initialize the wavefronts */
+	SI_FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id)
+	{
+		/* Get wavefront */
+		wavefront = ndrange->wavefronts[wavefront_id];
+
+		/* Save work-group IDs in registers */
+		wavefront->sreg[user_sgpr].as_int =
+			wavefront->work_group->id_3d[0];
+		wavefront->sreg[user_sgpr + 1].as_int =
+			wavefront->work_group->id_3d[1];
+		wavefront->sreg[user_sgpr + 2].as_int =
+			wavefront->work_group->id_3d[2];
+
+		/* Initialize the execution mask */
+		wavefront->sreg[SI_EXEC].as_int = 0xffffffff;
+		wavefront->sreg[SI_EXEC + 1].as_int = 0xffffffff;
+		wavefront->sreg[SI_EXECZ].as_int = 0;
+	}
+
+	/* CB0 bytes 0:15 */
+
+	/* Global work size for the {x,y,z} dimensions */
+	si_ndrange_const_buf_write(ndrange, 0, 0, 
+		&ndrange->global_size3[0], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 4, 
+		&ndrange->global_size3[1], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 8, 
+		&ndrange->global_size3[2], 4);
+
+	/* Number of work dimensions */
+	si_ndrange_const_buf_write(ndrange, 0, 12, &ndrange->work_dim, 4);
+
+	/* CB0 bytes 16:31 */
+
+	/* Local work size for the {x,y,z} dimensions */
+	si_ndrange_const_buf_write(ndrange, 0, 16, 
+		&ndrange->local_size3[0], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 20, 
+		&ndrange->local_size3[1], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 24, 
+		&ndrange->local_size3[2], 4);
+
+	/* 0  */
+	si_ndrange_const_buf_write(ndrange, 0, 28, &zero, 4);
+
+	/* CB0 bytes 32:47 */
+
+	/* Global work size {x,y,z} / local work size {x,y,z} */
+	si_ndrange_const_buf_write(ndrange, 0, 32, 
+		&ndrange->group_count3[0], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 36, 
+		&ndrange->group_count3[1], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 40, 
+		&ndrange->group_count3[2], 4);
+
+	/* 0  */
+	si_ndrange_const_buf_write(ndrange, 0, 44, &zero, 4);
+
+	/* CB0 bytes 48:63 */
+
+	/* FIXME Offset to private memory ring (0 if private memory is
+	 * not emulated) */
+
+	/* FIXME Private memory allocated per work_item */
+
+	/* 0  */
+	si_ndrange_const_buf_write(ndrange, 0, 56, &zero, 4);
+
+	/* 0  */
+	si_ndrange_const_buf_write(ndrange, 0, 60, &zero, 4);
+
+	/* CB0 bytes 64:79 */
+
+	/* FIXME Offset to local memory ring (0 if local memory is
+	 * not emulated) */
+
+	/* FIXME Local memory allocated per group */
+
+	/* 0 */
+	si_ndrange_const_buf_write(ndrange, 0, 72, &zero, 4);
+
+	/* FIXME Pointer to location in global buffer where math library
+	 * tables start. */
+
+	/* CB0 bytes 80:95 */
+
+	/* 0.0 as IEEE-32bit float - required for math library. */
+	f = 0.0f;
+	si_ndrange_const_buf_write(ndrange, 0, 80, &f, 4);
+
+	/* 0.5 as IEEE-32bit float - required for math library. */
+	f = 0.5f;
+	si_ndrange_const_buf_write(ndrange, 0, 84, &f, 4);
+
+	/* 1.0 as IEEE-32bit float - required for math library. */
+	f = 1.0f;
+	si_ndrange_const_buf_write(ndrange, 0, 88, &f, 4);
+
+	/* 2.0 as IEEE-32bit float - required for math library. */
+	f = 2.0f;
+	si_ndrange_const_buf_write(ndrange, 0, 92, &f, 4);
+
+	/* CB0 bytes 96:111 */
+
+	/* Global offset for the {x,y,z} dimension of the work_item spawn */
+	si_ndrange_const_buf_write(ndrange, 0, 96, &zero, 4);
+	si_ndrange_const_buf_write(ndrange, 0, 100, &zero, 4);
+	si_ndrange_const_buf_write(ndrange, 0, 104, &zero, 4);
+
+	/* Global single dimension flat offset: x * y * z */
+	si_ndrange_const_buf_write(ndrange, 0, 108, &zero, 4);
+
+	/* CB0 bytes 112:127 */
+
+	/* Group offset for the {x,y,z} dimensions of the work_item spawn */
+	si_ndrange_const_buf_write(ndrange, 0, 112, &zero, 4);
+	si_ndrange_const_buf_write(ndrange, 0, 116, &zero, 4);
+	si_ndrange_const_buf_write(ndrange, 0, 120, &zero, 4);
+
+	/* Group single dimension flat offset, x * y * z */
+	si_ndrange_const_buf_write(ndrange, 0, 124, &zero, 4);
+
+	/* CB0 bytes 128:143 */
+
+	/* FIXME Offset in the global buffer where data segment exists */
+	/* FIXME Offset in buffer for printf support */
+	/* FIXME Size of the printf buffer */
+}
+
 
 struct linked_list_t *opengl_program_repo_create()
 {

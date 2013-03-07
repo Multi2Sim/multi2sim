@@ -24,7 +24,7 @@
 
 struct linked_list_t;
 
-/* VBOs are stored in a hash table, the id is the key */
+/* VBOs are stored in a linked list */
 struct opengl_vertex_buffer_obj_t
 {
 	GLuint			id;

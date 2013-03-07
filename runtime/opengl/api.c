@@ -25,7 +25,7 @@
 #include "debug.h"
 
 /* Debug */
-int opengl_debug = 1;
+int opengl_debug = 0;
 
 /*
 \n * Error Messages
@@ -310,7 +310,7 @@ const GLubyte *glGetString( GLenum name )
 	{
 	case GL_VERSION:
 	{
-		sprintf(opengl_get_string, "%u.%u\n", gl_runtime_info.version_major, gl_runtime_info.version_minor);
+		sprintf(opengl_get_string, "Multi2Sim OpenGL %u.%u\n", gl_runtime_info.version_major, gl_runtime_info.version_minor);
 		return (const GLubyte *)opengl_get_string;
 	}
 	default:
