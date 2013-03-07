@@ -205,7 +205,7 @@ cl_program clCreateProgramWithBinary(
 				!device->arch_program_valid_binary_func(
 				(void *) binaries[i], lengths[i]))
 		{
-			if (binary_status[i])
+			if (binary_status)
 				binary_status[i] = CL_INVALID_VALUE;
 			if (errcode_ret)
 				*errcode_ret = CL_INVALID_VALUE;
