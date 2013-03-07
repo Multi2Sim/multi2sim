@@ -87,6 +87,7 @@ struct si_stream_t *stream;
 %token TOK_NEW_LINE
 %left TOK_AMP
 %token TOK_ABS
+%token TOK_NEG
 
 %type<inst> rl_instr
 %type<list> rl_arg_list
@@ -298,6 +299,30 @@ rl_arg
 
 		/* Activate absolute value flag */
 		arg->abs = 1;
+
+		/* Check valid application of 'abs' */
+		switch (arg->type)
+		{
+		case si_arg_scalar_register:
+		case si_arg_scalar_register_series:
+		case si_arg_vector_register:
+		case si_arg_vector_register_series:
+			break;
+
+		default:
+			yyerror("abs() function not allowed for argument");
+		}
+
+		/* Return */
+		$$ = arg;
+	}
+
+	| TOK_NEG rl_arg
+	{
+		struct si_arg_t *arg = $2;
+
+		/* Activate absolute value flag */
+		arg->neg = 1;
 
 		/* Check valid application of 'abs' */
 		switch (arg->type)

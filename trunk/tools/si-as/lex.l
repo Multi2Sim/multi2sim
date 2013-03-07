@@ -41,6 +41,10 @@ extern long offset;
 	return TOK_ABS;
 }
 
+"-" {
+	return TOK_NEG;
+}
+
 "(" { 
 	return TOK_OPAR;
 }
