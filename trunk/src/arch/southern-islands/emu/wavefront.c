@@ -778,67 +778,43 @@ void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront,
 /* Puts a memory descriptor for a constant buffer (e.g. CB0) into sregs
  * (requires 4 consecutive registers to store the 128-bit structure) */
 void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, 
-	int first_reg, int num_regs, int cb)
+	int first_reg, int num_regs, int const_buf_num)
 {
 	struct si_buffer_desc_t buf_desc;
+	struct si_ndrange_t *ndrange = wavefront->ndrange;
+
+	unsigned int buf_desc_addr;
 
 	assert(num_regs == 4);
-	assert(sizeof(struct si_buffer_desc_t) == 16);
-	assert(cb < si_emu_num_mapped_const_buffers);  
+	assert(sizeof(buf_desc) == 16);
+	assert(const_buf_num < SI_EMU_MAX_NUM_CONST_BUFS);
+	assert(ndrange->const_buf_table_entries[const_buf_num].valid);
 
-	/* FIXME Populate rest of resource descriptor? */
-	buf_desc.base_addr = SI_EMU_CONSTANT_MEMORY_START + 
-		cb*SI_EMU_CONSTANT_BUFFER_SIZE;
+	buf_desc_addr = ndrange->const_buf_table +
+		const_buf_num*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE;
 
-	memcpy(&wavefront->sreg[first_reg], &buf_desc, 16);
+	/* Read a descriptor from the constant buffer table (located 
+	 * in global memory) */
+	mem_read(si_emu->global_mem, buf_desc_addr, sizeof(buf_desc), 
+		&buf_desc);
+
+	/* Store the descriptor in 4 scalar registers */
+	memcpy(&wavefront->sreg[first_reg], &buf_desc, sizeof(buf_desc));
 }
 
-/* Puts a pointer to the constant buffer table into 2 consecutive sregs */
+/* Put a pointer to the constant buffer table into 2 consecutive sregs */
 void si_wavefront_init_sreg_with_cb_table(struct si_wavefront_t *wavefront,
         int first_reg, int num_regs)
 {
-        /* Initialize constant buffer table */
-        /* FIXME Do this initialization somewhere more appropriate later 
-	 * and include up to 'si_emu_num_mapped_const_buffers' */
-        struct si_buffer_desc_t buf_desc_cb0;
-        struct si_buffer_desc_t buf_desc_cb1;
-
-        memset(&buf_desc_cb0, 0, sizeof buf_desc_cb0);
-        memset(&buf_desc_cb1, 0, sizeof buf_desc_cb1);
-
-        buf_desc_cb0.base_addr = SI_EMU_CONSTANT_MEMORY_START;
-        buf_desc_cb1.base_addr = SI_EMU_CONSTANT_MEMORY_START + 
-		SI_EMU_CONSTANT_BUFFER_SIZE;
-
-        mem_write(si_emu->global_mem, SI_EMU_CONSTANT_BUFFER_TABLE_START, 16,
-                &buf_desc_cb0);
-        mem_write(si_emu->global_mem, SI_EMU_CONSTANT_BUFFER_TABLE_START+16,
-		16, &buf_desc_cb1);
-
-        struct si_mem_ptr_t mem_ptr;
-
-        assert(num_regs == 2);
-        assert(sizeof(struct si_mem_ptr_t) == 8);
-
-        mem_ptr.unused = 0;
-        mem_ptr.addr = SI_EMU_CONSTANT_BUFFER_TABLE_START;
-
-	memcpy(&wavefront->sreg[first_reg], &mem_ptr, 8);
-}
-
-/* Puts a pointer to the UAV table into 2 consecutive sregs */
-void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
-	int first_reg, int num_regs)
-{
+	struct si_ndrange_t *ndrange = wavefront->ndrange;
 	struct si_mem_ptr_t mem_ptr;
 
 	assert(num_regs == 2);
-	assert(sizeof(struct si_mem_ptr_t) == 8);
+	assert(sizeof(mem_ptr) == 8);
 
-	mem_ptr.unused = 0;
-	mem_ptr.addr = SI_EMU_UAV_TABLE_START;
+	mem_ptr.addr = (unsigned int)ndrange->const_buf_table;
 
-	memcpy(&wavefront->sreg[first_reg], &mem_ptr, 8);
+	memcpy(&wavefront->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
 }
 
 /* Puts a memory descriptor for a UAV into sregs
@@ -846,18 +822,39 @@ void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront,
 void si_wavefront_init_sreg_with_uav(struct si_wavefront_t *wavefront, 
 	int first_reg, int num_regs, int uav)
 {
-	struct si_buffer_desc_t uav_buf_desc;
-	unsigned int uav_table_entry_addr;
+	struct si_buffer_desc_t buf_desc;
+	struct si_ndrange_t *ndrange = wavefront->ndrange;
+
+	unsigned int buf_desc_addr;
 
 	assert(num_regs == 4);
-	assert(sizeof(struct si_buffer_desc_t) == 16);
-	assert(uav < SI_EMU_MAX_NUM_UAVS);  
+	assert(sizeof(buf_desc) == 16);
+	assert(uav < SI_EMU_MAX_NUM_UAVS);
+	assert(ndrange->uav_table_entries[uav].valid);
 
-	uav_table_entry_addr = SI_EMU_UAV_TABLE_START + 32*uav;
+	buf_desc_addr = ndrange->uav_table + uav*SI_EMU_UAV_TABLE_ENTRY_SIZE;
 
-	mem_read(si_emu->global_mem, uav_table_entry_addr, 16, 
-		&uav_buf_desc);
+	/* Read a descriptor from the constant buffer table (located 
+	 * in global memory) */
+	mem_read(si_emu->global_mem, buf_desc_addr, sizeof(buf_desc), 
+		&buf_desc);
 
-	memcpy(&wavefront->sreg[first_reg], &uav_buf_desc, 16);
+	/* Store the descriptor in 4 scalar registers */
+	memcpy(&wavefront->sreg[first_reg], &buf_desc, sizeof(buf_desc));
+}
+
+/* Put a pointer to the UAV table into 2 consecutive sregs */
+void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, 
+	int first_reg, int num_regs)
+{
+	struct si_ndrange_t *ndrange = wavefront->ndrange;
+	struct si_mem_ptr_t mem_ptr;
+
+	assert(num_regs == 2);
+	assert(sizeof(mem_ptr) == 8);
+
+	mem_ptr.addr = (unsigned int)ndrange->uav_table;
+
+	memcpy(&wavefront->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
 }
 

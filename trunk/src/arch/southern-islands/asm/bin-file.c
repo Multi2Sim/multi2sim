@@ -626,17 +626,33 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 		int i;
 
 		/* Get number of entries */
-		assert(header->descsz % sizeof(struct pt_note_constant_buffer_mask_t) == 0);
-		constant_buffer_count = header->descsz / sizeof(struct pt_note_constant_buffer_mask_t);
-		elf_debug("\tnote including number and size of constant buffers (%d entries)\n",
-			constant_buffer_count);
+		assert(header->descsz % 
+			sizeof(struct pt_note_constant_buffer_mask_t) == 0);
+		constant_buffer_count = header->descsz / 
+			sizeof(struct pt_note_constant_buffer_mask_t);
+		elf_debug("\tnote including number and size of constant "
+			"buffers (%d entries)\n", constant_buffer_count);
 
 		/* Decode entries */
-		for (i = 0; i < constant_buffer_count; i++) {
-			constant_buffer_mask = desc + i * sizeof(struct pt_note_constant_buffer_mask_t);
-			elf_debug("\tconstant_buffer[%d].size = %d (vec4f constants)\n",
-				constant_buffer_mask->index, constant_buffer_mask->size);
+		for (i = 0; i < constant_buffer_count; i++) 
+		{
+			constant_buffer_mask = desc + i * 
+				sizeof(struct pt_note_constant_buffer_mask_t);
+			elf_debug("\tconstant_buffer[%d].size = %d "
+				"(vec4f constants)\n", 
+				constant_buffer_mask->index, 
+				constant_buffer_mask->size);
+			if (constant_buffer_mask->index > 1 && 
+				constant_buffer_mask->size != 4096)
+			{
+				fatal("%s: CB%d has size %d, but we expect "
+					"constant buffers to be 4096 float4s", 
+					__FUNCTION__,
+					constant_buffer_mask->index, 
+					constant_buffer_mask->size);
+			}
 		}
+
 		break;
 	}
 
