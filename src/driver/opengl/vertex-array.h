@@ -40,7 +40,8 @@ struct opengl_vertex_client_array_t
 	GLenum format;
 	GLsizei	 stride;
 	GLsizei	 stride_byte;
-	const GLubyte *ptr;
+	//const GLubyte *ptr;
+	unsigned int ptr;
 	GLboolean enabled;
 	GLboolean normalized;
 	GLboolean integer;

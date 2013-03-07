@@ -83,7 +83,7 @@ static void opengl_vertex_client_array_init(struct opengl_vertex_client_array_t*
 	vca->format = GL_RGBA;
 	vca->stride = 0;
 	vca->stride_byte = 0;
-	vca->ptr = NULL;
+	vca->ptr = 0;
 	vca->enabled = GL_FALSE;
 	vca->normalized = GL_FALSE;
 	vca->integer = GL_FALSE;
