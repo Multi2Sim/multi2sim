@@ -91,6 +91,9 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 	switch (token->type)
 	{
 
+	case si_token_simm16:
+		return arg->type == si_arg_literal;
+
 	case si_token_64_sdst:
 		return arg->type == si_arg_scalar_register_series ||
 				arg->type == si_arg_special_register;
@@ -149,8 +152,12 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 	case si_token_vdst:
 	case si_token_vop3_vdst:
 	case si_token_vsrc0:
-	case si_token_vsrc1:
 		return arg->type == si_arg_vector_register;
+
+	case si_token_vsrc1:
+		return arg->type == si_arg_vector_register ||
+			arg->type == si_arg_literal ||
+			arg->type == si_arg_literal_float;
 
 	case si_token_vop3_64_svdst:
 		return arg->type == si_arg_scalar_register_series ||

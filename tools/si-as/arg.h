@@ -58,7 +58,8 @@ struct si_arg_t
 {
 	enum si_arg_type_t type;
 	int abs;  /* Absolute value */
-	
+	int neg;  /* Negation */
+
 	union
 	{
 	

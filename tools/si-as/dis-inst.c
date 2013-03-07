@@ -325,7 +325,13 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 		/* Check token */
 		switch (token->type)
 		{
-
+		
+		case si_token_simm16:
+		{
+			inst_bytes->sopk.simm16 = si_arg_encode_operand(arg);
+			break;
+		}
+		
 		case si_token_64_sdst:
 		{
 			int low;
@@ -769,6 +775,8 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			inst_bytes->vop3a.src0 = si_arg_encode_operand(arg);
 			if (arg->abs)
 				inst_bytes->vop3a.abs |= 0x1;
+			if (arg->neg)
+				inst_bytes->vop3a.neg |= 0x1;
 			break;
 
 		case si_token_vop3_src1:
@@ -776,6 +784,8 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			inst_bytes->vop3a.src1 = si_arg_encode_operand(arg);
 			if (arg->abs)
 				inst_bytes->vop3a.abs |= 0x2;
+			if (arg->neg)
+				inst_bytes->vop3a.neg |= 0x2;
 			break;
 
 		case si_token_vop3_src2:
@@ -783,6 +793,8 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			inst_bytes->vop3a.src2 = si_arg_encode_operand(arg);
 			if (arg->abs)
 				inst_bytes->vop3a.abs |= 0x4;
+			if (arg->neg)
+				inst_bytes->vop3a.neg |= 0x4;
 			break;
 
 		case si_token_vop3_vdst:
@@ -794,7 +806,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 
 			/* Encode */
 			assert(arg->type == si_arg_vector_register);
-			inst_bytes->vopc.vsrc1 = arg->value.vector_register.id;
+			inst_bytes->vopc.vsrc1 = si_arg_encode_operand(arg);
 			break;
 
 		case si_token_wait_cnt:
