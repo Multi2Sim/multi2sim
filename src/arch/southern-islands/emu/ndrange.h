@@ -22,11 +22,27 @@
 
 #include <stdio.h>
 
+#include "emu.h"
+
 enum si_ndrange_status_t
 {
 	si_ndrange_pending		= 0x0001,
 	si_ndrange_running		= 0x0002,
 	si_ndrange_finished		= 0x0004
+};
+
+enum si_emu_table_entry_kind_t
+{
+        SI_TABLE_ENTRY_KIND_BUFFER_DESC = 1,
+        SI_TABLE_ENTRY_KIND_IMAGE_DESC,
+        SI_TABLE_ENTRY_KIND_SAMPLER_DESC
+};
+
+struct si_emu_table_entry_t
+{
+        unsigned int valid : 1;
+        enum si_emu_table_entry_kind_t kind;
+        unsigned int size;
 };
 
 struct si_ndrange_t
@@ -131,6 +147,17 @@ struct si_ndrange_t
 	unsigned int num_vgpr_used;
 	unsigned int num_sgpr_used;
 
+        /* Internal tables that reside in global memory */
+        unsigned int const_buf_table;
+        struct si_emu_table_entry_t
+                const_buf_table_entries[SI_EMU_MAX_NUM_CONST_BUFS];
+        unsigned int resource_table;
+        struct si_emu_table_entry_t
+                resource_table_entries[SI_EMU_MAX_NUM_RESOURCES];
+        unsigned int uav_table;
+        struct si_emu_table_entry_t
+                uav_table_entries[SI_EMU_MAX_NUM_UAVS];
+
 	/* Statistics */
 
 	/* Histogram of executed instructions. Only allocated if the kernel 
@@ -160,8 +187,17 @@ int si_ndrange_get_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t
 void si_ndrange_set_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);
 void si_ndrange_clear_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);
 
-/* Access to constant memory */
-void si_isa_const_mem_write(int buffer, int offset, void *pvalue);
-void si_isa_const_mem_read(int buffer, int offset, void *pvalue);
+/* Access constant buffers */
+void si_ndrange_const_buf_write(struct si_ndrange_t *ndrange, 
+	int const_buf_num, int offset, void *pvalue, unsigned int size);
+void si_ndrange_const_buf_read(struct si_ndrange_t *ndrange, int const_buf_num, 	int offset, void *pvalue, unsigned int size);
+
+/* Access internal tables */
+void si_ndrange_insert_buffer_into_uav_table(struct si_ndrange_t *ndrange,
+        struct si_buffer_desc_t *buf_desc, unsigned int uav);
+void si_ndrange_insert_buffer_into_const_buf_table(struct si_ndrange_t *ndrange,
+        struct si_buffer_desc_t *buf_desc, unsigned int const_buf_num);
+void si_ndrange_insert_image_into_uav_table(struct si_ndrange_t *ndrange,
+        struct si_image_desc_t *image_desc, unsigned int uav);
 
 #endif

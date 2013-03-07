@@ -908,8 +908,9 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 	global_size_ptr = regs->edi;
 	local_size_ptr = regs->ebp;
 	opencl_debug("\tkernel_id=%d, work_dim=%d\n", kernel_id, work_dim);
-	opencl_debug("\tglobal_offset_ptr=0x%x, global_size_ptr=0x%x, local_size_ptr=0x%x\n",
-		global_offset_ptr, global_size_ptr, local_size_ptr);
+	opencl_debug("\tglobal_offset_ptr=0x%x, global_size_ptr=0x%x, "
+		"local_size_ptr=0x%x\n", global_offset_ptr, global_size_ptr, 
+		local_size_ptr);
 	
 	/* Debug */
 	assert(IN_RANGE(work_dim, 1, 3));
@@ -917,7 +918,8 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 	mem_read(mem, global_size_ptr, work_dim * 4, global_size);
 	mem_read(mem, local_size_ptr, work_dim * 4, local_size);
 	for (i = 0; i < work_dim; i++)
-		opencl_debug("\tglobal_offset[%d] = %u\n", i, global_offset[i]);
+		opencl_debug("\tglobal_offset[%d] = %u\n", 
+			i, global_offset[i]);
 	for (i = 0; i < work_dim; i++)
 		opencl_debug("\tglobal_size[%d] = %u\n", i, global_size[i]);
 	for (i = 0; i < work_dim; i++)
@@ -926,23 +928,27 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 	/* Get kernel */
 	kernel = list_get(opencl_si_kernel_list, kernel_id);
 	if (!kernel)
-		fatal("%s: invalid kernel ID (%d)",
-				__FUNCTION__, kernel_id);
+		fatal("%s: invalid kernel ID (%d)", __FUNCTION__, kernel_id);
 
 	/* Create ND-Range */
 	ndrange = si_ndrange_create(kernel->name);
 	si_ndrange_setup_size(ndrange, global_size, local_size, work_dim);
 
-	/* Set up initial state and arguments */
-	opencl_si_kernel_setup_ndrange_state(kernel, ndrange);
+	/* Set up initial state and arguments (order matters!) */
+	opencl_si_kernel_setup_ndrange_tables(ndrange); 
 	opencl_si_kernel_setup_ndrange_args(kernel, ndrange);
+	opencl_si_kernel_setup_ndrange_state(kernel, ndrange);
+	opencl_si_kernel_debug_ndrange_state(kernel, ndrange);
 
 	/* Set up instruction memory */
 	/* Initialize wavefront instruction buffer and PC */
-	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer;
-	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
+	elf_buffer = &kernel->bin_file->enc_dict_entry_southern_islands->
+		sec_text_buffer;
 	if (!elf_buffer->size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
+
+	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, 
+		elf_buffer->size, 0);
 
 	/* Set up call-back function to be run when ND-Range finishes. */
 	info = xcalloc(1, sizeof(struct opencl_abi_si_kernel_launch_info_t));

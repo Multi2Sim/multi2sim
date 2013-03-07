@@ -138,11 +138,10 @@ void si_isa_read_buf_res(struct si_work_item_t *work_item,
 	struct si_buffer_desc_t *buf_desc, int sreg);
 void si_isa_read_mem_ptr(struct si_work_item_t *work_item, 
 	struct si_mem_ptr_t *mem_ptr, int sreg);
+
+unsigned int si_isa_const_mem_allocate(unsigned int size);
+
 int si_isa_get_num_elems(int data_format);
 int si_isa_get_elem_size(int data_format);
-
-void si_isa_const_mem_write(int buffer, int offset, void *pvalue);
-void si_isa_const_mem_write_size(int buffer, int offset, void *pvalue,
-	unsigned int size);
 
 #endif
