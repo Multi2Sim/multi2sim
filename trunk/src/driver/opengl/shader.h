@@ -25,8 +25,9 @@
 
 #define OPENGL_SHADER_TABLE_INIT_SIZE	16
 struct linked_list_t;
+struct si_ndrange_t;
 
-/* Shaders are stored in hash table, the id is the key */
+/* Shaders are stored in a linked list */
 struct opengl_shader_t
 {
 	GLenum type;

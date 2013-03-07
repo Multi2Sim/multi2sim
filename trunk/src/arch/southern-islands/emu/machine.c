@@ -1219,7 +1219,30 @@ void si_isa_S_NOT_B32_impl(struct si_work_item_t *work_item,
 void si_isa_S_SWAPPC_B64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	unsigned int pc_lo;
+	unsigned int s0_lo;
+	unsigned int s0_hi;
+
+	/* Load operands from registers */
+	s0_lo = si_isa_read_sreg(work_item, INST.ssrc0);
+	s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1);
+
+	/* FIXME: PC is not 64bit */
+	pc_lo = work_item->wavefront->pc;
+
+	/* Write the results */
+	// work_item->wavefront->pc = s0_lo;
+	pc_lo += 4;
+	si_isa_write_sreg(work_item, INST.sdst, pc_lo);
+	si_isa_write_sreg(work_item, INST.sdst + 1, 0x0);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(0x%x) ", INST.sdst, pc_lo);
+		si_isa_debug("S%u<=(0x%x) ", INST.sdst + 1, s0_hi);
+		si_isa_debug("PC<=(0x%x)", s0_lo);
+	}
 }
 #undef INST
 

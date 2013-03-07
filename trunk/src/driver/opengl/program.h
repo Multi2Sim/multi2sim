@@ -28,6 +28,7 @@ struct linked_list_t;
 struct opengl_shader_t;
 struct opengl_context_t;
 struct si_opengl_bin_file_t;
+struct si_ndrange_t;
 
 /* Program objects are stored in a linked list repository */
 struct opengl_program_t
@@ -47,6 +48,8 @@ void opengl_program_unbind(struct opengl_program_t *prg, struct opengl_context_t
 void opengl_program_attach_shader(struct opengl_program_t *prg, struct opengl_shader_t *shdr);
 void opengl_program_detach_shader(struct opengl_program_t *prg, struct opengl_shader_t *shdr);
 struct elf_buffer_t *opengl_program_get_shader(struct opengl_program_t *prg, int shader_kind);
+
+void opengl_program_setup_ndrange_state(struct opengl_program_t *prg, struct si_ndrange_t *ndrange);
 
 struct linked_list_t *opengl_program_repo_create();
 void opengl_program_repo_free(struct linked_list_t *prg_repo);

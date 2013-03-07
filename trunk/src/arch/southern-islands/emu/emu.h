@@ -246,6 +246,7 @@ struct si_emu_t
 	long long vector_alu_inst_count;  /* Vector ALU instructions executed */
 	long long lds_inst_count;  /* LDS instructions executed */
 	long long vector_mem_inst_count;  /* Vector mem instructions executed */
+	long long export_inst_count; /* Export instruction executed */
 };
 
 /* Forward declaration */
