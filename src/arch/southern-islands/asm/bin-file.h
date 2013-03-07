@@ -48,7 +48,7 @@ typedef enum _E_SC_USER_DATA_CLASS
 	IMM_SAMPLER,                // immediate sampler descriptor
 	IMM_CONST_BUFFER,           // immediate const buffer descriptor
 	IMM_VERTEX_BUFFER,          // immediate vertex buffer descriptor
-	IMM_UAV,                    // immediate UAV descriptor
+	IMM_UAV = 4,                // immediate UAV descriptor
 	IMM_ALU_FLOAT_CONST,        // immediate float const (scalar or vector)
 	IMM_ALU_BOOL32_CONST,       // 32 immediate bools packed into a single UINT
 	IMM_GDS_COUNTER_RANGE,      // immediate UINT with GDS address range for counters

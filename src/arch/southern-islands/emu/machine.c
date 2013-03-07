@@ -247,14 +247,15 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 
 	for (i = 0; i < 4; i++)
 	{
-		mem_read(si_emu->global_mem, m_base + m_offset + i * 4, 4,
-			&value[i]);
+		mem_read(si_emu->global_mem, m_addr + i * 4, 4, &value[i]);
 		si_isa_write_sreg(work_item, INST.sdst + i, value[i].as_uint);
 	}
 
 	/* FIXME Set value based on type */
 	if (debug_status(si_isa_debug_category))
 	{
+		si_isa_debug("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+			m_addr);
 		for (i = 0; i < 4; i++)
 		{
 			si_isa_debug("S%u<=(%u,%gf) ", INST.sdst + i,
@@ -263,7 +264,7 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 	}
 
 	/* Record last memory access for the detailed simulator. */
-	work_item->global_mem_access_addr = m_base + m_offset;
+	work_item->global_mem_access_addr = m_addr;
 	work_item->global_mem_access_size = 4 * 4;
 }
 #undef INST
@@ -2894,9 +2895,13 @@ void si_isa_V_AND_B32_impl(struct si_work_item_t *work_item,
 
 	/* Load operands from registers or as a literal constant. */
 	if (INST.src0 == 0xFF)
+	{
 		s0 = INST.lit_cnst;
+	}
 	else
+	{
 		s0 = si_isa_read_reg(work_item, INST.src0);
+	}
 	s1 = si_isa_read_vreg(work_item, INST.vsrc1);
 
 	/* Bitwise OR the two operands. */
@@ -2908,8 +2913,8 @@ void si_isa_V_AND_B32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(0x%x) ", work_item->id, INST.vdst,
-			result.as_uint);
+		si_isa_debug("t%d: V%u<=(0x%x) (%u & %u) ", work_item->id, 
+			INST.vdst, result.as_uint, s0, s1);
 	}
 }
 #undef INST
@@ -5792,7 +5797,7 @@ void si_isa_BUFFER_LOAD_SBYTE_impl(struct si_work_item_t *work_item,
 	unsigned int mem_offset = 0;
 	unsigned int inst_offset = 0;
 	unsigned int off_vgpr = 0;
-	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int stride = 0;
 	unsigned int idx_vgpr = 0;
 
 	int bytes_to_read = 1;
@@ -5804,6 +5809,7 @@ void si_isa_BUFFER_LOAD_SBYTE_impl(struct si_work_item_t *work_item,
 	base = buf_desc.base_addr;
 	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
 	inst_offset = INST.offset;
+	stride = buf_desc.stride;
 
 	/* Table 8.3 from SI ISA */
 	if (!INST.idxen && INST.offen)
@@ -5818,6 +5824,14 @@ void si_isa_BUFFER_LOAD_SBYTE_impl(struct si_work_item_t *work_item,
 	{
 		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
 		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
 	}
 
 	addr = base + mem_offset + inst_offset + off_vgpr + 
@@ -5859,7 +5873,7 @@ void si_isa_BUFFER_STORE_BYTE_impl(struct si_work_item_t *work_item,
 	unsigned int mem_offset = 0;
 	unsigned int inst_offset = 0;
 	unsigned int off_vgpr = 0;
-	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int stride = 0;
 	unsigned int idx_vgpr = 0;
 
 	int bytes_to_write = 1;
@@ -5876,6 +5890,7 @@ void si_isa_BUFFER_STORE_BYTE_impl(struct si_work_item_t *work_item,
 	base = buf_desc.base_addr;
 	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
 	inst_offset = INST.offset;
+	stride = buf_desc.stride;
 
 	/* Table 8.3 from SI ISA */
 	if (!INST.idxen && INST.offen)
@@ -5890,6 +5905,14 @@ void si_isa_BUFFER_STORE_BYTE_impl(struct si_work_item_t *work_item,
 	{
 		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
 		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
 	}
 
 	addr = base + mem_offset + inst_offset + off_vgpr + 
@@ -5933,6 +5956,8 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
 	assert(!INST.addr64);
+	assert(!INST.tfe);
+	assert(!INST.slc);
 
 	struct si_buffer_desc_t buf_desc;
 	union si_reg_t value;
@@ -5946,7 +5971,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item,
 	unsigned int mem_offset = 0;
 	unsigned int inst_offset = 0;
 	unsigned int off_vgpr = 0;
-	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int stride = 0;
 	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
@@ -5963,6 +5988,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item,
 	base = buf_desc.base_addr;
 	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
 	inst_offset = INST.offset;
+	stride = buf_desc.stride;
 
 	/* Table 8.3 from SI ISA */
 	if (!INST.idxen && INST.offen)
@@ -5979,8 +6005,16 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item,
 		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
 	}
 
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
+	}
+
 	addr = base + mem_offset + inst_offset + off_vgpr + 
-		stride * (idx_vgpr + work_item->id_in_wavefront);
+		stride * (idx_vgpr + 0/*work_item->id_in_wavefront*/);
 
 	mem_read(si_emu->global_mem, addr, bytes_to_read, &value);
 
@@ -5999,6 +6033,8 @@ void si_isa_TBUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item,
 			si_isa_debug("offen ");
 		if (INST.idxen)
 			si_isa_debug("idxen ");
+		si_isa_debug("%u,%u,%u,%u ", base, mem_offset, inst_offset,
+			off_vgpr);
 	}
 }
 #undef INST
@@ -6022,7 +6058,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item,
 	unsigned int mem_offset = 0;
 	unsigned int inst_offset = 0;
 	unsigned int off_vgpr = 0;
-	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int stride = 0;
 	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
@@ -6039,6 +6075,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item,
 	base = buf_desc.base_addr;
 	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
 	inst_offset = INST.offset;
+	stride = buf_desc.stride;
 
 	/* Table 8.3 from SI ISA */
 	if (!INST.idxen && INST.offen)
@@ -6053,6 +6090,14 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item,
 	{
 		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
 		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
 	}
 
 	addr = base + mem_offset + inst_offset + off_vgpr + 
@@ -6098,7 +6143,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 	unsigned int mem_offset = 0;
 	unsigned int inst_offset = 0;
 	unsigned int off_vgpr = 0;
-	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int stride = 0;
 	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
@@ -6115,6 +6160,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 	base = buf_desc.base_addr;
 	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
 	inst_offset = INST.offset;
+	stride = buf_desc.stride;
 
 	/* Table 8.3 from SI ISA */
 	if (!INST.idxen && INST.offen)
@@ -6129,6 +6175,14 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 	{
 		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
 		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
 	}
 
 	addr = base + mem_offset + inst_offset + off_vgpr + 
@@ -6173,7 +6227,7 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item,
 	unsigned int mem_offset = 0;
 	unsigned int inst_offset = 0;
 	unsigned int off_vgpr = 0;
-	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int stride = 0;
 	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
@@ -6190,6 +6244,7 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item,
 	base = buf_desc.base_addr;
 	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
 	inst_offset = INST.offset;
+	stride = buf_desc.stride;
 
 	/* Table 8.3 from SI ISA */
 	if (!INST.idxen && INST.offen)
@@ -6204,6 +6259,14 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item,
 	{
 		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
 		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
 	}
 
 	addr = base + mem_offset + inst_offset + off_vgpr + 
@@ -6223,6 +6286,8 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item,
 		si_isa_debug("t%d: (%u)<=V%u(%u,%gf) ", work_item->id,
 			addr, INST.vdata, value.as_uint,
 			value.as_float);
+		si_isa_debug("%u,%u,%u,%u ", base, mem_offset, inst_offset,
+			off_vgpr);
 	}
 }
 #undef INST
@@ -6245,7 +6310,7 @@ void si_isa_TBUFFER_STORE_FORMAT_XY_impl(struct si_work_item_t *work_item,
 	unsigned int mem_offset = 0;
 	unsigned int inst_offset = 0;
 	unsigned int off_vgpr = 0;
-	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int stride = 0;
 	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
@@ -6262,6 +6327,7 @@ void si_isa_TBUFFER_STORE_FORMAT_XY_impl(struct si_work_item_t *work_item,
 	base = buf_desc.base_addr;
 	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
 	inst_offset = INST.offset;
+	stride = buf_desc.stride;
 
 	/* Table 8.3 from SI ISA */
 	if (!INST.idxen && INST.offen)
@@ -6276,6 +6342,14 @@ void si_isa_TBUFFER_STORE_FORMAT_XY_impl(struct si_work_item_t *work_item,
 	{
 		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
 		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
 	}
 
 	addr = base + mem_offset + inst_offset + off_vgpr + 
@@ -6320,7 +6394,7 @@ void si_isa_TBUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 	unsigned int mem_offset = 0;
 	unsigned int inst_offset = 0;
 	unsigned int off_vgpr = 0;
-	unsigned int stride = 0;  // FIXME we don't initialize correctly
+	unsigned int stride = 0;
 	unsigned int idx_vgpr = 0;
 
 	elem_size = si_isa_get_elem_size(INST.dfmt);
@@ -6337,6 +6411,7 @@ void si_isa_TBUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 	base = buf_desc.base_addr;
 	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
 	inst_offset = INST.offset;
+	stride = buf_desc.stride;
 
 	/* Table 8.3 from SI ISA */
 	if (!INST.idxen && INST.offen)
@@ -6351,6 +6426,14 @@ void si_isa_TBUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 	{
 		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
 		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
 	}
 
 	addr = base + mem_offset + inst_offset + off_vgpr + 

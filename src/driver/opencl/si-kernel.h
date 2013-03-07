@@ -191,15 +191,18 @@ struct opencl_si_kernel_t
 	int func_uniqueid;  /* Id of kernel function */
 };
 
-struct opencl_si_kernel_t *opencl_si_kernel_create(struct opencl_si_program_t *program,
-		char *name);
+struct opencl_si_kernel_t *opencl_si_kernel_create(
+	struct opencl_si_program_t *program, char *name);
 void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel);
 
 struct si_ndrange_t;
 void opencl_si_kernel_setup_ndrange_state(struct opencl_si_kernel_t *kernel,
-		struct si_ndrange_t *ndrange);
+	struct si_ndrange_t *ndrange);
 void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
-		struct si_ndrange_t *ndrange);
+	struct si_ndrange_t *ndrange);
+void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel, 
+	struct si_ndrange_t *ndrange);
+void opencl_si_kernel_setup_ndrange_tables(struct si_ndrange_t *ndrange);
 
 #endif
 

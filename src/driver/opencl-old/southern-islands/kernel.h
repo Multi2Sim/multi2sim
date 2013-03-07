@@ -23,6 +23,8 @@
 #include <lib/util/string.h>
 #include <lib/util/elf-format.h>
 
+#include <arch/southern-islands/emu/emu.h>
+
 #define SI_OPENCL_KERNEL_ARG_MAX_SIZE 64 
 
 enum si_opencl_kernel_arg_kind_t
@@ -57,10 +59,14 @@ enum si_opencl_kernel_arg_mem_type_t
 enum si_opencl_kernel_arg_data_type_t
 {
 	SI_OPENCL_KERNEL_ARG_DATA_TYPE_I1 = 1,
-	SI_OPENCL_KERNEL_ARG_DATA_TYPE_I8,
-	SI_OPENCL_KERNEL_ARG_DATA_TYPE_I16,
+	SI_OPENCL_KERNEL_ARG_DATA_TYPE_I8, SI_OPENCL_KERNEL_ARG_DATA_TYPE_I16,
 	SI_OPENCL_KERNEL_ARG_DATA_TYPE_I32,
 	SI_OPENCL_KERNEL_ARG_DATA_TYPE_I64,
+	SI_OPENCL_KERNEL_ARG_DATA_TYPE_U1,
+	SI_OPENCL_KERNEL_ARG_DATA_TYPE_U8,
+	SI_OPENCL_KERNEL_ARG_DATA_TYPE_U16,
+	SI_OPENCL_KERNEL_ARG_DATA_TYPE_U32,
+	SI_OPENCL_KERNEL_ARG_DATA_TYPE_U64,
 	SI_OPENCL_KERNEL_ARG_DATA_TYPE_FLOAT,
 	SI_OPENCL_KERNEL_ARG_DATA_TYPE_DOUBLE,
 	SI_OPENCL_KERNEL_ARG_DATA_TYPE_STRUCT,
@@ -212,5 +218,9 @@ struct mem_t;
 unsigned int si_opencl_kernel_get_work_group_info(
 	struct si_opencl_kernel_t *kernel, unsigned int name, 
 	struct mem_t *mem, unsigned int addr, unsigned int size);
+
+void si_kernel_create_buffer_desc(int num_elems, 
+	enum si_opencl_kernel_arg_data_type_t data_type,
+	struct si_buffer_desc_t *buffer_desc);
 
 #endif

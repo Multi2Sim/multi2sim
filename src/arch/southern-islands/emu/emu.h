@@ -22,37 +22,24 @@
 
 #include <stdio.h>
 
-#include <driver/opencl-old/southern-islands/kernel.h>
-
 /* UAV table */
-#define SI_EMU_UAV_TABLE_START 0
 #define SI_EMU_MAX_NUM_UAVS 16
-#define SI_EMU_UAV_TABLE_SIZE (SI_EMU_MAX_NUM_UAVS * 32)
+#define SI_EMU_UAV_TABLE_ENTRY_SIZE 32
+#define SI_EMU_UAV_TABLE_SIZE (SI_EMU_MAX_NUM_UAVS * SI_EMU_UAV_TABLE_ENTRY_SIZE)
 
 /* Constant buffer table */
-#define SI_EMU_CONSTANT_BUFFER_TABLE_START (SI_EMU_UAV_TABLE_START + SI_EMU_UAV_TABLE_SIZE)
-#define SI_EMU_CONSTANT_BUFFER_TABLE_SIZE 1024
+#define SI_EMU_MAX_NUM_CONST_BUFS 16
+#define SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE 16
+#define SI_EMU_CONST_BUF_TABLE_SIZE (SI_EMU_MAX_NUM_CONST_BUFS * SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE)
+
+#define SI_EMU_CONST_BUF_0_SIZE 160  /* Defined in Metadata.pdf */
+#define SI_EMU_CONST_BUF_1_SIZE 1024 /* FIXME */
 
 /* Resource table */
-#define SI_EMU_RESOURCE_TABLE_START (SI_EMU_CONSTANT_BUFFER_TABLE_START + SI_EMU_CONSTANT_BUFFER_TABLE_SIZE)
-#define SI_EMU_RESOURCE_TABLE_SIZE 1024
+#define SI_EMU_MAX_NUM_RESOURCES 16
+#define SI_EMU_RESOURCE_TABLE_ENTRY_SIZE 32
+#define SI_EMU_RESOURCE_TABLE_SIZE (SI_EMU_MAX_NUM_RESOURCES * SI_EMU_RESOURCE_TABLE_ENTRY_SIZE)
 
-/* Constant buffers */
-/* FIXME Check what happens when buffers are declared const. It may
- * change how these are allocated */
-#define SI_EMU_CONSTANT_MEMORY_START (SI_EMU_RESOURCE_TABLE_START + SI_EMU_RESOURCE_TABLE_SIZE)
-#define SI_EMU_CONSTANT_BUFFER_SIZE 1024
-#define SI_EMU_MAX_CONSTANT_BUFFERS 16 
-#define SI_EMU_CONSTANT_MEMORY_SIZE (SI_EMU_CONSTANT_BUFFER_SIZE * SI_EMU_MAX_CONSTANT_BUFFERS)
-
-/* Global memory */
-#define SI_EMU_GLOBAL_MEMORY_START (SI_EMU_CONSTANT_MEMORY_START + SI_EMU_CONSTANT_MEMORY_SIZE)
-
-/* Helpers */
-#define SI_EMU_CALC_CB_ADDR(cb_num) (SI_EMU_CONSTANT_MEMORY_START + SI_EMU_CONSTANT_BUFFER_SIZE*cb_num)
-
-
-extern int si_emu_num_mapped_const_buffers;
 
 enum si_buf_desc_data_fmt_t
 {
@@ -74,6 +61,7 @@ enum si_buf_desc_data_fmt_t
 
 enum si_buf_desc_num_fmt_t
 {
+	SI_BUF_DESC_NUM_FMT_INVALID = -1,  /* Not part of SI spec */
 	SI_BUF_DESC_NUM_FMT_UNORM = 0,
 	SI_BUF_DESC_NUM_FMT_SNORM,
 	SI_BUF_DESC_NUM_FMT_USCALED,
@@ -106,7 +94,7 @@ struct si_buffer_desc_t
 	unsigned int heap            : 1;    /*      122  */
 	unsigned int unused          : 3;    /* [125:123] */
 	unsigned int type            : 2;    /* [127:126] */
-};
+}__attribute__((packed));
 
 /* Table 8.11 in SI documentation */
 #if 0
@@ -131,7 +119,7 @@ struct si_image_desc_128_t
 	unsigned int pow2pad         : 1;    /*      121  */
 	unsigned int                 : 2;    /* [123:122] */
 	unsigned int type            : 4;    /* [127:124] */
-};
+}__attribute__((packed));
 #endif
 
 /* Table 8.11 in SI documentation */
@@ -164,7 +152,7 @@ struct si_image_desc_t
 	unsigned int                 : 6;    /* [191:186] */
 	unsigned int min_lod_warn    : 12;   /* [203:192] */
 	unsigned long long           : 52;   /* [255:204] */
-};
+}__attribute__((packed));
 
 /* Table 8.12 in SI documentation */
 struct si_sampler_desc_t
@@ -199,14 +187,14 @@ struct si_sampler_desc_t
 	unsigned int border_color_ptr   : 12;   /*  [107:96] */
 	unsigned int                    : 18;   /* [125:108] */
 	unsigned int border_color_type  : 2;    /* [127:126] */
-};
+}__attribute__((packed));
 
 /* Pointers get stored in 2 consecutive 32-bit registers */
 struct si_mem_ptr_t
 {
 	unsigned long long addr : 48;
 	unsigned int unused     : 16;
-};
+}__attribute__((packed));
 
 struct si_emu_t
 {
@@ -292,14 +280,5 @@ int si_emu_run(void);
 void si_emu_disasm(char *path);
 void si_emu_opengl_disasm(char *path, int opengl_shader_index);
 
-void si_emu_create_buffer_desc(int num_elems,
-		enum si_opencl_kernel_arg_data_type_t data_type,
-		struct si_buffer_desc_t *buffer_desc);
-void si_emu_insert_into_uav_table(struct si_buffer_desc_t *buffer_desc,
-	int buffer_num);
-unsigned int si_emu_get_uav_base_addr(int uav);
-struct si_buffer_desc_t si_emu_get_uav_table_entry(int uav);
-void si_emu_set_uav_table_entry(int uav, unsigned int addr, 
-	struct si_buffer_desc_t buf_desc);
 #endif
 

@@ -54,6 +54,7 @@ static enum si_opencl_kernel_arg_access_type_t
 	si_opencl_kernel_get_access_type(char *access_str);
 
 
+
 struct si_opencl_kernel_t *si_opencl_kernel_create(char *name)
 {
 	struct si_opencl_kernel_t *kernel;
@@ -863,32 +864,41 @@ void si_opencl_kernel_setup_ndrange_state(struct si_opencl_kernel_t *kernel,
 	/* CB0 bytes 0:15 */
 
 	/* Global work size for the {x,y,z} dimensions */
-	si_isa_const_mem_write(0, 0, &ndrange->global_size3[0]);
-	si_isa_const_mem_write(0, 4, &ndrange->global_size3[1]);
-	si_isa_const_mem_write(0, 8, &ndrange->global_size3[2]);
+	si_ndrange_const_buf_write(ndrange, 0, 0, 
+		&ndrange->global_size3[0], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 4, 
+		&ndrange->global_size3[1], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 8, 
+		&ndrange->global_size3[2], 4);
 
 	/* Number of work dimensions */
-	si_isa_const_mem_write(0, 12, &ndrange->work_dim);
+	si_ndrange_const_buf_write(ndrange, 0, 12, &ndrange->work_dim, 4);
 
 	/* CB0 bytes 16:31 */
 
 	/* Local work size for the {x,y,z} dimensions */
-	si_isa_const_mem_write(0, 16, &ndrange->local_size3[0]);
-	si_isa_const_mem_write(0, 20, &ndrange->local_size3[1]);
-	si_isa_const_mem_write(0, 24, &ndrange->local_size3[2]);
+	si_ndrange_const_buf_write(ndrange, 0, 16, 
+		&ndrange->local_size3[0], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 20, 
+		&ndrange->local_size3[1], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 24, 
+		&ndrange->local_size3[2], 4);
 
 	/* 0  */
-	si_isa_const_mem_write(0, 28, &zero);
+	si_ndrange_const_buf_write(ndrange, 0, 28, &zero, 4);
 
 	/* CB0 bytes 32:47 */
 
 	/* Global work size {x,y,z} / local work size {x,y,z} */
-	si_isa_const_mem_write(0, 32, &ndrange->group_count3[0]);
-	si_isa_const_mem_write(0, 36, &ndrange->group_count3[1]);
-	si_isa_const_mem_write(0, 40, &ndrange->group_count3[2]);
+	si_ndrange_const_buf_write(ndrange, 0, 32, 
+		&ndrange->group_count3[0], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 36, 
+		&ndrange->group_count3[1], 4);
+	si_ndrange_const_buf_write(ndrange, 0, 40, 
+		&ndrange->group_count3[2], 4);
 
 	/* 0  */
-	si_isa_const_mem_write(0, 44, &zero);
+	si_ndrange_const_buf_write(ndrange, 0, 44, &zero, 4);
 
 	/* CB0 bytes 48:63 */
 
@@ -898,10 +908,10 @@ void si_opencl_kernel_setup_ndrange_state(struct si_opencl_kernel_t *kernel,
 	/* FIXME Private memory allocated per work_item */
 
 	/* 0  */
-	si_isa_const_mem_write(0, 56, &zero);
+	si_ndrange_const_buf_write(ndrange, 0, 56, &zero, 4);
 
 	/* 0  */
-	si_isa_const_mem_write(0, 60, &zero);
+	si_ndrange_const_buf_write(ndrange, 0, 60, &zero, 4);
 
 	/* CB0 bytes 64:79 */
 
@@ -911,7 +921,7 @@ void si_opencl_kernel_setup_ndrange_state(struct si_opencl_kernel_t *kernel,
 	/* FIXME Local memory allocated per group */
 
 	/* 0 */
-	si_isa_const_mem_write(0, 72, &zero);
+	si_ndrange_const_buf_write(ndrange, 0, 72, &zero, 4);
 
 	/* FIXME Pointer to location in global buffer where math library
 	 * tables start. */
@@ -920,39 +930,39 @@ void si_opencl_kernel_setup_ndrange_state(struct si_opencl_kernel_t *kernel,
 
 	/* 0.0 as IEEE-32bit float - required for math library. */
 	f = 0.0f;
-	si_isa_const_mem_write(0, 80, &f);
+	si_ndrange_const_buf_write(ndrange, 0, 80, &f, 4);
 
 	/* 0.5 as IEEE-32bit float - required for math library. */
 	f = 0.5f;
-	si_isa_const_mem_write(0, 84, &f);
+	si_ndrange_const_buf_write(ndrange, 0, 84, &f, 4);
 
 	/* 1.0 as IEEE-32bit float - required for math library. */
 	f = 1.0f;
-	si_isa_const_mem_write(0, 88, &f);
+	si_ndrange_const_buf_write(ndrange, 0, 88, &f, 4);
 
 	/* 2.0 as IEEE-32bit float - required for math library. */
 	f = 2.0f;
-	si_isa_const_mem_write(0, 92, &f);
+	si_ndrange_const_buf_write(ndrange, 0, 92, &f, 4);
 
 	/* CB0 bytes 96:111 */
 
 	/* Global offset for the {x,y,z} dimension of the work_item spawn */
-	si_isa_const_mem_write(0, 96, &zero);
-	si_isa_const_mem_write(0, 100, &zero);
-	si_isa_const_mem_write(0, 104, &zero);
+	si_ndrange_const_buf_write(ndrange, 0, 96, &zero, 4);
+	si_ndrange_const_buf_write(ndrange, 0, 100, &zero, 4);
+	si_ndrange_const_buf_write(ndrange, 0, 104, &zero, 4);
 
 	/* Global single dimension flat offset: x * y * z */
-	si_isa_const_mem_write(0, 108, &zero);
+	si_ndrange_const_buf_write(ndrange, 0, 108, &zero, 4);
 
 	/* CB0 bytes 112:127 */
 
 	/* Group offset for the {x,y,z} dimensions of the work_item spawn */
-	si_isa_const_mem_write(0, 112, &zero);
-	si_isa_const_mem_write(0, 116, &zero);
-	si_isa_const_mem_write(0, 120, &zero);
+	si_ndrange_const_buf_write(ndrange, 0, 112, &zero, 4);
+	si_ndrange_const_buf_write(ndrange, 0, 116, &zero, 4);
+	si_ndrange_const_buf_write(ndrange, 0, 120, &zero, 4);
 
 	/* Group single dimension flat offset, x * y * z */
-	si_isa_const_mem_write(0, 124, &zero);
+	si_ndrange_const_buf_write(ndrange, 0, 124, &zero, 4);
 
 	/* CB0 bytes 128:143 */
 
@@ -1002,7 +1012,7 @@ void si_opencl_kernel_setup_ndrange_args(struct si_opencl_kernel_t *kernel,
 			/* Value copied directly into device constant
 			 * memory */
 			assert(arg->size);
-			si_isa_const_mem_write_size(
+			si_ndrange_const_buf_write(ndrange,
 				arg->value.constant_buffer_num,
 				arg->value.constant_offset,
 				arg->value.value,
@@ -1018,10 +1028,10 @@ void si_opencl_kernel_setup_ndrange_args(struct si_opencl_kernel_t *kernel,
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign
 				 * space for it. */
-				si_isa_const_mem_write(
+				si_ndrange_const_buf_write(ndrange, 
 					arg->pointer.constant_buffer_num,
 					arg->pointer.constant_offset,
-					&ndrange->local_mem_top);
+					&ndrange->local_mem_top, 4);
 
 				si_opencl_debug("    arg %d: %d bytes reserved"
 					" in local memory at 0x%x\n", i,
@@ -1039,10 +1049,10 @@ void si_opencl_kernel_setup_ndrange_args(struct si_opencl_kernel_t *kernel,
 						si_emu->opencl_repo,
 						si_opencl_object_mem,
 						arg->pointer.mem_obj_id);
-				si_isa_const_mem_write(
+				si_ndrange_const_buf_write(ndrange, 
 					arg->pointer.constant_buffer_num,
 					arg->pointer.constant_offset,
-					&mem_obj->device_ptr);
+					&mem_obj->device_ptr, 4);
 			}
 			break;
 		}
@@ -1069,7 +1079,112 @@ void si_opencl_kernel_setup_ndrange_args(struct si_opencl_kernel_t *kernel,
 	}
 }
 
+void si_kernel_create_buffer_desc(int num_elems, 
+	enum si_opencl_kernel_arg_data_type_t data_type,
+	struct si_buffer_desc_t *buffer_desc)
+{
+	int num_format;
+	int data_format;
+	int elem_size;
 
+	/* Zero-out the buffer resource descriptor */
+	assert(sizeof(*buffer_desc) == 16);
+	memset(buffer_desc, 0, sizeof(*buffer_desc));
+
+	num_format = SI_BUF_DESC_NUM_FMT_INVALID;
+	data_format = SI_BUF_DESC_DATA_FMT_INVALID;
+
+	if (data_type == SI_OPENCL_KERNEL_ARG_DATA_TYPE_I8)
+	{
+		num_format = SI_BUF_DESC_NUM_FMT_SINT;
+		if (num_elems == 1)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_8;
+		}
+		else if (num_elems == 2)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_8_8;
+		}
+		else if (num_elems == 4)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_8_8_8_8;
+		}
+		elem_size = 1 * num_elems;
+	}
+	else if (data_type == SI_OPENCL_KERNEL_ARG_DATA_TYPE_I16)
+	{
+		num_format = SI_BUF_DESC_NUM_FMT_SINT;
+		if (num_elems == 1)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_16;
+		}
+		else if (num_elems == 2)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_16_16;
+		}
+		else if (num_elems == 4)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_16_16_16_16;
+		}
+		elem_size = 2 * num_elems;
+	}
+	else if (data_type == SI_OPENCL_KERNEL_ARG_DATA_TYPE_I32)
+	{
+		num_format = SI_BUF_DESC_NUM_FMT_SINT;
+		if (num_elems == 1)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32;
+		}
+		else if (num_elems == 2)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32;
+		}
+		else if (num_elems == 3)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
+		}
+		else if (num_elems == 4)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
+		}
+		elem_size = 4 * num_elems;
+	}
+	else if (data_type == SI_OPENCL_KERNEL_ARG_DATA_TYPE_FLOAT)
+	{
+		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
+		if (num_elems == 1)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32;
+		}
+		else if (num_elems == 2)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32;
+		}
+		else if (num_elems == 3)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
+		}
+		else if (num_elems == 4)
+		{
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
+		}
+		elem_size = 4 * num_elems;
+	}
+	assert(data_format != SI_BUF_DESC_DATA_FMT_INVALID);
+	assert(num_format != SI_BUF_DESC_NUM_FMT_INVALID);
+
+	/* FIXME For now, storing the device_ptr in the UAV table and
+	 * setting the descriptor base address to zero */
+	buffer_desc->base_addr = 0;
+	buffer_desc->num_format = num_format;
+	buffer_desc->data_format = data_format;
+	buffer_desc->elem_size = elem_size;
+
+	return;
+}
+
+
+#if 0
 void si_opencl_kernel_debug_ndrange_state(struct si_opencl_kernel_t *kernel,
 		struct si_ndrange_t *ndrange)
 {
@@ -1303,6 +1418,7 @@ void si_opencl_kernel_debug_ndrange_state(struct si_opencl_kernel_t *kernel,
 	si_opencl_debug("========================================================"
 		"\n");
 }
+#endif
 
 
 unsigned int si_opencl_kernel_get_work_group_info(

@@ -188,49 +188,22 @@ void si_isa_read_mem_ptr(struct si_work_item_t *work_item,
  * Constant Memory
  */
 
-void si_isa_const_mem_write(int buffer, int offset, void *pvalue)
+/* Used for allocating CB0 and CB1 */
+unsigned int si_isa_const_mem_allocate(unsigned int size)
 {
-	unsigned int addr; 
+        unsigned int ptr;
 
-	assert(buffer < si_emu_num_mapped_const_buffers);
-	assert(offset <= SI_EMU_CONSTANT_BUFFER_SIZE - 4);
+        /* Assign position in device global memory */
+        ptr = si_emu->global_mem_top;
+        si_emu->global_mem_top += size;
 
-	addr = SI_EMU_CONSTANT_MEMORY_START + 
-		buffer*SI_EMU_CONSTANT_BUFFER_SIZE + offset;
-
-	/* Write */
-	mem_write(si_emu->global_mem, addr, 4, pvalue);
-}
-
-void si_isa_const_mem_write_size(int buffer, int offset, void *pvalue, 
-	unsigned int size)
-{
-	unsigned int addr; 
-
-	assert(buffer < si_emu_num_mapped_const_buffers);
-	assert(offset <= SI_EMU_CONSTANT_BUFFER_SIZE - size);
-
-	addr = SI_EMU_CONSTANT_MEMORY_START + 
-		buffer*SI_EMU_CONSTANT_BUFFER_SIZE + offset;
-
-	/* Write */
-	mem_write(si_emu->global_mem, addr, size, pvalue);
+        return ptr;
 }
 
 
-void si_isa_const_mem_read(int buffer, int offset, void *pvalue)
-{
-	unsigned int addr; 
-
-	assert(buffer < si_emu_num_mapped_const_buffers);
-	
-	addr = SI_EMU_CONSTANT_MEMORY_START + 
-		buffer*SI_EMU_CONSTANT_BUFFER_SIZE + offset;
-
-        /* Read */
-        mem_read(si_emu->global_mem, addr, 4, pvalue);
-}
-
+/* 
+ * Southern Islands data types
+ */
 int si_isa_get_num_elems(int data_format)
 {
 	int num_elems;

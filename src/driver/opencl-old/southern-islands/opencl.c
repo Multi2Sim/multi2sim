@@ -2632,7 +2632,8 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 		sec_text_buffer;
 	if (!elf_buffer->size)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
-	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
+	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, 
+		elf_buffer->size, 0);
 
 	/* Build UAV lists */
 	for (i = 0; i < list_count(kernel->arg_list); i++)
@@ -2677,16 +2678,17 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 			{
 				struct si_buffer_desc_t buffer_desc;
 
-				si_emu_create_buffer_desc(arg->pointer.num_elems,
-						arg->pointer.data_type, &buffer_desc);
-				si_emu_insert_into_uav_table(&buffer_desc,
-						arg->pointer.buffer_num);
+				si_kernel_create_buffer_desc(
+					arg->pointer.num_elems,
+					arg->pointer.data_type,
+					&buffer_desc);
+				si_ndrange_insert_buffer_into_uav_table(
+					ndrange,
+					&buffer_desc,
+					arg->pointer.buffer_num);
 			}
 		}
 	}
-
-	/* Debugging */
-	si_opencl_kernel_debug_ndrange_state(kernel, ndrange);
 
 	/* Set ND-Range status to 'pending'. This makes it immediately a 
 	 * candidate for execution, whether we have functional or 
