@@ -286,8 +286,9 @@ void mod_handler_nmoesi_load(int event, void *data)
 		/* Unlock directory entry */
 		dir_entry_unlock(mod->dir, stack->set, stack->way);
 
-		/* Continue */
-		esim_schedule_event(EV_MOD_NMOESI_LOAD_FINISH, stack, 0);
+		/* Impose the access latency before continuing */
+		esim_schedule_event(EV_MOD_NMOESI_LOAD_FINISH, stack, 
+			mod->latency);
 		return;
 	}
 
@@ -475,8 +476,9 @@ void mod_handler_nmoesi_store(int event, void *data)
 			stack->tag, cache_block_modified);
 		dir_entry_unlock(mod->dir, stack->set, stack->way);
 
-		/* Continue */
-		esim_schedule_event(EV_MOD_NMOESI_STORE_FINISH, stack, 0);
+		/* Impose the access latency before continuing */
+		esim_schedule_event(EV_MOD_NMOESI_STORE_FINISH, stack, 
+			mod->latency);
 		return;
 	}
 
@@ -722,8 +724,9 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		/* Unlock directory entry */
 		dir_entry_unlock(mod->dir, stack->set, stack->way);
 
-		/* Continue */
-		esim_schedule_event(EV_MOD_NMOESI_NC_STORE_FINISH, stack, 0);
+		/* Impose the access latency before continuing */
+		esim_schedule_event(EV_MOD_NMOESI_NC_STORE_FINISH, stack, 
+			mod->latency);
 		return;
 	}
 
