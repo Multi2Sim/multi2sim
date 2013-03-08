@@ -339,7 +339,8 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 					token, &err);
 			if (err)
 				fatal("%s: invalid data type '%s'.\n%s",
-					__FUNCTION__, token, opencl_err_si_kernel_metadata);
+					__FUNCTION__, token, 
+					opencl_err_si_kernel_metadata);
 
 			/* Token 3 - Number of elements */
 			token = str_token_list_shift(token_list);
@@ -360,11 +361,12 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Infer argument size from its type */
 			arg->size = arg->value.num_elems *
-				opencl_si_arg_get_data_size(arg->value.data_type);
+				opencl_si_arg_get_data_size(
+					arg->value.data_type);
 
 			/* Debug */
-			opencl_debug("\targument '%s' - value stored in constant "
-				"buffer %d at offset %d\n",
+			opencl_debug("\targument '%s' - value stored in "
+				"constant buffer %d at offset %d\n",
 				arg->name, arg->value.constant_buffer_num,
 				arg->value.constant_offset);
 
@@ -384,18 +386,21 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 1 - Name */
 			token = str_token_list_shift(token_list);
-			arg = opencl_si_arg_create(opencl_si_arg_pointer, token);
+			arg = opencl_si_arg_create(opencl_si_arg_pointer, 
+				token);
 
 			/* Token 2 - Data type */
 			token = str_token_list_shift(token_list);
-			arg->pointer.data_type = str_map_string_err(&opencl_si_arg_data_type_map,
-					token, &err);
+			arg->pointer.data_type = str_map_string_err(
+				&opencl_si_arg_data_type_map, token, &err);
 			if (err)
 				fatal("%s: invalid data type '%s'.\n%s",
-					__FUNCTION__, token, opencl_err_si_kernel_metadata);
+					__FUNCTION__, token, 
+					opencl_err_si_kernel_metadata);
 
 			/* Token 3 - Number of elements
-			 * Arrays of pointers not supported, only "1" allowed. */
+			 * Arrays of pointers not supported, 
+			 * only "1" allowed. */
 			token = str_token_list_shift(token_list);
 			opencl_si_kernel_expect_int(kernel, token_list);
 			opencl_si_kernel_expect(kernel, token_list, "1");
@@ -413,11 +418,12 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 6 - Memory scope */
 			token = str_token_list_shift(token_list);
-			arg->pointer.scope = str_map_string_err(&opencl_si_arg_scope_map,
-					token, &err);
+			arg->pointer.scope = str_map_string_err(
+				&opencl_si_arg_scope_map, token, &err);
 			if (err)
 				fatal("%s: invalid scope '%s'.\n%s",
-					__FUNCTION__, token, opencl_err_si_kernel_metadata);
+					__FUNCTION__, token, 
+					opencl_err_si_kernel_metadata);
 
 			/* Token 7 - Buffer number */
 			token = str_token_list_shift(token_list);
@@ -431,11 +437,12 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 9 - Access type */
 			token = str_token_list_shift(token_list);
-			arg->pointer.access_type = str_map_string_err(&opencl_si_arg_access_type_map,
-					token, &err);
+			arg->pointer.access_type = str_map_string_err(
+				&opencl_si_arg_access_type_map, token, &err);
 			if (err)
 				fatal("%s: invalid access type '%s'.\n%s",
-					__FUNCTION__, token, opencl_err_si_kernel_metadata);
+					__FUNCTION__, token, 
+					opencl_err_si_kernel_metadata);
 
 			/* Token 10 - ??? */
 			token = str_token_list_shift(token_list);
@@ -445,12 +452,13 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 			token = str_token_list_shift(token_list);
 			opencl_si_kernel_expect(kernel, token_list, "0");
 
-			/* Data size inferred here is always 4, the size of a pointer. */
+			/* Data size inferred here is always 4, the size 
+			 * of a pointer. */
 			arg->size = 4;
 
 			/* Debug */
-			opencl_debug("\targument '%s' - Pointer stored in constant "
-				"buffer %d at offset %d\n",
+			opencl_debug("\targument '%s' - Pointer stored in "
+				"constant buffer %d at offset %d\n",
 				arg->name, arg->pointer.constant_buffer_num,
 				arg->pointer.constant_offset);
 
@@ -683,6 +691,18 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 		/* Uniqueid
 		 * A mapping between a kernel and its unique ID */
 		if (!strcmp(token, "uniqueid"))
+		{
+			/* Expect 2 tokens */
+			opencl_si_kernel_expect_count(kernel, token_list, 2);
+
+			/* Next */
+			str_token_list_free(token_list);
+			continue;
+		}
+
+		/* Uavid 
+		 * ID of a raw UAV */
+		if (!strcmp(token, "uavid"))
 		{
 			/* Expect 2 tokens */
 			opencl_si_kernel_expect_count(kernel, token_list, 2);
@@ -1398,7 +1418,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
                         if (userElements[i].userRegCount > 1)
                         {
                                 si_isa_debug("\t| SREG[%2d:%2d] |  CB%1d "
-                                        "Descriptor          |\n",
+                                        "Descriptor           |\n",
                                         userElements[i].startUserReg,
                                         userElements[i].startUserReg +
                                         userElements[i].userRegCount - 1,
@@ -1407,7 +1427,7 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
                         else
                         {
                                 si_isa_debug("\t| SREG[%2d]    |  CB%1d "
-                                        "Descriptor          |\n",
+                                        "Descriptor         |\n",
                                         userElements[i].startUserReg,
                                         userElements[i].apiSlot);
                         }
