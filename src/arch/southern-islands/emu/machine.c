@@ -28,6 +28,7 @@
 #include "emu.h"
 #include "isa.h"
 #include "machine.h"
+#include "ndrange.h"
 #include "wavefront.h"
 #include "work-group.h"
 #include "work-item.h"
@@ -40,7 +41,6 @@ char *err_si_isa_note =
 
 #define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
 	inst->info->name, err_si_isa_note)
-
 
 #define INST SI_INST_SMRD
 void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item,
@@ -4658,8 +4658,8 @@ void si_isa_V_CMP_GT_I32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
-			work_item->id_in_wavefront, INST.vdst,
+		si_isa_debug("wf_id%d: S[%u:%u]<=(%u) ",
+			work_item->id_in_wavefront, INST.vdst, INST.vdst + 1, 
 			result.as_uint);
 	}
 }
@@ -5385,6 +5385,9 @@ void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item,
 	/* Load address and data from registers. */
 	addr = si_isa_read_vreg(work_item, INST.addr);
 	data0 = si_isa_read_vreg(work_item, INST.data0);
+
+	if (addr < 0 || addr > MIN(work_item->ndrange->local_mem_top, 
+		si_isa_read_sreg(work_item, SI_M0)));
 
 	/* Global data store not supported */
 	assert(!INST.gds);

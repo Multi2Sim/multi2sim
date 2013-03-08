@@ -642,15 +642,6 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 				"(vec4f constants)\n", 
 				constant_buffer_mask->index, 
 				constant_buffer_mask->size);
-			if (constant_buffer_mask->index > 1 && 
-				constant_buffer_mask->size != 4096)
-			{
-				fatal("%s: CB%d has size %d, but we expect "
-					"constant buffers to be 4096 float4s", 
-					__FUNCTION__,
-					constant_buffer_mask->index, 
-					constant_buffer_mask->size);
-			}
 		}
 
 		break;
