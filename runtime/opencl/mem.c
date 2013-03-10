@@ -129,12 +129,16 @@ cl_mem clCreateBuffer(
 	/* Create memory object */
 	mem = opencl_mem_create();
 
-	/* Because of alignment reasons, we are going to 'cache' buffers even
-	 * when the user specifies CL_MEM_USE_HOST_PTR */
+	/* Allocate the memory object in the device. */
 	assert(device->arch_device_mem_alloc_func);
 	mem->device_ptr = device->arch_device_mem_alloc_func(device->arch_device, size);
 	mem->device = device;
 	mem->size = size;
+
+	/* Save host pointer, if given */
+	mem->use_host_ptr = (flags & CL_MEM_USE_HOST_PTR) > 0;
+	if (mem->use_host_ptr)
+		mem->host_ptr = host_ptr;
 
 	/* Copy buffer contents */
 	assert(device->arch_device_mem_write_func);
