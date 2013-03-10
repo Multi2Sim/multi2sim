@@ -778,8 +778,32 @@ cl_int clEnqueueNDRangeKernel(
 		return status;
 
 	/* Check valid work dimensions */
-	if (work_dim > 3)
+	if (!IN_RANGE(work_dim, 1, 3))
 		return CL_INVALID_WORK_DIMENSION;
+
+	/* Global size is NULL */
+	if (!global_work_size)
+		return CL_INVALID_GLOBAL_WORK_SIZE;
+
+	/* Invalid global size components */
+	for (i = 0; i < work_dim; i++)
+		if (!global_work_size[i])
+			return CL_INVALID_GLOBAL_WORK_SIZE;
+
+	/* Invalid local size components */
+	if (local_work_size)
+	{
+		for (i = 0; i < work_dim; i++)
+		{
+			/* Component is 0 */
+			if (!local_work_size[i])
+				return CL_INVALID_WORK_GROUP_SIZE;
+
+			/* Global size not evenly divisible */
+			if (global_work_size[i] % local_work_size[i])
+				return CL_INVALID_WORK_GROUP_SIZE;
+		}
+	}
 
 	/* Kernel to run */
 	arch_kernel = NULL;
