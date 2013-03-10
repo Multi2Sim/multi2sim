@@ -25,8 +25,6 @@
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <driver/glut/frame-buffer.h>
-#include <driver/opencl-old/southern-islands/mem.h>
-#include <driver/opencl-old/southern-islands/command-queue.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -4781,6 +4779,7 @@ static int opengl_func_glArrayElement(struct x86_ctx_t *ctx)
  */
 static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 {
+#if 0
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -4933,7 +4932,7 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 		default:
 			break;
 	}
-
+#endif
 	/* Return */
 	return 0;	
 }

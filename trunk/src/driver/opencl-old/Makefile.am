@@ -1,4 +1,3 @@
 SUBDIRS = \
-	evergreen \
-	southern-islands
+	evergreen
 

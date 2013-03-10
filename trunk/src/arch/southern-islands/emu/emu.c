@@ -25,11 +25,6 @@
 #include <arch/southern-islands/asm/bin-file.h>
 #include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/context.h>
-#include <driver/opencl-old/southern-islands/device.h>
-#include <driver/opencl-old/southern-islands/platform.h>
-#include <driver/opencl-old/southern-islands/repo.h>
-#include <driver/opencl-old/southern-islands/kernel.h>
-#include <driver/opencl-old/southern-islands/mem.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -111,11 +106,6 @@ void si_emu_init()
 
 	/* Initialize ISA (instruction execution tables...) */
 	si_isa_init();
-
-	/* Initialize OpenCL objects */
-	si_emu->opencl_repo = si_opencl_repo_create();
-	si_emu->opencl_platform = si_opencl_platform_create();
-	si_emu->opencl_device = si_opencl_device_create();
 }
 
 
@@ -129,10 +119,6 @@ void si_emu_done()
 	/* Free ND-Ranges */
 	while (si_emu->ndrange_list_count)
 		si_ndrange_free(si_emu->ndrange_list_head);
-
-	/* Free OpenCL objects */
-	si_opencl_repo_free_all_objects(si_emu->opencl_repo);
-	si_opencl_repo_free(si_emu->opencl_repo);
 
 	/* Finalize disassembler */
 	si_disasm_done();
