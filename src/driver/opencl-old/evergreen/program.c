@@ -70,7 +70,14 @@ static char *err_evg_opencl_evergreen_format =
 	"\tYour application tried to load a pre-compiled OpenCL kernel binary which\n"
 	"\tdoes not contain code in the Evergreen ISA. Please, check that the off-line\n"
 	"\tcompilation of your kernel targets this GPU architecture supported by\n"
-	"\tMulti2Sim.\n";
+	"\tMulti2Sim.\n"
+	"\tAnother possible cause for this error is that you are trying to run a\n"
+	"\tstatically compiled x86 binary that is trying to load a Southern Islands\n"
+	"\tkernel binary (instead of Evergreen). If this is the case, you need to\n"
+	"\trecompile your application using the new implementation of the OpenCL\n"
+	"\truntime first included in Multi2Sim 4.1. If you are running benchmarks\n"
+	"\tfrom the APPSDK downloaded from the website, please get the latest\n"
+	"\tversion of the benchmark package.\n";
 
 
 void evg_opencl_program_build(struct evg_opencl_program_t *program)
