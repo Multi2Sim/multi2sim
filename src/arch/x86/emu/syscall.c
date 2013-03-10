@@ -39,7 +39,6 @@
 #include <driver/glut/glut.h>
 #include <driver/opencl/opencl.h>
 #include <driver/opencl-old/evergreen/opencl.h>
-#include <driver/opencl-old/southern-islands/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>

@@ -54,17 +54,10 @@ struct si_ndrange_t
 	/* Status */
 	enum si_ndrange_status_t status;
 
-	/* Event */
-	struct si_opencl_event_t *event;
-
 	/* Call-back function run right before freeing ND-Range, using the value in
 	 * 'free_notify_data' as an argument. */
 	void (*free_notify_func)(void *);
 	void *free_notify_data;
-
-	/* Command queue and command queue task associated */
-	struct si_opencl_command_queue_t *command_queue;
-	struct si_opencl_command_t *command;
 
 	/* Number of work dimensions */
 	int work_dim;

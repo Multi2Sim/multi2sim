@@ -201,11 +201,6 @@ struct si_emu_t
 	/* Timer */
 	struct m2s_timer_t *timer;
 
-	/* OpenCL objects */
-	struct si_opencl_repo_t *opencl_repo;
-	struct si_opencl_platform_t *opencl_platform;
-	struct si_opencl_device_t *opencl_device;
-
 	/* List of ND-Ranges */
 	struct si_ndrange_t *ndrange_list_head;
 	struct si_ndrange_t *ndrange_list_tail;
@@ -264,9 +259,6 @@ extern char *si_emu_report_file_name;
 extern FILE *si_emu_report_file;
 
 extern int si_emu_wavefront_size;
-
-extern char *si_err_opencl_note;
-extern char *si_err_opencl_param_note;
 
 extern struct si_emu_t *si_emu;
 extern struct arch_t *si_emu_arch;
