@@ -20,12 +20,6 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
-#include <driver/opencl-old/southern-islands/command-queue.h>
-#include <driver/opencl-old/southern-islands/event.h>
-#include <driver/opencl-old/southern-islands/kernel.h>
-#include <driver/opencl-old/southern-islands/mem.h>
-#include <driver/opencl-old/southern-islands/repo.h>
-#include <driver/opencl-old/southern-islands/opencl.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -39,25 +33,6 @@
 #include "wavefront.h"
 #include "work-group.h"
 #include "work-item.h"
-
-/*
- * Private
- */
-
-static void si_ndrange_debug_array(int nelem, int *array)
-{
-	char *comma = "";
-	int i;
-
-	si_opencl_debug("{");
-	for (i = 0; i < nelem; i++)
-	{
-		si_opencl_debug("%s%d", comma, array[i]);
-		comma = ", ";
-	}
-	si_opencl_debug("}");
-}
-
 
 
 
@@ -93,18 +68,6 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 	/* Run free notify call-back */
 	if (ndrange->free_notify_func)
 		ndrange->free_notify_func(ndrange->free_notify_data);
-
-	/* Set event status to complete if an event was set. */
-	if (ndrange->event)
-		ndrange->event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
-
-	/* Clear task from command queue */
-	if (ndrange->command_queue && ndrange->command)
-	{
-		si_opencl_command_queue_complete(ndrange->command_queue, 
-			ndrange->command);
-		si_opencl_command_free(ndrange->command);
-	}
 
 	/* Clear all states that affect lists. */
 	si_ndrange_clear_status(ndrange, si_ndrange_pending);
@@ -349,50 +312,35 @@ void si_ndrange_setup_size(struct si_ndrange_t *ndrange,
 	ndrange->global_size = ndrange->global_size3[0] *
 			ndrange->global_size3[1] * ndrange->global_size3[2];
 
-	/* Debug */
-	si_opencl_debug("\tglobal_work_size=");
-	si_ndrange_debug_array(work_dim, ndrange->global_size3);
-	si_opencl_debug("\n");
-
 	/* Local work sizes */
 	for (i = 0; i < work_dim; i++)
 	{
 		ndrange->local_size3[i] = local_size[i];
 		if (ndrange->local_size3[i] < 1)
-			fatal("%s: local work size must be greater than 0.\n%s",
-					__FUNCTION__, si_err_opencl_param_note);
+			fatal("%s: local work size must be greater than 0",
+					__FUNCTION__);
 	}
 	ndrange->local_size = ndrange->local_size3[0] * ndrange->local_size3[1] * ndrange->local_size3[2];
-
-	/* Debug */
-	si_opencl_debug("\tlocal_work_size=");
-	si_ndrange_debug_array(work_dim, ndrange->local_size3);
-	si_opencl_debug("\n");
 
 	/* Check valid global/local sizes */
 	if (ndrange->global_size3[0] < 1 || ndrange->global_size3[1] < 1
 			|| ndrange->global_size3[2] < 1)
-		fatal("%s: invalid global size.\n%s", __FUNCTION__, si_err_opencl_param_note);
+		fatal("%s: invalid global size", __FUNCTION__);
 	if (ndrange->local_size3[0] < 1 || ndrange->local_size3[1] < 1
 			|| ndrange->local_size3[2] < 1)
-		fatal("%s: invalid local size.\n%s", __FUNCTION__, si_err_opencl_param_note);
+		fatal("%s: invalid local size", __FUNCTION__);
 
 	/* Check divisibility of global by local sizes */
 	if ((ndrange->global_size3[0] % ndrange->local_size3[0])
 			|| (ndrange->global_size3[1] % ndrange->local_size3[1])
 			|| (ndrange->global_size3[2] % ndrange->local_size3[2]))
-		fatal("%s: global work sizes must be multiples of local sizes.\n%s",
-				__FUNCTION__, si_err_opencl_param_note);
+		fatal("%s: global work sizes must be multiples of local sizes",
+				__FUNCTION__);
 
 	/* Calculate number of groups */
 	for (i = 0; i < 3; i++)
 		ndrange->group_count3[i] = ndrange->global_size3[i] / ndrange->local_size3[i];
 	ndrange->group_count = ndrange->group_count3[0] * ndrange->group_count3[1] * ndrange->group_count3[2];
-
-	/* Debug */
-	si_opencl_debug("\tgroup_count=");
-	si_ndrange_debug_array(work_dim, ndrange->group_count3);
-	si_opencl_debug("\n");
 
 	/* Allocate work-group, wavefront, and work-item arrays */
 	si_ndrange_setup_arrays(ndrange);

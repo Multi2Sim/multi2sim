@@ -21,7 +21,6 @@ LDADD = \
 	$(top_builddir)/src/driver/glew/libglew.a \
 	$(top_builddir)/src/driver/opencl/libopencl.a \
 	$(top_builddir)/src/driver/opencl-old/evergreen/libopencl.a \
-	$(top_builddir)/src/driver/opencl-old/southern-islands/libopencl.a \
 	$(top_builddir)/src/driver/opengl/libopengl.a \
 	\
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \

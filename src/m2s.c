@@ -52,7 +52,6 @@
 #include <driver/glew/glew.h>
 #include <driver/opencl/opencl.h>
 #include <driver/opencl-old/evergreen/opencl.h>
-#include <driver/opencl-old/southern-islands/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
@@ -96,7 +95,6 @@ static char *evg_stack_debug_file_name = "";
 
 static char *si_disasm_file_name = "";
 static char *si_isa_debug_file_name = "";
-static char *si_opencl_debug_file_name = "";
 static char *si_opengl_disasm_file_name = "";
 static int si_opengl_disasm_shader_index = 1;
 
@@ -957,14 +955,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* OpenCL debug file */
-		if (!strcmp(argv[argi], "--si-debug-opencl"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			si_opencl_debug_file_name = argv[++argi];
-			continue;
-		}
-
 		/* Southern Islands GPU configuration file */
 		if (!strcmp(argv[argi], "--si-config"))
 		{
@@ -1690,7 +1680,6 @@ int main(int argc, char **argv)
 	evg_isa_debug_category = debug_new_category(evg_isa_debug_file_name);
 	evg_stack_debug_category = debug_new_category(evg_stack_debug_file_name);  /* GPU-REL */
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
-	si_opencl_debug_category = debug_new_category(si_opencl_debug_file_name);
 	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
 	arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
 	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
