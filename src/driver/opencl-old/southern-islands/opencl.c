@@ -160,31 +160,6 @@ char *si_err_opencl_version_note =
 
 
 /*
- * Common entry point for Southern Islands and Evergreen
- */
-
-int opencl_old_abi_call(struct x86_ctx_t *ctx)
-{
-	switch (x86_emu->gpu_kind)
-	{
-	case x86_emu_gpu_evergreen:
-		return evg_opencl_api_run(ctx);
-
-	case x86_emu_gpu_southern_islands:
-		return si_opencl_api_run(ctx);
-	
-	default:
-		panic("%s: invalid GPU kind", __FUNCTION__);
-		return 0;
-	}
-}
-
-
-
-
-
-
-/*
  * Entry point for OpenCL API
  */
 
