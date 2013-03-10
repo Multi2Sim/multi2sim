@@ -1263,97 +1263,133 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 	int elem_size;
 
 	/* Zero-out the buffer resource descriptor */
-	assert(sizeof(*buffer_desc) == 16);
-	memset(buffer_desc, 0, sizeof(*buffer_desc));
+	assert(sizeof(struct si_buffer_desc_t) == 16);
+	memset(buffer_desc, 0, sizeof(struct si_buffer_desc_t));
 
 	num_format = SI_BUF_DESC_NUM_FMT_INVALID;
 	data_format = SI_BUF_DESC_DATA_FMT_INVALID;
 
-	if (data_type == opencl_si_arg_i8)
+	switch (data_type)
 	{
+
+	case opencl_si_arg_i8:
+	case opencl_si_arg_u8:
+
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
-		if (num_elems == 1)
+		switch (num_elems)
 		{
+		case 1:
 			data_format = SI_BUF_DESC_DATA_FMT_8;
-		}
-		else if (num_elems == 2)
-		{
+			break;
+
+		case 2:
 			data_format = SI_BUF_DESC_DATA_FMT_8_8;
-		}
-		else if (num_elems == 4)
-		{
+			break;
+
+		case 4:
 			data_format = SI_BUF_DESC_DATA_FMT_8_8_8_8;
+			break;
+
+		default:
+			fatal("%s: invalid number of i8/u8 elements (%d)",
+					__FUNCTION__, num_elems);
 		}
 		elem_size = 1 * num_elems;
-	}
-	else if (data_type == opencl_si_arg_i16)
-	{
+		break;
+
+	case opencl_si_arg_i16:
+	case opencl_si_arg_u16:
+
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
-		if (num_elems == 1)
+		switch (num_elems)
 		{
+
+		case 1:
 			data_format = SI_BUF_DESC_DATA_FMT_16;
-		}
-		else if (num_elems == 2)
-		{
+			break;
+
+		case 2:
 			data_format = SI_BUF_DESC_DATA_FMT_16_16;
-		}
-		else if (num_elems == 4)
-		{
+			break;
+
+		case 4:
 			data_format = SI_BUF_DESC_DATA_FMT_16_16_16_16;
+			break;
+
+		default:
+			fatal("%s: invalid number of i16/u16 elements (%d)",
+					__FUNCTION__, num_elems);
 		}
 		elem_size = 2 * num_elems;
-	}
-	else if (data_type == opencl_si_arg_i32)
-	{
+		break;
+
+	case opencl_si_arg_i32:
+	case opencl_si_arg_u32:
+
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
-		if (num_elems == 1)
+		switch (num_elems)
 		{
+
+		case 1:
 			data_format = SI_BUF_DESC_DATA_FMT_32;
-		}
-		else if (num_elems == 2)
-		{
+			break;
+
+		case 2:
 			data_format = SI_BUF_DESC_DATA_FMT_32_32;
-		}
-		else if (num_elems == 3)
-		{
+			break;
+
+		case 3:
 			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
-		}
-		else if (num_elems == 4)
-		{
+			break;
+
+		case 4:
 			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
+			break;
+
+		default:
+			fatal("%s: invalid number of i32/u32 elements (%d)",
+					__FUNCTION__, num_elems);
 		}
 		elem_size = 4 * num_elems;
-	}
-	else if (data_type == opencl_si_arg_float)
-	{
+		break;
+
+	case opencl_si_arg_float:
+
 		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
-		if (num_elems == 1)
+		switch (num_elems)
 		{
+		case 1:
 			data_format = SI_BUF_DESC_DATA_FMT_32;
-		}
-		else if (num_elems == 2)
-		{
+			break;
+
+		case 2:
 			data_format = SI_BUF_DESC_DATA_FMT_32_32;
-		}
-		else if (num_elems == 3)
-		{
+			break;
+
+		case 3:
 			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
-		}
-		else if (num_elems == 4)
-		{
+			break;
+
+		case 4:
 			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
+			break;
+
+		default:
+			fatal("%s: invalid number of float elements (%d)",
+					__FUNCTION__, num_elems);
 		}
 		elem_size = 4 * num_elems;
-	}
-	else if (data_type == opencl_si_arg_struct)
-	{
+		break;
+
+	case opencl_si_arg_struct:
+
 		num_format = SI_BUF_DESC_NUM_FMT_UINT;
 		data_format = SI_BUF_DESC_DATA_FMT_8;
 		elem_size = 1;
-	}
-	else 
-	{
-		fatal("%s: Invalid data type for SI buffer (%d)", 
+		break;
+
+	default:
+		fatal("%s: invalid data type for SI buffer (%d)",
 			__FUNCTION__, data_type);
 	}
 	assert(num_format != SI_BUF_DESC_NUM_FMT_INVALID);
