@@ -1700,7 +1700,7 @@ int main(int argc, char **argv)
 	/* Initialization of runtimes */
 	runtime_init();
 	runtime_register("Old OpenCL", "m2s-opencl-old", "m2s-opencl-old", 325,
-			(runtime_abi_func_t) opencl_old_abi_call);
+			(runtime_abi_func_t) evg_opencl_abi_call);
 	runtime_register("GLUT", "glut", "m2s-glut", 326, (runtime_abi_func_t) glut_abi_call);
 	runtime_register("OpenGL", "GL", "m2s-opengl", 327, (runtime_abi_func_t) opengl_abi_call);
 	runtime_register("CUDA", "cuda", "m2s-cuda", 328, (runtime_abi_func_t) cuda_abi_call);
@@ -1722,10 +1722,6 @@ int main(int argc, char **argv)
 	evg_emu_init();
 	si_emu_init();
 	frm_emu_init();
-
-	/* Select the GPU emulator - FIXME */
-	if (si_emulator)
-		x86_emu->gpu_kind = x86_emu_gpu_southern_islands;
 
 	/* Initialization of x86 CPU */
 	if (x86_emu_sim_kind == arch_sim_kind_detailed)

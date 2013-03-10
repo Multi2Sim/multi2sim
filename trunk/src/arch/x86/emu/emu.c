@@ -111,9 +111,6 @@ void x86_emu_init(void)
 	/* Initialize mutex for variables controlling calls to 'x86_emu_process_events()' */
 	pthread_mutex_init(&x86_emu->process_events_mutex, NULL);
 
-	/* Initialize GPU emulators */
-	x86_emu->gpu_kind = x86_emu_gpu_evergreen;
-
 #ifdef HAVE_OPENGL
 	/* GLUT */
 	glut_init();
