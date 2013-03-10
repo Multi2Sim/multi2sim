@@ -32,6 +32,7 @@
 #include "list.h"
 #include "mem.h"
 #include "mhandle.h"
+#include "misc.h"
 #include "object.h"
 #include "opencl.h"
 
@@ -562,7 +563,7 @@ cl_int clEnqueueCopyBufferToImage(
 
 void *clEnqueueMapBuffer(
 	cl_command_queue command_queue,
-	cl_mem buffer,
+	cl_mem mem,
 	cl_bool blocking_map,
 	cl_map_flags map_flags,
 	size_t offset,
@@ -578,7 +579,7 @@ void *clEnqueueMapBuffer(
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tcommand_queue = %p", command_queue);
-	opencl_debug("\tbuffer = %p", buffer);
+	opencl_debug("\tbuffer = %p", mem);
 	opencl_debug("\tblocking_map = %d", blocking_map);
 	opencl_debug("\tmap_flags = %lld", map_flags);
 	opencl_debug("\toffset = %u", offset);
@@ -588,6 +589,7 @@ void *clEnqueueMapBuffer(
 	opencl_debug("\tevent = %p", event);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
+	/* Check command queue */
 	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 	{
 		if (errcode_ret)
@@ -595,13 +597,15 @@ void *clEnqueueMapBuffer(
 		return NULL;
 	}
 
-	if (!opencl_object_verify(buffer, OPENCL_OBJECT_MEM))
+	/* Check buffer object */
+	if (!opencl_object_verify(mem, OPENCL_OBJECT_MEM))
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_MEM_OBJECT;
 		return NULL;
 	}
 
+	/* Check event */
 	if ((status = opencl_event_wait_list_check(num_events_in_wait_list,
 			event_wait_list)) != CL_SUCCESS)
 	{
@@ -610,15 +614,38 @@ void *clEnqueueMapBuffer(
 		return NULL;
 	}
 
-	if (offset + cb > buffer->size)
+	/* It is not specified what happens when a memory object is mapped
+	 * twice without being unmapped. Detect this case and abort program. */
+	if (mem->mapped)
+		fatal("%s: cl_mem object already mapped",
+				__FUNCTION__);
+
+	/* Check buffer boundaries */
+	if (offset + cb > mem->size)
 	{
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_VALUE;
 		return NULL;
 	}
 
+	/* Save map information */
+	mem->mapped = 1;
+	mem->map_flags = map_flags;
+	mem->map_offset = offset;
+	mem->map_size = cb;
+
+	/* If host pointer does not exist, allocate it now. It is necessary to
+	 * do the host memory allocation now, and not when the command is
+	 * processed by the command queue, since the function needs to return
+	 * the host pointer right away. */
+	if (!mem->host_ptr)
+	{
+		assert(!mem->use_host_ptr);
+		mem->host_ptr = xcalloc(1, mem->size);
+	}
+
 	/* Create command */
-	command = opencl_command_create_map_buffer(
+	command = opencl_command_create_map_buffer(mem,
 			command_queue, event, num_events_in_wait_list,
 			(cl_event *) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, command);
@@ -632,7 +659,7 @@ void *clEnqueueMapBuffer(
 		*errcode_ret = CL_SUCCESS;
 	
 	/* Return mapped buffer */
-	return (char *) buffer->device_ptr + offset;
+	return mem->host_ptr + offset;
 }
 
 
@@ -657,7 +684,7 @@ void *clEnqueueMapImage(
 
 cl_int clEnqueueUnmapMemObject(
 	cl_command_queue command_queue,
-	cl_mem memobj,
+	cl_mem mem,
 	void *mapped_ptr,
 	cl_uint num_events_in_wait_list,
 	const cl_event *event_wait_list,
@@ -668,19 +695,26 @@ cl_int clEnqueueUnmapMemObject(
 
 	opencl_debug("call '%s'", __FUNCTION__);
 	opencl_debug("\tcommand_queue = %p", command_queue);
-	opencl_debug("\tmemobj = %p", memobj);
+	opencl_debug("\tmemobj = %p", mem);
 	opencl_debug("\tmapped_ptr = %p", mapped_ptr);
 	opencl_debug("\tnum_events_in_wait_list = %u", num_events_in_wait_list);
 	opencl_debug("\tevent_wait_list = %p", event_wait_list);
 	opencl_debug("\tevent = %p", event);
 
+	/* Check command queue */
 	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
-	if (!opencl_object_verify(memobj, OPENCL_OBJECT_MEM))
+	/* Check memory object */
+	if (!opencl_object_verify(mem, OPENCL_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
 
-	if (memobj->device_ptr > mapped_ptr || memobj->device_ptr + memobj->size < mapped_ptr)
+	/* Object not mapped before */
+	if (!mem->mapped)
+		return CL_INVALID_VALUE;
+
+	/* Check valid range of host pointer */
+	if (!IN_RANGE(mapped_ptr, mem->host_ptr, mem->host_ptr + mem->size - 1))
 		return CL_INVALID_VALUE;
 
 	/* Check events before they are needed */
@@ -689,7 +723,7 @@ cl_int clEnqueueUnmapMemObject(
 		return status;
 
 	/* Initialize data associated with the command */
-	command = opencl_command_create_unmap_buffer(command_queue, event,
+	command = opencl_command_create_unmap_buffer(mem, command_queue, event,
 			num_events_in_wait_list, (cl_event *) event_wait_list);
 	opencl_command_queue_enqueue(command_queue, command);
 

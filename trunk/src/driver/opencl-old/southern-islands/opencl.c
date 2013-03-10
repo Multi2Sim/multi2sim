@@ -1532,10 +1532,6 @@ int si_opencl_clSetKernelArg_impl(struct x86_ctx_t *ctx, int *argv)
 		fatal("%s: argument index out of bounds.\n%s", __FUNCTION__,
 			si_err_opencl_param_note);
 
-	if (arg_size >= SI_OPENCL_KERNEL_ARG_MAX_SIZE)
-		fatal("%s: kernel argument is too large.\n%s", __FUNCTION__,
-			si_err_opencl_param_note);
-
 	/* XXX Need to implement as described in Metadata.pdf */
 	/* 1) Scalar arguments are stored in CB1 at offset specified by
 	 *    metadata.  If the argument is over 4-bytes, it gets stored in
@@ -1556,8 +1552,10 @@ int si_opencl_clSetKernelArg_impl(struct x86_ctx_t *ctx, int *argv)
 	if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_VALUE)
 	{
 		assert(arg_value);
+		arg->size = arg_size;
+		arg->value.value = xmalloc(arg_size);
 		mem_read(ctx->mem, arg_value, arg_size, 
-			&arg->value.value[0]);
+			arg->value.value);
 	}
 	else if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER)
 	{
@@ -1587,7 +1585,8 @@ int si_opencl_clSetKernelArg_impl(struct x86_ctx_t *ctx, int *argv)
 					si_err_opencl_param_note);
 			}
 
-			/* Do nothing */
+			/* Just record size */
+			arg->size = arg_size;
 		}
 		/* Types that we don't know how to handle yet */
 		else

@@ -31,7 +31,20 @@ struct _cl_mem
 	struct opencl_device_t *device;
 	void *device_ptr;
 
-	size_t size;
+	/* Pointer in host memory. If the buffer is created with flag
+	 * CL_USE_HOST_PTR, the value of this field is obtained from the user.
+	 * Otherwise, it is allocated/deallocated with MapBuffer/UnmapBuffer. */
+	void *host_ptr;
+	int use_host_ptr;  /* True if passed by user in clCreateBuffer */
+
+	/* Used by MapBuffer */
+	int mapped;  /* True if buffer is MapBuffer'ed and not UnmapBuffer'ed */
+	int map_flags;  /* Flags used when mapping it (needed for unamp actions) */
+	unsigned int map_offset;
+	unsigned int map_size;
+
+	/* Size with which buffer is created */
+	unsigned int size;
 };
 
 
