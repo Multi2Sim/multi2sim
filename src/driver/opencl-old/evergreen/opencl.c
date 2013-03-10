@@ -176,14 +176,14 @@ char *evg_err_opencl_version_note =
  * Entry point for OpenCL API
  */
 
-int evg_opencl_api_run(struct x86_ctx_t *ctx)
+int evg_opencl_abi_call(struct x86_ctx_t *ctx)
 {
 	int argv[EVG_OPENCL_MAX_ARGS];
 	int code;
 	int ret;
 
 	/* Get function code and arguments */
-	code = evg_opencl_api_read_args(ctx, NULL, argv, sizeof argv);
+	code = evg_opencl_abi_read_args(ctx, NULL, argv, sizeof argv);
 	assert(IN_RANGE(code, EVG_OPENCL_FUNC_FIRST, EVG_OPENCL_FUNC_LAST));
 	
 	/* Call function */
@@ -198,7 +198,7 @@ int evg_opencl_api_run(struct x86_ctx_t *ctx)
 /* Return OpenCL function arguments, as identified in the current state
  * of the x86 context stack and registers. The value returned by the function
  * is the OpenCL function code identified by register 'ebx'. */
-int evg_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
+int evg_opencl_abi_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
 		void *argv_ptr, int argv_size)
 {
 	struct mem_t *mem = ctx->mem;
@@ -234,7 +234,7 @@ int evg_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
 /* Set return value of an OpenCL API call. This needs to be done explicitly when
  * a context gets suspended during the execution of the OpenCL call, and later the
  * wake-up call-back routine finishes the OpenCL call execution. */
-void evg_opencl_api_return(struct x86_ctx_t *ctx, int value)
+void evg_opencl_abi_return(struct x86_ctx_t *ctx, int value)
 {
 	ctx->regs->eax = value;
 }
@@ -1684,11 +1684,11 @@ void evg_opencl_clFinish_wakeup(struct x86_ctx_t *ctx, void *data)
 	int code;
 
 	/* Read function arguments again */
-	code = evg_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	code = evg_opencl_abi_read_args(ctx, NULL, &argv, sizeof argv);
 	assert(code == 1052);
 
 	/* Return success */
-	evg_opencl_api_return(ctx, 0);
+	evg_opencl_abi_return(ctx, 0);
 }
 
 int evg_opencl_clFinish_impl(struct x86_ctx_t *ctx, int *argv_ptr)
@@ -1745,7 +1745,7 @@ void evg_opencl_clEnqueueReadBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	int code;
 
 	/* Read function arguments again */
-	code = evg_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	code = evg_opencl_abi_read_args(ctx, NULL, &argv, sizeof argv);
 	assert(code == 1053);
 
 	/* Get memory object */
@@ -1781,7 +1781,7 @@ void evg_opencl_clEnqueueReadBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 			argv.cb, opencl_mem->device_ptr + argv.offset, argv.ptr);
 
 	/* Return success */
-	evg_opencl_api_return(ctx, 0);
+	evg_opencl_abi_return(ctx, 0);
 }
 
 int evg_opencl_clEnqueueReadBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
@@ -1846,7 +1846,7 @@ void evg_opencl_clEnqueueWriteBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	int code;
 
 	/* Read function arguments again */
-	code = evg_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	code = evg_opencl_abi_read_args(ctx, NULL, &argv, sizeof argv);
 	assert(code == 1055);
 
 	/* Get memory object */
@@ -1882,7 +1882,7 @@ void evg_opencl_clEnqueueWriteBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 			argv.cb, argv.ptr, opencl_mem->device_ptr + argv.offset);
 
 	/* Return success */
-	evg_opencl_api_return(ctx, 0);
+	evg_opencl_abi_return(ctx, 0);
 }
 
 int evg_opencl_clEnqueueWriteBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
@@ -1946,7 +1946,7 @@ void evg_opencl_clEnqueueCopyBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	int code;
 
 	/* Read function arguments again */
-	code = evg_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	code = evg_opencl_abi_read_args(ctx, NULL, &argv, sizeof argv);
 	assert(code == 1057);
 
 	/* Get memory objects */
@@ -1984,7 +1984,7 @@ void evg_opencl_clEnqueueCopyBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 			dst_mem->device_ptr + argv.dst_offset);
 
 	/* Return success */
-	evg_opencl_api_return(ctx, 0);
+	evg_opencl_abi_return(ctx, 0);
 }
 
 int evg_opencl_clEnqueueCopyBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
@@ -2053,7 +2053,7 @@ void evg_opencl_clEnqueueReadImage_wakeup(struct x86_ctx_t *ctx, void *data)
 	int code;
 
 	/* Read function arguments again */
-	code = evg_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	code = evg_opencl_abi_read_args(ctx, NULL, &argv, sizeof argv);
 	assert(code == 1059);
 
 	/* Get memory object */
@@ -2112,7 +2112,7 @@ void evg_opencl_clEnqueueReadImage_wakeup(struct x86_ctx_t *ctx, void *data)
 			opencl_mem->size, opencl_mem->device_ptr, argv.ptr);
 
 	/* Return success */
-	evg_opencl_api_return(ctx, 0);
+	evg_opencl_abi_return(ctx, 0);
 }
 
 int evg_opencl_clEnqueueReadImage_impl(struct x86_ctx_t *ctx, int *argv_ptr)
@@ -2175,7 +2175,7 @@ void evg_opencl_clEnqueueMapBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	int zero = 0;
 
 	/* Read function arguments again */
-	code = evg_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	code = evg_opencl_abi_read_args(ctx, NULL, &argv, sizeof argv);
 	assert(code == 1064);
 
 	/* Get memory object */
@@ -2203,7 +2203,7 @@ void evg_opencl_clEnqueueMapBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Return success */
-	evg_opencl_api_return(ctx, 0);
+	evg_opencl_abi_return(ctx, 0);
 }
 
 int evg_opencl_clEnqueueMapBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
@@ -2275,7 +2275,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	int i;
 
 	/* Read function arguments again */
-	code = evg_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	code = evg_opencl_abi_read_args(ctx, NULL, &argv, sizeof argv);
 	assert(code == 1067);
 
 	/* Get kernel */
@@ -2403,7 +2403,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	ndrange->command = task;
 
 	/* Return success */
-	evg_opencl_api_return(ctx, 0);
+	evg_opencl_abi_return(ctx, 0);
 }
 
 int evg_opencl_clEnqueueNDRangeKernel_impl(struct x86_ctx_t *ctx, int *argv_ptr)

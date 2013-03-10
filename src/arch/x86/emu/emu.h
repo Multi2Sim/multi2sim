@@ -24,13 +24,6 @@
 #include <stdio.h>
 
 
-enum x86_emu_gpu_kind_t
-{
-	x86_emu_gpu_invalid = 0,
-	x86_emu_gpu_evergreen,
-	x86_emu_gpu_southern_islands
-};
-
 struct x86_emu_t
 {
 	/* pid & address_space_index assignment */
@@ -51,9 +44,6 @@ struct x86_emu_t
 	
 	/* Flag set when any context changes any status other than 'specmode' */
 	int context_reschedule;
-
-	/* GPU emulation */
-	enum x86_emu_gpu_kind_t gpu_kind;
 
 	/* List of contexts */
 	struct x86_ctx_t *context_list_head;
