@@ -28,6 +28,7 @@
 #include "event.h"
 #include "mem.h"
 #include "mhandle.h"
+#include "misc.h"
 
 
 /* Memory read */
@@ -358,7 +359,7 @@ struct opencl_command_t *opencl_command_create_launch_kernel(
 	command->launch_kernel.work_dim = work_dim;
 
 	/* Work sizes */
-	assert(work_dim < 3);
+	assert(IN_RANGE(work_dim, 1, 3));
 	assert(global_work_size);
 	for (i = 0; i < work_dim; i++)
 	{
