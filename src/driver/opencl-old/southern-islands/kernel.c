@@ -118,6 +118,11 @@ struct si_opencl_kernel_arg_t *si_opencl_kernel_arg_create(char *name)
 
 void si_opencl_kernel_arg_free(struct si_opencl_kernel_arg_t *arg)
 {
+	if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_VALUE)
+	{
+		if (arg->value.value)
+			free(arg->value.value);
+	}
 	free(arg);
 }
 

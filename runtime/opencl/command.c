@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "device.h"
 #include "event.h"
+#include "mem.h"
 #include "mhandle.h"
 
 
@@ -74,14 +75,66 @@ static void opencl_command_run_mem_copy(struct opencl_command_t *command)
 /* Map a buffer */
 static void opencl_command_run_map_buffer(struct opencl_command_t *command)
 {
-	warning("%s: not implemented", __FUNCTION__);
+	struct opencl_mem_t *mem = command->map_buffer.mem;
+	struct opencl_device_t *device = command->device;
+
+	/* Check that host pointer is still valid. This may not be true
+	 * if there was a map/unmap race condition between command queues. */
+	if (!mem->mapped)
+		fatal("%s: cl_mem no longer mapped - race condition?",
+				__FUNCTION__);
+
+	/* If the CL_MAP_READ flag was set, copy buffer from device to host */
+	assert(mem->host_ptr);
+	if (mem->map_flags & 1)
+	{
+		device->arch_device_mem_read_func(
+				device->arch_device,
+				mem->host_ptr + mem->map_offset,
+				mem->device_ptr + mem->map_offset,
+				mem->map_size);
+		opencl_debug("\t%d bytes copied from device [%p+%u] to host [%p+%u]\n",
+				mem->map_size, mem->device_ptr, mem->map_offset,
+				mem->host_ptr, mem->map_offset);
+	}
 }
 
 
 /* Unmap a buffer */
 static void opencl_command_run_unmap_buffer(struct opencl_command_t *command)
 {
-	warning("%s: not implemented", __FUNCTION__);
+	struct opencl_mem_t *mem = command->unmap_buffer.mem;
+	struct opencl_device_t *device = command->device;
+
+	/* Check that host pointer is still valid. This may not be true if
+	 * there was a map/unmap race condition between command queues. */
+	if (!mem->mapped)
+		fatal("%s: cl_mem no longer mapped - race condition?",
+				__FUNCTION__);
+
+	/* If the CL_MAP_WRITE flag was set, copy buffer from host to device */
+	assert(mem->host_ptr);
+	if (mem->map_flags & 2)
+	{
+		device->arch_device_mem_write_func(
+				device->arch_device,
+				mem->device_ptr + mem->map_offset,
+				mem->host_ptr + mem->map_offset,
+				mem->map_size);
+		opencl_debug("\t%d bytes copied from host [%p+%u] to devicem [%p+%u]\n",
+				mem->map_size, mem->host_ptr, mem->map_offset,
+				mem->device_ptr, mem->map_offset);
+	}
+
+	/* Free host memory, but only if the host buffer was allocated with a call
+	 * to clMapBuffer. This is not the case when the buffer used a host
+	 * pointer given by the user in clCreateBuffer. */
+	assert(mem->host_ptr);
+	if (!mem->use_host_ptr)
+	{
+		free(mem->host_ptr);
+		mem->host_ptr = NULL;
+	}
 }
 
 
@@ -242,26 +295,42 @@ struct opencl_command_t *opencl_command_create_mem_copy(
 
 
 struct opencl_command_t *opencl_command_create_map_buffer(
+		struct opencl_mem_t *mem,
 		struct opencl_command_queue_t *command_queue,
 		struct opencl_event_t **done_event_ptr,
 		int num_wait_events,
 		struct opencl_event_t **wait_events)
 {
-	return opencl_command_create(opencl_command_map_buffer,
+	struct opencl_command_t *command;
+
+	/* Initialize */
+	command = opencl_command_create(opencl_command_map_buffer,
 			opencl_command_run_map_buffer, command_queue,
 			done_event_ptr, num_wait_events, wait_events);
+	command->map_buffer.mem = mem;
+
+	/* Return */
+	return command;
 }
 
 
 struct opencl_command_t *opencl_command_create_unmap_buffer(
+		struct opencl_mem_t *mem,
 		struct opencl_command_queue_t *command_queue,
 		struct opencl_event_t **done_event_ptr,
 		int num_wait_events,
 		struct opencl_event_t **wait_events)
 {
-	return opencl_command_create(opencl_command_unmap_buffer,
+	struct opencl_command_t *command;
+
+	/* Initialize */
+	command = opencl_command_create(opencl_command_unmap_buffer,
 			opencl_command_run_unmap_buffer, command_queue,
 			done_event_ptr, num_wait_events, wait_events);
+	command->unmap_buffer.mem = mem;
+
+	/* Return */
+	return command;
 }
 
 

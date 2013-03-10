@@ -72,6 +72,14 @@ struct opencl_command_t
 		} mem_copy;
 
 		struct {
+			struct opencl_mem_t *mem;
+		} map_buffer;
+
+		struct {
+			struct opencl_mem_t *mem;
+		} unmap_buffer;
+
+		struct {
 			struct opencl_device_t *device;
 			void *arch_kernel;  /* Of type 'opencl_xxx_kernel_t' */
 			int work_dim;
@@ -131,12 +139,14 @@ struct opencl_command_t *opencl_command_create_mem_copy(
 		struct opencl_event_t **wait_events);
 
 struct opencl_command_t *opencl_command_create_map_buffer(
+		struct opencl_mem_t *mem,
 		struct opencl_command_queue_t *command_queue,
 		struct opencl_event_t **done_event_ptr,
 		int num_wait_events,
 		struct opencl_event_t **wait_events);
 
 struct opencl_command_t *opencl_command_create_unmap_buffer(
+		struct opencl_mem_t *mem,
 		struct opencl_command_queue_t *command_queue,
 		struct opencl_event_t **done_event_ptr,
 		int num_wait_events,

@@ -25,7 +25,6 @@
 
 #include <arch/southern-islands/emu/emu.h>
 
-#define SI_OPENCL_KERNEL_ARG_MAX_SIZE 64 
 
 enum si_opencl_kernel_arg_kind_t
 {
@@ -130,7 +129,7 @@ struct si_opencl_pass_by_value_argument_t
 	int num_elems;
 	int constant_buffer_num;
 	int constant_offset;
-	unsigned int value[SI_OPENCL_KERNEL_ARG_MAX_SIZE];
+	void *value;
 };
 
 struct si_opencl_pass_by_pointer_argument_t
