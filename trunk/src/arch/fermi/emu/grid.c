@@ -32,7 +32,7 @@
 #include "grid.h"
 #include "isa.h"
 #include "thread.h"
-#include "threadblock.h"
+#include "thread-block.h"
 #include "warp.h"
 
 
@@ -56,10 +56,10 @@ void frm_grid_free(struct frm_grid_t *grid)
 {
         int i;
 
-        /* Free threadblocks */
-        for (i = 0; i < grid->threadblock_count; i++)
-                frm_threadblock_free(grid->threadblocks[i]);
-        free(grid->threadblocks);
+        /* Free thread_blocks */
+        for (i = 0; i < grid->thread_block_count; i++)
+                frm_thread_block_free(grid->thread_blocks[i]);
+        free(grid->thread_blocks);
 
         /* Free warps */
         for (i = 0; i < grid->warp_count; i++)
@@ -122,11 +122,11 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 {
 	struct cuda_function_t *function = grid->function;
 
-	struct frm_threadblock_t *threadblock;
+	struct frm_thread_block_t *thread_block;
 	struct frm_warp_t *warp;
 	struct frm_thread_t *thread;
 
-	int bidx, bidy, bidz;  /* 3D threadblock ID iterators */
+	int bidx, bidy, bidz;  /* 3D thread_block ID iterators */
 	int lidx, lidy, lidz;  /* 3D thread local ID iterators */
 
 	int tid;  /* Global ID iterator */
@@ -134,33 +134,33 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 	int wid;  /* Warp ID iterator */
 	int lid;  /* Local ID iterator */
 
-	/* Array of threadblocks */
-	grid->threadblock_count = function->group_count;
-	grid->threadblock_id_first = 0;
-	grid->threadblock_id_last = grid->threadblock_count - 1;
-	grid->threadblocks = xcalloc(grid->threadblock_count, sizeof(void *));
-	for (bid = 0; bid < grid->threadblock_count; bid++)
-		grid->threadblocks[bid] = frm_threadblock_create();
+	/* Array of thread_blocks */
+	grid->thread_block_count = function->group_count;
+	grid->thread_block_id_first = 0;
+	grid->thread_block_id_last = grid->thread_block_count - 1;
+	grid->thread_blocks = xcalloc(grid->thread_block_count, sizeof(void *));
+	for (bid = 0; bid < grid->thread_block_count; bid++)
+		grid->thread_blocks[bid] = frm_thread_block_create();
 	
 	/* Array of warps */
-	grid->warps_per_threadblock = (function->local_size + frm_emu_warp_size - 1) / frm_emu_warp_size;
-	grid->warp_count = grid->warps_per_threadblock * grid->threadblock_count;
+	grid->warps_per_thread_block = (function->local_size + frm_emu_warp_size - 1) / frm_emu_warp_size;
+	grid->warp_count = grid->warps_per_thread_block * grid->thread_block_count;
 	grid->warp_id_first = 0;
 	grid->warp_id_last = grid->warp_count - 1;
-	assert(grid->warps_per_threadblock > 0 && grid->warp_count > 0);
+	assert(grid->warps_per_thread_block > 0 && grid->warp_count > 0);
 	grid->warps = xcalloc(grid->warp_count, sizeof(void *));
 	for (wid = 0; wid < grid->warp_count; wid++)
 	{
-		bid = wid / grid->warps_per_threadblock;
+		bid = wid / grid->warps_per_thread_block;
 		grid->warps[wid] = frm_warp_create();
 		warp = grid->warps[wid];
-		threadblock = grid->threadblocks[bid];
+		thread_block = grid->thread_blocks[bid];
 
 		warp->id = wid;
-		warp->id_in_threadblock = wid % grid->warps_per_threadblock;
+		warp->id_in_thread_block = wid % grid->warps_per_thread_block;
 		warp->grid = grid;
-		warp->threadblock = threadblock;
-		DOUBLE_LINKED_LIST_INSERT_TAIL(threadblock, running, warp);
+		warp->thread_block = thread_block;
+		DOUBLE_LINKED_LIST_INSERT_TAIL(thread_block, running, warp);
 	}
 
 	/* Array of threads */
@@ -176,28 +176,28 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 		{
 			for (bidx = 0; bidx < function->group_count3[0]; bidx++)
 			{
-				/* Assign threadblock ID */
-				threadblock = grid->threadblocks[bid];
-				threadblock->grid = grid;
-				threadblock->id_3d[0] = bidx;
-				threadblock->id_3d[1] = bidy;
-				threadblock->id_3d[2] = bidz;
-				threadblock->id = bid;
-				frm_threadblock_set_status(threadblock, frm_threadblock_pending);
+				/* Assign thread_block ID */
+				thread_block = grid->thread_blocks[bid];
+				thread_block->grid = grid;
+				thread_block->id_3d[0] = bidx;
+				thread_block->id_3d[1] = bidy;
+				thread_block->id_3d[2] = bidz;
+				thread_block->id = bid;
+				frm_thread_block_set_status(thread_block, frm_thread_block_pending);
 
-				/* First, last, and number of threads in threadblock */
-				threadblock->thread_id_first = tid;
-				threadblock->thread_id_last = tid + function->local_size - 1;
-				threadblock->thread_count = function->local_size;
-				threadblock->threads = &grid->threads[tid];
-				snprintf(threadblock->name, sizeof(threadblock->name), "threadblock[i%d-i%d]",
-					threadblock->thread_id_first, threadblock->thread_id_last);
+				/* First, last, and number of threads in thread_block */
+				thread_block->thread_id_first = tid;
+				thread_block->thread_id_last = tid + function->local_size - 1;
+				thread_block->thread_count = function->local_size;
+				thread_block->threads = &grid->threads[tid];
+				snprintf(thread_block->name, sizeof(thread_block->name), "thread_block[i%d-i%d]",
+					thread_block->thread_id_first, thread_block->thread_id_last);
 
-				/* First ,last, and number of warps in threadblock */
-				threadblock->warp_id_first = bid * grid->warps_per_threadblock;
-				threadblock->warp_id_last = threadblock->warp_id_first + grid->warps_per_threadblock - 1;
-				threadblock->warp_count = grid->warps_per_threadblock;
-				threadblock->warps = &grid->warps[threadblock->warp_id_first];
+				/* First ,last, and number of warps in thread_block */
+				thread_block->warp_id_first = bid * grid->warps_per_thread_block;
+				thread_block->warp_id_last = thread_block->warp_id_first + grid->warps_per_thread_block - 1;
+				thread_block->warp_count = grid->warps_per_thread_block;
+				thread_block->warps = &grid->warps[thread_block->warp_id_first];
 
 				/* Iterate through threads */
 				lid = 0;
@@ -208,7 +208,7 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 						for (lidx = 0; lidx < function->local_size3[0]; lidx++)
 						{
 							/* Warp ID */
-							wid = bid * grid->warps_per_threadblock +
+							wid = bid * grid->warps_per_thread_block +
 								lid / frm_emu_warp_size;
 							assert(wid < grid->warp_count);
 							warp = grid->warps[wid];
@@ -225,14 +225,14 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 							thread->id = tid;
 
 							/* Local IDs */
-							thread->id_in_threadblock_3d[0] = lidx;
-							thread->id_in_threadblock_3d[1] = lidy;
-							thread->id_in_threadblock_3d[2] = lidz;
-							thread->id_in_threadblock = lid;
+							thread->id_in_thread_block_3d[0] = lidx;
+							thread->id_in_thread_block_3d[1] = lidy;
+							thread->id_in_thread_block_3d[2] = lidz;
+							thread->id_in_thread_block = lid;
 
 							/* Other */
-							thread->id_in_warp = thread->id_in_threadblock % frm_emu_warp_size;
-							thread->threadblock = grid->threadblocks[bid];
+							thread->id_in_warp = thread->id_in_thread_block % frm_emu_warp_size;
+							thread->thread_block = grid->thread_blocks[bid];
 							thread->warp = grid->warps[wid];
 
 							/* First, last, and number of threads in warp */
@@ -249,7 +249,7 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
                                                         thread->sr[FRM_SR_Tid_Y].v.i = lidy;  /* R0.y */
                                                         thread->sr[FRM_SR_Tid_Z].v.i = lidz;  /* R0.z */
 
-                                                        /* Save threadblock IDs in register R1 */
+                                                        /* Save thread_block IDs in register R1 */
                                                         thread->sr[FRM_SR_CTAid_X].v.i = bidx;  /* R1.x */
                                                         thread->sr[FRM_SR_CTAid_Y].v.i = bidy;  /* R1.y */
                                                         thread->sr[FRM_SR_CTAid_Z].v.i = bidz;  /* R1.z */
@@ -261,7 +261,7 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 					}
 				}
 
-				/* Next threadblock */
+				/* Next thread_block */
 				bid++;
 			}
 		}
@@ -288,21 +288,21 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 	printf("group_count = %d (%d,%d,%d)\n", function->group_count, function->group_count3[0],
 		function->group_count3[1], function->group_count3[2]);
 	printf("warp_count = %d\n", grid->warp_count);
-	printf("warps_per_threadblock = %d\n", grid->warps_per_threadblock);
+	printf("warps_per_thread_block = %d\n", grid->warps_per_thread_block);
 	printf(" tid tid2 tid1 tid0   bid bid2 bid1 bid0   lid lid2 lid1 lid0  warp            work-group\n");
 	for (tid = 0; tid < grid->thread_count; tid++)
 	{
 		thread = grid->threads[tid];
 		warp = thread->warp;
-		threadblock = thread->threadblock;
+		thread_block = thread->thread_block;
 		printf("%4d %4d %4d %4d  ", thread->id, thread->id_3d[2],
 			thread->id_3d[1], thread->id_3d[0]);
-		printf("%4d %4d %4d %4d  ", threadblock->id, threadblock->id_3d[2],
-			threadblock->id_3d[1], threadblock->id_3d[0]);
-		printf("%4d %4d %4d %4d  ", thread->id_in_threadblock, thread->id_in_threadblock_3d[2],
-			thread->id_in_threadblock_3d[1], thread->id_in_threadblock_3d[0]);
+		printf("%4d %4d %4d %4d  ", thread_block->id, thread_block->id_3d[2],
+			thread_block->id_3d[1], thread_block->id_3d[0]);
+		printf("%4d %4d %4d %4d  ", thread->id_in_thread_block, thread->id_in_thread_block_3d[2],
+			thread->id_in_thread_block_3d[1], thread->id_in_thread_block_3d[0]);
 		printf("%20s.%-4d  ", warp->name, thread->id_in_warp);
-		printf("%20s.%-4d\n", threadblock->name, thread->id_in_threadblock);
+		printf("%20s.%-4d\n", thread_block->name, thread->id_in_thread_block);
 	}
 
 }
@@ -358,15 +358,15 @@ void frm_grid_setup_args(struct frm_grid_t *grid)
 
 void frm_grid_run(struct frm_grid_t *grid)
 {
-	struct frm_threadblock_t *threadblock, *threadblock_next;
+	struct frm_thread_block_t *thread_block, *thread_block_next;
 	struct frm_warp_t *warp, *warp_next;
 	unsigned long long int cycle = 0;
 
-	/* Set all ready threadblocks to running */
-	while ((threadblock = grid->pending_list_head))
+	/* Set all ready thread_blocks to running */
+	while ((thread_block = grid->pending_list_head))
 	{
-		frm_threadblock_clear_status(threadblock, frm_threadblock_pending);
-		frm_threadblock_set_status(threadblock, frm_threadblock_running);
+		frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
+		frm_thread_block_set_status(thread_block, frm_thread_block_running);
 	}
                 /* Set is in state 'running' */
                 frm_grid_clear_status(grid, frm_grid_pending);
@@ -392,13 +392,13 @@ void frm_grid_run(struct frm_grid_t *grid)
 		cycle++;
 
 		/* Execute an instruction from each work-group */
-		for (threadblock = grid->running_list_head; threadblock; threadblock = threadblock_next)
+		for (thread_block = grid->running_list_head; thread_block; thread_block = thread_block_next)
 		{
 			/* Save next running work-group */
-			threadblock_next = threadblock->running_list_next;
+			thread_block_next = thread_block->running_list_next;
 
 			/* Run an instruction from each warp */
-			for (warp = threadblock->running_list_head; warp; warp = warp_next)
+			for (warp = thread_block->running_list_head; warp; warp = warp_next)
 			{
 				/* Save next running warp */
 				warp_next = warp->running_list_next;
@@ -420,8 +420,8 @@ void frm_grid_run(struct frm_grid_t *grid)
 
 void frm_grid_dump(struct frm_grid_t *grid, FILE *f)
 {
-	struct frm_threadblock_t *threadblock;
-	int threadblock_id;
+	struct frm_thread_block_t *thread_block;
+	int thread_block_id;
 	int thread_id, last_thread_id;
 	uint32_t branch_digest, last_branch_digest;
 	int branch_digest_count;
@@ -431,9 +431,9 @@ void frm_grid_dump(struct frm_grid_t *grid, FILE *f)
 	
 	fprintf(f, "[ Grid[%d] ]\n\n", grid->id);
 	fprintf(f, "Name = %s\n", grid->name);
-	fprintf(f, "ThreadBlockFirst = %d\n", grid->threadblock_id_first);
-	fprintf(f, "ThreadBlockLast = %d\n", grid->threadblock_id_last);
-	fprintf(f, "ThreadBlockCount = %d\n", grid->threadblock_count);
+	fprintf(f, "ThreadBlockFirst = %d\n", grid->thread_block_id_first);
+	fprintf(f, "ThreadBlockLast = %d\n", grid->thread_block_id_last);
+	fprintf(f, "ThreadBlockCount = %d\n", grid->thread_block_count);
 	fprintf(f, "WarpFirst = %d\n", grid->warp_id_first);
 	fprintf(f, "WarpLast = %d\n", grid->warp_id_last);
 	fprintf(f, "WarpCount = %d\n", grid->warp_count);
@@ -462,10 +462,10 @@ void frm_grid_dump(struct frm_grid_t *grid, FILE *f)
 	fprintf(f, "\n");
 
 	/* Threadblock */
-	FRM_FOR_EACH_THREADBLOCK_IN_GRID(grid, threadblock_id)
+	FRM_FOR_EACH_THREADBLOCK_IN_GRID(grid, thread_block_id)
 	{
-		threadblock = grid->threadblocks[threadblock_id];
-		frm_threadblock_dump(threadblock, f);
+		thread_block = grid->thread_blocks[thread_block_id];
+		frm_thread_block_dump(thread_block, f);
 	}
 }
 

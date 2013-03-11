@@ -17,8 +17,8 @@ libemu_a_SOURCES = \
 	thread.c \
 	thread.h \
 	\
-	threadblock.c \
-	threadblock.h \
+	thread-block.c \
+	thread-block.h \
 	\
 	warp.c \
 	warp.h

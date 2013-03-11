@@ -32,16 +32,16 @@ struct frm_warp_t
 	/* ID */
 	int id;
 	char name[MAX_STRING_SIZE];
-	int id_in_threadblock;
+	int id_in_thread_block;
 
 	/* IDs of threads it contains */
 	int thread_id_first;
 	int thread_id_last;
 	int thread_count;
 
-	/* Grid and threadblock it belongs to */
+	/* Grid and thread_block it belongs to */
 	struct frm_grid_t *grid;
-	struct frm_threadblock_t *threadblock;
+	struct frm_thread_block_t *thread_block;
 
 	/* Pointer to threads */
 	struct frm_thread_t **threads;  /* Pointer to first threads in 'function->threads' */

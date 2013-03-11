@@ -25,7 +25,7 @@
  * There variables are set before calling the instruction emulation function in
  * 'machine.c' to avoid passing pointers. */
 extern struct frm_grid_t *frm_isa_grid;
-extern struct frm_threadblock_t *frm_isa_threadblock;
+extern struct frm_thread_block_t *frm_isa_thread_block;
 extern struct frm_warp_t *frm_isa_warp;
 extern struct frm_thread_t *frm_isa_thread;
 extern struct frm_inst_t *frm_isa_inst;

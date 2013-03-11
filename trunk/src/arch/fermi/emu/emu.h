@@ -25,6 +25,9 @@
 
 struct frm_emu_t
 {
+	/* Timer */
+	struct m2s_timer_t *timer;
+
         /* List of ND-Ranges */
         struct frm_grid_t *grid_list_head;
         struct frm_grid_t *grid_list_tail;
@@ -66,6 +69,13 @@ struct frm_emu_t
 	/* Stats */
 	int grid_count;  /* Number of CUDA functions executed */
 	long long inst_count;  /* Number of instructions executed by warps */
+	long long scalar_alu_inst_count;  /* Scalar ALU instructions executed */
+	long long scalar_mem_inst_count;  /* Scalar mem instructions executed */
+	long long branch_inst_count;  /* Branch instructions executed */
+	long long vector_alu_inst_count;  /* Vector ALU instructions executed */
+	long long lds_inst_count;  /* LDS instructions executed */
+	long long vector_mem_inst_count;  /* Vector mem instructions executed */
+	long long export_inst_count; /* Export instruction executed */
 };
 
 extern enum arch_sim_kind_t frm_emu_sim_kind;
