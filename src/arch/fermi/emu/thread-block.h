@@ -21,14 +21,14 @@
 #define FERMI_EMU_THREADBLOCK_H
 
 
-enum frm_threadblock_status_t
+enum frm_thread_block_status_t
 {
-	frm_threadblock_pending		= 0x0001,
-	frm_threadblock_running		= 0x0002,
-	frm_threadblock_finished	= 0x0004
+	frm_thread_block_pending		= 0x0001,
+	frm_thread_block_running		= 0x0002,
+	frm_thread_block_finished	= 0x0004
 };
 
-struct frm_threadblock_t
+struct frm_thread_block_t
 {
 	/* ID */
 	int id;
@@ -36,7 +36,7 @@ struct frm_threadblock_t
 	int id_3d[3];
 
 	/* Status */
-	enum frm_threadblock_status_t status;
+	enum frm_thread_block_status_t status;
 
 	/* Grid it belongs to */
 	struct frm_grid_t *grid;
@@ -55,13 +55,13 @@ struct frm_threadblock_t
 	struct frm_thread_t **threads;  /* Pointer to first thread in 'function->threads' */
 	struct frm_warp_t **warps;  /* Pointer to first warp in 'function->warps' */
 
-	/* Double linked lists of threadblocks */
-	struct frm_threadblock_t *pending_list_prev;
-	struct frm_threadblock_t *pending_list_next;
-	struct frm_threadblock_t *running_list_prev;
-	struct frm_threadblock_t *running_list_next;
-	struct frm_threadblock_t *finished_list_prev;
-	struct frm_threadblock_t *finished_list_next;
+	/* Double linked lists of thread_blocks */
+	struct frm_thread_block_t *pending_list_prev;
+	struct frm_thread_block_t *pending_list_next;
+	struct frm_thread_block_t *running_list_prev;
+	struct frm_thread_block_t *running_list_next;
+	struct frm_thread_block_t *finished_list_prev;
+	struct frm_thread_block_t *finished_list_next;
 
 	/* List of running warps */
 	struct frm_warp_t *running_list_head;
@@ -90,16 +90,16 @@ struct frm_threadblock_t
 };
 
 #define FRM_FOR_EACH_THREADBLOCK_IN_GRID(GRID, THREADBLOCK_ID) \
-	for ((THREADBLOCK_ID) = (GRID)->threadblock_id_first; \
-		(THREADBLOCK_ID) <= (GRID)->threadblock_id_last; \
+	for ((THREADBLOCK_ID) = (GRID)->thread_block_id_first; \
+		(THREADBLOCK_ID) <= (GRID)->thread_block_id_last; \
 		(THREADBLOCK_ID)++)
 
-struct frm_threadblock_t *frm_threadblock_create(void);
-void frm_threadblock_free(struct frm_threadblock_t *threadblock);
-void frm_threadblock_dump(struct frm_threadblock_t *threadblock, FILE *f);
-int frm_threadblock_get_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status);
-void frm_threadblock_set_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status);
-void frm_threadblock_clear_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status);
+struct frm_thread_block_t *frm_thread_block_create(void);
+void frm_thread_block_free(struct frm_thread_block_t *thread_block);
+void frm_thread_block_dump(struct frm_thread_block_t *thread_block, FILE *f);
+int frm_thread_block_get_status(struct frm_thread_block_t *thread_block, enum frm_thread_block_status_t status);
+void frm_thread_block_set_status(struct frm_thread_block_t *thread_block, enum frm_thread_block_status_t status);
+void frm_thread_block_clear_status(struct frm_thread_block_t *thread_block, enum frm_thread_block_status_t status);
 
 
 #endif

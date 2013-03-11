@@ -48,15 +48,15 @@ struct frm_thread_t
 	/* IDs */
 	int id;  /* global ID */
 	int id_in_warp;
-	int id_in_threadblock;  /* local ID */
+	int id_in_thread_block;  /* local ID */
 
 	/* 3-dimensional IDs */
 	int id_3d[3];  /* global 3D IDs */
-	int id_in_threadblock_3d[3];  /* local 3D IDs */
+	int id_in_thread_block_3d[3];  /* local 3D IDs */
 
-	/* Warp, threadblock, and grid where it belongs */
+	/* Warp, thread_block, and grid where it belongs */
 	struct frm_warp_t *warp;
-	struct frm_threadblock_t *threadblock;
+	struct frm_thread_block_t *thread_block;
 	struct frm_grid_t *grid;
 
 	/* Thread state */
