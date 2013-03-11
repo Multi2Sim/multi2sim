@@ -29,7 +29,7 @@
 #include "grid.h"
 #include "machine.h"
 #include "thread.h"
-#include "threadblock.h"
+#include "thread-block.h"
 #include "warp.h"
 
 
@@ -169,7 +169,7 @@ void frm_warp_free(struct frm_warp_t *warp)
 void frm_warp_dump(struct frm_warp_t *warp, FILE *f)
 {
 	struct frm_grid_t *grid = warp->grid;
-	struct frm_threadblock_t *threadblock = warp->threadblock;
+	struct frm_thread_block_t *thread_block = warp->thread_block;
 
 	if (!f)
 		return;
@@ -178,7 +178,7 @@ void frm_warp_dump(struct frm_warp_t *warp, FILE *f)
 	fprintf(f, "[ NDRange[%d].Wavefront[%d] ]\n\n", grid->id, warp->id);
 
 	fprintf(f, "Name = %s\n", warp->name);
-	fprintf(f, "WorkGroup = %d\n", threadblock->id);
+	fprintf(f, "WorkGroup = %d\n", thread_block->id);
 	fprintf(f, "WorkItemFirst = %d\n", warp->thread_id_first);
 	fprintf(f, "WorkItemLast = %d\n", warp->thread_id_last);
 	fprintf(f, "WorkItemCount = %d\n", warp->thread_count);
@@ -218,17 +218,17 @@ void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
 /* Execute one instruction in the warp */
 void frm_warp_execute(struct frm_warp_t *warp)
 {
-	struct frm_threadblock_t *threadblock;
+	struct frm_thread_block_t *thread_block;
 	struct frm_thread_t *thread;
 	struct frm_inst_t *inst;
 
 	/* Get current work-group */
 	struct frm_grid_t *grid = warp->grid;
 	warp = warp;
-	threadblock = warp->threadblock;
+	thread_block = warp->thread_block;
 	thread = NULL;
 	inst = NULL;
-	assert(!DOUBLE_LINKED_LIST_MEMBER(threadblock, finished, warp));
+	assert(!DOUBLE_LINKED_LIST_MEMBER(thread_block, finished, warp));
 
 	/* Reset instruction flags */
 	warp->global_mem_write = 0;
@@ -277,18 +277,18 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	if (warp->finished)
 	{
 		/* Check if warp finished kernel execution */
-		assert(DOUBLE_LINKED_LIST_MEMBER(threadblock, running, warp));
-		assert(!DOUBLE_LINKED_LIST_MEMBER(threadblock, finished, warp));
-		DOUBLE_LINKED_LIST_REMOVE(threadblock, running, warp);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(threadblock, finished, warp);
+		assert(DOUBLE_LINKED_LIST_MEMBER(thread_block, running, warp));
+		assert(!DOUBLE_LINKED_LIST_MEMBER(thread_block, finished, warp));
+		DOUBLE_LINKED_LIST_REMOVE(thread_block, running, warp);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(thread_block, finished, warp);
 
 		/* Check if work-group finished kernel execution */
-		if (threadblock->finished_list_count == threadblock->warp_count)
+		if (thread_block->finished_list_count == thread_block->warp_count)
 		{
-			assert(DOUBLE_LINKED_LIST_MEMBER(grid, running, threadblock));
-			assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished, threadblock));
-			frm_threadblock_clear_status(threadblock, frm_threadblock_running);
-			frm_threadblock_set_status(threadblock, frm_threadblock_finished);
+			assert(DOUBLE_LINKED_LIST_MEMBER(grid, running, thread_block));
+			assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished, thread_block));
+			frm_thread_block_clear_status(thread_block, frm_thread_block_running);
+			frm_thread_block_set_status(thread_block, frm_thread_block_finished);
 		}
 	}
 }

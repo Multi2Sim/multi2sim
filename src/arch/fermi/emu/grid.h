@@ -46,15 +46,29 @@ struct frm_grid_t
 	/* CUDA function associated */
 	struct cuda_function_t *function;
 
-	/* Pointers to threadblocks, warps, and threads */
-	struct frm_threadblock_t **threadblocks;
+	/* Number of work dimensions */
+	int work_dim;
+
+	/* 3D work size counters */
+	int global_size3[3];  /* Total number of work_items */
+	int local_size3[3];  /* Number of work_items in a group */
+	int group_count3[3];  /* Number of work_item groups */
+
+	/* 1D work size counters. Each counter is equal to the multiplication
+	 * of each component in the corresponding 3D counter. */
+	int global_size;
+	int local_size;
+	int group_count;
+
+	/* Pointers to thread_blocks, warps, and threads */
+	struct frm_thread_block_t **thread_blocks;
 	struct frm_warp_t **warps;
 	struct frm_thread_t **threads;
 
-	/* IDs of threadblocks contained */
-	int threadblock_id_first;
-	int threadblock_id_last;
-	int threadblock_count;
+	/* IDs of thread_blocks contained */
+	int thread_block_id_first;
+	int thread_block_id_last;
+	int thread_block_count;
 	
 	/* IDs of warps contained */
 	int warp_id_first;
@@ -66,8 +80,8 @@ struct frm_grid_t
 	int thread_id_last;
 	int thread_count;
 
-	/* Size of threadblocks */
-	int warps_per_threadblock;  /* = ceil(local_size / frm_emu_warp_size) */
+	/* Size of thread_blocks */
+	int warps_per_thread_block;  /* = ceil(local_size / frm_emu_warp_size) */
 
         /* List of Grid */
         struct frm_grid_t *grid_list_prev;
@@ -79,23 +93,34 @@ struct frm_grid_t
         struct frm_grid_t *finished_grid_list_prev;
         struct frm_grid_t *finished_grid_list_next;
 
-	/* List of pending threadblocks */
-	struct frm_threadblock_t *pending_list_head;
-	struct frm_threadblock_t *pending_list_tail;
+	/* List of pending thread_blocks */
+	struct frm_thread_block_t *pending_list_head;
+	struct frm_thread_block_t *pending_list_tail;
 	int pending_list_count;
 	int pending_list_max;
 
-	/* List of running threadblocks */
-	struct frm_threadblock_t *running_list_head;
-	struct frm_threadblock_t *running_list_tail;
+	/* List of running thread_blocks */
+	struct frm_thread_block_t *running_list_head;
+	struct frm_thread_block_t *running_list_tail;
 	int running_list_count;
 	int running_list_max;
 
-	/* List of finished threadblocks */
-	struct frm_threadblock_t *finished_list_head;
-	struct frm_threadblock_t *finished_list_tail;
+	/* List of finished thread_blocks */
+	struct frm_thread_block_t *finished_list_head;
+	struct frm_thread_block_t *finished_list_tail;
 	int finished_list_count;
 	int finished_list_max;
+
+	/* Local memory top to assign to local arguments.
+	 * Initially it is equal to the size of local variables in 
+	 * kernel function. */
+	unsigned int local_mem_top;
+
+	/* Number of register used by each work-item. This fields determines
+	 * how many work-groups can be allocated per compute unit, among
+	 * others. */
+	unsigned int num_vgpr_used;
+	unsigned int num_sgpr_used;
 };
 
 struct frm_grid_t *frm_grid_create(struct cuda_function_t *function);
