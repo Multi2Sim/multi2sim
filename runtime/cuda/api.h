@@ -23,9 +23,9 @@
 
 
 /* Debug */
-extern int cuda_debug;
+extern int cuda_enable_debug;
 
-#define cuda_debug(stream, ...) (cuda_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+#define cuda_debug(stream, ...) (cuda_enable_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
 
 
 
