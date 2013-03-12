@@ -8,13 +8,15 @@ CUBIN = $(patsubst %.cu,%.cubin,$(CU))
 OBJDIR = obj
 OBJS = $(patsubst %.cpp,$(OBJDIR)/%.cpp.o,$(CPPS)) $(patsubst %.cu,$(OBJDIR)/%.cu.o,$(CU))
 
+M2S_ROOT = ../../..
+
 # compilers
 CXX = g++
 NVCC = nvcc
 CXXFLAGS = -Wall -m32
 NVCCFLAGS = -arch sm_20 -m 32
 INCS = -I.
-LIBS = -L/usr/local/lib -static -lm2s-cuda
+LIBS = -L$(M2S_ROOT)/lib/.libs -static -lm2s-cuda
 
 $(ELF): makeobjdir $(OBJS) $(CUBIN)
 	$(CXX) -o $@ $(CXXFLAGS) $(OBJS) $(LIBS)
