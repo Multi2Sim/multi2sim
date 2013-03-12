@@ -79,7 +79,7 @@ void versionCheck(void)
 	int ret;
 
 	env = getenv("LIBM2S_CUDA_DUMP");
-	cuda_debug = ((env[0] == '1') && (env[1] == '\0'));
+	cuda_debug = env && !strcmp(env, "1");
 
 	cuda_debug(stdout, "CUDA driver internal function '%s'\n", __FUNCTION__);
 
