@@ -13,7 +13,7 @@ M2S_ROOT = ../../..
 # compilers
 CXX = g++
 NVCC = nvcc
-CXXFLAGS = -Wall -m32
+CXXFLAGS = -Wall -g -m32
 NVCCFLAGS = -arch sm_20 -m 32
 INCS = -I.
 LIBS = -L$(M2S_ROOT)/lib/.libs -static -lm2s-cuda
