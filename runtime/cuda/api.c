@@ -27,7 +27,7 @@
 
 
 /* Debug */
-int cuda_debug = 0;
+int cuda_enable_debug = 0;
 
 /* Error messages */
 #define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", \
@@ -80,7 +80,8 @@ void versionCheck(void)
 	int ret;
 
 	env = getenv("LIBM2S_CUDA_DUMP");
-	cuda_debug = env && !strcmp(env, "1");
+	if (env != NULL)
+		cuda_enable_debug = !strcmp(env, "1");
 
 	cuda_debug(stdout, "CUDA driver internal function '%s'\n", __FUNCTION__);
 
