@@ -30,6 +30,7 @@ extern long offset;
 %option noyywrap
 %option nounput
 %option noinput
+%option yylineno
 
 %%
 

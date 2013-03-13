@@ -854,8 +854,8 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			break;
 
 		default:
-			fatal("%s: line %d: unsupported token for argument %d",
-					__FUNCTION__, yyget_lineno(), index + 1);
+			yyerror_fmt("unsupported token for argument %d",
+				index + 1);
 		}
 	}
 }

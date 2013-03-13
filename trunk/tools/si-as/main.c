@@ -40,7 +40,7 @@ char *input_file_name;
 void yyerror(const char *s)
 {
 	fprintf(stderr, "%s:%d: error: %s\n",
-			input_file_name, yyget_lineno(), s);
+			input_file_name, yylineno, s);
 	exit(1);
 }
 
@@ -49,7 +49,7 @@ void yyerror_fmt(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, "%s:%d: error: ", input_file_name, yyget_lineno());
+	fprintf(stderr, "%s:%d: error: ", input_file_name, yylineno);
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 	fflush(NULL);
@@ -59,16 +59,14 @@ void yyerror_fmt(char *fmt, ...)
 
 int main(int argc, char **argv) 
 {
-	FILE *f;
-
 	/* Check syntax */
 	if (argc != 2)
 		fatal("syntax: %s <file>", *argv);
 
 	/* Open input file */
 	input_file_name = argv[1];
-	f = fopen(input_file_name, "r");
-	if (!f)
+	yyin = fopen(input_file_name, "r");
+	if (!yyin)
 		fatal("%s: cannot open input file", input_file_name);
 	
 	/* Initialize */
@@ -79,7 +77,6 @@ int main(int argc, char **argv)
 	si_stream_init();
 
 	/* Parse input */
-	yyset_in(f);
 	yyparse();
 
 	/* Process tasks */

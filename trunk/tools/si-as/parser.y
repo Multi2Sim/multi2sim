@@ -46,9 +46,6 @@ extern char* yytext;
 extern int yylex(void);
 void yyerror(const char *s);
 
-int yyget_lineno(void);
-void yyset_lineno(int line_number);
-
 struct si_stream_t *stream;
 
 %}
@@ -107,9 +104,8 @@ rl_input
 
 rl_line
 	: TOK_NEW_LINE
-	{
-		yyset_lineno(yyget_lineno() + 1); 
-	}
+
+	| rl_label TOK_NEW_LINE
 
 	| rl_instr TOK_NEW_LINE
 	{
@@ -119,16 +115,7 @@ rl_line
 		si_stream_add_inst(si_out_stream, inst);
 		si_dis_inst_dump(inst, stdout);
 		si_dis_inst_free(inst);
-		
-		/* Next line */
-		yyset_lineno(yyget_lineno() + 1); 
 	}
-
-	| rl_label TOK_NEW_LINE
-	{
-		/* Next line */
-		yyset_lineno(yyget_lineno() + 1); 
-	} 
 ;
 
 rl_label
