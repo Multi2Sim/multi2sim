@@ -20,8 +20,9 @@
 #include <stdio.h>
 
 /* Bison parser globl functions */
-void yyset_in(FILE *in_str);
-int yyget_lineno(void);
 int yyparse(void);
 void yyerror(const char *s);
 void yyerror_fmt(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+
+extern int yylineno;
+extern FILE *yyin;
