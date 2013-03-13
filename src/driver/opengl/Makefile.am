@@ -6,6 +6,9 @@ libopengl_a_SOURCES = \
 	buffers.c \
 	buffers.h \
 	\
+	buffer-obj.c \
+	buffer-obj.h \
+	\
 	color-channel.c \
 	color-channel.h \
 	\
@@ -43,6 +46,9 @@ libopengl_a_SOURCES = \
 	span.c \
 	span.h \
 	\
+	transform-feedback.c \
+	transform-feedback.h \
+	\
 	vector.c \
 	vector.h \
 	\
@@ -51,9 +57,6 @@ libopengl_a_SOURCES = \
 	\
 	vertex-array.c \
 	vertex-array.h \
-	\
-	vertex-buffer.c \
-	vertex-buffer.h \
 	\
 	viewport.c \
 	viewport.h

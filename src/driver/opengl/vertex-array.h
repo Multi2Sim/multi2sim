@@ -31,31 +31,30 @@
 
 struct linked_list_t;
 struct opengl_context_t;
-struct opengl_vertex_buffer_obj_t;
+struct opengl_buffer_obj_t;
 
 struct opengl_vertex_client_array_t
 {
-	GLint size; /* the number of components per generic vertex attribute */
-	GLenum type;
-	GLenum format;
-	GLsizei	 stride;
-	GLsizei	 stride_byte;
-	//const GLubyte *ptr;
+	int size; /* the number of components per generic vertex attribute */
+	unsigned int type;
+	unsigned int format;
+	unsigned int stride;
+	unsigned int stride_byte;
 	unsigned int ptr;
-	GLboolean enabled;
-	GLboolean normalized;
-	GLboolean integer;
-	GLuint instance_divisor;
-	GLuint element_size;
-	GLuint	max_element;
-	struct opengl_vertex_buffer_obj_t *vbo;
+	unsigned char enabled;
+	unsigned char normalized;
+	unsigned char integer;
+	unsigned int instance_divisor;
+	unsigned int element_size;
+	unsigned int max_element;
+	struct opengl_buffer_obj_t *vbo;
 };
 
 struct opengl_vertex_array_obj_t
 {
-	GLint id;
-	GLint ref_count;
-	GLboolean delete_pending;
+	int id;
+	int ref_count;
+	unsigned char delete_pending;
 	struct opengl_vertex_client_array_t vtx_attrib[GL_MAX_VERTEX_ATTRIB_BINDINGS];
 };
 
@@ -63,8 +62,8 @@ struct opengl_vertex_array_obj_t
 struct opengl_vertex_array_attrib_t
 {
 	struct opengl_vertex_array_obj_t *curr_vao;			/* Current VAO bound to OpenGL context */
-	struct opengl_vertex_array_obj_t *default_vao;		/* Default VAO has id = 0 and initially is bound to curr_vao */
-	struct opengl_vertex_buffer_obj_t *curr_vbo;			/* Current VBO bound to OpenGL context */
+	struct opengl_vertex_array_obj_t *default_vao;		/* Default VAO has id = 0 */
+	struct opengl_buffer_obj_t *curr_vbo;			/* Current VBO bound to OpenGL context */
 };
 
 struct opengl_vertex_array_obj_t *opengl_vertex_array_obj_create();
@@ -79,7 +78,7 @@ struct opengl_vertex_array_obj_t *opengl_vertex_array_obj_repo_get(struct linked
 void opengl_vertex_array_obj_repo_add(struct linked_list_t *vao_repo, struct opengl_vertex_array_obj_t *vao);
 int opengl_vertex_array_obj_repo_remove(struct linked_list_t *vao_repo, struct opengl_vertex_array_obj_t *vao);
 
-void opengl_vertex_client_array_set_element_size(struct opengl_vertex_client_array_t *vtx_attrib, GLint size, GLenum type);
+void opengl_vertex_client_array_set_element_size(struct opengl_vertex_client_array_t *vtx_attrib, int size, unsigned int type);
 
 struct opengl_vertex_array_attrib_t *opengl_vertex_array_attrib_create();
 void opengl_vertex_array_attrib_free(struct opengl_vertex_array_attrib_t *vao_attrib);

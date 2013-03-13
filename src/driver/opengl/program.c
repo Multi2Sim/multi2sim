@@ -440,7 +440,7 @@ struct opengl_program_t *opengl_program_repo_get(struct linked_list_t *prg_repo,
 {
 	struct opengl_program_t *prg;
 
-	/* Search shader */
+	/* Search program */
 	LINKED_LIST_FOR_EACH(prg_repo)
 	{
 		prg = linked_list_get(prg_repo);

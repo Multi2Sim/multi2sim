@@ -23,14 +23,15 @@
 
 #include "opengl.h"
 #include "buffers.h"
+#include "buffer-obj.h"
 #include "context.h"
 #include "light.h"
+#include "matrix-stack.h"
 #include "program.h"
 #include "shader.h"
-#include "matrix-stack.h"
+#include "transform-feedback.h"
 #include "vertex.h"
 #include "vertex-array.h"
-#include "vertex-buffer.h"
 #include "viewport.h"
 
 
@@ -96,17 +97,17 @@ struct opengl_context_t *opengl_context_create(void)
 	/* Initialize light */
 	ctx->light = opengl_light_attrib_create();
 
-	/* Initialize shader objects table */
+	/* Initialize shader objects repository */
 	ctx->shader_repo = opengl_shader_repo_create();
 
-	/* Initialize program objects table */
+	/* Initialize program objects repository */
 	ctx->program_repo = opengl_program_repo_create();
 
-	/* Initialize VAO table */
+	/* Initialize VAO repository */
 	ctx->vao_repo = opengl_vertex_array_obj_repo_create();
 
-	/* Initialize VBO table */
-	ctx->vbo_repo = opengl_vertex_buffer_obj_repo_create();
+	/* Initialize Buffer objects repository */
+	ctx->buf_repo = opengl_buffer_obj_repo_create();
 
 	/* Initialize current color */
 	GLfloat init_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -120,6 +121,9 @@ struct opengl_context_t *opengl_context_create(void)
 
 	/* Initialize VAO/VBO binding point */
 	ctx->array_attrib = opengl_vertex_array_attrib_create();
+
+	/* Transform feedback binding point */
+	ctx->transform_feedback = opengl_transform_feedback_binding_create();
 
 	/* Return */
 	return ctx;
@@ -155,20 +159,23 @@ void opengl_context_free(struct opengl_context_t *ctx)
 	/* Free light */
 	opengl_light_attrib_free(ctx->light);
 
-	/* Free shader objects table */
+	/* Free shader objects repository */
 	opengl_shader_repo_free(ctx->shader_repo);
 
-	/* Free program objects table*/
+	/* Free program objects repository*/
 	opengl_program_repo_free(ctx->program_repo);
 
-	/* Free VAO table */
+	/* Free VAO repository */
 	opengl_vertex_array_obj_repo_free(ctx->vao_repo);
 
-	/* Free VBO table */
-	opengl_vertex_buffer_obj_repo_free(ctx->vbo_repo);
+	/* Free Buffer Object repository */
+	opengl_buffer_obj_repo_free(ctx->buf_repo);
 
 	/* Free VAO/VBO binding points */
 	opengl_vertex_array_attrib_free(ctx->array_attrib);
+
+	/* Free Transform Feedback binding point */
+	opengl_transform_feedback_binding_free(ctx->transform_feedback);
 
 	free(ctx);
 }
@@ -198,4 +205,91 @@ struct opengl_current_attrib_t *opengl_current_attrib_create()
 void opengl_current_attrib_free(struct opengl_current_attrib_t *crnt)
 {
 	free(crnt);
+}
+
+struct opengl_buffer_obj_t *opengl_context_get_bound_buffer(unsigned int target, struct opengl_context_t *ctx)
+{
+	struct opengl_buffer_obj_t *buf_obj;
+
+	switch(target)
+	{
+	case GL_ARRAY_BUFFER:
+	{
+		buf_obj = ctx->array_attrib->curr_vbo;
+		break;
+	}
+	case GL_ATOMIC_COUNTER_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+	case GL_COPY_READ_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+	case GL_COPY_WRITE_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+	case GL_DRAW_INDIRECT_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+/*	case GL_DISPATCH_INDIRECT_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+*/	case GL_ELEMENT_ARRAY_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+	case GL_PIXEL_PACK_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+	case GL_PIXEL_UNPACK_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+/*	case GL_SHADER_STORAGE_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+*/	case GL_TEXTURE_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+	case GL_TRANSFORM_FEEDBACK_BUFFER:
+	{
+		buf_obj = ctx->transform_feedback->curr_buf;
+		break;
+	}
+	case GL_UNIFORM_BUFFER:
+	{
+		buf_obj = NULL;
+		break;
+	}
+	default:
+		break;
+	}
+
+	if (!buf_obj)
+	{
+		opengl_debug("\t\tNo Buffer Object attached to binding point!\n");
+		return NULL;		
+	}
+	else
+	{
+		opengl_debug("\t\tFind Buffer Object #%d [%p] on binding point\n", buf_obj->id, buf_obj);
+		return buf_obj;
+	}
 }

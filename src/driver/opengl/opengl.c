@@ -33,6 +33,7 @@
 #include <mem-system/memory.h>
 
 #include "buffers.h"
+#include "buffer-obj.h"
 #include "context.h"
 #include "light.h"
 #include "material.h"
@@ -42,9 +43,9 @@
 #include "program.h"
 #include "rasterizer.h"
 #include "shader.h"
+#include "transform-feedback.h"
 #include "vertex.h"
 #include "vertex-array.h"
-#include "vertex-buffer.h"
 #include "viewport.h"
 
 /* Debug */
@@ -526,9 +527,9 @@ static int opengl_func_glDrawBuffer(struct x86_ctx_t *ctx)
 	mode_ptr = regs->ecx;
 	opengl_debug("\tmode_ptr=0x%x\n", mode_ptr);
 
-	GLenum mode;
+	unsigned int mode;
 
-	mem_read(mem, mode_ptr, sizeof(GLenum), &mode);
+	mem_read(mem, mode_ptr, sizeof(unsigned int), &mode);
 
 	/* Set color buffers */
 	fatal("Not implemented yet!\n");
@@ -558,8 +559,8 @@ static int opengl_func_glReadBuffer(struct x86_ctx_t *ctx)
 	mode_ptr = regs->ecx;
 	opengl_debug("\tmode_ptr=0x%x\n", mode_ptr);
 
-	GLenum mode;
-	mem_read(mem, mode_ptr, sizeof(GLenum), &mode);
+	unsigned int mode;
+	mem_read(mem, mode_ptr, sizeof(unsigned int), &mode);
 
 	/* Set color buffers */
 	fatal("Not implemented yet!\n");
@@ -588,9 +589,9 @@ static int opengl_func_glEnable(struct x86_ctx_t *ctx)
 	cap_ptr = regs->ecx;
 	opengl_debug("\tcap_ptr=0x%x\n", cap_ptr);
 
-	GLenum cap;
+	unsigned int cap;
 
-	mem_read(mem, cap_ptr, sizeof(GLenum), &cap);
+	mem_read(mem, cap_ptr, sizeof(unsigned int), &cap);
 
 	switch(cap)
 	{
@@ -1245,7 +1246,656 @@ static int opengl_func_glEnable(struct x86_ctx_t *ctx)
  */
 static int opengl_func_glDisable(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[1];
+	unsigned int cap;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
+	cap = args[0];
+
+	switch(cap)
+	{
+
+	case GL_ALPHA_TEST:
+
+		{
+			opengl_ctx->context_cap->is_alpha_test = GL_FALSE;
+			opengl_debug("\tGL_ALPHA_TEST disabled!\n");
+			break;
+		}
+
+	case GL_AUTO_NORMAL:
+
+		{
+			opengl_ctx->context_cap->is_auto_normal = GL_FALSE;
+			opengl_debug("\tGL_AUTO_NORMAL disabled!\n");
+			break;
+		}
+
+	case GL_BLEND:
+
+		{
+			opengl_ctx->context_cap->is_blend = GL_FALSE;
+			opengl_debug("\tGL_BLEND disabled!\n");
+			break;
+		}
+
+	case GL_CLIP_PLANE0:
+
+		{
+			opengl_ctx->context_cap->is_clip_plane0 = GL_FALSE;
+			opengl_debug("\tGL_CLIP_PLANE0 disabled!\n");
+			break;
+		}
+
+	case GL_CLIP_PLANE1:
+
+		{
+			opengl_ctx->context_cap->is_clip_plane1 = GL_FALSE;
+			opengl_debug("\tGL_CLIP_PLANE1 disabled!\n");
+			break;
+		}
+
+	case GL_CLIP_PLANE2:
+
+		{
+			opengl_ctx->context_cap->is_clip_plane2 = GL_FALSE;
+			opengl_debug("\tGL_CLIP_PLANE2 disabled!\n");
+			break;
+		}
+
+	case GL_CLIP_PLANE3:
+
+		{
+			opengl_ctx->context_cap->is_clip_plane3 = GL_FALSE;
+			opengl_debug("\tGL_CLIP_PLANE3 disabled!\n");
+			break;
+		}
+
+	case GL_CLIP_PLANE4:
+
+		{
+			opengl_ctx->context_cap->is_clip_plane4 = GL_FALSE;
+			opengl_debug("\tGL_CLIP_PLANE4 disabled!\n");
+			break;
+		}
+
+	case GL_CLIP_PLANE5:
+
+		{
+			opengl_ctx->context_cap->is_clip_plane5 = GL_FALSE;
+			opengl_debug("\tGL_CLIP_PLANE5 disabled!\n");
+			break;
+		}
+
+	case GL_COLOR_LOGIC_OP:
+
+		{
+			opengl_ctx->context_cap->is_color_logic_op = GL_FALSE;
+			opengl_debug("\tGL_COLOR_LOGIC_OP disabled!\n");
+			break;
+		}
+
+	case GL_COLOR_MATERIAL:
+
+		{
+			opengl_ctx->context_cap->is_color_material = GL_FALSE;
+			opengl_debug("\tGL_COLOR_MATERIAL disabled!\n");
+			break;
+		}
+
+	case GL_COLOR_SUM:
+
+		{
+			opengl_ctx->context_cap->is_color_sum = GL_FALSE;
+			opengl_debug("\tGL_COLOR_SUM disabled!\n");
+			break;
+		}
+
+	case GL_COLOR_TABLE:
+
+		{
+			opengl_ctx->context_cap->is_color_table = GL_FALSE;
+			opengl_debug("\tGL_COLOR_TABLE disabled!\n");
+			break;
+		}
+
+	case GL_CONVOLUTION_1D:
+
+		{
+			opengl_ctx->context_cap->is_convolution_1d = GL_FALSE;
+			opengl_debug("\tGL_CONVOLUTION_1D disabled!\n");
+			break;
+		}
+
+	case GL_CONVOLUTION_2D:
+
+		{
+			opengl_ctx->context_cap->is_convolution_2d = GL_FALSE;
+			opengl_debug("\tGL_CONVOLUTION_2D disabled!\n");
+			break;
+		}
+
+	case GL_CULL_FACE:
+
+		{
+			opengl_ctx->context_cap->is_cull_face = GL_FALSE;
+			opengl_debug("\tGL_CULL_FACE disabled!\n");
+			break;
+		}
+
+	case GL_DEPTH_TEST:
+
+		{
+			opengl_ctx->context_cap->is_depth_test = GL_FALSE;
+			opengl_debug("\tGL_DEPTH_TEST disabled!\n");
+			break;
+		}
+
+	case GL_DITHER:
+
+		{
+			opengl_ctx->context_cap->is_dither = GL_FALSE;
+			opengl_debug("\tGL_DITHER disabled!\n");
+			break;
+		}
+
+	case GL_FOG:
+
+		{
+			opengl_ctx->context_cap->is_fog = GL_FALSE;
+			opengl_debug("\tGL_FOG disabled!\n");
+			break;
+		}
+
+	case GL_HISTOGRAM:
+
+		{
+			opengl_ctx->context_cap->is_histogram = GL_FALSE;
+			opengl_debug("\tGL_HISTOGRAM disabled!\n");
+			break;
+		}
+
+	case GL_INDEX_LOGIC_OP:
+
+		{
+			opengl_ctx->context_cap->is_index_logic_op = GL_FALSE;
+			opengl_debug("\tGL_INDEX_LOGIC_OP disabled!\n");
+			break;
+		}
+
+	case GL_LIGHT0:
+
+		{
+			opengl_ctx->light->Light[0]->Enabled = GL_FALSE;
+			opengl_debug("\tGL_LIGHT0 disabled!\n");
+			break;
+		}
+
+	case GL_LIGHT1:
+
+		{
+			opengl_ctx->light->Light[1]->Enabled = GL_FALSE;
+			opengl_debug("\tGL_LIGHT1 disabled!\n");
+			break;
+		}
+
+	case GL_LIGHT2:
+
+		{
+			opengl_ctx->light->Light[2]->Enabled = GL_FALSE;
+			opengl_debug("\tGL_LIGHT2 disabled!\n");
+			break;
+		}
+
+	case GL_LIGHT3:
+
+		{
+			opengl_ctx->light->Light[3]->Enabled = GL_FALSE;
+			opengl_debug("\tGL_LIGHT3 disabled!\n");
+			break;
+		}
+
+	case GL_LIGHT4:
+
+		{
+			opengl_ctx->light->Light[4]->Enabled = GL_FALSE;
+			opengl_debug("\tGL_LIGHT4 disabled!\n");
+			break;
+		}
+
+	case GL_LIGHT5:
+
+		{
+			opengl_ctx->light->Light[5]->Enabled = GL_FALSE;
+			opengl_debug("\tGL_LIGHT5 disabled!\n");
+			break;
+		}
+
+	case GL_LIGHT6:
+
+		{
+			opengl_ctx->light->Light[6]->Enabled = GL_FALSE;
+			opengl_debug("\tGL_LIGHT6 disabled!\n");
+			break;
+		}
+
+	case GL_LIGHT7:
+
+		{
+			opengl_ctx->light->Light[7]->Enabled = GL_FALSE;
+			opengl_debug("\tGL_LIGHT7 disabled!\n");
+			break;
+		}
+
+	case GL_LIGHTING:
+
+		{
+			opengl_ctx->light->Enabled = GL_FALSE;
+			opengl_debug("\tGL_LIGHTING disabled!\n");
+			break;
+		}
+
+	case GL_LINE_SMOOTH:
+
+		{
+			opengl_ctx->context_cap->is_line_smooth = GL_FALSE;
+			opengl_debug("\tGL_LINE_SMOOTH disabled!\n");
+			break;
+		}
+
+	case GL_LINE_STIPPLE:
+
+		{
+			opengl_ctx->context_cap->is_line_stipple = GL_FALSE;
+			opengl_debug("\tGL_LINE_STIPPLE disabled!\n");
+			break;
+		}
+
+	case GL_MAP1_COLOR_4:
+
+		{
+			opengl_ctx->context_cap->is_map1_color_4 = GL_FALSE;
+			opengl_debug("\tGL_MAP1_COLOR_4 disabled!\n");
+			break;
+		}
+
+	case GL_MAP1_INDEX:
+
+		{
+			opengl_ctx->context_cap->is_map1_index = GL_FALSE;
+			opengl_debug("\tGL_MAP1_INDEX disabled!\n");
+			break;
+		}
+
+	case GL_MAP1_NORMAL:
+
+		{
+			opengl_ctx->context_cap->is_map1_normal = GL_FALSE;
+			opengl_debug("\tGL_MAP1_NORMAL disabled!\n");
+			break;
+		}
+
+	case GL_MAP1_TEXTURE_COORD_1:
+
+		{
+			opengl_ctx->context_cap->is_map1_texture_coord_1 = GL_FALSE;
+			opengl_debug("\tGL_MAP1_TEXTURE_COORD_1 disabled!\n");
+			break;
+		}
+
+	case GL_MAP1_TEXTURE_COORD_2:
+
+		{
+			opengl_ctx->context_cap->is_map1_texture_coord_2 = GL_FALSE;
+			opengl_debug("\tGL_MAP1_TEXTURE_COORD_2 disabled!\n");
+			break;
+		}
+
+	case GL_MAP1_TEXTURE_COORD_3:
+
+		{
+			opengl_ctx->context_cap->is_map1_texture_coord_3 = GL_FALSE;
+			opengl_debug("\tGL_MAP1_TEXTURE_COORD_3 disabled!\n");
+			break;
+		}
+
+	case GL_MAP1_TEXTURE_COORD_4:
+
+		{
+			opengl_ctx->context_cap->is_map1_texture_coord_4 = GL_FALSE;
+			opengl_debug("\tGL_MAP1_TEXTURE_COORD_4 disabled!\n");
+			break;
+		}
+
+	case GL_MAP1_VERTEX_3:
+
+		{
+			opengl_ctx->context_cap->is_map1_vertex_3 = GL_FALSE;
+			opengl_debug("\tGL_MAP1_VERTEX_3 disabled!\n");
+			break;
+		}
+
+	case GL_MAP1_VERTEX_4:
+
+		{
+			opengl_ctx->context_cap->is_map1_vertex_4 = GL_FALSE;
+			opengl_debug("\tGL_MAP1_VERTEX_4 disabled!\n");
+			break;
+		}
+
+	case GL_MAP2_COLOR_4:
+
+		{
+			opengl_ctx->context_cap->is_map2_color_4 = GL_FALSE;
+			opengl_debug("\tGL_MAP2_COLOR_4 disabled!\n");
+			break;
+		}
+
+	case GL_MAP2_INDEX:
+
+		{
+			opengl_ctx->context_cap->is_map2_index = GL_FALSE;
+			opengl_debug("\tGL_MAP2_INDEX disabled!\n");
+			break;
+		}
+
+	case GL_MAP2_NORMAL:
+
+		{
+			opengl_ctx->context_cap->is_map2_normal = GL_FALSE;
+			opengl_debug("\tGL_MAP2_NORMAL disabled!\n");
+			break;
+		}
+
+	case GL_MAP2_TEXTURE_COORD_1:
+
+		{
+			opengl_ctx->context_cap->is_map2_texture_coord_1 = GL_FALSE;
+			opengl_debug("\tGL_MAP2_TEXTURE_COORD_1 disabled!\n");
+			break;
+		}
+
+	case GL_MAP2_TEXTURE_COORD_2:
+
+		{
+			opengl_ctx->context_cap->is_map2_texture_coord_2 = GL_FALSE;
+			opengl_debug("\tGL_MAP2_TEXTURE_COORD_2 disabled!\n");
+			break;
+		}
+
+	case GL_MAP2_TEXTURE_COORD_3:
+
+		{
+			opengl_ctx->context_cap->is_map2_texture_coord_3 = GL_FALSE;
+			opengl_debug("\tGL_MAP2_TEXTURE_COORD_3 disabled!\n");
+			break;
+		}
+
+	case GL_MAP2_TEXTURE_COORD_4:
+
+		{
+			opengl_ctx->context_cap->is_map2_texture_coord_4 = GL_FALSE;
+			opengl_debug("\tGL_MAP2_TEXTURE_COORD_4 disabled!\n");
+			break;
+		}
+
+	case GL_MAP2_VERTEX_3:
+
+		{
+			opengl_ctx->context_cap->is_map2_vertex_3 = GL_FALSE;
+			opengl_debug("\tGL_MAP2_VERTEX_3 disabled!\n");
+			break;
+		}
+
+	case GL_MAP2_VERTEX_4:
+
+		{
+			opengl_ctx->context_cap->is_map2_vertex_4 = GL_FALSE;
+			opengl_debug("\tGL_MAP2_VERTEX_4 disabled!\n");
+			break;
+		}
+
+	case GL_MINMAX:
+
+		{
+			opengl_ctx->context_cap->is_minmax = GL_FALSE;
+			opengl_debug("\tGL_MINMAX disabled!\n");
+			break;
+		}
+
+	case GL_MULTISAMPLE:
+
+		{
+			opengl_ctx->context_cap->is_multisample = GL_FALSE;
+			opengl_debug("\tGL_MULTISAMPLE disabled!\n");
+			break;
+		}
+
+	case GL_NORMALIZE:
+
+		{
+			opengl_ctx->context_cap->is_normalize = GL_FALSE;
+			opengl_debug("\tGL_NORMALIZE disabled!\n");
+			break;
+		}
+
+	case GL_POINT_SMOOTH:
+
+		{
+			opengl_ctx->context_cap->is_point_smooth = GL_FALSE;
+			opengl_debug("\tGL_POINT_SMOOTH disabled!\n");
+			break;
+		}
+
+	case GL_POINT_SPRITE:
+
+		{
+			opengl_ctx->context_cap->is_point_sprite = GL_FALSE;
+			opengl_debug("\tGL_POINT_SPRITE disabled!\n");
+			break;
+		}
+
+	case GL_POLYGON_OFFSET_FILL:
+
+		{
+			opengl_ctx->context_cap->is_polygon_offset_fill = GL_FALSE;
+			opengl_debug("\tGL_POLYGON_OFFSET_FILL disabled!\n");
+			break;
+		}
+
+	case GL_POLYGON_OFFSET_LINE:
+
+		{
+			opengl_ctx->context_cap->is_polygon_offset_line = GL_FALSE;
+			opengl_debug("\tGL_POLYGON_OFFSET_LINE disabled!\n");
+			break;
+		}
+
+	case GL_POLYGON_OFFSET_POINT:
+
+		{
+			opengl_ctx->context_cap->is_polygon_offset_point = GL_FALSE;
+			opengl_debug("\tGL_POLYGON_OFFSET_POINT disabled!\n");
+			break;
+		}
+
+	case GL_POLYGON_SMOOTH:
+
+		{
+			opengl_ctx->context_cap->is_polygon_smooth = GL_FALSE;
+			opengl_debug("\tGL_POLYGON_SMOOTH disabled!\n");
+			break;
+		}
+
+	case GL_POLYGON_STIPPLE:
+
+		{
+			opengl_ctx->context_cap->is_polygon_stipple = GL_FALSE;
+			opengl_debug("\tGL_POLYGON_STIPPLE disabled!\n");
+			break;
+		}
+
+	case GL_POST_COLOR_MATRIX_COLOR_TABLE:
+
+		{
+			opengl_ctx->context_cap->is_post_color_matrix_color_table = GL_FALSE;
+			opengl_debug("\tGL_POST_COLOR_MATRIX_COLOR_TABLE disabled!\n");
+			break;
+		}
+
+	case GL_POST_CONVOLUTION_COLOR_TABLE:
+
+		{
+			opengl_ctx->context_cap->is_post_convolution_color_table = GL_FALSE;
+			opengl_debug("\tGL_POST_CONVOLUTION_COLOR_TABLE disabled!\n");
+			break;
+		}
+
+	case GL_RESCALE_NORMAL:
+
+		{
+			opengl_ctx->context_cap->is_rescale_normal = GL_FALSE;
+			opengl_debug("\tGL_RESCALE_NORMAL disabled!\n");
+			break;
+		}
+
+	case GL_SAMPLE_ALPHA_TO_COVERAGE:
+
+		{
+			opengl_ctx->context_cap->is_sample_alpha_to_coverage = GL_FALSE;
+			opengl_debug("\tGL_SAMPLE_ALPHA_TO_COVERAGE disabled!\n");
+			break;
+		}
+
+	case GL_SAMPLE_ALPHA_TO_ONE:
+
+		{
+			opengl_ctx->context_cap->is_sample_alpha_to_one = GL_FALSE;
+			opengl_debug("\tGL_SAMPLE_ALPHA_TO_ONE disabled!\n");
+			break;
+		}
+
+	case GL_SAMPLE_COVERAGE:
+
+		{
+			opengl_ctx->context_cap->is_sample_coverage = GL_FALSE;
+			opengl_debug("\tGL_SAMPLE_COVERAGE disabled!\n");
+			break;
+		}
+
+	case GL_SEPARABLE_2D:
+
+		{
+			opengl_ctx->context_cap->is_separable_2d = GL_FALSE;
+			opengl_debug("\tGL_SEPARABLE_2D disabled!\n");
+			break;
+		}
+
+	case GL_SCISSOR_TEST:
+
+		{
+			opengl_ctx->context_cap->is_scissor_test = GL_FALSE;
+			opengl_debug("\tGL_SCISSOR_TEST disabled!\n");
+			break;
+		}
+
+	case GL_STENCIL_TEST:
+
+		{
+			opengl_ctx->context_cap->is_stencil_test = GL_FALSE;
+			opengl_debug("\tGL_STENCIL_TEST disabled!\n");
+			break;
+		}
+
+	case GL_TEXTURE_1D:
+
+		{
+			opengl_ctx->context_cap->is_texture_1d = GL_FALSE;
+			opengl_debug("\tGL_TEXTURE_1D disabled!\n");
+			break;
+		}
+
+	case GL_TEXTURE_2D:
+
+		{
+			opengl_ctx->context_cap->is_texture_2d = GL_FALSE;
+			opengl_debug("\tGL_TEXTURE_2D disabled!\n");
+			break;
+		}
+
+	case GL_TEXTURE_3D:
+
+		{
+			opengl_ctx->context_cap->is_texture_3d = GL_FALSE;
+			opengl_debug("\tGL_TEXTURE_3D disabled!\n");
+			break;
+		}
+
+	case GL_TEXTURE_CUBE_MAP:
+
+		{
+			opengl_ctx->context_cap->is_texture_cube_map = GL_FALSE;
+			opengl_debug("\tGL_TEXTURE_CUBE_MAP disabled!\n");
+			break;
+		}
+
+	case GL_TEXTURE_GEN_Q:
+
+		{
+			opengl_ctx->context_cap->is_texture_gen_q = GL_FALSE;
+			opengl_debug("\tGL_TEXTURE_GEN_Q disabled!\n");
+			break;
+		}
+
+	case GL_TEXTURE_GEN_R:
+
+		{
+			opengl_ctx->context_cap->is_texture_gen_r = GL_FALSE;
+			opengl_debug("\tGL_TEXTURE_GEN_R disabled!\n");
+			break;
+		}
+
+	case GL_TEXTURE_GEN_S:
+
+		{
+			opengl_ctx->context_cap->is_texture_gen_s = GL_FALSE;
+			opengl_debug("\tGL_TEXTURE_GEN_S disabled!\n");
+			break;
+		}
+
+	case GL_TEXTURE_GEN_T:
+
+		{
+			opengl_ctx->context_cap->is_texture_gen_t = GL_FALSE;
+			opengl_debug("\tGL_TEXTURE_GEN_T disabled!\n");
+			break;
+		}
+
+	case GL_VERTEX_PROGRAM_POINT_SIZE:
+
+		{
+			opengl_ctx->context_cap->is_vertex_program_point_size = GL_FALSE;
+			opengl_debug("\tGL_VERTEX_PROGRAM_POINT_SIZE disabled!\n");
+			break;
+		}
+
+	case GL_VERTEX_PROGRAM_TWO_SIDE:
+
+		{
+			opengl_ctx->context_cap->is_vertex_program_two_side = GL_FALSE;
+			opengl_debug("\tGL_VERTEX_PROGRAM_TWO_SIDE disabled!\n");
+			break;
+		}
+
+	default:
+		break;
+	}
+
+	/* Return success */
 	return 0;
 }
 
@@ -1732,13 +2382,13 @@ static int opengl_func_glMatrixMode(struct x86_ctx_t *ctx)
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int mtx_mode_ptr;
-	GLenum mtx_mod;
+	unsigned int mtx_mod;
 
 	/* Read arguments */
 	mtx_mode_ptr = regs->ecx;
 	opengl_debug("\tmtx_mode_ptr=0x%x\n", mtx_mode_ptr);
 
-	mem_read(mem, mtx_mode_ptr, sizeof(GLenum), &mtx_mod);
+	mem_read(mem, mtx_mode_ptr, sizeof(unsigned int), &mtx_mod);
 
 	/* Set up current matrix */
 	switch(mtx_mod)
@@ -1971,8 +2621,7 @@ static int opengl_func_glViewport(struct x86_ctx_t *ctx)
 	/* Get function info */
 	int func_args[4];
 
-	/* GLint == GLsizei == int */
-	mem_read(mem, args_ptr, 4*sizeof(GLint), func_args);
+	mem_read(mem, args_ptr, 4*sizeof(int), func_args);
 	opengl_ctx->viewport->x = func_args[0];
 	opengl_ctx->viewport->y = func_args[1];
 	opengl_ctx->viewport->width = func_args[2];
@@ -2519,11 +3168,11 @@ static int opengl_func_glBegin(struct x86_ctx_t *ctx)
 	struct mem_t *mem = ctx->mem;
 
 	unsigned int mode_ptr;
-	GLenum mode;
+	unsigned int mode;
 
 	/* Read arguments */
 	mode_ptr = regs->ecx;
-	mem_read(mem, mode_ptr, sizeof(GLenum), &mode);
+	mem_read(mem, mode_ptr, sizeof(unsigned int), &mode);
 	opengl_debug("\tmode_ptr=0x%x\n", mode_ptr);
 	opengl_debug("\tmode=0x%x\n", mode);
 
@@ -9144,8 +9793,7 @@ static int opengl_func_glBindBuffer(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
-	/* FIXME: only list VBO right now , should add more buffer objects */
-	struct opengl_vertex_buffer_obj_t *vbo;
+	struct opengl_buffer_obj_t *buf_obj;
 
 	unsigned int args[2];
 	unsigned int target;
@@ -9158,23 +9806,95 @@ static int opengl_func_glBindBuffer(struct x86_ctx_t *ctx)
 
 	switch(target)
 	{
-		case GL_ARRAY_BUFFER:
+	case GL_ARRAY_BUFFER:
+	{
+		if (buffer == 0)
 		{
-			if (buffer == 0)
-			{
-				opengl_ctx->array_attrib->curr_vbo = NULL;	
-				opengl_debug("\tClear GL_ARRAY_BUFFER binding point\n");
-			}
-			else
-			{
-				opengl_debug("\tBinding VBO ID #%d ( data target: VAO ID #%d )\n", buffer, opengl_ctx->array_attrib->curr_vao->id);
-				vbo = opengl_vertex_buffer_obj_repo_get(opengl_ctx->vbo_repo, buffer);
-				opengl_ctx->array_attrib->curr_vbo = vbo;
-			}
-			break;
+			opengl_ctx->array_attrib->curr_vbo = NULL;
+			opengl_debug("\tClear GL_ARRAY_BUFFER binding point\n");
 		}
-		default:
-			break;
+		else
+		{
+			opengl_debug("\tBinding Buffer Object ID #%d to VAO ID #%d\n", buffer, opengl_ctx->array_attrib->curr_vao->id);
+			buf_obj = opengl_buffer_obj_repo_get(opengl_ctx->buf_repo, buffer);
+			opengl_ctx->array_attrib->curr_vbo = buf_obj;
+		}
+		break;
+	}
+	case GL_ATOMIC_COUNTER_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+	case GL_COPY_READ_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+	case GL_COPY_WRITE_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+	case GL_DRAW_INDIRECT_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+/*	case GL_DISPATCH_INDIRECT_BUFFER:
+	{
+		__NOT_IMPL__
+		break;		
+	}
+*/	case GL_ELEMENT_ARRAY_BUFFER:
+	{
+		__NOT_IMPL__
+		break;		
+	}
+	case GL_PIXEL_PACK_BUFFER:
+	{
+		__NOT_IMPL__
+		break;		
+	}
+	case GL_PIXEL_UNPACK_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+/*	case GL_SHADER_STORAGE_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+*/	case GL_TEXTURE_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+	case GL_TRANSFORM_FEEDBACK_BUFFER:
+	{
+		if (buffer == 0)
+		{
+			opengl_ctx->transform_feedback->curr_buf = NULL;
+			opengl_debug("\tClear GL_TRANSFORM_FEEDBACK_BUFFER binding point\n");
+		}
+		else
+		{
+			opengl_debug("\tBinding Buffer Object ID #%d to Transform Feedback Binding point\n", buffer);
+			buf_obj = opengl_buffer_obj_repo_get(opengl_ctx->buf_repo, buffer);
+			opengl_ctx->transform_feedback->curr_buf = buf_obj;
+		}
+		break;
+
+		break;
+	}
+	case GL_UNIFORM_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+	default:
+		break;
 	}
 
 	return 0;
@@ -9212,8 +9932,8 @@ static int opengl_func_glGenBuffers(struct x86_ctx_t *ctx)
 	unsigned int buffers;
 
 	int i;
-	struct opengl_vertex_buffer_obj_t *vbo;
-	GLint *buffers_ptr;
+	struct opengl_buffer_obj_t *buf_obj;
+	int *buffers_ptr;
 
 	/* Read arguments */
 	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
@@ -9223,18 +9943,18 @@ static int opengl_func_glGenBuffers(struct x86_ctx_t *ctx)
 	opengl_debug("\tGenerating %d VBO IDs, saving to buffers [0x%x]\n", n, buffers);
 
 	/* Create Vertex Buffers */
-	buffers_ptr = xcalloc(1, n*sizeof(GLint));
+	buffers_ptr = xcalloc(1, n*sizeof(int));
 
 	for (i = 0; i < n; ++i)
 	{
-		vbo = opengl_vertex_buffer_obj_create();
-		opengl_vertex_buffer_obj_repo_add(opengl_ctx->vbo_repo, vbo);
-		buffers_ptr[i] = vbo->id;
-		opengl_debug("\tVBO ID buffers[%d] = %d\n", i, buffers_ptr[i]);
+		buf_obj = opengl_buffer_obj_create();
+		opengl_buffer_obj_repo_add(opengl_ctx->buf_repo, buf_obj);
+		buffers_ptr[i] = buf_obj->id;
+		opengl_debug("\tBuffer generated, ID = %d\n", buffers_ptr[i]);
 	}
 
 	/* Return */
-	mem_write(mem, buffers, n*sizeof(GLint), buffers_ptr);
+	mem_write(mem, buffers, n*sizeof(int), buffers_ptr);
 	
 	free(buffers_ptr);
 
@@ -9267,8 +9987,7 @@ static int opengl_func_glBufferData(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
-	/* FIXME: only list VBO right now , should add more buffer objects */
-	struct opengl_vertex_buffer_obj_t *vbo;
+	struct opengl_buffer_obj_t *buf_obj;
 
 	unsigned int args[4];
 	unsigned int target;
@@ -9288,20 +10007,10 @@ static int opengl_func_glBufferData(struct x86_ctx_t *ctx)
 	tmp_buf = xcalloc(1, size);
 	mem_read(mem, data, size, tmp_buf);
 
-	switch(target)
-	{
-		case GL_ARRAY_BUFFER:
-		{
-			opengl_debug("\tCopy data to VBO ID #%d \n", opengl_ctx->array_attrib->curr_vao->id);
-			/* Get current bound VBO */
-			vbo = opengl_ctx->array_attrib->curr_vbo;
-			/* Copy data into VBO */
-			opengl_vertex_buffer_obj_data(vbo, size, tmp_buf, usage);
-			break;
-		}
-		default:
-			break;
-	}
+	opengl_debug("\tCopy data to VBO ID #%d \n", opengl_ctx->array_attrib->curr_vao->id);
+	/* Get current bound VBO and copy data */
+	buf_obj = opengl_context_get_bound_buffer(target, opengl_ctx);
+	opengl_buffer_obj_data(buf_obj, size, tmp_buf, usage);
 
 	free(tmp_buf);
 
@@ -9339,14 +10048,53 @@ static int opengl_func_glGetBufferSubData(struct x86_ctx_t *ctx)
 /*
  * OpenGL call #519 - glMapBuffer
  *
- * glMapBuffer - 
+ * glMapBuffer - map a buffer object's data store
  *
  * @return
  *	This function always returns 0
  */
 static int opengl_func_glMapBuffer(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_buffer_obj_t *buf_obj;
+	unsigned int enable = 1;
+	unsigned int second_flag;
+
+	unsigned int args[5];
+	unsigned int target;
+	unsigned int access;
+	unsigned int data_ptr;
+	unsigned int data_size_ptr;
+	unsigned int second_call_ptr;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 5 * sizeof(unsigned int), args);
+	target = args[0];
+	access = args[1];
+	data_ptr = args[2];
+	data_size_ptr = args[3];
+	second_call_ptr = args[4];
+	mem_read(mem, second_call_ptr, sizeof(unsigned int), &second_flag);
+
+	if (!second_flag)
+	{
+		buf_obj = opengl_context_get_bound_buffer(target, opengl_ctx);
+		/* 1st call only set up the data_size and second flag */
+		mem_write(mem, data_size_ptr, sizeof(unsigned int), &buf_obj->data_size);
+		mem_write(mem, second_call_ptr, sizeof(unsigned int), &enable);
+	}
+	else
+	{
+		/*2nd call maps buffer object */
+		buf_obj = opengl_context_get_bound_buffer(target, opengl_ctx);
+		buf_obj->map_access_flags = access;
+		buf_obj->map_pointer = data_ptr;
+		buf_obj->map_length = data_size_ptr;
+		mem_write(mem, data_ptr, buf_obj->data_size, buf_obj->data);
+	}
+
+	/* Return */
 	return 0;
 }
 
@@ -9360,7 +10108,32 @@ static int opengl_func_glMapBuffer(struct x86_ctx_t *ctx)
  */
 static int opengl_func_glUnmapBuffer(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_buffer_obj_t *buf_obj;
+
+	unsigned int args[2];
+	unsigned int target;
+	unsigned int data_ptr;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+	target = args[0];
+	data_ptr = args[1];
+
+	/* If buffer object was mapped, the mapped address must has been recorded */
+	buf_obj = opengl_context_get_bound_buffer(target, opengl_ctx);
+	if (buf_obj->map_pointer)
+	{
+		mem_write(mem, data_ptr, sizeof(unsigned int), &buf_obj->map_pointer);
+		buf_obj->map_pointer = 0x0;
+		buf_obj->map_length = 0x0;
+		buf_obj->map_access_flags = 0x0;
+	}
+	else
+		opengl_debug("\tBuffer Object was not mapped\n");
+	
+	/* Return */
 	return 0;
 }
 
@@ -10791,7 +11564,7 @@ static int opengl_func_glVertexAttribPointer(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 	struct opengl_vertex_array_obj_t *vao;
-	struct opengl_vertex_buffer_obj_t *vbo;
+	struct opengl_buffer_obj_t *vbo;
 	struct opengl_vertex_client_array_t *vtx_attrib;
 
 	unsigned int args[6];
@@ -11015,14 +11788,35 @@ static int opengl_func_glIsEnabledi(struct x86_ctx_t *ctx)
 /*
  * OpenGL call #628 - glBeginTransformFeedback
  *
- * glBeginTransformFeedback - 
+ * glBeginTransformFeedback - start transform feedback operation
  *
  * @return
  *	This function always returns 0
  */
 static int opengl_func_glBeginTransformFeedback(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_transform_feedback_state_t *tfst;
+
+	unsigned int args[1];
+	unsigned int primitive_mode;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
+	primitive_mode = args[0];
+
+	tfst = opengl_ctx->transform_feedback;
+	if (tfst->curr_tfo->active)
+	{
+		opengl_set_error(GL_INVALID_OPERATION);
+		return 0;
+	}
+
+	/* Set transform feedback object to active */
+	tfst->curr_tfo->active = 1;
+	tfst->mode = primitive_mode;
+
 	return 0;
 }
 
@@ -11036,7 +11830,11 @@ static int opengl_func_glBeginTransformFeedback(struct x86_ctx_t *ctx)
  */
 static int opengl_func_glEndTransformFeedback(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct opengl_transform_feedback_state_t *tfst;
+
+	tfst = opengl_ctx->transform_feedback;
+	tfst->curr_tfo->active = 0;
+
 	return 0;
 }
 
@@ -11064,7 +11862,62 @@ static int opengl_func_glBindBufferRange(struct x86_ctx_t *ctx)
  */
 static int opengl_func_glBindBufferBase(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+	struct opengl_buffer_obj_t *buf_obj;
+	struct opengl_transform_feedback_obj_t *curr_tfo;
+	struct opengl_transform_feedback_state_t *tfst;
+
+	unsigned int args[3];
+	unsigned int target;
+	unsigned int index;
+	unsigned int buffer;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
+	target = args[0];
+	index = args[1];
+	buffer = args[2];
+
+	tfst = opengl_ctx->transform_feedback;
+	curr_tfo = tfst->curr_tfo;
+
+	switch(target)
+	{
+	case GL_ATOMIC_COUNTER_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+	case GL_TRANSFORM_FEEDBACK_BUFFER:
+	{
+		if (index >= MAX_FEEDBACK_BUFFERS)
+		{
+			opengl_set_error(GL_INVALID_VALUE);
+			return 0;
+		}
+		buf_obj = opengl_buffer_obj_repo_get_and_reference(opengl_ctx->buf_repo, buffer);
+		if (!buf_obj->data || buf_obj->data_size == 0)
+		{
+			opengl_set_error(GL_INVALID_VALUE);
+			return 0;
+		}
+		if (curr_tfo->id != 0)
+		{
+			curr_tfo->buf_id[index] = buf_obj->id;
+			curr_tfo->buffers[index] = buf_obj;
+		}
+		break;
+	}
+	case GL_UNIFORM_BUFFER:
+	{
+		__NOT_IMPL__
+		break;
+	}
+	default:
+		opengl_set_error(GL_INVALID_ENUM);
+	}
+
 	return 0;
 }
 
@@ -11078,7 +11931,7 @@ static int opengl_func_glBindBufferBase(struct x86_ctx_t *ctx)
  */
 static int opengl_func_glTransformFeedbackVaryings(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	/* FIXME: not implemented */	
 	return 0;
 }
 
@@ -14672,7 +15525,7 @@ static int opengl_func_glGenVertexArrays(struct x86_ctx_t *ctx)
 	unsigned int n;
 	unsigned int arrays;
 
-	GLint *arrays_ptr;
+	int *arrays_ptr;
 	struct opengl_vertex_array_obj_t *vao;
 	int i;
 
@@ -14684,7 +15537,7 @@ static int opengl_func_glGenVertexArrays(struct x86_ctx_t *ctx)
 	opengl_debug("\tGenerating %d VAO IDs, saving to arrays [0x%x]\n", n, arrays);
 
 	/* Create Vertex Arrays */
-	arrays_ptr = xcalloc(1, n*sizeof(GLint));
+	arrays_ptr = xcalloc(1, n*sizeof(int));
 
 	for (i = 0; i < n; ++i)
 	{
@@ -14695,8 +15548,7 @@ static int opengl_func_glGenVertexArrays(struct x86_ctx_t *ctx)
 	}
 
 	/* Return */
-	/* FIXME: not working? */
-	mem_write(mem, arrays, n*sizeof(GLint), arrays_ptr);
+	mem_write(mem, arrays, n*sizeof(int), arrays_ptr);
 	
 	free(arrays_ptr);
 

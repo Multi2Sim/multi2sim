@@ -23,9 +23,10 @@
 #include "../include/GL/gl.h"
 #include "api.h"
 #include "debug.h"
+#include "mhandle.h"
 
 /* Debug */
-int opengl_debug = 0;
+int opengl_debug_enable = 1;
 
 /*
 \n * Error Messages
@@ -50,8 +51,8 @@ static char *opengl_err_not_impl =
 
 
 /* Multi2Sim OPENGL Runtime required */
-#define OPENGL_RUNTIME_VERSION_MAJOR	0
-#define OPENGL_RUNTIME_VERSION_MINOR	669
+#define OPENGL_RUNTIME_VERSION_MAJOR	1
+#define OPENGL_RUNTIME_VERSION_MINOR	700
 
 /* OpenGL global variables */
 char opengl_get_string[50];
@@ -220,7 +221,10 @@ void glEnable( GLenum cap )
 
 void glDisable( GLenum cap )
 {
-	__OPENGL_NOT_IMPL__
+	opengl_debug(stdout, "\nglDisable\n");
+	unsigned int sys_args[1];
+	sys_args[0] = (unsigned int) cap;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDisable, &sys_args);
 }
 
 
@@ -3415,13 +3419,67 @@ void glGetBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, GLvoid
 
 GLvoid* glMapBuffer (GLenum target, GLenum access)
 {
-	__OPENGL_NOT_IMPL__
-	return 0;
+	/* Debug */
+	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+	
+	void *data_ptr = NULL;
+	unsigned int *data_size;
+	unsigned int *second_call;
+	unsigned int sys_args[5];
+
+	/* Allocate */
+	data_size = xcalloc(1, sizeof(unsigned int));
+	second_call = xcalloc(1, sizeof(unsigned int));
+
+	/* 1st call set up the map_buf->data_size so it can allocate */
+	sys_args[0] = (unsigned int) target;
+	sys_args[1] = (unsigned int) access;
+	sys_args[2] = (unsigned int) data_ptr;
+	sys_args[3] = (unsigned int) data_size;
+	sys_args[4] = (unsigned int) second_call;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMapBuffer, &sys_args);
+
+	/* Allocate */
+	if (*data_size)
+		data_ptr = xcalloc(1, *data_size);
+	else
+	{
+		opengl_debug(stdout, "\n%s: no data to be mapped, return NULL\n", __FUNCTION__);
+		return NULL;
+	}
+
+	/* 2nd call copy data in native memory to guest memory */
+	sys_args[0] = (unsigned int) target;
+	sys_args[1] = (unsigned int) access;
+	sys_args[2] = (unsigned int) data_ptr;
+	sys_args[3] = (unsigned int) data_size;
+	sys_args[4] = (unsigned int) second_call;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMapBuffer, &sys_args);
+
+	/* Free */
+	free(data_size);
+	free(second_call);
+
+	/* Return */
+	if (data_ptr)
+		return data_ptr;
+	else
+		return NULL;
 }
 
 GLboolean glUnmapBuffer (GLenum target)
 {
-	__OPENGL_NOT_IMPL__
+	void *data_ptr = NULL;
+	unsigned int sys_args[2];
+	
+	sys_args[0] = (unsigned int) target;
+	sys_args[1] = (unsigned int) data_ptr;
+
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glUnmapBuffer, &sys_args);
+
+	if (data_ptr)
+		free(data_ptr);
+
 	return 0;
 }
 
@@ -4018,12 +4076,14 @@ GLboolean glIsEnabledi (GLenum target, GLuint index)
 
 void glBeginTransformFeedback (GLenum primitiveMode)
 {
-	__OPENGL_NOT_IMPL__
+	unsigned int sys_args[1];
+	sys_args[0] = (unsigned int) primitiveMode;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBeginTransformFeedback, &sys_args);
 }
 
 void glEndTransformFeedback (void)
 {
-	__OPENGL_NOT_IMPL__
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEndTransformFeedback, NULL);
 }
 
 void glBindBufferRange (GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size)
@@ -4033,12 +4093,21 @@ void glBindBufferRange (GLenum target, GLuint index, GLuint buffer, GLintptr off
 
 void glBindBufferBase (GLenum target, GLuint index, GLuint buffer)
 {
-	__OPENGL_NOT_IMPL__
+	unsigned int sys_args[3];
+	sys_args[0] = (unsigned int) target;
+	sys_args[1] = (unsigned int) index;
+	sys_args[2] = (unsigned int) buffer;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBindBufferBase, &sys_args);
 }
 
 void glTransformFeedbackVaryings (GLuint program, GLsizei count, const GLchar* *varyings, GLenum bufferMode)
 {
-	__OPENGL_NOT_IMPL__
+	unsigned int sys_args[4];
+	sys_args[0] = (unsigned int) program;
+	sys_args[1] = (unsigned int) count;
+	sys_args[2] = (unsigned int) varyings;
+	sys_args[3] = bufferMode;
+	syscall(OPENGL_SYSCALL_CODE, opengl_call_glTransformFeedbackVaryings, &sys_args);
 }
 
 void glGetTransformFeedbackVarying (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLsizei *size, GLenum *type, GLchar *name)
