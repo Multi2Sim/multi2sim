@@ -31,6 +31,17 @@
 
 #define MAX_VARYING	16
 
+struct opengl_buffer_obj_t;
+struct opengl_frame_buffer_t;
+struct opengl_light_attrib_t;
+struct opengl_matrix_stack_t;
+struct opengl_program_t;
+struct opengl_transform_feedback_state_t;
+struct opengl_vertex_buffer_t;
+struct opengl_viewport_attributes_t;
+struct opengl_vertex_array_obj_t;
+struct opengl_vertex_buffer_obj_t;
+
 enum opengl_vertex_attrib_t
 {
 	VERT_ATTRIB_POS = 0,
@@ -186,15 +197,6 @@ struct opengl_current_attrib_t
 	GLboolean RasterPosValid;
 };
 
-struct opengl_frame_buffer_t;
-struct opengl_viewport_attributes_t;
-struct opengl_matrix_stack_t;
-struct opengl_vertex_buffer_t;
-struct opengl_light_attrib_t;
-struct opengl_program_t;
-struct opengl_vertex_array_obj_t;
-struct opengl_vertex_buffer_obj_t;
-
 /* OpenGL context*/
 struct opengl_context_t
 {
@@ -220,14 +222,15 @@ struct opengl_context_t
 	struct linked_list_t *shader_repo;							/* Shader repository contains all program objects*/
 	struct linked_list_t *program_repo;							/* Program repository contains all program objects */
 	struct linked_list_t *vao_repo;								/* VAO repository contains all VAO */
-	struct linked_list_t *vbo_repo;							/* VBO repository contains all VBO */
+	struct linked_list_t *buf_repo;								/* Buffer repository contains all Buffer Objects */
 
 	/* Objects currently bind to OpenGL context */
 	GLchan current_color[4];
 	GLfloat current_normal[4];
 	struct opengl_program_t *current_program;
 
-	struct opengl_vertex_array_attrib_t *array_attrib;					/* Binding points for VAO and VBO */
+	struct opengl_vertex_array_attrib_t *array_attrib;					/* Binding point for VAO and VBO */
+	struct opengl_transform_feedback_state_t *transform_feedback;			/* Binding point for Tranform Feedback */
 };
 
 struct opengl_context_capability_t *opengl_context_capability_create(void);
@@ -240,5 +243,7 @@ struct opengl_matrix_t *opengl_context_get_current_matrix(struct opengl_context_
 
 struct opengl_current_attrib_t *opengl_current_attrib_create();
 void opengl_current_attrib_free(struct opengl_current_attrib_t *crnt);
+
+struct opengl_buffer_obj_t *opengl_context_get_bound_buffer(unsigned int target, struct opengl_context_t *ctx);
 
 #endif

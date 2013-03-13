@@ -23,9 +23,9 @@
 
 
 /* Debug */
-extern int opengl_debug;
+extern int opengl_debug_enable;
 
-#define opengl_debug(stream, ...) (opengl_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+#define opengl_debug(stream, ...) (opengl_debug_enable ? fprintf((stream), __VA_ARGS__) : (void) 0)
 
 
 /* System call for OpenGL runtime */
