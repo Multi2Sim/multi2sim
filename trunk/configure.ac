@@ -479,18 +479,7 @@ AC_ARG_ENABLE(debug,
 	case "${enableval}" in
 	yes)
 		debug=true
-		
-		# Add flag '-Wno-error=deprecated-declarations' only if it is supported.
-		# This flag prevents warnings caused by newer GTK versions that would cause with -Werror
-		saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
-		CFLAGS="-Wno-error=deprecated-declarations"
-		AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
-		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
-				[ AC_MSG_RESULT([yes]) ]
-				[ saved_flags="$saved_flags -Wno-error=deprecated-declarations" ],
-				[ AC_MSG_RESULT([no]) ]
-			)
-		CFLAGS="$saved_flags"
+		CFLAGS="-msse2 -Wall -DMHANDLE -g -O0 -std=gnu99"
 		;;
 	no)
 		;;
