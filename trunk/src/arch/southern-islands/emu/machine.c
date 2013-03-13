@@ -6514,6 +6514,6 @@ void si_isa_IMAGE_SAMPLE_impl(struct si_work_item_t *work_item,
 void si_isa_EXPORT_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	NOT_IMPL();
+	/* FIXME : not implemented */
 }
 #undef INST
