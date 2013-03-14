@@ -218,11 +218,13 @@ struct opengl_buffer_obj_t *opengl_context_get_bound_buffer(unsigned int target,
 		buf_obj = ctx->array_attrib->curr_vbo;
 		break;
 	}
+#ifdef GL_ATOMIC_COUNTER_BUFFER
 	case GL_ATOMIC_COUNTER_BUFFER:
 	{
 		buf_obj = NULL;
 		break;
 	}
+#endif
 	case GL_COPY_READ_BUFFER:
 	{
 		buf_obj = NULL;
