@@ -33,6 +33,7 @@
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/asm/asm.h>
 #include <arch/fermi/emu/emu.h>
+#include <arch/fermi/emu/isa.h>
 #include <arch/fermi/timing/gpu.h>
 #include <arch/mips/asm/asm.h>
 #include <arch/southern-islands/asm/asm.h>
@@ -102,6 +103,7 @@ static int si_opengl_disasm_shader_index = 1;
 static int si_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
 static char *frm_disasm_file_name = "";
+static char *frm_isa_debug_file_name = "";
 static char *cuda_debug_file_name = "";
 static int frm_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
@@ -1732,6 +1734,7 @@ int main(int argc, char **argv)
 	evg_stack_debug_category = debug_new_category(evg_stack_debug_file_name);  /* GPU-REL */
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
 	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
+	frm_isa_debug_category = debug_new_category(frm_isa_debug_file_name);
 	arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
 	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);
@@ -1774,6 +1777,10 @@ int main(int argc, char **argv)
 	/* Initialization of Southern Islands GPU */
 	if (si_emu_sim_kind == arch_sim_kind_detailed)
 		si_gpu_init();
+
+	/* Initialization of Fermi GPU */
+	if (frm_emu_sim_kind == arch_sim_kind_detailed)
+		frm_gpu_init();
 
 	/* Network and memory system */
 	net_init();
