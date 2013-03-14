@@ -26,7 +26,6 @@
 #include "opengl.h"
 #include "buffer-obj.h"
 
-
 int buf_id = 1;
 
 struct opengl_buffer_obj_t *opengl_buffer_obj_create()
@@ -41,13 +40,16 @@ struct opengl_buffer_obj_t *opengl_buffer_obj_create()
 	buf_obj->ref_count = 0;
 	buf_obj->delete_pending = GL_FALSE;
 	buf_obj->data = NULL;
-	/* FIXME */
 	buf_obj->usage = GL_DYNAMIC_DRAW;
+	buf_obj->map_access_flags = 0x0;
+	buf_obj->map_pointer = 0x0;
+	buf_obj->map_length = 0x0;
 
 	/* Update global buffer id */
 	buf_id += 1;
 
-	opengl_debug("\t\tBuffer Object #%d [%p] Created\n", buf_obj->id, buf_obj);
+	/* Debug */
+	opengl_debug("\t\tBuffer Object #%d [%p] created\n", buf_obj->id, buf_obj);
 
 	/* Return */	
 	return buf_obj;
@@ -57,9 +59,12 @@ struct opengl_buffer_obj_t *opengl_buffer_obj_create()
 void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buf_obj)
 {
 	/* Free */
+	if (buf_obj->map_pointer)
+		opengl_debug("\t\tBuffer Object #%d [%p] already mapped to [0x%x], use glUnmapBuffer to free it\n", 
+			buf_obj->id, buf_obj, buf_obj->map_pointer);
 	free(buf_obj->data);
 	free(buf_obj);
-	opengl_debug("\t\tBuffer Object #%d [%p] Freed\n", buf_obj->id, buf_obj);
+	opengl_debug("\t\tFree Buffer Object #%d [%p]\n", buf_obj->id, buf_obj);
 }
 
 /* Delete checks flags */
@@ -89,7 +94,9 @@ void opengl_buffer_obj_data(struct opengl_buffer_obj_t *buf_obj, unsigned int si
 	/* Update Buffer Object state */
 	buf_obj->usage = usage;
 
-	opengl_debug("\tCopied %td byte from [%p] to Buffer Object #%d [%p]\n", size, data, buf_obj->id, buf_obj);
+	/* Debug */
+	opengl_debug("\tCopy %td byte from [%p] to Buffer Object #%d [%p]\n", 
+		size, data, buf_obj->id, buf_obj);
 }
 
 
@@ -100,7 +107,8 @@ struct linked_list_t *opengl_buffer_obj_repo_create()
 	/* Allocate */
 	lst = linked_list_create();
 
-	opengl_debug("\tCreated Buffer Object repository [%p]\n", lst);
+	/* Debug */
+	opengl_debug("\tBuffer Object repository [%p] is created\n", lst);
 
 	/* Return */	
 	return lst;
@@ -121,20 +129,26 @@ void opengl_buffer_obj_repo_free(struct linked_list_t *buf_obj_repo)
 	/* Free buffer repository */
 	linked_list_free(buf_obj_repo);
 
-	opengl_debug("\tFreed Buffer Object repository [%p]\n", buf_obj_repo);
+	/* Debug */
+	opengl_debug("\tBuffer Object repository [%p] is freed\n", buf_obj_repo);
 }
 
 void opengl_buffer_obj_repo_add(struct linked_list_t *buf_obj_repo, struct opengl_buffer_obj_t *buf_obj)
 {
+	/* Add to repository */
 	linked_list_add(buf_obj_repo, buf_obj);
-	opengl_debug("\tInserting Buffer Object #%d [%p] into Buffer Object repository [%p]\n", buf_obj->id, buf_obj, buf_obj_repo);
+
+	/* Debug */
+	opengl_debug("\tAdd Buffer Object #%d [%p] to Buffer Object repository [%p]\n", 
+		buf_obj->id, buf_obj, buf_obj_repo);
 }
 
 int opengl_buffer_obj_repo_remove(struct linked_list_t *buf_obj_repo, struct opengl_buffer_obj_t *buf_obj)
 {
 	if (buf_obj->ref_count != 0)
 	{
-		opengl_debug("\tBuffer Object #%d [%p] cannot be removed immediately, as reference counter = %d\n", buf_obj->id, buf_obj, buf_obj->ref_count);
+		opengl_debug("\tBuffer Object #%d [%p] cannot be removed immediately, as reference counter = %d\n", 
+			buf_obj->id, buf_obj, buf_obj->ref_count);
 		return -1;
 	}
 	else 
@@ -144,7 +158,8 @@ int opengl_buffer_obj_repo_remove(struct linked_list_t *buf_obj_repo, struct ope
 		if (buf_obj_repo->error_code)
 			fatal("%s: Buffer Object does not exist", __FUNCTION__);
 		linked_list_remove(buf_obj_repo);
-		opengl_debug("\tBuffer Object #%d [%p] removed from Buffer Object table [%p]\n", buf_obj->id, buf_obj, buf_obj_repo);
+		opengl_debug("\tRemove Buffer Object #%d [%p] from Buffer Object table [%p]\n", 
+			buf_obj->id, buf_obj, buf_obj_repo);
 		return 1;
 	}
 }
@@ -158,23 +173,31 @@ struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get(struct linked_list_t *buf
 	{
 		buf_obj = linked_list_get(buf_obj_repo);
 		assert(buf_obj);
-		if (buf_obj->id == id)
+		if (buf_obj->id == id && !buf_obj->delete_pending)
 			return buf_obj;
 	}
 
-	/* Not found */
-	fatal("%s: requested Buffer Object does not exist (id=0x%x)",
+	/* Not found or being deleted */
+	fatal("%s: requested Buffer Object is not available (id=0x%x)",
 		__FUNCTION__, id);
 	return NULL;
 }
 
-struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get_and_reference(struct linked_list_t *buf_obj_repo, int id)
+struct opengl_buffer_obj_t *opengl_buffer_obj_repo_reference(struct linked_list_t *buf_obj_repo, int id)
 {
 	struct opengl_buffer_obj_t *buf_obj;
 
-	/* Get buffer object from buffer repository and update the reference count */
+	/* Get buffer object and update the reference count */
 	buf_obj = opengl_buffer_obj_repo_get(buf_obj_repo, id);
-	buf_obj->ref_count += 1;
-
-	return buf_obj;
+	if (!buf_obj->delete_pending)
+	{
+		buf_obj->ref_count += 1;
+		return buf_obj;
+	}
+	else
+	{
+		opengl_debug("\tCannot reference Buffer Object #%d [%p]: delete pending\n", 
+			buf_obj->id, buf_obj);
+		return NULL;	
+	}
 }

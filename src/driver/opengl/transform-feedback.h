@@ -27,11 +27,13 @@
 #endif
 
 struct linked_list_t;
+struct opengl_buffer_obj_t;
 
 struct opengl_transform_feedback_obj_t
 {
 	unsigned int id;
 	int ref_count;
+	unsigned char delete_pending;
 	unsigned char active;
 	unsigned char paused;
 	unsigned char ended_anytime;
@@ -48,7 +50,7 @@ struct opengl_transform_feedback_obj_t
 struct opengl_transform_feedback_state_t
 {
 	unsigned int mode;	/* GL_POINTS, GL_LINES or GL_TRIANGLES */
-	struct opengl_buffer_obj_t *curr_buf; /* Binding point */
+	struct opengl_buffer_obj_t *curr_buf; /* General binding point */
 	struct linked_list_t *tfo_repo;	/* Repository contains all transform feedback objects */
 	struct opengl_transform_feedback_obj_t *curr_tfo;
 	struct opengl_transform_feedback_obj_t *default_tfo;
@@ -58,13 +60,16 @@ struct opengl_transform_feedback_obj_t *opengl_transform_feedback_obj_create();
 void opengl_transform_feedback_obj_free(struct opengl_transform_feedback_obj_t *tfo);
 void opengl_transform_feedback_obj_detele(struct opengl_transform_feedback_obj_t *tfo);
 
-struct opengl_transform_feedback_state_t *opengl_transform_feedback_binding_create();
-void opengl_transform_feedback_binding_free(struct opengl_transform_feedback_state_t *tfst);
+struct opengl_transform_feedback_state_t *opengl_transform_feedback_state_create();
+void opengl_transform_feedback_state_free(struct opengl_transform_feedback_state_t *tfst);
+void opengl_transform_feedback_state_attach_buffer_obj(struct opengl_transform_feedback_state_t *tfst, struct opengl_buffer_obj_t *buf_obj);
+void opengl_transform_feedback_state_attach_buffer_obj_indexed(struct opengl_transform_feedback_state_t *tfst, struct opengl_buffer_obj_t *buf_obj, unsigned int index);
 
 struct linked_list_t *opengl_transform_feedback_obj_repo_create();
 void opengl_transform_feedback_obj_repo_free(struct linked_list_t *tfo_repo);
 void opengl_transform_feedback_obj_repo_add(struct linked_list_t *tfo_repo, struct opengl_transform_feedback_obj_t *tfo);
 int opengl_transform_feedback_obj_repo_remove(struct linked_list_t *tfo_repo, struct opengl_transform_feedback_obj_t *tfo);
 struct opengl_transform_feedback_obj_t *opengl_transform_feedback_obj_repo_get(struct linked_list_t *tfo_repo, int id);
+struct opengl_transform_feedback_obj_t *opengl_transform_feedback_obj_repo_reference(struct linked_list_t *tfo_repo, int id);
 
 #endif
