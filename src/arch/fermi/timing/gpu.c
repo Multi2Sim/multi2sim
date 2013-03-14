@@ -1188,7 +1188,7 @@ void frm_gpu_done()
 	/* GPU pipeline report */
 	frm_gpu_dump_report();
 
-	/* Free stream cores, SMs, and device */
+	/* Free SMs, and device */
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		sm = frm_gpu->sms[sm_id];
@@ -1250,7 +1250,7 @@ void frm_gpu_dump_report(void)
 	inst_per_cycle = frm_gpu->cycle ? 
 		(double)(frm_emu->inst_count/frm_gpu->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
-	fprintf(f, "NDRangeCount = %d\n", frm_emu->grid_count);
+	fprintf(f, "GridCount = %d\n", frm_emu->grid_count);
 	fprintf(f, "Instructions = %lld\n", frm_emu->inst_count);
 	fprintf(f, "ScalarALUInstructions = %lld\n", 
 		frm_emu->scalar_alu_inst_count);
