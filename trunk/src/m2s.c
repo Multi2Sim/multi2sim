@@ -1830,6 +1830,10 @@ int main(int argc, char **argv)
 	if (si_emu_sim_kind == arch_sim_kind_detailed)
 		si_gpu_done();
 
+	/* Finalization of Southern Islands GPU */
+	if (frm_emu_sim_kind == arch_sim_kind_detailed)
+		frm_gpu_done();
+
 	/* Finalization of network and memory system */
 	mmu_done();
 	mem_system_done();
