@@ -42,7 +42,7 @@
 #include "cycle-interval-report.h"
 
 static char *frm_err_stall =
-	"\tThe Southern Islands GPU has not completed execution of any in-flight\n"
+	"\tThe Fermi GPU has not completed execution of any in-flight\n"
 	"\tinstruction for 1M cycles. Most likely, this means that a\n"
 	"\tdeadlock condition occurred in the management of some modeled\n"
 	"\tstructure (network, memory system, pipeline queues, etc.).\n";
@@ -52,8 +52,8 @@ static char *frm_err_stall =
  */
 
 char *frm_gpu_config_help =
-	"The Southern Islands GPU configuration file is a plain text INI file\n"
-	"defining the parameters of the Southern Islands model for a detailed\n"
+	"The Fermi GPU configuration file is a plain text INI file\n"
+	"defining the parameters of the Fermi model for a detailed\n"
 	"(architectural) configuration. This file is passed to Multi2Sim with\n"
 	"the '--frm-config <file>' option, and should always be used together \n"
 	"with option '--frm-sim detailed'.\n" 
@@ -64,26 +64,26 @@ char *frm_gpu_config_help =
 	"\n"
 	"Section '[ Device ]': parameters for the GPU.\n"
 	"\n"
-	"  NumComputeUnits = <num> (Default = 32)\n"
-	"      Number of compute units in the GPU.\n"
-	"  MaxWavefrontsPerWorkGroup = <num> (Default = 16)\n"
-	"      The maximum size of a work group.\n"
+	"  NumSMs = <num> (Default = 16)\n"
+	"      Number of SMs in the GPU.\n"
+	"  MaxWarpsPerThreadBlock = <num> (Default = 16)\n"
+	"      The maximum size of a thread block.\n"
 	"\n"
-	"Section '[ ComputeUnit ]': parameters for the Compute Units.\n"
+	"Section '[ SM ]': parameters for the SMs.\n"
 	"\n"
-	"  NumWavefrontPools = <num> (Default = 4)\n"
-	"      Number of warp pools/SIMDs per compute unit.\n"
-	"  MaxWorkGroupsPerWavefrontPool = <num> (Default = 10)\n"
+	"  NumWarpPools = <num> (Default = 4)\n"
+	"      Number of warp pools/SIMDs per SM.\n"
+	"  MaxThreadBlocksPerWarpPool = <num> (Default = 10)\n"
 	"      The maximum number of work groups that can be scheduled to a\n"
 	"      warp pool at a time.\n"
-	"  MaxWavefrontsPerWavefrontPool = <num> (Default = 10)\n"
+	"  MaxWarpsPerWarpPool = <num> (Default = 10)\n"
 	"      The maximum number of warps that can be scheduled to a\n"
 	"      warp pool at a time.\n"
 	"  NumVectorRegisters = <num> (Default = 65536)\n"
-	"      Number of vector registers per compute unit. These are\n"
+	"      Number of vector registers per SM. These are\n"
 	"      divided evenly between all warp pools/SIMDs.\n"
 	"  NumScalarRegisters = <num> (Default = 2048)\n"
-	"      Number of scalar registers per compute unit. These are\n"
+	"      Number of scalar registers per SM. These are\n"
 	"      shared by all warp pools/SIMDs.\n"
 	"\n"
 	"Section '[ FrontEnd ]': parameters for fetch and issue.\n"
@@ -218,14 +218,14 @@ char *frm_gpu_config_help =
 	"      Size of the buffer holding register write instructions.\n"
 	"\n"
 	"Section '[ LDS ]': defines the parameters of the Local Data Share\n"
-	"on each compute unit.\n"
+	"on each SM.\n"
 	"\n"
 	"  Size = <bytes> (Default = 64 KB)\n"
-	"      LDS capacity per compute unit. This value must be\n"
+	"      LDS capacity per SM. This value must be\n"
 	"      equal to or larger than BlockSize * Banks.\n"
 	"  AllocSize = <bytes> (Default = 16)\n"
 	"      Minimum amount of LDS memory allocated at a time for\n"
-	"      each work-group.\n" 
+	"      each thread-block.\n" 
 	"  BlockSize = <bytes> (Default = 64)\n"
 	"      Access block size, used for access coalescing purposes\n"
 	"      among work-items.\n"
@@ -246,18 +246,18 @@ unsigned long long frm_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
 unsigned int frm_gpu_device_vendor_id = 1234; /* Completely arbitrary */
 
 char *frm_gpu_device_profile = "FULL_PROFILE";
-char *frm_gpu_device_name = "Multi2Sim Southern Islands GPU";
+char *frm_gpu_device_name = "Multi2Sim Fermi GPU";
 char *frm_gpu_device_vendor = "www.multi2sim.org";
 char *frm_gpu_device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics "
 	"cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics "
 	"cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store "
 	"cl_khr_gl_sharing cl_ext_device_fission cl_amd_device_attribute_query "
 	"cl_amd_media_ops cl_amd_popcnt cl_amd_printf ";
-char *frm_gpu_device_version = "OpenCL 1.2 AMD-APP-SDK-v2.7";
+char *frm_gpu_device_version = "CUDA 1.2 AMD-APP-SDK-v2.7";
 char *frm_gpu_driver_version = VERSION;
-char *frm_gpu_opencl_version = "OpenCL C 1.2";
+char *frm_gpu_opencl_version = "CUDA C 1.2";
 
-/* OpenCL Device Query Information */
+/* CUDA Device Query Information */
 unsigned int frm_gpu_thread_dimensions = 3;  /* FIXME */
 unsigned int frm_gpu_thread_sizes[3] = {256, 256, 256};  /* FIXME */
 unsigned int frm_gpu_thread_block_size = 256 * 256 * 256;  /* FIXME */
@@ -278,7 +278,7 @@ unsigned int frm_gpu_max_parameter_size = 1024;  /* The minimum value */
 unsigned int frm_gpu_mem_base_addr_align = 16 * 8;  /* size of long16 in bits */ 
 /* FIXME */
 unsigned int frm_gpu_min_data_type_align_size = 16;  /* size of long16 in bytes 
-													 deprecated in OpenCL 1.2 */
+													 deprecated in CUDA 1.2 */
 
 /* bit field, all single floating point capabilities supported */ /* FIXME */
 unsigned int frm_gpu_single_fp_config = 255;  
@@ -318,8 +318,8 @@ unsigned int frm_gpu_platform = 0;  /* FIXME */
 struct str_map_t frm_gpu_register_alloc_granularity_map =
 {
 	2, {
-		{ "Wavefront", frm_gpu_register_alloc_warp },
-		{ "WorkGroup", frm_gpu_register_alloc_thread_block }
+		{ "Warp", frm_gpu_register_alloc_warp },
+		{ "ThreadBlock", frm_gpu_register_alloc_thread_block }
 	}
 };
 enum frm_gpu_register_alloc_granularity_t frm_gpu_register_alloc_granularity;
@@ -411,8 +411,8 @@ struct frm_gpu_t *frm_gpu;
  * Private Functions
  */
 
-/* Version of Southern Islands trace producer.
- * See 'src/visual/fermi/gpu.c' for Southern Islands trace consumer. */
+/* Version of Fermi trace producer.
+ * See 'src/visual/fermi/gpu.c' for Fermi trace consumer. */
 
 #define FRM_TRACE_VERSION_MAJOR		1
 #define FRM_TRACE_VERSION_MINOR		1
@@ -426,7 +426,7 @@ static void frm_gpu_device_init()
 	/* Initialize */
 	frm_gpu = xcalloc(1, sizeof(struct frm_gpu_t));
 
-	/* Initialize compute units */
+	/* Initialize SMs */
 	frm_gpu->sms = xcalloc(frm_gpu_num_sms, 
 		sizeof(void *));
 	FRM_GPU_FOREACH_SM(sm_id)
@@ -465,10 +465,10 @@ static void frm_config_read(void)
 	section = "Device";
 
 	frm_gpu_num_sms = config_read_int(
-		gpu_config, section, "NumComputeUnits", 
+		gpu_config, section, "NumSMs", 
 		frm_gpu_num_sms);
 	if (frm_gpu_num_sms < 1)
-		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", 
+		fatal("%s: invalid value for 'NumSMs'.\n%s", 
 			frm_gpu_config_file_name, err_note);
 
 #if 0
@@ -484,7 +484,7 @@ static void frm_config_read(void)
 			err_note);
 
 	gpu_register_alloc_granularity_str = config_read_string(
-		gpu_config, section, "RegisterAllocGranularity", "WorkGroup");
+		gpu_config, section, "RegisterAllocGranularity", "ThreadBlock");
 	frm_gpu_register_alloc_granularity = str_map_string_case(
 		&frm_gpu_register_alloc_granularity_map, 
 		gpu_register_alloc_granularity_str);
@@ -493,28 +493,28 @@ static void frm_config_read(void)
 			frm_gpu_config_file_name, err_note);
 #endif
 
-	/* Compute Unit */
-	section = "ComputeUnit";
+	/* SM */
+	section = "SM";
 
 	frm_gpu_num_warp_pools = config_read_int(
-		gpu_config, section, "NumWavefrontPools", 
+		gpu_config, section, "NumWarpPools", 
 		frm_gpu_num_warp_pools);
 	if (frm_gpu_num_warp_pools < 1)
-		fatal("%s: invalid value for 'NumWavefrontPools'.\n%s", 
+		fatal("%s: invalid value for 'NumWarpPools'.\n%s", 
 				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_max_thread_blocks_per_warp_pool = config_read_int(
-		gpu_config, section, "MaxWorkGroupsPerWavefrontPool",
+		gpu_config, section, "MaxThreadBlocksPerWarpPool",
 		frm_gpu_max_thread_blocks_per_warp_pool);
 	if (frm_gpu_max_thread_blocks_per_warp_pool < 1)
-		fatal("%s: invalid value for 'MaxWorkGroupsPerWavefrontPool'"
+		fatal("%s: invalid value for 'MaxThreadBlocksPerWarpPool'"
 			".\n%s", frm_gpu_config_file_name, err_note);
 
 	frm_gpu_max_warps_per_warp_pool = config_read_int(
-		gpu_config, section, "MaxWavefrontsPerWavefrontPool",
+		gpu_config, section, "MaxWarpsPerWarpPool",
 		frm_gpu_max_warps_per_warp_pool);
 	if (frm_gpu_max_warps_per_warp_pool < 1)
-		fatal("%s: invalid value for 'MaxWavefrontsPerWavefrontPool'"
+		fatal("%s: invalid value for 'MaxWarpsPerWarpPool'"
 			".\n%s", frm_gpu_config_file_name, err_note);
 
 	frm_gpu_num_vector_registers = config_read_int(
@@ -949,17 +949,17 @@ void frm_config_dump(FILE *f)
 {
 	/* Device */
 	fprintf(f, "[ Config.Device ]\n");
-	fprintf(f, "NumComputeUnits = %d\n", frm_gpu_num_sms);
+	fprintf(f, "NumSMs = %d\n", frm_gpu_num_sms);
 	fprintf(f, "\n");
 
-	/* Compute Unit */
-	fprintf(f, "[ Config.ComputeUnit ]\n");
-	fprintf(f, "NumWavefrontPools = %d\n", frm_gpu_num_warp_pools);
+	/* SM */
+	fprintf(f, "[ Config.SM ]\n");
+	fprintf(f, "NumWarpPools = %d\n", frm_gpu_num_warp_pools);
 	fprintf(f, "NumVectorRegisters = %d\n", frm_gpu_num_vector_registers);
 	fprintf(f, "NumScalarRegisters = %d\n", frm_gpu_num_scalar_registers);
-	fprintf(f, "MaxWorkGroupsPerWavefrontPool = %d\n", 
+	fprintf(f, "MaxThreadBlocksPerWarpPool = %d\n", 
 		frm_gpu_max_thread_blocks_per_warp_pool);
-	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n", 
+	fprintf(f, "MaxWarpsPerWarpPool = %d\n", 
 		frm_gpu_max_warps_per_warp_pool);
 	fprintf(f, "\n");
 	/*
@@ -1080,11 +1080,11 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 {
 	int sm_id;
 
-	/* Assign current ND-Range */
+	/* Assign current Grid */
 	assert(!frm_gpu->grid);
 	frm_gpu->grid = grid;
 
-	/* Check that at least one work-group can be allocated per 
+	/* Check that at least one thread-block can be allocated per 
 	 * warp pool */
 	frm_gpu->thread_blocks_per_warp_pool = 
 		frm_calc_get_thread_blocks_per_warp_pool(
@@ -1094,15 +1094,15 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 
 	if (!frm_gpu->thread_blocks_per_warp_pool)
 	{
-		fatal("work-group resources cannot be allocated to a compute "
-			"unit.\n\tA compute unit in the GPU has a limit in "
+		fatal("thread-block resources cannot be allocated to a compute "
+			"unit.\n\tA SM in the GPU has a limit in "
 			"number of warps, number\n\tof registers, and "
-			"amount of local memory. If the work-group size\n"
-			"\texceeds any of these limits, the ND-Range cannot "
+			"amount of local memory. If the thread-block size\n"
+			"\texceeds any of these limits, the Grid cannot "
 			"be executed.\n");
 	}
 
-	/* Calculate limit of warps and work-items per Wavefront Pool */
+	/* Calculate limit of warps and work-items per Warp Pool */
 	frm_gpu->warps_per_warp_pool = 
 		frm_gpu->thread_blocks_per_warp_pool * 
 		grid->warps_per_thread_block;
@@ -1111,7 +1111,7 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 		frm_emu_warp_size;
 
 	/* Calculate limit of work groups, warps and work-items per 
-	 * compute unit */
+	 * SM */
 	frm_gpu->thread_blocks_per_sm = 
 		frm_gpu->thread_blocks_per_warp_pool * 
 		frm_gpu_num_warp_pools;
@@ -1188,7 +1188,7 @@ void frm_gpu_done()
 	/* GPU pipeline report */
 	frm_gpu_dump_report();
 
-	/* Free stream cores, compute units, and device */
+	/* Free stream cores, SMs, and device */
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		sm = frm_gpu->sms[sm_id];
@@ -1266,7 +1266,7 @@ void frm_gpu_dump_report(void)
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
-	/* Report for compute units */
+	/* Report for SMs */
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		sm = frm_gpu->sms[sm_id];
@@ -1278,9 +1278,9 @@ void frm_gpu_dump_report(void)
 		coalesced_reads = lds_mod->reads - lds_mod->effective_reads;
 		coalesced_writes = lds_mod->writes - lds_mod->effective_writes;
 
-		fprintf(f, "[ ComputeUnit%d ]\n\n", sm_id);
+		fprintf(f, "[ SM%d ]\n\n", sm_id);
 
-		fprintf(f, "WorkGroupCount = %lld\n", 
+		fprintf(f, "ThreadBlockCount = %lld\n", 
 			sm->mapped_thread_blocks);
 		fprintf(f, "Instructions = %lld\n", sm->inst_count);
 		fprintf(f, "ScalarALUInstructions = %lld\n", 
@@ -1333,7 +1333,7 @@ void frm_gpu_dump_summary(FILE *f)
 }
 
 
-/* Run one iteration of the Southern Islands GPU timing simulation loop. */
+/* Run one iteration of the Fermi GPU timing simulation loop. */
 int frm_gpu_run(void)
 {
 	struct frm_grid_t *grid;
@@ -1341,23 +1341,23 @@ int frm_gpu_run(void)
 	struct frm_sm_t *sm;
 	struct frm_sm_t *sm_next;
 
-	/* For efficiency when no Southern Islands emulation is selected, 
-	 * exit here if the list of existing ND-Ranges is empty. */
+	/* For efficiency when no Fermi emulation is selected, 
+	 * exit here if the list of existing Grids is empty. */
 	if (!frm_emu->grid_list_count)
 		return 0;
 
-	/* Start one ND-Range in state 'pending' */
+	/* Start one Grid in state 'pending' */
 	while ((grid = frm_emu->pending_grid_list_head))
 	{
-		/* Currently not supported for more than 1 ND-Range */
+		/* Currently not supported for more than 1 Grid */
 		if (frm_gpu->grid)
 		{
-			fatal("%s: Southern Islands GPU timing simulation not "
-				"supported for multiple ND-Ranges", 
+			fatal("%s: Fermi GPU timing simulation not "
+				"supported for multiple Grids", 
 				__FUNCTION__);
 		}
 
-		/* Set ND-Range status to 'running' */
+		/* Set Grid status to 'running' */
 		frm_grid_clear_status(grid, frm_grid_pending);
 		frm_grid_set_status(grid, frm_grid_running);
 
@@ -1366,16 +1366,16 @@ int frm_gpu_run(void)
 			grid->id, grid->thread_block_id_first, 
 			grid->thread_block_count);
 
-		/* Map ND-Range to GPU */
+		/* Map Grid to GPU */
 		frm_gpu_map_grid(grid);
 		frm_calc_plot();
 	}
 
-	/* Mapped ND-Range */
+	/* Mapped Grid */
 	grid = frm_gpu->grid;
 	assert(grid);
 
-	/* Allocate work-groups to compute units */
+	/* Allocate thread-blocks to SMs */
 	while (frm_gpu->sm_ready_list_head && 
 		grid->pending_list_head)
 	{
@@ -1398,7 +1398,7 @@ int frm_gpu_run(void)
 	/* Stop if there was a simulation stall */
 	if ((frm_gpu->cycle-frm_gpu->last_complete_cycle) > 1000000)
 	{
-		warning("Southern Islands GPU simulation stalled.\n%s", 
+		warning("Fermi GPU simulation stalled.\n%s", 
 			frm_err_stall);
 		esim_finish = esim_finish_stall;
 	}
@@ -1407,22 +1407,22 @@ int frm_gpu_run(void)
 	if (esim_finish)
 		return 1;
 
-	/* Run one loop iteration on each busy compute unit */
+	/* Run one loop iteration on each busy SM */
 	for (sm = frm_gpu->sm_busy_list_head; sm;
 		sm = sm_next)
 	{
-		/* Store next busy compute unit, since this can change
-		 * during the compute unit simulation loop iteration. */
+		/* Store next busy SM, since this can change
+		 * during the SM simulation loop iteration. */
 		sm_next = sm->sm_busy_list_next;
 
 		/* Run one cycle */
 		frm_sm_run(sm);
 	}
 
-	/* If ND-Range finished execution in all compute units, free it. */
+	/* If Grid finished execution in all SMs, free it. */
 	if (!frm_gpu->sm_busy_list_count)
 	{
-		/* Dump ND-Range report */
+		/* Dump Grid report */
 		frm_grid_dump(grid, frm_emu_report_file);
 
 		/* Stop if maximum number of kernels reached */
@@ -1432,7 +1432,7 @@ int frm_gpu_run(void)
 		//	esim_finish = esim_finish_frm_max_kernels;
 		//}
 
-		/* Finalize and free ND-Range */
+		/* Finalize and free Grid */
 		assert(frm_grid_get_status(grid, frm_grid_finished));
 		frm_gpu_unmap_grid();
 		frm_grid_free(grid);
