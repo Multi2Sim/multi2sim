@@ -44,7 +44,7 @@ void frm_mem_config_default(struct config_t *config)
 	assert(frm_emu_sim_kind == arch_sim_kind_detailed);
 
 	/* Cache geometry for L1 */
-	snprintf(section, sizeof section, "CacheGeometry si-geo-l1");
+	snprintf(section, sizeof section, "CacheGeometry frm-geo-l1");
 	config_write_int(config, section, "Sets", 64);
 	config_write_int(config, section, "Assoc", 4);
 	config_write_int(config, section, "BlockSize", 64);
@@ -52,7 +52,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "Policy", "LRU");
 
 	/* Cache geometry for L2 */
-	snprintf(section, sizeof section, "CacheGeometry si-geo-l2");
+	snprintf(section, sizeof section, "CacheGeometry frm-geo-l2");
 	config_write_int(config, section, "Sets", 128);
 	config_write_int(config, section, "Assoc", 16);
 	config_write_int(config, section, "BlockSize", 64);
@@ -63,158 +63,158 @@ void frm_mem_config_default(struct config_t *config)
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		/* L1 cache */
-		snprintf(section, sizeof section, "Module si-l1-%d", sm_id);
+		snprintf(section, sizeof section, "Module frm-l1-%d", sm_id);
 		config_write_string(config, section, "Type", "Cache");
-		config_write_string(config, section, "Geometry", "si-geo-l1");
-		config_write_string(config, section, "LowNetwork", "si-net-l1-l2");
+		config_write_string(config, section, "Geometry", "frm-geo-l1");
+		config_write_string(config, section, "LowNetwork", "frm-net-l1-l2");
 		config_write_string(config, section, "LowModules", 
-			"si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5");
+			"frm-l2-0 frm-l2-1 frm-l2-2 frm-l2-3 frm-l2-4 frm-l2-5");
 
 		/* Entry */
-		snprintf(section, sizeof section, "Entry si-cu-%d", sm_id);
-		snprintf(str, sizeof str, "si-l1-%d", sm_id);
-		config_write_string(config, section, "Arch", "SouthernIslands");
-		config_write_int(config, section, "ComputeUnit", sm_id);
+		snprintf(section, sizeof section, "Entry frm-sm-%d", sm_id);
+		snprintf(str, sizeof str, "frm-l1-%d", sm_id);
+		config_write_string(config, section, "Arch", "Fermi");
+		config_write_int(config, section, "SM", sm_id);
 		config_write_string(config, section, "Module", str);
 	}
 
 	/* L2 caches */
-	snprintf(section, sizeof section, "Module si-l2-0");
+	snprintf(section, sizeof section, "Module frm-l2-0");
 	config_write_string(config, section, "Type", "Cache");
-	config_write_string(config, section, "Geometry", "si-geo-l2");
-	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
-	config_write_string(config, section, "LowNetwork", "si-net-l2-0-gm-0");
-	config_write_string(config, section, "LowModules", "si-gm-0");
+	config_write_string(config, section, "Geometry", "frm-geo-l2");
+	config_write_string(config, section, "HighNetwork", "frm-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "frm-net-l2-0-gm-0");
+	config_write_string(config, section, "LowModules", "frm-gm-0");
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 0");
 
-	snprintf(section, sizeof section, "Module si-l2-1");
+	snprintf(section, sizeof section, "Module frm-l2-1");
 	config_write_string(config, section, "Type", "Cache");
-	config_write_string(config, section, "Geometry", "si-geo-l2");
-	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
-	config_write_string(config, section, "LowNetwork", "si-net-l2-1-gm-1");
-	config_write_string(config, section, "LowModules", "si-gm-1");
+	config_write_string(config, section, "Geometry", "frm-geo-l2");
+	config_write_string(config, section, "HighNetwork", "frm-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "frm-net-l2-1-gm-1");
+	config_write_string(config, section, "LowModules", "frm-gm-1");
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 1");
 	
-	snprintf(section, sizeof section, "Module si-l2-2");
+	snprintf(section, sizeof section, "Module frm-l2-2");
 	config_write_string(config, section, "Type", "Cache");
-	config_write_string(config, section, "Geometry", "si-geo-l2");
-	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
-	config_write_string(config, section, "LowNetwork", "si-net-l2-2-gm-2");
-	config_write_string(config, section, "LowModules", "si-gm-2");
+	config_write_string(config, section, "Geometry", "frm-geo-l2");
+	config_write_string(config, section, "HighNetwork", "frm-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "frm-net-l2-2-gm-2");
+	config_write_string(config, section, "LowModules", "frm-gm-2");
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 2");
 
-	snprintf(section, sizeof section, "Module si-l2-3");
+	snprintf(section, sizeof section, "Module frm-l2-3");
 	config_write_string(config, section, "Type", "Cache");
-	config_write_string(config, section, "Geometry", "si-geo-l2");
-	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
-	config_write_string(config, section, "LowNetwork", "si-net-l2-3-gm-3");
-	config_write_string(config, section, "LowModules", "si-gm-3");
+	config_write_string(config, section, "Geometry", "frm-geo-l2");
+	config_write_string(config, section, "HighNetwork", "frm-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "frm-net-l2-3-gm-3");
+	config_write_string(config, section, "LowModules", "frm-gm-3");
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 3");
 
-	snprintf(section, sizeof section, "Module si-l2-4");
+	snprintf(section, sizeof section, "Module frm-l2-4");
 	config_write_string(config, section, "Type", "Cache");
-	config_write_string(config, section, "Geometry", "si-geo-l2");
-	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
-	config_write_string(config, section, "LowNetwork", "si-net-l2-4-gm-4");
-	config_write_string(config, section, "LowModules", "si-gm-4");
+	config_write_string(config, section, "Geometry", "frm-geo-l2");
+	config_write_string(config, section, "HighNetwork", "frm-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "frm-net-l2-4-gm-4");
+	config_write_string(config, section, "LowModules", "frm-gm-4");
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 4");
 
-	snprintf(section, sizeof section, "Module si-l2-5");
+	snprintf(section, sizeof section, "Module frm-l2-5");
 	config_write_string(config, section, "Type", "Cache");
-	config_write_string(config, section, "Geometry", "si-geo-l2");
-	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
-	config_write_string(config, section, "LowNetwork", "si-net-l2-5-gm-5");
-	config_write_string(config, section, "LowModules", "si-gm-5");
+	config_write_string(config, section, "Geometry", "frm-geo-l2");
+	config_write_string(config, section, "HighNetwork", "frm-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "frm-net-l2-5-gm-5");
+	config_write_string(config, section, "LowModules", "frm-gm-5");
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 5");
 
 	/* Global memory */
-	snprintf(section, sizeof section, "Module si-gm-0");
+	snprintf(section, sizeof section, "Module frm-gm-0");
 	config_write_string(config, section, "Type", "MainMemory");
-	config_write_string(config, section, "HighNetwork", "si-net-l2-0-gm-0");
+	config_write_string(config, section, "HighNetwork", "frm-net-l2-0-gm-0");
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 0");
 
-	snprintf(section, sizeof section, "Module si-gm-1");
+	snprintf(section, sizeof section, "Module frm-gm-1");
 	config_write_string(config, section, "Type", "MainMemory");
-	config_write_string(config, section, "HighNetwork", "si-net-l2-1-gm-1");
+	config_write_string(config, section, "HighNetwork", "frm-net-l2-1-gm-1");
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 1");
 
-	snprintf(section, sizeof section, "Module si-gm-2");
+	snprintf(section, sizeof section, "Module frm-gm-2");
 	config_write_string(config, section, "Type", "MainMemory");
-	config_write_string(config, section, "HighNetwork", "si-net-l2-2-gm-2");
+	config_write_string(config, section, "HighNetwork", "frm-net-l2-2-gm-2");
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 2");
 
-	snprintf(section, sizeof section, "Module si-gm-3");
+	snprintf(section, sizeof section, "Module frm-gm-3");
 	config_write_string(config, section, "Type", "MainMemory");
-	config_write_string(config, section, "HighNetwork", "si-net-l2-3-gm-3");
+	config_write_string(config, section, "HighNetwork", "frm-net-l2-3-gm-3");
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 3");
 
-	snprintf(section, sizeof section, "Module si-gm-4");
+	snprintf(section, sizeof section, "Module frm-gm-4");
 	config_write_string(config, section, "Type", "MainMemory");
-	config_write_string(config, section, "HighNetwork", "si-net-l2-4-gm-4");
+	config_write_string(config, section, "HighNetwork", "frm-net-l2-4-gm-4");
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 4");
 
-	snprintf(section, sizeof section, "Module si-gm-5");
+	snprintf(section, sizeof section, "Module frm-gm-5");
 	config_write_string(config, section, "Type", "MainMemory");
-	config_write_string(config, section, "HighNetwork", "si-net-l2-5-gm-5");
+	config_write_string(config, section, "HighNetwork", "frm-net-l2-5-gm-5");
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
 		"ADDR DIV 64 MOD 6 EQ 5");
 
 	/* Network connecting L1s and L2s */
-	snprintf(section, sizeof section, "Network si-net-l1-l2");
+	snprintf(section, sizeof section, "Network frm-net-l1-l2");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
 
 	/* Networks connecting memory controllers and global memory banks */
-	snprintf(section, sizeof section, "Network si-net-l2-0-gm-0");
+	snprintf(section, sizeof section, "Network frm-net-l2-0-gm-0");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
 
-	snprintf(section, sizeof section, "Network si-net-l2-1-gm-1");
+	snprintf(section, sizeof section, "Network frm-net-l2-1-gm-1");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
 
-	snprintf(section, sizeof section, "Network si-net-l2-2-gm-2");
+	snprintf(section, sizeof section, "Network frm-net-l2-2-gm-2");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
 
-	snprintf(section, sizeof section, "Network si-net-l2-3-gm-3");
+	snprintf(section, sizeof section, "Network frm-net-l2-3-gm-3");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
 
-	snprintf(section, sizeof section, "Network si-net-l2-4-gm-4");
+	snprintf(section, sizeof section, "Network frm-net-l2-4-gm-4");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
 
-	snprintf(section, sizeof section, "Network si-net-l2-5-gm-5");
+	snprintf(section, sizeof section, "Network frm-net-l2-5-gm-5");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
@@ -237,17 +237,17 @@ void frm_mem_config_parse_entry(struct config_t *config, char *section)
 	config_var_allow(config, section, "Module");
 
 	/* Read compute unit */
-	sm_id = config_read_int(config, section, "ComputeUnit", -1);
+	sm_id = config_read_int(config, section, "SM", -1);
 	if (sm_id < 0)
-		fatal("%s: section [%s]: invalid or missing value for 'ComputeUnit'",
+		fatal("%s: section [%s]: invalid or missing value for 'SM'",
 			file_name, section);
 
 	/* Check compute unit boundaries */
 	if (sm_id >= frm_gpu_num_sms)
 	{
-		warning("%s: section [%s] ignored, referring to Southern Islands compute unit %d.\n"
-			"\tThis section refers to a compute unit that does not currently exist.\n"
-			"\tPlease review your Southern Islands configuration file if this is not the\n"
+		warning("%s: section [%s] ignored, referring to Fermi SM[%d].\n"
+			"\tThis section refers to a SM that does not currently exist.\n"
+			"\tPlease review your Fermi configuration file if this is not the\n"
 			"\tdesired behavior.\n",
 			file_name, section, sm_id);
 		return;
@@ -256,9 +256,9 @@ void frm_mem_config_parse_entry(struct config_t *config, char *section)
 	/* Check that entry has not been assigned before */
 	sm = frm_gpu->sms[sm_id];
 	if (sm->global_memory)
-		fatal("%s: section [%s]: entry from compute unit %d already assigned.\n"
+		fatal("%s: section [%s]: entry from SM[%d] already assigned.\n"
 			"\tA different [Entry <name>] section in the memory configuration file has already\n"
-			"\tassigned an entry for this particular compute unit. Please review your\n"
+			"\tassigned an entry for this particular SM. Please review your\n"
 			"\tconfiguration file to avoid duplicates.\n",
 			file_name, section, sm_id);
 
@@ -282,7 +282,7 @@ void frm_mem_config_parse_entry(struct config_t *config, char *section)
 	linked_list_add(frm_emu_arch->mem_entry_mod_list, sm->global_memory);
 	
 	/* Debug */
-	mem_debug("\tSouthern Islands compute unit %d\n", sm_id);
+	mem_debug("\tFermi SM[%d]\n", sm_id);
 	mem_debug("\t\tEntry -> %s\n", sm->global_memory->name);
 	mem_debug("\n");
 }
