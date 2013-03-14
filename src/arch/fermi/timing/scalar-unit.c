@@ -41,7 +41,7 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 	int list_entries;
 	int list_index = 0;
 	unsigned int complete;
-	struct frm_ndrange_t *ndrange = frm_gpu->ndrange;
+	struct frm_grid_t *grid= frm_gpu->grid;
 	struct frm_thread_block_t *thread_block;
 	struct frm_warp_t *warp;
 	int warp_id;
@@ -112,10 +112,10 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 			/* Check if all warps have reached the barrier */
 			complete = 1;
 			thread_block = uop->warp->thread_block;
-			FRM_FOREACH_WAVEFRONT_IN_WORK_GROUP(thread_block, 
+			FRM_FOREACH_WARP_IN_THREADBLOCK(thread_block, 
 				warp_id)
 			{
-				warp = ndrange->warps[warp_id];
+				warp = grid->warps[warp_id];
 				
 				if (!warp->warp_pool_entry->
 					wait_for_barrier)
@@ -128,10 +128,10 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 			 * clear their flags */
 			if (complete)
 			{
-				FRM_FOREACH_WAVEFRONT_IN_WORK_GROUP(thread_block, 
+				FRM_FOREACH_WARP_IN_THREADBLOCK(thread_block, 
 					warp_id)
 				{
-					warp = ndrange->
+					warp = grid->
 						warps[warp_id];
 					warp->warp_pool_entry->
 						wait_for_barrier = 0;

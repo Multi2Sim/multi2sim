@@ -84,10 +84,10 @@ struct frm_thread_t
 	unsigned int global_mem_access_size;
 
 	/* Last local memory access */
-	int local_mem_access_count;  /* Number of local memory access performed by last instruction */
-	unsigned int local_mem_access_addr[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	unsigned int local_mem_access_size[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	int local_mem_access_type[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
+	int lds_access_count;  /* Number of local memory access performed by last instruction */
+	unsigned int lds_access_addr[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	unsigned int lds_access_size[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	int lds_access_type[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
 };
 
 #define FRM_FOREACH_THREAD_IN_GRID(GRID, THREAD_ID) \
