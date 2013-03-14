@@ -33,23 +33,23 @@ struct opengl_buffer_obj_t
 	void* data;
 	unsigned int data_size;
 	unsigned int usage;
-	/* For mapped buffer */
-	unsigned int map_access_flags;
+	unsigned int map_access_flags; /* Access permission R, W, R/W */
 	unsigned int map_pointer; /* User space address of mapping */
-	unsigned int map_length;
+	unsigned int map_length; /* User space memory size */
 };
 
 struct opengl_buffer_obj_t *opengl_buffer_obj_create();
 void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buf_obj);
 void opengl_buffer_obj_detele(struct opengl_buffer_obj_t *buf_obj);
 void opengl_buffer_obj_data(struct opengl_buffer_obj_t *buf_obj, unsigned int size, const void *data, unsigned int usage);
+void opengl_buffer_obj_reference(struct opengl_buffer_obj_t *buf_obj);
+void opengl_buffer_obj_dereference(struct opengl_buffer_obj_t *buf_obj);
 
 struct linked_list_t *opengl_buffer_obj_repo_create();
 void opengl_buffer_obj_repo_free(struct linked_list_t *buf_obj_repo);
 void opengl_buffer_obj_repo_add(struct linked_list_t *buf_obj_repo, struct opengl_buffer_obj_t *buf_obj);
 int opengl_buffer_obj_repo_remove(struct linked_list_t *buf_obj_repo, struct opengl_buffer_obj_t *buf_obj);
 struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get(struct linked_list_t *buf_obj_repo, int id);
-struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get_and_reference(struct linked_list_t *buf_obj_repo, int id);
-
+struct opengl_buffer_obj_t *opengl_buffer_obj_repo_reference(struct linked_list_t *buf_obj_repo, int id);
 
 #endif

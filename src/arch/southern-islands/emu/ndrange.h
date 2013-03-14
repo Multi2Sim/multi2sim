@@ -141,15 +141,15 @@ struct si_ndrange_t
 	unsigned int num_sgpr_used;
 
         /* Internal tables that reside in global memory */
-        unsigned int const_buf_table;
-        struct si_emu_table_entry_t
-                const_buf_table_entries[SI_EMU_MAX_NUM_CONST_BUFS];
-        unsigned int resource_table;
-        struct si_emu_table_entry_t
-                resource_table_entries[SI_EMU_MAX_NUM_RESOURCES];
-        unsigned int uav_table;
-        struct si_emu_table_entry_t
-                uav_table_entries[SI_EMU_MAX_NUM_UAVS];
+	unsigned int const_buf_table;
+	struct si_emu_table_entry_t
+		const_buf_table_entries[SI_EMU_MAX_NUM_CONST_BUFS];
+	unsigned int resource_table;
+	struct si_emu_table_entry_t
+		resource_table_entries[SI_EMU_MAX_NUM_RESOURCES];
+	unsigned int uav_table;
+	struct si_emu_table_entry_t
+		uav_table_entries[SI_EMU_MAX_NUM_UAVS];
 
 	/* Statistics */
 
