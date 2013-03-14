@@ -32,7 +32,7 @@ extern int frm_stack_debug_category;
 
 
 /* Part of a GPU instruction specific for each work-item within warp. */
-struct frm_work_item_uop_t
+struct frm_thread_uop_t
 {
 	/* For global memory accesses */
 	unsigned int global_mem_access_addr;
@@ -54,12 +54,12 @@ struct frm_uop_t
 {
 	/* Fields */
 	long long id;
-	long long id_in_compute_unit;
+	long long id_in_sm;
 	long long id_in_warp;
 	int warp_pool_id;
 	struct frm_warp_t *warp;       /* Wavefront it belongs to */
 	struct frm_thread_block_t *thread_block;     /* Work-group it belongs to */
-	struct frm_compute_unit_t *compute_unit; /* Compute unit it belongs to */
+	struct frm_sm_t *sm; /* Compute unit it belongs to */
 	struct frm_warp_pool_entry_t *warp_pool_entry;  /* IB entry where uop is located */
 	struct frm_inst_t inst;
 
@@ -101,7 +101,7 @@ struct frm_uop_t
 
 	/* Per stream-core data. This space is dynamically allocated for an uop.
 	 * It should be always the last field of the structure. */
-	struct frm_work_item_uop_t work_item_uop[0];
+	struct frm_thread_uop_t thread_uop[0];
 };
 
 

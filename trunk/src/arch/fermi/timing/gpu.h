@@ -198,7 +198,7 @@ struct frm_gpu_t
 	int warps_per_sm;
 	int threads_per_sm;
 
-	/* Compute units */
+	/* Streaming multiprocessors */
 	struct frm_sm_t **sms;
 
 	/* List of ready compute units accepting work-groups */

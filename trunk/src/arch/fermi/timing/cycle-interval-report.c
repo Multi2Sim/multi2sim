@@ -5,9 +5,9 @@
 #include <lib/util/string.h>
 
 #include "uop.h"
+#include "sm.h"
 #include "cycle-interval-report.h"
 
-#include "compute-unit.h"
 
 int frm_spatial_report_active = 0 ;
 

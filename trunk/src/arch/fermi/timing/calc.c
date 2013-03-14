@@ -129,7 +129,7 @@ static void frm_calc_plot_threads_per_thread_block(void)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.threads.eps",
-		frm_gpu_calc_file_name, frm_gpu->ndrange->id);
+		frm_gpu_calc_file_name, frm_gpu->grid->id);
 	if (!file_can_open_for_write(plot_file_name))
 	{
 		fatal("%s: cannot write GPU occupancy calculation plot", 
@@ -138,9 +138,9 @@ static void frm_calc_plot_threads_per_thread_block(void)
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	local_mem_per_thread_block = frm_gpu->ndrange->local_mem_top;
+	local_mem_per_thread_block = frm_gpu->grid->local_mem_top;
 	registers_per_thread = 
-		frm_gpu->ndrange->num_vgpr_used;
+		frm_gpu->grid->num_vgpr_used;
 	for (threads_per_thread_block = frm_emu_warp_size;
 		threads_per_thread_block < 
 		(frm_gpu_max_warps_per_warp_pool * 
@@ -166,7 +166,7 @@ static void frm_calc_plot_threads_per_thread_block(void)
 
 	/* Current data point */
 	threads_per_thread_block = ROUND_UP(
-		frm_gpu->ndrange->local_size, 
+		frm_gpu->grid->local_size, 
 		frm_emu_warp_size);
 	thread_blocks_per_warp_pool = 
 		frm_calc_get_thread_blocks_per_warp_pool(
@@ -225,7 +225,7 @@ static void frm_calc_plot_registers_per_thread(void)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.registers.eps",
-		frm_gpu_calc_file_name, frm_gpu->ndrange->id);
+		frm_gpu_calc_file_name, frm_gpu->grid->id);
 	if (!file_can_open_for_write(plot_file_name))
 	{
 		fatal("%s: cannot write GPU occupancy calculation plot", 
@@ -234,8 +234,8 @@ static void frm_calc_plot_registers_per_thread(void)
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	local_mem_per_thread_block = frm_gpu->ndrange->local_mem_top;
-	threads_per_thread_block = frm_gpu->ndrange->local_size;
+	local_mem_per_thread_block = frm_gpu->grid->local_mem_top;
+	threads_per_thread_block = frm_gpu->grid->local_size;
 	warps_per_thread_block = (threads_per_thread_block + 
 		frm_emu_warp_size - 1) / frm_emu_warp_size;
 	for (registers_per_thread = 1; registers_per_thread <= 128; 
@@ -257,7 +257,7 @@ static void frm_calc_plot_registers_per_thread(void)
 	fclose(data_file);
 
 	/* Current data point */
-	registers_per_thread = frm_gpu->ndrange->num_vgpr_used;
+	registers_per_thread = frm_gpu->grid->num_vgpr_used;
 	thread_blocks_per_warp_pool = 
 		frm_calc_get_thread_blocks_per_warp_pool(
 			threads_per_thread_block, 
@@ -317,16 +317,16 @@ static void frm_calc_plot_local_mem_per_thread_block(void)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.local_mem.eps",
-		frm_gpu_calc_file_name, frm_gpu->ndrange->id);
+		frm_gpu_calc_file_name, frm_gpu->grid->id);
 	if (!file_can_open_for_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", 
 			plot_file_name);
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	registers_per_thread = frm_gpu->ndrange->num_vgpr_used;
+	registers_per_thread = frm_gpu->grid->num_vgpr_used;
 	local_mem_step = MAX(1, frm_gpu_lds_size / 32);
-	threads_per_thread_block = frm_gpu->ndrange->local_size;
+	threads_per_thread_block = frm_gpu->grid->local_size;
 	warps_per_thread_block = (threads_per_thread_block + 
 		frm_emu_warp_size - 1) / frm_emu_warp_size;
 	for (local_mem_per_thread_block = local_mem_step;
@@ -348,7 +348,7 @@ static void frm_calc_plot_local_mem_per_thread_block(void)
 	fclose(data_file);
 
 	/* Current data point */
-	local_mem_per_thread_block = frm_gpu->ndrange->local_mem_top;
+	local_mem_per_thread_block = frm_gpu->grid->local_mem_top;
 	thread_blocks_per_warp_pool = 
 		frm_calc_get_thread_blocks_per_warp_pool(
 			threads_per_thread_block, registers_per_thread, 

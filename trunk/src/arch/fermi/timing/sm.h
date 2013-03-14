@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_FERMI_TIMING_COMPUTE_UNIT_H
-#define ARCH_FERMI_TIMING_COMPUTE_UNIT_H
+#ifndef ARCH_FERMI_TIMING_SM_H
+#define ARCH_FERMI_TIMING_SM_H
 
 #include "branch-unit.h"
 #include "lds-unit.h"

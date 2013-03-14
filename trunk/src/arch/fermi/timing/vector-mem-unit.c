@@ -28,7 +28,7 @@
 #include <lib/util/list.h>
 #include <lib/util/config.h>
 
-#include "compute-unit.h"
+#include "sm.h"
 #include "gpu.h"
 #include "cycle-interval-report.h"
 #include "vector-mem-unit.h"
@@ -237,9 +237,9 @@ void frm_vector_mem_mem(struct frm_vector_mem_unit_t *vector_mem)
 
 		/* Access global memory */
 		assert(!uop->global_mem_witness);
-		FRM_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->warp, thread_id)
+		FRM_FOREACH_THREAD_IN_WARP(uop->warp, thread_id)
 		{
-			thread = frm_gpu->ndrange->threads[thread_id];
+			thread = frm_gpu->grid->threads[thread_id];
 			thread_uop = 
 				&uop->thread_uop[thread->id_in_warp];
 

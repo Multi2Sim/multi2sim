@@ -111,6 +111,9 @@ struct frm_grid_t
 	int finished_list_count;
 	int finished_list_max;
 
+	void *inst_buffer;
+	unsigned int inst_buffer_size;
+
 	/* Local memory top to assign to local arguments.
 	 * Initially it is equal to the size of local variables in 
 	 * kernel function. */
