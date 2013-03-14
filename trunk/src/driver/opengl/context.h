@@ -94,11 +94,11 @@ enum opengl_frag_attrib_t
 	FRAG_ATTRIB_TEX5 = 9,
 	FRAG_ATTRIB_TEX6 = 10,
 	FRAG_ATTRIB_TEX7 = 11,
-	FRAG_ATTRIB_FACE = 12,  /**< front/back face */
-	FRAG_ATTRIB_PNTC = 13,  /**< sprite/point coord */
+	FRAG_ATTRIB_FACE = 12,  /* front/back face */
+	FRAG_ATTRIB_PNTC = 13,  /* sprite/point coord */
 	FRAG_ATTRIB_CLIP_DIST0 = 14,
 	FRAG_ATTRIB_CLIP_DIST1 = 15,
-	FRAG_ATTRIB_VAR0 = 16,  /**< shader varying */
+	FRAG_ATTRIB_VAR0 = 16,  /* shader varying */
 	FRAG_ATTRIB_MAX = (FRAG_ATTRIB_VAR0 + MAX_VARYING)
 };
 
@@ -188,7 +188,7 @@ struct opengl_context_capability_t
 
 struct opengl_current_attrib_t
 {
-	GLfloat Attrib[VERT_ATTRIB_MAX][4];	/**< Position, color, texcoords, etc */
+	GLfloat Attrib[VERT_ATTRIB_MAX][4];	/* Position, color, texcoords, etc */
 	GLfloat RasterPos[4];
 	GLfloat RasterDistance;
 	GLfloat RasterColor[4];

@@ -123,7 +123,7 @@ struct opengl_context_t *opengl_context_create(void)
 	ctx->array_attrib = opengl_vertex_array_attrib_create();
 
 	/* Transform feedback binding point */
-	ctx->transform_feedback = opengl_transform_feedback_binding_create();
+	ctx->transform_feedback = opengl_transform_feedback_state_create();
 
 	/* Return */
 	return ctx;
@@ -175,7 +175,7 @@ void opengl_context_free(struct opengl_context_t *ctx)
 	opengl_vertex_array_attrib_free(ctx->array_attrib);
 
 	/* Free Transform Feedback binding point */
-	opengl_transform_feedback_binding_free(ctx->transform_feedback);
+	opengl_transform_feedback_state_free(ctx->transform_feedback);
 
 	free(ctx);
 }
@@ -240,12 +240,14 @@ struct opengl_buffer_obj_t *opengl_context_get_bound_buffer(unsigned int target,
 		buf_obj = NULL;
 		break;
 	}
-/*	case GL_DISPATCH_INDIRECT_BUFFER:
+#ifdef GL_DISPATCH_INDIRECT_BUFFER
+	case GL_DISPATCH_INDIRECT_BUFFER:
 	{
 		buf_obj = NULL;
 		break;
 	}
-*/	case GL_ELEMENT_ARRAY_BUFFER:
+#endif
+	case GL_ELEMENT_ARRAY_BUFFER:
 	{
 		buf_obj = NULL;
 		break;
@@ -260,12 +262,14 @@ struct opengl_buffer_obj_t *opengl_context_get_bound_buffer(unsigned int target,
 		buf_obj = NULL;
 		break;
 	}
-/*	case GL_SHADER_STORAGE_BUFFER:
+#ifdef GL_SHADER_STORAGE_BUFFER
+	case GL_SHADER_STORAGE_BUFFER:
 	{
 		buf_obj = NULL;
 		break;
 	}
-*/	case GL_TEXTURE_BUFFER:
+#endif
+	case GL_TEXTURE_BUFFER:
 	{
 		buf_obj = NULL;
 		break;

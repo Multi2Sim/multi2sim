@@ -30,6 +30,7 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/hash-table.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "buffers.h"
@@ -201,6 +202,8 @@ static int opengl_func_glClearColor(struct x86_ctx_t *ctx)
 	blue = args[2];
 	alpha = args[3];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%f, %f, %f, %f)\n", args[0], args[1], args[2], args[3]);
 	opengl_debug("\tClear color: RGBA = [%f, %f, %f, %f]\n", red, green, blue, alpha);
 
 	/* Set clear color */
@@ -597,172 +600,151 @@ static int opengl_func_glEnable(struct x86_ctx_t *ctx)
 	{
 
 	case GL_ALPHA_TEST:
-
-		{
-			opengl_ctx->context_cap->is_alpha_test = GL_TRUE;
-			opengl_debug("\tGL_ALPHA_TEST enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_alpha_test = GL_TRUE;
+		opengl_debug("\tGL_ALPHA_TEST enabled!\n");
+		break;
+	}
 
 	case GL_AUTO_NORMAL:
-
-		{
-			opengl_ctx->context_cap->is_auto_normal = GL_TRUE;
-			opengl_debug("\tGL_AUTO_NORMAL enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_auto_normal = GL_TRUE;
+		opengl_debug("\tGL_AUTO_NORMAL enabled!\n");
+		break;
+	}
 
 	case GL_BLEND:
-
-		{
-			opengl_ctx->context_cap->is_blend = GL_TRUE;
-			opengl_debug("\tGL_BLEND enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_blend = GL_TRUE;
+		opengl_debug("\tGL_BLEND enabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE0:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane0 = GL_TRUE;
-			opengl_debug("\tGL_CLIP_PLANE0 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane0 = GL_TRUE;
+		opengl_debug("\tGL_CLIP_PLANE0 enabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE1:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane1 = GL_TRUE;
-			opengl_debug("\tGL_CLIP_PLANE1 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane1 = GL_TRUE;
+		opengl_debug("\tGL_CLIP_PLANE1 enabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE2:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane2 = GL_TRUE;
-			opengl_debug("\tGL_CLIP_PLANE2 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane2 = GL_TRUE;
+		opengl_debug("\tGL_CLIP_PLANE2 enabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE3:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane3 = GL_TRUE;
-			opengl_debug("\tGL_CLIP_PLANE3 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane3 = GL_TRUE;
+		opengl_debug("\tGL_CLIP_PLANE3 enabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE4:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane4 = GL_TRUE;
-			opengl_debug("\tGL_CLIP_PLANE4 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane4 = GL_TRUE;
+		opengl_debug("\tGL_CLIP_PLANE4 enabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE5:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane5 = GL_TRUE;
-			opengl_debug("\tGL_CLIP_PLANE5 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane5 = GL_TRUE;
+		opengl_debug("\tGL_CLIP_PLANE5 enabled!\n");
+		break;
+	}
 
 	case GL_COLOR_LOGIC_OP:
-
-		{
-			opengl_ctx->context_cap->is_color_logic_op = GL_TRUE;
-			opengl_debug("\tGL_COLOR_LOGIC_OP enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_color_logic_op = GL_TRUE;
+		opengl_debug("\tGL_COLOR_LOGIC_OP enabled!\n");
+		break;
+	}
 
 	case GL_COLOR_MATERIAL:
-
-		{
-			opengl_ctx->context_cap->is_color_material = GL_TRUE;
-			opengl_debug("\tGL_COLOR_MATERIAL enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_color_material = GL_TRUE;
+		opengl_debug("\tGL_COLOR_MATERIAL enabled!\n");
+		break;
+	}
 
 	case GL_COLOR_SUM:
-
-		{
-			opengl_ctx->context_cap->is_color_sum = GL_TRUE;
-			opengl_debug("\tGL_COLOR_SUM enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_color_sum = GL_TRUE;
+		opengl_debug("\tGL_COLOR_SUM enabled!\n");
+		break;
+	}
 
 	case GL_COLOR_TABLE:
-
-		{
-			opengl_ctx->context_cap->is_color_table = GL_TRUE;
-			opengl_debug("\tGL_COLOR_TABLE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_color_table = GL_TRUE;
+		opengl_debug("\tGL_COLOR_TABLE enabled!\n");
+		break;
+	}
 
 	case GL_CONVOLUTION_1D:
-
-		{
-			opengl_ctx->context_cap->is_convolution_1d = GL_TRUE;
-			opengl_debug("\tGL_CONVOLUTION_1D enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_convolution_1d = GL_TRUE;
+		opengl_debug("\tGL_CONVOLUTION_1D enabled!\n");
+		break;
+	}
 
 	case GL_CONVOLUTION_2D:
-
-		{
-			opengl_ctx->context_cap->is_convolution_2d = GL_TRUE;
-			opengl_debug("\tGL_CONVOLUTION_2D enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_convolution_2d = GL_TRUE;
+		opengl_debug("\tGL_CONVOLUTION_2D enabled!\n");
+		break;
+	}
 
 	case GL_CULL_FACE:
-
-		{
-			opengl_ctx->context_cap->is_cull_face = GL_TRUE;
-			opengl_debug("\tGL_CULL_FACE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_cull_face = GL_TRUE;
+		opengl_debug("\tGL_CULL_FACE enabled!\n");
+		break;
+	}
 
 	case GL_DEPTH_TEST:
-
-		{
-			opengl_ctx->context_cap->is_depth_test = GL_TRUE;
-			opengl_debug("\tGL_DEPTH_TEST enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_depth_test = GL_TRUE;
+		opengl_debug("\tGL_DEPTH_TEST enabled!\n");
+		break;
+	}
 
 	case GL_DITHER:
-
-		{
-			opengl_ctx->context_cap->is_dither = GL_TRUE;
-			opengl_debug("\tGL_DITHER enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_dither = GL_TRUE;
+		opengl_debug("\tGL_DITHER enabled!\n");
+		break;
+	}
 
 	case GL_FOG:
-
-		{
-			opengl_ctx->context_cap->is_fog = GL_TRUE;
-			opengl_debug("\tGL_FOG enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_fog = GL_TRUE;
+		opengl_debug("\tGL_FOG enabled!\n");
+		break;
+	}
 
 	case GL_HISTOGRAM:
-
-		{
-			opengl_ctx->context_cap->is_histogram = GL_TRUE;
-			opengl_debug("\tGL_HISTOGRAM enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_histogram = GL_TRUE;
+		opengl_debug("\tGL_HISTOGRAM enabled!\n");
+		break;
+	}
 
 	case GL_INDEX_LOGIC_OP:
-
-		{
-			opengl_ctx->context_cap->is_index_logic_op = GL_TRUE;
-			opengl_debug("\tGL_INDEX_LOGIC_OP enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_index_logic_op = GL_TRUE;
+		opengl_debug("\tGL_INDEX_LOGIC_OP enabled!\n");
+		break;
+	}
 
 	case GL_LIGHT0:
 
@@ -837,396 +819,347 @@ static int opengl_func_glEnable(struct x86_ctx_t *ctx)
 		}
 
 	case GL_LINE_SMOOTH:
-
-		{
-			opengl_ctx->context_cap->is_line_smooth = GL_TRUE;
-			opengl_debug("\tGL_LINE_SMOOTH enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_line_smooth = GL_TRUE;
+		opengl_debug("\tGL_LINE_SMOOTH enabled!\n");
+		break;
+	}
 
 	case GL_LINE_STIPPLE:
-
-		{
-			opengl_ctx->context_cap->is_line_stipple = GL_TRUE;
-			opengl_debug("\tGL_LINE_STIPPLE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_line_stipple = GL_TRUE;
+		opengl_debug("\tGL_LINE_STIPPLE enabled!\n");
+		break;
+	}
 
 	case GL_MAP1_COLOR_4:
-
-		{
-			opengl_ctx->context_cap->is_map1_color_4 = GL_TRUE;
-			opengl_debug("\tGL_MAP1_COLOR_4 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_color_4 = GL_TRUE;
+		opengl_debug("\tGL_MAP1_COLOR_4 enabled!\n");
+		break;
+	}
 
 	case GL_MAP1_INDEX:
-
-		{
-			opengl_ctx->context_cap->is_map1_index = GL_TRUE;
-			opengl_debug("\tGL_MAP1_INDEX enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_index = GL_TRUE;
+		opengl_debug("\tGL_MAP1_INDEX enabled!\n");
+		break;
+	}
 
 	case GL_MAP1_NORMAL:
-
-		{
-			opengl_ctx->context_cap->is_map1_normal = GL_TRUE;
-			opengl_debug("\tGL_MAP1_NORMAL enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_normal = GL_TRUE;
+		opengl_debug("\tGL_MAP1_NORMAL enabled!\n");
+		break;
+	}
 
 	case GL_MAP1_TEXTURE_COORD_1:
-
-		{
-			opengl_ctx->context_cap->is_map1_texture_coord_1 = GL_TRUE;
-			opengl_debug("\tGL_MAP1_TEXTURE_COORD_1 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_texture_coord_1 = GL_TRUE;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_1 enabled!\n");
+		break;
+	}
 
 	case GL_MAP1_TEXTURE_COORD_2:
-
-		{
-			opengl_ctx->context_cap->is_map1_texture_coord_2 = GL_TRUE;
-			opengl_debug("\tGL_MAP1_TEXTURE_COORD_2 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_texture_coord_2 = GL_TRUE;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_2 enabled!\n");
+		break;
+	}
 
 	case GL_MAP1_TEXTURE_COORD_3:
-
-		{
-			opengl_ctx->context_cap->is_map1_texture_coord_3 = GL_TRUE;
-			opengl_debug("\tGL_MAP1_TEXTURE_COORD_3 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_texture_coord_3 = GL_TRUE;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_3 enabled!\n");
+		break;
+	}
 
 	case GL_MAP1_TEXTURE_COORD_4:
-
-		{
-			opengl_ctx->context_cap->is_map1_texture_coord_4 = GL_TRUE;
-			opengl_debug("\tGL_MAP1_TEXTURE_COORD_4 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_texture_coord_4 = GL_TRUE;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_4 enabled!\n");
+		break;
+	}
 
 	case GL_MAP1_VERTEX_3:
-
-		{
-			opengl_ctx->context_cap->is_map1_vertex_3 = GL_TRUE;
-			opengl_debug("\tGL_MAP1_VERTEX_3 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_vertex_3 = GL_TRUE;
+		opengl_debug("\tGL_MAP1_VERTEX_3 enabled!\n");
+		break;
+	}
 
 	case GL_MAP1_VERTEX_4:
-
-		{
-			opengl_ctx->context_cap->is_map1_vertex_4 = GL_TRUE;
-			opengl_debug("\tGL_MAP1_VERTEX_4 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_vertex_4 = GL_TRUE;
+		opengl_debug("\tGL_MAP1_VERTEX_4 enabled!\n");
+		break;
+	}
 
 	case GL_MAP2_COLOR_4:
-
-		{
-			opengl_ctx->context_cap->is_map2_color_4 = GL_TRUE;
-			opengl_debug("\tGL_MAP2_COLOR_4 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_color_4 = GL_TRUE;
+		opengl_debug("\tGL_MAP2_COLOR_4 enabled!\n");
+		break;
+	}
 
 	case GL_MAP2_INDEX:
-
-		{
-			opengl_ctx->context_cap->is_map2_index = GL_TRUE;
-			opengl_debug("\tGL_MAP2_INDEX enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_index = GL_TRUE;
+		opengl_debug("\tGL_MAP2_INDEX enabled!\n");
+		break;
+	}
 
 	case GL_MAP2_NORMAL:
-
-		{
-			opengl_ctx->context_cap->is_map2_normal = GL_TRUE;
-			opengl_debug("\tGL_MAP2_NORMAL enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_normal = GL_TRUE;
+		opengl_debug("\tGL_MAP2_NORMAL enabled!\n");
+		break;
+	}
 
 	case GL_MAP2_TEXTURE_COORD_1:
-
-		{
-			opengl_ctx->context_cap->is_map2_texture_coord_1 = GL_TRUE;
-			opengl_debug("\tGL_MAP2_TEXTURE_COORD_1 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_texture_coord_1 = GL_TRUE;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_1 enabled!\n");
+		break;
+	}
 
 	case GL_MAP2_TEXTURE_COORD_2:
-
-		{
-			opengl_ctx->context_cap->is_map2_texture_coord_2 = GL_TRUE;
-			opengl_debug("\tGL_MAP2_TEXTURE_COORD_2 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_texture_coord_2 = GL_TRUE;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_2 enabled!\n");
+		break;
+	}
 
 	case GL_MAP2_TEXTURE_COORD_3:
-
-		{
-			opengl_ctx->context_cap->is_map2_texture_coord_3 = GL_TRUE;
-			opengl_debug("\tGL_MAP2_TEXTURE_COORD_3 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_texture_coord_3 = GL_TRUE;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_3 enabled!\n");
+		break;
+	}
 
 	case GL_MAP2_TEXTURE_COORD_4:
-
-		{
-			opengl_ctx->context_cap->is_map2_texture_coord_4 = GL_TRUE;
-			opengl_debug("\tGL_MAP2_TEXTURE_COORD_4 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_texture_coord_4 = GL_TRUE;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_4 enabled!\n");
+		break;
+	}
 
 	case GL_MAP2_VERTEX_3:
-
-		{
-			opengl_ctx->context_cap->is_map2_vertex_3 = GL_TRUE;
-			opengl_debug("\tGL_MAP2_VERTEX_3 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_vertex_3 = GL_TRUE;
+		opengl_debug("\tGL_MAP2_VERTEX_3 enabled!\n");
+		break;
+	}
 
 	case GL_MAP2_VERTEX_4:
-
-		{
-			opengl_ctx->context_cap->is_map2_vertex_4 = GL_TRUE;
-			opengl_debug("\tGL_MAP2_VERTEX_4 enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_vertex_4 = GL_TRUE;
+		opengl_debug("\tGL_MAP2_VERTEX_4 enabled!\n");
+		break;
+	}
 
 	case GL_MINMAX:
-
-		{
-			opengl_ctx->context_cap->is_minmax = GL_TRUE;
-			opengl_debug("\tGL_MINMAX enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_minmax = GL_TRUE;
+		opengl_debug("\tGL_MINMAX enabled!\n");
+		break;
+	}
 
 	case GL_MULTISAMPLE:
-
-		{
-			opengl_ctx->context_cap->is_multisample = GL_TRUE;
-			opengl_debug("\tGL_MULTISAMPLE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_multisample = GL_TRUE;
+		opengl_debug("\tGL_MULTISAMPLE enabled!\n");
+		break;
+	}
 
 	case GL_NORMALIZE:
-
-		{
-			opengl_ctx->context_cap->is_normalize = GL_TRUE;
-			opengl_debug("\tGL_NORMALIZE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_normalize = GL_TRUE;
+		opengl_debug("\tGL_NORMALIZE enabled!\n");
+		break;
+	}
 
 	case GL_POINT_SMOOTH:
-
-		{
-			opengl_ctx->context_cap->is_point_smooth = GL_TRUE;
-			opengl_debug("\tGL_POINT_SMOOTH enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_point_smooth = GL_TRUE;
+		opengl_debug("\tGL_POINT_SMOOTH enabled!\n");
+		break;
+	}
 
 	case GL_POINT_SPRITE:
-
-		{
-			opengl_ctx->context_cap->is_point_sprite = GL_TRUE;
-			opengl_debug("\tGL_POINT_SPRITE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_point_sprite = GL_TRUE;
+		opengl_debug("\tGL_POINT_SPRITE enabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_OFFSET_FILL:
-
-		{
-			opengl_ctx->context_cap->is_polygon_offset_fill = GL_TRUE;
-			opengl_debug("\tGL_POLYGON_OFFSET_FILL enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_offset_fill = GL_TRUE;
+		opengl_debug("\tGL_POLYGON_OFFSET_FILL enabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_OFFSET_LINE:
-
-		{
-			opengl_ctx->context_cap->is_polygon_offset_line = GL_TRUE;
-			opengl_debug("\tGL_POLYGON_OFFSET_LINE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_offset_line = GL_TRUE;
+		opengl_debug("\tGL_POLYGON_OFFSET_LINE enabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_OFFSET_POINT:
-
-		{
-			opengl_ctx->context_cap->is_polygon_offset_point = GL_TRUE;
-			opengl_debug("\tGL_POLYGON_OFFSET_POINT enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_offset_point = GL_TRUE;
+		opengl_debug("\tGL_POLYGON_OFFSET_POINT enabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_SMOOTH:
-
-		{
-			opengl_ctx->context_cap->is_polygon_smooth = GL_TRUE;
-			opengl_debug("\tGL_POLYGON_SMOOTH enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_smooth = GL_TRUE;
+		opengl_debug("\tGL_POLYGON_SMOOTH enabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_STIPPLE:
-
-		{
-			opengl_ctx->context_cap->is_polygon_stipple = GL_TRUE;
-			opengl_debug("\tGL_POLYGON_STIPPLE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_stipple = GL_TRUE;
+		opengl_debug("\tGL_POLYGON_STIPPLE enabled!\n");
+		break;
+	}
 
 	case GL_POST_COLOR_MATRIX_COLOR_TABLE:
-
-		{
-			opengl_ctx->context_cap->is_post_color_matrix_color_table = GL_TRUE;
-			opengl_debug("\tGL_POST_COLOR_MATRIX_COLOR_TABLE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_post_color_matrix_color_table = GL_TRUE;
+		opengl_debug("\tGL_POST_COLOR_MATRIX_COLOR_TABLE enabled!\n");
+		break;
+	}
 
 	case GL_POST_CONVOLUTION_COLOR_TABLE:
-
-		{
-			opengl_ctx->context_cap->is_post_convolution_color_table = GL_TRUE;
-			opengl_debug("\tGL_POST_CONVOLUTION_COLOR_TABLE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_post_convolution_color_table = GL_TRUE;
+		opengl_debug("\tGL_POST_CONVOLUTION_COLOR_TABLE enabled!\n");
+		break;
+	}
 
 	case GL_RESCALE_NORMAL:
-
-		{
-			opengl_ctx->context_cap->is_rescale_normal = GL_TRUE;
-			opengl_debug("\tGL_RESCALE_NORMAL enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_rescale_normal = GL_TRUE;
+		opengl_debug("\tGL_RESCALE_NORMAL enabled!\n");
+		break;
+	}
 
 	case GL_SAMPLE_ALPHA_TO_COVERAGE:
-
-		{
-			opengl_ctx->context_cap->is_sample_alpha_to_coverage = GL_TRUE;
-			opengl_debug("\tGL_SAMPLE_ALPHA_TO_COVERAGE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_sample_alpha_to_coverage = GL_TRUE;
+		opengl_debug("\tGL_SAMPLE_ALPHA_TO_COVERAGE enabled!\n");
+		break;
+	}
 
 	case GL_SAMPLE_ALPHA_TO_ONE:
-
-		{
-			opengl_ctx->context_cap->is_sample_alpha_to_one = GL_TRUE;
-			opengl_debug("\tGL_SAMPLE_ALPHA_TO_ONE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_sample_alpha_to_one = GL_TRUE;
+		opengl_debug("\tGL_SAMPLE_ALPHA_TO_ONE enabled!\n");
+		break;
+	}
 
 	case GL_SAMPLE_COVERAGE:
-
-		{
-			opengl_ctx->context_cap->is_sample_coverage = GL_TRUE;
-			opengl_debug("\tGL_SAMPLE_COVERAGE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_sample_coverage = GL_TRUE;
+		opengl_debug("\tGL_SAMPLE_COVERAGE enabled!\n");
+		break;
+	}
 
 	case GL_SEPARABLE_2D:
-
-		{
-			opengl_ctx->context_cap->is_separable_2d = GL_TRUE;
-			opengl_debug("\tGL_SEPARABLE_2D enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_separable_2d = GL_TRUE;
+		opengl_debug("\tGL_SEPARABLE_2D enabled!\n");
+		break;
+	}
 
 	case GL_SCISSOR_TEST:
-
-		{
-			opengl_ctx->context_cap->is_scissor_test = GL_TRUE;
-			opengl_debug("\tGL_SCISSOR_TEST enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_scissor_test = GL_TRUE;
+		opengl_debug("\tGL_SCISSOR_TEST enabled!\n");
+		break;
+	}
 
 	case GL_STENCIL_TEST:
-
-		{
-			opengl_ctx->context_cap->is_stencil_test = GL_TRUE;
-			opengl_debug("\tGL_STENCIL_TEST enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_stencil_test = GL_TRUE;
+		opengl_debug("\tGL_STENCIL_TEST enabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_1D:
-
-		{
-			opengl_ctx->context_cap->is_texture_1d = GL_TRUE;
-			opengl_debug("\tGL_TEXTURE_1D enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_1d = GL_TRUE;
+		opengl_debug("\tGL_TEXTURE_1D enabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_2D:
-
-		{
-			opengl_ctx->context_cap->is_texture_2d = GL_TRUE;
-			opengl_debug("\tGL_TEXTURE_2D enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_2d = GL_TRUE;
+		opengl_debug("\tGL_TEXTURE_2D enabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_3D:
-
-		{
-			opengl_ctx->context_cap->is_texture_3d = GL_TRUE;
-			opengl_debug("\tGL_TEXTURE_3D enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_3d = GL_TRUE;
+		opengl_debug("\tGL_TEXTURE_3D enabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_CUBE_MAP:
-
-		{
-			opengl_ctx->context_cap->is_texture_cube_map = GL_TRUE;
-			opengl_debug("\tGL_TEXTURE_CUBE_MAP enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_cube_map = GL_TRUE;
+		opengl_debug("\tGL_TEXTURE_CUBE_MAP enabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_GEN_Q:
-
-		{
-			opengl_ctx->context_cap->is_texture_gen_q = GL_TRUE;
-			opengl_debug("\tGL_TEXTURE_GEN_Q enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_gen_q = GL_TRUE;
+		opengl_debug("\tGL_TEXTURE_GEN_Q enabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_GEN_R:
-
-		{
-			opengl_ctx->context_cap->is_texture_gen_r = GL_TRUE;
-			opengl_debug("\tGL_TEXTURE_GEN_R enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_gen_r = GL_TRUE;
+		opengl_debug("\tGL_TEXTURE_GEN_R enabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_GEN_S:
-
-		{
-			opengl_ctx->context_cap->is_texture_gen_s = GL_TRUE;
-			opengl_debug("\tGL_TEXTURE_GEN_S enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_gen_s = GL_TRUE;
+		opengl_debug("\tGL_TEXTURE_GEN_S enabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_GEN_T:
-
-		{
-			opengl_ctx->context_cap->is_texture_gen_t = GL_TRUE;
-			opengl_debug("\tGL_TEXTURE_GEN_T enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_gen_t = GL_TRUE;
+		opengl_debug("\tGL_TEXTURE_GEN_T enabled!\n");
+		break;
+	}
 
 	case GL_VERTEX_PROGRAM_POINT_SIZE:
-
-		{
-			opengl_ctx->context_cap->is_vertex_program_point_size = GL_TRUE;
-			opengl_debug("\tGL_VERTEX_PROGRAM_POINT_SIZE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_vertex_program_point_size = GL_TRUE;
+		opengl_debug("\tGL_VERTEX_PROGRAM_POINT_SIZE enabled!\n");
+		break;
+	}
 
 	case GL_VERTEX_PROGRAM_TWO_SIDE:
-
-		{
-			opengl_ctx->context_cap->is_vertex_program_two_side = GL_TRUE;
-			opengl_debug("\tGL_VERTEX_PROGRAM_TWO_SIDE enabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_vertex_program_two_side = GL_TRUE;
+		opengl_debug("\tGL_VERTEX_PROGRAM_TWO_SIDE enabled!\n");
+		break;
+	}
 
 	default:
 		break;
@@ -1239,7 +1172,7 @@ static int opengl_func_glEnable(struct x86_ctx_t *ctx)
 /*
  * OpenGL call #26 - glDisable
  *
- * glDisable - 
+ * glDisable - disable server-side GL capabilities
  *
  * @return
  *	This function always returns 0
@@ -1256,176 +1189,158 @@ static int opengl_func_glDisable(struct x86_ctx_t *ctx)
 	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
 	cap = args[0];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d)\n", args[0]);
+
 	switch(cap)
 	{
 
 	case GL_ALPHA_TEST:
-
-		{
-			opengl_ctx->context_cap->is_alpha_test = GL_FALSE;
-			opengl_debug("\tGL_ALPHA_TEST disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_alpha_test = GL_FALSE;
+		opengl_debug("\tGL_ALPHA_TEST disabled!\n");
+		break;
+	}
 
 	case GL_AUTO_NORMAL:
-
-		{
-			opengl_ctx->context_cap->is_auto_normal = GL_FALSE;
-			opengl_debug("\tGL_AUTO_NORMAL disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_auto_normal = GL_FALSE;
+		opengl_debug("\tGL_AUTO_NORMAL disabled!\n");
+		break;
+	}
 
 	case GL_BLEND:
-
-		{
-			opengl_ctx->context_cap->is_blend = GL_FALSE;
-			opengl_debug("\tGL_BLEND disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_blend = GL_FALSE;
+		opengl_debug("\tGL_BLEND disabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE0:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane0 = GL_FALSE;
-			opengl_debug("\tGL_CLIP_PLANE0 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane0 = GL_FALSE;
+		opengl_debug("\tGL_CLIP_PLANE0 disabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE1:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane1 = GL_FALSE;
-			opengl_debug("\tGL_CLIP_PLANE1 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane1 = GL_FALSE;
+		opengl_debug("\tGL_CLIP_PLANE1 disabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE2:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane2 = GL_FALSE;
-			opengl_debug("\tGL_CLIP_PLANE2 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane2 = GL_FALSE;
+		opengl_debug("\tGL_CLIP_PLANE2 disabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE3:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane3 = GL_FALSE;
-			opengl_debug("\tGL_CLIP_PLANE3 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane3 = GL_FALSE;
+		opengl_debug("\tGL_CLIP_PLANE3 disabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE4:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane4 = GL_FALSE;
-			opengl_debug("\tGL_CLIP_PLANE4 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane4 = GL_FALSE;
+		opengl_debug("\tGL_CLIP_PLANE4 disabled!\n");
+		break;
+	}
 
 	case GL_CLIP_PLANE5:
-
-		{
-			opengl_ctx->context_cap->is_clip_plane5 = GL_FALSE;
-			opengl_debug("\tGL_CLIP_PLANE5 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_clip_plane5 = GL_FALSE;
+		opengl_debug("\tGL_CLIP_PLANE5 disabled!\n");
+		break;
+	}
 
 	case GL_COLOR_LOGIC_OP:
-
-		{
-			opengl_ctx->context_cap->is_color_logic_op = GL_FALSE;
-			opengl_debug("\tGL_COLOR_LOGIC_OP disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_color_logic_op = GL_FALSE;
+		opengl_debug("\tGL_COLOR_LOGIC_OP disabled!\n");
+		break;
+	}
 
 	case GL_COLOR_MATERIAL:
-
-		{
-			opengl_ctx->context_cap->is_color_material = GL_FALSE;
-			opengl_debug("\tGL_COLOR_MATERIAL disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_color_material = GL_FALSE;
+		opengl_debug("\tGL_COLOR_MATERIAL disabled!\n");
+		break;
+	}
 
 	case GL_COLOR_SUM:
-
-		{
-			opengl_ctx->context_cap->is_color_sum = GL_FALSE;
-			opengl_debug("\tGL_COLOR_SUM disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_color_sum = GL_FALSE;
+		opengl_debug("\tGL_COLOR_SUM disabled!\n");
+		break;
+	}
 
 	case GL_COLOR_TABLE:
-
-		{
-			opengl_ctx->context_cap->is_color_table = GL_FALSE;
-			opengl_debug("\tGL_COLOR_TABLE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_color_table = GL_FALSE;
+		opengl_debug("\tGL_COLOR_TABLE disabled!\n");
+		break;
+	}
 
 	case GL_CONVOLUTION_1D:
-
-		{
-			opengl_ctx->context_cap->is_convolution_1d = GL_FALSE;
-			opengl_debug("\tGL_CONVOLUTION_1D disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_convolution_1d = GL_FALSE;
+		opengl_debug("\tGL_CONVOLUTION_1D disabled!\n");
+		break;
+	}
 
 	case GL_CONVOLUTION_2D:
-
-		{
-			opengl_ctx->context_cap->is_convolution_2d = GL_FALSE;
-			opengl_debug("\tGL_CONVOLUTION_2D disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_convolution_2d = GL_FALSE;
+		opengl_debug("\tGL_CONVOLUTION_2D disabled!\n");
+		break;
+	}
 
 	case GL_CULL_FACE:
-
-		{
-			opengl_ctx->context_cap->is_cull_face = GL_FALSE;
-			opengl_debug("\tGL_CULL_FACE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_cull_face = GL_FALSE;
+		opengl_debug("\tGL_CULL_FACE disabled!\n");
+		break;
+	}
 
 	case GL_DEPTH_TEST:
-
-		{
-			opengl_ctx->context_cap->is_depth_test = GL_FALSE;
-			opengl_debug("\tGL_DEPTH_TEST disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_depth_test = GL_FALSE;
+		opengl_debug("\tGL_DEPTH_TEST disabled!\n");
+		break;
+	}
 
 	case GL_DITHER:
-
-		{
-			opengl_ctx->context_cap->is_dither = GL_FALSE;
-			opengl_debug("\tGL_DITHER disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_dither = GL_FALSE;
+		opengl_debug("\tGL_DITHER disabled!\n");
+		break;
+	}
 
 	case GL_FOG:
-
-		{
-			opengl_ctx->context_cap->is_fog = GL_FALSE;
-			opengl_debug("\tGL_FOG disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_fog = GL_FALSE;
+		opengl_debug("\tGL_FOG disabled!\n");
+		break;
+	}
 
 	case GL_HISTOGRAM:
-
-		{
-			opengl_ctx->context_cap->is_histogram = GL_FALSE;
-			opengl_debug("\tGL_HISTOGRAM disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_histogram = GL_FALSE;
+		opengl_debug("\tGL_HISTOGRAM disabled!\n");
+		break;
+	}
 
 	case GL_INDEX_LOGIC_OP:
-
-		{
-			opengl_ctx->context_cap->is_index_logic_op = GL_FALSE;
-			opengl_debug("\tGL_INDEX_LOGIC_OP disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_index_logic_op = GL_FALSE;
+		opengl_debug("\tGL_INDEX_LOGIC_OP disabled!\n");
+		break;
+	}
 
 	case GL_LIGHT0:
 
@@ -1500,396 +1415,347 @@ static int opengl_func_glDisable(struct x86_ctx_t *ctx)
 		}
 
 	case GL_LINE_SMOOTH:
-
-		{
-			opengl_ctx->context_cap->is_line_smooth = GL_FALSE;
-			opengl_debug("\tGL_LINE_SMOOTH disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_line_smooth = GL_FALSE;
+		opengl_debug("\tGL_LINE_SMOOTH disabled!\n");
+		break;
+	}
 
 	case GL_LINE_STIPPLE:
-
-		{
-			opengl_ctx->context_cap->is_line_stipple = GL_FALSE;
-			opengl_debug("\tGL_LINE_STIPPLE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_line_stipple = GL_FALSE;
+		opengl_debug("\tGL_LINE_STIPPLE disabled!\n");
+		break;
+	}
 
 	case GL_MAP1_COLOR_4:
-
-		{
-			opengl_ctx->context_cap->is_map1_color_4 = GL_FALSE;
-			opengl_debug("\tGL_MAP1_COLOR_4 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_color_4 = GL_FALSE;
+		opengl_debug("\tGL_MAP1_COLOR_4 disabled!\n");
+		break;
+	}
 
 	case GL_MAP1_INDEX:
-
-		{
-			opengl_ctx->context_cap->is_map1_index = GL_FALSE;
-			opengl_debug("\tGL_MAP1_INDEX disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_index = GL_FALSE;
+		opengl_debug("\tGL_MAP1_INDEX disabled!\n");
+		break;
+	}
 
 	case GL_MAP1_NORMAL:
-
-		{
-			opengl_ctx->context_cap->is_map1_normal = GL_FALSE;
-			opengl_debug("\tGL_MAP1_NORMAL disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_normal = GL_FALSE;
+		opengl_debug("\tGL_MAP1_NORMAL disabled!\n");
+		break;
+	}
 
 	case GL_MAP1_TEXTURE_COORD_1:
-
-		{
-			opengl_ctx->context_cap->is_map1_texture_coord_1 = GL_FALSE;
-			opengl_debug("\tGL_MAP1_TEXTURE_COORD_1 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_texture_coord_1 = GL_FALSE;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_1 disabled!\n");
+		break;
+	}
 
 	case GL_MAP1_TEXTURE_COORD_2:
-
-		{
-			opengl_ctx->context_cap->is_map1_texture_coord_2 = GL_FALSE;
-			opengl_debug("\tGL_MAP1_TEXTURE_COORD_2 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_texture_coord_2 = GL_FALSE;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_2 disabled!\n");
+		break;
+	}
 
 	case GL_MAP1_TEXTURE_COORD_3:
-
-		{
-			opengl_ctx->context_cap->is_map1_texture_coord_3 = GL_FALSE;
-			opengl_debug("\tGL_MAP1_TEXTURE_COORD_3 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_texture_coord_3 = GL_FALSE;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_3 disabled!\n");
+		break;
+	}
 
 	case GL_MAP1_TEXTURE_COORD_4:
-
-		{
-			opengl_ctx->context_cap->is_map1_texture_coord_4 = GL_FALSE;
-			opengl_debug("\tGL_MAP1_TEXTURE_COORD_4 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_texture_coord_4 = GL_FALSE;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_4 disabled!\n");
+		break;
+	}
 
 	case GL_MAP1_VERTEX_3:
-
-		{
-			opengl_ctx->context_cap->is_map1_vertex_3 = GL_FALSE;
-			opengl_debug("\tGL_MAP1_VERTEX_3 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_vertex_3 = GL_FALSE;
+		opengl_debug("\tGL_MAP1_VERTEX_3 disabled!\n");
+		break;
+	}
 
 	case GL_MAP1_VERTEX_4:
-
-		{
-			opengl_ctx->context_cap->is_map1_vertex_4 = GL_FALSE;
-			opengl_debug("\tGL_MAP1_VERTEX_4 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map1_vertex_4 = GL_FALSE;
+		opengl_debug("\tGL_MAP1_VERTEX_4 disabled!\n");
+		break;
+	}
 
 	case GL_MAP2_COLOR_4:
-
-		{
-			opengl_ctx->context_cap->is_map2_color_4 = GL_FALSE;
-			opengl_debug("\tGL_MAP2_COLOR_4 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_color_4 = GL_FALSE;
+		opengl_debug("\tGL_MAP2_COLOR_4 disabled!\n");
+		break;
+	}
 
 	case GL_MAP2_INDEX:
-
-		{
-			opengl_ctx->context_cap->is_map2_index = GL_FALSE;
-			opengl_debug("\tGL_MAP2_INDEX disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_index = GL_FALSE;
+		opengl_debug("\tGL_MAP2_INDEX disabled!\n");
+		break;
+	}
 
 	case GL_MAP2_NORMAL:
-
-		{
-			opengl_ctx->context_cap->is_map2_normal = GL_FALSE;
-			opengl_debug("\tGL_MAP2_NORMAL disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_normal = GL_FALSE;
+		opengl_debug("\tGL_MAP2_NORMAL disabled!\n");
+		break;
+	}
 
 	case GL_MAP2_TEXTURE_COORD_1:
-
-		{
-			opengl_ctx->context_cap->is_map2_texture_coord_1 = GL_FALSE;
-			opengl_debug("\tGL_MAP2_TEXTURE_COORD_1 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_texture_coord_1 = GL_FALSE;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_1 disabled!\n");
+		break;
+	}
 
 	case GL_MAP2_TEXTURE_COORD_2:
-
-		{
-			opengl_ctx->context_cap->is_map2_texture_coord_2 = GL_FALSE;
-			opengl_debug("\tGL_MAP2_TEXTURE_COORD_2 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_texture_coord_2 = GL_FALSE;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_2 disabled!\n");
+		break;
+	}
 
 	case GL_MAP2_TEXTURE_COORD_3:
-
-		{
-			opengl_ctx->context_cap->is_map2_texture_coord_3 = GL_FALSE;
-			opengl_debug("\tGL_MAP2_TEXTURE_COORD_3 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_texture_coord_3 = GL_FALSE;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_3 disabled!\n");
+		break;
+	}
 
 	case GL_MAP2_TEXTURE_COORD_4:
-
-		{
-			opengl_ctx->context_cap->is_map2_texture_coord_4 = GL_FALSE;
-			opengl_debug("\tGL_MAP2_TEXTURE_COORD_4 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_texture_coord_4 = GL_FALSE;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_4 disabled!\n");
+		break;
+	}
 
 	case GL_MAP2_VERTEX_3:
-
-		{
-			opengl_ctx->context_cap->is_map2_vertex_3 = GL_FALSE;
-			opengl_debug("\tGL_MAP2_VERTEX_3 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_vertex_3 = GL_FALSE;
+		opengl_debug("\tGL_MAP2_VERTEX_3 disabled!\n");
+		break;
+	}
 
 	case GL_MAP2_VERTEX_4:
-
-		{
-			opengl_ctx->context_cap->is_map2_vertex_4 = GL_FALSE;
-			opengl_debug("\tGL_MAP2_VERTEX_4 disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_map2_vertex_4 = GL_FALSE;
+		opengl_debug("\tGL_MAP2_VERTEX_4 disabled!\n");
+		break;
+	}
 
 	case GL_MINMAX:
-
-		{
-			opengl_ctx->context_cap->is_minmax = GL_FALSE;
-			opengl_debug("\tGL_MINMAX disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_minmax = GL_FALSE;
+		opengl_debug("\tGL_MINMAX disabled!\n");
+		break;
+	}
 
 	case GL_MULTISAMPLE:
-
-		{
-			opengl_ctx->context_cap->is_multisample = GL_FALSE;
-			opengl_debug("\tGL_MULTISAMPLE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_multisample = GL_FALSE;
+		opengl_debug("\tGL_MULTISAMPLE disabled!\n");
+		break;
+	}
 
 	case GL_NORMALIZE:
-
-		{
-			opengl_ctx->context_cap->is_normalize = GL_FALSE;
-			opengl_debug("\tGL_NORMALIZE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_normalize = GL_FALSE;
+		opengl_debug("\tGL_NORMALIZE disabled!\n");
+		break;
+	}
 
 	case GL_POINT_SMOOTH:
-
-		{
-			opengl_ctx->context_cap->is_point_smooth = GL_FALSE;
-			opengl_debug("\tGL_POINT_SMOOTH disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_point_smooth = GL_FALSE;
+		opengl_debug("\tGL_POINT_SMOOTH disabled!\n");
+		break;
+	}
 
 	case GL_POINT_SPRITE:
-
-		{
-			opengl_ctx->context_cap->is_point_sprite = GL_FALSE;
-			opengl_debug("\tGL_POINT_SPRITE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_point_sprite = GL_FALSE;
+		opengl_debug("\tGL_POINT_SPRITE disabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_OFFSET_FILL:
-
-		{
-			opengl_ctx->context_cap->is_polygon_offset_fill = GL_FALSE;
-			opengl_debug("\tGL_POLYGON_OFFSET_FILL disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_offset_fill = GL_FALSE;
+		opengl_debug("\tGL_POLYGON_OFFSET_FILL disabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_OFFSET_LINE:
-
-		{
-			opengl_ctx->context_cap->is_polygon_offset_line = GL_FALSE;
-			opengl_debug("\tGL_POLYGON_OFFSET_LINE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_offset_line = GL_FALSE;
+		opengl_debug("\tGL_POLYGON_OFFSET_LINE disabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_OFFSET_POINT:
-
-		{
-			opengl_ctx->context_cap->is_polygon_offset_point = GL_FALSE;
-			opengl_debug("\tGL_POLYGON_OFFSET_POINT disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_offset_point = GL_FALSE;
+		opengl_debug("\tGL_POLYGON_OFFSET_POINT disabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_SMOOTH:
-
-		{
-			opengl_ctx->context_cap->is_polygon_smooth = GL_FALSE;
-			opengl_debug("\tGL_POLYGON_SMOOTH disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_smooth = GL_FALSE;
+		opengl_debug("\tGL_POLYGON_SMOOTH disabled!\n");
+		break;
+	}
 
 	case GL_POLYGON_STIPPLE:
-
-		{
-			opengl_ctx->context_cap->is_polygon_stipple = GL_FALSE;
-			opengl_debug("\tGL_POLYGON_STIPPLE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_polygon_stipple = GL_FALSE;
+		opengl_debug("\tGL_POLYGON_STIPPLE disabled!\n");
+		break;
+	}
 
 	case GL_POST_COLOR_MATRIX_COLOR_TABLE:
-
-		{
-			opengl_ctx->context_cap->is_post_color_matrix_color_table = GL_FALSE;
-			opengl_debug("\tGL_POST_COLOR_MATRIX_COLOR_TABLE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_post_color_matrix_color_table = GL_FALSE;
+		opengl_debug("\tGL_POST_COLOR_MATRIX_COLOR_TABLE disabled!\n");
+		break;
+	}
 
 	case GL_POST_CONVOLUTION_COLOR_TABLE:
-
-		{
-			opengl_ctx->context_cap->is_post_convolution_color_table = GL_FALSE;
-			opengl_debug("\tGL_POST_CONVOLUTION_COLOR_TABLE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_post_convolution_color_table = GL_FALSE;
+		opengl_debug("\tGL_POST_CONVOLUTION_COLOR_TABLE disabled!\n");
+		break;
+	}
 
 	case GL_RESCALE_NORMAL:
-
-		{
-			opengl_ctx->context_cap->is_rescale_normal = GL_FALSE;
-			opengl_debug("\tGL_RESCALE_NORMAL disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_rescale_normal = GL_FALSE;
+		opengl_debug("\tGL_RESCALE_NORMAL disabled!\n");
+		break;
+	}
 
 	case GL_SAMPLE_ALPHA_TO_COVERAGE:
-
-		{
-			opengl_ctx->context_cap->is_sample_alpha_to_coverage = GL_FALSE;
-			opengl_debug("\tGL_SAMPLE_ALPHA_TO_COVERAGE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_sample_alpha_to_coverage = GL_FALSE;
+		opengl_debug("\tGL_SAMPLE_ALPHA_TO_COVERAGE disabled!\n");
+		break;
+	}
 
 	case GL_SAMPLE_ALPHA_TO_ONE:
-
-		{
-			opengl_ctx->context_cap->is_sample_alpha_to_one = GL_FALSE;
-			opengl_debug("\tGL_SAMPLE_ALPHA_TO_ONE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_sample_alpha_to_one = GL_FALSE;
+		opengl_debug("\tGL_SAMPLE_ALPHA_TO_ONE disabled!\n");
+		break;
+	}
 
 	case GL_SAMPLE_COVERAGE:
-
-		{
-			opengl_ctx->context_cap->is_sample_coverage = GL_FALSE;
-			opengl_debug("\tGL_SAMPLE_COVERAGE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_sample_coverage = GL_FALSE;
+		opengl_debug("\tGL_SAMPLE_COVERAGE disabled!\n");
+		break;
+	}
 
 	case GL_SEPARABLE_2D:
-
-		{
-			opengl_ctx->context_cap->is_separable_2d = GL_FALSE;
-			opengl_debug("\tGL_SEPARABLE_2D disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_separable_2d = GL_FALSE;
+		opengl_debug("\tGL_SEPARABLE_2D disabled!\n");
+		break;
+	}
 
 	case GL_SCISSOR_TEST:
-
-		{
-			opengl_ctx->context_cap->is_scissor_test = GL_FALSE;
-			opengl_debug("\tGL_SCISSOR_TEST disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_scissor_test = GL_FALSE;
+		opengl_debug("\tGL_SCISSOR_TEST disabled!\n");
+		break;
+	}
 
 	case GL_STENCIL_TEST:
-
-		{
-			opengl_ctx->context_cap->is_stencil_test = GL_FALSE;
-			opengl_debug("\tGL_STENCIL_TEST disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_stencil_test = GL_FALSE;
+		opengl_debug("\tGL_STENCIL_TEST disabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_1D:
-
-		{
-			opengl_ctx->context_cap->is_texture_1d = GL_FALSE;
-			opengl_debug("\tGL_TEXTURE_1D disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_1d = GL_FALSE;
+		opengl_debug("\tGL_TEXTURE_1D disabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_2D:
-
-		{
-			opengl_ctx->context_cap->is_texture_2d = GL_FALSE;
-			opengl_debug("\tGL_TEXTURE_2D disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_2d = GL_FALSE;
+		opengl_debug("\tGL_TEXTURE_2D disabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_3D:
-
-		{
-			opengl_ctx->context_cap->is_texture_3d = GL_FALSE;
-			opengl_debug("\tGL_TEXTURE_3D disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_3d = GL_FALSE;
+		opengl_debug("\tGL_TEXTURE_3D disabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_CUBE_MAP:
-
-		{
-			opengl_ctx->context_cap->is_texture_cube_map = GL_FALSE;
-			opengl_debug("\tGL_TEXTURE_CUBE_MAP disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_cube_map = GL_FALSE;
+		opengl_debug("\tGL_TEXTURE_CUBE_MAP disabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_GEN_Q:
-
-		{
-			opengl_ctx->context_cap->is_texture_gen_q = GL_FALSE;
-			opengl_debug("\tGL_TEXTURE_GEN_Q disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_gen_q = GL_FALSE;
+		opengl_debug("\tGL_TEXTURE_GEN_Q disabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_GEN_R:
-
-		{
-			opengl_ctx->context_cap->is_texture_gen_r = GL_FALSE;
-			opengl_debug("\tGL_TEXTURE_GEN_R disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_gen_r = GL_FALSE;
+		opengl_debug("\tGL_TEXTURE_GEN_R disabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_GEN_S:
-
-		{
-			opengl_ctx->context_cap->is_texture_gen_s = GL_FALSE;
-			opengl_debug("\tGL_TEXTURE_GEN_S disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_gen_s = GL_FALSE;
+		opengl_debug("\tGL_TEXTURE_GEN_S disabled!\n");
+		break;
+	}
 
 	case GL_TEXTURE_GEN_T:
-
-		{
-			opengl_ctx->context_cap->is_texture_gen_t = GL_FALSE;
-			opengl_debug("\tGL_TEXTURE_GEN_T disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_texture_gen_t = GL_FALSE;
+		opengl_debug("\tGL_TEXTURE_GEN_T disabled!\n");
+		break;
+	}
 
 	case GL_VERTEX_PROGRAM_POINT_SIZE:
-
-		{
-			opengl_ctx->context_cap->is_vertex_program_point_size = GL_FALSE;
-			opengl_debug("\tGL_VERTEX_PROGRAM_POINT_SIZE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_vertex_program_point_size = GL_FALSE;
+		opengl_debug("\tGL_VERTEX_PROGRAM_POINT_SIZE disabled!\n");
+		break;
+	}
 
 	case GL_VERTEX_PROGRAM_TWO_SIDE:
-
-		{
-			opengl_ctx->context_cap->is_vertex_program_two_side = GL_FALSE;
-			opengl_debug("\tGL_VERTEX_PROGRAM_TWO_SIDE disabled!\n");
-			break;
-		}
+	{
+		opengl_ctx->context_cap->is_vertex_program_two_side = GL_FALSE;
+		opengl_debug("\tGL_VERTEX_PROGRAM_TWO_SIDE disabled!\n");
+		break;
+	}
 
 	default:
 		break;
@@ -2098,7 +1964,7 @@ static int opengl_func_glFinish(struct x86_ctx_t *ctx)
 /*
  * OpenGL call #41 - glFlush
  *
- * glFlush -  force execution of GL commands in finite time
+ * glFlush - force execution of GL commands in finite time
  *
  * @return
  *	The function always returns 0
@@ -2386,6 +2252,9 @@ static int opengl_func_glMatrixMode(struct x86_ctx_t *ctx)
 
 	/* Read arguments */
 	mtx_mode_ptr = regs->ecx;
+
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d)\n", mtx_mod);
 	opengl_debug("\tmtx_mode_ptr=0x%x\n", mtx_mode_ptr);
 
 	mem_read(mem, mtx_mode_ptr, sizeof(unsigned int), &mtx_mod);
@@ -2830,6 +2699,8 @@ static int opengl_func_glRotatef(struct x86_ctx_t *ctx)
 	x = args[1];
 	y = args[2];
 	z = args[3];
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%f, %f, %f, %f)\n", args[0], args[1], args[2], args[3]);
 	opengl_debug("\tRotate angle = %f, x = %f, y = %f, z = %f\n", angle, x, y, z);
 
 	/* Setup matrices */
@@ -5635,6 +5506,9 @@ static int opengl_func_glShadeModel(struct x86_ctx_t *ctx)
 	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
 	mode = args[0];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d)\n", args[0]);
+
 	/* Setup shade mode: FLAT or SMOOTH */
 	opengl_ctx->light->ShadeModel = mode;
 
@@ -5697,6 +5571,9 @@ static int opengl_func_glLightfv(struct x86_ctx_t *ctx)
 	light = args[0];
 	pname = args[1];
 	params = args[2];
+
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d, %d, %d)\n", args[0], args[1], args[2]);
 
 	/* Copy */
 	GLfloat *tmp_vctr;
@@ -5960,6 +5837,9 @@ static int opengl_func_glMaterialfv(struct x86_ctx_t *ctx)
 	unsigned int face;
 	unsigned int pname;
 	unsigned int params;
+
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d, %d, %d)\n", args[0], args[1], args[2]);
 
 	/* Read arguments */
 	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
@@ -9804,6 +9684,9 @@ static int opengl_func_glBindBuffer(struct x86_ctx_t *ctx)
 	target = args[0];
 	buffer = args[1];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%x, %d)\n", args[0], args[1]);
+
 	switch(target)
 	{
 	case GL_ARRAY_BUFFER:
@@ -9816,7 +9699,7 @@ static int opengl_func_glBindBuffer(struct x86_ctx_t *ctx)
 		else
 		{
 			opengl_debug("\tBinding Buffer Object ID #%d to VAO ID #%d\n", buffer, opengl_ctx->array_attrib->curr_vao->id);
-			buf_obj = opengl_buffer_obj_repo_get(opengl_ctx->buf_repo, buffer);
+			buf_obj = opengl_buffer_obj_repo_reference(opengl_ctx->buf_repo, buffer);
 			opengl_ctx->array_attrib->curr_vbo = buf_obj;
 		}
 		break;
@@ -9843,12 +9726,14 @@ static int opengl_func_glBindBuffer(struct x86_ctx_t *ctx)
 		__NOT_IMPL__
 		break;
 	}
-/*	case GL_DISPATCH_INDIRECT_BUFFER:
+#ifdef GL_DISPATCH_INDIRECT_BUFFER
+	case GL_DISPATCH_INDIRECT_BUFFER:
 	{
 		__NOT_IMPL__
 		break;		
 	}
-*/	case GL_ELEMENT_ARRAY_BUFFER:
+#endif
+	case GL_ELEMENT_ARRAY_BUFFER:
 	{
 		__NOT_IMPL__
 		break;		
@@ -9863,12 +9748,14 @@ static int opengl_func_glBindBuffer(struct x86_ctx_t *ctx)
 		__NOT_IMPL__
 		break;
 	}
-/*	case GL_SHADER_STORAGE_BUFFER:
+#ifdef GL_SHADER_STORAGE_BUFFER
+	case GL_SHADER_STORAGE_BUFFER:
 	{
 		__NOT_IMPL__
 		break;
 	}
-*/	case GL_TEXTURE_BUFFER:
+#endif
+	case GL_TEXTURE_BUFFER:
 	{
 		__NOT_IMPL__
 		break;
@@ -9883,7 +9770,7 @@ static int opengl_func_glBindBuffer(struct x86_ctx_t *ctx)
 		else
 		{
 			opengl_debug("\tBinding Buffer Object ID #%d to Transform Feedback Binding point\n", buffer);
-			buf_obj = opengl_buffer_obj_repo_get(opengl_ctx->buf_repo, buffer);
+			buf_obj = opengl_buffer_obj_repo_reference(opengl_ctx->buf_repo, buffer);
 			opengl_ctx->transform_feedback->curr_buf = buf_obj;
 		}
 		break;
@@ -9935,17 +9822,19 @@ static int opengl_func_glGenBuffers(struct x86_ctx_t *ctx)
 
 	int i;
 	struct opengl_buffer_obj_t *buf_obj;
-	int *buffers_ptr;
+	unsigned int *buffers_ptr;
 
 	/* Read arguments */
 	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
 	n = args[0];
 	buffers = args[1];
 
-	opengl_debug("\tGenerating %d VBO IDs, saving to buffers [0x%x]\n", n, buffers);
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d, %x)\n", args[0], args[1]);
+	opengl_debug("\tGenerate %d buffer object IDs, save to buffers array [0x%x]\n", n, buffers);
 
 	/* Create Vertex Buffers */
-	buffers_ptr = xcalloc(1, n*sizeof(int));
+	buffers_ptr = xcalloc(1, n*sizeof(unsigned int));
 
 	for (i = 0; i < n; ++i)
 	{
@@ -9955,11 +9844,10 @@ static int opengl_func_glGenBuffers(struct x86_ctx_t *ctx)
 		opengl_debug("\tBuffer generated, ID = %d\n", buffers_ptr[i]);
 	}
 
-	/* Return */
-	mem_write(mem, buffers, n*sizeof(int), buffers_ptr);
-	
+	mem_write(mem, buffers, n*sizeof(unsigned int), buffers_ptr);
 	free(buffers_ptr);
 
+	/* Return */
 	return 0;
 }
 
@@ -10009,7 +9897,10 @@ static int opengl_func_glBufferData(struct x86_ctx_t *ctx)
 	tmp_buf = xcalloc(1, size);
 	mem_read(mem, data, size, tmp_buf);
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d, %d, %d, %d)\n", args[0], args[1], args[2], args[3]);
 	opengl_debug("\tCopy data to VBO ID #%d \n", opengl_ctx->array_attrib->curr_vao->id);
+
 	/* Get current bound VBO and copy data */
 	buf_obj = opengl_context_get_bound_buffer(target, opengl_ctx);
 	opengl_buffer_obj_data(buf_obj, size, tmp_buf, usage);
@@ -10079,6 +9970,9 @@ static int opengl_func_glMapBuffer(struct x86_ctx_t *ctx)
 	second_call_ptr = args[4];
 	mem_read(mem, second_call_ptr, sizeof(unsigned int), &second_flag);
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%x, %x)\n", args[0], args[1]);
+
 	if (!second_flag)
 	{
 		buf_obj = opengl_context_get_bound_buffer(target, opengl_ctx);
@@ -10122,6 +10016,9 @@ static int opengl_func_glUnmapBuffer(struct x86_ctx_t *ctx)
 	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
 	target = args[0];
 	data_ptr = args[1];
+
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d, %d)\n", args[0], args[1]);
 
 	/* If buffer object was mapped, the mapped address must has been recorded */
 	buf_obj = opengl_context_get_bound_buffer(target, opengl_ctx);
@@ -10261,6 +10158,9 @@ static int opengl_func_glAttachShader(struct x86_ctx_t *ctx)
 	program = args[0];
 	shader = args[1];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d, %d)\n", args[0], args[1]);
+
 	/* Attach shader to program */
 	prg = opengl_program_repo_get(opengl_ctx->program_repo, program);
 	shdr = opengl_shader_repo_get(opengl_ctx->shader_repo, shader);
@@ -10361,11 +10261,14 @@ static int opengl_func_glCreateShader(struct x86_ctx_t *ctx)
 	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
 	type = args[0];
 
-	opengl_debug("\ttype = 0x%x\n", type);
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d)\n", args[0]);
 
+	/* Create shader object and add to repository */
 	shdr = opengl_shader_create(type);
 	opengl_shader_repo_add(opengl_ctx->shader_repo, shdr);
 
+	/* Return */
 	return shdr->id;
 }
 
@@ -10446,6 +10349,9 @@ static int opengl_func_glEnableVertexAttribArray(struct x86_ctx_t *ctx)
 	/* Read arguments */
 	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
 	index = args[0];
+
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d)\n", args[0]);
 
 	/* Enable Vertex Attrib Array */	
 	vao = opengl_ctx->array_attrib->curr_vao;
@@ -10715,14 +10621,28 @@ static int opengl_func_glIsShader(struct x86_ctx_t *ctx)
 /*
  * OpenGL call #556 - glLinkProgram
  *
- * glLinkProgram - 
+ * glLinkProgram - Links a program object
  *
  * @return
  *	This function always returns 0
  */
 static int opengl_func_glLinkProgram(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[1];
+	unsigned int program;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
+	program = args[0];
+
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d)\n", args[0]);
+	opengl_debug("\tProgram #%d linked\n", program);
+
+	/* Return */
 	return 0;
 }
 
@@ -10760,6 +10680,9 @@ static int opengl_func_glUseProgram(struct x86_ctx_t *ctx)
 	/* Read arguments */
 	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
 	pid = args[0];
+
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d)\n", args[0]);
 
 	/* Bind program to currect rendering state */
 	prg = opengl_program_repo_get(opengl_ctx->program_repo, pid);
@@ -11586,6 +11509,10 @@ static int opengl_func_glVertexAttribPointer(struct x86_ctx_t *ctx)
 	stride = args[4];
 	pointer = args[5];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d, %d, %x, %d, %d, %d)\n", 
+		args[0], args[1], args[2], args[3], args[4], args[5]);
+
 	/* Copy data in curr_vbo to curr_vao->vtx_attrib */
 	vao = opengl_ctx->array_attrib->curr_vao;
 	vbo = opengl_ctx->array_attrib->curr_vbo;
@@ -11808,6 +11735,9 @@ static int opengl_func_glBeginTransformFeedback(struct x86_ctx_t *ctx)
 	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
 	primitive_mode = args[0];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%x)\n", args[0]);
+
 	tfst = opengl_ctx->transform_feedback;
 	if (tfst->curr_tfo->active)
 	{
@@ -11857,7 +11787,7 @@ static int opengl_func_glBindBufferRange(struct x86_ctx_t *ctx)
 /*
  * OpenGL call #631 - glBindBufferBase
  *
- * glBindBufferBase - 
+ * glBindBufferBase - bind a buffer object to an indexed buffer target
  *
  * @return
  *	This function always returns 0
@@ -11867,7 +11797,6 @@ static int opengl_func_glBindBufferBase(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 	struct opengl_buffer_obj_t *buf_obj;
-	struct opengl_transform_feedback_obj_t *curr_tfo;
 	struct opengl_transform_feedback_state_t *tfst;
 
 	unsigned int args[3];
@@ -11881,8 +11810,11 @@ static int opengl_func_glBindBufferBase(struct x86_ctx_t *ctx)
 	index = args[1];
 	buffer = args[2];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%x, %d, %d)\n", 
+		args[0], args[1], args[2]);
+
 	tfst = opengl_ctx->transform_feedback;
-	curr_tfo = tfst->curr_tfo;
 
 	switch(target)
 	{
@@ -11897,20 +11829,18 @@ static int opengl_func_glBindBufferBase(struct x86_ctx_t *ctx)
 	{
 		if (index >= MAX_FEEDBACK_BUFFERS)
 		{
+			opengl_debug("\tIndex %d out of range: [0 - %d]\n", index, MAX_FEEDBACK_BUFFERS);
 			opengl_set_error(GL_INVALID_VALUE);
 			return 0;
 		}
-		buf_obj = opengl_buffer_obj_repo_get_and_reference(opengl_ctx->buf_repo, buffer);
-		if (!buf_obj->data || buf_obj->data_size == 0)
+		buf_obj = opengl_buffer_obj_repo_reference(opengl_ctx->buf_repo, buffer);
+		if (!buf_obj->data || !buf_obj->data_size)
 		{
+			opengl_debug("\tBuffer Object #%d [%p] contains no data\n", buf_obj->id, buf_obj);
 			opengl_set_error(GL_INVALID_VALUE);
 			return 0;
 		}
-		if (curr_tfo->id != 0)
-		{
-			curr_tfo->buf_id[index] = buf_obj->id;
-			curr_tfo->buffers[index] = buf_obj;
-		}
+		opengl_transform_feedback_state_attach_buffer_obj_indexed(tfst, buf_obj, index);
 		break;
 	}
 	case GL_UNIFORM_BUFFER:
@@ -11920,6 +11850,7 @@ static int opengl_func_glBindBufferBase(struct x86_ctx_t *ctx)
 	}
 	default:
 		opengl_set_error(GL_INVALID_ENUM);
+		break;
 	}
 
 	return 0;
@@ -11928,14 +11859,45 @@ static int opengl_func_glBindBufferBase(struct x86_ctx_t *ctx)
 /*
  * OpenGL call #632 - glTransformFeedbackVaryings
  *
- * glTransformFeedbackVaryings - 
+ * glTransformFeedbackVaryings - specify values to record in transform feedback buffers
  *
  * @return
  *	This function always returns 0
  */
 static int opengl_func_glTransformFeedbackVaryings(struct x86_ctx_t *ctx)
 {
-	/* FIXME: not implemented */	
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[4];
+	unsigned int program;
+	unsigned int count;
+	unsigned int varyings;
+	unsigned int buffer_mode;
+	unsigned int varying_ptr;
+	char varying_str[MAX_STRING_SIZE];
+	int i;
+
+	/* Read arguments */
+	mem_read(mem, regs->ecx, 4 * sizeof(unsigned int), args);
+	program = args[0];
+	count = args[1];
+	varyings = args[2];
+	buffer_mode = args[3];
+
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d, %d, %x, %x)\n", 
+		args[0], args[1], args[2], args[3]);
+	opengl_debug("\tRecord %d varyings from Program #%d, mode %x\n", 
+		count, program, buffer_mode);
+	for (i = 0; i < count; ++i)
+	{
+		mem_read(mem, varyings + i*sizeof(char*), sizeof(char*), &varying_ptr);
+		mem_read_string(mem, varying_ptr, sizeof(varying_str), varying_str);
+		opengl_debug("\t\tVarying #%d: %s\n", i, varying_str);	
+	}
+
+	/* Return */	
 	return 0;
 }
 
@@ -15488,6 +15450,9 @@ static int opengl_func_glBindVertexArray(struct x86_ctx_t *ctx)
 	mem_read(mem, regs->ecx, 1 * sizeof(unsigned int), args);
 	array = args[0];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d)\n", args[0]);
+
 	/* Get and bind */
 	vao = opengl_vertex_array_obj_repo_get(opengl_ctx->vao_repo, array);
 	opengl_ctx->array_attrib->curr_vao = vao;
@@ -15529,7 +15494,7 @@ static int opengl_func_glGenVertexArrays(struct x86_ctx_t *ctx)
 	unsigned int n;
 	unsigned int arrays;
 
-	int *arrays_ptr;
+	unsigned int *arrays_ptr;
 	struct opengl_vertex_array_obj_t *vao;
 	int i;
 
@@ -15538,10 +15503,12 @@ static int opengl_func_glGenVertexArrays(struct x86_ctx_t *ctx)
 	n = args[0];
 	arrays = args[1];
 
+	/* Debug */
+	opengl_debug("OpenGL runtime call parameters: (%d, %x)\n", args[0], args[1]);
 	opengl_debug("\tGenerating %d VAO IDs, saving to arrays [0x%x]\n", n, arrays);
 
 	/* Create Vertex Arrays */
-	arrays_ptr = xcalloc(1, n*sizeof(int));
+	arrays_ptr = xcalloc(1, n*sizeof(unsigned int));
 
 	for (i = 0; i < n; ++i)
 	{
@@ -15552,7 +15519,7 @@ static int opengl_func_glGenVertexArrays(struct x86_ctx_t *ctx)
 	}
 
 	/* Return */
-	mem_write(mem, arrays, n*sizeof(int), arrays_ptr);
+	mem_write(mem, arrays, n*sizeof(unsigned int), arrays_ptr);
 	
 	free(arrays_ptr);
 
