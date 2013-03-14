@@ -43,7 +43,11 @@ struct frm_warp_t
 	struct frm_grid_t *grid;
 	struct frm_thread_block_t *thread_block;
 
+	unsigned int pc;
+	int inst_size;
+
 	/* Pointer to threads */
+	struct frm_thread_t *scalar_thread;
 	struct frm_thread_t **threads;  /* Pointer to first threads in 'function->threads' */
 
 	/* Current instructions */
@@ -60,6 +64,17 @@ struct frm_warp_t
 
 	/* Predicate mask */
 	struct bit_map_t *pred;  /* thread_count elements */
+
+	/* Flags updated during instruction execution */
+	unsigned int vector_mem_read : 1;
+	unsigned int vector_mem_write : 1;
+	unsigned int scalar_mem_read : 1;
+	unsigned int lds_read : 1;
+	unsigned int lds_write : 1;
+	unsigned int mem_wait : 1;
+	unsigned int barrier : 1;
+	unsigned int finished : 1;
+	unsigned int vector_mem_glc : 1;
 
 	/* Loop counters */
 	/* FIXME: Include this as part of the stack to handle nested loops */
@@ -94,10 +109,13 @@ struct frm_warp_t
 	long long emu_time_start;
 	long long emu_time_end;
 
+
 	/* Fields introduced for architectural simulation */
 	int id_in_sm;
 	int alu_engine_in_flight;  /* Number of in-flight uops in ALU engine */
 	long long sched_when;  /* GPU cycle when warp was last scheduled */
+	int uop_id_counter;
+	struct frm_warp_pool_entry_t *warp_pool_entry;
 
 
 	/* Periodic report - used by architectural simulation */
@@ -113,8 +131,6 @@ struct frm_warp_t
 	long long inst_count;  /* Total number of instructions */
 	long long global_mem_inst_count;  /* Instructions accessing global memory */
 	long long local_mem_inst_count;  /* Instructions accessing local memory */
-
-	int finished;
 };
 
 #define FRM_FOREACH_WARP_IN_GRID(GRID, WARP_ID) \

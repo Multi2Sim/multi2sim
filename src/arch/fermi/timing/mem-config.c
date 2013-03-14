@@ -30,7 +30,7 @@
 
 #include "mem-config.h"
 #include "gpu.h"
-#include "compute-unit.h"
+#include "sm.h"
 
 
 void frm_mem_config_default(struct config_t *config)
@@ -60,7 +60,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "Policy", "LRU");
 
 	/* L1 caches */
-	FRM_GPU_FOREACH_COMPUTE_UNIT(sm_id)
+	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		/* L1 cache */
 		snprintf(section, sizeof section, "Module si-l1-%d", sm_id);
@@ -294,15 +294,15 @@ void frm_mem_config_check(struct config_t *config)
 	int sm_id;
 	char *file_name;
 
-	/* Check that all compute units have an entry to the memory hierarchy. */
+	/* Check that all SMs have an entry to the memory hierarchy. */
 	file_name = config_get_file_name(config);
-	FRM_GPU_FOREACH_COMPUTE_UNIT(sm_id)
+	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		sm = frm_gpu->sms[sm_id];
 		if (!sm->global_memory)
-			fatal("%s: Southern Islands compute unit %d has no entry to memory.\n"
+			fatal("%s: Fermi SM[%d] has no entry to memory.\n"
 				"\tPlease add a new [Entry <name>] section in your memory configuration\n"
-				"\tfile to associate this compute unit with a memory module.\n",
+				"\tfile to associate this SM with a memory module.\n",
 				file_name, sm_id);
 	}
 }

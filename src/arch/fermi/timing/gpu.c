@@ -1426,11 +1426,11 @@ int frm_gpu_run(void)
 		frm_grid_dump(grid, frm_emu_report_file);
 
 		/* Stop if maximum number of kernels reached */
-		if (frm_emu_max_kernels && frm_emu->grid_count >= 
-			frm_emu_max_kernels)
-		{
-			esim_finish = esim_finish_frm_max_kernels;
-		}
+		//if (frm_emu_max_kernels && frm_emu->grid_count >= 
+		//	frm_emu_max_kernels)
+		//{
+		//	esim_finish = esim_finish_frm_max_kernels;
+		//}
 
 		/* Finalize and free ND-Range */
 		assert(frm_grid_get_status(grid, frm_grid_finished));

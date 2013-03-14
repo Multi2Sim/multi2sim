@@ -236,7 +236,7 @@ void frm_sm_free(struct frm_sm_t *sm)
 void frm_sm_map_thread_block(struct frm_sm_t *sm, 
 	struct frm_thread_block_t *thread_block)
 {
-	struct frm_ndrange_t *ndrange = thread_block->ndrange;
+	struct frm_grid_t *grid = thread_block->grid;
 	struct frm_warp_t *warp;
 	int warp_id;
 	int ib_id;
@@ -279,11 +279,11 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm,
 	}
 
 	/* Assign warps identifiers in compute unit */
-	FRM_FOREACH_WAVEFRONT_IN_WORK_GROUP(thread_block, warp_id)
+	FRM_FOREACH_WARP_IN_THREADBLOCK(thread_block, warp_id)
 	{
-		warp = ndrange->warps[warp_id];
+		warp = grid->warps[warp_id];
 		warp->id_in_sm = thread_block->id_in_sm *
-			ndrange->warps_per_thread_block + 
+			grid->warps_per_thread_block + 
 			warp->id_in_thread_block;
 	}
 
@@ -356,8 +356,8 @@ void frm_sm_fetch(struct frm_sm_t *sm,
 	struct frm_uop_t *uop;
 	struct frm_thread_uop_t *thread_uop;
 	struct frm_warp_pool_entry_t *warp_pool_entry;
-	char inst_str[MAX_INST_STR_SIZE];
-	char inst_str_trimmed[MAX_INST_STR_SIZE];
+	char inst_str[1024];
+	char inst_str_trimmed[1024];
 
 	assert(active_fb < sm->num_warp_pools);
 
@@ -476,10 +476,10 @@ void frm_sm_fetch(struct frm_sm_t *sm,
 		/* Trace */
 		if (frm_tracing())
 		{
-			frm_inst_dump(&warp->inst, warp->inst_size, 
-				warp->pc, 
-				warp->ndrange->inst_buffer + warp->pc,
-				inst_str, sizeof inst_str);
+			//frm_inst_dump(&warp->inst, warp->inst_size, 
+			//	warp->pc, 
+			//	warp->grid->inst_buffer + warp->pc,
+			//	inst_str, sizeof inst_str);
 			str_single_spaces(inst_str_trimmed, 
 				sizeof inst_str_trimmed, 
 				inst_str);
@@ -492,9 +492,9 @@ void frm_sm_fetch(struct frm_sm_t *sm,
 		}
 		
 		/* Update last memory accesses */
-		FRM_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->warp, thread_id)
+		FRM_FOREACH_THREAD_IN_WARP(uop->warp, thread_id)
 		{
-			thread = frm_gpu->ndrange->threads[thread_id];
+			thread = frm_gpu->grid->threads[thread_id];
 			thread_uop = 
 				&uop->thread_uop[thread->id_in_warp];
 
@@ -558,17 +558,17 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 			assert(uop);
 
 			/* Only evaluate branch instructions */
-			if (uop->inst.info->fmt != FRM_FMT_SOPP) 
-			{
-				list_index++;
-				continue;
-			}
-			if (uop->inst.micro_inst.sopp.op <= 1 || 
-				uop->inst.micro_inst.sopp.op >= 10)
-			{
-				list_index++;
-				continue;
-			}
+			//if (uop->inst.info->fmt != FRM_FMT_SOPP) 
+			//{
+			//	list_index++;
+			//	continue;
+			//}
+			//if (uop->inst.micro_inst.sopp.op <= 1 || 
+			//	uop->inst.micro_inst.sopp.op >= 10)
+			//{
+			//	list_index++;
+			//	continue;
+			//}
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
@@ -627,23 +627,23 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 			assert(uop);
 
 			/* Only evaluate scalar instructions */
-			if (uop->inst.info->fmt != FRM_FMT_SOPP && 
-				uop->inst.info->fmt != FRM_FMT_SOP1 && 
-				uop->inst.info->fmt != FRM_FMT_SOP2 && 
-				uop->inst.info->fmt != FRM_FMT_SOPC && 
-				uop->inst.info->fmt != FRM_FMT_SOPK && 
-				uop->inst.info->fmt != FRM_FMT_SMRD)
-			{	
-				list_index++;
-				continue;
-			}
-			if (uop->inst.info->fmt == FRM_FMT_SOPP && 
-			    uop->inst.micro_inst.sopp.op > 1 && 
-				uop->inst.micro_inst.sopp.op < 10)
-			{
-				list_index++;
-				continue;
-			}
+			//if (uop->inst.info->fmt != FRM_FMT_SOPP && 
+			//	uop->inst.info->fmt != FRM_FMT_SOP1 && 
+			//	uop->inst.info->fmt != FRM_FMT_SOP2 && 
+			//	uop->inst.info->fmt != FRM_FMT_SOPC && 
+			//	uop->inst.info->fmt != FRM_FMT_SOPK && 
+			//	uop->inst.info->fmt != FRM_FMT_SMRD)
+			//{	
+			//	list_index++;
+			//	continue;
+			//}
+			//if (uop->inst.info->fmt == FRM_FMT_SOPP && 
+			//    uop->inst.micro_inst.sopp.op > 1 && 
+			//	uop->inst.micro_inst.sopp.op < 10)
+			//{
+			//	list_index++;
+			//	continue;
+			//}
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
@@ -681,11 +681,11 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 					uop->warp->id, 
 					uop->id_in_warp);
 
-				if (uop->inst.info->fmt == FRM_FMT_SMRD)
-				{
-					sm->scalar_mem_inst_count++;
-				}
-				else
+				//if (uop->inst.info->fmt == FRM_FMT_SMRD)
+				//{
+				//	sm->scalar_mem_inst_count++;
+				//}
+				//else
 				{
 					sm->scalar_alu_inst_count++;
 				}
@@ -709,15 +709,15 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 			assert(uop);
 
 			/* Only evaluate SIMD instructions */
-			if (uop->inst.info->fmt != FRM_FMT_VOP2 && 
-				uop->inst.info->fmt != FRM_FMT_VOP1 && 
-				uop->inst.info->fmt != FRM_FMT_VOPC && 
-				uop->inst.info->fmt != FRM_FMT_VOP3a && 
-				uop->inst.info->fmt != FRM_FMT_VOP3b)
-			{	
-				list_index++;
-				continue;
-			}
+			//if (uop->inst.info->fmt != FRM_FMT_VOP2 && 
+			//	uop->inst.info->fmt != FRM_FMT_VOP1 && 
+			//	uop->inst.info->fmt != FRM_FMT_VOPC && 
+			//	uop->inst.info->fmt != FRM_FMT_VOP3a && 
+			//	uop->inst.info->fmt != FRM_FMT_VOP3b)
+			//{	
+			//	list_index++;
+			//	continue;
+			//}
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
@@ -779,11 +779,11 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			if (uop->inst.info->fmt != FRM_FMT_MTBUF)
-			{	
-				list_index++;
-				continue;
-			}
+			//if (uop->inst.info->fmt != FRM_FMT_MTBUF)
+			//{	
+			//	list_index++;
+			//	continue;
+			//}
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
@@ -845,11 +845,11 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 			assert(uop);
 
 			/* Only evaluate LDS instructions */
-			if (uop->inst.info->fmt != FRM_FMT_DS)
-			{	
-				list_index++;
-				continue;
-			}
+			//if (uop->inst.info->fmt != FRM_FMT_DS)
+			//{	
+			//	list_index++;
+			//	continue;
+			//}
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
@@ -950,11 +950,11 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 	int i;
 
 	int total_insts_issued = 0;
-	int scalar_insts_issued = 0;
-	int branch_insts_issued = 0;
-	int lds_insts_issued = 0;
-	int simd_insts_issued = 0;
-	int mem_insts_issued = 0;
+	//int scalar_insts_issued = 0;
+	//int branch_insts_issued = 0;
+	//int lds_insts_issued = 0;
+	//int simd_insts_issued = 0;
+	//int mem_insts_issued = 0;
 
 	list_entries = list_count(sm->fetch_buffers[active_fb]);
 	
@@ -985,355 +985,355 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		/* Determine instruction type.  This simply decodes the 
 		 * instruction type, so that it can be issued to the proper 
 		 * hardware unit.  It is not the full decode stage */
-		switch (uop->inst.info->fmt)
-		{
+		//switch (uop->inst.info->fmt)
+		//{
 
-		/* Scalar ALU or Branch */
-		case FRM_FMT_SOPP:
-		{
-			/* Branch Unit */
-			if (uop->inst.micro_inst.sopp.op > 1 &&
-				uop->inst.micro_inst.sopp.op < 10)
-			{
-				/* Stall if max branch instructions 
-				 * already issued */
-				assert(branch_insts_issued <= 
-					frm_gpu_fe_max_inst_issued_per_type);
-				if (branch_insts_issued == 
-					frm_gpu_fe_max_inst_issued_per_type)
-				{
-					frm_trace("si.inst id=%lld cu=%d wf=%d "
-						"uop_id=%lld stg=\"s\"\n", 
-						uop->id_in_sm, 
-						sm->id, 
-						uop->warp->id, 
-						uop->id_in_warp);
-					list_index++;
-					continue;
-				}
+		///* Scalar ALU or Branch */
+		//case FRM_FMT_SOPP:
+		//{
+		//	/* Branch Unit */
+		//	if (uop->inst.micro_inst.sopp.op > 1 &&
+		//		uop->inst.micro_inst.sopp.op < 10)
+		//	{
+		//		/* Stall if max branch instructions 
+		//		 * already issued */
+		//		assert(branch_insts_issued <= 
+		//			frm_gpu_fe_max_inst_issued_per_type);
+		//		if (branch_insts_issued == 
+		//			frm_gpu_fe_max_inst_issued_per_type)
+		//		{
+		//			frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//				"uop_id=%lld stg=\"s\"\n", 
+		//				uop->id_in_sm, 
+		//				sm->id, 
+		//				uop->warp->id, 
+		//				uop->id_in_warp);
+		//			list_index++;
+		//			continue;
+		//		}
 
-				/* Stall if branch unit issue buffer is full */
-				if (list_count(sm->
-					branch_unit.issue_buffer) ==
-					frm_gpu_branch_unit_issue_buffer_size)
-				{
-					frm_trace("si.inst id=%lld cu=%d wf=%d "
-						"uop_id=%lld stg=\"s\"\n", 
-						uop->id_in_sm, 
-						sm->id, 
-						uop->warp->id, 
-						uop->id_in_warp);
-					list_index++;
-					continue;
-				}
+		//		/* Stall if branch unit issue buffer is full */
+		//		if (list_count(sm->
+		//			branch_unit.issue_buffer) ==
+		//			frm_gpu_branch_unit_issue_buffer_size)
+		//		{
+		//			frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//				"uop_id=%lld stg=\"s\"\n", 
+		//				uop->id_in_sm, 
+		//				sm->id, 
+		//				uop->warp->id, 
+		//				uop->id_in_warp);
+		//			list_index++;
+		//			continue;
+		//		}
 
-				uop->issue_ready = frm_gpu->cycle + 
-					frm_gpu_fe_issue_latency;
-				list_remove(sm->
-					fetch_buffers[active_fb], uop);
-				list_enqueue(sm->
-					branch_unit.issue_buffer, uop);
+		//		uop->issue_ready = frm_gpu->cycle + 
+		//			frm_gpu_fe_issue_latency;
+		//		list_remove(sm->
+		//			fetch_buffers[active_fb], uop);
+		//		list_enqueue(sm->
+		//			branch_unit.issue_buffer, uop);
 
-				branch_insts_issued++;
-				sm->branch_inst_count++;
-			}
-			/* Scalar Unit */
-			else
-			{
-				/* Stall if max scalar instructions 
-				 * already issued */
-				assert(scalar_insts_issued <= 
-					frm_gpu_fe_max_inst_issued_per_type);
-				if (scalar_insts_issued == 
-					frm_gpu_fe_max_inst_issued_per_type)
-				{
-					frm_trace("si.inst id=%lld cu=%d wf=%d "
-						"uop_id=%lld stg=\"s\"\n", 
-						uop->id_in_sm, 
-						sm->id, 
-						uop->warp->id, 
-						uop->id_in_warp);
-					list_index++;
-					continue;
-				}
+		//		branch_insts_issued++;
+		//		sm->branch_inst_count++;
+		//	}
+		//	/* Scalar Unit */
+		//	else
+		//	{
+		//		/* Stall if max scalar instructions 
+		//		 * already issued */
+		//		assert(scalar_insts_issued <= 
+		//			frm_gpu_fe_max_inst_issued_per_type);
+		//		if (scalar_insts_issued == 
+		//			frm_gpu_fe_max_inst_issued_per_type)
+		//		{
+		//			frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//				"uop_id=%lld stg=\"s\"\n", 
+		//				uop->id_in_sm, 
+		//				sm->id, 
+		//				uop->warp->id, 
+		//				uop->id_in_warp);
+		//			list_index++;
+		//			continue;
+		//		}
 
-				/* Stall if scalar unit issue buffer is full */
-				if (list_count(sm->
-					scalar_unit.issue_buffer) ==
-					frm_gpu_scalar_unit_issue_buffer_size)
-				{
-					frm_trace("si.inst id=%lld cu=%d wf=%d "
-						"uop_id=%lld stg=\"s\"\n", 
-						uop->id_in_sm, 
-						sm->id, 
-						uop->warp->id, 
-						uop->id_in_warp);
-					list_index++;
-					continue;
-				}
+		//		/* Stall if scalar unit issue buffer is full */
+		//		if (list_count(sm->
+		//			scalar_unit.issue_buffer) ==
+		//			frm_gpu_scalar_unit_issue_buffer_size)
+		//		{
+		//			frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//				"uop_id=%lld stg=\"s\"\n", 
+		//				uop->id_in_sm, 
+		//				sm->id, 
+		//				uop->warp->id, 
+		//				uop->id_in_warp);
+		//			list_index++;
+		//			continue;
+		//		}
 
-				uop->issue_ready = frm_gpu->cycle + 
-					frm_gpu_fe_issue_latency;
-				list_remove(
-					sm->
-					fetch_buffers[active_fb], uop);
-				list_enqueue(sm->
-					scalar_unit.issue_buffer, uop);
+		//		uop->issue_ready = frm_gpu->cycle + 
+		//			frm_gpu_fe_issue_latency;
+		//		list_remove(
+		//			sm->
+		//			fetch_buffers[active_fb], uop);
+		//		list_enqueue(sm->
+		//			scalar_unit.issue_buffer, uop);
 
-				scalar_insts_issued++;
-				sm->scalar_alu_inst_count++;
-			}
+		//		scalar_insts_issued++;
+		//		sm->scalar_alu_inst_count++;
+		//	}
 
-			break;
-		}
-		case FRM_FMT_SOP1:
-		case FRM_FMT_SOP2:
-		case FRM_FMT_SOPC:
-		case FRM_FMT_SOPK:
-		{
-			/* Stall if max scalar instructions already issued */
-			assert(scalar_insts_issued <= 
-				frm_gpu_fe_max_inst_issued_per_type);
-			if (scalar_insts_issued == 
-				frm_gpu_fe_max_inst_issued_per_type)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n",
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		//	break;
+		//}
+		//case FRM_FMT_SOP1:
+		//case FRM_FMT_SOP2:
+		//case FRM_FMT_SOPC:
+		//case FRM_FMT_SOPK:
+		//{
+		//	/* Stall if max scalar instructions already issued */
+		//	assert(scalar_insts_issued <= 
+		//		frm_gpu_fe_max_inst_issued_per_type);
+		//	if (scalar_insts_issued == 
+		//		frm_gpu_fe_max_inst_issued_per_type)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n",
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			/* Stall if scalar unit issue buffer is full */
-			if (list_count(sm->scalar_unit.issue_buffer) 
-				== frm_gpu_scalar_unit_issue_buffer_size)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n",
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		//	/* Stall if scalar unit issue buffer is full */
+		//	if (list_count(sm->scalar_unit.issue_buffer) 
+		//		== frm_gpu_scalar_unit_issue_buffer_size)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n",
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			uop->issue_ready = frm_gpu->cycle + 
-				frm_gpu_fe_issue_latency;
-			list_remove(sm->fetch_buffers[active_fb], 
-				uop);
-			list_enqueue(sm->scalar_unit.issue_buffer, 
-				uop);
+		//	uop->issue_ready = frm_gpu->cycle + 
+		//		frm_gpu_fe_issue_latency;
+		//	list_remove(sm->fetch_buffers[active_fb], 
+		//		uop);
+		//	list_enqueue(sm->scalar_unit.issue_buffer, 
+		//		uop);
 
-			scalar_insts_issued++;
-			sm->scalar_alu_inst_count++;
+		//	scalar_insts_issued++;
+		//	sm->scalar_alu_inst_count++;
 
-			break;
-		}
+		//	break;
+		//}
 
-		/* Scalar memory */
-		case FRM_FMT_SMRD:
-		{
-			/* Stall if max scalar instructions already issued */
-			assert(scalar_insts_issued <= 
-				frm_gpu_fe_max_inst_issued_per_type);
-			if (scalar_insts_issued == 
-				frm_gpu_fe_max_inst_issued_per_type)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n",
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		///* Scalar memory */
+		//case FRM_FMT_SMRD:
+		//{
+		//	/* Stall if max scalar instructions already issued */
+		//	assert(scalar_insts_issued <= 
+		//		frm_gpu_fe_max_inst_issued_per_type);
+		//	if (scalar_insts_issued == 
+		//		frm_gpu_fe_max_inst_issued_per_type)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n",
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			/* Stall if scalar unit issue buffer is full */
-			if (list_count(sm->scalar_unit.issue_buffer) 
-				== frm_gpu_scalar_unit_issue_buffer_size)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n",
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		//	/* Stall if scalar unit issue buffer is full */
+		//	if (list_count(sm->scalar_unit.issue_buffer) 
+		//		== frm_gpu_scalar_unit_issue_buffer_size)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n",
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			uop->issue_ready = frm_gpu->cycle + 
-				frm_gpu_fe_issue_latency;
-			list_remove(sm->fetch_buffers[active_fb], 
-				uop);
-			list_enqueue(sm->scalar_unit.issue_buffer, 
-				uop);
+		//	uop->issue_ready = frm_gpu->cycle + 
+		//		frm_gpu_fe_issue_latency;
+		//	list_remove(sm->fetch_buffers[active_fb], 
+		//		uop);
+		//	list_enqueue(sm->scalar_unit.issue_buffer, 
+		//		uop);
 
-			scalar_insts_issued++;
-			sm->scalar_mem_inst_count++;
+		//	scalar_insts_issued++;
+		//	sm->scalar_mem_inst_count++;
 
-			break;
-		}
+		//	break;
+		//}
 
-		/* Vector ALU */
-		case FRM_FMT_VOP2:
-		case FRM_FMT_VOP1:
-		case FRM_FMT_VOPC:
-		case FRM_FMT_VOP3a:
-		case FRM_FMT_VOP3b:
-		{
-			/* Stall if max SIMD instructions already issued */
-			assert(simd_insts_issued <= 
-				frm_gpu_fe_max_inst_issued_per_type);
-			if (simd_insts_issued == 
-				frm_gpu_fe_max_inst_issued_per_type)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n",
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		///* Vector ALU */
+		//case FRM_FMT_VOP2:
+		//case FRM_FMT_VOP1:
+		//case FRM_FMT_VOPC:
+		//case FRM_FMT_VOP3a:
+		//case FRM_FMT_VOP3b:
+		//{
+		//	/* Stall if max SIMD instructions already issued */
+		//	assert(simd_insts_issued <= 
+		//		frm_gpu_fe_max_inst_issued_per_type);
+		//	if (simd_insts_issued == 
+		//		frm_gpu_fe_max_inst_issued_per_type)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n",
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			/* Stall if SIMD issue buffer is full */
-			if (list_count(sm->simd_units[active_fb]->
-				issue_buffer) == frm_gpu_simd_issue_buffer_size)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n",
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		//	/* Stall if SIMD issue buffer is full */
+		//	if (list_count(sm->simd_units[active_fb]->
+		//		issue_buffer) == frm_gpu_simd_issue_buffer_size)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n",
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			uop->issue_ready = frm_gpu->cycle + 
-				frm_gpu_fe_issue_latency;
-			list_remove(sm->fetch_buffers[active_fb], 
-				uop);
-			list_enqueue(sm->simd_units[active_fb]->
-				issue_buffer, uop);
+		//	uop->issue_ready = frm_gpu->cycle + 
+		//		frm_gpu_fe_issue_latency;
+		//	list_remove(sm->fetch_buffers[active_fb], 
+		//		uop);
+		//	list_enqueue(sm->simd_units[active_fb]->
+		//		issue_buffer, uop);
 
-			uop->warp_pool_entry->ready_next_cycle = 1;
+		//	uop->warp_pool_entry->ready_next_cycle = 1;
 
-			simd_insts_issued++;
-			sm->simd_inst_count++;
+		//	simd_insts_issued++;
+		//	sm->simd_inst_count++;
 
-			break;
-		}
+		//	break;
+		//}
 
-		/* Vector memory */
-		case FRM_FMT_MTBUF:
-		{
-			/* Stall if max vector memory instructions already 
-			 * issued */
-			assert(mem_insts_issued <= 
-				frm_gpu_fe_max_inst_issued_per_type);
-			if (mem_insts_issued == 
-				frm_gpu_fe_max_inst_issued_per_type)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n",
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		///* Vector memory */
+		//case FRM_FMT_MTBUF:
+		//{
+		//	/* Stall if max vector memory instructions already 
+		//	 * issued */
+		//	assert(mem_insts_issued <= 
+		//		frm_gpu_fe_max_inst_issued_per_type);
+		//	if (mem_insts_issued == 
+		//		frm_gpu_fe_max_inst_issued_per_type)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n",
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			/* Stall if vector memory issue buffer is full */
-			if (list_count(
-				sm->vector_mem_unit.issue_buffer) ==
-				frm_gpu_vector_mem_issue_buffer_size)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n",
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		//	/* Stall if vector memory issue buffer is full */
+		//	if (list_count(
+		//		sm->vector_mem_unit.issue_buffer) ==
+		//		frm_gpu_vector_mem_issue_buffer_size)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n",
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			uop->issue_ready = frm_gpu->cycle + 
-				frm_gpu_fe_issue_latency;
-			list_remove(sm->fetch_buffers[active_fb], 
-				uop);
-			list_enqueue(sm->vector_mem_unit.issue_buffer,
-				uop);
+		//	uop->issue_ready = frm_gpu->cycle + 
+		//		frm_gpu_fe_issue_latency;
+		//	list_remove(sm->fetch_buffers[active_fb], 
+		//		uop);
+		//	list_enqueue(sm->vector_mem_unit.issue_buffer,
+		//		uop);
 
-			uop->warp_pool_entry->ready_next_cycle = 1;
+		//	uop->warp_pool_entry->ready_next_cycle = 1;
 
-			mem_insts_issued++;
-			sm->vector_mem_inst_count++;
+		//	mem_insts_issued++;
+		//	sm->vector_mem_inst_count++;
 
-			break;
-		}
+		//	break;
+		//}
 
-		/* Local Data Share */ 
-		case FRM_FMT_DS:
-		{
-			/* Stall if max LDS instructions already issued */
-			assert(lds_insts_issued <= 
-				frm_gpu_fe_max_inst_issued_per_type);
-			if (lds_insts_issued == 
-				frm_gpu_fe_max_inst_issued_per_type)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n",
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		///* Local Data Share */ 
+		//case FRM_FMT_DS:
+		//{
+		//	/* Stall if max LDS instructions already issued */
+		//	assert(lds_insts_issued <= 
+		//		frm_gpu_fe_max_inst_issued_per_type);
+		//	if (lds_insts_issued == 
+		//		frm_gpu_fe_max_inst_issued_per_type)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n",
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			/* Stall if the LDS issue buffer is full */
-			if (list_count(sm->lds_unit.issue_buffer) ==
-				frm_gpu_lds_issue_buffer_size)
-			{
-				frm_trace("si.inst id=%lld cu=%d wf=%d "
-					"uop_id=%lld stg=\"s\"\n", 
-					uop->id_in_sm, 
-					sm->id, 
-					uop->warp->id, 
-					uop->id_in_warp);
-				list_index++;
-				continue;
-			}
+		//	/* Stall if the LDS issue buffer is full */
+		//	if (list_count(sm->lds_unit.issue_buffer) ==
+		//		frm_gpu_lds_issue_buffer_size)
+		//	{
+		//		frm_trace("si.inst id=%lld cu=%d wf=%d "
+		//			"uop_id=%lld stg=\"s\"\n", 
+		//			uop->id_in_sm, 
+		//			sm->id, 
+		//			uop->warp->id, 
+		//			uop->id_in_warp);
+		//		list_index++;
+		//		continue;
+		//	}
 
-			uop->issue_ready = frm_gpu->cycle + 
-				frm_gpu_fe_issue_latency;
-			list_remove(sm->fetch_buffers[active_fb], 
-				uop);
-			list_enqueue(sm->lds_unit.issue_buffer, uop);
+		//	uop->issue_ready = frm_gpu->cycle + 
+		//		frm_gpu_fe_issue_latency;
+		//	list_remove(sm->fetch_buffers[active_fb], 
+		//		uop);
+		//	list_enqueue(sm->lds_unit.issue_buffer, uop);
 
-			uop->warp_pool_entry->ready_next_cycle = 1;
+		//	uop->warp_pool_entry->ready_next_cycle = 1;
 
-			lds_insts_issued++;
-			sm->lds_inst_count++;
+		//	lds_insts_issued++;
+		//	sm->lds_inst_count++;
 
-			break;
-		}
+		//	break;
+		//}
 
-		default:
-			fatal("%s: instruction type not implemented",
-				__FUNCTION__);
+		//default:
+		//	fatal("%s: instruction type not implemented",
+		//		__FUNCTION__);
 
-		}
+		//}
 
 		total_insts_issued++;
 

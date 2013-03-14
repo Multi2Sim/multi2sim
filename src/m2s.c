@@ -33,6 +33,7 @@
 #include <arch/evergreen/timing/uop.h>
 #include <arch/fermi/asm/asm.h>
 #include <arch/fermi/emu/emu.h>
+#include <arch/fermi/timing/gpu.h>
 #include <arch/mips/asm/asm.h>
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
@@ -1091,6 +1092,42 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Fermi GPU timing report */
+		if (!strcmp(argv[argi], "--frm-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_gpu_report_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Fermi GPU configuration file */
+		if (!strcmp(argv[argi], "--frm-config"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_gpu_config_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Maximum number of cycles */
+		if (!strcmp(argv[argi], "--frm-max-cycles"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_emu_max_cycles = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
+			argi++;
+			continue;
+		}
+
+		/* Fermi GPU timing report */
+		if (!strcmp(argv[argi], "--frm-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_gpu_report_file_name = argv[++argi];
+			continue;
+		}
+
 		/* Fermi simulation accuracy */
 		if (!strcmp(argv[argi], "--frm-sim"))
 		{
@@ -1344,6 +1381,20 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--si-max-cycles");
 		if (*si_gpu_report_file_name)
 			fatal(msg, "--si-report");
+	}
+
+	/* Options that only make sense for GPU detailed simulation */
+	if (frm_emu_sim_kind == arch_sim_kind_functional)
+	{
+		char *msg = "option '%s' not valid for functional GPU simulation.\n"
+			"\tPlease use option '--frm-sim detailed' as well.\n";
+
+		if (*frm_gpu_config_file_name)
+			fatal(msg, "--frm-config");
+		if (frm_emu_max_cycles)
+			fatal(msg, "--frm-max-cycles");
+		if (*frm_gpu_report_file_name)
+			fatal(msg, "--frm-report");
 	}
 
 	/* Options that only make sense when there is at least one architecture
