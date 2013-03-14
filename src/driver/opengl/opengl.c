@@ -9821,11 +9821,13 @@ static int opengl_func_glBindBuffer(struct x86_ctx_t *ctx)
 		}
 		break;
 	}
+#ifdef GL_ATOMIC_COUNTER_BUFFER
 	case GL_ATOMIC_COUNTER_BUFFER:
 	{
 		__NOT_IMPL__
 		break;
 	}
+#endif
 	case GL_COPY_READ_BUFFER:
 	{
 		__NOT_IMPL__
@@ -11884,11 +11886,13 @@ static int opengl_func_glBindBufferBase(struct x86_ctx_t *ctx)
 
 	switch(target)
 	{
+#ifdef GL_ATOMIC_COUNTER_BUFFER
 	case GL_ATOMIC_COUNTER_BUFFER:
 	{
 		__NOT_IMPL__
 		break;
 	}
+#endif
 	case GL_TRANSFORM_FEEDBACK_BUFFER:
 	{
 		if (index >= MAX_FEEDBACK_BUFFERS)
