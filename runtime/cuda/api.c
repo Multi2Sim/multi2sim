@@ -17,34 +17,31 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "../include/cuda.h"
 #include "api.h"
-#include "debug.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 
+
+
+/*
+ * Global Variables
+ */
 
 /* Debug */
-int cuda_enable_debug = 0;
+int cuda_debug_print;
 
 /* Error messages */
-#define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", \
-	__FUNCTION__, cuda_err_not_impl);
-
-static char *cuda_err_not_impl =
+char *cuda_err_not_impl =
 	"\tMulti2Sim provides partial support for CUDA driver library.\n"
 	"\tTo request the implementation of a certain functionality,\n"
 	"\tplease email development@multi2sim.org.\n";
 
-static char *cuda_err_version =
+char *cuda_err_version =
 	"\tYour guest application is using a version of the CUDA driver library\n"
 	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
 	"\tCUDA driver library ('libm2s-cuda').\n";
 
-static char *cuda_err_native =
+char *cuda_err_native =
 	"\tYou are trying to run natively an application using the Multi2Sim CUDA driver\n"
 	"\tlibrary implementation ('libm2s-cuda'). Please run this program on top of\n"
 	"\tMulti2Sim.\n";
@@ -53,42 +50,25 @@ static char *cuda_err_native =
 
 
 /*
- * Data Structures
+ * M2S CUDA Internal Functions
  */
-
-#define CUDA_VERSION_MAJOR	1
-#define CUDA_VERSION_MINOR	700
-
-struct cuda_version_t
-{
-	int major;
-	int minor;
-};
-
-
-
-
-/*
- * Internal Functions
- */
-
 
 void versionCheck(void)
 {
-	char *env;
 	struct cuda_version_t version;
+	char *debug_env;
 	int ret;
 
-	env = getenv("LIBM2S_CUDA_DUMP");
-	if (env != NULL)
-		cuda_enable_debug = !strcmp(env, "1");
+	/* Check debugging environment variable */
+	debug_env = getenv("LIBM2S_CUDA_DUMP");
+	cuda_debug = debug_env && !strcmp(debug_env, "1");
 
-	cuda_debug(stdout, "CUDA driver internal function '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA driver internal function '%s'\n", __FUNCTION__);
 
 	/* Version negotiation */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_versionCheck, &version);
 
-	cuda_debug(stdout, "\t(driver) out: version.major=%d version.minor=%d\n", version.major, version.minor);
+	cuda_debug_print(stdout, "\t(driver) out: version.major=%d version.minor=%d\n", version.major, version.minor);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
 	 * is running natively, system call CUDA_SYS_CODE is not supported. */
@@ -109,145 +89,146 @@ void versionCheck(void)
 
 
 /*
- * Multi2Sim CUDA Driver Library
+ * Public CUDA Driver Library
  */
 
 CUresult cuInit(unsigned int Flags)
 {
 	versionCheck();
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: Flags=%u\n", Flags);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: Flags=%u\n", Flags);
 
 	if (Flags != 0U)
 	{
-		cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
+		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
 
 CUresult cuDriverGetVersion(int *driverVersion)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 
 	if (driverVersion == NULL)
 	{
-		cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
+		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
 	*driverVersion = 4000;
 
-	cuda_debug(stdout, "\t(driver) out: driverVersion=%d\n", *driverVersion);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: driverVersion=%d\n", *driverVersion);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
 
 CUresult cuDeviceGet(CUdevice *device, int ordinal)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: ordinal=%d\n", ordinal);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: ordinal=%d\n", ordinal);
 
 	if (ordinal >= 1)
 	{
-		cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
+		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
 	*device = 0;
 
-	cuda_debug(stdout, "\t(driver) out: device=%d\n", *device);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: device=%d\n", *device);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
 
 CUresult cuDeviceGetCount(int *count)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 
 	*count = 1;
 
-	cuda_debug(stdout, "\t(driver) out: count=%d\n", *count);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: count=%d\n", *count);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
 
 CUresult cuDeviceGetName(char *name, int len, CUdevice dev)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: len=%d\n", len);
-	cuda_debug(stdout, "\t(driver) in: dev=%d\n", dev);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: len=%d\n", len);
+	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);
 
 	if (dev != 0)
 	{
-		cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
+		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
 	snprintf(name, len, "Multi2Sim Fermi Device");
 
-	cuda_debug(stdout, "\t(driver) out: name=%s\n", name);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: name=%s\n", name);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
 
 CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: major_ptr=%p\n", major);
-	cuda_debug(stdout, "\t(driver) in: minor_ptr=%p\n", minor);
-	cuda_debug(stdout, "\t(driver) in: dev=%d\n", dev);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: major_ptr=%p\n", major);
+	cuda_debug_print(stdout, "\t(driver) in: minor_ptr=%p\n", minor);
+	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);
 
 	if (dev != 0)
 	{
-		cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
+		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
 	*major = 2;
 	*minor = 0;
 
-	cuda_debug(stdout, "\t(driver) out: major=%d\n", *major);
-	cuda_debug(stdout, "\t(driver) out: minor=%d\n", *minor);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: major=%d\n", *major);
+	cuda_debug_print(stdout, "\t(driver) out: minor=%d\n", *minor);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
 
 CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: dev=%d\n", dev);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);
 
 	if (dev != 0)
 	{
-		cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
+		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
 	*bytes = 1 << 31;
 
-	cuda_debug(stdout, "\t(driver) out: bytes=%d\n", *bytes);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: bytes=%d\n", *bytes);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
 
 CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: dev=%d\n", dev);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);
 
 	if (dev != 0)
 	{
-		cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
+		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
@@ -267,7 +248,7 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 	/* FIXME: may not be 512 */
 	prop->textureAlign = 512;
 
-	cuda_debug(stdout, "\t(driver) out: prop->maxThreadsPerBlock=%d prop->maxThreadsDim[0]=%d \
+	cuda_debug_print(stdout, "\t(driver) out: prop->maxThreadsPerBlock=%d prop->maxThreadsDim[0]=%d \
 		prop->maxThreadsDim[1]=%d prop->maxThreadsDim[2]=%d prop->maxGridSize[0]=%d \
 		prop->maxGridSize[1]=%d prop->maxGridSize[2]=%d prop->sharedMemPerBlock=%d \
 		prop->totalConstantMemory=%d prop->SIMDWidth=%d prop->memPitch=%d \
@@ -276,20 +257,20 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 		prop->maxThreadsDim[2], prop->maxGridSize[0], prop->maxGridSize[1], 
 		prop->maxGridSize[2], prop->sharedMemPerBlock, prop->totalConstantMemory, 
 		prop->SIMDWidth, prop->memPitch, prop->regsPerBlock, prop->clockRate, prop->textureAlign);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
 
 CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: attrib=%d\n", attrib);
-	cuda_debug(stdout, "\t(driver) in: dev=%d\n", dev);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: attrib=%d\n", attrib);
+	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);
 
 	if (dev != 0)
 	{
-		cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
+		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
@@ -382,8 +363,8 @@ CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 	else if (attrib == CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING)
 		*pi = 0;
 
-	cuda_debug(stdout, "\t(driver) out: pi=%d", *pi);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: pi=%d", *pi);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -393,9 +374,9 @@ CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 	unsigned int sys_args[2];
 	int ret;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: flags=%u\n", flags); /* FIXME: flags specifies scheduling policy */
-	cuda_debug(stdout, "\t(driver) in: dev=%d\n", dev);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: flags=%u\n", flags); /* FIXME: flags specifies scheduling policy */
+	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);
 
 	/* Create context */
 	*pctx = (CUcontext)malloc(sizeof(struct CUctx_st));
@@ -414,8 +395,8 @@ CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
-	cuda_debug(stdout, "\t(driver) out: context.id=0x%08x\n", (*pctx)->id);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: context.id=0x%08x\n", (*pctx)->id);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -425,8 +406,8 @@ CUresult cuCtxDestroy(CUcontext ctx)
 	unsigned int sys_args[1];
 	int ret;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: context.id=0x%08x\n", ctx->id);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: context.id=0x%08x\n", ctx->id);
 
 	/* Syscall */
 	sys_args[0] = (unsigned int)ctx;
@@ -443,7 +424,7 @@ CUresult cuCtxDestroy(CUcontext ctx)
 	if (ctx != NULL)
 		free(ctx);
 
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -456,12 +437,12 @@ CUresult cuCtxAttach(CUcontext *pctx, unsigned int flags)
 
 CUresult cuCtxDetach(CUcontext ctx)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: context.id=0x%08x\n", ctx->id);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: context.id=0x%08x\n", ctx->id);
 
 	cuCtxDestroy(ctx);
 
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -492,12 +473,12 @@ CUresult cuCtxGetCurrent(CUcontext *pctx)
 
 CUresult cuCtxGetDevice(CUdevice *device)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 
 	*device = 0;
 
-	cuda_debug(stdout, "\t(driver) out: device=%d\n", *device);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: device=%d\n", *device);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -546,12 +527,12 @@ CUresult cuCtxSetSharedMemConfig(CUsharedconfig config)
 
 CUresult cuCtxGetApiVersion(CUcontext ctx, unsigned int *version)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 
 	*version= 4000U;
 
-	cuda_debug(stdout, "\t(driver) out: version=%u\n", *version);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: version=%u\n", *version);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -562,8 +543,8 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 	int ret;
 	FILE *fp;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: fname=%s\n", fname);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: fname=%s\n", fname);
 
 	/* Determine if the file exists */
 	fp = fopen(fname, "r");
@@ -586,8 +567,8 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
-	cuda_debug(stdout, "\t(driver) out: module.id=0x%08x\n", (*module)->id);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: module.id=0x%08x\n", (*module)->id);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -610,17 +591,17 @@ CUresult cuModuleLoadFatBinary(CUmodule *module, const void *fatCubin)
 	return CUDA_SUCCESS;
 }
 
-/* FIXME */
+/* FIXME: may need to free module in the simulator */
 CUresult cuModuleUnload(CUmodule hmod)
 {
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: module.id=0x%08x\n", hmod->id);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: module.id=0x%08x\n", hmod->id);
 
 	/* Free context */
 	if (hmod != NULL)
 		free(hmod);
 
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -630,9 +611,9 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 	unsigned int sys_args[3];
 	int ret;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: module.id=0x%08x\n", hmod->id);
-	cuda_debug(stdout, "\t(driver) in: name=%s\n", name);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: module.id=0x%08x\n", hmod->id);
+	cuda_debug_print(stdout, "\t(driver) in: name=%s\n", name);
 
 	/* Create function */
 	*hfunc = (CUfunction)malloc(sizeof(struct CUfunc_st));
@@ -650,8 +631,8 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
-	cuda_debug(stdout, "\t(driver) out: function.id=0x%08x\n", (*hfunc)->id);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: function.id=0x%08x\n", (*hfunc)->id);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -679,7 +660,7 @@ CUresult cuMemGetInfo(size_t *free, size_t *total)
 	unsigned int sys_args[2];
 	int ret;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 
 	/* Syscall */
 	sys_args[0] = (unsigned int)free;
@@ -693,9 +674,9 @@ CUresult cuMemGetInfo(size_t *free, size_t *total)
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
-	cuda_debug(stdout, "\t(driver) out: free=%d\n", *free);
-	cuda_debug(stdout, "\t(driver) out: total=%d\n", *total);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: free=%d\n", *free);
+	cuda_debug_print(stdout, "\t(driver) out: total=%d\n", *total);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -705,12 +686,12 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 	unsigned int sys_args[2];
 	int ret;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: bytesize=%d\n", bytesize);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: bytesize=%d\n", bytesize);
 
 	if (bytesize == 0)
 	{
-		cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
+		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
@@ -726,8 +707,8 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
-	cuda_debug(stdout, "\t(driver) out: dptr=0x%08x\n", *dptr);
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: dptr=0x%08x\n", *dptr);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -743,8 +724,8 @@ CUresult cuMemFree(CUdeviceptr dptr)
 	unsigned int sys_args[1];
 	int ret;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: dptr=0x%08x\n", dptr);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: dptr=0x%08x\n", dptr);
 
 	/* Syscall */
 	sys_args[0] = (unsigned int)dptr;
@@ -757,7 +738,7 @@ CUresult cuMemFree(CUdeviceptr dptr)
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -869,10 +850,10 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCou
 	unsigned int sys_args[3];
 	int ret;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: dstDevice=0x%08x\n", dstDevice);
-	cuda_debug(stdout, "\t(driver) in: srcHost=%p\n", srcHost);
-	cuda_debug(stdout, "\t(driver) in: ByteCount=%d\n", ByteCount);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: dstDevice=0x%08x\n", dstDevice);
+	cuda_debug_print(stdout, "\t(driver) in: srcHost=%p\n", srcHost);
+	cuda_debug_print(stdout, "\t(driver) in: ByteCount=%d\n", ByteCount);
 
 	/* Syscall */
 	sys_args[0] = (unsigned int)dstDevice;
@@ -887,7 +868,7 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCou
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -897,10 +878,10 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 	unsigned int sys_args[3];
 	int ret;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: dstHost=%p\n", dstHost);
-	cuda_debug(stdout, "\t(driver) in: srcDevice=0x%08x\n", srcDevice);
-	cuda_debug(stdout, "\t(driver) in: ByteCount=%d\n", ByteCount);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: dstHost=%p\n", dstHost);
+	cuda_debug_print(stdout, "\t(driver) in: srcDevice=0x%08x\n", srcDevice);
+	cuda_debug_print(stdout, "\t(driver) in: ByteCount=%d\n", ByteCount);
 
 	/* Syscall */
 	sys_args[0] = (unsigned int)dstHost;
@@ -915,7 +896,7 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -1247,18 +1228,18 @@ CUresult cuLaunchKernel(CUfunction f,
         unsigned int sys_args[11];
 	int ret;
 
-	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: function_id=%u\n", f->id);
-	cuda_debug(stdout, "\t(driver) in: gridDimX=%u\n", gridDimX);
-	cuda_debug(stdout, "\t(driver) in: gridDimY=%u\n", gridDimY);
-	cuda_debug(stdout, "\t(driver) in: gridDimZ=%u\n", gridDimZ);
-	cuda_debug(stdout, "\t(driver) in: blockDimX=%u\n", blockDimX);
-	cuda_debug(stdout, "\t(driver) in: blockDimY=%u\n", blockDimY);
-	cuda_debug(stdout, "\t(driver) in: blockDimZ=%u\n", blockDimZ);
-	cuda_debug(stdout, "\t(driver) in: sharedMemBytes=%u\n", sharedMemBytes);
-	cuda_debug(stdout, "\t(driver) in: hStream=%p\n", hStream);
-	cuda_debug(stdout, "\t(driver) in: kernelParams=%p\n", kernelParams);
-	cuda_debug(stdout, "\t(driver) in: extra=%p\n", extra);
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(driver) in: function_id=%u\n", f->id);
+	cuda_debug_print(stdout, "\t(driver) in: gridDimX=%u\n", gridDimX);
+	cuda_debug_print(stdout, "\t(driver) in: gridDimY=%u\n", gridDimY);
+	cuda_debug_print(stdout, "\t(driver) in: gridDimZ=%u\n", gridDimZ);
+	cuda_debug_print(stdout, "\t(driver) in: blockDimX=%u\n", blockDimX);
+	cuda_debug_print(stdout, "\t(driver) in: blockDimY=%u\n", blockDimY);
+	cuda_debug_print(stdout, "\t(driver) in: blockDimZ=%u\n", blockDimZ);
+	cuda_debug_print(stdout, "\t(driver) in: sharedMemBytes=%u\n", sharedMemBytes);
+	cuda_debug_print(stdout, "\t(driver) in: hStream=%p\n", hStream);
+	cuda_debug_print(stdout, "\t(driver) in: kernelParams=%p\n", kernelParams);
+	cuda_debug_print(stdout, "\t(driver) in: extra=%p\n", extra);
 
 	/* Syscall */
         sys_args[0] = (unsigned int)f;
@@ -1281,7 +1262,7 @@ CUresult cuLaunchKernel(CUfunction f,
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
-	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
+	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
