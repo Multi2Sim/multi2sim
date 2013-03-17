@@ -1627,6 +1627,12 @@ void m2s_loop(void)
 		else
 			timing_running |= si_gpu_run();
 
+		/* Fermi GPU simulation */
+		if (frm_emu_sim_kind == arch_sim_kind_functional)
+			emu_running |= frm_emu_run();
+		else
+			timing_running |= frm_gpu_run();
+
 		/* arm CPU simulation */
 		if (arm_emu_sim_kind == arch_sim_kind_functional)
 			emu_running |= arm_emu_run();
@@ -1830,7 +1836,7 @@ int main(int argc, char **argv)
 	if (si_emu_sim_kind == arch_sim_kind_detailed)
 		si_gpu_done();
 
-	/* Finalization of Southern Islands GPU */
+	/* Finalization of Fermi GPU */
 	if (frm_emu_sim_kind == arch_sim_kind_detailed)
 		frm_gpu_done();
 
