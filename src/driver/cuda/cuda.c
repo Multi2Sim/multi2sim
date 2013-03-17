@@ -766,12 +766,6 @@ static int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	/* Setup status */
 	frm_grid_set_status(function->grid, frm_grid_pending);
 
-	/* Run */
-	frm_grid_run(function->grid);
-
-	/* Free grid */
-	frm_grid_free(function->grid);
-
 	return 0;
 }
 
