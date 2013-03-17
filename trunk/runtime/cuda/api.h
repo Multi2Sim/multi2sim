@@ -20,21 +20,41 @@
 #ifndef RUNTIME_CUDA_API_H
 #define RUNTIME_CUDA_API_H
 
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
+#include "debug.h"
+#include "linked-list.h"
+#include "../include/cuda.h"
+#include "../include/cuda_runtime_api.h"
+
+
+
+
+/* Version */
+#define CUDA_VERSION_MAJOR	1
+#define CUDA_VERSION_MINOR	800
 
 /* Debug */
-extern int cuda_enable_debug;
+extern int cuda_debug;
+#define cuda_debug_print(stream, ...) (cuda_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
 
-#define cuda_debug(stream, ...) (cuda_enable_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+/* Error */
+extern char *cuda_err_not_impl;
+extern char *cuda_rt_err_not_impl;
+extern char *cuda_err_version;
+extern char *cuda_err_native;
+extern char *cuda_rt_err_native;
+#define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", \
+	__FUNCTION__, cuda_err_not_impl);
+#define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", \
+	__FUNCTION__, cuda_rt_err_not_impl);
 
-
-
-/* System call for CUDA driver */
+/* System Call Code */
 #define CUDA_SYS_CODE  328
 
-
-
-/* List of CUDA driver calls */
+/* List of CUDA Calls */
 enum cuda_call_t
 {
 	cuda_call_invalid,
@@ -44,7 +64,26 @@ enum cuda_call_t
 	cuda_call_count
 };
 
+/* CUDA runtime */
+extern CUfunction function;
+extern dim3 grid_dim;
+extern dim3 threadblock_dim;
+extern struct linked_list_t *args;
+extern int arg_index;
 
+
+
+
+/*
+ * Data Structures and Macros
+ */
+
+/* Version */
+struct cuda_version_t
+{
+	int major;
+	int minor;
+};
 
 /* CUDA context */
 struct CUctx_st
@@ -52,15 +91,11 @@ struct CUctx_st
 	unsigned int id;
 };
 
-
-
 /* CUDA module */
 struct CUmod_st
 {
 	unsigned int id;
 };
-
-
 
 /* CUDA function */
 struct CUfunc_st
@@ -68,12 +103,21 @@ struct CUfunc_st
 	unsigned int id;
 };
 
-
-
 /* CUDA stream */
 struct CUstream_st
 {
 	unsigned int id;
+};
+
+/* For CUDA runtime */
+#define __dv(v)
+
+/* For x86 binary analysis */
+struct __fatDeviceText {
+	int m;
+	int v;
+	const unsigned long long* d;
+	char* f;
 };
 
 #endif
