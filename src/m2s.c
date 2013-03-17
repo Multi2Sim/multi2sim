@@ -80,6 +80,7 @@ static char *opengl_debug_file_name = "";
 
 static char *x86_call_debug_file_name = "";
 static char *opencl_debug_file_name = "";
+static char *cuda_debug_file_name = "";
 static char *x86_disasm_file_name = "";
 static char *x86_isa_debug_file_name = "";
 static char *x86_load_checkpoint_file_name = "";
@@ -104,7 +105,6 @@ static int si_emulator = 0; /* FIXME We need to fix the initialization and selec
 
 static char *frm_disasm_file_name = "";
 static char *frm_isa_debug_file_name = "";
-static char *cuda_debug_file_name = "";
 static int frm_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
 static char *arm_disasm_file_name = "";
@@ -629,6 +629,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* CUDA runtime debug file */
+		if (!strcmp(argv[argi], "--x86-debug-cuda"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			cuda_debug_file_name = argv[++argi];
+			continue;
+		}
+
 		/* GLUT debug file */
 		if (!strcmp(argv[argi], "--x86-debug-glut"))
 		{
@@ -1070,11 +1078,27 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		 * Fermi GPU Options
 		 */
 
-		/* Fermi CUDA debug file */
-		if (!strcmp(argv[argi], "--frm-debug-cuda"))
+		/* Fermi ISA debug file */
+		if (!strcmp(argv[argi], "--frm-debug-isa"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			cuda_debug_file_name = argv[++argi];
+			frm_isa_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Fermi GPU configuration file */
+		if (!strcmp(argv[argi], "--frm-config"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_gpu_config_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Dump Fermi default configuration file */
+		if (!strcmp(argv[argi], "--frm-dump-default-config"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_gpu_dump_default_config_file_name = argv[++argi];
 			continue;
 		}
 
@@ -1094,27 +1118,23 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Fermi GPU timing report */
-		if (!strcmp(argv[argi], "--frm-report"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			frm_gpu_report_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Fermi GPU configuration file */
-		if (!strcmp(argv[argi], "--frm-config"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			frm_gpu_config_file_name = argv[++argi];
-			continue;
-		}
-
 		/* Maximum number of cycles */
 		if (!strcmp(argv[argi], "--frm-max-cycles"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			frm_emu_max_cycles = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+					argv[argi + 1], str_error(err));
+			argi++;
+			continue;
+		}
+
+		/* Maximum number of instructions */
+		if (!strcmp(argv[argi], "--frm-max-inst"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_emu_max_inst = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
 					argv[argi + 1], str_error(err));

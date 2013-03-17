@@ -201,13 +201,13 @@ struct frm_gpu_t
 	/* Streaming multiprocessors */
 	struct frm_sm_t **sms;
 
-	/* List of ready compute units accepting work-groups */
+	/* List of ready SM accepting work-groups */
 	struct frm_sm_t *sm_ready_list_head;
 	struct frm_sm_t *sm_ready_list_tail;
 	int sm_ready_list_count;
 	int sm_ready_list_max;
 
-	/* List of busy compute units */
+	/* List of busy SM */
 	struct frm_sm_t *sm_busy_list_head;
 	struct frm_sm_t *sm_busy_list_tail;
 	int sm_busy_list_count;

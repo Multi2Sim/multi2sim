@@ -676,6 +676,7 @@ static int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
+	struct frm_grid_t *grid;
 
 	unsigned int args[11];
 	unsigned int function_id;
@@ -726,7 +727,7 @@ static int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	function = cuda_object_get(CUDA_OBJ_FUNCTION, function_id);
 
 	/* Create and setup grid */
-	function->grid = frm_grid_create(function);
+	grid = frm_grid_create(function);
 	function->global_size3[0] = gridDimX*blockDimX;
 	function->global_size3[1] = gridDimY*blockDimY;
 	function->global_size3[2] = gridDimZ*blockDimZ;
@@ -742,6 +743,8 @@ static int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	function->group_count3[2] = gridDimZ;
 	function->group_count = function->group_count3[0] * function->group_count3[1] * 
 					function->group_count3[2];
+	frm_grid_setup_size(grid, function->global_size3, function->local_size3, 3);
+	grid->function = function;
 
 	/* Create arguments */
 	for (i = 0; i < sizeof(kernelParams); ++i)
@@ -759,12 +762,12 @@ static int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	}
 
 	/* Setup threads, constant memory and arguments */
-	frm_grid_setup_threads(function->grid);
-	frm_grid_setup_const_mem(function->grid);
-	frm_grid_setup_args(function->grid);
+	frm_grid_setup_threads(grid);
+	frm_grid_setup_const_mem(grid);
+	frm_grid_setup_args(grid);
 
 	/* Setup status */
-	frm_grid_set_status(function->grid, frm_grid_pending);
+	frm_grid_set_status(grid, frm_grid_pending);
 
 	return 0;
 }
