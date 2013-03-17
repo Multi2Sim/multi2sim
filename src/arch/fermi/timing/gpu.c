@@ -1342,18 +1342,18 @@ int frm_gpu_run(void)
 	struct frm_sm_t *sm_next;
 
 	/* For efficiency when no Fermi emulation is selected, 
-	 * exit here if the list of existing Grids is empty. */
+	 * exit here if the list of existing grids is empty. */
 	if (!frm_emu->grid_list_count)
 		return 0;
 
-	/* Start one Grid in state 'pending' */
+	/* Start one grid in state 'pending' */
 	while ((grid = frm_emu->pending_grid_list_head))
 	{
-		/* Currently not supported for more than 1 Grid */
+		/* Currently not supported for more than 1 grid */
 		if (frm_gpu->grid)
 		{
 			fatal("%s: Fermi GPU timing simulation not "
-				"supported for multiple Grids", 
+				"supported for multiple grids", 
 				__FUNCTION__);
 		}
 
