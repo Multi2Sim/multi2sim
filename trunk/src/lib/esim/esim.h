@@ -52,7 +52,7 @@ extern volatile enum esim_finish_t
 
 	esim_finish_frm_max_inst,
 	esim_finish_frm_max_cycles,
-	esim_finish_frm_max_kernels,
+	esim_finish_frm_max_functions,
 
 	esim_finish_si_max_inst,
 	esim_finish_si_max_cycles,

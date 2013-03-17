@@ -20,6 +20,9 @@
 #ifndef DRIVER_CUDA_MEMORY_H
 #define DRIVER_CUDA_EMMORY_H
 
+#include <lib/mhandle/mhandle.h>
+
+#include "object.h"
 
 struct cuda_memory_t
 {

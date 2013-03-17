@@ -93,6 +93,7 @@ extern struct frm_emu_t *frm_emu;
 extern struct arch_t *frm_emu_arch;
 
 void frm_emu_init(void);
+int frm_emu_run(void);
 void frm_emu_done(void);
 
 void frm_emu_libcuda_redirect(char *path, int size);

@@ -18,10 +18,7 @@
  */
 
 
-#include <lib/mhandle/mhandle.h>
-
-#include "context.h"
-#include "object.h"
+#include "cuda.h"
 
 
 /* Create a context */
@@ -43,6 +40,8 @@ struct cuda_context_t *cuda_context_create()
 /* Free context */
 void cuda_context_free(struct cuda_context_t *context)
 {
+	assert(context->ref_count > 0);
+	context->ref_count--;
 	cuda_object_remove(context);
 	free(context);
 }
