@@ -22,6 +22,7 @@
 #include <arch/fermi/asm/asm.h>
 #include <driver/cuda/device.h>
 #include <driver/cuda/object.h>
+#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
@@ -32,6 +33,9 @@
 
 #include "emu.h"
 #include "isa.h"
+#include "grid.h"
+#include "warp.h"
+#include "thread-block.h"
 
 
 /*
@@ -88,6 +92,10 @@ void frm_emu_init(void)
 
 void frm_emu_done(void)
 {
+	/* Free grid */
+	while (frm_emu->grid_list_count)
+		frm_grid_free(frm_emu->grid_list_head);
+
 	/* Free CUDA object list */
 	cuda_object_free_all();
 	linked_list_free(cuda_object_list);
@@ -97,5 +105,77 @@ void frm_emu_done(void)
         mem_free(frm_emu->const_mem);
         mem_free(frm_emu->global_mem);
         free(frm_emu);
+}
+
+
+void frm_emu_run(void)
+{
+	struct frm_grid_t *grid;
+	struct frm_grid_t *grid_next;
+
+	struct frm_thread_block_t *thread_block;
+	struct frm_thread_block_t *thread_block_next;
+
+	struct frm_warp_t *warp;
+	struct frm_warp_t *warp_next;
+
+	unsigned long long int cycle = 0;
+
+	grid = frm_emu->pending_grid_list_head;
+
+	/* Set all ready thread_blocks to running */
+	while ((thread_block = grid->pending_list_head))
+	{
+		frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
+		frm_thread_block_set_status(thread_block, frm_thread_block_running);
+	}
+	/* Set is in state 'running' */
+	frm_grid_clear_status(grid, frm_grid_pending);
+	frm_grid_set_status(grid, frm_grid_running);
+
+
+	/* Execution loop */
+	while (grid->running_list_head)
+	{
+		/* Stop if maximum number of GPU cycles exceeded */
+		if (frm_emu_max_cycles && cycle >= frm_emu_max_cycles)
+			esim_finish = esim_finish_frm_max_cycles;
+
+		/* Stop if maximum number of GPU instructions exceeded */
+		if (frm_emu_max_inst && frm_emu->inst_count >= frm_emu_max_inst)
+			esim_finish = esim_finish_frm_max_inst;
+
+		/* Stop if any reason met */
+		if (esim_finish)
+			break;
+
+		/* Next cycle */
+		cycle++;
+
+		/* Execute an instruction from each work-group */
+		for (thread_block = grid->running_list_head; thread_block; thread_block = thread_block_next)
+		{
+			/* Save next running work-group */
+			thread_block_next = thread_block->running_list_next;
+
+			/* Run an instruction from each warp */
+			for (warp = thread_block->running_list_head; warp; warp = warp_next)
+			{
+				/* Save next running warp */
+				warp_next = warp->running_list_next;
+
+				/* Execute instruction in warp */
+				frm_warp_execute(warp);
+			}
+		}
+	}
+
+	/* Dump stats */
+	frm_grid_dump(grid, stdout);
+
+	/* Stop if maximum number of functions reached */
+	//if (frm_emu_max_functions && frm_emu->grid_count >= frm_emu_max_functions)
+	//	x86_emu_finish = x86_emu_finish_max_gpu_functions;
+
 }
 
