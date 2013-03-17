@@ -42,7 +42,6 @@
  * Global variables
  */
 
-
 struct frm_emu_t *frm_emu;
 struct arch_t *frm_emu_arch;
 
@@ -67,26 +66,34 @@ void frm_emu_init(void)
 	frm_emu_arch = arch_list_register("Fermi", "frm");
 	frm_emu_arch->sim_kind = frm_emu_sim_kind;
 
-        /* Allocate */
-        frm_emu = xcalloc(1, sizeof(struct frm_emu_t));
-        if (!frm_emu)
-                fatal("%s: out of memory", __FUNCTION__);
+	/* Open report file */
+	if (*frm_emu_report_file_name)
+	{
+		frm_emu_report_file = file_open_for_write(
+			frm_emu_report_file_name);
+		if (!frm_emu_report_file)
+		{
+			fatal("%s: cannot open report for Fermi "
+				"emulator", frm_emu_report_file_name);
+		}
+	}
 
         /* Initialize */
-        frm_emu->const_mem = mem_create();
-        frm_emu->const_mem->safe = 0;
+        frm_emu = xcalloc(1, sizeof(struct frm_emu_t));
+	frm_emu->timer = m2s_timer_create("Fermi GPU Timer");
         frm_emu->global_mem = mem_create();
         frm_emu->global_mem->safe = 0;
         frm_emu->total_global_mem_size = 1 << 31; /* 2GB */
-        frm_emu->free_global_mem_size = frm_emu->total_global_mem_size;
+        frm_emu->free_global_mem_size = 1 << 31; /* 2GB */
         frm_emu->global_mem_top = 0;
+        frm_emu->const_mem = mem_create();
+        frm_emu->const_mem->safe = 0;
 
+	/* Initialize disassembler (decoding tables...) */
 	frm_disasm_init();
-	frm_isa_init();
 
-        /* Create device */
-        cuda_object_list = linked_list_create();  /* FIXME - Should be in driver implementation */
-        cuda_device_create();  /* FIXME - should just call cuda_init() or similar */
+	/* Initialize ISA (instruction execution tables...) */
+	frm_isa_init();
 }
 
 
@@ -108,7 +115,7 @@ void frm_emu_done(void)
 }
 
 
-void frm_emu_run(void)
+int frm_emu_run(void)
 {
 	struct frm_grid_t *grid;
 	struct frm_grid_t *grid_next;
@@ -119,38 +126,35 @@ void frm_emu_run(void)
 	struct frm_warp_t *warp;
 	struct frm_warp_t *warp_next;
 
-	unsigned long long int cycle = 0;
+	/* For efficiency when no Fermi emulation is selected, 
+	 * exit here if the list of existing grid is empty. */
+	if (!frm_emu->grid_list_count)
+		return 0;
 
-	grid = frm_emu->pending_grid_list_head;
-
-	/* Set all ready thread_blocks to running */
-	while ((thread_block = grid->pending_list_head))
+	/* Start any grid in state 'pending' */
+	while ((grid = frm_emu->pending_grid_list_head))
 	{
-		frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
-		frm_thread_block_set_status(thread_block, frm_thread_block_running);
+		/* Set all ready thread blocks to running */
+		while ((thread_block = grid->pending_list_head))
+		{
+			frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
+			frm_thread_block_set_status(thread_block, frm_thread_block_running);
+		}
+
+		/* Set is in state 'running' */
+		frm_grid_clear_status(grid, frm_grid_pending);
+		frm_grid_set_status(grid, frm_grid_running);
 	}
-	/* Set is in state 'running' */
-	frm_grid_clear_status(grid, frm_grid_pending);
-	frm_grid_set_status(grid, frm_grid_running);
 
-
-	/* Execution loop */
-	while (grid->running_list_head)
+	/* Run one instruction of each warp in each thread block of each
+	 * grid that is in status 'running'. */
+	for (grid = frm_emu->running_grid_list_head; grid; 
+		grid = grid_next)
 	{
-		/* Stop if maximum number of GPU cycles exceeded */
-		if (frm_emu_max_cycles && cycle >= frm_emu_max_cycles)
-			esim_finish = esim_finish_frm_max_cycles;
-
-		/* Stop if maximum number of GPU instructions exceeded */
-		if (frm_emu_max_inst && frm_emu->inst_count >= frm_emu_max_inst)
-			esim_finish = esim_finish_frm_max_inst;
-
-		/* Stop if any reason met */
-		if (esim_finish)
-			break;
-
-		/* Next cycle */
-		cycle++;
+		/* Save next grid in state 'running'. This is done because 
+		 * the state might change during the execution of the 
+		 * grid. */
+		grid_next = grid->running_grid_list_next;
 
 		/* Execute an instruction from each work-group */
 		for (thread_block = grid->running_list_head; thread_block; thread_block = thread_block_next)
@@ -170,12 +174,22 @@ void frm_emu_run(void)
 		}
 	}
 
-	/* Dump stats */
-	frm_grid_dump(grid, stdout);
+	/* Free grid that finished */
+	while ((grid = frm_emu->finished_grid_list_head))
+	{
+		/* Dump grid report */
+		frm_grid_dump(grid, frm_emu_report_file);
 
-	/* Stop if maximum number of functions reached */
-	//if (frm_emu_max_functions && frm_emu->grid_count >= frm_emu_max_functions)
-	//	x86_emu_finish = x86_emu_finish_max_gpu_functions;
+		/* Stop if maximum number of functions reached */
+		if (frm_emu_max_functions && frm_emu->grid_count >= 
+				frm_emu_max_functions)
+			esim_finish = esim_finish_frm_max_functions;
 
+		/* Extract from list of finished grid and free */
+		frm_grid_free(grid);
+	}
+
+	/* Return TRUE */
+	return 1;
 }
 

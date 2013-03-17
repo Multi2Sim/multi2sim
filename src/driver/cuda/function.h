@@ -23,6 +23,7 @@
 #include <lib/util/elf-format.h>
 #include <lib/util/string.h>
 
+#include "module.h"
 
 struct cuda_function_t
 {
@@ -40,21 +41,22 @@ struct cuda_function_t
 	int work_dim;
 
 	/* 3D Counters */
-	int global_size3[3];  /* Total number of work_items */
-	int local_size3[3];  /* Number of work_items in a group */
-	int group_count3[3];  /* Number of work_item groups */
+	unsigned int global_size3[3];  /* Total number of work_items */
+	unsigned int local_size3[3];  /* Number of work_items in a group */
+	unsigned int group_count3[3];  /* Number of work_item groups */
 
 	/* 1D Counters. Each counter is equal to the multiplication
 	 * of each component in the corresponding 3D counter. */
-	int global_size;
-	int local_size;
-	int group_count;
+	unsigned int global_size;
+	unsigned int local_size;
+	unsigned int group_count;
 
 	/* State of the running function */
 	struct frm_grid_t *grid;
 };
 
-struct cuda_function_t *cuda_function_create(void);
+struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, 
+	char *function_name);
 void cuda_function_free(struct cuda_function_t *function);
 void cuda_function_load(struct cuda_function_t *function, char *function_name);
 

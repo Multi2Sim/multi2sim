@@ -137,6 +137,10 @@ void frm_grid_setup_const_mem(struct frm_grid_t *grid);
 void frm_grid_setup_args(struct frm_grid_t *grid);
 void frm_grid_run(struct frm_grid_t *grid);
 
+void frm_grid_setup_size(struct frm_grid_t *grid,
+		unsigned int *global_size,
+		unsigned int *local_size,
+		int work_dim);
 
 #endif
 

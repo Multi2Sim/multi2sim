@@ -81,7 +81,7 @@ struct str_map_t esim_finish_map =
 
 		{ "FermiMaxInst", esim_finish_frm_max_inst },
 		{ "FermiMaxCycles", esim_finish_frm_max_cycles },
-		{ "FermiMaxKernels", esim_finish_frm_max_kernels },
+		{ "FermiMaxFunctions", esim_finish_frm_max_functions},
 
 		{ "SouthernIslandsMaxInst", esim_finish_si_max_inst },
 		{ "SouthernIslandsMaxCycles", esim_finish_si_max_cycles },
