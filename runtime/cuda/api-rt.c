@@ -17,68 +17,37 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "../include/cuda.h"
-#include "../include/cuda_runtime_api.h"
 #include "api.h"
-#include "debug.h"
-#include "linked-list.h"
 
-#include <stdio.h>
-#include <unistd.h>
 
+
+
+/*
+ * Global Variables
+ */
+
+CUfunction function;
+dim3 grid_dim;
+dim3 threadblock_dim;
+struct linked_list_t *args;
+int arg_index = 0;
 
 /* Error messages */
-#define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", \
-	__FUNCTION__, cuda_rt_not_impl);
-
-static char *cuda_rt_not_impl =
+char *cuda_rt_err_not_impl =
 	"\tMulti2Sim provides partial support for CUDA runtime library.\n"
 	"\tTo request the implementation of a certain functionality,\n"
 	"\tplease email development@multi2sim.org.\n";
 
-static char *cuda_err_native =
-	"\tYou are trying to run natively an application using the Multi2Sim CUDA driver\n"
-	"\tlibrary implementation ('libm2s-cuda'). Please run this program on top of\n"
-	"\tMulti2Sim.\n";
+char *cuda_rt_err_native =
+	"\tYou are trying to run natively an application using the Multi2Sim\n"
+	"\tCUDA runtime/driver library implementation ('libm2s-cuda'). Please\n"
+	"\trun this program on top of Multi2Sim.\n";
 
 
 
 
 /*
- * Data Structures and Macros
- */
-
-#define __dv(v)
-
-struct __fatDeviceText {
-	int m;
-	int v;
-	const unsigned long long* d;
-	char* f;
-};
-
-#define FRM_CUDART_VERSION_MAJOR	1
-#define FRM_CUDART_VERSION_MINOR	700
-
-struct frm_cudart_version_t
-{
-	int major;
-	int minor;
-};
-
-CUfunction function;
-
-dim3 grid_dim, threadblock_dim;
-
-struct linked_list_t *args;
-
-static int arg_index = 0;
-
-
-
-
-/*
- * Internal Functions
+ * CUDA Runtime Internal Functions
  */
 
 void** __cudaRegisterFatBinary(void *fatCubin)
@@ -87,7 +56,7 @@ void** __cudaRegisterFatBinary(void *fatCubin)
 
 	cuInit(0);
 
-	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
 	fatCubinHandle = (unsigned long long int **)malloc(sizeof(unsigned long long int *));
 	*fatCubinHandle = (unsigned long long int *)(((struct __fatDeviceText *)fatCubin)->d);
@@ -97,7 +66,7 @@ void** __cudaRegisterFatBinary(void *fatCubin)
 
 void __cudaUnregisterFatBinary(void **fatCubinHandle)
 {
-	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
 	if (fatCubinHandle != NULL)
 		free(fatCubinHandle);
@@ -151,7 +120,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	CUmodule module;
 	int ret;
 
-	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
 	/* Get kernel binary name */
 	/* FIXME - The system call should take another argument with the size of
@@ -164,8 +133,9 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		fatal("native execution not supported.\n%s",
 			cuda_err_native);
 
+	cuda_debug_print(stdout, "\t(runtime) out: cubin_filename=%s\n", cubin_filename);
+
 	/* Load module */
-	cuda_debug(stdout, "\t(runtime) out: cubin_filename=%s\n", cubin_filename);
 	cuModuleLoad(&module, cubin_filename);
 
 	/* Get function */
@@ -386,10 +356,10 @@ cudaError_t cudaEventElapsedTime(float *ms, cudaEvent_t start, cudaEvent_t end)
 
 cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem __dv(0), cudaStream_t stream __dv(0))
 {
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: gridDim=%u %u %u\n", 
+	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(runtime) in: gridDim=%u %u %u\n", 
 		gridDim.x, gridDim.y, gridDim.z);
-	cuda_debug(stdout, "\t(runtime) in: blockDim=%u %u %u\n", 
+	cuda_debug_print(stdout, "\t(runtime) in: blockDim=%u %u %u\n", 
 		blockDim.x, blockDim.y, blockDim.z);
 
 	grid_dim.x = gridDim.x;
@@ -399,17 +369,17 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem __dv
 	threadblock_dim.y = blockDim.y;
 	threadblock_dim.z = blockDim.z;
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cuda_debug_print(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
 
 cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 {
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: arg=%p\n", arg);
-	cuda_debug(stdout, "\t(runtime) in: size=%d\n", size);
-	cuda_debug(stdout, "\t(runtime) in: offset=%d\n", offset);
+	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(runtime) in: arg=%p\n", arg);
+	cuda_debug_print(stdout, "\t(runtime) in: size=%d\n", size);
+	cuda_debug_print(stdout, "\t(runtime) in: offset=%d\n", offset);
 
 	if (arg_index == 0)
 		args = linked_list_create();
@@ -417,7 +387,7 @@ cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 	linked_list_add(args, (void *)arg);
 	++arg_index;
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cuda_debug_print(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
@@ -433,8 +403,8 @@ cudaError_t cudaLaunch(const void *entry)
 	CUdeviceptr **kernel_args;
 	int i;
 
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: entry=%p\n", entry);
+	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(runtime) in: entry=%p\n", entry);
 
 	/* Copy kernel arguments */
 	kernel_args = malloc(linked_list_count(args) * sizeof(CUdeviceptr *));
@@ -451,7 +421,7 @@ cudaError_t cudaLaunch(const void *entry)
 		0, NULL, (void **)kernel_args, NULL);
 	free(kernel_args);
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cuda_debug_print(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
@@ -478,14 +448,14 @@ cudaError_t cudaMalloc(void **devPtr, size_t size)
 {
 	CUdeviceptr dptr;
 
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: size=%d\n", size);
+	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(runtime) in: size=%d\n", size);
 
 	cuMemAlloc(&dptr, size);
 	*(CUdeviceptr *)devPtr = dptr;
 
-	cuda_debug(stdout, "\t(runtime) out: devPtr=0x%08x\n", *(CUdeviceptr *)devPtr);
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cuda_debug_print(stdout, "\t(runtime) out: devPtr=0x%08x\n", *(CUdeviceptr *)devPtr);
+	cuda_debug_print(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
@@ -510,12 +480,12 @@ cudaError_t cudaMallocArray(struct cudaArray **array, const struct cudaChannelFo
 
 cudaError_t cudaFree(void *devPtr)
 {
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: devPtr=%p\n", devPtr);
+	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "\t(runtime) in: devPtr=%p\n", devPtr);
 
 	cuMemFree((CUdeviceptr)devPtr);
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cuda_debug_print(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
@@ -606,15 +576,15 @@ cudaError_t cudaMemGetInfo(size_t *free, size_t *total)
 
 cudaError_t cudaMemcpy(void *dst, const void *src, size_t count, enum cudaMemcpyKind kind)
 {
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 
-	/* FIXME: cudaMemcpyHostToHost, cudaMemcpyDeviceToDevice */
 	if (kind == cudaMemcpyHostToDevice)
 		cuMemcpyHtoD((CUdeviceptr)dst, src, count);
 	else if (kind == cudaMemcpyDeviceToHost)
 		cuMemcpyDtoH(dst, (CUdeviceptr)src, count);
+	/* FIXME: implement cudaMemcpyHostToHost, cudaMemcpyDeviceToDevice */
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cuda_debug_print(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
