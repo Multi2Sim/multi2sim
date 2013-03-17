@@ -25,18 +25,38 @@
 #include "object.h"
 
 
-struct cuda_function_t *cuda_function_create(void)
+struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
+	char *function_name)
 {
 	struct cuda_function_t *function;
+	char section_name[MAX_STRING_SIZE];
+	struct elf_section_t *section;
+	int i;
 
 	/* Initialize */
 	function = xcalloc(1, sizeof(struct cuda_function_t));
 	function->id = cuda_object_new_id(CUDA_OBJ_FUNCTION);
 	function->ref_count = 1;
 	function->arg_list = list_create();
+	function->module_id = module->id;
+	snprintf(function->name, MAX_STRING_SIZE, "%s", function_name);
 
-	/* Return */
+	/* Load function */
+	snprintf(section_name, MAX_STRING_SIZE, ".text.%s", function_name);
+	for (i = 0; i < list_count(module->elf_file->section_list); ++i)
+	{
+		section = (struct elf_section_t *)list_get(module->elf_file->section_list, i);
+		if (!strncmp(section->name, section_name, MAX_STRING_SIZE))
+			break;
+	}
+	if (i == list_count(module->elf_file->section_list))
+		fatal("%s section not found!\n", section_name);
+	function->function_buffer.ptr = section->buffer.ptr;
+	function->function_buffer.size = section->buffer.size;
+
+	/* Add function to object list */
 	cuda_object_add(function);
+
 	return function;
 }
 

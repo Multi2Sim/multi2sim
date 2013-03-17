@@ -20,14 +20,59 @@
 #ifndef DRIVER_CUDA_CUDA_H
 #define DRIVER_CUDA_CUDA_H
 
+#include <assert.h>
 
-#define cuda_debug(...) debug(cuda_debug_category, __VA_ARGS__)
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
+#include <lib/util/list.h>
+#include <arch/x86/emu/context.h>
+#include <arch/x86/emu/regs.h>
+#include <arch/fermi/emu/emu.h>
+#include <arch/fermi/emu/grid.h>
+#include <mem-system/memory.h>
+
+#include "object.h"
+#include "context.h"
+#include "module.h"
+#include "function.h"
+#include "function-arg.h"
+#include "memory.h"
+
+/* Version */
+struct cuda_version_t
+{
+	int major;
+	int minor;
+};
+
+/* Debug */
 extern int cuda_debug_category;
+#define cuda_debug(...) debug(cuda_debug_category, __VA_ARGS__)
 
+/* Error */
+extern char *cuda_err_code;
 
-struct x86_ctx_t;
+/* List of CUDA driver calls */
+enum cuda_call_t
+{
+	cuda_call_invalid = 0,
+#define CUDA_DEFINE_CALL(name) cuda_call_##name,
+#include "cuda.dat"
+#undef CUDA_DEFINE_CALL
+	cuda_call_count
+};
+
+/* Prototype of CUDA driver functions */
+typedef int (*cuda_func_t)(struct x86_ctx_t *ctx);
+
+/* Functions */
 int cuda_abi_call(struct x86_ctx_t *ctx);
 
+#define CUDA_DEFINE_CALL(name) \
+	int cuda_func_##name(struct x86_ctx_t *ctx);
+#include "cuda.dat"
+#undef CUDA_DEFINE_CALL
 
 #endif
 
