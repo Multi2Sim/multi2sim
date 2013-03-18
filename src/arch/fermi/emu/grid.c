@@ -289,7 +289,7 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 		function->group_count3[1], function->group_count3[2]);
 	printf("warp_count = %d\n", grid->warp_count);
 	printf("warps_per_thread_block = %d\n", grid->warps_per_thread_block);
-	printf(" tid tid2 tid1 tid0   bid bid2 bid1 bid0   lid lid2 lid1 lid0  warp            work-group\n");
+	printf(" tid tid2 tid1 tid0   bid bid2 bid1 bid0   lid lid2 lid1 lid0 warp            thread-block\n");
 	for (tid = 0; tid < grid->thread_count; tid++)
 	{
 		thread = grid->threads[tid];

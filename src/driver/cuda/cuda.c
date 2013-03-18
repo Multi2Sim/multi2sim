@@ -24,7 +24,7 @@
  */
 
 /* Debug */
-int cuda_debug_category;
+int cuda_debug_category = 1;
 
 /* Error messages */
 char *cuda_err_code =
@@ -140,6 +140,22 @@ int cuda_func_versionCheck(struct x86_ctx_t *ctx)
 
 
 
+
+/*
+ * CUDA call - cuInit
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+int cuda_func_cuInit(struct x86_ctx_t *ctx)
+{
+	/* Create device */
+        cuda_object_list = linked_list_create();
+        cuda_device_create();
+
+	return 0;
+}
 
 /*
  * CUDA call - cuCtxCreate
@@ -604,6 +620,59 @@ int cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
+struct cuda_abi_frm_kernel_launch_info_t
+{
+	struct cuda_function_t *function;
+	struct frm_grid_t *grid;
+	int finished;
+};
+void frm_grid_set_free_notify_func(struct frm_grid_t *grid,
+		void (*func)(void *), void *user_data)
+{
+	grid->free_notify_func = func;
+	grid->free_notify_data = user_data;
+}
+static void cuda_abi_frm_kernel_launch_finish(void *user_data)
+{
+	struct cuda_abi_frm_kernel_launch_info_t *info = user_data;
+	struct cuda_function_t *kernel = info->function;
+	struct frm_grid_t *grid = info->grid;
+
+	/* Debug */
+	cuda_debug("ND-Range %d running kernel '%s' finished\n",
+			grid->id, kernel->name);
+
+	/* Set 'finished' flag in launch info */
+	info->finished = 1;
+
+	/* Force the x86 emulator to check which suspended contexts can wakeup,
+	 * based on their new state. */
+	x86_emu_process_events_schedule();
+}
+
+
+static int cuda_abi_frm_kernel_launch_can_wakeup(struct x86_ctx_t *ctx,
+		void *user_data)
+{
+	struct cuda_abi_frm_kernel_launch_info_t *info = user_data;
+
+	/* NOTE: the ND-Range has been freed at this point if it finished
+	 * execution, so field 'info->ndrange' should not be accessed. We
+	 * use flag 'info->finished' instead. */
+	return info->finished;
+}
+
+static void cuda_abi_frm_kernel_launch_wakeup(struct x86_ctx_t *ctx,
+		void *user_data)
+{
+	struct cuda_abi_frm_kernel_launch_info_t *info = user_data;
+
+	/* Free info object */
+	free(info);
+}
+
+
+
 int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
@@ -629,6 +698,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	unsigned int arg_ptr;
 	unsigned int arg_value;
 	int i;
+	struct cuda_abi_frm_kernel_launch_info_t *info;
 
 	mem_read(mem, regs->ecx, 11 * sizeof(unsigned int), args);
 	mem_read(mem, args[0], sizeof(unsigned int), &function_id);
@@ -698,8 +768,19 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	frm_grid_setup_const_mem(grid);
 	frm_grid_setup_args(grid);
 
+	/* Set up call-back function to be run when ND-Range finishes. */
+	info = xcalloc(1, sizeof(struct cuda_abi_frm_kernel_launch_info_t));
+	info->function= function;
+	info->grid = grid;
+	frm_grid_set_free_notify_func(grid, cuda_abi_frm_kernel_launch_finish, info);
+
+
 	/* Setup status */
 	frm_grid_set_status(grid, frm_grid_pending);
+
+	/* Suspend x86 context until ND-Range finishes */
+	x86_ctx_suspend(ctx, cuda_abi_frm_kernel_launch_can_wakeup, info,
+			cuda_abi_frm_kernel_launch_wakeup, info);
 
 	return 0;
 }

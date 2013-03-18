@@ -20,12 +20,14 @@
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 
 #include "emu.h"
+#include "isa.h"
 #include "grid.h"
 #include "machine.h"
 #include "thread.h"
@@ -247,14 +249,14 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	int byte_index;
 
 	inst = &(warp->inst);
-	//printf("Instruction Hex: ");
+	frm_isa_debug("Instruction Hex: ");
 	/* Print most significant byte first */
 	for (byte_index = 7; byte_index >= 0; --byte_index)
 	{
-		//printf("%02x", *((unsigned char*)(warp->buf)+byte_index));
+		frm_isa_debug("%02x", *((unsigned char*)(warp->buf)+byte_index));
 		inst->dword.bytes[byte_index] = *((unsigned char*)(warp->buf)+byte_index);
 	}
-	//printf("\n");
+	frm_isa_debug("\n");
 
         FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
         {

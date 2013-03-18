@@ -33,7 +33,7 @@
 frm_isa_inst_func_t *frm_isa_inst_func;
 
 /* Debug */
-int frm_isa_debug_category;
+int frm_isa_debug_category = 1;
 
 
 /*
