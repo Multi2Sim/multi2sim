@@ -56,6 +56,19 @@ void frm_grid_free(struct frm_grid_t *grid)
 {
         int i;
 
+	/* Run free notify call-back */
+	if (grid->free_notify_func)
+		grid->free_notify_func(grid->free_notify_data);
+
+	/* Clear all states that affect lists. */
+	frm_grid_clear_status(grid, frm_grid_pending);
+	frm_grid_clear_status(grid, frm_grid_running);
+	frm_grid_clear_status(grid, frm_grid_finished);
+
+	/* Extract from ND-Range list in Southern Islands emulator */
+	assert(DOUBLE_LINKED_LIST_MEMBER(frm_emu, grid, grid));
+	DOUBLE_LINKED_LIST_REMOVE(frm_emu, grid, grid);
+
         /* Free thread_blocks */
         for (i = 0; i < grid->thread_block_count; i++)
                 frm_thread_block_free(grid->thread_blocks[i]);
@@ -140,15 +153,20 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 	grid->thread_block_id_last = grid->thread_block_count - 1;
 	grid->thread_blocks = xcalloc(grid->thread_block_count, sizeof(void *));
 	for (bid = 0; bid < grid->thread_block_count; bid++)
+	{
 		grid->thread_blocks[bid] = frm_thread_block_create();
+		thread_block = grid->thread_blocks[bid];
+	}
 	
 	/* Array of warps */
-	grid->warps_per_thread_block = (function->local_size + frm_emu_warp_size - 1) / frm_emu_warp_size;
+	grid->warps_per_thread_block = 
+		(function->local_size + frm_emu_warp_size - 1) / frm_emu_warp_size;
 	grid->warp_count = grid->warps_per_thread_block * grid->thread_block_count;
 	grid->warp_id_first = 0;
 	grid->warp_id_last = grid->warp_count - 1;
 	assert(grid->warps_per_thread_block > 0 && grid->warp_count > 0);
 	grid->warps = xcalloc(grid->warp_count, sizeof(void *));
+
 	for (wid = 0; wid < grid->warp_count; wid++)
 	{
 		bid = wid / grid->warps_per_thread_block;
@@ -160,6 +178,9 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 		warp->id_in_thread_block = wid % grid->warps_per_thread_block;
 		warp->grid = grid;
 		warp->thread_block = thread_block;
+                warp->buf_start = function->function_buffer.ptr;
+                warp->buf = warp->buf_start;
+                warp->buf_size = function->function_buffer.size;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(thread_block, running, warp);
 	}
 
@@ -183,12 +204,13 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 				thread_block->id_3d[1] = bidy;
 				thread_block->id_3d[2] = bidz;
 				thread_block->id = bid;
+				thread_block->grid = grid;
 				frm_thread_block_set_status(thread_block, frm_thread_block_pending);
 
 				/* First, last, and number of threads in thread_block */
 				thread_block->thread_id_first = tid;
 				thread_block->thread_id_last = tid + function->local_size - 1;
-				thread_block->thread_count = function->local_size;
+				thread_block->thread_count = grid->local_size;
 				thread_block->threads = &grid->threads[tid];
 				snprintf(thread_block->name, sizeof(thread_block->name), "thread_block[i%d-i%d]",
 					thread_block->thread_id_first, thread_block->thread_id_last);
@@ -273,11 +295,6 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 		warp = grid->warps[wid];
 		snprintf(warp->name, sizeof(warp->name), "warp[i%d-i%d]",
 			warp->thread_id_first, warp->thread_id_last);
-
-		/* Initialize warp program counter */
-                warp->buf_start = function->function_buffer.ptr;
-                warp->buf = warp->buf_start;
-                warp->buf_size = function->function_buffer.size;
 	}
 
 	/* Debug */
@@ -518,6 +535,9 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 			grid->warps_per_thread_block;
 		warp->grid = grid;
 		warp->thread_block = thread_block;
+                warp->buf_start = grid->function->function_buffer.ptr;
+                warp->buf = warp->buf_start;
+                warp->buf_size = grid->function->function_buffer.size;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(thread_block, running, warp);
 	}
 
@@ -600,6 +620,16 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 							}
 							warp->thread_count++;
 							warp->thread_id_last = tid;
+
+                                                        /* Save local IDs in register R0 */
+                                                        thread->sr[FRM_SR_Tid_X].v.i = lidx;  /* R0.x */
+                                                        thread->sr[FRM_SR_Tid_Y].v.i = lidy;  /* R0.y */
+                                                        thread->sr[FRM_SR_Tid_Z].v.i = lidz;  /* R0.z */
+
+                                                        /* Save thread_block IDs in register R1 */
+                                                        thread->sr[FRM_SR_CTAid_X].v.i = gidx;  /* R1.x */
+                                                        thread->sr[FRM_SR_CTAid_Y].v.i = gidy;  /* R1.y */
+                                                        thread->sr[FRM_SR_CTAid_Z].v.i = gidz;  /* R1.z */
 
 							/* Next work-item */
 							tid++;
