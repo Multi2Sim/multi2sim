@@ -43,6 +43,11 @@ struct frm_grid_t
         /* Status */
         enum frm_grid_status_t status;
 
+	/* Call-back function run right before freeing ND-Range, using the value in
+	 * 'free_notify_data' as an argument. */
+	void (*free_notify_func)(void *);
+	void *free_notify_data;
+
 	/* CUDA function associated */
 	struct cuda_function_t *function;
 

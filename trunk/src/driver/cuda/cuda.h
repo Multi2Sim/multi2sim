@@ -34,6 +34,7 @@
 
 #include "object.h"
 #include "context.h"
+#include "device.h"
 #include "module.h"
 #include "function.h"
 #include "function-arg.h"

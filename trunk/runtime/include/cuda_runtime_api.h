@@ -90,7 +90,7 @@ enum cudaError
     cudaErrorProfilerDisabled = 55,
     cudaErrorProfilerNotInitialized = 56,
     cudaErrorProfilerAlreadyStarted = 57,
-     cudaErrorProfilerAlreadyStopped = 58,
+    cudaErrorProfilerAlreadyStopped = 58,
     cudaErrorAssert = 59,
     cudaErrorTooManyPeers = 60,
     cudaErrorHostMemoryAlreadyRegistered = 61,

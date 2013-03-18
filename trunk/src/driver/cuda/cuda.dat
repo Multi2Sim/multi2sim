@@ -1,4 +1,5 @@
 CUDA_DEFINE_CALL(versionCheck)
+CUDA_DEFINE_CALL(cuInit)
 CUDA_DEFINE_CALL(cuCtxCreate)
 CUDA_DEFINE_CALL(cuCtxDestroy)
 CUDA_DEFINE_CALL(cuModuleLoad)
