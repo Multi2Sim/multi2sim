@@ -17,10 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <GL/glew.h>
+#include <X11/X.h>
+#include <X11/Xlib.h>
 #include <GL/gl.h>
-#include <GL/freeglut.h>
-#include <GL/glu.h>
+#include <GL/glx.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -30,7 +30,6 @@
 
 
 #define PROGRAM_BINARY_RETRIEVABLE_HINT  0x8257
-
 
 static char *syntax =
 	"Syntax: %s [<options>]\n"
@@ -45,6 +44,193 @@ static char *syntax =
 
 
 int dump_intermediate = 0;	/* Dump intermediate files */
+
+/* For context initialization */
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
+PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
+PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
+PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers;
+PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer;
+PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage;
+PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
+PFNGLGETSHADERIVPROC glGetShaderiv;
+PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
+PFNGLCREATESHADERPROC glCreateShader;
+PFNGLSHADERSOURCEPROC glShaderSource;
+PFNGLCOMPILESHADERPROC glCompileShader;
+PFNGLCREATEPROGRAMPROC glCreateProgram;
+PFNGLATTACHSHADERPROC glAttachShader;
+PFNGLLINKPROGRAMPROC glLinkProgram;
+PFNGLGETPROGRAMIVPROC glGetProgramiv;
+PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
+PFNGLUSEPROGRAMPROC glUseProgram;
+PFNGLPROGRAMPARAMETERIPROC glProgramParameteri;
+PFNGLGETPROGRAMBINARYPROC glGetProgramBinary;
+
+int pbuffer_width = 32;
+int pbuffer_height = 32;
+int framebuffer_width = 1024;
+int framebuffer_height = 768;
+
+/* X & Context */
+Display* dpy ;
+int fbcount;
+GLXFBConfig* fbc;
+GLXContext ctx;
+GLXPbuffer pbuf;
+
+/* Buffer IDs */
+GLuint m_framebuffer1;
+GLuint m_colorRenderbuffer1;
+GLuint m_depthRenderbuffer;
+
+static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
+static glXMakeContextCurrentARBProc glXMakeContextCurrentARB = 0;
+
+int opengl_context_init_x(unsigned int major_version, unsigned int minor_version)
+{
+	static int visual_attribs[] = 
+	{
+		GLX_RENDER_TYPE, GLX_RGBA_BIT,
+		GLX_RED_SIZE, 8,
+		GLX_GREEN_SIZE, 8,
+		GLX_BLUE_SIZE, 8,
+		GLX_ALPHA_SIZE, 8,
+		GLX_DEPTH_SIZE, 24,
+		GLX_STENCIL_SIZE, 8,
+		None
+	};
+
+	int context_attribs[] = 
+	{
+		GLX_CONTEXT_MAJOR_VERSION_ARB, major_version,
+		GLX_CONTEXT_MINOR_VERSION_ARB, minor_version,
+		None
+	};
+
+	dpy = XOpenDisplay(0);
+	fbcount = 0;
+	fbc = NULL;
+
+	/* open display */
+	if ( ! (dpy = XOpenDisplay(0)) )
+	{
+		fprintf(stderr, "Failed to open display\n");
+		exit(1);
+	}
+
+	/* get framebuffer configs, any is usable (might want to add proper attribs) */
+	if ( !(fbc = glXChooseFBConfig(dpy, DefaultScreen(dpy), visual_attribs, &fbcount) ) )
+	{
+		fprintf(stderr, "Failed to get FBConfig\n");
+		exit(1);
+	}
+
+	/* get the required extensions */
+	glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB");
+	glXMakeContextCurrentARB = (glXMakeContextCurrentARBProc)glXGetProcAddressARB( (const GLubyte *) "glXMakeContextCurrent");
+	glProgramParameteri = (PFNGLPROGRAMPARAMETERIPROC)glXGetProcAddressARB( (const GLubyte *) "glProgramParameteri");
+	glGetProgramBinary = (PFNGLGETPROGRAMBINARYPROC)glXGetProcAddressARB( (const GLubyte *) "glGetProgramBinary");
+	glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)glXGetProcAddressARB( (const GLubyte *) "glGenFramebuffers");
+	glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)glXGetProcAddressARB( (const GLubyte *) "glBindFramebuffer");
+	glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)glXGetProcAddressARB( (const GLubyte *) "glGenRenderbuffers");
+	glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)glXGetProcAddressARB( (const GLubyte *) "glBindRenderbuffer");
+	glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)glXGetProcAddressARB( (const GLubyte *) "glRenderbufferStorage");
+	glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)glXGetProcAddressARB( (const GLubyte *) "glFramebufferRenderbuffer");
+	glCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)glXGetProcAddressARB( (const GLubyte *) "glCheckFramebufferStatus");
+	glGetShaderiv = (PFNGLGETSHADERIVPROC)glXGetProcAddressARB( (const GLubyte *) "glGetShaderiv");
+	glGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)glXGetProcAddressARB( (const GLubyte *) "glGetShaderInfoLog");
+	glCreateShader = (PFNGLCREATESHADERPROC)glXGetProcAddressARB( (const GLubyte *) "glCreateShader");
+	glShaderSource = (PFNGLSHADERSOURCEPROC)glXGetProcAddressARB( (const GLubyte *) "glShaderSource");
+	glCompileShader = (PFNGLCOMPILESHADERPROC)glXGetProcAddressARB( (const GLubyte *) "glCompileShader");
+	glCreateProgram = (PFNGLCREATEPROGRAMPROC)glXGetProcAddressARB( (const GLubyte *) "glCreateProgram");
+	glAttachShader = (PFNGLATTACHSHADERPROC)glXGetProcAddressARB( (const GLubyte *) "glAttachShader");
+	glLinkProgram = (PFNGLLINKPROGRAMPROC)glXGetProcAddressARB( (const GLubyte *) "glLinkProgram");
+	glGetProgramiv = (PFNGLGETPROGRAMIVPROC)glXGetProcAddressARB( (const GLubyte *) "glGetProgramiv");
+	glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)glXGetProcAddressARB( (const GLubyte *) "glGetProgramInfoLog");
+	glUseProgram = (PFNGLUSEPROGRAMPROC)glXGetProcAddressARB( (const GLubyte *) "glUseProgram");
+
+	if ( !(glXCreateContextAttribsARB && glXMakeContextCurrentARB))
+	{
+		fprintf(stderr, "missing support for GLX_ARB_create_context\n");
+		XFree(fbc);
+		exit(1);
+	}
+
+	if ( !(glProgramParameteri && glGetProgramBinary))
+	{
+		fprintf(stderr, "missing support for GLX_ARB_get_program_binary\n");
+		XFree(fbc);
+		exit(1);
+	}
+
+	/* create a context using glXCreateContextAttribsARB */
+	if ( !( ctx = glXCreateContextAttribsARB(dpy, fbc[0], 0, True, context_attribs)) )
+	{
+		fprintf(stderr, "Failed to create opengl context\n");
+		XFree(fbc);
+		exit(1);
+	}
+
+	/* create temporary pbuffer */
+	int pbuffer_attribs[] = 
+	{
+		GLX_PBUFFER_WIDTH, pbuffer_width,
+		GLX_PBUFFER_HEIGHT, pbuffer_height,
+		None
+	};
+	pbuf = glXCreatePbuffer(dpy, fbc[0], pbuffer_attribs);
+
+	XFree(fbc);
+	XSync(dpy, False);
+
+	/* try to make it the current context */
+	if ( !glXMakeContextCurrent(dpy, pbuf, pbuf, ctx) )
+	{
+		/* some drivers does not support context without default framebuffer, so fallback on
+		* using the default window.
+		*/
+		if ( !glXMakeContextCurrent(dpy, DefaultRootWindow(dpy), DefaultRootWindow(dpy), ctx) )
+		{
+			fprintf(stderr, "failed to make current\n");
+			exit(1);
+		}
+	} 
+	else
+	{
+		printf("GL context init completed.\n");
+		printf("GL Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
+		printf("GL Renderer : %s\n", (const char*)glGetString(GL_RENDERER));
+		printf("GL Version (string) : %s\n", (const char*)glGetString(GL_VERSION));
+		printf("GLSL Version : %s\n", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+		return 1;
+	}
+	return 0;
+}
+
+void opengl_context_init_buffer()
+{
+	glGenFramebuffers(1, &m_framebuffer1);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer1);
+
+	glGenRenderbuffers(1, &m_colorRenderbuffer1);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_colorRenderbuffer1);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, framebuffer_width, framebuffer_height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_colorRenderbuffer1);
+
+	glGenRenderbuffers(1, &m_depthRenderbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_depthRenderbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebuffer_width, framebuffer_height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthRenderbuffer);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthRenderbuffer);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		printf("Failed to make complete framebuffer object %x\n",glCheckFramebufferStatus(GL_FRAMEBUFFER));
+	else
+		printf("Success, finally did it!\n");
+}
 
 /* For read shaders */
 void *read_buffer(char *file_name, int *psize)
@@ -66,50 +252,6 @@ void *read_buffer(char *file_name, int *psize)
 	if (psize)
 		*psize = size;
 	return buf;
-}
-
-int opengl_context_init(int argc, char *argv[])
-{
-	/* Init */
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
-	glutInitContextVersion(4, 1);
-	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
-	glutCreateWindow("OpenGL offline compiler");
-
-	/* Platform & OpenGL infomation */
-	const GLubyte *renderer = glGetString(GL_RENDERER);
-	const GLubyte *vendor = glGetString(GL_VENDOR);
-	const GLubyte *version = glGetString(GL_VERSION);
-	const GLubyte *glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
-	GLint major, minor;
-
-	glGetIntegerv(GL_MAJOR_VERSION, &major);
-	glGetIntegerv(GL_MINOR_VERSION, &minor);
-
-	printf("GL Vendor: %s\n", vendor);
-	printf("GL Renderer : %s\n", renderer);
-	printf("GL Version (string) : %s\n", version);
-	printf("GL Version (integer) : %d.%d\n", major, minor);
-	printf("GLSL Version : %s\n", glslVersion);
-
-	GLenum err = glewInit();
-
-	if (GLEW_OK != err)
-	{
-		/* Problem: glewInit failed, something is seriously wrong. */
-		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-		return -1;
-	}
-
-	/* Check if the ARB_get_program_binary is supported */
-	if (!GLEW_ARB_get_program_binary)
-	{
-		fprintf(stderr, "Need ARB_get_program_binary support!\n");
-		return -1;
-	}
-
-	return 0;
 }
 
 void opengl_shader_binary_analyze(const char *file_name)
@@ -404,10 +546,9 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	if (opengl_context_init(argc, argv))
+	if (opengl_context_init_x(4,2))
 	{
-		printf("Initilize OpenGL Context Failed !\n");
-		return -1;
+		opengl_context_init_buffer();
 	}
 
 	VSShaderSource = (GLchar *) read_buffer(vsfile, &VS_source_size);
