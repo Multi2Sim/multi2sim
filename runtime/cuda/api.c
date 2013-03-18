@@ -27,7 +27,7 @@
  */
 
 /* Debug */
-int cuda_debug_print;
+int cuda_debug;
 
 /* Error messages */
 char *cuda_err_not_impl =
@@ -94,6 +94,8 @@ void versionCheck(void)
 
 CUresult cuInit(unsigned int Flags)
 {
+	int ret;
+
 	versionCheck();
 
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
@@ -104,6 +106,15 @@ CUresult cuInit(unsigned int Flags)
 		cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
 	}
+
+	/* Syscall */
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			cuda_err_native);
 
 	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
