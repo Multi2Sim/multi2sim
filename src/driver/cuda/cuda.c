@@ -677,7 +677,6 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
-	struct frm_grid_t *grid;
 
 	unsigned int args[11];
 	unsigned int function_id;
@@ -697,6 +696,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	char arg_name[MAX_STRING_SIZE];
 	unsigned int arg_ptr;
 	unsigned int arg_value;
+	struct frm_grid_t *grid;
 	int i;
 	struct cuda_abi_frm_kernel_launch_info_t *info;
 
@@ -745,8 +745,23 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	function->group_count3[2] = gridDimZ;
 	function->group_count = function->group_count3[0] * function->group_count3[1] * 
 					function->group_count3[2];
+	grid->global_size3[0] = gridDimX*blockDimX;
+	grid->global_size3[1] = gridDimY*blockDimY;
+	grid->global_size3[2] = gridDimZ*blockDimZ;
+	grid->global_size = grid->global_size3[0] * grid->global_size3[1] * 
+					grid->global_size3[2];
+	grid->local_size3[0] = blockDimX;
+	grid->local_size3[1] = blockDimY;
+	grid->local_size3[2] = blockDimZ;
+	grid->local_size = grid->local_size3[0] * grid->local_size3[1] * 
+					grid->local_size3[2];
+	grid->group_count3[0] = gridDimX;
+	grid->group_count3[1] = gridDimY;
+	grid->group_count3[2] = gridDimZ;
+	grid->group_count = grid->group_count3[0] * grid->group_count3[1] * 
+					grid->group_count3[2];
+        grid->function = function;
 	frm_grid_setup_size(grid, function->global_size3, function->local_size3, 3);
-	grid->function = function;
 
 	/* Create arguments */
 	for (i = 0; i < sizeof(kernelParams); ++i)
@@ -764,7 +779,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	}
 
 	/* Setup threads, constant memory and arguments */
-	frm_grid_setup_threads(grid);
+	//frm_grid_setup_threads(grid);
 	frm_grid_setup_const_mem(grid);
 	frm_grid_setup_args(grid);
 
@@ -773,7 +788,6 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	info->function= function;
 	info->grid = grid;
 	frm_grid_set_free_notify_func(grid, cuda_abi_frm_kernel_launch_finish, info);
-
 
 	/* Setup status */
 	frm_grid_set_status(grid, frm_grid_pending);

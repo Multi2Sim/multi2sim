@@ -291,6 +291,24 @@ void frm_warp_execute(struct frm_warp_t *warp)
 			assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished, thread_block));
 			frm_thread_block_clear_status(thread_block, frm_thread_block_running);
 			frm_thread_block_set_status(thread_block, frm_thread_block_finished);
+
+			/* Check if ND-Range finished kernel execution */
+			if (grid->finished_list_count == 
+				grid->thread_block_count)
+			{
+				assert(DOUBLE_LINKED_LIST_MEMBER(frm_emu, 
+					running_grid, grid));
+				assert(!DOUBLE_LINKED_LIST_MEMBER(frm_emu, 
+					finished_grid, grid));
+				frm_grid_clear_status(grid, 
+					frm_grid_running);
+				frm_grid_set_status(grid, 
+					frm_grid_finished);
+			}
+
 		}
 	}
+
+	/* Increment the PC */
+	warp->pc += warp->inst_size;
 }

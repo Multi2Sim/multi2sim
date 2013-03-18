@@ -29,6 +29,8 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
+#include <lib/util/file.h>
+#include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
@@ -165,6 +167,9 @@ int frm_emu_run(void)
 			/* Run an instruction from each warp */
 			for (warp = thread_block->running_list_head; warp; warp = warp_next)
 			{
+//printf("=============grid %d\n", grid->running_list_head->running_list_head->id);
+//printf("=============tb %d\n", grid->running_list_head->running_list_head->buf_size);
+//printf("=============w %d\n", warp->buf_size);
 				/* Save next running warp */
 				warp_next = warp->running_list_next;
 
