@@ -150,10 +150,10 @@ int cuda_func_versionCheck(struct x86_ctx_t *ctx)
 int cuda_func_cuInit(struct x86_ctx_t *ctx)
 {
 	/* Create object list */
-        cuda_object_list = linked_list_create();
+	cuda_object_list = linked_list_create();
 
 	/* Create device */
-        cuda_device_create();
+	//cuda_device_create();
 
 	return 0;
 }
@@ -190,10 +190,6 @@ int cuda_func_cuCtxCreate(struct x86_ctx_t *ctx)
 	dev = args[1];
 
 	cuda_debug("\tin: dev=%u\n", dev);
-
-	/* Create device */
-        //cuda_object_list = linked_list_create();
-        //cuda_device_create();
 
 	/* Create context */
 	context = cuda_context_create();
@@ -446,7 +442,7 @@ int cuda_func_cuMemFree(struct x86_ctx_t *ctx)
 	unsigned int args[1];
 	unsigned int dptr;
 
-        void *cuda_object;
+	void *cuda_object;
 	unsigned int object_id;
 	unsigned int device_ptr;
 	unsigned int mem_id = 0;
@@ -457,19 +453,19 @@ int cuda_func_cuMemFree(struct x86_ctx_t *ctx)
 
 	cuda_debug("\tin: dptr=0x%08x\n", dptr);
 
-	/* Look for memory object */        
-        LINKED_LIST_FOR_EACH(cuda_object_list)
-        {
+	/* Look for memory object */
+	LINKED_LIST_FOR_EACH(cuda_object_list)
+	{
 		if (!(cuda_object = linked_list_get(cuda_object_list)))
 			fatal("%s: empty object", __FUNCTION__);
 		object_id = *((unsigned int *)cuda_object);
 		if (object_id >> 16 == CUDA_OBJ_MEMORY)
 		{
 			device_ptr = ((struct cuda_memory_t *)cuda_object)->device_ptr;
-                	if (device_ptr == dptr)
+			if (device_ptr == dptr)
 				mem_id = object_id;
 		}
-        }
+	}
 	if (mem_id == 0)
 		fatal("%s: requested CUDA object does not exist (id=0x%08x)",
 			__FUNCTION__, mem_id);
@@ -722,7 +718,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	/* Create and setup grid */
 	grid = frm_grid_create(function);
-        grid->function = function;
+	grid->function = function;
 	frm_grid_setup_size(grid, gridDim, blockDim, 3);
 
 	/* Create arguments */
