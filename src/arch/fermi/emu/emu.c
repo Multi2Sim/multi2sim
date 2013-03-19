@@ -26,10 +26,10 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
+#include <lib/util/file.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
-#include <lib/util/file.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
