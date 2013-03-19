@@ -138,7 +138,7 @@ void frm_grid_setup_const_mem(struct frm_grid_t *grid)
         struct cuda_function_t *function = grid->function;
 
 	/* FIXME: built-in consts */
-        frm_isa_const_mem_write(0x8, &function->local_size3[0]);
+        frm_isa_const_mem_write(0x8, &grid->local_size3[0]);
 }
 
 

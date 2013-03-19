@@ -676,12 +676,8 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	unsigned int args[11];
 	unsigned int function_id;
-	unsigned int gridDimX;
-	unsigned int gridDimY;
-	unsigned int gridDimZ;
-	unsigned int blockDimX;
-	unsigned int blockDimY;
-	unsigned int blockDimZ;
+	unsigned int gridDim[3];
+	unsigned int blockDim[3];
 	unsigned int sharedMemBytes;
 	unsigned int hStream;
 	unsigned int kernelParams;
@@ -698,24 +694,24 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	mem_read(mem, regs->ecx, 11 * sizeof(unsigned int), args);
 	mem_read(mem, args[0], sizeof(unsigned int), &function_id);
-	gridDimX = args[1];
-	gridDimY = args[2];
-	gridDimZ = args[3];
-	blockDimX = args[4];
-	blockDimY = args[5];
-	blockDimZ = args[6];
+	gridDim[0] = args[1]*args[4];
+	gridDim[1] = args[2]*args[5];
+	gridDim[2] = args[3]*args[6];
+	blockDim[0] = args[4];
+	blockDim[1] = args[5];
+	blockDim[2] = args[6];
 	sharedMemBytes = args[7];
 	hStream = args[8];
 	kernelParams = args[9];
 	extra = args[10];
 
 	cuda_debug("\tfunction_id=0x%08x\n", function_id);
-	cuda_debug("\tgridDimX=%u\n", gridDimX);
-	cuda_debug("\tgridDimY=%u\n", gridDimY);
-	cuda_debug("\tgridDimZ=%u\n", gridDimZ);
-	cuda_debug("\tblockDimX=%u\n", blockDimX);
-	cuda_debug("\tblockDimY=%u\n", blockDimY);
-	cuda_debug("\tblockDimZ=%u\n", blockDimZ);
+	cuda_debug("\tgridDimX=%u\n", gridDim[0]);
+	cuda_debug("\tgridDimY=%u\n", gridDim[1]);
+	cuda_debug("\tgridDimZ=%u\n", gridDim[2]);
+	cuda_debug("\tblockDimX=%u\n", blockDim[0]);
+	cuda_debug("\tblockDimY=%u\n", blockDim[1]);
+	cuda_debug("\tblockDimZ=%u\n", blockDim[2]);
 	cuda_debug("\tsharedMemBytes=%u\n", sharedMemBytes);
 	cuda_debug("\thStream=0x%08x\n", hStream);
 	cuda_debug("\tkernelParams=0x%08x\n", kernelParams);
@@ -726,38 +722,8 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	/* Create and setup grid */
 	grid = frm_grid_create(function);
-	function->global_size3[0] = gridDimX*blockDimX;
-	function->global_size3[1] = gridDimY*blockDimY;
-	function->global_size3[2] = gridDimZ*blockDimZ;
-	function->global_size = function->global_size3[0] * function->global_size3[1] * 
-					function->global_size3[2];
-	function->local_size3[0] = blockDimX;
-	function->local_size3[1] = blockDimY;
-	function->local_size3[2] = blockDimZ;
-	function->local_size = function->local_size3[0] * function->local_size3[1] * 
-					function->local_size3[2];
-	function->group_count3[0] = gridDimX;
-	function->group_count3[1] = gridDimY;
-	function->group_count3[2] = gridDimZ;
-	function->group_count = function->group_count3[0] * function->group_count3[1] * 
-					function->group_count3[2];
-	grid->global_size3[0] = gridDimX*blockDimX;
-	grid->global_size3[1] = gridDimY*blockDimY;
-	grid->global_size3[2] = gridDimZ*blockDimZ;
-	grid->global_size = grid->global_size3[0] * grid->global_size3[1] * 
-					grid->global_size3[2];
-	grid->local_size3[0] = blockDimX;
-	grid->local_size3[1] = blockDimY;
-	grid->local_size3[2] = blockDimZ;
-	grid->local_size = grid->local_size3[0] * grid->local_size3[1] * 
-					grid->local_size3[2];
-	grid->group_count3[0] = gridDimX;
-	grid->group_count3[1] = gridDimY;
-	grid->group_count3[2] = gridDimZ;
-	grid->group_count = grid->group_count3[0] * grid->group_count3[1] * 
-					grid->group_count3[2];
         grid->function = function;
-	frm_grid_setup_size(grid, function->global_size3, function->local_size3, 3);
+	frm_grid_setup_size(grid, gridDim, blockDim, 3);
 
 	/* Create arguments */
 	for (i = 0; i < sizeof(kernelParams); ++i)
