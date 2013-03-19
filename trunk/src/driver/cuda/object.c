@@ -123,10 +123,6 @@ void cuda_object_free_all()
 	while ((object = cuda_object_get_type(CUDA_OBJ_DEVICE)))
 		cuda_device_free((struct cuda_device_t *) object);
 
-	/* Contexts */
-	while ((object = cuda_object_get_type(CUDA_OBJ_CONTEXT)))
-		cuda_context_free((struct cuda_context_t *) object);
-
 	/* Functions */
 	while ((object = cuda_object_get_type(CUDA_OBJ_FUNCTION)))
 		cuda_function_free((struct cuda_function_t *) object);
@@ -138,10 +134,6 @@ void cuda_object_free_all()
 	/* Modules */
 	while ((object = cuda_object_get_type(CUDA_OBJ_MODULE)))
 		cuda_module_free((struct cuda_module_t *) object);
-
-	/* Streams */
-	while ((object = cuda_object_get_type(CUDA_OBJ_STREAM)))
-		cuda_stream_free((struct cuda_stream_t *) object);
 
 	/* Any object left */
 	if (cuda_object_list && linked_list_count(cuda_object_list))

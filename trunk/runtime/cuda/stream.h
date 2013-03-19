@@ -17,32 +17,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "stream.h"
+#ifndef DRIVER_CUDA_STREAM_H
+#define DRIVER_CUDA_STREAM_H
+
+#include "mhandle.h"
 
 
 
 
-/* Create a stream */
-struct cuda_stream_t *cuda_stream_create(void)
+struct cuda_stream_t
 {
-	struct cuda_stream_t *stream;
+	unsigned int id;
+	int ref_count;
 
-	/* Initialize */
-	stream = xcalloc(1, sizeof(struct cuda_stream_t));
-	stream->id = cuda_object_new_id(CUDA_OBJ_STREAM);
-	stream->ref_count = 1;
+	unsigned int device_id;
+};
 
-	cuda_object_add(stream);
+struct cuda_stream_t *cuda_stream_create(void);
+void cuda_stream_free(struct cuda_stream_t *stream);
 
-	return stream;
-}
-
-
-/* Free stream */
-void cuda_stream_free(struct cuda_stream_t *stream)
-{
-	cuda_object_remove(stream);
-
-	free(stream);
-}
+#endif
 
