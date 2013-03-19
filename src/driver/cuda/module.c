@@ -17,11 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-
 #include "module.h"
-#include "object.h"
+
+
 
 
 /* Create a module */
@@ -34,18 +32,19 @@ struct cuda_module_t *cuda_module_create(void)
 	module->id = cuda_object_new_id(CUDA_OBJ_MODULE);
 	module->ref_count = 1;
 
-	/* Return */
 	cuda_object_add(module);
+
 	return module;
 }
-
 
 /* Free module */
 void cuda_module_free(struct cuda_module_t *module)
 {
 	if (module->elf_file)
 		elf_file_free(module->elf_file);
+
 	cuda_object_remove(module);
+
 	free(module);
 }
 

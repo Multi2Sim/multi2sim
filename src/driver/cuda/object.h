@@ -20,6 +20,19 @@
 #ifndef DRIVER_CUDA_OBJECT_H
 #define DRIVER_CUDA_OBJECT_H
 
+#include <assert.h>
+
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
+#include "context.h"
+#include "device.h"
+#include "function.h"
+#include "memory.h"
+#include "module.h"
+#include "stream.h"
+
+
+
 
 enum cuda_obj_t
 {
@@ -38,7 +51,6 @@ void cuda_object_remove(void *object);
 void *cuda_object_get(enum cuda_obj_t type, unsigned int id);
 unsigned int cuda_object_new_id(enum cuda_obj_t type);
 void cuda_object_free_all(void);
-
 
 #endif
 

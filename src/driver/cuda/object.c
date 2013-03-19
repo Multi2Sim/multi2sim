@@ -17,24 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-
-#include <lib/util/debug.h>
-#include <lib/util/linked-list.h>
-
-#include "context.h"
-#include "device.h"
-#include "function.h"
-#include "memory.h"
-#include "module.h"
 #include "object.h"
-#include "stream.h"
 
+
+
+
+/*
+ * Global Variables
+ */
 
 struct linked_list_t *cuda_object_list;
 
 
-/* Add an CUDA object to object list */
+
+
+/*
+ * Functions
+ */
+
+/* Add a CUDA object to object list */
 void cuda_object_add(void *object)
 {
 	linked_list_find(cuda_object_list, object);
@@ -42,8 +43,7 @@ void cuda_object_add(void *object)
 	linked_list_add(cuda_object_list, object);
 }
 
-
-/* Remove an CUDA object from object list */
+/* Remove a CUDA object from object list */
 void cuda_object_remove(void *object)
 {
 	linked_list_find(cuda_object_list, object);
@@ -51,8 +51,7 @@ void cuda_object_remove(void *object)
 	linked_list_remove(cuda_object_list);
 }
 
-
-/* Look for an CUDA object in the object list. The 'id' is the
+/* Look for a CUDA object in the object list. The 'id' is the
  * first field for every object. */
 void *cuda_object_get(enum cuda_obj_t type, unsigned int id)
 {
@@ -62,6 +61,7 @@ void *cuda_object_get(enum cuda_obj_t type, unsigned int id)
 	if (id >> 16 != type)
 		fatal("%s: requested CUDA object of incorrect type",
 			__FUNCTION__);
+
 	LINKED_LIST_FOR_EACH(cuda_object_list)
 	{
 		if (!(object = linked_list_get(cuda_object_list)))
@@ -70,11 +70,12 @@ void *cuda_object_get(enum cuda_obj_t type, unsigned int id)
 		if (object_id == id)
 			return object;
 	}
+
 	fatal("%s: requested CUDA object does not exist (id=0x%x)",
 		__FUNCTION__, id);
+
 	return NULL;
 }
-
 
 /* Get the oldest created CUDA object of the specified type */
 void *cuda_object_get_type(enum cuda_obj_t type)
@@ -82,7 +83,6 @@ void *cuda_object_get_type(enum cuda_obj_t type)
         void *object;
         unsigned int object_id;
 
-        /* Find object */
         LINKED_LIST_FOR_EACH(cuda_object_list)
         {
                 if (!(object = linked_list_get(cuda_object_list)))
@@ -92,10 +92,8 @@ void *cuda_object_get_type(enum cuda_obj_t type)
                         return object;
         }
 
-        /* No object found */
         return NULL;
 }
-
 
 /* Assignment of CUDA object identifiers
  * An identifier is a 32-bit value, whose 16 most significant bits represent the
@@ -109,9 +107,9 @@ unsigned int cuda_object_new_id(enum cuda_obj_t type)
 	cuda_current_object_id++;
 	if (cuda_current_object_id > 0xffff)
 		fatal("cuda_object_new_id: too many CUDA objects");
+
 	return id;
 }
-
 
 /* Free all CUDA objects in the object list */
 void cuda_object_free_all()
@@ -126,17 +124,17 @@ void cuda_object_free_all()
 	while ((object = cuda_object_get_type(CUDA_OBJ_CONTEXT)))
 		cuda_context_free((struct cuda_context_t *) object);
 
-	/* Modules */
-	while ((object = cuda_object_get_type(CUDA_OBJ_MODULE)))
-		cuda_module_free((struct cuda_module_t *) object);
-
 	/* Functions */
 	while ((object = cuda_object_get_type(CUDA_OBJ_FUNCTION)))
 		cuda_function_free((struct cuda_function_t *) object);
 
-        /* Mems */
+        /* Memories */
         while ((object = cuda_object_get_type(CUDA_OBJ_MEMORY)))
                 cuda_memory_free((struct cuda_memory_t *) object);
+
+	/* Modules */
+	while ((object = cuda_object_get_type(CUDA_OBJ_MODULE)))
+		cuda_module_free((struct cuda_module_t *) object);
 
 	/* Streams */
 	while ((object = cuda_object_get_type(CUDA_OBJ_STREAM)))

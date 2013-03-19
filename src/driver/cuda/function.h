@@ -20,16 +20,24 @@
 #ifndef DRIVER_CUDA_FUNCTION_H
 #define DRIVER_CUDA_FUNCTION_H
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/elf-format.h>
+#include <lib/util/list.h>
 #include <lib/util/string.h>
 
+#include "function-arg.h"
 #include "module.h"
+#include "object.h"
+
+
+
 
 struct cuda_function_t
 {
 	int id;
-	char name[MAX_STRING_SIZE];  /* FIXME */
 	int ref_count;
+
+	char name[MAX_STRING_SIZE];
 
 	unsigned int module_id;
 	struct list_t *arg_list;
@@ -58,8 +66,6 @@ struct cuda_function_t
 struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, 
 	char *function_name);
 void cuda_function_free(struct cuda_function_t *function);
-void cuda_function_load(struct cuda_function_t *function, char *function_name);
-
 
 #endif
 
