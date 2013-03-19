@@ -101,6 +101,10 @@ void frm_emu_init(void)
 
 void frm_emu_done(void)
 {
+	/* Report */
+	if (frm_emu_report_file)
+		fclose(frm_emu_report_file);
+
 	/* Free grid */
 	while (frm_emu->grid_list_count)
 		frm_grid_free(frm_emu->grid_list_head);
@@ -110,8 +114,13 @@ void frm_emu_done(void)
 	if (cuda_object_list)
 		linked_list_free(cuda_object_list);
 
+	/* Finalize disassembler */
+	frm_disasm_done();
+
+	/* Finalize ISA */
 	frm_isa_done();
 
+	/* Finalize GPU kernel */
         mem_free(frm_emu->const_mem);
         mem_free(frm_emu->global_mem);
 	m2s_timer_free(frm_emu->timer);
