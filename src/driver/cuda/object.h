@@ -24,12 +24,10 @@
 
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
-#include "context.h"
 #include "device.h"
 #include "function.h"
 #include "memory.h"
 #include "module.h"
-#include "stream.h"
 
 
 
