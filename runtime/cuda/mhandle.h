@@ -20,8 +20,10 @@
 #ifndef MHANDLE_H
 #define MHANDLE_H
 
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
+
+
+
 
 #define MHANDLE_STRINGIFY(x) #x
 #define MHANDLE_TOSTRING(x) MHANDLE_STRINGIFY(x)

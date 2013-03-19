@@ -17,12 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdio.h>
-
 #include "debug.h"
-#include "mhandle.h"
+
+
 
 
 void fatal(char *fmt, ...)
@@ -36,7 +33,6 @@ void fatal(char *fmt, ...)
 	exit(1);
 }
 
-
 void panic(char *fmt, ...)
 {
 	va_list va;
@@ -47,7 +43,6 @@ void panic(char *fmt, ...)
 	fflush(NULL);
 	abort();
 }
-
 
 void warning(char *fmt, ...)
 {

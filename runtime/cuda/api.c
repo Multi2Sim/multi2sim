@@ -390,9 +390,7 @@ CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);
 
 	/* Create context */
-	*pctx = (CUcontext)malloc(sizeof(struct CUctx_st));
-	if (*pctx == NULL)
-		fatal("%s: cannot create context", __FUNCTION__);
+	*pctx = (CUcontext)xmalloc(sizeof(struct CUctx_st));
 
 	/* Syscall */
 	sys_args[0] = (unsigned int)pctx;
@@ -564,7 +562,7 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 	fclose(fp);
 
 	/* Create module */
-	*module = (CUmodule)malloc(sizeof(struct CUmod_st));
+	*module = (CUmodule)xmalloc(sizeof(struct CUmod_st));
 
 	/* Syscall */
         sys_args[0] = (unsigned int)module;
@@ -627,7 +625,7 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 	cuda_debug_print(stdout, "\t(driver) in: name=%s\n", name);
 
 	/* Create function */
-	*hfunc = (CUfunction)malloc(sizeof(struct CUfunc_st));
+	*hfunc = (CUfunction)xmalloc(sizeof(struct CUfunc_st));
 
 	/* Syscall */
 	sys_args[0] = (unsigned int)hfunc;
