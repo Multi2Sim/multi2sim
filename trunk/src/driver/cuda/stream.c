@@ -17,10 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/mhandle/mhandle.h>
-
 #include "stream.h"
-#include "object.h"
+
+
 
 
 /* Create a stream */
@@ -33,8 +32,8 @@ struct cuda_stream_t *cuda_stream_create(void)
 	stream->id = cuda_object_new_id(CUDA_OBJ_STREAM);
 	stream->ref_count = 1;
 
-	/* Return */
 	cuda_object_add(stream);
+
 	return stream;
 }
 
@@ -43,6 +42,7 @@ struct cuda_stream_t *cuda_stream_create(void)
 void cuda_stream_free(struct cuda_stream_t *stream)
 {
 	cuda_object_remove(stream);
+
 	free(stream);
 }
 

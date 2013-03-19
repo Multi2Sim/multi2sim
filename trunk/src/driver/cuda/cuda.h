@@ -22,25 +22,27 @@
 
 #include <assert.h>
 
+#include <arch/fermi/emu/emu.h>
+#include <arch/fermi/emu/grid.h>
+#include <arch/fermi/emu/warp.h>
+#include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
+#include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
-#include <arch/x86/emu/context.h>
-#include <arch/x86/emu/regs.h>
-#include <arch/x86/emu/emu.h>
-#include <arch/fermi/emu/emu.h>
-#include <arch/fermi/emu/grid.h>
-#include <arch/fermi/emu/warp.h>
 #include <mem-system/memory.h>
-
-#include "object.h"
 #include "context.h"
 #include "device.h"
-#include "module.h"
 #include "function.h"
 #include "function-arg.h"
 #include "memory.h"
+#include "module.h"
+#include "object.h"
+
+
+
 
 /* Version */
 struct cuda_version_t
@@ -48,6 +50,8 @@ struct cuda_version_t
 	int major;
 	int minor;
 };
+#define CUDA_VERSION_MAJOR 1
+#define CUDA_VERSION_MINOR 950
 
 /* Debug */
 extern int cuda_debug_category;
@@ -76,6 +80,14 @@ int cuda_abi_call(struct x86_ctx_t *ctx);
 	int cuda_func_##name(struct x86_ctx_t *ctx);
 #include "cuda.dat"
 #undef CUDA_DEFINE_CALL
+
+/* For CUDA launch */
+struct cuda_abi_frm_kernel_launch_info_t
+{
+	struct cuda_function_t *function;
+	struct frm_grid_t *grid;
+	int finished;
+};
 
 #endif
 

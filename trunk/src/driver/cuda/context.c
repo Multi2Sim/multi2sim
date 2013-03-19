@@ -17,8 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "context.h"
 
-#include "cuda.h"
+
 
 
 /* Create a context */
@@ -31,8 +32,8 @@ struct cuda_context_t *cuda_context_create()
 	context->id = cuda_object_new_id(CUDA_OBJ_CONTEXT);
 	context->ref_count = 1;
 
-	/* Return */
 	cuda_object_add(context);
+
 	return context;
 }
 
@@ -42,7 +43,9 @@ void cuda_context_free(struct cuda_context_t *context)
 {
 	assert(context->ref_count > 0);
 	context->ref_count--;
+
 	cuda_object_remove(context);
+
 	free(context);
 }
 

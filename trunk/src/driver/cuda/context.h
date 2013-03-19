@@ -20,6 +20,13 @@
 #ifndef DRIVER_CUDA_CONTEXT_H
 #define DRIVER_CUDA_CONTEXT_H
 
+#include <assert.h>
+
+#include <lib/mhandle/mhandle.h>
+#include "object.h"
+
+
+
 
 struct cuda_context_t
 {
@@ -31,7 +38,6 @@ struct cuda_context_t
 
 struct cuda_context_t *cuda_context_create(void);
 void cuda_context_free(struct cuda_context_t *context);
-
 
 #endif
 

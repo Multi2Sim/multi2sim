@@ -17,9 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/mhandle/mhandle.h>
-
 #include "function-arg.h"
+
+
 
 
 struct cuda_function_arg_t *cuda_function_arg_create(char *name)
@@ -30,7 +30,6 @@ struct cuda_function_arg_t *cuda_function_arg_create(char *name)
 	arg = xcalloc(1, sizeof(struct cuda_function_arg_t));
 	arg->name = xstrdup(name);
 
-	/* Return */
 	return arg;
 }
 

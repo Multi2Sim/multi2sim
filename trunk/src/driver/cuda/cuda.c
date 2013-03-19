@@ -19,6 +19,9 @@
 
 #include "cuda.h"
 
+
+
+
 /*
  * Global Variables
  */
@@ -117,14 +120,10 @@ int cuda_abi_call(struct x86_ctx_t *ctx)
  *	The return value is always 0.
  */
 
-#define CUDA_VERSION_MAJOR	1
-#define CUDA_VERSION_MINOR	950
-
 int cuda_func_versionCheck(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
-
 	struct cuda_version_t version;
 
 	version.major = CUDA_VERSION_MAJOR;
@@ -150,12 +149,17 @@ int cuda_func_versionCheck(struct x86_ctx_t *ctx)
 
 int cuda_func_cuInit(struct x86_ctx_t *ctx)
 {
-	/* Create device */
+	/* Create object list */
         cuda_object_list = linked_list_create();
+
+	/* Create device */
         cuda_device_create();
 
 	return 0;
 }
+
+
+
 
 /*
  * CUDA call - cuCtxCreate
@@ -266,7 +270,7 @@ int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 
 	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
 	mem_read(mem, args[0], sizeof(unsigned int), &pmod);
-	mem_read(mem, args[1], MAX_STRING_SIZE, fname);
+	mem_read(mem, args[1], sizeof fname, fname);
 
 	cuda_debug("\tin: filename=%s\n", fname);
 
@@ -316,7 +320,7 @@ int cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
 	mem_read(mem, args[0], sizeof(unsigned int), &pfunc);
 	mem_read(mem, args[1], sizeof(unsigned int), &module_id);
-	mem_read(mem, args[2], MAX_STRING_SIZE, function_name);
+	mem_read(mem, args[2], sizeof function_name, function_name);
 
 	cuda_debug("\tin: module.id=0x%08x\n", module_id);
 	cuda_debug("\tin: function_name=%s\n", function_name);
@@ -444,7 +448,7 @@ int cuda_func_cuMemFree(struct x86_ctx_t *ctx)
 
         void *cuda_object;
 	unsigned int object_id;
-        unsigned int device_ptr;
+	unsigned int device_ptr;
 	unsigned int mem_id = 0;
 	struct cuda_memory_t *cuda_mem;
 
@@ -620,18 +624,13 @@ int cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-struct cuda_abi_frm_kernel_launch_info_t
-{
-	struct cuda_function_t *function;
-	struct frm_grid_t *grid;
-	int finished;
-};
 void frm_grid_set_free_notify_func(struct frm_grid_t *grid,
-		void (*func)(void *), void *user_data)
+	void (*func)(void *), void *user_data)
 {
 	grid->free_notify_func = func;
 	grid->free_notify_data = user_data;
 }
+
 static void cuda_abi_frm_kernel_launch_finish(void *user_data)
 {
 	struct cuda_abi_frm_kernel_launch_info_t *info = user_data;
@@ -639,7 +638,7 @@ static void cuda_abi_frm_kernel_launch_finish(void *user_data)
 	struct frm_grid_t *grid = info->grid;
 
 	/* Debug */
-	cuda_debug("ND-Range %d running kernel '%s' finished\n",
+	cuda_debug("Grid %d running kernel '%s' finished\n",
 			grid->id, kernel->name);
 
 	/* Set 'finished' flag in launch info */
@@ -650,14 +649,13 @@ static void cuda_abi_frm_kernel_launch_finish(void *user_data)
 	x86_emu_process_events_schedule();
 }
 
-
 static int cuda_abi_frm_kernel_launch_can_wakeup(struct x86_ctx_t *ctx,
 		void *user_data)
 {
 	struct cuda_abi_frm_kernel_launch_info_t *info = user_data;
 
-	/* NOTE: the ND-Range has been freed at this point if it finished
-	 * execution, so field 'info->ndrange' should not be accessed. We
+	/* NOTE: the grid has been freed at this point if it finished
+	 * execution, so field 'info->grid' should not be accessed. We
 	 * use flag 'info->finished' instead. */
 	return info->finished;
 }
@@ -670,8 +668,6 @@ static void cuda_abi_frm_kernel_launch_wakeup(struct x86_ctx_t *ctx,
 	/* Free info object */
 	free(info);
 }
-
-
 
 int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 {
@@ -779,7 +775,6 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	}
 
 	/* Setup threads, constant memory and arguments */
-	//frm_grid_setup_threads(grid);
 	frm_grid_setup_const_mem(grid);
 	frm_grid_setup_args(grid);
 
