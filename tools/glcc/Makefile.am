@@ -10,7 +10,7 @@ INCLUDES = @M2S_INCLUDES@
 LDADD = \
 	$(top_builddir)/src/lib/util/libutil.a \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
-	-lGLEW -lGLU -lGL -lglut
+	-lX11 -lGL 
 
 endif
 
