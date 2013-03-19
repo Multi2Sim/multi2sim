@@ -83,6 +83,9 @@ void *cuda_object_get_type(enum cuda_obj_t type)
         void *object;
         unsigned int object_id;
 
+	if (!cuda_object_list)
+		return NULL;
+
         LINKED_LIST_FOR_EACH(cuda_object_list)
         {
                 if (!(object = linked_list_get(cuda_object_list)))
@@ -141,7 +144,7 @@ void cuda_object_free_all()
 		cuda_stream_free((struct cuda_stream_t *) object);
 
 	/* Any object left */
-	if (linked_list_count(cuda_object_list))
+	if (cuda_object_list && linked_list_count(cuda_object_list))
 		panic("cuda_object_free_all: objects remaining in the list");
 }
 
