@@ -205,6 +205,10 @@ int runtime_redirect(char *path, char *redirect_path, int redirect_path_size)
 
 	int index;
 
+	/* If the path is empty, no redirection. */
+	if (!*path)
+		return 0;
+
 	/* Get file name from path, making sure that the value passed to 'path'
 	 * is a full path. */
 	file_name = rindex(path, '/');
