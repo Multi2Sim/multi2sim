@@ -20,7 +20,10 @@ __top_builddir__lib_libm2s_cuda_la_SOURCES = \
 	mhandle.h \
 	\
 	context.c \
-	context.h
+	context.h \
+	\
+	stream.c \
+	stream.h
 
 AM_CFLAGS = -m32
 

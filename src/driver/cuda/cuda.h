@@ -33,7 +33,6 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <mem-system/memory.h>
-#include "context.h"
 #include "device.h"
 #include "function.h"
 #include "function-arg.h"

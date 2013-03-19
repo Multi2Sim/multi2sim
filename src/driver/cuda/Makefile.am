@@ -2,9 +2,6 @@ lib_LIBRARIES = libcuda.a
 
 libcuda_a_SOURCES = \
 	\
-	context.c \
-	context.h \
-	\
 	cuda.c \
 	cuda.dat \
 	cuda.h \
@@ -25,10 +22,7 @@ libcuda_a_SOURCES = \
 	module.h \
 	\
 	object.c \
-	object.h \
-	\
-	stream.c \
-	stream.h
+	object.h
 
 INCLUDES = @M2S_INCLUDES@
 

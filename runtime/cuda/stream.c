@@ -17,35 +17,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "context.h"
+#include "stream.h"
 
 
 
 
-/* Create a context */
-struct cuda_context_t *cuda_context_create()
+/* Create a stream */
+struct cuda_stream_t *cuda_stream_create(void)
 {
-	struct cuda_context_t *context;
+	struct cuda_stream_t *stream;
 
 	/* Initialize */
-	context = xcalloc(1, sizeof(struct cuda_context_t));
-	context->id = cuda_object_new_id(CUDA_OBJ_CONTEXT);
-	context->ref_count = 1;
+	stream = xcalloc(1, sizeof(struct cuda_stream_t));
+	//stream->id = cuda_object_new_id(CUDA_OBJ_STREAM);
+	stream->ref_count = 1;
 
-	cuda_object_add(context);
+	//cuda_object_add(stream);
 
-	return context;
+	return stream;
 }
 
 
-/* Free context */
-void cuda_context_free(struct cuda_context_t *context)
+/* Free stream */
+void cuda_stream_free(struct cuda_stream_t *stream)
 {
-	assert(context->ref_count > 0);
-	context->ref_count--;
+	//cuda_object_remove(stream);
 
-	cuda_object_remove(context);
-
-	free(context);
+	free(stream);
 }
 
