@@ -17,12 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/list.h>
-
 #include "function.h"
-#include "function-arg.h"
-#include "object.h"
+
+
 
 
 struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
@@ -37,9 +34,9 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	function = xcalloc(1, sizeof(struct cuda_function_t));
 	function->id = cuda_object_new_id(CUDA_OBJ_FUNCTION);
 	function->ref_count = 1;
-	function->arg_list = list_create();
-	function->module_id = module->id;
 	snprintf(function->name, MAX_STRING_SIZE, "%s", function_name);
+	function->module_id = module->id;
+	function->arg_list = list_create();
 
 	/* Load function */
 	snprintf(section_name, MAX_STRING_SIZE, ".text.%s", function_name);
@@ -54,7 +51,6 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	function->function_buffer.ptr = section->buffer.ptr;
 	function->function_buffer.size = section->buffer.size;
 
-	/* Add function to object list */
 	cuda_object_add(function);
 
 	return function;
@@ -72,8 +68,8 @@ void cuda_function_free(struct cuda_function_t *function)
 
 	/* FIXME: free ELF file */
 
-	/* Free function */
 	cuda_object_remove(function);
+
 	free(function);
 }
 

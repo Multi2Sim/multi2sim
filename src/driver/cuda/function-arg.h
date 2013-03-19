@@ -20,6 +20,11 @@
 #ifndef DRIVER_CUDA_FUNCTION_ARG_H
 #define DRIVER_CUDA_FUNCTION_ARG_H
 
+#include <lib/mhandle/mhandle.h>
+
+
+
+
 enum cuda_mem_scope_t
 {
 	CUDA_MEM_SCOPE_NONE = 0,
@@ -56,7 +61,6 @@ struct cuda_function_arg_t
 
 struct cuda_function_arg_t *cuda_function_arg_create(char *name);
 void cuda_function_arg_free(struct cuda_function_arg_t *arg);
-
 
 #endif
 

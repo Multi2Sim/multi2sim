@@ -17,11 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#include <lib/mhandle/mhandle.h>
-
 #include "device.h"
-#include "object.h"
+
+
 
 
 /* Create a device */
@@ -33,8 +31,8 @@ struct cuda_device_t *cuda_device_create()
 	device = xcalloc(1, sizeof(struct cuda_device_t));
 	device->id = cuda_object_new_id(CUDA_OBJ_DEVICE);
 
-	/* Return */
 	cuda_object_add(device);
+
 	return device;
 }
 
@@ -43,6 +41,7 @@ struct cuda_device_t *cuda_device_create()
 void cuda_device_free(struct cuda_device_t *device)
 {
 	cuda_object_remove(device);
+
 	free(device);
 }
 

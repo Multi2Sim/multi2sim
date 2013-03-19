@@ -20,6 +20,12 @@
 #ifndef DRIVER_CUDA_STREAM_H
 #define DRIVER_CUDA_STREAM_H
 
+#include <lib/mhandle/mhandle.h>
+
+#include "object.h"
+
+
+
 
 struct cuda_stream_t
 {
@@ -27,12 +33,10 @@ struct cuda_stream_t
 	int ref_count;
 
 	unsigned int device_id;
-	unsigned int context_id;
 };
 
 struct cuda_stream_t *cuda_stream_create(void);
 void cuda_stream_free(struct cuda_stream_t *stream);
-
 
 #endif
 

@@ -20,14 +20,18 @@
 #ifndef DRIVER_CUDA_MODULE_H
 #define DRIVER_CUDA_MODULE_H
 
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/elf-format.h>
+
+#include "object.h"
+
+
+
 
 struct cuda_module_t
 {
 	unsigned int id;
 	int ref_count;
-
-	unsigned int device_id;  /* Only one device allowed */
-	unsigned int context_id;
 
 	/* ELF binary */
 	struct elf_file_t *elf_file;
@@ -35,7 +39,6 @@ struct cuda_module_t
 
 struct cuda_module_t *cuda_module_create(void);
 void cuda_module_free(struct cuda_module_t *module);
-
 
 #endif
 
