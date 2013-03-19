@@ -20,8 +20,16 @@
 #ifndef LIB_UTIL_DEBUG_H
 #define LIB_UTIL_DEBUG_H
 
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
 
-/* Other messages */
+#include "mhandle.h"
+
+
+
+
+/* Error messages */
 void warning(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 void fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 void panic(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));

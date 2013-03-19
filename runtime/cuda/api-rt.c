@@ -58,7 +58,7 @@ void** __cudaRegisterFatBinary(void *fatCubin)
 
 	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
-	fatCubinHandle = (unsigned long long int **)malloc(sizeof(unsigned long long int *));
+	fatCubinHandle = (unsigned long long int **)xmalloc(sizeof(unsigned long long int *));
 	*fatCubinHandle = (unsigned long long int *)(((struct __fatDeviceText *)fatCubin)->d);
 
 	return (void **)fatCubinHandle;
@@ -407,7 +407,7 @@ cudaError_t cudaLaunch(const void *entry)
 	cuda_debug_print(stdout, "\t(runtime) in: entry=%p\n", entry);
 
 	/* Copy kernel arguments */
-	kernel_args = malloc(linked_list_count(args) * sizeof(CUdeviceptr *));
+	kernel_args = xmalloc(linked_list_count(args) * sizeof(CUdeviceptr *));
 	linked_list_head(args);
 	for (i = 0; i < linked_list_count(args); ++i)
 	{

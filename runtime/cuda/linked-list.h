@@ -20,6 +20,12 @@
 #ifndef LIB_UTIL_LINKED_LIST_H
 #define LIB_UTIL_LINKED_LIST_H
 
+#include <assert.h>
+
+#include "mhandle.h"
+
+
+
 
 /* Error constants */
 enum linked_list_error_t

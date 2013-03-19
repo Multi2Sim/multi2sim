@@ -23,18 +23,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include "../include/cuda.h"
+#include "../include/cuda_runtime_api.h"
 
 #include "debug.h"
 #include "linked-list.h"
-#include "../include/cuda.h"
-#include "../include/cuda_runtime_api.h"
 
 
 
 
 /* Version */
-#define CUDA_VERSION_MAJOR	1
-#define CUDA_VERSION_MINOR	800
+#define CUDA_VERSION_MAJOR 1
+#define CUDA_VERSION_MINOR 800
+
+/* String */
+#define MAX_STRING_SIZE 1024
 
 /* Debug */
 extern int cuda_debug;
@@ -52,7 +55,7 @@ extern char *cuda_rt_err_native;
 	__FUNCTION__, cuda_rt_err_not_impl);
 
 /* System Call Code */
-#define CUDA_SYS_CODE  328
+#define CUDA_SYS_CODE 328
 
 /* List of CUDA Calls */
 enum cuda_call_t
