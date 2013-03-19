@@ -192,8 +192,8 @@ int cuda_func_cuCtxCreate(struct x86_ctx_t *ctx)
 	cuda_debug("\tin: dev=%u\n", dev);
 
 	/* Create device */
-        cuda_object_list = linked_list_create();
-        cuda_device_create();
+        //cuda_object_list = linked_list_create();
+        //cuda_device_create();
 
 	/* Create context */
 	context = cuda_context_create();
