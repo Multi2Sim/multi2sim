@@ -124,6 +124,10 @@ void frm_disasm_init()
 	frm_sr[FRM_SR_ClockHi] = "SR_ClockHi";
 }
 
+void frm_disasm_done()
+{
+
+}
 
 void frm_inst_hex_dump(FILE *f, unsigned char *buf, int inst_index)
 {
@@ -136,6 +140,7 @@ void frm_inst_hex_dump(FILE *f, unsigned char *buf, int inst_index)
 	fprintf(f, "%08x", * (unsigned int *) (buf + 8 * inst_index + 4));
 	fprintf(f, "*/ \t");
 }
+
 
 
 
