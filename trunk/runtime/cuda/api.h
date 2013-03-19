@@ -29,6 +29,8 @@
 #include "debug.h"
 #include "linked-list.h"
 
+#include "context.h"
+
 
 
 
@@ -86,12 +88,6 @@ struct cuda_version_t
 {
 	int major;
 	int minor;
-};
-
-/* CUDA context */
-struct CUctx_st
-{
-	unsigned int id;
 };
 
 /* CUDA module */

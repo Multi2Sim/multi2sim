@@ -389,20 +389,7 @@ CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 	cuda_debug_print(stdout, "\t(driver) in: flags=%u\n", flags); /* FIXME: flags specifies scheduling policy */
 	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);
 
-	/* Create context */
-	*pctx = (CUcontext)xmalloc(sizeof(struct CUctx_st));
-
-	/* Syscall */
-	sys_args[0] = (unsigned int)pctx;
-	sys_args[1] = (unsigned int)dev;
-
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuCtxCreate, sys_args);
-
-	/* Check that we are running on Multi2Sim. If a program linked with this library
-	 * is running natively, system call CUDA_SYS_CODE is not supported. */
-	if (ret)
-		fatal("native execution not supported.\n%s",
-			cuda_err_native);
+	*pctx = cuda_context_create();
 
 	cuda_debug_print(stdout, "\t(driver) out: context.id=0x%08x\n", (*pctx)->id);
 	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
@@ -412,26 +399,10 @@ CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 
 CUresult cuCtxDestroy(CUcontext ctx)
 {
-	unsigned int sys_args[1];
-	int ret;
-
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(driver) in: context.id=0x%08x\n", ctx->id);
 
-	/* Syscall */
-	sys_args[0] = (unsigned int)ctx;
-
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuCtxDestroy, sys_args);
-
-	/* Check that we are running on Multi2Sim. If a program linked with this library
-	 * is running natively, system call CUDA_SYS_CODE is not supported. */
-	if (ret)
-		fatal("native execution not supported.\n%s",
-			cuda_err_native);
-
-	/* Free context */
-	if (ctx != NULL)
-		free(ctx);
+	cuda_context_free(ctx);
 
 	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
