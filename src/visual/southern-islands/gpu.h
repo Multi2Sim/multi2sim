@@ -27,6 +27,9 @@ struct list_t;
 struct vi_si_gpu_t
 {
 	struct list_t *compute_unit_list;
+
+	/* True if the trace contains the Southern Islands GPU */
+	int active;
 };
 
 

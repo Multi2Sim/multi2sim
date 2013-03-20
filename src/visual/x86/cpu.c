@@ -427,6 +427,9 @@ void vi_x86_cpu_init(void)
 			int version_major = 0;
 			int version_minor = 0;
 
+			/* Trace contains x86 */
+			vi_x86_cpu->active = 1;
+
 			/* Check version compatibility */
 			version = vi_trace_line_get_symbol(trace_line, "version");
 			if (version)

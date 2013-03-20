@@ -67,8 +67,6 @@ char *si_gpu_config_help =
 	"\n"
 	"  NumComputeUnits = <num> (Default = 32)\n"
 	"      Number of compute units in the GPU.\n"
-	"  MaxWavefrontsPerWorkGroup = <num> (Default = 16)\n"
-	"      The maximum size of a work group.\n"
 	"\n"
 	"Section '[ ComputeUnit ]': parameters for the Compute Units.\n"
 	"\n"
