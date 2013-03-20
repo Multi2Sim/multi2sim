@@ -22,10 +22,16 @@
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/elf-format.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/string.h>
 
 
@@ -254,38 +260,197 @@ void *read_buffer(char *file_name, int *psize)
 	return buf;
 }
 
-void opengl_shader_binary_analyze(const char *file_name)
+int opengl_binary_is_elf(char *buf)
+{
+	char ELF_MAGIC[4] = { 0x7F, 0x45, 0x4C, 0x46 };
+	if (!memcmp(buf, ELF_MAGIC, sizeof(ELF_MAGIC)))
+		return 1;
+	else
+		return 0;
+}
+
+void opengl_shader_binary_analyze_inner_elf(char *file_name)
+{
+	struct elf_file_t *elf_file;
+	struct elf_section_t *section;
+
+	char file_name_dest[MAX_STRING_SIZE];
+
+	int index;
+	FILE *f;
+
+	/* Open File */
+	elf_file = elf_file_create_from_path(file_name);
+
+	/* Explore sections */
+	LIST_FOR_EACH(elf_file->section_list, index)
+	{
+		/* Get section */
+		section = list_get(elf_file->section_list, index);
+		if (!*section->name)
+			continue;
+
+		/* Open file to dump section */
+		snprintf(file_name_dest, sizeof file_name_dest, "%s.%d%s",
+			file_name, index, section->name);
+		f = fopen(file_name_dest, "wb");
+		if (!f)
+			fatal("%s: cannot open file '%s'",
+				__FUNCTION__, file_name_dest);
+
+		/* Dump section and close file */
+		elf_buffer_dump(&section->buffer, f);
+		fclose(f);
+
+		/* Info */
+		printf("\t  %s: inner section '%s' dumped\n",
+			file_name_dest, section->name);
+	}
+
+	/* Close ELF file */
+	elf_file_free(elf_file);
+}
+
+void opengl_shader_binary_analyze(char *file_name)
 {
 	char ELF_MAGIC[4] = { 0x7F, 0x45, 0x4C, 0x46 };
 	char file_name_dest[MAX_STRING_SIZE];
 	char *file_buffer;
-
 	int file_size;
+	int index;
 	int i;
 	int count = 0;
 
 	FILE *f;
 	void *tmp_buf;
+	struct elf_file_t *elf_file;
+
+	char file_name_prefix[MAX_STRING_SIZE];
+	char subdir[MAX_STRING_SIZE];
+	int len;
+
+	/* Get file name prefix */
+	strcpy(file_name_prefix, file_name);
+	len = strlen(file_name);
+	if (len > 4 && !strcmp(file_name + len - 4, ".bin"))
+		file_name_prefix[len - 4] = '\0';
+
+	/* Create subdirectory */
+	snprintf(subdir, sizeof subdir, "%s_files", file_name_prefix);
+	mkdir(subdir, 0755);
 
 	file_buffer = (char *) read_buffer((char *) file_name, &file_size);
-
-	/* Find ELF magic in shader binary and dump */
-	for (i = 0; i < file_size - sizeof(ELF_MAGIC); ++i)
+	/* Shader binary may have different format */
+	if (opengl_binary_is_elf(file_buffer))
 	{
-		if (memcmp(file_buffer, ELF_MAGIC, sizeof(ELF_MAGIC)) == 0)
+		/* Read ELF file */
+		elf_file = elf_file_create_from_path(file_name);
+		if (!elf_file)
+			fatal("%s: cannot open ELF file", file_name);
+
+		/* List ELF sections */
+		printf("ELF sections:\n");
+		LIST_FOR_EACH(elf_file->section_list, index)
 		{
-			printf("Find ELF Magic at position %d\n", i);
-			sprintf(file_name_dest, "%s.elf.%d", file_name,
-				count);
-			count++;
-			tmp_buf = (void *) xmalloc(file_size - i);
-			memcpy(tmp_buf, file_buffer, file_size - i);
+			struct elf_section_t *section;
+
+			/* Get section */
+			section = list_get(elf_file->section_list, index);
+			if (!section->header->sh_size)
+				continue;
+
+			/* Dump to file */
+			snprintf(file_name_dest, sizeof file_name_dest, "%s/%s.%s",
+				subdir, file_name_prefix,
+				*section->name == '.' ? section->name + 1 : section->name);
 			f = fopen(file_name_dest, "wb");
-			fwrite(tmp_buf, file_size - i, 1, f);
-			free(tmp_buf);
+			if (!f)
+				fatal("%s: cannot open file '%s'", __FUNCTION__,
+					file_name_dest);
+			
+			/* Dump section and close file */
+			elf_buffer_dump(&section->buffer, f);
 			fclose(f);
+
+			/* Info */
+			printf("  section '%s': addr=0x%x, offset=0x%x, size=%d, flags=0x%x\n",
+				section->name, section->header->sh_addr, section->header->sh_offset,
+				section->header->sh_size, section->header->sh_flags);
 		}
-		file_buffer++;
+
+		/* Get symbols */
+		LIST_FOR_EACH(elf_file->symbol_table, index)
+		{
+			struct elf_symbol_t *symbol;
+			struct elf_section_t *section;
+
+			char shader_func_name[MAX_STRING_SIZE];
+			int shader_func_len;
+
+			int symbol_length;
+
+			size_t size;
+
+			/* Get symbol */
+			symbol = list_get(elf_file->symbol_table, index);
+			if (strncmp(symbol->name, "__Shader_", 9))
+				continue;
+			symbol_length = strlen(symbol->name);
+			if (!symbol_length)
+				continue;
+
+			/* Get shader function name */
+			shader_func_len = symbol_length - 9;
+			strncpy(shader_func_name, symbol->name + 9, shader_func_len);
+			shader_func_name[shader_func_len] = '\0';
+
+			/* Read section */
+			section = list_get(elf_file->section_list, symbol->section);
+			assert(section && symbol->value + symbol->size
+				<= section->header->sh_size);
+
+			/* Open file name */
+			snprintf(file_name_dest, sizeof file_name_dest, "%s/%s.%s",
+				subdir, file_name_prefix, shader_func_name);
+			f = fopen(file_name_dest, "wb");
+			if (!f)
+				fatal("%s: cannot create file '%s'", __FUNCTION__,
+					file_name_dest);
+
+			/* Dump buffer */
+			size = fwrite(section->buffer.ptr + symbol->value, 1, symbol->size, f);
+			if (size != symbol->size)
+				fatal("%s: cannot dump '%s' symbol contents", __FUNCTION__,
+					symbol->name);
+
+			/* Close output file */
+			printf("\t%s: data dumped\n", file_name_dest);
+			fclose(f);
+
+			if (str_suffix(symbol->name, "ElfBinary_0_"))
+				opengl_shader_binary_analyze_inner_elf(file_name_dest);
+		}
+	}
+	else
+	{
+		/* Not standard ELF, linear search and dump */
+		for (i = 0; i < file_size - sizeof(ELF_MAGIC); ++i)
+		{
+			if (memcmp(file_buffer, ELF_MAGIC, sizeof(ELF_MAGIC)) == 0)
+			{
+				printf("Find ELF Magic at position %d\n", i);
+				sprintf(file_name_dest, "%s.elf.%d", file_name,
+					count);
+				count++;
+				tmp_buf = (void *) xmalloc(file_size - i);
+				memcpy(tmp_buf, file_buffer, file_size - i);
+				f = fopen(file_name_dest, "wb");
+				fwrite(tmp_buf, file_size - i, 1, f);
+				free(tmp_buf);
+				fclose(f);
+			}
+			file_buffer++;
+		}
 	}
 }
 
@@ -336,7 +501,7 @@ int opengl_shader_binary_generator(const GLchar ** opengl_vertex_source,
 	const GLchar ** opengl_fragment_source,
 	const GLchar ** opengl_tessellation_control_source,
 	const GLchar ** opengl_tessellation_evaluation_source,
-	const GLchar ** opengl_geometry_source, const char *outputfile)
+	const GLchar ** opengl_geometry_source, char *outputfile)
 {
 	int i;
 	void *bin_buffer;
@@ -489,6 +654,11 @@ int main(int argc, char *argv[])
 		{
 			argi++;
 			dump_intermediate = 1;
+			if (argc == 3 && dump_intermediate)
+			{
+				opengl_shader_binary_analyze(argv[argi]);
+				exit(1);
+			}	
 			continue;
 		}
 		/* vertex source */
