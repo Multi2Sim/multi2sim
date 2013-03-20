@@ -120,12 +120,16 @@ void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg,
 
 unsigned int si_isa_read_vreg(struct si_work_item_t *work_item, int vreg)
 {
+	assert(vreg >= 0);
+	assert(vreg < 256);
 	return work_item->vreg[vreg].as_uint;
 }
 
 void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, 
 	unsigned int value)
 {
+	assert(vreg >= 0);
+	assert(vreg < 256);
 	work_item->vreg[vreg].as_uint = value;
 }
 
