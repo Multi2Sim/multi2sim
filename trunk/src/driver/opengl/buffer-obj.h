@@ -21,8 +21,7 @@
 #define DRIVER_OPENGL_BUFFER_OBJ_H
 
 #include <GL/glut.h>
-#include <stdio.h>
-#include <stdio.h>
+#include <pthread.h>
 
 struct linked_list_t;
 
