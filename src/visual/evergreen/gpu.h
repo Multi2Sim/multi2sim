@@ -24,6 +24,9 @@
 struct vi_evg_gpu_t
 {
 	struct list_t *compute_unit_list;
+
+	/* True if the trace contains the Evergreen GPU */
+	int active;
 };
 
 

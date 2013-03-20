@@ -359,6 +359,9 @@ void vi_si_gpu_init(void)
 			int version_major = 0;
 			int version_minor = 0;
 
+			/* The trace contains the Southern Islands GPU */
+			vi_si_gpu->active = 1;
+
 			/* Check version compatibility */
 			version = vi_trace_line_get_symbol(trace_line, "version");
 			if (version)

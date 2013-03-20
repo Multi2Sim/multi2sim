@@ -31,6 +31,9 @@ struct vi_x86_cpu_t
 	/* Hash table of contexts.
 	 * Elements are of type 'struct vi_x86_context_t' */
 	struct hash_table_t *context_table;
+
+	/* True if the trace file contains x86 information at all */
+	int active;
 };
 
 
