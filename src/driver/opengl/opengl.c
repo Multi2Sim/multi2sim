@@ -10696,7 +10696,8 @@ static int opengl_func_glUseProgram(struct x86_ctx_t *ctx)
 
 	/* Bind program to currect rendering state */
 	prg = opengl_program_repo_reference(opengl_ctx->program_repo, pid);
-	opengl_ctx->current_program = prg;
+	opengl_program_bind(prg,& opengl_ctx->current_program);
+
 	opengl_debug("\tUse Program #%d [%p]\n", pid, prg);
 
 	return 0;

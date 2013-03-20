@@ -187,6 +187,9 @@ struct linked_list_t *opengl_vertex_array_obj_repo_create()
 
 void opengl_vertex_array_obj_repo_free(struct linked_list_t *vao_repo)
 {
+
+	opengl_debug("\tFree VAO repository [%p]\n", vao_repo);
+
 	struct opengl_vertex_array_obj_t *vao;
 
 	/* Free all elements */
@@ -199,8 +202,6 @@ void opengl_vertex_array_obj_repo_free(struct linked_list_t *vao_repo)
 
 	/* Free VAO repository */
 	linked_list_free(vao_repo);
-
-	opengl_debug("\tFreed VAO repository [%p]\n", vao_repo);
 }
 
 void opengl_vertex_array_obj_repo_add(struct linked_list_t *vao_repo, struct opengl_vertex_array_obj_t *vao)

@@ -21,13 +21,12 @@
 #define DRIVER_OPENGL_PROGRAM_H
 
 #include <GL/glut.h>
-#include <stdio.h>
+#include <pthread.h>
 
 #define OPENGL_PROGRAM_TABLE_INIT_SIZE	16
 
 struct linked_list_t;
 struct opengl_shader_t;
-struct opengl_context_t;
 struct si_opengl_bin_file_t;
 struct si_ndrange_t;
 
@@ -40,15 +39,15 @@ struct opengl_program_t
 
 	GLboolean delete_pending;
 
-	struct linked_list_t *attached_shader_id_list;
+	struct linked_list_t *attached_shader;
 	struct si_opengl_bin_file_t *si_shader_binary;
 };
 
 struct opengl_program_t *opengl_program_create();
 void opengl_program_free(struct opengl_program_t *prg);
 void opengl_program_detele(struct opengl_program_t *prg);
-void opengl_program_bind(struct opengl_program_t *prg, struct opengl_context_t *ctx);
-void opengl_program_unbind(struct opengl_program_t *prg, struct opengl_context_t *ctx);
+void opengl_program_bind(struct opengl_program_t *prg, struct opengl_program_t **prg_bnd_ptr);
+void opengl_program_unbind(struct opengl_program_t *prg, struct opengl_program_t **prg_bnd_ptr);
 void opengl_program_attach_shader(struct opengl_program_t *prg, struct opengl_shader_t *shdr);
 void opengl_program_detach_shader(struct opengl_program_t *prg, struct opengl_shader_t *shdr);
 struct elf_buffer_t *opengl_program_get_shader(struct opengl_program_t *prg, int shader_kind);
@@ -58,8 +57,8 @@ void opengl_program_setup_ndrange_state(struct opengl_program_t *prg, struct si_
 struct linked_list_t *opengl_program_repo_create();
 void opengl_program_repo_free(struct linked_list_t *prg_repo);
 void opengl_program_repo_add(struct linked_list_t *prg_repo, struct opengl_program_t *prg);
+int opengl_program_repo_remove(struct linked_list_t *prg_repo, struct opengl_program_t *prg);
 struct opengl_program_t *opengl_program_repo_get(struct linked_list_t *prg_repo, int id);
 struct opengl_program_t *opengl_program_repo_reference(struct linked_list_t *prg_repo, int id);
-int opengl_program_repo_remove(struct linked_list_t *prg_repo, struct opengl_program_t *prg);
 
 #endif

@@ -31,36 +31,12 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 
-#include "context.h"
 #include "opengl.h"
 #include "program.h"
 #include "shader.h"
 
 
 static unsigned int program_id = 1;
-
-/* Private functions */
-
-static void opengl_program_reference(struct opengl_program_t *prg)
-{
-	pthread_mutex_lock(&prg->ref_mutex);
-	prg->ref_count -= 1;
-	pthread_mutex_unlock(&prg->ref_mutex);
-}
-
-static void opengl_program_dereference(struct opengl_program_t *prg)
-{
-	pthread_mutex_lock(&prg->ref_mutex);
-	prg->ref_count -= 1;
-	pthread_mutex_unlock(&prg->ref_mutex);
-
-	if (prg->ref_count < 0)
-	{
-		fatal("Program #%d reference count < 0\n");
-	}
-}
-
-/* Public functions */
 
 struct opengl_program_t *opengl_program_create()
 {
@@ -74,7 +50,7 @@ struct opengl_program_t *opengl_program_create()
 	prg->ref_count = 0;
 	pthread_mutex_init(&prg->ref_mutex, NULL);
 	prg->delete_pending = GL_FALSE;
-	prg->attached_shader_id_list = linked_list_create();
+	prg->attached_shader = linked_list_create();
 	prg->si_shader_binary = NULL;
 
 	/* Update global program id */
@@ -84,33 +60,21 @@ struct opengl_program_t *opengl_program_create()
 	return prg;
 }
 
-static unsigned int *opengl_program_get_shader_id_obj(struct opengl_program_t* prg)
-{
-	unsigned int *shdr_id;
-
-	LINKED_LIST_FOR_EACH(prg->attached_shader_id_list)
-	{
-		shdr_id = linked_list_get(prg->attached_shader_id_list);
-		opengl_debug("\tGet Shader ID object #%d [%p] from list [%p]\n", *shdr_id, shdr_id, prg->attached_shader_id_list);
-		assert(shdr_id);
-		return shdr_id;
-	}
-	return NULL;
-}
-
 /* Free doesn't check flags */
 void opengl_program_free(struct opengl_program_t *prg)
 {
-	unsigned int *shdr_id;
+	struct opengl_shader_t *shdr;
 
-	LINKED_LIST_FOR_EACH(prg->attached_shader_id_list)
+	/* Update attached shader reference */
+	LINKED_LIST_FOR_EACH(prg->attached_shader)
 	{
-		shdr_id = linked_list_get(prg->attached_shader_id_list);
-		free(shdr_id);
+		shdr = linked_list_get(prg->attached_shader);
+		if(shdr)
+			opengl_shader_ref_update(shdr, -1);
 	}
 
 	pthread_mutex_destroy(&prg->ref_mutex);
-	linked_list_free(prg->attached_shader_id_list);
+	linked_list_free(prg->attached_shader);
 	si_opengl_bin_file_free(prg->si_shader_binary);
 	free(prg);
 }
@@ -128,25 +92,37 @@ void opengl_program_detele(struct opengl_program_t *prg)
 	}
 }
 
-/* Attach shader doesn't actually attach shader object, it only record the
- * shader ID */
+/* Update reference count */
+void opengl_program_ref_update(struct opengl_program_t *prg, int change)
+{
+	int count;
+
+	pthread_mutex_lock(&prg->ref_mutex);
+	prg->ref_count += change;
+	count = prg->ref_count;
+	pthread_mutex_unlock(&prg->ref_mutex);
+
+	if (count < 0)
+		panic("%s: number of references is negative", __FUNCTION__);
+}
+
+/* Attach shader record the shader pointer */
 void opengl_program_attach_shader(struct opengl_program_t *prg,
 	struct opengl_shader_t *shdr)
 {
-	unsigned int *shdr_id = xcalloc(1, sizeof(unsigned int));
 	struct si_opengl_shader_t *shader;
 	int i;
 
 	if (shdr && prg)
 	{
-		/* Add shader to ID list */
-		shdr->ref_count += 1;
-		*shdr_id = shdr->id;
-		linked_list_add(prg->attached_shader_id_list, shdr_id);
-		opengl_debug("\tShader ID #%d [%p] added to ID list [%p]\n",
-			*shdr_id, shdr_id, prg->attached_shader_id_list);
-		opengl_debug
-			("\tShader #%d [%p] attached to Program #%d [%p]\n",
+		/* Add shader to  list */
+		linked_list_add(prg->attached_shader, shdr);
+
+		/* Update reference count */
+		opengl_shader_ref_update(shdr, 1);
+
+		/* Debug */
+		opengl_debug	("\tShader #%d [%p] attached to Program #%d [%p]\n",
 			shdr->id, shdr, prg->id, prg);
 
 		/* Copy ISA from program */
@@ -211,19 +187,23 @@ void opengl_program_attach_shader(struct opengl_program_t *prg,
 
 void opengl_program_detach_shader(struct opengl_program_t *prg, struct opengl_shader_t *shdr)
 {
-	unsigned int *shdr_id;
+	struct opengl_shader_t *shader;
 
 	if (shdr && prg)
 	{
-		shdr->ref_count -= 1;
-		/* Search shader ID */
-		LINKED_LIST_FOR_EACH(prg->attached_shader_id_list)
+		/* Search shader */
+		LINKED_LIST_FOR_EACH(prg->attached_shader)
 		{
-			shdr_id = linked_list_get(prg->attached_shader_id_list);
-			assert(shdr_id);
-			if (shdr->id == *shdr_id)
-				/* Remove shader ID from list */
-				linked_list_remove(prg->attached_shader_id_list);
+			shader = linked_list_get(prg->attached_shader);
+			assert(shader);
+			if (shader == shdr)
+			{
+				/* Update reference count */
+				opengl_shader_ref_update(shdr, -1);
+		
+				/* Remove shader from list */
+				linked_list_remove(prg->attached_shader);
+			}
 		}
 		opengl_debug("\tShader #%d [%p] detached to Program #%d [%p]\n", shdr->id, shdr, prg->id, prg);
 	}
@@ -251,30 +231,40 @@ struct elf_buffer_t *opengl_program_get_shader(struct opengl_program_t *prg, int
 	return NULL;
 }
 
-void opengl_program_bind(struct opengl_program_t *prg, struct opengl_context_t *ctx)
+/* Bind program to program binding point */
+void opengl_program_bind(struct opengl_program_t *prg, struct opengl_program_t **prg_bnd_ptr)
 {
-	if (prg && ctx)
+	if (prg)
 	{
-		if (ctx->current_program)
-		{
-			/* Dereference current  program */
-			opengl_program_dereference(&ctx->current_program);
+		/* Dereference current  program */
+		if (*prg_bnd_ptr)
+			opengl_program_ref_update(*prg_bnd_ptr, -1);
 
-			/* Reference and update binding point */
-			opengl_program_reference(prg);
-			ctx->current_program = prg;
-			opengl_debug("\tProgram #%d [%p] bind to OpenGL context [%p]\n", prg->id, prg, ctx);
-		}
+		/* Reference and update binding point */
+		opengl_program_ref_update(prg, 1);
+
+		/* Bind program to binding point */
+		*prg_bnd_ptr = prg;
+		
+		/* Debug */
+		opengl_debug("\tProgram #%d [%p] bind to OpenGL context [%p]\n", prg->id, prg, prg_bnd_ptr);
 	}
 }
 
-void opengl_program_unbind(struct opengl_program_t *prg, struct opengl_context_t *ctx)
+/* Unbind program from program binding point */
+void opengl_program_unbind(struct opengl_program_t *prg, struct opengl_program_t **prg_bnd_ptr)
 {
-	if (prg && ctx)
+	if (prg)
 	{
-		prg->ref_count -= 1;
-		ctx->current_program = NULL;
-		opengl_debug("\tProgram #%d [%p] bind to OpenGL context [%p]\n", prg->id, prg, ctx);
+		/* Update reference count */
+		if (*prg_bnd_ptr)
+			opengl_program_ref_update(prg, -1);
+
+		/* Clear binding point */
+		*prg_bnd_ptr = NULL;
+
+		/* Debug */
+		opengl_debug("\tProgram #%d [%p] bind to OpenGL context [%p]\n", prg->id, prg, prg_bnd_ptr);
 	}
 }
 
@@ -439,7 +429,7 @@ struct linked_list_t *opengl_program_repo_create()
 	/* Allocate */
 	lst = linked_list_create();
 
-	opengl_debug("\tCreated Program Repo [%p]\n", lst);
+	opengl_debug("\tCreated Program repository [%p]\n", lst);
 
 	/* Return */
 	return lst;
@@ -447,6 +437,8 @@ struct linked_list_t *opengl_program_repo_create()
 
 void opengl_program_repo_free(struct linked_list_t *prg_repo)
 {
+	opengl_debug("\tFree Program repository [%p]\n", prg_repo);
+
 	struct opengl_program_t *prg;
 
 	/* Free all elements */
@@ -460,7 +452,6 @@ void opengl_program_repo_free(struct linked_list_t *prg_repo)
 	/* Free program repository */
 	linked_list_free(prg_repo);
 
-	opengl_debug("\tFreed Program Repo [%p]\n", prg_repo);
 }
 
 struct opengl_program_t *opengl_program_repo_get(struct linked_list_t *prg_repo, int id)
@@ -514,7 +505,7 @@ struct opengl_program_t *opengl_program_repo_reference(struct linked_list_t *prg
 
 	/* Get and update reference count */
 	prg = opengl_program_repo_get(prg_repo, id);
-	opengl_program_reference(prg);
+	opengl_program_ref_update(prg, 1);
 
 	/* Return */
 	return prg;

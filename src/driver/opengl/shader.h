@@ -22,6 +22,7 @@
 
 
 #include <GL/glut.h>
+#include <pthread.h>
 
 #define OPENGL_SHADER_TABLE_INIT_SIZE	16
 struct linked_list_t;
@@ -33,6 +34,7 @@ struct opengl_shader_t
 	GLenum type;
 	GLuint id;
 	GLint ref_count;
+	pthread_mutex_t ref_mutex;
 	GLboolean delete_pending;
 	void *isa_buffer;
 };
@@ -40,11 +42,13 @@ struct opengl_shader_t
 struct opengl_shader_t *opengl_shader_create(GLenum type);
 void opengl_shader_free(struct opengl_shader_t *shdr);
 void opengl_shader_detele(struct opengl_shader_t *shdr);
+void opengl_shader_ref_update(struct opengl_shader_t *shdr, int change);
 
 struct linked_list_t *opengl_shader_repo_create();
 void opengl_shader_repo_free(struct linked_list_t *shdr_tbl);
 void opengl_shader_repo_add(struct linked_list_t *shdr_tbl, struct opengl_shader_t *shdr);
-struct opengl_shader_t *opengl_shader_repo_get(struct linked_list_t *shdr_tbl, int id);
 int opengl_shader_repo_remove(struct linked_list_t *shdr_tbl, struct opengl_shader_t *shdr);
+struct opengl_shader_t *opengl_shader_repo_get(struct linked_list_t *shdr_tbl, int id);
+struct opengl_shader_t *opengl_shader_repo_reference(struct linked_list_t *shdr_tbl, int id);
 
 #endif
