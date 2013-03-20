@@ -77,7 +77,7 @@ void opencl_si_program_list_done(void)
  */
 
 struct opencl_si_constant_buffer_t *opencl_si_constant_buffer_create(int id,
-	unsigned int device_ptr)
+	unsigned int device_ptr, unsigned int size)
 {
 	struct opencl_si_constant_buffer_t *constant_buffer;
 
@@ -85,6 +85,7 @@ struct opencl_si_constant_buffer_t *opencl_si_constant_buffer_create(int id,
 	constant_buffer = xcalloc(1, sizeof(struct opencl_si_constant_buffer_t));
 	constant_buffer->id = id;
 	constant_buffer->device_ptr = device_ptr;
+	constant_buffer->size = size;
 
 	/* Return */
 	return constant_buffer;
@@ -147,7 +148,7 @@ static void opencl_si_program_initialize_constant_buffers(
 
 		/* Create buffer */
 		constant_buffer = opencl_si_constant_buffer_create(i,
-				si_emu->global_mem_top);
+				si_emu->global_mem_top, symbol->size);
 		si_emu->global_mem_top += symbol->size;
 
 		/* Add the constant buffer to the list */

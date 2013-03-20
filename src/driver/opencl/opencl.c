@@ -936,8 +936,8 @@ static int opencl_abi_si_kernel_launch_impl(struct x86_ctx_t *ctx)
 
 	/* Set up initial state and arguments (order matters!) */
 	opencl_si_kernel_setup_ndrange_tables(ndrange); 
-	opencl_si_kernel_setup_ndrange_state(kernel, ndrange);
 	opencl_si_kernel_setup_ndrange_args(kernel, ndrange);
+	opencl_si_kernel_setup_ndrange_state(kernel, ndrange);
 	opencl_si_kernel_debug_ndrange_state(kernel, ndrange);
 
 	/* Set up instruction memory */

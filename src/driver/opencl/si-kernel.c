@@ -1107,6 +1107,8 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 		struct si_ndrange_t *ndrange)
 {
 	struct opencl_si_arg_t *arg;
+	struct opencl_si_constant_buffer_t *constant_buffer;
+	struct si_buffer_desc_t buffer_desc;
 
 	int index;
 	int zero = 0;
@@ -1173,8 +1175,6 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			/* UAV */
 			case opencl_si_arg_uav:
 			{
-				struct si_buffer_desc_t buffer_desc;
-
 				/* Create descriptor for argument */
 				opencl_si_create_buffer_desc(
 					arg->pointer.device_ptr,
@@ -1199,8 +1199,6 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			/* Hardware constant memory */
 			case opencl_si_arg_hw_constant:
 			{
-				struct si_buffer_desc_t buffer_desc;
-
 				opencl_si_create_buffer_desc(
 					arg->pointer.device_ptr,
 					arg->size,
@@ -1250,6 +1248,32 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 				__FUNCTION__, arg->type);
 
 		}
+	}
+
+	/* Add program-wide constant buffers to the ND-range. 
+	 * Program-wide constant buffers start at number 2. */
+	for (index = 2; index < 25; index++) 
+	{
+		constant_buffer = list_get(
+			kernel->program->constant_buffer_list, index);
+
+		if (!constant_buffer)
+			break;
+
+		opencl_si_create_buffer_desc(
+			constant_buffer->device_ptr,
+			constant_buffer->size,
+			4,
+			opencl_si_arg_float,
+			&buffer_desc);
+
+		/* Data stored in hw constant memory 
+		 * uses a 16-byte stride */
+		buffer_desc.stride = 16; // XXX Use or don't use?
+
+		/* Add to Constant Buffer table */
+		si_ndrange_insert_buffer_into_const_buf_table(ndrange, 
+			&buffer_desc, index);
 	}
 }
 
