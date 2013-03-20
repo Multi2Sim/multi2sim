@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_CUDA_CONTEXT_H
-#define DRIVER_CUDA_CONTEXT_H
+#ifndef RUNTIME_CUDA_CONTEXT_H
+#define RUNTIME_CUDA_CONTEXT_H
 
 #include <assert.h>
 #include "../include/cuda.h"
@@ -34,10 +34,10 @@ struct CUctx_st
 	unsigned int id;
 	int ref_count;
 
-	unsigned int device_id;
+	CUdevice device;
 };
 
-CUcontext cuda_context_create(void);
+CUcontext cuda_context_create(CUdevice device);
 void cuda_context_free(CUcontext context);
 
 #endif

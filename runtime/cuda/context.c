@@ -23,16 +23,15 @@
 
 
 /* Create a context */
-CUcontext cuda_context_create(void)
+CUcontext cuda_context_create(CUdevice device)
 {
 	CUcontext context;
 
 	/* Initialize */
 	context = xcalloc(1, sizeof(struct CUctx_st));
-	//context->id = cuda_object_new_id(CUDA_OBJ_CONTEXT);
+	context->id = 0;  /* FIXME: context->id = ? */
 	context->ref_count = 1;
-
-	//cuda_object_add(context);
+	context->device = device;
 
 	return context;
 }
@@ -43,8 +42,6 @@ void cuda_context_free(CUcontext context)
 {
 	assert(context->ref_count > 0);
 	context->ref_count--;
-
-	//cuda_object_remove(context);
 
 	free(context);
 }

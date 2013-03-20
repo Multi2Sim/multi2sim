@@ -28,8 +28,10 @@
 
 #include "debug.h"
 #include "linked-list.h"
+#include "list.h"
 
 #include "context.h"
+#include "device.h"
 
 
 
@@ -98,12 +100,6 @@ struct CUmod_st
 
 /* CUDA function */
 struct CUfunc_st
-{
-	unsigned int id;
-};
-
-/* CUDA stream */
-struct CUstream_st
 {
 	unsigned int id;
 };
