@@ -62,15 +62,18 @@ struct opengl_buffer_obj_t *opengl_buffer_obj_create()
 /* Free checks no flags */
 void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buf_obj)
 {
-	/* Free */
+	/* Check mapping */
 	if (buf_obj->map_pointer)
 		opengl_debug("\t\tBuffer Object #%d [%p] already mapped to [0x%x], use glUnmapBuffer to free it\n", 
 			buf_obj->id, buf_obj, buf_obj->map_pointer);
 
+	/* Debug */
+	opengl_debug("\t\tFree Buffer Object #%d [%p]\n", buf_obj->id, buf_obj);
+
+	/* Free */
 	pthread_mutex_destroy(&buf_obj->ref_mutex);
 	free(buf_obj->data);
 	free(buf_obj);
-	opengl_debug("\t\tFree Buffer Object #%d [%p]\n", buf_obj->id, buf_obj);
 }
 
 /* Delete checks flags */

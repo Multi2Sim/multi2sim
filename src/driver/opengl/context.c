@@ -159,11 +159,11 @@ void opengl_context_free(struct opengl_context_t *ctx)
 	/* Free light */
 	opengl_light_attrib_free(ctx->light);
 
-	/* Free shader objects repository */
-	opengl_shader_repo_free(ctx->shader_repo);
-
 	/* Free program objects repository*/
 	opengl_program_repo_free(ctx->program_repo);
+
+	/* Free shader objects repository */
+	opengl_shader_repo_free(ctx->shader_repo);
 
 	/* Free VAO repository */
 	opengl_vertex_array_obj_repo_free(ctx->vao_repo);

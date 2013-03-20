@@ -38,6 +38,7 @@ struct opengl_shader_t *opengl_shader_create(GLenum type)
 	shdr->type = type;
 	shdr->id = shader_id;
 	shdr->ref_count = 0;
+	pthread_mutex_init(&shdr->ref_mutex, NULL);
 	shdr->delete_pending = GL_FALSE;
 	opengl_debug("\tShader #%d [%p] created\n", shdr->id, shdr);
 
@@ -48,16 +49,20 @@ struct opengl_shader_t *opengl_shader_create(GLenum type)
 	return shdr;
 }
 
-/* Free checks the delete_pending flag and reference count while Delete doesn't */
+/* Free checks no flags */
 void opengl_shader_free(struct opengl_shader_t *shdr)
 {
-	/* Free */
-	opengl_debug("\tShader #%d [%p] freed\n", shdr->id, shdr);
+	/* Debug */
+	opengl_debug("\t\tFree Shader #%d [%p]\n", shdr->id, shdr);
+
+	/* Free mutex, buffer and the rests */
+	pthread_mutex_destroy(&shdr->ref_mutex);
 	if(shdr->isa_buffer)
 		free(shdr->isa_buffer);
 	free(shdr);
 }
 
+/* Delete checks flags */
 void opengl_shader_detele(struct opengl_shader_t *shdr)
 {
 	shdr->delete_pending = GL_TRUE;
@@ -65,6 +70,21 @@ void opengl_shader_detele(struct opengl_shader_t *shdr)
 		opengl_shader_free(shdr);
 }
 
+/* Update reference count */
+void opengl_shader_ref_update(struct opengl_shader_t *shdr, int change)
+{
+	int count;
+
+	pthread_mutex_lock(&shdr->ref_mutex);
+	shdr->ref_count += change;
+	count = shdr->ref_count;
+	pthread_mutex_unlock(&shdr->ref_mutex);
+
+	if (count < 0)
+		panic("%s: number of references is negative", __FUNCTION__);
+}
+
+/* Shader repository contains shaders created */
 struct linked_list_t *opengl_shader_repo_create()
 {
 	struct linked_list_t *lst;
@@ -72,14 +92,17 @@ struct linked_list_t *opengl_shader_repo_create()
 	/* Allocate */
 	lst = linked_list_create(); 
 
-	opengl_debug("\tCreated Shader Repository [%p]\n", lst);
+	opengl_debug("\tShader Repository [%p] created\n", lst);
 
 	/* Return */	
 	return lst;
 }
 
+/* Free shader repository */
 void opengl_shader_repo_free(struct linked_list_t *shdr_repo)
 {
+	opengl_debug("\tFree Shader Repository [%p]\n", shdr_repo);
+
 	struct opengl_shader_t *shdr;
 
 	/* Free all elements */
@@ -92,16 +115,36 @@ void opengl_shader_repo_free(struct linked_list_t *shdr_repo)
 
 	/* Free shader repository */
 	linked_list_free(shdr_repo);
-
-	opengl_debug("\tFreed Shader Repository [%p]\n", shdr_repo);
 }
 
+/* Add a shader to repository */
 void opengl_shader_repo_add(struct linked_list_t *shdr_repo, struct opengl_shader_t *shdr)
 {
 	linked_list_add(shdr_repo, shdr);
 	opengl_debug("\tAdded Shader #%d [%p] to Shader Repository [%p]\n", shdr->id, shdr, shdr_repo);
 }
 
+/* Remove a shader from repository */
+int opengl_shader_repo_remove(struct linked_list_t *shdr_repo, struct opengl_shader_t *shdr)
+{
+	if (shdr->ref_count != 0)
+	{
+		opengl_debug("\tShader %d [%p] cannot be removed immediately, as reference counter = %d\n", shdr->id, shdr, shdr->ref_count);
+		return -1;
+	}
+	else 
+	{
+		/* Check if shader exists */
+		linked_list_find(shdr_repo, shdr);
+		if (shdr_repo->error_code)
+			fatal("%s: Shader does not exist", __FUNCTION__);
+		linked_list_remove(shdr_repo);
+		opengl_debug("\tShader %d [%p] removed from Shader table\n", shdr->id, shdr);
+		return 1;
+	}
+}
+
+/* Get a shader from repository */
 struct opengl_shader_t *opengl_shader_repo_get(struct linked_list_t *shdr_repo, int id)
 {
 	struct opengl_shader_t *shdr;
@@ -121,21 +164,17 @@ struct opengl_shader_t *opengl_shader_repo_get(struct linked_list_t *shdr_repo, 
 	return NULL;
 }
 
-int opengl_shader_repo_remove(struct linked_list_t *shdr_repo, struct opengl_shader_t *shdr)
+/* Get and reference a shader */
+struct opengl_shader_t *opengl_shader_repo_reference(struct linked_list_t *shdr_repo, int id)
 {
-	if (shdr->ref_count != 0)
-	{
-		opengl_debug("\tShader %d [%p] cannot be removed immediately, as reference counter = %d\n", shdr->id, shdr, shdr->ref_count);
-		return -1;
-	}
-	else 
-	{
-		/* Check that shader exists */
-		linked_list_find(shdr_repo, shdr);
-		if (shdr_repo->error_code)
-			fatal("%s: Shader does not exist", __FUNCTION__);
-		linked_list_remove(shdr_repo);
-		opengl_debug("\tShader %d [%p] removed from Shader table\n", shdr->id, shdr);
-		return 1;
-	}
+	struct opengl_shader_t *shdr;
+
+	/* Get shader */
+	shdr = opengl_shader_repo_get(shdr_repo, id);
+
+	/* Update reference count */
+	opengl_shader_ref_update(shdr, 1);
+
+	/* Return */
+	return shdr;
 }
