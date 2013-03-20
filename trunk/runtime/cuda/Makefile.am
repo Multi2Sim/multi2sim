@@ -16,11 +16,17 @@ __top_builddir__lib_libm2s_cuda_la_SOURCES = \
 	linked-list.c \
 	linked-list.h \
 	\
+	list.c \
+	list.h \
+	\
 	mhandle.c \
 	mhandle.h \
 	\
 	context.c \
 	context.h \
+	\
+	device.c \
+	device.h \
 	\
 	stream.c \
 	stream.h
