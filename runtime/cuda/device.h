@@ -17,28 +17,37 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RUNTIME_CUDA_STREAM_H
-#define RUNTIME_CUDA_STREAM_H
+#ifndef RUNTIME_CUDA_DEVICE_H
+#define RUNTIME_CUDA_DEVICE_H
 
-#include <assert.h>
 #include "../include/cuda.h"
 #include "../include/cuda_runtime_api.h"
 
 #include "mhandle.h"
+#include "list.h"
 
 
 
 
-struct CUstream_st
+extern struct list_t *device_list;
+
+struct compute_capability_t
 {
-	unsigned int id;
-	int ref_count;
-
-	unsigned int device_id;
+	int major;
+	int minor;
 };
 
-CUstream cuda_stream_create(void);
-void cuda_stream_free(CUstream stream);
+struct cuda_device_t
+{
+	CUdevice device;
+	char *name;
+	struct compute_capability_t cc;
+	CUdevprop properties;
+	int attributes[CU_DEVICE_ATTRIBUTE_MAX];
+};
+
+struct cuda_device_t *cuda_device_create(void);
+void cuda_device_free(struct cuda_device_t *device);
 
 #endif
 

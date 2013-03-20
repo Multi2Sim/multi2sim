@@ -27,6 +27,8 @@ struct cuda_module_t *cuda_module_create(void)
 {
 	struct cuda_module_t *module;
 
+	cuda_object_list = (struct linked_list_t *)linked_list_create();
+
 	/* Initialize */
 	module = xcalloc(1, sizeof(struct cuda_module_t));
 	module->id = cuda_object_new_id(CUDA_OBJ_MODULE);

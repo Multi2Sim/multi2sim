@@ -23,25 +23,24 @@
 
 
 /* Create a stream */
-struct cuda_stream_t *cuda_stream_create(void)
+CUstream cuda_stream_create(void)
 {
-	struct cuda_stream_t *stream;
+	CUstream stream;
 
 	/* Initialize */
-	stream = xcalloc(1, sizeof(struct cuda_stream_t));
-	//stream->id = cuda_object_new_id(CUDA_OBJ_STREAM);
+	stream = xcalloc(1, sizeof(struct CUstream_st));
+	stream->id = 0;  /* FIXME: stream->id = ? */
 	stream->ref_count = 1;
-
-	//cuda_object_add(stream);
 
 	return stream;
 }
 
 
 /* Free stream */
-void cuda_stream_free(struct cuda_stream_t *stream)
+void cuda_stream_free(CUstream stream)
 {
-	//cuda_object_remove(stream);
+	assert(stream->ref_count > 0);
+	stream->ref_count--;
 
 	free(stream);
 }
