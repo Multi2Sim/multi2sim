@@ -39,10 +39,11 @@ struct opencl_si_constant_buffer_t
 {
 	int id;  /* Constant buffer ID (2-24) */
 	unsigned int device_ptr;
+	unsigned int size;
 };
 
 struct opencl_si_constant_buffer_t *opencl_si_constant_buffer_create(int id,
-		unsigned int device_ptr);
+	unsigned int device_ptr, unsigned int size);
 void opencl_si_constant_buffer_free(struct opencl_si_constant_buffer_t *constant_buffer);
 
 
