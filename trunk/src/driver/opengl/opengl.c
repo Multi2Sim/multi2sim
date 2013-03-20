@@ -5299,21 +5299,18 @@ static int opengl_func_glArrayElement(struct x86_ctx_t *ctx)
  */
 static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 {
-#if 0
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
 	struct si_ndrange_t *ndrange;
-	struct si_opencl_command_queue_t *command_queue;
-	struct si_opencl_command_t *task;
 
 	struct elf_buffer_t *elf_buffer;
 	struct opengl_vertex_array_obj_t *curr_vao;
 	struct opengl_vertex_client_array_t *vca;
+
 	unsigned int global_size[3];
 	unsigned int local_size[3];
 	int workdim;
-	struct si_opencl_mem_t *gpu_mem;
 
 	unsigned int args[3];
 	unsigned int mode;
@@ -5353,23 +5350,23 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 		if (vca->enabled)
 		{
 			/* Create a memory object and send data to GPU global memory */
-			gpu_mem = si_opencl_mem_create();
-			gpu_mem->type = 0;  /* FIXME */
-			gpu_mem->size = vca->vbo->data_size;
-			gpu_mem->flags = vca->vbo->usage;
-			opengl_debug("\tGPU memory [%p] created, size = %d, flags = %x\n", gpu_mem, gpu_mem->size, gpu_mem->flags);
+			// gpu_mem = si_opencl_mem_create();
+			// gpu_mem->type = 0;  /* FIXME */
+			// gpu_mem->size = vca->vbo->data_size;
+			// gpu_mem->flags = vca->vbo->usage;
+			// opengl_debug("\tGPU memory [%p] created, size = %d, flags = %x\n", gpu_mem, gpu_mem->size, gpu_mem->flags);
 
 			/* Assign position in device global memory */
-			gpu_mem->device_ptr = si_emu->global_mem_top;
-			si_emu->global_mem_top += gpu_mem->size;
+			// gpu_mem->device_ptr = si_emu->global_mem_top;
+			// si_emu->global_mem_top += gpu_mem->size;
 
 			/* If VBO bound, copy buffer into device memory */
-			if (vca->vbo->data)
-			{
-				mem_write(si_emu->global_mem, gpu_mem->device_ptr, vca->vbo->data_size, vca->vbo->data);
-				opengl_debug("\tCopy %d byte from data [%p] saved in VBO #%d [%p] to GPU global memory\n", 
-					(int) vca->vbo->data_size, vca->vbo->data, vca->vbo->id, vca->vbo);				
-			}
+			// if (vca->vbo->data)
+			// {
+			// 	mem_write(si_emu->global_mem, gpu_mem->device_ptr, vca->vbo->data_size, vca->vbo->data);
+			// 	opengl_debug("\tCopy %d byte from data [%p] saved in VBO #%d [%p] to GPU global memory\n", 
+			// 		(int) vca->vbo->data_size, vca->vbo->data, vca->vbo->id, vca->vbo);
+			// }
 		}
 	}
 
@@ -5378,81 +5375,94 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 	si_ndrange_set_status(ndrange, si_ndrange_pending);
 
 	/* Create command queue task */
-	task = si_opencl_command_create(si_opencl_command_queue_task_ndrange_kernel);
-	task->u.ndrange_kernel.ndrange = ndrange;
+	// task = si_opencl_command_create(si_opencl_command_queue_task_ndrange_kernel);
+	// task->u.ndrange_kernel.ndrange = ndrange;
 
 	/* Enqueue task */
-	command_queue = si_opencl_command_queue_create();
-	si_opencl_command_queue_submit(command_queue, task);
-	ndrange->command_queue = command_queue;
-	ndrange->command = task;
+	// command_queue = si_opencl_command_queue_create();
+	// si_opencl_command_queue_submit(command_queue, task);
+	// ndrange->command_queue = command_queue;
+	// ndrange->command = task;
 
 	switch(mode)
 	{
-		case GL_POINTS:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_POINTS, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_LINE_STRIP:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_LINE_STRIP, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_LINE_LOOP:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_LINE_LOOP, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_LINES:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_LINES, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_LINE_STRIP_ADJACENCY:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_LINE_STRIP_ADJACENCY, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_LINES_ADJACENCY:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_LINES_ADJACENCY, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_TRIANGLE_STRIP:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_TRIANGLE_STRIP, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_TRIANGLE_FAN:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_TRIANGLE_FAN, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_TRIANGLES:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_TRIANGLES, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_TRIANGLE_STRIP_ADJACENCY:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_TRIANGLE_STRIP_ADJACENCY, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_TRIANGLES_ADJACENCY:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_TRIANGLES_ADJACENCY, first = %d, count = %d\n", first, count);
-			break;
-		}
-		case GL_PATCHES:
-		{
-			opengl_debug("\tglDrawArrays mode = GL_PATCHES, first = %d, count = %d\n", first, count);
-			break;
-		}
-		default:
-			break;
+
+	case GL_POINTS:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_POINTS, first = %d, count = %d\n", first, count);
+		break;
 	}
-#endif
+
+	case GL_LINE_STRIP:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_LINE_STRIP, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_LINE_LOOP:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_LINE_LOOP, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_LINES:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_LINES, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_LINE_STRIP_ADJACENCY:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_LINE_STRIP_ADJACENCY, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_LINES_ADJACENCY:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_LINES_ADJACENCY, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_TRIANGLE_STRIP:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_TRIANGLE_STRIP, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_TRIANGLE_FAN:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_TRIANGLE_FAN, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_TRIANGLES:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_TRIANGLES, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_TRIANGLE_STRIP_ADJACENCY:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_TRIANGLE_STRIP_ADJACENCY, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_TRIANGLES_ADJACENCY:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_TRIANGLES_ADJACENCY, first = %d, count = %d\n", first, count);
+		break;
+	}
+
+	case GL_PATCHES:
+	{
+		opengl_debug("\tglDrawArrays mode = GL_PATCHES, first = %d, count = %d\n", first, count);
+		break;
+	}
+	
+	default:
+		break;
+	}
+
 	/* Return */
 	return 0;	
 }
@@ -9898,7 +9908,7 @@ static int opengl_func_glBufferData(struct x86_ctx_t *ctx)
 	mem_read(mem, data, size, tmp_buf);
 
 	/* Debug */
-	opengl_debug("OpenGL runtime call parameters: (%d, %d, %d, %d)\n", args[0], args[1], args[2], args[3]);
+	opengl_debug("OpenGL runtime call parameters: (%d, %d, %x, %d)\n", args[0], args[1], args[2], args[3]);
 	opengl_debug("\tCopy data to VBO ID #%d \n", opengl_ctx->array_attrib->curr_vao->id);
 
 	/* Get current bound VBO and copy data */
@@ -10685,7 +10695,7 @@ static int opengl_func_glUseProgram(struct x86_ctx_t *ctx)
 	opengl_debug("OpenGL runtime call parameters: (%d)\n", args[0]);
 
 	/* Bind program to currect rendering state */
-	prg = opengl_program_repo_get(opengl_ctx->program_repo, pid);
+	prg = opengl_program_repo_reference(opengl_ctx->program_repo, pid);
 	opengl_ctx->current_program = prg;
 	opengl_debug("\tUse Program #%d [%p]\n", pid, prg);
 

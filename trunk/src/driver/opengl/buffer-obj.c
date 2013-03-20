@@ -38,9 +38,13 @@ struct opengl_buffer_obj_t *opengl_buffer_obj_create()
 	/* Initialize */
 	buf_obj->id = buf_id;
 	buf_obj->ref_count = 0;
+	pthread_mutex_init(&buf_obj->ref_mutex, NULL);
 	buf_obj->delete_pending = GL_FALSE;
+
 	buf_obj->data = NULL;
+	buf_obj->data_size = 0;
 	buf_obj->usage = GL_DYNAMIC_DRAW;
+
 	buf_obj->map_access_flags = 0x0;
 	buf_obj->map_pointer = 0x0;
 	buf_obj->map_length = 0x0;
@@ -62,6 +66,8 @@ void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buf_obj)
 	if (buf_obj->map_pointer)
 		opengl_debug("\t\tBuffer Object #%d [%p] already mapped to [0x%x], use glUnmapBuffer to free it\n", 
 			buf_obj->id, buf_obj, buf_obj->map_pointer);
+
+	pthread_mutex_destroy(&buf_obj->ref_mutex);
 	free(buf_obj->data);
 	free(buf_obj);
 	opengl_debug("\t\tFree Buffer Object #%d [%p]\n", buf_obj->id, buf_obj);
@@ -191,7 +197,9 @@ struct opengl_buffer_obj_t *opengl_buffer_obj_repo_reference(struct linked_list_
 	buf_obj = opengl_buffer_obj_repo_get(buf_obj_repo, id);
 	if (!buf_obj->delete_pending)
 	{
+		pthread_mutex_lock(&buf_obj->ref_mutex);
 		buf_obj->ref_count += 1;
+		pthread_mutex_unlock(&buf_obj->ref_mutex);
 		return buf_obj;
 	}
 	else
