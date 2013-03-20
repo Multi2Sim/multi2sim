@@ -382,9 +382,6 @@ CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 
 CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 {
-	unsigned int sys_args[2];
-	int ret;
-
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(driver) in: flags=%u\n", flags); /* FIXME: flags specifies scheduling policy */
 	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);

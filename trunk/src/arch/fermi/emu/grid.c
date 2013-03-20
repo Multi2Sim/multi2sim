@@ -135,8 +135,6 @@ void frm_grid_clear_status(struct frm_grid_t *grid, enum frm_grid_status_t statu
 /* FIXME: constant memory should be member of 'frm_emu' or 'grid'? */
 void frm_grid_setup_const_mem(struct frm_grid_t *grid)
 {
-        struct cuda_function_t *function = grid->function;
-
 	/* FIXME: built-in consts */
         frm_isa_const_mem_write(0x8, &grid->local_size3[0]);
 }

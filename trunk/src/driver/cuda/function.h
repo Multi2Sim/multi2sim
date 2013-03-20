@@ -63,6 +63,7 @@ struct cuda_function_t
 	struct frm_grid_t *grid;
 };
 
+struct cuda_module_t;
 struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, 
 	char *function_name);
 void cuda_function_free(struct cuda_function_t *function);
