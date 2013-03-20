@@ -39,6 +39,29 @@
 
 static unsigned int program_id = 1;
 
+/* Private functions */
+
+static void opengl_program_reference(struct opengl_program_t *prg)
+{
+	pthread_mutex_lock(&prg->ref_mutex);
+	prg->ref_count -= 1;
+	pthread_mutex_unlock(&prg->ref_mutex);
+}
+
+static void opengl_program_dereference(struct opengl_program_t *prg)
+{
+	pthread_mutex_lock(&prg->ref_mutex);
+	prg->ref_count -= 1;
+	pthread_mutex_unlock(&prg->ref_mutex);
+
+	if (prg->ref_count < 0)
+	{
+		fatal("Program #%d reference count < 0\n");
+	}
+}
+
+/* Public functions */
+
 struct opengl_program_t *opengl_program_create()
 {
 	struct opengl_program_t *prg;
@@ -49,6 +72,7 @@ struct opengl_program_t *opengl_program_create()
 	/* Initialize */
 	prg->id = program_id;
 	prg->ref_count = 0;
+	pthread_mutex_init(&prg->ref_mutex, NULL);
 	prg->delete_pending = GL_FALSE;
 	prg->attached_shader_id_list = linked_list_create();
 	prg->si_shader_binary = NULL;
@@ -79,11 +103,13 @@ void opengl_program_free(struct opengl_program_t *prg)
 {
 	unsigned int *shdr_id;
 
-	/* Free */
-	while((shdr_id = opengl_program_get_shader_id_obj(prg)))
+	LINKED_LIST_FOR_EACH(prg->attached_shader_id_list)
 	{
+		shdr_id = linked_list_get(prg->attached_shader_id_list);
 		free(shdr_id);
 	}
+
+	pthread_mutex_destroy(&prg->ref_mutex);
 	linked_list_free(prg->attached_shader_id_list);
 	si_opengl_bin_file_free(prg->si_shader_binary);
 	free(prg);
@@ -231,10 +257,11 @@ void opengl_program_bind(struct opengl_program_t *prg, struct opengl_context_t *
 	{
 		if (ctx->current_program)
 		{
-			/* Remove and update current  program */
-			ctx->current_program->ref_count -= 1;
-			/* Bind program */
-			prg->ref_count += 1;
+			/* Dereference current  program */
+			opengl_program_dereference(&ctx->current_program);
+
+			/* Reference and update binding point */
+			opengl_program_reference(prg);
 			ctx->current_program = prg;
 			opengl_debug("\tProgram #%d [%p] bind to OpenGL context [%p]\n", prg->id, prg, ctx);
 		}
@@ -479,4 +506,16 @@ int opengl_program_repo_remove(struct linked_list_t *prg_repo, struct opengl_pro
 		opengl_debug("\tProgram %d [%p] removed from Program table\n", prg->id, prg);
 		return 1;
 	}
+}
+
+struct opengl_program_t *opengl_program_repo_reference(struct linked_list_t *prg_repo, int id)
+{
+	struct opengl_program_t *prg;
+
+	/* Get and update reference count */
+	prg = opengl_program_repo_get(prg_repo, id);
+	opengl_program_reference(prg);
+
+	/* Return */
+	return prg;
 }

@@ -40,9 +40,10 @@ struct opengl_context_capability_t *opengl_context_capability_create(void)
 	/* Variables */
  	struct opengl_context_capability_t* cap;
 
+ 	/* Allocate */
  	cap = xcalloc(1, sizeof(struct opengl_context_capability_t));
 
-	/* Set up initial value for each capability, initial value for each capability is GL_FALSE, except GL_DITHER and GL_MULTISAMPLE */
+	/* Set up initial value for each capability, only GL_DITHER and GL_MULTISAMPLE are GL_TRUE */
 	memset(cap, 0, sizeof(struct opengl_context_capability_t));
 	cap->is_dither = GL_TRUE;
 	cap->is_multisample = GL_TRUE;
@@ -53,6 +54,7 @@ struct opengl_context_capability_t *opengl_context_capability_create(void)
 
 void opengl_context_capability_free(struct opengl_context_capability_t *cap)
 {
+	/* Free */
 	free(cap);
 }
 
@@ -68,8 +70,8 @@ struct opengl_context_t *opengl_context_create(void)
 	ctx = xcalloc(1, sizeof(struct opengl_context_t));
 
 	/* Initialize frame buffers */
-	width = 0;  // FIXME
-	height = 0;  // FIXME
+	width = 0;  
+	height = 0;  
 	ctx->draw_buffer = opengl_frame_buffer_create(width, height);
 	ctx->read_buffer = opengl_frame_buffer_create(width, height);
 	
@@ -83,9 +85,7 @@ struct opengl_context_t *opengl_context_create(void)
 	ctx->modelview_matrix_stack = opengl_matrix_stack_create(GL_MODELVIEW);
 	ctx->projection_matrix_stack = opengl_matrix_stack_create(GL_PROJECTION);
 	for (i = 0; i < MAX_TEXTURE_STACK_DEPTH; i++)
-	{
 		ctx->texture_matrix_stack[i] = opengl_matrix_stack_create(GL_TEXTURE);
-	}
 	ctx->color_matrix_stack = opengl_matrix_stack_create(GL_COLOR);
 	
 	/* FIXME: which one is the default current stack ? */

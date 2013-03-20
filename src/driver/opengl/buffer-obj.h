@@ -21,6 +21,8 @@
 #define DRIVER_OPENGL_BUFFER_OBJ_H
 
 #include <GL/glut.h>
+#include <stdio.h>
+#include <stdio.h>
 
 struct linked_list_t;
 
@@ -29,13 +31,18 @@ struct opengl_buffer_obj_t
 {
 	unsigned int id;
 	int ref_count;
+	pthread_mutex_t ref_mutex;
 	unsigned char delete_pending;
+
+	/* Data */
 	void* data;
 	unsigned int data_size;
 	unsigned int usage;
+
+	/* Mapping to user address space */
 	unsigned int map_access_flags; /* Access permission R, W, R/W */
 	unsigned int map_pointer; /* User space address of mapping */
-	unsigned int map_length; /* User space memory size */
+	unsigned int map_length; /* User space mapping size */
 };
 
 struct opengl_buffer_obj_t *opengl_buffer_obj_create();

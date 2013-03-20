@@ -652,8 +652,10 @@ void glut_done(void)
 	linked_list_free(glut_event_list);
 
 	/* Free glut window property and title */
-	free(glut_window_properties);
-	free(glut_window_title);
+	if (glut_window_properties)
+		free(glut_window_properties);
+	if (glut_window_title)
+		free(glut_window_title);
 
 	/* Free frame buffer */
 	glut_frame_buffer_done();
@@ -888,6 +890,8 @@ static void *glut_thread_func(void *arg)
 	/* Free input arguments */
 	free(properties);
 	free(title);
+	glut_window_properties = NULL;
+	glut_window_title = NULL;
 
 	/* Host GLUT main loop */
 	glutMainLoop();

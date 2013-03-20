@@ -21,6 +21,7 @@
 #define DRIVER_OPENGL_PROGRAM_H
 
 #include <GL/glut.h>
+#include <stdio.h>
 
 #define OPENGL_PROGRAM_TABLE_INIT_SIZE	16
 
@@ -35,7 +36,10 @@ struct opengl_program_t
 {
 	GLuint id;
 	GLint ref_count;
+	pthread_mutex_t ref_mutex;
+
 	GLboolean delete_pending;
+
 	struct linked_list_t *attached_shader_id_list;
 	struct si_opengl_bin_file_t *si_shader_binary;
 };
@@ -55,6 +59,7 @@ struct linked_list_t *opengl_program_repo_create();
 void opengl_program_repo_free(struct linked_list_t *prg_repo);
 void opengl_program_repo_add(struct linked_list_t *prg_repo, struct opengl_program_t *prg);
 struct opengl_program_t *opengl_program_repo_get(struct linked_list_t *prg_repo, int id);
+struct opengl_program_t *opengl_program_repo_reference(struct linked_list_t *prg_repo, int id);
 int opengl_program_repo_remove(struct linked_list_t *prg_repo, struct opengl_program_t *prg);
 
 #endif

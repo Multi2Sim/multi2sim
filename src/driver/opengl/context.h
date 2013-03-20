@@ -200,35 +200,34 @@ struct opengl_current_attrib_t
 /* OpenGL context*/
 struct opengl_context_t
 {
+	/* For recording OpenGL errors */
 	int gl_error;
 
+	/* OpenGL context capabilities */
 	struct opengl_context_capability_t *context_cap;					/* context capabilities */
 
+	/* For OpenGL fixed pipeline */
 	struct opengl_frame_buffer_t *draw_buffer;						/* buffer for writing */
 	struct opengl_frame_buffer_t *read_buffer;						/* buffer for reading */
-
 	struct opengl_viewport_attributes_t *viewport;					/* viewport attributes */
-
 	struct opengl_matrix_stack_t *modelview_matrix_stack;				/* modelview matrix stack */
 	struct opengl_matrix_stack_t *projection_matrix_stack;				/* projection matrix stack */
 	struct opengl_matrix_stack_t *texture_matrix_stack[MAX_TEXTURE_UNITS];		/* texture matrix stacks */
 	struct opengl_matrix_stack_t *color_matrix_stack;					/* color matrix stack */
 	struct opengl_matrix_stack_t *current_matrix_stack;					/* current matrix stack, points to one of above stacks */
-
 	struct opengl_vertex_buffer_t *vertex_buffer;
-
 	struct opengl_light_attrib_t *light;
 
-	struct linked_list_t *shader_repo;							/* Shader repository contains all program objects*/
+	/* OpenGL objects repository */
+	struct linked_list_t *shader_repo;							/* Shader repository contains all shader objects*/
 	struct linked_list_t *program_repo;							/* Program repository contains all program objects */
 	struct linked_list_t *vao_repo;								/* VAO repository contains all VAO */
 	struct linked_list_t *buf_repo;								/* Buffer repository contains all Buffer Objects */
 
-	/* Objects currently bind to OpenGL context */
-	GLchan current_color[4];
-	GLfloat current_normal[4];
-	struct opengl_program_t *current_program;
-
+	/* OpenGL context binding points */
+	GLchan current_color[4];								/* Binding point for color currently in use */
+	GLfloat current_normal[4];								/* Binding point for normal currently in use */
+	struct opengl_program_t *current_program;						/* Binding point for program currently in use */
 	struct opengl_vertex_array_attrib_t *array_attrib;					/* Binding point for VAO and VBO */
 	struct opengl_transform_feedback_state_t *transform_feedback;			/* Binding point for Tranform Feedback */
 };
