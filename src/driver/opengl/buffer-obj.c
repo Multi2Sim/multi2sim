@@ -101,7 +101,7 @@ void opengl_buffer_obj_data(struct opengl_buffer_obj_t *buf_obj, unsigned int si
 	buf_obj->usage = usage;
 
 	/* Debug */
-	opengl_debug("\tCopy %td byte from [%p] to Buffer Object #%d [%p]\n", 
+	opengl_debug("\tCopy %u bytes from [%p] to Buffer Object #%d [%p]\n", 
 		size, data, buf_obj->id, buf_obj);
 }
 
