@@ -17,30 +17,50 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_CUDA_MODULE_H
-#define DRIVER_CUDA_MODULE_H
+#ifndef RUNTIME_CUDA_FUNCTION_ARG_H
+#define RUNTIME_CUDA_FUNCTION_ARG_H
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-
-#include "object.h"
+#include "mhandle.h"
 
 
 
 
-extern struct list_t *module_list;
-
-struct cuda_module_t
+enum cuda_mem_scope_t
 {
-	unsigned int id;
-	int ref_count;
-
-	/* ELF binary */
-	struct elf_file_t *elf_file;
+	CUDA_MEM_SCOPE_NONE = 0,
+	CUDA_MEM_SCOPE_GLOBAL,
+	CUDA_MEM_SCOPE_LOCAL,
+	CUDA_MEM_SCOPE_PRIVATE,
+	CUDA_MEM_SCOPE_CONSTANT
 };
 
-struct cuda_module_t *cuda_module_create(void);
-void cuda_module_free(struct cuda_module_t *module);
+enum cuda_function_arg_kind_t
+{
+	CUDA_FUNCTION_ARG_KIND_VALUE = 1,
+	CUDA_FUNCTION_ARG_KIND_POINTER
+};
+
+enum cuda_function_arg_access_type_t
+{
+	CUDA_FUNCTION_ARG_READ_ONLY = 1,
+	CUDA_FUNCTION_ARG_WRITE_ONLY,
+	CUDA_FUNCTION_ARG_READ_WRITE
+};
+
+struct cuda_function_arg_t
+{
+	int id;
+	char *name;
+
+	enum cuda_function_arg_kind_t kind;
+	enum cuda_mem_scope_t mem_scope;
+	enum cuda_function_arg_access_type_t access_type;
+
+	unsigned int value;
+};
+
+struct cuda_function_arg_t *cuda_function_arg_create(char *name);
+void cuda_function_arg_free(struct cuda_function_arg_t *arg);
 
 #endif
 

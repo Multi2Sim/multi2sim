@@ -88,5 +88,8 @@ struct cuda_abi_frm_kernel_launch_info_t
 	int finished;
 };
 
+void cuda_init(void);
+void cuda_done(void);
+
 #endif
 

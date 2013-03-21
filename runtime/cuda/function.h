@@ -17,22 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_CUDA_FUNCTION_H
-#define DRIVER_CUDA_FUNCTION_H
+#ifndef RUNTIME_CUDA_FUNCTION_H
+#define RUNTIME_CUDA_FUNCTION_H
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-#include <lib/util/list.h>
-#include <lib/util/string.h>
+#include "debug.h"
+#include "elf-format.h"
+#include "list.h"
+#include "mhandle.h"
+#include "string.h"
 
 #include "function-arg.h"
 #include "module.h"
-#include "object.h"
 
 
 
-
-extern struct list_t *function_list;
 
 struct cuda_function_t
 {
@@ -46,26 +44,8 @@ struct cuda_function_t
 
 	/* FIXME */
 	struct elf_buffer_t function_buffer;
-
-	/* Number of work dimensions */
-	int work_dim;
-
-	/* 3D Counters */
-	unsigned int global_size3[3];  /* Total number of work_items */
-	unsigned int local_size3[3];  /* Number of work_items in a group */
-	unsigned int group_count3[3];  /* Number of work_item groups */
-
-	/* 1D Counters. Each counter is equal to the multiplication
-	 * of each component in the corresponding 3D counter. */
-	unsigned int global_size;
-	unsigned int local_size;
-	unsigned int group_count;
-
-	/* State of the running function */
-	struct frm_grid_t *grid;
 };
 
-struct cuda_module_t;
 struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, 
 	char *function_name);
 void cuda_function_free(struct cuda_function_t *function);
