@@ -38,6 +38,7 @@ struct opengl_transform_feedback_obj_t *opengl_transform_feedback_obj_create()
 	/* Initialization */
 	tfo->id = tfo_id;
 	tfo->ref_count = 0;
+	pthread_mutex_init(&tfo->ref_mutex, NULL);
 	
 	/* Update global tfo id */
 	tfo_id += 1;
@@ -53,7 +54,22 @@ struct opengl_transform_feedback_obj_t *opengl_transform_feedback_obj_create()
 void opengl_transform_feedback_obj_free(struct opengl_transform_feedback_obj_t *tfo)
 {
 	/* Free */
+	pthread_mutex_destroy(&tfo->ref_mutex);
 	free(tfo);
+}
+
+/* Update reference count */
+void opengl_transform_feedback_obj_ref_update(struct opengl_transform_feedback_obj_t *tfo, int change)
+{
+	int count;
+
+	pthread_mutex_lock(&tfo->ref_mutex);
+	tfo->ref_count += change;
+	count = tfo->ref_count;
+	pthread_mutex_unlock(&tfo->ref_mutex);
+
+	if (count < 0)
+		panic("%s: number of references is negative", __FUNCTION__);
 }
 
 /* Delete checks flags */
@@ -111,7 +127,8 @@ void opengl_transform_feedback_state_attach_buffer_obj_indexed(struct opengl_tra
 	{
 		/* Attach to general binding point */
 		opengl_transform_feedback_state_attach_buffer_obj(tfst, buf_obj);
-		/* Attach to indexed binding point inside the TFO currently bound to the context*/
+
+		/* Attach to indexed binding point inside the currently bound TFO*/
 		tfo = tfst->curr_tfo;
 		if (tfo->id == 0)
 		{
@@ -149,6 +166,9 @@ struct linked_list_t *opengl_transform_feedback_obj_repo_create()
 
 void opengl_transform_feedback_obj_repo_free(struct linked_list_t *tfo_repo)
 {
+	/* Debug */
+	opengl_debug("\tFree Transform Feedback Object repository [%p]\n", tfo_repo);
+
 	struct opengl_transform_feedback_obj_t *tfo;
 
 	/* Free all elements */
@@ -161,9 +181,6 @@ void opengl_transform_feedback_obj_repo_free(struct linked_list_t *tfo_repo)
 
 	/* Free tfo repository */
 	linked_list_free(tfo_repo);
-
-	/* Debug */
-	opengl_debug("\tFreed Transform Feedback Object repository [%p]\n", tfo_repo);
 }
 
 void opengl_transform_feedback_obj_repo_add(struct linked_list_t *tfo_repo, struct opengl_transform_feedback_obj_t *tfo)
@@ -187,7 +204,7 @@ int opengl_transform_feedback_obj_repo_remove(struct linked_list_t *tfo_repo, st
 	}
 	else 
 	{
-		/* Check if Transform Feedback Object exists */
+		/* Find, remove */
 		linked_list_find(tfo_repo, tfo);
 		if (tfo_repo->error_code)
 			fatal("%s: Transform Feedback Object does not exist", __FUNCTION__);
@@ -225,7 +242,7 @@ struct opengl_transform_feedback_obj_t *opengl_transform_feedback_obj_repo_refer
 	tfo = opengl_transform_feedback_obj_repo_get(tfo_repo, id);
 	if (!tfo->delete_pending)
 	{
-		tfo->ref_count += 1;
+		opengl_transform_feedback_obj_ref_update(tfo, 1);
 		return tfo;
 	}
 	else
