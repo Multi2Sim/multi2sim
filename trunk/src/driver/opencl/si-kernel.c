@@ -1206,8 +1206,8 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 					arg->pointer.data_type, &buffer_desc);
 
 				/* Data stored in hw constant memory 
-				 * uses a 16-byte stride */
-				buffer_desc.stride = 16;
+				 * uses a 4-byte stride */
+				buffer_desc.stride = 4;
 
 				/* Add to Constant Buffer table */
 				si_ndrange_insert_buffer_into_const_buf_table(

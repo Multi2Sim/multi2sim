@@ -77,6 +77,8 @@ void si_isa_done()
 
 unsigned int si_isa_read_sreg(struct si_work_item_t *work_item, int sreg)
 {
+	unsigned int value;
+
 	assert(sreg >= 0);
 	assert(sreg != 104);
 	assert(sreg != 105);
@@ -86,7 +88,28 @@ unsigned int si_isa_read_sreg(struct si_work_item_t *work_item, int sreg)
 	assert(sreg != 254);
 	assert(sreg < 256);
 
-	return work_item->wavefront->sreg[sreg].as_uint;
+	if (sreg == SI_VCCZ)
+	{
+		if (work_item->wavefront->sreg[SI_VCC].as_uint == 0 && 
+			work_item->wavefront->sreg[SI_VCC+1].as_uint == 0)
+			value = 1;
+		else 
+			value = 0;
+	}
+	if (sreg == SI_EXECZ)
+	{
+		if (work_item->wavefront->sreg[SI_EXEC].as_uint == 0 && 
+			work_item->wavefront->sreg[SI_EXEC+1].as_uint == 0)
+			value = 1;
+		else 
+			value = 0;
+	}
+	else
+	{
+		value = work_item->wavefront->sreg[sreg].as_uint;
+	}
+
+	return value;
 }
 
 void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, 
