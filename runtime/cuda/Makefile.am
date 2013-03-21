@@ -13,9 +13,6 @@ __top_builddir__lib_libm2s_cuda_la_SOURCES = \
 	debug.c \
 	debug.h \
 	\
-	linked-list.c \
-	linked-list.h \
-	\
 	list.c \
 	list.h \
 	\
@@ -27,6 +24,15 @@ __top_builddir__lib_libm2s_cuda_la_SOURCES = \
 	\
 	device.c \
 	device.h \
+	\
+	function.c \
+	function.h \
+	\
+	function-arg.c \
+	function-arg.h \
+	\
+	module.c \
+	module.h \
 	\
 	stream.c \
 	stream.h

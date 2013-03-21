@@ -28,32 +28,34 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	char *function_name)
 {
 	struct cuda_function_t *function;
-	char section_name[MAX_STRING_SIZE];
+	int section_name_len;
+	char *section_name;
 	struct elf_section_t *section;
 	int i;
 
 	/* Initialize */
 	function = xcalloc(1, sizeof(struct cuda_function_t));
-	function->id = list_count(function_list);
+	function->id = list_count(function_list) - 1;
 	function->name = xstrdup(function_name);
 	function->ref_count = 1;
 	function->module_id = module->id;
 	function->arg_list = list_create();
 
 	/* Load function */
-	snprintf(section_name, MAX_STRING_SIZE, ".text.%s", function_name);
+	section_name_len = strlen(function_name) + 7;
+	section_name = (char *)xmalloc(section_name_len);
+	snprintf(section_name, section_name_len, ".text.%s", function_name);
 	for (i = 0; i < list_count(module->elf_file->section_list); ++i)
 	{
 		section = (struct elf_section_t *)list_get(module->elf_file->section_list, i);
-		if (!strncmp(section->name, section_name, MAX_STRING_SIZE))
+		if (!strncmp(section->name, section_name, section_name_len))
 			break;
 	}
 	if (i == list_count(module->elf_file->section_list))
 		fatal("%s section not found!\n", section_name);
+	free(section_name);
 	function->function_buffer.ptr = section->buffer.ptr;
 	function->function_buffer.size = section->buffer.size;
-
-	list_add(function_list, function);
 
 	return function;
 }

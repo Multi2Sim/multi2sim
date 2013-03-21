@@ -70,13 +70,14 @@ void versionCheck(void)
 	/* Version negotiation */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_versionCheck, &version);
 
-	cuda_debug_print(stdout, "\t(driver) out: version.major=%d version.minor=%d\n", version.major, version.minor);
+	cuda_debug_print(stdout, "\t(driver) out: version.major=%d version.minor=%d\n", 
+			version.major, version.minor);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
 	 * is running natively, system call CUDA_SYS_CODE is not supported. */
 	if (ret)
 		fatal("native execution not supported.\n%s",
-			cuda_err_native);
+				cuda_err_native);
 
 	/* Check that exact major version matches */
 	if (version.major != CUDA_VERSION_MAJOR
@@ -96,6 +97,8 @@ void versionCheck(void)
 
 CUresult cuInit(unsigned int Flags)
 {
+	int ret;
+
 	versionCheck();
 
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
@@ -107,9 +110,20 @@ CUresult cuInit(unsigned int Flags)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	/* Initialize device list and a default device */
+	/* Create a device list */
 	device_list = list_create();
+
+	/* Create a default device */
 	cuda_device_create();
+
+	/* Syscall */
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			cuda_err_native);
 
 	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
@@ -210,6 +224,8 @@ CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 
 CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 {
+	int ret;
+
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(driver) in: dev=%d\n", dev);
 
@@ -219,7 +235,14 @@ CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	*bytes = 1 << 31;  /* FIXME: should use syscall */
+	/* Syscall */
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cuDeviceTotalMem, bytes);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			cuda_err_native);
 
 	cuda_debug_print(stdout, "\t(driver) out: bytes=%d\n", *bytes);
 	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
@@ -243,6 +266,7 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 	/* Get device */
 	device = (struct cuda_device_t *)list_get(device_list, dev);
 
+	/* Get properties */
 	prop->maxThreadsPerBlock = device->properties.maxThreadsPerBlock;
 	prop->maxThreadsDim[0] = device->properties.maxThreadsDim[0];
 	prop->maxThreadsDim[1] = device->properties.maxThreadsDim[1];
@@ -259,33 +283,33 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 	prop->textureAlign = device->properties.textureAlign;
 
 	cuda_debug_print(stdout, "\t(driver) out: prop->maxThreadsPerBlock=%d\n \
-		\t\tprop->maxThreadsDim[0]=%d\n \
-		\t\tprop->maxThreadsDim[1]=%d\n \
-		\t\tprop->maxThreadsDim[2]=%d\n \
-		\t\tprop->maxGridSize[0]=%d\n \
-		\t\tprop->maxGridSize[1]=%d\n \
-		\t\tprop->maxGridSize[2]=%d\n \
-		\t\tprop->sharedMemPerBlock=%d\n \
-		\t\tprop->totalConstantMemory=%d\n \
-		\t\tprop->SIMDWidth=%d\n \
-		\t\tprop->memPitch=%d\n \
-		\t\tprop->regsPerBlock=%d\n \
-		\t\tprop->clockRate=%d\n \
-		\t\tprop->textureAlign=%d\n", 
-		prop->maxThreadsPerBlock, 
-		prop->maxThreadsDim[0], 
-		prop->maxThreadsDim[1], 
-		prop->maxThreadsDim[2], 
-		prop->maxGridSize[0], 
-		prop->maxGridSize[1], 
-		prop->maxGridSize[2], 
-		prop->sharedMemPerBlock, 
-		prop->totalConstantMemory, 
-		prop->SIMDWidth, 
-		prop->memPitch, 
-		prop->regsPerBlock, 
-		prop->clockRate, 
-		prop->textureAlign);
+			\t\tprop->maxThreadsDim[0]=%d\n \
+			\t\tprop->maxThreadsDim[1]=%d\n \
+			\t\tprop->maxThreadsDim[2]=%d\n \
+			\t\tprop->maxGridSize[0]=%d\n \
+			\t\tprop->maxGridSize[1]=%d\n \
+			\t\tprop->maxGridSize[2]=%d\n \
+			\t\tprop->sharedMemPerBlock=%d\n \
+			\t\tprop->totalConstantMemory=%d\n \
+			\t\tprop->SIMDWidth=%d\n \
+			\t\tprop->memPitch=%d\n \
+			\t\tprop->regsPerBlock=%d\n \
+			\t\tprop->clockRate=%d\n \
+			\t\tprop->textureAlign=%d\n", 
+			prop->maxThreadsPerBlock, 
+			prop->maxThreadsDim[0], 
+			prop->maxThreadsDim[1], 
+			prop->maxThreadsDim[2], 
+			prop->maxGridSize[0], 
+			prop->maxGridSize[1], 
+			prop->maxGridSize[2], 
+			prop->sharedMemPerBlock, 
+			prop->totalConstantMemory, 
+			prop->SIMDWidth, 
+			prop->memPitch, 
+			prop->regsPerBlock, 
+			prop->clockRate, 
+			prop->textureAlign);
 	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -303,6 +327,7 @@ CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
+	/* Get attribute */
 	*pi = (((struct cuda_device_t *)list_get(device_list, dev))->attributes)[attrib];
 
 	cuda_debug_print(stdout, "\t(driver) out: pi=%d", *pi);
@@ -375,13 +400,7 @@ CUresult cuCtxGetCurrent(CUcontext *pctx)
 
 CUresult cuCtxGetDevice(CUdevice *device)
 {
-	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-
-	*device = 0;
-
-	cuda_debug_print(stdout, "\t(driver) out: device=%d\n", *device);
-	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
-
+	__CUDA_NOT_IMPL__
 	return CUDA_SUCCESS;
 }
 
@@ -441,33 +460,24 @@ CUresult cuCtxGetApiVersion(CUcontext ctx, unsigned int *version)
 
 CUresult cuModuleLoad(CUmodule *module, const char *fname)
 {
-	unsigned int sys_args[2];
 	int ret;
-	FILE *fp;
 
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(driver) in: fname=%s\n", fname);
 
-	/* Determine if the file exists */
-	fp = fopen(fname, "r");
-	if (fp == NULL)
-		fatal("%s: cannot open file %s", __FUNCTION__, fname);
-	fclose(fp);
+	/* Ignore filename since it is given as an M2S option */
 
 	/* Create module */
 	*module = (CUmodule)xmalloc(sizeof(struct CUmod_st));
 
 	/* Syscall */
-        sys_args[0] = (unsigned int)module;
-        sys_args[1] = (unsigned int)fname;
-
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleLoad, sys_args);
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleLoad, &((*module)->id));
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
 	 * is running natively, system call CUDA_SYS_CODE is not supported. */
 	if (ret)
 		fatal("native execution not supported.\n%s",
-			cuda_err_native);
+				cuda_err_native);
 
 	cuda_debug_print(stdout, "\t(driver) out: module.id=0x%08x\n", (*module)->id);
 	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
@@ -493,15 +503,25 @@ CUresult cuModuleLoadFatBinary(CUmodule *module, const void *fatCubin)
 	return CUDA_SUCCESS;
 }
 
-/* FIXME: may need to free module in the simulator */
 CUresult cuModuleUnload(CUmodule hmod)
 {
+	int ret;
+
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(driver) in: module.id=0x%08x\n", hmod->id);
 
-	/* Free context */
-	if (hmod != NULL)
-		free(hmod);
+	/* Free module in driver */
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleUnload, hmod->id);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+				cuda_err_native);
+
+	/* Free module in runtime */
+	assert(hmod != NULL);
+	free(hmod);
 
 	cuda_debug_print(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
@@ -510,7 +530,6 @@ CUresult cuModuleUnload(CUmodule hmod)
 
 CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 {
-	unsigned int sys_args[3];
 	int ret;
 
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
@@ -521,11 +540,8 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 	*hfunc = (CUfunction)xmalloc(sizeof(struct CUfunc_st));
 
 	/* Syscall */
-	sys_args[0] = (unsigned int)hfunc;
-	sys_args[1] = (unsigned int)hmod;
-	sys_args[2] = (unsigned int)name;
-
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, sys_args);
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, 
+			&(*hfunc)->id, hmod->id, name);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
 	 * is running natively, system call CUDA_SYS_CODE is not supported. */

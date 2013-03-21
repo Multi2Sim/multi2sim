@@ -22,19 +22,19 @@
 
 
 
+struct list_t *module_list;
+
 /* Create a module */
 struct cuda_module_t *cuda_module_create(void)
 {
 	struct cuda_module_t *module;
 
-	cuda_object_list = (struct linked_list_t *)linked_list_create();
-
 	/* Initialize */
 	module = xcalloc(1, sizeof(struct cuda_module_t));
-	module->id = cuda_object_new_id(CUDA_OBJ_MODULE);
+	module->id = list_count(module_list);
 	module->ref_count = 1;
 
-	cuda_object_add(module);
+	list_add(module_list, module);
 
 	return module;
 }
@@ -44,8 +44,6 @@ void cuda_module_free(struct cuda_module_t *module)
 {
 	if (module->elf_file)
 		elf_file_free(module->elf_file);
-
-	cuda_object_remove(module);
 
 	free(module);
 }

@@ -27,7 +27,6 @@
 #include "../include/cuda_runtime_api.h"
 
 #include "debug.h"
-#include "linked-list.h"
 #include "list.h"
 
 #include "context.h"
@@ -75,7 +74,7 @@ enum cuda_call_t
 extern CUfunction function;
 extern dim3 grid_dim;
 extern dim3 threadblock_dim;
-extern struct linked_list_t *args;
+extern struct list_t *args;
 extern int arg_index;
 
 
