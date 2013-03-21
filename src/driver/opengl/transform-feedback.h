@@ -21,6 +21,7 @@
 #define DRIVER_OPENGL_TRANSFORM_FEEDBACK_H
 
 #include <GL/glut.h>
+#include <pthread.h>
 
 #ifndef MAX_FEEDBACK_BUFFERS
 #define MAX_FEEDBACK_BUFFERS 32
@@ -33,6 +34,7 @@ struct opengl_transform_feedback_obj_t
 {
 	unsigned int id;
 	int ref_count;
+	pthread_mutex_t ref_mutex;
 	unsigned char delete_pending;
 	unsigned char active;
 	unsigned char paused;
@@ -59,6 +61,7 @@ struct opengl_transform_feedback_state_t
 struct opengl_transform_feedback_obj_t *opengl_transform_feedback_obj_create();
 void opengl_transform_feedback_obj_free(struct opengl_transform_feedback_obj_t *tfo);
 void opengl_transform_feedback_obj_detele(struct opengl_transform_feedback_obj_t *tfo);
+void opengl_transform_feedback_obj_ref_update(struct opengl_transform_feedback_obj_t *tfo, int change);
 
 struct opengl_transform_feedback_state_t *opengl_transform_feedback_state_create();
 void opengl_transform_feedback_state_free(struct opengl_transform_feedback_state_t *tfst);

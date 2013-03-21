@@ -47,9 +47,8 @@ struct opengl_buffer_obj_t
 struct opengl_buffer_obj_t *opengl_buffer_obj_create();
 void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buf_obj);
 void opengl_buffer_obj_detele(struct opengl_buffer_obj_t *buf_obj);
+void opengl_buffer_obj_ref_update(struct opengl_buffer_obj_t *buf_obj, int change);
 void opengl_buffer_obj_data(struct opengl_buffer_obj_t *buf_obj, unsigned int size, const void *data, unsigned int usage);
-void opengl_buffer_obj_reference(struct opengl_buffer_obj_t *buf_obj);
-void opengl_buffer_obj_dereference(struct opengl_buffer_obj_t *buf_obj);
 
 struct linked_list_t *opengl_buffer_obj_repo_create();
 void opengl_buffer_obj_repo_free(struct linked_list_t *buf_obj_repo);

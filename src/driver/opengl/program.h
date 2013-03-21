@@ -36,10 +36,12 @@ struct opengl_program_t
 	GLuint id;
 	GLint ref_count;
 	pthread_mutex_t ref_mutex;
-
 	GLboolean delete_pending;
-
+	
+	/* List contains pointers to shaders*/
 	struct linked_list_t *attached_shader;
+
+	/* The entire shader binary is stored here */
 	struct si_opengl_bin_file_t *si_shader_binary;
 };
 

@@ -22,6 +22,7 @@
 
 
 #include <GL/glut.h>
+#include <pthread.h>
 
 #ifndef GL_MAX_VERTEX_ATTRIB_BINDINGS
 #define GL_MAX_VERTEX_ATTRIB_BINDINGS 32
@@ -33,9 +34,10 @@ struct linked_list_t;
 struct opengl_context_t;
 struct opengl_buffer_obj_t;
 
+/* Client array record vertex data information in user space memory */
 struct opengl_vertex_client_array_t
 {
-	int size; /* the number of components per generic vertex attribute */
+	int size; /* The number of components per generic vertex attribute */
 	unsigned int type;
 	unsigned int format;
 	unsigned int stride;
@@ -50,11 +52,14 @@ struct opengl_vertex_client_array_t
 	struct opengl_buffer_obj_t *vbo;
 };
 
+/* VAO */
 struct opengl_vertex_array_obj_t
 {
 	int id;
 	int ref_count;
+	pthread_mutex_t ref_mutex;
 	unsigned char delete_pending;
+
 	struct opengl_vertex_client_array_t vtx_attrib[GL_MAX_VERTEX_ATTRIB_BINDINGS];
 };
 
@@ -63,14 +68,15 @@ struct opengl_vertex_array_attrib_t
 {
 	struct opengl_vertex_array_obj_t *curr_vao;			/* Current VAO bound to OpenGL context */
 	struct opengl_vertex_array_obj_t *default_vao;		/* Default VAO has id = 0 */
-	struct opengl_buffer_obj_t *curr_vbo;			/* Current VBO bound to OpenGL context */
+	struct opengl_buffer_obj_t *curr_vbo;				/* Current VBO bound to OpenGL context */
 };
 
 struct opengl_vertex_array_obj_t *opengl_vertex_array_obj_create();
 void opengl_vertex_array_obj_free(struct opengl_vertex_array_obj_t *vao);
 void opengl_vertex_array_obj_detele(struct opengl_vertex_array_obj_t *vao);
-void opengl_vertex_array_obj_bind(struct opengl_vertex_array_obj_t *vao, struct opengl_context_t *ctx);
-void opengl_vertex_array_obj_unbind(struct opengl_vertex_array_obj_t *vao, struct opengl_context_t *ctx);
+void opengl_vertex_array_obj_ref_update(struct opengl_vertex_array_obj_t *vao, int change);
+void opengl_vertex_array_obj_bind(struct opengl_vertex_array_obj_t *vao, struct opengl_vertex_array_obj_t **vao_bnd_ptr);
+void opengl_vertex_array_obj_unbind(struct opengl_vertex_array_obj_t *vao, struct opengl_vertex_array_obj_t **vao_bnd_ptr);
 
 struct linked_list_t *opengl_vertex_array_obj_repo_create();
 void opengl_vertex_array_obj_repo_free(struct linked_list_t *vao_repo);
