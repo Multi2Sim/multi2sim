@@ -17,29 +17,31 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_CUDA_MODULE_H
-#define DRIVER_CUDA_MODULE_H
-
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-#include <lib/util/list.h>
+#include "memory.h"
 
 
 
 
-extern struct list_t *module_list;
+struct list_t *memory_object_list;
 
-struct cuda_module_t
+struct cuda_memory_object_t * cuda_memory_object_create(void)
 {
-	unsigned int id;
-	int ref_count;
+        struct cuda_memory_object_t *mem;
 
-	/* ELF binary */
-	struct elf_file_t *elf_file;
-};
+        /* Initialize */
+        mem = (struct cuda_memory_object_t *)xmalloc(sizeof(struct cuda_memory_object_t));
+        mem->id = list_count(memory_object_list);
+        mem->ref_count = 1;
 
-struct cuda_module_t *cuda_module_create(void);
-void cuda_module_free(struct cuda_module_t *module);
+	list_add(memory_object_list, mem);
 
-#endif
+        return mem;
+}
+
+
+void cuda_memory_object_free(struct cuda_memory_object_t *mem)
+{
+	list_remove(memory_object_list, mem);
+        free(mem);
+}
 

@@ -20,8 +20,10 @@
 
 #include <assert.h>
 #include <sys/stat.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include <lib/mhandle/mhandle.h>
+#include "mhandle.h"
 
 #include "debug.h"
 #include "elf-format.h"

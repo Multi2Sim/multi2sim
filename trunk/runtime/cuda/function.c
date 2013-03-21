@@ -24,17 +24,17 @@
 
 struct list_t *function_list;
 
-struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
+struct CUfunc_st *cuda_function_create(struct CUmod_st *module,
 	char *function_name)
 {
-	struct cuda_function_t *function;
+	struct CUfunc_st *function;
 	int section_name_len;
 	char *section_name;
 	struct elf_section_t *section;
 	int i;
 
 	/* Initialize */
-	function = xcalloc(1, sizeof(struct cuda_function_t));
+	function = (struct CUfunc_st *)xcalloc(1, sizeof(struct CUfunc_st));
 	function->id = list_count(function_list) - 1;
 	function->name = xstrdup(function_name);
 	function->ref_count = 1;
@@ -61,7 +61,7 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 }
 
 
-void cuda_function_free(struct cuda_function_t *function)
+void cuda_function_free(struct CUfunc_st *function)
 {
 	int i;
 

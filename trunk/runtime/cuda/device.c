@@ -22,14 +22,17 @@
 
 
 
+/* Device list */
+struct list_t *device_list;
+
 /* Create a device */
 struct cuda_device_t *cuda_device_create(void)
 {
 	struct cuda_device_t *device;
 
 	/* Initialize */
-	device = xcalloc(1, sizeof(struct cuda_device_t));
-	device->device = list_count(device_list) - 1;
+	device = (struct cuda_device_t *)xcalloc(1, sizeof(struct cuda_device_t));
+	device->device = list_count(device_list);
 	device->name = xstrdup("Multi2Sim Fermi Device");
 	device->cc.major = 2;
 	device->cc.minor = 2;
@@ -89,12 +92,16 @@ struct cuda_device_t *cuda_device_create(void)
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR] = 1;
 	device->attributes[CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING] = 0;
 
+	list_add(device_list, device);
+
 	return device;
 }
 
 /* Free device */
 void cuda_device_free(struct cuda_device_t *device)
 {
+	list_remove(device_list, device);
+
 	free(device);
 }
 
