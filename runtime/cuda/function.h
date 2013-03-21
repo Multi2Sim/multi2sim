@@ -20,6 +20,8 @@
 #ifndef RUNTIME_CUDA_FUNCTION_H
 #define RUNTIME_CUDA_FUNCTION_H
 
+#include <stdlib.h>
+
 #include "debug.h"
 #include "elf-format.h"
 #include "list.h"
@@ -32,7 +34,9 @@
 
 
 
-struct cuda_function_t
+extern struct list_t *function_list;
+
+struct CUfunc_st
 {
 	int id;
 	int ref_count;
@@ -46,9 +50,9 @@ struct cuda_function_t
 	struct elf_buffer_t function_buffer;
 };
 
-struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, 
+struct CUfunc_st *cuda_function_create(struct CUmod_st *module, 
 	char *function_name);
-void cuda_function_free(struct cuda_function_t *function);
+void cuda_function_free(struct CUfunc_st *function);
 
 #endif
 

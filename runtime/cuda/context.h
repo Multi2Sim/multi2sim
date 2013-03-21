@@ -24,10 +24,13 @@
 #include "../include/cuda.h"
 #include "../include/cuda_runtime_api.h"
 
+#include "list.h"
 #include "mhandle.h"
 
 
 
+
+extern struct list_t *context_list;
 
 struct CUctx_st
 {

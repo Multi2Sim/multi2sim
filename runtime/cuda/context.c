@@ -22,16 +22,20 @@
 
 
 
+struct list_t *context_list;
+
 /* Create a context */
 CUcontext cuda_context_create(CUdevice device)
 {
 	CUcontext context;
 
 	/* Initialize */
-	context = xcalloc(1, sizeof(struct CUctx_st));
-	context->id = 0;  /* FIXME: context->id = ? */
+	context = (CUcontext)xcalloc(1, sizeof(struct CUctx_st));
+	context->id = list_count(context_list);
 	context->ref_count = 1;
 	context->device = device;
+
+	list_add(context_list, context);
 
 	return context;
 }
@@ -40,8 +44,7 @@ CUcontext cuda_context_create(CUdevice device)
 /* Free context */
 void cuda_context_free(CUcontext context)
 {
-	assert(context->ref_count > 0);
-	context->ref_count--;
+	list_remove(context_list, context);
 
 	free(context);
 }

@@ -17,17 +17,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_CUDA_FUNCTION_H
-#define DRIVER_CUDA_FUNCTION_H
+#ifndef RUNTIME_CUDA_FUNCTION_H
+#define RUNTIME_CUDA_FUNCTION_H
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/elf-format.h>
+#include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
 #include "function-arg.h"
 #include "module.h"
-#include "object.h"
 
 
 
@@ -65,9 +65,7 @@ struct cuda_function_t
 	struct frm_grid_t *grid;
 };
 
-struct cuda_module_t;
-struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, 
-	char *function_name);
+struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, char *function_name);
 void cuda_function_free(struct cuda_function_t *function);
 
 #endif
