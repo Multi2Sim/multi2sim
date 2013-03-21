@@ -31,6 +31,10 @@
 
 #include "context.h"
 #include "device.h"
+#include "function.h"
+#include "memory.h"
+#include "module.h"
+#include "stream.h"
 
 
 
@@ -89,18 +93,6 @@ struct cuda_version_t
 {
 	int major;
 	int minor;
-};
-
-/* CUDA module */
-struct CUmod_st
-{
-	unsigned int id;
-};
-
-/* CUDA function */
-struct CUfunc_st
-{
-	unsigned int id;
 };
 
 /* For CUDA runtime */

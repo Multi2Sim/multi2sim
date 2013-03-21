@@ -238,13 +238,7 @@ int cuda_func_cuDeviceTotalMem(struct x86_ctx_t *ctx)
 
 int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 {
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
-
 	struct cuda_module_t *module;
-	unsigned int module_id;
-
-	module_id = regs->ecx;
 
 	cuda_debug("\tin: filename=%s\n", frm_emu_cuda_binary_name);
 
@@ -253,8 +247,6 @@ int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 	module->elf_file = elf_file_create_from_path(frm_emu_cuda_binary_name);
 
 	cuda_debug("\tout: module.id=0x%08x\n", module->id);
-
-	mem_write(mem, module_id, sizeof(unsigned int), &module->id);
 
 	return 0;
 }
@@ -313,16 +305,14 @@ int cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	unsigned int function_id;
 	unsigned int module_id;
 	char function_name[MAX_STRING_SIZE];
 
 	struct cuda_module_t *module;
 	struct cuda_function_t *function;
 
-	function_id = regs->ecx;
-	module_id = regs->edx;
-	mem_read(mem, regs->esi, MAX_STRING_SIZE, function_name);
+	module_id = regs->ecx;
+	mem_read(mem, regs->edx, MAX_STRING_SIZE, function_name);
 
 	cuda_debug("\tin: module.id=0x%08x\n", module_id);
 	cuda_debug("\tin: function_name=%s\n", function_name);
@@ -334,8 +324,6 @@ int cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 	function = cuda_function_create(module, function_name);
 
 	cuda_debug("\tout: function.id=0x%08x\n", function->id);
-
-	mem_write(mem, function_id, sizeof(unsigned int), &function->id);
 
 	return 0;
 }
@@ -361,13 +349,11 @@ int cuda_func_cuMemGetInfo(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	unsigned int args[2];
 	unsigned int free;
 	unsigned int total;
 
-	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
-	free = args[0];
-	total = args[1];
+	free = regs->ecx;
+	total = regs->edx;
 
 	cuda_debug("\tout: free=%u\n", frm_emu->free_global_mem_size);
 	cuda_debug("\tout: total=%u\n", frm_emu->total_global_mem_size);
@@ -399,15 +385,13 @@ int cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	unsigned int args[2];
-	unsigned int pdptr;
+	unsigned int dptr;
 	unsigned int bytesize;
 
 	struct cuda_memory_t *cuda_mem;
 
-	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
-	pdptr = args[0];
-	bytesize = args[1];
+	dptr = regs->ecx;
+	bytesize = regs->edx;
 
 	cuda_debug("\tin: bytesize=%u\n", bytesize);
 
@@ -422,7 +406,7 @@ int cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
 
 	cuda_debug("\tout: dptr=0x%08x\n", cuda_mem->device_ptr);
 
-	mem_write(mem, pdptr, sizeof(unsigned int), &(cuda_mem->device_ptr));
+	mem_write(mem, dptr, sizeof(unsigned int), &(cuda_mem->device_ptr));
 
 	return 0;
 }
@@ -443,19 +427,15 @@ int cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
 int cuda_func_cuMemFree(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
 
-	unsigned int args[1];
 	unsigned int dptr;
-
 	void *cuda_object;
 	unsigned int object_id;
 	unsigned int device_ptr;
 	unsigned int mem_id = 0;
 	struct cuda_memory_t *cuda_mem;
 
-	mem_read(mem, regs->ecx, sizeof(unsigned int), args);
-	dptr = args[0];
+	dptr = regs->ecx;
 
 	cuda_debug("\tin: dptr=0x%08x\n", dptr);
 
@@ -509,17 +489,14 @@ int cuda_func_cuMemcpyHtoD(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	unsigned int args[3];
 	unsigned int dstDevice;
 	unsigned int srcHost;
 	unsigned int ByteCount;
-
 	void *buf;
 
-	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
-	dstDevice = args[0];
-	srcHost = args[1];
-	ByteCount = args[2];
+	dstDevice = regs->ecx;
+	srcHost = regs->edx;
+	ByteCount = regs->esi;
 
 	cuda_debug("\tin: dstDevice=0x%08x\n", dstDevice);
 	cuda_debug("\tin: srcHost=0x%08x\n", srcHost);
@@ -558,17 +535,14 @@ int cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	unsigned int args[3];
 	unsigned int dstHost;
 	unsigned int srcDevice;
 	unsigned int ByteCount;
-
 	void *buf;
 
-	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
-	dstHost = args[0];
-	srcDevice = args[1];
-	ByteCount = args[2];
+	dstHost = regs->ecx;
+	srcDevice = regs->edx;
+	ByteCount = regs->esi;
 
 	cuda_debug("\tin: dstHost=0x%08x\n", dstHost);
 	cuda_debug("\tin: srcDevice=0x%08x\n", srcDevice);
@@ -695,7 +669,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	struct cuda_abi_frm_kernel_launch_info_t *info;
 
 	mem_read(mem, regs->ecx, 11 * sizeof(unsigned int), args);
-	mem_read(mem, args[0], sizeof(unsigned int), &function_id);
+	function_id = args[0];
 	gridDim[0] = args[1]*args[4];
 	gridDim[1] = args[2]*args[5];
 	gridDim[2] = args[3]*args[6];

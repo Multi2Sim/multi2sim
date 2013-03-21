@@ -20,6 +20,9 @@
 #ifndef RUNTIME_CUDA_MODULE_H
 #define RUNTIME_CUDA_MODULE_H
 
+#include "../include/cuda.h"
+#include "../include/cuda_runtime_api.h"
+
 #include "elf-format.h"
 #include "list.h"
 #include "mhandle.h"
@@ -27,7 +30,8 @@
 
 
 
-struct cuda_module_t
+extern struct list_t *module_list;
+struct CUmod_st
 {
 	unsigned int id;
 	int ref_count;
@@ -36,8 +40,8 @@ struct cuda_module_t
 	struct elf_file_t *elf_file;
 };
 
-struct cuda_module_t *cuda_module_create(void);
-void cuda_module_free(struct cuda_module_t *module);
+struct CUmod_st *cuda_module_create(void);
+void cuda_module_free(struct CUmod_st *module);
 
 #endif
 

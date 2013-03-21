@@ -13,6 +13,9 @@ __top_builddir__lib_libm2s_cuda_la_SOURCES = \
 	debug.c \
 	debug.h \
 	\
+	elf-format.c \
+	elf-format.h \
+	\
 	list.c \
 	list.h \
 	\
@@ -30,6 +33,9 @@ __top_builddir__lib_libm2s_cuda_la_SOURCES = \
 	\
 	function-arg.c \
 	function-arg.h \
+	\
+	memory.c \
+	memory.h \
 	\
 	module.c \
 	module.h \

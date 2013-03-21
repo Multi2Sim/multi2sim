@@ -17,29 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_CUDA_MODULE_H
-#define DRIVER_CUDA_MODULE_H
+#ifndef RUNTIME_CUDA_MEMORY_H
+#define RUNTIME_CUDA_MEMORY_H
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-#include <lib/util/list.h>
-
+#include "list.h"
+#include "mhandle.h"
 
 
 
-extern struct list_t *module_list;
 
-struct cuda_module_t
+extern struct list_t *memory_object_list;
+
+struct cuda_memory_object_t
 {
 	unsigned int id;
 	int ref_count;
 
-	/* ELF binary */
-	struct elf_file_t *elf_file;
+	unsigned int size;
+	unsigned int host_ptr;
+	unsigned int device_ptr;
 };
 
-struct cuda_module_t *cuda_module_create(void);
-void cuda_module_free(struct cuda_module_t *module);
+struct cuda_memory_object_t *cuda_memory_object_create(void);
+void cuda_memory_object_free(struct cuda_memory_object_t *mem);
 
 #endif
 
