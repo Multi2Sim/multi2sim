@@ -84,6 +84,21 @@ void opengl_buffer_obj_detele(struct opengl_buffer_obj_t *buf_obj)
 		opengl_buffer_obj_free(buf_obj);
 }
 
+/* Update buffer reference count */
+void opengl_buffer_obj_ref_update(struct opengl_buffer_obj_t *buf_obj, int change)
+{
+	int count;
+
+	pthread_mutex_lock(&buf_obj->ref_mutex);
+	buf_obj->ref_count += change;
+	count = buf_obj->ref_count;
+	pthread_mutex_unlock(&buf_obj->ref_mutex);
+
+	if (count < 0)
+		panic("%s: number of references is negative", __FUNCTION__);
+}
+
+/* Save a copy of data to buffer object */
 void opengl_buffer_obj_data(struct opengl_buffer_obj_t *buf_obj, unsigned int size, const void *data, unsigned int usage)
 {
 	/* Clean previous saved data */
@@ -125,6 +140,9 @@ struct linked_list_t *opengl_buffer_obj_repo_create()
 
 void opengl_buffer_obj_repo_free(struct linked_list_t *buf_obj_repo)
 {
+	/* Debug */
+	opengl_debug("\tFree Buffer Object repository [%p]\n", buf_obj_repo);
+
 	struct opengl_buffer_obj_t *buf_obj;
 
 	/* Free all elements */
@@ -137,9 +155,6 @@ void opengl_buffer_obj_repo_free(struct linked_list_t *buf_obj_repo)
 
 	/* Free buffer repository */
 	linked_list_free(buf_obj_repo);
-
-	/* Debug */
-	opengl_debug("\tBuffer Object repository [%p] is freed\n", buf_obj_repo);
 }
 
 void opengl_buffer_obj_repo_add(struct linked_list_t *buf_obj_repo, struct opengl_buffer_obj_t *buf_obj)
@@ -200,9 +215,7 @@ struct opengl_buffer_obj_t *opengl_buffer_obj_repo_reference(struct linked_list_
 	buf_obj = opengl_buffer_obj_repo_get(buf_obj_repo, id);
 	if (!buf_obj->delete_pending)
 	{
-		pthread_mutex_lock(&buf_obj->ref_mutex);
-		buf_obj->ref_count += 1;
-		pthread_mutex_unlock(&buf_obj->ref_mutex);
+		opengl_buffer_obj_ref_update(buf_obj, 1);
 		return buf_obj;
 	}
 	else

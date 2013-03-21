@@ -2,18 +2,18 @@
  *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
- *  This program is free software; you can redistribute it and/or modify
+ *  This vertex_array_obj is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
+ *  This vertex_array_obj is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
+ *  along with this vertex_array_obj; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -24,57 +24,10 @@
 #include <lib/util/linked-list.h>
 
 #include "opengl.h"
-#include "context.h"
+#include "buffer-obj.h"
 #include "vertex-array.h"
 
 static int vao_id = 1;
-
-void opengl_vertex_client_array_set_element_size(struct opengl_vertex_client_array_t *vca, GLint size, GLenum type)
-{
-	if (!vca->normalized)
-	{
-		switch(type)
-		{
-		case GL_FLOAT:
-			vca->element_size = size*sizeof(GLfloat);
-			break;
-		case GL_DOUBLE:
-			vca->element_size = size*sizeof(GLdouble);
-			break;
-		case GL_BYTE:
-			vca->element_size = size*sizeof(GLbyte);
-			break;
-		case GL_UNSIGNED_BYTE:
-			vca->element_size = size*sizeof(GLubyte);
-			break;
-		case GL_SHORT:
-			vca->element_size = size*sizeof(GLshort);
-			break;
-		case GL_UNSIGNED_SHORT:
-			vca->element_size = size*sizeof(GLushort);
-			break;
-		case GL_INT:
-			vca->element_size = size*sizeof(GLint);
-			break;
-		case GL_UNSIGNED_INT:
-			vca->element_size = size*sizeof(GLuint);
-			break;
-		case GL_INT_2_10_10_10_REV:
-			if (size!=4)
-				fatal("size must be 4 when type = GL_INT_2_10_10_10_REV\n");
-			vca->element_size = size*sizeof(GLuint);
-			break;
-		case GL_UNSIGNED_INT_2_10_10_10_REV:
-			if (size!=4)
-				fatal("size must be 4 when type GL_INT_2_10_10_10_REV\n");
-			vca->element_size = size*sizeof(GLuint);
-			break;
-		default:
-			vca->element_size = size*sizeof(GLfloat);
-			break;
-		}
-	}
-}
 
 static void opengl_vertex_client_array_init(struct opengl_vertex_client_array_t* vca, GLint size, GLenum type)
 {
@@ -114,10 +67,11 @@ struct opengl_vertex_array_obj_t *opengl_vertex_array_obj_create()
 	/* Initialize */
 	vao->id = vao_id;
 	vao->ref_count = 0;
+	pthread_mutex_init(&vao->ref_mutex, NULL);
 	vao->delete_pending = GL_FALSE;
 	opengl_vertex_array_obj_init(vao);
 
-	/* Update global vao id */
+	/* Update global VAO id */
 	vao_id += 1;
 
 	/* Return */	
@@ -144,31 +98,95 @@ void opengl_vertex_array_obj_detele(struct opengl_vertex_array_obj_t *vao)
 	}
 }
 
-void opengl_vertex_array_obj_bind(struct opengl_vertex_array_obj_t *vao, struct opengl_context_t *ctx)
+/* Update VAO reference count */
+void opengl_vertex_array_obj_ref_update(struct opengl_vertex_array_obj_t *vao, int change)
 {
-	if (vao && ctx)
-	{
-		if (ctx->array_attrib->curr_vao)
-		{
-			/* Remove and update current  program */
-			ctx->array_attrib->curr_vao->ref_count -= 1;
-			/* Bind program */
-			vao->ref_count += 1;
-			ctx->array_attrib->curr_vao = vao;
-			opengl_debug("\tVAO #%d [%p] bind to OpenGL context [%p]\n", 
-				vao->id, vao, ctx);
-		}
-	}
+	int count;
+
+	pthread_mutex_lock(&vao->ref_mutex);
+	vao->ref_count += change;
+	count = vao->ref_count;
+	pthread_mutex_unlock(&vao->ref_mutex);
+
+	if (count < 0)
+		panic("%s: number of references is negative", __FUNCTION__);
 }
 
-void opengl_vertex_array_obj_unbind(struct opengl_vertex_array_obj_t *vao, struct opengl_context_t *ctx)
+void opengl_vertex_array_obj_bind(struct opengl_vertex_array_obj_t *vao, struct opengl_vertex_array_obj_t **vao_bnd_ptr)
 {
-	if (vao && ctx)
+	int i;
+	struct opengl_buffer_obj_t *buf_obj;
+
+	if (vao)
 	{
-		vao->ref_count -= 1;
-		ctx->array_attrib->curr_vao = NULL;
-		opengl_debug("\tVAO #%d [%p] bind to OpenGL context [%p]\n", 
-			vao->id, vao, ctx);
+		/* Dereference current bound VAO */
+		if (*vao_bnd_ptr)
+		{
+			opengl_vertex_array_obj_ref_update(*vao_bnd_ptr, -1);
+			*vao_bnd_ptr = NULL;
+
+			/* Also need to update associate VBO ref count */
+			for (i = 0; i < GL_MAX_VERTEX_ATTRIB_BINDINGS; ++i)
+			{
+				if (vao->vtx_attrib[i].enabled)
+				{
+					buf_obj = vao->vtx_attrib[i].vbo;
+					opengl_buffer_obj_ref_update(buf_obj, -1);
+				}
+			}
+		}
+
+		/* Reference and update binding point */
+		opengl_vertex_array_obj_ref_update(vao, 1);
+
+		/* Also need to update associate VBO ref count */
+		for (i = 0; i < GL_MAX_VERTEX_ATTRIB_BINDINGS; ++i)
+		{
+			if (vao->vtx_attrib[i].enabled)
+			{
+				buf_obj = vao->vtx_attrib[i].vbo;
+				opengl_buffer_obj_ref_update(buf_obj, 1);
+			}
+		}
+
+		/* Bind VAO to binding point */
+		*vao_bnd_ptr = vao;
+		
+		/* Debug */
+		opengl_debug("\tVAO #%d [%p] bind to Binding Point [%p]\n", vao->id, vao, *vao_bnd_ptr);
+
+	}
+
+}
+
+void opengl_vertex_array_obj_unbind(struct opengl_vertex_array_obj_t *vao, struct opengl_vertex_array_obj_t **vao_bnd_ptr)
+{
+	int i;
+	struct opengl_buffer_obj_t *buf_obj;
+
+	if (vao)
+	{
+		/* Update reference count */
+		if (*vao_bnd_ptr)
+		{
+			opengl_vertex_array_obj_ref_update(vao, -1);
+
+			/* Also need to update associate VBO ref count */
+			for (i = 0; i < GL_MAX_VERTEX_ATTRIB_BINDINGS; ++i)
+			{
+				if (vao->vtx_attrib[i].enabled)
+				{
+					buf_obj = vao->vtx_attrib[i].vbo;
+					opengl_buffer_obj_ref_update(buf_obj, -1);
+				}
+			}
+		}
+
+		/* Clear binding point */
+		*vao_bnd_ptr = NULL;
+
+		/* Debug */
+		opengl_debug("\tProgram #%d [%p] bind to Binding point [%p]\n", vao->id, vao,*vao_bnd_ptr);
 	}
 }
 
@@ -248,6 +266,53 @@ int opengl_vertex_array_obj_repo_remove(struct linked_list_t *vao_repo, struct o
 		opengl_debug("\tVAO #%d [%p] removed from VAO table [%p]\n", 
 			vao->id, vao, vao_repo);
 		return 1;
+	}
+}
+
+void opengl_vertex_client_array_set_element_size(struct opengl_vertex_client_array_t *vca, GLint size, GLenum type)
+{
+	if (!vca->normalized)
+	{
+		switch(type)
+		{
+		case GL_FLOAT:
+			vca->element_size = size*sizeof(GLfloat);
+			break;
+		case GL_DOUBLE:
+			vca->element_size = size*sizeof(GLdouble);
+			break;
+		case GL_BYTE:
+			vca->element_size = size*sizeof(GLbyte);
+			break;
+		case GL_UNSIGNED_BYTE:
+			vca->element_size = size*sizeof(GLubyte);
+			break;
+		case GL_SHORT:
+			vca->element_size = size*sizeof(GLshort);
+			break;
+		case GL_UNSIGNED_SHORT:
+			vca->element_size = size*sizeof(GLushort);
+			break;
+		case GL_INT:
+			vca->element_size = size*sizeof(GLint);
+			break;
+		case GL_UNSIGNED_INT:
+			vca->element_size = size*sizeof(GLuint);
+			break;
+		case GL_INT_2_10_10_10_REV:
+			if (size!=4)
+				fatal("size must be 4 when type = GL_INT_2_10_10_10_REV\n");
+			vca->element_size = size*sizeof(GLuint);
+			break;
+		case GL_UNSIGNED_INT_2_10_10_10_REV:
+			if (size!=4)
+				fatal("size must be 4 when type GL_INT_2_10_10_10_REV\n");
+			vca->element_size = size*sizeof(GLuint);
+			break;
+		default:
+			vca->element_size = size*sizeof(GLfloat);
+			break;
+		}
 	}
 }
 

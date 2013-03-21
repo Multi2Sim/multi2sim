@@ -238,7 +238,10 @@ void opengl_program_bind(struct opengl_program_t *prg, struct opengl_program_t *
 	{
 		/* Dereference current  program */
 		if (*prg_bnd_ptr)
+		{
 			opengl_program_ref_update(*prg_bnd_ptr, -1);
+			*prg_bnd_ptr = NULL;			
+		}
 
 		/* Reference and update binding point */
 		opengl_program_ref_update(prg, 1);
@@ -247,7 +250,7 @@ void opengl_program_bind(struct opengl_program_t *prg, struct opengl_program_t *
 		*prg_bnd_ptr = prg;
 		
 		/* Debug */
-		opengl_debug("\tProgram #%d [%p] bind to OpenGL context [%p]\n", prg->id, prg, prg_bnd_ptr);
+		opengl_debug("\tProgram #%d [%p] bind to Binding Point [%p]\n", prg->id, prg,*prg_bnd_ptr);
 	}
 }
 
@@ -264,7 +267,7 @@ void opengl_program_unbind(struct opengl_program_t *prg, struct opengl_program_t
 		*prg_bnd_ptr = NULL;
 
 		/* Debug */
-		opengl_debug("\tProgram #%d [%p] bind to OpenGL context [%p]\n", prg->id, prg, prg_bnd_ptr);
+		opengl_debug("\tProgram #%d [%p] unbind from Binding point [%p]\n", prg->id, prg,*prg_bnd_ptr);
 	}
 }
 

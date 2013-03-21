@@ -28,29 +28,29 @@ struct frm_emu_t
 	/* Timer */
 	struct m2s_timer_t *timer;
 
-        /* List of ND-Ranges */
-        struct frm_grid_t *grid_list_head;
-        struct frm_grid_t *grid_list_tail;
-        int grid_list_count;
-        int grid_list_max;
+	/* List of ND-Ranges */
+	struct frm_grid_t *grid_list_head;
+	struct frm_grid_t *grid_list_tail;
+	int grid_list_count;
+	int grid_list_max;
 
-        /* List of pending ND-Ranges */
-        struct frm_grid_t *pending_grid_list_head;
-        struct frm_grid_t *pending_grid_list_tail;
-        int pending_grid_list_count;
-        int pending_grid_list_max;
+	/* List of pending ND-Ranges */
+	struct frm_grid_t *pending_grid_list_head;
+	struct frm_grid_t *pending_grid_list_tail;
+	int pending_grid_list_count;
+	int pending_grid_list_max;
 
-        /* List of running ND-Ranges */
-        struct frm_grid_t *running_grid_list_head;
-        struct frm_grid_t *running_grid_list_tail;
-        int running_grid_list_count;
-        int running_grid_list_max;
+	/* List of running ND-Ranges */
+	struct frm_grid_t *running_grid_list_head;
+	struct frm_grid_t *running_grid_list_tail;
+	int running_grid_list_count;
+	int running_grid_list_max;
 
-        /* List of finished ND-Ranges */
-        struct frm_grid_t *finished_grid_list_head;
-        struct frm_grid_t *finished_grid_list_tail;
-        int finished_grid_list_count;
-        int finished_grid_list_max;
+	/* List of finished ND-Ranges */
+	struct frm_grid_t *finished_grid_list_head;
+	struct frm_grid_t *finished_grid_list_tail;
+	int finished_grid_list_count;
+	int finished_grid_list_max;
 
 	/* Constant memory, which is organized as 16 banks of 64KB each. */
 	struct mem_t *const_mem;

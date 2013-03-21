@@ -9986,6 +9986,7 @@ static int opengl_func_glMapBuffer(struct x86_ctx_t *ctx)
 	if (!second_flag)
 	{
 		buf_obj = opengl_context_get_bound_buffer(target, opengl_ctx);
+
 		/* 1st call only set up the data_size and second flag */
 		mem_write(mem, data_size_ptr, sizeof(unsigned int), &buf_obj->data_size);
 		mem_write(mem, second_call_ptr, sizeof(unsigned int), &enable);
@@ -10007,7 +10008,7 @@ static int opengl_func_glMapBuffer(struct x86_ctx_t *ctx)
 /*
  * OpenGL call #520 - glUnmapBuffer
  *
- * glUnmapBuffer - 
+ * glUnmapBuffer - unmap a buffer object's data
  *
  * @return
  *	This function always returns 0
@@ -10696,7 +10697,7 @@ static int opengl_func_glUseProgram(struct x86_ctx_t *ctx)
 
 	/* Bind program to currect rendering state */
 	prg = opengl_program_repo_reference(opengl_ctx->program_repo, pid);
-	opengl_program_bind(prg,& opengl_ctx->current_program);
+	opengl_program_bind(prg, &opengl_ctx->current_program);
 
 	opengl_debug("\tUse Program #%d [%p]\n", pid, prg);
 
@@ -15466,7 +15467,7 @@ static int opengl_func_glBindVertexArray(struct x86_ctx_t *ctx)
 
 	/* Get and bind */
 	vao = opengl_vertex_array_obj_repo_get(opengl_ctx->vao_repo, array);
-	opengl_ctx->array_attrib->curr_vao = vao;
+	opengl_vertex_array_obj_bind(vao, &opengl_ctx->array_attrib->curr_vao);
 
 	opengl_debug("\tVAO ID #%d bound to OpenGL context\n", vao->id);
 

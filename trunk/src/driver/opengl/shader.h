@@ -36,6 +36,7 @@ struct opengl_shader_t
 	GLint ref_count;
 	pthread_mutex_t ref_mutex;
 	GLboolean delete_pending;
+	
 	void *isa_buffer;
 };
 
