@@ -87,6 +87,39 @@ int cuda_abi_call(struct x86_ctx_t *ctx)
 	return ret;
 }
 
+void cuda_init(void)
+{
+}
+
+void cuda_done(void)
+{
+	int i;
+	struct cuda_module_t *module;
+	struct cuda_function_t *function;
+
+	if (!module_list)
+		return;
+
+	LIST_FOR_EACH(module_list, i)
+	{
+		module = list_get(module_list, i);
+		if (module)
+			cuda_module_free(module);
+	}
+	list_free(module_list);
+
+	if (!function_list)
+		return;
+
+	LIST_FOR_EACH(function_list, i)
+	{
+		function = list_get(function_list, i);
+		if (function)
+			cuda_function_free(function);
+	}
+	list_free(function_list);
+}
+
 
 
 
@@ -152,8 +185,37 @@ int cuda_func_cuInit(struct x86_ctx_t *ctx)
 	/* Create object list */
 	cuda_object_list = linked_list_create();
 
-	/* Create device */
-	//cuda_device_create();
+	/* Create module list*/
+	module_list = list_create();
+
+	/* Create function list*/
+	function_list = list_create();
+
+	return 0;
+}
+
+
+
+
+/*
+ * CUDA call - cuDeviceTotalMem
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+int cuda_func_cuDeviceTotalMem(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int total_global_mem_size;
+
+	total_global_mem_size = regs->ecx;
+
+	cuda_debug("\tout: total=%u\n", frm_emu->total_global_mem_size);
+
+	mem_write(mem, total_global_mem_size, sizeof(unsigned int), &(frm_emu->total_global_mem_size));
 
 	return 0;
 }
@@ -179,25 +241,50 @@ int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	unsigned int args[2];
-	unsigned int pmod;
-	char fname[MAX_STRING_SIZE];
-
 	struct cuda_module_t *module;
+	unsigned int module_id;
 
-	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
-	mem_read(mem, args[0], sizeof(unsigned int), &pmod);
-	mem_read(mem, args[1], sizeof fname, fname);
+	module_id = regs->ecx;
 
-	cuda_debug("\tin: filename=%s\n", fname);
+	cuda_debug("\tin: filename=%s\n", frm_emu_cuda_binary_name);
 
 	/* Create module */
 	module = cuda_module_create();
-	module->elf_file = elf_file_create_from_path(fname);
+	module->elf_file = elf_file_create_from_path(frm_emu_cuda_binary_name);
 
 	cuda_debug("\tout: module.id=0x%08x\n", module->id);
 
-	mem_write(mem, pmod, sizeof(unsigned int), &module->id);
+	mem_write(mem, module_id, sizeof(unsigned int), &module->id);
+
+	return 0;
+}
+
+
+
+
+/*
+ * CUDA call - cuModuleUnload
+ *
+ * @param CUmodule hmod;
+ *      The module to unload.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+int cuda_func_cuModuleUnload(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	struct cuda_module_t *module;
+	unsigned int module_id;
+
+	/* Get module */
+	module_id = regs->ecx;
+	module = (struct cuda_module_t *)list_get(module_list, module_id);
+
+	/* Free module */
+	cuda_module_free(module);
 
 	return 0;
 }
@@ -226,31 +313,29 @@ int cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	unsigned int args[3];
-	unsigned int pfunc;
+	unsigned int function_id;
 	unsigned int module_id;
 	char function_name[MAX_STRING_SIZE];
 
 	struct cuda_module_t *module;
 	struct cuda_function_t *function;
 
-	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
-	mem_read(mem, args[0], sizeof(unsigned int), &pfunc);
-	mem_read(mem, args[1], sizeof(unsigned int), &module_id);
-	mem_read(mem, args[2], sizeof function_name, function_name);
+	function_id = regs->ecx;
+	module_id = regs->edx;
+	mem_read(mem, regs->esi, MAX_STRING_SIZE, function_name);
 
 	cuda_debug("\tin: module.id=0x%08x\n", module_id);
 	cuda_debug("\tin: function_name=%s\n", function_name);
 
 	/* Get module */
-	module = cuda_object_get(CUDA_OBJ_MODULE, module_id);
+	module = (struct cuda_module_t *)list_get(module_list, module_id);
 
 	/* Create function */
 	function = cuda_function_create(module, function_name);
 
 	cuda_debug("\tout: function.id=0x%08x\n", function->id);
 
-	mem_write(mem, pfunc, sizeof(unsigned int), &function->id);
+	mem_write(mem, function_id, sizeof(unsigned int), &function->id);
 
 	return 0;
 }
@@ -635,7 +720,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	cuda_debug("\textra=%u\n", extra);
 
 	/* Get function */
-	function = cuda_object_get(CUDA_OBJ_FUNCTION, function_id);
+	function = (struct cuda_function_t *)list_get(function_list, function_id);
 
 	/* Create and setup grid */
 	grid = frm_grid_create(function);
@@ -673,31 +758,6 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	/* Suspend x86 context until ND-Range finishes */
 	x86_ctx_suspend(ctx, cuda_abi_frm_kernel_launch_can_wakeup, info,
 			cuda_abi_frm_kernel_launch_wakeup, info);
-
-	return 0;
-}
-
-
-
-
-/*
- * CUDA call - cudaRegisterFunction
- *
- * @param size_t ByteCount;
- *      Size of memory copy in bytes.
- *
- * @return
- *	The return value is always 0 on success.
- */
-
-int cuda_func_cudaRegisterFunction(struct x86_ctx_t *ctx)
-{
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
-
-	cuda_debug("\tout: frm_emu_cuda_binary_name=%s\n", frm_emu_cuda_binary_name);
-
-	mem_write(mem, regs->ecx, MAX_STRING_SIZE, frm_emu_cuda_binary_name);
 
 	return 0;
 }

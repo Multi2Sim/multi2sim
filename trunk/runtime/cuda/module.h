@@ -17,18 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_CUDA_MODULE_H
-#define DRIVER_CUDA_MODULE_H
+#ifndef RUNTIME_CUDA_MODULE_H
+#define RUNTIME_CUDA_MODULE_H
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-
-#include "object.h"
-
+#include "elf-format.h"
+#include "list.h"
+#include "mhandle.h"
 
 
 
-extern struct list_t *module_list;
 
 struct cuda_module_t
 {

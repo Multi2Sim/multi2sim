@@ -17,30 +17,34 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_CUDA_MODULE_H
-#define DRIVER_CUDA_MODULE_H
-
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-
-#include "object.h"
+#include "module.h"
 
 
 
 
-extern struct list_t *module_list;
+struct list_t *module_list;
 
-struct cuda_module_t
+/* Create a module */
+struct cuda_module_t *cuda_module_create(void)
 {
-	unsigned int id;
-	int ref_count;
+	struct cuda_module_t *module;
 
-	/* ELF binary */
-	struct elf_file_t *elf_file;
-};
+	/* Initialize */
+	module = xcalloc(1, sizeof(struct cuda_module_t));
+	module->id = list_count(module_list) - 1;
+	module->ref_count = 1;
 
-struct cuda_module_t *cuda_module_create(void);
-void cuda_module_free(struct cuda_module_t *module);
+	list_add(module_list, module);
 
-#endif
+	return module;
+}
+
+/* Free module */
+void cuda_module_free(struct cuda_module_t *module)
+{
+	if (module->elf_file)
+		elf_file_free(module->elf_file);
+
+	free(module);
+}
 

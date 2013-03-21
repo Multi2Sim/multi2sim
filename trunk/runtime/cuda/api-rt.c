@@ -29,7 +29,7 @@
 CUfunction function;
 dim3 grid_dim;
 dim3 threadblock_dim;
-struct linked_list_t *args;
+struct list_t *args;
 int arg_index = 0;
 
 /* Error messages */
@@ -116,27 +116,13 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	dim3 *gDim,
 	int *wSize)
 {
-	char cubin_filename[500];
 	CUmodule module;
-	int ret;
 
 	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
-	/* Get kernel binary name */
-	/* FIXME - The system call should take another argument with the size of
-	 * 'cubin_filename'. */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cudaRegisterFunction, cubin_filename);
-
-	/* Check that we are running on Multi2Sim. If a program linked with this library
-	 * is running natively, system call CUDA_SYS_CODE is not supported. */
-	if (ret)
-		fatal("native execution not supported.\n%s",
-			cuda_err_native);
-
-	cuda_debug_print(stdout, "\t(runtime) out: cubin_filename=%s\n", cubin_filename);
-
 	/* Load module */
-	cuModuleLoad(&module, cubin_filename);
+	/* Ignore filename since it is given as an M2S option */
+	cuModuleLoad(&module, "ignore_cubin_filename");
 
 	/* Get function */
 	cuModuleGetFunction(&function, module, deviceFun);
@@ -382,9 +368,9 @@ cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 	cuda_debug_print(stdout, "\t(runtime) in: offset=%d\n", offset);
 
 	if (arg_index == 0)
-		args = linked_list_create();
+		args = list_create();
 
-	linked_list_add(args, (void *)arg);
+	list_add(args, (void *)arg);
 	++arg_index;
 
 	cuda_debug_print(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
@@ -407,13 +393,10 @@ cudaError_t cudaLaunch(const void *entry)
 	cuda_debug_print(stdout, "\t(runtime) in: entry=%p\n", entry);
 
 	/* Copy kernel arguments */
-	kernel_args = xmalloc(linked_list_count(args) * sizeof(CUdeviceptr *));
-	linked_list_head(args);
-	for (i = 0; i < linked_list_count(args); ++i)
-	{
-		kernel_args[i] = linked_list_get(args);
-		linked_list_next(args);
-	}
+	kernel_args = xmalloc(list_count(args) * sizeof(CUdeviceptr *));
+	list_head(args);
+	for (i = 0; i < list_count(args); ++i)
+		kernel_args[i] = list_get(args, i);
 
 	/* Launch kernel */
 	cuLaunchKernel(function, grid_dim.x, grid_dim.y, grid_dim.z, 

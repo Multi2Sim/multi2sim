@@ -1779,6 +1779,7 @@ int main(int argc, char **argv)
 
 	/* Initialization of drivers */
 	opencl_init();
+	cuda_init();
 
 	/* Initialization of libraries */
 	esim_init();
@@ -1878,6 +1879,7 @@ int main(int argc, char **argv)
 
 	/* Finalization of drivers */
 	opencl_done();
+	cuda_done();
 
 	/* Finalization of libraries */
 	esim_done();
