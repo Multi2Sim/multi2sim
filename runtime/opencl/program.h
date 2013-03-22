@@ -38,13 +38,19 @@ struct opencl_program_entry_t
 /* Program object */
 struct opencl_program_t
 {
+	/* Associated context */
+	struct opencl_context_t *context;
+
+	/* Source code */
+	char *source;
+
 	/* Program entries, one per device type, of type 'opencl_program_entry_t' */
 	struct list_t *entry_list;
 };
 
 
 /* Create/free */
-struct opencl_program_t *opencl_program_create(void);
+struct opencl_program_t *opencl_program_create(struct opencl_context_t *context);
 void opencl_program_free(struct opencl_program_t *program);
 
 /* Return true if any of the program entries provides an architecture-specific
