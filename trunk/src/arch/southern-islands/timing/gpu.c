@@ -1277,7 +1277,7 @@ void si_gpu_dump_report(void)
 		coalesced_reads = lds_mod->reads - lds_mod->effective_reads;
 		coalesced_writes = lds_mod->writes - lds_mod->effective_writes;
 
-		fprintf(f, "[ ComputeUnit%d ]\n\n", compute_unit_id);
+		fprintf(f, "[ ComputeUnit %d ]\n\n", compute_unit_id);
 
 		fprintf(f, "WorkGroupCount = %lld\n", 
 			compute_unit->mapped_work_groups);
