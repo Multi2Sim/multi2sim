@@ -57,7 +57,6 @@ int si_emu_max_kernels = 0;
 
 enum arch_sim_kind_t si_emu_sim_kind = arch_sim_kind_functional;
 
-char *si_emu_opencl_binary_name = "";
 char *si_emu_opengl_binary_name = "";
 char *si_emu_report_file_name = "";
 FILE *si_emu_report_file = NULL;

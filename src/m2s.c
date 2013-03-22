@@ -362,10 +362,6 @@ static char *m2s_help =
 	"      Display a help message describing the format of the Southern Islands GPU\n"
 	"      configuration file, passed with option '--si-config <file>'.\n"
 	"\n"
-	"  --si-kernel-binary <file>\n"
-	"      Use <file> as the returned kernel binary upon an OpenCL call to\n"
-	"      'clLoadProgramWithSource'.\n"
-	"\n"
 	"  --si-shader-binary <file>\n"
 	"      Use <file> as the returned shader binary upon an OpenGL call to\n"
 	"      'clLoadProgramWithSource'.\n"
@@ -998,14 +994,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 					argv[argi], m2s_err_note);
 			si_opengl_disasm_file_name = argv[++argi];
 			si_opengl_disasm_shader_index = atoi(argv[++argi]);
-			continue;
-		}
-
-		/* Southern Islands OpenCL binary */
-		if (!strcmp(argv[argi], "--si-kernel-binary"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			si_emu_opencl_binary_name = argv[++argi];
 			continue;
 		}
 
