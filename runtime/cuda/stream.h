@@ -24,17 +24,18 @@
 #include "../include/cuda.h"
 #include "../include/cuda_runtime_api.h"
 
+#include "list.h"
 #include "mhandle.h"
 
 
 
 
+extern struct list_t *stream_list;
+
 struct CUstream_st
 {
 	unsigned int id;
 	int ref_count;
-
-	unsigned int device_id;
 };
 
 CUstream cuda_stream_create(void);

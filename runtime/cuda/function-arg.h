@@ -20,7 +20,12 @@
 #ifndef RUNTIME_CUDA_FUNCTION_ARG_H
 #define RUNTIME_CUDA_FUNCTION_ARG_H
 
+#include "../include/cuda.h"
+#include "../include/cuda_runtime_api.h"
+
 #include "mhandle.h"
+
+#include "function.h"
 
 
 
@@ -36,13 +41,15 @@ enum cuda_mem_scope_t
 
 enum cuda_function_arg_kind_t
 {
-	CUDA_FUNCTION_ARG_KIND_VALUE = 1,
+	CUDA_FUNCTION_ARG_KIND_NONE = 0,
+	CUDA_FUNCTION_ARG_KIND_VALUE,
 	CUDA_FUNCTION_ARG_KIND_POINTER
 };
 
 enum cuda_function_arg_access_type_t
 {
-	CUDA_FUNCTION_ARG_READ_ONLY = 1,
+	CUDA_FUNCTION_ARG_NONE = 0,
+	CUDA_FUNCTION_ARG_READ_ONLY,
 	CUDA_FUNCTION_ARG_WRITE_ONLY,
 	CUDA_FUNCTION_ARG_READ_WRITE
 };
@@ -50,17 +57,18 @@ enum cuda_function_arg_access_type_t
 struct cuda_function_arg_t
 {
 	int id;
-	char *name;
 
-	enum cuda_function_arg_kind_t kind;
 	enum cuda_mem_scope_t mem_scope;
+	enum cuda_function_arg_kind_t kind;
 	enum cuda_function_arg_access_type_t access_type;
 
 	unsigned int value;
+	int size;
 };
 
-struct cuda_function_arg_t *cuda_function_arg_create(char *name);
-void cuda_function_arg_free(struct cuda_function_arg_t *arg);
+struct cuda_function_arg_t *cuda_function_arg_create(CUfunction function,
+		unsigned int value, int size);
+void cuda_function_arg_free(CUfunction function, struct cuda_function_arg_t *arg);
 
 #endif
 

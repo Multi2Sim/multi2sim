@@ -17,11 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LIB_UTIL_DEBUG_H
-#define LIB_UTIL_DEBUG_H
+#ifndef RUNTIME_CUDA_DEBUG_H
+#define RUNTIME_CUDA_DEBUG_H
 
+#include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "list.h"
+#include "mhandle.h"
+
+
 
 
 /* Initialization and finalization */

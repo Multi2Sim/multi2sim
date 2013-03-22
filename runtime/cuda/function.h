@@ -21,6 +21,8 @@
 #define RUNTIME_CUDA_FUNCTION_H
 
 #include <stdlib.h>
+#include "../include/cuda.h"
+#include "../include/cuda_runtime_api.h"
 
 #include "debug.h"
 #include "elf-format.h"
@@ -44,15 +46,16 @@ struct CUfunc_st
 	char *name;
 
 	unsigned int module_id;
-	struct list_t *arg_list;
 
-	/* FIXME */
-	struct elf_buffer_t function_buffer;
+	struct list_t *arg_list;
+	CUdeviceptr **arg_array;
+
+	int global_sizes[3];  /* #thread-blocks in a grid */
+	int local_sizes[3];
 };
 
-struct CUfunc_st *cuda_function_create(struct CUmod_st *module, 
-	char *function_name);
-void cuda_function_free(struct CUfunc_st *function);
+CUfunction cuda_function_create(CUmodule module, const char *function_name);
+void cuda_function_free(CUfunction function);
 
 #endif
 

@@ -38,6 +38,7 @@ struct CUctx_st
 	int ref_count;
 
 	CUdevice device;
+	unsigned int version;
 };
 
 CUcontext cuda_context_create(CUdevice device);
