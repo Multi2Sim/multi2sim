@@ -58,7 +58,8 @@ struct si_compute_unit_t
 	struct si_compute_unit_t *compute_unit_busy_list_next;
 
 	/* Entry points to memory hierarchy */
-	struct mod_t *global_memory;
+	struct mod_t *scalar_cache;
+	struct mod_t *vector_cache;
 	struct mod_t *lds_module;
 
 	/* Hardware structures */
