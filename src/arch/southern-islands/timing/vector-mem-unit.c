@@ -243,7 +243,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 			work_item_uop = 
 				&uop->work_item_uop[work_item->id_in_wavefront];
 
-			mod_access(vector_mem->compute_unit->global_memory, 
+			mod_access(vector_mem->compute_unit->vector_cache, 
 				access_kind, 
 				work_item_uop->global_mem_access_addr,
 				&uop->global_mem_witness, NULL, NULL, NULL);

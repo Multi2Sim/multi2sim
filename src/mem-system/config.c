@@ -48,188 +48,190 @@
 char *mem_config_file_name = "";
 
 char *mem_config_help =
-	"Option '--mem-config <file>' is used to configure the memory system. The\n"
-	"configuration file is a plain-text file in the IniFile format. The memory system\n"
-	"is formed of a set of cache modules, main memory modules, and interconnects.\n"
-	"\n"
-	"Interconnects can be defined in two different configuration files. The first way\n"
-	"is using option '--net-config <file>' (use option '--help-net-config' for more\n"
-	"information). Any network defined in the network configuration file can be\n"
-	"referenced from the memory configuration file. These networks will be referred\n"
-	"hereafter as external networks.\n"
-	"\n"
-	"The second option to define a network straight in the memory system\n"
-	"configuration. This alternative is provided for convenience and brevity. By\n"
-	"using sections [Network <name>], networks with a default topology are created,\n"
-	"which include a single switch, and one bidirectional link from the switch to\n"
-	"every end node present in the network.\n"
-	"\n"
-	"The following sections and variables can be used in the memory system\n"
-	"configuration file:\n"
-	"\n"
-	"Section [General] defines global parameters affecting the entire memory system.\n"
-	"\n"
-	"  PageSize = <size>  (Default = 4096)\n"
-	"      Memory page size. Virtual addresses are translated into new physical\n"
-	"      addresses in ascending order at the granularity of the page size.\n"
-	"  PeerTransfers = <bool> (Default = transfers)\n"
-	"      Whether or not transfers between peer caches are used.\n"
-	"\n"
-	"Section [Module <name>] defines a generic memory module. This section is used to\n"
-	"declare both caches and main memory modules accessible from CPU cores or GPU\n"
-	"compute units.\n"
-	"\n"
-	"  Type = {Cache|MainMemory}  (Required)\n"
-	"      Type of the memory module. From the simulation point of view, the\n"
-	"      difference between a cache and a main memory module is that the former\n"
-	"      contains only a subset of the data located at the memory locations it\n"
-	"      serves.\n"
-	"  Geometry = <geo>\n"
-	"      Cache geometry, defined in a separate section of type [Geometry <geo>].\n"
-	"      This variable is required for cache modules.\n"
-	"  LowNetwork = <net>\n"
-	"      Network connecting the module with other lower-level modules, i.e.,\n"
-	"      modules closer to main memory. This variable is mandatory for caches, and\n"
-	"      should not appear for main memory modules. Value <net> can refer to an\n"
-	"      internal network defined in a [Network <net>] section, or to an external\n"
-	"      network defined in the network configuration file.\n"
-	"  LowNetworkNode = <node>\n"
-	"      If 'LowNetwork' points to an external network, node in the network that\n"
-	"      the module is mapped to. For internal networks, this variable should be\n"
-	"      omitted.\n"
-	"  HighNetwork = <net>\n"
-	"      Network connecting the module with other higher-level modules, i.e.,\n"
-	"      modules closer to CPU cores or GPU compute units. For highest level\n"
-	"      modules accessible by CPU/GPU, this variable should be omitted.\n"
-	"  HighNetworkNode = <node>\n"
-	"      If 'HighNetwork' points to an external network, node that the module is\n"
-	"      mapped to.\n"
-	"  LowModules = <mod1> [<mod2> ...]\n"
-	"      List of lower-level modules. For a cache module, this variable is required.\n"
-	"      If there is only one lower-level module, it serves the entire address\n"
-	"      space for the current module. If there are several lower-level modules,\n"
-	"      each served a disjoint subset of the address space. This variable should\n"
-	"      be omitted for main memory modules.\n"
-	"  BlockSize = <size>\n"
-	"      Block size in bytes. This variable is required for a main memory module.\n"
-	"      It should be omitted for a cache module (in this case, the block size is\n"
-	"      specified in the corresponding cache geometry section).\n"
-	"  Latency = <cycles>\n"
-	"      Memory access latency. This variable is required for a main memory module,\n"
-	"      and should be omitted for a cache module (the access latency is specified\n"
-	"      in the corresponding cache geometry section in this case).\n"
-	"  Ports = <num>\n"
-	"      Number of read/write ports. This variable is only allowed for a main memory\n"
-	"      module. The number of ports for a cache is specified in a separate cache\n"
-	"      geometry section.\n"
-	"  DirectorySize <size>\n"
-	"      Size of the directory in number of blocks. The size of a directory limits\n"
-	"      the number of different blocks that can reside in upper-level caches. If a\n"
-	"      cache requests a new block from main memory, and its directory is full, a\n"
-	"      previous block must be evicted from the directory, and all its occurrences\n"
-	"      in the memory hierarchy need to be first invalidated. This variable is only\n"
-	"      allowed for a main memory module.\n"
-	"  DirectoryAssoc = <assoc>\n"
-	"      Directory associativity in number of ways. This variable is only allowed\n"
-	"      for a main memory module.\n"
-	"  AddressRange = { BOUNDS <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }\n"
-	"      Physical address range served by the module. If not specified, the entire\n"
-	"      address space is served by the module. There are two possible formats for\n"
-	"      the value of 'Range':\n"
-	"      With the first format, the user can specify the lowest and highest byte\n"
-	"      included in the address range. The value in <low> must be a multiple of\n"
-	"      the module block size, and the value in <high> must be a multiple of the\n"
-	"      block size minus 1.\n"
-	"      With the second format, the address space can be split between different\n"
-	"      modules in an interleaved manner. If dividing an address by <div> and\n"
-	"      modulo <mod> makes it equal to <eq>, it is served by this module. The\n"
-	"      value of <div> must be a multiple of the block size. When a module serves\n"
-	"      only a subset of the address space, the user must make sure that the rest\n"
-	"      of the modules at the same level serve the remaining address space.\n"
-	"\n"
-	"Section [CacheGeometry <geo>] defines a geometry for a cache. Caches using this\n"
-	"geometry are instantiated [Module <name>] sections.\n"
-	"\n"
-	"  Sets = <num_sets> (Required)\n"
-	"      Number of sets in the cache.\n"
-	"  Assoc = <num_ways> (Required)\n"
-	"      Cache associativity. The total number of blocks contained in the cache\n"
-	"      is given by the product Sets * Assoc.\n"
-	"  BlockSize = <size> (Required)\n"
-	"      Size of a cache block in bytes. The total size of the cache is given by\n"
-	"      the product Sets * Assoc * BlockSize.\n"
-	"  Latency = <cycles> (Required)\n"
-	"      Hit latency for a cache in number of cycles.\n"
-	"  Policy = {LRU|FIFO|Random} (Default = LRU)\n"
-	"      Block replacement policy.\n"
-	"  MSHR = <size> (Default = 16)\n"
-	"      Miss status holding register (MSHR) size in number of entries. This value\n"
-	"      determines the maximum number of accesses that can be in flight for the\n"
-	"      cache, including the time since the access request is received, until a\n"
-	"      potential miss is resolved.\n"
-	"  Ports = <num> (Default = 2)\n"
-	"      Number of ports. The number of ports in a cache limits the number of\n"
-	"      concurrent hits. If an access is a miss, it remains in the MSHR while it\n"
-	"      is resolved, but releases the cache port.\n"
-	"  DirectoryLatency = <cycles> (Default = 1)\n"
-	"      Latency for a directory access in number of cycles.\n"
-	"  EnablePrefetcher = {t|f} (Default = False)\n"
-	"      Whether the hardware should automatically perform prefetching.\n"
-	"      The prefetcher related options below will be ignored if this is not true.\n"
-	"  PrefetcherType = {GHB_PC_CS|GHB_PC_DC} (Default GHB_PC_CS)\n"
-	"      Specify the type of global history buffer based prefetcher to use.\n"
-	"      GHB_PC_CS - Program Counter indexed, Constant Stride.\n"
-	"      GHB_PC_DC - Program Counter indexed, Delta Correlation.\n"
-	"  PrefetcherGHBSize = <size> (Default = 256)\n"
-	"      The hardware prefetcher does global history buffer based prefetching.\n"
-	"      This option specifies the size of the global history buffer.\n"
-	"  PrefetcherITSize = <size> (Default = 64)\n"
-	"      The hardware prefetcher does global history buffer based prefetching.\n"
-	"      This option specifies the size of the index table used.\n"
-	"  PrefetcherLookupDepth = <num> (Default = 2)\n"
-	"      This option specifies the history (pattern) depth upto which the\n"
-	"      prefetcher looks at the history to decide when to prefetch.\n"
-	"\n"
-	"Section [Network <net>] defines an internal default interconnect, formed of a\n"
-	"single switch connecting all modules pointing to the network. For every module\n"
-	"in the network, a bidirectional link is created automatically between the module\n"
-	"and the switch, together with the suitable input/output buffers in the switch\n"
-	"and the module.\n"
-	"\n"
-	"  DefaultInputBufferSize = <size>\n"
-	"      Size of input buffers for end nodes (memory modules) and switch.\n"
-	"  DefaultOutputBufferSize = <size>\n"
-	"      Size of output buffers for end nodes and switch. \n"
-	"  DefaultBandwidth = <bandwidth>\n"
-	"      Bandwidth for links and switch crossbar in number of bytes per cycle.\n"
-	"\n"
-	"Section [Entry <name>] creates an entry into the memory system. An entry is a\n"
-	"connection between a CPU core/thread or a GPU compute unit with a module in the\n"
-	"memory system.\n"
-	"\n"
-	"  Arch = { x86 | Evergreen | SouthernIslands | ... }\n"
-	"      CPU or GPU architecture affected by this entry.\n"
-	"  Core = <core>\n"
-	"      CPU core identifier. This is a value between 0 and the number of cores\n"
-	"      minus 1, as defined in the CPU configuration file. This variable should be\n"
-	"      omitted for GPU entries.\n"
-	"  Thread = <thread>\n"
-	"      CPU thread identifier. Value between 0 and the number of threads per core\n"
-	"      minus 1. Omitted for GPU entries.\n"
-	"  ComputeUnit = <id>\n"
-	"      GPU compute unit identifier. Value between 0 and the number of compute\n"
-	"      units minus 1, as defined in the GPU configuration file. This variable\n"
-	"      should be omitted for CPU entries.\n"
-	"  DataModule = <mod>\n"
-	"  InstModule = <mod>\n"
-	"      In architectures supporting separate data/instruction caches, modules used\n"
-	"      to access memory for each particular purpose.\n"
-	"  Module = <mod>\n"
-	"      Module used to access the memory hierarchy. For architectures supporting\n"
-	"      separate data/instruction caches, this variable can be used instead of\n"
-	"      'DataModule' and 'InstModule' to indicate that data and instruction caches\n"
-	"      are unified.\n"
-	"\n";
+"Option '--mem-config <file>' is used to configure the memory system. The\n"
+"configuration file is a plain-text file in the IniFile format. The memory\n"
+"system is formed of a set of cache modules, main memory modules, and\n"
+"interconnects.\n"
+"\n"
+"Interconnects can be defined in two different configuration files. The first\n"
+"way is using option '--net-config <file>' (use option '--help-net-config'\n" 
+"for more information). Any network defined in the network configuration file\n"
+"can be referenced from the memory configuration file. These networks will be\n"
+"referred hereafter as external networks.\n"
+"\n"
+"The second option to define a network straight in the memory system\n"
+"configuration. This alternative is provided for convenience and brevity. By\n"
+"using sections [Network <name>], networks with a default topology are\n" 
+"created which include a single switch, and one bidirectional link from the\n" 
+"switch to every end node present in the network.\n"
+"\n"
+"The following sections and variables can be used in the memory system\n"
+"configuration file:\n"
+"\n"
+"Section [General] defines global parameters affecting the entire memory\n" 
+"system.\n"
+"\n"
+"  PageSize = <size>  (Default = 4096)\n"
+"      Memory page size. Virtual addresses are translated into new physical\n"
+"      addresses in ascending order at the granularity of the page size.\n"
+"  PeerTransfers = <bool> (Default = transfers)\n"
+"      Whether or not transfers between peer caches are used.\n"
+"\n"
+"Section [Module <name>] defines a generic memory module. This section is\n" 
+"used to declare both caches and main memory modules accessible from CPU\n" 
+"cores or GPU compute units.\n"
+"\n"
+"  Type = {Cache|MainMemory}  (Required)\n"
+"      Type of the memory module. From the simulation point of view, the\n"
+"      difference between a cache and a main memory module is that the former\n"
+"      contains only a subset of the data located at the memory locations it\n"
+"      serves.\n"
+"  Geometry = <geo>\n"
+"      Cache geometry, defined in a separate section of type\n" 
+"      [Geometry <geo>]. This variable is required for cache modules.\n"
+"  LowNetwork = <net>\n"
+"      Network connecting the module with other lower-level modules, i.e.,\n"
+"      modules closer to main memory. This variable is mandatory for caches,\n"
+"      and should not appear for main memory modules. Value <net> can refer\n" 
+"      to an internal network defined in a [Network <net>] section, or to an\n"
+"      external network defined in the network configuration file.\n"
+"  LowNetworkNode = <node>\n"
+"      If 'LowNetwork' points to an external network, node in the network\n" 
+"      that the module is mapped to. For internal networks, this variable\n" 
+"      should be omitted.\n"
+"  HighNetwork = <net>\n"
+"      Network connecting the module with other higher-level modules, i.e.,\n"
+"      modules closer to CPU cores or GPU compute units. For highest level\n"
+"      modules accessible by CPU/GPU, this variable should be omitted.\n"
+"  HighNetworkNode = <node>\n"
+"      If 'HighNetwork' points to an external network, node that the module\n"
+"      is mapped to.\n"
+"  LowModules = <mod1> [<mod2> ...]\n"
+"      List of lower-level modules. For a cache module, this variable is\n" 
+"      required. If there is only one lower-level module, it serves the\n" 
+"      entire address space for the current module. If there are several\n" 
+"      lower-level modules, each served a disjoint subset of the address\n" 
+"      space. This variable should be omitted for main memory modules.\n"
+"  BlockSize = <size>\n"
+"      Block size in bytes. This variable is required for a main memory\n"
+"      module. It should be omitted for a cache module (in this case, the\n" 
+"      block size is specified in the corresponding cache geometry section).\n"
+"  Latency = <cycles>\n"
+"      Memory access latency. This variable is required for a main memory\n" 
+"      module, and should be omitted for a cache module (the access latency\n" 
+"      is specified in the corresponding cache geometry section).\n"
+"  Ports = <num>\n"
+"      Number of read/write ports. This variable is only allowed for a main\n" 
+"      memory module. The number of ports for a cache is specified in a\n" 
+"      separate cache geometry section.\n"
+"  DirectorySize <size>\n"
+"      Size of the directory in number of blocks. The size of a directory\n" 
+"      limits the number of different blocks that can reside in upper-level\n" 
+"      caches. If a cache requests a new block from main memory, and its\n" 
+"      directory is full, a previous block must be evicted from the\n" 
+"      directory, and all its occurrences in the memory hierarchy need to be\n"
+"      first invalidated. This variable is only allowed for a main memory\n" 
+"      module.\n"
+"  DirectoryAssoc = <assoc>\n"
+"      Directory associativity in number of ways. This variable is only\n"
+"      allowed for a main memory module.\n"
+"  AddressRange = { BOUNDS <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }\n"
+"      Physical address range served by the module. If not specified, the\n" 
+"      entire address space is served by the module. There are two possible\n" 
+"      formats for the value of 'Range':\n"
+"      With the first format, the user can specify the lowest and highest\n" 
+"      byte included in the address range. The value in <low> must be a\n" 
+"      multiple of the module block size, and the value in <high> must be a\n" 
+"      multiple of the block size minus 1.\n"
+"      With the second format, the address space can be split between\n" 
+"      different modules in an interleaved manner. If dividing an address\n" 
+"      by <div> and modulo <mod> makes it equal to <eq>, it is served by\n" 
+"      this module. The value of <div> must be a multiple of the block size.\n" "      When a module serves only a subset of the address space, the user must\n""      make sure that the rest of the modules at the same level serve the\n" 
+"      remaining address space.\n"
+"\n"
+"Section [CacheGeometry <geo>] defines a geometry for a cache. Caches using\n" 
+"this geometry are instantiated [Module <name>] sections.\n"
+"\n"
+"  Sets = <num_sets> (Required)\n"
+"      Number of sets in the cache.\n"
+"  Assoc = <num_ways> (Required)\n"
+"      Cache associativity. The total number of blocks contained in the cache\n"
+"      is given by the product Sets * Assoc.\n"
+"  BlockSize = <size> (Required)\n"
+"      Size of a cache block in bytes. The total size of the cache is given\n" 
+"      by the product Sets * Assoc * BlockSize.\n"
+"  Latency = <cycles> (Required)\n"
+"      Hit latency for a cache in number of cycles.\n"
+"  Policy = {LRU|FIFO|Random} (Default = LRU)\n"
+"      Block replacement policy.\n"
+"  MSHR = <size> (Default = 16)\n"
+"      Miss status holding register (MSHR) size in number of entries. This\n"
+"      value determines the maximum number of accesses that can be in flight\n" "      for the cache, including the time since the access request is\n" 
+"      received, until a potential miss is resolved.\n"
+"  Ports = <num> (Default = 2)\n"
+"      Number of ports. The number of ports in a cache limits the number of\n"
+"      concurrent hits. If an access is a miss, it remains in the MSHR while\n"
+"      it is resolved, but releases the cache port.\n"
+"  DirectoryLatency = <cycles> (Default = 1)\n"
+"      Latency for a directory access in number of cycles.\n"
+"  EnablePrefetcher = {t|f} (Default = False)\n"
+"      Whether the hardware should automatically perform prefetching.\n"
+"      The prefetcher related options below will be ignored if this is\n" 
+"      not true.\n"
+"  PrefetcherType = {GHB_PC_CS|GHB_PC_DC} (Default GHB_PC_CS)\n"
+"      Specify the type of global history buffer based prefetcher to use.\n"
+"      GHB_PC_CS - Program Counter indexed, Constant Stride.\n"
+"      GHB_PC_DC - Program Counter indexed, Delta Correlation.\n"
+"  PrefetcherGHBSize = <size> (Default = 256)\n"
+"      The hardware prefetcher does global history buffer based prefetching.\n"
+"      This option specifies the size of the global history buffer.\n"
+"  PrefetcherITSize = <size> (Default = 64)\n"
+"      The hardware prefetcher does global history buffer based prefetching.\n"
+"      This option specifies the size of the index table used.\n"
+"  PrefetcherLookupDepth = <num> (Default = 2)\n"
+"      This option specifies the history (pattern) depth upto which the\n"
+"      prefetcher looks at the history to decide when to prefetch.\n"
+"\n"
+"Section [Network <net>] defines an internal default interconnect, formed of\n"
+"a single switch connecting all modules pointing to the network. For every\n" 
+"module in the network, a bidirectional link is created automatically between\n"
+"the module and the switch, together with the suitable input/output buffers\n" 
+"in the switch and the module.\n"
+"\n"
+"  DefaultInputBufferSize = <size>\n"
+"      Size of input buffers for end nodes (memory modules) and switch.\n"
+"  DefaultOutputBufferSize = <size>\n"
+"      Size of output buffers for end nodes and switch. \n"
+"  DefaultBandwidth = <bandwidth>\n"
+"      Bandwidth for links and switch crossbar in number of bytes per cycle.\n"
+"\n"
+"Section [Entry <name>] creates an entry into the memory system. An entry is\n" "a connection between a CPU core/thread or a GPU compute unit with a module\n" 
+"in the memory system.\n"
+"\n"
+"  Arch = { x86 | Evergreen | SouthernIslands | ... }\n"
+"      CPU or GPU architecture affected by this entry.\n"
+"  Core = <core>\n"
+"      CPU core identifier. This is a value between 0 and the number of cores\n"
+"      minus 1, as defined in the CPU configuration file. This variable\n" 
+"      should be omitted for GPU entries.\n"
+"  Thread = <thread>\n"
+"      CPU thread identifier. Value between 0 and the number of threads per\n" 
+"      core minus 1. Omitted for GPU entries.\n"
+"  ComputeUnit = <id>\n"
+"      GPU compute unit identifier. Value between 0 and the number of compute\n"
+"      units minus 1, as defined in the GPU configuration file. This variable\n"
+"      should be omitted for CPU entries.\n"
+"  DataModule = <mod>\n"
+"  ConstantDataModule = <mod>\n"
+"  InstModule = <mod>\n"
+"      In architectures supporting separate data/instruction caches, modules\n"
+"      used to access memory for each particular purpose.\n"
+"  Module = <mod>\n"
+"      Module used to access the memory hierarchy. For architectures\n" 
+"      supporting separate data/instruction caches, this variable can be used\n"
+"      instead of 'DataModule', 'InstModule', and 'ConstantDataModule' to\n" 
+"      indicate that data and instruction caches are unified.\n"
+"\n";
 
 
 
@@ -244,8 +246,9 @@ static char *err_mem_config_note =
 	"\ta description of the memory system configuration file format.\n";
 
 static char *err_mem_config_net =
-	"\tNetwork identifiers need to be declared either in the cache configuration\n"
-	"\tfile, or in the network configuration file (option '--net-config').\n";
+	"\tNetwork identifiers need to be declared either in the cache\n" 
+	"\tconfiguration file, or in the network configuration file (option\n" 
+	"\t'--net-config').\n";
 
 static char *err_mem_levels =
 	"\tThe path from a cache into main memory exceeds 10 levels of cache.\n"
@@ -254,18 +257,20 @@ static char *err_mem_levels =
 	"\tincrease variable MEM_SYSTEM_MAX_LEVELS in '" __FILE__ "'\n";
 
 static char *err_mem_block_size =
-	"\tBlock size in a cache must be greater or equal than its lower-level\n"
-	"\tcache for correct behavior of directories and coherence protocols.\n";
+	"\tBlock size in a cache must be greater or equal than its\n" 
+	"\tlower-level cache for correct behavior of directories and\n" 
+	"\tcoherence protocols.\n";
 
 static char *err_mem_connect =
-	"\tAn external network is used that does not provide connectivity between\n"
-	"\ta memory module and an associated low/high module. Please add the\n"
-	"\tnecessary links in the network configuration file.\n";
+	"\tAn external network is used that does not provide connectivity\n"
+	"\tbetween a memory module and an associated low/high module. Please\n"
+	"\tadd the necessary links in the network configuration file.\n";
 
 static char *err_mem_disjoint =
-	"\tIn current versions of Multi2Sim, it is not allowed having a memory\n"
-	"\tmodule shared for different architectures. Please make sure that\n"
-	"\tthe sets of modules accessible by different architectures are disjoint.\n";
+	"\tIn current versions of Multi2Sim, it is not allowed having a\n" 
+	"\tmemory module shared for different architectures. Please make sure\n"
+	"\tthat the sets of modules accessible by different architectures\n"
+	"\tare disjoint.\n";
 
 
 static void mem_config_default(struct config_t *config)
@@ -280,10 +285,14 @@ static void mem_config_default(struct config_t *config)
 		if (arch->sim_kind == arch_sim_kind_functional)
 			continue;
 
-		/* Architecture must have registered its 'mem_config_default' function */
+		/* Architecture must have registered its 'mem_config_default' 
+		 * function */
 		if (!arch->mem_config_default_func)
-			panic("%s: architecture '%s' didn't register 'mem_config_default'",
-				__FUNCTION__, arch->name);
+		{
+			panic("%s: architecture '%s' didn't register "
+				"'mem_config_default'", __FUNCTION__, 
+				arch->name);
+		}
 
 		/* Make call back */
 		arch->mem_config_default_func(config);
@@ -299,13 +308,15 @@ static void mem_config_read_general(struct config_t *config)
 	section = "General";
 
 	/* Page size */
-	mmu_page_size = config_read_int(config, section, "PageSize", mmu_page_size);
+	mmu_page_size = config_read_int(config, section, "PageSize", 
+		mmu_page_size);
 	if ((mmu_page_size & (mmu_page_size - 1)))
 		fatal("%s: page size must be power of 2.\n%s",
 			mem_config_file_name, err_mem_config_note);
 
 	/* Peer transfers */
-	mem_system_peer_transfers = config_read_bool(config, section, "PeerTransfers", 1);
+	mem_system_peer_transfers = config_read_bool(config, section, 
+		"PeerTransfers", 1);
 }
 
 
@@ -319,7 +330,8 @@ static void mem_config_read_networks(struct config_t *config)
 
 	/* Create networks */
 	mem_debug("Creating internal networks:\n");
-	for (section = config_section_first(config); section; section = config_section_next(config))
+	for (section = config_section_first(config); section; 
+		section = config_section_next(config))
 	{
 		char *net_name;
 
@@ -335,9 +347,9 @@ static void mem_config_read_networks(struct config_t *config)
 	}
 	mem_debug("\n");
 
-	/* Add network pointers to configuration file. This needs to be done separately,
-	 * because configuration file writes alter enumeration of sections.
-	 * Also check integrity of sections. */
+	/* Add network pointers to configuration file. This needs to be done 
+	 * separately, because configuration file writes alter enumeration of 
+	 * sections. Also check integrity of sections. */
 	for (i = 0; i < list_count(mem_system->net_list); i++)
 	{
 		/* Get network section name */
@@ -394,26 +406,36 @@ static void mem_config_insert_module_in_network(struct config_t *config,
 			mod->name, err_mem_config_note);
 
 	/* Read buffer sizes from network */
-	def_input_buffer_size = config_read_int(config, buf, "DefaultInputBufferSize", 0);
-	def_output_buffer_size = config_read_int(config, buf, "DefaultOutputBufferSize", 0);
+	def_input_buffer_size = config_read_int(config, buf, 
+		"DefaultInputBufferSize", 0);
+	def_output_buffer_size = config_read_int(config, buf, 
+		"DefaultOutputBufferSize", 0);
 	if (!def_input_buffer_size)
-		fatal("%s: network %s: variable 'DefaultInputBufferSize' missing.\n%s",
-			mem_config_file_name, net->name, err_mem_config_note);
+	{
+		fatal("%s: network %s: variable 'DefaultInputBufferSize' "
+			"missing.\n%s", mem_config_file_name, net->name, 
+			err_mem_config_note);
+	}
 	if (!def_output_buffer_size)
-		fatal("%s: network %s: variable 'DefaultOutputBufferSize' missing.\n%s",
-			mem_config_file_name, net->name, err_mem_config_note);
+	{
+		fatal("%s: network %s: variable 'DefaultOutputBufferSize' "
+			"missing.\n%s", mem_config_file_name, net->name, 
+			err_mem_config_note);
+	}
 	if (def_input_buffer_size < mod->block_size + 8)
-		fatal("%s: network %s: minimum input buffer size is %d for cache '%s'.\n%s",
-			mem_config_file_name, net->name, mod->block_size + 8,
-			mod->name, err_mem_config_note);
+	{
+		fatal("%s: network %s: minimum input buffer size is %d for "
+			"cache '%s'.\n%s", mem_config_file_name, net->name, 
+			mod->block_size + 8, mod->name, err_mem_config_note);
+	}
 	if (def_output_buffer_size < mod->block_size + 8)
-		fatal("%s: network %s: minimum output buffer size is %d for cache '%s'.\n%s",
-			mem_config_file_name, net->name, mod->block_size + 8,
-			mod->name, err_mem_config_note);
+		fatal("%s: network %s: minimum output buffer size is %d for "
+			"cache '%s'.\n%s", mem_config_file_name, net->name, 
+			mod->block_size + 8, mod->name, err_mem_config_note);
 
 	/* Insert module in network */
-	node = net_add_end_node(net, def_input_buffer_size, def_output_buffer_size,
-		mod->name, mod);
+	node = net_add_end_node(net, def_input_buffer_size, 
+		def_output_buffer_size, mod->name, mod);
 
 	/* Return */
 	*net_ptr = net;
@@ -432,8 +454,8 @@ try_external_network:
 
 	/* Node name must be specified */
 	if (!*net_node_name)
-		fatal("%s: %s: network node name required for external network.\n%s%s",
-			mem_config_file_name, mod->name,
+		fatal("%s: %s: network node name required for external "
+			"network.\n%s%s", mem_config_file_name, mod->name,
 			err_mem_config_note, err_mem_config_net);
 
 	/* Get node */
@@ -462,7 +484,8 @@ try_external_network:
 }
 
 
-static struct mod_t *mem_config_read_cache(struct config_t *config, char *section)
+static struct mod_t *mem_config_read_cache(struct config_t *config, 
+	char *section)
 {
 	char buf[MAX_STRING_SIZE];
 	char mod_name[MAX_STRING_SIZE];
@@ -513,11 +536,16 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	policy_str = config_read_string(config, buf, "Policy", "LRU");
 	mshr_size = config_read_int(config, buf, "MSHR", 16);
 	num_ports = config_read_int(config, buf, "Ports", 2);
-	enable_prefetcher = config_read_bool(config, buf, "EnablePrefetcher", 0);
-	prefetcher_type_str = config_read_string(config, buf, "PrefetcherType", "GHB_PC_CS");
-	prefetcher_ghb_size = config_read_int(config, buf, "PrefetcherGHBSize", 256);
-	prefetcher_it_size = config_read_int(config, buf, "PrefetcherITSize", 64);
-	prefetcher_lookup_depth = config_read_int(config, buf, "PrefetcherLookupDepth", 2);
+	enable_prefetcher = config_read_bool(config, buf, 
+		"EnablePrefetcher", 0);
+	prefetcher_type_str = config_read_string(config, buf, 
+		"PrefetcherType", "GHB_PC_CS");
+	prefetcher_ghb_size = config_read_int(config, buf, 
+		"PrefetcherGHBSize", 256);
+	prefetcher_it_size = config_read_int(config, buf, 
+		"PrefetcherITSize", 64);
+	prefetcher_lookup_depth = config_read_int(config, buf, 
+		"PrefetcherLookupDepth", 2);
 
 	/* Checks */
 	policy = str_map_string_case(&cache_policy_map, policy_str);
@@ -526,17 +554,21 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 			mem_config_file_name, mod_name,
 			policy_str, err_mem_config_note);
 	if (num_sets < 1 || (num_sets & (num_sets - 1)))
-		fatal("%s: cache %s: number of sets must be a power of two greater than 1.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
+		fatal("%s: cache %s: number of sets must be a power of two "
+			"greater than 1.\n%s", mem_config_file_name, mod_name, 
+			err_mem_config_note);
 	if (assoc < 1 || (assoc & (assoc - 1)))
-		fatal("%s: cache %s: associativity must be power of two and > 1.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
+		fatal("%s: cache %s: associativity must be power of two "
+			"and > 1.\n%s", mem_config_file_name, mod_name, 
+			err_mem_config_note);
 	if (block_size < 4 || (block_size & (block_size - 1)))
-		fatal("%s: cache %s: block size must be power of two and at least 4.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
+		fatal("%s: cache %s: block size must be power of two and "
+			"at least 4.\n%s", mem_config_file_name, mod_name, 
+			err_mem_config_note);
 	if (dir_latency < 1)
-		fatal("%s: cache %s: invalid value for variable 'DirectoryLatency'.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
+		fatal("%s: cache %s: invalid value for variable "
+			"'DirectoryLatency'.\n%s", mem_config_file_name, 
+			mod_name, err_mem_config_note);
 	if (latency < 1)
 		fatal("%s: cache %s: invalid value for variable 'Latency'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
@@ -548,12 +580,18 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (enable_prefetcher)
 	{
-		prefetcher_type = str_map_string_case(&prefetcher_type_map, prefetcher_type_str);
+		prefetcher_type = str_map_string_case(&prefetcher_type_map, 
+			prefetcher_type_str);
 		if (prefetcher_ghb_size < 1 || prefetcher_it_size < 1 ||
-		    prefetcher_type == prefetcher_type_invalid || prefetcher_lookup_depth < 2 || 
+		    prefetcher_type == prefetcher_type_invalid || 
+		    prefetcher_lookup_depth < 2 || 
 		    prefetcher_lookup_depth > PREFETCHER_LOOKUP_DEPTH_MAX)
-			fatal("%s: cache %s: invalid prefetcher configuration.\n%s",
-			      mem_config_file_name, mod_name, err_mem_config_note);
+		{
+			fatal("%s: cache %s: invalid prefetcher "
+				"configuration.\n%s",
+				mem_config_file_name, mod_name, 
+				err_mem_config_note);
+		}
 	}
 
 	/* Create module */
@@ -569,7 +607,8 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 
 	/* High network */
 	net_name = config_read_string(config, section, "HighNetwork", "");
-	net_node_name = config_read_string(config, section, "HighNetworkNode", "");
+	net_node_name = config_read_string(config, section, 
+		"HighNetworkNode", "");
 	mem_config_insert_module_in_network(config, mod, net_name, net_node_name,
 		&net, &net_node);
 	mod->high_net = net;
@@ -577,26 +616,32 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 
 	/* Low network */
 	net_name = config_read_string(config, section, "LowNetwork", "");
-	net_node_name = config_read_string(config, section, "LowNetworkNode", "");
-	mem_config_insert_module_in_network(config, mod, net_name, net_node_name,
-		&net, &net_node);
+	net_node_name = config_read_string(config, section, 
+		"LowNetworkNode", "");
+	mem_config_insert_module_in_network(config, mod, net_name, 
+		net_node_name, &net, &net_node);
 	mod->low_net = net;
 	mod->low_net_node = net_node;
 
 	/* Create cache */
-	mod->cache = cache_create(mod->name, num_sets, block_size, assoc, policy);
+	mod->cache = cache_create(mod->name, num_sets, block_size, assoc, 
+		policy);
 
 	/* Fill in prefetcher parameters */
 	if (enable_prefetcher)
-		mod->cache->prefetcher = prefetcher_create(prefetcher_ghb_size, prefetcher_it_size, 
-							   prefetcher_lookup_depth, prefetcher_type);
+	{
+		mod->cache->prefetcher = prefetcher_create(prefetcher_ghb_size, 
+			prefetcher_it_size, prefetcher_lookup_depth, 
+			prefetcher_type);
+	}
 
 	/* Return */
 	return mod;
 }
 
 
-static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *section)
+static struct mod_t *mem_config_read_main_memory(struct config_t *config, 
+	char *section)
 {
 	char mod_name[MAX_STRING_SIZE];
 
@@ -637,8 +682,9 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 		fatal("%s: %s: directory size must be a power of two.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (dir_assoc < 1 || (dir_assoc & (dir_assoc - 1)))
-		fatal("%s: %s: directory associativity must be a power of two.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
+		fatal("%s: %s: directory associativity must be a power of "
+			"two.\n%s", mem_config_file_name, mod_name, 
+			err_mem_config_note);
 	if (dir_assoc > dir_size)
 		fatal("%s: %s: invalid directory associativity.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
@@ -655,14 +701,14 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 	/* High network */
 	net_name = config_read_string(config, section, "HighNetwork", "");
 	net_node_name = config_read_string(config, section, "HighNetworkNode", "");
-	mem_config_insert_module_in_network(config, mod, net_name, net_node_name,
-			&net, &net_node);
+	mem_config_insert_module_in_network(config, mod, net_name, 
+		net_node_name, &net, &net_node);
 	mod->high_net = net;
 	mod->high_net_node = net_node;
 
 	/* Create cache and directory */
 	mod->cache = cache_create(mod->name, dir_size / dir_assoc, block_size,
-			dir_assoc, cache_policy_lru);
+		dir_assoc, cache_policy_lru);
 
 	/* Return */
 	return mod;
@@ -709,8 +755,9 @@ static void mem_config_read_module_address_range(struct config_t *config,
 			fatal("%s: %s: invalid value '%s' in 'AddressRange'",
 				mem_config_file_name, mod->name, token);
 		if (mod->range.bounds.low % mod->block_size)
-			fatal("%s: %s: low address bound must be a multiple of block size.\n%s",
-				mem_config_file_name, mod->name, err_mem_config_note);
+			fatal("%s: %s: low address bound must be a multiple "
+				"of block size.\n%s", mem_config_file_name, 
+				mod->name, err_mem_config_note);
 
 		/* High bound */
 		if (!(token = strtok(NULL, delim)))
@@ -720,8 +767,10 @@ static void mem_config_read_module_address_range(struct config_t *config,
 			fatal("%s: %s: invalid value '%s' in 'AddressRange'",
 				mem_config_file_name, mod->name, token);
 		if ((mod->range.bounds.high + 1) % mod->block_size)
-			fatal("%s: %s: high address bound must be a multiple of block size minus 1.\n%s",
-				mem_config_file_name, mod->name, err_mem_config_note);
+			fatal("%s: %s: high address bound must be a multiple "
+				"of block size minus 1.\n%s", 
+				mem_config_file_name, mod->name, 
+				err_mem_config_note);
 
 		/* No more tokens */
 		if ((token = strtok(NULL, delim)))
@@ -810,7 +859,8 @@ static void mem_config_read_modules(struct config_t *config)
 
 	/* Create modules */
 	mem_debug("Creating modules:\n");
-	for (section = config_section_first(config); section; section = config_section_next(config))
+	for (section = config_section_first(config); section; 
+		section = config_section_next(config))
 	{
 		/* Section for a module */
 		if (strncasecmp(section, "Module ", 7))
@@ -839,9 +889,9 @@ static void mem_config_read_modules(struct config_t *config)
 	/* Debug */
 	mem_debug("\n");
 
-	/* Add module pointers to configuration file. This needs to be done separately,
-	 * because configuration file writes alter enumeration of sections.
-	 * Also check integrity of sections. */
+	/* Add module pointers to configuration file. This needs to be done 
+	 * separately, because configuration file writes alter enumeration of 
+	 * sections.  Also check integrity of sections. */
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
 		/* Get module and section */
@@ -853,7 +903,8 @@ static void mem_config_read_modules(struct config_t *config)
 }
 
 
-static void mem_config_check_route_to_main_memory(struct mod_t *mod, int block_size, int level)
+static void mem_config_check_route_to_main_memory(struct mod_t *mod, 
+	int block_size, int level)
 {
 	struct mod_t *low_mod;
 	int i;
