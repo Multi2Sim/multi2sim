@@ -28,6 +28,7 @@
 #include "debug.h"
 #include "device.h"
 #include "elf-format.h"
+#include "misc.h"
 #include "list.h"
 #include "mhandle.h"
 #include "object.h"
@@ -142,7 +143,7 @@ void opencl_program_set_source(struct opencl_program_t *program,
 	for (i = 0; i < count; i++)
 	{
 		/* Reconstruct null-terminated string */
-		length = lengths[i] ? lengths[i] : strlen(strings[i]);
+		length = lengths && lengths[i] ? lengths[i] : strlen(strings[i]);
 		if (length >= sizeof string)
 			fatal("%s: buffer too small", __FUNCTION__);
 		memcpy(string, strings[i], length);
@@ -176,7 +177,16 @@ cl_program clCreateProgramWithSource(
 	cl_int *errcode_ret)
 {
 	struct opencl_program_t *program;
+	int i;
 	
+	/* Debug */
+	opencl_debug("call '%s'", __FUNCTION__);
+	opencl_debug("\tcontext = %p", context);
+	opencl_debug("\tcount = %u", count);
+	opencl_debug("\tstrings = %p", strings);
+	opencl_debug("\tlengths = %p", lengths);
+	opencl_debug("\terrcode_ret = %p", errcode_ret);
+
 	/* Check valid context */
 	if (!context)
 	{
@@ -191,6 +201,17 @@ cl_program clCreateProgramWithSource(
 		if (errcode_ret)
 			*errcode_ret = CL_INVALID_VALUE;
 		return NULL;
+	}
+
+	/* Check valid elements in 'strings' */
+	for (i = 0; i < count; i++)
+	{
+		if (!strings[i])
+		{
+			if (errcode_ret)
+				*errcode_ret = CL_INVALID_VALUE;
+			return NULL;
+		}
 	}
 
 	/* Create program */
@@ -360,6 +381,13 @@ static char *opencl_err_program_invalid =
 	"\tnot a valid OpenCL kernel binary or does not contain ISA code for\n"
 	"\tthe intended architecture.\n";
 
+static char *opencl_note_program_binary =
+	"\tYour guest OpenCL application has successfully loaded the program\n"
+	"\tbinary passed through environment variable 'M2S_OPENCL_BINARY'\n"
+	"\tafter a call to 'clCreateProgramWithSource'. While this works,\n"
+	"\ta safer option is loading directly from the application with a\n"
+	"\tcall to 'clCreateProgramWithBinary'.\n";
+
 cl_int clBuildProgram(
 	cl_program program,
 	cl_uint num_devices,
@@ -456,6 +484,11 @@ cl_int clBuildProgram(
 		/* Add pair of architecture-specific program and device to the
 		 * generic program object. */
 		opencl_program_add(program, device, arch_program);
+	
+		/* Show warning */
+		warning("%s: %s: program binary loaded for device '%s'.\n%s",
+			__FUNCTION__, binary_name, device->name,
+			opencl_note_program_binary);
 	}
 
 out:
