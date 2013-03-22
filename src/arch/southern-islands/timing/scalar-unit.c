@@ -360,7 +360,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			uop->global_mem_access_addr =
 				uop->wavefront->scalar_work_item->
 				global_mem_access_addr;
-			mod_access(scalar_unit->compute_unit->global_memory,
+			mod_access(scalar_unit->compute_unit->scalar_cache,
 				mod_access_load, uop->global_mem_access_addr,
 				&uop->global_mem_witness, NULL, NULL, NULL);
 
