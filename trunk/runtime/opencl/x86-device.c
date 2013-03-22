@@ -155,8 +155,9 @@ void opencl_x86_device_make_fiber_ex(
 }
 
 
-void opencl_x86_device_switch_fiber(struct opencl_x86_device_fiber_t *current,
-		struct opencl_x86_device_fiber_t *dest, void *reg_values)
+void opencl_x86_device_switch_fiber(volatile struct opencl_x86_device_fiber_t *current,
+		volatile struct opencl_x86_device_fiber_t *dest,
+		volatile void *reg_values)
 {
 	asm volatile (
 		"push %%eax\n\t"		/* Push registers onto sp + 24 */
