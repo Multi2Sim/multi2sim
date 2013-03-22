@@ -29,6 +29,7 @@
 #include "mhandle.h"
 #include "object.h"
 #include "opencl.h"
+#include "string.h"
 
 
 
@@ -76,12 +77,13 @@ void opencl_debug(char *fmt, ...)
 {
 	va_list va;
 	char *value;
+	char str[MAX_LONG_STRING_SIZE];
 
 	/* Initialize debug */
 	if (!opencl_debug_initialized)
 	{
 		opencl_debug_initialized = 1;
-		value = getenv("OPENCL_DEBUG");
+		value = getenv("M2S_OPENCL_DEBUG");
 		if (value && !strcmp(value, "1"))
 			opencl_debugging = 1;
 	}
@@ -89,12 +91,12 @@ void opencl_debug(char *fmt, ...)
 	/* Exit if not debugging */
 	if (!opencl_debugging)
 		return;
-
-	/* Dump debug message */
+	
+	/* Reconstruct message in 'str' first. This is done to avoid multiple
+	 * calls to 'printf', that can have race conditions among threads. */
 	va_start(va, fmt);
-	fprintf(stderr, "[libm2s-opencl] ");
-	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
+	vsnprintf(str, sizeof str, fmt, va);
+	fprintf(stderr, "[libm2s-opencl] %s\n", str);
 }
 
 
