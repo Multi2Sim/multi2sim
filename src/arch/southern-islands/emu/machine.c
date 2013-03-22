@@ -2327,7 +2327,7 @@ void si_isa_V_SIN_F32_impl(struct si_work_item_t *work_item,
 
 	/* Normalize input */
 	/* XXX Should it be module instead of dividing? */
-	s0.as_float = s0.as_float / (2 * M_PI);
+	s0.as_float = s0.as_float * (2 * M_PI);
 
 	if (IN_RANGE(s0.as_float, -256, 256))
 	{
@@ -2345,8 +2345,8 @@ void si_isa_V_SIN_F32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst,
-			result.as_float);
+		si_isa_debug("t%d: V%u<=(%gf) (sin %gf) ", work_item->id, 
+			INST.vdst, result.as_float, s0.as_float);
 	}
 }
 #undef INST
@@ -2367,7 +2367,7 @@ void si_isa_V_COS_F32_impl(struct si_work_item_t *work_item,
 
 	/* Normalize input */
 	/* XXX Should it be module instead of dividing? */
-	s0.as_float = s0.as_float / (2 * M_PI);
+	s0.as_float = s0.as_float * (2 * M_PI);
 
 	if (IN_RANGE(s0.as_float, -256, 256))
 	{
@@ -2385,8 +2385,8 @@ void si_isa_V_COS_F32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst,
-			result.as_float);
+		si_isa_debug("t%d: V%u<=(%gf) (cos %gf) ", work_item->id, 
+			INST.vdst, result.as_float, s0.as_float);
 	}
 }
 #undef INST
@@ -2670,8 +2670,8 @@ void si_isa_V_MUL_LEGACY_F32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst,
-			product.as_float);
+		si_isa_debug("t%d: V%u<=(%gf) (%gf * %gf) ", work_item->id, 
+			INST.vdst, product.as_float, s0.as_float, s1.as_float);
 	}
 }
 #undef INST
@@ -6607,7 +6607,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XY_impl(struct si_work_item_t *work_item,
 		if (debug_status(si_isa_debug_category))
 		{
 			si_isa_debug("t%d: V%u<=(%u)(%u,%gf) ", work_item->id,
-				INST.vdata + i, addr, value.as_uint,
+				INST.vdata + i, addr+4*i, value.as_uint,
 				value.as_float);
 		}
 	}
@@ -6694,7 +6694,7 @@ void si_isa_TBUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item,
 		if (debug_status(si_isa_debug_category))
 		{
 			si_isa_debug("t%d: V%u<=(%u)(%u,%gf) ", work_item->id,
-				INST.vdata + i, addr, value.as_uint,
+				INST.vdata + i, addr+4*i, value.as_uint,
 				value.as_float);
 		}
 	}
