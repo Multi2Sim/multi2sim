@@ -18,16 +18,8 @@
  */
 
 
-#include <assert.h>
-#include <sys/stat.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include "mhandle.h"
-
-#include "debug.h"
 #include "elf-format.h"
-#include "list.h"
+
 
 
 
@@ -44,6 +36,7 @@ static char *elf_err_64bit =
 	"\tget compilation errors related with missing '.h' files, check that\n"
 	"\tthe 32-bit gcc package associated with your Linux distribution is\n"
 	"\tinstalled.\n";
+
 
 
 

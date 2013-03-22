@@ -31,17 +31,17 @@
 
 
 extern struct list_t *module_list;
+
 struct CUmod_st
 {
 	unsigned int id;
 	int ref_count;
 
-	/* ELF binary */
 	struct elf_file_t *elf_file;
 };
 
-struct CUmod_st *cuda_module_create(void);
-void cuda_module_free(struct CUmod_st *module);
+CUmodule cuda_module_create(void);
+void cuda_module_free(CUmodule module);
 
 #endif
 

@@ -22,21 +22,27 @@
 
 
 
-struct cuda_function_arg_t *cuda_function_arg_create(char *name)
+struct cuda_function_arg_t *cuda_function_arg_create(CUfunction function,
+		unsigned int value, int size)
 {
 	struct cuda_function_arg_t *arg;
 
 	/* Initialize */
-	arg = xcalloc(1, sizeof(struct cuda_function_arg_t));
-	arg->name = xstrdup(name);
+	arg = (struct cuda_function_arg_t *)xcalloc(1, sizeof(struct cuda_function_arg_t));
+	arg->id = list_count(function->arg_list);
+	arg->value = value;
+	arg->size = size;
+
+	list_add(function->arg_list, arg);
 
 	return arg;
 }
 
 
-void cuda_function_arg_free(struct cuda_function_arg_t *arg)
+void cuda_function_arg_free(CUfunction function, struct cuda_function_arg_t *arg)
 {
-	free(arg->name);
+	list_remove(function->arg_list, arg);
+
 	free(arg);
 }
 

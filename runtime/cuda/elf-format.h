@@ -17,11 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LIB_UTIL_ELF_FORMAT_H
-#define LIB_UTIL_ELF_FORMAT_H
+#ifndef RUNTIME_CUDA_ELF_FORMAT_H
+#define RUNTIME_CUDA_ELF_FORMAT_H
 
+#include <assert.h>
 #include <elf.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+
+#include "debug.h"
+#include "elf-format.h"
+#include "list.h"
+#include "mhandle.h"
+
+
 
 
 /* ELF buffer */

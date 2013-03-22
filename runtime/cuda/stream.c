@@ -22,15 +22,19 @@
 
 
 
+struct list_t *stream_list;
+
 /* Create a stream */
 CUstream cuda_stream_create(void)
 {
 	CUstream stream;
 
 	/* Initialize */
-	stream = xcalloc(1, sizeof(struct CUstream_st));
-	stream->id = 0;  /* FIXME: stream->id = ? */
+	stream = (CUstream)xcalloc(1, sizeof(struct CUstream_st));
+	stream->id = list_count(stream_list);
 	stream->ref_count = 1;
+
+	list_add(stream_list, stream);
 
 	return stream;
 }
@@ -39,9 +43,9 @@ CUstream cuda_stream_create(void)
 /* Free stream */
 void cuda_stream_free(CUstream stream)
 {
-	assert(stream->ref_count > 0);
-	stream->ref_count--;
+	list_remove(stream_list, stream);
 
+	stream->ref_count--;
 	free(stream);
 }
 
