@@ -131,9 +131,9 @@ void opencl_x86_device_make_fiber_ex(
 		int arg_size,
 		void *args);
 void opencl_x86_device_switch_fiber(
-		struct opencl_x86_device_fiber_t *current,
-		struct opencl_x86_device_fiber_t *dest,
-		void *reg_values);
+		volatile struct opencl_x86_device_fiber_t *current,
+		volatile struct opencl_x86_device_fiber_t *dest,
+		volatile void *reg_values);
 void opencl_x86_device_exit_fiber(void);
 void opencl_x86_device_barrier(int data);
 
