@@ -17,10 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MHANDLE_H
-#define MHANDLE_H
+#ifndef RUNTIME_CUDA_MHANDLE_H
+#define RUNTIME_CUDA_MHANDLE_H
 
+#include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 

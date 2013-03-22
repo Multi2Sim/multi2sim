@@ -22,7 +22,6 @@
 
 
 
-/* Device list */
 struct list_t *device_list;
 
 /* Create a device */
@@ -102,6 +101,7 @@ void cuda_device_free(struct cuda_device_t *device)
 {
 	list_remove(device_list, device);
 
+	free(device->name);
 	free(device);
 }
 

@@ -23,8 +23,8 @@
 #include "../include/cuda.h"
 #include "../include/cuda_runtime_api.h"
 
-#include "mhandle.h"
 #include "list.h"
+#include "mhandle.h"
 
 
 
@@ -39,8 +39,9 @@ struct compute_capability_t
 
 struct cuda_device_t
 {
-	CUdevice device;
+	CUdevice device;  /* CUdevice is also an id */
 	char *name;
+
 	struct compute_capability_t cc;
 	CUdevprop properties;
 	int attributes[CU_DEVICE_ATTRIBUTE_MAX];

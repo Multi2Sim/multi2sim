@@ -29,7 +29,7 @@ struct cuda_memory_object_t * cuda_memory_object_create(void)
         struct cuda_memory_object_t *mem;
 
         /* Initialize */
-        mem = (struct cuda_memory_object_t *)xmalloc(sizeof(struct cuda_memory_object_t));
+        mem = (struct cuda_memory_object_t *)xcalloc(1, sizeof(struct cuda_memory_object_t));
         mem->id = list_count(memory_object_list);
         mem->ref_count = 1;
 
@@ -42,6 +42,8 @@ struct cuda_memory_object_t * cuda_memory_object_create(void)
 void cuda_memory_object_free(struct cuda_memory_object_t *mem)
 {
 	list_remove(memory_object_list, mem);
+
+        mem->ref_count--;
         free(mem);
 }
 

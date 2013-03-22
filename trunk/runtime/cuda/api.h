@@ -41,10 +41,7 @@
 
 /* Version */
 #define CUDA_VERSION_MAJOR 1
-#define CUDA_VERSION_MINOR 800
-
-/* String */
-#define MAX_STRING_SIZE 1024
+#define CUDA_VERSION_MINOR 850
 
 /* Debug */
 extern int cuda_debug;
@@ -74,12 +71,9 @@ enum cuda_call_t
 	cuda_call_count
 };
 
-/* CUDA runtime */
+/* For CUDA runtime */
+extern CUmodule module;
 extern CUfunction function;
-extern dim3 grid_dim;
-extern dim3 threadblock_dim;
-extern struct list_t *args;
-extern int arg_index;
 
 
 

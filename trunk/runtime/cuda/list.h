@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LIB_UTIL_LIST_H
-#define LIB_UTIL_LIST_H
+#ifndef RUNTIME_CUDA_LIST_H
+#define RUNTIME_CUDA_LIST_H
 
 #include "mhandle.h"
 
