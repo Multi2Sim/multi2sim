@@ -253,7 +253,6 @@ extern long long si_emu_max_cycles;
 extern long long si_emu_max_inst;
 extern int si_emu_max_kernels;
 
-extern char *si_emu_opencl_binary_name;
 extern char *si_emu_opengl_binary_name;
 extern char *si_emu_report_file_name;
 extern FILE *si_emu_report_file;

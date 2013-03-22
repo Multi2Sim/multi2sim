@@ -10236,7 +10236,7 @@ static int opengl_func_glCreateProgram(struct x86_ctx_t *ctx)
 		/* Load file into memory buffer */
 		file_buffer = read_buffer(si_emu_opengl_binary_name, &file_size);
 		if(!file_buffer)
-			fatal("%s:Invalid file!", si_emu_opencl_binary_name);
+			fatal("%s: invalid shader binary", si_emu_opengl_binary_name);
 
 		/* Create shader binary object and attach to program*/
 		si_shader_binary = si_opengl_bin_file_create(file_buffer, file_size, si_emu_opengl_binary_name);
