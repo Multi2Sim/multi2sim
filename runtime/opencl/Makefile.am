@@ -91,7 +91,7 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	x86-program.h
 
 
-AM_CFLAGS = -m32
+AM_CFLAGS = -m32 -D_GNU_SOURCE
 
 endif
 
