@@ -159,6 +159,20 @@ void opencl_x86_device_switch_fiber(volatile struct opencl_x86_device_fiber_t *c
 		volatile struct opencl_x86_device_fiber_t *dest,
 		volatile void *reg_values)
 {
+	/* The following code has been added to prevent the compiler from
+	 * optimizing out the parts of the caller that set arguments 'current', 'dest',
+	 * and 'reg_values'. If it is omitted, using '-O3' will make gcc think
+	 * that these values are not used in the function, and the caller will
+	 * skip pushing them to the stack. Maybe there is a better way of disabling
+	 * this optimization?? For now, we just use some code that uses the variables,
+	 * by checking that 'current' and 'dest' are not NULL, and that 'reg_values'
+	 * is 16-byte aligned. */
+	if ((long) reg_values % 16)
+		panic("%s: 'reg_values' not aligned", __FUNCTION__);
+	if (!current || !dest)
+		panic("%s: 'current' or 'dest' is NULL", __FUNCTION__);
+
+	/* The useful code next */
 	asm volatile (
 		"push %%eax\n\t"		/* Push registers onto sp + 24 */
 		"push %%ebx\n\t"		/* sp + 20 */
