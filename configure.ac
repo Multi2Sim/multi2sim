@@ -1,11 +1,10 @@
-AC_INIT([multi2sim], [4.0.1])
+AC_INIT([multi2sim], [4.1])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/m2s.c])
 AM_INIT_AUTOMAKE([nostdinc])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
-AC_PROG_SED
 
 # Libtool
 LT_INIT
@@ -52,6 +51,26 @@ AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap se
 
 
 
+################
+# Test for 'sed'
+################
+
+AC_MSG_CHECKING([for sed])
+SED=`which sed`
+if test $? == 0
+then
+	AC_MSG_RESULT($SED)
+	AC_SUBST(SED)
+else
+	AC_MSG_RESULT(no)
+	AC_MSG_ERROR([
+
+	Program 'sed' could not be found in your system. Please install this
+	command-line tool and retry compilation.]
+	)
+fi
+
+
 ###############
 # Test for libm
 ###############
@@ -59,11 +78,14 @@ AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap se
 AC_CHECK_HEADER([math.h], [], [AC_MSG_ERROR([cannot find header math.h])])
 AC_MSG_CHECKING([for -lm])
 
-saved_ldflags="$LDFLAGS"
-LDFLAGS="-lm"
+# Use new LDFLAGS
+saved_libs="$LIBS"
+LIBS="-lm"
+
+# Try program
 AC_LINK_IFELSE(
 	[
-		AC_LANG_PROGRAM([[int sin();]], [[int main() {return sin();}]])
+		AC_LANG_PROGRAM([[#include <math.h>]], [[double x = sin(1.0);]])
 	],
 	[
 		AC_MSG_RESULT(yes)
@@ -77,7 +99,9 @@ AC_LINK_IFELSE(
 		)
 	]
 )
-LDFLAGS="$saved_ldflags"
+
+# Restore original LDFLAGS
+LIBS="$saved_libs"
 
 
 
@@ -89,8 +113,11 @@ LDFLAGS="$saved_ldflags"
 AC_CHECK_HEADER([pthread.h], [], [AC_MSG_ERROR([cannot find header pthread.h])])
 AC_MSG_CHECKING([for -lpthread])
 
-saved_ldflags="$LDFLAGS"
-LDFLAGS="-lpthread"
+# Use temporary LDFLAGS
+saved_libs="$LIBS"
+LIBS="-lpthread"
+
+# Try
 AC_LINK_IFELSE(
 	[
 		AC_LANG_PROGRAM([[int pthread_create();]], [[int main() {return pthread_create();}]])
@@ -107,7 +134,9 @@ AC_LINK_IFELSE(
 		)
 	]
 )
-LDFLAGS="$saved_ldflags"
+
+# Restore original LIBS
+LIBS="$saved_libs"
 
 
 
@@ -120,9 +149,11 @@ have_zlib=yes
 AC_CHECK_HEADER([zlib.h], [], [have_zlib=no])
 AC_MSG_CHECKING([for -lz])
 
-# Link a test program
-saved_ldflags="$LDFLAGS"
-LDFLAGS="-lz"
+# Use temporary LIBS
+saved_libs="$LIBS"
+LIBS="-lz"
+
+# Try them
 AC_LINK_IFELSE(
 	[
 		AC_LANG_PROGRAM([[int inflate();]], [[int main() {return inflate();}]])
@@ -132,7 +163,9 @@ AC_LINK_IFELSE(
 		have_zlib=no
 	]
 )
-LDFLAGS="$saved_ldflags"
+
+# Restore original LIBS
+LIBS="$saved_libs"
 
 # Result
 AC_MSG_RESULT($have_zlib)
@@ -151,6 +184,37 @@ fi
 
 
 
+###################
+# Test SSE4 Support
+###################
+
+have_sse4=no
+AC_MSG_CHECKING([for SSE4 instructions support])
+
+# Compile a test program with SSE4 assembly
+AC_LINK_IFELSE(
+	[ AC_LANG_PROGRAM([[]], [[asm volatile( "pcmpeqq %xmm0, %xmm1\n\t");]])	],
+	[ have_sse4=yes ],
+	[]
+)
+
+# Result
+AC_MSG_RESULT($have_sse4)
+if test x$have_sse4 == xno
+then
+	AC_MSG_WARN([
+
+	Your CPU does not have support for x86 SSE4 instructions. Emulation of
+	these instructions will not be supported. The module in the x86 emulator
+	dealing with SSE4 instruction will not be compiled.]
+	)
+else
+	AC_DEFINE(HAVE_SSE4, [1])
+fi
+
+
+
+
 ##################
 # Test flag '-m32'
 ##################
@@ -163,7 +227,7 @@ AC_LINK_IFELSE(
 	[
 		AC_LANG_PROGRAM(
 			[[#include <stdio.h>]],
-			[[int main() { printf("hello world\n"); return 0; }]]
+			[[ printf("hello world\n"); ]]
 		)
 	],
 	[
@@ -210,28 +274,36 @@ AC_MSG_CHECKING([for AMD OpenCL libraries])
 have_opencl=no
 if test "x$AMDAPPSDKROOT" != "x"
 then
+	# Use temporary CFLAGS, LDFLAGS
 	saved_cflags="$CFLAGS"
 	saved_ldflags="$LDFLAGS"
+	saved_libs="$LIBS"
 	CFLAGS="-I$AMDAPPSDKROOT/include"
-	LDFLAGS="-L$AMDAPPSDKROOT/lib/x86 -L$AMDAPPSDKROOT/lib/x86_64 -lOpenCL"
+	LDFLAGS="-L$AMDAPPSDKROOT/lib/x86 -L$AMDAPPSDKROOT/lib/x86_64"
+	LIBS="-lOpenCL"
+
+	# Try program
 	AC_LINK_IFELSE(
 	[
 		AC_LANG_PROGRAM(
 			[[#include <CL/cl.h>]],
-			[[int main() {
+			[[
 				cl_int ret;
 				cl_platform_id platform;
 				cl_uint num_platforms;
 				ret = clGetPlatformIDs(1, &platform, &num_platforms);
 			        return CL_SUCCESS;
-			}]]
+			]]
 		)
 	],
 	[
 		have_opencl=yes
 	])
+
+	# Restore original CFLAGS, LDFLAGS, LIBS
 	CFLAGS="$saved_cflags"
 	LDFLAGS="$saved_ldflags"
+	LIBS="$saved_libs"
 fi
 
 # Warning if not
@@ -293,27 +365,24 @@ else
 	OPENGL_LDFLAGS="-lGL -lGLU -lGLEW -lglut"
 	AC_SUBST([OPENGL_LDFLAGS])
 
-	# Test link using all OpenGL libraries
-	saved_ldflags="$LDFLAGS"
-	LDFLAGS="$OPENGL_LDFLAGS"
+	# Export temporary LDFLAGS
+	saved_libs="$LIBS"
+	LIBS="$OPENGL_LDFLAGS"
+
+	# Try link
 	AC_MSG_CHECKING([for $OPENGL_LDFLAGS])
 	AC_LINK_IFELSE(
 		[
 			AC_LANG_PROGRAM(
 				[[
-					int glutInit();
-					int glBegin();
-					int gluOrtho2D();
-					int glewInit();
+					#include <GL/glut.h>
+					#include <GL/gl.h>
+					#include <GL/glu.h>
 				]],
 				[[
-					int main() {
-						glutInit();
-						glBegin();
-						gluOrtho2D();
-						glewInit();
-						return 0;
-					}
+					glutInit(NULL, NULL);
+					glBegin(0);
+					gluOrtho2D(0.0, 0.0, 0.0, 0.0);
 				]]
 			)
 		],
@@ -325,7 +394,9 @@ else
 			have_opengl=no
 		]
 	)
-	LDFLAGS="$saved_ldflags"
+
+	# Restore original LIBS
+	LIBS="$saved_libs"
 
 	# Message if not present
 	if test "x$have_opengl" = "xno"

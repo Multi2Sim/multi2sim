@@ -28,6 +28,7 @@ libemu_a_SOURCES = \
 	machine-sse.c \
 	machine-sse2.c \
 	machine-sse3.c \
+	machine-sse4.c \
 	machine-std.c \
 	machine-str.c \
 	\
