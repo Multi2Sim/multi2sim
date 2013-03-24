@@ -15,7 +15,7 @@ __top_builddir__lib_libm2s_glew_la_SOURCES = \
 	mhandle.c \
 	mhandle.h
 
-AM_CFLAGS = -Wall -O2 -fPIC -m32
+AM_CFLAGS = -m32
 
 endif
 
