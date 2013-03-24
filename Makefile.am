@@ -30,11 +30,15 @@ EXTRA_DIST = \
 	samples/arm/test-args.c \
 	samples/arm/test-sort \
 	samples/arm/test-args \
+	samples/fermi/vectorAdd \
+	samples/fermi/vectorAdd.cu \
+	samples/fermi/vectorAdd.cubin \
 	samples/mips/test-sort.c \
 	samples/mips/test-args.c \
 	samples/mips/test-sort \
 	samples/mips/test-args \
 	samples/southern-islands/7970/mem-config \
+	samples/southern-islands/7970/mem-config-unified-L1s
 	samples/southern-islands/7970/si-config \
 	samples/southern-islands/7850/mem-config \
 	samples/southern-islands/7850/si-config \
@@ -61,6 +65,8 @@ EXTRA_DIST = \
 	samples/memory/example-4/x86-config \
 	samples/memory/example-4/evg-config \
 	samples/memory/example-4/README \
+	samples/network/mesh_9_wo_r.txt \
+	samples/network/mesh_9_route.txt \
 	samples/x86/test-threads \
 	samples/x86/ctx-config-args-sort \
 	samples/x86/test-sort.c \

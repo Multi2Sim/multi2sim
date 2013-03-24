@@ -12,6 +12,8 @@ __top_builddir__lib_libm2s_glut_la_SOURCES = \
 	debug.c \
 	debug.h \
 	\
+	glut.dat \
+	\
 	mhandle.c \
 	mhandle.h \
 	\
