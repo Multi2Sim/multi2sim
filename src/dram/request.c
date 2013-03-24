@@ -17,15 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
-#include <stdio.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
 #include "request.h"
-#include "dram.h"
-#include "dram-system.h"
 
 
 /*

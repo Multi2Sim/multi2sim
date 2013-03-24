@@ -17,14 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-#include <unistd.h>
 
 #include <arch/common/arch.h>
 #include <arch/common/arch-list.h>
 #include <arch/southern-islands/asm/bin-file.h>
 #include <arch/southern-islands/timing/gpu.h>
-#include <arch/x86/emu/context.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>

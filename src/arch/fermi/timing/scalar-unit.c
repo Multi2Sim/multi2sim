@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <limits.h>
 
 #include <arch/fermi/emu/grid.h>
 #include <arch/fermi/emu/warp.h>

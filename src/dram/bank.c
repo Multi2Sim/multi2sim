@@ -17,15 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 
 #include "bank.h"
-#include "dram.h"
-#include "rank.h"
 
 
 /*

@@ -24,10 +24,8 @@
 #include <arch/fermi/emu/thread-block.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
-#include <lib/util/string.h>
 
 #include "sm.h"
 #include "gpu.h"

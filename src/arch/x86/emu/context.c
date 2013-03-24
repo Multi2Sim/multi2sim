@@ -19,8 +19,6 @@
 
 #include <assert.h>
 
-#include <arch/southern-islands/emu/emu.h>
-#include <driver/opencl-old/evergreen/opencl.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
