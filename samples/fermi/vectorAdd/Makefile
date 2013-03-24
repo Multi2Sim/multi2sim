@@ -3,10 +3,11 @@ ELF = vectorAdd
 CPPS = $(wildcard *.cpp)
 ALLCUS = $(wildcard *.cu)
 INCUS = $(wildcard *_kernel*.cu)
-CU = $(filter-out $(INCUS),$(ALLCUS))
-CUBIN = $(patsubst %.cu,%.cubin,$(CU))
+CUS = $(filter-out $(INCUS),$(ALLCUS))
+CUBINS = $(patsubst %.cu,%.cubin,$(CUS))
 OBJDIR = obj
-OBJS = $(patsubst %.cpp,$(OBJDIR)/%.cpp.o,$(CPPS)) $(patsubst %.cu,$(OBJDIR)/%.cu.o,$(CU))
+OBJS = $(patsubst %.cpp,$(OBJDIR)/%.cpp.o,$(CPPS)) $(patsubst %.cu,$(OBJDIR)/%.cu.o,$(CUS))
+CUCPPS = $(patsubst %.cu,$(OBJDIR)/%.cu.cpp,$(CUS))
 
 M2S_ROOT = ../../..
 
@@ -18,7 +19,7 @@ NVCCFLAGS = -arch sm_20 -m 32
 INCS = -I.
 LIBS = -L$(M2S_ROOT)/lib/.libs -static -lm2s-cuda
 
-$(ELF): makeobjdir $(OBJS) $(CUBIN)
+$(ELF): makeobjdir $(OBJS) $(CUBINS) $(CUCPPS)
 	$(CXX) -o $@ $(CXXFLAGS) $(OBJS) $(LIBS)
 
 makeobjdir:
@@ -32,6 +33,9 @@ $(OBJDIR)/%.cu.o: %.cu
 
 %.cubin: %.cu
 	$(NVCC) -o $@ $(NVCCFLAGS) $(INCS) -cubin $<
+
+$(OBJDIR)/%.cu.cpp: %.cu
+	$(NVCC) -o $@ $(NVCCFLAGS) $(INCS) -cuda $<
 
 clean:
 	rm -fr $(ELF) *.cubin $(OBJDIR)
