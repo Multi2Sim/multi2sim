@@ -47,6 +47,8 @@ struct CUfunc_st
 
 	unsigned int module_id;
 
+	unsigned long long int *inst_buffer;
+
 	struct list_t *arg_list;
 	CUdeviceptr **arg_array;
 

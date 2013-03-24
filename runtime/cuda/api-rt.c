@@ -44,19 +44,71 @@ char *cuda_rt_err_native =
 
 
 /*
+ * Internal Functions
+ */
+
+unsigned char get_uchar(const unsigned long long int *rodata, int index)
+{
+	return (unsigned char)((rodata[index / 8] >> (index % 8 * 8)) & 0xff);
+}
+
+unsigned short get_ushort(const unsigned long long int *rodata, int start_index)
+{
+	return (unsigned short)((unsigned short)get_uchar(rodata, start_index) |
+			((unsigned short)get_uchar(rodata, start_index + 1)) << 8);
+}
+
+unsigned int get_uint(const unsigned long long int *rodata, int start_index)
+{
+	return (unsigned int)((unsigned int)get_uchar(rodata, start_index) |
+			((unsigned int)get_uchar(rodata, start_index + 1)) << 8 |
+			((unsigned int)get_uchar(rodata, start_index + 2)) << 16 |
+			((unsigned int)get_uchar(rodata, start_index + 3)) << 24);
+}
+
+unsigned long long int get_ulonglong(const unsigned long long int *rodata, int start_index)
+{
+	return (unsigned long long int)
+		(((unsigned long long int)get_uint(rodata, start_index)) << 32 |
+		((unsigned long long int)get_uint(rodata, start_index + 4)));
+}
+
+int get_str_len(const unsigned long long int *rodata, int start_index)
+{
+	int i;
+
+	for (i = start_index; get_uchar(rodata, i) != '\0'; ++i)
+		;
+
+	return i;
+}
+
+void get_str(unsigned char *s, const unsigned long long int *rodata, int start_index, int end_index)
+{
+	int i;
+
+	for (i = start_index; i < end_index; ++i)
+		s[i - start_index] = get_uchar(rodata, i);
+	s[i - start_index] = '\0';
+}
+
+
+
+
+/*
  * CUDA Runtime Internal Functions
  */
 
-void** __cudaRegisterFatBinary(void *fatCubin)
+void **__cudaRegisterFatBinary(void *fatCubin)
 {
-	unsigned long long int **fatCubinHandle;
+	struct __fatDeviceText **fatCubinHandle;
 
 	cuInit(0);
 
 	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
-	fatCubinHandle = (unsigned long long int **)xcalloc(1, sizeof(unsigned long long int *));
-	*fatCubinHandle = (unsigned long long int *)(((struct __fatDeviceText *)fatCubin)->d);
+	fatCubinHandle = (struct __fatDeviceText **)xcalloc(1, sizeof(struct __fatDeviceText *));
+	*fatCubinHandle = fatCubin;
 
 	return (void **)fatCubinHandle;
 }
@@ -113,6 +165,17 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		dim3 *gDim,
 		int *wSize)
 {
+	struct __fatDeviceText *fatCubin;
+	const unsigned long long int *rodata;
+	int elf_head, str_tab_head, i;
+	unsigned char **section_names;
+	int section_name_len;
+	char text_section_name[1024];
+	unsigned short int text_section_index = 0;
+	Elf32_Ehdr elf_header;
+	Elf32_Shdr *sections;
+	unsigned long long int *inst_buffer;
+
 	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
 	/* Load module */
@@ -123,6 +186,68 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 
 	/* Get function */
 	cuModuleGetFunction(&function, module, deviceFun);
+
+	fatCubin = *(struct __fatDeviceText **)fatCubinHandle;
+	rodata = fatCubin->d;
+
+	/* Look for ELF start */
+	for (i = 0; (rodata[i] & 0xffffffff) != 0x464c457f; ++i)
+		;
+	elf_head = i * 8;
+
+	/* Get section header info */
+	elf_header.e_shoff = get_uint(rodata, elf_head + 32);
+	elf_header.e_shentsize = get_ushort(rodata, elf_head + 46);
+	elf_header.e_shnum = get_ushort(rodata, elf_head + 48);
+
+	/* Get section info */
+	sections = (Elf32_Shdr *)xcalloc(elf_header.e_shnum, sizeof(Elf32_Shdr));
+	for (i = 0; i < elf_header.e_shnum; ++i)
+	{
+		sections[i].sh_name = get_uint(rodata, 
+				elf_head + 52 + i * elf_header.e_shentsize);
+		sections[i].sh_offset = get_uint(rodata, 
+				elf_head + 52 + i * elf_header.e_shentsize + 16);
+		sections[i].sh_size = get_uint(rodata, 
+				elf_head + 52 + i * elf_header.e_shentsize + 20);
+	}
+
+	/* Get section names */
+	elf_header.e_shstrndx = get_ushort(rodata, elf_head + 50);
+	section_names = (unsigned char **)xcalloc(elf_header.e_shnum, sizeof(unsigned char *));
+	str_tab_head = elf_head + sections[elf_header.e_shstrndx].sh_offset;
+	for (i = 0; i < elf_header.e_shnum - 1; ++i)
+	{
+		section_name_len = get_str_len(rodata, str_tab_head +
+				sections[i].sh_name);
+		section_names[i] = (unsigned char *)xcalloc(1, section_name_len
+				+ 1);
+		get_str(section_names[i], rodata, str_tab_head +
+				sections[i].sh_name, str_tab_head + 
+				sections[i].sh_name + section_name_len);
+	}
+
+	/* Look for .text.kernel_name section */
+	snprintf(text_section_name, 1024, ".text.%s", deviceFun);
+	for (i = 0; i < elf_header.e_shnum; ++i)
+	{
+		if (!strcmp(text_section_name, (char *)section_names[i]))
+			break;
+	}
+	if (i == elf_header.e_shnum)
+		fatal("no section found");
+	text_section_index = i;
+
+	/* Get text section info */
+	inst_buffer = (unsigned long long int *)xcalloc(1,
+			sections[text_section_index].sh_size / 8 *
+			sizeof(unsigned long long int));
+	for (i = 0; i < sections[text_section_index].sh_size / 8; ++i)
+	{
+		inst_buffer[i] = get_ulonglong(rodata, elf_head +
+				sections[text_section_index].sh_offset + i * 8);
+		printf("inst_buffer[%d] = %016llx\n", i, inst_buffer[i]);
+	}
 }
 
 
