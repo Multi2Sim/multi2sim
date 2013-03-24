@@ -17,9 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <lib/util/string.h>
+
 #include "function.h"
-
-
+#include "function-arg.h"
+#include "module.h"
 
 
 struct list_t *function_list;

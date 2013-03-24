@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
+
 #include "device.h"
-
-
+#include "object.h"
 
 
 /* Create a device */

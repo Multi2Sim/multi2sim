@@ -20,13 +20,6 @@
 #ifndef DRIVER_CUDA_DEVICE_H
 #define DRIVER_CUDA_DEVICE_H
 
-#include <lib/mhandle/mhandle.h>
-
-#include "object.h"
-
-
-
-
 struct cuda_device_t
 {
 	unsigned int id;

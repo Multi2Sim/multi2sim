@@ -17,9 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
+#include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
+
+#include "device.h"
+#include "function.h"
+#include "memory.h"
+#include "module.h"
 #include "object.h"
-
-
 
 
 /*

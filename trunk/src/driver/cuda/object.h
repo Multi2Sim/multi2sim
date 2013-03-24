@@ -20,18 +20,6 @@
 #ifndef DRIVER_CUDA_OBJECT_H
 #define DRIVER_CUDA_OBJECT_H
 
-#include <assert.h>
-
-#include <lib/util/debug.h>
-#include <lib/util/linked-list.h>
-#include "device.h"
-#include "function.h"
-#include "memory.h"
-#include "module.h"
-
-
-
-
 enum cuda_obj_t
 {
         CUDA_OBJ_DEVICE = 1,

@@ -20,28 +20,6 @@
 #ifndef DRIVER_CUDA_CUDA_H
 #define DRIVER_CUDA_CUDA_H
 
-#include <assert.h>
-
-#include <arch/fermi/emu/emu.h>
-#include <arch/fermi/emu/grid.h>
-#include <arch/fermi/emu/warp.h>
-#include <arch/x86/emu/context.h>
-#include <arch/x86/emu/emu.h>
-#include <arch/x86/emu/regs.h>
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-#include <lib/util/linked-list.h>
-#include <lib/util/list.h>
-#include <mem-system/memory.h>
-#include "device.h"
-#include "function.h"
-#include "function-arg.h"
-#include "memory.h"
-#include "module.h"
-#include "object.h"
-
-
-
 
 /* Version */
 struct cuda_version_t
@@ -70,6 +48,7 @@ enum cuda_call_t
 };
 
 /* Prototype of CUDA driver functions */
+struct x86_ctx_t;
 typedef int (*cuda_func_t)(struct x86_ctx_t *ctx);
 
 /* Functions */

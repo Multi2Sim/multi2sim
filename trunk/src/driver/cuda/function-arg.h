@@ -20,11 +20,6 @@
 #ifndef DRIVER_CUDA_FUNCTION_ARG_H
 #define DRIVER_CUDA_FUNCTION_ARG_H
 
-#include <lib/mhandle/mhandle.h>
-
-
-
-
 enum cuda_mem_scope_t
 {
 	CUDA_MEM_SCOPE_NONE = 0,
