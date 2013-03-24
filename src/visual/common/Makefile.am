@@ -30,7 +30,7 @@ else
 
 libcommon_a_SOURCES = \
 	\
-	visual-nogtk.c \
+	visual-missing.c \
 	visual.h
 
 endif

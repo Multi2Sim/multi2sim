@@ -19,6 +19,7 @@
 
 #include <pthread.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
 #include "glut.h"
