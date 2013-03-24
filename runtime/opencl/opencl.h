@@ -29,6 +29,18 @@
 #include "../include/CL/cl.h"
 
 
+/* NOTE: The following re-declaration of 'pthread_setaffinity_np' is made to
+ * avoid some 'implicit declaration' warnings in older pthread distributions.
+ * Sometimes, the warning would still show up even after declaring macro
+ * #define _GNU_SOURCE (notice that this macro is declared in the gcc command
+ * line with the '-D' flag, see Makefile.am). */
+#ifndef pthread_setaffinity_np
+int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
+		const cpu_set_t *cpuset);
+#endif
+
+
+
 
 /*
  * Types
