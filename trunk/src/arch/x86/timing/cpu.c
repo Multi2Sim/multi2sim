@@ -31,7 +31,6 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
-#include <mem-system/mmu.h>
 #include <mem-system/prefetch-history.h>
 
 #include "bpred.h"

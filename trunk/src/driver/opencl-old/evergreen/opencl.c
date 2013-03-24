@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <unistd.h>
 
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>

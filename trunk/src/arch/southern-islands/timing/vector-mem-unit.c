@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <limits.h>
 
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
@@ -26,7 +25,6 @@
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
-#include <lib/util/config.h>
 
 #include "compute-unit.h"
 #include "gpu.h"

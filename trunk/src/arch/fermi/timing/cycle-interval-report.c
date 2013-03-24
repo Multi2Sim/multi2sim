@@ -4,7 +4,6 @@
 #include <lib/util/file.h>
 #include <lib/util/string.h>
 
-#include "uop.h"
 #include "sm.h"
 #include "cycle-interval-report.h"
 

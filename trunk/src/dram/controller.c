@@ -17,18 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/config.h>
 #include <lib/util/debug.h>
-#include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 
-#include "bank.h"
-#include "rank.h"
 #include "dram.h"
 #include "command.h"
 #include "request.h"

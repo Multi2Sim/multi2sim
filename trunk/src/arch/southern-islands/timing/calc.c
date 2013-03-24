@@ -20,8 +20,6 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include <arch/southern-islands/asm/bin-file.h>
-#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>

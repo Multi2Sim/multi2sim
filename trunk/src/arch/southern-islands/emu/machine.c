@@ -25,7 +25,6 @@
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
 #include "isa.h"
 #include "machine.h"
 #include "ndrange.h"

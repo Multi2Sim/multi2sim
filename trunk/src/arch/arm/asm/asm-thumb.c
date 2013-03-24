@@ -5,17 +5,9 @@
  *      Author: ukidaveyash
  */
 
-#include <ctype.h>
-#include <string.h>
 
-#include <lib/util/debug.h>
-#include <lib/util/elf-format.h>
-#include <lib/util/list.h>
-#include <lib/util/misc.h>
-#include <lib/util/string.h>
 #include <lib/mhandle/mhandle.h>
 
-#include "asm.h"
 #include "asm-thumb.h"
 
 /* Pointers to the tables of instructions */

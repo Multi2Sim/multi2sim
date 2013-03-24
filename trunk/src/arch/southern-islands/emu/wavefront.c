@@ -25,7 +25,6 @@
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
 #include "wavefront.h"
 #include "isa.h"
 #include "ndrange.h"
