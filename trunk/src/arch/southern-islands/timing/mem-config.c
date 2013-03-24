@@ -68,7 +68,7 @@ void si_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "Policy", "LRU");
 
 	/* Create scalar L1 caches */
-	for (i = 0; i < si_gpu_num_compute_units/4; i++)
+	for (i = 0; i < (si_gpu_num_compute_units + 3) / 4; i++)
 	{
 		snprintf(section, sizeof section, "Module si-scalar-l1-%d", i);
 		config_write_string(config, section, "Type", "Cache");
@@ -102,7 +102,7 @@ void si_mem_config_default(struct config_t *config)
 		config_write_int(config, section, "ComputeUnit", i);
 		snprintf(str, sizeof str, "si-vector-l1-%d", i);
 		config_write_string(config, section, "DataModule", str);
-		snprintf(str, sizeof str, "si-scalar-l1-%d", i/4);
+		snprintf(str, sizeof str, "si-scalar-l1-%d", i / 4);
 		config_write_string(config, section, "ConstantDataModule", str);
 	}
 
