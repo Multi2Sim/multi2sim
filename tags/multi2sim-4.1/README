@@ -1,0 +1,979 @@
+===============================================================================
+Coding Guidelines
+===============================================================================
+
+* Indenting:
+	
+	Tabs should be used for indenting. It is recommended to configure your
+	editor with a tab size of 8 spaces for a coherent layout with other
+	developers of Multi2Sim.
+
+* Line wrapping:
+	
+	Lines should have an approximate maximum length of 80 characters,
+	including initial tabs (and assuming a tab counts as 8 characters).
+	Code should continue on the next line with an additional tab
+	otherwise. Example:
+
+	int long_function_with_many_arguments(int argument_1, char *arg2,
+		int arg3)
+	{
+		/* Function body */
+	}
+
+* Comments:
+
+	Comments should not use the double slash '//' notation. They should
+	use instead the '/* */' notation. Multiple-line comments should
+	use a '*' character at the beginning of each new line, respecting
+	the 80-character limit of the lines.
+
+	/* This is an example of a comment that spans multiple lines. When the
+	 * second line starts, an asterisk is used. */
+
+* Code blocks:
+
+	Brackets in code blocks should not share a line with other code, both
+	for opening and closing brackets.
+	The opening parenthesis should have no space on the left for a function
+	declaration, but it should have it for 'if', 'while', and 'for' blocks.
+	Examples:
+
+	void function(int arg1, char *arg2)
+	{
+	}
+
+	if (cond)
+	{
+		/* Block 1 */
+	}
+	else
+	{
+		/* Block 2 */
+	}
+
+	while (1)
+	{
+	}
+	
+	In the case of conditionals and loops with only one line of code in
+	their body, no brackets need to be used. Examples:
+
+	for (i = 0; i < 10; i++)
+		only_one_line_example();
+
+	if (!x)
+		a = 1;
+	else
+		b = 1;
+
+	while (list_count(my_list))
+		list_remove_at(my_list, 0);
+
+* Enumerations:
+
+	Enumeration types should be named 'enum <xxx>_t', without using
+	'typedef' declarations. For example:
+
+	enum my_enum_t
+	{
+		err_list_ok = 0,
+		err_list_bounds,
+		err_list_not_fount
+	};
+
+* Memory allocation:
+
+	Dynamic memory allocation should be done using functions xmalloc,
+	xcalloc, xrealloc, and xstrdup, defined in 'lib/mhandle/mhandle.h'.
+	These functions internally call their corresponding malloc, calloc,
+	realloc, and strdup, and check that they return a valid pointer, i.e.,
+	enough memory was available to be allocated. For example:
+
+	void *buf;
+	char *s;
+
+	buf = xmalloc(100);
+	s = xstrdup("hello");
+
+	This mechanism replaces the previous approach based on an explicit check
+	by the caller that the returned pointer is valid.
+
+* Forward declarations:
+
+	Forward declarations should be avoided. A source file ".c" in a library
+	should have two sections (if used) declaring private and public
+	functions. Private functions should be defined before they are used
+	to avoid forward declarations. Public functions should be included
+	in the ".h" file associated with the ".c" source (or common for the
+	entire library). For example:
+
+	/*
+	 * Private Functions
+	 */
+	
+	static void func1()
+	{
+		...
+	}
+
+	[ 2 line breaks ]
+
+	static void func2()
+	{
+		...
+	}
+
+	[ 4 line breaks ]
+
+	/*
+	 * Public Functions
+	 */
+	
+	void public_func1()
+	{
+		...
+	}
+
+
+* Variable declaration
+
+	Variables should be declared only at the beginning of code blocks (can
+	be primary or secondary code blocks). Variables declared for a code
+	block should be classified in categories, such as type, or location of
+	the code where they will be used. Several variables sharing the same
+	type should be listed in different lines. For example:
+
+	static void mem_config_read_networks(struct config_t *config)
+	{
+		struct net_t *net;
+		int i;
+	
+		char buf[MAX_STRING_SIZE];
+		char *section;
+	
+		/* Create networks */
+		for (section = config_section_first(config); section;
+			section = config_section_next(config))
+		{
+			char *net_name;
+	
+			/* Network section */
+			if (strncasecmp(section, "Network ", 8))
+				continue;
+			net_name = section + 8;
+	
+			/* Create network */
+			net = net_create(net_name);
+			mem_debug("\t%s\n", net_name);
+			list_add(mem_system->net_list, net);
+		}
+	}
+
+
+* Function declaration:
+
+	When a function takes no input argument, its declaration should use the
+	'(void)' notation, instead of just '()'. If the header uses the empty
+	parentheses notation, the compiler sets no restrictions in the number of
+	arguments that the user can pass to the function. On the contrary, the
+	'(void)' notation forces the caller to make a call with zero arguments
+	to the function.
+	This affects the function declaration in a header file, a forward
+	declaration in a C file, and the header of the function definition in
+	the C file.
+	Example:
+
+		void say_hello(void);	/* Header file or forward declaration */
+
+		void say_hello(void)	/* Function implementation */
+		{
+			printf("Hello\n");
+		}
+
+
+* Spaces:
+
+	Conditions and expressions in parenthesis should be have a space on the
+	left of the opening parenthesis. Arguments in a function and function
+	calls should not have a space on the left of the opening parenthesis.
+		
+		if (condition)
+		while (condition)
+		for (...)
+		void my_func_declaration(...);
+		my_func_call();
+	
+	No spaces are used after an opening parenthesis or before a closing
+	parenthesis. One space used after commas.
+
+		if (a < b)
+		void my_func_decl(int a, int b);
+	
+	Spaces should be used on both sides of operators, such as assignments or
+	arithmetic:
+
+		var1 = var2;
+		for (x = 0; x < 10; x++)
+		a += 2;
+		var1 = a < 3 ? 10 : 20;
+		result = (a + 3) / 5;
+	
+	Type casts should be followed by a space:
+
+		printf("%lld\n", (long long) value);
+
+* Integer types:
+
+	Integer variables should be declared using built-in integer types, i.e.,
+	avoiding types in 'stdint.h' (uint8_t, int8_t, uint16_t, ...). The
+	main motivation is that some non-built-in types require type casts in 'printf'
+	calls to avoid warnings. Since Multi2Sim is assumed to run either on an
+	x86 or an x86_64 machine, the following type sizes should be used:
+
+	Unsigned 8-, 16-, 32-, and 64-bit integers:
+		unsigned char
+		unsigned short
+		unsigned int
+		unsigned long long
+	
+	Signed 8-, 16-, 32-, and 64-bit integers:
+		char
+		short
+		int
+		long long
+	
+	Integer types 'long' and 'unsigned long' should be avoided, since they
+	compile to different sizes in 32- and 64-bit platforms.
+
+
+===============================================================================
+Header Files
+===============================================================================
+
+* Code organization:
+
+	After SVN Rev. 1087, most of the files in Multi2Sim are organized as
+	pairs of header ('.h') and source ('.c') files, with the main exception
+	being the Multi2Sim program entry 'src/m2s.c'.
+	Every public symbol (and preferably also private symbols) used in a pair
+	of header and source files should use a common prefix, unique for these
+	files. For example, prefix 'x86_inst_' is used in files
+	'src/arch/x86/emu/inst.h' and 'src/arch/x86/emu/inst.c'.
+
+* Structure of a source ('.c') file:
+
+	In each source file, the copyright notice should be followed by a set of
+	'#include' compiler directives. The source file should include only
+	those files containing symbols being used throughout the source, with
+	the objective of keeping dependence tree sizes down to a minimum. Please
+	avoid copying sets of '#include' directives upon creation of a new file,
+	and add instead one by one as their presence is required.
+	Compiler '#include' directives should be classified in three groups,
+	separated with one blank line:
+
+		1) Standard include files found in the default include directory
+		   for the compiler (assert.h, stdio.h, etc), using the notation
+		   based on '< >' brackets. The list of header files should be
+		   ordered alphabetically.
+
+		2) Include files located in other directories of the Multi2Sim
+		   tree. These files are expressed as a relative path to the
+		   'src' directory (this is the only additional default path
+		   assumed by the compiler), also using the '< >' bracket
+		   notation. Files should be ordered alphabetically.
+
+		3) Include files located in the same directory as the source
+		   file, using the double quote '" "' notation. Files should be
+		   ordered alphabetically.
+
+	Each source file should include all header files defining the symbols
+	used in its code, and not rely on a multiple inclusion (i.e., a header
+	file including another header file) for this purpose. In general, header
+	files will not include any other header file.
+	For example:
+
+	/*
+	 *  Multi2Sim
+	 *  Copyright (C) 2012
+	 *  [...]
+	 */
+
+		--- One blank line ---
+	
+	#include <assert.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+
+	#include <lib/mhandle/mhandle.h>
+	#include <lib/util/debug.h>
+	#include <lib/util/list.h>
+
+	#include "emu.h"
+	#include "inst.h"
+
+		--- Two blank lines ---
+	
+	[ Body of the source file ]
+
+		--- One blank line at the end of the file ---
+
+
+* Structure of a header ('.h') file:
+
+	The contents of a header file should always be guarded by an '#ifdef'
+	compiler directive that avoid multiple or recursive inclusions of it.
+	The symbol following '#ifdef' should be the equal to the path of the
+	header file relative to the simulator 'src' directory, replacing slashes
+	and dashes with underscores, and using capital letters.
+	For example:
+
+	/*
+	 *  Multi2Sim
+	 *  Copyright (C) 2012
+	 *  [...]
+	 */
+
+		--- One blank line ---
+
+	#ifndef ARCH_X86_EMU_CONTEXT_H
+	#define ARCH_X86_EMU_CONTEXT_H
+
+		--- Two blank lines ---
+
+	[ '#include' lines go here, with the same format and spacing as for
+	source files. But in most cases, there should be no '#include' here at
+	all! ]
+
+	[ Body of the header file, with structure, 'extern' variables, and
+	function declarations ]
+
+		--- Two blank lines ---
+
+	#endif
+
+
+* Avoiding multiple inclusions
+
+	The objective of avoiding multiple inclusions is keeping dependence
+	trees small, and thus speeding up compilation upon modification of
+	header files. A multiple inclusion occurs when a header file includes
+	another header file. In most cases, this situation can avoided with the
+	following techniques:
+
+	- If a structure defined in a header file contains a field defined as a
+	  pointer to a structure defined in a different header file, the
+	  compiler does not need the latter structure to be defined. For
+	  example, structure
+
+	  	struct x86_context_t
+		{
+			struct x86_inst_t *current_inst;
+		}
+	
+	  defined in file 'context.h' has a field of type 'struct x86_inst_t *'
+	  defined in 'inst.h'. However, 'inst.h' does not need to be included,
+	  since the compiler does not need to now the size of the substructure
+	  to reserve memory for a pointer to it.
+
+	- If a function defined in a header file contains an argument whose type
+	  is a pointer to a structure defined in a different header file, the
+	  latter need not be included either. Instead, a forward declaration of
+	  the structure suffices to get rid of the compiler warning. For
+	  example:
+
+	  	struct dram_device_t;
+		void dram_bank_create(struct dram_device_t *device);
+
+	  In the example above, function 'dram_bank_create' would be defined in
+	  a file named 'dram-bank.h', while structure 'struct dram_device_t'
+	  would be defined in 'dram-device.h'. However, the latter file does not
+	  need to be included as long as 'struct dram_device_t' is present as a
+	  forward declaration of the structure.
+
+
+	Exceptions:
+
+	- When a derived type (type declared with 'typedef') declared in a
+	  secondary header file is used as a member of a structure or argument
+	  of a function declared in a primary header file, the secondary header
+	  file should be included as an exception. This problem occurs often
+	  when type 'FILE *' is used in arguments of 'xxx_dump' functions. In
+	  this case, header file 'stdio.h' needs to be included.
+	
+	- When a primary file defines a structure using a field of type 'struct'
+	  (not a pointer) defined in a secondary header file, the secondary
+	  header file needs to be included. In this case, the compiler needs to
+	  know the exact size of the secondary structure to allocate space for
+	  the primary.
+	  For example, structure 'struct evg_bin_format_t' has a field of type
+	  'struct elf_buffer_t'. Thus, header file 'bin-format.h' needs to
+	  include 'elf-format.h'.
+
+
+
+===============================================================================
+Dynamic Structures (Objects)
+===============================================================================
+	
+	Although Multi2Sim is written in C, its structure is based in a set of
+	dynamically allocated objects (a processor core, a hardware thread, a
+	micro-instruction, etc.), emulating the behavior of an object oriented
+	language.
+	An object is defined with a structure declaration (struct), one or more
+	constructor and destructor functions, and a set of other functions
+	updating or querying the state of the object.
+	The structure and function headers should be declared in the '.h' file
+	associated with the object, while the implementation of public functions
+	(plus other private functions, structures, and variables) should appear
+	in its associated '.c' file.
+	In general, every object should have its own pair of '.c' and '.h' files
+	implementing and encapsulating its behavior.
+	As an example, let us consider the object representing an x86
+	micro-instruction, called 'x86_uop_t' and defined in
+
+		src/arch/x86/timing/uop.h
+	
+	The implementation of the object is given in an independent the
+	associated C file in
+
+		src/arch/x86/timing/uop.c
+	
+	The constructor and destructor of all objects follow the same template.
+	An object constructor returns a pointer to a new allocated object, and
+	takes zero or more arguments, used for the object initialization. The
+	code in the constructor contains two sections: initialization and
+	return, as shown in this example:
+	
+		struct my_struct_t *my_struct_create(int field1, int field2)
+		{
+			struct my_struct_t *my_struct;
+	
+			/* Initialize */
+			my_struct = xcalloc(1, sizeof(struct my_struct_t));
+			my_struct->field1 = field1;
+			my_struct->field2 = field2;
+			my_struct->field3 = 100;
+	
+			/* Return */
+			return my_struct;
+		}
+
+	An object destructor takes a pointer to the object as the only argument,
+	and returns no value:
+
+		void my_struct_free(struct my_struct_t *my_struct)
+		{
+			[ ... free fields ... ]
+			free(my_struct);
+		}
+
+
+===============================================================================
+Multi2Sim Runtime Libraries
+===============================================================================
+
+In some cases, Multi2Sim requires a benchmark to be linked with specific runtime
+libraries for correct simulation. Currently, this is the case of GPU simulation,
+requiring OpenCL, CUDA, or OpenGL runtimes. Runtime libraries are linked
+statically or dynamically with the application running on Multi2Sim (guest
+code), and are not part of the source code compiled with the main 'configure'
+and 'make' commands. Runtime libraries are found in directories
+
+		/tools/libm2s-XXX
+
+As guest code, they are compiled targeting a 32-bit x86 architecture. When
+running 'make' on a runtime library directory, two versions of it are generated,
+one for dynamic and another for static linking:
+
+		/tools/libm2s-XXX/libm2s-XXX.a
+		/tools/libm2s-XXX/libm2s-XXX.so
+
+A runtime library communicates with Multi2Sim through a specific system call
+code, associated uniquely with that library, and not part of the standard Linux
+system call codes. For example, the CUDA runtime library is associated with code
+328.
+	
+The first argument of the system call is a function code, and the rest of the
+arguments depend on the prototype defined for that function. The set of possible
+function codes and their arguments define the Multi2Sim runtime library
+interface, and both the runtime library (guest code) and the simulator (host
+code) need to agree on it.
+
+
+* Steps involved in a runtime function call
+
+	Let us assume a CUDA application statically linked with the Multi2Sim
+	CUDA runtime library, and running on Multi2Sim. When the application
+	performs a CUDA call, e.g. cuMalloc, the guest control flow jumps to the
+	implementation of the CUDA runtime library (still guest code).
+
+	Eventually, the runtime library might require a service from the
+	simulator, such as returning the pointer to the next available memory
+	region in GPU simulated memory. For this purpose, a system call with
+	code 328 will be performed, which is captured by the simulator in the
+	code implemented in file
+
+		src/arch/x86/emu/syscall.c
+
+	This file contains the implementation of the most common Linux system
+	calls. However, the implementation of runtime libraries interface should
+	be implemented in a separate file. In the case of the CUDA runtime
+	interface, the system call just calls function 'frm_cuda_call()',
+	implemented in
+
+		src/arch/fermi/emu/cuda.c
+
+		[ It is still to be defined what is the standard directory for
+		the host implementation of the runtime library interface, i.e.,
+		whether its part of the target GPU architecture, or the host x86
+		architecture. ]
+
+* Runtime library calls
+
+	The set of calls that define a runtime library interface should be
+	declared in a *.dat file in the Multi2Sim host code. For example, the
+	set of functions for the new OpenCL runtime library is defined in
+
+		src/arch/x86/emu/clrt.dat
+
+	This file contains a list of calls (macro uses), on for each library
+	function. The arguments are the function name, followed by its
+	associated function code. The name of the first function should be
+	'init', devoted for version compatibility control and native/simulated
+	execution control (see below).
+
+	There are several positions in the code where a list of all library
+	functions is required. For example, an enumeration type
+	'enum x86_clrt_call_t' is defined, containing as many enumeration
+	constants as library function calls. This can be done by defining macro
+	'X86_CLRT_DEFINE_CALL' accordingly, and then including the 'clrt.dat'
+	file. This technique allows for the list of library calls to be
+	centralized in a single file, avoiding to update several code locations
+	every time a new call is added to the interface.
+
+	The implementation of each library function call should be part of the
+	simulator code, in the main *.c file associated with the runtime library
+	interface implementation. In the case of the OpenCL runtime, the
+	functions are found at the end of file
+
+		src/arch/x86/emu/clrt.c
+
+	The implementation of each function should be preceding by a multi-line
+	comment clearly specifying the prototype for that function (how many
+	arguments it has, the type of arguments, the definition of structures
+	pointed to by function arguments, etc.).
+
+* Version control for a Multi2Sim runtime library interface
+
+	The first runtime function call should be called 'init', and should be
+	used both to initialize the host environment, and to carry out a version
+	compatibility check between the guest runtime library and the Multi2Sim
+	implementation of the runtime interface.
+	
+	During the development of the Multi2sim runtime library, its interface
+	with the simulator evolves and changes, causing an older statically
+	pre-compiled application to be incompatible with the newer version of
+	the simulator, or vice versa. If this fact is silently ignored,
+	unexpected behaviors would be observed, and the cause of the errors
+	would be hard for the user to figure out.
+
+	Both the runtime library and the Multi2Sim implementation have a version
+	identifier formed of two numbers (major and minor version). For example,
+	the newer OpenCL runtime library defines
+
+		X86_CLRT_VERSION_MAJOR
+		X86_CLRT_VERSION_MINOR
+
+	in the Multi2Sim implementation at
+		
+		/src/arch/x86/emu/clrt.c
+
+	while it defines
+
+		M2S_CLRT_VERSION_MAJOR
+		M2S_CLRT_VERSION_MINOR
+
+	in the runtime library implementation at
+
+		/tools/libm2s-clrt/m2s-clrt.h
+
+	When the interface between the runtime library and the Multi2sim
+	implementation is modified or extended, the version numbers should be
+	updated with the following criterion:
+
+	1)	If the guest library requires a new feature from the host
+		implementation, the feature is added to the host, and the minor
+		version is updated to the current Multi2Sim SVN revision both in
+		host and guest. All previous services provided by the host
+		should remain available and backward-compatible. Executing a
+		newer library on the older simulator will fail, but an older
+		library on the newer simulator will succeed.
+	
+	2)	If a new feature is added that affects older services of the
+		host implementation breaking backward compatibility, the major
+		version is increased by 1 in the host and guest code. Executing
+		a library with a different (lower or higher) major version than
+		the host implementation will fail.
+
+	The 'init' function call in the runtime library will pass a pointer to a
+	structure of type
+
+		struct m2s_runtime_version_t
+		{
+			int major;
+			int minor;
+		}
+
+	containing the runtime library version. The host implementation reads
+	these values and compares them with the version of the runtime library
+	interface, according to the rules above. The 'init' function should
+	always return 0, or cause the program to exit.
+
+		
+
+* Native vs. simulated execution of the Multi2Sim runtime library
+
+	An application statically linked with a Multi2Sim runtime library is
+	aimed at running on Multi2Sim. However, a user could attempt to run it
+	natively as well. It is up to the Multi2Sim developer whether support
+	for native execution should be given as well in the runtime library. For
+	example, an OpenCL runtime library could use only its x86 OpenCL runtime
+	capabilities when run natively, and exploit Multi2Sim's support for GPU
+	simulation when run on the simulator.
+
+	It is easy for the Multi2Sim runtime library to find out whether it is
+	running natively or on the simulator, by checking the error code of the
+	runtime function call devoted for version control. On Multi2Sim, this
+	function call should always return 0, while on a native execution, the
+	system call will return -1, since it is not part of the Linux system
+	call interface.
+
+	If the runtime library detects native execution, and it is not a feature
+	supported for the library, it should output a clear error message, and
+	finalize the program. For example:
+
+	error: OpenCL program cannot be run natively.
+		This is an error message provided by the Multi2Sim OpenCL
+		library (libm2s-opencl). Apparently, you are attempting to run
+		natively a program that was linked with this library. You should
+		either run it on top of Multi2Sim, or link it with the OpenCL
+		library provided in the ATI Stream SDK if you want to use your
+		physical GPU device.
+
+
+* Debug information for the host implementation of the runtime library interface
+
+	For every runtime library interface, such as the implementation of the
+	new OpenCL runtime interface present in
+
+		src/arch/x86/clrt.c
+
+	there should be a command-line option for the simulator executable (m2s)
+	that provides a trace of all calls performed by the runtime. In this
+	case, the option should be '--debug-x86-clrt <file>'. The steps to
+	include this option are:
+
+		1) Define 'x86_clrt_debug_category' in
+			src/arch/x86/clrt.c
+		   and make it a public variable by including its external
+		   definition in the suitable section of
+		   	src/arch/x86/x86-emu.h
+		2) Define 'x86_clrt_debug' macro in the corresponding section of
+			src/arch/x86/x86-emu.h
+		3) Add all code needed for a new debug category in the main
+		Multi2Sim program, add the new command-line option, and update
+		the help message at
+			src/m2s.c
+
+* Debug information for the Multi2Sim runtime library
+
+	The runtime library itself is guest code, that can potentially run both
+	on Multi2Sim or natively. Thus, it is not possible to use a simulator
+	command-line option to activate debug information in a runtime library.
+	Instead, an environment variable is used for this purpose.
+
+	For example, the new OpenCL runtime library uses environment variable
+	'M2S_CLRT_DEBUG' to activate debug information. If the variable is set
+	to 1, the runtime library should dump information about every library
+	function called by the application, in the same format as the system
+	calls are dumped in
+		
+		src/arch/x86/emu/syscall.c
+	
+	As an example, the OpenCL runtime library uses function 'm2s_clrt_debug'
+	for debugging purposes, implemented in
+
+		tools/libm2s-clrt/m2s-clrt.c
+
+	
+	
+===============================================================================
+Steps to Publish a New Version Release (Administrator):
+===============================================================================
+
+	* Try to generate distribution version on both 32-bit and 64-bit
+	  machines. Compilation might cause different warnings. Compile in debug
+	  mode, and also generate distribution packages.
+
+	  	./configure --enable-debug
+		make
+
+		./configure
+		make distcheck
+
+	* svn commit all previous changes
+
+	* Run 'svn update' + 'svn2cl.sh'
+
+	* Update AM_INIT_AUTOMAKE in 'configure.ac'
+
+	* Remake all to update 'Makefiles'
+		~/multi2sim/trunk$ make clean
+		~/multi2sim/trunk$ make
+
+	* Add line in Changelog:
+		"Version X.Y.Z released"
+
+	* Copy 'trunk' directory into 'tags'. For example:
+		~/multi2sim$ svn cp trunk tags/multi2sim-X.Y.Z
+
+	* svn commit
+
+	* In trunk directory, create tar ball.
+		~/multi2sim/trunk$ make distcheck
+
+	* Check that all additional distribution files were included in the
+	  distribution package. Check that:
+	  	* 'libm2s-glut' compiles correctly.
+		* 'libm2s-opengl' compiles correctly.
+		* 'libm2s-opencl' compiles correctly.
+		* 'libm2s-cuda' compiles correctly.
+
+	* Copy tar ball to Multi2Sim server:
+		scp multi2sim-X.Y.Z.tar.gz $(M2S-SERVER):public_html/files/
+
+	* Update Multi2Sim web site.
+		* Log in.
+		* Click toolbox -> Special Pages -> Uncategorized templates
+		* Update 'Latest Version' and 'Latest Version Date'
+
+	* Send email to multi2sim@multi2sim.org
+
+
+===============================================================================
+Command to update Copyright in all files:
+===============================================================================
+
+In the Multi2Sim trunk directory, run:
+$ sources=`find -regex '.*/.*\.\(c\|cpp\|h\|dat\)$'`
+$ sed -i "s,^ \*  Copyright.*$, *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)," $sources
+
+
+===============================================================================
+Command to count lines of code
+===============================================================================
+
+In the Multi2Sim trunk directory, run:
+$ wc -l `find -regex '.*/.*\.\(c\|cpp\|h\|dat\)$'`
+
+
+===============================================================================
+Notes about the memory system
+===============================================================================
+
+When a memory address is accessed in an SRAM bank, the access time is calculated based on the following time components:
+
+* T_precharge: time to store the contents of the row buffer into its corresponding memory location.
+* T_row_buf_access: base access time to the row buffer.
+* T_activate: time to load a memory location into the row buffer.
+
+There are three possibilities to compute the access time T_access, one for each of the following scenarios:
+
+1) Row-closed. The row buffer is empty, and the new row needs to be activated before being accessed. T_access = T_activate + T_row_buf_access.
+2) Row-hit. The row buffer contains the requested address. T_access = T_row_buf_access.
+3) Row-conflict. The row buffer contains a different address. T_access = T_precharge + T_activate + T_row_buf_access.
+
+
+===============================================================================
+Help message for memory system configuration
+===============================================================================
+
+Option '--mem-config <file>' is used to configure the memory system. The
+configuration file is a plain-text file in the IniFile format. The memory system
+is formed of a set of cache modules, main memory modules, and interconnects.
+
+Interconnects can be defined in two different configuration files. The first way
+is using option '--net-config <file>' (use option '--help-net-config' for more
+information). Any network defined in the network configuration file can be
+referenced from the memory configuration file. These networks will be referred
+hereafter as external networks.
+
+The second option to define a network straight in the memory system
+configuration. This alternative is provided for convenience and brevity. By
+using sections [Network <name>], networks with a default topology are created,
+which include a single switch, and one bidirectional link from the switch to
+every end node present in the network.
+
+The following sections and variables can be used in the memory system
+configuration file:
+
+Section [General] defines global parameters affecting the entire memory system.
+
+  PageSize = <size>  (Default = 4096)
+      Memory page size. Virtual addresses are translated into new physical
+      addresses in ascending order at the granularity of the page size.
+
+Section [Module <name>] defines a generic memory module. This section is used to
+declare both caches and main memory modules accessible from CPU cores or GPU
+compute units.
+
+  Type = {Cache|MainMemory}  (Required)
+      Type of the memory module. From the simulation point of view, the
+      difference between a cache and a main memory module is that the former
+      contains only a subset of the data located at the memory locations it
+      serves.
+  Geometry = <geo>
+      Cache geometry, defined in a separate section of type [Geometry <geo>].
+      This variable is required for cache modules.
+  LowNetwork = <net>
+      Network connecting the module with other lower-level modules, i.e.,
+      modules closer to main memory. This variable is mandatory for caches, and
+      should not appear for main memory modules. Value <net> can refer to an
+      internal network defined in a [Network <net>] section, or to an external
+      network defined in the network configuration file.
+  LowNetworkNode = <node>
+      If 'LowNetwork' points to an external network, node in the network that
+      the module is mapped to. For internal networks, this variable should be
+      omitted.
+  HighNetwork = <net>
+      Network connecting the module with other higher-level modules, i.e.,
+      modules closer to CPU cores or GPU compute units. For highest level
+      modules accessible by CPU/GPU, this variable should be omitted.
+  HighNetworkNode = <node>
+      If 'HighNetwork' points to an external network, node that the module is
+      mapped to.
+  LowModules = <mod1> [<mod2> ...]
+      List of lower-level modules. For a cache module, this variable is rquired.
+      If there is only one lower-level module, it serves the entire address
+      space for the current module. If there are several lower-level modules,
+      each served a disjoint subset of the address space. This variable should
+      be omitted for main memory modules.
+  BlockSize = <size>
+      Block size in bytes. This variable is required for a main memory module.
+      It should be omitted for a cache module (in this case, the block size is
+      specified in the corresponding cache geometry section).
+  Latency = <cycles>
+      Memory access latency. This variable is required for a main memory module,
+      and should be omitted for a cache module (the access latency is specified
+      in the corresponding cache geometry section in this case).
+  AddressRange = { BOUNDS <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }
+      Physical address range served by the module. If not specified, the entire
+      address space is served by the module. There are two possible formats for
+      the value of 'Range':
+      With the first format, the user can specify the lowest and highest byte
+      included in the address range. The value in <low> must be a multiple of
+      the module block size, and the value in <high> must be a multiple of the
+      block size minus 1.
+      With the second format, the address space can be split between different
+      modules in an interleaved manner. If dividing an address by <div> and
+      modulo <mod> makes it equal to <eq>, it is served by this module. The
+      value of <div> must be a multiple of the block size. When a module serves
+      only a subset of the address space, the user must make sure that the rest
+      of the modules at the same level serve the remaining address space.
+
+Section [CacheGeometry <geo>] defines a geometry for a cache. Caches using this
+geometry are instantiated [Module <name>] sections.
+
+  Sets = <num_sets> (Required)
+      Number of sets in the cache.
+  Assoc = <num_ways> (Required)
+      Cache associativity. The total number of blocks contained in the cache
+      is given by the product Sets * Assoc.
+  BlockSize = <size> (Required)
+      Size of a cache block in bytes. The total size of the cache is given by
+      the product Sets * Assoc * BlockSize.
+  Latency = <cycles> (Required)
+      Hit latency for a cache in number of cycles.
+  Policy = {LRU|FIFO|Random} (Default = LRU)
+      Block replacement policy.
+  MSHR = <size> (Default = 16)
+      Miss status holding register (MSHR) size in number of entries. This value
+      determines the maximum number of accesses that can be in flight for the
+      cache, including the time since the access request is received, until a
+      potential miss is resolved.
+  Ports = <num> (Default = 2)
+      Number of ports. The number of ports in a cache limits the number of
+      concurrent hits. If an access is a miss, it remains in the MSHR while it
+      is resolved, but releases the cache port.
+
+Section [Network <net>] defines an internal default interconnect, formed of a
+single switch connecting all modules pointing to the network. For every module
+in the network, a bidirectional link is created automatically between the module
+and the switch, together with the suitable input/output buffers in the switch
+and the module.
+
+  DefaultInputBufferSize = <size>
+      Size of input buffers for end nodes (memory modules) and switch.
+  DefaultOutputBufferSize = <size>
+      Size of output buffers for end nodes and switch. 
+  DefaultBandwidth = <bandwidth>
+      Bandwidth for links and switch crossbar in number of bytes per cycle.
+
+Section [Entry <name>] creates an entry into the memory system. An entry is a
+connection between a CPU core/thread or a GPU compute unit with a module in the
+memory system.
+
+  Type = {CPU | GPU}
+      Type of processing node that this entry refers to.
+  Core = <core>
+      CPU core identifier. This is a value between 0 and the number of cores
+      minus 1, as defined in the CPU configuration file. This variable should be
+      omitted for GPU entries.
+  Thread = <thread>
+      CPU thread identifier. Value between 0 and the number of threads per core
+      minus 1. Omitted for GPU entries.
+  ComputeUnit = <id>
+      GPU compute unit identifier. Value between 0 and the number of compute
+      units minus 1, as defined in the GPU configuration file. This variable
+      should be omitted for CPU entries.
+  DataModule = <mod>
+      Module in the memory system that will serve as an entry to a CPU
+      core/thread when reading/writing program data. The value in <mod>
+      corresponds to a module defined in a section [Module <mod>]. Omitted for
+      GPU entries.
+  InstModule = <mod>
+      Module serving as an entry to a CPU core/thread when fetching program
+      instructions. Omitted for GPU entries.
+  Module = <mod>
+      Module serving as an entry to a GPU compute unit when reading/writing
+      program data in the global memory scope. Omitted for CPU entries.
+
+
+===============================================================================
+Help message in IPC report file
+===============================================================================
+
+The IPC (instructions-per-cycle) report file shows performance value for a
+context at specific intervals. If a context spawns child contexts, only IPC
+statistics for the parent context are shown. The following fields are shown in
+each record:
+
+  <cycle>
+      Current simulation cycle. The increment between this value and the value
+      shown in the next record is the interval specified in the context
+      configuration file.
+
+  <inst>
+      Number of non-speculative instructions executed in the current interval.
+
+  <ipc-glob>
+      Global IPC observed so far. This value is equal to the number of executed
+      non-speculative instructions divided by the current cycle.
+
+  <ipc-int>
+      IPC observed in the current interval. This value is equal to the number
+      of instructions executed in the current interval divided by the number of
+      cycles of the interval.
+
+

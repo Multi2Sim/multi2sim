@@ -1,0 +1,13 @@
+CUDA_DEFINE_CALL(versionCheck)
+CUDA_DEFINE_CALL(cuInit)
+CUDA_DEFINE_CALL(cuDeviceTotalMem)
+CUDA_DEFINE_CALL(cuModuleLoad)
+CUDA_DEFINE_CALL(cuModuleUnload)
+CUDA_DEFINE_CALL(cuModuleGetFunction)
+CUDA_DEFINE_CALL(cuMemGetInfo)
+CUDA_DEFINE_CALL(cuMemAlloc)
+CUDA_DEFINE_CALL(cuMemFree)
+CUDA_DEFINE_CALL(cuMemcpyHtoD)
+CUDA_DEFINE_CALL(cuMemcpyDtoH)
+CUDA_DEFINE_CALL(cuLaunchKernel)
+

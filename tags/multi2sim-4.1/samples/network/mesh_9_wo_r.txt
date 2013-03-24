@@ -1,0 +1,168 @@
+[ Network.mynet ]
+DefaultInputBufferSize = 4
+DefaultOutputBufferSize = 4
+DefaultBandwidth = 1
+
+[ Network.mynet.Node.N1 ]
+Type = EndNode
+
+[ Network.mynet.Node.N2 ]
+Type = EndNode
+
+[ Network.mynet.Node.N3 ]
+Type = EndNode
+
+[ Network.mynet.Node.N4 ]
+Type = EndNode
+
+[ Network.mynet.Node.N5 ]
+Type = EndNode
+
+[ Network.mynet.Node.N6 ]
+Type = EndNode
+
+[ Network.mynet.Node.N7 ]
+Type = EndNode
+
+[ Network.mynet.Node.N8 ]
+Type = EndNode
+
+[ Network.mynet.Node.N9 ]
+Type = EndNode
+
+[ Network.mynet.Node.S1 ]
+Type = Switch
+
+[ Network.mynet.Node.S2 ]
+Type = Switch
+
+[ Network.mynet.Node.S3 ]
+Type = Switch
+
+[ Network.mynet.Node.S4 ]
+Type = Switch
+
+[ Network.mynet.Node.S5 ]
+Type = Switch
+
+[ Network.mynet.Node.S6 ]
+Type = Switch
+
+[ Network.mynet.Node.S7 ]
+Type = Switch
+
+[ Network.mynet.Node.S8 ]
+Type = Switch
+
+[ Network.mynet.Node.S9 ]
+Type = Switch
+
+[ Network.mynet.Link.N1-S1 ]
+Type = Bidirectional
+Source = N1
+Dest = S1
+
+[ Network.mynet.Link.N2-S2 ]
+Type = Bidirectional
+Source = N2
+Dest = S2
+
+[ Network.mynet.Link.N3-S3 ]
+Type = Bidirectional
+Source = N3
+Dest = S3
+
+[ Network.mynet.Link.N4-S4 ]
+Type = Bidirectional
+Source = N4
+Dest = S4
+
+[ Network.mynet.Link.N5-S5 ]
+Type = Bidirectional
+Source = N5
+Dest = S5
+
+[ Network.mynet.Link.N6-S6 ]
+Type = Bidirectional
+Source = N6
+Dest = S6
+
+[ Network.mynet.Link.N7-S7 ]
+Type = Bidirectional
+Source = N7
+Dest = S7
+
+[ Network.mynet.Link.N8-S8 ]
+Type = Bidirectional
+Source = N8
+Dest = S8
+
+[ Network.mynet.Link.N9-S9 ]
+Type = Bidirectional
+Source = N9
+Dest = S9
+
+[ Network.mynet.Link.S1-S2 ]
+Type = Bidirectional
+Source = S1
+Dest = S2
+
+[ Network.mynet.Link.S2-S3 ]
+Type = Bidirectional
+Source = S2
+Dest = S3
+
+[ Network.mynet.Link.S3-S6 ]
+Type = Bidirectional
+Source = S3
+Dest = S6
+
+[ Network.mynet.Link.S1-S4 ]
+Type = Bidirectional
+Source = S1
+Dest = S4
+
+[ Network.mynet.Link.S2-S5 ]
+Type = Bidirectional
+Source = S2
+Dest = S5
+
+[ Network.mynet.Link.S4-S5 ]
+Type = Bidirectional
+Source = S4
+Dest = S5
+
+[ Network.mynet.Link.S5-S6 ]
+Type = Bidirectional
+Source = S5
+Dest = S6
+
+[ Network.mynet.Link.S4-S7 ]
+Type = Bidirectional
+Source = S4
+Dest = S7
+
+
+[ Network.mynet.Link.S5-S8 ]
+Type = Bidirectional
+Source = S5
+Dest = S8
+
+
+[ Network.mynet.Link.S6-S9 ]
+Type = Bidirectional
+Source = S6
+Dest = S9
+
+
+[ Network.mynet.Link.S7-S8 ]
+Type = Bidirectional
+Source = S7
+Dest = S8
+
+
+[ Network.mynet.Link.S8-S9 ]
+Type = Bidirectional
+Source = S8
+Dest = S9
+
