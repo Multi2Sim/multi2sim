@@ -20,13 +20,6 @@
 #ifndef DRIVER_CUDA_MODULE_H
 #define DRIVER_CUDA_MODULE_H
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/elf-format.h>
-#include <lib/util/list.h>
-
-
-
-
 extern struct list_t *module_list;
 
 struct cuda_module_t
