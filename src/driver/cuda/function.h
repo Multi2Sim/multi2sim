@@ -20,16 +20,7 @@
 #ifndef RUNTIME_CUDA_FUNCTION_H
 #define RUNTIME_CUDA_FUNCTION_H
 
-#include <lib/mhandle/mhandle.h>
 #include <lib/util/elf-format.h>
-#include <lib/util/debug.h>
-#include <lib/util/list.h>
-#include <lib/util/string.h>
-
-#include "function-arg.h"
-#include "module.h"
-
-
 
 
 extern struct list_t *function_list;
@@ -65,6 +56,7 @@ struct cuda_function_t
 	struct frm_grid_t *grid;
 };
 
+struct cuda_module_t;
 struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, char *function_name);
 void cuda_function_free(struct cuda_function_t *function);
 

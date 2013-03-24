@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
+
 #include "memory.h"
-
-
+#include "object.h"
 
 
 struct cuda_memory_t *cuda_memory_create(void)

@@ -17,9 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/elf-format.h>
+#include <lib/util/list.h>
+
 #include "module.h"
-
-
 
 
 struct list_t *module_list;
