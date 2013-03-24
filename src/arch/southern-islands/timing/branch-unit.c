@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <limits.h>
 
 #include <arch/southern-islands/emu/wavefront.h>
 #include <lib/esim/esim.h>

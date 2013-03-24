@@ -26,7 +26,6 @@
 
 #include "gpu.h"
 #include "warp-pool.h"
-#include "cycle-interval-report.h"
 
 struct frm_warp_pool_t *frm_warp_pool_create()
 {

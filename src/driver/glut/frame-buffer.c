@@ -18,7 +18,6 @@
  */
 
 #include <GL/glut.h>
-#include <pthread.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>

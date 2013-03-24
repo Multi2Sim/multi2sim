@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <limits.h>
 
 #include <arch/fermi/emu/warp.h>
 #include <lib/esim/esim.h>

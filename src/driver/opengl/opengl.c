@@ -21,7 +21,6 @@
 
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
-#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <driver/glut/frame-buffer.h>
@@ -29,7 +28,6 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
-#include <lib/util/hash-table.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 

@@ -20,7 +20,6 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
-#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>

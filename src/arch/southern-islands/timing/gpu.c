@@ -20,8 +20,6 @@
 #include <assert.h>
 
 #include <arch/common/arch.h>
-#include <arch/southern-islands/asm/bin-file.h>
-#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
@@ -29,7 +27,6 @@
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
-#include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/timer.h>

@@ -22,7 +22,6 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/repos.h>
-#include <mem-system/memory.h>
 
 #include "emu.h"
 #include "isa.h"

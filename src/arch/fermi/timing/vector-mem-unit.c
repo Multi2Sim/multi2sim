@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <limits.h>
 
 #include <arch/fermi/emu/grid.h>
 #include <arch/fermi/emu/warp.h>
@@ -26,7 +25,6 @@
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
-#include <lib/util/config.h>
 
 #include "sm.h"
 #include "gpu.h"

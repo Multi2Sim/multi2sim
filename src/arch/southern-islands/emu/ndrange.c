@@ -19,15 +19,12 @@
 
 #include <assert.h>
 
-#include <arch/southern-islands/asm/bin-file.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
-#include "emu.h"
 #include "isa.h"
 #include "ndrange.h"
 #include "wavefront.h"

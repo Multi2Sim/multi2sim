@@ -25,7 +25,6 @@
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/misc.h>
-#include <lib/util/string.h>
 
 #include "calc.h"
 #include "gpu.h"

@@ -18,7 +18,6 @@
  */
 
 #include <assert.h>
-#include <stdlib.h>
 
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
@@ -29,7 +28,6 @@
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
-#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "cuda.h"
