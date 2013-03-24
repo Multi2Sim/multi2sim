@@ -448,11 +448,29 @@ then
 	have_bison=yes
 fi
 
+# Check if the user explicitly disabled Flex/Bison
+AC_ARG_ENABLE(flex-bison,
+	[  --enable-flex-bison={yes|no}	Enable support for Flex/Bison (default=yes)],
+	[ ], [ enable_flex_bison=yes ])
+if test x$enable_flex_bison = xno
+then
+	have_flex=no
+	have_bison=no
+fi
+
 # Define macro for Automake and gcc
 AM_CONDITIONAL(HAVE_FLEX_BISON, test x$have_flex = xyes -a x$have_bison = xyes)
 if test x$have_flex = xyes -a x$have_bison = xyes
 then
 	AC_DEFINE(HAVE_FLEX_BISON, [1])
+elif test x$enable_flex_bison = xno
+then
+	AC_MSG_WARN([
+
+	Support for tools 'flex' and 'bison' has been explicitly disabled with
+	an argument in the ./configure script. Modules in the simulator
+	dependent on these tools will not be built.]
+	)
 else
 	AC_MSG_WARN([
 
@@ -460,8 +478,7 @@ else
 	Multi2Sim will not be built. In an Ubuntu distribution, you can install
 	these packages by running command
 
-		sudo apt-get install flex bison
-	]
+		sudo apt-get install flex bison]
 	)
 fi
 
