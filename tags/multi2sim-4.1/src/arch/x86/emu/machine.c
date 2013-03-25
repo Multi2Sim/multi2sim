@@ -1860,6 +1860,73 @@ void x86_isa_sfence_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_shld_rm16_r16_imm8_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned short rm16 = x86_isa_load_rm16(ctx);
+	unsigned short r16 = x86_isa_load_r16(ctx);
+	unsigned char imm8 = ctx->inst.imm.b;
+	unsigned long flags = regs->eflags;
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"push %5\n\t"
+		"popf\n\t"
+		"mov %4, %%cl\n\t"
+		"mov %3, %%bx\n\t"
+		"mov %2, %%ax\n\t"
+		"shld %%cl, %%bx, %%ax\n\t"
+		"mov %%ax, %1\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		: "=g" (flags), "=m" (rm16)
+		: "m" (rm16), "m" (r16), "m" (imm8), "g" (flags)
+		: "ax", "bx", "cl"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_rm16(ctx, rm16);
+	regs->eflags = flags;
+
+	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm16, x86_dep_r16, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of);
+}
+
+
+void x86_isa_shld_rm16_r16_cl_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned short rm16 = x86_isa_load_rm16(ctx);
+	unsigned short r16 = x86_isa_load_r16(ctx);
+	unsigned char cl = x86_isa_load_reg(ctx, x86_reg_cl);
+	unsigned long flags = regs->eflags;
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"push %5\n\t"
+		"popf\n\t"
+		"mov %4, %%cl\n\t"
+		"mov %3, %%bx\n\t"
+		"mov %2, %%ax\n\t"
+		"shld %%cl, %%bx, %%ax\n\t"
+		"mov %%ax, %1\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		: "=g" (flags), "=m" (rm16)
+		: "m" (rm16), "m" (r16), "m" (cl), "g" (flags)
+		: "ax", "bx", "cl"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_rm16(ctx, rm16);
+	regs->eflags = flags;
+
+	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm16, x86_dep_r16, x86_dep_ecx,
+		x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of);
+}
+
+
 void x86_isa_shld_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
