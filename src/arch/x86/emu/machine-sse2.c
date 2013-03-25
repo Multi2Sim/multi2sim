@@ -734,6 +734,54 @@ void x86_isa_movlpd_m64_xmm_impl(struct x86_ctx_t *ctx)
 }
 
 
+void x86_isa_movmskpd_r32_xmmm128_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t src;
+	unsigned int r32;
+
+	x86_isa_load_xmmm128(ctx, src.as_uchar);
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"movdqu %1, %%xmm0\n\t"
+		"movmskpd %%xmm0, %%eax\n\t"
+		"mov %%eax, %0"
+		: "=m" (r32)
+		: "m" (src)
+		: "xmm0", "eax"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_r32(ctx, r32);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_r32, 0, 0, 0);
+}
+
+
+void x86_isa_movmskps_r32_xmmm128_impl(struct x86_ctx_t *ctx)
+{
+	union x86_xmm_reg_t src;
+	unsigned int r32;
+
+	x86_isa_load_xmmm128(ctx, src.as_uchar);
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"movdqu %1, %%xmm0\n\t"
+		"movmskps %%xmm0, %%eax\n\t"
+		"mov %%eax, %0"
+		: "=m" (r32)
+		: "m" (src)
+		: "xmm0", "eax"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_r32(ctx, r32);
+
+	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_r32, 0, 0, 0);
+}
+
+
 void x86_isa_movntdq_m128_xmm_impl(struct x86_ctx_t *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
