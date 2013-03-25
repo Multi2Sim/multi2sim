@@ -142,6 +142,7 @@ DEFINST(cvtdq2ps_xmm_xmmm128, 0x0f, 0x5b, SKIP, REG, SKIP, 0)
 DEFINST(cvtsd2si_r32_xmmm64, 0x0f, 0x2d, SKIP, REG, SKIP, x86_prefix_repnz)
 DEFINST(cvtsd2ss_xmm_xmmm64, 0x0f, 0x5a, SKIP, REG, SKIP, x86_prefix_repnz)
 
+DEFINST(cvtpd2ps_xmm_xmmm128, 0x0f, 0x5a, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(cvtps2pd_xmm_xmmm64, 0x0f, 0x5a, SKIP, REG, SKIP, 0)
 
 DEFINST(cvtsi2sd_xmm_rm32, 0x0f, 0x2a, SKIP, REG, SKIP, x86_prefix_repnz)
