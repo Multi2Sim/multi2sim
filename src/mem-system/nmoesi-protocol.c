@@ -2766,6 +2766,10 @@ void mod_handler_nmoesi_invalidate(int event, void *data)
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:invalidate_finish\"\n",
 			stack->id, mod->name);
 
+		if (stack->reply == reply_ack_data)
+			cache_set_block(mod->cache, stack->set, stack->way, stack->tag,
+				cache_block_modified);
+
 		/* Ignore while pending */
 		assert(stack->pending > 0);
 		stack->pending--;
