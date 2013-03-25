@@ -261,7 +261,7 @@ cl_int clGetKernelWorkGroupInfo(
 	{
 		case CL_KERNEL_WORK_GROUP_SIZE:
 		{
-			size_t size = 1024;
+			size_t size = device->max_work_group_size;
 			return opencl_set_param(&size, sizeof size, param_value_size,
 				param_value, param_value_size_ret);
 		}
