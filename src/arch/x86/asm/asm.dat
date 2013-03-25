@@ -733,6 +733,8 @@ DEFINST(scasd, 0xaf, SKIP, SKIP, SKIP, SKIP, 0)
 
 DEFINST(sfence, 0x0f, 0xae, SKIP, 7, SKIP, 0)
 
+DEFINST(shld_rm16_r16_imm8, 0x0f, 0xa4, SKIP, REG, IB, x86_prefix_op)
+DEFINST(shld_rm16_r16_cl, 0x0f, 0xa5, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(shld_rm32_r32_imm8, 0x0f, 0xa4, SKIP, REG, IB, 0)
 DEFINST(shld_rm32_r32_cl, 0x0f, 0xa5, SKIP, REG, SKIP, 0)
 
