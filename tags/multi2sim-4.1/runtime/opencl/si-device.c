@@ -73,11 +73,11 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	parent->max_parameter_size = sizeof (cl_ulong16);
 	parent->max_read_image_args = 0;
 	parent->max_samplers = 0;
-	parent->max_work_group_size = 1024;
+	parent->max_work_group_size = 512;
 	parent->max_work_item_dimensions = 3;
-	parent->max_work_item_sizes[0] = 1024;
-	parent->max_work_item_sizes[1] = 1024;
-	parent->max_work_item_sizes[2] = 1024;
+	parent->max_work_item_sizes[0] = 512;
+	parent->max_work_item_sizes[1] = 512;
+	parent->max_work_item_sizes[2] = 512;
 	parent->max_write_image_args = 0;
 	parent->mem_base_addr_align = sizeof (cl_float4);
 	parent->min_data_type_align_size = 1;
