@@ -73,6 +73,15 @@ struct __fatDeviceText
 	char* f;
 };
 
+/* For CUDA driver */
+extern struct cuda_device_t *device;
+
+/* CUDA lists */
+extern struct list_t *context_list;
+extern struct list_t *device_list;
+extern struct list_t *module_list;
+extern struct list_t *function_list;
+
 
 #endif
 

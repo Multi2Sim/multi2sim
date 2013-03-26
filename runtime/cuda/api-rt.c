@@ -25,6 +25,7 @@
 #include "../include/cuda_runtime_api.h"
 #include "api.h"
 #include "debug.h"
+#include "device.h"
 #include "function-arg.h"
 #include "function.h"
 #include "list.h"
@@ -268,8 +269,22 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 
 cudaError_t cudaDeviceReset(void)
 {
-	__CUDART_NOT_IMPL__
-		return cudaSuccess;
+	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+
+	/* Free default device */
+	cuda_device_free(device);
+
+	/* Free lists */
+	list_free(context_list);
+	list_free(device_list);
+	list_free(module_list);
+	list_free(function_list);
+
+	/* FIXME: free resources in simulator */
+
+	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
+
+	return cudaSuccess;
 }
 
 cudaError_t cudaDeviceSynchronize(void)
