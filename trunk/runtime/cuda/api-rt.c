@@ -38,6 +38,7 @@
 
 CUmodule module;
 CUfunction function;
+cudaError_t cuda_rt_last_error;
 
 /* Error messages */
 char *cuda_rt_err_not_impl = 
@@ -284,6 +285,8 @@ cudaError_t cudaDeviceReset(void)
 
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
 
+	cuda_rt_last_error = cudaSuccess;
+
 	return cudaSuccess;
 }
 
@@ -355,8 +358,14 @@ cudaError_t cudaThreadSetCacheConfig(enum cudaFuncCache cacheConfig)
 
 cudaError_t cudaGetLastError(void)
 {
-	__CUDART_NOT_IMPL__
-		return cudaSuccess;
+	cudaError_t cuda_rt_last_error_ret;
+
+	cuda_rt_last_error_ret = cuda_rt_last_error;
+
+	/* Reset */
+	cuda_rt_last_error = cudaSuccess;
+
+	return cuda_rt_last_error_ret;
 }
 
 cudaError_t cudaPeekAtLastError(void)
@@ -489,9 +498,9 @@ cudaError_t cudaEventElapsedTime(float *ms, cudaEvent_t start, cudaEvent_t end)
 cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem __dv(0), cudaStream_t stream __dv(0))
 {
 	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug_print(stdout, "\t(runtime) in: gridDim=%u %u %u\n", 
+	cuda_debug_print(stdout, "\t(runtime) in: gridDim = %u %u %u\n", 
 			gridDim.x, gridDim.y, gridDim.z);
-	cuda_debug_print(stdout, "\t(runtime) in: blockDim=%u %u %u\n", 
+	cuda_debug_print(stdout, "\t(runtime) in: blockDim = %u %u %u\n", 
 			blockDim.x, blockDim.y, blockDim.z);
 
 	function->global_sizes[0] = gridDim.x;
@@ -501,7 +510,9 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem __dv
 	function->local_sizes[1] = blockDim.y;
 	function->local_sizes[2] = blockDim.z;
 
-	cuda_debug_print(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
+
+	cuda_rt_last_error = cudaSuccess;
 
 	return cudaSuccess;
 }
@@ -509,13 +520,15 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem __dv
 cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 {
 	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug_print(stdout, "\t(runtime) in: arg=%p\n", arg);
-	cuda_debug_print(stdout, "\t(runtime) in: size=%d\n", size);
-	cuda_debug_print(stdout, "\t(runtime) in: offset=%d\n", offset);
+	cuda_debug_print(stdout, "\t(runtime) in: arg = %p\n", arg);
+	cuda_debug_print(stdout, "\t(runtime) in: size = %d\n", size);
+	cuda_debug_print(stdout, "\t(runtime) in: offset = %d\n", offset);
 
 	cuda_function_arg_create(function, *(CUdeviceptr *)arg, size);
 
-	cuda_debug_print(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
+
+	cuda_rt_last_error = cudaSuccess;
 
 	return cudaSuccess;
 }
@@ -547,6 +560,8 @@ cudaError_t cudaLaunch(const void *entry)
 			0, NULL, (void **)function->arg_array, NULL);
 
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
+
+	cuda_rt_last_error = cudaSuccess;
 
 	return cudaSuccess;
 }
@@ -582,6 +597,8 @@ cudaError_t cudaMalloc(void **devPtr, size_t size)
 	cuda_debug_print(stdout, "\t(runtime) out: devPtr = 0x%08x\n", *(CUdeviceptr *)devPtr);
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
 
+	cuda_rt_last_error = cudaSuccess;
+
 	return cudaSuccess;
 }
 
@@ -611,6 +628,8 @@ cudaError_t cudaFree(void *devPtr)
 	cuMemFree((CUdeviceptr)devPtr);
 
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
+
+	cuda_rt_last_error = cudaSuccess;
 
 	return cudaSuccess;
 }
@@ -714,6 +733,8 @@ cudaError_t cudaMemcpy(void *dst, const void *src, size_t count, enum cudaMemcpy
 	/* FIXME: implement cudaMemcpyHostToHost, cudaMemcpyDeviceToDevice */
 
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
+
+	cuda_rt_last_error = cudaSuccess;
 
 	return cudaSuccess;
 }
