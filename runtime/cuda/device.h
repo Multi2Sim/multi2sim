@@ -20,14 +20,6 @@
 #ifndef RUNTIME_CUDA_DEVICE_H
 #define RUNTIME_CUDA_DEVICE_H
 
-#include "../include/cuda.h"
-#include "../include/cuda_runtime_api.h"
-
-#include "list.h"
-#include "mhandle.h"
-
-
-
 
 extern struct list_t *device_list;
 
@@ -49,6 +41,7 @@ struct cuda_device_t
 
 struct cuda_device_t *cuda_device_create(void);
 void cuda_device_free(struct cuda_device_t *device);
+
 
 #endif
 

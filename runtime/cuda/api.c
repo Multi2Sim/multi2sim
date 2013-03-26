@@ -17,9 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "../include/cuda.h"
 #include "api.h"
-
-
+#include "context.h"
+#include "debug.h"
+#include "device.h"
+#include "function.h"
+#include "list.h"
+//#include "memory.h"
+#include "module.h"
+#include "stream.h"
 
 
 /*
@@ -31,20 +42,20 @@ int cuda_debug;
 
 /* Error messages */
 char *cuda_err_not_impl =
-"\tMulti2Sim provides partial support for CUDA driver library.\n"
-"\tTo request the implementation of a certain functionality,\n"
-"\tplease email development@multi2sim.org.\n";
+		"\tMulti2Sim provides partial support for CUDA driver library.\n"
+		"\tTo request the implementation of a certain functionality,\n"
+		"\tplease email development@multi2sim.org.\n";
 
 char *cuda_err_version =
-"\tYour guest application is using a version of the CUDA driver library\n"
-"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
-"\tlatest Multi2Sim version, and recompile your application with the latest\n"
-"\tCUDA driver library ('libm2s-cuda').\n";
+		"\tYour guest application is using a version of the CUDA driver library\n"
+		"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
+		"\tlatest Multi2Sim version, and recompile your application with the latest\n"
+		"\tCUDA driver library ('libm2s-cuda').\n";
 
 char *cuda_err_native =
-"\tYou are trying to run natively an application using the Multi2Sim CUDA driver\n"
-"\tlibrary implementation ('libm2s-cuda'). Please run this program on top of\n"
-"\tMulti2Sim.\n";
+		"\tYou are trying to run natively an application using the Multi2Sim CUDA driver\n"
+		"\tlibrary implementation ('libm2s-cuda'). Please run this program on top of\n"
+		"\tMulti2Sim.\n";
 
 
 

@@ -20,32 +20,22 @@
 #ifndef RUNTIME_CUDA_API_H
 #define RUNTIME_CUDA_API_H
 
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include "../include/cuda.h"
-#include "../include/cuda_runtime_api.h"
-
-#include "debug.h"
-#include "list.h"
-
-#include "context.h"
-#include "device.h"
-#include "function.h"
-#include "memory.h"
-#include "module.h"
-#include "stream.h"
-
-
-
 
 /* Version */
 #define CUDA_VERSION_MAJOR 1
 #define CUDA_VERSION_MINOR 850
+struct cuda_version_t
+{
+	int major;
+	int minor;
+};
 
 /* Debug */
 extern int cuda_debug;
-#define cuda_debug_print(stream, ...) (cuda_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+#define cuda_debug_print(stream, ...) (cuda_debug ? fprintf((stream), \
+			__VA_ARGS__) : (void) 0)
+#define cuda_debug_print(stream, ...) (cuda_debug ? fprintf((stream), \
+			__VA_ARGS__) : (void) 0)
 
 /* Error */
 extern char *cuda_err_not_impl;
@@ -53,10 +43,10 @@ extern char *cuda_rt_err_not_impl;
 extern char *cuda_err_version;
 extern char *cuda_err_native;
 extern char *cuda_rt_err_native;
-#define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", \
-	__FUNCTION__, cuda_err_not_impl);
-#define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", \
-	__FUNCTION__, cuda_rt_err_not_impl);
+#define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", __FUNCTION__, \
+		cuda_err_not_impl);
+#define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", __FUNCTION__, \
+		cuda_rt_err_not_impl);
 
 /* System Call Code */
 #define CUDA_SYS_CODE 328
@@ -74,31 +64,15 @@ enum cuda_call_t
 /* For CUDA runtime */
 extern CUmodule module;
 extern CUfunction function;
-
-
-
-
-/*
- * Data Structures and Macros
- */
-
-/* Version */
-struct cuda_version_t
-{
-	int major;
-	int minor;
-};
-
-/* For CUDA runtime */
 #define __dv(v)
-
-/* For x86 binary analysis */
-struct __fatDeviceText {
+struct __fatDeviceText
+{
 	int m;
 	int v;
 	const unsigned long long* d;
 	char* f;
 };
+
 
 #endif
 

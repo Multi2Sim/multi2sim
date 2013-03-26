@@ -17,9 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "../include/cuda.h"
 #include "function-arg.h"
-
-
+#include "function.h"
+#include "list.h"
+#include "mhandle.h"
 
 
 struct cuda_function_arg_t *cuda_function_arg_create(CUfunction function,
@@ -28,7 +30,8 @@ struct cuda_function_arg_t *cuda_function_arg_create(CUfunction function,
 	struct cuda_function_arg_t *arg;
 
 	/* Initialize */
-	arg = (struct cuda_function_arg_t *)xcalloc(1, sizeof(struct cuda_function_arg_t));
+	arg = (struct cuda_function_arg_t *)xcalloc(1, 
+			sizeof(struct cuda_function_arg_t));
 	arg->id = list_count(function->arg_list);
 	arg->value = value;
 	arg->size = size;
@@ -37,7 +40,6 @@ struct cuda_function_arg_t *cuda_function_arg_create(CUfunction function,
 
 	return arg;
 }
-
 
 void cuda_function_arg_free(CUfunction function, struct cuda_function_arg_t *arg)
 {

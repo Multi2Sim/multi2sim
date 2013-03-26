@@ -20,15 +20,6 @@
 #ifndef RUNTIME_CUDA_MODULE_H
 #define RUNTIME_CUDA_MODULE_H
 
-#include "../include/cuda.h"
-#include "../include/cuda_runtime_api.h"
-
-#include "elf-format.h"
-#include "list.h"
-#include "mhandle.h"
-
-
-
 
 extern struct list_t *module_list;
 
@@ -42,6 +33,7 @@ struct CUmod_st
 
 CUmodule cuda_module_create(void);
 void cuda_module_free(CUmodule module);
+
 
 #endif
 

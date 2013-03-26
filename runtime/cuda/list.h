@@ -20,10 +20,6 @@
 #ifndef RUNTIME_CUDA_LIST_H
 #define RUNTIME_CUDA_LIST_H
 
-#include "mhandle.h"
-
-
-
 
 #define INLIST(X) (((X) + list->size) % list->size)
 #define ELEM(X) list->elem[((X) + list->head) % list->size]

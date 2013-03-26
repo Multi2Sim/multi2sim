@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "../include/cuda.h"
 #include "device.h"
-
-
+#include "list.h"
+#include "mhandle.h"
 
 
 struct list_t *device_list;
@@ -104,5 +105,4 @@ void cuda_device_free(struct cuda_device_t *device)
 	free(device->name);
 	free(device);
 }
-
 

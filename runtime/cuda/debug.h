@@ -20,17 +20,6 @@
 #ifndef RUNTIME_CUDA_DEBUG_H
 #define RUNTIME_CUDA_DEBUG_H
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "list.h"
-#include "mhandle.h"
-
-
-
 
 /* Initialization and finalization */
 void debug_init(void);
