@@ -24,13 +24,13 @@
  */
 
 DEFINST(FFMA, 
-	"%pred FFMA%mod0_D_ftzfmz%gen0_mod1_B_rnd%mod0_D_sat %dst, %src1, %src2, %src3", 
+	"%pred FFMA%mod0_D_ftzfmz%gen0_mod1_B_rnd%mod0_D_sat %dst, %src1, %src2_src3_FFMA", 
 	FP_FFMA, 
 	FP, 
 	0x0c0)
 
 DEFINST(FADD, 
-	"%pred FADD%mod0_A_ftz%gen0_mod1_B_rnd%FADD_sat %dst, %src1, %src2", 
+	"%pred FADD%mod0_A_ftz%gen0_mod1_B_rnd%FADD_sat %dst, %src1, %src2_neg", 
 	FP_FADD, 
 	FP, 
 	0x140)
@@ -66,7 +66,7 @@ DEFINST(FMUL32I,
 //FSET
 
 DEFINST(FSETP, 
-	"%pred FSETP%gen1_cmp%gen1_logic %P, %Q, %src1, %src2, %R", 
+	"%pred FSETP%gen1_cmp%gen1_logicftz %P, %Q, %src1, %src2, %R", 
 	FP_FSETP, 
 	FP, 
 	0x050)
@@ -120,13 +120,13 @@ DEFINST(IMAD,
 	0x083)
 
 DEFINST(IMUL, 
-	"%pred IMUL%IMAD_mod1%IMAD_mod2%IMAD_hi%IMAD_sat %dst, %src1, %src2, %src3", 
+	"%pred IMUL%IMAD_mod1%IMAD_mod2%IMAD_hi%IMAD_sat %dst, %src1, %src2", 
 	INT_IMUL, 
 	INT, 
 	0x143)
 
 DEFINST(IADD, 
-	"%pred IADD%mod0_D_sat%x %dst, %src1, %src2", 
+	"%pred IADD%mod0_D_sat%x %dst, %src1_neg, %src2_neg", 
 	INT_IADD, 
 	INT, 
 	0x123)
@@ -160,22 +160,28 @@ DEFINST(BFI,
 	0x0a3)
 
 DEFINST(SHR, 
-	"%pred SHR%mod0_A_u32%mod_A_w %dst, %src1, %src2", 
+	"%pred SHR%mod0_A_u32%mod0_A_w%mod0_C_s %dst, %src1, %src2", 
 	INT_SHR, 
 	INT, 
 	0x163)
 
 DEFINST(SHL, 
-	"%p SHL%mod0_A_u32%mod_A_w %dst, %src1, %src2", 
+	"%pred SHL%mod0_A_w %dst, %src1, %src2", 
 	INT_SHL, 
 	INT, 
 	0x183)
 
 DEFINST(LOP, 
-	"%pred LOP%mod0_D_op %dst, %src1, %src2", 
+	"%pred LOP%mod0_D_op67 %dst, %src1, %src2", 
 	INT_LOP, 
 	INT, 
 	0x1a3)
+
+DEFINST(LOP32I, 
+	"%pred LOP32I%mod0_D_op67 %dst, %src1, %imm32", 
+	INT_LOP32I, 
+	INT, 
+	0x0e2)
 
 DEFINST(FLO,
 	"FLO%mod0_A_u32 %dst, %src2",
@@ -207,6 +213,23 @@ DEFINST(ICMP,
  * F2F, F2I, I2F, I2I
  */
 
+DEFINST(F2F, 
+	"%pred F2F%gen0_mod1_D %dst, %src2", 
+	CONV_F2F, 
+	CONV, 
+	0x044)
+
+DEFINST(I2F, 
+	"%pred I2F%gen0_src1_dtype%mod0_A_stype_s%gen0_src1_stype_n%gen0_mod1_B_rnd %dst, %src2", 
+	CONV_I2F, 
+	CONV, 
+	0x064)
+
+DEFINST(I2I, 
+	"%pred I2I%mod0_A_dtype_s%gen0_src1_dtype_n%mod0_A_stype_s%gen0_src1_stype_n%mod0_D_sat %dst, %src2", 
+	CONV_I2I, 
+	CONV, 
+	0x074)
 
 /* MOV catogory instructions: 
  * MOV, MOV32I, SEL, PRMT
@@ -217,6 +240,19 @@ DEFINST(MOV,
 	MOV_MOV, 
 	MOV, 
 	0x0a4)
+
+DEFINST(MOV32I, 
+	"%pred MOV32I%mod0_C_s %dst, %imm32", 
+	MOV_MOV32I, 
+	MOV, 
+	0x062)
+
+
+DEFINST(SEL, 
+	"%pred SEL %dst, %src1, %src2, %R", 
+	MOV_SEL, 
+	MOV, 
+	0x084)
 
 //DEFINST(PRMT
 
@@ -239,11 +275,23 @@ DEFINST(LD,
 	LDST, 
 	0x105)
 
+DEFINST(LDS, 
+	"%pred LDS%mod0_B_type %dst, [%src1%offs]", 
+	LDST_LDS, 
+	LDST, 
+	0x305)
+
 DEFINST(ST, 
 	"%pred ST%offs_op1_e%mod0_B_cop%mod0_B_type [%src1%offs], %dst", 
 	LDST_ST, 
 	LDST, 
 	0x125)
+
+DEFINST(STS, 
+	"%pred STS%mod0_B_type [%src1%offs], %dst", 
+	LDST_STS, 
+	LDST, 
+	0x325)
 
 //DEFINST(LD_LDU
 
@@ -259,20 +307,62 @@ DEFINST(ST,
  * SSY, PBK, PCNT, PRET, PLONGJMP, BPT, EXIT
  */
 
+DEFINST(BRA, 
+	"%pred BRA%tgt_u%tgt_lmt %tgt", 
+	CTRL_BRA, 
+	CTRL, 
+	0x107)
+
+DEFINST(CAL, 
+	"CAL%tgt_noinc %tgt", 
+	CTRL_CAL, 
+	CTRL, 
+	0x147)
+
+DEFINST(RET, 
+	"%pred RET", 
+	CTRL_RET, 
+	CTRL, 
+	0x247)
+
 DEFINST(EXIT, 
 	"%pred EXIT", 
 	CTRL_EXIT, 
 	CTRL, 
 	0x207)
 
+DEFINST(SSY, 
+	"SSY %tgt", 
+	CTRL_SSY, 
+	CTRL, 
+	0x187)
+
 
 /* MISC catogory instructions: 
  * NOP, S2R, B2R, LEPC, BAR, VOTE
  */
 
+DEFINST(NOP, 
+	"%pred NOP%mod0_C_s%NOP_op CC%mod0_C_ccop", 
+	MISC_NOP, 
+	MISC, 
+	0x104)
+
 DEFINST(S2R, 
-	"%pred S2R %dst, %src2", 
+	"%pred S2R %dst, %src2_frm_sr", 
 	MISC_S2R, 
 	MISC, 
 	0x0b4)
+
+DEFINST(BAR, 
+	"%pred BAR%mod0_A_redarv%mod0_A_op %dst, %src1",
+	MISC_BAR, 
+	MISC, 
+	0x144)
+
+
+
+
+
+
 
