@@ -720,17 +720,17 @@ void frm_isa_NOP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 void frm_isa_S2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)  // no format yet
 {
 	NOT_IMPL();
-	/*
+
 	unsigned int dst_id, src_id;
 	unsigned int dst, src;
 
-	dst_id = inst->dword.misc_s2r.dst;
-	src_id = inst->dword.misc_s2r.sreg;
+	dst_id = inst->dword.general0.dst;
+	src_id = inst->dword.general0.src2 & 0xff;
 
 	src = thread->sr[src_id].v.i;
 	dst = src;
 
-        thread->gpr[dst_id].v.i = dst;*/
+        thread->gpr[dst_id].v.i = dst;
 }
 
 void frm_isa_B2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)

@@ -162,8 +162,8 @@ struct frm_fmt_tgt_t
 	unsigned long long int u : 1; /* 15 */
 	unsigned long long int noinc : 1; /* 16 */
 	unsigned long long int _const0 : 9; /* 25:17 */
-	unsigned long long int tgt : 20; /* 45:26 */
-	unsigned long long int _reserved0 : 12; /* 57:46 */
+	unsigned long long int target : 24; /* 49:26 */
+	unsigned long long int _reserved0 : 8; /* 57:50 */
 	unsigned long long int op1 : 6; /* 63:58 */
 };
 
@@ -197,8 +197,8 @@ struct frm_fmt_general0_mod1_C_t
 struct frm_fmt_general0_mod1_D_t
 {
 	unsigned long long int _reserved0 : 49; /* 48:0 */
-	unsigned long long int src3 : 2; /* 54:49 */
-	unsigned long long int cmp : 7; /* 57:55 */
+	unsigned long long int src3 : 6; /* 54:49 */
+	unsigned long long int cmp : 3; /* 57:55 */
 	unsigned long long int _reserved1 : 6; /* 63:58 */
 };
 
