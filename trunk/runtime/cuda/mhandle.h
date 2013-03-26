@@ -20,12 +20,7 @@
 #ifndef RUNTIME_CUDA_MHANDLE_H
 #define RUNTIME_CUDA_MHANDLE_H
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-
+#include <stddef.h>
 
 
 #define MHANDLE_STRINGIFY(x) #x
@@ -67,6 +62,7 @@
 
 
 
+
 void *mhandle_malloc(size_t size, char *at);
 void *mhandle_calloc(size_t nmemb, size_t size, char *at);
 void *mhandle_realloc(void *ptr, size_t size, char *at);
@@ -81,6 +77,7 @@ void *__xstrdup(const char *s, char *at);
 void __mhandle_check(char *at);
 void __mhandle_done();
 unsigned long __mhandle_used_memory();
+
 
 #endif
 

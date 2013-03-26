@@ -17,9 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "list.h"
 #include "memory.h"
-
-
+#include "mhandle.h"
 
 
 struct list_t *memory_object_list;
@@ -37,7 +37,6 @@ struct cuda_memory_object_t * cuda_memory_object_create(void)
 
         return mem;
 }
-
 
 void cuda_memory_object_free(struct cuda_memory_object_t *mem)
 {

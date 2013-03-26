@@ -23,8 +23,6 @@
 #include <string.h>
 
 
-
-
 #define HT_INITIAL_SIZE		1000
 
 /* Corruption detection extra bytes */

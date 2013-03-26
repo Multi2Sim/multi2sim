@@ -17,9 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "../include/cuda.h"
+#include "list.h"
+#include "function-arg.h"
 #include "function.h"
-
-
+#include "mhandle.h"
+#include "module.h"
 
 
 struct list_t *function_list;
@@ -40,7 +43,6 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 
 	return function;
 }
-
 
 void cuda_function_free(CUfunction function)
 {

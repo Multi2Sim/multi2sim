@@ -20,11 +20,6 @@
 #ifndef RUNTIME_CUDA_MEMORY_H
 #define RUNTIME_CUDA_MEMORY_H
 
-#include "list.h"
-#include "mhandle.h"
-
-
-
 
 extern struct list_t *memory_object_list;
 
@@ -40,6 +35,7 @@ struct cuda_memory_object_t
 
 struct cuda_memory_object_t *cuda_memory_object_create(void);
 void cuda_memory_object_free(struct cuda_memory_object_t *mem);
+
 
 #endif
 
