@@ -28,7 +28,6 @@
 #include "device.h"
 #include "function.h"
 #include "list.h"
-//#include "memory.h"
 #include "module.h"
 #include "stream.h"
 
@@ -36,6 +35,8 @@
 /*
  * Global Variables
  */
+
+struct cuda_device_t *device;
 
 /* Debug */
 int cuda_debug;
@@ -126,7 +127,7 @@ CUresult cuInit(unsigned int Flags)
 	function_list = list_create();
 
 	/* Create a default device */
-	cuda_device_create();
+	device = cuda_device_create();
 
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);
