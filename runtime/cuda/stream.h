@@ -20,15 +20,6 @@
 #ifndef RUNTIME_CUDA_STREAM_H
 #define RUNTIME_CUDA_STREAM_H
 
-#include <assert.h>
-#include "../include/cuda.h"
-#include "../include/cuda_runtime_api.h"
-
-#include "list.h"
-#include "mhandle.h"
-
-
-
 
 extern struct list_t *stream_list;
 
@@ -40,6 +31,7 @@ struct CUstream_st
 
 CUstream cuda_stream_create(void);
 void cuda_stream_free(CUstream stream);
+
 
 #endif
 

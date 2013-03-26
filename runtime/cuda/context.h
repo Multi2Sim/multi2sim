@@ -20,15 +20,6 @@
 #ifndef RUNTIME_CUDA_CONTEXT_H
 #define RUNTIME_CUDA_CONTEXT_H
 
-#include <assert.h>
-#include "../include/cuda.h"
-#include "../include/cuda_runtime_api.h"
-
-#include "list.h"
-#include "mhandle.h"
-
-
-
 
 extern struct list_t *context_list;
 
@@ -43,6 +34,7 @@ struct CUctx_st
 
 CUcontext cuda_context_create(CUdevice device);
 void cuda_context_free(CUcontext context);
+
 
 #endif
 

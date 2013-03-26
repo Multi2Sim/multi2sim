@@ -20,21 +20,6 @@
 #ifndef RUNTIME_CUDA_FUNCTION_H
 #define RUNTIME_CUDA_FUNCTION_H
 
-#include <stdlib.h>
-#include "../include/cuda.h"
-#include "../include/cuda_runtime_api.h"
-
-#include "debug.h"
-#include "elf-format.h"
-#include "list.h"
-#include "mhandle.h"
-#include "string.h"
-
-#include "function-arg.h"
-#include "module.h"
-
-
-
 
 extern struct list_t *function_list;
 
@@ -58,6 +43,7 @@ struct CUfunc_st
 
 CUfunction cuda_function_create(CUmodule module, const char *function_name);
 void cuda_function_free(CUfunction function);
+
 
 #endif
 

@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "../include/cuda.h"
 #include "context.h"
-
-
+#include "list.h"
+#include "mhandle.h"
 
 
 struct list_t *context_list;
@@ -40,7 +41,6 @@ CUcontext cuda_context_create(CUdevice device)
 
 	return context;
 }
-
 
 /* Free context */
 void cuda_context_free(CUcontext context)

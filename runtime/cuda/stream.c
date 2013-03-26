@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "../include/cuda.h"
+#include "list.h"
+#include "mhandle.h"
 #include "stream.h"
-
-
 
 
 struct list_t *stream_list;
@@ -38,7 +39,6 @@ CUstream cuda_stream_create(void)
 
 	return stream;
 }
-
 
 /* Free stream */
 void cuda_stream_free(CUstream stream)

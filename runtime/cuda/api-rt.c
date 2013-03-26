@@ -17,9 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <elf.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "../include/cuda.h"
+#include "../include/cuda_runtime_api.h"
 #include "api.h"
-
-
+#include "debug.h"
+#include "function-arg.h"
+#include "function.h"
+#include "list.h"
+#include "mhandle.h"
 
 
 /*
@@ -30,15 +39,15 @@ CUmodule module;
 CUfunction function;
 
 /* Error messages */
-char *cuda_rt_err_not_impl =
-"\tMulti2Sim provides partial support for CUDA runtime library.\n"
-"\tTo request the implementation of a certain functionality,\n"
-"\tplease email development@multi2sim.org.\n";
+char *cuda_rt_err_not_impl = 
+		"\tMulti2Sim provides partial support for CUDA runtime library.\n"
+		"\tTo request the implementation of a certain functionality,\n"
+		"\tplease email development@multi2sim.org.\n";
 
 char *cuda_rt_err_native =
-"\tYou are trying to run natively an application using the Multi2Sim\n"
-"\tCUDA runtime/driver library implementation ('libm2s-cuda'). Please\n"
-"\trun this program on top of Multi2Sim.\n";
+		"\tYou are trying to run natively an application using the Multi2Sim\n"
+		"\tCUDA runtime/driver library implementation ('libm2s-cuda'). Please\n"
+		"\trun this program on top of Multi2Sim.\n";
 
 
 

@@ -20,15 +20,6 @@
 #ifndef RUNTIME_CUDA_FUNCTION_ARG_H
 #define RUNTIME_CUDA_FUNCTION_ARG_H
 
-#include "../include/cuda.h"
-#include "../include/cuda_runtime_api.h"
-
-#include "mhandle.h"
-
-#include "function.h"
-
-
-
 
 enum cuda_mem_scope_t
 {
@@ -68,7 +59,9 @@ struct cuda_function_arg_t
 
 struct cuda_function_arg_t *cuda_function_arg_create(CUfunction function,
 		unsigned int value, int size);
-void cuda_function_arg_free(CUfunction function, struct cuda_function_arg_t *arg);
+void cuda_function_arg_free(CUfunction function, 
+		struct cuda_function_arg_t *arg);
+
 
 #endif
 

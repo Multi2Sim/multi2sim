@@ -719,8 +719,6 @@ void frm_isa_NOP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_S2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)  // no format yet
 {
-	NOT_IMPL();
-
 	unsigned int dst_id, src_id;
 	unsigned int dst, src;
 

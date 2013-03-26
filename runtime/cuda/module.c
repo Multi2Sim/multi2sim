@@ -17,9 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "../include/cuda.h"
+#include "elf-format.h"
+#include "list.h"
+#include "mhandle.h"
 #include "module.h"
-
-
 
 
 struct list_t *module_list;
