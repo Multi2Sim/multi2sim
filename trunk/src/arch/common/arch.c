@@ -115,9 +115,11 @@ void arch_register(char *name, char *prefix,
 		enum arch_sim_kind_t sim_kind,
 		arch_emu_init_func_t emu_init_func,
 		arch_emu_done_func_t emu_done_func,
+		arch_emu_dump_summary_func_t emu_dump_summary_func,
 		arch_run_func_t emu_run_func,
 		arch_timing_init_func_t timing_init_func,
 		arch_timing_done_func_t timing_done_func,
+		arch_timing_dump_summary_func_t timing_dump_summary_func,
 		arch_run_func_t timing_run_func)
 {
 	struct arch_t *arch;
@@ -137,9 +139,11 @@ void arch_register(char *name, char *prefix,
 	arch->sim_kind = sim_kind;
 	arch->emu_init_func = emu_init_func;
 	arch->emu_done_func = emu_done_func;
+	arch->emu_dump_summary_func = emu_dump_summary_func;
 	arch->emu_run_func = emu_run_func;
 	arch->timing_init_func = timing_init_func;
 	arch->timing_done_func = timing_done_func;
+	arch->timing_dump_summary_func = timing_dump_summary_func;
 	arch->timing_run_func = timing_run_func;
 
 	/* Choose functional/timing simulation loop iteration function */
@@ -199,6 +203,18 @@ void arch_get_names(char *str, int size)
 	str_printf(&str, &size, "}");
 }
 
+
+int arch_get_sim_kind_detailed_count(void)
+{
+	int count;
+	int i;
+
+	count = 0;
+	for (i = 0; i < arch_list_count; i++)
+		if (arch_list[i]->sim_kind == arch_sim_kind_detailed)
+			count++;
+	return count;
+}
 
 enum arch_sim_kind_t arch_run_all(void)
 {
