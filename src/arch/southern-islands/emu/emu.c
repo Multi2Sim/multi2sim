@@ -46,13 +46,10 @@
 
 
 struct si_emu_t *si_emu;
-struct arch_t *si_emu_arch;
 
 long long si_emu_max_cycles = 0;
 long long si_emu_max_inst = 0;
 int si_emu_max_kernels = 0;
-
-enum arch_sim_kind_t si_emu_sim_kind = arch_sim_kind_functional;
 
 char *si_emu_opengl_binary_name = "";
 char *si_emu_report_file_name = "";
@@ -71,12 +68,8 @@ int si_emu_num_mapped_const_buffers = 2;  /* CB0, CB1 by default */
 
 
 /* Initialize GPU kernel */
-void si_emu_init()
+void si_emu_init(struct arch_t *arch)
 {
-	/* Register architecture */
-	si_emu_arch = arch_list_register("SouthernIslands", "si");
-	si_emu_arch->sim_kind = si_emu_sim_kind;
-
 	/* Open report file */
 	if (*si_emu_report_file_name)
 	{
@@ -91,6 +84,7 @@ void si_emu_init()
 
 	/* Initialize */
 	si_emu = xcalloc(1, sizeof(struct si_emu_t));
+	si_emu->arch = arch;
 	si_emu->timer = m2s_timer_create("Southern Islands GPU Timer");
 	si_emu->global_mem = mem_create();
 	si_emu->global_mem->safe = 0;
@@ -133,30 +127,16 @@ void si_emu_dump_summary(FILE *f)
 	double time_in_sec;
 	double inst_per_sec;
 
-	/* If there was no Southern Islands simulation, no summary */
-	if (!si_emu->ndrange_count)
-		return;
-
 	/* Calculate statistics */
 	time_in_sec = (double) m2s_timer_get_value(si_emu->timer) / 1.0e6;
 	inst_per_sec = time_in_sec > 0.0 ? 
 		(double) si_emu->inst_count / time_in_sec : 0.0;
 
 	/* Print statistics */
-	fprintf(f, "[ SouthernIslands ]\n");
-	fprintf(f, "SimType = %s\n", si_emu_sim_kind == 
-		arch_sim_kind_functional ?  "Functional" : "Detailed");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
 	fprintf(f, "Instructions = %lld\n", si_emu->inst_count);
 	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
-
-	/* Detailed simulation */
-	if (si_emu_sim_kind == arch_sim_kind_detailed)
-		si_gpu_dump_summary(f);
-
-	/* End */
-	fprintf(f, "\n");
 }
 
 
@@ -268,8 +248,11 @@ void si_emu_opengl_disasm(char *path, int opengl_shader_index)
 }
 
 /* Run one iteration of the Southern Islands GPU emulation loop.
- * Return FALSE if there is no more emulation to perform. */
-int si_emu_run(void)
+ * Return values are:
+ *   - arch_sim_kind_invalid - no more emulation.
+ *   - arch_sim_kind_functional - still emulating.
+ */
+enum arch_sim_kind_t si_emu_run(void)
 {
 	struct si_ndrange_t *ndrange;
 	struct si_ndrange_t *ndrange_next;
@@ -283,7 +266,7 @@ int si_emu_run(void)
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!si_emu->ndrange_list_count)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Start any ND-Range in state 'pending' */
 	while ((ndrange = si_emu->pending_ndrange_list_head))
@@ -347,7 +330,7 @@ int si_emu_run(void)
 		si_ndrange_free(ndrange);
 	}
 
-	/* Return TRUE */
-	return 1;
+	/* Still emulating */
+	return arch_sim_kind_functional;
 }
 

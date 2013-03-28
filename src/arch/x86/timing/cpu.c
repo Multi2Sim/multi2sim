@@ -781,17 +781,18 @@ static void x86_cpu_core_done(int core)
 
 
 /* Initialization */
-void x86_cpu_init()
+void x86_cpu_init(void)
 {
+	struct arch_t *arch = x86_emu->arch;
 	int core;
 
 	/* Trace */
 	x86_trace_category = trace_new_category();
 
-	/* Register architecture */
-	x86_emu_arch->mem_config_check_func = x86_mem_config_check;
-	x86_emu_arch->mem_config_default_func = x86_mem_config_default;
-	x86_emu_arch->mem_config_parse_entry_func = x86_mem_config_parse_entry;
+	/* Functions for memory configuration */
+	arch->mem_config_check_func = x86_mem_config_check;
+	arch->mem_config_default_func = x86_mem_config_default;
+	arch->mem_config_parse_entry_func = x86_mem_config_parse_entry;
 
 	/* Analyze CPU configuration file */
 	x86_cpu_config_check();
@@ -1074,13 +1075,14 @@ void x86_cpu_run_fast_forward(void)
 }
 
 
-/* Run one iteration of the x86 timing simulation loop.
- * The function returns FALSE if there is no more simulation to perform. */
-int x86_cpu_run(void)
+/* Run one iteration of timing simulation. Return values are:
+ *   - arch_sim_kind_invalid - no more simulation.
+ *   - arch_sim_kind_detailed - still simulating. */
+enum arch_sim_kind_t x86_cpu_run(void)
 {
 	/* Stop if no context is running */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Fast-forward simulation */
 	if (x86_cpu_fast_forward_count && x86_emu->inst_count < x86_cpu_fast_forward_count)
@@ -1097,7 +1099,7 @@ int x86_cpu_run(void)
 
 	/* Stop if any previous reason met */
 	if (esim_finish)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* One more cycle of x86 timing simulation */
 	x86_cpu->cycle++;
@@ -1112,6 +1114,6 @@ int x86_cpu_run(void)
 	/* Process host threads generating events */
 	x86_emu_process_events();
 
-	/* Return TRUE */
-	return 1;
+	/* Still simulating */
+	return arch_sim_kind_detailed;
 }

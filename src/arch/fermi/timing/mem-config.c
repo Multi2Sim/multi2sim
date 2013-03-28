@@ -40,9 +40,6 @@ void frm_mem_config_default(struct config_t *config)
 
 	int sm_id;
 
-	/* Only detailed simulation */
-	assert(frm_emu_sim_kind == arch_sim_kind_detailed);
-
 	/* Cache geometry for L1 */
 	snprintf(section, sizeof section, "CacheGeometry frm-geo-l1");
 	config_write_int(config, section, "Sets", 64);
@@ -279,7 +276,8 @@ void frm_mem_config_parse_entry(struct config_t *config, char *section)
 			file_name, section, module_name);
 	
 	/* Add modules to list of memory entries */
-	linked_list_add(frm_emu_arch->mem_entry_mod_list, sm->global_memory);
+	linked_list_add(frm_emu->arch->mem_entry_mod_list,
+			sm->global_memory);
 	
 	/* Debug */
 	mem_debug("\tFermi SM[%d]\n", sm_id);

@@ -25,6 +25,9 @@
 
 struct arm_emu_t
 {
+	/* Common architecture object */
+	struct arch_t *arch;
+
 	/* pid & address_space_index assignment */
 	int current_pid;
 
@@ -101,18 +104,15 @@ void arm_emu_list_insert_head(enum arm_emu_list_kind_t list, struct arm_ctx_t *c
 void arm_emu_dump_summary(FILE *f);
 
 extern struct arm_emu_t *arm_emu;
-extern struct arch_t *arm_emu_arch;
-
-extern enum arch_sim_kind_t arm_emu_sim_kind;
 
 extern long long arm_emu_max_cycles;
 extern long long arm_emu_max_inst;
 extern long long arm_emu_max_time;
 
-void arm_emu_init(void);
+void arm_emu_init(struct arch_t *arch);
 void arm_emu_done(void);
 
-int arm_emu_run(void);
+enum arch_sim_kind_t arm_emu_run(void);
 
 void arm_emu_process_events_schedule();
 

@@ -273,30 +273,39 @@ static char *err_mem_disjoint =
 	"\tare disjoint.\n";
 
 
-static void mem_config_default(struct config_t *config)
+static void mem_config_default(struct arch_t *arch, void *user_data)
 {
-	struct arch_t *arch;
-	int i;
+	struct config_t *config = user_data;
 
-	LIST_FOR_EACH(arch_list, i)
-	{
-		/* Only for architectures in detailed simulation */
-		arch = list_get(arch_list, i);
-		if (arch->sim_kind == arch_sim_kind_functional)
-			continue;
+	/* Only for architectures in detailed simulation */
+	if (arch->sim_kind != arch_sim_kind_detailed)
+		return;
 
-		/* Architecture must have registered its 'mem_config_default' 
-		 * function */
-		if (!arch->mem_config_default_func)
-		{
-			panic("%s: architecture '%s' didn't register "
-				"'mem_config_default'", __FUNCTION__, 
-				arch->name);
-		}
+	/* Architecture must have registered its 'mem_config_default' function */
+	if (!arch->mem_config_default_func)
+		panic("%s: no default memory configuration for %s",
+				__FUNCTION__, arch->name);
 
-		/* Make call back */
-		arch->mem_config_default_func(config);
-	}
+	/* Call function for default memory configuration */
+	arch->mem_config_default_func(config);
+}
+
+
+static void mem_config_check(struct arch_t *arch, void *user_data)
+{
+	struct config_t *config = user_data;
+
+	/* Only for architectures in detailed simulation */
+	if (arch->sim_kind != arch_sim_kind_detailed)
+		return;
+
+	/* Architecture must have registers 'mem_config_check' function */
+	if (!arch->mem_config_check_func)
+		panic("%s: not default memory check for %s",
+				__FUNCTION__, arch->name);
+
+	/* Call function for memory check */
+	arch->mem_config_check_func(config);
 }
 
 
@@ -1021,8 +1030,6 @@ static void mem_config_read_entries(struct config_t *config)
 
 	struct arch_t *arch;
 
-	int i;
-
 	/* Debug */
 	mem_debug("Processing entries to the memory system:\n");
 	mem_debug("\n");
@@ -1055,10 +1062,10 @@ static void mem_config_read_entries(struct config_t *config)
 
 		/* Get architecture */
 		str_trim(arch_name_trimmed, sizeof arch_name_trimmed, arch_name);
-		arch = arch_list_get(arch_name_trimmed);
+		arch = arch_get(arch_name_trimmed);
 		if (!arch)
 		{
-			arch_list_get_names(arch_list_names, sizeof arch_list_names);
+			arch_get_names(arch_list_names, sizeof arch_list_names);
 			fatal("%s: section [%s]: '%s' is an invalid value for 'Arch'.\n"
 				"\tPossible values are %s.\n%s",
 				mem_config_file_name, section, arch_name_trimmed,
@@ -1087,21 +1094,7 @@ static void mem_config_read_entries(struct config_t *config)
 
 	/* After processing all [Entry <name>] sections, check that all architectures
 	 * satisfy their entries to the memory hierarchy. */
-	LIST_FOR_EACH(arch_list, i)
-	{
-		/* Only architectures with detailed simulation */
-		arch = list_get(arch_list, i);
-		if (arch->sim_kind == arch_sim_kind_functional)
-			continue;
-
-		/* Check that 'mem_config_check' has been registered. */
-		if (!arch->mem_config_check_func)
-			panic("%s: architecture '%s' didn't register 'mem_config_check'",
-				__FUNCTION__, arch->name);
-
-		/* Make call-back */
-		arch->mem_config_check_func(config);
-	}
+	arch_for_each(mem_config_check, config);
 }
 
 
@@ -1276,25 +1269,19 @@ static struct arch_t *mem_config_set_mod_arch(struct mod_t *mod, struct arch_t *
 }
 
 
-static void mem_config_check_disjoint(void)
+static void mem_config_check_disjoint(struct arch_t *arch, void *user_data)
 {
-	struct arch_t *arch;
 	struct arch_t *mod_arch;
 	struct mod_t *mod;
 
-	int i;
-
-	LIST_FOR_EACH(arch_list, i)
+	/* Color modules for this architecture */
+	LINKED_LIST_FOR_EACH(arch->mem_entry_mod_list)
 	{
-		arch = list_get(arch_list, i);
-		LINKED_LIST_FOR_EACH(arch->mem_entry_mod_list)
-		{
-			mod = linked_list_get(arch->mem_entry_mod_list);
-			mod_arch = mem_config_set_mod_arch(mod, arch);
-			if (mod_arch != arch)
-				fatal("%s: architectures '%s' and '%s' share memory modules.\n%s",
-					mem_config_file_name, arch->name, mod_arch->name, err_mem_disjoint);
-		}
+		mod = linked_list_get(arch->mem_entry_mod_list);
+		mod_arch = mem_config_set_mod_arch(mod, arch);
+		if (mod_arch != arch)
+			fatal("%s: architectures '%s' and '%s' share memory modules.\n%s",
+				mem_config_file_name, arch->name, mod_arch->name, err_mem_disjoint);
 	}
 }
 
@@ -1360,24 +1347,27 @@ static void mem_config_set_mod_level(struct mod_t *mod, int level)
 }
 
 
+static void mem_config_calculate_mod_levels_arch(struct arch_t *arch,
+		void *user_data)
+{
+	struct mod_t *mod;
+
+	LINKED_LIST_FOR_EACH(arch->mem_entry_mod_list)
+	{
+		mod = linked_list_get(arch->mem_entry_mod_list);
+		mem_config_set_mod_level(mod, 1);
+	}
+}
+
+
 static void mem_config_calculate_mod_levels(void)
 {
 	struct mod_t *mod;
-	struct arch_t *arch;
-	
 	int i;
-
+	
 	/* Start recursive level assignment with L1 modules (entries to memory)
 	 * for all architectures. */
-	LIST_FOR_EACH(arch_list, i)
-	{
-		arch = list_get(arch_list, i);
-		LINKED_LIST_FOR_EACH(arch->mem_entry_mod_list)
-		{
-			mod = linked_list_get(arch->mem_entry_mod_list);
-			mem_config_set_mod_level(mod, 1);
-		}
-	}
+	arch_for_each(mem_config_calculate_mod_levels_arch, NULL);
 
 	/* Debug */
 	mem_debug("Calculating module levels:\n");
@@ -1512,7 +1502,7 @@ void mem_config_read(void)
 	 * by the user, create a default configuration for each architecture. */
 	config = config_create(mem_config_file_name);
 	if (!*mem_config_file_name)
-		mem_config_default(config);
+		arch_for_each(mem_config_default, config);
 	else
 		config_load(config);
 
@@ -1546,8 +1536,8 @@ void mem_config_read(void)
 	/* Check routes to low and high modules */
 	mem_config_check_routes();
 
-	/* Check for disjoint CPU/GPU memory hierarchies */
-	mem_config_check_disjoint();
+	/* Check for disjoint memory hierarchies for different architectures. */
+	arch_for_each(mem_config_check_disjoint, NULL);
 
 	/* Compute sub-block sizes, based on high modules. This function also
 	 * initializes the directories in modules other than L1. */

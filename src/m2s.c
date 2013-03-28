@@ -77,10 +77,10 @@ static char *glu_debug_file_name = "";
 static char *glut_debug_file_name = "";
 static char *glew_debug_file_name = "";
 static char *opengl_debug_file_name = "";
-
-static char *x86_call_debug_file_name = "";
 static char *opencl_debug_file_name = "";
 static char *cuda_debug_file_name = "";
+
+static char *x86_call_debug_file_name = "";
 static char *x86_disasm_file_name = "";
 static char *x86_isa_debug_file_name = "";
 static char *x86_load_checkpoint_file_name = "";
@@ -88,6 +88,7 @@ static char *x86_loader_debug_file_name = "";
 static char *x86_save_checkpoint_file_name = "";
 static char *x86_sys_debug_file_name = "";
 static char *x86_trace_cache_debug_file_name = "";
+static enum arch_sim_kind_t x86_sim_kind = arch_sim_kind_functional;
 
 static char *evg_disasm_file_name = "";
 static char *evg_isa_debug_file_name = "";
@@ -95,23 +96,24 @@ static char *evg_opencl_debug_file_name = "";
 static char *evg_opengl_disasm_file_name = "";
 static int evg_opengl_disasm_shader_index = 1;
 static char *evg_stack_debug_file_name = "";
+static enum arch_sim_kind_t evg_sim_kind = arch_sim_kind_functional;
 
 static char *si_disasm_file_name = "";
 static char *si_isa_debug_file_name = "";
 static char *si_opengl_disasm_file_name = "";
 static int si_opengl_disasm_shader_index = 1;
-
-static int si_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
+static enum arch_sim_kind_t si_sim_kind = arch_sim_kind_functional;
 
 static char *frm_disasm_file_name = "";
 static char *frm_isa_debug_file_name = "";
-static int frm_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
+static enum arch_sim_kind_t frm_sim_kind = arch_sim_kind_functional;
 
 static char *arm_disasm_file_name = "";
 static char *arm_loader_debug_file_name = "";
 static char *arm_isa_debug_file_name = "";
 static char *arm_sys_debug_file_name = "";
 static char *arm_call_debug_file_name = "";
+static enum arch_sim_kind_t arm_sim_kind = arch_sim_kind_functional;
 
 static char *mips_disasm_file_name = "";
 
@@ -119,8 +121,10 @@ static char *mem_debug_file_name = "";
 
 static char *net_debug_file_name = "";
 
-static long long m2s_max_time = 0;  /* Max. simulation time in seconds (0 = no limit) */
-static long long m2s_loop_iter = 0;  /* Number of iterations in main simulation loop */
+static long long m2s_max_time;  /* Max. simulation time in seconds (0 = no limit) */
+static long long m2s_loop_iter;  /* Number of iterations in main simulation loop */
+
+static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
 static char *m2s_help =
 	"Syntax:\n"
@@ -773,14 +777,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--x86-sim"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			argi++;
-			if (!strcasecmp(argv[argi], "functional"))
-				x86_emu_sim_kind = arch_sim_kind_functional;
-			else if (!strcasecmp(argv[argi], "detailed"))
-				x86_emu_sim_kind = arch_sim_kind_detailed;
-			else
-				fatal("option '%s': invalid argument ('%s').\n%s",
-					argv[argi - 1], argv[argi], m2s_err_note);
+			x86_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
+					argv[++argi], "invalid value for --x86-sim.");
 			continue;
 		}
 
@@ -931,14 +929,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--evg-sim"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			argi++;
-			if (!strcasecmp(argv[argi], "functional"))
-				evg_emu_sim_kind = arch_sim_kind_functional;
-			else if (!strcasecmp(argv[argi], "detailed"))
-				evg_emu_sim_kind = arch_sim_kind_detailed;
-			else
-				fatal("option '%s': invalid argument ('%s').\n%s",
-					argv[argi - 1], argv[argi], m2s_err_note);
+			x86_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
+					argv[++argi], "invalid value for --evg-sim.");
 			continue;
 		}
 
@@ -1048,16 +1040,9 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		/* Southern Islands simulation accuracy */
 		if (!strcmp(argv[argi], "--si-sim"))
 		{
-			si_emulator = 1;
 			m2s_need_argument(argc, argv, argi);
-			argi++;
-			if (!strcasecmp(argv[argi], "functional"))
-				si_emu_sim_kind = arch_sim_kind_functional;
-			else if (!strcasecmp(argv[argi], "detailed"))
-				si_emu_sim_kind = arch_sim_kind_detailed;
-			else
-				fatal("option '%s': invalid argument ('%s').\n%s",
-					argv[argi - 1], argv[argi], m2s_err_note);
+			x86_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
+					argv[++argi], "invalid value for --si-sim.");
 			continue;
 		}
 
@@ -1141,16 +1126,9 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		/* Fermi simulation accuracy */
 		if (!strcmp(argv[argi], "--frm-sim"))
 		{
-			frm_emulator = 1;
 			m2s_need_argument(argc, argv, argi);
-			argi++;
-			if (!strcasecmp(argv[argi], "functional"))
-				frm_emu_sim_kind = arch_sim_kind_functional;
-			else if (!strcasecmp(argv[argi], "detailed"))
-				frm_emu_sim_kind = arch_sim_kind_detailed;
-			else
-				fatal("option '%s': invalid argument ('%s').\n%s",
-					argv[argi - 1], argv[argi], m2s_err_note);
+			x86_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
+					argv[++argi], "invalid value for --frm-sim.");
 			continue;
 		}
 
@@ -1348,7 +1326,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Options only allowed for x86 detailed simulation */
-	if (x86_emu_sim_kind == arch_sim_kind_functional)
+	if (x86_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional x86 simulation.\n"
 			"\tPlease use option '--x86-sim detailed' as well.\n";
@@ -1362,7 +1340,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Options that only make sense for GPU detailed simulation */
-	if (evg_emu_sim_kind == arch_sim_kind_functional)
+	if (evg_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"\tPlease use option '--evg-sim detailed' as well.\n";
@@ -1380,7 +1358,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Options that only make sense for GPU detailed simulation */
-	if (si_emu_sim_kind == arch_sim_kind_functional)
+	if (si_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"\tPlease use option '--si-sim detailed' as well.\n";
@@ -1394,7 +1372,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Options that only make sense for GPU detailed simulation */
-	if (frm_emu_sim_kind == arch_sim_kind_functional)
+	if (frm_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"\tPlease use option '--frm-sim detailed' as well.\n";
@@ -1409,11 +1387,12 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 
 	/* Options that only make sense when there is at least one architecture
 	 * using detailed simulation. */
-	if (evg_emu_sim_kind == arch_sim_kind_functional
-		&& x86_emu_sim_kind == arch_sim_kind_functional
-		&& si_emu_sim_kind == arch_sim_kind_functional
-		&& arm_emu_sim_kind == arch_sim_kind_functional
-		&& frm_emu_sim_kind == arch_sim_kind_functional)
+	/* FIXME */
+	if (evg_sim_kind == arch_sim_kind_functional
+		&& x86_sim_kind == arch_sim_kind_functional
+		&& si_sim_kind == arch_sim_kind_functional
+		&& arm_sim_kind == arch_sim_kind_functional
+		&& frm_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' needs architectural simulation.\n"
 			"\tPlease use option '--<arch>-sim detailed' as well, where <arch> is any\n"
@@ -1583,7 +1562,26 @@ void m2s_dump_summary(FILE *f)
 /* Signal handler while functional simulation loop is running */
 void m2s_signal_handler(int signum)
 {
-	switch (signum)
+	/* If a signal SIGINT has been caught already and not processed, it is
+	 * time to not defer it anymore. Execution ends here. */
+	if (m2s_signal_received == signum && signum == SIGINT)
+	{
+		fprintf(stderr, "SIGINT received\n");
+		exit(1);
+	}
+
+	/* Just record that we are receiving a signal. It is not a good idea to
+	 * process it now, since we might be interfering some critical
+	 * execution. The signal will be processed at the end of the simulation
+	 * loop iteration. */
+	m2s_signal_received = signum;
+}
+
+
+void m2s_signal_process(void)
+{
+	/* Process signal */
+	switch (m2s_signal_received)
 	{
 
 	case SIGINT:
@@ -1597,65 +1595,46 @@ void m2s_signal_handler(int signum)
 		fprintf(stderr, "SIGINT received\n");
 		break;
 
+	case SIGUSR1:
+
+		break;
+
 	default:
 
-		fprintf(stderr, "Signal %d received\n", signum);
+		fprintf(stderr, "Signal %d received\n", m2s_signal_received);
 		exit(1);
 	}
+
+	/* Signal already processed */
+	m2s_signal_received = 0;
 }
 
 
 void m2s_loop(void)
 {
-	int timing_running;
-	int emu_running;
+	enum arch_sim_kind_t sim_kind;
 
+	/* Install signal handlers */
+	signal(SIGINT, &m2s_signal_handler);
+	signal(SIGABRT, &m2s_signal_handler);
+	signal(SIGUSR1, &m2s_signal_handler);
+
+	/* Simulation loop */
 	while (!esim_finish)
 	{
-		/* Assume initially that no architecture is doing any useful emulation
-		 * or timing simulation. */
-		emu_running = 0;
-		timing_running = 0;
-
-		/* x86 CPU simulation */
-		if (x86_emu_sim_kind == arch_sim_kind_functional)
-			emu_running |= x86_emu_run();
-		else
-			timing_running |= x86_cpu_run();
-
-		/* Evergreen GPU simulation */
-		if (evg_emu_sim_kind == arch_sim_kind_functional)
-			emu_running |= evg_emu_run();
-		else
-			timing_running |= evg_gpu_run();
-
-		/* Southern Islands GPU simulation */
-		if (si_emu_sim_kind == arch_sim_kind_functional)
-			emu_running |= si_emu_run();
-		else
-			timing_running |= si_gpu_run();
-
-		/* Fermi GPU simulation */
-		if (frm_emu_sim_kind == arch_sim_kind_functional)
-			emu_running |= frm_emu_run();
-		else
-			timing_running |= frm_gpu_run();
-
-		/* arm CPU simulation */
-		if (arm_emu_sim_kind == arch_sim_kind_functional)
-			emu_running |= arm_emu_run();
-		else
-			timing_running |= arm_cpu_run();
-
+		/* Run iteration for all architectures. This function will return
+		 * the highest level of simulation performed in order of
+		 * none-functional-detailed. */
+		sim_kind = arch_run_all();
 
 		/* Event-driven simulation. Only process events and advance to next global
 		 * simulation cycle if any architecture performed a useful timing simulation. */
-		if (timing_running)
+		if (sim_kind == arch_sim_kind_detailed)
 			esim_process_events();
 
 		/* If neither functional or timing simulation was performed for any architecture,
 		 * it means that all guest contexts finished execution - simulation can end. */
-		if (!emu_running && !timing_running)
+		if (sim_kind == arch_sim_kind_invalid)
 			esim_finish = esim_finish_ctx;
 
 		/* Count loop iterations, and check for limit in simulation time only every
@@ -1664,8 +1643,16 @@ void m2s_loop(void)
 		if (m2s_max_time && !(m2s_loop_iter & ((1 << 17) - 1))
 			&& esim_real_time() > m2s_max_time * 1000000)
 			esim_finish = esim_finish_max_time;
+
+		/* Signal received */
+		if (m2s_signal_received)
+			m2s_signal_process();
 	}
 
+	/* Restore default signal handlers */
+	signal(SIGABRT, SIG_DFL);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGUSR1, SIG_DFL);
 }
 
 
@@ -1773,29 +1760,23 @@ int main(int argc, char **argv)
 	esim_init();
 	trace_init(trace_file_name);
 
-	/* Initialization for functional simulation */
-	arch_list_init();
-	x86_emu_init();
-	arm_emu_init();
-	evg_emu_init();
-	si_emu_init();
-	frm_emu_init();
-
-	/* Initialization of x86 CPU */
-	if (x86_emu_sim_kind == arch_sim_kind_detailed)
-		x86_cpu_init();
-
-	/* Initialization of Evergreen GPU */
-	if (evg_emu_sim_kind == arch_sim_kind_detailed)
-		evg_gpu_init();
-
-	/* Initialization of Southern Islands GPU */
-	if (si_emu_sim_kind == arch_sim_kind_detailed)
-		si_gpu_init();
-
-	/* Initialization of Fermi GPU */
-	if (frm_emu_sim_kind == arch_sim_kind_detailed)
-		frm_gpu_init();
+	/* Initialization of architectures */
+	arch_init();
+	arch_register("ARM", "arm", arm_sim_kind,
+			arm_emu_init, arm_emu_done, arm_emu_run,
+			arm_cpu_init, arm_cpu_done, arm_cpu_run);
+	arch_register("Evergreen", "evg", evg_sim_kind,
+			evg_emu_init, evg_emu_done, evg_emu_run,
+			evg_gpu_init, evg_gpu_done, evg_gpu_run);
+	arch_register("Fermi", "frm", frm_sim_kind,
+			frm_emu_init, frm_emu_done, frm_emu_run,
+			frm_gpu_init, frm_gpu_done, frm_gpu_run);
+	arch_register("SouthernIslands", "si", si_sim_kind,
+			si_emu_init, si_emu_done, si_emu_run,
+			si_gpu_init, si_gpu_done, si_gpu_run);
+	arch_register("x86", "x86", x86_sim_kind,
+			x86_emu_init, x86_emu_done, x86_emu_run,
+			x86_cpu_init, x86_cpu_done, x86_cpu_run);
 
 	/* Network and memory system */
 	net_init();
@@ -1809,20 +1790,12 @@ int main(int argc, char **argv)
 	/* Load programs */
 	m2s_load_programs(argc, argv);
 
-	/* Install signal handlers */
-	signal(SIGINT, &m2s_signal_handler);
-	signal(SIGABRT, &m2s_signal_handler);
-
 	/* Multi2Sim Central Simulation Loop */
 	m2s_loop();
 
 	/* Save architectural state checkpoint */
 	if (x86_save_checkpoint_file_name[0])
 		x86_checkpoint_save(x86_save_checkpoint_file_name);
-
-	/* Restore default signal handlers */
-	signal(SIGABRT, SIG_DFL);
-	signal(SIGINT, SIG_DFL);
 
 	/* Flush event-driven simulation, only if the reason for simulation
 	 * completion was not a simulation stall. If it was, draining the
@@ -1833,37 +1806,16 @@ int main(int argc, char **argv)
 	/* Dump statistics summary */
 	m2s_dump_summary(stderr);
 
-	/* Finalization of x86 CPU */
-	if (x86_emu_sim_kind == arch_sim_kind_detailed)
-		x86_cpu_done();
+	/* Finalization of architectures */
+	arch_done();
 
-	/* Finalization of Evergreen GPU */
-	if (evg_emu_sim_kind == arch_sim_kind_detailed)
-		evg_gpu_done();
-
-	/* Finalization of Southern Islands GPU */
-	if (si_emu_sim_kind == arch_sim_kind_detailed)
-		si_gpu_done();
-
-	/* Finalization of Fermi GPU */
-	if (frm_emu_sim_kind == arch_sim_kind_detailed)
-		frm_gpu_done();
+	/* Finalization of runtimes */
+	runtime_done();
 
 	/* Finalization of network and memory system */
 	mmu_done();
 	mem_system_done();
 	net_done();
-
-	/* Finalization of architectures */
-	evg_emu_done();
-	si_emu_done();
-	frm_emu_done();
-	x86_emu_done();
-	arm_emu_done();
-	arch_list_done();
-
-	/* Finalization of runtimes */
-	runtime_done();
 
 	/* Finalization of drivers */
 	opencl_done();

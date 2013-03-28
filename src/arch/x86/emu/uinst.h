@@ -279,6 +279,11 @@ struct x86_uinst_t
 };
 
 
+/* True if generation of micro-instruction is active. This is true when there is
+ * an x86 detailed simulation. For efficiency purposes, the condition is cached
+ * in this global variable. */
+extern int x86_uinst_active;
+
 extern struct list_t *x86_uinst_list;
 
 void x86_uinst_init(void);
@@ -290,10 +295,10 @@ void x86_uinst_free(struct x86_uinst_t *uinst);
 /* To prevent performance degradation in functional simulation, do the check before the actual
  * function call. Notice that 'x86_uinst_new' calls are done for every x86 instruction emulation. */
 #define x86_uinst_new(ctx, opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
-	{ if (x86_emu_sim_kind == arch_sim_kind_detailed) \
+	{ if (x86_uinst_active) \
 	__x86_uinst_new(ctx, opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 #define x86_uinst_new_mem(ctx, opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
-	{ if (x86_emu_sim_kind == arch_sim_kind_detailed) \
+	{ if (x86_uinst_active) \
 	__x86_uinst_new_mem(ctx, opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 
 void __x86_uinst_new(struct x86_ctx_t *ctx, enum x86_uinst_opcode_t opcode,

@@ -22,22 +22,6 @@
 
 #include <stdio.h>
 
-struct arch_t;
-
-extern struct list_t *arch_list;
-
-#define ARCH_LIST_FOR_EACH(iter) \
-	for ((iter) = 0; (iter) < arch_list->count; (iter)++)
-
-
-void arch_list_init(void);
-void arch_list_done(void);
-
-void arch_list_dump(FILE *f);
-
-struct arch_t *arch_list_register(char *arch_name, char *arch_prefix);
-struct arch_t *arch_list_get(char *arch_name);
-void arch_list_get_names(char *str, int size);
 
 
 #endif

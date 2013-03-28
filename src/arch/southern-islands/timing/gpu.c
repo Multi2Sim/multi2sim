@@ -1151,13 +1151,15 @@ static void si_gpu_unmap_ndrange(void)
 
 void si_gpu_init(void)
 {
+	struct arch_t *arch = si_emu->arch;
+
 	/* Trace */
 	si_trace_category = trace_new_category();
 
 	/* Register functions for architecture */
-	si_emu_arch->mem_config_check_func = si_mem_config_check;
-	si_emu_arch->mem_config_default_func = si_mem_config_default;
-	si_emu_arch->mem_config_parse_entry_func = si_mem_config_parse_entry;
+	arch->mem_config_check_func = si_mem_config_check;
+	arch->mem_config_default_func = si_mem_config_default;
+	arch->mem_config_parse_entry_func = si_mem_config_parse_entry;
 
 	/* Try to open report file */
 	if (si_gpu_report_file_name[0] && 
@@ -1329,8 +1331,10 @@ void si_gpu_dump_summary(FILE *f)
 }
 
 
-/* Run one iteration of the Southern Islands GPU timing simulation loop. */
-int si_gpu_run(void)
+/* Run one iteration of timing simulation. Return values are:
+ *   - arch_sim_kind_invalid - no more simulation
+ *   - arch_sim_kind_detailed - still simulating */
+enum arch_sim_kind_t si_gpu_run(void)
 {
 	struct si_ndrange_t *ndrange;
 
@@ -1340,7 +1344,7 @@ int si_gpu_run(void)
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!si_emu->ndrange_list_count)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Start one ND-Range in state 'pending' */
 	while ((ndrange = si_emu->pending_ndrange_list_head))
@@ -1401,7 +1405,7 @@ int si_gpu_run(void)
 
 	/* Stop if any reason met */
 	if (esim_finish)
-		return 1;
+		return arch_sim_kind_detailed;
 
 	/* Run one loop iteration on each busy compute unit */
 	for (compute_unit = si_gpu->compute_unit_busy_list_head; compute_unit;
@@ -1435,5 +1439,5 @@ int si_gpu_run(void)
 	}
 
 	/* Return true */
-	return 1;
+	return arch_sim_kind_invalid;
 }

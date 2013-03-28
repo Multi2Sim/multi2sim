@@ -38,6 +38,7 @@ struct str_map_t
 
 int str_map_string(struct str_map_t *map, char *s);
 int str_map_string_err(struct str_map_t *map, char *s, int *err_ptr);
+int str_map_string_err_msg(struct str_map_t *map, char *s, char *err_msg);
 
 int str_map_string_case(struct str_map_t *map, char *s);
 int str_map_string_case_err(struct str_map_t *map, char *s, int *err_ptr);
