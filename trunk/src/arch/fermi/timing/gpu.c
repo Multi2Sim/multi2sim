@@ -323,9 +323,9 @@ struct str_map_t frm_gpu_register_alloc_granularity_map =
 enum frm_gpu_register_alloc_granularity_t frm_gpu_register_alloc_granularity;
 
 /* Device parameters */
-int frm_gpu_num_sms = 32;
+int frm_gpu_num_sms = 15;
 
-/* Compute unit parameters */
+/* Streaming multiprocessor parameters */
 int frm_gpu_num_warp_pools = 4; /* Per CU */
 int frm_gpu_max_thread_blocks_per_warp_pool = 10;
 int frm_gpu_max_warps_per_warp_pool = 10; 
@@ -448,11 +448,9 @@ static void frm_config_read(void)
 {
 	struct config_t *gpu_config;
 	char *section;
-	char *err_note =
+	const char *err_note =
 		"\tPlease run 'm2s --frm-help' or consult the Multi2Sim Guide "
 		"for a\n\tdescription of the GPU configuration file format.";
-
-	//char *gpu_register_alloc_granularity_str;
 
 	/* Load GPU configuration file */
 	gpu_config = config_create(frm_gpu_config_file_name);
@@ -468,28 +466,6 @@ static void frm_config_read(void)
 	if (frm_gpu_num_sms < 1)
 		fatal("%s: invalid value for 'NumSMs'.\n%s", 
 			frm_gpu_config_file_name, err_note);
-
-#if 0
-	frm_gpu_register_alloc_size = config_read_int(
-		gpu_config, section, "RegisterAllocSize", 
-		frm_gpu_register_alloc_size);
-	if (frm_gpu_register_alloc_size < 1)
-		fatal("%s: invalid value for 'RegisterAllocSize'.\n%s", 
-			frm_gpu_config_file_name, err_note);
-	if (frm_gpu_num_registers % frm_gpu_register_alloc_size)
-		fatal("%s: 'NumRegisters' not a multiple of "
-			"'RegisterAllocSize'.\n%s", frm_gpu_config_file_name, 
-			err_note);
-
-	gpu_register_alloc_granularity_str = config_read_string(
-		gpu_config, section, "RegisterAllocGranularity", "ThreadBlock");
-	frm_gpu_register_alloc_granularity = str_map_string_case(
-		&frm_gpu_register_alloc_granularity_map, 
-		gpu_register_alloc_granularity_str);
-	if (frm_gpu_register_alloc_granularity == frm_gpu_register_alloc_invalid)
-		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s",
-			frm_gpu_config_file_name, err_note);
-#endif
 
 	/* SM */
 	section = "SM";
@@ -1424,11 +1400,11 @@ int frm_gpu_run(void)
 		frm_grid_dump(grid, frm_emu_report_file);
 
 		/* Stop if maximum number of kernels reached */
-		//if (frm_emu_max_kernels && frm_emu->grid_count >= 
-		//	frm_emu_max_kernels)
-		//{
-		//	esim_finish = esim_finish_frm_max_kernels;
-		//}
+		if (frm_emu_max_functions && frm_emu->grid_count >= 
+			frm_emu_max_functions)
+		{
+			esim_finish = esim_finish_frm_max_functions;
+		}
 
 		/* Finalize and free Grid */
 		assert(frm_grid_get_status(grid, frm_grid_finished));

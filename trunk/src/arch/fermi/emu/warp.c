@@ -241,6 +241,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	warp->active_mask_update = 0;
 	warp->active_mask_push = 0;
 	warp->active_mask_pop = 0;
+	warp->inst_size = 8;
 
 	int thread_id;
 
@@ -249,14 +250,13 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	int byte_index;
 
 	inst = &(warp->inst);
-	frm_isa_debug("Instruction Hex: ");
-	/* Print most significant byte first */
+	//frm_isa_debug("Instruction Hex: ");
 	for (byte_index = 7; byte_index >= 0; --byte_index)
 	{
-		frm_isa_debug("%02x", *((unsigned char*)(warp->buf)+byte_index));
+		//frm_isa_debug("%02x", *((unsigned char*)(warp->buf)+byte_index));
 		inst->dword.bytes[byte_index] = *((unsigned char*)(warp->buf)+byte_index);
 	}
-	frm_isa_debug("\n");
+	//frm_isa_debug("\n");
 
         FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
         {
@@ -312,3 +312,4 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	/* Increment the PC */
 	warp->pc += warp->inst_size;
 }
+

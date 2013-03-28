@@ -82,10 +82,12 @@ extern enum arch_sim_kind_t frm_emu_sim_kind;
 
 extern long long frm_emu_max_cycles;
 extern long long frm_emu_max_inst;
-extern int frm_emu_max_kernels;
+extern int frm_emu_max_functions;
+
 extern char *frm_emu_cuda_binary_name;
 extern char *frm_emu_report_file_name;
 extern FILE *frm_emu_report_file;
+
 extern int frm_emu_warp_size;
 extern char *err_frm_cuda_note;
 

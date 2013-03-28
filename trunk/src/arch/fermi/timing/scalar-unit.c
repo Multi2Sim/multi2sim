@@ -151,8 +151,8 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 			assert(uop->thread_block);
 			assert(uop->thread_block->sm_finished_count <=
 				uop->thread_block->warp_count);
-			if (uop->thread_block->sm_finished_count == 
-					uop->thread_block->warp_count)
+			//if (uop->thread_block->sm_finished_count == 
+			//		uop->thread_block->warp_count)
 			{
 				frm_sm_unmap_thread_block(
 					scalar_unit->sm,

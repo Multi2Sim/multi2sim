@@ -360,10 +360,15 @@ cudaError_t cudaGetLastError(void)
 {
 	cudaError_t cuda_rt_last_error_ret;
 
+	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+
 	cuda_rt_last_error_ret = cuda_rt_last_error;
 
 	/* Reset */
 	cuda_rt_last_error = cudaSuccess;
+
+	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n",
+			cuda_rt_last_error_ret);
 
 	return cuda_rt_last_error_ret;
 }
