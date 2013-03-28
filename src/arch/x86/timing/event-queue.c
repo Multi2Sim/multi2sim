@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/x86/emu/emu.h>
 #include <lib/util/linked-list.h>
 
 #include "cpu.h"
@@ -59,6 +61,7 @@ static int eventq_compare(const void *item1, const void *item2)
 
 int x86_event_queue_long_latency(int core, int thread)
 {
+	struct arch_t *arch = x86_emu->arch;
 	struct linked_list_t *event_queue = X86_CORE.event_queue;
 	struct x86_uop_t *uop;
 	
@@ -67,7 +70,7 @@ int x86_event_queue_long_latency(int core, int thread)
 		uop = linked_list_get(event_queue);
 		if (uop->thread != thread)
 			continue;
-		if (x86_cpu->cycle - uop->issue_when > 20)
+		if (arch->cycle_count - uop->issue_when > 20)
 			return 1;
 	}
 	return 0;
@@ -76,6 +79,7 @@ int x86_event_queue_long_latency(int core, int thread)
 
 int x86_event_queue_cache_miss(int core, int thread)
 {
+	struct arch_t *arch = x86_emu->arch;
 	struct linked_list_t *event_queue = X86_CORE.event_queue;
 	struct x86_uop_t *uop;
 
@@ -84,7 +88,7 @@ int x86_event_queue_cache_miss(int core, int thread)
 		uop = linked_list_get(event_queue);
 		if (uop->thread != thread || uop->uinst->opcode != x86_uinst_load)
 			continue;
-		if (x86_cpu->cycle - uop->issue_when > 5)
+		if (arch->cycle_count - uop->issue_when > 5)
 			return 1;
 	}
 	return 0;

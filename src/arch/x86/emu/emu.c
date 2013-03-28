@@ -33,7 +33,6 @@
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
 #include "context.h"
@@ -99,7 +98,6 @@ void x86_emu_init(struct arch_t *arch)
 
 	/* Initialize */
 	x86_emu->current_pid = 1000;  /* Initial assigned pid */
-	x86_emu->timer = m2s_timer_create("x86 emulation timer");
 	
 	/* Initialize mutex for variables controlling calls to 'x86_emu_process_events()' */
 	pthread_mutex_init(&x86_emu->process_events_mutex, NULL);
@@ -142,7 +140,6 @@ void x86_emu_done(void)
 		x86_ctx_free(x86_emu->context_list_head);
 	
 	/* Free */
-	m2s_timer_free(x86_emu->timer);
 	free(x86_emu);
 
 	/* End */
@@ -170,17 +167,9 @@ void x86_emu_dump(FILE *f)
 
 void x86_emu_dump_summary(FILE *f)
 {
-	double time_in_sec;
-	double inst_per_sec;
-
 	/* Functional simulation */
-	time_in_sec = (double) m2s_timer_get_value(x86_emu->timer) / 1.0e6;
-	inst_per_sec = time_in_sec > 0.0 ? (double) x86_emu->inst_count / time_in_sec : 0.0;
-	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "Contexts = %d\n", x86_emu->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
-	fprintf(f, "EmulatedInstructions = %lld\n", x86_emu->inst_count);
-	fprintf(f, "EmulatedInstructionsPerSecond = %.0f\n", inst_per_sec);
 }
 
 
@@ -844,7 +833,7 @@ enum arch_sim_kind_t x86_emu_run(void)
 		return arch_sim_kind_invalid;
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (x86_emu_max_inst && x86_emu->inst_count >= x86_emu_max_inst)
+	if (x86_emu_max_inst && x86_emu->arch->inst_count >= x86_emu_max_inst)
 		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */

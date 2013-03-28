@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -313,7 +314,7 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 	x86_isa_execute_inst(ctx);
 	
 	/* Statistics */
-	x86_emu->inst_count++;
+	x86_emu->arch->inst_count++;
 }
 
 
@@ -352,6 +353,7 @@ int x86_ctx_get_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 
 static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 {
+	struct arch_t *arch = x86_emu->arch;
 	enum x86_ctx_status_t status_diff;
 
 	/* Remove contexts from the following lists:
@@ -411,9 +413,9 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 	/* Start/stop x86 timer depending on whether there are any contexts
 	 * currently running. */
 	if (x86_emu->running_list_count)
-		m2s_timer_start(x86_emu->timer);
+		m2s_timer_start(arch->timer);
 	else
-		m2s_timer_stop(x86_emu->timer);
+		m2s_timer_stop(arch->timer);
 }
 
 

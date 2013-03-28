@@ -19,7 +19,9 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
 #include <arch/x86/emu/context.h>
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
 #include <lib/esim/trace.h>
 #include <lib/util/misc.h>
@@ -37,6 +39,7 @@
 
 void x86_cpu_recover(int core, int thread)
 {
+	struct arch_t *arch = x86_emu->arch;
 	struct x86_uop_t *uop;
 
 	/* Remove instructions of this thread in fetch queue, uop queue,
@@ -92,7 +95,7 @@ void x86_cpu_recover(int core, int thread)
 		x86_ctx_recover(X86_THREAD.ctx);
 	
 	/* Stall fetch and set eip to fetch. */
-	X86_THREAD.fetch_stall_until = MAX(X86_THREAD.fetch_stall_until, x86_cpu->cycle + x86_cpu_recover_penalty - 1);
+	X86_THREAD.fetch_stall_until = MAX(X86_THREAD.fetch_stall_until, arch->cycle_count + x86_cpu_recover_penalty - 1);
 	X86_THREAD.fetch_neip = X86_THREAD.ctx->regs->eip;
 }
 
