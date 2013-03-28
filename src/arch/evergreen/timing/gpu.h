@@ -70,9 +70,6 @@ extern int evg_gpu_tex_engine_load_queue_size;
 
 struct evg_gpu_t
 {
-	/* Current cycle */
-	long long cycle;
-
 	/* ND-Range running on it */
 	struct evg_ndrange_t *ndrange;
 	int work_groups_per_compute_unit;

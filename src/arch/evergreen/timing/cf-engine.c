@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
@@ -43,6 +45,8 @@ int evg_gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 
 static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
+	struct arch_t *arch = evg_emu->arch;
+
 	struct evg_ndrange_t *ndrange = evg_gpu->ndrange;
 	struct evg_wavefront_t *wavefront;
 
@@ -104,7 +108,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = evg_gpu->cycle + evg_gpu_cf_engine_inst_mem_latency;
+	uop->inst_mem_ready = arch->cycle_count + evg_gpu_cf_engine_inst_mem_latency;
 
 	/* Insert uop to fetch buffer */
 	assert(!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit]);

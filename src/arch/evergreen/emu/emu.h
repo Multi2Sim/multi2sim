@@ -28,9 +28,6 @@ struct evg_emu_t
 	/* Common architecture object */
 	struct arch_t *arch;
 
-	/* Timer */
-	struct m2s_timer_t *timer;
-
 	/* OpenCL objects */
 	struct evg_opencl_repo_t *opencl_repo;
 	struct evg_opencl_platform_t *opencl_platform;
@@ -79,7 +76,6 @@ struct evg_emu_t
 
 	/* Stats */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
-	long long inst_count;  /* Number of instructions executed by wavefronts */
 };
 
 

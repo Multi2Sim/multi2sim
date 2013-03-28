@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
 #include <driver/opencl-old/evergreen/bin-file.h>
 #include <driver/opencl-old/evergreen/command-queue.h>
 #include <driver/opencl-old/evergreen/kernel.h>
@@ -185,6 +186,8 @@ int evg_ndrange_get_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_statu
 
 void evg_ndrange_set_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status)
 {
+	struct arch_t *arch = evg_emu->arch;
+
 	/* Get only the new bits */
 	status &= ~ndrange->status;
 
@@ -198,9 +201,9 @@ void evg_ndrange_set_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_stat
 
 	/* Start/stop Evergreen timer depending on ND-Range states */
 	if (evg_emu->running_ndrange_list_count)
-		m2s_timer_start(evg_emu->timer);
+		m2s_timer_start(arch->timer);
 	else
-		m2s_timer_stop(evg_emu->timer);
+		m2s_timer_stop(arch->timer);
 
 	/* Update it */
 	ndrange->status |= status;
