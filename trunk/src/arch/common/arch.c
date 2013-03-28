@@ -32,8 +32,8 @@ struct str_map_t arch_sim_kind_map =
 {
 	2,
 	{
-		{ "Functional", arch_sim_kind_functional },
-		{ "Detailed", arch_sim_kind_detailed }
+		{ "functional", arch_sim_kind_functional },
+		{ "detailed", arch_sim_kind_detailed }
 	}
 };
 
