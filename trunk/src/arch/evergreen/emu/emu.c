@@ -18,7 +18,6 @@
  */
 
 #include <arch/common/arch.h>
-#include <arch/common/arch-list.h>
 #include <arch/evergreen/emu/opengl-bin-file.h>
 #include <arch/evergreen/timing/gpu.h>
 #include <driver/opencl-old/evergreen/bin-file.h>
