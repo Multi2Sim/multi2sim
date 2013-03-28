@@ -95,6 +95,13 @@ struct arch_t
 	/* List of entry modules to the memory hierarchy. Each element of this list
 	 * is of type 'mod_t'. */
 	struct linked_list_t *mem_entry_mod_list;
+
+	/* Timer for activity */
+	struct m2s_timer_t *timer;
+
+	/* Counters */
+	long long cycle_count;
+	long long inst_count;
 };
 
 

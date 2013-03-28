@@ -24,6 +24,7 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
+#include <lib/util/timer.h>
 
 #include "arch.h"
 
@@ -47,6 +48,7 @@ struct arch_t *arch_create(char *name, char *prefix)
 	arch->name = xstrdup(name);
 	arch->prefix = xstrdup(prefix);
 	arch->mem_entry_mod_list = linked_list_create();
+	arch->timer = m2s_timer_create(name);
 
 	/* Return */
 	return arch;
@@ -58,6 +60,7 @@ void arch_free(struct arch_t *arch)
 	free(arch->name);
 	free(arch->prefix);
 	linked_list_free(arch->mem_entry_mod_list);
+	m2s_timer_free(arch->timer);
 	free(arch);
 }
 
@@ -69,6 +72,35 @@ void arch_dump(struct arch_t *arch, FILE *f)
 	fprintf(f, "\n");
 }
 
+
+void arch_dump_summary(struct arch_t *arch, FILE *f)
+{
+	double time_in_sec;
+	double inst_per_sec;
+
+	/* If no instruction was run for this architecture, skip
+	 * statistics summary. */
+	if (!arch->inst_count)
+		return;
+
+	/* Standard emulation statistics */
+	time_in_sec = (double) m2s_timer_get_value(arch->timer) / 1.0e6;
+	inst_per_sec = time_in_sec > 0.0 ? (double) arch->inst_count / time_in_sec : 0.0;
+	fprintf(f, "[ %s ]\n", arch->name);
+	fprintf(f, "Time = %.2f\n", time_in_sec);
+	fprintf(f, "EmulatedInstructions = %lld\n", arch->inst_count);
+	fprintf(f, "EmulatedInstructionsPerSecond = %.0f\n", inst_per_sec);
+
+	/* Architecture-specific emulation statistics */
+	arch->emu_dump_summary_func(f);
+
+	/* Timing simulation statistics */
+	if (arch->sim_kind == arch_sim_kind_detailed)
+		arch->timing_dump_summary_func(f);
+
+	/* End */
+	fprintf(f, "\n");
+}
 
 
 
@@ -232,4 +264,3 @@ enum arch_sim_kind_t arch_run_all(void)
 	/* Return maximum simulation level performed */
 	return ret;
 }
-

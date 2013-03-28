@@ -319,9 +319,6 @@ struct x86_cpu_t
 	/* Array of cores */
 	struct x86_core_t *core;
 
-	/* Cycle counter */
-	long long cycle;
-
 	/* Some fields */
 	long long uop_id_counter;  /* Counter of uop ID assignment */
 	char *stage;  /* Name of currently simulated stage */
