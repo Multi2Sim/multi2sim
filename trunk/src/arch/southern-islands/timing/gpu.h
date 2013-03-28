@@ -187,9 +187,6 @@ extern int si_gpu_lds_num_ports;
 
 struct si_gpu_t
 {
-	/* Current cycle */
-	long long cycle;
-
 	/* ND-Range running on it */
 	struct si_ndrange_t *ndrange;
 	int work_groups_per_wavefront_pool;

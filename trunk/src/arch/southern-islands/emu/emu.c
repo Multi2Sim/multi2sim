@@ -84,7 +84,6 @@ void si_emu_init(struct arch_t *arch)
 	/* Initialize */
 	si_emu = xcalloc(1, sizeof(struct si_emu_t));
 	si_emu->arch = arch;
-	si_emu->timer = m2s_timer_create("Southern Islands GPU Timer");
 	si_emu->global_mem = mem_create();
 	si_emu->global_mem->safe = 0;
 
@@ -117,25 +116,13 @@ void si_emu_done()
 
 	/* Finalize GPU kernel */
 	mem_free(si_emu->global_mem);
-	m2s_timer_free(si_emu->timer);
 	free(si_emu);
 }
 
+
 void si_emu_dump_summary(FILE *f)
 {
-	double time_in_sec;
-	double inst_per_sec;
-
-	/* Calculate statistics */
-	time_in_sec = (double) m2s_timer_get_value(si_emu->timer) / 1.0e6;
-	inst_per_sec = time_in_sec > 0.0 ? 
-		(double) si_emu->inst_count / time_in_sec : 0.0;
-
-	/* Print statistics */
-	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
-	fprintf(f, "Instructions = %lld\n", si_emu->inst_count);
-	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 }
 
 
