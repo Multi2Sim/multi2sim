@@ -28,9 +28,6 @@ struct frm_emu_t
 	/* Common architecture object */
 	struct arch_t *arch;
 
-	/* Timer */
-	struct m2s_timer_t *timer;
-
 	/* List of ND-Ranges */
 	struct frm_grid_t *grid_list_head;
 	struct frm_grid_t *grid_list_tail;
@@ -71,7 +68,6 @@ struct frm_emu_t
 
 	/* Stats */
 	int grid_count;  /* Number of CUDA functions executed */
-	long long inst_count;  /* Number of instructions executed by warps */
 	long long scalar_alu_inst_count;  /* Scalar ALU instructions executed */
 	long long scalar_mem_inst_count;  /* Scalar mem instructions executed */
 	long long branch_inst_count;  /* Branch instructions executed */

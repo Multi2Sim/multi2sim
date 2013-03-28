@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
 #include <arch/fermi/emu/warp.h>
 #include <arch/fermi/emu/thread-block.h>
@@ -35,6 +37,7 @@
 
 void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 {
+	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop = NULL;
 	int i;
 	int list_entries;
@@ -56,7 +59,7 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 		uop = list_get(scalar_unit->write_buffer, list_index);
 		assert(uop);
 
-		if (frm_gpu->cycle < uop->write_ready)
+		if (arch->cycle_count < uop->write_ready)
 		{
 			/* Uop is not ready yet */
 			list_index++;
@@ -174,6 +177,7 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 
 void frm_scalar_unit_write(struct frm_scalar_unit_t *scalar_unit)
 {
+	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -232,7 +236,7 @@ void frm_scalar_unit_write(struct frm_scalar_unit_t *scalar_unit)
 				continue;
 			}
 			
-			uop->write_ready = frm_gpu->cycle + 
+			uop->write_ready = arch->cycle_count + 
 				frm_gpu_scalar_unit_write_latency;
 
 			list_remove(scalar_unit->exec_buffer, uop);
@@ -246,7 +250,7 @@ void frm_scalar_unit_write(struct frm_scalar_unit_t *scalar_unit)
 		else /* ALU instruction */ 
 		{
 			/* Uop is not ready yet */
-			if (frm_gpu->cycle < uop->execute_ready)
+			if (arch->cycle_count < uop->execute_ready)
 			{
 				list_index++;
 				continue;
@@ -283,7 +287,7 @@ void frm_scalar_unit_write(struct frm_scalar_unit_t *scalar_unit)
 				continue;
 			}
 
-			uop->write_ready = frm_gpu->cycle + 
+			uop->write_ready = arch->cycle_count + 
 				frm_gpu_scalar_unit_write_latency;
 
 			list_remove(scalar_unit->exec_buffer, uop);
@@ -299,6 +303,7 @@ void frm_scalar_unit_write(struct frm_scalar_unit_t *scalar_unit)
 
 void frm_scalar_unit_execute(struct frm_scalar_unit_t *scalar_unit)
 {
+	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	int list_entries;
 	int list_index = 0;
@@ -318,7 +323,7 @@ void frm_scalar_unit_execute(struct frm_scalar_unit_t *scalar_unit)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (frm_gpu->cycle < uop->read_ready)
+		if (arch->cycle_count < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -380,7 +385,7 @@ void frm_scalar_unit_execute(struct frm_scalar_unit_t *scalar_unit)
 		}
 		else /* ALU Instruction */
 		{
-			uop->execute_ready = frm_gpu->cycle + 
+			uop->execute_ready = arch->cycle_count + 
 				frm_gpu_scalar_unit_exec_latency;
 
 			/* Transfer the uop to the execution buffer */
@@ -398,6 +403,7 @@ void frm_scalar_unit_execute(struct frm_scalar_unit_t *scalar_unit)
 
 void frm_scalar_unit_read(struct frm_scalar_unit_t *scalar_unit)
 {
+	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -417,7 +423,7 @@ void frm_scalar_unit_read(struct frm_scalar_unit_t *scalar_unit)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (frm_gpu->cycle < uop->decode_ready)
+		if (arch->cycle_count < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -449,7 +455,7 @@ void frm_scalar_unit_read(struct frm_scalar_unit_t *scalar_unit)
 			continue;
 		}
 
-		uop->read_ready = frm_gpu->cycle + 
+		uop->read_ready = arch->cycle_count + 
 			frm_gpu_scalar_unit_read_latency;
 
 		list_remove(scalar_unit->decode_buffer, uop);
@@ -464,6 +470,7 @@ void frm_scalar_unit_read(struct frm_scalar_unit_t *scalar_unit)
 
 void frm_scalar_unit_decode(struct frm_scalar_unit_t *scalar_unit)
 {
+	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -483,7 +490,7 @@ void frm_scalar_unit_decode(struct frm_scalar_unit_t *scalar_unit)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (frm_gpu->cycle < uop->issue_ready)
+		if (arch->cycle_count < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -515,7 +522,7 @@ void frm_scalar_unit_decode(struct frm_scalar_unit_t *scalar_unit)
 			continue;
 		}
 
-		uop->decode_ready = frm_gpu->cycle + 
+		uop->decode_ready = arch->cycle_count + 
 			frm_gpu_scalar_unit_decode_latency;
 
 		list_remove(scalar_unit->issue_buffer, uop);

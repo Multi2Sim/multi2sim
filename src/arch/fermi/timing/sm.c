@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
 #include <arch/fermi/emu/warp.h>
 #include <arch/fermi/emu/thread-block.h>
@@ -346,6 +348,7 @@ void frm_sm_unmap_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *t
 void frm_sm_fetch(struct frm_sm_t *sm, 
 	int active_fb)
 {
+	struct arch_t *arch = frm_emu->arch;
 	int i, j;
 	int instructions_processed = 0;
 	int thread_id;
@@ -467,7 +470,7 @@ void frm_sm_fetch(struct frm_sm_t *sm,
 		uop->mem_wait_inst = warp->mem_wait;
 		uop->barrier_wait_inst = warp->barrier;
 		uop->inst = warp->inst;
-		uop->cycle_created = frm_gpu->cycle;
+		uop->cycle_created = arch->cycle_count;
 		assert(warp->thread_block && uop->thread_block);
 
 
@@ -519,7 +522,7 @@ void frm_sm_fetch(struct frm_sm_t *sm,
 		/* Access instruction cache. Record the time when the 
 		 * instruction will have been fetched, as per the latency 
 		 * of the instruction memory. */
-		uop->fetch_ready = frm_gpu->cycle + frm_gpu_fe_fetch_latency;
+		uop->fetch_ready = arch->cycle_count + frm_gpu_fe_fetch_latency;
 
 		/* Insert into fetch buffer */
 		list_enqueue(sm->fetch_buffers[active_fb], uop);
@@ -533,6 +536,7 @@ void frm_sm_fetch(struct frm_sm_t *sm,
 void frm_sm_issue_oldest(struct frm_sm_t *sm, 
 	int active_fb)
 {
+	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	struct frm_uop_t *oldest_uop;
 	int list_index;
@@ -570,7 +574,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (frm_gpu->cycle < uop->fetch_ready)
+			if (arch->cycle_count < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -589,7 +593,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 					issue_buffer) < 
 					frm_gpu_branch_unit_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = frm_gpu->cycle + 
+				oldest_uop->issue_ready = arch->cycle_count + 
 					frm_gpu_fe_issue_latency;
 				list_remove(sm->
 					fetch_buffers[active_fb], oldest_uop);
@@ -645,7 +649,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (frm_gpu->cycle < uop->fetch_ready)
+			if (arch->cycle_count < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -664,7 +668,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 					issue_buffer) < 
 					frm_gpu_scalar_unit_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = frm_gpu->cycle + 
+				oldest_uop->issue_ready = arch->cycle_count + 
 					frm_gpu_fe_issue_latency;
 				list_remove(sm->
 					fetch_buffers[active_fb], oldest_uop);
@@ -719,7 +723,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (frm_gpu->cycle < uop->fetch_ready)
+			if (arch->cycle_count < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -738,7 +742,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 					issue_buffer) < 
 					frm_gpu_simd_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = frm_gpu->cycle + 
+				oldest_uop->issue_ready = arch->cycle_count + 
 					frm_gpu_fe_issue_latency;
 				list_remove(sm->
 					fetch_buffers[active_fb], oldest_uop);
@@ -785,7 +789,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (frm_gpu->cycle < uop->fetch_ready)
+			if (arch->cycle_count < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -804,7 +808,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 					vector_mem_unit.issue_buffer) < 
 					frm_gpu_vector_mem_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = frm_gpu->cycle + 
+				oldest_uop->issue_ready = arch->cycle_count + 
 					frm_gpu_fe_issue_latency;
 				list_remove(sm->
 					fetch_buffers[active_fb], oldest_uop);
@@ -851,7 +855,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (frm_gpu->cycle < uop->fetch_ready)
+			if (arch->cycle_count < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -870,7 +874,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 					sm->lds_unit.issue_buffer) < 
 					frm_gpu_lds_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = frm_gpu->cycle + 
+				oldest_uop->issue_ready = arch->cycle_count + 
 					frm_gpu_fe_issue_latency;
 				list_remove(sm->
 					fetch_buffers[active_fb], oldest_uop);
@@ -901,7 +905,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 		assert(uop);
 
 		/* Skip all uops that have not yet completed the fetch */
-		if (frm_gpu->cycle < uop->fetch_ready)
+		if (arch->cycle_count < uop->fetch_ready)
 		{
 			continue;
 		}
@@ -915,6 +919,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 void frm_sm_update_fetch_visualization(
 		struct frm_sm_t *sm, int non_active_fb)
 {
+	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	int list_entries;
 	int i;
@@ -927,7 +932,7 @@ void frm_sm_update_fetch_visualization(
 		assert(uop);
 
 		/* Skip all uops that have not yet completed the fetch */
-		if (frm_gpu->cycle < uop->fetch_ready)
+		if (arch->cycle_count < uop->fetch_ready)
 		{
 			continue;
 		}
@@ -942,6 +947,7 @@ void frm_sm_update_fetch_visualization(
 void frm_sm_issue_first(struct frm_sm_t *sm, 
 	int active_fb)
 {
+	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	int list_index = 0;
 	int list_entries;
@@ -963,7 +969,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		assert(uop);
 
 		/* Skip all uops that have not yet completed the fetch */
-		if (frm_gpu->cycle < uop->fetch_ready)
+		if (arch->cycle_count < uop->fetch_ready)
 		{
 			list_index++;
 			continue;
@@ -1025,7 +1031,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		//			continue;
 		//		}
 
-		//		uop->issue_ready = frm_gpu->cycle + 
+		//		uop->issue_ready = arch->cycle_count + 
 		//			frm_gpu_fe_issue_latency;
 		//		list_remove(sm->
 		//			fetch_buffers[active_fb], uop);
@@ -1070,7 +1076,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		//			continue;
 		//		}
 
-		//		uop->issue_ready = frm_gpu->cycle + 
+		//		uop->issue_ready = arch->cycle_count + 
 		//			frm_gpu_fe_issue_latency;
 		//		list_remove(
 		//			sm->
@@ -1119,7 +1125,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		//		continue;
 		//	}
 
-		//	uop->issue_ready = frm_gpu->cycle + 
+		//	uop->issue_ready = arch->cycle_count + 
 		//		frm_gpu_fe_issue_latency;
 		//	list_remove(sm->fetch_buffers[active_fb], 
 		//		uop);
@@ -1165,7 +1171,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		//		continue;
 		//	}
 
-		//	uop->issue_ready = frm_gpu->cycle + 
+		//	uop->issue_ready = arch->cycle_count + 
 		//		frm_gpu_fe_issue_latency;
 		//	list_remove(sm->fetch_buffers[active_fb], 
 		//		uop);
@@ -1215,7 +1221,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		//		continue;
 		//	}
 
-		//	uop->issue_ready = frm_gpu->cycle + 
+		//	uop->issue_ready = arch->cycle_count + 
 		//		frm_gpu_fe_issue_latency;
 		//	list_remove(sm->fetch_buffers[active_fb], 
 		//		uop);
@@ -1265,7 +1271,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		//		continue;
 		//	}
 
-		//	uop->issue_ready = frm_gpu->cycle + 
+		//	uop->issue_ready = arch->cycle_count + 
 		//		frm_gpu_fe_issue_latency;
 		//	list_remove(sm->fetch_buffers[active_fb], 
 		//		uop);
@@ -1313,7 +1319,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		//		continue;
 		//	}
 
-		//	uop->issue_ready = frm_gpu->cycle + 
+		//	uop->issue_ready = arch->cycle_count + 
 		//		frm_gpu_fe_issue_latency;
 		//	list_remove(sm->fetch_buffers[active_fb], 
 		//		uop);
@@ -1346,11 +1352,12 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
  * last to first */
 void frm_sm_run(struct frm_sm_t *sm)
 {
+	struct arch_t *arch = frm_emu->arch;
 	int i;
 	int num_simd_units;
 	int active_fetch_buffer;  /* Fetch buffer chosen to issue this cycle */
 
-	active_fetch_buffer = frm_gpu->cycle % sm->num_warp_pools;
+	active_fetch_buffer = arch->cycle_count % sm->num_warp_pools;
 
 	assert(active_fetch_buffer >= 0 && 
 		active_fetch_buffer < sm->num_warp_pools);
