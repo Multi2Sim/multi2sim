@@ -455,11 +455,6 @@ static char *m2s_help =
 	"      evictions, etc. This option must be used together with detailed simulation\n"
 	"      of any CPU/GPU architecture.\n"
 	"\n"
-	"  --mem-report-access\n"
-	"      File to dump a report of memory access. The file contains a list of\n"
-	"      allocated memory pages, ordered as per number of accesses. It lists read,\n"
-	"      write, and execution accesses to each physical memory page.\n"
-	"\n"
 	"\n"
 	"================================================================================\n"
 	"Network Options\n"
@@ -928,7 +923,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--evg-sim"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
+			evg_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
 					argv[++argi], "invalid value for --evg-sim.");
 			continue;
 		}
@@ -1040,7 +1035,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--si-sim"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
+			si_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
 					argv[++argi], "invalid value for --si-sim.");
 			continue;
 		}
@@ -1126,7 +1121,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--frm-sim"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
+			frm_sim_kind = str_map_string_err_msg(&arch_sim_kind_map,
 					argv[++argi], "invalid value for --frm-sim.");
 			continue;
 		}
@@ -1177,6 +1172,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		}
 
 
+
 		/*
 		 * MIPS CPU Options
 		 */
@@ -1188,6 +1184,10 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			mips_disasm_file_name = argv[++argi];
 			continue;
 		}
+
+
+
+
 		/*
 		 * Memory System Options
 		 */
@@ -1223,13 +1223,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Memory accesses report */
-		if (!strcmp(argv[argi], "--mem-report-access"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			mmu_report_file_name = argv[++argi];
-			continue;
-		}
+
+
 
 
 		/*
@@ -1384,27 +1379,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--frm-report");
 	}
 
-	/* Options that only make sense when there is at least one architecture
-	 * using detailed simulation. */
-	/* FIXME */
-	if (evg_sim_kind == arch_sim_kind_functional
-		&& x86_sim_kind == arch_sim_kind_functional
-		&& si_sim_kind == arch_sim_kind_functional
-		&& arm_sim_kind == arch_sim_kind_functional
-		&& frm_sim_kind == arch_sim_kind_functional)
-	{
-		char *msg = "option '%s' needs architectural simulation.\n"
-			"\tPlease use option '--<arch>-sim detailed' as well, where <arch> is any\n"
-			"\tof the architectures supported in Multi2Sim.\n";
-
-		if (*mmu_report_file_name)
-			fatal(msg, "--mem-report-access");
-		if (*mem_report_file_name)
-			fatal(msg, "--mem-report");
-		if (*mem_config_file_name)
-			fatal(msg, "--mem-config");
-	}
-
 	/* Other checks */
 	if (*evg_disasm_file_name && argc > 3)
 		fatal("option '--evg-disasm' is incompatible with any other options.");
@@ -1537,9 +1511,7 @@ void m2s_dump_summary(FILE *f)
 
 	/* General detailed simulation statistics */
 	if (esim_cycle > 1)
-	{
 		fprintf(f, "Cycles = %lld\n", esim_cycle);
-	}
 
 	/* End */
 	fprintf(f, "\n");
@@ -1762,20 +1734,30 @@ int main(int argc, char **argv)
 	/* Initialization of architectures */
 	arch_init();
 	arch_register("ARM", "arm", arm_sim_kind,
-			arm_emu_init, arm_emu_done, arm_emu_run,
-			arm_cpu_init, arm_cpu_done, arm_cpu_run);
+			arm_emu_init, arm_emu_done,
+			arm_emu_dump_summary, arm_emu_run,
+			arm_cpu_init, arm_cpu_done,
+			arm_cpu_dump_summary, arm_cpu_run);
 	arch_register("Evergreen", "evg", evg_sim_kind,
-			evg_emu_init, evg_emu_done, evg_emu_run,
-			evg_gpu_init, evg_gpu_done, evg_gpu_run);
+			evg_emu_init, evg_emu_done,
+			evg_emu_dump_summary, evg_emu_run,
+			evg_gpu_init, evg_gpu_done,
+			evg_gpu_dump_summary, evg_gpu_run);
 	arch_register("Fermi", "frm", frm_sim_kind,
-			frm_emu_init, frm_emu_done, frm_emu_run,
-			frm_gpu_init, frm_gpu_done, frm_gpu_run);
+			frm_emu_init, frm_emu_done,
+			frm_emu_dump_summary, frm_emu_run,
+			frm_gpu_init, frm_gpu_done,
+			frm_gpu_dump_summary, frm_gpu_run);
 	arch_register("SouthernIslands", "si", si_sim_kind,
-			si_emu_init, si_emu_done, si_emu_run,
-			si_gpu_init, si_gpu_done, si_gpu_run);
+			si_emu_init, si_emu_done,
+			si_emu_dump_summary, si_emu_run,
+			si_gpu_init, si_gpu_done,
+			si_gpu_dump_summary, si_gpu_run);
 	arch_register("x86", "x86", x86_sim_kind,
-			x86_emu_init, x86_emu_done, x86_emu_run,
-			x86_cpu_init, x86_cpu_done, x86_cpu_run);
+			x86_emu_init, x86_emu_done,
+			x86_emu_dump_summary, x86_emu_run,
+			x86_cpu_init, x86_cpu_done,
+			x86_cpu_dump_summary, x86_cpu_run);
 
 	/* Network and memory system */
 	net_init();
