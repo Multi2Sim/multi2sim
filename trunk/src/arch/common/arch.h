@@ -23,7 +23,14 @@
 #include <stdio.h>
 
 
+
+/*
+ * Architecture Object
+ */
+
+
 struct config_t;
+struct arch_t;
 
 extern struct str_map_t arch_sim_kind_map;
 
@@ -33,6 +40,14 @@ enum arch_sim_kind_t
 	arch_sim_kind_functional,
 	arch_sim_kind_detailed
 };
+
+typedef void (*arch_callback_func_t)(struct arch_t *arch, void *user_data);
+
+typedef void (*arch_emu_init_func_t)(struct arch_t *arch);
+typedef void (*arch_emu_done_func_t)(void);
+typedef void (*arch_timing_init_func_t)(void);
+typedef void (*arch_timing_done_func_t)(void);
+typedef enum arch_sim_kind_t (*arch_run_func_t)(void);
 
 typedef void (*arch_mem_config_default_func_t)(struct config_t *config);
 typedef void (*arch_mem_config_parse_entry_func_t)(struct config_t *config, char *section);
@@ -51,7 +66,22 @@ struct arch_t
 	/* Simulation kind - must be assigned externally */
 	enum arch_sim_kind_t sim_kind;
 
-	/* Callback functions used in by the memory hierarchy */
+	/* Call-back functions for emulator */
+	arch_emu_init_func_t emu_init_func;
+	arch_emu_done_func_t emu_done_func;
+	arch_run_func_t emu_run_func;
+
+	/* Call-back functions for timing simulator */
+	arch_timing_init_func_t timing_init_func;
+	arch_timing_done_func_t timing_done_func;
+	arch_run_func_t timing_run_func;
+
+	/* Function to run one iteration of the simulation loop. This is set to
+	 * either 'emu_run_func' or 'timing_run_func', depending on the value of
+	 * 'sim_kind'. */
+	arch_run_func_t run_func;
+
+	/* Call-back functions used in by the memory hierarchy */
 	arch_mem_config_default_func_t mem_config_default_func;
 	arch_mem_config_parse_entry_func_t mem_config_parse_entry_func;
 	arch_mem_config_check_func_t mem_config_check_func;
@@ -66,5 +96,45 @@ struct arch_t *arch_create(char *name, char *prefix);
 void arch_free(struct arch_t *arch);
 void arch_dump(struct arch_t *arch, FILE *f);
 
+
+
+
+/*
+ * Architecture List
+ */
+
+
+
+/*
+ * Global
+ */
+
+void arch_init(void);
+void arch_done(void);
+
+void arch_register(char *name, char *prefix,
+		enum arch_sim_kind_t sim_kind,
+		arch_emu_init_func_t emu_init_func,
+		arch_emu_done_func_t emu_done_func,
+		arch_run_func_t emu_run_func,
+		arch_timing_init_func_t timing_init_func,
+		arch_timing_done_func_t timing_done_func,
+		arch_run_func_t timing_run_func);
+
+void arch_for_each(arch_callback_func_t callback_func, void *user_data);
+
+struct arch_t *arch_get(char *name);
+void arch_get_names(char *str, int size);
+
+/* Run one iteration (functional or timing) for each registered architecture,
+ * and return the type of useful simulation as follows:
+ *   - sim_arch_kind_detailed: at least one architecture performed detailed
+ *     simulation.
+ *   - sim_arch_kind_functional: no architecture performed detailed simulation,
+ *     but at least one performed useful functional simulation.
+ *   - sim_arch_kind_invalid: no architecture performed useful simulation, which
+ *     means the the simulator main loop can finish.
+ */
+enum arch_sim_kind_t arch_run_all(void);
 
 #endif

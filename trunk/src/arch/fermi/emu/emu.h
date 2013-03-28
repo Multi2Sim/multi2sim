@@ -25,6 +25,9 @@
 
 struct frm_emu_t
 {
+	/* Common architecture object */
+	struct arch_t *arch;
+
 	/* Timer */
 	struct m2s_timer_t *timer;
 
@@ -78,8 +81,6 @@ struct frm_emu_t
 	long long export_inst_count; /* Export instruction executed */
 };
 
-extern enum arch_sim_kind_t frm_emu_sim_kind;
-
 extern long long frm_emu_max_cycles;
 extern long long frm_emu_max_inst;
 extern int frm_emu_max_functions;
@@ -92,14 +93,11 @@ extern int frm_emu_warp_size;
 extern char *err_frm_cuda_note;
 
 extern struct frm_emu_t *frm_emu;
-extern struct arch_t *frm_emu_arch;
 
-void frm_emu_init(void);
-int frm_emu_run(void);
+void frm_emu_init(struct arch_t *arch);
 void frm_emu_done(void);
 
-void frm_emu_libcuda_redirect(char *path, int size);
-void frm_emu_libcuda_failed(int pid);
+enum arch_sim_kind_t frm_emu_run(void);
 
 #endif
 

@@ -17,14 +17,27 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
+
 #include "cpu.h"
 
 
-/* Run one iteration of the arm timing simulation loop.
- * Return FALSE if there is no more simulation to perform. */
-int arm_cpu_run(void)
+void arm_cpu_init(void)
 {
-	return 0;
+}
+
+
+void arm_cpu_done(void)
+{
+}
+
+
+/* Run one iteration of timing simulation. Return values are:
+ *   - arch_sim_kind_invalid - no timing simulation.
+ *   - arch_sim_kind_detailed - still simulating. */
+enum arch_sim_kind_t arm_cpu_run(void)
+{
+	return arch_sim_kind_invalid;
 }
 
 /* TODO: Implement the Arm cpu dump for the cycle accurate simulation */

@@ -55,12 +55,9 @@ long long x86_emu_max_inst = 0;
 long long x86_emu_max_cycles = 0;
 char x86_emu_last_inst_bytes[20];
 int x86_emu_last_inst_size = 0;
-enum arch_sim_kind_t x86_emu_sim_kind = arch_sim_kind_functional;
 int x86_emu_process_prefetch_hints = 0;
 
-/* x86 emulator and architecture */
 struct x86_emu_t *x86_emu;
-struct arch_t *x86_emu_arch;
 
 
 
@@ -72,7 +69,7 @@ struct arch_t *x86_emu_arch;
 
 /* Initialization */
 
-void x86_emu_init(void)
+void x86_emu_init(struct arch_t *arch)
 {
 	union
 	{
@@ -85,21 +82,18 @@ void x86_emu_init(void)
 	if (endian.as_uchar[0])
 		fatal("%s: host machine is not little endian", __FUNCTION__);
 
-	/* Register architecture */
-	x86_emu_arch = arch_list_register("x86", "x86");
-	x86_emu_arch->sim_kind = x86_emu_sim_kind;
-
 	/* Host types */
 	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
 	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
 	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
 
-	/* Initialization */
-	x86_sys_init();
-	x86_isa_init();
-
 	/* Create */
 	x86_emu = xcalloc(1, sizeof(struct x86_emu_t));
+	x86_emu->arch = arch;
+
+	/* Initialize */
+	x86_sys_init();
+	x86_isa_init();
 
 	/* Event for context IPC reports */
 	EV_X86_CTX_IPC_REPORT = esim_register_event_with_name(x86_ctx_ipc_report_handler, "x86_ctx_ipc_report");
@@ -180,27 +174,14 @@ void x86_emu_dump_summary(FILE *f)
 	double time_in_sec;
 	double inst_per_sec;
 
-	/* No statistic dump if there was no x86 simulation */
-	if (!x86_emu->inst_count)
-		return;
-
 	/* Functional simulation */
 	time_in_sec = (double) m2s_timer_get_value(x86_emu->timer) / 1.0e6;
 	inst_per_sec = time_in_sec > 0.0 ? (double) x86_emu->inst_count / time_in_sec : 0.0;
-	fprintf(f, "[ x86 ]\n");
-	fprintf(f, "SimType = %s\n", str_map_value(&arch_sim_kind_map, x86_emu_sim_kind));
 	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "Contexts = %d\n", x86_emu->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
 	fprintf(f, "EmulatedInstructions = %lld\n", x86_emu->inst_count);
 	fprintf(f, "EmulatedInstructionsPerSecond = %.0f\n", inst_per_sec);
-
-	/* Detailed simulation */
-	if (x86_emu_sim_kind == arch_sim_kind_detailed)
-		x86_cpu_dump_summary(f);
-
-	/* End */
-	fprintf(f, "\n");
 }
 
 
@@ -851,15 +832,17 @@ void x86_emu_process_events()
  */
 
 
-/* Run one iteration of the x86 emulation loop.
- * Return FALSE if there is no more simulation to perform. */
-int x86_emu_run(void)
+/* Run one iteration of the x86 emulation loop. Return values are:
+ *   - arch_sim_kind_invalid - emulation finished
+ *   - arch_sim_kind_functional - still emulating
+ */
+enum arch_sim_kind_t x86_emu_run(void)
 {
 	struct x86_ctx_t *ctx;
 
 	/* Stop if there is no context running */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && x86_emu->inst_count >= x86_emu_max_inst)
@@ -871,7 +854,7 @@ int x86_emu_run(void)
 
 	/* Stop if any previous reason met */
 	if (esim_finish)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Run an instruction from every running process */
 	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
@@ -884,6 +867,6 @@ int x86_emu_run(void)
 	/* Process list of suspended contexts */
 	x86_emu_process_events();
 
-	/* Return TRUE */
-	return 1;
+	/* Valid simulation */
+	return arch_sim_kind_functional;
 }

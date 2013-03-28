@@ -253,7 +253,8 @@ void si_gpu_uop_trash_empty(void);
 void si_compute_unit_run_simd(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run_scalar_unit(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run_branch_unit(struct si_compute_unit_t *compute_unit);
-int si_gpu_run(void);
+
+enum arch_sim_kind_t si_gpu_run(void);
 
 void si_simd_run(struct si_simd_t *simd);
 void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit);

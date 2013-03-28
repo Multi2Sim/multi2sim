@@ -61,6 +61,13 @@ int str_map_string(struct str_map_t *map, char *string)
 }
 
 
+int str_map_string_err_msg(struct str_map_t *map, char *s, char *err_msg)
+{
+	panic("%s: not implemented", __FUNCTION__);
+	return 0;
+}
+
+
 int str_map_string_case_err(struct str_map_t *map, char *s, int *err_ptr)
 {
 	int i;

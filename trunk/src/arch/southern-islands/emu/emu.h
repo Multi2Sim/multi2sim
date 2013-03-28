@@ -196,8 +196,12 @@ struct si_mem_ptr_t
 	unsigned int unused     : 16;
 }__attribute__((packed));
 
+
 struct si_emu_t
 {
+	/* Common architecture object */
+	struct arch_t *arch;
+
 	/* Timer */
 	struct m2s_timer_t *timer;
 
@@ -247,8 +251,6 @@ struct si_emu_t
 /* Forward declaration */
 struct x86_ctx_t;
 
-extern enum arch_sim_kind_t si_emu_sim_kind;
-
 extern long long si_emu_max_cycles;
 extern long long si_emu_max_inst;
 extern int si_emu_max_kernels;
@@ -260,14 +262,13 @@ extern FILE *si_emu_report_file;
 extern int si_emu_wavefront_size;
 
 extern struct si_emu_t *si_emu;
-extern struct arch_t *si_emu_arch;
 
-void si_emu_init(void);
+void si_emu_init(struct arch_t *arch);
 void si_emu_done(void);
 
 void si_emu_dump_summary(FILE *f);
 
-int si_emu_run(void);
+enum arch_sim_kind_t si_emu_run(void);
 
 void si_emu_disasm(char *path);
 void si_emu_opengl_disasm(char *path, int opengl_shader_index);

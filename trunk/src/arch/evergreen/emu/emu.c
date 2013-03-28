@@ -48,13 +48,10 @@
 
 
 struct evg_emu_t *evg_emu;
-struct arch_t *evg_emu_arch;
 
 long long evg_emu_max_cycles = 0;
 long long evg_emu_max_inst = 0;
 int evg_emu_max_kernels = 0;
-
-enum arch_sim_kind_t evg_emu_sim_kind = arch_sim_kind_functional;
 
 char *evg_emu_opencl_binary_name = "";
 char *evg_emu_report_file_name = "";
@@ -65,12 +62,8 @@ int evg_emu_wavefront_size = 64;
 
 
 
-void evg_emu_init(void)
+void evg_emu_init(struct arch_t *arch)
 {
-	/* Register architecture */
-	evg_emu_arch = arch_list_register("Evergreen", "evg");
-	evg_emu_arch->sim_kind = evg_emu_sim_kind;
-
 	/* Open report file */
 	if (*evg_emu_report_file_name)
 	{
@@ -82,6 +75,7 @@ void evg_emu_init(void)
 
 	/* Initialize */
 	evg_emu = xcalloc(1, sizeof(struct evg_emu_t));
+	evg_emu->arch = arch;
 	evg_emu->timer = m2s_timer_create("Evergreen GPU timer");
 	evg_emu->const_mem = mem_create();
 	evg_emu->const_mem->safe = 0;
@@ -134,29 +128,15 @@ void evg_emu_dump_summary(FILE *f)
 	double time_in_sec;
 	double inst_per_sec;
 
-	/* If there was no Evergreen simulation, no summary */
-	if (!evg_emu->ndrange_count)
-		return;
-
 	/* Calculate statistics */
 	time_in_sec = (double) m2s_timer_get_value(evg_emu->timer) / 1.0e6;
 	inst_per_sec = time_in_sec > 0.0 ? (double) evg_emu->inst_count / time_in_sec : 0.0;
 
 	/* Print statistics */
-	fprintf(f, "[ Evergreen ]\n");
-	fprintf(f, "SimType = %s\n", evg_emu_sim_kind == arch_sim_kind_functional ?
-			"Functional" : "Detailed");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
 	fprintf(f, "Instructions = %lld\n", evg_emu->inst_count);
 	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
-
-	/* Detailed simulation */
-	if (evg_emu_sim_kind == arch_sim_kind_detailed)
-		evg_gpu_dump_summary(f);
-
-	/* End */
-	fprintf(f, "\n");
 }
 
 
@@ -257,9 +237,11 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 }
 
 
-/* Run one iteration of the Evergreen GPU emulation loop.
- * Return FALSE if there is no more emulation to perform. */
-int evg_emu_run(void)
+/* One iteration of emulator. Return values are:
+ *   - arch_sim_kind_invalid - No more emulation.
+ *   - arch_sim_kind_functiona - still emulating. */
+
+enum arch_sim_kind_t evg_emu_run(void)
 {
 	struct evg_ndrange_t *ndrange;
 	struct evg_ndrange_t *ndrange_next;
@@ -272,7 +254,7 @@ int evg_emu_run(void)
 
 	/* Exit if there are no ND-Ranges to emulate */
 	if (!evg_emu->ndrange_list_count)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Start any ND-Range in state 'pending' */
 	while ((ndrange = evg_emu->pending_ndrange_list_head))
@@ -329,6 +311,6 @@ int evg_emu_run(void)
 		evg_ndrange_free(ndrange);
 	}
 
-	/* Return TRUE */
-	return 1;
+	/* Still emulating */
+	return arch_sim_kind_functional;
 }

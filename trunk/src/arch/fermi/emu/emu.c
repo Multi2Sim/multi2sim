@@ -40,13 +40,10 @@
  */
 
 struct frm_emu_t *frm_emu;
-struct arch_t *frm_emu_arch;
 
 long long frm_emu_max_cycles = 0;
 long long frm_emu_max_inst = 0;
 int frm_emu_max_functions = 0;
-
-enum arch_sim_kind_t frm_emu_sim_kind = arch_sim_kind_functional;
 
 char *frm_emu_cuda_binary_name = "";
 char *frm_emu_report_file_name = "";
@@ -57,12 +54,8 @@ int frm_emu_warp_size = 32;
 
 
 
-void frm_emu_init(void)
+void frm_emu_init(struct arch_t *arch)
 {
-	/* Register architecture */
-	frm_emu_arch = arch_list_register("Fermi", "frm");
-	frm_emu_arch->sim_kind = frm_emu_sim_kind;
-
 	/* Open report file */
 	if (*frm_emu_report_file_name)
 	{
@@ -77,6 +70,7 @@ void frm_emu_init(void)
 
         /* Initialize */
         frm_emu = xcalloc(1, sizeof(struct frm_emu_t));
+        frm_emu->arch = arch;
 	frm_emu->timer = m2s_timer_create("Fermi GPU Timer");
         frm_emu->global_mem = mem_create();
         frm_emu->global_mem->safe = 0;
@@ -123,7 +117,10 @@ void frm_emu_done(void)
 }
 
 
-int frm_emu_run(void)
+/* One iteration of emulator. Return values are:
+ *   - arch_sim_kind_invalid - emulation finished.
+ *   - arch_sim_kind_functional - still emulating */
+enum arch_sim_kind_t frm_emu_run(void)
 {
 	struct frm_grid_t *grid;
 	struct frm_grid_t *grid_next;
@@ -137,7 +134,7 @@ int frm_emu_run(void)
 	/* For efficiency when no Fermi emulation is selected, 
 	 * exit here if the list of existing grid is empty. */
 	if (!frm_emu->grid_list_count)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Start any grid in state 'pending' */
 	while ((grid = frm_emu->pending_grid_list_head))
@@ -197,7 +194,7 @@ int frm_emu_run(void)
 		frm_grid_free(grid);
 	}
 
-	/* Return TRUE */
-	return 1;
+	/* Still emulating */
+	return arch_sim_kind_functional;
 }
 

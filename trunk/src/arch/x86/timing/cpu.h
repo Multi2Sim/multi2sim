@@ -379,7 +379,7 @@ void x86_cpu_writeback(void);
 void x86_cpu_commit(void);
 void x86_cpu_recover(int core, int thread);
 
-int x86_cpu_run(void);
+enum arch_sim_kind_t x86_cpu_run(void);
 
 
 #endif
