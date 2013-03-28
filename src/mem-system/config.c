@@ -19,7 +19,6 @@
 #include <assert.h>
 
 #include <arch/common/arch.h>
-#include <arch/common/arch-list.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>

@@ -23,7 +23,6 @@
 #include <unistd.h>
 
 #include <arch/common/arch.h>
-#include <arch/common/arch-list.h>
 #include <arch/x86/timing/cpu.h>
 #include <driver/glew/glew.h>
 #include <driver/glu/glu.h>
