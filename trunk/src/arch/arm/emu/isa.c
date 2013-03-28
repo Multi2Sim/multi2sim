@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
@@ -1706,6 +1707,7 @@ static void arm_isa_debug_call(struct arm_ctx_t *ctx)
 /* FIXME - merge with ctx_execute */
 void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 {
+	struct arch_t *arch = arm_emu->arch;
 	struct arm_regs_t *regs = ctx->regs;
 
 
@@ -1718,7 +1720,7 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 	if (debug_status(arm_isa_inst_debug_category))
 	{
 		arm_isa_inst_debug("%d %8lld %x: ", ctx->pid,
-			arm_emu->inst_count, ctx->curr_ip);
+			arch->inst_count, ctx->curr_ip);
 		arm_inst_debug_dump(&ctx->inst, debug_file(arm_isa_inst_debug_category));
 		arm_isa_inst_debug("  (%d bytes)", ctx->inst.info->size);
 	}

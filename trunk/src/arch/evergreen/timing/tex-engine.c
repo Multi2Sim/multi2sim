@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
@@ -43,6 +45,8 @@ int evg_gpu_tex_engine_load_queue_size = 8;  /* Maximum number of in-flight glob
 
 static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
+	struct arch_t *arch = evg_emu->arch;
+
 	struct linked_list_t *pending_queue = compute_unit->tex_engine.pending_queue;
 	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
 
@@ -109,7 +113,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = evg_gpu->cycle + evg_gpu_tex_engine_inst_mem_latency;
+	uop->inst_mem_ready = arch->cycle_count + evg_gpu_tex_engine_inst_mem_latency;
 
 	/* Enqueue uop into fetch queue */
 	linked_list_out(compute_unit->tex_engine.fetch_queue);
@@ -140,6 +144,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 {
+	struct arch_t *arch = evg_emu->arch;
 	struct linked_list_t *fetch_queue = compute_unit->tex_engine.fetch_queue;
 	struct evg_uop_t *uop;
 
@@ -152,7 +157,7 @@ static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 		return;
 
 	/* If uop is still being fetched from instruction memory, done */
-	if (uop->inst_mem_ready > evg_gpu->cycle)
+	if (uop->inst_mem_ready > arch->cycle_count)
 		return;
 
 	/* If instruction buffer is occupied, done */

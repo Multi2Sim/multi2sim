@@ -31,9 +31,6 @@ struct arm_emu_t
 	/* pid & address_space_index assignment */
 	int current_pid;
 
-	/* Timer for emulator activity */
-	struct m2s_timer_t *timer;
-
 	/* Schedule next call to 'x86_emu_process_events()'.
 	 * The call will only be effective if 'process_events_force' is set.
 	 * This flag should be accessed thread-safely locking 'process_events_mutex'. */
@@ -82,9 +79,6 @@ struct arm_emu_t
 	struct arm_ctx_t *alloc_list_tail;
 	int alloc_list_count;
 	int alloc_list_max;
-
-	/* Stats */
-	long long inst_count;  /* Number of emulated instructions */
 };
 
 enum arm_emu_list_kind_t
