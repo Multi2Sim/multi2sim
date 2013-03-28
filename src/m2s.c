@@ -1516,17 +1516,8 @@ void m2s_dump_summary(FILE *f)
 	/* End */
 	fprintf(f, "\n");
 
-	/* x86 */
-	x86_emu_dump_summary(f);
-
-	/* Arm */
-	arm_emu_dump_summary(f);
-
-	/* Evergreen */
-	evg_emu_dump_summary(f);
-
-	/* Southern Islands */
-	si_emu_dump_summary(f);
+	/* Summary for all architectures */
+	arch_for_each((arch_callback_func_t) arch_dump_summary, f);
 }
 
 
