@@ -25,6 +25,9 @@
 
 struct evg_emu_t
 {
+	/* Common architecture object */
+	struct arch_t *arch;
+
 	/* Timer */
 	struct m2s_timer_t *timer;
 
@@ -80,8 +83,6 @@ struct evg_emu_t
 };
 
 
-extern enum arch_sim_kind_t evg_emu_sim_kind;
-
 extern long long evg_emu_max_cycles;
 extern long long evg_emu_max_inst;
 extern int evg_emu_max_kernels;
@@ -97,14 +98,13 @@ extern char *evg_err_opencl_param_note;
 
 
 extern struct evg_emu_t *evg_emu;
-extern struct arch_t *evg_emu_arch;
 
-void evg_emu_init(void);
+void evg_emu_init(struct arch_t *arch);
 void evg_emu_done(void);
 
 void evg_emu_dump_summary(FILE *f);
 
-int evg_emu_run(void);
+enum arch_sim_kind_t evg_emu_run(void);
 
 void evg_emu_disasm(char *path);
 void evg_emu_opengl_disasm(char *path, int opengl_shader_index);

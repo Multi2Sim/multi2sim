@@ -26,6 +26,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
@@ -42,11 +43,9 @@
 long long arm_emu_max_inst = 0;
 long long arm_emu_max_cycles = 0;
 long long arm_emu_max_time = 0;
-enum arch_sim_kind_t arm_emu_sim_kind = arch_sim_kind_functional;
 
-/* ARM emulator and architecture */
+/* ARM emulator */
 struct arm_emu_t *arm_emu;
-struct arch_t *arm_emu_arch;
 
 
 
@@ -58,7 +57,7 @@ struct arch_t *arm_emu_arch;
 
 /* Initialization */
 
-void arm_emu_init(void)
+void arm_emu_init(struct arch_t *arch)
 {
 	union
 	{
@@ -76,16 +75,13 @@ void arm_emu_init(void)
 	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
 	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
 
-	/* Register architecture */
-	arm_emu_arch = arch_list_register("ARM", "arm");
-	arm_emu_arch->sim_kind = arm_emu_sim_kind;
-
 	/* Initialization */
 	arm_sys_init();
 	arm_disasm_init();
 
 	/* Allocate */
 	arm_emu = xcalloc(1, sizeof(struct arm_emu_t));
+	arm_emu->arch = arch;
 
 	/* Event for context IPC reports */
 	EV_ARM_CTX_IPC_REPORT = esim_register_event_with_name(arm_ctx_ipc_report_handler, "arm_ctx_ipc_report");
@@ -133,28 +129,14 @@ void arm_emu_dump_summary(FILE *f)
 	double time_in_sec;
 	double inst_per_sec;
 
-	/* No statistic dump if there was no Arm simulation */
-	if (!arm_emu->inst_count)
-		return;
-
 	/* Functional simulation */
 	time_in_sec = (double) m2s_timer_get_value(arm_emu->timer) / 1.0e6;
 	inst_per_sec = time_in_sec > 0.0 ? (double) arm_emu->inst_count / time_in_sec : 0.0;
-	fprintf(f, "[ Arm ]\n");
-	fprintf(f, "SimType = %s\n", arm_emu_sim_kind == arch_sim_kind_functional ?
-			"Functional" : "Detailed");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "Instructions = %lld\n", arm_emu->inst_count);
 	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	fprintf(f, "Contexts = %d\n", arm_emu->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
-
-	/* Detailed simulation */
-	if (arm_emu_sim_kind == arch_sim_kind_detailed)
-		arm_cpu_dump_summary(f);
-
-	/* End */
-	fprintf(f, "\n");
 }
 
 
@@ -254,15 +236,17 @@ void arm_emu_process_events_schedule()
  * Functional simulation loop
  */
 
-/* Run one iteration of the Arm emulation loop.
- * Return FALSE if there is no more simulation to perform. */
-int arm_emu_run(void)
+/* Run one iteration of the ARM emulation loop. Return values are:
+ *   - arch_sim_kind_invalid - no more simulation
+ *   - arch_sim_kind_functional - still valid simulation
+ */
+enum arch_sim_kind_t arm_emu_run(void)
 {
 	struct arm_ctx_t *ctx;
 
 	/* Stop if there is no context running */
 	if (arm_emu->finished_list_count >= arm_emu->context_list_count)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (arm_emu_max_inst && arm_emu->inst_count >= arm_emu_max_inst)
@@ -274,7 +258,7 @@ int arm_emu_run(void)
 
 	/* Stop if any previous reason met */
 	if (esim_finish)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Run an instruction from every running process */
 	for (ctx = arm_emu->running_list_head; ctx; ctx = ctx->running_list_next)
@@ -287,6 +271,6 @@ int arm_emu_run(void)
 	/* Process list of suspended contexts */
 	/*arm_emu_process_events();*/
 
-	/* Return TRUE */
-	return 1;
+	/* Still running */
+	return arch_sim_kind_functional;
 }

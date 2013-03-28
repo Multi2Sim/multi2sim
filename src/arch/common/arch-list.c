@@ -26,10 +26,7 @@
 #include "arch-list.h"
 
 
-struct list_t *arch_list;
-
-
-
+#if 0
 void arch_list_init(void)
 {
 	arch_list = list_create();
@@ -58,58 +55,5 @@ void arch_list_dump(FILE *f)
 }
 
 
-struct arch_t *arch_list_register(char *arch_name, char *arch_prefix)
-{
-	struct arch_t *arch;
-
-	/* Check no duplicates */
-	arch = arch_list_get(arch_name);
-	if (arch)
-		fatal("%s: duplicated architecture", __FUNCTION__);
-
-	/* Create new architecture */
-	arch = arch_create(arch_name, arch_prefix);
-
-	/* Add architecture and return */
-	list_add(arch_list, arch);
-	return arch;
-}
-
-
-struct arch_t *arch_list_get(char *arch_name)
-{
-	struct arch_t *arch;
-	int i;
-
-	/* Search architecture */
-	LIST_FOR_EACH(arch_list, i)
-	{
-		arch = list_get(arch_list, i);
-		if (!strcasecmp(arch->name, arch_name))
-			return arch;
-	}
-
-	/* Not found */
-	return NULL;
-}
-
-
-/* Get a list of all possible names for architectures. This function is usefull
- * to print an error message with the valid values for architectures when
- * processing user input. */
-void arch_list_get_names(char *str, int size)
-{
-	struct arch_t *arch;
-	char *comma = "";
-	int i;
-
-	str_printf(&str, &size, "{");
-	LIST_FOR_EACH(arch_list, i)
-	{
-		arch = list_get(arch_list, i);
-		str_printf(&str, &size, "%s%s", comma, arch->name);
-		comma = "|";
-	}
-	str_printf(&str, &size, "}");
-}
+#endif
 

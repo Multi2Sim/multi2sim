@@ -26,6 +26,9 @@
 
 struct x86_emu_t
 {
+	/* Common architecture object */
+	struct arch_t *arch;
+
 	/* pid & address_space_index assignment */
 	int current_pid;
 
@@ -103,7 +106,6 @@ int x86_emu_list_member(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
 
 /* x86 emulator and architecture */
 extern struct x86_emu_t *x86_emu;
-extern struct arch_t *x86_emu_arch;
 
 extern long long x86_emu_max_cycles;
 extern long long x86_emu_max_inst;
@@ -111,12 +113,10 @@ extern char x86_emu_last_inst_bytes[20];
 extern int x86_emu_last_inst_size;
 extern int x86_emu_process_prefetch_hints;
 
-extern enum arch_sim_kind_t x86_emu_sim_kind;
-
-void x86_emu_init(void);
+void x86_emu_init(struct arch_t *arch);
 void x86_emu_done(void);
 
-int x86_emu_run(void);
+enum arch_sim_kind_t x86_emu_run(void);
 
 void x86_emu_dump(FILE *f);
 void x86_emu_dump_summary(FILE *f);

@@ -447,13 +447,15 @@ static void evg_gpu_unmap_ndrange(void)
 
 void evg_gpu_init(void)
 {
+	struct arch_t *arch = evg_emu->arch;
+
 	/* Trace */
 	evg_trace_category = trace_new_category();
 
 	/* Register functions for architecture */
-	evg_emu_arch->mem_config_check_func = evg_mem_config_check;
-	evg_emu_arch->mem_config_default_func = evg_mem_config_default;
-	evg_emu_arch->mem_config_parse_entry_func = evg_mem_config_parse_entry;
+	arch->mem_config_check_func = evg_mem_config_check;
+	arch->mem_config_default_func = evg_mem_config_default;
+	arch->mem_config_parse_entry_func = evg_mem_config_parse_entry;
 
 	/* Try to open report file */
 	if (evg_gpu_report_file_name[0] && !file_can_open_for_write(evg_gpu_report_file_name))
@@ -652,9 +654,10 @@ void evg_gpu_uop_trash_add(struct evg_uop_t *uop)
 }
 
 
-/* Run one iteration of the Evergreen GPU timing simulation loop.
- * Return false if the Evergreen timing simulation is completely idle. */
-int evg_gpu_run(void)
+/* Run one iteration of timing simulation. Return values are:
+ *   - arch_sim_kind_invalid - no valid timing simulation.
+ *   - arch_sim_kind_detailed - still simulating */
+enum arch_sim_kind_t evg_gpu_run(void)
 {
 	struct evg_ndrange_t *ndrange;
 
@@ -664,7 +667,7 @@ int evg_gpu_run(void)
 	/* For efficiency when no Evergreen emulation is selected, exit here
 	 * if the list of existing ND-Ranges is empty. */
 	if (!evg_emu->ndrange_list_count)
-		return 0;
+		return arch_sim_kind_invalid;
 
 	/* Start one ND-Range in state 'pending' */
 	while ((ndrange = evg_emu->pending_ndrange_list_head))
@@ -722,7 +725,7 @@ int evg_gpu_run(void)
 
 	/* Stop if any reason met */
 	if (esim_finish)
-		return 1;
+		return arch_sim_kind_detailed;
 
 	/* Free instructions in trash */
 	evg_gpu_uop_trash_empty();
@@ -759,6 +762,6 @@ int evg_gpu_run(void)
 		evg_ndrange_free(ndrange);
 	}
 
-	/* Return true */
-	return 1;
+	/* Still simulating */
+	return arch_sim_kind_detailed;
 }

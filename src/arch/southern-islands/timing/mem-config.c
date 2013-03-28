@@ -40,9 +40,6 @@ void si_mem_config_default(struct config_t *config)
 
 	int i;
 
-	/* Only detailed simulation */
-	assert(si_emu_sim_kind == arch_sim_kind_detailed);
-
 	/* Cache geometry for vector L1 */
 	snprintf(section, sizeof section, "CacheGeometry si-geo-vector-l1");
 	config_write_int(config, section, "Sets", 64);
@@ -365,9 +362,9 @@ void si_mem_config_parse_entry(struct config_t *config, char *section)
 	}
 	
 	/* Add modules to list of memory entries */
-	linked_list_add(si_emu_arch->mem_entry_mod_list, 
+	linked_list_add(si_emu->arch->mem_entry_mod_list, 
 		compute_unit->vector_cache);
-	linked_list_add(si_emu_arch->mem_entry_mod_list, 
+	linked_list_add(si_emu->arch->mem_entry_mod_list, 
 		compute_unit->scalar_cache);
 	
 	/* Debug */

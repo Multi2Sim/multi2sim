@@ -41,9 +41,6 @@ void evg_mem_config_default(struct config_t *config)
 	int l2_id;
 	int mm_id;
 
-	/* Only detailed simulation */
-	assert(evg_emu_sim_kind == arch_sim_kind_detailed);
-
 	/* Cache geometry for L1 */
 	snprintf(section, sizeof section, "CacheGeometry evg-geo-l1");
 	config_write_int(config, section, "Sets", 32);
@@ -177,7 +174,8 @@ void evg_mem_config_parse_entry(struct config_t *config, char *section)
 			file_name, section, module_name);
 	
 	/* Add modules to list of memory entries */
-	linked_list_add(evg_emu_arch->mem_entry_mod_list, compute_unit->global_memory);
+	linked_list_add(evg_emu->arch->mem_entry_mod_list,
+			compute_unit->global_memory);
 	
 	/* Debug */
 	mem_debug("\tEvergreen compute unit %d\n", compute_unit_id);
