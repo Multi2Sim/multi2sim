@@ -186,9 +186,6 @@ extern int frm_gpu_lds_num_ports;
 
 struct frm_gpu_t
 {
-	/* Current cycle */
-	long long cycle;
-
 	/* ND-Range running on it */
 	struct frm_grid_t *grid;
 	int thread_blocks_per_warp_pool;

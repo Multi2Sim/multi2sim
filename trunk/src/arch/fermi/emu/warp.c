@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/bit-map.h>
@@ -220,12 +221,15 @@ void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
 /* Execute one instruction in the warp */
 void frm_warp_execute(struct frm_warp_t *warp)
 {
+	struct arch_t *arch = frm_emu->arch;
+
 	struct frm_thread_block_t *thread_block;
 	struct frm_thread_t *thread;
 	struct frm_inst_t *inst;
+	
+	struct frm_grid_t *grid = warp->grid;
 
 	/* Get current work-group */
-	struct frm_grid_t *grid = warp->grid;
 	warp = warp;
 	thread_block = warp->thread_block;
 	thread = NULL;
@@ -268,7 +272,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	warp->buf += 8;
 
 	/* Stats */
-	frm_emu->inst_count++;
+	arch->inst_count++;
 	warp->emu_inst_count++;
 	warp->inst_count++;
 	{
