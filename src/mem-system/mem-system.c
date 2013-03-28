@@ -16,7 +16,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <arch/common/arch.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
@@ -54,8 +54,27 @@ char *mem_report_file_name = "";
  * Public Functions
  */
 
+static char *mem_err_timing =
+	"\tA command-line option related with the memory hierarchy ('--mem' prefix)\n"
+	"\thas been specified, by no architecture is running a detailed simulation.\n"
+	"\tPlease specify at least one detailed simulation (e.g., with option\n"
+	"\t'--x86-sim detailed'.\n";
+
 void mem_system_init(void)
 {
+	int count;
+
+	/* If any file name was specific for a command-line option related with the
+	 * memory hierarchy, make sure that at least one architecture is running
+	 * timing simulation. */
+	count = arch_get_sim_kind_detailed_count();
+	if (mem_report_file_name && !count)
+		fatal("memory report file given, but no timing simulation.\n%s",
+				mem_err_timing);
+	if (mem_config_file_name && !count)
+		fatal("memory configuration file given, but no timing simulation.\n%s",
+				mem_err_timing);
+
 	/* Trace */
 	mem_trace_category = trace_new_category();
 

@@ -197,3 +197,7 @@ enum arch_sim_kind_t frm_emu_run(void)
 	return arch_sim_kind_functional;
 }
 
+
+void frm_emu_dump_summary(FILE *f)
+{
+}

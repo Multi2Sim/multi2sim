@@ -45,8 +45,12 @@ typedef void (*arch_callback_func_t)(struct arch_t *arch, void *user_data);
 
 typedef void (*arch_emu_init_func_t)(struct arch_t *arch);
 typedef void (*arch_emu_done_func_t)(void);
+typedef void (*arch_emu_dump_summary_func_t)(FILE *f);
+
 typedef void (*arch_timing_init_func_t)(void);
 typedef void (*arch_timing_done_func_t)(void);
+typedef void (*arch_timing_dump_summary_func_t)(FILE *f);
+
 typedef enum arch_sim_kind_t (*arch_run_func_t)(void);
 
 typedef void (*arch_mem_config_default_func_t)(struct config_t *config);
@@ -69,11 +73,13 @@ struct arch_t
 	/* Call-back functions for emulator */
 	arch_emu_init_func_t emu_init_func;
 	arch_emu_done_func_t emu_done_func;
+	arch_emu_dump_summary_func_t emu_dump_summary_func;
 	arch_run_func_t emu_run_func;
 
 	/* Call-back functions for timing simulator */
 	arch_timing_init_func_t timing_init_func;
 	arch_timing_done_func_t timing_done_func;
+	arch_timing_dump_summary_func_t timing_dump_summary_func;
 	arch_run_func_t timing_run_func;
 
 	/* Function to run one iteration of the simulation loop. This is set to
@@ -116,15 +122,20 @@ void arch_register(char *name, char *prefix,
 		enum arch_sim_kind_t sim_kind,
 		arch_emu_init_func_t emu_init_func,
 		arch_emu_done_func_t emu_done_func,
+		arch_emu_dump_summary_func_t emu_dump_summary_func,
 		arch_run_func_t emu_run_func,
 		arch_timing_init_func_t timing_init_func,
 		arch_timing_done_func_t timing_done_func,
+		arch_timing_dump_summary_func_t timing_dump_summary_func,
 		arch_run_func_t timing_run_func);
 
 void arch_for_each(arch_callback_func_t callback_func, void *user_data);
 
 struct arch_t *arch_get(char *name);
 void arch_get_names(char *str, int size);
+
+/* Return number of architectures performing timing simulation */
+int arch_get_sim_kind_detailed_count(void);
 
 /* Run one iteration (functional or timing) for each registered architecture,
  * and return the type of useful simulation as follows:
