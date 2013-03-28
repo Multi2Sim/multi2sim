@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <arch/common/arch.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -33,6 +34,7 @@
 #include <mem-system/memory.h>
 
 #include "context.h"
+#include "emu.h"
 #include "file.h"
 #include "isa.h"
 #include "regs.h"
@@ -620,9 +622,9 @@ unsigned int arm_ctx_check_fault(struct arm_ctx_t *ctx)
 
 void arm_ctx_execute(struct arm_ctx_t *ctx)
 {
+	struct arch_t *arch = arm_emu->arch;
 	struct arm_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
-
 
 	unsigned char *buffer_ptr;
 	unsigned int fault_id;
@@ -684,7 +686,7 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 	arm_isa_execute_inst(ctx);
 
 	/* Statistics */
-	arm_emu->inst_count++;
+	arch->inst_count++;
 }
 
 
@@ -799,6 +801,7 @@ void arm_ctx_finish(struct arm_ctx_t *ctx, int status)
 
 static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
 {
+	struct arch_t *arch = arm_emu->arch;
 	enum arm_ctx_status_t status_diff;
 
 	/* Remove contexts from the following lists:
@@ -858,9 +861,9 @@ static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t s
 	/* Start/stop arm timer depending on whether there are any contexts
 	 * currently running. */
 	if (arm_emu->running_list_count)
-		m2s_timer_start(arm_emu->timer);
+		m2s_timer_start(arch->timer);
 	else
-		m2s_timer_stop(arm_emu->timer);
+		m2s_timer_stop(arch->timer);
 }
 
 void arm_ctx_set_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)

@@ -75,7 +75,6 @@ void evg_emu_init(struct arch_t *arch)
 	/* Initialize */
 	evg_emu = xcalloc(1, sizeof(struct evg_emu_t));
 	evg_emu->arch = arch;
-	evg_emu->timer = m2s_timer_create("Evergreen GPU timer");
 	evg_emu->const_mem = mem_create();
 	evg_emu->const_mem->safe = 0;
 	evg_emu->global_mem = mem_create();
@@ -117,25 +116,13 @@ void evg_emu_done()
 	/* Finalize GPU kernel */
 	mem_free(evg_emu->const_mem);
 	mem_free(evg_emu->global_mem);
-	m2s_timer_free(evg_emu->timer);
 	free(evg_emu);
 }
 
 
 void evg_emu_dump_summary(FILE *f)
 {
-	double time_in_sec;
-	double inst_per_sec;
-
-	/* Calculate statistics */
-	time_in_sec = (double) m2s_timer_get_value(evg_emu->timer) / 1.0e6;
-	inst_per_sec = time_in_sec > 0.0 ? (double) evg_emu->inst_count / time_in_sec : 0.0;
-
-	/* Print statistics */
-	fprintf(f, "Time = %.2f\n", time_in_sec);
 	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
-	fprintf(f, "Instructions = %lld\n", evg_emu->inst_count);
-	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 }
 
 

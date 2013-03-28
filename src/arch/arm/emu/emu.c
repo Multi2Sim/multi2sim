@@ -87,7 +87,6 @@ void arm_emu_init(struct arch_t *arch)
 
 	/* Initialize */
 	arm_emu->current_pid = 1000;  /* Initial assigned pid */
-	arm_emu->timer = m2s_timer_create("arm emulation timer");
 
 	/* Initialize mutex for variables controlling calls to 'arm_emu_process_events()' */
 	pthread_mutex_init(&arm_emu->process_events_mutex, NULL);
@@ -114,7 +113,6 @@ void arm_emu_done(void)
 	/*frm_emu_done();*/
 
 	/* Free */
-	m2s_timer_free(arm_emu->timer);
 	free(arm_emu);
 
 	/* End */
@@ -125,15 +123,6 @@ void arm_emu_done(void)
 
 void arm_emu_dump_summary(FILE *f)
 {
-	double time_in_sec;
-	double inst_per_sec;
-
-	/* Functional simulation */
-	time_in_sec = (double) m2s_timer_get_value(arm_emu->timer) / 1.0e6;
-	inst_per_sec = time_in_sec > 0.0 ? (double) arm_emu->inst_count / time_in_sec : 0.0;
-	fprintf(f, "Time = %.2f\n", time_in_sec);
-	fprintf(f, "Instructions = %lld\n", arm_emu->inst_count);
-	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	fprintf(f, "Contexts = %d\n", arm_emu->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
 }
@@ -241,6 +230,7 @@ void arm_emu_process_events_schedule()
  */
 enum arch_sim_kind_t arm_emu_run(void)
 {
+	struct arch_t *arch = arm_emu->arch;
 	struct arm_ctx_t *ctx;
 
 	/* Stop if there is no context running */
@@ -248,7 +238,7 @@ enum arch_sim_kind_t arm_emu_run(void)
 		return arch_sim_kind_invalid;
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (arm_emu_max_inst && arm_emu->inst_count >= arm_emu_max_inst)
+	if (arm_emu_max_inst && arch->inst_count >= arm_emu_max_inst)
 		esim_finish = esim_finish_arm_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
