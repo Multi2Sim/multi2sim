@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/x86/emu/emu.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
 #include <lib/util/string.h>
@@ -220,10 +222,13 @@ void x86_fu_done()
  * be reserved. */
 int x86_fu_reserve(struct x86_uop_t *uop)
 {
-	int i;
+	struct arch_t *arch = x86_emu->arch;
+	enum x86_fu_class_t fu_class;
+
 	int core = uop->core;
 	struct x86_fu_t *fu = X86_CORE.fu;
-	enum x86_fu_class_t fu_class;
+
+	int i;
 
 	/* Get the functional unit class required by the uop.
 	 * If the uop does not require a functional unit, return
@@ -234,18 +239,18 @@ int x86_fu_reserve(struct x86_uop_t *uop)
 
 	/* First time uop tries to reserve f.u. */
 	if (!uop->issue_try_when)
-		uop->issue_try_when = x86_cpu->cycle;
+		uop->issue_try_when = arch->cycle_count;
 
 	/* Find a free f.u. */
 	assert(fu_class > x86_fu_none && fu_class < x86_fu_count);
 	assert(x86_fu_res_pool[fu_class].count <= X86_FU_RES_MAX);
 	for (i = 0; i < x86_fu_res_pool[fu_class].count; i++) {
-		if (fu->cycle_when_free[fu_class][i] <= x86_cpu->cycle) {
+		if (fu->cycle_when_free[fu_class][i] <= arch->cycle_count) {
 			assert(x86_fu_res_pool[fu_class].issuelat > 0);
 			assert(x86_fu_res_pool[fu_class].oplat > 0);
-			fu->cycle_when_free[fu_class][i] = x86_cpu->cycle + x86_fu_res_pool[fu_class].issuelat;
+			fu->cycle_when_free[fu_class][i] = arch->cycle_count + x86_fu_res_pool[fu_class].issuelat;
 			fu->accesses[fu_class]++;
-			fu->waiting_time[fu_class] += x86_cpu->cycle - uop->issue_try_when;
+			fu->waiting_time[fu_class] += arch->cycle_count - uop->issue_try_when;
 			return x86_fu_res_pool[fu_class].oplat;
 		}
 	}

@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/x86/emu/emu.h>
 #include <lib/esim/trace.h>
 #include <lib/util/linked-list.h>
 
@@ -28,6 +30,7 @@
 
 static void x86_cpu_writeback_core(int core)
 {
+	struct arch_t *arch = x86_emu->arch;
 	struct x86_uop_t *uop;
 
 	int thread;
@@ -44,13 +47,13 @@ static void x86_cpu_writeback_core(int core)
 		/* A memory uop placed in the event queue is always complete.
 		 * Other uops are complete when uop->when is equals to current cycle. */
 		if (uop->flags & X86_UINST_MEM)
-			uop->when = x86_cpu->cycle;
-		if (uop->when > x86_cpu->cycle)
+			uop->when = arch->cycle_count;
+		if (uop->when > arch->cycle_count)
 			break;
 		
 		/* Check element integrity */
 		assert(x86_uop_exists(uop));
-		assert(uop->when == x86_cpu->cycle);
+		assert(uop->when == arch->cycle_count);
 		assert(uop->core == core);
 		assert(uop->ready);
 		assert(!uop->completed);

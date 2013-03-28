@@ -33,6 +33,7 @@
 #include <sys/time.h>
 #include <sys/times.h>
 
+#include <arch/common/arch.h>
 #include <arch/common/runtime.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
@@ -292,7 +293,7 @@ void x86_sys_call(struct x86_ctx_t *ctx)
 
 		/* Debug */
 		x86_sys_debug("%s runtime ABI call (code %d, inst %lld, pid %d)\n",
-			runtime->name, code, x86_emu->inst_count, ctx->pid);
+			runtime->name, code, x86_emu->arch->inst_count, ctx->pid);
 
 		/* Run runtime ABI call */
 		err = runtime_abi_call(runtime, ctx);
@@ -310,9 +311,9 @@ void x86_sys_call(struct x86_ctx_t *ctx)
 
 	/* Debug */
 	x86_sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
-		x86_sys_call_name[code], code, x86_emu->inst_count, ctx->pid);
+		x86_sys_call_name[code], code, x86_emu->arch->inst_count, ctx->pid);
 	x86_isa_call_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
-		x86_sys_call_name[code], code, x86_emu->inst_count, ctx->pid);
+		x86_sys_call_name[code], code, x86_emu->arch->inst_count, ctx->pid);
 
 	/* Perform system call */
 	err = x86_sys_call_func[code](ctx);
@@ -5577,7 +5578,7 @@ static int x86_sys_set_robust_list_impl(struct x86_ctx_t *ctx)
 	{ \
 		struct x86_regs_t *regs = ctx->regs; \
 		fatal("%s: system call not implemented (code %d, inst %lld, pid %d).\n%s", \
-			__FUNCTION__, regs->eax, x86_emu->inst_count, ctx->pid, \
+			__FUNCTION__, regs->eax, x86_emu->arch->inst_count, ctx->pid, \
 			err_x86_sys_note); \
 		return 0; \
 	}
