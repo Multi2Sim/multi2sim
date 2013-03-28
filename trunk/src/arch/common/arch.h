@@ -109,6 +109,8 @@ struct arch_t *arch_create(char *name, char *prefix);
 void arch_free(struct arch_t *arch);
 void arch_dump(struct arch_t *arch, FILE *f);
 
+void arch_dump_summary(struct arch_t *arch, FILE *f);
+
 
 
 
