@@ -30,6 +30,9 @@ libopengl_a_SOURCES = \
 	matrix-stack.c \
 	matrix-stack.h \
 	\
+	mem.c \
+	mem.h \
+	\
 	opengl.c \
 	opengl.dat \
 	opengl.h \

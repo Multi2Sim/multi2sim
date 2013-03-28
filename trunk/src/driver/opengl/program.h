@@ -52,7 +52,8 @@ void opengl_program_bind(struct opengl_program_t *prg, struct opengl_program_t *
 void opengl_program_unbind(struct opengl_program_t *prg, struct opengl_program_t **prg_bnd_ptr);
 void opengl_program_attach_shader(struct opengl_program_t *prg, struct opengl_shader_t *shdr);
 void opengl_program_detach_shader(struct opengl_program_t *prg, struct opengl_shader_t *shdr);
-struct elf_buffer_t *opengl_program_get_shader(struct opengl_program_t *prg, int shader_kind);
+struct si_opengl_shader_t *opengl_program_get_shader(struct opengl_program_t *prg, int shader_kind);
+struct elf_buffer_t *opengl_program_get_shader_isa(struct opengl_program_t *prg, int shader_kind);
 
 void opengl_program_setup_ndrange_state(struct opengl_program_t *prg, struct si_ndrange_t *ndrange);
 
