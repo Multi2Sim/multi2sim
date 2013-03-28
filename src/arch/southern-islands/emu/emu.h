@@ -202,9 +202,6 @@ struct si_emu_t
 	/* Common architecture object */
 	struct arch_t *arch;
 
-	/* Timer */
-	struct m2s_timer_t *timer;
-
 	/* List of ND-Ranges */
 	struct si_ndrange_t *ndrange_list_head;
 	struct si_ndrange_t *ndrange_list_tail;
@@ -238,7 +235,6 @@ struct si_emu_t
 
 	/* Statistics */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
-	long long inst_count;  /* Number of instructions executed by a WF */
 	long long scalar_alu_inst_count;  /* Scalar ALU instructions executed */
 	long long scalar_mem_inst_count;  /* Scalar mem instructions executed */
 	long long branch_inst_count;  /* Branch instructions executed */

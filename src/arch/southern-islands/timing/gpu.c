@@ -1223,6 +1223,7 @@ void si_gpu_dump_default_config(char *filename)
 
 void si_gpu_dump_report(void)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_compute_unit_t *compute_unit;
 	struct mod_t *lds_mod;
 	int compute_unit_id;
@@ -1245,11 +1246,11 @@ void si_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = si_gpu->cycle ? 
-		(double)(si_emu->inst_count/si_gpu->cycle) : 0.0;
+	inst_per_cycle = arch->cycle_count ? 
+		(double)(arch->inst_count/arch->cycle_count) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
-	fprintf(f, "Instructions = %lld\n", si_emu->inst_count);
+	fprintf(f, "Instructions = %lld\n", arch->inst_count);
 	fprintf(f, "ScalarALUInstructions = %lld\n", 
 		si_emu->scalar_alu_inst_count);
 	fprintf(f, "ScalarMemInstructions = %lld\n", 
@@ -1260,7 +1261,7 @@ void si_gpu_dump_report(void)
 	fprintf(f, "LDSInstructions = %lld\n", si_emu->lds_inst_count);
 	fprintf(f, "VectorMemInstructions = %lld\n", 
 		si_emu->vector_mem_inst_count);
-	fprintf(f, "Cycles = %lld\n", si_gpu->cycle);
+	fprintf(f, "Cycles = %lld\n", arch->cycle_count);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
@@ -1317,17 +1318,6 @@ void si_gpu_dump_report(void)
 
 void si_gpu_dump_summary(FILE *f)
 {
-	double time_in_sec;
-	double cycles_per_sec;
-
-	/* Calculate statistics */
-	time_in_sec = (double) m2s_timer_get_value(si_emu->timer) / 1.0e6;
-	cycles_per_sec = time_in_sec > 0.0 ? 
-		(double) si_gpu->cycle / time_in_sec : 0.0;
-
-	/* Print statistics */
-	fprintf(f, "Cycles = %lld\n", si_gpu->cycle);
-	fprintf(f, "SimulatedCyclesPerSecond = %.0f\n", cycles_per_sec);
 }
 
 
@@ -1336,6 +1326,7 @@ void si_gpu_dump_summary(FILE *f)
  *   - arch_sim_kind_detailed - still simulating */
 enum arch_sim_kind_t si_gpu_run(void)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_ndrange_t *ndrange;
 
 	struct si_compute_unit_t *compute_unit;
@@ -1385,18 +1376,18 @@ enum arch_sim_kind_t si_gpu_run(void)
 	}
 
 	/* One more cycle */
-	si_gpu->cycle++;
+	arch->cycle_count++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (si_emu_max_cycles && si_gpu->cycle >= si_emu_max_cycles)
+	if (si_emu_max_cycles && arch->cycle_count >= si_emu_max_cycles)
 		esim_finish = esim_finish_si_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (si_emu_max_inst && si_emu->inst_count >= si_emu_max_inst)
+	if (si_emu_max_inst && arch->inst_count >= si_emu_max_inst)
 		esim_finish = esim_finish_si_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((si_gpu->cycle-si_gpu->last_complete_cycle) > 1000000)
+	if ((arch->cycle_count-si_gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", 
 			si_err_stall);

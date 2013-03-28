@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
@@ -419,6 +420,8 @@ int si_ndrange_get_status(struct si_ndrange_t *ndrange,
 void si_ndrange_set_status(struct si_ndrange_t *ndrange, 
 	enum si_ndrange_status_t status)
 {
+	struct arch_t *arch = si_emu->arch;
+
 	/* Get only the new bits */
 	status &= ~ndrange->status;
 
@@ -435,9 +438,9 @@ void si_ndrange_set_status(struct si_ndrange_t *ndrange,
 
 	/* Start/stop Southern Islands timer depending on ND-Range states */
 	if (si_emu->running_ndrange_list_count)
-		m2s_timer_start(si_emu->timer);
+		m2s_timer_start(arch->timer);
 	else
-		m2s_timer_stop(si_emu->timer);
+		m2s_timer_stop(arch->timer);
 
 	/* Update it */
 	ndrange->status |= status;

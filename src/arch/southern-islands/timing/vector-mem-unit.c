@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <lib/esim/esim.h>
@@ -35,6 +37,7 @@
 
 void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop = NULL;
 	int list_entries;
 	int i;
@@ -52,7 +55,7 @@ void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 		assert(uop);
 
 		/* Uop is not ready */
-		if (si_gpu->cycle < uop->write_ready)
+		if (arch->cycle_count < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -78,6 +81,7 @@ void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 
 void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -131,7 +135,7 @@ void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 		}
 
 		/* Access complete, remove the uop from the queue */
-		uop->write_ready = si_gpu->cycle + 
+		uop->write_ready = arch->cycle_count + 
 			si_gpu_vector_mem_write_latency;
 
 		/* In the above context, access means any of the 
@@ -167,6 +171,7 @@ void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 
 void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
 	struct si_work_item_t *work_item;
@@ -190,7 +195,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (si_gpu->cycle < uop->read_ready)
+		if (arch->cycle_count < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -284,6 +289,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -303,7 +309,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (si_gpu->cycle < uop->decode_ready)
+		if (arch->cycle_count < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -336,7 +342,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->read_ready = si_gpu->cycle + 
+		uop->read_ready = arch->cycle_count + 
 			si_gpu_vector_mem_read_latency;
 
 		list_remove(vector_mem->decode_buffer, uop);
@@ -351,6 +357,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 
 void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -370,7 +377,7 @@ void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (si_gpu->cycle < uop->issue_ready)
+		if (arch->cycle_count < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -403,7 +410,7 @@ void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->decode_ready = si_gpu->cycle + 
+		uop->decode_ready = arch->cycle_count + 
 			si_gpu_vector_mem_decode_latency;
 
 		list_remove(vector_mem->issue_buffer, uop);

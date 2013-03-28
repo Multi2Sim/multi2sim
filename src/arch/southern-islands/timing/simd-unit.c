@@ -19,10 +19,12 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/southern-islands/emu/emu.h>
+#include <arch/southern-islands/emu/wavefront.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
-#include <arch/southern-islands/emu/wavefront.h>
 
 #include "compute-unit.h"
 #include "gpu.h"
@@ -32,6 +34,7 @@
 
 void si_simd_complete(struct si_simd_t *simd)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int list_entries;
 	int list_index = 0;
@@ -46,7 +49,7 @@ void si_simd_complete(struct si_simd_t *simd)
 		uop = list_get(simd->exec_buffer, list_index);
 		assert(uop);
 
-		if (si_gpu->cycle < uop->execute_ready)
+		if (arch->cycle_count < uop->execute_ready)
 		{
 			list_index++;
 			continue;
@@ -69,6 +72,7 @@ void si_simd_complete(struct si_simd_t *simd)
 
 void si_simd_execute(struct si_simd_t *simd)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int list_entries;
 	int list_index = 0;
@@ -88,7 +92,7 @@ void si_simd_execute(struct si_simd_t *simd)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (si_gpu->cycle < uop->decode_ready)
+		if (arch->cycle_count < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -123,7 +127,7 @@ void si_simd_execute(struct si_simd_t *simd)
 
 		/* Includes time for pipelined read-exec-write of 
 		 * all subwavefronts */
-		uop->execute_ready = si_gpu->cycle + si_gpu_simd_exec_latency;
+		uop->execute_ready = arch->cycle_count + si_gpu_simd_exec_latency;
 
 		/* Transfer the uop to the outstanding execution buffer */
 		list_remove(simd->decode_buffer, uop);
@@ -138,6 +142,7 @@ void si_simd_execute(struct si_simd_t *simd)
 
 void si_simd_decode(struct si_simd_t *simd)
 {
+	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -157,7 +162,7 @@ void si_simd_decode(struct si_simd_t *simd)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (si_gpu->cycle < uop->issue_ready)
+		if (arch->cycle_count < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -190,7 +195,7 @@ void si_simd_decode(struct si_simd_t *simd)
 			continue;
 		}
 
-		uop->decode_ready = si_gpu->cycle + si_gpu_simd_decode_latency;
+		uop->decode_ready = arch->cycle_count + si_gpu_simd_decode_latency;
 		list_remove(simd->issue_buffer, uop);
 		list_enqueue(simd->decode_buffer, uop);
 
