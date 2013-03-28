@@ -35,6 +35,19 @@
  * String maps
  */
 
+static void str_map_fatal(struct str_map_t *map, char *err_msg)
+{
+	int i;
+
+	fprintf(stderr, "fatal: %s\n\n", err_msg);
+	fprintf(stderr, "\tPossible values are:\n");
+	for (i = 0; i < map->count; i++)
+		fprintf(stderr, "\t* '%s'\n", map->map[i].string);
+	fprintf(stderr, "\n");
+	exit(1);
+}
+
+
 int str_map_string_err(struct str_map_t *map, char *string, int *err_ptr)
 {
 	int i;
@@ -63,7 +76,16 @@ int str_map_string(struct str_map_t *map, char *string)
 
 int str_map_string_err_msg(struct str_map_t *map, char *s, char *err_msg)
 {
-	panic("%s: not implemented", __FUNCTION__);
+	int err;
+	int value;
+
+	/* Map string */
+	value = str_map_string_err(map, s, &err);
+	if (!err)
+		return value;
+	
+	/* On error, dump fatal message */
+	str_map_fatal(map, err_msg);
 	return 0;
 }
 
@@ -91,6 +113,22 @@ int str_map_string_case_err(struct str_map_t *map, char *s, int *err_ptr)
 int str_map_string_case(struct str_map_t *map, char *s)
 {
 	return str_map_string_case_err(map, s, NULL);
+}
+
+
+int str_map_string_case_err_msg(struct str_map_t *map, char *s, char *err_msg)
+{
+	int err;
+	int value;
+
+	/* Map string */
+	value = str_map_string_case_err(map, s, &err);
+	if (!err)
+		return value;
+	
+	/* On error, dump fatal message */
+	str_map_fatal(map, err_msg);
+	return 0;
 }
 
 
