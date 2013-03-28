@@ -516,30 +516,30 @@ void si_ndrange_insert_image_into_uav_table(struct si_ndrange_t *ndrange,
 void si_ndrange_const_buf_write(struct si_ndrange_t *ndrange, 
 	int const_buf_num, int offset, void *pvalue, unsigned int size)
 {
-        unsigned int addr;
+	unsigned int addr;
 
 	struct si_buffer_desc_t buffer_desc;
 
-        /* Sanity check */
-        assert(const_buf_num < 2);
-        if (const_buf_num == 0)
-        {
-                assert(offset + size < SI_EMU_CONST_BUF_0_SIZE);
-        }
-        else if (const_buf_num == 1)
-        {
-                assert(offset + size < SI_EMU_CONST_BUF_1_SIZE);
-        }
+	/* Sanity check */
+	assert(const_buf_num < 2);
+	if (const_buf_num == 0)
+	{
+		assert(offset + size < SI_EMU_CONST_BUF_0_SIZE);
+	}
+	else if (const_buf_num == 1)
+	{
+		assert(offset + size < SI_EMU_CONST_BUF_1_SIZE);
+	}
 
 	mem_read(si_emu->global_mem, ndrange->const_buf_table + 
 		const_buf_num*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
 		sizeof(buffer_desc), &buffer_desc);
 
-        addr = (unsigned int)buffer_desc.base_addr;
-        addr += offset;
+	addr = (unsigned int)buffer_desc.base_addr;
+	addr += offset;
 
-        /* Write */
-        mem_write(si_emu->global_mem, addr, size, pvalue);
+	/* Write */
+	mem_write(si_emu->global_mem, addr, size, pvalue);
 }
 
 void si_ndrange_const_buf_read(struct si_ndrange_t *ndrange, int const_buf_num, 	int offset, void *pvalue, unsigned int size)
