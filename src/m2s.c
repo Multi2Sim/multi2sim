@@ -24,7 +24,6 @@
 #include <arch/arm/emu/syscall.h>
 #include <arch/arm/timing/cpu.h>
 #include <arch/common/arch.h>
-#include <arch/common/arch-list.h>
 #include <arch/common/runtime.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/isa.h>

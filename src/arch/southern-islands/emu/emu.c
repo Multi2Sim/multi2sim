@@ -19,7 +19,6 @@
 
 
 #include <arch/common/arch.h>
-#include <arch/common/arch-list.h>
 #include <arch/southern-islands/asm/bin-file.h>
 #include <arch/southern-islands/timing/gpu.h>
 #include <lib/esim/esim.h>

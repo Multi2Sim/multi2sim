@@ -21,7 +21,6 @@
 
 #include <arch/arm/timing/cpu.h>
 #include <arch/common/arch.h>
-#include <arch/common/arch-list.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
