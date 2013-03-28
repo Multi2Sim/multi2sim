@@ -211,7 +211,28 @@ void opengl_program_detach_shader(struct opengl_program_t *prg, struct opengl_sh
 		opengl_debug("\tError: Invalid Shader [%p] / Program [%p]\n", shdr, prg);
 }
 
-struct elf_buffer_t *opengl_program_get_shader(struct opengl_program_t *prg, int shader_kind)
+struct si_opengl_shader_t *opengl_program_get_shader(struct opengl_program_t *prg, int shader_kind)
+{
+	struct list_t *shader_list;
+	struct si_opengl_shader_t *si_shader;
+	int i;
+
+	shader_list = prg->si_shader_binary->shader_list;
+	LIST_FOR_EACH(shader_list, i)
+	{
+		si_shader = list_get(shader_list, i);
+		if (si_shader->shader_kind == shader_kind)
+		{
+			return si_shader;
+		}
+	}
+	/* Not found */
+	fatal("Shader not found!");
+	return NULL;
+
+}
+
+struct elf_buffer_t *opengl_program_get_shader_isa(struct opengl_program_t *prg, int shader_kind)
 {
 	struct list_t *shader_list;
 	struct si_opengl_shader_t *si_shader;

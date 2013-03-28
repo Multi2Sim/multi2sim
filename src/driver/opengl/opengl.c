@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
 #include <arch/southern-islands/emu/ndrange.h>
@@ -37,7 +38,9 @@
 #include "light.h"
 #include "material.h"
 #include "matrix.h"
+#include "mem.h"
 #include "matrix-stack.h"
+#include "object.h"
 #include "opengl.h"
 #include "program.h"
 #include "rasterizer.h"
@@ -124,6 +127,7 @@ void opengl_init(void)
 {
 	opengl_debug("Initializing OpenGL context\n");
 	opengl_ctx = opengl_context_create();
+
 }
 
 
@@ -5287,6 +5291,52 @@ static int opengl_func_glArrayElement(struct x86_ctx_t *ctx)
 	return 0;
 }
 
+struct opengl_shader_launch_info_t
+{
+	struct si_opengl_shader_t *shader;
+	struct si_ndrange_t *ndrange;
+	int finished;
+};
+
+static void opengl_shader_launch_finish(void *user_data)
+{
+	struct opengl_shader_launch_info_t *info = user_data;
+	struct si_opengl_shader_t *shader = info->shader;
+	struct si_ndrange_t *ndrange = info->ndrange;
+
+	/* Debug */
+	opengl_debug("\t\tND-Range %d running shader '%d' finished\n",
+			ndrange->id, shader->shader_kind);
+
+	/* Set 'finished' flag in launch info */
+	info->finished = 1;
+
+	/* Force the x86 emulator to check which suspended contexts can wakeup,
+	 * based on their new state. */
+	x86_emu_process_events_schedule();
+}
+
+
+static int opengl_shader_launch_can_wakeup(struct x86_ctx_t *ctx,
+		void *user_data)
+{
+	struct opengl_shader_launch_info_t *info = user_data;
+
+	/* NOTE: the ND-Range has been freed at this point if it finished
+	 * execution, so field 'info->ndrange' should not be accessed. We
+	 * use flag 'info->finished' instead. */
+	return info->finished;
+}
+
+static void opengl_shader_launch_wakeup(struct x86_ctx_t *ctx,
+		void *user_data)
+{
+	struct opengl_shader_launch_info_t *info = user_data;
+
+	/* Free info object */
+	free(info);
+}
+
 /*
  * OpenGL call #224 - glDrawArrays
  *
@@ -5301,7 +5351,9 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 	struct mem_t *mem = ctx->mem;
 
 	struct si_ndrange_t *ndrange;
-
+	struct si_opengl_shader_t *shader;
+	struct opengl_shader_launch_info_t *info;
+	struct opengl_mem_t *gpu_mem;
 	struct elf_buffer_t *elf_buffer;
 	struct opengl_vertex_array_obj_t *curr_vao;
 	struct opengl_vertex_client_array_t *vca;
@@ -5335,10 +5387,12 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 	opengl_program_setup_ndrange_state(opengl_ctx->current_program, ndrange);
 
 	/* Setup NDrange instruction memory */
-	elf_buffer = opengl_program_get_shader(opengl_ctx->current_program, SI_OPENGL_SHADER_VERTEX);
+	elf_buffer = opengl_program_get_shader_isa(opengl_ctx->current_program, SI_OPENGL_SHADER_VERTEX);
 	if (!elf_buffer->size)
 		fatal("%s: cannot load shader code", __FUNCTION__);
 	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, elf_buffer->size, 0);
+
+	shader = opengl_program_get_shader(opengl_ctx->current_program, SI_OPENGL_SHADER_VERTEX);
 
 	/* Send data to GPU global memory */
 	curr_vao = opengl_ctx->array_attrib->curr_vao;
@@ -5348,39 +5402,44 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 		if (vca->enabled)
 		{
 			/* Create a memory object and send data to GPU global memory */
-			// gpu_mem = si_opencl_mem_create();
-			// gpu_mem->type = 0;  /* FIXME */
-			// gpu_mem->size = vca->vbo->data_size;
-			// gpu_mem->flags = vca->vbo->usage;
-			// opengl_debug("\tGPU memory [%p] created, size = %d, flags = %x\n", gpu_mem, gpu_mem->size, gpu_mem->flags);
+			gpu_mem = opengl_mem_create();
+			gpu_mem->size = vca->vbo->data_size;
+			gpu_mem->flags = vca->vbo->usage;
+			opengl_debug("\tGPU memory [%p] created, size = %d, flags = %x\n", gpu_mem, gpu_mem->size, gpu_mem->flags);
 
 			/* Assign position in device global memory */
-			// gpu_mem->device_ptr = si_emu->global_mem_top;
-			// si_emu->global_mem_top += gpu_mem->size;
+			gpu_mem->device_ptr = si_emu->global_mem_top;
+			si_emu->global_mem_top += gpu_mem->size;
 
 			/* If VBO bound, copy buffer into device memory */
-			// if (vca->vbo->data)
-			// {
-			// 	mem_write(si_emu->global_mem, gpu_mem->device_ptr, vca->vbo->data_size, vca->vbo->data);
-			// 	opengl_debug("\tCopy %d byte from data [%p] saved in VBO #%d [%p] to GPU global memory\n", 
-			// 		(int) vca->vbo->data_size, vca->vbo->data, vca->vbo->id, vca->vbo);
-			// }
+			if (vca->vbo->data)
+			{
+				mem_write(si_emu->global_mem, gpu_mem->device_ptr, vca->vbo->data_size, vca->vbo->data);
+				opengl_debug("\tCopy %d byte from data [%p] saved in VBO #%d [%p] to GPU global memory\n", 
+					(int) vca->vbo->data_size, vca->vbo->data, vca->vbo->id, vca->vbo);
+			}
+
+			/* TODO: Record buffer descriptor inside GPU global memory */
+
+			/* Free memory object */
+			opengl_mem_free(gpu_mem);
 		}
 	}
+
+	/* Set up call-back function to be run when ND-Range finishes. */
+	info = xcalloc(1, sizeof(struct opengl_shader_launch_info_t));
+	info->shader = shader;
+	info->ndrange = ndrange;
+	si_ndrange_set_free_notify_func(ndrange, opengl_shader_launch_finish, info);
 
 	/* Set ND-Range status to 'pending'. This makes it immediately a candidate for
 	 * execution, whether we have functional or detailed simulation. */
 	si_ndrange_set_status(ndrange, si_ndrange_pending);
 
-	/* Create command queue task */
-	// task = si_opencl_command_create(si_opencl_command_queue_task_ndrange_kernel);
-	// task->u.ndrange_kernel.ndrange = ndrange;
+	/* Suspend x86 context until ND-Range finishes */
+	x86_ctx_suspend(ctx, opengl_shader_launch_can_wakeup, info,
+			opengl_shader_launch_wakeup, info);
 
-	/* Enqueue task */
-	// command_queue = si_opencl_command_queue_create();
-	// si_opencl_command_queue_submit(command_queue, task);
-	// ndrange->command_queue = command_queue;
-	// ndrange->command = task;
 
 	switch(mode)
 	{
@@ -9913,6 +9972,7 @@ static int opengl_func_glBufferData(struct x86_ctx_t *ctx)
 	buf_obj = opengl_context_get_bound_buffer(target, opengl_ctx);
 	opengl_buffer_obj_data(buf_obj, size, tmp_buf, usage);
 
+	/* Free */
 	free(tmp_buf);
 
 	return 0;
@@ -11542,13 +11602,13 @@ static int opengl_func_glVertexAttribPointer(struct x86_ctx_t *ctx)
 	}
 
 	vtx_attrib = &vao->vtx_attrib[index];
-	vtx_attrib->size = size;
-	vtx_attrib->type = type;
-	vtx_attrib->stride = stride;
-	vtx_attrib->enabled = GL_FALSE;
-	vtx_attrib->normalized = normalized;
-	vtx_attrib->ptr = pointer;	/* This is actually an offset ? */
-	vtx_attrib->vbo = vbo;
+	vtx_attrib->size = size; /* Amount of component to make a vertex, 1, 2, 3, or 4 */
+	vtx_attrib->type = type; /* Data type for each component */
+	vtx_attrib->stride = stride; /* Normally it is 0 */
+	vtx_attrib->enabled = GL_FALSE; /* FIXME */
+	vtx_attrib->normalized = normalized; /* */
+	vtx_attrib->ptr = pointer; /* This is actually an offset ? */
+	vtx_attrib->vbo = vbo; /* VBO contains vertex data */
 	opengl_vertex_client_array_set_element_size(vtx_attrib, size, type);
 	vtx_attrib->max_element = vbo->data_size / vtx_attrib->element_size;
 
