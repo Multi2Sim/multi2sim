@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
@@ -117,6 +118,8 @@ void si_wavefront_dump(struct si_wavefront_t *wavefront, FILE *f)
 /* Execute one instruction in the wavefront */
 void si_wavefront_execute(struct si_wavefront_t *wavefront)
 {
+	struct arch_t *arch = si_emu->arch;
+
 	struct si_ndrange_t *ndrange;
 	struct si_work_group_t *work_group;
 	struct si_work_item_t *work_item;
@@ -154,7 +157,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		&wavefront->inst, 0);
 
 	/* Stats */
-	si_emu->inst_count++;
+	arch->inst_count++;
 	wavefront->emu_inst_count++;
 	wavefront->inst_count++;
 
