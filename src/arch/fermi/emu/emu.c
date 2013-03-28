@@ -70,7 +70,6 @@ void frm_emu_init(struct arch_t *arch)
         /* Initialize */
         frm_emu = xcalloc(1, sizeof(struct frm_emu_t));
         frm_emu->arch = arch;
-	frm_emu->timer = m2s_timer_create("Fermi GPU Timer");
         frm_emu->global_mem = mem_create();
         frm_emu->global_mem->safe = 0;
         frm_emu->total_global_mem_size = 1 << 31; /* 2GB */
@@ -111,7 +110,6 @@ void frm_emu_done(void)
 	/* Finalize GPU kernel */
         mem_free(frm_emu->const_mem);
         mem_free(frm_emu->global_mem);
-	m2s_timer_free(frm_emu->timer);
         free(frm_emu);
 }
 

@@ -68,10 +68,10 @@ void mem_system_init(void)
 	 * memory hierarchy, make sure that at least one architecture is running
 	 * timing simulation. */
 	count = arch_get_sim_kind_detailed_count();
-	if (mem_report_file_name && !count)
+	if (mem_report_file_name && *mem_report_file_name && !count)
 		fatal("memory report file given, but no timing simulation.\n%s",
 				mem_err_timing);
-	if (mem_config_file_name && !count)
+	if (mem_config_file_name && *mem_config_file_name && !count)
 		fatal("memory configuration file given, but no timing simulation.\n%s",
 				mem_err_timing);
 
