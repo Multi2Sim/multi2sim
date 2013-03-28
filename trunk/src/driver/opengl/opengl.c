@@ -40,7 +40,6 @@
 #include "matrix.h"
 #include "mem.h"
 #include "matrix-stack.h"
-#include "object.h"
 #include "opengl.h"
 #include "program.h"
 #include "rasterizer.h"
