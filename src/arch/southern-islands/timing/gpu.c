@@ -1430,5 +1430,5 @@ enum arch_sim_kind_t si_gpu_run(void)
 	}
 
 	/* Return true */
-	return arch_sim_kind_invalid;
+	return arch_sim_kind_detailed;
 }

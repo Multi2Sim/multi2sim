@@ -77,6 +77,7 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 {
 	double time_in_sec;
 	double inst_per_sec;
+	double cycles_per_sec;
 
 	/* If no instruction was run for this architecture, skip
 	 * statistics summary. */
@@ -96,7 +97,16 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 
 	/* Timing simulation statistics */
 	if (arch->sim_kind == arch_sim_kind_detailed)
+	{
+		/* Standard */
+		cycles_per_sec = time_in_sec > 0.0 ? (double) arch->cycle_count
+				/ time_in_sec : 0.0;
+		fprintf(f, "Cycles = %lld\n", arch->cycle_count);
+		fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
+
+		/* Architecture-specific */
 		arch->timing_dump_summary_func(f);
+	}
 
 	/* End */
 	fprintf(f, "\n");
