@@ -85,9 +85,12 @@ struct frm_sm_t
 	long long vector_mem_inst_count;
 	long long lds_inst_count;
 
-	/* List of currently mapped work-groups */
-	int thread_block_count;
+	/* List of currently mapped thread blocks */
 	struct frm_thread_block_t **thread_blocks;
+	int thread_block_count;
+
+	/* List of currently mapped warps */
+	struct frm_warp_t **warps;
 
 	/* Compute Unit capacity state  (for concurrent CQ)*/
 	/* Statistics for spatial report */

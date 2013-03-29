@@ -27,8 +27,6 @@ struct CUmod_st
 {
 	unsigned int id;
 	int ref_count;
-
-	struct elf_file_t *elf_file;
 };
 
 CUmodule cuda_module_create(void);

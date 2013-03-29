@@ -29,10 +29,10 @@ struct CUfunc_st
 	int ref_count;
 
 	char *name;
-
 	unsigned int module_id;
 
 	unsigned long long int *inst_buffer;
+	unsigned int inst_buffer_size;
 
 	struct list_t *arg_list;
 	CUdeviceptr **arg_array;

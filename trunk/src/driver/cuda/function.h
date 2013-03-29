@@ -35,8 +35,8 @@ struct cuda_function_t
 	unsigned int module_id;
 	struct list_t *arg_list;
 
-	/* FIXME */
-	struct elf_buffer_t function_buffer;
+	unsigned long long int *inst_buffer;
+	unsigned int inst_buffer_size;
 
 	/* Number of work dimensions */
 	int work_dim;
@@ -57,7 +57,9 @@ struct cuda_function_t
 };
 
 struct cuda_module_t;
-struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, char *function_name);
+struct cuda_function_t *cuda_function_create(struct cuda_module_t *module, 
+		char *function_name, unsigned long long int *inst_buffer,
+		unsigned int inst_buffer_size);
 void cuda_function_free(struct cuda_function_t *function);
 
 #endif

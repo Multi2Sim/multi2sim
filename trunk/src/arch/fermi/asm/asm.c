@@ -42,7 +42,8 @@ static struct frm_inst_info_t frm_inst_info[FRM_INST_COUNT];
 /* Pointers to 'frm_inst_info' table indexed by instruction opcode */
 #define FRM_ISNT_INFO_LONG_SIZE 1024
 
-static struct frm_inst_info_t *frm_inst_info_long[FRM_ISNT_INFO_LONG_SIZE]; /* 8-byte instructions */
+/* Table containing information of all instructions. Indexed by instruction opcode */
+static struct frm_inst_info_t *frm_inst_info_long[FRM_ISNT_INFO_LONG_SIZE];
 
 /* Table containing names of all special registers */
 static char *frm_sr[FRM_SR_COUNT];
@@ -61,7 +62,7 @@ void frm_disasm_init()
 	info->fmt_str = _fmt_str; \
 	info->fmt = FRM_FMT_##_fmt; \
 	info->opcode = _opcode; \
-	info->size = 64;
+	info->size = 8;
 #include "asm.dat"
 #undef DEFINST
 
@@ -71,6 +72,7 @@ void frm_disasm_init()
 		frm_inst_info_long[info->opcode] = info;
 	}
 
+	/* Special registers */
 	frm_sr[FRM_SR_Laneld] = "SR_Laneld";
 	frm_sr[FRM_SR_VirtCfg] = "SR_VirtCfg";
 	frm_sr[FRM_SR_VirtId] = "SR_VirtId";
@@ -160,7 +162,8 @@ void frm_inst_decode(struct frm_inst_t *inst)
 		op == 0x043 || op == 0x053 || /* ISET */
 		op == 0x205 || op == 0x215 || /* LD */
 		op == 0x245 || op == 0x255)   /* ST */
-		op = ((inst->dword.bytes[7] & 0xf8) << 1) | ((inst->dword.bytes[0]) & 0xf);
+		op = ((inst->dword.bytes[7] & 0xf8) << 1) |
+			((inst->dword.bytes[0]) & 0xf);
 
 	inst->info = frm_inst_info_long[op];
 }

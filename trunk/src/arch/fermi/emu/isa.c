@@ -44,7 +44,7 @@ int frm_isa_debug_category = 1;
 /* Initialization */
 void frm_isa_init()
 {
-	/* Initialize */
+	/* Initialize instruction execution table */
 	frm_isa_inst_func = xcalloc(FRM_INST_COUNT, sizeof(frm_isa_inst_func_t));
 #define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
 	frm_isa_inst_func[FRM_INST_##_name] = frm_isa_##_name##_impl;
