@@ -54,9 +54,8 @@ struct frm_warp_t
 	struct frm_inst_t inst;
 
 	/* Starting/current position in buffer */
-	void *buf_start;
-	void *buf;
-	int buf_size;
+	unsigned long long int *inst_buffer;
+	unsigned int inst_buffer_size;
 
 	/* Active mask stack */
 	struct bit_map_t *active_stack;  /* FRM_MAX_STACK_SIZE * thread_count elements */

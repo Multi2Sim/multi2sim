@@ -64,6 +64,8 @@ enum cuda_call_t
 /* For CUDA runtime */
 extern CUmodule module;
 extern CUfunction function;
+extern unsigned long long int *inst_buffer;
+extern unsigned int inst_buffer_size;
 #define __dv(v)
 struct __fatDeviceText
 {

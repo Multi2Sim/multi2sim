@@ -46,7 +46,6 @@ void cuda_module_free(CUmodule module)
 {
 	list_remove(module_list, module);
 
-	elf_file_free(module->elf_file);
 	module->ref_count--;
 	free(module);
 }
