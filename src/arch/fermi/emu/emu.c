@@ -128,7 +128,7 @@ enum arch_sim_kind_t frm_emu_run(void)
 	struct frm_warp_t *warp;
 	struct frm_warp_t *warp_next;
 
-	/* For efficiency when no Fermi emulation is selected, 
+	/* For efficiency when no emulation is selected, 
 	 * exit here if the list of existing grid is empty. */
 	if (!frm_emu->grid_list_count)
 		return arch_sim_kind_invalid;
@@ -158,10 +158,10 @@ enum arch_sim_kind_t frm_emu_run(void)
 		 * grid. */
 		grid_next = grid->running_grid_list_next;
 
-		/* Execute an instruction from each work-group */
+		/* Execute an instruction from each thread block */
 		for (thread_block = grid->running_list_head; thread_block; thread_block = thread_block_next)
 		{
-			/* Save next running work-group */
+			/* Save next running thread block */
 			thread_block_next = thread_block->running_list_next;
 
 			/* Run an instruction from each warp */
@@ -182,7 +182,7 @@ enum arch_sim_kind_t frm_emu_run(void)
 		/* Dump grid report */
 		frm_grid_dump(grid, frm_emu_report_file);
 
-		/* Stop if maximum number of functions reached */
+		/* Stop if maximum number of kernels reached */
 		if (frm_emu_max_functions && frm_emu->grid_count >= 
 				frm_emu_max_functions)
 			esim_finish = esim_finish_frm_max_functions;

@@ -546,13 +546,18 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(driver) in: module_id = %d\n", hmod->id);
 	cuda_debug_print(stdout, "\t(driver) in: function_name = %s\n", name);
+	cuda_debug_print(stdout, "\t(internal) in: inst_buffer = %p\n",
+			inst_buffer);
+	cuda_debug_print(stdout, "\t(internal) in: inst_buffer_size = %u\n",
+			inst_buffer_size);
 
 	/* Create function */
 	*hfunc = cuda_function_create(hmod, name);
 
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, 
-			hmod->id, name);
+			hmod->id, name, inst_buffer,
+			inst_buffer_size);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
 	 * is running natively, system call CUDA_SYS_CODE is not supported. */

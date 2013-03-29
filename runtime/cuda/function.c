@@ -17,7 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdio.h>
+#include <string.h>
+
 #include "../include/cuda.h"
+#include "api.h"
 #include "list.h"
 #include "function-arg.h"
 #include "function.h"
@@ -37,6 +41,10 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 	function->ref_count = 1;
 	function->name = xstrdup(function_name);
 	function->module_id = module->id;
+	function->inst_buffer = (unsigned long long int *)xcalloc(1,
+			(unsigned long int)inst_buffer);
+	memcpy(function->inst_buffer, inst_buffer, inst_buffer_size);
+	function->inst_buffer_size = inst_buffer_size;
 	function->arg_list = list_create();
 
 	list_add(function_list, function);

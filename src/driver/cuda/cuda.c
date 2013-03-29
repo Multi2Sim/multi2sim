@@ -256,11 +256,8 @@ int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 {
 	struct cuda_module_t *module;
 
-	cuda_debug("\tin: filename=%s\n", frm_emu_cuda_binary_name);
-
 	/* Create module */
 	module = cuda_module_create();
-	module->elf_file = elf_file_create_from_path(frm_emu_cuda_binary_name);
 
 	cuda_debug("\tout: module.id=0x%08x\n", module->id);
 
@@ -323,21 +320,32 @@ int cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 
 	unsigned int module_id;
 	char function_name[MAX_STRING_SIZE];
+	unsigned long long int *inst_buffer;
+	unsigned int inst_buffer_size;
 
 	struct cuda_module_t *module;
 	struct cuda_function_t *function;
 
 	module_id = regs->ecx;
 	mem_read(mem, regs->edx, MAX_STRING_SIZE, function_name);
+	inst_buffer_size = regs->edi;
+	inst_buffer = (unsigned long long int *)xcalloc(1, inst_buffer_size);
+	mem_read(mem, regs->esi, inst_buffer_size, inst_buffer);
 
 	cuda_debug("\tin: module.id=0x%08x\n", module_id);
 	cuda_debug("\tin: function_name=%s\n", function_name);
+	cuda_debug("\tin: inst_buffer=%p\n", inst_buffer);
+	cuda_debug("\tin: inst_buffer_size=%u\n", inst_buffer_size);
 
 	/* Get module */
 	module = (struct cuda_module_t *)list_get(module_list, module_id);
 
 	/* Create function */
-	function = cuda_function_create(module, function_name);
+	function = cuda_function_create(module, function_name, inst_buffer,
+			inst_buffer_size);
+
+	/* Free */
+	free(inst_buffer);
 
 	cuda_debug("\tout: function.id=0x%08x\n", function->id);
 
@@ -714,7 +722,6 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	/* Create and setup grid */
 	grid = frm_grid_create(function);
-	grid->function = function;
 	frm_grid_setup_size(grid, gridDim, blockDim, 3);
 
 	/* Create arguments */

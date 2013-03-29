@@ -298,6 +298,7 @@ enum frm_inst_enum
 union frm_inst_dword_t
 {
 	unsigned char bytes[8];
+	unsigned long long int dword;
 
 	struct frm_fmt_general0_t general0;	
 	struct frm_fmt_general1_t general1;

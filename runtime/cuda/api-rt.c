@@ -38,6 +38,8 @@
 
 CUmodule module;
 CUfunction function;
+unsigned long long int *inst_buffer;
+unsigned int inst_buffer_size;
 cudaError_t cuda_rt_last_error;
 
 /* Error messages */
@@ -176,35 +178,30 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		dim3 *gDim,
 		int *wSize)
 {
-	struct __fatDeviceText *fatCubin;
 	const unsigned long long int *rodata;
-	int elf_head, str_tab_head, i;
+
+	int elf_head;
+	int str_tab_head;
+	Elf32_Ehdr elf_header;
+	Elf32_Shdr *sections;
 	unsigned char **section_names;
 	int section_name_len;
 	char text_section_name[1024];
 	unsigned short int text_section_index = 0;
-	Elf32_Ehdr elf_header;
-	Elf32_Shdr *sections;
-	unsigned long long int *inst_buffer;
 
-	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
+	int i;
 
-	/* Load module */
-	/* CUBIN can be extracted from x86 binary; however, we haven't figured
-	 * out how. So we ignore CUBIN filename here and let user provide it as
-	 * an M2S option. */
-	cuModuleLoad(&module, "ignored_cubin_filename");
+	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n",
+			__FUNCTION__);
 
-	/* Get function */
-	cuModuleGetFunction(&function, module, deviceFun);
+	/* Get .rodata section */
+	rodata = (*(struct __fatDeviceText **)fatCubinHandle)->d;
 
-	fatCubin = *(struct __fatDeviceText **)fatCubinHandle;
-	rodata = fatCubin->d;
-
-	/* Look for ELF start */
-	for (i = 0; (rodata[i] & 0xffffffff) != 0x464c457f; ++i)
+	/* Look for ELF head */
+	/* FIXME: boundary check */
+	for (i = 0; get_uint(rodata, i) != 0x464c457f; ++i)
 		;
-	elf_head = i * 8;
+	elf_head = i;
 
 	/* Get section header info */
 	elf_header.e_shoff = get_uint(rodata, elf_head + 32);
@@ -212,21 +209,26 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	elf_header.e_shnum = get_ushort(rodata, elf_head + 48);
 
 	/* Get section info */
-	sections = (Elf32_Shdr *)xcalloc(elf_header.e_shnum, sizeof(Elf32_Shdr));
+	sections = (Elf32_Shdr *)xcalloc(elf_header.e_shnum,
+			sizeof(Elf32_Shdr));
 	for (i = 0; i < elf_header.e_shnum; ++i)
 	{
 		sections[i].sh_name = get_uint(rodata, 
 				elf_head + 52 + i * elf_header.e_shentsize);
 		sections[i].sh_offset = get_uint(rodata, 
-				elf_head + 52 + i * elf_header.e_shentsize + 16);
+				elf_head + 52 + i * elf_header.e_shentsize +
+				16);
 		sections[i].sh_size = get_uint(rodata, 
-				elf_head + 52 + i * elf_header.e_shentsize + 20);
+				elf_head + 52 + i * elf_header.e_shentsize +
+				20);
 	}
 
-	/* Get section names */
+	/* Get string table head */
 	elf_header.e_shstrndx = get_ushort(rodata, elf_head + 50);
-	section_names = (unsigned char **)xcalloc(elf_header.e_shnum, sizeof(unsigned char *));
 	str_tab_head = elf_head + sections[elf_header.e_shstrndx].sh_offset;
+
+	/* Get section names */
+	section_names = (unsigned char **)xcalloc(elf_header.e_shnum, sizeof(unsigned char *));
 	for (i = 0; i < elf_header.e_shnum - 1; ++i)
 	{
 		section_name_len = get_str_len(rodata, str_tab_head +
@@ -239,26 +241,34 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	}
 
 	/* Look for .text.kernel_name section */
-	snprintf(text_section_name, 1024, ".text.%s", deviceFun);
+	snprintf(text_section_name, sizeof text_section_name, ".text.%s", deviceFun);
 	for (i = 0; i < elf_header.e_shnum; ++i)
 	{
 		if (!strcmp(text_section_name, (char *)section_names[i]))
 			break;
 	}
 	if (i == elf_header.e_shnum)
-		fatal("no section found");
+		fatal("%s section not found", text_section_name);
 	text_section_index = i;
 
-	/* Get text section info */
+	/* Get instruction binary */
 	inst_buffer = (unsigned long long int *)xcalloc(1,
-			sections[text_section_index].sh_size / 8 *
-			sizeof(unsigned long long int));
+			sections[text_section_index].sh_size);
 	for (i = 0; i < sections[text_section_index].sh_size / 8; ++i)
-	{
 		inst_buffer[i] = get_ulonglong(rodata, elf_head +
 				sections[text_section_index].sh_offset + i * 8);
-		printf("inst_buffer[%d] = %016llx\n", i, inst_buffer[i]);
-	}
+	inst_buffer_size = sections[text_section_index].sh_size;
+
+	/* Load module */
+	cuModuleLoad(&module, "ignored_cubin_filename");
+
+	/* Get function */
+	cuModuleGetFunction(&function, module, deviceFun);
+
+	/* Free */
+	free(inst_buffer);
+
+	cuda_debug_print(stdout, "\treturn\n");
 }
 
 

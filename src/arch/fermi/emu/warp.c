@@ -251,15 +251,21 @@ void frm_warp_execute(struct frm_warp_t *warp)
 
 	/* Decode instruction */
 
-	int byte_index;
+//	int byte_index;
+	static int buf = 0;
 
 	inst = &(warp->inst);
+	inst->dword.dword = 
+		((warp->inst_buffer)[buf] << 32) | 
+		((warp->inst_buffer)[buf] >> 32);
 	//frm_isa_debug("Instruction Hex: ");
-	for (byte_index = 7; byte_index >= 0; --byte_index)
-	{
-		//frm_isa_debug("%02x", *((unsigned char*)(warp->buf)+byte_index));
-		inst->dword.bytes[byte_index] = *((unsigned char*)(warp->buf)+byte_index);
-	}
+//	for (byte_index = 7; byte_index >= 0; --byte_index)
+//	{
+//		//frm_isa_debug("%02x", *((unsigned char*)(warp->buf)+byte_index));
+//		inst->dword.bytes[byte_index] = 
+//			(unsigned char)(((warp->inst_buffer)[buf]) >>
+//(byte_index*8));
+//	}
 	//frm_isa_debug("\n");
 
         FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
@@ -269,7 +275,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
         	(*frm_isa_inst_func[inst->info->inst])(thread, inst);
         }
 
-	warp->buf += 8;
+	++buf;
 
 	/* Stats */
 	arch->inst_count++;

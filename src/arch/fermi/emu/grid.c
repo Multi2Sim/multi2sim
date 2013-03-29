@@ -340,9 +340,8 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 			grid->warps_per_thread_block;
 		warp->grid = grid;
 		warp->thread_block = thread_block;
-                warp->buf_start = grid->function->function_buffer.ptr;
-                warp->buf = warp->buf_start;
-                warp->buf_size = grid->function->function_buffer.size;
+                warp->inst_buffer = grid->function->inst_buffer;
+                warp->inst_buffer_size = grid->function->inst_buffer_size;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(thread_block, running, warp);
 	}
 

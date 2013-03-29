@@ -1077,14 +1077,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Fermi kernel binary */
-		if (!strcmp(argv[argi], "--frm-kernel-binary"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			frm_emu_cuda_binary_name = argv[++argi];
-			continue;
-		}
-
 		/* Maximum number of cycles */
 		if (!strcmp(argv[argi], "--frm-max-cycles"))
 		{

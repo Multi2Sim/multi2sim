@@ -345,8 +345,7 @@ void frm_sm_unmap_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *t
 	frm_trace("si.unmap_wg cu=%d wg=%d\n", sm->id, thread_block->id);
 }
 
-void frm_sm_fetch(struct frm_sm_t *sm, 
-	int active_fb)
+void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 {
 	struct arch_t *arch = frm_emu->arch;
 	int i, j;
@@ -362,10 +361,9 @@ void frm_sm_fetch(struct frm_sm_t *sm,
 
 	assert(active_fb < sm->num_warp_pools);
 
-	for (i = 0; i < frm_gpu_max_warps_per_warp_pool; i++)
+	for (i = 0; i < sm->warp_count; i++)
 	{
-		warp = sm->warp_pools[active_fb]->
-			entries[i]-> warp;
+		warp = (sm->warps)[i];
 
 		/* No warp */
 		if (!warp) 
@@ -1348,8 +1346,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 	}
 }
 
-/* Advance one cycle in the compute unit by running every stage from 
- * last to first */
+/* Advance one cycle in the SM by running every stage from last to first */
 void frm_sm_run(struct frm_sm_t *sm)
 {
 	struct arch_t *arch = frm_emu->arch;
@@ -1395,7 +1392,7 @@ void frm_sm_run(struct frm_sm_t *sm)
 
 	/* Fetch */
 	for (i = 0; i < num_simd_units; i++)
-        	frm_sm_fetch(sm, i);
+		frm_sm_fetch(sm, i);
 
 	/* Stats */
 	sm->cycle++;
