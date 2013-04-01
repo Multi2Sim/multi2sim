@@ -120,7 +120,7 @@ LIBS="-lpthread"
 # Try
 AC_LINK_IFELSE(
 	[
-		AC_LANG_PROGRAM([[int pthread_create();]], [[int main() {return pthread_create();}]])
+		AC_LANG_PROGRAM([[int pthread_create();]], [[return pthread_create();]])
 	],
 	[
 		AC_MSG_RESULT(yes)
@@ -156,7 +156,7 @@ LIBS="-lz"
 # Try them
 AC_LINK_IFELSE(
 	[
-		AC_LANG_PROGRAM([[int inflate();]], [[int main() {return inflate();}]])
+		AC_LANG_PROGRAM([[int inflate();]], [[return inflate();]])
 	],
 	[],
 	[
