@@ -887,6 +887,78 @@ long long str_to_llint(char *str, int *err_ptr)
 }
 
 
+void str_int_to_alnum(char *str, int size, unsigned int value)
+{
+	unsigned int digit;
+	unsigned int c;
+
+	int len = 0;
+	int i;
+
+	/* Nothing if no room in output string */
+	if (!size)
+		return;
+	
+	/* Parse value */
+	while (value && len < size - 1)
+	{
+		digit = value % 62;
+		if (IN_RANGE(digit, 0, 9))
+			c = '0' + digit;
+		else if (IN_RANGE(digit, 10, 35))
+			c = digit - 10 + 'a';
+		else
+			c = digit - 36 + 'A';
+		str[len++] = c;
+		value /= 62;
+	}
+
+	/* Null-terminate */
+	str[len] = '\0';
+
+	/* Mirror string */
+	for (i = 0; i < len / 2; i++)
+	{
+		c = str[i];
+		str[i] = str[len - i - 1];
+		str[len - i - 1] = c;
+	}
+}
+
+
+unsigned int str_alnum_to_int(char *str)
+{
+	unsigned int result = 0;
+	unsigned int power;
+	unsigned int digit;
+
+	int i;
+	int c;
+
+	/* Empty string */
+	if (!str || !*str)
+		return 0;
+
+	/* Parse string */
+	power = 1;
+	for (i = strlen(str) - 1; i >= 0; i--)
+	{
+		c = (unsigned char) str[i];
+		if (IN_RANGE(c, '0', '9'))
+			digit = c - '0';
+		else if (IN_RANGE(c, 'a', 'z'))
+			digit = c - 'a' + 10;
+		else if (IN_RANGE(c, 'A', 'Z'))
+			digit = c - 'A' + 36;
+		else
+			return 0;
+		result += digit * power;
+		power *= 62;
+	}
+	return result;
+}
+
+
 void str_printf(char **pbuf, int *psize, char *fmt, ...)
 {
 	va_list va;

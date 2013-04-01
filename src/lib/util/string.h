@@ -110,6 +110,18 @@ char *str_error(int err);
 int str_to_int(char *str, int *err);
 long long str_to_llint(char *str, int *err);
 
+/* Convert an integer value into a sequence of alphanumeric characters. Each
+ * position of the destination string can encode a value between 0 and 61,
+ * where:
+ *  0-9    =>   '0'...'9'
+ *  10-35  =>   'a'...'z'
+ *  36-61  =>   'A'...'Z'
+ * The destination string is stored in 'str', a buffer with a maximum capacity
+ * of 'size' bytes. If 'size' is greater than 0, 'str' will be null-terminated.
+ */
+void str_int_to_alnum(char *str, int size, unsigned int value);
+unsigned int str_alnum_to_int(char *str);
+
 /* Dump formatted string into a buffer with a specific size. Its size is then
  * decreased, and the buffer is advanced to the end of the dumped string.
  * This function is useful for being used in other functions that dump
