@@ -110,7 +110,7 @@ void x86_isa_fadd_m32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
-		"fld %3\n\t"
+		"flds %3\n\t"
 		"faddp %%st(0), %%st(1)\n\t"
 		"fnstsw %%ax\n\t"
 		"fstpt %0\n\t"
@@ -596,7 +596,7 @@ void x86_isa_fdiv_m32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
-		"fld %3\n\t"
+		"flds %3\n\t"
 		"fdivrp %%st(0), %%st(1)\n\t"
 		"fnstsw %%ax\n\t"
 		"fstpt %0\n\t"
@@ -722,7 +722,7 @@ void x86_isa_fdivr_m32_impl(struct x86_ctx_t *ctx)
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
-		"fld %2\n\t"
+		"flds %2\n\t"
 		"fldt %3\n\t"
 		"fdivrp %%st(0), %%st(1)\n\t"
 		"fnstsw %%ax\n\t"
@@ -1221,7 +1221,7 @@ void x86_isa_fmul_m32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
-		"fld %3\n\t"
+		"flds %3\n\t"
 		"fmulp %%st(0), %%st(1)\n\t"
 		"fnstsw %%ax\n\t"
 		"fstpt %0\n\t"
@@ -1712,7 +1712,7 @@ void x86_isa_fsub_m32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
-		"fld %3\n\t"
+		"flds %3\n\t"
 		"fsubrp %%st(0), %%st(1)\n\t"
 		"fnstsw %%ax\n\t"
 		"fstpt %0\n\t"
@@ -1838,7 +1838,7 @@ void x86_isa_fsubr_m32_impl(struct x86_ctx_t *ctx)
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
-		"fld %2\n\t"
+		"flds %2\n\t"
 		"fldt %3\n\t"
 		"fsubrp %%st(0), %%st(1)\n\t"
 		"fnstsw %%ax\n\t"
