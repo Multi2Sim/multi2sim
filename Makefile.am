@@ -31,7 +31,6 @@ EXTRA_DIST = \
 	samples/arm/test-sort \
 	samples/arm/test-args \
 	samples/fermi/vectorAdd/vectorAdd \
-	samples/fermi/vectorAdd/vectorAdd.cu \
 	samples/fermi/vectorAdd/vectorAdd.cubin \
 	samples/mips/test-sort.c \
 	samples/mips/test-args.c \
