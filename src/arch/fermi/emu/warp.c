@@ -28,8 +28,8 @@
 #include <lib/util/misc.h>
 
 #include "emu.h"
-#include "isa.h"
 #include "grid.h"
+#include "isa.h"
 #include "machine.h"
 #include "thread.h"
 #include "thread-block.h"
@@ -48,7 +48,7 @@ static int frm_warp_divergence_compare(const void *elem1, const void *elem2)
 {
 	const int count1 = * (const int *) elem1;
 	const int count2 = * (const int *) elem2;
-	
+
 	if (count1 < count2)
 		return 1;
 	else if (count1 > count2)
@@ -98,7 +98,7 @@ static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
 	/* Sort divergence groups as per size */
 	list_sort(list, frm_warp_divergence_compare);
 	fprintf(f, "DivergenceGroups = %d\n", list_count(list));
-	
+
 	/* Dump size of groups with */
 	fprintf(f, "DivergenceGroupsSize =");
 	for (i = 0; i < list_count(list); i++)
@@ -117,10 +117,14 @@ static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
 		for (j = 0; j < warp->thread_count; j++)
 		{
 			int first, last;
-			first = warp->threads[j]->branch_digest == elem->branch_digest &&
-				(j == 0 || warp->threads[j - 1]->branch_digest != elem->branch_digest);
-			last = warp->threads[j]->branch_digest == elem->branch_digest &&
-				(j == warp->thread_count - 1 || warp->threads[j + 1]->branch_digest != elem->branch_digest);
+			first = warp->threads[j]->branch_digest ==
+				elem->branch_digest &&
+				(j == 0 || warp->threads[j - 1]->branch_digest
+				 != elem->branch_digest);
+			last = warp->threads[j]->branch_digest ==
+				elem->branch_digest &&
+				(j == warp->thread_count - 1 || warp->threads[j
+				 + 1]->branch_digest != elem->branch_digest);
 			if (first)
 				fprintf(f, " %d", j);
 			else if (last)
@@ -150,7 +154,8 @@ struct frm_warp_t *frm_warp_create()
 
 	/* Initialize */
 	warp = xcalloc(1, sizeof(struct frm_warp_t));
-	warp->active_stack = bit_map_create(FRM_MAX_STACK_SIZE * frm_emu_warp_size);
+	warp->active_stack = bit_map_create(FRM_MAX_STACK_SIZE *
+			frm_emu_warp_size);
 	warp->pred = bit_map_create(frm_emu_warp_size);
 	/* FIXME: Remove once loop state is part of stack */
 	warp->loop_depth = 0;
@@ -171,25 +176,29 @@ void frm_warp_free(struct frm_warp_t *warp)
 
 void frm_warp_dump(struct frm_warp_t *warp, FILE *f)
 {
-	struct frm_grid_t *grid = warp->grid;
-	struct frm_thread_block_t *thread_block = warp->thread_block;
+	struct frm_grid_t *grid;
+	struct frm_thread_block_t *thread_block;
+
+	grid = warp->grid;
+	thread_block = warp->thread_block;
 
 	if (!f)
 		return;
-	
+
 	/* Dump warp statistics in GPU report */
-	fprintf(f, "[ NDRange[%d].Wavefront[%d] ]\n\n", grid->id, warp->id);
+	fprintf(f, "[ Grid[%d].Warp[%d] ]\n\n", grid->id, warp->id);
 
 	fprintf(f, "Name = %s\n", warp->name);
-	fprintf(f, "WorkGroup = %d\n", thread_block->id);
-	fprintf(f, "WorkItemFirst = %d\n", warp->thread_id_first);
-	fprintf(f, "WorkItemLast = %d\n", warp->thread_id_last);
-	fprintf(f, "WorkItemCount = %d\n", warp->thread_count);
+	fprintf(f, "ThreadBlock = %d\n", thread_block->id);
+	fprintf(f, "ThreadFirst = %d\n", warp->thread_id_first);
+	fprintf(f, "ThreadLast = %d\n", warp->thread_id_last);
+	fprintf(f, "ThreadCount = %d\n", warp->thread_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "Inst_Count = %lld\n", warp->inst_count);
-	fprintf(f, "Global_Mem_Inst_Count = %lld\n", warp->global_mem_inst_count);
-	fprintf(f, "Local_Mem_Inst_Count = %lld\n", warp->local_mem_inst_count);
+	fprintf(f, "InstCount = %lld\n", warp->inst_count);
+	fprintf(f, "GlobalMemInstCount = %lld\n",
+			warp->global_mem_inst_count);
+	fprintf(f, "LocalMemInstCount = %lld\n", warp->local_mem_inst_count);
 	fprintf(f, "\n");
 
 	frm_warp_divergence_dump(warp, f);
@@ -203,8 +212,8 @@ void frm_warp_stack_push(struct frm_warp_t *warp)
 	warp->stack_top++;
 	warp->active_mask_push++;
 	bit_map_copy(warp->active_stack, warp->stack_top * warp->thread_count,
-		warp->active_stack, (warp->stack_top - 1) * warp->thread_count,
-		warp->thread_count);
+			warp->active_stack, (warp->stack_top - 1) *
+			warp->thread_count, warp->thread_count);
 }
 
 
@@ -221,16 +230,18 @@ void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
 /* Execute one instruction in the warp */
 void frm_warp_execute(struct frm_warp_t *warp)
 {
-	struct arch_t *arch = frm_emu->arch;
+	struct arch_t *arch;
 
+	struct frm_grid_t *grid;
 	struct frm_thread_block_t *thread_block;
 	struct frm_thread_t *thread;
 	struct frm_inst_t *inst;
-	
-	struct frm_grid_t *grid = warp->grid;
 
-	/* Get current work-group */
-	warp = warp;
+	int thread_id;
+
+	/* Get current arch, grid, and thread-block */
+	arch = frm_emu->arch;
+	grid = warp->grid;
 	thread_block = warp->thread_block;
 	thread = NULL;
 	inst = NULL;
@@ -247,73 +258,59 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	warp->active_mask_pop = 0;
 	warp->inst_size = 8;
 
-	int thread_id;
+	/* Get instruction */
+	inst = &warp->inst;
+	((inst->dword).word)[0] = 
+		((warp->inst_buffer)[warp->pc / warp->inst_size]) >> 32;
+	((inst->dword).word)[1] = 
+		(warp->inst_buffer)[warp->pc / warp->inst_size];
+	frm_isa_debug("warp[%d] executes instruction 0x%0llx\n", warp->id,
+			inst->dword.dword);
 
 	/* Decode instruction */
+	frm_inst_decode(inst);
 
-//	int byte_index;
-	static int buf = 0;
-
-	inst = &(warp->inst);
-	inst->dword.dword = 
-		((warp->inst_buffer)[buf] << 32) | 
-		((warp->inst_buffer)[buf] >> 32);
-	//frm_isa_debug("Instruction Hex: ");
-//	for (byte_index = 7; byte_index >= 0; --byte_index)
-//	{
-//		//frm_isa_debug("%02x", *((unsigned char*)(warp->buf)+byte_index));
-//		inst->dword.bytes[byte_index] = 
-//			(unsigned char)(((warp->inst_buffer)[buf]) >>
-//(byte_index*8));
-//	}
-	//frm_isa_debug("\n");
-
-        FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
-        {
-                thread = grid->threads[thread_id];
-		frm_inst_decode(inst);
-        	(*frm_isa_inst_func[inst->info->inst])(thread, inst);
-        }
-
-	++buf;
-
-	/* Stats */
-	arch->inst_count++;
-	warp->emu_inst_count++;
-	warp->inst_count++;
+	/* Execute instruction */
+	FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
 	{
-		warp->global_mem_inst_count++;
+		thread = grid->threads[thread_id];
+		(*frm_isa_inst_func[inst->info->inst])(thread, inst);
 	}
-
 
 	if (warp->finished)
 	{
 		/* Check if warp finished kernel execution */
 		assert(DOUBLE_LINKED_LIST_MEMBER(thread_block, running, warp));
-		assert(!DOUBLE_LINKED_LIST_MEMBER(thread_block, finished, warp));
+		assert(!DOUBLE_LINKED_LIST_MEMBER(thread_block, finished,
+					warp));
 		DOUBLE_LINKED_LIST_REMOVE(thread_block, running, warp);
 		DOUBLE_LINKED_LIST_INSERT_TAIL(thread_block, finished, warp);
 
-		/* Check if work-group finished kernel execution */
-		if (thread_block->finished_list_count == thread_block->warp_count)
+		/* Check if thread block finished kernel execution */
+		if (thread_block->finished_list_count ==
+				thread_block->warp_count)
 		{
-			assert(DOUBLE_LINKED_LIST_MEMBER(grid, running, thread_block));
-			assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished, thread_block));
-			frm_thread_block_clear_status(thread_block, frm_thread_block_running);
-			frm_thread_block_set_status(thread_block, frm_thread_block_finished);
+			assert(DOUBLE_LINKED_LIST_MEMBER(grid, running,
+						thread_block));
+			assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished,
+						thread_block));
+			frm_thread_block_clear_status(thread_block,
+					frm_thread_block_running);
+			frm_thread_block_set_status(thread_block,
+					frm_thread_block_finished);
 
-			/* Check if ND-Range finished kernel execution */
+			/* Check if grid finished kernel execution */
 			if (grid->finished_list_count == 
-				grid->thread_block_count)
+					grid->thread_block_count)
 			{
 				assert(DOUBLE_LINKED_LIST_MEMBER(frm_emu, 
-					running_grid, grid));
+							running_grid, grid));
 				assert(!DOUBLE_LINKED_LIST_MEMBER(frm_emu, 
-					finished_grid, grid));
+							finished_grid, grid));
 				frm_grid_clear_status(grid, 
-					frm_grid_running);
+						frm_grid_running);
 				frm_grid_set_status(grid, 
-					frm_grid_finished);
+						frm_grid_finished);
 			}
 
 		}
@@ -321,5 +318,10 @@ void frm_warp_execute(struct frm_warp_t *warp)
 
 	/* Increment the PC */
 	warp->pc += warp->inst_size;
+
+	/* Stats */
+	arch->inst_count++;
+	warp->emu_inst_count++;
+	warp->inst_count++;
 }
 

@@ -57,7 +57,7 @@ char *cuda_rt_err_native =
 
 
 /*
- * Internal Functions
+ * Private Functions
  */
 
 unsigned char get_uchar(const unsigned long long int *rodata, int index)
@@ -123,6 +123,8 @@ void **__cudaRegisterFatBinary(void *fatCubin)
 	fatCubinHandle = (struct __fatDeviceText **)xcalloc(1, sizeof(struct __fatDeviceText *));
 	*fatCubinHandle = fatCubin;
 
+	cuda_debug_print(stdout, "\treturn\n");
+
 	return (void **)fatCubinHandle;
 }
 
@@ -132,6 +134,8 @@ void __cudaUnregisterFatBinary(void **fatCubinHandle)
 
 	if (fatCubinHandle != NULL)
 		free(fatCubinHandle);
+
+	cuda_debug_print(stdout, "\treturn\n");
 }
 
 void __cudaRegisterVar(void **fatCubinHandle,
