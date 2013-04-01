@@ -55,6 +55,7 @@ struct frm_warp_t
 
 	/* Starting/current position in buffer */
 	unsigned long long int *inst_buffer;
+	unsigned int inst_buffer_index;
 	unsigned int inst_buffer_size;
 
 	/* Active mask stack */
