@@ -636,7 +636,7 @@ double x86_isa_extended_to_double(unsigned char *e)
 
 void x86_isa_float_to_extended(float f, unsigned char *e)
 {
-	asm volatile ("fld %1; fstpt %0\n\t"
+	asm volatile ("flds %1; fstpt %0\n\t"
 			: "=m" (*e) : "m" (f));
 }
 
@@ -644,7 +644,7 @@ void x86_isa_float_to_extended(float f, unsigned char *e)
 float x86_isa_extended_to_float(unsigned char *e)
 {
 	float f;
-	asm volatile ("fldt %1; fstp %0\n\t"
+	asm volatile ("fldt %1; fstps %0\n\t"
 			: "=m" (f) : "m" (*e));
 	return f;
 }
