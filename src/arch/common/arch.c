@@ -89,8 +89,8 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 	inst_per_sec = time_in_sec > 0.0 ? (double) arch->inst_count / time_in_sec : 0.0;
 	fprintf(f, "[ %s ]\n", arch->name);
 	fprintf(f, "Time = %.2f\n", time_in_sec);
-	fprintf(f, "EmulatedInstructions = %lld\n", arch->inst_count);
-	fprintf(f, "EmulatedInstructionsPerSecond = %.0f\n", inst_per_sec);
+	fprintf(f, "Instructions = %lld\n", arch->inst_count);
+	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 
 	/* Architecture-specific emulation statistics */
 	arch->emu_dump_summary_func(f);

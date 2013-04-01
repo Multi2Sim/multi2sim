@@ -64,6 +64,7 @@
 #include <mem-system/mem-system.h>
 #include <mem-system/mmu.h>
 #include <network/net-system.h>
+#include <sys/time.h>
 #include <visual/common/visual.h>
 
 
@@ -122,6 +123,7 @@ static char *net_debug_file_name = "";
 
 static long long m2s_max_time;  /* Max. simulation time in seconds (0 = no limit) */
 static long long m2s_loop_iter;  /* Number of iterations in main simulation loop */
+static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric digits) */
 
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
@@ -1539,19 +1541,42 @@ void m2s_signal_process(void)
 	{
 
 	case SIGINT:
-
+	{
 		/* Second time signal was received, abort. */
 		if (esim_finish)
 			abort();
 
 		/* Try to normally finish simulation */
 		esim_finish = esim_finish_signal;
-		fprintf(stderr, "SIGINT received\n");
+		fprintf(stderr, "\n; SIGINT received\n");
 		break;
+	}
 
 	case SIGUSR1:
+	{
+		long long time_in_dsec;
+		char file_name[MAX_STRING_SIZE];
+		FILE *f;
 
+		/* Report file name */
+		time_in_dsec = (double) esim_real_time() / 1.0e4;
+		snprintf(file_name, sizeof file_name, "m2s-%s-%lld", m2s_sim_id, time_in_dsec);
+		fprintf(stderr, "\n; SIGUSR1 received - dumping report in '%s'\n",
+				file_name);
+
+		/* Create report file */
+		f = fopen(file_name, "wt");
+		if (!f)
+		{
+			fprintf(stderr, "; Failed to write on '%s'\n", file_name);
+			break;
+		}
+
+		/* Dump report and close */
+		m2s_dump_summary(f);
+		fclose(f);
 		break;
+	}
 
 	default:
 
@@ -1610,15 +1635,35 @@ void m2s_loop(void)
 }
 
 
-int main(int argc, char **argv)
+static void m2s_init(void)
 {
+	struct timeval tv;
+	unsigned int min_id;
+	unsigned int max_id;
+	unsigned int id;
+
+	/* Compute simulation ID */
+	gettimeofday(&tv, NULL);
+	min_id = str_alnum_to_int("10000");
+	max_id = str_alnum_to_int("ZZZZZ");
+	id = tv.tv_usec % (max_id - min_id + 1) + min_id;
+	str_int_to_alnum(m2s_sim_id, sizeof m2s_sim_id, id);
+
 	/* Initial information */
 	fprintf(stderr, "\n");
-	fprintf(stderr, "; Multi2Sim %s - A Simulation Framework for CPU-GPU Heterogeneous Computing\n",
-		VERSION);
+	fprintf(stderr, "; Multi2Sim %s - ", VERSION);
+	fprintf(stderr, "A Simulation Framework for CPU-GPU Heterogeneous Computing\n");
 	fprintf(stderr, "; Please use command 'm2s --help' for a list of command-line options.\n");
-	fprintf(stderr, "; Last compilation: %s %s\n", __DATE__, __TIME__);
+	fprintf(stderr, "; Simulation alpha-numeric ID: %s\n", m2s_sim_id);
 	fprintf(stderr, "\n");
+
+}
+
+
+int main(int argc, char **argv)
+{
+	/* Global initialization and welcome message */
+	m2s_init();
 
 	/* Read command line */
 	m2s_read_command_line(&argc, argv);
