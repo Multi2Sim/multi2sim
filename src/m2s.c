@@ -1401,7 +1401,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 }
 
 
-void m2s_load_programs(int argc, char **argv)
+static void m2s_load_programs(int argc, char **argv)
 {
 	struct config_t *config;
 
@@ -1480,7 +1480,7 @@ void m2s_load_programs(int argc, char **argv)
 }
 
 
-void m2s_dump_summary(FILE *f)
+static void m2s_dump_summary(FILE *f)
 {
 	double time_in_sec;
 
@@ -1516,7 +1516,7 @@ void m2s_dump_summary(FILE *f)
 
 
 /* Signal handler while functional simulation loop is running */
-void m2s_signal_handler(int signum)
+static void m2s_signal_handler(int signum)
 {
 	/* If a signal SIGINT has been caught already and not processed, it is
 	 * time to not defer it anymore. Execution ends here. */
@@ -1534,7 +1534,7 @@ void m2s_signal_handler(int signum)
 }
 
 
-void m2s_signal_process(void)
+static void m2s_signal_process(void)
 {
 	/* Process signal */
 	switch (m2s_signal_received)
@@ -1589,7 +1589,32 @@ void m2s_signal_process(void)
 }
 
 
-void m2s_loop(void)
+static void m2s_init(void)
+{
+	struct timeval tv;
+	unsigned int min_id;
+	unsigned int max_id;
+	unsigned int id;
+
+	/* Compute simulation ID */
+	gettimeofday(&tv, NULL);
+	min_id = str_alnum_to_int("10000");
+	max_id = str_alnum_to_int("ZZZZZ");
+	id = (tv.tv_sec * 1000000000 + tv.tv_usec) % (max_id - min_id + 1) + min_id;
+	str_int_to_alnum(m2s_sim_id, sizeof m2s_sim_id, id);
+
+	/* Initial information */
+	fprintf(stderr, "\n");
+	fprintf(stderr, "; Multi2Sim %s - ", VERSION);
+	fprintf(stderr, "A Simulation Framework for CPU-GPU Heterogeneous Computing\n");
+	fprintf(stderr, "; Please use command 'm2s --help' for a list of command-line options.\n");
+	fprintf(stderr, "; Simulation alpha-numeric ID: %s\n", m2s_sim_id);
+	fprintf(stderr, "\n");
+
+}
+
+
+static void m2s_loop(void)
 {
 	enum arch_sim_kind_t sim_kind;
 
@@ -1632,31 +1657,6 @@ void m2s_loop(void)
 	signal(SIGABRT, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
 	signal(SIGUSR1, SIG_DFL);
-}
-
-
-static void m2s_init(void)
-{
-	struct timeval tv;
-	unsigned int min_id;
-	unsigned int max_id;
-	unsigned int id;
-
-	/* Compute simulation ID */
-	gettimeofday(&tv, NULL);
-	min_id = str_alnum_to_int("10000");
-	max_id = str_alnum_to_int("ZZZZZ");
-	id = tv.tv_usec % (max_id - min_id + 1) + min_id;
-	str_int_to_alnum(m2s_sim_id, sizeof m2s_sim_id, id);
-
-	/* Initial information */
-	fprintf(stderr, "\n");
-	fprintf(stderr, "; Multi2Sim %s - ", VERSION);
-	fprintf(stderr, "A Simulation Framework for CPU-GPU Heterogeneous Computing\n");
-	fprintf(stderr, "; Please use command 'm2s --help' for a list of command-line options.\n");
-	fprintf(stderr, "; Simulation alpha-numeric ID: %s\n", m2s_sim_id);
-	fprintf(stderr, "\n");
-
 }
 
 
