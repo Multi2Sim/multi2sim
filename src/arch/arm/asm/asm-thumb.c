@@ -831,8 +831,8 @@ void arm_thumb16_inst_decode(struct arm_thumb16_inst_t *inst)
 				current_table_high = current_table[thumb16_table_arg].next_table_high;
 				current_table_low = current_table[thumb16_table_arg].next_table_low;
 				current_table = current_table[thumb16_table_arg].next_table;
-				thumb16_table_arg = BITS16(*(unsigned short*)inst->dword.bytes, current_table_high, current_table_low);
-				loop_iteration++;
+	//			thumb16_table_arg = BITS16(*(unsigned short*)inst->dword.bytes, current_table_high, current_table_low);
+	//			loop_iteration++;
 			}
 			else if (loop_iteration > 6) {
 				fatal("Can not find the correct table containing the instruction\n");
