@@ -75,6 +75,7 @@
 					((unsigned long long) (X)) & ((1ULL << (B)) - 1))
 
 /* Extract bits from HI to LO from X */
+#define BITS16(X, HI, LO)	((((uint16_t)(X))>>(LO))&((1U<<((HI)-(LO)+1))-1))
 #define BITS32(X, HI, LO)	((((uint32_t)(X))>>(LO))&((1U<<((HI)-(LO)+1))-1))
 #define BITS64(X, HI, LO)	((((uint64_t)(X))>>(LO))&((1ULL<<((HI)-(LO)+1ULL))-1ULL))
 
