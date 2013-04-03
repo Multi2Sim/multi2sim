@@ -33,7 +33,6 @@
 #include "emu.h"
 #include "syscall.h"
 
-
 /*
  * Global variables
  */
@@ -117,6 +116,7 @@ void arm_emu_done(void)
 
 	/* End */
 	/*arm_isa_done();*/
+	arm_disasm_done();
 	arm_sys_done();
 }
 
