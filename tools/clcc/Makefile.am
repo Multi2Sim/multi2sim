@@ -3,7 +3,11 @@ if HAVE_OPENCL
 bin_PROGRAMS = $(top_builddir)/bin/m2s-clcc
 
 __top_builddir__bin_m2s_clcc_SOURCES = \
-	clcc.c
+	amd.c \
+	amd.h \
+	\
+	clcc.c \
+	clcc.h
 
 INCLUDES = @M2S_INCLUDES@
 
