@@ -27,7 +27,440 @@
 
 /* Hard-coded instructions */
 
+void arm_thumb32_disasm_init()
+{
+	int i;
 
+	/* Allocate Memory */
+	arm_thumb32_asm_table			= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv1_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv2_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv3_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv4_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv5_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv6_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv7_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv8_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv9_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv10_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv11_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv12_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv13_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv14_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_lv15_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_asm_ldst_mul_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_ldst_mul1_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_ldst_mul2_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_ldst_mul3_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_ldst_mul4_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_ldst_mul5_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_ldst_mul6_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_asm_ldst_dual_table		= xcalloc(32, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_ldst1_dual_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_ldst2_dual_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_asm_ldst3_dual_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_dproc_shft_reg_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_shft_reg1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_shft_reg2_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_shft_reg3_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_shft_reg4_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_shft_reg5_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_shft_reg6_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_dproc_imm_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_imm1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_imm2_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_imm3_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_imm4_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_imm5_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_imm6_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_dproc_reg_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_reg1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_reg2_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_reg3_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_reg4_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_reg5_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_reg6_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_reg7_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_dproc_misc_table	= xcalloc(8, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_misc1_table	= xcalloc(8, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_dproc_bin_imm_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_bin_imm1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_bin_imm2_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_bin_imm3_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_brnch_ctrl_table	= xcalloc(4, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_st_single_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_st_single1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_st_single2_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_st_single3_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_st_single4_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_st_single5_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_st_single6_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_ld_byte_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_ld_byte1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_ld_byte2_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_ld_byte3_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_ld_byte4_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_ld_byte5_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_ld_byte6_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_ld_hfword_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_ld_hfword1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_ld_hfword2_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_ld_word_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_ld_word1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_mult_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_mult1_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	arm_thumb32_mult_long_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+	/* Load store Multiple tables */
+	arm_thumb32_asm_table[1].next_table 		=  arm_thumb32_asm_lv1_table;
+	arm_thumb32_asm_table[1].next_table_high 	= 26;
+	arm_thumb32_asm_table[1].next_table_low		= 26;
+
+	arm_thumb32_asm_lv1_table[0].next_table		= arm_thumb32_asm_lv2_table;
+	arm_thumb32_asm_lv1_table[0].next_table_high	= 25;
+	arm_thumb32_asm_lv1_table[0].next_table_low	= 25;
+
+	arm_thumb32_asm_lv2_table[0].next_table		= arm_thumb32_asm_lv3_table;
+	arm_thumb32_asm_lv2_table[0].next_table_high	= 22;
+	arm_thumb32_asm_lv2_table[0].next_table_low	= 22;
+
+	arm_thumb32_asm_lv3_table[0].next_table		= arm_thumb32_asm_ldst_mul_table;
+	arm_thumb32_asm_lv3_table[0].next_table_high	= 24;
+	arm_thumb32_asm_lv3_table[0].next_table_low	= 23;
+
+	arm_thumb32_asm_ldst_mul_table[1].next_table 		= arm_thumb32_asm_ldst_mul1_table;
+	arm_thumb32_asm_ldst_mul_table[1].next_table_high 	= 20;
+	arm_thumb32_asm_ldst_mul_table[1].next_table_low 	= 20;
+
+	arm_thumb32_asm_ldst_mul1_table[1].next_table 		= arm_thumb32_asm_ldst_mul2_table;
+	arm_thumb32_asm_ldst_mul1_table[1].next_table_high 	= 21;
+	arm_thumb32_asm_ldst_mul1_table[1].next_table_low 	= 21;
+
+	arm_thumb32_asm_ldst_mul2_table[1].next_table 		= arm_thumb32_asm_ldst_mul3_table;
+	arm_thumb32_asm_ldst_mul2_table[1].next_table_high 	= 19;
+	arm_thumb32_asm_ldst_mul2_table[1].next_table_low 	= 16;
+
+	arm_thumb32_asm_ldst_mul_table[2].next_table 		= arm_thumb32_asm_ldst_mul4_table;
+	arm_thumb32_asm_ldst_mul_table[2].next_table_high 	= 20;
+	arm_thumb32_asm_ldst_mul_table[2].next_table_low 	= 20;
+
+	arm_thumb32_asm_ldst_mul4_table[0].next_table 		= arm_thumb32_asm_ldst_mul5_table;
+	arm_thumb32_asm_ldst_mul4_table[0].next_table_high 	= 21;
+	arm_thumb32_asm_ldst_mul4_table[0].next_table_low 	= 21;
+
+	arm_thumb32_asm_ldst_mul5_table[1].next_table 		= arm_thumb32_asm_ldst_mul6_table;
+	arm_thumb32_asm_ldst_mul5_table[1].next_table_high 	= 19;
+	arm_thumb32_asm_ldst_mul5_table[1].next_table_low 	= 16;
+
+	/* Load store Dual tables */
+	arm_thumb32_asm_lv3_table[1].next_table		= arm_thumb32_asm_ldst_dual_table;
+	arm_thumb32_asm_lv3_table[1].next_table_high	= 24;
+	arm_thumb32_asm_lv3_table[1].next_table_low	= 20;
+
+	arm_thumb32_asm_ldst_dual_table[(0x07)].next_table	 = arm_thumb32_asm_ldst1_dual_table;
+	arm_thumb32_asm_ldst_dual_table[(0x07)].next_table_high	 = 19;
+	arm_thumb32_asm_ldst_dual_table[(0x07)].next_table_low	 = 16;
+
+	arm_thumb32_asm_ldst_dual_table[(0x08)].next_table	 = arm_thumb32_asm_ldst2_dual_table;
+	arm_thumb32_asm_ldst_dual_table[(0x08)].next_table_high	 = 19;
+	arm_thumb32_asm_ldst_dual_table[(0x08)].next_table_low	 = 16;
+
+	arm_thumb32_asm_ldst_dual_table[(0x0d)].next_table	 = arm_thumb32_asm_ldst3_dual_table;
+	arm_thumb32_asm_ldst_dual_table[(0x0d)].next_table_high	 = 7;
+	arm_thumb32_asm_ldst_dual_table[(0x0d)].next_table_low	 = 4;
+
+	/* Data Processing Shifted Reg Tables */
+	arm_thumb32_asm_lv2_table[1].next_table 	= arm_thumb32_dproc_shft_reg_table;
+	arm_thumb32_asm_lv2_table[1].next_table_high	= 24;
+	arm_thumb32_asm_lv2_table[1].next_table_low 	= 21;
+
+	arm_thumb32_dproc_shft_reg_table[0].next_table  	= arm_thumb32_dproc_shft_reg1_table;
+	arm_thumb32_dproc_shft_reg_table[0].next_table_high 	= 11;
+	arm_thumb32_dproc_shft_reg_table[0].next_table_low 	= 8;
+
+	arm_thumb32_dproc_shft_reg_table[2].next_table  	= arm_thumb32_dproc_shft_reg2_table;
+	arm_thumb32_dproc_shft_reg_table[2].next_table_high 	= 19;
+	arm_thumb32_dproc_shft_reg_table[2].next_table_low 	= 16;
+
+	arm_thumb32_dproc_shft_reg_table[3].next_table  	= arm_thumb32_dproc_shft_reg3_table;
+	arm_thumb32_dproc_shft_reg_table[3].next_table_high 	= 19;
+	arm_thumb32_dproc_shft_reg_table[3].next_table_low 	= 16;
+
+	arm_thumb32_dproc_shft_reg_table[4].next_table  	= arm_thumb32_dproc_shft_reg4_table;
+	arm_thumb32_dproc_shft_reg_table[4].next_table_high 	= 11;
+	arm_thumb32_dproc_shft_reg_table[4].next_table_low 	= 8;
+
+	arm_thumb32_dproc_shft_reg_table[8].next_table  	= arm_thumb32_dproc_shft_reg5_table;
+	arm_thumb32_dproc_shft_reg_table[8].next_table_high 	= 11;
+	arm_thumb32_dproc_shft_reg_table[8].next_table_low 	= 8;
+
+	arm_thumb32_dproc_shft_reg_table[(0xd)].next_table  		= arm_thumb32_dproc_shft_reg6_table;
+	arm_thumb32_dproc_shft_reg_table[(0xd)].next_table_high 	= 11;
+	arm_thumb32_dproc_shft_reg_table[(0xd)].next_table_low 		= 8;
+
+	/* Data Processing Immediate Tables */
+	arm_thumb32_asm_table[2].next_table 		= arm_thumb32_asm_lv4_table;
+	arm_thumb32_asm_table[2].next_table_high 	= 15;
+	arm_thumb32_asm_table[2].next_table_low 	= 15;
+
+	arm_thumb32_asm_lv4_table[0].next_table 	= arm_thumb32_asm_lv5_table;
+	arm_thumb32_asm_lv4_table[0].next_table_high 	= 24;
+	arm_thumb32_asm_lv4_table[0].next_table_low 	= 21;
+
+	arm_thumb32_asm_lv5_table[0].next_table 	= arm_thumb32_dproc_imm_table;
+	arm_thumb32_asm_lv5_table[0].next_table_high 	= 24;
+	arm_thumb32_asm_lv5_table[0].next_table_low 	= 21;
+
+	arm_thumb32_dproc_imm_table[0].next_table  	= arm_thumb32_dproc_imm1_table;
+	arm_thumb32_dproc_imm_table[0].next_table_high 	= 11;
+	arm_thumb32_dproc_imm_table[0].next_table_low 	= 8;
+
+	arm_thumb32_dproc_imm_table[2].next_table  	= arm_thumb32_dproc_imm2_table;
+	arm_thumb32_dproc_imm_table[2].next_table_high 	= 19;
+	arm_thumb32_dproc_imm_table[2].next_table_low 	= 16;
+
+	arm_thumb32_dproc_imm_table[3].next_table  	= arm_thumb32_dproc_imm3_table;
+	arm_thumb32_dproc_imm_table[3].next_table_high 	= 19;
+	arm_thumb32_dproc_imm_table[3].next_table_low 	= 16;
+
+	arm_thumb32_dproc_imm_table[4].next_table  	= arm_thumb32_dproc_imm4_table;
+	arm_thumb32_dproc_imm_table[4].next_table_high 	= 11;
+	arm_thumb32_dproc_imm_table[4].next_table_low 	= 8;
+
+	arm_thumb32_dproc_imm_table[8].next_table  	= arm_thumb32_dproc_imm5_table;
+	arm_thumb32_dproc_imm_table[8].next_table_high 	= 11;
+	arm_thumb32_dproc_imm_table[8].next_table_low 	= 8;
+
+	arm_thumb32_dproc_imm_table[(0xd)].next_table  		= arm_thumb32_dproc_imm6_table;
+	arm_thumb32_dproc_imm_table[(0xd)].next_table_high 	= 11;
+	arm_thumb32_dproc_imm_table[(0xd)].next_table_low 	= 8;
+
+
+	/* Data Processing Plain Binary Immediate Tables */
+	arm_thumb32_asm_lv5_table[1].next_table 	= arm_thumb32_dproc_bin_imm_table;
+	arm_thumb32_asm_lv5_table[1].next_table_high 	= 24;
+	arm_thumb32_asm_lv5_table[1].next_table_low 	= 20;
+
+	arm_thumb32_dproc_bin_imm_table[0].next_table 		= arm_thumb32_dproc_bin_imm1_table;
+	arm_thumb32_dproc_bin_imm_table[0].next_table_high 	= 19;
+	arm_thumb32_dproc_bin_imm_table[0].next_table_low 	= 16;
+
+	arm_thumb32_dproc_bin_imm_table[(0x0a)].next_table 	= arm_thumb32_dproc_bin_imm2_table;
+	arm_thumb32_dproc_bin_imm_table[(0x0a)].next_table_high = 19;
+	arm_thumb32_dproc_bin_imm_table[(0x0a)].next_table_low 	= 16;
+
+	arm_thumb32_dproc_bin_imm_table[(0x16)].next_table 	= arm_thumb32_dproc_bin_imm3_table;
+	arm_thumb32_dproc_bin_imm_table[(0x16)].next_table_high = 19;
+	arm_thumb32_dproc_bin_imm_table[(0x16)].next_table_low 	= 16;
+
+	/* Branch_control table */
+	arm_thumb32_asm_lv4_table[1].next_table 	= arm_thumb32_brnch_ctrl_table;
+	arm_thumb32_asm_lv4_table[1].next_table_high 	= 14;
+	arm_thumb32_asm_lv4_table[1].next_table_low 	= 12;
+
+	/* Single Data table */
+	arm_thumb32_asm_table[3].next_table 		= arm_thumb32_asm_lv6_table;
+	arm_thumb32_asm_table[3].next_table_high 	= 26;
+	arm_thumb32_asm_table[3].next_table_low 	= 26;
+
+	arm_thumb32_asm_lv6_table[0].next_table 	= arm_thumb32_asm_lv7_table;
+	arm_thumb32_asm_lv6_table[0].next_table_high 	= 25;
+	arm_thumb32_asm_lv6_table[0].next_table_low 	= 24;
+
+	arm_thumb32_asm_lv7_table[0].next_table 	= arm_thumb32_asm_lv8_table;
+	arm_thumb32_asm_lv7_table[0].next_table_high 	= 22;
+	arm_thumb32_asm_lv7_table[0].next_table_low 	= 20;
+
+	for(i = 0; i < 8; i++)
+	{
+		if(!(i % 2))
+		{
+			arm_thumb32_asm_lv8_table[i].next_table 	= arm_thumb32_st_single_table;
+			arm_thumb32_asm_lv8_table[i].next_table_high 	= 23;
+			arm_thumb32_asm_lv8_table[i].next_table_low 	= 21;
+		}
+	}
+
+	arm_thumb32_st_single_table[0].next_table 	= arm_thumb32_st_single1_table;
+	arm_thumb32_st_single_table[0].next_table_high 	= 11;
+	arm_thumb32_st_single_table[0].next_table_low 	= 11;
+
+	arm_thumb32_st_single1_table[1].next_table 	= arm_thumb32_st_single2_table;
+	arm_thumb32_st_single1_table[1].next_table_high	= 8;
+	arm_thumb32_st_single1_table[1].next_table_low 	= 8;
+
+	arm_thumb32_st_single_table[1].next_table 	= arm_thumb32_st_single3_table;
+	arm_thumb32_st_single_table[1].next_table_high 	= 11;
+	arm_thumb32_st_single_table[1].next_table_low 	= 11;
+
+	arm_thumb32_st_single3_table[1].next_table 	= arm_thumb32_st_single4_table;
+	arm_thumb32_st_single3_table[1].next_table_high	= 8;
+	arm_thumb32_st_single3_table[1].next_table_low 	= 8;
+
+	arm_thumb32_st_single_table[2].next_table 	= arm_thumb32_st_single5_table;
+	arm_thumb32_st_single_table[2].next_table_high 	= 11;
+	arm_thumb32_st_single_table[2].next_table_low 	= 11;
+
+	arm_thumb32_st_single5_table[1].next_table 	= arm_thumb32_st_single6_table;
+	arm_thumb32_st_single5_table[1].next_table_high	= 8;
+	arm_thumb32_st_single5_table[1].next_table_low 	= 8;
+
+	/* Load Byte Table */
+	arm_thumb32_asm_lv7_table[1].next_table 	= arm_thumb32_asm_lv9_table;
+	arm_thumb32_asm_lv7_table[1].next_table_high 	= 22;
+	arm_thumb32_asm_lv7_table[1].next_table_low 	= 20;
+
+	arm_thumb32_asm_lv9_table[1].next_table 	= arm_thumb32_ld_byte_table;
+	arm_thumb32_asm_lv9_table[1].next_table_high 	= 24;
+	arm_thumb32_asm_lv9_table[1].next_table_low 	= 23;
+
+	arm_thumb32_asm_lv8_table[1].next_table 	= arm_thumb32_ld_byte_table;
+	arm_thumb32_asm_lv8_table[1].next_table_high 	= 24;
+	arm_thumb32_asm_lv8_table[1].next_table_low 	= 23;
+
+	arm_thumb32_ld_byte_table[0].next_table 	= arm_thumb32_ld_byte1_table;
+	arm_thumb32_ld_byte_table[0].next_table_high 	= 19;
+	arm_thumb32_ld_byte_table[0].next_table_low 	= 16;
+
+	for(i = 0; i < 15; i++)
+	{
+		arm_thumb32_ld_byte1_table[i].next_table 	= arm_thumb32_ld_byte2_table;
+		arm_thumb32_ld_byte1_table[i].next_table_high 	= 11;
+		arm_thumb32_ld_byte1_table[i].next_table_low 	= 11;
+	}
+
+	arm_thumb32_ld_byte2_table[1].next_table 	= arm_thumb32_ld_byte3_table;
+	arm_thumb32_ld_byte2_table[1].next_table_high 	= 10;
+	arm_thumb32_ld_byte2_table[1].next_table_low 	= 8;
+
+	arm_thumb32_ld_byte_table[2].next_table 	= arm_thumb32_ld_byte4_table;
+	arm_thumb32_ld_byte_table[2].next_table_high 	= 19;
+	arm_thumb32_ld_byte_table[2].next_table_low 	= 16;
+
+	for(i = 0; i < 15; i++)
+	{
+		arm_thumb32_ld_byte4_table[i].next_table 	= arm_thumb32_ld_byte5_table;
+		arm_thumb32_ld_byte4_table[i].next_table_high 	= 11;
+		arm_thumb32_ld_byte4_table[i].next_table_low 	= 11;
+	}
+
+	arm_thumb32_ld_byte5_table[1].next_table 	= arm_thumb32_ld_byte6_table;
+	arm_thumb32_ld_byte5_table[1].next_table_high 	= 10;
+	arm_thumb32_ld_byte5_table[1].next_table_low 	= 8;
+
+	/* Load Halfword Table */
+	arm_thumb32_asm_lv7_table[1].next_table 	= arm_thumb32_asm_lv9_table;
+	arm_thumb32_asm_lv7_table[1].next_table_high 	= 22;
+	arm_thumb32_asm_lv7_table[1].next_table_low 	= 20;
+
+	arm_thumb32_asm_lv9_table[3].next_table 	= arm_thumb32_ld_hfword_table;
+	arm_thumb32_asm_lv9_table[3].next_table_high 	= 24;
+	arm_thumb32_asm_lv9_table[3].next_table_low 	= 23;
+
+	arm_thumb32_asm_lv8_table[3].next_table 	= arm_thumb32_ld_hfword_table;
+	arm_thumb32_asm_lv8_table[3].next_table_high 	= 24;
+	arm_thumb32_asm_lv8_table[3].next_table_low 	= 23;
+
+	arm_thumb32_ld_hfword_table[0].next_table	= arm_thumb32_ld_hfword1_table;
+	arm_thumb32_ld_hfword_table[0].next_table_high 	= 11;
+	arm_thumb32_ld_hfword_table[0].next_table_low	= 11;
+
+	arm_thumb32_ld_hfword_table[2].next_table	= arm_thumb32_ld_hfword2_table;
+	arm_thumb32_ld_hfword_table[2].next_table_high 	= 11;
+	arm_thumb32_ld_hfword_table[2].next_table_low	= 11;
+
+	/* Load Word Table */
+	arm_thumb32_asm_lv7_table[1].next_table 	= arm_thumb32_asm_lv9_table;
+	arm_thumb32_asm_lv7_table[1].next_table_high 	= 22;
+	arm_thumb32_asm_lv7_table[1].next_table_low 	= 20;
+
+	arm_thumb32_asm_lv9_table[5].next_table 	= arm_thumb32_ld_word_table;
+	arm_thumb32_asm_lv9_table[5].next_table_high 	= 24;
+	arm_thumb32_asm_lv9_table[5].next_table_low 	= 23;
+
+	arm_thumb32_asm_lv8_table[5].next_table 	= arm_thumb32_ld_word_table;
+	arm_thumb32_asm_lv8_table[5].next_table_high 	= 24;
+	arm_thumb32_asm_lv8_table[5].next_table_low 	= 23;
+
+	arm_thumb32_ld_word_table[0].next_table		= arm_thumb32_ld_word1_table;
+	arm_thumb32_ld_word_table[0].next_table_high 	= 11;
+	arm_thumb32_ld_word_table[0].next_table_low	= 11;
+
+	/* Data Processing Register Based Table */
+	arm_thumb32_asm_lv7_table[2].next_table 	= arm_thumb32_dproc_reg_table;
+	arm_thumb32_asm_lv7_table[2].next_table_high 	= 23;
+	arm_thumb32_asm_lv7_table[2].next_table_low 	= 20;
+
+	arm_thumb32_dproc_reg_table[0].next_table	= arm_thumb32_dproc_reg1_table;
+	arm_thumb32_dproc_reg_table[0].next_table_high	= 7;
+	arm_thumb32_dproc_reg_table[0].next_table_low	= 7;
+
+	arm_thumb32_dproc_reg_table[1].next_table	= arm_thumb32_dproc_reg2_table;
+	arm_thumb32_dproc_reg_table[1].next_table_high	= 7;
+	arm_thumb32_dproc_reg_table[1].next_table_low	= 7;
+
+	arm_thumb32_dproc_reg2_table[1].next_table	= arm_thumb32_dproc_reg3_table;
+	arm_thumb32_dproc_reg2_table[1].next_table_high	= 19;
+	arm_thumb32_dproc_reg2_table[1].next_table_low	= 16;
+
+	arm_thumb32_dproc_reg_table[2].next_table	= arm_thumb32_dproc_reg4_table;
+	arm_thumb32_dproc_reg_table[2].next_table_high	= 7;
+	arm_thumb32_dproc_reg_table[2].next_table_low	= 7;
+
+	arm_thumb32_dproc_reg_table[3].next_table	= arm_thumb32_dproc_reg5_table;
+	arm_thumb32_dproc_reg_table[3].next_table_high	= 7;
+	arm_thumb32_dproc_reg_table[3].next_table_low	= 7;
+
+	arm_thumb32_dproc_reg_table[4].next_table	= arm_thumb32_dproc_reg6_table;
+	arm_thumb32_dproc_reg_table[4].next_table_high	= 7;
+	arm_thumb32_dproc_reg_table[4].next_table_low	= 7;
+
+	arm_thumb32_dproc_reg_table[5].next_table	= arm_thumb32_dproc_reg7_table;
+	arm_thumb32_dproc_reg_table[5].next_table_high	= 7;
+	arm_thumb32_dproc_reg_table[5].next_table_low	= 7;
+
+	arm_thumb32_dproc_reg_table[8].next_table	= arm_thumb32_dproc_misc_table;
+	arm_thumb32_dproc_reg_table[8].next_table_high	= 7;
+	arm_thumb32_dproc_reg_table[8].next_table_low	= 7;
+
+	arm_thumb32_dproc_misc_table[2].next_table	= arm_thumb32_dproc_misc1_table;
+	arm_thumb32_dproc_misc_table[2].next_table_high	= 21;
+	arm_thumb32_dproc_misc_table[2].next_table_low	= 20;
+
+
+	/* Multiply Tables */
+	arm_thumb32_asm_lv7_table[3].next_table 	= arm_thumb32_asm_lv10_table;
+	arm_thumb32_asm_lv7_table[3].next_table_high 	= 23;
+	arm_thumb32_asm_lv7_table[3].next_table_low 	= 23;
+
+	arm_thumb32_asm_lv10_table[0].next_table 	= arm_thumb32_mult_table;
+	arm_thumb32_asm_lv10_table[0].next_table_high 	= 5;
+	arm_thumb32_asm_lv10_table[0].next_table_low 	= 4;
+
+	arm_thumb32_mult_table[0].next_table 		= arm_thumb32_mult1_table;
+	arm_thumb32_mult_table[0].next_table_high 	= 15;
+	arm_thumb32_mult_table[0].next_table_low 	= 12;
+
+	/* Multiply Long Tables */
+	arm_thumb32_asm_lv10_table[1].next_table 	= arm_thumb32_mult_long_table;
+	arm_thumb32_asm_lv10_table[1].next_table_high 	= 22;
+	arm_thumb32_asm_lv10_table[1].next_table_low 	= 20;
+
+}
 void arm_thumb16_disasm_init()
 {
 	//int op[6];
