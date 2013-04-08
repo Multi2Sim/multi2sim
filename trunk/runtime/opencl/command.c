@@ -148,7 +148,8 @@ static void opencl_command_run_launch_kernel(struct opencl_command_t *command)
 			command->launch_kernel.work_dim,
 			command->launch_kernel.global_work_offset,
 			command->launch_kernel.global_work_size,
-			command->launch_kernel.local_work_size);
+			command->launch_kernel.local_work_size,
+			command->launch_kernel.group_id_offset);
 }
 
 
@@ -368,6 +369,7 @@ struct opencl_command_t *opencl_command_create_launch_kernel(
 		command->launch_kernel.global_work_size[i] = global_work_size[i];
 		command->launch_kernel.local_work_size[i] = local_work_size ?
 				local_work_size[i] : 1;
+		command->launch_kernel.group_id_offset[i] = 0;
 	}
 
 	/* Unused dimensions */
@@ -376,6 +378,7 @@ struct opencl_command_t *opencl_command_create_launch_kernel(
 		command->launch_kernel.global_work_offset[i] = 0;
 		command->launch_kernel.global_work_size[i] = 1;
 		command->launch_kernel.local_work_size[i] = 1;
+		command->launch_kernel.group_id_offset[i] = 0;
 	}
 
 	/* Return */

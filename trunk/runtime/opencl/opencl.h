@@ -209,7 +209,8 @@ typedef void (*opencl_arch_kernel_run_func_t)(
 		int work_dim,
 		unsigned int *global_work_offset,
 		unsigned int *global_work_size,
-		unsigned int *local_work_size);
+		unsigned int *local_work_size,
+		unsigned int *group_id_offset);
 
 
 

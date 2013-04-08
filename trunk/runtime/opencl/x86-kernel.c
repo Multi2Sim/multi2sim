@@ -328,7 +328,8 @@ void opencl_x86_kernel_run(
 	int work_dim,
 	unsigned int *global_work_offset,
 	unsigned int *global_work_size,
-	unsigned int *local_work_size)
+	unsigned int *local_work_size,
+	unsigned int *group_id_offset)
 {
 	int i;
 	int j;
@@ -364,6 +365,10 @@ void opencl_x86_kernel_run(
 	if(!exec->group_starts)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	exec->group_ids = xmalloc(3 * sizeof (size_t) * exec->num_groups);
+	if (!exec->group_ids)
+		fatal("%s: out of memory", __FUNCTION__);
+
 	pthread_mutex_init(&exec->mutex, NULL);
 
 	for (i = 0; i < num_groups[2]; i++)
@@ -378,6 +383,12 @@ void opencl_x86_kernel_run(
 				group_start[0] = exec->local[0] * k + global_work_offset[0];
 				group_start[1] = exec->local[1] * j + global_work_offset[1];
 				group_start[2] = exec->local[2] * i + global_work_offset[2];
+
+				size_t *group_id;
+				group_id = exec->group_ids + 3 * (i * num_groups[1] * num_groups[0] + j * num_groups[0] + k);
+				group_id[0] = k + group_id_offset[0];
+				group_id[1] = j + group_id_offset[1];
+				group_id[2] = i + group_id_offset[2];
 			}
 		}
 	}
@@ -396,6 +407,7 @@ void opencl_x86_kernel_run(
 
 	/* Free the execution context */
 	free(exec->group_starts);
+	free(exec->group_ids);
 	pthread_mutex_destroy(&exec->mutex);
 	free(exec);
 }
