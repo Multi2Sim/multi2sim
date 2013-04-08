@@ -86,6 +86,7 @@ struct opencl_command_t
 			unsigned int global_work_offset[3];
 			unsigned int global_work_size[3];
 			unsigned int local_work_size[3];
+			unsigned int group_id_offset[3];
 		} launch_kernel;
 	};
 };
