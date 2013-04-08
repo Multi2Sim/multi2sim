@@ -150,7 +150,8 @@ void opencl_x86_kernel_run(
 		int work_dim,
 		unsigned int *global_work_offset,
 		unsigned int *global_work_size,
-		unsigned int *local_work_size);
+		unsigned int *local_work_size,
+		unsigned int *group_id_offset);
 
 
 #endif

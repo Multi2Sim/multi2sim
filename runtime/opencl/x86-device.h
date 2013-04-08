@@ -50,6 +50,7 @@ struct opencl_x86_device_exec_t
 	int num_groups;
 	volatile int next_group;
 	size_t *group_starts;
+	size_t *group_ids;
 };
 
 

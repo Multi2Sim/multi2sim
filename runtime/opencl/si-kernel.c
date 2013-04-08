@@ -275,7 +275,8 @@ void opencl_si_kernel_run(
 		int work_dim,
 		unsigned int *global_work_offset,
 		unsigned int *global_work_size,
-		unsigned int *local_work_size)
+		unsigned int *local_work_size,
+		unsigned int *group_id_offset)
 {
 	/* ABI call */
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_kernel_launch, kernel->id,
