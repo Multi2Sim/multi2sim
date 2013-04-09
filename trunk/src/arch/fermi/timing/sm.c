@@ -57,13 +57,12 @@ struct frm_sm_t *frm_sm_create()
 		frm_gpu_lds_latency);
 
 	/* Hardware structures */
-	sm->num_warp_pools = frm_gpu_num_warp_pools;
-	sm->warp_pools = xcalloc(
-		sm->num_warp_pools, 
-		sizeof(struct frm_warp_pool_t*));
-	sm->fetch_buffers = xcalloc(sm->num_warp_pools,
+	sm->warp_pool = xcalloc(
+		1, 
+		sizeof(struct frm_warp_pool_t));
+	sm->fetch_buffers = xcalloc(sm->num_warp_schedulers,
 		sizeof(struct list_t*));
-	sm->simd_units = xcalloc(sm->num_warp_pools, 
+	sm->simd_units = xcalloc(sm->num_simd_units, 
 		sizeof(struct frm_simd_t*));
 
 	sm->scalar_unit.issue_buffer = list_create();
@@ -95,21 +94,21 @@ struct frm_sm_t *frm_sm_create()
 	sm->lds_unit.write_buffer = list_create();
 	sm->lds_unit.sm = sm;
 
-	for (i = 0; i < sm->num_warp_pools; i++) 
-	{
-		/* Allocate and initialize instruction buffers */
-		sm->warp_pools[i] = frm_warp_pool_create();
-		sm->warp_pools[i]->id = i;
-		sm->warp_pools[i]->sm = sm;
+	/* Allocate and initialize instruction buffers */
+	sm->warp_pool = frm_warp_pool_create();
+	sm->warp_pool->sm = sm;
+	for (i = 0; i < sm->num_warp_schedulers; i++)
 		sm->fetch_buffers[i] = list_create();
 
-		/* Allocate SIMD structures */
-		sm->simd_units[i] = xcalloc(1, 
+	/* Allocate SIMD structures */
+	for (i = 0; i < sm->num_simd_units; i++)
+	{
+		sm->simd_units[i] = xcalloc(1,
 			sizeof(struct frm_simd_t));
 		sm->simd_units[i]->id_in_sm = i;
 		sm->simd_units[i]->sm = sm;
-		sm->simd_units[i]->warp_pool = 
-			sm->warp_pools[i];
+		sm->simd_units[i]->warp_pool =
+			sm->warp_pool;
 		sm->simd_units[i]->issue_buffer = list_create();
 		sm->simd_units[i]->decode_buffer = list_create();
 		sm->simd_units[i]->exec_buffer = list_create();
@@ -117,25 +116,24 @@ struct frm_sm_t *frm_sm_create()
 			xcalloc(1, sizeof(struct frm_subwarp_pool_t));
 
 		sm->simd_units[i]->sm = sm;
-		sm->simd_units[i]->wkg_util = xcalloc(1, 
+		sm->simd_units[i]->wkg_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->wvf_util = xcalloc(1, 
+		sm->simd_units[i]->wvf_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->rdy_util = xcalloc(1, 
+		sm->simd_units[i]->rdy_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->occ_util = xcalloc(1, 
+		sm->simd_units[i]->occ_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->wki_util = xcalloc(1, 
+		sm->simd_units[i]->wki_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->act_util = xcalloc(1, 
+		sm->simd_units[i]->act_util = xcalloc(1,
 			sizeof(struct frm_util_t));
-		sm->simd_units[i]->tot_util = xcalloc(1, 
+		sm->simd_units[i]->tot_util = xcalloc(1,
 			sizeof(struct frm_util_t));
 	}
 
 	sm->thread_blocks = 
-		xcalloc(frm_gpu_max_thread_blocks_per_sm * 
-		frm_gpu_num_warp_pools, sizeof(void *));
+		xcalloc(frm_gpu_max_thread_blocks_per_sm, sizeof(void *));
 
 	/* Return */
 	return sm;
@@ -196,9 +194,9 @@ void frm_sm_free(struct frm_sm_t *sm)
 	list_free(sm->lds_unit.mem_buffer);
 	list_free(sm->lds_unit.write_buffer);
 
-	for (i = 0; i < sm->num_warp_pools; i++)
+	/* SIMDs */
+	for (i = 0; i < sm->num_simd_units; i++)
 	{
-		/* SIMDs */
 		frm_uop_list_free(sm->simd_units[i]->issue_buffer);
 		frm_uop_list_free(sm->simd_units[i]->decode_buffer);
 		frm_uop_list_free(sm->simd_units[i]->exec_buffer);
@@ -215,17 +213,19 @@ void frm_sm_free(struct frm_sm_t *sm)
 		free(sm->simd_units[i]->act_util);
 		free(sm->simd_units[i]->tot_util);
 		free(sm->simd_units[i]);
+	}
 
-		/* Common for compute unit */
+	/* Common for compute unit */
 
+	for (i = 0; i < sm->num_warp_schedulers; i++)
+	{
 		frm_uop_list_free(sm->fetch_buffers[i]);
 
 		list_free(sm->fetch_buffers[i]);
-
-		frm_warp_pool_free(sm->warp_pools[i]);
 	}
+	frm_warp_pool_free(sm->warp_pool);
+
 	free(sm->simd_units);
-	free(sm->warp_pools);
 	free(sm->fetch_buffers);
 	free(sm->thread_blocks);  /* List of mapped work-groups */
 	mod_free(sm->lds_module);
@@ -236,28 +236,26 @@ void frm_sm_free(struct frm_sm_t *sm)
 void frm_sm_map_thread_block(struct frm_sm_t *sm, 
 	struct frm_thread_block_t *thread_block)
 {
-	struct frm_grid_t *grid = thread_block->grid;
+	struct frm_grid_t *grid;
 	struct frm_warp_t *warp;
 	int warp_id;
-	int ib_id;
 
 	assert(sm->thread_block_count < 
 		frm_gpu->thread_blocks_per_sm);
 	assert(!thread_block->id_in_sm);
 
+	grid = thread_block->grid;
+
 	/* Find an available slot */
-	while (thread_block->id_in_sm < 
-		frm_gpu->thread_blocks_per_sm &&
-		sm->thread_blocks[thread_block->id_in_sm])
-	{
+	while (thread_block->id_in_sm < frm_gpu->thread_blocks_per_sm &&
+			sm->thread_blocks[thread_block->id_in_sm])
 		thread_block->id_in_sm++;
-	}
 	assert(thread_block->id_in_sm < 
 		frm_gpu->thread_blocks_per_sm);
 	sm->thread_blocks[thread_block->id_in_sm] = thread_block;
 	sm->thread_block_count++;
 
-	/* If compute unit reached its maximum load, remove it from 
+	/* If thread block reached its maximum load, remove it from
 	 * 'sm_ready' list.  Otherwise, move it to the end of 
 	 * the 'sm_ready' list. */
 	assert(DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_ready, 
@@ -270,7 +268,7 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm,
 			sm);
 	}
 	
-	/* If this is the first scheduled work-group, insert to 
+	/* If this is the first scheduled thread block, insert to
 	 * 'sm_busy' list. */
 	if (!DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_busy, sm))
 	{
@@ -278,7 +276,7 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm,
 			sm);
 	}
 
-	/* Assign warps identifiers in compute unit */
+	/* Assign warps identifiers in SM */
 	FRM_FOREACH_WARP_IN_THREADBLOCK(thread_block, warp_id)
 	{
 		warp = grid->warps[warp_id];
@@ -287,20 +285,19 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm,
 			warp->id_in_thread_block;
 	}
 
-	/* Set instruction buffer for work group */
-	ib_id = thread_block->id_in_sm % frm_gpu_num_warp_pools;
-	thread_block->warp_pool = sm->warp_pools[ib_id];
+	/* Set instruction buffer for thread block */
+	thread_block->sm = sm;
 
 	/* Insert warps into an instruction buffer */
-	frm_warp_pool_map_warps(thread_block->warp_pool, thread_block);
+	frm_warp_pool_map_warps(thread_block->sm->warp_pool, thread_block);
 
-	/* Change work-group status to running */
+	/* Change thread block status to running */
 	frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
 	frm_thread_block_set_status(thread_block, frm_thread_block_running);
 
 	/* Trace */
-	frm_trace("si.map_wg cu=%d wg=%d wi_first=%d wi_count=%d wf_first=%d " 
-		"wf_count=%d\n", sm->id, thread_block->id, 
+	frm_trace("frm.map_tb sm=%d tb=%d t_first=%d t_count=%d w_first=%d "
+		"w_count=%d\n", sm->id, thread_block->id,
 		thread_block->thread_id_first, thread_block->thread_count, 
 		thread_block->warp_id_first, thread_block->warp_count);
 
@@ -359,8 +356,6 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 	char inst_str[1024];
 	char inst_str_trimmed[1024];
 
-	assert(active_fb < sm->num_warp_pools);
-
 	for (i = 0; i < sm->warp_count; i++)
 	{
 		warp = (sm->warps)[i];
@@ -372,7 +367,7 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 		/* Sanity check warp */
 		assert(warp->warp_pool_entry);
 		assert(warp->warp_pool_entry ==
-			sm->warp_pools[active_fb]->entries[i]);
+			sm->warp_pool->entries[i]);
 
 		/* Regardless of how many instructions have been fetched 
 		 * already, this should always be checked */
@@ -1354,13 +1349,10 @@ void frm_sm_run(struct frm_sm_t *sm)
 	int num_simd_units;
 	int active_fetch_buffer;  /* Fetch buffer chosen to issue this cycle */
 
-	active_fetch_buffer = arch->cycle_count % sm->num_warp_pools;
-
-	assert(active_fetch_buffer >= 0 && 
-		active_fetch_buffer < sm->num_warp_pools);
+	active_fetch_buffer = arch->cycle_count;
 
 	/* SIMDs */
-	num_simd_units = sm->num_warp_pools;
+	num_simd_units = 1;
 	for (i = 0; i < num_simd_units; i++)
 		frm_simd_run(sm->simd_units[i]);
 

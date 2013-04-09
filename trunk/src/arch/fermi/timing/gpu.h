@@ -109,7 +109,6 @@ extern enum frm_gpu_register_alloc_granularity_t
 
 extern int frm_gpu_num_sms;
 
-extern int frm_gpu_num_warp_pools;
 extern int frm_gpu_max_thread_blocks_per_sm;
 extern int frm_gpu_max_warps_per_sm;
 extern int frm_gpu_max_threads_per_sm;
@@ -187,9 +186,6 @@ struct frm_gpu_t
 {
 	/* Grid running on it */
 	struct frm_grid_t *grid;
-	int thread_blocks_per_warp_pool;
-	int warps_per_warp_pool;
-	int threads_per_warp_pool;
 	int thread_blocks_per_sm;
 	int warps_per_sm;
 	int threads_per_sm;
