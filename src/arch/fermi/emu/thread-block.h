@@ -40,6 +40,7 @@ struct frm_thread_block_t
 
 	/* Grid it belongs to */
 	struct frm_grid_t *grid;
+	struct frm_sm_t *sm;
 
 	/* IDs of threads contained */
 	int thread_id_first;

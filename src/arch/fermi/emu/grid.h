@@ -98,19 +98,19 @@ struct frm_grid_t
         struct frm_grid_t *finished_grid_list_prev;
         struct frm_grid_t *finished_grid_list_next;
 
-	/* List of pending thread_blocks */
+	/* List of pending thread blocks */
 	struct frm_thread_block_t *pending_list_head;
 	struct frm_thread_block_t *pending_list_tail;
 	int pending_list_count;
 	int pending_list_max;
 
-	/* List of running thread_blocks */
+	/* List of running thread blocks */
 	struct frm_thread_block_t *running_list_head;
 	struct frm_thread_block_t *running_list_tail;
 	int running_list_count;
 	int running_list_max;
 
-	/* List of finished thread_blocks */
+	/* List of finished thread blocks */
 	struct frm_thread_block_t *finished_list_head;
 	struct frm_thread_block_t *finished_list_tail;
 	int finished_list_count;

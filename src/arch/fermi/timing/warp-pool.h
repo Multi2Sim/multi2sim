@@ -21,7 +21,7 @@
 #define FERMI_WARP_POOL_H
 
 
-struct frm_warp_pool_entry_t 
+struct frm_warp_pool_entry_t
 {
 	unsigned int valid : 1; /* Valid if warp assigned to entry */
 
@@ -48,8 +48,6 @@ struct frm_warp_pool_entry_t
 
 struct frm_warp_pool_t
 {
-	int id;
-
 	/* List of currently mapped warps */
 	int warp_count;
 	struct frm_warp_pool_entry_t **entries;
