@@ -326,7 +326,6 @@ enum frm_gpu_register_alloc_granularity_t frm_gpu_register_alloc_granularity;
 int frm_gpu_num_sms = 15;
 
 /* Streaming multiprocessor parameters */
-int frm_gpu_num_warp_pools = 4; /* Per CU */
 int frm_gpu_max_thread_blocks_per_sm = 8;
 int frm_gpu_max_warps_per_sm = 48;
 int frm_gpu_max_threads_per_sm = 1536;
@@ -468,13 +467,6 @@ static void frm_config_read(void)
 
 	/* SM */
 	section = "SM";
-
-	frm_gpu_num_warp_pools = config_read_int(
-		gpu_config, section, "NumWarpPools", 
-		frm_gpu_num_warp_pools);
-	if (frm_gpu_num_warp_pools < 1)
-		fatal("%s: invalid value for 'NumWarpPools'.\n%s", 
-				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_max_thread_blocks_per_sm = config_read_int(
 		gpu_config, section, "MaxThreadBlocksPerWarpPool",
@@ -1042,7 +1034,7 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 			grid->num_gpr_used,
 			grid->local_mem_top);
 
-	if (!frm_gpu->thread_blocks_per_warp_pool)
+	if (!frm_gpu->thread_blocks_per_sm)
 	{
 		fatal("thread-block resources cannot be allocated to a SM.\n"
 			"\tA SM in the GPU has a limit in "
@@ -1052,28 +1044,16 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 			"be executed.\n");
 	}
 
-	/* Calculate limit of warps and work-items per Warp Pool */
-	frm_gpu->warps_per_warp_pool = 
-		frm_gpu->thread_blocks_per_warp_pool * 
-		grid->warps_per_thread_block;
-	frm_gpu->threads_per_warp_pool = 
-		frm_gpu->warps_per_warp_pool * 
-		frm_emu_warp_size;
-
-	/* Calculate limit of work groups, warps and work-items per 
-	 * SM */
-	frm_gpu->thread_blocks_per_sm = 
-		frm_gpu->thread_blocks_per_warp_pool * 
-		frm_gpu_num_warp_pools;
+	/* Calculate limit of warps and threads per SM */
 	frm_gpu->warps_per_sm = 
-		frm_gpu->warps_per_warp_pool * 
-		frm_gpu_num_warp_pools;
+		frm_gpu->thread_blocks_per_sm * 
+		grid->warps_per_thread_block;
 	frm_gpu->threads_per_sm = 
-		frm_gpu->threads_per_warp_pool * 
-		frm_gpu_num_warp_pools;
-	assert(frm_gpu->thread_blocks_per_warp_pool <= 
+		frm_gpu->warps_per_sm * 
+		frm_emu_warp_size;
+	assert(frm_gpu->thread_blocks_per_sm <= 
 		frm_gpu_max_thread_blocks_per_sm);
-	assert(frm_gpu->warps_per_warp_pool <= 
+	assert(frm_gpu->warps_per_sm <= 
 		frm_gpu_max_warps_per_sm);
 
 	/* Reset architectural state */
@@ -1320,7 +1300,7 @@ enum arch_sim_kind_t frm_gpu_run(void)
 	grid = frm_gpu->grid;
 	assert(grid);
 
-	/* Allocate thread-blocks to SMs */
+	/* Allocate thread blocks to SMs */
 	while (frm_gpu->sm_ready_list_head && 
 		grid->pending_list_head)
 	{

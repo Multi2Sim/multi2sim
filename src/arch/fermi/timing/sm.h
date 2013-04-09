@@ -62,9 +62,10 @@ struct frm_sm_t
 	struct mod_t *lds_module;
 
 	/* Hardware structures */
-	unsigned int num_warp_pools;
-	struct frm_warp_pool_t **warp_pools;
+	struct frm_warp_pool_t *warp_pool;
+	unsigned int num_warp_schedulers;
 	struct list_t **fetch_buffers;
+	unsigned int num_simd_units;
 	struct frm_simd_t **simd_units;
 	/* TODO Make these into a configurable number of structures */
 	struct frm_scalar_unit_t scalar_unit;

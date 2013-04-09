@@ -61,24 +61,22 @@ void frm_warp_pool_free(struct frm_warp_pool_t *warp_pool)
 	free(warp_pool);
 }
 
-void frm_warp_pool_map_warps(struct frm_warp_pool_t *warp_pool, 
+void frm_warp_pool_map_warps(struct frm_warp_pool_t *warp_pool,
 	struct frm_thread_block_t *thread_block)
 {
 	struct frm_grid_t *grid = thread_block->grid;
 	struct frm_warp_t *warp;
-	int wg_id_in_ib;
 	int first_entry;
 	int i;
 
 	/* Determine starting ID for warps in the instruction buffer */
-	wg_id_in_ib = thread_block->id_in_sm/frm_gpu_num_warp_pools;
-	first_entry = wg_id_in_ib * grid->warps_per_thread_block;
+	first_entry = (thread_block->id_in_sm) * (grid->warps_per_thread_block);
 
 	/* Assign warps a slot in the instruction buffer */
 	for (i = 0; i < grid->warps_per_thread_block; i++) 
 	{
 		warp = thread_block->warps[i];
-		warp->warp_pool_entry = 
+		warp->warp_pool_entry =
 			warp_pool->entries[first_entry + i];
 		assert(!warp->warp_pool_entry->valid);
 
