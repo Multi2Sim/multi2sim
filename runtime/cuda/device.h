@@ -35,7 +35,6 @@ struct cuda_device_t
 	char *name;
 
 	struct compute_capability_t cc;
-	CUdevprop properties;
 	int attributes[CU_DEVICE_ATTRIBUTE_MAX];
 };
 

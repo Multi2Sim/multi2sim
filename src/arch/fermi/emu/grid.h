@@ -86,7 +86,7 @@ struct frm_grid_t
 	int thread_count;
 
 	/* Size of thread_blocks */
-	int warps_per_thread_block;  /* = ceil(local_size / frm_emu_warp_size) */
+	int warps_per_thread_block;  /* = ceil(local_size / frm_gpu_warp_size) */
 
         /* List of Grid */
         struct frm_grid_t *grid_list_prev;
@@ -124,11 +124,10 @@ struct frm_grid_t
 	 * kernel function. */
 	unsigned int local_mem_top;
 
-	/* Number of register used by each work-item. This fields determines
-	 * how many work-groups can be allocated per compute unit, among
+	/* Number of register used by each thread. This fields determines
+	 * how many thread blocks can be allocated per SM, among
 	 * others. */
-	unsigned int num_vgpr_used;
-	unsigned int num_sgpr_used;
+	unsigned int num_gpr_used;
 };
 
 struct frm_grid_t *frm_grid_create(struct cuda_function_t *function);

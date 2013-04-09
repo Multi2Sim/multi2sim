@@ -108,13 +108,13 @@ extern enum frm_gpu_register_alloc_granularity_t
 /* User configurable options */
 
 extern int frm_gpu_num_sms;
-extern int frm_gpu_max_warps_per_workgroup;
 
-extern int frm_gpu_num_vector_registers;
-extern int frm_gpu_num_scalar_registers;
 extern int frm_gpu_num_warp_pools;
-extern int frm_gpu_max_thread_blocks_per_warp_pool;
-extern int frm_gpu_max_warps_per_warp_pool;
+extern int frm_gpu_max_thread_blocks_per_sm;
+extern int frm_gpu_max_warps_per_sm;
+extern int frm_gpu_max_threads_per_sm;
+extern int frm_gpu_num_registers_per_sm;
+extern int frm_gpu_num_registers_per_thread;
 
 extern int frm_gpu_fe_fetch_latency;
 extern int frm_gpu_fe_fetch_width;
@@ -178,15 +178,14 @@ extern int frm_gpu_vector_mem_write_latency;
 extern int frm_gpu_vector_mem_write_buffer_size;
 extern int frm_gpu_vector_mem_max_inflight_mem_accesses;
 
-extern int frm_gpu_lds_size;
-extern int frm_gpu_lds_alloc_size;
+extern int frm_gpu_shared_mem_size;
 extern int frm_gpu_lds_latency;
 extern int frm_gpu_lds_block_size;
 extern int frm_gpu_lds_num_ports;
 
 struct frm_gpu_t
 {
-	/* ND-Range running on it */
+	/* Grid running on it */
 	struct frm_grid_t *grid;
 	int thread_blocks_per_warp_pool;
 	int warps_per_warp_pool;

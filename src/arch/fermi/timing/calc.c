@@ -42,70 +42,57 @@ static char *err_gnuplot_msg =
 	"\tgnuplot version currently installed.\n";
 
 
-int frm_calc_get_thread_blocks_per_warp_pool(int threads_per_thread_block,
-	int registers_per_thread, int local_mem_per_thread_block)
+
+
+int frm_calc_get_thread_blocks_per_sm(int threads_per_thread_block,
+	int registers_per_thread, int shared_mem_per_thread_block)
 {
 	int warps_per_thread_block;
 	int registers_per_thread_block;
 	int max_thread_blocks_limitted_by_max_warps;
 	int max_thread_blocks_limitted_by_num_registers;
-	int max_thread_blocks_limitted_by_local_mem;
-	int thread_blocks_per_warp_pool;
+	int max_thread_blocks_limitted_by_shared_mem;
+	int thread_blocks_per_sm;
 
-	/* Get maximum number of work-groups per SIMD as limited by the 
+	/* Get maximum number of thread blocks per SM as limited by the 
 	 * maximum number of warps, given the number of warps per 
-	 * work-group in the NDRange */
+	 * thread block in the grid */
 	assert(frm_emu_warp_size > 0);
 	warps_per_thread_block = (threads_per_thread_block + 
 		frm_emu_warp_size - 1) / frm_emu_warp_size;
 	max_thread_blocks_limitted_by_max_warps = 
-		frm_gpu_max_warps_per_warp_pool /
+		frm_gpu_max_warps_per_sm /
 		warps_per_thread_block;
 
-	/* Get maximum number of work-groups per SIMD as limited by the number 
+	/* Get maximum number of thread blocks per SM as limited by the number 
 	 * of available registers, given the number of registers used per 
-	 * work-item. */
-	if (frm_gpu_register_alloc_granularity == 
-		frm_gpu_register_alloc_warp)
-	{
-		registers_per_thread_block = ROUND_UP(registers_per_thread * 
-			frm_emu_warp_size, frm_gpu_register_alloc_size) * 
-			warps_per_thread_block;
-	}
-	else
-	{
-		registers_per_thread_block = ROUND_UP(registers_per_thread *
-			threads_per_thread_block, frm_gpu_register_alloc_size);
-	}
-	/* FIXME need to account for scalar registers */
+	 * thread. */
+	registers_per_thread_block = registers_per_thread *
+		threads_per_thread_block;
 	max_thread_blocks_limitted_by_num_registers = registers_per_thread_block ?
-		frm_gpu_num_vector_registers / registers_per_thread_block :
-		frm_gpu_max_thread_blocks_per_warp_pool;
+		frm_gpu_num_registers_per_sm / registers_per_thread_block :
+		frm_gpu_max_thread_blocks_per_sm;
 
-	/* Get maximum number of work-groups per SIMD as limited by the 
-	 * amount of available local memory, given the local memory used 
-	 * by each work-group in the NDRange */
-	local_mem_per_thread_block = ROUND_UP(local_mem_per_thread_block, 
-		frm_gpu_lds_alloc_size);
-	max_thread_blocks_limitted_by_local_mem = local_mem_per_thread_block ?
-		frm_gpu_lds_size / local_mem_per_thread_block :
-		frm_gpu_max_thread_blocks_per_warp_pool;
+	/* Get maximum number of thread blocks per SM as limited by the 
+	 * amount of available shared memory, given the shared memory used 
+	 * per thread block in the grid */
+	max_thread_blocks_limitted_by_shared_mem = shared_mem_per_thread_block ?
+		frm_gpu_shared_mem_size / shared_mem_per_thread_block :
+		frm_gpu_max_thread_blocks_per_sm;
 
-	/* Based on the limits above, calculate the actual limit of work-groups 
-	 * per SIMD. */
-	thread_blocks_per_warp_pool = 
-		frm_gpu_max_thread_blocks_per_warp_pool;
-	thread_blocks_per_warp_pool = MIN(thread_blocks_per_warp_pool,
+	/* Based on the limits above, calculate the actual limit of thread
+	 * blocks per SM. */
+	thread_blocks_per_sm = frm_gpu_max_thread_blocks_per_sm;
+	thread_blocks_per_sm = MIN(thread_blocks_per_sm,
 		max_thread_blocks_limitted_by_max_warps);
-	thread_blocks_per_warp_pool= MIN(thread_blocks_per_warp_pool, 
+	thread_blocks_per_sm = MIN(thread_blocks_per_sm, 
 		max_thread_blocks_limitted_by_num_registers);
-	thread_blocks_per_warp_pool = MIN(thread_blocks_per_warp_pool, 
-		max_thread_blocks_limitted_by_local_mem);
+	thread_blocks_per_sm = MIN(thread_blocks_per_sm, 
+		max_thread_blocks_limitted_by_shared_mem);
 
 	/* Return */
-	return thread_blocks_per_warp_pool;
+	return thread_blocks_per_sm;
 }
-
 
 static void frm_calc_plot_threads_per_thread_block(void)
 {
@@ -116,12 +103,12 @@ static void frm_calc_plot_threads_per_thread_block(void)
 	char script_file_name[MAX_PATH_SIZE];
 	char cmd[MAX_PATH_SIZE];
 	
-	int local_mem_per_thread_block;
+	//int local_mem_per_thread_block;
 	int threads_per_thread_block;
-	int registers_per_thread;
+	//int registers_per_thread;
 
 	int warps_per_thread_block;
-	int thread_blocks_per_warp_pool;
+	int thread_blocks_per_warp_pool = 1;
 	int warps_per_warp_pool;
 
 	int err;
@@ -137,21 +124,21 @@ static void frm_calc_plot_threads_per_thread_block(void)
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	local_mem_per_thread_block = frm_gpu->grid->local_mem_top;
-	registers_per_thread = 
-		frm_gpu->grid->num_vgpr_used;
+	//local_mem_per_thread_block = frm_gpu->grid->local_mem_top;
+	//registers_per_thread = 
+	//	frm_gpu->grid->num_gpr_used;
 	for (threads_per_thread_block = frm_emu_warp_size;
 		threads_per_thread_block < 
-		(frm_gpu_max_warps_per_warp_pool * 
+		(frm_gpu_max_warps_per_sm * 
 		frm_emu_warp_size);
 		threads_per_thread_block += frm_emu_warp_size)
 	{
 		/* Calculate point */
-		thread_blocks_per_warp_pool = 
-			frm_calc_get_thread_blocks_per_warp_pool(
-				threads_per_thread_block, 
-				registers_per_thread, 
-				local_mem_per_thread_block);
+		//thread_blocks_per_warp_pool = 
+		//	frm_calc_get_thread_blocks_per_warp_pool(
+		//		threads_per_thread_block, 
+		//		registers_per_thread, 
+		//		local_mem_per_thread_block);
 		warps_per_thread_block = (threads_per_thread_block + 
 			frm_emu_warp_size - 1) / frm_emu_warp_size;
 		warps_per_warp_pool = thread_blocks_per_warp_pool *
@@ -167,10 +154,10 @@ static void frm_calc_plot_threads_per_thread_block(void)
 	threads_per_thread_block = ROUND_UP(
 		frm_gpu->grid->local_size, 
 		frm_emu_warp_size);
-	thread_blocks_per_warp_pool = 
-		frm_calc_get_thread_blocks_per_warp_pool(
-			threads_per_thread_block, registers_per_thread, 
-			local_mem_per_thread_block);
+	//thread_blocks_per_warp_pool = 
+	//	frm_calc_get_thread_blocks_per_warp_pool(
+	//		threads_per_thread_block, registers_per_thread, 
+	//		local_mem_per_thread_block);
 	warps_per_thread_block = (threads_per_thread_block + 
 		frm_emu_warp_size - 1) / frm_emu_warp_size;
 	warps_per_warp_pool = thread_blocks_per_warp_pool * 
@@ -212,12 +199,12 @@ static void frm_calc_plot_registers_per_thread(void)
 	char script_file_name[MAX_PATH_SIZE];
 	char cmd[MAX_PATH_SIZE];
 	
-	int local_mem_per_thread_block;
+	//int local_mem_per_thread_block;
 	int threads_per_thread_block;
 	int registers_per_thread;
 
 	int warps_per_thread_block;
-	int thread_blocks_per_warp_pool;
+	int thread_blocks_per_warp_pool = 1;
 	int warps_per_warp_pool;
 
 	int err;
@@ -233,7 +220,7 @@ static void frm_calc_plot_registers_per_thread(void)
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	local_mem_per_thread_block = frm_gpu->grid->local_mem_top;
+	//local_mem_per_thread_block = frm_gpu->grid->local_mem_top;
 	threads_per_thread_block = frm_gpu->grid->local_size;
 	warps_per_thread_block = (threads_per_thread_block + 
 		frm_emu_warp_size - 1) / frm_emu_warp_size;
@@ -241,11 +228,11 @@ static void frm_calc_plot_registers_per_thread(void)
 		registers_per_thread += 4)
 	{
 		/* Calculate point */
-		thread_blocks_per_warp_pool = 
-			frm_calc_get_thread_blocks_per_warp_pool(
-				threads_per_thread_block, 
-				registers_per_thread, 
-				local_mem_per_thread_block);
+		//thread_blocks_per_warp_pool = 
+		//	frm_calc_get_thread_blocks_per_warp_pool(
+		//		threads_per_thread_block, 
+		//		registers_per_thread, 
+		//		local_mem_per_thread_block);
 		warps_per_warp_pool = thread_blocks_per_warp_pool *
 			warps_per_thread_block;
 
@@ -256,11 +243,11 @@ static void frm_calc_plot_registers_per_thread(void)
 	fclose(data_file);
 
 	/* Current data point */
-	registers_per_thread = frm_gpu->grid->num_vgpr_used;
-	thread_blocks_per_warp_pool = 
-		frm_calc_get_thread_blocks_per_warp_pool(
-			threads_per_thread_block, 
-			registers_per_thread, local_mem_per_thread_block);
+	registers_per_thread = frm_gpu->grid->num_gpr_used;
+	//thread_blocks_per_warp_pool = 
+	//	frm_calc_get_thread_blocks_per_warp_pool(
+	//		threads_per_thread_block, 
+	//		registers_per_thread, local_mem_per_thread_block);
 	warps_per_warp_pool = thread_blocks_per_warp_pool * 
 		warps_per_thread_block;
 
@@ -305,10 +292,10 @@ static void frm_calc_plot_local_mem_per_thread_block(void)
 	
 	int local_mem_per_thread_block;
 	int threads_per_thread_block;
-	int registers_per_thread;
+	//int registers_per_thread;
 
 	int warps_per_thread_block;
-	int thread_blocks_per_warp_pool;
+	int thread_blocks_per_warp_pool = 1;
 	int warps_per_warp_pool;
 	int local_mem_step;
 
@@ -323,20 +310,20 @@ static void frm_calc_plot_local_mem_per_thread_block(void)
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	registers_per_thread = frm_gpu->grid->num_vgpr_used;
-	local_mem_step = MAX(1, frm_gpu_lds_size / 32);
+	//registers_per_thread = frm_gpu->grid->num_gpr_used;
+	local_mem_step = MAX(1, frm_gpu_shared_mem_size / 32);
 	threads_per_thread_block = frm_gpu->grid->local_size;
 	warps_per_thread_block = (threads_per_thread_block + 
 		frm_emu_warp_size - 1) / frm_emu_warp_size;
 	for (local_mem_per_thread_block = local_mem_step;
-		local_mem_per_thread_block <= frm_gpu_lds_size;
+		local_mem_per_thread_block <= frm_gpu_shared_mem_size;
 		local_mem_per_thread_block += local_mem_step)
 	{
 		/* Calculate point */
-		thread_blocks_per_warp_pool = 
-			frm_calc_get_thread_blocks_per_warp_pool(
-			threads_per_thread_block, registers_per_thread, 
-			local_mem_per_thread_block);
+		//thread_blocks_per_warp_pool = 
+		//	frm_calc_get_thread_blocks_per_warp_pool(
+		//	threads_per_thread_block, registers_per_thread, 
+		//	local_mem_per_thread_block);
 		warps_per_warp_pool = thread_blocks_per_warp_pool *
 			warps_per_thread_block;
 
@@ -348,10 +335,10 @@ static void frm_calc_plot_local_mem_per_thread_block(void)
 
 	/* Current data point */
 	local_mem_per_thread_block = frm_gpu->grid->local_mem_top;
-	thread_blocks_per_warp_pool = 
-		frm_calc_get_thread_blocks_per_warp_pool(
-			threads_per_thread_block, registers_per_thread, 
-			local_mem_per_thread_block);
+	//thread_blocks_per_warp_pool = 
+	//	frm_calc_get_thread_blocks_per_warp_pool(
+	//		threads_per_thread_block, registers_per_thread, 
+	//		local_mem_per_thread_block);
 	warps_per_warp_pool = thread_blocks_per_warp_pool * 
 		warps_per_thread_block;
 
@@ -362,7 +349,7 @@ static void frm_calc_plot_local_mem_per_thread_block(void)
 	fprintf(script_file, "set xlabel 'Local memory used per work-group "
 		"(KB)'\n");
 	fprintf(script_file, "set ylabel 'Wavefronts per SIMD'\n");
-	fprintf(script_file, "set xrange [0:%d]\n", frm_gpu_lds_size / 1024);
+	fprintf(script_file, "set xrange [0:%d]\n", frm_gpu_shared_mem_size / 1024);
 	fprintf(script_file, "set yrange [0:]\n");
 	fprintf(script_file, "set size 0.65, 0.5\n");
 	fprintf(script_file, "set grid ytics\n");

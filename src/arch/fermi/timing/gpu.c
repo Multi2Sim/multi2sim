@@ -327,11 +327,11 @@ int frm_gpu_num_sms = 15;
 
 /* Streaming multiprocessor parameters */
 int frm_gpu_num_warp_pools = 4; /* Per CU */
-int frm_gpu_max_thread_blocks_per_warp_pool = 10;
-int frm_gpu_max_warps_per_warp_pool = 10; 
-int frm_gpu_num_vector_registers = 65536; /* Per CU */
-int frm_gpu_num_scalar_registers = 2048; /* Per CU */
-unsigned int frm_gpu_register_alloc_size = 32;
+int frm_gpu_max_thread_blocks_per_sm = 8;
+int frm_gpu_max_warps_per_sm = 48;
+int frm_gpu_max_threads_per_sm = 1536;
+int frm_gpu_num_registers_per_sm = 32768;
+int frm_gpu_num_registers_per_thread = 63;
 
 /* Front-end parameters */
 int frm_gpu_fe_fetch_latency = 5;
@@ -396,9 +396,8 @@ int frm_gpu_vector_mem_max_inflight_mem_accesses = 32;
 int frm_gpu_vector_mem_write_latency = 1;
 int frm_gpu_vector_mem_write_buffer_size = 1;
 
-/* LDS memory parameters */
-int frm_gpu_lds_size = 65536; /* 64KB */
-int frm_gpu_lds_alloc_size = 64; 
+/* Shared memory parameters */
+int frm_gpu_shared_mem_size = 49152;
 int frm_gpu_lds_latency = 2;
 int frm_gpu_lds_block_size = 64;
 int frm_gpu_lds_num_ports = 2;
@@ -477,32 +476,25 @@ static void frm_config_read(void)
 		fatal("%s: invalid value for 'NumWarpPools'.\n%s", 
 				frm_gpu_config_file_name, err_note);
 
-	frm_gpu_max_thread_blocks_per_warp_pool = config_read_int(
+	frm_gpu_max_thread_blocks_per_sm = config_read_int(
 		gpu_config, section, "MaxThreadBlocksPerWarpPool",
-		frm_gpu_max_thread_blocks_per_warp_pool);
-	if (frm_gpu_max_thread_blocks_per_warp_pool < 1)
+		frm_gpu_max_thread_blocks_per_sm);
+	if (frm_gpu_max_thread_blocks_per_sm < 1)
 		fatal("%s: invalid value for 'MaxThreadBlocksPerWarpPool'"
 			".\n%s", frm_gpu_config_file_name, err_note);
 
-	frm_gpu_max_warps_per_warp_pool = config_read_int(
+	frm_gpu_max_warps_per_sm = config_read_int(
 		gpu_config, section, "MaxWarpsPerWarpPool",
-		frm_gpu_max_warps_per_warp_pool);
-	if (frm_gpu_max_warps_per_warp_pool < 1)
+		frm_gpu_max_warps_per_sm);
+	if (frm_gpu_max_warps_per_sm < 1)
 		fatal("%s: invalid value for 'MaxWarpsPerWarpPool'"
 			".\n%s", frm_gpu_config_file_name, err_note);
 
-	frm_gpu_num_vector_registers = config_read_int(
-		gpu_config, section, "NumVectorRegisters", 
-		frm_gpu_num_vector_registers);
-	if (frm_gpu_num_vector_registers < 1)
-		fatal("%s: invalid value for 'NumVectorRegisters'.\n%s", 
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_num_scalar_registers = config_read_int(
-		gpu_config, section, "NumScalarRegisters", 
-		frm_gpu_num_scalar_registers);
-	if (frm_gpu_num_scalar_registers < 1)
-		fatal("%s: invalid value for 'NumScalarRegisters'.\n%s", 
+	frm_gpu_num_registers_per_sm = config_read_int(
+		gpu_config, section, "NumRegisters", 
+		frm_gpu_num_registers_per_sm);
+	if (frm_gpu_num_registers_per_sm < 1)
+		fatal("%s: invalid value for 'NumRegisters'.\n%s", 
 			frm_gpu_config_file_name, err_note);
 
 	/* Front End */
@@ -873,10 +865,8 @@ static void frm_config_read(void)
 	/* Local Data Share Unit */
 	section = "LocalDataShare";
 
-	frm_gpu_lds_size = config_read_int(
-		gpu_config, section, "Size", frm_gpu_lds_size);
-	frm_gpu_lds_alloc_size = config_read_int(
-		gpu_config, section, "AllocSize", frm_gpu_lds_alloc_size);
+	frm_gpu_shared_mem_size = config_read_int(
+		gpu_config, section, "Size", frm_gpu_shared_mem_size);
 	frm_gpu_lds_block_size = config_read_int(
 		gpu_config, section, "BlockSize", frm_gpu_lds_block_size);
 	frm_gpu_lds_latency = config_read_int(
@@ -884,28 +874,19 @@ static void frm_config_read(void)
 	frm_gpu_lds_num_ports = config_read_int(
 		gpu_config, section, "Ports", frm_gpu_lds_num_ports);
 
-	if ((frm_gpu_lds_size & (frm_gpu_lds_size - 1)) || frm_gpu_lds_size < 4)
+	if ((frm_gpu_shared_mem_size & (frm_gpu_shared_mem_size - 1)) ||
+			frm_gpu_shared_mem_size < 4)
 		fatal("%s: %s->Size must be a power of two and at least 4.\n%s",
 			frm_gpu_config_file_name, section, err_note);
-	if (frm_gpu_lds_alloc_size < 1)
-		fatal("%s: invalid value for %s->Allocsize.\n%s", 
-			frm_gpu_config_file_name, section, err_note);
-	if (frm_gpu_lds_size % frm_gpu_lds_alloc_size)
-		fatal("%s: %s->Size must be a multiple of %s->AllocSize.\n%s", 
-			frm_gpu_config_file_name, section, section, err_note);
 	if ((frm_gpu_lds_block_size & (frm_gpu_lds_block_size - 1)) || 
 		frm_gpu_lds_block_size < 4)
 		fatal("%s: %s->BlockSize must be a power of two and at "
 			"least 4.\n%s", frm_gpu_config_file_name, section, 
 			err_note);
-	if (frm_gpu_lds_alloc_size % frm_gpu_lds_block_size)
-		fatal("%s: %s->AllocSize must be a multiple of "
-			"%s->BlockSize.\n%s", frm_gpu_config_file_name, section,
-		       	section, err_note);
 	if (frm_gpu_lds_latency < 1)
 		fatal("%s: invalid value for %s->Latency.\n%s", 
 			frm_gpu_config_file_name, section, err_note);
-	if (frm_gpu_lds_size < frm_gpu_lds_block_size)
+	if (frm_gpu_shared_mem_size < frm_gpu_lds_block_size)
 		fatal("%s: %s->Size cannot be smaller than %s->BlockSize * "
 			"%s->Banks.\n%s", frm_gpu_config_file_name, section, 
 			section, section, err_note);
@@ -928,13 +909,11 @@ void frm_config_dump(FILE *f)
 
 	/* SM */
 	fprintf(f, "[ Config.SM ]\n");
-	fprintf(f, "NumWarpPools = %d\n", frm_gpu_num_warp_pools);
-	fprintf(f, "NumVectorRegisters = %d\n", frm_gpu_num_vector_registers);
-	fprintf(f, "NumScalarRegisters = %d\n", frm_gpu_num_scalar_registers);
-	fprintf(f, "MaxThreadBlocksPerWarpPool = %d\n", 
-		frm_gpu_max_thread_blocks_per_warp_pool);
-	fprintf(f, "MaxWarpsPerWarpPool = %d\n", 
-		frm_gpu_max_warps_per_warp_pool);
+	fprintf(f, "NumRegistersPerSM = %d\n", frm_gpu_num_registers_per_sm);
+	fprintf(f, "MaxThreadBlocksPerSM = %d\n", 
+		frm_gpu_max_thread_blocks_per_sm);
+	fprintf(f, "MaxWarpsPerSM = %d\n", 
+		frm_gpu_max_warps_per_sm);
 	fprintf(f, "\n");
 	/*
 	fprintf(f, "RegisterAllocSize = %d\n", frm_gpu_register_alloc_size);
@@ -1037,9 +1016,8 @@ void frm_config_dump(FILE *f)
 	fprintf(f, "\n");
 
 	/* LDS */
-	fprintf(f, "[ Config.LDS ]\n");
-	fprintf(f, "Size = %d\n", frm_gpu_lds_size);
-	fprintf(f, "AllocSize = %d\n", frm_gpu_lds_alloc_size);
+	fprintf(f, "[ Config.SharedMem ]\n");
+	fprintf(f, "Size = %d\n", frm_gpu_shared_mem_size);
 	fprintf(f, "BlockSize = %d\n", frm_gpu_lds_block_size);
 	fprintf(f, "Latency = %d\n", frm_gpu_lds_latency);
 	fprintf(f, "Ports = %d\n", frm_gpu_lds_num_ports);
@@ -1054,22 +1032,20 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 {
 	int sm_id;
 
-	/* Assign current Grid */
+	/* Assign current grid */
 	assert(!frm_gpu->grid);
 	frm_gpu->grid = grid;
 
-	/* Check that at least one thread-block can be allocated per 
-	 * warp pool */
-	frm_gpu->thread_blocks_per_warp_pool = 
-		frm_calc_get_thread_blocks_per_warp_pool(
+	frm_gpu->thread_blocks_per_sm = 
+		frm_calc_get_thread_blocks_per_sm(
 			grid->local_size, 
-			grid->num_vgpr_used,
+			grid->num_gpr_used,
 			grid->local_mem_top);
 
 	if (!frm_gpu->thread_blocks_per_warp_pool)
 	{
-		fatal("thread-block resources cannot be allocated to a compute "
-			"unit.\n\tA SM in the GPU has a limit in "
+		fatal("thread-block resources cannot be allocated to a SM.\n"
+			"\tA SM in the GPU has a limit in "
 			"number of warps, number\n\tof registers, and "
 			"amount of local memory. If the thread-block size\n"
 			"\texceeds any of these limits, the Grid cannot "
@@ -1096,9 +1072,9 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 		frm_gpu->threads_per_warp_pool * 
 		frm_gpu_num_warp_pools;
 	assert(frm_gpu->thread_blocks_per_warp_pool <= 
-		frm_gpu_max_thread_blocks_per_warp_pool);
+		frm_gpu_max_thread_blocks_per_sm);
 	assert(frm_gpu->warps_per_warp_pool <= 
-		frm_gpu_max_warps_per_warp_pool);
+		frm_gpu_max_warps_per_sm);
 
 	/* Reset architectural state */
 	FRM_GPU_FOREACH_SM(sm_id)
@@ -1315,7 +1291,7 @@ enum arch_sim_kind_t frm_gpu_run(void)
 	if (!frm_emu->grid_list_count)
 		return arch_sim_kind_invalid;
 
-	/* Start one grid in state 'pending' */
+	/* Start 1 grid in state 'pending' */
 	while ((grid = frm_emu->pending_grid_list_head))
 	{
 		/* Currently not supported for more than 1 grid */
@@ -1326,16 +1302,16 @@ enum arch_sim_kind_t frm_gpu_run(void)
 				__FUNCTION__);
 		}
 
-		/* Set Grid status to 'running' */
+		/* Set grid status to 'running' */
 		frm_grid_clear_status(grid, frm_grid_pending);
 		frm_grid_set_status(grid, frm_grid_running);
 
 		/* Trace */
-		frm_trace("frm.new_grid id=%d wg_first=%d wg_count=%d\n", 
+		frm_trace("frm.new_grid id=%d tb_first=%d tb_count=%d\n", 
 			grid->id, grid->thread_block_id_first, 
 			grid->thread_block_count);
 
-		/* Map Grid to GPU */
+		/* Map grid to GPU */
 		frm_gpu_map_grid(grid);
 		frm_calc_plot();
 	}
