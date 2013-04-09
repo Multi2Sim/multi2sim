@@ -134,7 +134,7 @@ struct frm_sm_t *frm_sm_create()
 	}
 
 	sm->thread_blocks = 
-		xcalloc(frm_gpu_max_thread_blocks_per_warp_pool * 
+		xcalloc(frm_gpu_max_thread_blocks_per_sm * 
 		frm_gpu_num_warp_pools, sizeof(void *));
 
 	/* Return */

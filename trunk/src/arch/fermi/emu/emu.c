@@ -48,6 +48,7 @@ char *frm_emu_cuda_binary_name = "";
 char *frm_emu_report_file_name = "";
 FILE *frm_emu_report_file = NULL;
 
+/* Default values calibrated to GTX 480 */
 int frm_emu_warp_size = 32;
 
 

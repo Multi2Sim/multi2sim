@@ -35,10 +35,10 @@ struct frm_warp_pool_t *frm_warp_pool_create()
 	/* Initialize */
 	warp_pool = xcalloc(1, sizeof(struct frm_warp_pool_t));
 	warp_pool->entries = xcalloc(
-		frm_gpu_max_warps_per_warp_pool, 
+		frm_gpu_max_warps_per_sm, 
 		sizeof(struct frm_warp_pool_entry_t*));
 
-	for (i = 0; i < frm_gpu_max_warps_per_warp_pool; i++) 
+	for (i = 0; i < frm_gpu_max_warps_per_sm; i++) 
 	{
 		warp_pool->entries[i] = xcalloc(1, 
 			sizeof(struct frm_warp_pool_entry_t));
@@ -54,7 +54,7 @@ void frm_warp_pool_free(struct frm_warp_pool_t *warp_pool)
 {
 	int i;
 
-	for (i = 0; i < frm_gpu_max_warps_per_warp_pool; i++) 
+	for (i = 0; i < frm_gpu_max_warps_per_sm; i++) 
 		free(warp_pool->entries[i]);
 
 	free(warp_pool->entries);

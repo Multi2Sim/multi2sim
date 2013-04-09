@@ -278,20 +278,31 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 	device = (struct cuda_device_t *)list_get(device_list, dev);
 
 	/* Get properties */
-	prop->maxThreadsPerBlock = device->properties.maxThreadsPerBlock;
-	prop->maxThreadsDim[0] = device->properties.maxThreadsDim[0];
-	prop->maxThreadsDim[1] = device->properties.maxThreadsDim[1];
-	prop->maxThreadsDim[2] = device->properties.maxThreadsDim[2];
-	prop->maxGridSize[0] = device->properties.maxGridSize[0];
-	prop->maxGridSize[1] = device->properties.maxGridSize[1];
-	prop->maxGridSize[2] = device->properties.maxGridSize[2];
-	prop->sharedMemPerBlock = device->properties.sharedMemPerBlock;
-	prop->totalConstantMemory = device->properties.totalConstantMemory;
-	prop->SIMDWidth = device->properties.SIMDWidth;
-	prop->memPitch = device->properties.memPitch;
-	prop->regsPerBlock = device->properties.regsPerBlock;
-	prop->clockRate = device->properties.clockRate;
-	prop->textureAlign = device->properties.textureAlign;
+	prop->maxThreadsPerBlock =
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK];
+	prop->maxThreadsDim[0] =
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X];
+	prop->maxThreadsDim[1] =
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y];
+	prop->maxThreadsDim[2] =
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z];
+	prop->maxGridSize[0] =
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X];
+	prop->maxGridSize[1] =
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y];
+	prop->maxGridSize[2] =
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z];
+	prop->sharedMemPerBlock =
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK];
+	prop->totalConstantMemory =
+		device->attributes[CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY];
+	prop->SIMDWidth = device->attributes[CU_DEVICE_ATTRIBUTE_WARP_SIZE];
+	prop->memPitch = device->attributes[CU_DEVICE_ATTRIBUTE_MAX_PITCH];
+	prop->regsPerBlock =
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK];
+	prop->clockRate = device->attributes[CU_DEVICE_ATTRIBUTE_CLOCK_RATE];
+	prop->textureAlign =
+		device->attributes[CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT];
 
 	cuda_debug_print(stdout, "\t(driver) out: prop->maxThreadsPerBlock=%d\n \
 			\t\tprop->maxThreadsDim[0]=%d\n \
