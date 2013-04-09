@@ -100,7 +100,7 @@ void frm_grid_set_status(struct frm_grid_t *grid, enum frm_grid_status_t status)
         /* Get only the new bits */
         status &= ~grid->status;
 
-        /* Add ND-Range to lists */
+        /* Add grid to lists */
         if (status & frm_grid_pending)
                 DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, pending_grid, grid);
         if (status & frm_grid_running)
@@ -118,7 +118,7 @@ void frm_grid_clear_status(struct frm_grid_t *grid, enum frm_grid_status_t statu
         /* Get only the bits that are set */
         status &= grid->status;
 
-        /* Remove ND-Range from lists */
+        /* Remove grid from lists */
         if (status & frm_grid_pending)
                 DOUBLE_LINKED_LIST_REMOVE(frm_emu, pending_grid, grid);
         if (status & frm_grid_running)
