@@ -20,6 +20,11 @@
 #ifndef FERMI_TIMING_GPU_H
 #define FERMI_TIMING_GPU_H
 
+/* Debugging */
+#define frm_gpu_debugging() debug_status(frm_gpu_debug_category)
+#define frm_gpu_debug(...) debug(frm_gpu_debug_category, __VA_ARGS__)
+extern int frm_gpu_debug_category;
+
 /* Trace */
 #define frm_tracing() trace_status(frm_trace_category)
 #define frm_trace(...) trace(frm_trace_category, __VA_ARGS__)

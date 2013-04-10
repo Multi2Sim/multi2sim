@@ -34,19 +34,19 @@ struct frm_emu_t
 	int grid_list_count;
 	int grid_list_max;
 
-	/* List of pending ND-Ranges */
+	/* List of pending grids */
 	struct frm_grid_t *pending_grid_list_head;
 	struct frm_grid_t *pending_grid_list_tail;
 	int pending_grid_list_count;
 	int pending_grid_list_max;
 
-	/* List of running ND-Ranges */
+	/* List of running grids */
 	struct frm_grid_t *running_grid_list_head;
 	struct frm_grid_t *running_grid_list_tail;
 	int running_grid_list_count;
 	int running_grid_list_max;
 
-	/* List of finished ND-Ranges */
+	/* List of finished grids */
 	struct frm_grid_t *finished_grid_list_head;
 	struct frm_grid_t *finished_grid_list_tail;
 	int finished_grid_list_count;

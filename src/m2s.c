@@ -106,6 +106,7 @@ static enum arch_sim_kind_t si_sim_kind = arch_sim_kind_functional;
 
 static char *frm_disasm_file_name = "";
 static char *frm_isa_debug_file_name = "";
+static char *frm_gpu_debug_file_name = "";
 static enum arch_sim_kind_t frm_sim_kind = arch_sim_kind_functional;
 
 static char *arm_disasm_file_name = "";
@@ -1735,6 +1736,7 @@ int main(int argc, char **argv)
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
 	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
 	frm_isa_debug_category = debug_new_category(frm_isa_debug_file_name);
+	frm_gpu_debug_category = debug_new_category(frm_gpu_debug_file_name);
 	arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
 	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);

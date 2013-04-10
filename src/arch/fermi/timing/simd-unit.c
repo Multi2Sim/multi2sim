@@ -58,7 +58,7 @@ void frm_simd_complete(struct frm_simd_t *simd)
 		/* Access complete, remove the uop from the queue */
 		list_remove(simd->exec_buffer, uop);
 
-		frm_trace("si.end_inst id=%lld cu=%d\n", uop->id_in_sm,
+		frm_trace("frm.end_inst id=%lld cu=%d\n", uop->id_in_sm,
 			uop->sm->id);
 
 		/* Free uop */
@@ -171,7 +171,7 @@ void frm_simd_decode(struct frm_simd_t *simd)
 		/* Stall if the issue width has been reached. */
 		if (instructions_processed > frm_gpu_simd_width)
 		{
-			frm_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+			frm_trace("frm.inst id=%lld sm=%d w=%d uop_id=%lld "
 				"stg=\"s\"\n", uop->id_in_sm, 
 				simd->sm->id, uop->warp->id, 
 				uop->id_in_warp);
@@ -187,7 +187,7 @@ void frm_simd_decode(struct frm_simd_t *simd)
 		if (list_count(simd->decode_buffer) == 
 			frm_gpu_simd_decode_buffer_size)
 		{
-			frm_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+			frm_trace("frm.inst id=%lld sm=%d w=%d uop_id=%lld "
 				"stg=\"s\"\n", uop->id_in_sm, 
 				simd->sm->id, uop->warp->id, 
 				uop->id_in_warp);
@@ -199,7 +199,7 @@ void frm_simd_decode(struct frm_simd_t *simd)
 		list_remove(simd->issue_buffer, uop);
 		list_enqueue(simd->decode_buffer, uop);
 
-		frm_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
+		frm_trace("frm.inst id=%lld sm=%d w=%d uop_id=%lld "
 			"stg=\"simd-d\"\n", uop->id_in_sm, 
 			simd->sm->id, uop->warp->id, 
 			uop->id_in_warp);

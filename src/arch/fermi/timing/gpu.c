@@ -237,6 +237,8 @@ char *frm_gpu_config_file_name = "";
 char *frm_gpu_dump_default_config_file_name = "";
 char *frm_gpu_report_file_name = "";
 
+int frm_gpu_debug_category = 1;
+
 int frm_trace_category;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
@@ -341,7 +343,7 @@ int frm_gpu_fe_issue_width = 5;
 int frm_gpu_fe_max_inst_issued_per_type = 1;
 
 /* SIMD unit parameters */
-int frm_gpu_simd_num_simd_lanes = 16; /* Per SIMD */
+int frm_gpu_simd_num_simd_lanes = 16;
 int frm_gpu_simd_width = 1;
 int frm_gpu_simd_issue_buffer_size = 1;
 int frm_gpu_simd_decode_latency = 1;
@@ -1285,6 +1287,11 @@ enum arch_sim_kind_t frm_gpu_run(void)
 		/* Set grid status to 'running' */
 		frm_grid_clear_status(grid, frm_grid_pending);
 		frm_grid_set_status(grid, frm_grid_running);
+
+		/* Debug */
+		frm_gpu_debug("frm.new_grid id=%d tb_first=%d tb_count=%d\n", 
+			grid->id, grid->thread_block_id_first, 
+			grid->thread_block_count);
 
 		/* Trace */
 		frm_trace("frm.new_grid id=%d tb_first=%d tb_count=%d\n", 
