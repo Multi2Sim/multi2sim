@@ -25,6 +25,151 @@
 #include <ctype.h>
 #include <stdint.h>
 #include "asm.h"
+
+
+
+/*
+ * Structure of Instruction Format (Thumb2-32bit)
+ */
+
+struct arm_thumb32_ld_st_mult_t
+{
+	unsigned int reglist	: 16;	/* [15:0] */
+	unsigned int rn		: 4;	/* [19:16] */
+	unsigned int __reserved0: 1; 	/* [20] */
+	unsigned int wback	: 1;	/* [21] */
+	unsigned int __reserved1: 10; 	/* [31:22] */
+};
+
+struct arm_thumb32_push_pop_t
+{
+	unsigned int reglist	: 16;	/* [15:0] */
+	unsigned int __reserved0: 16; 	/* [31:16] */
+};
+
+struct arm_thumb32_ld_st_double_t
+{
+	unsigned int immd8	: 8;	/* [7:0] */
+	unsigned int rt		: 4;	/* [11:8] */
+	unsigned int rt2	: 4; 	/* [15:12] */
+	unsigned int rn		: 4; 	/* [19:16] */
+	unsigned int __reserved0: 1; 	/* [20] */
+	unsigned int wback	: 1;	/* [21] */
+	unsigned int __reserved1: 1; 	/* [22] */
+	unsigned int add_sub	: 1;	/* [23] */
+	unsigned int index	: 1;	/* [24] */
+	unsigned int __reserved2: 7; 	/* [31:25] */
+};
+
+struct arm_thumb32_table_branch_t
+{
+	unsigned int rm		: 4; 	/* [3:0] */
+	unsigned int h		: 1; 	/* [4] */
+	unsigned int __reserved0: 11; 	/* [15:5] */
+	unsigned int rn		: 4; 	/* [19:16] */
+	unsigned int __reserved1: 12; 	/* [31:20] */
+};
+
+struct arm_thumb32_data_proc_shftreg_t
+{
+	unsigned int rm		: 4; 	/* [3:0] */
+	unsigned int type	: 2; 	/* [5:4] */
+	unsigned int imm2	: 2; 	/* [7:6] */
+	unsigned int rd		: 4; 	/* [11:8] */
+	unsigned int imm3	: 3; 	/* [14:12] */
+	unsigned int __reserved0: 1; 	/* [15] */
+	unsigned int rn		: 4; 	/* [19:16] */
+	unsigned int sign	: 1; 	/* [20] */
+	unsigned int __reserved1: 11; 	/* [31:21] */
+};
+
+struct arm_thumb32_data_proc_immd_t
+{
+	unsigned int immd8	: 8; 	/* [7:0] */
+	unsigned int rd		: 4; 	/* [11:8] */
+	unsigned int imm3	: 3; 	/* [14:12] */
+	unsigned int __reserved0: 1; 	/* [15] */
+	unsigned int rn		: 4; 	/* [19:16] */
+	unsigned int sign	: 1; 	/* [20] */
+	unsigned int __reserved1: 5; 	/* [25:21] */
+	unsigned int i_flag	: 1; 	/* [26] */
+	unsigned int __reserved2: 5; 	/* [31:27] */
+};
+
+struct arm_thumb32_branch_t
+{
+	unsigned int immd11	: 11; 	/* [10:0] */
+	unsigned int j2		: 1; 	/* [11] */
+	unsigned int __reserved0: 1; 	/* [12] */
+	unsigned int j1		: 1; 	/* [13] */
+	unsigned int __reserved1: 2; 	/* [15:14] */
+	unsigned int immd6	: 6; 	/* [21:16] */
+	unsigned int cond	: 4; 	/* [25:22] */
+	unsigned int sign	: 1; 	/* [26] */
+	unsigned int __reserved2: 5; 	/* [31:27] */
+};
+
+struct arm_thumb32_ldstr_reg_t
+{
+	unsigned int rm		: 4;	/* [3:0] */
+	unsigned int imm2	: 2;	/* [5:4] */
+	unsigned int __reserved0: 6; 	/* [11:6] */
+	unsigned int rd		: 4;	/* [15:12] */
+	unsigned int rn		: 4;	/* [19:16] */
+	unsigned int __reserved1: 12; 	/* [31:20] */
+};
+
+struct arm_thumb32_ldstr_imm_t
+{
+	unsigned int imm12	: 12;	/* [11:0] */
+	unsigned int rd		: 4;	/* [15:12] */
+	unsigned int rn		: 4;	/* [19:16] */
+	unsigned int __reserved0: 3; 	/* [22:20] */
+	unsigned int add	: 1;	/* [23] */
+	unsigned int __reserved1: 8; 	/* [31:24] */
+};
+
+struct arm_thumb32_ldstrt_imm_t
+{
+	unsigned int imm8	: 8;	/* [7:0] */
+	unsigned int __reserved0: 4; 	/* [11:8] */
+	unsigned int rd		: 4;	/* [15:12] */
+	unsigned int rn		: 4;	/* [19:16] */
+	unsigned int __reserved1: 12; 	/* [31:20] */
+};
+
+struct arm_thumb32_dproc_reg_t
+{
+	unsigned int rm		: 4;	/* [3:0] */
+	unsigned int rot	: 2;	/* [5:4] */
+	unsigned int __reserved0: 2; 	/* [7:6] */
+	unsigned int rd		: 4;	/* [11:8] */
+	unsigned int __reserved1: 4; 	/* [15:12] */
+	unsigned int rn		: 4;	/* [19:16] */
+	unsigned int sign	: 1;	/* [20] */
+	unsigned int __reserved2: 11; 	/* [31:21] */
+};
+
+struct arm_thumb32_mult_t
+{
+	unsigned int rm		: 4;	/* [3:0] */
+	unsigned int __reserved0: 4; 	/* [7:4] */
+	unsigned int rd		: 4; 	/* [11:8] */
+	unsigned int ra		: 4; 	/* [15:12] */
+	unsigned int rn		: 4; 	/* [19:16] */
+	unsigned int __reserved1: 12; 	/* [31:20] */
+};
+
+struct arm_thumb32_mult_long_t
+{
+	unsigned int rm		: 4;	/* [3:0] */
+	unsigned int __reserved0: 4; 	/* [7:4] */
+	unsigned int rdhi	: 4; 	/* [11:8] */
+	unsigned int rdlo	: 4; 	/* [15:12] */
+	unsigned int rn		: 4; 	/* [19:16] */
+	unsigned int __reserved1: 12; 	/* [31:20] */
+};
+
 /*
  * Structure of Instruction Format (Thumb2-16bit)
  */
@@ -295,7 +440,20 @@ enum arm_thumb16_cat_enum
 enum arm_thumb32_cat_enum
 {
 	ARM_THUMB32_CAT_NONE = 0,
-
+	ARM_THUMB32_CAT_LD_ST_MULT,	/* Load Store Multiple */
+	ARM_THUMB32_CAT_LD_ST_DOUBLE,	/* Load Store Double Exclusive */
+	ARM_THUMB32_CAT_PUSH_POP,	/* Push Pop Multiple */
+	ARM_THUMB32_CAT_TABLE_BRNCH,	/* Table Branch Byte */
+	ARM_THUMB32_CAT_DPR_SHFTREG,	/* Data processing Shifted register */
+	ARM_THUMB32_CAT_DPR_IMM,	/* Data processing immediate */
+	ARM_THUMB32_CAT_DPR_BIN_IMM,	/* Data processing binary immediate */
+	ARM_THUMB32_CAT_BRANCH,		/* Branch */
+	ARM_THUMB32_CAT_LDSTR_BYTE,	/* Load Store Register Byte/Halfword */
+	ARM_THUMB32_CAT_LDSTR_REG,	/* Load Store Register */
+	ARM_THUMB32_CAT_LDSTR_IMMD,	/* Load Store Immediate */
+	ARM_THUMB32_CAT_DPR_REG,	/* Data Processing Register */
+	ARM_THUMB32_CAT_MULT,		/* Multiply */
+	ARM_THUMB32_CAT_MULT_LONG,	/* Multiply Long*/
 	ARM_THUMB32_CAT_UNDEF,
 
 	ARM_THUMB32_CAT_COUNT
