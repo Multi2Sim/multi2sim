@@ -1344,16 +1344,12 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 /* Advance one cycle in the SM by running every stage from last to first */
 void frm_sm_run(struct frm_sm_t *sm)
 {
-	struct arch_t *arch = frm_emu->arch;
+	//struct arch_t *arch = frm_emu->arch;
 	int i;
-	int num_simd_units;
-	int active_fetch_buffer;  /* Fetch buffer chosen to issue this cycle */
-
-	active_fetch_buffer = arch->cycle_count;
+	//int active_fetch_buffer;  /* Fetch buffer chosen to issue this cycle */
 
 	/* SIMDs */
-	num_simd_units = 1;
-	for (i = 0; i < num_simd_units; i++)
+	for (i = 0; i < sm->num_simd_units; i++)
 		frm_simd_run(sm->simd_units[i]);
 
 	/* Vector memory */
@@ -1370,12 +1366,12 @@ void frm_sm_run(struct frm_sm_t *sm)
 
 	/* Issue from the active fetch buffer */
 	//frm_sm_issue_first(sm, active_fetch_buffer);
-	frm_sm_issue_oldest(sm, active_fetch_buffer);
+	frm_sm_issue_oldest(sm, 0);
 
 	/* Update visualization in non-active fetch buffers */
-	for (i = 0; i < num_simd_units; i++)
+	for (i = 0; i < sm->num_simd_units; i++)
 	{
-		if (i != active_fetch_buffer)
+		if (i != 0)
 		{
         		frm_sm_update_fetch_visualization(
 				sm, i);
@@ -1383,7 +1379,7 @@ void frm_sm_run(struct frm_sm_t *sm)
 	}
 
 	/* Fetch */
-	for (i = 0; i < num_simd_units; i++)
+	for (i = 0; i < sm->num_simd_units; i++)
 		frm_sm_fetch(sm, i);
 
 	/* Stats */
