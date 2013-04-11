@@ -20,11 +20,12 @@
 #ifndef ARCH_FERMI_SPATIAL_REPORT_H
 #define ARCH_FERMI_SPATIAL_REPORT_H
 
+
 /*
  * Public variable
  */
 extern int frm_spatial_report_active  ;
-
+struct frm_sm_t;
 
 
 void frm_report_new_inst(struct frm_sm_t *sm);
