@@ -136,7 +136,7 @@ void frm_grid_clear_status(struct frm_grid_t *grid, enum frm_grid_status_t statu
 void frm_grid_setup_const_mem(struct frm_grid_t *grid)
 {
 	/* FIXME: built-in consts */
-        frm_isa_const_mem_write(0x8, &grid->local_size3[0]);
+        frm_isa_const_mem_write(0x8, &grid->block_size3[0]);
 }
 
 
@@ -306,11 +306,11 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 	int lid;  /* Local ID iterator */
 
 	/* Array of work-groups */
-	grid->thread_block_count = grid->group_count;
+	grid->thread_block_count = grid->block_count;
 	grid->thread_block_id_first = 0;
 	grid->thread_block_id_last = grid->thread_block_count - 1;
 	grid->thread_blocks = xcalloc(grid->thread_block_count, sizeof(void *));
-	for (gid = 0; gid < grid->group_count; gid++)
+	for (gid = 0; gid < grid->block_count; gid++)
 	{
 		grid->thread_blocks[gid] = frm_thread_block_create();
 		thread_block = grid->thread_blocks[gid];
@@ -318,7 +318,7 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 
 	/* Array of warps */
 	grid->warps_per_thread_block = 
-		(grid->local_size + frm_emu_warp_size - 1) /
+		(grid->block_size + frm_emu_warp_size - 1) /
 		frm_emu_warp_size;
 	grid->warp_count = grid->warps_per_thread_block * 
 		grid->thread_block_count;
@@ -346,17 +346,17 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 	}
 
 	/* Array of work-items */
-	grid->thread_count = grid->global_size;
+	grid->thread_count = grid->grid_size;
 	grid->thread_id_first = 0;
 	grid->thread_id_last = grid->thread_count - 1;
 	grid->threads = xcalloc(grid->thread_count, sizeof(void *));
 	tid = 0;
 	gid = 0;
-	for (gidz = 0; gidz < grid->group_count3[2]; gidz++)
+	for (gidz = 0; gidz < grid->block_count3[2]; gidz++)
 	{
-		for (gidy = 0; gidy < grid->group_count3[1]; gidy++)
+		for (gidy = 0; gidy < grid->block_count3[1]; gidy++)
 		{
-			for (gidx = 0; gidx < grid->group_count3[0]; gidx++)
+			for (gidx = 0; gidx < grid->block_count3[0]; gidx++)
 			{
 				/* Assign work-group ID */
 				thread_block = grid->thread_blocks[gid];
@@ -369,8 +369,8 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 
 				/* First, last, and number of work-items in work-group */
 				thread_block->thread_id_first = tid;
-				thread_block->thread_id_last = tid + grid->local_size;
-				thread_block->thread_count = grid->local_size;
+				thread_block->thread_id_last = tid + grid->block_size;
+				thread_block->thread_count = grid->block_size;
 				thread_block->threads = &grid->threads[tid];
 				snprintf(thread_block->name, sizeof(thread_block->name), "work-group[i%d-i%d]",
 					thread_block->thread_id_first, thread_block->thread_id_last);
@@ -382,11 +382,11 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 				thread_block->warps = &grid->warps[thread_block->warp_id_first];
 				/* Iterate through work-items */
 				lid = 0;
-				for (lidz = 0; lidz < grid->local_size3[2]; lidz++)
+				for (lidz = 0; lidz < grid->block_size3[2]; lidz++)
 				{
-					for (lidy = 0; lidy < grid->local_size3[1]; lidy++)
+					for (lidy = 0; lidy < grid->block_size3[1]; lidy++)
 					{
-						for (lidx = 0; lidx < grid->local_size3[0]; lidx++)
+						for (lidx = 0; lidx < grid->block_size3[0]; lidx++)
 						{
 							/* Wavefront ID */
 							wid = gid * grid->warps_per_thread_block +
@@ -400,9 +400,9 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 							thread->grid = grid;
 
 							/* Global IDs */
-							thread->id_3d[0] = gidx * grid->local_size3[0] + lidx;
-							thread->id_3d[1] = gidy * grid->local_size3[1] + lidy;
-							thread->id_3d[2] = gidz * grid->local_size3[2] + lidz;
+							thread->id_3d[0] = gidx * grid->block_size3[0] + lidx;
+							thread->id_3d[1] = gidy * grid->block_size3[1] + lidy;
+							thread->id_3d[2] = gidz * grid->block_size3[2] + lidz;
 							thread->id = tid;
 
 							/* Local IDs */
@@ -460,15 +460,15 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 	}
 
 	/* Debug */
-	frm_isa_debug("local_size = %d (%d,%d,%d)\n", grid->local_size,
-		grid->local_size3[0], grid->local_size3[1],
-		grid->local_size3[2]);
-	frm_isa_debug("global_size = %d (%d,%d,%d)\n", grid->global_size,
-		grid->global_size3[0], grid->global_size3[1],
-		grid->global_size3[2]);
-	frm_isa_debug("group_count = %d (%d,%d,%d)\n", grid->group_count,
-		grid->group_count3[0], grid->group_count3[1],
-		grid->group_count3[2]);
+	frm_isa_debug("block_size = %d (%d,%d,%d)\n", grid->block_size,
+		grid->block_size3[0], grid->block_size3[1],
+		grid->block_size3[2]);
+	frm_isa_debug("grid_size = %d (%d,%d,%d)\n", grid->grid_size,
+		grid->grid_size3[0], grid->grid_size3[1],
+		grid->grid_size3[2]);
+	frm_isa_debug("block_count = %d (%d,%d,%d)\n", grid->block_count,
+		grid->block_count3[0], grid->block_count3[1],
+		grid->block_count3[2]);
 	frm_isa_debug("warp_count = %d\n", grid->warp_count);
 	frm_isa_debug("warps_per_thread_block = %d\n",
 		grid->warps_per_thread_block);
@@ -477,53 +477,53 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 
 
 void frm_grid_setup_size(struct frm_grid_t *grid,
-		unsigned int *global_size,
-		unsigned int *local_size,
+		unsigned int *grid_size,
+		unsigned int *block_size,
 		int work_dim)
 {
 	int i;
 
 	/* Default value */
-	grid->global_size3[1] = 1;
-	grid->global_size3[2] = 1;
-	grid->local_size3[1] = 1;
-	grid->local_size3[2] = 1;
+	grid->grid_size3[1] = 1;
+	grid->grid_size3[2] = 1;
+	grid->block_size3[1] = 1;
+	grid->block_size3[2] = 1;
 
 	/* Global work sizes */
 	for (i = 0; i < work_dim; i++)
-		grid->global_size3[i] = global_size[i];
-	grid->global_size = grid->global_size3[0] *
-			grid->global_size3[1] * grid->global_size3[2];
+		grid->grid_size3[i] = grid_size[i];
+	grid->grid_size = grid->grid_size3[0] *
+			grid->grid_size3[1] * grid->grid_size3[2];
 
 	/* Local work sizes */
 	for (i = 0; i < work_dim; i++)
 	{
-		grid->local_size3[i] = local_size[i];
-		if (grid->local_size3[i] < 1)
+		grid->block_size3[i] = block_size[i];
+		if (grid->block_size3[i] < 1)
 			fatal("%s: local work size must be greater than 0",
 					__FUNCTION__);
 	}
-	grid->local_size = grid->local_size3[0] * grid->local_size3[1] * grid->local_size3[2];
+	grid->block_size = grid->block_size3[0] * grid->block_size3[1] * grid->block_size3[2];
 
 	/* Check valid global/local sizes */
-	if (grid->global_size3[0] < 1 || grid->global_size3[1] < 1
-			|| grid->global_size3[2] < 1)
+	if (grid->grid_size3[0] < 1 || grid->grid_size3[1] < 1
+			|| grid->grid_size3[2] < 1)
 		fatal("%s: invalid global size", __FUNCTION__);
-	if (grid->local_size3[0] < 1 || grid->local_size3[1] < 1
-			|| grid->local_size3[2] < 1)
+	if (grid->block_size3[0] < 1 || grid->block_size3[1] < 1
+			|| grid->block_size3[2] < 1)
 		fatal("%s: invalid local size", __FUNCTION__);
 
 	/* Check divisibility of global by local sizes */
-	if ((grid->global_size3[0] % grid->local_size3[0])
-			|| (grid->global_size3[1] % grid->local_size3[1])
-			|| (grid->global_size3[2] % grid->local_size3[2]))
+	if ((grid->grid_size3[0] % grid->block_size3[0])
+			|| (grid->grid_size3[1] % grid->block_size3[1])
+			|| (grid->grid_size3[2] % grid->block_size3[2]))
 		fatal("%s: global work sizes must be multiples of local sizes",
 				__FUNCTION__);
 
 	/* Calculate number of groups */
 	for (i = 0; i < 3; i++)
-		grid->group_count3[i] = grid->global_size3[i] / grid->local_size3[i];
-	grid->group_count = grid->group_count3[0] * grid->group_count3[1] * grid->group_count3[2];
+		grid->block_count3[i] = grid->grid_size3[i] / grid->block_size3[i];
+	grid->block_count = grid->block_count3[0] * grid->block_count3[1] * grid->block_count3[2];
 
 	/* Allocate work-group, warp, and work-item arrays */
 	frm_grid_setup_arrays(grid);

@@ -33,6 +33,29 @@
 #include "sm.h"
 
 
+
+
+void frm_mem_config_check(struct config_t *config)
+{
+	struct frm_sm_t *sm;
+	int sm_id;
+	char *file_name;
+
+	/* Check that all SMs have an entry to the memory hierarchy. */
+	file_name = config_get_file_name(config);
+	FRM_GPU_FOREACH_SM(sm_id)
+	{
+		sm = frm_gpu->sms[sm_id];
+		if (!sm->global_memory)
+			fatal("%s: Fermi SM[%d] has no entry to memory.\n"
+					"\tPlease add a new [Entry <name>] section in\n"
+					"\tyour memory configuration file to associate\n"
+					"\tthis SM with a memory module.\n",
+					file_name, sm_id);
+	}
+}
+
+
 void frm_mem_config_default(struct config_t *config)
 {
 	char section[MAX_STRING_SIZE];
@@ -65,7 +88,7 @@ void frm_mem_config_default(struct config_t *config)
 		config_write_string(config, section, "Geometry", "frm-geo-l1");
 		config_write_string(config, section, "LowNetwork", "frm-net-l1-l2");
 		config_write_string(config, section, "LowModules", 
-			"frm-l2-0 frm-l2-1 frm-l2-2 frm-l2-3 frm-l2-4 frm-l2-5");
+				"frm-l2-0 frm-l2-1 frm-l2-2 frm-l2-3 frm-l2-4 frm-l2-5");
 
 		/* Entry */
 		snprintf(section, sizeof section, "Entry frm-sm-%d", sm_id);
@@ -83,7 +106,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "LowNetwork", "frm-net-l2-0-gm-0");
 	config_write_string(config, section, "LowModules", "frm-gm-0");
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 0");
+			"ADDR DIV 64 MOD 6 EQ 0");
 
 	snprintf(section, sizeof section, "Module frm-l2-1");
 	config_write_string(config, section, "Type", "Cache");
@@ -92,8 +115,8 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "LowNetwork", "frm-net-l2-1-gm-1");
 	config_write_string(config, section, "LowModules", "frm-gm-1");
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 1");
-	
+			"ADDR DIV 64 MOD 6 EQ 1");
+
 	snprintf(section, sizeof section, "Module frm-l2-2");
 	config_write_string(config, section, "Type", "Cache");
 	config_write_string(config, section, "Geometry", "frm-geo-l2");
@@ -101,7 +124,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "LowNetwork", "frm-net-l2-2-gm-2");
 	config_write_string(config, section, "LowModules", "frm-gm-2");
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 2");
+			"ADDR DIV 64 MOD 6 EQ 2");
 
 	snprintf(section, sizeof section, "Module frm-l2-3");
 	config_write_string(config, section, "Type", "Cache");
@@ -110,7 +133,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "LowNetwork", "frm-net-l2-3-gm-3");
 	config_write_string(config, section, "LowModules", "frm-gm-3");
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 3");
+			"ADDR DIV 64 MOD 6 EQ 3");
 
 	snprintf(section, sizeof section, "Module frm-l2-4");
 	config_write_string(config, section, "Type", "Cache");
@@ -119,7 +142,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "LowNetwork", "frm-net-l2-4-gm-4");
 	config_write_string(config, section, "LowModules", "frm-gm-4");
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 4");
+			"ADDR DIV 64 MOD 6 EQ 4");
 
 	snprintf(section, sizeof section, "Module frm-l2-5");
 	config_write_string(config, section, "Type", "Cache");
@@ -128,7 +151,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_string(config, section, "LowNetwork", "frm-net-l2-5-gm-5");
 	config_write_string(config, section, "LowModules", "frm-gm-5");
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 5");
+			"ADDR DIV 64 MOD 6 EQ 5");
 
 	/* Global memory */
 	snprintf(section, sizeof section, "Module frm-gm-0");
@@ -137,7 +160,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 0");
+			"ADDR DIV 64 MOD 6 EQ 0");
 
 	snprintf(section, sizeof section, "Module frm-gm-1");
 	config_write_string(config, section, "Type", "MainMemory");
@@ -145,7 +168,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 1");
+			"ADDR DIV 64 MOD 6 EQ 1");
 
 	snprintf(section, sizeof section, "Module frm-gm-2");
 	config_write_string(config, section, "Type", "MainMemory");
@@ -153,7 +176,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 2");
+			"ADDR DIV 64 MOD 6 EQ 2");
 
 	snprintf(section, sizeof section, "Module frm-gm-3");
 	config_write_string(config, section, "Type", "MainMemory");
@@ -161,7 +184,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 3");
+			"ADDR DIV 64 MOD 6 EQ 3");
 
 	snprintf(section, sizeof section, "Module frm-gm-4");
 	config_write_string(config, section, "Type", "MainMemory");
@@ -169,7 +192,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 4");
+			"ADDR DIV 64 MOD 6 EQ 4");
 
 	snprintf(section, sizeof section, "Module frm-gm-5");
 	config_write_string(config, section, "Type", "MainMemory");
@@ -177,7 +200,7 @@ void frm_mem_config_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
 	config_write_string(config, section, "AddressRange", 
-		"ADDR DIV 64 MOD 6 EQ 5");
+			"ADDR DIV 64 MOD 6 EQ 5");
 
 	/* Network connecting L1s and L2s */
 	snprintf(section, sizeof section, "Network frm-net-l1-l2");
@@ -233,20 +256,20 @@ void frm_mem_config_parse_entry(struct config_t *config, char *section)
 	/* Allow these sections in case we quit before reading them. */
 	config_var_allow(config, section, "Module");
 
-	/* Read compute unit */
+	/* Read SM */
 	sm_id = config_read_int(config, section, "SM", -1);
 	if (sm_id < 0)
 		fatal("%s: section [%s]: invalid or missing value for 'SM'",
-			file_name, section);
+				file_name, section);
 
-	/* Check compute unit boundaries */
+	/* Check SM boundaries */
 	if (sm_id >= frm_gpu_num_sms)
 	{
 		warning("%s: section [%s] ignored, referring to Fermi SM[%d].\n"
-			"\tThis section refers to a SM that does not currently exist.\n"
-			"\tPlease review your Fermi configuration file if this is not the\n"
-			"\tdesired behavior.\n",
-			file_name, section, sm_id);
+				"\tThis section refers to a SM that does not currently exist.\n"
+				"\tPlease review your Fermi configuration file if this is not the\n"
+				"\tdesired behavior.\n",
+				file_name, section, sm_id);
 		return;
 	}
 
@@ -254,54 +277,34 @@ void frm_mem_config_parse_entry(struct config_t *config, char *section)
 	sm = frm_gpu->sms[sm_id];
 	if (sm->global_memory)
 		fatal("%s: section [%s]: entry from SM[%d] already assigned.\n"
-			"\tA different [Entry <name>] section in the memory configuration file has already\n"
-			"\tassigned an entry for this particular SM. Please review your\n"
-			"\tconfiguration file to avoid duplicates.\n",
-			file_name, section, sm_id);
+				"\tA different [Entry <name>] section in the memory configuration file has already\n"
+				"\tassigned an entry for this particular SM. Please review your\n"
+				"\tconfiguration file to avoid duplicates.\n",
+				file_name, section, sm_id);
 
 	/* Read module */
 	module_name = config_read_string(config, section, "Module", NULL);
 	if (!module_name)
 		fatal("%s: section [%s]: variable 'Module' missing.\n"
-			"\tPlease run use '--mem-help' for more information on the\n"
-			"\tconfiguration file format, or consult the Multi2Sim Guide.\n",
-			file_name, section);
-	
+				"\tPlease run use '--mem-help' for more information on the\n"
+				"\tconfiguration file format, or consult the Multi2Sim Guide.\n",
+				file_name, section);
+
 	/* Assign module */
 	sm->global_memory = mem_system_get_mod(module_name);
 	if (!sm->global_memory)
 		fatal("%s: section [%s]: '%s' is not a valid module name.\n"
-			"\tThe given module name must match a module declared in a section\n"
-			"\t[Module <name>] in the memory configuration file.\n",
-			file_name, section, module_name);
-	
+				"\tThe given module name must match a module declared in a section\n"
+				"\t[Module <name>] in the memory configuration file.\n",
+				file_name, section, module_name);
+
 	/* Add modules to list of memory entries */
 	linked_list_add(frm_emu->arch->mem_entry_mod_list,
 			sm->global_memory);
-	
+
 	/* Debug */
 	mem_debug("\tFermi SM[%d]\n", sm_id);
 	mem_debug("\t\tEntry -> %s\n", sm->global_memory->name);
 	mem_debug("\n");
-}
-
-
-void frm_mem_config_check(struct config_t *config)
-{
-	struct frm_sm_t *sm;
-	int sm_id;
-	char *file_name;
-
-	/* Check that all SMs have an entry to the memory hierarchy. */
-	file_name = config_get_file_name(config);
-	FRM_GPU_FOREACH_SM(sm_id)
-	{
-		sm = frm_gpu->sms[sm_id];
-		if (!sm->global_memory)
-			fatal("%s: Fermi SM[%d] has no entry to memory.\n"
-				"\tPlease add a new [Entry <name>] section in your memory configuration\n"
-				"\tfile to associate this SM with a memory module.\n",
-				file_name, sm_id);
-	}
 }
 

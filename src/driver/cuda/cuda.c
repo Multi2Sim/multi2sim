@@ -322,6 +322,7 @@ int cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 	char function_name[MAX_STRING_SIZE];
 	unsigned long long int *inst_buffer;
 	unsigned int inst_buffer_size;
+	unsigned int num_gpr_used;
 
 	struct cuda_module_t *module;
 	struct cuda_function_t *function;
@@ -331,18 +332,20 @@ int cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 	inst_buffer_size = regs->edi;
 	inst_buffer = (unsigned long long int *)xcalloc(1, inst_buffer_size);
 	mem_read(mem, regs->esi, inst_buffer_size, inst_buffer);
+	num_gpr_used = regs->ebp;
 
-	cuda_debug("\tin: module.id=0x%08x\n", module_id);
-	cuda_debug("\tin: function_name=%s\n", function_name);
-	cuda_debug("\tin: inst_buffer=%p\n", inst_buffer);
-	cuda_debug("\tin: inst_buffer_size=%u\n", inst_buffer_size);
+	cuda_debug("\tin: module.id = 0x%08x\n", module_id);
+	cuda_debug("\tin: function_name = %s\n", function_name);
+	cuda_debug("\tin: inst_buffer = %p\n", inst_buffer);
+	cuda_debug("\tin: inst_buffer_size = %u\n", inst_buffer_size);
+	cuda_debug("\tin: num_gpr_used = %u\n", num_gpr_used);
 
 	/* Get module */
 	module = (struct cuda_module_t *)list_get(module_list, module_id);
 
 	/* Create function */
 	function = cuda_function_create(module, function_name, inst_buffer,
-			inst_buffer_size);
+			inst_buffer_size, num_gpr_used);
 
 	/* Free */
 	free(inst_buffer);
@@ -722,6 +725,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	/* Create and setup grid */
 	grid = frm_grid_create(function);
+        grid->num_gpr_used = function->num_gpr_used;
 	frm_grid_setup_size(grid, gridDim, blockDim, 3);
 
 	/* Create arguments */
