@@ -418,9 +418,12 @@ struct opencl_command_t *opencl_command_create_ndrange(
 
 	/* Calculate the number of work groups in the ND-Range */
 	command->ndrange.num_groups = 
-		global_work_size[0]/local_work_size[0] * 
-		global_work_size[1]/local_work_size[1] * 
-		global_work_size[2]/local_work_size[2];
+		(command->ndrange.global_work_size[0] /
+		command->ndrange.local_work_size[0]) * 
+		(command->ndrange.global_work_size[1] /
+		 command->ndrange.local_work_size[1]) * 
+		(command->ndrange.global_work_size[2] / 
+		 command->ndrange.local_work_size[2]);
 
 	/* Return */
 	return command;
