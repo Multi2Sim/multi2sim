@@ -210,15 +210,13 @@ void frm_sm_free(struct frm_sm_t *sm)
 }
 
 
-void frm_sm_map_thread_block(struct frm_sm_t *sm, 
-	struct frm_thread_block_t *thread_block)
+void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thread_block)
 {
 	struct frm_grid_t *grid;
 	struct frm_warp_t *warp;
 	int warp_id;
 
-	assert(sm->thread_block_count < 
-		frm_gpu->thread_blocks_per_sm);
+	assert(sm->thread_block_count < frm_gpu->thread_blocks_per_sm);
 	assert(!thread_block->id_in_sm);
 
 	grid = thread_block->grid;
@@ -233,15 +231,10 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm,
 	/* If thread block reached its maximum load, remove it from
 	 * 'sm_ready' list.  Otherwise, move it to the end of 
 	 * the 'sm_ready' list. */
-	assert(DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_ready, 
-		sm));
+	assert(DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_ready, sm));
 	DOUBLE_LINKED_LIST_REMOVE(frm_gpu, sm_ready, sm);
-	if (sm->thread_block_count < 
-		frm_gpu->thread_blocks_per_sm)
-	{
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_ready, 
-			sm);
-	}
+	if (sm->thread_block_count < frm_gpu->thread_blocks_per_sm)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_ready, sm);
 	
 	/* If this is the first scheduled thread block, insert to
 	 * 'sm_busy' list. */

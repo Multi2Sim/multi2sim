@@ -102,11 +102,11 @@ void frm_grid_set_status(struct frm_grid_t *grid, enum frm_grid_status_t status)
 
         /* Add grid to lists */
         if (status & frm_grid_pending)
-                DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, pending_grid, grid);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, pending_grid, grid);
         if (status & frm_grid_running)
-                DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, running_grid, grid);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, running_grid, grid);
         if (status & frm_grid_finished)
-                DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, finished_grid, grid);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, finished_grid, grid);
 
         /* Update it */
         grid->status |= status;
@@ -489,13 +489,13 @@ void frm_grid_setup_size(struct frm_grid_t *grid,
 	grid->block_size3[1] = 1;
 	grid->block_size3[2] = 1;
 
-	/* Global work sizes */
+	/* Grid sizes */
 	for (i = 0; i < work_dim; i++)
 		grid->grid_size3[i] = grid_size[i];
 	grid->grid_size = grid->grid_size3[0] *
 			grid->grid_size3[1] * grid->grid_size3[2];
 
-	/* Local work sizes */
+	/* Thread block sizes */
 	for (i = 0; i < work_dim; i++)
 	{
 		grid->block_size3[i] = block_size[i];
@@ -505,7 +505,7 @@ void frm_grid_setup_size(struct frm_grid_t *grid,
 	}
 	grid->block_size = grid->block_size3[0] * grid->block_size3[1] * grid->block_size3[2];
 
-	/* Check valid global/local sizes */
+	/* Check valid grid/thread block sizes */
 	if (grid->grid_size3[0] < 1 || grid->grid_size3[1] < 1
 			|| grid->grid_size3[2] < 1)
 		fatal("%s: invalid global size", __FUNCTION__);
@@ -525,7 +525,7 @@ void frm_grid_setup_size(struct frm_grid_t *grid,
 		grid->block_count3[i] = grid->grid_size3[i] / grid->block_size3[i];
 	grid->block_count = grid->block_count3[0] * grid->block_count3[1] * grid->block_count3[2];
 
-	/* Allocate work-group, warp, and work-item arrays */
+	/* Allocate work-group, warp, and thread arrays */
 	frm_grid_setup_arrays(grid);
 }
 
