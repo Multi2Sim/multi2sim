@@ -164,7 +164,7 @@ void opencl_done(void)
 /* NOTE: when modifying the values of these two macros, the same values should
  * be reflected in 'runtime/opencl/platform.c'. */
 #define OPENCL_VERSION_MAJOR  1
-#define OPENCL_VERSION_MINOR  1403
+#define OPENCL_VERSION_MINOR  1559
 
 struct opencl_version_t
 {
@@ -927,7 +927,7 @@ static int opencl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
 
 	/* Create ND-Range */
 	ndrange = si_ndrange_create();
-	ndrange->id = 0;
+	ndrange->id = si_emu->ndrange_count++;
         ndrange->local_mem_top = kernel->mem_size_local;
         ndrange->num_sgpr_used = kernel->bin_file->
                 enc_dict_entry_southern_islands->num_sgpr_used;
@@ -1126,6 +1126,8 @@ static void opencl_abi_si_ndrange_finish_wakeup(struct x86_ctx_t *ctx,
 	driver_state.wait_for_ndrange_completion = 0;
 	driver_state.ndrange_complete = 0;
 	driver_state.ready_for_work = 0;
+
+	si_emu->ndrange = NULL;
 }
 
 static int opencl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
@@ -1142,6 +1144,8 @@ static int opencl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
 		driver_state.wait_for_ndrange_completion = 0;
 		driver_state.ndrange_complete = 0;
 		driver_state.ready_for_work = 0;
+
+		si_emu->ndrange = NULL;
 	}
 	else 
 	{

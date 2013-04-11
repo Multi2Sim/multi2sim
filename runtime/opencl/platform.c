@@ -148,7 +148,7 @@ void opencl_platform_free(struct opencl_platform_t *platform)
  * NOTE: when modifying the values of these two macros, the same values should
  * be reflected in 'src/driver/opencl/opencl.c'. */
 #define OPENCL_VERSION_MAJOR  1
-#define OPENCL_VERSION_MINOR  1403
+#define OPENCL_VERSION_MINOR  1559
 
 cl_int clGetPlatformIDs(
 	cl_uint num_entries,
