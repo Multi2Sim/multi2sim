@@ -21,8 +21,10 @@
 
 #include <arch/common/arch.h>
 #include <arch/fermi/emu/emu.h>
+#include <arch/fermi/emu/thread-block.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
+#include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <arch/fermi/emu/warp.h>
 
@@ -30,6 +32,7 @@
 #include "gpu.h"
 #include "simd-unit.h"
 #include "uop.h"
+#include "warp-pool.h"
 
 
 void frm_simd_complete(struct frm_simd_t *simd)
@@ -48,11 +51,34 @@ void frm_simd_complete(struct frm_simd_t *simd)
 	{
 		uop = list_get(simd->exec_buffer, list_index);
 		assert(uop);
+		frm_gpu_debug("uop name = %s\n", ((uop->inst).info)->name);
 
 		if (arch->cycle_count < uop->execute_ready)
 		{
 			list_index++;
 			continue;
+		}
+
+		/* Check for "end" instruction */
+		if (uop->warp_last_inst)
+		{
+			/* If the uop completes the warp, set a bit 
+			 * so that the hardware wont try to fetch any 
+			 * more instructions for it */
+			uop->thread_block->sm_finished_count++;
+			uop->warp_pool_entry->warp_finished = 1;
+
+			/* Check if warp finishes a work-group */
+			assert(uop->thread_block);
+			assert(uop->thread_block->sm_finished_count <=
+				uop->thread_block->warp_count);
+			//if (uop->thread_block->sm_finished_count == 
+			//		uop->thread_block->warp_count)
+			{
+				frm_sm_unmap_thread_block(
+					simd->sm,
+					uop->thread_block);
+			}
 		}
 
 		/* Access complete, remove the uop from the queue */
@@ -88,6 +114,7 @@ void frm_simd_execute(struct frm_simd_t *simd)
 	{
 		uop = list_get(simd->decode_buffer, list_index);
 		assert(uop);
+		frm_gpu_debug("uop name = %s\n", ((uop->inst).info)->name);
 
 		instructions_processed++;
 
@@ -158,6 +185,7 @@ void frm_simd_decode(struct frm_simd_t *simd)
 	{
 		uop = list_get(simd->issue_buffer, list_index);
 		assert(uop);
+		frm_gpu_debug("uop name = %s\n", ((uop->inst).info)->name);
 
 		instructions_processed++;
 

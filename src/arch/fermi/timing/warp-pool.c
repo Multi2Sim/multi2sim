@@ -23,6 +23,7 @@
 #include <arch/fermi/emu/warp.h>
 #include <arch/fermi/emu/thread-block.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 
 #include "gpu.h"
 #include "warp-pool.h"
@@ -79,6 +80,9 @@ void frm_warp_pool_map_warps(struct frm_warp_pool_t *warp_pool,
 		warp->warp_pool_entry =
 			warp_pool->entries[first_entry + i];
 		assert(!warp->warp_pool_entry->valid);
+
+		frm_gpu_debug("w[%d] assigned to warp pool entry [%d]\n", i,
+				warp->warp_pool_entry->id_in_warp_pool);
 
 		/* Set initial state */
 		warp->warp_pool_entry->valid = 1;

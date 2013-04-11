@@ -31,7 +31,7 @@
 extern int frm_stack_debug_category;
 
 
-/* Part of a GPU instruction specific for each work-item within warp. */
+/* Part of a GPU instruction specific for each thread within warp. */
 struct frm_thread_uop_t
 {
 	/* For global memory accesses */
