@@ -216,12 +216,12 @@ void glReadBuffer( GLenum mode )
 }
 
 
-void glEnable( GLenum cap )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glEnable( GLenum cap )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnable, &cap);
-}
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnable, &cap);
+// }
 
 
 void glDisable( GLenum cap )
@@ -314,22 +314,22 @@ GLenum glGetError( void )
 }
 
 
-const GLubyte *glGetString( GLenum name )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// const GLubyte *glGetString( GLenum name )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	switch(name)
-	{
-	case GL_VERSION:
-	{
-		sprintf(opengl_get_string, "Multi2Sim OpenGL %u.%u\n", gl_runtime_info.version_major, gl_runtime_info.version_minor);
-		return (const GLubyte *)opengl_get_string;
-	}
-	default:
-		return NULL;
-	}
+// 	switch(name)
+// 	{
+// 	case GL_VERSION:
+// 	{
+// 		sprintf(opengl_get_string, "Multi2Sim OpenGL %u.%u\n", gl_runtime_info.version_major, gl_runtime_info.version_minor);
+// 		return (const GLubyte *)opengl_get_string;
+// 	}
+// 	default:
+// 		return NULL;
+// 	}
 
-}
+// }
 
 
 void glFinish( void )
@@ -3390,36 +3390,36 @@ void glGetQueryObjectuiv (GLuint id, GLenum pname, GLuint *params)
 	__OPENGL_NOT_IMPL__
 }
 
-void glBindBuffer (GLenum target, GLuint buffer)
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glBindBuffer (GLenum target, GLuint buffer)
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
 
-	unsigned int sys_args[2];
-	sys_args[0] = (unsigned int) target;
-	sys_args[1] = (unsigned int) buffer;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBindBuffer, &sys_args);
-}
+// 	unsigned int sys_args[2];
+// 	sys_args[0] = (unsigned int) target;
+// 	sys_args[1] = (unsigned int) buffer;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBindBuffer, &sys_args);
+// }
 
-void glDeleteBuffers (GLsizei n, const GLuint *buffers)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteBuffers (GLsizei n, const GLuint *buffers)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGenBuffers (GLsizei n, GLuint *buffers)
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glGenBuffers (GLsizei n, GLuint *buffers)
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
 
-	int i;
-	unsigned int sys_args[2];
-	sys_args[0] = (unsigned int) n;
-	sys_args[1] = (unsigned int) buffers;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenBuffers, &sys_args);
+// 	int i;
+// 	unsigned int sys_args[2];
+// 	sys_args[0] = (unsigned int) n;
+// 	sys_args[1] = (unsigned int) buffers;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenBuffers, &sys_args);
 
-	for (i = 0; i < n; ++i)
-		opengl_debug(stdout, "glGenBuffers: Buffer #%d ID = %d\n", n, buffers[n]);	
-}
+// 	for (i = 0; i < n; ++i)
+// 		opengl_debug(stdout, "glGenBuffers: Buffer #%d ID = %d\n", n, buffers[n]);	
+// }
 
 GLboolean glIsBuffer (GLuint buffer)
 {
@@ -3427,19 +3427,19 @@ GLboolean glIsBuffer (GLuint buffer)
 	return 0;
 }
 
-void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage)
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage)
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
 
-	unsigned int sys_args[4];
-	sys_args[0] = (unsigned int) target;
-	sys_args[1] = (unsigned int) size;
-	sys_args[2] = (unsigned int) data;
-	sys_args[3] = (unsigned int) usage;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBufferData, &sys_args);
+// 	unsigned int sys_args[4];
+// 	sys_args[0] = (unsigned int) target;
+// 	sys_args[1] = (unsigned int) size;
+// 	sys_args[2] = (unsigned int) data;
+// 	sys_args[3] = (unsigned int) usage;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBufferData, &sys_args);
 
-}
+// }
 
 void glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data)
 {
@@ -3553,78 +3553,78 @@ void glStencilMaskSeparate (GLenum face, GLuint mask)
 	__OPENGL_NOT_IMPL__
 }
 
-void glAttachShader (GLuint program, GLuint shader)
-{
-	unsigned int sys_args[2];
+// void glAttachShader (GLuint program, GLuint shader)
+// {
+// 	unsigned int sys_args[2];
 
-	sys_args[0] = (unsigned int) program;
-	sys_args[1] = (unsigned int) shader;
+// 	sys_args[0] = (unsigned int) program;
+// 	sys_args[1] = (unsigned int) shader;
 
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glAttachShader, &sys_args);
-}
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glAttachShader, &sys_args);
+// }
 
 void glBindAttribLocation (GLuint program, GLuint index, const GLchar *name)
 {
 	__OPENGL_NOT_IMPL__
 }
 
-void glCompileShader (GLuint shader)
-{
+// void glCompileShader (GLuint shader)
+// {
 	/* FIXME: Currently user need to load binary*/
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+	// opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-}
+// }
 
-GLuint glCreateProgram (void)
-{
-	int ret;
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// GLuint glCreateProgram (void)
+// {
+// 	int ret;
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	ret = syscall(OPENGL_SYSCALL_CODE, opengl_call_glCreateProgram, NULL);
+// 	ret = syscall(OPENGL_SYSCALL_CODE, opengl_call_glCreateProgram, NULL);
 
-	opengl_debug(stdout, "glCreateProgram ID = %d\n", ret);
-	return ret;
+// 	opengl_debug(stdout, "glCreateProgram ID = %d\n", ret);
+// 	return ret;
 
-}
+// }
 
-GLuint glCreateShader (GLenum type)
-{
-	int ret;
-	unsigned int sys_args[1];
+// GLuint glCreateShader (GLenum type)
+// {
+// 	int ret;
+// 	unsigned int sys_args[1];
 
-	sys_args[0] = (unsigned int) type;
+// 	sys_args[0] = (unsigned int) type;
 
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	if(type == GL_VERTEX_SHADER || type == GL_TESS_CONTROL_SHADER || type == GL_TESS_EVALUATION_SHADER || type == GL_GEOMETRY_SHADER || type == GL_FRAGMENT_SHADER)
-	{
-		ret = syscall(OPENGL_SYSCALL_CODE, opengl_call_glCreateShader, &sys_args);
-		opengl_debug(stdout, "glCreateShader ID = %d\n", ret);
-		return ret;
-	}
-	else 
-	{
-		opengl_err_flag = GL_INVALID_ENUM;
-		return 0;
-	}
-}
+// 	if(type == GL_VERTEX_SHADER || type == GL_TESS_CONTROL_SHADER || type == GL_TESS_EVALUATION_SHADER || type == GL_GEOMETRY_SHADER || type == GL_FRAGMENT_SHADER)
+// 	{
+// 		ret = syscall(OPENGL_SYSCALL_CODE, opengl_call_glCreateShader, &sys_args);
+// 		opengl_debug(stdout, "glCreateShader ID = %d\n", ret);
+// 		return ret;
+// 	}
+// 	else 
+// 	{
+// 		opengl_err_flag = GL_INVALID_ENUM;
+// 		return 0;
+// 	}
+// }
 
-void glDeleteProgram (GLuint program)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteProgram (GLuint program)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDeleteShader (GLuint shader)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteShader (GLuint shader)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDetachShader (GLuint program, GLuint shader)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDetachShader (GLuint program, GLuint shader)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glDisableVertexAttribArray (GLuint index)
 {
@@ -3735,31 +3735,31 @@ GLboolean glIsShader (GLuint shader)
 	return 0;
 }
 
-void glLinkProgram (GLuint program)
-{
-	/* Currently users need to load binary */
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glLinkProgram (GLuint program)
+// {
+// 	/* Currently users need to load binary */
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	unsigned int sys_args[1];
-	sys_args[0] = (unsigned int) program;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glLinkProgram, &sys_args);
-}
+// 	unsigned int sys_args[1];
+// 	sys_args[0] = (unsigned int) program;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glLinkProgram, &sys_args);
+// }
 
-void glShaderSource (GLuint shader, GLsizei count, const GLchar* *string, const GLint *length)
-{
-	/* Currently users need to load binary */
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-}
+// void glShaderSource (GLuint shader, GLsizei count, const GLchar* *string, const GLint *length)
+// {
+// 	/* Currently users need to load binary */
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// }
 
-void glUseProgram (GLuint program)
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glUseProgram (GLuint program)
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	unsigned int sys_args[1];
+// 	unsigned int sys_args[1];
 
-	sys_args[0] = (unsigned int) program;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glUseProgram, &sys_args);
-}
+// 	sys_args[0] = (unsigned int) program;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glUseProgram, &sys_args);
+// }
 
 void glUniform1f (GLint location, GLfloat v0)
 {

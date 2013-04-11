@@ -21,7 +21,7 @@
 #include <unistd.h>
 
 #include "../include/GL/gl.h"
-#include "../opengl/api.h"
+#include "../opengl/context.h"
 #include "api.h"
 #include "debug.h"
 #include "window.h"
@@ -107,6 +107,9 @@ void glutInit(int *argcp, char **argv)
 
 	/* Initialize */
 	glut_window_init();
+
+	/* Initialize OpenGL context */
+	opengl_context_init();
 }
 
 
@@ -1286,8 +1289,7 @@ void glutJoystickGetCenter( int ident, float *axes )
 
 void glutInitContextVersion( int majorVersion, int minorVersion )
 {
-	gl_runtime_info.version_major = majorVersion;
-	gl_runtime_info.version_minor = minorVersion;
+	opengl_context_props_set_version(majorVersion, minorVersion, opengl_ctx->props);
 	glut_debug(stdout, "Initialize OpenGL context version %d.%d\n", majorVersion, minorVersion);
 }
 
