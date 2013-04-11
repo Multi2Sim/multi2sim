@@ -17,10 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 
 #include <arch/common/arch.h>
 #include <arch/southern-islands/asm/bin-file.h>
 #include <arch/southern-islands/timing/gpu.h>
+#include <driver/opencl/opencl.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -86,8 +88,9 @@ void si_emu_init(struct arch_t *arch)
 	si_emu->arch = arch;
 	si_emu->global_mem = mem_create();
 	si_emu->global_mem->safe = 0;
-
 	si_emu->global_mem_top = 0;
+	si_emu->waiting_work_groups = list_create();
+	si_emu->running_work_groups = list_create();
 
 	/* Initialize disassembler (decoding tables...) */
 	si_disasm_init();
@@ -104,18 +107,21 @@ void si_emu_done()
 	if (si_emu_report_file)
 		fclose(si_emu_report_file);
 
-	/* Free ND-Ranges */
-	while (si_emu->ndrange_list_count)
-		si_ndrange_free(si_emu->ndrange_list_head);
-
 	/* Finalize disassembler */
 	si_disasm_done();
 
 	/* Finalize ISA */
 	si_isa_done();
 
-	/* Finalize GPU kernel */
+	/* Free emulator memory */
 	mem_free(si_emu->global_mem);
+
+	/* Free the work-group queues */
+	list_free(si_emu->waiting_work_groups);
+	list_free(si_emu->running_work_groups);
+
+	/* Free the emulator */
+	memset(si_emu, 0, sizeof(struct si_emu_t));
 	free(si_emu);
 }
 
@@ -123,6 +129,7 @@ void si_emu_done()
 void si_emu_dump_summary(FILE *f)
 {
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
+	fprintf(f, "WorkGroupCount = %lld\n", si_emu->work_group_count);
 }
 
 
@@ -241,79 +248,56 @@ void si_emu_opengl_disasm(char *path, int opengl_shader_index)
 enum arch_sim_kind_t si_emu_run(void)
 {
 	struct si_ndrange_t *ndrange;
-	struct si_ndrange_t *ndrange_next;
-
-	struct si_work_group_t *work_group;
-	struct si_work_group_t *work_group_next;
-
 	struct si_wavefront_t *wavefront;
-	struct si_wavefront_t *wavefront_next;
+	struct si_work_group_t *work_group;
+
+	int wavefront_id;
+	long work_group_id;
+
+	if (!list_count(si_emu->running_work_groups) &&
+		list_count(si_emu->waiting_work_groups))
+	{
+		work_group_id = (long)list_dequeue(si_emu->waiting_work_groups);
+		list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
+	}
 
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
-	if (!si_emu->ndrange_list_count)
+	if (!list_count(si_emu->running_work_groups))
 		return arch_sim_kind_invalid;
 
-	/* Start any ND-Range in state 'pending' */
-	while ((ndrange = si_emu->pending_ndrange_list_head))
+	assert(si_emu->ndrange);
+	ndrange = si_emu->ndrange;
+
+	/* Instantiate the next work-group */
+	work_group_id = (long)list_bottom(si_emu->running_work_groups);
+	work_group = si_work_group_create(work_group_id, ndrange);
+
+	/* Execute the work-group to completion */
+	while (!work_group->finished)
 	{
-		/* Set all ready work-groups to running */
-		while ((work_group = ndrange->pending_list_head))
+		SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
 		{
-			si_work_group_clear_status(work_group, 
-				si_work_group_pending);
-			si_work_group_set_status(work_group, 
-				si_work_group_running);
-		}
+			wavefront = work_group->wavefronts[wavefront_id];
 
-		/* Set is in state 'running' */
-		si_ndrange_clear_status(ndrange, si_ndrange_pending);
-		si_ndrange_set_status(ndrange, si_ndrange_running);
-	}
+			if (wavefront->finished || wavefront->barrier)
+				continue;
 
-	/* Run one instruction of each wavefront in each work-group of each
-	 * ND-Range that is in status 'running'. */
-	for (ndrange = si_emu->running_ndrange_list_head; ndrange; 
-		ndrange = ndrange_next)
-	{
-		/* Save next ND-Range in state 'running'. This is done because 
-		 * the state might change during the execution of the 
-		 * ND-Range. */
-		ndrange_next = ndrange->running_ndrange_list_next;
-
-		/* Execute an instruction from each work-group */
-		for (work_group = ndrange->running_list_head; work_group; 
-			work_group = work_group_next)
-		{
-			/* Save next running work-group */
-			work_group_next = work_group->running_list_next;
-
-			/* Run an instruction from each wavefront */
-			for (wavefront = work_group->running_list_head; 
-				wavefront; wavefront = wavefront_next)
-			{
-				/* Save next running wavefront */
-				wavefront_next = wavefront->running_list_next;
-
-				/* Execute instruction in wavefront */
-				si_wavefront_execute(wavefront);
-			}
+			/* Execute instruction in wavefront */
+			si_wavefront_execute(wavefront);
 		}
 	}
 
-	/* Free ND-Ranges that finished */
-	while ((ndrange = si_emu->finished_ndrange_list_head))
+	/* Remove work group from running list */
+	list_dequeue(si_emu->running_work_groups);
+
+	/* Free work group */
+	si_work_group_free(work_group);
+
+	/* If there is not more work groups to run, let driver know */
+	if (!list_count(si_emu->waiting_work_groups))
 	{
-		/* Dump ND-Range report */
-		si_ndrange_dump(ndrange, si_emu_report_file);
-
-		/* Stop if maximum number of kernels reached */
-		if (si_emu_max_kernels && si_emu->ndrange_count >= 
-				si_emu_max_kernels)
-			esim_finish = esim_finish_si_max_kernels;
-
-		/* Extract from list of finished ND-Ranges and free */
-		si_ndrange_free(ndrange);
+		opencl_si_request_work();
 	}
 
 	/* Still emulating */

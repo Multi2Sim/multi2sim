@@ -22,6 +22,8 @@
 
 #include <lib/util/elf-format.h>
 
+#define SI_ABI_MAX_USER_ELEMENTS 16
+
 
 /* Encoding dictionary entry header (as encoded in ELF file) */
 struct si_bin_enc_dict_entry_header_t

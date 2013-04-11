@@ -188,31 +188,14 @@ extern int si_gpu_lds_num_ports;
 struct si_gpu_t
 {
 	/* ND-Range running on it */
-	struct si_ndrange_t *ndrange;
 	int work_groups_per_wavefront_pool;
-	int wavefronts_per_wavefront_pool;
-	int work_items_per_wavefront_pool;
 	int work_groups_per_compute_unit;
-	int wavefronts_per_compute_unit;
-	int work_items_per_compute_unit;
 
 	/* Compute units */
 	struct si_compute_unit_t **compute_units;
 
 	/* List of ready compute units accepting work-groups */
-	struct si_compute_unit_t *compute_unit_ready_list_head;
-	struct si_compute_unit_t *compute_unit_ready_list_tail;
-	int compute_unit_ready_list_count;
-	int compute_unit_ready_list_max;
-
-	/* List of busy compute units */
-	struct si_compute_unit_t *compute_unit_busy_list_head;
-	struct si_compute_unit_t *compute_unit_busy_list_tail;
-	int compute_unit_busy_list_count;
-	int compute_unit_busy_list_max;
-
-	/* List of deleted instructions */
-	struct linked_list_t *trash_uop_list;
+	struct list_t *available_compute_units;
 
 	long long int last_complete_cycle;
 };
@@ -221,12 +204,6 @@ extern struct si_gpu_t *si_gpu;
 
 #define SI_GPU_FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
 	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < si_gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
-
-#define SI_GPU_FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(WAVEFRONT, SUBWAVEFRONT_ID, WORK_ITEM_ID) \
-	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first + (SUBWAVEFRONT_ID) * si_gpu_num_stream_cores; \
-		(WORK_ITEM_ID) <= MIN((WAVEFRONT)->work_item_id_first + ((SUBWAVEFRONT_ID) + 1) \
-			* si_gpu_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
-		(WORK_ITEM_ID)++)
 
 /* Forward declaration */
 struct si_uop_t;
@@ -251,6 +228,8 @@ void si_compute_unit_run_simd(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run_scalar_unit(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run_branch_unit(struct si_compute_unit_t *compute_unit);
 
+struct si_ndrange_t;
+void si_gpu_map_ndrange(struct si_ndrange_t *ndrange);
 enum arch_sim_kind_t si_gpu_run(void);
 
 void si_simd_run(struct si_simd_t *simd);
@@ -258,5 +237,6 @@ void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit);
 void si_branch_unit_run(struct si_branch_unit_t *branch_unit);
 void si_vector_mem_run(struct si_vector_mem_unit_t *vector_mem);
 void si_lds_run(struct si_lds_t *lds);
+
 
 #endif

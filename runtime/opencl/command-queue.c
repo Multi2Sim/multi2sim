@@ -773,7 +773,8 @@ cl_int clEnqueueNDRangeKernel(
 		return CL_INVALID_KERNEL;
 
 	/* Check valid events */
-	status = opencl_event_wait_list_check(num_events_in_wait_list, event_wait_list);
+	status = opencl_event_wait_list_check(num_events_in_wait_list, 
+		event_wait_list);
 	if (status != CL_SUCCESS)
 		return status;
 
@@ -818,14 +819,13 @@ cl_int clEnqueueNDRangeKernel(
 		return CL_INVALID_VALUE;
 
 	/* Create command */
-	command = opencl_command_create_launch_kernel(device, arch_kernel, work_dim,
-			(unsigned int *) global_work_offset,
-			(unsigned int *) global_work_size,
-			(unsigned int *) local_work_size,
-			command_queue,
-			event,
-			num_events_in_wait_list,
-			(cl_event *) event_wait_list);
+	command = opencl_command_create_ndrange(device, arch_kernel, work_dim,
+		(unsigned int *) global_work_offset,
+		(unsigned int *) global_work_size,
+		(unsigned int *) local_work_size, command_queue, event,
+		num_events_in_wait_list, (cl_event *) event_wait_list);
+
+	/* Enqueue command */
 	opencl_command_queue_enqueue(command_queue, command);
 
 	/* Success */

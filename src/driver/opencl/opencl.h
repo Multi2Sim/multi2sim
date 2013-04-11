@@ -31,6 +31,7 @@ int opencl_abi_call(struct x86_ctx_t *ctx);
 void opencl_init(void);
 void opencl_done(void);
 
+void opencl_si_request_work();
 
 #endif
 

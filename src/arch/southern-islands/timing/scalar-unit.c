@@ -21,7 +21,6 @@
 
 #include <arch/common/arch.h>
 #include <arch/southern-islands/emu/emu.h>
-#include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <lib/esim/esim.h>
@@ -43,7 +42,6 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 	int list_entries;
 	int list_index = 0;
 	unsigned int complete;
-	struct si_ndrange_t *ndrange = si_gpu->ndrange;
 	struct si_work_group_t *work_group;
 	struct si_wavefront_t *wavefront;
 	int wavefront_id;
@@ -92,8 +90,12 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 		/* Access complete, remove the uop from the queue */
 		list_remove(scalar_unit->write_buffer, uop);
 
-		/* The next instruction can be fetched */
-		uop->wavefront_pool_entry->ready = 1;
+		/* Scalar ALU instructions must complete before the next
+		 * instruction can be fetched */
+		if (!uop->scalar_mem_read)
+		{
+			uop->wavefront_pool_entry->ready = 1;
+		}
 
 		/* Check for "wait" instruction */
 		if (uop->mem_wait_inst)
@@ -117,7 +119,7 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 			SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, 
 				wavefront_id)
 			{
-				wavefront = ndrange->wavefronts[wavefront_id];
+				wavefront = work_group->wavefronts[wavefront_id];
 				
 				if (!wavefront->wavefront_pool_entry->
 					wait_for_barrier)
@@ -133,7 +135,7 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 				SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, 
 					wavefront_id)
 				{
-					wavefront = ndrange->
+					wavefront = work_group->
 						wavefronts[wavefront_id];
 					wavefront->wavefront_pool_entry->
 						wait_for_barrier = 0;
@@ -147,15 +149,14 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 			/* If the uop completes the wavefront, set a bit 
 			 * so that the hardware wont try to fetch any 
 			 * more instructions for it */
-			uop->work_group->compute_unit_finished_count++;
 			uop->wavefront_pool_entry->wavefront_finished = 1;
 
 			/* Check if wavefront finishes a work-group */
 			assert(uop->work_group);
-			assert(uop->work_group->compute_unit_finished_count <=
+			assert(uop->work_group->wavefronts_completed <=
 				uop->work_group->wavefront_count);
-			if (uop->work_group->compute_unit_finished_count == 
-					uop->work_group->wavefront_count)
+			if (uop->work_group->wavefronts_completed == 
+				uop->work_group->wavefront_count)
 			{
 				si_compute_unit_unmap_work_group(
 					scalar_unit->compute_unit,

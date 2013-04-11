@@ -33,15 +33,15 @@ struct opencl_si_program_t *opencl_si_program_create(
 	/* Initialize */
 	program = xcalloc(1, sizeof(struct opencl_si_program_t));
 	program->elf_file = elf_file_create_from_buffer(binary, length,
-			"Southern Islands Binary");
+		"Southern Islands Binary");
 
 	/* Create program object in driver */
 	program->id = syscall(OPENCL_SYSCALL_CODE,
-			opencl_abi_si_program_create);
+		opencl_abi_si_program_create);
 
 	/* Set program binary in driver */
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_program_set_binary,
-			program->id, binary, length);
+		program->id, binary, length);
 
 	/* Return */
 	return program;
@@ -54,9 +54,7 @@ void opencl_si_program_free(struct opencl_si_program_t *program)
 }
 
 /* Return true is a binary file is a valid SI program binary. */
-int opencl_si_program_valid_binary(
-	void *binary,
-	unsigned int length)
+int opencl_si_program_valid_binary(void *binary, unsigned int length)
 {
 	Elf32_Ehdr *h = (Elf32_Ehdr *) binary;
 	return h->e_machine == 0x3fd;

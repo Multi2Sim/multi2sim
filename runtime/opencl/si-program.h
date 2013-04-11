@@ -44,19 +44,13 @@ struct opencl_si_program_t
 
 
 struct opencl_si_program_t *opencl_si_program_create(
-		struct opencl_program_t *parent,
-		struct opencl_si_device_t *device,
-		void *binary,
-		unsigned int length);
+	struct opencl_program_t *parent, struct opencl_si_device_t *device,
+	void *binary, unsigned int length);
 
-void opencl_si_program_free(
-		struct opencl_si_program_t *program);
+void opencl_si_program_free(struct opencl_si_program_t *program);
 
 /* Return true is a binary file is a valid SI program binary. */
-int opencl_si_program_valid_binary(
-	void *binary,
-	unsigned int length);
-
+int opencl_si_program_valid_binary(void *binary, unsigned int length);
 
 #endif
 

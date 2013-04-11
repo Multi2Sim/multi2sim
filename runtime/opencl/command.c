@@ -140,16 +140,51 @@ static void opencl_command_run_unmap_buffer(struct opencl_command_t *command)
 
 
 /* Run a kernel */
-static void opencl_command_run_launch_kernel(struct opencl_command_t *command)
+static void opencl_command_run_ndrange(struct opencl_command_t *command)
 {
-	assert(command->launch_kernel.device->arch_kernel_run_func);
-	command->launch_kernel.device->arch_kernel_run_func(
-			command->launch_kernel.arch_kernel,
-			command->launch_kernel.work_dim,
-			command->launch_kernel.global_work_offset,
-			command->launch_kernel.global_work_size,
-			command->launch_kernel.local_work_size,
-			command->launch_kernel.group_id_offset);
+        int max_work_groups_to_send;
+        int remaining_work_groups;
+        int work_groups_to_send;
+        int work_group_start;
+
+        assert(command->ndrange.device->arch_kernel_run_func);
+
+	/* XXX There is Southern-Islands-specific code below */
+
+        /* Tell the driver to prepare for a new ND-Range */
+        command->ndrange.device->arch_kernel_run_func(
+                        command->ndrange.arch_kernel,
+                        command->ndrange.work_dim,
+                        command->ndrange.global_work_offset,
+                        command->ndrange.global_work_size,
+                        command->ndrange.local_work_size,
+			command->ndrange.group_id_offset);
+
+        /* Ask the driver how many work groups it can buffer */
+        /* Send work groups to the driver */
+        while (command->ndrange.current_group < command->ndrange.num_groups)
+        {
+                syscall(OPENCL_SYSCALL_CODE,
+                        opencl_abi_si_ndrange_get_num_buffer_entries,
+                        &max_work_groups_to_send);
+
+                remaining_work_groups = command->ndrange.num_groups -
+                        command->ndrange.current_group;
+                work_groups_to_send = MIN(remaining_work_groups,
+                        max_work_groups_to_send);
+
+                assert(max_work_groups_to_send != 0);
+
+                work_group_start = command->ndrange.current_group;
+
+                command->ndrange.current_group += work_groups_to_send;
+
+                syscall(OPENCL_SYSCALL_CODE, 
+			opencl_abi_si_ndrange_send_work_groups,
+                        work_group_start, work_groups_to_send);
+        }
+
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish);
 }
 
 
@@ -336,50 +371,56 @@ struct opencl_command_t *opencl_command_create_unmap_buffer(
 }
 
 
-struct opencl_command_t *opencl_command_create_launch_kernel(
-		struct opencl_device_t *device,
-		void *arch_kernel,  /* of type 'opencl_xxx_kernel_t' */
-		int work_dim,
-		unsigned int *global_work_offset,
-		unsigned int *global_work_size,
-		unsigned int *local_work_size,
-		struct opencl_command_queue_t *command_queue,
-		struct opencl_event_t **done_event_ptr,
-		int num_wait_events,
-		struct opencl_event_t **wait_events)
+struct opencl_command_t *opencl_command_create_ndrange(
+	struct opencl_device_t *device,
+	void *arch_kernel,  /* of type 'opencl_xxx_kernel_t' */
+	int work_dim,
+	unsigned int *global_work_offset,
+	unsigned int *global_work_size,
+	unsigned int *local_work_size,
+	struct opencl_command_queue_t *command_queue,
+	struct opencl_event_t **done_event_ptr,
+	int num_wait_events,
+	struct opencl_event_t **wait_events)
 {
 	struct opencl_command_t *command;
 	int i;
 
 	/* Initialize */
-	command = opencl_command_create(opencl_command_launch_kernel,
-			opencl_command_run_launch_kernel, command_queue, done_event_ptr,
-			num_wait_events, wait_events);
-	command->launch_kernel.device = device;
-	command->launch_kernel.arch_kernel = arch_kernel;
-	command->launch_kernel.work_dim = work_dim;
+	command = opencl_command_create(opencl_command_launch_ndrange,
+		opencl_command_run_ndrange, command_queue, 
+		done_event_ptr, num_wait_events, wait_events);
+	command->ndrange.device = device;
+	command->ndrange.arch_kernel = arch_kernel;
+	command->ndrange.work_dim = work_dim;
 
 	/* Work sizes */
 	assert(IN_RANGE(work_dim, 1, 3));
 	assert(global_work_size);
 	for (i = 0; i < work_dim; i++)
 	{
-		command->launch_kernel.global_work_offset[i] = global_work_offset ?
-				global_work_offset[i] : 0;
-		command->launch_kernel.global_work_size[i] = global_work_size[i];
-		command->launch_kernel.local_work_size[i] = local_work_size ?
-				local_work_size[i] : 1;
-		command->launch_kernel.group_id_offset[i] = 0;
+		command->ndrange.global_work_offset[i] = global_work_offset ?
+			global_work_offset[i] : 0;
+		command->ndrange.global_work_size[i] = global_work_size[i];
+		command->ndrange.local_work_size[i] = local_work_size ?
+			local_work_size[i] : 1;
+		command->ndrange.group_id_offset[i] = 0;
 	}
 
 	/* Unused dimensions */
 	for (i = work_dim; i < 3; i++)
 	{
-		command->launch_kernel.global_work_offset[i] = 0;
-		command->launch_kernel.global_work_size[i] = 1;
-		command->launch_kernel.local_work_size[i] = 1;
-		command->launch_kernel.group_id_offset[i] = 0;
+		command->ndrange.global_work_offset[i] = 0;
+		command->ndrange.global_work_size[i] = 1;
+		command->ndrange.local_work_size[i] = 1;
+		command->ndrange.group_id_offset[i] = 0;
 	}
+
+	/* Calculate the number of work groups in the ND-Range */
+	command->ndrange.num_groups = 
+		global_work_size[0]/local_work_size[0] * 
+		global_work_size[1]/local_work_size[1] * 
+		global_work_size[2]/local_work_size[2];
 
 	/* Return */
 	return command;

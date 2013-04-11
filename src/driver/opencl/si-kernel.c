@@ -839,122 +839,14 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 	free(kernel);
 }
 
-void opencl_si_kernel_setup_ndrange_state(struct opencl_si_kernel_t *kernel,
-		struct si_ndrange_t *ndrange)
+void opencl_si_kernel_setup_ndrange_constant_buffers(
+	struct si_ndrange_t *ndrange)
 {
-	struct si_wavefront_t *wavefront;
-	struct si_work_item_t *work_item;
-	struct si_bin_enc_user_element_t *user_elements;
-
-	int work_item_id;
-	int wavefront_id;
-	int i;
-
-	unsigned int user_sgpr;
-	unsigned int user_element_count;
 	unsigned int zero = 0;
 
 	float f;
 
-
-	/* Save local IDs in registers */
-	SI_FOREACH_WORK_ITEM_IN_NDRANGE(ndrange, work_item_id)
-	{
-		work_item = ndrange->work_items[work_item_id];
-		work_item->vreg[0].as_int = 
-			work_item->id_in_work_group_3d[0];  /* V0 */
-		work_item->vreg[1].as_int = 
-			work_item->id_in_work_group_3d[1];  /* V1 */
-		work_item->vreg[2].as_int = 
-			work_item->id_in_work_group_3d[2];  /* V2 */
-	}
-
-	/* Initialize the wavefronts */
-	SI_FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id)
-	{
-		/* Get wavefront */
-		wavefront = ndrange->wavefronts[wavefront_id];
-
-		/* Save work-group IDs in registers */
-		user_sgpr = kernel->bin_file->
-			enc_dict_entry_southern_islands->
-			compute_pgm_rsrc2->user_sgpr;
-		wavefront->sreg[user_sgpr].as_int =
-			wavefront->work_group->id_3d[0];
-		wavefront->sreg[user_sgpr + 1].as_int =
-			wavefront->work_group->id_3d[1];
-		wavefront->sreg[user_sgpr + 2].as_int =
-			wavefront->work_group->id_3d[2];
-
-		/* Initialize sreg pointers to internal data structures */
-		user_element_count = kernel->bin_file->
-			enc_dict_entry_southern_islands->userElementCount;
-		user_elements = kernel->bin_file->
-			enc_dict_entry_southern_islands->userElements;
-		for (i = 0; i < user_element_count; i++)
-		{
-			if (user_elements[i].dataClass == IMM_CONST_BUFFER)
-			{
-				/* Store CB pointer in sregs */
-				si_wavefront_init_sreg_with_cb(wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount,
-					user_elements[i].apiSlot);
-			}
-			else if (user_elements[i].dataClass == IMM_UAV)
-			{
-				/* Store UAV pointer in sregs */
-				si_wavefront_init_sreg_with_uav(wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount,
-					user_elements[i].apiSlot);
-			}
-			else if (user_elements[i].dataClass ==
-				PTR_CONST_BUFFER_TABLE)
-			{
-				/* Store CB table in sregs */
-				si_wavefront_init_sreg_with_cb_table(wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount);
-			}
-			else if (user_elements[i].dataClass == PTR_UAV_TABLE)
-			{
-				/* Store UAV table in sregs */
-				si_wavefront_init_sreg_with_uav_table(
-					wavefront,
-					user_elements[i].startUserReg,
-					user_elements[i].userRegCount);
-			}
-			else if (user_elements[i].dataClass == IMM_SAMPLER)
-			{
-				/* Store sampler in sregs */
-				assert(0);
-			}
-			else if (user_elements[i].dataClass ==
-				PTR_RESOURCE_TABLE)
-			{
-				/* Store resource table in sregs */
-				assert(0);
-			}
-			else if (user_elements[i].dataClass ==
-				PTR_INTERNAL_GLOBAL_TABLE)
-			{
-				fatal("%s: PTR_INTERNAL_GLOBAL_TABLE not "
-					"supported", __FUNCTION__);
-			}
-			else
-			{
-				fatal("%s: Unimplemented User Element: "
-					"dataClass:%d", __FUNCTION__,
-					user_elements[i].dataClass);
-			}
-		}
-
-		/* Initialize the execution mask */
-		wavefront->sreg[SI_EXEC].as_int = 0xffffffff;
-		wavefront->sreg[SI_EXEC + 1].as_int = 0xffffffff;
-		wavefront->sreg[SI_EXECZ].as_int = 0;
-	}
+	/* Initialize constant buffers */
 
 	/* CB0 bytes 0:15 */
 

@@ -26,7 +26,6 @@
 struct si_wavefront_t
 {
 	/* ID */
-	char name[30];
 	int id;
 	int id_in_work_group;
 
@@ -35,8 +34,7 @@ struct si_wavefront_t
 	int work_item_id_last;
 	int work_item_count;
 
-	/* NDRange and Work-group it belongs to */
-	struct si_ndrange_t *ndrange;
+	/* Work-group it belongs to */
 	struct si_work_group_t *work_group;
 
 	/* Program counter. Offset in 'inst_buffer' where we can find the next
@@ -49,8 +47,10 @@ struct si_wavefront_t
 
 	/* Pointer to work_items */
 	struct si_work_item_t *scalar_work_item;
-	struct si_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
-	union si_reg_t sreg[256];  /* Scalar registers */
+	struct si_work_item_t **work_items;  
+
+	/* Scalar registers */
+	union si_reg_t sreg[256];
 
 	/* Predicate mask */
 	struct bit_map_t *pred;  /* work_item_count elements */
@@ -67,14 +67,6 @@ struct si_wavefront_t
 	unsigned int finished : 1;
 	unsigned int vector_mem_glc : 1;
 
-	/* Linked lists */
-	struct si_wavefront_t *running_list_next;
-	struct si_wavefront_t *running_list_prev;
-	struct si_wavefront_t *barrier_list_next;
-	struct si_wavefront_t *barrier_list_prev;
-	struct si_wavefront_t *finished_list_next;
-	struct si_wavefront_t *finished_list_prev;
-
 	/* To measure simulation performance */
 	long long emu_inst_count;  /* Total emulated instructions */
 	long long emu_time_start;
@@ -83,7 +75,6 @@ struct si_wavefront_t
 	/* Fields introduced for timing simulation */
 	int id_in_compute_unit;
 	int uop_id_counter;
-	long long sched_when;  /* GPU cycle when wavefront was last scheduled */
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;
 
 	/* Statistics */
@@ -98,23 +89,17 @@ struct si_wavefront_t
 	long long export_inst_count;
 };
 
-#define SI_FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \
-	for ((WAVEFRONT_ID) = (NDRANGE)->wavefront_id_first; \
-		(WAVEFRONT_ID) <= (NDRANGE)->wavefront_id_last; \
-		(WAVEFRONT_ID)++)
-
 #define SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(WORK_GROUP, WAVEFRONT_ID) \
-	for ((WAVEFRONT_ID) = (WORK_GROUP)->wavefront_id_first; \
-		(WAVEFRONT_ID) <= (WORK_GROUP)->wavefront_id_last; \
+	for ((WAVEFRONT_ID) = 0; \
+		(WAVEFRONT_ID) < (WORK_GROUP)->wavefront_count; \
 		(WAVEFRONT_ID)++)
 
-struct si_wavefront_t *si_wavefront_create();
+struct si_wavefront_t *si_wavefront_create(int wavefront_id,
+	struct si_work_group_t *work_group);
 void si_wavefront_sreg_init(struct si_wavefront_t *wavefront);
 void si_wavefront_free(struct si_wavefront_t *wavefront);
 void si_wavefront_dump(struct si_wavefront_t *wavefront, FILE *f);
 
-void si_wavefront_stack_push(struct si_wavefront_t *wavefront);
-void si_wavefront_stack_pop(struct si_wavefront_t *wavefront, int count);
 void si_wavefront_execute(struct si_wavefront_t *wavefront);
 
 int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, 

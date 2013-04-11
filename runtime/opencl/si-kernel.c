@@ -83,7 +83,7 @@ void opencl_si_arg_debug(struct opencl_si_arg_t *arg)
  */
 
 static void opencl_si_kernel_metadata_line(struct opencl_si_kernel_t *kernel,
-		char *line)
+	char *line)
 {
 	struct list_t *token_list;
 	struct opencl_si_arg_t *arg;
@@ -138,10 +138,9 @@ static void opencl_si_kernel_metadata_line(struct opencl_si_kernel_t *kernel,
 }
 
 
-struct opencl_si_kernel_t *opencl_si_kernel_create(
-		struct opencl_kernel_t *parent,
-		struct opencl_si_program_t *program,
-		char *func_name)
+struct opencl_si_kernel_t *opencl_si_kernel_create( 
+	struct opencl_kernel_t *parent, struct opencl_si_program_t *program,
+	char *func_name)
 {
 	struct opencl_si_kernel_t *kernel;
 	struct elf_symbol_t *symbol;
@@ -157,7 +156,8 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(
 	kernel->arg_list = list_create();
 
 	/* Get kernel metadata from binary */
-	snprintf(symbol_name, sizeof symbol_name, "__OpenCL_%s_metadata", func_name);
+	snprintf(symbol_name, sizeof symbol_name, "__OpenCL_%s_metadata", 
+		func_name);
 	symbol = elf_symbol_get_by_name(program->elf_file, symbol_name);
 	if (!symbol)
 		fatal("%s: %s: kernel function not found in binary",
@@ -211,11 +211,8 @@ void opencl_si_kernel_debug(struct opencl_si_kernel_t *kernel)
 }
 
 
-int opencl_si_kernel_set_arg(
-		struct opencl_si_kernel_t *kernel,
-		int arg_index,
-		unsigned int arg_size,
-		void *arg_value)
+int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
+	unsigned int arg_size, void *arg_value)
 {
 	struct opencl_si_arg_t *arg;
 	struct opencl_mem_t *mem;
@@ -239,9 +236,9 @@ int opencl_si_kernel_set_arg(
 
 	case opencl_si_arg_pointer:
 
-		/* If an argument value is given, it should be a 'cl_mem' object.
-		 * We need to obtain the 'device_ptr' of the allocated memory
-		 * associated with it. */
+		/* If an argument value is given, it should be a 'cl_mem' 
+		 * object.  We need to obtain the 'device_ptr' of the 
+		 * allocated memory associated with it. */
 		if (arg_value)
 		{
 			mem = * (struct opencl_mem_t **) arg_value;
@@ -249,15 +246,19 @@ int opencl_si_kernel_set_arg(
 				fatal("%s: argument %d is not a cl_mem object",
 						__FUNCTION__, arg_index);
 			if (arg_size != 4)
-				fatal("%s: cl_mem argument %d expects size 4 (%d given)",
-						__FUNCTION__, arg_index, arg_size);
+			{
+				fatal("%s: cl_mem argument %d expects size 4 "
+					"(%d given)", __FUNCTION__, arg_index,
+					arg_size);
+			}
 			arg_value = mem->device_ptr;
 			arg_size = mem->size;
 		}
 
 		/* ABI call */
-		syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_kernel_set_arg_pointer,
-				kernel->id, arg_index, arg_value, arg_size);
+		syscall(OPENCL_SYSCALL_CODE, 
+			opencl_abi_si_kernel_set_arg_pointer, kernel->id, 
+			arg_index, arg_value, arg_size);
 		break;
 
 	default:
@@ -270,16 +271,13 @@ int opencl_si_kernel_set_arg(
 }
 
 
-void opencl_si_kernel_run(
-		struct opencl_si_kernel_t *kernel,
-		int work_dim,
-		unsigned int *global_work_offset,
-		unsigned int *global_work_size,
-		unsigned int *local_work_size,
-		unsigned int *group_id_offset)
+void opencl_si_kernel_run(struct opencl_si_kernel_t *kernel, int work_dim,
+	unsigned int *global_work_offset, unsigned int *global_work_size,
+	unsigned int *local_work_size, unsigned int *group_id_offset)
 {
 	/* ABI call */
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_kernel_launch, kernel->id,
-		work_dim, global_work_offset, global_work_size, local_work_size);
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_initialize, 
+		kernel->id, work_dim, global_work_offset, global_work_size, 
+		local_work_size);
 }
 
