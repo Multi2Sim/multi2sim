@@ -42,8 +42,8 @@ struct cuda_device_t *cuda_device_create(void)
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X] = 65536;
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y] = 65536;
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z] = 65536;
-	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK] =
-		49152;
+	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK]
+		= 49152;
 	device->attributes[CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY] = 65536;
 	device->attributes[CU_DEVICE_ATTRIBUTE_WARP_SIZE] = 32;
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_PITCH] = 2147483647;
@@ -82,8 +82,8 @@ struct cuda_device_t *cuda_device_create(void)
 									       */
 	device->attributes[CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH] = 384;
 	device->attributes[CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE] = 786432;
-	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR] =
-		1536;
+	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR]
+		= 1536;
 	device->attributes[CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT] = 2;
 	device->attributes[CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING] = 1;
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_LAYERED_WIDTH]

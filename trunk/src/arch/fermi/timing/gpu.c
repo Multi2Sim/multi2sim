@@ -32,12 +32,16 @@
 #include <lib/util/timer.h>
 
 #include "calc.h"
+#include "cycle-interval-report.h"
 #include "gpu.h"
 #include "sm.h"
 #include "mem-config.h"
 #include "uop.h"
 
-#include "cycle-interval-report.h"
+
+/*
+ * Global variables
+ */
 
 static char *frm_err_stall =
 	"\tThe Fermi GPU has not completed execution of any in-flight\n"
@@ -45,10 +49,7 @@ static char *frm_err_stall =
 	"\tdeadlock condition occurred in the management of some modeled\n"
 	"\tstructure (network, memory system, pipeline queues, etc.).\n";
 
-/*
- * Global variables
- */
-
+/* FIXME: check the default paramters */
 char *frm_gpu_config_help =
 	"The Fermi GPU configuration file is a plain text INI file\n"
 	"defining the parameters of the Fermi model for a detailed\n"
@@ -56,39 +57,35 @@ char *frm_gpu_config_help =
 	"the '--frm-config <file>' option, and should always be used together \n"
 	"with option '--frm-sim detailed'.\n" 
 	"\n"
-	"The following is a list of the sections allowed in the GPU "
-	"configuration\n"
+	"The following is a list of the sections allowed in the GPU configuration\n"
 	"file, along with the list of variables for each section.\n"
+	"The default values are calibrated to Tesla C2050.\n"
 	"\n"
 	"Section '[ Device ]': parameters for the GPU.\n"
 	"\n"
-	"  NumSMs = <num> (Default = 16)\n"
+	"  NumSMs = <num> (Default = 14)\n"
 	"      Number of SMs in the GPU.\n"
 	"  MaxWarpsPerThreadBlock = <num> (Default = 16)\n"
 	"      The maximum size of a thread block.\n"
 	"\n"
 	"Section '[ SM ]': parameters for the SMs.\n"
 	"\n"
-	"  NumWarpPools = <num> (Default = 4)\n"
-	"      Number of warp pools/SIMDs per SM.\n"
-	"  MaxThreadBlocksPerWarpPool = <num> (Default = 10)\n"
-	"      The maximum number of work groups that can be scheduled to a\n"
-	"      warp pool at a time.\n"
-	"  MaxWarpsPerWarpPool = <num> (Default = 10)\n"
+	"  NumWarpSchedulersPerSM = <num> (Default = 2)\n"
+	"      Number of warp schedulers per SM.\n"
+	"  MaxThreadBlocksPerSM = <num> (Default = 8)\n"
+	"      The maximum number of thread blocks that can be scheduled to a\n"
+	"      SM at a time.\n"
+	"  MaxWarpsPerSM = <num> (Default = 48)\n"
 	"      The maximum number of warps that can be scheduled to a\n"
-	"      warp pool at a time.\n"
-	"  NumVectorRegisters = <num> (Default = 65536)\n"
-	"      Number of vector registers per SM. These are\n"
-	"      divided evenly between all warp pools/SIMDs.\n"
-	"  NumScalarRegisters = <num> (Default = 2048)\n"
-	"      Number of scalar registers per SM. These are\n"
-	"      shared by all warp pools/SIMDs.\n"
+	"      SM at a time.\n"
+	"  NumRegistersPerSM = <num> (Default = 32768)\n"
+	"      Number of registers per SM.\n"
 	"\n"
 	"Section '[ FrontEnd ]': parameters for fetch and issue.\n"
 	"\n"
-	"  FetchLatency = <cycles> (Default = 5)\n"
+	"  FetchLatency = <cycles> (Default = 1)\n"
 	"      Latency of instruction memory in number of cycles.\n"
-	"  FetchWidth = <num> (Default = 4)\n"
+	"  FetchWidth = <num> (Default = 2)\n"
 	"      Maximum number of instructions fetched per cycle.\n"
 	"  FetchBufferSize = <num> (Default = 10)\n"
 	"      Size of the buffer holding fetched instructions.\n"
@@ -96,9 +93,9 @@ char *frm_gpu_config_help =
 	"      Latency of the decode stage in number of cycles.\n"
 	"  IssueWidth = <num> (Default = 5)\n"
 	"      Number of instructions that can be issued per cycle.\n"
-	"  MaxInstIssuedPerType = <num> (Default = 1)\n"
-	"      Maximum number of instructions that can be issued of each type\n"
-	"      (SIMD, scalar, etc.) in a single cycle.\n"
+	"  MaxInstIssuedPerSched = <num> (Default = 1)\n"
+	"      Maximum number of instructions that can be issued per\n"
+	"      warp scheduler.\n"
 	"\n"
 	"Section '[ SIMDUnit ]': parameters for the SIMD Units.\n"
 	"\n"
@@ -125,30 +122,6 @@ char *frm_gpu_config_help =
 	"  ReadExecWriteBufferSize = <num> (Default = 2)\n"
 	"      Size of the buffer holding instructions that have began the\n"
 	"      read-exec-write stages.\n"
-	"\n"
-	"Section '[ ScalarUnit ]': parameters for the Scalar Units.\n"
-	"\n"
-	"  Width = <num> (Default = 1)\n"
-	"      Maximum number of instructions processed per cycle.\n"
-	"  IssueBufferSize = <num> (Default = 4)\n"
-	"      Size of the buffer holding issued instructions.\n"
-	"  DecodeLatency = <cycles> (Default = 1)\n"
-	"      Latency of the decode stage in number of cycles.\n"
-	"  DecodeWidth = <num> (Default = 1)\n"
-	"      Number of instructions that can be decoded per cycle.\n"
-	"  ReadLatency = <cycles> (Default = 1)\n"
-	"      Latency of register file access in number of cycles for reads.\n"
-	"  ReadBufferSize = <num> (Default = 1)\n"
-	"      Size of the buffer holding register read instructions.\n"
-	"  ALULatency = <cycles> (Default = 4)\n"
-	"      Latency of ALU execution in number of cycles.\n"
-	"  ExecBufferSize = <num> (Default = 16)\n"
-	"      Size of the buffer holding in-flight memory instructions and\n"
-	"      executing ALU instructions.\n"
-	"  WriteLatency = <cycles> (Default = 1)\n"
-	"      Latency of register file writes in number of cycles.\n"
-	"  WriteBufferSize = <num> (Default = 1)\n"
-	"      Size of the buffer holding register write instructions.\n"
 	"\n"
 	"Section '[ BranchUnit ]': parameters for the Branch Units.\n"
 	"\n"
@@ -215,15 +188,14 @@ char *frm_gpu_config_help =
 	"  WriteBufferSize = <num> (Default = 1)\n"
 	"      Size of the buffer holding register write instructions.\n"
 	"\n"
-	"Section '[ LDS ]': defines the parameters of the Local Data Share\n"
+	"Section '[ SharedMem ]': defines the parameters of the shared memory\n"
 	"on each SM.\n"
 	"\n"
-	"  Size = <bytes> (Default = 64 KB)\n"
+	"  Size = <bytes> (Default = 48 KB)\n"
 	"      LDS capacity per SM. This value must be\n"
 	"      equal to or larger than BlockSize * Banks.\n"
-	"  AllocSize = <bytes> (Default = 16)\n"
-	"      Minimum amount of LDS memory allocated at a time for\n"
-	"      each thread-block.\n" 
+	"  NumBanks = <num> (Default = 32)\n"
+	"      Number of shared memory banks.\n"
 	"  BlockSize = <bytes> (Default = 64)\n"
 	"      Access block size, used for access coalescing purposes\n"
 	"      among work-items.\n"
@@ -233,33 +205,33 @@ char *frm_gpu_config_help =
 	"      Number of ports.\n"
 	"\n";
 
-char *frm_gpu_config_file_name = "";
-char *frm_gpu_dump_default_config_file_name = "";
-char *frm_gpu_report_file_name = "";
+	char *frm_gpu_config_file_name = "";
+	char *frm_gpu_dump_default_config_file_name = "";
+	char *frm_gpu_report_file_name = "";
 
-int frm_gpu_debug_category = 1;
+	int frm_gpu_debug_category = 1;
 
-int frm_trace_category;
+	int frm_trace_category;
 
-/* Default parameters based on the AMD Radeon HD 7970 */
-unsigned long long frm_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
-unsigned int frm_gpu_device_vendor_id = 1234; /* Completely arbitrary */
+	/* Default parameters based on the AMD Radeon HD 7970 */
+	unsigned long long frm_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
+	unsigned int frm_gpu_device_vendor_id = 1234; /* Completely arbitrary */
 
-char *frm_gpu_device_profile = "FULL_PROFILE";
-char *frm_gpu_device_name = "Multi2Sim Fermi GPU";
-char *frm_gpu_device_vendor = "www.multi2sim.org";
-char *frm_gpu_device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics "
+	char *frm_gpu_device_profile = "FULL_PROFILE";
+	char *frm_gpu_device_name = "Multi2Sim Fermi GPU";
+	char *frm_gpu_device_vendor = "www.multi2sim.org";
+	char *frm_gpu_device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics "
 	"cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics "
 	"cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store "
 	"cl_khr_gl_sharing cl_ext_device_fission cl_amd_device_attribute_query "
 	"cl_amd_media_ops cl_amd_popcnt cl_amd_printf ";
-char *frm_gpu_device_version = "CUDA 1.2 AMD-APP-SDK-v2.7";
-char *frm_gpu_driver_version = VERSION;
-char *frm_gpu_opencl_version = "CUDA C 1.2";
+	char *frm_gpu_device_version = "CUDA 1.2 AMD-APP-SDK-v2.7";
+	char *frm_gpu_driver_version = VERSION;
+	char *frm_gpu_opencl_version = "CUDA C 1.2";
 
-/* CUDA Device Query Information */
-unsigned int frm_gpu_thread_dimensions = 3;  /* FIXME */
-unsigned int frm_gpu_thread_sizes[3] = {256, 256, 256};  /* FIXME */
+	/* CUDA Device Query Information */
+	unsigned int frm_gpu_thread_dimensions = 3;  /* FIXME */
+	unsigned int frm_gpu_thread_sizes[3] = {256, 256, 256};  /* FIXME */
 unsigned int frm_gpu_thread_block_size = 256 * 256 * 256;  /* FIXME */
 
 unsigned int frm_gpu_image_support = 1; /* CL_TRUE */
@@ -278,7 +250,7 @@ unsigned int frm_gpu_max_parameter_size = 1024;  /* The minimum value */
 unsigned int frm_gpu_mem_base_addr_align = 16 * 8;  /* size of long16 in bits */ 
 /* FIXME */
 unsigned int frm_gpu_min_data_type_align_size = 16;  /* size of long16 in bytes 
-													 deprecated in CUDA 1.2 */
+							deprecated in CUDA 1.2 */
 
 /* bit field, all single floating point capabilities supported */ /* FIXME */
 unsigned int frm_gpu_single_fp_config = 255;  
@@ -436,8 +408,8 @@ static void frm_gpu_device_init()
 
 	/* Trace */
 	frm_trace_header("frm.init version=\"%d.%d\" num_sms=%d\n",
-		FRM_TRACE_VERSION_MAJOR, FRM_TRACE_VERSION_MINOR,
-		frm_gpu_num_sms);
+			FRM_TRACE_VERSION_MAJOR, FRM_TRACE_VERSION_MINOR,
+			frm_gpu_num_sms);
 }
 
 
@@ -454,351 +426,351 @@ static void frm_config_read(void)
 	gpu_config = config_create(frm_gpu_config_file_name);
 	if (*frm_gpu_config_file_name)
 		config_load(gpu_config);
-	
+
 	/* Device */
 	section = "Device";
 
 	frm_gpu_num_sms = config_read_int(
-		gpu_config, section, "NumSMs", frm_gpu_num_sms);
+			gpu_config, section, "NumSMs", frm_gpu_num_sms);
 	if (frm_gpu_num_sms < 1)
 		fatal("%s: invalid value for 'NumSMs'.\n%s", 
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	/* SM */
 	section = "SM";
 
 	frm_gpu_max_thread_blocks_per_sm = config_read_int(
-		gpu_config, section, "MaxThreadBlocksPerSM",
-		frm_gpu_max_thread_blocks_per_sm);
+			gpu_config, section, "MaxThreadBlocksPerSM",
+			frm_gpu_max_thread_blocks_per_sm);
 	if (frm_gpu_max_thread_blocks_per_sm < 1)
 		fatal("%s: invalid value for 'MaxThreadBlocksPerSM'.\n%s", 
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_max_warps_per_sm = config_read_int(
-		gpu_config, section, "MaxWarpsPerSM",
-		frm_gpu_max_warps_per_sm);
+			gpu_config, section, "MaxWarpsPerSM",
+			frm_gpu_max_warps_per_sm);
 	if (frm_gpu_max_warps_per_sm < 1)
 		fatal("%s: invalid value for 'MaxWarpsPerSM'.\n%s", 
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_num_registers_per_sm = config_read_int(
-		gpu_config, section, "NumRegistersPerSM", 
-		frm_gpu_num_registers_per_sm);
+			gpu_config, section, "NumRegistersPerSM", 
+			frm_gpu_num_registers_per_sm);
 	if (frm_gpu_num_registers_per_sm < 1)
 		fatal("%s: invalid value for 'NumRegistersPerSM'.\n%s", 
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	/* Front End */
 	section = "FrontEnd";
 
 	frm_gpu_fe_fetch_latency = config_read_int(
-		gpu_config, section, "FetchLatency", frm_gpu_fe_fetch_latency);
+			gpu_config, section, "FetchLatency", frm_gpu_fe_fetch_latency);
 	if (frm_gpu_fe_fetch_latency < 0)
 		fatal("%s: invalid value for 'FetchLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_fe_fetch_width = config_read_int(
-		gpu_config, section, "FetchWidth", frm_gpu_fe_fetch_width);
+			gpu_config, section, "FetchWidth", frm_gpu_fe_fetch_width);
 	if (frm_gpu_fe_fetch_width < 1)
 		fatal("%s: invalid value for 'FetchWidth'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_fe_fetch_buffer_size = config_read_int(
-		gpu_config, section, "FetchBufferSize", 
-		frm_gpu_fe_fetch_buffer_size);
+			gpu_config, section, "FetchBufferSize", 
+			frm_gpu_fe_fetch_buffer_size);
 	if (frm_gpu_fe_fetch_buffer_size < 1)
 		fatal("%s: invalid value for 'FetchBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_fe_issue_latency = config_read_int(
-		gpu_config, section, "IssueLatency", frm_gpu_fe_issue_latency);
+			gpu_config, section, "IssueLatency", frm_gpu_fe_issue_latency);
 	if (frm_gpu_fe_issue_latency < 0)
 		fatal("%s: invalid value for 'IssueLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_fe_issue_width = config_read_int(
-		gpu_config, section, "IssueWidth", frm_gpu_fe_issue_width);
+			gpu_config, section, "IssueWidth", frm_gpu_fe_issue_width);
 	if (frm_gpu_fe_issue_width < 1)
 		fatal("%s: invalid value for 'IssueWidth'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	/* SIMD Unit */
 	section = "SIMDUnit";
 
 	frm_gpu_simd_num_simd_lanes = config_read_int(
-		gpu_config, section, "NumSIMDLanes", frm_gpu_simd_num_simd_lanes);
+			gpu_config, section, "NumSIMDLanes", frm_gpu_simd_num_simd_lanes);
 	if (frm_gpu_simd_num_simd_lanes < 1)
 		fatal("%s: invalid value for 'NumSIMDLanes'.\n%s", 
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_simd_width = config_read_int(
-		gpu_config, section, "Width", frm_gpu_simd_width);
+			gpu_config, section, "Width", frm_gpu_simd_width);
 	if (frm_gpu_simd_width < 1)
 		fatal("%s: invalid value for 'Width'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_simd_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", 
-		frm_gpu_simd_issue_buffer_size);
+			gpu_config, section, "IssueBufferSize", 
+			frm_gpu_simd_issue_buffer_size);
 	if (frm_gpu_simd_issue_buffer_size < 1)
 		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_simd_decode_latency = config_read_int(
-		gpu_config, section, "DecodeLatency", 
-		frm_gpu_simd_decode_latency);
+			gpu_config, section, "DecodeLatency", 
+			frm_gpu_simd_decode_latency);
 	if (frm_gpu_simd_decode_latency < 0)
 		fatal("%s: invalid value for 'DecodeLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_simd_decode_buffer_size = config_read_int(
-		gpu_config, section, "DecodeBufferSize", 
-		frm_gpu_simd_decode_buffer_size);
+			gpu_config, section, "DecodeBufferSize", 
+			frm_gpu_simd_decode_buffer_size);
 	if (frm_gpu_simd_decode_buffer_size < 1)
 		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	/* FIXME Need to compute this dynamically based on the number
 	 * of the number of SIMD lanes */
 	frm_gpu_simd_exec_latency = config_read_int(
-		gpu_config, section, "ReadExecWriteLatency", 
-		frm_gpu_simd_exec_latency);
+			gpu_config, section, "ReadExecWriteLatency", 
+			frm_gpu_simd_exec_latency);
 	if (frm_gpu_simd_exec_latency < 0)
 		fatal("%s: invalid value for 'ReadExecWriteLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_simd_exec_buffer_size = config_read_int(
-		gpu_config, section, "ReadExecWriteBufferSize", 
-		frm_gpu_simd_exec_buffer_size);
+			gpu_config, section, "ReadExecWriteBufferSize", 
+			frm_gpu_simd_exec_buffer_size);
 	if (frm_gpu_simd_exec_buffer_size < 1)
 		fatal("%s: invalid value for 'ReadExecWriteBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	/* Branch Unit */
 	section = "BranchUnit";
 
 	frm_gpu_branch_unit_width = config_read_int(
-		gpu_config, section, "Width", frm_gpu_branch_unit_width);
+			gpu_config, section, "Width", frm_gpu_branch_unit_width);
 	if (frm_gpu_branch_unit_width < 1)
 		fatal("%s: invalid value for 'Width'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_branch_unit_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", 
-		frm_gpu_branch_unit_issue_buffer_size);
+			gpu_config, section, "IssueBufferSize", 
+			frm_gpu_branch_unit_issue_buffer_size);
 	if (frm_gpu_branch_unit_issue_buffer_size < 1)
 		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_branch_unit_decode_latency = config_read_int(
-		gpu_config, section, "DecodeLatency", 
-		frm_gpu_branch_unit_decode_latency);
+			gpu_config, section, "DecodeLatency", 
+			frm_gpu_branch_unit_decode_latency);
 	if (frm_gpu_branch_unit_decode_latency < 0)
 		fatal("%s: invalid value for 'DecodeLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_branch_unit_decode_buffer_size = config_read_int(
-		gpu_config, section, "DecodeBufferSize", 
-		frm_gpu_branch_unit_decode_buffer_size);
+			gpu_config, section, "DecodeBufferSize", 
+			frm_gpu_branch_unit_decode_buffer_size);
 	if (frm_gpu_branch_unit_decode_buffer_size < 1)
 		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_branch_unit_read_latency = config_read_int(
-		gpu_config, section, "ReadLatency", 
-		frm_gpu_branch_unit_read_latency);
+			gpu_config, section, "ReadLatency", 
+			frm_gpu_branch_unit_read_latency);
 	if (frm_gpu_branch_unit_read_latency < 0)
 		fatal("%s: invalid value for 'ReadLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_branch_unit_read_buffer_size = config_read_int(
-		gpu_config, section, "ReadBufferSize", 
-		frm_gpu_branch_unit_read_buffer_size);
+			gpu_config, section, "ReadBufferSize", 
+			frm_gpu_branch_unit_read_buffer_size);
 	if (frm_gpu_branch_unit_read_buffer_size < 1)
 		fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_branch_unit_exec_latency = config_read_int(
-		gpu_config, section, "ExecLatency", 
-		frm_gpu_branch_unit_exec_latency);
+			gpu_config, section, "ExecLatency", 
+			frm_gpu_branch_unit_exec_latency);
 	if (frm_gpu_branch_unit_exec_latency < 0)
 		fatal("%s: invalid value for 'ExecLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_branch_unit_exec_buffer_size= config_read_int(
-		gpu_config, section, "ExecBufferSize", 
-		frm_gpu_branch_unit_exec_buffer_size);
+			gpu_config, section, "ExecBufferSize", 
+			frm_gpu_branch_unit_exec_buffer_size);
 	if (frm_gpu_branch_unit_exec_buffer_size < 1)
 		fatal("%s: invalid value for 'ExecBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_branch_unit_write_latency = config_read_int(
-		gpu_config, section, "WriteLatency", 
-		frm_gpu_branch_unit_write_latency);
+			gpu_config, section, "WriteLatency", 
+			frm_gpu_branch_unit_write_latency);
 	if (frm_gpu_branch_unit_write_latency < 0)
 		fatal("%s: invalid value for 'WriteLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_branch_unit_write_buffer_size = config_read_int(
-		gpu_config, section, "WriteBufferSize", 
-		frm_gpu_branch_unit_write_buffer_size);
+			gpu_config, section, "WriteBufferSize", 
+			frm_gpu_branch_unit_write_buffer_size);
 	if (frm_gpu_branch_unit_write_buffer_size < 1)
 		fatal("%s: invalid value for 'WriteBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	/* LDS Unit */
 	section = "LDSUnit";
 
 	frm_gpu_lds_width = config_read_int(
-		gpu_config, section, "Width", frm_gpu_lds_width);
+			gpu_config, section, "Width", frm_gpu_lds_width);
 	if (frm_gpu_lds_width < 1)
 		fatal("%s: invalid value for 'Width'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_lds_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", 
-		frm_gpu_lds_issue_buffer_size);
+			gpu_config, section, "IssueBufferSize", 
+			frm_gpu_lds_issue_buffer_size);
 	if (frm_gpu_lds_issue_buffer_size < 1)
 		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_lds_decode_latency = config_read_int(
-		gpu_config, section, "DecodeLatency", 
-		frm_gpu_lds_decode_latency);
+			gpu_config, section, "DecodeLatency", 
+			frm_gpu_lds_decode_latency);
 	if (frm_gpu_lds_decode_latency < 0)
 		fatal("%s: invalid value for 'DecodeLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_lds_decode_buffer_size = config_read_int(
-		gpu_config, section, "DecodeBufferSize", 
-		frm_gpu_lds_decode_buffer_size);
+			gpu_config, section, "DecodeBufferSize", 
+			frm_gpu_lds_decode_buffer_size);
 	if (frm_gpu_lds_decode_buffer_size < 1)
 		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_lds_read_latency = config_read_int(
-		gpu_config, section, "ReadLatency", frm_gpu_lds_read_latency);
+			gpu_config, section, "ReadLatency", frm_gpu_lds_read_latency);
 	if (frm_gpu_lds_read_latency < 0)
 		fatal("%s: invalid value for 'ReadLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_lds_read_buffer_size = config_read_int(
-		gpu_config, section, "ReadBufferSize", 
-		frm_gpu_lds_read_buffer_size);
+			gpu_config, section, "ReadBufferSize", 
+			frm_gpu_lds_read_buffer_size);
 	if (frm_gpu_lds_read_buffer_size < 1)
 		fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_lds_max_inflight_mem_accesses = config_read_int(
-		gpu_config, section, "MaxInflightMem", 
-		frm_gpu_lds_max_inflight_mem_accesses);
+			gpu_config, section, "MaxInflightMem", 
+			frm_gpu_lds_max_inflight_mem_accesses);
 	if (frm_gpu_lds_max_inflight_mem_accesses < 1)
 		fatal("%s: invalid value for 'MaxInflightMem'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_lds_write_latency = config_read_int(
-		gpu_config, section, "WriteLatency", frm_gpu_lds_write_latency);
+			gpu_config, section, "WriteLatency", frm_gpu_lds_write_latency);
 	if (frm_gpu_lds_write_latency < 0)
 		fatal("%s: invalid value for 'WriteLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_lds_write_buffer_size = config_read_int(
-		gpu_config, section, "WriteBufferSize", 
-		frm_gpu_lds_write_buffer_size);
+			gpu_config, section, "WriteBufferSize", 
+			frm_gpu_lds_write_buffer_size);
 	if (frm_gpu_lds_write_buffer_size < 1)
 		fatal("%s: invalid value for 'WriteBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	/* VectorMem Unit */
 	section = "VectorMemUnit";
-	
+
 	frm_gpu_vector_mem_width = config_read_int(
-		gpu_config, section, "Width", frm_gpu_vector_mem_width);
+			gpu_config, section, "Width", frm_gpu_vector_mem_width);
 	if (frm_gpu_vector_mem_width < 1)
 		fatal("%s: invalid value for 'Width'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_vector_mem_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", 
-		frm_gpu_vector_mem_issue_buffer_size);
+			gpu_config, section, "IssueBufferSize", 
+			frm_gpu_vector_mem_issue_buffer_size);
 	if (frm_gpu_vector_mem_issue_buffer_size < 1)
 		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_vector_mem_decode_latency = config_read_int(
-		gpu_config, section, "DecodeLatency", 
-		frm_gpu_vector_mem_decode_latency);
+			gpu_config, section, "DecodeLatency", 
+			frm_gpu_vector_mem_decode_latency);
 	if (frm_gpu_vector_mem_decode_latency < 0)
 		fatal("%s: invalid value for 'DecodeLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_vector_mem_decode_buffer_size = config_read_int(
-		gpu_config, section, "DecodeBufferSize", 
-		frm_gpu_vector_mem_decode_buffer_size);
+			gpu_config, section, "DecodeBufferSize", 
+			frm_gpu_vector_mem_decode_buffer_size);
 	if (frm_gpu_vector_mem_decode_buffer_size < 1)
 		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_vector_mem_read_latency = config_read_int(
-		gpu_config, section, "ReadLatency", 
-		frm_gpu_vector_mem_read_latency);
+			gpu_config, section, "ReadLatency", 
+			frm_gpu_vector_mem_read_latency);
 	if (frm_gpu_vector_mem_read_latency < 0)
 		fatal("%s: invalid value for 'ReadLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_vector_mem_read_buffer_size = config_read_int(
-		gpu_config, section, "ReadBufferSize", 
-		frm_gpu_vector_mem_read_buffer_size);
+			gpu_config, section, "ReadBufferSize", 
+			frm_gpu_vector_mem_read_buffer_size);
 	if (frm_gpu_vector_mem_read_buffer_size < 1)
 		fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_vector_mem_max_inflight_mem_accesses = config_read_int(
-		gpu_config, section, "MaxInflightMem", 
-		frm_gpu_vector_mem_max_inflight_mem_accesses);
+			gpu_config, section, "MaxInflightMem", 
+			frm_gpu_vector_mem_max_inflight_mem_accesses);
 	if (frm_gpu_vector_mem_max_inflight_mem_accesses < 1)
 		fatal("%s: invalid value for 'MaxInflightMem'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_vector_mem_write_latency = config_read_int(
-		gpu_config, section, "WriteLatency", 
-		frm_gpu_vector_mem_write_latency);
+			gpu_config, section, "WriteLatency", 
+			frm_gpu_vector_mem_write_latency);
 	if (frm_gpu_vector_mem_write_latency < 0)
 		fatal("%s: invalid value for 'WriteLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	frm_gpu_vector_mem_write_buffer_size = config_read_int(
-		gpu_config, section, "WriteBufferSize", 
-		frm_gpu_vector_mem_write_buffer_size);
+			gpu_config, section, "WriteBufferSize", 
+			frm_gpu_vector_mem_write_buffer_size);
 	if (frm_gpu_vector_mem_write_buffer_size < 1)
 		fatal("%s: invalid value for 'WriteBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
+				frm_gpu_config_file_name, err_note);
 
 	/* Shared Memory Unit */
 	section = "SharedMemUnit";
 
 	frm_gpu_shared_mem_size = config_read_int(
-		gpu_config, section, "Size", frm_gpu_shared_mem_size);
+			gpu_config, section, "Size", frm_gpu_shared_mem_size);
 	frm_gpu_lds_block_size = config_read_int(
-		gpu_config, section, "BlockSize", frm_gpu_lds_block_size);
+			gpu_config, section, "BlockSize", frm_gpu_lds_block_size);
 	frm_gpu_lds_latency = config_read_int(
-		gpu_config, section, "Latency", frm_gpu_lds_latency);
+			gpu_config, section, "Latency", frm_gpu_lds_latency);
 	frm_gpu_lds_num_ports = config_read_int(
-		gpu_config, section, "Ports", frm_gpu_lds_num_ports);
+			gpu_config, section, "Ports", frm_gpu_lds_num_ports);
 
 	if ((frm_gpu_lds_block_size & (frm_gpu_lds_block_size - 1)) || 
-		frm_gpu_lds_block_size < 4)
+			frm_gpu_lds_block_size < 4)
 		fatal("%s: %s->BlockSize must be a power of two and at "
-			"least 4.\n%s", frm_gpu_config_file_name, section, 
-			err_note);
+				"least 4.\n%s", frm_gpu_config_file_name, section, 
+				err_note);
 	if (frm_gpu_lds_latency < 1)
 		fatal("%s: invalid value for %s->Latency.\n%s", 
-			frm_gpu_config_file_name, section, err_note);
+				frm_gpu_config_file_name, section, err_note);
 	if (frm_gpu_shared_mem_size < frm_gpu_lds_block_size)
 		fatal("%s: %s->Size cannot be smaller than %s->BlockSize * "
-			"%s->Banks.\n%s", frm_gpu_config_file_name, section, 
-			section, section, err_note);
-	
+				"%s->Banks.\n%s", frm_gpu_config_file_name, section, 
+				section, section, err_note);
+
 	/* Cycle Interval report */
 	frm_spatial_report_config_read(gpu_config);
 
@@ -821,7 +793,7 @@ void frm_config_dump(FILE *f)
 	fprintf(f, "MaxThreadBlocksPerSM = %d\n",
 			frm_gpu_max_thread_blocks_per_sm);
 	fprintf(f, "MaxWarpsPerSM = %d\n", 
-		frm_gpu_max_warps_per_sm);
+			frm_gpu_max_warps_per_sm);
 	fprintf(f, "\n");
 
 	/* Front-End */
@@ -832,7 +804,7 @@ void frm_config_dump(FILE *f)
 	fprintf(f, "IssueLatency = %d\n", frm_gpu_fe_issue_latency);
 	fprintf(f, "IssueWidth = %d\n", frm_gpu_fe_issue_width);
 	fprintf(f, "MaxInstIssuedPerType = %d\n", 
-		frm_gpu_fe_max_inst_issued_per_type);
+			frm_gpu_fe_max_inst_issued_per_type);
 	fprintf(f, "\n");
 
 	/* SIMD Unit */
@@ -844,26 +816,26 @@ void frm_config_dump(FILE *f)
 	fprintf(f, "DecodeBufferSize = %d\n", frm_gpu_simd_decode_buffer_size);
 	fprintf(f, "ReadExecWriteLatency = %d\n", frm_gpu_simd_exec_latency);
 	fprintf(f, "ReadExecWriteBufferSize = %d\n", 
-		frm_gpu_simd_exec_buffer_size);
+			frm_gpu_simd_exec_buffer_size);
 	fprintf(f, "\n");
 
 	/* Branch Unit */
 	fprintf(f, "[ Config.BranchUnit ]\n");
 	fprintf(f, "Width = %d\n", frm_gpu_branch_unit_width);
 	fprintf(f, "IssueBufferSize = %d\n", 
-		frm_gpu_branch_unit_issue_buffer_size);
+			frm_gpu_branch_unit_issue_buffer_size);
 	fprintf(f, "DecodeLatency = %d\n", frm_gpu_branch_unit_decode_latency);
 	fprintf(f, "DecodeBufferSize = %d\n", 
-		frm_gpu_branch_unit_decode_buffer_size);
+			frm_gpu_branch_unit_decode_buffer_size);
 	fprintf(f, "ReadLatency = %d\n", frm_gpu_branch_unit_read_latency);
 	fprintf(f, "ReadBufferSize = %d\n", 
-		frm_gpu_branch_unit_read_buffer_size);
+			frm_gpu_branch_unit_read_buffer_size);
 	fprintf(f, "ExecLatency = %d\n", frm_gpu_branch_unit_exec_latency);
 	fprintf(f, "ExecBufferSize = %d\n", 
-		frm_gpu_branch_unit_exec_buffer_size);
+			frm_gpu_branch_unit_exec_buffer_size);
 	fprintf(f, "WriteLatency = %d\n", frm_gpu_branch_unit_write_latency);
 	fprintf(f, "WriteBufferSize = %d\n", 
-		frm_gpu_branch_unit_write_buffer_size);
+			frm_gpu_branch_unit_write_buffer_size);
 	fprintf(f, "\n");
 
 	/* LDS */
@@ -872,11 +844,11 @@ void frm_config_dump(FILE *f)
 	fprintf(f, "IssueBufferSize = %d\n", frm_gpu_lds_issue_buffer_size);
 	fprintf(f, "DecodeLatency = %d\n", frm_gpu_lds_decode_latency);
 	fprintf(f, "DecodeBufferSize = %d\n", 
-		frm_gpu_lds_decode_buffer_size);
+			frm_gpu_lds_decode_buffer_size);
 	fprintf(f, "ReadLatency = %d\n", frm_gpu_lds_read_latency);
 	fprintf(f, "ReadBufferSize = %d\n", frm_gpu_lds_read_buffer_size);
 	fprintf(f, "MaxInflightMem = %d\n", 
-		frm_gpu_lds_max_inflight_mem_accesses);
+			frm_gpu_lds_max_inflight_mem_accesses);
 	fprintf(f, "WriteLatency = %d\n", frm_gpu_lds_write_latency);
 	fprintf(f, "WriteBufferSize = %d\n", frm_gpu_lds_write_buffer_size);
 	fprintf(f, "\n");
@@ -885,17 +857,17 @@ void frm_config_dump(FILE *f)
 	fprintf(f, "[ Config.VectorMemUnit ]\n");
 	fprintf(f, "Width = %d\n", frm_gpu_vector_mem_width);
 	fprintf(f, "IssueBufferSize = %d\n", 
-		frm_gpu_vector_mem_issue_buffer_size);
+			frm_gpu_vector_mem_issue_buffer_size);
 	fprintf(f, "DecodeLatency = %d\n", frm_gpu_vector_mem_decode_latency);
 	fprintf(f, "DecodeBufferSize = %d\n", 
-		frm_gpu_vector_mem_decode_buffer_size);
+			frm_gpu_vector_mem_decode_buffer_size);
 	fprintf(f, "ReadLatency = %d\n", frm_gpu_vector_mem_read_latency);
 	fprintf(f, "ReadBufferSize = %d\n", frm_gpu_vector_mem_read_buffer_size);
 	fprintf(f, "MaxInflightMem = %d\n", 
-		frm_gpu_vector_mem_max_inflight_mem_accesses);
+			frm_gpu_vector_mem_max_inflight_mem_accesses);
 	fprintf(f, "WriteLatency = %d\n", frm_gpu_vector_mem_write_latency);
 	fprintf(f, "WriteBufferSize = %d\n", 
-		frm_gpu_vector_mem_write_buffer_size);
+			frm_gpu_vector_mem_write_buffer_size);
 	fprintf(f, "\n");
 
 	/* LDS */
@@ -917,31 +889,27 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 	assert(!frm_gpu->grid);
 	frm_gpu->grid = grid;
 
-	/* Calculate the actual limit of thread blocks per SM */
+	/* Calculate the number of thread blocks per SM */
 	frm_gpu->thread_blocks_per_sm = 
 		frm_calc_get_thread_blocks_per_sm(
-			grid->block_size, 
-			grid->num_gpr_used,
-			grid->local_mem_top);
+				grid->block_size, 
+				grid->num_gpr_used,
+				grid->local_mem_top);
 
 	if (!frm_gpu->thread_blocks_per_sm)
 	{
 		fatal("thread-block resources cannot be allocated to a SM.\n"
-			"\tA SM in the GPU has a limit in "
-			"number of warps, number\n\tof registers, and "
-			"amount of local memory. If the thread-block size\n"
-			"\texceeds any of these limits, the Grid cannot "
-			"be executed.\n");
+				"\tA SM in the GPU has a limit in number of warps,\n"
+				"\tnumber of registers, and amount of shared memory.\n"
+				"\tIf the thread block size exceeds any of these limits,\n"
+				"\tthe grid cannot be executed.\n");
 	}
 
 	/* Calculate limit of warps and threads per SM */
-	frm_gpu->warps_per_sm = 
-		frm_gpu->thread_blocks_per_sm * 
+	frm_gpu->warps_per_sm = frm_gpu->thread_blocks_per_sm * 
 		grid->warps_per_thread_block;
-	frm_gpu->threads_per_sm = 
-		frm_gpu->warps_per_sm * 
-		frm_emu_warp_size;
-	frm_gpu_debug("limits per sm: tb = %d w = %d t = %d\n", 
+	frm_gpu->threads_per_sm = frm_gpu->warps_per_sm * frm_emu_warp_size;
+	frm_gpu_debug("%d thread blocks, %d warps, %d threads mapped per SM\n", 
 			frm_gpu->thread_blocks_per_sm, 
 			frm_gpu->warps_per_sm, 
 			frm_gpu->threads_per_sm);
@@ -1166,11 +1134,9 @@ enum arch_sim_kind_t frm_gpu_run(void)
 	assert(grid);
 
 	/* Allocate thread blocks to SMs */
-	while (frm_gpu->sm_ready_list_head && 
-			grid->pending_list_head)
+	while (frm_gpu->sm_ready_list_head && grid->pending_list_head)
 	{
-		frm_sm_map_thread_block(
-				frm_gpu->sm_ready_list_head,
+		frm_sm_map_thread_block(frm_gpu->sm_ready_list_head,
 				grid->pending_list_head);
 	}
 
@@ -1190,8 +1156,7 @@ enum arch_sim_kind_t frm_gpu_run(void)
 	/* Stop if there was a simulation stall */
 	if ((arch->cycle_count-frm_gpu->last_complete_cycle) > 1000000)
 	{
-		warning("Fermi GPU simulation stalled.\n%s", 
-				frm_err_stall);
+		warning("Fermi GPU simulation stalled.\n%s", frm_err_stall);
 		esim_finish = esim_finish_stall;
 	}
 
@@ -1235,3 +1200,4 @@ enum arch_sim_kind_t frm_gpu_run(void)
 	/* Still simulating */
 	return arch_sim_kind_detailed;
 }
+

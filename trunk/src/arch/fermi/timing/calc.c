@@ -61,8 +61,7 @@ int frm_calc_get_thread_blocks_per_sm(int threads_per_thread_block,
 	warps_per_thread_block = (threads_per_thread_block + 
 		frm_emu_warp_size - 1) / frm_emu_warp_size;
 	max_thread_blocks_limitted_by_max_warps = 
-		frm_gpu_max_warps_per_sm /
-		warps_per_thread_block;
+		frm_gpu_max_warps_per_sm / warps_per_thread_block;
 	frm_gpu_debug("max_thread_blocks_limitted_by_max_warps = %d\n",
 			max_thread_blocks_limitted_by_max_warps);
 
