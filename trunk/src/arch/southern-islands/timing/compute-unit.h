@@ -51,12 +51,6 @@ struct si_compute_unit_t
 	int id;
 	long long uop_id_counter;  
 
-	/* Double linked list of compute units */
-	struct si_compute_unit_t *compute_unit_ready_list_prev;
-	struct si_compute_unit_t *compute_unit_ready_list_next;
-	struct si_compute_unit_t *compute_unit_busy_list_prev;
-	struct si_compute_unit_t *compute_unit_busy_list_next;
-
 	/* Entry points to memory hierarchy */
 	struct mod_t *scalar_cache;
 	struct mod_t *vector_cache;

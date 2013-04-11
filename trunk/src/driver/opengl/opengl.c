@@ -5297,6 +5297,7 @@ struct opengl_shader_launch_info_t
 	int finished;
 };
 
+#if 0
 static void opengl_shader_launch_finish(void *user_data)
 {
 	struct opengl_shader_launch_info_t *info = user_data;
@@ -5314,6 +5315,7 @@ static void opengl_shader_launch_finish(void *user_data)
 	 * based on their new state. */
 	x86_emu_process_events_schedule();
 }
+#endif
 
 
 static int opengl_shader_launch_can_wakeup(struct x86_ctx_t *ctx,
@@ -5429,11 +5431,11 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 	info = xcalloc(1, sizeof(struct opengl_shader_launch_info_t));
 	info->shader = shader;
 	info->ndrange = ndrange;
-	si_ndrange_set_free_notify_func(ndrange, opengl_shader_launch_finish, info);
+	//si_ndrange_set_free_notify_func(ndrange, opengl_shader_launch_finish, info);
 
 	/* Set ND-Range status to 'pending'. This makes it immediately a candidate for
 	 * execution, whether we have functional or detailed simulation. */
-	si_ndrange_set_status(ndrange, si_ndrange_pending);
+	//si_ndrange_set_status(ndrange, si_ndrange_pending);
 
 	/* Suspend x86 context until ND-Range finishes */
 	x86_ctx_suspend(ctx, opengl_shader_launch_can_wakeup, info,

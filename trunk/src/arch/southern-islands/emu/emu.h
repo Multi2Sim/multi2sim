@@ -202,39 +202,20 @@ struct si_emu_t
 	/* Common architecture object */
 	struct arch_t *arch;
 
-	/* List of ND-Ranges */
-	struct si_ndrange_t *ndrange_list_head;
-	struct si_ndrange_t *ndrange_list_tail;
-	int ndrange_list_count;
-	int ndrange_list_max;
-
-	/* List of pending ND-Ranges */
-	struct si_ndrange_t *pending_ndrange_list_head;
-	struct si_ndrange_t *pending_ndrange_list_tail;
-	int pending_ndrange_list_count;
-	int pending_ndrange_list_max;
-
-	/* List of running ND-Ranges */
-	struct si_ndrange_t *running_ndrange_list_head;
-	struct si_ndrange_t *running_ndrange_list_tail;
-	int running_ndrange_list_count;
-	int running_ndrange_list_max;
-
-	/* List of finished ND-Ranges */
-	struct si_ndrange_t *finished_ndrange_list_head;
-	struct si_ndrange_t *finished_ndrange_list_tail;
-	int finished_ndrange_list_count;
-	int finished_ndrange_list_max;
-
 	/* Global memory */
 	struct mem_t *global_mem;
 	unsigned int global_mem_top;
 
-	/* List of set UAVs */
-	int valid_uav_list[SI_EMU_MAX_NUM_UAVS];
+	/* Current ND-Range */
+	struct si_ndrange_t *ndrange;
+
+	/* Work-group lists */
+	struct list_t *waiting_work_groups;
+	struct list_t *running_work_groups;
 
 	/* Statistics */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
+	long long work_group_count;  /* Number of OpenCL work groups executed */
 	long long scalar_alu_inst_count;  /* Scalar ALU instructions executed */
 	long long scalar_mem_inst_count;  /* Scalar mem instructions executed */
 	long long branch_inst_count;  /* Branch instructions executed */

@@ -48,18 +48,9 @@ struct si_work_item_t
 	/* Wavefront, work-group, and NDRange where it belongs */
 	struct si_wavefront_t *wavefront;
 	struct si_work_group_t *work_group;
-	struct si_ndrange_t *ndrange;
 
 	/* Work-item state */
 	union si_reg_t vreg[256];  /* Vector general purpose registers */
-
-	/* Linked list of write tasks. They are enqueued by machine instructions
-	 * and executed as a burst at the end of an ALU group. */
-	struct linked_list_t *write_task_list;
-
-	/* LDS (Local Data Share) OQs (Output Queues) */
-	struct list_t *lds_oqa;
-	struct list_t *lds_oqb;
 
 	/* Last global memory access */
 	unsigned int global_mem_access_addr;
@@ -72,19 +63,14 @@ struct si_work_item_t
 	int lds_access_type[SI_MAX_LDS_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
 };
 
-#define SI_FOREACH_WORK_ITEM_IN_NDRANGE(NDRANGE, WORK_ITEM_ID) \
-	for ((WORK_ITEM_ID) = (NDRANGE)->work_item_id_first; \
-		(WORK_ITEM_ID) <= (NDRANGE)->work_item_id_last; \
-		(WORK_ITEM_ID)++)
-
 #define SI_FOREACH_WORK_ITEM_IN_WORK_GROUP(WORK_GROUP, WORK_ITEM_ID) \
-	for ((WORK_ITEM_ID) = (WORK_GROUP)->work_item_id_first; \
-		(WORK_ITEM_ID) <= (WORK_GROUP)->work_item_id_last; \
+	for ((WORK_ITEM_ID) = 0; \
+		(WORK_ITEM_ID) < (WORK_GROUP)->work_item_count; \
 		(WORK_ITEM_ID)++)
 
 #define SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(WAVEFRONT, WORK_ITEM_ID) \
-	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first; \
-		(WORK_ITEM_ID) <= (WAVEFRONT)->work_item_id_last; \
+	for ((WORK_ITEM_ID) = 0; \
+		(WORK_ITEM_ID) < si_emu_wavefront_size; \
 		(WORK_ITEM_ID)++)
 
 struct si_work_item_t *si_work_item_create(void);

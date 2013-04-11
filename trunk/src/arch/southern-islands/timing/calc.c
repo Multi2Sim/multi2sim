@@ -41,7 +41,6 @@ static char *err_gnuplot_msg =
 	"supported in the\n"
 	"\tgnuplot version currently installed.\n";
 
-
 int si_calc_get_work_groups_per_wavefront_pool(int work_items_per_work_group,
 	int registers_per_work_item, int local_mem_per_work_group)
 {
@@ -128,7 +127,7 @@ static void si_calc_plot_work_items_per_work_group(void)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.work_items.eps",
-		si_gpu_calc_file_name, si_gpu->ndrange->id);
+		si_gpu_calc_file_name, si_emu->ndrange->id);
 	if (!file_can_open_for_write(plot_file_name))
 	{
 		fatal("%s: cannot write GPU occupancy calculation plot", 
@@ -137,9 +136,8 @@ static void si_calc_plot_work_items_per_work_group(void)
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	local_mem_per_work_group = si_gpu->ndrange->local_mem_top;
-	registers_per_work_item = 
-		si_gpu->ndrange->num_vgpr_used;
+	local_mem_per_work_group = si_emu->ndrange->local_mem_top;
+	registers_per_work_item = si_emu->ndrange->num_vgpr_used;
 	for (work_items_per_work_group = si_emu_wavefront_size;
 		work_items_per_work_group < 
 		(si_gpu_max_wavefronts_per_wavefront_pool * 
@@ -165,7 +163,7 @@ static void si_calc_plot_work_items_per_work_group(void)
 
 	/* Current data point */
 	work_items_per_work_group = ROUND_UP(
-		si_gpu->ndrange->local_size, 
+		si_emu->ndrange->local_size, 
 		si_emu_wavefront_size);
 	work_groups_per_wavefront_pool = 
 		si_calc_get_work_groups_per_wavefront_pool(
@@ -224,7 +222,7 @@ static void si_calc_plot_registers_per_work_item(void)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.registers.eps",
-		si_gpu_calc_file_name, si_gpu->ndrange->id);
+		si_gpu_calc_file_name, si_emu->ndrange->id);
 	if (!file_can_open_for_write(plot_file_name))
 	{
 		fatal("%s: cannot write GPU occupancy calculation plot", 
@@ -233,8 +231,8 @@ static void si_calc_plot_registers_per_work_item(void)
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	local_mem_per_work_group = si_gpu->ndrange->local_mem_top;
-	work_items_per_work_group = si_gpu->ndrange->local_size;
+	local_mem_per_work_group = si_emu->ndrange->local_mem_top;
+	work_items_per_work_group = si_emu->ndrange->local_size;
 	wavefronts_per_work_group = (work_items_per_work_group + 
 		si_emu_wavefront_size - 1) / si_emu_wavefront_size;
 	for (registers_per_work_item = 1; registers_per_work_item <= 128; 
@@ -256,7 +254,7 @@ static void si_calc_plot_registers_per_work_item(void)
 	fclose(data_file);
 
 	/* Current data point */
-	registers_per_work_item = si_gpu->ndrange->num_vgpr_used;
+	registers_per_work_item = si_emu->ndrange->num_vgpr_used;
 	work_groups_per_wavefront_pool = 
 		si_calc_get_work_groups_per_wavefront_pool(
 			work_items_per_work_group, 
@@ -316,16 +314,16 @@ static void si_calc_plot_local_mem_per_work_group(void)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.local_mem.eps",
-		si_gpu_calc_file_name, si_gpu->ndrange->id);
+		si_gpu_calc_file_name, si_emu->ndrange->id);
 	if (!file_can_open_for_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", 
 			plot_file_name);
 
 	/* Generate data file */
 	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
-	registers_per_work_item = si_gpu->ndrange->num_vgpr_used;
+	registers_per_work_item = si_emu->ndrange->num_vgpr_used;
 	local_mem_step = MAX(1, si_gpu_lds_size / 32);
-	work_items_per_work_group = si_gpu->ndrange->local_size;
+	work_items_per_work_group = si_emu->ndrange->local_size;
 	wavefronts_per_work_group = (work_items_per_work_group + 
 		si_emu_wavefront_size - 1) / si_emu_wavefront_size;
 	for (local_mem_per_work_group = local_mem_step;
@@ -347,7 +345,7 @@ static void si_calc_plot_local_mem_per_work_group(void)
 	fclose(data_file);
 
 	/* Current data point */
-	local_mem_per_work_group = si_gpu->ndrange->local_mem_top;
+	local_mem_per_work_group = si_emu->ndrange->local_mem_top;
 	work_groups_per_wavefront_pool = 
 		si_calc_get_work_groups_per_wavefront_pool(
 			work_items_per_work_group, registers_per_work_item, 
@@ -414,4 +412,3 @@ void si_calc_plot(void)
 	/* Plot varying local memory per work-group */
 	si_calc_plot_local_mem_per_work_group();
 }
-

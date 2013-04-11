@@ -1613,6 +1613,7 @@ void si_isa_S_ENDPGM_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
 	work_item->wavefront->finished = 1;
+	work_item->work_group->wavefronts_completed++;
 }
 
 /* PC = PC + signext(SIMM16 * 4) + 4 */
@@ -1821,34 +1822,27 @@ void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item,
 	struct si_wavefront_t *wavefront = work_item->wavefront;
 	struct si_work_group_t *work_group = work_item->work_group;
 
+	int wavefront_id;
+
 	/* Suspend current wavefront at the barrier */
 	wavefront->barrier = 1;
-	assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
-	DOUBLE_LINKED_LIST_REMOVE(work_group, running, wavefront);
-	DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, barrier, wavefront);
-	si_isa_debug("%s (gid=%d) reached barrier (%d reached, %d left)\n",
-		wavefront->name, work_group->id,
-		work_group->barrier_list_count,
-		work_group->wavefront_count - work_group->barrier_list_count);
+	work_group->wavefronts_at_barrier++;
+
+	si_isa_debug("Group %d reached barrier (%d reached, %d left)\n",
+		work_group->id, work_group->wavefronts_at_barrier,
+		work_group->wavefront_count - 
+		work_group->wavefronts_at_barrier);
 
 	/* If all wavefronts in work-group reached the barrier, wake them up */
-	if (work_group->barrier_list_count == work_group->wavefront_count)
+	if (work_group->wavefronts_at_barrier== work_group->wavefront_count)
 	{
-		struct si_wavefront_t *wavefront;
-
-		while (work_group->barrier_list_head)
+		SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
 		{
-			wavefront = work_group->barrier_list_head;
-			DOUBLE_LINKED_LIST_REMOVE(work_group, barrier,
-				wavefront);
-			DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, running,
-				wavefront);
+			work_group->wavefronts[wavefront_id]->barrier = 0;
 		}
-		assert(work_group->running_list_count ==
-			work_group->wavefront_count);
-		assert(work_group->barrier_list_count == 0);
-		si_isa_debug("%s completed barrier, waking up wavefronts\n",
-			work_group->name);
+		work_group->wavefronts_at_barrier = 0;
+
+		si_isa_debug("Group %d completed barrier\n", work_group->id);
 	}
 }
 
@@ -5846,7 +5840,7 @@ void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item,
 	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
 	data0.as_uint = si_isa_read_vreg(work_item, INST.data0);
 
-	if (addr.as_uint > MIN(work_item->ndrange->local_mem_top, 
+	if (addr.as_uint > MIN(work_item->work_group->ndrange->local_mem_top, 
 		si_isa_read_sreg(work_item, SI_M0)))
 	{
 		fatal("%s: invalid address\n", __FUNCTION__);

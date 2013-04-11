@@ -19,7 +19,6 @@
 
 #include <assert.h>
 
-#include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <lib/mhandle/mhandle.h>
@@ -64,7 +63,6 @@ void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool)
 void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
 	struct si_work_group_t *work_group)
 {
-	struct si_ndrange_t *ndrange = work_group->ndrange;
 	struct si_wavefront_t *wavefront;
 	int wg_id_in_ib;
 	int first_entry;
@@ -72,10 +70,10 @@ void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool
 
 	/* Determine starting ID for wavefronts in the instruction buffer */
 	wg_id_in_ib = work_group->id_in_compute_unit/si_gpu_num_wavefront_pools;
-	first_entry = wg_id_in_ib * ndrange->wavefronts_per_work_group;
+	first_entry = wg_id_in_ib * work_group->wavefront_count;
 
 	/* Assign wavefronts a slot in the instruction buffer */
-	for (i = 0; i < ndrange->wavefronts_per_work_group; i++) 
+	for (i = 0; i < work_group->wavefront_count; i++) 
 	{
 		wavefront = work_group->wavefronts[i];
 		wavefront->wavefront_pool_entry = 
@@ -94,23 +92,20 @@ void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool
 void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t 
 	*wavefront_pool, struct si_work_group_t *work_group)
 {
-	struct si_ndrange_t *ndrange = work_group->ndrange;
 	struct si_wavefront_t *wavefront;
 	int wf_id_in_ib;
 	int i;
 
 	/* Reset mapped wavefronts */
 	assert(wavefront_pool->wavefront_count >= 
-		ndrange->wavefronts_per_work_group);
+		work_group->wavefront_count);
 
-	for (i = 0; i < ndrange->wavefronts_per_work_group; i++) 
+	for (i = 0; i < work_group->wavefront_count; i++) 
 	{
 		wavefront = work_group->wavefronts[i];
 		wf_id_in_ib = 
 			wavefront->wavefront_pool_entry->id_in_wavefront_pool;
 
-		/* TODO Add complete flag to slots in instruction buffer */
-		/* TODO Check that all slots are complete before setting NULL */
 		assert(wavefront_pool->entries[wf_id_in_ib]->wavefront);
 		assert(wavefront_pool->entries[wf_id_in_ib]->wavefront->id == 
 			wavefront->id);
@@ -118,5 +113,5 @@ void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t
 		wavefront_pool->entries[wf_id_in_ib]->wavefront_finished = 0;
 		wavefront_pool->entries[wf_id_in_ib]->wavefront = NULL;
 	}
-	wavefront_pool->wavefront_count -= ndrange->wavefronts_per_work_group;
+	wavefront_pool->wavefront_count -= work_group->wavefront_count;
 }
