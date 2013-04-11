@@ -40,6 +40,7 @@ CUmodule module;
 CUfunction function;
 unsigned long long int *inst_buffer;
 unsigned int inst_buffer_size;
+unsigned int num_gpr_used;
 cudaError_t cuda_rt_last_error;
 
 /* Error messages */
@@ -225,6 +226,9 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		sections[i].sh_size = get_uint(rodata, 
 				elf_head + 52 + i * elf_header.e_shentsize +
 				20);
+		sections[i].sh_info = get_uint(rodata, 
+				elf_head + 52 + i * elf_header.e_shentsize +
+				28);
 	}
 
 	/* Get string table head */
@@ -254,6 +258,9 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	if (i == elf_header.e_shnum)
 		fatal("%s section not found", text_section_name);
 	text_section_index = i;
+
+	/* Get GPR usage */
+	num_gpr_used = sections[text_section_index].sh_info >> 24;
 
 	/* Get instruction binary */
 	inst_buffer = (unsigned long long int *)xcalloc(1,

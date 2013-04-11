@@ -561,14 +561,15 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 			inst_buffer);
 	cuda_debug_print(stdout, "\t(internal) in: inst_buffer_size = %u\n",
 			inst_buffer_size);
+	cuda_debug_print(stdout, "\t(internal) in: num_gpr_used = %u\n",
+			num_gpr_used);
 
 	/* Create function */
 	*hfunc = cuda_function_create(hmod, name);
 
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, 
-			hmod->id, name, inst_buffer,
-			inst_buffer_size);
+			hmod->id, name, inst_buffer, inst_buffer_size, num_gpr_used);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
 	 * is running natively, system call CUDA_SYS_CODE is not supported. */
