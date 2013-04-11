@@ -8,10 +8,7 @@ libasm_a_SOURCES = \
 	asm-thumb.c \
 	asm-thumb.h \
 	asm-thumb.dat \
-	asm-dec-table-init \
-	asm-thumb.c \
-	asm-thumb.h \
-	asm-thumb.dat 
+	asm-thumb32.dat
 
 INCLUDES = @M2S_INCLUDES@
 
