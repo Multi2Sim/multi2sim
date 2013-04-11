@@ -1056,6 +1056,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Fermi detailed simulation debug file */
+		if (!strcmp(argv[argi], "--frm-debug-gpu"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_gpu_debug_file_name = argv[++argi];
+			continue;
+		}
+
 		/* Fermi GPU configuration file */
 		if (!strcmp(argv[argi], "--frm-config"))
 		{

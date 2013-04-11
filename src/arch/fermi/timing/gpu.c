@@ -325,7 +325,7 @@ struct str_map_t frm_gpu_register_alloc_granularity_map =
 enum frm_gpu_register_alloc_granularity_t frm_gpu_register_alloc_granularity;
 
 /* Device parameters */
-int frm_gpu_num_sms = 15;
+int frm_gpu_num_sms = 1;
 
 /* Streaming multiprocessor parameters */
 int frm_gpu_max_thread_blocks_per_sm = 8;
@@ -868,10 +868,6 @@ static void frm_config_read(void)
 	frm_gpu_lds_num_ports = config_read_int(
 		gpu_config, section, "Ports", frm_gpu_lds_num_ports);
 
-	if ((frm_gpu_shared_mem_size & (frm_gpu_shared_mem_size - 1)) ||
-			frm_gpu_shared_mem_size < 4)
-		fatal("%s: %s->Size must be a power of two and at least 4.\n%s",
-			frm_gpu_config_file_name, section, err_note);
 	if ((frm_gpu_lds_block_size & (frm_gpu_lds_block_size - 1)) || 
 		frm_gpu_lds_block_size < 4)
 		fatal("%s: %s->BlockSize must be a power of two and at "
@@ -1030,6 +1026,7 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 	assert(!frm_gpu->grid);
 	frm_gpu->grid = grid;
 
+	/* Calculate the actual limit of thread blocks per SM */
 	frm_gpu->thread_blocks_per_sm = 
 		frm_calc_get_thread_blocks_per_sm(
 			grid->local_size, 
@@ -1053,10 +1050,10 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 	frm_gpu->threads_per_sm = 
 		frm_gpu->warps_per_sm * 
 		frm_emu_warp_size;
-	assert(frm_gpu->thread_blocks_per_sm <= 
-		frm_gpu_max_thread_blocks_per_sm);
-	assert(frm_gpu->warps_per_sm <= 
-		frm_gpu_max_warps_per_sm);
+	frm_gpu_debug("limits per sm: tb = %d w = %d t = %d\n", 
+			frm_gpu->thread_blocks_per_sm, 
+			frm_gpu->warps_per_sm, 
+			frm_gpu->threads_per_sm);
 
 	/* Reset architectural state */
 	FRM_GPU_FOREACH_SM(sm_id)
@@ -1127,6 +1124,7 @@ void frm_gpu_done()
 	{
 		sm = frm_gpu->sms[sm_id];
 		frm_sm_free(sm);
+		frm_gpu_debug("sm[%d] freed\n", sm_id);
 	}
 	free(frm_gpu->sms);
 
@@ -1316,6 +1314,8 @@ enum arch_sim_kind_t frm_gpu_run(void)
 			grid->pending_list_head);
 	}
 
+	frm_gpu_debug("cycle = %lld\n", arch->cycle_count);
+
 	/* One more cycle */
 	arch->cycle_count++;
 
@@ -1346,6 +1346,8 @@ enum arch_sim_kind_t frm_gpu_run(void)
 		/* Store next busy SM, since this can change
 		 * during the SM simulation loop iteration. */
 		sm_next = sm->sm_busy_list_next;
+
+		frm_gpu_debug("run sm[%d]\n", sm->id);
 
 		/* Run one cycle */
 		frm_sm_run(sm);
