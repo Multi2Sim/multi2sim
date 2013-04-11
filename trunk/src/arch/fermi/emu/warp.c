@@ -271,10 +271,27 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	frm_inst_decode(inst);
 
 	/* Execute instruction */
-	FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
+	switch (inst->info->fmt)
 	{
-		thread = grid->threads[thread_id];
-		(*frm_isa_inst_func[inst->info->inst])(thread, inst);
+	case FRM_FMT_MOV_MOV:
+		warp->vector_mem_read = 1;
+		warp->lds_read = 1;
+
+		FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
+		{
+			thread = grid->threads[thread_id];
+			(*frm_isa_inst_func[inst->info->inst])(thread, inst);
+		}
+		frm_isa_debug("inst 0x%llx executed\n", inst->dword.dword);
+		break;
+	default:
+		FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
+		{
+			thread = grid->threads[thread_id];
+			(*frm_isa_inst_func[inst->info->inst])(thread, inst);
+		}
+		frm_isa_debug("inst 0x%llx executed\n", inst->dword.dword);
+		break;
 	}
 
 	if (warp->finished)

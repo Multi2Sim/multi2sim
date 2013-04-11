@@ -52,7 +52,7 @@ struct frm_warp_pool_t
 	int warp_count;
 	struct frm_warp_pool_entry_t **entries;
 
-	/* Compute unit */
+	/* SM it belongs to */
 	struct frm_sm_t *sm;
 };
 

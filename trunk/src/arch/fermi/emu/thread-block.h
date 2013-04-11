@@ -32,7 +32,7 @@ struct frm_thread_block_t
 {
 	/* ID */
 	int id;
-	char name[MAX_STRING_SIZE];
+	char name[1024];
 	int id_3d[3];
 
 	/* Status */
