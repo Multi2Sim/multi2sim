@@ -50,7 +50,7 @@ struct frm_simd_t
 	long long inst_count;
 
 	/* In order of highest to lowest precedence (scope). All utilized 
-	 * functional * units are considered for each level of scope. If a 
+	 * functional units are considered for each level of scope. If a 
 	 * functional unit is not utilized in a cycle, the specialized metric 
 	 * of the highest precedence whose characteristics are met is the only 
 	 * specialized metric considered. The total utilization metric is 

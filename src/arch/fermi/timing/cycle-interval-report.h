@@ -43,9 +43,9 @@ struct config_t;
 
 void frm_spatial_report_config_read(struct config_t *config);
 
-void frm_cu_interval_update(struct frm_sm_t *sm);
+void frm_sm_interval_update(struct frm_sm_t *sm);
 
-void frm_cu_spatial_report_done();
+void frm_sm_spatial_report_done();
 
 
 #endif

@@ -31,7 +31,7 @@ struct list_t *function_list;
 
 struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	char *function_name, unsigned long long int *inst_buffer, 
-	unsigned int inst_buffer_size)
+	unsigned int inst_buffer_size, unsigned int num_gpr_used)
 {
 	struct cuda_function_t *function;
 	//char section_name[MAX_STRING_SIZE];
@@ -48,6 +48,7 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 (unsigned long int)inst_buffer_size);
 	memcpy(function->inst_buffer, inst_buffer, inst_buffer_size);
 	function->inst_buffer_size = inst_buffer_size;
+	function->num_gpr_used = num_gpr_used;
 	function->arg_list = list_create();
 
 	/* Load function */

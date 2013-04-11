@@ -421,20 +421,17 @@ static void frm_gpu_device_init()
 	struct frm_sm_t *sm;
 	int sm_id;
 
-	/* Initialize */
+	/* Initialize GPU */
 	frm_gpu = xcalloc(1, sizeof(struct frm_gpu_t));
 
 	/* Initialize SMs */
-	frm_gpu->sms = xcalloc(frm_gpu_num_sms, 
-		sizeof(void *));
+	frm_gpu->sms = xcalloc(frm_gpu_num_sms, sizeof(struct frm_sm_t *));
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
-		frm_gpu->sms[sm_id] = 
-			frm_sm_create();
+		frm_gpu->sms[sm_id] = frm_sm_create();
 		sm = frm_gpu->sms[sm_id];
 		sm->id = sm_id;
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_ready, 
-			sm);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_ready, sm);
 	}
 
 	/* Trace */
@@ -444,6 +441,7 @@ static void frm_gpu_device_init()
 }
 
 
+/* FIXME: check all the parameters to see if they are required in Fermi */
 static void frm_config_read(void)
 {
 	struct config_t *gpu_config;
@@ -461,8 +459,7 @@ static void frm_config_read(void)
 	section = "Device";
 
 	frm_gpu_num_sms = config_read_int(
-		gpu_config, section, "NumSMs", 
-		frm_gpu_num_sms);
+		gpu_config, section, "NumSMs", frm_gpu_num_sms);
 	if (frm_gpu_num_sms < 1)
 		fatal("%s: invalid value for 'NumSMs'.\n%s", 
 			frm_gpu_config_file_name, err_note);
@@ -471,24 +468,24 @@ static void frm_config_read(void)
 	section = "SM";
 
 	frm_gpu_max_thread_blocks_per_sm = config_read_int(
-		gpu_config, section, "MaxThreadBlocksPerWarpPool",
+		gpu_config, section, "MaxThreadBlocksPerSM",
 		frm_gpu_max_thread_blocks_per_sm);
 	if (frm_gpu_max_thread_blocks_per_sm < 1)
-		fatal("%s: invalid value for 'MaxThreadBlocksPerWarpPool'"
-			".\n%s", frm_gpu_config_file_name, err_note);
+		fatal("%s: invalid value for 'MaxThreadBlocksPerSM'.\n%s", 
+			frm_gpu_config_file_name, err_note);
 
 	frm_gpu_max_warps_per_sm = config_read_int(
-		gpu_config, section, "MaxWarpsPerWarpPool",
+		gpu_config, section, "MaxWarpsPerSM",
 		frm_gpu_max_warps_per_sm);
 	if (frm_gpu_max_warps_per_sm < 1)
-		fatal("%s: invalid value for 'MaxWarpsPerWarpPool'"
-			".\n%s", frm_gpu_config_file_name, err_note);
+		fatal("%s: invalid value for 'MaxWarpsPerSM'.\n%s", 
+			frm_gpu_config_file_name, err_note);
 
 	frm_gpu_num_registers_per_sm = config_read_int(
-		gpu_config, section, "NumRegisters", 
+		gpu_config, section, "NumRegistersPerSM", 
 		frm_gpu_num_registers_per_sm);
 	if (frm_gpu_num_registers_per_sm < 1)
-		fatal("%s: invalid value for 'NumRegisters'.\n%s", 
+		fatal("%s: invalid value for 'NumRegistersPerSM'.\n%s", 
 			frm_gpu_config_file_name, err_note);
 
 	/* Front End */
@@ -523,13 +520,6 @@ static void frm_config_read(void)
 		gpu_config, section, "IssueWidth", frm_gpu_fe_issue_width);
 	if (frm_gpu_fe_issue_width < 1)
 		fatal("%s: invalid value for 'IssueWidth'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_fe_max_inst_issued_per_type = config_read_int(
-		gpu_config, section, "MaxInstIssuedPerType", 
-		frm_gpu_fe_max_inst_issued_per_type);
-	if (frm_gpu_fe_max_inst_issued_per_type < 1)
-		fatal("%s: invalid value for 'MaxInstIssuedPerType'.\n%s",
 			frm_gpu_config_file_name, err_note);
 
 	/* SIMD Unit */
@@ -582,78 +572,6 @@ static void frm_config_read(void)
 		frm_gpu_simd_exec_buffer_size);
 	if (frm_gpu_simd_exec_buffer_size < 1)
 		fatal("%s: invalid value for 'ReadExecWriteBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	/* Scalar Unit */
-	section = "ScalarUnit";
-
-	frm_gpu_scalar_unit_width = config_read_int(
-		gpu_config, section, "Width", frm_gpu_scalar_unit_width);
-	if (frm_gpu_scalar_unit_width < 1)
-		fatal("%s: invalid value for 'Width'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_scalar_unit_issue_buffer_size = config_read_int(
-		gpu_config, section, "IssueBufferSize", 
-		frm_gpu_scalar_unit_issue_buffer_size);
-	if (frm_gpu_scalar_unit_issue_buffer_size < 1)
-		fatal("%s: invalid value for 'IssueBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_scalar_unit_decode_latency = config_read_int(
-		gpu_config, section, "DecodeLatency", 
-		frm_gpu_scalar_unit_decode_latency);
-	if (frm_gpu_scalar_unit_decode_latency < 0)
-		fatal("%s: invalid value for 'DecodeLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_scalar_unit_decode_buffer_size = config_read_int(
-		gpu_config, section, "DecodeBufferSize", 
-		frm_gpu_scalar_unit_decode_buffer_size);
-	if (frm_gpu_scalar_unit_decode_buffer_size < 1)
-		fatal("%s: invalid value for 'DecodeBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_scalar_unit_read_latency = config_read_int(
-		gpu_config, section, "ReadLatency", 
-		frm_gpu_scalar_unit_read_latency);
-	if (frm_gpu_scalar_unit_read_latency < 0)
-		fatal("%s: invalid value for 'ReadLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_scalar_unit_read_buffer_size = config_read_int(
-		gpu_config, section, "ReadBufferSize", 
-		frm_gpu_scalar_unit_read_buffer_size);
-	if (frm_gpu_scalar_unit_read_buffer_size < 1)
-		fatal("%s: invalid value for 'ReadBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_scalar_unit_exec_latency = config_read_int(
-		gpu_config, section, "ALULatency", 
-		frm_gpu_scalar_unit_exec_latency);
-	if (frm_gpu_scalar_unit_exec_latency < 0)
-		fatal("%s: invalid value for 'ALULatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_scalar_unit_exec_buffer_size= config_read_int(
-		gpu_config, section, "ExecBufferSize", 
-		frm_gpu_scalar_unit_exec_buffer_size);
-	if (frm_gpu_scalar_unit_exec_buffer_size < 1)
-		fatal("%s: invalid value for 'ExecBufferSize'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_scalar_unit_write_latency = config_read_int(
-		gpu_config, section, "WriteLatency", 
-		frm_gpu_scalar_unit_write_latency);
-	if (frm_gpu_scalar_unit_write_latency < 0)
-		fatal("%s: invalid value for 'WriteLatency'.\n%s",
-			frm_gpu_config_file_name, err_note);
-
-	frm_gpu_scalar_unit_write_buffer_size = config_read_int(
-		gpu_config, section, "WriteBufferSize", 
-		frm_gpu_scalar_unit_write_buffer_size);
-	if (frm_gpu_scalar_unit_write_buffer_size < 1)
-		fatal("%s: invalid value for 'WriteBufferSize'.\n%s",
 			frm_gpu_config_file_name, err_note);
 
 	/* Branch Unit */
@@ -856,8 +774,8 @@ static void frm_config_read(void)
 		fatal("%s: invalid value for 'WriteBufferSize'.\n%s",
 			frm_gpu_config_file_name, err_note);
 
-	/* Local Data Share Unit */
-	section = "LocalDataShare";
+	/* Shared Memory Unit */
+	section = "SharedMemUnit";
 
 	frm_gpu_shared_mem_size = config_read_int(
 		gpu_config, section, "Size", frm_gpu_shared_mem_size);
@@ -889,7 +807,7 @@ static void frm_config_read(void)
 	config_free(gpu_config);
 }
 
-
+/* FIXME */
 void frm_config_dump(FILE *f)
 {
 	/* Device */
@@ -900,17 +818,11 @@ void frm_config_dump(FILE *f)
 	/* SM */
 	fprintf(f, "[ Config.SM ]\n");
 	fprintf(f, "NumRegistersPerSM = %d\n", frm_gpu_num_registers_per_sm);
-	fprintf(f, "MaxThreadBlocksPerSM = %d\n", 
-		frm_gpu_max_thread_blocks_per_sm);
+	fprintf(f, "MaxThreadBlocksPerSM = %d\n",
+			frm_gpu_max_thread_blocks_per_sm);
 	fprintf(f, "MaxWarpsPerSM = %d\n", 
 		frm_gpu_max_warps_per_sm);
 	fprintf(f, "\n");
-	/*
-	fprintf(f, "RegisterAllocSize = %d\n", frm_gpu_register_alloc_size);
-	fprintf(f, "RegisterAllocGranularity = %s\n", 
-		str_map_value(&frm_gpu_register_alloc_granularity_map, 
-		frm_gpu_register_alloc_granularity));
-	*/
 
 	/* Front-End */
 	fprintf(f, "[ Config.FrontEnd ]\n");
@@ -933,25 +845,6 @@ void frm_config_dump(FILE *f)
 	fprintf(f, "ReadExecWriteLatency = %d\n", frm_gpu_simd_exec_latency);
 	fprintf(f, "ReadExecWriteBufferSize = %d\n", 
 		frm_gpu_simd_exec_buffer_size);
-	fprintf(f, "\n");
-
-	/* Scalar Unit */
-	fprintf(f, "[ Config.ScalarUnit ]\n");
-	fprintf(f, "Width = %d\n", frm_gpu_scalar_unit_width);
-	fprintf(f, "IssueBufferSize = %d\n", 
-		frm_gpu_scalar_unit_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", frm_gpu_scalar_unit_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", 
-		frm_gpu_scalar_unit_decode_buffer_size);
-	fprintf(f, "ReadLatency = %d\n", frm_gpu_scalar_unit_read_latency);
-	fprintf(f, "ReadBufferSize = %d\n", 
-		frm_gpu_scalar_unit_read_buffer_size);
-	fprintf(f, "ALULatency = %d\n", frm_gpu_scalar_unit_exec_latency);
-	fprintf(f, "ExecBufferSize = %d\n", 
-		frm_gpu_scalar_unit_exec_buffer_size);
-	fprintf(f, "WriteLatency = %d\n", frm_gpu_scalar_unit_write_latency);
-	fprintf(f, "WriteBufferSize = %d\n", 
-		frm_gpu_scalar_unit_write_buffer_size);
 	fprintf(f, "\n");
 
 	/* Branch Unit */
@@ -1020,8 +913,6 @@ void frm_config_dump(FILE *f)
 
 static void frm_gpu_map_grid(struct frm_grid_t *grid)
 {
-	int sm_id;
-
 	/* Assign current grid */
 	assert(!frm_gpu->grid);
 	frm_gpu->grid = grid;
@@ -1029,7 +920,7 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 	/* Calculate the actual limit of thread blocks per SM */
 	frm_gpu->thread_blocks_per_sm = 
 		frm_calc_get_thread_blocks_per_sm(
-			grid->local_size, 
+			grid->block_size, 
 			grid->num_gpr_used,
 			grid->local_mem_top);
 
@@ -1054,15 +945,6 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 			frm_gpu->thread_blocks_per_sm, 
 			frm_gpu->warps_per_sm, 
 			frm_gpu->threads_per_sm);
-
-	/* Reset architectural state */
-	FRM_GPU_FOREACH_SM(sm_id)
-	{
-		// FIXME
-		//sm = frm_gpu->sms[sm_id];
-		//sm->simd.decode_index = 0;
-		//sm->simd.execute_index = 0;
-	}
 }
 
 
@@ -1084,23 +966,22 @@ static void frm_gpu_unmap_grid(void)
 
 void frm_gpu_init(void)
 {
-	struct arch_t *arch = frm_emu->arch;
+	struct arch_t *arch;
 
 	/* Trace */
 	frm_trace_category = trace_new_category();
 
 	/* Register functions for architecture */
+	arch = frm_emu->arch;
 	arch->mem_config_check_func = frm_mem_config_check;
 	arch->mem_config_default_func = frm_mem_config_default;
 	arch->mem_config_parse_entry_func = frm_mem_config_parse_entry;
 
 	/* Try to open report file */
 	if (frm_gpu_report_file_name[0] && 
-		!file_can_open_for_write(frm_gpu_report_file_name))
-	{
+			!file_can_open_for_write(frm_gpu_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",
-			frm_gpu_report_file_name);
-	}
+				frm_gpu_report_file_name);
 
 	/* Read configuration file */
 	frm_config_read();
@@ -1114,26 +995,27 @@ void frm_gpu_init(void)
 void frm_gpu_done()
 {
 	struct frm_sm_t *sm;
+
 	int sm_id;
 
 	/* GPU pipeline report */
 	frm_gpu_dump_report();
 
-	/* Free SMs, and device */
+	/* Free SMs */
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		sm = frm_gpu->sms[sm_id];
 		frm_sm_free(sm);
-		frm_gpu_debug("sm[%d] freed\n", sm_id);
 	}
 	free(frm_gpu->sms);
+	frm_gpu_debug("SMs freed\n");
 
 	/* Free GPU */
 	free(frm_gpu);
+	frm_gpu_debug("GPU freed\n");
 
 	if(frm_spatial_report_active)
-		frm_cu_spatial_report_done();
-
+		frm_sm_spatial_report_done();
 
 	/* Finalizations */
 	frm_uop_done();
@@ -1165,7 +1047,6 @@ void frm_gpu_dump_report(void)
 	FILE *f;
 
 	double inst_per_cycle;
-
 	long long coalesced_reads;
 	long long coalesced_writes;
 
@@ -1185,16 +1066,10 @@ void frm_gpu_dump_report(void)
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "GridCount = %d\n", frm_emu->grid_count);
 	fprintf(f, "Instructions = %lld\n", arch->inst_count);
-	fprintf(f, "ScalarALUInstructions = %lld\n", 
-		frm_emu->scalar_alu_inst_count);
-	fprintf(f, "ScalarMemInstructions = %lld\n", 
-		frm_emu->scalar_mem_inst_count);
 	fprintf(f, "BranchInstructions = %lld\n", frm_emu->branch_inst_count);
-	fprintf(f, "VectorALUInstructions = %lld\n", 
-		frm_emu->vector_alu_inst_count);
-	fprintf(f, "LDSInstructions = %lld\n", frm_emu->lds_inst_count);
-	fprintf(f, "VectorMemInstructions = %lld\n", 
-		frm_emu->vector_mem_inst_count);
+	fprintf(f, "ALUInstructions = %lld\n", frm_emu->vector_alu_inst_count);
+	fprintf(f, "SharedMemInstructions = %lld\n", frm_emu->lds_inst_count);
+	fprintf(f, "GlobalMemInstructions = %lld\n", frm_emu->vector_mem_inst_count);
 	fprintf(f, "Cycles = %lld\n", arch->cycle_count);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
@@ -1207,43 +1082,29 @@ void frm_gpu_dump_report(void)
 
 		inst_per_cycle = sm->cycle ? 
 			(double)(sm->inst_count/sm->cycle) :
-		       	0.0;
+			0.0;
 		coalesced_reads = lds_mod->reads - lds_mod->effective_reads;
 		coalesced_writes = lds_mod->writes - lds_mod->effective_writes;
 
 		fprintf(f, "[ SM%d ]\n\n", sm_id);
 
-		fprintf(f, "ThreadBlockCount = %lld\n", 
-			sm->mapped_thread_blocks);
+		fprintf(f, "ThreadBlockCount = %lld\n", sm->mapped_thread_blocks);
 		fprintf(f, "Instructions = %lld\n", sm->inst_count);
-		fprintf(f, "ScalarALUInstructions = %lld\n", 
-			sm->scalar_alu_inst_count);
-		fprintf(f, "ScalarMemInstructions = %lld\n", 
-			sm->scalar_mem_inst_count);
-		fprintf(f, "BranchInstructions = %lld\n", 
-			sm->branch_inst_count);
-		fprintf(f, "SIMDInstructions = %lld\n", 
-			sm->simd_inst_count);
-		fprintf(f, "VectorMemInstructions = %lld\n", 
-			sm->vector_mem_inst_count);
-		fprintf(f, "LDSInstructions = %lld\n", 
-			sm->lds_inst_count);
+		fprintf(f, "BranchInstructions = %lld\n", sm->branch_inst_count);
+		fprintf(f, "ALUInstructions = %lld\n", 	sm->simd_inst_count);
+		fprintf(f, "SharedMemInstructions = %lld\n", sm->lds_inst_count);
+		fprintf(f, "GlobalMemInstructions = %lld\n", sm->vector_mem_inst_count);
 		fprintf(f, "Cycles = %lld\n", sm->cycle);
 		fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 		fprintf(f, "\n");
 
-		fprintf(f, "LDS.Accesses = %lld\n", 
-			lds_mod->reads + lds_mod->writes);
-		fprintf(f, "LDS.Reads = %lld\n", lds_mod->reads);
-		fprintf(f, "LDS.EffectiveReads = %lld\n", 
-			lds_mod->effective_reads);
-		fprintf(f, "LDS.CoalescedReads = %lld\n", 
-			coalesced_reads);
-		fprintf(f, "LDS.Writes = %lld\n", lds_mod->writes);
-		fprintf(f, "LDS.EffectiveWrites = %lld\n", 
-			lds_mod->effective_writes);
-		fprintf(f, "LDS.CoalescedWrites = %lld\n", 
-			coalesced_writes);
+		fprintf(f, "SharedMem.Accesses = %lld\n", lds_mod->reads + lds_mod->writes);
+		fprintf(f, "SharedMem.Reads = %lld\n", lds_mod->reads);
+		fprintf(f, "SharedMem.EffectiveReads = %lld\n", lds_mod->effective_reads);
+		fprintf(f, "SharedMem.CoalescedReads = %lld\n", coalesced_reads);
+		fprintf(f, "SharedMem.Writes = %lld\n", lds_mod->writes);
+		fprintf(f, "SharedMem.EffectiveWrites = %lld\n", lds_mod->effective_writes);
+		fprintf(f, "SharedMem.CoalescedWrites = %lld\n", coalesced_writes);
 		fprintf(f, "\n\n");
 	}
 
@@ -1260,11 +1121,13 @@ void frm_gpu_dump_summary(FILE *f)
  *   - arch_sim_kind_detailed - still simulating */
 enum arch_sim_kind_t frm_gpu_run(void)
 {
-	struct arch_t *arch = frm_emu->arch;
+	struct arch_t *arch;
 	struct frm_grid_t *grid;
 
 	struct frm_sm_t *sm;
 	struct frm_sm_t *sm_next;
+
+	arch = frm_emu->arch;
 
 	/* For efficiency when no Fermi emulation is selected, 
 	 * exit here if the list of existing grids is empty. */
@@ -1277,9 +1140,8 @@ enum arch_sim_kind_t frm_gpu_run(void)
 		/* Currently not supported for more than 1 grid */
 		if (frm_gpu->grid)
 		{
-			fatal("%s: Fermi GPU timing simulation not "
-				"supported for multiple grids", 
-				__FUNCTION__);
+			fatal("%s: Fermi GPU timing simulation not supported for"
+					"multiple grids", __FUNCTION__);
 		}
 
 		/* Set grid status to 'running' */
@@ -1287,14 +1149,12 @@ enum arch_sim_kind_t frm_gpu_run(void)
 		frm_grid_set_status(grid, frm_grid_running);
 
 		/* Debug */
-		frm_gpu_debug("frm.new_grid id=%d tb_first=%d tb_count=%d\n", 
-			grid->id, grid->thread_block_id_first, 
-			grid->thread_block_count);
+		frm_gpu_debug("grid[%d] added to running list\n", grid->id);
 
 		/* Trace */
 		frm_trace("frm.new_grid id=%d tb_first=%d tb_count=%d\n", 
-			grid->id, grid->thread_block_id_first, 
-			grid->thread_block_count);
+				grid->id, grid->thread_block_id_first, 
+				grid->thread_block_count);
 
 		/* Map grid to GPU */
 		frm_gpu_map_grid(grid);
@@ -1307,11 +1167,11 @@ enum arch_sim_kind_t frm_gpu_run(void)
 
 	/* Allocate thread blocks to SMs */
 	while (frm_gpu->sm_ready_list_head && 
-		grid->pending_list_head)
+			grid->pending_list_head)
 	{
 		frm_sm_map_thread_block(
-			frm_gpu->sm_ready_list_head,
-			grid->pending_list_head);
+				frm_gpu->sm_ready_list_head,
+				grid->pending_list_head);
 	}
 
 	frm_gpu_debug("cycle = %lld\n", arch->cycle_count);
@@ -1331,7 +1191,7 @@ enum arch_sim_kind_t frm_gpu_run(void)
 	if ((arch->cycle_count-frm_gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Fermi GPU simulation stalled.\n%s", 
-			frm_err_stall);
+				frm_err_stall);
 		esim_finish = esim_finish_stall;
 	}
 
@@ -1341,7 +1201,7 @@ enum arch_sim_kind_t frm_gpu_run(void)
 
 	/* Run one loop iteration on each busy SM */
 	for (sm = frm_gpu->sm_busy_list_head; sm;
-		sm = sm_next)
+			sm = sm_next)
 	{
 		/* Store next busy SM, since this can change
 		 * during the SM simulation loop iteration. */
@@ -1361,7 +1221,7 @@ enum arch_sim_kind_t frm_gpu_run(void)
 
 		/* Stop if maximum number of kernels reached */
 		if (frm_emu_max_functions && frm_emu->grid_count >= 
-			frm_emu_max_functions)
+				frm_emu_max_functions)
 		{
 			esim_finish = esim_finish_frm_max_functions;
 		}

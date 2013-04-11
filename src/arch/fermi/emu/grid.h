@@ -55,15 +55,15 @@ struct frm_grid_t
 	int work_dim;
 
 	/* 3D work size counters */
-	int global_size3[3];  /* Total number of work_items */
-	int local_size3[3];  /* Number of work_items in a group */
-	int group_count3[3];  /* Number of work_item groups */
+	int grid_size3[3];  /* Total number of threads */
+	int block_size3[3];  /* Number of threads in a thread block */
+	int block_count3[3];  /* Number of thread blocks */
 
 	/* 1D work size counters. Each counter is equal to the multiplication
 	 * of each component in the corresponding 3D counter. */
-	int global_size;
-	int local_size;
-	int group_count;
+	int grid_size;
+	int block_size;
+	int block_count;
 
 	/* Pointers to thread_blocks, warps, and threads */
 	struct frm_thread_block_t **thread_blocks;

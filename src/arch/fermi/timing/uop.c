@@ -80,10 +80,10 @@ void frm_uop_init()
 	/* GPU uop repository.
 	 * The size assigned for each 'frm_uop_t' is equals to the 
 	 * baseline structure size plus the size of a 'frm_thread_uop_t' 
-	 * element for each work-item in the warp. */
+	 * element for each thread in the warp. */
 	gpu_uop_repos = repos_create(sizeof(struct frm_uop_t) + 
-		sizeof(struct frm_thread_uop_t)
-		* frm_emu_warp_size, "gpu_uop_repos");
+			sizeof(struct frm_thread_uop_t)	* frm_emu_warp_size,
+			"gpu_uop_repos");
 }
 
 

@@ -11,9 +11,9 @@
 int frm_spatial_report_active = 0 ;
 
 static int spatial_profiling_interval = 10000;
-static char *frm_spatial_report_section_name = "SISpatialReport";
+static char *frm_spatial_report_section_name = "FRMSpatialReport";
 static FILE *spatial_report_file;
-static char *spatial_report_filename = "report-cu-spatial";
+static char *spatial_report_filename = "report-sm-spatial";
 
 
 void frm_spatial_report_config_read(struct config_t *config)
@@ -52,12 +52,12 @@ void frm_spatial_report_config_read(struct config_t *config)
 
 }
 
-void frm_cu_spatial_report_init()
+void frm_sm_spatial_report_init()
 {
 
 }
 
-void frm_cu_spatial_report_done()
+void frm_sm_spatial_report_done()
 {
 
 	fclose(spatial_report_file);
@@ -65,7 +65,7 @@ void frm_cu_spatial_report_done()
 	str_free(spatial_report_filename);
 }
 
-void frm_cu_spatial_report_dump(struct frm_sm_t *sm)
+void frm_sm_spatial_report_dump(struct frm_sm_t *sm)
 {
 
 	FILE *f = spatial_report_file ;
@@ -101,14 +101,14 @@ void frm_report_mapped_thread_block(struct frm_sm_t *sm)
 	sm->interval_mapped_thread_blocks++;
 }
 
-void frm_cu_interval_update(struct frm_sm_t *sm)
+void frm_sm_interval_update(struct frm_sm_t *sm)
 {
 	/* If interval - reset the counters in all the engines */
 	sm->interval_cycle ++;
 
 	if ( !(esim_cycle % spatial_profiling_interval))
 	{
-		frm_cu_spatial_report_dump(sm);
+		frm_sm_spatial_report_dump(sm);
 
 		/*
 		 * This counter is not reset since memory accesses could still

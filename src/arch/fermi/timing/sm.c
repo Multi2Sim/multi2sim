@@ -65,14 +65,6 @@ struct frm_sm_t *frm_sm_create()
 	sm->simd_units = xcalloc(sm->num_simd_units, 
 		sizeof(struct frm_simd_t*));
 
-	sm->scalar_unit.issue_buffer = list_create();
-	sm->scalar_unit.decode_buffer = list_create();
-	sm->scalar_unit.read_buffer = list_create();
-	sm->scalar_unit.exec_buffer = list_create();
-	sm->scalar_unit.write_buffer = list_create();
-	sm->scalar_unit.inflight_buffer = list_create();
-	sm->scalar_unit.sm = sm;
-
 	sm->branch_unit.issue_buffer = list_create();
 	sm->branch_unit.decode_buffer = list_create();
 	sm->branch_unit.read_buffer = list_create();
@@ -144,20 +136,6 @@ void frm_sm_free(struct frm_sm_t *sm)
 {
 	int i;
 
-	/* Scalar Unit */
-	frm_uop_list_free(sm->scalar_unit.issue_buffer);
-	frm_uop_list_free(sm->scalar_unit.decode_buffer);
-	frm_uop_list_free(sm->scalar_unit.read_buffer);
-	frm_uop_list_free(sm->scalar_unit.exec_buffer);
-	frm_uop_list_free(sm->scalar_unit.write_buffer);
-	frm_uop_list_free(sm->scalar_unit.inflight_buffer);
-	list_free(sm->scalar_unit.issue_buffer);
-	list_free(sm->scalar_unit.decode_buffer);
-	list_free(sm->scalar_unit.read_buffer);
-	list_free(sm->scalar_unit.exec_buffer);
-	list_free(sm->scalar_unit.write_buffer);
-	list_free(sm->scalar_unit.inflight_buffer);
-
 	/* Branch Unit */
 	frm_uop_list_free(sm->branch_unit.issue_buffer);
 	frm_uop_list_free(sm->branch_unit.decode_buffer);
@@ -170,7 +148,7 @@ void frm_sm_free(struct frm_sm_t *sm)
 	list_free(sm->branch_unit.exec_buffer);
 	list_free(sm->branch_unit.write_buffer);
 
-	/* Vector Memory */
+	/* Global Memory */
 	frm_uop_list_free(sm->vector_mem_unit.issue_buffer);
 	frm_uop_list_free(sm->vector_mem_unit.decode_buffer);
 	frm_uop_list_free(sm->vector_mem_unit.read_buffer);
@@ -182,7 +160,7 @@ void frm_sm_free(struct frm_sm_t *sm)
 	list_free(sm->vector_mem_unit.mem_buffer);
 	list_free(sm->vector_mem_unit.write_buffer);
 
-	/* Local Data Share */
+	/* Shared Memory */
 	frm_uop_list_free(sm->lds_unit.issue_buffer);
 	frm_uop_list_free(sm->lds_unit.decode_buffer);
 	frm_uop_list_free(sm->lds_unit.read_buffer);
@@ -214,20 +192,19 @@ void frm_sm_free(struct frm_sm_t *sm)
 		free(sm->simd_units[i]->tot_util);
 		free(sm->simd_units[i]);
 	}
+	free(sm->simd_units);
 
-	/* Common for compute unit */
-
+	/* Fetch buffers */
 	for (i = 0; i < sm->num_warp_schedulers; i++)
 	{
 		frm_uop_list_free(sm->fetch_buffers[i]);
-
 		list_free(sm->fetch_buffers[i]);
 	}
-	frm_warp_pool_free(sm->warp_pool);
-
-	free(sm->simd_units);
 	free(sm->fetch_buffers);
-	free(sm->thread_blocks);  /* List of mapped work-groups */
+
+	/* Others */
+	frm_warp_pool_free(sm->warp_pool);
+	free(sm->thread_blocks);
 	mod_free(sm->lds_module);
 	free(sm);
 }
@@ -1304,7 +1281,7 @@ void frm_sm_run(struct frm_sm_t *sm)
 	sm->cycle++;
 
 	if(frm_spatial_report_active)
-		frm_cu_interval_update(sm);
+		frm_sm_interval_update(sm);
 
 }
 
