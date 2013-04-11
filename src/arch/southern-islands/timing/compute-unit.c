@@ -24,6 +24,7 @@
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
+#include <driver/opencl/opencl.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -234,77 +235,59 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	free(compute_unit);
 }
 
-
-void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit, 
+void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit,
 	struct si_work_group_t *work_group)
 {
-	struct si_ndrange_t *ndrange = work_group->ndrange;
 	struct si_wavefront_t *wavefront;
 	int wavefront_id;
-	int ib_id;
+	int wfp_id;
 
-	assert(compute_unit->work_group_count < 
+	assert(compute_unit->work_group_count <
 		si_gpu->work_groups_per_compute_unit);
 	assert(!work_group->id_in_compute_unit);
 
 	/* Find an available slot */
-	while (work_group->id_in_compute_unit < 
+	while (work_group->id_in_compute_unit <
 		si_gpu->work_groups_per_compute_unit &&
 		compute_unit->work_groups[work_group->id_in_compute_unit])
 	{
 		work_group->id_in_compute_unit++;
 	}
-	assert(work_group->id_in_compute_unit < 
+	assert(work_group->id_in_compute_unit <
 		si_gpu->work_groups_per_compute_unit);
 	compute_unit->work_groups[work_group->id_in_compute_unit] = work_group;
 	compute_unit->work_group_count++;
 
-	/* If compute unit reached its maximum load, remove it from 
-	 * 'compute_unit_ready' list.  Otherwise, move it to the end of 
-	 * the 'compute_unit_ready' list. */
-	assert(DOUBLE_LINKED_LIST_MEMBER(si_gpu, compute_unit_ready, 
-		compute_unit));
-	DOUBLE_LINKED_LIST_REMOVE(si_gpu, compute_unit_ready, compute_unit);
-	if (compute_unit->work_group_count < 
+	/* If compute unit is not full, add it back to the available list */
+	assert(compute_unit->work_group_count <= 
+		si_gpu->work_groups_per_compute_unit);
+	if (compute_unit->work_group_count <
 		si_gpu->work_groups_per_compute_unit)
 	{
-		DOUBLE_LINKED_LIST_INSERT_TAIL(si_gpu, compute_unit_ready, 
-			compute_unit);
-	}
-	
-	/* If this is the first scheduled work-group, insert to 
-	 * 'compute_unit_busy' list. */
-	if (!DOUBLE_LINKED_LIST_MEMBER(si_gpu, compute_unit_busy, compute_unit))
-	{
-		DOUBLE_LINKED_LIST_INSERT_TAIL(si_gpu, compute_unit_busy, 
-			compute_unit);
+		list_enqueue(si_gpu->available_compute_units, compute_unit);
 	}
 
 	/* Assign wavefronts identifiers in compute unit */
 	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
 	{
-		wavefront = ndrange->wavefronts[wavefront_id];
+		wavefront = work_group->wavefronts[wavefront_id];
 		wavefront->id_in_compute_unit = work_group->id_in_compute_unit *
-			ndrange->wavefronts_per_work_group + 
+			work_group->wavefront_count +
 			wavefront->id_in_work_group;
 	}
 
-	/* Set instruction buffer for work group */
-	ib_id = work_group->id_in_compute_unit % si_gpu_num_wavefront_pools;
-	work_group->wavefront_pool = compute_unit->wavefront_pools[ib_id];
+	/* Set wavefront pool for work group */
+	wfp_id = work_group->id_in_compute_unit % si_gpu_num_wavefront_pools;
+	work_group->wavefront_pool = compute_unit->wavefront_pools[wfp_id];
 
 	/* Insert wavefronts into an instruction buffer */
-	si_wavefront_pool_map_wavefronts(work_group->wavefront_pool, work_group);
+	si_wavefront_pool_map_wavefronts(work_group->wavefront_pool,
+		work_group);
 
-	/* Change work-group status to running */
-	si_work_group_clear_status(work_group, si_work_group_pending);
-	si_work_group_set_status(work_group, si_work_group_running);
-
-	/* Trace */
-	si_trace("si.map_wg cu=%d wg=%d wi_first=%d wi_count=%d wf_first=%d " 
-		"wf_count=%d\n", compute_unit->id, work_group->id, 
-		work_group->work_item_id_first, work_group->work_item_count, 
-		work_group->wavefront_id_first, work_group->wavefront_count);
+	si_trace("si.map_wg cu=%d wg=%d wi_first=%d wi_count=%d wf_first=%d "
+		"wf_count=%d\n", compute_unit->id, work_group->id,
+		work_group->work_items[0]->id, work_group->work_item_count,
+		work_group->wavefronts[0]->id, work_group->wavefront_count);
 
 	/* Stats */
 	compute_unit->mapped_work_groups++;
@@ -313,8 +296,11 @@ void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit,
 }
 
 
-void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit, struct si_work_group_t *work_group)
+void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
+	struct si_work_group_t *work_group)
 {
+	long work_group_id;
+
 	/* Reset mapped work-group */
 	assert(compute_unit->work_group_count > 0);
 	assert(compute_unit->work_groups[work_group->id_in_compute_unit]);
@@ -322,29 +308,34 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit, st
 	compute_unit->work_group_count--;
 
 	/* Unmap wavefronts from instruction buffer */
-	si_wavefront_pool_unmap_wavefronts(work_group->wavefront_pool, 
+	si_wavefront_pool_unmap_wavefronts(work_group->wavefront_pool,
 		work_group);
 
-	/* If compute unit accepts work-groups again, insert into 
-	 * 'compute_unit_ready' list */
-	if (!DOUBLE_LINKED_LIST_MEMBER(si_gpu, compute_unit_ready, 
-		compute_unit))
+	work_group_id = work_group->id;
+	assert(list_index_of(si_emu->running_work_groups, 
+		(void*)work_group_id) >= 0);
+	list_remove(si_emu->running_work_groups, (void*)work_group_id);
+
+	if (!list_count(si_emu->running_work_groups) && 
+		!list_count(si_emu->waiting_work_groups))
 	{
-		DOUBLE_LINKED_LIST_INSERT_TAIL(si_gpu, compute_unit_ready, 
-			compute_unit);
+		opencl_si_request_work();
 	}
-	
-	/* If compute unit is not compute_unit_busy anymore, remove it from 
-	 * 'compute_unit_busy' list */
-	if (!compute_unit->work_group_count && DOUBLE_LINKED_LIST_MEMBER(si_gpu,
-		compute_unit_busy, compute_unit))
+
+	/* If compute unit is not already in the available list, place
+	 * it there */
+	assert(compute_unit->work_group_count <
+		si_gpu->work_groups_per_compute_unit);
+	if (list_index_of(si_gpu->available_compute_units, compute_unit) < 0)
 	{
-		DOUBLE_LINKED_LIST_REMOVE(si_gpu, compute_unit_busy, 
-			compute_unit);
+		list_enqueue(si_gpu->available_compute_units, compute_unit);
 	}
 
 	/* Trace */
-	si_trace("si.unmap_wg cu=%d wg=%d\n", compute_unit->id, work_group->id);
+	si_trace("si.unmap_wg cu=%d wg=%d\n", compute_unit->id,
+		work_group->id);
+
+	si_work_group_free(work_group);
 }
 
 void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, 
@@ -476,14 +467,13 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 		uop->glc = wavefront->vector_mem_glc;
 		assert(wavefront->work_group && uop->work_group);
 
-
 		/* Trace */
 		if (si_tracing())
 		{
 			si_inst_dump(&wavefront->inst, wavefront->inst_size, 
 				wavefront->pc, 
-				wavefront->ndrange->inst_buffer + wavefront->pc,
-				inst_str, sizeof inst_str);
+				wavefront->work_group->ndrange->inst_buffer + 
+				wavefront->pc, inst_str, sizeof inst_str);
 			str_single_spaces(inst_str_trimmed, 
 				sizeof inst_str_trimmed, 
 				inst_str);
@@ -498,7 +488,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 		/* Update last memory accesses */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
-			work_item = si_gpu->ndrange->work_items[work_item_id];
+			work_item = wavefront->work_items[work_item_id];
 			work_item_uop = 
 				&uop->work_item_uop[work_item->id_in_wavefront];
 
@@ -688,10 +678,15 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 
 				if (uop->inst.info->fmt == SI_FMT_SMRD)
 				{
+					uop->wavefront_pool_entry->
+						ready_next_cycle = 1;
 					compute_unit->scalar_mem_inst_count++;
 				}
 				else
 				{
+					/* Scalar ALU instructions have to
+					 * complete before the next 
+					 * instruction can be fetched */
 					compute_unit->scalar_alu_inst_count++;
 				}
 			}
@@ -1358,9 +1353,15 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 	struct arch_t *arch = si_emu->arch;
 	int i;
 	int num_simd_units;
-	int active_fetch_buffer;  /* Fetch buffer chosen to issue this cycle */
+	int active_fetch_buffer;  
 
-	active_fetch_buffer = arch->cycle_count % compute_unit->num_wavefront_pools;
+	/* Return if no work groups are mapped to this compute unit */
+	if (!compute_unit->work_group_count)
+		return;
+
+	/* Fetch buffer chosen to issue this cycle */
+	active_fetch_buffer = arch->cycle_count % 
+		compute_unit->num_wavefront_pools;
 
 	assert(active_fetch_buffer >= 0 && 
 		active_fetch_buffer < compute_unit->num_wavefront_pools);
@@ -1391,20 +1392,19 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 	{
 		if (i != active_fetch_buffer)
 		{
-        		si_compute_unit_update_fetch_visualization(
+			si_compute_unit_update_fetch_visualization(
 				compute_unit, i);
 		}
 	}
 
 	/* Fetch */
 	for (i = 0; i < num_simd_units; i++)
-        	si_compute_unit_fetch(compute_unit, i);
+		si_compute_unit_fetch(compute_unit, i);
 
 	/* Stats */
 	compute_unit->cycle++;
 
 	if(si_spatial_report_active)
 		si_cu_interval_update(compute_unit);
-
 }
 

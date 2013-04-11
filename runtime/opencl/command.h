@@ -35,7 +35,7 @@ enum opencl_command_type_t
 	opencl_command_mem_copy,
 	opencl_command_map_buffer,
 	opencl_command_unmap_buffer,
-	opencl_command_launch_kernel
+	opencl_command_launch_ndrange
 };
 
 
@@ -87,7 +87,9 @@ struct opencl_command_t
 			unsigned int global_work_size[3];
 			unsigned int local_work_size[3];
 			unsigned int group_id_offset[3];
-		} launch_kernel;
+			unsigned int num_groups;
+			unsigned int current_group;
+		} ndrange;
 	};
 };
 
@@ -153,7 +155,7 @@ struct opencl_command_t *opencl_command_create_unmap_buffer(
 		int num_wait_events,
 		struct opencl_event_t **wait_events);
 
-struct opencl_command_t *opencl_command_create_launch_kernel(
+struct opencl_command_t *opencl_command_create_ndrange(
 		struct opencl_device_t *device,
 		void *arch_kernel,  /* of type 'opencl_xxx_kernel_t' */
 		int work_dim,

@@ -196,7 +196,7 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(
 void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel);
 
 struct si_ndrange_t;
-void opencl_si_kernel_setup_ndrange_state(struct opencl_si_kernel_t *kernel,
+void opencl_si_kernel_setup_ndrange_constant_buffers(
 	struct si_ndrange_t *ndrange);
 void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 	struct si_ndrange_t *ndrange);

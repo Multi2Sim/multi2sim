@@ -21,7 +21,6 @@
 
 #include <arch/common/arch.h>
 #include <arch/southern-islands/emu/emu.h>
-#include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
@@ -242,7 +241,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		assert(!uop->global_mem_witness);
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
-			work_item = si_gpu->ndrange->work_items[work_item_id];
+			work_item = uop->wavefront->work_items[work_item_id];
 			work_item_uop = 
 				&uop->work_item_uop[work_item->id_in_wavefront];
 

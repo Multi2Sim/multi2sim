@@ -21,19 +21,22 @@
 
 #include <arch/common/arch.h>
 #include <arch/southern-islands/emu/ndrange.h>
+#include <arch/southern-islands/emu/work-group.h>
+#include <driver/opencl/opencl.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
 
-#include "gpu.h"
 #include "calc.h"
 #include "compute-unit.h"
+#include "gpu.h"
 #include "mem-config.h"
 #include "uop.h"
 
@@ -422,17 +425,18 @@ static void si_gpu_device_init()
 	/* Initialize */
 	si_gpu = xcalloc(1, sizeof(struct si_gpu_t));
 
-	/* Initialize compute units */
+	si_gpu->available_compute_units = list_create();
 	si_gpu->compute_units = xcalloc(si_gpu_num_compute_units, 
 		sizeof(void *));
+
+	/* Initialize compute units */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		si_gpu->compute_units[compute_unit_id] = 
 			si_compute_unit_create();
 		compute_unit = si_gpu->compute_units[compute_unit_id];
 		compute_unit->id = compute_unit_id;
-		DOUBLE_LINKED_LIST_INSERT_TAIL(si_gpu, compute_unit_ready, 
-			compute_unit);
+		list_add(si_gpu->available_compute_units, compute_unit);
 	}
 
 	/* Trace */
@@ -441,6 +445,39 @@ static void si_gpu_device_init()
 		si_gpu_num_compute_units);
 }
 
+void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
+{
+	/* Assign current ND-Range */
+	assert(si_emu->ndrange);
+	si_emu->ndrange = ndrange;
+
+	/* Check that at least one work-group can be allocated per 
+	 * wavefront pool */
+	si_gpu->work_groups_per_wavefront_pool = 
+		si_calc_get_work_groups_per_wavefront_pool(
+			ndrange->local_size, ndrange->num_vgpr_used,
+			ndrange->local_mem_top);
+
+	if (!si_gpu->work_groups_per_wavefront_pool)
+	{
+		fatal("work-group resources cannot be allocated to a compute "
+			"unit.\n\tA compute unit in the GPU has a limit in "
+			"number of wavefronts, number\n\tof registers, and "
+			"amount of local memory. If the work-group size\n"
+			"\texceeds any of these limits, the ND-Range cannot "
+			"be executed.\n");
+	}
+
+	/* Calculate limit of work groups per compute unit */
+	si_gpu->work_groups_per_compute_unit = 
+		si_gpu->work_groups_per_wavefront_pool * 
+		si_gpu_num_wavefront_pools;
+	assert(si_gpu->work_groups_per_wavefront_pool <= 
+		si_gpu_max_work_groups_per_wavefront_pool);
+
+	/* Optional plotting */
+	si_calc_plot();
+}
 
 static void si_config_read(void)
 {
@@ -1072,77 +1109,6 @@ void si_config_dump(FILE *f)
 }
 
 
-static void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
-{
-	int compute_unit_id;
-
-	/* Assign current ND-Range */
-	assert(!si_gpu->ndrange);
-	si_gpu->ndrange = ndrange;
-
-	/* Check that at least one work-group can be allocated per 
-	 * wavefront pool */
-	si_gpu->work_groups_per_wavefront_pool = 
-		si_calc_get_work_groups_per_wavefront_pool(
-			ndrange->local_size, 
-			ndrange->num_vgpr_used,
-			ndrange->local_mem_top);
-
-	if (!si_gpu->work_groups_per_wavefront_pool)
-	{
-		fatal("work-group resources cannot be allocated to a compute "
-			"unit.\n\tA compute unit in the GPU has a limit in "
-			"number of wavefronts, number\n\tof registers, and "
-			"amount of local memory. If the work-group size\n"
-			"\texceeds any of these limits, the ND-Range cannot "
-			"be executed.\n");
-	}
-
-	/* Calculate limit of wavefronts and work-items per Wavefront Pool */
-	si_gpu->wavefronts_per_wavefront_pool = 
-		si_gpu->work_groups_per_wavefront_pool * 
-		ndrange->wavefronts_per_work_group;
-	si_gpu->work_items_per_wavefront_pool = 
-		si_gpu->wavefronts_per_wavefront_pool * 
-		si_emu_wavefront_size;
-
-	/* Calculate limit of work groups, wavefronts and work-items per 
-	 * compute unit */
-	si_gpu->work_groups_per_compute_unit = 
-		si_gpu->work_groups_per_wavefront_pool * 
-		si_gpu_num_wavefront_pools;
-	si_gpu->wavefronts_per_compute_unit = 
-		si_gpu->wavefronts_per_wavefront_pool * 
-		si_gpu_num_wavefront_pools;
-	si_gpu->work_items_per_compute_unit = 
-		si_gpu->work_items_per_wavefront_pool * 
-		si_gpu_num_wavefront_pools;
-	assert(si_gpu->work_groups_per_wavefront_pool <= 
-		si_gpu_max_work_groups_per_wavefront_pool);
-	assert(si_gpu->wavefronts_per_wavefront_pool <= 
-		si_gpu_max_wavefronts_per_wavefront_pool);
-
-	/* Reset architectural state */
-	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-	{
-		// FIXME
-		//compute_unit = si_gpu->compute_units[compute_unit_id];
-		//compute_unit->simd.decode_index = 0;
-		//compute_unit->simd.execute_index = 0;
-	}
-}
-
-
-static void si_gpu_unmap_ndrange(void)
-{
-	/* Dump stats */
-	si_ndrange_dump(si_gpu->ndrange, si_emu_report_file);
-
-	/* Unmap */
-	si_gpu->ndrange = NULL;
-}
-
-
 
 
 /*
@@ -1194,7 +1160,11 @@ void si_gpu_done()
 	}
 	free(si_gpu->compute_units);
 
+	/* Free available compute unit list */
+	list_free(si_gpu->available_compute_units);
+
 	/* Free GPU */
+	memset(si_gpu, 0, sizeof(struct si_gpu_t));
 	free(si_gpu);
 
 	if(si_spatial_report_active)
@@ -1250,6 +1220,7 @@ void si_gpu_dump_report(void)
 		(double)(arch->inst_count/arch->cycle_count) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
+	fprintf(f, "WorkGroupCount = %lld\n", si_emu->work_group_count);
 	fprintf(f, "Instructions = %lld\n", arch->inst_count);
 	fprintf(f, "ScalarALUInstructions = %lld\n", 
 		si_emu->scalar_alu_inst_count);
@@ -1327,52 +1298,35 @@ void si_gpu_dump_summary(FILE *f)
 enum arch_sim_kind_t si_gpu_run(void)
 {
 	struct arch_t *arch = si_emu->arch;
-	struct si_ndrange_t *ndrange;
-
 	struct si_compute_unit_t *compute_unit;
-	struct si_compute_unit_t *compute_unit_next;
+	struct si_ndrange_t *ndrange;
+	struct si_work_group_t *work_group;
+
+	int compute_unit_id;
+
+	long work_group_id;
 
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
-	if (!si_emu->ndrange_list_count)
+	if (!list_count(si_emu->waiting_work_groups) && 
+		!list_count(si_emu->running_work_groups))
 		return arch_sim_kind_invalid;
 
-	/* Start one ND-Range in state 'pending' */
-	while ((ndrange = si_emu->pending_ndrange_list_head))
-	{
-		/* Currently not supported for more than 1 ND-Range */
-		if (si_gpu->ndrange)
-		{
-			fatal("%s: Southern Islands GPU timing simulation not "
-				"supported for multiple ND-Ranges", 
-				__FUNCTION__);
-		}
-
-		/* Set ND-Range status to 'running' */
-		si_ndrange_clear_status(ndrange, si_ndrange_pending);
-		si_ndrange_set_status(ndrange, si_ndrange_running);
-
-		/* Trace */
-		si_trace("si.new_ndrange id=%d wg_first=%d wg_count=%d\n", 
-			ndrange->id, ndrange->work_group_id_first, 
-			ndrange->work_group_count);
-
-		/* Map ND-Range to GPU */
-		si_gpu_map_ndrange(ndrange);
-		si_calc_plot();
-	}
-
-	/* Mapped ND-Range */
-	ndrange = si_gpu->ndrange;
+	ndrange = si_emu->ndrange;
 	assert(ndrange);
 
 	/* Allocate work-groups to compute units */
-	while (si_gpu->compute_unit_ready_list_head && 
-		ndrange->pending_list_head)
+	while (list_count(si_gpu->available_compute_units) && 
+		list_count(si_emu->waiting_work_groups))
 	{
+		work_group_id = (long)list_dequeue(si_emu->waiting_work_groups);
+		work_group = si_work_group_create(work_group_id, ndrange);
+
+		list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
+
 		si_compute_unit_map_work_group(
-			si_gpu->compute_unit_ready_list_head,
-			ndrange->pending_list_head);
+			list_dequeue(si_gpu->available_compute_units),
+			work_group);
 	}
 
 	/* One more cycle */
@@ -1398,35 +1352,17 @@ enum arch_sim_kind_t si_gpu_run(void)
 	if (esim_finish)
 		return arch_sim_kind_detailed;
 
+	/* If we're out of work, request more */
+	if (!list_count(si_emu->waiting_work_groups))
+		opencl_si_request_work();
+
 	/* Run one loop iteration on each busy compute unit */
-	for (compute_unit = si_gpu->compute_unit_busy_list_head; compute_unit;
-		compute_unit = compute_unit_next)
+	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		/* Store next busy compute unit, since this can change
-		 * during the compute unit simulation loop iteration. */
-		compute_unit_next = compute_unit->compute_unit_busy_list_next;
+		compute_unit = si_gpu->compute_units[compute_unit_id];
 
 		/* Run one cycle */
 		si_compute_unit_run(compute_unit);
-	}
-
-	/* If ND-Range finished execution in all compute units, free it. */
-	if (!si_gpu->compute_unit_busy_list_count)
-	{
-		/* Dump ND-Range report */
-		si_ndrange_dump(ndrange, si_emu_report_file);
-
-		/* Stop if maximum number of kernels reached */
-		if (si_emu_max_kernels && si_emu->ndrange_count >= 
-			si_emu_max_kernels)
-		{
-			esim_finish = esim_finish_si_max_kernels;
-		}
-
-		/* Finalize and free ND-Range */
-		assert(si_ndrange_get_status(ndrange, si_ndrange_finished));
-		si_gpu_unmap_ndrange();
-		si_ndrange_free(ndrange);
 	}
 
 	/* Return true */

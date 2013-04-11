@@ -342,6 +342,18 @@ static char *m2s_help =
 	"AMD Southern Islands GPU Options\n"
 	"================================================================================\n"
 	"\n"
+	"  --si-calc <prefix>\n"
+	"      If this option is set, a kernel execution will cause three GPU occupancy\n"
+	"      plots to be dumped in files '<prefix>.<ndrange_id>.<plot>.eps', where\n"
+	"      <ndrange_id> is the identifier of the current ND-Range, and <plot> is\n"
+	"      {work_items|registers|local_mem}. This options requires 'gnuplot' to be\n"
+	"      installed in the system.\n"
+	"\n"
+	"  --si-config <file>\n"
+	"      Configuration file for the Southern Islands GPU timing model, including\n"
+	"      parameters such as number of compute units, stream cores, or wavefront\n"
+	"      size. Type 'm2s --si-help' for details on the file format.\n"
+	"\n"
 	"  --si-debug-isa <file>\n"
 	"      Debug information on the emulation of Southern Islands ISA instructions,\n"
 	"      including architectural state updates on registers and memory locations.\n"
@@ -355,11 +367,6 @@ static char *m2s_help =
 	"      Disassemble a Southern Islands kernel binary. This option is incompatible\n"
 	"      with othe command-line options.\n"
 	"\n"
-	"  --si-config <file>\n"
-	"      Configuration file for the Southern Islands GPU timing model, including\n"
-	"      parameters such as number of compute units, stream cores, or wavefront\n"
-	"      size. Type 'm2s --si-help' for details on the file format.\n"
-	"\n"
 	"  --si-dump-default-config <file>\n"
 	"      Dumps the default GPU configuration file used for timing simulation.\n"
 	"      This cannot be used with any other option.\n"	
@@ -367,10 +374,6 @@ static char *m2s_help =
 	"  --si-help\n"
 	"      Display a help message describing the format of the Southern Islands GPU\n"
 	"      configuration file, passed with option '--si-config <file>'.\n"
-	"\n"
-	"  --si-shader-binary <file>\n"
-	"      Use <file> as the returned shader binary upon an OpenGL call to\n"
-	"      'clLoadProgramWithSource'.\n"
 	"\n"
 	"  --si-max-cycles <cycles>\n"
 	"      Maximum number of cycles for the GPU detailed simulation. Use 0 (default)\n"
@@ -388,6 +391,10 @@ static char *m2s_help =
 	"      File to dump a report of the GPU pipeline, such as active execution\n" 
 	"      engines, compute units occupancy, stream cores utilization, etc. Use\n"
 	"      together with a detailed GPU simulation (option '--si-sim detailed').\n"
+	"\n"
+	"  --si-shader-binary <file>\n"
+	"      Use <file> as the returned shader binary upon an OpenGL call to\n"
+	"      'clLoadProgramWithSource'.\n"
 	"\n"
 	"  --si-sim {functional|detailed}\n"
 	"      Functional (default) or detailed simulation for the AMD Southern Islands\n"
@@ -940,6 +947,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--si-help"))
 		{
 			fprintf(stderr, "%s", si_gpu_config_help);
+			continue;
+		}
+
+		/* Southern Islands GPU occupancy calculation plots */
+		if (!strcmp(argv[argi], "--si-calc"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_gpu_calc_file_name = argv[++argi];
 			continue;
 		}
 

@@ -295,6 +295,7 @@ void opengl_program_unbind(struct opengl_program_t *prg, struct opengl_program_t
 void opengl_program_setup_ndrange_state(struct opengl_program_t *prg,
 		struct si_ndrange_t *ndrange)
 {
+#if 0
 	struct si_wavefront_t *wavefront;
 	struct si_work_item_t *work_item;
 
@@ -443,6 +444,7 @@ void opengl_program_setup_ndrange_state(struct opengl_program_t *prg,
 	/* FIXME Offset in the global buffer where data segment exists */
 	/* FIXME Offset in buffer for printf support */
 	/* FIXME Size of the printf buffer */
+#endif
 }
 
 
