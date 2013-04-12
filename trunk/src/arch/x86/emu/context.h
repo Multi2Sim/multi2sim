@@ -202,7 +202,8 @@ int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex,
 	unsigned int count, unsigned int bitset);
 void x86_ctx_exit_robust_list(struct x86_ctx_t *ctx);
 
-void x86_ctx_gen_proc_self_maps(struct x86_ctx_t *ctx, char *path);
+void x86_ctx_gen_proc_self_maps(struct x86_ctx_t *ctx, char *path, int size);
+void x86_ctx_gen_proc_cpuinfo(struct x86_ctx_t *ctx, char *path, int size);
 
 void x86_ctx_ipc_report_schedule(struct x86_ctx_t *ctx);
 void x86_ctx_ipc_report_handler(int event, void *data);
