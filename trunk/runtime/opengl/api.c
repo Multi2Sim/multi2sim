@@ -3626,20 +3626,20 @@ void glBindAttribLocation (GLuint program, GLuint index, const GLchar *name)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glDisableVertexAttribArray (GLuint index)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDisableVertexAttribArray (GLuint index)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glEnableVertexAttribArray (GLuint index)
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glEnableVertexAttribArray (GLuint index)
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
 
-	unsigned int sys_args[1];
-	sys_args[0] = (unsigned int) index;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnableVertexAttribArray, &sys_args);
-}
+// 	unsigned int sys_args[1];
+// 	sys_args[0] = (unsigned int) index;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnableVertexAttribArray, &sys_args);
+// }
 
 void glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name)
 {
@@ -4041,20 +4041,20 @@ void glVertexAttrib4usv (GLuint index, const GLushort *v)
 	__OPENGL_NOT_IMPL__
 }
 
-void glVertexAttribPointer (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer)
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glVertexAttribPointer (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer)
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	unsigned int sys_args[6];
-	sys_args[0] = (unsigned int) index;
-	sys_args[1] = (unsigned int) size;
-	sys_args[2] = (unsigned int) type;
-	sys_args[3] = (unsigned int) normalized;
-	sys_args[4] = (unsigned int) stride;
-	sys_args[5] = (unsigned int) pointer;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glVertexAttribPointer, &sys_args);
+// 	unsigned int sys_args[6];
+// 	sys_args[0] = (unsigned int) index;
+// 	sys_args[1] = (unsigned int) size;
+// 	sys_args[2] = (unsigned int) type;
+// 	sys_args[3] = (unsigned int) normalized;
+// 	sys_args[4] = (unsigned int) stride;
+// 	sys_args[5] = (unsigned int) pointer;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glVertexAttribPointer, &sys_args);
 
-}
+// }
 
 void glUniformMatrix2x3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
 {
@@ -4138,16 +4138,16 @@ void glBindBufferRange (GLenum target, GLuint index, GLuint buffer, GLintptr off
 	__OPENGL_NOT_IMPL__
 }
 
-void glBindBufferBase (GLenum target, GLuint index, GLuint buffer)
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glBindBufferBase (GLenum target, GLuint index, GLuint buffer)
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	unsigned int sys_args[3];
-	sys_args[0] = (unsigned int) target;
-	sys_args[1] = (unsigned int) index;
-	sys_args[2] = (unsigned int) buffer;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBindBufferBase, &sys_args);
-}
+// 	unsigned int sys_args[3];
+// 	sys_args[0] = (unsigned int) target;
+// 	sys_args[1] = (unsigned int) index;
+// 	sys_args[2] = (unsigned int) buffer;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBindBufferBase, &sys_args);
+// }
 
 void glTransformFeedbackVaryings (GLuint program, GLsizei count, const GLchar* *varyings, GLenum bufferMode)
 {
@@ -5437,30 +5437,30 @@ void glTexBufferARB (GLenum target, GLenum internalformat, GLuint buffer)
 	__OPENGL_NOT_IMPL__
 }
 
-void glBindVertexArray (GLuint array)
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glBindVertexArray (GLuint array)
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	unsigned int sys_args[1];
-	sys_args[0] = (unsigned int) array;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBindVertexArray, &sys_args);
-}
+// 	unsigned int sys_args[1];
+// 	sys_args[0] = (unsigned int) array;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glBindVertexArray, &sys_args);
+// }
 
-void glDeleteVertexArrays (GLsizei n, const GLuint *arrays)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteVertexArrays (GLsizei n, const GLuint *arrays)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGenVertexArrays (GLsizei n, GLuint *arrays)
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glGenVertexArrays (GLsizei n, GLuint *arrays)
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	unsigned int sys_args[2];
-	sys_args[0] = (unsigned int) n;
-	sys_args[1] = (unsigned int) arrays;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenVertexArrays, &sys_args);
+// 	unsigned int sys_args[2];
+// 	sys_args[0] = (unsigned int) n;
+// 	sys_args[1] = (unsigned int) arrays;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenVertexArrays, &sys_args);
 
-}
+// }
 
 GLboolean glIsVertexArray (GLuint array)
 {

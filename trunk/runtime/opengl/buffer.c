@@ -27,6 +27,7 @@
 #include "list.h"
 #include "linked-list.h"
 #include "mhandle.h"
+#include "vertex-array.h"
 
 /* Global variables */
 struct linked_list_t *buffer_repo;
@@ -38,13 +39,19 @@ static unsigned int opengl_buffer_obj_assign_id();
 static struct opengl_buffer_obj_t *opengl_buffer_obj_create();
 static void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buffer_obj);
 static void opengl_buffer_obj_delete(struct opengl_buffer_obj_t *buffer_obj);
-static void opengl_buffer_obj_ref_update(struct opengl_buffer_obj_t *buffer_obj, int change);
 
-static struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get_buffer(struct linked_list_t *buffer_obj_repo, unsigned int id);
-static void opengl_buffer_obj_repo_add(struct linked_list_t *buffer_obj_repo, struct opengl_buffer_obj_t *buffer_obj);
-static int opengl_buffer_obj_repo_remove(struct linked_list_t *buffer_obj_repo, struct opengl_buffer_obj_t *buffer_obj);
+static void opengl_buffer_obj_repo_add(struct linked_list_t *buffer_obj_repo, 
+	struct opengl_buffer_obj_t *buffer_obj);
+static int opengl_buffer_obj_repo_remove(struct linked_list_t *buffer_obj_repo, 
+	struct opengl_buffer_obj_t *buffer_obj);
 
-static struct opengl_buffer_binding_target_t *opengl_buffer_binding_points_get_target(struct opengl_buffer_binding_points_t *bbp, unsigned int target);
+
+static void opengl_buffer_binding_target_bind_buffer(
+	struct opengl_buffer_binding_target_t *binding_target, struct opengl_buffer_obj_t *buffer_obj);
+static void opengl_buffer_binding_target_unbind_buffer(struct opengl_buffer_binding_target_t *binding_target);
+
+static struct opengl_buffer_binding_target_t *opengl_indexed_buffer_binding_points_get_target(
+	struct opengl_indexed_buffer_binding_points_t *idx_bbp, unsigned int target, unsigned int index);
 
 
 /*
@@ -71,6 +78,7 @@ static struct opengl_buffer_obj_t *opengl_buffer_obj_create()
 	pthread_mutex_init(&buffer_obj->ref_mutex, NULL);
 	buffer_obj->delete_pending = GL_FALSE;
 	buffer_obj->bound_targets = list_create();
+	buffer_obj->bound_vattribs = list_create();
 	buffer_obj->data = NULL;
 	buffer_obj->size = 0;
 	buffer_obj->usage = GL_STATIC_DRAW;
@@ -100,6 +108,7 @@ static void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buffer_obj)
 
 	/* Free list */
 	list_free(buffer_obj->bound_targets);
+	list_free(buffer_obj->bound_vattribs);
 
 	/* Free data */
 	if (buffer_obj->data)
@@ -120,6 +129,7 @@ static void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buffer_obj)
 static void opengl_buffer_obj_delete(struct opengl_buffer_obj_t *buffer_obj)
 {
 	struct opengl_buffer_binding_target_t *bbt;
+	struct opengl_vertex_attrib_t *vattrib;
 	int i;
 
 	buffer_obj->delete_pending = 1;
@@ -136,6 +146,13 @@ static void opengl_buffer_obj_delete(struct opengl_buffer_obj_t *buffer_obj)
 			pthread_mutex_unlock(&bbt->mutex);
 		}
 
+		/* Detach from vertex attribute objects */
+		LIST_FOR_EACH(buffer_obj->bound_vattribs, i)
+		{
+			vattrib = list_get(buffer_obj->bound_vattribs, i);
+			opengl_vertex_attrib_detach_buffer_obj(vattrib, buffer_obj);
+		}
+
 		opengl_buffer_obj_free(buffer_obj);
 	}
 	else
@@ -146,21 +163,8 @@ static void opengl_buffer_obj_delete(struct opengl_buffer_obj_t *buffer_obj)
 	}
 }
 
-/* Update buffer reference count */
-static void opengl_buffer_obj_ref_update(struct opengl_buffer_obj_t *buffer_obj, int change)
-{
-	int count;
-
-	pthread_mutex_lock(&buffer_obj->ref_mutex);
-	buffer_obj->ref_count += change;
-	count = buffer_obj->ref_count;
-	pthread_mutex_unlock(&buffer_obj->ref_mutex);
-
-	if (count < 0)
-		panic("\t%s: number of references is negative", __FUNCTION__);
-}
-
-static void opengl_buffer_obj_repo_add(struct linked_list_t *buffer_obj_repo, struct opengl_buffer_obj_t *buffer_obj)
+static void opengl_buffer_obj_repo_add(struct linked_list_t *buffer_obj_repo, 
+	struct opengl_buffer_obj_t *buffer_obj)
 {
 	/* Add to repository */
 	linked_list_add(buffer_obj_repo, buffer_obj);
@@ -170,7 +174,8 @@ static void opengl_buffer_obj_repo_add(struct linked_list_t *buffer_obj_repo, st
 		__FUNCTION__,  buffer_obj->id, buffer_obj, buffer_obj_repo);
 }
 
-static int opengl_buffer_obj_repo_remove(struct linked_list_t *buffer_obj_repo, struct opengl_buffer_obj_t *buffer_obj)
+static int opengl_buffer_obj_repo_remove(struct linked_list_t *buffer_obj_repo, 
+	struct opengl_buffer_obj_t *buffer_obj)
 {
 	if (buffer_obj->ref_count != 0)
 	{
@@ -191,40 +196,11 @@ static int opengl_buffer_obj_repo_remove(struct linked_list_t *buffer_obj_repo, 
 	}
 }
 
-static struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get_buffer(struct linked_list_t *buffer_obj_repo, unsigned int id)
+static void opengl_buffer_binding_target_bind_buffer(
+	struct opengl_buffer_binding_target_t *binding_target, struct opengl_buffer_obj_t *buffer_obj)
 {
-	/* ID 0 is reserved */
-	if (id == 0)
-		return NULL;
-
-	struct opengl_buffer_obj_t *buffer_obj;
-
-	/* Search Buffer Object */
-	LINKED_LIST_FOR_EACH(buffer_obj_repo)
-	{
-		buffer_obj = linked_list_get(buffer_obj_repo);
-		assert(buffer_obj);
-		if (buffer_obj->id == id && !buffer_obj->delete_pending)
-			return buffer_obj;
-	}
-
-	/* Not found or being deleted */
-	fatal("\t%s: requested Buffer Object is not available (id=0x%d)",
-		__FUNCTION__, id);
-	return NULL;
-}
-
-static void opengl_buffer_binding_target_bind_buffer(struct opengl_buffer_binding_target_t *binding_target, struct opengl_buffer_obj_t *buffer_obj)
-{
-	struct opengl_buffer_obj_t *curr_bound_buffer_obj;
-
 	/* Need to update current binding*/
-	if (binding_target->bound_buffer_id != 0)
-	{
-		curr_bound_buffer_obj = opengl_buffer_obj_repo_get_buffer(buffer_repo, binding_target->bound_buffer_id);
-		list_remove(curr_bound_buffer_obj->bound_targets, binding_target);
-		opengl_buffer_obj_ref_update(curr_bound_buffer_obj, -1);
-	}
+	opengl_buffer_binding_target_unbind_buffer(binding_target);
 
 	if (buffer_obj)
 	{
@@ -235,84 +211,63 @@ static void opengl_buffer_binding_target_bind_buffer(struct opengl_buffer_bindin
 		opengl_buffer_obj_ref_update(buffer_obj, 1);
 	}
 	else
+		binding_target->bound_buffer_id = 0;
+
+	/* Debug */
+	opengl_debug("\t%s: Buffer Object #%d [%p] bind to Binding Target [%p]\n", 
+		__FUNCTION__, buffer_obj->id, buffer_obj, binding_target);
+}
+
+static void opengl_buffer_binding_target_unbind_buffer(
+	struct opengl_buffer_binding_target_t *binding_target)
+{
+	struct opengl_buffer_obj_t *curr_bound_buffer_obj;
+
+	/* Need to update current binding*/
+	if (binding_target->bound_buffer_id != 0)
 	{
+		/* Get buffer object currently bound to binding target */
+		curr_bound_buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, 
+			binding_target->bound_buffer_id);
+
+		/* Debug */
+		opengl_debug("\t%s: Buffer Object #%d [%p] unbind from Binding Target [%p]\n", 
+			__FUNCTION__, curr_bound_buffer_obj->id, curr_bound_buffer_obj, binding_target);
+
+		/* Buffer object removes record of binding target */
+		list_remove(curr_bound_buffer_obj->bound_targets, binding_target);
+		opengl_buffer_obj_ref_update(curr_bound_buffer_obj, -1);
 		binding_target->bound_buffer_id = 0;
 	}
 
-	/* Debug */
-	opengl_debug("\t%s: [%p] bind to [%p]\n", __FUNCTION__, buffer_obj, binding_target);
 }
 
-static struct opengl_buffer_binding_target_t *opengl_buffer_binding_points_get_target(struct opengl_buffer_binding_points_t *bbp, unsigned int target)
+static struct opengl_buffer_binding_target_t *opengl_indexed_buffer_binding_points_get_target(
+	struct opengl_indexed_buffer_binding_points_t *idx_bbp, unsigned int target, unsigned int index)
 {
 	struct opengl_buffer_binding_target_t *bbt;
 
 	switch(target)
 	{
 
-	case GL_ARRAY_BUFFER:
-	{
-		bbt = bbp->array_buffer;
-		break;
-	}
 	case GL_ATOMIC_COUNTER_BUFFER:
 	{
-		bbt = bbp->atomic_counter_buffer;
-		break;
-	}
-	case GL_COPY_READ_BUFFER:
-	{
-		bbt = bbp->copy_read_buffer;
-		break;
-	}
-	case GL_COPY_WRITE_BUFFER:
-	{
-		bbt = bbp->copy_write_buffer;
-		break;
-	}
-	case GL_DRAW_INDIRECT_BUFFER:
-	{
-		bbt = bbp->draw_indirect_buffer;
-		break;
-	}
-	case GL_DISPATCH_INDIRECT_BUFFER:
-	{
-		bbt = bbp->dispatch_indirect_buffer;
-		break;		
-	}
-	case GL_ELEMENT_ARRAY_BUFFER:
-	{
-		bbt = bbp->element_array_buffer;
-		break;		
-	}
-	case GL_PIXEL_PACK_BUFFER:
-	{
-		bbt = bbp->pixel_pack_buffer;
-		break;		
-	}
-	case GL_PIXEL_UNPACK_BUFFER:
-	{
-		bbt = bbp->pixel_unpack_buffer;
+		bbt = idx_bbp->atomic_counter_buffer[index];
 		break;
 	}
 	case GL_SHADER_STORAGE_BUFFER:
 	{
-		bbt = bbp->shader_storage_buffer;
-		break;
-	}
-	case GL_TEXTURE_BUFFER:
-	{
-		bbt = bbp->texture_buffer;
+		bbt = idx_bbp->shader_storage_buffer[index];
 		break;
 	}
 	case GL_TRANSFORM_FEEDBACK_BUFFER:
 	{
-		bbt = bbp->transform_feedback_buffer;
+		bbt = idx_bbp->transform_feedback_buffer[index];
 		break;
 	}
 	case GL_UNIFORM_BUFFER:
 	{
-		bbt = bbp->uniform_buffer;
+		bbt = idx_bbp->uniform_buffer[index];
 		break;
 	}
 	default:
@@ -321,13 +276,26 @@ static struct opengl_buffer_binding_target_t *opengl_buffer_binding_points_get_t
 	}
 
 	/* Return */
-	return bbt;
+	return bbt;	
 }
-
 
 /*
  * Public Functions
  */
+
+/* Update buffer reference count */
+void opengl_buffer_obj_ref_update(struct opengl_buffer_obj_t *buffer_obj, int change)
+{
+	int count;
+
+	pthread_mutex_lock(&buffer_obj->ref_mutex);
+	buffer_obj->ref_count += change;
+	count = buffer_obj->ref_count;
+	pthread_mutex_unlock(&buffer_obj->ref_mutex);
+
+	if (count < 0)
+		panic("\t%s: number of references is negative", __FUNCTION__);
+}
 
 /* Created in opengl_context_init() */
 struct opengl_buffer_binding_points_t *opengl_buffer_binding_points_create()
@@ -411,6 +379,152 @@ void opengl_buffer_binding_points_free(struct opengl_buffer_binding_points_t *bb
 
 }
 
+struct opengl_buffer_binding_target_t *opengl_buffer_binding_points_get_target(
+	struct opengl_buffer_binding_points_t *bbp, unsigned int target)
+{
+	struct opengl_buffer_binding_target_t *bbt;
+
+	switch(target)
+	{
+
+	case GL_ARRAY_BUFFER:
+	{
+		bbt = bbp->array_buffer;
+		break;
+	}
+	case GL_ATOMIC_COUNTER_BUFFER:
+	{
+		bbt = bbp->atomic_counter_buffer;
+		break;
+	}
+	case GL_COPY_READ_BUFFER:
+	{
+		bbt = bbp->copy_read_buffer;
+		break;
+	}
+	case GL_COPY_WRITE_BUFFER:
+	{
+		bbt = bbp->copy_write_buffer;
+		break;
+	}
+	case GL_DRAW_INDIRECT_BUFFER:
+	{
+		bbt = bbp->draw_indirect_buffer;
+		break;
+	}
+	case GL_DISPATCH_INDIRECT_BUFFER:
+	{
+		bbt = bbp->dispatch_indirect_buffer;
+		break;		
+	}
+	case GL_ELEMENT_ARRAY_BUFFER:
+	{
+		bbt = bbp->element_array_buffer;
+		break;		
+	}
+	case GL_PIXEL_PACK_BUFFER:
+	{
+		bbt = bbp->pixel_pack_buffer;
+		break;		
+	}
+	case GL_PIXEL_UNPACK_BUFFER:
+	{
+		bbt = bbp->pixel_unpack_buffer;
+		break;
+	}
+	case GL_SHADER_STORAGE_BUFFER:
+	{
+		bbt = bbp->shader_storage_buffer;
+		break;
+	}
+	case GL_TEXTURE_BUFFER:
+	{
+		bbt = bbp->texture_buffer;
+		break;
+	}
+	case GL_TRANSFORM_FEEDBACK_BUFFER:
+	{
+		bbt = bbp->transform_feedback_buffer;
+		break;
+	}
+	case GL_UNIFORM_BUFFER:
+	{
+		bbt = bbp->uniform_buffer;
+		break;
+	}
+	default:
+		bbt = NULL;
+		break;
+	}
+
+	/* Return */
+	return bbt;
+}
+
+struct opengl_indexed_buffer_binding_points_t *opengl_indexed_buffer_binding_points_create(unsigned int max_indexed_target)
+{
+	struct opengl_indexed_buffer_binding_points_t *idx_bbp;
+	int i;
+
+	/* Allocate */
+	idx_bbp = xcalloc(1, sizeof(struct opengl_indexed_buffer_binding_points_t));
+	idx_bbp->atomic_counter_buffer = xcalloc(max_indexed_target, sizeof(struct opengl_buffer_binding_target_t *));
+	idx_bbp->shader_storage_buffer = xcalloc(max_indexed_target, sizeof(struct opengl_buffer_binding_target_t *));
+	idx_bbp->transform_feedback_buffer = xcalloc(max_indexed_target, sizeof(struct opengl_buffer_binding_target_t *));
+	idx_bbp->uniform_buffer = xcalloc(max_indexed_target, sizeof(struct opengl_buffer_binding_target_t *));
+
+	for (i = 0; i < max_indexed_target; ++i)
+	{
+		idx_bbp->atomic_counter_buffer[i] = xcalloc(1, sizeof(struct opengl_buffer_binding_target_t));
+		idx_bbp->shader_storage_buffer[i] = xcalloc(1, sizeof(struct opengl_buffer_binding_target_t));
+		idx_bbp->transform_feedback_buffer[i] = xcalloc(1, sizeof(struct opengl_buffer_binding_target_t));
+		idx_bbp->uniform_buffer[i] = xcalloc(1, sizeof(struct opengl_buffer_binding_target_t));
+	}
+
+	/* Initialize */
+	idx_bbp->max_indexed_targets = max_indexed_target;
+	for (i = 0; i < max_indexed_target; ++i)
+	{
+		pthread_mutex_init(&idx_bbp->atomic_counter_buffer[i]->mutex, NULL);
+		pthread_mutex_init(&idx_bbp->shader_storage_buffer[i]->mutex, NULL);
+		pthread_mutex_init(&idx_bbp->transform_feedback_buffer[i]->mutex, NULL);
+		pthread_mutex_init(&idx_bbp->uniform_buffer[i]->mutex, NULL);
+	}
+
+	/* Debug */
+	opengl_debug("\t%s: OpenGL indexed buffer binding points [%p] created\n", __FUNCTION__, idx_bbp);
+	
+	/* Return */	
+	return idx_bbp;
+}
+
+void opengl_indexed_buffer_binding_points_free(struct opengl_indexed_buffer_binding_points_t *idx_bbp)
+{
+	int i;
+
+	/* Debug */
+	opengl_debug("\t%s: OpenGL indexed buffer binding points [%p] freed\n", __FUNCTION__, idx_bbp);
+
+	for (i = 0; i < idx_bbp->max_indexed_targets; ++i)
+	{
+		free(idx_bbp->atomic_counter_buffer[i]);
+		free(idx_bbp->shader_storage_buffer[i]);
+		free(idx_bbp->transform_feedback_buffer[i]);
+		free(idx_bbp->uniform_buffer[i]);
+	}
+
+	for (i = 0; i < idx_bbp->max_indexed_targets; ++i)
+	{
+		pthread_mutex_destroy(&idx_bbp->atomic_counter_buffer[i]->mutex);
+		pthread_mutex_destroy(&idx_bbp->shader_storage_buffer[i]->mutex);
+		pthread_mutex_destroy(&idx_bbp->transform_feedback_buffer[i]->mutex);
+		pthread_mutex_destroy(&idx_bbp->uniform_buffer[i]->mutex);
+	}
+
+	free(idx_bbp);
+
+}
+
 struct linked_list_t *opengl_buffer_obj_repo_create()
 {
 	struct linked_list_t *lst;
@@ -444,6 +558,29 @@ void opengl_buffer_obj_repo_free(struct linked_list_t *buffer_obj_repo)
 	opengl_debug("\t%s: OpenGL Buffer Repository [%p] freed\n", __FUNCTION__, buffer_obj_repo);	
 }
 
+struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get(
+	struct linked_list_t *buffer_obj_repo, unsigned int id)
+{
+	/* ID 0 is reserved */
+	if (id == 0)
+		return NULL;
+
+	struct opengl_buffer_obj_t *buffer_obj;
+
+	/* Search Buffer Object */
+	LINKED_LIST_FOR_EACH(buffer_obj_repo)
+	{
+		buffer_obj = linked_list_get(buffer_obj_repo);
+		assert(buffer_obj);
+		if (buffer_obj->id == id && !buffer_obj->delete_pending)
+			return buffer_obj;
+	}
+
+	/* Not found or being deleted */
+	fatal("\t%s: requested Buffer Object is not available (id=%d)",
+		__FUNCTION__, id);
+	return NULL;
+}
 
 /* 
  * OpenGL API functions 
@@ -476,7 +613,7 @@ void glDeleteBuffers (GLsizei n, const GLuint *buffers)
 
 	for (i = 0; i < n; ++i)
 	{
-		buffer_obj = opengl_buffer_obj_repo_get_buffer(buffer_repo, buffers[i]);
+		buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, buffers[i]);
 		opengl_buffer_obj_repo_remove(buffer_repo, buffer_obj);
 		opengl_buffer_obj_delete(buffer_obj);
 	}
@@ -492,9 +629,27 @@ void glBindBuffer (GLenum target, GLuint buffer)
 	struct opengl_buffer_obj_t *buffer_obj;
 
 	target_obj = opengl_buffer_binding_points_get_target(opengl_ctx->buffer_binding_points, target);
-	buffer_obj = opengl_buffer_obj_repo_get_buffer(buffer_repo, buffer);
+	buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, buffer);
 	opengl_buffer_binding_target_bind_buffer(target_obj, buffer_obj);
 }
+
+void glBindBufferBase (GLenum target, GLuint index, GLuint buffer)
+{
+	/* Debug */
+	opengl_debug("API call %s(%x, %d)\n", __FUNCTION__, target, buffer);
+
+	struct opengl_buffer_binding_target_t *target_obj;
+	struct opengl_buffer_binding_target_t *idxed_target_obj;
+	struct opengl_buffer_obj_t *buffer_obj;
+
+	/* Need to bind to generic binding target as well as indexed binding target */
+	target_obj = opengl_buffer_binding_points_get_target(opengl_ctx->buffer_binding_points, target);
+	idxed_target_obj = opengl_indexed_buffer_binding_points_get_target(opengl_ctx->idxed_buffer_binding_points, target, index);
+	buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, buffer);
+	opengl_buffer_binding_target_bind_buffer(target_obj, buffer_obj);
+	opengl_buffer_binding_target_bind_buffer(idxed_target_obj, buffer_obj);
+}
+
 
 void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage)
 {
@@ -506,10 +661,11 @@ void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum us
 	struct opengl_buffer_obj_t *buffer_obj;
 
 	target_obj = opengl_buffer_binding_points_get_target(opengl_ctx->buffer_binding_points, target);
-	buffer_obj = opengl_buffer_obj_repo_get_buffer(buffer_repo, target_obj->bound_buffer_id);
+	buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, target_obj->bound_buffer_id);
 
 	/* Save a copy in buffer object */
 	buffer_obj->data = xcalloc(1, size);
-	memcpy(buffer_obj->data, data, size);
+	if (data)
+		memcpy(buffer_obj->data, data, size);
 	buffer_obj->usage = usage;
 }

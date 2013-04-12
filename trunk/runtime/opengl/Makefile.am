@@ -40,7 +40,10 @@ __top_builddir__lib_libm2s_opengl_la_SOURCES = \
 	shader.h \
 	\
 	string.c \
-	string.h
+	string.h \
+	\
+	vertex-array.c \
+	vertex-array.h
 
 
 AM_CFLAGS = -m32

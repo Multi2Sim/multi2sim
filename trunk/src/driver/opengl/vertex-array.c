@@ -233,6 +233,9 @@ struct opengl_vertex_array_obj_t *opengl_vertex_array_obj_repo_get(struct linked
 {
 	struct opengl_vertex_array_obj_t *vao;
 
+	if (id == 0)
+		return NULL;
+
 	/* Search VAO */
 	LINKED_LIST_FOR_EACH(vao_repo)
 	{
