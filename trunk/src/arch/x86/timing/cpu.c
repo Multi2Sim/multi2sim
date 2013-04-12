@@ -921,22 +921,16 @@ void x86_cpu_dump_summary(FILE *f)
 {
 	struct arch_t *arch = x86_emu->arch;
 
-	double time_in_sec;
 	double inst_per_cycle;
 	double uinst_per_cycle;
 	double branch_acc;
-	double cycles_per_sec;
 
 	/* Calculate statistics */
-	time_in_sec = (double) m2s_timer_get_value(arch->timer) / 1.0e6;
 	inst_per_cycle = arch->cycle_count ? (double) x86_cpu->num_committed_inst / arch->cycle_count : 0.0;
 	uinst_per_cycle = arch->cycle_count ? (double) x86_cpu->num_committed_uinst / arch->cycle_count : 0.0;
 	branch_acc = x86_cpu->num_branch_uinst ? (double) (x86_cpu->num_branch_uinst - x86_cpu->num_mispred_branch_uinst) / x86_cpu->num_branch_uinst : 0.0;
-	cycles_per_sec = time_in_sec > 0.0 ? (double) arch->cycle_count / time_in_sec : 0.0;
 
 	/* Print statistics */
-	fprintf(f, "Cycles = %lld\n", arch->cycle_count);
-	fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 	fprintf(f, "FastForwardInstructions = %lld\n", x86_cpu->num_fast_forward_inst);
 	fprintf(f, "CommittedInstructions = %lld\n", x86_cpu->num_committed_inst);
 	fprintf(f, "CommittedInstructionsPerCycle = %.4g\n", inst_per_cycle);
