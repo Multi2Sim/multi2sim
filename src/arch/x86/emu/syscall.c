@@ -575,6 +575,39 @@ static struct str_map_t sys_open_flags_map =
 	}
 };
 
+static struct x86_file_desc_t *x86_sys_open_virtual(struct x86_ctx_t *ctx,
+		char *path, int flags, int mode)
+{
+	char temp_path[MAX_PATH_SIZE];
+	struct x86_file_desc_t *desc;
+	int host_fd;
+
+	/* Assume no file found */
+	temp_path[0] = '\0';
+
+	/* Virtual file /proc/self/maps */
+	if (!strcmp(path, "/proc/self/maps"))
+		x86_ctx_gen_proc_self_maps(ctx, temp_path, sizeof temp_path);
+	
+	/* Virtual file /proc/cpuinfo */
+	else if (!strcmp(path, "/proc/cpuinfo"))
+		x86_ctx_gen_proc_cpuinfo(ctx, temp_path, sizeof temp_path);
+
+	/* No file found */
+	if (!temp_path[0])
+		return NULL;
+
+	/* File found, create descriptor */
+	host_fd = open(temp_path, flags, mode);
+	assert(host_fd > 0);
+
+	/* Add file descriptor table entry. */
+	desc = x86_file_desc_table_entry_new(ctx->file_desc_table, file_desc_virtual, host_fd, temp_path, flags);
+	x86_sys_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
+			temp_path, desc->guest_fd, desc->host_fd);
+	return desc;
+}
+
 static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
@@ -618,11 +651,25 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	/* Virtual files */
 	if (!strncmp(full_path, "/proc/", 6))
 	{
+		/* Attempt to open virtual file */
+		desc = x86_sys_open_virtual(ctx, full_path, flags, mode);
+		if (desc)
+			return desc->guest_fd;
+		
+		/* Unhandled virtual file. Let the application read the contents of the host
+		 * version of the file as if it was a regular file. */
+		x86_sys_debug("    warning: unhandled virtual file\n");
+	}
+
+#if 0
+	/* Virtual files */
+	if (!strncmp(full_path, "/proc/", 6))
+	{
 		/* File /proc/self/maps */
 		if (!strcmp(full_path, "/proc/self/maps"))
 		{
 			/* Create temporary file and open it. */
-			x86_ctx_gen_proc_self_maps(ctx, temp_path);
+			x86_ctx_gen_proc_self_maps(ctx, temp_path, sizeof temp_path);
 			host_fd = open(temp_path, flags, mode);
 			assert(host_fd > 0);
 
@@ -633,10 +680,17 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 			return desc->guest_fd;
 		}
 
+		/* File /proc/cpuinfo */
+		if (!strcmp(full_path, "/proc/cpuinfo"))
+		{
+			x86_ctx_gen_proc_cpuinfo(ctx, temp_path, sizeof temp_path);
+		}
+
 		/* Unhandled virtual file. Let the application read the contents of the host
 		 * version of the file as if it was a regular file. */
 		x86_sys_debug("    warning: unhandled virtual file\n");
 	}
+#endif
 
 	/* Regular file. */
 	host_fd = open(full_path, flags, mode);
