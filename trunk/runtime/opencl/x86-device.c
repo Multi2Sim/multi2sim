@@ -23,6 +23,7 @@
 #include "debug.h"
 #include "device.h"
 #include "mhandle.h"
+#include "string.h"
 #include "x86-device.h"
 #include "x86-kernel.h"
 #include "x86-program.h"
@@ -87,10 +88,26 @@ static int opencl_x86_device_get_next_work_group(
  * threads to spawn running work-groups. */
 static int opencl_x86_device_get_num_cores(void)
 {
-	if (opencl_native_mode)
-		return sysconf(_SC_NPROCESSORS_ONLN); /* Won't work in Multi2Sim */
-	else
-		return 4; /* TODO: Fix this */
+	char s[MAX_LONG_STRING_SIZE];
+	int num_cores = 0;
+	FILE *f;
+	
+	/* Get this information from /proc/cpuinfo */
+	f = fopen("/proc/cpuinfo", "rt");
+	if (!f)
+		fatal("%s: cannot access /proc/cpuinfo", __FUNCTION__);
+
+	/* Count entries starting with token 'processor' */
+	while (fgets(s, sizeof s, f))
+	{
+		strtok(s, "\n\t :");
+		if (!strcmp(s, "processor"))
+			num_cores++;
+	}
+
+	/* Done */
+	fclose(f);
+	return num_cores;
 }
 
 
