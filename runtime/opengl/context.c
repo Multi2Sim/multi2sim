@@ -27,6 +27,7 @@
 #include "mhandle.h"
 #include "program.h"
 #include "shader.h"
+#include "vertex-array.h"
 
 /* 
  * Other libraries are responsible for initializing OpenGL context.
@@ -102,8 +103,15 @@ static struct opengl_context_t *opengl_context_create()
 	context->state = opengl_context_state_create();
 	context->props = opengl_context_props_create();
 
+	context->buffer_binding_points = opengl_buffer_binding_points_create();
+	context->idxed_buffer_binding_points = opengl_indexed_buffer_binding_points_create(MAX_INDEXED_TARGETS);
+
+	/* FIXME: other repositories */
+	context->vao_repo = opengl_vertex_array_obj_repo_create();
+
 	/* Debug */
 	opengl_debug("%s: OpenGL context [%p] created\n", __FUNCTION__, context);
+
 	/* Return */
 	return context;
 }
@@ -113,6 +121,12 @@ static void opengl_context_free(struct opengl_context_t *context)
 	/* Free */
 	opengl_context_state_free(context->state);
 	opengl_context_props_free(context->props);
+	opengl_buffer_binding_points_free(context->buffer_binding_points);
+	opengl_indexed_buffer_binding_points_free(context->idxed_buffer_binding_points);
+
+	/* FIXME: other repositories */
+	opengl_vertex_array_obj_repo_free(context->vao_repo);
+
 	free(context);
 
 	/* Debug */
@@ -144,10 +158,6 @@ void opengl_context_init()
 		opengl_ctx = opengl_context_create();
 		opengl_context_initialized = 1;
 
-		opengl_ctx->buffer_binding_points = opengl_buffer_binding_points_create();
-
-		/*FIXME: Repository Initialization */
-
 		/* Debug */
 		opengl_debug("%s: OpenGL context [%p] initialized\n", __FUNCTION__, opengl_ctx);	
 	}
@@ -163,12 +173,6 @@ void opengl_context_destroy()
 {
 	if (opengl_context_initialized)
 	{
-		opengl_context_state_free(opengl_ctx->state);
-		opengl_context_props_free(opengl_ctx->props);
-		opengl_buffer_binding_points_free(opengl_ctx->buffer_binding_points);
-
-		/*FIXME: Repository Free*/
-
 		opengl_context_initialized = 0;
 		opengl_context_free(opengl_ctx);
 	}
@@ -186,7 +190,7 @@ void opengl_context_destroy()
 
  const GLubyte *glGetString( GLenum name )
 {
-	opengl_debug("OpenGL API %s \n", __FUNCTION__);
+	opengl_debug("API call %s \n", __FUNCTION__);
 
 	const GLubyte *str;
 
@@ -234,5 +238,6 @@ void opengl_context_destroy()
 
 void glEnable( GLenum cap )
 {
-	opengl_debug("OpenGL runtime: %s\n", __FUNCTION__);	
+	/* Debug */
+	opengl_debug("API call %s(%x)\n", __FUNCTION__, cap);
 }

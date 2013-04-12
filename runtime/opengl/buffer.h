@@ -24,7 +24,6 @@
 
 #include "opengl.h"
 
-
 /* To record ID of bound buffer*/
 struct opengl_buffer_binding_target_t
 {
@@ -32,7 +31,7 @@ struct opengl_buffer_binding_target_t
 	unsigned int bound_buffer_id;
 };
 
-/* Buffer object binding targets */
+/* General buffer object binding targets */
 struct opengl_buffer_binding_points_t
 {
 	struct opengl_buffer_binding_target_t *array_buffer;
@@ -50,6 +49,16 @@ struct opengl_buffer_binding_points_t
 	struct opengl_buffer_binding_target_t *uniform_buffer;
 };
 
+/* Indexed buffer object binding targets */
+struct opengl_indexed_buffer_binding_points_t
+{
+	unsigned int max_indexed_targets;
+	struct opengl_buffer_binding_target_t **atomic_counter_buffer;
+	struct opengl_buffer_binding_target_t **shader_storage_buffer;
+	struct opengl_buffer_binding_target_t **transform_feedback_buffer;
+	struct opengl_buffer_binding_target_t **uniform_buffer;
+};
+
 /* Buffers are stored in a linked list repository */
 struct opengl_buffer_obj_t
 {
@@ -60,10 +69,11 @@ struct opengl_buffer_obj_t
 	unsigned char delete_pending;
 
 	/*
-	 * This list records binding target objects bind with this buffer object 
-	 * Need to unattach from binding targets when buffer is deleted
+	 * These lists record where buffer object get referenced
+	 * Need to dereference when buffer is deleted
 	 */
-	struct list_t *bound_targets;
+	struct list_t *bound_targets; /* Components with type opengl_buffer_binding_target_t */
+	struct list_t *bound_vattribs; /* Components with  type opengl_vertex_attrib_t */
 
 	/* Buffer data storage */
 	void* data;
@@ -81,11 +91,19 @@ struct opengl_buffer_obj_t
 
 extern struct linked_list_t *buffer_repo;
 
+void opengl_buffer_obj_ref_update(struct opengl_buffer_obj_t *buffer_obj, int change);
+
 struct opengl_buffer_binding_points_t *opengl_buffer_binding_points_create();
 void opengl_buffer_binding_points_free(struct opengl_buffer_binding_points_t *bbp);
+struct opengl_buffer_binding_target_t *opengl_buffer_binding_points_get_target(
+	struct opengl_buffer_binding_points_t *bbp, unsigned int target);
+
+struct opengl_indexed_buffer_binding_points_t *opengl_indexed_buffer_binding_points_create(unsigned int max_indexed_target);
+void opengl_indexed_buffer_binding_points_free(struct opengl_indexed_buffer_binding_points_t *idx_bbp);
 
 struct linked_list_t *opengl_buffer_obj_repo_create();
 void opengl_buffer_obj_repo_free(struct linked_list_t *buffer_obj_repo);
+struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get(struct linked_list_t *buffer_obj_repo, unsigned int id);
 
 
 #endif

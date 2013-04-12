@@ -24,7 +24,13 @@
 
 /* Forward declarations*/
 struct linked_list_t;
+struct opengl_program_obj_t;
+struct opengl_vertex_array_obj_t;
 struct opengl_buffer_binding_points_t;
+
+#ifndef MAX_INDEXED_TARGETS
+#define MAX_INDEXED_TARGETS 16
+#endif
 
 /* OpenGL context state */
 struct opengl_context_state_t
@@ -131,7 +137,9 @@ struct opengl_context_t
 
 	/* Binding points */
 	struct opengl_buffer_binding_points_t *buffer_binding_points;
+	struct opengl_indexed_buffer_binding_points_t *idxed_buffer_binding_points;
 	struct opengl_program_obj_t *program_binding_point;
+	struct opengl_vertex_array_obj_t *vao_binding_point;
 
 	/* Repositories for container objects that cannot be shared */
 	struct linked_list_t *renderbuf_repo;
