@@ -2991,8 +2991,8 @@ void si_isa_V_ASHRREV_I32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst,
-			result.as_int);
+		si_isa_debug("t%d: V%u<=(%d, %u) ", work_item->id, INST.vdst,
+			result.as_int, result.as_uint);
 	}
 }
 #undef INST
@@ -4198,7 +4198,19 @@ void si_isa_V_BFE_I32_impl(struct si_work_item_t *work_item,
 	s2.as_uint = s2.as_uint & 0x1F;
 
 	/* Calculate the result. */
-	result.as_int = (s0.as_int >> s1.as_uint) & ((1 << s2.as_uint) - 1);
+	if (s2.as_uint == 0)
+	{
+		result.as_int = 0;
+	}
+	else if (s2.as_uint + s1.as_uint < 32)
+	{
+		result.as_int = (s0.as_int << (32 - s1.as_uint - s2.as_uint)) >> 
+			(32 - s2.as_uint);
+	}
+	else
+	{
+		result.as_int = s0.as_int >> s1.as_uint;
+	}
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, result.as_uint);
@@ -6775,8 +6787,6 @@ void si_isa_TBUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item,
 		si_isa_debug("t%d: (%u)<=V%u(%u,%gf) ", work_item->id,
 			addr, INST.vdata, value.as_uint,
 			value.as_float);
-		si_isa_debug("%u,%u,%u,%u ", base, mem_offset, inst_offset,
-			off_vgpr);
 	}
 }
 #undef INST
