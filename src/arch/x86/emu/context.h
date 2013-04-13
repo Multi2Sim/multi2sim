@@ -23,13 +23,18 @@
 #include <arch/x86/asm/asm.h>
 
 
+/* Forward declarations */
+struct bit_map_t;
+struct x86_ctx_t;
+
+
+
 #define x86_ctx_debug(...) debug(x86_ctx_debug_category, __VA_ARGS__)
 extern int x86_ctx_debug_category;
 
 /* Event scheduled periodically to dump IPC statistics for a context */
 extern int EV_X86_CTX_IPC_REPORT;
 
-struct x86_ctx_t;
 typedef int (*x86_ctx_can_wakeup_callback_func_t)(struct x86_ctx_t *ctx, void *data);
 typedef void (*x86_ctx_wakeup_callback_func_t)(struct x86_ctx_t *ctx, void *data);
 
@@ -134,6 +139,9 @@ struct x86_ctx_t
 	struct x86_file_desc_table_t *file_desc_table;  /* File descriptor table */
 	struct x86_signal_mask_table_t *signal_mask_table;
 	struct x86_signal_handler_table_t *signal_handler_table;
+
+	/* Thread affinity mask */
+	struct bit_map_t *affinity;
 
 
 	/* Statistics */

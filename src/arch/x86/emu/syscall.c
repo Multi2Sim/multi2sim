@@ -35,8 +35,10 @@
 
 #include <arch/common/arch.h>
 #include <arch/common/runtime.h>
+#include <arch/x86/timing/cpu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
@@ -660,37 +662,6 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 		 * version of the file as if it was a regular file. */
 		x86_sys_debug("    warning: unhandled virtual file\n");
 	}
-
-#if 0
-	/* Virtual files */
-	if (!strncmp(full_path, "/proc/", 6))
-	{
-		/* File /proc/self/maps */
-		if (!strcmp(full_path, "/proc/self/maps"))
-		{
-			/* Create temporary file and open it. */
-			x86_ctx_gen_proc_self_maps(ctx, temp_path, sizeof temp_path);
-			host_fd = open(temp_path, flags, mode);
-			assert(host_fd > 0);
-
-			/* Add file descriptor table entry. */
-			desc = x86_file_desc_table_entry_new(ctx->file_desc_table, file_desc_virtual, host_fd, temp_path, flags);
-			x86_sys_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
-				temp_path, desc->guest_fd, desc->host_fd);
-			return desc->guest_fd;
-		}
-
-		/* File /proc/cpuinfo */
-		if (!strcmp(full_path, "/proc/cpuinfo"))
-		{
-			x86_ctx_gen_proc_cpuinfo(ctx, temp_path, sizeof temp_path);
-		}
-
-		/* Unhandled virtual file. Let the application read the contents of the host
-		 * version of the file as if it was a regular file. */
-		x86_sys_debug("    warning: unhandled virtual file\n");
-	}
-#endif
 
 	/* Regular file. */
 	host_fd = open(full_path, flags, mode);
@@ -5167,26 +5138,83 @@ static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
+	struct x86_ctx_t *target_ctx;
 
+	int err = 0;
 	int pid;
-	int len;
-	int num_procs = 4;
+	int size;
+	int node;
+	int num_nodes;
+	int num_bits;
+
+	int i;
+	int j;
 
 	unsigned int mask_ptr;
-	unsigned int mask;
+	unsigned char *mask;
 
 	/* Arguments */
 	pid = regs->ebx;
-	len = regs->ecx;
+	size = regs->ecx;
 	mask_ptr = regs->edx;
-	x86_sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
+	x86_sys_debug("  pid=%d, size=%d, mask_ptr=0x%x\n",
+			pid, size, mask_ptr);
+
+	/* Check valid size (assume reasonable maximum of 1KB) */
+	if (!IN_RANGE(size, 0, 1 << 10))
+		fatal("%s: invalid range for 'size' (%d)", __FUNCTION__, size);
 
 	/* Read mask */
-	mem_read(mem, mask_ptr, 4, &mask);
-	x86_sys_debug("  mask=0x%x\n", mask);
+	mask = xcalloc(1, size);
+	mem_read(mem, mask_ptr, size, mask);
 
-	/* FIXME: system call ignored. Return the number of processors. */
-	return num_procs;
+	/* Dump it */
+	x86_sys_debug("  CPUs = {");
+	for (i = 0; i < size; i++)
+		for (j = 0; j < 8; j++)
+			if (mask[i] & (1 << j))
+				x86_sys_debug(" %d", i * 8 + j);
+	x86_sys_debug(" }\n");
+
+	/* Find context associated with 'pid'. If the value given in 'pid' is
+	 * zero, the current context is used. */
+	target_ctx = pid ? x86_ctx_get(pid) : ctx;
+	if (!target_ctx)
+	{
+		err = -ESRCH;
+		goto out;
+	}
+
+	/* Count number of effective valid bits in the mask. We need at least
+	 * one bit to be set for the context to make progress hereafter. */
+	num_bits = 0;
+	node = 0;
+	num_nodes = x86_cpu_num_cores * x86_cpu_num_threads;
+	for (i = 0; i < size && node < num_nodes; i++)
+	{
+		for (j = 0; j < 8 && node < num_nodes; j++)
+		{
+			num_bits += mask[i] & (1 << j) ? 1 : 0;
+			node++;
+		}
+	}
+	if (!num_bits)
+	{
+		err = -EINVAL;
+		goto out;
+	}
+
+	/* Set context affinity */
+	node = 0;
+	for (i = 0; i < size && node < num_nodes; i++)
+		for (j = 0; j < 8 && node < num_nodes; j++)
+			bit_map_set(target_ctx->affinity, node++,
+					1, mask[i] & (1 << j) ? 1 : 0);
+
+out:
+	/* Success */
+	free(mask);
+	return err;
 }
 
 
@@ -5200,25 +5228,53 @@ static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
+	struct x86_ctx_t *target_ctx;
 
 	int pid;
-	int len;
-	int num_procs = 4;
+	int size;
+	int node;
+	int num_nodes;
+
+	int i;
+	int j;
 
 	unsigned int mask_ptr;
-	unsigned int mask = (1 << num_procs) - 1;
+	unsigned char *mask;
 
 	/* Arguments */
 	pid = regs->ebx;
-	len = regs->ecx;
+	size = regs->ecx;
 	mask_ptr = regs->edx;
-	x86_sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
+	x86_sys_debug("  pid=%d, size=%d, mask_ptr=0x%x\n",
+			pid, size, mask_ptr);
+	
+	/* Check valid size (assume reasonable maximum of 1KB) */
+	if (!IN_RANGE(size, 0, 1 << 10))
+		fatal("%s: invalid range for 'size' (%d)", __FUNCTION__, size);
 
-	/* FIXME: the affinity is set to 1 for num_procs processors and only the 4 LSBytes are set.
-	 * The return value is set to num_procs. This is the behavior on a 4-core processor
-	 * in a real system. */
-	mem_write(mem, mask_ptr, 4, &mask);
-	return num_procs;
+	/* Find context associated with 'pid'. If the value given in 'pid' is
+	 * zero, the current context is used. */
+	target_ctx = pid ? x86_ctx_get(pid) : ctx;
+	if (!target_ctx)
+		return -ESRCH;
+
+	/* Allocate mask */
+	mask = xcalloc(1, size);
+
+	/* Read mask from context affinity bitmap */
+	node = 0;
+	num_nodes = x86_cpu_num_cores * x86_cpu_num_threads;
+	for (i = 0; i < size && node < num_nodes; i++)
+		for (j = 0; j < 8 && node < num_nodes; j++)
+			mask[i] |= bit_map_get(target_ctx->affinity,
+					node++, 1) << j;
+	
+	/* Return mask */
+	mem_write(mem, mask_ptr, size, mask);
+	free(mask);
+
+	/* Return sizeof(cpu_set_t) = 32 */
+	return 32;
 }
 
 

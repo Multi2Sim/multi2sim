@@ -23,6 +23,7 @@
 #include <arch/x86/timing/cpu.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
@@ -97,6 +98,9 @@ static struct x86_ctx_t *ctx_do_create()
 {
 	struct x86_ctx_t *ctx;
 
+	int num_nodes;
+	int i;
+	
 	/* Initialize */
 	ctx = xcalloc(1, sizeof(struct x86_ctx_t));
 	ctx->pid = x86_emu->current_pid++;
@@ -112,6 +116,13 @@ static struct x86_ctx_t *ctx_do_create()
 	ctx->backup_regs = x86_regs_create();
 	ctx->signal_mask_table = x86_signal_mask_table_create();
 
+	/* Thread affinity mask, used only for timing simulation. It is
+	 * initialized to all 1's. */
+	num_nodes = x86_cpu_num_cores * x86_cpu_num_threads;
+	ctx->affinity = bit_map_create(num_nodes);
+	for (i = 0; i < num_nodes; i++)
+		bit_map_set(ctx->affinity, i, 1, 1);
+	
 	/* Return context */
 	return ctx;
 }
@@ -120,7 +131,7 @@ static struct x86_ctx_t *ctx_do_create()
 struct x86_ctx_t *x86_ctx_create(void)
 {
 	struct x86_ctx_t *ctx;
-	
+
 	ctx = ctx_do_create();
 
 	/* Loader */
@@ -134,7 +145,7 @@ struct x86_ctx_t *x86_ctx_create(void)
 	/* Signal handlers and file descriptor table */
 	ctx->signal_handler_table = x86_signal_handler_table_create();
 	ctx->file_desc_table = x86_file_desc_table_create();
-	
+
 	return ctx;
 }
 
@@ -231,6 +242,7 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	x86_regs_free(ctx->backup_regs);
 	x86_signal_mask_table_free(ctx->signal_mask_table);
 	spec_mem_free(ctx->spec_mem);
+	bit_map_free(ctx->affinity);
 
 	/* Unlink shared structures */
 	x86_loader_unlink(ctx->loader);
@@ -265,6 +277,8 @@ void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 	x86_sigset_dump(ctx->signal_mask_table->blocked, f);
 	fprintf(f, "\n  pending signals: 0x%llx ", ctx->signal_mask_table->pending);
 	x86_sigset_dump(ctx->signal_mask_table->pending, f);
+	fprintf(f, "\n  affinity mask: ");
+	bit_map_dump(ctx->affinity, 0, x86_cpu_num_cores * x86_cpu_num_threads, f);
 	fprintf(f, "\n");
 }
 
