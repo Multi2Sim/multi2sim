@@ -47,11 +47,11 @@ static int x86_cpu_can_fetch(int core, int thread)
 	unsigned int block;
 
 	/* Context must be running */
-	if (!ctx || !x86_ctx_get_status(ctx, x86_ctx_running))
+	if (!ctx || !x86_ctx_get_state(ctx, x86_ctx_running))
 		return 0;
 	
 	/* Fetch stalled or context evict signal activated */
-	if (X86_THREAD.fetch_stall_until >= arch->cycle || ctx->dealloc_signal)
+	if (X86_THREAD.fetch_stall_until >= arch->cycle || ctx->evict_signal)
 		return 0;
 	
 	/* Fetch queue must have not exceeded the limit of stored bytes
@@ -133,7 +133,7 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 		uop->eip = X86_THREAD.fetch_eip;
 		uop->in_fetch_queue = 1;
 		uop->trace_cache = fetch_trace_cache;
-		uop->specmode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+		uop->specmode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
 		uop->fetch_address = X86_THREAD.fetch_address;
 		uop->fetch_access = X86_THREAD.fetch_access;
 		uop->neip = ctx->regs->eip;
@@ -247,7 +247,7 @@ static int x86_cpu_fetch_thread_trace_cache(int core, int thread)
 	for (i = 0; i < mop_count; i++)
 	{
 		/* If instruction caused context to suspend or finish */
-		if (!x86_ctx_get_status(X86_THREAD.ctx, x86_ctx_running))
+		if (!x86_ctx_get_state(X86_THREAD.ctx, x86_ctx_running))
 			break;
 		
 		/* Insert decoded uops into the trace cache queue. In the simulation,
@@ -310,7 +310,7 @@ static void x86_cpu_fetch_thread(int core, int thread)
 	while ((X86_THREAD.fetch_neip & ~(X86_THREAD.inst_mod->block_size - 1)) == block)
 	{
 		/* If instruction caused context to suspend or finish */
-		if (!x86_ctx_get_status(ctx, x86_ctx_running))
+		if (!x86_ctx_get_state(ctx, x86_ctx_running))
 			break;
 	
 		/* If fetch queue full, stop fetching */

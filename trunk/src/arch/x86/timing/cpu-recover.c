@@ -91,7 +91,7 @@ void x86_cpu_recover(int core, int thread)
 	}
 
 	/* If we actually fetched wrong instructions, recover emulator */
-	if (x86_ctx_get_status(X86_THREAD.ctx, x86_ctx_spec_mode))
+	if (x86_ctx_get_state(X86_THREAD.ctx, x86_ctx_spec_mode))
 		x86_ctx_recover(X86_THREAD.ctx);
 	
 	/* Stall fetch and set eip to fetch. */

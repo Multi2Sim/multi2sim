@@ -41,7 +41,7 @@ typedef void (*x86_ctx_wakeup_callback_func_t)(struct x86_ctx_t *ctx, void *data
 struct x86_ctx_t
 {
 	/* Context properties */
-	int status;
+	int state;
 	int pid;  /* Context ID */
 	int address_space_index;  /* Virtual memory address space index */
 
@@ -75,11 +75,28 @@ struct x86_ctx_t
 	int str_op_dir;  /* Direction: 1 = forward, -1 = backward */
 	int str_op_count;  /* Number of iterations in string operation */
 
-	/* Allocation to hardware threads */
-	long long alloc_when;  /* esim_cycle of allocation */
-	long long dealloc_when;  /* esim_cycle of deallocation */
-	int alloc_core, alloc_thread;  /* core/thread id of last allocation */
-	int dealloc_signal;  /* signal to deallocate context */
+
+
+	/*
+	 * Context scheduling (timing simulation)
+	 */
+
+	/* Cycle when the context was allocated and evicted to a node (core/thread),
+	 * respectively. */
+	long long alloc_cycle;
+	long long evict_cycle;
+
+	/* The context is mapped and allocated, but its eviction is in progress.
+	 * It will be effectively evicted once the last instruction reaches the
+	 * commit stage. This value is set by 'x86_cpu_context_evict_signal'. */
+	int evict_signal;
+
+	/* If context is in state 'mapped', these two variables represent the
+	 * node (core/thread) associated with the context. */
+	int core;
+	int thread;
+
+
 
 	/* For segmented memory access in glibc */
 	unsigned int glibc_segment_base;
@@ -128,7 +145,10 @@ struct x86_ctx_t
 	struct x86_ctx_t *suspended_list_next, *suspended_list_prev;
 	struct x86_ctx_t *finished_list_next, *finished_list_prev;
 	struct x86_ctx_t *zombie_list_next, *zombie_list_prev;
-	struct x86_ctx_t *alloc_list_next, *alloc_list_prev;
+
+	/* List of contexts mapped to a hardware core/thread. This list is
+	 * managed by the timing simulator for scheduling purposes. */
+	struct x86_ctx_t *mapped_list_next, *mapped_list_prev;
 
 	/* Substructures */
 	struct x86_loader_t *loader;
@@ -151,7 +171,7 @@ struct x86_ctx_t
 	long long inst_count;
 };
 
-enum x86_ctx_status_t
+enum x86_ctx_state_t
 {
 	x86_ctx_running      = 0x00001,  /* it is able to run instructions */
 	x86_ctx_spec_mode    = 0x00002,  /* executing in speculative mode */
@@ -170,6 +190,7 @@ enum x86_ctx_status_t
 	x86_ctx_futex        = 0x04000,  /* suspended in a futex */
 	x86_ctx_alloc        = 0x08000,  /* allocated to a core/thread */
 	x86_ctx_callback     = 0x10000,  /* suspended after syscall with callback */
+	x86_ctx_mapped       = 0x20000,  /* mapped to a core/thread */
 	x86_ctx_none         = 0x00000
 };
 
@@ -192,8 +213,8 @@ void x86_ctx_suspend(struct x86_ctx_t *ctx,
 	void *can_wakeup_callback_data, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
 	void *wakeup_callback_data);
 
-void x86_ctx_finish(struct x86_ctx_t *ctx, int status);
-void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status);
+void x86_ctx_finish(struct x86_ctx_t *ctx, int state);
+void x86_ctx_finish_group(struct x86_ctx_t *ctx, int state);
 void x86_ctx_execute(struct x86_ctx_t *ctx);
 
 void x86_ctx_set_eip(struct x86_ctx_t *ctx, unsigned int eip);
@@ -202,9 +223,9 @@ void x86_ctx_recover(struct x86_ctx_t *ctx);
 struct x86_ctx_t *x86_ctx_get(int pid);
 struct x86_ctx_t *x86_ctx_get_zombie(struct x86_ctx_t *parent, int pid);
 
-int x86_ctx_get_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status);
-void x86_ctx_set_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status);
-void x86_ctx_clear_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status);
+int x86_ctx_get_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state);
+void x86_ctx_set_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state);
+void x86_ctx_clear_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state);
 
 int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex,
 	unsigned int count, unsigned int bitset);

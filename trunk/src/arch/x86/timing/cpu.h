@@ -110,12 +110,13 @@ extern int x86_trace_category;
 
 
 /* Fast access macros */
-#define X86_CORE		(x86_cpu->core[core])
-#define X86_THREAD		(x86_cpu->core[core].thread[thread])
-#define X86_CORE_IDX(I)		(x86_cpu->core[(I)])
-#define X86_THREAD_IDX(I)	(x86_cpu->core[core].thread[(I)])
-#define X86_CORE_FOR_EACH	for (core = 0; core < x86_cpu_num_cores; core++)
-#define X86_THREAD_FOR_EACH	for (thread = 0; thread < x86_cpu_num_threads; thread++)
+#define X86_CORE  (x86_cpu->core[core])
+#define X86_THREAD  (x86_cpu->core[core].thread[thread])
+#define X86_CORE_IDX(x)  (x86_cpu->core[(x)])
+#define X86_THREAD_IDX(x)  (x86_cpu->core[core].thread[(x)])
+#define X86_CORE_THREAD_IDX(x, y)  (x86_cpu->core[(x)].thread[(y)])
+#define X86_CORE_FOR_EACH  for (core = 0; core < x86_cpu_num_cores; core++)
+#define X86_THREAD_FOR_EACH  for (thread = 0; thread < x86_cpu_num_threads; thread++)
 
 
 /* Dispatch stall reasons */
@@ -136,8 +137,15 @@ enum x86_dispatch_stall_t
 /* Thread */
 struct x86_thread_t
 {
-	struct x86_ctx_t *ctx;  /* allocated kernel context */
-	int last_alloc_pid;  /* pid of last allocated context */
+	/* Context currently running in this thread. This is a context present
+	 * in the thread's 'mapped' list. */
+	struct x86_ctx_t *ctx;
+
+	/* Double-linked list of mapped contexts */
+	struct x86_ctx_t *mapped_list_head;
+	struct x86_ctx_t *mapped_list_tail;
+	int mapped_list_count;
+	int mapped_list_max;
 
 	/* Reorder buffer */
 	int rob_count;
@@ -322,9 +330,12 @@ struct x86_cpu_t
 	long long uop_id_counter;  /* Counter of uop ID assignment */
 	char *stage;  /* Name of currently simulated stage */
 
-	/* Context allocations */
-	long long ctx_alloc_oldest;  /* Time when oldest context was allocated */
-	int ctx_dealloc_signals;  /* Sent deallocation signals */
+	/* From all contexts in the 'alloc' list of 'x86_emu', minimum value
+	 * of variable 'ctx->alloc_cycle'. This value is used to decide whether
+	 * the scheduler should be called at all to check for any context whose
+	 * execution quantum has expired. These variables are updated by calling
+	 * 'x86_cpu_update_min_alloc_cycle' */
+	long long min_alloc_cycle;
 	
 	/* List containing uops that need to report an 'end_inst' trace event */
 	struct linked_list_t *uop_trace_list;
@@ -358,8 +369,7 @@ void x86_cpu_dump_summary(FILE *f);
 void x86_cpu_update_occupancy_stats(void);
 
 int x86_cpu_pipeline_empty(int core, int thread);
-void x86_cpu_map_context(int core, int thread, struct x86_ctx_t *ctx);
-void x86_cpu_unmap_context(int core, int thread);
+void x86_cpu_evict_context(int core, int thread);
 void x86_cpu_schedule(void);
 
 void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop);

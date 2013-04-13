@@ -66,7 +66,7 @@ static x86_isa_inst_func_t x86_isa_inst_func[x86_opcode_count] =
 void x86_isa_mem_read(struct x86_ctx_t *ctx, unsigned int addr, int size, void *buf)
 {
 	/* Speculative mode read */
-	if (ctx->status & x86_ctx_spec_mode)
+	if (ctx->state & x86_ctx_spec_mode)
 	{
 		spec_mem_read(ctx->spec_mem, addr, size, buf);
 		return;
@@ -80,7 +80,7 @@ void x86_isa_mem_read(struct x86_ctx_t *ctx, unsigned int addr, int size, void *
 void x86_isa_mem_write(struct x86_ctx_t *ctx, unsigned int addr, int size, void *buf)
 {
 	/* Speculative mode write */
-	if (ctx->status & x86_ctx_spec_mode)
+	if (ctx->state & x86_ctx_spec_mode)
 	{
 		spec_mem_write(ctx->spec_mem, addr, size, buf);
 		return;
@@ -97,7 +97,7 @@ void x86_isa_error(struct x86_ctx_t *ctx, char *fmt, ...)
 	va_start(va, fmt);
 
 	/* No error shown on speculative mode */
-	if (ctx->status & x86_ctx_spec_mode)
+	if (ctx->state & x86_ctx_spec_mode)
 		return;
 
 	/* Error */
@@ -169,7 +169,7 @@ static void x86_isa_debug_call(struct x86_ctx_t *ctx)
 	int i;
 
 	/* Do nothing on speculative mode */
-	if (ctx->status & x86_ctx_spec_mode)
+	if (ctx->state & x86_ctx_spec_mode)
 		return;
 
 	/* Call or return. Otherwise, exit */
@@ -687,7 +687,7 @@ void x86_isa_store_float(struct x86_ctx_t *ctx, float value)
 }
 
 
-/* Store the code bits (14, 10, 9, and 8) of the FPU status word into
+/* Store the code bits (14, 10, 9, and 8) of the FPU state word into
  * the 'code' register. */
 void x86_isa_store_fpu_code(struct x86_ctx_t *ctx, unsigned short status)
 {
@@ -701,7 +701,7 @@ void x86_isa_store_fpu_code(struct x86_ctx_t *ctx, unsigned short status)
 }
 
 
-/* Read the status register, by building it from the 'top' and
+/* Read the state register, by building it from the 'top' and
  * 'code' fields. */
 unsigned short x86_isa_load_fpu_status(struct x86_ctx_t *ctx)
 {

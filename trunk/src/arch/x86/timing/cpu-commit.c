@@ -49,7 +49,7 @@ static int x86_cpu_can_commit_thread(int core, int thread)
 
 	/* Sanity check - If the context is running, we assume that something is
 	 * going wrong if more than 1M cycles go by without committing an inst. */
-	if (!ctx || !x86_ctx_get_status(ctx, x86_ctx_running))
+	if (!ctx || !x86_ctx_get_state(ctx, x86_ctx_running))
 		X86_THREAD.last_commit_cycle = arch->cycle;
 	if (arch->cycle - X86_THREAD.last_commit_cycle > 1000000)
 	{
@@ -170,8 +170,8 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 
 	/* If context eviction signal is activated and pipeline is empty,
 	 * deallocate context. */
-	if (ctx->dealloc_signal && x86_cpu_pipeline_empty(core, thread))
-		x86_cpu_unmap_context(core, thread);
+	if (ctx->evict_signal && x86_cpu_pipeline_empty(core, thread))
+		x86_cpu_evict_context(core, thread);
 }
 
 
