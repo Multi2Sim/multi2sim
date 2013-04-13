@@ -99,9 +99,9 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 	if (arch->sim_kind == arch_sim_kind_detailed)
 	{
 		/* Standard */
-		cycles_per_sec = time_in_sec > 0.0 ? (double) arch->cycle_count
+		cycles_per_sec = time_in_sec > 0.0 ? (double) arch->cycle
 				/ time_in_sec : 0.0;
-		fprintf(f, "Cycles = %lld\n", arch->cycle_count);
+		fprintf(f, "Cycles = %lld\n", arch->cycle);
 		fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 
 		/* Architecture-specific */

@@ -108,7 +108,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = arch->cycle_count + evg_gpu_cf_engine_inst_mem_latency;
+	uop->inst_mem_ready = arch->cycle + evg_gpu_cf_engine_inst_mem_latency;
 
 	/* Insert uop to fetch buffer */
 	assert(!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit]);

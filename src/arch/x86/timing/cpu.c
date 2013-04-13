@@ -519,9 +519,9 @@ static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix,
 	fprintf(f, "%s.Ctrl = %lld\n", prefix, uinst_ctrl_count);
 	fprintf(f, "%s.WndSwitch = %lld\n", prefix, uop_stats[x86_uinst_call] + uop_stats[x86_uinst_ret]);
 	fprintf(f, "%s.Total = %lld\n", prefix, uinst_total);
-	fprintf(f, "%s.IPC = %.4g\n", prefix, arch->cycle_count ? (double) uinst_total / arch->cycle_count : 0.0);
-	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, arch->cycle_count && peak_ipc ?
-		(double) uinst_total / arch->cycle_count / peak_ipc : 0.0);
+	fprintf(f, "%s.IPC = %.4g\n", prefix, arch->cycle ? (double) uinst_total / arch->cycle : 0.0);
+	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, arch->cycle && peak_ipc ?
+		(double) uinst_total / arch->cycle / peak_ipc : 0.0);
 	fprintf(f, "\n");
 }
 
@@ -533,7 +533,7 @@ static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix,
 #define DUMP_CORE_STRUCT_STATS(NAME, ITEM) { \
 	fprintf(f, #NAME ".Size = %d\n", (int) x86_##ITEM##_size * x86_cpu_num_threads); \
 	if (x86_cpu_occupancy_stats) \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", arch->cycle_count ? (double) X86_CORE.ITEM##_occupancy / arch->cycle_count : 0.0); \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", arch->cycle ? (double) X86_CORE.ITEM##_occupancy / arch->cycle : 0.0); \
 	fprintf(f, #NAME ".Full = %lld\n", X86_CORE.ITEM##_full); \
 	fprintf(f, #NAME ".Reads = %lld\n", X86_CORE.ITEM##_reads); \
 	fprintf(f, #NAME ".Writes = %lld\n", X86_CORE.ITEM##_writes); \
@@ -542,7 +542,7 @@ static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix,
 #define DUMP_THREAD_STRUCT_STATS(NAME, ITEM) { \
 	fprintf(f, #NAME ".Size = %d\n", (int) x86_##ITEM##_size); \
 	if (x86_cpu_occupancy_stats) \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", arch->cycle_count ? (double) X86_THREAD.ITEM##_occupancy / arch->cycle_count : 0.0); \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", arch->cycle ? (double) X86_THREAD.ITEM##_occupancy / arch->cycle : 0.0); \
 	fprintf(f, #NAME ".Full = %lld\n", X86_THREAD.ITEM##_full); \
 	fprintf(f, #NAME ".Reads = %lld\n", X86_THREAD.ITEM##_reads); \
 	fprintf(f, #NAME ".Writes = %lld\n", X86_THREAD.ITEM##_writes); \
@@ -574,9 +574,9 @@ static void x86_cpu_dump_report(void)
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
 	fprintf(f, "; Global statistics\n");
 	fprintf(f, "[ Global ]\n\n");
-	fprintf(f, "Cycles = %lld\n", arch->cycle_count);
+	fprintf(f, "Cycles = %lld\n", arch->cycle);
 	fprintf(f, "Time = %.2f\n", (double) now / 1000000);
-	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) arch->cycle_count / now * 1000000 : 0.0);
+	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) arch->cycle / now * 1000000 : 0.0);
 	fprintf(f, "MemoryUsed = %lu\n", (long) mem_mapped_space);
 	fprintf(f, "MemoryUsedMax = %lu\n", (long) mem_max_mapped_space);
 	fprintf(f, "\n");
@@ -862,8 +862,8 @@ void x86_cpu_dump(FILE *f)
 	/* General information */
 	fprintf(f, "\n");
 	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", x86_cpu->last_dump);
-	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", arch->cycle_count - x86_cpu->last_dump > 0 ?
-		(double) (x86_cpu->num_committed_uinst - x86_cpu->last_committed) / (arch->cycle_count - x86_cpu->last_dump) : 0);
+	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", arch->cycle - x86_cpu->last_dump > 0 ?
+		(double) (x86_cpu->num_committed_uinst - x86_cpu->last_committed) / (arch->cycle - x86_cpu->last_dump) : 0);
 	fprintf(f, "\n");
 
 	/* Cores */
@@ -902,7 +902,7 @@ void x86_cpu_dump(FILE *f)
 	}
 
 	/* Register last dump */
-	x86_cpu->last_dump = arch->cycle_count;
+	x86_cpu->last_dump = arch->cycle;
 	x86_cpu->last_committed = x86_cpu->num_committed_uinst;
 }
 
@@ -916,8 +916,8 @@ void x86_cpu_dump_summary(FILE *f)
 	double branch_acc;
 
 	/* Calculate statistics */
-	inst_per_cycle = arch->cycle_count ? (double) x86_cpu->num_committed_inst / arch->cycle_count : 0.0;
-	uinst_per_cycle = arch->cycle_count ? (double) x86_cpu->num_committed_uinst / arch->cycle_count : 0.0;
+	inst_per_cycle = arch->cycle ? (double) x86_cpu->num_committed_inst / arch->cycle : 0.0;
+	uinst_per_cycle = arch->cycle ? (double) x86_cpu->num_committed_uinst / arch->cycle : 0.0;
 	branch_acc = x86_cpu->num_branch_uinst ? (double) (x86_cpu->num_branch_uinst - x86_cpu->num_mispred_branch_uinst) / x86_cpu->num_branch_uinst : 0.0;
 
 	/* Print statistics */
@@ -1025,7 +1025,7 @@ void x86_cpu_run_stages()
 	 * 'spec_mode', or quantum of the oldest context expired, and no context
 	 * is being evicted. */
 	if (x86_emu->context_reschedule || x86_cpu->ctx_alloc_oldest +
-			x86_cpu_context_quantum <= arch->cycle_count)
+			x86_cpu_context_quantum <= arch->cycle)
 	{
 		x86_cpu_schedule();
 		x86_emu->context_reschedule = 0;
@@ -1086,7 +1086,7 @@ enum arch_sim_kind_t x86_cpu_run(void)
 		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
-	if (x86_emu_max_cycles && arch->cycle_count >= x86_emu_max_cycles)
+	if (x86_emu_max_cycles && arch->cycle >= x86_emu_max_cycles)
 		esim_finish = esim_finish_x86_max_cycles;
 
 	/* Stop if any previous reason met */
@@ -1094,7 +1094,7 @@ enum arch_sim_kind_t x86_cpu_run(void)
 		return arch_sim_kind_invalid;
 
 	/* One more cycle of x86 timing simulation */
-	arch->cycle_count++;
+	arch->cycle++;
 
 	/* Empty uop trace list. This dumps the last trace line for instructions
 	 * that were freed in the previous simulation cycle. */
