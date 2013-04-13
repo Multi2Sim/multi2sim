@@ -172,41 +172,7 @@ void x86_cpu_unmap_context_signal(struct x86_ctx_t *ctx)
 }
 
 
-void x86_cpu_static_schedule()
-{
-	struct arch_t *arch = x86_emu->arch;
-	struct x86_ctx_t *ctx;
-	int node;
-
-	x86_ctx_debug("cycle %lld: static scheduler called\n",
-		arch->cycle_count);
-	
-	/* If there is no new unallocated context, exit. */
-	assert(x86_emu->alloc_list_count <= x86_emu->context_list_count);
-	if (x86_emu->alloc_list_count == x86_emu->context_list_count)
-		return;
-	
-	/* Allocate all unallocated contexts. */
-	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)
-	{
-		/* Context is allocated. */
-		if (x86_ctx_get_status(ctx, x86_ctx_alloc))
-			continue;
-
-		/* Find free node. If none free, static scheduler aborts
-		 * simulation with an error. */
-		node = x86_cpu_context_to_cpu(ctx);
-		if (node < 0)
-			fatal("no core/thread free for context %d; increase number of cores/threads"
-				" or activate the context scheduler.", ctx->pid);
-
-		/* Allocate context. */
-		x86_cpu_map_context(node / x86_cpu_num_threads, node % x86_cpu_num_threads, ctx);
-	}
-}
-
-
-void x86_cpu_dynamic_schedule()
+void x86_cpu_schedule()
 {
 	struct arch_t *arch = x86_emu->arch;
 	struct x86_ctx_t *ctx, *found_ctx;
@@ -214,6 +180,11 @@ void x86_cpu_dynamic_schedule()
 
 	x86_ctx_debug("cycle %lld: scheduler called\n",
 		arch->cycle_count);
+
+	/* Don't do anything if there is currently any context that has been
+	 * signaled to be evicted, but hasn't completely left the pipeline. */
+	if (x86_cpu->ctx_dealloc_signals)
+		return;
 	
 	/* Evict non-running contexts */
 	for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)

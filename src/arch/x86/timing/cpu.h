@@ -49,7 +49,6 @@ extern int x86_cpu_num_cores;
 extern int x86_cpu_num_threads;
 
 extern int x86_cpu_context_quantum;
-extern int x86_cpu_context_switch;
 
 extern int x86_cpu_thread_quantum;
 extern int x86_cpu_thread_switch_penalty;
@@ -361,8 +360,7 @@ void x86_cpu_update_occupancy_stats(void);
 int x86_cpu_pipeline_empty(int core, int thread);
 void x86_cpu_map_context(int core, int thread, struct x86_ctx_t *ctx);
 void x86_cpu_unmap_context(int core, int thread);
-void x86_cpu_static_schedule(void);
-void x86_cpu_dynamic_schedule(void);
+void x86_cpu_schedule(void);
 
 void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop);
 void x86_cpu_uop_trace_list_empty(void);
