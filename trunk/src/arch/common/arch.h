@@ -100,7 +100,7 @@ struct arch_t
 	struct m2s_timer_t *timer;
 
 	/* Counters */
-	long long cycle_count;
+	long long cycle;
 	long long inst_count;
 };
 

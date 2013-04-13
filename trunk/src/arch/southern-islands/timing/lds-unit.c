@@ -54,7 +54,7 @@ void si_lds_complete(struct si_lds_t *lds)
 		assert(uop);
 
 		/* Uop is not ready */
-		if (arch->cycle_count < uop->write_ready)
+		if (arch->cycle < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -134,7 +134,7 @@ void si_lds_write(struct si_lds_t *lds)
 		}
 
 		/* Access complete, remove the uop from the queue */
-		uop->write_ready = arch->cycle_count + si_gpu_lds_write_latency;
+		uop->write_ready = arch->cycle + si_gpu_lds_write_latency;
 		list_remove(lds->mem_buffer, uop);
 		list_enqueue(lds->write_buffer, uop);
 
@@ -173,7 +173,7 @@ void si_lds_mem(struct si_lds_t *lds)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle_count < uop->read_ready)
+		if (arch->cycle < uop->read_ready)
         	{
 			list_index++;
 			continue;
@@ -298,13 +298,13 @@ void si_lds_read(struct si_lds_t *lds)
 		}
 
 		/* Uop is not ready yet */
-		if (arch->cycle_count < uop->decode_ready)
+		if (arch->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
 		}
 		
-		uop->read_ready = arch->cycle_count + si_gpu_lds_read_latency;
+		uop->read_ready = arch->cycle + si_gpu_lds_read_latency;
 		list_remove(lds->decode_buffer, uop);
 		list_enqueue(lds->read_buffer, uop);
 
@@ -337,7 +337,7 @@ void si_lds_decode(struct si_lds_t *lds)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch->cycle_count < uop->issue_ready)
+		if (arch->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -370,7 +370,7 @@ void si_lds_decode(struct si_lds_t *lds)
 			continue;
 		}
 
-		uop->decode_ready = arch->cycle_count + si_gpu_lds_decode_latency;
+		uop->decode_ready = arch->cycle + si_gpu_lds_decode_latency;
 		list_remove(lds->issue_buffer, uop);
 		list_enqueue(lds->decode_buffer, uop);
 

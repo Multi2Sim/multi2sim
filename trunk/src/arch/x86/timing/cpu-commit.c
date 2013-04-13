@@ -50,8 +50,8 @@ static int x86_cpu_can_commit_thread(int core, int thread)
 	/* Sanity check - If the context is running, we assume that something is
 	 * going wrong if more than 1M cycles go by without committing an inst. */
 	if (!ctx || !x86_ctx_get_status(ctx, x86_ctx_running))
-		X86_THREAD.last_commit_cycle = arch->cycle_count;
-	if (arch->cycle_count - X86_THREAD.last_commit_cycle > 1000000)
+		X86_THREAD.last_commit_cycle = arch->cycle;
+	if (arch->cycle - X86_THREAD.last_commit_cycle > 1000000)
 	{
 		warning("core-thread %d-%d: simulation ended due to commit stall.\n%s",
 			core, thread, err_x86_cpu_commit_stall);
@@ -122,7 +122,7 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 			x86_trace_cache_new_uop(X86_THREAD.trace_cache, uop);
 			
 		/* Statistics */
-		X86_THREAD.last_commit_cycle = arch->cycle_count;
+		X86_THREAD.last_commit_cycle = arch->cycle;
 		X86_THREAD.num_committed_uinst_array[uop->uinst->opcode]++;
 		X86_CORE.num_committed_uinst_array[uop->uinst->opcode]++;
 		x86_cpu->num_committed_uinst_array[uop->uinst->opcode]++;

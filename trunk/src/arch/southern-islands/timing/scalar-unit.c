@@ -57,7 +57,7 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 		uop = list_get(scalar_unit->write_buffer, list_index);
 		assert(uop);
 
-		if (arch->cycle_count < uop->write_ready)
+		if (arch->cycle < uop->write_ready)
 		{
 			/* Uop is not ready yet */
 			list_index++;
@@ -237,7 +237,7 @@ void si_scalar_unit_write(struct si_scalar_unit_t *scalar_unit)
 				continue;
 			}
 			
-			uop->write_ready = arch->cycle_count + 
+			uop->write_ready = arch->cycle + 
 				si_gpu_scalar_unit_write_latency;
 
 			list_remove(scalar_unit->exec_buffer, uop);
@@ -251,7 +251,7 @@ void si_scalar_unit_write(struct si_scalar_unit_t *scalar_unit)
 		else /* ALU instruction */ 
 		{
 			/* Uop is not ready yet */
-			if (arch->cycle_count < uop->execute_ready)
+			if (arch->cycle < uop->execute_ready)
 			{
 				list_index++;
 				continue;
@@ -288,7 +288,7 @@ void si_scalar_unit_write(struct si_scalar_unit_t *scalar_unit)
 				continue;
 			}
 
-			uop->write_ready = arch->cycle_count + 
+			uop->write_ready = arch->cycle + 
 				si_gpu_scalar_unit_write_latency;
 
 			list_remove(scalar_unit->exec_buffer, uop);
@@ -324,7 +324,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle_count < uop->read_ready)
+		if (arch->cycle < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -386,7 +386,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		}
 		else /* ALU Instruction */
 		{
-			uop->execute_ready = arch->cycle_count + 
+			uop->execute_ready = arch->cycle + 
 				si_gpu_scalar_unit_exec_latency;
 
 			/* Transfer the uop to the execution buffer */
@@ -424,7 +424,7 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle_count < uop->decode_ready)
+		if (arch->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -456,7 +456,7 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 			continue;
 		}
 
-		uop->read_ready = arch->cycle_count + 
+		uop->read_ready = arch->cycle + 
 			si_gpu_scalar_unit_read_latency;
 
 		list_remove(scalar_unit->decode_buffer, uop);
@@ -491,7 +491,7 @@ void si_scalar_unit_decode(struct si_scalar_unit_t *scalar_unit)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch->cycle_count < uop->issue_ready)
+		if (arch->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -523,7 +523,7 @@ void si_scalar_unit_decode(struct si_scalar_unit_t *scalar_unit)
 			continue;
 		}
 
-		uop->decode_ready = arch->cycle_count + 
+		uop->decode_ready = arch->cycle + 
 			si_gpu_scalar_unit_decode_latency;
 
 		list_remove(scalar_unit->issue_buffer, uop);

@@ -51,7 +51,7 @@ void si_branch_unit_complete(struct si_branch_unit_t *branch_unit)
 		uop = list_get(branch_unit->write_buffer, list_index);
 		assert(uop);
 
-		if (arch->cycle_count < uop->write_ready)
+		if (arch->cycle < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -97,7 +97,7 @@ void si_branch_unit_write(struct si_branch_unit_t *branch_unit)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch->cycle_count < uop->execute_ready)
+		if (arch->cycle < uop->execute_ready)
 		{
 			list_index++;
 			continue;
@@ -130,7 +130,7 @@ void si_branch_unit_write(struct si_branch_unit_t *branch_unit)
 			continue;
 		}
 
-		uop->write_ready = arch->cycle_count + 
+		uop->write_ready = arch->cycle + 
 			si_gpu_branch_unit_write_latency;
 		list_remove(branch_unit->exec_buffer, uop);
 		list_enqueue(branch_unit->write_buffer, uop);
@@ -164,7 +164,7 @@ void si_branch_unit_execute(struct si_branch_unit_t *branch_unit)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle_count < uop->read_ready)
+		if (arch->cycle < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -198,7 +198,7 @@ void si_branch_unit_execute(struct si_branch_unit_t *branch_unit)
 		}
 
 		/* Branch */
-		uop->execute_ready = arch->cycle_count + 
+		uop->execute_ready = arch->cycle + 
 			si_gpu_branch_unit_exec_latency;
 
 		/* Transfer the uop to the outstanding execution buffer */
@@ -234,7 +234,7 @@ void si_branch_unit_read(struct si_branch_unit_t *branch_unit)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch->cycle_count < uop->decode_ready)
+		if (arch->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -267,7 +267,7 @@ void si_branch_unit_read(struct si_branch_unit_t *branch_unit)
 			continue;
 		}
 
-		uop->read_ready = arch->cycle_count + 
+		uop->read_ready = arch->cycle + 
 			si_gpu_branch_unit_read_latency;
 
 		list_remove(branch_unit->decode_buffer, uop);
@@ -302,7 +302,7 @@ void si_branch_unit_decode(struct si_branch_unit_t *branch_unit)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch->cycle_count < uop->issue_ready)
+		if (arch->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -335,7 +335,7 @@ void si_branch_unit_decode(struct si_branch_unit_t *branch_unit)
 			continue;
 		}
 
-		uop->decode_ready = arch->cycle_count + 
+		uop->decode_ready = arch->cycle + 
 			si_gpu_branch_unit_decode_latency;
 
 		list_remove(branch_unit->issue_buffer, uop);

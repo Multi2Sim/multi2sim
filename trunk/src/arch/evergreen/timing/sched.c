@@ -120,7 +120,7 @@ static struct evg_wavefront_t *evg_schedule_greedy(struct evg_compute_unit_t *co
 	linked_list_find(wavefront_pool, temp_wavefront);
 	assert(!wavefront_pool->error_code);
 	linked_list_remove(wavefront_pool);
-	temp_wavefront->sched_when = arch->cycle_count;
+	temp_wavefront->sched_when = arch->cycle;
 	return temp_wavefront;
 }
 

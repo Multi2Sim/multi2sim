@@ -113,7 +113,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = arch->cycle_count + evg_gpu_tex_engine_inst_mem_latency;
+	uop->inst_mem_ready = arch->cycle + evg_gpu_tex_engine_inst_mem_latency;
 
 	/* Enqueue uop into fetch queue */
 	linked_list_out(compute_unit->tex_engine.fetch_queue);
@@ -157,7 +157,7 @@ static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 		return;
 
 	/* If uop is still being fetched from instruction memory, done */
-	if (uop->inst_mem_ready > arch->cycle_count)
+	if (uop->inst_mem_ready > arch->cycle)
 		return;
 
 	/* If instruction buffer is occupied, done */

@@ -25,6 +25,7 @@
 #include <arch/x86/emu/regs.h>
 #include <lib/esim/trace.h>
 #include <lib/util/debug.h>
+#include <lib/util/misc.h>
 #include <lib/util/list.h>
 
 #include "cpu.h"
@@ -96,10 +97,10 @@ void x86_cpu_map_context(int core, int thread, struct x86_ctx_t *ctx)
 	x86_ctx_set_status(ctx, x86_ctx_alloc);
 	ctx->alloc_core = core;
 	ctx->alloc_thread = thread;
-	ctx->alloc_when = arch->cycle_count;
+	ctx->alloc_when = arch->cycle;
 
 	x86_ctx_debug("cycle %lld: ctx %d allocated to c%dt%d\n",
-		arch->cycle_count, ctx->pid, core, thread);
+		arch->cycle, ctx->pid, core, thread);
 
 	/* Trace */
 	x86_trace("x86.map_ctx ctx=%d core=%d thread=%d ppid=%d\n",
@@ -123,12 +124,12 @@ void x86_cpu_unmap_context(int core, int thread)
 	X86_THREAD.fetch_neip = 0;
 
 	x86_ctx_clear_status(ctx, x86_ctx_alloc);
-	ctx->dealloc_when = arch->cycle_count;
+	ctx->dealloc_when = arch->cycle;
 	ctx->dealloc_signal = 0;
 	x86_cpu->ctx_dealloc_signals--;
 
 	x86_ctx_debug("cycle %lld: ctx %d evicted from c%dt%d\n",
-		arch->cycle_count, ctx->pid, core, thread);
+		arch->cycle, ctx->pid, core, thread);
 	
 	/* Trace */
 	x86_trace("x86.unmap_ctx ctx=%d core=%d thread=%d\n",
@@ -165,7 +166,7 @@ void x86_cpu_unmap_context_signal(struct x86_ctx_t *ctx)
 	core = ctx->alloc_core;
 	thread = ctx->alloc_thread;
 	x86_ctx_debug("cycle %lld: ctx %d receives eviction signal from c%dt%d\n",
-		arch->cycle_count, ctx->pid, core, thread);
+		arch->cycle, ctx->pid, core, thread);
 	if (x86_cpu_pipeline_empty(core, thread))
 		x86_cpu_unmap_context(core, thread);
 		
@@ -179,7 +180,7 @@ void x86_cpu_schedule()
 	int node;
 
 	x86_ctx_debug("cycle %lld: scheduler called\n",
-		arch->cycle_count);
+		arch->cycle);
 
 	/* Don't do anything if there is currently any context that has been
 	 * signaled to be evicted, but hasn't completely left the pipeline. */
@@ -187,7 +188,7 @@ void x86_cpu_schedule()
 		return;
 	
 	/* Evict non-running contexts */
-	for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
+	DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, alloc, ctx)
 		if (!ctx->dealloc_signal && !x86_ctx_get_status(ctx, x86_ctx_running))
 			x86_cpu_unmap_context_signal(ctx);
 
@@ -195,18 +196,18 @@ void x86_cpu_schedule()
 	 * and exit. */
 	if (x86_emu->alloc_list_count == x86_emu->running_list_count)
 	{
-		x86_cpu->ctx_alloc_oldest = arch->cycle_count;
-		for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
-			ctx->alloc_when = arch->cycle_count;
+		x86_cpu->ctx_alloc_oldest = arch->cycle;
+		DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, alloc, ctx)
+			ctx->alloc_when = arch->cycle;
 		return;
 	}
 
 	/* If any quantum expired and no context eviction signal is activated,
 	 * send signal to evict the oldest allocated context. */
-	if (!x86_cpu->ctx_dealloc_signals && x86_cpu->ctx_alloc_oldest + x86_cpu_context_quantum <= arch->cycle_count)
+	if (!x86_cpu->ctx_dealloc_signals && x86_cpu->ctx_alloc_oldest + x86_cpu_context_quantum <= arch->cycle)
 	{
 		found_ctx = NULL;
-		for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
+		DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, alloc, ctx)
 			if (!found_ctx || ctx->alloc_when < found_ctx->alloc_when)
 				found_ctx = ctx;
 		if (found_ctx)
@@ -214,12 +215,16 @@ void x86_cpu_schedule()
 	}
 	
 	/* Allocate running contexts */
-	while (x86_emu->alloc_list_count < x86_emu->running_list_count && x86_emu->alloc_list_count < x86_cpu_num_cores * x86_cpu_num_threads)
+	while (x86_emu->alloc_list_count < x86_emu->running_list_count &&
+			x86_emu->alloc_list_count < x86_cpu_num_cores * x86_cpu_num_threads)
 	{
-		/* Find running, non-allocated context with lowest dealloc_when value. */
+		/* Find running, non-allocated context with lowest dealloc_when
+		 * value. */
 		found_ctx = NULL;
-		for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
-			if (!x86_ctx_get_status(ctx, x86_ctx_alloc) && (!found_ctx || ctx->dealloc_when < found_ctx->dealloc_when))
+		DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, running, ctx)
+			if (!x86_ctx_get_status(ctx, x86_ctx_alloc) &&
+					(!found_ctx || ctx->dealloc_when
+					< found_ctx->dealloc_when))
 				found_ctx = ctx;
 		if (!found_ctx)
 			break;
@@ -232,8 +237,8 @@ void x86_cpu_schedule()
 	}
 
 	/* Calculate the context that was allocated first */
-	x86_cpu->ctx_alloc_oldest = arch->cycle_count;
-	for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
+	x86_cpu->ctx_alloc_oldest = arch->cycle;
+	DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, alloc, ctx)
 		if (!ctx->dealloc_signal && ctx->alloc_when < x86_cpu->ctx_alloc_oldest)
 			x86_cpu->ctx_alloc_oldest = ctx->alloc_when;
 }

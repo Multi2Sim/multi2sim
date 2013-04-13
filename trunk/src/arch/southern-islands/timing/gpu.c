@@ -1216,8 +1216,8 @@ void si_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = arch->cycle_count ? 
-		(double)(arch->inst_count/arch->cycle_count) : 0.0;
+	inst_per_cycle = arch->cycle ? 
+		(double)(arch->inst_count/arch->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
 	fprintf(f, "WorkGroupCount = %lld\n", si_emu->work_group_count);
@@ -1232,7 +1232,7 @@ void si_gpu_dump_report(void)
 	fprintf(f, "LDSInstructions = %lld\n", si_emu->lds_inst_count);
 	fprintf(f, "VectorMemInstructions = %lld\n", 
 		si_emu->vector_mem_inst_count);
-	fprintf(f, "Cycles = %lld\n", arch->cycle_count);
+	fprintf(f, "Cycles = %lld\n", arch->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
@@ -1330,10 +1330,10 @@ enum arch_sim_kind_t si_gpu_run(void)
 	}
 
 	/* One more cycle */
-	arch->cycle_count++;
+	arch->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (si_emu_max_cycles && arch->cycle_count >= si_emu_max_cycles)
+	if (si_emu_max_cycles && arch->cycle >= si_emu_max_cycles)
 		esim_finish = esim_finish_si_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
@@ -1341,7 +1341,7 @@ enum arch_sim_kind_t si_gpu_run(void)
 		esim_finish = esim_finish_si_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((arch->cycle_count-si_gpu->last_complete_cycle) > 1000000)
+	if ((arch->cycle-si_gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", 
 			si_err_stall);
