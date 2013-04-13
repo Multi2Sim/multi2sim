@@ -82,21 +82,6 @@ struct x86_emu_t
 	int alloc_list_max;
 };
 
-enum x86_emu_list_kind_t
-{
-	x86_emu_list_context = 0,
-	x86_emu_list_running,
-	x86_emu_list_suspended,
-	x86_emu_list_zombie,
-	x86_emu_list_finished,
-	x86_emu_list_alloc
-};
-
-void x86_emu_list_insert_head(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
-void x86_emu_list_insert_tail(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
-void x86_emu_list_remove(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
-int x86_emu_list_member(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
-
 
 /* x86 emulator and architecture */
 extern struct x86_emu_t *x86_emu;
