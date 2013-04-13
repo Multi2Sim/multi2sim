@@ -53,7 +53,7 @@ void frm_simd_complete(struct frm_simd_t *simd)
 		assert(uop);
 		frm_gpu_debug("uop name = %s\n", ((uop->inst).info)->name);
 
-		if (arch->cycle_count < uop->execute_ready)
+		if (arch->cycle < uop->execute_ready)
 		{
 			list_index++;
 			continue;
@@ -119,7 +119,7 @@ void frm_simd_execute(struct frm_simd_t *simd)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle_count < uop->decode_ready)
+		if (arch->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -154,7 +154,7 @@ void frm_simd_execute(struct frm_simd_t *simd)
 
 		/* Includes time for pipelined read-exec-write of 
 		 * all subwarps */
-		uop->execute_ready = arch->cycle_count + frm_gpu_simd_exec_latency;
+		uop->execute_ready = arch->cycle + frm_gpu_simd_exec_latency;
 
 		/* Transfer the uop to the outstanding execution buffer */
 		list_remove(simd->decode_buffer, uop);
@@ -190,7 +190,7 @@ void frm_simd_decode(struct frm_simd_t *simd)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch->cycle_count < uop->issue_ready)
+		if (arch->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -223,7 +223,7 @@ void frm_simd_decode(struct frm_simd_t *simd)
 			continue;
 		}
 
-		uop->decode_ready = arch->cycle_count + frm_gpu_simd_decode_latency;
+		uop->decode_ready = arch->cycle + frm_gpu_simd_decode_latency;
 		list_remove(simd->issue_buffer, uop);
 		list_enqueue(simd->decode_buffer, uop);
 

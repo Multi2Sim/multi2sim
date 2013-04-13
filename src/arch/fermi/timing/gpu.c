@@ -1029,8 +1029,8 @@ void frm_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = arch->cycle_count ? 
-		(double)(arch->inst_count / arch->cycle_count) : 0.0;
+	inst_per_cycle = arch->cycle ? 
+		(double)(arch->inst_count / arch->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "GridCount = %d\n", frm_emu->grid_count);
 	fprintf(f, "Instructions = %lld\n", arch->inst_count);
@@ -1038,7 +1038,7 @@ void frm_gpu_dump_report(void)
 	fprintf(f, "ALUInstructions = %lld\n", frm_emu->vector_alu_inst_count);
 	fprintf(f, "SharedMemInstructions = %lld\n", frm_emu->lds_inst_count);
 	fprintf(f, "GlobalMemInstructions = %lld\n", frm_emu->vector_mem_inst_count);
-	fprintf(f, "Cycles = %lld\n", arch->cycle_count);
+	fprintf(f, "Cycles = %lld\n", arch->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
@@ -1140,13 +1140,13 @@ enum arch_sim_kind_t frm_gpu_run(void)
 				grid->pending_list_head);
 	}
 
-	frm_gpu_debug("cycle = %lld\n", arch->cycle_count);
+	frm_gpu_debug("cycle = %lld\n", arch->cycle);
 
 	/* One more cycle */
-	arch->cycle_count++;
+	arch->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (frm_emu_max_cycles && arch->cycle_count >= frm_emu_max_cycles)
+	if (frm_emu_max_cycles && arch->cycle >= frm_emu_max_cycles)
 		esim_finish = esim_finish_frm_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
@@ -1154,7 +1154,7 @@ enum arch_sim_kind_t frm_gpu_run(void)
 		esim_finish = esim_finish_frm_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((arch->cycle_count-frm_gpu->last_complete_cycle) > 1000000)
+	if ((arch->cycle-frm_gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Fermi GPU simulation stalled.\n%s", frm_err_stall);
 		esim_finish = esim_finish_stall;
