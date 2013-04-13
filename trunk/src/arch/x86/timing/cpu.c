@@ -73,11 +73,6 @@ char *x86_config_help =
 	"  FastForward = <num_inst> (Default = 0)\n"
 	"      Number of x86 instructions to run with a fast functional simulation before\n"
 	"      the architectural simulation starts.\n"
-	"  ContextSwitch = {t|f} (Default = t)\n"
-	"      Allow context switches in computing nodes. If this option is set to false,\n"
-	"      the maximum number of contexts that can be run is limited by the number of\n"
-	"      computing nodes; if a contexts spawns a child that cannot be allocated to\n"
-	"      a free hardware thread, the simulation will stop with an error message.\n"
 	"  ContextQuantum = <cycles> (Default = 100k)\n"
 	"      If ContextSwitch is true, maximum number of cycles that a context can occupy\n"
 	"      a CPU hardware thread before it is replaced by other pending context.\n"
@@ -265,8 +260,6 @@ int x86_cpu_num_threads = 1;
 long long x86_cpu_fast_forward_count;
 
 int x86_cpu_context_quantum;
-int x86_cpu_context_switch;
-
 int x86_cpu_thread_quantum;
 int x86_cpu_thread_switch_penalty;
 
@@ -328,9 +321,7 @@ static void x86_cpu_config_check(void)
 
 	x86_cpu_fast_forward_count = config_read_llint(config, section, "FastForward", 0);
 
-	x86_cpu_context_switch = config_read_bool(config, section, "ContextSwitch", 1);
 	x86_cpu_context_quantum = config_read_int(config, section, "ContextQuantum", 100000);
-
 	x86_cpu_thread_quantum = config_read_int(config, section, "ThreadQuantum", 1000);
 	x86_cpu_thread_switch_penalty = config_read_int(config, section, "ThreadSwitchPenalty", 0);
 
@@ -419,7 +410,6 @@ static void x86_cpu_config_dump(FILE *f)
 	fprintf(f, "Cores = %d\n", x86_cpu_num_cores);
 	fprintf(f, "Threads = %d\n", x86_cpu_num_threads);
 	fprintf(f, "FastForward = %lld\n", x86_cpu_fast_forward_count);
-	fprintf(f, "ContextSwitch = %s\n", x86_cpu_context_switch ? "True" : "False");
 	fprintf(f, "ContextQuantum = %d\n", x86_cpu_context_quantum);
 	fprintf(f, "ThreadQuantum = %d\n", x86_cpu_thread_quantum);
 	fprintf(f, "ThreadSwitchPenalty = %d\n", x86_cpu_thread_switch_penalty);
@@ -1031,20 +1021,13 @@ void x86_cpu_run_stages()
 {
 	struct arch_t *arch = x86_emu->arch;
 
-	/* Static scheduler called after any context changed status other than 'sepcmode' */
-	if (!x86_cpu_context_switch && x86_emu->context_reschedule)
+	/* Scheduler called after any context changed status other than
+	 * 'spec_mode', or quantum of the oldest context expired, and no context
+	 * is being evicted. */
+	if (x86_emu->context_reschedule || x86_cpu->ctx_alloc_oldest +
+			x86_cpu_context_quantum <= arch->cycle_count)
 	{
-		x86_cpu_static_schedule();
-		x86_emu->context_reschedule = 0;
-	}
-
-	/* Dynamic scheduler called after any context changed status other than 'specmode',
-	 * or quantum of the oldest context expired, and no context is being evicted. */
-	if (x86_cpu_context_switch && !x86_cpu->ctx_dealloc_signals &&
-		(x86_emu->context_reschedule || x86_cpu->ctx_alloc_oldest +
-				x86_cpu_context_quantum <= arch->cycle_count))
-	{
-		x86_cpu_dynamic_schedule();
+		x86_cpu_schedule();
 		x86_emu->context_reschedule = 0;
 	}
 
