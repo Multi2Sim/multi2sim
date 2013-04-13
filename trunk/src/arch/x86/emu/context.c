@@ -109,7 +109,7 @@ static struct x86_ctx_t *ctx_do_create()
 	 * corresponding lists. The x86_ctx_running parameter has no
 	 * effect, since it will be updated later. */
 	x86_ctx_set_status(ctx, x86_ctx_running);
-	x86_emu_list_insert_head(x86_emu_list_context, ctx);
+	DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, context, ctx);
 
 	/* Structures */
 	ctx->regs = x86_regs_create();
@@ -231,11 +231,11 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	
 	/* Remove context from finished contexts list. This should
 	 * be the only list the context is in right now. */
-	assert(!x86_emu_list_member(x86_emu_list_running, ctx));
-	assert(!x86_emu_list_member(x86_emu_list_suspended, ctx));
-	assert(!x86_emu_list_member(x86_emu_list_zombie, ctx));
-	assert(x86_emu_list_member(x86_emu_list_finished, ctx));
-	x86_emu_list_remove(x86_emu_list_finished, ctx);
+	assert(!DOUBLE_LINKED_LIST_MEMBER(x86_emu, running, ctx));
+	assert(!DOUBLE_LINKED_LIST_MEMBER(x86_emu, suspended, ctx));
+	assert(!DOUBLE_LINKED_LIST_MEMBER(x86_emu, zombie, ctx));
+	assert(DOUBLE_LINKED_LIST_MEMBER(x86_emu, finished, ctx));
+	DOUBLE_LINKED_LIST_REMOVE(x86_emu, finished, ctx);
 		
 	/* Free private structures */
 	x86_regs_free(ctx->regs);
@@ -251,7 +251,7 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	mem_unlink(ctx->mem);
 
 	/* Remove context from contexts list and free */
-	x86_emu_list_remove(x86_emu_list_context, ctx);
+	DOUBLE_LINKED_LIST_REMOVE(x86_emu, context, ctx);
 	x86_ctx_debug("context %d freed\n", ctx->pid);
 
 	/* Free context */
@@ -373,16 +373,16 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 
 	/* Remove contexts from the following lists:
 	 *   running, suspended, zombie */
-	if (x86_emu_list_member(x86_emu_list_running, ctx))
-		x86_emu_list_remove(x86_emu_list_running, ctx);
-	if (x86_emu_list_member(x86_emu_list_suspended, ctx))
-		x86_emu_list_remove(x86_emu_list_suspended, ctx);
-	if (x86_emu_list_member(x86_emu_list_zombie, ctx))
-		x86_emu_list_remove(x86_emu_list_zombie, ctx);
-	if (x86_emu_list_member(x86_emu_list_finished, ctx))
-		x86_emu_list_remove(x86_emu_list_finished, ctx);
-	if (x86_emu_list_member(x86_emu_list_alloc, ctx))
-		x86_emu_list_remove(x86_emu_list_alloc, ctx);
+	if (DOUBLE_LINKED_LIST_MEMBER(x86_emu, running, ctx))
+		DOUBLE_LINKED_LIST_REMOVE(x86_emu, running, ctx);
+	if (DOUBLE_LINKED_LIST_MEMBER(x86_emu, suspended, ctx))
+		DOUBLE_LINKED_LIST_REMOVE(x86_emu, suspended, ctx);
+	if (DOUBLE_LINKED_LIST_MEMBER(x86_emu, zombie, ctx))
+		DOUBLE_LINKED_LIST_REMOVE(x86_emu, zombie, ctx);
+	if (DOUBLE_LINKED_LIST_MEMBER(x86_emu, finished, ctx))
+		DOUBLE_LINKED_LIST_REMOVE(x86_emu, finished, ctx);
+	if (DOUBLE_LINKED_LIST_MEMBER(x86_emu, alloc, ctx))
+		DOUBLE_LINKED_LIST_REMOVE(x86_emu, alloc, ctx);
 	
 	/* If the difference between the old and new status lies in other
 	 * states other than 'x86_ctx_specmode', a reschedule is marked. */
@@ -406,15 +406,15 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 	
 	/* Insert context into the corresponding lists. */
 	if (ctx->status & x86_ctx_running)
-		x86_emu_list_insert_head(x86_emu_list_running, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, running, ctx);
 	if (ctx->status & x86_ctx_zombie)
-		x86_emu_list_insert_head(x86_emu_list_zombie, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, zombie, ctx);
 	if (ctx->status & x86_ctx_finished)
-		x86_emu_list_insert_head(x86_emu_list_finished, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, finished, ctx);
 	if (ctx->status & x86_ctx_suspended)
-		x86_emu_list_insert_head(x86_emu_list_suspended, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, suspended, ctx);
 	if (ctx->status & x86_ctx_alloc)
-		x86_emu_list_insert_head(x86_emu_list_alloc, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, alloc, ctx);
 	
 	/* Dump new status (ignore 'x86_ctx_specmode' status, it's too frequent) */
 	if (debug_status(x86_ctx_debug_category) && (status_diff & ~x86_ctx_spec_mode))
