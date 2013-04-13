@@ -1019,17 +1019,8 @@ void x86_cpu_uop_trace_list_empty(void)
 
 void x86_cpu_run_stages()
 {
-	struct arch_t *arch = x86_emu->arch;
-
-	/* Scheduler called after any context changed status other than
-	 * 'spec_mode', or quantum of the oldest context expired, and no context
-	 * is being evicted. */
-	if (x86_emu->context_reschedule || x86_cpu->ctx_alloc_oldest +
-			x86_cpu_context_quantum <= arch->cycle)
-	{
-		x86_cpu_schedule();
-		x86_emu->context_reschedule = 0;
-	}
+	/* Context scheduler */
+	x86_cpu_schedule();
 
 	/* Stages */
 	x86_cpu_commit();

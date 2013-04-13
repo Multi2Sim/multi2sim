@@ -648,7 +648,7 @@ void x86_isa_div_rm8_impl(struct x86_ctx_t *ctx)
 
 	/* A devide exception would occur in the host process if the 'div' instruction
 	 * in the assembly code below generates a result greater than 0xff. */
-	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
 	skip_emulation = spec_mode && ax > 0xff;
 
 	/* Emulate */
@@ -691,7 +691,7 @@ void x86_isa_div_rm32_impl(struct x86_ctx_t *ctx)
 
 	/* A devide exception would occur in the host process if the 'div' instruction
 	 * in the assembly code below generates a result greater than 0xffffffff. */
-	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
 	skip_emulation = spec_mode && edx;
 
 	/* Emulate */
@@ -744,7 +744,7 @@ void x86_isa_idiv_rm32_impl(struct x86_ctx_t *ctx)
 
 	/* Avoid emulation in speculative mode if it could cause a divide exception */
 	skip_emulation = 0;
-	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
 	if (spec_mode)
 	{
 		long long edx_eax = ((unsigned long long) edx << 32) | eax;
@@ -1067,7 +1067,7 @@ void x86_isa_int_imm8_impl(struct x86_ctx_t *ctx)
 		x86_isa_error(ctx, "%s: not supported for num != 0x80", __FUNCTION__);
 
 	/* Do system call if not in speculative mode */
-	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
 	if (!spec_mode)
 		x86_sys_call(ctx);
 

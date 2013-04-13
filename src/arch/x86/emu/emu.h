@@ -42,8 +42,12 @@ struct x86_emu_t
 	 * futex. Used for FIFO wakeups. */
 	long long futex_sleep_count;
 	
-	/* Flag set when any context changes any status other than 'specmode' */
-	int context_reschedule;
+	/* Flag set to force a call to the scheduler 'x86_cpu_schedule()' in the
+	 * beginning of next cycle. This flag is set any time a context changes its
+	 * state in any bit other than 'spec_mode'. It can be set anywhere in the
+	 * code by directly assigning a value to 1. E.g.: when a system call is
+	 * executed to change the context's affinity. */
+	int schedule_signal;
 
 	/* List of contexts */
 	struct x86_ctx_t *context_list_head;
@@ -74,12 +78,6 @@ struct x86_emu_t
 	struct x86_ctx_t *finished_list_tail;
 	int finished_list_count;
 	int finished_list_max;
-
-	/* List of allocated contexts */
-	struct x86_ctx_t *alloc_list_head;
-	struct x86_ctx_t *alloc_list_tail;
-	int alloc_list_count;
-	int alloc_list_max;
 };
 
 

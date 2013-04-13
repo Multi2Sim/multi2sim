@@ -73,7 +73,7 @@ static char *help_x86_ctx_ipc_report =
 
 static struct str_map_t x86_ctx_status_map =
 {
-	16, {
+	18, {
 		{ "running",      x86_ctx_running },
 		{ "specmode",     x86_ctx_spec_mode },
 		{ "suspended",    x86_ctx_suspended },
@@ -89,7 +89,9 @@ static struct str_map_t x86_ctx_status_map =
 		{ "waitpid",      x86_ctx_waitpid },
 		{ "zombie",       x86_ctx_zombie },
 		{ "futex",        x86_ctx_futex },
-		{ "alloc",        x86_ctx_alloc }
+		{ "alloc",        x86_ctx_alloc },
+		{ "callback",     x86_ctx_callback },
+		{ "mapped",       x86_ctx_mapped }
 	}
 };
 
@@ -105,10 +107,10 @@ static struct x86_ctx_t *ctx_do_create()
 	ctx = xcalloc(1, sizeof(struct x86_ctx_t));
 	ctx->pid = x86_emu->current_pid++;
 
-	/* Update status so that the context is inserted in the
+	/* Update state so that the context is inserted in the
 	 * corresponding lists. The x86_ctx_running parameter has no
 	 * effect, since it will be updated later. */
-	x86_ctx_set_status(ctx, x86_ctx_running);
+	x86_ctx_set_state(ctx, x86_ctx_running);
 	DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, context, ctx);
 
 	/* Structures */
@@ -224,9 +226,11 @@ struct x86_ctx_t *x86_ctx_fork(struct x86_ctx_t *ctx)
 /* Free a context */
 void x86_ctx_free(struct x86_ctx_t *ctx)
 {
+	struct arch_t *arch = x86_emu->arch;
+
 	/* If context is not finished/zombie, finish it first.
 	 * This removes all references to current freed context. */
-	if (!x86_ctx_get_status(ctx, x86_ctx_finished | x86_ctx_zombie))
+	if (!x86_ctx_get_state(ctx, x86_ctx_finished | x86_ctx_zombie))
 		x86_ctx_finish(ctx, 0);
 	
 	/* Remove context from finished contexts list. This should
@@ -252,7 +256,7 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 
 	/* Remove context from contexts list and free */
 	DOUBLE_LINKED_LIST_REMOVE(x86_emu, context, ctx);
-	x86_ctx_debug("context %d freed\n", ctx->pid);
+	x86_ctx_debug("#%lld ctx %d freed\n", arch->cycle, ctx->pid);
 
 	/* Free context */
 	free(ctx);
@@ -264,7 +268,7 @@ void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 	char status_str[MAX_STRING_SIZE];
 
 	fprintf(f, "  pid=%d\n", ctx->pid);
-	str_map_flags(&x86_ctx_status_map, ctx->status, status_str, sizeof status_str);
+	str_map_flags(&x86_ctx_status_map, ctx->state, status_str, sizeof status_str);
 	fprintf(f, "  status=%s\n", status_str);
 	if (!ctx->parent)
 		fprintf(f, "  parent=(null)\n");
@@ -295,7 +299,7 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 
 	/* Memory permissions should not be checked if the context is executing in
 	 * speculative mode. This will prevent guest segmentation faults to occur. */
-	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
 	mem->safe = spec_mode ? 0 : mem_safe_mode;
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
@@ -339,9 +343,9 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 void x86_ctx_set_eip(struct x86_ctx_t *ctx, unsigned int eip)
 {
 	/* Entering specmode */
-	if (ctx->regs->eip != eip && !x86_ctx_get_status(ctx, x86_ctx_spec_mode))
+	if (ctx->regs->eip != eip && !x86_ctx_get_state(ctx, x86_ctx_spec_mode))
 	{
-		x86_ctx_set_status(ctx, x86_ctx_spec_mode);
+		x86_ctx_set_state(ctx, x86_ctx_spec_mode);
 		x86_regs_copy(ctx->backup_regs, ctx->regs);
 		ctx->regs->fpu_ctrl |= 0x3f; /* mask all FP exceptions on wrong path */
 	}
@@ -353,23 +357,24 @@ void x86_ctx_set_eip(struct x86_ctx_t *ctx, unsigned int eip)
 
 void x86_ctx_recover(struct x86_ctx_t *ctx)
 {
-	assert(x86_ctx_get_status(ctx, x86_ctx_spec_mode));
-	x86_ctx_clear_status(ctx, x86_ctx_spec_mode);
+	assert(x86_ctx_get_state(ctx, x86_ctx_spec_mode));
+	x86_ctx_clear_state(ctx, x86_ctx_spec_mode);
 	x86_regs_copy(ctx->regs, ctx->backup_regs);
 	spec_mem_clear(ctx->spec_mem);
 }
 
 
-int x86_ctx_get_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
+int x86_ctx_get_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
 {
-	return (ctx->status & status) > 0;
+	return (ctx->state & state) > 0;
 }
 
 
-static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
+static void x86_ctx_update_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
 {
 	struct arch_t *arch = x86_emu->arch;
-	enum x86_ctx_status_t status_diff;
+	enum x86_ctx_state_t status_diff;
+	char state_str[MAX_STRING_SIZE];
 
 	/* Remove contexts from the following lists:
 	 *   running, suspended, zombie */
@@ -381,48 +386,47 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 		DOUBLE_LINKED_LIST_REMOVE(x86_emu, zombie, ctx);
 	if (DOUBLE_LINKED_LIST_MEMBER(x86_emu, finished, ctx))
 		DOUBLE_LINKED_LIST_REMOVE(x86_emu, finished, ctx);
-	if (DOUBLE_LINKED_LIST_MEMBER(x86_emu, alloc, ctx))
-		DOUBLE_LINKED_LIST_REMOVE(x86_emu, alloc, ctx);
 	
-	/* If the difference between the old and new status lies in other
+	/* If the difference between the old and new state lies in other
 	 * states other than 'x86_ctx_specmode', a reschedule is marked. */
-	status_diff = ctx->status ^ status;
+	status_diff = ctx->state ^ state;
 	if (status_diff & ~x86_ctx_spec_mode)
-		x86_emu->context_reschedule = 1;
+		x86_emu->schedule_signal = 1;
 	
-	/* Update status */
-	ctx->status = status;
-	if (ctx->status & x86_ctx_finished)
-		ctx->status = x86_ctx_finished | (status & x86_ctx_alloc);
-	if (ctx->status & x86_ctx_zombie)
-		ctx->status = x86_ctx_zombie | (status & x86_ctx_alloc);
-	if (!(ctx->status & x86_ctx_suspended) &&
-		!(ctx->status & x86_ctx_finished) &&
-		!(ctx->status & x86_ctx_zombie) &&
-		!(ctx->status & x86_ctx_locked))
-		ctx->status |= x86_ctx_running;
+	/* Update state */
+	ctx->state = state;
+	if (ctx->state & x86_ctx_finished)
+		ctx->state = x86_ctx_finished
+				| (state & x86_ctx_alloc)
+				| (state & x86_ctx_mapped);
+	if (ctx->state & x86_ctx_zombie)
+		ctx->state = x86_ctx_zombie
+				| (state & x86_ctx_alloc)
+				| (state & x86_ctx_mapped);
+	if (!(ctx->state & x86_ctx_suspended) &&
+		!(ctx->state & x86_ctx_finished) &&
+		!(ctx->state & x86_ctx_zombie) &&
+		!(ctx->state & x86_ctx_locked))
+		ctx->state |= x86_ctx_running;
 	else
-		ctx->status &= ~x86_ctx_running;
+		ctx->state &= ~x86_ctx_running;
 	
 	/* Insert context into the corresponding lists. */
-	if (ctx->status & x86_ctx_running)
+	if (ctx->state & x86_ctx_running)
 		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, running, ctx);
-	if (ctx->status & x86_ctx_zombie)
+	if (ctx->state & x86_ctx_zombie)
 		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, zombie, ctx);
-	if (ctx->status & x86_ctx_finished)
+	if (ctx->state & x86_ctx_finished)
 		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, finished, ctx);
-	if (ctx->status & x86_ctx_suspended)
+	if (ctx->state & x86_ctx_suspended)
 		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, suspended, ctx);
-	if (ctx->status & x86_ctx_alloc)
-		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, alloc, ctx);
 	
-	/* Dump new status (ignore 'x86_ctx_specmode' status, it's too frequent) */
+	/* Dump new state (ignore 'x86_ctx_specmode' state, it's too frequent) */
 	if (debug_status(x86_ctx_debug_category) && (status_diff & ~x86_ctx_spec_mode))
 	{
-		char sstatus[200];
-		str_map_flags(&x86_ctx_status_map, ctx->status, sstatus, 200);
-		x86_ctx_debug("ctx %d changed status to %s\n",
-			ctx->pid, sstatus);
+		str_map_flags(&x86_ctx_status_map, ctx->state, state_str, sizeof state_str);
+		x86_ctx_debug("#%lld ctx %d changed state to %s\n",
+			arch->cycle, ctx->pid, state_str);
 	}
 
 	/* Start/stop x86 timer depending on whether there are any contexts
@@ -434,15 +438,15 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 }
 
 
-void x86_ctx_set_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
+void x86_ctx_set_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
 {
-	x86_ctx_update_status(ctx, ctx->status | status);
+	x86_ctx_update_state(ctx, ctx->state | state);
 }
 
 
-void x86_ctx_clear_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
+void x86_ctx_clear_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
 {
-	x86_ctx_update_status(ctx, ctx->status & ~status);
+	x86_ctx_update_state(ctx, ctx->state & ~state);
 }
 
 
@@ -531,7 +535,7 @@ void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_can_wakeup_callback_func_t c
 	void *wakeup_callback_data)
 {
 	/* Checks */
-	assert(!x86_ctx_get_status(ctx, x86_ctx_suspended));
+	assert(!x86_ctx_get_state(ctx, x86_ctx_suspended));
 	assert(!ctx->can_wakeup_callback_func);
 	assert(!ctx->can_wakeup_callback_data);
 
@@ -540,14 +544,14 @@ void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_can_wakeup_callback_func_t c
 	ctx->can_wakeup_callback_data = can_wakeup_callback_data;
 	ctx->wakeup_callback_func = wakeup_callback_func;
 	ctx->wakeup_callback_data = wakeup_callback_data;
-	x86_ctx_set_status(ctx, x86_ctx_suspended | x86_ctx_callback);
+	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_callback);
 	x86_emu_process_events_schedule();
 }
 
 
 /* Finish a context group. This call does a subset of action of the 'x86_ctx_finish'
  * call, but for all parent and child contexts sharing a memory map. */
-void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)
+void x86_ctx_finish_group(struct x86_ctx_t *ctx, int state)
 {
 	struct x86_ctx_t *aux;
 
@@ -557,7 +561,7 @@ void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)
 	assert(!ctx->group_parent);  /* Only one level */
 	
 	/* Context already finished */
-	if (x86_ctx_get_status(ctx, x86_ctx_finished | x86_ctx_zombie))
+	if (x86_ctx_get_state(ctx, x86_ctx_finished | x86_ctx_zombie))
 		return;
 
 	/* Finish all contexts in the group */
@@ -566,9 +570,9 @@ void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)
 		if (aux->group_parent != ctx && aux != ctx)
 			continue;
 
-		if (x86_ctx_get_status(aux, x86_ctx_zombie))
-			x86_ctx_set_status(aux, x86_ctx_finished);
-		if (x86_ctx_get_status(aux, x86_ctx_handler))
+		if (x86_ctx_get_state(aux, x86_ctx_zombie))
+			x86_ctx_set_state(aux, x86_ctx_finished);
+		if (x86_ctx_get_state(aux, x86_ctx_handler))
 			x86_signal_handler_return(aux);
 		x86_ctx_host_thread_suspend_cancel(aux);
 		x86_ctx_host_thread_timer_cancel(aux);
@@ -576,10 +580,10 @@ void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)
 		/* Child context of 'ctx' goes to state 'finished'.
 		 * Context 'ctx' goes to state 'zombie' or 'finished' if it has a parent */
 		if (aux == ctx)
-			x86_ctx_set_status(aux, aux->parent ? x86_ctx_zombie : x86_ctx_finished);
+			x86_ctx_set_state(aux, aux->parent ? x86_ctx_zombie : x86_ctx_finished);
 		else
-			x86_ctx_set_status(aux, x86_ctx_finished);
-		aux->exit_code = status;
+			x86_ctx_set_state(aux, x86_ctx_finished);
+		aux->exit_code = state;
 	}
 
 	/* Process events */
@@ -587,17 +591,17 @@ void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)
 }
 
 
-/* Finish a context. If the context has no parent, its status will be set
- * to 'x86_ctx_finished'. If it has, its status is set to 'x86_ctx_zombie', waiting for
+/* Finish a context. If the context has no parent, its state will be set
+ * to 'x86_ctx_finished'. If it has, its state is set to 'x86_ctx_zombie', waiting for
  * a call to 'waitpid'.
  * The children of the finished context will set their 'parent' attribute to NULL.
  * The zombie children will be finished. */
-void x86_ctx_finish(struct x86_ctx_t *ctx, int status)
+void x86_ctx_finish(struct x86_ctx_t *ctx, int state)
 {
 	struct x86_ctx_t *aux;
 	
 	/* Context already finished */
-	if (x86_ctx_get_status(ctx, x86_ctx_finished | x86_ctx_zombie))
+	if (x86_ctx_get_state(ctx, x86_ctx_finished | x86_ctx_zombie))
 		return;
 	
 	/* If context is waiting for host events, cancel spawned host threads. */
@@ -612,8 +616,8 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int status)
 		if (aux->parent == ctx)
 		{
 			aux->parent = NULL;
-			if (x86_ctx_get_status(aux, x86_ctx_zombie))
-				x86_ctx_set_status(aux, x86_ctx_finished);
+			if (x86_ctx_get_state(aux, x86_ctx_zombie))
+				x86_ctx_set_state(aux, x86_ctx_finished);
 		}
 	}
 
@@ -638,12 +642,12 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int status)
 	x86_ctx_exit_robust_list(ctx);
 
 	/* If we are in a signal handler, stop it. */
-	if (x86_ctx_get_status(ctx, x86_ctx_handler))
+	if (x86_ctx_get_state(ctx, x86_ctx_handler))
 		x86_signal_handler_return(ctx);
 
 	/* Finish context */
-	x86_ctx_set_status(ctx, ctx->parent ? x86_ctx_zombie : x86_ctx_finished);
-	ctx->exit_code = status;
+	x86_ctx_set_state(ctx, ctx->parent ? x86_ctx_zombie : x86_ctx_finished);
+	ctx->exit_code = state;
 	x86_emu_process_events_schedule();
 }
 
@@ -659,7 +663,7 @@ int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex, unsigned int c
 		wakeup_ctx = NULL;
 		for (ctx = x86_emu->suspended_list_head; ctx; ctx = ctx->suspended_list_next)
 		{
-			if (!x86_ctx_get_status(ctx, x86_ctx_futex) || ctx->wakeup_futex != futex)
+			if (!x86_ctx_get_state(ctx, x86_ctx_futex) || ctx->wakeup_futex != futex)
 				continue;
 			if (!(ctx->wakeup_futex_bitset & bitset))
 				continue;
@@ -670,7 +674,7 @@ int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex, unsigned int c
 		if (wakeup_ctx)
 		{
 			/* Wake up context */
-			x86_ctx_clear_status(wakeup_ctx, x86_ctx_suspended | x86_ctx_futex);
+			x86_ctx_clear_state(wakeup_ctx, x86_ctx_suspended | x86_ctx_futex);
 			x86_sys_debug("  futex 0x%x: thread %d woken up\n", futex, wakeup_ctx->pid);
 			wakeup_count++;
 			count--;
@@ -886,7 +890,7 @@ void x86_ctx_ipc_report_handler(int event, void *data)
 	/* Get context. If it does not exist anymore, no more
 	 * events to schedule. */
 	ctx = x86_ctx_get(stack->pid);
-	if (!ctx || x86_ctx_get_status(ctx, x86_ctx_finished) || esim_finish)
+	if (!ctx || x86_ctx_get_state(ctx, x86_ctx_finished) || esim_finish)
 	{
 		free(stack);
 		return;

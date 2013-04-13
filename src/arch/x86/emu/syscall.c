@@ -322,7 +322,7 @@ void x86_sys_call(struct x86_ctx_t *ctx)
 
 	/* Set return value in 'eax', except for 'sigreturn' system call. Also, if the
 	 * context got suspended, the wake up routine will set the return value. */
-	if (code != x86_sys_code_sigreturn && !x86_ctx_get_status(ctx, x86_ctx_suspended))
+	if (code != x86_sys_code_sigreturn && !x86_ctx_get_state(ctx, x86_ctx_suspended))
 		regs->eax = err;
 
 	/* Debug */
@@ -466,7 +466,7 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  blocking read - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = 1;  /* POLLIN */
-	x86_ctx_set_status(ctx, x86_ctx_suspended | x86_ctx_read);
+	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_read);
 	x86_emu_process_events_schedule();
 
 	/* Free allocated buffer. Return value doesn't matter,
@@ -539,7 +539,7 @@ static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 	/* Blocking write - suspend thread */
 	x86_sys_debug("  blocking write - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
-	x86_ctx_set_status(ctx, x86_ctx_suspended | x86_ctx_write);
+	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_write);
 	x86_emu_process_events_schedule();
 
 	/* Return value doesn't matter here. It will be overwritten when the
@@ -734,7 +734,7 @@ static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
 	if (!child && !(options & 0x1))
 	{
 		ctx->wakeup_pid = pid;
-		x86_ctx_set_status(ctx, x86_ctx_suspended | x86_ctx_waitpid);
+		x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_waitpid);
 		return 0;
 	}
 
@@ -744,7 +744,7 @@ static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
 	{
 		if (status_ptr)
 			mem_write(mem, status_ptr, 4, &child->exit_code);
-		x86_ctx_set_status(child, x86_ctx_finished);
+		x86_ctx_set_state(child, x86_ctx_finished);
 		return child->pid;
 	}
 
@@ -3687,7 +3687,7 @@ static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
 
 	/* Suspend process */
 	ctx->wakeup_time = now + total;
-	x86_ctx_set_status(ctx, x86_ctx_suspended | x86_ctx_nanosleep);
+	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_nanosleep);
 	x86_emu_process_events_schedule();
 	return 0;
 }
@@ -3975,7 +3975,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 		ctx->wakeup_time = now + (long long) timeout * 1000;
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = guest_fds.events;
-	x86_ctx_set_status(ctx, x86_ctx_suspended | x86_ctx_poll);
+	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_poll);
 	x86_emu_process_events_schedule();
 	return 0;
 }
@@ -4170,7 +4170,7 @@ static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
 	/* Save old mask and set new one, then suspend. */
 	ctx->signal_mask_table->backup = ctx->signal_mask_table->blocked;
 	ctx->signal_mask_table->blocked = new_set;
-	x86_ctx_set_status(ctx, x86_ctx_suspended | x86_ctx_sigsuspend);
+	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_sigsuspend);
 
 	/* New signal mask may cause new events */
 	x86_emu_process_events_schedule();
@@ -4995,7 +4995,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 		ctx->wakeup_futex = addr1;
 		ctx->wakeup_futex_bitset = bitset;
 		ctx->wakeup_futex_sleep = ++x86_emu->futex_sleep_count;
-		x86_ctx_set_status(ctx, x86_ctx_suspended | x86_ctx_futex);
+		x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_futex);
 		return 0;
 	}
 
@@ -5032,7 +5032,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 		for (temp_ctx = x86_emu->suspended_list_head; temp_ctx;
 				temp_ctx = temp_ctx->suspended_list_next)
 		{
-			if (x86_ctx_get_status(temp_ctx, x86_ctx_futex)
+			if (x86_ctx_get_state(temp_ctx, x86_ctx_futex)
 					&& temp_ctx->wakeup_futex == addr1)
 			{
 				temp_ctx->wakeup_futex = addr2;
@@ -5210,6 +5210,11 @@ static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
 		for (j = 0; j < 8 && node < num_nodes; j++)
 			bit_map_set(target_ctx->affinity, node++,
 					1, mask[i] & (1 << j) ? 1 : 0);
+
+	/* Changing the context affinity might force it to be evicted and unmapped
+	 * from the current node where it is running (timing simulation only). We
+	 * need to force a call to the scheduler. */
+	x86_emu->schedule_signal = 1;
 
 out:
 	/* Success */

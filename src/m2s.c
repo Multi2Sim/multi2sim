@@ -68,7 +68,6 @@
 #include <visual/common/visual.h>
 
 
-static char *ctx_debug_file_name = "";
 static char *visual_file_name = "";
 static char *ctx_config_file_name = "";
 static char *elf_debug_file_name = "";
@@ -81,6 +80,7 @@ static char *opencl_debug_file_name = "";
 static char *cuda_debug_file_name = "";
 
 static char *x86_call_debug_file_name = "";
+static char *x86_ctx_debug_file_name = "";
 static char *x86_disasm_file_name = "";
 static char *x86_isa_debug_file_name = "";
 static char *x86_load_checkpoint_file_name = "";
@@ -155,10 +155,6 @@ static char *m2s_help =
 	"      Show a help message describing the format of the context configuration\n"
 	"      file, passed to the simulator through option '--ctx-config <file>'.\n"
 	"\n"
-	"  --ctx-debug <file>\n"
-	"      Dump debug information related with context creation, destruction,\n"
-	"      allocation, or state change.\n"
-	"\n"
 	"  --elf-debug <file>\n"
 	"      Dump debug information related with the analysis of ELF files. Every time\n"
 	"      an executable file is open (CPU program of GPU kernel binary), detailed\n"
@@ -199,6 +195,10 @@ static char *m2s_help =
 	"  --x86-debug-clrt <file>\n"
 	"      Debug information for the newer implementation of the OpenCL runtime\n"
 	"      library (not available yet).\n"
+	"\n"
+	"  --x86-debug-ctx <file>\n"
+	"      Dump debug information related with context creation, destruction,\n"
+	"      allocation, or state change.\n"
 	"\n"
 	"  --x86-debug-glut <file>\n"
 	"      Debug information for GLUT runtime calls performed by an OpenGL program\n"
@@ -553,14 +553,6 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Context debug file */
-		if (!strcmp(argv[argi], "--ctx-debug"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			ctx_debug_file_name = argv[++argi];
-			continue;
-		}
-
 		/* ELF debug file */
 		if (!strcmp(argv[argi], "--elf-debug"))
 		{
@@ -630,6 +622,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			opencl_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Context debug file */
+		if (!strcmp(argv[argi], "--x86-debug-ctx"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_ctx_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -1740,13 +1740,13 @@ int main(int argc, char **argv)
 	debug_init();
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
-	x86_ctx_debug_category = debug_new_category(ctx_debug_file_name);
 	glu_debug_category = debug_new_category(glu_debug_file_name);
 	glut_debug_category = debug_new_category(glut_debug_file_name);
 	glew_debug_category = debug_new_category(glew_debug_file_name);
 	opengl_debug_category = debug_new_category(opengl_debug_file_name);
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	cuda_debug_category = debug_new_category(cuda_debug_file_name);
+	x86_ctx_debug_category = debug_new_category(x86_ctx_debug_file_name);
 	x86_isa_inst_debug_category = debug_new_category(x86_isa_debug_file_name);
 	x86_isa_call_debug_category = debug_new_category(x86_call_debug_file_name);
 	x86_loader_debug_category = debug_new_category(x86_loader_debug_file_name);

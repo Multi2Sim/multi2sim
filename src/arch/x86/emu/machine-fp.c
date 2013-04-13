@@ -1197,7 +1197,7 @@ void x86_isa_fldcw_m16_impl(struct x86_ctx_t *ctx)
 	x86_isa_mem_read(ctx, addr, 2, &value);
 
 	/* Mask all floating-point exception on wrong path */
-	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
 	if (spec_mode)
 		value |= 0x3f;
 
