@@ -142,6 +142,11 @@ static void opengl_context_free(struct opengl_context_t *context)
  * Public Functions
  */
 
+void opengl_context_set_error(struct opengl_context_t *context, unsigned int err)
+{
+	context->opengl_error = err;
+}
+
 void opengl_context_props_set_version(unsigned int major, unsigned int minor, 
 	struct opengl_context_props_t *props)
 {
@@ -1371,35 +1376,6 @@ void glDisable( GLenum cap )
 	default:
 		break;
 	}
-}
-
-void glClear( GLbitfield mask )
-{
-	/* Debug */
-	opengl_debug("API call %s(%x)\n", __FUNCTION__, mask);
-
-	/* FIXME */
-	if (mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT))
-		opengl_debug("\tInvalid mask!\n");
-
-	if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) 
-	{
-		opengl_debug("\tColor buffer cleared\n");
-		/* Clear color buffer */
-	}
-
-	if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) 
-	{
-		opengl_debug("\tDepth buffer cleared\n");
-		/* Clear depth buffer */
-	}
-
-	if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT)
-	{
-		opengl_debug("\tStencil buffer cleared\n");
-		/* Clear stencil buffer */
-	}
-
 }
 
 void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
