@@ -24,6 +24,7 @@
 
 void arm_cpu_init(void);
 void arm_cpu_done(void);
+void arm_cpu_dump(FILE *f);
 
 enum arch_sim_kind_t arm_cpu_run(void);
 void arm_cpu_dump_summary(FILE *f);

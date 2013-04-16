@@ -17,12 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <CL/cl.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/elf-format.h>
+#include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/string.h>
+
+#include "amd.h"
+#include "clcc.h"
 
 
 
@@ -30,6 +38,7 @@
  * Global Variables
  */
 
+int amd_native;
 int amd_dump_all;
 int amd_list_devices;
 char *amd_device_name = "";
@@ -44,33 +53,12 @@ char *amd_device_name = "";
 #define AMD_MAX_DEVICES  100
 
 static int amd_num_devices;
-//static int amd_device_index = -1;
 static cl_device_id amd_device_list[AMD_MAX_DEVICES];
 static cl_context amd_context;
-//static cl_device_id amd_device;
+static cl_device_id amd_device;
 
 
-
-#if 0
-char *output_file_prefix = "kernel";
-char *input_file_name;
-
-int debug_info = 0;  /* Debug info and no optimizations */
-
-char *kernel_file_name = NULL;  /* Kernel source file */
-char kernel_file_prefix[MAX_STRING_SIZE];  /* Prefix used for output files */
-char clcc_out_file_name[MAX_STRING_SIZE];  /* Name of binary */
-	
-cl_platform_id platform;
-cl_context context;
-
-int amd_num_devices = 0;
-int amd_device_index = -1;
-cl_device_id amd_device_list[MAX_DEVICES];
-cl_device_id amd_device;
-
-
-void kernel_binary_analyze_inner_elf(char *file_name)
+static void amd_binary_analyze_inner_elf(char *file_name)
 {
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;
@@ -104,7 +92,7 @@ void kernel_binary_analyze_inner_elf(char *file_name)
 		fclose(f);
 
 		/* Info */
-		printf("\t  %s: inner section '%s' dumped\n",
+		printf("\t\t%s - inner section '%s' dumped\n",
 			file_name_dest, section->name);
 	}
 
@@ -113,7 +101,7 @@ void kernel_binary_analyze_inner_elf(char *file_name)
 }
 
 
-void kernel_binary_analyze(char *file_name)
+static void amd_binary_analyze(char *file_name)
 {
 	struct elf_file_t *elf_file;
 
@@ -133,7 +121,7 @@ void kernel_binary_analyze(char *file_name)
 		file_name_prefix[len - 4] = '\0';
 
 	/* Create subdirectory */
-	snprintf(subdir, sizeof subdir, "%s_files", file_name_prefix);
+	snprintf(subdir, sizeof subdir, "%s_m2s_files", file_name_prefix);
 	mkdir(subdir, 0755);
 
 	/* Analyze ELF file */
@@ -142,7 +130,6 @@ void kernel_binary_analyze(char *file_name)
 		fatal("%s: cannot open ELF file", file_name);
 	
 	/* List ELF sections */
-	printf("ELF sections:\n");
 	LIST_FOR_EACH(elf_file->section_list, index)
 	{
 		struct elf_section_t *section;
@@ -166,9 +153,8 @@ void kernel_binary_analyze(char *file_name)
 		fclose(f);
 
 		/* Info */
-		printf("  section '%s': addr=0x%x, offset=0x%x, size=%d, flags=0x%x\n",
-			section->name, section->header->sh_addr, section->header->sh_offset,
-			section->header->sh_size, section->header->sh_flags);
+		printf("\t%s - ELF section '%s' dumped (%d bytes)\n",
+			file_name_dest, section->name, section->header->sh_size);
 	}
 	
 	/* Get symbols */
@@ -219,7 +205,7 @@ void kernel_binary_analyze(char *file_name)
 					symbol->name);
 
 			/* Close output file */
-			printf("\t%s: meta data dumped\n", file_name_dest);
+			printf("\t%s - metadata dumped\n", file_name_dest);
 			fclose(f);
 
 		}
@@ -245,11 +231,11 @@ void kernel_binary_analyze(char *file_name)
 					symbol->name);
 
 			/* Close output file */
-			printf("\t%s: inner ELF file dumped\n", file_name_dest);
+			printf("\t%s - inner ELF file dumped\n", file_name_dest);
 			fclose(f);
 
 			/* Analyze inner ELF */
-			kernel_binary_analyze_inner_elf(file_name_dest);
+			amd_binary_analyze_inner_elf(file_name_dest);
 		}
 	}
 
@@ -258,75 +244,64 @@ void kernel_binary_analyze(char *file_name)
 }
 
 
-void main_compile_kernel()
+#define AMD_MAX_DEVICES  100
+
+static void amd_compile_source(char *source_file_name)
 {
-	char device_name[MAX_STRING_SIZE];
-
-	char *kernel_file_ext = ".cl";
-	int len;
-	int extlen;
-	int size;
-
-	char *program_source;
-	size_t program_source_size;
-
+	char *source_file_ext;
+	char out_file_name_root[MAX_STRING_SIZE];
+	char out_file_name[MAX_STRING_SIZE];
 	char compiler_flags[MAX_STRING_SIZE];
-
-	size_t bin_sizes[MAX_DEVICES];
+	
+	int size;
+	int index;
+	
+	size_t program_source_size;
+	size_t bin_sizes[AMD_MAX_DEVICES];
 	size_t bin_sizes_ret;
-	char *bin_bits[MAX_DEVICES];
-
+	
+	char *program_source;
+	char *bin_bits[AMD_MAX_DEVICES];
+	
 	cl_int err;
 
-	/* Get amd_device info */
-	if (amd_device_index < 0)
-		fatal("no amd_device specified; use '-d' option");
-	clGetDeviceInfo(amd_device, CL_DEVICE_NAME, MAX_STRING_SIZE, device_name, NULL);
-	
-	/* Message */
-	printf("\n");
-	printf("Device %d selected: %s\n", amd_device_index, device_name);
-	printf("Compiling '%s'...\n", kernel_file_name);
-	
-	/* Get kernel prefix */
-	extlen = strlen(kernel_file_ext);
-	strncpy(kernel_file_prefix, kernel_file_name, MAX_STRING_SIZE);
-	len = strlen(kernel_file_name);
-	if (len > extlen && !strcmp(&kernel_file_name[len - extlen], kernel_file_ext))
-		kernel_file_prefix[len - extlen] = 0;
 
-	/* Assign output file name if it was not specified with option '-o' */
-	if (!clcc_out_file_name[0])
-		snprintf(clcc_out_file_name, MAX_STRING_SIZE, "%s.bin", kernel_file_prefix);
-	
+	/* Get source file without '.cl' suffix */
+	source_file_ext = ".cl";
+	snprintf(out_file_name_root, sizeof out_file_name_root, "%s", source_file_name);
+	if (str_suffix(out_file_name_root, source_file_ext))
+		out_file_name_root[strlen(out_file_name_root) - strlen(source_file_ext)] = '\0';
+
+	/* Compute output file name if not given. In either case, the output
+	 * file is placed in variable 'out_file_name'. */
+	if (!clcc_out_file_name || !*clcc_out_file_name)
+		snprintf(out_file_name, sizeof out_file_name, "%s.bin", out_file_name_root);
+	else
+		snprintf(out_file_name, sizeof out_file_name, "%s", clcc_out_file_name);
+
 	/* Read the program source */
-	program_source = read_buffer(kernel_file_name, &size);
+	program_source = read_buffer(source_file_name, &size);
 	program_source_size = size;
 	if (!program_source)
-		fatal("%s: cannot open kernel\n", kernel_file_name);
+		fatal("%s: cannot open file\n", source_file_name);
 	
 	/* Create program */
 	cl_program program;
-	program = clCreateProgramWithSource(context, 1, (const char **) &program_source, &program_source_size, &err);
+	program = clCreateProgramWithSource(amd_context, 1, (const char **) &program_source,
+			&program_source_size, &err);
 	if (err != CL_SUCCESS)
-		fatal("clCreateProgramWithSource failed");
-	
-	/* Compiler flags */
-	strcpy(compiler_flags, "");
-	if (debug_info)
-		strcat(compiler_flags, " -O0 -g");
+		fatal("%s: clCreateProgramWithSource failed", __FUNCTION__);
 	
 	/* Intermediate files */
+	compiler_flags[0] = '\0';
 	if (amd_dump_all)
 	{
 		char dir[MAX_STRING_SIZE];
-		char dir_flag[MAX_STRING_SIZE];
 
-		snprintf(dir, sizeof dir, "%s_AMDAPP_files", kernel_file_prefix);
-		snprintf(dir_flag, sizeof dir_flag, "-save-temps=%s/%s",
-			dir, kernel_file_prefix);
+		snprintf(dir, sizeof dir, "%s_amd_files", out_file_name_root);
+		snprintf(compiler_flags, sizeof compiler_flags, "-save-temps=%s/%s",
+			dir, out_file_name_root);
 		mkdir(dir, 0755);
-		strcat(compiler_flags, dir_flag);
 	}
 
 	/* Compile source */
@@ -342,65 +317,99 @@ void main_compile_kernel()
 	free(program_source);
 
 	/* Get number and size of binaries */
-	clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof(bin_sizes), bin_sizes, &bin_sizes_ret);
+	clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof bin_sizes, bin_sizes, &bin_sizes_ret);
 	amd_num_devices = bin_sizes_ret / sizeof(size_t);
-	for (amd_device_index = 0; amd_device_index < amd_num_devices; amd_device_index++)
-		if (bin_sizes[amd_device_index])
+	for (index = 0; index < amd_num_devices; index++)
+		if (bin_sizes[index])
 			break;
-	if (amd_device_index == amd_num_devices)
-		fatal("no binary generated");
+	if (index == amd_num_devices)
+		fatal("%s: no binary generated", __FUNCTION__);
 
 	/* Dump binary into file */
-	memset(bin_bits, 0, sizeof(bin_bits));
-	bin_bits[amd_device_index] = xmalloc(bin_sizes[amd_device_index]);
-	clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(bin_bits), bin_bits, NULL);
-	write_buffer(clcc_out_file_name, bin_bits[amd_device_index], bin_sizes[amd_device_index]);
-	free(bin_bits[amd_device_index]);
-	printf("\t%s: kernel binary created\n", clcc_out_file_name);
+	memset(bin_bits, 0, sizeof bin_bits);
+	bin_bits[index] = xmalloc(bin_sizes[index]);
+	clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof bin_bits, bin_bits, NULL);
+	if (!write_buffer(out_file_name, bin_bits[index], bin_sizes[index]))
+		fatal("%s: cannot write to file", out_file_name);
+	
+	/* Free buffers */
+	free(bin_bits[index]);
+	printf("\t%s - kernel binary created\n", out_file_name);
 
 	/* Process generated binary */
 	if (amd_dump_all)
-		kernel_binary_analyze(clcc_out_file_name);
+	{
+		printf("\t%s/* - AMD intermediate files dumped\n", out_file_name_root);
+		amd_binary_analyze(out_file_name);
+	}
 }
 
 
-int read_device(char *amd_device_name)
+
+
+/* Read global variable 'amd_device_name' and set variable 'amd_device' to the
+ * OpenCL device it refers to. */
+static void amd_read_device(void)
 {
 	char *endptr;
 	char name[MAX_STRING_SIZE];
 	char *token;
 	char *delim;
+
+	int device_index;
 	int i;
 
-	/* Try to interpret 'amd_device_name' as a number */
-	amd_device_index = strtol(amd_device_name, &endptr, 10);
+	/* No device given */
+	if (!amd_device_name || !*amd_device_name)
+		fatal("no device given, use option '--amd-device'");
+
+	/* Try to interpret device name as a number */
+	device_index = strtol(amd_device_name, &endptr, 10);
 	if (!*endptr)
 	{
-		if (amd_device_index >= amd_num_devices)
-			fatal("%d is not a valid amd_device ID; use '-l' option for a list of valid IDs",
-				amd_device_index);
-		return amd_device_index;
+		if (!IN_RANGE(device_index, 0, amd_num_devices - 1))
+			fatal("invalid device index, use '--amd-list' for valid devices");
+		amd_device = amd_device_list[device_index];
+		goto out;
 	}
 
-	/* 'amd_device_name' is a string. If the given name matches any of the tokens
-	 * in the amd_device name, that amd_device will be selected (first occurrence). */
+	/* Device name given as a string. If the given name matches any of the tokens
+	 * in the device name, that device will be selected (first occurrence). */
 	for (i = 0; i < amd_num_devices; i++)
 	{
 		clGetDeviceInfo(amd_device_list[i], CL_DEVICE_NAME, sizeof name, name, NULL);
 		delim = ", ";
 		for (token = strtok(name, " ,"); token; token = strtok(NULL, delim))
+		{
 			if (!strcasecmp(amd_device_name, token))
-				return i;
+			{
+				amd_device = amd_device_list[i];
+				goto out;
+			}
+		}
 	}
-	fatal("'%s' is not a valid amd_device name; use '-l' for a list of supported amd_device_list",
-		amd_device_name);
-	return -1;
+
+	/* Invalid device */
+	fatal("invalid device name, use '--amd-list' for valid devices");
+
+out:
+	/* Device found */
+	clGetDeviceInfo(amd_device, CL_DEVICE_NAME, sizeof name, name, NULL);
+	printf("Device '%s' selected\n", name);
 }
 
-#endif
 
 
 
+/*
+ * Public Functions
+ */
+
+/* Initialization. Global variables set here are:
+ * - amd_context
+ * - amd_num_devices
+ * - amd_device_list
+ */
 #define CL_CONTEXT_OFFLINE_DEVICES_AMD  0x403f
 
 void amd_init(void)
@@ -462,6 +471,32 @@ void amd_dump_device_list(FILE *f)
 
 	/* Finish */
 	amd_done();
-	exit(0);
+}
+
+
+void amd_compile(struct list_t *source_file_list, char *out_file_name)
+{
+	int index;
+
+	/* No input file given */
+	if (!list_count(source_file_list))
+		fatal("no input files given");
+	
+	/* Single output file not allowed for multiple sources */
+	if (list_count(source_file_list) > 1 && *out_file_name)
+		fatal("option '-o' not allowed for multiple sources");
+	
+	/* Initialize */
+	amd_init();
+
+	/* Read device from command line */
+	amd_read_device();
+
+	/* Compile source files */
+	LIST_FOR_EACH(source_file_list, index)
+		amd_compile_source(list_get(source_file_list, index));
+
+	/* Finish */
+	amd_done();
 }
 

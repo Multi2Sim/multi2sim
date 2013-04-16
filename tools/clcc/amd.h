@@ -27,6 +27,7 @@
  * Global Variables
  */
 
+extern int amd_native;
 extern int amd_dump_all;
 extern int amd_list_devices;
 extern char *amd_device_name;
@@ -36,6 +37,7 @@ void amd_init(void);
 void amd_done(void);
 
 void amd_dump_device_list(FILE *f);
+void amd_compile(struct list_t *source_file_list, char *out_file_name);
 
 #endif
 

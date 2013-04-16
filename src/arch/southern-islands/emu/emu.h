@@ -242,6 +242,7 @@ extern struct si_emu_t *si_emu;
 
 void si_emu_init(struct arch_t *arch);
 void si_emu_done(void);
+void si_emu_dump(FILE *f);
 
 void si_emu_dump_summary(FILE *f);
 
