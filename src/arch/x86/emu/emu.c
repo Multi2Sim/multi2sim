@@ -151,17 +151,10 @@ void x86_emu_done(void)
 void x86_emu_dump(FILE *f)
 {
 	struct x86_ctx_t *ctx;
-	int index = 0;
 
-	fprintf(f, "List of kernel contexts (arbitrary order):\n");
-	ctx = x86_emu->context_list_head;
-	while (ctx)
-	{
-		fprintf(f, "kernel context #%d:\n", index);
+	fprintf(f, "List of contexts (shows in any order)\n\n");
+	DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, context, ctx)
 		x86_ctx_dump(ctx, f);
-		ctx = ctx->context_list_next;
-		index++;
-	}
 }
 
 
