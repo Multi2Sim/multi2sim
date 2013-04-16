@@ -145,6 +145,9 @@ struct opengl_context_props_t
 /* OpenGL context */
 struct opengl_context_t
 {
+	/* Error */
+	unsigned int opengl_error;
+
 	/* Context state and properties */
 	struct opengl_context_state_t *state;
 	struct opengl_context_props_t *props;
@@ -170,5 +173,6 @@ void opengl_context_props_set_version(unsigned int major, unsigned int minor, st
 
 void opengl_context_init();
 void opengl_context_destroy();
+void opengl_context_set_error(struct opengl_context_t *context, unsigned int err);
 
 #endif
