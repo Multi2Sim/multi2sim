@@ -97,6 +97,7 @@ extern struct evg_emu_t *evg_emu;
 
 void evg_emu_init(struct arch_t *arch);
 void evg_emu_done(void);
+void evg_emu_dump(FILE *f);
 
 void evg_emu_dump_summary(FILE *f);
 

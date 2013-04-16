@@ -17,35 +17,65 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/common/arch.h>
-
-#include "cpu.h"
+#include "amd.h"
 
 
-void arm_cpu_init(void)
+
+/*
+ * Global Variables
+ */
+
+int amd_native;
+int amd_dump_all;
+int amd_list_devices;
+char *amd_device_name = "";
+
+
+
+/*
+ * Private Functions
+ */
+
+static char *amd_err_note =
+	"\tThe AMD Catalyst driver or AMD APP software kit are not present in your\n"
+	"\tsystem. The '--amd' option relies on the native drivers to be installed\n"
+	"\ton the machine, and acts as a command-line wrapper of AMD's compiler.\n"
+	"\tPlease install this software and recompile Multi2Sim.\n";
+
+static void amd_missing(void)
 {
+	fatal("AMD native drivers not available.\n%s",
+			amd_err_note);
 }
 
 
-void arm_cpu_done(void)
+
+
+
+/*
+ * Public Functions
+ */
+
+void amd_init(void)
 {
+	amd_missing();
 }
 
 
-void arm_cpu_dump(FILE *f)
+void amd_done(void)
 {
+	amd_missing();
 }
 
 
-/* Run one iteration of timing simulation. Return values are:
- *   - arch_sim_kind_invalid - no timing simulation.
- *   - arch_sim_kind_detailed - still simulating. */
-enum arch_sim_kind_t arm_cpu_run(void)
+void amd_dump_device_list(FILE *f)
 {
-	return arch_sim_kind_invalid;
+	amd_missing();
 }
 
-/* TODO: Implement the Arm cpu dump for the cycle accurate simulation */
-void arm_cpu_dump_summary(FILE *f)
+
+void amd_compile(struct list_t *source_file_list, char *out_file_name)
 {
+	amd_missing();
 }
+

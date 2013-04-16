@@ -157,10 +157,12 @@ void arch_register(char *name, char *prefix,
 		enum arch_sim_kind_t sim_kind,
 		arch_emu_init_func_t emu_init_func,
 		arch_emu_done_func_t emu_done_func,
+		arch_emu_dump_func_t emu_dump_func,
 		arch_emu_dump_summary_func_t emu_dump_summary_func,
 		arch_run_func_t emu_run_func,
 		arch_timing_init_func_t timing_init_func,
 		arch_timing_done_func_t timing_done_func,
+		arch_timing_dump_func_t timing_dump_func,
 		arch_timing_dump_summary_func_t timing_dump_summary_func,
 		arch_run_func_t timing_run_func)
 {

@@ -1504,6 +1504,11 @@ static void m2s_load_programs(int argc, char **argv)
 }
 
 
+static void m2s_dump(FILE *f)
+{
+}
+
+
 static void m2s_dump_summary(FILE *f)
 {
 	double time_in_sec;
@@ -1572,11 +1577,12 @@ static void m2s_signal_process(void)
 
 		/* Try to normally finish simulation */
 		esim_finish = esim_finish_signal;
-		fprintf(stderr, "\n; SIGINT received\n");
+		warning("signal SIGINT received");
 		break;
 	}
 
 	case SIGUSR1:
+	case SIGUSR2:
 	{
 		long long time_in_dsec;
 		char file_name[MAX_STRING_SIZE];
@@ -1585,19 +1591,23 @@ static void m2s_signal_process(void)
 		/* Report file name */
 		time_in_dsec = (double) esim_real_time() / 1.0e4;
 		snprintf(file_name, sizeof file_name, "m2s-%s-%lld", m2s_sim_id, time_in_dsec);
-		fprintf(stderr, "\n; SIGUSR1 received - dumping report in '%s'\n",
-				file_name);
+		warning("user signal received, dumping report in '%s'\n", file_name);
 
 		/* Create report file */
 		f = fopen(file_name, "wt");
 		if (!f)
 		{
-			fprintf(stderr, "; Failed to write on '%s'\n", file_name);
+			warning("%s: failed to write on file\n", file_name);
 			break;
 		}
 
-		/* Dump report and close */
-		m2s_dump_summary(f);
+		/* Dump summary or detailed report */
+		if (m2s_signal_received == SIGUSR1)
+			m2s_dump_summary(f);
+		else
+			m2s_dump(f);
+
+		/* Close */
 		fclose(f);
 		break;
 	}
@@ -1646,6 +1656,7 @@ static void m2s_loop(void)
 	signal(SIGINT, &m2s_signal_handler);
 	signal(SIGABRT, &m2s_signal_handler);
 	signal(SIGUSR1, &m2s_signal_handler);
+	signal(SIGUSR2, &m2s_signal_handler);
 
 	/* Simulation loop */
 	while (!esim_finish)
@@ -1681,6 +1692,7 @@ static void m2s_loop(void)
 	signal(SIGABRT, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
 	signal(SIGUSR1, SIG_DFL);
+	signal(SIGUSR2, SIG_DFL);
 }
 
 
@@ -1787,29 +1799,29 @@ int main(int argc, char **argv)
 	/* Initialization of architectures */
 	arch_init();
 	arch_register("ARM", "arm", arm_sim_kind,
-			arm_emu_init, arm_emu_done,
+			arm_emu_init, arm_emu_done, arm_emu_dump,
 			arm_emu_dump_summary, arm_emu_run,
-			arm_cpu_init, arm_cpu_done,
+			arm_cpu_init, arm_cpu_done, arm_cpu_dump,
 			arm_cpu_dump_summary, arm_cpu_run);
 	arch_register("Evergreen", "evg", evg_sim_kind,
-			evg_emu_init, evg_emu_done,
+			evg_emu_init, evg_emu_done, evg_emu_dump,
 			evg_emu_dump_summary, evg_emu_run,
-			evg_gpu_init, evg_gpu_done,
+			evg_gpu_init, evg_gpu_done, evg_gpu_dump,
 			evg_gpu_dump_summary, evg_gpu_run);
 	arch_register("Fermi", "frm", frm_sim_kind,
-			frm_emu_init, frm_emu_done,
+			frm_emu_init, frm_emu_done, frm_emu_dump,
 			frm_emu_dump_summary, frm_emu_run,
-			frm_gpu_init, frm_gpu_done,
+			frm_gpu_init, frm_gpu_done, frm_gpu_dump,
 			frm_gpu_dump_summary, frm_gpu_run);
 	arch_register("SouthernIslands", "si", si_sim_kind,
-			si_emu_init, si_emu_done,
+			si_emu_init, si_emu_done, si_emu_dump,
 			si_emu_dump_summary, si_emu_run,
-			si_gpu_init, si_gpu_done,
+			si_gpu_init, si_gpu_done, si_gpu_dump,
 			si_gpu_dump_summary, si_gpu_run);
 	arch_register("x86", "x86", x86_sim_kind,
-			x86_emu_init, x86_emu_done,
+			x86_emu_init, x86_emu_done, x86_emu_dump,
 			x86_emu_dump_summary, x86_emu_run,
-			x86_cpu_init, x86_cpu_done,
+			x86_cpu_init, x86_cpu_done, x86_cpu_dump,
 			x86_cpu_dump_summary, x86_cpu_run);
 
 	/* Network and memory system */

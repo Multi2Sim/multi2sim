@@ -114,6 +114,11 @@ void frm_emu_done(void)
 }
 
 
+void frm_emu_dump(FILE *f)
+{
+}
+
+
 /* One iteration of emulator. Return values are:
  *   - arch_sim_kind_invalid - emulation finished.
  *   - arch_sim_kind_functional - still emulating */

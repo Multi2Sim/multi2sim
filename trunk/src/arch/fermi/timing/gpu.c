@@ -990,6 +990,11 @@ void frm_gpu_done()
 }
 
 
+void frm_gpu_dump(FILE *f)
+{
+}
+
+
 void frm_gpu_dump_default_config(char *filename)
 {
 	FILE *f;

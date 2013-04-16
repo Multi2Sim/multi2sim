@@ -216,6 +216,7 @@ struct si_lds_t;
 
 void si_gpu_init(void);
 void si_gpu_done(void);
+void si_gpu_dump(FILE *f);
 
 void si_gpu_dump_default_config(char *filename);
 void si_gpu_dump_report(void);

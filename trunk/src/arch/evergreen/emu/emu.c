@@ -120,6 +120,11 @@ void evg_emu_done()
 }
 
 
+void evg_emu_dump(FILE *f)
+{
+}
+
+
 void evg_emu_dump_summary(FILE *f)
 {
 	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);

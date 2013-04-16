@@ -112,6 +112,7 @@ extern struct evg_gpu_t *evg_gpu;
 
 void evg_gpu_init(void);
 void evg_gpu_done(void);
+void evg_gpu_dump(FILE *f);
 
 void evg_gpu_dump_report(void);
 void evg_gpu_dump_summary(FILE *f);

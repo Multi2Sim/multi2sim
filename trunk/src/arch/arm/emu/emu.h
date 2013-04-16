@@ -105,6 +105,7 @@ extern long long arm_emu_max_time;
 
 void arm_emu_init(struct arch_t *arch);
 void arm_emu_done(void);
+void arm_emu_dump(FILE *f);
 
 enum arch_sim_kind_t arm_emu_run(void);
 

@@ -121,6 +121,11 @@ void arm_emu_done(void)
 }
 
 
+void arm_emu_dump(FILE *f)
+{
+}
+
+
 void arm_emu_dump_summary(FILE *f)
 {
 	fprintf(f, "Contexts = %d\n", arm_emu->running_list_max);
