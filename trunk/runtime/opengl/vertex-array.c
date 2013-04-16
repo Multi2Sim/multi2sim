@@ -582,3 +582,9 @@ void glBindVertexArray (GLuint array)
 	else
 		opengl_ctx->vao_binding_point = NULL;
 }
+
+GLboolean glIsVertexArray (GLuint array)
+{
+	__OPENGL_NOT_IMPL__
+	return 0;
+}
