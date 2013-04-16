@@ -238,6 +238,7 @@ struct frm_lds_t;
 
 void frm_gpu_init(void);
 void frm_gpu_done(void);
+void frm_gpu_dump(FILE *f);
 
 void frm_gpu_dump_default_config(char *filename);
 void frm_gpu_dump_report(void);

@@ -21,6 +21,7 @@
 #include <getopt.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 #include <lib/util/list.h>
 
 #include "amd.h"
@@ -55,31 +56,45 @@ static char *syntax =
 
 static void clcc_process_option(const char *option, char *optarg)
 {
-	if (!strcmp(option, "amd-all") || !strcmp(option, "a"))
+	/*
+	 * Native AMD related options
+	 */
+	
+	if (!strcmp(option, "amd"))
+	{
+		amd_native = 1;
+		return;
+	}
+
+	if (!strcmp(option, "amd-dump-all") || !strcmp(option, "a"))
 	{
 		amd_dump_all = 1;
+		return;
 	}
 
-	else if (!strcmp(option, "amd-device") || !strcmp(option, "d"))
+	if (!strcmp(option, "amd-device") || !strcmp(option, "d"))
 	{
 		amd_device_name = optarg;
+		return;
 	}
 
-	else if (!strcmp(option, "amd-list") || !strcmp(option, "l"))
+	if (!strcmp(option, "amd-list") || !strcmp(option, "l"))
 	{
 		amd_list_devices = 1;
+		return;
 	}
 
-	else if (!strcmp(option, "o"))
+	if (!strcmp(option, "o"))
 	{
 		clcc_out_file_name = optarg;
+		return;
 	}
 
-	else
-	{
-		fprintf(stderr, "%s", syntax);
-		exit(1);
-	}
+
+
+	/* Option not found */
+	fprintf(stderr, "%s", syntax);
+	exit(1);
 }
 
 
@@ -91,8 +106,9 @@ static void clcc_read_command_line(int argc, char **argv)
 
 	static struct option long_options[] =
 	{
-		{ "amd-all", no_argument, 0, 'a' },
+		{ "amd", no_argument, 0, 0 },
 		{ "amd-device", required_argument, 0, 'd' },
+		{ "amd-dump-all", no_argument, 0, 'a' },
 		{ "amd-list", no_argument, 0, 'l' },
 		{ 0, 0, 0, 0 }
 	};
@@ -144,10 +160,29 @@ int main(int argc, char **argv)
 
 	/* List AMD devices */
 	if (amd_list_devices)
+	{
 		amd_dump_device_list(stdout);
+		goto out;
+	}
 
+	/* Native AMD compilation */
+	if (amd_native)
+	{
+		amd_compile(clcc_source_file_list, clcc_out_file_name);
+		goto out;
+	}
+
+	/* Non-native compilation not supported yet */
+	if (list_count(clcc_source_file_list))
+		fatal("only AMD native compilation supported (use --amd)");
+
+	/* No input file given */
+	fatal("no input file given");
+
+out:
 	/* Finish */
 	clcc_done();
+	mhandle_done();
 	return 0;
 }
 

@@ -92,6 +92,7 @@ extern struct frm_emu_t *frm_emu;
 
 void frm_emu_init(struct arch_t *arch);
 void frm_emu_done(void);
+void frm_emu_dump(FILE *f);
 
 enum arch_sim_kind_t frm_emu_run(void);
 

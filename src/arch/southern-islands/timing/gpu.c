@@ -1144,7 +1144,7 @@ void si_gpu_init(void)
 }
 
 
-void si_gpu_done()
+void si_gpu_done(void)
 {
 	struct si_compute_unit_t *compute_unit;
 	int compute_unit_id;
@@ -1173,6 +1173,11 @@ void si_gpu_done()
 
 	/* Finalizations */
 	si_uop_done();
+}
+
+
+void si_gpu_dump(FILE *f)
+{
 }
 
 

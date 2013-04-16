@@ -510,6 +510,11 @@ void evg_gpu_done()
 }
 
 
+void evg_gpu_dump(FILE *f)
+{
+}
+
+
 void evg_gpu_dump_report(void)
 {
 	struct arch_t *arch = evg_emu->arch;

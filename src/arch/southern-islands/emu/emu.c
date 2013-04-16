@@ -126,6 +126,11 @@ void si_emu_done()
 }
 
 
+void si_emu_dump(FILE *f)
+{
+}
+
+
 void si_emu_dump_summary(FILE *f)
 {
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
