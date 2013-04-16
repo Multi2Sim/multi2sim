@@ -5505,10 +5505,10 @@ void glUniformBlockBinding (GLuint program, GLuint uniformBlockIndex, GLuint uni
 	__OPENGL_NOT_IMPL__
 }
 
-void glCopyBufferSubData (GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyBufferSubData (GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glDrawElementsBaseVertex (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLint basevertex)
 // {
