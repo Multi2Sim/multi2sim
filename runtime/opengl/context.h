@@ -119,6 +119,7 @@ struct opengl_context_state_t
 /* OpenGL context properties */
 struct opengl_context_props_t
 {
+	/* Version & identification */
 	unsigned int gl_major;
 	unsigned int gl_minor;
 	unsigned int glsl_major;
@@ -126,6 +127,19 @@ struct opengl_context_props_t
 	char *vendor;
 	char *renderer;
 	char info[50];
+
+	/* Clear related */
+	float *color;
+	double depth;
+	int stencil;
+
+	/* Viewport */
+	int vp_x;
+	int vp_y;
+	int vp_w;
+	int vp_h;
+	float vp_far;
+	float vp_near;
 };
 
 /* OpenGL context */
@@ -141,7 +155,7 @@ struct opengl_context_t
 	struct opengl_program_obj_t *program_binding_point;
 	struct opengl_vertex_array_obj_t *vao_binding_point;
 
-	/* Repositories for container objects that cannot be shared */
+	/* Repositories for container objects that are exclusive to a OpenGL context */
 	struct linked_list_t *renderbuf_repo;
 	struct linked_list_t *prog_pipe_repo;
 	struct linked_list_t *framebuf_repo;
