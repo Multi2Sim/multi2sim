@@ -224,7 +224,7 @@ struct opengl_shader_obj_t *opengl_shader_obj_repo_get_shader(struct linked_list
  * OpenGL API functions 
  */
 
-
+/* Shader Objects [2.11.1-2] [2.14.1-2] */
 GLuint glCreateShader (GLenum type)
 {
 	struct opengl_shader_obj_t *shader_obj;
@@ -238,19 +238,6 @@ GLuint glCreateShader (GLenum type)
 
 	/* Return */
 	return shader_obj->id;
-}
-
-void glDeleteShader (GLuint shader)
-{
-	struct opengl_shader_obj_t *shader_obj;
-
-	/* Debug */
-	opengl_debug("API call %s(%d)\n", __FUNCTION__, shader);
-
-	/* Get shader and delete */
-	shader_obj = opengl_shader_obj_repo_get_shader(shader_repo, shader);
-	opengl_shader_obj_repo_remove(shader_repo, shader_obj);
-	opengl_shader_obj_delete(shader_obj);
 }
 
 void glShaderSource (GLuint shader, GLsizei count, const GLchar* *string, const GLint *length)
@@ -298,4 +285,114 @@ void glCompileShader (GLuint shader)
 		/* Debug */
 		opengl_debug("\tShader Source: \n%s\n", source);
 	}
+}
+
+void glReleaseShaderCompiler (void)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDeleteShader (GLuint shader)
+{
+	struct opengl_shader_obj_t *shader_obj;
+
+	/* Debug */
+	opengl_debug("API call %s(%d)\n", __FUNCTION__, shader);
+
+	/* Get shader and delete */
+	shader_obj = opengl_shader_obj_repo_get_shader(shader_repo, shader);
+	opengl_shader_obj_repo_remove(shader_repo, shader_obj);
+	opengl_shader_obj_delete(shader_obj);
+}
+
+void glShaderBinary (GLsizei count, const GLuint *shaders, GLenum binaryformat, const GLvoid *binary, GLsizei length)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+/* Shader Execution [2.11.13] [2.14.13] */
+
+void glValidateProgram (GLuint program)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glValidateProgramPipeline (GLuint pipeline)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+/*Shader Memory Access [2.11.4] [2.14.14] */
+
+void glMemoryBarrier (GLbitfield barriers)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+/* Tessellation Control Shaders */
+
+void glPatchParameterfv (GLenum pname, const GLfloat *values)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+/* Fragment Shaders [2.10.2] [3.13.2] */
+
+void glBindFragDataLocation (GLuint program, GLuint color, const GLchar *name)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glBindFragDataLocationIndexed (GLuint program, GLuint colorNumber, GLuint index, const GLchar *name)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+GLint glGetFragDataLocation (GLuint program, const GLchar *name)
+{
+	__OPENGL_NOT_IMPL__
+	return 0;
+}
+
+GLint glGetFragDataIndex (GLuint program, const GLchar *name)
+{
+	__OPENGL_NOT_IMPL__
+	return 0;
+}
+
+
+/* Shader queries */
+
+GLboolean glIsShader (GLuint shader)
+{
+	__OPENGL_NOT_IMPL__
+	return 0;
+}
+
+void glGetShaderiv (GLuint shader, GLenum pname, GLint *params)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glGetShaderSource (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glGetShaderPrecisionFormat (GLenum shadertype, GLenum precisiontype, GLint *range, GLint *precision)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glGetProgramStageiv (GLuint program, GLenum shadertype, GLenum pname, GLint *values)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glGetShaderInfoLog (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
+{
+	__OPENGL_NOT_IMPL__
 }
