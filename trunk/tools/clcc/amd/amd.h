@@ -22,6 +22,9 @@
 
 #include <stdio.h>
 
+/* Forward declarations */
+struct list_t;
+
 
 /*
  * Global Variables
