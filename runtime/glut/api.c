@@ -161,6 +161,7 @@ enum glut_event_type_t
 	glut_event_tablet_button,
 	glut_event_menu_status,
 	glut_event_idle,
+	glut_event_close,
 	glut_event_timer
 };
 
@@ -717,8 +718,7 @@ void glutTimerFunc(unsigned int millis, void (*func)(int value), int value)
 {
 	glut_debug(stdout, "Glut time function: millis %d, function %p", millis, func);
 	if (glut_current_window)
-		glut_current_window->timer_func = func;	
-
+		glut_current_window->timer_func = func;
 }
 
 
@@ -1120,6 +1120,9 @@ void glutMouseWheelFunc( void (* callback)( int, int, int, int ) )
 void glutCloseFunc( void (* callback)( void ) )
 {
 	glut_debug(stdout, "Glut close func: %p\n", callback);
+	if (glut_current_window)
+		glut_current_window->close_func = callback;	
+
 }
 
 void glutWMCloseFunc( void (* callback)( void ) )
