@@ -137,21 +137,21 @@ void opengl_frame_buffer_clear(struct opengl_frame_buffer_t *fb, GLbitfield mask
 		if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) 
 		{
 			opengl_debug("\t\tColor buffer cleared to %d\n", clear_value);
-	    		for (i = 0; i < COLOR_BUFFER_COUNT; ++i)
+			for (i = 0; i < COLOR_BUFFER_COUNT; ++i)
 				opengl_render_buffer_clear(fb->color_buffer[i], clear_value);
-	  	}
+		}
 
 		if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) 
 		{
 			opengl_debug("\t\tDepth buffer cleared to %d\n", clear_value);
-	    		opengl_render_buffer_clear(fb->depth_buffer, clear_value);
+			opengl_render_buffer_clear(fb->depth_buffer, clear_value);
 		}
 
 		if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT) {
 			opengl_debug("\t\tStencil buffer cleared to %d\n", clear_value);
-	    		opengl_render_buffer_clear(fb->stencil_buffer, clear_value);
+			opengl_render_buffer_clear(fb->stencil_buffer, clear_value);
 		}
-	
+		
 }
 
 int opengl_frame_buffer_resize(struct opengl_frame_buffer_t *fb, int width, int height)

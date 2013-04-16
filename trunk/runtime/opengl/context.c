@@ -76,6 +76,10 @@ static struct opengl_context_props_t *opengl_context_props_create()
 	properties->vendor = xstrdup("Multi2Sim");
 	properties->renderer = xstrdup("OpenGL Emulator");
 
+	properties->color = xcalloc(1, 4*sizeof(float));
+	properties->depth = 1.0;
+	properties->stencil = 0;
+
 	/* Debug */
 	opengl_debug("%s: [%p] created\n", __FUNCTION__, properties);
 
@@ -88,6 +92,7 @@ static void opengl_context_props_free(struct opengl_context_props_t *props)
 	/* Free */
 	free(props->vendor);
 	free(props->renderer);
+	free(props->color);
 	free(props);
 
 	/* Debug */
@@ -240,4 +245,1203 @@ void glEnable( GLenum cap )
 {
 	/* Debug */
 	opengl_debug("API call %s(%x)\n", __FUNCTION__, cap);
+
+	switch(cap)
+	{
+
+	case GL_ALPHA_TEST:
+	{
+		opengl_ctx->state->enable_alpha_test = 1;
+		opengl_debug("\tGL_ALPHA_TEST enabled!\n");
+		break;
+	}
+
+	case GL_AUTO_NORMAL:
+	{
+		opengl_ctx->state->enable_auto_normal = 1;
+		opengl_debug("\tGL_AUTO_NORMAL enabled!\n");
+		break;
+	}
+
+	case GL_BLEND:
+	{
+		opengl_ctx->state->enable_blend = 1;
+		opengl_debug("\tGL_BLEND enabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE0:
+	{
+		opengl_ctx->state->enable_clip_plane0 = 1;
+		opengl_debug("\tGL_CLIP_PLANE0 enabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE1:
+	{
+		opengl_ctx->state->enable_clip_plane1 = 1;
+		opengl_debug("\tGL_CLIP_PLANE1 enabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE2:
+	{
+		opengl_ctx->state->enable_clip_plane2 = 1;
+		opengl_debug("\tGL_CLIP_PLANE2 enabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE3:
+	{
+		opengl_ctx->state->enable_clip_plane3 = 1;
+		opengl_debug("\tGL_CLIP_PLANE3 enabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE4:
+	{
+		opengl_ctx->state->enable_clip_plane4 = 1;
+		opengl_debug("\tGL_CLIP_PLANE4 enabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE5:
+	{
+		opengl_ctx->state->enable_clip_plane5 = 1;
+		opengl_debug("\tGL_CLIP_PLANE5 enabled!\n");
+		break;
+	}
+
+	case GL_COLOR_LOGIC_OP:
+	{
+		opengl_ctx->state->enable_color_logic_op = 1;
+		opengl_debug("\tGL_COLOR_LOGIC_OP enabled!\n");
+		break;
+	}
+
+	case GL_COLOR_MATERIAL:
+	{
+		opengl_ctx->state->enable_color_material = 1;
+		opengl_debug("\tGL_COLOR_MATERIAL enabled!\n");
+		break;
+	}
+
+	case GL_COLOR_SUM:
+	{
+		opengl_ctx->state->enable_color_sum = 1;
+		opengl_debug("\tGL_COLOR_SUM enabled!\n");
+		break;
+	}
+
+	case GL_COLOR_TABLE:
+	{
+		opengl_ctx->state->enable_color_table = 1;
+		opengl_debug("\tGL_COLOR_TABLE enabled!\n");
+		break;
+	}
+
+	case GL_CONVOLUTION_1D:
+	{
+		opengl_ctx->state->enable_convolution_1d = 1;
+		opengl_debug("\tGL_CONVOLUTION_1D enabled!\n");
+		break;
+	}
+
+	case GL_CONVOLUTION_2D:
+	{
+		opengl_ctx->state->enable_convolution_2d = 1;
+		opengl_debug("\tGL_CONVOLUTION_2D enabled!\n");
+		break;
+	}
+
+	case GL_CULL_FACE:
+	{
+		opengl_ctx->state->enable_cull_face = 1;
+		opengl_debug("\tGL_CULL_FACE enabled!\n");
+		break;
+	}
+
+	case GL_DEPTH_TEST:
+	{
+		opengl_ctx->state->enable_depth_test = 1;
+		opengl_debug("\tGL_DEPTH_TEST enabled!\n");
+		break;
+	}
+
+	case GL_DITHER:
+	{
+		opengl_ctx->state->enable_dither = 1;
+		opengl_debug("\tGL_DITHER enabled!\n");
+		break;
+	}
+
+	case GL_FOG:
+	{
+		opengl_ctx->state->enable_fog = 1;
+		opengl_debug("\tGL_FOG enabled!\n");
+		break;
+	}
+
+	case GL_HISTOGRAM:
+	{
+		opengl_ctx->state->enable_histogram = 1;
+		opengl_debug("\tGL_HISTOGRAM enabled!\n");
+		break;
+	}
+
+	case GL_INDEX_LOGIC_OP:
+	{
+		opengl_ctx->state->enable_index_logic_op = 1;
+		opengl_debug("\tGL_INDEX_LOGIC_OP enabled!\n");
+		break;
+	}
+
+	case GL_LIGHT0:
+	{
+		opengl_ctx->state->enable_light0 = 1;
+		opengl_debug("\tGL_LIGHT0 enabled!\n");
+		break;
+	}
+
+	case GL_LIGHT1:
+	{
+		opengl_ctx->state->enable_light1 = 1;
+		opengl_debug("\tGL_LIGHT1 enabled!\n");
+		break;
+	}
+
+	case GL_LIGHT2:
+	{
+		opengl_ctx->state->enable_light2 = 1;
+		opengl_debug("\tGL_LIGHT2 enabled!\n");
+		break;
+	}
+
+	case GL_LIGHT3:
+	{
+		opengl_ctx->state->enable_light3 = 1;
+		opengl_debug("\tGL_LIGHT3 enabled!\n");
+		break;
+	}
+
+	case GL_LIGHT4:
+	{
+		opengl_ctx->state->enable_light4 = 1;
+		opengl_debug("\tGL_LIGHT4 enabled!\n");
+		break;
+	}
+
+	case GL_LIGHT5:
+	{
+		opengl_ctx->state->enable_light5 = 1;
+		opengl_debug("\tGL_LIGHT5 enabled!\n");
+		break;
+	}
+
+	case GL_LIGHT6:
+	{
+		opengl_ctx->state->enable_light6 = 1;
+		opengl_debug("\tGL_LIGHT6 enabled!\n");
+		break;
+	}
+
+	case GL_LIGHT7:
+	{
+		opengl_ctx->state->enable_light7 = 1;
+		opengl_debug("\tGL_LIGHT7 enabled!\n");
+		break;
+	}
+
+	case GL_LIGHTING:
+	{
+		opengl_ctx->state->enable_lighting = 1;
+		opengl_debug("\tGL_LIGHTING enabled!\n");
+		break;
+	}
+
+	case GL_LINE_SMOOTH:
+	{
+		opengl_ctx->state->enable_line_smooth = 1;
+		opengl_debug("\tGL_LINE_SMOOTH enabled!\n");
+		break;
+	}
+
+	case GL_LINE_STIPPLE:
+	{
+		opengl_ctx->state->enable_line_stipple = 1;
+		opengl_debug("\tGL_LINE_STIPPLE enabled!\n");
+		break;
+	}
+
+	case GL_MAP1_COLOR_4:
+	{
+		opengl_ctx->state->enable_map1_color_4 = 1;
+		opengl_debug("\tGL_MAP1_COLOR_4 enabled!\n");
+		break;
+	}
+
+	case GL_MAP1_INDEX:
+	{
+		opengl_ctx->state->enable_map1_index = 1;
+		opengl_debug("\tGL_MAP1_INDEX enabled!\n");
+		break;
+	}
+
+	case GL_MAP1_NORMAL:
+	{
+		opengl_ctx->state->enable_map1_normal = 1;
+		opengl_debug("\tGL_MAP1_NORMAL enabled!\n");
+		break;
+	}
+
+	case GL_MAP1_TEXTURE_COORD_1:
+	{
+		opengl_ctx->state->enable_map1_texture_coord_1 = 1;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_1 enabled!\n");
+		break;
+	}
+
+	case GL_MAP1_TEXTURE_COORD_2:
+	{
+		opengl_ctx->state->enable_map1_texture_coord_2 = 1;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_2 enabled!\n");
+		break;
+	}
+
+	case GL_MAP1_TEXTURE_COORD_3:
+	{
+		opengl_ctx->state->enable_map1_texture_coord_3 = 1;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_3 enabled!\n");
+		break;
+	}
+
+	case GL_MAP1_TEXTURE_COORD_4:
+	{
+		opengl_ctx->state->enable_map1_texture_coord_4 = 1;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_4 enabled!\n");
+		break;
+	}
+
+	case GL_MAP1_VERTEX_3:
+	{
+		opengl_ctx->state->enable_map1_vertex_3 = 1;
+		opengl_debug("\tGL_MAP1_VERTEX_3 enabled!\n");
+		break;
+	}
+
+	case GL_MAP1_VERTEX_4:
+	{
+		opengl_ctx->state->enable_map1_vertex_4 = 1;
+		opengl_debug("\tGL_MAP1_VERTEX_4 enabled!\n");
+		break;
+	}
+
+	case GL_MAP2_COLOR_4:
+	{
+		opengl_ctx->state->enable_map2_color_4 = 1;
+		opengl_debug("\tGL_MAP2_COLOR_4 enabled!\n");
+		break;
+	}
+
+	case GL_MAP2_INDEX:
+	{
+		opengl_ctx->state->enable_map2_index = 1;
+		opengl_debug("\tGL_MAP2_INDEX enabled!\n");
+		break;
+	}
+
+	case GL_MAP2_NORMAL:
+	{
+		opengl_ctx->state->enable_map2_normal = 1;
+		opengl_debug("\tGL_MAP2_NORMAL enabled!\n");
+		break;
+	}
+
+	case GL_MAP2_TEXTURE_COORD_1:
+	{
+		opengl_ctx->state->enable_map2_texture_coord_1 = 1;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_1 enabled!\n");
+		break;
+	}
+
+	case GL_MAP2_TEXTURE_COORD_2:
+	{
+		opengl_ctx->state->enable_map2_texture_coord_2 = 1;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_2 enabled!\n");
+		break;
+	}
+
+	case GL_MAP2_TEXTURE_COORD_3:
+	{
+		opengl_ctx->state->enable_map2_texture_coord_3 = 1;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_3 enabled!\n");
+		break;
+	}
+
+	case GL_MAP2_TEXTURE_COORD_4:
+	{
+		opengl_ctx->state->enable_map2_texture_coord_4 = 1;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_4 enabled!\n");
+		break;
+	}
+
+	case GL_MAP2_VERTEX_3:
+	{
+		opengl_ctx->state->enable_map2_vertex_3 = 1;
+		opengl_debug("\tGL_MAP2_VERTEX_3 enabled!\n");
+		break;
+	}
+
+	case GL_MAP2_VERTEX_4:
+	{
+		opengl_ctx->state->enable_map2_vertex_4 = 1;
+		opengl_debug("\tGL_MAP2_VERTEX_4 enabled!\n");
+		break;
+	}
+
+	case GL_MINMAX:
+	{
+		opengl_ctx->state->enable_minmax = 1;
+		opengl_debug("\tGL_MINMAX enabled!\n");
+		break;
+	}
+
+	case GL_MULTISAMPLE:
+	{
+		opengl_ctx->state->enable_multisample = 1;
+		opengl_debug("\tGL_MULTISAMPLE enabled!\n");
+		break;
+	}
+
+	case GL_NORMALIZE:
+	{
+		opengl_ctx->state->enable_normalize = 1;
+		opengl_debug("\tGL_NORMALIZE enabled!\n");
+		break;
+	}
+
+	case GL_POINT_SMOOTH:
+	{
+		opengl_ctx->state->enable_point_smooth = 1;
+		opengl_debug("\tGL_POINT_SMOOTH enabled!\n");
+		break;
+	}
+
+	case GL_POINT_SPRITE:
+	{
+		opengl_ctx->state->enable_point_sprite = 1;
+		opengl_debug("\tGL_POINT_SPRITE enabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_OFFSET_FILL:
+	{
+		opengl_ctx->state->enable_polygon_offset_fill = 1;
+		opengl_debug("\tGL_POLYGON_OFFSET_FILL enabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_OFFSET_LINE:
+	{
+		opengl_ctx->state->enable_polygon_offset_line = 1;
+		opengl_debug("\tGL_POLYGON_OFFSET_LINE enabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_OFFSET_POINT:
+	{
+		opengl_ctx->state->enable_polygon_offset_point = 1;
+		opengl_debug("\tGL_POLYGON_OFFSET_POINT enabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_SMOOTH:
+	{
+		opengl_ctx->state->enable_polygon_smooth = 1;
+		opengl_debug("\tGL_POLYGON_SMOOTH enabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_STIPPLE:
+	{
+		opengl_ctx->state->enable_polygon_stipple = 1;
+		opengl_debug("\tGL_POLYGON_STIPPLE enabled!\n");
+		break;
+	}
+
+	case GL_POST_COLOR_MATRIX_COLOR_TABLE:
+	{
+		opengl_ctx->state->enable_post_color_matrix_color_table = 1;
+		opengl_debug("\tGL_POST_COLOR_MATRIX_COLOR_TABLE enabled!\n");
+		break;
+	}
+
+	case GL_POST_CONVOLUTION_COLOR_TABLE:
+	{
+		opengl_ctx->state->enable_post_convolution_color_table = 1;
+		opengl_debug("\tGL_POST_CONVOLUTION_COLOR_TABLE enabled!\n");
+		break;
+	}
+
+	case GL_RESCALE_NORMAL:
+	{
+		opengl_ctx->state->enable_rescale_normal = 1;
+		opengl_debug("\tGL_RESCALE_NORMAL enabled!\n");
+		break;
+	}
+
+	case GL_SAMPLE_ALPHA_TO_COVERAGE:
+	{
+		opengl_ctx->state->enable_sample_alpha_to_coverage = 1;
+		opengl_debug("\tGL_SAMPLE_ALPHA_TO_COVERAGE enabled!\n");
+		break;
+	}
+
+	case GL_SAMPLE_ALPHA_TO_ONE:
+	{
+		opengl_ctx->state->enable_sample_alpha_to_one = 1;
+		opengl_debug("\tGL_SAMPLE_ALPHA_TO_ONE enabled!\n");
+		break;
+	}
+
+	case GL_SAMPLE_COVERAGE:
+	{
+		opengl_ctx->state->enable_sample_coverage = 1;
+		opengl_debug("\tGL_SAMPLE_COVERAGE enabled!\n");
+		break;
+	}
+
+	case GL_SEPARABLE_2D:
+	{
+		opengl_ctx->state->enable_separable_2d = 1;
+		opengl_debug("\tGL_SEPARABLE_2D enabled!\n");
+		break;
+	}
+
+	case GL_SCISSOR_TEST:
+	{
+		opengl_ctx->state->enable_scissor_test = 1;
+		opengl_debug("\tGL_SCISSOR_TEST enabled!\n");
+		break;
+	}
+
+	case GL_STENCIL_TEST:
+	{
+		opengl_ctx->state->enable_stencil_test = 1;
+		opengl_debug("\tGL_STENCIL_TEST enabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_1D:
+	{
+		opengl_ctx->state->enable_texture_1d = 1;
+		opengl_debug("\tGL_TEXTURE_1D enabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_2D:
+	{
+		opengl_ctx->state->enable_texture_2d = 1;
+		opengl_debug("\tGL_TEXTURE_2D enabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_3D:
+	{
+		opengl_ctx->state->enable_texture_3d = 1;
+		opengl_debug("\tGL_TEXTURE_3D enabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_CUBE_MAP:
+	{
+		opengl_ctx->state->enable_texture_cube_map = 1;
+		opengl_debug("\tGL_TEXTURE_CUBE_MAP enabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_GEN_Q:
+	{
+		opengl_ctx->state->enable_texture_gen_q = 1;
+		opengl_debug("\tGL_TEXTURE_GEN_Q enabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_GEN_R:
+	{
+		opengl_ctx->state->enable_texture_gen_r = 1;
+		opengl_debug("\tGL_TEXTURE_GEN_R enabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_GEN_S:
+	{
+		opengl_ctx->state->enable_texture_gen_s = 1;
+		opengl_debug("\tGL_TEXTURE_GEN_S enabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_GEN_T:
+	{
+		opengl_ctx->state->enable_texture_gen_t = 1;
+		opengl_debug("\tGL_TEXTURE_GEN_T enabled!\n");
+		break;
+	}
+
+	case GL_VERTEX_PROGRAM_POINT_SIZE:
+	{
+		opengl_ctx->state->enable_vertex_program_point_size = 1;
+		opengl_debug("\tGL_VERTEX_PROGRAM_POINT_SIZE enabled!\n");
+		break;
+	}
+
+	case GL_VERTEX_PROGRAM_TWO_SIDE:
+	{
+		opengl_ctx->state->enable_vertex_program_two_side = 1;
+		opengl_debug("\tGL_VERTEX_PROGRAM_TWO_SIDE enabled!\n");
+		break;
+	}
+
+	default:
+		break;
+	}
+}
+
+void glDisable( GLenum cap )
+{
+	/* Debug */
+	opengl_debug("API call %s(%x)\n", __FUNCTION__, cap);
+
+	switch(cap)
+	{
+
+	case GL_ALPHA_TEST:
+	{
+		opengl_ctx->state->enable_alpha_test = 0;
+		opengl_debug("\tGL_ALPHA_TEST disabled!\n");
+		break;
+	}
+
+	case GL_AUTO_NORMAL:
+	{
+		opengl_ctx->state->enable_auto_normal = 0;
+		opengl_debug("\tGL_AUTO_NORMAL disabled!\n");
+		break;
+	}
+
+	case GL_BLEND:
+	{
+		opengl_ctx->state->enable_blend = 0;
+		opengl_debug("\tGL_BLEND disabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE0:
+	{
+		opengl_ctx->state->enable_clip_plane0 = 0;
+		opengl_debug("\tGL_CLIP_PLANE0 disabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE1:
+	{
+		opengl_ctx->state->enable_clip_plane1 = 0;
+		opengl_debug("\tGL_CLIP_PLANE1 disabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE2:
+	{
+		opengl_ctx->state->enable_clip_plane2 = 0;
+		opengl_debug("\tGL_CLIP_PLANE2 disabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE3:
+	{
+		opengl_ctx->state->enable_clip_plane3 = 0;
+		opengl_debug("\tGL_CLIP_PLANE3 disabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE4:
+	{
+		opengl_ctx->state->enable_clip_plane4 = 0;
+		opengl_debug("\tGL_CLIP_PLANE4 disabled!\n");
+		break;
+	}
+
+	case GL_CLIP_PLANE5:
+	{
+		opengl_ctx->state->enable_clip_plane5 = 0;
+		opengl_debug("\tGL_CLIP_PLANE5 disabled!\n");
+		break;
+	}
+
+	case GL_COLOR_LOGIC_OP:
+	{
+		opengl_ctx->state->enable_color_logic_op = 0;
+		opengl_debug("\tGL_COLOR_LOGIC_OP disabled!\n");
+		break;
+	}
+
+	case GL_COLOR_MATERIAL:
+	{
+		opengl_ctx->state->enable_color_material = 0;
+		opengl_debug("\tGL_COLOR_MATERIAL disabled!\n");
+		break;
+	}
+
+	case GL_COLOR_SUM:
+	{
+		opengl_ctx->state->enable_color_sum = 0;
+		opengl_debug("\tGL_COLOR_SUM disabled!\n");
+		break;
+	}
+
+	case GL_COLOR_TABLE:
+	{
+		opengl_ctx->state->enable_color_table = 0;
+		opengl_debug("\tGL_COLOR_TABLE disabled!\n");
+		break;
+	}
+
+	case GL_CONVOLUTION_1D:
+	{
+		opengl_ctx->state->enable_convolution_1d = 0;
+		opengl_debug("\tGL_CONVOLUTION_1D disabled!\n");
+		break;
+	}
+
+	case GL_CONVOLUTION_2D:
+	{
+		opengl_ctx->state->enable_convolution_2d = 0;
+		opengl_debug("\tGL_CONVOLUTION_2D disabled!\n");
+		break;
+	}
+
+	case GL_CULL_FACE:
+	{
+		opengl_ctx->state->enable_cull_face = 0;
+		opengl_debug("\tGL_CULL_FACE disabled!\n");
+		break;
+	}
+
+	case GL_DEPTH_TEST:
+	{
+		opengl_ctx->state->enable_depth_test = 0;
+		opengl_debug("\tGL_DEPTH_TEST disabled!\n");
+		break;
+	}
+
+	case GL_DITHER:
+	{
+		opengl_ctx->state->enable_dither = 0;
+		opengl_debug("\tGL_DITHER disabled!\n");
+		break;
+	}
+
+	case GL_FOG:
+	{
+		opengl_ctx->state->enable_fog = 0;
+		opengl_debug("\tGL_FOG disabled!\n");
+		break;
+	}
+
+	case GL_HISTOGRAM:
+	{
+		opengl_ctx->state->enable_histogram = 0;
+		opengl_debug("\tGL_HISTOGRAM disabled!\n");
+		break;
+	}
+
+	case GL_INDEX_LOGIC_OP:
+	{
+		opengl_ctx->state->enable_index_logic_op = 0;
+		opengl_debug("\tGL_INDEX_LOGIC_OP disabled!\n");
+		break;
+	}
+
+	case GL_LIGHT0:
+	{
+		opengl_ctx->state->enable_light0 = 0;
+		opengl_debug("\tGL_LIGHT0 disabled!\n");
+		break;
+	}
+
+	case GL_LIGHT1:
+	{
+		opengl_ctx->state->enable_light1 = 0;
+		opengl_debug("\tGL_LIGHT1 disabled!\n");
+		break;
+	}
+
+	case GL_LIGHT2:
+	{
+		opengl_ctx->state->enable_light2 = 0;
+		opengl_debug("\tGL_LIGHT2 disabled!\n");
+		break;
+	}
+
+	case GL_LIGHT3:
+	{
+		opengl_ctx->state->enable_light3 = 0;
+		opengl_debug("\tGL_LIGHT3 disabled!\n");
+		break;
+	}
+
+	case GL_LIGHT4:
+	{
+		opengl_ctx->state->enable_light4 = 0;
+		opengl_debug("\tGL_LIGHT4 disabled!\n");
+		break;
+	}
+
+	case GL_LIGHT5:
+	{
+		opengl_ctx->state->enable_light5 = 0;
+		opengl_debug("\tGL_LIGHT5 disabled!\n");
+		break;
+	}
+
+	case GL_LIGHT6:
+	{
+		opengl_ctx->state->enable_light6 = 0;
+		opengl_debug("\tGL_LIGHT6 disabled!\n");
+		break;
+	}
+
+	case GL_LIGHT7:
+	{
+		opengl_ctx->state->enable_light7 = 0;
+		opengl_debug("\tGL_LIGHT7 disabled!\n");
+		break;
+	}
+
+	case GL_LIGHTING:
+	{
+		opengl_ctx->state->enable_lighting = 0;
+		opengl_debug("\tGL_LIGHTING disabled!\n");
+		break;
+	}
+
+	case GL_LINE_SMOOTH:
+	{
+		opengl_ctx->state->enable_line_smooth = 0;
+		opengl_debug("\tGL_LINE_SMOOTH disabled!\n");
+		break;
+	}
+
+	case GL_LINE_STIPPLE:
+	{
+		opengl_ctx->state->enable_line_stipple = 0;
+		opengl_debug("\tGL_LINE_STIPPLE disabled!\n");
+		break;
+	}
+
+	case GL_MAP1_COLOR_4:
+	{
+		opengl_ctx->state->enable_map1_color_4 = 0;
+		opengl_debug("\tGL_MAP1_COLOR_4 disabled!\n");
+		break;
+	}
+
+	case GL_MAP1_INDEX:
+	{
+		opengl_ctx->state->enable_map1_index = 0;
+		opengl_debug("\tGL_MAP1_INDEX disabled!\n");
+		break;
+	}
+
+	case GL_MAP1_NORMAL:
+	{
+		opengl_ctx->state->enable_map1_normal = 0;
+		opengl_debug("\tGL_MAP1_NORMAL disabled!\n");
+		break;
+	}
+
+	case GL_MAP1_TEXTURE_COORD_1:
+	{
+		opengl_ctx->state->enable_map1_texture_coord_1 = 0;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_1 disabled!\n");
+		break;
+	}
+
+	case GL_MAP1_TEXTURE_COORD_2:
+	{
+		opengl_ctx->state->enable_map1_texture_coord_2 = 0;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_2 disabled!\n");
+		break;
+	}
+
+	case GL_MAP1_TEXTURE_COORD_3:
+	{
+		opengl_ctx->state->enable_map1_texture_coord_3 = 0;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_3 disabled!\n");
+		break;
+	}
+
+	case GL_MAP1_TEXTURE_COORD_4:
+	{
+		opengl_ctx->state->enable_map1_texture_coord_4 = 0;
+		opengl_debug("\tGL_MAP1_TEXTURE_COORD_4 disabled!\n");
+		break;
+	}
+
+	case GL_MAP1_VERTEX_3:
+	{
+		opengl_ctx->state->enable_map1_vertex_3 = 0;
+		opengl_debug("\tGL_MAP1_VERTEX_3 disabled!\n");
+		break;
+	}
+
+	case GL_MAP1_VERTEX_4:
+	{
+		opengl_ctx->state->enable_map1_vertex_4 = 0;
+		opengl_debug("\tGL_MAP1_VERTEX_4 disabled!\n");
+		break;
+	}
+
+	case GL_MAP2_COLOR_4:
+	{
+		opengl_ctx->state->enable_map2_color_4 = 0;
+		opengl_debug("\tGL_MAP2_COLOR_4 disabled!\n");
+		break;
+	}
+
+	case GL_MAP2_INDEX:
+	{
+		opengl_ctx->state->enable_map2_index = 0;
+		opengl_debug("\tGL_MAP2_INDEX disabled!\n");
+		break;
+	}
+
+	case GL_MAP2_NORMAL:
+	{
+		opengl_ctx->state->enable_map2_normal = 0;
+		opengl_debug("\tGL_MAP2_NORMAL disabled!\n");
+		break;
+	}
+
+	case GL_MAP2_TEXTURE_COORD_1:
+	{
+		opengl_ctx->state->enable_map2_texture_coord_1 = 0;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_1 disabled!\n");
+		break;
+	}
+
+	case GL_MAP2_TEXTURE_COORD_2:
+	{
+		opengl_ctx->state->enable_map2_texture_coord_2 = 0;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_2 disabled!\n");
+		break;
+	}
+
+	case GL_MAP2_TEXTURE_COORD_3:
+	{
+		opengl_ctx->state->enable_map2_texture_coord_3 = 0;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_3 disabled!\n");
+		break;
+	}
+
+	case GL_MAP2_TEXTURE_COORD_4:
+	{
+		opengl_ctx->state->enable_map2_texture_coord_4 = 0;
+		opengl_debug("\tGL_MAP2_TEXTURE_COORD_4 disabled!\n");
+		break;
+	}
+
+	case GL_MAP2_VERTEX_3:
+	{
+		opengl_ctx->state->enable_map2_vertex_3 = 0;
+		opengl_debug("\tGL_MAP2_VERTEX_3 disabled!\n");
+		break;
+	}
+
+	case GL_MAP2_VERTEX_4:
+	{
+		opengl_ctx->state->enable_map2_vertex_4 = 0;
+		opengl_debug("\tGL_MAP2_VERTEX_4 disabled!\n");
+		break;
+	}
+
+	case GL_MINMAX:
+	{
+		opengl_ctx->state->enable_minmax = 0;
+		opengl_debug("\tGL_MINMAX disabled!\n");
+		break;
+	}
+
+	case GL_MULTISAMPLE:
+	{
+		opengl_ctx->state->enable_multisample = 0;
+		opengl_debug("\tGL_MULTISAMPLE disabled!\n");
+		break;
+	}
+
+	case GL_NORMALIZE:
+	{
+		opengl_ctx->state->enable_normalize = 0;
+		opengl_debug("\tGL_NORMALIZE disabled!\n");
+		break;
+	}
+
+	case GL_POINT_SMOOTH:
+	{
+		opengl_ctx->state->enable_point_smooth = 0;
+		opengl_debug("\tGL_POINT_SMOOTH disabled!\n");
+		break;
+	}
+
+	case GL_POINT_SPRITE:
+	{
+		opengl_ctx->state->enable_point_sprite = 0;
+		opengl_debug("\tGL_POINT_SPRITE disabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_OFFSET_FILL:
+	{
+		opengl_ctx->state->enable_polygon_offset_fill = 0;
+		opengl_debug("\tGL_POLYGON_OFFSET_FILL disabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_OFFSET_LINE:
+	{
+		opengl_ctx->state->enable_polygon_offset_line = 0;
+		opengl_debug("\tGL_POLYGON_OFFSET_LINE disabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_OFFSET_POINT:
+	{
+		opengl_ctx->state->enable_polygon_offset_point = 0;
+		opengl_debug("\tGL_POLYGON_OFFSET_POINT disabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_SMOOTH:
+	{
+		opengl_ctx->state->enable_polygon_smooth = 0;
+		opengl_debug("\tGL_POLYGON_SMOOTH disabled!\n");
+		break;
+	}
+
+	case GL_POLYGON_STIPPLE:
+	{
+		opengl_ctx->state->enable_polygon_stipple = 0;
+		opengl_debug("\tGL_POLYGON_STIPPLE disabled!\n");
+		break;
+	}
+
+	case GL_POST_COLOR_MATRIX_COLOR_TABLE:
+	{
+		opengl_ctx->state->enable_post_color_matrix_color_table = 0;
+		opengl_debug("\tGL_POST_COLOR_MATRIX_COLOR_TABLE disabled!\n");
+		break;
+	}
+
+	case GL_POST_CONVOLUTION_COLOR_TABLE:
+	{
+		opengl_ctx->state->enable_post_convolution_color_table = 0;
+		opengl_debug("\tGL_POST_CONVOLUTION_COLOR_TABLE disabled!\n");
+		break;
+	}
+
+	case GL_RESCALE_NORMAL:
+	{
+		opengl_ctx->state->enable_rescale_normal = 0;
+		opengl_debug("\tGL_RESCALE_NORMAL disabled!\n");
+		break;
+	}
+
+	case GL_SAMPLE_ALPHA_TO_COVERAGE:
+	{
+		opengl_ctx->state->enable_sample_alpha_to_coverage = 0;
+		opengl_debug("\tGL_SAMPLE_ALPHA_TO_COVERAGE disabled!\n");
+		break;
+	}
+
+	case GL_SAMPLE_ALPHA_TO_ONE:
+	{
+		opengl_ctx->state->enable_sample_alpha_to_one = 0;
+		opengl_debug("\tGL_SAMPLE_ALPHA_TO_ONE disabled!\n");
+		break;
+	}
+
+	case GL_SAMPLE_COVERAGE:
+	{
+		opengl_ctx->state->enable_sample_coverage = 0;
+		opengl_debug("\tGL_SAMPLE_COVERAGE disabled!\n");
+		break;
+	}
+
+	case GL_SEPARABLE_2D:
+	{
+		opengl_ctx->state->enable_separable_2d = 0;
+		opengl_debug("\tGL_SEPARABLE_2D disabled!\n");
+		break;
+	}
+
+	case GL_SCISSOR_TEST:
+	{
+		opengl_ctx->state->enable_scissor_test = 0;
+		opengl_debug("\tGL_SCISSOR_TEST disabled!\n");
+		break;
+	}
+
+	case GL_STENCIL_TEST:
+	{
+		opengl_ctx->state->enable_stencil_test = 0;
+		opengl_debug("\tGL_STENCIL_TEST disabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_1D:
+	{
+		opengl_ctx->state->enable_texture_1d = 0;
+		opengl_debug("\tGL_TEXTURE_1D disabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_2D:
+	{
+		opengl_ctx->state->enable_texture_2d = 0;
+		opengl_debug("\tGL_TEXTURE_2D disabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_3D:
+	{
+		opengl_ctx->state->enable_texture_3d = 0;
+		opengl_debug("\tGL_TEXTURE_3D disabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_CUBE_MAP:
+	{
+		opengl_ctx->state->enable_texture_cube_map = 0;
+		opengl_debug("\tGL_TEXTURE_CUBE_MAP disabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_GEN_Q:
+	{
+		opengl_ctx->state->enable_texture_gen_q = 0;
+		opengl_debug("\tGL_TEXTURE_GEN_Q disabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_GEN_R:
+	{
+		opengl_ctx->state->enable_texture_gen_r = 0;
+		opengl_debug("\tGL_TEXTURE_GEN_R disabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_GEN_S:
+	{
+		opengl_ctx->state->enable_texture_gen_s = 0;
+		opengl_debug("\tGL_TEXTURE_GEN_S disabled!\n");
+		break;
+	}
+
+	case GL_TEXTURE_GEN_T:
+	{
+		opengl_ctx->state->enable_texture_gen_t = 0;
+		opengl_debug("\tGL_TEXTURE_GEN_T disabled!\n");
+		break;
+	}
+
+	case GL_VERTEX_PROGRAM_POINT_SIZE:
+	{
+		opengl_ctx->state->enable_vertex_program_point_size = 0;
+		opengl_debug("\tGL_VERTEX_PROGRAM_POINT_SIZE disabled!\n");
+		break;
+	}
+
+	case GL_VERTEX_PROGRAM_TWO_SIDE:
+	{
+		opengl_ctx->state->enable_vertex_program_two_side = 0;
+		opengl_debug("\tGL_VERTEX_PROGRAM_TWO_SIDE disabled!\n");
+		break;
+	}
+
+	default:
+		break;
+	}
+}
+
+void glClear( GLbitfield mask )
+{
+	/* Debug */
+	opengl_debug("API call %s(%x)\n", __FUNCTION__, mask);
+
+	/* FIXME */
+	if (mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT))
+		opengl_debug("\tInvalid mask!\n");
+
+	if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) 
+	{
+		opengl_debug("\tColor buffer cleared\n");
+		/* Clear color buffer */
+	}
+
+	if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) 
+	{
+		opengl_debug("\tDepth buffer cleared\n");
+		/* Clear depth buffer */
+	}
+
+	if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT)
+	{
+		opengl_debug("\tStencil buffer cleared\n");
+		/* Clear stencil buffer */
+	}
+
+}
+
+void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
+{
+	/* Debug */
+	opengl_debug("API call %s(%f, %f, %f, %f)\n", 
+		__FUNCTION__, red, green, blue, alpha);
+
+	/* Specify a clear value for the color buffers */
+	opengl_ctx->props->color[0] = red;
+	opengl_ctx->props->color[0] = green;
+	opengl_ctx->props->color[0] = blue;
+	opengl_ctx->props->color[0] = alpha;
+}
+
+void glClearDepth( GLclampd depth )
+{
+	/* Debug */
+	opengl_debug("API call %s(%f)\n", __FUNCTION__, depth);
+
+	/* Specify a clear value for the depth buffer */
+	opengl_ctx->props->depth = depth;
+}
+
+void glClearStencil( GLint s )
+{
+	/* Debug */
+	opengl_debug("API call %s(%d)\n", __FUNCTION__, s);
+
+	/* Specify a clear value for the stencil buffer */
+	opengl_ctx->props->stencil = s;
+}
+
+void glViewport( GLint x, GLint y, GLsizei width, GLsizei height )
+{
+	/* Debug */
+	opengl_debug("API call %s(%d, %d, %d, %d)\n", 
+		__FUNCTION__, x, y, width, height);
+
+	/* Set the viewport */
+	opengl_ctx->props->vp_x = x;
+	opengl_ctx->props->vp_y = y;
+	opengl_ctx->props->vp_w = width;
+	opengl_ctx->props->vp_h = height;
 }

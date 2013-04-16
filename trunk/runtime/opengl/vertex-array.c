@@ -392,3 +392,10 @@ void glDisableVertexAttribArray (GLuint index)
 	}
 
 }
+
+void glDrawArrays( GLenum mode, GLint first, GLsizei count )
+{
+	/* Debug */
+	opengl_debug("API call %s(%x, %d, %d)\n", 
+		__FUNCTION__, mode, first, count);
+}

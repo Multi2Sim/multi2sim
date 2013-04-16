@@ -209,13 +209,19 @@ static void opengl_buffer_binding_target_bind_buffer(
 		binding_target->bound_buffer_id = buffer_obj->id;
 		pthread_mutex_unlock(&binding_target->mutex);	
 		opengl_buffer_obj_ref_update(buffer_obj, 1);
+
+		/* Debug */
+		opengl_debug("\t%s: Buffer Object #%d [%p] bind to Binding Target [%p]\n", 
+			__FUNCTION__, buffer_obj->id, buffer_obj, binding_target);
+
 	}
 	else
+	{
 		binding_target->bound_buffer_id = 0;
-
-	/* Debug */
-	opengl_debug("\t%s: Buffer Object #%d [%p] bind to Binding Target [%p]\n", 
-		__FUNCTION__, buffer_obj->id, buffer_obj, binding_target);
+		/* Debug */
+		opengl_debug("\t%s: Buffer Object #0 bind to Binding Target [%p]\n", 
+			__FUNCTION__, binding_target);
+	}
 }
 
 static void opengl_buffer_binding_target_unbind_buffer(
@@ -629,8 +635,14 @@ void glBindBuffer (GLenum target, GLuint buffer)
 	struct opengl_buffer_obj_t *buffer_obj;
 
 	target_obj = opengl_buffer_binding_points_get_target(opengl_ctx->buffer_binding_points, target);
-	buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, buffer);
-	opengl_buffer_binding_target_bind_buffer(target_obj, buffer_obj);
+	if (buffer)
+	{
+		buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, buffer);
+		opengl_buffer_binding_target_bind_buffer(target_obj, buffer_obj);		
+	}
+	else
+		opengl_buffer_binding_target_bind_buffer(target_obj, NULL);		
+
 }
 
 void glBindBufferBase (GLenum target, GLuint index, GLuint buffer)
@@ -668,4 +680,52 @@ void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum us
 	if (data)
 		memcpy(buffer_obj->data, data, size);
 	buffer_obj->usage = usage;
+}
+
+GLvoid* glMapBuffer (GLenum target, GLenum access)
+{
+	struct opengl_buffer_binding_target_t *target_obj;
+	struct opengl_buffer_obj_t *buffer_obj;
+
+	/* Debug */
+	opengl_debug("API call %s(%x, %x)\n", __FUNCTION__, target, access);
+
+	target_obj = opengl_buffer_binding_points_get_target(opengl_ctx->buffer_binding_points, target);
+	buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, target_obj->bound_buffer_id);
+	buffer_obj->map_access_flags = access;
+	buffer_obj->mapped = 1;
+	buffer_obj->map_pointer = buffer_obj->data;
+	buffer_obj->map_offset = 0;
+	buffer_obj->map_length = buffer_obj->size;
+
+	return buffer_obj->map_pointer;
+}
+
+GLboolean glUnmapBuffer (GLenum target)
+{
+	struct opengl_buffer_binding_target_t *target_obj;
+	struct opengl_buffer_obj_t *buffer_obj;
+
+	/* Debug */
+	opengl_debug("API call %s(%x)\n", __FUNCTION__, target);
+
+	target_obj = opengl_buffer_binding_points_get_target(opengl_ctx->buffer_binding_points, target);
+	buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, target_obj->bound_buffer_id);
+	if (buffer_obj->mapped)
+	{
+		buffer_obj->map_access_flags = 0;
+		buffer_obj->mapped = 0;
+		buffer_obj->map_pointer = NULL;
+		buffer_obj->map_offset = 0;
+		buffer_obj->map_length = 0;
+		return GL_TRUE;
+	}
+	else
+	{
+		/* Debug */
+		opengl_debug("\t%s: Buffer %d [%p] not mapped\n", 
+			__FUNCTION__, buffer_obj->id, buffer_obj);
+		return GL_FALSE;
+	}
+
 }

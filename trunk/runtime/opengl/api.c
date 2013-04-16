@@ -65,25 +65,25 @@ void glClearIndex( GLfloat c )
 }
 
 
-void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	GLdouble sys_args[4];
-	sys_args[0] = (GLdouble) red;
-	sys_args[1] = (GLdouble) green;
-	sys_args[2] = (GLdouble) blue;
-	sys_args[3] = (GLdouble) alpha;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glClearColor, &sys_args);	
-}
+// 	GLdouble sys_args[4];
+// 	sys_args[0] = (GLdouble) red;
+// 	sys_args[1] = (GLdouble) green;
+// 	sys_args[2] = (GLdouble) blue;
+// 	sys_args[3] = (GLdouble) alpha;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glClearColor, &sys_args);	
+// }
 
 
-void glClear( GLbitfield mask )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glClear( GLbitfield mask )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glClear, &mask);
-}
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glClear, &mask);
+// }
 
 
 void glIndexMask( GLuint mask )
@@ -224,14 +224,14 @@ void glReadBuffer( GLenum mode )
 // }
 
 
-void glDisable( GLenum cap )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glDisable( GLenum cap )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	unsigned int sys_args[1];
-	sys_args[0] = (unsigned int) cap;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDisable, &sys_args);
-}
+// 	unsigned int sys_args[1];
+// 	sys_args[0] = (unsigned int) cap;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDisable, &sys_args);
+// }
 
 
 GLboolean glIsEnabled( GLenum cap )
@@ -351,10 +351,10 @@ void glHint( GLenum target, GLenum mode )
 }
 
 
-void glClearDepth( GLclampd depth )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClearDepth( GLclampd depth )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glDepthFunc( GLenum func )
@@ -429,18 +429,18 @@ void glFrustum( GLdouble left, GLdouble right,
 }
 
 
-void glViewport( GLint x, GLint y,
-                                    GLsizei width, GLsizei height )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glViewport( GLint x, GLint y,
+//                                     GLsizei width, GLsizei height )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	GLint sys_args[4];
-	sys_args[0] = (GLint) x;
-	sys_args[1] = (GLint) y;
-	sys_args[2] = (GLint) width;
-	sys_args[3] = (GLint) height;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glViewport, &sys_args);
-}
+// 	GLint sys_args[4];
+// 	sys_args[0] = (GLint) x;
+// 	sys_args[1] = (GLint) y;
+// 	sys_args[2] = (GLint) width;
+// 	sys_args[3] = (GLint) height;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glViewport, &sys_args);
+// }
 
 
 void glPushMatrix( void )
@@ -1552,17 +1552,17 @@ void glArrayElement( GLint i )
 }
 
 
-void glDrawArrays( GLenum mode, GLint first, GLsizei count )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glDrawArrays( GLenum mode, GLint first, GLsizei count )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
 
-	unsigned int sys_args[3];
-	sys_args[0] = (unsigned int) mode;
-	sys_args[1] = (unsigned int) first;
-	sys_args[2] = (unsigned int) count;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDrawArrays, &sys_args);
-}
+// 	unsigned int sys_args[3];
+// 	sys_args[0] = (unsigned int) mode;
+// 	sys_args[1] = (unsigned int) first;
+// 	sys_args[2] = (unsigned int) count;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDrawArrays, &sys_args);
+// }
 
 
 void glDrawElements( GLenum mode, GLsizei count,
@@ -1829,10 +1829,10 @@ void glStencilOp( GLenum fail, GLenum zfail, GLenum zpass )
 }
 
 
-void glClearStencil( GLint s )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClearStencil( GLint s )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glTexGend( GLenum coord, GLenum pname, GLdouble param )
@@ -3451,72 +3451,72 @@ void glGetBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, GLvoid
 	__OPENGL_NOT_IMPL__
 }
 
-GLvoid* glMapBuffer (GLenum target, GLenum access)
-{
-	/* FIXME: Move objects management to runtime can simplify this */
-	/* Debug */
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// GLvoid* glMapBuffer (GLenum target, GLenum access)
+// {
+// 	/* FIXME: Move objects management to runtime can simplify this */
+// 	/* Debug */
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 	
-	void *data_ptr = NULL;
-	unsigned int *data_size;
-	unsigned int *second_call;
-	unsigned int sys_args[5];
+// 	void *data_ptr = NULL;
+// 	unsigned int *data_size;
+// 	unsigned int *second_call;
+// 	unsigned int sys_args[5];
 
-	/* Allocate */
-	data_size = xcalloc(1, sizeof(unsigned int));
-	second_call = xcalloc(1, sizeof(unsigned int));
+// 	/* Allocate */
+// 	data_size = xcalloc(1, sizeof(unsigned int));
+// 	second_call = xcalloc(1, sizeof(unsigned int));
 
-	/* 1st call set up the map_buf->data_size so it can allocate */
-	sys_args[0] = (unsigned int) target;
-	sys_args[1] = (unsigned int) access;
-	sys_args[2] = (unsigned int) data_ptr;
-	sys_args[3] = (unsigned int) data_size;
-	sys_args[4] = (unsigned int) second_call;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMapBuffer, &sys_args);
+// 	/* 1st call set up the map_buf->data_size so it can allocate */
+// 	sys_args[0] = (unsigned int) target;
+// 	sys_args[1] = (unsigned int) access;
+// 	sys_args[2] = (unsigned int) data_ptr;
+// 	sys_args[3] = (unsigned int) data_size;
+// 	sys_args[4] = (unsigned int) second_call;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMapBuffer, &sys_args);
 
-	/* Allocate, will free in glUnmapBuffer */
-	if (*data_size)
-		data_ptr = xcalloc(1, *data_size);
-	else
-	{
-		opengl_debug(stdout, "\n%s: no data to be mapped, return NULL\n", __FUNCTION__);
-		return NULL;
-	}
+// 	/* Allocate, will free in glUnmapBuffer */
+// 	if (*data_size)
+// 		data_ptr = xcalloc(1, *data_size);
+// 	else
+// 	{
+// 		opengl_debug(stdout, "\n%s: no data to be mapped, return NULL\n", __FUNCTION__);
+// 		return NULL;
+// 	}
 
-	/* 2nd call copy data in native memory to guest memory */
-	sys_args[0] = (unsigned int) target;
-	sys_args[1] = (unsigned int) access;
-	sys_args[2] = (unsigned int) data_ptr;
-	sys_args[3] = (unsigned int) data_size;
-	sys_args[4] = (unsigned int) second_call;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMapBuffer, &sys_args);
+// 	/* 2nd call copy data in native memory to guest memory */
+// 	sys_args[0] = (unsigned int) target;
+// 	sys_args[1] = (unsigned int) access;
+// 	sys_args[2] = (unsigned int) data_ptr;
+// 	sys_args[3] = (unsigned int) data_size;
+// 	sys_args[4] = (unsigned int) second_call;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMapBuffer, &sys_args);
 
-	/* Free */
-	free(data_size);
-	free(second_call);
+// 	/* Free */
+// 	free(data_size);
+// 	free(second_call);
 
-	/* Return */
-	if (data_ptr)
-		return data_ptr;
-	else
-		return NULL;
-}
+// 	/* Return */
+// 	if (data_ptr)
+// 		return data_ptr;
+// 	else
+// 		return NULL;
+// }
 
-GLboolean glUnmapBuffer (GLenum target)
-{
-	void *data_ptr = NULL;
-	unsigned int sys_args[2];
+// GLboolean glUnmapBuffer (GLenum target)
+// {
+// 	void *data_ptr = NULL;
+// 	unsigned int sys_args[2];
 	
-	sys_args[0] = (unsigned int) target;
-	sys_args[1] = (unsigned int) data_ptr;
+// 	sys_args[0] = (unsigned int) target;
+// 	sys_args[1] = (unsigned int) data_ptr;
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glUnmapBuffer, &sys_args);
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glUnmapBuffer, &sys_args);
 
-	if (data_ptr)
-		free(data_ptr);
+// 	if (data_ptr)
+// 		free(data_ptr);
 
-	return 0;
-}
+// 	return 0;
+// }
 
 void glGetBufferParameteriv (GLenum target, GLenum pname, GLint *params)
 {
