@@ -593,6 +593,8 @@ struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get(
  */
 
 
+/* Buffer Objects [2.9-10] */
+
 void glGenBuffers (GLsizei n, GLuint *buffers)
 {
 	/* Debug */
@@ -600,6 +602,12 @@ void glGenBuffers (GLsizei n, GLuint *buffers)
 
 	int i;
 	struct opengl_buffer_obj_t *buffer_obj;
+
+	if (n < 0)
+	{
+		opengl_context_set_error(opengl_ctx, GL_INVALID_VALUE);
+		return;
+	}
 
 	for (i = 0; i < n; ++i)
 	{
@@ -617,6 +625,12 @@ void glDeleteBuffers (GLsizei n, const GLuint *buffers)
 	int i;
 	struct opengl_buffer_obj_t *buffer_obj;
 
+	if (n < 0)
+	{
+		opengl_context_set_error(opengl_ctx, GL_INVALID_VALUE);
+		return;
+	}
+
 	for (i = 0; i < n; ++i)
 	{
 		buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, buffers[i]);
@@ -625,6 +639,9 @@ void glDeleteBuffers (GLsizei n, const GLuint *buffers)
 	}
 
 }
+
+
+/* Creating and binding Buffer objects [2.9.1] */
 
 void glBindBuffer (GLenum target, GLuint buffer)
 {
@@ -645,6 +662,11 @@ void glBindBuffer (GLenum target, GLuint buffer)
 
 }
 
+void glBindBufferRange (GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size)
+{
+	__OPENGL_NOT_IMPL__
+}
+
 void glBindBufferBase (GLenum target, GLuint index, GLuint buffer)
 {
 	/* Debug */
@@ -662,6 +684,13 @@ void glBindBufferBase (GLenum target, GLuint index, GLuint buffer)
 	opengl_buffer_binding_target_bind_buffer(idxed_target_obj, buffer_obj);
 }
 
+
+/* Creating Buffer Object Data Stores [2.9.2] */
+
+void glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data)
+{
+	__OPENGL_NOT_IMPL__
+}
 
 void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage)
 {
@@ -682,6 +711,15 @@ void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum us
 	buffer_obj->usage = usage;
 }
 
+
+/* Mapping/Unmapping Buffer Data [2.9.3] */
+
+GLvoid* glMapBufferRange (GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access)
+{
+	__OPENGL_NOT_IMPL__
+	return 0;
+}
+
 GLvoid* glMapBuffer (GLenum target, GLenum access)
 {
 	struct opengl_buffer_binding_target_t *target_obj;
@@ -699,6 +737,12 @@ GLvoid* glMapBuffer (GLenum target, GLenum access)
 	buffer_obj->map_length = buffer_obj->size;
 
 	return buffer_obj->map_pointer;
+}
+
+
+void glFlushMappedBufferRange (GLenum target, GLintptr offset, GLsizeiptr length)
+{
+	__OPENGL_NOT_IMPL__
 }
 
 GLboolean glUnmapBuffer (GLenum target)
@@ -728,4 +772,39 @@ GLboolean glUnmapBuffer (GLenum target)
 		return GL_FALSE;
 	}
 
+}
+
+/* Copying between buffers */
+void glCopyBufferSubData (GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+void glClear( GLbitfield mask )
+{
+	/* Debug */
+	opengl_debug("API call %s(%x)\n", __FUNCTION__, mask);
+
+	/* FIXME */
+	if (mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT))
+		opengl_debug("\tInvalid mask!\n");
+
+	if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) 
+	{
+		opengl_debug("\tColor buffer cleared\n");
+		/* Clear color buffer */
+	}
+
+	if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) 
+	{
+		opengl_debug("\tDepth buffer cleared\n");
+		/* Clear depth buffer */
+	}
+
+	if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT)
+	{
+		opengl_debug("\tStencil buffer cleared\n");
+		/* Clear stencil buffer */
+	}
 }

@@ -321,3 +321,34 @@ void glUseProgram (GLuint program)
 		opengl_ctx->program_binding_point = NULL;
 	}
 }
+
+void glTransformFeedbackVaryings (GLuint program, GLsizei count, const GLchar* *varyings, GLenum bufferMode)
+{
+	int i;
+
+	/* Debug */
+	opengl_debug("API call %s(%d, %d, %p, %x)\n", 
+		__FUNCTION__, program, count, varyings, bufferMode);
+
+	for (i = 0; i < count; ++i)
+		opengl_debug("\tVarying #%d: %s\n", i, varyings[i]);
+
+}
+
+void glBeginTransformFeedback (GLenum primitiveMode)
+{
+	/* Debug */
+	opengl_debug("API call %s(%x)\n", 
+		__FUNCTION__, primitiveMode);
+
+	/* FIXME */
+}
+
+void glEndTransformFeedback (void)
+{
+	/* Debug */
+	opengl_debug("API call %s\n", __FUNCTION__);
+
+	/* FIXME */
+}
+

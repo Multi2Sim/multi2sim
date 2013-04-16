@@ -280,6 +280,258 @@ void opengl_vertex_array_obj_repo_free(struct linked_list_t *vtx_array_obj_repo)
  */
 
 
+/* Vertex Arrays [2.8] */
+
+
+void glVertexPointer( GLint size, GLenum type,
+	GLsizei stride, const GLvoid *ptr )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+void glNormalPointer( GLenum type, GLsizei stride,
+	const GLvoid *ptr )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+void glColorPointer( GLint size, GLenum type,
+	GLsizei stride, const GLvoid *ptr )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glSecondaryColorPointer (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glIndexPointer( GLenum type, GLsizei stride,
+	const GLvoid *ptr )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glEdgeFlagPointer( GLsizei stride, const GLvoid *ptr )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glFogCoordPointer (GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glTexCoordPointer( GLint size, GLenum type,
+	GLsizei stride, const GLvoid *ptr )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer)
+{
+	struct opengl_vertex_array_obj_t *vao;
+	struct opengl_vertex_attrib_t *vattrib;
+	struct opengl_buffer_binding_target_t *bbt;
+	struct opengl_buffer_obj_t *buffer_obj;
+
+	/* Debug */
+	opengl_debug("API call %s(%d, %d, %x, %d, %d, %p)\n", 
+		__FUNCTION__, index, size, type, normalized, stride, pointer);
+
+	vao = opengl_ctx->vao_binding_point;
+	bbt = opengl_buffer_binding_points_get_target(opengl_ctx->buffer_binding_points, GL_ARRAY_BUFFER);
+	buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, bbt->bound_buffer_id);
+	opengl_buffer_obj_ref_update(buffer_obj, 1);
+
+	if (vao)
+	{
+		vattrib = vao->attribs[index];
+		vattrib->size = size;
+		vattrib->type = type;
+		vattrib->normalized = normalized;
+		vattrib->stride = stride;
+		vattrib->pointer = (unsigned int)pointer;
+
+		vattrib->vbo = buffer_obj;
+	}
+}
+
+void glVertexAttribIPointer (GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glVertexAttribLPointer (GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glEnableClientState( GLenum cap )  /* 1.1 */
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDisableClientState( GLenum cap )  /* 1.1 */
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glEnableVertexAttribArray (GLuint index)
+{
+	struct opengl_vertex_array_obj_t *vao;
+	struct opengl_vertex_attrib_t *vattrib;
+
+	/* Debug */
+	opengl_debug("API call %s(%d)\n", __FUNCTION__, index);
+
+	vao = opengl_ctx->vao_binding_point;
+	if (vao)
+	{
+		vattrib = vao->attribs[index];
+		vattrib->enabled = 1;
+	}
+}
+
+void glDisableVertexAttribArray (GLuint index)
+{
+	struct opengl_vertex_array_obj_t *vao;
+	struct opengl_vertex_attrib_t *vattrib;
+
+	/* Debug */
+	opengl_debug("API call %s(%d)\n", __FUNCTION__, index);
+
+	vao = opengl_ctx->vao_binding_point;
+	if (vao)
+	{
+		vattrib = vao->attribs[index];
+		vattrib->enabled = 0;
+	}
+
+}
+
+void glVertexAttribDivisor (GLuint index, GLuint divisor)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glClientActiveTexture( GLenum texture )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+void glArrayElement( GLint i )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+/* Enable/Disable(PRIMITIVE_RESTART) */
+void glPrimitiveRestartIndex (GLuint index)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+/* Drawing Commands [2.8.3] [2.8.2] */
+
+
+void glDrawArrays( GLenum mode, GLint first, GLsizei count )
+{
+	/* Debug */
+	opengl_debug("API call %s(%x, %d, %d)\n", 
+		__FUNCTION__, mode, first, count);
+}
+
+void glDrawArraysInstanced (GLenum mode, GLint first, GLsizei count, GLsizei primcount)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawArraysInstancedBaseInstance (GLenum mode, GLint first, GLsizei count, GLsizei primcount, GLuint baseinstance)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawArraysIndirect (GLenum mode, const GLvoid *indirect)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glMultiDrawArrays (GLenum mode, const GLint *first, const GLsizei *count, GLsizei primcount)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawElements( GLenum mode, GLsizei count,
+                                      GLenum type, const GLvoid *indices )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawElementsInstanced (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLsizei primcount)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawElementsIndirect (GLenum mode, GLenum type, const GLvoid *indirect)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawElementsInstancedBaseInstance (GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei primcount, GLuint baseinstance)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawElementsInstancedBaseVertexBaseInstance (GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei primcount, GLint basevertex, GLuint baseinstance)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glMultiDrawElements (GLenum mode, const GLsizei *count, GLenum type, const GLvoid* *indices, GLsizei primcount)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawRangeElements( GLenum mode, GLuint start,
+	GLuint end, GLsizei count, GLenum type, const GLvoid *indices )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawElementsBaseVertex (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLint basevertex)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawRangeElementsBaseVertex (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices, GLint basevertex)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glDrawElementsInstancedBaseVertex (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLsizei primcount, GLint basevertex)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glMultiDrawElementsBaseVertex (GLenum mode, const GLsizei *count, GLenum type, const GLvoid* *indices, GLsizei primcount, const GLint *basevertex)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glInterleavedArrays( GLenum format, GLsizei stride,
+                                           const GLvoid *pointer )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+/* Vertex Array Objects [2.10] */
+
+
 void glGenVertexArrays (GLsizei n, GLuint *arrays)
 {
 	struct opengl_vertex_array_obj_t *vao;
@@ -329,73 +581,4 @@ void glBindVertexArray (GLuint array)
 	}
 	else
 		opengl_ctx->vao_binding_point = NULL;
-}
-
-void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer)
-{
-	struct opengl_vertex_array_obj_t *vao;
-	struct opengl_vertex_attrib_t *vattrib;
-	struct opengl_buffer_binding_target_t *bbt;
-	struct opengl_buffer_obj_t *buffer_obj;
-
-	/* Debug */
-	opengl_debug("API call %s(%d, %d, %x, %d, %d, %p)\n", 
-		__FUNCTION__, index, size, type, normalized, stride, pointer);
-
-	vao = opengl_ctx->vao_binding_point;
-	bbt = opengl_buffer_binding_points_get_target(opengl_ctx->buffer_binding_points, GL_ARRAY_BUFFER);
-	buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, bbt->bound_buffer_id);
-	opengl_buffer_obj_ref_update(buffer_obj, 1);
-
-	if (vao)
-	{
-		vattrib = vao->attribs[index];
-		vattrib->size = size;
-		vattrib->type = type;
-		vattrib->normalized = normalized;
-		vattrib->stride = stride;
-		vattrib->pointer = (unsigned int)pointer;
-
-		vattrib->vbo = buffer_obj;
-	}
-}
-
-void glEnableVertexAttribArray (GLuint index)
-{
-	struct opengl_vertex_array_obj_t *vao;
-	struct opengl_vertex_attrib_t *vattrib;
-
-	/* Debug */
-	opengl_debug("API call %s(%d)\n", __FUNCTION__, index);
-
-	vao = opengl_ctx->vao_binding_point;
-	if (vao)
-	{
-		vattrib = vao->attribs[index];
-		vattrib->enabled = 1;
-	}
-}
-
-void glDisableVertexAttribArray (GLuint index)
-{
-	struct opengl_vertex_array_obj_t *vao;
-	struct opengl_vertex_attrib_t *vattrib;
-
-	/* Debug */
-	opengl_debug("API call %s(%d)\n", __FUNCTION__, index);
-
-	vao = opengl_ctx->vao_binding_point;
-	if (vao)
-	{
-		vattrib = vao->attribs[index];
-		vattrib->enabled = 0;
-	}
-
-}
-
-void glDrawArrays( GLenum mode, GLint first, GLsizei count )
-{
-	/* Debug */
-	opengl_debug("API call %s(%x, %d, %d)\n", 
-		__FUNCTION__, mode, first, count);
 }
