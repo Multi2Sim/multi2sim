@@ -781,6 +781,35 @@ void glCopyBufferSubData (GLenum readTarget, GLenum writeTarget, GLintptr readOf
 }
 
 
+/* Buffer Object Queries [6.1.9] [6.1.15] */
+
+GLboolean glIsBuffer (GLuint buffer)
+{
+	__OPENGL_NOT_IMPL__
+	return 0;
+}
+
+void glGetBufferParameteriv (GLenum target, GLenum pname, GLint *params)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glGetBufferParameteri64v (GLenum target, GLenum pname, GLint64 *params)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glGetBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, GLvoid *data)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glGetBufferPointerv (GLenum target, GLenum pname, GLvoid* *params)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
 void glClear( GLbitfield mask )
 {
 	/* Debug */

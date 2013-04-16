@@ -3422,11 +3422,11 @@ void glGetQueryObjectuiv (GLuint id, GLenum pname, GLuint *params)
 // 		opengl_debug(stdout, "glGenBuffers: Buffer #%d ID = %d\n", n, buffers[n]);	
 // }
 
-GLboolean glIsBuffer (GLuint buffer)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsBuffer (GLuint buffer)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 // void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage)
 // {
@@ -3447,10 +3447,10 @@ GLboolean glIsBuffer (GLuint buffer)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glGetBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, GLvoid *data)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, GLvoid *data)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // GLvoid* glMapBuffer (GLenum target, GLenum access)
 // {
@@ -3519,15 +3519,15 @@ void glGetBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, GLvoid
 // 	return 0;
 // }
 
-void glGetBufferParameteriv (GLenum target, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetBufferParameteriv (GLenum target, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetBufferPointerv (GLenum target, GLenum pname, GLvoid* *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetBufferPointerv (GLenum target, GLenum pname, GLvoid* *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glBlendEquationSeparate (GLenum modeRGB, GLenum modeAlpha)
 {
@@ -3566,10 +3566,10 @@ void glStencilMaskSeparate (GLenum face, GLuint mask)
 // 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glAttachShader, &sys_args);
 // }
 
-void glBindAttribLocation (GLuint program, GLuint index, const GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindAttribLocation (GLuint program, GLuint index, const GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glCompileShader (GLuint shader)
 // {
@@ -3642,99 +3642,99 @@ void glBindAttribLocation (GLuint program, GLuint index, const GLchar *name)
 // 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEnableVertexAttribArray, &sys_args);
 // }
 
-void glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetActiveUniform (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetActiveUniform (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetAttachedShaders (GLuint program, GLsizei maxCount, GLsizei *count, GLuint *obj)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetAttachedShaders (GLuint program, GLsizei maxCount, GLsizei *count, GLuint *obj)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLint glGetAttribLocation (GLuint program, const GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLint glGetAttribLocation (GLuint program, const GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glGetProgramiv (GLuint program, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetProgramiv (GLuint program, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetProgramInfoLog (GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetProgramInfoLog (GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetShaderiv (GLuint shader, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetShaderiv (GLuint shader, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetShaderInfoLog (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetShaderInfoLog (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetShaderSource (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetShaderSource (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLint glGetUniformLocation (GLuint program, const GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLint glGetUniformLocation (GLuint program, const GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glGetUniformfv (GLuint program, GLint location, GLfloat *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetUniformfv (GLuint program, GLint location, GLfloat *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetUniformiv (GLuint program, GLint location, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetUniformiv (GLuint program, GLint location, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetVertexAttribdv (GLuint index, GLenum pname, GLdouble *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetVertexAttribdv (GLuint index, GLenum pname, GLdouble *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetVertexAttribfv (GLuint index, GLenum pname, GLfloat *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetVertexAttribfv (GLuint index, GLenum pname, GLfloat *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetVertexAttribiv (GLuint index, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetVertexAttribiv (GLuint index, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetVertexAttribPointerv (GLuint index, GLenum pname, GLvoid* *pointer)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetVertexAttribPointerv (GLuint index, GLenum pname, GLvoid* *pointer)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLboolean glIsProgram (GLuint program)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsProgram (GLuint program)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-GLboolean glIsShader (GLuint shader)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsShader (GLuint shader)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 // void glLinkProgram (GLuint program)
 // {
@@ -3762,105 +3762,105 @@ GLboolean glIsShader (GLuint shader)
 // 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glUseProgram, &sys_args);
 // }
 
-void glUniform1f (GLint location, GLfloat v0)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform1f (GLint location, GLfloat v0)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform2f (GLint location, GLfloat v0, GLfloat v1)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform2f (GLint location, GLfloat v0, GLfloat v1)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform3f (GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform3f (GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform4f (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform4f (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform1i (GLint location, GLint v0)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform1i (GLint location, GLint v0)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform2i (GLint location, GLint v0, GLint v1)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform2i (GLint location, GLint v0, GLint v1)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform3i (GLint location, GLint v0, GLint v1, GLint v2)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform3i (GLint location, GLint v0, GLint v1, GLint v2)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform4i (GLint location, GLint v0, GLint v1, GLint v2, GLint v3)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform4i (GLint location, GLint v0, GLint v1, GLint v2, GLint v3)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform1fv (GLint location, GLsizei count, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform1fv (GLint location, GLsizei count, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform2fv (GLint location, GLsizei count, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform2fv (GLint location, GLsizei count, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform3fv (GLint location, GLsizei count, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform3fv (GLint location, GLsizei count, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform4fv (GLint location, GLsizei count, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform4fv (GLint location, GLsizei count, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform1iv (GLint location, GLsizei count, const GLint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform1iv (GLint location, GLsizei count, const GLint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform2iv (GLint location, GLsizei count, const GLint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform2iv (GLint location, GLsizei count, const GLint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform3iv (GLint location, GLsizei count, const GLint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform3iv (GLint location, GLsizei count, const GLint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform4iv (GLint location, GLsizei count, const GLint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform4iv (GLint location, GLsizei count, const GLint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glValidateProgram (GLuint program)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glValidateProgram (GLuint program)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glVertexAttrib1d (GLuint index, GLdouble x)
 // {
@@ -4057,35 +4057,35 @@ void glValidateProgram (GLuint program)
 
 // }
 
-void glUniformMatrix2x3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix2x3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix3x2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix3x2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix2x4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix2x4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix4x2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix4x2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix3x4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix3x4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix4x3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix4x3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glColorMaski (GLuint index, GLboolean r, GLboolean g, GLboolean b, GLboolean a)
 {
@@ -4162,10 +4162,10 @@ GLboolean glIsEnabledi (GLenum target, GLuint index)
 // 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glTransformFeedbackVaryings, &sys_args);
 // }
 
-void glGetTransformFeedbackVarying (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLsizei *size, GLenum *type, GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTransformFeedbackVarying (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLsizei *size, GLenum *type, GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glClampColor (GLenum target, GLenum clamp)
 {
@@ -4187,15 +4187,15 @@ void glEndConditionalRender (void)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glGetVertexAttribIiv (GLuint index, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetVertexAttribIiv (GLuint index, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetVertexAttribIuiv (GLuint index, GLenum pname, GLuint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetVertexAttribIuiv (GLuint index, GLenum pname, GLuint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glVertexAttribI1i (GLuint index, GLint x)
 // {
@@ -4297,61 +4297,61 @@ void glGetVertexAttribIuiv (GLuint index, GLenum pname, GLuint *params)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glGetUniformuiv (GLuint program, GLint location, GLuint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetUniformuiv (GLuint program, GLint location, GLuint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glBindFragDataLocation (GLuint program, GLuint color, const GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindFragDataLocation (GLuint program, GLuint color, const GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLint glGetFragDataLocation (GLuint program, const GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLint glGetFragDataLocation (GLuint program, const GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glUniform1ui (GLint location, GLuint v0)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform1ui (GLint location, GLuint v0)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform2ui (GLint location, GLuint v0, GLuint v1)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform2ui (GLint location, GLuint v0, GLuint v1)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform3ui (GLint location, GLuint v0, GLuint v1, GLuint v2)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform3ui (GLint location, GLuint v0, GLuint v1, GLuint v2)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform4ui (GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform4ui (GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform1uiv (GLint location, GLsizei count, const GLuint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform1uiv (GLint location, GLsizei count, const GLuint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform2uiv (GLint location, GLsizei count, const GLuint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform2uiv (GLint location, GLsizei count, const GLuint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform3uiv (GLint location, GLsizei count, const GLuint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform3uiv (GLint location, GLsizei count, const GLuint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform4uiv (GLint location, GLsizei count, const GLuint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform4uiv (GLint location, GLsizei count, const GLuint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glTexParameterIiv (GLenum target, GLenum pname, const GLint *params)
 {
@@ -4424,10 +4424,10 @@ void glGetInteger64i_v (GLenum target, GLuint index, GLint64 *data)
 	__OPENGL_NOT_IMPL__
 }
 
-void glGetBufferParameteri64v (GLenum target, GLenum pname, GLint64 *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetBufferParameteri64v (GLenum target, GLenum pname, GLint64 *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glFramebufferTexture (GLenum target, GLenum attachment, GLuint texture, GLint level)
 {
@@ -5463,47 +5463,47 @@ void glTexBufferARB (GLenum target, GLenum internalformat, GLuint buffer)
 
 // }
 
-GLboolean glIsVertexArray (GLuint array)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsVertexArray (GLuint array)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glGetUniformIndices (GLuint program, GLsizei uniformCount, const GLchar* *uniformNames, GLuint *uniformIndices)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetUniformIndices (GLuint program, GLsizei uniformCount, const GLchar* *uniformNames, GLuint *uniformIndices)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetActiveUniformsiv (GLuint program, GLsizei uniformCount, const GLuint *uniformIndices, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetActiveUniformsiv (GLuint program, GLsizei uniformCount, const GLuint *uniformIndices, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetActiveUniformName (GLuint program, GLuint uniformIndex, GLsizei bufSize, GLsizei *length, GLchar *uniformName)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetActiveUniformName (GLuint program, GLuint uniformIndex, GLsizei bufSize, GLsizei *length, GLchar *uniformName)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLuint glGetUniformBlockIndex (GLuint program, const GLchar *uniformBlockName)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLuint glGetUniformBlockIndex (GLuint program, const GLchar *uniformBlockName)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glGetActiveUniformBlockiv (GLuint program, GLuint uniformBlockIndex, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetActiveUniformBlockiv (GLuint program, GLuint uniformBlockIndex, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetActiveUniformBlockName (GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei *length, GLchar *uniformBlockName)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetActiveUniformBlockName (GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei *length, GLchar *uniformBlockName)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformBlockBinding (GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformBlockBinding (GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glCopyBufferSubData (GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size)
 // {
@@ -5649,16 +5649,16 @@ void glGetNamedStringivARB (GLint namelen, const GLchar *name, GLenum pname, GLi
 	__OPENGL_NOT_IMPL__
 }
 
-void glBindFragDataLocationIndexed (GLuint program, GLuint colorNumber, GLuint index, const GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindFragDataLocationIndexed (GLuint program, GLuint colorNumber, GLuint index, const GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLint glGetFragDataIndex (GLuint program, const GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLint glGetFragDataIndex (GLuint program, const GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 void glGenSamplers (GLsizei count, GLuint *samplers)
 {
@@ -5946,147 +5946,147 @@ void glGetQueryObjectui64v (GLuint id, GLenum pname, GLuint64 *params)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glUniform1d (GLint location, GLdouble x)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform1d (GLint location, GLdouble x)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform2d (GLint location, GLdouble x, GLdouble y)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform2d (GLint location, GLdouble x, GLdouble y)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform3d (GLint location, GLdouble x, GLdouble y, GLdouble z)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform3d (GLint location, GLdouble x, GLdouble y, GLdouble z)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform4d (GLint location, GLdouble x, GLdouble y, GLdouble z, GLdouble w)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform4d (GLint location, GLdouble x, GLdouble y, GLdouble z, GLdouble w)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform1dv (GLint location, GLsizei count, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform1dv (GLint location, GLsizei count, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform2dv (GLint location, GLsizei count, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform2dv (GLint location, GLsizei count, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform3dv (GLint location, GLsizei count, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform3dv (GLint location, GLsizei count, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniform4dv (GLint location, GLsizei count, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniform4dv (GLint location, GLsizei count, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix2dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix2dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix3dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix3dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix4dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix4dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix2x3dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix2x3dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix2x4dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix2x4dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix3x2dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix3x2dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix3x4dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix3x4dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix4x2dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix4x2dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformMatrix4x3dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformMatrix4x3dv (GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetUniformdv (GLuint program, GLint location, GLdouble *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetUniformdv (GLuint program, GLint location, GLdouble *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLint glGetSubroutineUniformLocation (GLuint program, GLenum shadertype, const GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLint glGetSubroutineUniformLocation (GLuint program, GLenum shadertype, const GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-GLuint glGetSubroutineIndex (GLuint program, GLenum shadertype, const GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLuint glGetSubroutineIndex (GLuint program, GLenum shadertype, const GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glGetActiveSubroutineUniformiv (GLuint program, GLenum shadertype, GLuint index, GLenum pname, GLint *values)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetActiveSubroutineUniformiv (GLuint program, GLenum shadertype, GLuint index, GLenum pname, GLint *values)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetActiveSubroutineUniformName (GLuint program, GLenum shadertype, GLuint index, GLsizei bufsize, GLsizei *length, GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetActiveSubroutineUniformName (GLuint program, GLenum shadertype, GLuint index, GLsizei bufsize, GLsizei *length, GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetActiveSubroutineName (GLuint program, GLenum shadertype, GLuint index, GLsizei bufsize, GLsizei *length, GLchar *name)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetActiveSubroutineName (GLuint program, GLenum shadertype, GLuint index, GLsizei bufsize, GLsizei *length, GLchar *name)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUniformSubroutinesuiv (GLenum shadertype, GLsizei count, const GLuint *indices)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUniformSubroutinesuiv (GLenum shadertype, GLsizei count, const GLuint *indices)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetUniformSubroutineuiv (GLenum shadertype, GLint location, GLuint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetUniformSubroutineuiv (GLenum shadertype, GLint location, GLuint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetProgramStageiv (GLuint program, GLenum shadertype, GLenum pname, GLint *values)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetProgramStageiv (GLuint program, GLenum shadertype, GLenum pname, GLint *values)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glPatchParameteri (GLenum pname, GLint value)
 // {
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glPatchParameterfv (GLenum pname, const GLfloat *values)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPatchParameterfv (GLenum pname, const GLfloat *values)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glBindTransformFeedback (GLenum target, GLuint id)
 {
@@ -6144,20 +6144,20 @@ void glGetQueryIndexediv (GLenum target, GLuint index, GLenum pname, GLint *para
 	__OPENGL_NOT_IMPL__
 }
 
-void glReleaseShaderCompiler (void)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glReleaseShaderCompiler (void)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glShaderBinary (GLsizei count, const GLuint *shaders, GLenum binaryformat, const GLvoid *binary, GLsizei length)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glShaderBinary (GLsizei count, const GLuint *shaders, GLenum binaryformat, const GLvoid *binary, GLsizei length)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetShaderPrecisionFormat (GLenum shadertype, GLenum precisiontype, GLint *range, GLint *precision)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetShaderPrecisionFormat (GLenum shadertype, GLenum precisiontype, GLint *range, GLint *precision)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glDepthRangef (GLclampf n, GLclampf f)
 {
@@ -6169,322 +6169,322 @@ void glClearDepthf (GLclampf d)
 	__OPENGL_NOT_IMPL__
 }
 
-void glGetProgramBinary (GLuint program, GLsizei bufSize, GLsizei *length, GLenum *binaryFormat, GLvoid *binary)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetProgramBinary (GLuint program, GLsizei bufSize, GLsizei *length, GLenum *binaryFormat, GLvoid *binary)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramBinary (GLuint program, GLenum binaryFormat, const GLvoid *binary, GLsizei length)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramBinary (GLuint program, GLenum binaryFormat, const GLvoid *binary, GLsizei length)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramParameteri (GLuint program, GLenum pname, GLint value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramParameteri (GLuint program, GLenum pname, GLint value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glUseProgramStages (GLuint pipeline, GLbitfield stages, GLuint program)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glUseProgramStages (GLuint pipeline, GLbitfield stages, GLuint program)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glActiveShaderProgram (GLuint pipeline, GLuint program)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glActiveShaderProgram (GLuint pipeline, GLuint program)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLuint glCreateShaderProgramv (GLenum type, GLsizei count, const GLchar* *strings)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLuint glCreateShaderProgramv (GLenum type, GLsizei count, const GLchar* *strings)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glBindProgramPipeline (GLuint pipeline)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindProgramPipeline (GLuint pipeline)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDeleteProgramPipelines (GLsizei n, const GLuint *pipelines)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteProgramPipelines (GLsizei n, const GLuint *pipelines)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGenProgramPipelines (GLsizei n, GLuint *pipelines)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGenProgramPipelines (GLsizei n, GLuint *pipelines)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLboolean glIsProgramPipeline (GLuint pipeline)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsProgramPipeline (GLuint pipeline)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glGetProgramPipelineiv (GLuint pipeline, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetProgramPipelineiv (GLuint pipeline, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform1i (GLuint program, GLint location, GLint v0)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform1i (GLuint program, GLint location, GLint v0)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform1iv (GLuint program, GLint location, GLsizei count, const GLint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform1iv (GLuint program, GLint location, GLsizei count, const GLint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform1f (GLuint program, GLint location, GLfloat v0)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform1f (GLuint program, GLint location, GLfloat v0)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform1fv (GLuint program, GLint location, GLsizei count, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform1fv (GLuint program, GLint location, GLsizei count, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform1d (GLuint program, GLint location, GLdouble v0)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform1d (GLuint program, GLint location, GLdouble v0)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform1dv (GLuint program, GLint location, GLsizei count, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform1dv (GLuint program, GLint location, GLsizei count, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform1ui (GLuint program, GLint location, GLuint v0)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform1ui (GLuint program, GLint location, GLuint v0)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform1uiv (GLuint program, GLint location, GLsizei count, const GLuint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform1uiv (GLuint program, GLint location, GLsizei count, const GLuint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform2i (GLuint program, GLint location, GLint v0, GLint v1)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform2i (GLuint program, GLint location, GLint v0, GLint v1)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform2iv (GLuint program, GLint location, GLsizei count, const GLint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform2iv (GLuint program, GLint location, GLsizei count, const GLint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform2f (GLuint program, GLint location, GLfloat v0, GLfloat v1)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform2f (GLuint program, GLint location, GLfloat v0, GLfloat v1)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform2fv (GLuint program, GLint location, GLsizei count, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform2fv (GLuint program, GLint location, GLsizei count, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform2d (GLuint program, GLint location, GLdouble v0, GLdouble v1)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform2d (GLuint program, GLint location, GLdouble v0, GLdouble v1)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform2dv (GLuint program, GLint location, GLsizei count, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform2dv (GLuint program, GLint location, GLsizei count, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform2ui (GLuint program, GLint location, GLuint v0, GLuint v1)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform2ui (GLuint program, GLint location, GLuint v0, GLuint v1)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform2uiv (GLuint program, GLint location, GLsizei count, const GLuint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform2uiv (GLuint program, GLint location, GLsizei count, const GLuint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform3i (GLuint program, GLint location, GLint v0, GLint v1, GLint v2)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform3i (GLuint program, GLint location, GLint v0, GLint v1, GLint v2)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform3iv (GLuint program, GLint location, GLsizei count, const GLint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform3iv (GLuint program, GLint location, GLsizei count, const GLint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform3f (GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform3f (GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform3fv (GLuint program, GLint location, GLsizei count, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform3fv (GLuint program, GLint location, GLsizei count, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform3d (GLuint program, GLint location, GLdouble v0, GLdouble v1, GLdouble v2)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform3d (GLuint program, GLint location, GLdouble v0, GLdouble v1, GLdouble v2)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform3dv (GLuint program, GLint location, GLsizei count, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform3dv (GLuint program, GLint location, GLsizei count, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform3ui (GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform3ui (GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform3uiv (GLuint program, GLint location, GLsizei count, const GLuint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform3uiv (GLuint program, GLint location, GLsizei count, const GLuint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform4i (GLuint program, GLint location, GLint v0, GLint v1, GLint v2, GLint v3)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform4i (GLuint program, GLint location, GLint v0, GLint v1, GLint v2, GLint v3)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform4iv (GLuint program, GLint location, GLsizei count, const GLint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform4iv (GLuint program, GLint location, GLsizei count, const GLint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform4f (GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform4f (GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform4fv (GLuint program, GLint location, GLsizei count, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform4fv (GLuint program, GLint location, GLsizei count, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform4d (GLuint program, GLint location, GLdouble v0, GLdouble v1, GLdouble v2, GLdouble v3)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform4d (GLuint program, GLint location, GLdouble v0, GLdouble v1, GLdouble v2, GLdouble v3)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform4dv (GLuint program, GLint location, GLsizei count, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform4dv (GLuint program, GLint location, GLsizei count, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform4ui (GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform4ui (GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniform4uiv (GLuint program, GLint location, GLsizei count, const GLuint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniform4uiv (GLuint program, GLint location, GLsizei count, const GLuint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix2fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix2fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix3fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix3fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix4fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix4fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix2dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix2dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix3dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix3dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix4dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix4dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix2x3fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix2x3fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix3x2fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix3x2fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix2x4fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix2x4fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix4x2fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix4x2fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix3x4fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix3x4fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix4x3fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix4x3fv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix2x3dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix2x3dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix3x2dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix3x2dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix2x4dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix2x4dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix4x2dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix4x2dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix3x4dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix3x4dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glProgramUniformMatrix4x3dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProgramUniformMatrix4x3dv (GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLdouble *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glValidateProgramPipeline (GLuint pipeline)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glValidateProgramPipeline (GLuint pipeline)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetProgramPipelineInfoLog (GLuint pipeline, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetProgramPipelineInfoLog (GLuint pipeline, GLsizei bufSize, GLsizei *length, GLchar *infoLog)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glVertexAttribL1d (GLuint index, GLdouble x)
 // {
@@ -6531,10 +6531,10 @@ void glGetProgramPipelineInfoLog (GLuint pipeline, GLsizei bufSize, GLsizei *len
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glGetVertexAttribLdv (GLuint index, GLenum pname, GLdouble *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetVertexAttribLdv (GLuint index, GLenum pname, GLdouble *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glViewportArrayv (GLuint first, GLsizei count, const GLfloat *v)
 {
@@ -6754,10 +6754,10 @@ void glBindImageTexture (GLuint unit, GLuint texture, GLint level, GLboolean lay
 	__OPENGL_NOT_IMPL__
 }
 
-void glMemoryBarrier (GLbitfield barriers)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMemoryBarrier (GLbitfield barriers)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glTexStorage1D (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width)
 {
