@@ -269,10 +269,22 @@ AM_CONDITIONAL(HAVE_M32_FLAG, test x$have_m32_flag = xyes)
 # Test OpenCL
 #############
 
-# Run an OpenCL test program
-AC_MSG_CHECKING([for AMD OpenCL libraries])
+# Check if the user explicitly disabled OpenCL
+AC_ARG_ENABLE(opencl,
+	[  --enable-opencl={yes|no}	Enable support for OpenCL (default=yes)],
+	[], [ enable_opencl=yes ])
+
+# Check if OpenCL is present
 have_opencl=no
-if test "x$AMDAPPSDKROOT" != "x"
+if test "$enable_opencl" == "no"
+then
+	AC_MSG_WARN([
+
+	Support for OpenCL has been explicitly disabled by a configuration flag.
+	Some features of Multi2Sim will be disabled.]
+	)
+
+elif test "x$AMDAPPSDKROOT" != "x"
 then
 	# Use temporary CFLAGS, LDFLAGS
 	saved_cflags="$CFLAGS"
@@ -307,8 +319,7 @@ then
 fi
 
 # Warning if not
-AC_MSG_RESULT($have_opencl)
-if test "x$have_opencl" = "xno"
+if test "x$have_opencl" = "xno" -a "x$enable_opencl" = "xyes"
 then
 	AC_MSG_WARN([
 	
@@ -631,6 +642,7 @@ AC_SUBST([CFLAGS])
 M2S_INCLUDES=" \
 \
 -I\$(top_srcdir)/src \
+-I\$(top_srcdir)/tools \
 \
 "
 
@@ -717,7 +729,10 @@ AC_CONFIG_FILES([
 		src/lib/util/Makefile
 
 		tools/Makefile
+
 		tools/clcc/Makefile
+		tools/clcc/amd/Makefile
+
 		tools/glcc/Makefile
 		tools/si-as/Makefile
 		])

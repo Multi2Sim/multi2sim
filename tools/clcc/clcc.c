@@ -20,11 +20,10 @@
 #include <assert.h>
 #include <getopt.h>
 
+#include <clcc/amd/amd.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
-
-#include "amd.h"
 
 
 

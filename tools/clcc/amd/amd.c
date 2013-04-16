@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include <clcc/amd/amd.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
@@ -29,8 +30,6 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include "amd.h"
-#include "clcc.h"
 
 
 
@@ -246,11 +245,11 @@ static void amd_binary_analyze(char *file_name)
 
 #define AMD_MAX_DEVICES  100
 
-static void amd_compile_source(char *source_file_name)
+static void amd_compile_source(char *source_file_name, char *out_file_name)
 {
 	char *source_file_ext;
 	char out_file_name_root[MAX_STRING_SIZE];
-	char out_file_name[MAX_STRING_SIZE];
+	char out_file_name_str[MAX_STRING_SIZE];
 	char compiler_flags[MAX_STRING_SIZE];
 	
 	int size;
@@ -273,11 +272,13 @@ static void amd_compile_source(char *source_file_name)
 		out_file_name_root[strlen(out_file_name_root) - strlen(source_file_ext)] = '\0';
 
 	/* Compute output file name if not given. In either case, the output
-	 * file is placed in variable 'out_file_name'. */
-	if (!clcc_out_file_name || !*clcc_out_file_name)
-		snprintf(out_file_name, sizeof out_file_name, "%s.bin", out_file_name_root);
+	 * file is placed in variable 'out_file_name_str'. */
+	if (!out_file_name || !*out_file_name)
+		snprintf(out_file_name_str, sizeof out_file_name_str,
+				"%s.bin", out_file_name_root);
 	else
-		snprintf(out_file_name, sizeof out_file_name, "%s", clcc_out_file_name);
+		snprintf(out_file_name_str, sizeof out_file_name_str,
+				"%s", out_file_name);
 
 	/* Read the program source */
 	program_source = read_buffer(source_file_name, &size);
@@ -329,18 +330,18 @@ static void amd_compile_source(char *source_file_name)
 	memset(bin_bits, 0, sizeof bin_bits);
 	bin_bits[index] = xmalloc(bin_sizes[index]);
 	clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof bin_bits, bin_bits, NULL);
-	if (!write_buffer(out_file_name, bin_bits[index], bin_sizes[index]))
-		fatal("%s: cannot write to file", out_file_name);
+	if (!write_buffer(out_file_name_str, bin_bits[index], bin_sizes[index]))
+		fatal("%s: cannot write to file", out_file_name_str);
 	
 	/* Free buffers */
 	free(bin_bits[index]);
-	printf("\t%s - kernel binary created\n", out_file_name);
+	printf("\t%s - kernel binary created\n", out_file_name_str);
 
 	/* Process generated binary */
 	if (amd_dump_all)
 	{
 		printf("\t%s/* - AMD intermediate files dumped\n", out_file_name_root);
-		amd_binary_analyze(out_file_name);
+		amd_binary_analyze(out_file_name_str);
 	}
 }
 
@@ -494,7 +495,8 @@ void amd_compile(struct list_t *source_file_list, char *out_file_name)
 
 	/* Compile source files */
 	LIST_FOR_EACH(source_file_list, index)
-		amd_compile_source(list_get(source_file_list, index));
+		amd_compile_source(list_get(source_file_list, index),
+				out_file_name);
 
 	/* Finish */
 	amd_done();
