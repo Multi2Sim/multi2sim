@@ -67,9 +67,40 @@ void arch_free(struct arch_t *arch)
 
 void arch_dump(struct arch_t *arch, FILE *f)
 {
-	fprintf(f, "** Architecture '%s' **\n", arch->name);
+	double time_in_sec;
+	int i;
+
+	/* Nothing to print if architecture was not active */
+	if (!arch->inst_count)
+		return;
+
+	/* Header */
+	for (i = 0; i < 80; i++)
+		fprintf(f, "=");
+	fprintf(f, "\nArchitecture '%s'\n", arch->name);
+	for (i = 0; i < 80; i++)
+		fprintf(f, "=");
+	fprintf(f, "\n\n");
+
+	/* Emulator */
+	time_in_sec = (double) m2s_timer_get_value(arch->timer) / 1.0e6;
 	fprintf(f, "SimKind = %s\n", str_map_value(&arch_sim_kind_map, arch->sim_kind));
+	fprintf(f, "Time = %.2f\n", time_in_sec);
+	fprintf(f, "Instructions = %lld\n", arch->inst_count);
 	fprintf(f, "\n");
+	if (arch->emu_dump_func)
+		arch->emu_dump_func(f);
+
+
+	/* Continue with timing simulator only it active */
+	if (arch->sim_kind == arch_sim_kind_functional)
+		return;
+
+	/* Timing simulator */
+	fprintf(f, "Cycles = %lld\n", arch->cycle);
+	fprintf(f, "\n");
+	if (arch->timing_dump_func)
+		arch->timing_dump_func(f);
 }
 
 
@@ -183,10 +214,12 @@ void arch_register(char *name, char *prefix,
 	arch->sim_kind = sim_kind;
 	arch->emu_init_func = emu_init_func;
 	arch->emu_done_func = emu_done_func;
+	arch->emu_dump_func = emu_dump_func;
 	arch->emu_dump_summary_func = emu_dump_summary_func;
 	arch->emu_run_func = emu_run_func;
 	arch->timing_init_func = timing_init_func;
 	arch->timing_done_func = timing_done_func;
+	arch->timing_dump_func = timing_dump_func;
 	arch->timing_dump_summary_func = timing_dump_summary_func;
 	arch->timing_run_func = timing_run_func;
 

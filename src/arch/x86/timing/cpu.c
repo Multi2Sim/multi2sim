@@ -861,41 +861,50 @@ void x86_cpu_dump(FILE *f)
 	
 	/* General information */
 	fprintf(f, "\n");
-	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", x86_cpu->last_dump);
-	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", arch->cycle - x86_cpu->last_dump > 0 ?
-		(double) (x86_cpu->num_committed_uinst - x86_cpu->last_committed) / (arch->cycle - x86_cpu->last_dump) : 0);
+	fprintf(f, "LastDump = %lld   ; Cycle of last dump\n", x86_cpu->last_dump);
+	fprintf(f, "IPCLastDump = %.4g   ; IPC since last dump\n",
+			arch->cycle - x86_cpu->last_dump > 0 ?
+			(double) (x86_cpu->num_committed_uinst - x86_cpu->last_committed)
+			/ (arch->cycle - x86_cpu->last_dump) : 0);
 	fprintf(f, "\n");
 
 	/* Cores */
 	X86_CORE_FOR_EACH
 	{
-		fprintf(f, "Core %d:\n", core);
+		fprintf(f, "-------\n");
+		fprintf(f, "Core %d\n", core);
+		fprintf(f, "-------\n\n");
 		
-		fprintf(f, "eventq:\n");
+		fprintf(f, "Event Queue:\n");
 		x86_uop_linked_list_dump(X86_CORE.event_queue, f);
-		fprintf(f, "rob:\n");
+
+		fprintf(f, "Reorder Buffer:\n");
 		x86_rob_dump(core, f);
 
 		X86_THREAD_FOR_EACH
 		{
-			fprintf(f, "Thread %d:\n", thread);
+			fprintf(f, "----------------------\n");
+			fprintf(f, "Thread %d (in core %d)\n", thread, core);
+			fprintf(f, "----------------------\n\n");
 			
-			fprintf(f, "fetch queue:\n");
+			fprintf(f, "Fetch queue:\n");
 			x86_uop_list_dump(X86_THREAD.fetch_queue, f);
-			fprintf(f, "uop queue:\n");
+
+			fprintf(f, "Uop queue:\n");
 			x86_uop_list_dump(X86_THREAD.uop_queue, f);
-			fprintf(f, "iq:\n");
+
+			fprintf(f, "Instruction Queue:\n");
 			x86_uop_linked_list_dump(X86_THREAD.iq, f);
-			fprintf(f, "lq:\n");
+
+			fprintf(f, "Load Queue:\n");
 			x86_uop_linked_list_dump(X86_THREAD.lq, f);
-			fprintf(f, "sq:\n");
+
+			fprintf(f, "Store Queue:\n");
 			x86_uop_linked_list_dump(X86_THREAD.sq, f);
+
 			x86_reg_file_dump(core, thread, f);
 			if (X86_THREAD.ctx)
-			{
-				fprintf(f, "mapped context: %d\n", X86_THREAD.ctx->pid);
-				x86_ctx_dump(X86_THREAD.ctx, f);
-			}
+				fprintf(f, "MappedContext = %d\n", X86_THREAD.ctx->pid);
 			
 			fprintf(f, "\n");
 		}
@@ -904,6 +913,9 @@ void x86_cpu_dump(FILE *f)
 	/* Register last dump */
 	x86_cpu->last_dump = arch->cycle;
 	x86_cpu->last_committed = x86_cpu->num_committed_uinst;
+
+	/* End */
+	fprintf(f, "\n\n");
 }
 
 

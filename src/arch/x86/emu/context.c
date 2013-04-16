@@ -265,25 +265,32 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 
 void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 {
-	char status_str[MAX_STRING_SIZE];
+	char state_str[MAX_STRING_SIZE];
 
-	fprintf(f, "  pid=%d\n", ctx->pid);
-	str_map_flags(&x86_ctx_status_map, ctx->state, status_str, sizeof status_str);
-	fprintf(f, "  status=%s\n", status_str);
+	/* Title */
+	fprintf(f, "------------\n");
+	fprintf(f, "Context %d\n", ctx->pid);
+	fprintf(f, "------------\n\n");
+
+	str_map_flags(&x86_ctx_status_map, ctx->state, state_str, sizeof state_str);
+	fprintf(f, "State = %s\n", state_str);
 	if (!ctx->parent)
-		fprintf(f, "  parent=(null)\n");
+		fprintf(f, "Parent = None\n");
 	else
-		fprintf(f, "  parent=%d\n", ctx->parent->pid);
-	fprintf(f, "  heap break: 0x%x\n", ctx->mem->heap_break);
+		fprintf(f, "Parent = %d\n", ctx->parent->pid);
+	fprintf(f, "Heap break: 0x%x\n", ctx->mem->heap_break);
 
-	/* Signal masks */
-	fprintf(f, "  blocked signal mask: 0x%llx ", ctx->signal_mask_table->blocked);
+	/* Bit masks */
+	fprintf(f, "BlockedSignalMask = 0x%llx ", ctx->signal_mask_table->blocked);
 	x86_sigset_dump(ctx->signal_mask_table->blocked, f);
-	fprintf(f, "\n  pending signals: 0x%llx ", ctx->signal_mask_table->pending);
+	fprintf(f, "\nPendingSignalMask = 0x%llx ", ctx->signal_mask_table->pending);
 	x86_sigset_dump(ctx->signal_mask_table->pending, f);
-	fprintf(f, "\n  affinity mask: ");
+	fprintf(f, "\nAffinity = ");
 	bit_map_dump(ctx->affinity, 0, x86_cpu_num_cores * x86_cpu_num_threads, f);
 	fprintf(f, "\n");
+
+	/* End */
+	fprintf(f, "\n\n");
 }
 
 

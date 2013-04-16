@@ -1506,6 +1506,7 @@ static void m2s_load_programs(int argc, char **argv)
 
 static void m2s_dump(FILE *f)
 {
+	arch_for_each((arch_callback_func_t) arch_dump, f);
 }
 
 
