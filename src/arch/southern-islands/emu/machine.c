@@ -5840,6 +5840,84 @@ void si_isa_DS_INC_U32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+/* DS[ADDR+offset0*4] = D0; DS[ADDR+offset1*4] = D1; Write 2 Dwords */
+#define INST SI_INST_DS
+void si_isa_DS_WRITE2_B32_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	union si_reg_t addr0;
+	union si_reg_t addr1;
+	union si_reg_t data0;
+	union si_reg_t data1;
+
+	assert(!INST.gds);
+
+	/* Load address and data from registers. */
+	addr0.as_uint = si_isa_read_vreg(work_item, INST.addr);
+	addr0.as_uint += INST.offset0*4;
+	addr1.as_uint = si_isa_read_vreg(work_item, INST.addr);
+	addr1.as_uint += INST.offset1*4;
+	data0.as_uint = si_isa_read_vreg(work_item, INST.data0);
+	data1.as_uint = si_isa_read_vreg(work_item, INST.data1);
+
+	if (addr0.as_uint > MIN(work_item->work_group->ndrange->local_mem_top,
+		si_isa_read_sreg(work_item, SI_M0)))
+	{
+		fatal("%s: invalid address\n", __FUNCTION__);
+	}
+	if (addr1.as_uint > MIN(work_item->work_group->ndrange->local_mem_top,
+		si_isa_read_sreg(work_item, SI_M0)))
+	{
+		fatal("%s: invalid address\n", __FUNCTION__);
+	}
+
+	/* Write Dword. */
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		mem_write(work_item->work_group->lds_module, addr0.as_uint, 4,
+			&data0.as_uint);
+		mem_write(work_item->work_group->lds_module, addr1.as_uint, 4,
+			&data1.as_uint);
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		/* If offset1 != 1, then the following is incorrect */
+		assert(INST.offset0 == 0);
+		assert(INST.offset1 == 1);
+		work_item->lds_access_count = 2;
+		work_item->lds_access_type[0] = 2;
+		work_item->lds_access_addr[0] = addr0.as_uint;
+		work_item->lds_access_size[0] = 8;
+	}
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category) && INST.gds)
+	{
+		si_isa_debug("t%d: GDS[%u]<=(%u,%f) ", work_item->id, 
+			addr0.as_uint, data0.as_uint, data0.as_float);
+		si_isa_debug("t%d: GDS[%u]<=(%u,%f) ", work_item->id, 
+			addr1.as_uint, data0.as_uint, data0.as_float);
+	}
+	else
+	{
+		si_isa_debug("t%d: LDS[%u]<=(%u,%f) ", work_item->id, 
+			addr0.as_uint, data0.as_uint, data0.as_float);
+		si_isa_debug("t%d: LDS[%u]<=(%u,%f) ", work_item->id, 
+			addr1.as_uint, data1.as_uint, data1.as_float);
+	}
+}
+#undef INST
+
 /* DS[A] = D0; write a Dword. */
 #define INST SI_INST_DS
 void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item,
@@ -5847,6 +5925,10 @@ void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item,
 {
 	union si_reg_t addr;
 	union si_reg_t data0;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
 
 	/* Load address and data from registers. */
 	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
@@ -5907,6 +5989,10 @@ void si_isa_DS_WRITE_B8_impl(struct si_work_item_t *work_item,
 	union si_reg_t addr;
 	union si_reg_t data0;
 
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
+
 	/* Load address and data from registers. */
 	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
 	data0.as_uint = si_isa_read_vreg(work_item, INST.data0);
@@ -5959,6 +6045,10 @@ void si_isa_DS_WRITE_B16_impl(struct si_work_item_t *work_item,
 {
 	union si_reg_t addr;
 	union si_reg_t data0;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
 
 	/* Load address and data from registers. */
 	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
@@ -6014,6 +6104,10 @@ void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item,
 	union si_reg_t addr;
 	union si_reg_t data;
 
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
+
 	/* Load address from register. */
 	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
 
@@ -6057,6 +6151,69 @@ void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+/* R = DS[ADDR+offset0*4], R+1 = DS[ADDR+offset1*4]. Read 2 Dwords. */
+#define INST SI_INST_DS
+void si_isa_DS_READ2_B32_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	union si_reg_t addr;
+	union si_reg_t data0;
+	union si_reg_t data1;
+
+	assert(!INST.gds);
+
+	/* Load address from register. */
+	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
+
+	/* Global data store not supported */
+	assert(!INST.gds);
+
+	/* Read Dword. */
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		mem_read(work_item->work_group->lds_module, 
+			addr.as_uint + INST.offset0*4, 4, &data0.as_uint);
+		mem_read(work_item->work_group->lds_module, 
+			addr.as_uint + INST.offset1*4, 4, &data1.as_uint);
+	}
+
+	/* Write results. */
+	si_isa_write_vreg(work_item, INST.vdst, data0.as_uint);
+	si_isa_write_vreg(work_item, INST.vdst+1, data1.as_uint);
+
+	/* Record last memory access for the detailed simulator. */
+	if (INST.gds)
+	{
+		assert(0);
+	}
+	else
+	{
+		/* If offset1 != 1, then the following is incorrect */
+		assert(INST.offset0 == 0);
+		assert(INST.offset1 == 1);
+		work_item->lds_access_count = 2;
+		work_item->lds_access_type[0] = 1;
+		work_item->lds_access_addr[0] = addr.as_uint;
+		work_item->lds_access_size[0] = 8;
+	}
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(0x%x)(0x%x) ", work_item->id, 
+			INST.vdst, addr.as_uint+INST.offset0*4, 
+			data0.as_uint);
+		si_isa_debug("t%d: V%u<=(0x%x)(0x%x) ", work_item->id, 
+			INST.vdst+1, addr.as_uint+INST.offset1*4, 
+			data1.as_uint);
+	}
+}
+#undef INST
+
 /* R = signext(DS[A][7:0]}; signed byte read. */
 #define INST SI_INST_DS
 void si_isa_DS_READ_I8_impl(struct si_work_item_t *work_item,
@@ -6064,6 +6221,10 @@ void si_isa_DS_READ_I8_impl(struct si_work_item_t *work_item,
 {
 	union si_reg_t addr;
 	union si_reg_t data;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
 
 	/* Load address from register. */
 	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
@@ -6118,6 +6279,10 @@ void si_isa_DS_READ_U8_impl(struct si_work_item_t *work_item,
 	union si_reg_t addr;
 	union si_reg_t data;
 
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
+
 	/* Load address from register. */
 	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
 
@@ -6170,6 +6335,10 @@ void si_isa_DS_READ_I16_impl(struct si_work_item_t *work_item,
 {
 	union si_reg_t addr;
 	union si_reg_t data;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
 
 	/* Load address from register. */
 	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
@@ -6224,6 +6393,10 @@ void si_isa_DS_READ_U16_impl(struct si_work_item_t *work_item,
 {
 	union si_reg_t addr;
 	union si_reg_t data;
+
+	assert(!INST.offset0);
+	assert(!INST.offset1);
+	assert(!INST.gds);
 
 	/* Load address from register. */
 	addr.as_uint = si_isa_read_vreg(work_item, INST.addr);
