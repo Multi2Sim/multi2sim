@@ -358,7 +358,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 	for (i = 0; i < si_gpu_max_wavefronts_per_wavefront_pool; i++)
 	{
 		wavefront = compute_unit->wavefront_pools[active_fb]->
-			entries[i]-> wavefront;
+			entries[i]->wavefront;
 
 		/* No wavefront */
 		if (!wavefront) 

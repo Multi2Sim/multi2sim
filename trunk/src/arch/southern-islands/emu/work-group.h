@@ -22,16 +22,16 @@
 
 struct si_work_group_t
 {
-	char name[30];
-
 	/* ID */
 	int id;  /* Group ID */
 	int id_3d[3];  /* 3-dimensional Group ID */
 
 	/* Status */
 	int wavefronts_at_barrier;
-	int wavefronts_completed;
-	int finished;
+	int wavefronts_completed_emu;
+	int wavefronts_completed_timing;
+	int finished_emu;
+	int finished_timing;
 
 	/* ND-Range metadata */
 	struct si_ndrange_t *ndrange;

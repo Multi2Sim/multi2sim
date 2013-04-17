@@ -67,7 +67,6 @@ int si_emu_num_mapped_const_buffers = 2;  /* CB0, CB1 by default */
  */
 
 
-
 /* Initialize GPU kernel */
 void si_emu_init(struct arch_t *arch)
 {
@@ -279,7 +278,7 @@ enum arch_sim_kind_t si_emu_run(void)
 	work_group = si_work_group_create(work_group_id, ndrange);
 
 	/* Execute the work-group to completion */
-	while (!work_group->finished)
+	while (!work_group->finished_emu)
 	{
 		SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
 		{
