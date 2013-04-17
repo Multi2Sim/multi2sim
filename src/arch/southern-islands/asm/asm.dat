@@ -1490,6 +1490,14 @@ DEFINST(DS_WRITE_B32,
 	0
 )
 
+DEFINST(DS_WRITE2_B32,
+	" ds_write2_b32  %ADDR, %DATA0, %DATA1 %OFFSET0%OFFSET1",
+	DS,
+	14,
+	8,
+	0
+)
+
 DEFINST(DS_WRITE_B8,
 	" ds_write_b8   %ADDR, %DATA0",
 	DS,
@@ -1510,6 +1518,14 @@ DEFINST(DS_READ_B32,
 	" ds_read_b32   %DS_VDST, %ADDR",
 	DS,
 	54,
+	8,
+	0
+)
+
+DEFINST(DS_READ2_B32,
+	" ds_read2_b32  %DS_SERIES_VDST, %ADDR %OFFSET0%OFFSET1",
+	DS,
+	55,
 	8,
 	0
 )
