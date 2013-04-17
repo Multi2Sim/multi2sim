@@ -5,10 +5,6 @@ lib_LTLIBRARIES = $(top_builddir)/lib/libm2s-opengl.la
 __top_builddir__lib_libm2s_opengl_la_LDFLAGS = -version-info 1:0:0
 
 __top_builddir__lib_libm2s_opengl_la_SOURCES = \
-	\
-	vertex-spec.c \
-	vertex-spec.h \
-	\
 	api.c \
 	api.h \
 	\
@@ -39,6 +35,9 @@ __top_builddir__lib_libm2s_opengl_la_SOURCES = \
 	program.c \
 	program.h \
 	\
+	rasterization.c \
+	rasterization.h \
+	\
 	shader.c \
 	shader.h \
 	\
@@ -49,7 +48,11 @@ __top_builddir__lib_libm2s_opengl_la_SOURCES = \
 	texture.h \
 	\
 	vertex-array.c \
-	vertex-array.h 
+	vertex-array.h \
+	\
+	vertex-spec.c \
+	vertex-spec.h
+
 
 AM_CFLAGS = -m32
 

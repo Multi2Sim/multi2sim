@@ -117,58 +117,58 @@ void glLogicOp( GLenum opcode )
 }
 
 
-void glCullFace( GLenum mode )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCullFace( GLenum mode )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glFrontFace( GLenum mode )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFrontFace( GLenum mode )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPointSize( GLfloat size )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPointSize( GLfloat size )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLineWidth( GLfloat width )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLineWidth( GLfloat width )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLineStipple( GLint factor, GLushort pattern )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLineStipple( GLint factor, GLushort pattern )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPolygonMode( GLenum face, GLenum mode )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPolygonMode( GLenum face, GLenum mode )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPolygonOffset( GLfloat factor, GLfloat units )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPolygonOffset( GLfloat factor, GLfloat units )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPolygonStipple( const GLubyte *mask )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPolygonStipple( const GLubyte *mask )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetPolygonStipple( GLubyte *mask )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetPolygonStipple( GLubyte *mask )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glEdgeFlag( GLboolean flag )
@@ -1709,82 +1709,82 @@ void glColorMaterial( GLenum face, GLenum mode )
 }
 
 
-void glPixelZoom( GLfloat xfactor, GLfloat yfactor )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPixelZoom( GLfloat xfactor, GLfloat yfactor )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPixelStoref( GLenum pname, GLfloat param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPixelStoref( GLenum pname, GLfloat param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPixelStorei( GLenum pname, GLint param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPixelStorei( GLenum pname, GLint param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPixelTransferf( GLenum pname, GLfloat param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPixelTransferf( GLenum pname, GLfloat param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPixelTransferi( GLenum pname, GLint param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPixelTransferi( GLenum pname, GLint param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPixelMapfv( GLenum map, GLsizei mapsize,
-                                    const GLfloat *values )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPixelMapfv( GLenum map, GLsizei mapsize,
+//                                     const GLfloat *values )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPixelMapuiv( GLenum map, GLsizei mapsize,
-                                     const GLuint *values )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPixelMapuiv( GLenum map, GLsizei mapsize,
+//                                      const GLuint *values )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPixelMapusv( GLenum map, GLsizei mapsize,
-                                     const GLushort *values )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPixelMapusv( GLenum map, GLsizei mapsize,
+//                                      const GLushort *values )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetPixelMapfv( GLenum map, GLfloat *values )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetPixelMapfv( GLenum map, GLfloat *values )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetPixelMapuiv( GLenum map, GLuint *values )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetPixelMapuiv( GLenum map, GLuint *values )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetPixelMapusv( GLenum map, GLushort *values )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetPixelMapusv( GLenum map, GLushort *values )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glBitmap( GLsizei width, GLsizei height,
-                                GLfloat xorig, GLfloat yorig,
-                                GLfloat xmove, GLfloat ymove,
-                                const GLubyte *bitmap )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBitmap( GLsizei width, GLsizei height,
+//                                 GLfloat xorig, GLfloat yorig,
+//                                 GLfloat xmove, GLfloat ymove,
+//                                 const GLubyte *bitmap )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glReadPixels( GLint x, GLint y,
@@ -1796,12 +1796,12 @@ void glReadPixels( GLint x, GLint y,
 }
 
 
-void glDrawPixels( GLsizei width, GLsizei height,
-                                    GLenum format, GLenum type,
-                                    const GLvoid *pixels )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDrawPixels( GLsizei width, GLsizei height,
+//                                     GLenum format, GLenum type,
+//                                     const GLvoid *pixels )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glCopyPixels( GLint x, GLint y,
@@ -2360,70 +2360,70 @@ void glPopName( void )
 // }
 
 
-void glColorTable( GLenum target, GLenum internalformat,
-                                    GLsizei width, GLenum format,
-                                    GLenum type, const GLvoid *table )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glColorTable( GLenum target, GLenum internalformat,
+//                                     GLsizei width, GLenum format,
+//                                     GLenum type, const GLvoid *table )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glColorSubTable( GLenum target,
-                                       GLsizei start, GLsizei count,
-                                       GLenum format, GLenum type,
-                                       const GLvoid *data )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glColorSubTable( GLenum target,
+//                                        GLsizei start, GLsizei count,
+//                                        GLenum format, GLenum type,
+//                                        const GLvoid *data )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glColorTableParameteriv(GLenum target, GLenum pname,
-                                              const GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glColorTableParameteriv(GLenum target, GLenum pname,
+//                                               const GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glColorTableParameterfv(GLenum target, GLenum pname,
-                                              const GLfloat *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glColorTableParameterfv(GLenum target, GLenum pname,
+//                                               const GLfloat *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCopyColorSubTable( GLenum target, GLsizei start,
-                                           GLint x, GLint y, GLsizei width )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyColorSubTable( GLenum target, GLsizei start,
+//                                            GLint x, GLint y, GLsizei width )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCopyColorTable( GLenum target, GLenum internalformat,
-                                        GLint x, GLint y, GLsizei width )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyColorTable( GLenum target, GLenum internalformat,
+//                                         GLint x, GLint y, GLsizei width )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetColorTable( GLenum target, GLenum format,
-                                       GLenum type, GLvoid *table )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetColorTable( GLenum target, GLenum format,
+//                                        GLenum type, GLvoid *table )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetColorTableParameterfv( GLenum target, GLenum pname,
-                                                  GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetColorTableParameterfv( GLenum target, GLenum pname,
+//                                                   GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetColorTableParameteriv( GLenum target, GLenum pname,
-                                                  GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetColorTableParameteriv( GLenum target, GLenum pname,
+//                                                   GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glBlendEquation( GLenum mode )
@@ -2439,154 +2439,154 @@ void glBlendColor( GLclampf red, GLclampf green,
 }
 
 
-void glHistogram( GLenum target, GLsizei width,
-				   GLenum internalformat, GLboolean sink )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glHistogram( GLenum target, GLsizei width,
+// 				   GLenum internalformat, GLboolean sink )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glResetHistogram( GLenum target )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glResetHistogram( GLenum target )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetHistogram( GLenum target, GLboolean reset,
-				      GLenum format, GLenum type,
-				      GLvoid *values )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetHistogram( GLenum target, GLboolean reset,
+// 				      GLenum format, GLenum type,
+// 				      GLvoid *values )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetHistogramParameterfv( GLenum target, GLenum pname,
-						 GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetHistogramParameterfv( GLenum target, GLenum pname,
+// 						 GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetHistogramParameteriv( GLenum target, GLenum pname,
-						 GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetHistogramParameteriv( GLenum target, GLenum pname,
+// 						 GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMinmax( GLenum target, GLenum internalformat,
-				GLboolean sink )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMinmax( GLenum target, GLenum internalformat,
+// 				GLboolean sink )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glResetMinmax( GLenum target )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glResetMinmax( GLenum target )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetMinmax( GLenum target, GLboolean reset,
-                                   GLenum format, GLenum types,
-                                   GLvoid *values )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetMinmax( GLenum target, GLboolean reset,
+//                                    GLenum format, GLenum types,
+//                                    GLvoid *values )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetMinmaxParameterfv( GLenum target, GLenum pname,
-					      GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetMinmaxParameterfv( GLenum target, GLenum pname,
+// 					      GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetMinmaxParameteriv( GLenum target, GLenum pname,
-					      GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetMinmaxParameteriv( GLenum target, GLenum pname,
+// 					      GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glConvolutionFilter1D( GLenum target,
-	GLenum internalformat, GLsizei width, GLenum format, GLenum type,
-	const GLvoid *image )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glConvolutionFilter1D( GLenum target,
+// 	GLenum internalformat, GLsizei width, GLenum format, GLenum type,
+// 	const GLvoid *image )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glConvolutionFilter2D( GLenum target,
-	GLenum internalformat, GLsizei width, GLsizei height, GLenum format,
-	GLenum type, const GLvoid *image )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glConvolutionFilter2D( GLenum target,
+// 	GLenum internalformat, GLsizei width, GLsizei height, GLenum format,
+// 	GLenum type, const GLvoid *image )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glConvolutionParameterf( GLenum target, GLenum pname,
-	GLfloat params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glConvolutionParameterf( GLenum target, GLenum pname,
+// 	GLfloat params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glConvolutionParameterfv( GLenum target, GLenum pname,
-	const GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glConvolutionParameterfv( GLenum target, GLenum pname,
+// 	const GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glConvolutionParameteri( GLenum target, GLenum pname,
-	GLint params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glConvolutionParameteri( GLenum target, GLenum pname,
+// 	GLint params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glConvolutionParameteriv( GLenum target, GLenum pname,
-	const GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glConvolutionParameteriv( GLenum target, GLenum pname,
+// 	const GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCopyConvolutionFilter1D( GLenum target,
-	GLenum internalformat, GLint x, GLint y, GLsizei width )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyConvolutionFilter1D( GLenum target,
+// 	GLenum internalformat, GLint x, GLint y, GLsizei width )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCopyConvolutionFilter2D( GLenum target,
-	GLenum internalformat, GLint x, GLint y, GLsizei width,
-	GLsizei height)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyConvolutionFilter2D( GLenum target,
+// 	GLenum internalformat, GLint x, GLint y, GLsizei width,
+// 	GLsizei height)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetConvolutionFilter( GLenum target, GLenum format,
-	GLenum type, GLvoid *image )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetConvolutionFilter( GLenum target, GLenum format,
+// 	GLenum type, GLvoid *image )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetConvolutionParameterfv( GLenum target, GLenum pname,
-	GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetConvolutionParameterfv( GLenum target, GLenum pname,
+// 	GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetConvolutionParameteriv( GLenum target, GLenum pname,
-	GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetConvolutionParameteriv( GLenum target, GLenum pname,
+// 	GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glSeparableFilter2D( GLenum target,
@@ -2597,11 +2597,11 @@ void glSeparableFilter2D( GLenum target,
 }
 
 
-void glGetSeparableFilter( GLenum target, GLenum format,
-	GLenum type, GLvoid *row, GLvoid *column, GLvoid *span )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetSeparableFilter( GLenum target, GLenum format,
+// 	GLenum type, GLvoid *row, GLvoid *column, GLvoid *span )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glActiveTexture( GLenum texture )
@@ -3140,25 +3140,25 @@ void glBlendFuncSeparate (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAl
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glPointParameterf (GLenum pname, GLfloat param)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPointParameterf (GLenum pname, GLfloat param)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glPointParameterfv (GLenum pname, const GLfloat *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPointParameterfv (GLenum pname, const GLfloat *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glPointParameteri (GLenum pname, GLint param)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPointParameteri (GLenum pname, GLint param)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glPointParameteriv (GLenum pname, const GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPointParameteriv (GLenum pname, const GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glFogCoordf (GLfloat coord)
 // {
@@ -4167,10 +4167,10 @@ GLboolean glIsEnabledi (GLenum target, GLuint index)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glClampColor (GLenum target, GLenum clamp)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClampColor (GLenum target, GLenum clamp)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glBeginConditionalRender (GLuint id, GLenum mode)
 {
@@ -4439,10 +4439,10 @@ void glFramebufferTexture (GLenum target, GLenum attachment, GLuint texture, GLi
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glMinSampleShading (GLclampf value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMinSampleShading (GLclampf value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glBlendEquationi (GLuint buf, GLenum mode)
 {
@@ -5583,10 +5583,10 @@ void glGetSynciv (GLsync sync, GLenum pname, GLsizei bufSize, GLsizei *length, G
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glGetMultisamplefv (GLenum pname, GLuint index, GLfloat *val)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetMultisamplefv (GLenum pname, GLuint index, GLfloat *val)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glSampleMaski (GLuint index, GLbitfield mask)
 {
