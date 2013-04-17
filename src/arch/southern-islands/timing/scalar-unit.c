@@ -41,12 +41,10 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 	int i;
 	int list_entries;
 	int list_index = 0;
-	unsigned int complete;
-	struct si_work_group_t *work_group;
-	struct si_wavefront_t *wavefront;
+	unsigned int barrier_complete;
 	int wavefront_id;
 
-	/* Process completed memory instructions */
+	/* Process completed instructions */
 	list_entries = list_count(scalar_unit->write_buffer);
 
 	/* Sanity check the write buffer */
@@ -114,30 +112,27 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 			uop->wavefront_pool_entry->wait_for_barrier = 1;
 
 			/* Check if all wavefronts have reached the barrier */
-			complete = 1;
-			work_group = uop->wavefront->work_group;
-			SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, 
+			barrier_complete = 1;
+			SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(uop->work_group, 
 				wavefront_id)
 			{
-				wavefront = work_group->wavefronts[wavefront_id];
-				
-				if (!wavefront->wavefront_pool_entry->
-					wait_for_barrier)
+				if(!uop->work_group->wavefronts[wavefront_id]->
+					wavefront_pool_entry->wait_for_barrier)
 				{
-					complete = 0;
+					barrier_complete = 0;
 				}
 			}
 
 			/* If all wavefronts have reached the barrier, 
 			 * clear their flags */
-			if (complete)
+			if (barrier_complete)
 			{
-				SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, 
-					wavefront_id)
+				SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(
+					uop->work_group, wavefront_id)
 				{
-					wavefront = work_group->
-						wavefronts[wavefront_id];
-					wavefront->wavefront_pool_entry->
+					uop->work_group->
+						wavefronts[wavefront_id]->
+						wavefront_pool_entry->
 						wait_for_barrier = 0;
 				}
 			}
@@ -150,14 +145,24 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 			 * so that the hardware wont try to fetch any 
 			 * more instructions for it */
 			uop->wavefront_pool_entry->wavefront_finished = 1;
+			uop->work_group->wavefronts_completed_timing++;
+
+			if (uop->work_group->wavefronts_completed_timing ==
+				uop->work_group->wavefront_count)
+			{
+				uop->work_group->finished_timing = 1;
+			}
 
 			/* Check if wavefront finishes a work-group */
 			assert(uop->work_group);
-			assert(uop->work_group->wavefronts_completed <=
+			assert(uop->work_group->wavefronts_completed_timing <=
 				uop->work_group->wavefront_count);
-			if (uop->work_group->wavefronts_completed == 
-				uop->work_group->wavefront_count)
+			if (uop->work_group->finished_timing)
 			{
+				assert(uop->work_group->
+					wavefronts_completed_timing == 
+					uop->work_group->wavefront_count);
+
 				si_compute_unit_unmap_work_group(
 					scalar_unit->compute_unit,
 					uop->work_group);

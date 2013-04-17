@@ -68,7 +68,6 @@ void si_isa_write_task_commit(void);
 
 
 /* Debugging */
-#define si_isa_debugging() debug_status(si_isa_debug_category)
 #define si_isa_debug(...) debug(si_isa_debug_category, __VA_ARGS__)
 extern int si_isa_debug_category;
 
