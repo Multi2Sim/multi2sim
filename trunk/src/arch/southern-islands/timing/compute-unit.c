@@ -301,6 +301,12 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
 {
 	long work_group_id;
 
+	/* Add work group register access statistics to compute unit */
+	compute_unit->sreg_read_count += work_group->sreg_read_count;
+	compute_unit->sreg_write_count += work_group->sreg_write_count;
+	compute_unit->vreg_read_count += work_group->vreg_read_count;
+	compute_unit->vreg_write_count += work_group->vreg_write_count;
+
 	/* Reset mapped work-group */
 	assert(compute_unit->work_group_count > 0);
 	assert(compute_unit->work_groups[work_group->id_in_compute_unit]);

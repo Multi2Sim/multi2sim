@@ -79,20 +79,20 @@ struct si_compute_unit_t
 	long long simd_inst_count;
 	long long vector_mem_inst_count;
 	long long lds_inst_count;
+	long long int sreg_read_count;
+	long long int sreg_write_count;
+	long long int vreg_read_count;
+	long long int vreg_write_count;
 
 	/* List of currently mapped work-groups */
 	int work_group_count;
 	struct si_work_group_t **work_groups;
 
-	/* Compute Unit capacity state  (for concurrent CQ)*/
-	/* Statistics for spatial report */
-
+	/* Compute Unit capacity state  (for concurrent command queue)*/
 	/* Spatial profiling statistics */
 	long long interval_cycle;
 	long long interval_mapped_work_groups;
 	FILE * spatial_report_file;
-
-
 };
 
 struct si_compute_unit_t *si_compute_unit_create(void);
