@@ -863,19 +863,19 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (ARM_OPTR_LSL):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , LSL r%d", rm, rs);
+				str_printf(inst_str_ptr, inst_str_size, "r%d , lsl r%d", rm, rs);
 			break;
 
 			case (ARM_OPTR_LSR):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , LSR r%d", rm, rs);
+				str_printf(inst_str_ptr, inst_str_size, "r%d , lsr r%d", rm, rs);
 			break;
 
 			case (ARM_OPTR_ASR):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , ASR r%d", rm, rs);
+				str_printf(inst_str_ptr, inst_str_size, "r%d , asr r%d", rm, rs);
 			break;
 
 			case (ARM_OPTR_ROR):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , ROR r%d", rm, rs);
+				str_printf(inst_str_ptr, inst_str_size, "r%d , ror r%d", rm, rs);
 			break;
 			}
 		}
@@ -1908,6 +1908,25 @@ unsigned int arm_dump_word_symbol(struct elf_file_t *elf_file, unsigned int inst
 	return (word_flag);
 }
 
+unsigned int thumb_dump_word_symbol(struct elf_file_t *elf_file, unsigned int inst_addr, void *inst_ptr)
+{
+	struct elf_symbol_t *symbol;
+	unsigned int word_flag;
+ 	symbol = elf_symbol_get_by_address(elf_file, inst_addr,	NULL);
+
+	if((!strncmp(symbol->name, "$d",2)))
+	{
+		printf (".word   0x%08x\n", *(unsigned int *)inst_ptr);
+		word_flag = 1;
+	}
+	else
+	{
+		word_flag = 0;
+	}
+
+	return (word_flag);
+}
+
 int comp (const void *arg1,const void *arg2)
 {
 	struct elf_symbol_t *tmp1;
@@ -1980,7 +1999,7 @@ void arm_thumb32_inst_hex_dump(FILE *f , void *inst_ptr , unsigned int inst_addr
 {
 	int thumb_32;
 	thumb_32 = *(unsigned int *)inst_ptr;
-	printf("%8x:	%04x %04x		", inst_addr, (thumb_32 & 0x0000ffff), ((thumb_32) & 0xffff0000) >> 16);
+	printf("%8x:	%04x %04x	", inst_addr, (thumb_32 & 0x0000ffff), ((thumb_32) & 0xffff0000) >> 16);
 }
 
 int arm_test_thumb32(void *inst_ptr)
@@ -2022,6 +2041,7 @@ void arm_emu_disasm(char *path)
 	/* Initialization */
 	arm_disasm_init();
 	arm_thumb16_disasm_init();
+	arm_thumb32_disasm_init();
 	inst_index = 0;
 	/* Find .text section which saves instruction bits */
 	elf_file = elf_file_create_from_path(path);
@@ -2127,8 +2147,8 @@ void arm_emu_disasm(char *path)
 				}
 				else
 				{
-					inst_index += 4;
-					inst_ptr += 4;
+					inst_index += 2;
+					inst_ptr += 2;
 				}
 			}
 		}

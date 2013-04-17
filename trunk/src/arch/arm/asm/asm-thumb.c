@@ -90,7 +90,7 @@ void arm_thumb32_disasm_init()
 	arm_thumb32_dproc_misc_table	= xcalloc(8, sizeof(struct arm_thumb32_inst_info_t));
 	arm_thumb32_dproc_misc1_table	= xcalloc(8, sizeof(struct arm_thumb32_inst_info_t));
 
-	arm_thumb32_dproc_bin_imm_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_dproc_bin_imm_table		= xcalloc(32, sizeof(struct arm_thumb32_inst_info_t));
 	arm_thumb32_dproc_bin_imm1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
 	arm_thumb32_dproc_bin_imm2_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
 	arm_thumb32_dproc_bin_imm3_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
@@ -218,8 +218,8 @@ void arm_thumb32_disasm_init()
 	arm_thumb32_asm_table[2].next_table_low 	= 15;
 
 	arm_thumb32_asm_lv4_table[0].next_table 	= arm_thumb32_asm_lv5_table;
-	arm_thumb32_asm_lv4_table[0].next_table_high 	= 24;
-	arm_thumb32_asm_lv4_table[0].next_table_low 	= 21;
+	arm_thumb32_asm_lv4_table[0].next_table_high 	= 25;
+	arm_thumb32_asm_lv4_table[0].next_table_low 	= 25;
 
 	arm_thumb32_asm_lv5_table[0].next_table 	= arm_thumb32_dproc_imm_table;
 	arm_thumb32_asm_lv5_table[0].next_table_high 	= 24;
@@ -300,24 +300,24 @@ void arm_thumb32_disasm_init()
 	arm_thumb32_st_single_table[0].next_table_low 	= 11;
 
 	arm_thumb32_st_single1_table[1].next_table 	= arm_thumb32_st_single2_table;
-	arm_thumb32_st_single1_table[1].next_table_high	= 8;
-	arm_thumb32_st_single1_table[1].next_table_low 	= 8;
+	arm_thumb32_st_single1_table[1].next_table_high	= 9;
+	arm_thumb32_st_single1_table[1].next_table_low 	= 9;
 
 	arm_thumb32_st_single_table[1].next_table 	= arm_thumb32_st_single3_table;
 	arm_thumb32_st_single_table[1].next_table_high 	= 11;
 	arm_thumb32_st_single_table[1].next_table_low 	= 11;
 
 	arm_thumb32_st_single3_table[1].next_table 	= arm_thumb32_st_single4_table;
-	arm_thumb32_st_single3_table[1].next_table_high	= 8;
-	arm_thumb32_st_single3_table[1].next_table_low 	= 8;
+	arm_thumb32_st_single3_table[1].next_table_high	= 9;
+	arm_thumb32_st_single3_table[1].next_table_low 	= 9;
 
 	arm_thumb32_st_single_table[2].next_table 	= arm_thumb32_st_single5_table;
 	arm_thumb32_st_single_table[2].next_table_high 	= 11;
 	arm_thumb32_st_single_table[2].next_table_low 	= 11;
 
 	arm_thumb32_st_single5_table[1].next_table 	= arm_thumb32_st_single6_table;
-	arm_thumb32_st_single5_table[1].next_table_high	= 8;
-	arm_thumb32_st_single5_table[1].next_table_low 	= 8;
+	arm_thumb32_st_single5_table[1].next_table_high	= 9;
+	arm_thumb32_st_single5_table[1].next_table_low 	= 9;
 
 	/* Load Byte Table */
 	arm_thumb32_asm_lv7_table[1].next_table 	= arm_thumb32_asm_lv9_table;
@@ -460,7 +460,54 @@ void arm_thumb32_disasm_init()
 	arm_thumb32_asm_lv10_table[1].next_table_high 	= 22;
 	arm_thumb32_asm_lv10_table[1].next_table_low 	= 20;
 
+#define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
+	arm_thumb32_setup_table(#_name, _fmt_str, ARM_THUMB32_CAT_##_cat, _op1, _op2,\
+	_op3, _op4, _op5, _op6, _op7, _op8, ARM_THUMB32_INST_##_name);
+#include "asm-thumb32.dat"
+#undef DEFINST
 }
+
+void arm_thumb32_setup_table(char* name , char* fmt_str ,
+	enum arm_thumb32_cat_enum cat32 , int op1 , int op2 , int op3 ,
+	int op4 , int op5 , int op6, int op7, int op8, enum arm_thumb32_inst_enum inst_name)
+{
+	struct arm_thumb32_inst_info_t *current_table;
+	/* We initially start with the first table arm_asm_table, with the opcode field as argument */
+	current_table = arm_thumb32_asm_table;
+	int op[8];
+	int i;
+
+	op[0] = op1;
+	op[1] = op2;
+	op[2] = op3;
+	op[3] = op4;
+	op[4] = op5;
+	op[5] = op6;
+	op[6] = op7;
+	op[7] = op8;
+
+	i = 0;
+	while(1)
+	{
+		if(current_table[op[i]].next_table && (op[i] >= 0))
+		{
+				current_table = current_table[op[i]].next_table;
+				i++;
+		}
+		else
+		{
+			current_table[op[i]].name = name;
+			current_table[op[i]].fmt_str = fmt_str;
+			current_table[op[i]].cat32 = cat32;
+			current_table[op[i]].size = 4;
+			current_table[op[i]].inst = inst_name;
+
+			break;
+		}
+	}
+	printf(" %s \n", fmt_str);// Remove this YU
+}
+
 void arm_thumb16_disasm_init()
 {
 	//int op[6];
@@ -633,7 +680,6 @@ void arm_thumb16_setup_table(char* name , char* fmt_str ,
 			break;
 		}
 	}
-	printf(" %s \n", fmt_str);// Remove this YU
 }
 
 
@@ -1243,7 +1289,845 @@ void arm_thumb16_inst_dump_it_eq_x(char **inst_str_ptr, int *inst_str_size,
 void arm_thumb32_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
 	unsigned int inst_index, unsigned int inst_addr)
 {
-	printf("???\n");
+	struct arm_thumb32_inst_t inst;
+	int byte_index;
+	char *inst_str;
+	char **inst_str_ptr;
+	char *fmt_str;
+	int token_len;
+
+	inst.addr = inst_index;
+
+	for (byte_index = 0; byte_index < 4; ++byte_index)
+		inst.dword.bytes[byte_index] = *(unsigned char *) (inst_ptr
+			+ ((byte_index + 2) % 4));
+
+
+	arm_thumb32_inst_decode(&inst); // Change to thumb2
+	inst_str = str;
+	inst_str_ptr = &str;
+	fmt_str = inst.info->fmt_str;
+
+	if (fmt_str)
+	{
+		while (*fmt_str)
+		{
+			if (*fmt_str != '%')
+			{
+				if (!(*fmt_str == ' ' && *inst_str_ptr == inst_str))
+					str_printf(inst_str_ptr, &inst_str_size, "%c",
+						*fmt_str);
+				++fmt_str;
+				continue;
+			}
+
+			++fmt_str;
+			if (arm_token_comp(fmt_str, "rd", &token_len))
+				arm_thumb32_inst_dump_RD(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "rn", &token_len))
+				arm_thumb32_inst_dump_RN(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "rm", &token_len))
+				arm_thumb32_inst_dump_RM(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "rt", &token_len))
+				arm_thumb32_inst_dump_RT(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "rt2", &token_len))
+				arm_thumb32_inst_dump_RT2(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "ra", &token_len))
+				arm_thumb32_inst_dump_RA(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "rdlo", &token_len))
+				arm_thumb32_inst_dump_RDLO(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "rdhi", &token_len))
+				arm_thumb32_inst_dump_RDHI(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "imm12", &token_len))
+				arm_thumb32_inst_dump_IMM12(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "imm8", &token_len))
+				arm_thumb32_inst_dump_IMM12(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "imm2", &token_len))
+				arm_thumb32_inst_dump_IMM2(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "immd8", &token_len))
+				arm_thumb32_inst_dump_IMMD8(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "immd12", &token_len))
+				arm_thumb32_inst_dump_IMMD12(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "immd16", &token_len))
+				arm_thumb32_inst_dump_IMMD16(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "addr", &token_len))
+				arm_thumb32_inst_dump_ADDR(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "regs", &token_len))
+				arm_thumb32_inst_dump_REGS(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "shft", &token_len))
+				arm_thumb32_inst_dump_SHFT_REG(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "S", &token_len))
+				arm_thumb32_inst_dump_S(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "lsb", &token_len))
+				arm_thumb32_inst_dump_LSB(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "wid", &token_len))
+				arm_thumb32_inst_dump_WID(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+
+
+			else
+				fatal("%s: token not recognized\n", fmt_str);
+
+			fmt_str += token_len;
+		}
+		fprintf(f, "%s\n", inst_str);
+	}
+	else
+	{
+		fprintf (f,"???\n");
+	}
+
+}
+
+void arm_thumb32_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int rd;
+
+		if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
+			fatal("%d: rd fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LD_ST_DOUBLE)
+			fatal("%d: rd fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_PUSH_POP)
+			fatal("%d: rd fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_TABLE_BRNCH)
+			fatal("%d: rd fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
+			rd = inst->dword.data_proc_shftreg.rd;
+		else if (cat == ARM_THUMB32_CAT_DPR_IMM)
+			rd = inst->dword.data_proc_immd.rd;
+		else if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
+			rd = inst->dword.data_proc_immd.rd;
+		else if (cat == ARM_THUMB32_CAT_BRANCH)
+			fatal("%d: rd fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LDSTR_BYTE)
+			rd = inst->dword.ldstr_reg.rd;
+		else if (cat == ARM_THUMB32_CAT_LDSTR_REG)
+			rd = inst->dword.ldstr_reg.rd;
+		else if (cat == ARM_THUMB32_CAT_LDSTR_IMMD)
+			rd = inst->dword.ldstr_imm.rd;
+		else if (cat == ARM_THUMB32_CAT_DPR_REG)
+			rd = inst->dword.dproc_reg.rd;
+		else if (cat == ARM_THUMB32_CAT_MULT)
+			rd = inst->dword.mult.rd;
+		else if (cat == ARM_THUMB32_CAT_MULT_LONG)
+			fatal("%d: rd fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_BIT_FIELD)
+			rd = inst->dword.bit_field.rd;
+
+		else
+			fatal("%d: rd fmt not recognized", cat);
+
+		switch (rd)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+		case (r15):
+
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", rd);
+			break;
+		}
+
+}
+
+void arm_thumb32_inst_dump_RN(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int rn;
+
+		if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
+			rn = inst->dword.ld_st_mult.rn;
+		else if (cat == ARM_THUMB32_CAT_LD_ST_DOUBLE)
+			rn = inst->dword.ld_st_double.rn;
+		else if (cat == ARM_THUMB32_CAT_PUSH_POP)
+			fatal("%d: rn fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_TABLE_BRNCH)
+			rn = inst->dword.table_branch.rn;
+		else if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
+			rn = inst->dword.data_proc_shftreg.rn;
+		else if (cat == ARM_THUMB32_CAT_DPR_IMM)
+			rn = inst->dword.data_proc_immd.rn;
+		else if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
+			rn = inst->dword.data_proc_immd.rn;
+		else if (cat == ARM_THUMB32_CAT_BRANCH)
+			fatal("%d: rn fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LDSTR_BYTE)
+			rn = inst->dword.ldstr_reg.rn;
+		else if (cat == ARM_THUMB32_CAT_LDSTR_REG)
+			rn = inst->dword.ldstr_reg.rn;
+		else if (cat == ARM_THUMB32_CAT_LDSTR_IMMD)
+			rn = inst->dword.ldstr_imm.rn;
+		else if (cat == ARM_THUMB32_CAT_DPR_REG)
+			rn = inst->dword.dproc_reg.rn;
+		else if (cat == ARM_THUMB32_CAT_MULT)
+			rn = inst->dword.mult.rn;
+		else if (cat == ARM_THUMB32_CAT_MULT_LONG)
+			rn = inst->dword.mult_long.rn;
+		else if (cat == ARM_THUMB32_CAT_BIT_FIELD)
+			rn = inst->dword.bit_field.rn;
+
+		else
+			fatal("%d: rn fmt not recognized", cat);
+
+		switch (rn)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+		case (r15):
+
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", rn);
+			break;
+		}
+
+}
+
+void arm_thumb32_inst_dump_RM(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int rm;
+
+		if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
+			fatal("%d: rm fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LD_ST_DOUBLE)
+			fatal("%d: rm fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_PUSH_POP)
+			fatal("%d: rm fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_TABLE_BRNCH)
+			rm = inst->dword.table_branch.rm;
+		else if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
+			rm = inst->dword.data_proc_shftreg.rm;
+		else if (cat == ARM_THUMB32_CAT_DPR_IMM)
+			fatal("%d: rm fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
+			fatal("%d: rm fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_BRANCH)
+			fatal("%d: rm fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LDSTR_BYTE)
+			rm = inst->dword.ldstr_reg.rm;
+		else if (cat == ARM_THUMB32_CAT_LDSTR_REG)
+			rm = inst->dword.ldstr_reg.rm;
+		else if (cat == ARM_THUMB32_CAT_LDSTR_IMMD)
+			fatal("%d: rm fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_DPR_REG)
+			rm = inst->dword.dproc_reg.rm;
+		else if (cat == ARM_THUMB32_CAT_MULT)
+			rm = inst->dword.mult.rm;
+		else if (cat == ARM_THUMB32_CAT_MULT_LONG)
+			rm = inst->dword.mult_long.rm;
+		else if (cat == ARM_THUMB32_CAT_BIT_FIELD)
+			fatal("%d: rm fmt not recognized", cat);
+
+		else
+			fatal("%d: rm fmt not recognized", cat);
+
+		switch (rm)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+		case (r15):
+
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", rm);
+			break;
+		}
+
+}
+
+void arm_thumb32_inst_dump_RT(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int rt;
+
+		if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
+			fatal("%d: rt fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LD_ST_DOUBLE)
+			rt = inst->dword.ld_st_double.rt;
+		else
+			fatal("%d: rt fmt not recognized", cat);
+
+		switch (rt)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+		case (r15):
+
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", rt);
+			break;
+		}
+}
+
+void arm_thumb32_inst_dump_RT2(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int rt2;
+
+		if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
+			fatal("%d: rt fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LD_ST_DOUBLE)
+			rt2 = inst->dword.ld_st_double.rt2;
+		else
+			fatal("%d: rt2 fmt not recognized", cat);
+
+		switch (rt2)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+		case (r15):
+
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", rt2);
+			break;
+		}
+}
+
+void arm_thumb32_inst_dump_RA(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int ra;
+
+
+		if (cat == ARM_THUMB32_CAT_MULT)
+			ra = inst->dword.mult.ra;
+		else
+			fatal("%d: ra fmt not recognized", cat);
+
+		switch (ra)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+		case (r15):
+
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", ra);
+			break;
+		}
+}
+
+void arm_thumb32_inst_dump_RDLO(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int rdlo;
+
+
+		if (cat == ARM_THUMB32_CAT_MULT_LONG)
+			rdlo = inst->dword.mult_long.rdlo;
+		else
+			fatal("%d: rdlo fmt not recognized", cat);
+
+		switch (rdlo)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+		case (r15):
+
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", rdlo);
+			break;
+		}
+}
+
+void arm_thumb32_inst_dump_RDHI(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int rdhi;
+
+
+		if (cat == ARM_THUMB32_CAT_MULT_LONG)
+			rdhi = inst->dword.mult_long.rdhi;
+		else
+			fatal("%d: rdhi fmt not recognized", cat);
+
+		switch (rdhi)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+		case (r15):
+
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", rdhi);
+			break;
+		}
+}
+
+void arm_thumb32_inst_dump_S(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int sign;
+
+		if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
+			fatal("%d: S fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LD_ST_DOUBLE)
+			fatal("%d: S fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_PUSH_POP)
+			fatal("%d: S fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_TABLE_BRNCH)
+			fatal("%d: S fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
+			sign = inst->dword.data_proc_shftreg.sign;
+		else if (cat == ARM_THUMB32_CAT_DPR_IMM)
+			sign = inst->dword.data_proc_immd.sign;
+		else if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
+			sign = inst->dword.data_proc_immd.sign;
+		else if (cat == ARM_THUMB32_CAT_BRANCH)
+			sign = inst->dword.branch.sign;
+		else if (cat == ARM_THUMB32_CAT_LDSTR_BYTE)
+			fatal("%d: S fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LDSTR_REG)
+			fatal("%d: S fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_LDSTR_IMMD)
+			fatal("%d: S fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_DPR_REG)
+			sign = inst->dword.dproc_reg.sign;
+		else if (cat == ARM_THUMB32_CAT_MULT)
+			fatal("%d: S fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_MULT_LONG)
+			fatal("%d: S fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_BIT_FIELD)
+			fatal("%d: sign fmt not recognized", cat);
+
+		else
+			fatal("%d: sign fmt not recognized", cat);
+		if(sign)
+			str_printf(inst_str_ptr, inst_str_size, "s");
+}
+
+void arm_thumb32_inst_dump_REGS(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int regs;
+	unsigned int i;
+
+		if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
+			regs = inst->dword.ld_st_mult.reglist;
+		else if (cat == ARM_THUMB32_CAT_LD_ST_DOUBLE)
+			fatal("%d: regs fmt not recognized", cat);
+		else if (cat == ARM_THUMB32_CAT_PUSH_POP)
+			regs = inst->dword.push_pop.reglist;
+
+		else
+			fatal("%d: regs fmt not recognized", cat);
+
+		str_printf(inst_str_ptr, inst_str_size, "{");
+		for (i = 1; i < 65536; i *= 2)
+		{
+			if(regs & (i))
+			{
+				str_printf(inst_str_ptr, inst_str_size, "r%d ", log_base2(i));
+			}
+		}
+
+		str_printf(inst_str_ptr, inst_str_size, "}");
+
+}
+
+void arm_thumb32_inst_dump_SHFT_REG(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int shift;
+	unsigned int type;
+
+	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
+	{
+		type = inst->dword.data_proc_shftreg.type;
+		shift = (inst->dword.data_proc_shftreg.imm3 << 2) & (inst->dword.data_proc_shftreg.imm2);
+	}
+
+	else
+		fatal("%d: shft fmt not recognized", cat);
+
+	if(shift)
+	{
+		switch(type)
+		{
+		case (ARM_OPTR_LSL):
+			str_printf(inst_str_ptr, inst_str_size, "{lsl #%d}", shift);
+		break;
+
+		case (ARM_OPTR_LSR):
+			str_printf(inst_str_ptr, inst_str_size, "{lsr #%d}", shift);
+		break;
+
+		case (ARM_OPTR_ASR):
+			str_printf(inst_str_ptr, inst_str_size, "{asr #%d}", shift);
+		break;
+
+		case (ARM_OPTR_ROR):
+			str_printf(inst_str_ptr, inst_str_size, "{ror #%d}", shift);
+		break;
+		}
+	}
+
+}
+
+void arm_thumb32_inst_dump_IMM12(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int immd12;
+	unsigned int idx;
+	unsigned int wback;
+	unsigned int add;
+
+		if (cat == ARM_THUMB32_CAT_LDSTR_IMMD)
+			immd12 = inst->dword.ldstr_imm.immd12;
+		else if (cat == ARM_THUMB32_CAT_LDSTR_BYTE)
+			immd12 = inst->dword.ldstr_imm.immd12;
+		else
+			fatal("%d: imm12 fmt not recognized", cat);
+
+		if(inst->dword.ldstr_imm.add)
+			str_printf(inst_str_ptr, inst_str_size, "#%d",immd12);
+		else
+		{
+			idx = (immd12 & 0x00000400) >> 10;
+			add = (immd12 & 0x00000200) >> 9;
+			wback = (immd12 & 0x00000100) >> 8;
+			if(add)
+			{
+				if(idx == 1 && wback == 0)
+					str_printf(inst_str_ptr, inst_str_size, "[#%d]",(immd12 & 0x000000ff));
+				else if (idx == 1 && wback == 1)
+					str_printf(inst_str_ptr, inst_str_size, "[#%d]!",(immd12 & 0x000000ff));
+				else if (idx == 0 && wback == 1)
+					str_printf(inst_str_ptr, inst_str_size, "#%d",(immd12 & 0x000000ff));
+			}
+			else
+			{
+				if(idx == 1 && wback == 0)
+					str_printf(inst_str_ptr, inst_str_size, "[#-%d]",(immd12 & 0x000000ff));
+				else if (idx == 1 && wback == 1)
+					str_printf(inst_str_ptr, inst_str_size, "[#-%d]!",(immd12 & 0x000000ff));
+				else if (idx == 0 && wback == 1)
+					str_printf(inst_str_ptr, inst_str_size, "#-%d",(immd12 & 0x000000ff));
+
+			}
+		}
+
+}
+
+void arm_thumb32_inst_dump_IMMD12(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int immd8;
+	unsigned int immd3;
+	unsigned int i;
+	unsigned int imm4;
+	unsigned int imm5;
+	unsigned int shft;
+	unsigned int const_val;
+
+		if (cat == ARM_THUMB32_CAT_DPR_IMM)
+		{
+			immd8 = inst->dword.data_proc_immd.immd8;
+			immd3 = inst->dword.data_proc_immd.immd3;
+			i = inst->dword.data_proc_immd.i_flag;
+		}
+		else if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
+		{
+			immd8 = inst->dword.data_proc_immd.immd8;
+			immd3 = inst->dword.data_proc_immd.immd3;
+			i = inst->dword.data_proc_immd.i_flag;
+		}
+		else
+			fatal("%d: immd12 fmt not recognized", cat);
+
+		imm4 = (i << 3) | (immd3);
+
+		if(imm4 < 4)
+		{
+			switch(imm4)
+			{
+			case(0) :
+				const_val =  immd8;
+			break;
+
+			case(1) :
+				const_val = (immd8 << 16) | immd8;
+			break;
+
+			case(2) :
+				const_val = (immd8 << 24) | (immd8 << 8);
+			break;
+
+			case(3) :
+				const_val = (immd8 << 24) | (immd8 << 16) | (immd8 << 8) | immd8;
+			break;
+
+			}
+		}
+		else
+		{
+			imm5 = (imm4 << 1) | ((0x00000008 & immd8) >> 8);
+
+			const_val = (immd8 << 24) | 0x10000000;
+			shft = (imm5 - 8);
+
+			const_val = (const_val >> shft);
+		}
+
+		str_printf(inst_str_ptr, inst_str_size, "#%d", const_val);
+}
+
+void arm_thumb32_inst_dump_IMMD8(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int immd8;
+
+		if (cat == ARM_THUMB32_CAT_LD_ST_DOUBLE)
+			immd8 = (inst->dword.ld_st_double.immd8 << 2);
+		else
+			fatal("%d: immd12 fmt not recognized", cat);
+
+
+		if(immd8)
+		{
+			if(inst->dword.ld_st_double.add_sub)
+			{
+				if(inst->dword.ld_st_double.index == 1 && inst->dword.ld_st_double.wback == 0)
+					str_printf(inst_str_ptr, inst_str_size, "#%d",(immd8));
+				else if (inst->dword.ld_st_double.index == 1 && inst->dword.ld_st_double.wback == 1)
+					str_printf(inst_str_ptr, inst_str_size, "#%d!",(immd8));
+				else if (inst->dword.ld_st_double.index == 0 && inst->dword.ld_st_double.wback == 0)
+					str_printf(inst_str_ptr, inst_str_size, "#%d",(immd8));
+			}
+			else
+			{
+				if(inst->dword.ld_st_double.index == 1 && inst->dword.ld_st_double.wback == 0)
+					str_printf(inst_str_ptr, inst_str_size, "#-%d",(immd8));
+				else if (inst->dword.ld_st_double.index == 1 && inst->dword.ld_st_double.wback == 1)
+					str_printf(inst_str_ptr, inst_str_size, "#-%d!",(immd8));
+				else if (inst->dword.ld_st_double.index == 0 && inst->dword.ld_st_double.wback == 1)
+					str_printf(inst_str_ptr, inst_str_size, "#-%d",(immd8));
+
+			}
+		}
+
+}
+
+void arm_thumb32_inst_dump_IMM2(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int immd2;
+
+
+		if (cat == ARM_THUMB32_CAT_LDSTR_BYTE)
+		{
+			immd2 = inst->dword.ldstr_reg.immd2;
+		}
+		else if (cat == ARM_THUMB32_CAT_LDSTR_REG)
+		{
+			immd2 = inst->dword.ldstr_reg.immd2;
+		}
+		else
+			fatal("%d: imm2 fmt not recognized", cat);
+
+		str_printf(inst_str_ptr, inst_str_size, "#%d", immd2);
+}
+
+void arm_thumb32_inst_dump_LSB(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int immd2;
+	unsigned int immd3;
+
+
+		if (cat == ARM_THUMB32_CAT_BIT_FIELD)
+		{
+			immd2 = inst->dword.bit_field.immd2;
+			immd3 = inst->dword.bit_field.immd3;
+		}
+		else
+			fatal("%d: imm2 fmt not recognized", cat);
+
+
+		str_printf(inst_str_ptr, inst_str_size, "#%d", ((immd3 << 2) | immd2));
+}
+
+void arm_thumb32_inst_dump_WID(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int msb;
+	unsigned int immd2;
+	unsigned int immd3;
+	unsigned int lsb;
+
+
+
+		if (cat == ARM_THUMB32_CAT_BIT_FIELD)
+		{
+			msb = inst->dword.bit_field.msb;
+			immd2 = inst->dword.bit_field.immd2;
+			immd3 = inst->dword.bit_field.immd3;
+		}
+		else
+			fatal("%d: imm2 fmt not recognized", cat);
+
+		lsb = (immd3 << 2) | immd2;
+		str_printf(inst_str_ptr, inst_str_size, "#%d", (msb - lsb + 1));
+}
+
+void arm_thumb32_inst_dump_IMMD16(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int immd16;
+	unsigned int immd8;
+	unsigned int immd3;
+	unsigned int i;
+	unsigned int immd4;
+
+
+		if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
+		{
+			immd8 = inst->dword.data_proc_immd.immd8;
+			immd3 = inst->dword.data_proc_immd.immd3;
+			i = inst->dword.data_proc_immd.i_flag;
+			immd4 = inst->dword.data_proc_immd.rn;
+		}
+
+		else
+			fatal("%d: immd16 fmt not recognized", cat);
+
+		immd16 = (immd4 << 12) | (i << 11) | (immd3 << 8) | immd8;
+
+		str_printf(inst_str_ptr, inst_str_size, "#%d	; 0x%x", immd16, immd16);
+}
+
+void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int addr;
+
+		if (cat == ARM_THUMB32_CAT_BRANCH)
+		{
+			addr = (inst->dword.branch.sign << 20)
+			| (inst->dword.branch.j2 << 19)
+			| (inst->dword.branch.j1 << 18)
+			| (inst->dword.branch.immd6 << 12)
+			| (inst->dword.branch.immd11 << 1);
+		}
+		else
+			fatal("%d: addr fmt not recognized", cat);
+
+		addr = SEXT32(addr,21);
+		str_printf(inst_str_ptr, inst_str_size, "#%d	; 0x%x", addr, addr);
+}
+
+
+void arm_thumb32_inst_decode(struct arm_thumb32_inst_t *inst)
+{
+	struct arm_thumb32_inst_info_t *current_table;
+	/* We initially start with the first table mips_asm_table, with the opcode field as argument */
+	current_table = arm_thumb32_asm_table;
+	int current_table_low = 27;
+	int current_table_high = 28;
+	unsigned int thumb32_table_arg;
+	int loop_iteration = 0;
+
+	thumb32_table_arg =  BITS32(*(unsigned int*)inst->dword.bytes, current_table_high, current_table_low);
+
+	/* Find next tables if the instruction belongs to another table */
+	while (1) {
+		if (current_table[thumb32_table_arg].next_table && loop_iteration < 8) {
+			current_table_high = current_table[thumb32_table_arg].next_table_high;
+			current_table_low = current_table[thumb32_table_arg].next_table_low;
+			current_table = current_table[thumb32_table_arg].next_table;
+			thumb32_table_arg = BITS32(*(unsigned int*)inst->dword.bytes, current_table_high, current_table_low);
+			loop_iteration++;
+		}
+		else if (loop_iteration > 8) {
+			fatal("Can not find the correct table containing the instruction\n");
+		}
+		else
+			break;
+
+	}
+
+	inst->info = &current_table[thumb32_table_arg];
 }
 
 void arm_thumb16_inst_decode(struct arm_thumb16_inst_t *inst)
@@ -1271,6 +2155,7 @@ void arm_thumb16_inst_decode(struct arm_thumb16_inst_t *inst)
 				fatal("Can not find the correct table containing the instruction\n");
 			}
 			else
+
 				break;
 
 		}
@@ -1280,7 +2165,7 @@ void arm_thumb16_inst_decode(struct arm_thumb16_inst_t *inst)
 
 void arm_disasm_done()
 {
-
+	/* Thumb 16 tables */
 	free(arm_thumb16_asm_table);
 
 	free(arm_thumb16_shft_ins_table);
@@ -1305,4 +2190,98 @@ void arm_disasm_done()
 	free(arm_thumb16_misc_table);
 	free(arm_thumb16_it_table);
 
+	/* Thumb 32 tables */
+	free(arm_thumb32_asm_table);
+	free(arm_thumb32_asm_lv1_table);
+	free(arm_thumb32_asm_lv2_table);
+	free(arm_thumb32_asm_lv3_table);
+	free(arm_thumb32_asm_lv4_table);
+	free(arm_thumb32_asm_lv5_table);
+	free(arm_thumb32_asm_lv6_table);
+	free(arm_thumb32_asm_lv7_table);
+	free(arm_thumb32_asm_lv8_table);
+	free(arm_thumb32_asm_lv9_table);
+	free(arm_thumb32_asm_lv10_table);
+	free(arm_thumb32_asm_lv11_table);
+	free(arm_thumb32_asm_lv12_table);
+	free(arm_thumb32_asm_lv13_table);
+	free(arm_thumb32_asm_lv14_table);
+	free(arm_thumb32_asm_lv15_table);
+
+
+	free(arm_thumb32_asm_ldst_mul_table);
+	free(arm_thumb32_asm_ldst_mul1_table);
+	free(arm_thumb32_asm_ldst_mul2_table);
+	free(arm_thumb32_asm_ldst_mul3_table);
+	free(arm_thumb32_asm_ldst_mul4_table);
+	free(arm_thumb32_asm_ldst_mul5_table);
+	free(arm_thumb32_asm_ldst_mul6_table);
+
+	free(arm_thumb32_asm_ldst_dual_table);
+	free(arm_thumb32_asm_ldst1_dual_table);
+	free(arm_thumb32_asm_ldst2_dual_table);
+	free(arm_thumb32_asm_ldst3_dual_table);
+
+	free(arm_thumb32_dproc_shft_reg_table);
+	free(arm_thumb32_dproc_shft_reg1_table);
+	free(arm_thumb32_dproc_shft_reg2_table);
+	free(arm_thumb32_dproc_shft_reg3_table);
+	free(arm_thumb32_dproc_shft_reg4_table);
+	free(arm_thumb32_dproc_shft_reg5_table);
+	free(arm_thumb32_dproc_shft_reg6_table);
+
+	free(arm_thumb32_dproc_imm_table);
+	free(arm_thumb32_dproc_imm1_table);
+	free(arm_thumb32_dproc_imm2_table);
+	free(arm_thumb32_dproc_imm3_table);
+	free(arm_thumb32_dproc_imm4_table);
+	free(arm_thumb32_dproc_imm5_table);
+	free(arm_thumb32_dproc_imm6_table);
+
+	free(arm_thumb32_dproc_reg_table);
+	free(arm_thumb32_dproc_reg1_table);
+	free(arm_thumb32_dproc_reg2_table);
+	free(arm_thumb32_dproc_reg3_table);
+	free(arm_thumb32_dproc_reg4_table);
+	free(arm_thumb32_dproc_reg5_table);
+	free(arm_thumb32_dproc_reg6_table);
+	free(arm_thumb32_dproc_reg7_table);
+
+	free(arm_thumb32_dproc_misc_table);
+	free(arm_thumb32_dproc_misc1_table);
+
+	free(arm_thumb32_st_single_table);
+	free(arm_thumb32_st_single1_table);
+	free(arm_thumb32_st_single2_table);
+	free(arm_thumb32_st_single3_table);
+	free(arm_thumb32_st_single4_table);
+	free(arm_thumb32_st_single5_table);
+	free(arm_thumb32_st_single6_table);
+
+	free(arm_thumb32_ld_byte_table);
+	free(arm_thumb32_ld_byte1_table);
+	free(arm_thumb32_ld_byte2_table);
+	free(arm_thumb32_ld_byte3_table);
+	free(arm_thumb32_ld_byte4_table);
+	free(arm_thumb32_ld_byte5_table);
+	free(arm_thumb32_ld_byte6_table);
+
+	free(arm_thumb32_ld_hfword_table);
+	free(arm_thumb32_ld_hfword1_table);
+	free(arm_thumb32_ld_hfword2_table);
+
+	free(arm_thumb32_ld_word_table);
+	free(arm_thumb32_ld_word1_table);
+
+	free(arm_thumb32_mult_table);
+	free(arm_thumb32_mult1_table);
+
+	free(arm_thumb32_dproc_bin_imm_table);
+	free(arm_thumb32_dproc_bin_imm1_table);
+	free(arm_thumb32_dproc_bin_imm2_table);
+	free(arm_thumb32_dproc_bin_imm3_table);
+
+	free(arm_thumb32_mult_long_table);
+
+	free(arm_thumb32_brnch_ctrl_table);
 }
