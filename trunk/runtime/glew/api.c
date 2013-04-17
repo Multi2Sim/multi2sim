@@ -2127,7 +2127,7 @@ void glew_init_func()
 	__glewFogCoorddv = &glFogCoorddv;
 	__glewFogCoordf = &glFogCoordf;
 	__glewFogCoordfv = &glFogCoordfv;
-	// __glewMultiDrawArrays = &glMultiDrawArrays;
+ 	// __glewMultiDrawArrays = &glMultiDrawArrays;
 	// __glewMultiDrawElements = &glMultiDrawElements;
 	__glewPointParameterf = &glPointParameterf;
 	__glewPointParameterfv = &glPointParameterfv;

@@ -25,6 +25,8 @@
 #include "context.h"
 #include "vertex-spec.h"
 
+/* For old OpenGL 1.x */
+struct linked_list_t *vertex_repo;
 
 /*
  * Private Functions
