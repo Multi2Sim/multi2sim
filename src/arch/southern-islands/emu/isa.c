@@ -26,6 +26,7 @@
 #include "emu.h"
 #include "isa.h"
 #include "wavefront.h"
+#include "work-group.h"
 #include "work-item.h"
 
 
@@ -108,6 +109,9 @@ unsigned int si_isa_read_sreg(struct si_work_item_t *work_item, int sreg)
 		value = work_item->wavefront->sreg[sreg].as_uint;
 	}
 
+	/* Statistics */
+	work_item->work_group->sreg_read_count++;
+
 	return value;
 }
 
@@ -138,12 +142,19 @@ void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg,
 			!work_item->wavefront->sreg[SI_EXEC].as_uint &
 			!work_item->wavefront->sreg[SI_EXEC + 1].as_uint;
 	}
+
+	/* Statistics */
+	work_item->work_group->sreg_write_count++;
 }
 
 unsigned int si_isa_read_vreg(struct si_work_item_t *work_item, int vreg)
 {
 	assert(vreg >= 0);
 	assert(vreg < 256);
+
+	/* Statistics */
+	work_item->work_group->vreg_read_count++;
+
 	return work_item->vreg[vreg].as_uint;
 }
 
@@ -153,6 +164,9 @@ void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg,
 	assert(vreg >= 0);
 	assert(vreg < 256);
 	work_item->vreg[vreg].as_uint = value;
+
+	/* Statistics */
+	work_item->work_group->vreg_write_count++;
 }
 
 unsigned int si_isa_read_reg(struct si_work_item_t *work_item, int reg)

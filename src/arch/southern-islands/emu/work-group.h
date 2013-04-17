@@ -50,6 +50,12 @@ struct si_work_group_t
 
 	/* LDS */
 	struct mem_t *lds_module;
+
+	/* Statistics */
+	long long int sreg_read_count;
+	long long int sreg_write_count;
+	long long int vreg_read_count;
+	long long int vreg_write_count;
 };
 
 struct si_work_group_t *si_work_group_create(unsigned int work_group_id, 

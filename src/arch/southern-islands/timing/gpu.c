@@ -1274,7 +1274,15 @@ void si_gpu_dump_report(void)
 		fprintf(f, "Cycles = %lld\n", compute_unit->cycle);
 		fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 		fprintf(f, "\n");
-
+		fprintf(f, "ScalarRegReads= %lld\n", 
+			compute_unit->sreg_read_count);
+		fprintf(f, "ScalarRegWrites= %lld\n", 
+			compute_unit->sreg_write_count);
+		fprintf(f, "VectorRegReads= %lld\n", 
+			compute_unit->vreg_read_count);
+		fprintf(f, "VectorRegWrites= %lld\n", 
+			compute_unit->vreg_write_count);
+		fprintf(f, "\n");
 		fprintf(f, "LDS.Accesses = %lld\n", 
 			lds_mod->reads + lds_mod->writes);
 		fprintf(f, "LDS.Reads = %lld\n", lds_mod->reads);
