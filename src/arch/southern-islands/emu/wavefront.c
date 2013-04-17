@@ -48,6 +48,7 @@ struct si_wavefront_t *si_wavefront_create(int wavefront_id,
 
 	/* Initialize */
 	wavefront = xcalloc(1, sizeof(struct si_wavefront_t));
+	wavefront->id = wavefront_id;
 	wavefront->pred = bit_map_create(si_emu_wavefront_size);
 	si_wavefront_sreg_init(wavefront);
 
@@ -758,10 +759,10 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	else
 	{
 		/* Check if work-group finished kernel execution */
-		if (work_group->wavefronts_completed == 
+		if (work_group->wavefronts_completed_emu == 
 			work_group->wavefront_count)
 		{
-			work_group->finished = 1;
+			work_group->finished_emu = 1;
 		}
 	}
 }

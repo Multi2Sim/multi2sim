@@ -1613,7 +1613,7 @@ void si_isa_S_ENDPGM_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
 	work_item->wavefront->finished = 1;
-	work_item->work_group->wavefronts_completed++;
+	work_item->work_group->wavefronts_completed_emu++;
 }
 
 /* PC = PC + signext(SIMM16 * 4) + 4 */

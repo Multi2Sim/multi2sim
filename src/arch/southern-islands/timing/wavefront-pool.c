@@ -60,7 +60,8 @@ void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool)
 	free(wavefront_pool);
 }
 
-void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
+void si_wavefront_pool_map_wavefronts(
+	struct si_wavefront_pool_t *wavefront_pool, 
 	struct si_work_group_t *work_group)
 {
 	struct si_wavefront_t *wavefront;
@@ -93,7 +94,7 @@ void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t
 	*wavefront_pool, struct si_work_group_t *work_group)
 {
 	struct si_wavefront_t *wavefront;
-	int wf_id_in_ib;
+	int wf_id_in_wfp;
 	int i;
 
 	/* Reset mapped wavefronts */
@@ -103,15 +104,14 @@ void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t
 	for (i = 0; i < work_group->wavefront_count; i++) 
 	{
 		wavefront = work_group->wavefronts[i];
-		wf_id_in_ib = 
+		wf_id_in_wfp = 
 			wavefront->wavefront_pool_entry->id_in_wavefront_pool;
 
-		assert(wavefront_pool->entries[wf_id_in_ib]->wavefront);
-		assert(wavefront_pool->entries[wf_id_in_ib]->wavefront->id == 
+		assert(wavefront_pool->entries[wf_id_in_wfp]->wavefront);
+		assert(wavefront_pool->entries[wf_id_in_wfp]->wavefront->id == 
 			wavefront->id);
-		wavefront_pool->entries[wf_id_in_ib]->valid = 0;
-		wavefront_pool->entries[wf_id_in_ib]->wavefront_finished = 0;
-		wavefront_pool->entries[wf_id_in_ib]->wavefront = NULL;
+		memset(wavefront_pool->entries[wf_id_in_wfp], 0, 
+			sizeof(struct si_wavefront_pool_entry_t));
 	}
 	wavefront_pool->wavefront_count -= work_group->wavefront_count;
 }

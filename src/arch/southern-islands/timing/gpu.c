@@ -432,10 +432,11 @@ static void si_gpu_device_init()
 	/* Initialize compute units */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		si_gpu->compute_units[compute_unit_id] = 
-			si_compute_unit_create();
-		compute_unit = si_gpu->compute_units[compute_unit_id];
+		compute_unit = si_compute_unit_create();
 		compute_unit->id = compute_unit_id;
+
+		si_gpu->compute_units[compute_unit_id] = compute_unit;
+
 		list_add(si_gpu->available_compute_units, compute_unit);
 	}
 

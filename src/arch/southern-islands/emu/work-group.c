@@ -85,9 +85,8 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 	SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
 	{
 		work_group->wavefronts[wavefront_id] = si_wavefront_create(
-			wavefront_id, work_group);
-		work_group->wavefronts[wavefront_id]->id = 
-			work_group->id * wavefronts_per_group + wavefront_id;
+			work_group->id * wavefronts_per_group + wavefront_id,
+			work_group);
 
 		wavefront = work_group->wavefronts[wavefront_id];
 
