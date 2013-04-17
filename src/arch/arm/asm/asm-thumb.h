@@ -50,8 +50,8 @@ struct arm_thumb32_push_pop_t
 struct arm_thumb32_ld_st_double_t
 {
 	unsigned int immd8	: 8;	/* [7:0] */
-	unsigned int rt		: 4;	/* [11:8] */
-	unsigned int rt2	: 4; 	/* [15:12] */
+	unsigned int rt2	: 4;	/* [11:8] */
+	unsigned int rt		: 4; 	/* [15:12] */
 	unsigned int rn		: 4; 	/* [19:16] */
 	unsigned int __reserved0: 1; 	/* [20] */
 	unsigned int wback	: 1;	/* [21] */
@@ -87,7 +87,7 @@ struct arm_thumb32_data_proc_immd_t
 {
 	unsigned int immd8	: 8; 	/* [7:0] */
 	unsigned int rd		: 4; 	/* [11:8] */
-	unsigned int imm3	: 3; 	/* [14:12] */
+	unsigned int immd3	: 3; 	/* [14:12] */
 	unsigned int __reserved0: 1; 	/* [15] */
 	unsigned int rn		: 4; 	/* [19:16] */
 	unsigned int sign	: 1; 	/* [20] */
@@ -112,7 +112,7 @@ struct arm_thumb32_branch_t
 struct arm_thumb32_ldstr_reg_t
 {
 	unsigned int rm		: 4;	/* [3:0] */
-	unsigned int imm2	: 2;	/* [5:4] */
+	unsigned int immd2	: 2;	/* [5:4] */
 	unsigned int __reserved0: 6; 	/* [11:6] */
 	unsigned int rd		: 4;	/* [15:12] */
 	unsigned int rn		: 4;	/* [19:16] */
@@ -121,7 +121,7 @@ struct arm_thumb32_ldstr_reg_t
 
 struct arm_thumb32_ldstr_imm_t
 {
-	unsigned int imm12	: 12;	/* [11:0] */
+	unsigned int immd12	: 12;	/* [11:0] */
 	unsigned int rd		: 4;	/* [15:12] */
 	unsigned int rn		: 4;	/* [19:16] */
 	unsigned int __reserved0: 3; 	/* [22:20] */
@@ -131,7 +131,7 @@ struct arm_thumb32_ldstr_imm_t
 
 struct arm_thumb32_ldstrt_imm_t
 {
-	unsigned int imm8	: 8;	/* [7:0] */
+	unsigned int immd8	: 8;	/* [7:0] */
 	unsigned int __reserved0: 4; 	/* [11:8] */
 	unsigned int rd		: 4;	/* [15:12] */
 	unsigned int rn		: 4;	/* [19:16] */
@@ -169,6 +169,19 @@ struct arm_thumb32_mult_long_t
 	unsigned int rn		: 4; 	/* [19:16] */
 	unsigned int __reserved1: 12; 	/* [31:20] */
 };
+
+struct arm_thumb32_bit_field_t
+{
+	unsigned int msb	: 5;	/* [4:0] */
+	unsigned int __reserved0: 1; 	/* [5] */
+	unsigned int immd2	: 2; 	/* [7:6] */
+	unsigned int rd		: 4; 	/* [11:8] */
+	unsigned int immd3	: 3; 	/* [14:9] */
+	unsigned int __reserved1: 1; 	/* [15] */
+	unsigned int rn		: 4; 	/* [19:16] */
+	unsigned int __reserved2: 12; 	/* [31:20] */
+};
+
 
 /*
  * Structure of Instruction Format (Thumb2-16bit)
@@ -386,6 +399,27 @@ union arm_thumb16_inst_dword_t
 	struct arm_thumb16_cmp_t2_t cmp_t2;
 };
 
+union arm_thumb32_inst_dword_t
+{
+	unsigned char bytes[4];
+
+	struct arm_thumb32_ld_st_mult_t ld_st_mult;
+	struct arm_thumb32_push_pop_t push_pop;
+	struct arm_thumb32_ld_st_double_t ld_st_double;
+	struct arm_thumb32_table_branch_t table_branch;
+	struct arm_thumb32_data_proc_shftreg_t data_proc_shftreg;
+	struct arm_thumb32_data_proc_immd_t data_proc_immd;
+	struct arm_thumb32_branch_t branch;
+	struct arm_thumb32_ldstr_reg_t ldstr_reg;
+	struct arm_thumb32_ldstr_imm_t ldstr_imm;
+	struct arm_thumb32_ldstrt_imm_t ldstrt_imm;
+	struct arm_thumb32_dproc_reg_t dproc_reg;
+	struct arm_thumb32_mult_t mult;
+	struct arm_thumb32_mult_long_t mult_long;
+	struct arm_thumb32_bit_field_t bit_field;
+
+};
+
 enum arm_thumb16_inst_enum
 {
 	ARM_THUMB16_INST_NONE = 0,
@@ -402,8 +436,10 @@ enum arm_thumb16_inst_enum
 enum arm_thumb32_inst_enum
 {
 	ARM_THUMB32_INST_NONE = 0,
-
-
+#define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
+	ARM_THUMB32_INST_##_name,
+#include "asm-thumb32.dat"
+#undef DEFINST
 	/* Max */
 	ARM_THUMB32_INST_COUNT
 };
@@ -454,6 +490,7 @@ enum arm_thumb32_cat_enum
 	ARM_THUMB32_CAT_DPR_REG,	/* Data Processing Register */
 	ARM_THUMB32_CAT_MULT,		/* Multiply */
 	ARM_THUMB32_CAT_MULT_LONG,	/* Multiply Long*/
+	ARM_THUMB32_CAT_BIT_FIELD,	/* Multiply Long*/
 	ARM_THUMB32_CAT_UNDEF,
 
 	ARM_THUMB32_CAT_COUNT
@@ -492,6 +529,12 @@ struct arm_thumb16_inst_t
 	struct arm_thumb16_inst_info_t *info;
 };
 
+struct arm_thumb32_inst_t
+{
+	unsigned int addr;
+	union arm_thumb32_inst_dword_t dword;
+	struct arm_thumb32_inst_info_t *info;
+};
 
 
 /* Pointers to the tables of instructions Thumb16*/
@@ -655,6 +698,52 @@ void arm_thumb16_inst_dump_REGS(char **inst_str_ptr, int *inst_str_size,
 	struct arm_thumb16_inst_t *inst, enum arm_thumb16_cat_enum cat);
 void arm_thumb16_inst_dump_it_eq_x(char **inst_str_ptr, int *inst_str_size,
 	struct arm_thumb16_inst_t *inst, enum arm_thumb16_cat_enum cat);
+
+void arm_thumb32_disasm_init();
+void arm_thumb32_setup_table(char* name , char* fmt_str ,
+	enum arm_thumb32_cat_enum cat32 , int op1 , int op2 , int op3 ,
+	int op4 , int op5 , int op6, int op7, int op8, enum arm_thumb32_inst_enum inst_name);
+void arm_thumb32_inst_decode(struct arm_thumb32_inst_t *inst);
+void arm_thumb32_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_REGS(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_RN(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_RM(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_RT(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_RT2(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_IMM12(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_S(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_SHFT_REG(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_IMMD12(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_IMM2(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_IMMD16(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_IMMD8(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_WID(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_LSB(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_RA(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_RDHI(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_RDLO(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+
+
 
 int arm_test_thumb32(void *inst_ptr);
 
