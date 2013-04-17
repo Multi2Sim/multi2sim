@@ -6,6 +6,9 @@ __top_builddir__lib_libm2s_opengl_la_LDFLAGS = -version-info 1:0:0
 
 __top_builddir__lib_libm2s_opengl_la_SOURCES = \
 	\
+	vertex-spec.c \
+	vertex-spec.h \
+	\
 	api.c \
 	api.h \
 	\
@@ -42,12 +45,11 @@ __top_builddir__lib_libm2s_opengl_la_SOURCES = \
 	string.c \
 	string.h \
 	\
-	vertex-array.c \
-	vertex-array.h \
+	texture.c \
+	texture.h \
 	\
-	vertex-spec.c \
-	vertex-spec.h
-
+	vertex-array.c \
+	vertex-array.h 
 
 AM_CFLAGS = -m32
 

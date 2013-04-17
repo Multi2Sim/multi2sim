@@ -27,7 +27,9 @@
 #include "mhandle.h"
 #include "program.h"
 #include "shader.h"
+#include "texture.h"
 #include "vertex-array.h"
+#include "vertex-spec.h"
 
 /* 
  * Other libraries are responsible for initializing OpenGL context.
@@ -177,6 +179,10 @@ void opengl_context_init()
 		program_repo = opengl_program_obj_repo_create();
 	if (!shader_repo)
 		shader_repo = opengl_shader_obj_repo_create();
+	if (!texture_repo)
+		texture_repo = opengl_texture_obj_repo_create();
+	// if (!vertex_repo)
+	// 	vertex_repo = opengl_vertex_repo_create();
 }
 
 void opengl_context_destroy()
@@ -192,6 +198,11 @@ void opengl_context_destroy()
 		opengl_program_obj_repo_free(program_repo);
 	if (shader_repo)
 		opengl_shader_obj_repo_free(shader_repo);
+	if (texture_repo)
+		opengl_texture_obj_repo_free(texture_repo);
+	// if (vertex_repo)
+	// 	opengl_vertex_repo_free(vertex_repo);
+
 }
 
 /* 

@@ -1836,40 +1836,40 @@ void glStencilOp( GLenum fail, GLenum zfail, GLenum zpass )
 // }
 
 
-void glTexGend( GLenum coord, GLenum pname, GLdouble param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexGend( GLenum coord, GLenum pname, GLdouble param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexGenf( GLenum coord, GLenum pname, GLfloat param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexGenf( GLenum coord, GLenum pname, GLfloat param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexGeni( GLenum coord, GLenum pname, GLint param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexGeni( GLenum coord, GLenum pname, GLint param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexGendv( GLenum coord, GLenum pname, const GLdouble *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexGendv( GLenum coord, GLenum pname, const GLdouble *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexGenfv( GLenum coord, GLenum pname, const GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexGenfv( GLenum coord, GLenum pname, const GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexGeniv( GLenum coord, GLenum pname, const GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexGeniv( GLenum coord, GLenum pname, const GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glGetTexGendv( GLenum coord, GLenum pname, GLdouble *params )
@@ -1890,219 +1890,219 @@ void glGetTexGeniv( GLenum coord, GLenum pname, GLint *params )
 }
 
 
-void glTexEnvf( GLenum target, GLenum pname, GLfloat param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexEnvf( GLenum target, GLenum pname, GLfloat param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexEnvi( GLenum target, GLenum pname, GLint param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexEnvi( GLenum target, GLenum pname, GLint param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexEnvfv( GLenum target, GLenum pname, const GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexEnvfv( GLenum target, GLenum pname, const GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexEnviv( GLenum target, GLenum pname, const GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexEnviv( GLenum target, GLenum pname, const GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetTexEnvfv( GLenum target, GLenum pname, GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexEnvfv( GLenum target, GLenum pname, GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetTexEnviv( GLenum target, GLenum pname, GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexEnviv( GLenum target, GLenum pname, GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexParameterf( GLenum target, GLenum pname, GLfloat param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexParameterf( GLenum target, GLenum pname, GLfloat param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexParameteri( GLenum target, GLenum pname, GLint param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexParameteri( GLenum target, GLenum pname, GLint param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexParameterfv( GLenum target, GLenum pname,
-                                          const GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexParameterfv( GLenum target, GLenum pname,
+//                                           const GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexParameteriv( GLenum target, GLenum pname,
-                                          const GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexParameteriv( GLenum target, GLenum pname,
+//                                           const GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetTexParameterfv( GLenum target,
-                                           GLenum pname, GLfloat *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexParameterfv( GLenum target,
+//                                            GLenum pname, GLfloat *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetTexParameteriv( GLenum target,
-                                           GLenum pname, GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexParameteriv( GLenum target,
+//                                            GLenum pname, GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetTexLevelParameterfv( GLenum target, GLint level,
-                                                GLenum pname, GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexLevelParameterfv( GLenum target, GLint level,
+//                                                 GLenum pname, GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetTexLevelParameteriv( GLenum target, GLint level,
-                                                GLenum pname, GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexLevelParameteriv( GLenum target, GLint level,
+//                                                 GLenum pname, GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexImage1D( GLenum target, GLint level,
-                                    GLint internalFormat,
-                                    GLsizei width, GLint border,
-                                    GLenum format, GLenum type,
-                                    const GLvoid *pixels )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexImage1D( GLenum target, GLint level,
+//                                     GLint internalFormat,
+//                                     GLsizei width, GLint border,
+//                                     GLenum format, GLenum type,
+//                                     const GLvoid *pixels )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexImage2D( GLenum target, GLint level,
-                                    GLint internalFormat,
-                                    GLsizei width, GLsizei height,
-                                    GLint border, GLenum format, GLenum type,
-                                    const GLvoid *pixels )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexImage2D( GLenum target, GLint level,
+//                                     GLint internalFormat,
+//                                     GLsizei width, GLsizei height,
+//                                     GLint border, GLenum format, GLenum type,
+//                                     const GLvoid *pixels )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetTexImage( GLenum target, GLint level,
-                                     GLenum format, GLenum type,
-                                     GLvoid *pixels )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexImage( GLenum target, GLint level,
+//                                      GLenum format, GLenum type,
+//                                      GLvoid *pixels )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGenTextures( GLsizei n, GLuint *textures )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGenTextures( GLsizei n, GLuint *textures )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glDeleteTextures( GLsizei n, const GLuint *textures)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteTextures( GLsizei n, const GLuint *textures)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glBindTexture( GLenum target, GLuint texture )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindTexture( GLenum target, GLuint texture )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPrioritizeTextures( GLsizei n,
-                                            const GLuint *textures,
-                                            const GLclampf *priorities )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPrioritizeTextures( GLsizei n,
+//                                             const GLuint *textures,
+//                                             const GLclampf *priorities )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-GLboolean glAreTexturesResident( GLsizei n,
-                                                  const GLuint *textures,
-                                                  GLboolean *residences )
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glAreTexturesResident( GLsizei n,
+//                                                   const GLuint *textures,
+//                                                   GLboolean *residences )
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 
-GLboolean glIsTexture( GLuint texture )
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsTexture( GLuint texture )
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 
-void glTexSubImage1D( GLenum target, GLint level,
-                                       GLint xoffset,
-                                       GLsizei width, GLenum format,
-                                       GLenum type, const GLvoid *pixels )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexSubImage1D( GLenum target, GLint level,
+//                                        GLint xoffset,
+//                                        GLsizei width, GLenum format,
+//                                        GLenum type, const GLvoid *pixels )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexSubImage2D( GLenum target, GLint level,
-                                       GLint xoffset, GLint yoffset,
-                                       GLsizei width, GLsizei height,
-                                       GLenum format, GLenum type,
-                                       const GLvoid *pixels )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexSubImage2D( GLenum target, GLint level,
+//                                        GLint xoffset, GLint yoffset,
+//                                        GLsizei width, GLsizei height,
+//                                        GLenum format, GLenum type,
+//                                        const GLvoid *pixels )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCopyTexImage1D( GLenum target, GLint level,
-                                        GLenum internalformat,
-                                        GLint x, GLint y,
-                                        GLsizei width, GLint border )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyTexImage1D( GLenum target, GLint level,
+//                                         GLenum internalformat,
+//                                         GLint x, GLint y,
+//                                         GLsizei width, GLint border )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCopyTexImage2D( GLenum target, GLint level,
-                                        GLenum internalformat,
-                                        GLint x, GLint y,
-                                        GLsizei width, GLsizei height,
-                                        GLint border )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyTexImage2D( GLenum target, GLint level,
+//                                         GLenum internalformat,
+//                                         GLint x, GLint y,
+//                                         GLsizei width, GLsizei height,
+//                                         GLint border )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCopyTexSubImage1D( GLenum target, GLint level,
-                                           GLint xoffset, GLint x, GLint y,
-                                           GLsizei width )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyTexSubImage1D( GLenum target, GLint level,
+//                                            GLint xoffset, GLint x, GLint y,
+//                                            GLsizei width )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCopyTexSubImage2D( GLenum target, GLint level,
-                                           GLint xoffset, GLint yoffset,
-                                           GLint x, GLint y,
-                                           GLsizei width, GLsizei height )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyTexSubImage2D( GLenum target, GLint level,
+//                                            GLint xoffset, GLint yoffset,
+//                                            GLint x, GLint y,
+//                                            GLsizei width, GLsizei height )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glMap1d( GLenum target, GLdouble u1, GLdouble u2,
@@ -2328,36 +2328,36 @@ void glPopName( void )
 // }
 
 
-void glTexImage3D( GLenum target, GLint level,
-                                      GLint internalFormat,
-                                      GLsizei width, GLsizei height,
-                                      GLsizei depth, GLint border,
-                                      GLenum format, GLenum type,
-                                      const GLvoid *pixels )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexImage3D( GLenum target, GLint level,
+//                                       GLint internalFormat,
+//                                       GLsizei width, GLsizei height,
+//                                       GLsizei depth, GLint border,
+//                                       GLenum format, GLenum type,
+//                                       const GLvoid *pixels )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTexSubImage3D( GLenum target, GLint level,
-                                         GLint xoffset, GLint yoffset,
-                                         GLint zoffset, GLsizei width,
-                                         GLsizei height, GLsizei depth,
-                                         GLenum format,
-                                         GLenum type, const GLvoid *pixels)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexSubImage3D( GLenum target, GLint level,
+//                                          GLint xoffset, GLint yoffset,
+//                                          GLint zoffset, GLsizei width,
+//                                          GLsizei height, GLsizei depth,
+//                                          GLenum format,
+//                                          GLenum type, const GLvoid *pixels)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCopyTexSubImage3D( GLenum target, GLint level,
-                                             GLint xoffset, GLint yoffset,
-                                             GLint zoffset, GLint x,
-                                             GLint y, GLsizei width,
-                                             GLsizei height )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyTexSubImage3D( GLenum target, GLint level,
+//                                              GLint xoffset, GLint yoffset,
+//                                              GLint zoffset, GLint x,
+//                                              GLint y, GLsizei width,
+//                                              GLsizei height )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glColorTable( GLenum target, GLenum internalformat,
@@ -2604,10 +2604,10 @@ void glGetSeparableFilter( GLenum target, GLenum format,
 }
 
 
-void glActiveTexture( GLenum texture )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glActiveTexture( GLenum texture )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glClientActiveTexture( GLenum texture )
@@ -2616,46 +2616,46 @@ void glActiveTexture( GLenum texture )
 // }
 
 
-void glCompressedTexImage1D( GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid *data )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCompressedTexImage1D( GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid *data )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCompressedTexImage2D( GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCompressedTexImage2D( GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCompressedTexImage3D( GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid *data )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCompressedTexImage3D( GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid *data )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCompressedTexSubImage1D( GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLsizei imageSize, const GLvoid *data )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCompressedTexSubImage1D( GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLsizei imageSize, const GLvoid *data )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCompressedTexSubImage2D( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid *data )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCompressedTexSubImage2D( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid *data )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glCompressedTexSubImage3D( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, const GLvoid *data )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCompressedTexSubImage3D( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, const GLvoid *data )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetCompressedTexImage( GLenum target, GLint lod, GLvoid *img )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetCompressedTexImage( GLenum target, GLint lod, GLvoid *img )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glMultiTexCoord1d( GLenum target, GLdouble s )
@@ -4353,25 +4353,25 @@ void glEndConditionalRender (void)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glTexParameterIiv (GLenum target, GLenum pname, const GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexParameterIiv (GLenum target, GLenum pname, const GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glTexParameterIuiv (GLenum target, GLenum pname, const GLuint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexParameterIuiv (GLenum target, GLenum pname, const GLuint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetTexParameterIiv (GLenum target, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexParameterIiv (GLenum target, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetTexParameterIuiv (GLenum target, GLenum pname, GLuint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexParameterIuiv (GLenum target, GLenum pname, GLuint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glClearBufferiv (GLenum buffer, GLint drawbuffer, const GLint *value)
 {
@@ -4409,10 +4409,10 @@ const GLubyte * glGetStringi (GLenum name, GLuint index)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glTexBuffer (GLenum target, GLenum internalformat, GLuint buffer)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexBuffer (GLenum target, GLenum internalformat, GLuint buffer)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glPrimitiveRestartIndex (GLuint index)
 // {
@@ -5377,10 +5377,10 @@ void glGetFramebufferAttachmentParameteriv (GLenum target, GLenum attachment, GL
 	__OPENGL_NOT_IMPL__
 }
 
-void glGenerateMipmap (GLenum target)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGenerateMipmap (GLenum target)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glBlitFramebuffer (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter)
 {
@@ -5573,15 +5573,15 @@ void glGetSynciv (GLsync sync, GLenum pname, GLsizei bufSize, GLsizei *length, G
 	__OPENGL_NOT_IMPL__
 }
 
-void glTexImage2DMultisample (GLenum target, GLsizei samples, GLint internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexImage2DMultisample (GLenum target, GLsizei samples, GLint internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glTexImage3DMultisample (GLenum target, GLsizei samples, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexImage3DMultisample (GLenum target, GLsizei samples, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glGetMultisamplefv (GLenum pname, GLuint index, GLfloat *val)
 {
@@ -5660,76 +5660,76 @@ void glGetNamedStringivARB (GLint namelen, const GLchar *name, GLenum pname, GLi
 // 	return 0;
 // }
 
-void glGenSamplers (GLsizei count, GLuint *samplers)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGenSamplers (GLsizei count, GLuint *samplers)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDeleteSamplers (GLsizei count, const GLuint *samplers)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteSamplers (GLsizei count, const GLuint *samplers)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLboolean glIsSampler (GLuint sampler)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsSampler (GLuint sampler)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glBindSampler (GLuint unit, GLuint sampler)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindSampler (GLuint unit, GLuint sampler)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glSamplerParameteri (GLuint sampler, GLenum pname, GLint param)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSamplerParameteri (GLuint sampler, GLenum pname, GLint param)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glSamplerParameteriv (GLuint sampler, GLenum pname, const GLint *param)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSamplerParameteriv (GLuint sampler, GLenum pname, const GLint *param)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glSamplerParameterf (GLuint sampler, GLenum pname, GLfloat param)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSamplerParameterf (GLuint sampler, GLenum pname, GLfloat param)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glSamplerParameterfv (GLuint sampler, GLenum pname, const GLfloat *param)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSamplerParameterfv (GLuint sampler, GLenum pname, const GLfloat *param)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glSamplerParameterIiv (GLuint sampler, GLenum pname, const GLint *param)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSamplerParameterIiv (GLuint sampler, GLenum pname, const GLint *param)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glSamplerParameterIuiv (GLuint sampler, GLenum pname, const GLuint *param)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSamplerParameterIuiv (GLuint sampler, GLenum pname, const GLuint *param)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetSamplerParameteriv (GLuint sampler, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetSamplerParameteriv (GLuint sampler, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetSamplerParameterIiv (GLuint sampler, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetSamplerParameterIiv (GLuint sampler, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetSamplerParameterfv (GLuint sampler, GLenum pname, GLfloat *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetSamplerParameterfv (GLuint sampler, GLenum pname, GLfloat *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetSamplerParameterIuiv (GLuint sampler, GLenum pname, GLuint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetSamplerParameterIuiv (GLuint sampler, GLenum pname, GLuint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glQueryCounter (GLuint id, GLenum target)
 {
@@ -6739,40 +6739,40 @@ void glDrawTransformFeedbackStreamInstanced (GLenum mode, GLuint id, GLuint stre
 	__OPENGL_NOT_IMPL__
 }
 
-void glGetInternalformativ (GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetInternalformativ (GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glGetActiveAtomicCounterBufferiv (GLuint program, GLuint bufferIndex, GLenum pname, GLint *params)
 {
 	__OPENGL_NOT_IMPL__
 }
 
-void glBindImageTexture (GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, GLenum access, GLenum format)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindImageTexture (GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, GLenum access, GLenum format)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glMemoryBarrier (GLbitfield barriers)
 // {
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glTexStorage1D (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexStorage1D (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glTexStorage2D (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexStorage2D (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glTexStorage3D (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTexStorage3D (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glTextureStorage1DEXT (GLuint texture, GLenum target, GLsizei levels, GLenum internalformat, GLsizei width)
 {
