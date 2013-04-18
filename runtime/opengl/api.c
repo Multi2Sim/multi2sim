@@ -21,44 +21,11 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "../include/GL/gl.h"
 #include "api.h"
 #include "debug.h"
 #include "mhandle.h"
+#include "opengl.h"
 
-/* Debug */
-int opengl_debug_enable = 1;
-
-/*
- * Error Messages
- */
-
-#define __OPENGL_NOT_IMPL__  fatal("%s: not implemented.\n%s", \
-	__FUNCTION__, opengl_err_not_impl);
-
-
-static char *opengl_err_not_impl =
-	"\tMulti2Sim provides partial support for the OpenGL library.\n"
-	"\tTo request the implementation of a certain functionality, please\n"
-	"\temail development@multi2sim.org.\n";
-
-/*static char *opengl_err_version =
-	"\tYour guest application is using a version of the OpenGL runtime library\n"
-	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
-	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
-	"\tOpengl runtime library ('libm2s-opengl').\n";*/
-
-
-
-
-/* Multi2Sim OPENGL Runtime required */
-#define OPENGL_RUNTIME_VERSION_MAJOR	1
-#define OPENGL_RUNTIME_VERSION_MINOR	700
-
-/* OpenGL global variables */
-char opengl_get_string[50];
-int opengl_err_flag = GL_NO_ERROR;
-struct opengl_runtime_info_t gl_runtime_info = {0, 0, 4.3, "Multi2Sim", "OpenGL Emulator"};
 
 // void glClearIndex( GLfloat c )
 // {
@@ -99,22 +66,22 @@ struct opengl_runtime_info_t gl_runtime_info = {0, 0, 4.3, "Multi2Sim", "OpenGL 
 // }
 
 
-void glAlphaFunc( GLenum func, GLclampf ref )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glAlphaFunc( GLenum func, GLclampf ref )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glBlendFunc( GLenum sfactor, GLenum dfactor )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlendFunc( GLenum sfactor, GLenum dfactor )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLogicOp( GLenum opcode )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLogicOp( GLenum opcode )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glCullFace( GLenum mode )
@@ -183,22 +150,22 @@ void glLogicOp( GLenum opcode )
 // }
 
 
-void glScissor( GLint x, GLint y, GLsizei width, GLsizei height)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glScissor( GLint x, GLint y, GLsizei width, GLsizei height)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glClipPlane( GLenum plane, const GLdouble *equation )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClipPlane( GLenum plane, const GLdouble *equation )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetClipPlane( GLenum plane, GLdouble *equation )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetClipPlane( GLenum plane, GLdouble *equation )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glDrawBuffer( GLenum mode )
@@ -209,12 +176,12 @@ void glGetClipPlane( GLenum plane, GLdouble *equation )
 // }
 
 
-void glReadBuffer( GLenum mode )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glReadBuffer( GLenum mode )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glReadBuffer, &mode);
-}
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glReadBuffer, &mode);
+// }
 
 
 // void glEnable( GLenum cap )
@@ -235,11 +202,11 @@ void glReadBuffer( GLenum mode )
 // }
 
 
-GLboolean glIsEnabled( GLenum cap )
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsEnabled( GLenum cap )
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 
 // void glEnableClientState( GLenum cap )  /* 1.1 */
@@ -254,65 +221,65 @@ GLboolean glIsEnabled( GLenum cap )
 // }
 
 
-void glGetBooleanv( GLenum pname, GLboolean *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetBooleanv( GLenum pname, GLboolean *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetDoublev( GLenum pname, GLdouble *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetDoublev( GLenum pname, GLdouble *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetFloatv( GLenum pname, GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetFloatv( GLenum pname, GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetIntegerv( GLenum pname, GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetIntegerv( GLenum pname, GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPushAttrib( GLbitfield mask )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPushAttrib( GLbitfield mask )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPopAttrib( void )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPopAttrib( void )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPushClientAttrib( GLbitfield mask )  /* 1.1 */
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPushClientAttrib( GLbitfield mask )  /* 1.1 */
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPopClientAttrib( void )  /* 1.1 */
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPopClientAttrib( void )  /* 1.1 */
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-GLint glRenderMode( GLenum mode )
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLint glRenderMode( GLenum mode )
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 
-GLenum glGetError( void )
-{
-	return opengl_err_flag;
-}
+// GLenum glGetError( void )
+// {
+// 	return opengl_err_flag;
+// }
 
 
 // const GLubyte *glGetString( GLenum name )
@@ -333,23 +300,23 @@ GLenum glGetError( void )
 // }
 
 
-void glFinish( void )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFinish( void )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glFlush( void )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glFlush);
-}
+// void glFlush( void )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glFlush);
+// }
 
 
-void glHint( GLenum target, GLenum mode )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glHint( GLenum target, GLenum mode )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glClearDepth( GLclampd depth )
@@ -358,10 +325,10 @@ void glHint( GLenum target, GLenum mode )
 // }
 
 
-void glDepthFunc( GLenum func )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDepthFunc( GLenum func )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glDepthMask( GLboolean flag )
@@ -370,10 +337,10 @@ void glDepthFunc( GLenum func )
 // }
 
 
-void glDepthRange( GLclampd near_val, GLclampd far_val )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDepthRange( GLclampd near_val, GLclampd far_val )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glClearAccum( GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha )
@@ -388,46 +355,46 @@ void glDepthRange( GLclampd near_val, GLclampd far_val )
 // }
 
 
-void glMatrixMode( GLenum mode )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glMatrixMode( GLenum mode )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMatrixMode, &mode);
-}
-
-
-void glOrtho( GLdouble left, GLdouble right,
-                                 GLdouble bottom, GLdouble top,
-                                 GLdouble near_val, GLdouble far_val )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-
-	GLdouble sys_args[6];
-	sys_args[0] = (GLdouble) left;
-	sys_args[1] = (GLdouble) right;
-	sys_args[2] = (GLdouble) bottom;
-	sys_args[3] = (GLdouble) top;
-	sys_args[4] = (GLdouble) near_val;
-	sys_args[5] = (GLdouble) far_val;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glOrtho, &sys_args);
-}
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMatrixMode, &mode);
+// }
 
 
-void glFrustum( GLdouble left, GLdouble right,
-                                   GLdouble bottom, GLdouble top,
-                                   GLdouble near_val, GLdouble far_val )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glOrtho( GLdouble left, GLdouble right,
+//                                  GLdouble bottom, GLdouble top,
+//                                  GLdouble near_val, GLdouble far_val )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	GLdouble sys_args[6];
-	sys_args[0] = (GLdouble) left;
-	sys_args[1] = (GLdouble) right;
-	sys_args[2] = (GLdouble) bottom;
-	sys_args[3] = (GLdouble) top;
-	sys_args[4] = (GLdouble) near_val;
-	sys_args[5] = (GLdouble) far_val;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glFrustum, &sys_args);
-}
+// 	GLdouble sys_args[6];
+// 	sys_args[0] = (GLdouble) left;
+// 	sys_args[1] = (GLdouble) right;
+// 	sys_args[2] = (GLdouble) bottom;
+// 	sys_args[3] = (GLdouble) top;
+// 	sys_args[4] = (GLdouble) near_val;
+// 	sys_args[5] = (GLdouble) far_val;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glOrtho, &sys_args);
+// }
+
+
+// void glFrustum( GLdouble left, GLdouble right,
+//                                    GLdouble bottom, GLdouble top,
+//                                    GLdouble near_val, GLdouble far_val )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+
+// 	GLdouble sys_args[6];
+// 	sys_args[0] = (GLdouble) left;
+// 	sys_args[1] = (GLdouble) right;
+// 	sys_args[2] = (GLdouble) bottom;
+// 	sys_args[3] = (GLdouble) top;
+// 	sys_args[4] = (GLdouble) near_val;
+// 	sys_args[5] = (GLdouble) far_val;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glFrustum, &sys_args);
+// }
 
 
 // void glViewport( GLint x, GLint y,
@@ -444,172 +411,172 @@ void glFrustum( GLdouble left, GLdouble right,
 // }
 
 
-void glPushMatrix( void )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glPushMatrix( void )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glPushMatrix);
-}
-
-
-void glPopMatrix( void )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glPopMatrix);
-
-}
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glPushMatrix);
+// }
 
 
-void glLoadIdentity( void )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glPopMatrix( void )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glLoadIdentity);
-}
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glPopMatrix);
 
-
-void glLoadMatrixd( const GLdouble *m )
-{
-	__OPENGL_NOT_IMPL__
-}
+// }
 
 
-void glLoadMatrixf( const GLfloat *m )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLoadIdentity( void )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glLoadIdentity);
+// }
 
 
-void glMultMatrixd( const GLdouble *m )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLoadMatrixd( const GLdouble *m )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMultMatrixf( const GLfloat *m )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLoadMatrixf( const GLfloat *m )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRotated( GLdouble angle,
-                                   GLdouble x, GLdouble y, GLdouble z )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMultMatrixd( const GLdouble *m )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRotatef( GLfloat angle,
-                                   GLfloat x, GLfloat y, GLfloat z )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-
-	GLfloat sys_args[4];
-	sys_args[0] = (GLfloat) angle;
-	sys_args[1] = (GLfloat) x;
-	sys_args[2] = (GLfloat) y;
-	sys_args[3] = (GLfloat) z;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glRotatef, &sys_args);
-
-}
+// void glMultMatrixf( const GLfloat *m )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glScaled( GLdouble x, GLdouble y, GLdouble z )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRotated( GLdouble angle,
+//                                    GLdouble x, GLdouble y, GLdouble z )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glScalef( GLfloat x, GLfloat y, GLfloat z )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRotatef( GLfloat angle,
+//                                    GLfloat x, GLfloat y, GLfloat z )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+
+// 	GLfloat sys_args[4];
+// 	sys_args[0] = (GLfloat) angle;
+// 	sys_args[1] = (GLfloat) x;
+// 	sys_args[2] = (GLfloat) y;
+// 	sys_args[3] = (GLfloat) z;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glRotatef, &sys_args);
+
+// }
 
 
-void glTranslated( GLdouble x, GLdouble y, GLdouble z )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glScaled( GLdouble x, GLdouble y, GLdouble z )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glTranslatef( GLfloat x, GLfloat y, GLfloat z )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-
-	GLfloat sys_args[3];
-	sys_args[0] = (GLfloat) x;
-	sys_args[1] = (GLfloat) y;
-	sys_args[2] = (GLfloat) z;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glTranslatef, &sys_args);	
-
-}
+// void glScalef( GLfloat x, GLfloat y, GLfloat z )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-GLboolean glIsList( GLuint list )
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// void glTranslated( GLdouble x, GLdouble y, GLdouble z )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glDeleteLists( GLuint list, GLsizei range )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glTranslatef( GLfloat x, GLfloat y, GLfloat z )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+
+// 	GLfloat sys_args[3];
+// 	sys_args[0] = (GLfloat) x;
+// 	sys_args[1] = (GLfloat) y;
+// 	sys_args[2] = (GLfloat) z;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glTranslatef, &sys_args);	
+
+// }
 
 
-GLuint glGenLists( GLsizei range )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-
-	unsigned int sys_args[1];
-	sys_args[0] = (unsigned int) range;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenLists, &sys_args);	
-	return 0;
-}
+// GLboolean glIsList( GLuint list )
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 
-void glNewList( GLuint list, GLenum mode )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-
-	unsigned int sys_args[2];
-	sys_args[0] = (unsigned int) list;
-	sys_args[1] = (unsigned int) mode;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glNewList, &sys_args);	
-}
+// void glDeleteLists( GLuint list, GLsizei range )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEndList( void )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// GLuint glGenLists( GLsizei range )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEndList);		
-}
-
-
-void glCallList( GLuint list )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-
-	unsigned int sys_args[1];
-	sys_args[0] = (unsigned int) list;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glCallList, &sys_args);
-}
+// 	unsigned int sys_args[1];
+// 	sys_args[0] = (unsigned int) range;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glGenLists, &sys_args);	
+// 	return 0;
+// }
 
 
-void glCallLists( GLsizei n, GLenum type,
-                                     const GLvoid *lists )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glNewList( GLuint list, GLenum mode )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+
+// 	unsigned int sys_args[2];
+// 	sys_args[0] = (unsigned int) list;
+// 	sys_args[1] = (unsigned int) mode;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glNewList, &sys_args);	
+// }
 
 
-void glListBase( GLuint base )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEndList( void )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glEndList);		
+// }
+
+
+// void glCallList( GLuint list )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+
+// 	unsigned int sys_args[1];
+// 	sys_args[0] = (unsigned int) list;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glCallList, &sys_args);
+// }
+
+
+// void glCallLists( GLsizei n, GLenum type,
+//                                      const GLvoid *lists )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
+
+
+// void glListBase( GLuint base )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glBegin( GLenum mode )
@@ -1308,196 +1275,196 @@ void glListBase( GLuint base )
 // }
 
 
-void glRasterPos2d( GLdouble x, GLdouble y )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos2d( GLdouble x, GLdouble y )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos2f( GLfloat x, GLfloat y )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos2f( GLfloat x, GLfloat y )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos2i( GLint x, GLint y )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos2i( GLint x, GLint y )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos2s( GLshort x, GLshort y )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos2s( GLshort x, GLshort y )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos3d( GLdouble x, GLdouble y, GLdouble z )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos3d( GLdouble x, GLdouble y, GLdouble z )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos3f( GLfloat x, GLfloat y, GLfloat z )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos3f( GLfloat x, GLfloat y, GLfloat z )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos3i( GLint x, GLint y, GLint z )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos3i( GLint x, GLint y, GLint z )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos3s( GLshort x, GLshort y, GLshort z )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos3s( GLshort x, GLshort y, GLshort z )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos4d( GLdouble x, GLdouble y, GLdouble z, GLdouble w )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos4d( GLdouble x, GLdouble y, GLdouble z, GLdouble w )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos4f( GLfloat x, GLfloat y, GLfloat z, GLfloat w )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos4f( GLfloat x, GLfloat y, GLfloat z, GLfloat w )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos4i( GLint x, GLint y, GLint z, GLint w )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos4i( GLint x, GLint y, GLint z, GLint w )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos4s( GLshort x, GLshort y, GLshort z, GLshort w )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos4s( GLshort x, GLshort y, GLshort z, GLshort w )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos2dv( const GLdouble *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos2dv( const GLdouble *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos2fv( const GLfloat *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos2fv( const GLfloat *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos2iv( const GLint *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos2iv( const GLint *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos2sv( const GLshort *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos2sv( const GLshort *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos3dv( const GLdouble *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos3dv( const GLdouble *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos3fv( const GLfloat *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos3fv( const GLfloat *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos3iv( const GLint *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos3iv( const GLint *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos3sv( const GLshort *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos3sv( const GLshort *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos4dv( const GLdouble *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos4dv( const GLdouble *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos4fv( const GLfloat *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos4fv( const GLfloat *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos4iv( const GLint *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos4iv( const GLint *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRasterPos4sv( const GLshort *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRasterPos4sv( const GLshort *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRectd( GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRectd( GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRectf( GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRectf( GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRecti( GLint x1, GLint y1, GLint x2, GLint y2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRecti( GLint x1, GLint y1, GLint x2, GLint y2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRects( GLshort x1, GLshort y1, GLshort x2, GLshort y2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRects( GLshort x1, GLshort y1, GLshort x2, GLshort y2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRectdv( const GLdouble *v1, const GLdouble *v2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRectdv( const GLdouble *v1, const GLdouble *v2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRectfv( const GLfloat *v1, const GLfloat *v2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRectfv( const GLfloat *v1, const GLfloat *v2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRectiv( const GLint *v1, const GLint *v2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRectiv( const GLint *v1, const GLint *v2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glRectsv( const GLshort *v1, const GLshort *v2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRectsv( const GLshort *v1, const GLshort *v2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glVertexPointer( GLint size, GLenum type,
@@ -1541,10 +1508,10 @@ void glRectsv( const GLshort *v1, const GLshort *v2 )
 // }
 
 
-void glGetPointerv( GLenum pname, GLvoid **params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetPointerv( GLenum pname, GLvoid **params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glArrayElement( GLint i )
@@ -1580,133 +1547,133 @@ void glGetPointerv( GLenum pname, GLvoid **params )
 // }
 
 
-void glShadeModel( GLenum mode )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glShadeModel( GLenum mode )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	unsigned int sys_args[1];
-	sys_args[0] = (unsigned int) mode;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glShadeModel, &sys_args);
+// 	unsigned int sys_args[1];
+// 	sys_args[0] = (unsigned int) mode;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glShadeModel, &sys_args);
 
-}
-
-
-void glLightf( GLenum light, GLenum pname, GLfloat param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// }
 
 
-void glLighti( GLenum light, GLenum pname, GLint param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLightf( GLenum light, GLenum pname, GLfloat param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLightfv( GLenum light, GLenum pname,
-                                 const GLfloat *params )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-
-	unsigned int sys_args[3];
-	sys_args[0] = (unsigned int) light;
-	sys_args[1] = (unsigned int) pname;
-	sys_args[2] = (unsigned int) params;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glLightfv, &sys_args);
-}
+// void glLighti( GLenum light, GLenum pname, GLint param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLightiv( GLenum light, GLenum pname,
-                                 const GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLightfv( GLenum light, GLenum pname,
+//                                  const GLfloat *params )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+
+// 	unsigned int sys_args[3];
+// 	sys_args[0] = (unsigned int) light;
+// 	sys_args[1] = (unsigned int) pname;
+// 	sys_args[2] = (unsigned int) params;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glLightfv, &sys_args);
+// }
 
 
-void glGetLightfv( GLenum light, GLenum pname,
-                                    GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLightiv( GLenum light, GLenum pname,
+//                                  const GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetLightiv( GLenum light, GLenum pname,
-                                    GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetLightfv( GLenum light, GLenum pname,
+//                                     GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLightModelf( GLenum pname, GLfloat param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetLightiv( GLenum light, GLenum pname,
+//                                     GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLightModeli( GLenum pname, GLint param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLightModelf( GLenum pname, GLfloat param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLightModelfv( GLenum pname, const GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLightModeli( GLenum pname, GLint param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLightModeliv( GLenum pname, const GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLightModelfv( GLenum pname, const GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMaterialf( GLenum face, GLenum pname, GLfloat param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLightModeliv( GLenum pname, const GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMateriali( GLenum face, GLenum pname, GLint param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMaterialf( GLenum face, GLenum pname, GLfloat param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMaterialfv( GLenum face, GLenum pname, const GLfloat *params )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
-
-	unsigned int sys_args[3];
-	sys_args[0] = (unsigned int) face;
-	sys_args[1] = (unsigned int) pname;
-	sys_args[2] = (unsigned int) params;
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMaterialfv, &sys_args);
-}
+// void glMateriali( GLenum face, GLenum pname, GLint param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMaterialiv( GLenum face, GLenum pname, const GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMaterialfv( GLenum face, GLenum pname, const GLfloat *params )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+
+// 	unsigned int sys_args[3];
+// 	sys_args[0] = (unsigned int) face;
+// 	sys_args[1] = (unsigned int) pname;
+// 	sys_args[2] = (unsigned int) params;
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glMaterialfv, &sys_args);
+// }
 
 
-void glGetMaterialfv( GLenum face, GLenum pname, GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMaterialiv( GLenum face, GLenum pname, const GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetMaterialiv( GLenum face, GLenum pname, GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetMaterialfv( GLenum face, GLenum pname, GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glColorMaterial( GLenum face, GLenum mode )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetMaterialiv( GLenum face, GLenum pname, GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
+
+
+// void glColorMaterial( GLenum face, GLenum mode )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glPixelZoom( GLfloat xfactor, GLfloat yfactor )
@@ -1787,13 +1754,13 @@ void glColorMaterial( GLenum face, GLenum mode )
 // }
 
 
-void glReadPixels( GLint x, GLint y,
-                                    GLsizei width, GLsizei height,
-                                    GLenum format, GLenum type,
-                                    GLvoid *pixels )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glReadPixels( GLint x, GLint y,
+//                                     GLsizei width, GLsizei height,
+//                                     GLenum format, GLenum type,
+//                                     GLvoid *pixels )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glDrawPixels( GLsizei width, GLsizei height,
@@ -1804,18 +1771,18 @@ void glReadPixels( GLint x, GLint y,
 // }
 
 
-void glCopyPixels( GLint x, GLint y,
-                                    GLsizei width, GLsizei height,
-                                    GLenum type )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glCopyPixels( GLint x, GLint y,
+//                                     GLsizei width, GLsizei height,
+//                                     GLenum type )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glStencilFunc( GLenum func, GLint ref, GLuint mask )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glStencilFunc( GLenum func, GLint ref, GLuint mask )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glStencilMask( GLuint mask )
@@ -1824,10 +1791,10 @@ void glStencilFunc( GLenum func, GLint ref, GLuint mask )
 // }
 
 
-void glStencilOp( GLenum fail, GLenum zfail, GLenum zpass )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glStencilOp( GLenum fail, GLenum zfail, GLenum zpass )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glClearStencil( GLint s )
@@ -1872,22 +1839,22 @@ void glStencilOp( GLenum fail, GLenum zfail, GLenum zpass )
 // }
 
 
-void glGetTexGendv( GLenum coord, GLenum pname, GLdouble *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexGendv( GLenum coord, GLenum pname, GLdouble *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetTexGenfv( GLenum coord, GLenum pname, GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexGenfv( GLenum coord, GLenum pname, GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetTexGeniv( GLenum coord, GLenum pname, GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetTexGeniv( GLenum coord, GLenum pname, GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glTexEnvf( GLenum target, GLenum pname, GLfloat param )
@@ -2105,220 +2072,220 @@ void glGetTexGeniv( GLenum coord, GLenum pname, GLint *params )
 // }
 
 
-void glMap1d( GLenum target, GLdouble u1, GLdouble u2,
-                               GLint stride,
-                               GLint order, const GLdouble *points )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMap1d( GLenum target, GLdouble u1, GLdouble u2,
+//                                GLint stride,
+//                                GLint order, const GLdouble *points )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMap1f( GLenum target, GLfloat u1, GLfloat u2,
-                               GLint stride,
-                               GLint order, const GLfloat *points )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMap1f( GLenum target, GLfloat u1, GLfloat u2,
+//                                GLint stride,
+//                                GLint order, const GLfloat *points )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMap2d( GLenum target,
-		     GLdouble u1, GLdouble u2, GLint ustride, GLint uorder,
-		     GLdouble v1, GLdouble v2, GLint vstride, GLint vorder,
-		     const GLdouble *points )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMap2d( GLenum target,
+// 		     GLdouble u1, GLdouble u2, GLint ustride, GLint uorder,
+// 		     GLdouble v1, GLdouble v2, GLint vstride, GLint vorder,
+// 		     const GLdouble *points )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMap2f( GLenum target,
-		     GLfloat u1, GLfloat u2, GLint ustride, GLint uorder,
-		     GLfloat v1, GLfloat v2, GLint vstride, GLint vorder,
-		     const GLfloat *points )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMap2f( GLenum target,
+// 		     GLfloat u1, GLfloat u2, GLint ustride, GLint uorder,
+// 		     GLfloat v1, GLfloat v2, GLint vstride, GLint vorder,
+// 		     const GLfloat *points )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetMapdv( GLenum target, GLenum query, GLdouble *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetMapdv( GLenum target, GLenum query, GLdouble *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetMapfv( GLenum target, GLenum query, GLfloat *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetMapfv( GLenum target, GLenum query, GLfloat *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glGetMapiv( GLenum target, GLenum query, GLint *v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetMapiv( GLenum target, GLenum query, GLint *v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalCoord1d( GLdouble u )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalCoord1d( GLdouble u )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalCoord1f( GLfloat u )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalCoord1f( GLfloat u )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalCoord1dv( const GLdouble *u )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalCoord1dv( const GLdouble *u )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalCoord1fv( const GLfloat *u )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalCoord1fv( const GLfloat *u )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalCoord2d( GLdouble u, GLdouble v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalCoord2d( GLdouble u, GLdouble v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalCoord2f( GLfloat u, GLfloat v )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalCoord2f( GLfloat u, GLfloat v )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalCoord2dv( const GLdouble *u )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalCoord2dv( const GLdouble *u )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalCoord2fv( const GLfloat *u )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalCoord2fv( const GLfloat *u )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMapGrid1d( GLint un, GLdouble u1, GLdouble u2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMapGrid1d( GLint un, GLdouble u1, GLdouble u2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMapGrid1f( GLint un, GLfloat u1, GLfloat u2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMapGrid1f( GLint un, GLfloat u1, GLfloat u2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMapGrid2d( GLint un, GLdouble u1, GLdouble u2,
-                                   GLint vn, GLdouble v1, GLdouble v2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMapGrid2d( GLint un, GLdouble u1, GLdouble u2,
+//                                    GLint vn, GLdouble v1, GLdouble v2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMapGrid2f( GLint un, GLfloat u1, GLfloat u2,
-                                   GLint vn, GLfloat v1, GLfloat v2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMapGrid2f( GLint un, GLfloat u1, GLfloat u2,
+//                                    GLint vn, GLfloat v1, GLfloat v2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalPoint1( GLint i )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalPoint1( GLint i )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalPoint2( GLint i, GLint j )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalPoint2( GLint i, GLint j )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalMesh1( GLenum mode, GLint i1, GLint i2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalMesh1( GLenum mode, GLint i1, GLint i2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glEvalMesh2( GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2 )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEvalMesh2( GLenum mode, GLint i1, GLint i2, GLint j1, GLint j2 )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glFogf( GLenum pname, GLfloat param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFogf( GLenum pname, GLfloat param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glFogi( GLenum pname, GLint param )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFogi( GLenum pname, GLint param )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glFogfv( GLenum pname, const GLfloat *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFogfv( GLenum pname, const GLfloat *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glFogiv( GLenum pname, const GLint *params )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFogiv( GLenum pname, const GLint *params )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glFeedbackBuffer( GLsizei size, GLenum type, GLfloat *buffer )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFeedbackBuffer( GLsizei size, GLenum type, GLfloat *buffer )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPassThrough( GLfloat token )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPassThrough( GLfloat token )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glSelectBuffer( GLsizei size, GLuint *buffer )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSelectBuffer( GLsizei size, GLuint *buffer )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glInitNames( void )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glInitNames( void )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLoadName( GLuint name )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLoadName( GLuint name )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPushName( GLuint name )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPushName( GLuint name )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glPopName( void )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPopName( void )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glDrawRangeElements( GLenum mode, GLuint start,
@@ -2426,17 +2393,17 @@ void glPopName( void )
 // }
 
 
-void glBlendEquation( GLenum mode )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlendEquation( GLenum mode )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glBlendColor( GLclampf red, GLclampf green,
-                                    GLclampf blue, GLclampf alpha )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlendColor( GLclampf red, GLclampf green,
+//                                     GLclampf blue, GLclampf alpha )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glHistogram( GLenum target, GLsizei width,
@@ -2589,12 +2556,12 @@ void glBlendColor( GLclampf red, GLclampf green,
 // }
 
 
-void glSeparableFilter2D( GLenum target,
-	GLenum internalformat, GLsizei width, GLsizei height, GLenum format,
-	GLenum type, const GLvoid *row, const GLvoid *column )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSeparableFilter2D( GLenum target,
+// 	GLenum internalformat, GLsizei width, GLsizei height, GLenum format,
+// 	GLenum type, const GLvoid *row, const GLvoid *column )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glGetSeparableFilter( GLenum target, GLenum format,
@@ -2850,34 +2817,34 @@ void glSeparableFilter2D( GLenum target,
 // }
 
 
-void glLoadTransposeMatrixd( const GLdouble m[16] )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLoadTransposeMatrixd( const GLdouble m[16] )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glLoadTransposeMatrixf( const GLfloat m[16] )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glLoadTransposeMatrixf( const GLfloat m[16] )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMultTransposeMatrixd( const GLdouble m[16] )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMultTransposeMatrixd( const GLdouble m[16] )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glMultTransposeMatrixf( const GLfloat m[16] )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glMultTransposeMatrixf( const GLfloat m[16] )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glSampleCoverage( GLclampf value, GLboolean invert )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSampleCoverage( GLclampf value, GLboolean invert )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glActiveTextureARB(GLenum texture)
@@ -3125,10 +3092,10 @@ void glBlendEquationSeparateATI( GLenum modeRGB, GLenum modeA )
 
 /* GL/glext.h */
 
-void glBlendFuncSeparate (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlendFuncSeparate (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glMultiDrawArrays (GLenum mode, const GLint *first, const GLsizei *count, GLsizei primcount)
 // {
@@ -3270,126 +3237,126 @@ void glBlendFuncSeparate (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAl
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glWindowPos2d (GLdouble x, GLdouble y)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos2d (GLdouble x, GLdouble y)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos2dv (const GLdouble *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos2dv (const GLdouble *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos2f (GLfloat x, GLfloat y)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos2f (GLfloat x, GLfloat y)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos2fv (const GLfloat *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos2fv (const GLfloat *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos2i (GLint x, GLint y)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos2i (GLint x, GLint y)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos2iv (const GLint *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos2iv (const GLint *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos2s (GLshort x, GLshort y)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos2s (GLshort x, GLshort y)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos2sv (const GLshort *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos2sv (const GLshort *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos3d (GLdouble x, GLdouble y, GLdouble z)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos3d (GLdouble x, GLdouble y, GLdouble z)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos3dv (const GLdouble *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos3dv (const GLdouble *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos3f (GLfloat x, GLfloat y, GLfloat z)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos3f (GLfloat x, GLfloat y, GLfloat z)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos3fv (const GLfloat *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos3fv (const GLfloat *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos3i (GLint x, GLint y, GLint z)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos3i (GLint x, GLint y, GLint z)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos3iv (const GLint *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos3iv (const GLint *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos3s (GLshort x, GLshort y, GLshort z)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos3s (GLshort x, GLshort y, GLshort z)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glWindowPos3sv (const GLshort *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWindowPos3sv (const GLshort *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGenQueries (GLsizei n, GLuint *ids)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGenQueries (GLsizei n, GLuint *ids)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDeleteQueries (GLsizei n, const GLuint *ids)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteQueries (GLsizei n, const GLuint *ids)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLboolean glIsQuery (GLuint id)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsQuery (GLuint id)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glBeginQuery (GLenum target, GLuint id)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBeginQuery (GLenum target, GLuint id)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glEndQuery (GLenum target)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEndQuery (GLenum target)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetQueryiv (GLenum target, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetQueryiv (GLenum target, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetQueryObjectiv (GLuint id, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetQueryObjectiv (GLuint id, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetQueryObjectuiv (GLuint id, GLenum pname, GLuint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetQueryObjectuiv (GLuint id, GLenum pname, GLuint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glBindBuffer (GLenum target, GLuint buffer)
 // {
@@ -3529,25 +3496,25 @@ void glGetQueryObjectuiv (GLuint id, GLenum pname, GLuint *params)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glBlendEquationSeparate (GLenum modeRGB, GLenum modeAlpha)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlendEquationSeparate (GLenum modeRGB, GLenum modeAlpha)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glDrawBuffers (GLsizei n, const GLenum *bufs)
 // {
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glStencilOpSeparate (GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glStencilOpSeparate (GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glStencilMaskSeparate (GLenum face, GLuint mask)
 // {
@@ -4092,31 +4059,31 @@ void glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glGetBooleani_v (GLenum target, GLuint index, GLboolean *data)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetBooleani_v (GLenum target, GLuint index, GLboolean *data)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetIntegeri_v (GLenum target, GLuint index, GLint *data)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetIntegeri_v (GLenum target, GLuint index, GLint *data)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glEnablei (GLenum target, GLuint index)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEnablei (GLenum target, GLuint index)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDisablei (GLenum target, GLuint index)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDisablei (GLenum target, GLuint index)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLboolean glIsEnabledi (GLenum target, GLuint index)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsEnabledi (GLenum target, GLuint index)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 // void glBeginTransformFeedback (GLenum primitiveMode)
 // {
@@ -4172,15 +4139,15 @@ GLboolean glIsEnabledi (GLenum target, GLuint index)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glBeginConditionalRender (GLuint id, GLenum mode)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBeginConditionalRender (GLuint id, GLenum mode)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glEndConditionalRender (void)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEndConditionalRender (void)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glVertexAttribIPointer (GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
 // {
@@ -4393,11 +4360,11 @@ void glEndConditionalRender (void)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-const GLubyte * glGetStringi (GLenum name, GLuint index)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// const GLubyte * glGetStringi (GLenum name, GLuint index)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
 // void glDrawArraysInstanced (GLenum mode, GLint first, GLsizei count, GLsizei primcount)
 // {
@@ -4419,10 +4386,10 @@ const GLubyte * glGetStringi (GLenum name, GLuint index)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glGetInteger64i_v (GLenum target, GLuint index, GLint64 *data)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetInteger64i_v (GLenum target, GLuint index, GLint64 *data)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glGetBufferParameteri64v (GLenum target, GLenum pname, GLint64 *params)
 // {
@@ -4444,25 +4411,25 @@ void glGetInteger64i_v (GLenum target, GLuint index, GLint64 *data)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glBlendEquationi (GLuint buf, GLenum mode)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlendEquationi (GLuint buf, GLenum mode)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glBlendEquationSeparatei (GLuint buf, GLenum modeRGB, GLenum modeAlpha)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlendEquationSeparatei (GLuint buf, GLenum modeRGB, GLenum modeAlpha)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glBlendFunci (GLuint buf, GLenum src, GLenum dst)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlendFunci (GLuint buf, GLenum src, GLenum dst)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glBlendFuncSeparatei (GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlendFuncSeparatei (GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glCompressedTexSubImage3DARB (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, const GLvoid *data)
 {
@@ -5382,10 +5349,10 @@ void glDrawElementsInstancedARB (GLenum mode, GLsizei count, GLenum type, const 
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glBlitFramebuffer (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBlitFramebuffer (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glRenderbufferStorageMultisample (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height)
 // {
@@ -5530,48 +5497,48 @@ void glTexBufferARB (GLenum target, GLenum internalformat, GLuint buffer)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glProvokingVertex (GLenum mode)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glProvokingVertex (GLenum mode)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLsync glFenceSync (GLenum condition, GLbitfield flags)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLsync glFenceSync (GLenum condition, GLbitfield flags)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-GLboolean glIsSync (GLsync sync)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsSync (GLsync sync)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glDeleteSync (GLsync sync)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteSync (GLsync sync)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLenum glClientWaitSync (GLsync sync, GLbitfield flags, GLuint64 timeout)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLenum glClientWaitSync (GLsync sync, GLbitfield flags, GLuint64 timeout)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glWaitSync (GLsync sync, GLbitfield flags, GLuint64 timeout)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glWaitSync (GLsync sync, GLbitfield flags, GLuint64 timeout)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetInteger64v (GLenum pname, GLint64 *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetInteger64v (GLenum pname, GLint64 *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetSynciv (GLsync sync, GLenum pname, GLsizei bufSize, GLsizei *length, GLint *values)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetSynciv (GLsync sync, GLenum pname, GLsizei bufSize, GLsizei *length, GLint *values)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glTexImage2DMultisample (GLenum target, GLsizei samples, GLint internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
 // {
@@ -5588,10 +5555,10 @@ void glGetSynciv (GLsync sync, GLenum pname, GLsizei bufSize, GLsizei *length, G
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glSampleMaski (GLuint index, GLbitfield mask)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glSampleMaski (GLuint index, GLbitfield mask)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glBlendEquationiARB (GLuint buf, GLenum mode)
 {
@@ -5731,20 +5698,20 @@ void glGetNamedStringivARB (GLint namelen, const GLchar *name, GLenum pname, GLi
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glQueryCounter (GLuint id, GLenum target)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glQueryCounter (GLuint id, GLenum target)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetQueryObjecti64v (GLuint id, GLenum pname, GLint64 *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetQueryObjecti64v (GLuint id, GLenum pname, GLint64 *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetQueryObjectui64v (GLuint id, GLenum pname, GLuint64 *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetQueryObjectui64v (GLuint id, GLenum pname, GLuint64 *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glVertexP2ui (GLenum type, GLuint value)
 // {
@@ -6088,61 +6055,61 @@ void glGetQueryObjectui64v (GLuint id, GLenum pname, GLuint64 *params)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glBindTransformFeedback (GLenum target, GLuint id)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindTransformFeedback (GLenum target, GLuint id)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDeleteTransformFeedbacks (GLsizei n, const GLuint *ids)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteTransformFeedbacks (GLsizei n, const GLuint *ids)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGenTransformFeedbacks (GLsizei n, GLuint *ids)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGenTransformFeedbacks (GLsizei n, GLuint *ids)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLboolean glIsTransformFeedback (GLuint id)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsTransformFeedback (GLuint id)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glPauseTransformFeedback (void)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glPauseTransformFeedback (void)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glResumeTransformFeedback (void)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glResumeTransformFeedback (void)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDrawTransformFeedback (GLenum mode, GLuint id)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDrawTransformFeedback (GLenum mode, GLuint id)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDrawTransformFeedbackStream (GLenum mode, GLuint id, GLuint stream)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDrawTransformFeedbackStream (GLenum mode, GLuint id, GLuint stream)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glBeginQueryIndexed (GLenum target, GLuint index, GLuint id)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBeginQueryIndexed (GLenum target, GLuint index, GLuint id)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glEndQueryIndexed (GLenum target, GLuint index)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glEndQueryIndexed (GLenum target, GLuint index)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetQueryIndexediv (GLenum target, GLuint index, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetQueryIndexediv (GLenum target, GLuint index, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glReleaseShaderCompiler (void)
 // {
@@ -6159,10 +6126,10 @@ void glGetQueryIndexediv (GLenum target, GLuint index, GLenum pname, GLint *para
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glDepthRangef (GLclampf n, GLclampf f)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDepthRangef (GLclampf n, GLclampf f)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glClearDepthf (GLclampf d)
 {
@@ -6536,55 +6503,55 @@ void glClearDepthf (GLclampf d)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glViewportArrayv (GLuint first, GLsizei count, const GLfloat *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glViewportArrayv (GLuint first, GLsizei count, const GLfloat *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glViewportIndexedf (GLuint index, GLfloat x, GLfloat y, GLfloat w, GLfloat h)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glViewportIndexedf (GLuint index, GLfloat x, GLfloat y, GLfloat w, GLfloat h)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glViewportIndexedfv (GLuint index, const GLfloat *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glViewportIndexedfv (GLuint index, const GLfloat *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glScissorArrayv (GLuint first, GLsizei count, const GLint *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glScissorArrayv (GLuint first, GLsizei count, const GLint *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glScissorIndexed (GLuint index, GLint left, GLint bottom, GLsizei width, GLsizei height)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glScissorIndexed (GLuint index, GLint left, GLint bottom, GLsizei width, GLsizei height)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glScissorIndexedv (GLuint index, const GLint *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glScissorIndexedv (GLuint index, const GLint *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDepthRangeArrayv (GLuint first, GLsizei count, const GLclampd *v)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDepthRangeArrayv (GLuint first, GLsizei count, const GLclampd *v)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDepthRangeIndexed (GLuint index, GLclampd n, GLclampd f)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDepthRangeIndexed (GLuint index, GLclampd n, GLclampd f)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetFloati_v (GLenum target, GLuint index, GLfloat *data)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetFloati_v (GLenum target, GLuint index, GLfloat *data)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetDoublei_v (GLenum target, GLuint index, GLdouble *data)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetDoublei_v (GLenum target, GLuint index, GLdouble *data)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 GLsync glCreateSyncFromCLeventARB (struct _cl_context * context, struct _cl_event * event, GLbitfield flags)
 {
@@ -6729,15 +6696,15 @@ void glGetnUniformdvARB (GLuint program, GLint location, GLsizei bufSize, GLdoub
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glDrawTransformFeedbackInstanced (GLenum mode, GLuint id, GLsizei primcount)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDrawTransformFeedbackInstanced (GLenum mode, GLuint id, GLsizei primcount)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDrawTransformFeedbackStreamInstanced (GLenum mode, GLuint id, GLuint stream, GLsizei primcount)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDrawTransformFeedbackStreamInstanced (GLenum mode, GLuint id, GLuint stream, GLsizei primcount)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glGetInternalformativ (GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint *params)
 // {

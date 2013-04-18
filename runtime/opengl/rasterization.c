@@ -300,6 +300,13 @@ void glConvolutionParameteriv( GLenum target, GLenum pname,
 	__OPENGL_NOT_IMPL__
 }
 
+void glSeparableFilter2D( GLenum target,
+	GLenum internalformat, GLsizei width, GLsizei height, GLenum format,
+	GLenum type, const GLvoid *row, const GLvoid *column )
+{
+	__OPENGL_NOT_IMPL__
+}
+
 void glCopyConvolutionFilter1D( GLenum target,
 	GLenum internalformat, GLint x, GLint y, GLsizei width )
 {

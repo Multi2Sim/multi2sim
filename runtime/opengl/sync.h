@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef RUNTIME_OPENGL_SYNC_H
+#define RUNTIME_OPENGL_SYNC_H
 
-#ifndef RUNTIME_OPENGL_API_H
-#define RUNTIME_OPENGL_API_H
+#include "opengl.h"
+
 
 #endif
-

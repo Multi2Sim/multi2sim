@@ -422,6 +422,23 @@ void glGetTexEnviv( GLenum target, GLenum pname, GLint *params )
 	__OPENGL_NOT_IMPL__
 }
 
+void glGetTexGendv( GLenum coord, GLenum pname, GLdouble *params )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glGetTexGenfv( GLenum coord, GLenum pname, GLfloat *params )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glGetTexGeniv( GLenum coord, GLenum pname, GLint *params )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+/* Texture Coordinates [2.12.3] */
+
 void glTexGend( GLenum coord, GLenum pname, GLdouble param )
 {
 	__OPENGL_NOT_IMPL__
