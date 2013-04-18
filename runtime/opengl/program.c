@@ -1097,25 +1097,3 @@ void glGetProgramPipelineInfoLog (GLuint pipeline, GLsizei bufSize, GLsizei *len
 {
 	__OPENGL_NOT_IMPL__
 }
-
-
-
-
-
-void glBeginTransformFeedback (GLenum primitiveMode)
-{
-	/* Debug */
-	opengl_debug("API call %s(%x)\n", 
-		__FUNCTION__, primitiveMode);
-
-	/* FIXME */
-}
-
-void glEndTransformFeedback (void)
-{
-	/* Debug */
-	opengl_debug("API call %s\n", __FUNCTION__);
-
-	/* FIXME */
-}
-

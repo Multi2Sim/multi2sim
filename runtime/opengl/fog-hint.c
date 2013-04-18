@@ -17,9 +17,54 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <unistd.h>
+#include <stdio.h>
 
-#ifndef RUNTIME_OPENGL_API_H
-#define RUNTIME_OPENGL_API_H
+#include "mhandle.h"
+#include "debug.h"
+#include "fog-hint.h"
 
-#endif
 
+/*
+ * Private Functions
+ */
+
+
+
+/*
+ * Public Functions
+ */
+
+
+
+/* 
+ * OpenGL API functions 
+ */
+
+void glFogf( GLenum pname, GLfloat param )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+void glFogi( GLenum pname, GLint param )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+void glFogfv( GLenum pname, const GLfloat *params )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
+void glFogiv( GLenum pname, const GLint *params )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glHint( GLenum target, GLenum mode )
+{
+	__OPENGL_NOT_IMPL__
+}

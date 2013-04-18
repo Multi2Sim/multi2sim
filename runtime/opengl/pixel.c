@@ -17,9 +17,54 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <unistd.h>
+#include <stdio.h>
 
-#ifndef RUNTIME_OPENGL_API_H
-#define RUNTIME_OPENGL_API_H
+#include "mhandle.h"
+#include "debug.h"
+#include "pixel.h"
 
-#endif
+
+/*
+ * Private Functions
+ */
+
+
+
+/*
+ * Public Functions
+ */
+
+
+
+/* 
+ * OpenGL API functions 
+ */
+
+void glReadPixels( GLint x, GLint y,
+                                    GLsizei width, GLsizei height,
+                                    GLenum format, GLenum type,
+                                    GLvoid *pixels )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glReadBuffer( GLenum mode )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glCopyPixels( GLint x, GLint y,
+	GLsizei width, GLsizei height,
+	GLenum type )
+{
+	__OPENGL_NOT_IMPL__
+}
+
+void glBlitFramebuffer (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+
 
