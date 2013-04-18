@@ -109,6 +109,19 @@ struct arm_thumb32_branch_t
 	unsigned int __reserved2: 5; 	/* [31:27] */
 };
 
+struct arm_thumb32_branch_link_t
+{
+	unsigned int immd11	: 11; 	/* [10:0] */
+	unsigned int j2		: 1; 	/* [11] */
+	unsigned int __reserved0: 1; 	/* [12] */
+	unsigned int j1		: 1; 	/* [13] */
+	unsigned int __reserved1: 2; 	/* [15:14] */
+	unsigned int immd10	: 10; 	/* [25:16] */
+	unsigned int sign	: 1; 	/* [26] */
+	unsigned int __reserved2: 5; 	/* [31:27] */
+};
+
+
 struct arm_thumb32_ldstr_reg_t
 {
 	unsigned int rm		: 4;	/* [3:0] */
@@ -410,6 +423,7 @@ union arm_thumb32_inst_dword_t
 	struct arm_thumb32_data_proc_shftreg_t data_proc_shftreg;
 	struct arm_thumb32_data_proc_immd_t data_proc_immd;
 	struct arm_thumb32_branch_t branch;
+	struct arm_thumb32_branch_link_t branch_link;
 	struct arm_thumb32_ldstr_reg_t ldstr_reg;
 	struct arm_thumb32_ldstr_imm_t ldstr_imm;
 	struct arm_thumb32_ldstrt_imm_t ldstrt_imm;
@@ -728,8 +742,6 @@ void arm_thumb32_inst_dump_IMM2(char **inst_str_ptr, int *inst_str_size,
 	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
 void arm_thumb32_inst_dump_IMMD16(char **inst_str_ptr, int *inst_str_size,
 	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
-void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
-	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
 void arm_thumb32_inst_dump_IMMD8(char **inst_str_ptr, int *inst_str_size,
 	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
 void arm_thumb32_inst_dump_WID(char **inst_str_ptr, int *inst_str_size,
@@ -742,6 +754,10 @@ void arm_thumb32_inst_dump_RDHI(char **inst_str_ptr, int *inst_str_size,
 	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
 void arm_thumb32_inst_dump_RDLO(char **inst_str_ptr, int *inst_str_size,
 	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
+		struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat,
+		unsigned int inst_addr);
+
 
 
 
