@@ -204,54 +204,6 @@ void opengl_context_destroy()
  * OpenGL API functions 
  */
 
- const GLubyte *glGetString( GLenum name )
-{
-	opengl_debug("API call %s \n", __FUNCTION__);
-
-	const GLubyte *str;
-
-	switch(name)
-	{
-
-	case GL_VENDOR:
-	{
-		sprintf(opengl_ctx->props->info, "%s\n", opengl_ctx->props->vendor);
-		str = (const GLubyte *)opengl_ctx->props->info;
-		break;
-	}
-
-	case GL_RENDERER:
-	{
-		sprintf(opengl_ctx->props->info, "%s\n", opengl_ctx->props->renderer);
-		str = (const GLubyte *)opengl_ctx->props->info;
-		break;
-	}
-
-	case GL_VERSION:
-	{
-		sprintf(opengl_ctx->props->info, "Multi2Sim OpenGL %u.%u\n", 
-			opengl_ctx->props->gl_major, opengl_ctx->props->gl_minor);
-		str = (const GLubyte *)opengl_ctx->props->info;
-		break;
-	}
-
-	case GL_SHADING_LANGUAGE_VERSION:
-	{
-		sprintf(opengl_ctx->props->info, "Multi2Sim OpenGL GLSL %u.%u\n", 
-			opengl_ctx->props->gl_major, opengl_ctx->props->gl_minor);
-		str = (const GLubyte *)opengl_ctx->props->info;
-		break;
-	}
-
-	default:
-		str = NULL;
-		break;
-	}
-
-	/* Return */
-	return str;
-}
-
 void glEnable( GLenum cap )
 {
 	/* Debug */
@@ -1384,15 +1336,17 @@ void glDisable( GLenum cap )
 	}
 }
 
-void glViewport( GLint x, GLint y, GLsizei width, GLsizei height )
+void glEnablei (GLenum target, GLuint index)
 {
-	/* Debug */
-	opengl_debug("API call %s(%d, %d, %d, %d)\n", 
-		__FUNCTION__, x, y, width, height);
+	__OPENGL_NOT_IMPL__
+}
 
-	/* Set the viewport */
-	opengl_ctx->props->vp_x = x;
-	opengl_ctx->props->vp_y = y;
-	opengl_ctx->props->vp_w = width;
-	opengl_ctx->props->vp_h = height;
+void glDisablei (GLenum target, GLuint index)
+{
+	__OPENGL_NOT_IMPL__
+}
+
+GLenum glGetError( void )
+{
+	return opengl_ctx->opengl_error;
 }

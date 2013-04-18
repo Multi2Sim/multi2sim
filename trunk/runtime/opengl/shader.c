@@ -32,7 +32,6 @@
 struct linked_list_t *shader_repo;
 static unsigned int shader_obj_id = 0; /* ID 0 is reserved */
 
-
 /* Forward declarataion */
 static unsigned int opengl_shader_assign_id();
 
