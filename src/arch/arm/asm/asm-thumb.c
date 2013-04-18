@@ -95,7 +95,7 @@ void arm_thumb32_disasm_init()
 	arm_thumb32_dproc_bin_imm2_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
 	arm_thumb32_dproc_bin_imm3_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
 
-	arm_thumb32_brnch_ctrl_table	= xcalloc(4, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_brnch_ctrl_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
 
 	arm_thumb32_st_single_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
 	arm_thumb32_st_single1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
@@ -1366,7 +1366,7 @@ void arm_thumb32_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_
 					inst.info->cat32);
 			else if (arm_token_comp(fmt_str, "addr", &token_len))
 				arm_thumb32_inst_dump_ADDR(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->cat32);
+					inst.info->cat32, inst_addr);
 			else if (arm_token_comp(fmt_str, "regs", &token_len))
 				arm_thumb32_inst_dump_REGS(inst_str_ptr, &inst_str_size, &inst,
 					inst.info->cat32);
@@ -2078,22 +2078,24 @@ void arm_thumb32_inst_dump_IMMD16(char **inst_str_ptr, int *inst_str_size,
 }
 
 void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
-	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+		struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat,
+		unsigned int inst_addr)
 {
 	unsigned int addr;
 
 		if (cat == ARM_THUMB32_CAT_BRANCH)
 		{
-			addr = (inst->dword.branch.sign << 20)
-			| (inst->dword.branch.j2 << 19)
-			| (inst->dword.branch.j1 << 18)
-			| (inst->dword.branch.immd6 << 12)
-			| (inst->dword.branch.immd11 << 1);
+			addr = (inst->dword.branch_link.sign << 24)
+			| ((!(inst->dword.branch.j1 ^ inst->dword.branch_link.sign)) << 23)
+			| ((!(inst->dword.branch.j2 ^ inst->dword.branch_link.sign)) << 22)
+			| (inst->dword.branch_link.immd10 << 12)
+			| (inst->dword.branch_link.immd11 << 1);
 		}
 		else
 			fatal("%d: addr fmt not recognized", cat);
 
-		addr = SEXT32(addr,21);
+		addr = SEXT32(addr,25);
+		addr = (inst_addr + 4) + (addr);
 		str_printf(inst_str_ptr, inst_str_size, "#%d	; 0x%x", addr, addr);
 }
 
