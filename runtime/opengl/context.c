@@ -1384,37 +1384,6 @@ void glDisable( GLenum cap )
 	}
 }
 
-void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
-{
-	/* Debug */
-	opengl_debug("API call %s(%f, %f, %f, %f)\n", 
-		__FUNCTION__, red, green, blue, alpha);
-
-	/* Specify a clear value for the color buffers */
-	opengl_ctx->props->color[0] = red;
-	opengl_ctx->props->color[0] = green;
-	opengl_ctx->props->color[0] = blue;
-	opengl_ctx->props->color[0] = alpha;
-}
-
-void glClearDepth( GLclampd depth )
-{
-	/* Debug */
-	opengl_debug("API call %s(%f)\n", __FUNCTION__, depth);
-
-	/* Specify a clear value for the depth buffer */
-	opengl_ctx->props->depth = depth;
-}
-
-void glClearStencil( GLint s )
-{
-	/* Debug */
-	opengl_debug("API call %s(%d)\n", __FUNCTION__, s);
-
-	/* Specify a clear value for the stencil buffer */
-	opengl_ctx->props->stencil = s;
-}
-
 void glViewport( GLint x, GLint y, GLsizei width, GLsizei height )
 {
 	/* Debug */

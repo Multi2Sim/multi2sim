@@ -60,10 +60,10 @@ char opengl_get_string[50];
 int opengl_err_flag = GL_NO_ERROR;
 struct opengl_runtime_info_t gl_runtime_info = {0, 0, 4.3, "Multi2Sim", "OpenGL Emulator"};
 
-void glClearIndex( GLfloat c )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClearIndex( GLfloat c )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 // void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
@@ -87,16 +87,16 @@ void glClearIndex( GLfloat c )
 // }
 
 
-void glIndexMask( GLuint mask )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glIndexMask( GLuint mask )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glColorMask( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glColorMask( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glAlphaFunc( GLenum func, GLclampf ref )
@@ -201,12 +201,12 @@ void glGetClipPlane( GLenum plane, GLdouble *equation )
 }
 
 
-void glDrawBuffer( GLenum mode )
-{
-	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
+// void glDrawBuffer( GLenum mode )
+// {
+// 	opengl_debug(stdout, "\n%s\n", __FUNCTION__);
 
-	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDrawBuffer, &mode);
-}
+// 	syscall(OPENGL_SYSCALL_CODE, opengl_call_glDrawBuffer, &mode);
+// }
 
 
 void glReadBuffer( GLenum mode )
@@ -364,10 +364,10 @@ void glDepthFunc( GLenum func )
 }
 
 
-void glDepthMask( GLboolean flag )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDepthMask( GLboolean flag )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glDepthRange( GLclampd near_val, GLclampd far_val )
@@ -376,16 +376,16 @@ void glDepthRange( GLclampd near_val, GLclampd far_val )
 }
 
 
-void glClearAccum( GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClearAccum( GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
-void glAccum( GLenum op, GLfloat value )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glAccum( GLenum op, GLfloat value )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glMatrixMode( GLenum mode )
@@ -1818,10 +1818,10 @@ void glStencilFunc( GLenum func, GLint ref, GLuint mask )
 }
 
 
-void glStencilMask( GLuint mask )
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glStencilMask( GLuint mask )
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 
 void glStencilOp( GLenum fail, GLenum zfail, GLenum zpass )
@@ -3534,10 +3534,10 @@ void glBlendEquationSeparate (GLenum modeRGB, GLenum modeAlpha)
 	__OPENGL_NOT_IMPL__
 }
 
-void glDrawBuffers (GLsizei n, const GLenum *bufs)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDrawBuffers (GLsizei n, const GLenum *bufs)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glStencilOpSeparate (GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
 {
@@ -3549,10 +3549,10 @@ void glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask)
 	__OPENGL_NOT_IMPL__
 }
 
-void glStencilMaskSeparate (GLenum face, GLuint mask)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glStencilMaskSeparate (GLenum face, GLuint mask)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glAttachShader (GLuint program, GLuint shader)
 // {
@@ -4087,10 +4087,10 @@ void glStencilMaskSeparate (GLenum face, GLuint mask)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glColorMaski (GLuint index, GLboolean r, GLboolean g, GLboolean b, GLboolean a)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glColorMaski (GLuint index, GLboolean r, GLboolean g, GLboolean b, GLboolean a)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glGetBooleani_v (GLenum target, GLuint index, GLboolean *data)
 {
@@ -4373,25 +4373,25 @@ void glEndConditionalRender (void)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glClearBufferiv (GLenum buffer, GLint drawbuffer, const GLint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClearBufferiv (GLenum buffer, GLint drawbuffer, const GLint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glClearBufferuiv (GLenum buffer, GLint drawbuffer, const GLuint *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClearBufferuiv (GLenum buffer, GLint drawbuffer, const GLuint *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glClearBufferfv (GLenum buffer, GLint drawbuffer, const GLfloat *value)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClearBufferfv (GLenum buffer, GLint drawbuffer, const GLfloat *value)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glClearBufferfi (GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glClearBufferfi (GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 const GLubyte * glGetStringi (GLenum name, GLuint index)
 {
@@ -4429,10 +4429,10 @@ void glGetInteger64i_v (GLenum target, GLuint index, GLint64 *data)
 // 	__OPENGL_NOT_IMPL__
 // }
 
-void glFramebufferTexture (GLenum target, GLenum attachment, GLuint texture, GLint level)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFramebufferTexture (GLenum target, GLenum attachment, GLuint texture, GLint level)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glVertexAttribDivisor (GLuint index, GLuint divisor)
 // {
@@ -5294,88 +5294,88 @@ void glDrawElementsInstancedARB (GLenum mode, GLsizei count, GLenum type, const 
 	__OPENGL_NOT_IMPL__
 }
 
-GLboolean glIsRenderbuffer (GLuint renderbuffer)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsRenderbuffer (GLuint renderbuffer)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glBindRenderbuffer (GLenum target, GLuint renderbuffer)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindRenderbuffer (GLenum target, GLuint renderbuffer)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDeleteRenderbuffers (GLsizei n, const GLuint *renderbuffers)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteRenderbuffers (GLsizei n, const GLuint *renderbuffers)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGenRenderbuffers (GLsizei n, GLuint *renderbuffers)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGenRenderbuffers (GLsizei n, GLuint *renderbuffers)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glRenderbufferStorage (GLenum target, GLenum internalformat, GLsizei width, GLsizei height)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRenderbufferStorage (GLenum target, GLenum internalformat, GLsizei width, GLsizei height)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetRenderbufferParameteriv (GLenum target, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetRenderbufferParameteriv (GLenum target, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLboolean glIsFramebuffer (GLuint framebuffer)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLboolean glIsFramebuffer (GLuint framebuffer)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glBindFramebuffer (GLenum target, GLuint framebuffer)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glBindFramebuffer (GLenum target, GLuint framebuffer)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glDeleteFramebuffers (GLsizei n, const GLuint *framebuffers)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glDeleteFramebuffers (GLsizei n, const GLuint *framebuffers)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGenFramebuffers (GLsizei n, GLuint *framebuffers)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGenFramebuffers (GLsizei n, GLuint *framebuffers)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-GLenum glCheckFramebufferStatus (GLenum target)
-{
-	__OPENGL_NOT_IMPL__
-	return 0;
-}
+// GLenum glCheckFramebufferStatus (GLenum target)
+// {
+// 	__OPENGL_NOT_IMPL__
+// 	return 0;
+// }
 
-void glFramebufferTexture1D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFramebufferTexture1D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glFramebufferTexture3D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFramebufferTexture3D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glGetFramebufferAttachmentParameteriv (GLenum target, GLenum attachment, GLenum pname, GLint *params)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glGetFramebufferAttachmentParameteriv (GLenum target, GLenum attachment, GLenum pname, GLint *params)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 // void glGenerateMipmap (GLenum target)
 // {
@@ -5387,15 +5387,15 @@ void glBlitFramebuffer (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLin
 	__OPENGL_NOT_IMPL__
 }
 
-void glRenderbufferStorageMultisample (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glRenderbufferStorageMultisample (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
-void glFramebufferTextureLayer (GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer)
-{
-	__OPENGL_NOT_IMPL__
-}
+// void glFramebufferTextureLayer (GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer)
+// {
+// 	__OPENGL_NOT_IMPL__
+// }
 
 void glProgramParameteriARB (GLuint program, GLenum pname, GLint value)
 {
