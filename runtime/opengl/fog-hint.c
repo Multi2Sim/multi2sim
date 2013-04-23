@@ -68,3 +68,4 @@ void glHint( GLenum target, GLenum mode )
 {
 	__OPENGL_NOT_IMPL__
 }
+
