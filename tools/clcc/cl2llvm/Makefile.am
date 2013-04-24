@@ -2,44 +2,28 @@
 # conditional definition of 'AM_YFLAGS'.
 AM_YFLAGS = -d
 
-# Only if Flex and Bison are present
-if HAVE_FLEX_BISON
+lib_LIBRARIES = libcl2llvm.a
 
-bin_PROGRAMS = $(top_builddir)/bin/m2s-si-as
+if HAVE_FLEX_BISON_AND_LLVM
 
 BUILT_SOURCES = parser.h
 
-__top_builddir__bin_m2s_si_as_SOURCES = \
-	\
-	arg.c \
-	arg.h \
-	\
-	dis-inst.c \
-	dis-inst.h \
-	\
-	dis-inst-info.c \
-	dis-inst-info.h \
-	\
-	id.c \
-	id.h \
-	\
-	main.c \
-	main.h \
-	\
-	stream.c \
-	stream.h \
-	\
-	symbol.c \
-	symbol.h \
-	\
-	task.c \
-	task.h \
-	\
-	token.c \
-	token.h \
+libcl2llvm_a_SOURCES = \
+	cl2llvm.c \
+	cl2llvm.h \
 	\
 	lex.l \
 	parser.y
+
+AM_CFLAGS = `llvm-config --cflags`
+
+else
+
+libcl2llvm_a_SOURCES = \
+	cl2llvm-missing.c \
+	cl2llvm.h
+
+endif
 
 INCLUDES = @M2S_INCLUDES@
 
@@ -56,11 +40,4 @@ lex.o: lex.c
 parser.o: parser.c
 	$(AM_V_CC) $(CC) -c -o parser.o parser.c $(DEFS) $(INCLUDES) $(CFLAGS_NO_WERROR) $(AM_CFLAGS)
 
-
-LDADD = \
-	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
-	$(top_builddir)/src/lib/util/libutil.a \
-	$(top_builddir)/src/lib/mhandle/libmhandle.a
-
-endif
 

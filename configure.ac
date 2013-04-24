@@ -1,7 +1,8 @@
 AC_INIT([multi2sim], [4.1])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/m2s.c])
-AM_INIT_AUTOMAKE([nostdinc])
+AM_INIT_AUTOMAKE([nostdinc silent-rules])
+AM_SILENT_RULES([yes])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
@@ -495,6 +496,100 @@ fi
 
 
 
+###########
+# Test LLVM
+###########
+
+have_llvm=yes
+
+# Command-line option to force LLVM absence
+AC_ARG_ENABLE(llvm,
+	[  --enable-llvm={yes|no}	Enable support for LLVM (default=yes)],
+	[], [ enable_llvm=yes ])
+if test x$enable_llvm = xno
+then
+	have_llvm=no
+fi
+
+# Check for 'llvm-config' command
+if test x$have_llvm = xyes
+then
+	which llvm-config > /dev/null || \
+		have_llvm=no
+fi
+
+# Try to compile a program using LLVM
+if test x$have_llvm = xyes
+then
+	# Use temporary CXXFLAGS, LDFLAGS
+	saved_cxxflags="$CXXFLAGS"
+	saved_ldflags="$LDFLAGS"
+	saved_libs="$LIBS"
+	CXXFLAGS="`llvm-config --cflags`"
+	LDFLAGS=""
+	LIBS="`llvm-config --libs` `llvm-config --ldflags`"
+
+	# Try program
+	AC_LANG_PUSH([C++])
+	AC_LINK_IFELSE(
+	[
+		AC_LANG_PROGRAM(
+			[[
+				#include <llvm-c/Core.h>
+				#include <llvm-c/Analysis.h>
+				#include <llvm-c/ExecutionEngine.h>
+				#include <llvm-c/Target.h>
+				#include <llvm-c/Transforms/Scalar.h>
+			]],
+			[[
+				LLVMLinkInJIT();
+				LLVMInitializeNativeTarget();
+				LLVMBuilderRef builder = LLVMCreateBuilder();
+				LLVMModuleRef mod = LLVMModuleCreateWithName("hello_module");
+				LLVMTypeRef func_str_count_args[] = { LLVMPointerType(LLVMInt8Type(), 0) };
+				LLVMValueRef func_str_count = LLVMAddFunction(mod, "str_count",
+					LLVMFunctionType(LLVMInt32Type(), func_str_count_args, 1, 0));
+				LLVMSetFunctionCallConv(func_str_count, LLVMCCallConv);
+			]]
+		)
+	],
+	[],
+	[ have_llvm=no ])
+	AC_LANG_POP([C++])
+
+	# Restore original CXXFLAGS, LDFLAGS, LIBS
+	CXXFLAGS="$saved_cxxflags"
+	LDFLAGS="$saved_ldflags"
+	LIBS="$saved_libs"
+fi
+
+# Define macro for Automake and gcc
+AM_CONDITIONAL(HAVE_LLVM, test x$have_llvm = xyes)
+AM_CONDITIONAL(HAVE_FLEX_BISON_AND_LLVM, test x$have_flex = xyes -a x$have_bison = xyes -a x$have_llvm = xyes)
+if test x$have_llvm = xyes
+then
+	AC_DEFINE(HAVE_LLVM, [1])
+elif test x$enable_llvm = xno
+then
+	AC_MSG_WARN([
+
+	Support for LLVM has been explicitly disabled with an argument in the
+	./configure script. Modules in the simulator dependent on these tools
+	will not be built.]
+	)
+else
+	AC_MSG_WARN([
+
+	LLVM support is missing in your system. Some modules in Multi2Sim will
+	not be built. In an Ubuntu distribution, you can install these package
+	by running command
+
+		sudo apt-get install llvm-3.0]
+	)
+fi
+
+
+
 ##########
 # Test GTK
 ##########
@@ -732,6 +827,7 @@ AC_CONFIG_FILES([
 
 		tools/clcc/Makefile
 		tools/clcc/amd/Makefile
+		tools/clcc/cl2llvm/Makefile
 
 		tools/glcc/Makefile
 		tools/si-as/Makefile
