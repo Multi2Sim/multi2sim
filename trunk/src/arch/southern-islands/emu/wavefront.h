@@ -63,7 +63,7 @@ struct si_wavefront_t
 	unsigned int lds_write : 1;
 	unsigned int pred_mask_update : 1;
 	unsigned int mem_wait : 1;
-	unsigned int barrier : 1;
+	unsigned int at_barrier : 1;  // Used for emu synchronization
 	unsigned int finished : 1;
 	unsigned int vector_mem_glc : 1;
 
@@ -76,6 +76,7 @@ struct si_wavefront_t
 	int id_in_compute_unit;
 	int uop_id_counter;
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;
+	unsigned int barrier_inst : 1;
 
 	/* Statistics */
 	long long inst_count;  /* Total number of instructions */
