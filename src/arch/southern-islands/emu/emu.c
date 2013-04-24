@@ -284,7 +284,7 @@ enum arch_sim_kind_t si_emu_run(void)
 		{
 			wavefront = work_group->wavefronts[wavefront_id];
 
-			if (wavefront->finished || wavefront->barrier)
+			if (wavefront->finished || wavefront->at_barrier)
 				continue;
 
 			/* Execute instruction in wavefront */
