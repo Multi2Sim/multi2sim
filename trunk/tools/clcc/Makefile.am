@@ -1,5 +1,6 @@
 SUBDIRS = \
-	amd
+	amd \
+	cl2llvm
 
 bin_PROGRAMS = $(top_builddir)/bin/m2s-clcc
 
@@ -12,6 +13,7 @@ INCLUDES = @M2S_INCLUDES@
 
 LDADD = \
 	$(top_builddir)/tools/clcc/amd/libamd.a \
+	$(top_builddir)/tools/clcc/cl2llvm/libcl2llvm.a \
 	$(top_builddir)/src/lib/util/libutil.a \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a
 
