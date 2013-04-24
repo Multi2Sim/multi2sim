@@ -467,7 +467,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 		uop->wavefront_pool_entry = wavefront->wavefront_pool_entry;
 		uop->wavefront_last_inst = wavefront->finished;
 		uop->mem_wait_inst = wavefront->mem_wait;
-		uop->barrier_wait_inst = wavefront->barrier;
+		uop->barrier_wait_inst = wavefront->barrier_inst;
 		uop->inst = wavefront->inst;
 		uop->cycle_created = arch->cycle;
 		uop->glc = wavefront->vector_mem_glc;

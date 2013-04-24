@@ -1825,11 +1825,14 @@ void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item,
 	int wavefront_id;
 
 	/* Suspend current wavefront at the barrier */
-	wavefront->barrier = 1;
+	wavefront->barrier_inst = 1;
+	wavefront->at_barrier = 1;
 	work_group->wavefronts_at_barrier++;
 
-	si_isa_debug("Group %d reached barrier (%d reached, %d left)\n",
-		work_group->id, work_group->wavefronts_at_barrier,
+	si_isa_debug("Group %d wavefront %d reached barrier "
+		"(%d reached, %d left)\n",
+		work_group->id, wavefront->id, 
+		work_group->wavefronts_at_barrier,
 		work_group->wavefront_count - 
 		work_group->wavefronts_at_barrier);
 
@@ -1838,7 +1841,7 @@ void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item,
 	{
 		SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
 		{
-			work_group->wavefronts[wavefront_id]->barrier = 0;
+			work_group->wavefronts[wavefront_id]->at_barrier = 0;
 		}
 		work_group->wavefronts_at_barrier = 0;
 
@@ -5897,7 +5900,10 @@ void si_isa_DS_WRITE2_B32_impl(struct si_work_item_t *work_item,
 		work_item->lds_access_count = 2;
 		work_item->lds_access_type[0] = 2;
 		work_item->lds_access_addr[0] = addr0.as_uint;
-		work_item->lds_access_size[0] = 8;
+		work_item->lds_access_size[0] = 4;
+		work_item->lds_access_type[1] = 2;
+		work_item->lds_access_addr[1] = addr0.as_uint + 4;
+		work_item->lds_access_size[1] = 4;
 	}
 
 	/* Print isa debug information. */
@@ -5927,7 +5933,7 @@ void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item,
 	union si_reg_t data0;
 
 	assert(!INST.offset0);
-	assert(!INST.offset1);
+	//assert(!INST.offset1);
 	assert(!INST.gds);
 
 	/* Load address and data from registers. */
@@ -6105,7 +6111,7 @@ void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item,
 	union si_reg_t data;
 
 	assert(!INST.offset0);
-	assert(!INST.offset1);
+	//assert(!INST.offset1);
 	assert(!INST.gds);
 
 	/* Load address from register. */
@@ -6198,7 +6204,10 @@ void si_isa_DS_READ2_B32_impl(struct si_work_item_t *work_item,
 		work_item->lds_access_count = 2;
 		work_item->lds_access_type[0] = 1;
 		work_item->lds_access_addr[0] = addr.as_uint;
-		work_item->lds_access_size[0] = 8;
+		work_item->lds_access_size[0] = 4;
+		work_item->lds_access_type[1] = 1;
+		work_item->lds_access_addr[1] = addr.as_uint + 4;
+		work_item->lds_access_size[1] = 4;
 	}
 
 	/* Print isa debug information. */

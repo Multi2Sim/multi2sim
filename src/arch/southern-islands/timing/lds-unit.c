@@ -228,8 +228,9 @@ void si_lds_mem(struct si_lds_t *lds)
 				}
 				else
 				{
-					fatal("%s: invalid lds access type", 
-						__FUNCTION__);
+					fatal("%s: invalid lds access "
+						"type (%d)", __FUNCTION__,
+						work_item->lds_access_type[j]);
 				}
 
 				mod_access(lds->compute_unit->lds_module, 
