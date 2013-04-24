@@ -24,6 +24,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <lib/util/string.h>
 
 
 
@@ -31,7 +32,7 @@
  * Global Variables
  */
 
-char *clcc_out_file_name = "";
+char clcc_out_file_name[MAX_STRING_SIZE];
 struct list_t *clcc_source_file_list;  /* Elements of type 'char *' */
 
 
@@ -40,15 +41,36 @@ struct list_t *clcc_source_file_list;  /* Elements of type 'char *' */
 
 static char *syntax =
 	"\n"
-	"Syntax: m2s-clcc [<options>] <sources>\n"
+	"Syntax:\n"
 	"\n"
-	"\tOptions:\n"
-	"\t-l            Print list of available devices\n"
-	"\t-d <dev>      Select target device for compilation\n"
-	"\t-o <file>     Specify output file (default is <kernel>.bin)\n"
-	"\t-a            Dump intermediate files\n"
-	"\t-e            ELF verbose\n"
-	"\t-g            No optimizations (flags '-O0 -g' added)\n"
+	"\tm2s-clcc [<options>] <sources>\n"
+	"\n"
+	"Options:\n"
+	"\n"
+	"--amd\n"
+	"\tUse AMD's OpenCL driver installed on the machine to compile the\n"
+	"\tsources. This tool will act as a command-line wrapper of the native\n"
+	"\tAMD compiler.\n"
+	"\n"
+	"--amd-list, -l\n"
+	"\tPrint a list of available devices for the native AMD driver. This\n"
+	"\toption should be used together with option '--amd'.\n"
+	"\n"
+	"--amd-device <name>, -d <name>\n"
+	"\tSelect a target device for native AMD compilation. This option must\n"
+	"\tbe used together with option '--amd'.\n"
+	"\n"
+	"--amd-dump-all, -a\n"
+	"\tDump all intermediate fileis generated during compilation. This\n"
+	"\toption must be used together with '--amd'.\n"
+	"\n"
+	"--help, -h\n"
+	"\tShow help message with command-line options.\n"
+	"\n"
+	"-o <file>\n"
+	"\tOutput kernel binary. If no output file is specified, each kernel\n"
+	"\tsource is compiled into a kernel binary with the same name but\n"
+	"\tusing the '.bin' extension.\n"
 	"\n";
 
 
@@ -82,17 +104,22 @@ static void clcc_process_option(const char *option, char *optarg)
 		amd_list_devices = 1;
 		return;
 	}
+	
+	if (!strcmp(option, "help") || !strcmp(option, "h"))
+	{
+		printf("%s", syntax);
+		exit(0);
+	}
 
 	if (!strcmp(option, "o"))
 	{
-		clcc_out_file_name = optarg;
+		snprintf(clcc_out_file_name, sizeof clcc_out_file_name,
+				"%s", optarg);
 		return;
 	}
 
 
-
 	/* Option not found */
-	fprintf(stderr, "%s", syntax);
 	exit(1);
 }
 
@@ -109,11 +136,22 @@ static void clcc_read_command_line(int argc, char **argv)
 		{ "amd-device", required_argument, 0, 'd' },
 		{ "amd-dump-all", no_argument, 0, 'a' },
 		{ "amd-list", no_argument, 0, 'l' },
+		{ "help", no_argument, 0, 'h' },
 		{ 0, 0, 0, 0 }
 	};
+
+	/* No arguments given */
+	if (argc == 1)
+	{
+		printf("\n");
+		printf("Multi2Sim " VERSION " OpenCL C Compiler\n");
+		printf("Please run 'm2s-clcc --help' for a list of command-line options\n");
+		printf("\n");
+		exit(0);
+	}
 	
 	/* Process options */
-	while ((opt = getopt_long(argc, argv, "ad:lo:", long_options,
+	while ((opt = getopt_long(argc, argv, "ad:hlo:", long_options,
 			&option_index)) != -1)
 	{
 		if (opt)
@@ -185,89 +223,4 @@ out:
 	return 0;
 }
 
-
-#if 0
-int main(int argc, char **argv)
-{
-	int opt;
-
-	/* No arguments */
-	if (argc == 1)
-	{
-		fprintf(stderr, syntax, argv[0]);
-		return 1;
-	}
-
-	/* Process options */
-	while ((opt = getopt(argc, argv, "ld:aego:")) != -1)
-	{
-		switch (opt)
-		{
-
-		case 'g':
-			debug_info = 1;
-			break;
-
-		default:
-			fprintf(stderr, syntax, argv[0]);
-			return 1;
-		}
-	}
-
-	/* The only remaining argument should be the kernel to compile */
-	if (argc - optind > 1)
-	{
-		fprintf(stderr, syntax, argv[0]);
-		return 1;
-	}
-	else if (argc - optind == 1)
-		kernel_file_name = argv[optind];
-	if (!kernel_file_name && !amd_list_devices)
-		fatal("no kernel to compile");
-
-	/* Platform */
-	cl_int err;
-	err = clGetPlatformIDs(1, &platform, NULL);
-	if (err != CL_SUCCESS)
-		fatal("cannot get OpenCL platform");
-	
-	/* Get context */
-	cl_context_properties cprops[5];
-	cprops[0] = CL_CONTEXT_PLATFORM;
-	cprops[1] = (cl_context_properties)platform;
-	cprops[2] = CL_CONTEXT_OFFLINE_DEVICES_AMD;
-	cprops[3] = (cl_context_properties) 1;
-	cprops[4] = (cl_context_properties) NULL;
-	context = clCreateContextFromType(cprops, CL_DEVICE_TYPE_ALL, NULL, NULL, &err);
-	if (err != CL_SUCCESS)
-		fatal("cannot create context");
-	
-	/* Get device list from context */
-	err = clGetContextInfo(context, CL_CONTEXT_NUM_DEVICES, sizeof(num_devices), &num_devices, NULL);
-	if (err != CL_SUCCESS)
-		fatal("cannot get number of devices");
-	err = clGetContextInfo(context, CL_CONTEXT_DEVICES, sizeof(devices), devices, NULL);
-	if (err != CL_SUCCESS)
-		fatal("cannot get list of devices");
-	
-	/* Get selected device */
-	if (amd_device_name)
-	{
-		device_id = read_device(amd_device_name);
-		device = devices[device_id];
-	}
-	
-	/* List available devices */
-	if (amd_list_devices)
-		main_list_devices(stdout);
-	
-	/* Compile list of kernels */
-	if (kernel_file_name)
-		main_compile_kernel();
-	
-	/* End program */
-	printf("\n");
-	return 0;
-}
-#endif
 

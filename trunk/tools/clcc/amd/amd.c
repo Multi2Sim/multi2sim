@@ -460,7 +460,7 @@ void amd_dump_device_list(FILE *f)
 
 	/* List amd_device_list */
 	fprintf(f, "\n ID   Name, Vendor\n");
-	fprintf(f, "----  ----------------------------------------------------\n");
+	fprintf(f, "----------------------------------------------------------\n");
 	for (i = 0; i < amd_num_devices; i++)
 	{
 		clGetDeviceInfo(amd_device_list[i], CL_DEVICE_NAME, MAX_STRING_SIZE, name, NULL);
