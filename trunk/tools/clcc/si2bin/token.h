@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_SI_AS_FORMAL_ARG_H
-#define TOOLS_SI_AS_FORMAL_ARG_H
+#ifndef TOOLS_CLCC_SI2BIN_TOKEN_H
+#define TOOLS_CLCC_SI2BIN_TOKEN_H
 
 enum si_token_type_t
 {

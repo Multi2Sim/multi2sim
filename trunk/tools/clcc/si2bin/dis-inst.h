@@ -17,11 +17,34 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-struct si_id_t
+#ifndef TOOLS_CLCC_SI2BIN_INST_H
+#define TOOLS_CLCC_SI2BIN_INST_H
+
+#include <stdio.h>
+#include <arch/southern-islands/asm/asm.h>
+
+
+struct si_dis_inst_t
 {
-	char *name;
+	enum si_inst_opcode_t opcode;
+	struct si_dis_inst_info_t *info;
+	struct list_t *arg_list;
+
+	/* Instruction bytes generated */
+	union si_inst_microcode_t inst_bytes;
+	int size;  /* Number of bytes */
 };
 
-struct si_id_t *si_id_create(char *name);
-void si_id_free(struct si_id_t *id);
+
+/* Returns a newly created si_dis_inst_t object
+ * with the op-code corresponding to the
+ * 'inst_str' instruction.                 */
+struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list);
+
+void si_dis_inst_free(struct si_dis_inst_t *inst);
+void si_dis_inst_dump(struct si_dis_inst_t *inst, FILE *f);
+
+void si_dis_inst_gen(struct si_dis_inst_t *inst);
+
+#endif
 

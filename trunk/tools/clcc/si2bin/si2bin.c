@@ -23,33 +23,35 @@
 #include <arch/southern-islands/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
 
 #include "dis-inst.h"
 #include "dis-inst-info.h"
-#include "main.h"
+#include "si2bin.h"
 #include "parser.h"
 #include "stream.h"
 #include "symbol.h"
 #include "task.h"
 
 
-/* File name with assembly code */
-char *input_file_name;
+int si2bin_assemble;  /* Command-line option set */
+char *si2bin_file_name;  /* Current file */
 
 
-void yyerror(const char *s)
+void si2bin_yyerror(const char *s)
 {
 	fprintf(stderr, "%s:%d: error: %s\n",
-			input_file_name, yylineno, s);
+			si2bin_file_name, si2bin_yylineno, s);
 	exit(1);
 }
 
 
-void yyerror_fmt(char *fmt, ...)
+void si2bin_yyerror_fmt(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, "%s:%d: error: ", input_file_name, yylineno);
+	fprintf(stderr, "%s:%d: error: ",
+			si2bin_file_name, si2bin_yylineno);
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 	fflush(NULL);
@@ -57,18 +59,13 @@ void yyerror_fmt(char *fmt, ...)
 }
 
 
-int main(int argc, char **argv) 
-{
-	/* Check syntax */
-	if (argc != 2)
-		fatal("syntax: %s <file>", *argv);
 
-	/* Open input file */
-	input_file_name = argv[1];
-	yyin = fopen(input_file_name, "r");
-	if (!yyin)
-		fatal("%s: cannot open input file", input_file_name);
-	
+/*
+ * Public Functions
+ */
+
+void si2bin_init(void)
+{
 	/* Initialize */
 	si_disasm_init();
 	si_dis_inst_info_init();
@@ -76,21 +73,42 @@ int main(int argc, char **argv)
 	si_symbol_table_init();
 	si_stream_init();
 
-	/* Parse input */
-	yyparse();
+}
 
-	/* Process tasks */
-	si_task_list_process();
 
+void si2bin_done(void)
+{
 	/* Finalize */
 	si_task_list_done();
 	si_symbol_table_done();
 	si_stream_done();
 	si_dis_inst_info_done();
 	si_disasm_done();
+}
 
-	mhandle_done();
+
+void si2bin_compile(struct list_t *source_file_list,
+		struct list_t *bin_file_list)
+{
+	int index;
+
+	LIST_FOR_EACH(source_file_list, index)
+	{
+		/* Open file */
+		si2bin_file_name = list_get(source_file_list, index);
+		si2bin_yyin = fopen(si2bin_file_name, "r");
+		if (!si2bin_yyin)
+			fatal("%s: cannot open input file",
+					si2bin_file_name);
 	
-	return 0;
+		/* Parse input */
+		si2bin_yyparse();
+
+		/* Process pending tasks */
+		si_task_list_process();
+
+		/* Close */
+		fclose(si2bin_yyin);
+	}
 }
 

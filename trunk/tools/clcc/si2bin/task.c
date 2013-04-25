@@ -26,7 +26,7 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 
-#include "main.h"
+#include "si2bin.h"
 #include "stream.h"
 #include "symbol.h"
 #include "task.h"
@@ -74,7 +74,7 @@ void si_task_process(struct si_task_t *task)
 	/* Check whether symbol is resolved */
 	label = task->symbol;
 	if (!label->defined)
-		yyerror_fmt("undefined label: %s", label->name);
+		si2bin_yyerror_fmt("undefined label: %s", label->name);
 
 	/* Resolve label */
 	assert(IN_RANGE(task->offset, 0, si_out_stream->offset - 4));

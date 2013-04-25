@@ -26,7 +26,7 @@
 #include <lib/util/string.h>
 
 #include "arg.h"
-#include "main.h"
+#include "si2bin.h"
 
 
 struct str_map_t si_arg_special_register_map =
@@ -86,7 +86,7 @@ struct si_arg_t *si_arg_create_scalar_register(char *name)
 	assert(name[0] == 's');
 	arg->value.scalar_register.id = atoi(name + 1);
 	if (!IN_RANGE(arg->value.scalar_register.id, 0, 255))
-		yyerror_fmt("scalar register out of range: %s", name);
+		si2bin_yyerror_fmt("scalar register out of range: %s", name);
 
 	return arg;
 }
@@ -102,7 +102,7 @@ struct si_arg_t *si_arg_create_vector_register(char *name)
 	assert(name[0] == 'v');
 	arg->value.vector_register.id = atoi(name + 1);
 	if (!IN_RANGE(arg->value.vector_register.id, 0, 255))
-		yyerror_fmt("vector register out of range: %s", name);
+		si2bin_yyerror_fmt("vector register out of range: %s", name);
 
 	return arg;
 }
@@ -118,7 +118,7 @@ struct si_arg_t *si_arg_create_special_register(char *name)
 			str_map_string_err(&si_arg_special_register_map,
 			name, &err);
 	if (err)
-		yyerror_fmt("invalid special register: %s", name);
+		si2bin_yyerror_fmt("invalid special register: %s", name);
 
 	return arg;
 }
@@ -198,7 +198,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 			return value + 128;
 		if (IN_RANGE(value, -16, -1))
 			return 192 - value;
-		yyerror_fmt("invalid integer constant: %d", value);
+		si2bin_yyerror_fmt("invalid integer constant: %d", value);
 		break;
 	}
 
@@ -224,7 +224,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 		if (value == -4.0)
 			return 247;
 
-		yyerror_fmt("invalid float constant: %g", value);
+		si2bin_yyerror_fmt("invalid float constant: %g", value);
 		break;
 	}
 
@@ -236,7 +236,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 		if (IN_RANGE(id, 0, 103))
 			return id;
 
-		yyerror_fmt("invalid scalar register: s%d", id);
+		si2bin_yyerror_fmt("invalid scalar register: s%d", id);
 		break;
 	}
 
@@ -249,7 +249,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 		if (IN_RANGE(id, 0, 103))
 			return id;
 
-		yyerror_fmt("invalid scalar register: s%d", id);
+		si2bin_yyerror_fmt("invalid scalar register: s%d", id);
 		break;
 	}
 
@@ -261,7 +261,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 		if (IN_RANGE(id, 0, 255))
 			return id + 256;
 
-		yyerror_fmt("invalid vector register: v%d", id);
+		si2bin_yyerror_fmt("invalid vector register: v%d", id);
 		break;
 	}
 
@@ -274,7 +274,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 		if (IN_RANGE(id, 0, 255))
 			return id + 256;
 
-		yyerror_fmt("invalid vector register: v%d", id);
+		si2bin_yyerror_fmt("invalid vector register: v%d", id);
 		break;
 	}
 
@@ -293,14 +293,14 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 			return 253;
 
 		default:
-			yyerror_fmt("%s: unsupported special register (code=%d)",
+			si2bin_yyerror_fmt("%s: unsupported special register (code=%d)",
 				__FUNCTION__, arg->value.special_register.type);
 		}
 		break;
 	}
 
 	default:
-		yyerror_fmt("invalid operand (code %d)", arg->type);
+		si2bin_yyerror_fmt("invalid operand (code %d)", arg->type);
 		break;
 	}
 

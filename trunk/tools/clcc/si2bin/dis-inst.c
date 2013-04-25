@@ -30,7 +30,7 @@
 #include "arg.h"
 #include "dis-inst.h"
 #include "dis-inst-info.h"
-#include "main.h"
+#include "si2bin.h"
 #include "stream.h"
 #include "symbol.h"
 #include "task.h"
@@ -102,7 +102,7 @@ struct si_dis_inst_t *si_dis_inst_create(char *name, struct list_t *arg_list)
 
 	/* Error identifying instruction */
 	if (!info)
-		yyerror(err_str);
+		si2bin_yyerror(err_str);
 
 	/* Initialize opcode */
 	inst->info = info;
@@ -343,7 +343,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
-					yyerror("register series must be s[x:x+1]");
+					si2bin_yyerror("register series must be s[x:x+1]");
 			}
 			
 			/* Encode */
@@ -360,7 +360,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
 				if (inst->size == 8)
-					yyerror("only one literal allowed");
+					si2bin_yyerror("only one literal allowed");
 				inst->size = 8;
 				inst_bytes->sop2.ssrc0 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
@@ -371,12 +371,12 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				if (arg->type == si_arg_scalar_register_series &&
 						arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 1)
-					yyerror("invalid scalar register series, s[x:x+1] expected");
+					si2bin_yyerror("invalid scalar register series, s[x:x+1] expected");
 
 				/* Encode */
 				value = si_arg_encode_operand(arg);
 				if (!IN_RANGE(value, 0, 255))
-					yyerror("invalid argument type");
+					si2bin_yyerror("invalid argument type");
 				inst_bytes->sop2.ssrc0 = value;
 			}
 			break;
@@ -391,7 +391,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
 				if (inst->size == 8)
-					yyerror("only one literal allowed");
+					si2bin_yyerror("only one literal allowed");
 				inst->size = 8;
 				inst_bytes->sop2.ssrc1 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
@@ -402,12 +402,12 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				if (arg->type == si_arg_scalar_register_series &&
 						arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 1)
-					yyerror("invalid scalar register series, s[x:x+1] expected");
+					si2bin_yyerror("invalid scalar register series, s[x:x+1] expected");
 
 				/* Encode */
 				value = si_arg_encode_operand(arg);
 				if (!IN_RANGE(value, 0, 255))
-					yyerror("invalid argument type");
+					si2bin_yyerror("invalid argument type");
 				inst_bytes->sop2.ssrc1 = value;
 			}
 			break;
@@ -423,20 +423,20 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			/* Offset */
 			soffset = si_arg_encode_operand(arg->value.maddr.soffset);
 			if (!IN_RANGE(soffset, 0, 253))
-				yyerror("invalid offset");
+				si2bin_yyerror("invalid offset");
 			inst_bytes->mtbuf.soffset = soffset;
 
 			/* Data format */
 			inst_bytes->mtbuf.dfmt = str_map_string_err(&si_inst_dfmt_map,
 					arg->value.maddr.data_format, &err);
 			if (err)
-				yyerror_fmt("invalid data format: %s", arg->value.maddr.data_format);
+				si2bin_yyerror_fmt("invalid data format: %s", arg->value.maddr.data_format);
 
 			/* Number format */
 			inst_bytes->mtbuf.nfmt = str_map_string_err(&si_inst_nfmt_map,
 					arg->value.maddr.num_format, &err);
 			if (err)
-				yyerror_fmt("invalid number format: %s", arg->value.maddr.num_format);
+				si2bin_yyerror_fmt("invalid number format: %s", arg->value.maddr.num_format);
 
 			/* Qualifiers */
 			qual = arg->value.maddr.qual;
@@ -526,7 +526,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 
 			/* Check range */
 			if (high != high_must)
-				yyerror_fmt("invalid register series: v[%d:%d]", low, high);
+				si2bin_yyerror_fmt("invalid register series: v[%d:%d]", low, high);
 
 			/* Encode */
 			inst_bytes->mtbuf.vdata = low;
@@ -567,7 +567,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 
 			/* Check that low register is multiple of 2 */
 			if (arg->value.scalar_register_series.low % 2)
-				yyerror("base register must be multiple of 2");
+				si2bin_yyerror("base register must be multiple of 2");
 
 			/* Restrictions for high register */
 			switch (inst_info->inst)
@@ -579,7 +579,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* High register must be low plus 1 */
 				if (arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 1)
-					yyerror("register series must be s[x:x+1]");
+					si2bin_yyerror("register series must be s[x:x+1]");
 				break;
 
 			case SI_INST_S_BUFFER_LOAD_DWORD:
@@ -588,7 +588,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* High register must be low plus 3 */
 				if (arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 3)
-					yyerror("register series must be s[x:x+3]");
+					si2bin_yyerror("register series must be s[x:x+3]");
 				break;
 
 			default:
@@ -612,7 +612,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* High register must be low plus 1 */
 				if (arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 1)
-					yyerror("register series must be s[low:low+1]");
+					si2bin_yyerror("register series must be s[low:low+1]");
 				break;
 
 			case SI_INST_S_LOAD_DWORDX4:
@@ -620,7 +620,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* High register must be low plus 3 */
 				if (arg->value.scalar_register_series.high !=
 						arg->value.scalar_register_series.low + 3)
-					yyerror("register series must be s[low:low+3]");
+					si2bin_yyerror("register series must be s[low:low+3]");
 				break;
 
 			default:
@@ -639,12 +639,12 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 
 			/* Base register must be multiple of 4 */
 			if (low % 4)
-				yyerror_fmt("low register must be multiple of 4 in s[%d:%d]",
+				si2bin_yyerror_fmt("low register must be multiple of 4 in s[%d:%d]",
 						low, high);
 
 			/* High register must be low + 3 */
 			if (high != low + 3)
-				yyerror_fmt("register series must span 4 registers in s[%d:%d]",
+				si2bin_yyerror_fmt("register series must span 4 registers in s[%d:%d]",
 						low, high);
 
 			/* Encode */
@@ -665,7 +665,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
 				if (inst->size == 8)
-					yyerror("only one literal allowed");
+					si2bin_yyerror("only one literal allowed");
 				inst->size = 8;
 				inst_bytes->vopc.src0 = 0xff;
 				inst_bytes->vopc.lit_cnst = arg->value.literal.val;
@@ -685,7 +685,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
 				if (inst->size == 8)
-					yyerror("only one literal allowed");
+					si2bin_yyerror("only one literal allowed");
 				inst->size = 8;
 				inst_bytes->sop2.ssrc0 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
@@ -694,7 +694,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			{
 				value = si_arg_encode_operand(arg);
 				if (!IN_RANGE(value, 0, 255))
-					yyerror("invalid argument type");
+					si2bin_yyerror("invalid argument type");
 				inst_bytes->sop2.ssrc0 = value;
 			}
 			break;
@@ -709,7 +709,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
 				if (inst->size == 8)
-					yyerror("only one literal allowed");
+					si2bin_yyerror("only one literal allowed");
 				inst->size = 8;
 				inst_bytes->sop2.ssrc1 = 0xff;
 				inst_bytes->sop2.lit_cnst = arg->value.literal.val;
@@ -718,7 +718,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			{
 				value = si_arg_encode_operand(arg);
 				if (!IN_RANGE(value, 0, 255))
-					yyerror("invalid argument type");
+					si2bin_yyerror("invalid argument type");
 				inst_bytes->sop2.ssrc1 = value;
 			}
 			break;
@@ -762,7 +762,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 				low = arg->value.scalar_register_series.low;
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
-					yyerror("register series must be s[low:low+1]");
+					si2bin_yyerror("register series must be s[low:low+1]");
 			}
 
 			/* Encode */
@@ -814,7 +814,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			if (arg->value.wait_cnt.vmcnt_active)
 			{
 				if (!IN_RANGE(arg->value.wait_cnt.vmcnt_value, 0, 0xe))
-					yyerror("invalid value for vmcnt");
+					si2bin_yyerror("invalid value for vmcnt");
 				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
 						3, 0, arg->value.wait_cnt.vmcnt_value);
 			}
@@ -828,7 +828,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			if (arg->value.wait_cnt.lgkmcnt_active)
 			{
 				if (!IN_RANGE(arg->value.wait_cnt.lgkmcnt_value, 0, 0x1e))
-					yyerror("invalid value for lgkmcnt");
+					si2bin_yyerror("invalid value for lgkmcnt");
 				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
 						12, 8, arg->value.wait_cnt.lgkmcnt_value);
 			}
@@ -842,7 +842,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			if (arg->value.wait_cnt.expcnt_active)
 			{
 				if (!IN_RANGE(arg->value.wait_cnt.expcnt_value, 0, 0x6))
-					yyerror("invalid value for expcnt");
+					si2bin_yyerror("invalid value for expcnt");
 				inst_bytes->sopp.simm16 = SET_BITS_32(inst_bytes->sopp.simm16,
 						6, 4, arg->value.wait_cnt.expcnt_value);
 			}
@@ -854,7 +854,7 @@ void si_dis_inst_gen(struct si_dis_inst_t *inst)
 			break;
 
 		default:
-			yyerror_fmt("unsupported token for argument %d",
+			si2bin_yyerror_fmt("unsupported token for argument %d",
 				index + 1);
 		}
 	}

@@ -17,46 +17,37 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_SI_AS_LABEL_H
-#define TOOLS_SI_AS_LABEL_H
+#ifndef TOOLS_CLCC_SI2BIN_SI2BIN_H
+#define TOOLS_CLCC_SI2BIN_SI2BIN_H
 
 #include <stdio.h>
 
-
-/*
- * Stream
- */
-
 /* Forward declarations */
-struct si_dis_inst_t;
-
-struct si_stream_t
-{
-	void *buf;
-
-	int size;
-	int offset;
-};
+struct list_t;
 
 
-struct si_stream_t *si_stream_create(int size);
-void si_stream_free(struct si_stream_t *stream);
-
-void si_stream_add_inst(struct si_stream_t *stream,
-		struct si_dis_inst_t *inst);
+/* Command-line option for assembler set */
+extern int si2bin_assemble;
 
 
+int si2bin_yylex(void);
+int si2bin_yyparse(void);
+void si2bin_yyerror(const char *s);
+void si2bin_yyerror_fmt(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+
+extern int si2bin_yylineno;
+extern FILE *si2bin_yyin;
+extern char *si2bin_yytext;
 
 
 /*
- * Global
+ * Public functions
  */
 
-/* Global output stream */
-extern struct si_stream_t *si_out_stream;
-
-void si_stream_init(void);
-void si_stream_done(void);
+void si2bin_init(void);
+void si2bin_done(void);
+void si2bin_compile(struct list_t *source_file_list,
+		struct list_t *bin_file_list);
 
 
 #endif

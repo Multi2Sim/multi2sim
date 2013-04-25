@@ -22,7 +22,7 @@
 #include <lib/util/elf-format.h>
 
 #include "dis-inst.h"
-#include "main.h"
+#include "si2bin.h"
 #include "task.h"
 #include "stream.h"
 
@@ -58,7 +58,7 @@ void si_stream_add_inst(struct si_stream_t *stream,
 
 	/* Size of stream exceeded */
 	if (stream->offset + inst->size > stream->size)
-		yyerror("output stream size exceeded");
+		si2bin_yyerror("output stream size exceeded");
 
 	/* Add instruction */
 	memcpy(stream->buf + stream->offset, inst->inst_bytes.bytes, inst->size);

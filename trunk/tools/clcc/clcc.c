@@ -22,6 +22,7 @@
 
 #include <clcc/amd/amd.h>
 #include <clcc/cl2llvm/cl2llvm.h>
+#include <clcc/si2bin/si2bin.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -36,6 +37,7 @@
 char clcc_out_file_name[MAX_STRING_SIZE];
 struct list_t *clcc_source_file_list;  /* Elements of type 'char *' */
 struct list_t *clcc_llvm_file_list;  /* Elements of type 'char *' */
+struct list_t *clcc_bin_file_list;  /* Elements of type 'char *' */
 
 
 
@@ -63,7 +65,7 @@ static char *syntax =
 	"\tbe used together with option '--amd'.\n"
 	"\n"
 	"--amd-dump-all, -a\n"
-	"\tDump all intermediate fileis generated during compilation. This\n"
+	"\tDump all intermediate file is generated during compilation. This\n"
 	"\toption must be used together with '--amd'.\n"
 	"\n"
 	"--help, -h\n"
@@ -73,6 +75,11 @@ static char *syntax =
 	"\tOutput kernel binary. If no output file is specified, each kernel\n"
 	"\tsource is compiled into a kernel binary with the same name but\n"
 	"\tusing the '.bin' extension.\n"
+	"\n"
+	"-si-asm\n"
+	"\tTreat the input files as source files containing Southern Islands\n"
+	"\tassembly code. Run the Southern Islands assembler and generate a\n"
+	"\tkernel binary.\n"
 	"\n";
 
 
@@ -120,6 +127,12 @@ static void clcc_process_option(const char *option, char *optarg)
 		return;
 	}
 
+	if (!strcmp(option, "si-asm"))
+	{
+		si2bin_assemble = 1;
+		return;
+	}
+
 
 	/* Option not found */
 	exit(1);
@@ -139,6 +152,7 @@ static void clcc_read_command_line(int argc, char **argv)
 		{ "amd-dump-all", no_argument, 0, 'a' },
 		{ "amd-list", no_argument, 0, 'l' },
 		{ "help", no_argument, 0, 'h' },
+		{ "si-asm", no_argument, 0, 0 },
 		{ 0, 0, 0, 0 }
 	};
 
@@ -180,9 +194,11 @@ void clcc_init(void)
 	/* List of source files */
 	clcc_source_file_list = list_create();
 	clcc_llvm_file_list = list_create();
+	clcc_bin_file_list = list_create();
 
 	/* Initialize compiler modules */
 	cl2llvm_init();
+	si2bin_init();
 }
 
 
@@ -191,9 +207,11 @@ void clcc_done(void)
 	/* Free list of source files */
 	list_free(clcc_source_file_list);
 	list_free(clcc_llvm_file_list);
+	list_free(clcc_bin_file_list);
 
 	/* Finalize compiler modules */
 	cl2llvm_done();
+	si2bin_done();
 }
 
 
@@ -216,6 +234,13 @@ int main(int argc, char **argv)
 	if (amd_native)
 	{
 		amd_compile(clcc_source_file_list, clcc_out_file_name);
+		goto out;
+	}
+
+	/* Southern Islands assembler */
+	if (si2bin_assemble)
+	{
+		si2bin_compile(clcc_source_file_list, clcc_bin_file_list);
 		goto out;
 	}
 

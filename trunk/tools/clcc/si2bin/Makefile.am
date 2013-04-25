@@ -1,15 +1,15 @@
 # Define these even if Flex/Bison are not present. Automake does not support
 # conditional definition of 'AM_YFLAGS'.
-AM_YFLAGS = -d
+AM_YFLAGS = -d -p si2bin_yy
+AM_LFLAGS = -P si2bin_yy -o lex.yy.c
 
-# Only if Flex and Bison are present
+lib_LIBRARIES = libsi2bin.a
+
 if HAVE_FLEX_BISON
-
-bin_PROGRAMS = $(top_builddir)/bin/m2s-si-as
 
 BUILT_SOURCES = parser.h
 
-__top_builddir__bin_m2s_si_as_SOURCES = \
+libsi2bin_a_SOURCES = \
 	\
 	arg.c \
 	arg.h \
@@ -23,8 +23,8 @@ __top_builddir__bin_m2s_si_as_SOURCES = \
 	id.c \
 	id.h \
 	\
-	main.c \
-	main.h \
+	si2bin.c \
+	si2bin.h \
 	\
 	stream.c \
 	stream.h \
@@ -41,6 +41,19 @@ __top_builddir__bin_m2s_si_as_SOURCES = \
 	lex.l \
 	parser.y
 
+LDADD = \
+	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
+	$(top_builddir)/src/lib/util/libutil.a \
+	$(top_builddir)/src/lib/mhandle/libmhandle.a
+
+else
+
+libsi2bin_a_SOURCES = \
+	si2bin-missing.c \
+	si2bin.h
+
+endif
+
 INCLUDES = @M2S_INCLUDES@
 
 
@@ -56,11 +69,4 @@ lex.o: lex.c
 parser.o: parser.c
 	$(AM_V_CC) $(CC) -c -o parser.o parser.c $(DEFS) $(INCLUDES) $(CFLAGS_NO_WERROR) $(AM_CFLAGS)
 
-
-LDADD = \
-	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
-	$(top_builddir)/src/lib/util/libutil.a \
-	$(top_builddir)/src/lib/mhandle/libmhandle.a
-
-endif
 
