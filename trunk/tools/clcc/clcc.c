@@ -21,6 +21,7 @@
 #include <getopt.h>
 
 #include <clcc/amd/amd.h>
+#include <clcc/cl2llvm/cl2llvm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -34,6 +35,7 @@
 
 char clcc_out_file_name[MAX_STRING_SIZE];
 struct list_t *clcc_source_file_list;  /* Elements of type 'char *' */
+struct list_t *clcc_llvm_file_list;  /* Elements of type 'char *' */
 
 
 
@@ -177,6 +179,10 @@ void clcc_init(void)
 {
 	/* List of source files */
 	clcc_source_file_list = list_create();
+	clcc_llvm_file_list = list_create();
+
+	/* Initialize compiler modules */
+	cl2llvm_init();
 }
 
 
@@ -184,6 +190,10 @@ void clcc_done(void)
 {
 	/* Free list of source files */
 	list_free(clcc_source_file_list);
+	list_free(clcc_llvm_file_list);
+
+	/* Finalize compiler modules */
+	cl2llvm_done();
 }
 
 
@@ -209,12 +219,8 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	/* Non-native compilation not supported yet */
-	if (list_count(clcc_source_file_list))
-		fatal("only AMD native compilation supported (use --amd)");
-
-	/* No input file given */
-	fatal("no input file given");
+	/* OpenCL-to-LLVM pass */
+	cl2llvm_compile(clcc_source_file_list, clcc_llvm_file_list);
 
 out:
 	/* Finish */

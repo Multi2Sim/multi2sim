@@ -1,6 +1,8 @@
 %{
 
 #include <llvm-c/Core.h>
+
+#include "cl2llvm.h"
 #include "parser.h"
 
 int col_num = 0;

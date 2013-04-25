@@ -20,24 +20,40 @@
 #include "cl2llvm.h"
 
 
+/*
+ * Private Functions
+ */
+
+static char *cl2llvm_err_note =
+	"\tThe OpenCL-to-LLVM front-end could not be compiled due to an unsatisfied\n"
+	"\tdependence with Flex/Bison or LLVM libraries. Please install these\n"
+	"\tlibraries and recompile.\n";
+
 static void cl2llvm_missing(void)
 {
+	fatal("OpenCL-to-LLVM front-end not available.\n%s",
+			cl2llvm_err_note);
 }
 
 
+
+
+/*
+ * Public Functions
+ */
+
 void cl2llvm_init(void)
 {
-	cl2llvm_missing();
 }
 
 
 void cl2llvm_done(void)
 {
-	cl2llvm_missing();
 }
 
 
-void cl2llvm_compile(struct list_t *source_file_list, char *out_file_name)
+void cl2llvm_compile(struct list_t *source_file_list,
+		struct list_t *llvm_file_list)
 {
 	cl2llvm_missing();
 }

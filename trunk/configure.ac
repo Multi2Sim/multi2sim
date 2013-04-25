@@ -569,6 +569,12 @@ AM_CONDITIONAL(HAVE_FLEX_BISON_AND_LLVM, test x$have_flex = xyes -a x$have_bison
 if test x$have_llvm = xyes
 then
 	AC_DEFINE(HAVE_LLVM, [1])
+	LLVM_CFLAGS=`llvm-config --cflags`
+	LLVM_LDFLAGS=`llvm-config --ldflags`
+	LLVM_LIBS=`llvm-config --libs`
+	AC_SUBST([LLVM_CFLAGS])
+	AC_SUBST([LLVM_LDFLAGS])
+	AC_SUBST([LLVM_LIBS])
 elif test x$enable_llvm = xno
 then
 	AC_MSG_WARN([
