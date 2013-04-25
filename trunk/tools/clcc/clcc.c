@@ -76,7 +76,7 @@ static char *syntax =
 	"\tsource is compiled into a kernel binary with the same name but\n"
 	"\tusing the '.bin' extension.\n"
 	"\n"
-	"-si-asm\n"
+	"--si-asm\n"
 	"\tTreat the input files as source files containing Southern Islands\n"
 	"\tassembly code. Run the Southern Islands assembler and generate a\n"
 	"\tkernel binary.\n"
