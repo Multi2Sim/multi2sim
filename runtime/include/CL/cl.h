@@ -1357,6 +1357,7 @@ typedef cl_uint cl_kernel_work_group_info;
 typedef cl_uint cl_event_info;
 typedef cl_uint cl_command_type;
 typedef cl_uint cl_profiling_info;
+typedef intptr_t cl_device_partition_property;
 
 typedef struct _cl_image_format
 {
