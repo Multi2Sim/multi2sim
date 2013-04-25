@@ -15,7 +15,7 @@ libcl2llvm_a_SOURCES = \
 	lex.l \
 	parser.y
 
-AM_CFLAGS = `llvm-config --cflags`
+AM_CFLAGS = $(LLVM_CFLAGS)
 
 else
 

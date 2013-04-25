@@ -5,14 +5,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 #include <llvm-c/Core.h>
 #include <llvm-c/Analysis.h>
 #include <llvm-c/ExecutionEngine.h>
 #include <llvm-c/Target.h>
 #include <llvm-c/Transforms/Scalar.h>
 
-#include <lib/util/debug.h>
-#include <lib/util/hash-table.h>
+#include "cl2llvm.h"
+
+extern LLVMBuilderRef cl2llvm_builder;
+extern LLVMModuleRef cl2llvm_module;
+extern LLVMValueRef cl2llvm_function;
+extern LLVMBasicBlockRef cl2llvm_basic_block;
 
 
 struct symbol_t
@@ -60,19 +66,7 @@ struct init_list_elem_t
 int temp_var_count;
 char temp_var_name[50];
 
-extern int get_col_num(void);
-extern void set_col_num(int);
-extern int yyget_lineno(void);
-extern void yyset_lineno(int);
-extern int yylex(void);
-
-extern LLVMBuilderRef llvm_builder;
-extern LLVMModuleRef llvm_mod;
-extern LLVMValueRef llvm_current_function;
-extern LLVMBasicBlockRef llvm_current_basic_block;
-
-
-struct hash_table_t *symbol_table;
+struct hash_table_t *cl2llvm_symbol_table;
 
 #define type_cmp_num_types  17
 LLVMTypeRef type_cmp(LLVMTypeRef type1, LLVMTypeRef type2)
@@ -134,7 +128,7 @@ LLVMValueRef llvm_type_cast(LLVMValueRef val, LLVMTypeRef totype)
 		{
 			snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp%d", temp_var_count++);
-			return LLVMBuildSIToFP(llvm_builder, val,
+			return LLVMBuildSIToFP(cl2llvm_builder, val,
 					LLVMFloatType(), temp_var_name);
 		}
 	}
@@ -144,14 +138,14 @@ LLVMValueRef llvm_type_cast(LLVMValueRef val, LLVMTypeRef totype)
 		{
 			snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp%d", temp_var_count++);
-			return LLVMBuildSIToFP(llvm_builder, val,
+			return LLVMBuildSIToFP(cl2llvm_builder, val,
 					LLVMFloatType(), temp_var_name);
 		}
 		/*if (totype == LLVMInt32Type())
 		{
 			snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp%d", temp_var_count++);
-			return LLVMBuildSIToFP(llvm_builder, val,
+			return LLVMBuildSIToFP(cl2llvm_builder, val,
 					LLVMFloatType(), temp_var_name);
 		}*/
 	}
@@ -345,16 +339,16 @@ func_def
 	{
 		LLVMTypeRef func_args[0];
 		
-		llvm_current_function = LLVMAddFunction(llvm_mod, "func_name",
+		cl2llvm_function = LLVMAddFunction(cl2llvm_module, "func_name",
 			LLVMFunctionType(LLVMInt32Type(), func_args, 0, 0));
-		LLVMSetFunctionCallConv(llvm_current_function, LLVMCCallConv);
-		llvm_current_basic_block = LLVMAppendBasicBlock(llvm_current_function, "bb_entry");
-		LLVMPositionBuilderAtEnd(llvm_builder, llvm_current_basic_block);
+		LLVMSetFunctionCallConv(cl2llvm_function, LLVMCCallConv);
+		cl2llvm_basic_block = LLVMAppendBasicBlock(cl2llvm_function, "bb_entry");
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, cl2llvm_basic_block);
 	}
 	TOK_CURLY_BRACE_OPEN stmt_list TOK_CURLY_BRACE_CLOSE
 	{
-		LLVMValueRef x = LLVMBuildAdd(llvm_builder, LLVMConstInt(LLVMInt32Type(), 1, 0), LLVMConstInt(LLVMInt32Type(), 2, 0), "temp");
-		LLVMBuildRet(llvm_builder, x);
+		LLVMValueRef x = LLVMBuildAdd(cl2llvm_builder, LLVMConstInt(LLVMInt32Type(), 1, 0), LLVMConstInt(LLVMInt32Type(), 2, 0), "temp");
+		LLVMBuildRet(cl2llvm_builder, x);
 	}
 	; 
 
@@ -462,7 +456,7 @@ lvalue
 	{
 		struct symbol_t *symbol;
 
-		symbol = hash_table_get(symbol_table, $1);
+		symbol = hash_table_get(cl2llvm_symbol_table, $1);
 		if (!symbol)
 			yyerror("undefined identifier");
 
@@ -550,13 +544,13 @@ init_list
 
 		symbol = symbol_create($1);
 		symbol->type = LLVMTypeOf($2);
-		symbol->value = LLVMBuildAlloca(llvm_builder, symbol->type, $1);
-		err = hash_table_insert(symbol_table, $1, symbol);
+		symbol->value = LLVMBuildAlloca(cl2llvm_builder, symbol->type, $1);
+		err = hash_table_insert(cl2llvm_symbol_table, $1, symbol);
 		if (!err)
 			printf("duplicated symbol");
 		printf("symbol '%s' added to symbol table\n", $1);
 
-		LLVMBuildStore(llvm_builder, $2, symbol->value);
+		LLVMBuildStore(cl2llvm_builder, $2, symbol->value);
 	}
 	| init_list TOK_COMMA TOK_ID init %prec TOK_MULT
 	| TOK_ID array_deref_list init  %prec TOK_MULT {printf("init_list\n");}
@@ -648,13 +642,13 @@ expr
 		{
 		case LLVMIntegerTypeKind:
 
-			$$ = LLVMBuildAdd(llvm_builder, op1, op2, temp_var_name);
+			$$ = LLVMBuildAdd(cl2llvm_builder, op1, op2, temp_var_name);
 			break;
 
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			$$ = LLVMBuildFAdd(llvm_builder, op1, op2, temp_var_name);
+			$$ = LLVMBuildFAdd(cl2llvm_builder, op1, op2, temp_var_name);
 			break;
 
 		default:
@@ -676,13 +670,13 @@ expr
 		{
 		case LLVMIntegerTypeKind:
 
-			$$ = LLVMBuildSub(llvm_builder, op1, op2, temp_var_name);
+			$$ = LLVMBuildSub(cl2llvm_builder, op1, op2, temp_var_name);
 			break;
 
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			$$ = LLVMBuildFSub(llvm_builder, op1, op2, temp_var_name);
+			$$ = LLVMBuildFSub(cl2llvm_builder, op1, op2, temp_var_name);
 			break;
 
 		default:
@@ -695,19 +689,19 @@ expr
 	{
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp%d", temp_var_count++);
-		$$ = LLVMBuildMul(llvm_builder, $1, $3, temp_var_name);
+		$$ = LLVMBuildMul(cl2llvm_builder, $1, $3, temp_var_name);
 	}
 	| expr TOK_DIV expr
 	{
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp%d", temp_var_count++);
-		$$ = LLVMBuildSDiv(llvm_builder, $1, $3, temp_var_name);
+		$$ = LLVMBuildSDiv(cl2llvm_builder, $1, $3, temp_var_name);
 	}
 	| expr TOK_MOD expr
 	{
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp%d", temp_var_count++);
-		$$ = LLVMBuildSRem(llvm_builder, $1, $3, temp_var_name);
+		$$ = LLVMBuildSRem(cl2llvm_builder, $1, $3, temp_var_name);
 	}
 	| expr TOK_SHIFT_LEFT expr
 	| expr TOK_SHIFT_RIGHT expr
@@ -725,13 +719,13 @@ expr
 		{
 		case LLVMIntegerTypeKind:
 
-			$$ = LLVMBuildICmp(llvm_builder, LLVMIntEQ, op1, op2, temp_var_name);
+			$$ = LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ, op1, op2, temp_var_name);
 			break;
 
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			$$ = LLVMBuildFCmp(llvm_builder, LLVMRealOEQ, op1, op2, temp_var_name);
+			$$ = LLVMBuildFCmp(cl2llvm_builder, LLVMRealOEQ, op1, op2, temp_var_name);
 			break;
 
 		default:
@@ -754,13 +748,13 @@ expr
 		{
 		case LLVMIntegerTypeKind:
 
-			$$ = LLVMBuildICmp(llvm_builder, LLVMIntNE, op1, op2, temp_var_name);
+			$$ = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, op1, op2, temp_var_name);
 			break;
 
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			$$ = LLVMBuildFCmp(llvm_builder, LLVMRealONE, op1, op2, temp_var_name);
+			$$ = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, op1, op2, temp_var_name);
 			break;
 
 		default:
@@ -862,7 +856,7 @@ primary
 	{
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp%d", temp_var_count++);
-		$$ = LLVMBuildLoad(llvm_builder, $1, temp_var_name);
+		$$ = LLVMBuildLoad(cl2llvm_builder, $1, temp_var_name);
 	}
 
 	| vec_literal
@@ -1028,62 +1022,4 @@ type_name
 
 
 %%
-
-/* Global variables */
-LLVMBuilderRef llvm_builder;
-LLVMModuleRef llvm_mod;
-LLVMValueRef llvm_current_function;
-LLVMBasicBlockRef llvm_current_basic_block;
-
-int main()
-{
-	char *error = NULL; // Used to retrieve messages from functions
-
-	LLVMLinkInJIT();
-	LLVMInitializeNativeTarget();
-	
-	/* Initialize LLVM */
-	llvm_builder = LLVMCreateBuilder();
-	llvm_mod = LLVMModuleCreateWithName("module");
-
-	/* Initialize symbol table */
-	symbol_table = hash_table_create(10, 1);
-
-	yyparse();
-
-	/* Free symbol table */
-	hash_table_free(symbol_table);
-
-	LLVMDumpModule(llvm_mod);
-	LLVMVerifyModule(llvm_mod, LLVMAbortProcessAction, &error);
-	LLVMDisposeMessage(error); // Handler == LLVMAbortProcessAction -> No need to check errors
-
-
-	LLVMExecutionEngineRef engine;
-	LLVMModuleProviderRef provider = LLVMCreateModuleProviderForExistingModule(llvm_mod);
-	error = NULL;
-	if (LLVMCreateJITCompiler(&engine, provider, 2, &error) != 0)
-	{
-		fprintf(stderr, "%s\n", error);
-		LLVMDisposeMessage(error);
-		abort();
-	}
-
-	LLVMPassManagerRef pass = LLVMCreatePassManager();
-	LLVMAddTargetData(LLVMGetExecutionEngineTargetData(engine), pass);
-
-/*
-	int x = 12;
-	LLVMGenericValueRef exec_res = LLVMRunFunction(engine, func_main, 0, NULL);
-	fprintf(stderr, "\n");
-	fprintf(stderr, "; Running func_invert(%d) with JIT...\n", x);
-	fprintf(stderr, "; Result: %llu\n", LLVMGenericValueToInt(exec_res, 0));
-*/
-	LLVMDisposePassManager(pass);
-	LLVMDisposeBuilder(llvm_builder);
-	LLVMDisposeExecutionEngine(engine);
-
-
-	return 0;
-}
 

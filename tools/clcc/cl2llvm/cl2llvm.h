@@ -20,12 +20,33 @@
 #ifndef TOOLS_CLCC_CL2LLVM_H
 #define TOOLS_CLCC_CL2LLVM_H
 
+/* Forward declarations */
+
 struct list_t;
+struct hash_table_t;
+
+extern int get_col_num(void);
+extern void set_col_num(int);
+extern int yyget_lineno(void);
+extern void yyset_lineno(int);
+extern int yylex(void);
+extern int yyparse(void);
+
+extern FILE *yyin;
+
+extern struct hash_table_t *cl2llvm_symbol_table;
+
+
+
+/*
+ * Public Functions
+ */
 
 void cl2llvm_init(void);
 void cl2llvm_done(void);
 
-void cl2llvm_compile(struct list_t *source_file_list, char *out_file_name);
+void cl2llvm_compile(struct list_t *source_file_list,
+		struct list_t *llvm_file_list);
 
 #endif
 
