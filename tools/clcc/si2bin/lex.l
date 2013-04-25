@@ -20,7 +20,7 @@
 %{
 
 #include "id.h"
-#include "main.h"
+#include "si2bin.h"
 #include "parser.h"
 
 extern long offset;
@@ -75,17 +75,17 @@ extern long offset;
 }
 
 s[0-9]+ {
-	yylval.id = si_id_create(yytext);
+	si2bin_yylval.id = si_id_create(yytext);
 	return TOK_SCALAR_REGISTER;
 }
 
 v[0-9]+ {
-	yylval.id = si_id_create(yytext);
+	si2bin_yylval.id = si_id_create(yytext);
 	return TOK_VECTOR_REGISTER;
 }
 
 vcc|scc|exec {
-	yylval.id = si_id_create(yytext);
+	si2bin_yylval.id = si_id_create(yytext);
 	return TOK_SPECIAL_REGISTER;
 }
 
@@ -106,22 +106,22 @@ vcc|scc|exec {
 }
 
 [a-zA-Z_][a-zA-Z0-9_]* {   
-	yylval.id = si_id_create(yytext);
+	si2bin_yylval.id = si_id_create(yytext);
 	return TOK_ID; 
 }
 
 0x[0-9a-z]+ { 
-	yylval.id = si_id_create(yytext);
+	si2bin_yylval.id = si_id_create(yytext);
 	return TOK_HEX;	
 }
 
 [+-]?[0-9]+"."[0-9]+ {
-	yylval.num_float = atof(yytext);
+	si2bin_yylval.num_float = atof(yytext);
 	return TOK_FLOAT;
 }
 
 [+-]?[0-9]+ {
-	yylval.num = atoi(yytext);
+	si2bin_yylval.num = atoi(yytext);
 	return TOK_DECIMAL;
 }
 
@@ -135,7 +135,7 @@ vcc|scc|exec {
 
 . {
 	/* Lexical error */
-	yyerror_fmt("unexpected character: %s\n", yytext);
+	si2bin_yyerror_fmt("unexpected character: %s\n", yytext);
 }
 
 %%

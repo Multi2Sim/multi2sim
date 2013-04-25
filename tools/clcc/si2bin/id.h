@@ -17,12 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
+#ifndef TOOLS_CLCC_SI2BIN_ID_H
+#define TOOLS_CLCC_SI2BIN_ID_H
 
-/* Bison parser globl functions */
-int yyparse(void);
-void yyerror(const char *s);
-void yyerror_fmt(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+struct si_id_t
+{
+	char *name;
+};
 
-extern int yylineno;
-extern FILE *yyin;
+struct si_id_t *si_id_create(char *name);
+void si_id_free(struct si_id_t *id);
+
+#endif
+

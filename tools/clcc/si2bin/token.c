@@ -22,7 +22,7 @@
 #include <lib/util/string.h>
 
 #include "arg.h"
-#include "main.h"
+#include "si2bin.h"
 #include "token.h"
 
 
@@ -179,7 +179,7 @@ int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg)
 		return arg->type == si_arg_waitcnt;
 	
 	default:
-		yyerror_fmt("%s: unsupported token (code = %d)",
+		si2bin_yyerror_fmt("%s: unsupported token (code = %d)",
 				__FUNCTION__, token->type);
 		return 0;
 	}

@@ -1,4 +1,3 @@
 SUBDIRS = \
 	clcc \
-	glcc \
-	si-as
+	glcc
