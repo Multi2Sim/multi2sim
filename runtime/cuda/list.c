@@ -18,6 +18,7 @@
  */
 
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "list.h"
 #include "mhandle.h"
