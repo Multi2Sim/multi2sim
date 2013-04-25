@@ -20,6 +20,10 @@
 #ifndef TOOLS_CLCC_CL2LLVM_H
 #define TOOLS_CLCC_CL2LLVM_H
 
+#include <stdio.h>
+
+#include <lib/util/debug.h>
+
 /* Forward declarations */
 
 struct list_t;
