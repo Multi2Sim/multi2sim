@@ -945,6 +945,14 @@ DEFINST(V_CMP_EQ_I32,
 	0
 )
 
+DEFINST(V_CMP_LE_I32,
+	" v_cmp_le_i32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	131,
+	4,
+	0
+)
+
 DEFINST(V_CMP_GT_I32,
 	" v_cmp_gt_i32  vcc, %SRC0, %VSRC1",
 	VOPC,
