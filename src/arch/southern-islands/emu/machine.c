@@ -3569,6 +3569,37 @@ void si_isa_V_CMP_EQ_I32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+/* vcc = (S0.i <= S1.i). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_LE_I32_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	union si_reg_t s0;
+	union si_reg_t s1;
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 255)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = si_isa_read_reg(work_item, INST.src0);
+	s1.as_uint = si_isa_read_vreg(work_item,INST.vsrc1);
+
+	/* Compare the operands. */
+	result.as_uint = (s0.as_int <= s1.as_int);
+
+	/* Write the results. */
+	si_isa_bitmask_sreg(work_item, SI_VCC, result.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: vcc<=(%u) ",
+			work_item->id_in_wavefront, result.as_uint);
+	}
+}
+#undef INST
+
 /* vcc = (S0.i > S1.i). */
 #define INST SI_INST_VOPC
 void si_isa_V_CMP_GT_I32_impl(struct si_work_item_t *work_item,
