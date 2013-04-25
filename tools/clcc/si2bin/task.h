@@ -17,43 +17,42 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_SI_AS_SYMBOL_H
-#define TOOLS_SI_AS_SYMBOL_H
+#ifndef TOOLS_CLCC_SI2BIN_TASK_H
+#define TOOLS_CLCC_SI2BIN_TASK_H
 
 #include <stdio.h>
+
+
+/*
+ * Task Object
+ */
+
+/* Forward declaration */
+struct si_symbol_t;
+
+struct si_task_t
+{
+	int offset;
+	struct si_symbol_t *symbol;
+};
+
+struct si_task_t *si_task_create(int offset, struct si_symbol_t *symbol);
+void si_task_free(struct si_task_t *task);
+
+void si_task_dump(struct si_task_t *task, FILE *f);
+void si_task_process(struct si_task_t *task);
+
 
 
 /*
  * Global
  */
 
-extern struct hash_table_t *si_symbol_table;
+extern struct list_t *si_task_list;
 
-void si_symbol_table_init(void);
-void si_symbol_table_done(void);
+void si_task_list_init(void);
+void si_task_list_done(void);
 
-void si_symbol_table_dump(FILE *f);
-
-
-
-/*
- * Symbol
- */
-
-struct si_symbol_t
-{
-	char *name;
-	int value;
-
-	/* True if the symbol definition has been found already. False when
-	 * the symbol has been found as a forward declaration. */
-	int defined;
-};
-
-struct si_symbol_t *si_symbol_create(char *name);
-void si_symbol_free(struct si_symbol_t *symbol);
-
-void si_symbol_dump(struct si_symbol_t *symbol, FILE *f);
+void si_task_list_process(void);
 
 #endif
-

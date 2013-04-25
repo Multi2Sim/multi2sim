@@ -31,7 +31,7 @@
 #include "arg.h"
 #include "dis-inst.h"
 #include "id.h"
-#include "main.h"
+#include "si2bin.h"
 #include "stream.h"
 #include "string.h"
 #include "symbol.h"
@@ -39,14 +39,6 @@
 
 
 #define YYERROR_VERBOSE
-
-extern FILE* yyin;
-extern char* yytext;
-
-extern int yylex(void);
-void yyerror(const char *s);
-
-struct si_stream_t *stream;
 
 %}
 
@@ -127,7 +119,7 @@ rl_label
 		/* Check if symbol exists */
 		symbol = hash_table_get(si_symbol_table, id->name);
 		if (symbol && symbol->defined)
-			yyerror_fmt("multiply defined label: %s", id->name);
+			si2bin_yyerror_fmt("multiply defined label: %s", id->name);
 
 		/* Create if it does not exists */
 		if (!symbol)
@@ -272,7 +264,7 @@ rl_arg
 		}
 		else
 		{
-			yyerror_fmt("invalid register series: %s", id->name);
+			si2bin_yyerror_fmt("invalid register series: %s", id->name);
 		}
 		
 		/* Return created argument */
@@ -297,7 +289,7 @@ rl_arg
 			break;
 
 		default:
-			yyerror("abs() function not allowed for argument");
+			si2bin_yyerror("abs() function not allowed for argument");
 		}
 
 		/* Return */
@@ -321,7 +313,7 @@ rl_arg
 			break;
 
 		default:
-			yyerror("abs() function not allowed for argument");
+			si2bin_yyerror("abs() function not allowed for argument");
 		}
 
 		/* Return */
@@ -395,7 +387,7 @@ rl_maddr_qual
 
 		assert(qual->type == si_arg_maddr_qual);
 		if (qual->value.maddr_qual.offen)
-			yyerror("redundant qualifier 'offen'");
+			si2bin_yyerror("redundant qualifier 'offen'");
 		qual->value.maddr_qual.offen = 1;
 		$$ = qual;
 	}
@@ -406,7 +398,7 @@ rl_maddr_qual
 
 		assert(qual->type == si_arg_maddr_qual);
 		if (qual->value.maddr_qual.idxen)
-			yyerror("redundant qualifier 'idxen'");
+			si2bin_yyerror("redundant qualifier 'idxen'");
 		qual->value.maddr_qual.idxen = 1;
 		$$ = qual;
 	}
@@ -429,17 +421,17 @@ rl_waitcnt_arg
 	| rl_waitcnt_elem TOK_AMP rl_waitcnt_arg
 	{
 		if ($3->value.wait_cnt.vmcnt_active && $1->value.wait_cnt.vmcnt_active)
-			yyerror("duplicate 'vmcnt' token");
+			si2bin_yyerror("duplicate 'vmcnt' token");
 		$3->value.wait_cnt.vmcnt_active += $1->value.wait_cnt.vmcnt_active;
 		$3->value.wait_cnt.vmcnt_value += $1->value.wait_cnt.vmcnt_value;		
 		
 		if ($3->value.wait_cnt.expcnt_active && $1->value.wait_cnt.expcnt_active)
-			yyerror("duplicate 'expcnt' token");
+			si2bin_yyerror("duplicate 'expcnt' token");
 		$3->value.wait_cnt.expcnt_active += $1->value.wait_cnt.expcnt_active;
 		$3->value.wait_cnt.expcnt_value += $1->value.wait_cnt.expcnt_value;	
 		
 		if ($3->value.wait_cnt.lgkmcnt_active && $1->value.wait_cnt.lgkmcnt_active)
-			yyerror("duplicate 'lgkmcnt' token");
+			si2bin_yyerror("duplicate 'lgkmcnt' token");
 		$3->value.wait_cnt.lgkmcnt_active += $1->value.wait_cnt.lgkmcnt_active;
 		$3->value.wait_cnt.lgkmcnt_value += $1->value.wait_cnt.lgkmcnt_value;	
 		
