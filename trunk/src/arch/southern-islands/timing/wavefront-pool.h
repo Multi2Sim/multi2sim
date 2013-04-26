@@ -33,11 +33,11 @@ struct si_wavefront_pool_entry_t
 	struct si_uop_t *uop;
 
 	/* Status (not mutually exclusive) */
-	unsigned int ready : 1;              /* Ready to fetch next instruction */
-	unsigned int ready_next_cycle : 1;   /* Will be ready next cycle */
+	unsigned int ready : 1;            /* Ready to fetch next instruction */
+	unsigned int ready_next_cycle : 1; /* Will be ready next cycle */
 	/* TOOD Break wait_for_mem into waiting for each memory type */
-	unsigned int wait_for_mem : 1;       /* Waiting for memory instructions */
-	unsigned int wait_for_barrier : 1;   /* Waiting at barrier */
+	unsigned int wait_for_mem : 1;     /* Waiting for memory instructions */
+	unsigned int wait_for_barrier : 1; /* Waiting at barrier */
 	unsigned int wavefront_finished : 1; /* Wavefront executed last inst */
 
 	/* Outstanding memory accesses */

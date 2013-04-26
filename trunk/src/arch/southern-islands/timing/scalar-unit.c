@@ -109,6 +109,7 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 		{
 			/* Set a flag to wait until all wavefronts have 
 			 * reached the barrier */
+			assert(!uop->wavefront_pool_entry->wait_for_barrier);
 			uop->wavefront_pool_entry->wait_for_barrier = 1;
 
 			/* Check if all wavefronts have reached the barrier */
@@ -130,6 +131,10 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 				SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(
 					uop->work_group, wavefront_id)
 				{
+					assert(uop->work_group->
+						wavefronts[wavefront_id]->
+						wavefront_pool_entry->
+						wait_for_barrier);
 					uop->work_group->
 						wavefronts[wavefront_id]->
 						wavefront_pool_entry->
