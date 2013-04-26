@@ -818,7 +818,7 @@ cl_int clEnqueueNDRangeKernel(
 
 	//TODO: do some more checking, make sure device is the union device.
 	if (!arch_kernel)
-		arch_kernel = kernel; // send the whole thing for union execution.
+		return CL_INVALID_VALUE;
 
 	/* Create command */
 	command = opencl_command_create_ndrange(device, arch_kernel, work_dim,

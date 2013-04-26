@@ -175,7 +175,8 @@ typedef void (*opencl_arch_program_free_func_t)(
 		void *program);  /* Of type 'opencl_XXX_program_t' */
 
 /* Check if a binary blob is a valid program */
-typedef cl_bool (*opencl_arch_program_valid_binary_func_t)(
+typedef int (*opencl_arch_program_valid_binary_func_t)(
+	void *device,
 	void *binary,
 	unsigned int length);
 

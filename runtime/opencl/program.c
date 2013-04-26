@@ -292,7 +292,7 @@ cl_program clCreateProgramWithBinary(
 		assert(device->arch_program_valid_binary_func);
 		if (!lengths[i] || !binaries[i] ||
 				!device->arch_program_valid_binary_func(
-				(void *) binaries[i], lengths[i]))
+				device->arch_device, (void *) binaries[i], lengths[i]))
 		{
 			if (binary_status)
 				binary_status[i] = CL_INVALID_VALUE;
@@ -468,7 +468,7 @@ cl_int clBuildProgram(
 
 		/* Make sure the type of the binary matches */
 		assert(device->arch_program_valid_binary_func);
-		if (!device->arch_program_valid_binary_func(binary, size))
+		if (!device->arch_program_valid_binary_func(device->arch_device, binary, size))
 			fatal("%s: invalid binary for device '%s'.\n%s",
 				__FUNCTION__, device->name, opencl_err_program_invalid);
 

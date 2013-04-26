@@ -134,7 +134,7 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 			opencl_si_program_create;
 	parent->arch_program_free_func = (opencl_arch_program_free_func_t)
 			opencl_si_program_free;
-	parent->arch_program_valid_binary_func = (opencl_arch_program_valid_binary_func_t)
+	parent->arch_program_valid_binary_func =
 			opencl_si_program_valid_binary;
 
 	/* Return */
