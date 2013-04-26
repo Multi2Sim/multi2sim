@@ -657,24 +657,3 @@ cl_int clGetDeviceInfo(
 	return 0;
 }
 
-/* Hijack this method to create Fused device! */
- cl_int clCreateSubDevices (
-	cl_device_id  in_device,
-	const cl_device_partition_property  *properties,
-	cl_uint  num_devices,
-	cl_device_id  *out_devices,
-	cl_uint  *num_devices_ret)
-{
-	struct opencl_device_t *u;
-	if (in_device)
-		return CL_INVALID_VALUE;
-
-	u = opencl_device_create();
-	u->arch_device = opencl_union_device_create(u, num_devices, out_devices);
-	
-	if (num_devices_ret)
-		*num_devices_ret = 1;
-	out_devices[0] = u;
-
-	return CL_SUCCESS;
-}

@@ -72,3 +72,43 @@ void opencl_union_kernel_run(
 	free(threads);
 	free(num_groups);
 }
+
+struct opencl_union_kernel_t *opencl_union_kernel_create(
+		struct opencl_kernel_t *parent,
+		struct opencl_union_program_t *program,
+		char *func_name)
+{
+	int i;
+	struct opencl_union_kernel_t *kernel;
+	struct list_t *devices;
+
+	devices = program->device->devices;
+	kernel = xcalloc(1, sizeof (struct opencl_union_kernel_t));
+	kernel->parent = parent;
+	kernel->device = program->device;
+	kernel->kernels = list_create_with_size(list_count(devices));
+
+	LIST_FOR_EACH(devices, i)
+	{
+		struct opencl_device_t *subdevice = list_get(devices, i);
+		list_set(kernel->kernels, i, subdevice->arch_kernel_create_func(NULL, list_get(program->programs, i), func_name));
+	}
+
+	return kernel;
+}
+
+int opencl_union_kernel_set_arg(
+		struct opencl_union_kernel_t *kernel,
+		int arg_index,
+		unsigned int arg_size,
+		void *arg_value)
+{
+	int i;
+	LIST_FOR_EACH(kernel->device->devices, i)
+	{
+		struct opencl_device_t *subdevice = list_get(kernel->device->devices, i);
+		if (subdevice->arch_kernel_set_arg_func(list_get(kernel->kernels, i), arg_index, arg_size, arg_value))
+			return 1;
+	}
+	return 0;
+}
