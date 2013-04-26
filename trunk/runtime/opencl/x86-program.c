@@ -99,6 +99,7 @@ void opencl_x86_program_free(struct opencl_x86_program_t *program)
 
 
 int opencl_x86_program_valid_binary(
+	void *device,
 	void *binary,
 	unsigned int length)
 {

@@ -29,7 +29,7 @@
 #include "platform.h"
 #include "si-device.h"
 #include "x86-device.h"
-
+#include "union-device.h"
 
 static char *opencl_err_version =
 	"\tYour OpenCL program is using a version of the Multi2Sim Runtime library\n"
@@ -112,6 +112,11 @@ struct opencl_platform_t *opencl_platform_create(void)
 		/* Add Southern Islands device */
 		device = opencl_device_create();
 		device->arch_device = opencl_si_device_create(device);
+		list_add(platform->device_list, device);
+
+		/* Add Union device */
+		device = opencl_device_create();
+		device->arch_device = opencl_union_device_create(device, platform->device_list);
 		list_add(platform->device_list, device);
 	}
 

@@ -677,7 +677,6 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 			(opencl_arch_program_free_func_t)
 			opencl_x86_program_free;
 	parent->arch_program_valid_binary_func =
-			(opencl_arch_program_valid_binary_func_t)
 			opencl_x86_program_valid_binary;
 
 	/* Call-back functions for architecture-specific kernel */

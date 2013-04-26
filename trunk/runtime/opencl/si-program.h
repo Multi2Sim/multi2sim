@@ -50,7 +50,7 @@ struct opencl_si_program_t *opencl_si_program_create(
 void opencl_si_program_free(struct opencl_si_program_t *program);
 
 /* Return true is a binary file is a valid SI program binary. */
-int opencl_si_program_valid_binary(void *binary, unsigned int length);
+int opencl_si_program_valid_binary(void *device, void *binary, unsigned int length);
 
 #endif
 

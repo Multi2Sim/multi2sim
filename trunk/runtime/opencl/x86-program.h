@@ -55,6 +55,7 @@ void opencl_x86_program_free(
 
 /* Return true is a binary file is a valid x86 program binary. */
 int opencl_x86_program_valid_binary(
+	void *device,
 	void *binary,
 	unsigned int length);
 
