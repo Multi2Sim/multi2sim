@@ -185,13 +185,6 @@ LLVMTypeRef type_unify(LLVMValueRef val1, LLVMValueRef val2,
 }
 
 
-void yyerror(char *s)
-{
-	printf("line %d:%d: %s\n", yyget_lineno(), get_col_num(), s);
-	exit(1);
-}
-
-
 
 
 %}
