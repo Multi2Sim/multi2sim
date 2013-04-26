@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -39,6 +40,34 @@ LLVMBuilderRef cl2llvm_builder;
 LLVMModuleRef cl2llvm_module;
 LLVMValueRef cl2llvm_function;
 LLVMBasicBlockRef cl2llvm_basic_block;
+
+/* Current file being compiled */
+char *cl2llvm_file_name;
+
+
+void cl2llvm_yyerror(char *s)
+{
+	printf("%s:%d:%d: error: %s\n", cl2llvm_file_name, cl2llvm_yyget_lineno(),
+			cl2llvm_get_col_num(), s);
+	exit(1);
+}
+
+
+void cl2llvm_yyerror_fmt(char *fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	fprintf(stderr, "%s:%d:%d: error: ", cl2llvm_file_name,
+			cl2llvm_yyget_lineno(), cl2llvm_get_col_num());
+	vfprintf(stderr, fmt, va);
+	fprintf(stderr, "\n");
+	fflush(NULL);
+	exit(1);
+}
+
+
+
+
 
 
 void cl2llvm_init(void)
@@ -89,22 +118,21 @@ void cl2llvm_done(void)
 
 void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_list)
 {
-	char *file_name;
 	int index;
 
 	LIST_FOR_EACH(source_file_list, index)
 	{
 		/* Open file */
-		file_name = list_get(source_file_list, index);
-		yyin = fopen(file_name, "rb");
-		if (!yyin)
-			fatal("%s: cannot open file", file_name);
+		cl2llvm_file_name = list_get(source_file_list, index);
+		cl2llvm_yyin = fopen(cl2llvm_file_name, "rb");
+		if (!cl2llvm_yyin)
+			fatal("%s: cannot open file", cl2llvm_file_name);
 
 		/* Compile */
-		yyparse();
+		cl2llvm_yyparse();
 
 		/* Close */
-		fclose(yyin);
+		fclose(cl2llvm_yyin);
 	}
 }
 

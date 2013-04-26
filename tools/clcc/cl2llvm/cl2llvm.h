@@ -29,16 +29,21 @@
 struct list_t;
 struct hash_table_t;
 
-extern int get_col_num(void);
-extern void set_col_num(int);
-extern int yyget_lineno(void);
-extern void yyset_lineno(int);
-extern int yylex(void);
-extern int yyparse(void);
+int cl2llvm_get_col_num(void);
+void cl2llvm_set_col_num(int);
+int cl2llvm_yyget_lineno(void);
+void cl2llvm_yyset_lineno(int);
+int cl2llvm_yylex(void);
+int cl2llvm_yyparse(void);
 
-extern FILE *yyin;
+void cl2llvm_yyerror(char *s);
+void cl2llvm_yyerror_fmt(char *fmt, ...);
+
+extern FILE *cl2llvm_yyin;
+extern char *cl2llvm_file_name;
 
 extern struct hash_table_t *cl2llvm_symbol_table;
+
 
 
 
