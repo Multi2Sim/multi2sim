@@ -3139,3 +3139,25 @@ DEFINST(IT_1115,
 	0xf,
 	0xffffffff)
 
+/* Miscellaneous Revesrse */
+
+DEFINST(REV_0, 
+	"rev %rd  %rm", 
+	MISC_REV, 
+	0x2,
+	0x1,
+	0x1,
+	0x50,
+	0xffffffff,
+	0xffffffff)
+
+DEFINST(REV_1, 
+	"rev %rd  %rm", 
+	MISC_REV, 
+	0x2,
+	0x1,
+	0x1,
+	0x51,
+	0xffffffff,
+	0xffffffff)
+

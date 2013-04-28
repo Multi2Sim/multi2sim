@@ -125,6 +125,10 @@ void arm_thumb32_disasm_init()
 
 	arm_thumb32_mult_long_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
 
+	arm_thumb32_mov_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_mov1_table		= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+
+
 	/* Load store Multiple tables */
 	arm_thumb32_asm_table[1].next_table 		=  arm_thumb32_asm_lv1_table;
 	arm_thumb32_asm_table[1].next_table_high 	= 26;
@@ -211,6 +215,11 @@ void arm_thumb32_disasm_init()
 	arm_thumb32_dproc_shft_reg_table[(0xd)].next_table  		= arm_thumb32_dproc_shft_reg6_table;
 	arm_thumb32_dproc_shft_reg_table[(0xd)].next_table_high 	= 11;
 	arm_thumb32_dproc_shft_reg_table[(0xd)].next_table_low 		= 8;
+
+	arm_thumb32_dproc_shft_reg2_table[(0xf)].next_table	  	= arm_thumb32_mov_table;
+	arm_thumb32_dproc_shft_reg2_table[(0xf)].next_table_high 	= 5;
+	arm_thumb32_dproc_shft_reg2_table[(0xf)].next_table_low 	= 4;
+
 
 	/* Data Processing Immediate Tables */
 	arm_thumb32_asm_table[2].next_table 		= arm_thumb32_asm_lv4_table;
@@ -435,7 +444,7 @@ void arm_thumb32_disasm_init()
 
 	arm_thumb32_dproc_reg_table[8].next_table	= arm_thumb32_dproc_misc_table;
 	arm_thumb32_dproc_reg_table[8].next_table_high	= 7;
-	arm_thumb32_dproc_reg_table[8].next_table_low	= 7;
+	arm_thumb32_dproc_reg_table[8].next_table_low	= 6;
 
 	arm_thumb32_dproc_misc_table[2].next_table	= arm_thumb32_dproc_misc1_table;
 	arm_thumb32_dproc_misc_table[2].next_table_high	= 21;
@@ -798,6 +807,8 @@ void arm_thumb16_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
 			fatal("%d: rd fmt not recognized", cat);
 		else if (cat == ARM_THUMB16_CAT_MISC_ADDSP_INS)
 			rd = inst->dword.addsp_ins.reg_rd;
+		else if (cat == ARM_THUMB16_CAT_MISC_REV)
+			rd = inst->dword.rev_ins.reg_rd;
 		else if (cat == ARM_THUMB16_CAT_CMP_T2)
 			rd = (inst->dword.cmp_t2.N << 3 | inst->dword.cmp_t2.reg_rn);
 
@@ -857,6 +868,8 @@ void arm_thumb16_inst_dump_RM(char **inst_str_ptr, int *inst_str_size,
 			fatal("%d: rm fmt not recognized", cat);
 		else if (cat == ARM_THUMB16_CAT_MISC_ADDSP_INS)
 			fatal("%d: rm fmt not recognized", cat);
+		else if (cat == ARM_THUMB16_CAT_MISC_REV)
+			rm = inst->dword.rev_ins.reg_rm;
 		else if (cat == ARM_THUMB16_CAT_CMP_T2)
 			rm = inst->dword.cmp_t2.reg_rm;
 		else
@@ -1815,7 +1828,7 @@ void arm_thumb32_inst_dump_SHFT_REG(char **inst_str_ptr, int *inst_str_size,
 	if (cat == ARM_THUMB32_CAT_DPR_SHFTREG)
 	{
 		type = inst->dword.data_proc_shftreg.type;
-		shift = (inst->dword.data_proc_shftreg.imm3 << 2) & (inst->dword.data_proc_shftreg.imm2);
+		shift = (inst->dword.data_proc_shftreg.imm3 << 2) | (inst->dword.data_proc_shftreg.imm2);
 	}
 
 	else
@@ -2284,6 +2297,8 @@ void arm_disasm_done()
 	free(arm_thumb32_dproc_bin_imm3_table);
 
 	free(arm_thumb32_mult_long_table);
+	free(arm_thumb32_mov_table);
+	free(arm_thumb32_mov1_table);
 
 	free(arm_thumb32_brnch_ctrl_table);
 }

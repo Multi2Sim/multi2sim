@@ -2203,6 +2203,42 @@ DEFINST(RSB_reg,
 	0xffffffff,
 	0xffffffff)
 
+DEFINST(MOVS_LSR_imm, 
+	"mov%S.w %rd, %rm %shft", 
+	DPR_SHFTREG, 
+	0x1,
+	0x0,
+	0x1,
+	0x2,
+	0xf,
+	0x1,
+	0xffffffff,
+	0xffffffff)
+
+DEFINST(MOVS_ASR_imm, 
+	"mov%S.w %rd, %rm %shft", 
+	DPR_SHFTREG, 
+	0x1,
+	0x0,
+	0x1,
+	0x2,
+	0xf,
+	0x2,
+	0xffffffff,
+	0xffffffff)
+
+DEFINST(MOVS_LSL_imm, 
+	"mov%S.w %rd, %rm %shft", 
+	DPR_SHFTREG, 
+	0x1,
+	0x0,
+	0x1,
+	0x2,
+	0xf,
+	0x0,
+	0xffffffff,
+	0xffffffff)
+
 
 /* Data Processing Immediate instructions:
  * AND, TST, ORR, MVN, EOR, TEQ, ADD, CMN, ADC, SBC, SUB, CMP, RSB
@@ -9086,6 +9122,31 @@ DEFINST(LDRSB_litA,
 	0xffffffff,
 	0xffffffff)
 
+DEFINST(LDRSB_immB1, 
+	"ldrsb.w %rd, [%rn, %imm12]", 
+	LDSTR_BYTE, 
+	0x3,
+	0x0,
+	0x1,
+	0x1,
+	0x3,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff)
+
+DEFINST(LDRSB_immB2, 
+	"ldrsb.w %rd, [%rn, %imm12]", 
+	LDSTR_BYTE, 
+	0x3,
+	0x0,
+	0x0,
+	0x1,
+	0x3,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff)
+
+
 /* Load halfword table instructions:
  * LDRH, LDRSH
  */
@@ -9162,6 +9223,30 @@ DEFINST(LDRH_imm2,
 	0xffffffff,
 	0xffffffff)
 
+DEFINST(LDRH_imm3, 
+	"ldrh.w %rd, [%rn, {%imm12}]", 
+	LDSTR_IMMD, 
+	0x3,
+	0x0,
+	0x1,
+	0x3,
+	0x1,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff)
+
+DEFINST(LDRH_imm4, 
+	"ldrh.w %rd, [%rn, {%imm12}]", 
+	LDSTR_IMMD, 
+	0x3,
+	0x0,
+	0x0,
+	0x3,
+	0x1,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff)
+
 DEFINST(LDRSH_reg2, 
 	"ldrsh.w %rd, [%rn, %rm{ lsl %imm2}]", 
 	LDSTR_REG, 
@@ -9185,6 +9270,31 @@ DEFINST(LDRSH_imm2,
 	0x1,
 	0xffffffff,
 	0xffffffff) 	
+
+DEFINST(LDRSH_imm3, 
+	"ldrsh.w %rd, [%rn, {%imm12}]", 
+	LDSTR_IMMD, 
+	0x3,
+	0x0,
+	0x1,
+	0x3,
+	0x3,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff) 	
+
+DEFINST(LDRSH_imm4, 
+	"ldrsh.w %rd, [%rn, {%imm12}]", 
+	LDSTR_IMMD, 
+	0x3,
+	0x0,
+	0x0,
+	0x3,
+	0x3,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff) 	
+
 	
 /* Load word table instructions:
  * LDR
@@ -9493,7 +9603,7 @@ DEFINST(UMULL,
 	0x0,
 	0x3,
 	0x1,
-	0x1,
+	0x2,
 	0xffffffff,
 	0xffffffff,
 	0xffffffff)	
@@ -9826,10 +9936,130 @@ DEFINST(CLZ_reg,
 	0xffffffff,
 	0xffffffff)		
 
+DEFINST(UADD8_reg1, 
+	"uadd8 %rd, %rn, %rm", 
+	DPR_REG, 
+	0x3,
+	0x0,
+	0x2,
+	0x9,
+	0x1,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff)		
+
+DEFINST(REV_reg1, 
+	"rev.w %rd, %rm", 
+	DPR_REG, 
+	0x3,
+	0x0,
+	0x2,
+	0x9,
+	0x2,
+	0x1,
+	0xffffffff,
+	0xffffffff)		
+
+DEFINST(CLZ_reg1, 
+	"clz %rd, %rm", 
+	DPR_REG, 
+	0x3,
+	0x0,
+	0x2,
+	0x9,
+	0x2,
+	0x3,
+	0xffffffff,
+	0xffffffff)		
+
+DEFINST(UADD8_reg2, 
+	"uadd8 %rd, %rn, %rm", 
+	DPR_REG, 
+	0x3,
+	0x0,
+	0x2,
+	0xa,
+	0x1,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff)		
+
+DEFINST(REV_reg2, 
+	"rev.w %rd, %rm", 
+	DPR_REG, 
+	0x3,
+	0x0,
+	0x2,
+	0xa,
+	0x2,
+	0x1,
+	0xffffffff,
+	0xffffffff)		
+
+DEFINST(CLZ_reg2, 
+	"clz %rd, %rm", 
+	DPR_REG, 
+	0x3,
+	0x0,
+	0x2,
+	0xa,
+	0x2,
+	0x3,
+	0xffffffff,
+	0xffffffff)		
+
+DEFINST(UADD8_reg3, 
+	"uadd8 %rd, %rn, %rm", 
+	DPR_REG, 
+	0x3,
+	0x0,
+	0x2,
+	0xb,
+	0x1,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff)		
+
+DEFINST(REV_reg3, 
+	"rev.w %rd, %rm", 
+	DPR_REG, 
+	0x3,
+	0x0,
+	0x2,
+	0xb,
+	0x2,
+	0x1,
+	0xffffffff,
+	0xffffffff)		
+
+DEFINST(CLZ_reg3, 
+	"clz %rd, %rm", 
+	DPR_REG, 
+	0x3,
+	0x0,
+	0x2,
+	0xb,
+	0x2,
+	0x3,
+	0xffffffff,
+	0xffffffff)		
+
 DEFINST(MRC, 
 	"mrc	15, 0, %rt, cr13, cr0, {3}", 
 	LD_ST_DOUBLE, 
 	0x1,
+	0x1,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff,
+	0xffffffff)		
+
+DEFINST(STLDC, 
+	"stldc2	1, c%rt, [r0], #4", 
+	LD_ST_DOUBLE, 
+	0x3,
 	0x1,
 	0xffffffff,
 	0xffffffff,
