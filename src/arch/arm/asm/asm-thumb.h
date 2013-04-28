@@ -478,6 +478,7 @@ enum arm_thumb16_cat_enum
 	ARM_THUMB16_CAT_MISC_ADDSP_INS,	/* Miscellaneous Instructions ADD SP relative*/
 	ARM_THUMB16_CAT_MISC_SVC_INS,	/* Miscellaneous Instructions SVC instructions */
 	ARM_THUMB16_CAT_MISC_BR,	/* Miscellaneous Instructions Unconditional Branch */
+	ARM_THUMB16_CAT_MISC_REV,	/* Miscellaneous Reverse instructions */
 	ARM_THUMB16_CAT_MISC_SUBSP_INS,	/* Miscellaneous Instructions SUB SP relative*/
 	ARM_THUMB16_CAT_MISC_PUSH_POP,	/* Miscellaneous Instructions PUSH and POP*/
 	ARM_THUMB16_CAT_MISC_CBNZ,	/* Miscellaneous Instructions CB{N}Z*/
@@ -505,6 +506,7 @@ enum arm_thumb32_cat_enum
 	ARM_THUMB32_CAT_MULT,		/* Multiply */
 	ARM_THUMB32_CAT_MULT_LONG,	/* Multiply Long*/
 	ARM_THUMB32_CAT_BIT_FIELD,	/* Multiply Long*/
+	ARM_THUMB32_CAT_MOV_IMMD,	/* Immediate Move*/
 	ARM_THUMB32_CAT_UNDEF,
 
 	ARM_THUMB32_CAT_COUNT
@@ -678,6 +680,8 @@ struct arm_thumb32_inst_info_t *arm_thumb32_mult_long_table;
 
 struct arm_thumb32_inst_info_t *arm_thumb32_brnch_ctrl_table;
 
+struct arm_thumb32_inst_info_t *arm_thumb32_mov_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_mov1_table;
 
 
 /* Thumb Disassembler Functions */
