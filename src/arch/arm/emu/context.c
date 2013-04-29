@@ -435,11 +435,15 @@ static void arm_ctx_loader_load_stack(struct arm_ctx_t *ctx)
 				__FUNCTION__);
 }
 
+
 void arm_ctx_loader_load_exe(struct arm_ctx_t *ctx, char *exe)
 {
 
 	struct mem_t *mem = ctx->mem;
 	struct arm_file_desc_table_t *fdt = ctx->file_desc_table;
+
+	struct elf_symbol_t *symbol;
+	unsigned int mode;
 
 	char stdin_file_full_path[MAX_STRING_SIZE];
 	char stdout_file_full_path[MAX_STRING_SIZE];
@@ -495,9 +499,40 @@ void arm_ctx_loader_load_exe(struct arm_ctx_t *ctx, char *exe)
 	/* Stack */
 	arm_ctx_loader_load_stack(ctx);
 
+	/* Detect ARM/Thumb Mode */
+	if((ctx->prog_entry % 2))
+	{
+		ctx->prog_entry = ctx->prog_entry - 1;
+	}
+	symbol = elf_symbol_get_by_address(ctx->elf_file, ctx->prog_entry, NULL);
+
+	if(!strncmp(symbol->name, "$t",2))
+	{
+		mode = THUMB;
+	}
+	else if (!strncmp(symbol->name, "$d",2))
+	{
+		fatal("%s: Wrong entry point selected",
+			__FUNCTION__);
+	}
+	else
+	{
+		mode = ARM;
+	}
+
 	/* Register initialization */
-	ctx->regs->pc = ctx->prog_entry + 4;
-	ctx->regs->sp = ctx->environ_base;
+	if(mode == ARM)
+	{
+		ctx->regs->pc = ctx->prog_entry + 4;
+		ctx->regs->sp = ctx->environ_base;
+	}
+	else if (mode == THUMB)
+	{
+		ctx->regs->pc = ctx->prog_entry + 2;
+		ctx->regs->sp = ctx->environ_base;
+		/* Set the Thumb Mode flag in CPSR */
+		ctx->regs->cpsr.thumb = 1;
+	}
 
 	arm_loader_debug("Program entry is 0x%x\n", ctx->regs->pc);
 	arm_loader_debug("Initial stack pointer is 0x%x\n", ctx->regs->sp);
@@ -659,7 +694,10 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
-	buffer_ptr = mem_get_buffer(mem, (regs->pc - 4), 4, mem_access_exec);
+	if(ctx->regs->cpsr.thumb)
+		buffer_ptr = mem_get_buffer(mem, (regs->pc - 2), 2, mem_access_exec);
+	else
+		buffer_ptr = mem_get_buffer(mem, (regs->pc - 4), 4, mem_access_exec);
 
 	/* FIXME: Arm speculative mode execution to be added */
 	/*if (!buffer_ptr)
@@ -675,12 +713,33 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 
 	mem->safe = mem_safe_mode;
 
-	/* Disassemble */
-	arm_disasm(buffer_ptr, (regs->pc - 4), &ctx->inst);
-	if (ctx->inst.info->opcode == ARM_INST_NONE)/*&& !spec_mode)*/
-		fatal("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
-			(regs->pc - 4), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
+	/* Important YU Comment: Will be removed after implementation
+	 * If arm mode then the pc - 4 works. If thumb mode, keep removing data
+	 * at rate of pc-2, if thumb32 detected,
+	 * increase the pc by 2 and fetch pc 4 size 4, but instruction commit will make pc = pc +2 for thumb */
 
+
+	/* Disassemble */
+	if(ctx->regs->cpsr.thumb)
+	{
+		if(arm_test_thumb32(buffer_ptr))
+		{
+			ctx->regs->pc += 2;
+			buffer_ptr = mem_get_buffer(mem, (regs->pc - 4), 4, mem_access_exec);
+			thumb32_disasm(buffer_ptr, (regs->pc - 2), &ctx->inst_th_32);
+		}
+		else
+		{
+			thumb16_disasm(buffer_ptr, (regs->pc - 2), &ctx->inst_th_16);
+		}
+	}
+	else
+	{
+		arm_disasm(buffer_ptr, (regs->pc - 4), &ctx->inst);
+		if (ctx->inst.info->opcode == ARM_INST_NONE)/*&& !spec_mode)*/
+			fatal("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
+				(regs->pc - 4), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
+	}
 
 	/* Execute instruction */
 	arm_isa_execute_inst(ctx);
