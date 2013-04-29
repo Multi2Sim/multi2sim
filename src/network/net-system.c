@@ -28,6 +28,7 @@
 #include <lib/util/string.h>
 
 #include "net-system.h"
+#include "visual.h"
 #include "network.h"
 #include "node.h"
 
@@ -156,6 +157,9 @@ char *net_config_file_name = "";
 char *net_report_file_name = "";
 FILE *net_report_file;
 
+char *net_visual_file_name = "";
+FILE *net_visual_file;
+
 char *net_sim_network_name = "";
 long long net_max_cycles = 1000000;  /* 1M cycles default */
 double net_injection_rate = 0.01;  /* 1 packet every 100 cycles */
@@ -279,6 +283,15 @@ void net_init(void)
 			fatal("%s: cannot write on network report file",
 				net_report_file_name);
 	}
+
+	/* Visualization File*/
+	if (*net_visual_file_name)
+	{
+		net_visual_file = file_open_for_write(net_visual_file_name);
+		if (!net_visual_file)
+			fatal("%s: cannot write on network visualization file",
+					net_visual_file_name);
+	}
 }
 
 
@@ -296,6 +309,14 @@ void net_done(void)
 			if (net_report_file)
 				net_dump_report(net, net_report_file);
 
+			/* Dump Visualization data in a 'graphplot' compatible file*/
+			if (net_visual_file)
+			{
+				struct net_graph_t *graph;
+				graph = net_visual_calc(net);
+				net_dump_visual(graph, net_visual_file);
+				net_graph_free(graph);
+			}
 			/* Free network */
 			net_free(net);
 		}
@@ -304,6 +325,9 @@ void net_done(void)
 
 	/* Close report file */
 	file_close(net_report_file);
+
+	/* Close visualization file*/
+	file_close(net_visual_file);
 }
 
 

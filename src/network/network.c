@@ -28,6 +28,7 @@
 #include "buffer.h"
 #include "link.h"
 #include "net-system.h"
+#include "visual.h"
 #include "network.h"
 #include "node.h"
 #include "routing-table.h"
@@ -79,7 +80,7 @@ struct net_msg_t *net_msg_table_extract(struct net_t *net, long long id)
 	}
 	if (!msg)
 		panic("%s: message %lld not in hash table",
-			__FUNCTION__, id);
+				__FUNCTION__, id);
 	if (prev)
 		prev->bucket_next = msg->bucket_next;
 	else
@@ -136,13 +137,13 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		def_bandwidth = config_read_int(config, section, "DefaultBandwidth", 0);
 		if (!def_input_buffer_size)
 			fatal("%s:%s: DefaultInputBufferSize: invalid/missing value.\n%s",
-				net->name, section, net_err_config);
+					net->name, section, net_err_config);
 		if (!def_output_buffer_size)
 			fatal("%s:%s: DefaultOutputBufferSize: invalid/missing value.\n%s",
-				net->name, section, net_err_config);
+					net->name, section, net_err_config);
 		if (!def_bandwidth)
 			fatal("%s:%s: DefaultBandwidth: invalid/missing value.\n%s",
-				net->name, section, net_err_config);
+					net->name, section, net_err_config);
 	}
 
 	/* Nodes */
@@ -178,31 +179,31 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		token = strtok(NULL, delim);
 		if (!node_name || token)
 			fatal("%s:%s: wrong format for node.\n%s",
-				net->name, section, net_err_config);
+					net->name, section, net_err_config);
 
 		/* Get properties */
 		node_type = config_read_string(config, section, "Type", "");
 		input_buffer_size = config_read_int(config, section,
-			"InputBufferSize", def_input_buffer_size);
+				"InputBufferSize", def_input_buffer_size);
 		output_buffer_size = config_read_int(config, section,
-			"OutputBufferSize", def_output_buffer_size);
+				"OutputBufferSize", def_output_buffer_size);
 		bandwidth = config_read_int(config, section,
-			"BandWidth", def_bandwidth);
+				"BandWidth", def_bandwidth);
 
 		/* Create node */
 		if (!strcasecmp(node_type, "EndNode"))
 			net_add_end_node(net, input_buffer_size, output_buffer_size,
-				node_name, NULL);
+					node_name, NULL);
 		else if (!strcasecmp(node_type, "Switch"))
 			net_add_switch(net, input_buffer_size, output_buffer_size,
-				bandwidth, node_name);
+					bandwidth, node_name);
 		else
 			fatal("%s:%s: Type: invalid/missing value.\n%s",
-				net->name, section, net_err_config);
+					net->name, section, net_err_config);
 	}
 
 
-	
+
 	/* Links */
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
@@ -240,7 +241,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		token = strtok(NULL, delim);
 		if (!link_name || token)
 			fatal("%s: %s: bad format for link.\n%s",
-				name, section, net_err_config);
+					name, section, net_err_config);
 
 		/* Fields */
 		link_type = config_read_string(config, section, "Type", "Unidirectional");
@@ -255,10 +256,10 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 
 		if (!src_node)
 			fatal("%s: %s: %s: source node does not exist.\n%s",
-				name, section, src_node_name, net_err_config);
+					name, section, src_node_name, net_err_config);
 		if (!dst_node)
 			fatal("%s: %s: %s: destination node does not exist.\n%s",
-				name, section, dst_node_name, net_err_config);
+					name, section, dst_node_name, net_err_config);
 
 		if (v_channel_count >= 1)
 		{
@@ -306,7 +307,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		token_endl = strtok(NULL, delim);
 		if (token_endl)
 			fatal("%s: %s: bad format for route.\n%s",
-				name, section, net_err_config);
+					name, section, net_err_config);
 
 		/*Routes*/
 		routing_type = 1;
@@ -351,8 +352,8 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 
 					if (!nxt_node_r && name_check != 0)
 					{
-							fatal("Network %s:%s: Invalid node Name.\n %s",
-									net->name, section,net_err_config);
+						fatal("Network %s:%s: Invalid node Name.\n %s",
+								net->name, section,net_err_config);
 					}
 					if (nxt_node_r)
 					{
@@ -448,9 +449,9 @@ void net_dump_report(struct net_t *net, FILE *f)
 	fprintf(f, "[ Network.%s.General ]\n", net->name);
 	fprintf(f, "Transfers = %lld\n", net->transfers);
 	fprintf(f, "AverageMessageSize = %.2f\n", net->transfers ?
-		(double) net->msg_size_acc / net->transfers : 0.0);
+			(double) net->msg_size_acc / net->transfers : 0.0);
 	fprintf(f, "AverageLatency = %.4f\n", net->transfers ?
-		(double) net->lat_acc / net->transfers : 0.0);
+			(double) net->lat_acc / net->transfers : 0.0);
 	fprintf(f, "\n");
 
 	/* Links */
@@ -472,22 +473,62 @@ void net_dump_report(struct net_t *net, FILE *f)
 	}
 }
 
+void net_dump_visual(struct net_graph_t *graph, FILE *f)
+{
+	int i;
+	fprintf(f, "Legend = True \n");
+	fprintf(f, "Title = \" Network: %s \"\n", graph->net->name );
+	for (i = 0; i < list_count(graph->vertex_list); i++)
+	{
+		struct net_graph_vertex_t *vertex;
+		vertex= list_get(graph->vertex_list, i);
+
+		fprintf(f, "node = %s %d %f %d \n", vertex->name, vertex->kind,
+				(double) vertex->x_coor/graph->xscale, vertex->y_coor);
+
+	}
+	for (i = 0; i < list_count(graph->edge_list); i++)
+	{
+		struct net_graph_edge_t *edge;
+		edge= list_get(graph->edge_list, i);
+		if (!edge->upstream)
+			fprintf(f, "link = %f %d %f %d %d %d \n", (double) edge->src_vertex->x_coor / graph->xscale,
+					edge->src_vertex->y_coor,(double) edge->dst_vertex->x_coor / graph->xscale,
+					edge->dst_vertex->y_coor,(int) ((esim_cycle ?(double) edge->downstream->transferred_bytes
+							/ (esim_cycle * edge->downstream->bandwidth) : 0.0) * 10), 1);
+		else
+		{
+			fprintf(f, "link = %f %d %f %d %d %d \n", (double) edge->src_vertex->x_coor / graph->xscale
+					, edge->src_vertex->y_coor,	(double) edge->dst_vertex->x_coor / graph->xscale,
+					edge->dst_vertex->y_coor,(int) ((esim_cycle ?(double) edge->downstream->transferred_bytes
+							/ (esim_cycle * edge->downstream->bandwidth) : 0.0) * 10), 2);
+			fprintf(f, "link = %f %d %f %d %d %d \n",(double) edge->dst_vertex->x_coor / graph->xscale
+					, edge->dst_vertex->y_coor,	(double) edge->src_vertex->x_coor / graph->xscale
+					, edge->src_vertex->y_coor,	(int) ((esim_cycle ?(double) edge->upstream->transferred_bytes
+							/ (esim_cycle * edge->upstream->bandwidth) : 0.0) * 10), 2);
+		}
+
+	}
+
+}
+
+
 
 struct net_node_t *net_add_end_node(struct net_t *net,
-	int input_buffer_size, int output_buffer_size,
-	char *name, void *user_data)
+		int input_buffer_size, int output_buffer_size,
+		char *name, void *user_data)
 {
 	struct net_node_t *node;
 
 	/* Create node */
 	node = net_node_create(net,
-		net_node_end,  /* kind */
-		net->node_count,  /* index */
-		input_buffer_size,
-		output_buffer_size,
-		0,  /* bandwidth */
-		name,
-		user_data);
+			net_node_end,  /* kind */
+			net->node_count,  /* index */
+			input_buffer_size,
+			output_buffer_size,
+			0,  /* bandwidth */
+			name,
+			user_data);
 
 	/* Add to list */
 	net->node_count++;
@@ -508,13 +549,13 @@ struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name)
 
 	/* Create node */
 	node = net_node_create(net,
-		net_node_bus,  /* kind */
-		net->node_count,  /* index */
-		0,  /* input_buffer_size */
-		0,  /* output_buffer_size */
-		bandwidth,
-		name,
-		NULL);  /* user_data */
+			net_node_bus,  /* kind */
+			net->node_count,  /* index */
+			0,  /* input_buffer_size */
+			0,  /* output_buffer_size */
+			bandwidth,
+			name,
+			NULL);  /* user_data */
 
 	/* Add to list */
 	net->node_count++;
@@ -526,20 +567,20 @@ struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name)
 
 
 struct net_node_t *net_add_switch(struct net_t *net,
-	int input_buffer_size, int output_buffer_size,
-	int bandwidth, char *name)
+		int input_buffer_size, int output_buffer_size,
+		int bandwidth, char *name)
 {
 	struct net_node_t *node;
 
 	/* Create node */
 	node = net_node_create(net,
-		net_node_switch,  /* kind */
-		net->node_count,  /* index */
-		input_buffer_size,
-		output_buffer_size,
-		bandwidth,
-		name,
-		NULL);  /* user_data */
+			net_node_switch,  /* kind */
+			net->node_count,  /* index */
+			input_buffer_size,
+			output_buffer_size,
+			bandwidth,
+			name,
+			NULL);  /* user_data */
 
 	/* Add to list */
 	net->node_count++;
@@ -584,8 +625,8 @@ struct net_node_t *net_get_node_by_user_data(struct net_t *net, void *user_data)
 
 /* Create link with virtual channel */
 struct net_link_t *net_add_link(struct net_t *net,
-	struct net_node_t *src_node, struct net_node_t *dst_node,
-	int bandwidth, int vc_count)
+		struct net_node_t *src_node, struct net_node_t *dst_node,
+		int bandwidth, int vc_count)
 {
 	struct net_link_t *link;
 
@@ -608,8 +649,8 @@ struct net_link_t *net_add_link(struct net_t *net,
 
 /* Create bidirectional link with VC */
 void net_add_bidirectional_link(struct net_t *net,
-	struct net_node_t *src_node, struct net_node_t *dst_node,
-	int bandwidth, int vc_count)
+		struct net_node_t *src_node, struct net_node_t *dst_node,
+		int bandwidth, int vc_count)
 {
 	net_add_link(net, src_node, dst_node, bandwidth, vc_count);
 	net_add_link(net, dst_node, src_node, bandwidth, vc_count);
@@ -619,7 +660,7 @@ void net_add_bidirectional_link(struct net_t *net,
 /* Return TRUE if a message can be sent through the network. Return FALSE
  * otherwise, whether the reason is temporary of permanent. */
 int net_can_send(struct net_t *net, struct net_node_t *src_node,
-	struct net_node_t *dst_node, int size)
+		struct net_node_t *dst_node, int size)
 {
 	struct net_routing_table_t *routing_table = net->routing_table;
 	struct net_routing_table_entry_t *entry;
@@ -652,8 +693,8 @@ int net_can_send(struct net_t *net, struct net_node_t *src_node,
  * the reason why a message cannot be sent is permanent (e.g., no route
  * to destination). */
 int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
-	struct net_node_t *dst_node, int size,
-	int retry_event, void *retry_stack)
+		struct net_node_t *dst_node, int size,
+		int retry_event, void *retry_stack)
 {
 	struct net_routing_table_t *routing_table = net->routing_table;
 	struct net_routing_table_entry_t *entry;
@@ -666,7 +707,7 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 	/* No route to destination */
 	if (!output_buffer)
 		fatal("%s: no route between %s and %s.\n%s",
-			net->name, src_node->name, dst_node->name, net_err_no_route);
+				net->name, src_node->name, dst_node->name, net_err_no_route);
 
 	/* Message is too long */
 	if (size > output_buffer->size)
@@ -676,7 +717,7 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 	if (output_buffer->write_busy >= esim_cycle)
 	{
 		esim_schedule_event(retry_event, retry_stack,
-			output_buffer->write_busy - esim_cycle + 1);
+				output_buffer->write_busy - esim_cycle + 1);
 		return 0;
 	}
 
@@ -699,10 +740,10 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
  * from its input buffer, and the 'msg' object return by this function will be
  * invalid. */
 struct net_msg_t *net_send(struct net_t *net, struct net_node_t *src_node,
-	struct net_node_t *dst_node, int size)
+		struct net_node_t *dst_node, int size)
 {
 	return net_send_ev(net, src_node, dst_node, size,
-		ESIM_EV_NONE, NULL);
+			ESIM_EV_NONE, NULL);
 }
 
 
@@ -714,7 +755,7 @@ struct net_msg_t *net_send(struct net_t *net, struct net_node_t *src_node,
  * The message needs to be removed by the caller with an additional call to
  * 'net_receive', which will invalidate and free the 'msg' object. */
 struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
-	struct net_node_t *dst_node, int size, int receive_event, void *receive_stack)
+		struct net_node_t *dst_node, int size, int receive_event, void *receive_stack)
 {
 	struct net_stack_t *stack;
 	struct net_msg_t *msg;
@@ -742,8 +783,8 @@ struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
 
 
 struct net_msg_t *net_try_send(struct net_t *net, struct net_node_t *src_node,
-	struct net_node_t *dst_node, int size,
-	int retry_event, void *retry_stack)
+		struct net_node_t *dst_node, int size,
+		int retry_event, void *retry_stack)
 {
 	/* Check if network is available */
 	if (!net_can_send_ev(net, src_node, dst_node, size, retry_event, retry_stack))
@@ -755,8 +796,8 @@ struct net_msg_t *net_try_send(struct net_t *net, struct net_node_t *src_node,
 
 
 struct net_msg_t *net_try_send_ev(struct net_t *net, struct net_node_t *src_node,
-	struct net_node_t *dst_node, int size, int receive_event, void *receive_stack,
-	int retry_event, void *retry_stack)
+		struct net_node_t *dst_node, int size, int receive_event, void *receive_stack,
+		int retry_event, void *retry_stack)
 {
 	/* Check if network is available */
 	if (!net_can_send_ev(net, src_node, dst_node, size, retry_event, retry_stack))
