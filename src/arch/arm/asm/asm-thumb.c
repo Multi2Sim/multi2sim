@@ -96,6 +96,7 @@ void arm_thumb32_disasm_init()
 	arm_thumb32_dproc_bin_imm3_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
 
 	arm_thumb32_brnch_ctrl_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
+	arm_thumb32_brnch_ctrl1_table 	= xcalloc(8, sizeof(struct arm_thumb32_inst_info_t));
 
 	arm_thumb32_st_single_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
 	arm_thumb32_st_single1_table	= xcalloc(16, sizeof(struct arm_thumb32_inst_info_t));
@@ -280,6 +281,14 @@ void arm_thumb32_disasm_init()
 	arm_thumb32_asm_lv4_table[1].next_table 	= arm_thumb32_brnch_ctrl_table;
 	arm_thumb32_asm_lv4_table[1].next_table_high 	= 14;
 	arm_thumb32_asm_lv4_table[1].next_table_low 	= 12;
+
+	arm_thumb32_brnch_ctrl_table[0].next_table 	= arm_thumb32_brnch_ctrl1_table;
+	arm_thumb32_brnch_ctrl_table[0].next_table_high = 25;
+	arm_thumb32_brnch_ctrl_table[0].next_table_low 	= 25;
+
+	arm_thumb32_brnch_ctrl_table[2].next_table 	= arm_thumb32_brnch_ctrl1_table;
+	arm_thumb32_brnch_ctrl_table[2].next_table_high = 25;
+	arm_thumb32_brnch_ctrl_table[2].next_table_low 	= 23;
 
 	/* Single Data table */
 	arm_thumb32_asm_table[3].next_table 		= arm_thumb32_asm_lv6_table;
@@ -1395,6 +1404,10 @@ void arm_thumb32_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_
 			else if (arm_token_comp(fmt_str, "wid", &token_len))
 				arm_thumb32_inst_dump_WID(inst_str_ptr, &inst_str_size, &inst,
 					inst.info->cat32);
+			else if (arm_token_comp(fmt_str, "cond", &token_len))
+				arm_thumb32_inst_dump_COND(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->cat32);
+
 
 
 			else
@@ -2022,6 +2035,85 @@ void arm_thumb32_inst_dump_IMM2(char **inst_str_ptr, int *inst_str_size,
 		str_printf(inst_str_ptr, inst_str_size, "#%d", immd2);
 }
 
+void arm_thumb32_inst_dump_COND(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int cond;
+
+	if (cat == ARM_THUMB32_CAT_BRANCH_COND)
+		{
+			cond = inst->dword.branch.cond;
+		}
+		else
+			fatal("%d: cond fmt not recognized", cat);
+
+		switch (cond)
+			{
+			case (EQ):
+			str_printf(inst_str_ptr, inst_str_size, "eq");
+			break;
+
+			case (NE):
+			str_printf(inst_str_ptr, inst_str_size, "ne");
+			break;
+
+			case (CS):
+			str_printf(inst_str_ptr, inst_str_size, "cs");
+			break;
+
+			case (CC):
+			str_printf(inst_str_ptr, inst_str_size, "cc");
+			break;
+
+			case (MI):
+			str_printf(inst_str_ptr, inst_str_size, "mi");
+			break;
+
+			case (PL):
+			str_printf(inst_str_ptr, inst_str_size, "pl");
+			break;
+
+			case (VS):
+			str_printf(inst_str_ptr, inst_str_size, "vs");
+			break;
+
+			case (VC):
+			str_printf(inst_str_ptr, inst_str_size, "vc");
+			break;
+
+			case (HI):
+			str_printf(inst_str_ptr, inst_str_size, "hi");
+			break;
+
+			case (LS):
+			str_printf(inst_str_ptr, inst_str_size, "ls");
+			break;
+
+			case (GE):
+			str_printf(inst_str_ptr, inst_str_size, "ge");
+			break;
+
+			case (LT):
+			str_printf(inst_str_ptr, inst_str_size, "lt");
+			break;
+
+			case (GT):
+			str_printf(inst_str_ptr, inst_str_size, "gt");
+			break;
+
+			case (LE):
+			str_printf(inst_str_ptr, inst_str_size, "le");
+			break;
+
+			case (AL):
+			str_printf(inst_str_ptr, inst_str_size, " ");
+			break;
+			}
+
+}
+
+
+
 void arm_thumb32_inst_dump_LSB(char **inst_str_ptr, int *inst_str_size,
 	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
 {
@@ -2096,6 +2188,7 @@ void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
 {
 	unsigned int addr;
 
+	addr = 0;
 		if (cat == ARM_THUMB32_CAT_BRANCH)
 		{
 			addr = (inst->dword.branch_link.sign << 24)
@@ -2103,11 +2196,21 @@ void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
 			| ((!(inst->dword.branch.j2 ^ inst->dword.branch_link.sign)) << 22)
 			| (inst->dword.branch_link.immd10 << 12)
 			| (inst->dword.branch_link.immd11 << 1);
+			addr = SEXT32(addr,25);
+		}
+
+		else if (cat == ARM_THUMB32_CAT_BRANCH_COND)
+		{
+			addr = (inst->dword.branch.sign << 20)
+			| (((inst->dword.branch.j2)) << 19)
+			| (((inst->dword.branch.j1)) << 18)
+			| (inst->dword.branch.immd6 << 12)
+			| (inst->dword.branch.immd11 << 1);
+			addr = SEXT32(addr,21);
 		}
 		else
 			fatal("%d: addr fmt not recognized", cat);
 
-		addr = SEXT32(addr,25);
 		addr = (inst_addr + 4) + (addr);
 		str_printf(inst_str_ptr, inst_str_size, "#%d	; 0x%x", addr, addr);
 }
@@ -2301,4 +2404,5 @@ void arm_disasm_done()
 	free(arm_thumb32_mov1_table);
 
 	free(arm_thumb32_brnch_ctrl_table);
+	free(arm_thumb32_brnch_ctrl1_table);
 }

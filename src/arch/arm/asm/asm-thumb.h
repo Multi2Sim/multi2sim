@@ -499,6 +499,7 @@ enum arm_thumb32_cat_enum
 	ARM_THUMB32_CAT_DPR_IMM,	/* Data processing immediate */
 	ARM_THUMB32_CAT_DPR_BIN_IMM,	/* Data processing binary immediate */
 	ARM_THUMB32_CAT_BRANCH,		/* Branch */
+	ARM_THUMB32_CAT_BRANCH_COND,	/* Branch Conditional */
 	ARM_THUMB32_CAT_LDSTR_BYTE,	/* Load Store Register Byte/Halfword */
 	ARM_THUMB32_CAT_LDSTR_REG,	/* Load Store Register */
 	ARM_THUMB32_CAT_LDSTR_IMMD,	/* Load Store Immediate */
@@ -679,6 +680,7 @@ struct arm_thumb32_inst_info_t *arm_thumb32_dproc_bin_imm3_table;
 struct arm_thumb32_inst_info_t *arm_thumb32_mult_long_table;
 
 struct arm_thumb32_inst_info_t *arm_thumb32_brnch_ctrl_table;
+struct arm_thumb32_inst_info_t *arm_thumb32_brnch_ctrl1_table;
 
 struct arm_thumb32_inst_info_t *arm_thumb32_mov_table;
 struct arm_thumb32_inst_info_t *arm_thumb32_mov1_table;
@@ -761,7 +763,11 @@ void arm_thumb32_inst_dump_RDLO(char **inst_str_ptr, int *inst_str_size,
 void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
 		struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat,
 		unsigned int inst_addr);
+void arm_thumb32_inst_dump_COND(char **inst_str_ptr, int *inst_str_size,
+	struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
 
+void thumb16_disasm(void *buf, unsigned int ip, volatile struct arm_thumb16_inst_t *inst);
+void thumb32_disasm(void *buf, unsigned int ip, volatile struct arm_thumb32_inst_t *inst);
 
 
 

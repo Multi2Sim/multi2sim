@@ -509,4 +509,7 @@ void arm_disasm(void *buf, unsigned int ip, volatile struct arm_inst_t *inst);
 void arm_disasm_done();
 void arm_inst_debug_dump(struct arm_inst_t *inst, FILE *f );
 
+//void thumb16_disasm(void *buf, unsigned int ip, volatile struct arm_thumb16_inst_t *inst);
+//void thumb32_disasm(void *buf, unsigned int ip, volatile struct arm_thumb32_inst_t *inst);
+
 #endif
