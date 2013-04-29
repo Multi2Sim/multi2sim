@@ -61,10 +61,7 @@ struct si_wavefront_t *si_wavefront_create(int wavefront_id,
 		wavefront->work_items[work_item_id]->wavefront = wavefront;
 		wavefront->work_items[work_item_id]->id_in_wavefront = 
 			work_item_id;
-	
 		wavefront->work_items[work_item_id]->work_group = work_group;
-		wavefront->work_items[work_item_id]->id_in_work_group = 
-			wavefront_id * si_emu_wavefront_size + work_item_id;
 	}
 
 	/* Create scalar work item */
@@ -72,7 +69,7 @@ struct si_wavefront_t *si_wavefront_create(int wavefront_id,
 	wavefront->scalar_work_item->wavefront = wavefront;
 	wavefront->scalar_work_item->work_group = work_group;
 
-	/* Assign the work group and ND-Range */
+	/* Assign the work group */
 	wavefront->work_group = work_group;
 
 	/* Return */

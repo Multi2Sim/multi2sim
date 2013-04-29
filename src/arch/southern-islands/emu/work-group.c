@@ -77,7 +77,7 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 
 	/* Allocate pointers for work-items (will actually be created when
 	 * wavefronts are created) */
-	work_group->work_items = xcalloc(work_items_per_group, sizeof(void *));
+	work_group->work_items = xcalloc(si_emu_wavefront_size, sizeof(void *));
 	work_group->wavefronts = xcalloc(wavefronts_per_group, sizeof(void *));
 	work_group->wavefront_count = wavefronts_per_group;
 

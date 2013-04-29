@@ -63,11 +63,6 @@ struct si_work_item_t
 	int lds_access_type[SI_MAX_LDS_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
 };
 
-#define SI_FOREACH_WORK_ITEM_IN_WORK_GROUP(WORK_GROUP, WORK_ITEM_ID) \
-	for ((WORK_ITEM_ID) = 0; \
-		(WORK_ITEM_ID) < (WORK_GROUP)->work_item_count; \
-		(WORK_ITEM_ID)++)
-
 #define SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(WAVEFRONT, WORK_ITEM_ID) \
 	for ((WORK_ITEM_ID) = 0; \
 		(WORK_ITEM_ID) < si_emu_wavefront_size; \
