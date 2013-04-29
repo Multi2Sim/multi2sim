@@ -272,8 +272,7 @@ void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit,
 	{
 		wavefront = work_group->wavefronts[wavefront_id];
 		wavefront->id_in_compute_unit = work_group->id_in_compute_unit *
-			work_group->wavefront_count +
-			wavefront->id_in_work_group;
+			work_group->wavefront_count + wavefront_id;
 	}
 
 	/* Set wavefront pool for work group */

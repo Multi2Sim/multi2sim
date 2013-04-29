@@ -27,7 +27,6 @@ struct si_wavefront_t
 {
 	/* ID */
 	int id;
-	int id_in_work_group;
 
 	/* IDs of work-items it contains */
 	int work_item_id_first;
