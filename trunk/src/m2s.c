@@ -129,397 +129,402 @@ static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric dig
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
 static char *m2s_help =
-	"Syntax:\n"
-	"\n"
-	"        m2s [<options>] [<x86_binary> [<arg_list>]]\n"
-	"\n"
-	"The user command-line supports a sequence of command-line options, and can\n"
-	"include an x86 ELF binary (executable x86 program) followed by its arguments.\n"
-	"The execution of this program will be simulated by Multi2Sim, together with the\n"
-	"rest of the x86 programs specified in the context configuration file (option\n"
-	"'--ctx-config <file>'). The rest of the possible command-line options are\n"
-	"classified in categories and listed next:\n"
-	"\n"
-	"\n"
-	"================================================================================\n"
-	"General Options\n"
-	"================================================================================\n"
-	"\n"
-	"  --ctx-config <file>\n"
-	"      Use <file> as the context configuration file. This file describes the\n"
-	"      initial set of running applications, their arguments, and environment\n"
-	"      variables. Type 'm2s --ctx-config-help' for a description of the file\n"
-	"      format.\n"
-	"\n"
-	"  --ctx-config-help\n"
-	"      Show a help message describing the format of the context configuration\n"
-	"      file, passed to the simulator through option '--ctx-config <file>'.\n"
-	"\n"
-	"  --elf-debug <file>\n"
-	"      Dump debug information related with the analysis of ELF files. Every time\n"
-	"      an executable file is open (CPU program of GPU kernel binary), detailed\n"
-	"      information about its symbols, sections, strings, etc. is dumped here.\n"
-	"\n"
-	"  --max-time <time>\n"
-	"      Maximum simulation time in seconds. The simulator will stop once this time\n"
-	"      is exceeded. A value of 0 (default) means no time limit.\n"
-	"\n"
-	"  --trace <file>.gz\n"
-	"      Generate a trace file with debug information on the configuration of the\n"
-	"      modeled CPUs, GPUs, and memory system, as well as their dynamic\n" 
-	"      simulation. The trace is a compressed plain-text file in format. The user\n"
-	"      should watch the size of the generated trace as simulation runs, since\n"
-	"      the trace file can quickly become extremely large.\n"
-	"\n"
-	"  --visual <file>.gz\n"
-	"      Run the Multi2Sim Visualization Tool. This option consumes a file\n"
-	"      generated with the '--trace' option in a previous simulation. This option\n"
-	"      is only available on systems with support for GTK 3.0 or higher.\n"
-	"\n"
-	"\n"
-	"================================================================================\n"
-	"x86 CPU Options\n"
-	"================================================================================\n"
-	"\n"
-	"  --x86-config <file>\n"
-	"      Configuration file for the x86 CPU timing model, including parameters\n"
-	"      describing stage bandwidth, structures size, and other parameters of\n"
-	"      processor cores and threads. Type 'm2s --x86-help' for details on the file\n"
-	"      format.\n"
-	"\n"
-	"  --x86-debug-call <file>\n"
-	"      Dump debug information about function calls and returns. The control flow\n"
-	"      of an x86 program can be observed leveraging ELF symbols present in the\n"
-	"      program binary.\n"
-	"\n"
-	"  --x86-debug-clrt <file>\n"
-	"      Debug information for the newer implementation of the OpenCL runtime\n"
-	"      library (not available yet).\n"
-	"\n"
-	"  --x86-debug-ctx <file>\n"
-	"      Dump debug information related with context creation, destruction,\n"
-	"      allocation, or state change.\n"
-	"\n"
-	"  --x86-debug-glut <file>\n"
-	"      Debug information for GLUT runtime calls performed by an OpenGL program\n"
-	"      based on the GLUT library.\n"
-	"\n"
-	"  --x86-debug-loader <file>\n"
-	"      Dump debug information extending the analysis of the ELF program binary.\n"
-	"      This information shows which ELF sections and symbols are loaded to the\n"
-	"      initial program memory image.\n"
-	"\n"
-	"  --x86-debug-isa\n"
-	"      Debug information for dynamic execution of x86 instructions. Updates on\n"
-	"      the processor state can be analyzed using this information.\n"
-	"\n"
-	"  --x86-debug-opengl <file>\n"
-	"      Debug information for OpenGL runtime calls.\n"
-	"\n"
-	"  --x86-debug-syscall\n"
-	"      Debug information for system calls performed by an x86 program, including\n"
-	"      system call code, arguments, and return value.\n"
-	"\n"
-	"  --x86-debug-trace-cache\n"
-	"      Debug information for trace cache.\n"
-	"\n"
-	"  --x86-disasm <file>\n"
-	"      Disassemble the x86 ELF file provided in <file>, using the internal x86\n"
-	"      disassembler. This option is incompatible with any other option.\n"
-	"\n"
-	"  --x86-help\n"
-	"      Display a help message describing the format of the x86 CPU context\n"
-	"      configuration file.\n"
-	"\n"
-	"  --x86-last-inst <bytes>\n"
-	"      Stop simulation when the specified instruction is fetched. Can be used to\n"
-	"      trigger a checkpoint with option '--x86-save-checkpoint'. The instruction\n"
-	"      must be given as a sequence of hexadecimal digits, including trailing\n"
-	"      zeros if needed.\n"
-	"\n"
-	"  --x86-load-checkpoint <file>\n"
-	"      Load a checkpoint of the x86 architectural state, created in a previous\n"
-	"      execution of the simulator with option '--x86-save-checkpoint'.\n"
-	"\n"
-	"  --x86-max-cycles <cycles>\n"
-	"      Maximum number of cycles for x86 timing simulation. Use 0 (default) for no\n"
-	"      limit. This option is only valid for detailed x86 simulation (option\n"
-	"      '--x86-sim detailed').\n"
-	"\n"
-	"  --x86-max-inst <inst>\n"
-	"      Maximum number of x86 instructions. On x86 functional simulation, this\n"
-	"      limit is given in number of emulated instructions. On x86 detailed\n"
-	"      simulation, it is given as the number of committed (non-speculative)\n"
-	"      instructions. Use 0 (default) for unlimited.\n"
-	"\n"
-	"  --x86-report <file>\n"
-	"      File to dump a report of the x86 CPU pipeline, including statistics such\n"
-	"      as the number of instructions handled in every pipeline stage, read/write\n"
-	"      accesses performed on pipeline queues, etc. This option is only valid for\n"
-	"      detailed x86 simulation (option '--x86-sim detailed').\n"
-	"\n"
-	"  --x86-save-checkpoint <file>\n"
-	"      Save a checkpoint of x86 architectural state at the end of simulation.\n"
-	"      Useful options to use together with this are '--x86-max-inst' and\n"
-	"      '--x86-last-inst' to force the simulation to stop and create a checkpoint.\n"
-	"\n"
-	"  --x86-sim {functional|detailed}\n"
-	"      Choose a functional simulation (emulation) of an x86 program, versus\n"
-	"      a detailed (architectural) simulation. Simulation is functional by\n" 	"      default.\n"
-	"\n"
-	"\n"
-	"================================================================================\n"
-	"AMD Evergreen GPU Options\n"
-	"================================================================================\n"
-	"\n"
-	"  --evg-calc <prefix>\n"
-	"      If this option is set, a kernel execution will cause three GPU occupancy\n"
-	"      plots to be dumped in files '<prefix>.<ndrange_id>.<plot>.eps', where\n"
-	"      <ndrange_id> is the identifier of the current ND-Range, and <plot> is\n"
-	"      {work_items|registers|local_mem}. This options requires 'gnuplot' to be\n"
-	"      installed in the system.\n"
-	"\n"
-	"  --evg-config <file>\n"
-	"      Configuration file for the Evergreen GPU timing model, including\n"
-	"      parameters such as number of compute units, stream cores, or wavefront\n"
-	"      size. Type 'm2s --evg-help' for details on the file format.\n"
-	"\n"
-	"  --evg-debug-isa <file>\n"
-	"      Dump debug information on the Evergreen ISA instructions emulated, and\n"
-	"      their updates in the architectural GPU state.\n"
-	"\n"
-	"  --evg-debug-opencl <file>\n"
-	"      Dump debug information on OpenCL system calls performed by the x86 host\n"
-	"      program. The information includes OpenCL call code, arguments, and return\n"
-	"      values.\n"
-	"\n"
-	"  --evg-disasm <file>\n"
-	"      Disassemble OpenCL kernel binary provided in <file>. This option must be\n"
-	"      used with no other options.\n"
-	"\n"
-	"  --evg-disasm-opengl <file> <index>\n"
-	"      Disassemble OpenGL shader binary provided in <file>. The shader identifier\n"
-	"      is specified in <index>. This option must be used with no other options.\n"
-	"\n"
-	"  --evg-help\n"
-	"      Display a help message describing the format of the Evergreen GPU\n"
-	"      configuration file, passed with option '--evg-config <file>'.\n"
-	"\n"
-	"  --evg-kernel-binary <file>\n"
-	"      Specify OpenCL kernel binary to be loaded when the OpenCL host program\n"
-	"      performs a call to 'clCreateProgramWithSource'. Since on-line compilation\n"
-	"      of OpenCL kernels is not supported, this is a possible way to load them.\n"
-	"\n"
-	"  --evg-max-cycles <cycles>\n"
-	"      Maximum number of Evergreen GPU cycles for detailed simulation. Use 0\n"
-	"      (default) for no limit.\n"
-	"\n"
-	"  --evg-max-inst <inst>\n"
-	"      Maximum number of Evergreen ISA instructions. An instruction executed in\n"
-	"      common for a whole wavefront counts as 1 toward this limit. Use 0\n"
-	"      (default) for no limit.\n"
-	"\n"
-	"  --evg-max-kernels <kernels>\n"
-	"      Maximum number of Evergreen GPU kernels (0 for no maximum). After the last\n"
-	"      kernel finishes execution, the simulator will stop.\n"
-	"\n"
-	"  --evg-report-kernel <file>\n"
-	"      File to dump report of a GPU device kernel emulation. The report includes\n"
-	"      statistics about type of instructions, VLIW packing, thread divergence,\n" 
-	"      etc.\n"
-	"\n"
-	"  --evg-report <file>\n"
-	"      File to dump a report of the GPU pipeline, such as active execution\n" 
-	"      engines, compute units occupancy, stream cores utilization, etc. Use\n"
-	"      together with a detailed GPU simulation (option '--evg-sim detailed').\n"
-	"\n"
-	"  --evg-sim {functional|detailed}\n"
-	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
-	"      detailed (architectural) simulation. Functional simulation is default.\n"
-	"\n"
-	"\n"
-	"================================================================================\n"
-	"AMD Southern Islands GPU Options\n"
-	"================================================================================\n"
-	"\n"
-	"  --si-calc <prefix>\n"
-	"      If this option is set, a kernel execution will cause three GPU occupancy\n"
-	"      plots to be dumped in files '<prefix>.<ndrange_id>.<plot>.eps', where\n"
-	"      <ndrange_id> is the identifier of the current ND-Range, and <plot> is\n"
-	"      {work_items|registers|local_mem}. This options requires 'gnuplot' to be\n"
-	"      installed in the system.\n"
-	"\n"
-	"  --si-config <file>\n"
-	"      Configuration file for the Southern Islands GPU timing model, including\n"
-	"      parameters such as number of compute units, stream cores, or wavefront\n"
-	"      size. Type 'm2s --si-help' for details on the file format.\n"
-	"\n"
-	"  --si-debug-isa <file>\n"
-	"      Debug information on the emulation of Southern Islands ISA instructions,\n"
-	"      including architectural state updates on registers and memory locations.\n"
-	"\n"
-	"  --si-debug-opencl <file>\n"
-	"      Dump debug information on OpenCL system calls performed by the x86 host\n"
-	"      program. The information includes OpenCL call code, arguments, and return\n"
-	"      values.\n"
-	"\n"
-	"  --si-disasm <file>\n"
-	"      Disassemble a Southern Islands kernel binary. This option is incompatible\n"
-	"      with othe command-line options.\n"
-	"\n"
-	"  --si-dump-default-config <file>\n"
-	"      Dumps the default GPU configuration file used for timing simulation.\n"
-	"      This cannot be used with any other option.\n"	
-	"\n"
-	"  --si-help\n"
-	"      Display a help message describing the format of the Southern Islands GPU\n"
-	"      configuration file, passed with option '--si-config <file>'.\n"
-	"\n"
-	"  --si-max-cycles <cycles>\n"
-	"      Maximum number of cycles for the GPU detailed simulation. Use 0 (default)\n"
-	"      for no limit.\n"
-	"\n"
-	"  --si-max-inst <inst>\n"
-	"      Maximum number of ISA instructions. An instruction executed by an entire\n"
-	"      wavefront counts as 1 toward this limit. Use 0 (default) for no limit.\n"
-	"\n"
-	"  --si-max-kernels <kernels>\n"
-	"      Maximum number of Southern Islands kernels (0 for no maximum). After the\n"
-	"      last kernel finishes execution, the simulator will stop.\n"
-	"\n"
-	"  --si-report <file>\n"
-	"      File to dump a report of the GPU pipeline, such as active execution\n" 
-	"      engines, compute units occupancy, stream cores utilization, etc. Use\n"
-	"      together with a detailed GPU simulation (option '--si-sim detailed').\n"
-	"\n"
-	"  --si-shader-binary <file>\n"
-	"      Use <file> as the returned shader binary upon an OpenGL call to\n"
-	"      'clLoadProgramWithSource'.\n"
-	"\n"
-	"  --si-sim {functional|detailed}\n"
-	"      Functional (default) or detailed simulation for the AMD Southern Islands\n"
-	"      GPU model.\n"
-	"\n"
-	"\n"
-	"================================================================================\n"
-	"ARM CPU Options\n"
-	"================================================================================\n"
-	"\n"
-	"  --arm-disasm <file>\n"
-	"      Disassemble an ARM binary using Multi2Sim's internal disassembler. This\n"
-	"      option is incompatible with any other command-line option.\n"
-	"\n"
-	"  --arm-debug-loader <file>\n"
-	"      Dump debug information extending the analysis of the ELF program binary.\n"
-	"      This information shows which ELF sections and symbols are loaded to the\n"
-	"      initial program memory image.\n"
-	"\n"
-	"  --arm-debug-isa <file>\n"
-	"      Debug information for dynamic execution of Arm instructions. Updates on\n"
-	"      the processor state can be analyzed using this information.\n"
-	"\n"
-	"\n"
-	"================================================================================\n"
-	"MIPS Options\n"
-	"================================================================================\n"
-	"\n"
-	"  --mips-disasm <file>\n"
-	"      Disassemble an MIPS binary using Multi2Sim's internal disassembler. This\n"
-	"      option is incompatible with any other command-line option.\n"
-	"\n"
-	"\n"
-	"================================================================================\n"
-	"NVIDIA Fermi GPU Options\n"
-	"================================================================================\n"
-	"\n"
-	"  --frm-debug-cuda <file>\n"
-	"      Debug information on the emulation of Fermi CUDA driver APIs.\n"
-	"\n"
-	"  --frm-disasm <file>\n"
-	"      Disassemble a Fermi kernel binary (cubin format). This option is\n"
-	"      incompatible with any other command-line option.\n"
-	"\n"
-	"  --frm-sim {functional|detailed}\n"
-	"      Functional (default) or detailed simulation for the NVIDIA Fermi\n"
-	"      GPU model.\n"
-	"\n"
-	"\n"
-	"================================================================================\n"
-	"Memory System Options\n"
-	"================================================================================\n"
-	"\n"
-	"  --mem-config <file>\n"
-	"      Configuration file for memory hierarchy. Run 'm2s --mem-help' for a\n"
-	"      description of the file format.\n"
-	"\n"
-	"  --mem-debug <file>\n"
-	"      Dump debug information about memory accesses, cache memories, main memory,\n"
-	"      and directories.\n"
-	"\n"
-	"  --mem-help\n"
-	"      Print help message describing the format of the memory configuration file,\n"
-	"      passed to the simulator with option '--mem-config <file>'.\n"
-	"\n"
-	"  --mem-report\n"
-	"      File for a report on the memory hierarchy, including cache hits, misses,\n"
-	"      evictions, etc. This option must be used together with detailed simulation\n"
-	"      of any CPU/GPU architecture.\n"
-	"\n"
-	"\n"
-	"================================================================================\n"
-	"Network Options\n"
-	"================================================================================\n"
-	"\n"
-	"  --net-config <file>\n"
-	"      Network configuration file. Networks in the memory hierarchy can be\n"
-	"      defined here and referenced in other configuration files. For a\n"
-	"      description of the format, use option '--net-help'.\n"
-	"\n"
-	"  --net-debug\n"
-	"      Debug information related with interconnection networks, including packet\n"
-	"      transfers, link usage, etc.\n"
-	"\n"
-	"  --net-help\n"
-	"      Print help message describing the network configuration file, passed to\n"
-	"      the simulator with option '--net-config <file>'.\n"
-	"\n"
-	"  --net-injection-rate <rate>\n"
-	"      For network simulation, packet injection rate for nodes (e.g. 0.01 means\n"
-	"      one packet every 100 cycles on average. Nodes will inject packets into\n"
-	"      the network using random delays with exponential distribution with lambda\n"
-	"      = <rate>. This option must be used together with '--net-sim'.\n"
-	"\n"
-	"  --net-max-cycles <cycles>\n"
-	"      Maximum number of cycles for network simulation. This option must be used\n"
-	"      together with option '--net-sim'.\n"
-	"\n"
-	"  --net-msg-size <size>\n"
-	"      For network simulation, packet size in bytes. An entire packet is assumed\n" 
-	"      to fit in a node's buffer, but its transfer latency through a link will\n" 
-	"      depend on the message size and the link bandwidth. This option must be\n"
-	"      used together with '--net-sim'.\n"
-	"\n"
-	"  --net-report <file>\n"
-	"      File to dump detailed statistics for each network defined in the network\n"
-	"      configuration file (option '--net-config'). The report includes statistics\n"
-	"      on bandwidth utilization, network traffic, etc.\n"
-	"\n"
-	"  --net-sim <network>\n"
-	"      Runs a network simulation using synthetic traffic, where <network> is the\n"
-	"      name of a network specified in the network configuration file (option\n"
-	"      '--net-config').\n"
-	"\n";
+		"Syntax:\n"
+		"\n"
+		"        m2s [<options>] [<x86_binary> [<arg_list>]]\n"
+		"\n"
+		"The user command-line supports a sequence of command-line options, and can\n"
+		"include an x86 ELF binary (executable x86 program) followed by its arguments.\n"
+		"The execution of this program will be simulated by Multi2Sim, together with the\n"
+		"rest of the x86 programs specified in the context configuration file (option\n"
+		"'--ctx-config <file>'). The rest of the possible command-line options are\n"
+		"classified in categories and listed next:\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"General Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --ctx-config <file>\n"
+		"      Use <file> as the context configuration file. This file describes the\n"
+		"      initial set of running applications, their arguments, and environment\n"
+		"      variables. Type 'm2s --ctx-config-help' for a description of the file\n"
+		"      format.\n"
+		"\n"
+		"  --ctx-config-help\n"
+		"      Show a help message describing the format of the context configuration\n"
+		"      file, passed to the simulator through option '--ctx-config <file>'.\n"
+		"\n"
+		"  --elf-debug <file>\n"
+		"      Dump debug information related with the analysis of ELF files. Every time\n"
+		"      an executable file is open (CPU program of GPU kernel binary), detailed\n"
+		"      information about its symbols, sections, strings, etc. is dumped here.\n"
+		"\n"
+		"  --max-time <time>\n"
+		"      Maximum simulation time in seconds. The simulator will stop once this time\n"
+		"      is exceeded. A value of 0 (default) means no time limit.\n"
+		"\n"
+		"  --trace <file>.gz\n"
+		"      Generate a trace file with debug information on the configuration of the\n"
+		"      modeled CPUs, GPUs, and memory system, as well as their dynamic\n"
+		"      simulation. The trace is a compressed plain-text file in format. The user\n"
+		"      should watch the size of the generated trace as simulation runs, since\n"
+		"      the trace file can quickly become extremely large.\n"
+		"\n"
+		"  --visual <file>.gz\n"
+		"      Run the Multi2Sim Visualization Tool. This option consumes a file\n"
+		"      generated with the '--trace' option in a previous simulation. This option\n"
+		"      is only available on systems with support for GTK 3.0 or higher.\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"x86 CPU Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --x86-config <file>\n"
+		"      Configuration file for the x86 CPU timing model, including parameters\n"
+		"      describing stage bandwidth, structures size, and other parameters of\n"
+		"      processor cores and threads. Type 'm2s --x86-help' for details on the file\n"
+		"      format.\n"
+		"\n"
+		"  --x86-debug-call <file>\n"
+		"      Dump debug information about function calls and returns. The control flow\n"
+		"      of an x86 program can be observed leveraging ELF symbols present in the\n"
+		"      program binary.\n"
+		"\n"
+		"  --x86-debug-clrt <file>\n"
+		"      Debug information for the newer implementation of the OpenCL runtime\n"
+		"      library (not available yet).\n"
+		"\n"
+		"  --x86-debug-ctx <file>\n"
+		"      Dump debug information related with context creation, destruction,\n"
+		"      allocation, or state change.\n"
+		"\n"
+		"  --x86-debug-glut <file>\n"
+		"      Debug information for GLUT runtime calls performed by an OpenGL program\n"
+		"      based on the GLUT library.\n"
+		"\n"
+		"  --x86-debug-loader <file>\n"
+		"      Dump debug information extending the analysis of the ELF program binary.\n"
+		"      This information shows which ELF sections and symbols are loaded to the\n"
+		"      initial program memory image.\n"
+		"\n"
+		"  --x86-debug-isa\n"
+		"      Debug information for dynamic execution of x86 instructions. Updates on\n"
+		"      the processor state can be analyzed using this information.\n"
+		"\n"
+		"  --x86-debug-opengl <file>\n"
+		"      Debug information for OpenGL runtime calls.\n"
+		"\n"
+		"  --x86-debug-syscall\n"
+		"      Debug information for system calls performed by an x86 program, including\n"
+		"      system call code, arguments, and return value.\n"
+		"\n"
+		"  --x86-debug-trace-cache\n"
+		"      Debug information for trace cache.\n"
+		"\n"
+		"  --x86-disasm <file>\n"
+		"      Disassemble the x86 ELF file provided in <file>, using the internal x86\n"
+		"      disassembler. This option is incompatible with any other option.\n"
+		"\n"
+		"  --x86-help\n"
+		"      Display a help message describing the format of the x86 CPU context\n"
+		"      configuration file.\n"
+		"\n"
+		"  --x86-last-inst <bytes>\n"
+		"      Stop simulation when the specified instruction is fetched. Can be used to\n"
+		"      trigger a checkpoint with option '--x86-save-checkpoint'. The instruction\n"
+		"      must be given as a sequence of hexadecimal digits, including trailing\n"
+		"      zeros if needed.\n"
+		"\n"
+		"  --x86-load-checkpoint <file>\n"
+		"      Load a checkpoint of the x86 architectural state, created in a previous\n"
+		"      execution of the simulator with option '--x86-save-checkpoint'.\n"
+		"\n"
+		"  --x86-max-cycles <cycles>\n"
+		"      Maximum number of cycles for x86 timing simulation. Use 0 (default) for no\n"
+		"      limit. This option is only valid for detailed x86 simulation (option\n"
+		"      '--x86-sim detailed').\n"
+		"\n"
+		"  --x86-max-inst <inst>\n"
+		"      Maximum number of x86 instructions. On x86 functional simulation, this\n"
+		"      limit is given in number of emulated instructions. On x86 detailed\n"
+		"      simulation, it is given as the number of committed (non-speculative)\n"
+		"      instructions. Use 0 (default) for unlimited.\n"
+		"\n"
+		"  --x86-report <file>\n"
+		"      File to dump a report of the x86 CPU pipeline, including statistics such\n"
+		"      as the number of instructions handled in every pipeline stage, read/write\n"
+		"      accesses performed on pipeline queues, etc. This option is only valid for\n"
+		"      detailed x86 simulation (option '--x86-sim detailed').\n"
+		"\n"
+		"  --x86-save-checkpoint <file>\n"
+		"      Save a checkpoint of x86 architectural state at the end of simulation.\n"
+		"      Useful options to use together with this are '--x86-max-inst' and\n"
+		"      '--x86-last-inst' to force the simulation to stop and create a checkpoint.\n"
+		"\n"
+		"  --x86-sim {functional|detailed}\n"
+		"      Choose a functional simulation (emulation) of an x86 program, versus\n"
+		"      a detailed (architectural) simulation. Simulation is functional by\n" 	"      default.\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"AMD Evergreen GPU Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --evg-calc <prefix>\n"
+		"      If this option is set, a kernel execution will cause three GPU occupancy\n"
+		"      plots to be dumped in files '<prefix>.<ndrange_id>.<plot>.eps', where\n"
+		"      <ndrange_id> is the identifier of the current ND-Range, and <plot> is\n"
+		"      {work_items|registers|local_mem}. This options requires 'gnuplot' to be\n"
+		"      installed in the system.\n"
+		"\n"
+		"  --evg-config <file>\n"
+		"      Configuration file for the Evergreen GPU timing model, including\n"
+		"      parameters such as number of compute units, stream cores, or wavefront\n"
+		"      size. Type 'm2s --evg-help' for details on the file format.\n"
+		"\n"
+		"  --evg-debug-isa <file>\n"
+		"      Dump debug information on the Evergreen ISA instructions emulated, and\n"
+		"      their updates in the architectural GPU state.\n"
+		"\n"
+		"  --evg-debug-opencl <file>\n"
+		"      Dump debug information on OpenCL system calls performed by the x86 host\n"
+		"      program. The information includes OpenCL call code, arguments, and return\n"
+		"      values.\n"
+		"\n"
+		"  --evg-disasm <file>\n"
+		"      Disassemble OpenCL kernel binary provided in <file>. This option must be\n"
+		"      used with no other options.\n"
+		"\n"
+		"  --evg-disasm-opengl <file> <index>\n"
+		"      Disassemble OpenGL shader binary provided in <file>. The shader identifier\n"
+		"      is specified in <index>. This option must be used with no other options.\n"
+		"\n"
+		"  --evg-help\n"
+		"      Display a help message describing the format of the Evergreen GPU\n"
+		"      configuration file, passed with option '--evg-config <file>'.\n"
+		"\n"
+		"  --evg-kernel-binary <file>\n"
+		"      Specify OpenCL kernel binary to be loaded when the OpenCL host program\n"
+		"      performs a call to 'clCreateProgramWithSource'. Since on-line compilation\n"
+		"      of OpenCL kernels is not supported, this is a possible way to load them.\n"
+		"\n"
+		"  --evg-max-cycles <cycles>\n"
+		"      Maximum number of Evergreen GPU cycles for detailed simulation. Use 0\n"
+		"      (default) for no limit.\n"
+		"\n"
+		"  --evg-max-inst <inst>\n"
+		"      Maximum number of Evergreen ISA instructions. An instruction executed in\n"
+		"      common for a whole wavefront counts as 1 toward this limit. Use 0\n"
+		"      (default) for no limit.\n"
+		"\n"
+		"  --evg-max-kernels <kernels>\n"
+		"      Maximum number of Evergreen GPU kernels (0 for no maximum). After the last\n"
+		"      kernel finishes execution, the simulator will stop.\n"
+		"\n"
+		"  --evg-report-kernel <file>\n"
+		"      File to dump report of a GPU device kernel emulation. The report includes\n"
+		"      statistics about type of instructions, VLIW packing, thread divergence,\n"
+		"      etc.\n"
+		"\n"
+		"  --evg-report <file>\n"
+		"      File to dump a report of the GPU pipeline, such as active execution\n"
+		"      engines, compute units occupancy, stream cores utilization, etc. Use\n"
+		"      together with a detailed GPU simulation (option '--evg-sim detailed').\n"
+		"\n"
+		"  --evg-sim {functional|detailed}\n"
+		"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
+		"      detailed (architectural) simulation. Functional simulation is default.\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"AMD Southern Islands GPU Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --si-calc <prefix>\n"
+		"      If this option is set, a kernel execution will cause three GPU occupancy\n"
+		"      plots to be dumped in files '<prefix>.<ndrange_id>.<plot>.eps', where\n"
+		"      <ndrange_id> is the identifier of the current ND-Range, and <plot> is\n"
+		"      {work_items|registers|local_mem}. This options requires 'gnuplot' to be\n"
+		"      installed in the system.\n"
+		"\n"
+		"  --si-config <file>\n"
+		"      Configuration file for the Southern Islands GPU timing model, including\n"
+		"      parameters such as number of compute units, stream cores, or wavefront\n"
+		"      size. Type 'm2s --si-help' for details on the file format.\n"
+		"\n"
+		"  --si-debug-isa <file>\n"
+		"      Debug information on the emulation of Southern Islands ISA instructions,\n"
+		"      including architectural state updates on registers and memory locations.\n"
+		"\n"
+		"  --si-debug-opencl <file>\n"
+		"      Dump debug information on OpenCL system calls performed by the x86 host\n"
+		"      program. The information includes OpenCL call code, arguments, and return\n"
+		"      values.\n"
+		"\n"
+		"  --si-disasm <file>\n"
+		"      Disassemble a Southern Islands kernel binary. This option is incompatible\n"
+		"      with othe command-line options.\n"
+		"\n"
+		"  --si-dump-default-config <file>\n"
+		"      Dumps the default GPU configuration file used for timing simulation.\n"
+		"      This cannot be used with any other option.\n"
+		"\n"
+		"  --si-help\n"
+		"      Display a help message describing the format of the Southern Islands GPU\n"
+		"      configuration file, passed with option '--si-config <file>'.\n"
+		"\n"
+		"  --si-max-cycles <cycles>\n"
+		"      Maximum number of cycles for the GPU detailed simulation. Use 0 (default)\n"
+		"      for no limit.\n"
+		"\n"
+		"  --si-max-inst <inst>\n"
+		"      Maximum number of ISA instructions. An instruction executed by an entire\n"
+		"      wavefront counts as 1 toward this limit. Use 0 (default) for no limit.\n"
+		"\n"
+		"  --si-max-kernels <kernels>\n"
+		"      Maximum number of Southern Islands kernels (0 for no maximum). After the\n"
+		"      last kernel finishes execution, the simulator will stop.\n"
+		"\n"
+		"  --si-report <file>\n"
+		"      File to dump a report of the GPU pipeline, such as active execution\n"
+		"      engines, compute units occupancy, stream cores utilization, etc. Use\n"
+		"      together with a detailed GPU simulation (option '--si-sim detailed').\n"
+		"\n"
+		"  --si-shader-binary <file>\n"
+		"      Use <file> as the returned shader binary upon an OpenGL call to\n"
+		"      'clLoadProgramWithSource'.\n"
+		"\n"
+		"  --si-sim {functional|detailed}\n"
+		"      Functional (default) or detailed simulation for the AMD Southern Islands\n"
+		"      GPU model.\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"ARM CPU Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --arm-disasm <file>\n"
+		"      Disassemble an ARM binary using Multi2Sim's internal disassembler. This\n"
+		"      option is incompatible with any other command-line option.\n"
+		"\n"
+		"  --arm-debug-loader <file>\n"
+		"      Dump debug information extending the analysis of the ELF program binary.\n"
+		"      This information shows which ELF sections and symbols are loaded to the\n"
+		"      initial program memory image.\n"
+		"\n"
+		"  --arm-debug-isa <file>\n"
+		"      Debug information for dynamic execution of Arm instructions. Updates on\n"
+		"      the processor state can be analyzed using this information.\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"MIPS Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --mips-disasm <file>\n"
+		"      Disassemble an MIPS binary using Multi2Sim's internal disassembler. This\n"
+		"      option is incompatible with any other command-line option.\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"NVIDIA Fermi GPU Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --frm-debug-cuda <file>\n"
+		"      Debug information on the emulation of Fermi CUDA driver APIs.\n"
+		"\n"
+		"  --frm-disasm <file>\n"
+		"      Disassemble a Fermi kernel binary (cubin format). This option is\n"
+		"      incompatible with any other command-line option.\n"
+		"\n"
+		"  --frm-sim {functional|detailed}\n"
+		"      Functional (default) or detailed simulation for the NVIDIA Fermi\n"
+		"      GPU model.\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"Memory System Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --mem-config <file>\n"
+		"      Configuration file for memory hierarchy. Run 'm2s --mem-help' for a\n"
+		"      description of the file format.\n"
+		"\n"
+		"  --mem-debug <file>\n"
+		"      Dump debug information about memory accesses, cache memories, main memory,\n"
+		"      and directories.\n"
+		"\n"
+		"  --mem-help\n"
+		"      Print help message describing the format of the memory configuration file,\n"
+		"      passed to the simulator with option '--mem-config <file>'.\n"
+		"\n"
+		"  --mem-report\n"
+		"      File for a report on the memory hierarchy, including cache hits, misses,\n"
+		"      evictions, etc. This option must be used together with detailed simulation\n"
+		"      of any CPU/GPU architecture.\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"Network Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --net-config <file>\n"
+		"      Network configuration file. Networks in the memory hierarchy can be\n"
+		"      defined here and referenced in other configuration files. For a\n"
+		"      description of the format, use option '--net-help'.\n"
+		"\n"
+		"  --net-debug\n"
+		"      Debug information related with interconnection networks, including packet\n"
+		"      transfers, link usage, etc.\n"
+		"\n"
+		"  --net-help\n"
+		"      Print help message describing the network configuration file, passed to\n"
+		"      the simulator with option '--net-config <file>'.\n"
+		"\n"
+		"  --net-injection-rate <rate>\n"
+		"      For network simulation, packet injection rate for nodes (e.g. 0.01 means\n"
+		"      one packet every 100 cycles on average. Nodes will inject packets into\n"
+		"      the network using random delays with exponential distribution with lambda\n"
+		"      = <rate>. This option must be used together with '--net-sim'.\n"
+		"\n"
+		"  --net-max-cycles <cycles>\n"
+		"      Maximum number of cycles for network simulation. This option must be used\n"
+		"      together with option '--net-sim'.\n"
+		"\n"
+		"  --net-msg-size <size>\n"
+		"      For network simulation, packet size in bytes. An entire packet is assumed\n"
+		"      to fit in a node's buffer, but its transfer latency through a link will\n"
+		"      depend on the message size and the link bandwidth. This option must be\n"
+		"      used together with '--net-sim'.\n"
+		"\n"
+		"  --net-report <file>\n"
+		"      File to dump detailed statistics for each network defined in the network\n"
+		"      configuration file (option '--net-config'). The report includes statistics\n"
+		"      on bandwidth utilization, network traffic, etc.\n"
+		"\n"
+		"  --net-visual <file>\n"
+		"      File for graphically representing the interconnection network. This file \n"
+		"      is an input for a supplementary tool called 'graphplot' which is located \n"
+		"      in samples/network folder in multi2sim trunk.\n"
+		"\n"
+		"  --net-sim <network>\n"
+		"      Runs a network simulation using synthetic traffic, where <network> is the\n"
+		"      name of a network specified in the network configuration file (option\n"
+		"      '--net-config').\n"
+		"\n";
 
 
 static char *m2s_err_note =
-	"Please type 'm2s --help' for a list of valid Multi2Sim command-line options.\n";
+		"Please type 'm2s --help' for a list of valid Multi2Sim command-line options.\n";
 
 
 static void m2s_need_argument(int argc, char **argv, int argi)
 {
 	if (argi == argc - 1)
 		fatal("option %s requires one argument.\n%s",
-			argv[argi], m2s_err_note);
+				argv[argi], m2s_err_note);
 }
 
 
@@ -575,7 +580,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			m2s_max_time = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -725,7 +730,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			x86_emu_last_inst_size = hex_str_to_byte_array(x86_emu_last_inst_bytes,
-				argv[++argi], sizeof x86_emu_last_inst_bytes);
+					argv[++argi], sizeof x86_emu_last_inst_bytes);
 			continue;
 		}
 
@@ -744,7 +749,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			x86_emu_max_cycles = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -756,7 +761,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			x86_emu_max_inst = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -852,7 +857,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			if (argc != 4)
 				fatal("option '%s' requires two argument.\n%s",
-					argv[argi], m2s_err_note);
+						argv[argi], m2s_err_note);
 			evg_opengl_disasm_file_name = argv[++argi];
 			evg_opengl_disasm_shader_index = atoi(argv[++argi]);
 			continue;
@@ -888,7 +893,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			evg_emu_max_cycles = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -900,7 +905,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			evg_emu_max_inst = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -995,7 +1000,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			if (argc != 4)
 				fatal("option '%s' requires two argument.\n%s",
-					argv[argi], m2s_err_note);
+						argv[argi], m2s_err_note);
 			si_opengl_disasm_file_name = argv[++argi];
 			si_opengl_disasm_shader_index = atoi(argv[++argi]);
 			continue;
@@ -1016,7 +1021,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			si_emu_max_cycles = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -1028,7 +1033,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			si_emu_max_inst = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -1110,7 +1115,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			frm_emu_max_cycles = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -1122,7 +1127,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			frm_emu_max_inst = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -1290,7 +1295,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			net_max_cycles = str_to_llint(argv[argi + 1], &err);
 			if (err)
 				fatal("option %s, value '%s': %s", argv[argi],
-					argv[argi + 1], str_error(err));
+						argv[argi + 1], str_error(err));
 			argi++;
 			continue;
 		}
@@ -1313,6 +1318,13 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Network visual file*/
+		if (!strcmp(argv[argi], "--net-visual"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			net_visual_file_name = argv[++argi];
+			continue;
+		}
 		/* Network simulation */
 		if (!strcmp(argv[argi], "--net-sim"))
 		{
@@ -1330,7 +1342,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (argv[argi][0] == '-')
 		{
 			fatal("'%s' is not a valid command-line option.\n%s",
-				argv[argi], m2s_err_note);
+					argv[argi], m2s_err_note);
 		}
 
 		/* End of options */
@@ -1341,7 +1353,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	if (x86_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional x86 simulation.\n"
-			"\tPlease use option '--x86-sim detailed' as well.\n";
+				"\tPlease use option '--x86-sim detailed' as well.\n";
 
 		if (*x86_config_file_name)
 			fatal(msg, "--x86-config");
@@ -1355,7 +1367,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	if (evg_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
-			"\tPlease use option '--evg-sim detailed' as well.\n";
+				"\tPlease use option '--evg-sim detailed' as well.\n";
 
 		if (*evg_gpu_config_file_name)
 			fatal(msg, "--evg-config");
@@ -1373,7 +1385,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	if (si_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
-			"\tPlease use option '--si-sim detailed' as well.\n";
+				"\tPlease use option '--si-sim detailed' as well.\n";
 
 		if (*si_gpu_config_file_name)
 			fatal(msg, "--si-config");
@@ -1387,7 +1399,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	if (frm_sim_kind == arch_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
-			"\tPlease use option '--frm-sim detailed' as well.\n";
+				"\tPlease use option '--frm-sim detailed' as well.\n";
 
 		if (*frm_gpu_config_file_name)
 			fatal(msg, "--frm-config");
@@ -1681,7 +1693,7 @@ static void m2s_loop(void)
 		 * 128k iterations. This avoids a constant overhead of system calls. */
 		m2s_loop_iter++;
 		if (m2s_max_time && !(m2s_loop_iter & ((1 << 17) - 1))
-			&& esim_real_time() > m2s_max_time * 1000000)
+				&& esim_real_time() > m2s_max_time * 1000000)
 			esim_finish = esim_finish_max_time;
 
 		/* Signal received */
