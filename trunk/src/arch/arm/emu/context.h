@@ -33,6 +33,16 @@ extern int arm_ctx_debug_category;
 /* Event scheduled periodically to dump IPC statistics for a context */
 extern int EV_ARM_CTX_IPC_REPORT;
 
+
+
+enum arm__mode_t
+{
+	ARM = 1,
+	THUMB
+};
+
+
+
 struct arm_ctx_t
 {
 	/* Number of extra contexts using this loader */
@@ -95,6 +105,8 @@ struct arm_ctx_t
 
 	/* Currently emulated instruction */
 	struct arm_inst_t inst;
+	struct arm_thumb16_inst_t inst_th_16;
+	struct arm_thumb32_inst_t inst_th_32;
 
 	/* Links to contexts forming a linked list. */
 	struct arm_ctx_t *context_list_next, *context_list_prev;

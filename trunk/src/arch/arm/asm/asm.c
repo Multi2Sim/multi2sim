@@ -2177,6 +2177,26 @@ void arm_disasm(void *buf, unsigned int ip, volatile struct arm_inst_t *inst)
 
 }
 
+void thumb16_disasm(void *buf, unsigned int ip, volatile struct arm_thumb16_inst_t *inst)
+{
+	unsigned int byte_index;
+	inst->addr = ip;
+	for (byte_index = 0; byte_index < 2; ++byte_index)
+		inst->dword.bytes[byte_index] = *(unsigned char *) (buf + byte_index);
+
+	arm_thumb16_inst_decode((struct arm_thumb16_inst_t*) inst);
+}
+
+void thumb32_disasm(void *buf, unsigned int ip, volatile struct arm_thumb32_inst_t *inst)
+{
+	unsigned int byte_index;
+	inst->addr = ip;
+	for (byte_index = 0; byte_index < 2; ++byte_index)
+		inst->dword.bytes[byte_index] = *(unsigned char *) (buf + byte_index);
+
+	arm_thumb32_inst_decode((struct arm_thumb32_inst_t*) inst);
+}
+
 
 void arm_inst_debug_dump(struct arm_inst_t *inst, FILE *f )
 {
