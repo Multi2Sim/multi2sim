@@ -33,6 +33,7 @@ struct opencl_si_device_t
 
 struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *parent);
 void opencl_si_device_free(struct opencl_si_device_t *device);
+int opencl_si_device_preferred_workgroups(struct opencl_si_device_t *device);
 
 void *opencl_si_device_mem_alloc(struct opencl_si_device_t *device,
 		unsigned int size);

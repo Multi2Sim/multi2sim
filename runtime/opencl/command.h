@@ -87,6 +87,7 @@ struct opencl_command_t
 			unsigned int global_work_size[3];
 			unsigned int local_work_size[3];
 			unsigned int group_id_offset[3];
+			unsigned int group_count[3];
 			unsigned int num_groups;
 			unsigned int current_group;
 		} ndrange;

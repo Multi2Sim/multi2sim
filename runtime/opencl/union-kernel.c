@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <pthread.h>
 
 #include "kernel.h"
@@ -14,8 +15,11 @@ struct dispatch_info
 	unsigned int *global_work_offset;
 	unsigned int *global_work_size;
 	unsigned int *local_work_size;
-	unsigned int *group_id_offset;
 	void *part;
+	pthread_mutex_t *lock;
+
+	struct opencl_device_t *device;
+	struct opencl_kernel_t *kernel;
 };
 
 void *device_kernel_dispatch(void *ptr)
@@ -25,10 +29,27 @@ void *device_kernel_dispatch(void *ptr)
 	unsigned int *group_offset = xcalloc(info->work_dim, sizeof (unsigned int));
 	unsigned int *group_count = xcalloc(info->work_dim, sizeof (unsigned int));
 	
-	while (strat->get_partition(info->part, 1, group_offset, group_count))
+	pthread_mutex_lock(info->lock);
+	while (strat->get_partition(
+		info->part, 
+		info->device->arch_device_preferred_workgroups_func(info->device), 
+		group_offset, 
+		group_count))
 	{
-		//TODO: pass the dispatcher the actual device object and get it to launch kernels.
+		pthread_mutex_unlock(info->lock);
+	
+		info->device->arch_kernel_run_func(
+			info->kernel,
+			info->work_dim,
+			info->global_work_offset,
+			info->global_work_size,
+			info->local_work_size,
+			group_offset,
+			group_count);
+
+		pthread_mutex_lock(info->lock);
 	}
+	pthread_mutex_unlock(info->lock);
 
 	free(group_offset);
 	free(group_count);
@@ -36,39 +57,59 @@ void *device_kernel_dispatch(void *ptr)
 }
 
 void opencl_union_kernel_run(
-		struct opencl_kernel_t *kernel,
+		struct opencl_union_kernel_t *kernel,
 		int work_dim,
 		unsigned int *global_work_offset,
 		unsigned int *global_work_size,
 		unsigned int *local_work_size,
-		unsigned int *group_id_offset)
+		unsigned int *group_id_offset,
+		unsigned int *group_count)
 {
 	int i;
-	struct dispatch_info info;
+	int num_devices;
+	struct dispatch_info *info;
 	unsigned int *num_groups = xcalloc(work_dim, sizeof (unsigned int));
+	pthread_t *threads;
+	pthread_mutex_t lock;
+	void *part;
 
 	for (i = 0; i < (int)num_groups; i++)
+	{
 		num_groups[i] = global_work_size[i] / local_work_size[i];
+		/* Do not support recursive division of kernels */
+		assert(group_id_offset[i] == 0);
+		assert(group_count[i] == num_groups[i]);
+	}
 
-	int num_devices = list_count(kernel->entry_list);
-	void *part = strat->create(num_devices, work_dim, num_groups);
+	num_devices = list_count(kernel->kernels);
+	part = strat->create(num_devices, work_dim, num_groups);
+	threads = xcalloc(num_devices - 1, sizeof (pthread_t));
+	info = xcalloc(num_devices, sizeof (struct dispatch_info));
+	pthread_mutex_init(&lock, NULL);
 
-	info.work_dim = work_dim;
-	info.global_work_offset = global_work_offset;
-	info.global_work_size = global_work_size;
-	info.local_work_size = local_work_size;
-	info.group_id_offset = group_id_offset;
-	info.part = part;
-
-	pthread_t *threads = xcalloc(num_devices - 1, sizeof (pthread_t));
-	
-	for (i = 0; i < num_devices - 1; i++)
-		pthread_create(threads + i, NULL, device_kernel_dispatch, &info);
-	device_kernel_dispatch(&info);
+	for (i = 0; i < num_devices; i++)
+	{
+		info[i].work_dim = work_dim;
+		info[i].global_work_offset = global_work_offset;
+		info[i].global_work_size = global_work_size;
+		info[i].local_work_size = local_work_size;
+		info[i].part = part;
+		info[i].device = list_get(kernel->device->devices, i);
+		info[i].kernel = list_get(kernel->kernels, i);
+		info[i].lock = &lock;
+		
+		if (i != num_devices - 1)
+			pthread_create(threads + i, NULL, device_kernel_dispatch, info + i);
+		else
+			device_kernel_dispatch(info + i);
+	}
 
 	for (i = 0; i < num_devices - 1; i++)
 		pthread_join(threads[i], NULL);
+	
+	pthread_mutex_destroy(&lock);
 
+	free(info);
 	free(threads);
 	free(num_groups);
 }

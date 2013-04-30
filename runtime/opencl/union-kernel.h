@@ -19,12 +19,13 @@ struct opencl_union_kernel_t *opencl_union_kernel_create(
 		char *func_name);
 
 void opencl_union_kernel_run(
-		struct opencl_kernel_t *kernel,
+		struct opencl_union_kernel_t *kernel,
 		int work_dim,
 		unsigned int *global_work_offset,
 		unsigned int *global_work_size,
 		unsigned int *local_work_size,
-		unsigned int *group_id_offset);
+		unsigned int *group_id_offset,
+		unsigned int *group_count);
 
 void opencl_union_kernel_free(
 		struct opencl_union_kernel_t *kernel);

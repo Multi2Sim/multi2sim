@@ -158,7 +158,8 @@ static void opencl_command_run_ndrange(struct opencl_command_t *command)
                         command->ndrange.global_work_offset,
                         command->ndrange.global_work_size,
                         command->ndrange.local_work_size,
-			command->ndrange.group_id_offset);
+			command->ndrange.group_id_offset,
+			command->ndrange.group_count);
 
         /* Ask the driver how many work groups it can buffer */
         /* Send work groups to the driver */
@@ -405,6 +406,8 @@ struct opencl_command_t *opencl_command_create_ndrange(
 		command->ndrange.local_work_size[i] = local_work_size ?
 			local_work_size[i] : 1;
 		command->ndrange.group_id_offset[i] = 0;
+		assert(!(global_work_size[i] % command->ndrange.local_work_size[i]));
+		command->ndrange.group_count[i] = global_work_size[i] / command->ndrange.local_work_size[i];
 	}
 
 	/* Unused dimensions */
@@ -414,6 +417,7 @@ struct opencl_command_t *opencl_command_create_ndrange(
 		command->ndrange.global_work_size[i] = 1;
 		command->ndrange.local_work_size[i] = 1;
 		command->ndrange.group_id_offset[i] = 0;
+		command->ndrange.group_count[i] = 1;
 	}
 
 	/* Calculate the number of work groups in the ND-Range */
