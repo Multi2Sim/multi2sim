@@ -668,6 +668,9 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->arch_device_mem_copy_func =
 			(opencl_arch_device_mem_copy_func_t)
 			opencl_x86_device_mem_copy;
+	parent->arch_device_preferred_workgroups_func =
+			(opencl_arch_device_preferred_workgroups_func_t)
+			opencl_x86_device_preferred_workgroups;
 
 	/* Call-back functions for architecture-specific program */
 	parent->arch_program_create_func =
@@ -769,4 +772,9 @@ void opencl_x86_device_mem_copy(struct opencl_x86_device_t *device,
 {
 	/* Host and device are the same for x86 CPU */
 	memcpy(device_dest_ptr, device_src_ptr, size);
+}
+
+int opencl_x86_device_preferred_workgroups(struct opencl_x86_device_t *device)
+{
+	return device->num_cores;
 }

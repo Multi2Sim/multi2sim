@@ -88,6 +88,7 @@ struct _cl_device_id
 	opencl_arch_device_mem_read_func_t arch_device_mem_read_func;
 	opencl_arch_device_mem_write_func_t arch_device_mem_write_func;
 	opencl_arch_device_mem_copy_func_t arch_device_mem_copy_func;
+	opencl_arch_device_preferred_workgroups_func_t arch_device_preferred_workgroups_func;
 
 	/* Call-back functions for an architecture-specific program */
 	opencl_arch_program_create_func_t arch_program_create_func;
