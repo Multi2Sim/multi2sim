@@ -113,12 +113,12 @@ struct opencl_platform_t *opencl_platform_create(void)
 		device = opencl_device_create();
 		device->arch_device = opencl_si_device_create(device);
 		list_add(platform->device_list, device);
-
-		/* Add Union device */
-		device = opencl_device_create();
-		device->arch_device = opencl_union_device_create(device, platform->device_list);
-		list_add(platform->device_list, device);
 	}
+
+	/* Add Union device */
+	device = opencl_device_create();
+	device->arch_device = opencl_union_device_create(device, platform->device_list);
+	list_add(platform->device_list, device);
 
 	/* Return */
 	return platform;
