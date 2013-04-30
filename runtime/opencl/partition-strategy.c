@@ -4,12 +4,12 @@
 
 /* forward declartion for default strategy.  Put more declarations here */
 void *default_strategy_create(int num_devices, unsigned int dims, unsigned int *groups);
-int default_strategy_get_partition(void *inst, int desired_groups, unsigned int *group_offset, unsigned int *group_count);
+int default_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count);
 void default_strategy_destroy(void *inst);
 
 static struct opencl_partition_strategy strats[] = {{default_strategy_create, default_strategy_get_partition, default_strategy_destroy}};
 
-struct opencl_partition_strategy *get_strategy()
+const struct opencl_partition_strategy *get_strategy()
 {
 	char *value = getenv("M2S_OPENCL_PARTITION_STRATEGY_ID");
 	if (!value)
@@ -40,12 +40,12 @@ void *default_strategy_create(int num_devices, unsigned int dims, unsigned int *
 }
 
 
-int default_strategy_get_partition(void *inst, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
+int default_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
 {
 	int i;
 	struct default_strategy_info_t *info = inst;
 
-	if (info->done)
+	if (info->done || id)
 		return 0;
 	else
 	{
