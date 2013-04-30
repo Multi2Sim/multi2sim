@@ -329,13 +329,12 @@ void opencl_x86_kernel_run(
 	unsigned int *global_work_offset,
 	unsigned int *global_work_size,
 	unsigned int *local_work_size,
-	unsigned int *group_id_offset)
+	unsigned int *group_id_offset,
+	unsigned int *group_count)
 {
 	int i;
 	int j;
 	int k;
-	int num_groups[3];
-
 	struct opencl_x86_device_t *device = kernel->device;
 	struct opencl_x86_device_exec_t *exec;
 
@@ -355,9 +354,7 @@ void opencl_x86_kernel_run(
 	for (i = 0; i < 3; i++)
 	{
 		assert(!(exec->global[i] % exec->local[i]));
-
-		num_groups[i] = exec->global[i] / exec->local[i];
-		exec->num_groups *= num_groups[i];
+		exec->num_groups *= group_count[i];
 	}
 	exec->kernel = kernel;
 	exec->next_group = 0;
@@ -371,21 +368,21 @@ void opencl_x86_kernel_run(
 
 	pthread_mutex_init(&exec->mutex, NULL);
 
-	for (i = 0; i < num_groups[2]; i++)
+	for (i = 0; i < group_count[2]; i++)
 	{
-		for (j = 0; j < num_groups[1]; j++)
+		for (j = 0; j < group_count[1]; j++)
 		{
-			for (k = 0; k < num_groups[0]; k++)
+			for (k = 0; k < group_count[0]; k++)
 			{
 				size_t *group_start;
-
-				group_start = exec->group_starts + 3 * (i * num_groups[1] * num_groups[0] + j * num_groups[0] + k);
-				group_start[0] = exec->local[0] * k + global_work_offset[0];
-				group_start[1] = exec->local[1] * j + global_work_offset[1];
-				group_start[2] = exec->local[2] * i + global_work_offset[2];
+				int index = i * group_count[1] * group_count[0] + j * group_count[0] + k;
+				group_start = exec->group_starts + 3 * index;
+				group_start[0] = exec->local[0] * (k + group_id_offset[0]) + global_work_offset[0];
+				group_start[1] = exec->local[1] * (j + group_id_offset[1]) + global_work_offset[1];
+				group_start[2] = exec->local[2] * (i + group_id_offset[2]) + global_work_offset[2];
 
 				size_t *group_id;
-				group_id = exec->group_ids + 3 * (i * num_groups[1] * num_groups[0] + j * num_groups[0] + k);
+				group_id = exec->group_ids + 3 * index;
 				group_id[0] = k + group_id_offset[0];
 				group_id[1] = j + group_id_offset[1];
 				group_id[2] = i + group_id_offset[2];

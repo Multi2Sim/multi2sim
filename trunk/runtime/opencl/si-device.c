@@ -118,6 +118,8 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 			opencl_si_device_mem_write;
 	parent->arch_device_mem_copy_func = (opencl_arch_device_mem_copy_func_t)
 			opencl_si_device_mem_copy;
+	parent->arch_device_preferred_workgroups_func = (opencl_arch_device_preferred_workgroups_func_t)
+			opencl_si_device_preferred_workgroups;
 
 	/* Call-back functions for kernel */
 	parent->arch_kernel_create_func = (opencl_arch_kernel_create_func_t)
@@ -191,4 +193,9 @@ void opencl_si_device_mem_copy(struct opencl_si_device_t *device,
 		void *device_dest_ptr, void *device_src_ptr, unsigned int size)
 {
 	fatal("%s: not implemented", __FUNCTION__);
+}
+
+int opencl_si_device_preferred_workgroups(struct opencl_si_device_t *device)
+{
+	return 32; /* TODO: Determine core count */
 }

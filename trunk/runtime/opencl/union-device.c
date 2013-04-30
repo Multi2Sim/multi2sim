@@ -37,6 +37,7 @@ struct opencl_union_device_t *opencl_union_device_create(struct opencl_device_t 
 	parent->arch_device_mem_copy_func =
 			(opencl_arch_device_mem_copy_func_t)
 			opencl_x86_device_mem_copy;
+	parent->arch_device_preferred_workgroups_func = NULL;
 
 	/* Call-back functions for architecture-specific program */
 	parent->arch_program_create_func =

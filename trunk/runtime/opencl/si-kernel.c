@@ -273,7 +273,8 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 
 void opencl_si_kernel_run(struct opencl_si_kernel_t *kernel, int work_dim,
 	unsigned int *global_work_offset, unsigned int *global_work_size,
-	unsigned int *local_work_size, unsigned int *group_id_offset)
+	unsigned int *local_work_size, unsigned int *group_id_offset, 
+	unsigned int *group_count)
 {
 	/* ABI call */
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_initialize, 

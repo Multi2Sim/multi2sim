@@ -156,6 +156,10 @@ typedef void (*opencl_arch_device_mem_copy_func_t)(
 		void *device_src_ptr,
 		unsigned int size);
 
+/* Determine the preferred number of work-groups a device has */
+typedef int (*opencl_arch_device_preferred_workgroups_func_t)(
+		void *device); /* Of type opencl_xxx_device_t */
+
 
 
 /*
@@ -211,7 +215,8 @@ typedef void (*opencl_arch_kernel_run_func_t)(
 		unsigned int *global_work_offset,
 		unsigned int *global_work_size,
 		unsigned int *local_work_size,
-		unsigned int *group_id_offset);
+		unsigned int *group_id_offset, /* offset into the NDRange */
+		unsigned int *group_count); /* size of the NDRange portion to execute */  
 
 
 
