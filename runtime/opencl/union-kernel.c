@@ -15,6 +15,7 @@ struct dispatch_info
 	void *part;
 	pthread_mutex_t *lock;
 
+	int id;
 	struct opencl_device_t *device;
 	struct opencl_kernel_t *kernel;
 };
@@ -29,6 +30,7 @@ void *device_kernel_dispatch(void *ptr)
 	pthread_mutex_lock(info->lock);
 	while (get_strategy()->get_partition(
 		info->part, 
+		info->id,
 		info->device->arch_device_preferred_workgroups_func(info->device), 
 		group_offset, 
 		group_count))
@@ -94,6 +96,7 @@ void opencl_union_kernel_run(
 		info[i].device = list_get(kernel->device->devices, i);
 		info[i].kernel = list_get(kernel->kernels, i);
 		info[i].lock = &lock;
+		info[i].id = i;
 		
 		if (i != num_devices - 1)
 			pthread_create(threads + i, NULL, device_kernel_dispatch, info + i);
