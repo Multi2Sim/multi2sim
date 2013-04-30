@@ -131,7 +131,6 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 			if ((temp_edge->src_vertex == edge->dst_vertex) &&
 					(temp_edge->dst_vertex == edge->src_vertex))
 			{
-				//edge->upstream = temp_edge->downstream;
 				temp_edge->upstream = edge->downstream;
 				check = 1;
 			}
@@ -166,14 +165,14 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 	{
 		struct net_graph_edge_t *edge;
 		edge = list_get(graph->edge_list, i);
+
 		if ((edge->src_vertex->y_coor - edge->dst_vertex->y_coor > 1))
 		{
 			//creating one dummy node
 
 			struct net_graph_vertex_t *vertex;
-			char name[MAX_STRING_SIZE];
-			snprintf(name, sizeof(name), "%s%s_d", edge->src_vertex->name, edge->dst_vertex->name);
-			vertex = net_graph_vertex_create(graph, name);
+
+			vertex = net_graph_vertex_create(graph, "dummy");
 			vertex->kind = net_vertex_dummy;
 			vertex->y_coor = edge->src_vertex->y_coor - 1;
 			vertex->key_val = 0;
@@ -187,8 +186,8 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 			//creating two edges
 			//edge 1 called new_edge
 			struct net_graph_edge_t *new_edge;
-			snprintf(name, sizeof(name), "%s_%s", edge->src_vertex->name, vertex->name);
-			new_edge = net_graph_edge_create(graph, name);
+
+			new_edge = net_graph_edge_create(graph, "new edge");
 			new_edge->downstream = edge->downstream;
 			if (edge->upstream)
 				new_edge->upstream = edge->upstream;
@@ -197,8 +196,8 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 			new_edge->dst_vertex = vertex;
 			//edge 2 second edge
 			struct net_graph_edge_t *second_edge;
-			snprintf(name, sizeof(name), "%s_%s", vertex->name, edge->dst_vertex->name);
-			second_edge = net_graph_edge_create(graph, name);
+
+			second_edge = net_graph_edge_create(graph, "second edge");
 			second_edge->downstream = new_edge->downstream;
 			if (edge->upstream)
 				second_edge->upstream = edge->upstream;
@@ -207,7 +206,7 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 			second_edge->src_vertex = vertex;
 			second_edge->dst_vertex = edge->dst_vertex;
 
-			//changes in corrsponding vertices
+			//changes in corresponding vertices
 			list_remove(edge->src_vertex->outgoint_vertex_list, edge->dst_vertex);
 			list_add(edge->src_vertex->outgoint_vertex_list, vertex);
 			list_remove(edge->dst_vertex->incoming_vertex_list, edge->src_vertex);
@@ -259,8 +258,9 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 				vertex->neighbours= count;
 		}
 	}
-	for (int i = 1; i <= max_node_in_layer; i++)
-		scale = scale * i;
+
+	scale = list_count(graph->vertex_list);
+
 
 	/*Step 5: Cross Reduction */
 	net_graph_cross_reduction(graph, layer_count);
@@ -271,9 +271,9 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 
 		int opt_distance= max_node_in_layer * scale /(2*max_node_in_layer - 1);
 		vertex->x_coor = (2*(vertex->x_coor) + (max_node_in_layer - vertex->neighbours))* opt_distance;
-		graph->xscale = scale;
+		graph->xscale = scale ;
 	}
-	/*Step 7: remove the Graph */
+	/*Step 6: remove the Graph */
 	return graph;
 }
 
@@ -379,10 +379,19 @@ void net_graph_greedy_cycle_removal (struct net_graph_t *graph)
 		edge = list_get(graph->edge_list, i);
 		if (edge->dst_vertex->x_coor < edge->src_vertex->x_coor)
 		{
+			list_remove(edge->src_vertex->outgoint_vertex_list, edge->dst_vertex);
+			list_add(edge->src_vertex->incoming_vertex_list, edge->dst_vertex);
+			edge->src_vertex->indeg++;
+			edge->src_vertex->outdeg--;
+			list_remove(edge->dst_vertex->incoming_vertex_list, edge->src_vertex);
+			list_add(edge->dst_vertex->outgoint_vertex_list, edge->src_vertex);
+			edge->dst_vertex->outdeg++;
+			edge->dst_vertex->indeg--;
 			struct net_graph_vertex_t *temp;
 			temp = edge->dst_vertex;
 			edge->dst_vertex = edge->src_vertex;
 			edge->src_vertex = temp;
+
 		}
 	}
 }
@@ -392,25 +401,26 @@ void net_graph_label_assignment(struct net_graph_t *graph)
 	int label = 1;
 	while (label <= graph->vertex_count)
 	{
-		struct net_graph_vertex_t *vertex;
-
 		for (int i = 0; i < list_count(graph->vertex_list); i++)
 		{
-			vertex = list_get(graph->vertex_list, i);
-
-			if (vertex->key_val == 0 && list_count(vertex->incoming_vertex_list) == 0)
+			struct net_graph_vertex_t *vertexA;
+			vertexA = list_get(graph->vertex_list, i);
+			if ((list_count(vertexA->incoming_vertex_list) == 0))
 			{
-				vertex->key_val = label;
-				label++;
+				if (vertexA->key_val == 0)
+				{
+					vertexA->key_val = label;
+					label++;
+				}
 			}
 		}
 
 		struct net_graph_vertex_t *candidate;
+		struct net_graph_vertex_t *vertex;
 		struct list_t *candidate_list;
 		candidate_list = list_create();
 		for (int i = 0; i < list_count(graph->vertex_list); i++)
 		{
-
 			vertex = list_get(graph->vertex_list, i);
 			if (vertex->key_val == 0)
 			{
@@ -431,6 +441,7 @@ void net_graph_label_assignment(struct net_graph_t *graph)
 			}
 		}
 		//choosing candidate
+
 		if (list_count(candidate_list) != 0)
 		{
 			candidate = list_get(candidate_list, 0);
@@ -471,6 +482,7 @@ void net_graph_label_assignment(struct net_graph_t *graph)
 		label++;
 		list_free(candidate_list);
 	}
+
 }
 
 void net_graph_coffman_graham_layering (struct net_graph_t *graph, int width)
@@ -489,6 +501,7 @@ void net_graph_coffman_graham_layering (struct net_graph_t *graph, int width)
 		vertex->key_val = 0;
 		list_add(V, vertex);
 	}
+
 	// step 2: label assignment
 	net_graph_label_assignment(graph);
 
@@ -498,6 +511,7 @@ void net_graph_coffman_graham_layering (struct net_graph_t *graph, int width)
 		struct net_graph_vertex_t * candidate;
 		list_sort(V, key_compare);
 		int count = list_count(V);
+
 		for (int i = 0; i < count; i++)
 		{
 			struct net_graph_vertex_t *vertex;
@@ -526,13 +540,12 @@ void net_graph_coffman_graham_layering (struct net_graph_t *graph, int width)
 			}
 
 			int layer_count = 0;
-			int alarm_val = 0;
 			for (int j = 0; j < list_count(candidate->outgoint_vertex_list); j++)
 			{
 				struct net_graph_vertex_t *temp_vertex;
-				temp_vertex = list_get(candidate->outgoint_vertex_list, i);
+				temp_vertex = list_get(candidate->outgoint_vertex_list, j);
 				if (temp_vertex->y_coor >= k)
-					alarm_val = 1;
+					k = temp_vertex->y_coor + 1;
 			}
 
 			for (int j =0; j < list_count(graph->vertex_list); j++ )
@@ -544,7 +557,7 @@ void net_graph_coffman_graham_layering (struct net_graph_t *graph, int width)
 					layer_count++;
 				}
 			}
-			if ((layer_count < width) && (alarm_val == 0))
+			if ((layer_count < width))
 			{
 				candidate->y_coor = k;
 			}
@@ -562,6 +575,7 @@ void net_graph_coffman_graham_layering (struct net_graph_t *graph, int width)
 	}
 	list_free(U);
 	list_free(V);
+
 }
 
 void net_graph_cross_reduction(struct net_graph_t *graph, int layer_count)
@@ -585,10 +599,10 @@ void net_graph_cross_reduction(struct net_graph_t *graph, int layer_count)
 						vertex->cross_num+= (float)neighbor->x_coor;
 					}
 				}
-					if (list_count(vertex->incoming_vertex_list) != 0)
-						vertex->cross_num= vertex->cross_num/ list_count(vertex->incoming_vertex_list);
-					else
-						vertex->cross_num= (float) vertex->x_coor;
+				if (list_count(vertex->incoming_vertex_list) != 0)
+					vertex->cross_num= vertex->cross_num/ list_count(vertex->incoming_vertex_list);
+				else
+					vertex->cross_num= (float) vertex->x_coor;
 			}
 		}
 		struct list_t *key_list;
@@ -627,10 +641,8 @@ void net_graph_cross_reduction(struct net_graph_t *graph, int layer_count)
 					struct net_graph_vertex_t *neighbor;
 					neighbor = list_get(vertex->outgoint_vertex_list, j);
 
-					{
-						vertex->cross_num += (float) neighbor->x_coor;
-					}
-					//						vertex->cross_num = 0;
+					vertex->cross_num += (float) neighbor->x_coor;
+
 				}
 				if (list_count(vertex->outgoint_vertex_list))
 					vertex->cross_num= vertex->cross_num / list_count(vertex->outgoint_vertex_list);
@@ -638,7 +650,6 @@ void net_graph_cross_reduction(struct net_graph_t *graph, int layer_count)
 					vertex->cross_num= (float) vertex->x_coor;
 			}
 		}
-
 		struct list_t *key_list;
 		key_list = list_create();
 		for (int i = 0; i < list_count(graph->vertex_list); i++)
@@ -674,15 +685,13 @@ void net_graph_cross_reduction(struct net_graph_t *graph, int layer_count)
 				{
 					struct net_graph_vertex_t *neighbor;
 					neighbor = list_get(vertex->incoming_vertex_list, j);
-//					if (neighbor->y_coor == vertex->y_coor + 1)
-					{
-						vertex->cross_num+= (float)neighbor->x_coor;
-					}
+
+					vertex->cross_num+= (float)neighbor->x_coor;
 				}
-					if (list_count(vertex->incoming_vertex_list) != 0)
-						vertex->cross_num= vertex->cross_num/ list_count(vertex->incoming_vertex_list);
-					else
-						vertex->cross_num= (float) vertex->x_coor;
+				if (list_count(vertex->incoming_vertex_list) != 0)
+					vertex->cross_num= vertex->cross_num/ list_count(vertex->incoming_vertex_list);
+				else
+					vertex->cross_num= (float) vertex->x_coor;
 			}
 		}
 		struct list_t *key_list;
@@ -704,7 +713,6 @@ void net_graph_cross_reduction(struct net_graph_t *graph, int layer_count)
 			vertex->x_coor = list_count(key_list) - 1 - i;
 		}
 		list_free(key_list);
-
 	}
 
 }
