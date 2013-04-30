@@ -97,7 +97,10 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	union-kernel.h \
 	\
 	union-program.c \
-	union-program.h
+	union-program.h \
+	\
+	partition-strategy.c \
+	partition-strategy.h
 
 AM_CFLAGS = -m32 -D_GNU_SOURCE
 
