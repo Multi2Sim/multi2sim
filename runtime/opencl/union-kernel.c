@@ -6,9 +6,6 @@
 #include "list.h"
 #include "union-kernel.h"
 
-struct opencl_partition_strategy *strat = NULL;
-
-
 struct dispatch_info
 {
 	int work_dim;
@@ -30,7 +27,7 @@ void *device_kernel_dispatch(void *ptr)
 	unsigned int *group_count = xcalloc(info->work_dim, sizeof (unsigned int));
 	
 	pthread_mutex_lock(info->lock);
-	while (strat->get_partition(
+	while (get_strategy()->get_partition(
 		info->part, 
 		info->device->arch_device_preferred_workgroups_func(info->device), 
 		group_offset, 
@@ -82,7 +79,7 @@ void opencl_union_kernel_run(
 	}
 
 	num_devices = list_count(kernel->kernels);
-	part = strat->create(num_devices, work_dim, num_groups);
+	part = get_strategy()->create(num_devices, work_dim, num_groups);
 	threads = xcalloc(num_devices - 1, sizeof (pthread_t));
 	info = xcalloc(num_devices, sizeof (struct dispatch_info));
 	pthread_mutex_init(&lock, NULL);
@@ -108,7 +105,7 @@ void opencl_union_kernel_run(
 		pthread_join(threads[i], NULL);
 	
 	pthread_mutex_destroy(&lock);
-
+	get_strategy()->destroy(part);
 	free(info);
 	free(threads);
 	free(num_groups);

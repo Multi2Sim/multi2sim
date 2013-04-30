@@ -5,6 +5,7 @@
 #include "opencl.h"
 #include "union-device.h"
 #include "union-program.h"
+#include "partition-strategy.h"
 
 struct opencl_union_kernel_t
 {
@@ -35,15 +36,4 @@ int opencl_union_kernel_set_arg(
 		int arg_index,
 		unsigned int arg_size,
 		void *arg_value);
-
-
-typedef void *(*opencl_strategy_create_t)(int num_devices, unsigned int dims, unsigned int *groups);
-typedef int (*opencl_strategy_get_partition_t)(void *inst, int desired_groups, unsigned int *group_offset, unsigned int *group_count);
-
-struct opencl_partition_strategy
-{
-	opencl_strategy_create_t create;
-	opencl_strategy_get_partition_t get_partition;
-};
-
 #endif
