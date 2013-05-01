@@ -15,4 +15,5 @@ OPENCL_ABI_CALL(si_ndrange_initialize, 14)
 OPENCL_ABI_CALL(si_ndrange_get_num_buffer_entries, 15)
 OPENCL_ABI_CALL(si_ndrange_send_work_groups, 16)
 OPENCL_ABI_CALL(si_ndrange_finish, 17)
+OPENCL_ABI_CALL(si_ndrange_pass_mem_objs, 18)
 

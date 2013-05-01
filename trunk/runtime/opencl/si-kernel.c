@@ -24,6 +24,7 @@
 #include "list.h"
 #include "mem.h"
 #include "mhandle.h"
+#include "misc.h"
 #include "object.h"
 #include "si-kernel.h"
 #include "si-program.h"
@@ -280,5 +281,43 @@ void opencl_si_kernel_run(struct opencl_si_kernel_t *kernel, int work_dim,
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_initialize, 
 		kernel->id, work_dim, global_work_offset, global_work_size, 
 		local_work_size);
+
+	void *table_ptr = xcalloc(1, 4096);  // FIXME
+	void *cb_ptr = xcalloc(1, 4096);   // FIXME
+
+	int num_groups = *group_count;
+	int current_group = 0;
+	int max_work_groups_to_send;
+	int remaining_work_groups;
+	int work_groups_to_send;
+	int work_group_start;
+
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_pass_mem_objs, 
+		table_ptr, cb_ptr);
+
+	/* Ask the driver how many work groups it can buffer */
+	/* Send work groups to the driver */
+	while (current_group < num_groups)
+	{
+		syscall(OPENCL_SYSCALL_CODE,
+			opencl_abi_si_ndrange_get_num_buffer_entries,
+			&max_work_groups_to_send);
+
+		remaining_work_groups = num_groups - current_group;
+		work_groups_to_send = MIN(remaining_work_groups,
+			max_work_groups_to_send);
+
+		assert(max_work_groups_to_send != 0);
+
+		work_group_start = current_group;
+
+		current_group += work_groups_to_send;
+
+		syscall(OPENCL_SYSCALL_CODE, 
+			opencl_abi_si_ndrange_send_work_groups,
+			work_group_start, work_groups_to_send);
+	}
+
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish);
 }
 

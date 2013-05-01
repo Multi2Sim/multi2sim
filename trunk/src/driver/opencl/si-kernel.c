@@ -839,12 +839,38 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 	free(kernel);
 }
 
+
+void opencl_si_kernel_create_ndrange_constant_buffers(
+	struct si_ndrange_t *ndrange)
+{
+	/* Create constant buffer 0 */
+	ndrange->cb0 = si_emu->video_mem_top;
+	si_emu->video_mem_top += SI_EMU_CONST_BUF_0_SIZE;
+
+	/* Create constant buffer 1 */
+	ndrange->cb1 = si_emu->video_mem_top;
+	si_emu->video_mem_top += SI_EMU_CONST_BUF_1_SIZE;
+
+}
+
 void opencl_si_kernel_setup_ndrange_constant_buffers(
 	struct si_ndrange_t *ndrange)
 {
+	struct si_buffer_desc_t buffer_desc;
+
 	unsigned int zero = 0;
 
 	float f;
+
+	opencl_si_create_buffer_desc(ndrange->cb0, SI_EMU_CONST_BUF_0_SIZE, 1,
+		opencl_si_arg_i32, &buffer_desc);
+
+	si_ndrange_insert_buffer_into_const_buf_table(ndrange, &buffer_desc, 0);
+
+	opencl_si_create_buffer_desc(ndrange->cb1, SI_EMU_CONST_BUF_1_SIZE, 1,
+		opencl_si_arg_i32, &buffer_desc);
+
+	si_ndrange_insert_buffer_into_const_buf_table(ndrange, &buffer_desc, 1);
 
 	/* Initialize constant buffers */
 
@@ -958,37 +984,15 @@ void opencl_si_kernel_setup_ndrange_constant_buffers(
 	/* FIXME Size of the printf buffer */
 }
 
-void opencl_si_kernel_setup_ndrange_tables(struct si_ndrange_t *ndrange)
+void opencl_si_kernel_create_ndrange_tables(struct si_ndrange_t *ndrange)
 {
-	unsigned int base_addr;
-
-	struct si_buffer_desc_t buffer_desc;
-
 	/* Setup internal tables */
-	ndrange->const_buf_table = si_emu->global_mem_top;
-	si_emu->global_mem_top += SI_EMU_CONST_BUF_TABLE_SIZE;
-	ndrange->resource_table = si_emu->global_mem_top;
-	si_emu->global_mem_top += SI_EMU_RESOURCE_TABLE_SIZE;
-	ndrange->uav_table = si_emu->global_mem_top;
-	si_emu->global_mem_top += SI_EMU_UAV_TABLE_SIZE;
-
-	/* Initialize constant buffer 0 */
-	base_addr = si_emu->global_mem_top;
-	si_emu->global_mem_top += SI_EMU_CONST_BUF_0_SIZE;
-
-	opencl_si_create_buffer_desc(base_addr, SI_EMU_CONST_BUF_0_SIZE, 1, 
-		opencl_si_arg_i32, &buffer_desc);
-
-	si_ndrange_insert_buffer_into_const_buf_table(ndrange, &buffer_desc, 0);
-
-	/* Initialize constant buffer 1 */
-	base_addr = si_emu->global_mem_top;
-	si_emu->global_mem_top += SI_EMU_CONST_BUF_1_SIZE;
-
-	opencl_si_create_buffer_desc(base_addr, SI_EMU_CONST_BUF_1_SIZE, 1,
-		opencl_si_arg_i32, &buffer_desc);
-
-	si_ndrange_insert_buffer_into_const_buf_table(ndrange, &buffer_desc, 1);
+	ndrange->const_buf_table = si_emu->video_mem_top;
+	si_emu->video_mem_top += SI_EMU_CONST_BUF_TABLE_SIZE;
+	ndrange->resource_table = si_emu->video_mem_top;
+	si_emu->video_mem_top += SI_EMU_RESOURCE_TABLE_SIZE;
+	ndrange->uav_table = si_emu->video_mem_top;
+	si_emu->video_mem_top += SI_EMU_UAV_TABLE_SIZE;
 
 	return;
 }
@@ -1511,10 +1515,10 @@ void opencl_si_kernel_debug_ndrange_state(struct opencl_si_kernel_t *kernel,
 			i*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
 			sizeof(buffer_desc), &buffer_desc);
 
-        	si_isa_debug("\t| CB%-2d  | [%10u:%10u] |\n",
-			i, (unsigned int)buffer_desc.base_addr,
-			(unsigned int)buffer_desc.base_addr + 
-			(unsigned int)buffer_desc.num_records - 1);
+        	si_isa_debug("\t| CB%-2d  | [%10llu:%10llu] |\n",
+			i, (long long unsigned int)buffer_desc.base_addr,
+			(long long unsigned int)buffer_desc.base_addr + 
+			(long long unsigned int)buffer_desc.num_records - 1);
 	}
 	si_isa_debug("\t-----------------------------------\n");
         si_isa_debug("\n");
