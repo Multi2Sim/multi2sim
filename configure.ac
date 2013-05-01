@@ -518,6 +518,14 @@ then
 		have_llvm=no
 fi
 
+# Check for 'g++'
+have_cxx=yes
+which $CXX > /dev/null || have_cxx=no
+if test x$have_cxx = xno
+then
+	have_llvm=no
+fi
+
 # Try to compile a program using LLVM
 if test x$have_llvm = xyes
 then
@@ -554,7 +562,9 @@ then
 		)
 	],
 	[],
-	[ have_llvm=no ])
+	[
+		have_llvm=no
+	])
 	AC_LANG_POP([C++])
 
 	# Restore original CXXFLAGS, LDFLAGS, LIBS
@@ -583,6 +593,16 @@ then
 	./configure script. Modules in the simulator dependent on these tools
 	will not be built.]
 	)
+elif test x$have_cxx = xno
+then
+	AC_MSG_WARN([
+
+	The C++ compiler g++ is not installed in your system. This compiler is
+	needed to build LLVM-based modules on Multi2Sim. Please install g++, and
+	recompile. In an Ubuntu distribution, you can run
+	
+		sudo apt-get install g++]
+	)
 else
 	AC_MSG_WARN([
 
@@ -590,7 +610,7 @@ else
 	not be built. In an Ubuntu distribution, you can install these package
 	by running command
 
-		sudo apt-get install llvm-3.0]
+		sudo apt-get install llvm]
 	)
 fi
 
