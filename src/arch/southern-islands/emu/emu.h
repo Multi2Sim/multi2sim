@@ -32,13 +32,18 @@
 #define SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE 16
 #define SI_EMU_CONST_BUF_TABLE_SIZE (SI_EMU_MAX_NUM_CONST_BUFS * SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE)
 
-#define SI_EMU_CONST_BUF_0_SIZE 160  /* Defined in Metadata.pdf */
-#define SI_EMU_CONST_BUF_1_SIZE 1024 /* FIXME */
-
 /* Resource table */
 #define SI_EMU_MAX_NUM_RESOURCES 16
 #define SI_EMU_RESOURCE_TABLE_ENTRY_SIZE 32
 #define SI_EMU_RESOURCE_TABLE_SIZE (SI_EMU_MAX_NUM_RESOURCES * SI_EMU_RESOURCE_TABLE_ENTRY_SIZE)
+
+#define SI_EMU_TOTAL_TABLE_SIZE (SI_EMU_UAV_TABLE_SIZE + SI_EMU_CONST_BUF_TABLE_SIZE + SI_EMU_RESOURCE_TABLE_SIZE)
+
+/* Constant buffers */
+#define SI_EMU_CONST_BUF_0_SIZE 160  /* Defined in Metadata.pdf */
+#define SI_EMU_CONST_BUF_1_SIZE 1024 /* FIXME */
+
+#define SI_EMU_TOTAL_CONST_BUF_SIZE (SI_EMU_CONST_BUF_0_SIZE + SI_EMU_CONST_BUF_1_SIZE)
 
 
 enum si_buf_desc_data_fmt_t
@@ -202,9 +207,11 @@ struct si_emu_t
 	/* Common architecture object */
 	struct arch_t *arch;
 
-	/* Global memory */
-	struct mem_t *global_mem;
-	unsigned int global_mem_top;
+	/* Memory */
+	struct mem_t *video_mem;  /* local to the GPU */
+	unsigned int video_mem_top;
+	struct mem_t *shared_mem; /* shared with the CPU */
+	struct mem_t *global_mem; /* will point to video_mem or shared_mem */
 
 	/* Current ND-Range */
 	struct si_ndrange_t *ndrange;

@@ -79,7 +79,7 @@ struct si_ndrange_t
 	unsigned int num_sgpr_used;
 	unsigned int wg_id_sgpr;
 
-        /* Internal tables that reside in global memory */
+        /* Addresses and entries of tables that reside in global memory */
 	unsigned int const_buf_table;
 	struct si_ndrange_table_entry_t
 		const_buf_table_entries[SI_EMU_MAX_NUM_CONST_BUFS];
@@ -89,6 +89,10 @@ struct si_ndrange_t
 	unsigned int uav_table;
 	struct si_ndrange_table_entry_t
 		uav_table_entries[SI_EMU_MAX_NUM_UAVS];
+
+	/* Addresses of the constant buffers */
+	unsigned int cb0;
+	unsigned int cb1;
 
 	/* Statistics */
 

@@ -22,9 +22,9 @@
 
 struct config_t;
 
+void si_mem_config_fused(struct config_t *config);
 void si_mem_config_default(struct config_t *config);
 void si_mem_config_parse_entry(struct config_t *config, char *section);
 void si_mem_config_check(struct config_t *config);
-
 
 #endif

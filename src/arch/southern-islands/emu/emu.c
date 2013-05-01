@@ -85,11 +85,14 @@ void si_emu_init(struct arch_t *arch)
 	/* Initialize */
 	si_emu = xcalloc(1, sizeof(struct si_emu_t));
 	si_emu->arch = arch;
-	si_emu->global_mem = mem_create();
-	si_emu->global_mem->safe = 0;
-	si_emu->global_mem_top = 0;
+	si_emu->video_mem = mem_create();
+	si_emu->video_mem->safe = 0;
+	si_emu->video_mem_top = 0;
 	si_emu->waiting_work_groups = list_create();
 	si_emu->running_work_groups = list_create();
+
+	/* Set global memory to video memory by default */
+	si_emu->global_mem = si_emu->video_mem; 
 
 	/* Initialize disassembler (decoding tables...) */
 	si_disasm_init();
@@ -113,7 +116,7 @@ void si_emu_done()
 	si_isa_done();
 
 	/* Free emulator memory */
-	mem_free(si_emu->global_mem);
+	mem_free(si_emu->video_mem);
 
 	/* Free the work-group queues */
 	list_free(si_emu->waiting_work_groups);
