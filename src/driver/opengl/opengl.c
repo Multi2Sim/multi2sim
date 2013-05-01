@@ -5409,13 +5409,13 @@ static int opengl_func_glDrawArrays(struct x86_ctx_t *ctx)
 			opengl_debug("\tGPU memory [%p] created, size = %d, flags = %x\n", gpu_mem, gpu_mem->size, gpu_mem->flags);
 
 			/* Assign position in device global memory */
-			gpu_mem->device_ptr = si_emu->global_mem_top;
-			si_emu->global_mem_top += gpu_mem->size;
+			gpu_mem->device_ptr = si_emu->video_mem_top;
+			si_emu->video_mem_top += gpu_mem->size;
 
 			/* If VBO bound, copy buffer into device memory */
 			if (vca->vbo->data)
 			{
-				mem_write(si_emu->global_mem, gpu_mem->device_ptr, vca->vbo->data_size, vca->vbo->data);
+				mem_write(si_emu->video_mem, gpu_mem->device_ptr, vca->vbo->data_size, vca->vbo->data);
 				opengl_debug("\tCopy %d byte from data [%p] saved in VBO #%d [%p] to GPU global memory\n", 
 					(int) vca->vbo->data_size, vca->vbo->data, vca->vbo->id, vca->vbo);
 			}

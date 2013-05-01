@@ -22,10 +22,10 @@
 #include "debug.h"
 #include "device.h"
 #include "mhandle.h"
+#include "x86-device.h"
 #include "si-device.h"
 #include "si-kernel.h"
 #include "si-program.h"
-
 
 struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *parent)
 {
@@ -108,36 +108,41 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	/* Call-back functions for device */
 	parent->arch_device_free_func = (opencl_arch_device_free_func_t)
 			opencl_si_device_free;
-	parent->arch_device_mem_alloc_func = (opencl_arch_device_mem_alloc_func_t)
-			opencl_si_device_mem_alloc;
+
+	parent->arch_device_mem_alloc_func = 
+		(opencl_arch_device_mem_alloc_func_t)
+		opencl_si_device_mem_alloc;
 	parent->arch_device_mem_free_func = (opencl_arch_device_mem_free_func_t)
-			opencl_si_device_mem_free;
+		opencl_si_device_mem_free;
 	parent->arch_device_mem_read_func = (opencl_arch_device_mem_read_func_t)
-			opencl_si_device_mem_read;
-	parent->arch_device_mem_write_func = (opencl_arch_device_mem_write_func_t)
-			opencl_si_device_mem_write;
+		opencl_si_device_mem_read;
+	parent->arch_device_mem_write_func = 
+		(opencl_arch_device_mem_write_func_t)
+		opencl_si_device_mem_write;
 	parent->arch_device_mem_copy_func = (opencl_arch_device_mem_copy_func_t)
-			opencl_si_device_mem_copy;
-	parent->arch_device_preferred_workgroups_func = (opencl_arch_device_preferred_workgroups_func_t)
-			opencl_si_device_preferred_workgroups;
+		opencl_si_device_mem_copy;
+	parent->arch_device_preferred_workgroups_func = 
+		(opencl_arch_device_preferred_workgroups_func_t)
+		opencl_si_device_preferred_workgroups;
 
 	/* Call-back functions for kernel */
 	parent->arch_kernel_create_func = (opencl_arch_kernel_create_func_t)
-			opencl_si_kernel_create;
+		opencl_si_kernel_create;
 	parent->arch_kernel_free_func = (opencl_arch_kernel_free_func_t)
-			opencl_si_kernel_free;
+		opencl_si_kernel_free;
 	parent->arch_kernel_set_arg_func = (opencl_arch_kernel_set_arg_func_t)
-			opencl_si_kernel_set_arg;
+		opencl_si_kernel_set_arg;
 	parent->arch_kernel_run_func = (opencl_arch_kernel_run_func_t)
-			opencl_si_kernel_run;
+		opencl_si_kernel_run;
 	
 	/* Call-back functions for program */
 	parent->arch_program_create_func = (opencl_arch_program_create_func_t)
-			opencl_si_program_create;
+		opencl_si_program_create;
 	parent->arch_program_free_func = (opencl_arch_program_free_func_t)
-			opencl_si_program_free;
-	parent->arch_program_valid_binary_func =
-			opencl_si_program_valid_binary;
+		opencl_si_program_free;
+	parent->arch_program_valid_binary_func = 
+		(opencl_arch_program_valid_binary_func_t)
+		opencl_si_program_valid_binary;
 
 	/* Return */
 	return device;

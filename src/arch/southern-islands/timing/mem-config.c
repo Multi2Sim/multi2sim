@@ -32,7 +32,6 @@
 #include "gpu.h"
 #include "compute-unit.h"
 
-
 void si_mem_config_default(struct config_t *config)
 {
 	char section[MAX_STRING_SIZE];
@@ -240,6 +239,144 @@ void si_mem_config_default(struct config_t *config)
 	config_write_int(config, section, "DefaultBandwidth", 264);
 
 	snprintf(section, sizeof section, "Network si-net-l2-5-gm-5");
+	config_write_int(config, section, "DefaultInputBufferSize", 528);
+	config_write_int(config, section, "DefaultOutputBufferSize", 528);
+	config_write_int(config, section, "DefaultBandwidth", 264);
+}
+
+void si_mem_config_fused(struct config_t *config)
+{
+	char section[MAX_STRING_SIZE];
+	char str[MAX_STRING_SIZE];
+
+	int i;
+
+	/* Cache geometry for vector L1 */
+	snprintf(section, sizeof section, "CacheGeometry si-geo-vector-l1");
+	config_write_int(config, section, "Sets", 64);
+	config_write_int(config, section, "Assoc", 4);
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 1);
+	config_write_string(config, section, "Policy", "LRU");
+
+	/* Cache geometry for scalar L1 */
+	snprintf(section, sizeof section, "CacheGeometry si-geo-scalar-l1");
+	config_write_int(config, section, "Sets", 64);
+	config_write_int(config, section, "Assoc", 4);
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 1);
+	config_write_string(config, section, "Policy", "LRU");
+
+	/* Cache geometry for L2 */
+	snprintf(section, sizeof section, "CacheGeometry si-geo-l2");
+	config_write_int(config, section, "Sets", 128);
+	config_write_int(config, section, "Assoc", 16);
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 10);
+	config_write_string(config, section, "Policy", "LRU");
+
+	/* Create scalar L1 caches */
+	for (i = 0; i < (si_gpu_num_compute_units + 3) / 4; i++)
+	{
+		snprintf(section, sizeof section, "Module si-scalar-l1-%d", i);
+		config_write_string(config, section, "Type", "Cache");
+		config_write_string(config, section, "Geometry", 
+			"si-geo-scalar-l1");
+		config_write_string(config, section, "LowNetwork", 
+			"si-net-l1-l2");
+		config_write_string(config, section, "LowModules", 
+			"si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5");
+	}
+
+	/* Create vector L1 caches */
+	for (i = 0; i < si_gpu_num_compute_units; i++)
+	{
+		snprintf(section, sizeof section, "Module si-vector-l1-%d", i);
+		config_write_string(config, section, "Type", "Cache");
+		config_write_string(config, section, "Geometry", 
+			"si-geo-vector-l1");
+		config_write_string(config, section, "LowNetwork", 
+			"si-net-l1-l2");
+		config_write_string(config, section, "LowModules", 
+			"si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5");
+	}
+
+	/* Create entries from compute units to L1s */
+	for (i = 0; i < si_gpu_num_compute_units; i++)
+	{
+		/* Entry */
+		snprintf(section, sizeof section, "Entry si-cu-%d", i);
+		config_write_string(config, section, "Arch", "SouthernIslands");
+		config_write_int(config, section, "ComputeUnit", i);
+		snprintf(str, sizeof str, "si-vector-l1-%d", i);
+		config_write_string(config, section, "DataModule", str);
+		snprintf(str, sizeof str, "si-scalar-l1-%d", i / 4);
+		config_write_string(config, section, "ConstantDataModule", str);
+	}
+
+	/* L2 caches */
+	snprintf(section, sizeof section, "Module si-l2-0");
+	config_write_string(config, section, "Type", "Cache");
+	config_write_string(config, section, "Geometry", "si-geo-l2");
+	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "x86-net-l2-mm");
+	config_write_string(config, section, "LowModules", "x86-mm");
+	config_write_string(config, section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 0");
+
+	snprintf(section, sizeof section, "Module si-l2-1");
+	config_write_string(config, section, "Type", "Cache");
+	config_write_string(config, section, "Geometry", "si-geo-l2");
+	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "x86-net-l2-mm");
+	config_write_string(config, section, "LowModules", "x86-mm");
+	config_write_string(config, section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 1");
+	
+	snprintf(section, sizeof section, "Module si-l2-2");
+	config_write_string(config, section, "Type", "Cache");
+	config_write_string(config, section, "Geometry", "si-geo-l2");
+	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "x86-net-l2-mm");
+	config_write_string(config, section, "LowModules", "x86-mm");
+	config_write_string(config, section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 2");
+
+	snprintf(section, sizeof section, "Module si-l2-3");
+	config_write_string(config, section, "Type", "Cache");
+	config_write_string(config, section, "Geometry", "si-geo-l2");
+	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "x86-net-l2-mm");
+	config_write_string(config, section, "LowModules", "x86-mm");
+	config_write_string(config, section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 3");
+
+	snprintf(section, sizeof section, "Module si-l2-4");
+	config_write_string(config, section, "Type", "Cache");
+	config_write_string(config, section, "Geometry", "si-geo-l2");
+	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "x86-net-l2-mm");
+	config_write_string(config, section, "LowModules", "x86-mm");
+	config_write_string(config, section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 4");
+
+	snprintf(section, sizeof section, "Module si-l2-5");
+	config_write_string(config, section, "Type", "Cache");
+	config_write_string(config, section, "Geometry", "si-geo-l2");
+	config_write_string(config, section, "HighNetwork", "si-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "x86-net-l2-mm");
+	config_write_string(config, section, "LowModules", "x86-mm");
+	config_write_string(config, section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 5");
+
+	/* Network connecting L1s and L2s */
+	snprintf(section, sizeof section, "Network si-net-l1-l2");
+	config_write_int(config, section, "DefaultInputBufferSize", 528);
+	config_write_int(config, section, "DefaultOutputBufferSize", 528);
+	config_write_int(config, section, "DefaultBandwidth", 264);
+
+	/* Networks connecting memory controllers and global memory banks */
+	snprintf(section, sizeof section, "Network x86-net-l2-mm");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);

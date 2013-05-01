@@ -139,19 +139,11 @@ static void opencl_command_run_unmap_buffer(struct opencl_command_t *command)
 }
 
 
-/* Run a kernel */
+/* Run an ND-Range */
 static void opencl_command_run_ndrange(struct opencl_command_t *command)
 {
-        int max_work_groups_to_send;
-        int remaining_work_groups;
-        int work_groups_to_send;
-        int work_group_start;
-
         assert(command->ndrange.device->arch_kernel_run_func);
 
-	/* XXX There is Southern-Islands-specific code below */
-
-        /* Tell the driver to prepare for a new ND-Range */
         command->ndrange.device->arch_kernel_run_func(
                         command->ndrange.arch_kernel,
                         command->ndrange.work_dim,
@@ -160,32 +152,6 @@ static void opencl_command_run_ndrange(struct opencl_command_t *command)
                         command->ndrange.local_work_size,
 			command->ndrange.group_id_offset,
 			command->ndrange.group_count);
-
-        /* Ask the driver how many work groups it can buffer */
-        /* Send work groups to the driver */
-        while (command->ndrange.current_group < command->ndrange.num_groups)
-        {
-                syscall(OPENCL_SYSCALL_CODE,
-                        opencl_abi_si_ndrange_get_num_buffer_entries,
-                        &max_work_groups_to_send);
-
-                remaining_work_groups = command->ndrange.num_groups -
-                        command->ndrange.current_group;
-                work_groups_to_send = MIN(remaining_work_groups,
-                        max_work_groups_to_send);
-
-                assert(max_work_groups_to_send != 0);
-
-                work_group_start = command->ndrange.current_group;
-
-                command->ndrange.current_group += work_groups_to_send;
-
-                syscall(OPENCL_SYSCALL_CODE, 
-			opencl_abi_si_ndrange_send_work_groups,
-                        work_group_start, work_groups_to_send);
-        }
-
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish);
 }
 
 

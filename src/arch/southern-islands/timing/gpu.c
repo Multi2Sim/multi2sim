@@ -42,6 +42,8 @@
 
 #include "cycle-interval-report.h"
 
+extern int fused_device;
+
 static char *si_err_stall =
 	"\tThe Southern Islands GPU has not completed execution of any in-flight\n"
 	"\tinstruction for 1M cycles. Most likely, this means that a\n"
@@ -1125,7 +1127,10 @@ void si_gpu_init(void)
 
 	/* Register functions for architecture */
 	arch->mem_config_check_func = si_mem_config_check;
-	arch->mem_config_default_func = si_mem_config_default;
+	if (!fused_device)
+		arch->mem_config_default_func = si_mem_config_default;
+	else
+		arch->mem_config_default_func = si_mem_config_fused;
 	arch->mem_config_parse_entry_func = si_mem_config_parse_entry;
 
 	/* Try to open report file */
