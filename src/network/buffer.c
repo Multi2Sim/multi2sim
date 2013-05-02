@@ -58,8 +58,13 @@ struct net_buffer_t *net_buffer_create(struct net_t *net, struct net_node_t *nod
 
 void net_buffer_free(struct net_buffer_t *buffer)
 {
-	list_free(buffer->msg_list);
+	/* Free wakeup list */
+	LINKED_LIST_FOR_EACH(buffer->wakeup_list)
+		free(linked_list_get(buffer->wakeup_list));
 	linked_list_free(buffer->wakeup_list);
+
+	/* Free rest */
+	list_free(buffer->msg_list);
 	free(buffer->name);
 	free(buffer);
 }
