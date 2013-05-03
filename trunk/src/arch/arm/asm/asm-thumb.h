@@ -515,7 +515,7 @@ enum arm_thumb32_cat_enum
 
 struct arm_thumb16_inst_info_t
 {
-	enum arm_thumb16_inst_enum inst;
+	enum arm_thumb16_inst_enum inst_16;
 	enum arm_thumb16_cat_enum cat16;
 	char* name;
 	char* fmt_str;
@@ -528,7 +528,7 @@ struct arm_thumb16_inst_info_t
 
 struct arm_thumb32_inst_info_t
 {
-	enum arm_thumb32_inst_enum inst;
+	enum arm_thumb32_inst_enum inst_32;
 	enum arm_thumb32_cat_enum cat32;
 	char* name;
 	char* fmt_str;
@@ -768,6 +768,8 @@ void arm_thumb32_inst_dump_COND(char **inst_str_ptr, int *inst_str_size,
 
 void thumb16_disasm(void *buf, unsigned int ip, volatile struct arm_thumb16_inst_t *inst);
 void thumb32_disasm(void *buf, unsigned int ip, volatile struct arm_thumb32_inst_t *inst);
+void arm_th16_inst_debug_dump(struct arm_thumb16_inst_t *inst, FILE *f );
+void arm_th32_inst_debug_dump(struct arm_thumb32_inst_t *inst, FILE *f );
 
 
 

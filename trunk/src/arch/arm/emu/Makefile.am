@@ -18,6 +18,8 @@ libemu_a_SOURCES = \
 	isa.h \
 	\
 	machine.c \
+	machine_thumb16.c \
+	machine_thumb32.c \
 	machine.h \
 	\
 	syscall.c \
