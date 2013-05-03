@@ -49,13 +49,30 @@ static arm_isa_inst_func_t arm_isa_inst_func[ARM_INST_COUNT] =
 };
 
 
+static arm_isa_inst_func_t arm_th16_isa_inst_func[ARM_THUMB16_INST_COUNT] =
+{
+	NULL /* for op_none */
+#define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) , arm_th16_isa_##_name##_impl
+#include <arch/arm/asm/asm-thumb.dat>
+#undef DEFINST
+};
 
+
+static arm_isa_inst_func_t arm_th32_isa_inst_func[ARM_THUMB32_INST_COUNT] =
+{
+	NULL /* for op_none */
+#define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) , arm_th32_isa_##_name##_impl
+#include <arch/arm/asm/asm-thumb32.dat>
+#undef DEFINST
+};
 
 /*
  * Instruction statistics
  */
 
 static long long arm_inst_freq[ARM_INST_COUNT];
+static long long arm_th_16_inst_freq[ARM_THUMB16_INST_COUNT];
+static long long arm_th_32_inst_freq[ARM_THUMB32_INST_COUNT];
 
 
 
@@ -1713,7 +1730,26 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 
 	/* Set last, current, and target instruction addresses */
 	ctx->last_ip = ctx->curr_ip;
-	ctx->curr_ip = (regs->pc - 4);
+
+
+	if(ctx->regs->cpsr.thumb)		// Thumb2 Mode
+	{
+		if(ctx->inst_type == THUMB16)
+		{
+			ctx->curr_ip = (regs->pc - 2);
+		}
+		else if (ctx->inst_type == THUMB32)
+		{
+			ctx->curr_ip = (regs->pc - 4);
+		}
+		else
+			fatal("%d : ARM Wrong Instruction Type \n", ctx->inst_type);
+	}
+	else					// ARM mode
+	{
+		ctx->curr_ip = (regs->pc - 4);
+	}
+
 	ctx->target_ip = 0;
 
 	/* Debug */
@@ -1721,17 +1757,52 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 	{
 		arm_isa_inst_debug("%d %8lld %x: ", ctx->pid,
 			arch->inst_count, ctx->curr_ip);
+		if(ctx->regs->cpsr.thumb)
+		{
+			if(ctx->inst_type == THUMB32)
+			{
+				arm_th32_inst_debug_dump(&ctx->inst_th_32, debug_file(arm_isa_inst_debug_category));
+				arm_isa_inst_debug("  (%d bytes)", ctx->inst_th_32.info->size);
+			}
+			else if(ctx->inst_type == THUMB16)
+			{
+				arm_th16_inst_debug_dump(&ctx->inst_th_16, debug_file(arm_isa_inst_debug_category));
+				arm_isa_inst_debug("  (%d bytes)", ctx->inst_th_16.info->size);
+			}
+		}
+
 		arm_inst_debug_dump(&ctx->inst, debug_file(arm_isa_inst_debug_category));
 		arm_isa_inst_debug("  (%d bytes)", ctx->inst.info->size);
 	}
 
 	/* Call instruction emulation function */
-	regs->pc = regs->pc + ctx->inst.info->size;
-	if (ctx->inst.info->opcode)
-		arm_isa_inst_func[ctx->inst.info->opcode](ctx);
+	switch(ctx->inst_type)
+	{
+	case(ARM32):
+		regs->pc = regs->pc + ctx->inst.info->size;
+		if (ctx->inst.info->opcode)
+			arm_isa_inst_func[ctx->inst.info->opcode](ctx);
+		/* Statistics */
+		arm_inst_freq[ctx->inst.info->opcode]++;
+		break;
 
-	/* Statistics */
-	arm_inst_freq[ctx->inst.info->opcode]++;
+	case(THUMB16):
+		regs->pc = regs->pc + ctx->inst_th_16.info->size;
+		if (ctx->inst.info->opcode)
+			arm_th16_isa_inst_func[ctx->inst_th_16.info->opcode](ctx);
+		/* Statistics */
+		arm_th_16_inst_freq[ctx->inst_th_16.info->inst_16]++;
+		break;
+
+	case(THUMB32):
+		regs->pc = regs->pc + 2;
+		if (ctx->inst.info->opcode)
+			arm_th32_isa_inst_func[ctx->inst_th_32.info->opcode](ctx);
+		/* Statistics */
+		arm_th_32_inst_freq[ctx->inst_th_32.info->inst_32]++;
+		break;
+	}
+
 
 	/* Debug */
 	arm_isa_inst_debug("\n");

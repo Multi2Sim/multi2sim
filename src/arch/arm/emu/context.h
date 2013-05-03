@@ -35,13 +35,18 @@ extern int EV_ARM_CTX_IPC_REPORT;
 
 
 
-enum arm__mode_t
+enum arm_mode_t
 {
 	ARM = 1,
 	THUMB
 };
 
-
+enum arm_inst_mode_t
+{
+	ARM32 = 1,
+	THUMB16,
+	THUMB32
+};
 
 struct arm_ctx_t
 {
@@ -102,6 +107,7 @@ struct arm_ctx_t
 	unsigned int last_ip;  /* Address of last emulated instruction */
 	unsigned int curr_ip;  /* Address of currently emulated instruction */
 	unsigned int target_ip;  /* Target address for branch, even if not taken */
+	unsigned int inst_type;	/* The type of the current instruction ARM/Thumb16/Thumb32 */
 
 	/* Currently emulated instruction */
 	struct arm_inst_t inst;
