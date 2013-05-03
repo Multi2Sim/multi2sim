@@ -22,11 +22,25 @@
 
 /* Table of functions implementing implementing the Evergreen ISA */
 typedef void (*arm_isa_inst_func_t)(struct arm_ctx_t *ctx);
+typedef void (*arm_th16_isa_inst_func_t)(struct arm_ctx_t *ctx);
+typedef void (*arm_th32_isa_inst_func_t)(struct arm_ctx_t *ctx);
 
 /* Declarations of function prototypes implementing Evergreen ISA */
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	extern void arm_isa_##_name##_impl(struct arm_ctx_t *ctx);
 #include <arch/arm/asm/asm.dat>
+#undef DEFINST
+
+
+#define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
+	extern void arm_th16_isa_##_name##_impl(struct arm_ctx_t *ctx);
+#include <arch/arm/asm/asm-thumb.dat>
+#undef DEFINST
+
+
+#define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
+	extern void arm_th32_isa_##_name##_impl(struct arm_ctx_t *ctx);
+#include <arch/arm/asm/asm-thumb32.dat>
 #undef DEFINST
 
 

@@ -518,7 +518,7 @@ void arm_thumb32_setup_table(char* name , char* fmt_str ,
 			current_table[op[i]].fmt_str = fmt_str;
 			current_table[op[i]].cat32 = cat32;
 			current_table[op[i]].size = 4;
-			current_table[op[i]].inst = inst_name;
+			current_table[op[i]].inst_32 = inst_name;
 
 			break;
 		}
@@ -693,7 +693,7 @@ void arm_thumb16_setup_table(char* name , char* fmt_str ,
 			current_table[op[i]].fmt_str = fmt_str;
 			current_table[op[i]].cat16 = cat16;
 			current_table[op[i]].size = 2;
-			current_table[op[i]].inst = inst_name;
+			current_table[op[i]].inst_16 = inst_name;
 
 			break;
 		}
