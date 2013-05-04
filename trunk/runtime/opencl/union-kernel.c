@@ -127,12 +127,12 @@ struct opencl_union_kernel_t *opencl_union_kernel_create(
 	kernel = xcalloc(1, sizeof (struct opencl_union_kernel_t));
 	kernel->parent = parent;
 	kernel->device = program->device;
-	kernel->kernels = list_create_with_size(list_count(devices));
+	kernel->kernels = list_create();
 
 	LIST_FOR_EACH(devices, i)
 	{
 		struct opencl_device_t *subdevice = list_get(devices, i);
-		list_set(kernel->kernels, i, subdevice->arch_kernel_create_func(NULL, list_get(program->programs, i), func_name));
+		list_add(kernel->kernels, subdevice->arch_kernel_create_func(NULL, list_get(program->programs, i), func_name));
 	}
 
 	return kernel;
