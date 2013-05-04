@@ -12,9 +12,9 @@ struct opencl_union_device_t *opencl_union_device_create(struct opencl_device_t 
 	u = xcalloc(1, sizeof (struct opencl_union_device_t));
 	u->parent = parent;
 	int num_devices = list_count(devices);
-	u->devices = list_create_with_size(num_devices);
+	u->devices = list_create();
 	for (i = 0; i < num_devices; i++)
-		list_set(u->devices, i, list_get(devices, i));
+		list_add(u->devices, list_get(devices, i));
 
 	*(parent) = *(struct opencl_device_t *)list_get(devices, 0); // just copy over the parameters from someone - we'll do a better job later.
 	parent->type = CL_DEVICE_TYPE_ACCELERATOR;
@@ -52,13 +52,13 @@ struct opencl_union_device_t *opencl_union_device_create(struct opencl_device_t 
 	/* Call-back functions for architecture-specific kernel */
 	parent->arch_kernel_create_func =
 			(opencl_arch_kernel_create_func_t)
-			NULL;
+			opencl_union_kernel_create;
 	parent->arch_kernel_free_func =
 			(opencl_arch_kernel_free_func_t)
 			NULL;
 	parent->arch_kernel_set_arg_func =
 			(opencl_arch_kernel_set_arg_func_t)
-			NULL;
+			opencl_union_kernel_set_arg;
 	parent->arch_kernel_run_func =
 			(opencl_arch_kernel_run_func_t)
 			opencl_union_kernel_run;

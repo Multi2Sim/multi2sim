@@ -35,7 +35,6 @@ struct opencl_union_program_t *opencl_union_program_create(
 		total += bin->entry_sizes[i];
 	}
 	assert(total == length);
-
 	/* find the binary that corresponds to each device in the union */
 	LIST_FOR_EACH(device->devices, i)
 	{
@@ -90,12 +89,10 @@ int opencl_union_program_valid_binary(void *dev, void *binary, unsigned int leng
 	offset = sizeof *bin + bin->num_entries * sizeof bin->entry_sizes[0];
 
 	/* go through each of the entries and match it against all devices */
-	offset = 0;
 	for (i = 0; i < bin->num_entries; i++)
 	{
 		int j;
 		int valid = 0;
-
 		/* get each subdevice and check to see if it accepts the binary */
 		LIST_FOR_EACH(device->devices, j)
 		{
