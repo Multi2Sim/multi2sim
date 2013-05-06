@@ -25,8 +25,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
-#include "dis-inst.h"
-#include "dis-inst-info.h"
+#include "inst.h"
+#include "inst-info.h"
 #include "si2bin.h"
 #include "parser.h"
 #include "stream.h"

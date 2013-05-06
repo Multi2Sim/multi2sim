@@ -26,7 +26,7 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
-#include "dis-inst-info.h"
+#include "inst-info.h"
 #include "token.h"
 
 
