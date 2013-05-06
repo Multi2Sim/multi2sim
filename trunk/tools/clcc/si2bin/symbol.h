@@ -27,12 +27,12 @@
  * Global
  */
 
-extern struct hash_table_t *si_symbol_table;
+extern struct hash_table_t *si2bin_symbol_table;
 
-void si_symbol_table_init(void);
-void si_symbol_table_done(void);
+void si2bin_symbol_table_init(void);
+void si2bin_symbol_table_done(void);
 
-void si_symbol_table_dump(FILE *f);
+void si2bin_symbol_table_dump(FILE *f);
 
 
 
@@ -40,7 +40,7 @@ void si_symbol_table_dump(FILE *f);
  * Symbol
  */
 
-struct si_symbol_t
+struct si2bin_symbol_t
 {
 	char *name;
 	int value;
@@ -50,10 +50,10 @@ struct si_symbol_t
 	int defined;
 };
 
-struct si_symbol_t *si_symbol_create(char *name);
-void si_symbol_free(struct si_symbol_t *symbol);
+struct si2bin_symbol_t *si2bin_symbol_create(char *name);
+void si2bin_symbol_free(struct si2bin_symbol_t *symbol);
 
-void si_symbol_dump(struct si_symbol_t *symbol, FILE *f);
+void si2bin_symbol_dump(struct si2bin_symbol_t *symbol, FILE *f);
 
 #endif
 

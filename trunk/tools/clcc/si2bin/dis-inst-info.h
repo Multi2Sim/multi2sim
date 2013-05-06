@@ -32,15 +32,15 @@
 /* Forward declaration */
 struct si_inst_info_t;
 
-extern struct hash_table_t *si_dis_inst_info_table;
+extern struct hash_table_t *si2bin_inst_info_table;
 
-/* Element of hash table 'si_dis_inst_info_table', index by an instruction
+/* Element of hash table 'si2bin_inst_info_table', index by an instruction
  * name. */
-struct si_dis_inst_info_t
+struct si2bin_inst_info_t
 {
 	/* There can be multiple instruction encodings for the same instruction
 	 * name. This points to the next one in the list. */
-	struct si_dis_inst_info_t *next;
+	struct si2bin_inst_info_t *next;
 
 	/* Associated info structure in disassembler */
 	struct si_inst_info_t *inst_info;
@@ -51,8 +51,8 @@ struct si_dis_inst_info_t
 	char *name;  /* Token 0 of this list */
 };
 
-struct si_dis_inst_info_t *si_dis_inst_info_create(struct si_inst_info_t *inst_info);
-void si_dis_inst_info_free(struct si_dis_inst_info_t *info);
+struct si2bin_inst_info_t *si2bin_inst_info_create(struct si_inst_info_t *inst_info);
+void si2bin_inst_info_free(struct si2bin_inst_info_t *info);
 
 
 
@@ -61,8 +61,8 @@ void si_dis_inst_info_free(struct si_dis_inst_info_t *info);
  */
 
 /* Initialization of encoding tables */
-void si_dis_inst_info_init(void);
-void si_dis_inst_info_done(void);
+void si2bin_inst_info_init(void);
+void si2bin_inst_info_done(void);
 
 #endif
 

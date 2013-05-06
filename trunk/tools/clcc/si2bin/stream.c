@@ -31,11 +31,11 @@
  * Stream Object
  */
 
-struct si_stream_t *si_stream_create(int size)
+struct si2bin_stream_t *si2bin_stream_create(int size)
 {
-	struct si_stream_t *stream;
+	struct si2bin_stream_t *stream;
 	
-	stream = xcalloc(1, sizeof(struct si_stream_t));
+	stream = xcalloc(1, sizeof(struct si2bin_stream_t));
 	stream->buf = xcalloc(1, size);
 	stream->size = size;
 	
@@ -43,18 +43,18 @@ struct si_stream_t *si_stream_create(int size)
 }
 
 
-void si_stream_free(struct si_stream_t *stream)
+void si2bin_stream_free(struct si2bin_stream_t *stream)
 {
 	free(stream->buf);
 	free(stream);
 }
 
 
-void si_stream_add_inst(struct si_stream_t *stream,
-		struct si_dis_inst_t *inst)
+void si2bin_stream_add_inst(struct si2bin_stream_t *stream,
+		struct si2bin_inst_t *inst)
 {
 	/* Generate code for instruction */
-	si_dis_inst_gen(inst);
+	si2bin_inst_gen(inst);
 
 	/* Size of stream exceeded */
 	if (stream->offset + inst->size > stream->size)
@@ -66,7 +66,7 @@ void si_stream_add_inst(struct si_stream_t *stream,
 }
 
 
-void si_stream_dump(struct si_stream_t *stream, FILE *f)
+void si_stream_dump(struct si2bin_stream_t *stream, FILE *f)
 {
 	struct elf_buffer_t buffer;
 
@@ -81,16 +81,16 @@ void si_stream_dump(struct si_stream_t *stream, FILE *f)
  * Global
  */
 
-struct si_stream_t *si_out_stream;
+struct si2bin_stream_t *si2bin_out_stream;
 
-void si_stream_init(void)
+void si2bin_stream_init(void)
 {
-	si_out_stream = si_stream_create(1 << 20);  /* 2KB */
+	si2bin_out_stream = si2bin_stream_create(1 << 20);  /* 2KB */
 }
 
 
-void si_stream_done(void)
+void si2bin_stream_done(void)
 {
-	si_stream_free(si_out_stream);
+	si2bin_stream_free(si2bin_out_stream);
 }
 

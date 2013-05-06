@@ -27,14 +27,14 @@
 #include "symbol.h"
 
 
-struct hash_table_t *si_symbol_table;
+struct hash_table_t *si2bin_symbol_table;
 
-struct si_symbol_t *si_symbol_create(char *name)
+struct si2bin_symbol_t *si2bin_symbol_create(char *name)
 {
-	struct si_symbol_t *symbol;
+	struct si2bin_symbol_t *symbol;
 	
 	/* Allocate */
-	symbol = xcalloc(1, sizeof(struct si_symbol_t));
+	symbol = xcalloc(1, sizeof(struct si2bin_symbol_t));
 	symbol->name = xstrdup(name);
 	
 	/* Return */
@@ -42,13 +42,13 @@ struct si_symbol_t *si_symbol_create(char *name)
 
 }
 
-void si_symbol_free(struct si_symbol_t *symbol)
+void si2bin_symbol_free(struct si2bin_symbol_t *symbol)
 {
 	free(symbol->name);
 	free(symbol);
 }
 
-void si_symbol_dump(struct si_symbol_t *symbol, FILE *f)
+void si2bin_symbol_dump(struct si2bin_symbol_t *symbol, FILE *f)
 {
 	char buf[MAX_STRING_SIZE];
 
@@ -65,35 +65,35 @@ void si_symbol_dump(struct si_symbol_t *symbol, FILE *f)
  * Global Functions
  */
 
-void si_symbol_table_init(void)
+void si2bin_symbol_table_init(void)
 {
-	si_symbol_table = hash_table_create(5, 1);
+	si2bin_symbol_table = hash_table_create(5, 1);
 }
 
 
-void si_symbol_table_done(void)
+void si2bin_symbol_table_done(void)
 {
-	struct si_symbol_t *symbol;
+	struct si2bin_symbol_t *symbol;
 	char *name;
 
 	/* Free all symbols */
-	HASH_TABLE_FOR_EACH(si_symbol_table, name, symbol)
-		si_symbol_free(symbol);
+	HASH_TABLE_FOR_EACH(si2bin_symbol_table, name, symbol)
+		si2bin_symbol_free(symbol);
 	
 	/* Free symbol table */
-	hash_table_free(si_symbol_table);
+	hash_table_free(si2bin_symbol_table);
 }
 
-void si_symbol_table_dump(FILE *f)
+void si2bin_symbol_table_dump(FILE *f)
 {
-	struct si_symbol_t *symbol;
+	struct si2bin_symbol_t *symbol;
 	char *name;
 
 	fprintf(f, "Symbol Table:\n");
-	HASH_TABLE_FOR_EACH(si_symbol_table, name, symbol)
+	HASH_TABLE_FOR_EACH(si2bin_symbol_table, name, symbol)
 	{
 		fprintf(f, "\t");
-		si_symbol_dump(symbol, f);
+		si2bin_symbol_dump(symbol, f);
 		fprintf(f, "\n");
 	}
 }

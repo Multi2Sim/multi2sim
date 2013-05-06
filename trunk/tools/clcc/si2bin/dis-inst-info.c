@@ -37,19 +37,19 @@
 /* Hash table indexed by an instruction name, returning the associated entry in
  * 'si_inst_info' of type 'si_inst_info_t'. The name of the instruction is
  * extracted from the first token of the format string. */
-struct hash_table_t *si_dis_inst_info_table;
+struct hash_table_t *si2bin_inst_info_table;
 
 
-void si_dis_inst_info_init(void)
+void si2bin_inst_info_init(void)
 {
-	struct si_dis_inst_info_t *info;
-	struct si_dis_inst_info_t *prev_info;
+	struct si2bin_inst_info_t *info;
+	struct si2bin_inst_info_t *prev_info;
 	struct si_inst_info_t *inst_info;
 
 	int i;
 
 	/* Initialize hash table with instruction names. */
-	si_dis_inst_info_table = hash_table_create(SI_INST_COUNT, 1);
+	si2bin_inst_info_table = hash_table_create(SI_INST_COUNT, 1);
 	for (i = 0; i < SI_INST_COUNT; i++)
 	{
 		/* Instruction info from disassembler */
@@ -58,42 +58,42 @@ void si_dis_inst_info_init(void)
 			continue;
 
 		/* Create instruction info object */
-		info = si_dis_inst_info_create(inst_info);
+		info = si2bin_inst_info_create(inst_info);
 
 		/* Insert instruction info structure into hash table. There could
 		 * be already an instruction encoding with the same name. They
 		 * all formed a linked list. */
-		prev_info = hash_table_get(si_dis_inst_info_table, info->name);
+		prev_info = hash_table_get(si2bin_inst_info_table, info->name);
 		if (prev_info)
 		{
 			info->next = prev_info;
-			hash_table_set(si_dis_inst_info_table, info->name, info);
+			hash_table_set(si2bin_inst_info_table, info->name, info);
 		}
 		else
 		{
-			hash_table_insert(si_dis_inst_info_table, info->name, info);
+			hash_table_insert(si2bin_inst_info_table, info->name, info);
 		}
 	}
 }
 
 
-void si_dis_inst_info_done(void)
+void si2bin_inst_info_done(void)
 {
-	struct si_dis_inst_info_t *info;
-	struct si_dis_inst_info_t *next_info;
+	struct si2bin_inst_info_t *info;
+	struct si2bin_inst_info_t *next_info;
 
 	char *name;
 
-	HASH_TABLE_FOR_EACH(si_dis_inst_info_table, name, info)
+	HASH_TABLE_FOR_EACH(si2bin_inst_info_table, name, info)
 	{
 		while (info)
 		{
 			next_info = info->next;
-			si_dis_inst_info_free(info);
+			si2bin_inst_info_free(info);
 			info = next_info;
 		}
 	}
-	hash_table_free(si_dis_inst_info_table);
+	hash_table_free(si2bin_inst_info_table);
 }
 
 
@@ -103,17 +103,17 @@ void si_dis_inst_info_done(void)
  * Object 'si_dis_inst_info_t'
  */
 
-struct si_dis_inst_info_t *si_dis_inst_info_create(struct si_inst_info_t *inst_info)
+struct si2bin_inst_info_t *si2bin_inst_info_create(struct si_inst_info_t *inst_info)
 {
-	struct si_dis_inst_info_t *info;
-	struct si_token_t *token;
-	enum si_token_type_t token_type;
+	struct si2bin_inst_info_t *info;
+	struct si2bin_token_t *token;
+	enum si2bin_token_type_t token_type;
 
 	int index;
 	char *str_token;
 
 	/* Initialize */
-	info = xcalloc(1, sizeof(struct si_dis_inst_info_t));
+	info = xcalloc(1, sizeof(struct si2bin_inst_info_t));
 	info->inst_info = inst_info;
 
 	/* Create list of tokens from format string */
@@ -127,13 +127,13 @@ struct si_dis_inst_info_t *si_dis_inst_info_create(struct si_inst_info_t *inst_i
 	{
 		/* Get token from format string */
 		str_token = list_get(info->str_token_list, index);
-		token_type = str_map_string_case(&si_token_map, str_token);
+		token_type = str_map_string_case(&si2bin_token_map, str_token);
 		/*if (!token_type)
 			warning("%s: unrecognized token: %s",
 				__FUNCTION__, str_token);*/
 
 		/* Add formal argument */
-		token = si_token_create(token_type);
+		token = si2bin_token_create(token_type);
 		list_add(info->token_list, token);
 	}
 
@@ -142,9 +142,9 @@ struct si_dis_inst_info_t *si_dis_inst_info_create(struct si_inst_info_t *inst_i
 }
 
 
-void si_dis_inst_info_free(struct si_dis_inst_info_t *info)
+void si2bin_inst_info_free(struct si2bin_inst_info_t *info)
 {
-	struct si_token_t *token;
+	struct si2bin_token_t *token;
 	int index;
 
 	/* Tokens */
@@ -152,7 +152,7 @@ void si_dis_inst_info_free(struct si_dis_inst_info_t *info)
 	LIST_FOR_EACH(info->token_list, index)
 	{
 		token = list_get(info->token_list, index);
-		si_token_free(token);
+		si2bin_token_free(token);
 	}
 	list_free(info->token_list);
 

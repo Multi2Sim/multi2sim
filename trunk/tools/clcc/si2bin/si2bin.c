@@ -68,10 +68,10 @@ void si2bin_init(void)
 {
 	/* Initialize */
 	si_disasm_init();
-	si_dis_inst_info_init();
-	si_task_list_init();
-	si_symbol_table_init();
-	si_stream_init();
+	si2bin_inst_info_init();
+	si2bin_task_list_init();
+	si2bin_symbol_table_init();
+	si2bin_stream_init();
 
 }
 
@@ -79,10 +79,10 @@ void si2bin_init(void)
 void si2bin_done(void)
 {
 	/* Finalize */
-	si_task_list_done();
-	si_symbol_table_done();
-	si_stream_done();
-	si_dis_inst_info_done();
+	si2bin_task_list_done();
+	si2bin_symbol_table_done();
+	si2bin_stream_done();
+	si2bin_inst_info_done();
 	si_disasm_done();
 }
 
@@ -105,7 +105,7 @@ void si2bin_compile(struct list_t *source_file_list,
 		si2bin_yyparse();
 
 		/* Process pending tasks */
-		si_task_list_process();
+		si2bin_task_list_process();
 
 		/* Close */
 		fclose(si2bin_yyin);
