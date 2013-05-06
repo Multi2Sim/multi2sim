@@ -87,11 +87,31 @@ void cl2llvm_init(void)
 
 void cl2llvm_done(void)
 {
-	char *error = NULL;
-
 	/* Free symbol table */
 	hash_table_free(cl2llvm_symbol_table);
+}
 
+
+void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_list)
+{
+	int index;
+	char *error = NULL;
+
+	LIST_FOR_EACH(source_file_list, index)
+	{
+		/* Open file */
+		cl2llvm_file_name = list_get(source_file_list, index);
+		cl2llvm_yyin = fopen(cl2llvm_file_name, "rb");
+		if (!cl2llvm_yyin)
+			fatal("%s: cannot open file", cl2llvm_file_name);
+
+		/* Compile */
+		cl2llvm_yyparse();
+
+		/* Close */
+		fclose(cl2llvm_yyin);
+	}
+	
 	LLVMDumpModule(cl2llvm_module);
 	LLVMVerifyModule(cl2llvm_module, LLVMAbortProcessAction, &error);
 	LLVMDisposeMessage(error); // Handler == LLVMAbortProcessAction -> No need to check errors
@@ -113,26 +133,5 @@ void cl2llvm_done(void)
 	LLVMDisposePassManager(pass);
 	LLVMDisposeBuilder(cl2llvm_builder);
 	LLVMDisposeExecutionEngine(engine);
-}
-
-
-void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_list)
-{
-	int index;
-
-	LIST_FOR_EACH(source_file_list, index)
-	{
-		/* Open file */
-		cl2llvm_file_name = list_get(source_file_list, index);
-		cl2llvm_yyin = fopen(cl2llvm_file_name, "rb");
-		if (!cl2llvm_yyin)
-			fatal("%s: cannot open file", cl2llvm_file_name);
-
-		/* Compile */
-		cl2llvm_yyparse();
-
-		/* Close */
-		fclose(cl2llvm_yyin);
-	}
 }
 

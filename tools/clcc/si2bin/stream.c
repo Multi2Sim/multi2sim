@@ -91,7 +91,6 @@ void si_stream_init(void)
 
 void si_stream_done(void)
 {
-	si_stream_dump(si_out_stream, stdout);
 	si_stream_free(si_out_stream);
 }
 
