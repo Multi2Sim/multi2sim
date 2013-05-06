@@ -29,8 +29,8 @@
 #include <lib/util/list.h>
 
 #include "arg.h"
-#include "dis-inst.h"
 #include "id.h"
+#include "inst.h"
 #include "si2bin.h"
 #include "stream.h"
 #include "string.h"
@@ -45,11 +45,11 @@
 %union {
 	int num;
 	float num_float;
-	struct si_id_t *id;
-	struct si_dis_inst_t *inst;
+	struct si2bin_id_t *id;
+	struct si2bin_inst_t *inst;
 	struct si_label_t *label;
 	struct list_t *list;
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 }
 
  
@@ -101,46 +101,46 @@ rl_line
 
 	| rl_instr TOK_NEW_LINE
 	{
-		struct si_dis_inst_t *inst = $1;
+		struct si2bin_inst_t *inst = $1;
 
 		/* Generate code */
-		si_stream_add_inst(si_out_stream, inst);
-		si_dis_inst_dump(inst, stdout);
-		si_dis_inst_free(inst);
+		si2bin_stream_add_inst(si2bin_out_stream, inst);
+		si2bin_inst_dump(inst, stdout);
+		si2bin_inst_free(inst);
 	}
 ;
 
 rl_label
 	: TOK_ID TOK_COLON
 	{
-		struct si_id_t *id = $1;
-		struct si_symbol_t *symbol;
+		struct si2bin_id_t *id = $1;
+		struct si2bin_symbol_t *symbol;
 
 		/* Check if symbol exists */
-		symbol = hash_table_get(si_symbol_table, id->name);
+		symbol = hash_table_get(si2bin_symbol_table, id->name);
 		if (symbol && symbol->defined)
 			si2bin_yyerror_fmt("multiply defined label: %s", id->name);
 
 		/* Create if it does not exists */
 		if (!symbol)
 		{
-			symbol = si_symbol_create(id->name);
-			hash_table_insert(si_symbol_table, id->name, symbol);
+			symbol = si2bin_symbol_create(id->name);
+			hash_table_insert(si2bin_symbol_table, id->name, symbol);
 		}
 
 		/* Define symbol */
 		symbol->defined = 1;
-		symbol->value = si_out_stream->offset;
+		symbol->value = si2bin_out_stream->offset;
 
 		/* End */
-		si_id_free(id);
+		si2bin_id_free(id);
 	}
 
 rl_instr
 	: TOK_ID rl_arg_list 
 	{
-		struct si_dis_inst_t *inst;
-		struct si_id_t *id;
+		struct si2bin_inst_t *inst;
+		struct si2bin_id_t *id;
 		struct list_t *arg_list;
 
 		/* Get arguments */
@@ -148,10 +148,10 @@ rl_instr
 		arg_list = $2;
 		
 		/* Create instruction */
-		inst = si_dis_inst_create(id->name, arg_list);
+		inst = si2bin_inst_create(id->name, arg_list);
 
 		/* Return instructions */
-		si_id_free(id);
+		si2bin_id_free(id);
 		$$ = inst;
 	}
 ;
@@ -191,25 +191,25 @@ rl_arg_list
 rl_operand
 	: TOK_SCALAR_REGISTER
 	{
-		$$ = si_arg_create_scalar_register($1->name);
-		si_id_free($1);
+		$$ = si2bin_arg_create_scalar_register($1->name);
+		si2bin_id_free($1);
 	}
 	
 	| TOK_VECTOR_REGISTER
 	{
-		$$ = si_arg_create_vector_register($1->name); 
-		si_id_free($1);
+		$$ = si2bin_arg_create_vector_register($1->name); 
+		si2bin_id_free($1);
 	}
 	
 	| TOK_SPECIAL_REGISTER
 	{
-		$$ = si_arg_create_special_register($1->name); 
-		si_id_free($1);
+		$$ = si2bin_arg_create_special_register($1->name); 
+		si2bin_id_free($1);
 	}
 	
 	| TOK_DECIMAL
 	{
-		$$ = si_arg_create_literal($1);
+		$$ = si2bin_arg_create_literal($1);
 	}
 
 	| TOK_HEX
@@ -217,13 +217,13 @@ rl_operand
 		int value;
 
 		sscanf($1->name, "%x", &value);
-		$$ = si_arg_create_literal(value); 
-		si_id_free($1);
+		$$ = si2bin_arg_create_literal(value); 
+		si2bin_id_free($1);
 	}
 
 	| TOK_FLOAT
 	{
-		$$ = si_arg_create_literal_float($1);
+		$$ = si2bin_arg_create_literal_float($1);
 	}	
 
 
@@ -235,8 +235,8 @@ rl_arg
 
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA  
 	{
-		struct si_arg_t *arg;
-		struct si_id_t *id;
+		struct si2bin_arg_t *arg;
+		struct si2bin_id_t *id;
 
 		int low;
 		int high;
@@ -247,18 +247,18 @@ rl_arg
 		high = $5;
 		
 		/* Create argument */
-		arg = si_arg_create(); 
+		arg = si2bin_arg_create(); 
 		
 		/* Initialize */
 		if (!strcmp(id->name, "s"))
 		{
-			arg->type = si_arg_scalar_register_series;
+			arg->type = si2bin_arg_scalar_register_series;
 			arg->value.scalar_register_series.low = low;
 			arg->value.scalar_register_series.high = high;
 		}
 		else if (!strcmp(id->name, "v"))
 		{
-			arg->type = si_arg_vector_register_series;
+			arg->type = si2bin_arg_vector_register_series;
 			arg->value.vector_register_series.low = low;
 			arg->value.vector_register_series.high = high;
 		}
@@ -268,13 +268,13 @@ rl_arg
 		}
 		
 		/* Return created argument */
-		si_id_free(id);
+		si2bin_id_free(id);
 		$$ = arg;
 	}
 
 	| TOK_ABS TOK_OPAR rl_arg TOK_CPAR
 	{
-		struct si_arg_t *arg = $3;
+		struct si2bin_arg_t *arg = $3;
 
 		/* Activate absolute value flag */
 		arg->abs = 1;
@@ -282,10 +282,10 @@ rl_arg
 		/* Check valid application of 'abs' */
 		switch (arg->type)
 		{
-		case si_arg_scalar_register:
-		case si_arg_scalar_register_series:
-		case si_arg_vector_register:
-		case si_arg_vector_register_series:
+		case si2bin_arg_scalar_register:
+		case si2bin_arg_scalar_register_series:
+		case si2bin_arg_vector_register:
+		case si2bin_arg_vector_register_series:
 			break;
 
 		default:
@@ -298,7 +298,7 @@ rl_arg
 
 	| TOK_NEG rl_arg
 	{
-		struct si_arg_t *arg = $2;
+		struct si2bin_arg_t *arg = $2;
 
 		/* Activate absolute value flag */
 		arg->neg = 1;
@@ -306,10 +306,10 @@ rl_arg
 		/* Check valid application of 'abs' */
 		switch (arg->type)
 		{
-		case si_arg_scalar_register:
-		case si_arg_scalar_register_series:
-		case si_arg_vector_register:
-		case si_arg_vector_register_series:
+		case si2bin_arg_scalar_register:
+		case si2bin_arg_scalar_register_series:
+		case si2bin_arg_vector_register:
+		case si2bin_arg_vector_register_series:
 			break;
 
 		default:
@@ -322,12 +322,12 @@ rl_arg
 
 	| rl_operand rl_maddr_qual TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
 	{
-		struct si_arg_t *arg;
-		struct si_arg_t *soffset;
-		struct si_arg_t *qual;
+		struct si2bin_arg_t *arg;
+		struct si2bin_arg_t *soffset;
+		struct si2bin_arg_t *qual;
 
-		struct si_id_t *id_data_format;
-		struct si_id_t *id_num_format;
+		struct si2bin_id_t *id_data_format;
+		struct si2bin_id_t *id_num_format;
 
 		/* Read arguments */
 		soffset = $1;
@@ -336,35 +336,35 @@ rl_arg
 		id_num_format = $8;
 
 		/* Create argument */
-		arg = si_arg_create_maddr(soffset, qual,
+		arg = si2bin_arg_create_maddr(soffset, qual,
 			id_data_format->name, id_num_format->name);	
 			
 		/* Return */
-		si_id_free(id_data_format);
-		si_id_free(id_num_format);
+		si2bin_id_free(id_data_format);
+		si2bin_id_free(id_num_format);
 		$$ = arg;
 	}
 
 	| TOK_ID
 	{
-		struct si_arg_t *arg;
-		struct si_id_t *id;
-		struct si_symbol_t *symbol;
+		struct si2bin_arg_t *arg;
+		struct si2bin_id_t *id;
+		struct si2bin_symbol_t *symbol;
 
 		/* Get symbol or create it */
 		id = $1;
-		symbol = hash_table_get(si_symbol_table, id->name);
+		symbol = hash_table_get(si2bin_symbol_table, id->name);
 		if (!symbol)
 		{
-			symbol = si_symbol_create(id->name);
-			hash_table_insert(si_symbol_table, id->name, symbol);
+			symbol = si2bin_symbol_create(id->name);
+			hash_table_insert(si2bin_symbol_table, id->name, symbol);
 		}
 		
 		/* Create argument */
-		arg = si_arg_create_label(symbol);
+		arg = si2bin_arg_create_label(symbol);
 
 		/* Return */
-		si_id_free(id);
+		si2bin_id_free(id);
 		$$ = arg;
 	}
 
@@ -378,14 +378,14 @@ rl_maddr_qual
 
 	: 
 	{
-		$$ = si_arg_create_maddr_qual();
+		$$ = si2bin_arg_create_maddr_qual();
 	}
 
 	| rl_maddr_qual TOK_OFFEN
 	{
-		struct si_arg_t *qual = $1;
+		struct si2bin_arg_t *qual = $1;
 
-		assert(qual->type == si_arg_maddr_qual);
+		assert(qual->type == si2bin_arg_maddr_qual);
 		if (qual->value.maddr_qual.offen)
 			si2bin_yyerror("redundant qualifier 'offen'");
 		qual->value.maddr_qual.offen = 1;
@@ -394,9 +394,9 @@ rl_maddr_qual
 
 	| rl_maddr_qual TOK_IDXEN
 	{
-		struct si_arg_t *qual = $1;
+		struct si2bin_arg_t *qual = $1;
 
-		assert(qual->type == si_arg_maddr_qual);
+		assert(qual->type == si2bin_arg_maddr_qual);
 		if (qual->value.maddr_qual.idxen)
 			si2bin_yyerror("redundant qualifier 'idxen'");
 		qual->value.maddr_qual.idxen = 1;
@@ -405,10 +405,10 @@ rl_maddr_qual
 
 	| rl_maddr_qual TOK_OFFSET TOK_COLON TOK_DECIMAL
 	{
-		struct si_arg_t *qual = $1;
+		struct si2bin_arg_t *qual = $1;
 		int offset = $4;
 
-		assert(qual->type == si_arg_maddr_qual);
+		assert(qual->type == si2bin_arg_maddr_qual);
 		qual->value.maddr_qual.offset = offset;
 		/* FIXME - check range of 'offset' */
 		$$ = qual;
@@ -435,7 +435,7 @@ rl_waitcnt_arg
 		$3->value.wait_cnt.lgkmcnt_active += $1->value.wait_cnt.lgkmcnt_active;
 		$3->value.wait_cnt.lgkmcnt_value += $1->value.wait_cnt.lgkmcnt_value;	
 		
-		si_arg_free($1);
+		si2bin_arg_free($1);
 		$$ = $3;
 	}
 ;
@@ -444,17 +444,17 @@ rl_waitcnt_elem
 
 	: TOK_ID TOK_OPAR TOK_DECIMAL TOK_CPAR
 	{
-		struct si_arg_t *arg;
-		struct si_id_t *id;
+		struct si2bin_arg_t *arg;
+		struct si2bin_id_t *id;
 
 		/* Read arguments */
 		id = $1;
 		
 		/* Create argument */
-		arg = si_arg_create(); 
+		arg = si2bin_arg_create(); 
 		
 		/* Initialize */
-		arg->type = si_arg_waitcnt;
+		arg->type = si2bin_arg_waitcnt;
 		
 		if (!strcmp(id->name, "vmcnt"))
 		{
@@ -473,7 +473,7 @@ rl_waitcnt_elem
 		}
 		
 		/* Return */
-		si_id_free(id);
+		si2bin_id_free(id);
 		$$ = arg;
 	}
 ;
