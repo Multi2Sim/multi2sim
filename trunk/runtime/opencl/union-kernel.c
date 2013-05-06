@@ -22,11 +22,20 @@ struct dispatch_info
 
 void *device_kernel_dispatch(void *ptr)
 {
+	int i;
 	struct dispatch_info *info = (struct dispatch_info *)ptr;
 
-	unsigned int *group_offset = xcalloc(info->work_dim, sizeof (unsigned int));
-	unsigned int *group_count = xcalloc(info->work_dim, sizeof (unsigned int));
-	
+	/* Allocate the maximum number of dimensions */
+	unsigned int *group_offset = xcalloc(3, sizeof (unsigned int));
+	unsigned int *group_count = xcalloc(3, sizeof (unsigned int));
+
+	/* Initialize to reasonable values */
+	for (i = 0; i < 3; i++)
+	{
+		group_offset[i] = 0;
+		group_count[i] = 1;
+	}
+
 	pthread_mutex_lock(info->lock);
 	while (get_strategy()->get_partition(
 		info->part, 
@@ -36,7 +45,6 @@ void *device_kernel_dispatch(void *ptr)
 		group_count))
 	{
 		pthread_mutex_unlock(info->lock);
-	
 		info->device->arch_kernel_run_func(
 			info->kernel,
 			info->work_dim,
@@ -72,7 +80,7 @@ void opencl_union_kernel_run(
 	pthread_mutex_t lock;
 	void *part;
 
-	for (i = 0; i < (int)num_groups; i++)
+	for (i = 0; i < work_dim; i++)
 	{
 		num_groups[i] = global_work_size[i] / local_work_size[i];
 		/* Do not support recursive division of kernels */
