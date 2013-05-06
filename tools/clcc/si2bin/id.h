@@ -20,13 +20,13 @@
 #ifndef TOOLS_CLCC_SI2BIN_ID_H
 #define TOOLS_CLCC_SI2BIN_ID_H
 
-struct si_id_t
+struct si2bin_id_t
 {
 	char *name;
 };
 
-struct si_id_t *si_id_create(char *name);
-void si_id_free(struct si_id_t *id);
+struct si2bin_id_t *si2bin_id_create(char *name);
+void si2bin_id_free(struct si2bin_id_t *id);
 
 #endif
 

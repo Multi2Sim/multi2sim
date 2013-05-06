@@ -28,9 +28,9 @@
  */
 
 /* Forward declarations */
-struct si_dis_inst_t;
+struct si2bin_inst_t;
 
-struct si_stream_t
+struct si2bin_stream_t
 {
 	void *buf;
 
@@ -39,11 +39,11 @@ struct si_stream_t
 };
 
 
-struct si_stream_t *si_stream_create(int size);
-void si_stream_free(struct si_stream_t *stream);
+struct si2bin_stream_t *si2bin_stream_create(int size);
+void si2bin_stream_free(struct si2bin_stream_t *stream);
 
-void si_stream_add_inst(struct si_stream_t *stream,
-		struct si_dis_inst_t *inst);
+void si2bin_stream_add_inst(struct si2bin_stream_t *stream,
+		struct si2bin_inst_t *inst);
 
 
 
@@ -53,10 +53,10 @@ void si_stream_add_inst(struct si_stream_t *stream,
  */
 
 /* Global output stream */
-extern struct si_stream_t *si_out_stream;
+extern struct si2bin_stream_t *si2bin_out_stream;
 
-void si_stream_init(void);
-void si_stream_done(void);
+void si2bin_stream_init(void);
+void si2bin_stream_done(void);
 
 
 #endif

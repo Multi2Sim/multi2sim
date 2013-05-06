@@ -22,18 +22,18 @@
 #include "id.h"
 
 
-struct si_id_t *si_id_create(char *name)
+struct si2bin_id_t *si2bin_id_create(char *name)
 {
-	struct si_id_t *id;
+	struct si2bin_id_t *id;
 
-	id = xcalloc(1, sizeof(struct si_id_t));
+	id = xcalloc(1, sizeof(struct si2bin_id_t));
 	id->name = xstrdup(name);
 
 	return id;
 }
 
 
-void si_id_free(struct si_id_t *id)
+void si2bin_id_free(struct si2bin_id_t *id)
 {
 	free(id->name);
 	free(id);
