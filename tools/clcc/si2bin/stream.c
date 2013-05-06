@@ -21,7 +21,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
 
-#include "dis-inst.h"
+#include "inst.h"
 #include "si2bin.h"
 #include "task.h"
 #include "stream.h"

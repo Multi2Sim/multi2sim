@@ -28,8 +28,8 @@
 #include <lib/util/string.h>
 
 #include "arg.h"
-#include "dis-inst.h"
-#include "dis-inst-info.h"
+#include "inst.h"
+#include "inst-info.h"
 #include "si2bin.h"
 #include "stream.h"
 #include "symbol.h"

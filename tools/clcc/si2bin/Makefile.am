@@ -14,14 +14,14 @@ libsi2bin_a_SOURCES = \
 	arg.c \
 	arg.h \
 	\
-	dis-inst.c \
-	dis-inst.h \
-	\
-	dis-inst-info.c \
-	dis-inst-info.h \
-	\
 	id.c \
 	id.h \
+	\
+	inst.c \
+	inst.h \
+	\
+	inst-info.c \
+	inst-info.h \
 	\
 	si2bin.c \
 	si2bin.h \
