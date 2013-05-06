@@ -145,7 +145,8 @@ struct mips_inst_t
 };
 
 void mips_inst_decode(struct mips_inst_t *inst);
-
+void mips_disasm(unsigned int buf, unsigned int ip, volatile struct mips_inst_t *inst);
+void mips_inst_debug_dump(struct mips_inst_t *inst, FILE *f);
 void mips_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr);
 
 void mips_inst_dump(FILE *f, char *str, int inst_str_size, void *inst_ptr,
