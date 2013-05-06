@@ -825,6 +825,7 @@ AC_CONFIG_FILES([
 		src/arch/mips/Makefile
 		src/arch/mips/asm/Makefile
 		src/arch/mips/emu/Makefile
+		src/arch/mips/timing/Makefile
 
 		src/arch/southern-islands/Makefile
 		src/arch/southern-islands/asm/Makefile

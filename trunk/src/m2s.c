@@ -35,6 +35,10 @@
 #include <arch/fermi/emu/isa.h>
 #include <arch/fermi/timing/gpu.h>
 #include <arch/mips/asm/asm.h>
+#include <arch/mips/emu/context.h>
+#include <arch/mips/emu/isa.h>
+#include <arch/mips/emu/syscall.h>
+#include <arch/mips/timing/cpu.h>
 #include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/isa.h>
@@ -117,6 +121,11 @@ static char *arm_call_debug_file_name = "";
 static enum arch_sim_kind_t arm_sim_kind = arch_sim_kind_functional;
 
 static char *mips_disasm_file_name = "";
+static char *mips_loader_debug_file_name = "";
+static char *mips_isa_debug_file_name = "";
+static char *mips_sys_debug_file_name = "";
+static char *mips_call_debug_file_name = "";
+static enum arch_sim_kind_t mips_sim_kind = arch_sim_kind_functional;
 
 static char *mem_debug_file_name = "";
 
@@ -426,6 +435,14 @@ static char *m2s_help =
 		"  --mips-disasm <file>\n"
 		"      Disassemble an MIPS binary using Multi2Sim's internal disassembler. This\n"
 		"      option is incompatible with any other command-line option.\n"
+		"  --mips-debug-loader <file>\n"
+		"      Dump debug information extending the analysis of the ELF program binary.\n"
+		"      This information shows which ELF sections and symbols are loaded to the\n"
+		"      initial program memory image.\n"
+		"\n"
+		"  --mips-debug-isa <file>\n"
+		"      Debug information for dynamic execution of Mips instructions. Updates on\n"
+		"      the processor state can be analyzed using this information.\n"
 		"\n"
 		"\n"
 		"================================================================================\n"
@@ -1208,6 +1225,37 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Arm loader debug file */
+		if (!strcmp(argv[argi], "--mips-debug-loader"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			mips_loader_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Arm isa debug file */
+		if (!strcmp(argv[argi], "--mips-debug-isa"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			mips_isa_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* System call debug file */
+		if (!strcmp(argv[argi], "--mips-debug-syscall"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			mips_sys_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Function calls debug file */
+		if (!strcmp(argv[argi], "--mips-debug-call"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			mips_call_debug_file_name = argv[++argi];
+			continue;
+		}
 
 
 
@@ -1464,7 +1512,10 @@ static void m2s_load_programs(int argc, char **argv)
 		case EM_ARM:
 			arm_ctx_load_from_command_line(argc - 1, argv + 1);
 			break;
-
+		case EM_MIPS:
+			mips_ctx_load_from_command_line(argc - 1, argv + 1);
+			//fatal("loader has determined that the binary has MIPS format. Mips emulation is not supported yet\n");
+			break;
 		default:
 			fatal("%s: unsupported ELF architecture", argv[1]);
 		}
@@ -1789,6 +1840,10 @@ int main(int argc, char **argv)
 	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);
 	arm_isa_call_debug_category = debug_new_category(arm_call_debug_file_name);
+	mips_loader_debug_category = debug_new_category(mips_loader_debug_file_name);
+	mips_isa_inst_debug_category = debug_new_category(mips_isa_debug_file_name);
+	mips_sys_debug_category = debug_new_category(mips_sys_debug_file_name);
+	mips_isa_call_debug_category = debug_new_category(mips_call_debug_file_name);
 
 	/* Initialization of runtimes */
 	runtime_init();
@@ -1826,6 +1881,11 @@ int main(int argc, char **argv)
 			frm_emu_dump_summary, frm_emu_run,
 			frm_gpu_init, frm_gpu_done, frm_gpu_dump,
 			frm_gpu_dump_summary, frm_gpu_run);
+	arch_register("MIPS", "mips", mips_sim_kind,
+			mips_emu_init, mips_emu_done, mips_emu_dump,
+			mips_emu_dump_summary, mips_emu_run,
+			mips_cpu_init, mips_cpu_done, mips_cpu_dump,
+			mips_cpu_dump_summary, mips_cpu_run);
 	arch_register("SouthernIslands", "si", si_sim_kind,
 			si_emu_init, si_emu_done, si_emu_dump,
 			si_emu_dump_summary, si_emu_run,

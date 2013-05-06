@@ -64,7 +64,7 @@ volatile enum esim_finish_t esim_finish = esim_finish_none;
 
 struct str_map_t esim_finish_map =
 {
-	19, {
+	21, {
 		{ "ContextsFinished", esim_finish_ctx },
 
 		{ "x86LastInst", esim_finish_x86_last_inst },
@@ -73,6 +73,9 @@ struct str_map_t esim_finish_map =
 
 		{ "ArmMaxInst", esim_finish_arm_max_inst },
 		{ "ArmMaxCycles", esim_finish_arm_max_cycles },
+
+		{ "MipsMaxInst", esim_finish_mips_max_inst },
+		{ "MipsMaxCycles", esim_finish_mips_max_cycles },
 
 		{ "EvergreenMaxInst", esim_finish_evg_max_inst },
 		{ "EvergreenMaxCycles", esim_finish_evg_max_cycles },
