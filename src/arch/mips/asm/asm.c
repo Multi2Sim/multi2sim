@@ -948,7 +948,46 @@ void mips_emu_disasm(char *path)
 	mips_asm_done();
 }
 
-void mips_asm_done()
+void mips_disasm(unsigned int buf, unsigned int ip, volatile struct mips_inst_t *inst)
+{
+	struct mips_inst_info_t *current_table;
+	/* We start with the first table mips_asm_table, with the
+	 * opcode field as argument
+	 */
+	current_table = mips_asm_table;
+	int current_table_low = 26;
+	int current_table_high = 31;
+	unsigned int mips_table_arg;
+	int loop_iteration = 0;
+
+	inst->addr = ip;
+	inst->dword.bytes = (unsigned int) (buf);
+
+	mips_table_arg = 
+		BITS32(inst->dword.bytes, current_table_high,
+		       current_table_low);
+
+	/* Find next tables if the instruction belongs to another table */
+	while(1)
+	{
+		if (current_table[mips_table_arg].next_table
+		    && loop_iteration < 4)
+		{
+			current_table_high = current_table[mips_table_arg].next_table_low;
+			current_table = current_table[mips_table_arg].next_table;
+			mips_table_arg = BITS32(inst->dword.bytes, current_table_high, current_table_low);
+			loop_iteration++;
+		}
+		else if (loop_iteration > 4)
+		{
+			fatal("Cannot find the correct table containing the instruction\n");
+		}
+		else
+			break;
+	}
+	inst->info = &current_table[mips_table_arg];
+}
+	void mips_asm_done()
 {
 
 	free(mips_asm_table);
@@ -981,4 +1020,13 @@ void mips_asm_done()
 
 	free(mips_asm_table_special3);
 	free(mips_asm_table_special3_bshfl);
+}
+
+void mips_inst_debug_dump(struct mips_inst_t *inst, FILE *f)
+{
+	char inst_str[MAX_STRING_SIZE];
+	void *inst_ptr;
+	unsigned int print_symbol_address = 0;
+	inst_ptr = &inst->dword.bytes;
+	mips_inst_dump(f, inst_str, MAX_STRING_SIZE, inst_ptr, inst->addr, inst->addr, &print_symbol_address);
 }

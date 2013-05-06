@@ -19,6 +19,111 @@
 
 #ifndef ARCH_MIPS_EMU_EMU_H
 #define ARCH_MIPS_EMU_EMU_H
+#include <pthread.h>
+
+
+struct mips_emu_t
+{
+	/* Common architecture object */
+	struct arch_t *arch;
+
+	/* pid & address_space_index assignment */
+	int current_pid;
+
+	/* Timer for emulator activity */
+	//struct m2s_timer_t *timer;
+
+	/* Schedule next call to 'x86_emu_process_events()'.
+	 * The call will only be effective if 'process_events_force' is set.
+	 * This flag should be accessed thread-safely locking 'process_events_mutex'. */
+	pthread_mutex_t process_events_mutex;
+	int process_events_force;
+
+	/* Counter of times that a context has been suspended in a
+	 * futex. Used for FIFO wakeups. */
+	long long futex_sleep_count;
+
+	/* Flag set when any context changes any status other than 'specmode' */
+	int context_reschedule;
+
+	/* List of contexts */
+	struct mips_ctx_t *context_list_head;
+	struct mips_ctx_t *context_list_tail;
+	int context_list_count;
+	int context_list_max;
+
+	/* List of running contexts */
+	struct mips_ctx_t *running_list_head;
+	struct mips_ctx_t *running_list_tail;
+	int running_list_count;
+	int running_list_max;
+
+	/* List of suspended contexts */
+	struct mips_ctx_t *suspended_list_head;
+	struct mips_ctx_t *suspended_list_tail;
+	int suspended_list_count;
+	int suspended_list_max;
+
+	/* List of zombie contexts */
+	struct mips_ctx_t *zombie_list_head;
+	struct mips_ctx_t *zombie_list_tail;
+	int zombie_list_count;
+	int zombie_list_max;
+
+	/* List of finished contexts */
+	struct mips_ctx_t *finished_list_head;
+	struct mips_ctx_t *finished_list_tail;
+	int finished_list_count;
+	int finished_list_max;
+
+	/* List of allocated contexts */
+	struct mips_ctx_t *alloc_list_head;
+	struct mips_ctx_t *alloc_list_tail;
+	int alloc_list_count;
+	int alloc_list_max;
+
+	/* Stats */
+	long long inst_count;  /* Number of emulated instructions */
+};
+
+enum mips_emu_list_kind_t
+{
+	mips_emu_list_context = 0,
+	mips_emu_list_running,
+	mips_emu_list_suspended,
+	mips_emu_list_zombie,
+	mips_emu_list_finished,
+	mips_emu_list_alloc
+};
+
+int mips_emu_list_member(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx);
+void mips_emu_list_remove(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx);
+void mips_emu_list_insert_tail(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx);
+void mips_emu_list_insert_head(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx);
+void mips_emu_dump_summary(FILE *f);
+
+extern struct mips_emu_t *mips_emu;
+extern struct arch_t *mips_emu_arch;
+
+extern enum arch_sim_kind_t mips_emu_sim_kind;
+
+extern long long mips_emu_max_cycles;
+extern long long mips_emu_max_inst;
+extern long long mips_emu_max_time;
+
+/*void mips_emu_init(void);
+void mips_emu_done(void);
+*/
+void mips_emu_init(struct arch_t *arch);
+void mips_emu_done(void);
+void mips_emu_dump(FILE *f);
+
+
+enum arch_sim_kind_t mips_emu_run(void);
+
+void mips_emu_process_events_schedule();
+
+//int mips_emu_run(void);
 
 
 #endif
