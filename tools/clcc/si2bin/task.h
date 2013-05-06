@@ -28,19 +28,19 @@
  */
 
 /* Forward declaration */
-struct si_symbol_t;
+struct si2bin_symbol_t;
 
-struct si_task_t
+struct si2bin_task_t
 {
 	int offset;
-	struct si_symbol_t *symbol;
+	struct si2bin_symbol_t *symbol;
 };
 
-struct si_task_t *si_task_create(int offset, struct si_symbol_t *symbol);
-void si_task_free(struct si_task_t *task);
+struct si2bin_task_t *si2bin_task_create(int offset, struct si2bin_symbol_t *symbol);
+void si2bin_task_free(struct si2bin_task_t *task);
 
-void si_task_dump(struct si_task_t *task, FILE *f);
-void si_task_process(struct si_task_t *task);
+void si2bin_task_dump(struct si2bin_task_t *task, FILE *f);
+void si2bin_task_process(struct si2bin_task_t *task);
 
 
 
@@ -48,11 +48,11 @@ void si_task_process(struct si_task_t *task);
  * Global
  */
 
-extern struct list_t *si_task_list;
+extern struct list_t *si2bin_task_list;
 
-void si_task_list_init(void);
-void si_task_list_done(void);
+void si2bin_task_list_init(void);
+void si2bin_task_list_done(void);
 
-void si_task_list_process(void);
+void si2bin_task_list_process(void);
 
 #endif

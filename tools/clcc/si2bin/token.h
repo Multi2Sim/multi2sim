@@ -20,60 +20,60 @@
 #ifndef TOOLS_CLCC_SI2BIN_TOKEN_H
 #define TOOLS_CLCC_SI2BIN_TOKEN_H
 
-enum si_token_type_t
+enum si2bin_token_type_t
 {
-	si_token_invalid = 0,
+	si2bin_token_invalid = 0,
 
-	si_token_64_sdst,
-	si_token_64_ssrc0,
-	si_token_64_ssrc1,
-	si_token_64_src0,
-	si_token_64_src1,
-	si_token_64_src2,
-	si_token_64_svdst,
-	si_token_64_vdst,
-	si_token_label,
-	si_token_mt_maddr,
-	si_token_mt_series_vdata,
-	si_token_offset,
-	si_token_sdst,
-	si_token_series_sbase,
-	si_token_series_sdst,
-	si_token_series_srsrc,
-	si_token_simm16,
-	si_token_smrd_sdst,
-	si_token_src0,
-	si_token_src1,
-	si_token_src2,
-	si_token_ssrc0,
-	si_token_ssrc1,
-	si_token_vaddr,
-	si_token_vcc,
-	si_token_vdst,
-	si_token_vop3_64_svdst,
-	si_token_vop3_src0,
-	si_token_vop3_src1,
-	si_token_vop3_src2,
-	si_token_vop3_vdst,
-	si_token_vsrc0,
-	si_token_vsrc1,
-	si_token_wait_cnt,
+	si2bin_token_64_sdst,
+	si2bin_token_64_ssrc0,
+	si2bin_token_64_ssrc1,
+	si2bin_token_64_src0,
+	si2bin_token_64_src1,
+	si2bin_token_64_src2,
+	si2bin_token_64_svdst,
+	si2bin_token_64_vdst,
+	si2bin_token_label,
+	si2bin_token_mt_maddr,
+	si2bin_token_mt_series_vdata,
+	si2bin_token_offset,
+	si2bin_token_sdst,
+	si2bin_token_series_sbase,
+	si2bin_token_series_sdst,
+	si2bin_token_series_srsrc,
+	si2bin_token_simm16,
+	si2bin_token_smrd_sdst,
+	si2bin_token_src0,
+	si2bin_token_src1,
+	si2bin_token_src2,
+	si2bin_token_ssrc0,
+	si2bin_token_ssrc1,
+	si2bin_token_vaddr,
+	si2bin_token_vcc,
+	si2bin_token_vdst,
+	si2bin_token_vop3_64_svdst,
+	si2bin_token_vop3_src0,
+	si2bin_token_vop3_src1,
+	si2bin_token_vop3_src2,
+	si2bin_token_vop3_vdst,
+	si2bin_token_vsrc0,
+	si2bin_token_vsrc1,
+	si2bin_token_wait_cnt,
 
-	si_token_count
+	si2bin_token_count
 };
 
-extern struct str_map_t si_token_map;
+extern struct str_map_t si2bin_token_map;
 
-struct si_token_t
+struct si2bin_token_t
 {
-	enum si_token_type_t type;
+	enum si2bin_token_type_t type;
 };
 
-struct si_token_t *si_token_create(enum si_token_type_t type);
-void si_token_free(struct si_token_t *token);
+struct si2bin_token_t *si2bin_token_create(enum si2bin_token_type_t type);
+void si2bin_token_free(struct si2bin_token_t *token);
 
-struct si_arg_t;
-int si_token_is_arg_allowed(struct si_token_t *token, struct si_arg_t *arg);
+struct si2bin_arg_t;
+int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_t *arg);
 
 #endif
 

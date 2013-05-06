@@ -29,23 +29,23 @@
 #include "si2bin.h"
 
 
-struct str_map_t si_arg_special_register_map =
+struct str_map_t si2bin_arg_special_register_map =
 {
 	3,
 	{
-		{ "vcc", si_arg_special_register_vcc },
-		{ "scc", si_arg_special_register_scc },
-		{ "exec", si_arg_special_register_exec }
+		{ "vcc", si2bin_arg_special_register_vcc },
+		{ "scc", si2bin_arg_special_register_scc },
+		{ "exec", si2bin_arg_special_register_exec }
 	}
 };
 
 
-struct si_arg_t *si_arg_create(void)
+struct si2bin_arg_t *si2bin_arg_create(void)
 {
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 	
 	/* Allocate */
-	arg = xcalloc(1, sizeof(struct si_arg_t));
+	arg = xcalloc(1, sizeof(struct si2bin_arg_t));
 	
 	/* Return */
 	return arg;
@@ -53,35 +53,35 @@ struct si_arg_t *si_arg_create(void)
 }
 
 
-struct si_arg_t *si_arg_create_literal(int value)
+struct si2bin_arg_t *si2bin_arg_create_literal(int value)
 {
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 
-	arg = si_arg_create();
-	arg->type = si_arg_literal;
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_literal;
 	arg->value.literal.val = value;
 
 	return arg;
 }
 
-struct si_arg_t *si_arg_create_literal_float(float value)
+struct si2bin_arg_t *si2bin_arg_create_literal_float(float value)
 {
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 
-	arg = si_arg_create();
-	arg->type = si_arg_literal_float;
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_literal_float;
 	arg->value.literal_float.val = value;
 
 	return arg;
 }
 
 
-struct si_arg_t *si_arg_create_scalar_register(char *name)
+struct si2bin_arg_t *si2bin_arg_create_scalar_register(char *name)
 {
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 
-	arg = si_arg_create();
-	arg->type = si_arg_scalar_register;
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_scalar_register;
 
 	assert(name[0] == 's');
 	arg->value.scalar_register.id = atoi(name + 1);
@@ -92,12 +92,12 @@ struct si_arg_t *si_arg_create_scalar_register(char *name)
 }
 
 
-struct si_arg_t *si_arg_create_vector_register(char *name)
+struct si2bin_arg_t *si2bin_arg_create_vector_register(char *name)
 {
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 
-	arg = si_arg_create();
-	arg->type = si_arg_vector_register;
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_vector_register;
 
 	assert(name[0] == 'v');
 	arg->value.vector_register.id = atoi(name + 1);
@@ -107,15 +107,15 @@ struct si_arg_t *si_arg_create_vector_register(char *name)
 	return arg;
 }
 
-struct si_arg_t *si_arg_create_special_register(char *name)
+struct si2bin_arg_t *si2bin_arg_create_special_register(char *name)
 {
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 	int err;
 
-	arg = si_arg_create();
-	arg->type = si_arg_special_register;
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_special_register;
 	arg->value.special_register.type =
-			str_map_string_err(&si_arg_special_register_map,
+			str_map_string_err(&si2bin_arg_special_register_map,
 			name, &err);
 	if (err)
 		si2bin_yyerror_fmt("invalid special register: %s", name);
@@ -124,13 +124,13 @@ struct si_arg_t *si_arg_create_special_register(char *name)
 }
 
 
-struct si_arg_t *si_arg_create_maddr(struct si_arg_t *soffset,
-		struct si_arg_t *qual, char *data_format, char *num_format)
+struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
+		struct si2bin_arg_t *qual, char *data_format, char *num_format)
 {
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 
-	arg = si_arg_create();
-	arg->type = si_arg_maddr;
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_maddr;
 	arg->value.maddr.soffset = soffset;
 	arg->value.maddr.qual = qual;
 	arg->value.maddr.data_format = xstrdup(data_format);
@@ -140,40 +140,40 @@ struct si_arg_t *si_arg_create_maddr(struct si_arg_t *soffset,
 }
 
 
-struct si_arg_t *si_arg_create_maddr_qual(void)
+struct si2bin_arg_t *si2bin_arg_create_maddr_qual(void)
 {
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 
-	arg = si_arg_create();
-	arg->type = si_arg_maddr_qual;
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_maddr_qual;
 
 	return arg;
 }
 
 
-struct si_arg_t *si_arg_create_label(struct si_symbol_t *symbol)
+struct si2bin_arg_t *si2bin_arg_create_label(struct si2bin_symbol_t *symbol)
 {
-	struct si_arg_t *arg;
+	struct si2bin_arg_t *arg;
 
-	arg = si_arg_create();
-	arg->type = si_arg_label;
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_label;
 	arg->value.label.symbol = symbol;
 
 	return arg;
 }
 
 
-void si_arg_free(struct si_arg_t *arg)
+void si2bin_arg_free(struct si2bin_arg_t *arg)
 {
 	switch (arg->type)
 	{
 
-	case si_arg_maddr:
+	case si2bin_arg_maddr:
 
 		free(arg->value.maddr.data_format);
 		free(arg->value.maddr.num_format);
-		si_arg_free(arg->value.maddr.soffset);
-		si_arg_free(arg->value.maddr.qual);
+		si2bin_arg_free(arg->value.maddr.soffset);
+		si2bin_arg_free(arg->value.maddr.qual);
 		break;
 
 	default:
@@ -184,12 +184,12 @@ void si_arg_free(struct si_arg_t *arg)
 }
 
 
-int si_arg_encode_operand(struct si_arg_t *arg)
+int si2bin_arg_encode_operand(struct si2bin_arg_t *arg)
 {
 	switch (arg->type)
 	{
 
-	case si_arg_literal:
+	case si2bin_arg_literal:
 	{
 		int value;
 
@@ -202,7 +202,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 		break;
 	}
 
-	case si_arg_literal_float:
+	case si2bin_arg_literal_float:
 	{
 		float value;
 
@@ -228,7 +228,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 		break;
 	}
 
-	case si_arg_scalar_register:
+	case si2bin_arg_scalar_register:
 	{
 		int id;
 
@@ -241,7 +241,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 	}
 
 	/* Encode the low register */
-	case si_arg_scalar_register_series:
+	case si2bin_arg_scalar_register_series:
 	{
 		int id;
 
@@ -253,7 +253,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 		break;
 	}
 
-	case si_arg_vector_register:
+	case si2bin_arg_vector_register:
 	{
 		int id;
 
@@ -266,7 +266,7 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 	}
 
 	/* Encode the low register */
-	case si_arg_vector_register_series:
+	case si2bin_arg_vector_register_series:
 	{
 		int id;
 
@@ -279,17 +279,17 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 	}
 
 	/* Special register */
-	case si_arg_special_register:
+	case si2bin_arg_special_register:
 	{
 		switch (arg->value.special_register.type)
 		{
-		case si_arg_special_register_vcc:
+		case si2bin_arg_special_register_vcc:
 			return 106;
 
-		case si_arg_special_register_exec:
+		case si2bin_arg_special_register_exec:
 			return 126;
 
-		case si_arg_special_register_scc:
+		case si2bin_arg_special_register_scc:
 			return 253;
 
 		default:
@@ -309,41 +309,41 @@ int si_arg_encode_operand(struct si_arg_t *arg)
 }
 
 
-void si_arg_dump(struct si_arg_t *arg, FILE *f)
+void si2bin_arg_dump(struct si2bin_arg_t *arg, FILE *f)
 {
 	switch (arg->type)
 	{
 	
-	case si_arg_invalid:
+	case si2bin_arg_invalid:
 
 		fprintf(f, "<invalid>");
 		break;
 		
-	case si_arg_scalar_register:
+	case si2bin_arg_scalar_register:
 
 		fprintf(f, "<sreg> s%d", arg->value.scalar_register.id);
 		break;
 		
-	case si_arg_vector_register:
+	case si2bin_arg_vector_register:
 
 		fprintf(f, "<vreg> v%d", arg->value.vector_register.id);
 		break;
 		
-	case si_arg_scalar_register_series:
+	case si2bin_arg_scalar_register_series:
 
 		fprintf(f, "<sreg_series> s[%d:%d]",
 			arg->value.scalar_register_series.low,
 			arg->value.scalar_register_series.high);
 		break;
 			
-	case si_arg_vector_register_series:
+	case si2bin_arg_vector_register_series:
 
 		fprintf(f, "<vreg_series> v[%d:%d]",
 			arg->value.vector_register_series.low,
 			arg->value.vector_register_series.high);
 		break;
 			
-	case si_arg_literal:
+	case si2bin_arg_literal:
 	{
 		int value;
 
@@ -354,12 +354,12 @@ void si_arg_dump(struct si_arg_t *arg, FILE *f)
 		break;
 	}
 		
-	case si_arg_literal_float:
+	case si2bin_arg_literal_float:
 
 		fprintf(f, "<const_float> %g", arg->value.literal_float.val);
 		break;
 
-	case si_arg_waitcnt:
+	case si2bin_arg_waitcnt:
 	{
 		char buf[MAX_STRING_SIZE];
 
@@ -377,27 +377,27 @@ void si_arg_dump(struct si_arg_t *arg, FILE *f)
 		break;
 	}
 
-	case si_arg_special_register:
+	case si2bin_arg_special_register:
 
-		fprintf(f, "<special_reg> %s", str_map_value(&si_arg_special_register_map,
+		fprintf(f, "<special_reg> %s", str_map_value(&si2bin_arg_special_register_map,
 				arg->value.special_register.type));
 		break;
 	
-	case si_arg_mem_register:
+	case si2bin_arg_mem_register:
 
 		fprintf(f, "<mreg> m%d", arg->value.mem_register.id);
 		break;
 	
-	case si_arg_maddr:
+	case si2bin_arg_maddr:
 
 		fprintf(f, "<maddr>");
 
 		fprintf(f, " soffs={");
-		si_arg_dump(arg->value.maddr.soffset, f);
+		si2bin_arg_dump(arg->value.maddr.soffset, f);
 		fprintf(f, "}");
 
 		fprintf(f, " qual={");
-		si_arg_dump(arg->value.maddr.qual, f);
+		si2bin_arg_dump(arg->value.maddr.qual, f);
 		fprintf(f, "}");
 
 		fprintf(f, " dfmt=%s", arg->value.maddr.data_format);
@@ -405,14 +405,14 @@ void si_arg_dump(struct si_arg_t *arg, FILE *f)
 
 		break;
 
-	case si_arg_maddr_qual:
+	case si2bin_arg_maddr_qual:
 
 		fprintf(f, "offen=%c", arg->value.maddr_qual.offen ? 't' : 'f');
 		fprintf(f, " idxen=%c", arg->value.maddr_qual.idxen ? 't' : 'f');
 		fprintf(f, " offset=%d", arg->value.maddr_qual.offset);
 		break;
 
-	case si_arg_label:
+	case si2bin_arg_label:
 		fprintf(f, "<label>");
 		break;
 		

@@ -36,12 +36,12 @@
  * Task Object
  */
 
-struct si_task_t *si_task_create(int offset, struct si_symbol_t *symbol)
+struct si2bin_task_t *si2bin_task_create(int offset, struct si2bin_symbol_t *symbol)
 {
-	struct si_task_t *task;
+	struct si2bin_task_t *task;
 	
 	/* Allocate */
-	task = xcalloc(1, sizeof(struct si_task_t));
+	task = xcalloc(1, sizeof(struct si2bin_task_t));
 	
 	/* Initialize the task's offset and ID */
 	task->offset = offset;
@@ -52,23 +52,23 @@ struct si_task_t *si_task_create(int offset, struct si_symbol_t *symbol)
 
 }
 
-void si_task_free(struct si_task_t *task)
+void si2bin_task_free(struct si2bin_task_t *task)
 {
 	free(task);
 }
 
 
-void si_task_dump(struct si_task_t *task, FILE *f)
+void si2bin_task_dump(struct si2bin_task_t *task, FILE *f)
 {
 	fprintf(f, "offset=%d, symbol={", task->offset);
-	si_symbol_dump(task->symbol, f);
+	si2bin_symbol_dump(task->symbol, f);
 	fprintf(f, "}");
 }
 
 
-void si_task_process(struct si_task_t *task)
+void si2bin_task_process(struct si2bin_task_t *task)
 {
-	struct si_symbol_t *label;
+	struct si2bin_symbol_t *label;
 	union si_inst_microcode_t *inst;
 
 	/* Check whether symbol is resolved */
@@ -77,8 +77,8 @@ void si_task_process(struct si_task_t *task)
 		si2bin_yyerror_fmt("undefined label: %s", label->name);
 
 	/* Resolve label */
-	assert(IN_RANGE(task->offset, 0, si_out_stream->offset - 4));
-	inst = si_out_stream->buf + task->offset;
+	assert(IN_RANGE(task->offset, 0, si2bin_out_stream->offset - 4));
+	inst = si2bin_out_stream->buf + task->offset;
 	inst->sopp.simm16 = (label->value - task->offset) / 4 - 1;
 }
 
@@ -89,22 +89,22 @@ void si_task_process(struct si_task_t *task)
  * Global Functions
  */
 
-struct list_t *si_task_list;
+struct list_t *si2bin_task_list;
 
 		
-void si_task_list_init(void)
+void si2bin_task_list_init(void)
 {							  
-	si_task_list = list_create();
+	si2bin_task_list = list_create();
 }
 
 
-void si_task_list_done(void)
+void si2bin_task_list_done(void)
 {
 	int index;
 	
-	LIST_FOR_EACH(si_task_list, index)
-		si_task_free(list_get(si_task_list, index));
-	list_free(si_task_list);
+	LIST_FOR_EACH(si2bin_task_list, index)
+		si2bin_task_free(list_get(si2bin_task_list, index));
+	list_free(si2bin_task_list);
 }
 
 
@@ -113,19 +113,19 @@ void si_task_list_dump(FILE *f)
 	int index;
 	
 	fprintf(f, "Task list:\n");
-	LIST_FOR_EACH(si_task_list, index)
+	LIST_FOR_EACH(si2bin_task_list, index)
 	{
 		fprintf(f, "\ttask %d: ", index);
-		si_task_dump(list_get(si_task_list, index), f);
+		si2bin_task_dump(list_get(si2bin_task_list, index), f);
 		fprintf(f, "\n");
 	}
 }
 
 
-void si_task_list_process(void)
+void si2bin_task_list_process(void)
 {
 	int index;
 
-	LIST_FOR_EACH(si_task_list, index)
-		si_task_process(list_get(si_task_list, index));
+	LIST_FOR_EACH(si2bin_task_list, index)
+		si2bin_task_process(list_get(si2bin_task_list, index));
 }
