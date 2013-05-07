@@ -15,6 +15,7 @@ libemu_a_SOURCES = \
 	regs.h \
 	\
 	syscall.c \
+	syscall.dat \
 	syscall.h \
 	\
 	machine.c \

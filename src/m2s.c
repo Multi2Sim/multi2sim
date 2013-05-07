@@ -435,6 +435,7 @@ static char *m2s_help =
 		"  --mips-disasm <file>\n"
 		"      Disassemble an MIPS binary using Multi2Sim's internal disassembler. This\n"
 		"      option is incompatible with any other command-line option.\n"
+	        "\n"
 		"  --mips-debug-loader <file>\n"
 		"      Dump debug information extending the analysis of the ELF program binary.\n"
 		"      This information shows which ELF sections and symbols are loaded to the\n"
@@ -1512,9 +1513,9 @@ static void m2s_load_programs(int argc, char **argv)
 		case EM_ARM:
 			arm_ctx_load_from_command_line(argc - 1, argv + 1);
 			break;
+
 		case EM_MIPS:
 			mips_ctx_load_from_command_line(argc - 1, argv + 1);
-			//fatal("loader has determined that the binary has MIPS format. Mips emulation is not supported yet\n");
 			break;
 		default:
 			fatal("%s: unsupported ELF architecture", argv[1]);
