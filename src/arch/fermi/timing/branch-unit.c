@@ -71,7 +71,7 @@ void frm_branch_unit_complete(struct frm_branch_unit_t *branch_unit)
 
 		/* Statistics */
 		branch_unit->inst_count++;
-		frm_gpu->last_complete_cycle = esim_cycle;
+		frm_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 

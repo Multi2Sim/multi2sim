@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-//#include <evergreen-timing.h>
-
+#include <arch/common/arch.h>
+#include <arch/evergreen/emu/emu.h>
 #include <lib/esim/esim.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
@@ -82,24 +82,16 @@ void evg_cu_spatial_report_done()
 
 void evg_cu_spatial_report_dump(struct evg_compute_unit_t *compute_unit)
 {
-	FILE *f = spatial_report_file ;
+	FILE *f = spatial_report_file;
+	struct arch_t *arch = evg_emu->arch;
 
-
-	/*
-	printf("CU %d \t CFInst %lld \t MemAcc %lld \t TEXInstn %lld \t Cycles %lld \n",
-			compute_unit->id,
-			compute_unit->cf_engine.interval_inst_count,
-			compute_unit->inflight_mem_accesses,
-			compute_unit->tex_engine.interval_inst_count,
-			esim_cycle);
-	*/
 	fprintf(f,"CU,%d,CFInst,%lld,MemAcc,%lld,TEXInstn,%lld,ALUInstn,%lld,Cycles,%lld \n",
 			compute_unit->id,
 			compute_unit->cf_engine.interval_inst_count,
 			compute_unit->inflight_mem_accesses,
 			compute_unit->tex_engine.interval_inst_count,
 			compute_unit->alu_engine.interval_inst_count,
-			esim_cycle);
+			arch->cycle);
 
 }
 
@@ -140,9 +132,11 @@ void evg_tex_report_global_mem_finish( struct evg_compute_unit_t *compute_unit, 
 
 void evg_cu_interval_update(struct evg_compute_unit_t *compute_unit)
 {
+	struct arch_t *arch = evg_emu->arch;
+
 	/* If interval - reset the counters in all the engines */
 	compute_unit->interval_cycle ++;
-	if ( !(esim_cycle % spatial_profiling_interval))
+	if (!(arch->cycle % spatial_profiling_interval))
 	{
 		evg_cu_spatial_report_dump(compute_unit);
 

@@ -59,7 +59,7 @@ void mod_handler_local_mem_load(int event, void *data)
 	{
 		struct mod_stack_t *master_stack;
 
-		mem_debug("  %lld %lld 0x%x %s load\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s load\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.new_access name=\"A-%lld\" type=\"load\" "
 			"state=\"%s:load\" addr=0x%x\n",
@@ -86,7 +86,7 @@ void mod_handler_local_mem_load(int event, void *data)
 	{
 		struct mod_stack_t *older_stack;
 
-		mem_debug("  %lld %lld 0x%x %s load lock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s load lock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_lock\"\n",
 			stack->id, mod->name);
@@ -122,7 +122,7 @@ void mod_handler_local_mem_load(int event, void *data)
 
 	if (event == EV_MOD_LOCAL_MEM_LOAD_FINISH)
 	{
-		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s load finish\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_finish\"\n",
 			stack->id, mod->name);
@@ -161,7 +161,7 @@ void mod_handler_local_mem_store(int event, void *data)
 	{
 		struct mod_stack_t *master_stack;
 
-		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s store\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.new_access name=\"A-%lld\" type=\"store\" "
 			"state=\"%s:store\" addr=0x%x\n",
@@ -195,7 +195,7 @@ void mod_handler_local_mem_store(int event, void *data)
 	{
 		struct mod_stack_t *older_stack;
 
-		mem_debug("  %lld %lld 0x%x %s store lock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s store lock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_lock\"\n",
 			stack->id, mod->name);
@@ -226,7 +226,7 @@ void mod_handler_local_mem_store(int event, void *data)
 
 	if (event == EV_MOD_LOCAL_MEM_STORE_FINISH)
 	{
-		mem_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s store finish\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_finish\"\n",
 			stack->id, mod->name);
@@ -259,7 +259,7 @@ void mod_handler_local_mem_find_and_lock(int event, void *data)
 	if (event == EV_MOD_LOCAL_MEM_FIND_AND_LOCK)
 	{
 		mem_debug("  %lld %lld 0x%x %s find and lock\n",
-			esim_cycle, stack->id, stack->addr, mod->name);
+			esim_time, stack->id, stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock\"\n",
 			stack->id, mod->name);
 
@@ -270,7 +270,7 @@ void mod_handler_local_mem_find_and_lock(int event, void *data)
 
 	if (event == EV_MOD_LOCAL_MEM_FIND_AND_LOCK_PORT)
 	{
-		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock_port\"\n",
 			stack->id, mod->name);
@@ -310,7 +310,7 @@ void mod_handler_local_mem_find_and_lock(int event, void *data)
 		struct mod_port_t *port = stack->port;
 
 		assert(port);
-		mem_debug("  %lld %lld 0x%x %s find and lock action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s find and lock action\n", esim_time, stack->id,
 			stack->tag, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock_action\"\n",
 			stack->id, mod->name);
@@ -325,7 +325,7 @@ void mod_handler_local_mem_find_and_lock(int event, void *data)
 
 	if (event == EV_MOD_LOCAL_MEM_FIND_AND_LOCK_FINISH)
 	{
-		mem_debug("  %lld %lld 0x%x %s find and lock finish (err=%d)\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s find and lock finish (err=%d)\n", esim_time, stack->id,
 			stack->tag, mod->name, stack->err);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock_finish\"\n",
 			stack->id, mod->name);

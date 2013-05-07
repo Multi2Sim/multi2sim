@@ -46,6 +46,9 @@ extern long long net_max_cycles;
 extern double net_injection_rate;
 extern int net_msg_size;
 
+/* Frequency domain */
+extern int net_domain_index;
+
 /* Functions */
 void net_init(void);
 void net_done(void);

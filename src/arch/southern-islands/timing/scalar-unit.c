@@ -182,7 +182,7 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 
 		/* Statistics */
 		scalar_unit->inst_count++;
-		si_gpu->last_complete_cycle = esim_cycle;
+		si_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 

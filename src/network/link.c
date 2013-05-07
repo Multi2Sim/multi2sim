@@ -27,6 +27,7 @@
 
 #include "buffer.h"
 #include "link.h"
+#include "net-system.h"
 #include "network.h"
 #include "node.h"
 
@@ -89,16 +90,20 @@ void net_link_free(struct net_link_t *link)
 void net_link_dump_report(struct net_link_t *link, FILE *f)
 {
 	struct net_t *net = link->net;
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
 
 	fprintf(f, "[ Network.%s.Link.%s ]\n", net->name, link->name);
 	fprintf(f, "Config.Bandwidth = %d\n", link->bandwidth);
 	fprintf(f, "TransferredMessages = %lld\n", link->transferred_msgs);
 	fprintf(f, "TransferredBytes = %lld\n", link->transferred_bytes);
 	fprintf(f, "BusyCycles = %lld\n", link->busy_cycles);
-	fprintf(f, "BytesPerCycle = %.4f\n", esim_cycle ?
-			(double) link->transferred_bytes / esim_cycle : 0.0);
-	fprintf(f, "Utilization = %.4f\n", esim_cycle ?
-			(double) link->transferred_bytes / (esim_cycle * link->bandwidth) : 0.0);
+	fprintf(f, "BytesPerCycle = %.4f\n", cycle ?
+			(double) link->transferred_bytes / cycle : 0.0);
+	fprintf(f, "Utilization = %.4f\n", cycle ?
+			(double) link->transferred_bytes / (cycle * link->bandwidth) : 0.0);
 	fprintf(f, "\n");
 }
 
@@ -119,12 +124,16 @@ struct net_buffer_t *net_link_arbitrator_vc(struct net_link_t *link, struct net_
 	int output_buffer_vc_index;
 	int i;
 
+	long long cycle;
+
 	/*performing the check */
 	assert(node == src_node);
 
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
+
 	/* Getting the indexes of first output buffer and input buffer that are *
 	 * connected to a link with virtual channel capability */
-
 	int out_vc_count = 0;
 	int in_vc_count = 0;
 	int first_src_buffer_act_index = 0;
@@ -152,20 +161,20 @@ struct net_buffer_t *net_link_arbitrator_vc(struct net_link_t *link, struct net_
 	}
 
 	/* Checks */
-	assert (in_vc_count == link->virtual_channel);
-	assert (out_vc_count == link->virtual_channel);
+	assert(in_vc_count == link->virtual_channel);
+	assert(out_vc_count == link->virtual_channel);
 
 	/* If last decision was within the same cycle, return the same value */
-	if (link->sched_when == esim_cycle)
+	if (link->sched_when == cycle)
 		return link->sched_buffer;
 
 	/*make a new decision */
-	link->sched_when = esim_cycle;
+	link->sched_when = cycle;
 	last_output_buffer_vc_index = link->sched_buffer ?
 			(link->sched_buffer->index - first_src_buffer_act_index) : 0;
 
 	/*link must be ready*/
-	if (link->busy >= esim_cycle)
+	if (link->busy >= cycle)
 	{
 		link->sched_buffer = NULL;
 		return NULL;
@@ -185,11 +194,11 @@ struct net_buffer_t *net_link_arbitrator_vc(struct net_link_t *link, struct net_
 			continue;
 
 		/*msg must be ready */
-		if (msg->busy >= esim_cycle)
+		if (msg->busy >= cycle)
 			continue;
 
 		/*output buffer must be ready */
-		if (output_buffer->read_busy >= esim_cycle)
+		if (output_buffer->read_busy >= cycle)
 			continue;
 
 		/*ALL conditions satisfied */

@@ -75,7 +75,7 @@ void frm_lds_complete(struct frm_lds_t *lds)
 
 		/* Statistics */
 		lds->inst_count++;
-		frm_gpu->last_complete_cycle = esim_cycle;
+		frm_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 

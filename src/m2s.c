@@ -1577,6 +1577,7 @@ static void m2s_dump(FILE *f)
 static void m2s_dump_summary(FILE *f)
 {
 	double time_in_sec;
+	long long cycle;
 
 	/* No summary dumped if no simulation was run */
 	if (m2s_loop_iter < 2)
@@ -1598,8 +1599,9 @@ static void m2s_dump_summary(FILE *f)
 	fprintf(f, "SimEnd = %s\n", str_map_value(&esim_finish_map, esim_finish));
 
 	/* General detailed simulation statistics */
-	if (esim_cycle > 1)
-		fprintf(f, "Cycles = %lld\n", esim_cycle);
+	cycle = esim_cycle();
+	if (cycle > 1)
+		fprintf(f, "Cycles = %lld\n", cycle);
 
 	/* End */
 	fprintf(f, "\n");

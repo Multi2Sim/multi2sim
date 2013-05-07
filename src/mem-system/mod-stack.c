@@ -145,7 +145,7 @@ void mod_stack_wakeup_stack(struct mod_stack_t *master_stack)
 		return;
 
 	/* Debug */
-	mem_debug("  %lld %lld 0x%x wake up accesses:", esim_cycle,
+	mem_debug("  %lld %lld 0x%x wake up accesses:", esim_time,
 		master_stack->id, master_stack->addr);
 
 	/* Wake up all coalesced accesses */

@@ -66,7 +66,7 @@ void si_simd_complete(struct si_simd_t *simd)
 
 		/* Statistics */
 		simd->inst_count++;
-		si_gpu->last_complete_cycle = esim_cycle;
+		si_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 

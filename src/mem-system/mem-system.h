@@ -42,6 +42,9 @@ struct mem_system_t
 
 extern struct mem_system_t *mem_system;
 
+/* Frequency domain */
+extern int mem_domain_index;
+
 
 void mem_system_init(void);
 void mem_system_done(void);
