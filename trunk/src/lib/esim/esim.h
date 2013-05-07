@@ -25,7 +25,7 @@
 
 
 /*
- * Event-Driven Simulation
+ * Global Variables
  */
 
 
@@ -67,14 +67,25 @@ extern volatile enum esim_finish_t
 	esim_finish_stall  /* Simulation stalled */
 } esim_finish;
 
-/* Variable to indicate event simulation cycle */
+
+/* Simulation cycle */
 extern long long esim_cycle;
+
+/* Simulated time in picoseconds */
+extern long long esim_time;
 
 /* Empty event. When this event is scheduled, it will be ignored */
 extern int ESIM_EV_NONE;
 
 /* Procedure to handle an event */
 typedef void (*esim_event_handler_t)(int event, void *data);
+
+
+
+
+/*
+ * Functions
+ */
 
 /* Initialization and finalization */
 void esim_init(void);
@@ -84,9 +95,23 @@ void esim_done(void);
  * all events in the heap are dumped. */
 void esim_dump(FILE *f, int max);
 
-/* Register an events */
-int esim_register_event(esim_event_handler_t handler);
-int esim_register_event_with_name(esim_event_handler_t handler, char *name);
+/* Create a new frequency domain. Argument 'freq' specifies the frequency
+ * in MHz. The function returns a domain identifier. */
+int esim_new_domain(int freq);
+
+/* Functions returning the current cycle and the cycle time of a frequency
+ * domain. As an argument, they take a domain identifier returned by
+ * 'esim_new_domain'. The first cycle in any frequency domain is always 1. */
+long long esim_domain_get_cycle(int domain_index);
+long long esim_domain_get_cycle_time(int domain_index);
+
+
+/* Register an event, optionally giving an event name. These functions take an
+ * additional argument 'domain_index', specifying the frequency domain that the
+ * event is associated to. */
+int esim_register_event(esim_event_handler_t handler, int domain_index);
+int esim_register_event_with_name(esim_event_handler_t handler,
+		int domain_index, char *name);
 
 /* Schedule an event in 'after' cycles from now. If several cycles are
  * scheduled for the same cycle, they will execute in the order they were

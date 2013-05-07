@@ -82,7 +82,8 @@ void arm_emu_init(struct arch_t *arch)
 	arm_emu->arch = arch;
 
 	/* Event for context IPC reports */
-	EV_ARM_CTX_IPC_REPORT = esim_register_event_with_name(arm_ctx_ipc_report_handler, "arm_ctx_ipc_report");
+	EV_ARM_CTX_IPC_REPORT = esim_register_event_with_name(arm_ctx_ipc_report_handler,
+			arch->domain_index, "arm_ctx_ipc_report");
 
 	/* Initialize */
 	arm_emu->current_pid = 1000;  /* Initial assigned pid */

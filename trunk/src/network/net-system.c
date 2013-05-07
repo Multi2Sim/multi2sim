@@ -165,6 +165,9 @@ long long net_max_cycles = 1000000;  /* 1M cycles default */
 double net_injection_rate = 0.01;  /* 1 packet every 100 cycles */
 int net_msg_size = 1;  /* Message size in bytes */
 
+/* Frequency domain, as returned by function 'esim_new_domain'. */
+int net_domain_index;
+
 
 
 /*
@@ -266,11 +269,14 @@ void net_config_load(void)
 
 void net_init(void)
 {
+	/* New frequency domain */
+	net_domain_index = esim_new_domain(1000);  /* FIXME - 1GHz default frequency */
+
 	/* Register events */
-	EV_NET_SEND = esim_register_event_with_name(net_event_handler, "net_send");
-	EV_NET_OUTPUT_BUFFER = esim_register_event_with_name(net_event_handler, "net_output_buffer");
-	EV_NET_INPUT_BUFFER = esim_register_event_with_name(net_event_handler, "net_input_buffer");
-	EV_NET_RECEIVE = esim_register_event_with_name(net_event_handler, "net_receive");
+	EV_NET_SEND = esim_register_event_with_name(net_event_handler, net_domain_index, "net_send");
+	EV_NET_OUTPUT_BUFFER = esim_register_event_with_name(net_event_handler, net_domain_index, "net_output_buffer");
+	EV_NET_INPUT_BUFFER = esim_register_event_with_name(net_event_handler, net_domain_index, "net_input_buffer");
+	EV_NET_RECEIVE = esim_register_event_with_name(net_event_handler, net_domain_index, "net_receive");
 
 	/* Load network configuration file */
 	net_config_load();

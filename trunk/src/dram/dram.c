@@ -35,6 +35,11 @@
 int EV_DRAM_COMMAND_RECEIVE;
 int EV_DRAM_COMMAND_COMPLETE;
 
+/* DRAM frequency domain */
+int dram_domain_index;
+
+
+
 
 /*
  * Event handler
@@ -155,9 +160,12 @@ static void dram_event_handler(int event, void *data)
 
 void dram_init(void)
 {
+	/* Create frequency domain */
+	dram_domain_index = esim_new_domain(1000);  /* FIXME - 1GHz default frequency */
+
 	/* Register events */
-	EV_DRAM_COMMAND_RECEIVE = esim_register_event(dram_event_handler);
-	EV_DRAM_COMMAND_COMPLETE = esim_register_event(dram_event_handler);
+	EV_DRAM_COMMAND_RECEIVE = esim_register_event(dram_event_handler, dram_domain_index);
+	EV_DRAM_COMMAND_COMPLETE = esim_register_event(dram_event_handler, dram_domain_index);
 }
 
 
