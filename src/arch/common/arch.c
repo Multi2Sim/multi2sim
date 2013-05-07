@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
@@ -212,6 +213,7 @@ void arch_register(char *name, char *prefix,
 	/* Initialize */
 	arch = arch_create(name, prefix);
 	arch->sim_kind = sim_kind;
+	arch->domain_index = esim_new_domain(1000);  /* FIXME - 1GHz default frequency */
 	arch->emu_init_func = emu_init_func;
 	arch->emu_done_func = emu_done_func;
 	arch->emu_dump_func = emu_dump_func;

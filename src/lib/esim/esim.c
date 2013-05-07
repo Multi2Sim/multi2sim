@@ -24,6 +24,7 @@
 #include <lib/util/heap.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
 
@@ -109,6 +110,9 @@ static int esim_overload_shown = 0;
 long long esim_cycle = 1;
 int ESIM_EV_NONE;
 
+/* Simulated time in picoseconds */
+long long esim_time;
+
 
 
 /* List of registered events. Each element is of type 'struct
@@ -128,6 +132,87 @@ static struct m2s_timer_t *esim_timer;
 
 
 
+/*
+ * Frequency Domain
+ */
+
+/* List of frequency domains. Each domain is of type 'struct esim_domain_t'. The
+ * list contains an element at position 0 set to NULL. */
+static struct list_t *esim_domain_list;
+
+struct esim_domain_t
+{
+	int freq;
+	long long cycle_time;
+};
+
+
+struct esim_domain_t *esim_domain_create(int freq)
+{
+	struct esim_domain_t *domain;
+
+	/* Check valid 'freq' */
+	if (!IN_RANGE(freq, 1, 10000))
+		fatal("%s: frequency not in range [1, 10k] (=%d)\n",
+				__FUNCTION__, freq);
+
+	/* Initialize */
+	domain = xcalloc(1, sizeof(struct esim_domain_t));
+	domain->freq = freq;
+	domain->cycle_time = 1000000ll / freq;
+
+	/* Return */
+	return domain;
+}
+
+
+void esim_domain_free(struct esim_domain_t *domain)
+{
+	free(domain);
+}
+
+
+int esim_new_domain(int freq)
+{
+	struct esim_domain_t *domain;
+
+	domain = esim_domain_create(freq);
+	list_add(esim_domain_list, domain);
+	return list_count(esim_domain_list) - 1;
+}
+
+
+long long esim_domain_get_cycle(int domain_index)
+{
+	struct esim_domain_t *domain;
+
+	/* Get domain */
+	domain = list_get(esim_domain_list, domain_index);
+	if (!domain)
+		panic("%s: invalid domain index (%d)",
+				__FUNCTION__, domain_index);
+
+	/* Return current cycle */
+	return esim_time / domain->cycle_time + 1;
+}
+
+
+long long esim_domain_get_cycle_time(int domain_index)
+{
+	struct esim_domain_t *domain;
+
+	/* Get domain */
+	domain = list_get(esim_domain_list, domain_index);
+	if (!domain)
+		panic("%s: invalid domain index (%d)",
+				__FUNCTION__, domain_index);
+
+	/* Return cycle time */
+	return domain->cycle_time;
+}
+
+
+
 
 /*
  * Event Info
@@ -138,11 +223,13 @@ struct esim_event_info_t
 	int id;
 	char *name;
 	esim_event_handler_t handler;
+	struct esim_domain_t *domain;
 };
 
 
 struct esim_event_info_t *esim_event_info_create(int id,
-	char *name, esim_event_handler_t handler)
+	char *name, esim_event_handler_t handler,
+	struct esim_domain_t *domain)
 {
 	struct esim_event_info_t *event_info;
 
@@ -151,6 +238,7 @@ struct esim_event_info_t *esim_event_info_create(int id,
 	event_info->id = id;
 	event_info->handler = handler;
 	event_info->name = xstrdup(name);
+	event_info->domain = domain;
 
 	/* Return */
 	return event_info;
@@ -262,24 +350,38 @@ void esim_init()
 	esim_event_info_list = list_create();
 	esim_event_heap = heap_create(20);
 	esim_end_event_list = linked_list_create();
+	
+	/* List of frequency domains */
+	esim_domain_list = list_create();
+	list_add(esim_domain_list, NULL);
 
 	/* Initialize global timer */
 	esim_timer = m2s_timer_create(NULL);
 	m2s_timer_start(esim_timer);
 
 	/* Register special events */
-	ESIM_EV_INVALID = esim_register_event_with_name(NULL, "esim_invalid");
-	ESIM_EV_NONE = esim_register_event_with_name(NULL, "esim_none");
+	ESIM_EV_INVALID = esim_register_event_with_name(NULL, 0, "Invalid");
+	ESIM_EV_NONE = esim_register_event_with_name(NULL, 0, "None");
 }
 
 
 void esim_done()
 {
-	int id;
+	void *elem;
+	int index;
+
+	/* Free list of frequency domains */
+	LIST_FOR_EACH(esim_domain_list, index)
+	{
+		elem = list_get(esim_domain_list, index);
+		if (elem)
+			esim_domain_free(elem);
+	}
+	list_free(esim_domain_list);
 
 	/* Free list of event info items */
-	LIST_FOR_EACH(esim_event_info_list, id)
-		esim_event_info_free(list_get(esim_event_info_list, id));
+	LIST_FOR_EACH(esim_event_info_list, index)
+		esim_event_info_free(list_get(esim_event_info_list, index));
 	list_free(esim_event_info_list);
 
 	/* Free lists of events */
@@ -346,34 +448,43 @@ void esim_dump(FILE *f, int max)
 }
 
 
-int esim_register_event(esim_event_handler_t handler)
+int esim_register_event(esim_event_handler_t handler, int domain_index)
 {
 	char name[100];
-	int id;
+	int index;
 
 	/* Construct event name */
-	id = list_count(esim_event_info_list);
-	snprintf(name, sizeof name, "event_%d", id);
+	index = list_count(esim_event_info_list);
+	snprintf(name, sizeof name, "event_%d", index);
 
 	/* Register event */
-	return esim_register_event_with_name(handler, name);
+	return esim_register_event_with_name(handler, domain_index, name);
 }
 
 
-int esim_register_event_with_name(esim_event_handler_t handler, char *name)
+int esim_register_event_with_name(esim_event_handler_t handler,
+		int domain_index, char *name)
 {
 	struct esim_event_info_t *event_info;
-	int id;
+	struct esim_domain_t *domain;
+	int index;
+
+	/* Get frequency domain. Allow invalid domains for event 'Invalid'
+	 * and 'None'. */
+	domain = list_get(esim_domain_list, domain_index);
+	if (!domain && esim_event_info_list->count >= 2)
+		panic("%s: invalid domain index (%d)",
+				__FUNCTION__, domain_index);
 
 	/* Create event info item */
-	id = list_count(esim_event_info_list);
-	event_info = esim_event_info_create(id, name, handler);
+	index = list_count(esim_event_info_list);
+	event_info = esim_event_info_create(index, name, handler, domain);
 
 	/* Add to registered events list */
 	list_add(esim_event_info_list, event_info);
 
 	/* Return event ID */
-	return id;
+	return index;
 }
 
 
