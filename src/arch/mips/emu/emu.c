@@ -89,7 +89,8 @@ void mips_emu_init(struct arch_t *arch)
 	mips_emu->arch = arch;
 
 	/* Event for context IPC reports */
-	EV_MIPS_CTX_IPC_REPORT = esim_register_event_with_name(mips_ctx_ipc_report_handler, "mips_ctx_ipc_report");
+	EV_MIPS_CTX_IPC_REPORT = esim_register_event_with_name(mips_ctx_ipc_report_handler,
+			arch->domain_index, "mips_ctx_ipc_report");
 
 	/* Initialize */
 	mips_emu->current_pid = 1000;  /* Initial assigned pid */

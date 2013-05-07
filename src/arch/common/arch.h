@@ -72,6 +72,9 @@ struct arch_t
 	/* Simulation kind - must be assigned externally */
 	enum arch_sim_kind_t sim_kind;
 
+	/* Frequency domain index, as returned by function 'esim_new_domain' */
+	int domain_index;
+
 	/* Call-back functions for emulator */
 	arch_emu_init_func_t emu_init_func;
 	arch_emu_done_func_t emu_done_func;
