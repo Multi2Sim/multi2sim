@@ -134,7 +134,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 	{
 		struct mod_stack_t *master_stack;
 
-		mem_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s load\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.new_access name=\"A-%lld\" type=\"load\" "
 			"state=\"%s:load\" addr=0x%x\n",
@@ -162,7 +162,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 	{
 		struct mod_stack_t *older_stack;
 
-		mem_debug("  %lld %lld 0x%x %s load lock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s load lock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_lock\"\n",
 			stack->id, mod->name);
@@ -202,7 +202,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 	{
 		int retry_lat;
 
-		mem_debug("  %lld %lld 0x%x %s load action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s load action\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_action\"\n",
 			stack->id, mod->name);
@@ -249,7 +249,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 	{
 		int retry_lat;
 
-		mem_debug("  %lld %lld 0x%x %s load miss\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s load miss\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_miss\"\n",
 			stack->id, mod->name);
@@ -278,7 +278,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_LOAD_UNLOCK)
 	{
-		mem_debug("  %lld %lld 0x%x %s load unlock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s load unlock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_unlock\"\n",
 			stack->id, mod->name);
@@ -294,7 +294,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_LOAD_FINISH)
 	{
-		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s load finish\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_finish\"\n",
 			stack->id, mod->name);
@@ -337,7 +337,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 	{
 		struct mod_stack_t *master_stack;
 
-		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s store\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.new_access name=\"A-%lld\" type=\"store\" "
 			"state=\"%s:store\" addr=0x%x\n",
@@ -371,7 +371,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 	{
 		struct mod_stack_t *older_stack;
 
-		mem_debug("  %lld %lld 0x%x %s store lock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s store lock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_lock\"\n",
 			stack->id, mod->name);
@@ -406,7 +406,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 	{
 		int retry_lat;
 
-		mem_debug("  %lld %lld 0x%x %s store action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s store action\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_action\"\n",
 			stack->id, mod->name);
@@ -454,7 +454,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 	{
 		int retry_lat;
 
-		mem_debug("  %lld %lld 0x%x %s store unlock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s store unlock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_unlock\"\n",
 			stack->id, mod->name);
@@ -484,7 +484,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_STORE_FINISH)
 	{
-		mem_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s store finish\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_finish\"\n",
 			stack->id, mod->name);
@@ -522,7 +522,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 	{
 		struct mod_stack_t *master_stack;
 
-		mem_debug("%lld %lld 0x%x %s nc store\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s nc store\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.new_access name=\"A-%lld\" type=\"nc_store\" "
 			"state=\"%s:nc store\" addr=0x%x\n", stack->id, mod->name, stack->addr);
@@ -549,7 +549,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 	{
 		struct mod_stack_t *older_stack;
 
-		mem_debug("  %lld %lld 0x%x %s nc store lock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s nc store lock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:nc_store_lock\"\n",
 			stack->id, mod->name);
@@ -587,7 +587,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 	{
 		int retry_lat;
 
-		mem_debug("  %lld %lld 0x%x %s nc store writeback\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s nc store writeback\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:nc_store_writeback\"\n",
 			stack->id, mod->name);
@@ -624,7 +624,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 	{
 		int retry_lat;
 
-		mem_debug("  %lld %lld 0x%x %s nc store action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s nc store action\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:nc_store_action\"\n",
 			stack->id, mod->name);
@@ -687,7 +687,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 	{
 		int retry_lat;
 
-		mem_debug("  %lld %lld 0x%x %s nc store miss\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s nc store miss\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:nc_store_miss\"\n",
 			stack->id, mod->name);
@@ -711,7 +711,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_NC_STORE_UNLOCK)
 	{
-		mem_debug("  %lld %lld 0x%x %s nc store unlock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s nc store unlock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:nc_store_unlock\"\n",
 			stack->id, mod->name);
@@ -732,7 +732,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_NC_STORE_FINISH)
 	{
-		mem_debug("%lld %lld 0x%x %s nc store finish\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s nc store finish\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:nc_store_finish\"\n",
 			stack->id, mod->name);
@@ -774,7 +774,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 	{
 		struct mod_stack_t *master_stack;
 
-		mem_debug("%lld %lld 0x%x %s prefetch\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s prefetch\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.new_access name=\"A-%lld\" type=\"store\" "
 			"state=\"%s:prefetch\" addr=0x%x\n",
@@ -789,7 +789,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		{
 			/* Doesn't make sense to prefetch as the block is already being fetched */
 			mem_debug("  %lld %lld 0x%x %s useless prefetch - already being fetched\n",
-				  esim_cycle, stack->id, stack->addr, mod->name);
+				  esim_time, stack->id, stack->addr, mod->name);
 
 			mod->useless_prefetches++;
 			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_FINISH, stack, 0);
@@ -811,7 +811,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 	{
 		struct mod_stack_t *older_stack;
 
-		mem_debug("  %lld %lld 0x%x %s prefetch lock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s prefetch lock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_lock\"\n",
 			stack->id, mod->name);
@@ -844,7 +844,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_PREFETCH_ACTION)
 	{
-		mem_debug("  %lld %lld 0x%x %s prefetch action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s prefetch action\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_action\"\n",
 			stack->id, mod->name);
@@ -867,7 +867,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 		{
 			/* block already in the cache */
 			mem_debug("  %lld %lld 0x%x %s useless prefetch - cache hit\n",
-				  esim_cycle, stack->id, stack->addr, mod->name);
+				  esim_time, stack->id, stack->addr, mod->name);
 
 			mod->useless_prefetches++;
 			esim_schedule_event(EV_MOD_NMOESI_PREFETCH_UNLOCK, stack, 0);
@@ -886,7 +886,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 	}
 	if (event == EV_MOD_NMOESI_PREFETCH_MISS)
 	{
-		mem_debug("  %lld %lld 0x%x %s prefetch miss\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s prefetch miss\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_miss\"\n",
 			stack->id, mod->name);
@@ -924,7 +924,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_PREFETCH_UNLOCK)
 	{
-		mem_debug("  %lld %lld 0x%x %s prefetch unlock\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s prefetch unlock\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_unlock\"\n",
 			stack->id, mod->name);
@@ -939,7 +939,7 @@ void mod_handler_nmoesi_prefetch(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_PREFETCH_FINISH)
 	{
-		mem_debug("%lld %lld 0x%x %s prefetch\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s prefetch\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:prefetch_finish\"\n",
 			stack->id, mod->name);
@@ -981,7 +981,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 	if (event == EV_MOD_NMOESI_FIND_AND_LOCK)
 	{
 		mem_debug("  %lld %lld 0x%x %s find and lock (blocking=%d)\n",
-			esim_cycle, stack->id, stack->addr, mod->name, stack->blocking);
+			esim_time, stack->id, stack->addr, mod->name, stack->blocking);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock\"\n",
 			stack->id, mod->name);
 
@@ -1002,7 +1002,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		struct dir_lock_t *dir_lock;
 
 		assert(stack->port);
-		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock_port\"\n",
 			stack->id, mod->name);
@@ -1176,7 +1176,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		struct mod_port_t *port = stack->port;
 
 		assert(port);
-		mem_debug("  %lld %lld 0x%x %s find and lock action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s find and lock action\n", esim_time, stack->id,
 			stack->tag, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock_action\"\n",
 			stack->id, mod->name);
@@ -1204,7 +1204,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_FIND_AND_LOCK_FINISH)
 	{
-		mem_debug("  %lld %lld 0x%x %s find and lock finish (err=%d)\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s find and lock finish (err=%d)\n", esim_time, stack->id,
 			stack->tag, mod->name, stack->err);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock_finish\"\n",
 			stack->id, mod->name);
@@ -1276,7 +1276,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		cache_get_block(mod->cache, stack->set, stack->way, &stack->tag, &stack->state);
 		assert(stack->state || !dir_entry_group_shared_or_owned(mod->dir,
 			stack->set, stack->way));
-		mem_debug("  %lld %lld 0x%x %s evict (set=%d, way=%d, state=%s)\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict (set=%d, way=%d, state=%s)\n", esim_time, stack->id,
 			stack->tag, mod->name, stack->set, stack->way,
 			str_map_value(&cache_block_state_map, stack->state));
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict\"\n",
@@ -1299,7 +1299,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_EVICT_INVALID)
 	{
-		mem_debug("  %lld %lld 0x%x %s evict invalid\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict invalid\n", esim_time, stack->id,
 			stack->tag, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_invalid\"\n",
 			stack->id, mod->name);
@@ -1325,7 +1325,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		struct net_node_t *low_node;
 		int msg_size;
 
-		mem_debug("  %lld %lld 0x%x %s evict action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict action\n", esim_time, stack->id,
 			stack->tag, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_action\"\n",
 			stack->id, mod->name);
@@ -1371,7 +1371,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_EVICT_RECEIVE)
 	{
-		mem_debug("  %lld %lld 0x%x %s evict receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict receive\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_receive\"\n",
 			stack->id, target_mod->name);
@@ -1401,7 +1401,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_EVICT_PROCESS)
 	{
-		mem_debug("  %lld %lld 0x%x %s evict process\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict process\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_process\"\n",
 			stack->id, target_mod->name);
@@ -1475,7 +1475,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_EVICT_PROCESS_NONCOHERENT)
 	{
-		mem_debug("  %lld %lld 0x%x %s evict process noncoherent\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict process noncoherent\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_process_noncoherent\"\n",
 			stack->id, target_mod->name);
@@ -1552,7 +1552,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_EVICT_REPLY)
 	{
-		mem_debug("  %lld %lld 0x%x %s evict reply\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict reply\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_reply\"\n",
 			stack->id, target_mod->name);
@@ -1567,7 +1567,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_EVICT_REPLY_RECEIVE)
 	{
-		mem_debug("  %lld %lld 0x%x %s evict reply receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict reply receive\n", esim_time, stack->id,
 			stack->tag, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_reply_receive\"\n",
 			stack->id, mod->name);
@@ -1587,7 +1587,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_EVICT_FINISH)
 	{
-		mem_debug("  %lld %lld 0x%x %s evict finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict finish\n", esim_time, stack->id,
 			stack->tag, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_finish\"\n",
 			stack->id, mod->name);
@@ -1620,7 +1620,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		mem_debug("  %lld %lld 0x%x %s read request\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request\"\n",
 			stack->id, mod->name);
@@ -1658,7 +1658,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_READ_REQUEST_RECEIVE)
 	{
-		mem_debug("  %lld %lld 0x%x %s read request receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request receive\n", esim_time, stack->id,
 			stack->addr, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_receive\"\n",
 			stack->id, target_mod->name);
@@ -1681,7 +1681,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_READ_REQUEST_ACTION)
 	{
-		mem_debug("  %lld %lld 0x%x %s read request action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request action\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_action\"\n",
 			stack->id, target_mod->name);
@@ -1706,7 +1706,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 	{
 		struct mod_t *owner;
 
-		mem_debug("  %lld %lld 0x%x %s read request updown\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request updown\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_updown\"\n",
 			stack->id, target_mod->name);
@@ -1807,7 +1807,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_READ_REQUEST_UPDOWN_MISS)
 	{
-		mem_debug("  %lld %lld 0x%x %s read request updown miss\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request updown miss\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_updown_miss\"\n",
 			stack->id, target_mod->name);
@@ -1846,7 +1846,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 			return;
 
 		/* Trace */
-		mem_debug("  %lld %lld 0x%x %s read request updown finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request updown finish\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_updown_finish\"\n",
 			stack->id, target_mod->name);
@@ -1930,7 +1930,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 	{
 		struct mod_t *owner;
 
-		mem_debug("  %lld %lld 0x%x %s read request downup\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request downup\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_downup\"\n",
 			stack->id, target_mod->name);
@@ -1987,7 +1987,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 			return;
 
 		mem_debug("  %lld %lld 0x%x %s read request downup wait for reqs\n", 
-			esim_cycle, stack->id, stack->tag, target_mod->name);
+			esim_time, stack->id, stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_downup_wait_for_reqs\"\n",
 			stack->id, target_mod->name);
 
@@ -2012,7 +2012,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 	if (event == EV_MOD_NMOESI_READ_REQUEST_DOWNUP_FINISH)
 	{
 		mem_debug("  %lld %lld 0x%x %s read request downup finish\n", 
-			esim_cycle, stack->id, stack->tag, target_mod->name);
+			esim_time, stack->id, stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_downup_finish\"\n",
 			stack->id, target_mod->name);
 
@@ -2185,7 +2185,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		mem_debug("  %lld %lld 0x%x %s read request reply\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request reply\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_reply\"\n",
 			stack->id, target_mod->name);
@@ -2218,7 +2218,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_READ_REQUEST_FINISH)
 	{
-		mem_debug("  %lld %lld 0x%x %s read request finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request finish\n", esim_time, stack->id,
 			stack->tag, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_finish\"\n",
 			stack->id, mod->name);
@@ -2259,7 +2259,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		mem_debug("  %lld %lld 0x%x %s write request\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request\n", esim_time, stack->id,
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request\"\n",
 			stack->id, mod->name);
@@ -2303,7 +2303,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_WRITE_REQUEST_RECEIVE)
 	{
-		mem_debug("  %lld %lld 0x%x %s write request receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request receive\n", esim_time, stack->id,
 			stack->addr, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_receive\"\n",
 			stack->id, target_mod->name);
@@ -2326,7 +2326,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_WRITE_REQUEST_ACTION)
 	{
-		mem_debug("  %lld %lld 0x%x %s write request action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request action\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_action\"\n",
 			stack->id, target_mod->name);
@@ -2355,7 +2355,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_WRITE_REQUEST_EXCLUSIVE)
 	{
-		mem_debug("  %lld %lld 0x%x %s write request exclusive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request exclusive\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_exclusive\"\n",
 			stack->id, target_mod->name);
@@ -2369,7 +2369,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_WRITE_REQUEST_UPDOWN)
 	{
-		mem_debug("  %lld %lld 0x%x %s write request updown\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request updown\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_updown\"\n",
 			stack->id, target_mod->name);
@@ -2416,7 +2416,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_WRITE_REQUEST_UPDOWN_FINISH)
 	{
-		mem_debug("  %lld %lld 0x%x %s write request updown finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request updown finish\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_updown_finish\"\n",
 			stack->id, target_mod->name);
@@ -2481,7 +2481,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP)
 	{
-		mem_debug("  %lld %lld 0x%x %s write request downup\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request downup\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_downup\"\n",
 			stack->id, target_mod->name);
@@ -2546,7 +2546,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP_FINISH)
 	{
-		mem_debug("  %lld %lld 0x%x %s write request downup complete\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request downup complete\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_downup_finish\"\n",
 			stack->id, target_mod->name);
@@ -2566,7 +2566,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		mem_debug("  %lld %lld 0x%x %s write request reply\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request reply\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_reply\"\n",
 			stack->id, target_mod->name);
@@ -2597,7 +2597,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_WRITE_REQUEST_FINISH)
 	{
-		mem_debug("  %lld %lld 0x%x %s write request finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request finish\n", esim_time, stack->id,
 			stack->tag, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_finish\"\n",
 			stack->id, mod->name);
@@ -2630,7 +2630,7 @@ void mod_handler_nmoesi_peer(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_PEER_SEND) 
 	{
-		mem_debug("  %lld %lld 0x%x %s %s peer send\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s %s peer send\n", esim_time, stack->id,
 			stack->tag, src->name, peer->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:peer\"\n",
 			stack->id, src->name);
@@ -2644,7 +2644,7 @@ void mod_handler_nmoesi_peer(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_PEER_RECEIVE) 
 	{
-		mem_debug("  %lld %lld 0x%x %s %s peer receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s %s peer receive\n", esim_time, stack->id,
 			stack->tag, src->name, peer->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:peer_receive\"\n",
 			stack->id, peer->name);
@@ -2659,7 +2659,7 @@ void mod_handler_nmoesi_peer(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_PEER_REPLY) 
 	{
-		mem_debug("  %lld %lld 0x%x %s %s peer reply ack\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s %s peer reply ack\n", esim_time, stack->id,
 			stack->tag, src->name, peer->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:peer_reply_ack\"\n",
 			stack->id, peer->name);
@@ -2673,7 +2673,7 @@ void mod_handler_nmoesi_peer(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_PEER_FINISH) 
 	{
-		mem_debug("  %lld %lld 0x%x %s %s peer finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s %s peer finish\n", esim_time, stack->id,
 			stack->tag, src->name, peer->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:peer_finish\"\n",
 			stack->id, src->name);
@@ -2709,7 +2709,7 @@ void mod_handler_nmoesi_invalidate(int event, void *data)
 
 		/* Get block info */
 		cache_get_block(mod->cache, stack->set, stack->way, &stack->tag, &stack->state);
-		mem_debug("  %lld %lld 0x%x %s invalidate (set=%d, way=%d, state=%s)\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s invalidate (set=%d, way=%d, state=%s)\n", esim_time, stack->id,
 			stack->tag, mod->name, stack->set, stack->way,
 			str_map_value(&cache_block_state_map, stack->state));
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:invalidate\"\n",
@@ -2761,7 +2761,7 @@ void mod_handler_nmoesi_invalidate(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_INVALIDATE_FINISH)
 	{
-		mem_debug("  %lld %lld 0x%x %s invalidate finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s invalidate finish\n", esim_time, stack->id,
 			stack->tag, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:invalidate_finish\"\n",
 			stack->id, mod->name);
@@ -2801,7 +2801,7 @@ void mod_handler_nmoesi_message(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		mem_debug("  %lld %lld 0x%x %s message\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s message\n", esim_time, stack->id,
 			stack->addr, mod->name);
 
 		stack->reply_size = 8;
@@ -2826,7 +2826,7 @@ void mod_handler_nmoesi_message(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_MESSAGE_RECEIVE)
 	{
-		mem_debug("  %lld %lld 0x%x %s message receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s message receive\n", esim_time, stack->id,
 			stack->addr, target_mod->name);
 
 		/* Receive message */
@@ -2844,7 +2844,7 @@ void mod_handler_nmoesi_message(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_MESSAGE_ACTION)
 	{
-		mem_debug("  %lld %lld 0x%x %s clear owner action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s clear owner action\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 
 		assert(stack->message);
@@ -2895,7 +2895,7 @@ void mod_handler_nmoesi_message(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		mem_debug("  %lld %lld 0x%x %s message reply\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s message reply\n", esim_time, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Checks */
@@ -2915,7 +2915,7 @@ void mod_handler_nmoesi_message(int event, void *data)
 
 	if (event == EV_MOD_NMOESI_MESSAGE_FINISH)
 	{
-		mem_debug("  %lld %lld 0x%x %s message finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s message finish\n", esim_time, stack->id,
 			stack->tag, mod->name);
 
 		/* Receive message */

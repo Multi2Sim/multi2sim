@@ -87,16 +87,21 @@ void net_buffer_dump(struct net_buffer_t *buffer, FILE *f)
 
 void net_buffer_dump_report(struct net_buffer_t *buffer, FILE *f)
 {
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
+
 	/* Update stats */
 	net_buffer_update_occupancy(buffer);
 
 	/* Report */
-	fprintf(f, "%s.MessageOccupancy = %.2f\n", buffer->name, esim_cycle ?
-		(double) buffer->occupancy_msgs_acc / esim_cycle : 0.0);
-	fprintf(f, "%s.ByteOccupancy = %.2f\n", buffer->name, esim_cycle ?
-		(double) buffer->occupancy_bytes_acc / esim_cycle : 0.0);
-	fprintf(f, "%s.Utilization = %.4f\n", buffer->name, esim_cycle ?
-		(double) buffer->occupancy_bytes_acc / esim_cycle / buffer->size : 0.0);
+	fprintf(f, "%s.MessageOccupancy = %.2f\n", buffer->name, cycle ?
+		(double) buffer->occupancy_msgs_acc / cycle : 0.0);
+	fprintf(f, "%s.ByteOccupancy = %.2f\n", buffer->name, cycle ?
+		(double) buffer->occupancy_bytes_acc / cycle : 0.0);
+	fprintf(f, "%s.Utilization = %.4f\n", buffer->name, cycle ?
+		(double) buffer->occupancy_bytes_acc / cycle / buffer->size : 0.0);
 }
 
 
@@ -204,15 +209,19 @@ void net_buffer_wakeup(struct net_buffer_t *buffer)
 void net_buffer_update_occupancy(struct net_buffer_t *buffer)
 {
 	long long cycles;
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
 
 	/* Accumulate previous values */
-	cycles = esim_cycle - buffer->occupancy_measured_cycle;
+	cycles = cycle - buffer->occupancy_measured_cycle;
 	buffer->occupancy_bytes_acc += buffer->occupancy_bytes_value * cycles;
 	buffer->occupancy_msgs_acc += buffer->occupancy_msgs_value * cycles;
 
 	/* Store new sample */
 	buffer->occupancy_bytes_value = buffer->count;
 	buffer->occupancy_msgs_value = list_count(buffer->msg_list);
-	buffer->occupancy_measured_cycle = esim_cycle;
+	buffer->occupancy_measured_cycle = cycle;
 }
 

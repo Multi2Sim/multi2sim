@@ -19,6 +19,8 @@
 
 #include <assert.h>
 
+#include <arch/common/arch.h>
+#include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <arch/evergreen/emu/wavefront.h>
 #include <arch/evergreen/emu/work-group.h>
@@ -147,6 +149,7 @@ void evg_compute_unit_free(struct evg_compute_unit_t *compute_unit)
 
 void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
 {
+	struct arch_t *arch = evg_emu->arch;
 	struct evg_ndrange_t *ndrange = work_group->ndrange;
 	struct evg_wavefront_t *wavefront;
 	int wavefront_id;
@@ -209,7 +212,7 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 
 	/* Stats */
 	compute_unit->mapped_work_groups++;
-	evg_gpu->last_complete_cycle = esim_cycle;
+	evg_gpu->last_complete_cycle = arch->cycle;
 }
 
 

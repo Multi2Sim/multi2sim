@@ -263,6 +263,7 @@ static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 
 static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 {
+	struct arch_t *arch = evg_emu->arch;
 	struct linked_list_t *complete_queue = compute_unit->cf_engine.complete_queue;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 	struct evg_work_group_t *work_group;
@@ -316,7 +317,7 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 			evg_compute_unit_unmap_work_group(compute_unit, work_group);
 
 		/* Statistics */
-		evg_gpu->last_complete_cycle = esim_cycle;
+		evg_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 

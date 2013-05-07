@@ -123,6 +123,10 @@ void __trace(int category, int print_cycle, char *fmt, ...)
 	va_list va;
 	char buf[4096];
 	int len;
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_cycle();
 
 	/* Get category */
 	assert(category > 0);
@@ -141,12 +145,13 @@ void __trace(int category, int print_cycle, char *fmt, ...)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Dump current cycle */
-	if (esim_cycle > trace_last_cycle && print_cycle)
+	if (cycle > trace_last_cycle && print_cycle)
 	{
-		gzprintf(trace_file, "c clk=%lld\n", esim_cycle);
-		trace_last_cycle = esim_cycle;
+		gzprintf(trace_file, "c clk=%lld\n", cycle);
+		trace_last_cycle = cycle;
 	}
 
 	/* Dump message */
 	gzwrite(trace_file, buf, len);
 }
+

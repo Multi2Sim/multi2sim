@@ -22,21 +22,24 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "command.h"
+#include "dram.h"
 
 
 /*
  * Command
  */
 
+static long long command_id_counter;
+
 struct dram_command_t *dram_command_create(void)
 {
 	struct dram_command_t *command;
-	static long long command_id_counter;
+	long long cycle = esim_domain_cycle(dram_domain_index);
 	
 	/* Initialize */
 	command = xcalloc(1, sizeof(struct dram_command_t));
 	command->id = ++command_id_counter;
-	command->cycle = esim_cycle;
+	command->cycle = cycle;
 
 	/* Return */
 	return command;

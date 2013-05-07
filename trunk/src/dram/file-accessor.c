@@ -61,19 +61,23 @@ void request_file_accessor_free(struct request_file_accessor *accessor)
 struct dram_request_t *request_file_accessor_get(struct request_file_accessor *accessor)
 {
 	struct list_t *token_list;
-	long long cycle;
 	char *request_str;
 	char line[MAX_STRING_SIZE];
 	char *line_ptr;
-
+	
+	long long cycle;
+	long long request_cycle;
 	
 	struct dram_request_t *request;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(dram_domain_index);
 
 	/* Check if there is cached request */
 	if (accessor->cached_request)
 	{
 		/* Return cached request if it belongs to current cycle */
-		if (accessor->cached_request_cycle == esim_cycle)
+		if (accessor->cached_request_cycle == cycle)
 		{
 			struct dram_request_t *cached_request;
 
@@ -100,8 +104,8 @@ struct dram_request_t *request_file_accessor_get(struct request_file_accessor *a
 		fatal("%s: Invalid request: Expecting 3 arguments", __FUNCTION__);
 
 	/* Read cycle */
-	cycle = atoll(str_token_list_first(token_list));
-	if (cycle < esim_cycle)
+	request_cycle = atoll(str_token_list_first(token_list));
+	if (request_cycle < cycle)
 		fatal("%s: Invalid request: Invalid cycle number", __FUNCTION__);
 
 	/* Read request type */
@@ -127,13 +131,13 @@ struct dram_request_t *request_file_accessor_get(struct request_file_accessor *a
 	str_token_list_free(token_list);
 
 	/* If it's current cycle, return the request */
-	if (cycle == esim_cycle)
+	if (request_cycle == cycle)
 		return request;
 
 	/* else store the request in cache */
 	else
 	{
-		accessor->cached_request_cycle = cycle;
+		accessor->cached_request_cycle = request_cycle;
 		accessor->cached_request = request;
 		return NULL;
 	}
@@ -176,19 +180,23 @@ void command_file_accessor_free(struct command_file_accessor *accessor)
 struct dram_command_t *command_file_accessor_get(struct command_file_accessor *accessor, struct dram_t *dram)
 {
 	struct list_t *token_list;
-	long long cycle;
+	struct dram_command_t *command;
+
 	char *command_str;
 	char line[MAX_STRING_SIZE];
 	char *line_ptr;
 	
-	struct dram_command_t *command;
+	long long request_cycle;
+	long long cycle;
 
+	/* Get current cycle */
+	cycle = esim_domain_cycle(dram_domain_index);
 
 	/* Check if there is cached command */
 	if (accessor->cached_command)
 	{
 		/* Return cached command if it belongs to current cycle */
-		if (accessor->cached_command_cycle == esim_cycle)
+		if (accessor->cached_command_cycle == cycle)
 		{
 			struct dram_command_t *cached_command;
 
@@ -218,8 +226,8 @@ struct dram_command_t *command_file_accessor_get(struct command_file_accessor *a
 		fatal("%s: Invalid command: Expecting more arguments", __FUNCTION__);
 
 	/* Read cycle */
-	cycle = atoll(str_token_list_first(token_list));
-	if (cycle < esim_cycle)
+	request_cycle = atoll(str_token_list_first(token_list));
+	if (request_cycle < cycle)
 		fatal("%s: Invalid command: Invalid cycle number", __FUNCTION__);
 
 	/* Read command */
@@ -285,13 +293,13 @@ struct dram_command_t *command_file_accessor_get(struct command_file_accessor *a
 	str_token_list_free(token_list);
 
 	/* If it's current cycle, return the command */
-	if (cycle == esim_cycle)
+	if (request_cycle == cycle)
 		return command;
 
 	/* else store the command in cache */
 	else
 	{
-		accessor->cached_command_cycle = cycle;
+		accessor->cached_command_cycle = request_cycle;
 		accessor->cached_command = command;
 		return NULL;
 	}

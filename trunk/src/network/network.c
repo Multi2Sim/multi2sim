@@ -476,6 +476,11 @@ void net_dump_report(struct net_t *net, FILE *f)
 void net_dump_visual(struct net_graph_t *graph, FILE *f)
 {
 	int i;
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
+
 	fprintf(f, "Legend = True \n");
 	fprintf(f, "Title = \" Network: %s \"\n", graph->net->name );
 	for (i = 0; i < list_count(graph->vertex_list); i++)
@@ -494,18 +499,18 @@ void net_dump_visual(struct net_graph_t *graph, FILE *f)
 		if (!edge->upstream)
 			fprintf(f, "link = %f %d %f %d %d %d \n", (double) edge->src_vertex->x_coor / graph->xscale,
 					edge->src_vertex->y_coor,(double) edge->dst_vertex->x_coor / graph->xscale,
-					edge->dst_vertex->y_coor,(int) ((esim_cycle ?(double) edge->downstream->transferred_bytes
-							/ (esim_cycle * edge->downstream->bandwidth) : 0.0) * 10), 1);
+					edge->dst_vertex->y_coor,(int) ((cycle ?(double) edge->downstream->transferred_bytes
+							/ (cycle * edge->downstream->bandwidth) : 0.0) * 10), 1);
 		else
 		{
 			fprintf(f, "link = %f %d %f %d %d %d \n", (double) edge->src_vertex->x_coor / graph->xscale
 					, edge->src_vertex->y_coor,	(double) edge->dst_vertex->x_coor / graph->xscale,
-					edge->dst_vertex->y_coor,(int) ((esim_cycle ?(double) edge->downstream->transferred_bytes
-							/ (esim_cycle * edge->downstream->bandwidth) : 0.0) * 10), 2);
+					edge->dst_vertex->y_coor,(int) ((cycle ?(double) edge->downstream->transferred_bytes
+							/ (cycle * edge->downstream->bandwidth) : 0.0) * 10), 2);
 			fprintf(f, "link = %f %d %f %d %d %d \n",(double) edge->dst_vertex->x_coor / graph->xscale
 					, edge->dst_vertex->y_coor,	(double) edge->src_vertex->x_coor / graph->xscale
-					, edge->src_vertex->y_coor,	(int) ((esim_cycle ?(double) edge->upstream->transferred_bytes
-							/ (esim_cycle * edge->upstream->bandwidth) : 0.0) * 10), 2);
+					, edge->src_vertex->y_coor,	(int) ((cycle ?(double) edge->upstream->transferred_bytes
+							/ (cycle * edge->upstream->bandwidth) : 0.0) * 10), 2);
 		}
 
 	}
@@ -665,6 +670,10 @@ int net_can_send(struct net_t *net, struct net_node_t *src_node,
 	struct net_routing_table_t *routing_table = net->routing_table;
 	struct net_routing_table_entry_t *entry;
 	struct net_buffer_t *output_buffer;
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
 
 	/* Get output buffer */
 	entry = net_routing_table_lookup(routing_table, src_node, dst_node);
@@ -675,7 +684,7 @@ int net_can_send(struct net_t *net, struct net_node_t *src_node,
 		return 0;
 
 	/* Output buffer is busy */
-	if (output_buffer->write_busy >= esim_cycle)
+	if (output_buffer->write_busy >= cycle)
 		return 0;
 
 	/* Message does not fit in output buffer */
@@ -699,6 +708,10 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 	struct net_routing_table_t *routing_table = net->routing_table;
 	struct net_routing_table_entry_t *entry;
 	struct net_buffer_t *output_buffer;
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
 
 	/* Get output buffer */
 	entry = net_routing_table_lookup(routing_table, src_node, dst_node);
@@ -714,10 +727,10 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 		fatal("%s: message too long.\n%s", net->name, net_err_large_message);
 
 	/* Output buffer is busy */
-	if (output_buffer->write_busy >= esim_cycle)
+	if (output_buffer->write_busy >= cycle)
 	{
 		esim_schedule_event(retry_event, retry_stack,
-				output_buffer->write_busy - esim_cycle + 1);
+				output_buffer->write_busy - cycle + 1);
 		return 0;
 	}
 

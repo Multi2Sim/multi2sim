@@ -134,8 +134,8 @@ int evg_opencl_command_queue_can_wakeup(struct x86_ctx_t *ctx, void *data)
 
 	/* Debug */
 	if (can_wakeup)
-		evg_opencl_debug("\tcycle %lld - command queue 0x%x empty"
-			" - context resumed\n", esim_cycle, command_queue->id);
+		evg_opencl_debug("\tcommand queue 0x%x empty"
+			" - context resumed\n", command_queue->id);
 
 	/* Return */
 	return can_wakeup;

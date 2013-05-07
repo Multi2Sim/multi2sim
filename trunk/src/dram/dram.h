@@ -30,8 +30,11 @@
 #define dram_debug(...) debug(dram_debug_category, __VA_ARGS__)
 extern int dram_debug_category;
 
-int EV_DRAM_COMMAND_RECEIVE;
-int EV_DRAM_COMMAND_COMPLETE;
+extern int EV_DRAM_COMMAND_RECEIVE;
+extern int EV_DRAM_COMMAND_COMPLETE;
+
+extern int dram_domain_index;
+
 
 
 /*

@@ -171,7 +171,7 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 
 		/* Statistics */
 		scalar_unit->inst_count++;
-		frm_gpu->last_complete_cycle = esim_cycle;
+		frm_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 

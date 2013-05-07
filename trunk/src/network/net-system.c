@@ -402,11 +402,17 @@ void net_sim(char *debug_file_name)
 
 	/* Simulation loop */
 	esim_process_events();
-	while (esim_cycle < net_max_cycles)
+	while (1)
 	{
 		struct net_node_t *node;
 		struct net_node_t *dst_node;
+		long long cycle;
 		int i;
+
+		/* Get current cycle */
+		cycle = esim_domain_cycle(net_domain_index);
+		if (cycle >= net_max_cycles)
+			break;
 
 		/* Inject messages */
 		for (i = 0; i < net->node_count; i++)
@@ -417,7 +423,7 @@ void net_sim(char *debug_file_name)
 				continue;
 
 			/* Turn for next injection? */
-			if (inject_time[i] > esim_cycle)
+			if (inject_time[i] > cycle)
 				continue;
 
 			/* Get a random destination node */
@@ -427,7 +433,7 @@ void net_sim(char *debug_file_name)
 			} while (dst_node->kind != net_node_end || dst_node == node);
 
 			/* Inject */
-			while (inject_time[i] < esim_cycle)
+			while (inject_time[i] < cycle)
 			{
 				inject_time[i] += exp_random(net_injection_rate);
 				if (net_can_send(net, node, dst_node, net_msg_size))
@@ -436,7 +442,7 @@ void net_sim(char *debug_file_name)
 		}
 
 		/* Next cycle */
-		net_debug("___ cycle %lld ___\n", esim_cycle);
+		net_debug("___ cycle %lld ___\n", cycle);
 		esim_process_events();
 	}
 

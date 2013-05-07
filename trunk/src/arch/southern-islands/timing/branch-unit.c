@@ -71,7 +71,7 @@ void si_branch_unit_complete(struct si_branch_unit_t *branch_unit)
 
 		/* Statistics */
 		branch_unit->inst_count++;
-		si_gpu->last_complete_cycle = esim_cycle;
+		si_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 

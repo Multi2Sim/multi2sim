@@ -75,7 +75,7 @@ void frm_vector_mem_complete(struct frm_vector_mem_unit_t *vector_mem)
 
 		/* Statistics */
 		vector_mem->inst_count++;
-		frm_gpu->last_complete_cycle = esim_cycle;
+		frm_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 
