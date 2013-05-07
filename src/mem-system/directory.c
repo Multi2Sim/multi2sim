@@ -212,9 +212,10 @@ int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y)
 struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y)
 {
 	struct dir_lock_t *dir_lock;
+
 	assert(x < dir->xsize && y < dir->ysize);
 	dir_lock = &dir->dir_lock[x * dir->ysize + y];
-	mem_debug("  %lld dir_lock retrieve\n", esim_cycle);
+	mem_debug("  dir_lock retrieve\n");
 	return dir_lock;
 }
 

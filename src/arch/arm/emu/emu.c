@@ -248,7 +248,7 @@ enum arch_sim_kind_t arm_emu_run(void)
 		esim_finish = esim_finish_arm_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
-	if (arm_emu_max_cycles && esim_cycle >= arm_emu_max_cycles)
+	if (arm_emu_max_cycles && arch->cycle >= arm_emu_max_cycles)
 		esim_finish = esim_finish_arm_max_cycles;
 
 	/* Stop if any previous reason met */

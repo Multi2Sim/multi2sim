@@ -516,11 +516,19 @@ void dram_controller_process_request(struct dram_controller_t *controller)
 
 void dram_controller_schedule_command(struct dram_controller_t *controller)
 {
-	int i, j, k, num_info_per_scheduler, valid;
+	int i;
+	int j;
+	int k;
+	int num_info_per_scheduler;
+	int valid;
+
 	struct dram_command_t *command;
 	struct dram_bank_info_t *info;
 	struct dram_command_scheduler_t *scheduler;
 
+	long long cycle;
+
+	cycle = esim_domain_cycle(dram_domain_index);
 	num_info_per_scheduler = controller->dram_num_ranks * controller->dram_num_banks_per_device;
 
 	for (i = 0; i < controller->num_physical_channels; i++)
@@ -567,7 +575,12 @@ void dram_controller_schedule_command(struct dram_controller_t *controller)
 					break;
 			}
 
-			info = list_get(controller->dram_bank_info_list, scheduler->last_scheduled_bank_id + scheduler->last_scheduled_rank_id * controller->dram_num_banks_per_device + scheduler->channel_id * controller->dram_num_ranks * controller->dram_num_banks_per_device);
+			info = list_get(controller->dram_bank_info_list,
+					scheduler->last_scheduled_bank_id +
+					scheduler->last_scheduled_rank_id *
+					controller->dram_num_banks_per_device +
+					scheduler->channel_id * controller->dram_num_ranks *
+					controller->dram_num_banks_per_device);
 
 			/* Fetch a command from command queue */
 			command = list_head(info->command_queue);
@@ -577,7 +590,8 @@ void dram_controller_schedule_command(struct dram_controller_t *controller)
 				valid = 1;
 				for (k = 0; k < DRAM_TIMING_MATRIX_SIZE; k++)
 				{
-					if (esim_cycle - info->dram_bank_info_last_scheduled_time_matrix[k] < controller->dram_timing_matrix[command->type][k])
+					if (cycle - info->dram_bank_info_last_scheduled_time_matrix[k]
+							< controller->dram_timing_matrix[command->type][k])
 						valid = 0;
 				}
 
@@ -591,7 +605,7 @@ void dram_controller_schedule_command(struct dram_controller_t *controller)
 					esim_schedule_event(EV_DRAM_COMMAND_RECEIVE, command, 0);
 
 					/* Update last scheduled time matrix */
-					info->dram_bank_info_last_scheduled_time_matrix[command->type] = esim_cycle;
+					info->dram_bank_info_last_scheduled_time_matrix[command->type] = cycle;
 				}
 			}
 		}

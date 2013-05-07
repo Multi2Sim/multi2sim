@@ -229,8 +229,8 @@ static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 
 static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 {
+	struct arch_t *arch = evg_emu->arch;
 	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
-
 	struct evg_uop_t *cf_uop, *uop;
 
 	/* Get instruction at the head of the load queue. */
@@ -275,7 +275,7 @@ static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 		evg_uop_free(uop);
 	
 	/* Statistics */
-	evg_gpu->last_complete_cycle = esim_cycle;
+	evg_gpu->last_complete_cycle = arch->cycle;
 }
 
 

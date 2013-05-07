@@ -74,7 +74,7 @@ void si_lds_complete(struct si_lds_t *lds)
 
 		/* Statistics */
 		lds->inst_count++;
-		si_gpu->last_complete_cycle = esim_cycle;
+		si_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 

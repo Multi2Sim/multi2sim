@@ -887,6 +887,7 @@ void x86_ctx_ipc_report_schedule(struct x86_ctx_t *ctx)
 
 void x86_ctx_ipc_report_handler(int event, void *data)
 {
+	struct arch_t *arch = x86_emu->arch;
 	struct x86_ctx_ipc_report_stack_t *stack = data;
 	struct x86_ctx_t *ctx;
 
@@ -906,10 +907,10 @@ void x86_ctx_ipc_report_handler(int event, void *data)
 	/* Dump new IPC */
 	assert(ctx->loader->ipc_report_interval);
 	inst_count = ctx->inst_count - stack->inst_count;
-	ipc_global = esim_cycle ? (double) ctx->inst_count / esim_cycle : 0.0;
+	ipc_global = arch->cycle ? (double) ctx->inst_count / arch->cycle : 0.0;
 	ipc_interval = (double) inst_count / ctx->loader->ipc_report_interval;
 	fprintf(ctx->loader->ipc_report_file, "%10lld %8lld %10.4f %10.4f\n",
-		esim_cycle, inst_count, ipc_global, ipc_interval);
+		arch->cycle, inst_count, ipc_global, ipc_interval);
 
 	/* Schedule new event */
 	stack->inst_count = ctx->inst_count;

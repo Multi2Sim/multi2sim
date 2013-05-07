@@ -48,7 +48,11 @@ int dram_domain_index;
 static void dram_event_handler(int event, void *data)
 {
 	struct dram_command_t *command = data;
+	long long cycle;
 	FILE *f;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(dram_domain_index);
 
 	if (event == EV_DRAM_COMMAND_RECEIVE)
 	{
@@ -56,7 +60,7 @@ static void dram_event_handler(int event, void *data)
 		f = debug_file(dram_debug_category);
 		if (f)
 		{
-			dram_debug("\tNew command in cycle %lld:\n", esim_cycle);
+			dram_debug("\tNew command in cycle %lld:\n", cycle);
 			dram_command_dump(command, f);
 		}
 
@@ -135,7 +139,7 @@ static void dram_event_handler(int event, void *data)
 		f = debug_file(dram_debug_category);
 		if (f)
 		{
-			dram_debug("\tCommand freed in cycle %lld:\n", esim_cycle);
+			dram_debug("\tCommand freed in cycle %lld:\n", cycle);
 			dram_command_dump(command, stdout);
 		}
 

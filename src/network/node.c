@@ -99,7 +99,11 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 {
 	struct net_t *net = node->net;
 	struct net_buffer_t *buffer;
+	long long cycle;
 	int i;
+	
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
 
 	/* General */
 	fprintf(f, "[ Network.%s.Node.%s ]\n", net->name, node->name);
@@ -113,12 +117,12 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 	/* Statistics */
 	fprintf(f, "SentMessages = %lld\n", node->msgs_sent);
 	fprintf(f, "SentBytes = %lld\n", node->bytes_sent);
-	fprintf(f, "SendRate = %.4f\n", esim_cycle ?
-		(double) node->bytes_sent / esim_cycle : 0.0);
+	fprintf(f, "SendRate = %.4f\n", cycle ?
+		(double) node->bytes_sent / cycle : 0.0);
 	fprintf(f, "ReceivedMessages = %lld\n", node->msgs_received);
 	fprintf(f, "ReceivedBytes = %lld\n", node->bytes_received);
-	fprintf(f, "ReceiveRate = %.4f\n", esim_cycle ?
-		(double) node->bytes_received / esim_cycle : 0.0);
+	fprintf(f, "ReceiveRate = %.4f\n", cycle ?
+		(double) node->bytes_received / cycle : 0.0);
 
 	/* Input buffers */
 	for (i = 0; i < list_count(node->input_buffer_list); i++)
@@ -179,6 +183,8 @@ struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 	struct net_buffer_t *input_buffer;
 	struct net_msg_t *msg;
 
+	long long cycle;
+
 	int last_input_buffer_index;
 	int input_buffer_index;
 	int input_buffer_count;
@@ -187,20 +193,23 @@ struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 	/* Checks */
 	assert(output_buffer->node == node);
 	assert(list_get(node->output_buffer_list, output_buffer->index) == output_buffer);
+	
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
 
 	/* If last scheduling decision was done in current cycle,
 	 * return the same value. */
-	if (output_buffer->sched_when == esim_cycle)
+	if (output_buffer->sched_when == cycle)
 		return output_buffer->sched_buffer;
 	
 	/* Make a new decision */
-	output_buffer->sched_when = esim_cycle;
+	output_buffer->sched_when = cycle;
 	input_buffer_count = list_count(node->input_buffer_list);
 	last_input_buffer_index = output_buffer->sched_buffer ?
 		output_buffer->sched_buffer->index : 0;
 
 	/* Output buffer must be ready to be written */
-	if (output_buffer->write_busy >= esim_cycle)
+	if (output_buffer->write_busy >= cycle)
 	{
 		output_buffer->sched_buffer = NULL;
 		return NULL;
@@ -218,11 +227,11 @@ struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 			continue;
 
 		/* Message must be ready */
-		if (msg->busy >= esim_cycle)
+		if (msg->busy >= cycle)
 			continue;
 
 		/* Input buffer must be ready to be read */
-		if (input_buffer->read_busy >= esim_cycle)
+		if (input_buffer->read_busy >= cycle)
 			continue;
 
 		/* Message must target this output buffer */

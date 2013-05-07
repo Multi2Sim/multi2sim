@@ -68,9 +68,6 @@ extern volatile enum esim_finish_t
 } esim_finish;
 
 
-/* Simulation cycle */
-extern long long esim_cycle;
-
 /* Simulated time in picoseconds */
 extern long long esim_time;
 
@@ -102,8 +99,11 @@ int esim_new_domain(int freq);
 /* Functions returning the current cycle and the cycle time of a frequency
  * domain. As an argument, they take a domain identifier returned by
  * 'esim_new_domain'. The first cycle in any frequency domain is always 1. */
-long long esim_domain_get_cycle(int domain_index);
-long long esim_domain_get_cycle_time(int domain_index);
+long long esim_domain_cycle(int domain_index);
+long long esim_domain_cycle_time(int domain_index);
+
+/* Return the current cycle of the fastest domain. */
+long long esim_cycle(void);
 
 
 /* Register an event, optionally giving an event name. These functions take an
@@ -144,8 +144,8 @@ void esim_process_all_events(void);
 int esim_event_count(void);
 
 /* Process esim events, without enabling the schedule of a new event;
- * when all events are processed, esim heap will be empty;
- * esim_cycle is not incremented */
+ * when all events are processed, esim heap will be empty.
+ * Value in 'esim_time' is not incremented */
 void esim_empty(void);
 
 /* Return the number of micro-seconds ellapsed since the beginning of the

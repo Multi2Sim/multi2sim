@@ -41,6 +41,10 @@ struct net_msg_t *net_msg_create(struct net_t *net, struct net_node_t *src_node,
 	struct net_node_t *dst_node, int size)
 {
 	struct net_msg_t *msg;
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
 
 	/* Initialize */
 	msg = xcalloc(1, sizeof(struct net_msg_t));
@@ -49,7 +53,7 @@ struct net_msg_t *net_msg_create(struct net_t *net, struct net_node_t *src_node,
 	msg->dst_node = dst_node;
 	msg->size = size;
 	msg->id = ++net->msg_id_counter;
-	msg->send_cycle = esim_cycle;
+	msg->send_cycle = cycle;
 	if (size < 1)
 		panic("%s: bad size", __FUNCTION__);
 
@@ -109,6 +113,11 @@ void net_event_handler(int event, void *data)
 	struct net_node_t *node = msg->node;
 	struct net_buffer_t *buffer = msg->buffer;
 
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
+
 	if (event == EV_NET_SEND)
 	{
 		struct net_routing_table_entry_t *entry;
@@ -127,14 +136,14 @@ void net_event_handler(int event, void *data)
 			msg->size,
 			src_node->name,
 			dst_node->name);
-
+	
 		/* Get output buffer */
 		entry = net_routing_table_lookup(routing_table, src_node, dst_node);
 		output_buffer = entry->output_buffer;
 		if (!output_buffer)
 			fatal("%s: no route from %s to %s.\n%s", net->name, src_node->name,
 				dst_node->name, net_err_no_route);
-		if (output_buffer->write_busy >= esim_cycle)
+		if (output_buffer->write_busy >= cycle)
 			panic("%s: output buffer busy.\n%s", __FUNCTION__, net_err_can_send);
 		if (msg->size > output_buffer->size)
 			panic("%s: message does not fit in buffer.\n%s", __FUNCTION__, net_err_can_send);
@@ -143,10 +152,10 @@ void net_event_handler(int event, void *data)
 
 		/* Insert in output buffer (1 cycle latency) */
 		net_buffer_insert(output_buffer, msg);
-		output_buffer->write_busy = esim_cycle;
+		output_buffer->write_busy = cycle;
 		msg->node = src_node;
 		msg->buffer = output_buffer;
-		msg->busy = esim_cycle;
+		msg->busy = cycle;
 
 		/* Schedule next event */
 		esim_schedule_event(EV_NET_OUTPUT_BUFFER, stack, 1);
@@ -179,17 +188,17 @@ void net_event_handler(int event, void *data)
 		}
 
 		/* If source output buffer is busy, wait */
-		if (buffer->read_busy >= esim_cycle)
+		if (buffer->read_busy >= cycle)
 		{
-			esim_schedule_event(event, stack, buffer->read_busy - esim_cycle + 1);
+			esim_schedule_event(event, stack, buffer->read_busy - cycle + 1);
 			return;
 		}
 		
 		/* If link is busy, wait */
 		link = buffer->link;
-		if (link->busy >= esim_cycle)
+		if (link->busy >= cycle)
 		{
-			esim_schedule_event(event, stack, link->busy - esim_cycle + 1);
+			esim_schedule_event(event, stack, link->busy - cycle + 1);
 			return;
 		}
 
@@ -215,9 +224,9 @@ void net_event_handler(int event, void *data)
 		/* If destination input buffer is busy, wait */
 		assert(buffer == link->src_buffer);
 		input_buffer = link->dst_buffer;
-		if (input_buffer->write_busy >= esim_cycle)
+		if (input_buffer->write_busy >= cycle)
 		{
-			esim_schedule_event(event, stack, input_buffer->write_busy - esim_cycle + 1);
+			esim_schedule_event(event, stack, input_buffer->write_busy - cycle + 1);
 			return;
 		}
 
@@ -234,17 +243,17 @@ void net_event_handler(int event, void *data)
 		/* Calculate latency and occupy resources */
 		lat = (msg->size - 1) / link->bandwidth + 1;
 		assert(lat > 0);
-		buffer->read_busy = esim_cycle + lat - 1;
-		link->busy = esim_cycle + lat - 1;
-		input_buffer->write_busy = esim_cycle + lat - 1;
+		buffer->read_busy = cycle + lat - 1;
+		link->busy = cycle + lat - 1;
+		input_buffer->write_busy = cycle + lat - 1;
 
 		/* Transfer message to next input buffer */
-		assert(msg->busy < esim_cycle);
+		assert(msg->busy < cycle);
 		net_buffer_extract(buffer, msg);
 		net_buffer_insert(input_buffer, msg);
 		msg->node = input_buffer->node;
 		msg->buffer = input_buffer;
-		msg->busy = esim_cycle + lat - 1;
+		msg->busy = cycle + lat - 1;
 
 		/* Stats */
 		link->busy_cycles += lat;
@@ -300,7 +309,7 @@ void net_event_handler(int event, void *data)
 		}
 		
 		/* If source input buffer is busy, wait */
-		if (buffer->read_busy >= esim_cycle)
+		if (buffer->read_busy >= cycle)
 		{
 			net_debug("msg "
 				"a=\"stall\" "
@@ -309,7 +318,7 @@ void net_event_handler(int event, void *data)
 				"why=\"src-busy\"\n",
 				net->name,
 				msg->id);
-			esim_schedule_event(event, stack, buffer->read_busy - esim_cycle + 1);
+			esim_schedule_event(event, stack, buffer->read_busy - cycle + 1);
 			return;
 		}
 		
@@ -321,7 +330,7 @@ void net_event_handler(int event, void *data)
 				node->name, dst_node->name, net_err_no_route);
 		
 		/* If destination output buffer is busy, wait */
-		if (output_buffer->write_busy >= esim_cycle)
+		if (output_buffer->write_busy >= cycle)
 		{
 			net_debug("msg "
 				"a=\"stall\" "
@@ -330,7 +339,7 @@ void net_event_handler(int event, void *data)
 				"why=\"dst-busy\"\n",
 				net->name,
 				msg->id);
-			esim_schedule_event(event, stack, output_buffer->write_busy - esim_cycle + 1);
+			esim_schedule_event(event, stack, output_buffer->write_busy - cycle + 1);
 			return;
 		}
 
@@ -370,15 +379,15 @@ void net_event_handler(int event, void *data)
 		assert(node->bandwidth > 0);
 		lat = (msg->size - 1) / node->bandwidth + 1;
 		assert(lat > 0);
-		buffer->read_busy = esim_cycle + lat - 1;
-		output_buffer->write_busy = esim_cycle + lat - 1;
+		buffer->read_busy = cycle + lat - 1;
+		output_buffer->write_busy = cycle + lat - 1;
 
 		/* Transfer message to next output buffer */
-		assert(msg->busy < esim_cycle);
+		assert(msg->busy < cycle);
 		net_buffer_extract(buffer, msg);
 		net_buffer_insert(output_buffer, msg);
 		msg->buffer = output_buffer;
-		msg->busy = esim_cycle + lat - 1;
+		msg->busy = cycle + lat - 1;
 
 		/* Schedule next event */
 		esim_schedule_event(EV_NET_OUTPUT_BUFFER, stack, lat);
@@ -398,7 +407,7 @@ void net_event_handler(int event, void *data)
 
 		/* Stats */
 		net->transfers++;
-		net->lat_acc += esim_cycle - msg->send_cycle;
+		net->lat_acc += cycle - msg->send_cycle;
 		net->msg_size_acc += msg->size;
 
 		/* If not return event was specified, free message here */

@@ -92,7 +92,7 @@ void frm_simd_complete(struct frm_simd_t *simd)
 
 		/* Statistics */
 		simd->inst_count++;
-		frm_gpu->last_complete_cycle = esim_cycle;
+		frm_gpu->last_complete_cycle = arch->cycle;
 	}
 }
 

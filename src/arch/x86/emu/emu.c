@@ -740,6 +740,7 @@ void x86_emu_process_events()
  */
 enum arch_sim_kind_t x86_emu_run(void)
 {
+	struct arch_t *arch = x86_emu->arch;
 	struct x86_ctx_t *ctx;
 
 	/* Stop if there is no context running */
@@ -751,7 +752,7 @@ enum arch_sim_kind_t x86_emu_run(void)
 		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
-	if (x86_emu_max_cycles && esim_cycle >= x86_emu_max_cycles)
+	if (x86_emu_max_cycles && arch->cycle >= x86_emu_max_cycles)
 		esim_finish = esim_finish_x86_max_cycles;
 
 	/* Stop if any previous reason met */

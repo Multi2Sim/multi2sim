@@ -276,7 +276,7 @@ enum arch_sim_kind_t mips_emu_run(void)
 		esim_finish = esim_finish_mips_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
-	if (mips_emu_max_cycles && esim_cycle >= mips_emu_max_cycles)
+	if (mips_emu_max_cycles && arch->cycle >= mips_emu_max_cycles)
 		esim_finish = esim_finish_mips_max_cycles;
 
 	/* Stop if any previous reason met */
