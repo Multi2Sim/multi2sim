@@ -94,6 +94,7 @@ void esim_dump(FILE *f, int max);
 
 /* Create a new frequency domain. Argument 'freq' specifies the frequency
  * in MHz. The function returns a domain identifier. */
+#define ESIM_MAX_FREQUENCY  10000
 int esim_new_domain(int freq);
 
 /* Functions returning the current cycle and the cycle time of a frequency
@@ -101,6 +102,7 @@ int esim_new_domain(int freq);
  * 'esim_new_domain'. The first cycle in any frequency domain is always 1. */
 long long esim_domain_cycle(int domain_index);
 long long esim_domain_cycle_time(int domain_index);
+int esim_domain_frequency(int domain_index);
 
 /* Return the current cycle of the fastest domain. */
 long long esim_cycle(void);

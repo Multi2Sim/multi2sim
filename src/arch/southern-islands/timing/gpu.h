@@ -108,6 +108,7 @@ extern enum si_gpu_register_alloc_granularity_t
 
 /* User configurable options */
 
+extern int si_gpu_frequency;
 extern int si_gpu_num_compute_units;
 extern int si_gpu_max_wavefronts_per_workgroup;
 
@@ -213,6 +214,14 @@ struct si_simd_t;
 struct si_branch_unit_t;
 struct si_vector_mem_unit_t;
 struct si_lds_t;
+
+
+
+/*
+ * Public Functions
+ */
+
+void si_gpu_read_config(void);
 
 void si_gpu_init(void);
 void si_gpu_done(void);

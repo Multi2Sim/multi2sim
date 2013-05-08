@@ -110,6 +110,13 @@ extern struct evg_gpu_t *evg_gpu;
 			* evg_gpu_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
 		(WORK_ITEM_ID)++)
 
+
+/*
+ * Public Functions
+ */
+
+void evg_gpu_read_config(void);
+
 void evg_gpu_init(void);
 void evg_gpu_done(void);
 void evg_gpu_dump(FILE *f);

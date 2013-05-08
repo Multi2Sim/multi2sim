@@ -21,6 +21,7 @@
 #define ARCH_ARM_EMU_EMU_H
 
 #include <pthread.h>
+#include <stdio.h>
 
 
 struct arm_emu_t
@@ -102,6 +103,13 @@ extern struct arm_emu_t *arm_emu;
 extern long long arm_emu_max_cycles;
 extern long long arm_emu_max_inst;
 extern long long arm_emu_max_time;
+
+
+
+
+/*
+ * Public Functions
+ */
 
 void arm_emu_init(struct arch_t *arch);
 void arm_emu_done(void);

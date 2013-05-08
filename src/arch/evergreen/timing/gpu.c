@@ -60,6 +60,8 @@ char *evg_gpu_config_help =
 	"\n"
 	"Section '[ Device ]': parameters for the GPU.\n"
 	"\n"
+	"  Frequency = <value> (Default = 700)\n"
+	"      Frequency domain for the Evergreen GPU in MHz.\n"
 	"  NumComputeUnits = <num> (Default = 20)\n"
 	"      Number of compute units in the GPU. A compute unit runs one or more\n"
 	"      work-groups at a time.\n"
@@ -184,7 +186,7 @@ static char *evg_err_stall =
 #define EVG_TRACE_VERSION_MINOR		671
 
 
-static void evg_gpu_device_init()
+static void evg_gpu_device_init(void)
 {
 	struct evg_compute_unit_t *compute_unit;
 	int compute_unit_id;
@@ -210,7 +212,107 @@ static void evg_gpu_device_init()
 }
 
 
-static void evg_config_read(void)
+static void evg_config_dump(FILE *f)
+{
+	/* Device configuration */
+	fprintf(f, "[ Config.Device ]\n");
+	fprintf(f, "Frequency = %d\n", arch_evergreen->frequency);
+	fprintf(f, "NumComputeUnits = %d\n", evg_gpu_num_compute_units);
+	fprintf(f, "NumStreamCores = %d\n", evg_gpu_num_stream_cores);
+	fprintf(f, "NumRegisters = %d\n", evg_gpu_num_registers);
+	fprintf(f, "RegisterAllocSize = %d\n", evg_gpu_register_alloc_size);
+	fprintf(f, "RegisterAllocGranularity = %s\n", str_map_value(&evg_gpu_register_alloc_granularity_map, evg_gpu_register_alloc_granularity));
+	fprintf(f, "WavefrontSize = %d\n", evg_emu_wavefront_size);
+	fprintf(f, "MaxWorkGroupsPerComputeUnit = %d\n", evg_gpu_max_work_groups_per_compute_unit);
+	fprintf(f, "MaxWavefrontsPerComputeUnit = %d\n", evg_gpu_max_wavefronts_per_compute_unit);
+	fprintf(f, "SchedulingPolicy = %s\n", str_map_value(&evg_gpu_sched_policy_map, evg_gpu_sched_policy));
+	fprintf(f, "\n");
+
+	/* Local Memory */
+	fprintf(f, "[ Config.LocalMemory ]\n");
+	fprintf(f, "Size = %d\n", evg_gpu_local_mem_size);
+	fprintf(f, "AllocSize = %d\n", evg_gpu_local_mem_alloc_size);
+	fprintf(f, "BlockSize = %d\n", evg_gpu_local_mem_block_size);
+	fprintf(f, "Latency = %d\n", evg_gpu_local_mem_latency);
+	fprintf(f, "Ports = %d\n", evg_gpu_local_mem_num_ports);
+	fprintf(f, "\n");
+
+	/* CF Engine */
+	fprintf(f, "[ Config.CFEngine ]\n");
+	fprintf(f, "InstructionMemoryLatency = %d\n", evg_gpu_cf_engine_inst_mem_latency);
+	fprintf(f, "\n");
+
+	/* ALU Engine */
+	fprintf(f, "[ Config.ALUEngine ]\n");
+	fprintf(f, "InstructionMemoryLatency = %d\n", evg_gpu_alu_engine_inst_mem_latency);
+	fprintf(f, "FetchQueueSize = %d\n", evg_gpu_alu_engine_fetch_queue_size);
+	fprintf(f, "ProcessingElementLatency = %d\n", evg_gpu_alu_engine_pe_latency);
+	fprintf(f, "\n");
+
+	/* TEX Engine */
+	fprintf(f, "[ Config.TEXEngine ]\n");
+	fprintf(f, "InstructionMemoryLatency = %d\n", evg_gpu_tex_engine_inst_mem_latency);
+	fprintf(f, "FetchQueueSize = %d\n", evg_gpu_tex_engine_fetch_queue_size);
+	fprintf(f, "LoadQueueSize = %d\n", evg_gpu_tex_engine_load_queue_size);
+	fprintf(f, "\n");
+
+	/* End of configuration */
+	fprintf(f, "\n");
+}
+
+
+static void evg_gpu_map_ndrange(struct evg_ndrange_t *ndrange)
+{
+	struct evg_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
+	/* Assign current ND-Range */
+	assert(!evg_gpu->ndrange);
+	evg_gpu->ndrange = ndrange;
+
+	/* Check that at least one work-group can be allocated per compute unit */
+	evg_gpu->work_groups_per_compute_unit = evg_calc_get_work_groups_per_compute_unit(
+		ndrange->kernel->local_size, ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used,
+		ndrange->local_mem_top);
+	if (!evg_gpu->work_groups_per_compute_unit)
+		fatal("work-group resources cannot be allocated to a compute unit.\n"
+			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"
+			"\tof registers, and amount of local memory. If the work-group size\n"
+			"\texceeds any of these limits, the ND-Range cannot be executed.\n");
+
+	/* Derived from this, calculate limit of wavefronts and work-items per compute unit. */
+	evg_gpu->wavefronts_per_compute_unit = evg_gpu->work_groups_per_compute_unit * ndrange->wavefronts_per_work_group;
+	evg_gpu->work_items_per_compute_unit = evg_gpu->wavefronts_per_compute_unit * evg_emu_wavefront_size;
+	assert(evg_gpu->work_groups_per_compute_unit <= evg_gpu_max_work_groups_per_compute_unit);
+	assert(evg_gpu->wavefronts_per_compute_unit <= evg_gpu_max_wavefronts_per_compute_unit);
+
+	/* Reset architectural state */
+	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		compute_unit = evg_gpu->compute_units[compute_unit_id];
+		compute_unit->cf_engine.decode_index = 0;
+		compute_unit->cf_engine.execute_index = 0;
+	}
+}
+
+
+static void evg_gpu_unmap_ndrange(void)
+{
+	/* Dump stats */
+	evg_ndrange_dump(evg_gpu->ndrange, evg_emu_report_file);
+
+	/* Unmap */
+	evg_gpu->ndrange = NULL;
+}
+
+
+
+
+/*
+ * Public Functions
+ */
+
+void evg_gpu_read_config(void)
 {
 	struct config_t *gpu_config;
 	char *section;
@@ -228,6 +330,12 @@ static void evg_config_read(void)
 	
 	/* Device */
 	section = "Device";
+
+	arch_evergreen->frequency = config_read_int(gpu_config, section, "Frequency", 700);
+	if (!IN_RANGE(arch_evergreen->frequency, 1, ESIM_MAX_FREQUENCY))
+		fatal("%s: invalid value for 'Frequency'.\n%s",
+				evg_gpu_config_file_name, err_note);
+
 	evg_gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", evg_gpu_num_compute_units);
 	evg_gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", evg_gpu_num_stream_cores);
 	evg_gpu_num_registers = config_read_int(gpu_config, section, "NumRegisters", evg_gpu_num_registers);
@@ -315,7 +423,7 @@ static void evg_config_read(void)
 			"(2 words each), and 4 literal constants (1 word each).\n%s",
 			evg_gpu_config_file_name, section, err_note);
 	if (evg_gpu_alu_engine_pe_latency < 1)
-		fatal("%s: invalud value for %s->ProcessingElementLatency.\n%s", evg_gpu_config_file_name, section, err_note);
+		fatal("%s: invalid value for %s->ProcessingElementLatency.\n%s", evg_gpu_config_file_name, section, err_note);
 
 	/* TEX Engine */
 	section = "TEXEngine";
@@ -339,111 +447,11 @@ static void evg_config_read(void)
 	evg_periodic_report_config_read(gpu_config);
 	evg_spatial_report_config_read(gpu_config);
 
-
 	/* Close GPU configuration file */
 	config_check(gpu_config);
 	config_free(gpu_config);
 }
 
-
-static void evg_config_dump(FILE *f)
-{
-	/* Device configuration */
-	fprintf(f, "[ Config.Device ]\n");
-	fprintf(f, "NumComputeUnits = %d\n", evg_gpu_num_compute_units);
-	fprintf(f, "NumStreamCores = %d\n", evg_gpu_num_stream_cores);
-	fprintf(f, "NumRegisters = %d\n", evg_gpu_num_registers);
-	fprintf(f, "RegisterAllocSize = %d\n", evg_gpu_register_alloc_size);
-	fprintf(f, "RegisterAllocGranularity = %s\n", str_map_value(&evg_gpu_register_alloc_granularity_map, evg_gpu_register_alloc_granularity));
-	fprintf(f, "WavefrontSize = %d\n", evg_emu_wavefront_size);
-	fprintf(f, "MaxWorkGroupsPerComputeUnit = %d\n", evg_gpu_max_work_groups_per_compute_unit);
-	fprintf(f, "MaxWavefrontsPerComputeUnit = %d\n", evg_gpu_max_wavefronts_per_compute_unit);
-	fprintf(f, "SchedulingPolicy = %s\n", str_map_value(&evg_gpu_sched_policy_map, evg_gpu_sched_policy));
-	fprintf(f, "\n");
-
-	/* Local Memory */
-	fprintf(f, "[ Config.LocalMemory ]\n");
-	fprintf(f, "Size = %d\n", evg_gpu_local_mem_size);
-	fprintf(f, "AllocSize = %d\n", evg_gpu_local_mem_alloc_size);
-	fprintf(f, "BlockSize = %d\n", evg_gpu_local_mem_block_size);
-	fprintf(f, "Latency = %d\n", evg_gpu_local_mem_latency);
-	fprintf(f, "Ports = %d\n", evg_gpu_local_mem_num_ports);
-	fprintf(f, "\n");
-
-	/* CF Engine */
-	fprintf(f, "[ Config.CFEngine ]\n");
-	fprintf(f, "InstructionMemoryLatency = %d\n", evg_gpu_cf_engine_inst_mem_latency);
-	fprintf(f, "\n");
-
-	/* ALU Engine */
-	fprintf(f, "[ Config.ALUEngine ]\n");
-	fprintf(f, "InstructionMemoryLatency = %d\n", evg_gpu_alu_engine_inst_mem_latency);
-	fprintf(f, "FetchQueueSize = %d\n", evg_gpu_alu_engine_fetch_queue_size);
-	fprintf(f, "ProcessingElementLatency = %d\n", evg_gpu_alu_engine_pe_latency);
-	fprintf(f, "\n");
-
-	/* TEX Engine */
-	fprintf(f, "[ Config.TEXEngine ]\n");
-	fprintf(f, "InstructionMemoryLatency = %d\n", evg_gpu_tex_engine_inst_mem_latency);
-	fprintf(f, "FetchQueueSize = %d\n", evg_gpu_tex_engine_fetch_queue_size);
-	fprintf(f, "LoadQueueSize = %d\n", evg_gpu_tex_engine_load_queue_size);
-	fprintf(f, "\n");
-	
-	/* End of configuration */
-	fprintf(f, "\n");
-}
-
-
-static void evg_gpu_map_ndrange(struct evg_ndrange_t *ndrange)
-{
-	struct evg_compute_unit_t *compute_unit;
-	int compute_unit_id;
-
-	/* Assign current ND-Range */
-	assert(!evg_gpu->ndrange);
-	evg_gpu->ndrange = ndrange;
-
-	/* Check that at least one work-group can be allocated per compute unit */
-	evg_gpu->work_groups_per_compute_unit = evg_calc_get_work_groups_per_compute_unit(
-		ndrange->kernel->local_size, ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used,
-		ndrange->local_mem_top);
-	if (!evg_gpu->work_groups_per_compute_unit)
-		fatal("work-group resources cannot be allocated to a compute unit.\n"
-			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"
-			"\tof registers, and amount of local memory. If the work-group size\n"
-			"\texceeds any of these limits, the ND-Range cannot be executed.\n");
-
-	/* Derived from this, calculate limit of wavefronts and work-items per compute unit. */
-	evg_gpu->wavefronts_per_compute_unit = evg_gpu->work_groups_per_compute_unit * ndrange->wavefronts_per_work_group;
-	evg_gpu->work_items_per_compute_unit = evg_gpu->wavefronts_per_compute_unit * evg_emu_wavefront_size;
-	assert(evg_gpu->work_groups_per_compute_unit <= evg_gpu_max_work_groups_per_compute_unit);
-	assert(evg_gpu->wavefronts_per_compute_unit <= evg_gpu_max_wavefronts_per_compute_unit);
-
-	/* Reset architectural state */
-	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-	{
-		compute_unit = evg_gpu->compute_units[compute_unit_id];
-		compute_unit->cf_engine.decode_index = 0;
-		compute_unit->cf_engine.execute_index = 0;
-	}
-}
-
-
-static void evg_gpu_unmap_ndrange(void)
-{
-	/* Dump stats */
-	evg_ndrange_dump(evg_gpu->ndrange, evg_emu_report_file);
-
-	/* Unmap */
-	evg_gpu->ndrange = NULL;
-}
-
-
-
-
-/*
- * Public Functions
- */
 
 void evg_gpu_init(void)
 {
@@ -462,9 +470,6 @@ void evg_gpu_init(void)
 		fatal("%s: cannot open GPU pipeline report file",
 			evg_gpu_report_file_name);
 
-	/* Read configuration file */
-	evg_config_read();
-
 	/* Initializations */
 	evg_periodic_report_init();
 	evg_gpu_device_init();
@@ -475,7 +480,7 @@ void evg_gpu_init(void)
 }
 
 
-void evg_gpu_done()
+void evg_gpu_done(void)
 {
 	struct evg_compute_unit_t *compute_unit;
 	int compute_unit_id;

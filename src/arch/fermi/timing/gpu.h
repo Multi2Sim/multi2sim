@@ -236,6 +236,14 @@ struct frm_branch_unit_t;
 struct frm_vector_mem_unit_t;
 struct frm_lds_t;
 
+
+
+/*
+ * Public Functions
+ */
+
+void frm_gpu_read_config(void);
+
 void frm_gpu_init(void);
 void frm_gpu_done(void);
 void frm_gpu_dump(FILE *f);

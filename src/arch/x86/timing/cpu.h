@@ -359,7 +359,14 @@ struct x86_cpu_t
 };
 
 
-/* Procedures and functions */
+
+
+/*
+ * Public Functions
+ */
+
+void x86_cpu_read_config(void);
+
 void x86_cpu_init(void);
 void x86_cpu_done(void);
 

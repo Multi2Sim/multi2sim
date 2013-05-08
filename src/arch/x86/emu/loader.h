@@ -39,10 +39,6 @@ struct x86_loader_t
 	char *stdin_file;  /* File name for stdin */
 	char *stdout_file;  /* File name for stdout */
 
-	/* IPC report (for detailed simulation) */
-	FILE *ipc_report_file;
-	int ipc_report_interval;
-
 	/* Stack */
 	unsigned int stack_base;
 	unsigned int stack_top;

@@ -67,6 +67,8 @@ char *si_gpu_config_help =
 	"\n"
 	"Section '[ Device ]': parameters for the GPU.\n"
 	"\n"
+	"  Frequency = <value> (Default = 1000)\n"
+	"      Frequency for the Southern Islands GPU in MHz.\n"
 	"  NumComputeUnits = <num> (Default = 32)\n"
 	"      Number of compute units in the GPU.\n"
 	"\n"
@@ -419,7 +421,7 @@ struct si_gpu_t *si_gpu;
 #define SI_TRACE_VERSION_MINOR		1
 
 
-static void si_gpu_device_init()
+static void si_gpu_device_init(void)
 {
 	struct si_compute_unit_t *compute_unit;
 	int compute_unit_id;
@@ -482,15 +484,152 @@ void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
 	si_calc_plot();
 }
 
-static void si_config_read(void)
+
+void si_config_dump(FILE *f)
+{
+	/* Device */
+	fprintf(f, "[ Config.Device ]\n");
+	fprintf(f, "Frequency = %d\n", arch_southern_islands->frequency);
+	fprintf(f, "NumComputeUnits = %d\n", si_gpu_num_compute_units);
+	fprintf(f, "\n");
+
+	/* Compute Unit */
+	fprintf(f, "[ Config.ComputeUnit ]\n");
+	fprintf(f, "NumWavefrontPools = %d\n", si_gpu_num_wavefront_pools);
+	fprintf(f, "NumVectorRegisters = %d\n", si_gpu_num_vector_registers);
+	fprintf(f, "NumScalarRegisters = %d\n", si_gpu_num_scalar_registers);
+	fprintf(f, "MaxWorkGroupsPerWavefrontPool = %d\n",
+		si_gpu_max_work_groups_per_wavefront_pool);
+	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n",
+		si_gpu_max_wavefronts_per_wavefront_pool);
+	fprintf(f, "\n");
+	/*
+	fprintf(f, "RegisterAllocSize = %d\n", si_gpu_register_alloc_size);
+	fprintf(f, "RegisterAllocGranularity = %s\n",
+		str_map_value(&si_gpu_register_alloc_granularity_map,
+		si_gpu_register_alloc_granularity));
+	*/
+
+	/* Front-End */
+	fprintf(f, "[ Config.FrontEnd ]\n");
+	fprintf(f, "FetchLatency = %d\n", si_gpu_fe_fetch_latency);
+	fprintf(f, "FetchWidth = %d\n", si_gpu_fe_fetch_width);
+	fprintf(f, "FetchBufferSize = %d\n", si_gpu_fe_fetch_buffer_size);
+	fprintf(f, "IssueLatency = %d\n", si_gpu_fe_issue_latency);
+	fprintf(f, "IssueWidth = %d\n", si_gpu_fe_issue_width);
+	fprintf(f, "MaxInstIssuedPerType = %d\n",
+		si_gpu_fe_max_inst_issued_per_type);
+	fprintf(f, "\n");
+
+	/* SIMD Unit */
+	fprintf(f, "[ Config.SIMDUnit ]\n");
+	fprintf(f, "NumSIMDLanes = %d\n", si_gpu_simd_num_simd_lanes);
+	fprintf(f, "Width = %d\n", si_gpu_simd_width);
+	fprintf(f, "IssueBufferSize = %d\n", si_gpu_simd_issue_buffer_size);
+	fprintf(f, "DecodeLatency = %d\n", si_gpu_simd_decode_latency);
+	fprintf(f, "DecodeBufferSize = %d\n", si_gpu_simd_decode_buffer_size);
+	fprintf(f, "ReadExecWriteLatency = %d\n", si_gpu_simd_exec_latency);
+	fprintf(f, "ReadExecWriteBufferSize = %d\n",
+		si_gpu_simd_exec_buffer_size);
+	fprintf(f, "\n");
+
+	/* Scalar Unit */
+	fprintf(f, "[ Config.ScalarUnit ]\n");
+	fprintf(f, "Width = %d\n", si_gpu_scalar_unit_width);
+	fprintf(f, "IssueBufferSize = %d\n",
+		si_gpu_scalar_unit_issue_buffer_size);
+	fprintf(f, "DecodeLatency = %d\n", si_gpu_scalar_unit_decode_latency);
+	fprintf(f, "DecodeBufferSize = %d\n",
+		si_gpu_scalar_unit_decode_buffer_size);
+	fprintf(f, "ReadLatency = %d\n", si_gpu_scalar_unit_read_latency);
+	fprintf(f, "ReadBufferSize = %d\n",
+		si_gpu_scalar_unit_read_buffer_size);
+	fprintf(f, "ALULatency = %d\n", si_gpu_scalar_unit_exec_latency);
+	fprintf(f, "ExecBufferSize = %d\n",
+		si_gpu_scalar_unit_exec_buffer_size);
+	fprintf(f, "WriteLatency = %d\n", si_gpu_scalar_unit_write_latency);
+	fprintf(f, "WriteBufferSize = %d\n",
+		si_gpu_scalar_unit_write_buffer_size);
+	fprintf(f, "\n");
+
+	/* Branch Unit */
+	fprintf(f, "[ Config.BranchUnit ]\n");
+	fprintf(f, "Width = %d\n", si_gpu_branch_unit_width);
+	fprintf(f, "IssueBufferSize = %d\n",
+		si_gpu_branch_unit_issue_buffer_size);
+	fprintf(f, "DecodeLatency = %d\n", si_gpu_branch_unit_decode_latency);
+	fprintf(f, "DecodeBufferSize = %d\n",
+		si_gpu_branch_unit_decode_buffer_size);
+	fprintf(f, "ReadLatency = %d\n", si_gpu_branch_unit_read_latency);
+	fprintf(f, "ReadBufferSize = %d\n",
+		si_gpu_branch_unit_read_buffer_size);
+	fprintf(f, "ExecLatency = %d\n", si_gpu_branch_unit_exec_latency);
+	fprintf(f, "ExecBufferSize = %d\n",
+		si_gpu_branch_unit_exec_buffer_size);
+	fprintf(f, "WriteLatency = %d\n", si_gpu_branch_unit_write_latency);
+	fprintf(f, "WriteBufferSize = %d\n",
+		si_gpu_branch_unit_write_buffer_size);
+	fprintf(f, "\n");
+
+	/* LDS */
+	fprintf(f, "[ Config.LDSUnit ]\n");
+	fprintf(f, "Width = %d\n", si_gpu_lds_width);
+	fprintf(f, "IssueBufferSize = %d\n", si_gpu_lds_issue_buffer_size);
+	fprintf(f, "DecodeLatency = %d\n", si_gpu_lds_decode_latency);
+	fprintf(f, "DecodeBufferSize = %d\n",
+		si_gpu_lds_decode_buffer_size);
+	fprintf(f, "ReadLatency = %d\n", si_gpu_lds_read_latency);
+	fprintf(f, "ReadBufferSize = %d\n", si_gpu_lds_read_buffer_size);
+	fprintf(f, "MaxInflightMem = %d\n",
+		si_gpu_lds_max_inflight_mem_accesses);
+	fprintf(f, "WriteLatency = %d\n", si_gpu_lds_write_latency);
+	fprintf(f, "WriteBufferSize = %d\n", si_gpu_lds_write_buffer_size);
+	fprintf(f, "\n");
+
+	/* Vector Memory */
+	fprintf(f, "[ Config.VectorMemUnit ]\n");
+	fprintf(f, "Width = %d\n", si_gpu_vector_mem_width);
+	fprintf(f, "IssueBufferSize = %d\n",
+		si_gpu_vector_mem_issue_buffer_size);
+	fprintf(f, "DecodeLatency = %d\n", si_gpu_vector_mem_decode_latency);
+	fprintf(f, "DecodeBufferSize = %d\n",
+		si_gpu_vector_mem_decode_buffer_size);
+	fprintf(f, "ReadLatency = %d\n", si_gpu_vector_mem_read_latency);
+	fprintf(f, "ReadBufferSize = %d\n", si_gpu_vector_mem_read_buffer_size);
+	fprintf(f, "MaxInflightMem = %d\n",
+		si_gpu_vector_mem_max_inflight_mem_accesses);
+	fprintf(f, "WriteLatency = %d\n", si_gpu_vector_mem_write_latency);
+	fprintf(f, "WriteBufferSize = %d\n",
+		si_gpu_vector_mem_write_buffer_size);
+	fprintf(f, "\n");
+
+	/* LDS */
+	fprintf(f, "[ Config.LDS ]\n");
+	fprintf(f, "Size = %d\n", si_gpu_lds_size);
+	fprintf(f, "AllocSize = %d\n", si_gpu_lds_alloc_size);
+	fprintf(f, "BlockSize = %d\n", si_gpu_lds_block_size);
+	fprintf(f, "Latency = %d\n", si_gpu_lds_latency);
+	fprintf(f, "Ports = %d\n", si_gpu_lds_num_ports);
+	fprintf(f, "\n");
+
+	/* End of configuration */
+	fprintf(f, "\n");
+}
+
+
+
+
+/*
+ * Public Functions
+ */
+
+void si_gpu_read_config(void)
 {
 	struct config_t *gpu_config;
 	char *section;
 	char *err_note =
 		"\tPlease run 'm2s --si-help' or consult the Multi2Sim Guide "
 		"for a\n\tdescription of the GPU configuration file format.";
-
-	//char *gpu_register_alloc_granularity_str;
 
 	/* Load GPU configuration file */
 	gpu_config = config_create(si_gpu_config_file_name);
@@ -500,34 +639,17 @@ static void si_config_read(void)
 	/* Device */
 	section = "Device";
 
-	si_gpu_num_compute_units = config_read_int(
-		gpu_config, section, "NumComputeUnits", 
-		si_gpu_num_compute_units);
+	arch_southern_islands->frequency = config_read_int(gpu_config, section,
+			"Frequency", 1000);
+	if (!IN_RANGE(arch_southern_islands->frequency, 1, ESIM_MAX_FREQUENCY))
+		fatal("%s: invalid value for 'Frequency'.\n%s",
+			si_gpu_config_file_name, err_note);
+
+	si_gpu_num_compute_units = config_read_int(gpu_config, section,
+			"NumComputeUnits", si_gpu_num_compute_units);
 	if (si_gpu_num_compute_units < 1)
 		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", 
 			si_gpu_config_file_name, err_note);
-
-#if 0
-	si_gpu_register_alloc_size = config_read_int(
-		gpu_config, section, "RegisterAllocSize", 
-		si_gpu_register_alloc_size);
-	if (si_gpu_register_alloc_size < 1)
-		fatal("%s: invalid value for 'RegisterAllocSize'.\n%s", 
-			si_gpu_config_file_name, err_note);
-	if (si_gpu_num_registers % si_gpu_register_alloc_size)
-		fatal("%s: 'NumRegisters' not a multiple of "
-			"'RegisterAllocSize'.\n%s", si_gpu_config_file_name, 
-			err_note);
-
-	gpu_register_alloc_granularity_str = config_read_string(
-		gpu_config, section, "RegisterAllocGranularity", "WorkGroup");
-	si_gpu_register_alloc_granularity = str_map_string_case(
-		&si_gpu_register_alloc_granularity_map, 
-		gpu_register_alloc_granularity_str);
-	if (si_gpu_register_alloc_granularity == si_gpu_register_alloc_invalid)
-		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s",
-			si_gpu_config_file_name, err_note);
-#endif
 
 	/* Compute Unit */
 	section = "ComputeUnit";
@@ -981,143 +1103,6 @@ static void si_config_read(void)
 }
 
 
-void si_config_dump(FILE *f)
-{
-	/* Device */
-	fprintf(f, "[ Config.Device ]\n");
-	fprintf(f, "NumComputeUnits = %d\n", si_gpu_num_compute_units);
-	fprintf(f, "\n");
-
-	/* Compute Unit */
-	fprintf(f, "[ Config.ComputeUnit ]\n");
-	fprintf(f, "NumWavefrontPools = %d\n", si_gpu_num_wavefront_pools);
-	fprintf(f, "NumVectorRegisters = %d\n", si_gpu_num_vector_registers);
-	fprintf(f, "NumScalarRegisters = %d\n", si_gpu_num_scalar_registers);
-	fprintf(f, "MaxWorkGroupsPerWavefrontPool = %d\n", 
-		si_gpu_max_work_groups_per_wavefront_pool);
-	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n", 
-		si_gpu_max_wavefronts_per_wavefront_pool);
-	fprintf(f, "\n");
-	/*
-	fprintf(f, "RegisterAllocSize = %d\n", si_gpu_register_alloc_size);
-	fprintf(f, "RegisterAllocGranularity = %s\n", 
-		str_map_value(&si_gpu_register_alloc_granularity_map, 
-		si_gpu_register_alloc_granularity));
-	*/
-
-	/* Front-End */
-	fprintf(f, "[ Config.FrontEnd ]\n");
-	fprintf(f, "FetchLatency = %d\n", si_gpu_fe_fetch_latency);
-	fprintf(f, "FetchWidth = %d\n", si_gpu_fe_fetch_width);
-	fprintf(f, "FetchBufferSize = %d\n", si_gpu_fe_fetch_buffer_size);
-	fprintf(f, "IssueLatency = %d\n", si_gpu_fe_issue_latency);
-	fprintf(f, "IssueWidth = %d\n", si_gpu_fe_issue_width);
-	fprintf(f, "MaxInstIssuedPerType = %d\n", 
-		si_gpu_fe_max_inst_issued_per_type);
-	fprintf(f, "\n");
-
-	/* SIMD Unit */
-	fprintf(f, "[ Config.SIMDUnit ]\n");
-	fprintf(f, "NumSIMDLanes = %d\n", si_gpu_simd_num_simd_lanes);
-	fprintf(f, "Width = %d\n", si_gpu_simd_width);
-	fprintf(f, "IssueBufferSize = %d\n", si_gpu_simd_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", si_gpu_simd_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", si_gpu_simd_decode_buffer_size);
-	fprintf(f, "ReadExecWriteLatency = %d\n", si_gpu_simd_exec_latency);
-	fprintf(f, "ReadExecWriteBufferSize = %d\n", 
-		si_gpu_simd_exec_buffer_size);
-	fprintf(f, "\n");
-
-	/* Scalar Unit */
-	fprintf(f, "[ Config.ScalarUnit ]\n");
-	fprintf(f, "Width = %d\n", si_gpu_scalar_unit_width);
-	fprintf(f, "IssueBufferSize = %d\n", 
-		si_gpu_scalar_unit_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", si_gpu_scalar_unit_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", 
-		si_gpu_scalar_unit_decode_buffer_size);
-	fprintf(f, "ReadLatency = %d\n", si_gpu_scalar_unit_read_latency);
-	fprintf(f, "ReadBufferSize = %d\n", 
-		si_gpu_scalar_unit_read_buffer_size);
-	fprintf(f, "ALULatency = %d\n", si_gpu_scalar_unit_exec_latency);
-	fprintf(f, "ExecBufferSize = %d\n", 
-		si_gpu_scalar_unit_exec_buffer_size);
-	fprintf(f, "WriteLatency = %d\n", si_gpu_scalar_unit_write_latency);
-	fprintf(f, "WriteBufferSize = %d\n", 
-		si_gpu_scalar_unit_write_buffer_size);
-	fprintf(f, "\n");
-
-	/* Branch Unit */
-	fprintf(f, "[ Config.BranchUnit ]\n");
-	fprintf(f, "Width = %d\n", si_gpu_branch_unit_width);
-	fprintf(f, "IssueBufferSize = %d\n", 
-		si_gpu_branch_unit_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", si_gpu_branch_unit_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", 
-		si_gpu_branch_unit_decode_buffer_size);
-	fprintf(f, "ReadLatency = %d\n", si_gpu_branch_unit_read_latency);
-	fprintf(f, "ReadBufferSize = %d\n", 
-		si_gpu_branch_unit_read_buffer_size);
-	fprintf(f, "ExecLatency = %d\n", si_gpu_branch_unit_exec_latency);
-	fprintf(f, "ExecBufferSize = %d\n", 
-		si_gpu_branch_unit_exec_buffer_size);
-	fprintf(f, "WriteLatency = %d\n", si_gpu_branch_unit_write_latency);
-	fprintf(f, "WriteBufferSize = %d\n", 
-		si_gpu_branch_unit_write_buffer_size);
-	fprintf(f, "\n");
-
-	/* LDS */
-	fprintf(f, "[ Config.LDSUnit ]\n");
-	fprintf(f, "Width = %d\n", si_gpu_lds_width);
-	fprintf(f, "IssueBufferSize = %d\n", si_gpu_lds_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", si_gpu_lds_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", 
-		si_gpu_lds_decode_buffer_size);
-	fprintf(f, "ReadLatency = %d\n", si_gpu_lds_read_latency);
-	fprintf(f, "ReadBufferSize = %d\n", si_gpu_lds_read_buffer_size);
-	fprintf(f, "MaxInflightMem = %d\n", 
-		si_gpu_lds_max_inflight_mem_accesses);
-	fprintf(f, "WriteLatency = %d\n", si_gpu_lds_write_latency);
-	fprintf(f, "WriteBufferSize = %d\n", si_gpu_lds_write_buffer_size);
-	fprintf(f, "\n");
-
-	/* Vector Memory */
-	fprintf(f, "[ Config.VectorMemUnit ]\n");
-	fprintf(f, "Width = %d\n", si_gpu_vector_mem_width);
-	fprintf(f, "IssueBufferSize = %d\n", 
-		si_gpu_vector_mem_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", si_gpu_vector_mem_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", 
-		si_gpu_vector_mem_decode_buffer_size);
-	fprintf(f, "ReadLatency = %d\n", si_gpu_vector_mem_read_latency);
-	fprintf(f, "ReadBufferSize = %d\n", si_gpu_vector_mem_read_buffer_size);
-	fprintf(f, "MaxInflightMem = %d\n", 
-		si_gpu_vector_mem_max_inflight_mem_accesses);
-	fprintf(f, "WriteLatency = %d\n", si_gpu_vector_mem_write_latency);
-	fprintf(f, "WriteBufferSize = %d\n", 
-		si_gpu_vector_mem_write_buffer_size);
-	fprintf(f, "\n");
-
-	/* LDS */
-	fprintf(f, "[ Config.LDS ]\n");
-	fprintf(f, "Size = %d\n", si_gpu_lds_size);
-	fprintf(f, "AllocSize = %d\n", si_gpu_lds_alloc_size);
-	fprintf(f, "BlockSize = %d\n", si_gpu_lds_block_size);
-	fprintf(f, "Latency = %d\n", si_gpu_lds_latency);
-	fprintf(f, "Ports = %d\n", si_gpu_lds_num_ports);
-	fprintf(f, "\n");
-
-	/* End of configuration */
-	fprintf(f, "\n");
-}
-
-
-
-
-/*
- * Public Functions
- */
-
 void si_gpu_init(void)
 {
 	struct arch_t *arch = si_emu->arch;
@@ -1140,9 +1125,6 @@ void si_gpu_init(void)
 		fatal("%s: cannot open GPU pipeline report file",
 			si_gpu_report_file_name);
 	}
-
-	/* Read configuration file */
-	si_config_read();
 
 	/* Initializations */
 	si_gpu_device_init();
