@@ -33,6 +33,10 @@ extern char *si_gpu_dump_default_config_file_name;
 extern char *si_gpu_report_file_name;
 extern char *si_gpu_calc_file_name;
 
+/* FIXME - remove */
+extern int si_gpu_fused_device;
+
+
 /* OpenCL Device Info */
 extern unsigned long long si_gpu_device_type;
 extern unsigned int si_gpu_device_vendor_id;

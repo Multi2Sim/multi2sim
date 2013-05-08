@@ -42,7 +42,6 @@
 
 #include "cycle-interval-report.h"
 
-extern int fused_device;
 
 static char *si_err_stall =
 	"\tThe Southern Islands GPU has not completed execution of any in-flight\n"
@@ -243,6 +242,9 @@ char *si_gpu_dump_default_config_file_name = "";
 char *si_gpu_report_file_name = "";
 
 int si_trace_category;
+
+/* FIXME This needs to be renamed and set when the simulator starts up. */
+int si_gpu_fused_device;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
 unsigned long long si_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
@@ -1108,21 +1110,11 @@ void si_gpu_init(void)
 	/* Trace */
 	si_trace_category = trace_new_category();
 
-	/* Register functions for architecture */
-	arch_southern_islands->mem_config_check_func = si_mem_config_check;
-	if (!fused_device)
-		arch_southern_islands->mem_config_default_func = si_mem_config_default;
-	else
-		arch_southern_islands->mem_config_default_func = si_mem_config_fused;
-	arch_southern_islands->mem_config_parse_entry_func = si_mem_config_parse_entry;
-
 	/* Try to open report file */
 	if (si_gpu_report_file_name[0] && 
-		!file_can_open_for_write(si_gpu_report_file_name))
-	{
+			!file_can_open_for_write(si_gpu_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",
 			si_gpu_report_file_name);
-	}
 
 	/* Initializations */
 	si_gpu_device_init();
