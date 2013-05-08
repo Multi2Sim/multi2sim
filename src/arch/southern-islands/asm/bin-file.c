@@ -70,7 +70,7 @@ static struct str_map_t enc_dict_machine_map =
 };
 
 
-static struct str_map_t pt_note_type_map = {
+struct str_map_t pt_note_type_map = {
 	17, {
 		{ "ELF_NOTE_ATI_PROGINFO", 1 },
 		{ "ELF_NOTE_ATI_INPUTS", 2 },
