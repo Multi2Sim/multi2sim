@@ -103,7 +103,10 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	partition-strategy.h \
 	\
 	partition-util.c \
-	partition-util.h
+	partition-util.h \
+	\
+	even-partition-strategy.c \
+	even-partition-strategy.h
 
 AM_CFLAGS = -m32 -D_GNU_SOURCE
 
