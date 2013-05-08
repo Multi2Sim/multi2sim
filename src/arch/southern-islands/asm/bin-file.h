@@ -80,6 +80,7 @@ typedef enum _E_SC_USER_DATA_CLASS
 	E_SC_USER_DATA_CLASS_LAST
 } E_SC_USER_DATA_CLASS;
 
+
 /* User Element entry */
 struct si_bin_enc_user_element_t
 {

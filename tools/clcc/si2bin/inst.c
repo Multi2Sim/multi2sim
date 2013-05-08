@@ -22,16 +22,17 @@
 #include <arch/southern-islands/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/elf-encode.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
 #include "arg.h"
+#include "bin.h"
 #include "inst.h"
 #include "inst-info.h"
 #include "si2bin.h"
-#include "stream.h"
 #include "symbol.h"
 #include "task.h"
 #include "token.h"
@@ -458,13 +459,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			if (label->defined)
 			{
 				inst_bytes->sopp.simm16 = (label->value -
-						si2bin_out_stream->offset) / 4 - 1;
+						si2bin_out_buffer->offset) / 4 - 1;
 			}
 			else
 			{
 				/* We create a task to complete this instruction once the
 				 * label is defined. */
-				task = si2bin_task_create(si2bin_out_stream->offset, label);
+				task = si2bin_task_create(si2bin_out_buffer->offset, label);
 				list_add(si2bin_task_list, task);
 			}
 			break;

@@ -23,20 +23,20 @@
 #include <arch/southern-islands/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
 
+#include "bin.h"
 #include "inst.h"
 #include "inst-info.h"
 #include "si2bin.h"
 #include "parser.h"
-#include "stream.h"
 #include "symbol.h"
 #include "task.h"
 
 
 int si2bin_assemble;  /* Command-line option set */
 char *si2bin_file_name;  /* Current file */
-
 
 void si2bin_yyerror(const char *s)
 {
@@ -71,7 +71,8 @@ void si2bin_init(void)
 	si2bin_inst_info_init();
 	si2bin_task_list_init();
 	si2bin_symbol_table_init();
-	si2bin_stream_init();
+	//si2bin_stream_init();
+	si2bin_bin_init();
 
 }
 
@@ -81,7 +82,8 @@ void si2bin_done(void)
 	/* Finalize */
 	si2bin_task_list_done();
 	si2bin_symbol_table_done();
-	si2bin_stream_done();
+	//si2bin_stream_done();
+	si2bin_bin_done();
 	si2bin_inst_info_done();
 	si_disasm_done();
 }

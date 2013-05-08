@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <lib/util/debug.h>
+#include <lib/util/elf-encode.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 
@@ -32,7 +33,8 @@
 #include "id.h"
 #include "inst.h"
 #include "si2bin.h"
-#include "stream.h"
+#include "si2bin_bin.h"
+//#include "stream.h"
 #include "string.h"
 #include "symbol.h"
 #include "task.h"
@@ -104,7 +106,9 @@ rl_line
 		struct si2bin_inst_t *inst = $1;
 
 		/* Generate code */
-		si2bin_stream_add_inst(si2bin_out_stream, inst);
+		//si2bin_stream_add_inst(si2bin_out_stream, inst);
+		si2bin_inst_gen(inst);
+		elf_enc_buffer_write(si2bin_out_buffer, inst->inst_bytes.bytes, inst->size);
 		si2bin_inst_dump(inst, stdout);
 		si2bin_inst_free(inst);
 	}
@@ -130,7 +134,8 @@ rl_label
 
 		/* Define symbol */
 		symbol->defined = 1;
-		symbol->value = si2bin_out_stream->offset;
+		//symbol->value = si2bin_out_stream->offset;
+		symbol->value = si2bin_out_buffer->offset;		
 
 		/* End */
 		si2bin_id_free(id);
