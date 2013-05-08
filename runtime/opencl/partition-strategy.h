@@ -1,7 +1,7 @@
 #ifndef __PARTITION_STRATEGY_H__
 #define __PARTITION_STRATEGY_H__
 
-typedef void *(*opencl_strategy_create_t)(int num_devices, unsigned int dims, unsigned int *groups);
+typedef void *(*opencl_strategy_create_t)(int num_devices, unsigned int dims, const unsigned int *groups);
 typedef int (*opencl_strategy_get_partition_t)(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count);
 typedef void (*opencl_strategy_destroy_t)(void *inst);
 
