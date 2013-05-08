@@ -23,11 +23,12 @@
 #include <arch/southern-islands/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 
+#include "bin.h"
 #include "si2bin.h"
-#include "stream.h"
 #include "symbol.h"
 #include "task.h"
 
@@ -77,8 +78,8 @@ void si2bin_task_process(struct si2bin_task_t *task)
 		si2bin_yyerror_fmt("undefined label: %s", label->name);
 
 	/* Resolve label */
-	assert(IN_RANGE(task->offset, 0, si2bin_out_stream->offset - 4));
-	inst = si2bin_out_stream->buf + task->offset;
+	assert(IN_RANGE(task->offset, 0, si2bin_out_buffer->offset - 4));
+	inst = si2bin_out_buffer->ptr + task->offset;
 	inst->sopp.simm16 = (label->value - task->offset) / 4 - 1;
 }
 

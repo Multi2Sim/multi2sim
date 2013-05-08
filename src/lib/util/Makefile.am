@@ -17,6 +17,9 @@ libutil_a_SOURCES = \
 	debug.c \
 	debug.h \
 	\
+	elf-encode.c \
+	elf-encode.h \
+	\
 	elf-format.c \
 	elf-format.h \
 	\
