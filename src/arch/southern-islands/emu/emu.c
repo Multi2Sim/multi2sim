@@ -137,6 +137,16 @@ void si_emu_dump_summary(FILE *f)
 {
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
 	fprintf(f, "WorkGroupCount = %lld\n", si_emu->work_group_count);
+	fprintf(f, "BranchInstructions = %lld\n", si_emu->branch_inst_count);
+	fprintf(f, "LDSInstructions = %lld\n", si_emu->lds_inst_count);
+	fprintf(f, "ScalarALUInstructions = %lld\n", 
+		si_emu->scalar_alu_inst_count);
+	fprintf(f, "ScalarMemInstructions = %lld\n", 
+		si_emu->scalar_mem_inst_count);
+	fprintf(f, "VectorALUInstructions = %lld\n", 
+		si_emu->vector_alu_inst_count);
+	fprintf(f, "VectorMemInstructions = %lld\n", 
+		si_emu->vector_mem_inst_count);
 }
 
 
