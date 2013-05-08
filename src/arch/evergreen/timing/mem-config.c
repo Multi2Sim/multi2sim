@@ -174,7 +174,7 @@ void evg_mem_config_parse_entry(struct config_t *config, char *section)
 			file_name, section, module_name);
 	
 	/* Add modules to list of memory entries */
-	linked_list_add(evg_emu->arch->mem_entry_mod_list,
+	linked_list_add(arch_evergreen->mem_entry_mod_list,
 			compute_unit->global_memory);
 	
 	/* Debug */

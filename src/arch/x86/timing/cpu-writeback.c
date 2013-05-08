@@ -30,7 +30,6 @@
 
 static void x86_cpu_writeback_core(int core)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct x86_uop_t *uop;
 
 	int thread;
@@ -47,13 +46,13 @@ static void x86_cpu_writeback_core(int core)
 		/* A memory uop placed in the event queue is always complete.
 		 * Other uops are complete when uop->when is equals to current cycle. */
 		if (uop->flags & X86_UINST_MEM)
-			uop->when = arch->cycle;
-		if (uop->when > arch->cycle)
+			uop->when = arch_x86->cycle;
+		if (uop->when > arch_x86->cycle)
 			break;
 		
 		/* Check element integrity */
 		assert(x86_uop_exists(uop));
-		assert(uop->when == arch->cycle);
+		assert(uop->when == arch_x86->cycle);
 		assert(uop->core == core);
 		assert(uop->ready);
 		assert(!uop->completed);

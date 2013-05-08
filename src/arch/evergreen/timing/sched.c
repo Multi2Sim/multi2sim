@@ -87,7 +87,6 @@ static struct evg_wavefront_t *evg_schedule_round_robin(struct evg_compute_unit_
 
 static struct evg_wavefront_t *evg_schedule_greedy(struct evg_compute_unit_t *compute_unit)
 {
-	struct arch_t *arch = evg_emu->arch;
 	struct evg_wavefront_t *wavefront, *temp_wavefront;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 
@@ -120,7 +119,7 @@ static struct evg_wavefront_t *evg_schedule_greedy(struct evg_compute_unit_t *co
 	linked_list_find(wavefront_pool, temp_wavefront);
 	assert(!wavefront_pool->error_code);
 	linked_list_remove(wavefront_pool);
-	temp_wavefront->sched_when = arch->cycle;
+	temp_wavefront->sched_when = arch_evergreen->cycle;
 	return temp_wavefront;
 }
 

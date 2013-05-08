@@ -43,7 +43,7 @@ enum arch_sim_kind_t
 
 typedef void (*arch_callback_func_t)(struct arch_t *arch, void *user_data);
 
-typedef void (*arch_emu_init_func_t)(struct arch_t *arch);
+typedef void (*arch_emu_init_func_t)(void);
 typedef void (*arch_emu_done_func_t)(void);
 typedef void (*arch_emu_dump_func_t)(FILE *f);
 typedef void (*arch_emu_dump_summary_func_t)(FILE *f);

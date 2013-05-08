@@ -199,8 +199,6 @@ struct x86_ctx_t *x86_ctx_fork(struct x86_ctx_t *ctx)
 /* Free a context */
 void x86_ctx_free(struct x86_ctx_t *ctx)
 {
-	struct arch_t *arch = x86_emu->arch;
-
 	/* If context is not finished/zombie, finish it first.
 	 * This removes all references to current freed context. */
 	if (!x86_ctx_get_state(ctx, x86_ctx_finished | x86_ctx_zombie))
@@ -229,7 +227,7 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 
 	/* Remove context from contexts list and free */
 	DOUBLE_LINKED_LIST_REMOVE(x86_emu, context, ctx);
-	x86_ctx_debug("#%lld ctx %d freed\n", arch->cycle, ctx->pid);
+	x86_ctx_debug("#%lld ctx %d freed\n", arch_x86->cycle, ctx->pid);
 
 	/* Free context */
 	free(ctx);
@@ -313,7 +311,7 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 	x86_isa_execute_inst(ctx);
 	
 	/* Statistics */
-	x86_emu->arch->inst_count++;
+	arch_x86->inst_count++;
 }
 
 
@@ -352,7 +350,6 @@ int x86_ctx_get_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
 
 static void x86_ctx_update_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
 {
-	struct arch_t *arch = x86_emu->arch;
 	enum x86_ctx_state_t status_diff;
 	char state_str[MAX_STRING_SIZE];
 
@@ -406,15 +403,15 @@ static void x86_ctx_update_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t sta
 	{
 		str_map_flags(&x86_ctx_status_map, ctx->state, state_str, sizeof state_str);
 		x86_ctx_debug("#%lld ctx %d changed state to %s\n",
-			arch->cycle, ctx->pid, state_str);
+			arch_x86->cycle, ctx->pid, state_str);
 	}
 
 	/* Start/stop x86 timer depending on whether there are any contexts
 	 * currently running. */
 	if (x86_emu->running_list_count)
-		m2s_timer_start(arch->timer);
+		m2s_timer_start(arch_x86->timer);
 	else
-		m2s_timer_stop(arch->timer);
+		m2s_timer_stop(arch_x86->timer);
 }
 
 

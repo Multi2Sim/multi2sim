@@ -101,31 +101,6 @@ struct si_buffer_desc_t
 	unsigned int type            : 2;    /* [127:126] */
 }__attribute__((packed));
 
-/* Table 8.11 in SI documentation */
-#if 0
-struct si_image_desc_128_t
-{
-	unsigned long long base_addr : 40;   /*    [39:0] */
-	unsigned int mid_lod         : 12;   /*   [51:40] */
-	unsigned int data_fmt        : 6;    /*   [57:52] */
-	unsigned int num_fmt         : 4;    /*   [61:58] */
-	unsigned int                 : 2;    /*   [63:62] */
-	unsigned int width           : 14;   /*   [77:64] */
-	unsigned int height          : 14;   /*   [91:78] */
-	unsigned int perf_mod        : 3;    /*   [94:92] */
-	unsigned int interlaced      : 1;    /*       95  */
-	unsigned int dst_sel_x       : 3;    /*   [98:96] */
-	unsigned int dst_sel_y       : 3;    /*  [101:99] */
-	unsigned int dst_sel_z       : 3;    /* [104:102] */
-	unsigned int dst_sel_w       : 3;    /* [107:105] */
-	unsigned int base_level      : 4;    /* [111:108] */
-	unsigned int last_level      : 4;    /* [115:112] */
-	unsigned int tiling_idx      : 5;    /* [120:116] */
-	unsigned int pow2pad         : 1;    /*      121  */
-	unsigned int                 : 2;    /* [123:122] */
-	unsigned int type            : 4;    /* [127:124] */
-}__attribute__((packed));
-#endif
 
 /* Table 8.11 in SI documentation */
 struct si_image_desc_t
@@ -204,9 +179,6 @@ struct si_mem_ptr_t
 
 struct si_emu_t
 {
-	/* Common architecture object */
-	struct arch_t *arch;
-
 	/* Memory */
 	struct mem_t *video_mem;  /* local to the GPU */
 	unsigned int video_mem_top;
@@ -247,7 +219,13 @@ extern int si_emu_wavefront_size;
 
 extern struct si_emu_t *si_emu;
 
-void si_emu_init(struct arch_t *arch);
+
+
+/*
+ * Public Functions
+ */
+
+void si_emu_init(void);
 void si_emu_done(void);
 void si_emu_dump(FILE *f);
 

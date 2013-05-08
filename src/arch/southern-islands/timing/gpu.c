@@ -1105,18 +1105,16 @@ void si_gpu_read_config(void)
 
 void si_gpu_init(void)
 {
-	struct arch_t *arch = si_emu->arch;
-
 	/* Trace */
 	si_trace_category = trace_new_category();
 
 	/* Register functions for architecture */
-	arch->mem_config_check_func = si_mem_config_check;
+	arch_southern_islands->mem_config_check_func = si_mem_config_check;
 	if (!fused_device)
-		arch->mem_config_default_func = si_mem_config_default;
+		arch_southern_islands->mem_config_default_func = si_mem_config_default;
 	else
-		arch->mem_config_default_func = si_mem_config_fused;
-	arch->mem_config_parse_entry_func = si_mem_config_parse_entry;
+		arch_southern_islands->mem_config_default_func = si_mem_config_fused;
+	arch_southern_islands->mem_config_parse_entry_func = si_mem_config_parse_entry;
 
 	/* Try to open report file */
 	if (si_gpu_report_file_name[0] && 
@@ -1186,7 +1184,6 @@ void si_gpu_dump_default_config(char *filename)
 
 void si_gpu_dump_report(void)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_compute_unit_t *compute_unit;
 	struct mod_t *lds_mod;
 	int compute_unit_id;
@@ -1209,12 +1206,12 @@ void si_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = arch->cycle ? 
-		(double)(arch->inst_count/arch->cycle) : 0.0;
+	inst_per_cycle = arch_southern_islands->cycle ? 
+		(double)(arch_southern_islands->inst_count/arch_southern_islands->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
 	fprintf(f, "WorkGroupCount = %lld\n", si_emu->work_group_count);
-	fprintf(f, "Instructions = %lld\n", arch->inst_count);
+	fprintf(f, "Instructions = %lld\n", arch_southern_islands->inst_count);
 	fprintf(f, "ScalarALUInstructions = %lld\n", 
 		si_emu->scalar_alu_inst_count);
 	fprintf(f, "ScalarMemInstructions = %lld\n", 
@@ -1225,7 +1222,7 @@ void si_gpu_dump_report(void)
 	fprintf(f, "LDSInstructions = %lld\n", si_emu->lds_inst_count);
 	fprintf(f, "VectorMemInstructions = %lld\n", 
 		si_emu->vector_mem_inst_count);
-	fprintf(f, "Cycles = %lld\n", arch->cycle);
+	fprintf(f, "Cycles = %lld\n", arch_southern_islands->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
@@ -1298,7 +1295,6 @@ void si_gpu_dump_summary(FILE *f)
  *   - arch_sim_kind_detailed - still simulating */
 enum arch_sim_kind_t si_gpu_run(void)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_compute_unit_t *compute_unit;
 	struct si_ndrange_t *ndrange;
 	struct si_work_group_t *work_group;
@@ -1331,18 +1327,18 @@ enum arch_sim_kind_t si_gpu_run(void)
 	}
 
 	/* One more cycle */
-	arch->cycle++;
+	arch_southern_islands->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (si_emu_max_cycles && arch->cycle >= si_emu_max_cycles)
+	if (si_emu_max_cycles && arch_southern_islands->cycle >= si_emu_max_cycles)
 		esim_finish = esim_finish_si_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (si_emu_max_inst && arch->inst_count >= si_emu_max_inst)
+	if (si_emu_max_inst && arch_southern_islands->inst_count >= si_emu_max_inst)
 		esim_finish = esim_finish_si_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((arch->cycle-si_gpu->last_complete_cycle) > 1000000)
+	if ((arch_southern_islands->cycle-si_gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", 
 			si_err_stall);

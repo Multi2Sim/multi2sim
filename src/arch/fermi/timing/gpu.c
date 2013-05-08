@@ -940,16 +940,13 @@ void frm_gpu_read_config(void)
 
 void frm_gpu_init(void)
 {
-	struct arch_t *arch;
-
 	/* Trace */
 	frm_trace_category = trace_new_category();
 
 	/* Register functions for architecture */
-	arch = frm_emu->arch;
-	arch->mem_config_check_func = frm_mem_config_check;
-	arch->mem_config_default_func = frm_mem_config_default;
-	arch->mem_config_parse_entry_func = frm_mem_config_parse_entry;
+	arch_fermi->mem_config_check_func = frm_mem_config_check;
+	arch_fermi->mem_config_default_func = frm_mem_config_default;
+	arch_fermi->mem_config_parse_entry_func = frm_mem_config_parse_entry;
 
 	/* Try to open report file */
 	if (frm_gpu_report_file_name[0] && 
@@ -1015,7 +1012,6 @@ void frm_gpu_dump_default_config(char *filename)
 
 void frm_gpu_dump_report(void)
 {
-	struct arch_t *arch = frm_emu->arch;
 	struct frm_sm_t *sm;
 	struct mod_t *lds_mod;
 	int sm_id;
@@ -1037,16 +1033,16 @@ void frm_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = arch->cycle ? 
-		(double)(arch->inst_count / arch->cycle) : 0.0;
+	inst_per_cycle = arch_fermi->cycle ? 
+		(double)(arch_fermi->inst_count / arch_fermi->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "GridCount = %d\n", frm_emu->grid_count);
-	fprintf(f, "Instructions = %lld\n", arch->inst_count);
+	fprintf(f, "Instructions = %lld\n", arch_fermi->inst_count);
 	fprintf(f, "BranchInstructions = %lld\n", frm_emu->branch_inst_count);
 	fprintf(f, "ALUInstructions = %lld\n", frm_emu->vector_alu_inst_count);
 	fprintf(f, "SharedMemInstructions = %lld\n", frm_emu->lds_inst_count);
 	fprintf(f, "GlobalMemInstructions = %lld\n", frm_emu->vector_mem_inst_count);
-	fprintf(f, "Cycles = %lld\n", arch->cycle);
+	fprintf(f, "Cycles = %lld\n", arch_fermi->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
@@ -1097,13 +1093,10 @@ void frm_gpu_dump_summary(FILE *f)
  *   - arch_sim_kind_detailed - still simulating */
 enum arch_sim_kind_t frm_gpu_run(void)
 {
-	struct arch_t *arch;
 	struct frm_grid_t *grid;
 
 	struct frm_sm_t *sm;
 	struct frm_sm_t *sm_next;
-
-	arch = frm_emu->arch;
 
 	/* For efficiency when no Fermi emulation is selected, 
 	 * exit here if the list of existing grids is empty. */
@@ -1148,21 +1141,21 @@ enum arch_sim_kind_t frm_gpu_run(void)
 				grid->pending_list_head);
 	}
 
-	frm_gpu_debug("cycle = %lld\n", arch->cycle);
+	frm_gpu_debug("cycle = %lld\n", arch_fermi->cycle);
 
 	/* One more cycle */
-	arch->cycle++;
+	arch_fermi->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (frm_emu_max_cycles && arch->cycle >= frm_emu_max_cycles)
+	if (frm_emu_max_cycles && arch_fermi->cycle >= frm_emu_max_cycles)
 		esim_finish = esim_finish_frm_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (frm_emu_max_inst && arch->inst_count >= frm_emu_max_inst)
+	if (frm_emu_max_inst && arch_fermi->inst_count >= frm_emu_max_inst)
 		esim_finish = esim_finish_frm_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((arch->cycle-frm_gpu->last_complete_cycle) > 1000000)
+	if ((arch_fermi->cycle-frm_gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Fermi GPU simulation stalled.\n%s", frm_err_stall);
 		esim_finish = esim_finish_stall;

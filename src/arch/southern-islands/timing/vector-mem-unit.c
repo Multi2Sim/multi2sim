@@ -36,7 +36,6 @@
 
 void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop = NULL;
 	int list_entries;
 	int i;
@@ -54,7 +53,7 @@ void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 		assert(uop);
 
 		/* Uop is not ready */
-		if (arch->cycle < uop->write_ready)
+		if (arch_southern_islands->cycle < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -74,13 +73,12 @@ void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 
 		/* Statistics */
 		vector_mem->inst_count++;
-		si_gpu->last_complete_cycle = arch->cycle;
+		si_gpu->last_complete_cycle = arch_southern_islands->cycle;
 	}
 }
 
 void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -134,7 +132,7 @@ void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 		}
 
 		/* Access complete, remove the uop from the queue */
-		uop->write_ready = arch->cycle + 
+		uop->write_ready = arch_southern_islands->cycle + 
 			si_gpu_vector_mem_write_latency;
 
 		/* In the above context, access means any of the 
@@ -170,7 +168,6 @@ void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 
 void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
 	struct si_work_item_t *work_item;
@@ -194,7 +191,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle < uop->read_ready)
+		if (arch_southern_islands->cycle < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -288,7 +285,6 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 
 void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -308,7 +304,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle < uop->decode_ready)
+		if (arch_southern_islands->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -341,7 +337,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->read_ready = arch->cycle + 
+		uop->read_ready = arch_southern_islands->cycle + 
 			si_gpu_vector_mem_read_latency;
 
 		list_remove(vector_mem->decode_buffer, uop);
@@ -356,7 +352,6 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 
 void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -376,7 +371,7 @@ void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch->cycle < uop->issue_ready)
+		if (arch_southern_islands->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -409,7 +404,7 @@ void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->decode_ready = arch->cycle + 
+		uop->decode_ready = arch_southern_islands->cycle + 
 			si_gpu_vector_mem_decode_latency;
 
 		list_remove(vector_mem->issue_buffer, uop);

@@ -36,7 +36,6 @@
 
 void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop = NULL;
 	int i;
 	int list_entries;
@@ -55,7 +54,7 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 		uop = list_get(scalar_unit->write_buffer, list_index);
 		assert(uop);
 
-		if (arch->cycle < uop->write_ready)
+		if (arch_southern_islands->cycle < uop->write_ready)
 		{
 			/* Uop is not ready yet */
 			list_index++;
@@ -182,13 +181,12 @@ void si_scalar_unit_complete(struct si_scalar_unit_t *scalar_unit)
 
 		/* Statistics */
 		scalar_unit->inst_count++;
-		si_gpu->last_complete_cycle = arch->cycle;
+		si_gpu->last_complete_cycle = arch_southern_islands->cycle;
 	}
 }
 
 void si_scalar_unit_write(struct si_scalar_unit_t *scalar_unit)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -247,7 +245,7 @@ void si_scalar_unit_write(struct si_scalar_unit_t *scalar_unit)
 				continue;
 			}
 			
-			uop->write_ready = arch->cycle + 
+			uop->write_ready = arch_southern_islands->cycle + 
 				si_gpu_scalar_unit_write_latency;
 
 			list_remove(scalar_unit->exec_buffer, uop);
@@ -261,7 +259,7 @@ void si_scalar_unit_write(struct si_scalar_unit_t *scalar_unit)
 		else /* ALU instruction */ 
 		{
 			/* Uop is not ready yet */
-			if (arch->cycle < uop->execute_ready)
+			if (arch_southern_islands->cycle < uop->execute_ready)
 			{
 				list_index++;
 				continue;
@@ -298,7 +296,7 @@ void si_scalar_unit_write(struct si_scalar_unit_t *scalar_unit)
 				continue;
 			}
 
-			uop->write_ready = arch->cycle + 
+			uop->write_ready = arch_southern_islands->cycle + 
 				si_gpu_scalar_unit_write_latency;
 
 			list_remove(scalar_unit->exec_buffer, uop);
@@ -314,7 +312,6 @@ void si_scalar_unit_write(struct si_scalar_unit_t *scalar_unit)
 
 void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int list_entries;
 	int list_index = 0;
@@ -334,7 +331,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle < uop->read_ready)
+		if (arch_southern_islands->cycle < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -396,7 +393,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		}
 		else /* ALU Instruction */
 		{
-			uop->execute_ready = arch->cycle + 
+			uop->execute_ready = arch_southern_islands->cycle + 
 				si_gpu_scalar_unit_exec_latency;
 
 			/* Transfer the uop to the execution buffer */
@@ -414,7 +411,6 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 
 void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -434,7 +430,7 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle < uop->decode_ready)
+		if (arch_southern_islands->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -466,7 +462,7 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 			continue;
 		}
 
-		uop->read_ready = arch->cycle + 
+		uop->read_ready = arch_southern_islands->cycle + 
 			si_gpu_scalar_unit_read_latency;
 
 		list_remove(scalar_unit->decode_buffer, uop);
@@ -481,7 +477,6 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 
 void si_scalar_unit_decode(struct si_scalar_unit_t *scalar_unit)
 {
-	struct arch_t *arch = si_emu->arch;
 	struct si_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -501,7 +496,7 @@ void si_scalar_unit_decode(struct si_scalar_unit_t *scalar_unit)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch->cycle < uop->issue_ready)
+		if (arch_southern_islands->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -533,7 +528,7 @@ void si_scalar_unit_decode(struct si_scalar_unit_t *scalar_unit)
 			continue;
 		}
 
-		uop->decode_ready = arch->cycle + 
+		uop->decode_ready = arch_southern_islands->cycle + 
 			si_gpu_scalar_unit_decode_latency;
 
 		list_remove(scalar_unit->issue_buffer, uop);

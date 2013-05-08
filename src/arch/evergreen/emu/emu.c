@@ -61,7 +61,7 @@ int evg_emu_wavefront_size = 64;
 
 
 
-void evg_emu_init(struct arch_t *arch)
+void evg_emu_init(void)
 {
 	/* Open report file */
 	if (*evg_emu_report_file_name)
@@ -74,7 +74,6 @@ void evg_emu_init(struct arch_t *arch)
 
 	/* Initialize */
 	evg_emu = xcalloc(1, sizeof(struct evg_emu_t));
-	evg_emu->arch = arch;
 	evg_emu->const_mem = mem_create();
 	evg_emu->const_mem->safe = 0;
 	evg_emu->global_mem = mem_create();

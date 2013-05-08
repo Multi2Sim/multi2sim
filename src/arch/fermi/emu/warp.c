@@ -230,8 +230,6 @@ void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
 /* Execute one instruction in the warp */
 void frm_warp_execute(struct frm_warp_t *warp)
 {
-	struct arch_t *arch;
-
 	struct frm_grid_t *grid;
 	struct frm_thread_block_t *thread_block;
 	struct frm_thread_t *thread;
@@ -240,7 +238,6 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	int thread_id;
 
 	/* Get current arch, grid, and thread-block */
-	arch = frm_emu->arch;
 	grid = warp->grid;
 	thread_block = warp->thread_block;
 	thread = NULL;
@@ -337,7 +334,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	warp->pc += warp->inst_size;
 
 	/* Stats */
-	arch->inst_count++;
+	arch_fermi->inst_count++;
 	warp->emu_inst_count++;
 	warp->inst_count++;
 }

@@ -206,9 +206,9 @@ void x86_mem_config_parse_entry(struct config_t *config, char *section)
 			file_name, section, inst_module_name);
 	
 	/* Add modules to entry list */
-	linked_list_add(x86_emu->arch->mem_entry_mod_list, X86_THREAD.data_mod);
+	linked_list_add(arch_x86->mem_entry_mod_list, X86_THREAD.data_mod);
 	if (X86_THREAD.data_mod != X86_THREAD.inst_mod)
-		linked_list_add(x86_emu->arch->mem_entry_mod_list, X86_THREAD.inst_mod);
+		linked_list_add(arch_x86->mem_entry_mod_list, X86_THREAD.inst_mod);
 
 	/* Debug */
 	mem_debug("\tx86 Core %d, Thread %d\n", core, thread);

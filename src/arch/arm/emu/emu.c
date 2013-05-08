@@ -55,7 +55,7 @@ struct arm_emu_t *arm_emu;
 
 /* Initialization */
 
-void arm_emu_init(struct arch_t *arch)
+void arm_emu_init(void)
 {
 	union
 	{
@@ -79,7 +79,6 @@ void arm_emu_init(struct arch_t *arch)
 
 	/* Allocate */
 	arm_emu = xcalloc(1, sizeof(struct arm_emu_t));
-	arm_emu->arch = arch;
 
 	/* Initialize */
 	arm_emu->current_pid = 1000;  /* Initial assigned pid */
@@ -232,7 +231,6 @@ void arm_emu_process_events_schedule()
  */
 enum arch_sim_kind_t arm_emu_run(void)
 {
-	struct arch_t *arch = arm_emu->arch;
 	struct arm_ctx_t *ctx;
 
 	/* Stop if there is no context running */
@@ -240,11 +238,11 @@ enum arch_sim_kind_t arm_emu_run(void)
 		return arch_sim_kind_invalid;
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (arm_emu_max_inst && arch->inst_count >= arm_emu_max_inst)
+	if (arm_emu_max_inst && arch_arm->inst_count >= arm_emu_max_inst)
 		esim_finish = esim_finish_arm_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
-	if (arm_emu_max_cycles && arch->cycle >= arm_emu_max_cycles)
+	if (arm_emu_max_cycles && arch_arm->cycle >= arm_emu_max_cycles)
 		esim_finish = esim_finish_arm_max_cycles;
 
 	/* Stop if any previous reason met */
