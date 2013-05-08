@@ -162,3 +162,20 @@ DESCRIPTION
 FILES
 	* src/dram/*
 
+================================================================================	
+AUTHOR
+	Tushar Swamy (swamy.t@husky.neu.edu)
+
+DESCRIPTION
+
+	Tushar has implemented the Southern Islands assembler for 'm2s-clcc'. He
+	has also implemented the ELF encoding library. He has extended support
+	for the Southern Islands disassembler and emulator.
+
+FILES
+	* tools/clcc/si2bin/*
+	* src/lib/util/elf-encode.{c|h}
+	* src/arch/southern-islands/asm/*
+	* src/arch/southern-islands/emu/*
+
+
