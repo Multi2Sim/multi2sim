@@ -35,29 +35,6 @@
  * Note Object
  */
 
-struct str_map_t pt_note_type_map = {
-        17, {
-                { "ELF_NOTE_ATI_PROGINFO", 1 },
-                { "ELF_NOTE_ATI_INPUTS", 2 },
-                { "ELF_NOTE_ATI_OUTPUTS", 3 },
-                { "ELF_NOTE_ATI_CONDOUT", 4 },
-                { "ELF_NOTE_ATI_FLOAT32CONSTS", 5 },
-                { "ELF_NOTE_ATI_INT32CONSTS", 6 },
-                { "ELF_NOTE_ATI_BOOL32CONSTS", 7 },
-                { "ELF_NOTE_ATI_EARLYEXIT", 8 },
-                { "ELF_NOTE_ATI_GLOBAL_BUFFERS", 9 },
-                { "ELF_NOTE_ATI_CONSTANT_BUFFERS", 10 },
-                { "ELF_NOTE_ATI_INPUT_SAMPLERS", 11 },
-                { "ELF_NOTE_ATI_PERSISTENT_BUFFERS", 12 },
-                { "ELF_NOTE_ATI_SCRATCH_BUFFERS", 13 },
-                { "ELF_NOTE_ATI_SUB_CONSTANT_BUFFERS", 14 },
-                { "ELF_NOTE_ATI_UAV_MAILBOX_SIZE", 15 },
-                { "ELF_NOTE_ATI_UAV", 16 },
-                { "ELF_NOTE_ATI_UAV_OP_MASK", 17 }
-        }
-};
-
-
 struct si2bin_bin_note_t *si2bin_bin_note_create(unsigned int type,
 		unsigned int size, void *payload)
 {
