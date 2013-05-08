@@ -2,12 +2,17 @@
 #include "partition-strategy.h"
 #include "mhandle.h"
 
-/* forward declartion for default strategy.  Put more declarations here */
-void *default_strategy_create(int num_devices, unsigned int dims, unsigned int *groups);
+/* include strategies here */
+#include "even-partition-strategy.h"
+
+/* forward declartion for default strategy. */
+void *default_strategy_create(int num_devices, unsigned int dims, const unsigned int *groups);
 int default_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count);
 void default_strategy_destroy(void *inst);
 
-static struct opencl_partition_strategy strats[] = {{default_strategy_create, default_strategy_get_partition, default_strategy_destroy}};
+static struct opencl_partition_strategy strats[] = {
+	{default_strategy_create, default_strategy_get_partition, default_strategy_destroy},
+	{even_strategy_create, even_strategy_get_partition, even_strategy_destroy}};
 
 const struct opencl_partition_strategy *get_strategy()
 {
@@ -28,7 +33,7 @@ struct default_strategy_info_t
 	int done;
 };
 
-void *default_strategy_create(int num_devices, unsigned int dims, unsigned int *groups)
+void *default_strategy_create(int num_devices, unsigned int dims, const unsigned int *groups)
 {
 	struct default_strategy_info_t *info = xcalloc(1, sizeof (struct default_strategy_info_t));
 	info->num_devices = num_devices;

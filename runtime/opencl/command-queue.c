@@ -816,7 +816,6 @@ cl_int clEnqueueNDRangeKernel(
 			arch_kernel = kernel_entry->arch_kernel;
 	}
 
-	//TODO: do some more checking, make sure device is the union device.
 	if (!arch_kernel)
 		return CL_INVALID_VALUE;
 
