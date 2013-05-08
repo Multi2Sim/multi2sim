@@ -787,11 +787,6 @@ void x86_cpu_init(void)
 	/* Trace */
 	x86_trace_category = trace_new_category();
 
-	/* Functions for memory configuration */
-	arch_x86->mem_config_check_func = x86_mem_config_check;
-	arch_x86->mem_config_default_func = x86_mem_config_default;
-	arch_x86->mem_config_parse_entry_func = x86_mem_config_parse_entry;
-
 	/* Initialize */
 	x86_cpu = xcalloc(1, sizeof(struct x86_cpu_t));
 	x86_cpu->uop_trace_list = linked_list_create();

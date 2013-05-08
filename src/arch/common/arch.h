@@ -54,11 +54,11 @@ typedef void (*arch_timing_done_func_t)(void);
 typedef void (*arch_timing_dump_func_t)(FILE *f);
 typedef void (*arch_timing_dump_summary_func_t)(FILE *f);
 
-typedef enum arch_sim_kind_t (*arch_run_func_t)(void);
-
 typedef void (*arch_mem_config_default_func_t)(struct config_t *config);
 typedef void (*arch_mem_config_parse_entry_func_t)(struct config_t *config, char *section);
 typedef void (*arch_mem_config_check_func_t)(struct config_t *config);
+
+typedef enum arch_sim_kind_t (*arch_run_func_t)(void);
 
 
 struct arch_t
@@ -92,15 +92,15 @@ struct arch_t
 	arch_timing_dump_summary_func_t timing_dump_summary_func;
 	arch_run_func_t timing_run_func;
 
-	/* Function to run one iteration of the simulation loop. This is set to
-	 * either 'emu_run_func' or 'timing_run_func', depending on the value of
-	 * 'sim_kind'. */
-	arch_run_func_t run_func;
-
 	/* Call-back functions used in by the memory hierarchy */
 	arch_mem_config_default_func_t mem_config_default_func;
 	arch_mem_config_parse_entry_func_t mem_config_parse_entry_func;
 	arch_mem_config_check_func_t mem_config_check_func;
+
+	/* Function to run one iteration of the simulation loop. This is set to
+	 * either 'emu_run_func' or 'timing_run_func', depending on the value of
+	 * 'sim_kind'. */
+	arch_run_func_t run_func;
 
 	/* List of entry modules to the memory hierarchy. Each element of this list
 	 * is of type 'mod_t'. */
@@ -156,6 +156,9 @@ struct arch_t *arch_register(char *name, char *prefix,
 		arch_timing_done_func_t timing_done_func,
 		arch_timing_dump_func_t timing_dump_func,
 		arch_timing_dump_summary_func_t timing_dump_summary_func,
+		arch_mem_config_default_func_t mem_config_default_func,
+		arch_mem_config_parse_entry_func_t mem_config_parse_entry_func,
+		arch_mem_config_check_func_t mem_config_check_func,
 		arch_run_func_t timing_run_func);
 
 void arch_for_each(arch_callback_func_t callback_func, void *user_data);

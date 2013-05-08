@@ -19,6 +19,7 @@
 #include <assert.h>
 
 #include <arch/common/arch.h>
+#include <arch/southern-islands/timing/gpu.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
@@ -40,7 +41,6 @@
 #include "module.h"
 #include "prefetcher.h"
 
-extern int fused_device;
 
 /*
  * Global Variables
@@ -1538,7 +1538,7 @@ void mem_config_read(void)
 	mem_config_check_routes();
 
 	/* Check for disjoint memory hierarchies for different architectures. */
-	if (!fused_device)
+	if (!si_gpu_fused_device)
 		arch_for_each(mem_config_check_disjoint, NULL);
 
 	/* Compute sub-block sizes, based on high modules. This function also
