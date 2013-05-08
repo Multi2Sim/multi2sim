@@ -164,8 +164,8 @@ void opencl_done(void)
 
 /* NOTE: when modifying the values of these two macros, the same values should
  * be reflected in 'runtime/opencl/platform.c'. */
-#define OPENCL_VERSION_MAJOR  1
-#define OPENCL_VERSION_MINOR  1559
+#define OPENCL_VERSION_MAJOR  2
+#define OPENCL_VERSION_MINOR  1629
 
 struct opencl_version_t
 {
