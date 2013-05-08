@@ -29,7 +29,6 @@ struct si_wavefront_pool_entry_t
 	struct si_wavefront_pool_t *wavefront_pool;
 
 	struct si_wavefront_t *wavefront;
-	long long int cycle_fetched;
 	struct si_uop_t *uop;
 
 	/* Status (not mutually exclusive) */

@@ -22,6 +22,7 @@
 #include <arch/common/arch.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <arch/southern-islands/emu/wavefront.h>
+#include <arch/southern-islands/timing/wavefront-pool.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
@@ -130,6 +131,8 @@ void si_simd_execute(struct si_simd_t *simd)
 		/* Transfer the uop to the outstanding execution buffer */
 		list_remove(simd->decode_buffer, uop);
 		list_enqueue(simd->exec_buffer, uop);
+
+		uop->wavefront_pool_entry->ready_next_cycle = 1;
 
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 			"stg=\"simd-e\"\n", uop->id_in_compute_unit, 

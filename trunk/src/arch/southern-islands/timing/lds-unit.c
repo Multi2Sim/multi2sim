@@ -136,6 +136,8 @@ void si_lds_write(struct si_lds_t *lds)
 		list_remove(lds->mem_buffer, uop);
 		list_enqueue(lds->write_buffer, uop);
 
+		uop->wavefront_pool_entry->ready_next_cycle = 1;
+
 		instructions_processed++;
 
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
@@ -237,9 +239,6 @@ void si_lds_mem(struct si_lds_t *lds)
 				uop->lds_witness--;
 			}
 		}
-
-		/* Increment outstanding memory access count */
-		uop->wavefront_pool_entry->lgkm_cnt++;
 
 		/* Transfer the uop to the mem buffer */
 		list_remove(lds->read_buffer, uop);
