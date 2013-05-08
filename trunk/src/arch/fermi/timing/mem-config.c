@@ -299,7 +299,7 @@ void frm_mem_config_parse_entry(struct config_t *config, char *section)
 				file_name, section, module_name);
 
 	/* Add modules to list of memory entries */
-	linked_list_add(frm_emu->arch->mem_entry_mod_list,
+	linked_list_add(arch_fermi->mem_entry_mod_list,
 			sm->global_memory);
 
 	/* Debug */

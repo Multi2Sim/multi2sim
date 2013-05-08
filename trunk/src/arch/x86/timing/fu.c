@@ -222,7 +222,6 @@ void x86_fu_done()
  * be reserved. */
 int x86_fu_reserve(struct x86_uop_t *uop)
 {
-	struct arch_t *arch = x86_emu->arch;
 	enum x86_fu_class_t fu_class;
 
 	int core = uop->core;
@@ -239,18 +238,18 @@ int x86_fu_reserve(struct x86_uop_t *uop)
 
 	/* First time uop tries to reserve f.u. */
 	if (!uop->issue_try_when)
-		uop->issue_try_when = arch->cycle;
+		uop->issue_try_when = arch_x86->cycle;
 
 	/* Find a free f.u. */
 	assert(fu_class > x86_fu_none && fu_class < x86_fu_count);
 	assert(x86_fu_res_pool[fu_class].count <= X86_FU_RES_MAX);
 	for (i = 0; i < x86_fu_res_pool[fu_class].count; i++) {
-		if (fu->cycle_when_free[fu_class][i] <= arch->cycle) {
+		if (fu->cycle_when_free[fu_class][i] <= arch_x86->cycle) {
 			assert(x86_fu_res_pool[fu_class].issuelat > 0);
 			assert(x86_fu_res_pool[fu_class].oplat > 0);
-			fu->cycle_when_free[fu_class][i] = arch->cycle + x86_fu_res_pool[fu_class].issuelat;
+			fu->cycle_when_free[fu_class][i] = arch_x86->cycle + x86_fu_res_pool[fu_class].issuelat;
 			fu->accesses[fu_class]++;
-			fu->waiting_time[fu_class] += arch->cycle - uop->issue_try_when;
+			fu->waiting_time[fu_class] += arch_x86->cycle - uop->issue_try_when;
 			return x86_fu_res_pool[fu_class].oplat;
 		}
 	}

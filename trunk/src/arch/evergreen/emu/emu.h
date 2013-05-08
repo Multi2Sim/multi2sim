@@ -25,9 +25,6 @@
 
 struct evg_emu_t
 {
-	/* Common architecture object */
-	struct arch_t *arch;
-
 	/* OpenCL objects */
 	struct evg_opencl_repo_t *opencl_repo;
 	struct evg_opencl_platform_t *opencl_platform;
@@ -95,7 +92,7 @@ extern char *evg_err_opencl_param_note;
 
 extern struct evg_emu_t *evg_emu;
 
-void evg_emu_init(struct arch_t *arch);
+void evg_emu_init(void);
 void evg_emu_done(void);
 void evg_emu_dump(FILE *f);
 

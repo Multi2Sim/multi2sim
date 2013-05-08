@@ -68,7 +68,7 @@ int si_emu_num_mapped_const_buffers = 2;  /* CB0, CB1 by default */
 
 
 /* Initialize GPU kernel */
-void si_emu_init(struct arch_t *arch)
+void si_emu_init(void)
 {
 	/* Open report file */
 	if (*si_emu_report_file_name)
@@ -84,7 +84,6 @@ void si_emu_init(struct arch_t *arch)
 
 	/* Initialize */
 	si_emu = xcalloc(1, sizeof(struct si_emu_t));
-	si_emu->arch = arch;
 	si_emu->video_mem = mem_create();
 	si_emu->video_mem->safe = 0;
 	si_emu->video_mem_top = 0;

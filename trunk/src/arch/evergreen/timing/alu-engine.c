@@ -46,8 +46,6 @@ int evg_gpu_alu_engine_pe_latency = 4;  /* Processing element latency */
 
 static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
-	struct arch_t *arch = evg_emu->arch;
-
 	struct linked_list_t *pending_queue = compute_unit->alu_engine.pending_queue;
 	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
@@ -171,7 +169,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = arch->cycle + evg_gpu_alu_engine_inst_mem_latency;
+	uop->inst_mem_ready = arch_evergreen->cycle + evg_gpu_alu_engine_inst_mem_latency;
 
 	/* Enqueue instruction into fetch queue */
 	linked_list_out(fetch_queue);
@@ -193,7 +191,6 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 static void evg_alu_engine_decode(struct evg_compute_unit_t *compute_unit)
 {
-	struct arch_t *arch = evg_emu->arch;
 	struct linked_list_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
 	struct evg_uop_t *uop;
 
@@ -206,7 +203,7 @@ static void evg_alu_engine_decode(struct evg_compute_unit_t *compute_unit)
 		return;
 
 	/* If uop is still being fetched from instruction memory, done */
-	if (uop->inst_mem_ready > arch->cycle)
+	if (uop->inst_mem_ready > arch_evergreen->cycle)
 		return;
 
 	/* If instruction buffer is occupied, done */
@@ -278,7 +275,6 @@ static void evg_alu_engine_read(struct evg_compute_unit_t *compute_unit)
 
 static void evg_alu_engine_execute(struct evg_compute_unit_t *compute_unit)
 {
-	struct arch_t *arch = evg_emu->arch;
 	struct mod_t *local_memory = compute_unit->local_memory;
 	struct evg_uop_t *uop;
 
@@ -299,7 +295,7 @@ static void evg_alu_engine_execute(struct evg_compute_unit_t *compute_unit)
 	assert(uop->exec_subwavefront_count < uop->subwavefront_count);
 	uop->exec_subwavefront_count++;
 	heap_insert(compute_unit->alu_engine.event_queue,
-		arch->cycle + evg_gpu_alu_engine_pe_latency,
+		arch_evergreen->cycle + evg_gpu_alu_engine_pe_latency,
 		uop);
 	
 	/* Trace */
@@ -315,7 +311,6 @@ static void evg_alu_engine_execute(struct evg_compute_unit_t *compute_unit)
 
 static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 {
-	struct arch_t *arch = evg_emu->arch;
 	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
 	struct evg_wavefront_t *wavefront;
@@ -334,9 +329,9 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 	{
 		/* Extract a new event for this cycle */
 		cycle = heap_peek(compute_unit->alu_engine.event_queue, (void **) &uop);
-		if (!uop || cycle > arch->cycle)
+		if (!uop || cycle > arch_evergreen->cycle)
 			break;
-		assert(cycle == arch->cycle);
+		assert(cycle == arch_evergreen->cycle);
 		wavefront = uop->wavefront;
 		heap_extract(compute_unit->alu_engine.event_queue, NULL);
 
@@ -421,7 +416,7 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 				evg_uop_free(uop);
 
 			/* Statistics */
-			evg_gpu->last_complete_cycle = arch->cycle;
+			evg_gpu->last_complete_cycle = arch_evergreen->cycle;
 		}
 	}
 }

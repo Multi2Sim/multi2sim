@@ -70,14 +70,13 @@ void si_cu_spatial_report_done()
 
 void si_cu_spatial_report_dump(struct si_compute_unit_t *compute_unit)
 {
-	struct arch_t *arch = si_emu->arch;
 	FILE *f = spatial_report_file;
 
 	fprintf(f, "CU,%d,MemAcc,%lld,MappedWGs,%lld,Cycles,%lld\n",
 			compute_unit->id,
 			compute_unit->vector_mem_unit.inflight_mem_accesses,
 			compute_unit->interval_mapped_work_groups,
-			arch->cycle);
+			arch_southern_islands->cycle);
 
 }
 
@@ -107,12 +106,10 @@ void si_report_mapped_work_group(struct si_compute_unit_t *compute_unit)
 
 void si_cu_interval_update(struct si_compute_unit_t *compute_unit)
 {
-	struct arch_t *arch = si_emu->arch;
-
 	/* If interval - reset the counters in all the engines */
 	compute_unit->interval_cycle ++;
 
-	if (!(arch->cycle % spatial_profiling_interval))
+	if (!(arch_southern_islands->cycle % spatial_profiling_interval))
 	{
 		si_cu_spatial_report_dump(compute_unit);
 

@@ -455,15 +455,13 @@ void evg_gpu_read_config(void)
 
 void evg_gpu_init(void)
 {
-	struct arch_t *arch = evg_emu->arch;
-
 	/* Trace */
 	evg_trace_category = trace_new_category();
 
 	/* Register functions for architecture */
-	arch->mem_config_check_func = evg_mem_config_check;
-	arch->mem_config_default_func = evg_mem_config_default;
-	arch->mem_config_parse_entry_func = evg_mem_config_parse_entry;
+	arch_evergreen->mem_config_check_func = evg_mem_config_check;
+	arch_evergreen->mem_config_default_func = evg_mem_config_default;
+	arch_evergreen->mem_config_parse_entry_func = evg_mem_config_parse_entry;
 
 	/* Try to open report file */
 	if (evg_gpu_report_file_name[0] && !file_can_open_for_write(evg_gpu_report_file_name))
@@ -522,7 +520,6 @@ void evg_gpu_dump(FILE *f)
 
 void evg_gpu_dump_report(void)
 {
-	struct arch_t *arch = evg_emu->arch;
 	struct evg_compute_unit_t *compute_unit;
 	struct mod_t *local_mod;
 	int compute_unit_id;
@@ -550,11 +547,11 @@ void evg_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = arch->cycle ? (double) arch->inst_count / arch->cycle : 0.0;
+	inst_per_cycle = arch_evergreen->cycle ? (double) arch_evergreen->inst_count / arch_evergreen->cycle : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
-	fprintf(f, "Instructions = %lld\n", arch->inst_count);
-	fprintf(f, "Cycles = %lld\n", arch->cycle);
+	fprintf(f, "Instructions = %lld\n", arch_evergreen->inst_count);
+	fprintf(f, "Cycles = %lld\n", arch_evergreen->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
@@ -625,10 +622,9 @@ void evg_gpu_dump_report(void)
 
 void evg_gpu_dump_summary(FILE *f)
 {
-	struct arch_t *arch = evg_emu->arch;
 	double inst_per_cycle;
 
-	inst_per_cycle = arch->cycle ? (double) arch->inst_count / arch->cycle : 0.0;
+	inst_per_cycle = arch_evergreen->cycle ? (double) arch_evergreen->inst_count / arch_evergreen->cycle : 0.0;
 	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
 }
 
@@ -662,7 +658,6 @@ void evg_gpu_uop_trash_add(struct evg_uop_t *uop)
  *   - arch_sim_kind_detailed - still simulating */
 enum arch_sim_kind_t evg_gpu_run(void)
 {
-	struct arch_t *arch = evg_emu->arch;
 	struct evg_ndrange_t *ndrange;
 
 	struct evg_compute_unit_t *compute_unit;
@@ -709,18 +704,18 @@ enum arch_sim_kind_t evg_gpu_run(void)
 			ndrange->pending_list_head);
 
 	/* One more cycle */
-	arch->cycle++;
+	arch_evergreen->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (evg_emu_max_cycles && arch->cycle >= evg_emu_max_cycles)
+	if (evg_emu_max_cycles && arch_evergreen->cycle >= evg_emu_max_cycles)
 		esim_finish = esim_finish_evg_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (evg_emu_max_inst && arch->inst_count >= evg_emu_max_inst)
+	if (evg_emu_max_inst && arch_evergreen->inst_count >= evg_emu_max_inst)
 		esim_finish = esim_finish_evg_max_inst;
 	
 	/* Stop if there was a simulation stall */
-	if ((arch->cycle-evg_gpu->last_complete_cycle) > 1000000)
+	if (arch_evergreen->cycle - evg_gpu->last_complete_cycle > 1000000)
 	{
 		warning("Evergreen GPU simulation stalled.\n%s",
 			evg_err_stall);

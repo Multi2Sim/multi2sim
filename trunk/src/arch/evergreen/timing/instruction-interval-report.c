@@ -166,7 +166,6 @@ void evg_periodic_report_config_read(struct config_t *config)
  * (evg_periodic_report_active = 1). */
 void evg_periodic_report_wavefront_init(struct evg_wavefront_t *wavefront)
 {
-	struct arch_t *arch = evg_emu->arch;
 	struct evg_work_group_t *work_group = wavefront->work_group;
 	char file_name[MAX_STRING_SIZE];
 
@@ -211,7 +210,7 @@ void evg_periodic_report_wavefront_init(struct evg_wavefront_t *wavefront)
 		fatal("%s: could not open periodic report file", file_name);
 
 	/* Record initial cycle */
-	wavefront->periodic_report_cycle = arch->cycle;
+	wavefront->periodic_report_cycle = arch_evergreen->cycle;
 }
 
 
@@ -234,7 +233,6 @@ void evg_periodic_report_wavefront_done(struct evg_wavefront_t *wavefront)
 
 void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
 {
-	struct arch_t *arch = evg_emu->arch;
 	FILE *f = wavefront->periodic_report_file;
 	int i;
 
@@ -255,7 +253,7 @@ void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
 
 	/* Dump entry */
 	fprintf(f, "%8lld ", wavefront->periodic_report_vliw_bundle_count);
-	fprintf(f, "%5lld ", arch->cycle - wavefront->periodic_report_cycle);
+	fprintf(f, "%5lld ", arch_evergreen->cycle - wavefront->periodic_report_cycle);
 	fprintf(f, "%5d ", wavefront->periodic_report_inst_count);
 	fprintf(f, "%5d ", wavefront->periodic_report_local_mem_accesses);
 	fprintf(f, "%5d ", wavefront->periodic_report_global_mem_reads);
@@ -263,7 +261,7 @@ void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
 	fprintf(f, "\n");
 
 	/* Reset statistics */
-	wavefront->periodic_report_cycle = arch->cycle;
+	wavefront->periodic_report_cycle = arch_evergreen->cycle;
 	wavefront->periodic_report_inst_count = 0;
 	wavefront->periodic_report_local_mem_accesses = 0;
 	wavefront->periodic_report_global_mem_reads = 0;

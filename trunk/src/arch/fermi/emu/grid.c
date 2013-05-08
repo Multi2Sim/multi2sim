@@ -179,7 +179,6 @@ void frm_grid_setup_args(struct frm_grid_t *grid)
 
 void frm_grid_run(struct frm_grid_t *grid)
 {
-	struct arch_t *arch = frm_emu->arch;
 	struct frm_thread_block_t *thread_block, *thread_block_next;
 	struct frm_warp_t *warp, *warp_next;
 	unsigned long long int cycle = 0;
@@ -203,7 +202,7 @@ void frm_grid_run(struct frm_grid_t *grid)
 			esim_finish = esim_finish_frm_max_cycles;
 
 		/* Stop if maximum number of GPU instructions exceeded */
-		if (frm_emu_max_inst && arch->inst_count >= frm_emu_max_inst)
+		if (frm_emu_max_inst && arch_fermi->inst_count >= frm_emu_max_inst)
 			esim_finish = esim_finish_frm_max_inst;
 
 		/* Stop if any reason met */

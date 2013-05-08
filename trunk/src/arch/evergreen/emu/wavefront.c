@@ -257,8 +257,6 @@ void evg_wavefront_stack_pop(struct evg_wavefront_t *wavefront, int count)
 /* Execute one instruction in the wavefront */
 void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 {
-	struct arch_t *arch = evg_emu->arch;
-
 	struct evg_ndrange_t *ndrange = wavefront->ndrange;
 	struct evg_work_group_t *work_group = wavefront->work_group;
 	struct evg_work_item_t *work_item;
@@ -322,7 +320,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 
 		/* Stats */
-		arch->inst_count++;
+		arch_evergreen->inst_count++;
 		wavefront->inst_count++;
 		wavefront->cf_inst_count++;
 		if (inst->info->flags & EVG_INST_FLAG_MEM)
@@ -369,7 +367,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 		
 		/* Statistics */
-		arch->inst_count++;
+		arch_evergreen->inst_count++;
 		wavefront->inst_count += alu_group->inst_count;
 		wavefront->alu_inst_count += alu_group->inst_count;
 		wavefront->alu_group_count++;
@@ -423,7 +421,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 
 		/* Statistics */
-		arch->inst_count++;
+		arch_evergreen->inst_count++;
 		wavefront->inst_count++;
 		wavefront->tc_inst_count++;
 		if (inst->info->flags & EVG_INST_FLAG_MEM)

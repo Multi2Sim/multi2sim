@@ -499,9 +499,9 @@ void si_mem_config_parse_entry(struct config_t *config, char *section)
 	}
 	
 	/* Add modules to list of memory entries */
-	linked_list_add(si_emu->arch->mem_entry_mod_list, 
+	linked_list_add(arch_southern_islands->mem_entry_mod_list, 
 		compute_unit->vector_cache);
-	linked_list_add(si_emu->arch->mem_entry_mod_list, 
+	linked_list_add(arch_southern_islands->mem_entry_mod_list, 
 		compute_unit->scalar_cache);
 	
 	/* Debug */

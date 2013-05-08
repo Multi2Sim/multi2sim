@@ -238,7 +238,6 @@ void arm_sys_done(void)
 
 void arm_sys_call(struct arm_ctx_t *ctx)
 {
-	struct arch_t *arch = arm_emu->arch;
 	struct arm_regs_t *regs = ctx->regs;
 
 	int code;
@@ -254,9 +253,9 @@ void arm_sys_call(struct arm_ctx_t *ctx)
 
 	/* Debug */
 	arm_sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
-		arm_sys_call_name[code], code, arch->inst_count, ctx->pid);
+		arm_sys_call_name[code], code, arch_arm->inst_count, ctx->pid);
 	arm_isa_call_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
-		arm_sys_call_name[code], code, arch->inst_count, ctx->pid);
+		arm_sys_call_name[code], code, arch_arm->inst_count, ctx->pid);
 
 	/* Perform system call */
 	err = arm_sys_call_func[code](ctx);
@@ -1214,10 +1213,9 @@ static int arm_sys_ARM_set_tls_impl(struct arm_ctx_t *ctx)
 #define SYS_NOT_IMPL(NAME) \
 	static int arm_sys_##NAME##_impl(struct arm_ctx_t *ctx) \
 	{ \
-		struct arch_t *arch = arm_emu->arch; \
 		struct arm_regs_t *regs = ctx->regs; \
 		fatal("%s: system call not implemented (code %d, inst %lld, pid %d).\n%s", \
-			__FUNCTION__, regs->r7, arch->inst_count, ctx->pid, \
+			__FUNCTION__, regs->r7, arch_arm->inst_count, ctx->pid, \
 			err_arm_sys_note); \
 		return 0; \
 	}

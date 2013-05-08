@@ -26,9 +26,6 @@
 
 struct x86_emu_t
 {
-	/* Common architecture object */
-	struct arch_t *arch;
-
 	/* pid & address_space_index assignment */
 	int current_pid;
 
@@ -90,7 +87,13 @@ extern char x86_emu_last_inst_bytes[20];
 extern int x86_emu_last_inst_size;
 extern int x86_emu_process_prefetch_hints;
 
-void x86_emu_init(struct arch_t *arch);
+
+
+/*
+ * Public Functions
+ */
+
+void x86_emu_init(void);
 void x86_emu_done(void);
 
 enum arch_sim_kind_t x86_emu_run(void);

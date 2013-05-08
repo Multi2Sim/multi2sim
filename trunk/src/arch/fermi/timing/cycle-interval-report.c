@@ -69,14 +69,13 @@ void frm_sm_spatial_report_done()
 
 void frm_sm_spatial_report_dump(struct frm_sm_t *sm)
 {
-	struct arch_t *arch = frm_emu->arch;
 	FILE *f = spatial_report_file;
 
 	fprintf(f,"CU,%d,MemAcc,%lld,MappedWGs,%lld,Cycles,%lld\n",
 			sm->id,
 			sm->vector_mem_unit.inflight_mem_accesses,
 			sm->interval_mapped_thread_blocks,
-			arch->cycle);
+			arch_fermi->cycle);
 
 }
 
@@ -106,11 +105,9 @@ void frm_report_mapped_thread_block(struct frm_sm_t *sm)
 
 void frm_sm_interval_update(struct frm_sm_t *sm)
 {
-	struct arch_t *arch = frm_emu->arch;
-
 	/* If interval - reset the counters in all the engines */
 	sm->interval_cycle ++;
-	if (!(arch->cycle % spatial_profiling_interval))
+	if (!(arch_fermi->cycle % spatial_profiling_interval))
 	{
 		frm_sm_spatial_report_dump(sm);
 

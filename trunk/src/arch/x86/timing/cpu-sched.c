@@ -102,8 +102,6 @@
  * node (core/thread). */
 static void x86_cpu_alloc_context(struct x86_ctx_t *ctx)
 {
-	struct arch_t *arch = x86_emu->arch;
-
 	int core = ctx->core;
 	int thread = ctx->thread;
 
@@ -113,7 +111,7 @@ static void x86_cpu_alloc_context(struct x86_ctx_t *ctx)
 	assert(!ctx->evict_signal);
 
 	/* Update context state */
-	ctx->alloc_cycle = arch->cycle;
+	ctx->alloc_cycle = arch_x86->cycle;
 	x86_ctx_set_state(ctx, x86_ctx_alloc);
 
 	/* Update node state */
@@ -122,7 +120,7 @@ static void x86_cpu_alloc_context(struct x86_ctx_t *ctx)
 
 	/* Debug */
 	x86_ctx_debug("#%lld ctx %d in node %d/%d allocated\n",
-		arch->cycle, ctx->pid, core, thread);
+		arch_x86->cycle, ctx->pid, core, thread);
 
 	/* Trace */
 	x86_trace("x86.map_ctx ctx=%d core=%d thread=%d ppid=%d\n",
@@ -134,8 +132,6 @@ static void x86_cpu_alloc_context(struct x86_ctx_t *ctx)
  * contexts currently mapped to it. */
 static void x86_cpu_map_context(struct x86_ctx_t *ctx)
 {
-	struct arch_t *arch = x86_emu->arch;
-
 	int min_core;
 	int min_thread;
 
@@ -184,7 +180,7 @@ static void x86_cpu_map_context(struct x86_ctx_t *ctx)
 
 	/* Debug */
 	x86_ctx_debug("#%lld ctx %d mapped to node %d/%d\n",
-		arch->cycle, ctx->pid, core, thread);
+		arch_x86->cycle, ctx->pid, core, thread);
 }
 
 
@@ -194,8 +190,6 @@ static void x86_cpu_map_context(struct x86_ctx_t *ctx)
  * A context must have been evicted from the node before being unmapped. */
 static void x86_cpu_unmap_context(struct x86_ctx_t *ctx)
 {
-	struct arch_t *arch = x86_emu->arch;
-
 	int core = ctx->core;
 	int thread = ctx->thread;
 
@@ -211,7 +205,7 @@ static void x86_cpu_unmap_context(struct x86_ctx_t *ctx)
 
 	/* Debug */
 	x86_ctx_debug("#%lld ctx %d unmapped from node %d/%d\n",
-		arch->cycle, ctx->pid, core, thread);
+		arch_x86->cycle, ctx->pid, core, thread);
 
 	/* If context is finished, free it. */
 	if (x86_ctx_get_state(ctx, x86_ctx_finished))
@@ -233,13 +227,12 @@ static void x86_cpu_unmap_context(struct x86_ctx_t *ctx)
  * there is any allocated context that has exceeded its quantum. */
 static void x86_cpu_update_min_alloc_cycle(void)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct x86_ctx_t *ctx;
 
 	int core;
 	int thread;
 
-	x86_cpu->min_alloc_cycle = arch->cycle;
+	x86_cpu->min_alloc_cycle = arch_x86->cycle;
 	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 	{
 		ctx = X86_THREAD.ctx;
@@ -255,8 +248,6 @@ static void x86_cpu_update_min_alloc_cycle(void)
  * commit stage, the context will be effectively evicted. */
 static void x86_cpu_evict_context_signal(struct x86_ctx_t *ctx)
 {
-	struct arch_t *arch = x86_emu->arch;
-
 	int core = ctx->core;
 	int thread = ctx->thread;
 
@@ -270,7 +261,7 @@ static void x86_cpu_evict_context_signal(struct x86_ctx_t *ctx)
 	/* Set eviction signal. */
 	ctx->evict_signal = 1;
 	x86_ctx_debug("#%lld ctx %d signaled for eviction from node %d/%d\n",
-		arch->cycle, ctx->pid, core, thread);
+		arch_x86->cycle, ctx->pid, core, thread);
 
 	/* If pipeline is already empty for the thread, effective eviction can
 	 * happen straight away. */
@@ -283,7 +274,6 @@ static void x86_cpu_evict_context_signal(struct x86_ctx_t *ctx)
 /* Scheduling actions for all contexts currently mapped to a node (core/thread). */
 static void x86_cpu_schedule_node(int core, int thread)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct x86_ctx_t *ctx;
 	struct x86_ctx_t *tmp_ctx;
 
@@ -305,7 +295,7 @@ static void x86_cpu_schedule_node(int core, int thread)
 			x86_cpu_evict_context_signal(ctx);
 
 		/* Context quantum expired */
-		if (!ctx->evict_signal && arch->cycle >= ctx->alloc_cycle
+		if (!ctx->evict_signal && arch_x86->cycle >= ctx->alloc_cycle
 				+ x86_cpu_context_quantum)
 		{
 			int found = 0;
@@ -330,7 +320,7 @@ static void x86_cpu_schedule_node(int core, int thread)
 			if (found)
 				x86_cpu_evict_context_signal(ctx);
 			else
-				ctx->alloc_cycle = arch->cycle;
+				ctx->alloc_cycle = arch_x86->cycle;
 		}
 	}
 
@@ -391,7 +381,6 @@ int x86_cpu_pipeline_empty(int core, int thread)
 
 void x86_cpu_evict_context(int core, int thread)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct x86_ctx_t *ctx = X86_THREAD.ctx;
 
 	assert(ctx);
@@ -407,12 +396,12 @@ void x86_cpu_evict_context(int core, int thread)
 
 	/* Update context state */
 	x86_ctx_clear_state(ctx, x86_ctx_alloc);
-	ctx->evict_cycle = arch->cycle;
+	ctx->evict_cycle = arch_x86->cycle;
 	ctx->evict_signal = 0;
 
 	/* Debug */
 	x86_ctx_debug("#%lld ctx %d evicted from node %d/%d\n",
-		arch->cycle, ctx->pid, core, thread);
+		arch_x86->cycle, ctx->pid, core, thread);
 
 	/* Trace */
 	x86_trace("x86.unmap_ctx ctx=%d core=%d thread=%d\n",
@@ -422,7 +411,6 @@ void x86_cpu_evict_context(int core, int thread)
 
 void x86_cpu_schedule(void)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct x86_ctx_t *ctx;
 
 	int quantum_expired;
@@ -430,7 +418,7 @@ void x86_cpu_schedule(void)
 	int thread;
 
 	/* Check if any context quantum could have expired */
-	quantum_expired = arch->cycle >= x86_cpu->min_alloc_cycle +
+	quantum_expired = arch_x86->cycle >= x86_cpu->min_alloc_cycle +
 			x86_cpu_context_quantum;
 
 	/* Check for quick scheduler end. The only way to effectively execute
@@ -442,7 +430,7 @@ void x86_cpu_schedule(void)
 	/* OK, we have to schedule. Uncheck the schedule signal here, since
 	 * upcoming actions might set it again for a second scheduler call. */
 	x86_emu->schedule_signal = 0;
-	x86_ctx_debug("#%lld schedule\n", arch->cycle);
+	x86_ctx_debug("#%lld schedule\n", arch_x86->cycle);
 
 	/* Check if there is any running context that is currently not mapped
 	 * to any node (core/thread); for example, a new context, or a

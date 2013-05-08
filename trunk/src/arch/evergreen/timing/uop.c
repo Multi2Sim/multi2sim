@@ -256,7 +256,6 @@ void gpu_uop_dump_active_mask(struct evg_uop_t *uop, FILE *f)
 /* Stack debug - dump debugging information */
 void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 {
-	struct arch_t *arch = evg_emu->arch;
 	struct evg_wavefront_t *wavefront = uop->wavefront;
 
 	FILE *f;
@@ -269,7 +268,7 @@ void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 	if (uop->active_mask_pop)
 	{
 		evg_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"pop\" cnt=%d top=%d mask=\"",
-			arch->cycle,
+			arch_evergreen->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,
@@ -283,7 +282,7 @@ void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 	if (uop->active_mask_push)
 	{
 		evg_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"push\" cnt=%d top=%d mask=\"",
-			arch->cycle,
+			arch_evergreen->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,

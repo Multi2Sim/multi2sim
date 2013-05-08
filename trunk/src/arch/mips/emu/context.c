@@ -619,7 +619,6 @@ void mips_ctx_free(struct mips_ctx_t *ctx)
 
 void mips_ctx_execute(struct mips_ctx_t *ctx)
 {
-	struct arch_t *arch = mips_emu->arch;
 	struct mips_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -685,8 +684,7 @@ void mips_ctx_execute(struct mips_ctx_t *ctx)
 	mips_isa_execute_inst(ctx);
 
 	/* Statistics */
-	arch->inst_count++;
-
+	arch_mips->inst_count++;
 }
 
 /* Finish a context group. This call does a subset of action of the 'mips_ctx_finish'
@@ -800,7 +798,6 @@ void mips_ctx_finish(struct mips_ctx_t *ctx, int status)
 
 static void mips_ctx_update_status(struct mips_ctx_t *ctx, enum mips_ctx_status_t status)
 {
-	struct arch_t *arch = mips_emu->arch;
 	enum mips_ctx_status_t status_diff;
 
 	/* Remove contexts from the following lists:
@@ -860,9 +857,9 @@ static void mips_ctx_update_status(struct mips_ctx_t *ctx, enum mips_ctx_status_
 	/* Start/stop mips timer depending on whether there are any contexts
 	 * currently running. */
 	if (mips_emu->running_list_count)
-		m2s_timer_start(arch->timer);
+		m2s_timer_start(arch_mips->timer);
 	else
-		m2s_timer_stop(arch->timer);
+		m2s_timer_stop(arch_mips->timer);
 }
 
 void mips_ctx_set_status(struct mips_ctx_t *ctx, enum mips_ctx_status_t status)
