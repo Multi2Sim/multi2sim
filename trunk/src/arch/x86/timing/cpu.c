@@ -29,6 +29,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/misc.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 #include <mem-system/prefetch-history.h>
@@ -65,6 +66,8 @@ char *x86_config_help =
 	"\n"
 	"Section '[ General ]':\n"
 	"\n"
+	"  Frequency = <freq> (Default = 1000 MHz)\n"
+	"      Frequency in MHz for the x86 CPU. Value between 1 and 10K.\n"
 	"  Cores = <num_cores> (Default = 1)\n"
 	"      Number of cores.\n"
 	"  Threads = <num_threads> (Default = 1)\n"
@@ -300,113 +303,12 @@ static char *x86_cpu_err_fast_forward =
 	"\tof fast-forward instructions and retry.\n";
 
 
-/* Check CPU configuration file */
-static void x86_cpu_config_check(void)
-{
-	struct config_t *config;
-	char *section;
-
-	/* Open file */
-	config = config_create(x86_config_file_name);
-	if (*x86_config_file_name)
-		config_load(config);
-
-	
-	/* General configuration */
-
-	section = "General";
-
-	x86_cpu_num_cores = config_read_int(config, section, "Cores", x86_cpu_num_cores);
-	x86_cpu_num_threads = config_read_int(config, section, "Threads", x86_cpu_num_threads);
-
-	x86_cpu_fast_forward_count = config_read_llint(config, section, "FastForward", 0);
-
-	x86_cpu_context_quantum = config_read_int(config, section, "ContextQuantum", 100000);
-	x86_cpu_thread_quantum = config_read_int(config, section, "ThreadQuantum", 1000);
-	x86_cpu_thread_switch_penalty = config_read_int(config, section, "ThreadSwitchPenalty", 0);
-
-	x86_cpu_recover_kind = config_read_enum(config, section, "RecoverKind", x86_cpu_recover_kind_writeback, x86_cpu_recover_kind_map, 2);
-	x86_cpu_recover_penalty = config_read_int(config, section, "RecoverPenalty", 0);
-
-	x86_emu_process_prefetch_hints = config_read_bool(config, section, "ProcessPrefetchHints", 1);
-	prefetch_history_size = config_read_int(config, section, "PrefetchHistorySize", 10);
-
-
-	/* Section '[ Pipeline ]' */
-
-	section = "Pipeline";
-
-	x86_cpu_fetch_kind = config_read_enum(config, section, "FetchKind", x86_cpu_fetch_kind_timeslice, x86_cpu_fetch_kind_map, 3);
-
-	x86_cpu_decode_width = config_read_int(config, section, "DecodeWidth", 4);
-
-	x86_cpu_dispatch_kind = config_read_enum(config, section, "DispatchKind", x86_cpu_dispatch_kind_timeslice, x86_cpu_dispatch_kind_map, 2);
-	x86_cpu_dispatch_width = config_read_int(config, section, "DispatchWidth", 4);
-
-	x86_cpu_issue_kind = config_read_enum(config, section, "IssueKind", x86_cpu_issue_kind_timeslice, x86_cpu_issue_kind_map, 2);
-	x86_cpu_issue_width = config_read_int(config, section, "IssueWidth", 4);
-
-	x86_cpu_commit_kind = config_read_enum(config, section, "CommitKind", x86_cpu_commit_kind_shared, x86_cpu_commit_kind_map, 2);
-	x86_cpu_commit_width = config_read_int(config, section, "CommitWidth", 4);
-
-	x86_cpu_occupancy_stats = config_read_bool(config, section, "OccupancyStats", 0);
-
-
-	/* Section '[ Queues ]' */
-
-	section = "Queues";
-
-	x86_fetch_queue_size = config_read_int(config, section, "FetchQueueSize", 64);
-
-	x86_uop_queue_size = config_read_int(config, section, "UopQueueSize", 32);
-
-	x86_rob_kind = config_read_enum(config, section, "RobKind", x86_rob_kind_private, x86_rob_kind_map, 2);
-	x86_rob_size = config_read_int(config, section, "RobSize", 64);
-
-	x86_iq_kind = config_read_enum(config, section, "IqKind", x86_iq_kind_private, x86_iq_kind_map, 2);
-	x86_iq_size = config_read_int(config, section, "IqSize", 40);
-
-	x86_lsq_kind = config_read_enum(config, section, "LsqKind", x86_lsq_kind_private, x86_lsq_kind_map, 2);
-	x86_lsq_size = config_read_int(config, section, "LsqSize", 20);
-
-	x86_reg_file_kind = config_read_enum(config, section, "RfKind", x86_reg_file_kind_private, x86_reg_file_kind_map, 2);
-	x86_reg_file_int_size = config_read_int(config, section, "RfIntSize", 80);
-	x86_reg_file_fp_size = config_read_int(config, section, "RfFpSize", 40);
-	x86_reg_file_xmm_size = config_read_int(config, section, "RfXmmSize", 40);
-
-
-	/* Functional Units */
-	x86_fu_config_read(config);
-
-
-	/* Branch Predictor */
-
-	section = "BranchPredictor";
-
-	x86_bpred_kind = config_read_enum(config, section, "Kind", x86_bpred_kind_twolevel, x86_bpred_kind_map, 6);
-	x86_bpred_btb_sets = config_read_int(config, section, "BTB.Sets", 256);
-	x86_bpred_btb_assoc = config_read_int(config, section, "BTB.Assoc", 4);
-	x86_bpred_bimod_size = config_read_int(config, section, "Bimod.Size", 1024);
-	x86_bpred_choice_size = config_read_int(config, section, "Choice.Size", 1024);
-	x86_bpred_ras_size = config_read_int(config, section, "RAS.Size", 32);
-	x86_bpred_twolevel_l1size = config_read_int(config, section, "TwoLevel.L1Size", 1);
-	x86_bpred_twolevel_l2size = config_read_int(config, section, "TwoLevel.L2Size", 1024);
-	x86_bpred_twolevel_hist_size = config_read_int(config, section, "TwoLevel.HistorySize", 8);
-
-	/* Trace Cache */
-	x86_trace_cache_config_check(config);
-
-	/* Close file */
-	config_check(config);
-	config_free(config);
-}
-
-
 /* Dump the CPU configuration */
 static void x86_cpu_config_dump(FILE *f)
 {
 	/* General configuration */
 	fprintf(f, "[ Config.General ]\n");
+	fprintf(f, "Frequency = %d\n", arch_x86->frequency);
 	fprintf(f, "Cores = %d\n", x86_cpu_num_cores);
 	fprintf(f, "Threads = %d\n", x86_cpu_num_threads);
 	fprintf(f, "FastForward = %lld\n", x86_cpu_fast_forward_count);
@@ -763,6 +665,9 @@ static void x86_cpu_core_done(int core)
 	prefetch_history_free(X86_CORE.prefetch_history);
 }
 
+
+
+
 /*
  * Public Functions
  */
@@ -774,7 +679,111 @@ static void x86_cpu_core_done(int core)
 #define X86_TRACE_VERSION_MINOR		671
 
 
-/* Initialization */
+void x86_cpu_read_config(void)
+{
+	struct config_t *config;
+	char *section;
+
+	/* Open file */
+	config = config_create(x86_config_file_name);
+	if (*x86_config_file_name)
+		config_load(config);
+
+
+	/* General configuration */
+
+	section = "General";
+
+	arch_x86->frequency = config_read_int(config, section, "Frequency", 1000);
+	if (!IN_RANGE(arch_x86->frequency, 1, ESIM_MAX_FREQUENCY))
+		fatal("%s: invalid value for 'Frequency'.", x86_config_file_name);
+
+	x86_cpu_num_cores = config_read_int(config, section, "Cores", x86_cpu_num_cores);
+	x86_cpu_num_threads = config_read_int(config, section, "Threads", x86_cpu_num_threads);
+
+	x86_cpu_fast_forward_count = config_read_llint(config, section, "FastForward", 0);
+
+	x86_cpu_context_quantum = config_read_int(config, section, "ContextQuantum", 100000);
+	x86_cpu_thread_quantum = config_read_int(config, section, "ThreadQuantum", 1000);
+	x86_cpu_thread_switch_penalty = config_read_int(config, section, "ThreadSwitchPenalty", 0);
+
+	x86_cpu_recover_kind = config_read_enum(config, section, "RecoverKind", x86_cpu_recover_kind_writeback, x86_cpu_recover_kind_map, 2);
+	x86_cpu_recover_penalty = config_read_int(config, section, "RecoverPenalty", 0);
+
+	x86_emu_process_prefetch_hints = config_read_bool(config, section, "ProcessPrefetchHints", 1);
+	prefetch_history_size = config_read_int(config, section, "PrefetchHistorySize", 10);
+
+
+	/* Section '[ Pipeline ]' */
+
+	section = "Pipeline";
+
+	x86_cpu_fetch_kind = config_read_enum(config, section, "FetchKind", x86_cpu_fetch_kind_timeslice, x86_cpu_fetch_kind_map, 3);
+
+	x86_cpu_decode_width = config_read_int(config, section, "DecodeWidth", 4);
+
+	x86_cpu_dispatch_kind = config_read_enum(config, section, "DispatchKind", x86_cpu_dispatch_kind_timeslice, x86_cpu_dispatch_kind_map, 2);
+	x86_cpu_dispatch_width = config_read_int(config, section, "DispatchWidth", 4);
+
+	x86_cpu_issue_kind = config_read_enum(config, section, "IssueKind", x86_cpu_issue_kind_timeslice, x86_cpu_issue_kind_map, 2);
+	x86_cpu_issue_width = config_read_int(config, section, "IssueWidth", 4);
+
+	x86_cpu_commit_kind = config_read_enum(config, section, "CommitKind", x86_cpu_commit_kind_shared, x86_cpu_commit_kind_map, 2);
+	x86_cpu_commit_width = config_read_int(config, section, "CommitWidth", 4);
+
+	x86_cpu_occupancy_stats = config_read_bool(config, section, "OccupancyStats", 0);
+
+
+	/* Section '[ Queues ]' */
+
+	section = "Queues";
+
+	x86_fetch_queue_size = config_read_int(config, section, "FetchQueueSize", 64);
+
+	x86_uop_queue_size = config_read_int(config, section, "UopQueueSize", 32);
+
+	x86_rob_kind = config_read_enum(config, section, "RobKind", x86_rob_kind_private, x86_rob_kind_map, 2);
+	x86_rob_size = config_read_int(config, section, "RobSize", 64);
+
+	x86_iq_kind = config_read_enum(config, section, "IqKind", x86_iq_kind_private, x86_iq_kind_map, 2);
+	x86_iq_size = config_read_int(config, section, "IqSize", 40);
+
+	x86_lsq_kind = config_read_enum(config, section, "LsqKind", x86_lsq_kind_private, x86_lsq_kind_map, 2);
+	x86_lsq_size = config_read_int(config, section, "LsqSize", 20);
+
+	x86_reg_file_kind = config_read_enum(config, section, "RfKind", x86_reg_file_kind_private, x86_reg_file_kind_map, 2);
+	x86_reg_file_int_size = config_read_int(config, section, "RfIntSize", 80);
+	x86_reg_file_fp_size = config_read_int(config, section, "RfFpSize", 40);
+	x86_reg_file_xmm_size = config_read_int(config, section, "RfXmmSize", 40);
+
+
+	/* Functional Units */
+	x86_fu_read_config(config);
+
+
+	/* Branch Predictor */
+
+	section = "BranchPredictor";
+
+	x86_bpred_kind = config_read_enum(config, section, "Kind", x86_bpred_kind_twolevel, x86_bpred_kind_map, 6);
+	x86_bpred_btb_sets = config_read_int(config, section, "BTB.Sets", 256);
+	x86_bpred_btb_assoc = config_read_int(config, section, "BTB.Assoc", 4);
+	x86_bpred_bimod_size = config_read_int(config, section, "Bimod.Size", 1024);
+	x86_bpred_choice_size = config_read_int(config, section, "Choice.Size", 1024);
+	x86_bpred_ras_size = config_read_int(config, section, "RAS.Size", 32);
+	x86_bpred_twolevel_l1size = config_read_int(config, section, "TwoLevel.L1Size", 1);
+	x86_bpred_twolevel_l2size = config_read_int(config, section, "TwoLevel.L2Size", 1024);
+	x86_bpred_twolevel_hist_size = config_read_int(config, section, "TwoLevel.HistorySize", 8);
+
+	/* Trace Cache */
+	x86_trace_cache_read_config(config);
+
+	/* Close file */
+	config_check(config);
+	config_free(config);
+}
+
+
 void x86_cpu_init(void)
 {
 	struct arch_t *arch = x86_emu->arch;
@@ -787,9 +796,6 @@ void x86_cpu_init(void)
 	arch->mem_config_check_func = x86_mem_config_check;
 	arch->mem_config_default_func = x86_mem_config_default;
 	arch->mem_config_parse_entry_func = x86_mem_config_parse_entry;
-
-	/* Analyze CPU configuration file */
-	x86_cpu_config_check();
 
 	/* Initialize */
 	x86_cpu = xcalloc(1, sizeof(struct x86_cpu_t));

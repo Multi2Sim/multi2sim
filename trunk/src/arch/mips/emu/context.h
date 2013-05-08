@@ -29,9 +29,6 @@
 #define mips_ctx_debug(...) debug(mips_ctx_debug_category, __VA_ARGS__)
 extern int mips_ctx_debug_category;
 
-/* Event scheduled periodically to dump IPC statistics for a context */
-extern int EV_MIPS_CTX_IPC_REPORT;
-
 struct mips_ctx_t
 {
 	/* Number of extra contexts using this loader */
@@ -52,10 +49,6 @@ struct mips_ctx_t
 
 	int exit_signal;  /* Signal to send parent when finished */
 	int exit_code;  /* For zombie contexts */
-
-	/* IPC report (for detailed simulation) */
-	FILE *ipc_report_file; //???
-	int ipc_report_interval; //???
 
 	/* Program data */
 	struct elf_file_t *elf_file;
@@ -180,7 +173,6 @@ void mips_ctx_finish_group(struct mips_ctx_t *ctx, int status);
 void mips_ctx_load_from_command_line(int argc, char **argv);
 void mips_ctx_load_from_ctx_config(struct config_t *config, char *section);
 void mips_ctx_gen_proc_self_maps(struct mips_ctx_t *ctx, char *path);
-void mips_ctx_ipc_report_handler(int event, void *data);
 
 unsigned int mips_ctx_check_fault(struct mips_ctx_t *ctx);
 

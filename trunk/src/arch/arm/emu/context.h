@@ -30,9 +30,6 @@
 #define arm_ctx_debug(...) debug(arm_ctx_debug_category, __VA_ARGS__)
 extern int arm_ctx_debug_category;
 
-/* Event scheduled periodically to dump IPC statistics for a context */
-extern int EV_ARM_CTX_IPC_REPORT;
-
 
 
 enum arm_mode_t
@@ -68,10 +65,6 @@ struct arm_ctx_t
 
 	int exit_signal;  /* Signal to send parent when finished */
 	int exit_code;  /* For zombie contexts */
-
-	/* IPC report (for detailed simulation) */
-	FILE *ipc_report_file;
-	int ipc_report_interval;
 
 	/* Program data */
 	struct elf_file_t *elf_file;
@@ -199,7 +192,6 @@ void arm_ctx_finish_group(struct arm_ctx_t *ctx, int status);
 void arm_ctx_load_from_command_line(int argc, char **argv);
 void arm_ctx_load_from_ctx_config(struct config_t *config, char *section);
 void arm_ctx_gen_proc_self_maps(struct arm_ctx_t *ctx, char *path);
-void arm_ctx_ipc_report_handler(int event, void *data);
 
 unsigned int arm_ctx_check_fault(struct arm_ctx_t *ctx);
 

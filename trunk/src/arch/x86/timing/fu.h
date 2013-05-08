@@ -88,7 +88,7 @@ int x86_fu_reserve(struct x86_uop_t *uop);
 void x86_fu_release(int core);
 
 struct config_t;
-void x86_fu_config_read(struct config_t *config);
+void x86_fu_read_config(struct config_t *config);
 void x86_fu_config_dump(FILE *f);
 
 void x86_fu_dump_report(struct x86_fu_t *fu, FILE *f);

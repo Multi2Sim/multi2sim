@@ -111,7 +111,7 @@ extern int x86_trace_cache_queue_size;
 
 
 struct config_t;
-void x86_trace_cache_config_check(struct config_t *config);
+void x86_trace_cache_read_config(struct config_t *config);
 
 void x86_trace_cache_init(void);
 void x86_trace_cache_done(void);

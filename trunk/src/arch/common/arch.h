@@ -48,6 +48,7 @@ typedef void (*arch_emu_done_func_t)(void);
 typedef void (*arch_emu_dump_func_t)(FILE *f);
 typedef void (*arch_emu_dump_summary_func_t)(FILE *f);
 
+typedef void (*arch_timing_read_config_func_t)(void);
 typedef void (*arch_timing_init_func_t)(void);
 typedef void (*arch_timing_done_func_t)(void);
 typedef void (*arch_timing_dump_func_t)(FILE *f);
@@ -72,7 +73,8 @@ struct arch_t
 	/* Simulation kind - must be assigned externally */
 	enum arch_sim_kind_t sim_kind;
 
-	/* Frequency domain index, as returned by function 'esim_new_domain' */
+	/* Frequency and frequency domain, as returned by 'esim_new_domain()'. */
+	int frequency;
 	int domain_index;
 
 	/* Call-back functions for emulator */
@@ -83,6 +85,7 @@ struct arch_t
 	arch_run_func_t emu_run_func;
 
 	/* Call-back functions for timing simulator */
+	arch_timing_read_config_func_t timing_read_config_func;
 	arch_timing_init_func_t timing_init_func;
 	arch_timing_done_func_t timing_done_func;
 	arch_timing_dump_func_t timing_dump_func;
@@ -120,27 +123,35 @@ void arch_dump_summary(struct arch_t *arch, FILE *f);
 
 
 
-
 /*
- * Architecture List
+ * Global Variables
  */
 
+extern struct arch_t *arch_arm;
+extern struct arch_t *arch_evergreen;
+extern struct arch_t *arch_fermi;
+extern struct arch_t *arch_mips;
+extern struct arch_t *arch_southern_islands;
+extern struct arch_t *arch_x86;
+
+
 
 
 /*
- * Global
+ * Public Functions
  */
 
 void arch_init(void);
 void arch_done(void);
 
-void arch_register(char *name, char *prefix,
+struct arch_t *arch_register(char *name, char *prefix,
 		enum arch_sim_kind_t sim_kind,
 		arch_emu_init_func_t emu_init_func,
 		arch_emu_done_func_t emu_done_func,
 		arch_emu_dump_func_t emu_dump_func,
 		arch_emu_dump_summary_func_t emu_dump_summary_func,
 		arch_run_func_t emu_run_func,
+		arch_timing_read_config_func_t timing_read_config_func,
 		arch_timing_init_func_t timing_init_func,
 		arch_timing_done_func_t timing_done_func,
 		arch_timing_dump_func_t timing_dump_func,

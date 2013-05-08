@@ -30,6 +30,10 @@
 #include "arch.h"
 
 
+/*
+ * Object 'arch_t' Functions
+ */
+
 struct str_map_t arch_sim_kind_map =
 {
 	2,
@@ -110,6 +114,7 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 	double time_in_sec;
 	double inst_per_sec;
 	double cycles_per_sec;
+	double cycle_time;  /* In nanoseconds */
 
 	/* If no instruction was run for this architecture, skip
 	 * statistics summary. */
@@ -120,7 +125,7 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 	time_in_sec = (double) m2s_timer_get_value(arch->timer) / 1.0e6;
 	inst_per_sec = time_in_sec > 0.0 ? (double) arch->inst_count / time_in_sec : 0.0;
 	fprintf(f, "[ %s ]\n", arch->name);
-	fprintf(f, "Time = %.2f\n", time_in_sec);
+	fprintf(f, "RealTime = %.2f [s]\n", time_in_sec);
 	fprintf(f, "Instructions = %lld\n", arch->inst_count);
 	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 
@@ -131,8 +136,10 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 	if (arch->sim_kind == arch_sim_kind_detailed)
 	{
 		/* Standard */
-		cycles_per_sec = time_in_sec > 0.0 ? (double) arch->cycle
-				/ time_in_sec : 0.0;
+		cycles_per_sec = time_in_sec > 0.0 ? (double) arch->cycle / time_in_sec : 0.0;
+		cycle_time = (double) esim_domain_cycle_time(arch->domain_index) / 1000.0;
+		fprintf(f, "SimTime = %.2f [ns]\n", arch->cycle * cycle_time);
+		fprintf(f, "Frequency = %d [MHz]\n", arch->frequency);
 		fprintf(f, "Cycles = %lld\n", arch->cycle);
 		fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 
@@ -146,8 +153,23 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 
 
 
+
 /*
- * Architecture List
+ * Global Variables
+ */
+
+struct arch_t *arch_arm;
+struct arch_t *arch_evergreen;
+struct arch_t *arch_fermi;
+struct arch_t *arch_mips;
+struct arch_t *arch_southern_islands;
+struct arch_t *arch_x86;
+
+
+
+
+/*
+ * Public Functions
  */
 
 #define ARCH_LIST_MAX_SIZE  10
@@ -158,8 +180,86 @@ static struct arch_t *arch_list[ARCH_LIST_MAX_SIZE];
 static int arch_list_count;  /* Number of registered architectures */
 
 
+struct arch_t *arch_register(char *name, char *prefix,
+		enum arch_sim_kind_t sim_kind,
+		arch_emu_init_func_t emu_init_func,
+		arch_emu_done_func_t emu_done_func,
+		arch_emu_dump_func_t emu_dump_func,
+		arch_emu_dump_summary_func_t emu_dump_summary_func,
+		arch_run_func_t emu_run_func,
+		arch_timing_read_config_func_t timing_read_config_func,
+		arch_timing_init_func_t timing_init_func,
+		arch_timing_done_func_t timing_done_func,
+		arch_timing_dump_func_t timing_dump_func,
+		arch_timing_dump_summary_func_t timing_dump_summary_func,
+		arch_run_func_t timing_run_func)
+{
+	struct arch_t *arch;
+
+	/* Check no duplicates */
+	arch = arch_get(name);
+	if (arch)
+		panic("%s: duplicated architecture", __FUNCTION__);
+
+	/* Check list size */
+	if (arch_list_count == ARCH_LIST_MAX_SIZE)
+		panic("%s: architecture list too big - increase ARCH_LIST_MAX_SIZE",
+				__FUNCTION__);
+
+	/* Initialize */
+	arch = arch_create(name, prefix);
+	arch->sim_kind = sim_kind;
+	arch->emu_init_func = emu_init_func;
+	arch->emu_done_func = emu_done_func;
+	arch->emu_dump_func = emu_dump_func;
+	arch->emu_dump_summary_func = emu_dump_summary_func;
+	arch->emu_run_func = emu_run_func;
+	arch->timing_read_config_func = timing_read_config_func;
+	arch->timing_init_func = timing_init_func;
+	arch->timing_done_func = timing_done_func;
+	arch->timing_dump_func = timing_dump_func;
+	arch->timing_dump_summary_func = timing_dump_summary_func;
+	arch->timing_run_func = timing_run_func;
+
+	/* Choose functional/timing simulation loop iteration function */
+	assert(sim_kind);
+	arch->run_func = sim_kind == arch_sim_kind_functional ?
+			emu_run_func : timing_run_func;
+
+	/* Add architecture and return it */
+	arch_list[arch_list_count++] = arch;
+	return arch;
+}
+
+
 void arch_init(void)
 {
+	struct arch_t *arch;
+	int i;
+
+	/* Initialize all architectures */
+	for (i = 0; i < arch_list_count; i++)
+	{
+		/* Get architecture */
+		arch = arch_list[i];
+
+		/* Timing simulation */
+		if (arch->sim_kind == arch_sim_kind_detailed)
+		{
+			/* Read configuration file */
+			arch->timing_read_config_func();
+
+			/* Register frequency domain */
+			arch->domain_index = esim_new_domain(arch->frequency);
+		}
+
+		/* Initialize emulator */
+		arch->emu_init_func(arch);
+
+		/* Initialize timing simulator */
+		if (arch->sim_kind == arch_sim_kind_detailed)
+			arch->timing_init_func();
+	}
 }
 
 
@@ -182,61 +282,6 @@ void arch_done(void)
 		/* Free architecture */
 		arch_free(arch);
 	}
-}
-
-
-void arch_register(char *name, char *prefix,
-		enum arch_sim_kind_t sim_kind,
-		arch_emu_init_func_t emu_init_func,
-		arch_emu_done_func_t emu_done_func,
-		arch_emu_dump_func_t emu_dump_func,
-		arch_emu_dump_summary_func_t emu_dump_summary_func,
-		arch_run_func_t emu_run_func,
-		arch_timing_init_func_t timing_init_func,
-		arch_timing_done_func_t timing_done_func,
-		arch_timing_dump_func_t timing_dump_func,
-		arch_timing_dump_summary_func_t timing_dump_summary_func,
-		arch_run_func_t timing_run_func)
-{
-	struct arch_t *arch;
-
-	/* Check no duplicates */
-	arch = arch_get(name);
-	if (arch)
-		panic("%s: duplicated architecture", __FUNCTION__);
-
-	/* Check list size */
-	if (arch_list_count == ARCH_LIST_MAX_SIZE)
-		panic("%s: architecture list too big - increase ARCH_LIST_MAX_SIZE",
-				__FUNCTION__);
-
-	/* Initialize */
-	arch = arch_create(name, prefix);
-	arch->sim_kind = sim_kind;
-	arch->domain_index = esim_new_domain(1000);  /* FIXME - 1GHz default frequency */
-	arch->emu_init_func = emu_init_func;
-	arch->emu_done_func = emu_done_func;
-	arch->emu_dump_func = emu_dump_func;
-	arch->emu_dump_summary_func = emu_dump_summary_func;
-	arch->emu_run_func = emu_run_func;
-	arch->timing_init_func = timing_init_func;
-	arch->timing_done_func = timing_done_func;
-	arch->timing_dump_func = timing_dump_func;
-	arch->timing_dump_summary_func = timing_dump_summary_func;
-	arch->timing_run_func = timing_run_func;
-
-	/* Choose functional/timing simulation loop iteration function */
-	assert(sim_kind);
-	arch->run_func = sim_kind == arch_sim_kind_functional ?
-			emu_run_func : timing_run_func;
-
-	/* Add architecture */
-	arch_list[arch_list_count++] = arch;
-
-	/* Call functional/timing simulator initialization */
-	emu_init_func(arch);
-	if (sim_kind == arch_sim_kind_detailed)
-		timing_init_func();
 }
 
 
