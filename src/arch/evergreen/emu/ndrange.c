@@ -186,8 +186,6 @@ int evg_ndrange_get_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_statu
 
 void evg_ndrange_set_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status)
 {
-	struct arch_t *arch = evg_emu->arch;
-
 	/* Get only the new bits */
 	status &= ~ndrange->status;
 
@@ -201,9 +199,9 @@ void evg_ndrange_set_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_stat
 
 	/* Start/stop Evergreen timer depending on ND-Range states */
 	if (evg_emu->running_ndrange_list_count)
-		m2s_timer_start(arch->timer);
+		m2s_timer_start(arch_evergreen->timer);
 	else
-		m2s_timer_stop(arch->timer);
+		m2s_timer_stop(arch_evergreen->timer);
 
 	/* Update it */
 	ndrange->status |= status;

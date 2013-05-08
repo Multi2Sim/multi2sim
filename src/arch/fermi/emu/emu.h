@@ -25,9 +25,6 @@
 
 struct frm_emu_t
 {
-	/* Common architecture object */
-	struct arch_t *arch;
-
 	/* List of ND-Ranges */
 	struct frm_grid_t *grid_list_head;
 	struct frm_grid_t *grid_list_tail;
@@ -90,7 +87,7 @@ extern char *err_frm_cuda_note;
 
 extern struct frm_emu_t *frm_emu;
 
-void frm_emu_init(struct arch_t *arch);
+void frm_emu_init(void);
 void frm_emu_done(void);
 void frm_emu_dump(FILE *f);
 

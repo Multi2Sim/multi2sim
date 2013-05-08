@@ -254,7 +254,7 @@ void arch_init(void)
 		}
 
 		/* Initialize emulator */
-		arch->emu_init_func(arch);
+		arch->emu_init_func();
 
 		/* Initialize timing simulator */
 		if (arch->sim_kind == arch_sim_kind_detailed)

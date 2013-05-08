@@ -45,8 +45,6 @@ int evg_gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 
 static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
-	struct arch_t *arch = evg_emu->arch;
-
 	struct evg_ndrange_t *ndrange = evg_gpu->ndrange;
 	struct evg_wavefront_t *wavefront;
 
@@ -108,7 +106,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = arch->cycle + evg_gpu_cf_engine_inst_mem_latency;
+	uop->inst_mem_ready = arch_evergreen->cycle + evg_gpu_cf_engine_inst_mem_latency;
 
 	/* Insert uop to fetch buffer */
 	assert(!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit]);
@@ -263,7 +261,6 @@ static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 
 static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 {
-	struct arch_t *arch = evg_emu->arch;
 	struct linked_list_t *complete_queue = compute_unit->cf_engine.complete_queue;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 	struct evg_work_group_t *work_group;
@@ -317,7 +314,7 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 			evg_compute_unit_unmap_work_group(compute_unit, work_group);
 
 		/* Statistics */
-		evg_gpu->last_complete_cycle = arch->cycle;
+		evg_gpu->last_complete_cycle = arch_evergreen->cycle;
 	}
 }
 

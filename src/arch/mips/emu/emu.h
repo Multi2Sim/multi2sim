@@ -24,14 +24,8 @@
 
 struct mips_emu_t
 {
-	/* Common architecture object */
-	struct arch_t *arch;
-
 	/* pid & address_space_index assignment */
 	int current_pid;
-
-	/* Timer for emulator activity */
-	//struct m2s_timer_t *timer;
 
 	/* Schedule next call to 'x86_emu_process_events()'.
 	 * The call will only be effective if 'process_events_force' is set.
@@ -111,19 +105,19 @@ extern long long mips_emu_max_cycles;
 extern long long mips_emu_max_inst;
 extern long long mips_emu_max_time;
 
-/*void mips_emu_init(void);
-void mips_emu_done(void);
-*/
-void mips_emu_init(struct arch_t *arch);
+
+
+/*
+ * Public Functions
+ */
+
+void mips_emu_init(void);
 void mips_emu_done(void);
 void mips_emu_dump(FILE *f);
-
 
 enum arch_sim_kind_t mips_emu_run(void);
 
 void mips_emu_process_events_schedule();
-
-//int mips_emu_run(void);
 
 
 #endif

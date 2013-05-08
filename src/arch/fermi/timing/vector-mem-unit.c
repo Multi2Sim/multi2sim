@@ -37,7 +37,6 @@
 
 void frm_vector_mem_complete(struct frm_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop = NULL;
 	int list_entries;
 	int i;
@@ -55,7 +54,7 @@ void frm_vector_mem_complete(struct frm_vector_mem_unit_t *vector_mem)
 		assert(uop);
 
 		/* Uop is not ready */
-		if (arch->cycle < uop->write_ready)
+		if (arch_fermi->cycle < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -75,13 +74,12 @@ void frm_vector_mem_complete(struct frm_vector_mem_unit_t *vector_mem)
 
 		/* Statistics */
 		vector_mem->inst_count++;
-		frm_gpu->last_complete_cycle = arch->cycle;
+		frm_gpu->last_complete_cycle = arch_fermi->cycle;
 	}
 }
 
 void frm_vector_mem_write(struct frm_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -135,7 +133,7 @@ void frm_vector_mem_write(struct frm_vector_mem_unit_t *vector_mem)
 		}
 
 		/* Access complete, remove the uop from the queue */
-		uop->write_ready = arch->cycle + 
+		uop->write_ready = arch_fermi->cycle + 
 			frm_gpu_vector_mem_write_latency;
 
 		/* In the above context, access means any of the 
@@ -171,7 +169,6 @@ void frm_vector_mem_write(struct frm_vector_mem_unit_t *vector_mem)
 
 void frm_vector_mem_mem(struct frm_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	struct frm_thread_uop_t *thread_uop;
 	struct frm_thread_t *thread;
@@ -195,7 +192,7 @@ void frm_vector_mem_mem(struct frm_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle < uop->read_ready)
+		if (arch_fermi->cycle < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -289,7 +286,6 @@ void frm_vector_mem_mem(struct frm_vector_mem_unit_t *vector_mem)
 
 void frm_vector_mem_read(struct frm_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -309,7 +305,7 @@ void frm_vector_mem_read(struct frm_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch->cycle < uop->decode_ready)
+		if (arch_fermi->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -342,7 +338,7 @@ void frm_vector_mem_read(struct frm_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->read_ready = arch->cycle + 
+		uop->read_ready = arch_fermi->cycle + 
 			frm_gpu_vector_mem_read_latency;
 
 		list_remove(vector_mem->decode_buffer, uop);
@@ -357,7 +353,6 @@ void frm_vector_mem_read(struct frm_vector_mem_unit_t *vector_mem)
 
 void frm_vector_mem_decode(struct frm_vector_mem_unit_t *vector_mem)
 {
-	struct arch_t *arch = frm_emu->arch;
 	struct frm_uop_t *uop;
 	int instructions_processed = 0;
 	int list_entries;
@@ -377,7 +372,7 @@ void frm_vector_mem_decode(struct frm_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch->cycle < uop->issue_ready)
+		if (arch_fermi->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -410,7 +405,7 @@ void frm_vector_mem_decode(struct frm_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->decode_ready = arch->cycle + 
+		uop->decode_ready = arch_fermi->cycle + 
 			frm_gpu_vector_mem_decode_latency;
 
 		list_remove(vector_mem->issue_buffer, uop);

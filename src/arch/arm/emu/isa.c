@@ -1724,7 +1724,6 @@ static void arm_isa_debug_call(struct arm_ctx_t *ctx)
 /* FIXME - merge with ctx_execute */
 void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 {
-	struct arch_t *arch = arm_emu->arch;
 	struct arm_regs_t *regs = ctx->regs;
 
 
@@ -1756,7 +1755,7 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 	if (debug_status(arm_isa_inst_debug_category))
 	{
 		arm_isa_inst_debug("%d %8lld %x: ", ctx->pid,
-			arch->inst_count, ctx->curr_ip);
+			arch_arm->inst_count, ctx->curr_ip);
 		if(ctx->regs->cpsr.thumb)
 		{
 			if(ctx->inst_type == THUMB32)

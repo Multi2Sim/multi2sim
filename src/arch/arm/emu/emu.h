@@ -26,9 +26,6 @@
 
 struct arm_emu_t
 {
-	/* Common architecture object */
-	struct arch_t *arch;
-
 	/* pid & address_space_index assignment */
 	int current_pid;
 
@@ -111,7 +108,7 @@ extern long long arm_emu_max_time;
  * Public Functions
  */
 
-void arm_emu_init(struct arch_t *arch);
+void arm_emu_init(void);
 void arm_emu_done(void);
 void arm_emu_dump(FILE *f);
 

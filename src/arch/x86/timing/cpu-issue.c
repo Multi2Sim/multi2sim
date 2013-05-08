@@ -39,7 +39,6 @@
 
 static int x86_cpu_issue_sq(int core, int thread, int quant)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct x86_uop_t *store;
 	struct linked_list_t *sq = X86_THREAD.sq;
 	struct mod_client_info_t *client_info;
@@ -76,7 +75,7 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		store->in_event_queue = 1;
 		store->issued = 1;
-		store->issue_when = arch->cycle;
+		store->issue_when = arch_x86->cycle;
 	
 		/* Statistics */
 		X86_CORE.num_issued_uinst_array[store->uinst->opcode]++;
@@ -104,7 +103,6 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 
 static int x86_cpu_issue_lq(int core, int thread, int quant)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct linked_list_t *lq = X86_THREAD.lq;
 	struct x86_uop_t *load;
 	struct mod_client_info_t *client_info;
@@ -146,7 +144,7 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		load->in_event_queue = 1;
 		load->issued = 1;
-		load->issue_when = arch->cycle;
+		load->issue_when = arch_x86->cycle;
 		
 		/* Statistics */
 		X86_CORE.num_issued_uinst_array[load->uinst->opcode]++;
@@ -178,7 +176,6 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 
 static int x86_cpu_issue_preq(int core, int thread, int quant)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct linked_list_t *preq = X86_THREAD.preq;
 	struct x86_uop_t *prefetch;
 
@@ -235,7 +232,7 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		prefetch->in_event_queue = 1;
 		prefetch->issued = 1;
-		prefetch->issue_when = arch->cycle;
+		prefetch->issue_when = arch_x86->cycle;
 		
 		/* Statistics */
 		X86_CORE.num_issued_uinst_array[prefetch->uinst->opcode]++;
@@ -267,7 +264,6 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 
 static int x86_cpu_issue_iq(int core, int thread, int quant)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct linked_list_t *iq = X86_THREAD.iq;
 	struct x86_uop_t *uop;
 	int lat;
@@ -306,8 +302,8 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 		assert(!uop->in_event_queue);
 		assert(lat > 0);
 		uop->issued = 1;
-		uop->issue_when = arch->cycle;
-		uop->when = arch->cycle + lat;
+		uop->issue_when = arch_x86->cycle;
+		uop->when = arch_x86->cycle + lat;
 		x86_event_queue_insert(X86_CORE.event_queue, uop);
 		
 		/* Statistics */

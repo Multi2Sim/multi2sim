@@ -53,7 +53,7 @@ int frm_emu_warp_size = 32;
 
 
 
-void frm_emu_init(struct arch_t *arch)
+void frm_emu_init(void)
 {
 	/* Open report file */
 	if (*frm_emu_report_file_name)
@@ -69,7 +69,6 @@ void frm_emu_init(struct arch_t *arch)
 
         /* Initialize */
         frm_emu = xcalloc(1, sizeof(struct frm_emu_t));
-        frm_emu->arch = arch;
         frm_emu->global_mem = mem_create();
         frm_emu->global_mem->safe = 0;
         frm_emu->total_global_mem_size = 1 << 31; /* 2GB */

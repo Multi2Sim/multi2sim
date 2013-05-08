@@ -39,7 +39,6 @@
 
 void x86_cpu_recover(int core, int thread)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct x86_uop_t *uop;
 
 	/* Remove instructions of this thread in fetch queue, uop queue,
@@ -95,7 +94,7 @@ void x86_cpu_recover(int core, int thread)
 		x86_ctx_recover(X86_THREAD.ctx);
 	
 	/* Stall fetch and set eip to fetch. */
-	X86_THREAD.fetch_stall_until = MAX(X86_THREAD.fetch_stall_until, arch->cycle + x86_cpu_recover_penalty - 1);
+	X86_THREAD.fetch_stall_until = MAX(X86_THREAD.fetch_stall_until, arch_x86->cycle + x86_cpu_recover_penalty - 1);
 	X86_THREAD.fetch_neip = X86_THREAD.ctx->regs->eip;
 }
 

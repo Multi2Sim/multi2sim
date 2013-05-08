@@ -532,7 +532,7 @@ static char *x86_uinst_dep_name_get(int dep)
 void x86_uinst_init(void)
 {
 	x86_uinst_list = list_create();
-	x86_uinst_active = x86_emu->arch->sim_kind == arch_sim_kind_detailed;
+	x86_uinst_active = arch_x86->sim_kind == arch_sim_kind_detailed;
 }
 
 
@@ -570,7 +570,7 @@ void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
 	int i;
 
 	/* Create micro-instruction */
-	assert(x86_emu->arch->sim_kind == arch_sim_kind_detailed);
+	assert(arch_x86->sim_kind == arch_sim_kind_detailed);
 	uinst = x86_uinst_create();
 	uinst->opcode = opcode;
 	uinst->idep[0] = idep0;

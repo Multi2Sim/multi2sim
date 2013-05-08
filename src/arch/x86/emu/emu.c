@@ -67,7 +67,7 @@ struct x86_emu_t *x86_emu;
 
 /* Initialization */
 
-void x86_emu_init(struct arch_t *arch)
+void x86_emu_init(void)
 {
 	union
 	{
@@ -87,7 +87,6 @@ void x86_emu_init(struct arch_t *arch)
 
 	/* Create */
 	x86_emu = xcalloc(1, sizeof(struct x86_emu_t));
-	x86_emu->arch = arch;
 
 	/* Initialize */
 	x86_sys_init();
@@ -736,7 +735,6 @@ void x86_emu_process_events()
  */
 enum arch_sim_kind_t x86_emu_run(void)
 {
-	struct arch_t *arch = x86_emu->arch;
 	struct x86_ctx_t *ctx;
 
 	/* Stop if there is no context running */
@@ -744,11 +742,11 @@ enum arch_sim_kind_t x86_emu_run(void)
 		return arch_sim_kind_invalid;
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (x86_emu_max_inst && x86_emu->arch->inst_count >= x86_emu_max_inst)
+	if (x86_emu_max_inst && arch_x86->inst_count >= x86_emu_max_inst)
 		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
-	if (x86_emu_max_cycles && arch->cycle >= x86_emu_max_cycles)
+	if (x86_emu_max_cycles && arch_x86->cycle >= x86_emu_max_cycles)
 		esim_finish = esim_finish_x86_max_cycles;
 
 	/* Stop if any previous reason met */
