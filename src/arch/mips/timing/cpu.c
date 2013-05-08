@@ -18,11 +18,25 @@
  */
 
 #include <arch/common/arch.h>
+#include <arch/mips/emu/emu.h>
+#include <lib/esim/esim.h>
+
 #include "cpu.h"
+
+
+/*
+ * Public Functions
+ */
+
+void mips_cpu_read_config(void)
+{
+}
+
 
 void mips_cpu_init(void)
 {
 }
+
 
 void mips_cpu_done(void)
 {

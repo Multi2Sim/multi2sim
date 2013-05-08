@@ -22,6 +22,13 @@
 
 #include <stdio.h>
 
+
+/*
+ * Public Functions
+ */
+
+void mips_cpu_read_config(void);
+
 void mips_cpu_init(void);
 void mips_cpu_done(void);
 void mips_cpu_dump(FILE *f);

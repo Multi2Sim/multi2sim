@@ -273,7 +273,7 @@ void x86_fu_release(int core)
 }
 
 
-void x86_fu_config_read(struct config_t *config)
+void x86_fu_read_config(struct config_t *config)
 {
 	struct x86_fu_res_t *fu_res;
 

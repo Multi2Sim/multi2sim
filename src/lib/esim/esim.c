@@ -159,9 +159,9 @@ struct esim_domain_t *esim_domain_create(int freq)
 	struct esim_domain_t *domain;
 
 	/* Check valid 'freq' */
-	if (!IN_RANGE(freq, 1, 10000))
-		fatal("%s: frequency not in range [1, 10k] (=%d)\n",
-				__FUNCTION__, freq);
+	if (!IN_RANGE(freq, 1, ESIM_MAX_FREQUENCY))
+		fatal("%s: frequency not in range [1, %d] (=%d)\n",
+			__FUNCTION__, ESIM_MAX_FREQUENCY, freq);
 
 	/* Initialize */
 	domain = xcalloc(1, sizeof(struct esim_domain_t));
@@ -220,6 +220,21 @@ long long esim_domain_cycle_time(int domain_index)
 
 	/* Return cycle time */
 	return domain->cycle_time;
+}
+
+
+int esim_domain_frequency(int domain_index)
+{
+	struct esim_domain_t *domain;
+
+	/* Get domain */
+	domain = list_get(esim_domain_list, domain_index);
+	if (!domain)
+		panic("%s: invalid domain index (%d)",
+				__FUNCTION__, domain_index);
+
+	/* Return cycle time */
+	return domain->freq;
 }
 
 

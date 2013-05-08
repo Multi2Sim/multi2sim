@@ -63,6 +63,8 @@ char *frm_gpu_config_help =
 	"\n"
 	"Section '[ Device ]': parameters for the GPU.\n"
 	"\n"
+	"  Frequency = <value> (Default = 1000)\n"
+	"      Frequency for the Fermi GPU in MHz.\n"
 	"  NumSMs = <num> (Default = 14)\n"
 	"      Number of SMs in the GPU.\n"
 	"  MaxWarpsPerThreadBlock = <num> (Default = 16)\n"
@@ -205,33 +207,33 @@ char *frm_gpu_config_help =
 	"      Number of ports.\n"
 	"\n";
 
-	char *frm_gpu_config_file_name = "";
-	char *frm_gpu_dump_default_config_file_name = "";
-	char *frm_gpu_report_file_name = "";
+char *frm_gpu_config_file_name = "";
+char *frm_gpu_dump_default_config_file_name = "";
+char *frm_gpu_report_file_name = "";
 
-	int frm_gpu_debug_category = 1;
+int frm_gpu_debug_category = 1;
 
-	int frm_trace_category;
+int frm_trace_category;
 
-	/* Default parameters based on the AMD Radeon HD 7970 */
-	unsigned long long frm_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
-	unsigned int frm_gpu_device_vendor_id = 1234; /* Completely arbitrary */
+/* Default parameters based on the AMD Radeon HD 7970 */
+unsigned long long frm_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
+unsigned int frm_gpu_device_vendor_id = 1234; /* Completely arbitrary */
 
-	char *frm_gpu_device_profile = "FULL_PROFILE";
-	char *frm_gpu_device_name = "Multi2Sim Fermi GPU";
-	char *frm_gpu_device_vendor = "www.multi2sim.org";
-	char *frm_gpu_device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics "
+char *frm_gpu_device_profile = "FULL_PROFILE";
+char *frm_gpu_device_name = "Multi2Sim Fermi GPU";
+char *frm_gpu_device_vendor = "www.multi2sim.org";
+char *frm_gpu_device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics "
 	"cl_khr_global_int32_extended_atomics cl_khr_local_int32_base_atomics "
 	"cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store "
 	"cl_khr_gl_sharing cl_ext_device_fission cl_amd_device_attribute_query "
 	"cl_amd_media_ops cl_amd_popcnt cl_amd_printf ";
-	char *frm_gpu_device_version = "CUDA 1.2 AMD-APP-SDK-v2.7";
-	char *frm_gpu_driver_version = VERSION;
-	char *frm_gpu_opencl_version = "CUDA C 1.2";
+char *frm_gpu_device_version = "CUDA 1.2 AMD-APP-SDK-v2.7";
+char *frm_gpu_driver_version = VERSION;
+char *frm_gpu_opencl_version = "CUDA C 1.2";
 
-	/* CUDA Device Query Information */
-	unsigned int frm_gpu_thread_dimensions = 3;  /* FIXME */
-	unsigned int frm_gpu_thread_sizes[3] = {256, 256, 256};  /* FIXME */
+/* CUDA Device Query Information */
+unsigned int frm_gpu_thread_dimensions = 3;  /* FIXME */
+unsigned int frm_gpu_thread_sizes[3] = {256, 256, 256};  /* FIXME */
 unsigned int frm_gpu_thread_block_size = 256 * 256 * 256;  /* FIXME */
 
 unsigned int frm_gpu_image_support = 1; /* CL_TRUE */
@@ -388,7 +390,7 @@ struct frm_gpu_t *frm_gpu;
 #define FRM_TRACE_VERSION_MINOR		1
 
 
-static void frm_gpu_device_init()
+static void frm_gpu_device_init(void)
 {
 	struct frm_sm_t *sm;
 	int sm_id;
@@ -413,8 +415,161 @@ static void frm_gpu_device_init()
 }
 
 
-/* FIXME: check all the parameters to see if they are required in Fermi */
-static void frm_config_read(void)
+/* FIXME */
+void frm_config_dump(FILE *f)
+{
+	/* Device */
+	fprintf(f, "[ Config.Device ]\n");
+	fprintf(f, "NumSMs = %d\n", frm_gpu_num_sms);
+	fprintf(f, "\n");
+
+	/* SM */
+	fprintf(f, "[ Config.SM ]\n");
+	fprintf(f, "NumRegistersPerSM = %d\n", frm_gpu_num_registers_per_sm);
+	fprintf(f, "MaxThreadBlocksPerSM = %d\n",
+			frm_gpu_max_thread_blocks_per_sm);
+	fprintf(f, "MaxWarpsPerSM = %d\n",
+			frm_gpu_max_warps_per_sm);
+	fprintf(f, "\n");
+
+	/* Front-End */
+	fprintf(f, "[ Config.FrontEnd ]\n");
+	fprintf(f, "FetchLatency = %d\n", frm_gpu_fe_fetch_latency);
+	fprintf(f, "FetchWidth = %d\n", frm_gpu_fe_fetch_width);
+	fprintf(f, "FetchBufferSize = %d\n", frm_gpu_fe_fetch_buffer_size);
+	fprintf(f, "IssueLatency = %d\n", frm_gpu_fe_issue_latency);
+	fprintf(f, "IssueWidth = %d\n", frm_gpu_fe_issue_width);
+	fprintf(f, "MaxInstIssuedPerType = %d\n",
+			frm_gpu_fe_max_inst_issued_per_type);
+	fprintf(f, "\n");
+
+	/* SIMD Unit */
+	fprintf(f, "[ Config.SIMDUnit ]\n");
+	fprintf(f, "NumSIMDLanes = %d\n", frm_gpu_simd_num_simd_lanes);
+	fprintf(f, "Width = %d\n", frm_gpu_simd_width);
+	fprintf(f, "IssueBufferSize = %d\n", frm_gpu_simd_issue_buffer_size);
+	fprintf(f, "DecodeLatency = %d\n", frm_gpu_simd_decode_latency);
+	fprintf(f, "DecodeBufferSize = %d\n", frm_gpu_simd_decode_buffer_size);
+	fprintf(f, "ReadExecWriteLatency = %d\n", frm_gpu_simd_exec_latency);
+	fprintf(f, "ReadExecWriteBufferSize = %d\n",
+			frm_gpu_simd_exec_buffer_size);
+	fprintf(f, "\n");
+
+	/* Branch Unit */
+	fprintf(f, "[ Config.BranchUnit ]\n");
+	fprintf(f, "Width = %d\n", frm_gpu_branch_unit_width);
+	fprintf(f, "IssueBufferSize = %d\n",
+			frm_gpu_branch_unit_issue_buffer_size);
+	fprintf(f, "DecodeLatency = %d\n", frm_gpu_branch_unit_decode_latency);
+	fprintf(f, "DecodeBufferSize = %d\n",
+			frm_gpu_branch_unit_decode_buffer_size);
+	fprintf(f, "ReadLatency = %d\n", frm_gpu_branch_unit_read_latency);
+	fprintf(f, "ReadBufferSize = %d\n",
+			frm_gpu_branch_unit_read_buffer_size);
+	fprintf(f, "ExecLatency = %d\n", frm_gpu_branch_unit_exec_latency);
+	fprintf(f, "ExecBufferSize = %d\n",
+			frm_gpu_branch_unit_exec_buffer_size);
+	fprintf(f, "WriteLatency = %d\n", frm_gpu_branch_unit_write_latency);
+	fprintf(f, "WriteBufferSize = %d\n",
+			frm_gpu_branch_unit_write_buffer_size);
+	fprintf(f, "\n");
+
+	/* LDS */
+	fprintf(f, "[ Config.LDSUnit ]\n");
+	fprintf(f, "Width = %d\n", frm_gpu_lds_width);
+	fprintf(f, "IssueBufferSize = %d\n", frm_gpu_lds_issue_buffer_size);
+	fprintf(f, "DecodeLatency = %d\n", frm_gpu_lds_decode_latency);
+	fprintf(f, "DecodeBufferSize = %d\n",
+			frm_gpu_lds_decode_buffer_size);
+	fprintf(f, "ReadLatency = %d\n", frm_gpu_lds_read_latency);
+	fprintf(f, "ReadBufferSize = %d\n", frm_gpu_lds_read_buffer_size);
+	fprintf(f, "MaxInflightMem = %d\n",
+			frm_gpu_lds_max_inflight_mem_accesses);
+	fprintf(f, "WriteLatency = %d\n", frm_gpu_lds_write_latency);
+	fprintf(f, "WriteBufferSize = %d\n", frm_gpu_lds_write_buffer_size);
+	fprintf(f, "\n");
+
+	/* Vector Memory */
+	fprintf(f, "[ Config.VectorMemUnit ]\n");
+	fprintf(f, "Width = %d\n", frm_gpu_vector_mem_width);
+	fprintf(f, "IssueBufferSize = %d\n",
+			frm_gpu_vector_mem_issue_buffer_size);
+	fprintf(f, "DecodeLatency = %d\n", frm_gpu_vector_mem_decode_latency);
+	fprintf(f, "DecodeBufferSize = %d\n",
+			frm_gpu_vector_mem_decode_buffer_size);
+	fprintf(f, "ReadLatency = %d\n", frm_gpu_vector_mem_read_latency);
+	fprintf(f, "ReadBufferSize = %d\n", frm_gpu_vector_mem_read_buffer_size);
+	fprintf(f, "MaxInflightMem = %d\n",
+			frm_gpu_vector_mem_max_inflight_mem_accesses);
+	fprintf(f, "WriteLatency = %d\n", frm_gpu_vector_mem_write_latency);
+	fprintf(f, "WriteBufferSize = %d\n",
+			frm_gpu_vector_mem_write_buffer_size);
+	fprintf(f, "\n");
+
+	/* LDS */
+	fprintf(f, "[ Config.SharedMem ]\n");
+	fprintf(f, "Size = %d\n", frm_gpu_shared_mem_size);
+	fprintf(f, "BlockSize = %d\n", frm_gpu_lds_block_size);
+	fprintf(f, "Latency = %d\n", frm_gpu_lds_latency);
+	fprintf(f, "Ports = %d\n", frm_gpu_lds_num_ports);
+	fprintf(f, "\n");
+
+	/* End of configuration */
+	fprintf(f, "\n");
+}
+
+
+static void frm_gpu_map_grid(struct frm_grid_t *grid)
+{
+	/* Assign current grid */
+	assert(!frm_gpu->grid);
+	frm_gpu->grid = grid;
+
+	/* Calculate the number of thread blocks per SM */
+	frm_gpu->thread_blocks_per_sm =
+		frm_calc_get_thread_blocks_per_sm(
+				grid->block_size,
+				grid->num_gpr_used,
+				grid->local_mem_top);
+
+	if (!frm_gpu->thread_blocks_per_sm)
+	{
+		fatal("thread-block resources cannot be allocated to a SM.\n"
+				"\tA SM in the GPU has a limit in number of warps,\n"
+				"\tnumber of registers, and amount of shared memory.\n"
+				"\tIf the thread block size exceeds any of these limits,\n"
+				"\tthe grid cannot be executed.\n");
+	}
+
+	/* Calculate limit of warps and threads per SM */
+	frm_gpu->warps_per_sm = frm_gpu->thread_blocks_per_sm *
+		grid->warps_per_thread_block;
+	frm_gpu->threads_per_sm = frm_gpu->warps_per_sm * frm_emu_warp_size;
+	frm_gpu_debug("%d thread blocks, %d warps, %d threads mapped per SM\n",
+			frm_gpu->thread_blocks_per_sm,
+			frm_gpu->warps_per_sm,
+			frm_gpu->threads_per_sm);
+}
+
+
+static void frm_gpu_unmap_grid(void)
+{
+	/* Dump stats */
+	frm_grid_dump(frm_gpu->grid, frm_emu_report_file);
+
+	/* Unmap */
+	frm_gpu->grid = NULL;
+}
+
+
+
+
+/*
+ * Public Functions
+ */
+
+/* FIXME - some copied from Southern Islands, check if required in Fermi */
+void frm_gpu_read_config(void)
 {
 	struct config_t *gpu_config;
 	char *section;
@@ -430,8 +585,11 @@ static void frm_config_read(void)
 	/* Device */
 	section = "Device";
 
-	frm_gpu_num_sms = config_read_int(
-			gpu_config, section, "NumSMs", frm_gpu_num_sms);
+	arch_fermi->frequency = config_read_int(gpu_config, section, "Frequency", 1000);
+	if (!IN_RANGE(arch_fermi->frequency, 1, ESIM_MAX_FREQUENCY))
+		fatal("%s: invalid value for 'Frequency'.\n%s",
+				frm_gpu_config_file_name, err_note);
+	frm_gpu_num_sms = config_read_int(gpu_config, section, "NumSMs", frm_gpu_num_sms);
 	if (frm_gpu_num_sms < 1)
 		fatal("%s: invalid value for 'NumSMs'.\n%s", 
 				frm_gpu_config_file_name, err_note);
@@ -779,158 +937,6 @@ static void frm_config_read(void)
 	config_free(gpu_config);
 }
 
-/* FIXME */
-void frm_config_dump(FILE *f)
-{
-	/* Device */
-	fprintf(f, "[ Config.Device ]\n");
-	fprintf(f, "NumSMs = %d\n", frm_gpu_num_sms);
-	fprintf(f, "\n");
-
-	/* SM */
-	fprintf(f, "[ Config.SM ]\n");
-	fprintf(f, "NumRegistersPerSM = %d\n", frm_gpu_num_registers_per_sm);
-	fprintf(f, "MaxThreadBlocksPerSM = %d\n",
-			frm_gpu_max_thread_blocks_per_sm);
-	fprintf(f, "MaxWarpsPerSM = %d\n", 
-			frm_gpu_max_warps_per_sm);
-	fprintf(f, "\n");
-
-	/* Front-End */
-	fprintf(f, "[ Config.FrontEnd ]\n");
-	fprintf(f, "FetchLatency = %d\n", frm_gpu_fe_fetch_latency);
-	fprintf(f, "FetchWidth = %d\n", frm_gpu_fe_fetch_width);
-	fprintf(f, "FetchBufferSize = %d\n", frm_gpu_fe_fetch_buffer_size);
-	fprintf(f, "IssueLatency = %d\n", frm_gpu_fe_issue_latency);
-	fprintf(f, "IssueWidth = %d\n", frm_gpu_fe_issue_width);
-	fprintf(f, "MaxInstIssuedPerType = %d\n", 
-			frm_gpu_fe_max_inst_issued_per_type);
-	fprintf(f, "\n");
-
-	/* SIMD Unit */
-	fprintf(f, "[ Config.SIMDUnit ]\n");
-	fprintf(f, "NumSIMDLanes = %d\n", frm_gpu_simd_num_simd_lanes);
-	fprintf(f, "Width = %d\n", frm_gpu_simd_width);
-	fprintf(f, "IssueBufferSize = %d\n", frm_gpu_simd_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", frm_gpu_simd_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", frm_gpu_simd_decode_buffer_size);
-	fprintf(f, "ReadExecWriteLatency = %d\n", frm_gpu_simd_exec_latency);
-	fprintf(f, "ReadExecWriteBufferSize = %d\n", 
-			frm_gpu_simd_exec_buffer_size);
-	fprintf(f, "\n");
-
-	/* Branch Unit */
-	fprintf(f, "[ Config.BranchUnit ]\n");
-	fprintf(f, "Width = %d\n", frm_gpu_branch_unit_width);
-	fprintf(f, "IssueBufferSize = %d\n", 
-			frm_gpu_branch_unit_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", frm_gpu_branch_unit_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", 
-			frm_gpu_branch_unit_decode_buffer_size);
-	fprintf(f, "ReadLatency = %d\n", frm_gpu_branch_unit_read_latency);
-	fprintf(f, "ReadBufferSize = %d\n", 
-			frm_gpu_branch_unit_read_buffer_size);
-	fprintf(f, "ExecLatency = %d\n", frm_gpu_branch_unit_exec_latency);
-	fprintf(f, "ExecBufferSize = %d\n", 
-			frm_gpu_branch_unit_exec_buffer_size);
-	fprintf(f, "WriteLatency = %d\n", frm_gpu_branch_unit_write_latency);
-	fprintf(f, "WriteBufferSize = %d\n", 
-			frm_gpu_branch_unit_write_buffer_size);
-	fprintf(f, "\n");
-
-	/* LDS */
-	fprintf(f, "[ Config.LDSUnit ]\n");
-	fprintf(f, "Width = %d\n", frm_gpu_lds_width);
-	fprintf(f, "IssueBufferSize = %d\n", frm_gpu_lds_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", frm_gpu_lds_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", 
-			frm_gpu_lds_decode_buffer_size);
-	fprintf(f, "ReadLatency = %d\n", frm_gpu_lds_read_latency);
-	fprintf(f, "ReadBufferSize = %d\n", frm_gpu_lds_read_buffer_size);
-	fprintf(f, "MaxInflightMem = %d\n", 
-			frm_gpu_lds_max_inflight_mem_accesses);
-	fprintf(f, "WriteLatency = %d\n", frm_gpu_lds_write_latency);
-	fprintf(f, "WriteBufferSize = %d\n", frm_gpu_lds_write_buffer_size);
-	fprintf(f, "\n");
-
-	/* Vector Memory */
-	fprintf(f, "[ Config.VectorMemUnit ]\n");
-	fprintf(f, "Width = %d\n", frm_gpu_vector_mem_width);
-	fprintf(f, "IssueBufferSize = %d\n", 
-			frm_gpu_vector_mem_issue_buffer_size);
-	fprintf(f, "DecodeLatency = %d\n", frm_gpu_vector_mem_decode_latency);
-	fprintf(f, "DecodeBufferSize = %d\n", 
-			frm_gpu_vector_mem_decode_buffer_size);
-	fprintf(f, "ReadLatency = %d\n", frm_gpu_vector_mem_read_latency);
-	fprintf(f, "ReadBufferSize = %d\n", frm_gpu_vector_mem_read_buffer_size);
-	fprintf(f, "MaxInflightMem = %d\n", 
-			frm_gpu_vector_mem_max_inflight_mem_accesses);
-	fprintf(f, "WriteLatency = %d\n", frm_gpu_vector_mem_write_latency);
-	fprintf(f, "WriteBufferSize = %d\n", 
-			frm_gpu_vector_mem_write_buffer_size);
-	fprintf(f, "\n");
-
-	/* LDS */
-	fprintf(f, "[ Config.SharedMem ]\n");
-	fprintf(f, "Size = %d\n", frm_gpu_shared_mem_size);
-	fprintf(f, "BlockSize = %d\n", frm_gpu_lds_block_size);
-	fprintf(f, "Latency = %d\n", frm_gpu_lds_latency);
-	fprintf(f, "Ports = %d\n", frm_gpu_lds_num_ports);
-	fprintf(f, "\n");
-
-	/* End of configuration */
-	fprintf(f, "\n");
-}
-
-
-static void frm_gpu_map_grid(struct frm_grid_t *grid)
-{
-	/* Assign current grid */
-	assert(!frm_gpu->grid);
-	frm_gpu->grid = grid;
-
-	/* Calculate the number of thread blocks per SM */
-	frm_gpu->thread_blocks_per_sm = 
-		frm_calc_get_thread_blocks_per_sm(
-				grid->block_size, 
-				grid->num_gpr_used,
-				grid->local_mem_top);
-
-	if (!frm_gpu->thread_blocks_per_sm)
-	{
-		fatal("thread-block resources cannot be allocated to a SM.\n"
-				"\tA SM in the GPU has a limit in number of warps,\n"
-				"\tnumber of registers, and amount of shared memory.\n"
-				"\tIf the thread block size exceeds any of these limits,\n"
-				"\tthe grid cannot be executed.\n");
-	}
-
-	/* Calculate limit of warps and threads per SM */
-	frm_gpu->warps_per_sm = frm_gpu->thread_blocks_per_sm * 
-		grid->warps_per_thread_block;
-	frm_gpu->threads_per_sm = frm_gpu->warps_per_sm * frm_emu_warp_size;
-	frm_gpu_debug("%d thread blocks, %d warps, %d threads mapped per SM\n", 
-			frm_gpu->thread_blocks_per_sm, 
-			frm_gpu->warps_per_sm, 
-			frm_gpu->threads_per_sm);
-}
-
-
-static void frm_gpu_unmap_grid(void)
-{
-	/* Dump stats */
-	frm_grid_dump(frm_gpu->grid, frm_emu_report_file);
-
-	/* Unmap */
-	frm_gpu->grid = NULL;
-}
-
-
-
-
-/*
- * Public Functions
- */
 
 void frm_gpu_init(void)
 {
@@ -950,9 +956,6 @@ void frm_gpu_init(void)
 			!file_can_open_for_write(frm_gpu_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",
 				frm_gpu_report_file_name);
-
-	/* Read configuration file */
-	frm_config_read();
 
 	/* Initializations */
 	frm_gpu_device_init();

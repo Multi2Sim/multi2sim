@@ -17,9 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/arm/emu/emu.h>
 #include <arch/common/arch.h>
+#include <lib/esim/esim.h>
 
 #include "cpu.h"
+
+
+/*
+ * Global Variables
+ */
+
+
+/* 
+ * Public Functions
+ */
+
+void arm_cpu_read_config(void)
+{
+}
 
 
 void arm_cpu_init(void)

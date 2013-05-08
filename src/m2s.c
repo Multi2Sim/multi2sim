@@ -1577,7 +1577,6 @@ static void m2s_dump(FILE *f)
 static void m2s_dump_summary(FILE *f)
 {
 	double time_in_sec;
-	long long cycle;
 
 	/* No summary dumped if no simulation was run */
 	if (m2s_loop_iter < 2)
@@ -1595,13 +1594,12 @@ static void m2s_dump_summary(FILE *f)
 
 	/* General statistics */
 	fprintf(f, "[ General ]\n");
-	fprintf(f, "Time = %.2f\n", time_in_sec);
+	fprintf(f, "RealTime = %.2f [s]\n", time_in_sec);
 	fprintf(f, "SimEnd = %s\n", str_map_value(&esim_finish_map, esim_finish));
 
 	/* General detailed simulation statistics */
-	cycle = esim_cycle();
-	if (cycle > 1)
-		fprintf(f, "Cycles = %lld\n", cycle);
+	if (esim_time)
+		fprintf(f, "SimTime = %.2f [ns]\n", esim_time / 1000.0);
 
 	/* End */
 	fprintf(f, "\n");
@@ -1868,37 +1866,43 @@ int main(int argc, char **argv)
 	trace_init(trace_file_name);
 
 	/* Initialization of architectures */
-	arch_init();
-	arch_register("ARM", "arm", arm_sim_kind,
+	arch_arm = arch_register("ARM", "arm", arm_sim_kind,
 			arm_emu_init, arm_emu_done, arm_emu_dump,
 			arm_emu_dump_summary, arm_emu_run,
+			arm_cpu_read_config,
 			arm_cpu_init, arm_cpu_done, arm_cpu_dump,
 			arm_cpu_dump_summary, arm_cpu_run);
-	arch_register("Evergreen", "evg", evg_sim_kind,
+	arch_evergreen = arch_register("Evergreen", "evg", evg_sim_kind,
 			evg_emu_init, evg_emu_done, evg_emu_dump,
 			evg_emu_dump_summary, evg_emu_run,
+			evg_gpu_read_config,
 			evg_gpu_init, evg_gpu_done, evg_gpu_dump,
 			evg_gpu_dump_summary, evg_gpu_run);
-	arch_register("Fermi", "frm", frm_sim_kind,
+	arch_fermi = arch_register("Fermi", "frm", frm_sim_kind,
 			frm_emu_init, frm_emu_done, frm_emu_dump,
 			frm_emu_dump_summary, frm_emu_run,
+			frm_gpu_read_config,
 			frm_gpu_init, frm_gpu_done, frm_gpu_dump,
 			frm_gpu_dump_summary, frm_gpu_run);
-	arch_register("MIPS", "mips", mips_sim_kind,
+	arch_mips = arch_register("MIPS", "mips", mips_sim_kind,
 			mips_emu_init, mips_emu_done, mips_emu_dump,
 			mips_emu_dump_summary, mips_emu_run,
+			mips_cpu_read_config,
 			mips_cpu_init, mips_cpu_done, mips_cpu_dump,
 			mips_cpu_dump_summary, mips_cpu_run);
-	arch_register("SouthernIslands", "si", si_sim_kind,
+	arch_southern_islands = arch_register("SouthernIslands", "si", si_sim_kind,
 			si_emu_init, si_emu_done, si_emu_dump,
 			si_emu_dump_summary, si_emu_run,
+			si_gpu_read_config,
 			si_gpu_init, si_gpu_done, si_gpu_dump,
 			si_gpu_dump_summary, si_gpu_run);
-	arch_register("x86", "x86", x86_sim_kind,
+	arch_x86 = arch_register("x86", "x86", x86_sim_kind,
 			x86_emu_init, x86_emu_done, x86_emu_dump,
 			x86_emu_dump_summary, x86_emu_run,
+			x86_cpu_read_config,
 			x86_cpu_init, x86_cpu_done, x86_cpu_dump,
 			x86_cpu_dump_summary, x86_cpu_run);
+	arch_init();
 
 	/* Network and memory system */
 	net_init();

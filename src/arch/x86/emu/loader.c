@@ -85,12 +85,6 @@ char *x86_loader_help =
 	"examples on how to use the context configuration file.\n"
 	"\n";
 
-static char *err_x86_ctx_ipc_report =
-	"\tThe IPC report file has been specified for a context, but the\n"
-	"\tfunctional simulation does not track cycles. Please use option\n"
-	"\t'--x86-sim detailed' in the command line to activate IPC reports.\n";
-
-
 static struct str_map_t elf_section_flags_map =
 {
 	3, {
@@ -628,9 +622,6 @@ void x86_loader_free(struct x86_loader_t *ld)
 		str_free(linked_list_get(ld->env));
 	linked_list_free(ld->env);
 
-	/* IPC report file */
-	file_close(ld->ipc_report_file);
-
 	/* Free loader */
 	if (ld->interp)
 		free(ld->interp);
@@ -706,7 +697,6 @@ void x86_loader_load_from_ctx_config(struct config_t *config, char *section)
 	char *in;
 	char *out;
 
-	char *ipc_report_file_name;
 	char *config_file_name;
 
 	/* Get configuration file name for errors */
@@ -754,29 +744,6 @@ void x86_loader_load_from_ctx_config(struct config_t *config, char *section)
 	/* Standard output */
 	out = config_read_string(config, section, "Stdout", "");
 	ld->stdout_file = str_set(NULL, out);
-
-	/* IPC report file */
-	ipc_report_file_name = config_read_string(config, section,
-			"IPCReport", "");
-	ld->ipc_report_interval = config_read_int(config, section,
-			"IPCReportInterval", 100000);
-	if (*ipc_report_file_name)
-	{
-		if (x86_emu->arch->sim_kind == arch_sim_kind_functional)
-			warning("%s: [%s]: value for 'IPCReport' ignored.\n%s",
-				config_file_name, section, err_x86_ctx_ipc_report);
-		else
-		{
-			ld->ipc_report_file = file_open_for_write(ipc_report_file_name);
-			if (!ld->ipc_report_file)
-				fatal("%s: cannot open IPC report file",
-						ipc_report_file_name);
-			if (ld->ipc_report_interval < 1)
-				fatal("%s: invalid value for 'IPCReportInterval'",
-						config_file_name);
-			x86_ctx_ipc_report_schedule(ctx);
-		}
-	}
 
 	/* Load executable */
 	x86_loader_load_exe(ctx, exe);

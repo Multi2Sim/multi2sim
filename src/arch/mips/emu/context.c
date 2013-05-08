@@ -42,8 +42,6 @@
 int mips_loader_debug_category;
 int mips_ctx_debug_category;
 
-int EV_MIPS_CTX_IPC_REPORT;
-
 static struct str_map_t mips_ctx_status_map =
 {
 	16, {
@@ -1008,49 +1006,4 @@ void mips_ctx_gen_proc_self_maps(struct mips_ctx_t *ctx, char *path)
 
 	/* Close file */
 	fclose(f);
-}
-
-
-
-
-/*
- * IPC report
- */
-
-struct mips_ctx_ipc_report_stack_t
-{
-	int pid;
-	long long inst_count;
-};
-
-void mips_ctx_ipc_report_handler(int event, void *data)
-{
-	struct arch_t *arch = mips_emu->arch;
-	struct mips_ctx_ipc_report_stack_t *stack = data;
-	struct mips_ctx_t *ctx;
-
-	long long inst_count;
-	double ipc_interval;
-	double ipc_global;
-
-	/* Get context. If it does not exist anymore, no more
-	 * events to schedule. */
-	ctx = mips_ctx_get(stack->pid);
-	if (!ctx || mips_ctx_get_status(ctx, mips_ctx_finished) || esim_finish)
-	{
-		free(stack);
-		return;
-	}
-
-	/* Dump new IPC */
-	assert(ctx->ipc_report_interval);
-	inst_count = ctx->inst_count - stack->inst_count;
-	ipc_global = arch->cycle ? (double) ctx->inst_count / arch->cycle : 0.0;
-	ipc_interval = (double) inst_count / ctx->ipc_report_interval;
-	fprintf(ctx->ipc_report_file, "%10lld %8lld %10.4f %10.4f\n",
-		arch->cycle, inst_count, ipc_global, ipc_interval);
-
-	/* Schedule new event */
-	stack->inst_count = ctx->inst_count;
-	esim_schedule_event(event, stack, ctx->ipc_report_interval);
 }
