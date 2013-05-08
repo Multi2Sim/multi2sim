@@ -376,9 +376,6 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 				mod_access_load, uop->global_mem_access_addr,
 				&uop->global_mem_witness, NULL, NULL, NULL);
 
-			/* Increment outstanding memory access count */
-			uop->wavefront_pool_entry->lgkm_cnt++;
-
 			/* Transfer the uop to the execution buffer */
 			list_remove(scalar_unit->read_buffer, uop);
 			list_enqueue(scalar_unit->exec_buffer, uop);

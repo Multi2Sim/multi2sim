@@ -60,18 +60,35 @@ void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool)
 	free(wavefront_pool);
 }
 
+void si_wavefront_pool_entry_clear(
+	struct si_wavefront_pool_entry_t *wavefront_pool_entry)
+{
+	wavefront_pool_entry->wavefront = NULL;
+	wavefront_pool_entry->uop = NULL;
+	wavefront_pool_entry->valid = 0;
+	wavefront_pool_entry->ready = 0;
+	wavefront_pool_entry->ready_next_cycle = 0;
+	wavefront_pool_entry->wait_for_mem = 0;
+	wavefront_pool_entry->wait_for_barrier = 0;
+	wavefront_pool_entry->wavefront_finished = 0;
+	wavefront_pool_entry->vm_cnt = 0;
+	wavefront_pool_entry->exp_cnt = 0;
+	wavefront_pool_entry->lgkm_cnt = 0;
+}
+
 void si_wavefront_pool_map_wavefronts(
 	struct si_wavefront_pool_t *wavefront_pool, 
 	struct si_work_group_t *work_group)
 {
 	struct si_wavefront_t *wavefront;
-	int wg_id_in_ib;
+	int wg_id_in_wfp;
 	int first_entry;
 	int i;
 
 	/* Determine starting ID for wavefronts in the instruction buffer */
-	wg_id_in_ib = work_group->id_in_compute_unit/si_gpu_num_wavefront_pools;
-	first_entry = wg_id_in_ib * work_group->wavefront_count;
+	wg_id_in_wfp = work_group->id_in_compute_unit /
+		si_gpu_num_wavefront_pools;
+	first_entry = wg_id_in_wfp * work_group->wavefront_count;
 
 	/* Assign wavefronts a slot in the instruction buffer */
 	for (i = 0; i < work_group->wavefront_count; i++) 
@@ -79,6 +96,8 @@ void si_wavefront_pool_map_wavefronts(
 		wavefront = work_group->wavefronts[i];
 		wavefront->wavefront_pool_entry = 
 			wavefront_pool->entries[first_entry + i];
+
+		assert(wavefront->wavefront_pool_entry);
 		assert(!wavefront->wavefront_pool_entry->valid);
 
 		/* Set initial state */
@@ -108,10 +127,13 @@ void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t
 			wavefront->wavefront_pool_entry->id_in_wavefront_pool;
 
 		assert(wavefront_pool->entries[wf_id_in_wfp]->wavefront);
+		assert(wavefront_pool->entries[wf_id_in_wfp]->valid);
 		assert(wavefront_pool->entries[wf_id_in_wfp]->wavefront->id == 
 			wavefront->id);
-		memset(wavefront_pool->entries[wf_id_in_wfp], 0, 
-			sizeof(struct si_wavefront_pool_entry_t));
+
+		/* Clear wavefront pool entry */
+		si_wavefront_pool_entry_clear(
+			wavefront_pool->entries[wf_id_in_wfp]);
 	}
 	wavefront_pool->wavefront_count -= work_group->wavefront_count;
 }

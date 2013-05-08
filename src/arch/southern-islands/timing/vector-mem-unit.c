@@ -269,9 +269,6 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 				fatal("%s: invalid access kind", __FUNCTION__);
 		}
 
-		/* Increment outstanding memory access count */
-		uop->wavefront_pool_entry->lgkm_cnt++;
-
 		/* Transfer the uop to the mem buffer */
 		list_remove(vector_mem->read_buffer, uop);
 		list_enqueue(vector_mem->mem_buffer, uop);

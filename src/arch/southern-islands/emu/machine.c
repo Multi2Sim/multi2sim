@@ -222,6 +222,9 @@ void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 void si_isa_S_LOAD_DWORDX2_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
+	/* Record access */
+	work_item->wavefront->scalar_mem_read = 1;
+
 	NOT_IMPL();
 }
 
@@ -236,6 +239,9 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 	struct si_mem_ptr_t mem_ptr;
 	int sbase;
 	int i;
+
+	/* Record access */
+	work_item->wavefront->scalar_mem_read = 1;
 
 	assert(INST.imm);
 
@@ -279,6 +285,9 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item,
 void si_isa_S_LOAD_DWORDX8_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
+	/* Record access */
+	work_item->wavefront->scalar_mem_read = 1;
+
 	NOT_IMPL();
 }
 #undef INST

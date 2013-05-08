@@ -470,7 +470,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 		uop->cycle_created = arch_southern_islands->cycle;
 		uop->glc = wavefront->vector_mem_glc;
 		assert(wavefront->work_group && uop->work_group);
-
+		
 		/* Trace */
 		if (si_tracing())
 		{
@@ -684,6 +684,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 					uop->wavefront_pool_entry->
 						ready_next_cycle = 1;
 					compute_unit->scalar_mem_inst_count++;
+					uop->wavefront_pool_entry->lgkm_cnt++;
 				}
 				else
 				{
@@ -759,8 +760,6 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 					uop->wavefront->id, 
 					uop->id_in_wavefront);
 
-				uop->wavefront_pool_entry->ready_next_cycle = 1;
-
 				compute_unit->simd_inst_count++;
 			}
 		}
@@ -828,6 +827,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 				uop->wavefront_pool_entry->ready_next_cycle = 1;
 
 				compute_unit->vector_mem_inst_count++;
+				uop->wavefront_pool_entry->lgkm_cnt++;
 			}
 		}
 	}
@@ -891,9 +891,8 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 					uop->wavefront->id, 
 					uop->id_in_wavefront);
 
-				uop->wavefront_pool_entry->ready_next_cycle = 1;
-
 				compute_unit->lds_inst_count++;
+				uop->wavefront_pool_entry->lgkm_cnt++;
 			}
 		}
 	}
@@ -1177,8 +1176,11 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 			list_enqueue(compute_unit->scalar_unit.issue_buffer, 
 				uop);
 
+			uop->wavefront_pool_entry->ready_next_cycle = 1;
+
 			scalar_insts_issued++;
 			compute_unit->scalar_mem_inst_count++;
+			uop->wavefront_pool_entry->lgkm_cnt++;
 
 			break;
 		}
@@ -1226,8 +1228,6 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				uop);
 			list_enqueue(compute_unit->simd_units[active_fb]->
 				issue_buffer, uop);
-
-			uop->wavefront_pool_entry->ready_next_cycle = 1;
 
 			simd_insts_issued++;
 			compute_unit->simd_inst_count++;
@@ -1281,6 +1281,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 
 			mem_insts_issued++;
 			compute_unit->vector_mem_inst_count++;
+			uop->wavefront_pool_entry->lgkm_cnt++;
 
 			break;
 		}
@@ -1324,10 +1325,9 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				uop);
 			list_enqueue(compute_unit->lds_unit.issue_buffer, uop);
 
-			uop->wavefront_pool_entry->ready_next_cycle = 1;
-
 			lds_insts_issued++;
 			compute_unit->lds_inst_count++;
+			uop->wavefront_pool_entry->lgkm_cnt++;
 
 			break;
 		}
