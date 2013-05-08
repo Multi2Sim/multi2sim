@@ -192,6 +192,9 @@ struct arch_t *arch_register(char *name, char *prefix,
 		arch_timing_done_func_t timing_done_func,
 		arch_timing_dump_func_t timing_dump_func,
 		arch_timing_dump_summary_func_t timing_dump_summary_func,
+		arch_mem_config_default_func_t mem_config_default_func,
+		arch_mem_config_parse_entry_func_t mem_config_parse_entry_func,
+		arch_mem_config_check_func_t mem_config_check_func,
 		arch_run_func_t timing_run_func)
 {
 	struct arch_t *arch;
@@ -219,6 +222,9 @@ struct arch_t *arch_register(char *name, char *prefix,
 	arch->timing_done_func = timing_done_func;
 	arch->timing_dump_func = timing_dump_func;
 	arch->timing_dump_summary_func = timing_dump_summary_func;
+	arch->mem_config_default_func = mem_config_default_func;
+	arch->mem_config_parse_entry_func = mem_config_parse_entry_func;
+	arch->mem_config_check_func = mem_config_check_func;
 	arch->timing_run_func = timing_run_func;
 
 	/* Choose functional/timing simulation loop iteration function */

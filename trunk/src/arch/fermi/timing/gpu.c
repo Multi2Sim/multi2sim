@@ -943,11 +943,6 @@ void frm_gpu_init(void)
 	/* Trace */
 	frm_trace_category = trace_new_category();
 
-	/* Register functions for architecture */
-	arch_fermi->mem_config_check_func = frm_mem_config_check;
-	arch_fermi->mem_config_default_func = frm_mem_config_default;
-	arch_fermi->mem_config_parse_entry_func = frm_mem_config_parse_entry;
-
 	/* Try to open report file */
 	if (frm_gpu_report_file_name[0] && 
 			!file_can_open_for_write(frm_gpu_report_file_name))

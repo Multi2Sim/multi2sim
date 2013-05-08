@@ -458,11 +458,6 @@ void evg_gpu_init(void)
 	/* Trace */
 	evg_trace_category = trace_new_category();
 
-	/* Register functions for architecture */
-	arch_evergreen->mem_config_check_func = evg_mem_config_check;
-	arch_evergreen->mem_config_default_func = evg_mem_config_default;
-	arch_evergreen->mem_config_parse_entry_func = evg_mem_config_parse_entry;
-
 	/* Try to open report file */
 	if (evg_gpu_report_file_name[0] && !file_can_open_for_write(evg_gpu_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",
