@@ -285,7 +285,7 @@ void opencl_si_kernel_run(struct opencl_si_kernel_t *kernel, int work_dim,
 	void *table_ptr = xcalloc(1, 4096);  // FIXME
 	void *cb_ptr = xcalloc(1, 4096);   // FIXME
 
-	int num_groups = *group_count;
+	int num_groups = group_count[0]*group_count[1]*group_count[2];
 	int current_group = 0;
 	int max_work_groups_to_send;
 	int remaining_work_groups;
