@@ -96,7 +96,7 @@ extern int x86_emu_process_prefetch_hints;
 void x86_emu_init(void);
 void x86_emu_done(void);
 
-enum arch_sim_kind_t x86_emu_run(void);
+int x86_emu_run(void);
 
 void x86_emu_dump(FILE *f);
 void x86_emu_dump_summary(FILE *f);

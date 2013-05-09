@@ -112,7 +112,7 @@ void arm_emu_init(void);
 void arm_emu_done(void);
 void arm_emu_dump(FILE *f);
 
-enum arch_sim_kind_t arm_emu_run(void);
+int arm_emu_run(void);
 
 void arm_emu_process_events_schedule();
 

@@ -184,18 +184,18 @@ struct arch_t *arch_register(char *name, char *prefix,
 		enum arch_sim_kind_t sim_kind,
 		arch_emu_init_func_t emu_init_func,
 		arch_emu_done_func_t emu_done_func,
+		arch_emu_run_func_t emu_run_func,
 		arch_emu_dump_func_t emu_dump_func,
 		arch_emu_dump_summary_func_t emu_dump_summary_func,
-		arch_run_func_t emu_run_func,
 		arch_timing_read_config_func_t timing_read_config_func,
 		arch_timing_init_func_t timing_init_func,
 		arch_timing_done_func_t timing_done_func,
+		arch_timing_run_func_t timing_run_func,
 		arch_timing_dump_func_t timing_dump_func,
 		arch_timing_dump_summary_func_t timing_dump_summary_func,
 		arch_mem_config_default_func_t mem_config_default_func,
 		arch_mem_config_parse_entry_func_t mem_config_parse_entry_func,
-		arch_mem_config_check_func_t mem_config_check_func,
-		arch_run_func_t timing_run_func)
+		arch_mem_config_check_func_t mem_config_check_func)
 {
 	struct arch_t *arch;
 
@@ -210,6 +210,7 @@ struct arch_t *arch_register(char *name, char *prefix,
 				__FUNCTION__);
 
 	/* Initialize */
+	assert(sim_kind);
 	arch = arch_create(name, prefix);
 	arch->sim_kind = sim_kind;
 	arch->emu_init_func = emu_init_func;
@@ -226,11 +227,6 @@ struct arch_t *arch_register(char *name, char *prefix,
 	arch->mem_config_parse_entry_func = mem_config_parse_entry_func;
 	arch->mem_config_check_func = mem_config_check_func;
 	arch->timing_run_func = timing_run_func;
-
-	/* Choose functional/timing simulation loop iteration function */
-	assert(sim_kind);
-	arch->run_func = sim_kind == arch_sim_kind_functional ?
-			emu_run_func : timing_run_func;
 
 	/* Add architecture and return it */
 	arch_list[arch_list_count++] = arch;
@@ -346,19 +342,51 @@ int arch_get_sim_kind_detailed_count(void)
 	return count;
 }
 
-enum arch_sim_kind_t arch_run_all(void)
+
+void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 {
-	enum arch_sim_kind_t ret = arch_sim_kind_invalid;
-	enum arch_sim_kind_t arch_ret;
+	struct arch_t *arch;
+	long long cycle;
+
+	int run;
 	int i;
+
+	/* Reset active emulation and timing simulation counters */
+	*num_emu_active_ptr = 0;
+	*num_timing_active_ptr = 0;
 
 	/* Run one iteration for all architectures */
 	for (i = 0; i < arch_list_count; i++)
 	{
-		arch_ret = arch_list[i]->run_func();
-		ret = MAX(ret, arch_ret);
-	}
+		/* Get architecture */
+		arch = arch_list[i];
+		if (arch->sim_kind == arch_sim_kind_functional)
+		{
+			/* Emulation iteration */
+			arch->active = arch->emu_run_func();
 
-	/* Return maximum simulation level performed */
-	return ret;
+			/* Increase number of active emulations if the architecture
+			 * actually performed a useful emulation iteration. */
+			*num_emu_active_ptr += arch->active;
+		}
+		else
+		{
+			/* Check whether the architecture should actually run an
+			 * iteration. If it is working at a slower frequency than
+			 * the main simulation loop, we must skip this call. */
+			cycle = esim_domain_cycle(arch->domain_index);
+			run = cycle != arch->last_timing_cycle;
+
+			/* Timing simulation iteration */
+			if (run)
+			{
+				arch->active = arch->timing_run_func();
+				arch->last_timing_cycle = cycle;
+			}
+
+			/* Increase number of active timing simulations if the
+			 * architecture actually performance a useful iteration. */
+			*num_timing_active_ptr += arch->active;
+		}
+	}
 }

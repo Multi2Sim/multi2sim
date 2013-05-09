@@ -244,7 +244,8 @@ void si_compute_unit_run_branch_unit(struct si_compute_unit_t *compute_unit);
 
 struct si_ndrange_t;
 void si_gpu_map_ndrange(struct si_ndrange_t *ndrange);
-enum arch_sim_kind_t si_gpu_run(void);
+
+int si_gpu_run(void);
 
 void si_simd_run(struct si_simd_t *simd);
 void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit);

@@ -115,7 +115,7 @@ void mips_emu_init(void);
 void mips_emu_done(void);
 void mips_emu_dump(FILE *f);
 
-enum arch_sim_kind_t mips_emu_run(void);
+int mips_emu_run(void);
 
 void mips_emu_process_events_schedule();
 

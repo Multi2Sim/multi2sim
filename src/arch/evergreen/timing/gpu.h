@@ -128,7 +128,7 @@ struct evg_uop_t;
 void evg_gpu_uop_trash_add(struct evg_uop_t *uop);
 void evg_gpu_uop_trash_empty(void);
 
-enum arch_sim_kind_t evg_gpu_run(void);
+int evg_gpu_run(void);
 
 #endif
 

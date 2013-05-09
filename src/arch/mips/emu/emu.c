@@ -255,15 +255,14 @@ void mips_emu_process_events_schedule()
  * Functional simulation loop
  */
 
-/* Run one iteration of the Mips emulation loop.
- * Return FALSE if there is no more simulation to perform. */
-enum arch_sim_kind_t mips_emu_run(void)
+/* Run one iteration of the MIPS emulation loop. Return TRUE if still running. */
+int mips_emu_run(void)
 {
 	struct mips_ctx_t *ctx;
 
 	/* Stop if there is no context running */
 	if (mips_emu->finished_list_count >= mips_emu->context_list_count)
-		return arch_sim_kind_invalid;
+		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (mips_emu_max_inst && arch_mips->inst_count >= mips_emu_max_inst)
@@ -275,7 +274,7 @@ enum arch_sim_kind_t mips_emu_run(void)
 
 	/* Stop if any previous reason met */
 	if (esim_finish)
-		return arch_sim_kind_invalid;
+		return TRUE;
 
 	/* Run an instruction from every running process */
 	for (ctx = mips_emu->running_list_head; ctx; ctx = ctx->running_list_next)
@@ -285,9 +284,6 @@ enum arch_sim_kind_t mips_emu_run(void)
 	while (mips_emu->finished_list_head)
 		mips_ctx_free(mips_emu->finished_list_head);
 
-	/* Process list of suspended contexts */
-	/*mips_emu_process_events();*/
-
 	/* Still running */
-	return arch_sim_kind_functional;
+	return TRUE;
 }

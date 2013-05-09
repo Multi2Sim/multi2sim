@@ -31,9 +31,10 @@ void mips_cpu_read_config(void);
 
 void mips_cpu_init(void);
 void mips_cpu_done(void);
-void mips_cpu_dump(FILE *f);
 
-enum arch_sim_kind_t mips_cpu_run(void);
+int mips_cpu_run(void);
+
+void mips_cpu_dump(FILE *f);
 void mips_cpu_dump_summary(FILE *f);
 
 #endif

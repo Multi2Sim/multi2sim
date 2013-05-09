@@ -24,6 +24,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/misc.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
@@ -118,10 +119,8 @@ void frm_emu_dump(FILE *f)
 }
 
 
-/* One iteration of emulator. Return values are:
- *   - arch_sim_kind_invalid - emulation finished.
- *   - arch_sim_kind_functional - still emulating */
-enum arch_sim_kind_t frm_emu_run(void)
+/* One iteration of emulator. Return TRUE if emulation is still running. */
+int frm_emu_run(void)
 {
 	struct frm_grid_t *grid;
 	struct frm_grid_t *grid_next;
@@ -135,7 +134,7 @@ enum arch_sim_kind_t frm_emu_run(void)
 	/* For efficiency when no emulation is selected, 
 	 * exit here if the list of existing grid is empty. */
 	if (!frm_emu->grid_list_count)
-		return arch_sim_kind_invalid;
+		return FALSE;
 
 	/* Start any grid in state 'pending' */
 	while ((grid = frm_emu->pending_grid_list_head))
@@ -196,7 +195,7 @@ enum arch_sim_kind_t frm_emu_run(void)
 	}
 
 	/* Still emulating */
-	return arch_sim_kind_functional;
+	return TRUE;
 }
 
 

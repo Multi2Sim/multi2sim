@@ -20,6 +20,7 @@
 #include <arch/arm/emu/emu.h>
 #include <arch/common/arch.h>
 #include <lib/esim/esim.h>
+#include <lib/util/misc.h>
 
 #include "cpu.h"
 
@@ -53,13 +54,13 @@ void arm_cpu_dump(FILE *f)
 }
 
 
-/* Run one iteration of timing simulation. Return values are:
- *   - arch_sim_kind_invalid - no timing simulation.
- *   - arch_sim_kind_detailed - still simulating. */
-enum arch_sim_kind_t arm_cpu_run(void)
+/* Run one iteration of timing simulation. Return TRUE if the timing simulation
+ * is still running. */
+int arm_cpu_run(void)
 {
-	return arch_sim_kind_invalid;
+	return FALSE;
 }
+
 
 /* TODO: Implement the Arm cpu dump for the cycle accurate simulation */
 void arm_cpu_dump_summary(FILE *f)
