@@ -225,9 +225,18 @@ void glClearDepth( GLclampd depth )
 	opengl_ctx->props->depth = depth;
 }
 
-void glClearIndex( GLfloat c )
+void glClearDepthf (GLclampf d)
 {
 	__OPENGL_NOT_IMPL__
+}
+
+void glClearIndex( GLfloat c )
+{
+	/* Debug */
+	opengl_debug("API call %s(%f)\n", __FUNCTION__, c);
+
+	/* FIXME: Specify a clear value for the color index buffers */
+
 }
 
 void glClearStencil( GLint s )
