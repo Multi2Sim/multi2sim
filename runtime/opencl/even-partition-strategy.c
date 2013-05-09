@@ -1,6 +1,8 @@
 #include "mhandle.h"
 #include "even-partition-strategy.h"
 
+int even_strategy_parts_per_device = 1;
+
 struct even_strategy_info_t
 {
 	int num_devices;
@@ -24,12 +26,15 @@ void *even_strategy_create(int num_devices, unsigned int dims, const unsigned in
 int even_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
 {
 	struct even_strategy_info_t *info = inst;
-	if (!info->done[id])
+	if (info->done[id] < even_strategy_parts_per_device)
 	{
 		/* partition with highest dimension */
 		unsigned int max_dim_groups = info->groups[info->dims - 1];
-		unsigned int start = id * max_dim_groups / info->num_devices;
-		unsigned int size = (id + 1) * max_dim_groups / info->num_devices - start;
+		unsigned int divisions = even_strategy_parts_per_device * info->num_devices;
+
+		unsigned int chunk = id * even_strategy_parts_per_device + info->done[id];
+		unsigned int start = chunk * max_dim_groups / divisions;
+		unsigned int size = (chunk + 1) * max_dim_groups / divisions - start;
 		int i;
 
 		for (i = 0; i < info->dims - 1; i++)
@@ -40,7 +45,7 @@ int even_strategy_get_partition(void *inst, int id, int desired_groups, unsigned
 
 		group_offset[info->dims - 1] = start;
 		group_count[info->dims - 1] = size;
-		info->done[id] = 1;
+		info->done[id]++;
 		return 1;
 	}
 	else
