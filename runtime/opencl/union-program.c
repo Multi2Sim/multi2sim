@@ -18,7 +18,7 @@ struct opencl_union_program_t *opencl_union_program_create(
 	struct opencl_device_t *subdevice;
 
 	bin = binary;
-	assert(bin->num_entries == list_count(device->devices));
+	assert(bin->num_entries >= list_count(device->devices));
 
 	program = xcalloc(1, sizeof (struct opencl_union_program_t));
 	program->parent = parent;
@@ -81,32 +81,36 @@ void opencl_union_program_free(struct opencl_union_program_t *program)
 int opencl_union_program_valid_binary(void *dev, void *binary, unsigned int length)
 {
 	int i;
-	int offset;
 	struct opencl_union_binary_t *bin;
 	struct opencl_union_device_t *device = dev;
 
 	bin = (struct opencl_union_binary_t *)binary;
-	offset = sizeof *bin + bin->num_entries * sizeof bin->entry_sizes[0];
 
-	/* go through each of the entries and match it against all devices */
-	for (i = 0; i < bin->num_entries; i++)
+	/* get each subdevice and check to see if it has a binary */
+	LIST_FOR_EACH(device->devices, i)
 	{
 		int j;
-		int valid = 0;
-		/* get each subdevice and check to see if it accepts the binary */
-		LIST_FOR_EACH(device->devices, j)
-		{
-			struct opencl_device_t *subdevice;
-			subdevice = list_get(device->devices, j);
-			if (subdevice->arch_program_valid_binary_func(subdevice->arch_device, (char *)binary + offset, bin->entry_sizes[i]))
-				valid = 1;
-		}
+		struct opencl_device_t *subdevice;
+		subdevice = list_get(device->devices, i);
 
-		offset += bin->entry_sizes[i];
+		int valid = 0;
+		int offset = sizeof *bin + bin->num_entries * sizeof bin->entry_sizes[0];
+		/* go through binaries. */
+		for (j = 0; j < bin->num_entries; j++)
+		{
+			if (subdevice->arch_program_valid_binary_func(subdevice->arch_device, (char *)binary + offset, bin->entry_sizes[j]))
+			{
+				valid = 1;
+				break;
+			}
+
+			offset += bin->entry_sizes[j];
+		}
 
 		/* make sure that a device acepts the binary */
 		if (!valid)
 			return 0;
 	}
+
 	return 1;
 }

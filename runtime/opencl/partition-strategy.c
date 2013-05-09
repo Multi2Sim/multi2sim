@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 #include "partition-strategy.h"
 #include "mhandle.h"
 
@@ -20,7 +21,11 @@ const struct opencl_partition_strategy *get_strategy()
 	if (!value)
 		return strats; // first "default" strategy.
 	else
-		return strats + atoi(value);
+	{
+		int idx = atoi(value);
+		assert(idx >= 0 && idx < sizeof strats / sizeof strats[0]);
+		return strats + idx;
+	}
 }
 
 // default strategy.  Schedule everything onto device 0.
