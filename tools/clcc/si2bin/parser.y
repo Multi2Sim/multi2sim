@@ -105,7 +105,6 @@ rl_line
 		struct si2bin_inst_t *inst = $1;
 
 		/* Generate code */
-		//si2bin_stream_add_inst(si2bin_out_stream, inst);
 		si2bin_inst_gen(inst);
 		elf_enc_buffer_write(si2bin_out_buffer, inst->inst_bytes.bytes, inst->size);
 		si2bin_inst_dump(inst, stdout);
