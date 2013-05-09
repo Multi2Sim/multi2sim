@@ -39,6 +39,8 @@ static unsigned int opengl_buffer_obj_assign_id();
 static struct opengl_buffer_obj_t *opengl_buffer_obj_create();
 static void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buffer_obj);
 static void opengl_buffer_obj_delete(struct opengl_buffer_obj_t *buffer_obj);
+static void opengl_buffer_obj_data(struct opengl_buffer_obj_t *buffer_obj, unsigned int size, const void *data, unsigned int usage);
+
 
 static void opengl_buffer_obj_repo_add(struct linked_list_t *buffer_obj_repo, 
 	struct opengl_buffer_obj_t *buffer_obj);
@@ -161,6 +163,15 @@ static void opengl_buffer_obj_delete(struct opengl_buffer_obj_t *buffer_obj)
 		opengl_debug("\t%s: Cannot delete Buffer Object #%d [%p], check if still in use\n", 
 			__FUNCTION__, buffer_obj->id, buffer_obj);
 	}
+}
+
+static void opengl_buffer_obj_data(struct opengl_buffer_obj_t *buffer_obj, unsigned int size, const void *data, unsigned int usage)
+{
+	/* Save a copy in buffer object */
+	buffer_obj->data = xcalloc(1, size);
+	if (data)
+		memcpy(buffer_obj->data, data, size);
+	buffer_obj->usage = usage;
 }
 
 static void opengl_buffer_obj_repo_add(struct linked_list_t *buffer_obj_repo, 
@@ -386,11 +397,11 @@ void opengl_buffer_binding_points_free(struct opengl_buffer_binding_points_t *bb
 }
 
 struct opengl_buffer_binding_target_t *opengl_buffer_binding_points_get_target(
-	struct opengl_buffer_binding_points_t *bbp, unsigned int target)
+	struct opengl_buffer_binding_points_t *bbp, unsigned int target_id)
 {
 	struct opengl_buffer_binding_target_t *bbt;
 
-	switch(target)
+	switch(target_id)
 	{
 
 	case GL_ARRAY_BUFFER:
@@ -588,6 +599,7 @@ struct opengl_buffer_obj_t *opengl_buffer_obj_repo_get(
 	return NULL;
 }
 
+
 /* 
  * OpenGL API functions 
  */
@@ -703,12 +715,34 @@ void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum us
 
 	target_obj = opengl_buffer_binding_points_get_target(opengl_ctx->buffer_binding_points, target);
 	buffer_obj = opengl_buffer_obj_repo_get(buffer_repo, target_obj->bound_buffer_id);
+	
+	/* GL_INVALID_ENUM is generated if target is not one of the accepted buffer targets */
+	if (!target_obj)
+	{
+		opengl_context_set_error(opengl_ctx, GL_INVALID_ENUM);
+		return;
+	}
+
+	/* GL_INVALID_OPERATION is generated if the reserved buffer object name 0 is bound to target. */
+	if (target_obj->bound_buffer_id == 0)
+	{
+		opengl_context_set_error(opengl_ctx, GL_INVALID_OPERATION);
+		return;
+	}
+	
+	/* GL_INVALID_VALUE is generated if size is negative. */
+	if (size < 0)
+	{
+		opengl_context_set_error(opengl_ctx, GL_INVALID_VALUE);
+		return;
+	}
 
 	/* Save a copy in buffer object */
-	buffer_obj->data = xcalloc(1, size);
-	if (data)
-		memcpy(buffer_obj->data, data, size);
-	buffer_obj->usage = usage;
+	opengl_buffer_obj_data(buffer_obj, size, data, usage);
+
+	/* GL_OUT_OF_MEMORY is generated if the GL is unable to create a data store with the specified size. */
+	if (!buffer_obj->data)
+		opengl_context_set_error(opengl_ctx, GL_OUT_OF_MEMORY);
 }
 
 
@@ -817,23 +851,26 @@ void glClear( GLbitfield mask )
 
 	/* FIXME */
 	if (mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT))
+	{
 		opengl_debug("\tInvalid mask!\n");
+		opengl_context_set_error(opengl_ctx, GL_INVALID_VALUE);
+	}
 
 	if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) 
 	{
 		opengl_debug("\tColor buffer cleared\n");
-		/* Clear color buffer */
+		/* TODO: Clear color buffer */
 	}
 
 	if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) 
 	{
 		opengl_debug("\tDepth buffer cleared\n");
-		/* Clear depth buffer */
+		/* TODO: Clear depth buffer */
 	}
 
 	if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT)
 	{
 		opengl_debug("\tStencil buffer cleared\n");
-		/* Clear stencil buffer */
+		/* TODO: Clear stencil buffer */
 	}
 }

@@ -96,7 +96,7 @@ void opengl_buffer_obj_ref_update(struct opengl_buffer_obj_t *buffer_obj, int ch
 struct opengl_buffer_binding_points_t *opengl_buffer_binding_points_create();
 void opengl_buffer_binding_points_free(struct opengl_buffer_binding_points_t *bbp);
 struct opengl_buffer_binding_target_t *opengl_buffer_binding_points_get_target(
-	struct opengl_buffer_binding_points_t *bbp, unsigned int target);
+	struct opengl_buffer_binding_points_t *bbp, unsigned int target_id);
 
 struct opengl_indexed_buffer_binding_points_t *opengl_indexed_buffer_binding_points_create(unsigned int max_indexed_target);
 void opengl_indexed_buffer_binding_points_free(struct opengl_indexed_buffer_binding_points_t *idx_bbp);
