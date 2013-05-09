@@ -30,11 +30,10 @@
 #include <lib/util/list.h>
 
 #include "arg.h"
+#include "bin.h"
 #include "id.h"
 #include "inst.h"
 #include "si2bin.h"
-#include "si2bin_bin.h"
-//#include "stream.h"
 #include "string.h"
 #include "symbol.h"
 #include "task.h"

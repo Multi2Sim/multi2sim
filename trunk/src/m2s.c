@@ -1583,6 +1583,7 @@ static void m2s_dump(FILE *f)
 static void m2s_dump_summary(FILE *f)
 {
 	double time_in_sec;
+	long long cycles;
 
 	/* No summary dumped if no simulation was run */
 	if (m2s_loop_iter < 2)
@@ -1605,7 +1606,12 @@ static void m2s_dump_summary(FILE *f)
 
 	/* General detailed simulation statistics */
 	if (esim_time)
+	{
+		cycles = esim_cycle();
 		fprintf(f, "SimTime = %.2f [ns]\n", esim_time / 1000.0);
+		fprintf(f, "Frequency = %d [MHz]\n", esim_frequency);
+		fprintf(f, "Cycles = %lld\n", cycles);
+	}
 
 	/* End */
 	fprintf(f, "\n");
