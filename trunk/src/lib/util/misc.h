@@ -22,6 +22,13 @@
 
 #include <stdio.h>
 
+/* Boolean constants */
+#ifndef TRUE
+#define TRUE (1)
+#endif
+#ifndef FALSE
+#define FALSE (0)
+#endif
 
 /* Min, Max */
 #ifndef MIN

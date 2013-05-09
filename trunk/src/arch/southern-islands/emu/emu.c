@@ -257,11 +257,8 @@ void si_emu_opengl_disasm(char *path, int opengl_shader_index)
 }
 
 /* Run one iteration of the Southern Islands GPU emulation loop.
- * Return values are:
- *   - arch_sim_kind_invalid - no more emulation.
- *   - arch_sim_kind_functional - still emulating.
- */
-enum arch_sim_kind_t si_emu_run(void)
+ * Return TRUE if still running. */
+int si_emu_run(void)
 {
 	struct si_ndrange_t *ndrange;
 	struct si_wavefront_t *wavefront;
@@ -280,7 +277,7 @@ enum arch_sim_kind_t si_emu_run(void)
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!list_count(si_emu->running_work_groups))
-		return arch_sim_kind_invalid;
+		return FALSE;
 
 	assert(si_emu->ndrange);
 	ndrange = si_emu->ndrange;
@@ -317,6 +314,6 @@ enum arch_sim_kind_t si_emu_run(void)
 	}
 
 	/* Still emulating */
-	return arch_sim_kind_functional;
+	return TRUE;
 }
 

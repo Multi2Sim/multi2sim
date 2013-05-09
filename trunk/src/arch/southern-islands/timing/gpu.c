@@ -1282,10 +1282,8 @@ void si_gpu_dump_summary(FILE *f)
 }
 
 
-/* Run one iteration of timing simulation. Return values are:
- *   - arch_sim_kind_invalid - no more simulation
- *   - arch_sim_kind_detailed - still simulating */
-enum arch_sim_kind_t si_gpu_run(void)
+/* Run one iteration of timing simulation. Return TRUE if still running. */
+int si_gpu_run(void)
 {
 	struct si_compute_unit_t *compute_unit;
 	struct si_ndrange_t *ndrange;
@@ -1298,8 +1296,8 @@ enum arch_sim_kind_t si_gpu_run(void)
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!list_count(si_emu->waiting_work_groups) && 
-		!list_count(si_emu->running_work_groups))
-		return arch_sim_kind_invalid;
+			!list_count(si_emu->running_work_groups))
+		return FALSE;
 
 	ndrange = si_emu->ndrange;
 	assert(ndrange);
@@ -1308,10 +1306,10 @@ enum arch_sim_kind_t si_gpu_run(void)
 	while (list_count(si_gpu->available_compute_units) && 
 		list_count(si_emu->waiting_work_groups))
 	{
-		work_group_id = (long)list_dequeue(si_emu->waiting_work_groups);
+		work_group_id = (long) list_dequeue(si_emu->waiting_work_groups);
 		work_group = si_work_group_create(work_group_id, ndrange);
 
-		list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
+		list_enqueue(si_emu->running_work_groups, (void *) work_group_id);
 
 		si_compute_unit_map_work_group(
 			list_dequeue(si_gpu->available_compute_units),
@@ -1339,7 +1337,7 @@ enum arch_sim_kind_t si_gpu_run(void)
 
 	/* Stop if any reason met */
 	if (esim_finish)
-		return arch_sim_kind_detailed;
+		return TRUE;
 
 	/* If we're out of work, request more */
 	if (!list_count(si_emu->waiting_work_groups))
@@ -1354,6 +1352,6 @@ enum arch_sim_kind_t si_gpu_run(void)
 		si_compute_unit_run(compute_unit);
 	}
 
-	/* Return true */
-	return arch_sim_kind_detailed;
+	/* Still running */
+	return TRUE;
 }

@@ -648,10 +648,9 @@ void evg_gpu_uop_trash_add(struct evg_uop_t *uop)
 }
 
 
-/* Run one iteration of timing simulation. Return values are:
- *   - arch_sim_kind_invalid - no valid timing simulation.
- *   - arch_sim_kind_detailed - still simulating */
-enum arch_sim_kind_t evg_gpu_run(void)
+/* Run one iteration of timing simulation. Return TRUE if the timing simulation
+ * is still running. */
+int evg_gpu_run(void)
 {
 	struct evg_ndrange_t *ndrange;
 
@@ -661,7 +660,7 @@ enum arch_sim_kind_t evg_gpu_run(void)
 	/* For efficiency when no Evergreen emulation is selected, exit here
 	 * if the list of existing ND-Ranges is empty. */
 	if (!evg_emu->ndrange_list_count)
-		return arch_sim_kind_invalid;
+		return FALSE;
 
 	/* Start one ND-Range in state 'pending' */
 	while ((ndrange = evg_emu->pending_ndrange_list_head))
@@ -719,7 +718,7 @@ enum arch_sim_kind_t evg_gpu_run(void)
 
 	/* Stop if any reason met */
 	if (esim_finish)
-		return arch_sim_kind_detailed;
+		return TRUE;
 
 	/* Free instructions in trash */
 	evg_gpu_uop_trash_empty();
@@ -757,5 +756,5 @@ enum arch_sim_kind_t evg_gpu_run(void)
 	}
 
 	/* Still simulating */
-	return arch_sim_kind_detailed;
+	return TRUE;
 }

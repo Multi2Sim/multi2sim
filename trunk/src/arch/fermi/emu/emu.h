@@ -91,7 +91,7 @@ void frm_emu_init(void);
 void frm_emu_done(void);
 void frm_emu_dump(FILE *f);
 
-enum arch_sim_kind_t frm_emu_run(void);
+int frm_emu_run(void);
 
 void frm_emu_dump_summary(FILE *f);
 

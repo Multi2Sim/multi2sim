@@ -227,11 +227,8 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 }
 
 
-/* One iteration of emulator. Return values are:
- *   - arch_sim_kind_invalid - No more emulation.
- *   - arch_sim_kind_functiona - still emulating. */
-
-enum arch_sim_kind_t evg_emu_run(void)
+/* One iteration of emulator. Return TRUE if the emulation is still running. */
+int evg_emu_run(void)
 {
 	struct evg_ndrange_t *ndrange;
 	struct evg_ndrange_t *ndrange_next;
@@ -244,7 +241,7 @@ enum arch_sim_kind_t evg_emu_run(void)
 
 	/* Exit if there are no ND-Ranges to emulate */
 	if (!evg_emu->ndrange_list_count)
-		return arch_sim_kind_invalid;
+		return FALSE;
 
 	/* Start any ND-Range in state 'pending' */
 	while ((ndrange = evg_emu->pending_ndrange_list_head))
@@ -302,5 +299,5 @@ enum arch_sim_kind_t evg_emu_run(void)
 	}
 
 	/* Still emulating */
-	return arch_sim_kind_functional;
+	return TRUE;
 }

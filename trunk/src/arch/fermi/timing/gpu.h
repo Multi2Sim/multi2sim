@@ -259,7 +259,7 @@ void frm_sm_run_simd(struct frm_sm_t *sm);
 void frm_sm_run_scalar_unit(struct frm_sm_t *sm);
 void frm_sm_run_branch_unit(struct frm_sm_t *sm);
 
-enum arch_sim_kind_t frm_gpu_run(void);
+int frm_gpu_run(void);
 
 void frm_simd_run(struct frm_simd_t *simd);
 void frm_scalar_unit_run(struct frm_scalar_unit_t *scalar_unit);

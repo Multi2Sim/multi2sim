@@ -1058,14 +1058,12 @@ void x86_cpu_run_fast_forward(void)
 }
 
 
-/* Run one iteration of timing simulation. Return values are:
- *   - arch_sim_kind_invalid - no more simulation.
- *   - arch_sim_kind_detailed - still simulating. */
-enum arch_sim_kind_t x86_cpu_run(void)
+/* Run one iteration of timing simulation. Return TRUE if still running. */
+int x86_cpu_run(void)
 {
 	/* Stop if no context is running */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-		return arch_sim_kind_invalid;
+		return FALSE;
 
 	/* Fast-forward simulation */
 	if (x86_cpu_fast_forward_count && arch_x86->inst_count < x86_cpu_fast_forward_count)
@@ -1082,7 +1080,7 @@ enum arch_sim_kind_t x86_cpu_run(void)
 
 	/* Stop if any previous reason met */
 	if (esim_finish)
-		return arch_sim_kind_invalid;
+		return TRUE;
 
 	/* One more cycle of x86 timing simulation */
 	arch_x86->cycle++;
@@ -1098,5 +1096,5 @@ enum arch_sim_kind_t x86_cpu_run(void)
 	x86_emu_process_events();
 
 	/* Still simulating */
-	return arch_sim_kind_detailed;
+	return TRUE;
 }

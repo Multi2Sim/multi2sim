@@ -1083,10 +1083,8 @@ void frm_gpu_dump_summary(FILE *f)
 }
 
 
-/* Run one iteration of detailed simulation. Return values are:
- *   - arch_sim_kind_invalid - no timing simulation
- *   - arch_sim_kind_detailed - still simulating */
-enum arch_sim_kind_t frm_gpu_run(void)
+/* Run one iteration of detailed simulation. Return TRUE if still running. */
+int frm_gpu_run(void)
 {
 	struct frm_grid_t *grid;
 
@@ -1096,7 +1094,7 @@ enum arch_sim_kind_t frm_gpu_run(void)
 	/* For efficiency when no Fermi emulation is selected, 
 	 * exit here if the list of existing grids is empty. */
 	if (!frm_emu->grid_list_count)
-		return arch_sim_kind_invalid;
+		return FALSE;
 
 	/* Start 1 grid in state 'pending' */
 	while ((grid = frm_emu->pending_grid_list_head))
@@ -1158,7 +1156,7 @@ enum arch_sim_kind_t frm_gpu_run(void)
 
 	/* Stop if any reason met */
 	if (esim_finish)
-		return arch_sim_kind_detailed;
+		return TRUE;
 
 	/* Run one loop iteration on each busy SM */
 	for (sm = frm_gpu->sm_busy_list_head; sm;
@@ -1194,6 +1192,6 @@ enum arch_sim_kind_t frm_gpu_run(void)
 	}
 
 	/* Still simulating */
-	return arch_sim_kind_detailed;
+	return TRUE;
 }
 
