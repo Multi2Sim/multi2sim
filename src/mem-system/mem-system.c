@@ -41,14 +41,51 @@
 
 int mem_debug_category;
 int mem_trace_category;
-int mem_system_peer_transfers;
+int mem_peer_transfers;
 
 /* Frequency domain, as returned by function 'esim_new_domain'. */
+int mem_frequency = 1000;
 int mem_domain_index;
 
 struct mem_system_t *mem_system;
 
 char *mem_report_file_name = "";
+
+
+
+/*
+ * Memory System Object
+ */
+
+struct mem_system_t *mem_system_create(void)
+{
+	struct mem_system_t *mem_system;
+
+	/* Initialize */
+	mem_system = xcalloc(1, sizeof(struct mem_system_t));
+	mem_system->net_list = list_create();
+	mem_system->mod_list = list_create();
+
+	/* Return */
+	return mem_system;
+}
+
+
+void mem_system_free(struct mem_system_t *mem_system)
+{
+	/* Free memory modules */
+	while (list_count(mem_system->mod_list))
+		mod_free(list_pop(mem_system->mod_list));
+	list_free(mem_system->mod_list);
+
+	/* Free networks */
+	while (list_count(mem_system->net_list))
+		net_free(list_pop(mem_system->net_list));
+	list_free(mem_system->net_list);
+
+	/* Free memory system */
+	free(mem_system);
+}
 
 
 
@@ -77,6 +114,10 @@ void mem_system_init(void)
 	if (mem_config_file_name && *mem_config_file_name && !count)
 		fatal("memory configuration file given, but no timing simulation.\n%s",
 				mem_err_timing);
+	
+	/* Create global memory system and read configuration */
+	mem_system = mem_system_create();
+	mem_config_read();
 
 	/* Trace */
 	mem_trace_category = trace_new_category();
@@ -86,13 +127,8 @@ void mem_system_init(void)
 		fatal("%s: cannot open GPU cache report file",
 			mem_report_file_name);
 
-	/* Frequency domain */
-	mem_domain_index = esim_new_domain(1000);  /* FIXME - 1GHz default */
-
-	/* Initialize */
-	mem_system = xcalloc(1, sizeof(struct mem_system_t));
-	mem_system->net_list = list_create();
-	mem_system->mod_list = list_create();
+	/* Create Frequency domain */
+	mem_domain_index = esim_new_domain(mem_frequency);
 
 	/* Event handler for memory hierarchy commands */
 	EV_MEM_SYSTEM_COMMAND = esim_register_event_with_name(mem_system_command_handler,
@@ -277,9 +313,6 @@ void mem_system_init(void)
 			mem_domain_index, "mod_local_mem_find_and_lock_action");
 	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_FINISH = esim_register_event_with_name(mod_handler_local_mem_find_and_lock,
 			mem_domain_index, "mod_local_mem_find_and_lock_finish");
-
-	/* Read configuration */
-	mem_config_read();
 }
 
 
@@ -288,18 +321,8 @@ void mem_system_done(void)
 	/* Dump report */
 	mem_system_dump_report();
 
-	/* Free memory modules */
-	while (list_count(mem_system->mod_list))
-		mod_free(list_pop(mem_system->mod_list));
-	list_free(mem_system->mod_list);
-
-	/* Free networks */
-	while (list_count(mem_system->net_list))
-		net_free(list_pop(mem_system->net_list));
-	list_free(mem_system->net_list);
-
 	/* Free memory system */
-	free(mem_system);
+	mem_system_free(mem_system);
 }
 
 
