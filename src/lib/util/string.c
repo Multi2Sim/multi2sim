@@ -262,6 +262,28 @@ char *str_token_list_first(struct list_t *token_list)
 }
 
 
+int str_token_list_find(struct list_t *token_list, char *token)
+{
+	int index;
+
+	LIST_FOR_EACH(token_list, index)
+		if (!strcmp(token, list_get(token_list, index)))
+			return index;
+	return -1;
+}
+
+
+int str_token_list_find_case(struct list_t *token_list, char *token)
+{
+	int index;
+
+	LIST_FOR_EACH(token_list, index)
+		if (!strcasecmp(token, list_get(token_list, index)))
+			return index;
+	return -1;
+}
+
+
 void str_token_list_dump(struct list_t *token_list, FILE *f)
 {
 	int i;

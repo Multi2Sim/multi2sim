@@ -61,6 +61,15 @@ void str_token_list_free(struct list_t *token_list);
 
 char *str_token_list_shift(struct list_t *token_list);
 char *str_token_list_first(struct list_t *token_list);
+
+/* Return the index of token 'token' inside of the token list. If the token is
+ * not present, return -1. */
+int str_token_list_find(struct list_t *token_list, char *token);
+
+/* Same as 'str_token_list_find', but perform case-insensitive comparisons to
+ * search for the requested token. */
+int str_token_list_find_case(struct list_t *token_list, char *token);
+
 void str_token_list_dump(struct list_t *token_list, FILE *f);
 
 

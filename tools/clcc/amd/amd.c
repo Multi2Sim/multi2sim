@@ -44,17 +44,48 @@ char *amd_device_name = "";
 
 
 
-
 /*
- *
+ * AMD Device Object
  */
 
-#define AMD_MAX_DEVICES  100
+struct amd_device_t
+{
+	cl_device_id device_id;
+	char *name;
+	struct list_t *token_list;
+};
 
-static int amd_num_devices;
-static cl_device_id amd_device_list[AMD_MAX_DEVICES];
+
+struct amd_device_t *amd_device_create(cl_device_id device_id, char *name)
+{
+	struct amd_device_t *device;
+
+	device = xcalloc(1, sizeof(struct amd_device_t));
+	device->device_id = device_id;
+	device->name = xstrdup(name);
+	device->token_list = str_token_list_create(name, " (),");
+
+	return device;
+}
+
+
+void amd_device_free(struct amd_device_t *device)
+{
+	str_token_list_free(device->token_list);
+	free(device->name);
+	free(device);
+}
+
+
+
+
+/*
+ * Private Functions
+ */
+
 static cl_context amd_context;
-static cl_device_id amd_device;
+static struct list_t *amd_device_list;
+static struct list_t *amd_selected_device_list;
 
 
 static void amd_binary_analyze_inner_elf(char *file_name)
@@ -245,7 +276,8 @@ static void amd_binary_analyze(char *file_name)
 
 #define AMD_MAX_DEVICES  100
 
-static void amd_compile_source(char *source_file_name, char *out_file_name)
+static void amd_compile_source(char *source_file_name, char *out_file_name,
+		struct amd_device_t *device)
 {
 	char *source_file_ext;
 	char out_file_name_root[MAX_STRING_SIZE];
@@ -254,6 +286,7 @@ static void amd_compile_source(char *source_file_name, char *out_file_name)
 	
 	int size;
 	int index;
+	int num_devices;
 	
 	size_t program_source_size;
 	size_t bin_sizes[AMD_MAX_DEVICES];
@@ -306,12 +339,13 @@ static void amd_compile_source(char *source_file_name, char *out_file_name)
 	}
 
 	/* Compile source */
-	err = clBuildProgram(program, 1, &amd_device, compiler_flags, NULL, NULL);
+	err = clBuildProgram(program, 1, &device->device_id, compiler_flags, NULL, NULL);
 	if (err != CL_SUCCESS)
 	{
 		char buf[0x10000];
 
-		clGetProgramBuildInfo(program, amd_device, CL_PROGRAM_BUILD_LOG, sizeof buf, buf, NULL);
+		clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG,
+				sizeof buf, buf, NULL);
 		fprintf(stderr, "\n%s\n", buf);
 		fatal("compilation failed");
 	}
@@ -319,11 +353,11 @@ static void amd_compile_source(char *source_file_name, char *out_file_name)
 
 	/* Get number and size of binaries */
 	clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof bin_sizes, bin_sizes, &bin_sizes_ret);
-	amd_num_devices = bin_sizes_ret / sizeof(size_t);
-	for (index = 0; index < amd_num_devices; index++)
+	num_devices = bin_sizes_ret / sizeof(size_t);
+	for (index = 0; index < num_devices; index++)
 		if (bin_sizes[index])
 			break;
-	if (index == amd_num_devices)
+	if (index == num_devices)
 		fatal("%s: no binary generated", __FUNCTION__);
 
 	/* Dump binary into file */
@@ -348,55 +382,90 @@ static void amd_compile_source(char *source_file_name, char *out_file_name)
 
 
 
-/* Read global variable 'amd_device_name' and set variable 'amd_device' to the
- * OpenCL device it refers to. */
+/* Read global variable 'amd_device_name' containing a list of devices split by
+ * commas, and initialize the list of devices 'amd_device_list' with all
+ * present devices. */
+#define MAX_DEVICE_IDS  100
 static void amd_read_device(void)
 {
-	char *endptr;
-	char name[MAX_STRING_SIZE];
-	char *token;
-	char *delim;
+	struct list_t *token_list;
+	struct amd_device_t *device;
 
-	int device_index;
-	int i;
+	char *endptr;
+	char *name;
+	char *comma;
+
+	int index;
 
 	/* No device given */
 	if (!amd_device_name || !*amd_device_name)
 		fatal("no device given, use option '--amd-device'");
 
-	/* Try to interpret device name as a number */
-	device_index = strtol(amd_device_name, &endptr, 10);
-	if (!*endptr)
-	{
-		if (!IN_RANGE(device_index, 0, amd_num_devices - 1))
-			fatal("invalid device index, use '--amd-list' for valid devices");
-		amd_device = amd_device_list[device_index];
-		goto out;
-	}
+	/* Split the list of device names in tokens */
+	token_list = str_token_list_create(amd_device_name, ",");
+	if (!token_list->count)
+		fatal("invalid list of devices");
 
-	/* Device name given as a string. If the given name matches any of the tokens
-	 * in the device name, that device will be selected (first occurrence). */
-	for (i = 0; i < amd_num_devices; i++)
+	/* Extract devices */
+	while (token_list->count)
 	{
-		clGetDeviceInfo(amd_device_list[i], CL_DEVICE_NAME, sizeof name, name, NULL);
-		delim = ", ";
-		for (token = strtok(name, " ,"); token; token = strtok(NULL, delim))
+		/* Get device string */
+		name = str_token_list_first(token_list);
+
+		/* Try to interpret device name as a number */
+		index = strtol(name, &endptr, 10);
+		if (!*endptr)
 		{
-			if (!strcasecmp(amd_device_name, token))
-			{
-				amd_device = amd_device_list[i];
-				goto out;
-			}
+			if (!IN_RANGE(index, 0, amd_device_list->count - 1))
+				fatal("invalid device index (%d), use '--amd-list' for a list",
+						index);
+
+			/* Get device */
+			device = list_get(amd_device_list, index);
 		}
+
+		/* Device given by its name */
+		else
+		{
+			LIST_FOR_EACH(amd_device_list, index)
+			{
+				device = list_get(amd_device_list, index);
+				if (str_token_list_find_case(device->token_list, name) >= 0)
+					break;
+			}
+
+			/* Not found */
+			if (index == amd_device_list->count)
+				fatal("%s: invalid device, use '--amd-list' for a list",
+					name);
+
+		}
+
+		/* Check that device is not added yet */
+		if (list_index_of(amd_selected_device_list, device) >= 0)
+			fatal("%s: device added twice", device->name);
+
+		/* Add selected device */
+		list_add(amd_selected_device_list, device);
+
+		/* Next token */
+		str_token_list_shift(token_list);
 	}
 
-	/* Invalid device */
-	fatal("invalid device name, use '--amd-list' for valid devices");
+	/* Free tokens */
+	str_token_list_free(token_list);
 
-out:
-	/* Device found */
-	clGetDeviceInfo(amd_device, CL_DEVICE_NAME, sizeof name, name, NULL);
-	printf("Device '%s' selected\n", name);
+	/* Devices found */
+	assert(amd_selected_device_list->count);
+	printf("Selected devices: ");
+	comma = "";
+	LIST_FOR_EACH(amd_selected_device_list, index)
+	{
+		device = list_get(amd_selected_device_list, index);
+		printf("%s%s", comma, device->name);
+		comma = ", ";
+	}
+	printf("\n");
 }
 
 
@@ -415,6 +484,17 @@ out:
 
 void amd_init(void)
 {
+	struct amd_device_t *device;
+	cl_device_id device_ids[MAX_DEVICE_IDS];
+	char name[MAX_STRING_SIZE];
+
+	int num_devices;
+	int i;
+
+	/* Initialize list of devices */
+	amd_device_list = list_create();
+	amd_selected_device_list = list_create();
+
 	/* Platform */
 	cl_int err;
 	cl_platform_id platform;
@@ -434,26 +514,43 @@ void amd_init(void)
 		fatal("%s: cannot create OpenCL context", __FUNCTION__);
 	
 	/* Get device list from context */
-	err = clGetContextInfo(amd_context, CL_CONTEXT_NUM_DEVICES, sizeof amd_num_devices,
-			&amd_num_devices, NULL);
-	err |= clGetContextInfo(amd_context, CL_CONTEXT_DEVICES, sizeof amd_device_list,
-			amd_device_list, NULL);
+	err = clGetContextInfo(amd_context, CL_CONTEXT_NUM_DEVICES, sizeof num_devices,
+			&num_devices, NULL);
+	err |= clGetContextInfo(amd_context, CL_CONTEXT_DEVICES, sizeof device_ids,
+			device_ids, NULL);
 	if (err != CL_SUCCESS)
 		fatal("%s: cannot get OpenCL device list", __FUNCTION__);
 	
+	/* Add devices to device list */
+	for (i = 0; i < num_devices; i++)
+	{
+		/* Get device name */
+		clGetDeviceInfo(device_ids[i], CL_DEVICE_NAME, sizeof name, name, NULL);
+
+		/* Create device and insert in list */
+		device = amd_device_create(device_ids[i], name);
+		list_add(amd_device_list, device);
+	}
 }
 
 
 void amd_done(void)
 {
+	int index;
+
+	/* Free list of devices */
+	LIST_FOR_EACH(amd_device_list, index)
+		amd_device_free(list_get(amd_device_list, index));
+	list_free(amd_device_list);
+	list_free(amd_selected_device_list);
 }
 
 
 void amd_dump_device_list(FILE *f)
 {
-	int i;
-	char name[MAX_STRING_SIZE];
+	struct amd_device_t *device;
 	char vendor[MAX_STRING_SIZE];
+	int index;
 
 	/* Initialize */
 	amd_init();
@@ -461,14 +558,14 @@ void amd_dump_device_list(FILE *f)
 	/* List amd_device_list */
 	fprintf(f, "\n ID   Name, Vendor\n");
 	fprintf(f, "----------------------------------------------------------\n");
-	for (i = 0; i < amd_num_devices; i++)
+	LIST_FOR_EACH(amd_device_list, index)
 	{
-		clGetDeviceInfo(amd_device_list[i], CL_DEVICE_NAME, MAX_STRING_SIZE, name, NULL);
-		clGetDeviceInfo(amd_device_list[i], CL_DEVICE_VENDOR, MAX_STRING_SIZE, vendor, NULL);
-		fprintf(f, " %2d  %s, %s\n", i, name, vendor);
+		device = list_get(amd_device_list, index);
+		clGetDeviceInfo(device->device_id, CL_DEVICE_VENDOR, MAX_STRING_SIZE, vendor, NULL);
+		fprintf(f, " %2d  %s, %s\n", index, device->name, vendor);
 	}
 	fprintf(f, "----------------------------------------------------------\n");
-	fprintf(f, "\t%d devices available\n\n", amd_num_devices);
+	fprintf(f, "\t%d devices available\n\n", amd_device_list->count);
 
 	/* Finish */
 	amd_done();
@@ -477,6 +574,7 @@ void amd_dump_device_list(FILE *f)
 
 void amd_compile(struct list_t *source_file_list, char *out_file_name)
 {
+	struct amd_device_t *device;
 	int index;
 
 	/* No input file given */
@@ -494,9 +592,10 @@ void amd_compile(struct list_t *source_file_list, char *out_file_name)
 	amd_read_device();
 
 	/* Compile source files */
+	device = list_get(amd_selected_device_list, 0);
 	LIST_FOR_EACH(source_file_list, index)
 		amd_compile_source(list_get(source_file_list, index),
-				out_file_name);
+				out_file_name, device);
 
 	/* Finish */
 	amd_done();
