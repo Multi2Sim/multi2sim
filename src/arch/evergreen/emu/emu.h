@@ -98,7 +98,7 @@ void evg_emu_dump(FILE *f);
 
 void evg_emu_dump_summary(FILE *f);
 
-enum arch_sim_kind_t evg_emu_run(void);
+int evg_emu_run(void);
 
 void evg_emu_disasm(char *path);
 void evg_emu_opengl_disasm(char *path, int opengl_shader_index);

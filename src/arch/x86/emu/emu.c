@@ -729,17 +729,14 @@ void x86_emu_process_events()
  */
 
 
-/* Run one iteration of the x86 emulation loop. Return values are:
- *   - arch_sim_kind_invalid - emulation finished
- *   - arch_sim_kind_functional - still emulating
- */
-enum arch_sim_kind_t x86_emu_run(void)
+/* Run one iteration of the x86 emulation loop. Return TRUE if still running. */
+int x86_emu_run(void)
 {
 	struct x86_ctx_t *ctx;
 
 	/* Stop if there is no context running */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-		return arch_sim_kind_invalid;
+		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && arch_x86->inst_count >= x86_emu_max_inst)
@@ -751,7 +748,7 @@ enum arch_sim_kind_t x86_emu_run(void)
 
 	/* Stop if any previous reason met */
 	if (esim_finish)
-		return arch_sim_kind_invalid;
+		return TRUE;
 
 	/* Run an instruction from every running process */
 	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
@@ -764,6 +761,6 @@ enum arch_sim_kind_t x86_emu_run(void)
 	/* Process list of suspended contexts */
 	x86_emu_process_events();
 
-	/* Valid simulation */
-	return arch_sim_kind_functional;
+	/* Still running */
+	return TRUE;
 }

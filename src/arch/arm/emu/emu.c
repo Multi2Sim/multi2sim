@@ -225,17 +225,15 @@ void arm_emu_process_events_schedule()
  * Functional simulation loop
  */
 
-/* Run one iteration of the ARM emulation loop. Return values are:
- *   - arch_sim_kind_invalid - no more simulation
- *   - arch_sim_kind_functional - still valid simulation
- */
-enum arch_sim_kind_t arm_emu_run(void)
+/* Run one iteration of the ARM emulation loop. Return TRUE if the emulation is
+ * still running. */
+int arm_emu_run(void)
 {
 	struct arm_ctx_t *ctx;
 
 	/* Stop if there is no context running */
 	if (arm_emu->finished_list_count >= arm_emu->context_list_count)
-		return arch_sim_kind_invalid;
+		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (arm_emu_max_inst && arch_arm->inst_count >= arm_emu_max_inst)
@@ -247,7 +245,7 @@ enum arch_sim_kind_t arm_emu_run(void)
 
 	/* Stop if any previous reason met */
 	if (esim_finish)
-		return arch_sim_kind_invalid;
+		return TRUE;
 
 	/* Run an instruction from every running process */
 	for (ctx = arm_emu->running_list_head; ctx; ctx = ctx->running_list_next)
@@ -257,9 +255,6 @@ enum arch_sim_kind_t arm_emu_run(void)
 	while (arm_emu->finished_list_head)
 		arm_ctx_free(arm_emu->finished_list_head);
 
-	/* Process list of suspended contexts */
-	/*arm_emu_process_events();*/
-
 	/* Still running */
-	return arch_sim_kind_functional;
+	return TRUE;
 }

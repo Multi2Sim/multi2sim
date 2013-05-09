@@ -20,6 +20,7 @@
 #include <arch/common/arch.h>
 #include <arch/mips/emu/emu.h>
 #include <lib/esim/esim.h>
+#include <lib/util/misc.h>
 
 #include "cpu.h"
 
@@ -46,12 +47,10 @@ void mips_cpu_dump(FILE *f)
 {
 }
 
-/* Run one iteration of timing simulation. Return values are:
- *  - arch_sim_kind_invalid - no timing simulation. 
- *  - arch_sim_kind_detailed - still simulating. */
-enum arch_sim_kind_t mips_cpu_run(void)
+/* Run one iteration of timing simulation. Return TRUE if still running. */
+int mips_cpu_run(void)
 {
-	return arch_sim_kind_invalid;
+	return FALSE;
 }
 
 /* TODO: Implement the Mips cpu dump for the cycle accurate simulation */

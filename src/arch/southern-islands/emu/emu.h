@@ -227,11 +227,11 @@ extern struct si_emu_t *si_emu;
 
 void si_emu_init(void);
 void si_emu_done(void);
+
+int si_emu_run(void);
+
 void si_emu_dump(FILE *f);
-
 void si_emu_dump_summary(FILE *f);
-
-enum arch_sim_kind_t si_emu_run(void);
 
 void si_emu_disasm(char *path);
 void si_emu_opengl_disasm(char *path, int opengl_shader_index);
