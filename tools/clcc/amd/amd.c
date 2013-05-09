@@ -25,11 +25,16 @@
 #include <clcc/amd/amd.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/elf-encode.h>
 #include <lib/util/elf-format.h>
+#include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
+
+
+#define AMD_MAX_DEVICES  100
 
 
 
@@ -274,14 +279,13 @@ static void amd_binary_analyze(char *file_name)
 }
 
 
-#define AMD_MAX_DEVICES  100
-
+/* Compile source in 'source_file_name' into binary 'out_file_name' (should contain
+ * a valid string). If 'verbose' is set, additional output is provided about
+ * the compilation. If 'dump_all' is set, intermediate files are dumped. */
 static void amd_compile_source(char *source_file_name, char *out_file_name,
-		struct amd_device_t *device)
+		struct amd_device_t *device, int verbose, int dump_all)
 {
-	char *source_file_ext;
 	char out_file_name_root[MAX_STRING_SIZE];
-	char out_file_name_str[MAX_STRING_SIZE];
 	char compiler_flags[MAX_STRING_SIZE];
 	
 	int size;
@@ -292,26 +296,18 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 	size_t bin_sizes[AMD_MAX_DEVICES];
 	size_t bin_sizes_ret;
 	
+	char *source_file_ext;
 	char *program_source;
 	char *bin_bits[AMD_MAX_DEVICES];
 	
 	cl_int err;
-
-
+		
 	/* Get source file without '.cl' suffix */
 	source_file_ext = ".cl";
 	snprintf(out_file_name_root, sizeof out_file_name_root, "%s", source_file_name);
 	if (str_suffix(out_file_name_root, source_file_ext))
 		out_file_name_root[strlen(out_file_name_root) - strlen(source_file_ext)] = '\0';
 
-	/* Compute output file name if not given. In either case, the output
-	 * file is placed in variable 'out_file_name_str'. */
-	if (!out_file_name || !*out_file_name)
-		snprintf(out_file_name_str, sizeof out_file_name_str,
-				"%s.bin", out_file_name_root);
-	else
-		snprintf(out_file_name_str, sizeof out_file_name_str,
-				"%s", out_file_name);
 
 	/* Read the program source */
 	program_source = read_buffer(source_file_name, &size);
@@ -364,19 +360,98 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 	memset(bin_bits, 0, sizeof bin_bits);
 	bin_bits[index] = xmalloc(bin_sizes[index]);
 	clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof bin_bits, bin_bits, NULL);
-	if (!write_buffer(out_file_name_str, bin_bits[index], bin_sizes[index]))
-		fatal("%s: cannot write to file", out_file_name_str);
+	if (!write_buffer(out_file_name, bin_bits[index], bin_sizes[index]))
+		fatal("%s: cannot write to file", out_file_name);
 	
 	/* Free buffers */
 	free(bin_bits[index]);
-	printf("\t%s - kernel binary created\n", out_file_name_str);
+	if (verbose)
+		printf("\t%s - kernel binary created\n", out_file_name);
 
 	/* Process generated binary */
-	if (amd_dump_all)
+	if (dump_all)
 	{
 		printf("\t%s/* - AMD intermediate files dumped\n", out_file_name_root);
-		amd_binary_analyze(out_file_name_str);
+		amd_binary_analyze(out_file_name);
 	}
+}
+
+
+static void amd_compile_source_packed(char *source_file_name, char *out_file_name)
+{
+	char temp_file_name[MAX_STRING_SIZE];
+
+	struct amd_device_t *device;
+	struct elf_file_t *kernel_file;
+	struct elf_enc_file_t *file;
+	struct elf_enc_buffer_t *buffer;
+	struct elf_enc_section_t *section;
+	struct elf_enc_symbol_t *symbol;
+	struct elf_enc_symbol_table_t *symbol_table;
+
+	int index;
+	int machine;
+	FILE *f;
+
+	/* Create target ELF file */
+	file = elf_enc_file_create();
+
+	/* Create ELF symbol table */
+	symbol_table = elf_enc_symbol_table_create(".symtab", ".strtab");
+	elf_enc_file_add_symbol_table(file, symbol_table);
+
+	/* Create temporary file to dump binaries */
+	f = file_create_temp(temp_file_name, sizeof temp_file_name);
+
+	/* Compile for each device */
+	LIST_FOR_EACH(amd_selected_device_list, index)
+	{
+		/* Compile file for device */
+		device = list_get(amd_selected_device_list, index);
+		amd_compile_source(source_file_name, temp_file_name, device,
+				FALSE, FALSE);
+
+		/* Read the 'eh_machine' field */
+		kernel_file = elf_file_create_from_path(temp_file_name);
+		machine = kernel_file->header->e_machine;
+		elf_file_free(kernel_file);
+
+		/* Create ELF buffer */
+		buffer = elf_enc_buffer_create();
+		elf_enc_buffer_read_from_file(buffer, f);
+		elf_enc_file_add_buffer(file, buffer);
+
+		/* Create ELF section */
+		section = elf_enc_section_create(".text", buffer, buffer);
+		elf_enc_file_add_section(file, section);
+
+		/* Create ELF symbol */
+		symbol = elf_enc_symbol_create(device->name);
+		symbol->symbol.st_value = machine;
+		symbol->symbol.st_shndx = section->index;
+		elf_enc_symbol_table_add(symbol_table, symbol);
+	}
+
+	/* Close temporary file */
+	fclose(f);
+
+	/* Generate ELF file */
+	buffer = elf_enc_buffer_create();
+	elf_enc_file_generate(file, buffer);
+
+	/* Open output file */
+	f = file_open_for_write(out_file_name);
+	if (!f)
+		fatal("%s: cannot create output file", out_file_name);
+
+	/* Dump and close */
+	elf_enc_buffer_write_to_file(buffer, f);
+	elf_enc_buffer_free(buffer);
+	fclose(f);
+
+	/* Free ELF file */
+	elf_enc_file_free(file);
+	printf("\t%s - packed kernel binary created\n", out_file_name);
 }
 
 
@@ -385,7 +460,6 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 /* Read global variable 'amd_device_name' containing a list of devices split by
  * commas, and initialize the list of devices 'amd_device_list' with all
  * present devices. */
-#define MAX_DEVICE_IDS  100
 static void amd_read_device(void)
 {
 	struct list_t *token_list;
@@ -485,7 +559,7 @@ static void amd_read_device(void)
 void amd_init(void)
 {
 	struct amd_device_t *device;
-	cl_device_id device_ids[MAX_DEVICE_IDS];
+	cl_device_id device_ids[AMD_MAX_DEVICES];
 	char name[MAX_STRING_SIZE];
 
 	int num_devices;
@@ -574,6 +648,12 @@ void amd_dump_device_list(FILE *f)
 
 void amd_compile(struct list_t *source_file_list, char *out_file_name)
 {
+	char out_file_name_str[MAX_STRING_SIZE];
+	char out_file_name_root[MAX_STRING_SIZE];
+
+	char *source_file_name;
+	char *source_file_ext;
+
 	struct amd_device_t *device;
 	int index;
 
@@ -592,10 +672,44 @@ void amd_compile(struct list_t *source_file_list, char *out_file_name)
 	amd_read_device();
 
 	/* Compile source files */
-	device = list_get(amd_selected_device_list, 0);
 	LIST_FOR_EACH(source_file_list, index)
-		amd_compile_source(list_get(source_file_list, index),
-				out_file_name, device);
+	{
+		/* Get source file */
+		source_file_name = list_get(source_file_list, index);
+
+		/* Get source file without '.cl' suffix */
+		source_file_ext = ".cl";
+		snprintf(out_file_name_root, sizeof out_file_name_root, "%s", source_file_name);
+		if (str_suffix(out_file_name_root, source_file_ext))
+			out_file_name_root[strlen(out_file_name_root) - strlen(source_file_ext)] = '\0';
+
+		/* Compute output file name if not given. In either case, the output
+		 * file is placed in variable 'out_file_name_str'. */
+		if (!out_file_name || !*out_file_name)
+			snprintf(out_file_name_str, sizeof out_file_name_str,
+					"%s.bin", out_file_name_root);
+		else
+			snprintf(out_file_name_str, sizeof out_file_name_str,
+					"%s", out_file_name);
+		out_file_name = out_file_name_str;
+
+
+		/* One device */
+		assert(amd_selected_device_list->count);
+		if (amd_selected_device_list->count == 1)
+		{
+			device = list_get(amd_selected_device_list, 0);
+			amd_compile_source(source_file_name, out_file_name, device,
+					TRUE, amd_dump_all);
+		}
+
+		/* Multiple devices */
+		else
+		{
+			amd_compile_source_packed(source_file_name,
+					out_file_name);
+		}
+	}
 
 	/* Finish */
 	amd_done();

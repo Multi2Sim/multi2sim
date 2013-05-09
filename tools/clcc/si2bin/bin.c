@@ -23,6 +23,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
+#include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
@@ -367,6 +368,8 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer)
         struct elf_enc_section_t *rodata_section;
 
         struct elf_enc_file_t *file;
+
+	FILE *f;
 	
 
 	bin = si2bin_bin_create();
@@ -531,8 +534,10 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer)
         kernel_buffer = elf_enc_buffer_create();
 
         si2bin_bin_generate(bin, kernel_buffer);
-	
-	elf_enc_bin_file_write(kernel_buffer, "kernel");
+
+	f = file_open_for_write("kernel");
+	elf_enc_buffer_write_to_file(kernel_buffer, f);
+	file_close(f);
 
         text_section = elf_enc_section_create(".text", kernel_buffer, kernel_buffer);
         text_section->header.sh_type = SHT_PROGBITS;
@@ -592,8 +597,9 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer)
 
         elf_enc_file_generate(file, bin_buffer);
 
-
-        elf_enc_bin_file_write(bin_buffer, "kernel.bin");
+	f = file_open_for_write("kernel.bin");
+        elf_enc_buffer_write_to_file(bin_buffer, f);
+	file_close(f);
 
         si2bin_bin_free(bin);
 
