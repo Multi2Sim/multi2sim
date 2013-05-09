@@ -38,6 +38,18 @@
 static unsigned int opengl_context_initialized;
 struct opengl_context_t *opengl_ctx;
 
+static char *opengl_err_version =
+	"\tYour OpenGL program is using a version of the Multi2Sim Runtime library\n"
+	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
+	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
+	"\tMulti2Sim OpenGL Runtime library ('libm2s-opengl').\n";
+
+
+struct opengl_version_t
+{
+	int major;
+	int minor;
+};
 
 /*
  * Private Functions
@@ -101,9 +113,29 @@ static void opengl_context_props_free(struct opengl_context_props_t *props)
 	opengl_debug("%s: [%p] freed\n", __FUNCTION__, props);	
 }
 
+/* NOTE: when modifying the values of these two macros, the same values should
+ * be reflected in 'runtime/opengl/context.c'. */
+#define OPENGL_VERSION_MAJOR  1
+#define OPENGL_VERSION_MINOR  1000
+
 static struct opengl_context_t *opengl_context_create()
 {
 	struct opengl_context_t *context;
+	struct opengl_version_t version;
+
+	/* It can be assumed that this is the first OpenGL function called by
+	 * the host program.  Multi2Sim's version is checked for compatibility with 
+	 * the runtime library version. */
+	syscall(OPENGL_SYSCALL_CODE, opengl_abi_init, &version);
+
+	/* Check Multi2sim version and Multi2Sim OpenGL runtime version compatibility. */
+	if (version.major != OPENGL_VERSION_MAJOR
+			|| version.minor < OPENGL_VERSION_MINOR)
+		fatal("incompatible Multi2Sim Runtime version.\n"
+			"\tRuntime library v. %d.%d / "
+			"Host implementation v. %d.%d.\n%s",
+			OPENGL_VERSION_MAJOR, OPENGL_VERSION_MINOR,
+			version.major, version.minor, opengl_err_version);
 
 	/* Allocate */
 	context = xcalloc(1, sizeof(struct opengl_context_t));

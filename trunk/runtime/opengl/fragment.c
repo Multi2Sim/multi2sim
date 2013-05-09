@@ -152,9 +152,3 @@ void glLogicOp( GLenum opcode )
 {
 	__OPENGL_NOT_IMPL__
 }
-
-
-
-
-
-

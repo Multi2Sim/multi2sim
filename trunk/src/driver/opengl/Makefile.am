@@ -43,6 +43,9 @@ libopengl_a_SOURCES = \
 	rasterizer.c \
 	rasterizer.h \
 	\
+	si_shader.c \
+	si_shader.h \
+	\
 	shader.c \
 	shader.h \
 	\
