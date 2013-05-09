@@ -17,8 +17,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MEM_SYSTEM_H
-#define MEM_SYSTEM_H
+#ifndef MEM_SYSTEM_MEM_SYSTEM_H
+#define MEM_SYSTEM_MEM_SYSTEM_H
+
+
+/*
+ * Memory System Object
+ */
+
+struct mem_system_t
+{
+	/* List of modules and networks */
+	struct list_t *mod_list;
+	struct list_t *net_list;
+};
+
+
+
+
+/*
+ * Global Variables
+ */
+
 
 extern char *mem_report_file_name;
 
@@ -31,19 +51,23 @@ extern int mem_debug_category;
 #define mem_trace_header(...) trace_header(mem_trace_category, __VA_ARGS__)
 extern int mem_trace_category;
 
-extern int mem_system_peer_transfers;
 
-struct mem_system_t
-{
-	/* List of modules and networks */
-	struct list_t *mod_list;
-	struct list_t *net_list;
-};
+/* Configuration */
+extern int mem_frequency;
+extern int mem_peer_transfers;
 
+/* Frequency and frequency domain */
+extern int mem_domain_index;
+
+/* Global memory system */
 extern struct mem_system_t *mem_system;
 
-/* Frequency domain */
-extern int mem_domain_index;
+
+
+
+/*
+ * Public Functions
+ */
 
 
 void mem_system_init(void);

@@ -25,6 +25,7 @@
 #include <lib/util/file.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
+#include <lib/util/misc.h>
 #include <lib/util/string.h>
 
 #include "net-system.h"
@@ -44,6 +45,12 @@ char *net_config_help =
 	"IniFile format. It specifies a set of networks, their nodes, and\n"
 	"connections between them. The following set of sections and variables\n"
 	"are allowed:\n"
+	"\n"
+	"Section '[ General ]' contains configuration parameters affecting the\n"
+	"whole network system.\n"
+	"\n"
+	"  Frequency = <value> (Default = 1000)\n"
+	"      Frequency for the network system in MHz.\n"
 	"\n"
 	"Section '[ Network.<name> ]' defines a network. The string specified in\n"
 	"<name> can be used in other configuration files to refer to\n"
@@ -165,7 +172,9 @@ long long net_max_cycles = 1000000;  /* 1M cycles default */
 double net_injection_rate = 0.01;  /* 1 packet every 100 cycles */
 int net_msg_size = 1;  /* Message size in bytes */
 
-/* Frequency domain, as returned by function 'esim_new_domain'. */
+/* Frequency of the network system, and frequency domain, as returned by
+ * function 'esim_new_domain'. */
+int net_frequency = 1000;
 int net_domain_index;
 
 
@@ -189,7 +198,7 @@ static double exp_random(double lambda)
  */
 
 
-void net_config_load(void)
+void net_read_config(void)
 {
 	struct config_t *config;
 	char *section;
@@ -205,6 +214,16 @@ void net_config_load(void)
 	config = config_create(net_config_file_name);
 	if (*net_config_file_name)
 		config_load(config);
+	
+	/* Section with generic configuration parameters */
+	section = "General";
+
+	/* Frequency */
+	net_frequency = config_read_int(config, section,
+			"Frequency", net_frequency);
+	if (!IN_RANGE(net_frequency, 1, ESIM_MAX_FREQUENCY))
+		fatal("%s: invalid value for 'Frequency'", net_config_file_name);
+
 
 	/* Create a temporary list of network names found in configuration file */
 	net_name_list = list_create();
@@ -269,17 +288,17 @@ void net_config_load(void)
 
 void net_init(void)
 {
-	/* New frequency domain */
-	net_domain_index = esim_new_domain(1000);  /* FIXME - 1GHz default frequency */
+	/* Load network configuration file */
+	net_read_config();
+
+	/* Create frequency domain */
+	net_domain_index = esim_new_domain(net_frequency);
 
 	/* Register events */
 	EV_NET_SEND = esim_register_event_with_name(net_event_handler, net_domain_index, "net_send");
 	EV_NET_OUTPUT_BUFFER = esim_register_event_with_name(net_event_handler, net_domain_index, "net_output_buffer");
 	EV_NET_INPUT_BUFFER = esim_register_event_with_name(net_event_handler, net_domain_index, "net_input_buffer");
 	EV_NET_RECEIVE = esim_register_event_with_name(net_event_handler, net_domain_index, "net_receive");
-
-	/* Load network configuration file */
-	net_config_load();
 
 	/* Report file */
 	if (*net_report_file_name)

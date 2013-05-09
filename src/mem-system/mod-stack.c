@@ -179,7 +179,7 @@ struct mod_t *mod_stack_set_peer(struct mod_t *peer, int state)
 {
 	struct mod_t *ret = NULL;
 
-	if (state == cache_block_owned || mem_system_peer_transfers)
+	if (state == cache_block_owned || mem_peer_transfers)
 		ret = peer;	
 
 	return ret;

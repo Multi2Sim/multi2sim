@@ -71,6 +71,15 @@ extern volatile enum esim_finish_t
 /* Simulated time in picoseconds */
 extern long long esim_time;
 
+/* Cycle time of one iteration of the main Multi2Sim loop. For every call to
+ * 'esim_process_events()', 'esim_time' will advance in as many picoseconds as
+ * this value indicates. The main loop cycle time is calculated as the minimum
+ * of all frequency domains' cycle times, as registered with
+ * 'esim_new_domain()'. These variables are read-only, updated everytime a new
+ * call to 'esim_new_domain()' is performed. */
+extern int esim_frequency;
+extern long long esim_cycle_time;
+
 /* Empty event. When this event is scheduled, it will be ignored */
 extern int ESIM_EV_NONE;
 
@@ -92,10 +101,10 @@ void esim_done(void);
  * all events in the heap are dumped. */
 void esim_dump(FILE *f, int max);
 
-/* Create a new frequency domain. Argument 'freq' specifies the frequency
+/* Create a new frequency domain. Argument 'frequency' specifies the frequency
  * in MHz. The function returns a domain identifier. */
 #define ESIM_MAX_FREQUENCY  10000
-int esim_new_domain(int freq);
+int esim_new_domain(int frequency);
 
 /* Functions returning the current cycle and the cycle time of a frequency
  * domain. As an argument, they take a domain identifier returned by

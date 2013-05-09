@@ -113,12 +113,9 @@ int ESIM_EV_NONE;
 /* Simulated time in picoseconds */
 long long esim_time;
 
-/* Cycle time of one iteration of the main Multi2Sim loop. For every call to
- * 'esim_process_events()', 'esim_time' will advance in as many picoseconds as
- * this value indicates. The main loop cycle time is calculated as the minimum
- * of all frequency domains' cycle times, as registered with
- * 'esim_new_domain()'. */
+/* Frequency and cycle time of the fastest frequency domain. */
 long long esim_cycle_time;
+int esim_frequency;
 
 
 
@@ -149,28 +146,31 @@ static struct list_t *esim_domain_list;
 
 struct esim_domain_t
 {
-	int freq;
+	int frequency;
 	long long cycle_time;
 };
 
 
-struct esim_domain_t *esim_domain_create(int freq)
+struct esim_domain_t *esim_domain_create(int frequency)
 {
 	struct esim_domain_t *domain;
 
-	/* Check valid 'freq' */
-	if (!IN_RANGE(freq, 1, ESIM_MAX_FREQUENCY))
+	/* Check valid 'frequency' */
+	if (!IN_RANGE(frequency, 1, ESIM_MAX_FREQUENCY))
 		fatal("%s: frequency not in range [1, %d] (=%d)\n",
-			__FUNCTION__, ESIM_MAX_FREQUENCY, freq);
+			__FUNCTION__, ESIM_MAX_FREQUENCY, frequency);
 
 	/* Initialize */
 	domain = xcalloc(1, sizeof(struct esim_domain_t));
-	domain->freq = freq;
-	domain->cycle_time = 1000000ll / freq;
+	domain->frequency = frequency;
+	domain->cycle_time = 1000000ll / frequency;
 
 	/* Update 'esim_cycle_time' if needed */
 	if (!esim_cycle_time || domain->cycle_time < esim_cycle_time)
+	{
+		esim_frequency = frequency;
 		esim_cycle_time = domain->cycle_time;
+	}
 
 	/* Return */
 	return domain;
@@ -183,11 +183,11 @@ void esim_domain_free(struct esim_domain_t *domain)
 }
 
 
-int esim_new_domain(int freq)
+int esim_new_domain(int frequency)
 {
 	struct esim_domain_t *domain;
 
-	domain = esim_domain_create(freq);
+	domain = esim_domain_create(frequency);
 	list_add(esim_domain_list, domain);
 	return list_count(esim_domain_list) - 1;
 }
@@ -234,7 +234,7 @@ int esim_domain_frequency(int domain_index)
 				__FUNCTION__, domain_index);
 
 	/* Return cycle time */
-	return domain->freq;
+	return domain->frequency;
 }
 
 
