@@ -89,8 +89,14 @@ unsigned int elf_enc_buffer_read(struct elf_enc_buffer_t *buffer,
 unsigned int elf_enc_buffer_seek(struct elf_enc_buffer_t *buffer,
 	unsigned int offset);
 
-/* Writes buffer into a binary file with given name */
-int elf_enc_bin_file_write(struct elf_enc_buffer_t *buffer, char *name);
+/* Write the entire content of an ELF buffer at the current position of a file
+ * stream given in 'f'. The function returns the number of bytes written. */
+int elf_enc_buffer_write_to_file(struct elf_enc_buffer_t *buffer, FILE *f);
+
+/* Read the content of the entire file 'f' into the current position of an
+ * ELF buffer. The function returns the number of bytes read. */
+int elf_enc_buffer_read_from_file(struct elf_enc_buffer_t *buffer, FILE *f);
+
 
 
 /*
@@ -294,7 +300,7 @@ struct elf_enc_file_t
 
 /* Will create an ELF binary based on the information in 'elf_file' */
 void elf_enc_file_generate(struct elf_enc_file_t *elf_file,
-		struct elf_enc_buffer_t *bin_buffer);
+		struct elf_enc_buffer_t *buffer);
 
 /* Constructor and destructor for elf_enc_file_t */
 struct elf_enc_file_t *elf_enc_file_create(void);

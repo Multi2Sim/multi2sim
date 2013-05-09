@@ -160,6 +160,37 @@ unsigned int elf_enc_buffer_seek(struct elf_enc_buffer_t *buffer, unsigned int o
 }
 
 
+int elf_enc_buffer_write_to_file(struct elf_enc_buffer_t *buffer, FILE *f)
+{
+	return fwrite(buffer->ptr, 1, buffer->size, f);
+}
+
+
+int elf_enc_buffer_read_from_file(struct elf_enc_buffer_t *buffer, FILE *f)
+{
+	long file_size;
+	void *buf;
+	
+	/* Get file size */
+	fseek(f, 0, SEEK_END);
+	file_size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+	if (file_size < 0)
+		return 0;
+
+	/* Read file */
+	buf = xmalloc(file_size);
+	file_size = fread(buf, 1, file_size, f);
+
+	/* Write into ELF buffer */
+	elf_enc_buffer_write(buffer, buf, file_size);
+
+	/* Free temporary buffer */
+	free(buf);
+	return file_size;
+}
+
+
 
 /*
  * Section
@@ -700,19 +731,3 @@ void elf_enc_file_generate(struct elf_enc_file_t *file,
 	elf_enc_buffer_write(bin_buffer, shtab, shtab_size);
 }
 
-
-int elf_enc_bin_file_write(struct elf_enc_buffer_t *buffer, char *name)
-{
-	FILE *fp;
-
-	fp = fopen(name, "wb");
-
-	if (!fp)
-		fatal("%s: could not open file to write", __FUNCTION__);
-
-	fwrite(buffer->ptr, buffer->size, 1, fp);
-
-	fclose(fp);
-
-	return buffer->size;
-}
