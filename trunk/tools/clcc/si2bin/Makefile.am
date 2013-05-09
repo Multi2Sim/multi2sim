@@ -29,9 +29,6 @@ libsi2bin_a_SOURCES = \
 	si2bin.c \
 	si2bin.h \
 	\
-	stream.c \
-	stream.h \
-	\
 	symbol.c \
 	symbol.h \
 	\

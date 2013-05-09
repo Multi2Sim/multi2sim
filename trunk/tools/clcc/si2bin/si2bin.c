@@ -71,7 +71,6 @@ void si2bin_init(void)
 	si2bin_inst_info_init();
 	si2bin_task_list_init();
 	si2bin_symbol_table_init();
-	//si2bin_stream_init();
 	si2bin_bin_init();
 
 }
@@ -82,7 +81,6 @@ void si2bin_done(void)
 	/* Finalize */
 	si2bin_task_list_done();
 	si2bin_symbol_table_done();
-	//si2bin_stream_done();
 	si2bin_bin_done();
 	si2bin_inst_info_done();
 	si_disasm_done();
