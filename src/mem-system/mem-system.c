@@ -115,12 +115,19 @@ void mem_system_init(void)
 		fatal("memory configuration file given, but no timing simulation.\n%s",
 				mem_err_timing);
 	
-	/* Create global memory system and read configuration */
-	mem_system = mem_system_create();
-	mem_config_read();
-
-	/* Trace */
+	/* Create trace category. This needs to be done before reading the
+	 * memory configuration file with 'mem_config_read', since the latter
+	 * function generates the trace headers. */
 	mem_trace_category = trace_new_category();
+
+	/* Create global memory system. This needs to be done before reading the
+	 * memory configuration file with 'mem_config_read', since the latter
+	 * function inserts caches and networks in 'mem_system', and relies on
+	 * these lists to have been created. */
+	mem_system = mem_system_create();
+
+	/* Read memory configuration file */
+	mem_config_read();
 
 	/* Try to open report file */
 	if (*mem_report_file_name && !file_can_open_for_write(mem_report_file_name))
