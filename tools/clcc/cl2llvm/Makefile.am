@@ -13,6 +13,18 @@ libcl2llvm_a_SOURCES = \
 	cl2llvm.c \
 	cl2llvm.h \
 	\
+	init-list-elem.c\
+	init-list-elem.h\
+	\
+	symbol.c \
+	symbol.h \
+	\
+	type.c\
+	type.h\
+	\
+	val.c\
+	val.h\
+	\
 	lex.l \
 	parser.y
 

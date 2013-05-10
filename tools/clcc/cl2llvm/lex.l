@@ -1,9 +1,16 @@
 %{
 
+#include <math.h>
+
 #include <llvm-c/Core.h>
 
-#include "cl2llvm.h"
+#include "val.h"
+#include "type.h"
+#include <llvm-c/Core.h>
 #include "parser.h"
+#include "cl2llvm.h"
+
+
 
 int cl2llvm_col_num = 0;
 
@@ -12,13 +19,146 @@ void cl2llvm_set_col_num(int leng)
 {
 	cl2llvm_col_num = leng;
 }
-
-
 int cl2llvm_get_col_num()
 {
 	return cl2llvm_col_num;
 }
 
+int long long unsigned htod(char *hex)
+{
+	unsigned long long decimal = 0;
+	int multval = 0;
+	int i = 0;
+	int zero_count = 2;
+	int length = strlen(hex);
+	while(hex[i+2] == '0')
+	{
+		i++;
+		zero_count++;
+	}
+	for(i = 0; i + zero_count < length; i++)
+	{
+		switch(hex[i+zero_count])
+		{
+			case'0':
+				multval = 0;
+				break;
+			case'1':
+				multval = 1;
+				break;
+			case'2':
+				multval = 2;
+				break;
+			case'3':
+				multval = 3;
+				break;
+			case'4':
+				multval = 4;
+				break;
+			case'5':
+				multval = 5;
+				break;
+			case'6':
+				multval = 6;
+				break;
+			case'7':
+				multval = 7;
+				break;
+			case'8':
+				multval = 8;
+				break;
+			case'9':
+				multval = 9;
+				break;
+			case'a':
+			case'A':
+				multval = 10;
+				break;
+			case'b':
+			case'B':
+				multval = 11;
+				break;
+			case'c':
+			case'C':
+				multval = 12;
+				break;
+			case'd':
+			case'D':
+				multval = 13;
+				break;
+			case'e':
+			case'E':
+				multval = 14;
+				break;
+			case'f':
+			case'F':
+				multval = 15;
+				break;
+			case'U':
+			case'u':
+			case'l':
+			case'L':
+				multval = 0;
+				break;
+			}
+			int place_val = i;
+			decimal = decimal + multval * pow(16, place_val);
+		}
+		return decimal;
+	}
+
+int long long unsigned otod(char *oct)
+{
+	unsigned long long decimal = 0;
+	int multval = 0;
+	int i = 0;
+	int zero_count = 1;
+	while(oct[i+1] == '0')
+	{
+		i++;
+		zero_count++;
+	}
+	int length = strlen(oct);
+	for(i = 0; i + zero_count < length; i++)
+	{
+		switch(oct[i+zero_count])
+	{
+		case'0':
+			multval = 0;
+			break;
+		case'1':
+			multval = 1;
+			break;
+		case'2':
+			multval = 2;
+			break;
+		case'3':
+			multval = 3;
+			break;
+		case'4':
+			multval = 4;
+			break;
+		case'5':
+			multval = 5;
+			break;
+		case'6':
+			multval = 6;
+			break;
+		case'7':
+			multval = 7;
+			break;			case'U':
+		case'u':
+		case'l':
+		case'L':
+			multval = 0;
+				break;
+		}
+		int place_val = i;
+		decimal = decimal + multval * pow(8, place_val);			
+	}
+	return decimal;
+}
+	
 %}
 
 %option noyywrap
@@ -27,7 +167,11 @@ int cl2llvm_get_col_num()
 
 
 
-UL  ((Ul)|(lU)|(uL)|(Lu)|(ul)|(UL)|(ll)|(LL)|U|L|l|u|(llu)|(LLu)|(llU)|(LLU)|(ull)|(uLL)|(Ull)|(ULL))
+UL  (Ul)|(lU)|(uL)|(Lu)|(ul)|(UL)
+LL  (ll)|(LL)|(lL)|(Ll)
+CU  (U)|(u)
+CL  (L)|(l)
+ULL (llu)|(LLu)|(llU)|(LLU)|(ull)|(uLL)|(Ull)|(ULL)|(Llu)|(lLu)|(LlU)|(lLU)|(uLl)|(ulL)|(ULl)|(UlL)
 
 SH			(short)
 SP			[ \t\n]+
@@ -38,10 +182,24 @@ S			(signed)
 
 
 TOK_ID			[a-zA-Z_][a-zA-Z0-9_]*
-CONST_0			0{UL}?
-CONST_HEX		0[xX][a-fA-F0-9]+{UL}?
-CONST_OCT		0[0-7]+{UL}?
-CONST_INT		[1-9][0-9]*{UL}?
+CONST_HEX		0[xX][a-fA-F0-9]+
+CONST_HEX_U		0[xX][a-fA-F0-9]+{CU}
+CONST_HEX_L		0[xX][a-fA-F0-9]+{CL}
+CONST_HEX_UL		0[xX][a-fA-F0-9]+{UL}
+CONST_HEX_LL		0[xX][a-fA-F0-9]+{LL}
+CONST_HEX_ULL		0[xX][a-fA-F0-9]+{ULL}
+CONST_OCT		0[0-7]+
+CONST_OCT_L		0[0-7]+{CL}
+CONST_OCT_U		0[0-7]+{CU}
+CONST_OCT_UL		0[0-7]+{UL}
+CONST_OCT_LL		0[0-7]+{LL}
+CONST_OCT_ULL		0[0-7]+{ULL}
+CONST_INT		([1-9][0-9]*)|(0)
+CONST_INT_U		([1-9][0-9]*{U}+)|(0{U})
+CONST_INT_L		([1-9][0-9]*{L}+)|(0{L})
+CONST_INT_UL		([1-9][0-9]*{UL}+)|(0{UL})
+CONST_INT_LL		([1-9][0-9]*{UL}+)|(0{LL})
+CONST_INT_ULL		([1-9][0-9]*{ULL}+)|(0{ULL})
 CONST_CHAR		[a-zA-Z_]?'(\\.|[^\\'])+'
 CONST_INT_EXPON		[0-9]+[Ee][+-]?[0-9]+(f|F|l|L)?
 CONST_DEC		(([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*))([Ee][+-]?[0-9]+)?(f|F|l|L)?
@@ -148,8 +306,8 @@ TOK_TYPEDEF		(typedef)
 TOK_UCHAR		(uchar)|(unsigned[ \t\n]+char)|(unsigned{SP}char)
 TOK_UCHARN		(uchar)(2|3|4|8|16)
 TOK_UINT		(uint)|({I}{SP}{U})|({U}{SP}{I})
-TOK_UINT_LONG		({U}{SP]{L})|({L}{SP}{U})|{U}{SP}{I}{SP}{L})|({I}{SP}{U}{SP}{L})|({I}{SP}{L}{SP}{U})|({U}{SP}{L}{SP}{I})|({L}{SP}{I}{SP}{U})|({L}{SP}{U}{SP}{I})
-TOK_UINT_LONG_LONG	({U}{SP]{L}{SP}{L})|({L}{SP}{L}{SP}{U})|({L}{SP}{U}{SP}{L})|{L}{SP}{U}{SP}{I}{SP}{L})|({I}{SP}{U}{SP}{L}{SP}{L})|({L}{SP}{I}{SP}{L}{SP}{U})|({L}{SP}{U}{SP}{L}{SP}{I})|({L}{SP}{L}{SP}{I}{SP}{U})|({L}{SP}{L}{SP}{U}{SP}{I})|({L}{SP}{U}{SP}{I}{L})|({I}{SP}{L}{SP}{U}{L})|({I}{SP}{L}{SP}{L}{SP}{U})|({U]{SP}{L}{SP}{I}{SP}{L})|({U}{SP}{L]{SP}{L}{SP}{I})|({U}{SP}{I}{SP}{L}{SP}{L})
+TOK_UINT_LONG		(ulong)|({U}{SP}{L})|({L}{SP}{U})|({U}{SP}{I}{SP}{L})|({I}{SP}{U}{SP}{L})|({I}{SP}{L}{SP}{U})|({U}{SP}{L}{SP}{I})|({L}{SP}{I}{SP}{U})|({L}{SP}{U}{SP}{I})
+TOK_UINT_LONG_LONG ({U}{SP}{L}{SP}{L})|({L}{SP}{L}{SP}{U})|({L}{SP}{U}{SP}{L})|({L}{SP}{U}{SP}{I}{SP}{L})|({I}{SP}{U}{SP}{L}{SP}{L})|({L}{SP}{I}{SP}{L}{SP}{U})|({L}{SP}{U}{SP}{L}{SP}{I})|({L}{SP}{L}{SP}{I}{SP}{U})|({L}{SP}{L}{SP}{U}{SP}{I})|({L}{SP}{U}{SP}{I}{L})|({I}{SP}{L}{SP}{U}{L})|({I}{SP}{L}{SP}{L}{SP}{U})|({U}{SP}{L}{SP}{I}{SP}{L})|({U}{SP}{L}{SP}{L}{SP}{I})|({U}{SP}{I}{SP}{L}{SP}{L})
 TOK_UINTN		(uint)(2|3|4|8|16)
 TOK_UINTPTR_T		(uintptr_t)
 TOK_ULONG		(ulong)
@@ -185,22 +343,54 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
 	return TOK_STRING;
 }
-
-{CONST_0} {
-	printf("TOK_CONST_VAL - %s\n", yytext);
-	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
-	return 
-	TOK_CONST_VAL;
-}
 {CONST_HEX} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
 	printf("TOK_CONST_VAL - %s\n", yytext);
-	return TOK_CONST_VAL;
+	cl2llvm_yylval.const_int_val = htod(yytext);
+	printf("hex in dec = %ld\n", cl2llvm_yylval.const_int_val);
+	return TOK_CONST_INT;
+}
+{CONST_HEX_U} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_VAL_U - %s\n", yytext);
+	cl2llvm_yylval.const_int_val = htod(yytext);
+	printf("hex in dec = %ld\n", cl2llvm_yylval.const_int_val);
+	return TOK_CONST_INT_U;
+}
+{CONST_HEX_L} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_VAL_L - %s\n", yytext);
+	cl2llvm_yylval.const_int_val = htod(yytext);
+	printf("hex in dec = %ld\n", cl2llvm_yylval.const_int_val);
+	return TOK_CONST_INT_L;
+}
+{CONST_HEX_LL} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_VAL_LL - %s\n", yytext);
+	cl2llvm_yylval.const_int_val_ull = htod(yytext);
+	printf("hex in dec = %llu\n", cl2llvm_yylval.const_int_val_ull);
+	return TOK_CONST_INT_LL;
+}
+{CONST_HEX_UL} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_VAL_UL - %s\n", yytext);
+	cl2llvm_yylval.const_int_val = htod(yytext);
+	printf("hex in dec = %ld\n", cl2llvm_yylval.const_int_val);
+	return TOK_CONST_INT_UL;
+}
+{CONST_HEX_ULL} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_INT_ULL - %s\n", yytext);
+	cl2llvm_yylval.const_int_val_ull = htod(yytext);
+	printf("hex in dec = %llu\n", cl2llvm_yylval.const_int_val_ull);
+	return TOK_CONST_INT_ULL;
 }
 {CONST_OCT} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
 	printf("TOK_CONST_VAL - %s\n", yytext);
-	return TOK_CONST_VAL;
+	cl2llvm_yylval.const_int_val = otod(yytext);
+	printf("oct in dec = %ld\n", cl2llvm_yylval.const_int_val);
+	return TOK_CONST_INT;
 }
 {CONST_INT} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
@@ -208,6 +398,37 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 	cl2llvm_yylval.const_int_val = atoi(yytext);
 	return TOK_CONST_INT;
 }
+{CONST_INT_U} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_VAL_U - %s\n", yytext);
+	cl2llvm_yylval.const_int_val = atoi(yytext);
+	return TOK_CONST_INT_U;
+}
+{CONST_INT_L} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_VAL_L - %s\n", yytext);
+	cl2llvm_yylval.const_int_val = atoi(yytext);
+	return TOK_CONST_INT_L;
+}
+{CONST_INT_UL} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_VAL_UL - %s\n", yytext);
+	cl2llvm_yylval.const_int_val = atoi(yytext);
+	return TOK_CONST_INT_UL;
+}
+{CONST_INT_LL} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_VAL_LL - %s\n", yytext);
+	cl2llvm_yylval.const_int_val_ull = atoi(yytext);
+	return TOK_CONST_INT_LL;
+}
+{CONST_INT_ULL} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	printf("TOK_CONST_VAL_ULL - %s\n", yytext);
+	cl2llvm_yylval.const_int_val_ull = atoi(yytext);
+	return TOK_CONST_INT_ULL;
+}
+
 {CONST_CHAR} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
 	printf("TOK_CONST_VAL - %s\n", yytext);
@@ -647,6 +868,11 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + 4);
 	return TOK_LONG;
 }
+{TOK_INT_LONG_LONG} {
+	printf("TOK_LONG_LONG - %s\n", yytext);
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	return TOK_LONG_LONG;
+}
 {TOK_LONGN} {
 	printf("TOK_LONGN - %s\n", yytext);
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
@@ -737,6 +963,16 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + 4);
 	return TOK_UINT;
 }
+{TOK_UINT_LONG} {
+	printf("TOK_UINT_LONG - %s\n", yytext);
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	return TOK_UINT_LONG;
+}
+{TOK_UINT_LONG_LONG} {
+	printf("TOK_UINT_LONG_LONG - %s\n", yytext);
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	return TOK_UINT_LONG_LONG;
+}
 {TOK_UINTN} {
 	printf("TOK_UINTN - %s\n", yytext);
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
@@ -746,11 +982,6 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 	printf("TOK_UINTPTR_T - %s\n", yytext);
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + 9);
 	return TOK_UINTPTR_T;
-}
-{TOK_ULONG} {
-	printf("TOK_UNSIGNED TOK_LONG - %s\n", yytext);
-	cl2llvm_set_col_num(cl2llvm_get_col_num() + 5);
-	return TOK_ULONG;
 }
 {TOK_ULONGN} {
 	printf("TOK_ULONGN - %s\n", yytext);
