@@ -380,8 +380,19 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 			/* Timing simulation iteration */
 			if (run)
 			{
+				/* Do it... */
 				arch->active = arch->timing_run_func();
-				arch->last_timing_cycle = cycle;
+
+				/* ... but only update the last timing
+				 * simulation cycle if there was an effective
+				 * execution of the iteration loop. Otherwise,
+				 * there is a deadlock: 'esim_time' will not
+				 * advance (no call to 'esim_process_events')
+				 * because no architecture ran, and no
+				 * architecture will run because 'esim_time'
+				 * did not advance. */
+				if (arch->active)
+					arch->last_timing_cycle = cycle;
 			}
 
 			/* Increase number of active timing simulations if the
