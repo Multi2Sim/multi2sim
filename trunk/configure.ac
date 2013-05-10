@@ -558,6 +558,9 @@ then
 				LLVMValueRef func_str_count = LLVMAddFunction(mod, "str_count",
 					LLVMFunctionType(LLVMInt32Type(), func_str_count_args, 1, 0));
 				LLVMSetFunctionCallConv(func_str_count, LLVMCCallConv);
+
+				/* Half type added in LLVM 3.1 */
+				LLVMHalfType();
 			]]
 		)
 	],
@@ -606,11 +609,11 @@ then
 else
 	AC_MSG_WARN([
 
-	LLVM support is missing in your system. Some modules in Multi2Sim will
-	not be built. In an Ubuntu distribution, you can install these package
-	by running command
+	LLVM support is missing in your system, or you have an older version of
+	this library. Some modules in Multi2Sim will not be built. In an Ubuntu
+	distribution, you can install these package by running command
 
-		sudo apt-get install llvm]
+		sudo apt-get install llvm-3.1]
 	)
 fi
 
