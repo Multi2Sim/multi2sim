@@ -17,46 +17,26 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #include <lib/mhandle/mhandle.h>
 
-#include "cl2llvm.h"
+#include "val.h"
 
 
-/*
- * Private Functions
- */
-
-static char *cl2llvm_err_note =
-	"\tThe OpenCL-to-LLVM front-end could not be compiled due to an unsatisfied\n"
-	"\tdependence with Flex/Bison or LLVM libraries. Please install these\n"
-	"\tlibraries and recompile.\n";
-
-static void cl2llvm_missing(void)
+struct cl2llvm_val_t *cl2llvm_val_create(void)
 {
-	fatal("OpenCL-to-LLVM front-end not available.\n%s",
-			cl2llvm_err_note);
+	struct cl2llvm_val_t *cl2llvm_val;
+
+	cl2llvm_val = xcalloc(1, sizeof(struct cl2llvm_val_t));
+
+	return cl2llvm_val;
 }
 
-
-
-
-/*
- * Public Functions
- */
-
-void cl2llvm_init(void)
+void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val)
 {
+	free(cl2llvm_val);
 }
 
-
-void cl2llvm_done(void)
-{
-}
-
-
-void cl2llvm_compile(struct list_t *source_file_list,
-		struct list_t *llvm_file_list)
-{
-	cl2llvm_missing();
-}
 

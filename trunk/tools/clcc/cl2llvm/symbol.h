@@ -17,46 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/mhandle/mhandle.h>
+#ifndef TOOLS_CLCC_CL2LLVM_SYMBOL_H
+#define TOOLS_CLCC_CL2LLVM_SYMBOL_H
 
-#include "cl2llvm.h"
+#include <llvm-c/Core.h>
 
-
-/*
- * Private Functions
- */
-
-static char *cl2llvm_err_note =
-	"\tThe OpenCL-to-LLVM front-end could not be compiled due to an unsatisfied\n"
-	"\tdependence with Flex/Bison or LLVM libraries. Please install these\n"
-	"\tlibraries and recompile.\n";
-
-static void cl2llvm_missing(void)
+struct cl2llvm_symbol_t
 {
-	fatal("OpenCL-to-LLVM front-end not available.\n%s",
-			cl2llvm_err_note);
-}
+	char * name;
+	LLVMTypeRef type;
+	LLVMValueRef value;
+	int is_signed;
+};
 
+struct cl2llvm_symbol_t *cl2llvm_symbol_create(char *name);
+void cl2llvm_symbol_free(struct cl2llvm_symbol_t *symbol);
 
-
-
-/*
- * Public Functions
- */
-
-void cl2llvm_init(void)
-{
-}
-
-
-void cl2llvm_done(void)
-{
-}
-
-
-void cl2llvm_compile(struct list_t *source_file_list,
-		struct list_t *llvm_file_list)
-{
-	cl2llvm_missing();
-}
-
+#endif
