@@ -179,3 +179,14 @@ FILES
 	* src/arch/southern-islands/emu/*
 
 
+================================================================================
+AUTHOR
+	Chris Barton (barton.ch@husky.neu.edu)
+
+DESCRIPTION
+
+	Chris is the author of the OpenCL compiler front-end.
+
+FILES
+	* All files in tools/clcc/cl2llvm
+

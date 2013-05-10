@@ -19,44 +19,24 @@
 
 #include <lib/mhandle/mhandle.h>
 
-#include "cl2llvm.h"
+#include "symbol.h"
 
 
-/*
- * Private Functions
- */
-
-static char *cl2llvm_err_note =
-	"\tThe OpenCL-to-LLVM front-end could not be compiled due to an unsatisfied\n"
-	"\tdependence with Flex/Bison or LLVM libraries. Please install these\n"
-	"\tlibraries and recompile.\n";
-
-static void cl2llvm_missing(void)
+struct cl2llvm_symbol_t *cl2llvm_symbol_create(char *name)
 {
-	fatal("OpenCL-to-LLVM front-end not available.\n%s",
-			cl2llvm_err_note);
+	struct cl2llvm_symbol_t *symbol;
+
+	/* Initialize */
+	symbol = xcalloc(1, sizeof(struct cl2llvm_symbol_t));
+	symbol->name = xstrdup(name);
+
+	/* Return */
+	return symbol;
 }
 
-
-
-
-/*
- * Public Functions
- */
-
-void cl2llvm_init(void)
+void cl2llvm_symbol_free(struct cl2llvm_symbol_t *symbol)
 {
-}
-
-
-void cl2llvm_done(void)
-{
-}
-
-
-void cl2llvm_compile(struct list_t *source_file_list,
-		struct list_t *llvm_file_list)
-{
-	cl2llvm_missing();
+	free(symbol->name);
+	free(symbol);
 }
 

@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_CLCC_CL2LLVM_H
-#define TOOLS_CLCC_CL2LLVM_H
+#ifndef TOOLS_CLCC_CL2LLVM_CL2LLVM_H
+#define TOOLS_CLCC_CL2LLVM_CL2LLVM_H
 
 #include <stdio.h>
 

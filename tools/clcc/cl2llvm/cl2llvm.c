@@ -27,10 +27,12 @@
 #include <llvm-c/Target.h>
 #include <llvm-c/Transforms/Scalar.h>
 
+#include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 
+#include "symbol.h"
 #include "cl2llvm.h"
 #include "parser.h"
 
@@ -87,7 +89,12 @@ void cl2llvm_init(void)
 
 void cl2llvm_done(void)
 {
+	char *name;
+	struct cl2llvm_symbol_t *symbol;
+
 	/* Free symbol table */
+	HASH_TABLE_FOR_EACH(cl2llvm_symbol_table, name, symbol)
+		cl2llvm_symbol_free(symbol);
 	hash_table_free(cl2llvm_symbol_table);
 }
 
