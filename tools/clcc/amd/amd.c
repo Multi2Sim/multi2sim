@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include <clcc/clcc.h>
+#include <clcc/define.h>
 #include <clcc/amd/amd.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -286,7 +288,10 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 		struct amd_device_t *device, int verbose, int dump_all)
 {
 	char out_file_name_root[MAX_STRING_SIZE];
-	char compiler_flags[MAX_STRING_SIZE];
+	char compiler_flags[MAX_LONG_STRING_SIZE];
+
+	char *compiler_flags_ptr;
+	int compiler_flags_size;
 	
 	int size;
 	int index;
@@ -299,6 +304,8 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 	char *source_file_ext;
 	char *program_source;
 	char *bin_bits[AMD_MAX_DEVICES];
+
+	struct clcc_define_t *define;
 	
 	cl_int err;
 		
@@ -322,23 +329,35 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 	if (err != CL_SUCCESS)
 		fatal("%s: clCreateProgramWithSource failed", __FUNCTION__);
 	
-	/* Intermediate files */
+	/* Initialize compiler flags */
 	compiler_flags[0] = '\0';
+	compiler_flags_ptr = compiler_flags;
+	compiler_flags_size = sizeof compiler_flags;
+
+	/* Dump intermediate files */
 	if (amd_dump_all)
 	{
 		char dir[MAX_STRING_SIZE];
 
 		snprintf(dir, sizeof dir, "%s_amd_files", out_file_name_root);
-		snprintf(compiler_flags, sizeof compiler_flags, "-save-temps=%s/%s",
-			dir, out_file_name_root);
+		str_printf(&compiler_flags_ptr, &compiler_flags_size,
+				" -save-temps=%s/%s", dir, out_file_name_root);
 		mkdir(dir, 0755);
+	}
+
+	/* Add #define macro definitions */
+	LIST_FOR_EACH(clcc_define_list, index)
+	{
+		define = list_get(clcc_define_list, index);
+		str_printf(&compiler_flags_ptr, &compiler_flags_size,
+				" -D%s=%s", define->name, define->value);
 	}
 
 	/* Compile source */
 	err = clBuildProgram(program, 1, &device->device_id, compiler_flags, NULL, NULL);
 	if (err != CL_SUCCESS)
 	{
-		char buf[0x10000];
+		char buf[MAX_LONG_STRING_SIZE];
 
 		clGetProgramBuildInfo(program, device->device_id, CL_PROGRAM_BUILD_LOG,
 				sizeof buf, buf, NULL);
