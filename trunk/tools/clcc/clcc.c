@@ -28,6 +28,8 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
+#include "define.h"
+
 
 
 /*
@@ -38,6 +40,7 @@ char clcc_out_file_name[MAX_STRING_SIZE];
 struct list_t *clcc_source_file_list;  /* Elements of type 'char *' */
 struct list_t *clcc_llvm_file_list;  /* Elements of type 'char *' */
 struct list_t *clcc_bin_file_list;  /* Elements of type 'char *' */
+struct list_t *clcc_define_list;  /* Elements of type 'struct clcc_define_t *' */
 
 
 
@@ -60,7 +63,7 @@ static char *syntax =
 	"\tPrint a list of available devices for the native AMD driver. This\n"
 	"\toption should be used together with option '--amd'.\n"
 	"\n"
-	"--amd-device <device1>[,<device2>...]\n"
+	"--amd-device <device1>[,<device2>...], -d <device1>[,<device2>...]\n"
 	"\tSelect a list of target devices for native AMD compilation. There\n"
 	"\tshould be no spaces between device names/identifiers when separated\n"
 	"\tby commas. When more than one device is selected, all binaries are\n"
@@ -70,6 +73,10 @@ static char *syntax =
 	"--amd-dump-all, -a\n"
 	"\tDump all intermediate file is generated during compilation. This\n"
 	"\toption must be used together with '--amd'.\n"
+	"\n"
+	"--define <symbol>=<value>, -D <symbol>=<value>\n"
+	"\tAdd a definition for additional symbols, equivalent to #define\n"
+	"\tcompiler directives. This argument can be used multiple times.\n"
 	"\n"
 	"--help, -h\n"
 	"\tShow help message with command-line options.\n"
@@ -108,6 +115,27 @@ static void clcc_process_option(const char *option, char *optarg)
 	if (!strcmp(option, "amd-device") || !strcmp(option, "d"))
 	{
 		amd_device_name = optarg;
+		return;
+	}
+
+	if (!strcmp(option, "define") || !strcmp(option, "D"))
+	{
+		struct list_t *token_list;
+		struct clcc_define_t *define;
+
+		/* Create list of tokens */
+		token_list = str_token_list_create(optarg, "=");
+		if (token_list->count != 2)
+			fatal("wrong format for --define/-D option, "
+				"should be <sym>=<val> (%s)", optarg);
+	
+		/* Create define element and add it to the list */
+		define = clcc_define_create(list_get(token_list, 0),
+				list_get(token_list, 1));
+		list_add(clcc_define_list, define);
+
+		/* Free token list */
+		list_free(token_list);
 		return;
 	}
 
@@ -156,6 +184,7 @@ static void clcc_read_command_line(int argc, char **argv)
 		{ "amd-list", no_argument, 0, 'l' },
 		{ "help", no_argument, 0, 'h' },
 		{ "si-asm", no_argument, 0, 0 },
+		{ "define", required_argument, 0, 'D' },
 		{ 0, 0, 0, 0 }
 	};
 
@@ -170,7 +199,7 @@ static void clcc_read_command_line(int argc, char **argv)
 	}
 	
 	/* Process options */
-	while ((opt = getopt_long(argc, argv, "ad:hlo:", long_options,
+	while ((opt = getopt_long(argc, argv, "ad:hlo:D:", long_options,
 			&option_index)) != -1)
 	{
 		if (opt)
@@ -198,6 +227,7 @@ void clcc_init(void)
 	clcc_source_file_list = list_create();
 	clcc_llvm_file_list = list_create();
 	clcc_bin_file_list = list_create();
+	clcc_define_list = list_create();
 
 	/* Initialize compiler modules */
 	cl2llvm_init();
@@ -207,10 +237,17 @@ void clcc_init(void)
 
 void clcc_done(void)
 {
+	int index;
+
 	/* Free list of source files */
 	list_free(clcc_source_file_list);
 	list_free(clcc_llvm_file_list);
 	list_free(clcc_bin_file_list);
+
+	/* Free list of '#define' directives */
+	LIST_FOR_EACH(clcc_define_list, index)
+		clcc_define_free(list_get(clcc_define_list, index));
+	list_free(clcc_define_list);
 
 	/* Finalize compiler modules */
 	cl2llvm_done();
