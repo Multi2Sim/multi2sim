@@ -18,20 +18,18 @@
  */
 
 
-#ifndef TOOLS_CLCC_CLCC_H
-#define TOOLS_CLCC_CLCC_H
-
-/* Forward declarations */
-struct list_t;
+#ifndef TOOLS_CLCC_DEFINE_H
+#define TOOLS_CLCC_DEFINE_H
 
 
-/*
- * Global Variables
- */
+struct clcc_define_t
+{
+	char *name;
+	char *value;
+};
 
-extern char *clcc_out_file_name;
-extern struct list_t *clcc_source_file_list;
-extern struct list_t *clcc_define_list;
+struct clcc_define_t *clcc_define_create(char *name, char *value);
+void clcc_define_free(struct clcc_define_t *define);
 
 
 #endif
