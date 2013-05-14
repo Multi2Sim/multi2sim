@@ -51,7 +51,7 @@ DEFINST(S_MAX_U32,
 )
 
 DEFINST(S_CSELECT_B32,
-	" s_cselect_b32 %SDST, %SSRC0, %SSRC1",
+	" s_cselect_b32  %SDST, %SSRC0, %SSRC1",
 	SOP2,
 	10,
 	4,
@@ -145,6 +145,15 @@ DEFINST(S_MUL_I32,
 	4,
 	0
 )
+
+DEFINST(S_BFE_I32,
+	" s_bfe_i32     %SDST, %SSRC0, %SSRC1",
+	SOP2,
+	40,
+	4,
+	0
+)
+
 
 /*
  * SOPK
@@ -1582,10 +1591,26 @@ DEFINST(BUFFER_LOAD_SBYTE,
 	0
 )
 
+DEFINST(BUFFER_LOAD_DWORD,
+	" buffer_load_dword  %MU_SERIES_VDATA, %VADDR, %SERIES_SRSRC, %MU_MADDR",
+	MUBUF,
+	12,
+	8,
+	0
+)
+
 DEFINST(BUFFER_STORE_BYTE,
 	" buffer_store_byte  %MU_SERIES_VDATA, %VADDR, %SERIES_SRSRC, %MU_MADDR %MU_GLC",
 	MUBUF,
 	24,
+	8,
+	0
+)
+
+DEFINST(BUFFER_STORE_DWORD,
+	" buffer_store_dword  %MU_SERIES_VDATA, %VADDR, %SERIES_SRSRC, %MU_MADDR %MU_GLC",
+	MUBUF,
+	28,
 	8,
 	0
 )
