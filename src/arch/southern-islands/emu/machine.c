@@ -1061,6 +1061,60 @@ void si_isa_S_MUL_I32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+/* D.i = (S0.i >> S1.u[4:0]) & ((1 << S2.u[4:0]) - 1); bitfield extract,
+ * S0=data, S1=field_offset, S2=field_width. */
+#define INST SI_INST_SOP2
+void si_isa_S_BFE_I32_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	union si_reg_t s0;
+	union si_reg_t s1;
+	union si_reg_t s2;
+	union si_reg_t result;
+	union si_reg_t full_reg;
+	union si_reg_t nonzero;
+
+	/* Load operands from registers. */
+	s0.as_uint = si_isa_read_sreg(work_item, INST.ssrc0);
+	full_reg.as_uint = si_isa_read_sreg(work_item, INST.ssrc1);
+
+	/* s1 (offset) should be [4:0] of ssrc1 and s2 (width) should be [22:16] of ssrc1*/
+	s1.as_uint = full_reg.as_uint & 0x1F;
+	s2.as_uint = full_reg.as_uint & 0x7F0000;
+
+	/* Calculate the result. */
+	if (s2.as_uint == 0)
+	{
+		result.as_int = 0;
+	}
+	else if (s2.as_uint + s1.as_uint < 32)
+	{
+		result.as_int = (s0.as_int << (32 - s1.as_uint - s2.as_uint)) >> 
+			(32 - s2.as_uint);
+	}
+	else
+	{
+		result.as_int = s0.as_int >> s1.as_uint;
+	}
+
+	nonzero.as_uint = result.as_uint != 0;
+	
+	/* Write the results. */
+	si_isa_write_sreg(work_item, INST.sdst, result.as_uint);
+	si_isa_write_sreg(work_item, SI_SCC, nonzero.as_uint);
+
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		si_isa_debug("scc<=(%u)", nonzero.as_uint);
+	}
+	
+}
+#undef INST
+
+
 /*
  * SOPK
  */
@@ -6574,6 +6628,83 @@ void si_isa_BUFFER_LOAD_SBYTE_impl(struct si_work_item_t *work_item,
 #undef INST
 
 #define INST SI_INST_MUBUF
+void si_isa_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	assert(!INST.addr64);
+	assert(!INST.glc);
+	assert(!INST.slc);
+	assert(!INST.tfe);
+	assert(!INST.lds);
+
+	struct si_buffer_desc_t buf_desc;
+	union si_reg_t value;
+
+	unsigned int addr;
+	unsigned int base;
+	unsigned int mem_offset = 0;
+	unsigned int inst_offset = 0;
+	unsigned int off_vgpr = 0;
+	unsigned int stride = 0;
+	unsigned int idx_vgpr = 0;
+
+	int bytes_to_read = 4;
+
+	/* srsrc is in units of 4 registers */
+	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc * 4);
+
+	/* Figure 8.1 from SI ISA defines address calculation */
+	base = buf_desc.base_addr;
+	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
+	inst_offset = INST.offset;
+	stride = buf_desc.stride;
+
+	/* Table 8.3 from SI ISA */
+	if (!INST.idxen && INST.offen)
+	{
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && !INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
+	}
+
+	addr = base + mem_offset + inst_offset + off_vgpr + 
+		stride * (idx_vgpr + work_item->id_in_wavefront);
+
+	mem_read(si_emu->global_mem, addr, bytes_to_read, &value);
+	
+	/* Sign extend */
+	value.as_int = (int) value.as_byte[0];
+
+	si_isa_write_vreg(work_item, INST.vdata, value.as_uint);
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = bytes_to_read;
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%u)(%d) ", work_item->id,
+			INST.vdata, addr, value.as_int);
+	}
+}
+#undef INST
+
+#define INST SI_INST_MUBUF
 void si_isa_BUFFER_STORE_BYTE_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
@@ -6640,7 +6771,90 @@ void si_isa_BUFFER_STORE_BYTE_impl(struct si_work_item_t *work_item,
 	mem_write(si_emu->global_mem, addr, bytes_to_write, &value);
 	
 	/* Sign extend */
-	value.as_int = (int) value.as_byte[0];
+	//value.as_int = (int) value.as_byte[0];
+
+	si_isa_write_vreg(work_item, INST.vdata, value.as_uint);
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = bytes_to_write;
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%u)(%d) ", work_item->id,
+			INST.vdata, addr, value.as_int);
+	}
+}
+#undef INST
+
+#define INST SI_INST_MUBUF
+void si_isa_BUFFER_STORE_DWORD_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	assert(!INST.addr64);
+	assert(!INST.slc);
+	assert(!INST.tfe);
+	assert(!INST.lds);
+
+	struct si_buffer_desc_t buf_desc;
+	union si_reg_t value;
+
+	unsigned int addr;
+	unsigned int base;
+	unsigned int mem_offset = 0;
+	unsigned int inst_offset = 0;
+	unsigned int off_vgpr = 0;
+	unsigned int stride = 0;
+	unsigned int idx_vgpr = 0;
+
+	int bytes_to_write = 4;
+
+	if (INST.glc)
+	{
+		work_item->wavefront->vector_mem_glc = 1; // FIXME redundant
+	}
+
+	/* srsrc is in units of 4 registers */
+	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc * 4);
+
+	/* Figure 8.1 from SI ISA defines address calculation */
+	base = buf_desc.base_addr;
+	mem_offset = si_isa_read_sreg(work_item, INST.soffset);
+	inst_offset = INST.offset;
+	stride = buf_desc.stride;
+
+	/* Table 8.3 from SI ISA */
+	if (!INST.idxen && INST.offen)
+	{
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && !INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+	}
+	else if (INST.idxen && INST.offen)
+	{
+		idx_vgpr = si_isa_read_vreg(work_item, INST.vaddr);
+		off_vgpr = si_isa_read_vreg(work_item, INST.vaddr + 1);
+	}
+
+	/* It wouldn't make sense to have a value for idxen without
+	 * having a stride */
+	if (idx_vgpr && !stride)
+	{
+		fatal("%s: the buffer descriptor is probably not correct",
+			__FUNCTION__);
+	}
+
+	addr = base + mem_offset + inst_offset + off_vgpr + 
+		stride * (idx_vgpr + work_item->id_in_wavefront);
+
+	value.as_int = si_isa_read_vreg(work_item, INST.vdata);
+
+	mem_write(si_emu->global_mem, addr, bytes_to_write, &value);
+	
+	/* Sign extend */
+	//value.as_int = (int) value.as_byte[0];
 
 	si_isa_write_vreg(work_item, INST.vdata, value.as_uint);
 
