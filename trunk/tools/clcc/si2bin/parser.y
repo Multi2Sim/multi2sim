@@ -56,7 +56,6 @@
  
 
 
-
 %token<id> TOK_SCALAR_REGISTER
 %token<id> TOK_VECTOR_REGISTER
 %token<id> TOK_SPECIAL_REGISTER
@@ -88,6 +87,7 @@
 %type<arg> rl_waitcnt_arg
 
 %%
+
 
 
 rl_input
