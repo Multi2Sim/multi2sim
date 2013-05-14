@@ -23,19 +23,36 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "val.h"
+#include "type.h"
 
 
 struct cl2llvm_val_t *cl2llvm_val_create(void)
 {
 	struct cl2llvm_val_t *cl2llvm_val;
-
 	cl2llvm_val = xcalloc(1, sizeof(struct cl2llvm_val_t));
+
+	struct cl2llvm_type_t *cl2llvm_type;
+	cl2llvm_type = xcalloc(1, sizeof(struct cl2llvm_type_t));
+	
+	cl2llvm_val->type = cl2llvm_type;
+
+	return cl2llvm_val;
+}
+
+struct cl2llvm_val_t *cl2llvm_val_create_w_init(LLVMValueRef val, int sign)
+{
+	struct cl2llvm_val_t *cl2llvm_val = cl2llvm_val_create();
+	
+	cl2llvm_val->val = val;
+	cl2llvm_val->type->llvm_type = LLVMTypeOf(val);
+	cl2llvm_val->type->sign = sign;
 
 	return cl2llvm_val;
 }
 
 void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val)
 {
+	free(cl2llvm_val->type);
 	free(cl2llvm_val);
 }
 

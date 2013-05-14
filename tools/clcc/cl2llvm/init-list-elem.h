@@ -26,7 +26,7 @@ struct cl2llvm_init_list_elem_t
 {
 	char *elem_name;
 	LLVMValueRef val;
-	int is_signed;
+	int sign;
 };
 
 struct cl2llvm_init_list_elem_t *cl2llvm_create_init_list_elem(char *name);

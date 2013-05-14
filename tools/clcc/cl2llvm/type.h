@@ -28,11 +28,12 @@
 
 struct cl2llvm_type_t
 {
-	LLVMTypeRef type;
-	int is_signed;
+	LLVMTypeRef llvm_type;
+	int sign;
 };
 
 struct cl2llvm_type_t *cl2llvm_type_create(void);
+struct cl2llvm_type_t *cl2llvm_type_create_w_init(LLVMTypeRef llvm_type, int sign);
 void cl2llvm_type_free(struct cl2llvm_type_t*);
 
 #endif
