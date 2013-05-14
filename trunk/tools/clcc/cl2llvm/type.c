@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <llvm-c/Core.h>
 #include <lib/mhandle/mhandle.h>
 
 #include "type.h"
@@ -30,6 +31,15 @@ struct cl2llvm_type_t *cl2llvm_type_create(void)
 	struct cl2llvm_type_t *cl2llvm_type;
 
 	cl2llvm_type = xcalloc(1, sizeof(struct cl2llvm_type_t));
+
+	return cl2llvm_type;
+}
+
+struct cl2llvm_type_t *cl2llvm_type_create_w_init(LLVMTypeRef llvm_type, int sign) 
+{
+	struct cl2llvm_type_t *cl2llvm_type = cl2llvm_type_create();
+	cl2llvm_type->llvm_type = llvm_type;
+	cl2llvm_type->sign = sign;
 
 	return cl2llvm_type;
 }

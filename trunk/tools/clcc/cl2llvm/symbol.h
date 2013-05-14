@@ -25,12 +25,11 @@
 struct cl2llvm_symbol_t
 {
 	char * name;
-	LLVMTypeRef type;
-	LLVMValueRef value;
-	int is_signed;
+	struct cl2llvm_val_t *cl2llvm_val;
 };
 
 struct cl2llvm_symbol_t *cl2llvm_symbol_create(char *name);
+struct cl2llvm_symbol_t *cl2llvm_symbol_create_w_init(LLVMValueRef val, int sign, char *name);
 void cl2llvm_symbol_free(struct cl2llvm_symbol_t *symbol);
 
 #endif
