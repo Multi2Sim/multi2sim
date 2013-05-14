@@ -22,13 +22,16 @@
 
 #include <llvm-c/Core.h>
 
+#include "type.h"
+
 struct cl2llvm_val_t
 {
 	LLVMValueRef val;
-	int is_signed;
+	struct cl2llvm_type_t *type;
 };
 
-struct cl2llvm_val_t *cl2llvm_val_create();
+struct cl2llvm_val_t *cl2llvm_val_create(void);
+struct cl2llvm_val_t *cl2llvm_val_create_w_init(LLVMValueRef val, int sign);
 void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val);
 
 #endif

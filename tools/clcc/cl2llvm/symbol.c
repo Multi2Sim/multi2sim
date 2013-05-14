@@ -20,6 +20,7 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "symbol.h"
+#include "val.h"
 
 
 struct cl2llvm_symbol_t *cl2llvm_symbol_create(char *name)
@@ -30,7 +31,22 @@ struct cl2llvm_symbol_t *cl2llvm_symbol_create(char *name)
 	symbol = xcalloc(1, sizeof(struct cl2llvm_symbol_t));
 	symbol->name = xstrdup(name);
 
+	symbol->cl2llvm_val = cl2llvm_val_create();
+
 	/* Return */
+	return symbol;
+}
+
+struct cl2llvm_symbol_t *cl2llvm_symbol_create_w_init(LLVMValueRef val, int sign, char *name)
+{
+	struct cl2llvm_symbol_t *symbol;
+
+	symbol = cl2llvm_symbol_create(name);
+
+	symbol->cl2llvm_val->val = val;
+	symbol->cl2llvm_val->type->llvm_type = LLVMTypeOf(val);
+	symbol->cl2llvm_val->type->sign = sign;
+
 	return symbol;
 }
 
