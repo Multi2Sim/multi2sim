@@ -45,6 +45,7 @@ void *device_kernel_dispatch(void *ptr)
 		group_count))
 	{
 		pthread_mutex_unlock(info->lock);
+		printf("id %d. offset: %d.  count: %d\n", info->id, group_offset[0], group_count[0]);
 		info->device->arch_kernel_run_func(
 			info->kernel,
 			info->work_dim,

@@ -1,10 +1,12 @@
 #include <time.h>
 #include <string.h>
 #include <limits.h>
-#include "mhandle.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include "partition-util.h"
 
 #define MIN(a, b) ((a) < (b)? (a): (b))
+#define MAX(a, b) ((a) > (b)? (a): (b))
 
 long long get_time()
 {
@@ -14,17 +16,47 @@ long long get_time()
 	return 1000000000LL * t.tv_sec + t.tv_nsec;	
 }
 
+struct partition_info_t *partition_info_create(int num_devices, unsigned int dims, const unsigned int *groups)
+{
+	struct partition_info_t *info = calloc(1, sizeof (struct partition_info_t));
+	info->num_devices = num_devices;
+	info->dims = dims;
+	info->groups = calloc(dims, sizeof (unsigned int));
+	memcpy(info->groups, groups, dims * sizeof (unsigned int));
+	return info;
+}
+
+
+void partition_info_free(struct partition_info_t *info)
+{
+	free(info->groups);
+	free(info);
+}
+
+unsigned int closest_multiple_not_more(unsigned int value, unsigned int factor, unsigned int max)
+{
+	unsigned int rem = value % factor;
+	/* if the remander is equal to or more than half, go bigger */
+	if (rem >= factor / 2)
+		return MIN(value + factor - rem, max);
+	/* max sure we're not just retuning zero if there's still work to do */
+	else if (value != rem)
+		return MIN(value - rem, max);
+	else
+		return MIN(factor, max);
+}
+
 
 struct cube_t *cube_init(int dims, const unsigned int *size)
 {
 	unsigned int *whole;
 	struct cube_t *cube;
 
-	cube = xcalloc(1, sizeof (struct cube_t));
+	cube = calloc(1, sizeof (struct cube_t));
 	cube->dims = dims;	
 	cube->list = list_create();
 
-	whole = xcalloc(2 * dims, sizeof (unsigned int));
+	whole = calloc(2 * dims, sizeof (unsigned int));
 	memset(whole, 0, dims * sizeof (unsigned int));
 	memcpy(whole + dims, size, dims * sizeof (unsigned int));
 	list_add(cube->list, whole);
@@ -36,14 +68,23 @@ void cube_remove_region(struct cube_t *cube, const unsigned int *start, const un
 {
 	int i, j;
 	struct list_t *splits = list_create();
-	unsigned int *rem = xcalloc(2 * cube->dims, sizeof (unsigned int));
-	memcpy(rem, start, 3 * sizeof (unsigned int));
-	memcpy(rem + cube->dims, size, 3 * sizeof (unsigned int));
+	unsigned int *rem = calloc(2 * cube->dims, sizeof (unsigned int));
+	memcpy(rem, start, cube->dims * sizeof (unsigned int));
+	memcpy(rem + cube->dims, size, cube->dims * sizeof (unsigned int));
 
 	/* remove the cube from the rest of the cubes */
 	LIST_FOR_EACH(cube->list, i)
-		remove_from_cube(cube->dims, splits, list_get(cube->list, i), rem);
+	{
+		unsigned int *region = list_get(cube->list, i);
+		remove_from_cube(cube->dims, splits, region, rem);
+		free(region);
+	}
+	list_free(cube->list);
 
+	/* now set the new list */
+	cube->list = splits;
+	free(rem);
+	
 	/* go backward through the list so that we don't skip elemnts when they're removed */
 	for (int i = list_count(splits) - 1; i >= 0; i--)
 	{
@@ -56,15 +97,6 @@ void cube_remove_region(struct cube_t *cube, const unsigned int *start, const un
 			}
 		}
 	}
-
-	/* now set the new list */
-	LIST_FOR_EACH(cube->list, i)
-		free(list_get(cube->list, i));
-	list_free(cube->list);
-	cube->list = splits;
-
-	free(rem);
-	list_free(splits);
 }
 
 
@@ -142,7 +174,8 @@ void remove_from_cube(
 	const unsigned int *remove)
 {
 	int i, j;
-	unsigned int *inter = xcalloc(2 * dims, sizeof (unsigned int));
+	unsigned int *inter = calloc(2 * dims, sizeof (unsigned int));
+
 	if (get_intersection(dims, inter, cube, remove))
 	{
 		for (i = 0; i < dims; i++)
@@ -155,7 +188,7 @@ void remove_from_cube(
 			/* Add cube before beginning */
 			if (inter_start != cube_start)
 			{
-				unsigned int *rem = xcalloc(2 * dims, sizeof (unsigned int));
+				unsigned int *rem = calloc(2 * dims, sizeof (unsigned int));
 	
 				for (j = 0; j < dims; j++)
 				{
@@ -166,29 +199,30 @@ void remove_from_cube(
 					if (j == i)
 						rem[dims + j] = inter_start - cube_start;
 					else
-						rem[dims + j] = cube_size;
+						rem[dims + j] = cube[dims + j];
 				}
-
 				list_add(result, rem); /* record the new cube */
 			}
 			
 			/* Add cube before end */
 			if (inter_start + inter_size != cube_start + cube_size)
 			{
-				unsigned int *rem = xcalloc(2 * dims, sizeof (unsigned int));
+				unsigned int *rem = calloc(2 * dims, sizeof (unsigned int));
 				
 				for (j = 0; j < dims; j++)
 				{
-					/* start is after subcube end */
-					rem[j] = inter_start + inter_size;
-					
 					if (j == i)
-						rem[dims + j] = cube_size - inter_size;
+					{
+						rem[j] = inter_start + inter_size;
+						rem[dims + j] = cube_size - inter_size - (inter_start - cube_start);
+					}
 					else
-						rem[dims + j] = cube_size;
+					{
+						rem[j] = cube[j];
+						rem[dims + j] = cube[dims + j];
+					}
 
 				}
-
 				list_add(result, rem);
 			}
 		}
@@ -196,7 +230,7 @@ void remove_from_cube(
 	}
 	else /* no intersection? then the whole cube is left */
 	{
-		unsigned int *rem = xcalloc(2 * dims, sizeof (unsigned int));
+		unsigned int *rem = calloc(2 * dims, sizeof (unsigned int));
 		memcpy(rem, cube, 2 * dims * sizeof (unsigned int));
 		list_add(result, rem);
 	}
@@ -215,14 +249,89 @@ int covers_cube(int dims, unsigned int *cube, unsigned int *other)
 }
 
 
-unsigned int get_centroid_distance(int dims, unsigned int *cube, unsigned int *point)
+unsigned int get_centroid_distance_sq(int dims, const unsigned int *cube, const unsigned int *point)
 {
 	int i;
 	int dist = 0;
-	/* calculate Manhattan distance for now */
 	for (i = 0; i < dims; i++)
-		dist += abs((cube[i] + cube[dims + i]) / 2 - point[i]);
+	{
+		int d = (cube[i] + cube[dims + i]) / 2 - point[i];
+		dist += d * d;
+	}
 	return dist;
+}
+
+void get_closest_point(int dims, unsigned int *out, const unsigned int *point, const unsigned int *cube)
+{
+	int inside = 1;
+	int i;
+
+	for (i = 0; i < dims; i++)
+		if (cube[i] > point[i] || cube[i] + cube[dims + i] <= point[i])
+			inside = 0;
+	
+	if (inside)
+		memcpy(out, point, dims * sizeof (unsigned int));
+	else
+	{
+		int j;
+		int normal_dim = -1;
+		unsigned int close_dist = UINT_MAX;
+		unsigned int *closest = calloc(2 * dims, sizeof (unsigned int));
+		unsigned int *face = calloc(2 * dims, sizeof (unsigned int));
+
+		/* go through each of 2n (n - 1)-dimensional surface that the n dimensional cube has */
+		for (i = 0; i < dims; i++)
+		{
+			/* for each dimension there is a near face and a far face */
+			memcpy(face, cube, 2 * dims * sizeof (unsigned int));
+			for (j = 0; j < 2; j++)
+			{
+				if (j)
+					face[i] += face[dims + i];
+				face[dims + i] = 0;
+			}
+
+			/* find the closest face */
+			unsigned int cur_dist = get_centroid_distance_sq(dims, face, point);
+			if (cur_dist < close_dist)
+			{
+				close_dist = cur_dist;
+				memcpy(closest, face, 2 * dims * sizeof (unsigned int));
+				normal_dim = i;
+			}
+		}
+		free(face);
+
+		/* now closest contains the face closest to the point.
+		   go through the dimensions again, looking at all 
+		   the dimensions of the face */
+		
+
+		/* initialize the point to the starting point of the face */
+		memcpy(out, closest, dims * sizeof (unsigned int));
+
+		for (i = 0; i < dims; i++)
+		{
+			if (i != normal_dim)
+			{
+				/* distance to the centroid from the face */
+				int centroid = (cube[i] + cube[dims + i]) / 2;
+				int centroid_dist = abs((int)closest[i] - centroid);
+				/* distance to the point from the face */
+				int point_dist = abs((int)closest[i] - point[i]);
+
+				/* total distance between the two (point is outside of cube) */
+				int total = centroid_dist + point_dist;
+
+				int centroid_weight = total - point_dist;
+				int point_weight = total - centroid_dist;
+				out[i] = (centroid_weight * centroid + point_weight * point[i]) / total;
+			}
+		}
+
+		free(closest);
+	}		
 }
 
 void cube_get_region(
