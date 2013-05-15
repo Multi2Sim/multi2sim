@@ -5,6 +5,17 @@
 
 long long get_time();
 
+struct partition_info_t
+{
+	int num_devices;
+	unsigned int dims;
+	unsigned int *groups;
+};
+
+struct partition_info_t *partition_info_create(int num_devices, unsigned int dims, const unsigned int *groups);
+void partition_info_free(struct partition_info_t *info);
+unsigned int closest_multiple_not_more(unsigned int value, unsigned int factor, unsigned int max);
+
 struct cube_t
 {
 	int dims;
