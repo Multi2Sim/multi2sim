@@ -77,6 +77,10 @@
 %left TOK_AMP
 %token TOK_ABS
 %token TOK_NEG
+%token TOK_MEM
+%token TOK_ARGS
+%token TOK_DATA
+%token TOK_TEXT
 
 %type<inst> rl_instr
 %type<list> rl_arg_list
@@ -89,9 +93,41 @@
 %%
 
 
+new_section
+	: args_section
+	| text_section
+;
 
-rl_input
-	: 
+args_section
+	: TOK_ARGS TOK_NEW_LINE arg_list
+;
+
+arg_list
+	:
+	| TOK_ID TOK_DECIMAL
+	{
+		struct si2bin_id_t *id;
+		id = $1;
+		fprintf(stdout, "\n*** arg: %s ****\n", id->name);
+	}
+	| TOK_ID TOK_DECIMAL TOK_NEW_LINE arg_list
+	{
+		struct si2bin_id_t *id;
+		id = $1;
+		fprintf(stdout, "\n*** arg: %s ****\n", id->name);
+	}
+	| TOK_NEW_LINE new_section
+;
+	
+
+	
+
+text_section
+	: TOK_TEXT TOK_NEW_LINE rl_input
+;
+
+rl_input 
+	:
 	| rl_line rl_input
 ;
 

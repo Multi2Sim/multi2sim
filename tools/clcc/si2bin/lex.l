@@ -106,6 +106,22 @@ vcc|scc|exec {
 	return TOK_OFFSET;
 }
 
+".mem" {
+	return TOK_MEM;
+}
+
+".args" {
+	return TOK_ARGS;
+}
+
+".data" {
+	return TOK_DATA;
+}
+
+".text" {
+	return TOK_TEXT;
+}
+
 [a-zA-Z_][a-zA-Z0-9_]* {   
 	si2bin_yylval.id = si2bin_id_create(yytext);
 	return TOK_ID; 
@@ -127,6 +143,10 @@ vcc|scc|exec {
 }
 
 "//"[^\n]* {
+	/* Ignore comments */
+}
+
+"#"[^\n]* {
 	/* Ignore comments */
 }
 
