@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "mhandle.h"
 #include "relative-runtime-partition-strategy.h"
 #include "partition-util.h"
@@ -38,9 +39,14 @@ int relative_runtime_strategy_get_partition(void *inst, int id, int desired_grou
 	int i;
 	float total_speed;
 	unsigned int target_groups;
+	unsigned int row_size;
+	unsigned int *pos;
 	struct relative_runtime_strategy_t *info = inst;
 	struct per_device_info_t *dev = info->device_info + id;
-	
+
+	if (!info->groups_left)
+		return 0;
+
 	/* if the start has been set, update the speed */
 	long long now = get_time();
 	if (dev->start)
@@ -70,8 +76,30 @@ int relative_runtime_strategy_get_partition(void *inst, int id, int desired_grou
 	/* allocate groups proportional to performance.  Allocate half the remainder */
 	target_groups = info->groups_left * dev->speed / total_speed / 2;
 	target_groups = closest_multiple_not_more(target_groups, desired_groups, info->groups_left);
+
+	/* for now, just assume row major order and only vary the highest dimension */
+
+	/* how big is a highest-dimension 'row' */
+	row_size = 1;
+	for (i = 0; i < info->info->dims - 1; i++)
+	{
+		group_count[i] = info->info->groups[i];
+		row_size *= info->info->groups[i];
+	}
+
+	target_groups = closest_multiple_not_more(target_groups, row_size, info->groups_left);
+	assert(target_groups % row_size == 0);
+	group_count[info->info->dims - 1] = target_groups / row_size;
+	info->groups_left -= target_groups;
+	pos = xcalloc(info->info->dims, sizeof (unsigned int));
+	memset(pos, 0, info->info->dims * sizeof (unsigned int));
+	int found = cube_get_region(info->cube, group_offset, group_count, pos);
+	assert(found);
+	free(pos);
+
+	cube_remove_region(info->cube, group_offset, group_count);
 	
-	return 0;	
+	return 1;	
 }
 
 void relative_runtime_strategy_destroy(void *inst)
