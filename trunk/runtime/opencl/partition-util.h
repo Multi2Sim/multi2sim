@@ -25,10 +25,9 @@ struct cube_t
 struct cube_t *cube_init(int dims, const unsigned int *size);
 void cube_remove_region(struct cube_t *cube, const unsigned int *start, const unsigned int *size);
 void cube_destroy(struct cube_t *cube);
-void cube_get_region(
+int cube_get_region(
 	struct cube_t *cube,
 	unsigned int *start_out, 
-	unsigned int *size_out, 
 	const unsigned int *target_size, 
 	const unsigned int *target_loc);
 

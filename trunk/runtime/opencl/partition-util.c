@@ -334,12 +334,81 @@ void get_closest_point(int dims, unsigned int *out, const unsigned int *point, c
 	}		
 }
 
-void cube_get_region(
+unsigned int distance_squared(int dims, const unsigned int *a, const unsigned int *b)
+{
+	int i;
+	unsigned int dist = 0;
+	for (i = 0; i < dims; i++)
+	{
+		int d = a[i] - b[i];
+		dist += d * d;
+	}
+	return dist;
+}
+
+
+int can_contain(int dims, const unsigned int *me, const unsigned int *that)
+{
+	int i;
+	for (i = 0; i < dims; i++)
+		if (me[i] < that[i])
+			return 0;
+	return 1;
+}
+
+unsigned int squared(int x)
+{
+	return x * x;
+}
+
+int cube_get_region(
 	struct cube_t *cube,
 	unsigned int *start_out, 
-	unsigned int *size_out, 
 	const unsigned int *target_size, 
 	const unsigned int *target_loc)
 {
-	
+	int i;
+	int found = 0;
+	unsigned int min_dist_squared = UINT_MAX;
+	unsigned int *cur_start = calloc(cube->dims, sizeof (unsigned int));
+
+	/* consider each cube in the list */
+	LIST_FOR_EACH(cube->list, i)
+	{
+		unsigned int *cur = list_get(cube->list, i);
+		/* if the cube is big enough to hold the target */
+		if (can_contain(cube->dims, cur + cube->dims, target_size))
+		{
+			int j;
+			/* go dimension by dimension and figure out which corner is best
+			   we limit the possibilities to corners to reduce fragmentation */
+			unsigned int cur_dist_squared = 0;
+			for (j = 0; j < cube->dims; j++)
+			{
+				int near_center = cur[j] + target_size[j] / 2;
+				int far_center = cur[cube->dims + j] + cur[j] - target_size[j] / 2;
+				
+				if (abs(target_loc[j] - near_center) < abs(target_loc[j] - far_center))
+				{
+					cur_start[j] = cur[j];
+					cur_dist_squared += squared(target_loc[j] - near_center);
+				}
+				else
+				{
+					cur_start[j] = cur[j] + cur[cube->dims + j] - target_size[j];
+					cur_dist_squared += squared(target_loc[j] - far_center);
+				}
+			}
+
+			if (cur_dist_squared < min_dist_squared)
+			{
+				min_dist_squared = cur_dist_squared;
+				memcpy(start_out, cur_start, cube->dims * sizeof (unsigned int));
+				found = 1;
+			}
+		}
+	}
+	free(cur_start);
+	return found;
 }
+
