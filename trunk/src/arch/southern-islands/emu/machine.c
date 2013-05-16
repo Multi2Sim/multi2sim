@@ -1080,7 +1080,7 @@ void si_isa_S_BFE_I32_impl(struct si_work_item_t *work_item,
 
 	/* s1 (offset) should be [4:0] of ssrc1 and s2 (width) should be [22:16] of ssrc1*/
 	s1.as_uint = full_reg.as_uint & 0x1F;
-	s2.as_uint = full_reg.as_uint & 0x7F0000;
+	s2.as_uint = (full_reg.as_uint >> 16) & 0x7F;
 
 	/* Calculate the result. */
 	if (s2.as_uint == 0)
