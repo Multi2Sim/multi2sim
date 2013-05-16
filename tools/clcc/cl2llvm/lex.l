@@ -158,6 +158,60 @@ int long long unsigned otod(char *oct)
 	}
 	return decimal;
 }
+
+double atod(char *ascii)
+{
+	char base[100];
+	char expon[100];
+	int expon_is_neg = 0;
+
+/*	if (strlen(ascii) > 99)
+	{
+		yyerror("Constant is too large for floating point precision data type");
+	}
+*/
+	int i = 0;
+	while (ascii[i] != '\00' && ascii[i] != 'e' && ascii[i] != 'E' &&
+		ascii[i] != 'f' && ascii[i] != 'F' && ascii[i] != 'l' &&
+		ascii[i] != 'L' && ascii[i] != 'h' && ascii[i] != 'H')
+	{
+		printf("loop1\n");
+		base[i] = ascii[i];
+		i++;
+	}
+	base[i] = '\00';
+	i++;
+
+	int j = 0;
+
+	while (ascii[i] != '\00' && ascii[i] != 'f' && ascii[i] != 'F' && ascii[i] != 'l' && ascii[i] != 'L' && ascii[i] != 'h' && ascii[i] != 'H')
+	{
+		printf("loop2\n");
+		if(ascii[i] == '+')
+			i++;
+		if(ascii[i] == '-')
+		{
+			expon_is_neg = 1;
+			i++;
+		}
+		printf("%c\n", ascii[i]);
+		expon[j] = ascii[i];
+		i++;
+		j++;
+	}
+	expon[i] = '\00';
+
+	double base_d = atof(base);
+	double expon_d = atof(expon);
+	
+	if (expon_is_neg)
+		expon_d = expon_d * -1;
+	printf("base = %f, expon = %f, %d", base_d, expon_d, expon_is_neg); 
+	
+	double decimal = base_d * pow(10, expon_d);
+	printf("decimal = %f\n", decimal);
+	return decimal;
+}
 	
 %}
 
@@ -201,8 +255,11 @@ CONST_INT_UL		([1-9][0-9]*{UL}+)|(0{UL})
 CONST_INT_LL		([1-9][0-9]*{UL}+)|(0{LL})
 CONST_INT_ULL		([1-9][0-9]*{ULL}+)|(0{ULL})
 CONST_CHAR		[a-zA-Z_]?'(\\.|[^\\'])+'
-CONST_INT_EXPON		[0-9]+[Ee][+-]?[0-9]+(f|F|l|L)?
-CONST_DEC		(([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*))([Ee][+-]?[0-9]+)?(f|F|l|L)?
+CONST_DEC_NO_POINT	[0-9]+[Ee][+-]?[0-9]+
+CONST_DEC		(([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*)|([0-9]+))([Ee][+-]?[0-9]+)?
+CONST_DEC_H		(([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*)|([0-9]+))([Ee][+-]?[0-9]+)?(h|H)
+CONST_DEC_F		(([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*)|([0-9]+))([Ee][+-]?[0-9]+)?(f|F)
+CONST_DEC_L		(([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*)|([0-9]+))([Ee][+-]?[0-9]+)?(l|L)
 TOK_STRING		\"[^\"\`]*\"
 TOK_COMMA		\,
 TOK_SEMICOLON		\;
@@ -428,22 +485,40 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 	cl2llvm_yylval.const_int_val_ull = atoi(yytext);
 	return TOK_CONST_INT_ULL;
 }
-
+{CONST_DEC_NO_POINT} {
+	printf("TOK_CONST_DEC_EX - %s\n", yytext);
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_float_val = atod(yytext);
+	return TOK_CONST_DEC;
+}
+{CONST_DEC} {
+	printf("TOK_CONST_DEC_EX - %s\n", yytext);
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_float_val = atod(yytext);
+	return TOK_CONST_DEC;
+}
+{CONST_DEC_H} {
+	printf("TOK_CONST_VAL - %s\n", yytext);
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_float_val = atod(yytext);
+	return TOK_CONST_DEC_H;
+}
+{CONST_DEC_F} {
+	printf("TOK_CONST_VAL - %s\n", yytext);
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_float_val = atod(yytext);
+	return TOK_CONST_DEC_F;
+}
+{CONST_DEC_L} {
+	printf("TOK_CONST_VAL - %s\n", yytext);
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_float_val = atod(yytext);
+	return TOK_CONST_DEC_L;
+}
 {CONST_CHAR} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
 	printf("TOK_CONST_VAL - %s\n", yytext);
 	return TOK_CONST_VAL;
-}
-{CONST_INT_EXPON} {
-	printf("TOK_CONST_VAL - %s\n", yytext);
-	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
-	return TOK_CONST_VAL;
-}
-{CONST_DEC} {
-	printf("TOK_CONST_VAL - %s\n", yytext);
-	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
-	cl2llvm_yylval.const_float_val = atof(yytext);
-	return TOK_CONST_DEC;
 }
 {TOK_COMMA} {
 	printf("COMMA - %s\n", yytext);
