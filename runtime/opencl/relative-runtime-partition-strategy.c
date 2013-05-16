@@ -86,13 +86,20 @@ int relative_runtime_strategy_get_partition(void *inst, int id, int desired_grou
 		group_count[i] = info->info->groups[i];
 		row_size *= info->info->groups[i];
 	}
-
+	/* target groups should be a multiple of the row size */
 	target_groups = closest_multiple_not_more(target_groups, row_size, info->groups_left);
 	assert(target_groups % row_size == 0);
+	/* now we know the shape in every dimension */
 	group_count[info->info->dims - 1] = target_groups / row_size;
 	info->groups_left -= target_groups;
+
+	/* decide what point in the NDRange to prefer */
 	pos = xcalloc(info->info->dims, sizeof (unsigned int));
 	memset(pos, 0, info->info->dims * sizeof (unsigned int));
+
+	/* make even devices prefer the top, and odd devices prefer the bottom */
+	pos[info->info->dims - 1] = info->info->groups[info->info->dims - 1] * (id % 2);
+
 	int found = cube_get_region(info->cube, group_offset, group_count, pos);
 	assert(found);
 	free(pos);

@@ -899,8 +899,8 @@ static int opencl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
 	unsigned int global_size[3];
 	unsigned int local_size[3];
 
-	if (si_gpu_fused_device)
-		fatal("Fused device not supported\n");  // FIXME
+//	if (si_gpu_fused_device)
+//		fatal("Fused device not supported\n");  // FIXME
 
 	if (si_gpu_fused_device)
 		si_emu->global_mem = ctx->mem;
