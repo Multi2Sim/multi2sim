@@ -244,7 +244,7 @@ char *si_gpu_report_file_name = "";
 int si_trace_category;
 
 /* FIXME This needs to be renamed and set when the simulator starts up. */
-int si_gpu_fused_device;
+int si_gpu_fused_device = 1;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
 unsigned long long si_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
