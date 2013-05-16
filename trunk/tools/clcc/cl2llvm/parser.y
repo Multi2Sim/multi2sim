@@ -35,6 +35,9 @@ extern LLVMBasicBlockRef cl2llvm_basic_block;
 int temp_var_count;
 char temp_var_name[50];
 
+int block_count;
+char block_name[50];
+
 struct hash_table_t *cl2llvm_symbol_table;
 
 #define type_cmp_num_types  31
@@ -113,6 +116,7 @@ void type_cmp(struct cl2llvm_val_t *type1_w_sign, struct cl2llvm_val_t *type2_w_
 
 void llvm_type_cast(struct cl2llvm_val_t *llvm_val, struct cl2llvm_type_t *totype_w_sign)
 {
+
 	LLVMTypeRef fromtype = LLVMTypeOf(llvm_val->val);
 	LLVMTypeRef totype = totype_w_sign->llvm_type;
 	int fromsign = llvm_val->type->sign;
@@ -863,7 +867,7 @@ int type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct cl
 %union {
 	long int const_int_val;
 	unsigned long long const_int_val_ull;
-	float const_float_val;
+	double  const_float_val;
 	char * identifier;
 	struct cl2llvm_type_t *llvm_type_ref;
 	struct cl2llvm_val_t *llvm_value_ref;
@@ -878,6 +882,9 @@ int type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct cl
 %token<const_int_val_ull> TOK_CONST_INT_LL
 %token<const_int_val_ull> TOK_CONST_INT_ULL
 %token<const_float_val> TOK_CONST_DEC
+%token<const_float_val> TOK_CONST_DEC_H
+%token<const_float_val> TOK_CONST_DEC_F
+%token<const_float_val> TOK_CONST_DEC_L
 %token TOK_CONST_VAL
 %token TOK_STRING
 %token TOK_COMMA
@@ -983,7 +990,9 @@ int type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct cl
 
 %type<llvm_value_ref> primary
 %type<llvm_value_ref> lvalue
+%type<llvm_value_ref> maybe_expr
 %type<llvm_value_ref> expr
+%type<llvm_value_ref> unary_expr
 %type<llvm_value_ref> init
 %type<init_list> init_list
 %type<llvm_type_ref> type_name
@@ -1022,8 +1031,7 @@ func_def
 	}
 	TOK_CURLY_BRACE_OPEN stmt_list TOK_CURLY_BRACE_CLOSE
 	{
-		LLVMValueRef x = LLVMBuildAdd(cl2llvm_builder, LLVMConstInt(LLVMInt32Type(), 1, 0), LLVMConstInt(LLVMInt32Type(), 2, 0), "temp");
-		LLVMBuildRet(cl2llvm_builder, x);
+		LLVMBuildRet(cl2llvm_builder, LLVMConstInt(LLVMInt32Type(), 1, 0));
 	}
 	; 
 
@@ -1134,9 +1142,11 @@ lvalue
 		if (!symbol)
 			yyerror("undefined identifier");
 
-		struct cl2llvm_symbol_t *symbol_dup = cl2llvm_symbol_create_w_init(symbol->cl2llvm_val->val, symbol->cl2llvm_val->type->sign, symbol->name);
+		struct cl2llvm_val_t *symbol_val_dup = cl2llvm_val_create_w_init(symbol->cl2llvm_val->val, symbol->cl2llvm_val->type->sign);
 
-		$$ = symbol_dup->cl2llvm_val;
+		symbol_val_dup->type->llvm_type = symbol->cl2llvm_val->type->llvm_type;
+
+		$$ = symbol_val_dup;
 	}
 	| struct_deref_list
 	{
@@ -1160,6 +1170,9 @@ array_deref_list
 
 stmt
 	: maybe_expr TOK_SEMICOLON
+	{
+		cl2llvm_val_free($1);
+	}
 	| declaration
 	| func_def
 	| for_loop
@@ -1217,14 +1230,19 @@ init_list
 		struct list_t *init_list = list_create();
 		struct cl2llvm_symbol_t *symbol = cl2llvm_symbol_create($1);
 
+		cl2llvm_val_free(symbol->cl2llvm_val);
 		symbol->cl2llvm_val = $2;
+
 		list_add(init_list, symbol);
 		$$ = init_list;
 	}
 	| init_list TOK_COMMA TOK_ID init %prec TOK_MULT
 	{
 		struct cl2llvm_symbol_t *symbol = cl2llvm_symbol_create($3);
+
+		cl2llvm_val_free(symbol->cl2llvm_val);
 		symbol->cl2llvm_val = $4;
+
 		list_add($1, symbol);
 		$$ = $1;
 	}
@@ -1250,6 +1268,7 @@ declaration
 				cl2llvm_builder, $1->llvm_type, 
 				current_list_elem->name), $1->sign, 
 				current_list_elem->name);
+			symbol->cl2llvm_val->type->llvm_type = $1->llvm_type;
 			err = hash_table_insert(cl2llvm_symbol_table, 
 				current_list_elem->name, symbol);
 			if (!err)
@@ -1267,8 +1286,8 @@ declaration
 					current_list_elem->cl2llvm_val->val,
 					symbol->cl2llvm_val->val);
 			}
-			/*cl2llvm_symbol_free(current_list_elem);*/
 		}
+		cl2llvm_type_free($1);
 		LIST_FOR_EACH($2, i)
 		{
 			cl2llvm_symbol_free(list_get($2, i));
@@ -1310,7 +1329,18 @@ case_clause
 	;
 
 if_stmt
-	: TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE stmt_or_stmt_list
+	: TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE
+	/*{
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+
+		LLVMBasicBlockRef cl2llvm_if_block = LLVMAppendBasicBlock(cl2llvm_function, block_name);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, cl2llvm_if_block);
+	}*/
+	stmt_or_stmt_list
+	/*{
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, cl2llvm_basic_block);
+	}*/
 	| TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE stmt_or_stmt_list TOK_ELSE stmt_or_stmt_list
 	;
 
@@ -1333,6 +1363,12 @@ while_loop
 
 maybe_expr
 	: /*empty*/
+	{
+		/*create object so that maybe_expr always points to a memory 
+		  location regardless of its contents*/
+		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		$$ = value;
+	}
 	| expr
 	;
 expr
@@ -1345,6 +1381,7 @@ expr
 
 	| expr TOK_PLUS expr
 	{
+		printf("addition rule\n");
 		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		
 		type_unify($1, $3, type);
@@ -1357,6 +1394,7 @@ expr
 
 			value->val = LLVMBuildAdd(cl2llvm_builder, $1->val, $3->val, temp_var_name);
 			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 
 		case LLVMHalfTypeKind:
@@ -1365,6 +1403,7 @@ expr
 
 			value->val = LLVMBuildFAdd(cl2llvm_builder, $1->val, $3->val, temp_var_name);
 			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 
 		default:
@@ -1391,6 +1430,7 @@ expr
 
 			value->val = LLVMBuildSub(cl2llvm_builder, $1->val, $3->val, temp_var_name);
 			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 
 		case LLVMHalfTypeKind:
@@ -1399,6 +1439,7 @@ expr
 
 			value->val = LLVMBuildFSub(cl2llvm_builder, $1->val, $3->val, temp_var_name);
 			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 
 		default:
@@ -1425,6 +1466,7 @@ expr
 			value->val = LLVMBuildMul(cl2llvm_builder, $1->val,
 				$3->val, temp_var_name);
 			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 
 		case LLVMHalfTypeKind:
@@ -1433,65 +1475,131 @@ expr
 			value->val = LLVMBuildFMul(cl2llvm_builder, $1->val,
 				$3->val, temp_var_name);
 			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 		default:
 
 			yyerror("invalid type of operands for addition");
 		}
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_type_free(type);
 
 		$$ = value;
 
 	}
 	| expr TOK_DIV expr
 	{
-		snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
+		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *value = cl2llvm_val_create();
-		value->val = LLVMBuildSDiv(cl2llvm_builder, $1->val, $3->val, temp_var_name);
-		value->type->sign = 1;
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		type_unify($1, $3, type);
+
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+			if (type->sign)
+			{
+				value->val = LLVMBuildSDiv(cl2llvm_builder, 
+					$1->val, $3->val, temp_var_name);
+			}
+			else
+			{
+				value->val = LLVMBuildUDiv(cl2llvm_builder, 
+					$1->val, $3->val, temp_var_name);
+			}
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+			value->val = LLVMBuildFDiv(cl2llvm_builder, 
+					$1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		default:
+			
+			yyerror("invalid type of operands for addition");
+		}
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_type_free(type);
 		$$ = value;
 	}
 	| expr TOK_MOD expr
 	{
-		snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
+		struct cl2llvm_type_t *type = cl2llvm_type_create();
 		struct cl2llvm_val_t *value = cl2llvm_val_create();
-		value->val = LLVMBuildSRem(cl2llvm_builder, $1->val, $3->val, temp_var_name);
-		value->type->sign = 1;
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		type_unify($1, $3, type);
+
+		switch (type->sign)
+		{
+		case 1:
+			value->val = LLVMBuildSRem(cl2llvm_builder, 
+				$1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		case 0:
+			value->val = LLVMBuildURem(cl2llvm_builder, 
+				$1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		default:
+			
+			yyerror("invalid type of operands for addition");
+		}
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_type_free(type);
 		$$ = value;
+
 	}
 	| expr TOK_SHIFT_LEFT expr
 	| expr TOK_SHIFT_RIGHT expr
 	| expr TOK_EQUALITY expr
 	{
 		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		
-		type_unify($1, $3, type);
-		snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
 		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		type_unify($1, $3, type);
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
-			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ, $1->val, $3->val, temp_var_name);
-			value->type->sign = 1;
+			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ,
+				$1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 
+		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealOEQ, $1->val, $3->val, temp_var_name);
-			value->type->sign = 1;
+			value->val = LLVMBuildFCmp(cl2llvm_builder,
+				LLVMRealOEQ, $1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 
 		default:
 
-			yyerror("invalid type of operands for addition");
+			yyerror("invalid type of operands for equality");
 		}
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
@@ -1501,27 +1609,33 @@ expr
 	| expr TOK_INEQUALITY expr
 	{
 		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		
-		type_unify($1, $3, type);
-		snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
 		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		type_unify($1, $3, type);
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
-			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, $1->val, $3->val, temp_var_name);
-			value->type->sign = 1;
+			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE,
+				$1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 
+		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, $1->val, $3->val, temp_var_name);
-			value->type->sign = 1;
+			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealONE, $1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
 			break;
 
 		default:
+
 			yyerror("invalid type of operands for addition");
 		}
 		cl2llvm_val_free($1);
@@ -1531,24 +1645,461 @@ expr
 
 	}
 	| expr TOK_LESS expr
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create();
+		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		type_unify($1, $3, type);
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			if (type->sign)
+			{
+				value->val = LLVMBuildICmp(cl2llvm_builder, 
+					LLVMIntSLT, $1->val, $3->val, 
+					temp_var_name);
+			}
+			else
+			{
+				value->val = LLVMBuildICmp(cl2llvm_builder, 
+					LLVMIntULT, $1->val, $3->val, 
+					temp_var_name);
+			}
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealOLT, $1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		default:
+
+			yyerror("invalid type of operands for addition");
+		}
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_type_free(type);
+		$$ = value;
+
+	}
 	| expr TOK_GREATER expr
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create();
+		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		type_unify($1, $3, type);
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			if (type->sign)
+			{
+				value->val = LLVMBuildICmp(cl2llvm_builder, 
+					LLVMIntSGT, $1->val, $3->val, 
+					temp_var_name);
+			}
+			else
+			{
+				value->val = LLVMBuildICmp(cl2llvm_builder, 
+					LLVMIntUGT, $1->val, $3->val, 
+					temp_var_name);
+			}
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealOGT, $1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		default:
+
+			yyerror("invalid type of operands for addition");
+		}
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_type_free(type);
+		$$ = value;
+	}
 	| expr TOK_LESS_EQUAL expr
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create();
+		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		type_unify($1, $3, type);
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			if (type->sign)
+			{
+				value->val = LLVMBuildICmp(cl2llvm_builder, 
+					LLVMIntSLE, $1->val, $3->val, 
+					temp_var_name);
+			}
+			else
+			{
+				value->val = LLVMBuildICmp(cl2llvm_builder, 
+					LLVMIntULE, $1->val, $3->val, 
+					temp_var_name);
+			}
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealOLE, $1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		default:
+
+			yyerror("invalid type of operands for addition");
+		}
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_type_free(type);
+		$$ = value;
+	}
 	| expr TOK_GREATER_EQUAL expr
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create();
+		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		type_unify($1, $3, type);
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			if (type->sign)
+			{
+				value->val = LLVMBuildICmp(cl2llvm_builder, 
+					LLVMIntSGE, $1->val, $3->val, 
+					temp_var_name);
+			}
+			else
+			{
+				value->val = LLVMBuildICmp(cl2llvm_builder, 
+					LLVMIntUGE, $1->val, $3->val, 
+					temp_var_name);
+			}
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+				LLVMRealOGE, $1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		default:
+
+			yyerror("invalid type of operands for addition");
+		}
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_type_free(type);
+		$$ = value;
+	}
 	| expr TOK_LOGICAL_AND expr
 	| expr TOK_LOGICAL_OR expr
-	| expr TOK_EQUAL expr
+	| lvalue TOK_EQUAL expr
 	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
+			$1->type->llvm_type , $1->type->sign);
+
+		llvm_type_cast($3, type);
+		LLVMBuildStore(cl2llvm_builder, $3->val, $1->val);
+		cl2llvm_type_free(type);
+		$$ = $3;
 	}
-	| expr TOK_ADD_EQUAL expr
-	| expr TOK_MINUS_EQUAL expr
-	| expr TOK_DIV_EQUAL expr
-	| expr TOK_MULT_EQUAL expr
-	| expr TOK_MOD_EQUAL expr
-	| expr TOK_AND_EQUAL expr
-	| expr TOK_OR_EQUAL expr
-	| expr TOK_EXCLUSIVE_EQUAL expr
-	| expr TOK_SHIFT_RIGHT_EQUAL expr
-	| expr TOK_SHIFT_LEFT_EQUAL expr
+	| lvalue TOK_ADD_EQUAL expr
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
+			$1->type->llvm_type , $1->type->sign);
+		struct cl2llvm_val_t *value;
+		
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
+			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
+			$1->type->sign);
+		
+		llvm_type_cast($3, type);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			value = cl2llvm_val_create_w_init(
+				LLVMBuildAdd(cl2llvm_builder, lval->val, 
+				$3->val, temp_var_name), type->sign);
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value = cl2llvm_val_create_w_init(
+				LLVMBuildFAdd(cl2llvm_builder, lval->val, 
+				$3->val, temp_var_name), type->sign);
+			break;
+
+		default:
+
+			yyerror("invalid type of operands for addition");
+			value = cl2llvm_val_create();
+		}
+
+		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		
+		cl2llvm_val_free(lval);
+		cl2llvm_type_free(type);
+		$$ = value;
+	}
+	| lvalue TOK_MINUS_EQUAL expr
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
+			$1->type->llvm_type , $1->type->sign);
+		struct cl2llvm_val_t *value;
+		
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
+			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
+			$1->type->sign);
+
+		llvm_type_cast($3, type);
+	
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			value = cl2llvm_val_create_w_init(
+				LLVMBuildSub(cl2llvm_builder, lval->val, 
+				$3->val, temp_var_name), type->sign);
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value = cl2llvm_val_create_w_init(
+				LLVMBuildFSub(cl2llvm_builder, lval->val, 
+				$3->val, temp_var_name), type->sign);
+			break;
+
+		default:
+			
+			yyerror("invalid type of operands for addition");
+			value = cl2llvm_val_create();
+		}
+
+		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
+
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_val_free(lval);
+		cl2llvm_type_free(type);
+		$$ = value;
+	}
+	| lvalue TOK_DIV_EQUAL expr
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
+			$1->type->llvm_type , $1->type->sign);
+		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
+			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
+			$1->type->sign);
+	
+		llvm_type_cast($3, type);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+			if (type->sign)
+			{
+				value->val = LLVMBuildSDiv(cl2llvm_builder, 
+					lval->val, $3->val, temp_var_name);
+			}
+			else
+			{
+				value->val = LLVMBuildUDiv(cl2llvm_builder, 
+					lval->val, $3->val, temp_var_name);
+			}
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+			value->val = LLVMBuildFDiv(cl2llvm_builder, 
+					$1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		default:
+			
+			yyerror("invalid type of operands for addition");
+		}
+	
+		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
+		
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_val_free(lval);
+		cl2llvm_type_free(type);
+		$$ = value;
+	}
+	| lvalue TOK_MULT_EQUAL expr
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
+			$1->type->llvm_type , $1->type->sign);
+		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
+			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
+			$1->type->sign);
+	
+		llvm_type_cast($3, type);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			value->val = LLVMBuildMul(cl2llvm_builder, 
+				lval->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+			value->val = LLVMBuildFMul(cl2llvm_builder, 
+					$1->val, $3->val, temp_var_name);
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		default:
+			
+			yyerror("invalid type of operands for addition");
+		}
+	
+		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
+		
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_val_free(lval);
+		cl2llvm_type_free(type);
+		$$ = value;
+	}
+	| lvalue TOK_MOD_EQUAL expr
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
+			$1->type->llvm_type , $1->type->sign);
+		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
+			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
+			$1->type->sign);
+	
+		llvm_type_cast($3, type);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		
+		switch (LLVMGetTypeKind(type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+			if (type->sign)
+			{
+				value->val = LLVMBuildSRem(cl2llvm_builder, 
+					lval->val, $3->val, temp_var_name);
+			}
+			else
+			{
+				value->val = LLVMBuildURem(cl2llvm_builder, 
+					lval->val, $3->val, temp_var_name);
+			}
+			value->type->sign = type->sign;
+			value->type->llvm_type = type->llvm_type;
+			break;
+
+		default:
+			
+			yyerror("invalid type of operands for addition");
+		}
+	
+		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
+		
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_val_free(lval);
+		cl2llvm_type_free(type);
+		$$ = value;
+	}
+	| lvalue TOK_AND_EQUAL expr
+	| lvalue TOK_OR_EQUAL expr
+	| lvalue TOK_EXCLUSIVE_EQUAL expr
+	| lvalue TOK_SHIFT_RIGHT_EQUAL expr
+	| lvalue TOK_SHIFT_LEFT_EQUAL expr
 	| expr TOK_CONDITIONAL expr TOK_COLON expr
 
 	| unary_expr
@@ -1574,15 +2125,47 @@ expr
 
 unary_expr
 	: lvalue TOK_INCREMENT %prec TOK_POSTFIX
+	{
+		$$ = NULL;
+	}
 	| TOK_INCREMENT lvalue %prec TOK_PREFIX
+	{
+		$$ = NULL;
+	}
 	| TOK_DECREMENT lvalue %prec TOK_PREFIX
+	{
+		$$ = NULL;
+	}
 	| lvalue TOK_DECREMENT %prec TOK_POSTFIX
+	{
+		$$ = NULL;
+	}
 	| TOK_MINUS primary %prec TOK_PREFIX
+	{
+		$$ = NULL;
+	}
 	| TOK_PLUS primary %prec TOK_PREFIX
+	{
+		$$ = NULL;
+	}
 	| TOK_PAR_OPEN type_spec TOK_PAR_CLOSE expr %prec TOK_PREFIX
+	{
+		printf("cast rule\n");
+		llvm_type_cast($4, $2);
+		$$ = $4;
+	}
 	| TOK_SIZEOF TOK_PAR_OPEN type_spec TOK_PAR_CLOSE %prec TOK_PREFIX
+	{
+		$$ = NULL;
+	}
 	| TOK_BITWISE_NOT expr
+	{
+		$$ = NULL;
+	}
 	| TOK_BITWISE_AND lvalue %prec TOK_PREFIX
+	{
+		$$ = NULL;
+	}
 	;
 
 
@@ -1650,6 +2233,24 @@ primary
 	{
 		struct cl2llvm_val_t *value = cl2llvm_val_create_w_init(
 			LLVMConstReal(LLVMFloatType(), $1), 1);
+		$$ = value;
+	}
+	| TOK_CONST_DEC_H
+	{
+		struct cl2llvm_val_t *value = cl2llvm_val_create_w_init(
+			LLVMConstReal(LLVMHalfType(), $1), 1);
+		$$ = value;
+	}
+	| TOK_CONST_DEC_F
+	{
+		struct cl2llvm_val_t *value = cl2llvm_val_create_w_init(
+			LLVMConstReal(LLVMFloatType(), $1), 1);
+		$$ = value;
+	}
+	| TOK_CONST_DEC_L
+	{
+		struct cl2llvm_val_t *value = cl2llvm_val_create_w_init(
+			LLVMConstReal(LLVMDoubleType(), $1), 1);
 		$$ = value;
 	}
 	| lvalue
