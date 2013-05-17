@@ -37,14 +37,14 @@ libopengl_a_SOURCES = \
 	opengl.dat \
 	opengl.h \
 	\
-	program.c \
-	program.h \
-	\
 	rasterizer.c \
 	rasterizer.h \
 	\
-	si_shader.c \
-	si_shader.h \
+	si-shader.c \
+	si-shader.h \
+	\
+	si-program.c \
+	si-program.h \
 	\
 	shader.c \
 	shader.h \

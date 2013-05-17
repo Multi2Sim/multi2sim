@@ -17,26 +17,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <unistd.h>
-#include <stdio.h>
+#ifndef DRIVER_OPENGL_SI_PROGRAM_H
+#define DRIVER_OPENGL_SI_PROGRAM_H
 
-#include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-#include "si_shader.h"
 
+struct elf_file_t;
 
 /*
- * Private Functions
+ * OpenGL Southern Islands Program
  */
 
 
+struct opengl_si_program_t
+{
+	int id;
+	
+	/* ELF binary */
+	struct elf_file_t *elf_file;
+};
 
-/*
- * Public Functions
- */
 
-
-
-/* 
- * OpenGL API functions 
- */
+#endif
