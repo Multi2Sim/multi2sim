@@ -20,36 +20,35 @@
 #ifndef DRIVER_OPENGL_SI_SHADER_H
 #define DRIVER_OPENGL_SI_SHADER_H
 
-#include <lib/util/elf-format.h>
-
 struct opengl_si_program_t;
 
-struct opencl_si_shader_t
+struct opengl_si_shader_t
 {
 	int id;
 	char *name;
 
 	/* Program that shader belongs to */
-	struct opencl_si_program_t *program;
+	struct opengl_si_program_t *program;
 
 	/* AMD Shader binary (internal ELF) */
-	struct si_bin_file_t *bin_file;
+	struct opengl_si_shader_t *shader_bin;
 
+	/**/
 };
 
-struct opencl_si_shader_t *opencl_si_shader_create(
-	struct opencl_si_program_t *program, char *name);
-void opencl_si_shader_free(struct opencl_si_shader_t *shader);
+struct opengl_si_shader_t *opengl_si_shader_create(
+	struct opengl_si_program_t *program, char *name);
+void opengl_si_shader_free(struct opengl_si_shader_t *shader);
 
 struct si_ndrange_t;
-void opencl_si_shader_setup_ndrange_constant_buffers(
+void opengl_si_shader_setup_ndrange_constant_buffers(
 	struct si_ndrange_t *ndrange);
-void opencl_si_shader_setup_ndrange_args(struct opencl_si_shader_t *shader,
+void opengl_si_shader_setup_ndrange_args(struct opengl_si_shader_t *shader,
 	struct si_ndrange_t *ndrange);
-void opencl_si_shader_debug_ndrange_state(struct opencl_si_shader_t *shader, 
+void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader, 
 	struct si_ndrange_t *ndrange);
-void opencl_si_shader_create_ndrange_tables(struct si_ndrange_t *ndrange);
-void opencl_si_shader_create_ndrange_constant_buffers(
+void opengl_si_shader_create_ndrange_tables(struct si_ndrange_t *ndrange);
+void opengl_si_shader_create_ndrange_constant_buffers(
 	struct si_ndrange_t *ndrange);
 
 
