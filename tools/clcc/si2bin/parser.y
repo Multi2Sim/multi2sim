@@ -77,6 +77,7 @@
 %left TOK_AMP
 %token TOK_ABS
 %token TOK_NEG
+%token TOK_STAR
 %token TOK_MEM
 %token TOK_ARGS
 %token TOK_DATA
@@ -94,42 +95,123 @@
 
 
 new_section
-	: args_section
-	| text_section
+	: mem_section data_section args_section text_section
 ;
 
+mem_section
+	: TOK_MEM mem_list
+	|
+	{
+		/* No Mem section */
+	}
+
+mem_list
+	:
+	| mem_arg
+	| mem_arg mem_list
+;
+
+mem_arg
+	:
+	| TOK_NEW_LINE
+	| TOK_ID TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA  
+	{
+		struct si2bin_id_t *id = $1;
+
+		fprintf(stdout, "\n*** %s s[%d:%d] ***\n", id->name, $4, $6);
+		
+		si2bin_id_free(id);
+	}
+;
+
+data_section
+	: TOK_DATA data_list
+	|
+	{
+		/* No Data Section */
+	}
+;
+
+data_list
+	:
+	| data_arg
+	| data_arg data_list
+;
+
+data_arg
+	:
+	| TOK_NEW_LINE
+
+
 args_section
-	: TOK_ARGS TOK_NEW_LINE arg_list
+	: TOK_ARGS arg_list
+	|
+	{
+		/*No arg section */
+	}
 ;
 
 arg_list
+	:
+	| arg
+	| arg arg_list
+;
+
+arg
+	:
+	| TOK_NEW_LINE
+	| PASS_BY_VALUE
+	| PASS_BY_REFERENCE
+	| VECTOR
+;
+
+
+PASS_BY_VALUE
 	:
 	| TOK_ID TOK_DECIMAL
 	{
 		struct si2bin_id_t *id;
 		id = $1;
 		fprintf(stdout, "\n*** arg: %s ****\n", id->name);
+		si2bin_id_free(id);
 	}
-	| TOK_ID TOK_DECIMAL TOK_NEW_LINE arg_list
+	
+;
+
+PASS_BY_REFERENCE
+	:
+	| TOK_ID TOK_STAR TOK_DECIMAL
 	{
 		struct si2bin_id_t *id;
 		id = $1;
-		fprintf(stdout, "\n*** arg: %s ****\n", id->name);
+		fprintf(stdout, "\n*** arg: %s* ****\n", id->name);
+		si2bin_id_free(id);
 	}
-	| TOK_NEW_LINE new_section
-;
-	
 
+;
+
+VECTOR
+	: 
+	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL
+	{
+		struct si2bin_id_t *id;
+		id = $1;
+		fprintf(stdout, "\n*** arg: %s[%d] ****\n", id->name, $3);
+		si2bin_id_free(id);
+	}
+	
+;
 	
 
 text_section
-	: TOK_TEXT TOK_NEW_LINE rl_input
+	:TOK_TEXT text_list
 ;
 
-rl_input 
+text_list
 	:
-	| rl_line rl_input
+	| rl_line text_list
 ;
+
 
 rl_line
 	: TOK_NEW_LINE
