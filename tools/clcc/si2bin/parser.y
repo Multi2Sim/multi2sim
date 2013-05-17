@@ -78,147 +78,157 @@
 %token TOK_ABS
 %token TOK_NEG
 %token TOK_STAR
+%token TOK_GLOBAL
 %token TOK_MEM
 %token TOK_ARGS
 %token TOK_DATA
 %token TOK_TEXT
 
-%type<inst> rl_instr
-%type<list> rl_arg_list
-%type<arg> rl_operand
-%type<arg> rl_arg
-%type<arg> rl_maddr_qual
-%type<arg> rl_waitcnt_elem
-%type<arg> rl_waitcnt_arg
+%type<inst> instr
+%type<list> arg_list
+%type<arg> operand
+%type<arg> arg
+%type<arg> maddr_qual
+%type<arg> waitcnt_elem
+%type<arg> waitcnt_arg
 
 %%
 
 
-new_section
-	: mem_section data_section args_section text_section
-;
+program
+	: kernel_list
+	| TOK_NEW_LINE kernel_list
+	;
 
-mem_section
-	: TOK_MEM mem_list
-	|
+kernel_list
+	: kernel
+	| kernel kernel_list
+	;
+
+kernel
+	: global_section section_list
+	;
+
+section_list
+	: section
+	| section section_list
+	;
+
+section
+	: mem_section
+	| data_section
+	| args_section
+	| text_section
+	;
+
+global_section
+	: TOK_GLOBAL TOK_ID TOK_NEW_LINE
 	{
-		/* No Mem section */
+		/* TOK_ID is kernel name */
+		si2bin_id_free($2);
 	}
 
-mem_list
-	:
-	| mem_arg
-	| mem_arg mem_list
+mem_section
+	: mem_header
+	| mem_header mem_stmt_list
+	;
+
+mem_header
+	: TOK_MEM TOK_NEW_LINE
+	;
+
+mem_stmt_list
+	: mem_stmt
+	| mem_stmt mem_stmt_list
 ;
 
-mem_arg
-	:
-	| TOK_NEW_LINE
-	| TOK_ID TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA  
+mem_stmt
+	: TOK_ID TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA TOK_NEW_LINE 
 	{
 		struct si2bin_id_t *id = $1;
 
 		fprintf(stdout, "\n*** %s s[%d:%d] ***\n", id->name, $4, $6);
 		
 		si2bin_id_free(id);
+		si2bin_id_free($2);
 	}
+
 ;
 
 data_section
-	: TOK_DATA data_list
-	|
-	{
-		/* No Data Section */
-	}
+	: data_header
+	| data_header data_stmt_list
+	;
+
+data_header
+	: TOK_DATA TOK_NEW_LINE
+	;
+
+data_stmt_list
+	: data_stmt
+	| data_stmt data_stmt_list
 ;
 
-data_list
-	:
-	| data_arg
-	| data_arg data_list
-;
-
-data_arg
-	:
-	| TOK_NEW_LINE
+data_stmt
+	: TOK_NEW_LINE
 
 
 args_section
-	: TOK_ARGS arg_list
-	|
-	{
-		/*No arg section */
-	}
+	: args_header
+	| args_header args_stmt_list
+	;
+
+args_header
+	: TOK_ARGS TOK_NEW_LINE
+	;
+
+args_stmt_list
+	: args_stmt
+	| args_stmt args_stmt_list
+	;
 ;
 
-arg_list
-	:
-	| arg
-	| arg arg_list
-;
-
-arg
-	:
-	| TOK_NEW_LINE
-	| PASS_BY_VALUE
-	| PASS_BY_REFERENCE
-	| VECTOR
-;
-
-
-PASS_BY_VALUE
-	:
-	| TOK_ID TOK_DECIMAL
+args_stmt
+	: TOK_ID TOK_DECIMAL TOK_NEW_LINE
 	{
 		struct si2bin_id_t *id;
 		id = $1;
 		fprintf(stdout, "\n*** arg: %s ****\n", id->name);
 		si2bin_id_free(id);
 	}
-	
-;
-
-PASS_BY_REFERENCE
-	:
-	| TOK_ID TOK_STAR TOK_DECIMAL
+	| TOK_ID TOK_STAR TOK_DECIMAL TOK_NEW_LINE
 	{
 		struct si2bin_id_t *id;
 		id = $1;
 		fprintf(stdout, "\n*** arg: %s* ****\n", id->name);
 		si2bin_id_free(id);
 	}
-
-;
-
-VECTOR
-	: 
-	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL
+	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
 	{
 		struct si2bin_id_t *id;
 		id = $1;
 		fprintf(stdout, "\n*** arg: %s[%d] ****\n", id->name, $3);
 		si2bin_id_free(id);
 	}
-	
-;
-	
 
 text_section
-	:TOK_TEXT text_list
-;
+	: text_header
+	| text_header text_stmt_list
+	;
 
-text_list
-	:
-	| rl_line text_list
-;
+text_header
+	: TOK_TEXT TOK_NEW_LINE
+	;
 
+text_stmt_list
+	: text_stmt
+	| text_stmt text_stmt_list
+	;
 
-rl_line
-	: TOK_NEW_LINE
+text_stmt
+	: label TOK_NEW_LINE
 
-	| rl_label TOK_NEW_LINE
-
-	| rl_instr TOK_NEW_LINE
+	| instr TOK_NEW_LINE
 	{
 		struct si2bin_inst_t *inst = $1;
 
@@ -230,7 +240,7 @@ rl_line
 	}
 ;
 
-rl_label
+label
 	: TOK_ID TOK_COLON
 	{
 		struct si2bin_id_t *id = $1;
@@ -257,8 +267,8 @@ rl_label
 		si2bin_id_free(id);
 	}
 
-rl_instr
-	: TOK_ID rl_arg_list 
+instr
+	: TOK_ID arg_list 
 	{
 		struct si2bin_inst_t *inst;
 		struct si2bin_id_t *id;
@@ -277,13 +287,13 @@ rl_instr
 	}
 ;
 
-rl_arg_list
+arg_list
 	:  /* Empty argument list */
 	{
 		$$ = NULL;
 	}
 
-	| rl_arg
+	| arg
 	{
 		struct list_t *arg_list;
 		
@@ -297,7 +307,7 @@ rl_arg_list
 		$$ = arg_list;
 	}
 
-	| rl_arg TOK_COMMA rl_arg_list
+	| arg TOK_COMMA arg_list
 	{
 		/* Add argument to head of list_t in $3 */
 		list_insert($3, 0, $1);
@@ -309,7 +319,7 @@ rl_arg_list
 ;
 
 
-rl_operand
+operand
 	: TOK_SCALAR_REGISTER
 	{
 		$$ = si2bin_arg_create_scalar_register($1->name);
@@ -348,8 +358,8 @@ rl_operand
 	}	
 
 
-rl_arg
-	: rl_operand
+arg
+	: operand
 	{
 		$$ = $1;
 	}
@@ -393,7 +403,7 @@ rl_arg
 		$$ = arg;
 	}
 
-	| TOK_ABS TOK_OPAR rl_arg TOK_CPAR
+	| TOK_ABS TOK_OPAR arg TOK_CPAR
 	{
 		struct si2bin_arg_t *arg = $3;
 
@@ -417,7 +427,7 @@ rl_arg
 		$$ = arg;
 	}
 
-	| TOK_NEG rl_arg
+	| TOK_NEG arg
 	{
 		struct si2bin_arg_t *arg = $2;
 
@@ -441,7 +451,7 @@ rl_arg
 		$$ = arg;
 	}
 
-	| rl_operand rl_maddr_qual TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
+	| operand maddr_qual TOK_FORMAT TOK_COLON TOK_OBRA TOK_ID TOK_COMMA TOK_ID TOK_CBRA
 	{
 		struct si2bin_arg_t *arg;
 		struct si2bin_arg_t *soffset;
@@ -489,20 +499,20 @@ rl_arg
 		$$ = arg;
 	}
 
-	| rl_waitcnt_arg
+	| waitcnt_arg
 	{
-		/* The return value is given by 'rl_waitcnt_arg's definition */
+		/* The return value is given by 'waitcnt_arg's definition */
 	}
 ;
 
-rl_maddr_qual
+maddr_qual
 
 	: 
 	{
 		$$ = si2bin_arg_create_maddr_qual();
 	}
 
-	| rl_maddr_qual TOK_OFFEN
+	| maddr_qual TOK_OFFEN
 	{
 		struct si2bin_arg_t *qual = $1;
 
@@ -513,7 +523,7 @@ rl_maddr_qual
 		$$ = qual;
 	}
 
-	| rl_maddr_qual TOK_IDXEN
+	| maddr_qual TOK_IDXEN
 	{
 		struct si2bin_arg_t *qual = $1;
 
@@ -524,7 +534,7 @@ rl_maddr_qual
 		$$ = qual;
 	}
 
-	| rl_maddr_qual TOK_OFFSET TOK_COLON TOK_DECIMAL
+	| maddr_qual TOK_OFFSET TOK_COLON TOK_DECIMAL
 	{
 		struct si2bin_arg_t *qual = $1;
 		int offset = $4;
@@ -535,11 +545,11 @@ rl_maddr_qual
 		$$ = qual;
 	}
 
-rl_waitcnt_arg
+waitcnt_arg
 
-	: rl_waitcnt_elem
+	: waitcnt_elem
 
-	| rl_waitcnt_elem TOK_AMP rl_waitcnt_arg
+	| waitcnt_elem TOK_AMP waitcnt_arg
 	{
 		if ($3->value.wait_cnt.vmcnt_active && $1->value.wait_cnt.vmcnt_active)
 			si2bin_yyerror("duplicate 'vmcnt' token");
@@ -561,7 +571,7 @@ rl_waitcnt_arg
 	}
 ;
 
-rl_waitcnt_elem
+waitcnt_elem
 
 	: TOK_ID TOK_OPAR TOK_DECIMAL TOK_CPAR
 	{
