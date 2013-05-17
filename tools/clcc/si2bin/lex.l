@@ -75,6 +75,10 @@ extern long offset;
 	return TOK_NEW_LINE;
 }
 
+"*" {
+	return TOK_STAR;
+}
+
 s[0-9]+ {
 	si2bin_yylval.id = si2bin_id_create(yytext);
 	return TOK_SCALAR_REGISTER;
