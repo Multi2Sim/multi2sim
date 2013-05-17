@@ -71,7 +71,7 @@ extern long offset;
 	return TOK_AMP;
 }
 
-"\n" {
+"\n"* {
 	return TOK_NEW_LINE;
 }
 
@@ -108,6 +108,14 @@ vcc|scc|exec {
 
 "offset" {
 	return TOK_OFFSET;
+}
+
+".global" {
+	return TOK_GLOBAL;
+}
+
+".globl" {
+	return TOK_GLOBAL;
 }
 
 ".mem" {
