@@ -1164,7 +1164,9 @@ void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str,
 		case 0:
 		case 4:
 		case 9:
+		case 12:
 		case 24:
+		case 28:
 		case 50:
 			vdata_end = vdata + 0;
 			break;
