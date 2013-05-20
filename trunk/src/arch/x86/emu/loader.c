@@ -623,8 +623,7 @@ void x86_loader_free(struct x86_loader_t *ld)
 	linked_list_free(ld->env);
 
 	/* Free loader */
-	if (ld->interp)
-		free(ld->interp);
+	str_free(ld->interp);
 	str_free(ld->exe);
 	str_free(ld->cwd);
 	str_free(ld->stdin_file);
