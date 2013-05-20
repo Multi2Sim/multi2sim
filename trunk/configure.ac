@@ -525,6 +525,7 @@ if test x$have_cxx = xno
 then
 	have_llvm=no
 fi
+AM_CONDITIONAL(HAVE_CXX, test x$have_cxx = xyes)
 
 # Try to compile a program using LLVM
 if test x$have_llvm = xyes
