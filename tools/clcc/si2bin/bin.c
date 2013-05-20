@@ -608,24 +608,3 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer)
         elf_enc_buffer_free(bin_buffer);
 
 }
-
-
-/* Global */
-struct elf_enc_buffer_t *si2bin_out_buffer;
-
-void si2bin_bin_init(void)
-{
-	si2bin_out_buffer = elf_enc_buffer_create();
-}
-
-void si2bin_bin_done(void)
-{
-	
-	si2bin_bin_create_file(si2bin_out_buffer);
-	elf_enc_buffer_free(si2bin_out_buffer);
-}
-
-
-
-
-
