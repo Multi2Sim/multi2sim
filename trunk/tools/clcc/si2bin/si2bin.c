@@ -36,12 +36,12 @@
 
 
 int si2bin_assemble;  /* Command-line option set */
-char *si2bin_file_name;  /* Current file */
+char *si2bin_source_file;  /* Current file */
 
 void si2bin_yyerror(const char *s)
 {
 	fprintf(stderr, "%s:%d: error: %s\n",
-			si2bin_file_name, si2bin_yylineno, s);
+			si2bin_source_file, si2bin_yylineno, s);
 	exit(1);
 }
 
@@ -51,7 +51,7 @@ void si2bin_yyerror_fmt(char *fmt, ...)
 	va_list va;
 	va_start(va, fmt);
 	fprintf(stderr, "%s:%d: error: ",
-			si2bin_file_name, si2bin_yylineno);
+			si2bin_source_file, si2bin_yylineno);
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 	fflush(NULL);
@@ -95,11 +95,11 @@ void si2bin_compile(struct list_t *source_file_list,
 	LIST_FOR_EACH(source_file_list, index)
 	{
 		/* Open file */
-		si2bin_file_name = list_get(source_file_list, index);
-		si2bin_yyin = fopen(si2bin_file_name, "r");
+		si2bin_source_file = list_get(source_file_list, index);
+		si2bin_yyin = fopen(si2bin_source_file, "r");
 		if (!si2bin_yyin)
 			fatal("%s: cannot open input file",
-					si2bin_file_name);
+					si2bin_source_file);
 	
 		/* Parse input */
 		si2bin_yyparse();
