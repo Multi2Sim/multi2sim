@@ -512,9 +512,10 @@ then
 fi
 
 # Check for 'llvm-config' command
+LLVM_CONFIG="llvm-config-3.1"
 if test x$have_llvm = xyes
 then
-	which llvm-config > /dev/null || \
+	which $LLVM_CONFIG > /dev/null || \
 		have_llvm=no
 fi
 
@@ -534,9 +535,9 @@ then
 	saved_cxxflags="$CXXFLAGS"
 	saved_ldflags="$LDFLAGS"
 	saved_libs="$LIBS"
-	CXXFLAGS="`llvm-config --cflags`"
+	CXXFLAGS="`$LLVM_CONFIG --cflags`"
 	LDFLAGS=""
-	LIBS="`llvm-config --libs` `llvm-config --ldflags`"
+	LIBS="`$LLVM_CONFIG --libs` `$LLVM_CONFIG --ldflags`"
 
 	# Try program
 	AC_LANG_PUSH([C++])
@@ -583,9 +584,9 @@ AM_CONDITIONAL(HAVE_FLEX_BISON_AND_LLVM, test x$have_flex = xyes -a x$have_bison
 if test x$have_llvm = xyes
 then
 	AC_DEFINE(HAVE_LLVM, [1])
-	LLVM_CFLAGS=`llvm-config --cflags`
-	LLVM_LDFLAGS=`llvm-config --ldflags`
-	LLVM_LIBS=`llvm-config --libs`
+	LLVM_CFLAGS=`$LLVM_CONFIG --cflags`
+	LLVM_LDFLAGS=`$LLVM_CONFIG --ldflags`
+	LLVM_LIBS=`$LLVM_CONFIG --libs`
 	AC_SUBST([LLVM_CFLAGS])
 	AC_SUBST([LLVM_LDFLAGS])
 	AC_SUBST([LLVM_LIBS])
