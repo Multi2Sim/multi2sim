@@ -76,7 +76,7 @@ void amd_dump_device_list(FILE *f)
 }
 
 
-void amd_compile(struct list_t *source_file_list, char *out_file_name)
+void amd_compile(struct list_t *source_file_list, struct list_t *bin_file_list)
 {
 	amd_missing();
 }
