@@ -3,7 +3,12 @@ SUBDIRS = \
 	cl2llvm \
 	si2bin
 
+# The entire OpenCL compiler can only be built if g++ is installed on the
+# system. This is done with conditional compilation based on HAVE_CXX
+if HAVE_CXX
 bin_PROGRAMS = $(top_builddir)/bin/m2s-clcc
+endif
+
 
 __top_builddir__bin_m2s_clcc_LINK = $(CXX) -o $@
 __top_builddir__bin_m2s_clcc_SOURCES = \
