@@ -35,8 +35,28 @@
 #include "task.h"
 
 
-int si2bin_assemble;  /* Command-line option set */
-char *si2bin_source_file;  /* Current file */
+/*
+ * Global Variables
+ */
+
+/* Flag indicating that command-line option '--si-asm' was set. Set externally
+ * when processing the command-line arguments. */
+int si2bin_assemble;
+
+/* Current source file name being assembled. Set internally in function
+ * 'si2bin_compile()' */
+char *si2bin_source_file;
+
+/* Current output binary buffer being assembled. Set intarnally in function
+ * 'si2bin_compile()' */
+struct elf_enc_buffer_t *si2bin_output_buffer;
+
+
+
+
+/*
+ * Public Functions
+ */
 
 void si2bin_yyerror(const char *s)
 {
@@ -71,8 +91,6 @@ void si2bin_init(void)
 	si2bin_inst_info_init();
 	si2bin_task_list_init();
 	si2bin_symbol_table_init();
-	si2bin_bin_init();
-
 }
 
 
@@ -81,7 +99,6 @@ void si2bin_done(void)
 	/* Finalize */
 	si2bin_task_list_done();
 	si2bin_symbol_table_done();
-	si2bin_bin_done();
 	si2bin_inst_info_done();
 	si_disasm_done();
 }
@@ -91,15 +108,25 @@ void si2bin_compile(struct list_t *source_file_list,
 		struct list_t *bin_file_list)
 {
 	int index;
+	char *output_file;
+	FILE *f;
 
 	LIST_FOR_EACH(source_file_list, index)
 	{
-		/* Open file */
+		/* Open source file */
 		si2bin_source_file = list_get(source_file_list, index);
 		si2bin_yyin = fopen(si2bin_source_file, "r");
 		if (!si2bin_yyin)
-			fatal("%s: cannot open input file",
-					si2bin_source_file);
+			fatal("%s: cannot open input file", si2bin_source_file);
+
+		/* Open output file */
+		output_file = list_get(bin_file_list, index);
+		f = fopen(output_file, "wb");
+		if (!f)
+			fatal("%s: cannot output output file", output_file);
+
+		/* Create output buffer */
+		si2bin_output_buffer = elf_enc_buffer_create();
 	
 		/* Parse input */
 		si2bin_yyparse();
@@ -107,8 +134,12 @@ void si2bin_compile(struct list_t *source_file_list,
 		/* Process pending tasks */
 		si2bin_task_list_process();
 
-		/* Close */
+		/* Close source file */
 		fclose(si2bin_yyin);
+
+		/* Dump output buffer and free it */
+		elf_enc_buffer_write_to_file(si2bin_output_buffer, f);
+		elf_enc_buffer_free(si2bin_output_buffer);
 	}
 }
 

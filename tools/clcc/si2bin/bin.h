@@ -151,17 +151,5 @@ void si2bin_bin_add_entry(struct si2bin_bin_t *bin, struct si2bin_bin_entry_t *e
 void si2bin_bin_generate(struct si2bin_bin_t *bin, struct elf_enc_buffer_t *bin_buffer);
 
 
-
-/* FIXME - Move functions below somewhere else */
-
-/* Create binary file based on parsed instructions */
-void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer);
-
-/* Global */
-extern struct elf_enc_buffer_t *si2bin_out_buffer;
-
-void si2bin_bin_init(void);
-void si2bin_bin_done(void);
-
 #endif
 

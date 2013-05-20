@@ -78,8 +78,8 @@ void si2bin_task_process(struct si2bin_task_t *task)
 		si2bin_yyerror_fmt("undefined label: %s", label->name);
 
 	/* Resolve label */
-	assert(IN_RANGE(task->offset, 0, si2bin_out_buffer->offset - 4));
-	inst = si2bin_out_buffer->ptr + task->offset;
+	assert(IN_RANGE(task->offset, 0, si2bin_output_buffer->offset - 4));
+	inst = si2bin_output_buffer->ptr + task->offset;
 	inst->sopp.simm16 = (label->value - task->offset) / 4 - 1;
 }
 
