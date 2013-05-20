@@ -665,13 +665,11 @@ void amd_dump_device_list(FILE *f)
 }
 
 
-void amd_compile(struct list_t *source_file_list, char *out_file_name)
+void amd_compile(struct list_t *source_file_list,
+		struct list_t *bin_file_list)
 {
-	char out_file_name_str[MAX_STRING_SIZE];
-	char out_file_name_root[MAX_STRING_SIZE];
-
 	char *source_file_name;
-	char *source_file_ext;
+	char *bin_file_name;
 
 	struct amd_device_t *device;
 	int index;
@@ -679,10 +677,6 @@ void amd_compile(struct list_t *source_file_list, char *out_file_name)
 	/* No input file given */
 	if (!list_count(source_file_list))
 		fatal("no input files given");
-	
-	/* Single output file not allowed for multiple sources */
-	if (list_count(source_file_list) > 1 && *out_file_name)
-		fatal("option '-o' not allowed for multiple sources");
 	
 	/* Initialize */
 	amd_init();
@@ -693,32 +687,16 @@ void amd_compile(struct list_t *source_file_list, char *out_file_name)
 	/* Compile source files */
 	LIST_FOR_EACH(source_file_list, index)
 	{
-		/* Get source file */
+		/* Get source and binary file */
 		source_file_name = list_get(source_file_list, index);
-
-		/* Get source file without '.cl' suffix */
-		source_file_ext = ".cl";
-		snprintf(out_file_name_root, sizeof out_file_name_root, "%s", source_file_name);
-		if (str_suffix(out_file_name_root, source_file_ext))
-			out_file_name_root[strlen(out_file_name_root) - strlen(source_file_ext)] = '\0';
-
-		/* Compute output file name if not given. In either case, the output
-		 * file is placed in variable 'out_file_name_str'. */
-		if (!out_file_name || !*out_file_name)
-			snprintf(out_file_name_str, sizeof out_file_name_str,
-					"%s.bin", out_file_name_root);
-		else
-			snprintf(out_file_name_str, sizeof out_file_name_str,
-					"%s", out_file_name);
-		out_file_name = out_file_name_str;
-
+		bin_file_name = list_get(bin_file_list, index);
 
 		/* One device */
 		assert(amd_selected_device_list->count);
 		if (amd_selected_device_list->count == 1)
 		{
 			device = list_get(amd_selected_device_list, 0);
-			amd_compile_source(source_file_name, out_file_name, device,
+			amd_compile_source(source_file_name, bin_file_name, device,
 					TRUE, amd_dump_all);
 		}
 
@@ -726,7 +704,7 @@ void amd_compile(struct list_t *source_file_list, char *out_file_name)
 		else
 		{
 			amd_compile_source_packed(source_file_name,
-					out_file_name);
+					bin_file_name);
 		}
 	}
 
