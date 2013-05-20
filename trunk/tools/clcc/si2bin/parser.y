@@ -234,7 +234,7 @@ text_stmt
 
 		/* Generate code */
 		si2bin_inst_gen(inst);
-		elf_enc_buffer_write(si2bin_out_buffer, inst->inst_bytes.bytes, inst->size);
+		elf_enc_buffer_write(si2bin_output_buffer, inst->inst_bytes.bytes, inst->size);
 		si2bin_inst_dump(inst, stdout);
 		si2bin_inst_free(inst);
 	}
@@ -260,8 +260,7 @@ label
 
 		/* Define symbol */
 		symbol->defined = 1;
-		//symbol->value = si2bin_out_stream->offset;
-		symbol->value = si2bin_out_buffer->offset;		
+		symbol->value = si2bin_output_buffer->offset;		
 
 		/* End */
 		si2bin_id_free(id);

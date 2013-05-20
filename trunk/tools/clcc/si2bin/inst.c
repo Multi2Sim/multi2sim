@@ -459,13 +459,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			if (label->defined)
 			{
 				inst_bytes->sopp.simm16 = (label->value -
-						si2bin_out_buffer->offset) / 4 - 1;
+						si2bin_output_buffer->offset) / 4 - 1;
 			}
 			else
 			{
 				/* We create a task to complete this instruction once the
 				 * label is defined. */
-				task = si2bin_task_create(si2bin_out_buffer->offset, label);
+				task = si2bin_task_create(si2bin_output_buffer->offset, label);
 				list_add(si2bin_task_list, task);
 			}
 			break;
