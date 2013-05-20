@@ -827,6 +827,9 @@ AC_CONFIG_FILES([
 		src/arch/fermi/emu/Makefile
 		src/arch/fermi/timing/Makefile
 
+		src/arch/kepler/Makefile
+		src/arch/kepler/asm/Makefile
+
 		src/arch/mips/Makefile
 		src/arch/mips/asm/Makefile
 		src/arch/mips/emu/Makefile
