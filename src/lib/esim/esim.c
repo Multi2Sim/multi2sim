@@ -113,9 +113,12 @@ int ESIM_EV_NONE;
 /* Simulated time in picoseconds */
 long long esim_time;
 
-/* Frequency and cycle time of the fastest frequency domain. */
+/* Frequency (MHz) and cycle time (psec) of the fastest frequency domain. */
 long long esim_cycle_time;
 int esim_frequency;
+
+/* Number of main loop iterations with no forwarded time */
+long long esim_no_forward_cycles;
 
 
 
@@ -446,9 +449,9 @@ void esim_dump(FILE *f, int max)
 	while (1)
 	{
 		/* Stop dumping */
-		if (max && heap_count(aux_event_heap) == max)
+		if (max && aux_event_heap->count == max)
 			break;
-		if (!heap_count(esim_event_heap))
+		if (!esim_event_heap->count)
 			break;
 
 		/* Transfer an event from main heap to auxiliary heap */
@@ -463,14 +466,14 @@ void esim_dump(FILE *f, int max)
 	}
 
 	/* Rest of events */
-	if (heap_count(esim_event_heap))
-		fprintf(f, "\t\t+ %d more\n", heap_count(esim_event_heap));
-	fprintf(f, "Total: %d event(s)\n", heap_count(esim_event_heap) +
-		heap_count(aux_event_heap));
+	if (esim_event_heap->count)
+		fprintf(f, "\t\t+ %d more\n", esim_event_heap->count);
+	fprintf(f, "Total: %d event(s)\n", esim_event_heap->count +
+		aux_event_heap->count);
 	fprintf(f, "\n");
 
 	/* Bring events back from list to heap. */
-	while (heap_count(aux_event_heap))
+	while (aux_event_heap->count)
 	{
 		when = heap_extract(aux_event_heap, (void **) &event);
 		heap_insert(esim_event_heap, when, event);
@@ -557,7 +560,7 @@ void esim_schedule_event(int event_index, void *data, int cycles)
 	heap_insert(esim_event_heap, when, event);
 
 	/* Warn when heap is overloaded */
-	if (!esim_overload_shown && heap_count(esim_event_heap) >= ESIM_OVERLOAD_EVENTS)
+	if (!esim_overload_shown && esim_event_heap->count >= ESIM_OVERLOAD_EVENTS)
 	{
 		esim_overload_shown = 1;
 		warning("%s: number of in-flight events exceeds %d.\n%s",
@@ -613,13 +616,22 @@ void esim_execute_event(int id, void *data)
 }
 
 
-void esim_process_events(void)
+void esim_process_events(int forward)
 {
 	long long when;
 
 	struct esim_event_t *event;
 	struct esim_event_info_t *event_info;
 	
+	/* Check if any action is actually needed. Events will be checked and
+	 * global time will be advanced only if argument 'forward' is set or
+	 * there are any pending events to process. */
+	if (!forward && !esim_event_heap->count)
+	{
+		esim_no_forward_cycles++;
+		return;
+	}
+
 	/* Process events scheduled for this cycle */
 	while (1)
 	{
@@ -710,7 +722,7 @@ void esim_empty(void)
 
 int esim_event_count(void)
 {
-	return heap_count(esim_event_heap);
+	return esim_event_heap->count;
 }
 
 
