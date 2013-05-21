@@ -75,10 +75,15 @@ extern long long esim_time;
  * 'esim_process_events()', 'esim_time' will advance in as many picoseconds as
  * this value indicates. The main loop cycle time is calculated as the minimum
  * of all frequency domains' cycle times, as registered with
- * 'esim_new_domain()'. These variables are read-only, updated everytime a new
+ * 'esim_new_domain()'. These variables are read-only, updated every time a new
  * call to 'esim_new_domain()' is performed. */
 extern int esim_frequency;
 extern long long esim_cycle_time;
+
+/* Counter keeping track of all calls to 'esim_process_events()' where the
+ * global time 'esim_time' was not incremented (for example, as a result of
+ * all architectures performing only a functional simulation. */
+extern long long esim_no_forward_cycles;
 
 /* Empty event. When this event is scheduled, it will be ignored */
 extern int ESIM_EV_NONE;
@@ -138,10 +143,19 @@ void esim_schedule_end_event(int event, void *data);
  * after all pending events for current cycle completed */
 void esim_execute_event(int event, void *data);
 
-/* Advance event simulation one cycle and process all events for the new cycle.
- * This function should be called at the end of the main simulation loop body
- * of the main program. */
-void esim_process_events(void);
+/* Call to be made in each iteration of the main simulation loop, moving the
+ * event-driven simulation engine one cycle.
+ * The argument 'forward' is a flag forcing the global simulation time
+ * 'esim_time' to advance by 'esim_cycle_time' picoseconds. If not set,
+ * the global time will only advance if there were any pending events to
+ * process.
+ * The caller should set flag 'forward' to FALSE if there is no need to
+ * advance the global simulation time, e.g., if all architectures in the
+ * system are just performing a functional simulation.
+ * For each call to 'esim_process_events' where the global simulation time
+ * did not effectively advance, global counter 'esim_no_forward_cycles' is
+ * incremented. */
+void esim_process_events(int forward);
 
 /* Process all events in the heap. When the heap is empty, all finalization
  * events scheduled with 'esim_schedule_end_event' are processed. Since

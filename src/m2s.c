@@ -1740,13 +1740,14 @@ static void m2s_loop(void)
 	while (!esim_finish)
 	{
 		/* Run iteration for all architectures. This function returns the number
-		 * of architectures running an active emulation and timing simulation. */
+		 * of architectures actively running emulation, as well as the number of
+		 * architectures running an active timing simulation. */
 		arch_run(&num_emu_active, &num_timing_active);
 
 		/* Event-driven simulation. Only process events and advance to next global
-		 * simulation cycle if any architecture performed a useful timing simulation. */
-		if (num_timing_active)
-			esim_process_events();
+		 * simulation cycle if any architecture performed a useful timing simulation.
+		 * The argument 'num_timing_active' is interpreted as a flag TRUE/FALSE. */
+		esim_process_events(num_timing_active);
 
 		/* If neither functional nor timing simulation was performed for any architecture,
 		 * it means that all guest contexts finished execution - simulation can end. */

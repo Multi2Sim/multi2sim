@@ -3808,24 +3808,44 @@ static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  clk_id=0x%x (%s), ts_ptr=0x%x\n",
 		clk_id, clk_id_str, ts_ptr);
 
+	/* Initialize */
+	sim_ts.sec = 0;
+	sim_ts.nsec = 0;
+
 	/* Clock type */
 	switch (clk_id)
 	{
 	case 0:  /* CLOCK_REALTIME */
-	case 1:  /* CLOCK_MONOTONIC */
-	case 4:  /* CLOCK_MONOTONIC_RAW */
 
-		/* Get count in micro-seconds */
+		/* For CLOCK_REALTIME, return the host real time. This is the same
+		 * value that the guest application would see if it ran natively. */
 		now = esim_real_time();
 		sim_ts.sec = now / 1000000;
 		sim_ts.nsec = (now % 1000000) * 1000;
+		break;
 
-		/* Debug */
-		x86_sys_debug("\tts.tv_sec = %u\n", sim_ts.sec);
-		x86_sys_debug("\tts.tv_nsec = %u\n", sim_ts.nsec);
+	case 1:  /* CLOCK_MONOTONIC */
+	case 4:  /* CLOCK_MONOTONIC_RAW */
 
-		/* Write to guest memory */
-		mem_write(mem, ts_ptr, sizeof sim_ts, &sim_ts);
+		/* For these two clocks, we want to return simulated time. This
+		 * time is tricky to calculate when there could be iterations of the
+		 * main simulation loop when no timing simulation happened, but
+		 * which still need to be considered to avoid the application
+		 * having the illusion of time not going by at all. This is the
+		 * strategy assumed to calculate simulated time:
+		 *   - A first component is based on the value of 'esim_time',
+		 *     considering all simulation cycles when there was an
+		 *     active timing simulation of any architecture.
+		 *   - A second component will add a time increment for each
+		 *     simulation main loop iteration where the global time
+		 *     'esim_time' was not incremented. These iterations are
+		 *     recorded in variable 'esim_no_forward_cycles'. A default
+		 *     value of 1ns per each iteration is considered here.
+		 */
+		now = esim_time / 1000;  /* Obtain nsec */
+		now += esim_no_forward_cycles;  /* One more nsec per iteration */
+		sim_ts.sec = now / 1000000000ll;
+		sim_ts.nsec = now % 1000000000ll;
 		break;
 
 	case 2:  /* CLOCK_PROCESS_CPUTIME_ID */
@@ -3842,7 +3862,12 @@ static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
 			__FUNCTION__, clk_id);
 	}
 
-	/* Success */
+	/* Debug */
+	x86_sys_debug("\tts.tv_sec = %u\n", sim_ts.sec);
+	x86_sys_debug("\tts.tv_nsec = %u\n", sim_ts.nsec);
+
+	/* Write to guest memory */
+	mem_write(mem, ts_ptr, sizeof sim_ts, &sim_ts);
 	return 0;
 }
 

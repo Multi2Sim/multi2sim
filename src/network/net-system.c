@@ -420,7 +420,7 @@ void net_sim(char *debug_file_name)
 	/* FIXME: error for no dest node in network */
 
 	/* Simulation loop */
-	esim_process_events();
+	esim_process_events(TRUE);
 	while (1)
 	{
 		struct net_node_t *node;
@@ -462,12 +462,11 @@ void net_sim(char *debug_file_name)
 
 		/* Next cycle */
 		net_debug("___ cycle %lld ___\n", cycle);
-		esim_process_events();
+		esim_process_events(TRUE);
 	}
 
 	/* Drain events */
-	while (esim_event_count())
-		esim_process_events();
+	esim_process_all_events();
 
 	/* Free */
 	free(inject_time);

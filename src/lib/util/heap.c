@@ -33,17 +33,6 @@ struct heap_elem_t
 	void *data;
 };
 
-struct heap_t
-{
-	int size;
-	int count;
-	int current;
-	int error;
-	long long time;
-	enum heap_time_policy_enum time_policy;
-	struct heap_elem_t *elem;
-};
-
 
 
 
@@ -149,12 +138,6 @@ char *heap_error_msg(struct heap_t *heap)
 		return "element not found";
 	}
 	return "";
-}
-
-
-int heap_count(struct heap_t *heap)
-{
-	return heap->count;
 }
 
 
