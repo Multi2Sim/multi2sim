@@ -126,7 +126,8 @@ void si_simd_execute(struct si_simd_t *simd)
 
 		/* Includes time for pipelined read-exec-write of 
 		 * all subwavefronts */
-		uop->execute_ready = arch_southern_islands->cycle + si_gpu_simd_exec_latency;
+		uop->execute_ready = arch_southern_islands->cycle + 
+			si_gpu_simd_exec_latency;
 
 		/* Transfer the uop to the outstanding execution buffer */
 		list_remove(simd->decode_buffer, uop);

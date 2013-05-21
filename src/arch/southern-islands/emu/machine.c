@@ -3261,6 +3261,37 @@ void si_isa_V_MAC_F32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+/* D.f = S0.f * K + S1.f; K is a 32-bit inline constant */
+#define INST SI_INST_VOP2
+void si_isa_V_MADMK_F32_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	union si_reg_t s0;
+	union si_reg_t s1;
+	union si_reg_t K;
+	union si_reg_t dst;
+
+	/* Load operands from registers or as a literal constant. */
+	s0.as_uint = si_isa_read_vreg(work_item, INST.src0);
+	s1.as_uint = si_isa_read_vreg(work_item, INST.vsrc1);
+	K.as_uint = si_isa_read_vreg(work_item, INST.lit_cnst);
+	
+	/* Calculate the result */
+	dst.as_float = s0.as_float * K.as_float + s1.as_float;
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, dst.as_uint);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%f) (%f * %f + %f)", work_item->id, 
+			INST.vdst, dst.as_float, s0.as_float, K.as_float, 
+			s1.as_float);
+	}
+}
+#undef INST
+
 /* D.u = S0.u + S1.u, vcc = carry-out. */
 #define INST SI_INST_VOP2
 void si_isa_V_ADD_I32_impl(struct si_work_item_t *work_item,

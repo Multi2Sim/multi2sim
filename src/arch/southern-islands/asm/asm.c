@@ -586,6 +586,14 @@ int si_inst_decode(void *buf, struct si_inst_t *inst, unsigned int offset)
 			inst_size = 8;
 			memcpy(&inst->micro_inst, buf, inst_size);
 		}
+
+		/* Some opcodes define a 32-bit literal constant following
+		 * the instruction */
+		if (inst->micro_inst.vop2.op == 32)
+		{
+			inst_size = 8;
+			memcpy(&inst->micro_inst, buf, inst_size);
+		}
 	}
 	else if (inst->micro_inst.vintrp.enc == 0x32)
 	{
@@ -1609,6 +1617,11 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size,
 			operand_dump_series_scalar(operand_str, sbase, 
 				sbase_end);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VOP2_LIT", &token_len))
+		{
+			str_printf(&inst_str, &str_size, "0x%08x", 
+				inst->micro_inst.vop2.lit_cnst);
 		}
 		else if (is_token(fmt_str, "OFFSET", &token_len))
 		{
