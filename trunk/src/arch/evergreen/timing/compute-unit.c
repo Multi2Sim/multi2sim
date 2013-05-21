@@ -104,7 +104,7 @@ void evg_compute_unit_free(struct evg_compute_unit_t *compute_unit)
 
 	/* ALU Engine - free uops in event queue (heap) */
 	event_queue = compute_unit->alu_engine.event_queue;
-	while (heap_count(event_queue))
+	while (event_queue->count)
 	{
 		heap_extract(event_queue, (void **) &uop);
 		uop->write_subwavefront_count++;
