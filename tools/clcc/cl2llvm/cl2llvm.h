@@ -35,6 +35,9 @@ int cl2llvm_yyget_lineno(void);
 void cl2llvm_yyset_lineno(int);
 int cl2llvm_yylex(void);
 int cl2llvm_yyparse(void);
+int temp_var_count;
+char temp_var_name[50];
+
 
 void cl2llvm_yyerror(char *s);
 void cl2llvm_yyerror_fmt(char *fmt, ...);

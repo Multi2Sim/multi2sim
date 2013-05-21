@@ -32,832 +32,13 @@ extern LLVMBasicBlockRef cl2llvm_basic_block;
 
 
 
-int temp_var_count;
-char temp_var_name[50];
+extern int temp_var_count;
+extern char temp_var_name[50];
 
 int block_count;
 char block_name[50];
 
 struct hash_table_t *cl2llvm_symbol_table;
-
-#define type_cmp_num_types  31
-
-void type_cmp(struct cl2llvm_val_t *type1_w_sign, struct cl2llvm_val_t *type2_w_sign, struct cl2llvm_type_t *dom_type)
-{
-	LLVMTypeRef type1_type = LLVMTypeOf(type1_w_sign->val);
-	LLVMTypeRef type2_type = LLVMTypeOf(type2_w_sign->val);
-	int type1_sign = type1_w_sign->type->sign;
-	int type2_sign = type1_w_sign->type->sign;
-
-	struct llvm_type_const
-	{
-		LLVMTypeRef type;
-		int sign;
-	};
-
-	struct llvm_type_table 
-	{
-		struct llvm_type_const type1;
-		struct llvm_type_const type2;
-	};
-	struct llvm_type_table table[type_cmp_num_types] = 
-	{
-		{ {LLVMDoubleType(), 1}, {LLVMInt64Type(), 1} },
-		{ {LLVMDoubleType(), 1}, {LLVMInt32Type(), 1} },
-		{ {LLVMDoubleType(), 1}, {LLVMInt16Type(), 1} },
-		{ {LLVMDoubleType(), 1}, {LLVMInt8Type(), 1} },
-		{ {LLVMDoubleType(), 1}, {LLVMInt1Type(), 1} },
-		{ {LLVMFloatType(), 1}, {LLVMInt64Type(), 1} },
-		{ {LLVMFloatType(), 1}, {LLVMInt32Type(), 1} },
-		{ {LLVMFloatType(), 1}, {LLVMInt16Type(), 1} },
-		{ {LLVMFloatType(), 1}, {LLVMInt8Type(), 1} },
-		{ {LLVMFloatType(), 1}, {LLVMInt1Type(), 1} },
-		{ {LLVMInt64Type(), 0}, {LLVMInt32Type(), 0} },
-		{ {LLVMInt64Type(), 0}, {LLVMInt16Type(), 0} },
-		{ {LLVMInt64Type(), 0}, {LLVMInt8Type(), 0} },
-		{ {LLVMInt64Type(), 0}, {LLVMInt1Type(), 0} },
-		{ {LLVMInt64Type(), 0}, {LLVMInt32Type(), 1} },
-		{ {LLVMInt64Type(), 0}, {LLVMInt16Type(), 1} },
-		{ {LLVMInt64Type(), 0}, {LLVMInt8Type(), 1} },
-		{ {LLVMInt64Type(), 0}, {LLVMInt1Type(), 1} },
-		{ {LLVMInt64Type(), 1}, {LLVMInt32Type(), 1} },
-		{ {LLVMInt64Type(), 1}, {LLVMInt16Type(), 1} },
-		{ {LLVMInt64Type(), 1}, {LLVMInt8Type(), 1} },
-		{ {LLVMInt64Type(), 1}, {LLVMInt1Type(), 1} },
-		{ {LLVMInt32Type(), 0}, {LLVMInt8Type(), 1} },
-		{ {LLVMInt32Type(), 0}, {LLVMInt16Type(), 1} },
-		{ {LLVMInt32Type(), 0}, {LLVMInt1Type(), 1} },
-		{ {LLVMInt32Type(), 0}, {LLVMInt8Type(), 0} },
-		{ {LLVMInt32Type(), 0}, {LLVMInt16Type(), 0} },
-		{ {LLVMInt32Type(), 0}, {LLVMInt1Type(), 0} },
-		{ {LLVMInt32Type(), 1}, {LLVMInt8Type(), 1} },
-		{ {LLVMInt32Type(), 1}, {LLVMInt16Type(), 1} },
-		{ {LLVMInt32Type(), 1}, {LLVMInt1Type(), 1} }
-
-	};
-	int i;
-
-	for (i = 0; i < type_cmp_num_types; i++)
-	{
-		if ((type1_type == table[i].type1.type 
-				&& type1_sign == table[i].type1.sign
-				&& type2_type == table[i].type2.type 
-				&& type2_sign == table[i].type2.sign)
-			|| (type2_type == table[i].type1.type 
-				&& type2_sign == table[i].type1.sign 
-				&& type1_type == table[i].type2.type 
-				&& type1_sign == table[i].type2.sign))
-		{
-			dom_type->llvm_type = table[i].type1.type;
-			dom_type->sign = table[i].type1.sign;
-		}
-	}
-}
-
-void llvm_type_cast(struct cl2llvm_val_t *llvm_val, struct cl2llvm_type_t *totype_w_sign)
-{
-
-	LLVMTypeRef fromtype = LLVMTypeOf(llvm_val->val);
-	LLVMTypeRef totype = totype_w_sign->llvm_type;
-	int fromsign = llvm_val->type->sign;
-	int tosign = totype_w_sign->sign;
-
-	snprintf(temp_var_name, sizeof temp_var_name,
-		"tmp%d", temp_var_count++);
-
-	if (fromtype == LLVMInt64Type())
-	{
-		if (totype == LLVMDoubleType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMFloatType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMHalfType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMInt64Type())
-		{
-			if (tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-			temp_var_count--;
-		}
-		else if (totype == LLVMInt32Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt32Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt16Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt16Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt8Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt8Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt1Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt1Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-			
-	}
-	else if (fromtype == LLVMInt32Type())
-	{
-		if (totype == LLVMDoubleType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMFloatType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMHalfType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMInt64Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt64Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt64Type(),
-					temp_var_name);
-			}
-			if (tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt32Type())
-		{
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-			temp_var_count--;
-		}
-		else if (totype == LLVMInt16Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt16Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt8Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt8Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt1Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt1Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-			
-	}
-	else if (fromtype == LLVMInt16Type())
-	{
-		if (totype == LLVMDoubleType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMFloatType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMHalfType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMInt64Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt64Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt64Type(),
-					temp_var_name);
-			}
-			if (tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt32Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt32Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt32Type(),
-					temp_var_name);
-			}
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt16Type())
-		{
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-			temp_var_count--;
-		}
-		else if (totype == LLVMInt8Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt8Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt1Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt1Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-			
-	}
-	else if (fromtype == LLVMInt8Type())
-	{
-		if (totype == LLVMDoubleType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMFloatType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMHalfType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMInt64Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt64Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt64Type(),
-					temp_var_name);
-			}
-			if (tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt32Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt32Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt32Type(),
-					temp_var_name);
-			}
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt16Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt16Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt16Type(),
-					temp_var_name);
-			}
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt8Type())
-		{
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-			temp_var_count--;
-		}
-		else if (totype == LLVMInt1Type())
-		{
-			llvm_val->val = LLVMBuildTrunc(cl2llvm_builder,
-				llvm_val->val, LLVMInt1Type(), temp_var_name);
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-			
-	}
-	else if (fromtype == LLVMInt1Type())
-	{
-		if (totype == LLVMDoubleType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMDoubleType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMFloatType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMFloatType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMHalfType())
-		{
-			if (fromsign)
-			{
-				llvm_val->val =
-					LLVMBuildSIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val =
-					LLVMBuildUIToFP(cl2llvm_builder,
-					llvm_val->val, LLVMHalfType(),
-					temp_var_name);
-			}
-			llvm_val->type->sign = 1;
-		}
-		else if (totype == LLVMInt64Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt64Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt64Type(),
-					temp_var_name);
-			}
-			if (tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt32Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt32Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt32Type(),
-					temp_var_name);
-			}
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt16Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt16Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt16Type(),
-					temp_var_name);
-			}
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt8Type())
-		{
-			if (fromsign)
-			{
-				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt8Type(),
-					temp_var_name);
-			}
-			else
-			{
-				llvm_val->val = LLVMBuildZExt(cl2llvm_builder,
-					llvm_val->val, LLVMInt8Type(),
-					temp_var_name);
-			}
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-		}
-		else if (totype == LLVMInt1Type())
-		{
-			if(tosign)
-				llvm_val->type->sign = 1;
-			else
-				llvm_val->type->sign = 0;
-			temp_var_count--;
-		}			
-	}
-
-	/*We now know that from type must be a floating point.*/
-
-	/*Floating point to signed integer conversions*/
-	else if (tosign && LLVMGetTypeKind(totype) == 8)
-	{
-		if (totype == LLVMInt64Type())
-		{
-			llvm_val->val = LLVMBuildFPToSI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt64Type(), temp_var_name);
-		}
-		else if (totype == LLVMInt32Type())
-		{
-			llvm_val->val = LLVMBuildFPToSI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt32Type(), temp_var_name);
-		}
-		else if (totype == LLVMInt16Type())
-		{
-			llvm_val->val = LLVMBuildFPToSI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt16Type(), temp_var_name);
-		}
-		else if (totype == LLVMInt8Type())
-		{
-			llvm_val->val = LLVMBuildFPToSI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt8Type(), temp_var_name);
-		}
-		else if (totype == LLVMInt1Type())
-		{
-			llvm_val->val = LLVMBuildFPToSI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt1Type(), temp_var_name);
-		}
-		llvm_val->type->sign = 1;
-	}
-	/*Floating point to unsigned integer conversions*/
-	else if (!tosign)
-	{
-		if (totype == LLVMInt64Type())
-		{
-			llvm_val->val = LLVMBuildFPToUI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt64Type(), temp_var_name);
-		}
-		else if (totype == LLVMInt32Type())
-		{
-			llvm_val->val = LLVMBuildFPToUI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt32Type(), temp_var_name);
-		}
-		else if (totype == LLVMInt16Type())
-		{
-			llvm_val->val = LLVMBuildFPToUI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt16Type(), temp_var_name);
-		}
-		else if (totype == LLVMInt8Type())
-		{
-			llvm_val->val = LLVMBuildFPToUI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt8Type(), temp_var_name);
-		}
-		else if (totype == LLVMInt1Type())
-		{
-			llvm_val->val = LLVMBuildFPToUI(cl2llvm_builder, 
-				llvm_val->val, LLVMInt1Type(), temp_var_name);
-		}
-		llvm_val->type->sign = 0;
-	}
-	else if (totype == LLVMDoubleType())
-	{
-		llvm_val->val = LLVMBuildFPExt(cl2llvm_builder, 
-			llvm_val->val, LLVMDoubleType(), temp_var_name);
-		llvm_val->type->sign = 1;
-	}
-	else if (totype == LLVMFloatType())
-	{
-		if (fromtype == LLVMDoubleType())
-		{
-			llvm_val->val = LLVMBuildFPTrunc(cl2llvm_builder, 
-				llvm_val->val, LLVMFloatType(), temp_var_name);
-		}
-		else if (fromtype == LLVMHalfType())
-		{
-			llvm_val->val = LLVMBuildFPExt(cl2llvm_builder, 
-				llvm_val->val, LLVMFloatType(), temp_var_name);
-		}
-		llvm_val->type->sign = 1;
-	}
-	else if (totype == LLVMHalfType())
-	{
-		llvm_val->val = LLVMBuildFPTrunc(cl2llvm_builder, 
-			llvm_val->val, LLVMHalfType(), temp_var_name);
-		llvm_val->type->sign = 1;
-	}
-	llvm_val->type->llvm_type = totype;
-}
-
-
-int type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct cl2llvm_type_t *type)
-{
-	LLVMTypeRef type1 = LLVMTypeOf(val1->val);
-	LLVMTypeRef type2 = LLVMTypeOf(val2->val);
-
-	/* By default, new values returned are the same as the original
-	 * values. */
-	/* If types match, no type cast needed */
-	if (type1 == type2 && val1->type->sign == val2->type->sign)
-	{
-			type->llvm_type = type1;
-			type->sign = val1->type->sign;
-			return 1;
-	}
-
-	/* Obtain dominant type */
-	type_cmp(val1, val2, type);
-	assert((type->llvm_type != type1 || type->llvm_type != type2) || ( type->sign != val1->type->sign || type->sign != val2->type->sign));
-
-	/* Whatever operand differs from the dominant type will be typecast
-	 * to it. */
-	if (type->llvm_type != type1 || type->sign != val1->type->sign)
-	{
-		llvm_type_cast(val1, type);
-	}
-	else
-	{
-		llvm_type_cast(val2, type);
-	}
-	return 1;
-}
 
 
 
@@ -1258,6 +439,7 @@ declaration
 	: declarator_list init_list TOK_SEMICOLON
 	{
 		struct cl2llvm_symbol_t *symbol;
+		struct cl2llvm_val_t *cast_to_val;
 		int init_count = list_count($2);
 		int i;
 		for(i = 0; i < init_count; i++)
@@ -1281,10 +463,11 @@ declaration
 			}
 			else
 			{
-				llvm_type_cast( current_list_elem->cl2llvm_val, $1);
+				cast_to_val = llvm_type_cast( current_list_elem->cl2llvm_val, $1);
 				LLVMBuildStore(cl2llvm_builder,
-					current_list_elem->cl2llvm_val->val,
+					cast_to_val->val,
 					symbol->cl2llvm_val->val);
+				cl2llvm_val_free(cast_to_val);
 			}
 		}
 		cl2llvm_type_free($1);
@@ -1383,8 +566,19 @@ expr
 	{
 		printf("addition rule\n");
 		struct cl2llvm_type_t *type = cl2llvm_type_create();
+		struct cl2llvm_val_t *op1, *op2;
 		
-		type_unify($1, $3, type);
+		type_unify($1, $3, &op1, &op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp%d", temp_var_count++);
 		struct cl2llvm_val_t *value = cl2llvm_val_create();
@@ -1392,7 +586,7 @@ expr
 		{
 		case LLVMIntegerTypeKind:
 
-			value->val = LLVMBuildAdd(cl2llvm_builder, $1->val, $3->val, temp_var_name);
+			value->val = LLVMBuildAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1401,7 +595,7 @@ expr
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFAdd(cl2llvm_builder, $1->val, $3->val, temp_var_name);
+			value->val = LLVMBuildFAdd(cl2llvm_builder, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1410,6 +604,10 @@ expr
 
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free( op2);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free($1);
 		cl2llvm_type_free(type);
@@ -1418,8 +616,20 @@ expr
 	| expr TOK_MINUS expr
 	{
 		struct cl2llvm_type_t *type = cl2llvm_type_create();
+		struct cl2llvm_val_t *op1, *op2;
 		
-		type_unify($1, $3, type);
+		type_unify($1, $3, &op1, & op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+	
 		snprintf(temp_var_name, sizeof temp_var_name,
 				"tmp%d", temp_var_count++);
 
@@ -1428,7 +638,7 @@ expr
 		{
 		case LLVMIntegerTypeKind:
 
-			value->val = LLVMBuildSub(cl2llvm_builder, $1->val, $3->val, temp_var_name);
+			value->val = LLVMBuildSub(cl2llvm_builder, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1437,7 +647,7 @@ expr
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFSub(cl2llvm_builder, $1->val, $3->val, temp_var_name);
+			value->val = LLVMBuildFSub(cl2llvm_builder, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1446,6 +656,11 @@ expr
 
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
+
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1458,13 +673,25 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		type_unify($1, $3, type);
+		struct cl2llvm_val_t *op1, *op2;
+		
+		type_unify($1, $3, &op1, &op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
 		
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
-			value->val = LLVMBuildMul(cl2llvm_builder, $1->val,
-				$3->val, temp_var_name);
+			value->val = LLVMBuildMul(cl2llvm_builder, op1->val,
+				op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1472,8 +699,8 @@ expr
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
-			value->val = LLVMBuildFMul(cl2llvm_builder, $1->val,
-				$3->val, temp_var_name);
+			value->val = LLVMBuildFMul(cl2llvm_builder, op1->val,
+				op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1481,6 +708,10 @@ expr
 
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1495,7 +726,20 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		type_unify($1, $3, type);
+		struct cl2llvm_val_t *op1, *op2;
+		
+		type_unify($1, $3, &op1, & op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+
 
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
@@ -1503,12 +747,12 @@ expr
 			if (type->sign)
 			{
 				value->val = LLVMBuildSDiv(cl2llvm_builder, 
-					$1->val, $3->val, temp_var_name);
+					op1->val, op2->val, temp_var_name);
 			}
 			else
 			{
 				value->val = LLVMBuildUDiv(cl2llvm_builder, 
-					$1->val, $3->val, temp_var_name);
+					op1->val, op2->val, temp_var_name);
 			}
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
@@ -1518,7 +762,7 @@ expr
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 			value->val = LLVMBuildFDiv(cl2llvm_builder, 
-					$1->val, $3->val, temp_var_name);
+					op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1527,6 +771,10 @@ expr
 			
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1539,20 +787,32 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		type_unify($1, $3, type);
+		struct cl2llvm_val_t *op1, *op2;
+		
+		type_unify($1, $3, &op1, & op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
 
 		switch (type->sign)
 		{
 		case 1:
 			value->val = LLVMBuildSRem(cl2llvm_builder, 
-				$1->val, $3->val, temp_var_name);
+				op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
 
 		case 0:
 			value->val = LLVMBuildURem(cl2llvm_builder, 
-				$1->val, $3->val, temp_var_name);
+				op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1561,6 +821,10 @@ expr
 			
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1576,13 +840,26 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		type_unify($1, $3, type);
+		struct cl2llvm_val_t *op1, *op2;
+		
+		type_unify($1, $3, &op1, & op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
 			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ,
-				$1->val, $3->val, temp_var_name);
+				op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1592,7 +869,7 @@ expr
 		case LLVMDoubleTypeKind:
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder,
-				LLVMRealOEQ, $1->val, $3->val, temp_var_name);
+				LLVMRealOEQ, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1601,6 +878,10 @@ expr
 
 			yyerror("invalid type of operands for equality");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1613,13 +894,26 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		type_unify($1, $3, type);
+		struct cl2llvm_val_t *op1, *op2;
+		
+		type_unify($1, $3, &op1, & op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
 			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE,
-				$1->val, $3->val, temp_var_name);
+				op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1629,7 +923,7 @@ expr
 		case LLVMDoubleTypeKind:
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealONE, $1->val, $3->val, temp_var_name);
+				LLVMRealONE, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1638,6 +932,10 @@ expr
 
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1651,7 +949,20 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		type_unify($1, $3, type);
+		struct cl2llvm_val_t *op1, *op2;
+		
+		type_unify($1, $3, &op1, & op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
@@ -1659,13 +970,13 @@ expr
 			if (type->sign)
 			{
 				value->val = LLVMBuildICmp(cl2llvm_builder, 
-					LLVMIntSLT, $1->val, $3->val, 
+					LLVMIntSLT, op1->val, op2->val, 
 					temp_var_name);
 			}
 			else
 			{
 				value->val = LLVMBuildICmp(cl2llvm_builder, 
-					LLVMIntULT, $1->val, $3->val, 
+					LLVMIntULT, op1->val, op2->val, 
 					temp_var_name);
 			}
 			value->type->sign = type->sign;
@@ -1677,7 +988,7 @@ expr
 		case LLVMDoubleTypeKind:
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealOLT, $1->val, $3->val, temp_var_name);
+				LLVMRealOLT, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1686,6 +997,10 @@ expr
 
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1699,7 +1014,20 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		type_unify($1, $3, type);
+		struct cl2llvm_val_t *op1, *op2;
+		
+		type_unify($1, $3, &op1, & op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
@@ -1707,13 +1035,13 @@ expr
 			if (type->sign)
 			{
 				value->val = LLVMBuildICmp(cl2llvm_builder, 
-					LLVMIntSGT, $1->val, $3->val, 
+					LLVMIntSGT, op1->val, op2->val, 
 					temp_var_name);
 			}
 			else
 			{
 				value->val = LLVMBuildICmp(cl2llvm_builder, 
-					LLVMIntUGT, $1->val, $3->val, 
+					LLVMIntUGT, op1->val, op2->val, 
 					temp_var_name);
 			}
 			value->type->sign = type->sign;
@@ -1725,7 +1053,7 @@ expr
 		case LLVMDoubleTypeKind:
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealOGT, $1->val, $3->val, temp_var_name);
+				LLVMRealOGT, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1734,6 +1062,10 @@ expr
 
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1746,7 +1078,20 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		type_unify($1, $3, type);
+		struct cl2llvm_val_t *op1, *op2;
+		
+		type_unify($1, $3, &op1, & op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
@@ -1754,13 +1099,13 @@ expr
 			if (type->sign)
 			{
 				value->val = LLVMBuildICmp(cl2llvm_builder, 
-					LLVMIntSLE, $1->val, $3->val, 
+					LLVMIntSLE, op1->val, op2->val, 
 					temp_var_name);
 			}
 			else
 			{
 				value->val = LLVMBuildICmp(cl2llvm_builder, 
-					LLVMIntULE, $1->val, $3->val, 
+					LLVMIntULE, op1->val, op2->val, 
 					temp_var_name);
 			}
 			value->type->sign = type->sign;
@@ -1772,7 +1117,7 @@ expr
 		case LLVMDoubleTypeKind:
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealOLE, $1->val, $3->val, temp_var_name);
+				LLVMRealOLE, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1781,6 +1126,10 @@ expr
 
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1793,7 +1142,20 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		type_unify($1, $3, type);
+		struct cl2llvm_val_t *op1, *op2;
+		
+		type_unify($1, $3, &op1, & op2);
+		if(op1 == $1)
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+		else
+		{
+			type->llvm_type = LLVMTypeOf(op1->val);
+			type->sign = op1->type->sign;
+		}
+
 		switch (LLVMGetTypeKind(type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
@@ -1801,13 +1163,13 @@ expr
 			if (type->sign)
 			{
 				value->val = LLVMBuildICmp(cl2llvm_builder, 
-					LLVMIntSGE, $1->val, $3->val, 
+					LLVMIntSGE, op1->val, op2->val, 
 					temp_var_name);
 			}
 			else
 			{
 				value->val = LLVMBuildICmp(cl2llvm_builder, 
-					LLVMIntUGE, $1->val, $3->val, 
+					LLVMIntUGE, op1->val, op2->val, 
 					temp_var_name);
 			}
 			value->type->sign = type->sign;
@@ -1819,7 +1181,7 @@ expr
 		case LLVMDoubleTypeKind:
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
-				LLVMRealOGE, $1->val, $3->val, temp_var_name);
+				LLVMRealOGE, op1->val, op2->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1828,6 +1190,10 @@ expr
 
 			yyerror("invalid type of operands for addition");
 		}
+		if ($1 != op1)
+			cl2llvm_val_free(op1);
+		else if ($3 != op2)
+			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
@@ -1840,10 +1206,12 @@ expr
 		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
 			$1->type->llvm_type , $1->type->sign);
 
-		llvm_type_cast($3, type);
+		struct cl2llvm_val_t *value = llvm_type_cast($3, type);
 		LLVMBuildStore(cl2llvm_builder, $3->val, $1->val);
 		cl2llvm_type_free(type);
-		$$ = $3;
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		$$ = value;
 	}
 	| lvalue TOK_ADD_EQUAL expr
 	{
@@ -1887,6 +1255,7 @@ expr
 		}
 
 		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
+		
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		
