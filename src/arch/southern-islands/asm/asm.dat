@@ -603,6 +603,14 @@ DEFINST(V_MAC_F32,
 	0
 )
 
+DEFINST(V_MADMK_F32,
+	" v_madmk_f32   %VDST, %SRC0, %VOP2_LIT, %VSRC1",
+	VOP2,
+	32,
+	8,
+	0
+)
+
 DEFINST(V_ADD_I32,
 	" v_add_i32     %VDST, vcc, %SRC0, %VSRC1",
 	VOP2,

@@ -253,5 +253,4 @@ void si_branch_unit_run(struct si_branch_unit_t *branch_unit);
 void si_vector_mem_run(struct si_vector_mem_unit_t *vector_mem);
 void si_lds_run(struct si_lds_t *lds);
 
-
 #endif
