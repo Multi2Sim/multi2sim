@@ -26,15 +26,39 @@
 #include <llvm-c/Target.h>
 #include <llvm-c/Transforms/Scalar.h>
 
+struct cl2llvm_val_t;
+
 struct cl2llvm_type_t
 {
 	LLVMTypeRef llvm_type;
 	int sign;
 };
 
+/*
+ * Creates a new cl2llvm_value_t.
+ */
+
 struct cl2llvm_type_t *cl2llvm_type_create(void);
+
+/*
+ * Creates a new cl2llvm_type_t with the llvm_type and sign specified by the 
+ * first and second arguments respectively.
+ */
 struct cl2llvm_type_t *cl2llvm_type_create_w_init(LLVMTypeRef llvm_type, int sign);
+
+/*
+ * Frees the cl2llvm_type_t specified by the argument.
+ */
+
 void cl2llvm_type_free(struct cl2llvm_type_t*);
+
+/*
+ * This function takes two cl2llvm_value_t's and returns the type of the   
+ * dominant operand. The return value points to a newly created cl2llvm_type_t 
+ * which must be freed using cl2llvm_type_free().
+ */
+
+struct cl2llvm_type_t *type_cmp(struct cl2llvm_val_t *type1_w_sign, struct cl2llvm_val_t *type2_w_sign);
 
 #endif
 
