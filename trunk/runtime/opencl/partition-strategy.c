@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "partition-strategy.h"
-#include "mhandle.h"
 
 /* include strategies here */
 #include "even-partition-strategy.h"
@@ -42,10 +44,10 @@ struct default_strategy_info_t
 
 void *default_strategy_create(int num_devices, unsigned int dims, const unsigned int *groups)
 {
-	struct default_strategy_info_t *info = xcalloc(1, sizeof (struct default_strategy_info_t));
+	struct default_strategy_info_t *info = (struct default_strategy_info_t *)calloc(1, sizeof (struct default_strategy_info_t));
 	info->num_devices = num_devices;
 	info->dims = dims;
-	info->groups = xcalloc(dims, sizeof (unsigned int));
+	info->groups = (unsigned int *)calloc(dims, sizeof (unsigned int));
 	memcpy(info->groups, groups, sizeof (unsigned int) * dims);
 	info->done = 0;
 	return info;
@@ -55,13 +57,13 @@ void *default_strategy_create(int num_devices, unsigned int dims, const unsigned
 int default_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
 {
 	int i;
-	struct default_strategy_info_t *info = inst;
+	struct default_strategy_info_t *info = (struct default_strategy_info_t *)inst;
 
 	if (info->done || id)
 		return 0;
 	else
 	{
-		for (i = 0; i < info->dims; i++)
+		for (i = 0; i < (int)info->dims; i++)
 		{
 			group_offset[i] = 0;
 			group_count[i] = info->groups[i];

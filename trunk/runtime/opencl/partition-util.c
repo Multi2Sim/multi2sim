@@ -4,24 +4,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "partition-util.h"
+#include "partition-util-time.h"
 
 #define MIN(a, b) ((a) < (b)? (a): (b))
 #define MAX(a, b) ((a) > (b)? (a): (b))
 
-long long get_time()
-{
-	struct timespec t;
-	clock_gettime(CLOCK_MONOTONIC, &t);
-
-	return 1000000000LL * t.tv_sec + t.tv_nsec;	
-}
-
 struct partition_info_t *partition_info_create(int num_devices, unsigned int dims, const unsigned int *groups)
 {
-	struct partition_info_t *info = calloc(1, sizeof (struct partition_info_t));
+	struct partition_info_t *info = (struct partition_info_t *)calloc(1, sizeof (struct partition_info_t));
 	info->num_devices = num_devices;
 	info->dims = dims;
-	info->groups = calloc(dims, sizeof (unsigned int));
+	info->groups = (unsigned int *)calloc(dims, sizeof (unsigned int));
 	memcpy(info->groups, groups, dims * sizeof (unsigned int));
 	return info;
 }
@@ -86,7 +79,7 @@ void cube_remove_region(struct cube_t *cube, const unsigned int *start, const un
 	free(rem);
 	
 	/* go backward through the list so that we don't skip elemnts when they're removed */
-	for (int i = list_count(splits) - 1; i >= 0; i--)
+	for (i = list_count(splits) - 1; i >= 0; i--)
 	{
 		LIST_FOR_EACH(splits, j)
 		{
@@ -279,6 +272,7 @@ void get_closest_point(int dims, unsigned int *out, const unsigned int *point, c
 		unsigned int close_dist = UINT_MAX;
 		unsigned int *closest = calloc(2 * dims, sizeof (unsigned int));
 		unsigned int *face = calloc(2 * dims, sizeof (unsigned int));
+		unsigned int cur_dist;
 
 		/* go through each of 2n (n - 1)-dimensional surface that the n dimensional cube has */
 		for (i = 0; i < dims; i++)
@@ -293,7 +287,7 @@ void get_closest_point(int dims, unsigned int *out, const unsigned int *point, c
 			}
 
 			/* find the closest face */
-			unsigned int cur_dist = get_centroid_distance_sq(dims, face, point);
+			cur_dist = get_centroid_distance_sq(dims, face, point);
 			if (cur_dist < close_dist)
 			{
 				close_dist = cur_dist;
