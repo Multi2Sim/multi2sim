@@ -30,7 +30,6 @@ struct list_t;
  * Global Variables
  */
 
-extern int amd_native;
 extern int amd_dump_all;
 extern int amd_list_devices;
 extern char *amd_device_name;

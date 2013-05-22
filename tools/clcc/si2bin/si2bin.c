@@ -39,10 +39,6 @@
  * Global Variables
  */
 
-/* Flag indicating that command-line option '--si-asm' was set. Set externally
- * when processing the command-line arguments. */
-int si2bin_assemble;
-
 /* Current source file name being assembled. Set internally in function
  * 'si2bin_compile()' */
 char *si2bin_source_file;

@@ -24,8 +24,6 @@
 
 #include "si2bin.h"
 
-/* Command-line option */
-int si2bin_assemble;
 
 
 
