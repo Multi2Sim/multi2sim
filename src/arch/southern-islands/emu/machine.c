@@ -3272,9 +3272,9 @@ void si_isa_V_MADMK_F32_impl(struct si_work_item_t *work_item,
 	union si_reg_t dst;
 
 	/* Load operands from registers or as a literal constant. */
-	s0.as_uint = si_isa_read_vreg(work_item, INST.src0);
+	s0.as_uint = si_isa_read_reg(work_item, INST.src0);
 	s1.as_uint = si_isa_read_vreg(work_item, INST.vsrc1);
-	K.as_uint = si_isa_read_vreg(work_item, INST.lit_cnst);
+	K.as_uint = INST.lit_cnst;
 	
 	/* Calculate the result */
 	dst.as_float = s0.as_float * K.as_float + s1.as_float;
