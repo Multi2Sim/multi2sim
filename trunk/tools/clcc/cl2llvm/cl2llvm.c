@@ -26,6 +26,7 @@
 #include <llvm-c/ExecutionEngine.h>
 #include <llvm-c/Target.h>
 #include <llvm-c/Transforms/Scalar.h>
+#include <llvm-c/BitWriter.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -122,6 +123,7 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 	}
 	
 	LLVMDumpModule(cl2llvm_module);
+	LLVMWriteBitcodeToFile(cl2llvm_module, "./string.bc");
 	LLVMVerifyModule(cl2llvm_module, LLVMAbortProcessAction, &error);
 	LLVMDisposeMessage(error); // Handler == LLVMAbortProcessAction -> No need to check errors
 
