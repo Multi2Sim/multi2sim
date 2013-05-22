@@ -15,6 +15,7 @@
 #include <llvm-c/ExecutionEngine.h>
 #include <llvm-c/Target.h>
 #include <llvm-c/Transforms/Scalar.h>
+#include <llvm-c/BitWriter.h>
 
 #include "val.h"
 #include "type.h"
@@ -47,6 +48,7 @@ struct hash_table_t *cl2llvm_symbol_table;
 	struct cl2llvm_type_t *llvm_type_ref;
 	struct cl2llvm_val_t *llvm_value_ref;
 	struct list_t * init_list;
+	LLVMBasicBlockRef basic_block_ref;
 }
 
 %token<identifier>  TOK_ID
@@ -203,6 +205,7 @@ func_def
 		LLVMSetFunctionCallConv(cl2llvm_function, LLVMCCallConv);
 		cl2llvm_basic_block = LLVMAppendBasicBlock(cl2llvm_function, "bb_entry");
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, cl2llvm_basic_block);
+
 	}
 	TOK_CURLY_BRACE_OPEN stmt_list TOK_CURLY_BRACE_CLOSE
 	{
@@ -507,18 +510,27 @@ case_clause
 
 if_stmt
 	: TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE
-	/*{
+	{
+		struct cl2llvm_type_t *i1 = cl2llvm_type_create_w_init(LLVMInt1Type(), 1);
+
 		snprintf(block_name, sizeof block_name,
 			"block_%d", block_count++);
 
-		LLVMBasicBlockRef cl2llvm_if_block = LLVMAppendBasicBlock(cl2llvm_function, block_name);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, cl2llvm_if_block);
-	}*/
+		LLVMBasicBlockRef if_false = LLVMAppendBasicBlock(cl2llvm_function, block_name);
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef if_true = LLVMAppendBasicBlock(cl2llvm_function, block_name);
+
+		LLVMBuildCondBr(cl2llvm_builder, llvm_type_cast($3, i1)->val, if_true, if_false);
+		$<basic_block_ref>$ = if_false;
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, if_true);
+	}
 	stmt_or_stmt_list
-	/*{
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, cl2llvm_basic_block);
-	}*/
-	| TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE stmt_or_stmt_list TOK_ELSE stmt_or_stmt_list
+	{
+		LLVMBuildBr(cl2llvm_builder, $<basic_block_ref>5);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<basic_block_ref>5);
+	}
+/*	| TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE stmt_or_stmt_list TOK_ELSE stmt_or_stmt_list*/
 	;
 
 for_loop
