@@ -25,6 +25,7 @@ INCLUDES = @M2S_INCLUDES@
 LDADD = \
 	$(top_builddir)/tools/clcc/amd/libamd.a \
 	$(top_builddir)/tools/clcc/cl2llvm/libcl2llvm.a \
+	$(top_builddir)/tools/clcc/llvm2si/libllvm2si.a \
 	$(top_builddir)/tools/clcc/si2bin/libsi2bin.a \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
 	$(top_builddir)/src/lib/util/libutil.a \

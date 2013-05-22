@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <stdio.h>
 
 #include <lib/mhandle/mhandle.h>
@@ -25,6 +26,21 @@
 
 #include "llvm2si.h"
 
+
+/*
+ * Private Functions
+ */
+
+void llvm2si_compile_source(FILE *inf, FILE *outf)
+{
+}
+
+
+
+
+/*
+ * Public Functions
+ */
 
 void llvm2si_init(void)
 {
@@ -39,5 +55,41 @@ void llvm2si_done(void)
 void llvm2si_compile(struct list_t *source_file_list,
 		struct list_t *output_file_list)
 {
-}
+	char *source_file;
+	char *output_file;
 
+	FILE *inf;
+	FILE *outf;
+
+	int index;
+
+	LIST_FOR_EACH(source_file_list, index)
+	{
+		/* Get file names */
+		source_file = list_get(source_file_list, index);
+		output_file = list_get(output_file_list, index);
+		assert(source_file);
+		assert(output_file);
+
+		/* Open source file */
+		inf = fopen(source_file, "r");
+		if (!inf)
+			fatal("%s: cannot open source file", source_file);
+
+		/* Open output file */
+		outf = fopen(output_file, "w");
+		if (!outf)
+			fatal("%s: cannot open output file", output_file);
+
+		/* Compile */
+		llvm2si_compile_source(inf, outf);
+
+		/* Close files */
+		fclose(inf);
+		fclose(outf);
+
+		/* Info */
+		printf("\t%s: Southern Islands assembly dumped\n",
+				output_file);
+	}
+}
