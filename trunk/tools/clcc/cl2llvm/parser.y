@@ -1,5 +1,7 @@
 %{
 
+#define YYDEBUG 1
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,16 +23,11 @@
 #include "parser.h"
 #include "cl2llvm.h"
 
+
 extern LLVMBuilderRef cl2llvm_builder;
 extern LLVMModuleRef cl2llvm_module;
 extern LLVMValueRef cl2llvm_function;
 extern LLVMBasicBlockRef cl2llvm_basic_block;
-
-
-
-
-
-
 
 extern int temp_var_count;
 extern char temp_var_name[50];
@@ -39,9 +36,6 @@ int block_count;
 char block_name[50];
 
 struct hash_table_t *cl2llvm_symbol_table;
-
-
-
 
 %}
 
@@ -71,28 +65,28 @@ struct hash_table_t *cl2llvm_symbol_table;
 %token TOK_COMMA
 %token TOK_SEMICOLON
 %token TOK_ELLIPSIS
-%left 	TOK_PAR_OPEN TOK_PAR_CLOSE TOK_BRACKET_OPEN
-	TOK_BRACKET_CLOSE TOK_POSTFIX TOK_STRUCT_REF TOK_STRUCT_DEREF
-%token 	TOK_CURLY_BRACE_OPEN
-%token 	TOK_CURLY_BRACE_CLOSE
-%right	TOK_PREFIX TOK_LOGICAL_NEGATE TOK_BITWISE_NOT
-%left 	TOK_PLUS TOK_MINUS
-%left 	TOK_MULT TOK_DIV TOK_MOD
-%left	TOK_SHIFT_RIGHT TOK_SHIFT_LEFT
-%left	TOK_GREATER TOK_LESS TOK_GREATER_EQUAL TOK_LESS_EQUAL
-%left	TOK_EQUALITY TOK_INEQUALITY
-%left	TOK_BITWISE_AND
-%left	TOK_BITWISE_EXCLUSIVE
-%left	TOK_BITWISE_OR
-%left	TOK_LOGICAL_AND
-%left	TOK_LOGICAL_OR
-%right	TOK_CONDITIONAL TOK_COLON
 %right 	TOK_EQUAL TOK_ADD_EQUAL TOK_MINUS_EQUAL
 	TOK_MULT_EQUAL TOK_DIV_EQUAL TOK_MOD_EQUAL TOK_AND_EQUAL
 	TOK_OR_EQUAL TOK_EXCLUSIVE_EQUAL TOK_SHIFT_RIGHT_EQUAL 
 	TOK_SHIFT_LEFT_EQUAL
-%token TOK_INCREMENT
+%right	TOK_CONDITIONAL TOK_COLON
+%left	TOK_LOGICAL_OR
+%left	TOK_LOGICAL_AND
+%left	TOK_BITWISE_OR
+%left	TOK_BITWISE_EXCLUSIVE
+%left	TOK_BITWISE_AND
+%left	TOK_EQUALITY TOK_INEQUALITY
+%left	TOK_GREATER TOK_LESS TOK_GREATER_EQUAL TOK_LESS_EQUAL
+%left	TOK_SHIFT_RIGHT TOK_SHIFT_LEFT
+%left 	TOK_PLUS TOK_MINUS
+%left 	TOK_MULT TOK_DIV TOK_MOD
+%right	TOK_PREFIX TOK_LOGICAL_NEGATE TOK_BITWISE_NOT
+%token 	TOK_CURLY_BRACE_CLOSE
+%token 	TOK_CURLY_BRACE_OPEN
+%left 	TOK_PAR_OPEN TOK_PAR_CLOSE TOK_BRACKET_OPEN
+	TOK_BRACKET_CLOSE TOK_POSTFIX TOK_STRUCT_REF TOK_STRUCT_DEREF
 %token TOK_DECREMENT
+%token TOK_INCREMENT
 %token TOK_AUTO
 %token TOK_BOOL
 %token TOK_BREAK
@@ -1224,9 +1218,9 @@ expr
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
-		
-		llvm_type_cast($3, type);
 
+		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
+	
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		
@@ -1236,7 +1230,7 @@ expr
 
 			value = cl2llvm_val_create_w_init(
 				LLVMBuildAdd(cl2llvm_builder, lval->val, 
-				$3->val, temp_var_name), type->sign);
+				rval->val, temp_var_name), type->sign);
 			break;
 
 		case LLVMHalfTypeKind:
@@ -1245,7 +1239,7 @@ expr
 
 			value = cl2llvm_val_create_w_init(
 				LLVMBuildFAdd(cl2llvm_builder, lval->val, 
-				$3->val, temp_var_name), type->sign);
+				rval->val, temp_var_name), type->sign);
 			break;
 
 		default:
@@ -1258,7 +1252,7 @@ expr
 		
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
-		
+		cl2llvm_val_free(rval);
 		cl2llvm_val_free(lval);
 		cl2llvm_type_free(type);
 		$$ = value;
@@ -1275,8 +1269,8 @@ expr
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
 
-		llvm_type_cast($3, type);
-	
+		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
+
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		
@@ -1286,7 +1280,7 @@ expr
 
 			value = cl2llvm_val_create_w_init(
 				LLVMBuildSub(cl2llvm_builder, lval->val, 
-				$3->val, temp_var_name), type->sign);
+				rval->val, temp_var_name), type->sign);
 			break;
 
 		case LLVMHalfTypeKind:
@@ -1295,7 +1289,7 @@ expr
 
 			value = cl2llvm_val_create_w_init(
 				LLVMBuildFSub(cl2llvm_builder, lval->val, 
-				$3->val, temp_var_name), type->sign);
+				rval->val, temp_var_name), type->sign);
 			break;
 
 		default:
@@ -1308,6 +1302,7 @@ expr
 
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_val_free(rval);
 		cl2llvm_val_free(lval);
 		cl2llvm_type_free(type);
 		$$ = value;
@@ -1324,7 +1319,7 @@ expr
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
 	
-		llvm_type_cast($3, type);
+		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
@@ -1335,12 +1330,12 @@ expr
 			if (type->sign)
 			{
 				value->val = LLVMBuildSDiv(cl2llvm_builder, 
-					lval->val, $3->val, temp_var_name);
+					lval->val, rval->val, temp_var_name);
 			}
 			else
 			{
 				value->val = LLVMBuildUDiv(cl2llvm_builder, 
-					lval->val, $3->val, temp_var_name);
+					lval->val, rval->val, temp_var_name);
 			}
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
@@ -1350,7 +1345,7 @@ expr
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 			value->val = LLVMBuildFDiv(cl2llvm_builder, 
-					$1->val, $3->val, temp_var_name);
+					lval->val, rval->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1364,6 +1359,7 @@ expr
 		
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_val_free(rval);
 		cl2llvm_val_free(lval);
 		cl2llvm_type_free(type);
 		$$ = value;
@@ -1380,7 +1376,7 @@ expr
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
 	
-		llvm_type_cast($3, type);
+		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
@@ -1390,7 +1386,7 @@ expr
 		case LLVMIntegerTypeKind:
 
 			value->val = LLVMBuildMul(cl2llvm_builder, 
-				lval->val, $3->val, temp_var_name);
+				lval->val, rval->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1399,7 +1395,7 @@ expr
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 			value->val = LLVMBuildFMul(cl2llvm_builder, 
-					$1->val, $3->val, temp_var_name);
+					lval->val, rval->val, temp_var_name);
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
 			break;
@@ -1410,10 +1406,11 @@ expr
 		}
 	
 		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
-		
+	
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(lval);
+		cl2llvm_val_free(rval);
 		cl2llvm_type_free(type);
 		$$ = value;
 	}
@@ -1429,7 +1426,7 @@ expr
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
 	
-		llvm_type_cast($3, type);
+		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
@@ -1440,12 +1437,12 @@ expr
 			if (type->sign)
 			{
 				value->val = LLVMBuildSRem(cl2llvm_builder, 
-					lval->val, $3->val, temp_var_name);
+					lval->val, rval->val, temp_var_name);
 			}
 			else
 			{
 				value->val = LLVMBuildURem(cl2llvm_builder, 
-					lval->val, $3->val, temp_var_name);
+					lval->val, rval->val, temp_var_name);
 			}
 			value->type->sign = type->sign;
 			value->type->llvm_type = type->llvm_type;
@@ -1460,6 +1457,7 @@ expr
 		
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_val_free(rval);
 		cl2llvm_val_free(lval);
 		cl2llvm_type_free(type);
 		$$ = value;
