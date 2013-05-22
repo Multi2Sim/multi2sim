@@ -126,13 +126,13 @@ DEFINST(IMUL,
 	0x143)
 
 DEFINST(IADD, 
-	"%pred IADD%mod0_D_sat%x %dst, %src1_neg, %src2_neg", 
+	"%pred IADD%mod0_D_sat%mod0_D_x %dst, %src1_neg, %src2_neg", 
 	INT_IADD, 
 	INT, 
 	0x123)
 
 DEFINST(IADD32I, 
-	"%pred IADD32I%mod0_D_sat%x %dst, %src1, %imm32", 
+	"%pred IADD32I%mod0_D_sat%mod0_D_x %dst, %src1, %imm32", 
 	INT_IADD32I, 
 	INT, 
 	0x012)
