@@ -1,6 +1,7 @@
 SUBDIRS = \
 	amd \
 	cl2llvm \
+	llvm2si \
 	si2bin
 
 # The entire OpenCL compiler can only be built if g++ is installed on the
