@@ -863,6 +863,7 @@ AC_CONFIG_FILES([
 		tools/clcc/Makefile
 		tools/clcc/amd/Makefile
 		tools/clcc/cl2llvm/Makefile
+		tools/clcc/llvm2si/Makefile
 		tools/clcc/si2bin/Makefile
 
 		tools/glcc/Makefile

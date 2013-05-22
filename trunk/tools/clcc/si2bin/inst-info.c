@@ -61,8 +61,8 @@ void si2bin_inst_info_init(void)
 		info = si2bin_inst_info_create(inst_info);
 
 		/* Insert instruction info structure into hash table. There could
-		 * be already an instruction encoding with the same name. They
-		 * all formed a linked list. */
+		 * be already an instruction encoding with the same name but a
+		 * different encoding. They all form a linked list. */
 		prev_info = hash_table_get(si2bin_inst_info_table, info->name);
 		if (prev_info)
 		{
@@ -100,7 +100,7 @@ void si2bin_inst_info_done(void)
 
 
 /*
- * Object 'si_dis_inst_info_t'
+ * Instruction Information Object
  */
 
 struct si2bin_inst_info_t *si2bin_inst_info_create(struct si_inst_info_t *inst_info)
@@ -128,9 +128,6 @@ struct si2bin_inst_info_t *si2bin_inst_info_create(struct si_inst_info_t *inst_i
 		/* Get token from format string */
 		str_token = list_get(info->str_token_list, index);
 		token_type = str_map_string_case(&si2bin_token_map, str_token);
-		/*if (!token_type)
-			warning("%s: unrecognized token: %s",
-				__FUNCTION__, str_token);*/
 
 		/* Add formal argument */
 		token = si2bin_token_create(token_type);
@@ -159,4 +156,3 @@ void si2bin_inst_info_free(struct si2bin_inst_info_t *info)
 	/* Free */
 	free(info);
 }
-

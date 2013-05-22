@@ -36,9 +36,8 @@ struct si2bin_inst_t
 };
 
 
-/* Returns a newly created si_dis_inst_t object
- * with the op-code corresponding to the
- * 'inst_str' instruction.                 */
+/* Create a new instruction with the opcode corresponding to the first instruction
+ * named 'name' that matches the number and type of arguments passed in 'arg_list'. */
 struct si2bin_inst_t *si2bin_inst_create(char *name, struct list_t *arg_list);
 
 void si2bin_inst_free(struct si2bin_inst_t *inst);
