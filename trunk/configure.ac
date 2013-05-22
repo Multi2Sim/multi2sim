@@ -1,11 +1,13 @@
 AC_INIT([multi2sim], [4.1])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/m2s.c])
-AM_INIT_AUTOMAKE([nostdinc silent-rules])
-AM_SILENT_RULES([yes])
+AM_INIT_AUTOMAKE([nostdinc])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
+
+# Silent rules if supported
+ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # Libtool
 LT_INIT
