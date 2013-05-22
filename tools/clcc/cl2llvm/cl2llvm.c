@@ -113,6 +113,8 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 			fatal("%s: cannot open file", cl2llvm_file_name);
 
 		/* Compile */
+		extern int cl2llvm_yydebug;
+		cl2llvm_yydebug = 1; ////
 		cl2llvm_yyparse();
 
 		/* Close */
