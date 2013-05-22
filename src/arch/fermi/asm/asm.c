@@ -878,7 +878,7 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			str_printf(&str, &size, "%s", str_map_value(&frm_inst_NOP_op_map, op));	
 		}
 
-		else if (inst_is_token(fmt_str,"x", &len))
+		else if (inst_is_token(fmt_str,"mod0_D_x", &len))
 		{
 			unsigned long long int x;
 			x = inst.dword.mod0_D.ftzfmz & 0x1;
