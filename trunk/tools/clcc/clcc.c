@@ -22,6 +22,7 @@
 
 #include <clcc/amd/amd.h>
 #include <clcc/cl2llvm/cl2llvm.h>
+#include <clcc/llvm2si/llvm2si.h>
 #include <clcc/si2bin/si2bin.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -39,9 +40,16 @@
 /* Output file name passed with option '-o' */
 char clcc_out_file_name[MAX_STRING_SIZE];
 
-struct list_t *clcc_source_file_list;  /* Elements of type 'char *' */
-struct list_t *clcc_llvm_file_list;  /* Elements of type 'char *' */
-struct list_t *clcc_bin_file_list;  /* Elements of type 'char *' */
+int clcc_amd_run;  /* Run AMD native compiler */
+int clcc_llvm2si_run;  /* Run LLVM-to-SI back-end */
+int clcc_si2bin_run;  /* Run Southern Islands assembler */
+
+
+/* File names computed from source files */
+struct list_t *clcc_source_file_list;  /* Source file names */
+struct list_t *clcc_llvm_file_list;  /* LLVM files, extension, '.llvm' */
+struct list_t *clcc_asm_file_list;  /* Assembly files, extension '.s' */
+struct list_t *clcc_bin_file_list;  /* Binary files, extension '.bin' */
 
 /* List of macros passed with '-D' options in the command line. */
 struct list_t *clcc_define_list;  /* Elements of type 'struct clcc_define_t *' */
@@ -85,6 +93,10 @@ static char *syntax =
 	"--help, -h\n"
 	"\tShow help message with command-line options.\n"
 	"\n"
+	"--llvm2si\n"
+	"\tInterpret sources as LLVM binaries and generate Southern Islands\n"
+	"\tassembly output in a '.s' file.\n"
+	"\n"
 	"-o <file>\n"
 	"\tOutput kernel binary. If no output file is specified, each kernel\n"
 	"\tsource is compiled into a kernel binary with the same name but\n"
@@ -106,7 +118,7 @@ static void clcc_process_option(const char *option, char *optarg)
 	
 	if (!strcmp(option, "amd"))
 	{
-		amd_native = 1;
+		clcc_amd_run = 1;
 		return;
 	}
 
@@ -155,6 +167,12 @@ static void clcc_process_option(const char *option, char *optarg)
 		exit(0);
 	}
 
+	if (!strcmp(option, "llvm2si"))
+	{
+		clcc_llvm2si_run = 1;
+		return;
+	}
+
 	if (!strcmp(option, "o"))
 	{
 		snprintf(clcc_out_file_name, sizeof clcc_out_file_name,
@@ -164,7 +182,7 @@ static void clcc_process_option(const char *option, char *optarg)
 
 	if (!strcmp(option, "si-asm"))
 	{
-		si2bin_assemble = 1;
+		clcc_si2bin_run = 1;
 		return;
 	}
 
@@ -187,6 +205,7 @@ static void clcc_read_command_line(int argc, char **argv)
 		{ "amd-dump-all", no_argument, 0, 'a' },
 		{ "amd-list", no_argument, 0, 'l' },
 		{ "help", no_argument, 0, 'h' },
+		{ "llvm2si", no_argument, 0, 0 },
 		{ "si-asm", no_argument, 0, 0 },
 		{ "define", required_argument, 0, 'D' },
 		{ 0, 0, 0, 0 }
@@ -259,13 +278,17 @@ void clcc_read_source_files(void)
 		str_substr(file_name_prefix, sizeof file_name_prefix,
 				file_name_ptr, 0, dot_str - file_name_ptr);
 
-		/* Final binary with '.bin' extension */
-		snprintf(file_name, sizeof file_name, "%s.bin", file_name_prefix);
-		list_add(clcc_bin_file_list, xstrdup(file_name));
-
 		/* LLVM binary with '.llvm' extension */
 		snprintf(file_name, sizeof file_name, "%s.llvm", file_name_prefix);
 		list_add(clcc_llvm_file_list, xstrdup(file_name));
+
+		/* Assembly code with '.s' extension */
+		snprintf(file_name, sizeof file_name, "%s.s", file_name_prefix);
+		list_add(clcc_asm_file_list, xstrdup(file_name));
+
+		/* Final binary with '.bin' extension */
+		snprintf(file_name, sizeof file_name, "%s.bin", file_name_prefix);
+		list_add(clcc_bin_file_list, xstrdup(file_name));
 	}
 
 	/* Option '-o' given. Replace name of final binary. */
@@ -288,11 +311,13 @@ void clcc_init(void)
 	/* List of source files */
 	clcc_source_file_list = list_create();
 	clcc_llvm_file_list = list_create();
+	clcc_asm_file_list = list_create();
 	clcc_bin_file_list = list_create();
 	clcc_define_list = list_create();
 
 	/* Initialize compiler modules */
 	cl2llvm_init();
+	llvm2si_init();
 	si2bin_init();
 }
 
@@ -311,6 +336,11 @@ void clcc_done(void)
 		free(list_get(clcc_llvm_file_list, index));
 	list_free(clcc_llvm_file_list);
 
+	/* Free list of assembly files */
+	LIST_FOR_EACH(clcc_asm_file_list, index)
+		free(list_get(clcc_asm_file_list, index));
+	list_free(clcc_asm_file_list);
+
 	/* Free list of binary files */
 	LIST_FOR_EACH(clcc_bin_file_list, index)
 		free(list_get(clcc_bin_file_list, index));
@@ -323,6 +353,7 @@ void clcc_done(void)
 
 	/* Finalize compiler modules */
 	cl2llvm_done();
+	llvm2si_done();
 	si2bin_done();
 }
 
@@ -347,14 +378,29 @@ int main(int argc, char **argv)
 	}
 
 	/* Native AMD compilation */
-	if (amd_native)
+	if (clcc_amd_run)
 	{
 		amd_compile(clcc_source_file_list, clcc_bin_file_list);
 		goto out;
 	}
 
+	/* LLVM to Southern Islands back-end */
+	if (clcc_llvm2si_run)
+	{
+		/* Replace output file if specified */
+		if (clcc_out_file_name[1] && clcc_asm_file_list->count == 1)
+		{
+			free(list_get(clcc_asm_file_list, 0));
+			list_set(clcc_asm_file_list, 0, xstrdup(clcc_out_file_name));
+		}
+
+		/* Run */
+		llvm2si_compile(clcc_source_file_list, clcc_asm_file_list);
+		goto out;
+	}
+
 	/* Southern Islands assembler */
-	if (si2bin_assemble)
+	if (clcc_si2bin_run)
 	{
 		si2bin_compile(clcc_source_file_list, clcc_bin_file_list);
 		goto out;
@@ -369,5 +415,3 @@ out:
 	mhandle_done();
 	return 0;
 }
-
-

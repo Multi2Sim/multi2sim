@@ -27,9 +27,6 @@ struct list_t;
 struct elf_enc_buffer_t;
 
 
-/* Flag set by command-line parser activating the Southern Islands assembler. */
-extern int si2bin_assemble;
-
 /* Output buffer of the currently assembled file.
  * Internal use only. */
 extern struct elf_enc_buffer_t *si2bin_output_buffer;

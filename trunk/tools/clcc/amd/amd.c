@@ -44,7 +44,6 @@
  * Global Variables
  */
 
-int amd_native;
 int amd_dump_all;
 int amd_list_devices;
 char *amd_device_name = "";
