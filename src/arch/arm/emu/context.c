@@ -43,6 +43,8 @@
 int arm_loader_debug_category;
 int arm_ctx_debug_category;
 
+int EV_ARM_CTX_IPC_REPORT;
+
 static struct str_map_t arm_ctx_status_map =
 {
 	16, {
@@ -655,12 +657,15 @@ unsigned int arm_ctx_check_fault(struct arm_ctx_t *ctx)
 
 void arm_ctx_execute(struct arm_ctx_t *ctx)
 {
+	struct arch_t *arch = arm_emu->arch;
 	struct arm_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
 	unsigned char *buffer_ptr;
 	unsigned int fault_id;
 	int spec_mode;
+	int arm_mode;
+
 
 	/* Memory permissions should not be checked if the context is executing in
 	 * speculative mode. This will prevent guest segmentation faults to occur. */
@@ -688,6 +693,31 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 		}
 
 	}
+
+
+	arm_mode = arm_ctx_operate_mode_tag(ctx->thumb_symbol_list, (ctx->regs->pc -2));
+
+	if(arm_mode == ARM)
+	{
+		if(ctx->regs->cpsr.thumb)
+		{
+			ctx->regs->cpsr.thumb = 0;
+			ctx->regs->pc = ctx->regs->pc + 2;
+		}
+		else
+			ctx->regs->cpsr.thumb = 0;
+	}
+	else if(arm_mode == THUMB)
+	{
+		if(ctx->regs->cpsr.thumb == 0)
+		{
+			ctx->regs->cpsr.thumb = 1;
+			ctx->regs->pc = ctx->regs->pc - 2;
+		}
+		else
+			ctx->regs->cpsr.thumb = 1;
+	}
+
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
@@ -746,10 +776,68 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 	}
 
 	/* Execute instruction */
-	arm_isa_execute_inst(ctx);
+	if(ctx->iteq_inst_num && ctx->iteq_block_flag)
+	{
+
+		if(arm_isa_thumb_check_cond(ctx, ctx->inst_th_16.dword.if_eq_ins.first_cond))
+			arm_isa_execute_inst(ctx);
+
+		ctx->iteq_inst_num = ctx->iteq_inst_num - 1;
+
+		switch(ctx->inst_type)
+		{
+		case(ARM32):
+			regs->pc = regs->pc + ctx->inst.info->size;
+		break;
+
+		case(THUMB16):
+			regs->pc = regs->pc + ctx->inst_th_16.info->size;
+		break;
+
+		case(THUMB32):
+			regs->pc = regs->pc + 2;
+		break;
+		}
+
+		arm_isa_inst_debug("If-Then Equation Detected\n\n");
+	}
+	else
+		arm_isa_execute_inst(ctx);
 
 	/* Statistics */
-	arch_arm->inst_count++;
+	arch->inst_count++;
+
+	if((arch->inst_count % 10) == 0)
+	{
+		arm_isa_inst_debug("Register Debug Dump\n");
+		arm_isa_inst_debug(
+			"r0 = 0x%x\n"
+			"r1 = 0x%x\n"
+			"r2 = 0x%x\n"
+			"r3 = 0x%x\n"
+			"r4 = 0x%x\n"
+			"r5 = 0x%x\n"
+			"r6 = 0x%x\n"
+			"r7 = 0x%x\n"
+			"r8 = 0x%x\n"
+			"r9 = 0x%x\n"
+			"r10(sl) = 0x%x\n"
+			"r11(fp) = 0x%x\n"
+			"r12(ip) = 0x%x\n"
+			"r13(sp) = 0x%x\n"
+			"r14(lr) = 0x%x\n"
+			"r15(pc) = 0x%x\n"
+			"cpsr.n	= 0x%x\n"
+			"cpsr.v	= 0x%x\n"
+			"cpsr.q	= 0x%x\n"
+			"cpsr.thumb = 0x%x\n"
+			"cpsr.C	= 0x%x\n\n", ctx->regs->r0, ctx->regs->r1, ctx->regs->r2, ctx->regs->r3,
+			ctx->regs->r4, ctx->regs->r5, ctx->regs->r6, ctx->regs->r7,
+			ctx->regs->r8, ctx->regs->r9, ctx->regs->sl, ctx->regs->fp,
+			ctx->regs->ip, ctx->regs->sp, ctx->regs->lr, ctx->regs->pc,
+			ctx->regs->cpsr.n, ctx->regs->cpsr.v, ctx->regs->cpsr.q,
+			ctx->regs->cpsr.thumb, ctx->regs->cpsr.C);
+	}
 }
 
 
@@ -864,6 +952,7 @@ void arm_ctx_finish(struct arm_ctx_t *ctx, int status)
 
 static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
 {
+	struct arch_t *arch = arm_emu->arch;
 	enum arm_ctx_status_t status_diff;
 
 	/* Remove contexts from the following lists:
@@ -923,9 +1012,9 @@ static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t s
 	/* Start/stop arm timer depending on whether there are any contexts
 	 * currently running. */
 	if (arm_emu->running_list_count)
-		m2s_timer_start(arch_arm->timer);
+		m2s_timer_start(arch->timer);
 	else
-		m2s_timer_stop(arch_arm->timer);
+		m2s_timer_stop(arch->timer);
 }
 
 void arm_ctx_set_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
@@ -981,6 +1070,11 @@ void arm_ctx_load_from_command_line(int argc, char **argv)
 
 	/* Load executable */
 	arm_ctx_loader_load_exe(ctx, argv[0]);
+
+	/* Create Arm-Thumb Symbol List */
+	ctx->thumb_symbol_list = list_create();
+	arm_ctx_thumb_symbol_list_sort(ctx->thumb_symbol_list, ctx->elf_file);
+
 }
 
 void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *full_path, int size)
@@ -1068,4 +1162,120 @@ void arm_ctx_gen_proc_self_maps(struct arm_ctx_t *ctx, char *path)
 
 	/* Close file */
 	fclose(f);
+}
+
+
+int arm_ctx_comp (const void *arg1,const void *arg2)
+{
+	struct elf_symbol_t *tmp1;
+	struct elf_symbol_t *tmp2;
+
+	tmp1 = (struct elf_symbol_t*)arg1;
+	tmp2 = (struct elf_symbol_t*)arg2;
+
+	return (tmp1->value - tmp2->value);
+}
+
+
+
+void arm_ctx_thumb_symbol_list_sort(struct list_t * thumb_symbol_list, struct elf_file_t *elf_file)
+{
+	struct elf_symbol_t *symbol;
+	unsigned int i;
+
+	for ( i = 0; i < list_count(elf_file->symbol_table); i++)
+	{
+		symbol = (struct elf_symbol_t* )list_get(elf_file->symbol_table, i);
+		if((!strncmp(symbol->name, "$t",2)) || (!strncmp(symbol->name, "$a",2)))
+		{
+			list_add(thumb_symbol_list, symbol);
+		}
+	}
+
+	list_sort(thumb_symbol_list, arm_ctx_comp);
+}
+
+
+
+enum arm_mode_t arm_ctx_operate_mode_tag(struct list_t * thumb_symbol_list, unsigned int addr)
+{
+	struct elf_symbol_t *symbol;
+
+	enum arm_mode_t mode;
+
+	unsigned int tag_index;
+	unsigned int i;
+
+	for (i = 0; i < list_count(thumb_symbol_list); ++i)
+	{
+		symbol = (struct elf_symbol_t*)list_get(thumb_symbol_list,i);
+		if(symbol->value > addr)
+		{
+			tag_index = i - 1;
+			break;
+		}
+		//printf("Symbol value = %x   %s\n", symbol->value, symbol->name);
+	}
+
+	symbol = (struct elf_symbol_t *) list_get(thumb_symbol_list, tag_index);
+
+	if(symbol)
+	{
+		if(!strncmp(symbol->name, "$a",2))
+		{
+			mode = ARM;
+		}
+		else if(!strncmp(symbol->name, "$t",2))
+		{
+			mode = THUMB;
+		}
+	}
+	else
+	{
+		mode = ARM;
+	}
+	return(mode);
+}
+
+
+
+/*
+ * IPC report
+ */
+
+struct arm_ctx_ipc_report_stack_t
+{
+	int pid;
+	long long inst_count;
+};
+
+void arm_ctx_ipc_report_handler(int event, void *data)
+{
+	struct arm_ctx_ipc_report_stack_t *stack = data;
+	struct arm_ctx_t *ctx;
+
+	long long inst_count;
+	double ipc_interval;
+	double ipc_global;
+
+	/* Get context. If it does not exist anymore, no more
+	 * events to schedule. */
+	ctx = arm_ctx_get(stack->pid);
+	if (!ctx || arm_ctx_get_status(ctx, arm_ctx_finished) || esim_finish)
+	{
+		free(stack);
+		return;
+	}
+
+	/* Dump new IPC */
+	assert(ctx->ipc_report_interval);
+	inst_count = ctx->inst_count - stack->inst_count;
+	ipc_global = esim_cycle ? (double) ctx->inst_count / esim_cycle : 0.0;
+	ipc_interval = (double) inst_count / ctx->ipc_report_interval;
+	fprintf(ctx->ipc_report_file, "%10lld %8lld %10.4f %10.4f\n",
+		esim_cycle, inst_count, ipc_global, ipc_interval);
+
+	/* Schedule new event */
+	stack->inst_count = ctx->inst_count;
+	esim_schedule_event(event, stack, ctx->ipc_report_interval);
 }

@@ -58,6 +58,7 @@ void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op
 	unsigned int op3);
 void arm_isa_multiply(struct arm_ctx_t *ctx);
 int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op2_cat_t cat);
+unsigned int arm_isa_bit_count(unsigned int ip_num);
 
 void arm_isa_syscall(struct arm_ctx_t *ctx);
 
@@ -65,6 +66,20 @@ unsigned int arm_isa_invalid_addr_str(unsigned int addr, int value, struct arm_c
 unsigned int arm_isa_invalid_addr_ldr(unsigned int addr, unsigned int* value, struct arm_ctx_t *ctx);
 
 void arm_isa_execute_inst(struct arm_ctx_t *ctx);
+
+
+void arm_thumb_add_isa(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3, unsigned int flag);
+void arm_thumb_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3, unsigned int flag_set);
+unsigned int arm_thumb32_isa_immd12(struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat);
+void arm_thumb32_isa_branch_link(struct arm_ctx_t *ctx);
+void arm_thumb32_isa_branch(struct arm_ctx_t *ctx);
+unsigned int arm_isa_thumb_check_cond(struct arm_ctx_t *ctx, unsigned int cond);
+void arm_thumb_isa_rev_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3, unsigned int flag_set);
+void arm_thumb_isa_iteq(struct arm_ctx_t *ctx);
+unsigned int arm_isa_thumb_immd_extend(unsigned int immd);
 
 
 #define CALL_STACK_SIZE 10000

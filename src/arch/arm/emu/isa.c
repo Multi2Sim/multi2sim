@@ -903,6 +903,8 @@ void arm_isa_branch(struct arm_ctx_t *ctx)
 	}
 }
 
+
+
 int arm_isa_check_cond(struct arm_ctx_t *ctx)
 {
 	unsigned int cond;
@@ -1133,10 +1135,24 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 			{
 				if(reg_list & (i))
 				{
-					mem_read(ctx->mem, read_val, 4, buf);
-					arm_isa_reg_store(ctx, log_base2(i), copy_buf);
-					arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
-					read_val += 4;
+					if(log_base2(i) == 15)
+					{
+						mem_read(ctx->mem, read_val, 4, buf);
+						if(copy_buf % 2)
+						{
+							copy_buf = copy_buf - 1;
+						}
+						arm_isa_reg_store(ctx, log_base2(i), copy_buf);
+						arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
+						read_val += 4;
+					}
+					else
+					{
+						mem_read(ctx->mem, read_val, 4, buf);
+						arm_isa_reg_store(ctx, log_base2(i), copy_buf);
+						arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
+						read_val += 4;
+					}
 				}
 			}
 			if(ctx->inst.dword.bdtr_ins.wb)
@@ -1151,10 +1167,24 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 			{
 				if(reg_list & (i))
 				{
-					mem_read(ctx->mem, read_val, 4, buf);
-					arm_isa_reg_store(ctx, log_base2(i), copy_buf);
-					arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
-					read_val -= 4;
+					if(log_base2(i) == 15)
+					{
+						mem_read(ctx->mem, read_val, 4, buf);
+						if(copy_buf % 2)
+						{
+							copy_buf = copy_buf - 1;
+						}
+						arm_isa_reg_store(ctx, log_base2(i), copy_buf);
+						arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
+						read_val -= 4;
+					}
+					else
+					{
+						mem_read(ctx->mem, read_val, 4, buf);
+						arm_isa_reg_store(ctx, log_base2(i), copy_buf);
+						arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
+						read_val -= 4;
+					}
 				}
 			}
 			if(ctx->inst.dword.bdtr_ins.wb)
@@ -1174,10 +1204,24 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 				if(reg_list & (i))
 				{
 
-					mem_read(ctx->mem, read_val, 4, buf);
-					arm_isa_reg_store(ctx, log_base2(i), copy_buf);
-					arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
-					read_val += 4;
+					if(log_base2(i) == 15)
+					{
+						mem_read(ctx->mem, read_val, 4, buf);
+						if(copy_buf % 2)
+						{
+							copy_buf = copy_buf - 1;
+						}
+						arm_isa_reg_store(ctx, log_base2(i), copy_buf);
+						arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
+						read_val += 4;
+					}
+					else
+					{
+						mem_read(ctx->mem, read_val, 4, buf);
+						arm_isa_reg_store(ctx, log_base2(i), copy_buf);
+						arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
+						read_val += 4;
+					}
 				}
 			}
 			if(ctx->inst.dword.bdtr_ins.wb)
@@ -1192,10 +1236,24 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx)
 			{
 				if(reg_list & (i))
 				{
-					mem_read(ctx->mem, read_val, 4, buf);
-					arm_isa_reg_store(ctx, log_base2(i), copy_buf);
-					arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
-					read_val -= 4;
+					if(log_base2(i) == 15)
+					{
+						mem_read(ctx->mem, read_val, 4, buf);
+						if(copy_buf % 2)
+						{
+							copy_buf = copy_buf - 1;
+						}
+						arm_isa_reg_store(ctx, log_base2(i), copy_buf);
+						arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
+						read_val -= 4;
+					}
+					else
+					{
+						mem_read(ctx->mem, read_val, 4, buf);
+						arm_isa_reg_store(ctx, log_base2(i), copy_buf);
+						arm_isa_inst_debug("  pop r%d <= 0x%x\n",log_base2(i),read_val);
+						read_val -= 4;
+					}
 				}
 			}
 			if(ctx->inst.dword.bdtr_ins.wb)
@@ -1251,6 +1309,94 @@ void arm_isa_set_cpsr_val(struct arm_ctx_t *ctx, unsigned int op2)
 	arm_isa_cpsr_print(ctx);
 
 }
+
+void arm_thumb_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3, unsigned int flag_set)
+{
+	int rd_val;
+	int rn_val;
+	int operand2;
+	unsigned int rd_val_safe;
+	unsigned long flags;
+	struct arm_regs_t *regs;
+	arm_isa_reg_load(ctx, rn, &rn_val);
+
+	regs = ctx->regs;
+	flags = 0;
+
+	if(!(flag_set))
+	{
+		if(rd == 15)
+		{
+			rd_val_safe = rn_val - op2 - op3;
+			arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
+			arm_isa_reg_store_safe(ctx, rd, rd_val_safe);
+		}
+		else
+		{
+			rd_val = rn_val - op2 - op3;
+			arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
+			arm_isa_reg_store(ctx, rd, rd_val);
+		}
+	}
+	else
+	{
+		rd_val = rn_val - op2 - op3;
+		arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
+
+		operand2 = (-1 * (op2  + op3));
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		asm volatile (
+			"push %5\n\t"
+			"popf\n\t"
+			"mov %2, %%eax\n\t"
+			"add %%eax, %3\n\t"
+			"mov %3, %%eax\n\t"
+			"mov %%eax, %4\n\t"
+			"pushf\n\t"
+			"pop %0\n\t"
+			: "=g" (flags), "=m" (operand2)
+			  : "m" (operand2), "m" (rn_val), "m" (rd_val), "g" (flags)
+			    : "eax"
+		);
+
+		arm_isa_inst_debug("  flags = 0x%lx\n", flags);
+		if(flags & 0x00000001)
+		{
+			regs->cpsr.C = 1;
+		}
+		if(flags & 0x00008000)
+		{
+			regs->cpsr.v = 1;
+		}
+		if(flags & 0x00000040)
+		{
+			regs->cpsr.z = 1;
+		}
+		if(flags & 0x00000080)
+		{
+			regs->cpsr.n = 1;
+		}
+		if((operand2 == 0) && (rn_val == 0))
+		{
+			regs->cpsr.C = 1;
+		}
+
+		if(operand2 == 0)
+		{
+			regs->cpsr.C = 1;
+		}
+
+		arm_isa_reg_store(ctx, rd, rd_val);
+		arm_isa_cpsr_print(ctx);
+	}
+}
+
 void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
 	unsigned int op3)
 {
@@ -1303,6 +1449,85 @@ void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, i
 			"pop %0\n\t"
 			: "=g" (flags), "=m" (operand2)
 			  : "m" (operand2), "m" (rn_val), "m" (rd_val), "g" (flags)
+			    : "eax"
+		);
+
+		arm_isa_inst_debug("  flags = 0x%lx\n", flags);
+		if(flags & 0x00000001)
+		{
+			regs->cpsr.C = 1;
+		}
+		if(flags & 0x00008000)
+		{
+			regs->cpsr.v = 1;
+		}
+		if(flags & 0x00000040)
+		{
+			regs->cpsr.z = 1;
+		}
+		if(flags & 0x00000080)
+		{
+			regs->cpsr.n = 1;
+		}
+		if((operand2 == 0) && (rn_val == 0))
+		{
+			regs->cpsr.C = 1;
+		}
+
+		if(operand2 == 0)
+		{
+			regs->cpsr.C = 1;
+		}
+
+		arm_isa_reg_store(ctx, rd, rd_val);
+		arm_isa_cpsr_print(ctx);
+	}
+}
+
+
+void arm_thumb_isa_rev_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3, unsigned int flag_set)
+{
+	int rd_val;
+	int rn_val;
+	int operand2;
+	unsigned long flags;
+	struct arm_regs_t *regs;;
+
+	regs = ctx->regs;
+	flags = 0;
+
+	arm_isa_reg_load(ctx, rn, &rn_val);
+
+	if(!(flag_set))
+	{
+		rd_val = op2 - rn_val - op3;
+		arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
+		arm_isa_reg_store(ctx, rd, rd_val);
+	}
+	else
+	{
+		rd_val = op2 - rn_val - op3;
+		arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
+
+		operand2 = (-1 * (rn_val + op3));
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		asm volatile (
+			"push %5\n\t"
+			"popf\n\t"
+			"mov %2, %%eax\n\t"
+			"add %%eax, %3\n\t"
+			"mov %3, %%eax\n\t"
+			"mov %%eax, %4\n\t"
+			"pushf\n\t"
+			"pop %0\n\t"
+			: "=g" (flags), "=m" (operand2)
+			  : "m" (operand2), "m" (op2), "m" (rd_val), "g" (flags)
 			    : "eax"
 		);
 
@@ -1412,6 +1637,70 @@ void arm_isa_subtract_rev(struct arm_ctx_t *ctx, unsigned int rd, unsigned int r
 			regs->cpsr.C = 1;
 		}
 
+		arm_isa_reg_store(ctx, rd, rd_val);
+		arm_isa_cpsr_print(ctx);
+	}
+}
+
+
+void arm_thumb_add_isa(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3, unsigned int flag_set)
+{
+	int rd_val;
+	int rn_val;
+	struct arm_regs_t *regs;
+	unsigned long flags;
+
+	flags = 0;
+	regs = ctx->regs;
+	arm_isa_reg_load(ctx, rn, &rn_val);
+
+	if(!(flag_set))
+	{
+		rd_val = rn_val + op2 + op3;
+		arm_isa_inst_debug("  r%d = r%d + %d\n", rd, rn, op2);
+		arm_isa_reg_store(ctx, rd, rd_val);
+	}
+	else
+	{
+
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+		rn_val = rn_val + op3;
+		asm volatile (
+			"push %5\n\t"
+			"popf\n\t"
+			"mov %2, %%eax\n\t"
+			"add %3, %%eax\n\t"
+			"mov %%eax, %4\n\t"
+			"pushf\n\t"
+			"pop %0\n\t"
+			: "=g" (flags), "=m" (rn_val)
+			  : "m" (rn_val), "m" (op2), "m" (rd_val), "g" (flags)
+			    : "eax"
+		);
+
+
+		if(flags & 0x00000001)
+		{
+			regs->cpsr.C = 1;
+		}
+		if(flags & 0x00008000)
+		{
+			regs->cpsr.v = 1;
+		}
+		if(flags & 0x00000040)
+		{
+			regs->cpsr.z = 1;
+		}
+		if(flags & 0x00000080)
+		{
+			regs->cpsr.n = 1;
+		}
+
+		arm_isa_inst_debug("  r%d = r%d + %d\n", rd, rn, op2);
 		arm_isa_reg_store(ctx, rd, rd_val);
 		arm_isa_cpsr_print(ctx);
 	}
@@ -1727,6 +2016,7 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 	struct arm_regs_t *regs = ctx->regs;
 
 
+
 	/* Set last, current, and target instruction addresses */
 	ctx->last_ip = ctx->curr_ip;
 
@@ -1769,9 +2059,11 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 				arm_isa_inst_debug("  (%d bytes)", ctx->inst_th_16.info->size);
 			}
 		}
-
-		arm_inst_debug_dump(&ctx->inst, debug_file(arm_isa_inst_debug_category));
-		arm_isa_inst_debug("  (%d bytes)", ctx->inst.info->size);
+		else
+		{
+			arm_inst_debug_dump(&ctx->inst, debug_file(arm_isa_inst_debug_category));
+			arm_isa_inst_debug("  (%d bytes)", ctx->inst.info->size);
+		}
 	}
 
 	/* Call instruction emulation function */
@@ -1787,16 +2079,16 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 
 	case(THUMB16):
 		regs->pc = regs->pc + ctx->inst_th_16.info->size;
-		if (ctx->inst.info->opcode)
-			arm_th16_isa_inst_func[ctx->inst_th_16.info->opcode](ctx);
+		if (ctx->inst_th_16.info->inst_16)
+			arm_th16_isa_inst_func[ctx->inst_th_16.info->inst_16](ctx);
 		/* Statistics */
 		arm_th_16_inst_freq[ctx->inst_th_16.info->inst_16]++;
 		break;
 
 	case(THUMB32):
 		regs->pc = regs->pc + 2;
-		if (ctx->inst.info->opcode)
-			arm_th32_isa_inst_func[ctx->inst_th_32.info->opcode](ctx);
+		if (ctx->inst_th_32.info->inst_32)
+			arm_th32_isa_inst_func[ctx->inst_th_32.info->inst_32](ctx);
 		/* Statistics */
 		arm_th_32_inst_freq[ctx->inst_th_32.info->inst_32]++;
 		break;
@@ -1809,4 +2101,348 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 		arm_isa_debug_call(ctx);
 }
 
+unsigned int arm_thumb32_isa_immd12(struct arm_thumb32_inst_t *inst, enum arm_thumb32_cat_enum cat)
+{
+	unsigned int immd8;
+	unsigned int immd3;
+	unsigned int i;
+	unsigned int imm4;
+	unsigned int imm5;
+	unsigned int shft;
+	unsigned int const_val;
 
+
+		if (cat == ARM_THUMB32_CAT_DPR_IMM)
+		{
+			immd8 = inst->dword.data_proc_immd.immd8;
+			immd3 = inst->dword.data_proc_immd.immd3;
+			i = inst->dword.data_proc_immd.i_flag;
+		}
+		else if (cat == ARM_THUMB32_CAT_DPR_BIN_IMM)
+		{
+			immd8 = inst->dword.data_proc_immd.immd8;
+			immd3 = inst->dword.data_proc_immd.immd3;
+			i = inst->dword.data_proc_immd.i_flag;
+		}
+		else
+			fatal("%d: immd12 fmt not recognized", cat);
+
+		imm4 = (i << 3) | (immd3);
+
+		if(imm4 < 4)
+		{
+			switch(imm4)
+			{
+			case(0) :
+				const_val =  immd8;
+			break;
+
+			case(1) :
+				const_val = (immd8 << 16) | immd8;
+			break;
+
+			case(2) :
+				const_val = (immd8 << 24) | (immd8 << 8);
+			break;
+
+			case(3) :
+				const_val = (immd8 << 24) | (immd8 << 16) | (immd8 << 8) | immd8;
+			break;
+
+			}
+		}
+		else
+		{
+			imm5 = (imm4 << 1) | ((0x00000008 & immd8) >> 8);
+
+			const_val = (immd8 << 24) | 0x10000000;
+			shft = (imm5 - 8);
+
+			const_val = (const_val >> shft);
+		}
+		return (const_val);
+
+}
+
+void arm_thumb32_isa_branch(struct arm_ctx_t *ctx)
+{
+	unsigned int addr;
+	struct arm_thumb32_inst_t *inst;
+	enum arm_thumb32_cat_enum cat;
+	unsigned int cond;
+
+	inst = &ctx->inst_th_32;
+	cat = ctx->inst_th_32.info->cat32;
+	addr = 0;
+		if (cat == ARM_THUMB32_CAT_BRANCH)
+		{
+			addr = (inst->dword.branch_link.sign << 24)
+			| ((!(inst->dword.branch.j1 ^ inst->dword.branch_link.sign)) << 23)
+			| ((!(inst->dword.branch.j2 ^ inst->dword.branch_link.sign)) << 22)
+			| (inst->dword.branch_link.immd10 << 12)
+			| (inst->dword.branch_link.immd11 << 1);
+			addr = SEXT32(addr,25);
+
+			addr = (ctx->regs->pc - 4) + (addr);
+			ctx->regs->pc = addr + 4;
+			arm_isa_inst_debug("  Branch addr = 0x%x, pc <= 0x%x\n", ctx->regs->pc - 2, ctx->regs->pc);
+		}
+		else if (cat == ARM_THUMB32_CAT_BRANCH_COND)
+		{
+			addr = (inst->dword.branch.sign << 20)
+			| (((inst->dword.branch.j2)) << 19)
+			| (((inst->dword.branch.j1)) << 18)
+			| (inst->dword.branch.immd6 << 12)
+			| (inst->dword.branch.immd11 << 1);
+			addr = SEXT32(addr,21);
+
+			cond = inst->dword.branch.cond;
+			if(arm_isa_thumb_check_cond(ctx, cond))
+			{
+				addr = (ctx->regs->pc - 4) + (addr);
+				ctx->regs->pc = addr + 4;
+				arm_isa_inst_debug("  Branch addr = 0x%x, pc <= 0x%x\n", ctx->regs->pc - 2, ctx->regs->pc);
+			}
+		}
+		else
+			fatal("%d: addr fmt not recognized", cat);
+
+		/* FIXME : Changed from +4 to +2 */
+
+}
+
+
+void arm_thumb32_isa_branch_link(struct arm_ctx_t *ctx)
+{
+	unsigned int addr;
+	struct arm_thumb32_inst_t *inst;
+	enum arm_thumb32_cat_enum cat;
+
+	inst = &ctx->inst_th_32;
+	cat = ctx->inst_th_32.info->cat32;
+	addr = 0;
+		if (cat == ARM_THUMB32_CAT_BRANCH)
+		{
+			addr = (inst->dword.branch_link.sign << 24)
+			| ((!(inst->dword.branch.j1 ^ inst->dword.branch_link.sign)) << 23)
+			| ((!(inst->dword.branch.j2 ^ inst->dword.branch_link.sign)) << 22)
+			| (inst->dword.branch_link.immd10 << 12)
+			| (inst->dword.branch_link.immd11 << 1);
+			addr = SEXT32(addr,25);
+			arm_isa_inst_debug("  Inst_32 addr = 0x%x, Branch offset = 0x%x\n", inst->addr, addr);
+			addr = (inst->addr + 4) + addr;
+			//addr = (ctx->regs->pc - 4) + (addr);
+			//addr = (inst->addr + 2) + addr;
+			//addr = (ctx->regs->pc - 4) + (addr);
+		}
+		else if (cat == ARM_THUMB32_CAT_BRANCH_LX)
+		{
+			addr = (inst->dword.branch_link.sign << 24)
+						| ((!(inst->dword.branch.j1 ^ inst->dword.branch_link.sign)) << 23)
+						| ((!(inst->dword.branch.j2 ^ inst->dword.branch_link.sign)) << 22)
+						| (inst->dword.branch_link.immd10 << 12)
+						| ((inst->dword.branch_link.immd11 & 0xfffffffe) << 1);
+			addr = SEXT32(addr,25);
+
+			if((inst->addr + 2) % 4)
+				addr = (inst->addr + 4) + addr;
+				//addr = (ctx->regs->pc - 2) + (addr);
+			else
+				addr = (inst->addr + 2) + addr;
+				//addr = (ctx->regs->pc - 4) + (addr);
+		}
+		else if (cat == ARM_THUMB32_CAT_BRANCH_COND)
+		{
+			addr = (inst->dword.branch.sign << 20)
+			| (((inst->dword.branch.j2)) << 19)
+			| (((inst->dword.branch.j1)) << 18)
+			| (inst->dword.branch.immd6 << 12)
+			| (inst->dword.branch.immd11 << 1);
+			addr = SEXT32(addr,21);
+			addr = (inst->addr + 2) + addr;
+			//addr = (ctx->regs->pc - 4) + (addr);
+		}
+		else
+			fatal("%d: addr fmt not recognized", cat);
+
+		/* FIXME : Changed from +4 to +2 */
+		arm_isa_inst_debug("  Branch addr_32 = 0x%x, Current pc <= 0x%x\n", addr, ctx->regs->pc);
+		arm_isa_reg_store(ctx, 14, ctx->regs->pc - 1);
+		ctx->regs->pc = addr + 2;
+		arm_isa_inst_debug("  Branch addr_32 = 0x%x, Written pc <= 0x%x\n", addr, ctx->regs->pc);
+}
+
+unsigned int arm_isa_bit_count(unsigned int ip_num)
+{
+    unsigned int count = 0;
+
+    while (ip_num)
+    {
+	    ip_num &= ip_num - 1;
+	    ++count;
+    }
+    return count;
+}
+
+unsigned int arm_isa_thumb_check_cond(struct arm_ctx_t *ctx, unsigned int cond)
+{
+
+	struct arm_regs_t *regs;
+	unsigned int ret_val;
+	regs = ctx->regs;
+
+	switch (cond)
+	{
+	case (EQ):
+		ret_val = (regs->cpsr.z) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = EQ\n");
+		break;
+
+	case (NE):
+		ret_val = (!(regs->cpsr.z)) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = NE\n");
+		break;
+
+	case (CS):
+		ret_val = (regs->cpsr.C) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = CS\n");
+		break;
+
+	case (CC):
+		ret_val = (!(regs->cpsr.C)) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = CC\n");
+		break;
+
+	case (MI):
+		ret_val = (regs->cpsr.n) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = MI\n");
+		break;
+
+	case (PL):
+		ret_val = (!(regs->cpsr.n)) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = PL\n");
+		break;
+
+	case (VS):
+		ret_val = (regs->cpsr.v) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = VS\n");
+		break;
+
+	case (VC):
+		ret_val = (!(regs->cpsr.v)) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = VC\n");
+		break;
+
+	case (HI):
+		ret_val = (!(regs->cpsr.z) && (regs->cpsr.C)) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = HI\n");
+		break;
+
+	case (LS):
+		ret_val = ((regs->cpsr.z) | !(regs->cpsr.C)) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = LS\n");
+		break;
+
+	case (GE):
+		ret_val =
+			(((regs->cpsr.n) & (regs->cpsr.v))
+				| (!(regs->cpsr.n) & !(regs->cpsr.v))) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = GE\n");
+		break;
+
+	case (LT):
+		ret_val =
+			(((regs->cpsr.n) & !(regs->cpsr.v))
+				| (!(regs->cpsr.n) && (regs->cpsr.v))) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = LT\n");
+		break;
+
+	case (GT):
+		ret_val =
+			(((regs->cpsr.n) & (regs->cpsr.v) & !(regs->cpsr.z))
+				| (!(regs->cpsr.n) & !(regs->cpsr.v)
+					& !(regs->cpsr.z))) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = GT\n");
+		break;
+
+	case (LE):
+		ret_val =
+			(((regs->cpsr.z) | (!(regs->cpsr.n) && (regs->cpsr.v))
+				| ((regs->cpsr.n) && !(regs->cpsr.v)))) ? 1 : 0;
+		arm_isa_inst_debug(
+			"  Cond = LE\n");
+		break;
+
+	case (AL):
+		ret_val = 1;
+		break;
+	}
+
+	return (ret_val);
+}
+
+void arm_thumb_isa_iteq(struct arm_ctx_t *ctx)
+{
+	unsigned int mask;
+
+	mask = ctx->inst_th_16.dword.if_eq_ins.mask;
+
+	if(mask == 8)
+	{
+		ctx->iteq_inst_num = 1;
+		ctx->iteq_block_flag = ITEQ_ENABLED;
+	}
+}
+
+unsigned int arm_isa_thumb_immd_extend(unsigned int immd)
+{
+	unsigned int shift;
+
+	shift = (immd & 0x00000f80) >> 7;
+	arm_isa_inst_debug("  Shift = 0x%x\n", shift);
+
+	if (((immd & 0x00000c00) >> 10) == 0)
+	{
+		switch(((immd & 0x00000300) >> 8))
+		{
+		case(0):
+			immd = immd & 0x000000ff;
+		break;
+
+		case(1):
+			immd = immd & 0x000000ff;
+			immd = (immd << 16) | immd;
+		break;
+
+		case(2):
+			immd = immd & 0x000000ff;
+			immd = (immd << 24) | (immd << 8);
+		break;
+
+		case(3):
+			immd = immd & 0x000000ff;
+			immd = (immd << 24) | (immd << 16) | (immd << 8) | (immd);
+		break;
+		}
+	}
+	else
+	{
+		immd = (1 << 7) | (immd & 0x0000007f);
+		immd = arm_rotr(immd, shift);
+		arm_isa_inst_debug("  Rotated immd = 0x%x\n", immd);
+	}
+	return (immd);
+}

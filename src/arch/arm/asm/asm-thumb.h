@@ -384,6 +384,12 @@ struct arm_thumb16_cond_br_t
 	unsigned int __reserved0: 4;	/* [15:12] */
 };
 
+struct arm_thumb16_br_t
+{
+	unsigned int immd11	: 11;	/* [10:0] */
+	unsigned int __reserved0: 5;	/* [15:11] */
+};
+
 union arm_thumb16_inst_dword_t
 {
 	unsigned char bytes[2];
@@ -410,6 +416,7 @@ union arm_thumb16_inst_dword_t
 	struct arm_thumb16_svc_t svc_ins;
 	struct arm_thumb16_cond_br_t cond_br_ins;
 	struct arm_thumb16_cmp_t2_t cmp_t2;
+	struct arm_thumb16_br_t br_ins;
 };
 
 union arm_thumb32_inst_dword_t
@@ -431,6 +438,7 @@ union arm_thumb32_inst_dword_t
 	struct arm_thumb32_mult_t mult;
 	struct arm_thumb32_mult_long_t mult_long;
 	struct arm_thumb32_bit_field_t bit_field;
+	struct arm_thumb16_misc_addsp_t add_sp;
 
 };
 
@@ -477,7 +485,8 @@ enum arm_thumb16_cat_enum
 	ARM_THUMB16_CAT_LDM_STM,	/* Load/Store Multiple Instructions */
 	ARM_THUMB16_CAT_MISC_ADDSP_INS,	/* Miscellaneous Instructions ADD SP relative*/
 	ARM_THUMB16_CAT_MISC_SVC_INS,	/* Miscellaneous Instructions SVC instructions */
-	ARM_THUMB16_CAT_MISC_BR,	/* Miscellaneous Instructions Unconditional Branch */
+	ARM_THUMB16_CAT_MISC_BR,	/* Miscellaneous Instructions Conditional Branch */
+	ARM_THUMB16_CAT_MISC_UCBR,	/* Miscellaneous Instructions Conditional Branch */
 	ARM_THUMB16_CAT_MISC_REV,	/* Miscellaneous Reverse instructions */
 	ARM_THUMB16_CAT_MISC_SUBSP_INS,	/* Miscellaneous Instructions SUB SP relative*/
 	ARM_THUMB16_CAT_MISC_PUSH_POP,	/* Miscellaneous Instructions PUSH and POP*/
@@ -499,6 +508,7 @@ enum arm_thumb32_cat_enum
 	ARM_THUMB32_CAT_DPR_IMM,	/* Data processing immediate */
 	ARM_THUMB32_CAT_DPR_BIN_IMM,	/* Data processing binary immediate */
 	ARM_THUMB32_CAT_BRANCH,		/* Branch */
+	ARM_THUMB32_CAT_BRANCH_LX,		/* Branch with Link exchange*/
 	ARM_THUMB32_CAT_BRANCH_COND,	/* Branch Conditional */
 	ARM_THUMB32_CAT_LDSTR_BYTE,	/* Load Store Register Byte/Halfword */
 	ARM_THUMB32_CAT_LDSTR_REG,	/* Load Store Register */
@@ -549,6 +559,7 @@ struct arm_thumb16_inst_t
 struct arm_thumb32_inst_t
 {
 	unsigned int addr;
+	unsigned int decode;
 	union arm_thumb32_inst_dword_t dword;
 	struct arm_thumb32_inst_info_t *info;
 };
