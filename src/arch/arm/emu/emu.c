@@ -76,6 +76,8 @@ void arm_emu_init(void)
 	/* Initialization */
 	arm_sys_init();
 	arm_disasm_init();
+	arm_thumb16_disasm_init();
+	arm_thumb32_disasm_init();
 
 	/* Allocate */
 	arm_emu = xcalloc(1, sizeof(struct arm_emu_t));

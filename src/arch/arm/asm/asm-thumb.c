@@ -523,7 +523,6 @@ void arm_thumb32_setup_table(char* name , char* fmt_str ,
 			break;
 		}
 	}
-	printf(" %s \n", fmt_str);// Remove this YU
 }
 
 void arm_thumb16_disasm_init()
@@ -864,7 +863,7 @@ void arm_thumb16_inst_dump_RM(char **inst_str_ptr, int *inst_str_size,
 		else if (cat == ARM_THUMB16_CAT_LDSTR_REG)
 			rm = inst->dword.ldstr_reg_ins.reg_ro;
 		else if (cat == ARM_THUMB16_CAT_LDSTR_EXTS)
-			rm = inst->dword.ldstr_exts_ins.reg_ro;
+			rm = inst->dword.ldstr_exts_ins.reg_rb;
 		else if (cat == ARM_THUMB16_CAT_LDSTR_IMMD)
 			fatal("%d: rm fmt not recognized", cat);
 		else if (cat == ARM_THUMB16_CAT_LDSTR_HFWRD)
@@ -912,7 +911,7 @@ void arm_thumb16_inst_dump_RN(char **inst_str_ptr, int *inst_str_size,
 		if (cat == ARM_THUMB16_CAT_MOVSHIFT_REG)
 			fatal("%d: rn fmt not recognized", cat);
 		else if (cat == ARM_THUMB16_CAT_ADDSUB)
-			rn = inst->dword.addsub_ins.rn_imm;
+			rn = inst->dword.addsub_ins.reg_rs;
 		else if (cat == ARM_THUMB16_CAT_IMMD_OPRS)
 			rn = inst->dword.immd_oprs_ins.reg_rd;
 		else if (cat == ARM_THUMB16_CAT_DPR_INS)
@@ -1000,6 +999,8 @@ void arm_thumb16_inst_dump_IMMD8(char **inst_str_ptr , int *inst_str_size ,
 			immd8 = 4 * inst->dword.sub_sp_ins.immd_8;
 		else if (cat == ARM_THUMB16_CAT_MISC_BR)
 			immd8 = inst->dword.cond_br_ins.s_offset;
+		else if (cat == ARM_THUMB16_CAT_MISC_UCBR)
+			immd8 = inst->dword.br_ins.immd11;
 		else if (cat == ARM_THUMB16_CAT_MISC_SVC_INS)
 			immd8 = inst->dword.svc_ins.value;
 		else
@@ -1017,6 +1018,15 @@ void arm_thumb16_inst_dump_IMMD8(char **inst_str_ptr , int *inst_str_size ,
 			}
 			str_printf(inst_str_ptr, inst_str_size, "%x",immd8);
 		}
+		else if(cat == ARM_THUMB16_CAT_MISC_UCBR)
+		{
+			immd8 = immd8 << 1;
+			immd8 = SEXT32(immd8, 12);
+
+			immd8 = inst_addr + 4 + immd8;
+			str_printf(inst_str_ptr, inst_str_size, "%x",immd8);
+		}
+
 		else
 			str_printf(inst_str_ptr, inst_str_size, "#%d",immd8);
 
@@ -1092,7 +1102,7 @@ void arm_thumb16_inst_dump_IMMD5(char **inst_str_ptr, int *inst_str_size,
 		else if (cat == ARM_THUMB16_CAT_LDSTR_EXTS)
 			fatal("%d: immd5 fmt not recognized", cat);
 		else if (cat == ARM_THUMB16_CAT_LDSTR_IMMD)
-			immd5 = inst->dword.ldstr_immd_ins.offset;
+			immd5 = inst->dword.ldstr_immd_ins.offset << 2;
 		else if (cat == ARM_THUMB16_CAT_LDSTR_HFWRD)
 			immd5 = inst->dword.ldstr_hfwrd_ins.offset;
 		else if (cat == ARM_THUMB16_CAT_LDSTR_SP_IMMD)
@@ -1112,7 +1122,11 @@ void arm_thumb16_inst_dump_IMMD5(char **inst_str_ptr, int *inst_str_size,
 
 		if(cat == ARM_THUMB16_CAT_MISC_CBNZ)
 		{
-			immd5 = (inst_addr + 4) + (immd5 << 1);
+			if((inst_addr + 2) % 4)
+				immd5 = (inst_addr + 4) + (immd5 << 1);
+			else
+				immd5 = (inst_addr + 2) + (immd5 << 1);
+
 			str_printf(inst_str_ptr, inst_str_size, "%x",immd5);
 		}
 		else
@@ -1271,6 +1285,7 @@ void arm_thumb16_inst_dump_REGS(char **inst_str_ptr, int *inst_str_size,
 		else
 			fatal("%d: regs fmt not recognized", cat);
 
+		regs = (inst->dword.push_pop_ins.m_ext << 14) | regs;
 		str_printf(inst_str_ptr, inst_str_size, "{");
 		for (i = 1; i < 65536; i *= 2)
 		{
@@ -1811,8 +1826,6 @@ void arm_thumb32_inst_dump_REGS(char **inst_str_ptr, int *inst_str_size,
 
 		if (cat == ARM_THUMB32_CAT_LD_ST_MULT)
 			regs = inst->dword.ld_st_mult.reglist;
-		else if (cat == ARM_THUMB32_CAT_LD_ST_DOUBLE)
-			fatal("%d: regs fmt not recognized", cat);
 		else if (cat == ARM_THUMB32_CAT_PUSH_POP)
 			regs = inst->dword.push_pop.reglist;
 
@@ -2198,7 +2211,15 @@ void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
 			| (inst->dword.branch_link.immd11 << 1);
 			addr = SEXT32(addr,25);
 		}
-
+		else if (cat == ARM_THUMB32_CAT_BRANCH_LX)
+		{
+			addr = (inst->dword.branch_link.sign << 24)
+			| ((!(inst->dword.branch.j1 ^ inst->dword.branch_link.sign)) << 23)
+			| ((!(inst->dword.branch.j2 ^ inst->dword.branch_link.sign)) << 22)
+			| (inst->dword.branch_link.immd10 << 12)
+			| ((inst->dword.branch_link.immd11 & 0xfffffffe) << 1);
+			addr = SEXT32(addr,25);
+		}
 		else if (cat == ARM_THUMB32_CAT_BRANCH_COND)
 		{
 			addr = (inst->dword.branch.sign << 20)
@@ -2211,7 +2232,8 @@ void arm_thumb32_inst_dump_ADDR(char **inst_str_ptr, int *inst_str_size,
 		else
 			fatal("%d: addr fmt not recognized", cat);
 
-		addr = (inst_addr + 4) + (addr);
+		/* FIXME : Changed from +4 to +2 */
+		addr = (inst_addr + 2) + (addr);
 		str_printf(inst_str_ptr, inst_str_size, "#%d	; 0x%x", addr, addr);
 }
 

@@ -535,11 +535,28 @@ unsigned int arm_rotl(unsigned int value, unsigned int shift)
 
 unsigned int arm_rotr(unsigned int value, unsigned int shift)
 {
+
+	// Rotating 32 bits on a 32-bit integer is the same as rotating 0 bits; 33 bits -> 1 bit; etc.
+	if (shift >= 32 || shift <= -32) {
+		shift = shift % 32;
+	}
+
+	unsigned int temp = value;
+
+	// Rotate input to the right
+	value = value >> shift;
+
+	// Build mask for carried over bits
+	temp = temp << (32 - shift);
+
+	return value | temp;
+	/*
 	shift = shift * 2;
 	if ((shift &= sizeof(value) * 8 - 1) == 0)
 		return value;
 
 	return (value >> shift) | (value << (sizeof(value) * 8 - shift));
+	*/
 }
 
 void arm_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
@@ -2190,13 +2207,14 @@ void thumb16_disasm(void *buf, unsigned int ip, volatile struct arm_thumb16_inst
 void thumb32_disasm(void *buf, unsigned int ip, volatile struct arm_thumb32_inst_t *inst)
 {
 	unsigned int byte_index;
-	inst->addr = ip;
+	inst->addr = ip - 2;
 	for (byte_index = 0; byte_index < 4; ++byte_index)
 		inst->dword.bytes[byte_index] = *(unsigned char *) (buf
 			+ ((byte_index + 2) % 4));
 
 
 	arm_thumb32_inst_decode((struct arm_thumb32_inst_t*) inst);
+
 }
 
 
@@ -2217,15 +2235,19 @@ void arm_th16_inst_debug_dump(struct arm_thumb16_inst_t *inst, FILE *f )
 	void *inst_ptr;
 
 	inst_ptr = &inst->dword.bytes;
-	arm_inst_dump(f, inst_str, MAX_STRING_SIZE, inst_ptr, inst->addr, inst->addr);
+	arm_thumb16_inst_dump(f, inst_str, MAX_STRING_SIZE, inst_ptr, inst->addr, inst->addr);
 }
 
 void arm_th32_inst_debug_dump(struct arm_thumb32_inst_t *inst, FILE *f )
 {
 
 	char inst_str[MAX_STRING_SIZE];
-	void *inst_ptr;
+	struct arm_thumb32_inst_t inst_ptr;
+	unsigned int byte_index;
 
-	inst_ptr = &inst->dword.bytes;
-	arm_inst_dump(f, inst_str, MAX_STRING_SIZE, inst_ptr, inst->addr, inst->addr);
+	for (byte_index = 0; byte_index < 4; ++byte_index)
+		inst_ptr.dword.bytes[byte_index] = inst->dword.bytes[((byte_index
+			+ 2) % 4)];
+
+	arm_thumb32_inst_dump(f, inst_str, MAX_STRING_SIZE, &inst_ptr.dword.bytes, inst->addr, inst->addr);
 }

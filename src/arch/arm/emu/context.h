@@ -31,12 +31,20 @@
 extern int arm_ctx_debug_category;
 
 
+enum arm_thumb_iteq_t
+{
+	ITEQ_DISABLED = 0,
+	ITEQ_ENABLED
+};
+
 
 enum arm_mode_t
 {
 	ARM = 1,
 	THUMB
 };
+
+
 
 enum arm_inst_mode_t
 {
@@ -122,6 +130,9 @@ struct arm_ctx_t
 	/* When debugging function calls with 'arm_isa_debug_call', function call level. */
 	int function_level;
 
+	/* For checking if the instruction is in IF-THEN Block */
+	unsigned int iteq_inst_num;
+	unsigned int iteq_block_flag;
 
 	/* Variables used to wake up suspended contexts. */
 	long long wakeup_time;  /* arm_emu_timer time to wake up (poll/nanosleep) */
@@ -145,6 +156,9 @@ struct arm_ctx_t
 
 	/* Call Debug Stack */
 	struct arm_isa_cstack_t *cstack;
+
+	/* ARM/Thumb Symbol List */
+	struct list_t *thumb_symbol_list;
 
 	/* Statistics */
 
@@ -192,6 +206,8 @@ void arm_ctx_finish_group(struct arm_ctx_t *ctx, int status);
 void arm_ctx_load_from_command_line(int argc, char **argv);
 void arm_ctx_load_from_ctx_config(struct config_t *config, char *section);
 void arm_ctx_gen_proc_self_maps(struct arm_ctx_t *ctx, char *path);
+void arm_ctx_thumb_symbol_list_sort(struct list_t * thumb_symbol_list, struct elf_file_t *elf_file);
+enum arm_mode_t arm_ctx_operate_mode_tag(struct list_t * thumb_symbol_list, unsigned int addr);
 
 unsigned int arm_ctx_check_fault(struct arm_ctx_t *ctx);
 
