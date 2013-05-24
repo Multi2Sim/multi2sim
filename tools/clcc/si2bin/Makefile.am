@@ -26,6 +26,9 @@ libsi2bin_a_SOURCES = \
 	inst-info.c \
 	inst-info.h \
 	\
+	metadata.c\
+	metadata.h\
+	\
 	si2bin.c \
 	si2bin.h \
 	\

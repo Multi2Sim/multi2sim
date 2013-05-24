@@ -149,7 +149,8 @@ void si2bin_bin_free(struct si2bin_bin_t *bin);
 
 void si2bin_bin_add_entry(struct si2bin_bin_t *bin, struct si2bin_bin_entry_t *entry);
 void si2bin_bin_generate(struct si2bin_bin_t *bin, struct elf_enc_buffer_t *bin_buffer);
-
+void si2bin_bin_create_file(struct elf_enc_buffer_t 
+	*text_section_buffer, struct elf_enc_buffer_t *bin_buffer);
 
 #endif
 
