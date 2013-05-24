@@ -80,31 +80,36 @@ struct opencl_si_kernel_t
 	int id;
 };
 
+struct opencl_si_ndrange_t
+{
+	struct opencl_ndrange_t *parent;	
+
+	struct opencl_si_kernel_t *arch_kernel;
+};
 
 struct opencl_si_kernel_t *opencl_si_kernel_create(
-		struct opencl_kernel_t *parent,
-		struct opencl_si_program_t *program,
-		char *func_name);
+	struct opencl_kernel_t *parent, struct opencl_si_program_t *program,
+	char *func_name);
 
 void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel);
 
 void opencl_si_kernel_debug(struct opencl_si_kernel_t *kernel);
 
-int opencl_si_kernel_set_arg(
-		struct opencl_si_kernel_t *kernel,
-		int arg_index,
-		unsigned int arg_size,
-		void *arg_value);
+int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
+	unsigned int arg_size, void *arg_value);
 
-void opencl_si_kernel_run(
-		struct opencl_si_kernel_t *kernel,
-		int work_dim,
-		unsigned int *global_work_offset,
-		unsigned int *global_work_size,
-		unsigned int *local_work_size,
-		unsigned int *group_id_offset,
-		unsigned int *group_count);
+struct opencl_si_ndrange_t *opencl_si_ndrange_create(
+	struct opencl_ndrange_t *ndrange, 
+	struct opencl_si_kernel_t *si_kernel);
 
+void opencl_si_ndrange_free(struct opencl_ndrange_t *ndrange);
+
+void opencl_si_ndrange_init(struct opencl_ndrange_t *ndrange);
+
+void opencl_si_ndrange_run(struct opencl_ndrange_t *ndrange);
+
+void opencl_si_ndrange_run_partial(struct opencl_ndrange_t *ndrange,
+	unsigned int work_group_start[3], unsigned int work_group_size[3]);
 
 #endif
 

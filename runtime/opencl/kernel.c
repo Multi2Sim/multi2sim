@@ -28,6 +28,7 @@
 #include "kernel.h"
 #include "list.h"
 #include "mhandle.h"
+#include "misc.h"
 #include "object.h"
 #include "program.h"
 
@@ -301,3 +302,70 @@ cl_int clGetKernelWorkGroupInfo(
 	return 0;
 }
 
+struct opencl_ndrange_t *opencl_ndrange_create(
+	struct opencl_device_t *device,
+	struct opencl_kernel_t *kernel,
+	unsigned int work_dim,
+	unsigned int *global_work_offset,
+	unsigned int *global_work_size,
+	unsigned int *local_work_size)
+{
+	struct opencl_ndrange_t *ndrange;
+	struct opencl_kernel_entry_t *kernel_entry;
+
+	void *arch_kernel = NULL;
+
+	int i;
+
+	assert(kernel);
+	assert(device);
+	assert(global_work_size);
+	assert(IN_RANGE(work_dim, 1, 3));
+
+	ndrange = xcalloc(1, sizeof(struct opencl_ndrange_t));
+	ndrange->device = device;
+	ndrange->kernel = kernel;
+	ndrange->work_dim = work_dim;
+
+	opencl_debug("[%s] creating an nd-range for %s", __FUNCTION__, 
+		device->name);
+	LIST_FOR_EACH(kernel->entry_list, i)
+	{
+		kernel_entry = list_get(kernel->entry_list, i);
+		if (kernel_entry->device == device)
+			arch_kernel = kernel_entry->arch_kernel;
+	}
+	assert(arch_kernel);
+
+	ndrange->arch_ndrange = device->arch_ndrange_create_func(ndrange,
+		arch_kernel);
+
+	/* Work sizes */
+	for (i = 0; i < work_dim; i++)
+	{
+		ndrange->global_work_offset[i] = global_work_offset ?
+			global_work_offset[i] : 0;
+		ndrange->global_work_size[i] = global_work_size[i];
+		ndrange->local_work_size[i] = local_work_size ?
+			local_work_size[i] : 1;
+		assert(!(global_work_size[i] % ndrange->local_work_size[i]));
+		ndrange->group_count[i] = global_work_size[i] / 
+			ndrange->local_work_size[i];
+	}
+
+	/* Unused dimensions */
+	for (i = work_dim; i < 3; i++)
+	{
+		ndrange->global_work_offset[i] = 0;
+		ndrange->global_work_size[i] = 1;
+		ndrange->local_work_size[i] = 1;
+		ndrange->group_count[i] = ndrange->global_work_size[i] / 
+			ndrange->local_work_size[i];
+	}
+
+	/* Calculate the number of work groups in the ND-Range */
+	ndrange->num_groups = ndrange->group_count[0] * 
+		ndrange->group_count[1] * ndrange->group_count[2];
+
+	return ndrange;
+}

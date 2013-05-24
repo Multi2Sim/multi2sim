@@ -291,11 +291,13 @@ cl_program clCreateProgramWithBinary(
 		/* Make sure the type of the binary matches */
 		assert(device->arch_program_valid_binary_func);
 		if (!lengths[i] || !binaries[i] ||
-				!device->arch_program_valid_binary_func(
-				device->arch_device, (void *) binaries[i], lengths[i]))
+			!device->arch_program_valid_binary_func(
+			device->arch_device, (void *) binaries[i], lengths[i]))
 		{
 			if (binary_status)
+			{
 				binary_status[i] = CL_INVALID_VALUE;
+			}
 			if (errcode_ret)
 				*errcode_ret = CL_INVALID_VALUE;
 			opencl_program_free(program);
@@ -309,7 +311,7 @@ cl_program clCreateProgramWithBinary(
 		/* Create the architecture-specific program object. */
 		assert(device->arch_program_create_func);
 		arch_program = device->arch_program_create_func(program,
-				device->arch_device, (void *) binaries[i], lengths[i]);
+			device->arch_device, (void *) binaries[i], lengths[i]);
 
 		/* Add pair of architecture-specific program and device to the
 		 * generic program object. */

@@ -36,7 +36,7 @@
 #include "si-kernel.h"
 #include "si-program.h"
 
-#define SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE 16
+#define SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE (1024*1024)
 
 
 static char *opencl_err_abi_call =
@@ -164,8 +164,8 @@ void opencl_done(void)
 
 /* NOTE: when modifying the values of these two macros, the same values should
  * be reflected in 'runtime/opencl/platform.c'. */
-#define OPENCL_VERSION_MAJOR  2
-#define OPENCL_VERSION_MINOR  1629
+#define OPENCL_VERSION_MAJOR  3
+#define OPENCL_VERSION_MINOR  1664
 
 struct opencl_version_t
 {
@@ -900,9 +900,6 @@ static int opencl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
 	unsigned int local_size[3];
 
 	if (si_gpu_fused_device)
-		fatal("Fused device not supported\n");  // FIXME
-
-	if (si_gpu_fused_device)
 		si_emu->global_mem = ctx->mem;
 
 	/* Arguments */
@@ -1018,6 +1015,9 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
 	available_buffer_entries = SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
 		list_count(si_emu->waiting_work_groups);
 
+	opencl_debug("\tavailable buffer entries = %d\n", 
+		available_buffer_entries);
+
 	mem_write(mem, host_ptr, sizeof available_buffer_entries,
 		&available_buffer_entries);
 
@@ -1027,17 +1027,20 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
 /*
  * OpenCL ABI call #16 - si_ndrange_send_work_groups
  *
- * Receives a range of work-group IDs to add to the waiting 
- * work-group queue. The x86 context performing this call
- * suspends until the emulator needs more work.
+ * Let's the driver know that work groups have been added to 
+ * the queue.
  *
- * @param int work_group_start_id 
+ * @param unsigned int work_group_start[3]
  *
- *	The first work-group ID to add to the waiting queue.
+ *	Origin of work groups to enqueue
  *
- * @param int work_group_count
+ * @param unsigned int work_group_count[3]
  *
- *	The number of work groups to add to the waiting queue.
+ *	Count of work groups to enqueue
+ *
+ * @param unsigned int work_group_sizes[3]
+ *
+ * 	Overall sizes of work groups in each dimension
  *
  * @return int
  *
@@ -1061,28 +1064,57 @@ static void opencl_abi_si_ndrange_send_work_groups_wakeup(
 static int opencl_abi_si_ndrange_send_work_groups_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
-	int i;
-	int work_group_count;
-	int work_group_start_id;
+	int i, j, k;
+
+	unsigned int work_group_start_ptr;
+	unsigned int work_group_count_ptr;
+	unsigned int work_group_sizes_ptr;
+	unsigned int work_group_start[3];
+	unsigned int work_group_count[3];
+	unsigned int work_group_sizes[3];
+	unsigned int total_num_groups;
 
 	long work_group_id;
 
 	/* Arguments */
-	work_group_start_id = regs->ecx;
-	work_group_count = regs->edx;
+	work_group_start_ptr = regs->ecx;
+	work_group_count_ptr = regs->edx;
+	work_group_sizes_ptr = regs->esi;
 
-	assert(work_group_count <= SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
+	mem_read(mem, work_group_start_ptr, 3 * 4, work_group_start);
+	mem_read(mem, work_group_count_ptr, 3 * 4, work_group_count);
+	mem_read(mem, work_group_sizes_ptr, 3 * 4, work_group_sizes);
+
+	total_num_groups = work_group_count[2] * work_group_count[1] * 
+		work_group_count[0];
+	assert(total_num_groups <= SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
 		list_count(si_emu->waiting_work_groups));
 
-	opencl_debug("    receiving work groups %d through %d\n",
-		work_group_start_id, work_group_start_id+work_group_count-1);
+	opencl_debug("\treceiving work groups (%d,%d,%d) through (%d,%d,%d)\n",
+		work_group_start[0], work_group_start[1], work_group_start[2],
+		work_group_start[0] + work_group_count[0] - 1, 
+		work_group_start[1] + work_group_count[1] - 1, 
+		work_group_start[2] + work_group_count[2] - 1);
 
 	/* Receive work groups (add them to the waiting queue) */
-	for (i = 0; i < work_group_count; i++)
+	for (i = work_group_start[2]; i < work_group_start[2] + work_group_count[2]; i++)
 	{
-		work_group_id = work_group_start_id + i;
-		list_enqueue(si_emu->waiting_work_groups, (void*)work_group_id);
+		for (j = work_group_start[1]; j < work_group_start[1] + work_group_count[1]; j++)
+		{
+			for (k = work_group_start[0]; k < work_group_start[0] + work_group_count[0]; k++)
+			{
+				work_group_id = (i * work_group_sizes[1] * 
+					work_group_sizes[0]) + (j * 
+					work_group_sizes[0]) + k;
+
+				list_enqueue(si_emu->waiting_work_groups, 
+					(void*)work_group_id);
+				opencl_debug("\tadding wg %ld\n", 
+					work_group_id);
+			}
+		}
 	}
 
 	/* XXX Later, check if waiting queue is still under a threshold.  
@@ -1121,6 +1153,8 @@ static void opencl_abi_si_ndrange_finish_wakeup(struct x86_ctx_t *ctx,
 {
 	assert(!user_data);
 
+	opencl_debug("waking up after finish");
+
 	/* Reset driver state */
 	si_ndrange_free(driver_state.ndrange);
 	driver_state.ndrange = NULL;
@@ -1139,6 +1173,7 @@ static int opencl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
 	if (!list_count(si_emu->running_work_groups) && 
 		!list_count(si_emu->waiting_work_groups))
 	{
+		opencl_debug("\tndrange is complete\n");
 		/* Reset driver state */
 		si_ndrange_free(driver_state.ndrange);
 		driver_state.ndrange = NULL;
@@ -1151,6 +1186,7 @@ static int opencl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
 	}
 	else 
 	{
+		opencl_debug("\tsuspending driver thread\n");
 		/* Suspend x86 context until simulation completes */
 		x86_ctx_suspend(ctx, opencl_abi_si_ndrange_finish_can_wakeup, 
 			NULL, opencl_abi_si_ndrange_finish_wakeup, NULL);
@@ -1159,9 +1195,16 @@ static int opencl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
 	return 0;
 }
 
-
 /*
  * OpenCL ABI call #18 - si_ndrange_pass_mem_objs
+ *
+ * @param unsigned int *tables_ptr
+ *
+ *	Location reserved for internal tables (may not be aligned)
+ *
+ * @param unsigned int *constant_buffers_ptr
+ *
+ *	Location reserved for constant buffers (may not be aligned)
  *
  * @return int
  *
@@ -1179,9 +1222,9 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(struct x86_ctx_t *ctx)
 
 	if (si_gpu_fused_device)
 	{
-		/* Arguments */
-		tables_ptr = regs->ecx;
-		constant_buffers_ptr = regs->edx;
+		/* 16 extra bytes allocated */
+		tables_ptr = (regs->ecx + 15) & 0xFFFFFFF0;
+		constant_buffers_ptr = (regs->edx + 15) & 0xFFFFFFF0;
 
 		si_emu->ndrange->const_buf_table = tables_ptr;
 
@@ -1215,6 +1258,26 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(struct x86_ctx_t *ctx)
 	return 0;
 }
 
+/*
+ * OpenCL ABI call #19 - si_ndrange_set_fused
+ *
+ * @param unsigned int fused
+ *
+ *	Whether to enable or disable the fused device
+ *
+ * @return int
+ *
+ *	The function always returns 0.
+ */
+
+static int opencl_abi_si_ndrange_set_fused_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	si_gpu_fused_device = regs->ecx;
+
+	return 0;
+}
 /*
  *  Helper functions
  */

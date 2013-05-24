@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "device.h"
 #include "event.h"
+#include "list.h"
 #include "mem.h"
 #include "mhandle.h"
 #include "misc.h"
@@ -142,16 +143,10 @@ static void opencl_command_run_unmap_buffer(struct opencl_command_t *command)
 /* Run an ND-Range */
 static void opencl_command_run_ndrange(struct opencl_command_t *command)
 {
-        assert(command->ndrange.device->arch_kernel_run_func);
+        assert(command->ndrange);
+        assert(command->device->arch_ndrange_run_func);
 
-        command->ndrange.device->arch_kernel_run_func(
-                        command->ndrange.arch_kernel,
-                        command->ndrange.work_dim,
-                        command->ndrange.global_work_offset,
-                        command->ndrange.global_work_size,
-                        command->ndrange.local_work_size,
-			command->ndrange.group_id_offset,
-			command->ndrange.group_count);
+        command->device->arch_ndrange_run_func(command->ndrange); 
 }
 
 
@@ -340,7 +335,7 @@ struct opencl_command_t *opencl_command_create_unmap_buffer(
 
 struct opencl_command_t *opencl_command_create_ndrange(
 	struct opencl_device_t *device,
-	void *arch_kernel,  /* of type 'opencl_xxx_kernel_t' */
+	struct opencl_kernel_t *kernel,
 	int work_dim,
 	unsigned int *global_work_offset,
 	unsigned int *global_work_size,
@@ -351,49 +346,15 @@ struct opencl_command_t *opencl_command_create_ndrange(
 	struct opencl_event_t **wait_events)
 {
 	struct opencl_command_t *command;
-	int i;
 
 	/* Initialize */
 	command = opencl_command_create(opencl_command_launch_ndrange,
 		opencl_command_run_ndrange, command_queue, 
 		done_event_ptr, num_wait_events, wait_events);
-	command->ndrange.device = device;
-	command->ndrange.arch_kernel = arch_kernel;
-	command->ndrange.work_dim = work_dim;
 
-	/* Work sizes */
-	assert(IN_RANGE(work_dim, 1, 3));
-	assert(global_work_size);
-	for (i = 0; i < work_dim; i++)
-	{
-		command->ndrange.global_work_offset[i] = global_work_offset ?
-			global_work_offset[i] : 0;
-		command->ndrange.global_work_size[i] = global_work_size[i];
-		command->ndrange.local_work_size[i] = local_work_size ?
-			local_work_size[i] : 1;
-		command->ndrange.group_id_offset[i] = 0;
-		assert(!(global_work_size[i] % command->ndrange.local_work_size[i]));
-		command->ndrange.group_count[i] = global_work_size[i] / command->ndrange.local_work_size[i];
-	}
-
-	/* Unused dimensions */
-	for (i = work_dim; i < 3; i++)
-	{
-		command->ndrange.global_work_offset[i] = 0;
-		command->ndrange.global_work_size[i] = 1;
-		command->ndrange.local_work_size[i] = 1;
-		command->ndrange.group_id_offset[i] = 0;
-		command->ndrange.group_count[i] = 1;
-	}
-
-	/* Calculate the number of work groups in the ND-Range */
-	command->ndrange.num_groups = 
-		(command->ndrange.global_work_size[0] /
-		command->ndrange.local_work_size[0]) * 
-		(command->ndrange.global_work_size[1] /
-		 command->ndrange.local_work_size[1]) * 
-		(command->ndrange.global_work_size[2] / 
-		 command->ndrange.local_work_size[2]);
+	command->ndrange = opencl_ndrange_create(
+		device, kernel, work_dim, global_work_offset,
+		global_work_size, local_work_size);
 
 	/* Return */
 	return command;

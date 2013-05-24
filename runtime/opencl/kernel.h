@@ -20,6 +20,8 @@
 #ifndef RUNTIME_OPENCL_KERNEL_H
 #define RUNTIME_OPENCL_KERNEL_H
 
+#include <pthread.h>
+
 #include "opencl.h"
 
 
@@ -33,6 +35,25 @@ struct opencl_kernel_entry_t
 	void *arch_program;  /* Of type 'opencl_xxx_program_t' */
 };
 
+/* ND-Range object (instantiation of a kernel) */
+struct opencl_ndrange_t
+{
+	struct opencl_device_t *device;
+	struct opencl_kernel_t *kernel;	
+
+	int work_dim;
+
+	unsigned int global_work_offset[3];
+	unsigned int global_work_size[3];
+	unsigned int local_work_size[3];
+
+	unsigned int group_count[3];
+	unsigned int num_groups;
+
+	unsigned int fused;
+
+	void *arch_ndrange;
+};
 
 /* Kernel object */
 struct opencl_kernel_t
@@ -45,7 +66,6 @@ struct opencl_kernel_t
 	struct list_t *entry_list;
 };
 
-
 /* Create/free */
 struct opencl_kernel_t *opencl_kernel_create(void);
 void opencl_kernel_free(struct opencl_kernel_t *kernel);
@@ -55,6 +75,13 @@ struct opencl_kernel_entry_t *opencl_kernel_add(struct opencl_kernel_t *kernel,
 		struct opencl_device_t *device, void *arch_kernel,
 		void *arch_program);
 
+struct opencl_ndrange_t *opencl_ndrange_create(
+	struct opencl_device_t *device,
+	struct opencl_kernel_t *kernel,
+	unsigned int work_dim,
+	unsigned int *global_work_offset,
+	unsigned int *global_work_size,
+	unsigned int *local_work_size);
 
 #endif
 

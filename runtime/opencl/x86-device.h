@@ -43,8 +43,8 @@ struct opencl_x86_device_exec_t
 	struct opencl_x86_kernel_t *kernel;
 
 	int dims;
-	const size_t *global;
-	const size_t *local;
+	size_t *global;
+	size_t *local;
 
 	pthread_mutex_t mutex;
 	int num_groups;

@@ -21,6 +21,7 @@
 
 #include "debug.h"
 #include "device.h"
+#include "list.h"
 #include "mhandle.h"
 #include "x86-device.h"
 #include "si-device.h"
@@ -132,8 +133,17 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 		opencl_si_kernel_free;
 	parent->arch_kernel_set_arg_func = (opencl_arch_kernel_set_arg_func_t)
 		opencl_si_kernel_set_arg;
-	parent->arch_kernel_run_func = (opencl_arch_kernel_run_func_t)
-		opencl_si_kernel_run;
+	parent->arch_ndrange_create_func = (opencl_arch_ndrange_create_func_t)
+		opencl_si_ndrange_create;
+	parent->arch_ndrange_init_func = (opencl_arch_ndrange_init_func_t) 
+		opencl_si_ndrange_init;
+	parent->arch_ndrange_run_func = (opencl_arch_ndrange_run_func_t) 
+		opencl_si_ndrange_run;
+	parent->arch_ndrange_run_partial_func = 
+		(opencl_arch_ndrange_run_partial_func_t) 
+		opencl_si_ndrange_run_partial;
+	parent->arch_ndrange_free_func = (opencl_arch_ndrange_free_func_t) 
+		opencl_si_ndrange_free;
 	
 	/* Call-back functions for program */
 	parent->arch_program_create_func = (opencl_arch_program_create_func_t)
@@ -143,6 +153,9 @@ struct opencl_si_device_t *opencl_si_device_create(struct opencl_device_t *paren
 	parent->arch_program_valid_binary_func = 
 		(opencl_arch_program_valid_binary_func_t)
 		opencl_si_program_valid_binary;
+
+	opencl_debug("[%s] opencl_si_device_t device = %p", __FUNCTION__, 
+		device);
 
 	/* Return */
 	return device;

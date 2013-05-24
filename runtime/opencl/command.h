@@ -20,6 +20,7 @@
 #ifndef RUNTIME_OPENCL_COMMAND_H
 #define RUNTIME_OPENCL_COMMAND_H
 
+#include "kernel.h"
 #include "opencl.h"
 
 struct opencl_command_t;
@@ -50,6 +51,7 @@ struct opencl_command_t
 
 	struct opencl_command_queue_t *command_queue;
 	struct opencl_device_t *device;
+	void *ndrange;  /* Architecture-specific ND-Range */
 
 	union
 	{
@@ -78,19 +80,6 @@ struct opencl_command_t
 		struct {
 			struct opencl_mem_t *mem;
 		} unmap_buffer;
-
-		struct {
-			struct opencl_device_t *device;
-			void *arch_kernel;  /* Of type 'opencl_xxx_kernel_t' */
-			int work_dim;
-			unsigned int global_work_offset[3];
-			unsigned int global_work_size[3];
-			unsigned int local_work_size[3];
-			unsigned int group_id_offset[3];
-			unsigned int group_count[3];
-			unsigned int num_groups;
-			unsigned int current_group;
-		} ndrange;
 	};
 };
 
@@ -158,7 +147,7 @@ struct opencl_command_t *opencl_command_create_unmap_buffer(
 
 struct opencl_command_t *opencl_command_create_ndrange(
 		struct opencl_device_t *device,
-		void *arch_kernel,  /* of type 'opencl_xxx_kernel_t' */
+		struct opencl_kernel_t *kernel,
 		int work_dim,
 		unsigned int *global_work_offset,
 		unsigned int *global_work_size,

@@ -9,6 +9,8 @@ struct opencl_union_device_t *opencl_union_device_create(struct opencl_device_t 
 {
 	cl_uint i;
 	struct opencl_union_device_t *u;
+	struct opencl_device_t *tmp;
+
 	u = xcalloc(1, sizeof (struct opencl_union_device_t));
 	u->parent = parent;
 	int num_devices = list_count(devices);
@@ -16,7 +18,15 @@ struct opencl_union_device_t *opencl_union_device_create(struct opencl_device_t 
 	for (i = 0; i < num_devices; i++)
 		list_add(u->devices, list_get(devices, i));
 
+	opencl_debug("[%s] union device contains:", __FUNCTION__);
+	for (i = 0; i < num_devices; i++)
+	{
+		tmp = list_get(devices, i);
+		opencl_debug("[%s] %s = %p", __FUNCTION__, tmp->name, tmp);
+	}
+
 	*(parent) = *(struct opencl_device_t *)list_get(devices, 0); // just copy over the parameters from someone - we'll do a better job later.
+	parent->name = "Multi2Sim Union Device";
 	parent->type = CL_DEVICE_TYPE_ACCELERATOR;
 
 	parent->arch_device_free_func =
@@ -55,13 +65,16 @@ struct opencl_union_device_t *opencl_union_device_create(struct opencl_device_t 
 			opencl_union_kernel_create;
 	parent->arch_kernel_free_func =
 			(opencl_arch_kernel_free_func_t)
-			NULL;
+			opencl_union_kernel_free;
 	parent->arch_kernel_set_arg_func =
 			(opencl_arch_kernel_set_arg_func_t)
 			opencl_union_kernel_set_arg;
-	parent->arch_kernel_run_func =
-			(opencl_arch_kernel_run_func_t)
-			opencl_union_kernel_run;
+	parent->arch_ndrange_create_func =
+			(opencl_arch_ndrange_create_func_t)
+			opencl_union_ndrange_create;
+	parent->arch_ndrange_run_func =
+			(opencl_arch_ndrange_run_func_t)
+			opencl_union_ndrange_run;
 
 	return u;
 }

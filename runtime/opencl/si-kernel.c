@@ -21,6 +21,7 @@
 
 #include "debug.h"
 #include "elf-format.h"
+#include "kernel.h"
 #include "list.h"
 #include "mem.h"
 #include "mhandle.h"
@@ -150,6 +151,8 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(
 	char symbol_name[MAX_STRING_SIZE];
 	char line[MAX_STRING_SIZE];
 
+	opencl_debug("[%s] creating southern-islands kernel", __FUNCTION__);
+
 	/* Initialize */
 	kernel = xcalloc(1, sizeof(struct opencl_si_kernel_t));
 	kernel->parent = parent;
@@ -179,7 +182,9 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(
 			program->id, func_name);
 
 	/* Dump debug info and return */
+	opencl_debug("[%s] kernel = %p", __FUNCTION__, (void*)kernel);
 	opencl_si_kernel_debug(kernel);
+
 	return kernel;
 }
 
@@ -271,53 +276,120 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 	return 0;
 }
 
-
-void opencl_si_kernel_run(struct opencl_si_kernel_t *kernel, int work_dim,
-	unsigned int *global_work_offset, unsigned int *global_work_size,
-	unsigned int *local_work_size, unsigned int *group_id_offset, 
-	unsigned int *group_count)
+void opencl_si_ndrange_free(struct opencl_ndrange_t *ndrange)
 {
-	/* ABI call */
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish);
+}
+
+void opencl_si_ndrange_run(struct opencl_ndrange_t *ndrange)
+{
+	int i;
+
+	unsigned int *work_group_start = xcalloc(3, sizeof (unsigned int));
+	unsigned int *work_group_count = xcalloc(3, sizeof (unsigned int));
+
+	for (i = 0; i < 3; i++)
+	{
+		work_group_start[i] = 0;
+		work_group_count[i] = ndrange->group_count[i];
+	}
+
+	opencl_debug("[%s] added groups to the wg queue (%d x %d x %d)", 
+		__FUNCTION__, ndrange->group_count[0], ndrange->group_count[1],
+		ndrange->group_count[2]);
+
+	/* Initialize the SI GPU with the ND-Range */
+	opencl_si_ndrange_init(ndrange);
+
+	/* Run all of the work groups */
+	opencl_si_ndrange_run_partial(ndrange, work_group_start,
+		work_group_count);
+
+	opencl_si_ndrange_free(ndrange);
+}
+
+struct opencl_si_ndrange_t *opencl_si_ndrange_create(
+	struct opencl_ndrange_t *ndrange,
+	struct opencl_si_kernel_t *si_kernel)
+{
+	opencl_debug("[%s] creating southern-islands ndrange", __FUNCTION__);
+	struct opencl_si_ndrange_t *arch_ndrange;
+
+	assert(ndrange);
+	assert(si_kernel);
+
+	arch_ndrange = (struct opencl_si_ndrange_t *)xcalloc(1, 
+		sizeof(struct opencl_si_ndrange_t));
+
+	arch_ndrange->parent = ndrange;
+	arch_ndrange->arch_kernel = si_kernel;
+
+	return arch_ndrange;
+}
+
+
+void opencl_si_ndrange_init(struct opencl_ndrange_t *ndrange)
+{
+	void *table_ptr;
+	void *cb_ptr;
+
+	struct opencl_si_kernel_t *kernel;
+	struct opencl_si_ndrange_t *arch_ndrange;
+
+	const int cb_size = 4096;
+	const int table_size = 4096;
+
+	table_ptr = xcalloc(1, table_size + 16);  // FIXME
+	cb_ptr = xcalloc(1, cb_size + 16);   // FIXME
+
+	arch_ndrange = ndrange->arch_ndrange;
+	kernel = (struct opencl_si_kernel_t *)(arch_ndrange->arch_kernel);
+	opencl_debug("[%s] kernel id is = %d", __FUNCTION__, kernel->id); 
+	opencl_debug("[%s] kernel addr is = %p", __FUNCTION__, (void*)kernel); 
+
+	/* Tell the driver whether or not we are using a fused device */
+	opencl_debug("[%s] southern-islands fused memory = %d", 
+		__FUNCTION__, ndrange->fused);
+	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_set_fused,
+		ndrange->fused);
+
+	/* Pass ND-Range metadata */
+	opencl_debug("[%s] passing nd-range metadata", __FUNCTION__);
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_initialize, 
-		kernel->id, work_dim, global_work_offset, global_work_size, 
-		local_work_size);
+		kernel->id, ndrange->work_dim, 
+		ndrange->global_work_offset, ndrange->global_work_size, 
+		ndrange->local_work_size);
 
-	void *table_ptr = xcalloc(1, 4096);  // FIXME
-	void *cb_ptr = xcalloc(1, 4096);   // FIXME
-
-	int num_groups = group_count[0]*group_count[1]*group_count[2];
-	int current_group = 0;
-	int max_work_groups_to_send;
-	int remaining_work_groups;
-	int work_groups_to_send;
-	int work_group_start;
-
+	/* Provide internal tables initialized within the host
+	 * process' virtual address space */
+	opencl_debug("[%s] passing nd-range internal memory objects", 
+		__FUNCTION__);
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_pass_mem_objs, 
 		table_ptr, cb_ptr);
+}
+
+void opencl_si_ndrange_run_partial(struct opencl_ndrange_t *ndrange,
+	unsigned int *work_group_start, unsigned int *work_group_count)
+{
+	int max_work_groups_to_send;
+	int num_groups;
+
+	num_groups = work_group_count[0] * work_group_count[1] * 
+		work_group_count[2];
+	opencl_debug("[%s] southern-islands has %d work groups to run", 
+		__FUNCTION__, num_groups);
 
 	/* Ask the driver how many work groups it can buffer */
 	/* Send work groups to the driver */
-	while (current_group < num_groups)
-	{
-		syscall(OPENCL_SYSCALL_CODE,
-			opencl_abi_si_ndrange_get_num_buffer_entries,
-			&max_work_groups_to_send);
+	syscall(OPENCL_SYSCALL_CODE,
+		opencl_abi_si_ndrange_get_num_buffer_entries,
+		&max_work_groups_to_send);
 
-		remaining_work_groups = num_groups - current_group;
-		work_groups_to_send = MIN(remaining_work_groups,
-			max_work_groups_to_send);
+	assert(max_work_groups_to_send > num_groups);
 
-		assert(max_work_groups_to_send != 0);
-
-		work_group_start = current_group;
-
-		current_group += work_groups_to_send;
-
-		syscall(OPENCL_SYSCALL_CODE, 
-			opencl_abi_si_ndrange_send_work_groups,
-			work_group_start, work_groups_to_send);
-	}
-
-	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish);
+	syscall(OPENCL_SYSCALL_CODE, 
+		opencl_abi_si_ndrange_send_work_groups, 
+		&work_group_start[0], &work_group_count[0],
+		ndrange->group_count);
 }
 

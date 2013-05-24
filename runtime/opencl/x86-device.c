@@ -692,9 +692,23 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->arch_kernel_set_arg_func =
 			(opencl_arch_kernel_set_arg_func_t)
 			opencl_x86_kernel_set_arg;
-	parent->arch_kernel_run_func =
-			(opencl_arch_kernel_run_func_t)
-			opencl_x86_kernel_run;
+
+	/* Call-back functions for architecture-specific ND-Range */
+	parent->arch_ndrange_init_func =
+			(opencl_arch_ndrange_init_func_t)
+			opencl_x86_ndrange_init;
+	parent->arch_ndrange_create_func =
+			(opencl_arch_ndrange_create_func_t)
+			opencl_x86_ndrange_create;
+	parent->arch_ndrange_run_func =
+			(opencl_arch_ndrange_run_func_t)
+			opencl_x86_ndrange_run;
+	parent->arch_ndrange_run_partial_func =
+			(opencl_arch_ndrange_run_partial_func_t)
+			opencl_x86_ndrange_run_partial;
+	parent->arch_ndrange_free_func =
+			(opencl_arch_ndrange_free_func_t)
+			opencl_x86_ndrange_free;
 
 	/* Initialize mutex and condition variables */
 	pthread_mutex_init(&device->lock, NULL);
@@ -719,6 +733,9 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 		CPU_SET(i, &cpu_set);
 		pthread_setaffinity_np(device->threads[i], sizeof cpu_set, &cpu_set);
 	}
+
+	opencl_debug("[%s] opencl_x86_device_t device = %p", __FUNCTION__, 
+		device);
 
 	/* Return */
 	return device;
