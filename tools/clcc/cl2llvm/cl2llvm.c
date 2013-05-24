@@ -33,6 +33,7 @@
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 
+#include "function.h"
 #include "symbol.h"
 #include "cl2llvm.h"
 #include "parser.h"
@@ -41,8 +42,6 @@
 /* Global variables */
 LLVMBuilderRef cl2llvm_builder;
 LLVMModuleRef cl2llvm_module;
-LLVMValueRef cl2llvm_function;
-LLVMBasicBlockRef cl2llvm_basic_block;
 
 /* Current file being compiled */
 char *cl2llvm_file_name;
@@ -82,7 +81,7 @@ void cl2llvm_init(void)
 	cl2llvm_builder = LLVMCreateBuilder();
 	cl2llvm_module = LLVMModuleCreateWithName("module");
 
-	/* Initialize symbol table */
+	/* Initialize global symbol table */
 	cl2llvm_symbol_table = hash_table_create(10, 1);
 
 }
@@ -91,11 +90,11 @@ void cl2llvm_init(void)
 void cl2llvm_done(void)
 {
 	char *name;
-	struct cl2llvm_symbol_t *symbol;
+	struct cl2llvm_function_t *function;
 
 	/* Free symbol table */
-	HASH_TABLE_FOR_EACH(cl2llvm_symbol_table, name, symbol)
-		cl2llvm_symbol_free(symbol);
+	HASH_TABLE_FOR_EACH(cl2llvm_symbol_table, name, function)
+		cl2llvm_function_free(function);
 	hash_table_free(cl2llvm_symbol_table);
 }
 

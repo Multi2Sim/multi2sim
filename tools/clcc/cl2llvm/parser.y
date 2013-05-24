@@ -17,6 +17,8 @@
 #include <llvm-c/Transforms/Scalar.h>
 #include <llvm-c/BitWriter.h>
 
+#include "declarator-list.h"
+#include "function.h"
 #include "val.h"
 #include "type.h"
 #include "init-list-elem.h"
@@ -36,8 +38,12 @@ extern char temp_var_name[50];
 int block_count;
 char block_name[50];
 
+int  func_count;
+char func_name[50];
+
 struct hash_table_t *cl2llvm_symbol_table;
 
+struct cl2llvm_function_t *current_function;
 %}
 
 %union {
@@ -49,6 +55,7 @@ struct hash_table_t *cl2llvm_symbol_table;
 	struct cl2llvm_val_t *llvm_value_ref;
 	struct list_t * init_list;
 	LLVMBasicBlockRef basic_block_ref;
+	struct cl2llvm_decl_list_t *decl_list;
 }
 
 %token<identifier>  TOK_ID
@@ -113,7 +120,7 @@ struct hash_table_t *cl2llvm_symbol_table;
 %token TOK_GOTO
 %token TOK_HALF
 %token TOK_IF
-%left TOK_ELSE
+%nonassoc TOK_ELSE
 %token TOK_IMAGE2D_T
 %token TOK_IMAGE3D_T
 %token TOK_IMAGE2D_ARRAY_T
@@ -174,8 +181,10 @@ struct hash_table_t *cl2llvm_symbol_table;
 %type<init_list> init_list
 %type<llvm_type_ref> type_name
 %type<llvm_type_ref> type_spec
-%type<llvm_type_ref> declarator
-%type<llvm_type_ref> declarator_list
+%type<decl_list> declarator
+%type<decl_list> declarator_list
+%type<basic_block_ref> if
+%type<basic_block_ref> while_loop_block
 
 %start program
 
@@ -192,25 +201,39 @@ external_def
 
 
 func_def
-	: declarator_list TOK_ID
-	/*{
-		current_id.id_name = yylval.identifier;
-	}*/
-	TOK_PAR_OPEN arg_list TOK_PAR_CLOSE
+	: declarator_list TOK_ID TOK_PAR_OPEN arg_list TOK_PAR_CLOSE
 	{
+		LLVMGetTypeKind($1->type_spec->llvm_type);
+		int err;
+		struct cl2llvm_function_t *new_function;
+
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+
 		LLVMTypeRef func_args[0];
-		
-		cl2llvm_function = LLVMAddFunction(cl2llvm_module, "func_name",
-			LLVMFunctionType(LLVMInt32Type(), func_args, 0, 0));
+		LLVMTypeRef cl2llvm_function_type = LLVMFunctionType($1->type_spec->llvm_type, func_args, 0, 0);
+		LLVMValueRef cl2llvm_function = LLVMAddFunction(cl2llvm_module, $2,
+			cl2llvm_function_type);
 		LLVMSetFunctionCallConv(cl2llvm_function, LLVMCCallConv);
-		cl2llvm_basic_block = LLVMAppendBasicBlock(cl2llvm_function, "bb_entry");
+		LLVMBasicBlockRef cl2llvm_basic_block = LLVMAppendBasicBlock(cl2llvm_function, block_name);
+		new_function = cl2llvm_function_create($2);
+
+		current_function = new_function;
+
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, cl2llvm_basic_block);
+		
+		new_function->func = cl2llvm_function;
+		new_function->func_type = cl2llvm_function_type;
+		new_function->sign = $1->type_spec->sign;
+
+		/*insert function into global symbol table*/
+		err = hash_table_insert(cl2llvm_symbol_table, 
+				$2, new_function);
+		if (!err)
+			printf("function already defined");
 
 	}
 	TOK_CURLY_BRACE_OPEN stmt_list TOK_CURLY_BRACE_CLOSE
-	{
-		LLVMBuildRet(cl2llvm_builder, LLVMConstInt(LLVMInt32Type(), 1, 0));
-	}
 	; 
 
 
@@ -234,6 +257,13 @@ declarator_list
 		$$ = $1;
 	}
 	| declarator_list declarator
+	{
+		LLVMGetTypeKind($2->type_spec->llvm_type);
+		cl2llvm_attach_decl_to_list($2, $1);
+		cl2llvm_decl_list_struct_free($2);
+		LLVMGetTypeKind($1->type_spec->llvm_type);
+		$$ = $1;
+	}
 	;
 
 access_qual
@@ -246,31 +276,46 @@ access_qual
 declarator
 	: type_spec 
 	{
-		$$ = $1;
+		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
+		decl_list->type_spec = $1;
+		$$ = decl_list;
 	}
 	| addr_qual
 	{
-		$$ = NULL;
+		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
+		decl_list->addr_qual = NULL;
+		$$ = decl_list;
 	}
 	| TOK_KERNEL
 	{
-		$$ = NULL;
+		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
+		decl_list->kernel_t = NULL;
+		$$ = decl_list;
 	}
 	| TOK_INLINE
 	{
-		$$ = NULL;
+		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
+		decl_list->inline_t = NULL;
+		$$ = decl_list;
 	}
 	| sc_spec
 	{
-		$$ = NULL;
+		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
+		decl_list->sc_spec = NULL;
+		$$ = decl_list;
+
 	}
 	| access_qual
 	{
-		$$ = NULL;
+		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
+		decl_list->access_qual = NULL;
+		$$ = decl_list;
 	}
 	| type_qual
 	{
-		$$ = NULL;
+		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
+		decl_list->type_qual = NULL;
+		$$ = decl_list;
 	}
 	;
 
@@ -316,7 +361,7 @@ lvalue
 	{
 		struct cl2llvm_symbol_t *symbol;
 
-		symbol = hash_table_get(cl2llvm_symbol_table, $1);
+		symbol = hash_table_get(current_function->symbol_table, $1);
 		if (!symbol)
 			yyerror("undefined identifier");
 
@@ -358,6 +403,14 @@ stmt
 	| do_while_loop
 	| if_stmt
 	| TOK_RETURN expr TOK_SEMICOLON
+	{
+		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( LLVMGetReturnType(current_function->func_type), current_function->sign);
+		struct cl2llvm_val_t *ret_val = llvm_type_cast($2, type);
+		LLVMBuildRet(cl2llvm_builder, ret_val->val);
+		cl2llvm_type_free(type);
+		cl2llvm_val_free(ret_val);
+		cl2llvm_val_free($2);
+	}
 	| TOK_CONTINUE TOK_SEMICOLON
 	| TOK_BREAK TOK_SEMICOLON
 	| switch_stmt
@@ -444,30 +497,30 @@ declaration
 			int err;			
 			struct cl2llvm_symbol_t *current_list_elem = list_get($2, i);
 			symbol = cl2llvm_symbol_create_w_init( LLVMBuildAlloca( 
-				cl2llvm_builder, $1->llvm_type, 
-				current_list_elem->name), $1->sign, 
+				cl2llvm_builder, $1->type_spec->llvm_type, 
+				current_list_elem->name), $1->type_spec->sign, 
 				current_list_elem->name);
-			symbol->cl2llvm_val->type->llvm_type = $1->llvm_type;
-			err = hash_table_insert(cl2llvm_symbol_table, 
+			symbol->cl2llvm_val->type->llvm_type = $1->type_spec->llvm_type;
+			err = hash_table_insert(current_function->symbol_table, 
 				current_list_elem->name, symbol);
 			if (!err)
 				printf("duplicated symbol");
-			if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->llvm_type 
-				&& current_list_elem->cl2llvm_val->type->sign == $1->sign)
+			if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->type_spec->llvm_type 
+				&& current_list_elem->cl2llvm_val->type->sign == $1->type_spec->sign)
 			{
 				LLVMBuildStore(cl2llvm_builder,
 					current_list_elem->cl2llvm_val->val, symbol->cl2llvm_val->val);
 			}
 			else
 			{
-				cast_to_val = llvm_type_cast( current_list_elem->cl2llvm_val, $1);
+				cast_to_val = llvm_type_cast( current_list_elem->cl2llvm_val, $1->type_spec);
 				LLVMBuildStore(cl2llvm_builder,
 					cast_to_val->val,
 					symbol->cl2llvm_val->val);
 				cl2llvm_val_free(cast_to_val);
 			}
 		}
-		cl2llvm_type_free($1);
+		cl2llvm_decl_list_free($1);
 		LIST_FOR_EACH($2, i)
 		{
 			cl2llvm_symbol_free(list_get($2, i));
@@ -509,28 +562,65 @@ case_clause
 	;
 
 if_stmt
-	: TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE
+	: if %prec TOK_PLUS
+	{
+		/* goto endif block*/
+		LLVMBuildBr(cl2llvm_builder, $1);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1);
+	}
+	| if TOK_ELSE
+	{ 
+		/*create endif block. $1 now becomes the if false block*/
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef endif = LLVMAppendBasicBlock(current_function->func, block_name);
+		
+		/*Branch to endif*/
+		LLVMBuildBr(cl2llvm_builder, endif);
+		/*position builder at if false block*/
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1);
+		$<basic_block_ref>$ = endif;
+	}
+	stmt_or_stmt_list %prec TOK_MULT
+	{
+		/*branch to endif block and prepare to write code for endif block*/
+		LLVMBuildBr(cl2llvm_builder, $<basic_block_ref>3);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<basic_block_ref>3);
+
+	}
+	;
+
+if
+	:  TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE
 	{
 		struct cl2llvm_type_t *i1 = cl2llvm_type_create_w_init(LLVMInt1Type(), 1);
-
+		
+		/*Create endif block*/
 		snprintf(block_name, sizeof block_name,
 			"block_%d", block_count++);
-
-		LLVMBasicBlockRef if_false = LLVMAppendBasicBlock(cl2llvm_function, block_name);
+		LLVMBasicBlockRef endif = LLVMAppendBasicBlock(current_function->func, block_name);
+		
+		/*Create if true block*/
 		snprintf(block_name, sizeof block_name,
 			"block_%d", block_count++);
-		LLVMBasicBlockRef if_true = LLVMAppendBasicBlock(cl2llvm_function, block_name);
-
-		LLVMBuildCondBr(cl2llvm_builder, llvm_type_cast($3, i1)->val, if_true, if_false);
-		$<basic_block_ref>$ = if_false;
+		LLVMBasicBlockRef if_true = LLVMAppendBasicBlock(current_function->func, block_name);
+		
+		/*evaluate expression*/
+		struct cl2llvm_val_t *bool_val =  llvm_type_cast($3, i1);
+		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, if_true, endif);
+		$<basic_block_ref>$ = endif;
+		
+		/*prepare to write if_true block*/
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, if_true);
+	
+		cl2llvm_val_free(bool_val);
+		cl2llvm_val_free($3);
+		cl2llvm_type_free(i1);
 	}
 	stmt_or_stmt_list
 	{
-		LLVMBuildBr(cl2llvm_builder, $<basic_block_ref>5);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<basic_block_ref>5);
+		$$ = $<basic_block_ref>5;
 	}
-/*	| TOK_IF TOK_PAR_OPEN expr TOK_PAR_CLOSE stmt_or_stmt_list TOK_ELSE stmt_or_stmt_list*/
 	;
 
 for_loop
@@ -547,7 +637,42 @@ do_while_loop
 	;
 
 while_loop
-	: TOK_WHILE TOK_PAR_OPEN expr TOK_PAR_CLOSE stmt_or_stmt_list
+	: TOK_WHILE while_loop_block TOK_PAR_OPEN expr TOK_PAR_CLOSE
+	{
+		struct cl2llvm_type_t *i1 = cl2llvm_type_create_w_init(LLVMInt1Type(), 1);
+
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef if_false = LLVMAppendBasicBlock(current_function->func, block_name);
+		
+		struct cl2llvm_val_t *bool_val =  llvm_type_cast($4, i1);
+		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $2, if_false);
+		$<basic_block_ref>$ = if_false;
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $2);
+	
+		cl2llvm_val_free(bool_val);
+		cl2llvm_type_free(i1);
+	}
+	stmt_or_stmt_list
+	{
+		struct cl2llvm_type_t *i1 = cl2llvm_type_create_w_init(LLVMInt1Type(), 1);
+		struct cl2llvm_val_t *bool_val =  llvm_type_cast($4, i1);
+		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $2, $<basic_block_ref>6);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<basic_block_ref>6);
+		cl2llvm_val_free(bool_val);
+		cl2llvm_val_free($4);
+		cl2llvm_type_free(i1);
+	}
+	;
+
+while_loop_block
+	: /*empty*/
+	{
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef while_loop = LLVMAppendBasicBlock(current_function->func, block_name);
+		$$ = while_loop;
+	}
 	;
 
 maybe_expr
