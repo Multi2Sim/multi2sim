@@ -33,6 +33,7 @@
 #include "bin.h"
 #include "id.h"
 #include "inst.h"
+#include "metadata.h"
 #include "si2bin.h"
 #include "string.h"
 #include "symbol.h"
@@ -124,8 +125,10 @@ section
 global_section
 	: TOK_GLOBAL TOK_ID TOK_NEW_LINE
 	{
-		/* TOK_ID is kernel name */
-		si2bin_id_free($2);
+		struct si2bin_id_t *id = $2;
+		si2bin_metadata = si2bin_metadata_create(id->name);
+		si2bin_id_free(id);
+		fprintf(stdout, "**** Kernel: %s *****", si2bin_metadata->name);
 	}
 
 mem_section
@@ -186,14 +189,21 @@ args_stmt_list
 	: args_stmt
 	| args_stmt args_stmt_list
 	;
-;
+
 
 args_stmt
 	: TOK_ID TOK_DECIMAL TOK_NEW_LINE
 	{
 		struct si2bin_id_t *id;
+		struct si2bin_arg_val_t *arg_val;
+
 		id = $1;
-		fprintf(stdout, "\n*** arg: %s ****\n", id->name);
+		arg_val = si2bin_arg_val_create(id->name, 1, $2);
+		fprintf(stdout, "*** arg: %s %d ***", arg_val->type, arg_val->offset);
+		
+		si2bin_metadata_add_arg_val(si2bin_metadata, arg_val);
+
+		si2bin_arg_val_free(arg_val);
 		si2bin_id_free(id);
 	}
 	| TOK_ID TOK_STAR TOK_DECIMAL TOK_NEW_LINE
@@ -206,8 +216,15 @@ args_stmt
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
 	{
 		struct si2bin_id_t *id;
+		struct si2bin_arg_val_t *arg_val;
+
 		id = $1;
-		fprintf(stdout, "\n*** arg: %s[%d] ****\n", id->name, $3);
+		arg_val = si2bin_arg_val_create(id->name, $3, $5);
+		fprintf(stdout, "*** arg: %s %d ***", arg_val->type, arg_val->offset);
+		
+		si2bin_metadata_add_arg_val(si2bin_metadata, arg_val);
+
+		si2bin_arg_val_free(arg_val);
 		si2bin_id_free(id);
 	}
 
