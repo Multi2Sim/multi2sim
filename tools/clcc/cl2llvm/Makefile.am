@@ -13,6 +13,12 @@ libcl2llvm_a_SOURCES = \
 	cl2llvm.c \
 	cl2llvm.h \
 	\
+	declarator-list.h\
+	declarator-list.c\
+	\
+	function.h\
+	function.c\
+	\
 	init-list-elem.c\
 	init-list-elem.h\
 	\
