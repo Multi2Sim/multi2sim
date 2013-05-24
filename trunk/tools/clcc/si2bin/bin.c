@@ -340,7 +340,8 @@ void si2bin_bin_generate(struct si2bin_bin_t *bin, struct elf_enc_buffer_t *bin_
 }
 
 
-void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer)
+void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer, 
+	struct elf_enc_buffer_t *bin_buffer)
 {
         char *ptr;
 	
@@ -362,7 +363,6 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer)
         
 	struct elf_enc_buffer_t *kernel_buffer;
         struct elf_enc_buffer_t *rodata_buffer;
-        struct elf_enc_buffer_t *bin_buffer;
 
         struct elf_enc_section_t *text_section;
         struct elf_enc_section_t *rodata_section;
@@ -593,18 +593,16 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer)
         elf_enc_file_add_buffer(file, kernel_buffer);
         elf_enc_file_add_section(file, text_section);
 
-        bin_buffer = elf_enc_buffer_create();
-
         elf_enc_file_generate(file, bin_buffer);
 
-	f = file_open_for_write("kernel.bin");
-        elf_enc_buffer_write_to_file(bin_buffer, f);
-	file_close(f);
+	//f = file_open_for_write("kernel.bin");
+        //elf_enc_buffer_write_to_file(bin_buffer, f);
+	//file_close(f);
 
         si2bin_bin_free(bin);
 
         elf_enc_file_free(file);
 
-        elf_enc_buffer_free(bin_buffer);
+        //elf_enc_buffer_free(bin_buffer);
 
 }

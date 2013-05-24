@@ -29,6 +29,7 @@
 #include "bin.h"
 #include "inst.h"
 #include "inst-info.h"
+#include "metadata.h"
 #include "si2bin.h"
 #include "parser.h"
 #include "symbol.h"
@@ -43,10 +44,11 @@
  * 'si2bin_compile()' */
 char *si2bin_source_file;
 
-/* Current output binary buffer being assembled. Set intarnally in function
+/* Current output binary buffer being assembled. Set internally in function
  * 'si2bin_compile()' */
 struct elf_enc_buffer_t *si2bin_output_buffer;
-
+struct elf_enc_buffer_t *si2bin_binary_buffer;
+struct si2bin_metadata_t *si2bin_metadata;
 
 
 
@@ -123,7 +125,8 @@ void si2bin_compile(struct list_t *source_file_list,
 
 		/* Create output buffer */
 		si2bin_output_buffer = elf_enc_buffer_create();
-	
+		si2bin_binary_buffer = elf_enc_buffer_create();
+
 		/* Parse input */
 		si2bin_yyparse();
 
@@ -132,10 +135,15 @@ void si2bin_compile(struct list_t *source_file_list,
 
 		/* Close source file */
 		fclose(si2bin_yyin);
+		
+		/* Use buffer with assembly instructions to build elf file */
+		si2bin_bin_create_file(si2bin_output_buffer, si2bin_binary_buffer);
 
 		/* Dump output buffer and free it */
-		elf_enc_buffer_write_to_file(si2bin_output_buffer, f);
+		elf_enc_buffer_write_to_file(si2bin_binary_buffer, f);
 		elf_enc_buffer_free(si2bin_output_buffer);
+		elf_enc_buffer_free(si2bin_binary_buffer);
+		si2bin_metadata_free(si2bin_metadata);
 	}
 }
 
