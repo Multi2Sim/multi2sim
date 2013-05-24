@@ -1321,6 +1321,7 @@ typedef struct _cl_command_queue *cl_command_queue;
 typedef struct _cl_mem *cl_mem;
 typedef struct _cl_program *cl_program;
 typedef struct _cl_kernel *cl_kernel;
+typedef struct _cl_ndrange *cl_ndrange;
 typedef struct _cl_event *cl_event;
 typedef struct _cl_sampler *cl_sampler;
 

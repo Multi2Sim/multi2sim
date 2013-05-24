@@ -52,6 +52,7 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
 #define opencl_command_queue_t _cl_command_queue
 #define opencl_mem_t _cl_mem
 #define opencl_program_t _cl_program
+#define opencl_ndrange_t _cl_ndrange
 #define opencl_kernel_t _cl_kernel
 #define opencl_event_t _cl_event
 #define opencl_sampler_t _cl_sampler
@@ -208,17 +209,22 @@ typedef int (*opencl_arch_kernel_set_arg_func_t)(
 		unsigned int arg_size,
 		void *arg_value);
 
-/* Run ND-Range on device */
-typedef void (*opencl_arch_kernel_run_func_t)(
-		void *kernel,  /* Of type 'opencl_XXX_kernel_t' */
-		int work_dim,
-		unsigned int *global_work_offset,
-		unsigned int *global_work_size,
-		unsigned int *local_work_size,
-		unsigned int *group_id_offset, /* offset into the NDRange */
-		unsigned int *group_count); /* size of the NDRange portion to execute */  
+/* Create an ND-Range */
+typedef void *(*opencl_arch_ndrange_create_func_t)(
+	struct opencl_ndrange_t *ndrange, void *arch_kernel);
 
+/* Initialize an ND-Range */
+typedef void (*opencl_arch_ndrange_init_func_t)(void *ndrange);
 
+/* Launch an ND-Range */
+typedef void (*opencl_arch_ndrange_run_func_t)(void *ndrange);
+
+/* Run an part of an ND-Range */
+typedef void (*opencl_arch_ndrange_run_partial_func_t)(void *ndrange, 
+		unsigned int *work_group_start, unsigned int *work_group_count);
+
+/* Free an ND-Range */
+typedef void (*opencl_arch_ndrange_free_func_t)(void *ndrange);
 
 /*
  * Global Variables

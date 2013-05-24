@@ -243,7 +243,6 @@ char *si_gpu_report_file_name = "";
 
 int si_trace_category;
 
-/* FIXME This needs to be renamed and set when the simulator starts up. */
 int si_gpu_fused_device;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
@@ -1292,7 +1291,7 @@ int si_gpu_run(void)
 	int compute_unit_id;
 
 	long work_group_id;
-
+	
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
 	if (!list_count(si_emu->waiting_work_groups) && 
@@ -1306,10 +1305,13 @@ int si_gpu_run(void)
 	while (list_count(si_gpu->available_compute_units) && 
 		list_count(si_emu->waiting_work_groups))
 	{
-		work_group_id = (long) list_dequeue(si_emu->waiting_work_groups);
+		work_group_id = (long) list_dequeue(
+			si_emu->waiting_work_groups);
+
 		work_group = si_work_group_create(work_group_id, ndrange);
 
-		list_enqueue(si_emu->running_work_groups, (void *) work_group_id);
+		list_enqueue(si_emu->running_work_groups, 
+			(void *)work_group_id);
 
 		si_compute_unit_map_work_group(
 			list_dequeue(si_gpu->available_compute_units),
@@ -1320,15 +1322,22 @@ int si_gpu_run(void)
 	arch_southern_islands->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (si_emu_max_cycles && arch_southern_islands->cycle >= si_emu_max_cycles)
+	if (si_emu_max_cycles && arch_southern_islands->cycle >= 
+		si_emu_max_cycles)
+	{
 		esim_finish = esim_finish_si_max_cycles;
+	}
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (si_emu_max_inst && arch_southern_islands->inst_count >= si_emu_max_inst)
+	if (si_emu_max_inst && arch_southern_islands->inst_count >= 
+		si_emu_max_inst)
+	{
 		esim_finish = esim_finish_si_max_inst;
+	}
 
 	/* Stop if there was a simulation stall */
-	if ((arch_southern_islands->cycle-si_gpu->last_complete_cycle) > 1000000)
+	if ((arch_southern_islands->cycle-si_gpu->last_complete_cycle) > 
+		1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", 
 			si_err_stall);

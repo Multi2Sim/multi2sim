@@ -135,6 +135,7 @@ cl_context clCreateContext(
 				*errcode_ret = CL_INVALID_DEVICE;
 			return NULL;
 		}
+		opencl_debug("\tdevice %d: %s", i, devices[i]->name);
 	}
 
 	/* Create context */

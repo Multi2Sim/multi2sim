@@ -99,7 +99,13 @@ struct _cl_device_id
 	opencl_arch_kernel_create_func_t arch_kernel_create_func;
 	opencl_arch_kernel_free_func_t arch_kernel_free_func;
 	opencl_arch_kernel_set_arg_func_t arch_kernel_set_arg_func;
-	opencl_arch_kernel_run_func_t arch_kernel_run_func;
+
+	/* Call-back functions for ND-range execution */
+	opencl_arch_ndrange_create_func_t arch_ndrange_create_func;
+	opencl_arch_ndrange_init_func_t arch_ndrange_init_func;
+	opencl_arch_ndrange_run_func_t arch_ndrange_run_func;
+	opencl_arch_ndrange_run_partial_func_t arch_ndrange_run_partial_func;
+	opencl_arch_ndrange_free_func_t arch_ndrange_free_func;
 	
 	/* Architecture-specific device of type 'opencl_XXX_device_t'.
 	 * This pointer is used to reference what would be a sub-class in an
