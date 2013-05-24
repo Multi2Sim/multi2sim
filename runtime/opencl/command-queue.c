@@ -747,9 +747,9 @@ cl_int clEnqueueNDRangeKernel(
 
 	struct opencl_device_t *device;
 	struct opencl_command_t *command;
-	struct opencl_kernel_entry_t *kernel_entry;
+	//struct opencl_kernel_entry_t *kernel_entry;
 
-	void *arch_kernel;
+	//void *arch_kernel;
 	int i;
 
 	/* Debug */
@@ -807,8 +807,9 @@ cl_int clEnqueueNDRangeKernel(
 	}
 
 	/* Kernel to run */
-	arch_kernel = NULL;
 	device = command_queue->device;
+	/*
+	arch_kernel = NULL;
 	LIST_FOR_EACH(kernel->entry_list, i)
 	{
 		kernel_entry = list_get(kernel->entry_list, i);
@@ -818,9 +819,10 @@ cl_int clEnqueueNDRangeKernel(
 
 	if (!arch_kernel)
 		return CL_INVALID_VALUE;
+		*/
 
 	/* Create command */
-	command = opencl_command_create_ndrange(device, arch_kernel, work_dim,
+	command = opencl_command_create_ndrange(device, kernel, work_dim,
 		(unsigned int *) global_work_offset,
 		(unsigned int *) global_work_size,
 		(unsigned int *) local_work_size, command_queue, event,
