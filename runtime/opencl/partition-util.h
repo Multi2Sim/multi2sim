@@ -2,8 +2,7 @@
 #define __PARTITION_UTIL_H__
 
 #include "list.h"
-
-long long get_time();
+#include "partition-util-time.h"
 
 struct partition_info_t
 {

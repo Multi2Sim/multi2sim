@@ -105,6 +105,9 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	partition-util.c \
 	partition-util.h \
 	\
+	partition-util-time.c \
+	partition-util-time.h \
+	\
 	even-partition-strategy.c \
 	even-partition-strategy.h \
 	\
