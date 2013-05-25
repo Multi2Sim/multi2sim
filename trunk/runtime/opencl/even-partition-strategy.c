@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "even-partition-strategy.h"
+#include "partition-util-time.h"
 
 int even_strategy_parts_per_device = 1;
 
