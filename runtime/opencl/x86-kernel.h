@@ -187,6 +187,8 @@ void opencl_x86_ndrange_run(
 		struct opencl_ndrange_t *ndrange);
 
 void opencl_x86_ndrange_run_partial(
-		struct opencl_ndrange_t *ndrange);
+		struct opencl_ndrange_t *ndrange, 
+		unsigned int *work_group_start, 
+		unsigned int *work_group_count);
 
 #endif
