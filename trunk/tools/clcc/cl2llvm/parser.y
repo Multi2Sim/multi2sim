@@ -17,6 +17,7 @@
 #include <llvm-c/Transforms/Scalar.h>
 #include <llvm-c/BitWriter.h>
 
+#include "arg.h"
 #include "declarator-list.h"
 #include "function.h"
 #include "val.h"
@@ -54,6 +55,8 @@ struct cl2llvm_function_t *current_function;
 	struct cl2llvm_type_t *llvm_type_ref;
 	struct cl2llvm_val_t *llvm_value_ref;
 	struct list_t * init_list;
+	struct cl2llvm_arg_t *arg_t;
+	struct list_t *arg_list;
 	LLVMBasicBlockRef basic_block_ref;
 	struct cl2llvm_decl_list_t *decl_list;
 }
@@ -183,6 +186,8 @@ struct cl2llvm_function_t *current_function;
 %type<llvm_type_ref> type_spec
 %type<decl_list> declarator
 %type<decl_list> declarator_list
+%type<arg_t> arg
+%type<arg_list> arg_list
 %type<basic_block_ref> if
 %type<basic_block_ref> while_loop_block
 
@@ -196,12 +201,16 @@ program
 
 external_def
 	: func_def
+	| func_decl
 	| declaration
 	;
 
+func_decl
+	: declarator_list TOK_ID TOK_PAR_OPEN arg_list TOK_PAR_CLOSE TOK_SEMICOLON
+	;
 
 func_def
-	: declarator_list TOK_ID TOK_PAR_OPEN arg_list TOK_PAR_CLOSE
+	: declarator_list TOK_ID TOK_PAR_OPEN arg_list TOK_PAR_CLOSE TOK_CURLY_BRACE_OPEN
 	{
 		LLVMGetTypeKind($1->type_spec->llvm_type);
 		int err;
@@ -209,9 +218,41 @@ func_def
 
 		snprintf(block_name, sizeof block_name,
 			"block_%d", block_count++);
+		
+		/*Read function arguments*/
+		int arg_count = list_count($4);
+		int arg_num;
+		LLVMTypeRef func_args[2];
+		if (list_get($4, $4->head) == NULL)
+		{
+			if (arg_count > 1)
+				yyerror("expected declaration specifiers or '...' before ',' token");
+			else 
+			{
+				func_args[0] = NULL;
+			}
+		}
+		else
+		{
+			for (arg_num = 0; arg_num < arg_count; arg_num++)
+			{
+				printf("loop1\n");
+				
+				struct cl2llvm_arg_t *current_arg = list_get($4, arg_num);
+				/*LLVMGetTypeKind(current_arg->type_spec->llvm_type);*/
+				if (current_arg->name == NULL)
+					yyerror("parameter name omitted");
+				func_args[arg_num] = current_arg->type_spec->llvm_type;
+			}
+			func_args[arg_num + 1] = NULL;
+		}
+		for (arg_num = 0; arg_num < arg_count; arg_num++)
+		{
+			printf("loop2\n");
+			/*LLVMGetTypeKind(func_args[arg_num]);*/
+		}
 
-		LLVMTypeRef func_args[0];
-		LLVMTypeRef cl2llvm_function_type = LLVMFunctionType($1->type_spec->llvm_type, func_args, 0, 0);
+		LLVMTypeRef cl2llvm_function_type = LLVMFunctionType($1->type_spec->llvm_type, func_args, arg_count, 0);
 		LLVMValueRef cl2llvm_function = LLVMAddFunction(cl2llvm_module, $2,
 			cl2llvm_function_type);
 		LLVMSetFunctionCallConv(cl2llvm_function, LLVMCCallConv);
@@ -231,22 +272,71 @@ func_def
 				$2, new_function);
 		if (!err)
 			printf("function already defined");
+		/* Declare parameters */
+		if (list_get($4, $4->head) != NULL)
+		{
+			for (arg_num = 0; arg_num < arg_count; arg_num++)
+			{
+				
+				struct cl2llvm_arg_t *current_arg = list_get($4, arg_num);			
+				struct cl2llvm_val_t *arg_pointer = cl2llvm_val_create_w_init( 
+					LLVMBuildAlloca(cl2llvm_builder, 
+					current_arg->type_spec->llvm_type, current_arg->name),
+					current_arg->type_spec->sign);
+				LLVMValueRef arg_val = LLVMGetParam(new_function->func, arg_num);
+				LLVMBuildStore(cl2llvm_builder, arg_val, arg_pointer->val);
+			}
+		}
+		int i;
+		LIST_FOR_EACH($4, i)
+		{
+			cl2llvm_arg_free(list_get($4, i));
+		}
+		list_free($4);
 
 	}
-	TOK_CURLY_BRACE_OPEN stmt_list TOK_CURLY_BRACE_CLOSE
+	stmt_list TOK_CURLY_BRACE_CLOSE
 	; 
 
 
 
 arg_list
 	: /*empty*/
+	{
+		printf("empty\n");
+		struct cl2llvm_arg_t *empty_arg = NULL;
+		struct list_t *arg_list = list_create();
+		list_add(arg_list, empty_arg);
+		$$ = arg_list;
+	}
 	| arg
-	| arg TOK_COMMA arg_list
+	{
+		printf("arg\n");
+		struct list_t *arg_list = list_create();
+		list_add(arg_list, $1);
+		$$ = arg_list;
+	}
+	| arg_list TOK_COMMA arg
+	{
+		printf("arg_list\n");
+		list_add($1, $3);
+		$$ = $1;
+	}
 	;
 
 arg
 	: declarator_list TOK_ID
+	{
+		struct cl2llvm_arg_t *arg = cl2llvm_arg_create($1, $2);
+		cl2llvm_decl_list_struct_free($1);
+		$$ = arg;
+	}
 	| declarator_list
+	{
+		struct cl2llvm_arg_t *arg = cl2llvm_arg_create($1, NULL);
+		cl2llvm_decl_list_struct_free($1);
+		$$ = arg;
+	}
 	;
 
 
@@ -258,7 +348,6 @@ declarator_list
 	}
 	| declarator_list declarator
 	{
-		LLVMGetTypeKind($2->type_spec->llvm_type);
 		cl2llvm_attach_decl_to_list($2, $1);
 		cl2llvm_decl_list_struct_free($2);
 		$$ = $1;
@@ -396,6 +485,7 @@ stmt
 		cl2llvm_val_free($1);
 	}
 	| declaration
+	| func_decl
 	| func_def
 	| for_loop
 	| while_loop
@@ -437,10 +527,6 @@ array_init
 
 init
 	: /*empty*/
-	{
-		$$ = NULL;
-	}
-	| TOK_PAR_OPEN arg_list TOK_PAR_CLOSE
 	{
 		$$ = NULL;
 	}

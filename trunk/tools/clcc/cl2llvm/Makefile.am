@@ -10,6 +10,9 @@ if HAVE_FLEX_BISON_AND_LLVM
 BUILT_SOURCES = parser.h
 
 libcl2llvm_a_SOURCES = \
+	arg.h\
+	arg.c\
+	\
 	cl2llvm.c \
 	cl2llvm.h \
 	\
