@@ -23,3 +23,4 @@ const struct opencl_partition_strategy *get_strategy();
 #endif
 
 #endif
+

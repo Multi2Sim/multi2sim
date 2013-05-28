@@ -28,6 +28,9 @@ struct si2bin_inst_t
 {
 	enum si_inst_opcode_t opcode;
 	struct si2bin_inst_info_t *info;
+
+	/* List of arguments. Each element in the list is of type
+	 * 'struct si2bin_arg_t'. */
 	struct list_t *arg_list;
 
 	/* Instruction bytes generated */
@@ -37,12 +40,16 @@ struct si2bin_inst_t
 
 
 /* Create a new instruction with the opcode corresponding to the first instruction
- * named 'name' that matches the number and type of arguments passed in 'arg_list'. */
+ * named 'name' that matches the number and type of arguments passed in 'arg_list'.
+ * The list of arguments in 'arg_list' and 'arg_list' itself will be freed
+ * internally during the call to 'si2bin_inst_free'. */
 struct si2bin_inst_t *si2bin_inst_create(char *name, struct list_t *arg_list);
 
 void si2bin_inst_free(struct si2bin_inst_t *inst);
 void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f);
 
+/* Populate fields 'inst_bytes' and 'size' based on the instruction and the value
+ * of its arguments. */
 void si2bin_inst_gen(struct si2bin_inst_t *inst);
 
 #endif
