@@ -55,4 +55,9 @@ int covers_cube(int dims, unsigned int *cube, unsigned int *other);
 
 unsigned int get_centroid_distance(int dims, unsigned int *cube, unsigned int *point);
 
+/* functions for getting proportions */
+unsigned int proportions_from_string(const char *str, unsigned int count, unsigned int *prop);
+void normalize_proportions(unsigned int new_sum, unsigned int count, unsigned int *prop);
+unsigned int convert_fraction(unsigned int num, unsigned int den, unsigned int new_den);
+
 #endif
