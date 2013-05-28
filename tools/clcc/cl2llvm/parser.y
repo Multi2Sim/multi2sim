@@ -261,7 +261,6 @@ declarator_list
 		LLVMGetTypeKind($2->type_spec->llvm_type);
 		cl2llvm_attach_decl_to_list($2, $1);
 		cl2llvm_decl_list_struct_free($2);
-		LLVMGetTypeKind($1->type_spec->llvm_type);
 		$$ = $1;
 	}
 	;
@@ -289,7 +288,7 @@ declarator
 	| TOK_KERNEL
 	{
 		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
-		decl_list->kernel_t = NULL;
+		decl_list->kernel_t = 	"kernel";
 		$$ = decl_list;
 	}
 	| TOK_INLINE
