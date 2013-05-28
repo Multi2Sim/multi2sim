@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "partition-util.h"
 #include "partition-util-time.h"
 
@@ -404,5 +405,62 @@ int cube_get_region(
 	}
 	free(cur_start);
 	return found;
+}
+
+
+unsigned int proportions_from_string(const char *str, unsigned int count, unsigned int *prop)
+{
+	char *mstr;
+	char *cur;
+	unsigned int i;
+	unsigned int sum = 0;
+
+	/* copy string into multable copy */
+	mstr = (char *)malloc(strlen(str) + 1);
+	strcpy(mstr, str);
+
+	/* tokenize on colon */
+	cur = strtok(mstr, ":");
+	for (i = 0; i < count; i++)
+	{
+		if (cur)
+		{
+			prop[i] = atoi(cur);
+			sum += prop[i];
+			cur = strtok(NULL, ":");
+		}
+		else /* if we run out of tokens, just put zero */
+			prop[i] = 0;
+	}
+
+	free(mstr);
+	return sum;
+}
+
+void normalize_proportions(unsigned int new_sum, unsigned int count, unsigned int *prop)
+{
+	unsigned int i;
+	unsigned int old_sum = 0;
+	unsigned int so_far;
+
+	for (i = 0; i < count; i++)
+		old_sum += prop[i];
+
+	so_far = 0;
+	for (i  = 0; i < count; i++)
+	{
+		unsigned int start;
+		unsigned int end;
+
+		start = convert_fraction(so_far, old_sum, new_sum);
+		so_far += prop[i];
+		end = convert_fraction(so_far, old_sum, new_sum);
+		prop[i] = end - start;
+	}
+}
+
+unsigned int convert_fraction(unsigned int num, unsigned int den, unsigned int new_den)
+{
+	return (num * new_den) / den;
 }
 
