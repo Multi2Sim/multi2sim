@@ -531,3 +531,4 @@ void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shader_bin)
 
 	free(shader_bin);
 }
+
