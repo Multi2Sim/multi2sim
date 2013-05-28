@@ -8,3 +8,4 @@ long long get_time()
 
 	return 1000000000LL * t.tv_sec + t.tv_nsec;	
 }
+
