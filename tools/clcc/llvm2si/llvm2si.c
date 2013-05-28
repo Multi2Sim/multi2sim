@@ -20,6 +20,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include <clcc/si2bin/arg.h>
+#include <clcc/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
@@ -33,6 +35,27 @@
 
 void llvm2si_compile_source(FILE *inf, FILE *outf)
 {
+	struct list_t *arg_list;
+
+	struct si2bin_inst_t *inst;
+	struct si2bin_arg_t *arg;
+
+	/* Create argument list */
+	arg_list = list_create();
+
+	/* Argument 1 */
+	arg = si2bin_arg_create_vector_register("v1");
+	list_add(arg_list, arg);
+
+	/* Argument 2 */
+	arg = si2bin_arg_create_scalar_register("s0");
+	list_add(arg_list, arg);
+
+	/* Create instruction, dump, and free it */
+	inst = si2bin_inst_create("v_mov_b32", arg_list);
+	si2bin_inst_gen(inst);
+	si2bin_inst_dump(inst, stdout);
+	si2bin_inst_free(inst);
 }
 
 
