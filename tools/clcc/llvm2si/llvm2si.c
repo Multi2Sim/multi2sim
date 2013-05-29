@@ -27,6 +27,7 @@
 #include <lib/util/list.h>
 
 #include "llvm2si.h"
+#include "translate.h"
 
 
 /*
@@ -81,9 +82,6 @@ void llvm2si_compile(struct list_t *source_file_list,
 	char *source_file;
 	char *output_file;
 
-	FILE *inf;
-	FILE *outf;
-
 	int index;
 
 	LIST_FOR_EACH(source_file_list, index)
@@ -94,22 +92,8 @@ void llvm2si_compile(struct list_t *source_file_list,
 		assert(source_file);
 		assert(output_file);
 
-		/* Open source file */
-		inf = fopen(source_file, "r");
-		if (!inf)
-			fatal("%s: cannot open source file", source_file);
-
-		/* Open output file */
-		outf = fopen(output_file, "w");
-		if (!outf)
-			fatal("%s: cannot open output file", output_file);
-
-		/* Compile */
-		llvm2si_compile_source(inf, outf);
-
-		/* Close files */
-		fclose(inf);
-		fclose(outf);
+		/* Translate */
+		llvm2si_translate(source_file, output_file);
 
 		/* Info */
 		printf("\t%s: Southern Islands assembly dumped\n",

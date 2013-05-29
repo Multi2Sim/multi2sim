@@ -4,10 +4,17 @@ if HAVE_LLVM
 
 libllvm2si_a_SOURCES = \
 	\
+	basic-block.c \
+	basic-block.h \
+	\
 	llvm2si.c \
-	llvm2si.h
+	llvm2si.h \
+	\
+	translate.cc \
+	translate.h
 
 AM_CFLAGS = $(LLVM_CFLAGS)
+AM_CXXFLAGS = $(LLVM_CXXFLAGS)
 
 else
 
