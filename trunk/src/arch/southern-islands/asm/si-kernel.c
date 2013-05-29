@@ -25,15 +25,15 @@
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <arch/southern-islands/emu/work-item.h>
+#include <driver/opencl/opencl.h>
+#include <driver/opencl/si-program.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
-#include "opencl.h"
 #include "si-kernel.h"
-#include "si-program.h"
 
 
 static char *opencl_err_si_kernel_symbol =

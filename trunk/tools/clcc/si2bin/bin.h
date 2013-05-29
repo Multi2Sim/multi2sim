@@ -32,6 +32,8 @@ struct list_t;
  * Note in the PT_NOTE segment
  */
 
+/* FIXME - change prefix to si2bin_inner_bin_note_t */
+
 struct si2bin_bin_note_t
 {
 	unsigned int type;
@@ -51,6 +53,8 @@ void si2bin_bin_note_dump(struct elf_enc_buffer_t *buffer, FILE *fp);
 /*
  * Encoding Dictionary Entry
  */
+
+/* FIXME - change prefix to si2bin_inner_bin_XXX */
 
 /* Encoding dictionary entry header (as encoded in ELF file) */
 struct si2bin_bin_entry_header_t
@@ -103,35 +107,18 @@ void si2bin_bin_entry_add_note(struct si2bin_bin_entry_t *entry,
 
 
 
+
 /*
- * AMD Binary File (Internal ELF)
+ * AMD Internal ELF
  */
 
-/* si_elf_enc_create kernel will create an enc_elf_file that has the following sections
- * and segments:
-	
-	Sections
-	------------------
-	[ 0] Null section
-	[ 1] .shstrtab
-	[ 2] .text
-	[ 3] .data
-	[ 4] .symtab
-	[ 5] .strtab
-	[ 6] .text
-	[ 7] .data
-	[ 8] .symtab
-	[ 9] .strtab
+/*
+ FIXME - change file names to
+ 	inner-bin.c|h
+	outer-bin.c|h
+*/
 
-	Segments
-	------------------
-	00 Encoding Dictionary     - LOPROC+2
-	01 Note for Segment 02     - PT_NOTE
-	02 Sections 2 - 5          - PT_LOAD
-	03 Note for Segment 04     - PT_NOTE
-	04 Sections 6 - 9          - PT_LOAD
- 
- */
+/* FIXME - change function names in .c file */
 
 struct si2bin_bin_t
 {
@@ -149,8 +136,9 @@ void si2bin_bin_free(struct si2bin_bin_t *bin);
 
 void si2bin_bin_add_entry(struct si2bin_bin_t *bin, struct si2bin_bin_entry_t *entry);
 void si2bin_bin_generate(struct si2bin_bin_t *bin, struct elf_enc_buffer_t *bin_buffer);
-void si2bin_bin_create_file(struct elf_enc_buffer_t 
-	*text_section_buffer, struct elf_enc_buffer_t *bin_buffer);
+
+void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer, struct elf_enc_buffer_t *bin_buffer);
+
 
 #endif
 

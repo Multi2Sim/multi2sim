@@ -4,10 +4,15 @@
 /* Forward Declarations */
 struct list_t;
 
+/* FIXME - get rid of this whole file, integrated with si2bin_inner_bin_t */
 
 /*
  * Arg_val Object
  */
+
+/* FIXME - this goes to arch/southern-islands/asm/arg.c|h,
+ * object named si_arg_t
+ * NOTE: make sure that there's not an existing si_arg_t already */
 
 struct si2bin_arg_val_t
 {
@@ -38,6 +43,7 @@ void si2bin_arg_ptr_free(struct si2bin_arg_ptr_t *arg_ptr);
 /*
  * Metadata Object
  */
+
 
 
 struct si2bin_metadata_t
