@@ -41,6 +41,8 @@ struct opengl_program_obj_t
 	unsigned char delete_pending;
 	
 	struct list_t *shaders;
+	void *binary;
+	unsigned int binary_size;
 };
 
 extern struct linked_list_t *program_repo;

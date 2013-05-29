@@ -33,6 +33,8 @@
 #include <mem-system/memory.h>
 
 #include "opengl.h"
+#include "si-program.h"
+#include "si-shader.h"
 
 /* Debug */
 int opengl_debug_category;
@@ -210,7 +212,25 @@ static int opengl_abi_init_impl(struct x86_ctx_t *ctx)
 }
 
 /*
- * OpenGL ABI call #2 - si_mem_alloc
+ * OpenGL ABI call #2 - done
+ *
+ * Finialize, free all created objects 
+ *
+ * @return
+ *	The function always returns 0.
+ */
+
+static int opengl_abi_done_impl(struct x86_ctx_t *ctx)
+{
+	/* Free */
+	opengl_si_program_list_done();
+
+	/* Return success */
+	return 0;
+}
+
+/*
+ * OpenGL ABI call #3 - si_mem_alloc
  *
  * Allocates memory in the Southern Islands device.
  *
@@ -253,7 +273,7 @@ static int opengl_abi_si_mem_alloc_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #3 - si_mem_read
+ * OpenGL ABI call #4 - si_mem_read
  *
  * Read memory from Southern Islands device into host memory space.
  *
@@ -311,7 +331,7 @@ static int opengl_abi_si_mem_read_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #4 - si_mem_write
+ * OpenGL ABI call #5 - si_mem_write
  *
  * Write memory from host into Southern Islands device.
  *
@@ -369,7 +389,7 @@ static int opengl_abi_si_mem_write_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #5 - si_mem_copy
+ * OpenGL ABI call #6 - si_mem_copy
  *
  * Copy memory across two different regions of the Southern Islands device
  * memory space.
@@ -426,7 +446,7 @@ static int opengl_abi_si_mem_copy_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #6 - si_mem_free
+ * OpenGL ABI call #7 - si_mem_free
  *
  * Deallocated memory in Southern Islands global memory scope.
  *
@@ -460,27 +480,37 @@ static int opengl_abi_si_mem_free_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #7 - si_program_create
+ * OpenGL ABI call #8 - si_program_create
  *
- * Create a Southern Islands program object and return a unique identifier
- * for it.
+ * Create a Southern Islands program object 
  *
  * @return int
  *
- *	Unique program ID.
+ *	No value is returned.
  */
 
 static int opengl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
-	return 0;
+	struct x86_regs_t *regs = ctx->regs;
+	struct opengl_si_program_t *program;
+	unsigned int program_id;
+
+	/* Arguments */
+	program_id = regs->ecx;
+
+	/* Create program */
+	program = opengl_si_program_create(program_id);
+	opengl_debug("\tnew program ID = %d\n", program->id);
+
+	/* Return program ID */
+	return program->id;
 }
 
 
 
 
 /*
- * OpenGL ABI call #8 - si_program_set_binary
+ * OpenGL ABI call #9 - si_program_set_binary
  *
  * Associate a binary to a Southern Islands program.
  *
@@ -503,7 +533,34 @@ static int opengl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
 
 static int opengl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct opengl_si_program_t *program;
+
+	int program_id;
+	unsigned int bin_ptr;
+	unsigned int bin_size;
+
+	void *buf;
+
+	/* Arguments */
+	program_id = regs->ecx;
+	bin_ptr = regs->edx;
+	bin_size = regs->esi;
+	opengl_debug("\tprogram_id=%d, bin_ptr=0x%x, size=%u\n",
+			program_id, bin_ptr, bin_size);
+
+	/* Get program */
+	program = list_get(opengl_si_program_list, program_id);
+	if (!program)
+		fatal("%s: invalid program ID (%d)",
+				__FUNCTION__, program_id);
+
+	/* Set the binary */
+	buf = xmalloc(bin_size);
+	mem_read(ctx->mem, bin_ptr, bin_size, buf);
+	opengl_si_program_set_binary(program, buf, bin_size);
+	free(buf);
+	
 	/* No return value */
 	return 0;
 }
@@ -511,7 +568,7 @@ static int opengl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #9 - si_shader_create
+ * OpenGL ABI call #10 - si_shader_create
  *
  * Create a Southern Islands shader object and return a unique identifier
  * for it.
@@ -538,7 +595,7 @@ static int opengl_abi_si_shader_create_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #14 - si_ndrange_initialize
+ * OpenGL ABI call #11 - si_ndrange_initialize
  *
  * Create and initialize an ND-Range for the supplied shader.
  *
@@ -582,7 +639,7 @@ static int opengl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #15 - si_ndrange_get_num_buffer_entries
+ * OpenGL ABI call #12 - si_ndrange_get_num_buffer_entries
  *
  * Returns the number of available buffer entries in the waiting 
  * work-group queue.
@@ -606,7 +663,7 @@ static int opengl_abi_si_ndrange_get_num_buffer_entries_impl(
 }
 
 /*
- * OpenGL ABI call #16 - si_ndrange_send_work_groups
+ * OpenGL ABI call #13 - si_ndrange_send_work_groups
  *
  * Receives a range of work-group IDs to add to the waiting 
  * work-group queue. The x86 context performing this call
@@ -679,7 +736,7 @@ static int opengl_abi_si_ndrange_send_work_groups_impl(struct x86_ctx_t *ctx)
 }
 
 /*
- * OpenGL ABI call #17 - si_ndrange_finish
+ * OpenGL ABI call #14 - si_ndrange_finish
  *
  * Tells the driver that there are no more work groups to execute
  * from the ND-Range.
@@ -742,7 +799,7 @@ static int opengl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #18 - si_ndrange_pass_mem_objs
+ * OpenGL ABI call #15 - si_ndrange_pass_mem_objs
  *
  * @return int
  *

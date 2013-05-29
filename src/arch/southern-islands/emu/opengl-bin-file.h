@@ -66,6 +66,11 @@ struct si_opengl_shader_binary_t
 struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer_ptr, int size, char *name);
 void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shader_bin);
 
+struct si_opengl_shader_t *si_opengl_shader_create(void *buffer, int size, char* name);
+void si_opengl_shader_free(struct si_opengl_shader_t *shdr);
+
+
+
 
 #endif
 

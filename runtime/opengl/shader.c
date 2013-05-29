@@ -39,8 +39,10 @@ static struct opengl_shader_obj_t *opengl_shader_obj_create();
 static void opengl_shader_obj_free(struct opengl_shader_obj_t *shader_obj);
 static void opengl_shader_obj_delete(struct opengl_shader_obj_t *shader_obj);
 
-static void opengl_shader_obj_repo_add(struct linked_list_t *shader_obj_repo, struct opengl_shader_obj_t *shader_obj);
-static int opengl_shader_obj_repo_remove(struct linked_list_t *shader_obj_repo, struct opengl_shader_obj_t *shader_obj);
+static void opengl_shader_obj_repo_add(struct linked_list_t *shader_obj_repo, 
+	struct opengl_shader_obj_t *shader_obj);
+static int opengl_shader_obj_repo_remove(struct linked_list_t *shader_obj_repo, 
+	struct opengl_shader_obj_t *shader_obj);
 
 /*
  * Private Functions
@@ -91,8 +93,6 @@ static void opengl_shader_obj_free(struct opengl_shader_obj_t *shader_obj)
 	}
 	list_free(shader_obj->source);
 
-	if (shader_obj->isa)
-		free(shader_obj->isa);
 
 	/* Remove bindings from program objects */
 	LIST_FOR_EACH(shader_obj->bound_programs, index)
@@ -284,6 +284,8 @@ void glCompileShader (GLuint shader)
 		/* Debug */
 		opengl_debug("\tShader Source: \n%s\n", source);
 	}
+
+	/* Shader compilation is not supported currently */
 }
 
 void glReleaseShaderCompiler (void)
