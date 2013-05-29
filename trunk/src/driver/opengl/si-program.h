@@ -21,10 +21,35 @@
 #define DRIVER_OPENGL_SI_PROGRAM_H
 
 
-struct elf_file_t;
+/*
+ * Program List
+ */
+
+extern struct list_t *opengl_si_program_list;
+
+void opengl_si_program_list_init(void);
+void opengl_si_program_list_done(void);
+
 
 /*
- * OpenGL Southern Islands Program
+ * Constant Buffer
+ */
+
+struct opengl_si_constant_buffer_t
+{
+	int id;  /* Constant buffer ID (2-24) */
+	unsigned int device_ptr;
+	unsigned int size;
+};
+
+struct opengl_si_constant_buffer_t *opengl_si_constant_buffer_create(int id,
+	unsigned int device_ptr, unsigned int size);
+void opengl_si_constant_buffer_free(struct opengl_si_constant_buffer_t *constant_buffer);
+
+
+
+/*
+ * OpengL Southern Islands Program
  */
 
 
@@ -34,7 +59,18 @@ struct opengl_si_program_t
 	
 	/* ELF binary */
 	struct elf_file_t *elf_file;
+
+	/* Constant buffers are shared by all shaders compiled in the
+	 * same binary. This list is comprised of elements of type
+	 * 'opengl_si_constant_buffer_t'. */
+	struct list_t *constant_buffer_list;
 };
+
+struct opengl_si_program_t *opengl_si_program_create(unsigned int program_id);
+void opengl_si_program_free(struct opengl_si_program_t *program);
+
+void opengl_si_program_set_binary(struct opengl_si_program_t *program,
+		void *buf, unsigned int size);
 
 
 #endif

@@ -25,6 +25,7 @@
 
 struct list_t;
 struct linked_list_t;
+struct opengl_si_shader_t;
 
 /* Shader objects are stored in a linked list repository */
 struct opengl_shader_obj_t
@@ -42,7 +43,7 @@ struct opengl_shader_obj_t
 	struct list_t *bound_programs;
 
 	struct list_t *source; /* Source code */
-	void *isa; /* Buffer to store ISAs */
+	struct opengl_si_shader_t *shader; /* Shader binary */
 };
 
 extern struct linked_list_t *shader_repo;
