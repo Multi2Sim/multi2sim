@@ -23,15 +23,19 @@
 #include <lib/util/hash-table.h>
 #include <lib/mhandle/mhandle.h>
 
+#include "arg.h"
 #include "symbol.h"
 #include "function.h"
 
-struct cl2llvm_function_t *cl2llvm_function_create(char *name)
+struct cl2llvm_function_t *cl2llvm_function_create(char *name, struct list_t *arg_list)
 {
 	struct cl2llvm_function_t *function;
 	function = xcalloc(1, sizeof(struct cl2llvm_function_t));
 
 	function->symbol_table = hash_table_create(10, 1);
+
+	function->arg_list = arg_list;
+	function->arg_count = list_count(arg_list);
 
 	function->name = xstrdup(name);
 
@@ -43,12 +47,18 @@ void cl2llvm_function_free(struct cl2llvm_function_t *function)
 	char *symbol_name;
 	struct cl2llvm_symbol_t *symbol;
 
-	free(function->name);
-	
+	free(function->name);	
 	/* Free symbol table */
 	HASH_TABLE_FOR_EACH(function->symbol_table, symbol_name, symbol)
 		cl2llvm_symbol_free(symbol);
 	hash_table_free(function->symbol_table);
+
+	int i;
+	LIST_FOR_EACH(function->arg_list, i)
+	{
+		cl2llvm_arg_free(list_get(function->arg_list, i));
+	}
+	list_free(function->arg_list);
 
 	free(function);
 }
