@@ -87,6 +87,8 @@ struct opencl_x86_device_work_group_data_t
 
 struct opencl_x86_device_t
 {
+	enum opencl_runtime_type_t type;  /* First field */
+
 	/* Parent generic device object */
 	struct opencl_device_t *parent;
 

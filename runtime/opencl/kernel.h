@@ -41,17 +41,6 @@ struct opencl_ndrange_t
 	struct opencl_device_t *device;
 	struct opencl_kernel_t *kernel;	
 
-	int work_dim;
-
-	unsigned int global_work_offset[3];
-	unsigned int global_work_size[3];
-	unsigned int local_work_size[3];
-
-	unsigned int group_count[3];
-	unsigned int num_groups;
-
-	unsigned int fused;
-
 	void *arch_ndrange;
 };
 

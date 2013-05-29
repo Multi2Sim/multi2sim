@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <dlfcn.h>
 
 #include "debug.h"
@@ -44,6 +45,7 @@ struct opencl_x86_program_t *opencl_x86_program_create(
 
 	/* Initialize */
 	program = xcalloc(1, sizeof(struct opencl_x86_program_t));
+	program->type = opencl_runtime_type_x86;
 	program->parent = parent;
 	program->device = device;
 
@@ -91,6 +93,8 @@ struct opencl_x86_program_t *opencl_x86_program_create(
 
 void opencl_x86_program_free(struct opencl_x86_program_t *program)
 {
+	assert(program->type == opencl_runtime_type_x86);
+
 	dlclose(program->dlhandle);
 	unlink(program->file_name);
 	free(program->file_name);

@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include "elf-format.h"
 #include "mhandle.h"
 #include "si-program.h"
@@ -32,6 +34,7 @@ struct opencl_si_program_t *opencl_si_program_create(
 
 	/* Initialize */
 	program = xcalloc(1, sizeof(struct opencl_si_program_t));
+	program->type = opencl_runtime_type_si;
 	program->elf_file = elf_file_create_from_buffer(binary, length,
 		"Southern Islands Binary");
 
@@ -49,6 +52,8 @@ struct opencl_si_program_t *opencl_si_program_create(
 
 void opencl_si_program_free(struct opencl_si_program_t *program)
 {
+	assert(program->type == opencl_runtime_type_si);
+
 	elf_file_free(program->elf_file);
 	free(program);
 }

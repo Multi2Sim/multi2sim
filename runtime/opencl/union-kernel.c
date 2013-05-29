@@ -1,11 +1,12 @@
 #include <assert.h>
 #include <pthread.h>
 
+#include "debug.h"
 #include "kernel.h"
 #include "list.h"
 #include "mhandle.h"
 #include "misc.h"
-#include "si-kernel.h" ///////////////////////////////////
+#include "program.h"
 #include "union-device.h"
 #include "union-kernel.h"
 
@@ -16,8 +17,8 @@ struct dispatch_info
 
 	int id;
 	struct opencl_device_t *device;
+	struct opencl_union_ndrange_t *ndrange;
 	void *arch_kernel;
-	struct opencl_ndrange_t *ndrange;
 };
 
 void *device_ndrange_dispatch(void *ptr)
@@ -25,16 +26,16 @@ void *device_ndrange_dispatch(void *ptr)
 	int i;
 
 	struct dispatch_info *info = (struct dispatch_info *)ptr;
-	struct opencl_ndrange_t *ndrange = info->ndrange;
+	struct opencl_union_ndrange_t *ndrange = info->ndrange;
 
 	void *arch_ndrange;
 
-	if (info->id == 1)
-	{
-		struct opencl_si_kernel_t *si_kernel = (struct opencl_si_kernel_t *)info->arch_kernel; ///////////
-		opencl_debug("[%s] kernel id is %d",
-			__FUNCTION__, si_kernel->id); ////////////
-	}
+	assert(ptr);
+	assert(info->part);
+	assert(info->lock);
+	assert(info->device);
+	assert(info->arch_kernel);
+	assert(info->ndrange);
 
 	/* Allocate the maximum number of dimensions */
 	unsigned int *group_offset = xcalloc(3, sizeof (unsigned int));
@@ -48,18 +49,24 @@ void *device_ndrange_dispatch(void *ptr)
 			ndrange->local_work_size[i]) - 
 			(ndrange->global_work_offset[i] /
 			ndrange->local_work_size[i]);
-		opencl_debug("[%s] global size %d = %d", __FUNCTION__, i, 
-			ndrange->global_work_size[i]);
-		opencl_debug("[%s] work group count %d = %d", __FUNCTION__, i, 
-			group_count[i]);
 	}
+	opencl_debug("[%s] global size = (%d,%d,%d)", __FUNCTION__,
+		ndrange->global_work_size[0],
+		ndrange->global_work_size[1],
+		ndrange->global_work_size[2]);
+	opencl_debug("[%s] group count = (%d,%d,%d)", __FUNCTION__,
+		group_count[0], group_count[1], group_count[2]);
 
-	arch_ndrange = info->device->arch_ndrange_create_func(ndrange, 
-		info->arch_kernel);
-	ndrange->arch_ndrange = arch_ndrange;
+	/* Create architecture-specific ND-Range */
+	arch_ndrange = info->device->arch_ndrange_create_func(ndrange->parent,
+		info->arch_kernel, ndrange->work_dim, 
+		ndrange->global_work_offset, ndrange->global_work_size, 
+		ndrange->local_work_size, 1);
+	
+	/* Initialize architecture-specific ND-Range */
+	info->device->arch_ndrange_init_func(arch_ndrange);
 
-	info->device->arch_ndrange_init_func(ndrange);
-
+	/* Execute work groups until the ND-Range is complete */
 	pthread_mutex_lock(info->lock);
 	while (get_strategy()->get_partition(
 		info->part, 
@@ -67,14 +74,16 @@ void *device_ndrange_dispatch(void *ptr)
 		info->device->arch_device_preferred_workgroups_func(
 			info->device), group_offset, group_count))
 	{
-		opencl_debug("[%s] running work groups %d:%d on device %s",
-			__FUNCTION__,
-			group_offset[1]*group_count[0] + group_offset[0], 
-			group_offset[1]*group_count[0] + group_offset[0] + 
-			group_count[0] - 1, info->device->name);
+		opencl_debug("[%s] running work groups (%d,%d,%d) to (%d,%d,%d)"
+			" on device %s", __FUNCTION__,
+			group_offset[0], group_offset[1], group_offset[2],
+			group_offset[0]+group_count[0]-1,
+			group_offset[1]+group_count[1]-1,
+			group_offset[2]+group_count[2]-1,
+			info->device->name);
 		pthread_mutex_unlock(info->lock);
 
-		info->device->arch_ndrange_run_partial_func(ndrange,
+		info->device->arch_ndrange_run_partial_func(arch_ndrange,
 			group_offset, group_count);
 
 		opencl_debug("[%s] id %d. offset: %d.  count: %d", 
@@ -86,7 +95,8 @@ void *device_ndrange_dispatch(void *ptr)
 	pthread_mutex_unlock(info->lock);
 
 	opencl_debug("[%s] calling nd-range finish", __FUNCTION__);
-	info->device->arch_ndrange_free_func(ndrange);
+	/* Initialize architecture-specific ND-Range */
+	info->device->arch_ndrange_free_func(arch_ndrange);
 
 	free(group_offset);
 	free(group_count);
@@ -96,10 +106,16 @@ void *device_ndrange_dispatch(void *ptr)
 	return NULL;
 }
 
-void opencl_union_ndrange_run(struct opencl_ndrange_t *ndrange)
+void opencl_union_ndrange_run_partial(struct opencl_union_ndrange_t *ndrange, 
+	unsigned int *work_group_start, unsigned int *work_group_count)
+{
+	fatal("%s: This function should never be called\n", __FUNCTION__);
+}
+
+void opencl_union_ndrange_run(struct opencl_union_ndrange_t *ndrange)
 {
 	struct dispatch_info *info;
-	struct opencl_union_ndrange_t *union_ndrange;
+	struct list_t *device_list;
 
 	pthread_t *threads;
 	pthread_mutex_t lock;
@@ -109,17 +125,16 @@ void opencl_union_ndrange_run(struct opencl_ndrange_t *ndrange)
 
 	void *part;
 
-	ndrange->fused = 1;
-
 	opencl_debug("[%s] global work size = %d,%d,%d", __FUNCTION__, 
 		ndrange->global_work_size[0], ndrange->global_work_size[1], 
 		ndrange->global_work_size[2]);
 
-	union_ndrange = ndrange->arch_ndrange;
-	assert(union_ndrange);
+	assert(ndrange->type == opencl_runtime_type_union);
 
-	num_devices = list_count(union_ndrange->devices);
-	assert(list_count(union_ndrange->arch_kernels) == num_devices);
+	device_list = ndrange->kernel->program->device->devices;
+	num_devices = list_count(device_list);
+
+	assert(list_count(ndrange->arch_kernels) == num_devices);
 	opencl_debug("[%s] num fused sub-devices = %d", __FUNCTION__, 
 		num_devices);
 
@@ -133,8 +148,10 @@ void opencl_union_ndrange_run(struct opencl_ndrange_t *ndrange)
 	{
 		info[i].ndrange = ndrange;
 		info[i].part = part;
-		info[i].device = list_get(union_ndrange->devices, i);
-		info[i].arch_kernel = list_get(union_ndrange->arch_kernels, i);
+		info[i].device = list_get(device_list, i);
+		info[i].arch_kernel = list_get(ndrange->arch_kernels, i);
+		opencl_debug("[%s] ndrange->kernel[%d] = %p", 
+			__FUNCTION__, i, info[i].arch_kernel);
 		info[i].lock = &lock;
 		info[i].id = i;
 		
@@ -147,13 +164,8 @@ void opencl_union_ndrange_run(struct opencl_ndrange_t *ndrange)
 		}
 		else
 		{
-			opencl_debug("[%s] device address is %p",
-				__FUNCTION__, info[i].device); ////////
 			opencl_debug("[%s] dispatching %s as main thread",
 				__FUNCTION__, info[i].device->name);
-			struct opencl_si_kernel_t *si_kernel = (struct opencl_si_kernel_t *)info[i].arch_kernel; ///////////
-			opencl_debug("[%s] kernel id is %d",
-				__FUNCTION__, si_kernel->id); ////////////
 			device_ndrange_dispatch(info + i);
 		}
 	}
@@ -183,8 +195,10 @@ struct opencl_union_kernel_t *opencl_union_kernel_create(
 
 	devices = program->device->devices;
 	kernel = xcalloc(1, sizeof (struct opencl_union_kernel_t));
+	kernel->type = opencl_runtime_type_union;
 	kernel->parent = parent;
-	kernel->device = program->device;
+	//kernel->device = program->device;
+	kernel->program = program;
 	kernel->arch_kernels = list_create();
 
 	LIST_FOR_EACH(devices, i)
@@ -202,36 +216,46 @@ struct opencl_union_kernel_t *opencl_union_kernel_create(
 
 void opencl_union_kernel_free(struct opencl_union_kernel_t *kernel)
 {
-	/* FIXME need to free stuff */
+	assert(kernel->type == opencl_runtime_type_union);
+
+	warning("%s: not implemented", __FUNCTION__);
 }
 
-int opencl_union_kernel_set_arg(
-		struct opencl_union_kernel_t *kernel,
-		int arg_index,
-		unsigned int arg_size,
-		void *arg_value)
+int opencl_union_kernel_set_arg(struct opencl_union_kernel_t *kernel,
+	int arg_index, unsigned int arg_size, void *arg_value)
 {
 	int i;
-	LIST_FOR_EACH(kernel->device->devices, i)
+	struct list_t *device_list;
+
+	assert(kernel->type == opencl_runtime_type_union);
+	device_list = kernel->program->device->devices;
+	LIST_FOR_EACH(device_list, i)
 	{
-		struct opencl_device_t *subdevice = list_get(kernel->device->devices, i);
-		if (subdevice->arch_kernel_set_arg_func(list_get(kernel->arch_kernels, i), arg_index, arg_size, arg_value))
+		struct opencl_device_t *subdevice = list_get(device_list, i);
+		if (subdevice->arch_kernel_set_arg_func(
+			list_get(kernel->arch_kernels, i), arg_index, 
+			arg_size, arg_value))
+		{
 			return 1;
+		}
 	}
 	return 0;
 }
 
 struct opencl_union_ndrange_t *opencl_union_ndrange_create(
 	struct opencl_ndrange_t *ndrange,
-	struct opencl_union_kernel_t *union_kernel)
+	struct opencl_union_kernel_t *union_kernel,
+	unsigned int work_dim, unsigned int *global_work_offset,
+	unsigned int *global_work_size, unsigned int *local_work_size,
+	unsigned int fused)
 {
+	struct list_t *devices;
+	//struct opencl_device_t *subdevice;
 	struct opencl_union_ndrange_t *union_ndrange;
-	struct opencl_device_t *subdevice;
-	void *arch_kernel;
+	
+	void *subkernel;
 
 	int i;
-	int num_devices;
-	int num_kernels;
 
 	opencl_debug("[%s] creating union nd-range", __FUNCTION__);
 
@@ -240,34 +264,64 @@ struct opencl_union_ndrange_t *opencl_union_ndrange_create(
 
 	union_ndrange = (struct opencl_union_ndrange_t *)xcalloc(1, 
 		sizeof(struct opencl_union_ndrange_t));
+	union_ndrange->type = opencl_runtime_type_union;
+	union_ndrange->parent = ndrange;
 	union_ndrange->kernel = union_kernel;
-	union_ndrange->devices = list_create();
+	union_ndrange->work_dim = work_dim;
 	union_ndrange->arch_kernels = list_create();
 
-	union_ndrange->parent = ndrange;
+	/* Make sure the number of devices match the number of kernels */
+	devices = union_kernel->program->device->devices;
+	assert(list_count(devices) == list_count(union_kernel->arch_kernels));
+	opencl_debug("[%s] union nd-range has %d kernels", __FUNCTION__,
+		list_count(devices));
 
-	num_devices = list_count(union_kernel->device->devices);
-	num_kernels = list_count(union_kernel->arch_kernels);
-	assert(num_devices == num_kernels);
-
-	for (i = 0; i < num_devices; i++)
+	LIST_FOR_EACH(devices, i)
 	{
-		subdevice = (struct opencl_device_t *)
-			list_get(union_kernel->device->devices, i);
-		list_add(union_ndrange->devices, subdevice);
-		opencl_debug("[%s] union nd-range device %d: %p ", __FUNCTION__,
-			i, subdevice);
-
-		arch_kernel = list_get(union_kernel->arch_kernels, i);
-		list_add(union_ndrange->arch_kernels, arch_kernel);
+		subkernel = list_get(union_kernel->arch_kernels, i);
+		list_add(union_ndrange->arch_kernels, subkernel);
 		opencl_debug("[%s] union nd-range kernel %d: %p ", __FUNCTION__,
-			i, arch_kernel);
+			i, subkernel);
 	}
 
-	opencl_debug("[%s] union nd-range has %d kernels", __FUNCTION__,
-		list_count(union_kernel->arch_kernels));
+	/* Work sizes */
+	for (i = 0; i < work_dim; i++)
+	{
+		union_ndrange->global_work_offset[i] = global_work_offset ?
+			global_work_offset[i] : 0;
+		union_ndrange->global_work_size[i] = global_work_size[i];
+		union_ndrange->local_work_size[i] = local_work_size ?
+			local_work_size[i] : 1;
+		assert(!(global_work_size[i] % 
+			union_ndrange->local_work_size[i]));
+		union_ndrange->group_count[i] = global_work_size[i] / 
+			union_ndrange->local_work_size[i];
+	}
+
+	/* Unused dimensions */
+	for (i = work_dim; i < 3; i++)
+	{
+		union_ndrange->global_work_offset[i] = 0;
+		union_ndrange->global_work_size[i] = 1;
+		union_ndrange->local_work_size[i] = 1;
+		union_ndrange->group_count[i] = 
+			union_ndrange->global_work_size[i] / 
+			union_ndrange->local_work_size[i];
+	}
+
+	/* Calculate the number of work groups in the ND-Range */
+	union_ndrange->num_groups = union_ndrange->group_count[0] * 
+		union_ndrange->group_count[1] * union_ndrange->group_count[2];
 
 	return union_ndrange;
-
 }
 
+void opencl_union_ndrange_init(struct opencl_union_ndrange_t *ndrange)
+{
+	warning("%s: not implemented", __FUNCTION__);
+}
+
+void opencl_union_ndrange_free(struct opencl_union_ndrange_t *ndrange)
+{
+	warning("%s: not implemented", __FUNCTION__);
+}

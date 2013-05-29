@@ -95,7 +95,7 @@ static void opencl_command_run_map_buffer(struct opencl_command_t *command)
 				mem->host_ptr + mem->map_offset,
 				mem->device_ptr + mem->map_offset,
 				mem->map_size);
-		opencl_debug("\t%d bytes copied from device [%p+%u] to host [%p+%u]\n",
+		opencl_debug("\t%d bytes copied from device [%p+%u] to host [%p+%u]",
 				mem->map_size, mem->device_ptr, mem->map_offset,
 				mem->host_ptr, mem->map_offset);
 	}
@@ -123,7 +123,7 @@ static void opencl_command_run_unmap_buffer(struct opencl_command_t *command)
 				mem->device_ptr + mem->map_offset,
 				mem->host_ptr + mem->map_offset,
 				mem->map_size);
-		opencl_debug("\t%d bytes copied from host [%p+%u] to devicem [%p+%u]\n",
+		opencl_debug("\t%d bytes copied from host [%p+%u] to devicem [%p+%u]",
 				mem->map_size, mem->host_ptr, mem->map_offset,
 				mem->device_ptr, mem->map_offset);
 	}
@@ -146,7 +146,11 @@ static void opencl_command_run_ndrange(struct opencl_command_t *command)
         assert(command->ndrange);
         assert(command->device->arch_ndrange_run_func);
 
-        command->device->arch_ndrange_run_func(command->ndrange); 
+	struct opencl_ndrange_t *ndrange;
+
+	ndrange = command->ndrange;
+
+	command->device->arch_ndrange_run_func(ndrange->arch_ndrange); 
 }
 
 

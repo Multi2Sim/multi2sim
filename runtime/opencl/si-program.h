@@ -29,6 +29,8 @@ struct opencl_si_device_t;
 /* Program object */
 struct opencl_si_program_t
 {
+	enum opencl_runtime_type_t type;  /* First field */
+
 	/* Parent generic program object */
 	struct opencl_program_t *parent;
 

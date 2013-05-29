@@ -111,6 +111,8 @@ struct opencl_x86_kernel_arg_t
  * opencl_kernel_t with information specific to x86. */
 struct opencl_x86_kernel_t
 {
+	enum opencl_runtime_type_t type;  /* First field */
+
 	/* Kernel object acting as parent object. */
 	struct opencl_kernel_t *parent;
 
@@ -135,15 +137,9 @@ struct opencl_x86_kernel_t
  */
 struct opencl_x86_ndrange_t
 {
-	struct opencl_ndrange_t *parent;	
+	enum opencl_runtime_type_t type;  /* First field */
 
-	struct opencl_x86_kernel_t *arch_kernel;
-};
-#if 0
-struct opencl_x86_ndrange_t
-{
-	struct opencl_device_t *device;
-	struct opencl_kernel_t *kernel;	
+	struct opencl_ndrange_t *parent;	
 	struct opencl_x86_kernel_t *arch_kernel;
 
 	int work_dim;
@@ -154,10 +150,8 @@ struct opencl_x86_ndrange_t
 
 	unsigned int group_count[3];
 	unsigned int num_groups;
-
-	unsigned int fused;
 };
-#endif
+
 
 struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 		struct opencl_kernel_t *parent,
@@ -175,19 +169,22 @@ int opencl_x86_kernel_set_arg(
 
 struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 		struct opencl_ndrange_t *ndrange,
-		struct opencl_x86_kernel_t *arch_kernel);
+		struct opencl_x86_kernel_t *arch_kernel,
+		unsigned int work_dim, unsigned int *global_work_offset,
+		unsigned int *global_work_size, unsigned int *local_work_size,
+		unsigned int fused);
 
 void opencl_x86_ndrange_free(
-		struct opencl_ndrange_t *ndrange);
+		struct opencl_x86_ndrange_t *ndrange);
 
 void opencl_x86_ndrange_init(
-		struct opencl_ndrange_t *ndrange);
+		struct opencl_x86_ndrange_t *ndrange);
 
 void opencl_x86_ndrange_run(
-		struct opencl_ndrange_t *ndrange);
+		struct opencl_x86_ndrange_t *ndrange);
 
 void opencl_x86_ndrange_run_partial(
-		struct opencl_ndrange_t *ndrange, 
+		struct opencl_x86_ndrange_t *ndrange, 
 		unsigned int *work_group_start, 
 		unsigned int *work_group_count);
 
