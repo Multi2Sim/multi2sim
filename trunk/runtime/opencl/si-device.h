@@ -25,6 +25,8 @@
 
 struct opencl_si_device_t
 {
+	enum opencl_runtime_type_t type;  /* First field */
+
 	/* Parent generic device object */
 	struct opencl_device_t *parent;
 };

@@ -60,6 +60,12 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
 /* Generic call-back function */
 typedef void *(*opencl_callback_t)(void *);
 
+enum opencl_runtime_type_t
+{
+	opencl_runtime_type_x86=1,
+	opencl_runtime_type_si,
+	opencl_runtime_type_union
+};
 
 
 /*
@@ -211,7 +217,10 @@ typedef int (*opencl_arch_kernel_set_arg_func_t)(
 
 /* Create an ND-Range */
 typedef void *(*opencl_arch_ndrange_create_func_t)(
-	struct opencl_ndrange_t *ndrange, void *arch_kernel);
+	struct opencl_ndrange_t *ndrange, void *arch_kernel,
+	unsigned int work_dim, unsigned int *global_work_offset,
+	unsigned int *global_work_size, unsigned int *local_work_size,
+	unsigned int fused);
 
 /* Initialize an ND-Range */
 typedef void (*opencl_arch_ndrange_init_func_t)(void *ndrange);

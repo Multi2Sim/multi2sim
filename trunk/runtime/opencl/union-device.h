@@ -6,6 +6,8 @@
 
 struct opencl_union_device_t
 {
+	enum opencl_runtime_type_t type;  /* First field */
+
 	struct opencl_device_t *parent;
 	struct list_t *devices;
 };
