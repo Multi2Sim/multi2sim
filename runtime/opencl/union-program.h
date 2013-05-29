@@ -7,6 +7,8 @@
 
 struct opencl_union_program_t
 {
+	enum opencl_runtime_type_t type;  /* First field */
+
 	struct opencl_program_t *parent;
 	struct opencl_union_device_t *device;
 	struct list_t *programs;
@@ -15,6 +17,8 @@ struct opencl_union_program_t
 /* use this format for 'multiple binaries' */
 struct opencl_union_binary_t
 {
+	enum opencl_runtime_type_t type;  /* First field */
+
 	unsigned int num_entries;
 	unsigned int entry_sizes[0];	
 };

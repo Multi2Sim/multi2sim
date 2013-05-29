@@ -155,6 +155,7 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(
 
 	/* Initialize */
 	kernel = xcalloc(1, sizeof(struct opencl_si_kernel_t));
+	kernel->type = opencl_runtime_type_si;
 	kernel->parent = parent;
 	kernel->program = program;
 	kernel->arg_list = list_create();
@@ -192,6 +193,8 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(
 void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 {
 	int index;
+
+	assert(kernel->type == opencl_runtime_type_si);
 
 	/* Free arguments */
 	LIST_FOR_EACH(kernel->arg_list, index)
@@ -276,12 +279,14 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 	return 0;
 }
 
-void opencl_si_ndrange_free(struct opencl_ndrange_t *ndrange)
+void opencl_si_ndrange_free(struct opencl_si_ndrange_t *ndrange)
 {
+	assert(ndrange->type == opencl_runtime_type_si);
+
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish);
 }
 
-void opencl_si_ndrange_run(struct opencl_ndrange_t *ndrange)
+void opencl_si_ndrange_run(struct opencl_si_ndrange_t *ndrange)
 {
 	int i;
 
@@ -310,31 +315,68 @@ void opencl_si_ndrange_run(struct opencl_ndrange_t *ndrange)
 
 struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 	struct opencl_ndrange_t *ndrange,
-	struct opencl_si_kernel_t *si_kernel)
+	struct opencl_si_kernel_t *si_kernel,
+	unsigned int work_dim, unsigned int *global_work_offset,
+	unsigned int *global_work_size, unsigned int *local_work_size,
+	unsigned int fused)
 {
-	opencl_debug("[%s] creating southern-islands ndrange", __FUNCTION__);
 	struct opencl_si_ndrange_t *arch_ndrange;
+
+	int i;
 
 	assert(ndrange);
 	assert(si_kernel);
+	assert(si_kernel->type == opencl_runtime_type_si);
+
+	opencl_debug("[%s] creating southern-islands ndrange", __FUNCTION__);
 
 	arch_ndrange = (struct opencl_si_ndrange_t *)xcalloc(1, 
 		sizeof(struct opencl_si_ndrange_t));
-
+	arch_ndrange->type = opencl_runtime_type_si;
 	arch_ndrange->parent = ndrange;
 	arch_ndrange->arch_kernel = si_kernel;
+	arch_ndrange->fused = fused;
+	arch_ndrange->work_dim = work_dim;
+
+	/* Work sizes */
+	for (i = 0; i < work_dim; i++)
+	{
+		arch_ndrange->global_work_offset[i] = global_work_offset ?
+			global_work_offset[i] : 0;
+		arch_ndrange->global_work_size[i] = global_work_size[i];
+		arch_ndrange->local_work_size[i] = local_work_size ?
+			local_work_size[i] : 1;
+		assert(!(global_work_size[i] % 
+			arch_ndrange->local_work_size[i]));
+		arch_ndrange->group_count[i] = global_work_size[i] / 
+			arch_ndrange->local_work_size[i];
+	}
+
+	/* Unused dimensions */
+	for (i = work_dim; i < 3; i++)
+	{
+		arch_ndrange->global_work_offset[i] = 0;
+		arch_ndrange->global_work_size[i] = 1;
+		arch_ndrange->local_work_size[i] = 1;
+		arch_ndrange->group_count[i] = 
+			arch_ndrange->global_work_size[i] / 
+			arch_ndrange->local_work_size[i];
+	}
+
+	/* Calculate the number of work groups in the ND-Range */
+	arch_ndrange->num_groups = arch_ndrange->group_count[0] * 
+		arch_ndrange->group_count[1] * arch_ndrange->group_count[2];
 
 	return arch_ndrange;
 }
 
 
-void opencl_si_ndrange_init(struct opencl_ndrange_t *ndrange)
+void opencl_si_ndrange_init(struct opencl_si_ndrange_t *ndrange)
 {
 	void *table_ptr;
 	void *cb_ptr;
 
 	struct opencl_si_kernel_t *kernel;
-	struct opencl_si_ndrange_t *arch_ndrange;
 
 	const int cb_size = 4096;
 	const int table_size = 4096;
@@ -342,10 +384,10 @@ void opencl_si_ndrange_init(struct opencl_ndrange_t *ndrange)
 	table_ptr = xcalloc(1, table_size + 16);  // FIXME
 	cb_ptr = xcalloc(1, cb_size + 16);   // FIXME
 
-	arch_ndrange = ndrange->arch_ndrange;
-	kernel = (struct opencl_si_kernel_t *)(arch_ndrange->arch_kernel);
-	opencl_debug("[%s] kernel id is = %d", __FUNCTION__, kernel->id); 
-	opencl_debug("[%s] kernel addr is = %p", __FUNCTION__, (void*)kernel); 
+	kernel = (struct opencl_si_kernel_t *)(ndrange->arch_kernel);
+	assert(kernel->type == opencl_runtime_type_si);
+	opencl_debug("[%s] kernel = %p", __FUNCTION__, kernel); 
+	opencl_debug("[%s] kernel id = %d", __FUNCTION__, kernel->id); 
 
 	/* Tell the driver whether or not we are using a fused device */
 	opencl_debug("[%s] southern-islands fused memory = %d", 
@@ -357,7 +399,8 @@ void opencl_si_ndrange_init(struct opencl_ndrange_t *ndrange)
 	opencl_debug("[%s] passing nd-range metadata", __FUNCTION__);
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_initialize, 
 		kernel->id, ndrange->work_dim, 
-		ndrange->global_work_offset, ndrange->global_work_size, 
+		ndrange->global_work_offset, 
+		ndrange->global_work_size, 
 		ndrange->local_work_size);
 
 	/* Provide internal tables initialized within the host
@@ -368,7 +411,7 @@ void opencl_si_ndrange_init(struct opencl_ndrange_t *ndrange)
 		table_ptr, cb_ptr);
 }
 
-void opencl_si_ndrange_run_partial(struct opencl_ndrange_t *ndrange,
+void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
 	unsigned int *work_group_start, unsigned int *work_group_count)
 {
 	int max_work_groups_to_send;

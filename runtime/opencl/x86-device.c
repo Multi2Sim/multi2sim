@@ -573,6 +573,7 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 
 	/* Initialize */
 	device = xcalloc(1, sizeof(struct opencl_x86_device_t));
+	device->type = opencl_runtime_type_x86;
 	device->parent = parent;
 	device->num_cores = opencl_x86_device_get_num_cores();
 	device->num_kernels = 0;
@@ -694,21 +695,21 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 			opencl_x86_kernel_set_arg;
 
 	/* Call-back functions for architecture-specific ND-Range */
-	parent->arch_ndrange_init_func =
-			(opencl_arch_ndrange_init_func_t)
-			opencl_x86_ndrange_init;
 	parent->arch_ndrange_create_func =
 			(opencl_arch_ndrange_create_func_t)
 			opencl_x86_ndrange_create;
+	parent->arch_ndrange_free_func =
+			(opencl_arch_ndrange_free_func_t)
+			opencl_x86_ndrange_free;
+	parent->arch_ndrange_init_func =
+			(opencl_arch_ndrange_init_func_t)
+			opencl_x86_ndrange_init;
 	parent->arch_ndrange_run_func =
 			(opencl_arch_ndrange_run_func_t)
 			opencl_x86_ndrange_run;
 	parent->arch_ndrange_run_partial_func =
 			(opencl_arch_ndrange_run_partial_func_t)
 			opencl_x86_ndrange_run_partial;
-	parent->arch_ndrange_free_func =
-			(opencl_arch_ndrange_free_func_t)
-			opencl_x86_ndrange_free;
 
 	/* Initialize mutex and condition variables */
 	pthread_mutex_init(&device->lock, NULL);

@@ -932,7 +932,6 @@ static int opencl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
 
 	/* Create ND-Range */
 	ndrange = si_ndrange_create();
-	ndrange->id = si_emu->ndrange_count++;
 	ndrange->local_mem_top = kernel->mem_size_local;
 	ndrange->num_sgpr_used = kernel->bin_file->
 		enc_dict_entry_southern_islands->num_sgpr_used;
@@ -1077,6 +1076,11 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(struct x86_ctx_t *ctx)
 	unsigned int total_num_groups;
 
 	long work_group_id;
+
+	assert(driver_state.ndrange);
+	assert(driver_state.ndrange->const_buf_table);
+	assert(driver_state.ndrange->uav_table);
+	assert(driver_state.ndrange->resource_table);
 
 	/* Arguments */
 	work_group_start_ptr = regs->ecx;
