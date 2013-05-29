@@ -234,7 +234,7 @@ void opengl_vertex_attrib_attach_buffer_obj(struct opengl_vertex_attrib_t *vattr
 void opengl_vertex_attrib_detach_buffer_obj(struct opengl_vertex_attrib_t *vattrib, struct opengl_buffer_obj_t *buffer_obj)
 {
 	/* Remove buffer object bound to vertex attribute object */
-	if (vattrib->vbo == buffer_obj)
+	if (buffer_obj && vattrib->vbo && vattrib->vbo == buffer_obj)
 	{
 		list_remove(vattrib->vbo->bound_vattribs, vattrib);
 		opengl_buffer_obj_ref_update(buffer_obj, -1);

@@ -217,10 +217,12 @@ void opengl_context_init()
 
 void opengl_context_destroy()
 {
+
 	if (opengl_context_initialized)
 	{
 		opengl_context_initialized = 0;
 		opengl_context_free(opengl_ctx);
+
 	}
 	if (buffer_repo)
 		opengl_buffer_obj_repo_free(buffer_repo);
@@ -230,6 +232,9 @@ void opengl_context_destroy()
 		opengl_shader_obj_repo_free(shader_repo);
 	if (texture_repo)
 		opengl_texture_obj_repo_free(texture_repo);
+	/* Also destroy objects created in driver */
+	syscall(OPENGL_SYSCALL_CODE, opengl_abi_done);
+
 }
 
 /* 

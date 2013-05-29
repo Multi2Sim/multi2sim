@@ -23,6 +23,7 @@
 
 #include "context.h"
 #include "debug.h"
+#include "elf-format.h"
 #include "list.h"
 #include "linked-list.h"
 #include "mhandle.h"
@@ -87,6 +88,8 @@ static void opengl_program_obj_free(struct opengl_program_obj_t *program_obj)
 	}
 
 	list_free(program_obj->shaders);
+	if (program_obj->binary)
+		free(program_obj->binary);
 	free(program_obj);
 }
 
@@ -255,11 +258,36 @@ void glDetachShader (GLuint program, GLuint shader)
 	list_remove(program_obj->shaders, shader_obj);
 }
 
+static char *opengl_err_program_compile =
+	"\tYour guest OpenGL application is trying to link an OpenGL program\n"
+	"\tby calling function 'glLinkProgram'. Dynamic shader compilation\n"
+	"\tand program linking is currently not supported. The following two\n"
+	"\talternatives are suggested instead:\n"
+	"\n"
+	"\t1) Use 'glProgramBinary' in your program instead of glLinkProgram \n"
+	"\n"
+	"\t2) You can force the Multi2Sim runtime to load a specific kernel\n"
+	"\t   binary every time the application performs a call to\n"
+	"\t   'glLinkProgram' by setting environment varaible\n"
+	"\t   'M2S_OPENGL_BINARY' to the path of a pre-compiled binary that\n"
+	"\t   will be passed to the application.\n";
+
+static char *opengl_err_program_not_found =
+	"\tYour guest OpenGL application has executed function\n"
+	"\t'glLinkProgram', while the Multi2Sim runtime found that\n"
+	"\tenvironment variable 'M2S_OPENGL_BINARY' was set. However, the\n"
+	"\tbinary file pointed to by this variable was not found.\n";
+
 void glLinkProgram (GLuint program)
 {
 	struct opengl_program_obj_t *program_obj;
 	struct opengl_shader_obj_t *shader_obj;
 	int index;
+
+	char *binary_name;
+	void *binary;
+	unsigned int size;
+	FILE *f;
 
 	/* Debug */
 	opengl_debug("API call %s(%d)\n", __FUNCTION__, program);
@@ -274,6 +302,36 @@ void glLinkProgram (GLuint program)
 		opengl_debug("\t%s: Link Shader Object #%d [%p] to Program #%d [%p] \n", 
 			__FUNCTION__, shader_obj->id, shader_obj, program_obj->id, program_obj);
 	}
+
+	/* Runtime compilation is not supported, but the user can have activated
+	 * environment variable 'M2S_OPENGL_BINARY', which will make the runtime
+	 * load that specific pre-compiled shader binary. */
+	binary_name = getenv("M2S_OPENGL_BINARY");
+	if (!binary_name || !*binary_name)
+		fatal("%s: runtime shader compilation not supported.\n%s",
+				__FUNCTION__, opengl_err_program_compile);
+
+	/* Load binary */
+	f = fopen(binary_name, "rb");
+	if (!f)
+		fatal("%s: %s: cannot open file.\n%s", __FUNCTION__,
+			binary_name, opengl_err_program_not_found);
+	
+	/* Allocate buffer */
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	binary = xmalloc(size);
+
+	/* Read binary */
+	fseek(f, 0, SEEK_SET);
+	fread(binary, size, 1, f);
+	fclose(f);
+	
+	/* Add to program object */
+	program_obj->binary = binary;
+	program_obj->binary_size = size;
+
+
 }
 
 void glUseProgram (GLuint program)
@@ -296,6 +354,11 @@ void glUseProgram (GLuint program)
 		program_obj = opengl_program_obj_repo_get_program(program_repo, program);
 		opengl_ctx->program_binding_point = program_obj;
 		opengl_program_obj_ref_update(program_obj, 1);
+
+		/* Call the driver to setup the program binary */
+		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_create);
+		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_set_binary, 
+			program_obj->id, program_obj->binary, program_obj->binary_size);
 	}
 	else
 	{

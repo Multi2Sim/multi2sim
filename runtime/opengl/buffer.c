@@ -118,12 +118,6 @@ static void opengl_buffer_obj_free(struct opengl_buffer_obj_t *buffer_obj)
 		free(buffer_obj->data);
 	}
 
-	/* Free mapping */
-	if (buffer_obj->map_pointer)
-	{
-		free(buffer_obj->map_pointer);
-	}
-
 	/* Free */
 	free(buffer_obj);
 }

@@ -17,6 +17,9 @@ __top_builddir__lib_libm2s_opengl_la_SOURCES = \
 	debug.c \
 	debug.h \
 	\
+	elf-format.c \
+	elf-format.h \
+	\
 	fog-hint.c \
 	fog-hint.h \
 	\

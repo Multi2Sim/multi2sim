@@ -429,7 +429,7 @@ static void si_opengl_shader_set_isa(struct si_opengl_shader_t *shdr)
 
 }
 
-static struct si_opengl_shader_t *si_opengl_shader_create(void *buffer, int size, char* name)
+struct si_opengl_shader_t *si_opengl_shader_create(void *buffer, int size, char* name)
 {
 	struct si_opengl_shader_t *shdr;
 

@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include "../include/GL/gl.h"
+#include "../opengl/opengl.h"
 #include "../opengl/context.h"
 #include "api.h"
 #include "debug.h"
@@ -391,6 +392,7 @@ void glutMainLoop(void)
 			break;
 
 		default:
+			opengl_context_destroy();
 			fatal("GLUT event not supported (type=%d).\n%s",
 				event.type, glut_err_not_impl);
 		}
