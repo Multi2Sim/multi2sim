@@ -21,6 +21,7 @@
 #define TOOLS_CLCC_CL2LLVM_FUNCTION_H
 
 #include <llvm-c/Core.h>
+#include <lib/util/list.h>
 
 struct cl2llvm_function_t
 {
@@ -29,9 +30,11 @@ struct cl2llvm_function_t
 	int sign;
 	char *name;
 	struct hash_table_t *symbol_table;
+	struct list_t *arg_list;
+	int arg_count;
 };
 
-struct cl2llvm_function_t *cl2llvm_function_create(char *name);
+struct cl2llvm_function_t *cl2llvm_function_create(char *name, struct list_t *arg_list);
 
 void cl2llvm_function_free(struct cl2llvm_function_t *function);
 	

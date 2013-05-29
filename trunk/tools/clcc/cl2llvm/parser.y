@@ -55,6 +55,7 @@ struct cl2llvm_function_t *current_function;
 	struct cl2llvm_type_t *llvm_type_ref;
 	struct cl2llvm_val_t *llvm_value_ref;
 	struct list_t * init_list;
+	struct list_t * list_val_t;
 	struct cl2llvm_arg_t *arg_t;
 	struct list_t *arg_list;
 	LLVMBasicBlockRef basic_block_ref;
@@ -182,6 +183,8 @@ struct cl2llvm_function_t *current_function;
 %type<llvm_value_ref> unary_expr
 %type<llvm_value_ref> init
 %type<init_list> init_list
+%type<list_val_t> param_list
+%type<llvm_value_ref> func_call
 %type<llvm_type_ref> type_name
 %type<llvm_type_ref> type_spec
 %type<decl_list> declarator
@@ -202,7 +205,6 @@ program
 external_def
 	: func_def
 	| func_decl
-	| declaration
 	;
 
 func_decl
@@ -215,7 +217,7 @@ func_def
 		LLVMGetTypeKind($1->type_spec->llvm_type);
 		int err;
 		struct cl2llvm_function_t *new_function;
-
+	
 		snprintf(block_name, sizeof block_name,
 			"block_%d", block_count++);
 		
@@ -246,18 +248,14 @@ func_def
 			}
 			func_args[arg_num + 1] = NULL;
 		}
-		for (arg_num = 0; arg_num < arg_count; arg_num++)
-		{
-			printf("loop2\n");
-			/*LLVMGetTypeKind(func_args[arg_num]);*/
-		}
+
 
 		LLVMTypeRef cl2llvm_function_type = LLVMFunctionType($1->type_spec->llvm_type, func_args, arg_count, 0);
 		LLVMValueRef cl2llvm_function = LLVMAddFunction(cl2llvm_module, $2,
 			cl2llvm_function_type);
 		LLVMSetFunctionCallConv(cl2llvm_function, LLVMCCallConv);
 		LLVMBasicBlockRef cl2llvm_basic_block = LLVMAppendBasicBlock(cl2llvm_function, block_name);
-		new_function = cl2llvm_function_create($2);
+		new_function = cl2llvm_function_create($2, $4);
 
 		current_function = new_function;
 
@@ -269,7 +267,8 @@ func_def
 
 		/*insert function into global symbol table*/
 		err = hash_table_insert(cl2llvm_symbol_table, 
-				$2, new_function);
+			$2, new_function);
+		printf("%s\n", $2);
 		if (!err)
 			printf("function already defined");
 		/* Declare parameters */
@@ -287,13 +286,7 @@ func_def
 				LLVMBuildStore(cl2llvm_builder, arg_val, arg_pointer->val);
 			}
 		}
-		int i;
-		LIST_FOR_EACH($4, i)
-		{
-			cl2llvm_arg_free(list_get($4, i));
-		}
-		list_free($4);
-
+		
 	}
 	stmt_list TOK_CURLY_BRACE_CLOSE
 	; 
@@ -485,8 +478,8 @@ stmt
 		cl2llvm_val_free($1);
 	}
 	| declaration
-	| func_decl
 	| func_def
+	| func_decl
 	| for_loop
 	| while_loop
 	| do_while_loop
@@ -509,14 +502,65 @@ stmt
 
 func_call
 	: TOK_ID TOK_PAR_OPEN param_list TOK_PAR_CLOSE
+	{
+		printf("%s\n", $1);
+		struct cl2llvm_function_t *function = hash_table_get(cl2llvm_symbol_table, $1);
+		if (!function)
+			yyerror("undefined function");
+		LLVMTypeRef param_types[100];
+		LLVMGetParamTypes(function->func_type, param_types);
+		
+		LLVMValueRef cast_param_array[100];
+		int i;
+		/* check that parameter types match */
+		for (i = 0; i < function->arg_count; i++)
+		{
+			printf("loop\n");
+			struct cl2llvm_arg_t *current_func_arg = list_get(function->arg_list, i);
+			struct cl2llvm_val_t *current_param = list_get($3, i);
+			if (current_func_arg->type_spec->llvm_type != current_param->type->llvm_type || current_func_arg->type_spec->sign  != current_param->type->sign)
+			{
+				struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( current_func_arg->type_spec->llvm_type, current_func_arg->type_spec->sign);
+				struct cl2llvm_val_t *cast_param = llvm_type_cast(current_param, type);
+				cl2llvm_type_free(type);
+				cast_param_array[i] = cast_param->val;
+				cl2llvm_val_free(current_param);
+			}
+			else
+			{
+				cast_param_array[i] = current_param->val;
+				cl2llvm_val_free(current_param);
+			}
+		}
+		list_free($3);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		struct cl2llvm_val_t *ret_val = cl2llvm_val_create_w_init(
+			LLVMBuildCall(cl2llvm_builder, function->func,
+			cast_param_array, function->arg_count, temp_var_name),
+			function->sign);
+		
+		$$ = ret_val;
+	}
 	| TOK_ID TOK_PAR_OPEN TOK_PAR_CLOSE
 	;
 
 param_list
 	: expr
+	{
+		struct list_t *param_list = list_create();
+		list_add(param_list, $1);
+		$$ = param_list;
+	}
 	| array_deref_list TOK_EQUAL expr
 	| array_init
 	| param_list TOK_COMMA expr
+	{
+		list_add($1, $3);
+		$$ = $1;
+	}
 	| param_list TOK_COMMA array_init
 	| param_list TOK_COMMA array_deref_list TOK_EQUAL expr
 	;
@@ -1698,7 +1742,7 @@ expr
 
 	| func_call
 	{
-		$$ = NULL;
+		$$ = $1;
 	}
 
 	| TOK_LOGICAL_NEGATE expr
