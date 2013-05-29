@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "command.h"
 #include "command-queue.h"
@@ -147,10 +148,31 @@ static void opencl_command_run_ndrange(struct opencl_command_t *command)
         assert(command->device->arch_ndrange_run_func);
 
 	struct opencl_ndrange_t *ndrange;
+	struct timespec t;
+
+	cl_ulong cltime;
 
 	ndrange = command->ndrange;
 
+	if (command->done_event)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &t);
+		cltime = (cl_ulong)t.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)t.tv_nsec;
+		command->done_event->time_start = cltime;
+	}
+
 	command->device->arch_ndrange_run_func(ndrange->arch_ndrange); 
+
+	if (command->done_event)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &t);
+		cltime = (cl_ulong)t.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)t.tv_nsec;
+		command->done_event->time_end = cltime;
+	}
 }
 
 
