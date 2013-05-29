@@ -283,6 +283,7 @@ struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 
 void opencl_x86_kernel_free(struct opencl_x86_kernel_t *kernel)
 {
+	opencl_debug("[%s] freeing x86 kernel", __FUNCTION__);
 	free(kernel->param_info);
 	free(kernel->stack_params);
 	free(kernel->register_params);
@@ -386,13 +387,17 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 /* Initialize an ND-Range */
 void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 {
-	opencl_debug("[%s] empty", __FUNCTION__);
+	opencl_debug("[%s] initing x86 ndrange", __FUNCTION__);
+
+	/* Nothing to do */
 }
 
 /* Finalize an ND-Range */
 void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 {
-	opencl_debug("[%s] empty", __FUNCTION__);
+	opencl_debug("[%s] freeing x86 ndrange", __FUNCTION__);
+
+	/* Nothing to do */
 }
 
 void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange, unsigned int *work_group_start, unsigned int *work_group_count)
@@ -401,7 +406,7 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange, unsign
 	int j;
 	int k;
 
-	opencl_debug("[%s] running x86 partial", __FUNCTION__);
+	opencl_debug("[%s] running x86 partial ndrange", __FUNCTION__);
 
 	/* just assign the old parameters */
 	struct opencl_x86_kernel_t *kernel = ndrange->arch_kernel;

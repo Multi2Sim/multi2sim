@@ -218,7 +218,33 @@ void opencl_union_kernel_free(struct opencl_union_kernel_t *kernel)
 {
 	assert(kernel->type == opencl_runtime_type_union);
 
-	warning("%s: not implemented", __FUNCTION__);
+	struct list_t *device_list;
+	struct opencl_device_t *device;
+	
+	int i;
+
+	assert(kernel);
+	assert(kernel->arch_kernels);
+
+	opencl_debug("[%s] releasing union kernel resources", __FUNCTION__);
+
+	device_list = kernel->program->device->devices;
+
+	assert(list_count(device_list) == list_count(kernel->arch_kernels));
+	opencl_debug("[%s] there are %d sub-kernels", __FUNCTION__, 
+		list_count(device_list));
+
+	/* Free the kernel for each sub-device */
+	LIST_FOR_EACH(device_list, i)
+	{
+		device = list_get(device_list, i);
+		device->arch_kernel_free_func(
+			list_get(kernel->arch_kernels, i));
+	}
+
+	/* Free the union kernel */
+	list_free(kernel->arch_kernels);
+	free(kernel);
 }
 
 int opencl_union_kernel_set_arg(struct opencl_union_kernel_t *kernel,
@@ -318,10 +344,20 @@ struct opencl_union_ndrange_t *opencl_union_ndrange_create(
 
 void opencl_union_ndrange_init(struct opencl_union_ndrange_t *ndrange)
 {
-	warning("%s: not implemented", __FUNCTION__);
+	opencl_debug("[%s] empty", __FUNCTION__);
 }
 
 void opencl_union_ndrange_free(struct opencl_union_ndrange_t *ndrange)
 {
-	warning("%s: not implemented", __FUNCTION__);
+	assert(ndrange);
+	assert(ndrange->arch_kernels);
+
+	opencl_debug("[%s] releasing union nd-range resources", __FUNCTION__);
+
+	/* ND-Ranges of sub-devices are freed immediately 
+	 * after they execute */
+
+	/* Free the union ND-Range */
+	list_free(ndrange->arch_kernels);
+	free(ndrange);
 }
