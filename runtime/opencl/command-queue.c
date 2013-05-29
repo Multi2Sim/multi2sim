@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 
 #include "command.h"
 #include "command-queue.h"
@@ -104,7 +105,21 @@ void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
 void opencl_command_queue_enqueue(struct opencl_command_queue_t *command_queue, 
 	struct opencl_command_t *command)
 {
+	struct timespec t;
+
+	cl_ulong cltime;
+
 	pthread_mutex_lock(&command_queue->lock);
+
+	if (command->done_event)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &t);
+		cltime = t.tv_sec;
+		cltime *= 1000000000;
+		cltime += t.tv_nsec;
+		command->done_event->time_queued = cltime;
+	}
+
 	list_add(command_queue->command_list, command);
 	pthread_mutex_unlock(&command_queue->lock);
 }
@@ -126,6 +141,9 @@ void opencl_command_queue_flush(struct opencl_command_queue_t *command_queue)
 struct opencl_command_t *opencl_command_queue_dequeue(struct opencl_command_queue_t *command_queue)
 {
 	struct opencl_command_t *command;
+	struct timespec t;
+
+	cl_ulong cltime;
 
 	/* Lock */
 	pthread_mutex_lock(&command_queue->lock);
@@ -139,6 +157,15 @@ struct opencl_command_t *opencl_command_queue_dequeue(struct opencl_command_queu
 	command = list_remove_at(command_queue->command_list, 0);
 	if (!command_queue->command_list->count)
 		command_queue->process = 0;
+
+	if (command->done_event)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &t);
+		cltime = t.tv_sec;
+		cltime *= 1000000000;
+		cltime += t.tv_nsec;
+		command->done_event->time_submit = cltime;
+	}
 
 	/* If we get an 'end' command, return NULL */
 	if (command->type == opencl_command_end)
@@ -747,9 +774,7 @@ cl_int clEnqueueNDRangeKernel(
 
 	struct opencl_device_t *device;
 	struct opencl_command_t *command;
-	//struct opencl_kernel_entry_t *kernel_entry;
 
-	//void *arch_kernel;
 	int i;
 
 	/* Debug */
@@ -808,18 +833,6 @@ cl_int clEnqueueNDRangeKernel(
 
 	/* Kernel to run */
 	device = command_queue->device;
-	/*
-	arch_kernel = NULL;
-	LIST_FOR_EACH(kernel->entry_list, i)
-	{
-		kernel_entry = list_get(kernel->entry_list, i);
-		if (kernel_entry->device == device)
-			arch_kernel = kernel_entry->arch_kernel;
-	}
-
-	if (!arch_kernel)
-		return CL_INVALID_VALUE;
-		*/
 
 	/* Create command */
 	command = opencl_command_create_ndrange(device, kernel, work_dim,

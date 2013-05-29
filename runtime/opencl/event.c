@@ -314,8 +314,11 @@ cl_int clGetEventProfilingInfo(
 	if (!opencl_object_verify(event, OPENCL_OBJECT_EVENT))
 		return CL_INVALID_EVENT;
 
-	if (!event->command_queue || !(event->command_queue->properties & CL_QUEUE_PROFILING_ENABLE))
+	if (!event->command_queue || 
+		!(event->command_queue->properties & CL_QUEUE_PROFILING_ENABLE))
+	{
 		return CL_PROFILING_INFO_NOT_AVAILABLE;
+	}
 
 	if (param_value_size_ret)
 		*param_value_size_ret = sizeof (cl_ulong);
