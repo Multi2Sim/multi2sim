@@ -6,9 +6,6 @@ libopencl_a_SOURCES = \
 	opencl.dat \
 	opencl.h \
 	\
-	si-kernel.c \
-	si-kernel.h \
-	\
 	si-program.c \
 	si-program.h
 

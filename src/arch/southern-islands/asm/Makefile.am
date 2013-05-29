@@ -7,7 +7,10 @@ libasm_a_SOURCES = \
 	asm.h \
 	\
 	bin-file.c \
-	bin-file.h
+	bin-file.h \
+	\
+	si-kernel.h \
+	si-kernel.c
 
 INCLUDES = @M2S_INCLUDES@
 
