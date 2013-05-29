@@ -587,9 +587,11 @@ if test x$have_llvm = xyes
 then
 	AC_DEFINE(HAVE_LLVM, [1])
 	LLVM_CFLAGS=`$LLVM_CONFIG --cflags`
+	LLVM_CXXFLAGS=`$LLVM_CONFIG --cxxflags`
 	LLVM_LDFLAGS=`$LLVM_CONFIG --ldflags`
 	LLVM_LIBS=`$LLVM_CONFIG --libs`
 	AC_SUBST([LLVM_CFLAGS])
+	AC_SUBST([LLVM_CXXFLAGS])
 	AC_SUBST([LLVM_LDFLAGS])
 	AC_SUBST([LLVM_LIBS])
 elif test x$enable_llvm = xno
