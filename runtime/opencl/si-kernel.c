@@ -194,6 +194,8 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 {
 	int index;
 
+	opencl_debug("[%s] freeing si kernel", __FUNCTION__);
+
 	assert(kernel->type == opencl_runtime_type_si);
 
 	/* Free arguments */
@@ -281,6 +283,8 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 
 void opencl_si_ndrange_free(struct opencl_si_ndrange_t *ndrange)
 {
+	opencl_debug("[%s] freeing si ndrange", __FUNCTION__);
+
 	assert(ndrange->type == opencl_runtime_type_si);
 
 	syscall(OPENCL_SYSCALL_CODE, opencl_abi_si_ndrange_finish);
