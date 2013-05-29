@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/asm/si-kernel.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/context.h>
@@ -33,7 +34,6 @@
 #include <mem-system/memory.h>
 
 #include "opencl.h"
-#include "si-kernel.h"
 #include "si-program.h"
 
 #define SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE (1024*1024)
