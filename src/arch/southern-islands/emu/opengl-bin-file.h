@@ -24,7 +24,7 @@
 
 
 /* Shader types */
-enum si_opengl_shader_kind_t
+enum si_opengl_shader_binary_kind_t
 {
 	SI_OPENGL_SHADER_VERTEX = 0,
 	SI_OPENGL_SHADER_GEOMETRY,
@@ -35,10 +35,10 @@ enum si_opengl_shader_kind_t
 	SI_OPENGL_SHADER_INVALID
 };
 
-struct si_opengl_shader_t
+struct si_opengl_shader_binary_t
 {
 	/* Type of shader */
-	enum si_opengl_shader_kind_t shader_kind;
+	enum si_opengl_shader_binary_kind_t shader_kind;
 
 	/* ELF-formatted shader, it's embedded in the .internal 
 	 * section of a shader binary */
@@ -47,11 +47,11 @@ struct si_opengl_shader_t
 	/* Pointer to ISA */
 	struct elf_buffer_t *shader_isa;
 
-	/* Encoding dictionary */
+	/* TODO: Encoding dictionary */
 
 };
 
-struct si_opengl_shader_binary_t
+struct si_opengl_program_binary_t
 {
 	/* Name of the associated shader binary file */
 	char *name;
@@ -59,15 +59,15 @@ struct si_opengl_shader_binary_t
 	/* Associated ELF-format shader binary */
 	struct elf_file_t *binary;
 
-	/* List of shaders in shader binary, */
+	/* List of shaders in shader binary, elements with type si_opengl_shader_binary_t */
 	struct list_t *shaders;
 };
 
-struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer_ptr, int size, char *name);
-void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shader_bin);
+struct si_opengl_program_binary_t *si_opengl_program_binary_create(void *buffer_ptr, int size, char *name);
+void si_opengl_program_binary_free(struct si_opengl_program_binary_t *program_bin);
 
-struct si_opengl_shader_t *si_opengl_shader_create(void *buffer, int size, char* name);
-void si_opengl_shader_free(struct si_opengl_shader_t *shdr);
+struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer, int size, char* name);
+void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shdr);
 
 
 
