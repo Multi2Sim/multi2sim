@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2013  Chris Barton (barton.ch@husky.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,25 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#ifndef TOOLS_CLCC_CL2LLVM_INIT_H
+#define TOOLS_CLCC_CL2LLVM_INIT_H
 
-#include <lib/mhandle/mhandle.h>
+#include <llvm-c/Core.h>
 
-#include "init-list-elem.h"
-#include "val.h"
-
-struct cl2llvm_init_list_elem_t *cl2llvm_create_init_list_elem(char *name)
+struct cl2llvm_init_t
 {
-	struct cl2llvm_init_list_elem_t *elem;
-	elem = xcalloc(1,sizeof(struct cl2llvm_init_list_elem_t));
-	elem->elem_name = xstrdup(name);
-	return elem;
-}
+	char * name;
+	struct cl2llvm_val_t *cl2llvm_val;
+	struct list_t *array_deref_list;
+};
 
-void cl2llvm_init_list_elem_free(struct cl2llvm_init_list_elem_t *elem)
-{
-	free(elem->elem_name);
-	free(elem);
-}
+struct cl2llvm_init_t *cl2llvm_init_create(char *name);
+struct cl2llvm_init_t *cl2llvm_init_create_w_init(LLVMValueRef val, int sign, char *name);
+void cl2llvm_init_free(struct cl2llvm_init_t *init);
+
+#endif
