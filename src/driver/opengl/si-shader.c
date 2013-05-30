@@ -22,9 +22,10 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
- 
+#include <lib/util/list.h>
+#include <arch/southern-islands/emu/opengl-bin-file.h> 
 #include "si-shader.h"
-
+#include "si-program.h"
 
 /*
  * Private Functions
@@ -36,8 +37,37 @@
  * Public Functions
  */
 
+struct opengl_si_shader_t *opengl_si_shader_create(
+	struct opengl_si_program_t *program, unsigned int shader_kind)
+{
+	struct list_t *shaders_list;
+	struct opengl_si_shader_t *shdr;
+	struct si_opengl_program_binary_t *prog_bin;
+	struct si_opengl_shader_binary_t *shdr_bin;
+	int i;
 
+	/* Allocate */
+	shdr = xcalloc(1, sizeof(struct opengl_si_shader_t));
 
-/* 
- * OpenGL API functions 
- */
+	/* Initialize */
+	shdr->program = program;
+	prog_bin = program->program_bin;
+	shaders_list = prog_bin->shaders;
+	// /* FIXME: is it true that an OpenGL program binary can only have only 1 shader of each kind */
+	LIST_FOR_EACH(shaders_list, i)
+	{
+		shdr_bin = list_get(shaders_list, i);
+		if (shdr_bin->shader_kind == shader_kind)
+			shdr->shader_bin = shdr_bin;
+	}
+
+	/* Return */
+	return shdr;
+
+}
+
+void opengl_si_shader_free(struct opengl_si_shader_t *shader)
+{
+	/* Free */
+	free(shader);
+}
