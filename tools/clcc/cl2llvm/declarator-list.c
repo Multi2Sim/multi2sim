@@ -51,8 +51,8 @@ void cl2llvm_decl_list_free(struct cl2llvm_decl_list_t *declarator_list)
 		free(declarator_list->type_spec);
 	if (declarator_list->addr_qual != NULL)
 		free(declarator_list->addr_qual);
-	if (declarator_list->kernel_t != NULL)
-		free(declarator_list->kernel_t);
+	/*if (declarator_list->kernel_t != NULL)
+		free(declarator_list->kernel_t);*/
 	if (declarator_list->inline_t != NULL)
 		free(declarator_list->inline_t);
 	if (declarator_list->sc_spec != NULL)

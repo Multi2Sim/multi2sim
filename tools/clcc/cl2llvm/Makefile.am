@@ -22,8 +22,8 @@ libcl2llvm_a_SOURCES = \
 	function.h\
 	function.c\
 	\
-	init-list-elem.c\
-	init-list-elem.h\
+	init.c\
+	init.h\
 	\
 	symbol.c \
 	symbol.h \
