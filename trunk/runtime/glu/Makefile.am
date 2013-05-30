@@ -12,8 +12,17 @@ __top_builddir__lib_libm2s_glu_la_SOURCES = \
 	debug.c \
 	debug.h \
 	\
+	list.c \
+	list.h \
+	\
 	mhandle.c \
-	mhandle.h
+	mhandle.h \
+	\
+	misc.c \
+	misc.h \
+	\
+	string.c \
+	string.h
 
 AM_CFLAGS = -m32
 

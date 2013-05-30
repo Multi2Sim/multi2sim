@@ -23,6 +23,8 @@
 #include "../include/GL/glu.h"
 #include "api.h"
 #include "debug.h"
+#include "string.h"
+
 
 
 
@@ -68,7 +70,6 @@ struct glu_version_t
 	int major;
 	int minor;
 };
-
 
 void gluInit(int *argcp, char **argv)
 {
@@ -218,10 +219,23 @@ void gluEndTrim(GLUnurbs * nurb)
 	__GLU_NOT_IMPL__
 }
 
+static struct str_map_t opengl_error_map =
+{
+	7,
+	{
+		{ "INVALID_ENUM", GL_INVALID_ENUM },
+		{ "INVALID_VALUE", GL_INVALID_VALUE },
+		{ "INVALID_OPERATION", GL_INVALID_OPERATION },
+		{ "INVALID_FRAMEBUFFER_OPERATION", GL_INVALID_FRAMEBUFFER_OPERATION },
+		{ "OUT_OF_MEMORY ", GL_OUT_OF_MEMORY },
+		{ "STACK_OVERFLOW", GL_STACK_OVERFLOW },
+		{ "STACK_UNDERFLOW", GL_STACK_OVERFLOW }
+	}
+};
+
 const GLubyte *gluErrorString(GLenum error)
 {
-	__GLU_NOT_IMPL__
-	return NULL;
+	return (const GLubyte *)str_map_value(&opengl_error_map, error);
 }
 
 void gluGetNurbsProperty(GLUnurbs * nurb, GLenum property,

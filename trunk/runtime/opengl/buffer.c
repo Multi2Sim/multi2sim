@@ -733,6 +733,8 @@ void glBufferData (GLenum target, GLsizeiptr size, const GLvoid *data, GLenum us
 
 	/* Save a copy in buffer object */
 	opengl_buffer_obj_data(buffer_obj, size, data, usage);
+	if(!data)
+		opengl_debug("\tNULL data pointer\n");
 
 	/* GL_OUT_OF_MEMORY is generated if the GL is unable to create a data store with the specified size. */
 	if (!buffer_obj->data)
