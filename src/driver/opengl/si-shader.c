@@ -24,6 +24,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h> 
+ 
 #include "si-shader.h"
 #include "si-program.h"
 
@@ -53,7 +54,7 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 	shdr->program = program;
 	prog_bin = program->program_bin;
 	shaders_list = prog_bin->shaders;
-	// /* FIXME: is it true that an OpenGL program binary can only have only 1 shader of each kind */
+	/* FIXME: is it true that an OpenGL program binary can only contain 1 shader of each kind */
 	LIST_FOR_EACH(shaders_list, i)
 	{
 		shdr_bin = list_get(shaders_list, i);

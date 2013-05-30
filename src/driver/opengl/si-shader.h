@@ -30,7 +30,6 @@ struct opengl_si_shader_t
 	/* AMD Shader binary (internal ELF) */
 	struct si_opengl_shader_binary_t *shader_bin;
 
-	/**/
 };
 
 struct opengl_si_shader_t *opengl_si_shader_create(
@@ -39,8 +38,6 @@ void opengl_si_shader_free(struct opengl_si_shader_t *shader);
 
 struct si_ndrange_t;
 void opengl_si_shader_setup_ndrange_constant_buffers(
-	struct si_ndrange_t *ndrange);
-void opengl_si_shader_setup_ndrange_args(struct opengl_si_shader_t *shader,
 	struct si_ndrange_t *ndrange);
 void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader, 
 	struct si_ndrange_t *ndrange);
