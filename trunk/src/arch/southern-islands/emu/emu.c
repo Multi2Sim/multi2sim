@@ -211,8 +211,8 @@ void si_emu_disasm(char *path)
 /* GPU OpenGL disassembler tool */
 void si_emu_opengl_disasm(char *path, int opengl_shader_index)
 {
-	struct si_opengl_shader_binary_t *si_shader_bin;
-	struct si_opengl_shader_t *si_shader;
+	struct si_opengl_program_binary_t *si_program_bin;
+	struct si_opengl_shader_binary_t *si_shader;
 	void *file_buffer;
 	int file_size;
 
@@ -225,28 +225,28 @@ void si_emu_opengl_disasm(char *path, int opengl_shader_index)
 		fatal("%s:Invalid file!", path);
 
 	/* Analyze the file and initialize structure */	
-	si_shader_bin = si_opengl_shader_binary_create(file_buffer, file_size, path);
+	si_program_bin = si_opengl_program_binary_create(file_buffer, file_size, path);
 	free_buffer(file_buffer);
 
 	// /* Basic info of the shader binary */
 	printf("This shader binary contains %d shaders\n\n", 
-		list_count(si_shader_bin->shaders));
-	if (opengl_shader_index > list_count(si_shader_bin->shaders) || 
+		list_count(si_program_bin->shaders));
+	if (opengl_shader_index > list_count(si_program_bin->shaders) || 
 		opengl_shader_index <= 0 )
 	{
 		fatal("Shader index out of range! Please choose <index> "
-			"from 1 ~ %d", list_count(si_shader_bin->shaders));
+			"from 1 ~ %d", list_count(si_program_bin->shaders));
 	}
 
 	/* Disassemble */
-	si_shader = list_get(si_shader_bin->shaders, 
+	si_shader = list_get(si_program_bin->shaders, 
 		opengl_shader_index - 1 );
 	printf("**\n** Disassembly for shader %d\n**\n\n", opengl_shader_index);
 	si_disasm_buffer(si_shader->shader_isa, stdout);
 	printf("\n\n\n");
 
 	/* Free */
-	si_opengl_shader_binary_free(si_shader_bin);
+	si_opengl_program_binary_free(si_program_bin);
 	si_disasm_done();
 
 	/* End */

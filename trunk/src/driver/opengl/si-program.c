@@ -25,6 +25,7 @@
 #include <lib/util/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/string.h>
+#include <arch/southern-islands/emu/opengl-bin-file.h>
 
 #include "si-program.h"
 
@@ -132,8 +133,8 @@ void opengl_si_program_free(struct opengl_si_program_t *program)
 	}
 
 	/* ELF file */
-	if (program->elf_file)
-		elf_file_free(program->elf_file);
+	if (program->program_bin)
+		si_opengl_program_binary_free(program->program_bin);
 
 	/* Free program */
 	free(program);
@@ -146,12 +147,14 @@ void opengl_si_program_set_binary(struct opengl_si_program_t *program,
 	char name[MAX_STRING_SIZE];
 
 	/* Already set */
-	if (program->elf_file)
+	if (program->program_bin)
 		fatal("%s: binary already set", __FUNCTION__);
 
 	/* Load ELF binary from guest memory */
 	snprintf(name, sizeof name, "program[%d].externalELF", program->id);
-	program->elf_file = elf_file_create_from_buffer(buf, size, name);
+
+	/* Program contains shader binary */
+	program->program_bin = si_opengl_program_binary_create(buf, size, name);
 
 	/* Initialize constant buffers */
 	opengl_si_program_initialize_constant_buffers(program);

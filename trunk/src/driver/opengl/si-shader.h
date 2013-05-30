@@ -24,20 +24,17 @@ struct opengl_si_program_t;
 
 struct opengl_si_shader_t
 {
-	int id;
-	char *name;
-
 	/* Program that shader belongs to */
 	struct opengl_si_program_t *program;
 
 	/* AMD Shader binary (internal ELF) */
-	struct opengl_si_shader_t *shader_bin;
+	struct si_opengl_shader_binary_t *shader_bin;
 
 	/**/
 };
 
 struct opengl_si_shader_t *opengl_si_shader_create(
-	struct opengl_si_program_t *program, char *name);
+	struct opengl_si_program_t *program, unsigned int shader_type);
 void opengl_si_shader_free(struct opengl_si_shader_t *shader);
 
 struct si_ndrange_t;
