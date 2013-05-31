@@ -14,8 +14,8 @@ libsi2bin_a_SOURCES = \
 	arg.c \
 	arg.h \
 	\
-	bin.c \
-	bin.h \
+	inner-bin.c \
+	inner-bin.h \
 	\
 	id.c \
 	id.h \
@@ -28,6 +28,9 @@ libsi2bin_a_SOURCES = \
 	\
 	metadata.c\
 	metadata.h\
+	\
+	outer-bin.c \
+	outer-bin.h \
 	\
 	si2bin.c \
 	si2bin.h \

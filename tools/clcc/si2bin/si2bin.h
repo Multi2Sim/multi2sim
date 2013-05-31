@@ -29,10 +29,8 @@ struct elf_enc_buffer_t;
 
 /* Output buffer of the currently assembled file.
  * Internal use only. */
-extern struct elf_enc_buffer_t *si2bin_output_buffer;
-extern struct elf_enc_buffer_t *si2bin_binary_buffer;
-extern struct si2bin_metadata_t *si2bin_metadata;
-
+extern struct si2bin_outer_bin_t *si2bin_outer_bin;
+extern int kernel_num;
 
 int si2bin_yylex(void);
 int si2bin_yyparse(void);
