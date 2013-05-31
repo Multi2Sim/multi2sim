@@ -322,8 +322,6 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 
 	for (i = 0; i < frm_gpu_max_warps_per_sm; i++)
 	{
-		//frm_gpu_debug("w[%d]: sm fetch\n", i);
-
 		warp = sm->warp_pool->entries[i]->warp;
 
 		/* No warp */
@@ -1238,11 +1236,11 @@ void frm_sm_run(struct frm_sm_t *sm)
 	/* Vector memory */
 	frm_vector_mem_run(&sm->vector_mem_unit);
 
-	/* LDS */
+	/* Shared memory */
 	frm_lds_run(&sm->lds_unit);
 
-	/* Scalar unit */
-	//frm_scalar_unit_run(&sm->scalar_unit);
+	/* collector unit */
+	//frm_collector_unit_run(&sm->scalar_unit);
 
 	/* Branch unit */
 	frm_branch_unit_run(&sm->branch_unit);
