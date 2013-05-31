@@ -20,7 +20,7 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
-#include <arch/southern-islands/asm/si-kernel.h>
+#include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/timing/gpu.h>
 #include <arch/x86/emu/context.h>
@@ -35,6 +35,7 @@
 
 #include "opencl.h"
 #include "si-program.h"
+#include "si-kernel.h"
 
 #define SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE (1024*1024)
 
@@ -632,7 +633,7 @@ static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_kernel_t *kernel;
-	struct opencl_si_arg_t *arg;
+	struct si_arg_t *arg;
 
 	int kernel_id;
 
@@ -656,7 +657,7 @@ static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
 
 	/* Get argument */
 	arg = list_get(kernel->arg_list, index);
-	if (!arg || arg->type != opencl_si_arg_value)
+	if (!arg || arg->type != si_arg_value)
 		fatal("%s: invalid argument %d type",
 				__FUNCTION__, index);
 
@@ -720,7 +721,7 @@ static int opencl_abi_si_kernel_set_arg_pointer_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_kernel_t *kernel;
-	struct opencl_si_arg_t *arg;
+	struct si_arg_t *arg;
 
 	int kernel_id;
 
@@ -744,7 +745,7 @@ static int opencl_abi_si_kernel_set_arg_pointer_impl(struct x86_ctx_t *ctx)
 
 	/* Get argument */
 	arg = list_get(kernel->arg_list, index);
-	if (!arg || arg->type != opencl_si_arg_pointer)
+	if (!arg || arg->type != si_arg_pointer)
 		fatal("%s: invalid argument %d type",
 				__FUNCTION__, index);
 
