@@ -33,6 +33,7 @@
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 
+#include "declarator-list.h"
 #include "function.h"
 #include "symbol.h"
 #include "cl2llvm.h"
@@ -83,6 +84,19 @@ void cl2llvm_init(void)
 
 	/* Initialize global symbol table */
 	cl2llvm_symbol_table = hash_table_create(10, 1);
+
+	/*LLVMTypeRef args_get_global_id_array[] = {LLVMInt32Type()};
+	struct list_t *args_get_global_id = list_create();
+	struct cl2llvm_decl_list_t *ggi_dimindex_decl = cl2llvm_decl_list_create();
+	ggi_dimindex_decl->type_spec->llvm_type = LLVMInt32Type():
+	ggi_dimindex_decl->type_spec->sign = 0;
+	struct cl2llvm_arg_t *ggi_dimindex_arg1 = cl2llvm_arg_create(ggi_dimindex_decl, NULL);
+	list_add(args_get_global_id, ggi_dimindex_arg1);
+	struct cl2llvm_function_t *cl2llvm_get_global_id = cl2llvm_func_create("get_global_id", args_get_global_id)
+	cl2llvm_get_global_id->func_type = LLVMFunctionType(cl2llvm_module, LLVMInt32Type(), args_get_global_id_array, 1, 0);
+	cl2llvm_get_global_id->func = LLVMAddFunction(cl2llvm_module, "get_global_id", cl2llvm_get_global_id->func_type)
+
+	hash_table_insert(cl2llvm_hash_table, cl2llvm_function, "get_global_id");*/
 
 }
 
