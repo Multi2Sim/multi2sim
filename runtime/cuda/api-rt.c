@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <elf.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +27,7 @@
 #include "api.h"
 #include "debug.h"
 #include "device.h"
+#include "elf-format.h"
 #include "function-arg.h"
 #include "function.h"
 #include "list.h"
@@ -38,8 +40,8 @@
 
 CUmodule module;
 CUfunction function;
-unsigned long long int *inst_buffer;
 unsigned int inst_buffer_size;
+unsigned long long int *inst_buffer;
 unsigned int num_gpr_used;
 cudaError_t cuda_rt_last_error;
 
@@ -68,48 +70,48 @@ char *cuda_rt_err_param_note =
  * Private Functions
  */
 
-unsigned char get_uchar(const unsigned long long int *rodata, int index)
+unsigned char get_uchar(const unsigned long long int *kernel_bin_section, int index)
 {
-	return (unsigned char)((rodata[index / 8] >> (index % 8 * 8)) & 0xff);
+	return (unsigned char)((kernel_bin_section[index / 8] >> (index % 8 * 8)) & 0xff);
 }
 
-unsigned short get_ushort(const unsigned long long int *rodata, int start_index)
+unsigned short get_ushort(const unsigned long long int *kernel_bin_section, int start_index)
 {
-	return (unsigned short)((unsigned short)get_uchar(rodata, start_index) |
-			((unsigned short)get_uchar(rodata, start_index + 1)) << 8);
+	return (unsigned short)((unsigned short)get_uchar(kernel_bin_section, start_index) |
+			((unsigned short)get_uchar(kernel_bin_section, start_index + 1)) << 8);
 }
 
-unsigned int get_uint(const unsigned long long int *rodata, int start_index)
+unsigned int get_uint(const unsigned long long int *kernel_bin_section, int start_index)
 {
-	return (unsigned int)((unsigned int)get_uchar(rodata, start_index) |
-			((unsigned int)get_uchar(rodata, start_index + 1)) << 8 |
-			((unsigned int)get_uchar(rodata, start_index + 2)) << 16 |
-			((unsigned int)get_uchar(rodata, start_index + 3)) << 24);
+	return (unsigned int)((unsigned int)get_uchar(kernel_bin_section, start_index) |
+			((unsigned int)get_uchar(kernel_bin_section, start_index + 1)) << 8 |
+			((unsigned int)get_uchar(kernel_bin_section, start_index + 2)) << 16 |
+			((unsigned int)get_uchar(kernel_bin_section, start_index + 3)) << 24);
 }
 
-unsigned long long int get_ulonglong(const unsigned long long int *rodata, int start_index)
+unsigned long long int get_ulonglong(const unsigned long long int *kernel_bin_section, int start_index)
 {
 	return (unsigned long long int)
-		(((unsigned long long int)get_uint(rodata, start_index)) << 32 |
-		((unsigned long long int)get_uint(rodata, start_index + 4)));
+		(((unsigned long long int)get_uint(kernel_bin_section, start_index)) << 32 |
+		((unsigned long long int)get_uint(kernel_bin_section, start_index + 4)));
 }
 
-int get_str_len(const unsigned long long int *rodata, int start_index)
+int get_str_len(const unsigned long long int *kernel_bin_section, int start_index)
 {
 	int i;
 
-	for (i = start_index; get_uchar(rodata, i) != '\0'; ++i)
+	for (i = start_index; get_uchar(kernel_bin_section, i) != '\0'; ++i)
 		;
 
 	return i;
 }
 
-void get_str(unsigned char *s, const unsigned long long int *rodata, int start_index, int end_index)
+void get_str(unsigned char *s, const unsigned long long int *kernel_bin_section, int start_index, int end_index)
 {
 	int i;
 
 	for (i = start_index; i < end_index; ++i)
-		s[i - start_index] = get_uchar(rodata, i);
+		s[i - start_index] = get_uchar(kernel_bin_section, i);
 	s[i - start_index] = '\0';
 }
 
@@ -190,92 +192,73 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		dim3 *gDim,
 		int *wSize)
 {
-	const unsigned long long int *rodata;
-
+	const unsigned long long int *kernel_bin_section;
+	unsigned long long int kernel_bin_section_size;
 	int elf_head;
-	int str_tab_head;
-	Elf32_Ehdr elf_header;
-	Elf32_Shdr *sections;
-	unsigned char **section_names;
-	int section_name_len;
+
+	struct elf_file_t *kernel_bin;
+	struct elf_section_t *section;
 	char text_section_name[1024];
-	unsigned short int text_section_index = 0;
+	unsigned short int text_section_index;
+	struct elf_section_t *text_section;
 
 	int i;
 
 	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n",
 			__FUNCTION__);
 
-	/* Get .rodata section */
-	rodata = (*(struct __fatDeviceText **)fatCubinHandle)->d;
+	/* Get the section containing kernel binary */
+	kernel_bin_section = (*(struct __fatDeviceText **)fatCubinHandle)->d;
+	kernel_bin_section_size = *(((unsigned long long int *)kernel_bin_section) + 1) + 16;
 
 	/* Look for ELF head */
-	/* FIXME: boundary check */
-	for (i = 0; get_uint(rodata, i) != 0x464c457f; ++i)
-		;
-	elf_head = i;
-
-	/* Get section header info */
-	elf_header.e_shoff = get_uint(rodata, elf_head + 32);
-	elf_header.e_shentsize = get_ushort(rodata, elf_head + 46);
-	elf_header.e_shnum = get_ushort(rodata, elf_head + 48);
-
-	/* Get section info */
-	sections = (Elf32_Shdr *)xcalloc(elf_header.e_shnum,
-			sizeof(Elf32_Shdr));
-	for (i = 0; i < elf_header.e_shnum; ++i)
+	elf_head = -1;
+	for (i = 2; i < kernel_bin_section_size; ++i)
 	{
-		sections[i].sh_name = get_uint(rodata, 
-				elf_head + 52 + i * elf_header.e_shentsize);
-		sections[i].sh_offset = get_uint(rodata, 
-				elf_head + 52 + i * elf_header.e_shentsize +
-				16);
-		sections[i].sh_size = get_uint(rodata, 
-				elf_head + 52 + i * elf_header.e_shentsize +
-				20);
-		sections[i].sh_info = get_uint(rodata, 
-				elf_head + 52 + i * elf_header.e_shentsize +
-				28);
+		if (get_uint(kernel_bin_section, i) == 0x464c457f)
+		{
+			elf_head = i;
+			break;
+		}
 	}
+	assert(elf_head != -1);
 
-	/* Get string table head */
-	elf_header.e_shstrndx = get_ushort(rodata, elf_head + 50);
-	str_tab_head = elf_head + sections[elf_header.e_shstrndx].sh_offset;
-
-	/* Get section names */
-	section_names = (unsigned char **)xcalloc(elf_header.e_shnum, sizeof(unsigned char *));
-	for (i = 0; i < elf_header.e_shnum - 1; ++i)
-	{
-		section_name_len = get_str_len(rodata, str_tab_head +
-				sections[i].sh_name);
-		section_names[i] = (unsigned char *)xcalloc(1, section_name_len
-				+ 1);
-		get_str(section_names[i], rodata, str_tab_head +
-				sections[i].sh_name, str_tab_head + 
-				sections[i].sh_name + section_name_len);
-	}
+	/* Get kernel binary 
+	 * Notice that this binary may be larger than the actual binary since we
+	 * cannot determine the end of the binary. */
+	kernel_bin = elf_file_create_from_buffer(
+			(void *)(kernel_bin_section + elf_head / sizeof(unsigned long long int)),
+			kernel_bin_section_size - elf_head * sizeof(unsigned long long int), NULL);
 
 	/* Look for .text.kernel_name section */
 	snprintf(text_section_name, sizeof text_section_name, ".text.%s", deviceFun);
-	for (i = 0; i < elf_header.e_shnum; ++i)
+	text_section_index = 0;
+	for (i = 0; i < list_count(kernel_bin->section_list); ++i)
 	{
-		if (!strcmp(text_section_name, (char *)section_names[i]))
-			break;
-	}
-	if (i == elf_header.e_shnum)
-		fatal("%s section not found", text_section_name);
-	text_section_index = i;
+		section = (struct elf_section_t *)list_get(kernel_bin->section_list, i);
 
-	/* Get GPR usage */
-	num_gpr_used = sections[text_section_index].sh_info >> 24;
+		if (!strncmp(section->name, text_section_name, sizeof text_section_name))
+		{
+			text_section_index = i;
+			break;
+		}
+	}
+	assert(text_section_index != 0);
+
+	/* Get .text.kernel_name section */
+	text_section = (struct elf_section_t *)list_get(kernel_bin->section_list, text_section_index);
 
 	/* Get instruction binary */
-	inst_buffer = (unsigned long long int *)xcalloc(1,
-			sections[text_section_index].sh_size);
-	for (i = 0; i < sections[text_section_index].sh_size / 8; ++i)
-		inst_buffer[i] = get_ulonglong(rodata, elf_head +
-				sections[text_section_index].sh_offset + i * 8);
-	inst_buffer_size = sections[text_section_index].sh_size;
+	inst_buffer_size = text_section->header->sh_size;
+	inst_buffer = (unsigned long long int *)xcalloc(1, inst_buffer_size);
+	for (i = 0; i < inst_buffer_size / 8; ++i)
+	{
+		inst_buffer[i] = get_ulonglong(kernel_bin_section, elf_head +
+				text_section->header->sh_offset + i * 8);
+	}
+
+	/* Get GPR usage */
+	num_gpr_used = text_section->header->sh_info >> 24;
 
 	/* Load module */
 	cuModuleLoad(&module, "ignored_cubin_filename");
@@ -285,6 +268,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 
 	/* Free */
 	free(inst_buffer);
+	elf_file_free(kernel_bin);
 
 	cuda_debug_print(stdout, "\treturn\n");
 }
@@ -404,7 +388,7 @@ cudaError_t cudaGetLastError(void)
 cudaError_t cudaPeekAtLastError(void)
 {
 	__CUDART_NOT_IMPL__
-	return cudaSuccess;
+		return cudaSuccess;
 }
 
 
@@ -424,88 +408,88 @@ cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp *prop_ptr, int device)
 	/* Check for valid properties pointer */
 	if (!prop_ptr)
 		fatal("%s: invalid value for 'prop_ptr'.\n%s",
-			__FUNCTION__, cuda_rt_err_param_note);
+				__FUNCTION__, cuda_rt_err_param_note);
 
 	/* Check for valid device. For now, we just check that the device is
 	 * 1, but later we will check among an array of possible valid
 	 * devices. */
 	if (device != 1)
 		fatal("%s: invalid device (%d).\n%s", __FUNCTION__,
-			device, cuda_rt_err_param_note);
-	
+				device, cuda_rt_err_param_note);
+
 	/* Populate fields */
 	snprintf(prop_ptr->name, sizeof prop_ptr->name, "Multi2Sim CUDA Device");
 
 	/* Return success */
 	return cudaSuccess;
-    
-/* FIXME - populate all these fields
-    char name[256];
-    size_t totalGlobalMem;
-    size_t sharedMemPerBlock;
-    int regsPerBlock;
-    int warpSize;
-    size_t memPitch;
-    int maxThreadsPerBlock;
-    int maxThreadsDim[3];
-    int maxGridSize[3];
-    int clockRate;
-    size_t totalConstMem;
-    int major;
-    int minor;
-    size_t textureAlignment;
-    size_t texturePitchAlignment;
-    int deviceOverlap;
-    int multiProcessorCount;
-    int kernelExecTimeoutEnabled;
-    int integrated;
-    int canMapHostMemory;
-    int computeMode;
-    int maxTexture1D;
-    int maxTexture1DMipmap;
-    int maxTexture1DLinear;
-    int maxTexture2D[2];
-    int maxTexture2DMipmap[2];
-    int maxTexture2DLinear[3];
-    int maxTexture2DGather[2];
-    int maxTexture3D[3];
-    int maxTextureCubemap;
-    int maxTexture1DLayered[2];
-    int maxTexture2DLayered[3];
-    int maxTextureCubemapLayered[2];
-    int maxSurface1D;
-    int maxSurface2D[2];
-    int maxSurface3D[3];
-    int maxSurface1DLayered[2];
-    int maxSurface2DLayered[3];
-    int maxSurfaceCubemap;
-    int maxSurfaceCubemapLayered[2];
-    size_t surfaceAlignment;
-    int concurrentKernels;
-    int ECCEnabled;
-    int pciBusID;
-    int pciDeviceID;
-    int pciDomainID;
-    int tccDriver;
-    int asyncEngineCount;
-    int unifiedAddressing;
-    int memoryClockRate;
-    int memoryBusWidth;
-    int l2CacheSize;
-    int maxThreadsPerMultiProcessor;
-*/
+
+	/* FIXME - populate all these fields
+	   char name[256];
+	   size_t totalGlobalMem;
+	   size_t sharedMemPerBlock;
+	   int regsPerBlock;
+	   int warpSize;
+	   size_t memPitch;
+	   int maxThreadsPerBlock;
+	   int maxThreadsDim[3];
+	   int maxGridSize[3];
+	   int clockRate;
+	   size_t totalConstMem;
+	   int major;
+	   int minor;
+	   size_t textureAlignment;
+	   size_t texturePitchAlignment;
+	   int deviceOverlap;
+	   int multiProcessorCount;
+	   int kernelExecTimeoutEnabled;
+	   int integrated;
+	   int canMapHostMemory;
+	   int computeMode;
+	   int maxTexture1D;
+	   int maxTexture1DMipmap;
+	   int maxTexture1DLinear;
+	   int maxTexture2D[2];
+	   int maxTexture2DMipmap[2];
+	   int maxTexture2DLinear[3];
+	   int maxTexture2DGather[2];
+	   int maxTexture3D[3];
+	   int maxTextureCubemap;
+	   int maxTexture1DLayered[2];
+	   int maxTexture2DLayered[3];
+	   int maxTextureCubemapLayered[2];
+	   int maxSurface1D;
+	   int maxSurface2D[2];
+	   int maxSurface3D[3];
+	   int maxSurface1DLayered[2];
+	   int maxSurface2DLayered[3];
+	   int maxSurfaceCubemap;
+	   int maxSurfaceCubemapLayered[2];
+	   size_t surfaceAlignment;
+	   int concurrentKernels;
+	   int ECCEnabled;
+	   int pciBusID;
+	   int pciDeviceID;
+	   int pciDomainID;
+	   int tccDriver;
+	   int asyncEngineCount;
+	   int unifiedAddressing;
+	   int memoryClockRate;
+	   int memoryBusWidth;
+	   int l2CacheSize;
+	   int maxThreadsPerMultiProcessor;
+	 */
 }
 
 cudaError_t cudaChooseDevice(int *device, const struct cudaDeviceProp *prop)
 {
 	__CUDART_NOT_IMPL__
-	return cudaSuccess;
+		return cudaSuccess;
 }
 
 cudaError_t cudaSetDevice(int device)
 {
 	__CUDART_NOT_IMPL__
-	return cudaSuccess;
+		return cudaSuccess;
 }
 
 cudaError_t cudaGetDevice(int *device_ptr)
@@ -513,13 +497,13 @@ cudaError_t cudaGetDevice(int *device_ptr)
 	/* Check valid device pointer */
 	if (!device_ptr)
 		fatal("%s: invalid device pointer.\n%s", __FUNCTION__,
-			cuda_rt_err_param_note);
-	
+				cuda_rt_err_param_note);
+
 	/* We allow temporarily for only the Fermi device. We assigned a
 	 * hardcoded device identifier equal to 1. This function will be
 	 * extended later with support to Kepler. */
 	*device_ptr = 1;
-	
+
 	/* Return success */
 	return cudaSuccess;
 }
