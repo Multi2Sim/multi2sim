@@ -20,20 +20,21 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/bin-file.h>
+#include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <arch/southern-islands/emu/work-item.h>
-#include <driver/opencl/opencl.h>
-#include <driver/opencl/si-program.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
+#include "opencl.h"
 #include "si-kernel.h"
+#include "si-program.h"
 
 
 static char *opencl_err_si_kernel_symbol =
@@ -56,7 +57,7 @@ static char *opencl_err_si_kernel_metadata =
 
 static void opencl_si_create_buffer_desc(unsigned int base_addr,
 	unsigned int size, int num_elems, 
-	enum opencl_si_arg_data_type_t data_type,
+	enum si_arg_data_type_t data_type,
 	struct si_buffer_desc_t *buffer_desc);
 
 
@@ -97,91 +98,6 @@ void opencl_si_kernel_list_done(void)
 	}
 	list_free(opencl_si_kernel_list);
 }
-
-
-
-
-/*
- * Argument
- */
-
-struct opencl_si_arg_t *opencl_si_arg_create(enum opencl_si_arg_type_t type,
-		char *name)
-{
-	struct opencl_si_arg_t *arg;
-
-	/* Initialize */
-	arg = xcalloc(1, sizeof(struct opencl_si_arg_t));
-	arg->type = type;
-	arg->name = xstrdup(name);
-
-	/* Return */
-	return arg;
-}
-
-
-void opencl_si_arg_free(struct opencl_si_arg_t *arg)
-{
-	/* Specific fields per type */
-	switch (arg->type)
-	{
-	case opencl_si_arg_value:
-
-		if (arg->value.value_ptr)
-			free(arg->value.value_ptr);
-		break;
-
-	default:
-		break;
-	}
-
-	/* Rest */
-	free(arg->name);
-	free(arg);
-}
-
-
-/* Infer argument size from its data type */
-int opencl_si_arg_get_data_size(enum opencl_si_arg_data_type_t data_type)
-{
-	switch (data_type)
-	{
-
-	case opencl_si_arg_i8:
-	case opencl_si_arg_u8:
-	case opencl_si_arg_struct:
-	case opencl_si_arg_union:
-	case opencl_si_arg_event:
-	case opencl_si_arg_opaque:
-
-		return 1;
-
-	case opencl_si_arg_i16:
-	case opencl_si_arg_u16:
-
-		return 2;
-
-	case opencl_si_arg_i32:
-	case opencl_si_arg_u32:
-	case opencl_si_arg_float:
-
-		return 4;
-
-	case opencl_si_arg_i64:
-	case opencl_si_arg_u64:
-	case opencl_si_arg_double:
-
-		return 8;
-
-	default:
-
-		panic("%s: invalid data type (%d)",
-				__FUNCTION__, data_type);
-		return 0;
-	}
-}
-
-
 
 
 /*
@@ -229,73 +145,10 @@ static void opencl_si_kernel_expect_count(struct opencl_si_kernel_t *kernel,
 }
 
 
-static struct str_map_t opencl_si_arg_dimension_map =
-{
-	2,
-	{
-		{ "2D", 2 },
-		{ "3D", 3 }
-	}
-};
-
-
-static struct str_map_t opencl_si_arg_access_type_map =
-{
-	3,
-	{
-		{ "RO", opencl_si_arg_read_only },
-		{ "WO", opencl_si_arg_write_only },
-		{ "RW", opencl_si_arg_read_write }
-	}
-};
-
-
-static struct str_map_t opencl_si_arg_data_type_map =
-{
-	16,
-	{
-		{ "i1", opencl_si_arg_i1 },
-		{ "i8", opencl_si_arg_i8 },
-		{ "i16", opencl_si_arg_i16 },
-		{ "i32", opencl_si_arg_i32 },
-		{ "i64", opencl_si_arg_i64 },
-		{ "u1", opencl_si_arg_u1 },
-		{ "u8", opencl_si_arg_u8 },
-		{ "u16", opencl_si_arg_u16 },
-		{ "u32", opencl_si_arg_u32 },
-		{ "u64", opencl_si_arg_u64 },
-		{ "float", opencl_si_arg_float },
-		{ "double", opencl_si_arg_double },
-		{ "struct", opencl_si_arg_struct },
-		{ "union", opencl_si_arg_union },
-		{ "event", opencl_si_arg_event },
-		{ "opaque", opencl_si_arg_opaque }
-	}
-};
-
-
-static struct str_map_t opencl_si_arg_scope_map =
-{
-	10,
-	{
-		{ "g", opencl_si_arg_global },
-		{ "p", opencl_si_arg_emu_private },
-		{ "l", opencl_si_arg_emu_local },
-		{ "uav", opencl_si_arg_uav },
-		{ "c", opencl_si_arg_emu_constant },
-		{ "r", opencl_si_arg_emu_gds },
-		{ "hl", opencl_si_arg_hw_local },
-		{ "hp", opencl_si_arg_hw_private },
-		{ "hc", opencl_si_arg_hw_constant },
-		{ "hr", opencl_si_arg_hw_gds }
-	}
-};
-
-
 static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 {
 	struct elf_buffer_t *buffer = &kernel->metadata_buffer;
-	struct opencl_si_arg_t *arg;
+	struct si_arg_t *arg;
 	struct list_t *token_list;
 
 	char line[MAX_STRING_SIZE];
@@ -330,11 +183,11 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 1 - Name */
 			token = str_token_list_shift(token_list);
-			arg = opencl_si_arg_create(opencl_si_arg_value, token);
+			arg = si_arg_create(si_arg_value, token);
 
 			/* Token 2 - Data type */
 			token = str_token_list_shift(token_list);
-			arg->value.data_type = str_map_string_err(&opencl_si_arg_data_type_map,
+			arg->value.data_type = str_map_string_err(&si_arg_data_type_map,
 					token, &err);
 			if (err)
 				fatal("%s: invalid data type '%s'.\n%s",
@@ -360,7 +213,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Infer argument size from its type */
 			arg->size = arg->value.num_elems *
-				opencl_si_arg_get_data_size(
+				si_arg_get_data_size(
 					arg->value.data_type);
 
 			/* Debug */
@@ -385,13 +238,13 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 1 - Name */
 			token = str_token_list_shift(token_list);
-			arg = opencl_si_arg_create(opencl_si_arg_pointer, 
+			arg = si_arg_create(si_arg_pointer, 
 				token);
 
 			/* Token 2 - Data type */
 			token = str_token_list_shift(token_list);
 			arg->pointer.data_type = str_map_string_err(
-				&opencl_si_arg_data_type_map, token, &err);
+				&si_arg_data_type_map, token, &err);
 			if (err)
 				fatal("%s: invalid data type '%s'.\n%s",
 					__FUNCTION__, token, 
@@ -418,7 +271,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 			/* Token 6 - Memory scope */
 			token = str_token_list_shift(token_list);
 			arg->pointer.scope = str_map_string_err(
-				&opencl_si_arg_scope_map, token, &err);
+				&si_arg_scope_map, token, &err);
 			if (err)
 				fatal("%s: invalid scope '%s'.\n%s",
 					__FUNCTION__, token, 
@@ -437,7 +290,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 			/* Token 9 - Access type */
 			token = str_token_list_shift(token_list);
 			arg->pointer.access_type = str_map_string_err(
-				&opencl_si_arg_access_type_map, token, &err);
+				&si_arg_access_type_map, token, &err);
 			if (err)
 				fatal("%s: invalid access type '%s'.\n%s",
 					__FUNCTION__, token, 
@@ -475,11 +328,11 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 1 - Name */
 			token = str_token_list_shift(token_list);
-			arg = opencl_si_arg_create(opencl_si_arg_image, token);
+			arg = si_arg_create(si_arg_image, token);
 
 			/* Token 2 - Dimension */
 			token = str_token_list_shift(token_list);
-			arg->image.dimension = str_map_string_err(&opencl_si_arg_dimension_map,
+			arg->image.dimension = str_map_string_err(&si_arg_dimension_map,
 					token, &err);
 			if (err)
 				fatal("%s: invalid image dimensions '%s'.\n%s",
@@ -487,7 +340,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 3 - Access type */
 			token = str_token_list_shift(token_list);
-			arg->image.access_type = str_map_string_err(&opencl_si_arg_access_type_map,
+			arg->image.access_type = str_map_string_err(&si_arg_access_type_map,
 					token, &err);
 			if (err)
 				fatal("%s: invalid access type '%s'.\n%s",
@@ -522,7 +375,7 @@ static void opencl_si_kernel_load_metadata_v3(struct opencl_si_kernel_t *kernel)
 
 			/* Token 1 - Name */
 			token = str_token_list_shift(token_list);
-			arg = opencl_si_arg_create(opencl_si_arg_sampler, token);
+			arg = si_arg_create(si_arg_sampler, token);
 
 			/* Token 2 - ID */
 			token = str_token_list_shift(token_list);
@@ -830,7 +683,7 @@ void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel)
 
 	/* Free argument list */
 	LIST_FOR_EACH(kernel->arg_list, index)
-		opencl_si_arg_free(list_get(kernel->arg_list, index));
+		si_arg_free(list_get(kernel->arg_list, index));
 	list_free(kernel->arg_list);
 
 	/* Rest */
@@ -863,12 +716,12 @@ void opencl_si_kernel_setup_ndrange_constant_buffers(
 	float f;
 
 	opencl_si_create_buffer_desc(ndrange->cb0, SI_EMU_CONST_BUF_0_SIZE, 1,
-		opencl_si_arg_i32, &buffer_desc);
+		si_arg_i32, &buffer_desc);
 
 	si_ndrange_insert_buffer_into_const_buf_table(ndrange, &buffer_desc, 0);
 
 	opencl_si_create_buffer_desc(ndrange->cb1, SI_EMU_CONST_BUF_1_SIZE, 1,
-		opencl_si_arg_i32, &buffer_desc);
+		si_arg_i32, &buffer_desc);
 
 	si_ndrange_insert_buffer_into_const_buf_table(ndrange, &buffer_desc, 1);
 
@@ -1001,7 +854,7 @@ void opencl_si_kernel_create_ndrange_tables(struct si_ndrange_t *ndrange)
 void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 		struct si_ndrange_t *ndrange)
 {
-	struct opencl_si_arg_t *arg;
+	struct si_arg_t *arg;
 	struct opencl_si_constant_buffer_t *constant_buffer;
 	struct si_buffer_desc_t buffer_desc;
 
@@ -1032,7 +885,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 		switch (arg->type)
 		{
 
-		case opencl_si_arg_value:
+		case si_arg_value:
 
 			/* Value copied directly into device constant
 			 * memory */
@@ -1043,13 +896,13 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 				arg->value.value_ptr, arg->size);
 			break;
 
-		case opencl_si_arg_pointer:
+		case si_arg_pointer:
 
 			switch (arg->pointer.scope)
 			{
 
 			/* Hardware local memory */
-			case opencl_si_arg_hw_local:
+			case si_arg_hw_local:
 
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign
@@ -1068,7 +921,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 				break;
 
 			/* UAV */
-			case opencl_si_arg_uav:
+			case si_arg_uav:
 			{
 				/* Create descriptor for argument */
 				opencl_si_create_buffer_desc(
@@ -1092,7 +945,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			}
 
 			/* Hardware constant memory */
-			case opencl_si_arg_hw_constant:
+			case si_arg_hw_constant:
 			{
 				opencl_si_create_buffer_desc(
 					arg->pointer.device_ptr,
@@ -1126,12 +979,12 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 
 			break;
 
-		case opencl_si_arg_image:
+		case si_arg_image:
 
 			fatal("%s: type 'image' not implemented", __FUNCTION__);
 			break;
 
-		case opencl_si_arg_sampler:
+		case si_arg_sampler:
 
 			fatal("%s: type 'sampler' not implemented", 
 				__FUNCTION__);
@@ -1159,7 +1012,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 			constant_buffer->device_ptr,
 			constant_buffer->size,
 			4,
-			opencl_si_arg_float,
+			si_arg_float,
 			&buffer_desc);
 
 		/* Data stored in hw constant memory 
@@ -1174,7 +1027,7 @@ void opencl_si_kernel_setup_ndrange_args(struct opencl_si_kernel_t *kernel,
 
 static void opencl_si_create_buffer_desc(unsigned int base_addr,
 	unsigned int size, int num_elems, 
-	enum opencl_si_arg_data_type_t data_type,
+	enum si_arg_data_type_t data_type,
 	struct si_buffer_desc_t *buffer_desc)
 {
 	int num_format;
@@ -1191,8 +1044,8 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 	switch (data_type)
 	{
 
-	case opencl_si_arg_i8:
-	case opencl_si_arg_u8:
+	case si_arg_i8:
+	case si_arg_u8:
 
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
 		switch (num_elems)
@@ -1216,8 +1069,8 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 1 * num_elems;
 		break;
 
-	case opencl_si_arg_i16:
-	case opencl_si_arg_u16:
+	case si_arg_i16:
+	case si_arg_u16:
 
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
 		switch (num_elems)
@@ -1242,8 +1095,8 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 2 * num_elems;
 		break;
 
-	case opencl_si_arg_i32:
-	case opencl_si_arg_u32:
+	case si_arg_i32:
+	case si_arg_u32:
 
 		num_format = SI_BUF_DESC_NUM_FMT_SINT;
 		switch (num_elems)
@@ -1272,7 +1125,7 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 4 * num_elems;
 		break;
 
-	case opencl_si_arg_float:
+	case si_arg_float:
 
 		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
 		switch (num_elems)
@@ -1300,7 +1153,7 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 		elem_size = 4 * num_elems;
 		break;
 
-	case opencl_si_arg_struct:
+	case si_arg_struct:
 
 		num_format = SI_BUF_DESC_NUM_FMT_UINT;
 		data_format = SI_BUF_DESC_DATA_FMT_8;

@@ -28,7 +28,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
-#include "bin.h"
+#include "inner-bin.h"
 
 
 
@@ -36,13 +36,13 @@
  * Note Object
  */
 
-struct si2bin_bin_note_t *si2bin_bin_note_create(unsigned int type,
+struct si2bin_inner_bin_note_t *si2bin_inner_bin_note_create(unsigned int type,
 		unsigned int size, void *payload)
 {
-	struct si2bin_bin_note_t *note;
+	struct si2bin_inner_bin_note_t *note;
 
 	/* Initialize */
-	note = xcalloc(1, sizeof(struct si2bin_bin_note_t));
+	note = xcalloc(1, sizeof(struct si2bin_inner_bin_note_t));
 	note->type = type;
 	note->size = size;
 
@@ -58,7 +58,7 @@ struct si2bin_bin_note_t *si2bin_bin_note_create(unsigned int type,
 }
 
 
-void si2bin_bin_note_free(struct si2bin_bin_note_t *note)
+void si2bin_inner_bin_note_free(struct si2bin_inner_bin_note_t *note)
 {
 	if (note->size)
 		free(note->payload);
@@ -66,7 +66,7 @@ void si2bin_bin_note_free(struct si2bin_bin_note_t *note)
 }
 
 
-void si2bin_bin_note_dump(struct elf_enc_buffer_t *buffer, FILE *fp)
+void si2bin_inner_bin_note_dump(struct elf_enc_buffer_t *buffer, FILE *fp)
 {
 	int offset;
 	int descsz;
@@ -118,12 +118,12 @@ void si2bin_bin_note_dump(struct elf_enc_buffer_t *buffer, FILE *fp)
  */
 
 
-struct si2bin_bin_entry_t *si2bin_bin_entry_create(void)
+struct si2bin_inner_bin_entry_t *si2bin_inner_bin_entry_create(void)
 {
-	struct si2bin_bin_entry_t *entry;
+	struct si2bin_inner_bin_entry_t *entry;
 
 	/* Initialize */
-	entry = xcalloc(1, sizeof(struct si2bin_bin_entry_t));
+	entry = xcalloc(1, sizeof(struct si2bin_inner_bin_entry_t));
 
 	/* Text Section Initialization */
 	entry->text_section_buffer = elf_enc_buffer_create();
@@ -150,13 +150,13 @@ struct si2bin_bin_entry_t *si2bin_bin_entry_create(void)
 }
 
 
-void si2bin_bin_entry_free(struct si2bin_bin_entry_t *entry)
+void si2bin_inner_bin_entry_free(struct si2bin_inner_bin_entry_t *entry)
 {
 	int i;
 
 	/* Free list element and list */
 	LIST_FOR_EACH(entry->note_list, i)
-		si2bin_bin_note_free(list_get(entry->note_list, i));
+		si2bin_inner_bin_note_free(list_get(entry->note_list, i));
 	list_free(entry->note_list);
 
 	/* Free buffer */
@@ -167,13 +167,95 @@ void si2bin_bin_entry_free(struct si2bin_bin_entry_t *entry)
 }
 
 
-void si2bin_bin_entry_add_note(struct si2bin_bin_entry_t *entry,
-		struct si2bin_bin_note_t *note)
+void si2bin_inner_bin_entry_add_note(struct si2bin_inner_bin_entry_t *entry,
+		struct si2bin_inner_bin_note_t *note)
 {
 	list_add(entry->note_list, note);
 }
 
 
+/*
+ * Constant Buffer
+ */
+
+struct si2bin_inner_bin_constant_buffer_t *si2bin_inner_bin_constant_buffer_create(
+		int buff_num, int start_reg, int end_reg)
+{
+	struct si2bin_inner_bin_constant_buffer_t *cb;
+
+	/* Initialize */
+	cb = xcalloc(1, sizeof(struct si2bin_inner_bin_constant_buffer_t));
+	
+	cb->buffer_number = buff_num;
+	cb->start_reg = start_reg;
+	cb->end_reg = end_reg;
+
+	/* Return */
+	return cb;
+}
+
+void si2bin_inner_bin_constant_buffer_free(
+		struct si2bin_inner_bin_constant_buffer_t *cb)
+{
+	free(cb);
+}
+
+
+/*
+ * UAV Table Pointer
+ */
+
+struct si2bin_inner_bin_uav_table_pointer_t *si2bin_inner_bin_uav_table_pointer_create(
+ 		int start_reg, int end_reg)
+{
+ 	struct si2bin_inner_bin_uav_table_pointer_t *uav_ptr;
+
+	/* Initialize */
+	uav_ptr = xcalloc(1, sizeof(struct si2bin_inner_bin_uav_table_pointer_t));
+	
+	uav_ptr->start_reg = start_reg;
+	uav_ptr->end_reg = end_reg;
+
+	/* Return */
+	return uav_ptr;
+}
+
+void si2bin_inner_bin_uav_table_pointer_free(
+		struct si2bin_inner_bin_uav_table_pointer_t * uav_ptr)
+{
+	free(uav_ptr);
+}
+
+/*
+ * Metadata Object
+ */
+
+struct si2bin_inner_bin_metadata_t *si2bin_inner_bin_metadata_create(void)
+{
+	struct si2bin_inner_bin_metadata_t *metadata;
+	struct si2bin_inner_bin_constant_buffer_t *cb;
+
+	metadata = xcalloc(1, sizeof(struct si2bin_inner_bin_metadata_t));
+
+	metadata->arg_list = list_create();
+	
+	metadata->cb_list = list_create();
+	cb = si2bin_inner_bin_constant_buffer_create(0, 0, 0);
+	list_add(metadata->cb_list, cb);
+
+	metadata->cb_list = list_create();
+	cb = si2bin_inner_bin_constant_buffer_create(1, 0, 0);
+	list_add(metadata->cb_list, cb);
+	
+	metadata->cb_list = list_create();
+	cb = si2bin_inner_bin_constant_buffer_create(2, 0, 0);
+	list_add(metadata->cb_list, cb);
+	
+	metadata->uav_ptr = si2bin_inner_bin_uav_table_pointer_create(0, 0);
+
+	
+	return metadata;
+}
 
 
 /*
@@ -181,16 +263,17 @@ void si2bin_bin_entry_add_note(struct si2bin_bin_entry_t *entry,
  */
 
 
-struct si2bin_bin_t *si2bin_bin_create(void)
+struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 {
-	struct si2bin_bin_t *bin;
+	struct si2bin_inner_bin_t *bin;
 	struct elf_enc_buffer_t *buffer;
 	struct elf_enc_segment_t *segment;
 
 	/* Initialize */
-	bin = xcalloc(1, sizeof(struct si2bin_bin_t));
+	bin = xcalloc(1, sizeof(struct si2bin_inner_bin_t));
 	bin->file = elf_enc_file_create();
 	bin->entry_list = list_create();
+	bin->metadata = si2bin_inner_bin_metadata_create();
 	
 	/* Create buffer and segment for encoding dictionary */
 	buffer = elf_enc_buffer_create();
@@ -201,30 +284,32 @@ struct si2bin_bin_t *si2bin_bin_create(void)
 
 	segment->header.p_type = PT_LOPROC + 2;
 
+	bin->name = xstrdup(name);
+
 	/* Return */
 	return bin;
 }
 
 
-void si2bin_bin_free(struct si2bin_bin_t *bin)
+void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 {
 	int i;
 
 	/* Free list elements and list */
 	LIST_FOR_EACH(bin->entry_list, i)
-		si2bin_bin_entry_free(list_get(bin->entry_list ,i));
+		si2bin_inner_bin_entry_free(list_get(bin->entry_list ,i));
 	list_free(bin->entry_list);
 
 	/* Free elf_enc_file */
 	elf_enc_file_free(bin->file);
 
-	/* Free si2bin_bin */
+	/* Free si2bin_inner_bin */
 	free(bin);
 }
 
 
-void si2bin_bin_add_entry(struct si2bin_bin_t *bin,
-		struct si2bin_bin_entry_t *entry)
+void si2bin_inner_bin_add_entry(struct si2bin_inner_bin_t *bin,
+		struct si2bin_inner_bin_entry_t *entry)
 {
 	struct elf_enc_segment_t *note_segment;
 	struct elf_enc_segment_t *load_segment;
@@ -263,7 +348,7 @@ void si2bin_bin_add_entry(struct si2bin_bin_t *bin,
 }
 
 
-void si2bin_bin_generate(struct si2bin_bin_t *bin, struct elf_enc_buffer_t *bin_buffer)
+void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_buffer_t *bin_buffer)
 {
 	int i;
 	int namesz;
@@ -272,8 +357,8 @@ void si2bin_bin_generate(struct si2bin_bin_t *bin, struct elf_enc_buffer_t *bin_
 	int buf_offset;
 	int phtab_size;
 	char *name;
-	struct si2bin_bin_note_t *note;
-	struct si2bin_bin_entry_t *entry;
+	struct si2bin_inner_bin_note_t *note;
+	struct si2bin_inner_bin_entry_t *entry;
 	struct elf_enc_buffer_t *enc_dict;
 	struct elf_enc_buffer_t *buffer;
 
@@ -321,13 +406,13 @@ void si2bin_bin_generate(struct si2bin_bin_t *bin, struct elf_enc_buffer_t *bin_
 		}
 
 		entry->header.d_offset = sizeof(Elf32_Ehdr) + phtab_size +
-			sizeof(struct si2bin_bin_entry_header_t) *
+			sizeof(struct si2bin_inner_bin_entry_header_t) *
 			list_count(bin->entry_list) + buf_offset;
 
 
 		/* Write information to enc_dict */
 		elf_enc_buffer_write(enc_dict, &entry->header,
-				sizeof(struct si2bin_bin_entry_header_t));
+				sizeof(struct si2bin_inner_bin_entry_header_t));
 
 	}
 
@@ -340,14 +425,14 @@ void si2bin_bin_generate(struct si2bin_bin_t *bin, struct elf_enc_buffer_t *bin_
 }
 
 
-void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer, 
+void si2bin_inner_bin_create_file(struct elf_enc_buffer_t *text_section_buffer, 
 	struct elf_enc_buffer_t *bin_buffer)
 {
         char *ptr;
 	
-	struct si2bin_bin_t *bin;
-        struct si2bin_bin_entry_t *entry;
-        struct si2bin_bin_note_t *note;
+	struct si2bin_inner_bin_t *bin;
+        struct si2bin_inner_bin_entry_t *entry;
+        struct si2bin_inner_bin_note_t *note;
         
 	struct elf_enc_symbol_t *uav11;
         struct elf_enc_symbol_t *uav10;
@@ -372,14 +457,14 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer,
 	FILE *f;
 	
 
-	bin = si2bin_bin_create();
+	bin = si2bin_inner_bin_create("kernel");
 
         bin->file->header.e_machine = 0x7d;
         bin->file->header.e_version = 1;
         bin->file->header.e_ident[EI_OSABI] = 0x64;
         bin->file->header.e_ident[EI_ABIVERSION] = 1;
 
-        entry = si2bin_bin_entry_create();
+        entry = si2bin_inner_bin_entry_create();
 
 
         entry->header.d_machine = 26;
@@ -421,12 +506,12 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer,
         ptr = 0;
 
         /* ELF_NOTE_ATI_INPUTS */
-        note = si2bin_bin_note_create(2, 0, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(2, 0, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
         /*ELF_NOTE_ATI_OUTPUTS */
-        note = si2bin_bin_note_create(3, 0, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(3, 0, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
         /*ELF_NOTE_ATI_UAV */
         ptr = xcalloc(1, 48);
@@ -443,37 +528,37 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer,
         ptr[28] = 5;
         ptr[44] = 5;
 
-        note = si2bin_bin_note_create(16, 48, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(16, 48, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 	free(ptr);
 
 	/* ELF_NOTE_ATI_CONDOUT */
         ptr = xcalloc(1, 4);
-        note = si2bin_bin_note_create(4, 4, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(4, 4, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
         free(ptr);
 
         /* ELF_NOTE_ATI_FLOAT32CONSTS */
-        note = si2bin_bin_note_create(5, 0, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(5, 0, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
         /* ELF_NOTE_ATI_INT32CONSTS */
-        note = si2bin_bin_note_create(6, 0, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(6, 0, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
         /* ELF_NOTE_ATI_BOOL32CONSTS */
-        note = si2bin_bin_note_create(7, 0, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(7, 0, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
         /* ELF_NOTE_ATI_EARLYEXIT */
         ptr = xcalloc(1, 4);
-        note = si2bin_bin_note_create(8, 4, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(8, 4, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
         free(ptr);
 
         /* ELF_NOTE_ATI_GLOBAL_BUFFERS */
-        note = si2bin_bin_note_create(9, 0, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(9, 0, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
         /* ELF_NOTE_ATI_CONSTANT_BUFFERS */
 
@@ -483,39 +568,39 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer,
         ptr[4] = 3;
         ptr[12] = 0xf;
 
-        note = si2bin_bin_note_create(10, 16, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(10, 16, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
         free(ptr);
 
         /* ELF_NOTE_ATI_INPUT_SAMPLERS */
-        note = si2bin_bin_note_create(11, 0, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(11, 0, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
 	/* ELF_NOTE_ATI_SCRATCH_BUFFERS */
         ptr = xcalloc(1, 4);
-        note = si2bin_bin_note_create(13, 4, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(13, 4, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
         free(ptr);
 
         /* ELF_NOTE_ATI_PERSISTENT_BUFFERS */
-        note = si2bin_bin_note_create(12, 0, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(12, 0, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
         /* ELF_NOTE_ATI_PROGINFO */
         ptr = xcalloc(1, 912);
-        note = si2bin_bin_note_create(1, 912, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(1, 912, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
         free(ptr);
 
         /* ELF_NOTE_ATI_SUB_CONSTANT_BUFFERS */
-        note = si2bin_bin_note_create(14, 0, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(14, 0, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
 
         /* ELF_NOTE_ATI_UAV_MAILBOX_SIZE */
         ptr = xcalloc(1, 4);
-        note = si2bin_bin_note_create(15, 4, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(15, 4, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
         free(ptr);
 
         /* ELF_NOTE_ATI_UAV_OP_MASK */
@@ -523,17 +608,17 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer,
 
         ptr[1] = 0x1c;
 
-        note = si2bin_bin_note_create(17, 4, ptr);
-        si2bin_bin_entry_add_note(entry, note);
+        note = si2bin_inner_bin_note_create(17, 4, ptr);
+        si2bin_inner_bin_entry_add_note(entry, note);
         free(ptr);
 
 
 
-        si2bin_bin_add_entry(bin, entry);
+        si2bin_inner_bin_add_entry(bin, entry);
 
         kernel_buffer = elf_enc_buffer_create();
 
-        si2bin_bin_generate(bin, kernel_buffer);
+        si2bin_inner_bin_generate(bin, kernel_buffer);
 
 	f = file_open_for_write("kernel");
 	elf_enc_buffer_write_to_file(kernel_buffer, f);
@@ -599,7 +684,7 @@ void si2bin_bin_create_file(struct elf_enc_buffer_t *text_section_buffer,
         //elf_enc_buffer_write_to_file(bin_buffer, f);
 	//file_close(f);
 
-        si2bin_bin_free(bin);
+        si2bin_inner_bin_free(bin);
 
         elf_enc_file_free(file);
 

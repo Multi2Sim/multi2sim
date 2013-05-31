@@ -30,10 +30,10 @@
 #include <lib/util/list.h>
 
 #include "arg.h"
-#include "bin.h"
+#include "inner-bin.h"
 #include "id.h"
 #include "inst.h"
-#include "metadata.h"
+#include "outer-bin.h"
 #include "si2bin.h"
 #include "string.h"
 #include "symbol.h"
@@ -120,15 +120,31 @@ section
 	| data_section
 	| args_section
 	| text_section
+	{
+		//struct elf_enc_buffer_t *text_buffer;
+
+		//text_buffer = list_get(list_get(si2bin_outer_bin->inner_bin_list, kernel_num)->entry_list, 0)->text_section_buffer;
+		//si2bin_task_list_process(text_buffer);
+	}
 	;
 
 global_section
 	: TOK_GLOBAL TOK_ID TOK_NEW_LINE
 	{
 		struct si2bin_id_t *id = $2;
-		si2bin_metadata = si2bin_metadata_create(id->name);
+		struct si2bin_inner_bin_t *inner_bin;
+		struct si2bin_inner_bin_entry_t *entry;
+		
+
+		inner_bin = si2bin_inner_bin_create(id->name);
+		entry = si2bin_inner_bin_entry_create();
+
+		si2bin_inner_bin_add_entry(inner_bin, entry);
+		si2bin_outer_bin_add(si2bin_outer_bin, inner_bin);
+
+		kernel_num ++;
+
 		si2bin_id_free(id);
-		fprintf(stdout, "**** Kernel: %s *****", si2bin_metadata->name);
 	}
 
 mem_section
@@ -149,9 +165,23 @@ mem_stmt
 	: TOK_ID TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA TOK_NEW_LINE 
 	{
 		struct si2bin_id_t *id = $1;
+		struct si2bin_inner_bin_t *inner_bin;
+		struct si2bin_inner_bin_constant_buffer_t *cb;
 
-		fprintf(stdout, "\n*** %s s[%d:%d] ***\n", id->name, $4, $6);
+
+		inner_bin = list_get(si2bin_outer_bin->inner_bin_list, kernel_num);
 		
+		if (!strcmp(id->name, "uav"))
+		{
+			inner_bin->metadata->uav_ptr->start_reg = $4;
+			inner_bin->metadata->uav_ptr->end_reg = $6;
+		}
+		else if (!strcmp(id->name, "cb0"))
+		{
+			cb = list_get(inner_bin->metadata->cb_list, 0);
+			cb->start_reg = $4;
+			cb->end_reg = $6;
+		}
 		si2bin_id_free(id);
 		si2bin_id_free($2);
 	}
@@ -194,7 +224,7 @@ args_stmt_list
 args_stmt
 	: TOK_ID TOK_DECIMAL TOK_NEW_LINE
 	{
-		struct si2bin_id_t *id;
+		/*struct si2bin_id_t *id;
 		struct si2bin_arg_val_t *arg_val;
 
 		id = $1;
@@ -204,18 +234,18 @@ args_stmt
 		si2bin_metadata_add_arg_val(si2bin_metadata, arg_val);
 
 		si2bin_arg_val_free(arg_val);
-		si2bin_id_free(id);
+		si2bin_id_free(id);*/
 	}
 	| TOK_ID TOK_STAR TOK_DECIMAL TOK_NEW_LINE
 	{
-		struct si2bin_id_t *id;
+		/*struct si2bin_id_t *id;
 		id = $1;
 		fprintf(stdout, "\n*** arg: %s* ****\n", id->name);
-		si2bin_id_free(id);
+		si2bin_id_free(id);*/
 	}
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
 	{
-		struct si2bin_id_t *id;
+		/*struct si2bin_id_t *id;
 		struct si2bin_arg_val_t *arg_val;
 
 		id = $1;
@@ -225,7 +255,7 @@ args_stmt
 		si2bin_metadata_add_arg_val(si2bin_metadata, arg_val);
 
 		si2bin_arg_val_free(arg_val);
-		si2bin_id_free(id);
+		si2bin_id_free(id);*/
 	}
 
 text_section
@@ -248,10 +278,17 @@ text_stmt
 	| instr TOK_NEW_LINE
 	{
 		struct si2bin_inst_t *inst = $1;
+		struct elf_enc_buffer_t *text_buffer;
+		struct si2bin_inner_bin_t *inner_bin;
+		struct si2bin_inner_bin_entry_t *entry;
+
+		inner_bin = list_get(si2bin_outer_bin->inner_bin_list, kernel_num);
+		entry = list_get(inner_bin->entry_list, 0);
+		text_buffer = entry->text_section_buffer;
 
 		/* Generate code */
 		si2bin_inst_gen(inst);
-		elf_enc_buffer_write(si2bin_output_buffer, inst->inst_bytes.bytes, inst->size);
+		elf_enc_buffer_write(text_buffer, inst->inst_bytes.bytes, inst->size);
 		si2bin_inst_dump(inst, stdout);
 		si2bin_inst_free(inst);
 	}
@@ -262,6 +299,14 @@ label
 	{
 		struct si2bin_id_t *id = $1;
 		struct si2bin_symbol_t *symbol;
+		struct elf_enc_buffer_t *text_buffer;
+		struct si2bin_inner_bin_t *inner_bin;
+		struct si2bin_inner_bin_entry_t *entry;
+
+		inner_bin = list_get(si2bin_outer_bin->inner_bin_list, kernel_num);
+		entry = list_get(inner_bin->entry_list, 0);
+		text_buffer = entry->text_section_buffer;
+
 
 		/* Check if symbol exists */
 		symbol = hash_table_get(si2bin_symbol_table, id->name);
@@ -277,7 +322,7 @@ label
 
 		/* Define symbol */
 		symbol->defined = 1;
-		symbol->value = si2bin_output_buffer->offset;		
+		symbol->value = text_buffer->offset;		
 
 		/* End */
 		si2bin_id_free(id);

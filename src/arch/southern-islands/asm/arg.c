@@ -1,0 +1,148 @@
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/string.h>
+
+#include "arg.h"
+
+struct str_map_t si_arg_dimension_map =
+{
+	2,
+	{
+		{ "2D", 2 },
+		{ "3D", 3 }
+	}
+};
+
+
+struct str_map_t si_arg_access_type_map =
+{
+	3,
+	{
+		{ "RO", si_arg_read_only },
+		{ "WO", si_arg_write_only },
+		{ "RW", si_arg_read_write }
+	}
+};
+
+
+struct str_map_t si_arg_data_type_map =
+{
+	16,
+	{
+		{ "i1", si_arg_i1 },
+		{ "i8", si_arg_i8 },
+		{ "i16", si_arg_i16 },
+		{ "i32", si_arg_i32 },
+		{ "i64", si_arg_i64 },
+		{ "u1", si_arg_u1 },
+		{ "u8", si_arg_u8 },
+		{ "u16", si_arg_u16 },
+		{ "u32", si_arg_u32 },
+		{ "u64", si_arg_u64 },
+		{ "float", si_arg_float },
+		{ "double", si_arg_double },
+		{ "struct", si_arg_struct },
+		{ "union", si_arg_union },
+		{ "event", si_arg_event },
+		{ "opaque", si_arg_opaque }
+	}
+};
+
+
+struct str_map_t si_arg_scope_map =
+{
+	10,
+	{
+		{ "g", si_arg_global },
+		{ "p", si_arg_emu_private },
+		{ "l", si_arg_emu_local },
+		{ "uav", si_arg_uav },
+		{ "c", si_arg_emu_constant },
+		{ "r", si_arg_emu_gds },
+		{ "hl", si_arg_hw_local },
+		{ "hp", si_arg_hw_private },
+		{ "hc", si_arg_hw_constant },
+		{ "hr", si_arg_hw_gds }
+	}
+};
+
+
+struct si_arg_t *si_arg_create(enum si_arg_type_t type,
+		char *name)
+{
+	struct si_arg_t *arg;
+
+	/* Initialize */
+	arg = xcalloc(1, sizeof(struct si_arg_t));
+	arg->type = type;
+	arg->name = xstrdup(name);
+
+	/* Return */
+	return arg;
+}
+
+
+void si_arg_free(struct si_arg_t *arg)
+{
+	/* Specific fields per type */
+	switch (arg->type)
+	{
+	case si_arg_value:
+
+		if (arg->value.value_ptr)
+			free(arg->value.value_ptr);
+		break;
+
+	default:
+		break;
+	}
+
+	/* Rest */
+	free(arg->name);
+	free(arg);
+}
+
+
+/* Infer argument size from its data type */
+int si_arg_get_data_size(enum si_arg_data_type_t data_type)
+{
+	switch (data_type)
+	{
+
+	case si_arg_i8:
+	case si_arg_u8:
+	case si_arg_struct:
+	case si_arg_union:
+	case si_arg_event:
+	case si_arg_opaque:
+
+		return 1;
+
+	case si_arg_i16:
+	case si_arg_u16:
+
+		return 2;
+
+	case si_arg_i32:
+	case si_arg_u32:
+	case si_arg_float:
+
+		return 4;
+
+	case si_arg_i64:
+	case si_arg_u64:
+	case si_arg_double:
+
+		return 8;
+
+	default:
+
+		panic("%s: invalid data type (%d)",
+				__FUNCTION__, data_type);
+		return 0;
+	}
+}
+
+
+
