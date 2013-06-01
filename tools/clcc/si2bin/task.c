@@ -72,23 +72,16 @@ void si2bin_task_process(struct si2bin_task_t *task)
 {
 	struct si2bin_symbol_t *label;
 	union si_inst_microcode_t *inst;
-	struct si2bin_inner_bin_t *inner_bin;
-	struct si2bin_inner_bin_entry_t *entry;
-	struct elf_enc_buffer_t *text_buffer;
 
 
-	inner_bin = list_get(si2bin_outer_bin->inner_bin_list, kernel_num);
-	entry = list_get(inner_bin->entry_list, 0);
-	text_buffer = entry->text_section_buffer;
-	
 	/* Check whether symbol is resolved */
 	label = task->symbol;
 	if (!label->defined)
 		si2bin_yyerror_fmt("undefined label: %s", label->name);
 
 	/* Resolve label */
-	assert(IN_RANGE(task->offset, 0, text_buffer->offset - 4));
-	inst = text_buffer->ptr + task->offset;
+	assert(IN_RANGE(task->offset, 0, si2bin_entry->text_section_buffer->offset - 4));
+	inst = si2bin_entry->text_section_buffer->ptr + task->offset;
 	inst->sopp.simm16 = (label->value - task->offset) / 4 - 1;
 }
 

@@ -27,7 +27,6 @@
 struct elf_enc_buffer_t;
 struct list_t;
 
-
 /*
  * Note in the PT_NOTE segment
  */
@@ -115,7 +114,7 @@ struct si2bin_inner_bin_constant_buffer_t
 	int end_reg;
 };
 
-struct si2bin_inner_bin_constant_buffer_t *si2bin_inner_bin_constant_buffer_create(int buff_num, int start_reg, int end_reg);
+struct si2bin_inner_bin_constant_buffer_t *si2bin_inner_bin_constant_buffer_create(int buff_num);
 void si2bin_inner_bin_constant_buffer_free(struct si2bin_inner_bin_constant_buffer_t *cb);
 
 
@@ -129,27 +128,8 @@ struct si2bin_inner_bin_uav_table_pointer_t
 	int end_reg;
 };
 
-struct si2bin_inner_bin_uav_table_pointer_t *si2bin_inner_bin_uav_table_pointer_create(int start_reg, int end_reg);
+struct si2bin_inner_bin_uav_table_pointer_t *si2bin_inner_bin_uav_table_pointer_create();
 void si2bin_inner_bin_uav_table_pointer_free(struct si2bin_inner_bin_uav_table_pointer_t *uav_ptr);
-
-
-/*
- * Metadata
- */
-	
-	
-struct si2bin_inner_bin_metadata_t
-{
-	struct list_t *cb_list;
-	
-	struct list_t *arg_list;
-
-	struct si2bin_inner_bin_uav_table_pointer_t *uav_ptr;
-	
-};
-
-struct si2bin_inner_bin_metadata_t *si2bin_inner_bin_metadata_create(void);
-void si2bin_inner_bin_metadata_free(struct si2bin_inner_bin_metadata_t *metadata);
 
 
 /*
@@ -161,7 +141,8 @@ struct si2bin_inner_bin_t
 {
 	char *name;
 
-	struct si2bin_inner_bin_metadata_t *metadata;
+	struct list_t *cb_list;
+	struct si2bin_inner_bin_uav_table_pointer_t *uav_ptr;
 
 	/* ELF file created internally.
 	 * Private field. */

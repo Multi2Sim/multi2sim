@@ -46,8 +46,10 @@ char *si2bin_source_file;
 
 /* Current output binary buffer being assembled. Set internally in function
  * 'si2bin_compile()' */
-struct si2bin_outer_bin_t *si2bin_outer_bin = NULL;
-int kernel_num;
+struct si2bin_outer_bin_t *si2bin_outer_bin;
+struct si2bin_inner_bin_entry_t *si2bin_entry;
+struct elf_enc_buffer_t *bin_buffer;
+
 
 
 /*
@@ -123,7 +125,7 @@ void si2bin_compile(struct list_t *source_file_list,
 
 		/* Create output buffer */
 		si2bin_outer_bin = si2bin_outer_bin_create();
-		kernel_num = -1;
+		bin_buffer = elf_enc_buffer_create();
 
 		/* Parse input */
 		si2bin_yyparse();
@@ -135,7 +137,9 @@ void si2bin_compile(struct list_t *source_file_list,
 		fclose(si2bin_yyin);
 		
 		/* Dump output buffer and free it */
-		//si2bin_outer_bin_generate(si2bin_outer_bin, f);
+		si2bin_outer_bin_generate(si2bin_outer_bin, bin_buffer);
+
+		elf_enc_buffer_write_to_file(bin_buffer, f);
 
 		/* Free Outer ELF */
 		si2bin_outer_bin_free(si2bin_outer_bin);

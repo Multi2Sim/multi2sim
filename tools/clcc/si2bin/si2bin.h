@@ -30,7 +30,7 @@ struct elf_enc_buffer_t;
 /* Output buffer of the currently assembled file.
  * Internal use only. */
 extern struct si2bin_outer_bin_t *si2bin_outer_bin;
-extern int kernel_num;
+extern struct si2bin_inner_bin_entry_t *si2bin_entry;
 
 int si2bin_yylex(void);
 int si2bin_yyparse(void);
