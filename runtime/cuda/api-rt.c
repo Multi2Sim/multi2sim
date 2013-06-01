@@ -124,18 +124,18 @@ void get_str(unsigned char *s, const unsigned long long int *kernel_bin_section,
 
 void **__cudaRegisterFatBinary(void *fatCubin)
 {
-	struct __fatDeviceText **fatCubinHandle;
+	void **fatCubinHandle;
 
 	cuInit(0);
 
 	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
-	fatCubinHandle = (struct __fatDeviceText **)xcalloc(1, sizeof(struct __fatDeviceText *));
+	fatCubinHandle = xcalloc(1, sizeof(void *));
 	*fatCubinHandle = fatCubin;
 
 	cuda_debug_print(stdout, "\treturn\n");
 
-	return (void **)fatCubinHandle;
+	return fatCubinHandle;
 }
 
 void __cudaUnregisterFatBinary(void **fatCubinHandle)
@@ -208,7 +208,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 			__FUNCTION__);
 
 	/* Get the section containing kernel binary */
-	kernel_bin_section = (*(struct __fatDeviceText **)fatCubinHandle)->d;
+	kernel_bin_section = (*(struct {int m; int v; const unsigned long long int *d; char *f;} **)fatCubinHandle)->d;
 	kernel_bin_section_size = *(((unsigned long long int *)kernel_bin_section) + 1) + 16;
 
 	/* Look for ELF head */
