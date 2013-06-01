@@ -1,77 +1,51 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #ifndef TOOLS_CLCC_SI2BIN_METADATA_H
 #define TOOLS_CLCC_SI2BIN_METADATA_H
 
 /* Forward Declarations */
 struct list_t;
-
-/* FIXME - get rid of this whole file, integrated with si2bin_inner_bin_t */
-
-/*
- * Arg_val Object
- */
-
-/* FIXME - this goes to arch/southern-islands/asm/arg.c|h,
- * object named si_arg_t
- * NOTE: make sure that there's not an existing si_arg_t already */
-
-struct si2bin_arg_val_t
-{
-	char *type;
-	int num_elem;
-	int offset;
-};
-
-struct si2bin_arg_val_t *si2bin_arg_val_create(char *type, int num_elem, int offset);
-void si2bin_arg_val_free(struct si2bin_arg_val_t *arg_val);
-
-/*
- * Arg_ptr Object
- */
-
-struct si2bin_arg_ptr_t
-{
-	char *type;
-	int offset;
-	char *mem_type;
-};
-
-struct si2bin_arg_ptr_t *si2bin_arg_ptr_create(char *type, int offset, char *mem_type);
-void si2bin_arg_ptr_free(struct si2bin_arg_ptr_t *arg_ptr);
-
+struct si_arg_t;
 
 
 /*
- * Metadata Object
+ * Metadata
  */
-
-
-
+	
+	
 struct si2bin_metadata_t
 {
+
+	struct list_t *arg_list; /* Elements of type si_arg_t */
 	
-	char *name;
-
-	struct list_t *const_buffer_list;
-	
-	int uav_table_ptr;
-
-	
-	struct list_t *arg_val_list;
-
-	struct list_t *arg_ptr_list;
-
-
-	int offset;
+	int uniqueid;
+	int uavprivate;
+	int hwregion;
+	int hwlocal;
 
 };
 
-struct si2bin_metadata_t *si2bin_metadata_create(char *name);
+struct si2bin_metadata_t *si2bin_metadata_create(void);
 void si2bin_metadata_free(struct si2bin_metadata_t *metadata);
 
-void si2bin_metadata_add_arg_val(struct si2bin_metadata_t *metadata, 
-	struct si2bin_arg_val_t *arg_val);
-
-void si2bin_metadata_add_arg_ptr(struct si2bin_metadata_t *metadata, 
-	struct si2bin_arg_ptr_t *arg_ptr);
+void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, struct si_arg_t *arg);
 
 #endif
+

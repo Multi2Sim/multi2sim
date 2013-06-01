@@ -21,7 +21,10 @@
 #define TOOLS_CLCC_SI2BIN_OUTER_BIN_H
 
 #include "inner-bin.h"
+#include "metadata.h"
 
+/* Forward Declarations */
+struct list_t;
 
 /*
  * AMD External ELF Binary
@@ -36,13 +39,16 @@ struct si2bin_outer_bin_t
 	/* List of internal ELFs. Each element is of type 'si2bin_inner_bin_t'.
 	 * Private field. */
 	struct list_t *inner_bin_list;
+
+	/* Element of type si2bin_metadata_t */
+	struct list_t *metadata_list;
 };
 
 struct si2bin_outer_bin_t *si2bin_outer_bin_create(void);
 void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin);
 
 void si2bin_outer_bin_add(struct si2bin_outer_bin_t *outer_bin,
-		struct si2bin_inner_bin_t *inner_bin);
+		struct si2bin_inner_bin_t *inner_bin, struct si2bin_metadata_t *metadata);
 void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		struct elf_enc_buffer_t *buffer);
 

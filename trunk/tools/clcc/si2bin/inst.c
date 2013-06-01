@@ -32,7 +32,6 @@
 #include "inner-bin.h"
 #include "inst.h"
 #include "inst-info.h"
-#include "outer-bin.h"
 #include "si2bin.h"
 #include "symbol.h"
 #include "task.h"
@@ -454,27 +453,21 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			struct si2bin_symbol_t *label;
 			struct si2bin_task_t *task;
-			struct si2bin_inner_bin_t *inner_bin;
-			struct si2bin_inner_bin_entry_t *entry;
-			struct elf_enc_buffer_t *text_buffer;
 
 
-			inner_bin = list_get(si2bin_outer_bin->inner_bin_list, kernel_num);
-			entry = list_get(inner_bin->entry_list, 0);
-			text_buffer = entry->text_section_buffer;
 
 			assert(arg->type == si2bin_arg_label);
 			label = arg->value.label.symbol;
 			if (label->defined)
 			{
 				inst_bytes->sopp.simm16 = (label->value -
-						text_buffer->offset) / 4 - 1;
+						si2bin_entry->text_section_buffer->offset) / 4 - 1;
 			}
 			else
 			{
 				/* We create a task to complete this instruction once the
 				 * label is defined. */
-				task = si2bin_task_create(text_buffer->offset, label);
+				task = si2bin_task_create(si2bin_entry->text_section_buffer->offset, label);
 				list_add(si2bin_task_list, task);
 			}
 			break;

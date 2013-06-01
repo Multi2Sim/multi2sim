@@ -178,8 +178,7 @@ void si2bin_inner_bin_entry_add_note(struct si2bin_inner_bin_entry_t *entry,
  * Constant Buffer
  */
 
-struct si2bin_inner_bin_constant_buffer_t *si2bin_inner_bin_constant_buffer_create(
-		int buff_num, int start_reg, int end_reg)
+struct si2bin_inner_bin_constant_buffer_t *si2bin_inner_bin_constant_buffer_create(int buff_num)
 {
 	struct si2bin_inner_bin_constant_buffer_t *cb;
 
@@ -187,8 +186,6 @@ struct si2bin_inner_bin_constant_buffer_t *si2bin_inner_bin_constant_buffer_crea
 	cb = xcalloc(1, sizeof(struct si2bin_inner_bin_constant_buffer_t));
 	
 	cb->buffer_number = buff_num;
-	cb->start_reg = start_reg;
-	cb->end_reg = end_reg;
 
 	/* Return */
 	return cb;
@@ -205,16 +202,12 @@ void si2bin_inner_bin_constant_buffer_free(
  * UAV Table Pointer
  */
 
-struct si2bin_inner_bin_uav_table_pointer_t *si2bin_inner_bin_uav_table_pointer_create(
- 		int start_reg, int end_reg)
+struct si2bin_inner_bin_uav_table_pointer_t *si2bin_inner_bin_uav_table_pointer_create()
 {
  	struct si2bin_inner_bin_uav_table_pointer_t *uav_ptr;
 
 	/* Initialize */
 	uav_ptr = xcalloc(1, sizeof(struct si2bin_inner_bin_uav_table_pointer_t));
-	
-	uav_ptr->start_reg = start_reg;
-	uav_ptr->end_reg = end_reg;
 
 	/* Return */
 	return uav_ptr;
@@ -224,37 +217,6 @@ void si2bin_inner_bin_uav_table_pointer_free(
 		struct si2bin_inner_bin_uav_table_pointer_t * uav_ptr)
 {
 	free(uav_ptr);
-}
-
-/*
- * Metadata Object
- */
-
-struct si2bin_inner_bin_metadata_t *si2bin_inner_bin_metadata_create(void)
-{
-	struct si2bin_inner_bin_metadata_t *metadata;
-	struct si2bin_inner_bin_constant_buffer_t *cb;
-
-	metadata = xcalloc(1, sizeof(struct si2bin_inner_bin_metadata_t));
-
-	metadata->arg_list = list_create();
-	
-	metadata->cb_list = list_create();
-	cb = si2bin_inner_bin_constant_buffer_create(0, 0, 0);
-	list_add(metadata->cb_list, cb);
-
-	metadata->cb_list = list_create();
-	cb = si2bin_inner_bin_constant_buffer_create(1, 0, 0);
-	list_add(metadata->cb_list, cb);
-	
-	metadata->cb_list = list_create();
-	cb = si2bin_inner_bin_constant_buffer_create(2, 0, 0);
-	list_add(metadata->cb_list, cb);
-	
-	metadata->uav_ptr = si2bin_inner_bin_uav_table_pointer_create(0, 0);
-
-	
-	return metadata;
 }
 
 
@@ -268,12 +230,12 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 	struct si2bin_inner_bin_t *bin;
 	struct elf_enc_buffer_t *buffer;
 	struct elf_enc_segment_t *segment;
+	struct si2bin_inner_bin_constant_buffer_t *cb;
 
 	/* Initialize */
 	bin = xcalloc(1, sizeof(struct si2bin_inner_bin_t));
 	bin->file = elf_enc_file_create();
 	bin->entry_list = list_create();
-	bin->metadata = si2bin_inner_bin_metadata_create();
 	
 	/* Create buffer and segment for encoding dictionary */
 	buffer = elf_enc_buffer_create();
@@ -284,7 +246,22 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 
 	segment->header.p_type = PT_LOPROC + 2;
 
+	/* Save kernel name */
 	bin->name = xstrdup(name);
+
+	/* Set up constant buffer list and uav ptr */
+	bin->cb_list = list_create();
+	cb = si2bin_inner_bin_constant_buffer_create(0);
+	list_add(bin->cb_list, cb);
+
+	cb = si2bin_inner_bin_constant_buffer_create(1);
+	list_add(bin->cb_list, cb);
+	
+	cb = si2bin_inner_bin_constant_buffer_create(2);
+	list_add(bin->cb_list, cb);
+	
+	bin->uav_ptr = si2bin_inner_bin_uav_table_pointer_create();
+
 
 	/* Return */
 	return bin;
@@ -293,6 +270,7 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 
 void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 {
+	struct si2bin_inner_bin_constant_buffer_t *cb;
 	int i;
 
 	/* Free list elements and list */
@@ -302,6 +280,20 @@ void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 
 	/* Free elf_enc_file */
 	elf_enc_file_free(bin->file);
+
+	/* Free kernel name */
+	free(bin->name);
+
+	/* Free Constant Buffer List*/
+	LIST_FOR_EACH(bin->cb_list, i)
+	{
+		cb = list_get(bin->cb_list, i);
+		si2bin_inner_bin_constant_buffer_free(cb);
+	}
+	list_free(bin->cb_list);
+
+	/* Free UAV Table Pointer */
+	si2bin_inner_bin_uav_table_pointer_free(bin->uav_ptr);
 
 	/* Free si2bin_inner_bin */
 	free(bin);
