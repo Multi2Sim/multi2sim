@@ -24,15 +24,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <arch/southern-islands/asm/arg.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
+#include <lib/util/string.h>
 
 #include "arg.h"
 #include "inner-bin.h"
 #include "id.h"
 #include "inst.h"
+#include "metadata.h"
 #include "outer-bin.h"
 #include "si2bin.h"
 #include "string.h"
@@ -42,7 +45,17 @@
 
 #define YYERROR_VERBOSE
 
+
+/* 'si2bin_inner_bin' and 'si2bin_inner_bin_entry' pointing to the current internal
+ * binary that is set every time a new .global section is found. */
+
+struct si2bin_inner_bin_t *si2bin_inner_bin;
+struct si2bin_metadata_t *si2bin_metadata;
+int si2bin_uniqueid = 1024;
+
+
 %}
+
 
 %union {
 	int num;
@@ -120,30 +133,24 @@ section
 	| data_section
 	| args_section
 	| text_section
-	{
-		//struct elf_enc_buffer_t *text_buffer;
-
-		//text_buffer = list_get(list_get(si2bin_outer_bin->inner_bin_list, kernel_num)->entry_list, 0)->text_section_buffer;
-		//si2bin_task_list_process(text_buffer);
-	}
 	;
 
 global_section
 	: TOK_GLOBAL TOK_ID TOK_NEW_LINE
 	{
 		struct si2bin_id_t *id = $2;
-		struct si2bin_inner_bin_t *inner_bin;
-		struct si2bin_inner_bin_entry_t *entry;
+
+		si2bin_inner_bin = si2bin_inner_bin_create(id->name);
+		si2bin_metadata = si2bin_metadata_create();
+		si2bin_entry = si2bin_inner_bin_entry_create();
+
+		si2bin_metadata->uniqueid = si2bin_uniqueid;
+
+		si2bin_inner_bin_add_entry(si2bin_inner_bin, si2bin_entry);
+		si2bin_outer_bin_add(si2bin_outer_bin, si2bin_inner_bin, si2bin_metadata);
+
+		si2bin_uniqueid ++;
 		
-
-		inner_bin = si2bin_inner_bin_create(id->name);
-		entry = si2bin_inner_bin_entry_create();
-
-		si2bin_inner_bin_add_entry(inner_bin, entry);
-		si2bin_outer_bin_add(si2bin_outer_bin, inner_bin);
-
-		kernel_num ++;
-
 		si2bin_id_free(id);
 	}
 
@@ -165,23 +172,36 @@ mem_stmt
 	: TOK_ID TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA TOK_NEW_LINE 
 	{
 		struct si2bin_id_t *id = $1;
-		struct si2bin_inner_bin_t *inner_bin;
 		struct si2bin_inner_bin_constant_buffer_t *cb;
 
-
-		inner_bin = list_get(si2bin_outer_bin->inner_bin_list, kernel_num);
 		
 		if (!strcmp(id->name, "uav"))
 		{
-			inner_bin->metadata->uav_ptr->start_reg = $4;
-			inner_bin->metadata->uav_ptr->end_reg = $6;
+			si2bin_inner_bin->uav_ptr->start_reg = $4;
+			si2bin_inner_bin->uav_ptr->end_reg = $6;
 		}
 		else if (!strcmp(id->name, "cb0"))
 		{
-			cb = list_get(inner_bin->metadata->cb_list, 0);
+			cb = list_get(si2bin_inner_bin->cb_list, 0);
+			assert(cb);
 			cb->start_reg = $4;
 			cb->end_reg = $6;
 		}
+		else if (!strcmp(id->name, "cb1"))
+		{
+			cb = list_get(si2bin_inner_bin->cb_list, 1);
+			assert(cb);
+			cb->start_reg = $4;
+			cb->end_reg = $6;
+		}
+		else if (!strcmp(id->name, "cb2"))
+		{
+			cb = list_get(si2bin_inner_bin->cb_list, 2);
+			assert(cb);
+			cb->start_reg = $4;
+			cb->end_reg = $6;
+		}
+
 		si2bin_id_free(id);
 		si2bin_id_free($2);
 	}
@@ -224,40 +244,68 @@ args_stmt_list
 args_stmt
 	: TOK_ID TOK_DECIMAL TOK_NEW_LINE
 	{
-		/*struct si2bin_id_t *id;
-		struct si2bin_arg_val_t *arg_val;
+		struct si2bin_id_t *id;
+		struct si_arg_t *arg;
+		int data_type;
 
 		id = $1;
-		arg_val = si2bin_arg_val_create(id->name, 1, $2);
-		fprintf(stdout, "*** arg: %s %d ***", arg_val->type, arg_val->offset);
-		
-		si2bin_metadata_add_arg_val(si2bin_metadata, arg_val);
 
-		si2bin_arg_val_free(arg_val);
-		si2bin_id_free(id);*/
+		data_type = str_map_string(&si_arg_data_type_map, id->name);
+		arg = si_arg_create(si_arg_value, "val");
+		arg->value.data_type = data_type;
+		arg->value.num_elems = 1;
+		arg->value.constant_buffer_num = 1;
+		arg->value.constant_offset = $2;
+		
+		si2bin_metadata_add_arg(si2bin_metadata, arg);
+
+		si2bin_id_free(id);
 	}
 	| TOK_ID TOK_STAR TOK_DECIMAL TOK_NEW_LINE
 	{
-		/*struct si2bin_id_t *id;
+		struct si2bin_id_t *id;
+		struct si_arg_t *arg;
+		int data_type;
+
 		id = $1;
-		fprintf(stdout, "\n*** arg: %s* ****\n", id->name);
-		si2bin_id_free(id);*/
+
+		data_type = str_map_string(&si_arg_data_type_map, id->name);
+		arg = si_arg_create(si_arg_pointer, "ptr");
+		arg->pointer.data_type = data_type;
+		arg->pointer.constant_buffer_num = 1;
+		arg->pointer.constant_offset = $3;
+		arg->pointer.scope = si_arg_uav;
+		arg->pointer.buffer_num = 12;
+		arg->pointer.access_type = si_arg_read_write;
+		
+		si2bin_metadata_add_arg(si2bin_metadata, arg);
+
+		si2bin_id_free(id);
+		id = $1;
 	}
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
 	{
-		/*struct si2bin_id_t *id;
-		struct si2bin_arg_val_t *arg_val;
+		struct si2bin_id_t *id;
+		struct si_arg_t *arg;
+		int data_type;
 
 		id = $1;
-		arg_val = si2bin_arg_val_create(id->name, $3, $5);
-		fprintf(stdout, "*** arg: %s %d ***", arg_val->type, arg_val->offset);
-		
-		si2bin_metadata_add_arg_val(si2bin_metadata, arg_val);
 
-		si2bin_arg_val_free(arg_val);
-		si2bin_id_free(id);*/
+		data_type = str_map_string(&si_arg_data_type_map, id->name);
+		arg = si_arg_create(si_arg_value, "val");
+		arg->value.data_type = data_type;
+		arg->value.num_elems = $3;
+		arg->value.constant_buffer_num = 1;
+		arg->value.constant_offset = $5;
+		
+		si2bin_metadata_add_arg(si2bin_metadata, arg);
+
+		si2bin_id_free(id);
 	}
 
+/* FIXME - use a check for 'si2bin_inner_bin' == NULL to make sure that we are inside of
+ * a valid internal binary, i.e., the order of sections is right (no .text before .global).
+ * Same for .data, etc. */
 text_section
 	: text_header
 	| text_header text_stmt_list
@@ -278,17 +326,10 @@ text_stmt
 	| instr TOK_NEW_LINE
 	{
 		struct si2bin_inst_t *inst = $1;
-		struct elf_enc_buffer_t *text_buffer;
-		struct si2bin_inner_bin_t *inner_bin;
-		struct si2bin_inner_bin_entry_t *entry;
-
-		inner_bin = list_get(si2bin_outer_bin->inner_bin_list, kernel_num);
-		entry = list_get(inner_bin->entry_list, 0);
-		text_buffer = entry->text_section_buffer;
 
 		/* Generate code */
 		si2bin_inst_gen(inst);
-		elf_enc_buffer_write(text_buffer, inst->inst_bytes.bytes, inst->size);
+		elf_enc_buffer_write(si2bin_entry->text_section_buffer, inst->inst_bytes.bytes, inst->size);
 		si2bin_inst_dump(inst, stdout);
 		si2bin_inst_free(inst);
 	}
@@ -299,15 +340,8 @@ label
 	{
 		struct si2bin_id_t *id = $1;
 		struct si2bin_symbol_t *symbol;
-		struct elf_enc_buffer_t *text_buffer;
-		struct si2bin_inner_bin_t *inner_bin;
-		struct si2bin_inner_bin_entry_t *entry;
 
-		inner_bin = list_get(si2bin_outer_bin->inner_bin_list, kernel_num);
-		entry = list_get(inner_bin->entry_list, 0);
-		text_buffer = entry->text_section_buffer;
-
-
+		
 		/* Check if symbol exists */
 		symbol = hash_table_get(si2bin_symbol_table, id->name);
 		if (symbol && symbol->defined)
@@ -322,7 +356,7 @@ label
 
 		/* Define symbol */
 		symbol->defined = 1;
-		symbol->value = text_buffer->offset;		
+		symbol->value = si2bin_entry->text_section_buffer->offset;		
 
 		/* End */
 		si2bin_id_free(id);

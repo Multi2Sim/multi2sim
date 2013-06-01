@@ -1,108 +1,68 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <string.h>
 
+#include <arch/southern-islands/asm/arg.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 
-
 #include "metadata.h"
 
 
+/*
+* Metadata Object
+*/
 
-
-
-struct si2bin_arg_val_t *si2bin_arg_val_create(char *type, int num_elem, int offset)
+struct si2bin_metadata_t *si2bin_metadata_create(void)
 {
-	struct si2bin_arg_val_t *arg_val;
+       struct si2bin_metadata_t *metadata;
 
-	/* Initialize */
-	arg_val = xcalloc(1, sizeof(struct si2bin_arg_val_t));
+       metadata = xcalloc(1, sizeof(struct si2bin_metadata_t));
 
-	
-	if (strcmp(type, "i32") &&
-		strcmp(type, "float"))
-	{
-		fatal("Unrecognized value type");
-	}
-
-	arg_val->type = xstrdup(type);
-	arg_val->offset = offset;
-	arg_val->num_elem = num_elem;
-
-	return arg_val;
-}
-
-void si2bin_arg_val_free(struct si2bin_arg_val_t *arg_val)
-{
-	free(arg_val->type);
-	free(arg_val);
-}
-
-struct si2bin_arg_ptr_t *si2bin_arg_ptr_create(char *type, int offset, char *mem_type)
-{
-	struct si2bin_arg_ptr_t *arg_ptr;
-
-	/* Initialize */
-	arg_ptr = xcalloc(1, sizeof(struct si2bin_arg_ptr_t));
-
-
-	if (strcmp(type, "i32") &&
-		strcmp(type, "float"))
-	{
-		fatal("Unrecognized pointer type");
-	}
-
-	arg_ptr->type = xstrdup(type);
-	arg_ptr->offset = offset;
-	arg_ptr->mem_type = xstrdup(mem_type);
-	
-	return arg_ptr;
-}
-
-
-void si2bin_arg_ptr_free(struct si2bin_arg_ptr_t *arg_ptr)
-{
-	free(arg_ptr->type);
-	free(arg_ptr->mem_type);
-	free(arg_ptr);
-}
-
-
-struct si2bin_metadata_t *si2bin_metadata_create(char *name)
-{
-	struct si2bin_metadata_t *metadata;
-
-	/* Initialize */
-	metadata = xcalloc(1, sizeof(struct si2bin_metadata_t));
-	metadata->name = xstrdup(name);
-
-	metadata->const_buffer_list = list_create();
-	metadata->arg_val_list = list_create();
-	metadata->arg_ptr_list = list_create();
-	
-	return metadata;
+       metadata->arg_list = list_create();
+       
+	/* Return */
+       return metadata;
 }
 
 void si2bin_metadata_free(struct si2bin_metadata_t *metadata)
 {
-	list_free(metadata->const_buffer_list);
-	list_free(metadata->arg_val_list);
-	list_free(metadata->arg_ptr_list);
-	free(metadata->name);
+	struct si_arg_t *arg;
+	int i;
+	
+	LIST_FOR_EACH(metadata->arg_list, i)
+	{
+		arg = list_get(metadata->arg_list, i);
+		si_arg_free(arg);
+	}
+
+	list_free(metadata->arg_list);
+
 	free(metadata);
 }
 
-void si2bin_metadata_add_arg_val(struct si2bin_metadata_t *metadata,
-	struct si2bin_arg_val_t *arg_val)
+void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, struct si_arg_t *arg)
 {
-	list_add(metadata->arg_val_list, arg_val);
-	metadata->offset += arg_val->offset;
+	list_add(metadata->arg_list, arg);
 }
 
-void si2bin_metadata_add_arg_ptr(struct si2bin_metadata_t *metadata,
-	struct si2bin_arg_ptr_t *arg_ptr)
-{
-	list_add(metadata->arg_ptr_list, arg_ptr);
-	metadata->offset += arg_ptr->offset;
-}
+
