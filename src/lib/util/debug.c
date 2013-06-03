@@ -310,7 +310,7 @@ void __debug_buffer(int category, char *buffer_name, void *buffer, int size)
 }
 
 
-void fatal(char *fmt, ...)
+void fatal(const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -322,7 +322,7 @@ void fatal(char *fmt, ...)
 }
 
 
-void panic(char *fmt, ...)
+void panic(const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -334,7 +334,7 @@ void panic(char *fmt, ...)
 }
 
 
-void warning(char *fmt, ...)
+void warning(const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);

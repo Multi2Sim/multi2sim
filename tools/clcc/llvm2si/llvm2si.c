@@ -45,11 +45,11 @@ void llvm2si_compile_source(FILE *inf, FILE *outf)
 	arg_list = list_create();
 
 	/* Argument 1 */
-	arg = si2bin_arg_create_vector_register("v1");
+	arg = si2bin_arg_create_vector_register(1);
 	list_add(arg_list, arg);
 
 	/* Argument 2 */
-	arg = si2bin_arg_create_scalar_register("s0");
+	arg = si2bin_arg_create_scalar_register(0);
 	list_add(arg_list, arg);
 
 	/* Create instruction, dump, and free it */
