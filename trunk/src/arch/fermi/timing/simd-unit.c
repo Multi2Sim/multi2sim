@@ -32,7 +32,7 @@
 #include "gpu.h"
 #include "simd-unit.h"
 #include "uop.h"
-#include "warp-pool.h"
+#include "warp-inst-queue.h"
 
 
 void frm_simd_complete(struct frm_simd_t *simd)
@@ -65,7 +65,7 @@ void frm_simd_complete(struct frm_simd_t *simd)
 			 * so that the hardware wont try to fetch any 
 			 * more instructions for it */
 			uop->thread_block->sm_finished_count++;
-			uop->warp_pool_entry->warp_finished = 1;
+			uop->warp_inst_queue_entry->warp_finished = 1;
 
 			/* Check if warp finishes a work-group */
 			assert(uop->thread_block);

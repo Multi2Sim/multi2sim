@@ -32,7 +32,7 @@
 #include "gpu.h"
 #include "scalar-unit.h"
 #include "uop.h"
-#include "warp-pool.h"
+#include "warp-inst-queue.h"
 
 
 void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
@@ -68,9 +68,9 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 		/* If this is the last instruction and there are outstanding
 		 * memory operations, wait for them to complete */
 		if (uop->warp_last_inst && 
-			(uop->warp_pool_entry->lgkm_cnt || 
-			 uop->warp_pool_entry->vm_cnt || 
-			 uop->warp_pool_entry->exp_cnt)) 
+			(uop->warp_inst_queue_entry->lgkm_cnt || 
+			 uop->warp_inst_queue_entry->vm_cnt || 
+			 uop->warp_inst_queue_entry->exp_cnt)) 
 		{
 			frm_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 				"stg=\"s\"\n", uop->id_in_sm, 
@@ -84,15 +84,15 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 		/* Decrement the outstanding memory access count */
 		if (uop->scalar_mem_read)
 		{
-			assert(uop->warp_pool_entry->lgkm_cnt > 0);
-			uop->warp_pool_entry->lgkm_cnt--;
+			assert(uop->warp_inst_queue_entry->lgkm_cnt > 0);
+			uop->warp_inst_queue_entry->lgkm_cnt--;
 		}
 
 		/* Access complete, remove the uop from the queue */
 		list_remove(scalar_unit->write_buffer, uop);
 
 		/* The next instruction can be fetched */
-		uop->warp_pool_entry->ready = 1;
+		uop->warp_inst_queue_entry->ready = 1;
 
 		/* Check for "wait" instruction */
 		if (uop->mem_wait_inst)
@@ -100,7 +100,7 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 			/* If a wait instruction was executed and there are 
 			 * outstanding memory accesses, set the warp to 
 			 * waiting */
-			uop->warp_pool_entry->wait_for_mem = 1;
+			uop->warp_inst_queue_entry->wait_for_mem = 1;
 		}
 
 		/* Check for "barrier" instruction */
@@ -108,7 +108,7 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 		{
 			/* Set a flag to wait until all warps have 
 			 * reached the barrier */
-			uop->warp_pool_entry->wait_for_barrier = 1;
+			uop->warp_inst_queue_entry->wait_for_barrier = 1;
 
 			/* Check if all warps have reached the barrier */
 			complete = 1;
@@ -118,7 +118,7 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 			{
 				warp = grid->warps[warp_id];
 				
-				if (!warp->warp_pool_entry->
+				if (!warp->warp_inst_queue_entry->
 					wait_for_barrier)
 				{
 					complete = 0;
@@ -134,7 +134,7 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 				{
 					warp = grid->
 						warps[warp_id];
-					warp->warp_pool_entry->
+					warp->warp_inst_queue_entry->
 						wait_for_barrier = 0;
 				}
 			}
@@ -147,7 +147,7 @@ void frm_scalar_unit_complete(struct frm_scalar_unit_t *scalar_unit)
 			 * so that the hardware wont try to fetch any 
 			 * more instructions for it */
 			uop->thread_block->sm_finished_count++;
-			uop->warp_pool_entry->warp_finished = 1;
+			uop->warp_inst_queue_entry->warp_finished = 1;
 
 			/* Check if warp finishes a work-group */
 			assert(uop->thread_block);
@@ -366,7 +366,7 @@ void frm_scalar_unit_execute(struct frm_scalar_unit_t *scalar_unit)
 				&uop->global_mem_witness, NULL, NULL, NULL);
 
 			/* Increment outstanding memory access count */
-			uop->warp_pool_entry->lgkm_cnt++;
+			uop->warp_inst_queue_entry->lgkm_cnt++;
 
 			/* Transfer the uop to the execution buffer */
 			list_remove(scalar_unit->read_buffer, uop);

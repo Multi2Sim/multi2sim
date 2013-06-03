@@ -56,11 +56,11 @@ struct frm_uop_t
 	long long id;
 	long long id_in_sm;
 	long long id_in_warp;
-	int warp_pool_id;
+	int warp_inst_queue_id;
 	struct frm_warp_t *warp;       /* Wavefront it belongs to */
 	struct frm_thread_block_t *thread_block;     /* Work-group it belongs to */
 	struct frm_sm_t *sm; /* Compute unit it belongs to */
-	struct frm_warp_pool_entry_t *warp_pool_entry;  /* IB entry where uop is located */
+	struct frm_warp_inst_queue_entry_t *warp_inst_queue_entry;  /* IB entry where uop is located */
 	struct frm_inst_t inst;
 
 	/* Flags */
