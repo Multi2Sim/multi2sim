@@ -20,13 +20,7 @@
 #ifndef TOOLS_CLCC_LLVM2SI_TRANSLATE_H
 #define TOOLS_CLCC_LLVM2SI_TRANSLATE_H
 
-#ifdef __cplusplus
-#define __EXTERN_C__ extern "C"
-#else
-#define __EXTERN_C__
-#endif
-
-__EXTERN_C__ void llvm2si_translate(char *source_file, char *output_file);
+void llvm2si_translate(char *source_file, char *output_file);
 
 #endif
 
