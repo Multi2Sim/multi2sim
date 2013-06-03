@@ -417,13 +417,13 @@ arg_list
 operand
 	: TOK_SCALAR_REGISTER
 	{
-		$$ = si2bin_arg_create_scalar_register($1->name);
+		$$ = si2bin_arg_create_scalar_register(atoi($1->name + 1));
 		si2bin_id_free($1);
 	}
 	
 	| TOK_VECTOR_REGISTER
 	{
-		$$ = si2bin_arg_create_vector_register($1->name); 
+		$$ = si2bin_arg_create_vector_register(atoi($1->name + 1)); 
 		si2bin_id_free($1);
 	}
 	

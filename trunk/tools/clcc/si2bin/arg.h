@@ -152,8 +152,10 @@ void si2bin_arg_free(struct si2bin_arg_t *inst_arg);
 
 struct si2bin_arg_t *si2bin_arg_create_literal(int value);
 struct si2bin_arg_t *si2bin_arg_create_literal_float(float value);
-struct si2bin_arg_t *si2bin_arg_create_scalar_register(char *name);
-struct si2bin_arg_t *si2bin_arg_create_vector_register(char *name);
+struct si2bin_arg_t *si2bin_arg_create_scalar_register(int id);
+struct si2bin_arg_t *si2bin_arg_create_scalar_register_series(int low, int high);
+struct si2bin_arg_t *si2bin_arg_create_vector_register(int id);
+struct si2bin_arg_t *si2bin_arg_create_vector_register_series(int low, int high);
 struct si2bin_arg_t *si2bin_arg_create_special_register(char *name);
 struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
 		struct si2bin_arg_t *qual, char *data_format, char *num_format);

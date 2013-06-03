@@ -71,9 +71,9 @@ void __debug(int category, char *fmt, ...) __attribute__ ((format (printf, 2, 3)
 void __debug_buffer(int category, char *buffer_name, void *buffer, int size);
 
 /* Other messages */
-void warning(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void panic(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void warning(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void fatal(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void panic(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 
 #endif

@@ -23,8 +23,6 @@
 #include <stdio.h>
 #include <arch/southern-islands/asm/asm.h>
 
-/* Forward Declarations */
-//struct elf_enc_buffer_t;
 
 struct si2bin_inst_t
 {

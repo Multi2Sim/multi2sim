@@ -63,24 +63,14 @@ static FILE *llvm2si_outf;
 static void llvm2si_translate_emit_header(void)
 {
 	struct si2bin_inst_t *inst;
-	struct si2bin_arg_t *arg;
 	struct list_t *arg_list;
 
 	arg_list = list_create();
-
-	arg = si2bin_arg_create_scalar_register("s13");
-	list_add(arg_list, arg);
-
-	arg = si2bin_arg_create();
-	arg->type = si2bin_arg_scalar_register_series;
-	arg->value.scalar_register_series.low = 2;
-	arg->value.scalar_register_series.high = 5;
-	list_add(arg_list, arg);
-
-	arg = si2bin_arg_create_literal(4);
-	list_add(arg_list, arg);
-
+	list_add(arg_list, si2bin_arg_create_scalar_register(13));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(2, 5));
+	list_add(arg_list, si2bin_arg_create_literal(4));
 	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
+
 	si2bin_inst_dump(inst, llvm2si_outf);
 	si2bin_inst_free(inst);
 }
