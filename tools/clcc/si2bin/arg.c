@@ -76,36 +76,63 @@ struct si2bin_arg_t *si2bin_arg_create_literal_float(float value)
 }
 
 
-struct si2bin_arg_t *si2bin_arg_create_scalar_register(char *name)
+struct si2bin_arg_t *si2bin_arg_create_scalar_register(int id)
 {
 	struct si2bin_arg_t *arg;
 
 	arg = si2bin_arg_create();
 	arg->type = si2bin_arg_scalar_register;
+	arg->value.scalar_register.id = id;
 
-	assert(name[0] == 's');
-	arg->value.scalar_register.id = atoi(name + 1);
 	if (!IN_RANGE(arg->value.scalar_register.id, 0, 255))
-		si2bin_yyerror_fmt("scalar register out of range: %s", name);
+		si2bin_yyerror_fmt("scalar register out of range: s%d", id);
 
 	return arg;
 }
 
 
-struct si2bin_arg_t *si2bin_arg_create_vector_register(char *name)
+struct si2bin_arg_t *si2bin_arg_create_scalar_register_series(int low, int high)
+{
+	struct si2bin_arg_t *arg;
+
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_scalar_register_series;
+	arg->value.scalar_register_series.low = low;
+	arg->value.scalar_register_series.high = high;
+	assert(high >= low);
+
+	return arg;
+}
+
+
+struct si2bin_arg_t *si2bin_arg_create_vector_register(int id)
 {
 	struct si2bin_arg_t *arg;
 
 	arg = si2bin_arg_create();
 	arg->type = si2bin_arg_vector_register;
+	arg->value.vector_register.id = id;
 
-	assert(name[0] == 'v');
-	arg->value.vector_register.id = atoi(name + 1);
 	if (!IN_RANGE(arg->value.vector_register.id, 0, 255))
-		si2bin_yyerror_fmt("vector register out of range: %s", name);
+		si2bin_yyerror_fmt("vector register out of range: v%d", id);
 
 	return arg;
 }
+
+
+struct si2bin_arg_t *si2bin_arg_create_vector_register_series(int low, int high)
+{
+	struct si2bin_arg_t *arg;
+
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_vector_register_series;
+	arg->value.vector_register_series.low = low;
+	arg->value.vector_register_series.high = high;
+	assert(high >= low);
+
+	return arg;
+}
+
 
 struct si2bin_arg_t *si2bin_arg_create_special_register(char *name)
 {
