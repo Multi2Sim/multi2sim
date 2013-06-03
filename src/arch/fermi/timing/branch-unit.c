@@ -30,7 +30,7 @@
 #include "sm.h"
 #include "gpu.h"
 #include "uop.h"
-#include "warp-pool.h"
+#include "warp-inst-queue.h"
 
 void frm_branch_unit_complete(struct frm_branch_unit_t *branch_unit)
 {
@@ -63,7 +63,7 @@ void frm_branch_unit_complete(struct frm_branch_unit_t *branch_unit)
 			uop->sm->id);
 
 		/* Allow next instruction to be fetched */
-		uop->warp_pool_entry->ready = 1;
+		uop->warp_inst_queue_entry->ready = 1;
 
 		/* Free uop */
 		frm_uop_free(uop);

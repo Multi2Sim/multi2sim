@@ -34,7 +34,7 @@
 #include "gpu.h"
 #include "simd-unit.h"
 #include "uop.h"
-#include "warp-pool.h"
+#include "warp-inst-queue.h"
 
 #include "cycle-interval-report.h"
 
@@ -58,9 +58,11 @@ struct frm_sm_t *frm_sm_create()
 		frm_gpu_lds_latency);
 
 	/* Hardware structures */
-	sm->num_warp_schedulers = 2;
-	sm->fetch_buffers = xcalloc(sm->num_warp_schedulers,
-		sizeof(struct list_t*));
+	sm->num_warp_inst_queues = 2;
+	sm->warp_inst_queues = xcalloc(sm->num_warp_inst_queues,
+		sizeof(struct list_t *));
+	sm->fetch_buffers = xcalloc(sm->num_warp_inst_queues,
+		sizeof(struct list_t *));
 	sm->num_simd_units = 4;
 	sm->simd_units = xcalloc(sm->num_simd_units, 
 		sizeof(struct frm_simd_t*));
@@ -87,25 +89,29 @@ struct frm_sm_t *frm_sm_create()
 	sm->lds_unit.sm = sm;
 
 	/* Allocate and initialize instruction buffers */
-	sm->warp_pool = frm_warp_pool_create();
-	sm->warp_pool->sm = sm;
-	for (i = 0; i < sm->num_warp_schedulers; i++)
+	for (i = 0; i < sm->num_warp_inst_queues; i++)
+	{
+		sm->warp_inst_queues[i] = frm_warp_inst_queue_create();
+		sm->warp_inst_queues[i]->sm = sm;
+	}
+	for (i = 0; i < sm->num_warp_inst_queues; i++)
 		sm->fetch_buffers[i] = list_create();
 
 	/* Allocate SIMD structures */
+	assert(sm->num_warp_inst_queues == sm->num_simd_units);
 	for (i = 0; i < sm->num_simd_units; i++)
 	{
 		sm->simd_units[i] = xcalloc(1,
 			sizeof(struct frm_simd_t));
 		sm->simd_units[i]->id_in_sm = i;
 		sm->simd_units[i]->sm = sm;
-		sm->simd_units[i]->warp_pool =
-			sm->warp_pool;
+		sm->simd_units[i]->warp_inst_queue =
+			sm->warp_inst_queues[i];
 		sm->simd_units[i]->issue_buffer = list_create();
 		sm->simd_units[i]->decode_buffer = list_create();
 		sm->simd_units[i]->exec_buffer = list_create();
-		sm->simd_units[i]->subwarp_pool =
-			xcalloc(1, sizeof(struct frm_subwarp_pool_t));
+		sm->simd_units[i]->subwarp_inst_queue =
+			xcalloc(1, sizeof(struct frm_subwarp_inst_queue_t));
 
 		sm->simd_units[i]->sm = sm;
 		sm->simd_units[i]->wkg_util = xcalloc(1,
@@ -182,7 +188,7 @@ void frm_sm_free(struct frm_sm_t *sm)
 		list_free(sm->simd_units[i]->decode_buffer);
 		list_free(sm->simd_units[i]->exec_buffer);
 
-		free(sm->simd_units[i]->subwarp_pool);
+		free(sm->simd_units[i]->subwarp_inst_queue);
 		free(sm->simd_units[i]->wkg_util);
 		free(sm->simd_units[i]->wvf_util);
 		free(sm->simd_units[i]->rdy_util);
@@ -195,7 +201,7 @@ void frm_sm_free(struct frm_sm_t *sm)
 	free(sm->simd_units);
 
 	/* Fetch buffers */
-	for (i = 0; i < sm->num_warp_schedulers; i++)
+	for (i = 0; i < sm->num_warp_inst_queues; i++)
 	{
 		frm_uop_list_free(sm->fetch_buffers[i]);
 		list_free(sm->fetch_buffers[i]);
@@ -203,7 +209,9 @@ void frm_sm_free(struct frm_sm_t *sm)
 	free(sm->fetch_buffers);
 
 	/* Others */
-	frm_warp_pool_free(sm->warp_pool);
+	for (i = 0; i < sm->num_warp_inst_queues; i++)
+		frm_warp_inst_queue_free(sm->warp_inst_queues[i]);
+	free(sm->warp_inst_queues);
 	free(sm->thread_blocks);
 	mod_free(sm->lds_module);
 	free(sm);
@@ -215,29 +223,28 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thr
 	struct frm_grid_t *grid;
 	struct frm_warp_t *warp;
 	int warp_id;
+	int wiq_id;
 
 	assert(sm->thread_block_count < frm_gpu->thread_blocks_per_sm);
 	assert(!thread_block->id_in_sm);
 
 	grid = thread_block->grid;
 
-	/* Find an available slot */
+	/* Assign a thread block to an available slot in an SM */
 	while (thread_block->id_in_sm < frm_gpu->thread_blocks_per_sm &&
 			sm->thread_blocks[thread_block->id_in_sm])
 		thread_block->id_in_sm++;
 	sm->thread_blocks[thread_block->id_in_sm] = thread_block;
 	sm->thread_block_count++;
 
-	/* If thread block reached its maximum load, remove it from
-	 * 'sm_ready' list.  Otherwise, move it to the end of 
-	 * the 'sm_ready' list. */
+	/* All SMs were added to 'sm_ready' list in initialization. Here remove
+	 * SM from 'sm_ready' list first. Then determine if it is fully loaded.
+	 * If not, add it to the end of the 'sm_ready' list; otherwise, add it
+	 * to 'sm_busy' list */
 	assert(DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_ready, sm));
 	DOUBLE_LINKED_LIST_REMOVE(frm_gpu, sm_ready, sm);
 	if (sm->thread_block_count < frm_gpu->thread_blocks_per_sm)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_ready, sm);
-	
-	/* If this is the first scheduled thread block, insert to
-	 * 'sm_busy' list. */
 	if (!DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_busy, sm))
 		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_busy, sm);
 
@@ -251,10 +258,11 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thr
 	}
 
 	/* Set instruction buffer for thread block */
-	thread_block->warp_pool = sm->warp_pool;
+	wiq_id = thread_block->id_in_sm % frm_gpu_num_warp_inst_queues;
+	thread_block->warp_inst_queue = sm->warp_inst_queues[wiq_id];
 
-	/* Insert warps into an instruction buffer */
-	frm_warp_pool_map_warps(thread_block->warp_pool, thread_block);
+	/* Insert warp into warp instruction queue */
+	frm_warp_inst_queue_map_warps(thread_block->warp_inst_queue, thread_block);
 
 	/* Change thread block status to running */
 	frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
@@ -281,8 +289,8 @@ void frm_sm_unmap_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *t
 	sm->thread_blocks[thread_block->id_in_sm] = NULL;
 	sm->thread_block_count--;
 
-	/* Unmap warps from instruction buffer */
-	frm_warp_pool_unmap_warps(thread_block->warp_pool, 
+	/* Unmap warps from warp instruction queue */
+	frm_warp_inst_queue_unmap_warps(thread_block->warp_inst_queue, 
 		thread_block);
 
 	/* If compute unit accepts work-groups again, insert into 
@@ -307,7 +315,7 @@ void frm_sm_unmap_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *t
 	frm_trace("si.unmap_wg cu=%d wg=%d\n", sm->id, thread_block->id);
 }
 
-void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
+void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 {
 	int i, j;
 	int instructions_processed = 0;
@@ -316,30 +324,30 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 	struct frm_thread_t *thread;
 	struct frm_uop_t *uop;
 	struct frm_thread_uop_t *thread_uop;
-	struct frm_warp_pool_entry_t *warp_pool_entry;
+	struct frm_warp_inst_queue_entry_t *warp_inst_queue_entry;
 	char inst_str[1024];
 	char inst_str_trimmed[1024];
 
 	for (i = 0; i < frm_gpu_max_warps_per_sm; i++)
 	{
-		warp = sm->warp_pool->entries[i]->warp;
+		warp = sm->warp_inst_queues[wiq_id]->entries[i]->warp;
 
 		/* No warp */
 		if (!warp) 
 			continue;
 
 		/* Sanity check warp */
-		assert(warp->warp_pool_entry);
-		assert(warp->warp_pool_entry ==
-			sm->warp_pool->entries[i]);
+		assert(warp->warp_inst_queue_entry);
+		assert(warp->warp_inst_queue_entry ==
+			sm->warp_inst_queues[wiq_id]->entries[i]);
 
 		/* Regardless of how many instructions have been fetched 
 		 * already, this should always be checked */
-		if (warp->warp_pool_entry->ready_next_cycle)
+		if (warp->warp_inst_queue_entry->ready_next_cycle)
 		{
 			/* Allow instruction to be fetched next cycle */
-			warp->warp_pool_entry->ready = 1;
-			warp->warp_pool_entry->ready_next_cycle = 0;
+			warp->warp_inst_queue_entry->ready = 1;
+			warp->warp_inst_queue_entry->ready_next_cycle = 0;
 			continue;
 		}
 
@@ -349,13 +357,13 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 
 		/* Wavefront isn't ready (previous instruction is still 
 		 * in flight) */
-		if (!warp->warp_pool_entry->ready)
+		if (!warp->warp_inst_queue_entry->ready)
 			continue;
 
 		/* If the warp finishes, there still may be outstanding 
 		 * memory operations, so if the entry is marked finished 
 		 * the warp must also be finished, but not vice-versa */
-		if (warp->warp_pool_entry->warp_finished)
+		if (warp->warp_inst_queue_entry->warp_finished)
 		{
 			assert(warp->finished);
 			continue;
@@ -369,12 +377,12 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 
 		/* Wavefront is ready but waiting on outstanding 
 		 * memory instructions */
-		if (warp->warp_pool_entry->wait_for_mem)
+		if (warp->warp_inst_queue_entry->wait_for_mem)
 		{
-			if (!warp->warp_pool_entry->lgkm_cnt &&
-				!warp->warp_pool_entry->vm_cnt)
+			if (!warp->warp_inst_queue_entry->lgkm_cnt &&
+				!warp->warp_inst_queue_entry->vm_cnt)
 			{
-				warp->warp_pool_entry->wait_for_mem =
+				warp->warp_inst_queue_entry->wait_for_mem =
 					0;	
 			}
 			else
@@ -387,7 +395,7 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 		}
 
 		/* Wavefront is ready but waiting at barrier */
-		if (warp->warp_pool_entry->wait_for_barrier)
+		if (warp->warp_inst_queue_entry->wait_for_barrier)
 		{
 			/* TODO Show a waiting state in visualization tool */
 			/* XXX uop is already freed */
@@ -395,9 +403,9 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 		}
 
 		/* Stall if fetch buffer full */
-		assert(list_count(sm->fetch_buffers[active_fb]) <= 
+		assert(list_count(sm->fetch_buffers[wiq_id]) <= 
 					frm_gpu_fe_fetch_buffer_size);
-		if (list_count(sm->fetch_buffers[active_fb]) == 
+		if (list_count(sm->fetch_buffers[wiq_id]) == 
 					frm_gpu_fe_fetch_buffer_size)
 		{
 			continue;
@@ -406,8 +414,8 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 		/* Emulate instruction */
 		frm_warp_execute(warp);
 
-		warp_pool_entry = warp->warp_pool_entry;
-		warp_pool_entry->ready = 0;
+		warp_inst_queue_entry = warp->warp_inst_queue_entry;
+		warp_inst_queue_entry->ready = 0;
 
 		/* Create uop */
 		uop = frm_uop_create();
@@ -416,13 +424,13 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 		uop->sm = sm;
 		uop->id_in_sm = sm->uop_id_counter++;
 		uop->id_in_warp = warp->uop_id_counter++;
-		uop->warp_pool_id = active_fb;
+		uop->warp_inst_queue_id = wiq_id;
 		uop->vector_mem_read = warp->vector_mem_read;
 		uop->vector_mem_write = warp->vector_mem_write;
 		uop->scalar_mem_read = warp->scalar_mem_read;
 		uop->lds_read = warp->lds_read;
 		uop->lds_write = warp->lds_write;
-		uop->warp_pool_entry = warp->warp_pool_entry;
+		uop->warp_inst_queue_entry = warp->warp_inst_queue_entry;
 		uop->warp_last_inst = warp->finished;
 		uop->mem_wait_inst = warp->mem_wait;
 		uop->barrier_wait_inst = warp->barrier;
@@ -448,7 +456,7 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 			frm_trace("si.new_inst id=%lld cu=%d ib=%d wg=%d "
 				"wf=%d uop_id=%lld stg=\"f\" asm=\"%s\"\n", 
 				uop->id_in_sm, sm->id, 
-				uop->warp_pool_id, uop->thread_block->id, 
+				uop->warp_inst_queue_id, uop->thread_block->id, 
 				warp->id, uop->id_in_warp, 
 				inst_str_trimmed);
 		}
@@ -486,7 +494,7 @@ void frm_sm_fetch(struct frm_sm_t *sm, int active_fb)
 		uop->fetch_ready = arch_fermi->cycle + frm_gpu_fe_fetch_latency;
 
 		/* Insert into fetch buffer */
-		list_enqueue(sm->fetch_buffers[active_fb], uop);
+		list_enqueue(sm->fetch_buffers[wiq_id], uop);
 
 		instructions_processed++;
 		sm->inst_count++;
@@ -630,7 +638,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 					uop->warp->id, 
 					uop->id_in_warp);
 
-				uop->warp_pool_entry->ready_next_cycle = 1;
+				uop->warp_inst_queue_entry->ready_next_cycle = 1;
 
 				sm->simd_inst_count++;
 			}
@@ -699,7 +707,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 					uop->warp->id, 
 					uop->id_in_warp);
 
-				uop->warp_pool_entry->ready_next_cycle = 1;
+				uop->warp_inst_queue_entry->ready_next_cycle = 1;
 
 				sm->vector_mem_inst_count++;
 			}
@@ -765,7 +773,7 @@ void frm_sm_issue_oldest(struct frm_sm_t *sm,
 					uop->warp->id, 
 					uop->id_in_warp);
 
-				uop->warp_pool_entry->ready_next_cycle = 1;
+				uop->warp_inst_queue_entry->ready_next_cycle = 1;
 
 				sm->lds_inst_count++;
 			}
@@ -1101,7 +1109,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 			list_enqueue(sm->simd_units[active_fb]->
 				issue_buffer, uop);
 
-			uop->warp_pool_entry->ready_next_cycle = 1;
+			uop->warp_inst_queue_entry->ready_next_cycle = 1;
 
 			simd_insts_issued++;
 			sm->simd_inst_count++;
@@ -1152,7 +1160,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 			list_enqueue(sm->vector_mem_unit.issue_buffer,
 				uop);
 
-			uop->warp_pool_entry->ready_next_cycle = 1;
+			uop->warp_inst_queue_entry->ready_next_cycle = 1;
 
 			mem_insts_issued++;
 			sm->vector_mem_inst_count++;
@@ -1199,7 +1207,7 @@ void frm_sm_issue_first(struct frm_sm_t *sm,
 		//		uop);
 		//	list_enqueue(sm->lds_unit.issue_buffer, uop);
 
-		//	uop->warp_pool_entry->ready_next_cycle = 1;
+		//	uop->warp_inst_queue_entry->ready_next_cycle = 1;
 
 		//	lds_insts_issued++;
 		//	sm->lds_inst_count++;

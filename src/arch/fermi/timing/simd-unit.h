@@ -20,7 +20,7 @@
 #ifndef ARCH_FERMI_TIMING_SIMD_UNIT_H
 #define ARCH_FERMI_TIMING_SIMD_UNIT_H
 
-struct frm_subwarp_pool_t
+struct frm_subwarp_inst_queue_t
 {
 	struct frm_uop_t *uop;
 	unsigned int num_subwarps_executed;
@@ -41,8 +41,8 @@ struct frm_simd_t
 	struct list_t *decode_buffer; /* Decoded instructions */
 	struct list_t *exec_buffer;   /* Execution */
 
-	struct frm_subwarp_pool_t *subwarp_pool;  
-	struct frm_warp_pool_t *warp_pool;
+	struct frm_subwarp_inst_queue_t *subwarp_inst_queue;  
+	struct frm_warp_inst_queue_t *warp_inst_queue;
 
 	struct frm_sm_t *sm;
 
