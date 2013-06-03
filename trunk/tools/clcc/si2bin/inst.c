@@ -38,7 +38,54 @@
 #include "token.h"
 
 
-struct si2bin_inst_t *si2bin_inst_create(char *name, struct list_t *arg_list)
+struct si2bin_inst_t *si2bin_inst_create(int opcode, struct list_t *arg_list)
+{
+	struct si2bin_inst_t *inst;
+	struct si2bin_arg_t *arg;
+	struct si2bin_token_t *token;
+	struct si2bin_inst_info_t *info;
+	int index;
+
+	/* Initialize */
+	inst = xcalloc(1, sizeof(struct si2bin_inst_t));
+	inst->arg_list = arg_list;
+
+	/* Check valid opcode */
+	if (!IN_RANGE(opcode, 1, SI_INST_COUNT - 1))
+		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
+
+	/* Get instruction information */
+	inst->info = list_get(si2bin_inst_info_list, opcode);
+	info = inst->info;
+	if (!info)
+		fatal("%s: opcode %d not supported", __FUNCTION__, opcode);
+
+	/* Check number of arguments */
+	if (arg_list->count != info->token_list->count)
+		fatal("%s: invalid number of arguments (%d given, %d expected)",
+				__FUNCTION__, arg_list->count, info->token_list->count);
+
+	/* Check argument types */
+	LIST_FOR_EACH(arg_list, index)
+	{
+		/* Get actual argument */
+		arg = list_get(arg_list, index);
+
+		/* Get formal argument from instruction info */
+		token = list_get(info->token_list, index);
+		assert(token);
+
+		/* Check that actual argument type is acceptable for token */
+		if (!si2bin_token_is_arg_allowed(token, arg))
+			fatal("%s: invalid type for argument %d", __FUNCTION__, index);
+	}
+
+	/* Return */
+	return inst;
+}
+
+
+struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, struct list_t *arg_list)
 {
 	struct si2bin_inst_t *inst;
 	struct si2bin_inst_info_t *info;
