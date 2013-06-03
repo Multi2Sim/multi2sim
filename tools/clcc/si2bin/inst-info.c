@@ -34,8 +34,12 @@
  * Global Functions
  */
 
+/* List indexed by an instruction opcode (enum si_inst_opcode_t). Each element
+ * of the list if of type 'si2bin_inst_info_t'. */
+struct list_t *si2bin_inst_info_list;
+
 /* Hash table indexed by an instruction name, returning the associated entry in
- * 'si_inst_info' of type 'si_inst_info_t'. The name of the instruction is
+ * of type 'si2bin_inst_info_t'. The name of the instruction is
  * extracted from the first token of the format string. */
 struct hash_table_t *si2bin_inst_info_table;
 
@@ -48,17 +52,26 @@ void si2bin_inst_info_init(void)
 
 	int i;
 
-	/* Initialize hash table with instruction names. */
+	/* Initialize hash table and list */
+	si2bin_inst_info_list = list_create_with_size(SI_INST_COUNT);
 	si2bin_inst_info_table = hash_table_create(SI_INST_COUNT, 1);
+
+	/* Populate them */
 	for (i = 0; i < SI_INST_COUNT; i++)
 	{
 		/* Instruction info from disassembler */
 		inst_info = &si_inst_info[i];
 		if (!inst_info->name || !inst_info->fmt_str)
+		{
+			list_add(si2bin_inst_info_list, NULL);
 			continue;
+		}
 
 		/* Create instruction info object */
 		info = si2bin_inst_info_create(inst_info);
+
+		/* Insert to list */
+		list_add(si2bin_inst_info_list, info);
 
 		/* Insert instruction info structure into hash table. There could
 		 * be already an instruction encoding with the same name but a
@@ -80,19 +93,18 @@ void si2bin_inst_info_init(void)
 void si2bin_inst_info_done(void)
 {
 	struct si2bin_inst_info_t *info;
-	struct si2bin_inst_info_t *next_info;
+	int index;
 
-	char *name;
-
-	HASH_TABLE_FOR_EACH(si2bin_inst_info_table, name, info)
+	/* Free elements 'si2bin_inst_info_t' */
+	LIST_FOR_EACH(si2bin_inst_info_list, index)
 	{
-		while (info)
-		{
-			next_info = info->next;
+		info = list_get(si2bin_inst_info_list, index);
+		if (info)
 			si2bin_inst_info_free(info);
-			info = next_info;
-		}
 	}
+
+	/* Free list and hash table */
+	list_free(si2bin_inst_info_list);
 	hash_table_free(si2bin_inst_info_table);
 }
 

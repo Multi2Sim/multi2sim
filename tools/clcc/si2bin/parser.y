@@ -374,7 +374,7 @@ instr
 		arg_list = $2;
 		
 		/* Create instruction */
-		inst = si2bin_inst_create(id->name, arg_list);
+		inst = si2bin_inst_create_with_name(id->name, arg_list);
 
 		/* Return instructions */
 		si2bin_id_free(id);

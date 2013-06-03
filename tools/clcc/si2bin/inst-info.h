@@ -32,6 +32,7 @@
 /* Forward declaration */
 struct si_inst_info_t;
 
+extern struct list_t *si2bin_inst_info_list;
 extern struct hash_table_t *si2bin_inst_info_table;
 
 /* Element of hash table 'si2bin_inst_info_table', index by an instruction

@@ -53,7 +53,7 @@ void llvm2si_compile_source(FILE *inf, FILE *outf)
 	list_add(arg_list, arg);
 
 	/* Create instruction, dump, and free it */
-	inst = si2bin_inst_create("v_mov_b32", arg_list);
+	inst = si2bin_inst_create_with_name("v_mov_b32", arg_list);
 	si2bin_inst_gen(inst);
 	si2bin_inst_dump(inst, stdout);
 	si2bin_inst_free(inst);
