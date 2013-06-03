@@ -34,8 +34,8 @@ libtiming_a_SOURCES = \
 	vector-mem-unit.c \
 	vector-mem-unit.h \
 	\
-	warp-pool.c \
-	warp-pool.h
+	warp-inst-queue.c \
+	warp-inst-queue.h
 
 
 INCLUDES = @M2S_INCLUDES@

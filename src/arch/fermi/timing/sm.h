@@ -62,8 +62,8 @@ struct frm_sm_t
 	struct mod_t *lds_module;
 
 	/* Hardware structures */
-	struct frm_warp_pool_t *warp_pool;
-	unsigned int num_warp_schedulers;
+	unsigned int num_warp_inst_queues;
+	struct frm_warp_inst_queue_t **warp_inst_queues;
 	struct list_t **fetch_buffers;
 	unsigned int num_simd_units;
 	struct frm_simd_t **simd_units;
@@ -113,11 +113,11 @@ void frm_sm_unmap_thread_block(struct frm_sm_t *sm,
 struct frm_warp_t *frm_sm_schedule(struct frm_sm_t *sm);
 void frm_sm_run(struct frm_sm_t *sm);
 
-struct frm_warp_pool_t *frm_warp_pool_create();
-void frm_warp_pool_free(struct frm_warp_pool_t *warp_pool);
-void frm_warp_pool_map_warps(struct frm_warp_pool_t *warp_pool, 
+struct frm_warp_inst_queue_t *frm_warp_inst_queue_create();
+void frm_warp_inst_queue_free(struct frm_warp_inst_queue_t *warp_inst_queue);
+void frm_warp_inst_queue_map_warps(struct frm_warp_inst_queue_t *warp_inst_queue, 
 	struct frm_thread_block_t *thread_block);
-void frm_warp_pool_unmap_warps(struct frm_warp_pool_t *warp_pool, 
+void frm_warp_inst_queue_unmap_warps(struct frm_warp_inst_queue_t *warp_inst_queue, 
 	struct frm_thread_block_t *thread_block);
 
 #endif

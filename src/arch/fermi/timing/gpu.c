@@ -300,6 +300,7 @@ enum frm_gpu_register_alloc_granularity_t frm_gpu_register_alloc_granularity;
 
 /* Device parameters */
 int frm_gpu_num_sms = 1;
+int frm_gpu_num_warp_inst_queues = 2;
 
 /* Streaming multiprocessor parameters */
 int frm_gpu_max_thread_blocks_per_sm = 8;

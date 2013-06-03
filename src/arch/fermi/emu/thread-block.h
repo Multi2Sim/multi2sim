@@ -23,8 +23,8 @@
 
 enum frm_thread_block_status_t
 {
-	frm_thread_block_pending		= 0x0001,
-	frm_thread_block_running		= 0x0002,
+	frm_thread_block_pending	= 0x0001,
+	frm_thread_block_running	= 0x0002,
 	frm_thread_block_finished	= 0x0004
 };
 
@@ -55,7 +55,7 @@ struct frm_thread_block_t
 	/* Pointers to warps and threads */
 	struct frm_thread_t **threads;  /* Pointer to first thread in 'function->threads' */
 	struct frm_warp_t **warps;  /* Pointer to first warp in 'function->warps' */
-	struct frm_warp_pool_t *warp_pool;
+	struct frm_warp_inst_queue_t *warp_inst_queue;
 
 	/* Double linked lists of thread_blocks */
 	struct frm_thread_block_t *pending_list_prev;

@@ -32,7 +32,7 @@
 #include "gpu.h"
 #include "lds-unit.h"
 #include "uop.h"
-#include "warp-pool.h"
+#include "warp-inst-queue.h"
 
 
 void frm_lds_complete(struct frm_lds_t *lds)
@@ -63,8 +63,8 @@ void frm_lds_complete(struct frm_lds_t *lds)
 		/* Access complete, remove the uop from the queue */
 		list_remove(lds->write_buffer, uop);
 
-		assert(uop->warp_pool_entry->lgkm_cnt > 0);
-		uop->warp_pool_entry->lgkm_cnt--;
+		assert(uop->warp_inst_queue_entry->lgkm_cnt > 0);
+		uop->warp_inst_queue_entry->lgkm_cnt--;
 
 		frm_trace("si.end_inst id=%lld cu=%d\n", uop->id_in_sm,
 			uop->sm->id);
@@ -239,7 +239,7 @@ void frm_lds_mem(struct frm_lds_t *lds)
 		}
 
 		/* Increment outstanding memory access count */
-		uop->warp_pool_entry->lgkm_cnt++;
+		uop->warp_inst_queue_entry->lgkm_cnt++;
 
 		/* Transfer the uop to the mem buffer */
 		list_remove(lds->read_buffer, uop);

@@ -33,7 +33,7 @@
 #include "cycle-interval-report.h"
 #include "vector-mem-unit.h"
 #include "uop.h"
-#include "warp-pool.h"
+#include "warp-inst-queue.h"
 
 void frm_vector_mem_complete(struct frm_vector_mem_unit_t *vector_mem)
 {
@@ -63,8 +63,8 @@ void frm_vector_mem_complete(struct frm_vector_mem_unit_t *vector_mem)
 		/* Access complete, remove the uop from the queue */
 		list_remove(vector_mem->write_buffer, uop);
 
-		assert(uop->warp_pool_entry->lgkm_cnt > 0);
-		uop->warp_pool_entry->lgkm_cnt--;
+		assert(uop->warp_inst_queue_entry->lgkm_cnt > 0);
+		uop->warp_inst_queue_entry->lgkm_cnt--;
 
 		frm_trace("si.end_inst id=%lld cu=%d\n", uop->id_in_sm,
 			uop->sm->id);
@@ -271,7 +271,7 @@ void frm_vector_mem_mem(struct frm_vector_mem_unit_t *vector_mem)
 		}
 
 		/* Increment outstanding memory access count */
-		uop->warp_pool_entry->lgkm_cnt++;
+		uop->warp_inst_queue_entry->lgkm_cnt++;
 
 		/* Transfer the uop to the mem buffer */
 		list_remove(vector_mem->read_buffer, uop);
