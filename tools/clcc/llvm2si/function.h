@@ -17,39 +17,34 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_CLCC_LLVM2SI_BASIC_BLOCK_H
-#define TOOLS_CLCC_LLVM2SI_BASIC_BLOCK_H
+#ifndef TOOLS_CLCC_LLVM2SI_FUNCTION_H
+#define TOOLS_CLCC_LLVM2SI_FUNCTION_H
 
 #include <stdio.h>
 
 
 /* Forward declarations */
 struct linked_list_t;
-struct llvm2si_function_t;
-struct si2bin_inst_t;
+struct llvm2si_basic_block_t;
 
 
-struct llvm2si_basic_block_t
+struct llvm2si_function_t
 {
 	char *name;
 
-	/* Function where the basic block belongs. This field is populated
-	 * automatically when function 'llvm2si_function_add' is called. */
-	struct llvm2si_function_t *function;
-
-	/* List list of instructions forming the basic block. Each element is of
-	 * type 'struct si2bin_inst_t'. */
-	struct linked_list_t *inst_list;
+	/* List of basic blocks. Each element is of type
+	 * 'struct llvm2si_basic_block_t' */
+	struct linked_list_t *basic_block_list;
 };
 
 
-struct llvm2si_basic_block_t *llvm2si_basic_block_create(const char *name);
-void llvm2si_basic_block_free(struct llvm2si_basic_block_t *basic_block);
-void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f);
+struct llvm2si_function_t *llvm2si_function_create(const char *name);
+void llvm2si_function_free(struct llvm2si_function_t *function);
+void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f);
 
-/* Add an instruction to the basic block. */
-void llvm2si_basic_block_add(struct llvm2si_basic_block_t *basic_block,
-		struct si2bin_inst_t *inst);
-
+/* Add a basic block to the function. */
+void llvm2si_function_add(struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block);
 
 #endif
+

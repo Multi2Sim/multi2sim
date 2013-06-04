@@ -24,6 +24,10 @@
 #include <arch/southern-islands/asm/asm.h>
 
 
+/* Forward declarations */
+struct llvm2si_basic_block_t;
+
+
 struct si2bin_inst_t
 {
 	enum si_inst_opcode_t opcode;
@@ -36,6 +40,10 @@ struct si2bin_inst_t
 	/* Instruction bytes generated */
 	union si_inst_microcode_t inst_bytes;
 	int size;  /* Number of bytes */
+
+	/* For LLVM-to-SI back-end: basic block that the instruction
+	 * belongs to. */
+	struct llvm2si_basic_block_t *basic_block;
 };
 
 

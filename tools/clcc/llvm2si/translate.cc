@@ -39,6 +39,8 @@ extern "C"
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <clcc/llvm2si/basic-block.h>
+#include <clcc/llvm2si/function.h>
 #include <clcc/si2bin/arg.h>
 #include <clcc/si2bin/inst.h>
 
@@ -73,7 +75,7 @@ static int llvm2si_translate_vreg_gid = 3;  /* v[3:5] */
 /* Emit initialization Southern Islands assembly. This code is present in every
  * Southern Islands binary, regardless of its content.
  */
-static void llvm2si_translate_emit_header(void)
+static void llvm2si_translate_emit_header(struct llvm2si_basic_block_t *basic_block)
 {
 	struct si2bin_inst_t *inst;
 	struct list_t *arg_list;
@@ -94,8 +96,7 @@ static void llvm2si_translate_emit_header(void)
 				llvm2si_translate_sreg_cb0, llvm2si_translate_sreg_cb0 + 3));
 		list_add(arg_list, si2bin_arg_create_literal(4 + index));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		si2bin_inst_dump(inst, llvm2si_outf);
-		si2bin_inst_free(inst);
+		llvm2si_basic_block_add(basic_block, inst);
 	}
 
 	/* Obtain global offset in s[offs:offs+2].
@@ -113,8 +114,7 @@ static void llvm2si_translate_emit_header(void)
 				llvm2si_translate_sreg_cb0, llvm2si_translate_sreg_cb0 + 3));
 		list_add(arg_list, si2bin_arg_create_literal(0x18 + index));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		si2bin_inst_dump(inst, llvm2si_outf);
-		si2bin_inst_free(inst);
+		llvm2si_basic_block_add(basic_block, inst);
 	}
 
 	/* Calculate global ID in dimensions [0:2] and store it in v[3:5].
@@ -133,8 +133,7 @@ static void llvm2si_translate_emit_header(void)
 		list_add(arg_list, si2bin_arg_create_scalar_register(
 				llvm2si_translate_sreg_lsize + index));
 		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
-		si2bin_inst_dump(inst, llvm2si_outf);
-		si2bin_inst_free(inst);
+		llvm2si_basic_block_add(basic_block, inst);
 
 		/* v_mul_i32_i24 */
 		arg_list = list_create();
@@ -145,8 +144,7 @@ static void llvm2si_translate_emit_header(void)
 		list_add(arg_list, si2bin_arg_create_vector_register(
 				llvm2si_translate_vreg_gid + index));
 		inst = si2bin_inst_create(SI_INST_V_MUL_I32_I24, arg_list);
-		si2bin_inst_dump(inst, llvm2si_outf);
-		si2bin_inst_free(inst);
+		llvm2si_basic_block_add(basic_block, inst);
 
 		/* v_add_i32 */
 		arg_list = list_create();
@@ -158,8 +156,7 @@ static void llvm2si_translate_emit_header(void)
 		list_add(arg_list, si2bin_arg_create_vector_register(
 				llvm2si_translate_vreg_lid + index));
 		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
-		si2bin_inst_dump(inst, llvm2si_outf);
-		si2bin_inst_free(inst);
+		llvm2si_basic_block_add(basic_block, inst);
 
 		/* v_add_i32 */
 		arg_list = list_create();
@@ -171,8 +168,7 @@ static void llvm2si_translate_emit_header(void)
 		list_add(arg_list, si2bin_arg_create_vector_register(
 				llvm2si_translate_vreg_gid + index));
 		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
-		si2bin_inst_dump(inst, llvm2si_outf);
-		si2bin_inst_free(inst);
+		llvm2si_basic_block_add(basic_block, inst);
 	}
 
 	/* Load UAVs. UAV10 is used for private memory an stored in s[uav10:uav10+3].
@@ -187,8 +183,7 @@ static void llvm2si_translate_emit_header(void)
 			llvm2si_translate_sreg_uav, llvm2si_translate_sreg_uav + 1));
 	list_add(arg_list, si2bin_arg_create_literal(0x50));
 	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
-	si2bin_inst_dump(inst, llvm2si_outf);
-	si2bin_inst_free(inst);
+	llvm2si_basic_block_add(basic_block, inst);
 
 	/* s_load_dwordx4 s[uav11:uav11+3], s[uav:uav+1], 0x58 */
 	arg_list = list_create();
@@ -198,8 +193,7 @@ static void llvm2si_translate_emit_header(void)
 			llvm2si_translate_sreg_uav, llvm2si_translate_sreg_uav + 1));
 	list_add(arg_list, si2bin_arg_create_literal(0x58));
 	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
-	si2bin_inst_dump(inst, llvm2si_outf);
-	si2bin_inst_free(inst);
+	llvm2si_basic_block_add(basic_block, inst);
 }
 
 
@@ -224,7 +218,31 @@ llvm2si_translate_pass_t::llvm2si_translate_pass_t() : FunctionPass(ID)
 
 bool llvm2si_translate_pass_t::runOnFunction(Function &f)
 {
-	outs() << "Function '" << f.getName() << "'\n";
+	struct llvm2si_function_t *function;
+	struct llvm2si_basic_block_t *basic_block;
+	const char *name;
+
+	/* Skip special functions */
+	name = f.getName().data();
+	if (!strcmp(name, "get_work_dim")
+			|| !strcmp(name, "get_global_size")
+			|| !strcmp(name, "get_global_id")
+			|| !strcmp(name, "get_local_size")
+			|| !strcmp(name, "get_local_id")
+			|| !strcmp(name, "get_num_groups")
+			|| !strcmp(name, "get_group_id")
+			|| !strcmp(name, "get_global_offset"))
+		return false;
+
+	/* Create function and entry basic block */
+	function = llvm2si_function_create(f.getName().data());
+	basic_block = llvm2si_basic_block_create("entry");
+	llvm2si_function_add(function, basic_block);
+
+	/* Emit function header in entry basic block */
+	llvm2si_translate_emit_header(basic_block);
+
+	/* Basic blocks in function */
 	for (Function::iterator bb = f.begin(), bb_end = f.end();
 			bb != bb_end; bb++)
 	{
@@ -235,6 +253,13 @@ bool llvm2si_translate_pass_t::runOnFunction(Function &f)
 			outs() << "\t\t" << *inst << "\n";
 		}
 	}
+
+	/* Free function. This takes care of freeing all basic blocks and
+	 * instructions added to the function. */
+	llvm2si_function_dump(function, llvm2si_outf);
+	llvm2si_function_free(function);
+
+	/* Module not modified, return false */
 	return false;
 }
 
@@ -270,9 +295,6 @@ extern "C" void llvm2si_translate(char *source_file, char *output_file)
 	llvm2si_outf = fopen(output_file, "w");
 	if (!llvm2si_outf)
 		fatal("%s: cannot open output file", output_file);
-
-	/* Header */
-	llvm2si_translate_emit_header();
 
 	/* Apply pass */
 	PassManager pm;
