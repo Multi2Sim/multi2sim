@@ -63,7 +63,7 @@ struct frm_sm_t *frm_sm_create()
 		sizeof(struct list_t *));
 	sm->fetch_buffers = xcalloc(sm->num_warp_inst_queues,
 		sizeof(struct list_t *));
-	sm->num_simd_units = 4;
+	sm->num_simd_units = 2;
 	sm->simd_units = xcalloc(sm->num_simd_units, 
 		sizeof(struct frm_simd_t*));
 
@@ -257,12 +257,13 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thr
 			warp->id_in_thread_block;
 	}
 
-	/* Set instruction buffer for thread block */
+	/* Set warp instruction queue for thread block */
 	wiq_id = thread_block->id_in_sm % frm_gpu_num_warp_inst_queues;
 	thread_block->warp_inst_queue = sm->warp_inst_queues[wiq_id];
 
 	/* Insert warp into warp instruction queue */
-	frm_warp_inst_queue_map_warps(thread_block->warp_inst_queue, thread_block);
+	frm_warp_inst_queue_map_warps(thread_block->warp_inst_queue,
+			thread_block);
 
 	/* Change thread block status to running */
 	frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
