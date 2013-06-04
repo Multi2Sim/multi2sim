@@ -429,7 +429,9 @@ operand
 	
 	| TOK_SPECIAL_REGISTER
 	{
-		$$ = si2bin_arg_create_special_register($1->name); 
+		enum si_inst_special_reg_t reg;
+		reg = str_map_string(&si_inst_special_reg_map, $1->name);
+		$$ = si2bin_arg_create_special_register(reg); 
 		si2bin_id_free($1);
 	}
 	
