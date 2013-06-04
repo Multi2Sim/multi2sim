@@ -41,8 +41,9 @@
 char clcc_out_file_name[MAX_STRING_SIZE];
 
 int clcc_amd_run;  /* Run AMD native compiler */
-int clcc_llvm2si_run;  /* Run LLVM-to-SI back-end */
-int clcc_si2bin_run;  /* Run Southern Islands assembler */
+int clcc_cl2llvm_run;  /* Run OpenCL-to-LLVM stand-alone front-end */
+int clcc_llvm2si_run;  /* Run LLVM-to-SI stand-alone back-end */
+int clcc_si2bin_run;  /* Run Southern Islands stand-alone assembler */
 
 
 /* File names computed from source files */
@@ -85,6 +86,11 @@ static char *syntax =
 	"--amd-dump-all, -a\n"
 	"\tDump all intermediate file is generated during compilation. This\n"
 	"\toption must be used together with '--amd'.\n"
+	"\n"
+	"--cl2llvm\n"
+	"\tRun stand-alone OpenCL C to LLVM front-end, consuming OpenCL C\n"
+	"\tsource files and generating LLVM outputs with the '.llvm'\n"
+	"\tfile extension.\n"
 	"\n"
 	"--define <symbol>=<value>, -D <symbol>=<value>\n"
 	"\tAdd a definition for additional symbols, equivalent to #define\n"
@@ -160,6 +166,12 @@ static void clcc_process_option(const char *option, char *optarg)
 		amd_list_devices = 1;
 		return;
 	}
+
+	if (!strcmp(option, "cl2llvm"))
+	{
+		clcc_cl2llvm_run = 1;
+		return;
+	}
 	
 	if (!strcmp(option, "help") || !strcmp(option, "h"))
 	{
@@ -204,6 +216,7 @@ static void clcc_read_command_line(int argc, char **argv)
 		{ "amd-device", required_argument, 0, 'd' },
 		{ "amd-dump-all", no_argument, 0, 'a' },
 		{ "amd-list", no_argument, 0, 'l' },
+		{ "cl2llvm", no_argument, 0, 0 },
 		{ "help", no_argument, 0, 'h' },
 		{ "llvm2si", no_argument, 0, 0 },
 		{ "si-asm", no_argument, 0, 0 },
@@ -384,11 +397,26 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	/* LLVM to Southern Islands back-end */
+	/* OpenCL C to LLVM stand-alone front-end */
+	if (clcc_cl2llvm_run)
+	{
+		/* Replace output file if option '-o' was used */
+		if (clcc_out_file_name[0] && clcc_llvm_file_list->count == 1)
+		{
+			free(list_get(clcc_llvm_file_list, 0));
+			list_set(clcc_llvm_file_list, 0, xstrdup(clcc_out_file_name));
+		}
+
+		/* Run */
+		cl2llvm_compile(clcc_source_file_list, clcc_llvm_file_list);
+		goto out;
+	}
+
+	/* LLVM to Southern Islands stand-alone back-end */
 	if (clcc_llvm2si_run)
 	{
-		/* Replace output file if specified */
-		if (clcc_out_file_name[1] && clcc_asm_file_list->count == 1)
+		/* Replace output file if option '-o' was used */
+		if (clcc_out_file_name[0] && clcc_asm_file_list->count == 1)
 		{
 			free(list_get(clcc_asm_file_list, 0));
 			list_set(clcc_asm_file_list, 0, xstrdup(clcc_out_file_name));
@@ -406,8 +434,10 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	/* OpenCL-to-LLVM pass */
+	/* Compilation steps */
 	cl2llvm_compile(clcc_source_file_list, clcc_llvm_file_list);
+	llvm2si_compile(clcc_llvm_file_list, clcc_asm_file_list);
+	si2bin_compile(clcc_asm_file_list, clcc_bin_file_list);
 
 out:
 	/* Finish */
