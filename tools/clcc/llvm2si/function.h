@@ -26,7 +26,39 @@
 /* Forward declarations */
 struct linked_list_t;
 struct llvm2si_basic_block_t;
+struct llvm2si_function_t;
 
+
+
+/*
+ * Function Argument
+ */
+
+struct llvm2si_function_arg_t
+{
+	/* Scalar register identifier containing the argument. This argument is
+	 * populated when the argument is inserted into the function with a
+	 * call to 'llvm2si_function_add_arg()'. */
+	int sreg;
+
+	/* Index that the argument occupies in the function argument list.
+	 * This field is populated by 'llvm2si_function_add_arg()'. */
+	int index;
+
+	/* Function that the argument belongs to. Populated when inserted with
+	 * a call to 'llvm2si_function_add_arg()'. */
+	struct llvm2si_function_t *function;
+};
+
+struct llvm2si_function_arg_t *llvm2si_function_arg_create(void);
+void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg);
+
+
+
+
+/*
+ * Function Object
+ */
 
 struct llvm2si_function_t
 {
@@ -50,6 +82,9 @@ struct llvm2si_function_t
 	int vreg_lid;  /* Local ID (3 registers) */
 	int vreg_gid;  /* Global ID (4 registers) */
 
+	/* List of arguments. Each element is of type
+	 * 'struct llvm2si_function_arg_t' */
+	struct list_t *arg_list;
 
 	/* List of basic blocks. Each element is of type
 	 * 'struct llvm2si_basic_block_t' */
@@ -62,12 +97,18 @@ void llvm2si_function_free(struct llvm2si_function_t *function);
 void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f);
 
 /* Add a basic block to the function. */
-void llvm2si_function_add(struct llvm2si_function_t *function,
+void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block);
+
+/* Add argument 'arg' into the list of arguments of 'function', and generate
+ * code to load it into 'basic_block'. */
+void llvm2si_function_add_arg(struct llvm2si_function_t *function,
+		struct llvm2si_function_arg_t *arg,
 		struct llvm2si_basic_block_t *basic_block);
 	
 /* Generate initialization code for the function. The code will be dumped in
  * 'basic_block', which must have been previously added to the function with a
- * call to 'llvm2si_function_add'. */
+ * call to 'llvm2si_function_add_basic_block'. */
 void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
 
