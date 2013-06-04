@@ -400,6 +400,8 @@ const char* cudaGetErrorString(cudaError_t error)
 
 cudaError_t cudaGetDeviceCount(int *count)
 {
+	/* 0 for fermi, 1 for kepler */	
+	*count = 2;	
 	return cudaSuccess;
 }
 
@@ -411,73 +413,79 @@ cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp *prop_ptr, int device)
 				__FUNCTION__, cuda_rt_err_param_note);
 
 	/* Check for valid device. For now, we just check that the device is
-	 * 1, but later we will check among an array of possible valid
+	 * 0 (default), but later we will check among an array of possible valid
 	 * devices. */
-	if (device != 1)
+	if (device != 0)  
 		fatal("%s: invalid device (%d).\n%s", __FUNCTION__,
 				device, cuda_rt_err_param_note);
 
+	/* Initialize device properties */	
+	strcpy (prop_ptr->name, "cudaDevice1");
+	prop_ptr->totalGlobalMem = 1073741824; // 1G
+	prop_ptr->sharedMemPerBlock = 49152; // 48M
+	prop_ptr->regsPerBlock = 32768;
+	prop_ptr->warpSize = 32;
+	prop_ptr->memPitch = 2147483648u; // 2G
+	prop_ptr->maxThreadsPerBlock = 512;
+	prop_ptr->maxThreadsDim[1] = 512;
+	prop_ptr->maxThreadsDim[2] = 512;
+	prop_ptr->maxThreadsDim[3] = 64;
+	prop_ptr->maxGridSize[1] = 65535; //64M
+	prop_ptr->maxGridSize[2] = 65535; //64M
+	prop_ptr->maxGridSize[3] = 65535; // 64M
+	prop_ptr->clockRate = 500000;
+	prop_ptr->totalConstMem = 65535; //64M
+	prop_ptr->major = 1;
+	prop_ptr->minor = 3;
+	prop_ptr->textureAlignment = 512;
+	prop_ptr->texturePitchAlignment = 32;
+	prop_ptr->deviceOverlap = 1;
+	prop_ptr->multiProcessorCount = 480;
+	prop_ptr->kernelExecTimeoutEnabled = 0;
+	prop_ptr->integrated = 1;
+	prop_ptr->canMapHostMemory = 1;
+	prop_ptr->computeMode = cudaComputeModeDefault;
+	prop_ptr->maxTexture1D = 65536;
+	//prop_ptr->maxTexture1DMipmap;
+	//prop_ptr->maxTexture1DLinear;
+	prop_ptr->maxTexture2D[1] = 65536; //64M
+	prop_ptr->maxTexture2D[2] = 65536; //64M
+	//prop_ptr->maxTexture2DMipmap[2];
+	//prop_ptr->maxTexture2DLinear[3];
+	//prop_ptr->maxTexture2DGather[2];
+	prop_ptr->maxTexture3D[1] = 2048; //2M
+	prop_ptr->maxTexture3D[2] = 2048; //2M
+	prop_ptr->maxTexture3D[3] = 2048; //2M
+	//prop_ptr->maxTextureCubemap;
+	//prop_ptr->maxTexture1DLayered[2];
+	//prop_ptr->maxTexture2DLayered[3];
+	//prop_ptr->maxTextureCubemapLayered[2];
+	//prop_ptr->maxSurface1D;
+	//prop_ptr->maxSurface2D[2];
+	//prop_ptr->maxSurface3D[3];
+	//prop_ptr->maxSurface1DLayered[2];
+	//prop_ptr->maxSurface2DLayered[3];
+	//prop_ptr->maxSurfaceCubemap;
+	//prop_ptr->maxSurfaceCubemapLayered[2];
+	//prop_ptr->surfaceAlignment;
+	prop_ptr->concurrentKernels = 1;
+	prop_ptr->ECCEnabled = 1;
+	//prop_ptr->pciBusID;
+	//prop_ptr->pciDeviceID;
+	//prop_ptr->pciDomainID;
+	prop_ptr->tccDriver = 1;
+	prop_ptr->asyncEngineCount = 2;
+	prop_ptr->unifiedAddressing = 1;
+	prop_ptr->memoryClockRate = 950000;
+	prop_ptr->memoryBusWidth = 256;
+	prop_ptr->l2CacheSize = 256;
+	prop_ptr->maxThreadsPerMultiProcessor = 8;
+
 	/* Populate fields */
-	snprintf(prop_ptr->name, sizeof prop_ptr->name, "Multi2Sim CUDA Device");
+	//snprintf(prop_ptr->name, sizeof prop_ptr->name, "Multi2Sim CUDA Device");
 
 	/* Return success */
 	return cudaSuccess;
-
-	/* FIXME - populate all these fields
-	   char name[256];
-	   size_t totalGlobalMem;
-	   size_t sharedMemPerBlock;
-	   int regsPerBlock;
-	   int warpSize;
-	   size_t memPitch;
-	   int maxThreadsPerBlock;
-	   int maxThreadsDim[3];
-	   int maxGridSize[3];
-	   int clockRate;
-	   size_t totalConstMem;
-	   int major;
-	   int minor;
-	   size_t textureAlignment;
-	   size_t texturePitchAlignment;
-	   int deviceOverlap;
-	   int multiProcessorCount;
-	   int kernelExecTimeoutEnabled;
-	   int integrated;
-	   int canMapHostMemory;
-	   int computeMode;
-	   int maxTexture1D;
-	   int maxTexture1DMipmap;
-	   int maxTexture1DLinear;
-	   int maxTexture2D[2];
-	   int maxTexture2DMipmap[2];
-	   int maxTexture2DLinear[3];
-	   int maxTexture2DGather[2];
-	   int maxTexture3D[3];
-	   int maxTextureCubemap;
-	   int maxTexture1DLayered[2];
-	   int maxTexture2DLayered[3];
-	   int maxTextureCubemapLayered[2];
-	   int maxSurface1D;
-	   int maxSurface2D[2];
-	   int maxSurface3D[3];
-	   int maxSurface1DLayered[2];
-	   int maxSurface2DLayered[3];
-	   int maxSurfaceCubemap;
-	   int maxSurfaceCubemapLayered[2];
-	   size_t surfaceAlignment;
-	   int concurrentKernels;
-	   int ECCEnabled;
-	   int pciBusID;
-	   int pciDeviceID;
-	   int pciDomainID;
-	   int tccDriver;
-	   int asyncEngineCount;
-	   int unifiedAddressing;
-	   int memoryClockRate;
-	   int memoryBusWidth;
-	   int l2CacheSize;
-	   int maxThreadsPerMultiProcessor;
-	 */
 }
 
 cudaError_t cudaChooseDevice(int *device, const struct cudaDeviceProp *prop)
@@ -488,7 +496,7 @@ cudaError_t cudaChooseDevice(int *device, const struct cudaDeviceProp *prop)
 
 cudaError_t cudaSetDevice(int device)
 {
-	__CUDART_NOT_IMPL__
+	//Sets device as the current device for the calling host thread
 		return cudaSuccess;
 }
 
