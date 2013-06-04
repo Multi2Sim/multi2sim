@@ -102,127 +102,139 @@ struct str_map_t si_inst_fmt_map =
 /* String maps for assembly dump. */
 struct str_map_t si_inst_sdst_map = {
 	24, {
-			{"reserved", 0},
-			{"reserved", 1},
-			{"vcc_lo", 2},
-			{"vcc_hi", 3},
-			{"tba_lo", 4},
-			{"tba_hi", 5},
-			{"tma_lo", 6},
-			{"tma_hi", 7},
-			{"ttmp0", 8},
-			{"ttmp1", 9},
-			{"ttmp2", 10},
-			{"ttmp3", 11},
-			{"ttmp4", 12},
-			{"ttmp5", 13},
-			{"ttmp6", 14},
-			{"ttmp7", 15},
-			{"ttmp8", 16},
-			{"ttmp9", 17},
-			{"ttmp10", 18},
-			{"ttmp11", 19},
-			{"m0", 20},
-			{"reserved", 21},
-			{"exec_lo", 22},
-			{"exec_hi", 23}
-		}
+		{"reserved", 0},
+		{"reserved", 1},
+		{"vcc_lo", 2},
+		{"vcc_hi", 3},
+		{"tba_lo", 4},
+		{"tba_hi", 5},
+		{"tma_lo", 6},
+		{"tma_hi", 7},
+		{"ttmp0", 8},
+		{"ttmp1", 9},
+		{"ttmp2", 10},
+		{"ttmp3", 11},
+		{"ttmp4", 12},
+		{"ttmp5", 13},
+		{"ttmp6", 14},
+		{"ttmp7", 15},
+		{"ttmp8", 16},
+		{"ttmp9", 17},
+		{"ttmp10", 18},
+		{"ttmp11", 19},
+		{"m0", 20},
+		{"reserved", 21},
+		{"exec_lo", 22},
+		{"exec_hi", 23}
+	}
 };
 
 struct str_map_t si_inst_ssrc_map = {
 	16, {
-			{"0.5", 0},
-			{"-0.5", 1},
-			{"1.0", 2},
-			{"-1.0", 3},
-			{"2.0", 4},
-			{"-2.0", 5},
-			{"4.0", 6},
-			{"-4.0", 7},
-			{"reserved", 8},
-			{"reserved", 9},
-			{"reserved", 10},
-			{"vccz", 11},
-			{"execz", 12},
-			{"scc", 13},
-			{"reserved", 14},
-			{"literal constant", 15}
-		}
+		{"0.5", 0},
+		{"-0.5", 1},
+		{"1.0", 2},
+		{"-1.0", 3},
+		{"2.0", 4},
+		{"-2.0", 5},
+		{"4.0", 6},
+		{"-4.0", 7},
+		{"reserved", 8},
+		{"reserved", 9},
+		{"reserved", 10},
+		{"vccz", 11},
+		{"execz", 12},
+		{"scc", 13},
+		{"reserved", 14},
+		{"literal constant", 15}
+	}
 };
 
 struct str_map_t si_inst_dfmt_map = {
 	16, {
-			{"invalid", 0},
-			{"BUF_DATA_FORMAT_8", 1},
-			{"BUF_DATA_FORMAT_16", 2},
-			{"BUF_DATA_FORMAT_8_8", 3},
-			{"BUF_DATA_FORMAT_32", 4},
-			{"BUF_DATA_FORMAT_16_16", 5},
-			{"BUF_DATA_FORMAT_10_11_11", 6},
-			{"BUF_DATA_FORMAT_11_10_10", 7},
-			{"BUF_DATA_FORMAT_10_10_10_2", 8},
-			{"BUF_DATA_FORMAT_2_10_10_10", 9},
-			{"BUF_DATA_FORMAT_8_8_8_8", 10},
-			{"BUF_DATA_FORMAT_32_32", 11},
-			{"BUF_DATA_FORMAT_16_16_16_16", 12},
-			{"BUF_DATA_FORMAT_32_32_32", 13},
-			{"BUF_DATA_FORMAT_32_32_32_32", 14},
-			{"reserved", 15}
-		}
+		{"invalid", 0},
+		{"BUF_DATA_FORMAT_8", 1},
+		{"BUF_DATA_FORMAT_16", 2},
+		{"BUF_DATA_FORMAT_8_8", 3},
+		{"BUF_DATA_FORMAT_32", 4},
+		{"BUF_DATA_FORMAT_16_16", 5},
+		{"BUF_DATA_FORMAT_10_11_11", 6},
+		{"BUF_DATA_FORMAT_11_10_10", 7},
+		{"BUF_DATA_FORMAT_10_10_10_2", 8},
+		{"BUF_DATA_FORMAT_2_10_10_10", 9},
+		{"BUF_DATA_FORMAT_8_8_8_8", 10},
+		{"BUF_DATA_FORMAT_32_32", 11},
+		{"BUF_DATA_FORMAT_16_16_16_16", 12},
+		{"BUF_DATA_FORMAT_32_32_32", 13},
+		{"BUF_DATA_FORMAT_32_32_32_32", 14},
+		{"reserved", 15}
+	}
 };
 
 struct str_map_t si_inst_nfmt_map = {
 	14, {
-			{"BUF_NUM_FORMAT_UNORM", 0},
-			{"BUF_NUM_FORMAT_SNORM", 1},
-			{"BUF_NUM_FORMAT_UNSCALED", 2},
-			{"BUF_NUM_FORMAT_SSCALED", 3},
-			{"BUF_NUM_FORMAT_UINT", 4},
-			{"BUF_NUM_FORMAT_SINT", 5},
-			{"BUF_NUM_FORMAT_SNORM_NZ", 6},
-			{"BUF_NUM_FORMAT_FLOAT", 7},
-			{"reserved", 8},
-			{"BUF_NUM_FORMAT_SRGB", 9},
-			{"BUF_NUM_FORMAT_UBNORM", 10},
-			{"BUF_NUM_FORMAT_UBNORM_NZ", 11},
-			{"BUF_NUM_FORMAT_UBINT", 12},
-			{"BUF_NUM_FORMAT_UBSCALED", 13}
-		}
+		{"BUF_NUM_FORMAT_UNORM", 0},
+		{"BUF_NUM_FORMAT_SNORM", 1},
+		{"BUF_NUM_FORMAT_UNSCALED", 2},
+		{"BUF_NUM_FORMAT_SSCALED", 3},
+		{"BUF_NUM_FORMAT_UINT", 4},
+		{"BUF_NUM_FORMAT_SINT", 5},
+		{"BUF_NUM_FORMAT_SNORM_NZ", 6},
+		{"BUF_NUM_FORMAT_FLOAT", 7},
+		{"reserved", 8},
+		{"BUF_NUM_FORMAT_SRGB", 9},
+		{"BUF_NUM_FORMAT_UBNORM", 10},
+		{"BUF_NUM_FORMAT_UBNORM_NZ", 11},
+		{"BUF_NUM_FORMAT_UBINT", 12},
+		{"BUF_NUM_FORMAT_UBSCALED", 13}
+	}
 };
 
 struct str_map_t si_inst_OP16_map = {
 	16, {
-			{"f", 0},
-			{"lt", 1},
-			{"eq", 2},
-			{"le", 3},
-			{"gt", 4},
-			{"lg", 5},
-			{"ge", 6},
-			{"o", 7},
-			{"u", 8},
-			{"nge", 9},
-			{"nlg", 10},
-			{"ngt", 11},
-			{"nle", 12},
-			{"neq", 13},
-			{"nlt", 14},
-			{"tru", 15},
-		}
+		{"f", 0},
+		{"lt", 1},
+		{"eq", 2},
+		{"le", 3},
+		{"gt", 4},
+		{"lg", 5},
+		{"ge", 6},
+		{"o", 7},
+		{"u", 8},
+		{"nge", 9},
+		{"nlg", 10},
+		{"ngt", 11},
+		{"nle", 12},
+		{"neq", 13},
+		{"nlt", 14},
+		{"tru", 15},
+	}
 };
 
 struct str_map_t si_inst_OP8_map = {
 	8, {
-			{"f", 0},
-			{"lt", 1},
-			{"eq", 2},
-			{"le", 3},
-			{"gt", 4},
-			{"lg", 5},
-			{"ge", 6},
-			{"tru", 7},
-		}
+		{"f", 0},
+		{"lt", 1},
+		{"eq", 2},
+		{"le", 3},
+		{"gt", 4},
+		{"lg", 5},
+		{"ge", 6},
+		{"tru", 7},
+	}
 };
+
+struct str_map_t si_inst_special_reg_map = {
+	4, {
+		{ "vcc", si_inst_special_reg_vcc },
+		{ "scc", si_inst_special_reg_scc },
+		{ "exec", si_inst_special_reg_exec },
+		{ "tma", si_inst_special_reg_tma }
+	}
+};
+
+
+
 
 /* 
  * Initialization/finalization of disassembler

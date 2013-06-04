@@ -29,17 +29,6 @@
 #include "si2bin.h"
 
 
-struct str_map_t si2bin_arg_special_register_map =
-{
-	3,
-	{
-		{ "vcc", si2bin_arg_special_register_vcc },
-		{ "scc", si2bin_arg_special_register_scc },
-		{ "exec", si2bin_arg_special_register_exec }
-	}
-};
-
-
 struct si2bin_arg_t *si2bin_arg_create(void)
 {
 	struct si2bin_arg_t *arg;
@@ -134,18 +123,13 @@ struct si2bin_arg_t *si2bin_arg_create_vector_register_series(int low, int high)
 }
 
 
-struct si2bin_arg_t *si2bin_arg_create_special_register(char *name)
+struct si2bin_arg_t *si2bin_arg_create_special_register(enum si_inst_special_reg_t reg)
 {
 	struct si2bin_arg_t *arg;
-	int err;
 
 	arg = si2bin_arg_create();
 	arg->type = si2bin_arg_special_register;
-	arg->value.special_register.type =
-			str_map_string_err(&si2bin_arg_special_register_map,
-			name, &err);
-	if (err)
-		si2bin_yyerror_fmt("invalid special register: %s", name);
+	arg->value.special_register.reg = reg;
 
 	return arg;
 }
@@ -308,20 +292,20 @@ int si2bin_arg_encode_operand(struct si2bin_arg_t *arg)
 	/* Special register */
 	case si2bin_arg_special_register:
 	{
-		switch (arg->value.special_register.type)
+		switch (arg->value.special_register.reg)
 		{
-		case si2bin_arg_special_register_vcc:
+		case si_inst_special_reg_vcc:
 			return 106;
 
-		case si2bin_arg_special_register_exec:
+		case si_inst_special_reg_exec:
 			return 126;
 
-		case si2bin_arg_special_register_scc:
+		case si_inst_special_reg_scc:
 			return 253;
 
 		default:
 			si2bin_yyerror_fmt("%s: unsupported special register (code=%d)",
-				__FUNCTION__, arg->value.special_register.type);
+				__FUNCTION__, arg->value.special_register.reg);
 		}
 		break;
 	}
@@ -406,8 +390,8 @@ void si2bin_arg_dump(struct si2bin_arg_t *arg, FILE *f)
 
 	case si2bin_arg_special_register:
 
-		fprintf(f, "<special_reg> %s", str_map_value(&si2bin_arg_special_register_map,
-				arg->value.special_register.type));
+		fprintf(f, "<special_reg> %s", str_map_value(&si_inst_special_reg_map,
+				arg->value.special_register.reg));
 		break;
 	
 	case si2bin_arg_mem_register:

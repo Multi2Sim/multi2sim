@@ -340,6 +340,18 @@ enum si_inst_category_t
 };
 
 
+extern struct str_map_t si_inst_special_reg_map;
+
+enum si_inst_special_reg_t
+{
+	si_inst_special_reg_invalid = 0,
+	si_inst_special_reg_vcc,
+	si_inst_special_reg_scc,
+	si_inst_special_reg_exec,
+	si_inst_special_reg_tma
+};
+
+
 enum si_inst_flag_t
 {
 	SI_INST_FLAG_NONE = 0x0000,

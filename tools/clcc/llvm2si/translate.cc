@@ -152,7 +152,7 @@ static void llvm2si_translate_emit_header(void)
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_vector_register(
 				llvm2si_translate_vreg_gid + index));
-		list_add(arg_list, si2bin_arg_create_special_register("vcc"));
+		list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
 		list_add(arg_list, si2bin_arg_create_vector_register(
 				llvm2si_translate_vreg_gid + index));
 		list_add(arg_list, si2bin_arg_create_vector_register(
@@ -165,7 +165,7 @@ static void llvm2si_translate_emit_header(void)
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_vector_register(
 				llvm2si_translate_vreg_gid + index));
-		list_add(arg_list, si2bin_arg_create_special_register("vcc"));
+		list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
 		list_add(arg_list, si2bin_arg_create_scalar_register(
 				llvm2si_translate_sreg_offs + index));
 		list_add(arg_list, si2bin_arg_create_vector_register(

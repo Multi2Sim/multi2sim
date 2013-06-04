@@ -20,7 +20,10 @@
 #ifndef TOOLS_CLCC_SI2BIN_ARG_H
 #define TOOLS_CLCC_SI2BIN_ARG_H
 
+#include <arch/southern-islands/asm/asm.h>
+
 #include <stdio.h>
+
 
 /* Forward declarations */
 struct si2bin_symbol_t;
@@ -42,16 +45,6 @@ enum si2bin_arg_type_t
 	si2bin_arg_label,
 	si2bin_arg_maddr,
 	si2bin_arg_maddr_qual
-};
-
-/* NOTE: modify string map 'si_arg_special_register_map' in asm.c together
- * with this enumeration. */
-enum si2bin_arg_special_register_type_t
-{
-	si2bin_arg_special_register_invalid = 0,
-	si2bin_arg_special_register_vcc,
-	si2bin_arg_special_register_scc,
-	si2bin_arg_special_register_exec
 };
 
 struct si2bin_arg_t 
@@ -136,7 +129,7 @@ struct si2bin_arg_t
 		
 		struct
 		{
-			enum si2bin_arg_special_register_type_t type;
+			enum si_inst_special_reg_t reg;
 		} special_register;
 
 		struct
@@ -156,7 +149,7 @@ struct si2bin_arg_t *si2bin_arg_create_scalar_register(int id);
 struct si2bin_arg_t *si2bin_arg_create_scalar_register_series(int low, int high);
 struct si2bin_arg_t *si2bin_arg_create_vector_register(int id);
 struct si2bin_arg_t *si2bin_arg_create_vector_register_series(int low, int high);
-struct si2bin_arg_t *si2bin_arg_create_special_register(char *name);
+struct si2bin_arg_t *si2bin_arg_create_special_register(enum si_inst_special_reg_t reg);
 struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
 		struct si2bin_arg_t *qual, char *data_format, char *num_format);
 struct si2bin_arg_t *si2bin_arg_create_maddr_qual(void);
