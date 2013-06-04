@@ -57,6 +57,19 @@ static FILE *llvm2si_outf;
  * Private Functions
  */
 
+static int llvm2si_translate_sreg_uav = 0;  /* s[0:1] */
+static int llvm2si_translate_sreg_cb0 = 2;  /* s[2:5] */
+static int llvm2si_translate_sreg_cb1 = 6;  /* s[6:9] */
+static int llvm2si_translate_sreg_wgid = 10;  /* s[10:12] */
+static int llvm2si_translate_sreg_lsize = 13;  /* s[13:15] */
+static int llvm2si_translate_sreg_offs = 16;  /* s[16:18] */
+static int llvm2si_translate_sreg_uav10 = 19;  /* s[19:22] */
+static int llvm2si_translate_sreg_uav11 = 23;  /* s[23:26] */
+
+static int llvm2si_translate_vreg_lid = 0;  /* v[0:2] */
+static int llvm2si_translate_vreg_gid = 3;  /* v[3:5] */
+
+
 /* Emit initialization Southern Islands assembly. This code is present in every
  * Southern Islands binary, regardless of its content.
  */
@@ -64,13 +77,127 @@ static void llvm2si_translate_emit_header(void)
 {
 	struct si2bin_inst_t *inst;
 	struct list_t *arg_list;
+	int index;
 
+	/* Obtain local size in s[lsize:lsize+2].
+	 *
+	 * s_buffer_load_dword s[lsize], s[cb0:cb0+3], 0x04
+	 * s_buffer_load_dword s[lsize+1], s[cb0:cb0+3], 0x05
+	 * s_buffer_load_dword s[lsize+2], s[cb0:cb0+3], 0x06
+	 * */
+	for (index = 0; index < 3; index++)
+	{
+		arg_list = list_create();
+		list_add(arg_list, si2bin_arg_create_scalar_register(
+				llvm2si_translate_sreg_lsize + index));
+		list_add(arg_list, si2bin_arg_create_scalar_register_series(
+				llvm2si_translate_sreg_cb0, llvm2si_translate_sreg_cb0 + 3));
+		list_add(arg_list, si2bin_arg_create_literal(4 + index));
+		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
+		si2bin_inst_dump(inst, llvm2si_outf);
+		si2bin_inst_free(inst);
+	}
+
+	/* Obtain global offset in s[offs:offs+2].
+	 *
+	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x18
+	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x19
+	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x1a
+	 */
+	for (index = 0; index < 3; index++)
+	{
+		arg_list = list_create();
+		list_add(arg_list, si2bin_arg_create_scalar_register(
+				llvm2si_translate_sreg_offs + index));
+		list_add(arg_list, si2bin_arg_create_scalar_register_series(
+				llvm2si_translate_sreg_cb0, llvm2si_translate_sreg_cb0 + 3));
+		list_add(arg_list, si2bin_arg_create_literal(0x18 + index));
+		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
+		si2bin_inst_dump(inst, llvm2si_outf);
+		si2bin_inst_free(inst);
+	}
+
+	/* Calculate global ID in dimensions [0:2] and store it in v[3:5].
+	 *
+	 * v_mov_b32 v[gid+dim], s[lsize+dim]
+	 * v_mul_i32_i24 v[gid+dim], s[wgid+dim], v[gid+dim]
+	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], v[lid+dim]
+	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], s[offs+dim]
+	 */
+	for (index = 0; index < 3; index++)
+	{
+		/* v_mov_b32 */
+		arg_list = list_create();
+		list_add(arg_list, si2bin_arg_create_vector_register(
+				llvm2si_translate_vreg_gid + index));
+		list_add(arg_list, si2bin_arg_create_scalar_register(
+				llvm2si_translate_sreg_lsize + index));
+		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
+		si2bin_inst_dump(inst, llvm2si_outf);
+		si2bin_inst_free(inst);
+
+		/* v_mul_i32_i24 */
+		arg_list = list_create();
+		list_add(arg_list, si2bin_arg_create_vector_register(
+				llvm2si_translate_vreg_gid + index));
+		list_add(arg_list, si2bin_arg_create_scalar_register(
+				llvm2si_translate_sreg_wgid + index));
+		list_add(arg_list, si2bin_arg_create_vector_register(
+				llvm2si_translate_vreg_gid + index));
+		inst = si2bin_inst_create(SI_INST_V_MUL_I32_I24, arg_list);
+		si2bin_inst_dump(inst, llvm2si_outf);
+		si2bin_inst_free(inst);
+
+		/* v_add_i32 */
+		arg_list = list_create();
+		list_add(arg_list, si2bin_arg_create_vector_register(
+				llvm2si_translate_vreg_gid + index));
+		list_add(arg_list, si2bin_arg_create_special_register("vcc"));
+		list_add(arg_list, si2bin_arg_create_vector_register(
+				llvm2si_translate_vreg_gid + index));
+		list_add(arg_list, si2bin_arg_create_vector_register(
+				llvm2si_translate_vreg_lid + index));
+		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
+		si2bin_inst_dump(inst, llvm2si_outf);
+		si2bin_inst_free(inst);
+
+		/* v_add_i32 */
+		arg_list = list_create();
+		list_add(arg_list, si2bin_arg_create_vector_register(
+				llvm2si_translate_vreg_gid + index));
+		list_add(arg_list, si2bin_arg_create_special_register("vcc"));
+		list_add(arg_list, si2bin_arg_create_scalar_register(
+				llvm2si_translate_sreg_offs + index));
+		list_add(arg_list, si2bin_arg_create_vector_register(
+				llvm2si_translate_vreg_gid + index));
+		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
+		si2bin_inst_dump(inst, llvm2si_outf);
+		si2bin_inst_free(inst);
+	}
+
+	/* Load UAVs. UAV10 is used for private memory an stored in s[uav10:uav10+3].
+	 * UAV11 is used for global memory and stored in s[uav11:uav11+3].
+	 *
+	 * s_load_dwordx4 s[uav10:uav10+3], s[uav:uav+1], 0x50
+	 */
 	arg_list = list_create();
-	list_add(arg_list, si2bin_arg_create_scalar_register(13));
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(2, 5));
-	list_add(arg_list, si2bin_arg_create_literal(4));
-	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(
+			llvm2si_translate_sreg_uav10, llvm2si_translate_sreg_uav10 + 3));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(
+			llvm2si_translate_sreg_uav, llvm2si_translate_sreg_uav + 1));
+	list_add(arg_list, si2bin_arg_create_literal(0x50));
+	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
+	si2bin_inst_dump(inst, llvm2si_outf);
+	si2bin_inst_free(inst);
 
+	/* s_load_dwordx4 s[uav11:uav11+3], s[uav:uav+1], 0x58 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(
+			llvm2si_translate_sreg_uav11, llvm2si_translate_sreg_uav11 + 3));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(
+			llvm2si_translate_sreg_uav, llvm2si_translate_sreg_uav + 1));
+	list_add(arg_list, si2bin_arg_create_literal(0x58));
+	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
 	si2bin_inst_dump(inst, llvm2si_outf);
 	si2bin_inst_free(inst);
 }
