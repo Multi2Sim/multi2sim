@@ -45,6 +45,7 @@ char func_name[50];
 struct hash_table_t *cl2llvm_symbol_table;
 
 struct cl2llvm_function_t *current_function;
+
 %}
 
 %union {
@@ -200,8 +201,8 @@ struct cl2llvm_function_t *current_function;
 
 %%
 program
-	: external_def {printf("start rule matched\n");}
-	| program external_def {printf("start rule matched\n");}
+	: external_def 
+	| program external_def 
 	;
 
 external_def
@@ -211,6 +212,9 @@ external_def
 
 func_decl
 	: declarator_list TOK_ID TOK_PAR_OPEN arg_list TOK_PAR_CLOSE TOK_SEMICOLON
+	{
+		}
+
 	;
 
 func_def
@@ -239,7 +243,6 @@ func_def
 		{
 			for (arg_num = 0; arg_num < arg_count; arg_num++)
 			{
-				printf("loop1\n");
 				
 				struct cl2llvm_arg_t *current_arg = list_get($4, arg_num);
 				/*LLVMGetTypeKind(current_arg->type_spec->llvm_type);*/
@@ -269,9 +272,8 @@ func_def
 		/*insert function into global symbol table*/
 		err = hash_table_insert(cl2llvm_symbol_table, 
 			$2, new_function);
-		printf("%s\n", $2);
 		if (!err)
-			printf("function already defined");
+			yyerror("function already defined");
 		/* Declare parameters */
 		if (list_get($4, $4->head) != NULL)
 		{
@@ -307,7 +309,6 @@ func_def
 arg_list
 	: /*empty*/
 	{
-		printf("empty\n");
 		struct cl2llvm_arg_t *empty_arg = NULL;
 		struct list_t *arg_list = list_create();
 		list_add(arg_list, empty_arg);
@@ -315,14 +316,12 @@ arg_list
 	}
 	| arg
 	{
-		printf("arg\n");
 		struct list_t *arg_list = list_create();
 		list_add(arg_list, $1);
 		$$ = arg_list;
 	}
 	| arg_list TOK_COMMA arg
 	{
-		printf("arg_list\n");
 		list_add($1, $3);
 		$$ = $1;
 	}
@@ -442,27 +441,43 @@ lvalue
 	| TOK_ID array_deref_list %prec TOK_MINUS
 	{
 		int i;
-		
-		struct cl2llvm_symbol_t *symbol = hash_table_get(current_function->symbol_table, $1);
+		struct cl2llvm_symbol_t *symbol;
+		struct cl2llvm_val_t *current_index;
+		LLVMValueRef indices[100];
+
+		/*Retrieve symbol from table*/
+	 	symbol = hash_table_get(current_function->symbol_table, $1);
 		if (symbol == NULL)	
 			yyerror("symbol undeclared first use in this program");
-		LLVMValueRef indices[100];
-		struct cl2llvm_val_t *current_index;
+		
+		/*Create array of indices*/
 		for(i = 0; i < list_count($2); i++)
 		{
 			current_index = list_get($2, i);
 			indices[i] = current_index->val;
 		}
+		/*Load object pointer*/
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		LLVMValueRef array_ptr = LLVMBuildLoad(cl2llvm_builder, symbol->cl2llvm_val->val, temp_var_name);
+		LLVMValueRef array_ptr = LLVMBuildLoad(cl2llvm_builder, symbol->cl2llvm_val->val,
+			temp_var_name);
+
+		/*Load element pointer*/
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
 		struct cl2llvm_val_t *deref_ptr = cl2llvm_val_create_w_init( LLVMBuildGEP( 
 			cl2llvm_builder, array_ptr, indices, list_count($2), temp_var_name), 
 			symbol->cl2llvm_val->type->sign);
+
+		/*Free pointers*/
+		LIST_FOR_EACH($2, i)
+		{
+			cl2llvm_val_free(list_get($2, i));
+		}
+		list_free($2);
+
 		$$ = deref_ptr;
 	}
 	| type_ptr_list TOK_ID
@@ -472,12 +487,16 @@ lvalue
 	| TOK_ID %prec TOK_MINUS
 	{
 		struct cl2llvm_symbol_t *symbol;
+		struct cl2llvm_val_t *symbol_val_dup;
 
+		/*Access symbol from symbol table*/
 		symbol = hash_table_get(current_function->symbol_table, $1);
 		if (!symbol)
 			yyerror("undefined identifier");
 
-		struct cl2llvm_val_t *symbol_val_dup = cl2llvm_val_create_w_init(symbol->cl2llvm_val->val, symbol->cl2llvm_val->type->sign);
+		/*Duplicate symbol*/
+		symbol_val_dup = cl2llvm_val_create_w_init(symbol->cl2llvm_val->val, 
+			symbol->cl2llvm_val->type->sign);
 
 		symbol_val_dup->type->llvm_type = symbol->cl2llvm_val->type->llvm_type;
 
@@ -545,6 +564,8 @@ stmt
 	}
 	| TOK_CONTINUE TOK_SEMICOLON
 	| TOK_BREAK TOK_SEMICOLON
+	{
+	}
 	| switch_stmt
 	| label_stmt
 	| goto_stmt
@@ -553,10 +574,11 @@ stmt
 func_call
 	: TOK_ID TOK_PAR_OPEN param_list TOK_PAR_CLOSE
 	{
-		printf("%s\n", $1);
+	
+
 		struct cl2llvm_function_t *function = hash_table_get(cl2llvm_symbol_table, $1);
 		if (!function)
-			yyerror("undefined function");
+			yyerror("implicit declaration of function");
 		LLVMTypeRef param_types[100];
 		LLVMGetParamTypes(function->func_type, param_types);
 		
@@ -565,10 +587,9 @@ func_call
 		/* check that parameter types match */
 		for (i = 0; i < function->arg_count; i++)
 		{
-			printf("loop\n");
 			struct cl2llvm_arg_t *current_func_arg = list_get(function->arg_list, i);
 			struct cl2llvm_val_t *current_param = list_get($3, i);
-			if (current_func_arg->type_spec->llvm_type != current_param->type->llvm_type || current_func_arg->type_spec->sign  != current_param->type->sign)
+			if (current_func_arg->type_spec->llvm_type != current_param->type->llvm_type)
 			{
 				struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( current_func_arg->type_spec->llvm_type, current_func_arg->type_spec->sign);
 				struct cl2llvm_val_t *cast_param = llvm_type_cast(current_param, type);
@@ -588,9 +609,9 @@ func_call
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		struct cl2llvm_val_t *ret_val = cl2llvm_val_create_w_init(
-			LLVMBuildCall(cl2llvm_builder, function->func,
-			cast_param_array, function->arg_count, temp_var_name),
+		LLVMValueRef llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
+			cast_param_array, function->arg_count, temp_var_name);
+		struct cl2llvm_val_t *ret_val = cl2llvm_val_create_w_init(llvm_val_func_ret, 	
 			function->sign);
 		
 		$$ = ret_val;
@@ -705,11 +726,16 @@ declaration
 		struct cl2llvm_symbol_t *symbol;
 		struct cl2llvm_val_t *cast_to_val;
 		int init_count = list_count($2);
+	struct cl2llvm_init_t *current_list_elem;
 		int i;
+
+		/*Create and store each sybmol in the init_list*/
 		for(i = 0; i < init_count; i++)
 		{	
 			int err;			
-			struct cl2llvm_init_t *current_list_elem = list_get($2, i);
+			current_list_elem = list_get($2, i);
+			
+			/*If data type is array*/
 			if (current_list_elem->array_deref_list == NULL)
 			{
 				symbol = cl2llvm_symbol_create_w_init( LLVMBuildAlloca( 
@@ -717,25 +743,20 @@ declaration
 					current_list_elem->name), $1->type_spec->sign, 
 					current_list_elem->name);
 					symbol->cl2llvm_val->type->llvm_type = $1->type_spec->llvm_type;
+				/*Insert symbol into symbol table*/
 				err = hash_table_insert(current_function->symbol_table, 
 					current_list_elem->name, symbol);
 				if (!err)
-					printf("duplicated symbol");
-				if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->type_spec->llvm_type 
-					&& current_list_elem->cl2llvm_val->type->sign == $1->type_spec->sign)
-				{
-					LLVMBuildStore(cl2llvm_builder,
-						current_list_elem->cl2llvm_val->val, symbol->cl2llvm_val->val);
-				}
-				else
-				{
-					cast_to_val = llvm_type_cast( current_list_elem->cl2llvm_val, $1->type_spec);
-					LLVMBuildStore(cl2llvm_builder,
-						cast_to_val->val,
-						symbol->cl2llvm_val->val);
-					cl2llvm_val_free(cast_to_val);
-				}
+					yyerror("duplicated symbol");
+				
+				/*Cast initializer to declarator type and store*/
+				cast_to_val = llvm_type_cast( current_list_elem->cl2llvm_val, 
+					$1->type_spec);
+				LLVMBuildStore(cl2llvm_builder, cast_to_val->val, 
+					symbol->cl2llvm_val->val);
+				cl2llvm_val_free(cast_to_val);
 			}
+			/*If init is an array*/
 			else
 			{	
 				struct cl2llvm_val_t *array_length = list_get(current_list_elem->array_deref_list, 0);
@@ -748,7 +769,8 @@ declaration
 				err = hash_table_insert(current_function->symbol_table, 
 					current_list_elem->name, symbol);
 				if (!err)
-					printf("duplicated symbol");
+					yyerror("duplicated symbol");
+				
 
 			}
 		}
@@ -1567,12 +1589,16 @@ expr
 	{
 		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
 			$1->type->llvm_type , $1->type->sign);
-
+		
+		/*Cast rvalue to type of lvalue and store*/
 		struct cl2llvm_val_t *value = llvm_type_cast($3, type);
 		LLVMBuildStore(cl2llvm_builder, $3->val, $1->val);
+
+		/*Free pointers*/
 		cl2llvm_type_free(type);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+
 		$$ = value;
 	}
 	| lvalue TOK_ADD_EQUAL expr
@@ -1885,7 +1911,6 @@ unary_expr
 	}
 	| TOK_PAR_OPEN type_spec TOK_PAR_CLOSE expr %prec TOK_PREFIX
 	{
-		printf("cast rule\n");
 		llvm_type_cast($4, $2);
 		$$ = $4;
 	}
@@ -2021,7 +2046,7 @@ type_spec
 	| type_name type_ptr_list
 	{
 		int i = 0;
-		LLVMTypeRef ptr_type;
+		LLVMTypeRef ptr_type = NULL;
 		do
 		{
 			if(i)
@@ -2030,7 +2055,6 @@ type_spec
 				ptr_type = LLVMPointerType($1->llvm_type, 0);
 			i++;
 		} while(i < $2);
-		LLVMGetTypeKind(ptr_type);
 		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(ptr_type, $1->sign);
 		cl2llvm_type_free($1);
 		LLVMGetTypeKind(type->llvm_type);

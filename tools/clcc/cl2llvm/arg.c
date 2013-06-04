@@ -33,7 +33,6 @@ struct cl2llvm_arg_t *cl2llvm_arg_create(struct cl2llvm_decl_list_t *decl_list, 
 	struct cl2llvm_arg_t *arg;
 	
 	arg = xcalloc(1, sizeof(struct cl2llvm_arg_t));
-	printf("%s\n", name);
 	arg->name = xstrdup(name);
 
 	/*merge declarators to arg*/

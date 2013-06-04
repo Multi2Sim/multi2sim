@@ -33,6 +33,8 @@
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
 
+#include "arg.h"
+#include "type.h"
 #include "declarator-list.h"
 #include "function.h"
 #include "symbol.h"
@@ -85,19 +87,32 @@ void cl2llvm_init(void)
 	/* Initialize global symbol table */
 	cl2llvm_symbol_table = hash_table_create(10, 1);
 
-	/*LLVMTypeRef args_get_global_id_array[] = {LLVMInt32Type()};
+	/*Declare get_global_id*/
+	
+	/*Arguments*/
+	LLVMTypeRef args_get_global_id_array[] = {LLVMInt32Type()};
 	struct list_t *args_get_global_id = list_create();
 	struct cl2llvm_decl_list_t *ggi_dimindex_decl = cl2llvm_decl_list_create();
-	ggi_dimindex_decl->type_spec->llvm_type = LLVMInt32Type():
-	ggi_dimindex_decl->type_spec->sign = 0;
-	struct cl2llvm_arg_t *ggi_dimindex_arg1 = cl2llvm_arg_create(ggi_dimindex_decl, NULL);
+	ggi_dimindex_decl->type_spec = cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
+	struct cl2llvm_arg_t *ggi_dimindex_arg1 = cl2llvm_arg_create(ggi_dimindex_decl, "dimindex");
 	list_add(args_get_global_id, ggi_dimindex_arg1);
-	struct cl2llvm_function_t *cl2llvm_get_global_id = cl2llvm_func_create("get_global_id", args_get_global_id)
-	cl2llvm_get_global_id->func_type = LLVMFunctionType(cl2llvm_module, LLVMInt32Type(), args_get_global_id_array, 1, 0);
-	cl2llvm_get_global_id->func = LLVMAddFunction(cl2llvm_module, "get_global_id", cl2llvm_get_global_id->func_type)
 
-	hash_table_insert(cl2llvm_hash_table, cl2llvm_function, "get_global_id");*/
+	/*Function*/
+	struct cl2llvm_function_t *cl2llvm_get_global_id = cl2llvm_function_create("get_global_id",
+		args_get_global_id);
+	
+	 cl2llvm_get_global_id->func_type = LLVMFunctionType( LLVMInt32Type(),
+	 	args_get_global_id_array, 1, 0);
+ 	cl2llvm_get_global_id->func = LLVMAddFunction(cl2llvm_module, "get_global_id",
+		cl2llvm_get_global_id->func_type);
+	cl2llvm_get_global_id->sign = 1;
+	LLVMSetFunctionCallConv(cl2llvm_get_global_id->func, LLVMCCallConv);
 
+	/*Insert function in global symbol table*/
+	hash_table_insert(cl2llvm_symbol_table, "get_global_id", cl2llvm_get_global_id);
+
+	/*free pointers*/
+	cl2llvm_decl_list_struct_free(ggi_dimindex_decl);
 }
 
 
@@ -117,6 +132,7 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 {
 	int index;
 	char *error = NULL;
+	char *llvm_file_name;
 
 	LIST_FOR_EACH(source_file_list, index)
 	{
@@ -128,18 +144,21 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 
 		/* Compile */
 		extern int cl2llvm_yydebug;
-		cl2llvm_yydebug = 1; ////
+		/*initialize yydebug to 1 for debug information from bison*/
+		cl2llvm_yydebug = 0; ////
 		cl2llvm_yyparse();
+	
+		/*Verify module and dump bit code to file*/
+		llvm_file_name = list_get(llvm_file_list, index);
+		LLVMVerifyModule(cl2llvm_module, LLVMAbortProcessAction, &error);
+		LLVMWriteBitcodeToFile(cl2llvm_module, llvm_file_name);
+		LLVMDisposeMessage(error); // Handler == LLVMAbortProcessAction -> No need to check errors
+
 
 		/* Close */
 		fclose(cl2llvm_yyin);
 	}
 	
-	LLVMDumpModule(cl2llvm_module);
-	LLVMWriteBitcodeToFile(cl2llvm_module, "./string.bc");
-	LLVMVerifyModule(cl2llvm_module, LLVMAbortProcessAction, &error);
-	LLVMDisposeMessage(error); // Handler == LLVMAbortProcessAction -> No need to check errors
-
 
 	LLVMExecutionEngineRef engine;
 	LLVMModuleProviderRef provider = LLVMCreateModuleProviderForExistingModule(cl2llvm_module);
