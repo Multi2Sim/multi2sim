@@ -173,7 +173,7 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_
 	
 	case si2bin_token_vcc:
 		return arg->type == si2bin_arg_special_register &&
-			arg->value.special_register.type == si2bin_arg_special_register_vcc;
+			arg->value.special_register.reg == si_inst_special_reg_vcc;
 	
 	case si2bin_token_wait_cnt:
 		return arg->type == si2bin_arg_waitcnt;
