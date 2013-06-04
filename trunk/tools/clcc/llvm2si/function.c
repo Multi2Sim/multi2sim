@@ -30,6 +30,34 @@
 #include "function.h"
 
 
+/*
+ * Function Argument Object
+ */
+
+struct llvm2si_function_arg_t *llvm2si_function_arg_create(void)
+{
+	struct llvm2si_function_arg_t *arg;
+
+	/* Allocate */
+	arg = xcalloc(1, sizeof(struct llvm2si_function_arg_t));
+
+	/* Return */
+	return arg;
+}
+
+
+void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg)
+{
+	free(arg);
+}
+
+
+
+
+/*
+ * Function Object
+ */
+
 struct llvm2si_function_t *llvm2si_function_create(const char *name)
 {
 	struct llvm2si_function_t *function;
@@ -38,6 +66,7 @@ struct llvm2si_function_t *llvm2si_function_create(const char *name)
 	function = xcalloc(1, sizeof(struct llvm2si_function_t));
 	function->name = xstrdup(name);
 	function->basic_block_list = linked_list_create();
+	function->arg_list = list_create();
 
 	/* Return */
 	return function;
@@ -46,10 +75,17 @@ struct llvm2si_function_t *llvm2si_function_create(const char *name)
 
 void llvm2si_function_free(struct llvm2si_function_t *function)
 {
+	int index;
+
 	/* Free list of basic blocks */
 	LINKED_LIST_FOR_EACH(function->basic_block_list)
 		llvm2si_basic_block_free(linked_list_get(function->basic_block_list));
 	linked_list_free(function->basic_block_list);
+
+	/* Free list of arguments */
+	LIST_FOR_EACH(function->arg_list, index)
+		llvm2si_function_arg_free(list_get(function->arg_list, index));
+	list_free(function->arg_list);
 
 	/* Rest */
 	free(function->name);
@@ -76,7 +112,7 @@ void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f)
 }
 
 
-void llvm2si_function_add(struct llvm2si_function_t *function,
+void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block)
 {
 	/* Check that basic block does not belong to any other function. */
@@ -87,6 +123,39 @@ void llvm2si_function_add(struct llvm2si_function_t *function,
 	/* Add basic block */
 	linked_list_add(function->basic_block_list, basic_block);
 	basic_block->function = function;
+}
+
+
+void llvm2si_function_add_arg(struct llvm2si_function_t *function,
+		struct llvm2si_function_arg_t *arg,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+
+	/* Check that argument does not belong to a function yet */
+	if (arg->function)
+		panic("%s: argument already added", __FUNCTION__);
+
+	/* Add argument */
+	list_add(function->arg_list, arg);
+	arg->function = function;
+	arg->index = function->arg_list->count - 1;
+
+	/* Allocate 1 scalar register for the argument */
+	arg->sreg = function->num_sregs;
+	function->num_sregs++;
+
+	/* Generate code to load argument
+	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_cb1,
+			function->sreg_cb1 + 3));
+	list_add(arg_list, si2bin_arg_create_literal(arg->index * 4));
+	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
 
@@ -158,7 +227,7 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 				function->sreg_cb0, function->sreg_cb0 + 3));
 		list_add(arg_list, si2bin_arg_create_literal(4 + index));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		llvm2si_basic_block_add(basic_block, inst);
+		llvm2si_basic_block_add_inst(basic_block, inst);
 	}
 
 	/* Obtain global offset in s[offs:offs+2].
@@ -176,7 +245,7 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 				function->sreg_cb0, function->sreg_cb0 + 3));
 		list_add(arg_list, si2bin_arg_create_literal(0x18 + index));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		llvm2si_basic_block_add(basic_block, inst);
+		llvm2si_basic_block_add_inst(basic_block, inst);
 	}
 
 	/* Calculate global ID in dimensions [0:2] and store it in v[3:5].
@@ -195,7 +264,7 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 		list_add(arg_list, si2bin_arg_create_scalar_register(
 				function->sreg_lsize + index));
 		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
-		llvm2si_basic_block_add(basic_block, inst);
+		llvm2si_basic_block_add_inst(basic_block, inst);
 
 		/* v_mul_i32_i24 */
 		arg_list = list_create();
@@ -206,7 +275,7 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 		list_add(arg_list, si2bin_arg_create_vector_register(
 				function->vreg_gid + index));
 		inst = si2bin_inst_create(SI_INST_V_MUL_I32_I24, arg_list);
-		llvm2si_basic_block_add(basic_block, inst);
+		llvm2si_basic_block_add_inst(basic_block, inst);
 
 		/* v_add_i32 */
 		arg_list = list_create();
@@ -218,7 +287,7 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 		list_add(arg_list, si2bin_arg_create_vector_register(
 				function->vreg_lid + index));
 		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
-		llvm2si_basic_block_add(basic_block, inst);
+		llvm2si_basic_block_add_inst(basic_block, inst);
 
 		/* v_add_i32 */
 		arg_list = list_create();
@@ -230,7 +299,7 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 		list_add(arg_list, si2bin_arg_create_vector_register(
 				function->vreg_gid + index));
 		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
-		llvm2si_basic_block_add(basic_block, inst);
+		llvm2si_basic_block_add_inst(basic_block, inst);
 	}
 
 	/* Load UAVs. UAV10 is used for private memory an stored in s[uav10:uav10+3].
@@ -245,7 +314,7 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 			function->sreg_uav_table, function->sreg_uav_table + 1));
 	list_add(arg_list, si2bin_arg_create_literal(0x50));
 	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
-	llvm2si_basic_block_add(basic_block, inst);
+	llvm2si_basic_block_add_inst(basic_block, inst);
 
 	/* s_load_dwordx4 s[uav11:uav11+3], s[uav:uav+1], 0x58 */
 	arg_list = list_create();
@@ -255,6 +324,6 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 			function->sreg_uav_table, function->sreg_uav_table + 1));
 	list_add(arg_list, si2bin_arg_create_literal(0x58));
 	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
-	llvm2si_basic_block_add(basic_block, inst);
+	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 

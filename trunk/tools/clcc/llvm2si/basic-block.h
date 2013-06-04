@@ -48,7 +48,7 @@ void llvm2si_basic_block_free(struct llvm2si_basic_block_t *basic_block);
 void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f);
 
 /* Add an instruction to the basic block. */
-void llvm2si_basic_block_add(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_add_inst(struct llvm2si_basic_block_t *basic_block,
 		struct si2bin_inst_t *inst);
 
 

@@ -75,7 +75,7 @@ void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f
 }
 
 
-void llvm2si_basic_block_add(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_add_inst(struct llvm2si_basic_block_t *basic_block,
 		struct si2bin_inst_t *inst)
 {
 	/* Check that the instruction does not belong to any other basic

@@ -78,6 +78,7 @@ llvm2si_translate_pass_t::llvm2si_translate_pass_t() : FunctionPass(ID)
 bool llvm2si_translate_pass_t::runOnFunction(Function &f)
 {
 	struct llvm2si_function_t *function;
+	struct llvm2si_function_arg_t *arg;
 	struct llvm2si_basic_block_t *basic_block;
 	const char *name;
 
@@ -96,10 +97,18 @@ bool llvm2si_translate_pass_t::runOnFunction(Function &f)
 	/* Create function */
 	function = llvm2si_function_create(f.getName().data());
 
-	/* Create a basic block and generate header in it */
+	/* Create a basic block and generate header code in it */
 	basic_block = llvm2si_basic_block_create("entry");
-	llvm2si_function_add(function, basic_block);
+	llvm2si_function_add_basic_block(function, basic_block);
 	llvm2si_function_gen_header(function, basic_block);
+
+	/* Add function arguments and generate code to load them */
+	for (Function::arg_iterator farg = f.arg_begin(), farg_end = f.arg_end();
+			farg != farg_end; farg++)
+	{
+		arg = llvm2si_function_arg_create();
+		llvm2si_function_add_arg(function, arg, basic_block);
+	}
 
 	/* Basic blocks in function */
 	for (Function::iterator bb = f.begin(), bb_end = f.end();
