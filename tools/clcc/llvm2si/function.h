@@ -30,7 +30,26 @@ struct llvm2si_basic_block_t;
 
 struct llvm2si_function_t
 {
+	/* Function name */
 	char *name;
+
+	/* Number of used registers */
+	int num_sregs;  /* Scalar */
+	int num_vregs;  /* Vector */
+
+	int sreg_uav_table;  /* UAV table (2 registers) */
+	int sreg_cb0;  /* CB0 (4 registers) */
+	int sreg_cb1;  /* CB1 (4 registers) */
+	int sreg_wgid;  /* Work-group ID (3 registers) */
+	int sreg_lsize;  /* Local size (3 registers) */
+	int sreg_offs;  /* Global offset (3 registers) */
+	int sreg_uav10;  /* UAV10 (4 registers) */
+	int sreg_uav11;  /* UAV11 (4 registers) */
+	int sreg_arg;  /* Arguments (variable number of registers) */
+
+	int vreg_lid;  /* Local ID (3 registers) */
+	int vreg_gid;  /* Global ID (4 registers) */
+
 
 	/* List of basic blocks. Each element is of type
 	 * 'struct llvm2si_basic_block_t' */
@@ -44,6 +63,12 @@ void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f);
 
 /* Add a basic block to the function. */
 void llvm2si_function_add(struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block);
+	
+/* Generate initialization code for the function. The code will be dumped in
+ * 'basic_block', which must have been previously added to the function with a
+ * call to 'llvm2si_function_add'. */
+void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
 
 #endif
