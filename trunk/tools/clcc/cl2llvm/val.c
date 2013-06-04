@@ -71,6 +71,11 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 	int fromsign = original_val->type->sign;
 	int tosign = totype_w_sign->sign;
 
+	/*By default the return value is the same as the original_val*/
+	llvm_val->val = original_val->val;
+	llvm_val->type->llvm_type = original_val->type->llvm_type;
+	llvm_val->type->sign = original_val->type->sign;
+
 	snprintf(temp_var_name, sizeof temp_var_name,
 		"tmp%d", temp_var_count++);
 

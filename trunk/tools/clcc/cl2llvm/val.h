@@ -54,13 +54,14 @@ void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val);
  * This function takes a cl2llvm_value_t and casts it to the type of the 
  * cl2llvm_type_t specified in the second argument. A new cl2llvm_value_t which 
  * contains the casted value is created and returned. This new cl2llvm_value_t 
- * must be freed using cl2llvm_value_free().
+ * must be freed using cl2llvm_value_free(). If the value and the totype have the 
+ * same type no type cast is made, however a new cl2llvm_value_t is still created.
  */
 
 struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t *original_val, struct cl2llvm_type_t *totype_w_sign);
 
 /*
- * This function takes to cl2llvm_value_t's determines the dominant type and  
+ * This function takes two cl2llvm_value_t's determines the dominant type and  
  * creates a new cl2llvm_value_t which contains the non-dominant operand cast 
  * to the type of the dominant operand. This function will either create one or 
  * zero cl2llvm_value_t's based on whether or not a type cast is needed. It is 
