@@ -45,24 +45,11 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	function->ref_count = 1;
 	function->module_id = module->id;
 	function->inst_buffer = (unsigned long long int *)xcalloc(1,
-(unsigned long int)inst_buffer_size);
+			(unsigned long int)inst_buffer_size);
 	memcpy(function->inst_buffer, inst_buffer, inst_buffer_size);
 	function->inst_buffer_size = inst_buffer_size;
 	function->num_gpr_used = num_gpr_used;
 	function->arg_list = list_create();
-
-	/* Load function */
-	//snprintf(section_name, MAX_STRING_SIZE, ".text.%s", function_name);
-	//for (i = 0; i < list_count(module->elf_file->section_list); ++i)
-	//{
-	//	section = (struct elf_section_t *)list_get(module->elf_file->section_list, i);
-	//	if (!strncmp(section->name, section_name, MAX_STRING_SIZE))
-	//		break;
-	//}
-	//if (i == list_count(module->elf_file->section_list))
-	//	fatal("%s section not found!\n", section_name);
-	//function->inst_buffer.ptr = section->buffer.ptr;
-	//function->inst_buffer.size = section->buffer.size;
 
 	list_add(function_list, function);
 

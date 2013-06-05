@@ -254,10 +254,18 @@ int cuda_func_cuDeviceTotalMem(struct x86_ctx_t *ctx)
 
 int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 {
-	struct cuda_module_t *module;
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
+	struct cuda_module_t *module;
+	char binary_filename[MAX_STRING_SIZE] = "";
+
+	/* Get kernel binary */
+	if (regs->ecx != 0)
+		mem_read(mem, regs->ecx, MAX_STRING_SIZE, binary_filename);
+	
 	/* Create module */
-	module = cuda_module_create();
+	module = cuda_module_create(binary_filename);
 
 	cuda_debug("\tout: module.id=0x%08x\n", module->id);
 

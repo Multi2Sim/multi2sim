@@ -241,10 +241,11 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thr
 	 * SM from 'sm_ready' list first. Then determine if it is fully loaded.
 	 * If not, add it to the end of the 'sm_ready' list; otherwise, add it
 	 * to 'sm_busy' list */
-	assert(DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_ready, sm));
-	DOUBLE_LINKED_LIST_REMOVE(frm_gpu, sm_ready, sm);
+	assert(list_index_of(frm_gpu->sm_ready_list, sm) <
+			list_count(frm_gpu->sm_ready_list));
+	list_remove(frm_gpu->sm_ready_list, sm);
 	if (sm->thread_block_count < frm_gpu->thread_blocks_per_sm)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_ready, sm);
+		list_add(frm_gpu->sm_ready_list, sm);
 	if (!DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_busy, sm))
 		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_busy, sm);
 

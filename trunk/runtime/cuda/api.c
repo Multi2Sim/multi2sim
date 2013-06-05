@@ -488,13 +488,11 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(driver) in: filename = %s\n", fname);
 
-	/* Ignore filename since it is given as an M2S option */
-
 	/* Create module */
 	*module = cuda_module_create();
 
 	/* Syscall */
-	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleLoad);
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleLoad, fname);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
 	 * is running natively, system call CUDA_SYS_CODE is not supported. */

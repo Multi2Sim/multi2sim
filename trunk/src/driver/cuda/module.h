@@ -27,11 +27,11 @@ struct cuda_module_t
 	unsigned int id;
 	int ref_count;
 
-	/* ELF binary */
+	/* Kernel binary */
 	struct elf_file_t *elf_file;
 };
 
-struct cuda_module_t *cuda_module_create(void);
+struct cuda_module_t *cuda_module_create(char *binary_filename);
 void cuda_module_free(struct cuda_module_t *module);
 
 #endif
