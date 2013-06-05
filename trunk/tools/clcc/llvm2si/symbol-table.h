@@ -20,6 +20,9 @@
 #ifndef TOOLS_CLCC_LLVM2SI_SYMBOL_TABLE_H
 #define TOOLS_CLCC_LLVM2SI_SYMBOL_TABLE_H
 
+#include <stdio.h>
+
+
 /* Forward declarations */
 struct hash_table_t;
 struct llvm2si_symbol_t;
@@ -37,6 +40,7 @@ struct llvm2si_symbol_table_t
 
 struct llvm2si_symbol_table_t *llvm2si_symbol_table_create(void);
 void llvm2si_symbol_table_free(struct llvm2si_symbol_table_t *table);
+void llvm2si_symbol_table_dump(struct llvm2si_symbol_table_t *table, FILE *f);
 
 void llvm2si_symbol_table_add_symbol(struct llvm2si_symbol_table_t *table,
 		struct llvm2si_symbol_t *symbol);

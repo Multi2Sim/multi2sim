@@ -214,13 +214,18 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 	function->vreg_gid = function->num_vregs;
 	function->num_vregs += 3;
 
+	/* Allocate 1 vector register for stack pointer */
+	/* FIXME - initialize stack pointer */
+	function->vreg_sp = function->num_vregs;
+	function->num_vregs++;
+
 
 	/* Obtain local size in s[lsize:lsize+2].
 	 *
 	 * s_buffer_load_dword s[lsize], s[cb0:cb0+3], 0x04
 	 * s_buffer_load_dword s[lsize+1], s[cb0:cb0+3], 0x05
 	 * s_buffer_load_dword s[lsize+2], s[cb0:cb0+3], 0x06
-	 * */
+	 */
 	for (index = 0; index < 3; index++)
 	{
 		arg_list = list_create();
