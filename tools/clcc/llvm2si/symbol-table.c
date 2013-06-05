@@ -54,6 +54,18 @@ void llvm2si_symbol_table_free(struct llvm2si_symbol_table_t *table)
 }
 
 
+void llvm2si_symbol_table_dump(struct llvm2si_symbol_table_t *table, FILE *f)
+{
+	char *key;
+	struct llvm2si_symbol_t *symbol;
+
+	fprintf(f, "Symbol table:\n");
+	HASH_TABLE_FOR_EACH(table->table, key, symbol)
+		llvm2si_symbol_dump(symbol, f);
+	fprintf(f, "\n");
+}
+
+
 void llvm2si_symbol_table_add_symbol(struct llvm2si_symbol_table_t *table,
 		struct llvm2si_symbol_t *symbol)
 {

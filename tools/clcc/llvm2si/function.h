@@ -81,6 +81,7 @@ struct llvm2si_function_t
 
 	int vreg_lid;  /* Local ID (3 registers) */
 	int vreg_gid;  /* Global ID (4 registers) */
+	int vreg_sp;  /* Stack pointer (1 register) */
 
 	/* List of arguments. Each element is of type
 	 * 'struct llvm2si_function_arg_t' */
@@ -92,6 +93,10 @@ struct llvm2si_function_t
 
 	/* Symbol table associated with the function. */
 	struct llvm2si_symbol_table_t *symbol_table;
+
+	/* While code is generated, this variable keeps track of the total
+	 * amount of bytes pushed into the stack for this function. */
+	unsigned int stack_size;
 };
 
 

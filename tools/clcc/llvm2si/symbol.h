@@ -20,6 +20,9 @@
 #ifndef TOOLS_CLCC_LLVM2SI_SYMBOL_H
 #define TOOLS_CLCC_LLVM2SI_SYMBOL_H
 
+#include <stdio.h>
+
+
 struct llvm2si_symbol_t
 {
 	char *name;
@@ -28,6 +31,7 @@ struct llvm2si_symbol_t
 
 struct llvm2si_symbol_t *llvm2si_symbol_create(const char *name);
 void llvm2si_symbol_free(struct llvm2si_symbol_t *symbol);
+void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f);
 
 
 #endif
