@@ -27,7 +27,7 @@ struct cl2llvm_decl_list_t
 	char *kernel_t;
 	char *inline_t;
 	char *sc_spec;
-	char *access_qual;
+	int access_qual;
 	char *type_qual;
 };
 
