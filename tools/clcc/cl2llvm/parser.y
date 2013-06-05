@@ -189,6 +189,7 @@ struct cl2llvm_function_t *current_function;
 %type<llvm_value_ref> func_call
 %type<llvm_type_ref> type_name
 %type<const_int_val> type_ptr_list
+%type<const_int_val> access_qual
 %type<llvm_type_ref> type_spec
 %type<decl_list> declarator
 %type<decl_list> declarator_list
@@ -275,12 +276,14 @@ func_def
 		if (!err)
 			yyerror("function already defined");
 		/* Declare parameters */
+
 		if (list_get($4, $4->head) != NULL)
 		{
 			for (arg_num = 0; arg_num < arg_count; arg_num++)
 			{
+				struct cl2llvm_arg_t *current_arg = list_get($4, arg_num);
 				
-				struct cl2llvm_arg_t *current_arg = list_get($4, arg_num);			
+			
 				LLVMGetTypeKind(current_arg->type_spec->llvm_type);
 				struct cl2llvm_val_t *arg_pointer = cl2llvm_val_create_w_init( 
 					LLVMBuildAlloca(cl2llvm_builder, 
@@ -352,6 +355,38 @@ declarator_list
 	| declarator_list declarator
 	{
 		cl2llvm_attach_decl_to_list($2, $1);
+		if ($1->type_spec != NULL && $2->access_qual != 0)
+		{
+					switch ($2->access_qual)
+			{
+				case 1:
+					$1->type_spec->llvm_type = LLVMPointerType( LLVMGetElementType( 
+						$1->type_spec->llvm_type), 1);
+					
+				case 2:
+					$1->type_spec->llvm_type = LLVMPointerType( LLVMGetElementType( 
+						$1->type_spec->llvm_type), 2);
+
+				default:
+					break;
+			}
+		}
+		if ($1->access_qual != 0 && $2->type_spec != NULL)
+		{
+			switch ($1->access_qual)
+			{
+				case 1:
+					$1->type_spec->llvm_type = LLVMPointerType( 
+						LLVMGetElementType($2->type_spec->llvm_type), 1);
+					
+				case 2:
+					$1->type_spec->llvm_type = LLVMPointerType( 	
+						LLVMGetElementType($2->type_spec->llvm_type), 2);
+
+				default:
+					break;
+			}
+		}
 		cl2llvm_decl_list_struct_free($2);
 		$$ = $1;
 	}
@@ -359,7 +394,13 @@ declarator_list
 
 access_qual
 	: TOK_GLOBAL
+	{
+		$$ = 1;
+	}
 	| TOK_LOCAL
+	{
+		$$ = 2;
+	}
 	| TOK_PRIVATE
 	| TOK_CONSTANT
 	;
@@ -399,7 +440,7 @@ declarator
 	| access_qual
 	{
 		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
-		decl_list->access_qual = NULL;
+		decl_list->access_qual = $1;
 		$$ = decl_list;
 	}
 	| type_qual

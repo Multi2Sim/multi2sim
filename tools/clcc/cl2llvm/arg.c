@@ -59,8 +59,6 @@ void cl2llvm_arg_free(struct cl2llvm_arg_t *arg)
 		free(arg->inline_t);
 	if (arg->sc_spec != NULL)
 		free(arg->sc_spec);
-	if (arg->access_qual != NULL)
-		free(arg->access_qual);
 	if (arg->type_qual != NULL)
 		free(arg->type_qual);
 	free(arg->name);

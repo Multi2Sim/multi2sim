@@ -39,7 +39,7 @@ struct cl2llvm_decl_list_t *cl2llvm_decl_list_create()
 	decl_list->kernel_t = NULL;
 	decl_list->inline_t = NULL;
 	decl_list->sc_spec = NULL;
-	decl_list->access_qual = NULL;
+	decl_list->access_qual = 0;
 	decl_list->type_qual = NULL;
 
 	return decl_list;
@@ -57,8 +57,6 @@ void cl2llvm_decl_list_free(struct cl2llvm_decl_list_t *declarator_list)
 		free(declarator_list->inline_t);
 	if (declarator_list->sc_spec != NULL)
 		free(declarator_list->sc_spec);
-	if (declarator_list->access_qual != NULL)
-		free(declarator_list->access_qual);
 	if (declarator_list->type_qual != NULL)
 		free(declarator_list->type_qual);
 	free(declarator_list);
@@ -81,7 +79,7 @@ void cl2llvm_attach_decl_to_list(struct cl2llvm_decl_list_t *declarator, struct 
 		declarator_list->inline_t = declarator->inline_t;
 	if (declarator->sc_spec != NULL)
 		declarator_list->sc_spec = declarator->sc_spec;	
-	if (declarator->access_qual != NULL)
+	if (declarator->access_qual != 0)
 		declarator_list->access_qual = declarator->access_qual;	
 	if (declarator->type_qual != NULL)
 		declarator_list->type_qual = declarator->type_qual;
