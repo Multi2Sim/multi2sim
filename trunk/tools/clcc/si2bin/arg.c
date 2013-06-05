@@ -29,6 +29,27 @@
 #include "si2bin.h"
 
 
+struct str_map_t si2bin_arg_type_map =
+{
+	13,
+	{
+		{ "invalid", si2bin_arg_invalid },
+		{ "sreg", si2bin_arg_scalar_register },
+		{ "vreg", si2bin_arg_vector_register },
+		{ "sreg_series", si2bin_arg_scalar_register_series },
+		{ "vreg_series", si2bin_arg_vector_register_series },
+		{ "mreg", si2bin_arg_mem_register },
+		{ "special_reg", si2bin_arg_special_register },
+		{ "const", si2bin_arg_literal },
+		{ "const_float", si2bin_arg_literal_float },
+		{ "waitcnt", si2bin_arg_waitcnt },
+		{ "label", si2bin_arg_label },
+		{ "maddr", si2bin_arg_maddr },
+		{ "maddr_qual", si2bin_arg_maddr_qual }
+	}
+};
+
+
 struct si2bin_arg_t *si2bin_arg_create(void)
 {
 	struct si2bin_arg_t *arg;
@@ -435,3 +456,40 @@ void si2bin_arg_dump(struct si2bin_arg_t *arg, FILE *f)
 	}
 }
 
+
+void si2bin_arg_valid_types(struct si2bin_arg_t *arg,
+		enum si2bin_arg_type_t *types, int num_types,
+		const char *user_message)
+{
+	char msg[MAX_STRING_SIZE];
+	char *msg_ptr;
+	char *sep;
+
+	int msg_size;
+	int i;
+
+	/* Check if argument type if valid */
+	for (i = 0; i < num_types; i++)
+		if (arg->type == types[i])
+			return;
+
+	/* Construct error message */
+	msg[0] = '\0';
+	msg_ptr = msg;
+	msg_size = sizeof msg;
+	str_printf(&msg_ptr, &msg_size, "argument of type %s found, {",
+			str_map_value(&si2bin_arg_type_map, arg->type));
+
+	/* List allowed types */
+	sep = "";
+	for (i = 0; i < num_types; i++)
+	{
+		str_printf(&msg_ptr, &msg_size, "%s%s", sep,
+				str_map_value(&si2bin_arg_type_map, types[i]));
+		sep = "|";
+	}
+
+	/* Message tail */
+	str_printf(&msg_ptr, &msg_size, "} expected");
+	fatal("%s: %s", user_message, msg);
+}
