@@ -140,6 +140,16 @@ void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 	if (arg->function)
 		panic("%s: argument already added", __FUNCTION__);
 
+	/* If this is the first argument added to the function, update the
+	 * scalar register that points to the first argument (sreg_arg). */
+	if (!function->arg_list->count)
+		function->sreg_arg = function->num_sregs;
+
+	/* Make sure that all function arguments appear in contiguous scalar
+	 * registers after the first recorded argument. */
+	if (function->sreg_arg + function->arg_list->count != function->num_sregs)
+		panic("%s: arguments in non-contiguous scalar registers", __FUNCTION__);
+
 	/* Add argument */
 	list_add(function->arg_list, arg);
 	arg->function = function;

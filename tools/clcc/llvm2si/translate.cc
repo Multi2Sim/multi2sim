@@ -44,6 +44,7 @@ extern "C"
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/list.h>
+#include <lib/util/string.h>
 #include <clcc/llvm2si/basic-block.h>
 #include <clcc/llvm2si/function.h>
 #include <clcc/si2bin/arg.h>
@@ -210,6 +211,250 @@ static void llvm2si_translate_call_inst(CallInst *call_inst,
 }
 
 
+/* Create a Southern Islands instruction argument from an LLVM value. The type
+ * of argument created depends on the LLVM value as follows:
+ *   - If the LLVM value is an integer constant, the Southern Islands argument
+ *     will be of type integer literal.
+ *   - If the LLVM value is an LLVM identifier, the Southern Islands argument
+ *     will be the vector register associated with that symbol.
+ *   - If the LLVM value is a function argument, the Southern Islands argument
+ *     will be the scalar register pointing to that argument.
+ */
+static struct si2bin_arg_t *llvm2si_translate_value(Value *value,
+		struct llvm2si_function_t *function)
+{
+	Type *type;
+	ConstantInt *constant_int_value;
+	Argument *func_arg;
+
+	/* Get value type */
+	type = value->getType();
+
+	/* LLVM identifier */
+	if (value->hasName())
+	{
+		const char *name;
+		struct llvm2si_symbol_t *symbol;
+
+		/* Look up symbol */
+		name = value->getName().data();
+		symbol = llvm2si_symbol_table_lookup(function->symbol_table, name);
+		if (!symbol)
+			fatal("%s: %s: symbol not found", __FUNCTION__, name);
+
+		/* Create argument */
+		return si2bin_arg_create_vector_register(symbol->vreg);
+	}
+
+	/* Integer constant */
+	constant_int_value = dynamic_cast<ConstantInt*>(value);
+	if (constant_int_value)
+	{
+		IntegerType *constant_int_type;
+		int bit_width;
+		int value;
+
+		/* Only 32-bit constants supported for now. We need to figure
+		 * out what to do with the sign extension otherwise. */
+		constant_int_type = reinterpret_cast<IntegerType*>(type);
+		bit_width = constant_int_type->getBitWidth();
+		if (bit_width != 32)
+			fatal("%s: only 32-bit type supported (%d-bit found)",
+				__FUNCTION__, bit_width);
+
+		/* Create argument */
+		value = constant_int_value->getZExtValue();
+		return si2bin_arg_create_literal(value);
+	}
+
+	/* Function argument */
+	func_arg = dynamic_cast<Argument*>(value);
+	if (func_arg)
+	{
+		int index;
+
+		/* Create Southern Islands argument as a scalar register equal
+		 * to the baseline register used for arguments 'sreg_arg' plus
+		 * the index of the requested function argument. */
+		index = func_arg->getArgNo();
+		return si2bin_arg_create_scalar_register(function->sreg_arg + index);
+	}
+
+	/* Type not supported */
+	fatal("%s: value type not supported", __FUNCTION__);
+	return NULL;
+}
+
+
+static void llvm2si_translate_getelementptr_inst(GetElementPtrInst *getelementptr_inst,
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	Value *PointerOperand;
+	Value *IndexOperand;
+
+	struct si2bin_arg_t *pointer_arg;
+	struct si2bin_arg_t *index_arg;
+	struct si2bin_inst_t *inst;
+	struct llvm2si_symbol_t *effaddr_symbol;
+	struct list_t *arg_list;
+
+	const char *effaddr_name;
+
+	/* Get pointer operand */
+	PointerOperand = getelementptr_inst->getPointerOperand();
+	pointer_arg = llvm2si_translate_value(PointerOperand, function);
+
+	/* Check valid type of pointer argument */
+	enum si2bin_arg_type_t pointer_arg_types[3] = { si2bin_arg_vector_register,
+			si2bin_arg_scalar_register, si2bin_arg_literal };
+	si2bin_arg_valid_types(pointer_arg, pointer_arg_types, 3, __FUNCTION__);
+
+	/* Check that there is only one index */
+	if (getelementptr_inst->getNumIndices() != 1)
+		fatal("%s: only supported for 1 index", __FUNCTION__);
+
+	/* Get index operand */
+	IndexOperand = *getelementptr_inst->idx_begin();
+	index_arg = llvm2si_translate_value(IndexOperand, function);
+
+	/* Check valid types of index argument */
+	enum si2bin_arg_type_t index_arg_types[1] = { si2bin_arg_vector_register };
+	si2bin_arg_valid_types(index_arg, index_arg_types, 1, __FUNCTION__);
+
+	/* Create symbol for effective address */
+	effaddr_name = getelementptr_inst->getName().data();
+	effaddr_symbol = llvm2si_symbol_create(effaddr_name);
+	llvm2si_symbol_table_add_symbol(function->symbol_table, effaddr_symbol);
+
+	/* Allocate a vector register for effective address */
+	effaddr_symbol->vreg = function->num_vregs;
+	function->num_vregs++;
+
+	/* Emit effective address calculation (addition) */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(effaddr_symbol->vreg));
+	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
+	list_add(arg_list, pointer_arg);
+	list_add(arg_list, index_arg);
+	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+}
+
+
+static void llvm2si_translate_load_inst(LoadInst *load_inst,
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	int address_space;
+	int sreg_uav;
+	int size;
+
+	Value *PointerOperand;
+	Type *PointerOperandType;
+	Type *PointedType;
+	IntegerType *PointedTypeInt;
+
+	const char *pointer_name;
+	const char *value_name;
+
+	struct llvm2si_symbol_t *pointer_symbol;
+	struct llvm2si_symbol_t *value_symbol;
+	struct si2bin_arg_t *arg_soffset;
+	struct si2bin_arg_t *arg_qual;
+	struct si2bin_inst_t *inst;
+	struct list_t *arg_list;
+
+	/* Get address space */
+	address_space = load_inst->getPointerAddressSpace();
+	switch (address_space)
+	{
+	case 0:
+		/* Private memory */
+		sreg_uav = function->sreg_uav10;
+		break;
+	case 1:
+		/* Global memory */
+		sreg_uav = function->sreg_uav11;
+		break;
+	default:
+		fatal("%s: invalid address space (%d)",
+			__FUNCTION__, address_space);
+	}
+
+	/* Get pointer operand (address) */
+	PointerOperand = load_inst->getPointerOperand();
+	if (!PointerOperand->hasName())
+		fatal("%s: pointer operand not a variable",
+			__FUNCTION__);
+
+	/* Get pointer type */
+	PointerOperandType = PointerOperand->getType();
+	if (!PointerOperandType->isPointerTy())
+		fatal("%s: pointer operand not a pointer",
+			__FUNCTION__);
+
+	/* Get pointed type */
+	if (PointerOperandType->getNumContainedTypes() != 1)
+		fatal("%s: multiple sub-types not supported",
+			__FUNCTION__);
+	PointedType = PointerOperandType->getContainedType(0);
+
+	/* Get size of pointed type */
+	if (PointedType->isPointerTy())
+	{
+		size = 4;
+	}
+	else if (PointedType->isIntegerTy())
+	{
+		PointedTypeInt = reinterpret_cast<IntegerType*>(PointedType);
+		size = PointedTypeInt->getBitWidth();
+		if (size % 8)
+			fatal("%s: invalid integer size", __FUNCTION__);
+
+		/* Get size in bytes */
+		size /= 8;
+		if (size != 4)
+			fatal("%s: only size 4 supported", __FUNCTION__);
+	}
+	else
+	{
+		size = 0;
+		fatal("%s: invalid element type", __FUNCTION__);
+	}
+
+	/* Get pointer symbol */
+	pointer_name = PointerOperand->getName().data();
+	pointer_symbol = llvm2si_symbol_table_lookup(function->symbol_table, pointer_name);
+	if (!pointer_symbol)
+		fatal("%s: %s: invalid symbol", __FUNCTION__, pointer_name);
+
+	/* Create value symbol */
+	value_name = load_inst->getName().data();
+	value_symbol = llvm2si_symbol_create(value_name);
+	llvm2si_symbol_table_add_symbol(function->symbol_table, value_symbol);
+
+	/* Allocate new vector register */
+	value_symbol->vreg = function->num_vregs;
+	function->num_vregs++;
+
+	/* Emit memory load instruction.
+	 * tbuffer_load_format_x v[value_symbol->vreg], v[pointer_symbol->vreg],
+	 * 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,BUF_NUM_FORMAT_FLOAT]
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(value_symbol->vreg));
+	list_add(arg_list, si2bin_arg_create_vector_register(pointer_symbol->vreg));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(sreg_uav, sreg_uav + 3));
+	arg_soffset = si2bin_arg_create_literal(0);
+	arg_qual = si2bin_arg_create_maddr_qual();
+	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
+			si_inst_buf_data_format_32, si_inst_buf_num_format_float));
+	inst = si2bin_inst_create(SI_INST_TBUFFER_LOAD_FORMAT_X, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+}
+
+
 static void llvm2si_translate_store_inst(StoreInst *store_inst,
 		struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block)
@@ -254,13 +499,13 @@ static void llvm2si_translate_store_inst(StoreInst *store_inst,
 	/* Get value operand */
 	ValueOperand = store_inst->getValueOperand();
 	if (!ValueOperand->hasName())
-		fatal("%s: store: value operand not a variable",
+		fatal("%s: value operand not a variable",
 			__FUNCTION__);
 
 	/* Get pointer operand (address) */
 	PointerOperand = store_inst->getPointerOperand();
 	if (!PointerOperand->hasName())
-		fatal("%s: store: pointer operand not a variable",
+		fatal("%s: pointer operand not a variable",
 			__FUNCTION__);
 
 	/* Get size of the value */
@@ -274,20 +519,17 @@ static void llvm2si_translate_store_inst(StoreInst *store_inst,
 		ValueOperandTypeInt = reinterpret_cast<IntegerType*>(ValueOperandType);
 		size = ValueOperandTypeInt->getBitWidth();
 		if (size % 8)
-			fatal("%s: store: invalid integer size",
-				__FUNCTION__);
+			fatal("%s: invalid integer size", __FUNCTION__);
 
 		/* Get size in bytes */
 		size /= 8;
 		if (size != 4)
-			fatal("%s: store: only size 4 supported",
-				__FUNCTION__);
+			fatal("%s: only size 4 supported", __FUNCTION__);
 	}
 	else
 	{
 		size = 0;
-		fatal("%s: store: invalid element type",
-			__FUNCTION__);
+		fatal("%s: invalid element type", __FUNCTION__);
 	}
 
 	/* Get value symbol */
@@ -341,6 +583,24 @@ static void llvm2si_translate_inst(Instruction *inst,
 		CallInst *call_inst = dynamic_cast<CallInst*>(inst);
 		assert(call_inst);
 		llvm2si_translate_call_inst(call_inst, function, basic_block);
+		break;
+	}
+
+	case Instruction::GetElementPtr:
+	{
+		GetElementPtrInst *getelementptr_inst =
+				dynamic_cast<GetElementPtrInst*>(inst);
+		assert(getelementptr_inst);
+		llvm2si_translate_getelementptr_inst(getelementptr_inst,
+				function, basic_block);
+		break;
+	}
+
+	case Instruction::Load:
+	{
+		LoadInst *load_inst = dynamic_cast<LoadInst*>(inst);
+		assert(load_inst);
+		llvm2si_translate_load_inst(load_inst, function, basic_block);
 		break;
 	}
 
