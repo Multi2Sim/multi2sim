@@ -192,6 +192,8 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		dim3 *gDim,
 		int *wSize)
 {
+	char *binary_filename;
+
 	const unsigned long long int *kernel_bin_section;
 	unsigned long long int kernel_bin_section_size;
 	int elf_head;
@@ -203,33 +205,44 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	struct elf_section_t *text_section;
 
 	int i;
+	unsigned char inst_buffer_byte;
 
 	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n",
 			__FUNCTION__);
 
-	/* Get the section containing kernel binary */
-	kernel_bin_section = (*(struct {int m; int v; const unsigned long long int *d; char *f;} **)fatCubinHandle)->d;
-	kernel_bin_section_size = *(((unsigned long long int *)kernel_bin_section) + 1) + 16;
+	/* User can set an environment variable 'M2S_OPENCL_BINARY' to make the
+ 	 * runtime load that specific pre-compiled binary. */
+	binary_filename = getenv("M2S_CUDA_BINARY");
 
-	/* Look for ELF head */
-	elf_head = -1;
-	for (i = 2; i < kernel_bin_section_size; ++i)
+	/* Get kernel binary */
+	if (!binary_filename)
 	{
-		if (get_uint(kernel_bin_section, i) == 0x464c457f)
+		/* Get the section containing kernel binary */
+		kernel_bin_section = (*(struct {int m; int v; const unsigned long long int *d; char *f;} **)fatCubinHandle)->d;
+		kernel_bin_section_size = *(((unsigned long long int *)kernel_bin_section) + 1) + 16;
+	
+		/* Look for ELF head */
+		elf_head = -1;
+		for (i = 2; i < kernel_bin_section_size; ++i)
 		{
-			elf_head = i;
-			break;
+			if (get_uint(kernel_bin_section, i) == 0x464c457f)
+			{
+				elf_head = i;
+				break;
+			}
 		}
+		assert(elf_head != -1);
+	
+		/* Get kernel binary 
+		 * Notice that this binary may be larger than the actual binary since we
+		 * cannot determine the end of the binary. */
+		kernel_bin = elf_file_create_from_buffer(
+				(void *)(kernel_bin_section + elf_head / sizeof(unsigned long long int)),
+				kernel_bin_section_size - elf_head * sizeof(unsigned long long int), NULL);
 	}
-	assert(elf_head != -1);
-
-	/* Get kernel binary 
-	 * Notice that this binary may be larger than the actual binary since we
-	 * cannot determine the end of the binary. */
-	kernel_bin = elf_file_create_from_buffer(
-			(void *)(kernel_bin_section + elf_head / sizeof(unsigned long long int)),
-			kernel_bin_section_size - elf_head * sizeof(unsigned long long int), NULL);
-
+	else
+		kernel_bin = elf_file_create_from_path(binary_filename);
+	
 	/* Look for .text.kernel_name section */
 	snprintf(text_section_name, sizeof text_section_name, ".text.%s", deviceFun);
 	text_section_index = 0;
@@ -251,17 +264,32 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	/* Get instruction binary */
 	inst_buffer_size = text_section->header->sh_size;
 	inst_buffer = (unsigned long long int *)xcalloc(1, inst_buffer_size);
-	for (i = 0; i < inst_buffer_size / 8; ++i)
+	if (!binary_filename)
 	{
-		inst_buffer[i] = get_ulonglong(kernel_bin_section, elf_head +
-				text_section->header->sh_offset + i * 8);
+		for (i = 0; i < inst_buffer_size / 8; ++i)
+		{
+			inst_buffer[i] = get_ulonglong(kernel_bin_section, elf_head +
+					text_section->header->sh_offset + i * 8);
+		}
+	}
+	else
+	{
+		for (i = 0; i < inst_buffer_size; ++i)
+		{
+			elf_buffer_seek(&(kernel_bin->buffer), text_section->header->sh_offset + i);
+			elf_buffer_read(&(kernel_bin->buffer), &inst_buffer_byte, 1);
+			if (i % 8 == 0 || i % 8 == 1 || i % 8 == 2 || i % 8 == 3)
+				inst_buffer[i / 8] |= (unsigned long long int)(inst_buffer_byte) << (i * 8 + 32);
+			else
+				inst_buffer[i / 8] |= (unsigned long long int)(inst_buffer_byte) << (i * 8 - 32);
+		}
 	}
 
 	/* Get GPR usage */
 	num_gpr_used = text_section->header->sh_info >> 24;
 
 	/* Load module */
-	cuModuleLoad(&module, "ignored_cubin_filename");
+	cuModuleLoad(&module, binary_filename);
 
 	/* Get function */
 	cuModuleGetFunction(&function, module, deviceFun);
