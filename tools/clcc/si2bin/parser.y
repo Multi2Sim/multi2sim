@@ -49,10 +49,6 @@
 /* 'si2bin_inner_bin' and 'si2bin_inner_bin_entry' pointing to the current internal
  * binary that is set every time a new .global section is found. */
 
-struct si2bin_inner_bin_t *si2bin_inner_bin;
-struct si2bin_metadata_t *si2bin_metadata;
-int si2bin_uniqueid = 1024;
-
 
 %}
 
@@ -147,6 +143,7 @@ global_section
 		si2bin_metadata->uniqueid = si2bin_uniqueid;
 
 		si2bin_inner_bin_add_entry(si2bin_inner_bin, si2bin_entry);
+
 		si2bin_outer_bin_add(si2bin_outer_bin, si2bin_inner_bin, si2bin_metadata);
 
 		si2bin_uniqueid ++;
@@ -251,7 +248,7 @@ args_stmt
 		id = $1;
 
 		data_type = str_map_string(&si_arg_data_type_map, id->name);
-		arg = si_arg_create(si_arg_value, "val");
+		arg = si_arg_create(si_arg_value, "arg");
 		arg->value.data_type = data_type;
 		arg->value.num_elems = 1;
 		arg->value.constant_buffer_num = 1;
@@ -270,7 +267,7 @@ args_stmt
 		id = $1;
 
 		data_type = str_map_string(&si_arg_data_type_map, id->name);
-		arg = si_arg_create(si_arg_pointer, "ptr");
+		arg = si_arg_create(si_arg_pointer, "arg");
 		arg->pointer.data_type = data_type;
 		arg->pointer.constant_buffer_num = 1;
 		arg->pointer.constant_offset = $3;
@@ -281,8 +278,37 @@ args_stmt
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 
 		si2bin_id_free(id);
-		id = $1;
 	}
+	| TOK_ID TOK_STAR TOK_DECIMAL TOK_ID TOK_DECIMAL TOK_ID TOK_NEW_LINE
+	{
+		struct si2bin_id_t *id;
+		struct si_arg_t *arg;
+		int data_type;
+		int scope;
+		int access_type;
+
+		id = $1;
+
+		data_type = str_map_string(&si_arg_data_type_map, id->name);
+		scope = str_map_string(&si_arg_scope_map, $4->name);
+		access_type = str_map_string(&si_arg_access_type_map, $6->name);
+
+
+		arg = si_arg_create(si_arg_pointer, "arg");
+		arg->pointer.data_type = data_type;
+		arg->pointer.constant_buffer_num = 1;
+		arg->pointer.constant_offset = $3;
+		arg->pointer.scope = scope;
+		arg->pointer.buffer_num = $5;
+		arg->pointer.access_type = access_type;
+		
+		si2bin_metadata_add_arg(si2bin_metadata, arg);
+
+		si2bin_id_free(id);
+		si2bin_id_free($4);
+		si2bin_id_free($6);
+	}
+
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
 	{
 		struct si2bin_id_t *id;
@@ -292,7 +318,7 @@ args_stmt
 		id = $1;
 
 		data_type = str_map_string(&si_arg_data_type_map, id->name);
-		arg = si_arg_create(si_arg_value, "val");
+		arg = si_arg_create(si_arg_value, "arg");
 		arg->value.data_type = data_type;
 		arg->value.num_elems = $3;
 		arg->value.constant_buffer_num = 1;
@@ -303,9 +329,6 @@ args_stmt
 		si2bin_id_free(id);
 	}
 
-/* FIXME - use a check for 'si2bin_inner_bin' == NULL to make sure that we are inside of
- * a valid internal binary, i.e., the order of sections is right (no .text before .global).
- * Same for .data, etc. */
 text_section
 	: text_header
 	| text_header text_stmt_list

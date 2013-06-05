@@ -85,6 +85,30 @@ struct str_map_t si_arg_scope_map =
 	}
 };
 
+struct str_map_t si_arg_reflection_map =
+{
+	16,
+	{
+		{ "int1", si_arg_i1 },
+		{ "int8", si_arg_i8 },
+		{ "int16", si_arg_i16 },
+		{ "int", si_arg_i32 },
+		{ "int64", si_arg_i64 },
+		{ "uint1", si_arg_u1 },
+		{ "uint8", si_arg_u8 },
+		{ "uint16", si_arg_u16 },
+		{ "uint", si_arg_u32 },
+		{ "uint64", si_arg_u64 },
+		{ "float", si_arg_float },
+		{ "double", si_arg_double },
+		{ "struct", si_arg_struct },
+		{ "union", si_arg_union },
+		{ "event", si_arg_event },
+		{ "opaque", si_arg_opaque }
+	}
+};
+
+
 
 struct si_arg_t *si_arg_create(enum si_arg_type_t type,
 		char *name)
