@@ -27,7 +27,7 @@
 struct list_t *module_list;
 
 /* Create a module */
-struct cuda_module_t *cuda_module_create(void)
+struct cuda_module_t *cuda_module_create(char *binary_filename)
 {
 	struct cuda_module_t *module;
 
@@ -35,6 +35,8 @@ struct cuda_module_t *cuda_module_create(void)
 	module = xcalloc(1, sizeof(struct cuda_module_t));
 	module->id = list_count(module_list);
 	module->ref_count = 1;
+	if (strncmp(binary_filename, "", 1))
+		module->elf_file = elf_file_create_from_path(binary_filename);
 
 	list_add(module_list, module);
 

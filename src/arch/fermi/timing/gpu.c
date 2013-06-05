@@ -28,6 +28,7 @@
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
 
@@ -401,12 +402,13 @@ static void frm_gpu_device_init(void)
 
 	/* Initialize SMs */
 	frm_gpu->sms = xcalloc(frm_gpu_num_sms, sizeof(struct frm_sm_t *));
+	frm_gpu->sm_ready_list = list_create();
 	FRM_GPU_FOREACH_SM(sm_id)
 	{
 		frm_gpu->sms[sm_id] = frm_sm_create();
 		sm = frm_gpu->sms[sm_id];
 		sm->id = sm_id;
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_ready, sm);
+		list_add(frm_gpu->sm_ready_list, sm);
 	}
 
 	/* Trace */
@@ -971,6 +973,7 @@ void frm_gpu_done()
 		sm = frm_gpu->sms[sm_id];
 		frm_sm_free(sm);
 	}
+	list_free(frm_gpu->sm_ready_list);
 	free(frm_gpu->sms);
 	frm_gpu_debug("SMs freed\n");
 

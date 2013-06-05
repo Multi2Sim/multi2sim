@@ -199,6 +199,8 @@ struct frm_gpu_t
 	/* Streaming multiprocessors */
 	struct frm_sm_t **sms;
 
+	struct list_t *sm_ready_list;
+
 	/* List of ready SM accepting thread blocks */
 	struct frm_sm_t *sm_ready_list_head;
 	struct frm_sm_t *sm_ready_list_tail;
