@@ -89,6 +89,9 @@ struct llvm2si_function_t
 	/* List of basic blocks. Each element is of type
 	 * 'struct llvm2si_basic_block_t' */
 	struct linked_list_t *basic_block_list;
+
+	/* Symbol table associated with the function. */
+	struct llvm2si_symbol_table_t *symbol_table;
 };
 
 
