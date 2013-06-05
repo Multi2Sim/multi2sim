@@ -44,6 +44,8 @@ void llvm2si_symbol_table_dump(struct llvm2si_symbol_table_t *table, FILE *f);
 
 void llvm2si_symbol_table_add_symbol(struct llvm2si_symbol_table_t *table,
 		struct llvm2si_symbol_t *symbol);
+struct llvm2si_symbol_t *llvm2si_symbol_table_lookup(struct llvm2si_symbol_table_t *table,
+		const char *name);
 
 #endif
 

@@ -218,8 +218,19 @@ static void llvm2si_translate_store_inst(StoreInst *store_inst,
 	int sreg_uav;
 
 	Value *ValueOperand;
-	Type *TypeOperand;
-	IntegerType *IntTypeOperand;
+	Value *PointerOperand;
+	Type *ValueOperandType;
+	IntegerType *ValueOperandTypeInt;
+
+	const char *value_name;
+	const char *pointer_name;
+
+	struct llvm2si_symbol_t *value_symbol;
+	struct llvm2si_symbol_t *pointer_symbol;
+	struct si2bin_arg_t *arg_soffset;
+	struct si2bin_arg_t *arg_qual;
+	struct si2bin_inst_t *inst;
+	struct list_t *arg_list;
 
 	int size;
 
@@ -240,17 +251,73 @@ static void llvm2si_translate_store_inst(StoreInst *store_inst,
 			__FUNCTION__, address_space);
 	}
 
-	/* Get value and type */
+	/* Get value operand */
 	ValueOperand = store_inst->getValueOperand();
-	TypeOperand = ValueOperand->getType();
-	outs() << *store_inst << "\n";
-	outs() << *TypeOperand << "\n";
-	IntTypeOperand = reinterpret_cast<IntegerType*>(TypeOperand);
-	if (!TypeOperand->isIntegerTy() || IntTypeOperand->getBitWidth() != 32)
-		fatal("%s: store: only 'i32' type supported",
+	if (!ValueOperand->hasName())
+		fatal("%s: store: value operand not a variable",
 			__FUNCTION__);
 
-	/* FIXME ... */
+	/* Get pointer operand (address) */
+	PointerOperand = store_inst->getPointerOperand();
+	if (!PointerOperand->hasName())
+		fatal("%s: store: pointer operand not a variable",
+			__FUNCTION__);
+
+	/* Get size of the value */
+	ValueOperandType = ValueOperand->getType();
+	if (ValueOperandType->isPointerTy())
+	{
+		size = 4;
+	}
+	else if (ValueOperandType->isIntegerTy())
+	{
+		ValueOperandTypeInt = reinterpret_cast<IntegerType*>(ValueOperandType);
+		size = ValueOperandTypeInt->getBitWidth();
+		if (size % 8)
+			fatal("%s: store: invalid integer size",
+				__FUNCTION__);
+
+		/* Get size in bytes */
+		size /= 8;
+		if (size != 4)
+			fatal("%s: store: only size 4 supported",
+				__FUNCTION__);
+	}
+	else
+	{
+		size = 0;
+		fatal("%s: store: invalid element type",
+			__FUNCTION__);
+	}
+
+	/* Get value symbol */
+	value_name = ValueOperand->getName().data();
+	value_symbol = llvm2si_symbol_table_lookup(function->symbol_table, value_name);
+	if (!value_symbol)
+		fatal("%s: %s: invalid symbol", __FUNCTION__, value_name);
+
+	/* Get pointer symbol */
+	pointer_name = PointerOperand->getName().data();
+	pointer_symbol = llvm2si_symbol_table_lookup(function->symbol_table, pointer_name);
+	if (!pointer_symbol)
+		fatal("%s: %s: invalid symbol", __FUNCTION__, pointer_name);
+
+	/* Emit memory write.
+	 * tbuffer_store_format_x v[value_symbol->vreg], s[pointer_symbol->vreg],
+	 * 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,
+	 * 	BUF_NUM_FORMAT_FLOAT]
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(value_symbol->vreg));
+	list_add(arg_list, si2bin_arg_create_vector_register(pointer_symbol->vreg));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(sreg_uav, sreg_uav + 3));
+	arg_soffset = si2bin_arg_create_literal(0);
+	arg_qual = si2bin_arg_create_maddr_qual();
+	/* FIXME - better representation needed for 'maddr' field */
+	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
+			"BUF_DATA_FORMAT_32", "BUF_NUM_FORMAT_FLOAT"));
+	inst = si2bin_inst_create(SI_INST_TBUFFER_STORE_FORMAT_X, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
 

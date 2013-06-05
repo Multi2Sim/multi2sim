@@ -77,3 +77,9 @@ void llvm2si_symbol_table_add_symbol(struct llvm2si_symbol_table_t *table,
 			__FUNCTION__, symbol->name);
 }
 
+
+struct llvm2si_symbol_t *llvm2si_symbol_table_lookup(struct llvm2si_symbol_table_t *table,
+		const char *name)
+{
+	return hash_table_get(table->table, (char *) name);
+}
