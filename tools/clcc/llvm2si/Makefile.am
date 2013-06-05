@@ -13,6 +13,12 @@ libllvm2si_a_SOURCES = \
 	llvm2si.c \
 	llvm2si.h \
 	\
+	symbol.c \
+	symbol.h \
+	\
+	symbol-table.c \
+	symbol-table.h \
+	\
 	translate.cc \
 	translate.h
 
