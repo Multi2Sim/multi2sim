@@ -99,6 +99,9 @@ struct opencl_si_ndrange_t
 
 	unsigned int group_count[3];
 	unsigned int num_groups;
+
+	void *table_ptr;
+	void *cb_ptr;
 };
 
 struct opencl_si_kernel_t *opencl_si_kernel_create(
