@@ -464,8 +464,6 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_mt_maddr:
 		{
 			struct si2bin_arg_t *qual;
-
-			int err;
 			int soffset;
 
 			/* Offset */
@@ -474,17 +472,9 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				si2bin_yyerror("invalid offset");
 			inst_bytes->mtbuf.soffset = soffset;
 
-			/* Data format */
-			inst_bytes->mtbuf.dfmt = str_map_string_err(&si_inst_dfmt_map,
-					arg->value.maddr.data_format, &err);
-			if (err)
-				si2bin_yyerror_fmt("invalid data format: %s", arg->value.maddr.data_format);
-
-			/* Number format */
-			inst_bytes->mtbuf.nfmt = str_map_string_err(&si_inst_nfmt_map,
-					arg->value.maddr.num_format, &err);
-			if (err)
-				si2bin_yyerror_fmt("invalid number format: %s", arg->value.maddr.num_format);
+			/* Data and number format */
+			inst_bytes->mtbuf.dfmt = arg->value.maddr.data_format;
+			inst_bytes->mtbuf.nfmt = arg->value.maddr.num_format;
 
 			/* Qualifiers */
 			qual = arg->value.maddr.qual;

@@ -136,7 +136,9 @@ struct si2bin_arg_t *si2bin_arg_create_special_register(enum si_inst_special_reg
 
 
 struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
-		struct si2bin_arg_t *qual, char *data_format, char *num_format)
+		struct si2bin_arg_t *qual,
+		enum si_inst_buf_data_format_t data_format,
+		enum si_inst_buf_num_format_t num_format)
 {
 	struct si2bin_arg_t *arg;
 
@@ -144,8 +146,8 @@ struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
 	arg->type = si2bin_arg_maddr;
 	arg->value.maddr.soffset = soffset;
 	arg->value.maddr.qual = qual;
-	arg->value.maddr.data_format = xstrdup(data_format);
-	arg->value.maddr.num_format = xstrdup(num_format);
+	arg->value.maddr.data_format = data_format;
+	arg->value.maddr.num_format = num_format;
 
 	return arg;
 }
@@ -181,8 +183,6 @@ void si2bin_arg_free(struct si2bin_arg_t *arg)
 
 	case si2bin_arg_maddr:
 
-		free(arg->value.maddr.data_format);
-		free(arg->value.maddr.num_format);
 		si2bin_arg_free(arg->value.maddr.soffset);
 		si2bin_arg_free(arg->value.maddr.qual);
 		break;
@@ -411,8 +411,10 @@ void si2bin_arg_dump(struct si2bin_arg_t *arg, FILE *f)
 		si2bin_arg_dump(arg->value.maddr.qual, f);
 		fprintf(f, "}");
 
-		fprintf(f, " dfmt=%s", arg->value.maddr.data_format);
-		fprintf(f, " nfmt=%s", arg->value.maddr.num_format);
+		fprintf(f, " dfmt=%s", str_map_value(&si_inst_buf_data_format_map,
+				arg->value.maddr.data_format));
+		fprintf(f, " nfmt=%s", str_map_value(&si_inst_buf_num_format_map,
+				arg->value.maddr.num_format));
 
 		break;
 
