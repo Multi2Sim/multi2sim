@@ -43,14 +43,14 @@ struct opencl_x86_device_exec_t
 	struct opencl_x86_kernel_t *kernel;
 
 	int dims;
-	size_t *global;
-	size_t *local;
+	unsigned int global[3];
+	unsigned int local[3];
 
 	pthread_mutex_t mutex;
 	int num_groups;
 	volatile int next_group;
-	size_t *group_starts;
-	size_t *group_ids;
+	unsigned int *group_starts;
+	unsigned int *group_ids;
 };
 
 

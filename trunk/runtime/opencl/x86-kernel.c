@@ -382,6 +382,53 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 	arch_ndrange->num_groups = arch_ndrange->group_count[0] * 
 		arch_ndrange->group_count[1] * arch_ndrange->group_count[2];
 
+	struct opencl_x86_device_exec_t *exec;
+
+	/* Check that all arguments are set */
+	for (i = 0; i < x86_kernel->num_params; i++)
+	{
+		assert(x86_kernel->param_info);
+		if (!x86_kernel->param_info[i].is_set)
+			fatal("%s: argument %d not set", __FUNCTION__, i);
+	}
+
+	/* Initialize execution information */
+	exec = xcalloc(1, sizeof(struct opencl_x86_device_exec_t));
+	exec->dims = work_dim;
+
+	/* FIXME Redundant */
+	for (i = 0; i < 3; i++)
+	{
+		exec->global[i] = arch_ndrange->global_work_size[i];
+		exec->local[i] = arch_ndrange->local_work_size[i];
+	}
+
+	opencl_debug("[%s] dims = %d", __FUNCTION__, work_dim);
+	opencl_debug("[%s] local size = (%d, %d, %d)", __FUNCTION__,
+		local_work_size[0], local_work_size[1], local_work_size[2]);
+	opencl_debug("[%s] global size = (%d, %d, %d)", __FUNCTION__,
+		global_work_size[0], global_work_size[1], global_work_size[2]);
+
+	exec->num_groups = 1;
+	for (i = 0; i < 3; i++)
+	{
+		assert(!(exec->global[i] % exec->local[i]));
+		exec->num_groups *= exec->global[i] / exec->local[i];
+	}
+	exec->kernel = x86_kernel;
+	exec->next_group = 0;
+	exec->group_starts = xmalloc(3 * sizeof (size_t) * exec->num_groups);
+	if(!exec->group_starts)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	exec->group_ids = xmalloc(3 * sizeof (size_t) * exec->num_groups);
+	if (!exec->group_ids)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	pthread_mutex_init(&exec->mutex, NULL);
+
+	arch_ndrange->exec = exec;
+
 	return arch_ndrange;
 }
 /* Initialize an ND-Range */
@@ -397,99 +444,62 @@ void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 {
 	opencl_debug("[%s] freeing x86 ndrange", __FUNCTION__);
 
-	/* Nothing to do */
+	free(ndrange->exec->group_starts);
+	free(ndrange->exec->group_ids);
+	pthread_mutex_destroy(&ndrange->exec->mutex);
+	free(ndrange->exec);
 }
 
-void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange, unsigned int *work_group_start, unsigned int *work_group_count)
+void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange, 
+	unsigned int *work_group_start, unsigned int *work_group_count)
 {
 	int i;
 	int j;
 	int k;
 
+	struct opencl_x86_device_exec_t *exec;
+	struct opencl_x86_device_t *device = ndrange->arch_kernel->device;
+
 	opencl_debug("[%s] running x86 partial ndrange", __FUNCTION__);
 
-	/* just assign the old parameters */
-	struct opencl_x86_kernel_t *kernel = ndrange->arch_kernel;
-	assert(kernel->type == opencl_runtime_type_x86);
-
-	int work_dim = ndrange->work_dim;
-	unsigned int *global_work_offset = ndrange->global_work_offset;
-	unsigned int *global_work_size = ndrange->global_work_size;
-	unsigned int *local_work_size = ndrange->local_work_size;
-	unsigned int *group_id_offset = work_group_start;
-	unsigned int *group_count = work_group_count;
-
-	assert(kernel);
-	opencl_debug("[%s] kernel = %p", __FUNCTION__, kernel);
-	opencl_debug("[%s] kernel num params = %d", __FUNCTION__,
-		kernel->num_params);
-
-	struct opencl_x86_device_t *device = kernel->device;
-	struct opencl_x86_device_exec_t *exec;
-
-	/* Check that all arguments are set */
-	for (i = 0; i < kernel->num_params; i++)
-	{
-		assert(kernel->param_info);
-		if (!kernel->param_info[i].is_set)
-			fatal("%s: argument %d not set",
-				__FUNCTION__, i);
-	}
-
-	/* Initialize execution information */
-	exec = xcalloc(1, sizeof(struct opencl_x86_device_exec_t));
-	exec->dims = work_dim;
-	exec->global = global_work_size;
-	exec->local = local_work_size;
-
-	opencl_debug("[%s] dims = %d", __FUNCTION__, work_dim);
-	opencl_debug("[%s] local size = (%d, %d, %d)", __FUNCTION__,
-		local_work_size[0], local_work_size[1], local_work_size[2]);
-	opencl_debug("[%s] global size = (%d, %d, %d)", __FUNCTION__,
-		global_work_size[0], global_work_size[1], global_work_size[2]);
 	opencl_debug("[%s] group count = (%d, %d, %d)", __FUNCTION__,
-		group_count[0], group_count[1], group_count[2]);
-	opencl_debug("[%s] group offset = (%d, %d, %d)", __FUNCTION__,
-		group_id_offset[0], group_id_offset[1], group_id_offset[2]);
+		work_group_count[0], work_group_count[1], work_group_count[2]);
 
-	exec->num_groups = 1;
-	for (i = 0; i < 3; i++)
+	exec = ndrange->exec; 
+
+	/* Initialize work group information */
+	for (i = 0; i < work_group_count[2]; i++)
 	{
-		assert(!(exec->global[i] % exec->local[i]));
-		exec->num_groups *= group_count[i];
-	}
-	exec->kernel = kernel;
-	exec->next_group = 0;
-	exec->group_starts = xmalloc(3 * sizeof (size_t) * exec->num_groups);
-	if(!exec->group_starts)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	exec->group_ids = xmalloc(3 * sizeof (size_t) * exec->num_groups);
-	if (!exec->group_ids)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	pthread_mutex_init(&exec->mutex, NULL);
-
-	for (i = 0; i < group_count[2]; i++)
-	{
-		for (j = 0; j < group_count[1]; j++)
+		for (j = 0; j < work_group_count[1]; j++)
 		{
-			for (k = 0; k < group_count[0]; k++)
+			for (k = 0; k < work_group_count[0]; k++)
 			{
-				opencl_debug("[%s] running group (%d,%d,%d)",
+				opencl_debug("[%s] initializing group (%d,%d,%d)",
 					__FUNCTION__, k, j, i);
-				size_t *group_start;
-				int index = i * group_count[1] * group_count[0] + j * group_count[0] + k;
-				group_start = exec->group_starts + 3 * index;
-				group_start[0] = exec->local[0] * (k + group_id_offset[0]) + global_work_offset[0];
-				group_start[1] = exec->local[1] * (j + group_id_offset[1]) + global_work_offset[1];
-				group_start[2] = exec->local[2] * (i + group_id_offset[2]) + global_work_offset[2];
 
-				size_t *group_id;
+				int index = (i * work_group_count[1] * 
+					work_group_count[0]) + 
+					(j * work_group_count[0]) + k;
+
+				/* Initialize group offsets */
+				unsigned int *group_start;
+				group_start = exec->group_starts + 3 * index;
+				group_start[0] = exec->local[0] * 
+					(k + work_group_start[0]) + 
+					work_group_start[0];
+				group_start[1] = exec->local[1] * 
+					(j + work_group_start[1]) + 
+					work_group_start[1];
+				group_start[2] = exec->local[2] * 
+					(i + work_group_start[2]) + 
+					work_group_start[2];
+
+				/* Initialize group IDs */
+				unsigned int *group_id;
 				group_id = exec->group_ids + 3 * index;
-				group_id[0] = k + group_id_offset[0];
-				group_id[1] = j + group_id_offset[1];
-				group_id[2] = i + group_id_offset[2];
+				group_id[0] = k + work_group_start[0];
+				group_id[1] = j + work_group_start[1];
+				group_id[2] = i + work_group_start[2];
 			}
 		}
 	}
@@ -510,19 +520,18 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange, unsign
 
 	pthread_mutex_unlock(&device->lock);
 
-	/* Free the execution context */
-	free(exec->group_starts);
-	free(exec->group_ids);
-	pthread_mutex_destroy(&exec->mutex);
-	free(exec);
 }
 
 /* Run an ND-Range */
 void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange)
 {
 	unsigned int group_start[3] = {0, 0, 0};
+
 	opencl_x86_ndrange_init(ndrange);
-	opencl_x86_ndrange_run_partial(ndrange, group_start, ndrange->group_count);
+
+	opencl_x86_ndrange_run_partial(ndrange, group_start, 
+		ndrange->group_count);
+
 	opencl_x86_ndrange_free(ndrange);
 }
 
