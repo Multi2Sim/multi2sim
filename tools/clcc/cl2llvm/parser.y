@@ -357,15 +357,17 @@ declarator_list
 		cl2llvm_attach_decl_to_list($2, $1);
 		if ($1->type_spec != NULL && $2->access_qual != 0)
 		{
-					switch ($2->access_qual)
+			switch ($2->access_qual)
 			{
 				case 1:
-					$1->type_spec->llvm_type = LLVMPointerType( LLVMGetElementType( 
-						$1->type_spec->llvm_type), 1);
+					$1->type_spec->llvm_type = LLVMPointerType( 
+						LLVMGetElementType($1->type_spec->llvm_type), 1);
+					break;
 					
 				case 2:
-					$1->type_spec->llvm_type = LLVMPointerType( LLVMGetElementType( 
-						$1->type_spec->llvm_type), 2);
+					$1->type_spec->llvm_type = LLVMPointerType(  
+						LLVMGetElementType($1->type_spec->llvm_type), 2);
+						break;
 
 				default:
 					break;
@@ -378,10 +380,12 @@ declarator_list
 				case 1:
 					$1->type_spec->llvm_type = LLVMPointerType( 
 						LLVMGetElementType($2->type_spec->llvm_type), 1);
+						break;
 					
 				case 2:
 					$1->type_spec->llvm_type = LLVMPointerType( 	
 						LLVMGetElementType($2->type_spec->llvm_type), 2);
+						break;
 
 				default:
 					break;
