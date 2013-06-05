@@ -821,5 +821,63 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 	}
 }
 
+struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
+{
+	struct cl2llvm_val_t *bool_val = cl2llvm_val_create();
+	
+	bool_val->type->sign = value->type->sign;
 
+	snprintf(temp_var_name, sizeof temp_var_name,
+		"tmp%d", temp_var_count++);
+
+	if (LLVMTypeOf(value->val) == LLVMDoubleType())
+	{
+		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
+			value->val, LLVMConstInt(LLVMDoubleType(), 0, 0),
+			temp_var_name);
+	}
+	else if (LLVMTypeOf(value->val) == LLVMFloatType())
+	{
+		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
+			value->val, LLVMConstInt(LLVMFloatType(), 0, 0),
+			temp_var_name);
+	}
+	else if (LLVMTypeOf(value->val) == LLVMHalfType())
+	{
+		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
+			value->val, LLVMConstInt(LLVMHalfType(), 0, 0),
+			temp_var_name);
+	}
+	else if (LLVMTypeOf(value->val) == LLVMInt64Type())
+	{
+		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
+			value->val, LLVMConstInt(LLVMInt64Type(), 0, 0),
+			temp_var_name);
+	}
+	else if (LLVMTypeOf(value->val) == LLVMInt32Type())
+	{
+		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
+			value->val, LLVMConstInt(LLVMInt32Type(), 0, 0),
+			temp_var_name);
+	}
+	else if (LLVMTypeOf(value->val) == LLVMInt16Type())
+	{
+		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
+			value->val, LLVMConstInt(LLVMInt16Type(), 0, 0),
+			temp_var_name);
+	}
+	else if (LLVMTypeOf(value->val) == LLVMInt8Type())
+	{
+		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
+			value->val, LLVMConstInt(LLVMInt8Type(), 0, 0),
+			temp_var_name);
+	}
+	else if (LLVMTypeOf(value->val) == LLVMInt1Type())
+	{
+		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
+			value->val, LLVMConstInt(LLVMInt1Type(), 0, 0),
+			temp_var_name);
+	}
+	return bool_val;
+}
 
