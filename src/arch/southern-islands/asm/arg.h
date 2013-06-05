@@ -26,7 +26,7 @@ extern struct str_map_t si_arg_dimension_map;
 extern struct str_map_t si_arg_access_type_map;
 extern struct str_map_t si_arg_data_type_map;
 extern struct str_map_t si_arg_scope_map;
-
+extern struct str_map_t si_arg_reflection_map;
 
 enum si_arg_type_t
 {
