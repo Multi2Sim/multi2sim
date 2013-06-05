@@ -141,6 +141,7 @@ struct opencl_x86_ndrange_t
 
 	struct opencl_ndrange_t *parent;	
 	struct opencl_x86_kernel_t *arch_kernel;
+	struct opencl_x86_device_exec_t *exec;
 
 	int work_dim;
 
