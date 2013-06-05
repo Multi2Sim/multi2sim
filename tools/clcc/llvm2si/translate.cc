@@ -21,13 +21,17 @@
 #include <iostream>
 #include <llvm/ADT/OwningPtr.h>
 #include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/Constants.h>
+#include <llvm/DerivedTypes.h>
 #include <llvm/Function.h>
+#include <llvm/Instructions.h>
 #include <llvm/LLVMContext.h>
 #include <llvm/Pass.h>
 #include <llvm/PassManager.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/system_error.h>
+#include <llvm/Type.h>
 
 
 /* C includes */
@@ -44,6 +48,8 @@ extern "C"
 #include <clcc/si2bin/arg.h>
 #include <clcc/si2bin/inst.h>
 
+#include "symbol.h"
+#include "symbol-table.h"
 #include "translate.h"
 }
 
@@ -53,6 +59,86 @@ using namespace std;
 
 /* Private variables */
 static FILE *llvm2si_outf;
+
+
+
+/*
+ * Private Functions
+ */
+
+
+static void llvm2si_translate_inst(Instruction *inst, struct llvm2si_basic_block_t *basic_block)
+{
+	struct llvm2si_function_t *function = basic_block->function;
+
+	assert(function);
+	switch (inst->getOpcode())
+	{
+
+	case Instruction::Alloca:
+	{
+		AllocaInst *alloca_inst = dynamic_cast<AllocaInst*>(inst);
+		Value *ArraySize;
+		ConstantInt *ArraySizeConst;
+
+		Type *AllocatedType;
+		IntegerType *AllocatedIntType;
+
+		int num_elem;
+		int elem_size;
+		int total_size;
+
+		struct llvm2si_symbol_t *symbol;
+
+		/* Get number of elements to allocate */
+		ArraySize = alloca_inst->getArraySize();
+		ArraySizeConst = dynamic_cast<ConstantInt*>(ArraySize);
+		if (!ArraySizeConst)
+			fatal("%s: alloca: number of elements must be constant",
+				__FUNCTION__);
+		num_elem = ArraySizeConst->getZExtValue();
+
+		/* Get size of each element */
+		AllocatedType = alloca_inst->getAllocatedType();
+		if (AllocatedType->isPointerTy())
+		{
+			elem_size = 4;
+		}
+		else if (AllocatedType->isIntegerTy())
+		{
+			AllocatedIntType = reinterpret_cast<IntegerType*>(AllocatedType);
+			elem_size = AllocatedIntType->getBitWidth();
+			if (elem_size % 8)
+				fatal("%s: alloca: invalid integer size",
+					__FUNCTION__);
+			elem_size /= 8;
+		}
+		else
+		{
+			fatal("%s: alloca: invalid element type",
+				__FUNCTION__);
+		}
+
+		/* Total size */
+		total_size = num_elem * elem_size;
+		if (!total_size)
+			fatal("%s: alloca: invalid total size",
+				__FUNCTION__);
+
+		/* Create symbol and add to function symbol table */
+		assert(alloca_inst->hasName());
+		symbol = llvm2si_symbol_create(alloca_inst->getName().data());
+		llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
+
+		/* Done */
+		break;
+	}
+
+	default:
+		fatal("%s: %s: unsupported LLVM instruction",
+			__FUNCTION__, inst->getOpcodeName());
+	}
+}
 
 
 
@@ -95,10 +181,10 @@ bool llvm2si_translate_pass_t::runOnFunction(Function &f)
 		return false;
 
 	/* Create function */
-	function = llvm2si_function_create(f.getName().data());
+	function = llvm2si_function_create(name);
 
 	/* Create a basic block and generate header code in it */
-	basic_block = llvm2si_basic_block_create("entry");
+	basic_block = llvm2si_basic_block_create(name);
 	llvm2si_function_add_basic_block(function, basic_block);
 	llvm2si_function_gen_header(function, basic_block);
 
@@ -114,11 +200,10 @@ bool llvm2si_translate_pass_t::runOnFunction(Function &f)
 	for (Function::iterator bb = f.begin(), bb_end = f.end();
 			bb != bb_end; bb++)
 	{
-		outs() << "\tBasic block '" << bb->getName() << "'\n";
 		for (BasicBlock::iterator inst = bb->begin(), inst_end = bb->end();
 				inst != inst_end; inst++)
 		{
-			outs() << "\t\t" << *inst << "\n";
+			llvm2si_translate_inst(inst, basic_block);
 		}
 	}
 

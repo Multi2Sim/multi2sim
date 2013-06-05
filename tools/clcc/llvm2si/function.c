@@ -28,6 +28,7 @@
 
 #include "basic-block.h"
 #include "function.h"
+#include "symbol-table.h"
 
 
 /*
@@ -67,6 +68,7 @@ struct llvm2si_function_t *llvm2si_function_create(const char *name)
 	function->name = xstrdup(name);
 	function->basic_block_list = linked_list_create();
 	function->arg_list = list_create();
+	function->symbol_table = llvm2si_symbol_table_create();
 
 	/* Return */
 	return function;
@@ -88,6 +90,7 @@ void llvm2si_function_free(struct llvm2si_function_t *function)
 	list_free(function->arg_list);
 
 	/* Rest */
+	llvm2si_symbol_table_free(function->symbol_table);
 	free(function->name);
 	free(function);
 }
