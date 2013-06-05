@@ -72,4 +72,6 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t *original_val, struct 
 
 void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct cl2llvm_val_t **new_val1, struct cl2llvm_val_t **new_val2);
 
+struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value);
+
 #endif

@@ -14,6 +14,10 @@
 
 int cl2llvm_col_num = 0;
 
+void cl2llvm_set_lineno(int lineno)
+{
+	yyset_lineno(lineno);
+}
 
 void cl2llvm_set_col_num(int leng)
 {
