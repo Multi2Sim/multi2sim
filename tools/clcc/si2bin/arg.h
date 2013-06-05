@@ -21,6 +21,7 @@
 #define TOOLS_CLCC_SI2BIN_ARG_H
 
 #include <arch/southern-islands/asm/asm.h>
+#include <lib/util/misc.h>
 
 #include <stdio.h>
 
@@ -28,7 +29,7 @@
 /* Forward declarations */
 struct si2bin_symbol_t;
 
-
+extern struct str_map_t si2bin_arg_type_map;
 enum si2bin_arg_type_t 
 {
 	si2bin_arg_invalid = 0,
@@ -143,6 +144,7 @@ struct si2bin_arg_t
 struct si2bin_arg_t *si2bin_arg_create(void);
 void si2bin_arg_free(struct si2bin_arg_t *inst_arg);
 
+/* Constructors with specific types */
 struct si2bin_arg_t *si2bin_arg_create_literal(int value);
 struct si2bin_arg_t *si2bin_arg_create_literal_float(float value);
 struct si2bin_arg_t *si2bin_arg_create_scalar_register(int id);
@@ -157,9 +159,18 @@ struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
 struct si2bin_arg_t *si2bin_arg_create_maddr_qual(void);
 struct si2bin_arg_t *si2bin_arg_create_label(struct si2bin_symbol_t *symbol);
 
+void si2bin_arg_dump(struct si2bin_arg_t *inst_arg, FILE *f);
+
 int si2bin_arg_encode_operand(struct si2bin_arg_t *arg);
 
-void si2bin_arg_dump(struct si2bin_arg_t *inst_arg, FILE *f);
+/* Check that an argument is of any of the 'num_types' types listed in array
+ * 'types'. If it is not, a fatal message will be produced, showing 'message'
+ * as part of the error string. This function is useful before inserting the
+ * argument into an instruction that might not accept a given encoding. */
+void si2bin_arg_valid_types(struct si2bin_arg_t *arg,
+		enum si2bin_arg_type_t *types, int num_types,
+		const char *user_message);
+
 
 
 #endif
