@@ -556,16 +556,32 @@ arg
 
 		struct si2bin_id_t *id_data_format;
 		struct si2bin_id_t *id_num_format;
+		
+		enum si_inst_buf_data_format_t data_format;
+		enum si_inst_buf_num_format_t num_format;
+		
+		int err;
 
 		/* Read arguments */
 		soffset = $1;
 		qual = $2;
 		id_data_format = $6;
 		id_num_format = $8;
+		
+		/* Data format */
+		data_format = str_map_string_err(&si_inst_buf_data_format_map,
+				id_data_format->name, &err);
+		if (err)
+			si2bin_yyerror_fmt("%s: invalid data format", id_data_format->name);
+			
+		/* Number format */
+		num_format = str_map_string_err(&si_inst_buf_num_format_map,
+				id_num_format->name, &err);
+		if (err)
+			si2bin_yyerror_fmt("%s: invalid number format", id_num_format->name); 
 
 		/* Create argument */
-		arg = si2bin_arg_create_maddr(soffset, qual,
-			id_data_format->name, id_num_format->name);	
+		arg = si2bin_arg_create_maddr(soffset, qual, data_format, num_format);	
 			
 		/* Return */
 		si2bin_id_free(id_data_format);

@@ -150,43 +150,43 @@ struct str_map_t si_inst_ssrc_map = {
 	}
 };
 
-struct str_map_t si_inst_dfmt_map = {
+struct str_map_t si_inst_buf_data_format_map = {
 	16, {
-		{"invalid", 0},
-		{"BUF_DATA_FORMAT_8", 1},
-		{"BUF_DATA_FORMAT_16", 2},
-		{"BUF_DATA_FORMAT_8_8", 3},
-		{"BUF_DATA_FORMAT_32", 4},
-		{"BUF_DATA_FORMAT_16_16", 5},
-		{"BUF_DATA_FORMAT_10_11_11", 6},
-		{"BUF_DATA_FORMAT_11_10_10", 7},
-		{"BUF_DATA_FORMAT_10_10_10_2", 8},
-		{"BUF_DATA_FORMAT_2_10_10_10", 9},
-		{"BUF_DATA_FORMAT_8_8_8_8", 10},
-		{"BUF_DATA_FORMAT_32_32", 11},
-		{"BUF_DATA_FORMAT_16_16_16_16", 12},
-		{"BUF_DATA_FORMAT_32_32_32", 13},
-		{"BUF_DATA_FORMAT_32_32_32_32", 14},
-		{"reserved", 15}
+		{"invalid", si_inst_buf_data_format_invalid },
+		{"BUF_DATA_FORMAT_8", si_inst_buf_data_format_8 },
+		{"BUF_DATA_FORMAT_16", si_inst_buf_data_format_16 },
+		{"BUF_DATA_FORMAT_8_8", si_inst_buf_data_format_8_8 },
+		{"BUF_DATA_FORMAT_32", si_inst_buf_data_format_32 },
+		{"BUF_DATA_FORMAT_16_16", si_inst_buf_data_format_16_16 },
+		{"BUF_DATA_FORMAT_10_11_11", si_inst_buf_data_format_10_11_11 },
+		{"BUF_DATA_FORMAT_11_10_10", si_inst_buf_data_format_11_10_10 },
+		{"BUF_DATA_FORMAT_10_10_10_2", si_inst_buf_data_format_10_10_10_2 },
+		{"BUF_DATA_FORMAT_2_10_10_10", si_inst_buf_data_format_2_10_10_10 },
+		{"BUF_DATA_FORMAT_8_8_8_8", si_inst_buf_data_format_8_8_8_8 },
+		{"BUF_DATA_FORMAT_32_32", si_inst_buf_data_format_32_32 },
+		{"BUF_DATA_FORMAT_16_16_16_16", si_inst_buf_data_format_16_16_16_16 },
+		{"BUF_DATA_FORMAT_32_32_32", si_inst_buf_data_format_32_32_32 },
+		{"BUF_DATA_FORMAT_32_32_32_32", si_inst_buf_data_format_32_32_32_32 },
+		{"reserved", si_inst_buf_data_format_reserved }
 	}
 };
 
-struct str_map_t si_inst_nfmt_map = {
+struct str_map_t si_inst_buf_num_format_map = {
 	14, {
-		{"BUF_NUM_FORMAT_UNORM", 0},
-		{"BUF_NUM_FORMAT_SNORM", 1},
-		{"BUF_NUM_FORMAT_UNSCALED", 2},
-		{"BUF_NUM_FORMAT_SSCALED", 3},
-		{"BUF_NUM_FORMAT_UINT", 4},
-		{"BUF_NUM_FORMAT_SINT", 5},
-		{"BUF_NUM_FORMAT_SNORM_NZ", 6},
-		{"BUF_NUM_FORMAT_FLOAT", 7},
-		{"reserved", 8},
-		{"BUF_NUM_FORMAT_SRGB", 9},
-		{"BUF_NUM_FORMAT_UBNORM", 10},
-		{"BUF_NUM_FORMAT_UBNORM_NZ", 11},
-		{"BUF_NUM_FORMAT_UBINT", 12},
-		{"BUF_NUM_FORMAT_UBSCALED", 13}
+		{"BUF_NUM_FORMAT_UNORM", si_inst_buf_num_format_unorm },
+		{"BUF_NUM_FORMAT_SNORM", si_inst_buf_num_format_snorm },
+		{"BUF_NUM_FORMAT_UNSCALED", si_inst_buf_num_format_unscaled },
+		{"BUF_NUM_FORMAT_SSCALED", si_inst_buf_num_format_sscaled },
+		{"BUF_NUM_FORMAT_UINT", si_inst_buf_num_format_uint },
+		{"BUF_NUM_FORMAT_SINT", si_inst_buf_num_format_sint },
+		{"BUF_NUM_FORMAT_SNORM_NZ", si_inst_buf_num_format_snorm_nz },
+		{"BUF_NUM_FORMAT_FLOAT", si_inst_buf_num_format_float },
+		{"reserved", si_inst_buf_num_format_reserved },
+		{"BUF_NUM_FORMAT_SRGB", si_inst_buf_num_format_srgb },
+		{"BUF_NUM_FORMAT_UBNORM", si_inst_buf_num_format_ubnorm },
+		{"BUF_NUM_FORMAT_UBNORM_NZ", si_inst_buf_num_format_ubnorm_nz },
+		{"BUF_NUM_FORMAT_UBINT", si_inst_buf_num_format_ubint },
+		{"BUF_NUM_FORMAT_UBSCALED", si_inst_buf_num_format_ubscaled }
 	}
 };
 
@@ -1791,9 +1791,9 @@ void si_inst_dump(struct si_inst_t *inst, unsigned int inst_size,
 		
 			/* Format */
 			str_printf(&inst_str, &str_size, " format:[%s,%s]",
-				str_map_value(&si_inst_dfmt_map, 
+				str_map_value(&si_inst_buf_data_format_map, 
 					inst->micro_inst.mtbuf.dfmt),
-				str_map_value(&si_inst_nfmt_map, 
+				str_map_value(&si_inst_buf_num_format_map, 
 					inst->micro_inst.mtbuf.nfmt));
 		}
 		else if (is_token(fmt_str, "MIMG_SERIES_VDATA", &token_len))

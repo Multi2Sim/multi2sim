@@ -116,8 +116,8 @@ struct si2bin_arg_t
 			 * (memory address qualifier) */
 			struct si2bin_arg_t *qual;
 
-			char *data_format;
-			char *num_format;
+			enum si_inst_buf_data_format_t data_format;
+			enum si_inst_buf_num_format_t num_format;
 		} maddr;
 
 		struct
@@ -151,7 +151,9 @@ struct si2bin_arg_t *si2bin_arg_create_vector_register(int id);
 struct si2bin_arg_t *si2bin_arg_create_vector_register_series(int low, int high);
 struct si2bin_arg_t *si2bin_arg_create_special_register(enum si_inst_special_reg_t reg);
 struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
-		struct si2bin_arg_t *qual, char *data_format, char *num_format);
+		struct si2bin_arg_t *qual,
+		enum si_inst_buf_data_format_t data_format,
+		enum si_inst_buf_num_format_t num_format);
 struct si2bin_arg_t *si2bin_arg_create_maddr_qual(void);
 struct si2bin_arg_t *si2bin_arg_create_label(struct si2bin_symbol_t *symbol);
 
