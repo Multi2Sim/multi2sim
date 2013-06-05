@@ -860,7 +860,7 @@ if
 		LLVMBasicBlockRef if_true = LLVMAppendBasicBlock(current_function->func, block_name);
 		
 		/*evaluate expression*/
-		struct cl2llvm_val_t *bool_val =  llvm_type_cast($3, i1);
+		struct cl2llvm_val_t *bool_val =  cl2llvm_val_bool($3);
 		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, if_true, endif);
 		$<basic_block_ref>$ = endif;
 		

@@ -41,6 +41,10 @@
 #include "cl2llvm.h"
 #include "parser.h"
 
+extern void cl2llvm_set_lineno(int);
+extern int cl2llvm_col_num;
+extern int temp_var_count;
+extern int block_count;
 
 /* Global variables */
 LLVMBuilderRef cl2llvm_builder;
@@ -71,14 +75,21 @@ void cl2llvm_yyerror_fmt(char *fmt, ...)
 }
 
 
-
-
-
-
 void cl2llvm_init(void)
+{
+}
+
+
+
+void cl2llvm_init_global_vars(void)
 {
 	LLVMLinkInJIT();
 	LLVMInitializeNativeTarget();
+	
+	cl2llvm_set_lineno(0);
+	cl2llvm_col_num = 0;
+	temp_var_count = 0;
+	block_count = 0;
 	
 	/* Initialize LLVM */
 	cl2llvm_builder = LLVMCreateBuilder();
@@ -118,6 +129,10 @@ void cl2llvm_init(void)
 
 void cl2llvm_done(void)
 {
+}
+
+void cl2llvm_erase_global_vars(void)
+{
 	char *name;
 	struct cl2llvm_function_t *function;
 
@@ -136,6 +151,7 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 
 	LIST_FOR_EACH(source_file_list, index)
 	{
+		cl2llvm_init_global_vars();
 		/* Open file */
 		cl2llvm_file_name = list_get(source_file_list, index);
 		cl2llvm_yyin = fopen(cl2llvm_file_name, "rb");
@@ -157,6 +173,8 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 
 		/* Close */
 		fclose(cl2llvm_yyin);
+
+		cl2llvm_erase_global_vars();
 	}
 	
 
