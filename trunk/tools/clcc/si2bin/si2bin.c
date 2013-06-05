@@ -49,6 +49,10 @@ char *si2bin_source_file;
 struct si2bin_outer_bin_t *si2bin_outer_bin;
 struct si2bin_inner_bin_entry_t *si2bin_entry;
 struct elf_enc_buffer_t *bin_buffer;
+struct si2bin_inner_bin_t *si2bin_inner_bin;
+struct si2bin_metadata_t *si2bin_metadata;
+int si2bin_uniqueid = 1024;
+
 
 
 
@@ -143,6 +147,7 @@ void si2bin_compile(struct list_t *source_file_list,
 
 		/* Free Outer ELF */
 		si2bin_outer_bin_free(si2bin_outer_bin);
+		elf_enc_buffer_free(bin_buffer);
 	}
 }
 
