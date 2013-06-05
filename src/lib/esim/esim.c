@@ -166,7 +166,7 @@ struct esim_domain_t *esim_domain_create(int frequency)
 	/* Initialize */
 	domain = xcalloc(1, sizeof(struct esim_domain_t));
 	domain->frequency = frequency;
-	domain->cycle_time = 1000000ll / frequency;
+	domain->cycle_time = 1000000ll / frequency;  /* Picoseconds */
 
 	/* Update 'esim_cycle_time' if needed */
 	if (!esim_cycle_time || domain->cycle_time < esim_cycle_time)

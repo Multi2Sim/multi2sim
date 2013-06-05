@@ -148,7 +148,8 @@ static void opencl_command_run_ndrange(struct opencl_command_t *command)
         assert(command->device->arch_ndrange_run_func);
 
 	struct opencl_ndrange_t *ndrange;
-	struct timespec t;
+
+	struct timespec start, end;
 
 	cl_ulong cltime;
 
@@ -156,21 +157,23 @@ static void opencl_command_run_ndrange(struct opencl_command_t *command)
 
 	if (command->done_event)
 	{
-		clock_gettime(CLOCK_MONOTONIC, &t);
-		cltime = (cl_ulong)t.tv_sec;
-		cltime *= 1000000000;
-		cltime += (cl_ulong)t.tv_nsec;
-		command->done_event->time_start = cltime;
+		clock_gettime(CLOCK_MONOTONIC, &start);
 	}
 
 	command->device->arch_ndrange_run_func(ndrange->arch_ndrange); 
 
 	if (command->done_event)
 	{
-		clock_gettime(CLOCK_MONOTONIC, &t);
-		cltime = (cl_ulong)t.tv_sec;
+		clock_gettime(CLOCK_MONOTONIC, &end);
+
+		cltime = (cl_ulong)start.tv_sec;
 		cltime *= 1000000000;
-		cltime += (cl_ulong)t.tv_nsec;
+		cltime += (cl_ulong)start.tv_nsec;
+		command->done_event->time_start = cltime;
+
+		cltime = (cl_ulong)end.tv_sec;
+		cltime *= 1000000000;
+		cltime += (cl_ulong)end.tv_nsec;
 		command->done_event->time_end = cltime;
 	}
 }
