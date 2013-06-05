@@ -76,8 +76,6 @@ enum si_fmt_enum
 extern struct str_map_t si_inst_fmt_map;
 extern struct str_map_t si_inst_sdst_map;
 extern struct str_map_t si_inst_ssrc_map;
-extern struct str_map_t si_inst_dfmt_map;
-extern struct str_map_t si_inst_nfmt_map;
 extern struct str_map_t si_inst_OP16_map;
 extern struct str_map_t si_inst_OP8_map;
 
@@ -301,7 +299,6 @@ struct si_fmt_exp_t
 
 
 extern struct str_map_t si_inst_category_map;
-
 enum si_inst_category_t
 {
 	SI_INST_CAT_NONE = 0,
@@ -341,7 +338,6 @@ enum si_inst_category_t
 
 
 extern struct str_map_t si_inst_special_reg_map;
-
 enum si_inst_special_reg_t
 {
 	si_inst_special_reg_invalid = 0,
@@ -350,6 +346,49 @@ enum si_inst_special_reg_t
 	si_inst_special_reg_exec,
 	si_inst_special_reg_tma
 };
+
+
+extern struct str_map_t si_inst_buf_data_format_map;
+enum si_inst_buf_data_format_t
+{
+	si_inst_buf_data_format_invalid = 0,
+	si_inst_buf_data_format_8 = 1,
+	si_inst_buf_data_format_16 = 2,
+	si_inst_buf_data_format_8_8 = 3,
+	si_inst_buf_data_format_32 = 4,
+	si_inst_buf_data_format_16_16 = 5,
+	si_inst_buf_data_format_10_11_11 = 6,
+	si_inst_buf_data_format_11_10_10 = 7,
+	si_inst_buf_data_format_10_10_10_2 = 8,
+	si_inst_buf_data_format_2_10_10_10 = 9,
+	si_inst_buf_data_format_8_8_8_8 = 10,
+	si_inst_buf_data_format_32_32 = 11,
+	si_inst_buf_data_format_16_16_16_16 = 12,
+	si_inst_buf_data_format_32_32_32 = 13,
+	si_inst_buf_data_format_32_32_32_32 = 14,
+	si_inst_buf_data_format_reserved = 15
+};
+
+
+extern struct str_map_t si_inst_buf_num_format_map;
+enum si_inst_buf_num_format_t
+{
+	si_inst_buf_num_format_unorm = 0,
+	si_inst_buf_num_format_snorm = 1,
+	si_inst_buf_num_format_unscaled = 2,
+	si_inst_buf_num_format_sscaled = 3,
+	si_inst_buf_num_format_uint = 4,
+	si_inst_buf_num_format_sint = 5,
+	si_inst_buf_num_format_snorm_nz = 6,
+	si_inst_buf_num_format_float = 7,
+	si_inst_buf_num_format_reserved = 8,
+	si_inst_buf_num_format_srgb = 9,
+	si_inst_buf_num_format_ubnorm = 10,
+	si_inst_buf_num_format_ubnorm_nz = 11,
+	si_inst_buf_num_format_ubint = 12,
+	si_inst_buf_num_format_ubscaled = 13
+};
+
 
 
 enum si_inst_flag_t

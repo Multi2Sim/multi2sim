@@ -313,9 +313,8 @@ static void llvm2si_translate_store_inst(StoreInst *store_inst,
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(sreg_uav, sreg_uav + 3));
 	arg_soffset = si2bin_arg_create_literal(0);
 	arg_qual = si2bin_arg_create_maddr_qual();
-	/* FIXME - better representation needed for 'maddr' field */
 	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
-			"BUF_DATA_FORMAT_32", "BUF_NUM_FORMAT_FLOAT"));
+			si_inst_buf_data_format_32, si_inst_buf_num_format_float));
 	inst = si2bin_inst_create(SI_INST_TBUFFER_STORE_FORMAT_X, arg_list);
 	llvm2si_basic_block_add_inst(basic_block, inst);
 }
