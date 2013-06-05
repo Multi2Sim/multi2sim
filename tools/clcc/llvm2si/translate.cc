@@ -42,6 +42,7 @@ extern "C"
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/misc.h>
 #include <lib/util/list.h>
 #include <clcc/llvm2si/basic-block.h>
 #include <clcc/llvm2si/function.h>
@@ -66,76 +67,227 @@ static FILE *llvm2si_outf;
  * Private Functions
  */
 
-
-static void llvm2si_translate_inst(Instruction *inst, struct llvm2si_basic_block_t *basic_block)
+static void llvm2si_translate_alloca_inst(AllocaInst *alloca_inst,
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
 {
-	struct llvm2si_function_t *function = basic_block->function;
+	Value *ArraySize;
+	ConstantInt *ArraySizeConst;
 
-	assert(function);
+	Type *AllocatedType;
+	IntegerType *AllocatedIntType;
+
+	int num_elem;
+	int elem_size;
+	int total_size;
+
+	struct llvm2si_symbol_t *symbol;
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+
+	/* Get number of elements to allocate */
+	ArraySize = alloca_inst->getArraySize();
+	ArraySizeConst = dynamic_cast<ConstantInt*>(ArraySize);
+	if (!ArraySizeConst)
+		fatal("%s: alloca: number of elements must be constant",
+			__FUNCTION__);
+	num_elem = ArraySizeConst->getZExtValue();
+
+	/* Get size of each element */
+	AllocatedType = alloca_inst->getAllocatedType();
+	if (AllocatedType->isPointerTy())
+	{
+		elem_size = 4;
+	}
+	else if (AllocatedType->isIntegerTy())
+	{
+		AllocatedIntType = reinterpret_cast<IntegerType*>(AllocatedType);
+		elem_size = AllocatedIntType->getBitWidth();
+		if (elem_size % 8)
+			fatal("%s: alloca: invalid integer size",
+				__FUNCTION__);
+		elem_size /= 8;
+	}
+	else
+	{
+		fatal("%s: alloca: invalid element type",
+			__FUNCTION__);
+	}
+
+	/* Total size */
+	total_size = num_elem * elem_size;
+	if (!total_size)
+		fatal("%s: alloca: invalid total size",
+			__FUNCTION__);
+
+	/* Create symbol and add to function symbol table */
+	assert(alloca_inst->hasName());
+	symbol = llvm2si_symbol_create(alloca_inst->getName().data());
+	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
+
+	/* Allocate a new vector register. This register will point to
+	 * the current stack top, and will be associated with the symbol
+	 * returned by the 'alloca' function. */
+	symbol->vreg = function->num_vregs;
+	function->num_vregs++;
+
+	/* Emit instruction to store top of the stack.
+	 * v_mov_b32 v[vreg], v[sp]
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(symbol->vreg));
+	list_add(arg_list, si2bin_arg_create_vector_register(function->vreg_sp));
+	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+
+	/* Emit instruction to increment stack pointer.
+	 * v_add_i32 v[sp], vcc, v[sp], total_size
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(function->vreg_sp));
+	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
+	list_add(arg_list, si2bin_arg_create_vector_register(function->vreg_sp));
+	list_add(arg_list, si2bin_arg_create_literal(total_size));
+	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+}
+
+
+static void llvm2si_translate_call_inst(CallInst *call_inst,
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	Function *CalledFunction;
+
+	const char *func_name;
+
+	/* Get function name */
+	CalledFunction = call_inst->getCalledFunction();
+	func_name = CalledFunction->getName().data();
+
+	/* Built-in functions */
+	if (!strcmp(func_name, "get_global_id"))
+	{
+		Value *ArgOperand;
+		ConstantInt *ArgOperandConst;
+
+		struct llvm2si_symbol_t *symbol;
+
+		int dim;
+
+		/* Check number of arguments */
+		if (call_inst->getNumArgOperands() != 1)
+			fatal("%s: %s: invalid number of arguments",
+				__FUNCTION__, func_name);
+
+		/* Argument must be an integer constat */
+		ArgOperand = call_inst->getArgOperand(0);
+		ArgOperandConst = dynamic_cast<ConstantInt*>(ArgOperand);
+		if (!ArgOperandConst)
+			fatal("%s: %s: argument must be integer constant",
+				__FUNCTION__, func_name);
+
+		/* Get dimension */
+		dim = ArgOperandConst->getZExtValue();
+		if (!IN_RANGE(dim, 0, 2))
+			fatal("%s: %s: invalid range for argument",
+				__FUNCTION__, func_name);
+
+		/* Create new symbol */
+		assert(call_inst->hasName());
+		symbol = llvm2si_symbol_create(call_inst->getName().data());
+		llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
+
+		/* Associate symbol with vector register containing the global
+		 * ID in the specified dimension. */
+		symbol->vreg = function->vreg_gid + dim;
+	}
+	else
+	{
+		fatal("%s: %s: invalid built-in function",
+			__FUNCTION__, func_name);
+	}
+}
+
+
+static void llvm2si_translate_store_inst(StoreInst *store_inst,
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	int address_space;
+	int sreg_uav;
+
+	Value *ValueOperand;
+	Type *TypeOperand;
+	IntegerType *IntTypeOperand;
+
+	int size;
+
+	/* Get address space */
+	address_space = store_inst->getPointerAddressSpace();
+	switch (address_space)
+	{
+	case 0:
+		/* Private memory */
+		sreg_uav = function->sreg_uav10;
+		break;
+	case 1:
+		/* Global memory */
+		sreg_uav = function->sreg_uav11;
+		break;
+	default:
+		fatal("%s: invalid address space (%d)",
+			__FUNCTION__, address_space);
+	}
+
+	/* Get value and type */
+	ValueOperand = store_inst->getValueOperand();
+	TypeOperand = ValueOperand->getType();
+	outs() << *store_inst << "\n";
+	outs() << *TypeOperand << "\n";
+	IntTypeOperand = reinterpret_cast<IntegerType*>(TypeOperand);
+	if (!TypeOperand->isIntegerTy() || IntTypeOperand->getBitWidth() != 32)
+		fatal("%s: store: only 'i32' type supported",
+			__FUNCTION__);
+
+	/* FIXME ... */
+}
+
+
+static void llvm2si_translate_inst(Instruction *inst,
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	assert(basic_block->function == function);
 	switch (inst->getOpcode())
 	{
 
 	case Instruction::Alloca:
 	{
 		AllocaInst *alloca_inst = dynamic_cast<AllocaInst*>(inst);
-		Value *ArraySize;
-		ConstantInt *ArraySizeConst;
+		assert(alloca_inst);
+		llvm2si_translate_alloca_inst(alloca_inst, function, basic_block);
+		break;
+	}
 
-		Type *AllocatedType;
-		IntegerType *AllocatedIntType;
+	case Instruction::Call:
+	{
+		CallInst *call_inst = dynamic_cast<CallInst*>(inst);
+		assert(call_inst);
+		llvm2si_translate_call_inst(call_inst, function, basic_block);
+		break;
+	}
 
-		int num_elem;
-		int elem_size;
-		int total_size;
-
-		struct llvm2si_symbol_t *symbol;
-
-		/* Get number of elements to allocate */
-		ArraySize = alloca_inst->getArraySize();
-		ArraySizeConst = dynamic_cast<ConstantInt*>(ArraySize);
-		if (!ArraySizeConst)
-			fatal("%s: alloca: number of elements must be constant",
-				__FUNCTION__);
-		num_elem = ArraySizeConst->getZExtValue();
-
-		/* Get size of each element */
-		AllocatedType = alloca_inst->getAllocatedType();
-		if (AllocatedType->isPointerTy())
-		{
-			elem_size = 4;
-		}
-		else if (AllocatedType->isIntegerTy())
-		{
-			AllocatedIntType = reinterpret_cast<IntegerType*>(AllocatedType);
-			elem_size = AllocatedIntType->getBitWidth();
-			if (elem_size % 8)
-				fatal("%s: alloca: invalid integer size",
-					__FUNCTION__);
-			elem_size /= 8;
-		}
-		else
-		{
-			fatal("%s: alloca: invalid element type",
-				__FUNCTION__);
-		}
-
-		/* Total size */
-		total_size = num_elem * elem_size;
-		if (!total_size)
-			fatal("%s: alloca: invalid total size",
-				__FUNCTION__);
-
-		/* Create symbol and add to function symbol table */
-		assert(alloca_inst->hasName());
-		symbol = llvm2si_symbol_create(alloca_inst->getName().data());
-		llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
-
-		/* Done */
+	case Instruction::Store:
+	{
+		StoreInst *store_inst = dynamic_cast<StoreInst*>(inst);
+		assert(store_inst);
+		llvm2si_translate_store_inst(store_inst, function, basic_block);
 		break;
 	}
 
 	default:
-		fatal("%s: %s: unsupported LLVM instruction",
+		warning("%s: %s: unsupported LLVM instruction",
 			__FUNCTION__, inst->getOpcodeName());
 	}
 }
@@ -203,7 +355,7 @@ bool llvm2si_translate_pass_t::runOnFunction(Function &f)
 		for (BasicBlock::iterator inst = bb->begin(), inst_end = bb->end();
 				inst != inst_end; inst++)
 		{
-			llvm2si_translate_inst(inst, basic_block);
+			llvm2si_translate_inst(inst, function, basic_block);
 		}
 	}
 

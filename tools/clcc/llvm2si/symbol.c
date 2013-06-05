@@ -42,3 +42,10 @@ void llvm2si_symbol_free(struct llvm2si_symbol_t *symbol)
 	free(symbol);
 }
 
+
+void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f)
+{
+	fprintf(f, "name='%s', vreg=%d\n",
+			symbol->name,
+			symbol->vreg);
+}
