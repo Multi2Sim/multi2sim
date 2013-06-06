@@ -304,23 +304,21 @@ void frm_warp_execute(struct frm_warp_t *warp)
 		if (thread_block->finished_list_count ==
 				thread_block->warp_count)
 		{
-			assert(DOUBLE_LINKED_LIST_MEMBER(grid, running,
-						thread_block));
-			assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished,
-						thread_block));
+			assert(list_index_of(grid->running_thread_blocks,
+						thread_block) != -1);
+			assert(list_index_of(grid->finished_thread_blocks,
+						thread_block) == -1);
 			frm_thread_block_clear_status(thread_block,
 					frm_thread_block_running);
 			frm_thread_block_set_status(thread_block,
 					frm_thread_block_finished);
 
 			/* Check if grid finished kernel execution */
-			if (grid->finished_list_count == 
-					grid->thread_block_count)
+			if (list_count(grid->finished_thread_blocks) == 
+					list_count(grid->thread_blocks))
 			{
-				assert(DOUBLE_LINKED_LIST_MEMBER(frm_emu, 
-							running_grid, grid));
-				assert(!DOUBLE_LINKED_LIST_MEMBER(frm_emu, 
-							finished_grid, grid));
+				assert(list_index_of(frm_emu->running_grids, grid) != -1);
+				assert(list_index_of(frm_emu->finished_grids, grid) == -1);
 				frm_grid_clear_status(grid, 
 						frm_grid_running);
 				frm_grid_set_status(grid, 

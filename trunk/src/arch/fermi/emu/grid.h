@@ -65,8 +65,13 @@ struct frm_grid_t
 	int block_size;
 	int block_count;
 
+	/* Lists of thread blocks */
+	struct list_t *thread_blocks;
+	struct list_t *pending_thread_blocks;
+	struct list_t *running_thread_blocks;
+	struct list_t *finished_thread_blocks;
+
 	/* Pointers to thread_blocks, warps, and threads */
-	struct frm_thread_block_t **thread_blocks;
 	struct frm_warp_t **warps;
 	struct frm_thread_t **threads;
 
@@ -97,24 +102,6 @@ struct frm_grid_t
         struct frm_grid_t *running_grid_list_next;
         struct frm_grid_t *finished_grid_list_prev;
         struct frm_grid_t *finished_grid_list_next;
-
-	/* List of pending thread blocks */
-	struct frm_thread_block_t *pending_list_head;
-	struct frm_thread_block_t *pending_list_tail;
-	int pending_list_count;
-	int pending_list_max;
-
-	/* List of running thread blocks */
-	struct frm_thread_block_t *running_list_head;
-	struct frm_thread_block_t *running_list_tail;
-	int running_list_count;
-	int running_list_max;
-
-	/* List of finished thread blocks */
-	struct frm_thread_block_t *finished_list_head;
-	struct frm_thread_block_t *finished_list_tail;
-	int finished_list_count;
-	int finished_list_max;
 
 	void *inst_buffer;
 	unsigned int inst_buffer_size;

@@ -733,7 +733,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	/* Create and setup grid */
 	grid = frm_grid_create(function);
-        grid->num_gpr_used = function->num_gpr_used;
+	grid->num_gpr_used = function->num_gpr_used;
 	frm_grid_setup_size(grid, gridDim, blockDim, 3);
 
 	/* Create arguments */
