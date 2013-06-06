@@ -281,7 +281,7 @@ func_def
 		if (!err)
 			yyerror("function already defined");
 		/* Declare parameters */
-		LLVMValueRef store_instr;
+		LLVMValueRef store_instr = NULL;
 
 		if (list_get($4, $4->head) != NULL)
 		{
@@ -413,7 +413,13 @@ access_qual
 		$$ = 2;
 	}
 	| TOK_PRIVATE
+	{
+		$$ = 0;
+	}
 	| TOK_CONSTANT
+	{
+		$$ = 0;
+	}
 	;
 
 declarator
