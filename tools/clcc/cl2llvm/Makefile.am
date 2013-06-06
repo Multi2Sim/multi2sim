@@ -19,6 +19,9 @@ libcl2llvm_a_SOURCES = \
 	declarator-list.h\
 	declarator-list.c\
 	\
+	for-blocks.c\
+	for-blocks.h\
+	\
 	function.h\
 	function.c\
 	\
