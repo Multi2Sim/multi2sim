@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
@@ -69,11 +70,11 @@ void frm_thread_block_set_status(struct frm_thread_block_t *thread_block, enum f
 
 	/* Add thread_block to lists */
 	if (status & frm_thread_block_pending)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(grid, pending, thread_block);
+		list_add(grid->pending_thread_blocks, thread_block);
 	if (status & frm_thread_block_running)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(grid, running, thread_block);
+		list_add(grid->running_thread_blocks, thread_block);
 	if (status & frm_thread_block_finished)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(grid, finished, thread_block);
+		list_add(grid->finished_thread_blocks, thread_block);
 
 	/* Update it */
 	thread_block->status |= status;
@@ -89,11 +90,11 @@ void frm_thread_block_clear_status(struct frm_thread_block_t *thread_block, enum
 
 	/* Remove thread_block from lists */
 	if (status & frm_thread_block_pending)
-		DOUBLE_LINKED_LIST_REMOVE(grid, pending, thread_block);
+		list_remove(grid->pending_thread_blocks, thread_block);
 	if (status & frm_thread_block_running)
-		DOUBLE_LINKED_LIST_REMOVE(grid, running, thread_block);
+		list_remove(grid->running_thread_blocks, thread_block);
 	if (status & frm_thread_block_finished)
-		DOUBLE_LINKED_LIST_REMOVE(grid, finished, thread_block);
+		list_remove(grid->finished_thread_blocks, thread_block);
 	
 	/* Update status */
 	thread_block->status &= ~status;

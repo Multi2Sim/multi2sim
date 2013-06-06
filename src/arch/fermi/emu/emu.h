@@ -22,32 +22,16 @@
 
 #include <stdio.h>
 
+#include <lib/util/list.h>
+
 
 struct frm_emu_t
 {
-	/* List of ND-Ranges */
-	struct frm_grid_t *grid_list_head;
-	struct frm_grid_t *grid_list_tail;
-	int grid_list_count;
-	int grid_list_max;
-
-	/* List of pending grids */
-	struct frm_grid_t *pending_grid_list_head;
-	struct frm_grid_t *pending_grid_list_tail;
-	int pending_grid_list_count;
-	int pending_grid_list_max;
-
-	/* List of running grids */
-	struct frm_grid_t *running_grid_list_head;
-	struct frm_grid_t *running_grid_list_tail;
-	int running_grid_list_count;
-	int running_grid_list_max;
-
-	/* List of finished grids */
-	struct frm_grid_t *finished_grid_list_head;
-	struct frm_grid_t *finished_grid_list_tail;
-	int finished_grid_list_count;
-	int finished_grid_list_max;
+	/* List of grids */
+	struct list_t *grids;
+	struct list_t *pending_grids;
+	struct list_t *running_grids;
+	struct list_t *finished_grids;
 
 	/* Global memory */
 	struct mem_t *global_mem;

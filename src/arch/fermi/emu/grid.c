@@ -42,7 +42,7 @@ struct frm_grid_t *frm_grid_create(struct cuda_function_t *function)
 
 	/* Initialize */
 	grid = xcalloc(1, sizeof(struct frm_grid_t));
-	DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, grid, grid);
+	list_add(frm_emu->grids, grid);
 	grid->id = 0;
 	strncpy(grid->name, function->name, MAX_STRING_SIZE);
 	grid->function = function;
@@ -66,13 +66,13 @@ void frm_grid_free(struct frm_grid_t *grid)
 	frm_grid_clear_status(grid, frm_grid_finished);
 
 	/* Extract from ND-Range list in Southern Islands emulator */
-	assert(DOUBLE_LINKED_LIST_MEMBER(frm_emu, grid, grid));
-	DOUBLE_LINKED_LIST_REMOVE(frm_emu, grid, grid);
+	assert(list_index_of(frm_emu->grids, grid) != LIST_ERR_NOT_FOUND);
+	list_remove(frm_emu->grids, grid);
 
         /* Free thread_blocks */
         for (i = 0; i < grid->thread_block_count; i++)
-                frm_thread_block_free(grid->thread_blocks[i]);
-        free(grid->thread_blocks);
+                frm_thread_block_free(list_get(grid->thread_blocks, i));
+        list_free(grid->thread_blocks);
 
         /* Free warps */
         for (i = 0; i < grid->warp_count; i++)
@@ -102,11 +102,11 @@ void frm_grid_set_status(struct frm_grid_t *grid, enum frm_grid_status_t status)
 
         /* Add grid to lists */
         if (status & frm_grid_pending)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, pending_grid, grid);
+		list_add(frm_emu->pending_grids, grid);
         if (status & frm_grid_running)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, running_grid, grid);
+		list_add(frm_emu->running_grids, grid);
         if (status & frm_grid_finished)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_emu, finished_grid, grid);
+		list_add(frm_emu->finished_grids, grid);
 
         /* Update it */
         grid->status |= status;
@@ -120,11 +120,11 @@ void frm_grid_clear_status(struct frm_grid_t *grid, enum frm_grid_status_t statu
 
         /* Remove grid from lists */
         if (status & frm_grid_pending)
-                DOUBLE_LINKED_LIST_REMOVE(frm_emu, pending_grid, grid);
+		list_remove(frm_emu->pending_grids, grid);
         if (status & frm_grid_running)
-                DOUBLE_LINKED_LIST_REMOVE(frm_emu, running_grid, grid);
+		list_remove(frm_emu->running_grids, grid);
         if (status & frm_grid_finished)
-                DOUBLE_LINKED_LIST_REMOVE(frm_emu, finished_grid, grid);
+		list_remove(frm_emu->finished_grids, grid);
 
         /* Update status */
         grid->status &= ~status;
@@ -177,68 +177,6 @@ void frm_grid_setup_args(struct frm_grid_t *grid)
 }
 
 
-void frm_grid_run(struct frm_grid_t *grid)
-{
-	struct frm_thread_block_t *thread_block, *thread_block_next;
-	struct frm_warp_t *warp, *warp_next;
-	unsigned long long int cycle = 0;
-
-	/* Set all ready thread_blocks to running */
-	while ((thread_block = grid->pending_list_head))
-	{
-		frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
-		frm_thread_block_set_status(thread_block, frm_thread_block_running);
-	}
-                /* Set is in state 'running' */
-                frm_grid_clear_status(grid, frm_grid_pending);
-                frm_grid_set_status(grid, frm_grid_running);
-
-
-	/* Execution loop */
-	while (grid->running_list_head)
-	{
-		/* Stop if maximum number of GPU cycles exceeded */
-		if (frm_emu_max_cycles && cycle >= frm_emu_max_cycles)
-			esim_finish = esim_finish_frm_max_cycles;
-
-		/* Stop if maximum number of GPU instructions exceeded */
-		if (frm_emu_max_inst && arch_fermi->inst_count >= frm_emu_max_inst)
-			esim_finish = esim_finish_frm_max_inst;
-
-		/* Stop if any reason met */
-		if (esim_finish)
-			break;
-
-		/* Next cycle */
-		cycle++;
-
-		/* Execute an instruction from each work-group */
-		for (thread_block = grid->running_list_head; thread_block; thread_block = thread_block_next)
-		{
-			/* Save next running work-group */
-			thread_block_next = thread_block->running_list_next;
-
-			/* Run an instruction from each warp */
-			for (warp = thread_block->running_list_head; warp; warp = warp_next)
-			{
-				/* Save next running warp */
-				warp_next = warp->running_list_next;
-
-				/* Execute instruction in warp */
-				frm_warp_execute(warp);
-			}
-		}
-	}
-
-	/* Dump stats */
-	frm_grid_dump(grid, stdout);
-
-	/* Stop if maximum number of functions reached */
-	//if (frm_emu_max_functions && frm_emu->grid_count >= frm_emu_max_functions)
-	//	x86_emu_finish = x86_emu_finish_max_gpu_functions;
-}
-
-
 void frm_grid_dump(struct frm_grid_t *grid, FILE *f)
 {
 	struct frm_thread_block_t *thread_block;
@@ -285,7 +223,7 @@ void frm_grid_dump(struct frm_grid_t *grid, FILE *f)
 	/* Threadblock */
 	FRM_FOR_EACH_THREADBLOCK_IN_GRID(grid, thread_block_id)
 	{
-		thread_block = grid->thread_blocks[thread_block_id];
+		thread_block = list_get(grid->thread_blocks, thread_block_id);
 		frm_thread_block_dump(thread_block, f);
 	}
 }
@@ -304,15 +242,15 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 	int wid;  /* Wavefront ID iterator */
 	int lid;  /* Local ID iterator */
 
-	/* Array of work-groups */
+	/* Set up thread blocks */
+	grid->thread_blocks = list_create_with_size(grid->block_count);
 	grid->thread_block_count = grid->block_count;
 	grid->thread_block_id_first = 0;
 	grid->thread_block_id_last = grid->thread_block_count - 1;
-	grid->thread_blocks = xcalloc(grid->thread_block_count, sizeof(void *));
 	for (gid = 0; gid < grid->block_count; gid++)
 	{
-		grid->thread_blocks[gid] = frm_thread_block_create();
-		thread_block = grid->thread_blocks[gid];
+		list_add(grid->thread_blocks, frm_thread_block_create());
+		thread_block = list_get(grid->thread_blocks, gid);
 	}
 
 	/* Array of warps */
@@ -332,7 +270,7 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 		gid = wid / grid->warps_per_thread_block;
 		grid->warps[wid] = frm_warp_create();
 		warp = grid->warps[wid];
-		thread_block = grid->thread_blocks[gid];
+		thread_block = list_get(grid->thread_blocks, gid);
 
 		warp->id = wid;
 		warp->id_in_thread_block = wid % 
@@ -358,7 +296,8 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 			for (gidx = 0; gidx < grid->block_count3[0]; gidx++)
 			{
 				/* Assign work-group ID */
-				thread_block = grid->thread_blocks[gid];
+				thread_block = list_get(grid->thread_blocks,
+						gid);
 				thread_block->grid = grid;
 				thread_block->id_3d[0] = gidx;
 				thread_block->id_3d[1] = gidy;
@@ -412,7 +351,8 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 
 							/* Other */
 							thread->id_in_warp = thread->id_in_thread_block % frm_emu_warp_size;
-							thread->thread_block = grid->thread_blocks[gid];
+							thread->thread_block =
+								list_get(grid->thread_blocks, gid);
 							thread->warp = grid->warps[wid];
 
 							/* First, last, and number of work-items in warp */
@@ -524,7 +464,7 @@ void frm_grid_setup_size(struct frm_grid_t *grid,
 		grid->block_count3[i] = grid->grid_size3[i] / grid->block_size3[i];
 	grid->block_count = grid->block_count3[0] * grid->block_count3[1] * grid->block_count3[2];
 
-	/* Allocate work-group, warp, and thread arrays */
+	/* Allocate thread block, warp, and thread arrays */
 	frm_grid_setup_arrays(grid);
 }
 
