@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2013  Chris Barton (barton.ch@husky.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,27 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_CLCC_CL2LLVM_FUNCTION_H
-#define TOOLS_CLCC_CL2LLVM_FUNCTION_H
+#ifndef TOOLS_CLCC_CL2LLVM_WHILD_BLOCK_H
+#define TOOLS_CLCC_CL2LLVM_WHILE_BLOCK_H
 
 #include <llvm-c/Core.h>
-#include <lib/util/list.h>
 
-struct cl2llvm_function_t
+struct cl2llvm_while_blocks_t
 {
-	LLVMValueRef func;
-	LLVMTypeRef func_type;
-	int sign;
-	char *name;
-	struct hash_table_t *symbol_table;
-	struct list_t *arg_list;
-	int arg_count;
-	LLVMBasicBlockRef entry_block;
-	LLVMValueRef last_declaration;
+	LLVMBasicBlockRef while_cond;
+	LLVMBasicBlockRef while_stmt;
+	LLVMBasicBlockRef while_end;
 };
 
-struct cl2llvm_function_t *cl2llvm_function_create(char *name, struct list_t *arg_list);
+struct cl2llvm_while_blocks_t *cl2llvm_while_blocks_create(void);
 
-void cl2llvm_function_free(struct cl2llvm_function_t *function);
-	
+void cl2llvm_while_blocks_free(struct cl2llvm_while_blocks_t *while_blocks);
+
 #endif
