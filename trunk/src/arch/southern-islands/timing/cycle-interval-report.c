@@ -72,11 +72,27 @@ void si_cu_spatial_report_dump(struct si_compute_unit_t *compute_unit)
 {
 	FILE *f = spatial_report_file;
 
-	fprintf(f, "CU,%d,MemAcc,%lld,MappedWGs,%lld,Cycles,%lld\n",
-			compute_unit->id,
-			compute_unit->vector_mem_unit.inflight_mem_accesses,
-			compute_unit->interval_mapped_work_groups,
-			arch_southern_islands->cycle);
+	fprintf(f,
+		"CU,%d,MemAcc,%lld,MappedWGs,%lld,UnmappedWGs,%lld,ALUIssued,%lld,LDSIssued,%lld,Cycles,%lld\n",
+		compute_unit->id,
+		compute_unit->vector_mem_unit.inflight_mem_accesses,
+		compute_unit->interval_mapped_work_groups,
+		compute_unit->interval_unmapped_work_groups,
+		compute_unit->interval_alu_issued,
+		compute_unit->interval_lds_issued,
+		arch_southern_islands->cycle);
+
+
+}
+
+void si_lds_report_new_inst(struct si_compute_unit_t *compute_unit)
+{
+	compute_unit->interval_lds_issued = compute_unit->interval_lds_issued + 1;
+}
+
+void si_alu_report_new_inst(struct si_compute_unit_t *compute_unit)
+{
+	compute_unit->interval_alu_issued ++ ;
 
 }
 
@@ -87,6 +103,7 @@ void si_report_global_mem_inflight( struct si_compute_unit_t *compute_unit, int 
 	 * Write stage adds a positive number for accesses finished
 	 */
 	compute_unit->vector_mem_unit.inflight_mem_accesses += pending_accesses;
+
 
 }
 
@@ -104,6 +121,13 @@ void si_report_mapped_work_group(struct si_compute_unit_t *compute_unit)
 	compute_unit->interval_mapped_work_groups++;
 }
 
+void si_report_unmapped_work_group(struct si_compute_unit_t *compute_unit)
+{
+	/*TODO Add calculation here to change this to wavefront pool entries used */
+	compute_unit->interval_unmapped_work_groups++;
+}
+
+
 void si_cu_interval_update(struct si_compute_unit_t *compute_unit)
 {
 	/* If interval - reset the counters in all the engines */
@@ -120,5 +144,8 @@ void si_cu_interval_update(struct si_compute_unit_t *compute_unit)
 		 */
 		compute_unit->interval_cycle = 0;
 		compute_unit->interval_mapped_work_groups = 0;
+		compute_unit->interval_unmapped_work_groups = 0;
+		compute_unit->interval_alu_issued = 0;
+		compute_unit->interval_lds_issued = 0;
 	}
 }

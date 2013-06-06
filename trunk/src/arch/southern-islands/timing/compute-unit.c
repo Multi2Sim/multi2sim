@@ -340,6 +340,9 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
 	si_trace("si.unmap_wg cu=%d wg=%d\n", compute_unit->id,
 		work_group->id);
 
+	if(si_spatial_report_active)
+		si_report_unmapped_work_group(compute_unit);
+
 	si_work_group_free(work_group);
 }
 

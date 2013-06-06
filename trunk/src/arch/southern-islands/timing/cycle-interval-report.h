@@ -26,12 +26,13 @@
 extern int si_spatial_report_active  ;
 
 
-
-void si_report_new_inst(struct si_compute_unit_t *compute_unit);
-
 void si_alu_report_new_inst(struct si_compute_unit_t *compute_unit);
 
+void si_lds_report_new_inst(struct si_compute_unit_t *compute_unit);
+
 void si_report_mapped_work_group(struct si_compute_unit_t *compute_unit);
+
+void si_report_unmapped_work_group(struct si_compute_unit_t *compute_unit);
 
 
 /* Used in vector unit to keep track of num of mem accesses in flight */
