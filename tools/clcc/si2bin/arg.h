@@ -171,6 +171,9 @@ void si2bin_arg_valid_types(struct si2bin_arg_t *arg,
 		enum si2bin_arg_type_t *types, int num_types,
 		const char *user_message);
 
+/* Swap two arguments */
+void si2bin_arg_swap(struct si2bin_arg_t **arg1_ptr,
+		struct si2bin_arg_t **arg2_ptr);
 
 
 #endif

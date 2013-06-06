@@ -68,6 +68,150 @@ static FILE *llvm2si_outf;
  * Private Functions
  */
 
+/* Create a Southern Islands instruction argument from an LLVM value. The type
+ * of argument created depends on the LLVM value as follows:
+ *   - If the LLVM value is an integer constant, the Southern Islands argument
+ *     will be of type integer literal.
+ *   - If the LLVM value is an LLVM identifier, the Southern Islands argument
+ *     will be the vector register associated with that symbol.
+ *   - If the LLVM value is a function argument, the Southern Islands argument
+ *     will be the scalar register pointing to that argument.
+ */
+static struct si2bin_arg_t *llvm2si_translate_value(Value *value,
+		struct llvm2si_function_t *function)
+{
+	Type *type;
+	ConstantInt *constant_int_value;
+	Argument *func_arg;
+
+	/* Get value type */
+	type = value->getType();
+
+	/* LLVM identifier */
+	if (value->hasName())
+	{
+		const char *name;
+		struct llvm2si_symbol_t *symbol;
+
+		/* Look up symbol */
+		name = value->getName().data();
+		symbol = llvm2si_symbol_table_lookup(function->symbol_table, name);
+		if (!symbol)
+			fatal("%s: %s: symbol not found", __FUNCTION__, name);
+
+		/* Create argument */
+		return si2bin_arg_create_vector_register(symbol->vreg);
+	}
+
+	/* Integer constant */
+	constant_int_value = dynamic_cast<ConstantInt*>(value);
+	if (constant_int_value)
+	{
+		IntegerType *constant_int_type;
+		int bit_width;
+		int value;
+
+		/* Only 32-bit constants supported for now. We need to figure
+		 * out what to do with the sign extension otherwise. */
+		constant_int_type = reinterpret_cast<IntegerType*>(type);
+		bit_width = constant_int_type->getBitWidth();
+		if (bit_width != 32)
+			fatal("%s: only 32-bit type supported (%d-bit found)",
+				__FUNCTION__, bit_width);
+
+		/* Create argument */
+		value = constant_int_value->getZExtValue();
+		return si2bin_arg_create_literal(value);
+	}
+
+	/* Function argument */
+	func_arg = dynamic_cast<Argument*>(value);
+	if (func_arg)
+	{
+		int index;
+
+		/* Create Southern Islands argument as a scalar register equal
+		 * to the baseline register used for arguments 'sreg_arg' plus
+		 * the index of the requested function argument. */
+		index = func_arg->getArgNo();
+		return si2bin_arg_create_scalar_register(function->sreg_arg + index);
+	}
+
+	/* Type not supported */
+	fatal("%s: value type not supported", __FUNCTION__);
+	return NULL;
+}
+
+
+static void llvm2si_translate_add_inst(BinaryOperator *add_inst,
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	Value *op1;
+	Value *op2;
+
+	struct si2bin_arg_t *arg_op1;
+	struct si2bin_arg_t *arg_op2;
+	struct list_t *arg_list;
+	struct llvm2si_symbol_t *symbol;
+	struct si2bin_inst_t *inst;
+
+	/* Get operands */
+	assert(add_inst->getNumOperands() == 2);
+	op1 = add_inst->getOperand(0);
+	op2 = add_inst->getOperand(1);
+
+	/* Create SI arguments for operands */
+	arg_op1 = llvm2si_translate_value(op1, function);
+	arg_op2 = llvm2si_translate_value(op2, function);
+
+	/* Check argument types */
+	enum si2bin_arg_type_t arg_types[3] = { si2bin_arg_vector_register,
+			si2bin_arg_scalar_register, si2bin_arg_literal };
+	si2bin_arg_valid_types(arg_op1, arg_types, 3, __FUNCTION__);
+	si2bin_arg_valid_types(arg_op2, arg_types, 3, __FUNCTION__);
+
+	/* Combination const-const not allowed */
+	if (arg_op1->type == si2bin_arg_literal &&
+			arg_op2->type == si2bin_arg_literal)
+		fatal("%s: two literals not allowed", __FUNCTION__);
+	
+	/* Create symbol and add to function symbol table */
+	assert(alloca_inst->hasName());
+	symbol = llvm2si_symbol_create(add_inst->getName().data());
+	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
+
+	/* Allocate a new vector register for the result */
+	symbol->vreg = function->num_vregs;
+	function->num_vregs++;
+
+	/* Combinations sreg-vreg, vreg-sreg, vreg-vreg, vreg-const, const-vreg
+	 * generate a vector instruction. These are the combinations that have
+	 * at least one operand being a vector register. Combination vreg-sreg
+	 * needs to be swapped first for proper encoding. */
+	if (arg_op1->type == si2bin_arg_vector_register &&
+			arg_op2->type == si2bin_arg_scalar_register)
+		si2bin_arg_swap(&arg_op1, &arg_op2);
+	if (arg_op1->type == si2bin_arg_vector_register ||
+			arg_op2->type == si2bin_arg_vector_register)
+	{
+		arg_list = list_create();
+		list_add(arg_list, si2bin_arg_create_vector_register(symbol->vreg));
+		list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
+		list_add(arg_list, arg_op1);
+		list_add(arg_list, arg_op2);
+		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
+		llvm2si_basic_block_add_inst(basic_block, inst);
+		return;
+	}
+
+	/* Combinations not supported */
+	fatal("%s: argument types not supported (%s, %s)",
+			__FUNCTION__, str_map_value(&si2bin_arg_type_map, arg_op1->type),
+			str_map_value(&si2bin_arg_type_map, arg_op2->type));
+}
+
+
 static void llvm2si_translate_alloca_inst(AllocaInst *alloca_inst,
 		struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block)
@@ -208,81 +352,6 @@ static void llvm2si_translate_call_inst(CallInst *call_inst,
 		fatal("%s: %s: invalid built-in function",
 			__FUNCTION__, func_name);
 	}
-}
-
-
-/* Create a Southern Islands instruction argument from an LLVM value. The type
- * of argument created depends on the LLVM value as follows:
- *   - If the LLVM value is an integer constant, the Southern Islands argument
- *     will be of type integer literal.
- *   - If the LLVM value is an LLVM identifier, the Southern Islands argument
- *     will be the vector register associated with that symbol.
- *   - If the LLVM value is a function argument, the Southern Islands argument
- *     will be the scalar register pointing to that argument.
- */
-static struct si2bin_arg_t *llvm2si_translate_value(Value *value,
-		struct llvm2si_function_t *function)
-{
-	Type *type;
-	ConstantInt *constant_int_value;
-	Argument *func_arg;
-
-	/* Get value type */
-	type = value->getType();
-
-	/* LLVM identifier */
-	if (value->hasName())
-	{
-		const char *name;
-		struct llvm2si_symbol_t *symbol;
-
-		/* Look up symbol */
-		name = value->getName().data();
-		symbol = llvm2si_symbol_table_lookup(function->symbol_table, name);
-		if (!symbol)
-			fatal("%s: %s: symbol not found", __FUNCTION__, name);
-
-		/* Create argument */
-		return si2bin_arg_create_vector_register(symbol->vreg);
-	}
-
-	/* Integer constant */
-	constant_int_value = dynamic_cast<ConstantInt*>(value);
-	if (constant_int_value)
-	{
-		IntegerType *constant_int_type;
-		int bit_width;
-		int value;
-
-		/* Only 32-bit constants supported for now. We need to figure
-		 * out what to do with the sign extension otherwise. */
-		constant_int_type = reinterpret_cast<IntegerType*>(type);
-		bit_width = constant_int_type->getBitWidth();
-		if (bit_width != 32)
-			fatal("%s: only 32-bit type supported (%d-bit found)",
-				__FUNCTION__, bit_width);
-
-		/* Create argument */
-		value = constant_int_value->getZExtValue();
-		return si2bin_arg_create_literal(value);
-	}
-
-	/* Function argument */
-	func_arg = dynamic_cast<Argument*>(value);
-	if (func_arg)
-	{
-		int index;
-
-		/* Create Southern Islands argument as a scalar register equal
-		 * to the baseline register used for arguments 'sreg_arg' plus
-		 * the index of the requested function argument. */
-		index = func_arg->getArgNo();
-		return si2bin_arg_create_scalar_register(function->sreg_arg + index);
-	}
-
-	/* Type not supported */
-	fatal("%s: value type not supported", __FUNCTION__);
-	return NULL;
 }
 
 
@@ -575,6 +644,14 @@ static void llvm2si_translate_inst(Instruction *inst,
 		AllocaInst *alloca_inst = dynamic_cast<AllocaInst*>(inst);
 		assert(alloca_inst);
 		llvm2si_translate_alloca_inst(alloca_inst, function, basic_block);
+		break;
+	}
+
+	case Instruction::Add:
+	{
+		BinaryOperator *add_inst = dynamic_cast<BinaryOperator*>(inst);
+		assert(add_inst);
+		llvm2si_translate_add_inst(add_inst, function, basic_block);
 		break;
 	}
 
