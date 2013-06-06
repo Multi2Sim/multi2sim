@@ -833,19 +833,19 @@ struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
 	if (LLVMTypeOf(value->val) == LLVMDoubleType())
 	{
 		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
-			value->val, LLVMConstInt(LLVMDoubleType(), 0, 0),
+			value->val, LLVMConstReal(LLVMDoubleType(), 0),
 			temp_var_name);
 	}
 	else if (LLVMTypeOf(value->val) == LLVMFloatType())
 	{
 		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
-			value->val, LLVMConstInt(LLVMFloatType(), 0, 0),
+			value->val, LLVMConstReal(LLVMFloatType(), 0),
 			temp_var_name);
 	}
 	else if (LLVMTypeOf(value->val) == LLVMHalfType())
 	{
 		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
-			value->val, LLVMConstInt(LLVMHalfType(), 0, 0),
+			value->val, LLVMConstReal(LLVMHalfType(), 0),
 			temp_var_name);
 	}
 	else if (LLVMTypeOf(value->val) == LLVMInt64Type())
@@ -878,6 +878,7 @@ struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
 			value->val, LLVMConstInt(LLVMInt1Type(), 0, 0),
 			temp_var_name);
 	}
+	bool_val->type->llvm_type = LLVMTypeOf(bool_val->val);
 	return bool_val;
 }
 
