@@ -160,6 +160,7 @@ struct si2bin_arg_t *si2bin_arg_create_maddr_qual(void);
 struct si2bin_arg_t *si2bin_arg_create_label(struct si2bin_symbol_t *symbol);
 
 void si2bin_arg_dump(struct si2bin_arg_t *inst_arg, FILE *f);
+void si2bin_arg_dump_assembly(struct si2bin_arg_t *arg, FILE *f);
 
 int si2bin_arg_encode_operand(struct si2bin_arg_t *arg);
 

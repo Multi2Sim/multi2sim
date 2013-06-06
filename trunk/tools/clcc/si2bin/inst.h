@@ -63,6 +63,7 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name,
 
 void si2bin_inst_free(struct si2bin_inst_t *inst);
 void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f);
+void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f);
 
 /* Populate fields 'inst_bytes' and 'size' based on the instruction and the value
  * of its arguments. */
