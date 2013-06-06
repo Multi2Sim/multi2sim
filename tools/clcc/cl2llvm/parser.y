@@ -17,6 +17,7 @@
 #include <llvm-c/Transforms/Scalar.h>
 #include <llvm-c/BitWriter.h>
 
+#include "for-blocks.h"
 #include "while-blocks.h"
 #include "arg.h"
 #include "declarator-list.h"
@@ -63,6 +64,7 @@ LLVMBasicBlockRef current_basic_block;
 	struct list_t *arg_list;
 	LLVMBasicBlockRef basic_block_ref;
 	struct cl2llvm_while_blocks_t *llvm_while_blocks;
+	struct cl2llvm_for_blocks_t *llvm_for_blocks;
 	struct cl2llvm_decl_list_t *decl_list;
 }
 
@@ -199,6 +201,8 @@ LLVMBasicBlockRef current_basic_block;
 %type<arg_t> arg
 %type<arg_list> arg_list
 %type<basic_block_ref> if
+%type<llvm_while_blocks> while_block_init
+%type<llvm_for_blocks> for_loop_header
 
 
 %start program
@@ -281,7 +285,6 @@ func_def
 		if (!err)
 			yyerror("function already defined");
 		/* Declare parameters */
-		LLVMValueRef store_instr = NULL;
 
 		if (list_get($4, $4->head) != NULL)
 		{
@@ -299,12 +302,20 @@ func_def
 					arg_pointer->val, current_arg->type_spec->sign, current_arg->name);
 				symbol->cl2llvm_val->type->llvm_type = current_arg->type_spec->llvm_type;
 				LLVMValueRef arg_val = LLVMGetParam(new_function->func, arg_num);
-				store_instr = LLVMBuildStore(cl2llvm_builder, arg_val, arg_pointer->val);
+				LLVMBuildStore(cl2llvm_builder, arg_val, arg_pointer->val);
 				hash_table_insert(new_function->symbol_table, current_arg->name, symbol);
 				cl2llvm_val_free(arg_pointer);
 			}
 		}
-		new_function->last_declaration = store_instr;
+		/*End declaration block*/
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+
+		LLVMBasicBlockRef cl2llvm_first_block = LLVMAppendBasicBlock(new_function->func, block_name);
+		LLVMValueRef branch = LLVMBuildBr(cl2llvm_builder, cl2llvm_first_block);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, cl2llvm_first_block);
+		current_basic_block = cl2llvm_first_block;
+		new_function->branch_instr = branch;
 		cl2llvm_decl_list_free($1);	
 	}
 	stmt_list TOK_CURLY_BRACE_CLOSE
@@ -597,7 +608,8 @@ array_deref_list
 stmt
 	: maybe_expr TOK_SEMICOLON
 	{
-		cl2llvm_val_free($1);
+		if ($1 != NULL)
+			cl2llvm_val_free($1);
 	}
 	| declaration
 	| func_def
@@ -797,7 +809,7 @@ declaration
 			if (current_list_elem->array_deref_list == NULL)
 			{
 				/*Go to entry block and declare variable*/
-				LLVMPositionBuilder(cl2llvm_builder, current_function->entry_block, current_function->last_declaration);
+				LLVMPositionBuilder(cl2llvm_builder, current_function->entry_block, current_function->branch_instr);
 				LLVMValueRef var_addr = LLVMBuildAlloca(cl2llvm_builder, 
 					$1->type_spec->llvm_type, current_list_elem->name);
 				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
@@ -948,21 +960,242 @@ if
 
 for_loop
 	: for_loop_header stmt_or_stmt_list
+	{
+		/*Finish for loop statement*/
+		LLVMBuildBr(cl2llvm_builder, $1->for_incr);
+
+		/*Prepare to build for end*/
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1->for_end);
+
+		/*Free for_blocks*/
+		cl2llvm_for_blocks_free($1);
+
+	}
 	;
 
 for_loop_header
-	: TOK_FOR TOK_PAR_OPEN maybe_expr TOK_SEMICOLON maybe_expr TOK_SEMICOLON maybe_expr TOK_PAR_CLOSE
-	| TOK_FOR TOK_PAR_OPEN declaration maybe_expr TOK_SEMICOLON maybe_expr TOK_PAR_CLOSE
+	: TOK_FOR TOK_PAR_OPEN maybe_expr TOK_SEMICOLON
+	{
+		struct cl2llvm_for_blocks_t *for_blocks;
+		
+		/*Initialize "for" blocks*/
+		for_blocks = cl2llvm_for_blocks_create();
+		
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef for_cond = LLVMAppendBasicBlock(current_function->func,
+			block_name);
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef for_stmt = LLVMAppendBasicBlock(current_function->func,
+			block_name);
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef for_incr = LLVMAppendBasicBlock(current_function->func,
+			block_name);
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef for_end = LLVMAppendBasicBlock(current_function->func, 
+			block_name);
+
+		for_blocks->for_cond = for_cond;
+		for_blocks->for_stmt = for_stmt;
+		for_blocks->for_incr = for_incr;
+		for_blocks->for_end = for_end;
+
+		/*Prepare to build for loop conditional*/
+		LLVMBuildBr(cl2llvm_builder, for_blocks->for_cond);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, for_blocks->for_cond);
+
+		$<llvm_for_blocks>$ = for_blocks;
+	}
+	maybe_expr TOK_SEMICOLON
+	{
+		struct cl2llvm_val_t *bool_val = NULL;
+
+		/*Build for loop conditional*/
+		if ($6 != NULL)
+		{
+			bool_val = cl2llvm_val_bool($6);
+			LLVMBuildCondBr(cl2llvm_builder, bool_val->val, 
+				$<llvm_for_blocks>5->for_stmt, $<llvm_for_blocks>5->for_end);	
+		}
+		else
+		{
+			LLVMBuildBr(cl2llvm_builder, $<llvm_for_blocks>5->for_stmt);
+		}
+		
+		/*Prepare to build for loop increment*/
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>5->for_incr);
+
+			
+		/*Free pointers*/
+		if (bool_val != NULL)
+			cl2llvm_val_free(bool_val);
+		if ($3 != NULL)
+			cl2llvm_val_free($3);
+		if ($6 != NULL)
+			cl2llvm_val_free($6);
+	}
+	maybe_expr TOK_PAR_CLOSE
+	{
+		/*Finish for loop increment*/
+		LLVMBuildBr(cl2llvm_builder, $<llvm_for_blocks>5->for_cond);
+			
+		/*Prepare to build for loop statements*/
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>5->for_stmt);
+
+		/*Free pointers*/
+		if ($9 != NULL)
+			cl2llvm_val_free($9);
+
+		$$ = $<llvm_for_blocks>5;
+	}
+	| TOK_FOR TOK_PAR_OPEN declaration
+	{
+		struct cl2llvm_for_blocks_t *for_blocks;
+		
+		/*Initialize "for" blocks*/
+		for_blocks = cl2llvm_for_blocks_create();
+		
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef for_cond = LLVMAppendBasicBlock(current_function->func,
+			block_name);
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef for_stmt = LLVMAppendBasicBlock(current_function->func,
+			block_name);
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef for_incr = LLVMAppendBasicBlock(current_function->func,
+			block_name);
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef for_end = LLVMAppendBasicBlock(current_function->func, 
+			block_name);
+
+		for_blocks->for_cond = for_cond;
+		for_blocks->for_stmt = for_stmt;
+		for_blocks->for_incr = for_incr;
+		for_blocks->for_end = for_end;
+
+		/*Prepare to build for loop conditional*/
+		LLVMBuildBr(cl2llvm_builder, for_blocks->for_cond);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, for_blocks->for_cond);
+
+		$<llvm_for_blocks>$ = for_blocks;
+		
+	}
+	maybe_expr TOK_SEMICOLON
+	{
+		struct cl2llvm_val_t *bool_val = NULL;
+
+		/*Build for loop conditional*/
+		if ($5 != NULL)
+		{
+			bool_val = cl2llvm_val_bool($5);
+			LLVMBuildCondBr(cl2llvm_builder, bool_val->val, 
+				$<llvm_for_blocks>4->for_stmt, $<llvm_for_blocks>4->for_end);
+		}
+		else
+		{
+			LLVMBuildBr(cl2llvm_builder, $<llvm_for_blocks>4->for_stmt);
+		}
+
+		/*Prepare to build for loop increment*/
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>4->for_incr);
+		
+		/*Free pointers*/
+		if (bool_val != NULL)
+			cl2llvm_val_free(bool_val);
+		if ($5 != NULL)
+			cl2llvm_val_free($5);
+		
+	}
+	maybe_expr TOK_PAR_CLOSE
+	{
+		LLVMBuildBr(cl2llvm_builder, $<llvm_for_blocks>4->for_cond);
+
+		/*Prepare to build for loop statements*/
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>4->for_stmt);
+
+		/*Free pointers*/
+		if ($8 != NULL)
+			cl2llvm_val_free($8);
+
+		$$ = $<llvm_for_blocks>4;
+
+	}
 	;
 
 do_while_loop
-	: TOK_DO stmt_or_stmt_list TOK_WHILE TOK_PAR_OPEN expr TOK_PAR_CLOSE TOK_SEMICOLON 
+	: TOK_DO
+	{
+		struct cl2llvm_while_blocks_t *while_blocks = cl2llvm_while_blocks_create();
+
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef while_stmt = LLVMAppendBasicBlock(current_function->func, block_name);
+
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef while_cond = LLVMAppendBasicBlock(current_function->func, block_name);
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef while_end = LLVMAppendBasicBlock(current_function->func, block_name);
+		
+		LLVMBuildBr(cl2llvm_builder, while_stmt);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, while_stmt);
+
+		while_blocks->while_stmt = while_stmt;
+		while_blocks->while_cond = while_cond;
+		while_blocks->while_end = while_end;
+
+		$<llvm_while_blocks>$ = while_blocks;
+	}
+	stmt_or_stmt_list TOK_WHILE TOK_PAR_OPEN
+	{
+		LLVMBuildBr(cl2llvm_builder, $<llvm_while_blocks>2->while_cond);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>2->while_cond);
+	}
+	expr TOK_PAR_CLOSE TOK_SEMICOLON 
+	{
+		struct cl2llvm_val_t *bool_val;
+		
+		bool_val = cl2llvm_val_bool($7);
+		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $<llvm_while_blocks>2->while_stmt,
+			$<llvm_while_blocks>2->while_end);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>2->while_end);
+	}
 	;
 
 while_loop
-	: TOK_WHILE TOK_PAR_OPEN expr TOK_PAR_CLOSE
+	: TOK_WHILE TOK_PAR_OPEN while_block_init expr TOK_PAR_CLOSE
 	{
 		struct cl2llvm_val_t *bool_val;
+		bool_val = cl2llvm_val_bool($4);
+		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $3->while_stmt, $3->while_end);
+
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $3->while_stmt);
+	
+		current_basic_block = $3->while_stmt;
+	
+		cl2llvm_val_free(bool_val);
+		cl2llvm_val_free($4);
+	}
+	stmt_or_stmt_list
+	{
+		LLVMBuildBr(cl2llvm_builder, $3->while_cond);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $3->while_end);
+		current_basic_block = $3->while_end;
+		cl2llvm_while_blocks_free($3);
+	}
+	;
+
+while_block_init
+	: /*empty*/
+	{
 		struct cl2llvm_while_blocks_t *while_blocks = cl2llvm_while_blocks_create();
 
 		snprintf(block_name, sizeof block_name,
@@ -978,40 +1211,24 @@ while_loop
 		
 		LLVMBuildBr(cl2llvm_builder, while_cond);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, while_cond);
-		bool_val = cl2llvm_val_bool($3);
-		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, while_stmt, while_end);
-
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, while_stmt);
 
 		while_blocks->while_stmt = while_stmt;
 		while_blocks->while_cond = while_cond;
 		while_blocks->while_end = while_end;
 
-		$<llvm_while_blocks>$ = while_blocks;
-
-		current_basic_block = while_blocks->while_stmt;
-	
-		cl2llvm_val_free(bool_val);
-		cl2llvm_val_free($3);
-	}
-	stmt_or_stmt_list
-	{
-		LLVMBuildBr(cl2llvm_builder, $<llvm_while_blocks>5->while_cond);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>5->while_end);
-		current_basic_block = $<llvm_while_blocks>5->while_end;
-		cl2llvm_while_blocks_free($<llvm_while_blocks>5);
+		$$ = while_blocks;
 	}
 	;
 
 maybe_expr
 	: /*empty*/
 	{
-		/*create object so that maybe_expr always points to a memory 
-		  location regardless of its contents*/
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
-		$$ = value;
+		$$ = NULL;
 	}
 	| expr
+	{
+		$$ = $1;
+	}
 	;
 expr
 	: primary

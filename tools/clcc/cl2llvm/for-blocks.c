@@ -17,27 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_CLCC_CL2LLVM_FUNCTION_H
-#define TOOLS_CLCC_CL2LLVM_FUNCTION_H
+#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-#include <llvm-c/Core.h>
-#include <lib/util/list.h>
+#include <lib/mhandle/mhandle.h>
 
-struct cl2llvm_function_t
+#include "for-blocks.h"
+
+struct cl2llvm_for_blocks_t *cl2llvm_for_blocks_create(void)
 {
-	LLVMValueRef func;
-	LLVMTypeRef func_type;
-	int sign;
-	char *name;
-	struct hash_table_t *symbol_table;
-	struct list_t *arg_list;
-	int arg_count;
-	LLVMBasicBlockRef entry_block;
-	LLVMValueRef branch_instr;
-};
+	struct cl2llvm_for_blocks_t *for_blocks;
 
-struct cl2llvm_function_t *cl2llvm_function_create(char *name, struct list_t *arg_list);
+	for_blocks = xcalloc(1, sizeof(struct cl2llvm_for_blocks_t));
 
-void cl2llvm_function_free(struct cl2llvm_function_t *function);
-	
-#endif
+	return for_blocks;
+}
+
+void cl2llvm_for_blocks_free(struct cl2llvm_for_blocks_t *for_blocks)
+{
+	free(for_blocks);
+}
+
