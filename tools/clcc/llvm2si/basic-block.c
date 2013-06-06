@@ -67,7 +67,7 @@ void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
 	{
 		inst = linked_list_get(basic_block->inst_list);
-		si2bin_inst_dump(inst, f);
+		si2bin_inst_dump_assembly(inst, f);
 	}
 
 	/* End */
@@ -88,3 +88,4 @@ void llvm2si_basic_block_add_inst(struct llvm2si_basic_block_t *basic_block,
 	linked_list_add(basic_block->inst_list, inst);
 	inst->basic_block = basic_block;
 }
+
