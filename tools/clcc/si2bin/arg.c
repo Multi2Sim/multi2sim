@@ -493,3 +493,15 @@ void si2bin_arg_valid_types(struct si2bin_arg_t *arg,
 	str_printf(&msg_ptr, &msg_size, "} expected");
 	fatal("%s: %s", user_message, msg);
 }
+
+
+void si2bin_arg_swap(struct si2bin_arg_t **arg1_ptr,
+		struct si2bin_arg_t **arg2_ptr)
+{
+	struct si2bin_arg_t *arg3;
+
+	arg3 = *arg1_ptr;
+	*arg1_ptr = *arg2_ptr;
+	*arg2_ptr = arg3;
+}
+
