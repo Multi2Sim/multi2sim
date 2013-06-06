@@ -32,7 +32,7 @@
 #include "lds-unit.h"
 #include "uop.h"
 #include "wavefront-pool.h"
-
+#include "cycle-interval-report.h"
 
 void si_lds_complete(struct si_lds_t *lds)
 {
@@ -368,6 +368,9 @@ void si_lds_decode(struct si_lds_t *lds)
 		uop->decode_ready = arch_southern_islands->cycle + si_gpu_lds_decode_latency;
 		list_remove(lds->issue_buffer, uop);
 		list_enqueue(lds->decode_buffer, uop);
+
+		if (si_spatial_report_active)
+			si_lds_report_new_inst(lds->compute_unit);
 
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 			"stg=\"lds-d\"\n", uop->id_in_compute_unit, 

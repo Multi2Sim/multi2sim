@@ -49,6 +49,7 @@ struct si_compute_unit_t
 {
 	/* IDs */
 	int id;
+	int subdevice_id;
 	long long uop_id_counter;  
 
 	/* Entry points to memory hierarchy */
@@ -92,6 +93,9 @@ struct si_compute_unit_t
 	/* Spatial profiling statistics */
 	long long interval_cycle;
 	long long interval_mapped_work_groups;
+	long long interval_unmapped_work_groups;
+	long long interval_alu_issued;
+	long long interval_lds_issued ;
 	FILE * spatial_report_file;
 };
 
