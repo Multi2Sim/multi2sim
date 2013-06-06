@@ -34,6 +34,9 @@ libcl2llvm_a_SOURCES = \
 	val.c\
 	val.h\
 	\
+	while-blocks.c\
+	while-blocks.h\
+	\
 	lex.l \
 	parser.y
 

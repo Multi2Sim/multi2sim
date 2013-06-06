@@ -17,6 +17,7 @@
 #include <llvm-c/Transforms/Scalar.h>
 #include <llvm-c/BitWriter.h>
 
+#include "while-blocks.h"
 #include "arg.h"
 #include "declarator-list.h"
 #include "function.h"
@@ -60,6 +61,7 @@ struct cl2llvm_function_t *current_function;
 	struct cl2llvm_arg_t *arg_t;
 	struct list_t *arg_list;
 	LLVMBasicBlockRef basic_block_ref;
+	struct cl2llvm_while_blocks_t *llvm_while_blocks;
 	struct cl2llvm_decl_list_t *decl_list;
 }
 
@@ -196,7 +198,7 @@ struct cl2llvm_function_t *current_function;
 %type<arg_t> arg
 %type<arg_list> arg_list
 %type<basic_block_ref> if
-%type<basic_block_ref> while_loop_block
+
 
 %start program
 
@@ -936,41 +938,43 @@ do_while_loop
 	;
 
 while_loop
-	: TOK_WHILE while_loop_block TOK_PAR_OPEN expr TOK_PAR_CLOSE
+	: TOK_WHILE TOK_PAR_OPEN expr TOK_PAR_CLOSE
 	{
-		struct cl2llvm_type_t *i1 = cl2llvm_type_create_w_init(LLVMInt1Type(), 1);
+		struct cl2llvm_val_t *bool_val;
+		struct cl2llvm_while_blocks_t *while_blocks = cl2llvm_while_blocks_create();
 
 		snprintf(block_name, sizeof block_name,
 			"block_%d", block_count++);
-		LLVMBasicBlockRef if_false = LLVMAppendBasicBlock(current_function->func, block_name);
+		LLVMBasicBlockRef while_stmt = LLVMAppendBasicBlock(current_function->func, block_name);
+
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef while_cond = LLVMAppendBasicBlock(current_function->func, block_name);
+		snprintf(block_name, sizeof block_name,
+			"block_%d", block_count++);
+		LLVMBasicBlockRef while_end = LLVMAppendBasicBlock(current_function->func, block_name);
 		
-		struct cl2llvm_val_t *bool_val =  llvm_type_cast($4, i1);
-		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $2, if_false);
-		$<basic_block_ref>$ = if_false;
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $2);
+		LLVMBuildBr(cl2llvm_builder, while_cond);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, while_cond);
+		bool_val = cl2llvm_val_bool($3);
+		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, while_stmt, while_end);
+
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, while_stmt);
+
+		while_blocks->while_stmt = while_stmt;
+		while_blocks->while_cond = while_cond;
+		while_blocks->while_end = while_end;
+
+		$<llvm_while_blocks>$ = while_blocks;
 	
 		cl2llvm_val_free(bool_val);
-		cl2llvm_type_free(i1);
+		cl2llvm_val_free($3);
 	}
 	stmt_or_stmt_list
 	{
-		struct cl2llvm_type_t *i1 = cl2llvm_type_create_w_init(LLVMInt1Type(), 1);
-		struct cl2llvm_val_t *bool_val =  llvm_type_cast($4, i1);
-		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $2, $<basic_block_ref>6);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<basic_block_ref>6);
-		cl2llvm_val_free(bool_val);
-		cl2llvm_val_free($4);
-		cl2llvm_type_free(i1);
-	}
-	;
-
-while_loop_block
-	: /*empty*/
-	{
-		snprintf(block_name, sizeof block_name,
-			"block_%d", block_count++);
-		LLVMBasicBlockRef while_loop = LLVMAppendBasicBlock(current_function->func, block_name);
-		$$ = while_loop;
+		LLVMBuildBr(cl2llvm_builder, $<llvm_while_blocks>5->while_cond);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>5->while_end);
+		cl2llvm_while_blocks_free($<llvm_while_blocks>5);
 	}
 	;
 
