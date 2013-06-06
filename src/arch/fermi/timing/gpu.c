@@ -1097,11 +1097,11 @@ int frm_gpu_run(void)
 
 	/* For efficiency when no Fermi emulation is selected, 
 	 * exit here if the list of existing grids is empty. */
-	if (!frm_emu->grid_list_count)
+	if (!list_count(frm_emu->grids))
 		return FALSE;
 
 	/* Start 1 grid in state 'pending' */
-	while ((grid = frm_emu->pending_grid_list_head))
+	while ((grid = list_head(frm_emu->pending_grids)))
 	{
 		/* Currently not supported for more than 1 grid */
 		if (frm_gpu->grid)
@@ -1132,10 +1132,10 @@ int frm_gpu_run(void)
 	assert(grid);
 
 	/* Allocate thread blocks to SMs */
-	while (frm_gpu->sm_ready_list_head && grid->pending_list_head)
+	while (frm_gpu->sm_ready_list_head && list_head(grid->pending_thread_blocks))
 	{
 		frm_sm_map_thread_block(frm_gpu->sm_ready_list_head,
-				grid->pending_list_head);
+				list_head(grid->pending_thread_blocks));
 	}
 
 	frm_gpu_debug("cycle = %lld\n", arch_fermi->cycle);
@@ -1183,7 +1183,7 @@ int frm_gpu_run(void)
 		frm_grid_dump(grid, frm_emu_report_file);
 
 		/* Stop if maximum number of kernels reached */
-		if (frm_emu_max_functions && frm_emu->grid_count >= 
+		if (frm_emu_max_functions && list_count(frm_emu->grids) >= 
 				frm_emu_max_functions)
 		{
 			esim_finish = esim_finish_frm_max_functions;

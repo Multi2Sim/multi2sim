@@ -77,6 +77,10 @@ void frm_emu_init(void)
         frm_emu->global_mem_top = 0;
         frm_emu->const_mem = mem_create();
         frm_emu->const_mem->safe = 0;
+	frm_emu->grids = list_create();
+	frm_emu->pending_grids = list_create();
+	frm_emu->running_grids = list_create();
+	frm_emu->finished_grids = list_create();
 
 	/* Initialize disassembler (decoding tables...) */
 	frm_disasm_init();
@@ -92,9 +96,13 @@ void frm_emu_done(void)
 	if (frm_emu_report_file)
 		fclose(frm_emu_report_file);
 
-	/* Free grid */
-	while (frm_emu->grid_list_count)
-		frm_grid_free(frm_emu->grid_list_head);
+	/* Free grids */
+	while (list_count(frm_emu->grids))
+		frm_grid_free(list_head(frm_emu->grids));
+	list_free(frm_emu->grids);
+	list_free(frm_emu->pending_grids);
+	list_free(frm_emu->running_grids);
+	list_free(frm_emu->finished_grids);
 
 	/* Free CUDA object list */
 	cuda_object_free_all();
@@ -133,14 +141,14 @@ int frm_emu_run(void)
 
 	/* For efficiency when no emulation is selected, 
 	 * exit here if the list of existing grid is empty. */
-	if (!frm_emu->grid_list_count)
+	if (!list_count(frm_emu->grids))
 		return FALSE;
 
 	/* Start any grid in state 'pending' */
-	while ((grid = frm_emu->pending_grid_list_head))
+	while ((grid = list_head(frm_emu->pending_grids)))
 	{
 		/* Set all ready thread blocks to running */
-		while ((thread_block = grid->pending_list_head))
+		while ((thread_block = list_head(grid->pending_thread_blocks)))
 		{
 			frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
 			frm_thread_block_set_status(thread_block, frm_thread_block_running);
@@ -153,7 +161,7 @@ int frm_emu_run(void)
 
 	/* Run one instruction of each warp in each thread block of each
 	 * grid that is in status 'running'. */
-	for (grid = frm_emu->running_grid_list_head; grid; 
+	for (grid = list_head(frm_emu->running_grids); grid; 
 		grid = grid_next)
 	{
 		/* Save next grid in state 'running'. This is done because 
@@ -162,7 +170,7 @@ int frm_emu_run(void)
 		grid_next = grid->running_grid_list_next;
 
 		/* Execute an instruction from each thread block */
-		for (thread_block = grid->running_list_head; thread_block; thread_block = thread_block_next)
+		for (thread_block = list_head(grid->running_thread_blocks); thread_block; thread_block = thread_block_next)
 		{
 			/* Save next running thread block */
 			thread_block_next = thread_block->running_list_next;
@@ -180,7 +188,7 @@ int frm_emu_run(void)
 	}
 
 	/* Free grid that finished */
-	while ((grid = frm_emu->finished_grid_list_head))
+	while ((grid = list_head(frm_emu->finished_grids)))
 	{
 		/* Dump grid report */
 		frm_grid_dump(grid, frm_emu_report_file);
