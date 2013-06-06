@@ -31,6 +31,7 @@
 #include "gpu.h"
 #include "simd-unit.h"
 #include "uop.h"
+#include "cycle-interval-report.h"
 
 
 void si_simd_complete(struct si_simd_t *simd)
@@ -199,6 +200,9 @@ void si_simd_decode(struct si_simd_t *simd)
 		uop->decode_ready = arch_southern_islands->cycle + si_gpu_simd_decode_latency;
 		list_remove(simd->issue_buffer, uop);
 		list_enqueue(simd->decode_buffer, uop);
+
+		if (si_spatial_report_active)
+			si_alu_report_new_inst(simd->compute_unit);
 
 		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld "
 			"stg=\"simd-d\"\n", uop->id_in_compute_unit, 
