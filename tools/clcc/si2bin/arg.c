@@ -505,3 +505,96 @@ void si2bin_arg_swap(struct si2bin_arg_t **arg1_ptr,
 	*arg2_ptr = arg3;
 }
 
+
+void si2bin_arg_dump_assembly(struct si2bin_arg_t *arg, FILE *f)
+{
+	switch (arg->type)
+	{
+	
+	case si2bin_arg_invalid:
+		break;
+
+	case si2bin_arg_scalar_register:
+		fprintf(f, "s%d", arg->value.scalar_register.id);
+		break;
+	
+	case si2bin_arg_vector_register:
+		fprintf(f, "v%d", arg->value.vector_register.id);
+		break;
+
+	case si2bin_arg_scalar_register_series:
+		fprintf(f, "s[%d:%d]", 
+			arg->value.scalar_register_series.low,
+			arg->value.scalar_register_series.high);
+		break;
+	
+	case si2bin_arg_vector_register_series:
+		fprintf(f, "v[%d:%d]", 
+			arg->value.vector_register_series.low,
+			arg->value.vector_register_series.high);
+		break;
+	
+	case si2bin_arg_literal:
+	{
+		int value;
+		value = arg->value.literal.val;
+		if(value)
+			fprintf(f, "0x%x", value);
+		else
+			fprintf(f, "%d", value);
+		break;
+	}
+
+	case si2bin_arg_literal_float:
+		fprintf(f, "%g", arg->value.literal_float.val);
+		break;
+
+	case si2bin_arg_waitcnt:
+	{
+		if(arg->value.wait_cnt.vmcnt_active)
+			fprintf(f, "vmcnt(%d)", arg->value.wait_cnt.vmcnt_value);
+		else if (arg->value.wait_cnt.lgkmcnt_active)
+			fprintf(f, "lgkmcnt(%d)", arg->value.wait_cnt.lgkmcnt_value);
+		else if (arg->value.wait_cnt.expcnt_active)
+			fprintf(f, "expcnt(%d)", arg->value.wait_cnt.expcnt_value);
+
+		break;
+	}
+
+	case si2bin_arg_special_register:
+		fprintf(f, "%s", str_map_value(&si_inst_special_reg_map, 
+			arg->value.special_register.reg));
+		break;
+
+	case si2bin_arg_mem_register:
+		fprintf(f, "m%d", arg->value.mem_register.id);
+		break;
+
+	case si2bin_arg_maddr:
+
+		
+		si2bin_arg_dump_assembly(arg->value.maddr.soffset, f);
+		fprintf(f, " ");
+		si2bin_arg_dump_assembly(arg->value.maddr.qual, f);
+		fprintf(f, " format:[%s,%s]", 
+			str_map_value(&si_inst_buf_data_format_map, arg->value.maddr.data_format),
+			str_map_value(&si_inst_buf_num_format_map, arg->value.maddr.num_format));
+		
+		break;
+	
+	case si2bin_arg_maddr_qual:
+	{
+		if(arg->value.maddr_qual.idxen)
+			fprintf(f, "idxen");
+		else if(arg->value.maddr_qual.offset)
+			fprintf(f, "offset");
+		else
+			fprintf(f, "offen");
+		break;
+	}
+
+	default:
+		fprintf(f, "error - not a valid argument type");
+	}
+}
+

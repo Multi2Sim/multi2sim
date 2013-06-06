@@ -218,6 +218,31 @@ void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f)
 }
 
 
+void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f)
+{
+        struct si2bin_arg_t *arg;
+
+        int i;
+
+        /* Dump instruction opcode */
+        fprintf(f, "\t%s ", inst->info->name);
+
+        /* Dump arguments */
+        LIST_FOR_EACH(inst->arg_list, i)
+        {
+                arg = list_get(inst->arg_list, i);
+		assert(arg);
+                si2bin_arg_dump_assembly(arg, f);
+                if (i < inst->arg_list->count - 1)
+			fprintf(f, ", ");
+			
+	}
+
+	/* New line */
+	fprintf(f, "\n");
+}
+
+
 void si2bin_inst_gen(struct si2bin_inst_t *inst)
 {
 	union si_inst_microcode_t *inst_bytes;
@@ -899,4 +924,5 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		}
 	}
 }
+
 
