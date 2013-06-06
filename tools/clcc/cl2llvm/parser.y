@@ -46,6 +46,7 @@ char func_name[50];
 struct hash_table_t *cl2llvm_symbol_table;
 
 struct cl2llvm_function_t *current_function;
+LLVMBasicBlockRef current_basic_block;
 
 %}
 
@@ -267,10 +268,12 @@ func_def
 		current_function = new_function;
 
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, cl2llvm_basic_block);
+		current_basic_block = cl2llvm_basic_block;
 		
 		new_function->func = cl2llvm_function;
 		new_function->func_type = cl2llvm_function_type;
 		new_function->sign = $1->type_spec->sign;
+		new_function->entry_block = cl2llvm_basic_block;
 
 		/*insert function into global symbol table*/
 		err = hash_table_insert(cl2llvm_symbol_table, 
@@ -278,6 +281,7 @@ func_def
 		if (!err)
 			yyerror("function already defined");
 		/* Declare parameters */
+		LLVMValueRef store_instr;
 
 		if (list_get($4, $4->head) != NULL)
 		{
@@ -295,11 +299,12 @@ func_def
 					arg_pointer->val, current_arg->type_spec->sign, current_arg->name);
 				symbol->cl2llvm_val->type->llvm_type = current_arg->type_spec->llvm_type;
 				LLVMValueRef arg_val = LLVMGetParam(new_function->func, arg_num);
-				LLVMBuildStore(cl2llvm_builder, arg_val, arg_pointer->val);
+				store_instr = LLVMBuildStore(cl2llvm_builder, arg_val, arg_pointer->val);
 				hash_table_insert(new_function->symbol_table, current_arg->name, symbol);
 				cl2llvm_val_free(arg_pointer);
 			}
 		}
+		new_function->last_declaration = store_instr;
 		cl2llvm_decl_list_free($1);	
 	}
 	stmt_list TOK_CURLY_BRACE_CLOSE
@@ -773,7 +778,7 @@ declaration
 		struct cl2llvm_symbol_t *symbol;
 		struct cl2llvm_val_t *cast_to_val;
 		int init_count = list_count($2);
-	struct cl2llvm_init_t *current_list_elem;
+		struct cl2llvm_init_t *current_list_elem;
 		int i;
 
 		/*Create and store each sybmol in the init_list*/
@@ -782,14 +787,20 @@ declaration
 			int err;			
 			current_list_elem = list_get($2, i);
 			
-			/*If data type is array*/
+			/*If data type is not an array*/
 			if (current_list_elem->array_deref_list == NULL)
 			{
-				symbol = cl2llvm_symbol_create_w_init( LLVMBuildAlloca( 
-					cl2llvm_builder, $1->type_spec->llvm_type, 
-					current_list_elem->name), $1->type_spec->sign, 
-					current_list_elem->name);
-					symbol->cl2llvm_val->type->llvm_type = $1->type_spec->llvm_type;
+				/*Go to entry block and declare variable*/
+				LLVMPositionBuilder(cl2llvm_builder, current_function->entry_block, current_function->last_declaration);
+				LLVMValueRef var_addr = LLVMBuildAlloca(cl2llvm_builder, 
+					$1->type_spec->llvm_type, current_list_elem->name);
+				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+
+				/*Create symbol*/
+				symbol = cl2llvm_symbol_create_w_init( var_addr, 
+					$1->type_spec->sign, current_list_elem->name);
+				symbol->cl2llvm_val->type->llvm_type = $1->type_spec->llvm_type;
+
 				/*Insert symbol into symbol table*/
 				err = hash_table_insert(current_function->symbol_table, 
 					current_list_elem->name, symbol);
@@ -868,6 +879,7 @@ if_stmt
 		/* goto endif block*/
 		LLVMBuildBr(cl2llvm_builder, $1);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1);
+		current_basic_block = $1;
 	}
 	| if TOK_ELSE
 	{ 
@@ -880,6 +892,8 @@ if_stmt
 		LLVMBuildBr(cl2llvm_builder, endif);
 		/*position builder at if false block*/
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1);
+		current_basic_block = $1;
+
 		$<basic_block_ref>$ = endif;
 	}
 	stmt_or_stmt_list %prec TOK_MULT
@@ -887,6 +901,7 @@ if_stmt
 		/*branch to endif block and prepare to write code for endif block*/
 		LLVMBuildBr(cl2llvm_builder, $<basic_block_ref>3);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<basic_block_ref>3);
+		current_basic_block = $<basic_block_ref>3;
 
 	}
 	;
@@ -913,6 +928,7 @@ if
 		
 		/*prepare to write if_true block*/
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, if_true);
+		current_basic_block = if_true;
 	
 		cl2llvm_val_free(bool_val);
 		cl2llvm_val_free($3);
@@ -966,6 +982,8 @@ while_loop
 		while_blocks->while_end = while_end;
 
 		$<llvm_while_blocks>$ = while_blocks;
+
+		current_basic_block = while_blocks->while_stmt;
 	
 		cl2llvm_val_free(bool_val);
 		cl2llvm_val_free($3);
@@ -974,6 +992,7 @@ while_loop
 	{
 		LLVMBuildBr(cl2llvm_builder, $<llvm_while_blocks>5->while_cond);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>5->while_end);
+		current_basic_block = $<llvm_while_blocks>5->while_end;
 		cl2llvm_while_blocks_free($<llvm_while_blocks>5);
 	}
 	;
