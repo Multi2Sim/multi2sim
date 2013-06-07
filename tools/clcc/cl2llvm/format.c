@@ -17,27 +17,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_CLCC_CL2LLVM_FUNCTION_H
-#define TOOLS_CLCC_CL2LLVM_FUNCTION_H
+#include "lib/mhandle/mhandle.h"
 
-#include <llvm-c/Core.h>
-#include <lib/util/list.h>
+#include "format.h"
 
-struct cl2llvm_function_t
+char *extract_file_name(char *text)
 {
-	LLVMValueRef func;
-	LLVMTypeRef func_type;
-	int sign;
-	char *name;
-	struct hash_table_t *symbol_table;
-	struct list_t *arg_list;
-	int arg_count;
-	LLVMBasicBlockRef entry_block;
-	LLVMValueRef branch_instr;
-};
-
-struct cl2llvm_function_t *cl2llvm_function_create(char *name, struct list_t *arg_list);
-
-void cl2llvm_function_free(struct cl2llvm_function_t *function);
+	int i = 1;
+	int j = 0;
+	char buffer[100];
+	char *ret_buffer;
 	
-#endif
+	/*Copy file name to buffer*/
+	while(text[i] != 34)
+	{
+		i++;
+	}
+	i++;
+	while(text[i] != 34)
+	{
+		buffer[j] = text[i];
+		i++;
+		j++;
+	}
+	buffer[j] = '\00';
+	ret_buffer = xstrdup(buffer);
+
+	return ret_buffer;
+}
+

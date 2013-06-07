@@ -111,7 +111,7 @@ LLVMBasicBlockRef current_basic_block;
 %token TOK_BREAK
 %token TOK_CASE
 %token TOK_CHAR
-%token TOK_CHARN
+%token<const_int_val> TOK_CHARN
 %token TOK_CONSTANT
 %token TOK_CONST
 %token TOK_CONTINUE
@@ -119,12 +119,12 @@ LLVMBasicBlockRef current_basic_block;
 %token TOK_DO
 %token TOK_DOUBLE
 %token TOK_DOUBLE_LONG
-%token TOK_DOUBLEN
+%token<const_int_val> TOK_DOUBLEN
 %token TOK_ENUM
 %token TOK_EVENT_T
 %token TOK_EXTERN
 %token TOK_FLOAT
-%token TOK_FLOATN
+%token<const_int_val> TOK_FLOATN
 %token TOK_FOR
 %token TOK_GLOBAL
 %token TOK_GOTO
@@ -141,12 +141,12 @@ LLVMBasicBlockRef current_basic_block;
 %token TOK_INT
 %token TOK_INT_LONG
 %token TOK_LONG_LONG
-%token TOK_INTN
+%token<const_int_val> TOK_INTN
 %token TOK_INTPTR_T
 %token TOK_KERNEL
 %token TOK_LOCAL
 %token TOK_LONG
-%token TOK_LONGN
+%token<const_int_val> TOK_LONGN
 %token TOK_PRIVATE
 %token TOK_PTRDIFF_T
 %token TOK_READ_ONLY
@@ -155,7 +155,7 @@ LLVMBasicBlockRef current_basic_block;
 %token TOK_RETURN
 %token TOK_SAMPLER_T
 %token TOK_SHORT
-%token TOK_SHORTN
+%token<const_int_val> TOK_SHORTN
 %token TOK_SIGNED
 %token TOK_SIZEOF
 %token TOK_SIZE_T
@@ -164,19 +164,19 @@ LLVMBasicBlockRef current_basic_block;
 %token TOK_SWITCH
 %token TOK_TYPEDEF
 %token TOK_TYPENAME
-%token TOK_UCHARN
+%token<const_int_val> TOK_UCHARN
 %token TOK_UCHAR
 %token TOK_ULONG
 %token TOK_USHORT
 %token TOK_UINT
 %token TOK_UINT_LONG
 %token TOK_UINT_LONG_LONG
-%token TOK_UINTN
-%token TOK_ULONGN
+%token<const_int_val> TOK_UINTN
+%token<const_int_val> TOK_ULONGN
 %token TOK_UINTPTR_T
 %token TOK_UNION
 %token TOK_UNSIGNED
-%token TOK_USHORTN
+%token<const_int_val> TOK_USHORTN
 %token TOK_VOID
 %token TOK_VOLATILE
 %token TOK_WHILE
@@ -825,12 +825,17 @@ declaration
 				if (!err)
 					yyerror("duplicated symbol");
 				
-				/*Cast initializer to declarator type and store*/
-				cast_to_val = llvm_type_cast( current_list_elem->cl2llvm_val, 
-					$1->type_spec);
-				LLVMBuildStore(cl2llvm_builder, cast_to_val->val, 
-					symbol->cl2llvm_val->val);
-				cl2llvm_val_free(cast_to_val);
+				/*If initializer is present, cast initializer to declarator 
+				  type and store*/
+				if (current_list_elem->cl2llvm_val != NULL)
+				{
+					cast_to_val = llvm_type_cast( 
+						current_list_elem->cl2llvm_val, 
+						$1->type_spec);
+					LLVMBuildStore(cl2llvm_builder, cast_to_val->val, 
+						symbol->cl2llvm_val->val);
+					cl2llvm_val_free(cast_to_val);
+				}
 			}
 			/*If init is an array*/
 			else
@@ -2282,8 +2287,8 @@ primary
 	}
 	| TOK_CONST_DEC
 	{
-		struct cl2llvm_val_t *value = cl2llvm_val_create_w_init(
-			LLVMConstReal(LLVMFloatType(), $1), 1);
+		struct cl2llvm_val_t *value = cl2llvm_val_create_w_init( 
+			LLVMConstReal(LLVMDoubleType(), $1), 1);
 		$$ = value;
 	}
 	| TOK_CONST_DEC_H
@@ -2448,43 +2453,68 @@ type_name
 	}
 	| TOK_UINTN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt32Type(), $1), 0);
+		$$ = type;
+
 	}
 	| TOK_UCHARN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt8Type(), $1), 0);
+		$$ = type;
+
 	}
 	| TOK_ULONGN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt32Type(), $1), 0);
+		$$ = type;
+
 	}
 	| TOK_USHORTN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt16Type(), $1), 0);
+		$$ = type;
+
 	}
 	| TOK_SHORTN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt16Type(), $1), 1);
+		$$ = type;
+
 	}
 	| TOK_INTN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt32Type(), $1), 1);
+		$$ = type;
 	}
 	| TOK_LONGN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt32Type(), $1), 1);
+		$$ = type;
 	}
 	| TOK_CHARN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMInt8Type(), $1), 1);
+		$$ = type;
 	}
 	| TOK_FLOATN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMFloatType(), $1), 0);
+		$$ = type;
 	}
 	| TOK_DOUBLEN
 	{
-		$$ = NULL;
+		struct cl2llvm_type_t *type;
+		type = cl2llvm_type_create_w_init(LLVMVectorType(LLVMDoubleType(), $1), 0);
+		$$ = type;
 	}
 	| TOK_INT 
 	{
