@@ -26,16 +26,42 @@
 /*
  * Global Variables
  */
-
 extern struct str_map_t pt_note_type_map;
-
-
 
 /*
  * Southern Islands Binary File
  */
 
 #define SI_ABI_MAX_USER_ELEMENTS 16
+
+struct pt_note_data_segment_desc_t
+{
+	Elf32_Word offset;  /* Offsets in bytes to start of data */
+	Elf32_Word size;  /* Size in bytes of data */
+};
+
+
+struct pt_note_constant_buffer_mask_t
+{
+	Elf32_Word index;  /* Constant buffer identifier */
+	Elf32_Word size;  /* Size in vec4f constants of the buffer */
+};
+
+struct pt_note_uav_entry_t
+{
+	Elf32_Word id;  /* UAV number */
+	Elf32_Word unknown1;  /* FIXME */
+	Elf32_Word unknown2;  /* FIXME */
+	Elf32_Word unknown3;  /* FIXME */
+};
+
+
+struct pt_note_prog_info_entry_t
+{
+	Elf32_Word address;  /* Device address */
+	Elf32_Word value;  /* Value */
+};
+
 
 /* Encoding dictionary entry header (as encoded in ELF file) */
 struct si_bin_enc_dict_entry_header_t

@@ -94,6 +94,11 @@ vcc|scc|exec {
 	return TOK_SPECIAL_REGISTER;
 }
 
+m[0-9]+ {
+	si2bin_yylval.id = si2bin_id_create(yytext);
+	return TOK_MEMORY_REGISTER;
+}
+
 "format" {
 	return TOK_FORMAT;
 }

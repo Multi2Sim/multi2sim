@@ -152,6 +152,7 @@ struct si2bin_arg_t *si2bin_arg_create_scalar_register_series(int low, int high)
 struct si2bin_arg_t *si2bin_arg_create_vector_register(int id);
 struct si2bin_arg_t *si2bin_arg_create_vector_register_series(int low, int high);
 struct si2bin_arg_t *si2bin_arg_create_special_register(enum si_inst_special_reg_t reg);
+struct si2bin_arg_t *si2bin_arg_create_mem_register(int id);
 struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
 		struct si2bin_arg_t *qual,
 		enum si_inst_buf_data_format_t data_format,

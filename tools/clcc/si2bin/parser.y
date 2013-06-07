@@ -69,6 +69,7 @@
 %token<id> TOK_SCALAR_REGISTER
 %token<id> TOK_VECTOR_REGISTER
 %token<id> TOK_SPECIAL_REGISTER
+%token<id> TOK_MEMORY_REGISTER
 %token<num> TOK_DECIMAL
 %token<id> TOK_HEX
 %token<num_float> TOK_FLOAT
@@ -129,6 +130,10 @@ section
 	| data_section
 	| args_section
 	| text_section
+	{
+		si2bin_metadata->num_sgprs = si2bin_num_sgprs;
+		si2bin_metadata->num_sgprs = si2bin_num_vgprs;
+	}	
 	;
 
 global_section
@@ -147,6 +152,9 @@ global_section
 		si2bin_outer_bin_add(si2bin_outer_bin, si2bin_inner_bin, si2bin_metadata);
 
 		si2bin_uniqueid ++;
+
+		si2bin_num_vgprs = 0;
+		si2bin_num_sgprs = 0;
 		
 		si2bin_id_free(id);
 	}
@@ -439,14 +447,28 @@ arg_list
 
 operand
 	: TOK_SCALAR_REGISTER
-	{
-		$$ = si2bin_arg_create_scalar_register(atoi($1->name + 1));
+	{	
+		int value;
+
+		value = atoi($1->name + 1);
+		$$ = si2bin_arg_create_scalar_register(value); 
+
+		if (value > si2bin_num_sgprs)
+			si2bin_num_sgprs = value;
+		
 		si2bin_id_free($1);
 	}
 	
 	| TOK_VECTOR_REGISTER
 	{
-		$$ = si2bin_arg_create_vector_register(atoi($1->name + 1)); 
+		int value;
+
+		value = atoi($1->name + 1);
+		$$ = si2bin_arg_create_vector_register(value); 
+		
+		if (value > si2bin_num_vgprs)
+			si2bin_num_vgprs = value;
+
 		si2bin_id_free($1);
 	}
 	
@@ -455,6 +477,12 @@ operand
 		enum si_inst_special_reg_t reg;
 		reg = str_map_string(&si_inst_special_reg_map, $1->name);
 		$$ = si2bin_arg_create_special_register(reg); 
+		si2bin_id_free($1);
+	}
+
+	| TOK_MEMORY_REGISTER
+	{
+		$$ = si2bin_arg_create_mem_register(atoi($1->name + 1));
 		si2bin_id_free($1);
 	}
 	
@@ -506,12 +534,18 @@ arg
 			arg->type = si2bin_arg_scalar_register_series;
 			arg->value.scalar_register_series.low = low;
 			arg->value.scalar_register_series.high = high;
+
+			if (high > si2bin_num_sgprs)
+				si2bin_num_sgprs = high;
 		}
 		else if (!strcmp(id->name, "v"))
 		{
 			arg->type = si2bin_arg_vector_register_series;
 			arg->value.vector_register_series.low = low;
 			arg->value.vector_register_series.high = high;
+			
+			if (high > si2bin_num_vgprs)
+				si2bin_num_vgprs = high;
 		}
 		else
 		{

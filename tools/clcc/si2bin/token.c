@@ -132,7 +132,8 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_
 
 	case si2bin_token_sdst:
 	case si2bin_token_smrd_sdst:
-		return arg->type == si2bin_arg_scalar_register;
+		return arg->type == si2bin_arg_scalar_register ||
+			arg->type == si2bin_arg_mem_register;
 
 	case si2bin_token_src0:
 

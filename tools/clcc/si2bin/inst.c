@@ -625,7 +625,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_sdst:
 
 			/* Encode */
-			inst_bytes->sop2.sdst = arg->value.scalar_register.id;
+			inst_bytes->sop2.sdst = si2bin_arg_encode_operand(arg);
 			break;
 
 		case si2bin_token_series_sbase:
