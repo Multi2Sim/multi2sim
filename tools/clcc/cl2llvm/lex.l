@@ -2,15 +2,18 @@
 
 #include <math.h>
 
+#include <lib/util/list.h>
 #include <llvm-c/Core.h>
 
+#include "format.h"
 #include "val.h"
 #include "type.h"
 #include <llvm-c/Core.h>
 #include "parser.h"
 #include "cl2llvm.h"
 
-
+extern char *cl2llvm_file_name;
+extern struct list_t *cl2llvm_preprcr_file_list;
 
 int cl2llvm_col_num = 0;
 
@@ -211,6 +214,57 @@ double atod(char *ascii)
 	double decimal = base_d * pow(10, expon_d);
 	return decimal;
 }
+
+int extract_lineno(char *text)
+{
+	char buffer[100];
+	int lineno;
+	int i = 1;
+	int j = 0;
+
+	/*Copy Line number to buffer*/
+	while(text[i] == 32)
+	{
+		i++;
+	}
+	while(text[i] != 32)
+	{
+		buffer[j] = text[i];
+		j++;
+		i++;
+	}
+	buffer[j] = '\00';
+	
+	/*Convert buffer to integer and return*/
+	lineno = atoi(buffer);
+	return lineno;
+}
+
+
+
+int extract_vector_size(char *text)
+{
+	int i = 2;
+	char buffer[10];
+
+	while  (text[i] != 49
+		&& text[i] != 50
+		&& text[i] != 51
+		&& text[i] != 52
+		&& text[i] != 56)
+	{
+		i++;
+	}
+	buffer[0] = text[i];
+	i++;
+	if (text[i] == 54)
+	{
+		buffer[1] = text[i];
+		i++;
+	}
+	buffer[i] = '\00';
+	return atoi(buffer);
+}
 	
 %}
 
@@ -233,7 +287,7 @@ L			(long)
 U			(unsigned)
 S			(signed)
 
-
+PREPROCESSOR		((\#)[ \t]+[0-9]+[ \t]+\"[^\"\`]*\"[ \t]*(\n))
 TOK_ID			[a-zA-Z_][a-zA-Z0-9_]*
 CONST_HEX		0[xX][a-fA-F0-9]+
 CONST_HEX_U		0[xX][a-fA-F0-9]+{CU}
@@ -381,6 +435,13 @@ TOK_WHILE		(while)
 TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 
 %%
+
+{PREPROCESSOR} {
+	yyset_lineno(extract_lineno(yytext));
+	cl2llvm_set_col_num(0);
+	cl2llvm_file_name = extract_file_name(yytext);
+	list_add(cl2llvm_preprcr_file_list, cl2llvm_file_name);
+}
 
 [\n] { 
 	yyset_lineno(yyget_lineno() + 1);
@@ -700,6 +761,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_CHARN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_CHARN;
 }
 {TOK_CONSTANT} {
@@ -732,6 +794,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_DOUBLEN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_DOUBLEN;
 }
 {TOK_ELSE} {
@@ -756,6 +819,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_FLOATN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_FLOATN;
 }
 {TOK_FOR} {
@@ -812,6 +876,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_INTN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_INTN;
 }
 {TOK_INTPTR_T} {
@@ -836,6 +901,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_LONGN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_LONGN;
 }
 {TOK_PRIVATE} {
@@ -864,6 +930,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_SHORTN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_SHORTN;
 }
 {TOK_SIZEOF} {
@@ -900,6 +967,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_UCHARN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_UCHARN;
 }
 {TOK_UINT} {
@@ -916,6 +984,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_UINTN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_UINTN;
 }
 {TOK_UINTPTR_T} {
@@ -924,6 +993,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_ULONGN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_ULONGN;
 }
 {TOK_UNION} {
@@ -936,6 +1006,7 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 }
 {TOK_USHORTN} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_USHORTN;
 }
 {TOK_VOID} {
