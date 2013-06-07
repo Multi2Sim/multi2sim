@@ -51,6 +51,9 @@ struct si2bin_inner_bin_entry_t *si2bin_entry;
 struct elf_enc_buffer_t *bin_buffer;
 struct si2bin_inner_bin_t *si2bin_inner_bin;
 struct si2bin_metadata_t *si2bin_metadata;
+
+int si2bin_num_sgprs;
+int si2bin_num_vgprs;
 int si2bin_uniqueid = 1024;
 
 

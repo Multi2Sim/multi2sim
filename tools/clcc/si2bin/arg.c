@@ -155,6 +155,19 @@ struct si2bin_arg_t *si2bin_arg_create_special_register(enum si_inst_special_reg
 	return arg;
 }
 
+struct si2bin_arg_t *si2bin_arg_create_mem_register(int id)
+{
+	struct si2bin_arg_t *arg;
+
+	arg = si2bin_arg_create();
+	arg->type = si2bin_arg_mem_register;
+	arg->value.mem_register.id = id;
+
+	if (arg->value.mem_register.id)
+		si2bin_yyerror_fmt("memory register can only be m0");
+
+	return arg;
+}
 
 struct si2bin_arg_t *si2bin_arg_create_maddr(struct si2bin_arg_t *soffset,
 		struct si2bin_arg_t *qual,
@@ -330,7 +343,21 @@ int si2bin_arg_encode_operand(struct si2bin_arg_t *arg)
 		}
 		break;
 	}
+	
+	/* Memory Register */
+	case si2bin_arg_mem_register:
+	{	
+		int id;
 
+		id = arg->value.mem_register.id;
+		
+		if (!id)
+			return 124;
+
+		si2bin_yyerror_fmt("invalid memory register: m%d", id);
+		break;
+	}
+	
 	default:
 		si2bin_yyerror_fmt("invalid operand (code %d)", arg->type);
 		break;

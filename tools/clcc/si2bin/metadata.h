@@ -40,6 +40,9 @@ struct si2bin_metadata_t
 	int hwregion;
 	int hwlocal;
 
+	int num_sgprs;
+	int num_vgprs;
+
 };
 
 struct si2bin_metadata_t *si2bin_metadata_create(void);
