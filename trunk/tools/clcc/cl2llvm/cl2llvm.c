@@ -53,6 +53,9 @@ LLVMModuleRef cl2llvm_module;
 /* Current file being compiled */
 char *cl2llvm_file_name;
 
+/*Preprocessor file list*/
+struct list_t *cl2llvm_preprcr_file_list;
+
 
 void cl2llvm_yyerror(char *s)
 {
@@ -86,7 +89,7 @@ void cl2llvm_init_global_vars(void)
 	LLVMLinkInJIT();
 	LLVMInitializeNativeTarget();
 	
-	cl2llvm_set_lineno(0);
+	cl2llvm_set_lineno(1);
 	cl2llvm_col_num = 0;
 	temp_var_count = 0;
 	block_count = 0;
@@ -94,6 +97,9 @@ void cl2llvm_init_global_vars(void)
 	/* Initialize LLVM */
 	cl2llvm_builder = LLVMCreateBuilder();
 	cl2llvm_module = LLVMModuleCreateWithName("module");
+
+	/*Initialize preprocessor file list*/
+	cl2llvm_preprcr_file_list = list_create();
 
 	/* Initialize global symbol table */
 	cl2llvm_symbol_table = hash_table_create(10, 1);
@@ -132,7 +138,9 @@ void cl2llvm_done(void)
 }
 
 void cl2llvm_erase_global_vars(void)
-{
+{	
+	char *file_name;
+	int index;
 	char *name;
 	struct cl2llvm_function_t *function;
 
@@ -140,6 +148,14 @@ void cl2llvm_erase_global_vars(void)
 	HASH_TABLE_FOR_EACH(cl2llvm_symbol_table, name, function)
 		cl2llvm_function_free(function);
 	hash_table_free(cl2llvm_symbol_table);
+
+	/* Free preprocessor file list */
+	LIST_FOR_EACH(cl2llvm_preprcr_file_list, index)
+	{
+		file_name = list_get(cl2llvm_preprcr_file_list, index);
+		free(file_name);
+	}
+	list_free(cl2llvm_preprcr_file_list);
 }
 
 
