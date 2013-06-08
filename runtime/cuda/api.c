@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -1165,6 +1166,9 @@ CUresult cuLaunchKernel(CUfunction f,
 	cuda_debug_print(stdout, "\t(driver) in: hStream = %p\n", hStream);
 	cuda_debug_print(stdout, "\t(driver) in: kernelParams = %p\n", kernelParams);
 	cuda_debug_print(stdout, "\t(driver) in: extra = %p\n", extra);
+
+	assert(gridDimX != 0 && gridDimY != 0 && gridDimZ != 0);
+	assert(blockDimX != 0 && blockDimY != 0 && blockDimZ != 0);
 
 	/* Syscall */
 	sys_args[0] = f->id;

@@ -297,8 +297,7 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 }
 
 
-void frm_grid_setup_size(struct frm_grid_t *grid,
-		unsigned int *block_count,
+void frm_grid_setup_size(struct frm_grid_t *grid, unsigned int *block_count,
 		unsigned int *block_size)
 {
 	int i;
@@ -320,14 +319,6 @@ void frm_grid_setup_size(struct frm_grid_t *grid,
 		grid->grid_size3[i] = block_count[i] * block_size[i];
 	grid->grid_size = grid->grid_size3[0] * grid->grid_size3[1] *
 		grid->grid_size3[2];
-
-	/* Check valid grid/thread block sizes */
-	if (grid->grid_size3[0] < 1 || grid->grid_size3[1] < 1
-			|| grid->grid_size3[2] < 1)
-		fatal("%s: invalid grid size", __FUNCTION__);
-	if (grid->block_size3[0] < 1 || grid->block_size3[1] < 1
-			|| grid->block_size3[2] < 1)
-		fatal("%s: invalid thread block size", __FUNCTION__);
 
 	/* Allocate thread blocks, warps, and threads */
 	frm_grid_setup_arrays(grid);
