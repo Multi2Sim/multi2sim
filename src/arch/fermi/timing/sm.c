@@ -220,7 +220,7 @@ void frm_sm_free(struct frm_sm_t *sm)
 
 void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thread_block)
 {
-	//struct frm_grid_t *grid;
+	struct frm_grid_t *grid;
 	//struct frm_warp_t *warp;
 	//int warp_id;
 	int wiq_id;
@@ -228,7 +228,7 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thr
 	assert(sm->thread_block_count < frm_gpu->thread_blocks_per_sm);
 	assert(!thread_block->id_in_sm);
 
-	//grid = thread_block->grid;
+	grid = thread_block->grid;
 
 	/* Assign a thread block to an available slot in an SM */
 	while (thread_block->id_in_sm < frm_gpu->thread_blocks_per_sm &&
@@ -267,8 +267,8 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thr
 			thread_block);
 
 	/* Change thread block status to running */
-	frm_thread_block_clear_status(thread_block, frm_thread_block_pending);
-	frm_thread_block_set_status(thread_block, frm_thread_block_running);
+	list_remove(grid->pending_thread_blocks, thread_block);
+	list_add(grid->running_thread_blocks, thread_block);
 
 	/* Trace */
 	frm_trace("frm.map_tb sm=%d tb=%d t_first=%d t_count=%d w_first=%d "
