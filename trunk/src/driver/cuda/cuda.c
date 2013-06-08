@@ -703,6 +703,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	int i;
 	struct cuda_abi_frm_kernel_launch_info_t *info;
 
+	/* Read arguments */
 	mem_read(mem, regs->ecx, 11 * sizeof(unsigned int), args);
 	function_id = args[0];
 	gridDim[0] = args[1];
@@ -716,6 +717,7 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	kernelParams = args[9];
 	extra = args[10];
 
+	/* Debug */
 	cuda_debug("\tfunction_id=0x%08x\n", function_id);
 	cuda_debug("\tgridDimX=%u\n", gridDim[0]);
 	cuda_debug("\tgridDimY=%u\n", gridDim[1]);
@@ -729,42 +731,48 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	cuda_debug("\textra=%u\n", extra);
 
 	/* Get function */
-	function = (struct cuda_function_t *)list_get(function_list, function_id);
+	function = list_get(function_list, function_id);
 
-	/* Create and setup grid */
-	grid = frm_grid_create(function);
-	grid->num_gpr_used = function->num_gpr_used;
-	frm_grid_setup_size(grid, gridDim, blockDim, 3);
-
-	/* Create arguments */
+	/* Arguments */
 	for (i = 0; i < sizeof(kernelParams); ++i)
 	{
-		mem_read(mem, kernelParams + i * 4, sizeof(unsigned int), &arg_ptr);
+		/* Get argument value */
+		mem_read(mem, kernelParams + i * 4, sizeof(unsigned int), 
+				&arg_ptr);
 		mem_read(mem, arg_ptr, sizeof(unsigned int), &arg_value);
 
+		/* Create argument */
 		snprintf(arg_name, MAX_STRING_SIZE, "arg_%d", i);
 		arg = cuda_function_arg_create(arg_name);
+
+		/* Initialize argument */
 		arg->kind = CUDA_FUNCTION_ARG_KIND_POINTER;
 		arg->mem_scope = CUDA_MEM_SCOPE_GLOBAL;
 		arg->access_type = CUDA_FUNCTION_ARG_READ_WRITE;
 		arg->value = arg_value;
+
+		/* Add to list */
 		list_add(function->arg_list, arg);
 	}
 
-	/* Setup threads, constant memory and arguments */
+	/* Create grid */
+	grid = frm_grid_create(function);
+
+	/* Set up grid */
+	frm_grid_setup_size(grid, gridDim, blockDim);
 	frm_grid_setup_const_mem(grid);
 	frm_grid_setup_args(grid);
 
-	/* Set up call-back function to be run when ND-Range finishes. */
+	/* Add to pending list */
+	list_add(frm_emu->pending_grids, grid);
+
+	/* Set up call-back function to be run when grid finishes */
 	info = xcalloc(1, sizeof(struct cuda_abi_frm_kernel_launch_info_t));
 	info->function= function;
 	info->grid = grid;
 	frm_grid_set_free_notify_func(grid, cuda_abi_frm_kernel_launch_finish, info);
 
-	/* Setup status */
-	frm_grid_set_status(grid, frm_grid_pending);
-
-	/* Suspend x86 context until ND-Range finishes */
+	/* Suspend x86 context until grid finishes */
 	x86_ctx_suspend(ctx, cuda_abi_frm_kernel_launch_can_wakeup, info,
 			cuda_abi_frm_kernel_launch_wakeup, info);
 

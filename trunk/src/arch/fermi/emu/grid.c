@@ -43,13 +43,15 @@ struct frm_grid_t *frm_grid_create(struct cuda_function_t *function)
 	/* Create new grid */
 	grid = xcalloc(1, sizeof(struct frm_grid_t));
 
-	/* Add to list */
-	list_add(frm_emu->grids, grid);
-
 	/* Initialize grid */
 	grid->id = list_count(frm_emu->grids) - 1;
 	strncpy(grid->name, function->name, MAX_STRING_SIZE);
+	grid->status = frm_grid_pending;
 	grid->function = function;
+	grid->num_gpr_used = function->num_gpr_used;
+
+	/* Add to list */
+	list_add(frm_emu->grids, grid);
 
 	/* Return */
 	return grid;
@@ -82,47 +84,6 @@ void frm_grid_free(struct frm_grid_t *grid)
         free(grid);
 }
 
-
-int frm_grid_get_status(struct frm_grid_t *grid, enum frm_grid_status_t status)
-{
-        return (grid->status & status) > 0;
-}
-
-
-void frm_grid_set_status(struct frm_grid_t *grid, enum frm_grid_status_t status)
-{
-        /* Get only the new bits */
-        status &= ~grid->status;
-
-        /* Add grid to lists */
-        if (status & frm_grid_pending)
-		list_add(frm_emu->pending_grids, grid);
-        if (status & frm_grid_running)
-		list_add(frm_emu->running_grids, grid);
-        if (status & frm_grid_finished)
-		list_add(frm_emu->finished_grids, grid);
-
-        /* Update it */
-        grid->status |= status;
-}
-
-
-void frm_grid_clear_status(struct frm_grid_t *grid, enum frm_grid_status_t status)
-{
-        /* Get only the bits that are set */
-        status &= grid->status;
-
-        /* Remove grid from lists */
-        if (status & frm_grid_pending)
-		list_remove(frm_emu->pending_grids, grid);
-        if (status & frm_grid_running)
-		list_remove(frm_emu->running_grids, grid);
-        if (status & frm_grid_finished)
-		list_remove(frm_emu->finished_grids, grid);
-
-        /* Update status */
-        grid->status &= ~status;
-}
 
 
 /* Write initial values in constant buffer 0 (CB0) */
@@ -338,33 +299,24 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 
 void frm_grid_setup_size(struct frm_grid_t *grid,
 		unsigned int *block_count,
-		unsigned int *block_size,
-		int work_dim)
+		unsigned int *block_size)
 {
 	int i;
 
-	/* Default values */
-	grid->block_count3[1] = 1;
-	grid->block_count3[2] = 1;
-	grid->block_size3[1] = 1;
-	grid->block_size3[2] = 1;
-	grid->grid_size3[1] = 1;
-	grid->grid_size3[2] = 1;
-
 	/* Thread block counts */
-	for (i = 0; i < work_dim; i++)
+	for (i = 0; i < 3; i++)
 		grid->block_count3[i] = block_count[i];
 	grid->block_count = grid->block_count3[0] * grid->block_count3[1] *
 		grid->block_count3[2];
 
 	/* Thread block sizes */
-	for (i = 0; i < work_dim; i++)
+	for (i = 0; i < 3; i++)
 		grid->block_size3[i] = block_size[i];
 	grid->block_size = grid->block_size3[0] * grid->block_size3[1] *
 		grid->block_size3[2];
 
 	/* Calculate grid sizes */
-	for (i = 0; i < work_dim; i++)
+	for (i = 0; i < 3; i++)
 		grid->grid_size3[i] = block_count[i] * block_size[i];
 	grid->grid_size = grid->grid_size3[0] * grid->grid_size3[1] *
 		grid->grid_size3[2];
