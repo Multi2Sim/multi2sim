@@ -42,19 +42,6 @@ struct frm_thread_block_t
 	struct frm_grid_t *grid;
 	struct frm_sm_t *sm;
 
-	/* IDs of threads contained */
-	int thread_id_first;
-	int thread_id_last;
-	int thread_count;
-
-	/* IDs of warps contained */
-	int warp_id_first;
-	int warp_id_last;
-	int warp_count;
-
-	/* Pointers to warps and threads */
-	struct frm_thread_t **threads;  /* Pointer to first thread in 'function->threads' */
-	struct frm_warp_t **warps;  /* Pointer to first warp in 'function->warps' */
 	struct frm_warp_inst_queue_t *warp_inst_queue;
 
 	/* Double linked lists of thread_blocks */
@@ -65,11 +52,17 @@ struct frm_thread_block_t
 	struct frm_thread_block_t *finished_list_prev;
 	struct frm_thread_block_t *finished_list_next;
 
-	/* List of running warps */
-	struct frm_warp_t *running_list_head;
-	struct frm_warp_t *running_list_tail;
-	int running_list_count;
-	int running_list_max;
+	/* Array of warps */
+	int warp_count;
+	struct frm_warp_t **warps;
+
+	/* List of warps */
+	struct list_t *running_warps;
+	struct list_t *finished_warps;
+
+	/* Array of threads */
+	int thread_count;
+	struct frm_thread_t **threads;
 
 	/* List of warps in barrier */
 	struct frm_warp_t *barrier_list_head;
@@ -77,12 +70,6 @@ struct frm_thread_block_t
 	int barrier_list_count;
 	int barrier_list_max;
 
-	/* List of finished warps */
-	struct frm_warp_t *finished_list_head;
-	struct frm_warp_t *finished_list_tail;
-	int finished_list_count;
-	int finished_list_max;
-	
 	/* Fields introduced for architectural simulation */
 	int id_in_sm;
 	int sm_finished_count;  /* like 'finished_list_count', but when warp reaches Complete stage */

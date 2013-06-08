@@ -24,6 +24,7 @@
 #include <arch/fermi/emu/thread-block.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/list.h>
 
 #include "gpu.h"
 #include "warp-inst-queue.h"
@@ -99,16 +100,15 @@ void frm_warp_inst_queue_map_warps(
 void frm_warp_inst_queue_unmap_warps(struct frm_warp_inst_queue_t 
 	*warp_inst_queue, struct frm_thread_block_t *thread_block)
 {
-	struct frm_grid_t *grid = thread_block->grid;
 	struct frm_warp_t *warp;
 	int wf_id_in_ib;
 	int i;
 
 	/* Reset mapped warps */
 	assert(warp_inst_queue->warp_count >= 
-		grid->warps_per_thread_block);
+		thread_block->warp_count);
 
-	for (i = 0; i < grid->warps_per_thread_block; i++) 
+	for (i = 0; i < thread_block->warp_count; i++) 
 	{
 		warp = thread_block->warps[i];
 		wf_id_in_ib = 
@@ -123,5 +123,5 @@ void frm_warp_inst_queue_unmap_warps(struct frm_warp_inst_queue_t
 		warp_inst_queue->entries[wf_id_in_ib]->warp_finished = 0;
 		warp_inst_queue->entries[wf_id_in_ib]->warp = NULL;
 	}
-	warp_inst_queue->warp_count -= grid->warps_per_thread_block;
+	warp_inst_queue->warp_count -= thread_block->warp_count;
 }

@@ -46,9 +46,9 @@ struct frm_mem_access_t
 struct frm_thread_t
 {
 	/* IDs */
-	int id;  /* global ID */
+	int id;
 	int id_in_warp;
-	int id_in_thread_block;  /* local ID */
+	int id_in_thread_block;
 
 	/* 3-dimensional IDs */
 	int id_3d[3];  /* global 3D IDs */
