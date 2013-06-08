@@ -1112,8 +1112,8 @@ int frm_gpu_run(void)
 		}
 
 		/* Set grid status to 'running' */
-		frm_grid_clear_status(grid, frm_grid_pending);
-		frm_grid_set_status(grid, frm_grid_running);
+		list_remove(frm_emu->pending_grids, grid);
+		list_add(frm_emu->running_grids, grid);
 
 		/* Debug */
 		frm_gpu_debug("grid[%d] added to running list\n", grid->id);
@@ -1191,7 +1191,7 @@ int frm_gpu_run(void)
 		}
 
 		/* Finalize and free Grid */
-		assert(frm_grid_get_status(grid, frm_grid_finished));
+		assert(grid->status == frm_grid_finished);
 		frm_gpu_unmap_grid();
 		frm_grid_free(grid);
 	}
