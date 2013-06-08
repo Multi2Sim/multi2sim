@@ -168,6 +168,7 @@ struct frm_warp_t *frm_warp_create()
 void frm_warp_free(struct frm_warp_t *warp)
 {
 	/* Free warp */
+	free(warp->threads);
 	bit_map_free(warp->active_stack);
 	bit_map_free(warp->pred);
 	free(warp);
@@ -186,12 +187,13 @@ void frm_warp_dump(struct frm_warp_t *warp, FILE *f)
 		return;
 
 	/* Dump warp statistics in GPU report */
-	fprintf(f, "[ Grid[%d].Warp[%d] ]\n\n", grid->id, warp->id);
+	fprintf(f, "[ Grid[%d].ThreadBlock[%d].Warp[%d] ]\n\n", 
+			grid->id, thread_block->id,
+			warp->id_in_thread_block);
 
 	fprintf(f, "Name = %s\n", warp->name);
-	fprintf(f, "ThreadBlock = %d\n", thread_block->id);
-	fprintf(f, "ThreadFirst = %d\n", warp->thread_id_first);
-	fprintf(f, "ThreadLast = %d\n", warp->thread_id_last);
+	fprintf(f, "ThreadFirst = %d\n", warp->threads[0]->id_in_warp);
+	fprintf(f, "ThreadLast = %d\n", warp->threads[warp->thread_count - 1]->id_in_warp);
 	fprintf(f, "ThreadCount = %d\n", warp->thread_count);
 	fprintf(f, "\n");
 
@@ -242,7 +244,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	thread_block = warp->thread_block;
 	thread = NULL;
 	inst = NULL;
-	assert(!DOUBLE_LINKED_LIST_MEMBER(thread_block, finished, warp));
+	assert(list_index_of(thread_block->finished_warps, warp) == -1);
 
 	/* Reset instruction flags */
 	warp->global_mem_write = 0;
@@ -274,17 +276,21 @@ void frm_warp_execute(struct frm_warp_t *warp)
 		warp->vector_mem_read = 1;
 		warp->lds_read = 1;
 
-		FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
+		for (thread_id = warp->threads[0]->id_in_warp; 
+				thread_id < (warp)->thread_count; 
+				thread_id++)
 		{
-			thread = grid->threads[thread_id];
+			thread = warp->threads[thread_id];
 			(*frm_isa_inst_func[inst->info->inst])(thread, inst);
 		}
 		frm_isa_debug("inst 0x%llx executed\n", inst->dword.dword);
 		break;
 	default:
-		FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
+		for (thread_id = warp->threads[0]->id_in_warp; 
+				thread_id < (warp)->thread_count; 
+				thread_id++)
 		{
-			thread = grid->threads[thread_id];
+			thread = warp->threads[thread_id];
 			(*frm_isa_inst_func[inst->info->inst])(thread, inst);
 		}
 		frm_isa_debug("inst 0x%llx executed\n", inst->dword.dword);
@@ -294,37 +300,31 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	if (warp->finished)
 	{
 		/* Check if warp finished kernel execution */
-		assert(DOUBLE_LINKED_LIST_MEMBER(thread_block, running, warp));
-		assert(!DOUBLE_LINKED_LIST_MEMBER(thread_block, finished,
-					warp));
-		DOUBLE_LINKED_LIST_REMOVE(thread_block, running, warp);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(thread_block, finished, warp);
+		assert(list_index_of(thread_block->running_warps, warp) != -1);
+		assert(list_index_of(thread_block->finished_warps, warp) == -1);
+		list_remove(thread_block->running_warps, warp);
+		list_add(thread_block->finished_warps, warp);
 
 		/* Check if thread block finished kernel execution */
-		if (thread_block->finished_list_count ==
+		if (list_count(thread_block->finished_warps) ==
 				thread_block->warp_count)
 		{
 			assert(list_index_of(grid->running_thread_blocks,
 						thread_block) != -1);
 			assert(list_index_of(grid->finished_thread_blocks,
 						thread_block) == -1);
-			frm_thread_block_clear_status(thread_block,
-					frm_thread_block_running);
-			frm_thread_block_set_status(thread_block,
-					frm_thread_block_finished);
+			list_remove(grid->running_thread_blocks, thread_block);
+			list_add(grid->finished_thread_blocks, thread_block);
 
 			/* Check if grid finished kernel execution */
 			if (list_count(grid->finished_thread_blocks) == 
-					list_count(grid->thread_blocks))
+					grid->thread_block_count)
 			{
 				assert(list_index_of(frm_emu->running_grids, grid) != -1);
 				assert(list_index_of(frm_emu->finished_grids, grid) == -1);
-				frm_grid_clear_status(grid, 
-						frm_grid_running);
-				frm_grid_set_status(grid, 
-						frm_grid_finished);
+				list_remove(frm_emu->running_grids, grid);
+				list_add(frm_emu->finished_grids, grid);
 			}
-
 		}
 	}
 

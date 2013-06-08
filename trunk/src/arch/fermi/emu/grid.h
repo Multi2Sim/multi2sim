@@ -65,33 +65,14 @@ struct frm_grid_t
 	int block_size;
 	int block_count;
 
+	/* Array of thread blocks */
+	int thread_block_count;
+	struct frm_thread_block_t **thread_blocks;
+
 	/* Lists of thread blocks */
-	struct list_t *thread_blocks;
 	struct list_t *pending_thread_blocks;
 	struct list_t *running_thread_blocks;
 	struct list_t *finished_thread_blocks;
-
-	/* Pointers to thread_blocks, warps, and threads */
-	struct frm_warp_t **warps;
-	struct frm_thread_t **threads;
-
-	/* IDs of thread_blocks contained */
-	int thread_block_id_first;
-	int thread_block_id_last;
-	int thread_block_count;
-	
-	/* IDs of warps contained */
-	int warp_id_first;
-	int warp_id_last;
-	int warp_count;
-
-	/* IDs of threads contained */
-	int thread_id_first;
-	int thread_id_last;
-	int thread_count;
-
-	/* Size of thread_blocks */
-	int warps_per_thread_block;  /* = ceil(local_size / frm_gpu_warp_size) */
 
         /* List of Grid */
         struct frm_grid_t *grid_list_prev;

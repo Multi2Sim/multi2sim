@@ -705,9 +705,9 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	mem_read(mem, regs->ecx, 11 * sizeof(unsigned int), args);
 	function_id = args[0];
-	gridDim[0] = args[1]*args[4];
-	gridDim[1] = args[2]*args[5];
-	gridDim[2] = args[3]*args[6];
+	gridDim[0] = args[1];
+	gridDim[1] = args[2];
+	gridDim[2] = args[3];
 	blockDim[0] = args[4];
 	blockDim[1] = args[5];
 	blockDim[2] = args[6];
