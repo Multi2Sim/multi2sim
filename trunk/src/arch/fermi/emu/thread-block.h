@@ -86,9 +86,6 @@ struct frm_thread_block_t
 struct frm_thread_block_t *frm_thread_block_create(void);
 void frm_thread_block_free(struct frm_thread_block_t *thread_block);
 void frm_thread_block_dump(struct frm_thread_block_t *thread_block, FILE *f);
-int frm_thread_block_get_status(struct frm_thread_block_t *thread_block, enum frm_thread_block_status_t status);
-void frm_thread_block_set_status(struct frm_thread_block_t *thread_block, enum frm_thread_block_status_t status);
-void frm_thread_block_clear_status(struct frm_thread_block_t *thread_block, enum frm_thread_block_status_t status);
 
 
 #endif

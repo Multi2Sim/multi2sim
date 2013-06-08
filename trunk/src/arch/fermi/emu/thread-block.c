@@ -68,52 +68,6 @@ void frm_thread_block_free(struct frm_thread_block_t *thread_block)
 }
 
 
-int frm_thread_block_get_status(struct frm_thread_block_t *thread_block, enum frm_thread_block_status_t status)
-{
-	return (thread_block->status & status) > 0;
-}
-
-
-void frm_thread_block_set_status(struct frm_thread_block_t *thread_block, enum frm_thread_block_status_t status)
-{
-	struct frm_grid_t *grid = thread_block->grid;
-
-	/* Get only the new bits */
-	status &= ~thread_block->status;
-
-	/* Add thread_block to lists */
-	if (status & frm_thread_block_pending)
-		list_add(grid->pending_thread_blocks, thread_block);
-	if (status & frm_thread_block_running)
-		list_add(grid->running_thread_blocks, thread_block);
-	if (status & frm_thread_block_finished)
-		list_add(grid->finished_thread_blocks, thread_block);
-
-	/* Update it */
-	thread_block->status |= status;
-}
-
-
-void frm_thread_block_clear_status(struct frm_thread_block_t *thread_block, enum frm_thread_block_status_t status)
-{
-	struct frm_grid_t *grid = thread_block->grid;
-
-	/* Get only the bits that are set */
-	status &= thread_block->status;
-
-	/* Remove thread_block from lists */
-	if (status & frm_thread_block_pending)
-		list_remove(grid->pending_thread_blocks, thread_block);
-	if (status & frm_thread_block_running)
-		list_remove(grid->running_thread_blocks, thread_block);
-	if (status & frm_thread_block_finished)
-		list_remove(grid->finished_thread_blocks, thread_block);
-	
-	/* Update status */
-	thread_block->status &= ~status;
-}
-
-
 void frm_thread_block_dump(struct frm_thread_block_t *thread_block, FILE *f)
 {
 //	struct frm_grid_t *grid = thread_block->grid;
