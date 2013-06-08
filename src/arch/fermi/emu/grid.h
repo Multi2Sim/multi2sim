@@ -37,22 +37,22 @@ enum frm_grid_status_t
 struct frm_grid_t
 {
 	/* ID */
-	int id;  /* Sequential grid ID (given by frm_emu->grid_count counter) */
+	int id;
 	char name[MAX_STRING_SIZE];
 
         /* Status */
         enum frm_grid_status_t status;
 
+	/* CUDA function associated */
+	struct cuda_function_t *function;
+
+	/* Number of register used by each thread. */
+	unsigned int num_gpr_used;
+
 	/* Call-back function run right before freeing ND-Range, using the value in
 	 * 'free_notify_data' as an argument. */
 	void (*free_notify_func)(void *);
 	void *free_notify_data;
-
-	/* CUDA function associated */
-	struct cuda_function_t *function;
-
-	/* Number of work dimensions */
-	int work_dim;
 
 	/* 3D work size counters */
 	int grid_size3[3];  /* Total number of threads */
@@ -92,17 +92,10 @@ struct frm_grid_t
 	 * kernel function. */
 	unsigned int local_mem_top;
 
-	/* Number of register used by each thread. This fields determines
-	 * how many thread blocks can be allocated per SM, among
-	 * others. */
-	unsigned int num_gpr_used;
 };
 
 struct frm_grid_t *frm_grid_create(struct cuda_function_t *function);
 void frm_grid_free(struct frm_grid_t *grid);
-int frm_grid_get_status(struct frm_grid_t *grid, enum frm_grid_status_t status);
-void frm_grid_set_status(struct frm_grid_t *grid, enum frm_grid_status_t status);
-void frm_grid_clear_status(struct frm_grid_t *grid, enum frm_grid_status_t status);
 void frm_grid_dump(struct frm_grid_t *grid, FILE *f);
 void frm_grid_setup_threads(struct frm_grid_t *grid);
 void frm_grid_setup_const_mem(struct frm_grid_t *grid);
@@ -111,8 +104,7 @@ void frm_grid_run(struct frm_grid_t *grid);
 
 void frm_grid_setup_size(struct frm_grid_t *grid,
 		unsigned int *global_size,
-		unsigned int *local_size,
-		int work_dim);
+		unsigned int *local_size);
 
 #endif
 
