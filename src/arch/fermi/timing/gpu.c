@@ -22,6 +22,7 @@
 #include <arch/common/arch.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
+#include <arch/fermi/emu/thread-block.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
@@ -546,7 +547,7 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 
 	/* Calculate limit of warps and threads per SM */
 	frm_gpu->warps_per_sm = frm_gpu->thread_blocks_per_sm *
-		grid->warps_per_thread_block;
+		grid->thread_blocks[0]->warp_count;
 	frm_gpu->threads_per_sm = frm_gpu->warps_per_sm * frm_emu_warp_size;
 	frm_gpu_debug("%d thread blocks, %d warps, %d threads mapped per SM\n",
 			frm_gpu->thread_blocks_per_sm,
@@ -1119,7 +1120,7 @@ int frm_gpu_run(void)
 
 		/* Trace */
 		frm_trace("frm.new_grid id=%d tb_first=%d tb_count=%d\n", 
-				grid->id, grid->thread_block_id_first, 
+				grid->id, grid->thread_blocks[0]->id, 
 				grid->thread_block_count);
 
 		/* Map grid to GPU */

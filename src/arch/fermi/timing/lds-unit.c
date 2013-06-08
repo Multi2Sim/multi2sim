@@ -208,9 +208,11 @@ void frm_lds_mem(struct frm_lds_t *lds)
 		}
 
 		/* Access local memory */
-		FRM_FOREACH_THREAD_IN_WARP(uop->warp, thread_id)
+		for (thread_id = uop->warp->threads[0]->id_in_warp; 
+				thread_id < uop->warp->thread_count; 
+				thread_id++)
 		{
-			thread = frm_gpu->grid->threads[thread_id];
+			thread = uop->warp->threads[thread_id];
 			thread_uop = 
 				&uop->thread_uop[thread->id_in_warp];
 
