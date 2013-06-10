@@ -20,6 +20,8 @@
 #ifndef TOOLS_CLCC_LLVM2SI_FUNCTION_H
 #define TOOLS_CLCC_LLVM2SI_FUNCTION_H
 
+#include <arch/southern-islands/asm/arg.h>
+
 #include <stdio.h>
 
 
@@ -48,10 +50,18 @@ struct llvm2si_function_arg_t
 	/* Function that the argument belongs to. Populated when inserted with
 	 * a call to 'llvm2si_function_add_arg()'. */
 	struct llvm2si_function_t *function;
+
+	/* All fields inherited from 'si_arg_t' */
+	struct si_arg_t *arg;
+
 };
 
-struct llvm2si_function_arg_t *llvm2si_function_arg_create(void);
+/* Create a function argument from a 'si_arg_t' object. This object will be
+ * freed automatically in a call to 'llvm2si_function_arg_free()'. */
+struct llvm2si_function_arg_t *llvm2si_function_arg_create(struct si_arg_t *arg);
 void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg);
+
+void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE *f);
 
 
 
