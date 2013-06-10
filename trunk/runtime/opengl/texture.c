@@ -50,7 +50,6 @@ struct linked_list_t *opengl_texture_obj_repo_create()
 }
 void opengl_texture_obj_repo_free(struct linked_list_t *lst)
 {
-	/* Free */
 	free(lst);
 }
 
