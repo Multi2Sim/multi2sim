@@ -150,53 +150,71 @@ void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange, void *buf,
 }
 
 void si_ndrange_insert_buffer_into_uav_table(struct si_ndrange_t *ndrange,
-        struct si_buffer_desc_t *buf_desc, unsigned int uav)
+	struct si_buffer_desc_t *buf_desc, unsigned int uav)
 {
-        assert(uav < SI_EMU_MAX_NUM_UAVS);
-        assert(sizeof(*buf_desc) <= SI_EMU_UAV_TABLE_ENTRY_SIZE);
+	assert(uav < SI_EMU_MAX_NUM_UAVS);
+	assert(sizeof(*buf_desc) <= SI_EMU_UAV_TABLE_ENTRY_SIZE);
 
-        /* Write the buffer resource descriptor into the UAV table */
-        mem_write(si_emu->global_mem, ndrange->uav_table +
-                uav*SI_EMU_UAV_TABLE_ENTRY_SIZE, sizeof(*buf_desc),
-                buf_desc);
+	/* Write the buffer resource descriptor into the UAV table */
+	mem_write(si_emu->global_mem, ndrange->uav_table +
+		uav*SI_EMU_UAV_TABLE_ENTRY_SIZE, sizeof(*buf_desc),
+		buf_desc);
 
-        ndrange->uav_table_entries[uav].valid = 1;
-        ndrange->uav_table_entries[uav].kind = 
+	ndrange->uav_table_entries[uav].valid = 1;
+	ndrange->uav_table_entries[uav].kind = 
 		SI_TABLE_ENTRY_KIND_BUFFER_DESC;
-        ndrange->uav_table_entries[uav].size = sizeof(*buf_desc);
+	ndrange->uav_table_entries[uav].size = sizeof(*buf_desc);
 }
 
-void si_ndrange_insert_buffer_into_const_buf_table(struct si_ndrange_t *ndrange,
-        struct si_buffer_desc_t *buf_desc, unsigned int const_buf_num)
+void si_ndrange_insert_buffer_into_vertex_buffer_table(struct si_ndrange_t *ndrange,
+	struct si_buffer_desc_t *buf_desc, unsigned int vertex_buffer)
 {
-        assert(const_buf_num < SI_EMU_MAX_NUM_CONST_BUFS);
-        assert(sizeof(*buf_desc) <= SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE);
+	assert(vertex_buffer < SI_EMU_MAX_NUM_VERTEX_BUFFERS);
+	assert(sizeof(*buf_desc) <= SI_EMU_VERTEX_BUFFER_TABLE_ENTRY_SIZE);
 
-        /* Write the buffer resource descriptor into the UAV table */
-        mem_write(si_emu->global_mem, ndrange->const_buf_table +
-                const_buf_num*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
+	/* Write the buffer resource descriptor into the UAV table */
+	mem_write(si_emu->global_mem, ndrange->vertex_buffer_table +
+		vertex_buffer*SI_EMU_VERTEX_BUFFER_TABLE_ENTRY_SIZE, sizeof(*buf_desc),
+		buf_desc);
+
+	ndrange->vertex_buffer_table_entries[vertex_buffer].valid = 1;
+	ndrange->vertex_buffer_table_entries[vertex_buffer].kind = 
+		SI_TABLE_ENTRY_KIND_BUFFER_DESC;
+	ndrange->vertex_buffer_table_entries[vertex_buffer].size = sizeof(*buf_desc);
+}
+
+
+void si_ndrange_insert_buffer_into_const_buf_table(struct si_ndrange_t *ndrange,
+	struct si_buffer_desc_t *buf_desc, unsigned int const_buf_num)
+{
+	assert(const_buf_num < SI_EMU_MAX_NUM_CONST_BUFS);
+	assert(sizeof(*buf_desc) <= SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE);
+
+	/* Write the buffer resource descriptor into the UAV table */
+	mem_write(si_emu->global_mem, ndrange->const_buf_table +
+		const_buf_num*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
 		sizeof(*buf_desc), buf_desc);
 
-        ndrange->const_buf_table_entries[const_buf_num].valid = 1;
-        ndrange->const_buf_table_entries[const_buf_num].kind = 
+	ndrange->const_buf_table_entries[const_buf_num].valid = 1;
+	ndrange->const_buf_table_entries[const_buf_num].kind = 
 		SI_TABLE_ENTRY_KIND_BUFFER_DESC;
-        ndrange->uav_table_entries[const_buf_num].size = sizeof(*buf_desc);
+	ndrange->uav_table_entries[const_buf_num].size = sizeof(*buf_desc);
 }
 
 void si_ndrange_insert_image_into_uav_table(struct si_ndrange_t *ndrange,
-        struct si_image_desc_t *image_desc, unsigned int uav)
+	struct si_image_desc_t *image_desc, unsigned int uav)
 {
-        assert(uav < SI_EMU_MAX_NUM_UAVS);
-        assert(sizeof(*image_desc) <= SI_EMU_UAV_TABLE_ENTRY_SIZE);
+	assert(uav < SI_EMU_MAX_NUM_UAVS);
+	assert(sizeof(*image_desc) <= SI_EMU_UAV_TABLE_ENTRY_SIZE);
 
-        /* Write the buffer resource descriptor into the UAV table */
-        mem_write(si_emu->global_mem, ndrange->uav_table +
-                uav*SI_EMU_UAV_TABLE_ENTRY_SIZE, sizeof(*image_desc),
-                image_desc);
+	/* Write the buffer resource descriptor into the UAV table */
+	mem_write(si_emu->global_mem, ndrange->uav_table +
+		uav*SI_EMU_UAV_TABLE_ENTRY_SIZE, sizeof(*image_desc),
+		image_desc);
 
-        ndrange->uav_table_entries[uav].valid = 1;
-        ndrange->uav_table_entries[uav].kind = SI_TABLE_ENTRY_KIND_IMAGE_DESC;
-        ndrange->uav_table_entries[uav].size = sizeof(*image_desc);
+	ndrange->uav_table_entries[uav].valid = 1;
+	ndrange->uav_table_entries[uav].kind = SI_TABLE_ENTRY_KIND_IMAGE_DESC;
+	ndrange->uav_table_entries[uav].size = sizeof(*image_desc);
 }
 
 void si_ndrange_const_buf_write(struct si_ndrange_t *ndrange, 
@@ -230,28 +248,28 @@ void si_ndrange_const_buf_write(struct si_ndrange_t *ndrange,
 
 void si_ndrange_const_buf_read(struct si_ndrange_t *ndrange, int const_buf_num, 	int offset, void *pvalue, unsigned int size)
 {
-        unsigned int addr;
+	unsigned int addr;
 
 	struct si_buffer_desc_t buffer_desc;
 
-        /* Sanity check */
-        assert(const_buf_num < 2);
-        if (const_buf_num == 0)
-        {
-                assert(offset + size < SI_EMU_CONST_BUF_0_SIZE);
-        }
-        else if (const_buf_num == 1)
-        {
-                assert(offset + size < SI_EMU_CONST_BUF_1_SIZE);
-        }
+	/* Sanity check */
+	assert(const_buf_num < 2);
+	if (const_buf_num == 0)
+	{
+		assert(offset + size < SI_EMU_CONST_BUF_0_SIZE);
+	}
+	else if (const_buf_num == 1)
+	{
+		assert(offset + size < SI_EMU_CONST_BUF_1_SIZE);
+	}
 
 	mem_read(si_emu->global_mem, ndrange->const_buf_table + 
 		const_buf_num*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
 		sizeof(buffer_desc), &buffer_desc);
 
-        addr = (unsigned int)buffer_desc.base_addr;
-        addr += offset;
+	addr = (unsigned int)buffer_desc.base_addr;
+	addr += offset;
 
-        /* Read */
-        mem_read(si_emu->global_mem, addr, size, pvalue);
+	/* Read */
+	mem_read(si_emu->global_mem, addr, size, pvalue);
 }

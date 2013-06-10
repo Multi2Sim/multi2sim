@@ -285,8 +285,3 @@ void glListBase( GLuint base )
 	__OPENGL_NOT_IMPL__
 }
 
-
-
-
-
-
