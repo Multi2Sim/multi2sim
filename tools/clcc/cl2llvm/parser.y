@@ -187,6 +187,9 @@ LLVMBasicBlockRef current_basic_block;
 %type<list_val_t> array_deref_list
 %type<llvm_value_ref> maybe_expr
 %type<llvm_value_ref> expr
+%type<list_val_t> vec_literal_param_two_elem
+%type<list_val_t> vec_literal_param_list
+%type<llvm_value_ref> vec_literal
 %type<llvm_value_ref> unary_expr
 %type<llvm_value_ref> init
 %type<init_list> init_list
@@ -1152,6 +1155,7 @@ do_while_loop
 		
 		LLVMBuildBr(cl2llvm_builder, while_stmt);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, while_stmt);
+		current_basic_block = while_stmt;
 
 		while_blocks->while_stmt = while_stmt;
 		while_blocks->while_cond = while_cond;
@@ -1163,6 +1167,7 @@ do_while_loop
 	{
 		LLVMBuildBr(cl2llvm_builder, $<llvm_while_blocks>2->while_cond);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>2->while_cond);
+		current_basic_block = $<llvm_while_blocks>2->while_cond;
 	}
 	expr TOK_PAR_CLOSE TOK_SEMICOLON 
 	{
@@ -1172,6 +1177,7 @@ do_while_loop
 		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $<llvm_while_blocks>2->while_stmt,
 			$<llvm_while_blocks>2->while_end);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>2->while_end);
+		current_basic_block = $<llvm_while_blocks>2->while_end;
 	}
 	;
 
@@ -1888,7 +1894,7 @@ expr
 		
 		/*Cast rvalue to type of lvalue and store*/
 		struct cl2llvm_val_t *value = llvm_type_cast($3, type);
-		LLVMBuildStore(cl2llvm_builder, $3->val, $1->val);
+		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
 
 		/*Free pointers*/
 		cl2llvm_type_free(type);
@@ -2230,21 +2236,138 @@ unary_expr
  * syntax rules are created to avoid shift/reduce conflicts. */
 vec_literal
 	: TOK_PAR_OPEN type_spec TOK_PAR_CLOSE TOK_PAR_OPEN vec_literal_param_list TOK_PAR_CLOSE
-	;
+	{
+		int index;
+		struct cl2llvm_val_t *current_vec_elem;
+		struct cl2llvm_type_t *elem_type;
+		struct cl2llvm_val_t *cast_val;
+		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *blank_elem = cl2llvm_val_create_w_init( LLVMConstInt(LLVMInt32Type(), 0, 0), 1);
+		struct cl2llvm_val_t *cast_index;
+		struct cl2llvm_val_t *cl2llvm_index;
+		LLVMValueRef vec_const_elems[16];
+		int vec_nonconst_elems[16];
+		int elem_count = 0;
+		int const_elem_count = 0;
 
-vec_literal_param_elem
-	: expr
-	| array_deref_list
-	| array_init
+		cast_index = NULL;
+		cast_val = NULL;
+		current_vec_elem = NULL;
+
+		snprintf(temp_var_name, sizeof(temp_var_name),
+				"tmp%d", temp_var_count++);
+
+		elem_type = cl2llvm_type_create_w_init(LLVMGetElementType($2->llvm_type), $2->sign);
+		
+		/*Go to entry block and declare vector*/
+		LLVMPositionBuilder(cl2llvm_builder, current_function->entry_block, current_function->branch_instr);
+		LLVMValueRef vec_addr = LLVMBuildAlloca(cl2llvm_builder, 
+			$2->llvm_type, temp_var_name);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+
+		/*Iterate over list and build and vector of all constant entries*/
+		for (index = 0; index < list_count($5); ++index)
+		{
+			current_vec_elem = list_get($5, index);
+			if(LLVMIsConstant(current_vec_elem->val) == 1)
+			{
+				
+				cast_val = llvm_type_cast(current_vec_elem, elem_type);
+				vec_const_elems[index] = cast_val->val;
+				vec_nonconst_elems[index] = 0;
+				elem_count++;
+				const_elem_count++;
+			}
+			else
+			{
+				cast_val = llvm_type_cast(blank_elem, elem_type);
+				vec_const_elems[index] = cast_val->val;
+				vec_nonconst_elems[index] = 1;
+				elem_count++;
+			}
+			if (elem_count > LLVMGetVectorSize($2->llvm_type))
+				yyerror("Too many elements in vector literal");
+			cl2llvm_val_free(cast_val);
+		}
+		if (elem_count < LLVMGetVectorSize($2->llvm_type));
+			yyerror("Too few elements in vector literal");
+		
+		LLVMValueRef const_vector = LLVMConstVector(vec_const_elems, elem_count);
+
+		/*Store constant vector*/
+		LLVMBuildStore(cl2llvm_builder, const_vector, vec_addr);
+
+		/*If there are non-constant entries in vector, insert them*/
+		if (!const_elem_count)
+		{
+			for (index = 0; index < elem_count; index++)
+			{	
+				cl2llvm_index = cl2llvm_val_create_w_init( LLVMConstInt(LLVMInt32Type(), index, 0), 1);
+				current_vec_elem = list_get($5, index);
+				if (vec_nonconst_elems[index])
+				{
+					cast_val = llvm_type_cast(current_vec_elem, elem_type);
+					
+					snprintf(temp_var_name, sizeof(temp_var_name),
+						"tmp%d", temp_var_count++);
+
+					LLVMValueRef vector_load = LLVMBuildLoad( cl2llvm_builder, vec_addr, temp_var_name);
+
+					snprintf(temp_var_name, sizeof(temp_var_name),
+						"tmp%d", temp_var_count++);
+					cast_index = llvm_type_cast(cl2llvm_index, elem_type);
+
+					LLVMValueRef new_vec = LLVMBuildInsertElement( cl2llvm_builder, vector_load, cast_val->val, cl2llvm_index->val, temp_var_name);
+
+					LLVMBuildStore(cl2llvm_builder, new_vec, vec_addr);
+
+				}
+				if (cast_val != NULL)
+					cl2llvm_val_free(cast_val);
+				if (cast_val != NULL)
+					cl2llvm_val_free(cast_index);
+				cl2llvm_val_free(cl2llvm_index);
+			}
+		}
+		cl2llvm_val_free(current_vec_elem);
+		cl2llvm_type_free(elem_type);
+
+		LIST_FOR_EACH($5, index)
+		{
+			cl2llvm_val_free(list_get($5, index));
+		}
+		list_free($5);
+
+		value = cl2llvm_val_create_w_init(vec_addr, $2->sign);
+
+		$$ = value;
+	}
 	;
 
 vec_literal_param_two_elem
-	: vec_literal_param_elem TOK_COMMA vec_literal_param_elem
+	: expr TOK_COMMA expr
+	{
+		struct list_t *vec_elem_list;
+
+		vec_elem_list = list_create();
+		list_add(vec_elem_list, $1);
+		list_add(vec_elem_list, $3);
+
+		$$ = vec_elem_list;
+	}
 	;
 
 vec_literal_param_list
 	: vec_literal_param_two_elem
-	| vec_literal_param_elem TOK_COMMA vec_literal_param_list
+	{
+		$$ = $1;
+	}
+	| vec_literal_param_list TOK_COMMA expr
+	{
+		list_add($1, $3);
+
+		$$ = $1;
+	}
 	;
 
 
