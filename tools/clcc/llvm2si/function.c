@@ -19,12 +19,14 @@
 
 #include <assert.h>
 
+#include <arch/southern-islands/asm/arg.h>
 #include <clcc/si2bin/arg.h>
 #include <clcc/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
+#include <lib/util/string.h>
 
 #include "basic-block.h"
 #include "function.h"
@@ -35,22 +37,46 @@
  * Function Argument Object
  */
 
-struct llvm2si_function_arg_t *llvm2si_function_arg_create(void)
+struct llvm2si_function_arg_t *llvm2si_function_arg_create(struct si_arg_t *arg)
 {
-	struct llvm2si_function_arg_t *arg;
+	struct llvm2si_function_arg_t *function_arg;
 
 	/* Allocate */
-	arg = xcalloc(1, sizeof(struct llvm2si_function_arg_t));
+	function_arg = xcalloc(1, sizeof(struct llvm2si_function_arg_t));
+	function_arg->arg = arg;
 
 	/* Return */
-	return arg;
+	return function_arg;
 }
 
 
 void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg)
 {
+	si_arg_free(arg->arg);
 	free(arg);
 }
+
+
+void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE *f)
+{
+	struct si_arg_t *arg = function_arg->arg;
+
+	switch (arg->type)
+	{
+	case si_arg_pointer:
+
+		/* Type, name, offset, UAV */
+		fprintf(f, "\t%s* %s %d uav11\n",
+				str_map_value(&si_arg_data_type_map, arg->pointer.data_type),
+				arg->name, function_arg->index * 16);
+		break;
+
+	default:
+		fatal("%s: argument type not recognized (%d)",
+				__FUNCTION__, arg->type);
+	}
+}
+
 
 
 
@@ -96,22 +122,70 @@ void llvm2si_function_free(struct llvm2si_function_t *function)
 }
 
 
+static void llvm2si_function_dump_data(struct llvm2si_function_t *function,
+		FILE *f)
+{
+	/* Section header */
+	fprintf(f, ".data\n");
+
+	/* User elements */
+	fprintf(f, "\tuserElementCount = 3\n");
+	fprintf(f, "\tuserElements[0] = PTR_INTERNAL_GLOBAL_TABLE, 0, s[%d:%d]\n",
+			function->sreg_uav10, function->sreg_uav10 + 1);
+	fprintf(f, "\tuserElements[1] = PTR_UAV_TABLE, 0, s[%d:%d]\n",
+			function->sreg_uav11, function->sreg_uav11 + 1);
+	fprintf(f, "\tuserElements[2] = IMM_CONST_BUFFER, 1, s[%d:%d]\n",
+			function->sreg_cb1, function->sreg_cb1 + 3);
+	fprintf(f, "\n");
+
+	/* Registers */
+	fprintf(f, "\tNumVgprs = %d\n", function->num_vregs);
+	fprintf(f, "\tNumSgprs = %d\n", function->num_sregs);
+	fprintf(f, "\n");
+
+	/* Floating-point mode */
+	fprintf(f, "\tFloatMode = 192\n");
+	fprintf(f, "\tIeeeMode = 0\n");
+	fprintf(f, "\n");
+
+	/* Program resources */
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2 = 0x00000011\n");  /* What is this? */
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:USER_SGPR = %d\n", function->sreg_wgid);  /* Work-group ID */
+	fprintf(f, "\n");
+}
+
+
 void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f)
 {
 	struct llvm2si_basic_block_t *basic_block;
+	struct llvm2si_function_arg_t *function_arg;
+
+	int index;
 
 	/* Function name */
-	fprintf(f, "*\n* Function '%s'\n*\n\n", function->name);
+	fprintf(f, ".global %s\n\n", function->name);
+
+	/* Arguments */
+	fprintf(f, ".args\n");
+	LIST_FOR_EACH(function->arg_list, index)
+	{
+		function_arg = list_get(function->arg_list, index);
+		llvm2si_function_arg_dump(function_arg, f);
+	}
+	fprintf(f, "\n");
 
 	/* Dump basic blocks */
+	fprintf(f, ".text\n");
 	LINKED_LIST_FOR_EACH(function->basic_block_list)
 	{
 		basic_block = linked_list_get(function->basic_block_list);
 		llvm2si_basic_block_dump(basic_block, f);
 	}
+	fprintf(f, "\n");
 
-	/* End */
-	fprintf(f, "\n\n");
+	/* Dump section '.data' */
+	llvm2si_function_dump_data(function, f);
+	fprintf(f, "\n");
 }
 
 
