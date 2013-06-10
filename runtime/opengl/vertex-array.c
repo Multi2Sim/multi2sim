@@ -443,6 +443,10 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	/* Debug */
 	opengl_debug("API call %s(%x, %d, %d)\n", 
 		__FUNCTION__, mode, first, count);
+
+	/* Send data to GPU from indexed vertex attribute array
+	 * Shader binary stores the index of expected attribute 
+	 */
 }
 
 void glDrawArraysInstanced (GLenum mode, GLint first, GLsizei count, GLsizei primcount)

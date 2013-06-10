@@ -408,9 +408,3 @@ void glGetQueryObjectui64v (GLuint id, GLenum pname, GLuint64 *params)
 {
 	__OPENGL_NOT_IMPL__
 }
-
-
-
-
-
-
