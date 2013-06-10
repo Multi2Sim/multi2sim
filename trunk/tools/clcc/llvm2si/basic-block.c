@@ -60,9 +60,6 @@ void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f
 {
 	struct si2bin_inst_t *inst;
 
-	/* Basic block name */
-	fprintf(f, "== Basic block '%s' ==\n", basic_block->name);
-
 	/* Print list of instructions */
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
 	{

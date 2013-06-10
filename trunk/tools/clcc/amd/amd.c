@@ -389,7 +389,7 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 	/* Process generated binary */
 	if (dump_all)
 	{
-		printf("\t%s/* - AMD intermediate files dumped\n", out_file_name_root);
+		printf("\t%s_amd_files/* - AMD intermediate files dumped\n", out_file_name_root);
 		amd_binary_analyze(out_file_name);
 	}
 }

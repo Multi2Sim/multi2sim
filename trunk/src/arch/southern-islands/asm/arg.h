@@ -20,6 +20,9 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_ARG_H
 #define ARCH_SOUTHERN_ISLANDS_ARG_H
 
+#include <stdio.h>
+
+
 /* String Maps */
 
 extern struct str_map_t si_arg_dimension_map;

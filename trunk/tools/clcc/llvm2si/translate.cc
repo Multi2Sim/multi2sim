@@ -68,6 +68,70 @@ static FILE *llvm2si_outf;
  * Private Functions
  */
 
+static enum si_arg_data_type_t llvm2si_translate_arg_type(Type *llvm_arg_type)
+{
+	int bit_width;
+
+	if (llvm_arg_type->isIntegerTy())
+	{
+		bit_width = llvm_arg_type->getIntegerBitWidth();
+		switch (bit_width)
+		{
+		case 1: return si_arg_i1;
+		case 8: return si_arg_i8;
+		case 16: return si_arg_i16;
+		case 32: return si_arg_i32;
+		case 64: return si_arg_i64;
+
+		default:
+			fatal("%s: invalid argument bit width (%d)",
+				__FUNCTION__, bit_width);
+			return si_arg_data_type_invalid;
+		}
+	}
+	else
+	{
+		errs() << __FUNCTION__ << ": unsupported argument type: "
+				<< *llvm_arg_type << "\n";
+		return si_arg_data_type_invalid;
+	}
+}
+
+
+static void llvm2si_translate_arg(Argument *llvm_arg,
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	char arg_name[MAX_STRING_SIZE];
+
+	struct llvm2si_function_arg_t *function_arg;
+	struct si_arg_t *arg;
+
+	Type *llvm_arg_type;
+
+	/* Argument name */
+	snprintf(arg_name, sizeof arg_name, "arg%d", function->arg_list->count);
+
+	/* Check argument type */
+	llvm_arg_type = llvm_arg->getType();
+	if (llvm_arg_type->isPointerTy())
+	{
+		llvm_arg_type = llvm_arg_type->getPointerElementType();
+		arg = si_arg_create(si_arg_pointer, arg_name);
+		arg->pointer.data_type = llvm2si_translate_arg_type(llvm_arg_type);
+	}
+	else
+	{
+		arg = si_arg_create(si_arg_value, arg_name);
+		arg->value.data_type = llvm2si_translate_arg_type(llvm_arg_type);
+	}
+
+	/* Function argument */
+	function_arg = llvm2si_function_arg_create(arg);
+	llvm2si_function_add_arg(function, function_arg, basic_block);
+}
+
+
 /* Create a Southern Islands instruction argument from an LLVM value. The type
  * of argument created depends on the LLVM value as follows:
  *   - If the LLVM value is an integer constant, the Southern Islands argument
@@ -716,50 +780,48 @@ llvm2si_translate_pass_t::llvm2si_translate_pass_t() : FunctionPass(ID)
 }
 
 
-bool llvm2si_translate_pass_t::runOnFunction(Function &f)
+bool llvm2si_translate_pass_t::runOnFunction(Function &llvm_func)
 {
 	struct llvm2si_function_t *function;
-	struct llvm2si_function_arg_t *arg;
+	struct llvm2si_function_arg_t *function_arg;
 	struct llvm2si_basic_block_t *basic_block;
-	const char *name;
+
+	const char *func_name;
 
 	/* Skip special functions */
-	name = f.getName().data();
-	if (!strcmp(name, "get_work_dim")
-			|| !strcmp(name, "get_global_size")
-			|| !strcmp(name, "get_global_id")
-			|| !strcmp(name, "get_local_size")
-			|| !strcmp(name, "get_local_id")
-			|| !strcmp(name, "get_num_groups")
-			|| !strcmp(name, "get_group_id")
-			|| !strcmp(name, "get_global_offset"))
+	func_name = llvm_func.getName().data();
+	if (!strcmp(func_name, "get_work_dim")
+			|| !strcmp(func_name, "get_global_size")
+			|| !strcmp(func_name, "get_global_id")
+			|| !strcmp(func_name, "get_local_size")
+			|| !strcmp(func_name, "get_local_id")
+			|| !strcmp(func_name, "get_num_groups")
+			|| !strcmp(func_name, "get_group_id")
+			|| !strcmp(func_name, "get_global_offset"))
 		return false;
 
 	/* Create function */
-	function = llvm2si_function_create(name);
+	function = llvm2si_function_create(func_name);
 
 	/* Create a basic block and generate header code in it */
-	basic_block = llvm2si_basic_block_create(name);
+	basic_block = llvm2si_basic_block_create(func_name);
 	llvm2si_function_add_basic_block(function, basic_block);
 	llvm2si_function_gen_header(function, basic_block);
 
 	/* Add function arguments and generate code to load them */
-	for (Function::arg_iterator farg = f.arg_begin(), farg_end = f.arg_end();
-			farg != farg_end; farg++)
-	{
-		arg = llvm2si_function_arg_create();
-		llvm2si_function_add_arg(function, arg, basic_block);
-	}
+	for (Function::arg_iterator llvm_arg = llvm_func.arg_begin(), llvm_arg_end = llvm_func.arg_end();
+			llvm_arg != llvm_arg_end; llvm_arg++)
+		llvm2si_translate_arg(llvm_arg, function, basic_block);
 
 	/* Basic blocks in function */
-	for (Function::iterator bb = f.begin(), bb_end = f.end();
-			bb != bb_end; bb++)
+	for (Function::iterator llvm_basic_block = llvm_func.begin(),
+			llvm_basic_block_end = llvm_func.end();
+			llvm_basic_block != llvm_basic_block_end; llvm_basic_block++)
 	{
-		for (BasicBlock::iterator inst = bb->begin(), inst_end = bb->end();
-				inst != inst_end; inst++)
-		{
-			llvm2si_translate_inst(inst, function, basic_block);
-		}
+		for (BasicBlock::iterator llvm_inst = llvm_basic_block->begin(),
+				llvm_inst_end = llvm_basic_block->end();
+				llvm_inst != llvm_inst_end; llvm_inst++)
+			llvm2si_translate_inst(llvm_inst, function, basic_block);
 	}
 
 	/* Free function. This takes care of freeing all basic blocks and
