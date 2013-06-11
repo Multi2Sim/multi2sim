@@ -115,5 +115,10 @@ void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront,
 	int first_reg, int num_regs);
 void si_wavefront_init_sreg_with_uav(struct si_wavefront_t *wavefront,
 	int first_reg, int num_regs, int uav);
+void si_wavefront_init_sreg_with_vertex_buffer_table(struct si_wavefront_t *wavefront, 
+	int first_reg, int num_regs);
+void si_wavefront_init_sreg_with_fetch_shader(struct si_wavefront_t *wavefront, 
+	int first_reg, int num_regs);
+
 
 #endif

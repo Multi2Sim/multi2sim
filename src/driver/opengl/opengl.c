@@ -639,7 +639,7 @@ static int opengl_abi_si_shader_free_impl(struct x86_ctx_t *ctx)
  *
  * @param int shader_id
  *
- * 	Kernel ID, as returned by ABI call 'si_shader_create'
+ * 	Shader ID, as returned by ABI call 'si_shader_create'
  *
  * @param int work_dim
  *
