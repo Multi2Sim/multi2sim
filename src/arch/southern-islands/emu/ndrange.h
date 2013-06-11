@@ -67,6 +67,10 @@ struct si_ndrange_t
 	void *inst_buffer;
 	unsigned int inst_buffer_size;
 
+	/* Fetch shader memory containing Fetch shader instructions */
+	void *fs_buffer;
+	unsigned int fs_buffer_size;
+
 	/* Local memory top to assign to local arguments.
 	 * Initially it is equal to the size of local variables in 
 	 * kernel function. */
@@ -112,6 +116,8 @@ void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f);
 /* Functions to set up ND-Range after initialization */
 void si_ndrange_setup_size(struct si_ndrange_t *ndrange, 
 	unsigned int *global_size, unsigned int *local_size, int work_dim);
+void si_ndrange_setup_fs_mem(struct si_ndrange_t *ndrange, void *buf, 
+	int size, unsigned int pc);
 void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange, void *buf, 
 	int size, unsigned int pc);
 

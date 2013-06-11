@@ -452,6 +452,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	/* Send data to GPU from indexed vertex attribute array
 	 * Vertex shader binary has the index of expected attribute array
 	 */
+	/* FIXME: Add support of texture/sampler/image... */
 	vao = opengl_ctx->vao_binding_point;
 	if (vao)
 	{
@@ -463,13 +464,17 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 			{
 				if (vbo)
 				{
-					/* Allocate space in device memory */
+					/* If already copied to device memory, free it */
+					if (vbo->device_ptr)
+						syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_free,
+							vbo->device_ptr);
+					/* Otherwise just allocate space in device memory */
 					vbo->device_ptr = (void*)syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_alloc,
 						vbo->size);
-					/* Send data into device memory */
+					/* Then send data to device memory */
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_write,
 						vbo->device_ptr, vbo->data, vbo->size);
-					/* Debug */
+					/* Debug info */
 					opengl_debug("\tData send to device memory, device_ptr = %p\n", 
 						vbo->device_ptr);					
 				}
@@ -480,6 +485,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	}
 	else
 		opengl_debug("\tNo Vertex Array is available to render!\n");
+
+	/*  */
 
 }
 
