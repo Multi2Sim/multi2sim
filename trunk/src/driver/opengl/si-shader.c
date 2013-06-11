@@ -54,6 +54,7 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 	shdr->program = program;
 	prog_bin = program->program_bin;
 	shaders_list = prog_bin->shaders;
+	
 	/* FIXME: is it true that an OpenGL program binary can only contain 1 shader of each kind */
 	LIST_FOR_EACH(shaders_list, i)
 	{
@@ -72,3 +73,27 @@ void opengl_si_shader_free(struct opengl_si_shader_t *shader)
 	/* Free */
 	free(shader);
 }
+
+void opengl_si_shader_setup_ndrange_constant_buffers(
+	struct si_ndrange_t *ndrange)
+{
+	
+}
+
+void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader, 
+	struct si_ndrange_t *ndrange)
+{
+
+}
+
+void opengl_si_shader_create_ndrange_tables(struct si_ndrange_t *ndrange)
+{
+
+}
+
+void opengl_si_shader_create_ndrange_constant_buffers(
+	struct si_ndrange_t *ndrange)
+{
+
+}
+

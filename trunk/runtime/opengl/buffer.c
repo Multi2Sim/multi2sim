@@ -165,6 +165,7 @@ static void opengl_buffer_obj_data(struct opengl_buffer_obj_t *buffer_obj, unsig
 	buffer_obj->data = xcalloc(1, size);
 	if (data)
 		memcpy(buffer_obj->data, data, size);
+	buffer_obj->size = size;
 	buffer_obj->usage = usage;
 }
 

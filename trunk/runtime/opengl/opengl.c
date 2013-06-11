@@ -75,7 +75,7 @@ void opengl_debug(char *fmt, ...)
 	if (!opengl_debug_initialized)
 	{
 		opengl_debug_initialized = 1;
-		value = getenv("M2S_OPENGL_DEBUG");
+		value = getenv("M2S_OPENGL_RT_DEBUG");
 		if (value && !strcmp(value, "1"))
 			opengl_debugging = 1;
 	}

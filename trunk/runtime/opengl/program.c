@@ -367,9 +367,13 @@ void glUseProgram (GLuint program)
 			/* Clear binding point */
 			program_obj = opengl_ctx->program_binding_point;
 			opengl_program_obj_ref_update(program_obj, -1);
+			/* Call the driver to destroy program binary */
+			syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_free,
+				program_obj->id);
 		}
 
 		opengl_ctx->program_binding_point = NULL;
+
 	}
 }
 
