@@ -351,7 +351,7 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 		fprintf(stderr, "\n%s\n", buf);
 		fatal("compilation failed");
 	}
-	free(program_source);
+	free_buffer(program_source);
 
 	/* Get number and size of binaries */
 	clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof bin_sizes, bin_sizes, &bin_sizes_ret);
