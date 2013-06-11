@@ -55,7 +55,7 @@ void cl2llvm_done(void)
 
 
 void cl2llvm_compile(struct list_t *source_file_list,
-		struct list_t *llvm_file_list)
+		struct list_t *llvm_file_list, int opt_level)
 {
 	cl2llvm_missing();
 }
