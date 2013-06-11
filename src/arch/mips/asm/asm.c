@@ -973,9 +973,11 @@ void mips_disasm(unsigned int buf, unsigned int ip, volatile struct mips_inst_t 
 		if (current_table[mips_table_arg].next_table
 		    && loop_iteration < 4)
 		{
-			current_table_high = current_table[mips_table_arg].next_table_low;
+			current_table_high = current_table[mips_table_arg].next_table_high;
+			current_table_low = current_table[mips_table_arg].next_table_low;
 			current_table = current_table[mips_table_arg].next_table;
-			mips_table_arg = BITS32(inst->dword.bytes, current_table_high, current_table_low);
+			mips_table_arg = BITS32(inst->dword.bytes, current_table_high,
+									current_table_low);
 			loop_iteration++;
 		}
 		else if (loop_iteration > 4)
