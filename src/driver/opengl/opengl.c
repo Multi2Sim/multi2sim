@@ -486,7 +486,7 @@ static int opengl_abi_si_mem_free_impl(struct x86_ctx_t *ctx)
  *
  * @return int
  *
- *	No value is returned.
+ *	Program ID.
  */
 
 static int opengl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
@@ -508,9 +508,40 @@ static int opengl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
 
 
 
+/*
+ * OpenGL ABI call #9 - si_program_free
+ *
+ * Free a Southern Islands program object 
+ *
+ * @return int
+ *
+ *	No value is returned.
+ */
+
+static int opengl_abi_si_program_free_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct opengl_si_program_t *program;
+	unsigned int program_id;
+
+	/* Arguments */
+	program_id = regs->ecx;
+
+	/* Create program */
+	program = list_get(opengl_si_program_list ,program_id);
+	opengl_debug("\tfree program ID = %d\n", program->id);
+
+	/* Free program object */
+	opengl_si_program_free(program);
+
+	/* Return */
+	return 0;
+}
+
+
 
 /*
- * OpenGL ABI call #9 - si_program_set_binary
+ * OpenGL ABI call #10 - si_program_set_binary
  *
  * Associate a binary to a Southern Islands program.
  *
@@ -568,18 +599,10 @@ static int opengl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #10 - si_shader_create
+ * OpenGL ABI call #11 - si_shader_create
  *
  * Create a Southern Islands shader object and return a unique identifier
  * for it.
- *
- * @param int program_id
- *
- * 	Program ID, as returned by ABI call 'si_program_create'
- *
- * @param char *func_name
- *
- * 	Kernel function name in the program.
  *
  * @return int
  *
@@ -587,6 +610,21 @@ static int opengl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
  */
 
 static int opengl_abi_si_shader_create_impl(struct x86_ctx_t *ctx)
+{
+	__NOT_IMPL__
+	return 0;
+}
+
+
+
+/*
+ * OpenGL ABI call #12 - si_shader_free
+ *
+ * Free a Southern Islands shader object 
+ *
+ */
+
+static int opengl_abi_si_shader_free_impl(struct x86_ctx_t *ctx)
 {
 	__NOT_IMPL__
 	return 0;
