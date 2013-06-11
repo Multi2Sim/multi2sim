@@ -22,9 +22,6 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include <clcc/clcc.h>
-#include <clcc/define.h>
-#include <clcc/amd/amd.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
@@ -34,6 +31,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
+#include "amd.h"
 
 
 #define AMD_MAX_DEVICES  100
@@ -304,8 +302,6 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 	char *program_source;
 	char *bin_bits[AMD_MAX_DEVICES];
 
-	struct clcc_define_t *define;
-	
 	cl_int err;
 		
 	/* Get source file without '.cl' suffix */
@@ -342,14 +338,6 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 		str_printf(&compiler_flags_ptr, &compiler_flags_size,
 				" -save-temps=%s/%s", dir, out_file_name_root);
 		mkdir(dir, 0755);
-	}
-
-	/* Add #define macro definitions */
-	LIST_FOR_EACH(clcc_define_list, index)
-	{
-		define = list_get(clcc_define_list, index);
-		str_printf(&compiler_flags_ptr, &compiler_flags_size,
-				" -D%s=%s", define->name, define->value);
 	}
 
 	/* Compile source */
