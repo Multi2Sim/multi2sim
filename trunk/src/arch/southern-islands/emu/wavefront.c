@@ -889,13 +889,13 @@ void si_wavefront_init_sreg_with_vertex_buffer_table(struct si_wavefront_t *wave
 void si_wavefront_init_sreg_with_fetch_shader(struct si_wavefront_t *wavefront, 
 	int first_reg, int num_regs)
 {
-	struct si_ndrange_t *ndrange = wavefront->work_group->ndrange;
+	// struct si_ndrange_t *ndrange = wavefront->work_group->ndrange;
 	struct si_mem_ptr_t mem_ptr;
 
 	assert(num_regs == 2);
 	assert(sizeof(mem_ptr) == 8);
 
-	mem_ptr.addr = (unsigned int)ndrange->fs_buffer;
+	// mem_ptr.addr = ndrange->fs_buffer;
 
 	memcpy(&wavefront->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
 }
