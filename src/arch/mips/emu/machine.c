@@ -85,8 +85,8 @@ void mips_isa_ADDI_impl(struct mips_ctx_t *ctx)
 }
 void mips_isa_ADDIU_impl(struct mips_ctx_t *ctx)
 {
-	MIPS_GPR_SET(RT, MIPS_GPR_GET(RS) + (short int)SEXT32(IMM, 16));
-	mips_isa_inst_debug("  %x = %x + %d", MIPS_GPR_GET(RT), MIPS_GPR_GET(RS), (short int)SEXT32(IMM, 16));
+	MIPS_GPR_SET(RT, MIPS_GPR_GET(RS) + SEXT32(IMM, 16));
+	mips_isa_inst_debug("  r%d -> r%d+0x%x", RT, RS, SEXT32(IMM, 16));
 }
 void mips_isa_SLTI_impl(struct mips_ctx_t *ctx)
 {
@@ -117,7 +117,7 @@ void mips_isa_XORI_impl(struct mips_ctx_t *ctx)
 void mips_isa_LUI_impl(struct mips_ctx_t *ctx)
 {
 	MIPS_GPR_SET(RT, (int)(IMM << 16));
-	mips_isa_inst_debug("  value loaded: %x, final result: %x", IMM<<16, MIPS_GPR_GET(RT));
+	mips_isa_inst_debug("  r%d: $0x%x", RT, MIPS_GPR_GET(RT));
 
 }
 void mips_isa_BEQL_impl(struct mips_ctx_t *ctx)
@@ -164,12 +164,12 @@ void mips_isa_LW_impl(struct mips_ctx_t *ctx)
 {
 	unsigned int temp;
 	unsigned int addr = MIPS_GPR_GET(RS) + SEXT32((signed)IMM,16);
-	mips_isa_inst_debug("  LW: Mem addr: %x, offset=%x, base=%x", addr, SEXT32(IMM,16), MIPS_GPR_GET(RS));
 	if ((BITS32(addr, 1, 0) | 0) == 1 )
 		fatal("LW: address error, effective address must be naturallty-aligned\n");
-	mem_read(ctx->mem, addr, sizeof(4), &temp);
-	mips_isa_inst_debug("  value loaded: %x", temp);
+	mem_read(ctx->mem, addr, 4, &temp);
+	//mips_isa_inst_debug("  value loaded: %x", temp);
 	MIPS_GPR_SET(RT, temp);
+	mips_isa_inst_debug("  $0x%x=>tmp0, tmp0+r%d=>tmp0, tmp0=>r%d", SEXT32(IMM,16), RS, RT);
 }
 void mips_isa_LBU_impl(struct mips_ctx_t *ctx)
 {
@@ -221,7 +221,8 @@ void mips_isa_SWL_impl(struct mips_ctx_t *ctx)
 void mips_isa_SW_impl(struct mips_ctx_t *ctx)
 {
 	unsigned int temp = MIPS_GPR_GET(RT);
-	unsigned int addr = MIPS_GPR_GET(RS) + SEXT32((signed)IMM,16);
+	unsigned int addr = MIPS_GPR_GET(RS) + SEXT32(IMM,16);
+
 	mem_write(ctx->mem, addr, 4, &temp);
 }
 void mips_isa_SWR_impl(struct mips_ctx_t *ctx)
@@ -308,7 +309,7 @@ void mips_isa_SDC2_impl(struct mips_ctx_t *ctx)
 void mips_isa_SLL_impl(struct mips_ctx_t *ctx)
 {
 	MIPS_GPR_SET(RD, (MIPS_GPR_GET(RT) << SA));
-	mips_isa_inst_debug("  %x = %x << %x", MIPS_GPR_GET(RD), MIPS_GPR_GET(RT), SA);
+	mips_isa_inst_debug("  %x=%x<<%x", MIPS_GPR_GET(RD), MIPS_GPR_GET(RT), SA);
 }
 void mips_isa_MOVF_impl(struct mips_ctx_t *ctx)
 {
@@ -567,7 +568,7 @@ void mips_isa_BGEZAL_impl(struct mips_ctx_t *ctx)
 	MIPS_GPR_SET(31, ctx->regs->pc + 8);
 	if ((int)MIPS_GPR_GET(RS) >= 0)
 		RELBRANCH(SEXT32(IMM,16) << 2);
-	mips_isa_inst_debug("  BGEZAL: PC = %8x, and reg 31 = %8x",
+	mips_isa_inst_debug("  BGEZAL: PC=%8x, r31=%8x",
 			ctx->regs->pc, ctx->regs->regs_R[31]);
 }
 void mips_isa_BLTZALL_impl(struct mips_ctx_t *ctx)

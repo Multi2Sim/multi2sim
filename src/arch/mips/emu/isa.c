@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
@@ -60,7 +61,7 @@ void mips_isa_execute_inst(struct mips_ctx_t *ctx)
 	if (debug_status(mips_isa_inst_debug_category))
 	{
 		mips_isa_inst_debug("%d %8lld %x: ", ctx->pid,
-			mips_emu->inst_count, ctx->regs->pc);
+			arch_mips->inst_count, ctx->regs->pc);
 		mips_inst_debug_dump(&ctx->inst, debug_file(mips_isa_inst_debug_category));
 	}
 

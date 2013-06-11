@@ -678,7 +678,7 @@ void mips_ctx_execute(struct mips_ctx_t *ctx)
 		fatal("0x%x: not supported mips instruction\nOpcode: %x\n",
 			(regs->pc), ctx->inst.dword.standard.opc);
 	else
-		mips_ctx_debug("Instruction decoded:%8x - %s\n", ctx->inst.addr, ctx->inst.info->name);
+		mips_loader_debug("Instruction decoded:%8x - %s\n", ctx->inst.addr, ctx->inst.info->name);
 
 	/* Execute instruction */
 	mips_isa_execute_inst(ctx);
