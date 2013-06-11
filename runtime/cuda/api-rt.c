@@ -428,7 +428,7 @@ const char* cudaGetErrorString(cudaError_t error)
 
 cudaError_t cudaGetDeviceCount(int *count)
 {
-	/* 0 for fermi, 1 for kepler */	
+	/* 0 for kepler, 1 for fermi */
 	*count = 2;	
 	return cudaSuccess;
 }
@@ -443,12 +443,12 @@ cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp *prop_ptr, int device)
 	/* Check for valid device. For now, we just check that the device is
 	 * 0 (default), but later we will check among an array of possible valid
 	 * devices. */
-	if (device != 0)  
+	if (device != 1)  
 		fatal("%s: invalid device (%d).\n%s", __FUNCTION__,
 				device, cuda_rt_err_param_note);
 
 	/* Initialize device properties */	
-	strcpy (prop_ptr->name, "cudaDevice1");
+	strcpy (prop_ptr->name, "Device1-fermi");
 	prop_ptr->totalGlobalMem = 1073741824; // 1G
 	prop_ptr->sharedMemPerBlock = 49152; // 48M
 	prop_ptr->regsPerBlock = 32768;

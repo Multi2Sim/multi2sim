@@ -74,8 +74,8 @@ struct frm_thread_block_t
 	int id_in_sm;
 	int sm_finished_count;  /* like 'finished_list_count', but when warp reaches Complete stage */
 
-	/* Local memory */
-	struct mem_t *local_mem;
+	/* Shared memory */
+	struct mem_t *shared_mem;
 };
 
 #define FRM_FOR_EACH_THREADBLOCK_IN_GRID(GRID, THREADBLOCK_ID) \
