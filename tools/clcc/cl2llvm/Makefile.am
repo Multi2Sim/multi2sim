@@ -40,6 +40,9 @@ libcl2llvm_a_SOURCES = \
 	val.c\
 	val.h\
 	\
+	vector-ops.c\
+	vector-ops.h\
+	\
 	while-blocks.c\
 	while-blocks.h\
 	\
