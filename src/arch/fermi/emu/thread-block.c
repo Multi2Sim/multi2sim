@@ -41,8 +41,8 @@ struct frm_thread_block_t *frm_thread_block_create()
 
 	/* Initialize */
 	thread_block = xcalloc(1, sizeof(struct frm_thread_block_t));
-	thread_block->local_mem = mem_create();
-	thread_block->local_mem->safe = 0;
+	thread_block->shared_mem = mem_create();
+	thread_block->shared_mem->safe = 0;
 
 	/* Return */
 	return thread_block;
@@ -63,7 +63,7 @@ void frm_thread_block_free(struct frm_thread_block_t *thread_block)
                 frm_thread_free(thread_block->threads[i]);
 	free(thread_block->threads);
 
-	mem_free(thread_block->local_mem);
+	mem_free(thread_block->shared_mem);
 	free(thread_block);
 }
 

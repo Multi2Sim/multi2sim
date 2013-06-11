@@ -24,7 +24,7 @@
 #include "emu.h"
 #include "thread.h"
 #include "warp.h"
-
+#include "thread-block.h"
 
 char *frm_err_isa_note =
 	"\tThe NVIDIA Fermi SASS instruction set is partially supported by Multi2Sim. If\n"
@@ -271,7 +271,7 @@ void frm_isa_IADD_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
         thread->gpr[dst_id].v.f = dst;
 }
 
-void frm_isa_IADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst) // imm
+void frm_isa_IADD32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst) 
 {
 	unsigned int dst_id, src1_id;
 	unsigned int dst, src1, imm32;
@@ -451,7 +451,15 @@ void frm_isa_MOV_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_MOV32I_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	__NOT_IMPL__
+	unsigned int dst_id;
+	unsigned int dst, imm32;
+		
+	dst_id = inst->dword.imm.dst;
+	imm32 = inst->dword.imm.imm32;
+	
+        dst = imm32;
+
+	thread->gpr[dst_id].v.f = dst;
 }
 
 void frm_isa_SEL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -593,7 +601,15 @@ void frm_isa_STUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_STS_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	__NOT_IMPL__
+	unsigned int dst_id, src_id, addr;
+	unsigned int dst;
+
+	dst_id = inst->dword.offs.dst;
+	dst = thread->gpr[dst_id].v.i;
+	src_id = inst->dword.offs.src1;
+	addr = thread->gpr[src_id].v.i;
+
+	mem_write(frm_thread_create()->thread_block->shared_mem, addr, 4, &dst);
 }
 
 void frm_isa_STSUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
