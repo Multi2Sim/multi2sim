@@ -20,10 +20,11 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include <arch/southern-islands/emu/opengl-bin-file.h> 
+#include <arch/southern-islands/emu/ndrange.h> 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
-#include <arch/southern-islands/emu/opengl-bin-file.h> 
  
 #include "si-shader.h"
 #include "si-program.h"
@@ -88,6 +89,17 @@ void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader,
 
 void opengl_si_shader_create_ndrange_tables(struct si_ndrange_t *ndrange)
 {
+	/* Setup internal tables */
+	ndrange->const_buf_table = si_emu->video_mem_top;
+	si_emu->video_mem_top += SI_EMU_CONST_BUF_TABLE_SIZE;
+	ndrange->resource_table = si_emu->video_mem_top;
+	si_emu->video_mem_top += SI_EMU_RESOURCE_TABLE_SIZE;
+	ndrange->uav_table = si_emu->video_mem_top;
+	si_emu->video_mem_top += SI_EMU_UAV_TABLE_SIZE;
+	ndrange->vertex_buffer_table = si_emu->video_mem_top;
+	si_emu->video_mem_top += SI_EMU_VERTEX_BUFFER_TABLE_SIZE;
+
+	return;
 
 }
 

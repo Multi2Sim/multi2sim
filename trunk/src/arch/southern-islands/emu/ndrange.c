@@ -149,6 +149,22 @@ void si_ndrange_setup_inst_mem(struct si_ndrange_t *ndrange, void *buf,
 	memcpy(ndrange->inst_buffer, buf, size);
 }
 
+void si_ndrange_setup_fs_mem(struct si_ndrange_t *ndrange, void *buf, 
+	int size, unsigned int pc)
+{
+	/* Sanity */
+	if (ndrange->fs_buffer || ndrange->fs_buffer_size)
+		panic("%s: fetch shader buffer already set up", __FUNCTION__);
+	if (!size || pc >= size)
+		panic("%s: invalid value for size/pc", __FUNCTION__);
+
+	/* Allocate memory buffer */
+	assert(size);
+	ndrange->fs_buffer = xmalloc(size);
+	ndrange->fs_buffer_size = size;
+	memcpy(ndrange->fs_buffer, buf, size);
+}
+
 void si_ndrange_insert_buffer_into_uav_table(struct si_ndrange_t *ndrange,
 	struct si_buffer_desc_t *buf_desc, unsigned int uav)
 {
