@@ -29,8 +29,6 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
-#include "define.h"
-
 
 
 /*
@@ -55,7 +53,7 @@ struct list_t *clcc_asm_file_list;  /* Assembly files, extension '.s' */
 struct list_t *clcc_bin_file_list;  /* Binary files, extension '.bin' */
 
 /* List of macros passed with '-D' options in the command line. */
-struct list_t *clcc_define_list;  /* Elements of type 'struct clcc_define_t *' */
+struct list_t *clcc_define_list;  /* Elements of type 'char *' */
 
 
 
@@ -149,22 +147,7 @@ static void clcc_process_option(const char *option, char *optarg)
 
 	if (!strcmp(option, "define") || !strcmp(option, "D"))
 	{
-		struct list_t *token_list;
-		struct clcc_define_t *define;
-
-		/* Create list of tokens */
-		token_list = str_token_list_create(optarg, "=");
-		if (token_list->count != 2)
-			fatal("wrong format for --define/-D option, "
-				"should be <sym>=<val> (%s)", optarg);
-	
-		/* Create define element and add it to the list */
-		define = clcc_define_create(list_get(token_list, 0),
-				list_get(token_list, 1));
-		list_add(clcc_define_list, define);
-
-		/* Free token list */
-		str_token_list_free(token_list);
+		list_add(clcc_define_list, xstrdup(optarg));
 		return;
 	}
 
@@ -349,12 +332,16 @@ static void clcc_preprocess(struct list_t *source_file_list,
 		struct list_t *clp_file_list)
 {
 	char cmd[MAX_LONG_STRING_SIZE];
+	char *cmd_ptr;
+	int cmd_size;
 
 	char *source_file;
 	char *clp_file;
+	char *define;
 
 	int index;
 	int ret;
+	int j;
 
 	LIST_FOR_EACH(source_file_list, index)
 	{
@@ -364,11 +351,26 @@ static void clcc_preprocess(struct list_t *source_file_list,
 		assert(source_file);
 		assert(clp_file);
 
-		/* Run command */
-		snprintf(cmd, sizeof cmd, "cpp %s -o %s", source_file, clp_file);
-		ret = system(cmd);
+		/* Initialize command */
+		cmd[0] = '\0';
+		cmd_ptr = cmd;
+		cmd_size = sizeof cmd;
+		str_printf(&cmd_ptr, &cmd_size, "cpp %s -o %s", source_file, clp_file);
 
-		/* Command 'cpp' not found */
+		/* Add '-D' flags */
+		LIST_FOR_EACH(clcc_define_list, j)
+		{
+			define = list_get(clcc_define_list, j);
+			str_printf(&cmd_ptr, &cmd_size, " -D%s", define);
+		}
+
+		/* Check command exceeding size */
+		if (!cmd_size)
+			fatal("%s: 'cpp' command exceeds buffer size",
+					__FUNCTION__);
+
+		/* Run command */
+		ret = system(cmd);
 		if (ret == -1)
 			fatal("%s: cannot run preprocessor, command 'cpp' not found",
 					__FUNCTION__);
@@ -428,7 +430,7 @@ void clcc_done(void)
 
 	/* Free list of '#define' directives */
 	LIST_FOR_EACH(clcc_define_list, index)
-		clcc_define_free(list_get(clcc_define_list, index));
+		free(list_get(clcc_define_list, index));
 	list_free(clcc_define_list);
 
 	/* Finalize compiler modules */

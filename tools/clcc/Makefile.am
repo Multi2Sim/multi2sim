@@ -13,12 +13,7 @@ endif
 
 __top_builddir__bin_m2s_clcc_LINK = $(CXX) -o $@
 __top_builddir__bin_m2s_clcc_SOURCES = \
-	\
-	clcc.c \
-	clcc.h \
-	\
-	define.c \
-	define.h
+	clcc.c
 
 INCLUDES = @M2S_INCLUDES@
 
