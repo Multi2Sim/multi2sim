@@ -354,7 +354,7 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 		vattrib->normalized = normalized;
 		vattrib->stride = stride;
 		vattrib->pointer = (unsigned int)pointer;
-
+		vattrib->enabled = GL_TRUE;
 		vattrib->vbo = buffer_obj;
 	}
 }
@@ -391,7 +391,7 @@ void glEnableVertexAttribArray (GLuint index)
 	if (vao)
 	{
 		vattrib = vao->attribs[index];
-		vattrib->enabled = 1;
+		vattrib->enabled = GL_TRUE;
 	}
 }
 
@@ -407,7 +407,7 @@ void glDisableVertexAttribArray (GLuint index)
 	if (vao)
 	{
 		vattrib = vao->attribs[index];
-		vattrib->enabled = 0;
+		vattrib->enabled = GL_FALSE;
 	}
 
 }
@@ -440,13 +440,47 @@ void glPrimitiveRestartIndex (GLuint index)
 
 void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 {
+	struct opengl_vertex_array_obj_t *vao;
+	struct opengl_vertex_attrib_t *vattrib;
+	struct opengl_buffer_obj_t *vbo;
+	int i;
+
 	/* Debug */
 	opengl_debug("API call %s(%x, %d, %d)\n", 
 		__FUNCTION__, mode, first, count);
 
 	/* Send data to GPU from indexed vertex attribute array
-	 * Shader binary stores the index of expected attribute 
+	 * Vertex shader binary has the index of expected attribute array
 	 */
+	vao = opengl_ctx->vao_binding_point;
+	if (vao)
+	{
+		for (i = 0; i < MAX_VERTEX_ATTRIBS; ++i)
+		{
+			vattrib = vao->attribs[i];
+			vbo = vattrib->vbo;
+			if (vattrib->enabled)
+			{
+				if (vbo)
+				{
+					/* Allocate space in device memory */
+					vbo->device_ptr = (void*)syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_alloc,
+						vbo->size);
+					/* Send data into device memory */
+					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_write,
+						vbo->device_ptr, vbo->data, vbo->size);
+					/* Debug */
+					opengl_debug("\tData send to device memory, device_ptr = %p\n", 
+						vbo->device_ptr);					
+				}
+				else
+					fatal("Vertex Attribute at index %d is used with no data", i);
+			}
+		}
+	}
+	else
+		opengl_debug("\tNo Vertex Array is available to render!\n");
+
 }
 
 void glDrawArraysInstanced (GLenum mode, GLint first, GLsizei count, GLsizei primcount)
@@ -549,7 +583,8 @@ void glGenVertexArrays (GLsizei n, GLuint *arrays)
 	{
 		vao = opengl_vertex_array_obj_create(MAX_VERTEX_ATTRIBS);
 		opengl_vertex_array_obj_repo_add(opengl_ctx->vao_repo, vao);
-	}	
+		arrays[i] = vao->id;
+	}
 }
 
 void glDeleteVertexArrays (GLsizei n, const GLuint *arrays)

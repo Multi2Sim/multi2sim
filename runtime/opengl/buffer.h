@@ -75,11 +75,14 @@ struct opengl_buffer_obj_t
 	struct list_t *bound_targets; /* Components with type opengl_buffer_binding_target_t */
 	struct list_t *bound_vattribs; /* Components with  type opengl_vertex_attrib_t */
 
-	/* Buffer data storage */
+	/* Data stored in host memory*/
 	void* data;
 	unsigned int size;
 	unsigned int usage;
 	unsigned int access;
+
+	/* Pointer in GPU memory */
+	void *device_ptr;
 
 	/* Mapping info */
 	unsigned int map_access_flags;

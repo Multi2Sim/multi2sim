@@ -112,6 +112,7 @@ struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer, i
 	{
 		si_opengl_shader_binary_set_type(shdr);
 		si_opengl_shader_binary_set_isa(shdr);
+		/* TODO: encoding dictionary */
 	}
 
 	/* Return */
