@@ -159,15 +159,26 @@ void cl2llvm_erase_global_vars(void)
 }
 
 
-void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_list)
+void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_list,
+		int opt_level)
 {
 	int index;
 	char *error = NULL;
 	char *llvm_file_name;
 
+	/* This code activates debug information for bison */
+	/*
+	 * extern int cl2llvm_yydebug;
+	 * cl2llvm_yydebug = 1;
+	 */
+
+	/* Process all files */
 	LIST_FOR_EACH(source_file_list, index)
 	{
+
+		/* Initialize */
 		cl2llvm_init_global_vars();
+
 		/* Open file */
 		cl2llvm_file_name = list_get(source_file_list, index);
 		cl2llvm_yyin = fopen(cl2llvm_file_name, "rb");
@@ -175,40 +186,32 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 			fatal("%s: cannot open file", cl2llvm_file_name);
 
 		/* Compile */
-		extern int cl2llvm_yydebug;
-		/*initialize yydebug to 1 for debug information from bison*/
-		cl2llvm_yydebug = 0; ////
 		cl2llvm_yyparse();
 	
-		/*Verify module and dump bit code to file*/
-		llvm_file_name = list_get(llvm_file_list, index);
+		/* Verify module and optimize */
 		LLVMVerifyModule(cl2llvm_module, LLVMAbortProcessAction, &error);
+		LLVMPassManagerRef pm = LLVMCreatePassManager();
+		switch (opt_level)
+		{
+		case 1:
+			LLVMAddCFGSimplificationPass(pm);
+			LLVMAddPromoteMemoryToRegisterPass(pm);
+		case 0:
+			break;
+		default:
+			panic("invalid optimization level (%d)", opt_level);
+		}
+		LLVMRunPassManager(pm, cl2llvm_module);
+
+		/* Dump bit code */
+		llvm_file_name = list_get(llvm_file_list, index);
 		LLVMWriteBitcodeToFile(cl2llvm_module, llvm_file_name);
-		LLVMDisposeMessage(error); // Handler == LLVMAbortProcessAction -> No need to check errors
+		LLVMDisposePassManager(pm);
+		LLVMDisposeMessage(error);
 
-
-		/* Close */
+		/* Finalize */
 		fclose(cl2llvm_yyin);
-
 		cl2llvm_erase_global_vars();
 	}
-	
-
-	LLVMExecutionEngineRef engine;
-	LLVMModuleProviderRef provider = LLVMCreateModuleProviderForExistingModule(cl2llvm_module);
-	error = NULL;
-	if (LLVMCreateJITCompiler(&engine, provider, 2, &error) != 0)
-	{
-		fprintf(stderr, "%s\n", error);
-		LLVMDisposeMessage(error);
-		abort();
-	}
-
-	LLVMPassManagerRef pass = LLVMCreatePassManager();
-	LLVMAddTargetData(LLVMGetExecutionEngineTargetData(engine), pass);
-
-	LLVMDisposePassManager(pass);
-	LLVMDisposeBuilder(cl2llvm_builder);
-	LLVMDisposeExecutionEngine(engine);
 }
 

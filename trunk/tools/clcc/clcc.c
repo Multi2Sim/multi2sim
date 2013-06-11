@@ -26,6 +26,7 @@
 #include <clcc/si2bin/si2bin.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/misc.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
@@ -43,6 +44,7 @@ int clcc_preprocess_run;  /* Run stand-alone preprocessor */
 int clcc_cl2llvm_run;  /* Run OpenCL-to-LLVM stand-alone front-end */
 int clcc_llvm2si_run;  /* Run LLVM-to-SI stand-alone back-end */
 int clcc_si2bin_run;  /* Run Southern Islands stand-alone assembler */
+int clcc_opt_level = 1;  /* Optimization level */
 
 
 /* File names computed from source files */
@@ -107,6 +109,11 @@ static char *syntax =
 	"\tOutput kernel binary. If no output file is specified, each kernel\n"
 	"\tsource is compiled into a kernel binary with the same name but\n"
 	"\tusing the '.bin' extension.\n"
+	"\n"
+	"-O <level> (-O1 default)\n"
+	"\tOptimization level. Supported values are:\n"
+	"\t  -O0    No optimizations.\n"
+	"\t  -O1    Optimizations at the LLVM level.\n"
 	"\n"
 	"--preprocess, -E\n"
 	"\tRun the stand-alone C preprocessor. This command is equivalent to\n"
@@ -182,6 +189,17 @@ static void clcc_process_option(const char *option, char *optarg)
 		return;
 	}
 
+	if (!strcmp(option, "O"))
+	{
+		int err;
+		clcc_opt_level = str_to_int(optarg, &err);
+		if (err)
+			fatal("%s: %s", optarg, str_error(err));
+		if (!IN_RANGE(clcc_opt_level, 0, 1))
+			fatal("%s: invalid value", optarg);
+		return;
+	}
+
 	if (!strcmp(option, "preprocess") || !strcmp(option, "E"))
 	{
 		clcc_preprocess_run = 1;
@@ -196,7 +214,7 @@ static void clcc_process_option(const char *option, char *optarg)
 
 
 	/* Option not found */
-	exit(1);
+	fatal("%s: invalid option", option);
 }
 
 
@@ -232,7 +250,7 @@ static void clcc_read_command_line(int argc, char **argv)
 	}
 	
 	/* Process options */
-	while ((opt = getopt_long(argc, argv, "ad:hlo:D:E", long_options,
+	while ((opt = getopt_long(argc, argv, "ad:hlo:D:EO:", long_options,
 			&option_index)) != -1)
 	{
 		if (opt)
@@ -481,7 +499,7 @@ int main(int argc, char **argv)
 	{
 		clcc_replace_out_file_name(clcc_llvm_file_list);
 		clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
-		cl2llvm_compile(clcc_clp_file_list, clcc_llvm_file_list);
+		cl2llvm_compile(clcc_clp_file_list, clcc_llvm_file_list, clcc_opt_level);
 		goto out;
 	}
 
@@ -504,7 +522,7 @@ int main(int argc, char **argv)
 	/* Compilation steps */
 	clcc_replace_out_file_name(clcc_bin_file_list);
 	clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
-	cl2llvm_compile(clcc_clp_file_list, clcc_llvm_file_list);
+	cl2llvm_compile(clcc_clp_file_list, clcc_llvm_file_list, clcc_opt_level);
 	llvm2si_compile(clcc_llvm_file_list, clcc_asm_file_list);
 	si2bin_compile(clcc_asm_file_list, clcc_bin_file_list);
 
