@@ -41,6 +41,7 @@
 char clcc_out_file_name[MAX_STRING_SIZE];
 
 int clcc_amd_run;  /* Run AMD native compiler */
+int clcc_preprocess_run;  /* Run stand-alone preprocessor */
 int clcc_cl2llvm_run;  /* Run OpenCL-to-LLVM stand-alone front-end */
 int clcc_llvm2si_run;  /* Run LLVM-to-SI stand-alone back-end */
 int clcc_si2bin_run;  /* Run Southern Islands stand-alone assembler */
@@ -48,6 +49,7 @@ int clcc_si2bin_run;  /* Run Southern Islands stand-alone assembler */
 
 /* File names computed from source files */
 struct list_t *clcc_source_file_list;  /* Source file names */
+struct list_t *clcc_clp_file_list;  /* Preprocessed source list, extension '.clp' */
 struct list_t *clcc_llvm_file_list;  /* LLVM files, extension, '.llvm' */
 struct list_t *clcc_asm_file_list;  /* Assembly files, extension '.s' */
 struct list_t *clcc_bin_file_list;  /* Binary files, extension '.bin' */
@@ -107,6 +109,11 @@ static char *syntax =
 	"\tOutput kernel binary. If no output file is specified, each kernel\n"
 	"\tsource is compiled into a kernel binary with the same name but\n"
 	"\tusing the '.bin' extension.\n"
+	"\n"
+	"--preprocess, -E\n"
+	"\tRun the stand-alone C preprocessor. This command is equivalent to\n"
+	"\tan external call to command 'cpp', replacing compiler directives\n"
+	"\tand macros.\n"
 	"\n"
 	"--si-asm\n"
 	"\tTreat the input files as source files containing Southern Islands\n"
@@ -192,6 +199,12 @@ static void clcc_process_option(const char *option, char *optarg)
 		return;
 	}
 
+	if (!strcmp(option, "preprocess") || !strcmp(option, "E"))
+	{
+		clcc_preprocess_run = 1;
+		return;
+	}
+
 	if (!strcmp(option, "si-asm"))
 	{
 		clcc_si2bin_run = 1;
@@ -217,10 +230,11 @@ static void clcc_read_command_line(int argc, char **argv)
 		{ "amd-dump-all", no_argument, 0, 'a' },
 		{ "amd-list", no_argument, 0, 'l' },
 		{ "cl2llvm", no_argument, 0, 0 },
+		{ "define", required_argument, 0, 'D' },
 		{ "help", no_argument, 0, 'h' },
 		{ "llvm2si", no_argument, 0, 0 },
+		{ "preprocess", no_argument, 0, 'E' },
 		{ "si-asm", no_argument, 0, 0 },
-		{ "define", required_argument, 0, 'D' },
 		{ 0, 0, 0, 0 }
 	};
 
@@ -235,7 +249,7 @@ static void clcc_read_command_line(int argc, char **argv)
 	}
 	
 	/* Process options */
-	while ((opt = getopt_long(argc, argv, "ad:hlo:D:", long_options,
+	while ((opt = getopt_long(argc, argv, "ad:hlo:D:E", long_options,
 			&option_index)) != -1)
 	{
 		if (opt)
@@ -257,7 +271,28 @@ static void clcc_read_command_line(int argc, char **argv)
 }
 
 
-void clcc_read_source_files(void)
+/* If a file was specified with option '-o', replace the file name in the file
+ * list with the output file. The file list must contain only one element. */
+static void clcc_replace_out_file_name(struct list_t *file_list)
+{
+	char *file_name;
+
+	/* Nothing to do if output file name is not given */
+	if (!clcc_out_file_name[0])
+		return;
+
+	/* Free old string */
+	assert(list_count(file_list) == 1);
+	file_name = list_get(file_list, 0);
+	free(file_name);
+
+	/* Set new name */
+	file_name = xstrdup(clcc_out_file_name);
+	list_set(file_list, 0, file_name);
+}
+
+
+static void clcc_read_source_files(void)
 {
 	char *file_name_ptr;
 	char file_name[MAX_STRING_SIZE];
@@ -291,6 +326,10 @@ void clcc_read_source_files(void)
 		str_substr(file_name_prefix, sizeof file_name_prefix,
 				file_name_ptr, 0, dot_str - file_name_ptr);
 
+		/* Pre-processed source with '.clp' extension */
+		snprintf(file_name, sizeof file_name, "%s.clp", file_name_prefix);
+		list_add(clcc_clp_file_list, xstrdup(file_name));
+
 		/* LLVM binary with '.llvm' extension */
 		snprintf(file_name, sizeof file_name, "%s.llvm", file_name_prefix);
 		list_add(clcc_llvm_file_list, xstrdup(file_name));
@@ -303,18 +342,40 @@ void clcc_read_source_files(void)
 		snprintf(file_name, sizeof file_name, "%s.bin", file_name_prefix);
 		list_add(clcc_bin_file_list, xstrdup(file_name));
 	}
+}
 
-	/* Option '-o' given. Replace name of final binary. */
-	if (clcc_out_file_name[0])
+
+static void clcc_preprocess(struct list_t *source_file_list,
+		struct list_t *clp_file_list)
+{
+	char cmd[MAX_LONG_STRING_SIZE];
+
+	char *source_file;
+	char *clp_file;
+
+	int index;
+	int ret;
+
+	LIST_FOR_EACH(source_file_list, index)
 	{
-		/* Free old string */
-		assert(clcc_bin_file_list->count == 1);
-		file_name_ptr = list_get(clcc_bin_file_list, 0);
-		free(file_name_ptr);
+		/* Get files */
+		source_file = list_get(source_file_list, index);
+		clp_file = list_get(clp_file_list, index);
+		assert(source_file);
+		assert(clp_file);
 
-		/* Set new string */
-		file_name_ptr = xstrdup(clcc_out_file_name);
-		list_set(clcc_bin_file_list, 0, file_name_ptr);
+		/* Run command */
+		snprintf(cmd, sizeof cmd, "cpp %s -o %s", source_file, clp_file);
+		ret = system(cmd);
+
+		/* Command 'cpp' not found */
+		if (ret == -1)
+			fatal("%s: cannot run preprocessor, command 'cpp' not found",
+					__FUNCTION__);
+
+		/* Any other error by 'cpp' */
+		if (ret)
+			exit(ret);
 	}
 }
 
@@ -323,6 +384,7 @@ void clcc_init(void)
 {
 	/* List of source files */
 	clcc_source_file_list = list_create();
+	clcc_clp_file_list = list_create();
 	clcc_llvm_file_list = list_create();
 	clcc_asm_file_list = list_create();
 	clcc_bin_file_list = list_create();
@@ -343,6 +405,11 @@ void clcc_done(void)
 	LIST_FOR_EACH(clcc_source_file_list, index)
 		free(list_get(clcc_source_file_list, index));
 	list_free(clcc_source_file_list);
+
+	/* Free list of pre-processed files */
+	LIST_FOR_EACH(clcc_clp_file_list, index)
+		free(list_get(clcc_clp_file_list, index));
+	list_free(clcc_clp_file_list);
 
 	/* Free list of LLVM object files */
 	LIST_FOR_EACH(clcc_llvm_file_list, index)
@@ -393,36 +460,33 @@ int main(int argc, char **argv)
 	/* Native AMD compilation */
 	if (clcc_amd_run)
 	{
-		amd_compile(clcc_source_file_list, clcc_bin_file_list);
+		clcc_replace_out_file_name(clcc_bin_file_list);
+		clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
+		amd_compile(clcc_clp_file_list, clcc_bin_file_list);
+		goto out;
+	}
+
+	/* Stand-alone pre-processor */
+	if (clcc_preprocess_run)
+	{
+		clcc_replace_out_file_name(clcc_clp_file_list);
+		clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
 		goto out;
 	}
 
 	/* OpenCL C to LLVM stand-alone front-end */
 	if (clcc_cl2llvm_run)
 	{
-		/* Replace output file if option '-o' was used */
-		if (clcc_out_file_name[0] && clcc_llvm_file_list->count == 1)
-		{
-			free(list_get(clcc_llvm_file_list, 0));
-			list_set(clcc_llvm_file_list, 0, xstrdup(clcc_out_file_name));
-		}
-
-		/* Run */
-		cl2llvm_compile(clcc_source_file_list, clcc_llvm_file_list);
+		clcc_replace_out_file_name(clcc_llvm_file_list);
+		clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
+		cl2llvm_compile(clcc_clp_file_list, clcc_llvm_file_list);
 		goto out;
 	}
 
 	/* LLVM to Southern Islands stand-alone back-end */
 	if (clcc_llvm2si_run)
 	{
-		/* Replace output file if option '-o' was used */
-		if (clcc_out_file_name[0] && clcc_asm_file_list->count == 1)
-		{
-			free(list_get(clcc_asm_file_list, 0));
-			list_set(clcc_asm_file_list, 0, xstrdup(clcc_out_file_name));
-		}
-
-		/* Run */
+		clcc_replace_out_file_name(clcc_asm_file_list);
 		llvm2si_compile(clcc_source_file_list, clcc_asm_file_list);
 		goto out;
 	}
@@ -430,12 +494,15 @@ int main(int argc, char **argv)
 	/* Southern Islands assembler */
 	if (clcc_si2bin_run)
 	{
+		clcc_replace_out_file_name(clcc_bin_file_list);
 		si2bin_compile(clcc_source_file_list, clcc_bin_file_list);
 		goto out;
 	}
 
 	/* Compilation steps */
-	cl2llvm_compile(clcc_source_file_list, clcc_llvm_file_list);
+	clcc_replace_out_file_name(clcc_bin_file_list);
+	clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
+	cl2llvm_compile(clcc_clp_file_list, clcc_llvm_file_list);
 	llvm2si_compile(clcc_llvm_file_list, clcc_asm_file_list);
 	si2bin_compile(clcc_asm_file_list, clcc_bin_file_list);
 
