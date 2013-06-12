@@ -213,8 +213,9 @@ static void clcc_process_option(const char *option, char *optarg)
 	}
 
 
-	/* Option not found */
-	fatal("%s: invalid option", option);
+	/* Option not found. Error message has been shown already by the call
+	 * to 'getopts'. */
+	exit(1);
 }
 
 
