@@ -37,43 +37,46 @@
  * Function Argument Object
  */
 
-struct llvm2si_function_arg_t *llvm2si_function_arg_create(struct si_arg_t *arg)
+struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg,
+		int index)
 {
-	struct llvm2si_function_arg_t *function_arg;
+	struct llvm2si_function_arg_t *arg;
 
 	/* Allocate */
-	function_arg = xcalloc(1, sizeof(struct llvm2si_function_arg_t));
-	function_arg->arg = arg;
+	arg = xcalloc(1, sizeof(struct llvm2si_function_arg_t));
+	arg->llarg = llarg;
+	arg->index = index;
 
 	/* Return */
-	return function_arg;
+	return arg;
 }
 
 
 void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg)
 {
-	si_arg_free(arg->arg);
+	assert(arg->si_arg);
+	si_arg_free(arg->si_arg);
 	free(arg);
 }
 
 
-void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE *f)
+void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *arg, FILE *f)
 {
-	struct si_arg_t *arg = function_arg->arg;
+	struct si_arg_t *si_arg = arg->si_arg;
 
-	switch (arg->type)
+	switch (si_arg->type)
 	{
 	case si_arg_pointer:
 
 		/* Type, name, offset, UAV */
 		fprintf(f, "\t%s* %s %d uav11\n",
-				str_map_value(&si_arg_data_type_map, arg->pointer.data_type),
-				arg->name, function_arg->index * 16);
+				str_map_value(&si_arg_data_type_map, si_arg->pointer.data_type),
+				si_arg->name, arg->index * 16);
 		break;
 
 	default:
 		fatal("%s: argument type not recognized (%d)",
-				__FUNCTION__, arg->type);
+				__FUNCTION__, si_arg->type);
 	}
 }
 
@@ -85,13 +88,14 @@ void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE
  * Function Object
  */
 
-struct llvm2si_function_t *llvm2si_function_create(const char *name)
+struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 {
 	struct llvm2si_function_t *function;
 
 	/* Allocate */
 	function = xcalloc(1, sizeof(struct llvm2si_function_t));
-	function->name = xstrdup(name);
+	function->llfunction = llfunction;
+	function->name = xstrdup(LLVMGetValueName(llfunction));
 	function->basic_block_list = linked_list_create();
 	function->arg_list = list_create();
 	function->symbol_table = llvm2si_symbol_table_create();
@@ -225,9 +229,9 @@ void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 		panic("%s: arguments in non-contiguous scalar registers", __FUNCTION__);
 
 	/* Add argument */
+	assert(function->arg_list->count == arg->index);
 	list_add(function->arg_list, arg);
 	arg->function = function;
-	arg->index = function->arg_list->count - 1;
 
 	/* Allocate 1 scalar register for the argument */
 	arg->sreg = function->num_sregs;
@@ -246,7 +250,7 @@ void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 }
 
 
-void llvm2si_function_gen_header(struct llvm2si_function_t *function,
+void llvm2si_function_emit_header(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block)
 {
 	struct si2bin_inst_t *inst;
@@ -417,5 +421,29 @@ void llvm2si_function_gen_header(struct llvm2si_function_t *function,
 	list_add(arg_list, si2bin_arg_create_literal(0x58));
 	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
 	llvm2si_basic_block_add_inst(basic_block, inst);
+}
+
+
+void llvm2si_function_emit_args(struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	LLVMValueRef llfunction;
+	LLVMValueRef llarg;
+
+	struct llvm2si_function_arg_t *arg;
+
+	/* Emit code for each argument individually */
+	llfunction = function->llfunction;
+	for (llarg = LLVMGetFirstParam(llfunction); llarg;
+			llarg = LLVMGetNextParam(llarg))
+	{
+		/* Create function argument and add it */
+		arg = llvm2si_function_arg_create(llarg,
+				function->arg_list->count);
+
+		/* Add the argument to the list. This call will cause the
+		 * corresponding code to be emitted. */
+		llvm2si_function_add_arg(function, arg, basic_block);
+	}
 }
 

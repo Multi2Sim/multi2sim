@@ -21,6 +21,7 @@
 #define TOOLS_CLCC_LLVM2SI_FUNCTION_H
 
 #include <arch/southern-islands/asm/arg.h>
+#include <llvm-c/Core.h>
 
 #include <stdio.h>
 
@@ -38,27 +39,31 @@ struct llvm2si_function_t;
 
 struct llvm2si_function_arg_t
 {
-	/* Scalar register identifier containing the argument. This argument is
-	 * populated when the argument is inserted into the function with a
-	 * call to 'llvm2si_function_add_arg()'. */
-	int sreg;
+	/* Associated LLVM argument */
+	LLVMValueRef llarg;
 
-	/* Index that the argument occupies in the function argument list.
-	 * This field is populated by 'llvm2si_function_add_arg()'. */
+	/* Index that the argument occupies in the function argument list. */
 	int index;
 
-	/* Function that the argument belongs to. Populated when inserted with
-	 * a call to 'llvm2si_function_add_arg()'. */
+
+	/* The fields below are populated when the argument is inserted into
+	 * a function with a call to 'llvm2si_function_add_arg()'. */
+
+	/* Scalar register identifier containing the argument */
+	int sreg;
+
+	/* Function that the argument belongs to */
 	struct llvm2si_function_t *function;
 
-	/* All fields inherited from 'si_arg_t' */
-	struct si_arg_t *arg;
+	/* All fields inherited from 'si_arg_t'. */
+	struct si_arg_t *si_arg;
 
 };
 
-/* Create a function argument from a 'si_arg_t' object. This object will be
- * freed automatically in a call to 'llvm2si_function_arg_free()'. */
-struct llvm2si_function_arg_t *llvm2si_function_arg_create(struct si_arg_t *arg);
+/* Create an argument. Value in 'index' indicates the argument index within the
+ * function. */
+struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg,
+		int index);
 void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg);
 
 void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE *f);
@@ -74,6 +79,9 @@ struct llvm2si_function_t
 {
 	/* Function name */
 	char *name;
+
+	/* LLVM function */
+	LLVMValueRef llfunction;
 
 	/* Number of used registers */
 	int num_sregs;  /* Scalar */
@@ -110,7 +118,7 @@ struct llvm2si_function_t
 };
 
 
-struct llvm2si_function_t *llvm2si_function_create(const char *name);
+struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction);
 void llvm2si_function_free(struct llvm2si_function_t *function);
 void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f);
 
@@ -127,7 +135,13 @@ void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 /* Generate initialization code for the function. The code will be dumped in
  * 'basic_block', which must have been previously added to the function with a
  * call to 'llvm2si_function_add_basic_block'. */
-void llvm2si_function_gen_header(struct llvm2si_function_t *function,
+void llvm2si_function_emit_header(struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block);
+
+/* Emit code to load arguments into scalar register. The 'basic_block' must
+ * have been added to the 'function' before. The function will internally
+ * create its list of arguments. */
+void llvm2si_function_emit_args(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
 
 #endif
