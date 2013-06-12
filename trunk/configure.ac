@@ -586,7 +586,12 @@ AM_CONDITIONAL(HAVE_FLEX_BISON_AND_LLVM, test x$have_flex = xyes -a x$have_bison
 if test x$have_llvm = xyes
 then
 	AC_DEFINE(HAVE_LLVM, [1])
-	LLVM_CFLAGS=`$LLVM_CONFIG --cflags`
+
+	# Use the LLVM flags suggested by 'llvm-config', but don't let them
+	# interfere with our own flags. Get rid of their -O2, -NDEBUG, and -g.
+	# We will decide if we want those with our --enable-debug.
+	LLVM_CFLAGS=`$LLVM_CONFIG --cflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O2\>\)//g"`
+
 	LLVM_CXXFLAGS=`$LLVM_CONFIG --cxxflags`
 	LLVM_LDFLAGS=`$LLVM_CONFIG --ldflags`
 	LLVM_LIBS=`$LLVM_CONFIG --libs`

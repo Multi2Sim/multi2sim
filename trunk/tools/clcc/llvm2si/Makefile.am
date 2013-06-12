@@ -19,11 +19,10 @@ libllvm2si_a_SOURCES = \
 	symbol-table.c \
 	symbol-table.h \
 	\
-	translate.cc \
+	translate.c \
 	translate.h
 
 AM_CFLAGS = $(LLVM_CFLAGS)
-AM_CXXFLAGS = $(LLVM_CXXFLAGS)
 
 else
 
