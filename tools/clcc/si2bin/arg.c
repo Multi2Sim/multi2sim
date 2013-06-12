@@ -565,10 +565,7 @@ void si2bin_arg_dump_assembly(struct si2bin_arg_t *arg, FILE *f)
 	{
 		int value;
 		value = arg->value.literal.val;
-		if(value)
 			fprintf(f, "0x%x", value);
-		else
-			fprintf(f, "%d", value);
 		break;
 	}
 
