@@ -75,7 +75,7 @@ void llvm2si_translate(char *source_file, char *output_file)
 		function = llvm2si_function_create(llfunction);
 
 		/* Create a basic block and generate header code in it */
-		basic_block = llvm2si_basic_block_create("entry");
+		basic_block = llvm2si_basic_block_create(NULL);
 		llvm2si_function_add_basic_block(function, basic_block);
 
 		/* Emit code for function */
