@@ -13,6 +13,9 @@ libcl2llvm_a_SOURCES = \
 	arg.h\
 	arg.c\
 	\
+	built-in-funcs.h\
+	built-in-funcs.c\
+	\
 	cl2llvm.c \
 	cl2llvm.h \
 	\

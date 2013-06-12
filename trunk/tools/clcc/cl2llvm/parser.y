@@ -27,6 +27,7 @@
 #include "type.h"
 #include "init.h"
 #include "symbol.h"
+#include "built-in-funcs.h"
 #include "parser.h"
 #include "cl2llvm.h"
 
@@ -47,6 +48,7 @@ char block_name[50];
 int  func_count;
 char func_name[50];
 
+extern struct hash_table_t *cl2llvm_built_in_func_table;
 struct hash_table_t *cl2llvm_symbol_table;
 
 struct cl2llvm_function_t *cl2llvm_current_function;
@@ -692,6 +694,11 @@ stmt
 func_call
 	: TOK_ID TOK_PAR_OPEN param_list TOK_PAR_CLOSE
 	{
+		int *func_id;
+
+		func_id = hash_table_get(cl2llvm_built_in_func_table, $1);
+		if (func_id)
+			func_declare(func_id);
 	
 
 		struct cl2llvm_function_t *function = hash_table_get(cl2llvm_symbol_table, $1);
@@ -845,6 +852,7 @@ declaration
 		struct cl2llvm_val_t *cast_to_val;
 		int init_count = list_count($2);
 		struct cl2llvm_init_t *current_list_elem;
+		LLVMValueRef var_addr;
 		int i;
 
 		/*Create each sybmol in the init_list*/
@@ -854,16 +862,40 @@ declaration
 			current_list_elem = list_get($2, i);
 			
 			/*if variable type is a vector*/
-			/*if (LLVMGetTypeKind($1->type_spec->llvm_type) == LLVMVectorType())
-			{
-				if (LLVMGetVector
-			}*/
-			/*If data type is not an array*/
-			 if (current_list_elem->array_deref_list == NULL)
+			if (LLVMGetTypeKind($1->type_spec->llvm_type) == LLVMVectorTypeKind)
 			{
 				/*Go to entry block and declare variable*/
 				LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
-				LLVMValueRef var_addr = LLVMBuildAlloca(cl2llvm_builder, 
+				var_addr = LLVMBuildAlloca(cl2llvm_builder, 
+					$1->type_spec->llvm_type, current_list_elem->name);
+				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+
+				/*Create symbol*/
+				symbol = cl2llvm_symbol_create_w_init( var_addr, 
+					$1->type_spec->sign, current_list_elem->name);
+
+				/*Insert symbol into symbol table*/
+				err = hash_table_insert(cl2llvm_current_function->symbol_table, 
+					current_list_elem->name, symbol);
+				if (!err)
+					yyerror("duplicated symbol");
+
+				if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->type_spec->llvm_type 
+					&& current_list_elem->cl2llvm_val->type->sign == $1->type_spec->sign)
+				{
+					LLVMBuildStore(cl2llvm_builder, current_list_elem->cl2llvm_val->val, var_addr);
+				}
+				else 
+				{
+					yyerror("type of vector initializer does not match type of delcarator");
+				}
+			}
+			/*If data type is not an array*/
+			else if (current_list_elem->array_deref_list == NULL)
+			{
+				/*Go to entry block and declare variable*/
+				LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
+				var_addr = LLVMBuildAlloca(cl2llvm_builder, 
 					$1->type_spec->llvm_type, current_list_elem->name);
 				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
 
