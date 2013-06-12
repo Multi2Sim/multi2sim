@@ -39,34 +39,25 @@ struct llvm2si_function_t;
 
 struct llvm2si_function_arg_t
 {
-	/* Associated LLVM argument */
-	LLVMValueRef llarg;
-
-	/* Index that the argument occupies in the function argument list. */
-	int index;
+	char *name;
+	LLVMValueRef llarg;  /* Associated LLVM argument */
+	struct si_arg_t *si_arg;  /* Inherited from 'si_arg_t'. */
 
 
 	/* The fields below are populated when the argument is inserted into
 	 * a function with a call to 'llvm2si_function_add_arg()'. */
 
-	/* Scalar register identifier containing the argument */
-	int sreg;
-
-	/* Function that the argument belongs to */
-	struct llvm2si_function_t *function;
-
-	/* All fields inherited from 'si_arg_t'. */
-	struct si_arg_t *si_arg;
-
+	struct llvm2si_function_t *function;  /* Function it belongs to */
+	int index;  /* Index occupied in function argument list */
+	int sreg;  /* Scalar register identifier containing the argument */
 };
 
-/* Create an argument. Value in 'index' indicates the argument index within the
- * function. */
-struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg,
-		int index);
-void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg);
 
+struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg);
+void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg);
 void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE *f);
+
+void llvm2si_function_arg_set_name(struct llvm2si_function_arg_t *arg, char *name);
 
 
 
@@ -126,12 +117,6 @@ void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f);
 void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
 
-/* Add argument 'arg' into the list of arguments of 'function', and generate
- * code to load it into 'basic_block'. */
-void llvm2si_function_add_arg(struct llvm2si_function_t *function,
-		struct llvm2si_function_arg_t *arg,
-		struct llvm2si_basic_block_t *basic_block);
-	
 /* Generate initialization code for the function. The code will be dumped in
  * 'basic_block', which must have been previously added to the function with a
  * call to 'llvm2si_function_add_basic_block'. */
@@ -142,6 +127,12 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function,
  * have been added to the 'function' before. The function will internally
  * create its list of arguments. */
 void llvm2si_function_emit_args(struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block);
+
+/* Emit code for the function body. The first basic block of the function will
+ * be added at the end of 'basic_block', which should be already part of the
+ * function. As the code emission progresses, new basic blocks will be created. */
+void llvm2si_function_emit_body(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
 
 #endif
