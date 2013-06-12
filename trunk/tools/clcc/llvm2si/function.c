@@ -27,6 +27,7 @@
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
+#include <llvm-c/Core.h>
 
 #include "basic-block.h"
 #include "function.h"
@@ -37,15 +38,72 @@
  * Function Argument Object
  */
 
-struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg,
-		int index)
+/* Return a Southern Islands argument type from an LLVM type. */
+static enum si_arg_data_type_t llvm2si_function_arg_get_data_type(LLVMTypeRef lltype)
+{
+	LLVMTypeKind lltype_kind;
+	int bit_width;
+
+	lltype_kind = LLVMGetTypeKind(lltype);
+	if (lltype_kind == LLVMIntegerTypeKind)
+	{
+		bit_width = LLVMGetIntTypeWidth(lltype);
+		switch (bit_width)
+		{
+		case 1: return si_arg_i1;
+		case 8: return si_arg_i8;
+		case 16: return si_arg_i16;
+		case 32: return si_arg_i32;
+		case 64: return si_arg_i64;
+
+		default:
+			fatal("%s: invalid argument bit width (%d)",
+				__FUNCTION__, bit_width);
+			return si_arg_data_type_invalid;
+		}
+	}
+	else
+	{
+		fatal("%s: unsupported argument type kind (%d)",
+				__FUNCTION__, lltype_kind);
+		return si_arg_data_type_invalid;
+	}
+}
+
+
+struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg)
 {
 	struct llvm2si_function_arg_t *arg;
+	struct si_arg_t *si_arg;
 
-	/* Allocate */
+	LLVMTypeRef lltype;
+	LLVMTypeKind lltype_kind;
+
+	char *name;
+
+	/* Get argument name */
+	name = (char *) LLVMGetValueName(llarg);
+
+	/* Initialize 'si_arg' object */
+	lltype = LLVMTypeOf(llarg);
+	lltype_kind = LLVMGetTypeKind(lltype);
+	if (lltype_kind == LLVMPointerTypeKind)
+	{
+		lltype = LLVMGetElementType(lltype);
+		si_arg = si_arg_create(si_arg_pointer, name);
+		si_arg->pointer.data_type = llvm2si_function_arg_get_data_type(lltype);
+	}
+	else
+	{
+		si_arg = si_arg_create(si_arg_value, name);
+		si_arg->value.data_type = llvm2si_function_arg_get_data_type(lltype);
+	}
+
+	/* Initialize 'arg' object */
 	arg = xcalloc(1, sizeof(struct llvm2si_function_arg_t));
+	arg->name = str_set(arg->name, name);
 	arg->llarg = llarg;
-	arg->index = index;
+	arg->si_arg = si_arg;
 
 	/* Return */
 	return arg;
@@ -54,7 +112,9 @@ struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg,
 
 void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg)
 {
+	assert(arg->name);
 	assert(arg->si_arg);
+	str_free(arg->name);
 	si_arg_free(arg->si_arg);
 	free(arg);
 }
@@ -78,6 +138,12 @@ void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *arg, FILE *f)
 		fatal("%s: argument type not recognized (%d)",
 				__FUNCTION__, si_arg->type);
 	}
+}
+
+
+void llvm2si_function_arg_set_name(struct llvm2si_function_arg_t *arg, char *name)
+{
+	arg->name = str_set(arg->name, name);
 }
 
 
@@ -204,49 +270,6 @@ void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
 	/* Add basic block */
 	linked_list_add(function->basic_block_list, basic_block);
 	basic_block->function = function;
-}
-
-
-void llvm2si_function_add_arg(struct llvm2si_function_t *function,
-		struct llvm2si_function_arg_t *arg,
-		struct llvm2si_basic_block_t *basic_block)
-{
-	struct list_t *arg_list;
-	struct si2bin_inst_t *inst;
-
-	/* Check that argument does not belong to a function yet */
-	if (arg->function)
-		panic("%s: argument already added", __FUNCTION__);
-
-	/* If this is the first argument added to the function, update the
-	 * scalar register that points to the first argument (sreg_arg). */
-	if (!function->arg_list->count)
-		function->sreg_arg = function->num_sregs;
-
-	/* Make sure that all function arguments appear in contiguous scalar
-	 * registers after the first recorded argument. */
-	if (function->sreg_arg + function->arg_list->count != function->num_sregs)
-		panic("%s: arguments in non-contiguous scalar registers", __FUNCTION__);
-
-	/* Add argument */
-	assert(function->arg_list->count == arg->index);
-	list_add(function->arg_list, arg);
-	arg->function = function;
-
-	/* Allocate 1 scalar register for the argument */
-	arg->sreg = function->num_sregs;
-	function->num_sregs++;
-
-	/* Generate code to load argument
-	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
-	 */
-	arg_list = list_create();
-	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_cb1,
-			function->sreg_cb1 + 3));
-	list_add(arg_list, si2bin_arg_create_literal(arg->index * 4));
-	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
 
@@ -424,6 +447,64 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function,
 }
 
 
+/* Add argument 'arg' into the list of arguments of 'function', and generate
+ * code to load it into 'basic_block'. Calls to this function must be done
+ * consecutively without any action in between that could allocate any
+ * scalar register ID in 'function'. */
+static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
+		struct llvm2si_function_arg_t *arg,
+		struct llvm2si_basic_block_t *basic_block)
+{
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+
+	char arg_name[MAX_STRING_SIZE];
+
+	/* Check that argument does not belong to a function yet */
+	if (arg->function)
+		panic("%s: argument already added", __FUNCTION__);
+
+	/* If this is the first argument added to the function, update the
+	 * scalar register that points to the first argument (sreg_arg). */
+	if (!function->arg_list->count)
+		function->sreg_arg = function->num_sregs;
+
+	/* Make sure that all function arguments appear in contiguous scalar
+	 * registers after the first recorded argument. */
+	if (function->sreg_arg + function->arg_list->count != function->num_sregs)
+		panic("%s: arguments in non-contiguous scalar registers", __FUNCTION__);
+
+	/* Add argument */
+	list_add(function->arg_list, arg);
+	arg->function = function;
+	arg->index = function->arg_list->count - 1;
+
+	/* If the LLVM argument didn't provide a valid name, update the name
+	 * as 'argX' now that we know which index the argument has in the function. */
+	assert(arg->name);
+	if (!*arg->name)
+	{
+		snprintf(arg_name, sizeof arg_name, "arg%d", arg->index);
+		llvm2si_function_arg_set_name(arg, arg_name);
+	}
+
+	/* Allocate 1 scalar register for the argument */
+	arg->sreg = function->num_sregs;
+	function->num_sregs++;
+
+	/* Generate code to load argument
+	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_cb1,
+			function->sreg_cb1 + 3));
+	list_add(arg_list, si2bin_arg_create_literal(arg->index * 4));
+	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+}
+
+
 void llvm2si_function_emit_args(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block)
 {
@@ -438,8 +519,7 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function,
 			llarg = LLVMGetNextParam(llarg))
 	{
 		/* Create function argument and add it */
-		arg = llvm2si_function_arg_create(llarg,
-				function->arg_list->count);
+		arg = llvm2si_function_arg_create(llarg);
 
 		/* Add the argument to the list. This call will cause the
 		 * corresponding code to be emitted. */
@@ -447,3 +527,8 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function,
 	}
 }
 
+
+void llvm2si_function_emit_body(struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block)
+{
+}
