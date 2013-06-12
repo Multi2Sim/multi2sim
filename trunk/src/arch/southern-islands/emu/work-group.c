@@ -234,6 +234,22 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 					user_elements[i].startUserReg,
 					user_elements[i].userRegCount);
 			}
+			else if (user_elements[i].dataClass == PTR_VERTEX_BUFFER_TABLE)
+			{
+				/* Store VB table in sregs */
+				si_wavefront_init_sreg_with_vertex_buffer_table(
+					wavefront,
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount);
+			}
+			else if (user_elements[i].dataClass == SUB_PTR_FETCH_SHADER)
+			{
+				/* Store Fetch Shader pointer in sregs */
+				si_wavefront_init_sreg_with_fetch_shader(
+					wavefront,
+					user_elements[i].startUserReg,
+					user_elements[i].userRegCount);
+			}
 			else if (user_elements[i].dataClass == IMM_SAMPLER)
 			{
 				/* Store sampler in sregs */
