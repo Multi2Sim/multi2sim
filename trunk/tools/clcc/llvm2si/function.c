@@ -531,4 +531,19 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function,
 void llvm2si_function_emit_body(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block)
 {
+	LLVMValueRef llfunction;
+	LLVMBasicBlockRef llbb;
+
+	/* Iterate through the function basic blocks */
+	llfunction = function->llfunction;
+	for (llbb = LLVMGetFirstBasicBlock(llfunction); llbb;
+			llbb = LLVMGetNextBasicBlock(llbb))
+	{
+		/* Create an SI basic block and add it to the function */
+		basic_block = llvm2si_basic_block_create(llbb);
+		llvm2si_function_add_basic_block(function, basic_block);
+
+		/* Emit code for the basic block */
+		llvm2si_basic_block_emit(basic_block);
+	}
 }
