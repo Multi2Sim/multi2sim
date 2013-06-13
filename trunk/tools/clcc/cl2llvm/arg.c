@@ -37,11 +37,11 @@ struct cl2llvm_arg_t *cl2llvm_arg_create(struct cl2llvm_decl_list_t *decl_list, 
 
 	/*merge declarators to arg*/
 	arg->type_spec = decl_list->type_spec;
-	arg->addr_qual = decl_list->addr_qual;
+	arg->access_qual = decl_list->access_qual;
 	arg->kernel_t = decl_list->kernel_t;
 	arg->inline_t = decl_list->inline_t;
 	arg->sc_spec = decl_list->sc_spec;
-	arg->access_qual = decl_list->access_qual;
+	arg->addr_qual = decl_list->addr_qual;
 	arg->type_qual = decl_list->type_qual;
 
 	return arg;
@@ -51,8 +51,8 @@ void cl2llvm_arg_free(struct cl2llvm_arg_t *arg)
 {
 	if (arg->type_spec != NULL)
 		free(arg->type_spec);
-	if (arg->addr_qual != NULL)
-		free(arg->addr_qual);
+	if (arg->access_qual != NULL)
+		free(arg->access_qual);
 	if (arg->kernel_t != NULL)
 		free(arg->kernel_t);
 	if (arg->inline_t != NULL)

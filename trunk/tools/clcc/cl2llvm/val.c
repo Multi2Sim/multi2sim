@@ -38,9 +38,13 @@ struct cl2llvm_val_t *cl2llvm_val_create(void)
 	cl2llvm_val = xcalloc(1, sizeof(struct cl2llvm_val_t));
 
 	struct cl2llvm_type_t *cl2llvm_type;
-	cl2llvm_type = xcalloc(1, sizeof(struct cl2llvm_type_t));
+	cl2llvm_type = cl2llvm_type_create();
 	
 	cl2llvm_val->type = cl2llvm_type;
+	cl2llvm_val->vector_indices = xmalloc(sizeof(struct cl2llvm_val_t *) * 17);
+
+	/* Initialize first element of vector_indices to NULL indicating that it is empty */
+	cl2llvm_val->vector_indices[0] = NULL;
 
 	return cl2llvm_val;
 }
@@ -59,6 +63,7 @@ struct cl2llvm_val_t *cl2llvm_val_create_w_init(LLVMValueRef val, int sign)
 void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val)
 {
 	free(cl2llvm_val->type);
+	free(cl2llvm_val->vector_indices);
 	free(cl2llvm_val);
 }
 

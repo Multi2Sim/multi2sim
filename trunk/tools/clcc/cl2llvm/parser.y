@@ -190,6 +190,7 @@ LLVMBasicBlockRef current_basic_block;
 %type<llvm_value_ref> primary
 %type<llvm_value_ref> lvalue
 %type<list_val_t> array_deref_list
+%type<llvm_value_ref> struct_deref_list
 %type<llvm_value_ref> maybe_expr
 %type<llvm_value_ref> expr
 %type<list_val_t> vec_literal_param_two_elem
@@ -202,7 +203,7 @@ LLVMBasicBlockRef current_basic_block;
 %type<llvm_value_ref> func_call
 %type<llvm_type_ref> type_name
 %type<const_int_val> type_ptr_list
-%type<const_int_val> access_qual
+%type<const_int_val> addr_qual
 %type<llvm_type_ref> type_spec
 %type<decl_list> declarator
 %type<decl_list> declarator_list
@@ -423,9 +424,9 @@ declarator_list
 	| declarator_list declarator
 	{
 		cl2llvm_attach_decl_to_list($2, $1);
-		if ($1->type_spec != NULL && $2->access_qual != 0)
+		if ($1->type_spec != NULL && $2->addr_qual != 0)
 		{
-			switch ($2->access_qual)
+			switch ($2->addr_qual)
 			{
 				case 1:
 					$1->type_spec->llvm_type = LLVMPointerType( 
@@ -441,9 +442,9 @@ declarator_list
 					break;
 			}
 		}
-		if ($1->access_qual != 0 && $2->type_spec != NULL)
+		if ($1->addr_qual != 0 && $2->type_spec != NULL)
 		{
-			switch ($1->access_qual)
+			switch ($1->addr_qual)
 			{
 				case 1:
 					$1->type_spec->llvm_type = LLVMPointerType( 
@@ -464,7 +465,7 @@ declarator_list
 	}
 	;
 
-access_qual
+addr_qual
 	: TOK_GLOBAL
 	{
 		$$ = 1;
@@ -490,10 +491,10 @@ declarator
 		decl_list->type_spec = $1;
 		$$ = decl_list;
 	}
-	| addr_qual
+	| access_qual
 	{
 		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
-		decl_list->addr_qual = NULL;
+		decl_list->access_qual = NULL;
 		$$ = decl_list;
 	}
 	| TOK_KERNEL
@@ -515,10 +516,10 @@ declarator
 		$$ = decl_list;
 
 	}
-	| access_qual
+	| addr_qual
 	{
 		struct cl2llvm_decl_list_t *decl_list = cl2llvm_decl_list_create();
-		decl_list->access_qual = $1;
+		decl_list->addr_qual = $1;
 		$$ = decl_list;
 	}
 	| type_qual
@@ -534,7 +535,7 @@ type_qual
 	| TOK_VOLATILE
 	;
 
-addr_qual
+access_qual
 	: TOK_READ_ONLY
 	| TOK_WRITE_ONLY
 	| TOK_READ_WRITE
@@ -623,16 +624,55 @@ lvalue
 	}
 	| struct_deref_list
 	{
-		$$ = NULL;
+		$$ = $1;
 	}
 	;
 
 struct_deref_list
 	: TOK_ID TOK_STRUCT_REF TOK_ID
+	{
+		struct cl2llvm_symbol_t *symbol;
+		struct cl2llvm_val_t *value;
+
+		
+		/* Get symbol from hash table */
+		symbol = hash_table_get(cl2llvm_current_function->symbol_table, $1);
+		if (!symbol)	
+			yyerror("symbol undeclared first use in this program");
+
+		/* Duplicate symbol value */
+		value = cl2llvm_val_create_w_init(symbol->cl2llvm_val->val, 
+			symbol->cl2llvm_val->type->sign);
+
+		/* If symbol is a vector retrieve the specified indices */
+		if (LLVMGetTypeKind(LLVMGetElementType(symbol->cl2llvm_val->type->llvm_type))
+			== LLVMVectorTypeKind)
+		{	
+			cl2llvm_get_vector_indices(value->vector_indices, $3);
+		}
+		$$ = value;
+	}
 	| TOK_ID array_deref_list TOK_STRUCT_REF TOK_ID array_deref_list
+	{
+		$$ = NULL;
+	}
 	| TOK_ID array_deref_list TOK_STRUCT_REF TOK_ID
+	{
+		$$ = NULL;
+	}
 	| TOK_ID TOK_STRUCT_REF TOK_ID array_deref_list
+	{
+		$$ = NULL;
+	}
 	| struct_deref_list TOK_STRUCT_REF TOK_ID
+	{
+		/* If struct_deref_list is a vector emit error. */
+		if (LLVMGetTypeKind(LLVMGetElementType($1->type->llvm_type))
+			== LLVMVectorTypeKind)
+			cl2llvm_yyerror("Dereferencing something that is not a pointer, struct or union");
+
+		$$ = NULL;
+	}
 	;
 
 
@@ -879,15 +919,19 @@ declaration
 					current_list_elem->name, symbol);
 				if (!err)
 					yyerror("duplicated symbol");
-
-				if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->type_spec->llvm_type 
-					&& current_list_elem->cl2llvm_val->type->sign == $1->type_spec->sign)
+				
+				/* If initializer is present, store it. */
+				if (current_list_elem->cl2llvm_val != NULL)
 				{
-					LLVMBuildStore(cl2llvm_builder, current_list_elem->cl2llvm_val->val, var_addr);
-				}
-				else 
-				{
-					yyerror("type of vector initializer does not match type of delcarator");
+					if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->type_spec->llvm_type 
+						&& current_list_elem->cl2llvm_val->type->sign == $1->type_spec->sign)
+					{
+						LLVMBuildStore(cl2llvm_builder, current_list_elem->cl2llvm_val->val, var_addr);
+					}
+					else 
+					{
+						yyerror("type of vector initializer does not match type of delcarator");
+					}
 				}
 			}
 			/*If data type is not an array*/
@@ -2523,17 +2567,95 @@ primary
 	}
 	| lvalue
 	{
+		int i;
+		int component_count = 0;
+		LLVMValueRef new_vector_addr;
+		LLVMValueRef new_vector;
+		LLVMValueRef component;
+		
 		snprintf(temp_var_name, sizeof(temp_var_name),
-				"tmp%d", temp_var_count++);
+			"tmp%d", temp_var_count++);
 		struct cl2llvm_val_t *value = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
+
+		/* If value is an array element, retrieve element type */
 		if (LLVMGetTypeKind(value->type->llvm_type) == LLVMArrayTypeKind
 			|| LLVMGetTypeKind(value->type->llvm_type) == LLVMPointerTypeKind
 			|| LLVMGetTypeKind(value->type->llvm_type) == LLVMStructTypeKind)
 		{
 			value->type->llvm_type = LLVMGetElementType(value->type->llvm_type);
 		}
+
+		/* If element is of vector type, check for component indices. */
+		if (LLVMGetTypeKind($1->type->llvm_type)
+			== LLVMVectorTypeKind && $1->vector_indices)
+		{
+			/* Get vector component count */
+			while($1->vector_indices[component_count])
+				component_count++;
+			
+			/* If there are multiple components */
+			if (component_count == 2 || component_count == 3
+				|| component_count == 4 || component_count == 8
+				|| component_count == 16)
+			{
+
+				snprintf(temp_var_name, sizeof temp_var_name,
+					"tmp%d", temp_var_count++);
+
+				/* Go to entry block and allocate new vector */
+				LLVMPositionBuilder(cl2llvm_builder, 
+					cl2llvm_current_function->entry_block,
+					cl2llvm_current_function->branch_instr);
+			
+				new_vector_addr = LLVMBuildAlloca(cl2llvm_builder,
+					LLVMVectorType(LLVMGetElementType(value->type->llvm_type),
+					component_count), temp_var_name);
+
+				LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+
+
+				/* Load new vector */
+				snprintf(temp_var_name, sizeof temp_var_name,
+					"tmp%d", temp_var_count++);
+				new_vector = LLVMBuildLoad(cl2llvm_builder, new_vector_addr,
+					temp_var_name);
+
+				while ($1->vector_indices[i])
+				{
+					snprintf(temp_var_name, sizeof temp_var_name,
+						"tmp%d", temp_var_count++);
+					component = LLVMBuildExtractElement(cl2llvm_builder, 
+						value->val, $1->vector_indices[i]->val,
+						temp_var_name);
+
+					snprintf(temp_var_name, sizeof temp_var_name,
+						"tmp%d", temp_var_count++);
+					new_vector = LLVMBuildInsertElement(cl2llvm_builder, 
+						new_vector, component, $1->vector_indices[i]->val,
+						temp_var_name);
+					i++;
+				}
+				value->val = new_vector;
+				value->type->llvm_type = LLVMTypeOf(new_vector);
+			}
+			else if (component_count == 1)
+			{
+				snprintf(temp_var_name, sizeof temp_var_name,
+					"tmp%d", temp_var_count++);
+				
+				component = LLVMBuildExtractElement(cl2llvm_builder, 
+					value->val, $1->vector_indices[0]->val,
+					temp_var_name);
+				value->val = component;
+				value->type->llvm_type = LLVMTypeOf(component);
+			}
+			else
+				cl2llvm_yyerror("Invalid vector type.");
+		}
+			
+
 		cl2llvm_val_free($1);
 
 		$$ = value;

@@ -30,7 +30,8 @@ struct cl2llvm_val_t
 {
 	LLVMValueRef val;
 	struct cl2llvm_type_t *type;
-};
+	struct cl2llvm_val_t **vector_indices;
+} cl2llvm_val_t;
 
 /*
  * Creates a new cl2llvm_value_t.
