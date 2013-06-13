@@ -51,7 +51,4 @@ struct linked_list_t *opengl_program_obj_repo_create();
 void opengl_program_obj_repo_free(struct linked_list_t *program_obj_repo);
 struct opengl_program_obj_t *opengl_program_obj_repo_get_program(struct linked_list_t *program_obj_repo, unsigned int id);
 
-void opengl_program_obj_attach_shader_obj(struct opengl_program_obj_t *program_obj, struct opengl_shader_obj_t *shader_obj);
-void opengl_program_obj_detach_shader_obj(struct opengl_program_obj_t *program_obj, struct opengl_shader_obj_t *shader_obj);
-
 #endif

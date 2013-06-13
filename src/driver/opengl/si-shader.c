@@ -25,22 +25,96 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
+#include <../runtime/include/GL/gl.h>
  
 #include "si-shader.h"
 #include "si-program.h"
 
-/*
- * Private Functions
- */
+struct list_t *opengl_shader_list;
 
+void opengl_si_shader_list_init(void)
+{
+	/* Already initialized */
+	if (opengl_shader_list)
+		return;
 
+	/* Initialize and add one empty element */
+	opengl_shader_list = list_create();
+	list_add(opengl_shader_list, NULL);
+}
+
+void opengl_si_shader_list_done(void)
+{
+	int index;
+	struct opengl_si_shader_t *shdr;
+
+	/* Not initialized */
+	if (!opengl_shader_list)
+		return;
+
+	/* Free list of Southern Islands programs */
+	LIST_FOR_EACH(opengl_shader_list, index)
+	{
+		shdr = list_get(opengl_shader_list, index);
+		if (shdr)
+			opengl_si_shader_free(shdr);
+	}
+	list_free(opengl_shader_list);
+}
 
 /*
  * Public Functions
  */
 
 struct opengl_si_shader_t *opengl_si_shader_create(
-	struct opengl_si_program_t *program, unsigned int shader_kind)
+	unsigned int shader_id, unsigned int shader_kind)
+{
+	struct opengl_si_shader_t *shdr;
+
+	opengl_si_shader_list_init();
+
+	/* Allocate */
+	shdr = xcalloc(1, sizeof(struct opengl_si_shader_t));
+
+	/* Setup shader type for later mapping */
+	switch(shader_kind)
+	{
+	
+	case GL_VERTEX_SHADER:
+		shdr->shader_kind = SI_OPENGL_SHADER_VERTEX;
+		break;
+	case GL_FRAGMENT_SHADER:
+		shdr->shader_kind = SI_OPENGL_SHADER_FRAGMENT;
+		break;
+	case GL_GEOMETRY_SHADER:
+		shdr->shader_kind = SI_OPENGL_SHADER_GEOMETRY;
+		break;
+	case GL_TESS_CONTROL_SHADER:
+		shdr->shader_kind = SI_OPENGL_SHADER_CONTROL;
+		break;
+	case GL_TESS_EVALUATION_SHADER:
+		shdr->shader_kind = SI_OPENGL_SHADER_CONTROL;
+		break;
+	default:
+		shdr->shader_kind = SI_OPENGL_SHADER_INVALID;
+		break;
+	}
+
+	/* Add to shader list, shader id is the index */
+	list_insert(opengl_shader_list, shader_id, shdr);
+
+	/* Return */
+	return shdr;
+
+}
+
+void opengl_si_shader_free(struct opengl_si_shader_t *shdr)
+{
+	/* Free */
+	free(shdr);
+}
+
+void opengl_si_shader_init( struct opengl_si_program_t *program, unsigned int shader_id)
 {
 	struct list_t *shaders_list;
 	struct opengl_si_shader_t *shdr;
@@ -48,8 +122,8 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 	struct si_opengl_shader_binary_t *shdr_bin;
 	int i;
 
-	/* Allocate */
-	shdr = xcalloc(1, sizeof(struct opengl_si_shader_t));
+	/* Get shader object */
+	shdr = list_get(opengl_shader_list, shader_id);
 
 	/* Initialize */
 	shdr->program = program;
@@ -60,20 +134,12 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 	LIST_FOR_EACH(shaders_list, i)
 	{
 		shdr_bin = list_get(shaders_list, i);
-		if (shdr_bin->shader_kind == shader_kind)
+		if (shdr_bin->shader_kind == shdr->shader_kind)
 			shdr->shader_bin = shdr_bin;
 	}
-
-	/* Return */
-	return shdr;
-
 }
 
-void opengl_si_shader_free(struct opengl_si_shader_t *shader)
-{
-	/* Free */
-	free(shader);
-}
+
 
 void opengl_si_shader_setup_ndrange_constant_buffers(
 	struct si_ndrange_t *ndrange)
