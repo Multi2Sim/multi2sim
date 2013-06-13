@@ -224,6 +224,7 @@ static int opengl_abi_done_impl(struct x86_ctx_t *ctx)
 {
 	/* Free */
 	opengl_si_program_list_done();
+	opengl_si_shader_list_done();
 
 	/* Return success */
 	return 0;
@@ -543,7 +544,7 @@ static int opengl_abi_si_program_free_impl(struct x86_ctx_t *ctx)
 /*
  * OpenGL ABI call #10 - si_program_set_binary
  *
- * Associate a binary to a Southern Islands program.
+ * Associate a binary to a Southern Islands program. Also setup associated shaders. 
  *
  * @param int program_id
  *
@@ -604,14 +605,26 @@ static int opengl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
  * Create a Southern Islands shader object and return a unique identifier
  * for it.
  *
- * @return int
+ * @return void
  *
- *	Unique shader ID.
+ *	No return value.
  */
 
 static int opengl_abi_si_shader_create_impl(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int shader_id;
+	unsigned int type;
+
+	/* Arguments */
+	shader_id = regs->ecx;
+	type = regs->edx;
+	opengl_debug("\tshader_id=%d, type=%x\n", shader_id, type);
+
+	/* Create a shader object, will be mapped to shaders in program object */
+	opengl_si_shader_create(shader_id, type);
+	
 	return 0;
 }
 
