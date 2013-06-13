@@ -23,6 +23,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
+#include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
@@ -37,7 +38,7 @@
 
  
 /* Table containing information of all instructions */
-static struct frm_inst_info_t frm_inst_info[FRM_INST_COUNT];
+struct frm_inst_info_t frm_inst_info[FRM_INST_COUNT];
 
 /* Pointers to 'frm_inst_info' table indexed by instruction opcode */
 #define FRM_ISNT_INFO_LONG_SIZE 1024
@@ -800,6 +801,13 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			str_printf(&str, &size, "%s", str_map_value(&frm_inst_cmp_map, inst.dword.general0_mod1_D.cmp));
 		}
 
+		else if (inst_is_token(fmt_str,"gen0_mod1_D", &len))
+		{
+			//str_printf(&str, &size, "%s", str_map_value(&frm_inst_cmp_map, inst.dword.general0_mod1_D.cmp));
+			fatal("%s: gen0_mod1_D not supported: %s", __FUNCTION__,
+					fmt_str);
+		}
+
 		else if (inst_is_token(fmt_str,"gen0_src1_dtype", &len))
 		{
 			unsigned long long int dtype;
@@ -978,7 +986,18 @@ void frm_disasm(char *path)
         exit(0);
 }
 
+void frm_disasm_text_section_buffer(struct elf_enc_buffer_t *buffer)
+{
+	int inst_index;
+	char inst_str[MAX_STRING_SIZE];
 
-
-
+	for (inst_index = 0; inst_index < buffer->size/8; ++inst_index)
+	{
+		frm_inst_hex_dump(stdout, (unsigned char*)(buffer->ptr),
+			inst_index);
+		frm_inst_dump(inst_str, sizeof inst_str, buffer->ptr,
+			inst_index);
+		printf("%s;\n", inst_str);
+	}
+}
 

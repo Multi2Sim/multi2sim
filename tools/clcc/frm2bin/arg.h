@@ -1,0 +1,296 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#ifndef TOOLS_CLCC_FRM2BIN_ARG_H
+#define TOOLS_CLCC_FRM2BIN_ARG_H
+
+#include <stdio.h>
+
+#include "token.h"
+
+/* Forward declarations */
+struct frm_symbol_t;
+
+
+enum frm_arg_type_t 
+{
+	frm_arg_invalid = 0,
+
+	frm_arg_scalar_register,
+	frm_arg_special_register,
+	frm_arg_predicate_register,
+	frm_arg_zero_register,
+	frm_arg_literal,
+	/*frm_arg_label,*/
+	frm_arg_maddr,
+	frm_arg_const_maddr,
+	frm_arg_glob_maddr,
+	frm_arg_pt,
+};
+
+/* NOTE: modify string map 'frm_arg_special_register_map' in asm.c together
+ * with this enumeration. */
+enum frm_arg_special_register_type_t
+{
+	/* Do we still need the invalid ?? */
+	//frm_arg_special_register_invalid = 0,
+
+	/* More to be added */
+	frm_arg_special_register_LaneId = 0, 
+	frm_arg_special_register_VirtCfg = 2, 
+	frm_arg_special_register_VirtId, 
+	frm_arg_special_register_PM0, 
+	frm_arg_special_register_PM1, 
+	frm_arg_special_register_PM2, 
+	frm_arg_special_register_PM3, 
+	frm_arg_special_register_PM4, 
+	frm_arg_special_register_PM5, 
+	frm_arg_special_register_PM6, 
+	frm_arg_special_register_PM7, 
+	frm_arg_special_register_PRIM_TYPE = 16, 
+	frm_arg_special_register_INVOCATION_ID, 
+	frm_arg_special_register_Y_DIRECTION, 
+	frm_arg_special_register_MACHINE_ID_0 = 24, 
+	frm_arg_special_register_MACHINE_ID_1, 
+	frm_arg_special_register_MACHINE_ID_2, 
+	frm_arg_special_register_MACHINE_ID_3, 
+	frm_arg_special_register_AFFINITY, 
+	frm_arg_special_register_Tid = 32,  
+	frm_arg_special_register_Tid_X, 
+	frm_arg_special_register_Tid_Y, 
+	frm_arg_special_register_Tid_Z, 
+	frm_arg_special_register_CTAParam, 
+	frm_arg_special_register_CTAid_X, 
+	frm_arg_special_register_CTAid_Y, 
+	frm_arg_special_register_CTAid_Z, 
+	frm_arg_special_register_NTid, 
+	frm_arg_special_register_NTid_X, 
+	frm_arg_special_register_NTid_Y, 
+	frm_arg_special_register_NTid_Z, 
+	frm_arg_special_register_GridParam, 
+	frm_arg_special_register_NCTAid_X, 
+	frm_arg_special_register_NCTAid_Y, 
+	frm_arg_special_register_NCTAid_Z, 
+	frm_arg_special_register_SWinLo, 
+	frm_arg_special_register_SWINSZ, 
+	frm_arg_special_register_SMemSz, 
+	frm_arg_special_register_SMemBanks, 
+	frm_arg_special_register_LWinLo, 
+	frm_arg_special_register_LWINSZ, 
+	frm_arg_special_register_LMemLoSz, 
+	frm_arg_special_register_LMemHiOff, 
+	frm_arg_special_register_EqMask, 
+	frm_arg_special_register_LtMask, 
+	frm_arg_special_register_LeMask, 
+	frm_arg_special_register_GtMask, 
+	frm_arg_special_register_GeMask, 
+	frm_arg_special_register_ClockLo = 80, 
+	frm_arg_special_register_ClockHi, 
+
+};
+
+/* logic type */
+enum frm_mod_logic_type_t
+{
+	logic_and,
+	logic_or,
+	logic_xor,
+};
+
+/* mod data width */
+enum frm_mod_data_width_t
+{
+	u32,
+	s32,
+};
+
+/* mod comparison type */
+enum frm_mod_comp_t
+{
+	lt,
+	eq,
+	le,
+	gt,
+	ne,
+	ge,
+};
+
+/* type def for modifier */
+struct frm_mod_t
+{
+	enum frm_token_type_t type;
+	union
+	{
+		enum frm_mod_data_width_t data_width;
+		enum frm_mod_logic_type_t logic; 
+		enum frm_mod_comp_t comparison;
+	} value;
+};
+
+struct frm_arg_t 
+{
+	enum frm_arg_type_t type;
+	int abs;  /* Absolute value */
+	int neg;  /* Negation */
+
+	union
+	{
+	
+		struct
+		{
+			unsigned int id;
+		} scalar_register;
+
+		struct
+		{
+			int low;
+			int high;
+		} scalar_register_series;
+
+		struct
+		{
+			int low;
+			int high;
+		} vector_register_series;
+		
+		struct
+		{
+			int id;
+		} 
+		vector_register;
+		
+		struct
+		{
+			int val;
+		} literal;
+		
+		struct
+		{
+			float val;
+		} literal_float;
+
+		struct
+		{
+			int vmcnt_active;
+			int vmcnt_value;
+
+			int lgkmcnt_active;
+			int lgkmcnt_value;
+
+			int expcnt_active;
+			int expcnt_value;
+		} wait_cnt;
+		
+		struct
+		{
+			int id;
+		} mem_register;
+		
+		struct
+		{
+			/* Sub-argument of type 'vector', 'scalar', 'literal',
+			 * or 'literal_float'. */
+			struct frm_arg_t *soffset;
+
+			/* Sub-argument of type 'maddr_qual'
+			 * (memory address qualifier) */
+			struct frm_arg_t *qual;
+
+			char *data_format;
+			char *num_format;
+		} maddr;
+
+		struct
+		{
+			int offen;
+			int idxen;
+			int offset;
+		} maddr_qual;
+
+		struct
+		{
+			unsigned int bank_idx;
+			/* offset within the bank */
+			unsigned int offset;
+		} const_maddr;
+
+		struct
+		{
+			/* [reg + offset] */
+			/* index of the register used */
+			unsigned int reg_idx;
+			unsigned int offset;
+		} glob_maddr;
+
+		struct
+		{
+			/* whether it's pt or not*/
+			unsigned int idx;
+		} pt;
+		
+		struct
+		{
+			enum frm_arg_special_register_type_t type;
+		} special_register;
+		
+		struct
+		{
+			/* P1: 1, !P1: -1*/
+			int id;
+		} predicate_register;
+
+		struct
+		{
+			struct frm_symbol_t *symbol;
+		} label;
+		
+	} value;
+};
+
+
+
+struct frm_arg_t *frm_arg_create(void);
+void frm_arg_free(struct frm_arg_t *inst_arg);
+
+struct frm_arg_t *frm_arg_create_literal(int value);
+struct frm_arg_t *frm_arg_create_scalar_register(char* name);
+struct frm_arg_t *frm_arg_create_special_register(char *name);
+struct frm_arg_t *frm_arg_create_predicate_register(char *name);
+struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset);
+struct frm_arg_t *frm_arg_create_glob_maddr(int reg_idx, int offset);
+struct frm_arg_t *frm_arg_create_pt(char* name);
+struct frm_arg_t *frm_arg_create_maddr(struct frm_arg_t *soffset,
+	struct frm_arg_t *qual, char *data_format, char *num_format);
+/*
+struct frm_arg_t *frm_arg_create_label(struct frm_symbol_t *symbol);
+*/
+
+int frm_arg_encode_operand(struct frm_arg_t *arg);
+
+void frm_arg_dump(struct frm_arg_t *inst_arg, FILE *f);
+void frm_mod_free(struct frm_mod_t *mod);
+
+struct frm_mod_t *frm_mod_create_data_width(char *mod_name);
+struct frm_mod_t *frm_mod_create_logic(char *mod_name);
+struct frm_mod_t *frm_mod_create_comparison(char *mod_name);
+struct frm_mod_t *frm_mod_create_with_name(char *name);
+
+
+#endif
+
