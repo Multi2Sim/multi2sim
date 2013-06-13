@@ -30,6 +30,7 @@
 struct linked_list_t;
 struct llvm2si_basic_block_t;
 struct llvm2si_function_t;
+struct si2bin_arg_t;
 
 
 
@@ -56,8 +57,6 @@ struct llvm2si_function_arg_t
 struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg);
 void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg);
 void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE *f);
-
-void llvm2si_function_arg_set_name(struct llvm2si_function_arg_t *arg, char *name);
 
 
 
@@ -134,6 +133,19 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function,
  * function. As the code emission progresses, new basic blocks will be created. */
 void llvm2si_function_emit_body(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
+
+/* Create a Southern Islands instruction argument from an LLVM value. The type
+ * of argument created depends on the LLVM value as follows:
+ *   - If the LLVM value is an integer constant, the Southern Islands argument
+ *     will be of type integer literal.
+ *   - If the LLVM value is an LLVM identifier, the Southern Islands argument
+ *     will be the vector register associated with that symbol.
+ *   - If the LLVM value is a function argument, the Southern Islands argument
+ *     will be the scalar register pointing to that argument.
+ */
+struct si2bin_arg_t *llvm2si_function_translate_value(
+		struct llvm2si_function_t *function,
+		LLVMValueRef llvalue);
 
 #endif
 

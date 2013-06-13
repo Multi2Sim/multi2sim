@@ -22,14 +22,23 @@
 
 #include <stdio.h>
 
+/* NOTE: update 'llvm2si_symbol_type_map' if this enumeration is extended. */
+enum llvm2si_symbol_type_t
+{
+	llvm2si_symbol_type_invalid = 0,
+	llvm2si_symbol_type_vector_register,
+	llvm2si_symbol_type_scalar_register
+};
 
 struct llvm2si_symbol_t
 {
 	char *name;
-	int vreg;
+	enum llvm2si_symbol_type_t type;
+	int reg;
 };
 
-struct llvm2si_symbol_t *llvm2si_symbol_create(const char *name);
+struct llvm2si_symbol_t *llvm2si_symbol_create(char *name,
+		enum llvm2si_symbol_type_t type, int reg);
 void llvm2si_symbol_free(struct llvm2si_symbol_t *symbol);
 void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f);
 
