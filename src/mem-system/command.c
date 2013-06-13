@@ -750,18 +750,24 @@ void mem_system_end_command_handler(int event, void *data)
 		assert(list_count(buffer_list) == 1);
 
 		buffer = list_get(buffer_list, 0);
-		link = buffer->link;
-
-		/* Output */
-		str_printf(&msg_str, &msg_size, "check bytes on %s", link->name);
-
-		if (expected_bytes != link-> transferred_bytes)
+		/*New change because of BUS implementation */
+		/* FIXME: Check to see if the Virtual channel capability is considered. */
+		if (buffer->kind == net_buffer_link)
 		{
-			test_failed = 1;
-			str_printf(&msg_detail_str, &msg_detail_size,
-				"\t%s expected %llu bytes transferred, but %llu found\n",
-				link->name, expected_bytes, link->transferred_bytes);
+			link = buffer->link;
+			assert(link);
+			/* Output */
+			str_printf(&msg_str, &msg_size, "check bytes on %s", link->name);
+
+			if (expected_bytes != link-> transferred_bytes)
+			{
+				test_failed = 1;
+				str_printf(&msg_detail_str, &msg_detail_size,
+						"\t%s expected %llu bytes transferred, but %llu found\n",
+						link->name, expected_bytes, link->transferred_bytes);
+			}
 		}
+		/* FIXME: The same calculation may be required for BUS connections. */
 	}
 
 	/* Invalid command */

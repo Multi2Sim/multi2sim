@@ -1163,7 +1163,7 @@ static void mem_config_create_switches(struct config_t *config)
 			if (net_node != net_switch)
 			{
 				net_add_bidirectional_link(net, net_node, net_switch,
-					def_bandwidth, 1);
+					def_bandwidth, def_output_buffer_size,def_input_buffer_size, 1);
 				mem_debug(" %s", net_node->name);
 			}
 		}
@@ -1214,6 +1214,7 @@ static void mem_config_check_routes(void)
 			/* Check that there is a route */
 			entry = net_routing_table_lookup(mod->low_net->routing_table,
 				mod->low_net_node, low_mod->high_net_node);
+
 			if (!entry->output_buffer)
 				fatal("%s: %s: network does not connect '%s' with '%s'.\n%s",
 					mem_config_file_name, mod->low_net->name,

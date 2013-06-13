@@ -38,19 +38,28 @@ struct net_node_t
 {
 	struct net_t *net;
 	enum net_node_kind_t kind;
-	int index;  /* Used to index routing table */
+	int index;		/* Used to index routing table */
 	char *name;
 	void *user_data;
 
-	/* Switch crossbar or bus*/
+	/* Switch crossbar or bus */
 	int bandwidth;
-	long long bus_busy;
-	
+	/* long long bus_busy; */
+
 	/* Buffers */
 	int input_buffer_size;
 	int output_buffer_size;
 	struct list_t *input_buffer_list;
 	struct list_t *output_buffer_list;
+
+	/* BUS & scheduling */
+	struct list_t *bus_lane_list;	/* elements are of type struct
+					 * net_bus_t */
+	struct list_t *src_buffer_list;	/* elements are of type struct
+					 * net_buffer_t * */
+	struct list_t *dst_buffer_list;	/* elements are of type struct
+					 * net_buffer_t * */
+	int last_node_index;
 
 	/* Stats */
 	long long bytes_received;
@@ -71,12 +80,15 @@ void net_node_dump(struct net_node_t *node, FILE *f);
 
 void net_node_dump_report(struct net_node_t *node, FILE *f);
 
-struct net_buffer_t *net_node_add_output_buffer(struct net_node_t *node);
-struct net_buffer_t *net_node_add_input_buffer(struct net_node_t *node);
+/* Adding buffers to nodes. It supports asymmetric switches */
+struct net_buffer_t *net_node_add_output_buffer(struct net_node_t *node,
+	int bandwidth);
+struct net_buffer_t *net_node_add_input_buffer(struct net_node_t *node,
+	int bandwidth);
+struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node);
 
 struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 	struct net_buffer_t *output_buffer);
 
 
 #endif
-

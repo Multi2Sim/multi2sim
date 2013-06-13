@@ -26,13 +26,14 @@
 #include <lib/util/string.h>
 
 #include "buffer.h"
+#include "bus.h"
 #include "net-system.h"
 #include "network.h"
 #include "node.h"
 #include "routing-table.h"
 
 
-/*
+/* 
  * Public functions
  */
 
@@ -81,6 +82,22 @@ void net_node_free(struct net_node_t *node)
 		net_buffer_free(list_get(node->output_buffer_list, i));
 	list_free(node->output_buffer_list);
 
+
+	/* For BUS */
+	if (node->kind == net_node_bus)
+	{
+		/* Freeing associated bus structures */
+		for (i = 0; i < list_count(node->bus_lane_list); i++)
+			net_bus_free(list_get(node->bus_lane_list, i));
+		list_free(node->bus_lane_list);
+
+		/* Freeing lists that keeps track of src and dst buffers */
+		if (node->src_buffer_list)
+			list_free(node->src_buffer_list);
+		if (node->dst_buffer_list)
+			list_free(node->dst_buffer_list);
+	}
+
 	/* Free node */
 	free(node->name);
 	free(node);
@@ -90,8 +107,10 @@ void net_node_free(struct net_node_t *node)
 void net_node_dump(struct net_node_t *node, FILE *f)
 {
 	fprintf(f, "\tName = %s\n", node->name);
-	fprintf(f, "\tNumber of input buffers = %d\n", list_count(node->input_buffer_list));
-	fprintf(f, "\tNumber of output buffers = %d\n", list_count(node->output_buffer_list));
+	fprintf(f, "\tNumber of input buffers = %d\n",
+		list_count(node->input_buffer_list));
+	fprintf(f, "\tNumber of output buffers = %d\n",
+		list_count(node->output_buffer_list));
 }
 
 
@@ -101,7 +120,7 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 	struct net_buffer_t *buffer;
 	long long cycle;
 	int i;
-	
+
 	/* Get current cycle */
 	cycle = esim_domain_cycle(net_domain_index);
 
@@ -110,10 +129,11 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 
 	/* Configuration */
 	fprintf(f, "Config.InputBufferSize = %d\n", node->input_buffer_size);
-	fprintf(f, "Config.OutputBufferSize = %d\n", node->output_buffer_size);
+	fprintf(f, "Config.OutputBufferSize = %d\n",
+		node->output_buffer_size);
 	if (node->kind != net_node_end)
 		fprintf(f, "Config.BandWidth = %d\n", node->bandwidth);
-	
+
 	/* Statistics */
 	fprintf(f, "SentMessages = %lld\n", node->msgs_sent);
 	fprintf(f, "SentBytes = %lld\n", node->bytes_sent);
@@ -143,29 +163,45 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 }
 
 
-struct net_buffer_t *net_node_add_input_buffer(struct net_node_t *node)
+struct net_buffer_t *net_node_add_input_buffer(struct net_node_t *node,
+	int bandwidth)
 {
 	struct net_buffer_t *buffer;
 	char name[MAX_STRING_SIZE];
 
-	snprintf(name, sizeof(name), "in_buf_%d", list_count(node->input_buffer_list));
-	buffer = net_buffer_create(node->net, node, node->input_buffer_size, name);
+	snprintf(name, sizeof(name), "in_buf_%d",
+		list_count(node->input_buffer_list));
+	buffer = net_buffer_create(node->net, node, bandwidth, name);
 	buffer->index = list_count(node->input_buffer_list);
 	list_add(node->input_buffer_list, buffer);
 	return buffer;
 }
 
 
-struct net_buffer_t *net_node_add_output_buffer(struct net_node_t *node)
+
+struct net_buffer_t *net_node_add_output_buffer(struct net_node_t *node, int bandwidth)
 {
 	struct net_buffer_t *buffer;
 	char name[MAX_STRING_SIZE];
 
 	snprintf(name, sizeof(name), "out_buf_%d", list_count(node->output_buffer_list));
-	buffer = net_buffer_create(node->net, node, node->output_buffer_size, name);
+	buffer = net_buffer_create(node->net, node, bandwidth, name);
 	buffer->index = list_count(node->output_buffer_list);
 	list_add(node->output_buffer_list, buffer);
 	return buffer;
+}
+
+struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node)
+{
+	assert(node->kind == net_node_bus);
+	struct net_bus_t *bus;
+	char name[MAX_STRING_SIZE];
+
+	snprintf(name, sizeof(name), "%s_bp_%d", node->name, list_count(node->bus_lane_list));
+	bus = net_bus_create(node->net, node, node->bandwidth, name);
+	bus->index = list_count(node->bus_lane_list);
+	list_add(node->bus_lane_list, bus);
+	return bus;
 }
 
 
@@ -174,7 +210,7 @@ struct net_buffer_t *net_node_add_output_buffer(struct net_node_t *node)
  * as an immediate target.
  */
 struct net_buffer_t *net_node_schedule(struct net_node_t *node,
-	struct net_buffer_t *output_buffer)
+		struct net_buffer_t *output_buffer)
 {
 	struct net_t *net = node->net;
 	struct net_routing_table_t *routing_table = net->routing_table;
@@ -193,7 +229,7 @@ struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 	/* Checks */
 	assert(output_buffer->node == node);
 	assert(list_get(node->output_buffer_list, output_buffer->index) == output_buffer);
-	
+
 	/* Get current cycle */
 	cycle = esim_domain_cycle(net_domain_index);
 
@@ -201,12 +237,12 @@ struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 	 * return the same value. */
 	if (output_buffer->sched_when == cycle)
 		return output_buffer->sched_buffer;
-	
+
 	/* Make a new decision */
 	output_buffer->sched_when = cycle;
 	input_buffer_count = list_count(node->input_buffer_list);
 	last_input_buffer_index = output_buffer->sched_buffer ?
-		output_buffer->sched_buffer->index : 0;
+			output_buffer->sched_buffer->index : 0;
 
 	/* Output buffer must be ready to be written */
 	if (output_buffer->write_busy >= cycle)
