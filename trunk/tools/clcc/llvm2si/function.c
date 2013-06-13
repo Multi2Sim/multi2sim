@@ -31,6 +31,7 @@
 
 #include "basic-block.h"
 #include "function.h"
+#include "symbol.h"
 #include "symbol-table.h"
 
 
@@ -83,6 +84,8 @@ struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg)
 
 	/* Get argument name */
 	name = (char *) LLVMGetValueName(llarg);
+	if (!*name)
+		fatal("%s: anonymous arguments not allowed", __FUNCTION__);
 
 	/* Initialize 'si_arg' object */
 	lltype = LLVMTypeOf(llarg);
@@ -101,7 +104,7 @@ struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg)
 
 	/* Initialize 'arg' object */
 	arg = xcalloc(1, sizeof(struct llvm2si_function_arg_t));
-	arg->name = str_set(arg->name, name);
+	arg->name = xstrdup(name);
 	arg->llarg = llarg;
 	arg->si_arg = si_arg;
 
@@ -139,14 +142,6 @@ void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *arg, FILE *f)
 				__FUNCTION__, si_arg->type);
 	}
 }
-
-
-void llvm2si_function_arg_set_name(struct llvm2si_function_arg_t *arg, char *name)
-{
-	arg->name = str_set(arg->name, name);
-}
-
-
 
 
 
@@ -457,8 +452,7 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 {
 	struct list_t *arg_list;
 	struct si2bin_inst_t *inst;
-
-	char arg_name[MAX_STRING_SIZE];
+	struct llvm2si_symbol_t *symbol;
 
 	/* Check that argument does not belong to a function yet */
 	if (arg->function)
@@ -479,18 +473,14 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 	arg->function = function;
 	arg->index = function->arg_list->count - 1;
 
-	/* If the LLVM argument didn't provide a valid name, update the name
-	 * as 'argX' now that we know which index the argument has in the function. */
-	assert(arg->name);
-	if (!*arg->name)
-	{
-		snprintf(arg_name, sizeof arg_name, "arg%d", arg->index);
-		llvm2si_function_arg_set_name(arg, arg_name);
-	}
-
 	/* Allocate 1 scalar register for the argument */
 	arg->sreg = function->num_sregs;
 	function->num_sregs++;
+
+	/* Insert argument name in symbol table */
+	symbol = llvm2si_symbol_create(arg->name, llvm2si_symbol_type_scalar_register,
+			arg->sreg);
+	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
 
 	/* Generate code to load argument
 	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
@@ -547,3 +537,78 @@ void llvm2si_function_emit_body(struct llvm2si_function_t *function,
 		llvm2si_basic_block_emit(basic_block);
 	}
 }
+
+
+struct si2bin_arg_t *llvm2si_function_translate_value(
+		struct llvm2si_function_t *function,
+		LLVMValueRef llvalue)
+{
+	//LLVMTypeRef lltype;
+	//LLVMTypeKind lltype_kind;
+
+	struct llvm2si_symbol_t *symbol;
+	char *name;
+
+	/* Get value name and type */
+	name = (char *) LLVMGetValueName(llvalue);
+	//lltype = LLVMTypeOf(llvalue);
+	//lltype_kind = LLVMGetTypeKind(lltype);
+
+	/* LLVM identifier */
+	if (*name)
+	{
+		/* Look up symbol */
+		symbol = llvm2si_symbol_table_lookup(function->symbol_table, name);
+		if (!symbol)
+			fatal("%s: %s: symbol not found", __FUNCTION__, name);
+
+		/* Create argument with the associated scalar/vector register found
+		 * in the symbol table. */
+		assert(symbol->type == llvm2si_symbol_type_vector_register ||
+				symbol->type == llvm2si_symbol_type_scalar_register);
+		return symbol->type == llvm2si_symbol_type_vector_register ?
+				si2bin_arg_create_vector_register(symbol->reg) :
+				si2bin_arg_create_scalar_register(symbol->reg);
+	}
+
+#if 0
+	/* Integer constant */
+	constant_int_value = dynamic_cast<ConstantInt*>(value);
+	if (lltype_kind == LLVMIntegerTypeKind && LLVMIsConstant(llvalue))
+	{
+		IntegerType *constant_int_type;
+		int bit_width;
+		int value;
+
+		/* Only 32-bit constants supported for now. We need to figure
+		 * out what to do with the sign extension otherwise. */
+		constant_int_type = reinterpret_cast<IntegerType*>(type);
+		bit_width = constant_int_type->getBitWidth();
+		if (bit_width != 32)
+			fatal("%s: only 32-bit type supported (%d-bit found)",
+				__FUNCTION__, bit_width);
+
+		/* Create argument */
+		value = constant_int_value->getZExtValue();
+		return si2bin_arg_create_literal(value);
+	}
+
+	/* Function argument */
+	func_arg = dynamic_cast<Argument*>(value);
+	if (func_arg)
+	{
+		int index;
+
+		/* Create Southern Islands argument as a scalar register equal
+		 * to the baseline register used for arguments 'sreg_arg' plus
+		 * the index of the requested function argument. */
+		index = func_arg->getArgNo();
+		return si2bin_arg_create_scalar_register(function->sreg_arg + index);
+	}
+#endif
+
+	/* Type not supported */
+	fatal("%s: value type not supported", __FUNCTION__);
+	return NULL;
+}
+

@@ -19,17 +19,30 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/string.h>
 
 #include "symbol.h"
 
 
-struct llvm2si_symbol_t *llvm2si_symbol_create(const char *name)
+struct str_map_t llvm2si_symbol_type_map =
+{
+	3, {
+		{ "vreg", llvm2si_symbol_type_vector_register },
+		{ "sreg", llvm2si_symbol_type_scalar_register }
+	}
+};
+
+
+struct llvm2si_symbol_t *llvm2si_symbol_create(char *name,
+		enum llvm2si_symbol_type_t type, int reg)
 {
 	struct llvm2si_symbol_t *symbol;
 
 	/* Initialize */
 	symbol = xcalloc(1, sizeof(struct llvm2si_symbol_t));
 	symbol->name = xstrdup(name);
+	symbol->type = type;
+	symbol->reg = reg;
 
 	/* Return */
 	return symbol;
@@ -45,7 +58,7 @@ void llvm2si_symbol_free(struct llvm2si_symbol_t *symbol)
 
 void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f)
 {
-	fprintf(f, "name='%s', vreg=%d\n",
-			symbol->name,
-			symbol->vreg);
+	fprintf(f, "name='%s', type=%s, reg=%d\n", symbol->name,
+			str_map_value(&llvm2si_symbol_type_map, symbol->type),
+			symbol->reg);
 }
