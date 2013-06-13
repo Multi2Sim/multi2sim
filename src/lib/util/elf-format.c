@@ -667,6 +667,10 @@ void elf_file_read_header(char *path, Elf32_Ehdr *ehdr)
 	if (count != 1)
 		fatal("%s: invalid ELF file", path);
 
+	/* Check that file is a valid ELF file */
+	if (strncmp((char *) ehdr->e_ident, ELFMAG, 4))
+		fatal("%s: invalid ELF file", path);
+
 	/* Check that ELF file is a 32-bit object */
 	if (ehdr->e_ident[EI_CLASS] == ELFCLASS64)
 		fatal("%s: 64-bit ELF not supported.\n%s",
