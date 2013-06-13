@@ -27,8 +27,8 @@
 struct str_map_t llvm2si_symbol_type_map =
 {
 	3, {
-		{ "vreg", llvm2si_symbol_type_vector_register },
-		{ "sreg", llvm2si_symbol_type_scalar_register }
+		{ "vreg", llvm2si_symbol_vector_register },
+		{ "sreg", llvm2si_symbol_scalar_register }
 	}
 };
 
@@ -37,6 +37,10 @@ struct llvm2si_symbol_t *llvm2si_symbol_create(char *name,
 		enum llvm2si_symbol_type_t type, int reg)
 {
 	struct llvm2si_symbol_t *symbol;
+
+	/* Check valid name */
+	if (!name || !*name)
+		fatal("%s: empty symbol name", __FUNCTION__);
 
 	/* Initialize */
 	symbol = xcalloc(1, sizeof(struct llvm2si_symbol_t));

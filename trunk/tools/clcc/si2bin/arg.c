@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <stdarg.h>
 #include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
@@ -484,21 +485,32 @@ void si2bin_arg_dump(struct si2bin_arg_t *arg, FILE *f)
 }
 
 
-void si2bin_arg_valid_types(struct si2bin_arg_t *arg,
-		enum si2bin_arg_type_t *types, int num_types,
-		const char *user_message)
+void __si2bin_arg_valid_types(struct si2bin_arg_t *arg, const char *user_message,
+		int num_types, ...)
 {
+	va_list ap;
+
 	char msg[MAX_STRING_SIZE];
 	char *msg_ptr;
 	char *sep;
 
+	enum si2bin_arg_type_t types[64];
+
 	int msg_size;
 	int i;
 
+	/* Maximum number of types */
+	if (!IN_RANGE(num_types, 1, 64))
+		panic("%s: bad number of types", __FUNCTION__);
+
 	/* Check if argument type if valid */
+	va_start(ap, num_types);
 	for (i = 0; i < num_types; i++)
+	{
+		types[i] = va_arg(ap, enum si2bin_arg_type_t);
 		if (arg->type == types[i])
 			return;
+	}
 
 	/* Construct error message */
 	msg[0] = '\0';
