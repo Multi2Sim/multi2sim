@@ -22,6 +22,7 @@
 
 #include <clcc/amd/amd.h>
 #include <clcc/cl2llvm/cl2llvm.h>
+#include <clcc/frm2bin/frm2bin.h>
 #include <clcc/llvm2si/llvm2si.h>
 #include <clcc/si2bin/si2bin.h>
 #include <lib/mhandle/mhandle.h>
@@ -42,6 +43,7 @@ char clcc_out_file_name[MAX_STRING_SIZE];
 int clcc_amd_run;  /* Run AMD native compiler */
 int clcc_preprocess_run;  /* Run stand-alone preprocessor */
 int clcc_cl2llvm_run;  /* Run OpenCL-to-LLVM stand-alone front-end */
+int clcc_frm2bin_run;  /* Run Fermi stand-alone assembler */
 int clcc_llvm2si_run;  /* Run LLVM-to-SI stand-alone back-end */
 int clcc_si2bin_run;  /* Run Southern Islands stand-alone assembler */
 int clcc_opt_level = 1;  /* Optimization level */
@@ -97,6 +99,10 @@ static char *syntax =
 	"--define <symbol>=<value>, -D <symbol>=<value>\n"
 	"\tAdd a definition for additional symbols, equivalent to #define\n"
 	"\tcompiler directives. This argument can be used multiple times.\n"
+	"\n"
+	"--frm-asm\n"
+	"\tTreat the input files as source files containing Fermi assembly\n"
+	"\tcode. Run the Fermi assembler and generate a CUDA kernel binary.\n"
 	"\n"
 	"--help, -h\n"
 	"\tShow help message with command-line options.\n"
@@ -169,6 +175,12 @@ static void clcc_process_option(const char *option, char *optarg)
 		clcc_cl2llvm_run = 1;
 		return;
 	}
+
+	if (!strcmp(option, "frm-asm"))
+	{
+		clcc_frm2bin_run = 1;
+		return;
+	}
 	
 	if (!strcmp(option, "help") || !strcmp(option, "h"))
 	{
@@ -232,6 +244,7 @@ static void clcc_read_command_line(int argc, char **argv)
 		{ "amd-dump-all", no_argument, 0, 'a' },
 		{ "amd-list", no_argument, 0, 'l' },
 		{ "cl2llvm", no_argument, 0, 0 },
+		{ "frm-asm", no_argument, 0, 0},
 		{ "define", required_argument, 0, 'D' },
 		{ "help", no_argument, 0, 'h' },
 		{ "llvm2si", no_argument, 0, 0 },
@@ -415,6 +428,7 @@ void clcc_init(void)
 	cl2llvm_init();
 	llvm2si_init();
 	si2bin_init();
+	frm2bin_init();
 }
 
 
@@ -456,6 +470,7 @@ void clcc_done(void)
 	cl2llvm_done();
 	llvm2si_done();
 	si2bin_done();
+	frm2bin_done();
 }
 
 
@@ -517,6 +532,14 @@ int main(int argc, char **argv)
 	{
 		clcc_replace_out_file_name(clcc_bin_file_list);
 		si2bin_compile(clcc_source_file_list, clcc_bin_file_list);
+		goto out;
+	}
+
+	/* Fermi assembler */
+	if (clcc_frm2bin_run)
+	{
+		clcc_replace_out_file_name(clcc_bin_file_list);
+		frm2bin_compile(clcc_source_file_list, clcc_bin_file_list);
 		goto out;
 	}
 

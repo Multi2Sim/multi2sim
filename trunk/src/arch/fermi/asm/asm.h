@@ -22,6 +22,8 @@
 
 #include <stdio.h>
 
+/* Forward declarations */
+struct elf_enc_buffer_t;
 
 
 /* Microcode Formats */
@@ -331,6 +333,9 @@ struct frm_inst_info_t
 	int size;
 };
 
+/* Table containing information for all instructions, filled out with the
+ * fields found in 'asm.dat'. */
+extern struct frm_inst_info_t frm_inst_info[FRM_INST_COUNT];
 
 struct frm_inst_t
 {
@@ -358,6 +363,9 @@ void frm_inst_get_op_src(struct frm_inst_t *inst, int src_idx,
 void frm_inst_decode(struct frm_inst_t *inst);
 
 void frm_disasm(char *path);
+
+/* a temporial implementation to disassmbler only text_section */
+void frm_disasm_text_section_buffer(struct elf_enc_buffer_t *buffer);
 
 #endif
 
