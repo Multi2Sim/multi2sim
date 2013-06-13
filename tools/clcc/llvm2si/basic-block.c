@@ -42,7 +42,63 @@
 void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 		LLVMValueRef llinst)
 {
-	warning("%s: not supported", __FUNCTION__);
+	LLVMValueRef llarg_op1;
+	LLVMValueRef llarg_op2;
+
+	struct llvm2si_function_t *function;
+	struct llvm2si_symbol_t *ret_symbol;
+	struct si2bin_arg_t *arg_op1;
+	struct si2bin_arg_t *arg_op2;
+	struct si2bin_inst_t *inst;
+	struct list_t *arg_list;
+
+	int num_operands;
+	int ret_vreg;
+
+	char *ret_name;
+
+	/* Get function */
+	function = basic_block->function;
+	assert(function);
+
+	/* Only supported for 2 operands (op1, op2) */
+	num_operands = LLVMGetNumOperands(llinst);
+	if (num_operands != 2)
+		fatal("%s: 2 operands supported, %d found",
+			__FUNCTION__, num_operands);
+
+	/* Get operands (vreg, literal) */
+	llarg_op1 = LLVMGetOperand(llinst, 0);
+	llarg_op2 = LLVMGetOperand(llinst, 1);
+	arg_op1 = llvm2si_function_translate_value(function, llarg_op1);
+	arg_op2 = llvm2si_function_translate_value(function, llarg_op2);
+
+	/* Only the first operand can be a constant, so swap them if there is
+	 * a constant in the second. */
+	if (arg_op2->type != si2bin_arg_vector_register)
+		si2bin_arg_swap(&arg_op1, &arg_op2);
+	si2bin_arg_valid_types(arg_op1, si2bin_arg_vector_register,
+			si2bin_arg_literal, si2bin_arg_literal_float);
+	si2bin_arg_valid_types(arg_op2, si2bin_arg_vector_register);
+
+	/* Allocate vector register and create symbol for return value */
+	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_vreg = llvm2si_function_allocate_vreg(function);
+	ret_symbol = llvm2si_symbol_create(ret_name,
+			llvm2si_symbol_vector_register,
+			ret_vreg);
+	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
+
+	/* Emit effective address calculation.
+	 * v_add_i32 ret_vreg, vcc, arg_index, arg_pointer
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
+	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
+	list_add(arg_list, arg_op1);
+	list_add(arg_list, arg_op2);
+	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
 
@@ -184,43 +240,161 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 	list_add(arg_list, arg_pointer);
 	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
 	llvm2si_basic_block_add_inst(basic_block, inst);
-#if 0
-	Value *PointerOperand;
-	Value *IndexOperand;
-
-	struct si2bin_arg_t *pointer_arg;
-	struct si2bin_arg_t *index_arg;
-	struct si2bin_inst_t *inst;
-	struct llvm2si_symbol_t *effaddr_symbol;
-	struct list_t *arg_list;
-	
-	const char *effaddr_name;
-
-
-	------------------
-
-#endif
 }
 
 
 void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 		LLVMValueRef llinst)
 {
-	warning("%s: not supported", __FUNCTION__);
+	LLVMValueRef llarg_address;
+	LLVMTypeRef lltype;
+	LLVMTypeKind lltype_kind;
+
+	struct llvm2si_function_t *function;
+	struct llvm2si_symbol_t *ret_symbol;
+	struct si2bin_inst_t *inst;
+	struct si2bin_arg_t *arg_address;
+	struct si2bin_arg_t *arg_qual;
+	struct si2bin_arg_t *arg_soffset;
+	struct list_t *arg_list;
+
+	int num_operands;
+	int addr_space;
+	int ret_vreg;
+
+	char *ret_name;
+
+	/* Get function */
+	function = basic_block->function;
+	assert(function);
+
+	/* Only supported for 1 operand (address) */
+	num_operands = LLVMGetNumOperands(llinst);
+	if (num_operands != 1)
+		fatal("%s: 1 operands supported, %d found",
+			__FUNCTION__, num_operands);
+
+	/* Get address operand (vreg) */
+	llarg_address = LLVMGetOperand(llinst, 0);
+	arg_address = llvm2si_function_translate_value(function, llarg_address);
+	si2bin_arg_valid_types(arg_address, si2bin_arg_vector_register);
+
+	/* Get address space - only 1 (global mem.) supported for now */
+	lltype = LLVMTypeOf(llarg_address);
+	addr_space = LLVMGetPointerAddressSpace(lltype);
+	if (addr_space != 1)
+		fatal("%s: address space 1 expected (%d given)",
+			__FUNCTION__, addr_space);
+
+	/* Get return type (data) - only support 4-byte types for now */
+	lltype = LLVMTypeOf(llinst);
+	lltype_kind = LLVMGetTypeKind(lltype);
+	if (!(lltype_kind == LLVMIntegerTypeKind && LLVMGetIntTypeWidth(lltype) == 32) &&
+			lltype_kind != LLVMFloatTypeKind)
+		fatal("%s: only 4-byte int/float types supported", __FUNCTION__);
+
+	/* Allocate vector register and create symbol for return value */
+	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_vreg = llvm2si_function_allocate_vreg(function);
+	ret_symbol = llvm2si_symbol_create(ret_name,
+			llvm2si_symbol_vector_register,
+			ret_vreg);
+	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
+
+	/* Emit memory load instruction.
+	 * tbuffer_load_format_x v[value_symbol->vreg], v[pointer_symbol->vreg],
+	 * 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,BUF_NUM_FORMAT_FLOAT]
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
+	list_add(arg_list, arg_address);
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_uav11,
+			function->sreg_uav11 + 3));
+	arg_soffset = si2bin_arg_create_literal(0);
+	arg_qual = si2bin_arg_create_maddr_qual();
+	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
+			si_inst_buf_data_format_32, si_inst_buf_num_format_float));
+	inst = si2bin_inst_create(SI_INST_TBUFFER_LOAD_FORMAT_X, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
 
 void llvm2si_basic_block_emit_ret(struct llvm2si_basic_block_t *basic_block,
 		LLVMValueRef llinst)
 {
-	warning("%s: not supported", __FUNCTION__);
+	/* Ignore return for now */
 }
 
 
 void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
 		LLVMValueRef llinst)
 {
-	warning("%s: not supported", __FUNCTION__);
+	LLVMValueRef llarg_data;
+	LLVMValueRef llarg_address;
+	LLVMTypeRef lltype;
+	LLVMTypeKind lltype_kind;
+
+	struct llvm2si_function_t *function;
+	struct si2bin_inst_t *inst;
+	struct si2bin_arg_t *arg_data;
+	struct si2bin_arg_t *arg_address;
+	struct si2bin_arg_t *arg_qual;
+	struct si2bin_arg_t *arg_soffset;
+	struct list_t *arg_list;
+
+	int num_operands;
+	int addr_space;
+
+	/* Get function */
+	function = basic_block->function;
+	assert(function);
+
+	/* Only supported for 2 operand (address, data) */
+	num_operands = LLVMGetNumOperands(llinst);
+	if (num_operands != 2)
+		fatal("%s: 2 operands supported, %d found",
+			__FUNCTION__, num_operands);
+
+	/* Get data operand (vreg) */
+	llarg_data = LLVMGetOperand(llinst, 0);
+	arg_data = llvm2si_function_translate_value(function, llarg_data);
+	si2bin_arg_valid_types(arg_data, si2bin_arg_vector_register);
+
+	/* Get address operand (vreg) */
+	llarg_address = LLVMGetOperand(llinst, 1);
+	arg_address = llvm2si_function_translate_value(function, llarg_address);
+	si2bin_arg_valid_types(arg_address, si2bin_arg_vector_register);
+
+	/* Get address space - only 1 (global mem.) supported for now */
+	lltype = LLVMTypeOf(llarg_address);
+	addr_space = LLVMGetPointerAddressSpace(lltype);
+	if (addr_space != 1)
+		fatal("%s: address space 1 expected (%d given)",
+			__FUNCTION__, addr_space);
+
+	/* Get type of data - only support 4-byte types for now */
+	lltype = LLVMTypeOf(llarg_data);
+	lltype_kind = LLVMGetTypeKind(lltype);
+	if (!(lltype_kind == LLVMIntegerTypeKind && LLVMGetIntTypeWidth(lltype) == 32) &&
+			lltype_kind != LLVMFloatTypeKind)
+		fatal("%s: only 4-byte int/float types supported", __FUNCTION__);
+
+	/* Emit memory write.
+	 * tbuffer_store_format_x v[value_symbol->vreg], s[pointer_symbol->vreg],
+	 * 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,
+	 * 	BUF_NUM_FORMAT_FLOAT]
+	 */
+	arg_list = list_create();
+	list_add(arg_list, arg_data);
+	list_add(arg_list, arg_address);
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_uav11,
+			function->sreg_uav11 + 3));
+	arg_soffset = si2bin_arg_create_literal(0);
+	arg_qual = si2bin_arg_create_maddr_qual();
+	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
+			si_inst_buf_data_format_32, si_inst_buf_num_format_float));
+	inst = si2bin_inst_create(SI_INST_TBUFFER_STORE_FORMAT_X, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
 
