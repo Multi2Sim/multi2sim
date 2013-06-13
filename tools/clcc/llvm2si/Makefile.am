@@ -17,10 +17,7 @@ libllvm2si_a_SOURCES = \
 	symbol.h \
 	\
 	symbol-table.c \
-	symbol-table.h \
-	\
-	translate.c \
-	translate.h
+	symbol-table.h
 
 AM_CFLAGS = $(LLVM_CFLAGS)
 
