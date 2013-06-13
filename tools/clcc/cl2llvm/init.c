@@ -71,8 +71,7 @@ void cl2llvm_init_free(struct cl2llvm_init_t *init)
 
 	if (init->cl2llvm_val != NULL)
 	{
-		free(init->cl2llvm_val->type);
-		free(init->cl2llvm_val);
+		cl2llvm_val_free(init->cl2llvm_val);
 	}
 	free(init->name);
 	free(init);

@@ -52,8 +52,7 @@ struct cl2llvm_symbol_t *cl2llvm_symbol_create_w_init(LLVMValueRef val, int sign
 
 void cl2llvm_symbol_free(struct cl2llvm_symbol_t *symbol)
 {
-	free(symbol->cl2llvm_val->type);
-	free(symbol->cl2llvm_val);
+	cl2llvm_val_free(symbol->cl2llvm_val);
 	free(symbol->name);
 	free(symbol);
 }

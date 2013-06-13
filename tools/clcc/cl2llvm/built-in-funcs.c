@@ -23,6 +23,7 @@
 #include <llvm-c/Core.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
+#include <lib/mhandle/mhandle.h>
 
 #include "declarator-list.h"
 #include "built-in-funcs.h"
@@ -39,9 +40,15 @@ struct hash_table_t *built_in_func_table_create(void)
 	struct hash_table_t *built_in_func_table = hash_table_create(200, 1);
 	
 	/* Insert function names and id numbers into hash table. */
-	hash_table_insert(built_in_func_table, "get_global_size", intptr(0));
+	hash_table_insert(built_in_func_table, "get_global_dim", intptr(0));
 	hash_table_insert(built_in_func_table, "get_global_id", intptr(1));
-
+	hash_table_insert(built_in_func_table, "get_global_size", intptr(2));
+	hash_table_insert(built_in_func_table, "get_local_size", intptr(3));
+	hash_table_insert(built_in_func_table, "get_local_id", intptr(4));
+	hash_table_insert(built_in_func_table, "get_num_groups", intptr(5));
+	hash_table_insert(built_in_func_table, "get_group_id", intptr(6));
+	hash_table_insert(built_in_func_table, "get_group_offset", intptr(7));
+	
 	return built_in_func_table;
 }
 
@@ -56,45 +63,260 @@ void func_declare(int *func_id)
 	switch (*func_id)
 	{
 		case 0:
+			/*Declare get_global_dim*/
+	
+			/* Arguments */
+			args_array[0] = NULL;
+			args = list_create();
+			list_add(args, NULL);
+	
+			/* Function */
+			function = cl2llvm_function_create("get_global_dim", args);
+		
+			 function->func_type = LLVMFunctionType( LLVMInt32Type(), 
+		 		args_array, 1, 0);
+	 		function->func = LLVMAddFunction(cl2llvm_module, 
+				"get_global_dim", function->func_type);
+			function->sign = 0;
+			LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
+			LLVMAddFunctionAttr(function->func, 1 << 5);
+	
+			/* Insert function in global symbol table */
+			hash_table_insert(cl2llvm_symbol_table, "get_global_size", 
+				function);
+		
 			break;
 
 		case 1:
-		/*Declare get_global_id*/
+			/*Declare get_global_id*/
 	
-		/* Arguments */
-		args_array[0] = LLVMInt32Type();
-		args = list_create();
-		arg_decl1 = cl2llvm_decl_list_create();
-		arg_decl1->type_spec = 
-			cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
-		arg1 = cl2llvm_arg_create(arg_decl1, "dimindex");
-		list_add(args, arg1);
-
-		/* Function */
-		function = cl2llvm_function_create("get_global_id", args);
+			/* Arguments */
+			args_array[0] = LLVMInt32Type();
+			args = list_create();
+			arg_decl1 = cl2llvm_decl_list_create();
+			arg_decl1->type_spec = 
+				cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
+			arg1 = cl2llvm_arg_create(arg_decl1, "dimindex");
+			list_add(args, arg1);
 	
-		 function->func_type = LLVMFunctionType( LLVMInt32Type(), 
-		 	args_array, 1, 0);
-	 	function->func = LLVMAddFunction(cl2llvm_module, 
-			"get_global_id", function->func_type);
-		function->sign = 1;
-		LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
-		LLVMAddFunctionAttr(function->func, 1 << 5);
-
-		/* Insert function in global symbol table */
-		hash_table_insert(cl2llvm_symbol_table, "get_global_id", 
-			function);
-
-		/* Free pointers */
-		cl2llvm_decl_list_struct_free(arg_decl1);
+			/* Function */
+			function = cl2llvm_function_create("get_global_id", args);
 		
-		break;
+			 function->func_type = LLVMFunctionType( LLVMInt32Type(), 
+		 		args_array, 1, 0);
+	 		function->func = LLVMAddFunction(cl2llvm_module, 
+				"get_global_id", function->func_type);
+			function->sign = 0;
+			LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
+			LLVMAddFunctionAttr(function->func, 1 << 5);
+	
+			/* Insert function in global symbol table */
+			hash_table_insert(cl2llvm_symbol_table, "get_global_id", 
+				function);
+
+			/* Free pointers */
+			cl2llvm_decl_list_struct_free(arg_decl1);
+		
+			break;
+
+		case 2:
+			/*Declare get_global_size*/
+	
+			/* Arguments */
+			args_array[0] = LLVMInt32Type();
+			args = list_create();
+			arg_decl1 = cl2llvm_decl_list_create();
+			arg_decl1->type_spec = 
+				cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
+			arg1 = cl2llvm_arg_create(arg_decl1, "dimindex");
+			list_add(args, arg1);
+	
+			/* Function */
+			function = cl2llvm_function_create("get_global_size", args);
+		
+			 function->func_type = LLVMFunctionType( LLVMInt32Type(), 
+		 		args_array, 1, 0);
+	 		function->func = LLVMAddFunction(cl2llvm_module, 
+				"get_global_size", function->func_type);
+			function->sign = 0;
+			LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
+			LLVMAddFunctionAttr(function->func, 1 << 5);
+	
+			/* Insert function in global symbol table */
+			hash_table_insert(cl2llvm_symbol_table, "get_global_size", 
+				function);
+
+			/* Free pointers */
+			cl2llvm_decl_list_struct_free(arg_decl1);
+		
+			break;
+
+		case 3:
+			/*Declare get_local_size*/
+	
+			/* Arguments */
+			args_array[0] = LLVMInt32Type();
+			args = list_create();
+			arg_decl1 = cl2llvm_decl_list_create();
+			arg_decl1->type_spec = 
+				cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
+			arg1 = cl2llvm_arg_create(arg_decl1, "dimindex");
+			list_add(args, arg1);
+	
+			/* Function */
+			function = cl2llvm_function_create("get_local_size", args);
+		
+			 function->func_type = LLVMFunctionType( LLVMInt32Type(), 
+		 		args_array, 1, 0);
+	 		function->func = LLVMAddFunction(cl2llvm_module, 
+				"get_local_size", function->func_type);
+			function->sign = 0;
+			LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
+			LLVMAddFunctionAttr(function->func, 1 << 5);
+	
+			/* Insert function in global symbol table */
+			hash_table_insert(cl2llvm_symbol_table, "get_local_size", 
+				function);
+
+			/* Free pointers */
+			cl2llvm_decl_list_struct_free(arg_decl1);
+		
+			break;
+
+		case 4:
+			/*Declare get_local_id*/
+	
+			/* Arguments */
+			args_array[0] = LLVMInt32Type();
+			args = list_create();
+			arg_decl1 = cl2llvm_decl_list_create();
+			arg_decl1->type_spec = 
+				cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
+			arg1 = cl2llvm_arg_create(arg_decl1, "dimindex");
+			list_add(args, arg1);
+	
+			/* Function */
+			function = cl2llvm_function_create("get_local_id", args);
+		
+			 function->func_type = LLVMFunctionType( LLVMInt32Type(), 
+		 		args_array, 1, 0);
+	 		function->func = LLVMAddFunction(cl2llvm_module, 
+				"get_local_id", function->func_type);
+			function->sign = 0;
+			LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
+			LLVMAddFunctionAttr(function->func, 1 << 5);
+	
+			/* Insert function in global symbol table */
+			hash_table_insert(cl2llvm_symbol_table, "get_local_id", 
+				function);
+
+			/* Free pointers */
+			cl2llvm_decl_list_struct_free(arg_decl1);
+		
+			break;
+
+		case 5:
+			/*Declare get_num_groups*/
+	
+			/* Arguments */
+			args_array[0] = LLVMInt32Type();
+			args = list_create();
+			arg_decl1 = cl2llvm_decl_list_create();
+			arg_decl1->type_spec = 
+				cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
+			arg1 = cl2llvm_arg_create(arg_decl1, "dimindex");
+			list_add(args, arg1);
+	
+			/* Function */
+			function = cl2llvm_function_create("get_num_groups", args);
+		
+			 function->func_type = LLVMFunctionType( LLVMInt32Type(), 
+		 		args_array, 1, 0);
+	 		function->func = LLVMAddFunction(cl2llvm_module, 
+				"get_num_groups", function->func_type);
+			function->sign = 0;
+			LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
+			LLVMAddFunctionAttr(function->func, 1 << 5);
+	
+			/* Insert function in global symbol table */
+			hash_table_insert(cl2llvm_symbol_table, "get_num_groups", 
+				function);
+
+			/* Free pointers */
+			cl2llvm_decl_list_struct_free(arg_decl1);
+		
+			break;
+
+		case 6:
+			/*Declare get_group_id*/
+	
+			/* Arguments */
+			args_array[0] = LLVMInt32Type();
+			args = list_create();
+			arg_decl1 = cl2llvm_decl_list_create();
+			arg_decl1->type_spec = 
+				cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
+			arg1 = cl2llvm_arg_create(arg_decl1, "dimindex");
+			list_add(args, arg1);
+	
+			/* Function */
+			function = cl2llvm_function_create("get_group_id", args);
+		
+			 function->func_type = LLVMFunctionType( LLVMInt32Type(), 
+		 		args_array, 1, 0);
+	 		function->func = LLVMAddFunction(cl2llvm_module, 
+				"get_group_id", function->func_type);
+			function->sign = 0;
+			LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
+			LLVMAddFunctionAttr(function->func, 1 << 5);
+	
+			/* Insert function in global symbol table */
+			hash_table_insert(cl2llvm_symbol_table, "get_group_id", 
+				function);
+
+			/* Free pointers */
+			cl2llvm_decl_list_struct_free(arg_decl1);
+		
+			break;
+
+		case 7:
+			/*Declare get_group_offset*/
+	
+			/* Arguments */
+			args_array[0] = LLVMInt32Type();
+			args = list_create();
+			arg_decl1 = cl2llvm_decl_list_create();
+			arg_decl1->type_spec = 
+				cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
+			arg1 = cl2llvm_arg_create(arg_decl1, "dimindex");
+			list_add(args, arg1);
+	
+			/* Function */
+			function = cl2llvm_function_create("get_group_offset", args);
+		
+			 function->func_type = LLVMFunctionType( LLVMInt32Type(), 
+		 		args_array, 1, 0);
+	 		function->func = LLVMAddFunction(cl2llvm_module, 
+				"get_group_offset", function->func_type);
+			function->sign = 0;
+			LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
+			LLVMAddFunctionAttr(function->func, 1 << 5);
+	
+			/* Insert function in global symbol table */
+			hash_table_insert(cl2llvm_symbol_table, "get_group_offset", 
+				function);
+
+			/* Free pointers */
+			cl2llvm_decl_list_struct_free(arg_decl1);
+		
+			break;
+
 	}
 }
 
 int *intptr(int num)
 {
-	int *ptr = malloc(sizeof(int));
+	int *ptr = xmalloc(sizeof(int));
 	*ptr = num;
 	return ptr;
 }

@@ -22,8 +22,11 @@
 
 #include <llvm-c/Core.h>
 
+#include "val.h"
+
 /* Expands any vectors present in a list of cl2llvm_val_t's */
 
 void expand_vectors(struct list_t *elem_list);
 
+void cl2llvm_get_vector_indices(struct cl2llvm_val_t **, char *);
 #endif

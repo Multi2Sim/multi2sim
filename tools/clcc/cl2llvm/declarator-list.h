@@ -23,11 +23,11 @@
 struct cl2llvm_decl_list_t
 {
 	struct cl2llvm_type_t *type_spec;
-	char *addr_qual;
+	int addr_qual;
 	char *kernel_t;
 	char *inline_t;
 	char *sc_spec;
-	int access_qual;
+	char *access_qual;
 	char *type_qual;
 };
 
