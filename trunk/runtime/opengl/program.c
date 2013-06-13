@@ -337,6 +337,8 @@ void glLinkProgram (GLuint program)
 void glUseProgram (GLuint program)
 {
 	struct opengl_program_obj_t *program_obj;
+	struct opengl_shader_obj_t *shader_obj;
+	int i;
 
 	/* Debug */
 	opengl_debug("API call %s(%d)\n", __FUNCTION__, program);
@@ -355,10 +357,20 @@ void glUseProgram (GLuint program)
 		opengl_ctx->program_binding_point = program_obj;
 		opengl_program_obj_ref_update(program_obj, 1);
 
-		/* Call the driver to setup the program binary */
+		/* Call the driver to setup the program binary and map shaders */
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_create);
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_program_set_binary, 
 			program_obj->id, program_obj->binary, program_obj->binary_size);
+
+		LIST_FOR_EACH(program_obj->shaders, i)
+		{
+			shader_obj = list_get(program_obj->shaders, i);
+			if (shader_obj)
+				/* Create by driver */
+				syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_shader_create,
+					shader_obj->id, shader_obj->type);
+		}
+	
 	}
 	else
 	{

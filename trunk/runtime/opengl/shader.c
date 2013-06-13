@@ -285,7 +285,10 @@ void glCompileShader (GLuint shader)
 		opengl_debug("\tShader Source: \n%s\n", source);
 	}
 
-	/* Shader compilation is not supported currently */
+	/* 
+	 * Shader compilation is not supported currently.
+	 * Shader will be mapped to shaders in program binary when glUseProgram is called 
+	 */
 }
 
 void glReleaseShaderCompiler (void)
@@ -304,6 +307,11 @@ void glDeleteShader (GLuint shader)
 	shader_obj = opengl_shader_obj_repo_get_shader(shader_repo, shader);
 	opengl_shader_obj_repo_remove(shader_repo, shader_obj);
 	opengl_shader_obj_delete(shader_obj);
+
+	/* Delete by driver */
+	syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_shader_free,
+		shader_obj->id);
+
 }
 
 void glShaderBinary (GLsizei count, const GLuint *shaders, GLenum binaryformat, const GLvoid *binary, GLsizei length)
