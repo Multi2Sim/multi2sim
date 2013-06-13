@@ -51,6 +51,7 @@ struct llvm2si_function_arg_t
 	struct llvm2si_function_t *function;  /* Function it belongs to */
 	int index;  /* Index occupied in function argument list */
 	int sreg;  /* Scalar register identifier containing the argument */
+	int vreg;  /* Vector register where argument was copied */
 };
 
 
@@ -146,6 +147,10 @@ void llvm2si_function_emit_body(struct llvm2si_function_t *function,
 struct si2bin_arg_t *llvm2si_function_translate_value(
 		struct llvm2si_function_t *function,
 		LLVMValueRef llvalue);
+
+/* Allocate one new scalar/vector register and return its identifier. */
+int llvm2si_function_allocate_sreg(struct llvm2si_function_t *function);
+int llvm2si_function_allocate_vreg(struct llvm2si_function_t *function);
 
 #endif
 

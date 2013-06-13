@@ -165,13 +165,17 @@ void si2bin_arg_dump_assembly(struct si2bin_arg_t *arg, FILE *f);
 
 int si2bin_arg_encode_operand(struct si2bin_arg_t *arg);
 
-/* Check that an argument is of any of the 'num_types' types listed in array
- * 'types'. If it is not, a fatal message will be produced, showing 'message'
- * as part of the error string. This function is useful before inserting the
- * argument into an instruction that might not accept a given encoding. */
-void si2bin_arg_valid_types(struct si2bin_arg_t *arg,
-		enum si2bin_arg_type_t *types, int num_types,
-		const char *user_message);
+
+/* Check that an argument is of any of the types listed in the function. For
+ * example, this function could be used like this:
+ *	si2bin_arg_valid_types(arg, si2bin_arg_literal,
+ *		si2bin_arg_scalar_register);
+ */
+#define si2bin_arg_valid_types(arg, ...) \
+	__si2bin_arg_valid_types(arg, __FUNCTION__, \
+		PP_NARG(__VA_ARGS__), __VA_ARGS__)
+void __si2bin_arg_valid_types(struct si2bin_arg_t *arg, const char *user_message,
+		int num_args, ...);
 
 /* Swap two arguments */
 void si2bin_arg_swap(struct si2bin_arg_t **arg1_ptr,
