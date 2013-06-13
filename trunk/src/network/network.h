@@ -29,7 +29,6 @@ extern int EV_NET_OUTPUT_BUFFER;
 extern int EV_NET_INPUT_BUFFER;
 extern int EV_NET_RECEIVE;
 
-
 /* Stack */
 struct net_stack_t
 {
@@ -58,6 +57,8 @@ struct net_t
 	/* Properties */
 	char *name;
 	long long msg_id_counter;  /* Counter to assign message IDs */
+	int def_output_buffer_size;
+	int def_input_buffer_size;
 	
 	/* Nodes */
 	struct list_t *node_list;
@@ -92,7 +93,8 @@ void net_dump_report(struct net_t *net, FILE *f);
 struct net_node_t *net_add_end_node(struct net_t *net,
 	int input_buffer_size, int output_buffer_size,
 	char *name, void *user_data);
-struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name);
+struct net_node_t *net_add_bus(struct net_t *net,
+	int bandwidth, char *name, int lanes); //[K]
 struct net_node_t *net_add_switch(struct net_t *net,
 	int input_buffer_size, int output_buffer_size,
 	int bandwidth, char *name);
@@ -104,10 +106,16 @@ struct net_node_t *net_get_node_by_user_data(struct net_t *net,
 
 struct net_link_t *net_add_link(struct net_t *net,
 	struct net_node_t *src_node, struct net_node_t *dst_node,
-	int bandwidth, int vc_count);
+	int bandwidth, int link_src_bsize, int link_dst_bsize, int vc_count);
 void net_add_bidirectional_link(struct net_t *net,
 	struct net_node_t *src_node, struct net_node_t *dst_node,
-	int bandwidth, int vc_count);
+	int bandwidth, int link_src_bsize, int link_dst_bsize, int vc_count);
+
+void net_add_bus_port(struct net_t *net, struct net_node_t *src_node,
+		struct net_node_t *dst_node , int bus_src_buffer, int bus_dst_buffer);
+void net_add_bidirectional_bus_port(struct net_t *net,
+		struct net_node_t *src_node, struct net_node_t *dst_node,
+		int bus_src_buffer, int bus_dst_buffer);
 
 
 int net_can_send(struct net_t *net, struct net_node_t *src_node,

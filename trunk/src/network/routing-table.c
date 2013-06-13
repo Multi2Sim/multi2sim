@@ -25,6 +25,7 @@
 
 #include "buffer.h"
 #include "link.h"
+#include "bus.h"
 #include "net-system.h"
 #include "network.h"
 #include "node.h"
@@ -37,14 +38,14 @@
  */
 
 static char *err_net_cycle =
-	"\tA cycle has been detected in the graph representing the routing table\n"
-	"\tfor a network. Routing cycles can cause deadlocks in simulations, that\n"
-	"\tcan in turn make the simulation stall with no output.\n";
+		"\tA cycle has been detected in the graph representing the routing table\n"
+		"\tfor a network. Routing cycles can cause deadlocks in simulations, that\n"
+		"\tcan in turn make the simulation stall with no output.\n";
 
 static char *err_net_routing = 
-	"\t There is a link missing between source node and next node for this  \n"
-	"\t route step. The route between source and destination node should go \n"
-	"\t through existing links that are defined in the configuration file.  \n";
+		"\t There is a link missing between source node and next node for this  \n"
+		"\t route step. The route between source and destination node should go \n"
+		"\t through existing links that are defined in the configuration file.  \n";
 
 
 #define NET_NODE_COLOR_WHITE ((void *) 1)
@@ -53,8 +54,11 @@ static char *err_net_routing =
 
 
 /* This algorithm will be recursively called to do the backtracking of DFS algorithm. */
+/* Theoretically we shouldn't encounter any problem with the cycle detection when BUSes
+ * exist since they are not connected to any output buffers and cycles are based on the
+ * output buffers. --> more thorough examinations may be required.*/
 static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *routing_table, struct list_t *buffer_list,
-	struct list_t *color_list, struct list_t *parent_list, int list_elem, int buffer_count)
+		struct list_t *color_list, struct list_t *parent_list, int list_elem, int buffer_count)
 {
 	int j;
 
@@ -97,7 +101,8 @@ static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *
 					if(buffer_color == NET_NODE_COLOR_WHITE)
 					{
 						list_set(parent_list, i, buffer_elem);
-						routing_table_cycle_detection_dfs_visit(routing_table, buffer_list, color_list, parent_list, i, buffer_count);
+						routing_table_cycle_detection_dfs_visit(routing_table, buffer_list,
+								color_list, parent_list, i, buffer_count);
 					}
 
 					buffer_color = list_get(color_list, i);
@@ -106,7 +111,7 @@ static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *
 					if (buffer_color == NET_NODE_COLOR_GRAY  && parent_index != buffer_elem)
 					{
 						warning("network %s: cycle found in routing table.\n%s",
-							net->name, err_net_cycle);
+								net->name, err_net_cycle);
 						routing_table->has_cycle = 1;
 					}
 				}
@@ -143,15 +148,16 @@ static void net_routing_table_cycle_detection(struct net_routing_table_t *routin
 	for (i = 0; i < routing_table->dim; i++)
 	{
 		node_i = list_get(net->node_list, i);
-		for (j = 0; j < list_count(node_i->output_buffer_list); j++)
-		{
+		if (node_i->kind != net_node_bus)
+			for (j = 0; j < list_count(node_i->output_buffer_list); j++)
+			{
 
-			buffer_i = list_get(node_i->output_buffer_list,j);
+				buffer_i = list_get(node_i->output_buffer_list,j);
 
-			list_add(color_list, NET_NODE_COLOR_WHITE);
-			list_add(parent_list, buffer_i);
-			list_add(buffer_list, buffer_i);
-		}
+				list_add(color_list, NET_NODE_COLOR_WHITE);
+				list_add(parent_list, buffer_i);
+				list_add(buffer_list, buffer_i);
+			}
 	}
 
 	buffer_count = list_count(color_list);
@@ -161,12 +167,14 @@ static void net_routing_table_cycle_detection(struct net_routing_table_t *routin
 		buffer_color = list_get(color_list, i);
 		if (buffer_color == NET_NODE_COLOR_WHITE)
 		{
-			routing_table_cycle_detection_dfs_visit(routing_table, buffer_list, color_list, parent_list, i, buffer_count);
+			routing_table_cycle_detection_dfs_visit(routing_table, buffer_list,
+					color_list, parent_list, i, buffer_count);
 		}
 	}
 	list_free(color_list);
 	list_free(parent_list);
 	list_free(buffer_list);
+//	fprintf(stdout, "cycle detection: done \n");
 }
 
 
@@ -204,7 +212,7 @@ void net_routing_table_initiate(struct net_routing_table_t *routing_table)
 
 	struct net_node_t *src_node, *dst_node;
 	struct net_buffer_t *buffer;
-	struct net_link_t *link;
+
 
 	struct net_routing_table_entry_t *entry;
 
@@ -213,7 +221,7 @@ void net_routing_table_initiate(struct net_routing_table_t *routing_table)
 		panic("%s: network \"%s\": routing table already allocated", __FUNCTION__, net->name);
 	routing_table->dim = list_count(net->node_list);
 	routing_table->entries = xcalloc(routing_table->dim * routing_table->dim,
-		sizeof(struct net_routing_table_entry_t));
+			sizeof(struct net_routing_table_entry_t));
 
 	/* Initialize table with infinite costs */
 	for (i = 0; i < net->node_count; i++)
@@ -236,14 +244,58 @@ void net_routing_table_initiate(struct net_routing_table_t *routing_table)
 		for (j = 0; j < list_count(src_node->output_buffer_list); j++)
 		{
 			buffer = list_get(src_node->output_buffer_list, j);
-			link = buffer->link;
-			assert(link);
-			entry = net_routing_table_lookup(routing_table, src_node, link->dst_node);
-			entry->cost = 1;
-			entry->next_node = link->dst_node;
-			entry->output_buffer = buffer;
+			/*For each buffer of each node we check to see if it is connected
+			 * to a link or a BUS.
+			 *
+			 * If it is connected to the link we update the table by getting
+			 * the destination node of the Link*/
+			if (buffer->kind == net_buffer_link)
+			{
+				struct net_link_t *link;
+				assert(!buffer->bus);
+				link = buffer->link;
+				assert(link);
+				entry = net_routing_table_lookup(routing_table, src_node, link->dst_node);
+				entry->cost = 1;
+				entry->next_node = link->dst_node;
+				entry->output_buffer = buffer;
+			}
+
+			/* If it is connected to a BUS we create a connection between this node and
+			 * all the nodes that are connected to the BUS*/
+			else if (buffer->kind == net_buffer_bus)
+			{
+				int k;
+				struct net_node_t *bus_node;
+				struct net_bus_t *bus;
+				assert(!buffer->link);
+				assert(buffer->bus);
+				bus = buffer->bus;
+				bus_node = bus->node;
+				for (k = 0; k < list_count(bus_node->dst_buffer_list); k++)
+				{
+					struct net_buffer_t *dst_buffer;
+					dst_buffer = list_get(bus_node->dst_buffer_list, k);
+					if (src_node != dst_buffer->node)
+					{
+						entry = net_routing_table_lookup(routing_table, src_node, dst_buffer->node);
+						entry->cost = 1;
+						entry->next_node = dst_buffer->node;
+						entry->output_buffer = buffer;
+					}
+					/*For BUS. Even though we never get to BUS in the routing table (no routes path
+					 * through BUS node. They all pass through BUS node's buffer) we still provide a
+					 * Path from BUS nodes to all the nodes. There is no path from nodes that ends in
+					 * BUS. Next buffer is still NULL*/
+					entry = net_routing_table_lookup(routing_table, bus_node, dst_buffer->node);
+					entry->cost = 1;
+					entry->next_node = dst_buffer->node;
+
+				}
+			}
 		}
 	}
+//	net_routing_table_dump(routing_table, stdout);
 }
 
 /* Calculate shortest paths Floyd-Warshall algorithm.*/
@@ -301,7 +353,7 @@ void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
 			struct net_routing_table_entry_t *entry_i_j;
 
 			node_i = list_get(net->node_list, i);
-			
+
 			node_j = list_get(net->node_list, j);
 			entry_i_j = net_routing_table_lookup(routing_table, node_i, node_j);
 			next_node = entry_i_j->next_node;
@@ -324,17 +376,49 @@ void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
 
 			/* Look for output buffer */
 			buffer = NULL;
-			assert(list_count(node_i->output_buffer_list));
-			for (k = 0; k < list_count(node_i->output_buffer_list); k++)
+			if (node_i->kind != net_node_bus)
 			{
-				buffer = list_get(node_i->output_buffer_list, k);
-				link = buffer->link;
-				assert(link);
-				if (link->dst_node == next_node)
-					break;
+				struct net_buffer_t *bus_dst_buffer;
+				assert(list_count(node_i->output_buffer_list));
+				for (k = 0; k < list_count(node_i->output_buffer_list); k++)
+				{
+					buffer = list_get(node_i->output_buffer_list, k);
+					if (buffer->link)
+					{
+						link = buffer->link;
+						assert(link);
+						if (link->dst_node == next_node)
+							break;
+					}
+					else if (buffer->bus)
+					{
+						int l;
+						int check = 0;
+						struct net_node_t *bus_node;
+						struct net_bus_t *bus;
+						bus = buffer->bus;
+						assert(bus);
+						bus_node = bus->node;
+						for (l = 0; l < list_count(bus_node->dst_buffer_list); l++)
+						{
+							bus_dst_buffer = list_get(bus_node->dst_buffer_list, l);
+							if (bus_dst_buffer->node == next_node)
+							{
+								check = 1;
+								entry_i_j->next_node = bus_dst_buffer->node;
+								break;
+							}
+						}
+						if (check == 1)
+							break;
+
+					}
+				}
+				assert(k < list_count(node_i->output_buffer_list));
+				entry_i_j->output_buffer = buffer;
+
+
 			}
-			assert(k < list_count(node_i->output_buffer_list));
-			entry_i_j->output_buffer = buffer;
 		}
 	}
 
@@ -352,7 +436,7 @@ void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
 			entry_i_j = net_routing_table_lookup(routing_table, node_i, node_j);
 
 			buffer = entry_i_j->output_buffer;
-			if (buffer)
+			if (buffer && buffer->link)
 			{
 				link = buffer->link;
 				assert(link);
@@ -367,39 +451,57 @@ void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
 
 void net_routing_table_dump(struct net_routing_table_t *routing_table, FILE *f)
 {
-	int i, j, k;
+	int i, j;
 
 	struct net_t *net = routing_table->net;
 	struct net_node_t *next_node;
-
+	struct net_node_t *node_l;
 	/* Routing table */
 	fprintf(f, "         ");
 	for (i = 0; i < net->node_count; i++)
-		fprintf(f, "%2d ", i);
+	{
+		node_l = list_get(net->node_list, i);
+		fprintf(f, "\t%s \t\t", node_l->name);
+	}
+
 	fprintf(f, "\n");
 	for (i = 0; i < net->node_count; i++)
 	{
-		fprintf(f, "node %2d: ", i);
+		node_l = list_get(net->node_list, i);
+		fprintf(f, "%s\t\t", node_l->name);
 		for (j = 0; j < net->node_count; j++)
 		{
 			struct net_node_t *node_i;
 			struct net_node_t *node_j;
 			struct net_routing_table_entry_t *entry_i_j;
+			struct net_buffer_t *buffer;
 			node_i = list_get(net->node_list, i);
 			node_j = list_get(net->node_list, j);
 			entry_i_j = net_routing_table_lookup(routing_table, node_i, node_j);
 			next_node = entry_i_j->next_node;
+			buffer = entry_i_j->output_buffer;
 
 			if (next_node)
-				fprintf(f, "%2d ", next_node->index);
+			{
+				fprintf(f, "%s:\t", next_node->name);
+				if (buffer)
+				{
+					fprintf(f,"%s   \t", buffer->name);
+				}
+				else
+					fprintf(f,"-------- \t");
+			}
 			else
-				fprintf(f, "-- ");
+				fprintf(f, "--\t\t\t");
 		}
 		fprintf(f, "\n");
+
 	}
 	fprintf(f, "\n");
 
 	/* Node combinations */
+	/*
+	int k;
 	for (i = 0; i < net->node_count; i++)
 	{
 		for (j = 0; j < net->node_count; j++)
@@ -433,11 +535,12 @@ void net_routing_table_dump(struct net_routing_table_t *routing_table, FILE *f)
 		}
 		fprintf(f, "\n");
 	}
+	 */
 }
 
 
 struct net_routing_table_entry_t *net_routing_table_lookup(struct net_routing_table_t *routing_table,
-	struct net_node_t *src_node, struct net_node_t *dst_node)
+		struct net_node_t *src_node, struct net_node_t *dst_node)
 {
 	struct net_routing_table_entry_t *entry;
 
@@ -451,7 +554,7 @@ struct net_routing_table_entry_t *net_routing_table_lookup(struct net_routing_ta
 
 /* Updating the entries in the routing table based on the routes existing in configuration file*/
 void net_routing_table_route_update(struct net_routing_table_t *routing_table, struct net_node_t *src_node,
-	struct net_node_t *dst_node, struct net_node_t *next_node, int vc_num)
+		struct net_node_t *dst_node, struct net_node_t *next_node, int vc_num)
 {
 
 	int k;
@@ -485,8 +588,8 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table, s
 			else
 			{
 				if (link->virtual_channel <= vc_num)
-						fatal("Network %s: %s.to.%s: wrong virtual channel number is used in route \n %s",
-								routing_table->net->name, src_node->name, dst_node->name, net_err_config);
+					fatal("Network %s: %s.to.%s: wrong virtual channel number is used in route \n %s",
+							routing_table->net->name, src_node->name, dst_node->name, net_err_config);
 				struct net_buffer_t *vc_buffer;
 				vc_buffer = list_get(src_node->output_buffer_list, (buffer->index)+vc_num);
 				assert(vc_buffer->link == buffer->link);
@@ -497,7 +600,7 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table, s
 	}
 	/*If there is not a route between the source node and next node , error */
 	if (route_check == 0) fatal("Network %s : route %s.to.%s = %s : Missing Link \n%s ",
-		routing_table->net->name, src_node->name, dst_node->name, next_node->name, err_net_routing);
+			routing_table->net->name, src_node->name, dst_node->name, next_node->name, err_net_routing);
 
 	/* Find cycle in routing table */
 	net_routing_table_cycle_detection(routing_table);

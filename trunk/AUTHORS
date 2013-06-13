@@ -190,3 +190,17 @@ DESCRIPTION
 FILES
 	* All files in tools/clcc/cl2llvm
 
+
+================================================================================
+AUTHOR
+	Amir Kavyan Ziabari (aziabari@ece.neu.edu)
+
+DESCRIPTION
+	Amir has implemented the Interconnection Network in Mutli2sim. He has 
+	designed and implemented routing and data-flow schemes in CPU and GPU
+	internal networks. 
+
+FILES
+	* src/network/
+ 
+	
