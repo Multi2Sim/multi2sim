@@ -62,10 +62,6 @@ void llvm2si_compile(struct list_t *source_file_list,
 
 		/* Translate */
 		llvm2si_translate(source_file, output_file);
-
-		/* Info */
-		printf("\t%s: Southern Islands assembly dumped\n",
-				output_file);
 	}
 }
 
