@@ -26,11 +26,11 @@ struct cl2llvm_arg_t
 {
 	char *name;
 	struct cl2llvm_type_t *type_spec;
-	char *addr_qual;
+	char *access_qual;
 	char *kernel_t;
 	char *inline_t;
 	char *sc_spec;
-	int access_qual;
+	int addr_qual;
 	char *type_qual;
 };
 

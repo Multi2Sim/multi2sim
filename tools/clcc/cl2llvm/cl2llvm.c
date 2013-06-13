@@ -115,6 +115,14 @@ void cl2llvm_init_global_vars(void)
 
 void cl2llvm_done(void)
 {
+	char *name;
+	int *intptr;
+
+	/* Free built-in function table. */
+	HASH_TABLE_FOR_EACH(cl2llvm_built_in_func_table, name, intptr)
+		free(intptr);
+	hash_table_free(cl2llvm_built_in_func_table);
+
 }
 
 void cl2llvm_erase_global_vars(void)
