@@ -22,8 +22,8 @@
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/list.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/list.h>
 
 #include "buffer.h"
 #include "net-system.h"
@@ -31,12 +31,12 @@
 #include "node.h"
 
 
-/*
+/* 
  * Public Functions
  */
 
-struct net_buffer_t *net_buffer_create(struct net_t *net, struct net_node_t *node,
-	int size, char *name)
+struct net_buffer_t *net_buffer_create(struct net_t *net,
+	struct net_node_t *node, int size, char *name)
 {
 	struct net_buffer_t *buffer;
 
@@ -101,7 +101,8 @@ void net_buffer_dump_report(struct net_buffer_t *buffer, FILE *f)
 	fprintf(f, "%s.ByteOccupancy = %.2f\n", buffer->name, cycle ?
 		(double) buffer->occupancy_bytes_acc / cycle : 0.0);
 	fprintf(f, "%s.Utilization = %.4f\n", buffer->name, cycle ?
-		(double) buffer->occupancy_bytes_acc / cycle / buffer->size : 0.0);
+		(double) buffer->occupancy_bytes_acc / cycle /
+		buffer->size : 0.0);
 }
 
 
@@ -178,7 +179,7 @@ void net_buffer_wait(struct net_buffer_t *buffer, int event, void *stack)
 	/* Create new event-stack element */
 	assert(buffer->count > 0);
 	wakeup = xmalloc(sizeof(struct net_buffer_wakeup_t));
-	
+
 	/* Add it to wakeup list */
 	wakeup->event = event;
 	wakeup->stack = stack;
@@ -224,4 +225,3 @@ void net_buffer_update_occupancy(struct net_buffer_t *buffer)
 	buffer->occupancy_msgs_value = list_count(buffer->msg_list);
 	buffer->occupancy_measured_cycle = cycle;
 }
-

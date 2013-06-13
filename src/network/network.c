@@ -27,6 +27,7 @@
 
 #include "buffer.h"
 #include "link.h"
+#include "bus.h"
 #include "net-system.h"
 #include "visual.h"
 #include "network.h"
@@ -132,18 +133,20 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		if (strcasecmp(section, section_str))
 			continue;
 
-		def_input_buffer_size = config_read_int(config, section, "DefaultInputBufferSize", 0);
-		def_output_buffer_size = config_read_int(config, section, "DefaultOutputBufferSize", 0);
+		net->def_input_buffer_size = config_read_int(config, section, "DefaultInputBufferSize", 0);
+		net->def_output_buffer_size = config_read_int(config, section, "DefaultOutputBufferSize", 0);
 		def_bandwidth = config_read_int(config, section, "DefaultBandwidth", 0);
-		if (!def_input_buffer_size)
+		if (!net->def_input_buffer_size)
 			fatal("%s:%s: DefaultInputBufferSize: invalid/missing value.\n%s",
 					net->name, section, net_err_config);
-		if (!def_output_buffer_size)
+		if (!net->def_output_buffer_size)
 			fatal("%s:%s: DefaultOutputBufferSize: invalid/missing value.\n%s",
 					net->name, section, net_err_config);
 		if (!def_bandwidth)
 			fatal("%s:%s: DefaultBandwidth: invalid/missing value.\n%s",
 					net->name, section, net_err_config);
+		def_output_buffer_size = net->def_output_buffer_size;
+		def_input_buffer_size = net->def_input_buffer_size;
 	}
 
 	/* Nodes */
@@ -157,6 +160,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		int input_buffer_size;
 		int output_buffer_size;
 		int bandwidth;
+		int lanes; //BUS lanes
 
 		/* First token must be 'Network' */
 		snprintf(section_str, sizeof section_str, "%s", section);
@@ -189,6 +193,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 				"OutputBufferSize", def_output_buffer_size);
 		bandwidth = config_read_int(config, section,
 				"BandWidth", def_bandwidth);
+		lanes = config_read_int(config, section, "Lanes", 1);
 
 		/* Create node */
 		if (!strcasecmp(node_type, "EndNode"))
@@ -197,6 +202,21 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		else if (!strcasecmp(node_type, "Switch"))
 			net_add_switch(net, input_buffer_size, output_buffer_size,
 					bandwidth, node_name);
+		else if (!strcasecmp(node_type, "Bus"))
+		{
+			/* Right now we ignore the size of buffers. But we can set it as the
+			 * value for bus ports, making the connecting switches asymmetric.*/
+			if (input_buffer_size != def_input_buffer_size ||
+					output_buffer_size != def_output_buffer_size)
+				fatal("%s:%s: BUS does not contain input/output buffers. "
+						"Size values will be ignored \n", net->name, section);
+
+			/*If the number of lanes is smaller than 1 produce an error*/
+			if (lanes < 1)
+				fatal("%s:%s: BUS cannot have less than 1 number of lanes \n%s",
+						net->name, section, net_err_config);
+			net_add_bus(net, bandwidth, node_name, lanes);
+		}
 		else
 			fatal("%s:%s: Type: invalid/missing value.\n%s",
 					net->name, section, net_err_config);
@@ -214,6 +234,8 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		char *link_type;
 		int bandwidth;
 		int v_channel_count ;
+		int src_buffer_size;
+		int dst_buffer_size;
 
 		char *src_node_name;
 		char *dst_node_name;
@@ -249,6 +271,10 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		src_node_name = config_read_string(config, section, "Source", "");
 		dst_node_name = config_read_string(config, section, "Dest", "");
 		v_channel_count = config_read_int(config, section, "VC", 1);
+		src_buffer_size = config_read_int(config, section,
+				"SourceBufferSize", 0);
+		dst_buffer_size = config_read_int(config, section,
+				"DestBufferSize", 0);
 
 		/* Nodes */
 		src_node = net_get_node_by_name(net, src_node_name);
@@ -261,20 +287,64 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 			fatal("%s: %s: %s: destination node does not exist.\n%s",
 					name, section, dst_node_name, net_err_config);
 
-		if (v_channel_count >= 1)
+
+		/* If it is a link connection */
+		if (src_node->kind != net_node_bus && dst_node->kind != net_node_bus)
 		{
+			int link_src_bsize ;
+			int link_dst_bsize ;
+
+			if (v_channel_count >= 1)
+			{
+
+				if (!strcasecmp(link_type, "Unidirectional"))
+				{
+					link_src_bsize = (src_buffer_size)
+									?  src_buffer_size : src_node->output_buffer_size;
+					link_dst_bsize =  (dst_buffer_size)
+											?  dst_buffer_size : dst_node->input_buffer_size;
+
+					net_add_link(net, src_node, dst_node, bandwidth,
+							link_src_bsize, link_dst_bsize, v_channel_count);
+				}
+				else if (!strcasecmp(link_type, "Bidirectional"))
+				{
+					net_add_bidirectional_link(net, src_node, dst_node, bandwidth,
+							src_buffer_size,dst_buffer_size, v_channel_count);
+				}
+			}
+			else fatal("%s: %s: Unacceptable number of virtual channels \n %s",
+					name, section,net_err_config);
+		}
+		/*If is is a Bus Connection*/
+		else
+		{
+
+			if (v_channel_count > 1)
+				fatal("%s: %s: BUS can not have virtual channels. \n %s",
+						name, section, net_err_config);
 
 			if (!strcasecmp(link_type, "Unidirectional"))
 			{
-				net_add_link(net, src_node, dst_node, bandwidth, v_channel_count);
+				if ((src_node->kind == net_node_bus &&
+						src_buffer_size) ||
+						(dst_node->kind == net_node_bus &&
+								dst_buffer_size))
+				{
+					fatal ("%s: %s: Source/Destination BUS cannot have buffer. \n %s "
+							,name, section, net_err_config);
+				}
+
+				net_add_bus_port(net, src_node, dst_node,
+						src_buffer_size, dst_buffer_size);
 			}
 			else if (!strcasecmp(link_type, "Bidirectional"))
 			{
-				net_add_bidirectional_link(net, src_node, dst_node, bandwidth,v_channel_count);
+				net_add_bidirectional_bus_port(net, src_node, dst_node,
+						src_buffer_size, dst_buffer_size);
 			}
+
 		}
-		else fatal("%s: %s: Unacceptable number of virtual channels \n %s",
-				name, section,net_err_config);
 	}
 
 	/* initializing the routing table */
@@ -545,13 +615,9 @@ struct net_node_t *net_add_end_node(struct net_t *net,
 }
 
 
-struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name)
+struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name, int lanes) //[K]
 {
 	struct net_node_t *node;
-
-	/* Not supported */
-	panic("%s: buses not supported", __FUNCTION__);
-
 	/* Create node */
 	node = net_node_create(net,
 			net_node_bus,  /* kind */
@@ -566,6 +632,14 @@ struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name)
 	net->node_count++;
 	list_add(net->node_list, node);
 
+	node->bus_lane_list = list_create_with_size(4);
+	node->src_buffer_list= list_create_with_size(4);
+	node->dst_buffer_list = list_create_with_size(4);
+
+	for (int i = 0; i < lanes ; i++)
+	{
+		net_node_add_bus_lane(node);
+	}
 	/* Return */
 	return node;
 }
@@ -631,7 +705,8 @@ struct net_node_t *net_get_node_by_user_data(struct net_t *net, void *user_data)
 /* Create link with virtual channel */
 struct net_link_t *net_add_link(struct net_t *net,
 		struct net_node_t *src_node, struct net_node_t *dst_node,
-		int bandwidth, int vc_count)
+		int bandwidth, int link_src_bsize, int link_dst_bsize,
+		int vc_count)
 {
 	struct net_link_t *link;
 
@@ -642,7 +717,8 @@ struct net_link_t *net_add_link(struct net_t *net,
 		fatal("network \"%s\": link cannot connect two end nodes\n", net->name);
 
 	/* Create link connecting buffers */
-	link = net_link_create(net, src_node, dst_node, bandwidth, vc_count);
+	link = net_link_create(net, src_node, dst_node, bandwidth,
+			link_src_bsize, link_dst_bsize, vc_count);
 
 	/* Add to link list */
 	list_add(net->link_list, link);
@@ -655,15 +731,82 @@ struct net_link_t *net_add_link(struct net_t *net,
 /* Create bidirectional link with VC */
 void net_add_bidirectional_link(struct net_t *net,
 		struct net_node_t *src_node, struct net_node_t *dst_node,
-		int bandwidth, int vc_count)
+		int bandwidth, int link_src_bsize, int link_dst_bsize,
+		int vc_count)
 {
-	net_add_link(net, src_node, dst_node, bandwidth, vc_count);
-	net_add_link(net, dst_node, src_node, bandwidth, vc_count);
+
+	int src_buffer_size;
+	int dst_buffer_size;
+
+	src_buffer_size = (link_src_bsize)
+						? link_src_bsize : src_node->output_buffer_size;
+	dst_buffer_size = (link_dst_bsize)
+						? link_dst_bsize : dst_node->input_buffer_size;
+	net_add_link(net, src_node, dst_node, bandwidth,
+			src_buffer_size, dst_buffer_size, vc_count);
+
+	src_buffer_size = (link_src_bsize)
+							? link_src_bsize : dst_node->output_buffer_size;
+	dst_buffer_size = (link_dst_bsize)
+							? link_dst_bsize : src_node->input_buffer_size;
+	net_add_link(net, dst_node, src_node, bandwidth,
+			src_buffer_size, dst_buffer_size, vc_count);
 
 }
 
+void net_add_bus_port(struct net_t *net, struct net_node_t *src_node,
+		struct net_node_t *dst_node , int bus_src_buffer, int bus_dst_buffer)
+{
+	/*Checks*/
+	assert(src_node->net ==net);
+	assert(dst_node->net ==net);
+	struct net_buffer_t * buffer;
+
+	/* Condition 1: No support for direct BUS to BUS connection*/
+	if (src_node->kind == net_node_bus && dst_node->kind == net_node_bus)
+		fatal("network \"%s\" : BUS to BUS connection is not supported.", net->name);
+
+	/*Condition 2: In case source node is BUS, we add an input buffer to destination
+	 * node and add it to the list of destination nodes in BUS*/
+	if (src_node->kind == net_node_bus && dst_node->kind != net_node_bus)
+	{
+		int dst_buffer_size = (bus_dst_buffer) ? bus_dst_buffer : dst_node->input_buffer_size;
+		buffer = net_node_add_input_buffer(dst_node, dst_buffer_size);
+
+		assert(!buffer->link);
+		list_add(src_node->dst_buffer_list, buffer);
+		buffer->bus = list_get(src_node->bus_lane_list, 0);
+	}
+
+	/*Condition 3: In case destination node is BUS, we add an output buffer to
+	 * source node and add it to the list of source nodes in BUS*/
+	else if (src_node->kind != net_node_bus && dst_node->kind == net_node_bus)
+	{
+		int src_buffer_size = (bus_src_buffer) ? bus_src_buffer : src_node->output_buffer_size;
+		buffer = net_node_add_output_buffer(src_node, src_buffer_size);
+		assert(!buffer->link);
+		list_add(dst_node->src_buffer_list, buffer);
+		buffer->bus = list_get(dst_node->bus_lane_list, 0);
+	}
+
+	/* We make the buffer as type port for clarification and use in event handler*/
+	buffer->kind = net_buffer_bus;
+
+}
+
+void net_add_bidirectional_bus_port(struct net_t *net,
+		struct net_node_t *src_node, struct net_node_t *dst_node,
+		int bus_src_buffer, int bus_dst_buffer)
+{
+	net_add_bus_port(net, src_node, dst_node, bus_src_buffer, bus_dst_buffer);
+	net_add_bus_port(net, dst_node, src_node, bus_src_buffer, bus_dst_buffer);
+}
+
 /* Return TRUE if a message can be sent through the network. Return FALSE
- * otherwise, whether the reason is temporary of permanent. */
+ * otherwise, whether the reason is temporary of permanent. This function
+ * is being used just in stand alone simulator. So in here if a buffer is
+ * busy for any reason, the node simply discards the message and sends
+ * another one. */
 int net_can_send(struct net_t *net, struct net_node_t *src_node,
 		struct net_node_t *dst_node, int size)
 {
@@ -678,6 +821,7 @@ int net_can_send(struct net_t *net, struct net_node_t *src_node,
 	/* Get output buffer */
 	entry = net_routing_table_lookup(routing_table, src_node, dst_node);
 	output_buffer = entry->output_buffer;
+
 
 	/* No route to destination */
 	if (!output_buffer)
