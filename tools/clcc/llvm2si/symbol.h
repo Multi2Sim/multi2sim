@@ -26,8 +26,8 @@
 enum llvm2si_symbol_type_t
 {
 	llvm2si_symbol_type_invalid = 0,
-	llvm2si_symbol_type_vector_register,
-	llvm2si_symbol_type_scalar_register
+	llvm2si_symbol_vector_register,
+	llvm2si_symbol_scalar_register
 };
 
 struct llvm2si_symbol_t

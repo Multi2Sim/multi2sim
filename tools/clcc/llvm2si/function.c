@@ -473,16 +473,11 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 	arg->function = function;
 	arg->index = function->arg_list->count - 1;
 
-	/* Allocate 1 scalar register for the argument */
-	arg->sreg = function->num_sregs;
-	function->num_sregs++;
+	/* Allocate 1 scalar and 1 vector register for the argument */
+	arg->sreg = function->num_sregs++;
+	arg->vreg = function->num_vregs++;
 
-	/* Insert argument name in symbol table */
-	symbol = llvm2si_symbol_create(arg->name, llvm2si_symbol_type_scalar_register,
-			arg->sreg);
-	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
-
-	/* Generate code to load argument
+	/* Generate code to load argument into a scalar register.
 	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
 	 */
 	arg_list = list_create();
@@ -492,6 +487,24 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 	list_add(arg_list, si2bin_arg_create_literal(arg->index * 4));
 	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
 	llvm2si_basic_block_add_inst(basic_block, inst);
+
+	/* Copy argument into a vector register. This vector register will be
+	 * used for convenience during code emission, so that we don't have to
+	 * worry at this point about different operand type encodings for
+	 * instructions. Optimization passes will get rid later of redundant
+	 * copies and scalar opportunities.
+	 * v_mov_b32 v[arg], s[arg]
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(arg->vreg));
+	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
+	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+	
+	/* Insert argument name in symbol table, using its vector register. */
+	symbol = llvm2si_symbol_create(arg->name,
+		llvm2si_symbol_vector_register, arg->vreg);
+	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
 }
 
 
@@ -539,76 +552,105 @@ void llvm2si_function_emit_body(struct llvm2si_function_t *function,
 }
 
 
-struct si2bin_arg_t *llvm2si_function_translate_value(
+static struct si2bin_arg_t *llvm2si_function_translate_const_value(
 		struct llvm2si_function_t *function,
 		LLVMValueRef llvalue)
 {
-	//LLVMTypeRef lltype;
-	//LLVMTypeKind lltype_kind;
+	LLVMTypeRef lltype;
+	LLVMTypeKind lltype_kind;
 
-	struct llvm2si_symbol_t *symbol;
-	char *name;
-
-	/* Get value name and type */
-	name = (char *) LLVMGetValueName(llvalue);
-	//lltype = LLVMTypeOf(llvalue);
-	//lltype_kind = LLVMGetTypeKind(lltype);
-
-	/* LLVM identifier */
-	if (*name)
+	lltype = LLVMTypeOf(llvalue);
+	lltype_kind = LLVMGetTypeKind(lltype);
+	
+	/* Check constant type */
+	switch (lltype_kind)
 	{
-		/* Look up symbol */
-		symbol = llvm2si_symbol_table_lookup(function->symbol_table, name);
-		if (!symbol)
-			fatal("%s: %s: symbol not found", __FUNCTION__, name);
-
-		/* Create argument with the associated scalar/vector register found
-		 * in the symbol table. */
-		assert(symbol->type == llvm2si_symbol_type_vector_register ||
-				symbol->type == llvm2si_symbol_type_scalar_register);
-		return symbol->type == llvm2si_symbol_type_vector_register ?
-				si2bin_arg_create_vector_register(symbol->reg) :
-				si2bin_arg_create_scalar_register(symbol->reg);
-	}
-
-#if 0
-	/* Integer constant */
-	constant_int_value = dynamic_cast<ConstantInt*>(value);
-	if (lltype_kind == LLVMIntegerTypeKind && LLVMIsConstant(llvalue))
+	
+	case LLVMIntegerTypeKind:
 	{
-		IntegerType *constant_int_type;
 		int bit_width;
 		int value;
 
 		/* Only 32-bit constants supported for now. We need to figure
 		 * out what to do with the sign extension otherwise. */
-		constant_int_type = reinterpret_cast<IntegerType*>(type);
-		bit_width = constant_int_type->getBitWidth();
+		bit_width = LLVMGetIntTypeWidth(lltype);
 		if (bit_width != 32)
-			fatal("%s: only 32-bit type supported (%d-bit found)",
-				__FUNCTION__, bit_width);
+			fatal("%s: only 32-bit integer constant supported "
+				" (%d-bit found)", __FUNCTION__, bit_width);
 
 		/* Create argument */
-		value = constant_int_value->getZExtValue();
+		value = LLVMConstIntGetZExtValue(llvalue);
 		return si2bin_arg_create_literal(value);
 	}
 
-	/* Function argument */
-	func_arg = dynamic_cast<Argument*>(value);
-	if (func_arg)
-	{
-		int index;
-
-		/* Create Southern Islands argument as a scalar register equal
-		 * to the baseline register used for arguments 'sreg_arg' plus
-		 * the index of the requested function argument. */
-		index = func_arg->getArgNo();
-		return si2bin_arg_create_scalar_register(function->sreg_arg + index);
+	default:
+		
+		fatal("%s: constant type not supported (%d)",
+			__FUNCTION__, lltype_kind);
+		return NULL;
 	}
-#endif
+}
 
-	/* Type not supported */
-	fatal("%s: value type not supported", __FUNCTION__);
-	return NULL;
+
+struct si2bin_arg_t *llvm2si_function_translate_value(
+		struct llvm2si_function_t *function,
+		LLVMValueRef llvalue)
+{
+	struct llvm2si_symbol_t *symbol;
+	struct si2bin_arg_t *arg;
+
+	char *name;
+
+	/* Treat constants separately */
+	if (LLVMIsConstant(llvalue))
+		return llvm2si_function_translate_const_value(function, llvalue);
+
+	/* Get name */
+	name = (char *) LLVMGetValueName(llvalue);
+	if (!name || !*name)
+		fatal("%s: anonymous values not supported", __FUNCTION__);
+
+	/* Look up symbol */
+	symbol = llvm2si_symbol_table_lookup(function->symbol_table, name);
+	if (!symbol)
+		fatal("%s: %s: symbol not found", __FUNCTION__, name);
+
+	/* Create argument based on symbol type */
+	switch (symbol->type)
+	{
+
+	case llvm2si_symbol_vector_register:
+
+		arg = si2bin_arg_create_vector_register(symbol->reg);
+		break;
+
+	case llvm2si_symbol_scalar_register:
+
+		arg = si2bin_arg_create_scalar_register(symbol->reg);
+		break;
+
+	default:
+
+		arg = NULL;
+		fatal("%s: invalid symbol type (%d)", __FUNCTION__,
+				symbol->type);
+	}
+
+	/* Return argument */
+	return arg;
+}
+
+
+int llvm2si_function_allocate_sreg(struct llvm2si_function_t *function)
+{
+	function->num_sregs++;
+	return function->num_sregs - 1;
+}
+
+
+int llvm2si_function_allocate_vreg(struct llvm2si_function_t *function)
+{
+	function->num_vregs++;
+	return function->num_vregs - 1;
 }
 
