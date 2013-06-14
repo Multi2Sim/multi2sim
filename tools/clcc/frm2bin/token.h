@@ -69,6 +69,7 @@ enum frm_token_type_t
 	frm_token_gen0_src1_dtype,
 	frm_token_gen0_src1_dtype_n,
 	frm_token_gen0_src1_stype_n,
+	frm_token_gen0_dst_cc,
 	frm_token_offs_op1_e,
 	frm_token_P,
 	frm_token_Q,
