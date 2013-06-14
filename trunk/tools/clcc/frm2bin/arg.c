@@ -19,14 +19,15 @@
 
 #include <assert.h>
 #include <stdlib.h>
+
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
 #include "arg.h"
-#include "token.h"
 #include "frm2bin.h"
+#include "token.h"
 
 
 struct str_map_t frm_arg_special_register_map =
@@ -91,13 +92,13 @@ struct str_map_t frm_arg_special_register_map =
 struct frm_arg_t *frm_arg_create(void)
 {
 	struct frm_arg_t *arg;
-	
+
 	/* Allocate */
 	arg = xcalloc(1, sizeof(struct frm_arg_t));
-	
+
 	/* Return */
 	return arg;
-	
+
 }
 
 
@@ -146,13 +147,13 @@ struct frm_arg_t *frm_arg_create_pt(char *name)
 	/* more cases will be added later */
 	if (!strcmp(name, "pt"))
 	{
-	  /* value range 0 ~ 7, 7 means predicate ture */
-	  /* if it's pt, predicate ture, P7 */
-	  arg->value.pt.idx = 7 ;
+		/* value range 0 ~ 7, 7 means predicate ture */
+		/* if it's pt, predicate ture, P7 */
+		arg->value.pt.idx = 7;
 	}
 	else
 	{
-	  arg->value.pt.idx = 0 ;
+		arg->value.pt.idx = 0;
 	}
 
 	return arg;
@@ -181,8 +182,7 @@ struct frm_arg_t *frm_arg_create_special_register(char *name)
 	arg = frm_arg_create();
 	arg->type = frm_arg_special_register;
 	arg->value.special_register.type =
-			str_map_string_err(&frm_arg_special_register_map,
-			name, &err);
+		str_map_string_err(&frm_arg_special_register_map, name, &err);
 	if (err)
 		frm2bin_yyerror_fmt("invalid special register: %s", name);
 
@@ -287,21 +287,22 @@ int frm_arg_encode_operand(struct frm_arg_t *arg)
 			return id;
 
 		frm2bin_yyerror_fmt("invalid scalar register: s%d", id);
-		//printf("invalid scalar register: s%d", id);
 		break;
 	}
 
 
-	/* Special register */
+		/* Special register */
 	case frm_arg_special_register:
 	{
 		switch (arg->value.special_register.type)
 		{
-			/* not implemented yet*/
+			/* not implemented yet */
 
 		default:
-			frm2bin_yyerror_fmt("%s: unsupported special register (code=%d)",
-				__FUNCTION__, arg->value.special_register.type);
+			frm2bin_yyerror_fmt
+				("%s: unsupported special register (code=%d)",
+				__FUNCTION__,
+				arg->value.special_register.type);
 		}
 		break;
 	}
@@ -320,17 +321,17 @@ void frm_arg_dump(struct frm_arg_t *arg, FILE *f)
 {
 	switch (arg->type)
 	{
-	
+
 	case frm_arg_invalid:
 
 		fprintf(f, "<invalid>");
 		break;
-		
+
 	case frm_arg_scalar_register:
 
 		fprintf(f, "<sreg> s%d", arg->value.scalar_register.id);
 		break;
-		
+
 	case frm_arg_literal:
 	{
 		int value;
@@ -341,15 +342,15 @@ void frm_arg_dump(struct frm_arg_t *arg, FILE *f)
 			fprintf(f, " (0x%x)", value);
 		break;
 	}
-		
+
 	case frm_arg_special_register:
 	{
-		fprintf(f, "<special_reg> %s", 
+		fprintf(f, "<special_reg> %s",
 			str_map_value(&frm_arg_special_register_map,
-			arg->value.special_register.type));
+				arg->value.special_register.type));
 		break;
 	}
-	
+
 	case frm_arg_maddr:
 	{
 		fprintf(f, "<maddr>");
@@ -387,13 +388,12 @@ struct frm_mod_t *frm_mod_create_with_name(char *name)
 	enum frm_token_type_t token_type = frm_token_invalid;
 	char long_name[40];
 
-	/* % is removed from the mod in the previous processing
-	 * but the frm_token_map has % in each token, so it's added
-	 * back. This will be changed later
-	*/
+	/* % is removed from the mod in the previous processing but the
+	 * frm_token_map has % in each token, so it's added back. This will
+	 * be changed later */
 	strcpy(long_name, "%");
 	strcat(long_name, name);
-	
+
 	/* Allocate */
 	mod = xcalloc(1, sizeof(struct frm_mod_t));
 
@@ -408,7 +408,7 @@ struct frm_mod_t *frm_mod_create_with_name(char *name)
 		mod->type = token_type;
 		printf("invalid modifier type! [%s]\n", name);
 	}
-	
+
 	/* Return */
 	return mod;
 }
@@ -416,10 +416,10 @@ struct frm_mod_t *frm_mod_create_with_name(char *name)
 struct frm_mod_t *frm_mod_create(void)
 {
 	struct frm_mod_t *mod;
-	
+
 	/* Allocate */
 	mod = xcalloc(1, sizeof(struct frm_mod_t));
-	
+
 	/* Return */
 	return mod;
 }
@@ -430,6 +430,7 @@ struct frm_mod_t *frm_mod_create_data_width(char *mod_name)
 
 	mod = frm_mod_create();
 	mod->type = frm_token_mod_data_width;
+
 	if (!strcmp(mod_name, "U32"))
 	{
 		mod->value.data_width = u32;
@@ -452,6 +453,7 @@ struct frm_mod_t *frm_mod_create_logic(char *mod_name)
 
 	mod = frm_mod_create();
 	mod->type = frm_token_mod_logic;
+
 	if (!strcmp(mod_name, "AND"))
 	{
 		mod->value.logic = logic_and;
@@ -478,6 +480,7 @@ struct frm_mod_t *frm_mod_create_comparison(char *mod_name)
 
 	mod = frm_mod_create();
 	mod->type = frm_token_mod_comparison;
+
 	if (!strcmp(mod_name, "LT"))
 	{
 		mod->value.comparison = lt;
@@ -510,7 +513,32 @@ struct frm_mod_t *frm_mod_create_comparison(char *mod_name)
 	return mod;
 }
 
+struct frm_mod_t *frm_mod_create_brev(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_mod0_B_brev;
+	mod->value.brev = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_dst_cc(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_gen0_dst_cc;
+	mod->value.dst_cc = 1;
+
+	return mod;
+}
+
 void frm_mod_free(struct frm_mod_t *mod)
 {
 	free(mod);
 }
+

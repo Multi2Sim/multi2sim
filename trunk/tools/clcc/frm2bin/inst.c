@@ -28,9 +28,9 @@
 #include <lib/util/string.h>
 
 #include "arg.h"
+#include "frm2bin.h"
 #include "inst.h"
 #include "inst-info.h"
-#include "frm2bin.h"
 #include "symbol.h"
 #include "token.h"
 
@@ -50,27 +50,31 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 	struct frm_mod_t *mod;
 
 	char err_str[MAX_STRING_SIZE];
+
 	int index;
-	
+
 	/* string list for the modifier in the instruction */
 	struct list_t *str_mod_list;
+
 	/* list of modifier, type frm_mod_t */
 	struct list_t *mod_list;
+
 	/* The name paramter passed in constains both inst-name and mod_list */
 	char *inst_name;
+
 	char *mod_name;
 
 	/* Allocate */
 	inst = xcalloc(1, sizeof(struct frm2bin_inst_t));
-	
+
 	/* Initialize */
 	if (!arg_list)
 		arg_list = list_create();
 	inst->arg_list = arg_list;
-	
+
 	/* create a list of tokens in the instruction using "." delimiter */
 	/* "." is the delimiter between inst-name and modifier, also */
-	/*  modifier between mofifier */
+	/* modifier between mofifier */
 	str_mod_list = str_token_list_create(name, ".");
 
 	/* extract the inst-name, it will be removed from the str_mod_list */
@@ -81,46 +85,57 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 	if (str_mod_list->count > 0)
 	{
 		LIST_FOR_EACH(str_mod_list, index)
-	  	{
-	  		mod_name = list_get(str_mod_list, index);
-	  	  	/* check which modifier it belongs to, 
-			 * then create a mod object */
-	  	  	if (!strcmp(mod_name, "U32") || !strcmp(mod_name, "S32"))
-	  	  	{
-	  	  		/* create a modifier object, 
-			  	 * then add it to the tail of the list*/
-	  	  	  	mod = frm_mod_create_data_width(mod_name);
-	  	  	  	list_add(mod_list, mod);
-	  	  	}
-	  	  	else if (!strcmp(mod_name, "AND") || 
-				!strcmp(mod_name, "OR") || 
+		{
+			mod_name = list_get(str_mod_list, index);
+			/* check which modifier it belongs to, then create a 
+			 * mod object */
+			if (!strcmp(mod_name, "U32")
+				|| !strcmp(mod_name, "S32"))
+			{
+				/* create a modifier object, then add it to
+				 * the tail of the list */
+				mod = frm_mod_create_data_width(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "AND") ||
+				!strcmp(mod_name, "OR") ||
 				!strcmp(mod_name, "XOR"))
-	  	  	{
-	  	  		/* create a modifier object, 
-			  	 * then add it to the tail of the list*/
-	  	  	  	mod = frm_mod_create_logic(mod_name);
-	  	  	  	list_add(mod_list, mod);
-	  	  	}
-	  	  	else if (!strcmp(mod_name, "LT") || 
-				!strcmp(mod_name, "EQ") || 
-				!strcmp(mod_name, "LE") || 
-				!strcmp(mod_name, "GT") || 
-				!strcmp(mod_name, "NE") || 
+			{
+				/* create logic modifier, add to list */
+				mod = frm_mod_create_logic(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "LT") ||
+				!strcmp(mod_name, "EQ") ||
+				!strcmp(mod_name, "LE") ||
+				!strcmp(mod_name, "GT") ||
+				!strcmp(mod_name, "NE") ||
 				!strcmp(mod_name, "GE"))
-	  	  	{
-	  	  		/* create a modifier object, 
-			  	 * then add it to the tail of the list*/
-	  	  	  	mod = frm_mod_create_comparison(mod_name);
-	  	  	  	list_add(mod_list, mod);
-	  	  	}
-	  	  	else
-	  	  	{
-	  	  		/* unsupported modifier */
-				snprintf(err_str, sizeof err_str, 
+			{
+				/* create comparison modifier, add to list */
+				mod = frm_mod_create_comparison(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "BREV"))
+			{
+				/* create bit reverse modifier, add to list */
+				mod = frm_mod_create_brev(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "CC"))
+			{
+				/* create bit reverse modifier, add to list */
+				mod = frm_mod_create_dst_cc(mod_name);
+				list_add(mod_list, mod);
+			}
+			else
+			{
+				/* unsupported modifier */
+				snprintf(err_str, sizeof err_str,
 					"Unsupported modifier: %s", mod_name);
 				frm2bin_yyerror(err_str);
-	  	  	}
-	  	}
+			}
+		}
 	}
 
 	inst->mod_list = mod_list;
@@ -141,12 +156,13 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 
 
 	/* Try to create the instruction following all possible encodings for
-	 * the same instruction name. 
-	 * For Fermi, the name passed in contains both the instructionname 
-	 * and modifiler list. so we use inst_name created before  */
-	snprintf(err_str, sizeof err_str, "invalid instruction: %s", inst_name);
-	for (info = hash_table_get(frm2bin_inst_info_table, inst_name);
-			info; info = info->next)
+	 * the same instruction name. For Fermi, the name passed in contains
+	 * both the instructionname and modifiler list. so we use inst_name
+	 * created before */
+	snprintf(err_str, sizeof err_str, "invalid instruction: %s",
+		inst_name);
+	for (info = hash_table_get(frm2bin_inst_info_table, inst_name); info;
+		info = info->next)
 	{
 		/* Check number of arguments */
 		if (arg_list->count != info->token_list->count)
@@ -170,13 +186,13 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 			token = list_get(info->token_list, index);
 			assert(token);
 
-			/* Check that actual argument type is acceptable 
-			 * for token, right now this func always return success */
+			/* Check that actual argument type is acceptable for
+			 * token, right now this func always return success */
 			if (!frm_token_is_arg_allowed(token, arg))
 			{
 				printf("invalid args type\n");
 				snprintf(err_str, sizeof err_str,
-					"invalid type for argument %d", 
+					"invalid type for argument %d",
 					index + 1);
 				break;
 			}
@@ -185,9 +201,9 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 		/* Error while processing arguments */
 		if (err_str[0])
 			continue;
-	
-		/* All checks passed, instruction identified correctly as that
-		 * represented by 'info'. */
+
+		/* All checks passed, instruction identified correctly as
+		 * that represented by 'info'. */
 		break;
 	}
 
@@ -211,23 +227,24 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 void frm2bin_inst_free(struct frm2bin_inst_t *inst)
 {
 	int index;
+
 	struct frm_arg_t *arg;
 	struct frm_mod_t *mod;
-	
+
 	/* Free all argument object in the argument list */
 	LIST_FOR_EACH(inst->arg_list, index)
 	{
 		arg = list_get(inst->arg_list, index);
 		frm_arg_free(arg);
 	}
-	
+
 	/* Free all argument object in the argument list */
 	LIST_FOR_EACH(inst->mod_list, index)
 	{
 		mod = list_get(inst->mod_list, index);
 		frm_mod_free(mod);
 	}
-	
+
 	/* Free argument list, modifier list and instruction object */
 	list_free(inst->mod_list);
 	list_free(inst->arg_list);
@@ -242,7 +259,7 @@ void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f)
 	
 	int i;
 	int j;
-	
+
 	/* Dump instruction opcode */
 	fprintf(f, "Instruction %s\n", inst->info->name);
 	/*
@@ -267,10 +284,11 @@ void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f)
 	/* Print words */
 	for (i = 0; i < inst->size / 4; i++)
 	{
-		word = * (int *) &inst->inst_bytes.bytes[i * 4];
+		word = *(int *) &inst->inst_bytes.bytes[i * 4];
 		printf("\tword %d:  hex = { %08x },  bin = {", i, word);
 		for (j = 0; j < 32; j++)
-			printf("%s%d", j % 4 ? "" : " ", (word >> (31 - j)) & 1);
+			printf("%s%d", j % 4 ? "" : " ",
+				(word >> (31 - j)) & 1);
 		printf(" }\n");
 	}
 }
@@ -278,8 +296,8 @@ void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f)
 
 void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 {
-	/* Fermi uses frm_inst_dword_t inst_bytes 
-	 * it's different from southern-island */
+	/* Fermi uses frm_inst_dword_t inst_bytes it's different from
+	 * southern-island */
 	union frm_inst_dword_t *inst_bytes;
 
 	struct frm_inst_info_t *inst_info;
@@ -299,10 +317,10 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	assert(info);
 	inst_info = info->inst_info;
 
-	/* By default, the instruction has the number of bytes specified by its
-	 * format. 4-bit instructions could be extended later to 8 bits upon
-	 * the presence of a literal constant. 
-	 * right now for fermi, all of them are 8 bytes */
+	/* By default, the instruction has the number of bytes specified by
+	 * its format. 4-bit instructions could be extended later to 8 bits
+	 * upon the presence of a literal constant. right now for fermi, all 
+	 * of them are 8 bytes */
 	inst->size = inst_info->size;
 
 	/* Instruction opcode */
@@ -439,10 +457,10 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* [4] = 0, others are default value */
 		inst_bytes->general0.mod0 = 0x0;
 		/* default value */
-		inst_bytes->general0.dst_cc = 0x0; /* only 5 bits here */
+		inst_bytes->general0.dst_cc = 0x0;	/* only 5 bits here */
 		/* [55]=0, [57]=0, [56] default */
-		inst_bytes->general0.mod1 &= 0x1f; 
-		inst_bytes->general0.op1 = 0x8; 
+		inst_bytes->general0.mod1 &= 0x1f;
+		inst_bytes->general0.op1 = 0x8;
 
 
 		/* set the predicate */
@@ -452,7 +470,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		}
 		else
 		{
-			/*no predicate, value=7 */
+			/* no predicate, value=7 */
 			inst_bytes->general0.pred = 0x7;
 		}
 
@@ -485,7 +503,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	*/
 
 	case FRM_FMT_INT_ISCADD:
-		
+
 		inst_bytes->general0.op0 = 0x3;
 		/* [4] = 0 */
 		inst_bytes->general0.mod0 &= 0xfffe;
@@ -502,17 +520,45 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		}
 		else
 		{
+			/* no predicate, value=7 */
+			inst_bytes->general0.pred = 0x7;
+		}
+
+		break;
+
+	case FRM_FMT_INT_BFE:
+
+
+		/* [3:0]: 0011 */
+		inst_bytes->general0.op0 = 0x3;
+
+		/* [9:4]: 000010, [5], [8] are default value */
+		inst_bytes->general0.mod0 = 0x2;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->general0.pred = inst->pred_num;
+		}
+		else
+		{
 			/*no predicate, value=7 */
 			inst_bytes->general0.pred = 0x7;
 		}
-		/* No opcode: only 1 instruction */
-		break;
 
-	//case FRM_FMT_INT_BFE:
-	//	
-	//	inst_bytes->exp.enc = 0x3e;
-	//	/* No opcode: only 1 instruction */
-	//	break;
+		/* [47:46]: 00, (default value not sure) */
+		inst_bytes->general0.src2_mod = 0x0;
+
+		/* [48]: 0, dst.cc (default value) */
+		inst_bytes->general0.dst_cc = 0x0;
+
+		/* [57:49]: 000000000 */
+		inst_bytes->general0.mod1 = 0x0;
+
+		/* [63:58]: 011100 */
+		inst_bytes->general0.op1 = 0x1c;
+
+		break;
 
 	//case FRM_FMT_INT_BFI:
 	//	
@@ -699,7 +745,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	//	break;
 
 	case FRM_FMT_CTRL_EXIT:
-		
+
 		inst_bytes->general0.op0 = 0x7;
 		inst_bytes->general0.mod0 = 0x1e;
 		inst_bytes->general0.dst = 0x0;
@@ -717,7 +763,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		}
 		else
 		{
-			/*no predicate, value=7 */
+			/* no predicate, value=7 */
 			inst_bytes->general0.pred = 0x7;
 		}
 		/* No opcode: only 1 instruction */
@@ -736,7 +782,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	//	break;
 
 	case FRM_FMT_MISC_S2R:
-		
+
 		inst_bytes->general0.op0 = 0x4;
 		inst_bytes->general0.mod0 = 0x0;
 		inst_bytes->general0.src1 = 0x0;
@@ -752,7 +798,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		}
 		else
 		{
-			/*no predicate, value=7 */
+			/* no predicate, value=7 */
 			inst_bytes->general0.pred = 0x7;
 		}
 		/* No opcode: only 1 instruction */
@@ -775,118 +821,136 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		LIST_FOR_EACH(inst->mod_list, index)
 		{
 			int data_width_cnt = 0;
-		  	mod = list_get(inst->mod_list, index);
-		  	/* take actions according to the type of the modifier */
-		  	switch(mod->type)
-		  	{
-		  		case frm_token_mod_data_width:
-		  	  	{
-		  	  	   	/* right now I only care about IMADD inst, 
-				   	* this should be improved later */
-		  	  	   	if (data_width_cnt == 0)
-		  	  	   	{
-		  	  	   		data_width_cnt ++;
-		  	  	   		/* for wide1 */
-		  	  	   		if(mod->value.data_width == u32)
-		  	  	   		{
-		  	  	   			inst_bytes->general0.mod0 
-								&= 0xfffd;
-		  	  	   		}
-		  	  	   		else
-		  	  	   		{
-		  	  	   			inst_bytes->general0.mod0 
-								|= 0x2;
-		  	  	   		}
-		  	  	   	}
-		  	  	   	else if (data_width_cnt == 1)
-		  	  	   	{
-		  	  	   		/* reset the counter */
-		  	  	   	  	data_width_cnt = 0;
-		  	  	   	  	/* for wide2 */
-		  	  	   	  	if(mod->value.data_width == u32)
-		  	  	   	  	{
-		  	  	   	  		inst_bytes->general0.mod0 
-								&= 0xfff7;
-		  	  	   	  	}
-		  	  	   	  	else
-		  	  	   	  	{
-		  	  	   	  		inst_bytes->general0.mod0 
-								|= 0x8;
-		  	  	   	  	}
-		  	  	   	}
-		  	  	   	else
-		  	  	   	{
-		  	  	   		frm2bin_yyerror_fmt("Error unrecognized \
+
+			mod = list_get(inst->mod_list, index);
+			/* take actions according to the type of the modifier 
+			 */
+			switch (mod->type)
+			{
+			case frm_token_mod_data_width:
+			{
+				/* right now I only care about IMADD inst, *
+				 * this should be improved later */
+				if (data_width_cnt == 0)
+				{
+					data_width_cnt++;
+					/* for wide1 */
+					if (mod->value.data_width == u32)
+					{
+						inst_bytes->general0.mod0
+							&= 0xfffd;
+					}
+					else
+					{
+						inst_bytes->general0.mod0
+							|= 0x2;
+					}
+				}
+				else if (data_width_cnt == 1)
+				{
+					/* reset the counter */
+					data_width_cnt = 0;
+					/* for wide2 */
+					if (mod->value.data_width == u32)
+					{
+						inst_bytes->general0.mod0
+							&= 0xfff7;
+					}
+					else
+					{
+						inst_bytes->general0.mod0
+							|= 0x8;
+					}
+				}
+				else
+				{
+					frm2bin_yyerror_fmt
+						("Error unrecognized \
 							mod data_width \n");
-		  	  	   	}
-		  	  		break;
-		  	  	}
+				}
+				break;
+			}
 
-		  	  	case frm_token_mod_logic:
-		  	  	{
-		  	  		/* right now only cares about isetp inst, 
-		  	  		 * need improvement later */
-		  	  		if (mod->value.logic == logic_and)
-		  	  		{
-		  	  			inst_bytes->general1.logic = 0x0;
-		  	  		}
-		  	  		else if (mod->value.logic == logic_or)
-		  	  		{
-		  	  			inst_bytes->general1.logic = 0x1;
-		  	  		}
-		  	  		else if (mod->value.logic == logic_xor)
-		  	  		{
-		  	  			inst_bytes->general1.logic = 0x2;
-		  	  		}
-		  	  		else
-		  	  		{
-		  	  			frm2bin_yyerror_fmt("Error unrecognized \
+			case frm_token_mod_logic:
+			{
+				/* right now only cares about isetp inst,
+				 * need improvement later */
+				if (mod->value.logic == logic_and)
+				{
+					inst_bytes->general1.logic = 0x0;
+				}
+				else if (mod->value.logic == logic_or)
+				{
+					inst_bytes->general1.logic = 0x1;
+				}
+				else if (mod->value.logic == logic_xor)
+				{
+					inst_bytes->general1.logic = 0x2;
+				}
+				else
+				{
+					frm2bin_yyerror_fmt
+						("Error unrecognized \
 							mod logic \n");
-		  	  		}
+				}
 
-		  	  		break;
-		  	  	}
+				break;
+			}
 
-		  	  	case frm_token_mod_comparison:
-		  	  	{
-		  	  	  	/* right now only cares about isetp inst, 
-		  	  	  	 * need improvement later */
-		  	  	  	if (mod->value.comparison == lt)
-		  	  	  	{
-		  	  	  		inst_bytes->general1.cmp = 0x1;
-		  	  	  	}
-		  	  	  	else if (mod->value.comparison == eq)
-		  	  	  	{
-		  	  	  		inst_bytes->general1.cmp = 0x2;
-		  	  	  	}
-		  	  	  	else if (mod->value.comparison == le)
-		  	  	  	{
-		  	  	  		inst_bytes->general1.cmp = 0x3;
-		  	  	  	}
-		  	  	  	else if (mod->value.comparison == gt)
-		  	  	  	{
-		  	  	  		inst_bytes->general1.cmp = 0x4;
-		  	  	  	}
-		  	  	  	else if (mod->value.comparison == ne)
-		  	  	  	{
-		  	  	  		inst_bytes->general1.cmp = 0x5;
-		  	  	  	}
-		  	  	  	else if (mod->value.comparison == ge)
-		  	  	  	{
-		  	  	  		inst_bytes->general1.cmp = 0x6;
-		  	  	  	}
-		  	  	  	else
-		  	  	  	{
-		  	  	  		frm2bin_yyerror_fmt("Error unrecognized \
+			case frm_token_mod_comparison:
+			{
+				/* right now only cares about isetp inst,
+				 * need improvement later */
+				if (mod->value.comparison == lt)
+				{
+					inst_bytes->general1.cmp = 0x1;
+				}
+				else if (mod->value.comparison == eq)
+				{
+					inst_bytes->general1.cmp = 0x2;
+				}
+				else if (mod->value.comparison == le)
+				{
+					inst_bytes->general1.cmp = 0x3;
+				}
+				else if (mod->value.comparison == gt)
+				{
+					inst_bytes->general1.cmp = 0x4;
+				}
+				else if (mod->value.comparison == ne)
+				{
+					inst_bytes->general1.cmp = 0x5;
+				}
+				else if (mod->value.comparison == ge)
+				{
+					inst_bytes->general1.cmp = 0x6;
+				}
+				else
+				{
+					frm2bin_yyerror_fmt
+						("Error unrecognized \
 							mod comparison \n");
-		  	  	  	}
-		  	  	  	break;
-		  	  	}
-		  	  	default:
-		  	  		frm2bin_yyerror_fmt("Error which figure out \
+				}
+
+				break;
+			}
+
+			case frm_token_mod0_B_brev:
+			{
+				/* bit reverse */
+				if (mod->value.brev == 1)
+					inst_bytes->mod0_B.cop |= 0x1;
+				else
+					inst_bytes->mod0_B.cop &= 0xfe;
+
+				break;
+			}
+
+			default:
+				frm2bin_yyerror_fmt("Error which figure out \
 						the modifier \n");
 
-		  	}
+			}
 		}
 	}
 
@@ -905,272 +969,271 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		switch (token->type)
 		{
 			/* only support the argument I need now */
-			case frm_token_dst:
+		case frm_token_dst:
+		{
+			/* [19:14]dst, both general0 and general1 use it */
+			if (arg->type == frm_arg_scalar_register)
 			{
-				/* [19:14]dst, both general0 and general1 use it */
-			  	if (arg->type == frm_arg_scalar_register)
-			  	{
-			  		inst_bytes->general0.dst = 
-						arg->value.scalar_register.id;
-			  	}
-			  	else
-				{
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_dst. \
-						[dis-inst.c]\n");
-				}
-
-			  	break;
+				inst_bytes->general0.dst =
+					arg->value.scalar_register.id;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt("Wrong frm_token_dst. \
+					[dis-inst.c]\n");
 			}
 
-			case frm_token_src1:
-		  	{
-		  		/* [25:20] src2 */
-		  	        if (arg->type == frm_arg_scalar_register)
-		  	        {
-		  	      		/* for scalar register */
-		  	      	  	//inst_bytes->general0.src2_mod = 0x0;
-		  	      	  	inst_bytes->general0.src1 = 
-		  	      	  		arg->value.scalar_register.id;
-		  	        }
-		  	        else
-		  	        {
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_src1. \
-						[dis-inst.c]\n");
-		  	        }
-		  	  	break;
-		  	}
+			break;
+		}
 
-			case frm_token_src2: 
+		case frm_token_src1:
+		{
+			/* [25:20] src2 */
+			if (arg->type == frm_arg_scalar_register)
 			{
-		  		/* [45:26] src2 */
-		  	        if (arg->type == frm_arg_const_maddr)
-		  	        {
-		  	      		/* for const mem */
-		  	      	  	inst_bytes->general0.src2_mod = 0x1;
-		  	      	  	inst_bytes->general0.src2 = 
-						(arg->value.glob_maddr.reg_idx 
-						<< 16)
-		  	      			| (arg->value.glob_maddr.offset);
-		  	        }
+				/* for scalar register */
+				inst_bytes->general0.src1 =
+					arg->value.scalar_register.id;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt("Wrong frm_token_src1. \
+					[dis-inst.c]\n");
+			}
+			break;
+		}
 
-		  	        else if (arg->type == frm_arg_scalar_register)
-		  	        {
-		  	      		/* for scalar register */
-		  	      	  	inst_bytes->general0.src2_mod = 0x0;
-		  	      	  	inst_bytes->general0.src2 = 
-		  	      	  		arg->value.scalar_register.id;
-		  	        }
+		case frm_token_src2:
+		{
+			/* [45:26] src2 */
+			if (arg->type == frm_arg_const_maddr)
+			{
+				/* for const mem */
+				inst_bytes->general0.src2_mod = 0x1;
+				inst_bytes->general0.src2 =
+					(arg->value.glob_maddr.reg_idx
+					<< 16)
+					| (arg->value.glob_maddr.offset);
+			}
 
-		  	        else if (arg->type == frm_arg_literal)
-		  	        {
-		  	      		/* for immediate value */
-		  	      	  	inst_bytes->general0.src2_mod = 0x2;
-		  	      	  	inst_bytes->general0.src2 = 
-		  	      	  		arg->value.literal.val;
-		  	        }
-		  	        else
-		  	        {
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_src2. \
-						[dis-inst.c]\n");
-		  	        }
-		  	  	break;
-		  	}
+			else if (arg->type == frm_arg_scalar_register)
+			{
+				/* for scalar register */
+				inst_bytes->general0.src2_mod = 0x0;
+				inst_bytes->general0.src2 =
+					arg->value.scalar_register.id;
+			}
 
-		  	case frm_token_src2_neg:
-		  	{
-		  	        /* [45:26] src2 */
-		  	        //if (arg->type == frm_arg_const_maddr)
-		  	        //{
-		  	        //        /* for const mem */
-		  	        //        inst_bytes->general0.src2_mod = 0x1;
-		  	        //        inst_bytes->general0.src2 = 
-		  	        //        	(arg->value.glob_maddr.reg_idx << 16)
-		  	        //      	| (arg->value.glob_maddr.offset);
-		  	        //}
+			else if (arg->type == frm_arg_literal)
+			{
+				/* for immediate value */
+				inst_bytes->general0.src2_mod = 0x2;
+				inst_bytes->general0.src2 =
+					arg->value.literal.val;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt("Wrong frm_token_src2. \
+					[dis-inst.c]\n");
+			}
+			break;
+		}
 
-		  	        if (arg->type == frm_arg_scalar_register)
-		  	        {
-		  	      		/* need to be imporved later, src2_neg 
-		  	      	  	 * need way to identify negative */
-		  	      	  	inst_bytes->general0.src2 = 
-		  	      	  		arg->value.scalar_register.id;
-		  	        }
+		case frm_token_src2_neg:
+		{
+		        /* [45:26] src2 */
+		        //if (arg->type == frm_arg_const_maddr)
+		        //{
+		        //        /* for const mem */
+		        //        inst_bytes->general0.src2_mod = 0x1;
+		        //        inst_bytes->general0.src2 = 
+		        //        	(arg->value.glob_maddr.reg_idx << 16)
+		        //      	| (arg->value.glob_maddr.offset);
+		        //}
 
-		  	        //else if (arg->type == frm_arg_literal)
-		  	        //{
-		  	        //        /* for immediate value */
-		  	        //        inst_bytes->general0.src2_mod = 0x2;
-		  	        //        inst_bytes->general0.src2 = 
-		  	        //        	arg->value.literal.val;
-		  	        //}
-		  	        else
-		  	        {
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_src2_neg. \
-						[dis-inst.c]\n");
-		  	        }
-		  	  	break;
-		  	}
+		        if (arg->type == frm_arg_scalar_register)
+		        {
+		      		/* need to be imporved later, src2_neg 
+		      	  	 * need way to identify negative */
+		      	  	inst_bytes->general0.src2 = 
+		      	  		arg->value.scalar_register.id;
+		        }
 
-		  	case frm_token_src3:
-		  	{
-		  	        if (arg->type == frm_arg_scalar_register)
-		  	        {
-		  	      		/* [54:49] */
-		  	        	inst_bytes->general0_mod1_B.src3 = 
-		  	      			arg->value.scalar_register.id;
-		  	        }
-		  	        else
-		  	        {
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_src3. \
-						[dis-inst.c]\n");
-		  	        }
-		  		break;
-		  	}
+		        //else if (arg->type == frm_arg_literal)
+		        //{
+		        //        /* for immediate value */
+		        //        inst_bytes->general0.src2_mod = 0x2;
+		        //        inst_bytes->general0.src2 = 
+		        //        	arg->value.literal.val;
+		        //}
+		        else
+		        {
+		  		frm2bin_yyerror_fmt("Wrong frm_token_src2_neg. \
+					[dis-inst.c]\n");
+			}
+			break;
+		}
 
-		  	case frm_token_src2_frm_sr:
-		  	{
-		  	        switch (arg->value.special_register.type)
-		  	        {
-		  	      		/* frm_fmt_imm_t is very similar */
-		  	      	  	case FRM_SR_CTAid_X:
-		  	      	  	{
-		  	      	  	        inst_bytes->imm.imm32 = 37;
-		  	      	  	        break;
-		  	      	  	}
-		  	      	  	case FRM_SR_Tid_X:
-		  	      	  	{
-		  	      	  	        inst_bytes->imm.imm32 = 33;
-		  	      	  	        break;
-		  	      	  	}
-		  	      	  	default:
-		  	      	  	{
-		  	  			frm2bin_yyerror_fmt("Not supported \
-							special register\n");
-		  	      	  	      break;
-		  	      	  	}
-		  	      	  	/* other registers added later */
-		  	        }
-		  		break;
-		  	}
+		case frm_token_src3:
+		{
+			if (arg->type == frm_arg_scalar_register)
+			{
+				/* [54:49] */
+				inst_bytes->general0_mod1_B.src3 =
+					arg->value.scalar_register.id;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt("Wrong frm_token_src3. \
+					[dis-inst.c]\n");
+			}
+			break;
+		}
 
-		  	case frm_token_offs:
-		  	{
-		  		break;
-		  	}
-
-		  	case frm_token_imm32:
-		  	{
-		  		break;
-		  	}
-
-		  	case frm_token_mod0_C_shamt:
-		  	{
-		  	        if (arg->type == frm_arg_literal)
-		  	        {
-		  	      		/* [9:5] */
-		  	        	inst_bytes->mod0_C.shamt = 
-		  	      		arg->value.literal.val;
-		  	        }
-		  	        else
-		  	        {
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_shamt. \
-						[dis-inst.c]\n");
-		  	        }
-		  		break;
-		  	}
-
-		  	case frm_token_Q:
-		  	{
-		  	        if (arg->type == frm_arg_pt)
-		  	        {
-		  	      		/* [16:14], general0.dst[19:14] */
-		  	      	  	inst_bytes->general0.dst = 
-		  	      	  		arg->value.pt.idx
-		  	      			| ( inst_bytes->general0.dst 
-						& 0x38);
-		  	        }
-		  	        else
-		  	        {
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_Q. \
-						[dis-inst.c]\n");
-		  	        }
-		  		break;
-		  	}
-
-		  	case frm_token_P:
-		  	{
-		  	        /* a new frm_fmt need to be created in asm.h to
-		  	         * handle the case of P
-		  	        */
-		  	        if (arg->type == frm_arg_predicate_register)
-		  	        {
-		  	      		/* [19:17], general0.dst is [19:14] */
-		  	      		inst_bytes->general0.dst = 
-		  	      	  		(arg->value.predicate_register.id 
-						<< 3)
-		  	      			| ( inst_bytes->general0.dst 
-						& 0x7);
-		  	        }
-		  	        else
-		  	        {
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_P. \
-						[dis-inst.c]\n");
-		  	        }
-		  		break;
-		  	}
-
-		  	case frm_token_R:
-		  	{
-		  	        if (arg->type == frm_arg_pt)
-		  	        {
-		  	      		/* [51:49] */
-		  	      		/* will be improved later */
-		  	      		inst_bytes->general1.R = arg->value.pt.idx;
-		  	        }
-		  	        else
-		  	        {
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_R. \
-						[dis-inst.c]\n");
-		  	        }
-		  		break;
-		  	}
-
-		  	/* temporial for LD dst, [src1 + offset] 
-		  	 * src1 is combined with offset now */
-		  	case frm_token_src1_offs:
-		  	{
-		  	        if (arg->type == frm_arg_glob_maddr)
-		  	        {
-		  	      		/* [25:20] */
-		  	      	  	inst_bytes->general0.src1 = 
-		  	      	  		arg->value.glob_maddr.reg_idx;
-		  	        }
-		  	        else
-		  	        {
-		  	  		frm2bin_yyerror_fmt("Wrong frm_token_src1_offs. \
-						[dis-inst.c]\n");
-		  	        }
-		  	        break;
-		  	}
-		
+		case frm_token_src2_frm_sr:
+		{
+			switch (arg->value.special_register.type)
+			{
+				/* frm_fmt_imm_t is very similar */
+			case FRM_SR_CTAid_X:
+			{
+				inst_bytes->imm.imm32 = 37;
+				break;
+			}
+			case FRM_SR_Tid_X:
+			{
+				inst_bytes->imm.imm32 = 33;
+				break;
+			}
 			default:
-				frm2bin_yyerror_fmt("unsupported token for argument %d",
-					index + 1);
+			{
+				frm2bin_yyerror_fmt("Not supported \
+						special register\n");
+				break;
+			}
+				/* other registers added later */
+			}
+			break;
+		}
+
+		case frm_token_offs:
+		{
+			break;
+		}
+
+		case frm_token_imm32:
+		{
+			break;
+		}
+
+		case frm_token_mod0_C_shamt:
+		{
+			if (arg->type == frm_arg_literal)
+			{
+				/* [9:5] */
+				inst_bytes->mod0_C.shamt =
+					arg->value.literal.val;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt("Wrong frm_token_shamt. \
+					[dis-inst.c]\n");
+			}
+			break;
+		}
+
+		case frm_token_Q:
+		{
+			if (arg->type == frm_arg_pt)
+			{
+				/* [16:14], general0.dst[19:14] */
+				inst_bytes->general0.dst =
+					arg->value.pt.idx
+					| (inst_bytes->general0.dst & 0x38);
+			}
+			else
+			{
+				frm2bin_yyerror_fmt("Wrong frm_token_Q. \
+					[dis-inst.c]\n");
+			}
+			break;
+		}
+
+		case frm_token_P:
+		{
+			/* a new frm_fmt need to be created in asm.h to
+			 * handle the case of P */
+			if (arg->type == frm_arg_predicate_register)
+			{
+				/* [19:17], general0.dst is [19:14] */
+				inst_bytes->general0.dst =
+					(arg->value.predicate_register.id
+					<< 3)
+					| (inst_bytes->general0.dst & 0x7);
+			}
+			else
+			{
+				frm2bin_yyerror_fmt("Wrong frm_token_P. \
+					[dis-inst.c]\n");
+			}
+			break;
+		}
+
+		case frm_token_R:
+		{
+			if (arg->type == frm_arg_pt)
+			{
+				/* [51:49] */
+				/* will be improved later */
+				inst_bytes->general1.R = arg->value.pt.idx;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt("Wrong frm_token_R. \
+					[dis-inst.c]\n");
+			}
+			break;
+		}
+
+			/* temporial for LD dst, [src1 + offset] src1 is
+			 * combined with offset now */
+		case frm_token_src1_offs:
+		{
+			if (arg->type == frm_arg_glob_maddr)
+			{
+				/* [25:20] */
+				inst_bytes->general0.src1 =
+					arg->value.glob_maddr.reg_idx;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt
+					("Wrong frm_token_src1_offs. \
+					[dis-inst.c]\n");
+			}
+			break;
+		}
+
+		default:
+			frm2bin_yyerror_fmt
+				("unsupported token for argument %d",
+				index + 1);
 		}
 	}
 }
 
-/* functions for predicate  structure creation and free */
-struct frm2bin_pred_t *frm2bin_pred_create (int number)
+/* functions for predicate structure creation and free */
+struct frm2bin_pred_t *frm2bin_pred_create(int number)
 {
-  struct frm2bin_pred_t *pred;
-  pred = xcalloc(1, sizeof(struct frm2bin_pred_t));
-  pred->number = number;
+	struct frm2bin_pred_t *pred;
 
-  return pred;
+	pred = xcalloc(1, sizeof(struct frm2bin_pred_t));
+	pred->number = number;
+
+	return pred;
 }
 
-void frm2bin_pred_free (struct frm2bin_pred_t *pred)
+void frm2bin_pred_free(struct frm2bin_pred_t *pred)
 {
-  free(pred);
+	free(pred);
 }
