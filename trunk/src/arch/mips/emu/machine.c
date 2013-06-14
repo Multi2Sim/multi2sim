@@ -225,6 +225,8 @@ void mips_isa_SW_impl(struct mips_ctx_t *ctx)
 
 	mem_write(ctx->mem, addr, 4, &temp);
 }
+
+
 void mips_isa_SWR_impl(struct mips_ctx_t *ctx)
 {
 	unsigned char *src = (unsigned char *) &MIPS_GPR_GET(RT);
@@ -236,10 +238,15 @@ void mips_isa_SWR_impl(struct mips_ctx_t *ctx)
 		dst[i] = src[size - i -1];
 	mem_write(ctx->mem, addr - size + 1, size, dst);
 }
+
+
 void mips_isa_CACHE_impl(struct mips_ctx_t *ctx)
 {
 	__MIPS_NOT_IMPL__
 }
+
+
+
 void mips_isa_LL_impl(struct mips_ctx_t *ctx)
 {
 	unsigned int temp;
@@ -381,7 +388,7 @@ void mips_isa_BREAK_impl(struct mips_ctx_t *ctx)
 }
 void mips_isa_SYNC_impl(struct mips_ctx_t *ctx)
 {
-	__MIPS_NOT_IMPL__
+	//__MIPS_NOT_IMPL__
 }
 void mips_isa_MFHI_impl(struct mips_ctx_t *ctx)
 {
@@ -646,9 +653,18 @@ void mips_isa_EXT_impl(struct mips_ctx_t *ctx)
 {
 	__MIPS_NOT_IMPL__
 }
+
+//#define MASK_BITS(X, HI, LO) (unsigned int)((X) & ((((1ull)<<(HI-LO+1))-1) << LO))
 void mips_isa_INS_impl(struct mips_ctx_t *ctx)
 {
-	__MIPS_NOT_IMPL__
+	if (SA > RD)
+		mips_isa_inst_debug(" INS: LSB>MSB, unpredictable behavior\n");
+	unsigned int value, new_rt;
+	value = BITS32(MIPS_GPR_GET(RS),(MIPS_GPR_GET(RD)-MIPS_GPR_GET(SA)),0);
+	new_rt = SET_BITS_32(MIPS_GPR_GET(RT), MIPS_GPR_GET(RD), MIPS_GPR_GET(SA), value);
+	MIPS_GPR_SET(RT, new_rt);
+	mips_isa_inst_debug(" r%d=$0x%x", RT, MIPS_GPR_GET(RT));
+	//__MIPS_NOT_IMPL__
 }
 void mips_isa_WSBH_impl(struct mips_ctx_t *ctx)
 {
