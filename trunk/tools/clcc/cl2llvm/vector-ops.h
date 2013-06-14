@@ -26,7 +26,17 @@
 
 /* Expands any vectors present in a list of cl2llvm_val_t's */
 
+/* This function takes a list of values and returns the same list with each vector expanded into its components */
 void expand_vectors(struct list_t *elem_list);
 
-void cl2llvm_get_vector_indices(struct cl2llvm_val_t **, char *);
+/* This function takes a string referencing the components of a vector and returns the index of each referenced component in an array */
+void cl2llvm_get_vector_indices(struct cl2llvm_val_t *, char *);
+
+/* Takes a pointer to a component referenced vector and performs the necessary assignment. The rvalue may be either a vector or scalar value */
+struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val_t *lvalue_addr, 
+	struct cl2llvm_val_t *rvalue);
+
+/* Take a referenced vector and emits and error if any of the vector's components are referenced more that once */
+void cl2llvm_no_repeated_component_references(struct cl2llvm_val_t *lvalue);
+
 #endif
