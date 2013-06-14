@@ -34,6 +34,54 @@
 #include "symbol-table.h"
 
 
+/*
+ * Some helper functions
+ */
+
+static int llvm2si_get_lltype_size(LLVMTypeRef lltype)
+{
+	LLVMTypeKind lltype_kind;
+	int bit_width;
+
+	/* Return size based on type kind */
+	lltype_kind = LLVMGetTypeKind(lltype);
+	switch (lltype_kind)
+	{
+
+	case LLVMIntegerTypeKind:
+		
+		bit_width = LLVMGetIntTypeWidth(lltype);
+		return (bit_width + 7) / 8;
+
+	case LLVMPointerTypeKind:
+
+		/* Memory address is 4 bytes */
+		return 4;
+	
+	default:
+
+		fatal("%s: unsupported type kind (%d)",
+			__FUNCTION__, lltype_kind);
+		return 0;
+	}
+}
+
+
+static int llvm2si_get_pointed_lltype_size(LLVMTypeRef lltype)
+{
+	LLVMTypeKind lltype_kind;
+
+	/* Type must be a pointer */
+	lltype_kind = LLVMGetTypeKind(lltype);
+	if (lltype_kind != LLVMPointerTypeKind)
+		fatal("%s: type not a pointer", __FUNCTION__);
+
+	/* Get pointed type */
+	lltype = LLVMGetElementType(lltype);
+	return llvm2si_get_lltype_size(lltype);
+}
+
+
 
 /*
  * Private Functions
@@ -186,19 +234,23 @@ void llvm2si_basic_block_emit_call(struct llvm2si_basic_block_t *basic_block,
 void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_block,
 		LLVMValueRef llinst)
 {
-	LLVMValueRef llarg_pointer;
+	LLVMValueRef llarg_ptr;
 	LLVMValueRef llarg_index;
+	LLVMTypeRef lltype_ptr;
 
 	struct llvm2si_function_t *function;
 	struct llvm2si_symbol_t *ptr_symbol;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_arg_t *arg_ptr;
 	struct si2bin_arg_t *arg_index;
+	struct si2bin_arg_t *arg_offset;
 	struct si2bin_inst_t *inst;
 	struct list_t *arg_list;
 
 	int num_operands;
+	int tmp_vreg;
 	int ret_vreg;
+	int ptr_size;
 
 	char *ret_name;
 
@@ -213,13 +265,17 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 			__FUNCTION__, num_operands);
 
 	/* Get pointer operand (vreg) */
-	llarg_pointer = LLVMGetOperand(llinst, 0);
-	arg_ptr = llvm2si_function_translate_value(function, llarg_pointer, &ptr_symbol);
+	llarg_ptr = LLVMGetOperand(llinst, 0);
+	arg_ptr = llvm2si_function_translate_value(function, llarg_ptr, &ptr_symbol);
 	si2bin_arg_valid_types(arg_ptr, si2bin_arg_vector_register);
 
 	/* Address must be a symbol with UAV */
 	if (!ptr_symbol || !ptr_symbol->address)
 		fatal("%s: no UAV for symbol", __FUNCTION__);
+	
+	/* Get size of pointed value */
+	lltype_ptr = LLVMTypeOf(llarg_ptr);
+	ptr_size = llvm2si_get_pointed_lltype_size(lltype_ptr);
 
 	/* Get index operand (vreg, literal) */
 	llarg_index = LLVMGetOperand(llinst, 1);
@@ -236,13 +292,43 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 	llvm2si_symbol_set_uav_index(ret_symbol, ptr_symbol->uav_index);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
-	/* Emit effective address calculation.
-	 * v_add_i32 ret_vreg, vcc, arg_index, arg_pointer
+	/* Calculate offset as the multiplication between 'arg_index' and the
+	 * size of the pointed element ('ptr_size'). If 'arg_index' is a
+	 * literal, we can pre-calculate it here. If 'arg_index' is a vector
+	 * register, we need to emit an instruction. */
+	if (arg_index->type == si2bin_arg_literal)
+	{
+		/* Argument 'arg_offset' is just a modification of
+		 * 'arg_index'. */
+		arg_offset = arg_index;
+		arg_offset->value.literal.val *= ptr_size;
+	}
+	else
+	{
+		/* Allocate one register and create 'arg_offset' with it */
+		tmp_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
+		arg_offset = si2bin_arg_create_vector_register(tmp_vreg);
+
+		/* Emit calculation of offset as the multiplication between the
+		 * index argument and the pointed element size.
+		 * v_mul_i32_i24 tmp_vreg, ptr_size, arg_index
+		 */
+		arg_list = list_create();
+		list_add(arg_list, si2bin_arg_create_vector_register(tmp_vreg));
+		list_add(arg_list, si2bin_arg_create_literal(ptr_size));
+		list_add(arg_list, arg_index);
+		inst = si2bin_inst_create(SI_INST_V_MUL_I32_I24, arg_list);
+		llvm2si_basic_block_add_inst(basic_block, inst);
+	}
+
+	/* Emit effective address calculation as the addition between the
+	 * original pointer and the offset.
+	 * v_add_i32 ret_vreg, vcc, arg_offset, arg_pointer
 	 */
 	arg_list = list_create();
 	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
-	list_add(arg_list, arg_index);
+	list_add(arg_list, arg_offset);
 	list_add(arg_list, arg_ptr);
 	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
 	llvm2si_basic_block_add_inst(basic_block, inst);

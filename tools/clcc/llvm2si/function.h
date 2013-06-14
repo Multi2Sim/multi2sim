@@ -51,6 +51,7 @@ struct llvm2si_function_arg_t
 
 	struct llvm2si_function_t *function;  /* Function it belongs to */
 	int index;  /* Index occupied in function argument list */
+	int uav_index;  /* For arguments of type 'si_arg_pointer', and scope 'si_arg_uav' */
 	int sreg;  /* Scalar register identifier containing the argument */
 	int vreg;  /* Vector register where argument was copied */
 };
