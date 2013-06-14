@@ -35,12 +35,26 @@ struct llvm2si_symbol_t
 	char *name;
 	enum llvm2si_symbol_type_t type;
 	int reg;
+
+	/* Flag indicating whether the symbol contains a global memory
+	 * address. */
+	int address;
+
+	/* If the symbol represents a global memory address (flag 'address'
+	 * is set to 1, UAV identifier (0=uav10, 1=uav11, ...). */
+	int uav_index;
 };
 
 struct llvm2si_symbol_t *llvm2si_symbol_create(char *name,
 		enum llvm2si_symbol_type_t type, int reg);
 void llvm2si_symbol_free(struct llvm2si_symbol_t *symbol);
 void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f);
+
+/* Set the symbol type to an address to global memory (flag 'address' is set to
+ * 1) and associate it with a UAV as specified in 'uav_index' (0=uav10, 1=uav11,
+ * ...). */
+void llvm2si_symbol_set_uav_index(struct llvm2si_symbol_t *symbol,
+		int uav_index);
 
 
 #endif

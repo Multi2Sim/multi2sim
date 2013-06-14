@@ -70,8 +70,8 @@ void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 	/* Get operands (vreg, literal) */
 	llarg_op1 = LLVMGetOperand(llinst, 0);
 	llarg_op2 = LLVMGetOperand(llinst, 1);
-	arg_op1 = llvm2si_function_translate_value(function, llarg_op1);
-	arg_op2 = llvm2si_function_translate_value(function, llarg_op2);
+	arg_op1 = llvm2si_function_translate_value(function, llarg_op1, NULL);
+	arg_op2 = llvm2si_function_translate_value(function, llarg_op2, NULL);
 
 	/* Only the first operand can be a constant, so swap them if there is
 	 * a constant in the second. */
@@ -190,8 +190,9 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 	LLVMValueRef llarg_index;
 
 	struct llvm2si_function_t *function;
+	struct llvm2si_symbol_t *ptr_symbol;
 	struct llvm2si_symbol_t *ret_symbol;
-	struct si2bin_arg_t *arg_pointer;
+	struct si2bin_arg_t *arg_ptr;
 	struct si2bin_arg_t *arg_index;
 	struct si2bin_inst_t *inst;
 	struct list_t *arg_list;
@@ -213,12 +214,16 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 
 	/* Get pointer operand (vreg) */
 	llarg_pointer = LLVMGetOperand(llinst, 0);
-	arg_pointer = llvm2si_function_translate_value(function, llarg_pointer);
-	si2bin_arg_valid_types(arg_pointer, si2bin_arg_vector_register);
+	arg_ptr = llvm2si_function_translate_value(function, llarg_pointer, &ptr_symbol);
+	si2bin_arg_valid_types(arg_ptr, si2bin_arg_vector_register);
+
+	/* Address must be a symbol with UAV */
+	if (!ptr_symbol || !ptr_symbol->address)
+		fatal("%s: no UAV for symbol", __FUNCTION__);
 
 	/* Get index operand (vreg, literal) */
 	llarg_index = LLVMGetOperand(llinst, 1);
-	arg_index = llvm2si_function_translate_value(function, llarg_index);
+	arg_index = llvm2si_function_translate_value(function, llarg_index, NULL);
 	si2bin_arg_valid_types(arg_index, si2bin_arg_vector_register,
 			si2bin_arg_literal);
 
@@ -228,6 +233,7 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 	ret_symbol = llvm2si_symbol_create(ret_name,
 			llvm2si_symbol_vector_register,
 			ret_vreg);
+	llvm2si_symbol_set_uav_index(ret_symbol, ptr_symbol->uav_index);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
 	/* Emit effective address calculation.
@@ -237,7 +243,7 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
 	list_add(arg_list, arg_index);
-	list_add(arg_list, arg_pointer);
+	list_add(arg_list, arg_ptr);
 	inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
 	llvm2si_basic_block_add_inst(basic_block, inst);
 }
@@ -251,9 +257,11 @@ void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeKind lltype_kind;
 
 	struct llvm2si_function_t *function;
+	struct llvm2si_function_uav_t *uav;
+	struct llvm2si_symbol_t *addr_symbol;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_inst_t *inst;
-	struct si2bin_arg_t *arg_address;
+	struct si2bin_arg_t *arg_addr;
 	struct si2bin_arg_t *arg_qual;
 	struct si2bin_arg_t *arg_soffset;
 	struct list_t *arg_list;
@@ -276,8 +284,18 @@ void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 
 	/* Get address operand (vreg) */
 	llarg_address = LLVMGetOperand(llinst, 0);
-	arg_address = llvm2si_function_translate_value(function, llarg_address);
-	si2bin_arg_valid_types(arg_address, si2bin_arg_vector_register);
+	arg_addr = llvm2si_function_translate_value(function, llarg_address, &addr_symbol);
+	si2bin_arg_valid_types(arg_addr, si2bin_arg_vector_register);
+
+	/* Address must be a symbol with UAV */
+	if (!addr_symbol || !addr_symbol->address)
+		fatal("%s: no UAV for symbol", __FUNCTION__);
+
+	/* Get UAV */
+	uav = list_get(function->uav_list, addr_symbol->uav_index);
+	if (!uav)
+		fatal("%s: invalid UAV index (%d)", __FUNCTION__,
+				addr_symbol->uav_index);
 
 	/* Get address space - only 1 (global mem.) supported for now */
 	lltype = LLVMTypeOf(llarg_address);
@@ -307,8 +325,9 @@ void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 	 */
 	arg_list = list_create();
 	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
-	list_add(arg_list, arg_address);
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(0, 3)); ///////////// FIXME
+	list_add(arg_list, arg_addr);
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(uav->sreg,
+			uav->sreg + 3));
 	arg_soffset = si2bin_arg_create_literal(0);
 	arg_qual = si2bin_arg_create_maddr_qual();
 	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
@@ -337,14 +356,16 @@ void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
 		LLVMValueRef llinst)
 {
 	LLVMValueRef llarg_data;
-	LLVMValueRef llarg_address;
+	LLVMValueRef llarg_addr;
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
 
 	struct llvm2si_function_t *function;
+	struct llvm2si_function_uav_t *uav;
+	struct llvm2si_symbol_t *addr_symbol;
 	struct si2bin_inst_t *inst;
 	struct si2bin_arg_t *arg_data;
-	struct si2bin_arg_t *arg_address;
+	struct si2bin_arg_t *arg_addr;
 	struct si2bin_arg_t *arg_qual;
 	struct si2bin_arg_t *arg_soffset;
 	struct list_t *arg_list;
@@ -364,16 +385,26 @@ void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
 
 	/* Get data operand (vreg) */
 	llarg_data = LLVMGetOperand(llinst, 0);
-	arg_data = llvm2si_function_translate_value(function, llarg_data);
+	arg_data = llvm2si_function_translate_value(function, llarg_data, NULL);
 	si2bin_arg_valid_types(arg_data, si2bin_arg_vector_register);
 
 	/* Get address operand (vreg) */
-	llarg_address = LLVMGetOperand(llinst, 1);
-	arg_address = llvm2si_function_translate_value(function, llarg_address);
-	si2bin_arg_valid_types(arg_address, si2bin_arg_vector_register);
+	llarg_addr = LLVMGetOperand(llinst, 1);
+	arg_addr = llvm2si_function_translate_value(function, llarg_addr, &addr_symbol);
+	si2bin_arg_valid_types(arg_addr, si2bin_arg_vector_register);
+
+	/* Address must be a symbol with UAV */
+	if (!addr_symbol || !addr_symbol->address)
+		fatal("%s: no UAV for symbol", __FUNCTION__);
+
+	/* Get UAV */
+	uav = list_get(function->uav_list, addr_symbol->uav_index);
+	if (!uav)
+		fatal("%s: invalid UAV index (%d)", __FUNCTION__,
+				addr_symbol->uav_index);
 
 	/* Get address space - only 1 (global mem.) supported for now */
-	lltype = LLVMTypeOf(llarg_address);
+	lltype = LLVMTypeOf(llarg_addr);
 	addr_space = LLVMGetPointerAddressSpace(lltype);
 	if (addr_space != 1)
 		fatal("%s: address space 1 expected (%d given)",
@@ -393,8 +424,9 @@ void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
 	 */
 	arg_list = list_create();
 	list_add(arg_list, arg_data);
-	list_add(arg_list, arg_address);
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(0, 3)); ////////////// FIXME
+	list_add(arg_list, arg_addr);
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(uav->sreg,
+			uav->sreg + 3));
 	arg_soffset = si2bin_arg_create_literal(0);
 	arg_qual = si2bin_arg_create_maddr_qual();
 	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
@@ -460,7 +492,7 @@ void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f
 
 	/* Label with basic block name if not empty */
 	if (*basic_block->name)
-		fprintf(f, "%s:\n", basic_block->name);
+		fprintf(f, "\n%s:\n", basic_block->name);
 
 	/* Print list of instructions */
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
@@ -468,9 +500,6 @@ void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f
 		inst = linked_list_get(basic_block->inst_list);
 		si2bin_inst_dump_assembly(inst, f);
 	}
-
-	/* End */
-	fprintf(f, "\n");
 }
 
 
