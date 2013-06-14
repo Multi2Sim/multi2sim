@@ -81,13 +81,14 @@ void llvm2si_compile_file(char *source_file, char *output_file)
 		/* Create function */
 		function = llvm2si_function_create(llfunction);
 
-		/* Create a basic block and generate header code in it */
+		/* Emit code for function */
+		llvm2si_function_emit_header(function);
+		llvm2si_function_emit_args(function);
+
+		/* Create a basic block and generate body in it */
 		basic_block = llvm2si_basic_block_create(NULL);
 		llvm2si_function_add_basic_block(function, basic_block);
 
-		/* Emit code for function */
-		llvm2si_function_emit_header(function, basic_block);
-		llvm2si_function_emit_args(function, basic_block);
 		llvm2si_function_emit_body(function, basic_block);
 
 		/* Dump and free function */

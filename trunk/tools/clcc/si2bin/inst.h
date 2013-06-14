@@ -44,6 +44,10 @@ struct si2bin_inst_t
 	/* For LLVM-to-SI back-end: basic block that the instruction
 	 * belongs to. */
 	struct llvm2si_basic_block_t *basic_block;
+
+	/* Comment attached to the instruction, which will be dumped together
+	 * with it. */
+	char *comment;
 };
 
 
@@ -64,6 +68,9 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name,
 void si2bin_inst_free(struct si2bin_inst_t *inst);
 void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f);
 void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f);
+
+/* Attach a comment to the instruction */
+void si2bin_inst_add_comment(struct si2bin_inst_t *inst, char *comment);
 
 /* Populate fields 'inst_bytes' and 'size' based on the instruction and the value
  * of its arguments. */

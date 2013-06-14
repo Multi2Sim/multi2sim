@@ -94,6 +94,7 @@ struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg)
 	{
 		lltype = LLVMGetElementType(lltype);
 		si_arg = si_arg_create(si_arg_pointer, name);
+		si_arg->pointer.scope = si_arg_uav;
 		si_arg->pointer.data_type = llvm2si_function_arg_get_data_type(lltype);
 	}
 	else
@@ -145,45 +146,143 @@ void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *arg, FILE *f)
 
 
 
+
+/*
+ * Function UAV Object
+ */
+
+struct llvm2si_function_uav_t
+{
+	/* Function where it belongs */
+	struct llvm2si_function_t *function;
+
+	/* UAV index in 'function->uav_list'. Uav10 has an index 0, uav11 has
+	 * index 1, etc. */
+	int index;
+
+	/* Base scalar register of a group of 4 assigned to the UAV. This
+	 * register identifier is a multiple of 4. */
+	int sreg;
+};
+
+
+struct llvm2si_function_uav_t *llvm2si_function_uav_create(void)
+{
+	struct llvm2si_function_uav_t *uav;
+
+	/* Initialize */
+	uav = xcalloc(1, sizeof(struct llvm2si_function_uav_t));
+
+	/* Return */
+	return uav;
+}
+
+
+void llvm2si_function_uav_free(struct llvm2si_function_uav_t *uav)
+{
+	free(uav);
+}
+
+
+
+
 /*
  * Function Object
  */
 
-struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
+/* Add argument 'arg' into the list of arguments of 'function', and emit code
+ * to load it into 'function->basic_block_args'. */
+static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
+		struct llvm2si_function_arg_t *arg)
 {
-	struct llvm2si_function_t *function;
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+	struct llvm2si_symbol_t *symbol;
+	struct llvm2si_basic_block_t *basic_block;
 
-	/* Allocate */
-	function = xcalloc(1, sizeof(struct llvm2si_function_t));
-	function->llfunction = llfunction;
-	function->name = xstrdup(LLVMGetValueName(llfunction));
-	function->basic_block_list = linked_list_create();
-	function->arg_list = list_create();
-	function->symbol_table = llvm2si_symbol_table_create();
+	/* Check that argument does not belong to a function yet */
+	if (arg->function)
+		panic("%s: argument already added", __FUNCTION__);
 
-	/* Return */
-	return function;
+	/* Select basic block */
+	basic_block = function->basic_block_args;
+
+	/* Add argument */
+	list_add(function->arg_list, arg);
+	arg->function = function;
+	arg->index = function->arg_list->count - 1;
+
+	/* Allocate 1 scalar and 1 vector register for the argument */
+	arg->sreg = llvm2si_function_alloc_sreg(function, 1, 1);
+	arg->vreg = llvm2si_function_alloc_vreg(function, 1, 1);
+
+	/* Generate code to load argument into a scalar register.
+	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_cb1,
+			function->sreg_cb1 + 3));
+	list_add(arg_list, si2bin_arg_create_literal(arg->index * 4));
+	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+
+	/* Copy argument into a vector register. This vector register will be
+	 * used for convenience during code emission, so that we don't have to
+	 * worry at this point about different operand type encodings for
+	 * instructions. Optimization passes will get rid later of redundant
+	 * copies and scalar opportunities.
+	 * v_mov_b32 v[arg], s[arg]
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(arg->vreg));
+	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
+	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+
+	/* Insert argument name in symbol table, using its vector register. */
+	symbol = llvm2si_symbol_create(arg->name,
+		llvm2si_symbol_vector_register, arg->vreg);
+	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
 }
 
 
-void llvm2si_function_free(struct llvm2si_function_t *function)
+/* Add a UAV to the UAV list. This function allocates a series of 4 aligned
+ * scalar registers to the UAV, populating its 'index' and 'sreg' fields.
+ * The UAV object will be freed automatically after calling this function.
+ * Emit the code needed to load UAV into 'function->basic_block_uavs' */
+static void llvm2si_function_add_uav(struct llvm2si_function_t *function,
+		struct llvm2si_function_uav_t *uav)
 {
-	int index;
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+	struct llvm2si_basic_block_t *basic_block;
 
-	/* Free list of basic blocks */
-	LINKED_LIST_FOR_EACH(function->basic_block_list)
-		llvm2si_basic_block_free(linked_list_get(function->basic_block_list));
-	linked_list_free(function->basic_block_list);
+	/* Associate UAV with function */
+	assert(!uav->function);
+	uav->function = function;
 
-	/* Free list of arguments */
-	LIST_FOR_EACH(function->arg_list, index)
-		llvm2si_function_arg_free(list_get(function->arg_list, index));
-	list_free(function->arg_list);
+	/* Obtain basic block */
+	basic_block = function->basic_block_uavs;
 
-	/* Rest */
-	llvm2si_symbol_table_free(function->symbol_table);
-	free(function->name);
-	free(function);
+	/* Allocate 4 aligned scalar registers */
+	uav->sreg = llvm2si_function_alloc_sreg(function, 4, 4);
+
+	/* Insert to UAV list */
+	uav->index = function->uav_list->count;
+	list_add(function->uav_list, uav);
+
+	/* Emit code to load UAV.
+	 * s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(
+			uav->sreg, uav->sreg + 3));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(
+			function->sreg_uav_table, function->sreg_uav_table + 1));
+	list_add(arg_list, si2bin_arg_create_literal((uav->index + 10) * 8));
+	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
 
@@ -215,6 +314,58 @@ static void llvm2si_function_dump_data(struct llvm2si_function_t *function,
 	fprintf(f, "\tCOMPUTE_PGM_RSRC2 = 0x00000011\n");  /* What is this? */
 	fprintf(f, "\tCOMPUTE_PGM_RSRC2:USER_SGPR = %d\n", function->sreg_wgid);  /* Work-group ID */
 	fprintf(f, "\n");
+}
+
+
+struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
+{
+	struct llvm2si_function_t *function;
+
+	/* Allocate */
+	function = xcalloc(1, sizeof(struct llvm2si_function_t));
+	function->llfunction = llfunction;
+	function->name = xstrdup(LLVMGetValueName(llfunction));
+	function->basic_block_list = linked_list_create();
+	function->arg_list = list_create();
+	function->uav_list = list_create();
+	function->symbol_table = llvm2si_symbol_table_create();
+
+	/* Standard basic blocks */
+	function->basic_block_header = llvm2si_basic_block_create(NULL);
+	function->basic_block_uavs = llvm2si_basic_block_create(NULL);
+	function->basic_block_args = llvm2si_basic_block_create(NULL);
+	llvm2si_function_add_basic_block(function, function->basic_block_header);
+	llvm2si_function_add_basic_block(function, function->basic_block_uavs);
+	llvm2si_function_add_basic_block(function, function->basic_block_args);
+
+	/* Return */
+	return function;
+}
+
+
+void llvm2si_function_free(struct llvm2si_function_t *function)
+{
+	int index;
+
+	/* Free list of basic blocks */
+	LINKED_LIST_FOR_EACH(function->basic_block_list)
+		llvm2si_basic_block_free(linked_list_get(function->basic_block_list));
+	linked_list_free(function->basic_block_list);
+
+	/* Free list of arguments */
+	LIST_FOR_EACH(function->arg_list, index)
+		llvm2si_function_arg_free(list_get(function->arg_list, index));
+	list_free(function->arg_list);
+
+	/* Free list of UAVs */
+	LIST_FOR_EACH(function->uav_list, index)
+		llvm2si_function_uav_free(list_get(function->uav_list, index));
+	list_free(function->uav_list);
+
+	/* Rest */
+	llvm2si_symbol_table_free(function->symbol_table);
+	free(function->name);
+	free(function);
 }
 
 
@@ -266,12 +417,17 @@ void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
 }
 
 
-void llvm2si_function_emit_header(struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block)
+void llvm2si_function_emit_header(struct llvm2si_function_t *function)
 {
+	struct llvm2si_basic_block_t *basic_block;
 	struct si2bin_inst_t *inst;
 	struct list_t *arg_list;
+
+	char comment[MAX_STRING_SIZE];
 	int index;
+
+	/* Select basic block */
+	basic_block = function->basic_block_header;
 
 	/* Function must be empty at this point */
 	assert(!function->num_sregs);
@@ -295,12 +451,6 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function,
 	/* Allocate 3 scalar registers for the global offset */
 	function->sreg_offs = llvm2si_function_alloc_sreg(function, 3, 1);
 
-	/* Allocate 4 scalar registers for uav10, alignment 4 */
-	function->sreg_uav10 = llvm2si_function_alloc_sreg(function, 4, 4);
-
-	/* Allocate 4 scalar registers for uav11, alignment 4 */
-	function->sreg_uav11 = llvm2si_function_alloc_sreg(function, 4, 4);
-
 	/* Allocate 3 vector registers (v[0:2]) for local ID */
 	assert(!function->num_vregs);
 	function->vreg_lid = llvm2si_function_alloc_vreg(function, 3, 1);
@@ -319,6 +469,7 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function,
 	 * s_buffer_load_dword s[lsize+1], s[cb0:cb0+3], 0x05
 	 * s_buffer_load_dword s[lsize+2], s[cb0:cb0+3], 0x06
 	 */
+	llvm2si_basic_block_add_comment(basic_block, "Obtain local size");
 	for (index = 0; index < 3; index++)
 	{
 		arg_list = list_create();
@@ -337,6 +488,7 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function,
 	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x19
 	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x1a
 	 */
+	llvm2si_basic_block_add_comment(basic_block, "Obtain global offset");
 	for (index = 0; index < 3; index++)
 	{
 		arg_list = list_create();
@@ -358,6 +510,11 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function,
 	 */
 	for (index = 0; index < 3; index++)
 	{
+		/* Comment */
+		snprintf(comment, sizeof comment, "Calculate global ID "
+				"in dimension %d", index);
+		llvm2si_basic_block_add_comment(basic_block, comment);
+
 		/* v_mov_b32 */
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_vector_register(
@@ -402,106 +559,16 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function,
 		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
 		llvm2si_basic_block_add_inst(basic_block, inst);
 	}
-
-	/* Load UAVs. UAV10 is used for private memory an stored in s[uav10:uav10+3].
-	 * UAV11 is used for global memory and stored in s[uav11:uav11+3].
-	 *
-	 * s_load_dwordx4 s[uav10:uav10+3], s[uav:uav+1], 0x50
-	 */
-	arg_list = list_create();
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(
-			function->sreg_uav10, function->sreg_uav10 + 3));
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(
-			function->sreg_uav_table, function->sreg_uav_table + 1));
-	list_add(arg_list, si2bin_arg_create_literal(0x50));
-	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
-
-	/* s_load_dwordx4 s[uav11:uav11+3], s[uav:uav+1], 0x58 */
-	arg_list = list_create();
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(
-			function->sreg_uav11, function->sreg_uav11 + 3));
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(
-			function->sreg_uav_table, function->sreg_uav_table + 1));
-	list_add(arg_list, si2bin_arg_create_literal(0x58));
-	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
 
-/* Add argument 'arg' into the list of arguments of 'function', and generate
- * code to load it into 'basic_block'. Calls to this function must be done
- * consecutively without any action in between that could allocate any
- * scalar register ID in 'function'. */
-static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
-		struct llvm2si_function_arg_t *arg,
-		struct llvm2si_basic_block_t *basic_block)
-{
-	struct list_t *arg_list;
-	struct si2bin_inst_t *inst;
-	struct llvm2si_symbol_t *symbol;
-
-	/* Check that argument does not belong to a function yet */
-	if (arg->function)
-		panic("%s: argument already added", __FUNCTION__);
-
-	/* If this is the first argument added to the function, update the
-	 * scalar register that points to the first argument (sreg_arg). */
-	if (!function->arg_list->count)
-		function->sreg_arg = function->num_sregs;
-
-	/* Make sure that all function arguments appear in contiguous scalar
-	 * registers after the first recorded argument. */
-	if (function->sreg_arg + function->arg_list->count != function->num_sregs)
-		panic("%s: arguments in non-contiguous scalar registers", __FUNCTION__);
-
-	/* Add argument */
-	list_add(function->arg_list, arg);
-	arg->function = function;
-	arg->index = function->arg_list->count - 1;
-
-	/* Allocate 1 scalar and 1 vector register for the argument */
-	arg->sreg = llvm2si_function_alloc_sreg(function, 1, 1);
-	arg->vreg = llvm2si_function_alloc_vreg(function, 1, 1);
-
-	/* Generate code to load argument into a scalar register.
-	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
-	 */
-	arg_list = list_create();
-	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_cb1,
-			function->sreg_cb1 + 3));
-	list_add(arg_list, si2bin_arg_create_literal(arg->index * 4));
-	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
-
-	/* Copy argument into a vector register. This vector register will be
-	 * used for convenience during code emission, so that we don't have to
-	 * worry at this point about different operand type encodings for
-	 * instructions. Optimization passes will get rid later of redundant
-	 * copies and scalar opportunities.
-	 * v_mov_b32 v[arg], s[arg]
-	 */
-	arg_list = list_create();
-	list_add(arg_list, si2bin_arg_create_vector_register(arg->vreg));
-	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
-	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
-	
-	/* Insert argument name in symbol table, using its vector register. */
-	symbol = llvm2si_symbol_create(arg->name,
-		llvm2si_symbol_vector_register, arg->vreg);
-	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
-}
-
-
-void llvm2si_function_emit_args(struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block)
+void llvm2si_function_emit_args(struct llvm2si_function_t *function)
 {
 	LLVMValueRef llfunction;
 	LLVMValueRef llarg;
 
 	struct llvm2si_function_arg_t *arg;
+	struct llvm2si_function_uav_t *uav;
 
 	/* Emit code for each argument individually */
 	llfunction = function->llfunction;
@@ -513,7 +580,16 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function,
 
 		/* Add the argument to the list. This call will cause the
 		 * corresponding code to be emitted. */
-		llvm2si_function_add_arg(function, arg, basic_block);
+		llvm2si_function_add_arg(function, arg);
+
+		/* If argument is an object in global memory, create a UAV
+		 * associated with it. */
+		if (arg->si_arg->type == si_arg_pointer &&
+				arg->si_arg->pointer.scope == si_arg_uav)
+		{
+			uav = llvm2si_function_uav_create();
+			llvm2si_function_add_uav(function, uav);
+		}
 	}
 }
 
