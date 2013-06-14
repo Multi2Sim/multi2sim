@@ -30,6 +30,8 @@ extern char *net_err_large_message;
 extern char *net_err_node_name_duplicate;
 extern char *net_err_config;
 extern char *net_err_can_send;
+extern char *net_err_cycle;
+extern char *net_err_route_step;
 
 
 /* Debug */
