@@ -194,12 +194,10 @@ static void llvm2si_function_dump_data(struct llvm2si_function_t *function,
 	fprintf(f, ".data\n");
 
 	/* User elements */
-	fprintf(f, "\tuserElementCount = 3\n");
-	fprintf(f, "\tuserElements[0] = PTR_INTERNAL_GLOBAL_TABLE, 0, s[%d:%d]\n",
-			function->sreg_uav10, function->sreg_uav10 + 1);
-	fprintf(f, "\tuserElements[1] = PTR_UAV_TABLE, 0, s[%d:%d]\n",
-			function->sreg_uav11, function->sreg_uav11 + 1);
-	fprintf(f, "\tuserElements[2] = IMM_CONST_BUFFER, 1, s[%d:%d]\n",
+	fprintf(f, "\tuserElementCount = 2\n");
+	fprintf(f, "\tuserElements[0] = PTR_UAV_TABLE, 0, s[%d:%d]\n",
+			function->sreg_uav_table, function->sreg_uav_table + 1);
+	fprintf(f, "\tuserElements[1] = IMM_CONST_BUFFER, 1, s[%d:%d]\n",
 			function->sreg_cb1, function->sreg_cb1 + 3);
 	fprintf(f, "\n");
 
@@ -280,50 +278,39 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function,
 	assert(!function->num_vregs);
 
 	/* Allocate 2 scalar registers for UAV table */
-	function->sreg_uav_table = function->num_sregs;
-	function->num_sregs += 2;
+	function->sreg_uav_table = llvm2si_function_alloc_sreg(function, 2, 1);
 
 	/* Allocate 4 scalar registers for CB0 */
-	function->sreg_cb0 = function->num_sregs;
-	function->num_sregs += 4;
+	function->sreg_cb0 = llvm2si_function_alloc_sreg(function, 4, 1);
 
 	/* Allocate 4 scalar registers for CB1 */
-	function->sreg_cb1 = function->num_sregs;
-	function->num_sregs += 4;
+	function->sreg_cb1 = llvm2si_function_alloc_sreg(function, 4, 1);
 
 	/* Allocate 3 scalar registers for the work-group ID */
-	function->sreg_wgid = function->num_sregs;
-	function->num_sregs += 3;
+	function->sreg_wgid = llvm2si_function_alloc_sreg(function, 3, 1);
 
 	/* Allocate 3 scalar registers for the local size */
-	function->sreg_lsize = function->num_sregs;
-	function->num_sregs += 3;
+	function->sreg_lsize = llvm2si_function_alloc_sreg(function, 3, 1);
 
 	/* Allocate 3 scalar registers for the global offset */
-	function->sreg_offs = function->num_sregs;
-	function->num_sregs += 3;
+	function->sreg_offs = llvm2si_function_alloc_sreg(function, 3, 1);
 
-	/* Allocate 4 scalar registers for uav10 */
-	function->sreg_uav10 = function->num_sregs;
-	function->num_sregs += 4;
+	/* Allocate 4 scalar registers for uav10, alignment 4 */
+	function->sreg_uav10 = llvm2si_function_alloc_sreg(function, 4, 4);
 
-	/* Allocate 4 scalar registers for uav11 */
-	function->sreg_uav11 = function->num_sregs;
-	function->num_sregs += 4;
+	/* Allocate 4 scalar registers for uav11, alignment 4 */
+	function->sreg_uav11 = llvm2si_function_alloc_sreg(function, 4, 4);
 
 	/* Allocate 3 vector registers (v[0:2]) for local ID */
 	assert(!function->num_vregs);
-	function->vreg_lid = function->num_vregs;
-	function->num_vregs += 3;
+	function->vreg_lid = llvm2si_function_alloc_vreg(function, 3, 1);
 
 	/* Allocate 3 vector register for global ID */
-	function->vreg_gid = function->num_vregs;
-	function->num_vregs += 3;
+	function->vreg_gid = llvm2si_function_alloc_vreg(function, 3, 1);
 
 	/* Allocate 1 vector register for stack pointer */
 	/* FIXME - initialize stack pointer */
-	function->vreg_sp = function->num_vregs;
-	function->num_vregs++;
+	function->vreg_sp = llvm2si_function_alloc_vreg(function, 1, 1);
 
 
 	/* Obtain local size in s[lsize:lsize+2].
@@ -474,8 +461,8 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 	arg->index = function->arg_list->count - 1;
 
 	/* Allocate 1 scalar and 1 vector register for the argument */
-	arg->sreg = function->num_sregs++;
-	arg->vreg = function->num_vregs++;
+	arg->sreg = llvm2si_function_alloc_sreg(function, 1, 1);
+	arg->vreg = llvm2si_function_alloc_vreg(function, 1, 1);
 
 	/* Generate code to load argument into a scalar register.
 	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
@@ -641,16 +628,21 @@ struct si2bin_arg_t *llvm2si_function_translate_value(
 }
 
 
-int llvm2si_function_allocate_sreg(struct llvm2si_function_t *function)
+int llvm2si_function_alloc_sreg(struct llvm2si_function_t *function,
+		int count, int align)
 {
-	function->num_sregs++;
-	return function->num_sregs - 1;
+	function->num_sregs = (function->num_sregs + align - 1)
+			/ align * align;
+	function->num_sregs += count;
+	return function->num_sregs - count;
 }
 
 
-int llvm2si_function_allocate_vreg(struct llvm2si_function_t *function)
+int llvm2si_function_alloc_vreg(struct llvm2si_function_t *function,
+		int count, int align)
 {
-	function->num_vregs++;
-	return function->num_vregs - 1;
+	function->num_vregs = (function->num_vregs + align - 1)
+			/ align * align;
+	function->num_vregs += count;
+	return function->num_vregs - count;
 }
-

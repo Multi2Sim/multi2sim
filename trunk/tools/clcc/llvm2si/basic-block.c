@@ -83,7 +83,7 @@ void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
-	ret_vreg = llvm2si_function_allocate_vreg(function);
+	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
 	ret_symbol = llvm2si_symbol_create(ret_name,
 			llvm2si_symbol_vector_register,
 			ret_vreg);
@@ -224,7 +224,7 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
-	ret_vreg = llvm2si_function_allocate_vreg(function);
+	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
 	ret_symbol = llvm2si_symbol_create(ret_name,
 			llvm2si_symbol_vector_register,
 			ret_vreg);
@@ -295,7 +295,7 @@ void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
-	ret_vreg = llvm2si_function_allocate_vreg(function);
+	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
 	ret_symbol = llvm2si_symbol_create(ret_name,
 			llvm2si_symbol_vector_register,
 			ret_vreg);
@@ -322,7 +322,15 @@ void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 void llvm2si_basic_block_emit_ret(struct llvm2si_basic_block_t *basic_block,
 		LLVMValueRef llinst)
 {
-	/* Ignore return for now */
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+
+	/* Emit program end instruction.
+	 * s_endpgm
+	 */
+	arg_list = list_create();
+	inst = si2bin_inst_create(SI_INST_S_ENDPGM, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
 

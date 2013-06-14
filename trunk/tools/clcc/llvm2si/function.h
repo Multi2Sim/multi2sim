@@ -148,9 +148,12 @@ struct si2bin_arg_t *llvm2si_function_translate_value(
 		struct llvm2si_function_t *function,
 		LLVMValueRef llvalue);
 
-/* Allocate one new scalar/vector register and return its identifier. */
-int llvm2si_function_allocate_sreg(struct llvm2si_function_t *function);
-int llvm2si_function_allocate_vreg(struct llvm2si_function_t *function);
+/* Allocate 'count' scalar/vector registers where the first register
+ * identifier is a multiple of 'align'. */
+int llvm2si_function_alloc_sreg(struct llvm2si_function_t *function,
+		int count, int align);
+int llvm2si_function_alloc_vreg(struct llvm2si_function_t *function,
+		int count, int align);
 
 #endif
 
