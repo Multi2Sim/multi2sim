@@ -567,12 +567,12 @@ static int opengl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opengl_si_program_t *program;
-
 	int program_id;
+
 	unsigned int bin_ptr;
 	unsigned int bin_size;
-
 	void *buf;
+
 
 	/* Arguments */
 	program_id = regs->ecx;
@@ -613,17 +613,23 @@ static int opengl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
 static int opengl_abi_si_shader_create_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct opengl_si_program_t *program;
 
+	unsigned int program_id;
 	unsigned int shader_id;
-	unsigned int type;
+	unsigned int shader_type;
 
 	/* Arguments */
-	shader_id = regs->ecx;
-	type = regs->edx;
-	opengl_debug("\tshader_id=%d, type=%x\n", shader_id, type);
+	program_id = regs->ecx;
+	shader_id = regs->edx;
+	shader_type = regs->esi;
+	opengl_debug("\tprogram_id=%d, shader_id=%d, type=%x\n", program_id, shader_id, shader_type);
 
-	/* Create a shader object, will be mapped to shaders in program object */
-	opengl_si_shader_create(shader_id, type);
+	/* Create a shader object, will be initialized with shaders in program object */
+	opengl_si_shader_create(shader_id, shader_type);
+	program = list_get(opengl_si_program_list, program_id);
+	if (program)
+		opengl_si_shader_init(program, shader_id);
 	
 	return 0;
 }
@@ -642,8 +648,6 @@ static int opengl_abi_si_shader_free_impl(struct x86_ctx_t *ctx)
 	__NOT_IMPL__
 	return 0;
 }
-
-
 
 /*
  * OpenGL ABI call #11 - si_ndrange_initialize
