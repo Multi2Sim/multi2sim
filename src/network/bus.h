@@ -46,4 +46,5 @@ struct net_bus_t
 struct net_bus_t *net_bus_create(struct net_t *net,struct net_node_t * node, int bandwidth, char *name);
 void net_bus_free(struct net_bus_t *bus);
 struct net_bus_t * net_bus_arbitration(struct net_node_t * bus_node, struct net_buffer_t *buffer);
+void net_bus_dump_report(struct net_bus_t *bus, FILE *f);
 #endif
