@@ -648,7 +648,7 @@ struct_deref_list
 		if (LLVMGetTypeKind(LLVMGetElementType(symbol->cl2llvm_val->type->llvm_type))
 			== LLVMVectorTypeKind)
 		{	
-			cl2llvm_get_vector_indices(value->vector_indices, $3);
+			cl2llvm_get_vector_indices(value, $3);
 		}
 		$$ = value;
 	}
@@ -926,7 +926,8 @@ declaration
 					if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->type_spec->llvm_type 
 						&& current_list_elem->cl2llvm_val->type->sign == $1->type_spec->sign)
 					{
-						LLVMBuildStore(cl2llvm_builder, current_list_elem->cl2llvm_val->val, var_addr);
+						LLVMBuildStore(cl2llvm_builder, 
+							current_list_elem->cl2llvm_val->val, var_addr);
 					}
 					else 
 					{
@@ -2015,12 +2016,22 @@ expr
 	| expr TOK_LOGICAL_OR expr
 	| lvalue TOK_EQUAL expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
-			$1->type->llvm_type , $1->type->sign);
+		struct cl2llvm_val_t *value;
+		struct cl2llvm_type_t *type; 
 		
-		/*Cast rvalue to type of lvalue and store*/
-		struct cl2llvm_val_t *value = llvm_type_cast($3, type);
-		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
+		type = cl2llvm_type_create_w_init($1->type->llvm_type , $1->type->sign);
+
+		/* If lvalue is a component referenced vector. */
+		if ($1->vector_indices[0])
+		{
+			value = cl2llvm_build_component_wise_assignment($1, $3);
+		}
+		else
+		{
+			/*Cast rvalue to type of lvalue and store*/
+			value = llvm_type_cast($3, type);
+			LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
+		}
 
 		/*Free pointers*/
 		cl2llvm_type_free(type);
@@ -2382,7 +2393,8 @@ vec_literal
 
 		snprintf(temp_var_name, sizeof(temp_var_name),
 			"tmp%d", temp_var_count++);
-
+		
+		/* Create type object to represent element type */
 		elem_type = cl2llvm_type_create_w_init(LLVMGetElementType($2->llvm_type), $2->sign);
 		
 		/*Go to entry block and declare vector*/
@@ -2394,7 +2406,7 @@ vec_literal
 		/*Expand any vectors present in list*/
 		expand_vectors($5);
 
-		/*Iterate over list and build and vector of all constant entries*/
+		/*Iterate over list and build a vector of all constant entries*/
 		for (index = 0; index < list_count($5); ++index)
 		{
 			current_vec_elem = list_get($5, index);
@@ -2463,7 +2475,9 @@ vec_literal
 				cl2llvm_val_free(cl2llvm_index);
 			}
 		}
+		cl2llvm_val_free(blank_elem);
 		cl2llvm_type_free(elem_type);
+		cl2llvm_type_free($2);
 
 		LIST_FOR_EACH($5, index)
 		{
@@ -2588,13 +2602,12 @@ primary
 		}
 
 		/* If element is of vector type, check for component indices. */
-		if (LLVMGetTypeKind($1->type->llvm_type)
-			== LLVMVectorTypeKind && $1->vector_indices)
+		if (LLVMGetTypeKind(LLVMGetElementType($1->type->llvm_type))
+			== LLVMVectorTypeKind && $1->vector_indices[i])
 		{
 			/* Get vector component count */
 			while($1->vector_indices[component_count])
 				component_count++;
-			
 			/* If there are multiple components */
 			if (component_count == 2 || component_count == 3
 				|| component_count == 4 || component_count == 8
