@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <arch/southern-islands/asm/arg.h>
+#include <arch/southern-islands/asm/bin-file.h>
 #include <clcc/si2bin/arg.h>
 #include <clcc/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
@@ -132,10 +133,23 @@ void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *arg, FILE *f)
 	{
 	case si_arg_pointer:
 
-		/* Type, name, offset, UAV */
-		fprintf(f, "\t%s* %s %d uav11\n",
+		switch (si_arg->pointer.scope)
+		{
+
+		case si_arg_uav:
+			
+			/* Type, name, offset, UAV */
+			fprintf(f, "\t%s* %s %d uav%d\n",
 				str_map_value(&si_arg_data_type_map, si_arg->pointer.data_type),
-				si_arg->name, arg->index * 16);
+				si_arg->name, arg->index * 16, arg->uav_index + 10);
+			break;
+
+		default:
+
+			fatal("%s: pointer scope not supported (%d)",
+				__FUNCTION__, si_arg->pointer.scope);
+		}
+
 		break;
 
 	default:
@@ -279,8 +293,9 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 		uav = llvm2si_function_uav_create();
 		llvm2si_function_add_uav(function, uav);
 
-		/* Store UAV index in the symbol information */
+		/* Store UAV index in argument and symbol */
 		llvm2si_symbol_set_uav_index(symbol, uav->index);
+		arg->uav_index = uav->index;
 	}
 }
 
@@ -288,14 +303,23 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 static void llvm2si_function_dump_data(struct llvm2si_function_t *function,
 		FILE *f)
 {
+	/* COMPUTE_PGM_RSRC2 */
+	union
+	{
+		struct si_bin_compute_pgm_rsrc2_t as_rsrc;
+		unsigned int as_uint;
+	} rsrc;
+
 	/* Section header */
 	fprintf(f, ".data\n");
 
 	/* User elements */
-	fprintf(f, "\tuserElementCount = 2\n");
+	fprintf(f, "\tuserElementCount = 3\n");
 	fprintf(f, "\tuserElements[0] = PTR_UAV_TABLE, 0, s[%d:%d]\n",
 			function->sreg_uav_table, function->sreg_uav_table + 1);
-	fprintf(f, "\tuserElements[1] = IMM_CONST_BUFFER, 1, s[%d:%d]\n",
+	fprintf(f, "\tuserElements[1] = IMM_CONST_BUFFER, 0, s[%d:%d]\n",
+			function->sreg_cb0, function->sreg_cb0 + 3);
+	fprintf(f, "\tuserElements[2] = IMM_CONST_BUFFER, 1, s[%d:%d]\n",
 			function->sreg_cb1, function->sreg_cb1 + 3);
 	fprintf(f, "\n");
 
@@ -310,8 +334,16 @@ static void llvm2si_function_dump_data(struct llvm2si_function_t *function,
 	fprintf(f, "\n");
 
 	/* Program resources */
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2 = 0x00000011\n");  /* What is this? */
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:USER_SGPR = %d\n", function->sreg_wgid);  /* Work-group ID */
+	rsrc.as_uint = 0;
+	rsrc.as_rsrc.user_sgpr = function->sreg_wgid;
+	rsrc.as_rsrc.tgid_x_en = 1;
+	rsrc.as_rsrc.tgid_y_en = 1;
+	rsrc.as_rsrc.tgid_z_en = 1;
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2 = 0x%08x\n", rsrc.as_uint);
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:USER_SGPR = %d\n", rsrc.as_rsrc.user_sgpr);
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_X_EN = %d\n", rsrc.as_rsrc.tgid_x_en);
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Y_EN = %d\n", rsrc.as_rsrc.tgid_y_en);
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Z_EN = %d\n", rsrc.as_rsrc.tgid_z_en);
 	fprintf(f, "\n");
 }
 
