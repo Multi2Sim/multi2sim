@@ -62,7 +62,24 @@ void llvm2si_symbol_free(struct llvm2si_symbol_t *symbol)
 
 void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f)
 {
-	fprintf(f, "name='%s', type=%s, reg=%d\n", symbol->name,
+	/* Name, type, register */
+	fprintf(f, "name='%s', type=%s, reg=%d", symbol->name,
 			str_map_value(&llvm2si_symbol_type_map, symbol->type),
 			symbol->reg);
+
+	/* UAV index */
+	if (symbol->address)
+		fprintf(f, ", uav%d", symbol->uav_index + 10);
+	
+	/* End */
+	fprintf(f, "\n");
 }
+
+
+void llvm2si_symbol_set_uav_index(struct llvm2si_symbol_t *symbol,
+		int uav_index)
+{
+	symbol->address = 1;
+	symbol->uav_index = uav_index;
+}
+

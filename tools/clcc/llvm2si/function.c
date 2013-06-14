@@ -151,21 +151,6 @@ void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *arg, FILE *f)
  * Function UAV Object
  */
 
-struct llvm2si_function_uav_t
-{
-	/* Function where it belongs */
-	struct llvm2si_function_t *function;
-
-	/* UAV index in 'function->uav_list'. Uav10 has an index 0, uav11 has
-	 * index 1, etc. */
-	int index;
-
-	/* Base scalar register of a group of 4 assigned to the UAV. This
-	 * register identifier is a multiple of 4. */
-	int sreg;
-};
-
-
 struct llvm2si_function_uav_t *llvm2si_function_uav_create(void)
 {
 	struct llvm2si_function_uav_t *uav;
@@ -190,6 +175,45 @@ void llvm2si_function_uav_free(struct llvm2si_function_uav_t *uav)
  * Function Object
  */
 
+/* Add a UAV to the UAV list. This function allocates a series of 4 aligned
+ * scalar registers to the UAV, populating its 'index' and 'sreg' fields.
+ * The UAV object will be freed automatically after calling this function.
+ * Emit the code needed to load UAV into 'function->basic_block_uavs' */
+static void llvm2si_function_add_uav(struct llvm2si_function_t *function,
+		struct llvm2si_function_uav_t *uav)
+{
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+	struct llvm2si_basic_block_t *basic_block;
+
+	/* Associate UAV with function */
+	assert(!uav->function);
+	uav->function = function;
+
+	/* Obtain basic block */
+	basic_block = function->basic_block_uavs;
+
+	/* Allocate 4 aligned scalar registers */
+	uav->sreg = llvm2si_function_alloc_sreg(function, 4, 4);
+
+	/* Insert to UAV list */
+	uav->index = function->uav_list->count;
+	list_add(function->uav_list, uav);
+
+	/* Emit code to load UAV.
+	 * s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(
+			uav->sreg, uav->sreg + 3));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(
+			function->sreg_uav_table, function->sreg_uav_table + 1));
+	list_add(arg_list, si2bin_arg_create_literal((uav->index + 10) * 8));
+	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+}
+
+
 /* Add argument 'arg' into the list of arguments of 'function', and emit code
  * to load it into 'function->basic_block_args'. */
 static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
@@ -199,6 +223,7 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 	struct si2bin_inst_t *inst;
 	struct llvm2si_symbol_t *symbol;
 	struct llvm2si_basic_block_t *basic_block;
+	struct llvm2si_function_uav_t *uav;
 
 	/* Check that argument does not belong to a function yet */
 	if (arg->function)
@@ -244,45 +269,19 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 	symbol = llvm2si_symbol_create(arg->name,
 		llvm2si_symbol_vector_register, arg->vreg);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
-}
 
+	/* If argument is an object in global memory, create a UAV
+	 * associated with it. */
+	if (arg->si_arg->type == si_arg_pointer &&
+			arg->si_arg->pointer.scope == si_arg_uav)
+	{
+		/* New UAV */
+		uav = llvm2si_function_uav_create();
+		llvm2si_function_add_uav(function, uav);
 
-/* Add a UAV to the UAV list. This function allocates a series of 4 aligned
- * scalar registers to the UAV, populating its 'index' and 'sreg' fields.
- * The UAV object will be freed automatically after calling this function.
- * Emit the code needed to load UAV into 'function->basic_block_uavs' */
-static void llvm2si_function_add_uav(struct llvm2si_function_t *function,
-		struct llvm2si_function_uav_t *uav)
-{
-	struct list_t *arg_list;
-	struct si2bin_inst_t *inst;
-	struct llvm2si_basic_block_t *basic_block;
-
-	/* Associate UAV with function */
-	assert(!uav->function);
-	uav->function = function;
-
-	/* Obtain basic block */
-	basic_block = function->basic_block_uavs;
-
-	/* Allocate 4 aligned scalar registers */
-	uav->sreg = llvm2si_function_alloc_sreg(function, 4, 4);
-
-	/* Insert to UAV list */
-	uav->index = function->uav_list->count;
-	list_add(function->uav_list, uav);
-
-	/* Emit code to load UAV.
-	 * s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
-	 */
-	arg_list = list_create();
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(
-			uav->sreg, uav->sreg + 3));
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(
-			function->sreg_uav_table, function->sreg_uav_table + 1));
-	list_add(arg_list, si2bin_arg_create_literal((uav->index + 10) * 8));
-	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
+		/* Store UAV index in the symbol information */
+		llvm2si_symbol_set_uav_index(symbol, uav->index);
+	}
 }
 
 
@@ -337,6 +336,12 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	llvm2si_function_add_basic_block(function, function->basic_block_header);
 	llvm2si_function_add_basic_block(function, function->basic_block_uavs);
 	llvm2si_function_add_basic_block(function, function->basic_block_args);
+
+	/* Comments in basic blocks */
+	llvm2si_basic_block_add_comment(function->basic_block_uavs,
+			"Obtain UAV descriptors");
+	llvm2si_basic_block_add_comment(function->basic_block_args,
+			"Read kernel arguments from cb1");
 
 	/* Return */
 	return function;
@@ -458,10 +463,6 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function)
 	/* Allocate 3 vector register for global ID */
 	function->vreg_gid = llvm2si_function_alloc_vreg(function, 3, 1);
 
-	/* Allocate 1 vector register for stack pointer */
-	/* FIXME - initialize stack pointer */
-	function->vreg_sp = llvm2si_function_alloc_vreg(function, 1, 1);
-
 
 	/* Obtain local size in s[lsize:lsize+2].
 	 *
@@ -568,7 +569,6 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function)
 	LLVMValueRef llarg;
 
 	struct llvm2si_function_arg_t *arg;
-	struct llvm2si_function_uav_t *uav;
 
 	/* Emit code for each argument individually */
 	llfunction = function->llfunction;
@@ -581,15 +581,6 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function)
 		/* Add the argument to the list. This call will cause the
 		 * corresponding code to be emitted. */
 		llvm2si_function_add_arg(function, arg);
-
-		/* If argument is an object in global memory, create a UAV
-		 * associated with it. */
-		if (arg->si_arg->type == si_arg_pointer &&
-				arg->si_arg->pointer.scope == si_arg_uav)
-		{
-			uav = llvm2si_function_uav_create();
-			llvm2si_function_add_uav(function, uav);
-		}
 	}
 }
 
@@ -657,12 +648,16 @@ static struct si2bin_arg_t *llvm2si_function_translate_const_value(
 
 struct si2bin_arg_t *llvm2si_function_translate_value(
 		struct llvm2si_function_t *function,
-		LLVMValueRef llvalue)
+		LLVMValueRef llvalue,
+		struct llvm2si_symbol_t **symbol_ptr)
 {
 	struct llvm2si_symbol_t *symbol;
 	struct si2bin_arg_t *arg;
 
 	char *name;
+
+	/* Returned symbol is NULL by default */
+	PTR_ASSIGN(symbol_ptr, NULL);
 
 	/* Treat constants separately */
 	if (LLVMIsConstant(llvalue))
@@ -698,8 +693,9 @@ struct si2bin_arg_t *llvm2si_function_translate_value(
 		fatal("%s: invalid symbol type (%d)", __FUNCTION__,
 				symbol->type);
 	}
-
-	/* Return argument */
+	
+	/* Return argument and symbol */
+	PTR_ASSIGN(symbol_ptr, symbol);
 	return arg;
 }
 
