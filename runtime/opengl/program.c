@@ -334,6 +334,11 @@ void glLinkProgram (GLuint program)
 
 }
 
+/* 
+ * This is where we send program binary and initialize shaders in device
+ * All program and shader objects were stored in repository in host memory 
+ * until it is actually in use. 
+ */
 void glUseProgram (GLuint program)
 {
 	struct opengl_program_obj_t *program_obj;
@@ -366,9 +371,11 @@ void glUseProgram (GLuint program)
 		{
 			shader_obj = list_get(program_obj->shaders, i);
 			if (shader_obj)
-				/* Create by driver */
+			{
+				/* Create shaders by driver */
 				syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_shader_create,
-					shader_obj->id, shader_obj->type);
+					program_obj->id, shader_obj->id, shader_obj->type);
+			}
 		}
 	
 	}

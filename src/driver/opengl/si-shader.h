@@ -21,6 +21,7 @@
 #define DRIVER_OPENGL_SI_SHADER_H
 
 struct opengl_si_program_t;
+struct si_opengl_shader_binary_t *shader_bin;
 
 struct opengl_si_shader_t
 {
@@ -35,7 +36,7 @@ struct opengl_si_shader_t
 
 };
 
-extern struct list_t *opengl_shader_list;
+extern struct list_t *opengl_si_shader_list;
 
 void opengl_si_shader_list_init(void);
 void opengl_si_shader_list_done(void);
