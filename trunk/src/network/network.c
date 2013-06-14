@@ -300,9 +300,9 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 				if (!strcasecmp(link_type, "Unidirectional"))
 				{
 					link_src_bsize = (src_buffer_size)
-									?  src_buffer_size : src_node->output_buffer_size;
+											?  src_buffer_size : src_node->output_buffer_size;
 					link_dst_bsize =  (dst_buffer_size)
-											?  dst_buffer_size : dst_node->input_buffer_size;
+													?  dst_buffer_size : dst_node->input_buffer_size;
 
 					net_add_link(net, src_node, dst_node, bandwidth,
 							link_src_bsize, link_dst_bsize, v_channel_count);
@@ -402,14 +402,14 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 					snprintf(spr_result_size, sizeof spr_result_size, "%s.to.%s",
 							src_node_r->name,dst_node_r->name);
 					nxt_node_name = config_read_string(config, section, spr_result_size , "---" );
+
 					/* Token Separates the next node and VC */
 					snprintf(section_str, sizeof section_str, "%s", nxt_node_name);
 					token = strtok(section_str, delim_sep);
 					nxt_node_name = token;
 					token = strtok(NULL, delim_sep);
 
-
-					if (token)
+					if (token != NULL)
 					{
 						vc_used = atoi(token);
 						if (vc_used < 0)
@@ -420,26 +420,30 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 					int name_check = strcmp(nxt_node_name, "---");
 					nxt_node_r = net_get_node_by_name(net, nxt_node_name);
 
-					if (!nxt_node_r && name_check != 0)
+					if (name_check == 1)
 					{
-						fatal("Network %s:%s: Invalid node Name.\n %s",
-								net->name, section,net_err_config);
-					}
-					if (nxt_node_r)
-					{
-						if (src_node_r == dst_node_r)
-							fatal("Network %s:%s: Invalid Routing format.\n %s",
+						if (nxt_node_r == NULL)
+							fatal("Network %s:%s: Invalid node Name.\n %s",
 									net->name, section,net_err_config);
-						else
-							if (vc_used > 0)
-								net_routing_table_route_update(net->routing_table,
-										src_node_r, dst_node_r, nxt_node_r, vc_used);
+
+						else if (nxt_node_r)
+						{
+							if (src_node_r == dst_node_r)
+								fatal("Network %s:%s: Invalid Routing format.\n %s",
+										net->name, section,net_err_config);
 							else
 							{
-								vc_used = 0;
-								net_routing_table_route_update(net->routing_table,
-										src_node_r, dst_node_r, nxt_node_r, vc_used);
+								if (vc_used > 0)
+									net_routing_table_route_update(net->routing_table,
+											src_node_r, dst_node_r, nxt_node_r, vc_used);
+								else
+								{
+									vc_used = 0;
+									net_routing_table_route_update(net->routing_table,
+											src_node_r, dst_node_r, nxt_node_r, vc_used);
+								}
 							}
+						}
 					}
 				}
 			}
@@ -739,16 +743,16 @@ void net_add_bidirectional_link(struct net_t *net,
 	int dst_buffer_size;
 
 	src_buffer_size = (link_src_bsize)
-						? link_src_bsize : src_node->output_buffer_size;
+								? link_src_bsize : src_node->output_buffer_size;
 	dst_buffer_size = (link_dst_bsize)
-						? link_dst_bsize : dst_node->input_buffer_size;
+								? link_dst_bsize : dst_node->input_buffer_size;
 	net_add_link(net, src_node, dst_node, bandwidth,
 			src_buffer_size, dst_buffer_size, vc_count);
 
 	src_buffer_size = (link_src_bsize)
-							? link_src_bsize : dst_node->output_buffer_size;
+									? link_src_bsize : dst_node->output_buffer_size;
 	dst_buffer_size = (link_dst_bsize)
-							? link_dst_bsize : src_node->input_buffer_size;
+									? link_dst_bsize : src_node->input_buffer_size;
 	net_add_link(net, dst_node, src_node, bandwidth,
 			src_buffer_size, dst_buffer_size, vc_count);
 

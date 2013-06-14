@@ -148,6 +148,18 @@ char *net_err_can_send =
 	"\tbuffer. This can be solved by making sure a message can be sent\n"
 	"\tbefore injecting it (use function 'net_can_send').\n";
 
+char *net_err_cycle =
+		"\tA cycle has been detected in the graph representing the routing table\n"
+		"\tfor a network. Routing cycles can cause deadlocks in simulations, that\n"
+		"\tcan in turn make the simulation stall with no output.\n";
+
+char *net_err_route_step =
+		"\tThere is a link missing between source node and next node for this  \n"
+		"\troute step. The route between source and destination node should go \n"
+		"\tthrough existing links/Buses that are defined in the configuration  \n"
+		"\tfile.  \n";
+
+
 
 /* Events */
 int EV_NET_SEND;
