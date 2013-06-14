@@ -30,6 +30,7 @@
 struct linked_list_t;
 struct llvm2si_basic_block_t;
 struct llvm2si_function_t;
+struct llvm2si_symbol_t;
 struct si2bin_arg_t;
 
 
@@ -63,6 +64,30 @@ void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE
 
 
 /*
+ * Function UAV Object
+ */
+
+struct llvm2si_function_uav_t
+{
+	/* Function where it belongs */
+	struct llvm2si_function_t *function;
+
+	/* UAV index in 'function->uav_list'. Uav10 has an index 0, uav11 has
+	 * index 1, etc. */
+	int index;
+
+	/* Base scalar register of a group of 4 assigned to the UAV. This
+	 * register identifier is a multiple of 4. */
+	int sreg;
+};
+
+struct llvm2si_function_uav_t *llvm2si_function_uav_create(void);
+void llvm2si_function_uav_free(struct llvm2si_function_uav_t *uav);
+
+
+
+
+/*
  * Function Object
  */
 
@@ -87,7 +112,6 @@ struct llvm2si_function_t
 
 	int vreg_lid;  /* Local ID (3 registers) */
 	int vreg_gid;  /* Global ID (4 registers) */
-	int vreg_sp;  /* Stack pointer (1 register) */
 
 	/* List of arguments. Each element is of type
 	 * 'struct llvm2si_function_arg_t' */
@@ -143,13 +167,13 @@ void llvm2si_function_emit_body(struct llvm2si_function_t *function,
  *   - If the LLVM value is an integer constant, the Southern Islands argument
  *     will be of type integer literal.
  *   - If the LLVM value is an LLVM identifier, the Southern Islands argument
- *     will be the vector register associated with that symbol.
- *   - If the LLVM value is a function argument, the Southern Islands argument
- *     will be the scalar register pointing to that argument.
+ *     will be the vector register associated with that symbol. In this case,
+ *     the symbol is returned in the 'symbol_ptr' argument.
  */
 struct si2bin_arg_t *llvm2si_function_translate_value(
 		struct llvm2si_function_t *function,
-		LLVMValueRef llvalue);
+		LLVMValueRef llvalue,
+		struct llvm2si_symbol_t **symbol_ptr);
 
 /* Allocate 'count' scalar/vector registers where the first register
  * identifier is a multiple of 'align'. */
