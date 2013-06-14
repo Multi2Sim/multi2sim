@@ -427,6 +427,8 @@ text_stmt
 		/* si2bin_inst_dump(inst, stdout); */
 		si2bin_inst_free(inst);
 	}
+	
+	| TOK_NEW_LINE
 ;
 
 label

@@ -164,17 +164,14 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, struct list_t *ar
 void si2bin_inst_free(struct si2bin_inst_t *inst)
 {
 	int index;
-	struct si2bin_arg_t *arg;
 	
-	/* Free all argument object in the argument list */
+	/* Free argument list */
 	LIST_FOR_EACH(inst->arg_list, index)
-	{
-		arg = list_get(inst->arg_list, index);
-		si2bin_arg_free(arg);
-	}
-	
-	/* Free argument list and instruction object */
+		si2bin_arg_free(list_get(inst->arg_list, index));
 	list_free(inst->arg_list);
+	
+	/* Rest */
+	str_free(inst->comment);
 	free(inst);
 }
 
@@ -224,6 +221,10 @@ void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f)
 
         int i;
 
+        /* Comment attached to the instruction */
+        if (inst->comment)
+        	fprintf(f, "\n\t# %s\n", inst->comment);
+
         /* Dump instruction opcode */
         fprintf(f, "\t%s ", inst->info->name);
 
@@ -240,6 +241,12 @@ void si2bin_inst_dump_assembly(struct si2bin_inst_t *inst, FILE *f)
 
 	/* New line */
 	fprintf(f, "\n");
+}
+
+
+void si2bin_inst_add_comment(struct si2bin_inst_t *inst, char *comment)
+{
+	inst->comment = str_set(inst->comment, comment);
 }
 
 

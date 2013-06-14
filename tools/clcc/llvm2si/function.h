@@ -84,9 +84,6 @@ struct llvm2si_function_t
 	int sreg_wgid;  /* Work-group ID (3 registers) */
 	int sreg_lsize;  /* Local size (3 registers) */
 	int sreg_offs;  /* Global offset (3 registers) */
-	int sreg_uav10;  /* UAV10 (4 registers) */
-	int sreg_uav11;  /* UAV11 (4 registers) */
-	int sreg_arg;  /* Arguments (variable number of registers) */
 
 	int vreg_lid;  /* Local ID (3 registers) */
 	int vreg_gid;  /* Global ID (4 registers) */
@@ -96,9 +93,18 @@ struct llvm2si_function_t
 	 * 'struct llvm2si_function_arg_t' */
 	struct list_t *arg_list;
 
+	/* List of UAVs, starting at uav10. Each UAV is associated with one
+	 * function argument using a buffer in global memory. */
+	struct list_t *uav_list;
+
 	/* List of basic blocks. Each element is of type
 	 * 'struct llvm2si_basic_block_t' */
 	struct linked_list_t *basic_block_list;
+
+	/* Pre-defined basic blocks */
+	struct llvm2si_basic_block_t *basic_block_header;
+	struct llvm2si_basic_block_t *basic_block_uavs;
+	struct llvm2si_basic_block_t *basic_block_args;
 
 	/* Symbol table associated with the function. */
 	struct llvm2si_symbol_table_t *symbol_table;
@@ -117,17 +123,14 @@ void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f);
 void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
 
-/* Generate initialization code for the function. The code will be dumped in
- * 'basic_block', which must have been previously added to the function with a
- * call to 'llvm2si_function_add_basic_block'. */
-void llvm2si_function_emit_header(struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block);
+/* Generate initialization code for the function in basic block
+ * 'function->basic_block_header'. */
+void llvm2si_function_emit_header(struct llvm2si_function_t *function);
 
-/* Emit code to load arguments into scalar register. The 'basic_block' must
- * have been added to the 'function' before. The function will internally
- * create its list of arguments. */
-void llvm2si_function_emit_args(struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block);
+/* Emit code to load arguments into registers. The code will be emitted in
+ * 'function->basic_block_args'. UAVs will be created and loaded in
+ * 'function->basic_block_uavs', as they are needed by new arguments. */
+void llvm2si_function_emit_args(struct llvm2si_function_t *function);
 
 /* Emit code for the function body. The first basic block of the function will
  * be added at the end of 'basic_block', which should be already part of the

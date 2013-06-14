@@ -35,6 +35,10 @@ struct llvm2si_basic_block_t
 {
 	char *name;
 
+	/* Comment stored temporarily in the basic block to be attached to the
+	 * next instruction added. */
+	char *comment;
+
 	/* Associated LLVM basic block. It can be NULL for those SI basic blocks
 	 * that don't associate to an original LLVM block, such as the header
 	 * basic block. */
@@ -57,6 +61,12 @@ void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f
 /* Add one SI instruction to the 'inst_list' field of the basic block. */
 void llvm2si_basic_block_add_inst(struct llvm2si_basic_block_t *basic_block,
 		struct si2bin_inst_t *inst);
+
+/* Add a comment to a basic block. The comment will be attached to the next
+ * instruction added with 'llvm2si_basic_block_add_inst'. If not other
+ * instruction is added to the basic block, the comment won't have any effect. */
+void llvm2si_basic_block_add_comment(struct llvm2si_basic_block_t *basic_block,
+		char *comment);
 
 /* Emit SI code for the basic block. The function reads the LLVM basic block
  * stored in field 'llbb', and emits SI instructions into field 'inst_list'. */
