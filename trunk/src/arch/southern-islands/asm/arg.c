@@ -109,7 +109,6 @@ struct str_map_t si_arg_reflection_map =
 };
 
 
-
 struct si_arg_t *si_arg_create(enum si_arg_type_t type,
 		char *name)
 {
@@ -143,6 +142,13 @@ void si_arg_free(struct si_arg_t *arg)
 	/* Rest */
 	free(arg->name);
 	free(arg);
+}
+
+/* Set name if incorrect name is used in constructor */
+void si_arg_name_set(struct si_arg_t *arg, char *name)
+{
+	free(arg->name);
+	arg->name = xstrdup(name);
 }
 
 

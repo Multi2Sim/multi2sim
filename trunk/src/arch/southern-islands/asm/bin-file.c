@@ -42,6 +42,44 @@ struct pt_note_header_t
 	char name[8];  /* Note header string. Must be "ATI CAL" */
 };
 
+struct str_map_t si_bin_user_data_class = 
+{
+	32, {
+		{ "IMM_RESOURCE",                           0 },
+		{ "IMM_SAMPLER",                            1 },
+		{ "IMM_CONST_BUFFER",                       2 },
+		{ "IMM_VERTEX_BUFFER",                      3 },
+		{ "IMM_UAV",                                4 },
+		{ "IMM_ALU_FLOAT_CONST",                    5 },
+		{ "IMM_ALU_BOOL32_CONST",                   6 },
+		{ "IMM_GDS_COUNTER_RANGE",                  7 },
+		{ "IMM_GDS_MEMORY_RANGE",                   8 },
+		{ "IMM_GWS_BASE",                           9 },
+		{ "IMM_WORK_ITEM_RANGE",                    10 },
+		{ "IMM_WORK_GROUP_RANGE",                   11 },
+		{ "IMM_DISPATCH_ID",                        12 },
+		{ "IMM_SCRATCH_BUFFER",                     13 },
+		{ "IMM_HEAP_BUFFER",                        14 },
+		{ "IMM_KERNEL_ARG",                         15 },
+		{ "IMM_CONTEXT_BASE",                       16 },
+		{ "IMM_LDS_ESGS_SIZE",                      17 },
+		{ "SUB_PTR_FETCH_SHADER",                   18 },
+		{ "PTR_RESOURCE_TABLE",                     17 },
+		{ "PTR_CONST_BUFFER_TABLE",                 20 },
+		{ "PTR_INTERNAL_RESOURCE_TABLE",            21 },
+		{ "PTR_SAMPLER_TABLE",                      22 },
+		{ "PTR_UAV_TABLE",                          23 },
+		{ "PTR_INTERNAL_GLOBAL_TABLE",              24 },
+		{ "PTR_VERTEX_BUFFER_TABLE",                25 },
+		{ "PTR_SO_BUFFER_TABLE",                    26 },
+		{ "PTR_EXTENDED_USER_DATA",                 27 },
+		{ "PTR_INDIRECT_RESOURCE",                  28 },
+		{ "PTR_INDIRECT_INTERNAL_RESOURCE",         29 },
+		{ "PTR_INDIRECT_UAV",                       30 },
+		{ "E_SC_USER_DATA_CLASS_LAST",              31 },
+	}
+};
+
 
 static struct str_map_t enc_dict_machine_map =
 {
@@ -1002,3 +1040,20 @@ void si_bin_file_free(struct si_bin_file_t *bin_file)
 	elf_file_free(bin_file->elf_file);
 	free(bin_file);
 }
+
+struct si_bin_enc_user_element_t *si_bin_enc_user_element_create()
+{
+	struct si_bin_enc_user_element_t *user_elem;
+
+	/* Initialize */
+	user_elem = xcalloc(1, sizeof(struct si_bin_enc_user_element_t));
+	
+	/* Return */
+	return user_elem;
+}
+
+void si_bin_enc_user_element_free(struct si_bin_enc_user_element_t *user_elem)
+{
+	free(user_elem);
+}
+

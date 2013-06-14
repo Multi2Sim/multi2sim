@@ -83,7 +83,6 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 {
 	struct si2bin_inner_bin_t *inner_bin;
 	struct si2bin_inner_bin_entry_t *entry;
-	struct si2bin_inner_bin_constant_buffer_t *cb;
 	struct si2bin_inner_bin_note_t *note;
 
 	struct elf_enc_section_t *text_section;
@@ -100,6 +99,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 	struct si2bin_metadata_t *metadata;
 	struct si_arg_t *arg;
+	struct si_bin_enc_user_element_t *user_elem;
 	struct pt_note_prog_info_entry_t prog_info[NUM_PROG_INFO_ELEM];
 
 	char line[MAX_LONG_STRING_SIZE];
@@ -113,15 +113,12 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	int j;
 	int k;
 	int offset;
-	int skip_cb;
 	int uav[20];
+	int cb[10];
 	int rodata_size;
 	int buff_num_offset;
-
 	
-	FILE *f;
 	
-
 	rodata_size = 0;
 
 	/* Create Text Section */
@@ -142,10 +139,12 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	LIST_FOR_EACH(outer_bin->inner_bin_list, i)
 	{
 		offset = 0;
-		skip_cb = 0;
 
 		for(j = 0; j < 20; j++)
 			uav[j] = 0;
+
+		for(j = 0; j < 10; j++)
+			cb[j] = 0;		
 
 		kernel_buffer = elf_enc_buffer_create();
 
@@ -164,7 +163,6 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		entry->header.d_machine = 26;
 		entry->header.d_type = 0; /* ???? */
 
-
 		/* Metadata -> .rodata section of Outer ELF */
 
 		/* Print kernel name */
@@ -182,7 +180,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		/* Unique ID */
 		snprintf(line, sizeof line, ";uniqueid:%d\n", metadata->uniqueid);
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
-
+		
 		/* Memory - uavprivate */
 		snprintf(line, sizeof line, ";memory:uavprivate:%d\n", metadata->uavprivate);
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
@@ -209,7 +207,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					scope = str_map_value(&si_arg_scope_map, arg->pointer.scope);
 					access_type = str_map_value(&si_arg_access_type_map, arg->pointer.access_type);
 
-					snprintf(line, sizeof line, ";pointer:%s%d:%s:1:%d:%d:%s:%d:%d:%s:0:0\n", arg->name, j, 
+					snprintf(line, sizeof line, ";pointer:%s:%s:1:%d:%d:%s:%d:%d:%s:0:0\n", arg->name, 
 							data_type, arg->pointer.constant_buffer_num, arg->pointer.constant_offset,
 							scope, arg->pointer.buffer_num, 4, access_type);
 
@@ -295,7 +293,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
 
-		snprintf(line, sizeof line + 1, "__OpenCL_%s_metadata", inner_bin->name);
+		snprintf(line, sizeof line, "__OpenCL_%s_metadata", inner_bin->name);
 
 		metadata_symbol = elf_enc_symbol_create(line);
 		metadata_symbol->symbol.st_shndx = 4;
@@ -311,7 +309,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 		/* Header ->  .rodata section */
 
-		snprintf(line, sizeof line + 1, "__OpenCL_%s_header", inner_bin->name);
+		snprintf(line, sizeof line, "__OpenCL_%s_header", inner_bin->name);
 
 		header_symbol = elf_enc_symbol_create(line);
 		header_symbol->symbol.st_shndx = 4;
@@ -360,7 +358,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 			if (!uav[k])
 				continue;
 		
-			snprintf(line, sizeof line + 1, "uav%d", k);
+			snprintf(line, sizeof line, "uav%d", k);
 			uav_symbol = elf_enc_symbol_create(line);
 			uav_symbol->symbol.st_value = buff_num_offset;
 			uav_symbol->symbol.st_shndx = 16;
@@ -409,50 +407,47 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		/* ELF_NOTE_ATI_CONSTANT_BUFFERS */
 
 
-		skip_cb = 0;
+		buff_num_offset = 0;
 
-		for (k = 0; k < 3; k++)
+		for (k = 0; k < list_count(inner_bin->user_element_list); k++)
 		{
-			cb = list_get(inner_bin->cb_list, k);
+			user_elem = list_get(inner_bin->user_element_list, k);
 			
-			if (!cb->start_reg && !cb->end_reg)
-				continue;
-
-			skip_cb++;
+			if (user_elem->dataClass == IMM_CONST_BUFFER)
+			{
+				cb[user_elem->apiSlot] = 1;
+				buff_num_offset++;
+			}
 		}
 
-		ptr = xcalloc(1, (8 * skip_cb));
-		
-		skip_cb = 0;
+		ptr = xcalloc(1, (8 * buff_num_offset));
 
 		/* CB Symbols */
-		for (k = 2; k >= 0; k--)
+		for (k = 0; k < 10; k++)
 		{
-			cb = list_get(inner_bin->cb_list, k);
-
-			if (!cb->start_reg && !cb->end_reg)
+			if (cb[k])
 			{
-				skip_cb++;
-				continue;
+				snprintf(line, sizeof line, "cb%d", k);
+
+				cb_symbol = elf_enc_symbol_create(line);
+				cb_symbol->symbol.st_value = buff_num_offset - 1;
+				cb_symbol->symbol.st_shndx = 10;
+				elf_enc_symbol_table_add(entry->symbol_table, cb_symbol);
+				
+			
+				ptr[(buff_num_offset - 1) * 8] = k;
+			
+				if (k == 0)
+					ptr[(buff_num_offset - 1) * 8 + 4] = 0xf;
+
+				if (k == 1)
+					ptr[(buff_num_offset - 1) * 8 + 4] = list_count(metadata->arg_list);
+
+				buff_num_offset--;
 			}
 
-			snprintf(line, sizeof line + 1, "cb%d", cb->buffer_number);
-
-			cb_symbol = elf_enc_symbol_create(line);
-			cb_symbol->symbol.st_value = list_count(inner_bin->cb_list) - skip_cb - k - 1;
-			cb_symbol->symbol.st_shndx = 10;
-			elf_enc_symbol_table_add(entry->symbol_table, cb_symbol);
-
-			ptr[(list_count(inner_bin->cb_list) - skip_cb - k - 1) * 8] = cb->buffer_number;
-			
-			if (cb->buffer_number == 0)
-				ptr[12] = 0xf;
-
-			if (cb->buffer_number == 1)
-				ptr[4] = 3;
-
 		}
-
+		
 
 		note = si2bin_inner_bin_note_create(10, 16, ptr);
 		si2bin_inner_bin_entry_add_note(entry, note);
@@ -474,234 +469,169 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 		/* ELF_NOTE_ATI_PROGINFO */
 		
+		/* AMU_ABI_USER_ELEMENT_COUNT */
 		prog_info[0].address = 0x80001000;
-		prog_info[0].value = 3;
-		prog_info[1].address = 0x80001001;
-		prog_info[1].value = 0x17;
-		prog_info[2].address = 0x80001002;
-		prog_info[2].value = 0;
-		prog_info[3].address = 0x80001003;
-		prog_info[3].value = 2;
-		prog_info[4].address = 0x80001004;
-		prog_info[4].value = 2;
-		prog_info[5].address = 0x80001005;
-		prog_info[5].value = 2;
-		prog_info[6].address = 0x80001006;
-		prog_info[6].value = 0;
-		prog_info[7].address = 0x80001007;
-		prog_info[7].value = 4;
-		prog_info[8].address = 0x80001008;
-		prog_info[8].value = 4;
-		prog_info[9].address = 0x80001009;
-		prog_info[9].value = 2;
-		prog_info[10].address = 0x8000100a;
-		prog_info[10].value = 1;
-		prog_info[11].address = 0x8000100b;
-		prog_info[11].value = 8;
-		prog_info[12].address = 0x8000100c;
-		prog_info[12].value = 4;
-		prog_info[13].address = 0x8000100d;
-		prog_info[13].value = 0;
-		prog_info[14].address = 0x8000100e;
-		prog_info[14].value = 0;
-		prog_info[15].address = 0x8000100f;
-		prog_info[15].value = 0;
-		prog_info[16].address = 0x80001010;
-		prog_info[16].value = 0;
-		prog_info[17].address = 0x80001011;
-		prog_info[17].value = 0;
-		prog_info[18].address = 0x80001012;
-		prog_info[18].value = 0;
-		prog_info[19].address = 0x80001013;
-		prog_info[19].value = 0;
-		prog_info[20].address = 0x80001014;
-		prog_info[20].value = 0;
-		prog_info[21].address = 0x80001015;
-		prog_info[21].value = 0;
-		prog_info[22].address = 0x80001016;
-		prog_info[22].value = 0;
-		prog_info[23].address = 0x80001017;
-		prog_info[23].value = 0;
-		prog_info[24].address = 0x80001018;
-		prog_info[24].value = 0;
-		prog_info[25].address = 0x80001019;
-		prog_info[25].value = 0;
-		prog_info[26].address = 0x8000101a;
-		prog_info[26].value = 0;
-		prog_info[27].address = 0x8000101b;
-		prog_info[27].value = 0;
-		prog_info[28].address = 0x8000101c;
-		prog_info[28].value = 0;
-		prog_info[29].address = 0x8000101d;
-		prog_info[29].value = 0;
-		prog_info[30].address = 0x8000101e;
-		prog_info[30].value = 0;
-		prog_info[31].address = 0x8000101f;
-		prog_info[31].value = 0;
-		prog_info[32].address = 0x80001020;
-		prog_info[32].value = 0;
-		prog_info[33].address = 0x80001021;
-		prog_info[33].value = 0;
-		prog_info[34].address = 0x80001022;
-		prog_info[34].value = 0;
-		prog_info[35].address = 0x80001023;
-		prog_info[35].value = 0;
-		prog_info[36].address = 0x80001024;
-		prog_info[36].value = 0;
-		prog_info[37].address = 0x80001025;
-		prog_info[37].value = 0;
-		prog_info[38].address = 0x80001026;
-		prog_info[38].value = 0;
-		prog_info[39].address = 0x80001027;
-		prog_info[39].value = 0;
-		prog_info[40].address = 0x80001028;
-		prog_info[40].value = 0;
-		prog_info[41].address = 0x80001029;
-		prog_info[41].value = 0;
-		prog_info[42].address = 0x8000102a;
-		prog_info[42].value = 0;
-		prog_info[43].address = 0x8000102b;
-		prog_info[43].value = 0;
-		prog_info[44].address = 0x8000102c;
-		prog_info[44].value = 0;
-		prog_info[45].address = 0x8000102d;
-		prog_info[45].value = 0;
-		prog_info[46].address = 0x8000102e;
-		prog_info[46].value = 0;
-		prog_info[47].address = 0x8000102f;
-		prog_info[47].value = 0;
-		prog_info[48].address = 0x80001030;
-		prog_info[48].value = 0;
-		prog_info[49].address = 0x80001031;
-		prog_info[49].value = 0;
-		prog_info[50].address = 0x80001032;
-		prog_info[50].value = 0;
-		prog_info[51].address = 0x80001033;
-		prog_info[51].value = 0;
-		prog_info[52].address = 0x80001034;
-		prog_info[52].value = 0;
-		prog_info[53].address = 0x80001035;
-		prog_info[53].value = 0;
-		prog_info[54].address = 0x80001036;
-		prog_info[54].value = 0;
-		prog_info[55].address = 0x80001037;
-		prog_info[55].value = 0;
-		prog_info[56].address = 0x80001038;
-		prog_info[56].value = 0;
-		prog_info[57].address = 0x80001039;
-		prog_info[57].value = 0;
-		prog_info[58].address = 0x8000103a;
-		prog_info[58].value = 0;
-		prog_info[59].address = 0x8000103c;
-		prog_info[59].value = 0;
-		prog_info[60].address = 0x8000103d;
-		prog_info[60].value = 0;
-		prog_info[61].address = 0x8000103e;
-		prog_info[61].value = 0;
-		prog_info[62].address = 0x8000103f;
-		prog_info[62].value = 0;
-		prog_info[63].address = 0x80001040;
-		prog_info[63].value = 0;
-		prog_info[64].address = 0x80001041;
-		prog_info[64].value = metadata->num_vgprs;
-		prog_info[65].address = 0x80001042;
-		prog_info[65].value = metadata->num_sgprs;;
-		prog_info[66].address = 0x80001863;
-		prog_info[66].value = 0x66;
-		prog_info[67].address = 0x80001864;
-		prog_info[67].value = 0x100;
-		prog_info[68].address = 0x80001043;
-		prog_info[68].value = 0xc0;
-		prog_info[69].address = 0x80001044;
-		prog_info[69].value = 0;
-		prog_info[70].address = 0x80001045;
-		prog_info[70].value = 0;
-		prog_info[71].address = 0x00002e13;
-		prog_info[71].value = 0x98;
-		prog_info[72].address = 0x8000001c;
-		prog_info[72].value = 0x100;
-		prog_info[73].address = 0x8000001d;
-		prog_info[73].value = 0;
-		prog_info[74].address = 0x8000001e;
+		prog_info[0].value = list_count(inner_bin->user_element_list);
+		
+		/* AMU_ABI_USER_ELEMENTS (15 maximum) */
+		for (k = 0; k < 16; k++)
+		{
+			prog_info[(k * 4) + 1].address = 0x80001000 + (k * 4) + 1;
+			prog_info[(k * 4) + 2].address = 0x80001000 + (k * 4) + 2;
+			prog_info[(k * 4) + 3].address = 0x80001000 + (k * 4) + 3;
+			prog_info[(k * 4) + 4].address = 0x80001000 + (k * 4) + 4;
+			
+			if ((list_count(inner_bin->user_element_list) - 1) >= k)
+			{
+				user_elem = list_get(inner_bin->user_element_list, k);
+
+				prog_info[(k * 4) + 1].value = user_elem->dataClass;
+				prog_info[(k * 4) + 2].value = user_elem->apiSlot;
+				prog_info[(k * 4) + 3].value = user_elem->startUserReg;
+				prog_info[(k * 4) + 4].value = user_elem->userRegCount;
+		
+			}
+			else
+			{
+				prog_info[(k * 4) + 1].value = 0;
+				prog_info[(k * 4) + 2].value = 0;
+				prog_info[(k * 4) + 3].value = 0;
+				prog_info[(k * 4) + 4].value = 0;
+			}
+		}
+				
+		
+	
+		/* AMU_ABI_SI_NUM_VGPRS */
+		prog_info[65].address = 0x80001041;
+		prog_info[65].value = metadata->num_vgprs;
+		
+		/* AMU_ABI_SI_NUM_SGPRS */
+		prog_info[66].address = 0x80001042;	
+		prog_info[66].value = metadata->num_sgprs;;
+		
+		/* AMU_ABI_SI_NUM_SGPRS_AVAIL */
+		prog_info[67].address = 0x80001863;
+		prog_info[67].value = 0x66;
+
+		/* AMU_ABI_SI_NUM_VGPRS_ AVAIL */
+		prog_info[68].address = 0x80001864;
+		prog_info[68].value = 0x100;
+
+		/* AMU_ABI_SI_FLOAT_MODE */
+		prog_info[69].address = 0x80001043;
+		prog_info[69].value = inner_bin->FloatMode;
+
+		/* AU_ABI_SI_IEEE_MODE */
+		prog_info[70].address = 0x80001044;
+		prog_info[70].value = inner_bin->IeeeMode;
+
+		prog_info[71].address = 0x80001045;
+		prog_info[71].value = 0;
+		
+		/* COMPUTE_PGM_RSRC2 */
+		prog_info[72].address = 0x00002e13;
+		prog_info[72].value = inner_bin->pgm_rsrc2;
+
+		/* AMU_ABI_NUM_THREAD_PER_GROUP_X */
+		prog_info[73].address = 0x8000001c;
+		prog_info[73].value = 0x100;
+
+		prog_info[74].address = 0x8000001d;
 		prog_info[74].value = 0;
-		prog_info[75].address = 0x80001841;
+		prog_info[75].address = 0x8000001e;
 		prog_info[75].value = 0;
-		prog_info[76].address = 0x8000001f;
-		prog_info[76].value = 0x1c00;
-		prog_info[77].address = 0x80001843;
+		prog_info[76].address = 0x80001841;
+		prog_info[76].value = 0;
+		
+		/* AMU_ABI_RAT_OP_IS_USED */
+		prog_info[77].address = 0x8000001f;
 		prog_info[77].value = 0x1c00;
-		prog_info[78].address = 0x80001844;
-		prog_info[78].value = 0;
-		prog_info[79].address = 0x80001845;
+
+		/* AMU_ABI_UAV_RESOURCE_MASK_0 */
+		prog_info[78].address = 0x80001843;
+		prog_info[78].value = 0x1c00;
+		
+		prog_info[79].address = 0x80001844;
 		prog_info[79].value = 0;
-		prog_info[80].address = 0x80001846;
+		prog_info[80].address = 0x80001845;
 		prog_info[80].value = 0;
-		prog_info[81].address = 0x80001847;
+		prog_info[81].address = 0x80001846;
 		prog_info[81].value = 0;
-		prog_info[82].address = 0x80001848;
+		prog_info[82].address = 0x80001847;
 		prog_info[82].value = 0;
-		prog_info[83].address = 0x80001849;
+		prog_info[83].address = 0x80001848;
 		prog_info[83].value = 0;
-		prog_info[84].address = 0x8000184a;
+		prog_info[84].address = 0x80001849;
 		prog_info[84].value = 0;
-		prog_info[85].address = 0x8000184b;
+		prog_info[85].address = 0x8000184a;
 		prog_info[85].value = 0;
-		prog_info[86].address = 0x8000184c;
+		prog_info[86].address = 0x8000184b;
 		prog_info[86].value = 0;
-		prog_info[87].address = 0x8000184d;
+		prog_info[87].address = 0x8000184c;
 		prog_info[87].value = 0;
-		prog_info[88].address = 0x8000184e;
+		prog_info[88].address = 0x8000184d;
 		prog_info[88].value = 0;
-		prog_info[89].address = 0x8000184f;
+		prog_info[89].address = 0x8000184e;
 		prog_info[89].value = 0;
-		prog_info[90].address = 0x80001850;
+		prog_info[90].address = 0x8000184f;
 		prog_info[90].value = 0;
-		prog_info[91].address = 0x80001851;
+		prog_info[91].address = 0x80001850;
 		prog_info[91].value = 0;
-		prog_info[92].address = 0x80001852;
+		prog_info[92].address = 0x80001851;
 		prog_info[92].value = 0;
-		prog_info[93].address = 0x80001853;
+		prog_info[93].address = 0x80001852;
 		prog_info[93].value = 0;
-		prog_info[94].address = 0x80001854;
+		prog_info[94].address = 0x80001853;
 		prog_info[94].value = 0;
-		prog_info[95].address = 0x80001855;
+		prog_info[95].address = 0x80001854;
 		prog_info[95].value = 0;
-		prog_info[96].address = 0x80001856;
+		prog_info[96].address = 0x80001855;
 		prog_info[96].value = 0;
-		prog_info[97].address = 0x80001857;
+		prog_info[97].address = 0x80001856;
 		prog_info[97].value = 0;
-		prog_info[98].address = 0x80001858;
+		prog_info[98].address = 0x80001857;
 		prog_info[98].value = 0;
-		prog_info[99].address = 0x80001859;
+		prog_info[99].address = 0x80001858;
 		prog_info[99].value = 0;
-		prog_info[100].address = 0x8000185a;
+		prog_info[100].address = 0x80001859;
 		prog_info[100].value = 0;
-		prog_info[101].address = 0x8000185b;
+		prog_info[101].address = 0x8000185a;
 		prog_info[101].value = 0;
-		prog_info[102].address = 0x8000185c;
+		prog_info[102].address = 0x8000185b;
 		prog_info[102].value = 0;
-		prog_info[103].address = 0x8000185d;
+		prog_info[103].address = 0x8000185c;
 		prog_info[103].value = 0;
-		prog_info[104].address = 0x8000185e;
+		prog_info[104].address = 0x8000185d;
 		prog_info[104].value = 0;
-		prog_info[105].address = 0x8000185f;
+		prog_info[105].address = 0x8000185e;
 		prog_info[105].value = 0;
-		prog_info[106].address = 0x80001860;
+		prog_info[106].address = 0x8000185f;
 		prog_info[106].value = 0;
-		prog_info[107].address = 0x80001861;
+		prog_info[107].address = 0x80001860;
 		prog_info[107].value = 0;
-		prog_info[108].address = 0x80001862;
+		prog_info[108].address = 0x80001861;
 		prog_info[108].value = 0;
-		prog_info[109].address = 0x8000000a;
-		prog_info[109].value = 1;
-		prog_info[110].address = 0x80000078;
-		prog_info[110].value = 0x40;
-		prog_info[111].address = 0x80000081;
-		prog_info[111].value = 0x8000;
-		prog_info[112].address = 0x80000082;
-		prog_info[112].value = 0;
+		prog_info[109].address = 0x80001862;
+		prog_info[109].value = 0;
 
+		/* AMU_ABI_NUM_WAVEFRONT_PER_SIMD */
+		prog_info[110].address = 0x8000000a;
+		prog_info[110].value = 1;
+		
+		/* AMU_ABI_WAVEFRONT_SIZE - Set to 64*/
+		prog_info[111].address = 0x80000078;
+		prog_info[111].value = 0x40;
 
+		/* AMU_ABI_LDS_SIZE_AVAIL */
+		prog_info[112].address = 0x80000081;
+		prog_info[112].value = 0x8000;
+
+		/* AMU_ABI_LDS_SIZE_USED */
+		prog_info[113].address = 0x80000082;
+		prog_info[113].value = 0;
+
+		
 		note = si2bin_inner_bin_note_create(1, 912, prog_info);
 		si2bin_inner_bin_entry_add_note(entry, note);
 
@@ -734,13 +664,15 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		si2bin_inner_bin_generate(inner_bin, kernel_buffer);
 		
 		
-		f = file_open_for_write("kernel");
+		/* Output Kernel */
+		/* f = file_open_for_write("kernel");
 		elf_enc_buffer_write_to_file(kernel_buffer, f);
 		file_close(f);
+		*/
 
 
 
-		snprintf(line, sizeof line + 1, "__OpenCL_%s_kernel", inner_bin->name);
+		snprintf(line, sizeof line, "__OpenCL_%s_kernel", inner_bin->name);
 
 		kernel_symbol = elf_enc_symbol_create(line);
 		kernel_symbol->symbol.st_shndx = 5;

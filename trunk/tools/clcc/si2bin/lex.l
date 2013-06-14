@@ -79,6 +79,10 @@ extern long offset;
 	return TOK_STAR;
 }
 
+"=" {
+	return TOK_EQ;
+}
+
 s[0-9]+ {
 	si2bin_yylval.id = si2bin_id_create(yytext);
 	return TOK_SCALAR_REGISTER;
@@ -97,6 +101,11 @@ vcc|scc|exec {
 m[0-9]+ {
 	si2bin_yylval.id = si2bin_id_create(yytext);
 	return TOK_MEMORY_REGISTER;
+}
+
+uav[0-9]+ {
+	si2bin_yylval.id = si2bin_id_create(yytext);
+	return TOK_UAV;
 }
 
 "format" {

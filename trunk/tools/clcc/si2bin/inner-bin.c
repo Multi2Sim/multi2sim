@@ -174,50 +174,6 @@ void si2bin_inner_bin_entry_add_note(struct si2bin_inner_bin_entry_t *entry,
 }
 
 
-/*
- * Constant Buffer
- */
-
-struct si2bin_inner_bin_constant_buffer_t *si2bin_inner_bin_constant_buffer_create(int buff_num)
-{
-	struct si2bin_inner_bin_constant_buffer_t *cb;
-
-	/* Initialize */
-	cb = xcalloc(1, sizeof(struct si2bin_inner_bin_constant_buffer_t));
-	
-	cb->buffer_number = buff_num;
-
-	/* Return */
-	return cb;
-}
-
-void si2bin_inner_bin_constant_buffer_free(
-		struct si2bin_inner_bin_constant_buffer_t *cb)
-{
-	free(cb);
-}
-
-
-/*
- * UAV Table Pointer
- */
-
-struct si2bin_inner_bin_uav_table_pointer_t *si2bin_inner_bin_uav_table_pointer_create()
-{
- 	struct si2bin_inner_bin_uav_table_pointer_t *uav_ptr;
-
-	/* Initialize */
-	uav_ptr = xcalloc(1, sizeof(struct si2bin_inner_bin_uav_table_pointer_t));
-
-	/* Return */
-	return uav_ptr;
-}
-
-void si2bin_inner_bin_uav_table_pointer_free(
-		struct si2bin_inner_bin_uav_table_pointer_t * uav_ptr)
-{
-	free(uav_ptr);
-}
 
 
 /*
@@ -230,7 +186,6 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 	struct si2bin_inner_bin_t *bin;
 	struct elf_enc_buffer_t *buffer;
 	struct elf_enc_segment_t *segment;
-	struct si2bin_inner_bin_constant_buffer_t *cb;
 
 	/* Initialize */
 	bin = xcalloc(1, sizeof(struct si2bin_inner_bin_t));
@@ -249,19 +204,8 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 	/* Save kernel name */
 	bin->name = xstrdup(name);
 
-	/* Set up constant buffer list and uav ptr */
-	bin->cb_list = list_create();
-	cb = si2bin_inner_bin_constant_buffer_create(0);
-	list_add(bin->cb_list, cb);
-
-	cb = si2bin_inner_bin_constant_buffer_create(1);
-	list_add(bin->cb_list, cb);
-	
-	cb = si2bin_inner_bin_constant_buffer_create(2);
-	list_add(bin->cb_list, cb);
-	
-	bin->uav_ptr = si2bin_inner_bin_uav_table_pointer_create();
-
+	/* Set up user element list and program resource */
+	bin->user_element_list = list_create();
 
 	/* Return */
 	return bin;
@@ -270,7 +214,7 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 
 void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 {
-	struct si2bin_inner_bin_constant_buffer_t *cb;
+	struct si_bin_enc_user_element_t *user_elem;
 	int i;
 
 	/* Free list elements and list */
@@ -284,21 +228,25 @@ void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 	/* Free kernel name */
 	free(bin->name);
 
-	/* Free Constant Buffer List*/
-	LIST_FOR_EACH(bin->cb_list, i)
+	/* Free User Element List*/
+	LIST_FOR_EACH(bin->user_element_list, i)
 	{
-		cb = list_get(bin->cb_list, i);
-		si2bin_inner_bin_constant_buffer_free(cb);
+		user_elem = list_get(bin->user_element_list, i);
+		si_bin_enc_user_element_free(user_elem);
 	}
-	list_free(bin->cb_list);
+	list_free(bin->user_element_list);
 
-	/* Free UAV Table Pointer */
-	si2bin_inner_bin_uav_table_pointer_free(bin->uav_ptr);
+	/* Free Program Resource */
 
 	/* Free si2bin_inner_bin */
 	free(bin);
 }
 
+void si2bin_inner_bin_add_user_element(struct si2bin_inner_bin_t *bin, 
+		struct si_bin_enc_user_element_t *user_elem)
+{
+	list_add(bin->user_element_list, user_elem);
+}
 
 void si2bin_inner_bin_add_entry(struct si2bin_inner_bin_t *bin,
 		struct si2bin_inner_bin_entry_t *entry)

@@ -26,6 +26,8 @@
 /* Forward declaration */
 struct elf_enc_buffer_t;
 struct list_t;
+struct si_bin_compute_pgm_rsrc2_t;
+struct si_bin_enc_user_element_t;
 
 /*
  * Note in the PT_NOTE segment
@@ -103,34 +105,6 @@ void si2bin_inner_bin_entry_add_note(struct si2bin_inner_bin_entry_t *entry,
 		struct si2bin_inner_bin_note_t *note);
 
 
-/*
- * Constant Buffer
- */
-
-struct si2bin_inner_bin_constant_buffer_t
-{
-	int buffer_number;
-	int start_reg;
-	int end_reg;
-};
-
-struct si2bin_inner_bin_constant_buffer_t *si2bin_inner_bin_constant_buffer_create(int buff_num);
-void si2bin_inner_bin_constant_buffer_free(struct si2bin_inner_bin_constant_buffer_t *cb);
-
-
-/*
- * UAV Table Pointer
- */
-
-struct si2bin_inner_bin_uav_table_pointer_t
-{
-	int start_reg;
-	int end_reg;
-};
-
-struct si2bin_inner_bin_uav_table_pointer_t *si2bin_inner_bin_uav_table_pointer_create();
-void si2bin_inner_bin_uav_table_pointer_free(struct si2bin_inner_bin_uav_table_pointer_t *uav_ptr);
-
 
 /*
  * AMD Internal ELF
@@ -141,8 +115,17 @@ struct si2bin_inner_bin_t
 {
 	char *name;
 
-	struct list_t *cb_list;
-	struct si2bin_inner_bin_uav_table_pointer_t *uav_ptr;
+	/* Program Resource */
+	int pgm_rsrc2;
+	
+	/* Elements of type si_bin_enc_user_element_t */
+	struct list_t *user_element_list;
+
+	/* FloatMode */
+	int FloatMode;
+
+	/*IeeeMode */
+	int IeeeMode;
 
 	/* ELF file created internally.
 	 * Private field. */
@@ -155,6 +138,8 @@ struct si2bin_inner_bin_t
 
 struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name);
 void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin);
+void si2bin_inner_bin_add_user_element(struct si2bin_inner_bin_t *bin,
+		struct si_bin_enc_user_element_t *user_elem);
 
 void si2bin_inner_bin_add_entry(struct si2bin_inner_bin_t *bin, struct si2bin_inner_bin_entry_t *entry);
 void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_buffer_t *bin_buffer);
