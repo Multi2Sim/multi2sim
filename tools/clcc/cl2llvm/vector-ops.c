@@ -58,20 +58,25 @@ void expand_vectors(struct list_t *elem_list)
 
 				current_vec_elem = cl2llvm_val_create_w_init( LLVMBuildExtractElement(cl2llvm_builder, current_elem->val, cl2llvm_index->val, temp_var_name), current_elem->type->sign);
 				list_insert(elem_list, index + vec_index, current_vec_elem);
+			cl2llvm_val_free(cl2llvm_index);
 			}
+			cl2llvm_val_free(current_elem);
 			list_remove(elem_list, current_elem);
 		}
 	}
 }
 
-void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *string)
+void cl2llvm_get_vector_indices(struct cl2llvm_val_t *value, char *string)
 {
 	int i;
+	int boundary_error = 0;
+	int vector_size;
 	int s_prefix = 0;
 	int leng = strlen(string);
 	char error_message[50];
 	struct cl2llvm_val_t *index;
 
+	vector_size = LLVMGetVectorSize(LLVMGetElementType(value->type->llvm_type));
 	i = 0;
 
 	if (string[0] == 's' || string[0] == 'S')
@@ -99,7 +104,7 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if (!s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 0, 0);
-					indice_array[i] = index;
+					value->vector_indices[i] = index;
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -110,7 +115,7 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if (!s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 1, 0);
-					indice_array[i] = index;
+					value->vector_indices[i] = index;
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -122,7 +127,9 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if (!s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 2, 0);
-					indice_array[i] = index;
+					value->vector_indices[i] = index;
+					if(vector_size < 3)
+						boundary_error = 1;
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -133,7 +140,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if (!s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 3, 0);
-					indice_array[i] = index;
+					value->vector_indices[i] = index;
+					if(vector_size < 4)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -144,7 +154,7 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 0, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -155,7 +165,7 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 1, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -166,7 +176,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 2, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 3)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -177,7 +190,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 3, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 4)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -188,7 +204,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 4, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 5)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -198,7 +217,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 5, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 6)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -209,7 +231,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 6, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 7)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -220,7 +245,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 7, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 8)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -231,7 +259,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 8, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 9)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -242,7 +273,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 9, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 10)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -254,7 +288,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 10, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 11)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -266,7 +303,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 11, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 12)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index");
@@ -277,7 +317,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 12, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 13)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -289,7 +332,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 13, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 14)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -301,7 +347,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 14, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 15)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -313,7 +362,10 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				if(s_prefix)
 				{
 					index->val = LLVMConstInt(LLVMInt32Type(), 15, 0);
-					indice_array[i-1] = index;
+					value->vector_indices[i-1] = index;
+					if(vector_size < 16)
+						boundary_error = 1;
+
 				}
 				else
 					cl2llvm_yyerror("Invalid syntax for vector index (may not combine"
@@ -327,40 +379,235 @@ void cl2llvm_get_vector_indices(struct cl2llvm_val_t **indice_array, char *strin
 				
 		}
 	}
+	if (boundary_error)
+		cl2llvm_yyerror("Component reference is outside boundary of vector");
 	if (!s_prefix)
-		indice_array[i] = NULL;
+		value->vector_indices[i] = NULL;
 	else
-		indice_array[i-1] = NULL;
+		value->vector_indices[i-1] = NULL;
 }
 
-/*void cl2llvm_build_component_wise_assignment(struct cl2llvm_val_t *lvalue, 
-	struct cl2llvm_val_t *rvalue);
+struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val_t *lvalue_addr, 
+	struct cl2llvm_val_t *rvalue)
 {
+	int component_count = 0;
+	int i;
+	struct cl2llvm_type_t *component_type;
+	struct cl2llvm_val_t *lvalue;
+	struct cl2llvm_val_t *new_lvalue;
+	struct cl2llvm_val_t *cast_rvalue;
+	LLVMValueRef llvm_index;
+	LLVMValueRef component;
+	LLVMValueRef new_lvalue_val;
+	
 	snprintf(temp_var_name, sizeof(temp_var_name),
 		"tmp%d", temp_var_count++);
 
-	LLVMBuildLoad(cl2llvm_builder, lvalue->val, temp_var_name);
+	/* Load vector */
+	lvalue = cl2llvm_val_create_w_init(LLVMBuildLoad(cl2llvm_builder, lvalue_addr->val,
+		temp_var_name), lvalue_addr->type->sign);
 	
-	Get number of components 
-	while(lvalue->component_indices)
+	new_lvalue_val = lvalue->val;
+	
+	/* Create object to  represent component type of lvalue. */
+	component_type = cl2llvm_type_create_w_init(LLVMGetElementType(lvalue->type->llvm_type), 
+		lvalue->type->sign);
+	
+	/* Get number of components referenced by lvalue. */
+	while(lvalue_addr->vector_indices[component_count])
 		component_count++;
 	
-	 Check that none of the vector's components are referenced twice 
-	cl2llvm_no_repeated_component_references(lvalue);
+	
+	/* Check that none of the vector's components are referenced twice */
+	cl2llvm_no_repeated_component_references(lvalue_addr);
 
-	if (LLVMGetTypeKind(LLVMTypeOf(rvalue)) == LLVMVectorTypeKind)
+	/* If rvalue is a vector */
+	if (LLVMGetTypeKind(rvalue->type->llvm_type) == LLVMVectorTypeKind)
 	{
-		
+		/* Check that element type of rvalue vector matches element type of 
+		lvalue vector */
+		if (LLVMGetElementType(rvalue->type->llvm_type) != LLVMGetElementType(lvalue->type->llvm_type))
+			cl2llvm_yyerror("Type mis-match. (casts between vector types are forbidden)");
+
+		/* Check that size of vector matches number of components specified 
+		in lvalue. */
+		if (LLVMGetVectorSize(rvalue->type->llvm_type) != component_count)
+			cl2llvm_yyerror("Size of vector does not match number of components specified in lvalue.");
+
+		/* Extract each component from rvalue and assign it to the specified
+		component of the lvalue. */
+
+		for (i = 0; i < component_count; i++)
+		{
+			snprintf(temp_var_name, sizeof(temp_var_name),
+				"tmp%d", temp_var_count++);
+
+			llvm_index = LLVMConstInt(LLVMInt32Type(), i, 0);
+
+			/* Extract component from rvalue */
+			component = LLVMBuildExtractElement(cl2llvm_builder, rvalue->val, llvm_index, temp_var_name);
+
+			snprintf(temp_var_name, sizeof(temp_var_name),
+				"tmp%d", temp_var_count++);
+
+			/* Insert component into lvalue */
+			new_lvalue_val = LLVMBuildInsertElement(cl2llvm_builder, new_lvalue_val, 
+				component, lvalue_addr->vector_indices[i]->val, temp_var_name);
+		}
 	}
+
+	/* If rvalue is a scalar, assign this value to every specified component of the lavlue */
+	else
+	{
+		cast_rvalue = llvm_type_cast(rvalue, component_type);
+	
+		for (i = 0; i < component_count; i++)
+		{
+			snprintf(temp_var_name, sizeof(temp_var_name),
+				"tmp%d", temp_var_count++);
+
+			/* Insert component into lvalue */
+			new_lvalue_val = LLVMBuildInsertElement(cl2llvm_builder, new_lvalue_val, 
+				cast_rvalue->val, lvalue_addr->vector_indices[i]->val, temp_var_name);
+			
+		}
+		cl2llvm_val_free(cast_rvalue);
+	}
+
+	new_lvalue = cl2llvm_val_create_w_init(new_lvalue_val, component_type->sign);
+
+	/* Free pointers */
+	cl2llvm_type_free(component_type);
+
+	return new_lvalue;
 }
 
 
 void cl2llvm_no_repeated_component_references(struct cl2llvm_val_t *lvalue)
 {
+	int index_0 = 0, index_1 = 0, index_2 = 0, index_3 = 0, index_4 = 0, 
+		index_5 = 0, index_6 = 0,  index_7 = 0, index_8 = 0, index_9 = 0, 
+		index_10 = 0, index_11 = 0, index_12 = 0, index_13 = 0, 
+		index_14 = 0, index_15 = 0;
+	int error = 0;
 	int i = 0;
 
-	while(lvalue->component_indices[i])
+	while(lvalue->vector_indices[i])
 	{
-		if(component_indices[i]->val == LLVMConstInt(LLVMInt
+		if(lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 0, 0))
+		{
+			if(!index_0)
+				index_0 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 1, 0))
+		{
+			if(!index_1)
+				index_1 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 2, 0))
+		{
+			if(!index_2)
+				index_2 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 3, 0))
+		{
+			if(!index_3)
+				index_3 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 4, 0))
+		{
+			if(!index_4)
+				index_4 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 5, 0))
+		{
+			if(!index_5)
+				index_5 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 6, 0))
+		{
+			if(!index_6)
+				index_6 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 7, 0))
+		{
+			if(!index_7)
+				index_7 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 8, 0))
+		{
+			if(!index_8)
+				index_8 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 9, 0))
+		{
+			if(!index_9)
+				index_9 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 10, 0))
+		{
+			if(!index_10)
+				index_10 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 11, 0))
+		{
+			if(!index_11)
+				index_11 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 12, 0))
+		{
+			if(!index_12)
+				index_12 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 13, 0))
+		{
+			if(!index_13)
+				index_13 = 1;
+			else
+				error = 1;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 14, 0))
+		{
+			if(!index_14)
+				index_14 = 1;
+			else
+				error = 14;
+		}
+		else if (lvalue->vector_indices[i]->val == LLVMConstInt(LLVMInt32Type(), 15, 0))
+		{
+			if(!index_15)
+				index_15 = 1;
+			else
+				error = 1;
+		}
+		i++;
+		if (error)
+			cl2llvm_yyerror("Invalid lvalue. (May not reference the same vector component twice in an lvalue)");
 	}
-}*/
+}
