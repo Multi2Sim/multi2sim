@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <arch/southern-islands/asm/arg.h>
+#include <arch/southern-islands/asm/bin-file.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
 #include <lib/util/hash-table.h>
@@ -48,7 +49,7 @@
 
 /* 'si2bin_inner_bin' and 'si2bin_inner_bin_entry' pointing to the current internal
  * binary that is set every time a new .global section is found. */
-
+struct si_arg_t *arg;
 
 %}
 
@@ -89,6 +90,8 @@
 %token TOK_ABS
 %token TOK_NEG
 %token TOK_STAR
+%token TOK_EQ
+%token<id>  TOK_UAV
 %token TOK_GLOBAL
 %token TOK_MEM
 %token TOK_ARGS
@@ -131,8 +134,9 @@ section
 	| args_section
 	| text_section
 	{
-		si2bin_metadata->num_sgprs = si2bin_num_sgprs;
-		si2bin_metadata->num_sgprs = si2bin_num_vgprs;
+		si2bin_metadata->num_sgprs = si2bin_num_sgprs + 1;
+		si2bin_metadata->num_vgprs = si2bin_num_vgprs + 1;
+
 	}	
 	;
 
@@ -174,44 +178,8 @@ mem_stmt_list
 ;
 
 mem_stmt
-	: TOK_ID TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA TOK_NEW_LINE 
-	{
-		struct si2bin_id_t *id = $1;
-		struct si2bin_inner_bin_constant_buffer_t *cb;
-
-		
-		if (!strcmp(id->name, "uav"))
-		{
-			si2bin_inner_bin->uav_ptr->start_reg = $4;
-			si2bin_inner_bin->uav_ptr->end_reg = $6;
-		}
-		else if (!strcmp(id->name, "cb0"))
-		{
-			cb = list_get(si2bin_inner_bin->cb_list, 0);
-			assert(cb);
-			cb->start_reg = $4;
-			cb->end_reg = $6;
-		}
-		else if (!strcmp(id->name, "cb1"))
-		{
-			cb = list_get(si2bin_inner_bin->cb_list, 1);
-			assert(cb);
-			cb->start_reg = $4;
-			cb->end_reg = $6;
-		}
-		else if (!strcmp(id->name, "cb2"))
-		{
-			cb = list_get(si2bin_inner_bin->cb_list, 2);
-			assert(cb);
-			cb->start_reg = $4;
-			cb->end_reg = $6;
-		}
-
-		si2bin_id_free(id);
-		si2bin_id_free($2);
-	}
-
-;
+	: TOK_NEW_LINE 
+	;
 
 data_section
 	: data_header
@@ -228,7 +196,76 @@ data_stmt_list
 ;
 
 data_stmt
-	: TOK_NEW_LINE
+	: TOK_ID TOK_EQ TOK_DECIMAL TOK_NEW_LINE
+	{
+		if (!strcmp("userElementCount", $1->name))
+		{
+		}
+		else if (!strcmp("NumVgprs", $1->name))
+		{
+		}
+		else if (!strcmp("NumSgprs", $1->name))
+		{
+		}
+		else if (!strcmp("FloatMode", $1->name))
+		{
+			si2bin_inner_bin->FloatMode = $3;
+		}
+		else if (!strcmp("IeeeMode", $1->name))
+		{	
+			si2bin_inner_bin->IeeeMode = $3;
+		}
+		else
+		{
+			fatal("Unrecognized assignment");
+		}
+
+		si2bin_id_free($1);
+	}
+	| TOK_ID TOK_EQ TOK_HEX TOK_NEW_LINE
+	{
+		if (!strcmp("COMPUTE_PGM_RSRC2", $1->name))
+		{
+			int pgm_rsrc2;
+			
+			sscanf($3->name, "%x", &pgm_rsrc2);
+			si2bin_inner_bin->pgm_rsrc2 = pgm_rsrc2;
+
+			si2bin_id_free($1);
+			si2bin_id_free($3);
+
+		}
+	}
+	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_EQ TOK_ID TOK_COMMA TOK_DECIMAL TOK_COMMA TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA TOK_NEW_LINE
+	{
+		struct si_bin_enc_user_element_t *user_elem;
+		int data_class;
+
+
+		if (strcmp("userElements", $1->name))
+			fatal("User Elements not correctly specified: %s", $1->name);
+		
+		data_class = str_map_string(&si_bin_user_data_class, $6->name);
+
+		user_elem = si_bin_enc_user_element_create();
+		user_elem->dataClass = data_class;
+		user_elem->apiSlot = $8;
+		user_elem->startUserReg = $12;
+		user_elem->userRegCount = $14 - $12 + 1;
+		
+		si2bin_inner_bin_add_user_element(si2bin_inner_bin, user_elem);
+
+		si2bin_id_free($1);
+		si2bin_id_free($6);
+		si2bin_id_free($10);
+
+	}
+	| TOK_ID TOK_COLON TOK_ID TOK_EQ TOK_DECIMAL TOK_NEW_LINE
+	{
+		/* Added to accept COMPUTE_PGM_RSRC2:USER_SGPR */
+		si2bin_id_free($1);
+		si2bin_id_free($3);
+	}
 
 
 args_section
@@ -238,6 +275,9 @@ args_section
 
 args_header
 	: TOK_ARGS TOK_NEW_LINE
+	{
+		arg = NULL;
+	}
 	;
 
 args_stmt_list
@@ -247,85 +287,66 @@ args_stmt_list
 
 
 args_stmt
-	: TOK_ID TOK_DECIMAL TOK_NEW_LINE
+	: TOK_ID TOK_ID TOK_DECIMAL TOK_NEW_LINE
 	{
-		struct si2bin_id_t *id;
-		struct si_arg_t *arg;
 		int data_type;
 
-		id = $1;
-
-		data_type = str_map_string(&si_arg_data_type_map, id->name);
+		data_type = str_map_string(&si_arg_data_type_map, $1->name);
 		arg = si_arg_create(si_arg_value, "arg");
 		arg->value.data_type = data_type;
 		arg->value.num_elems = 1;
 		arg->value.constant_buffer_num = 1;
-		arg->value.constant_offset = $2;
+		arg->value.constant_offset = $3;
 		
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 
-		si2bin_id_free(id);
+		arg = NULL;
+		si2bin_id_free($1);
+		si2bin_id_free($2);
 	}
-	| TOK_ID TOK_STAR TOK_DECIMAL TOK_NEW_LINE
+	
+	| TOK_ID TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list TOK_NEW_LINE
 	{
-		struct si2bin_id_t *id;
-		struct si_arg_t *arg;
 		int data_type;
 
-		id = $1;
+		data_type = str_map_string(&si_arg_data_type_map, $1->name);
 
-		data_type = str_map_string(&si_arg_data_type_map, id->name);
-		arg = si_arg_create(si_arg_pointer, "arg");
+		if(!arg)
+		{
+			arg = si_arg_create(si_arg_pointer, $3->name);
+		}
+		else
+		{
+			si_arg_name_set(arg, $3->name);
+		}
+		
 		arg->pointer.data_type = data_type;
 		arg->pointer.constant_buffer_num = 1;
-		arg->pointer.constant_offset = $3;
-		arg->pointer.scope = si_arg_uav;
-		arg->pointer.buffer_num = 12;
-		arg->pointer.access_type = si_arg_read_write;
-		
+		arg->pointer.constant_offset = $4;
+
+		/* Set Defaults */
+		if (!arg->pointer.scope)
+		{
+			arg->pointer.scope = str_map_string(&si_arg_scope_map, "uav");
+			arg->pointer.buffer_num = 12;
+		}
+
+		if (!arg->pointer.access_type)
+			arg->pointer.access_type = str_map_string(&si_arg_access_type_map, "RW");
+
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 
-		si2bin_id_free(id);
-	}
-	| TOK_ID TOK_STAR TOK_DECIMAL TOK_ID TOK_DECIMAL TOK_ID TOK_NEW_LINE
-	{
-		struct si2bin_id_t *id;
-		struct si_arg_t *arg;
-		int data_type;
-		int scope;
-		int access_type;
-
-		id = $1;
-
-		data_type = str_map_string(&si_arg_data_type_map, id->name);
-		scope = str_map_string(&si_arg_scope_map, $4->name);
-		access_type = str_map_string(&si_arg_access_type_map, $6->name);
-
-
-		arg = si_arg_create(si_arg_pointer, "arg");
-		arg->pointer.data_type = data_type;
-		arg->pointer.constant_buffer_num = 1;
-		arg->pointer.constant_offset = $3;
-		arg->pointer.scope = scope;
-		arg->pointer.buffer_num = $5;
-		arg->pointer.access_type = access_type;
 		
-		si2bin_metadata_add_arg(si2bin_metadata, arg);
-
-		si2bin_id_free(id);
-		si2bin_id_free($4);
-		si2bin_id_free($6);
+		arg = NULL;
+		si2bin_id_free($1);
+		si2bin_id_free($3);
 	}
 
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
 	{
-		struct si2bin_id_t *id;
-		struct si_arg_t *arg;
 		int data_type;
 
-		id = $1;
-
-		data_type = str_map_string(&si_arg_data_type_map, id->name);
+		data_type = str_map_string(&si_arg_data_type_map, $1->name);
 		arg = si_arg_create(si_arg_value, "arg");
 		arg->value.data_type = data_type;
 		arg->value.num_elems = $3;
@@ -334,8 +355,48 @@ args_stmt
 		
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 
-		si2bin_id_free(id);
+		si2bin_id_free($1);
 	}
+
+ptr_stmt_list
+	: ptr_stmt
+	| ptr_stmt ptr_stmt_list
+	;
+
+ptr_stmt 
+	: scope
+	| TOK_ID
+	{
+		int access_type;
+		
+		access_type = str_map_string(&si_arg_access_type_map, $1->name);
+		
+		if (!arg)
+			arg = si_arg_create(si_arg_pointer, "arg");
+
+		arg->pointer.access_type = access_type;
+		
+		si2bin_id_free($1);
+	}
+	;
+
+scope
+	: TOK_UAV
+	{
+		int scope;
+		
+		scope = str_map_string(&si_arg_scope_map, "uav");	
+		
+		if (!arg)
+			arg = si_arg_create(si_arg_pointer, "arg");
+		
+		arg->pointer.scope = scope;
+		arg->pointer.buffer_num = atoi($1->name + 3);
+
+		si2bin_id_free($1);
+
+	}
+	;
 
 text_section
 	: text_header
@@ -361,7 +422,9 @@ text_stmt
 		/* Generate code */
 		si2bin_inst_gen(inst);
 		elf_enc_buffer_write(si2bin_entry->text_section_buffer, inst->inst_bytes.bytes, inst->size);
-		si2bin_inst_dump(inst, stdout);
+		
+		/* Dump Instruction Info */
+		/* si2bin_inst_dump(inst, stdout); */
 		si2bin_inst_free(inst);
 	}
 ;

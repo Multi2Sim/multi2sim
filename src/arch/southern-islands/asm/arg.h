@@ -144,9 +144,12 @@ struct si_arg_t
 	};
 };
 
+
 struct si_arg_t *si_arg_create(enum si_arg_type_t type,
 		char *name);
 void si_arg_free(struct si_arg_t *arg);
+
+void si_arg_name_set(struct si_arg_t *arg, char *name);
 
 int si_arg_get_data_size(enum si_arg_data_type_t data_type);
 
