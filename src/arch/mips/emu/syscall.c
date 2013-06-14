@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/arch.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -239,10 +240,10 @@ void mips_sys_call(struct mips_ctx_t *ctx)
 	mips_sys_call_freq[code]++;
 
 	/* Debug */
-	mips_sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
+	mips_sys_debug("'%s' (code %d, inst %lld, pid %d)\n",
 		mips_sys_call_name[code], code, mips_emu->inst_count, ctx->pid);
 	mips_isa_call_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
-		mips_sys_call_name[code], code, mips_emu->inst_count, ctx->pid);
+		mips_sys_call_name[code], code, arch_mips->inst_count, ctx->pid);
 
 	/* Perform system call */
 	err = mips_sys_call_func[code](ctx);
@@ -1166,12 +1167,49 @@ static int mips_sys_set_thread_area_impl(struct mips_ctx_t *ctx)
 
 	unsigned int uinfo_ptr;
 
+//	struct sim_user_desc uinfo;
 	/* Arguments */
 	uinfo_ptr = regs->regs_R[4];
 	mips_sys_debug("  uinfo_ptr=0x%x\n", uinfo_ptr);
 
 	regs->regs_cop0[29] = uinfo_ptr;
+	regs->regs_R[7] = 0;
 
+	/* Read structure */
+/*		mem_read(mem, uinfo_ptr, sizeof uinfo, &uinfo);
+		mips_sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
+			uinfo.entry_number, uinfo.base_addr, uinfo.limit);
+		mips_sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
+			uinfo.seg_32bit, uinfo.contents, uinfo.read_exec_only);
+		mips_sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
+			uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
+		if (!uinfo.seg_32bit)
+			fatal("syscall set_thread_area: only 32-bit segments supported");
+*/
+		/* Limit given in pages (4KB units) */
+/*		if (uinfo.limit_in_pages)
+			uinfo.limit <<= 12;
+
+		if (uinfo.entry_number == -1)
+			{
+				if (ctx->glibc_segment_base)
+					fatal("%s: glibc segment already set", __FUNCTION__);
+
+				ctx->glibc_segment_base = uinfo.base_addr;
+				ctx->glibc_segment_limit = uinfo.limit;
+				uinfo.entry_number = 6;
+				mem_write(mem, uinfo_ptr, 4, &uinfo.entry_number);
+			}
+			else
+			{
+				if (uinfo.entry_number != 6)
+					fatal("%s: invalid entry number", __FUNCTION__);
+				if (!ctx->glibc_segment_base)
+					fatal("%s: glibc segment not set", __FUNCTION__);
+				ctx->glibc_segment_base = uinfo.base_addr;
+				ctx->glibc_segment_limit = uinfo.limit;
+			}
+*/
 	/* Return */
 	return 0;
 }
