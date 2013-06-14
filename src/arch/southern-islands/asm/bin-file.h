@@ -27,6 +27,7 @@
  * Global Variables
  */
 extern struct str_map_t pt_note_type_map;
+extern struct str_map_t si_bin_user_data_class;
 
 /*
  * Southern Islands Binary File
@@ -128,6 +129,10 @@ struct si_bin_enc_user_element_t
 	unsigned int userRegCount;
 };
 
+struct si_bin_enc_user_element_t *si_bin_enc_user_element_create();
+void si_bin_enc_user_element_free(struct si_bin_enc_user_element_t *user_elem);
+
+
 /* COMPUTE_PGM_RSRC2 */
 struct si_bin_compute_pgm_rsrc2_t
 {
@@ -144,6 +149,7 @@ struct si_bin_compute_pgm_rsrc2_t
 	unsigned int excp_en 		: 7;
 	unsigned int 			: 1;
 };
+
 
 /* Encoding dictionary entry */
 struct si_bin_enc_dict_entry_t
