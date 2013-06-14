@@ -96,6 +96,7 @@ void net_buffer_dump_report(struct net_buffer_t *buffer, FILE *f)
 	net_buffer_update_occupancy(buffer);
 
 	/* Report */
+	fprintf(f, "%s.Size = %d \n", buffer->name, buffer->size);
 	fprintf(f, "%s.MessageOccupancy = %.2f\n", buffer->name, cycle ?
 		(double) buffer->occupancy_msgs_acc / cycle : 0.0);
 	fprintf(f, "%s.ByteOccupancy = %.2f\n", buffer->name, cycle ?

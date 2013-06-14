@@ -38,9 +38,9 @@
  */
 
 struct net_node_t *net_node_create(struct net_t *net,
-	enum net_node_kind_t kind, int index,
-	int input_buffer_size, int output_buffer_size,
-	int bandwidth, char *name, void *user_data)
+		enum net_node_kind_t kind, int index,
+		int input_buffer_size, int output_buffer_size,
+		int bandwidth, char *name, void *user_data)
 {
 	struct net_node_t *node;
 
@@ -58,7 +58,7 @@ struct net_node_t *net_node_create(struct net_t *net,
 		panic("%s: invalid bandwidth", __FUNCTION__);
 	if (net_get_node_by_name(net, name))
 		fatal("%s: duplicated node name.\n%s", net->name,
-			net_err_node_name_duplicate);
+				net_err_node_name_duplicate);
 
 	/* Lists of ports */
 	node->output_buffer_list = list_create_with_size(4);
@@ -108,9 +108,9 @@ void net_node_dump(struct net_node_t *node, FILE *f)
 {
 	fprintf(f, "\tName = %s\n", node->name);
 	fprintf(f, "\tNumber of input buffers = %d\n",
-		list_count(node->input_buffer_list));
+			list_count(node->input_buffer_list));
 	fprintf(f, "\tNumber of output buffers = %d\n",
-		list_count(node->output_buffer_list));
+			list_count(node->output_buffer_list));
 }
 
 
@@ -127,35 +127,45 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 	/* General */
 	fprintf(f, "[ Network.%s.Node.%s ]\n", net->name, node->name);
 
-	/* Configuration */
-	fprintf(f, "Config.InputBufferSize = %d\n", node->input_buffer_size);
-	fprintf(f, "Config.OutputBufferSize = %d\n",
-		node->output_buffer_size);
-	if (node->kind != net_node_end)
-		fprintf(f, "Config.BandWidth = %d\n", node->bandwidth);
-
 	/* Statistics */
-	fprintf(f, "SentMessages = %lld\n", node->msgs_sent);
-	fprintf(f, "SentBytes = %lld\n", node->bytes_sent);
-	fprintf(f, "SendRate = %.4f\n", cycle ?
-		(double) node->bytes_sent / cycle : 0.0);
-	fprintf(f, "ReceivedMessages = %lld\n", node->msgs_received);
-	fprintf(f, "ReceivedBytes = %lld\n", node->bytes_received);
-	fprintf(f, "ReceiveRate = %.4f\n", cycle ?
-		(double) node->bytes_received / cycle : 0.0);
-
-	/* Input buffers */
-	for (i = 0; i < list_count(node->input_buffer_list); i++)
+	if (node->kind != net_node_bus)
 	{
-		buffer = list_get(node->input_buffer_list, i);
-		net_buffer_dump_report(buffer, f);
+		/* Configuration */
+		if (node->kind != net_node_end)
+			fprintf(f, "Config.BandWidth = %d\n", node->bandwidth);
+
+		fprintf(f, "SentMessages = %lld\n", node->msgs_sent);
+		fprintf(f, "SentBytes = %lld\n", node->bytes_sent);
+		fprintf(f, "SendRate = %.4f\n", cycle ?
+				(double) node->bytes_sent / cycle : 0.0);
+		fprintf(f, "ReceivedMessages = %lld\n", node->msgs_received);
+		fprintf(f, "ReceivedBytes = %lld\n", node->bytes_received);
+		fprintf(f, "ReceiveRate = %.4f\n", cycle ?
+				(double) node->bytes_received / cycle : 0.0);
+
+		/* Input buffers */
+		for (i = 0; i < list_count(node->input_buffer_list); i++)
+		{
+			buffer = list_get(node->input_buffer_list, i);
+			net_buffer_dump_report(buffer, f);
+		}
+
+		/* Output buffers */
+		for (i = 0; i < list_count(node->output_buffer_list); i++)
+		{
+			buffer = list_get(node->output_buffer_list, i);
+			net_buffer_dump_report(buffer, f);
+		}
 	}
-
-	/* Output buffers */
-	for (i = 0; i < list_count(node->output_buffer_list); i++)
+	else if (node->kind == net_node_bus)
 	{
-		buffer = list_get(node->output_buffer_list, i);
-		net_buffer_dump_report(buffer, f);
+		struct net_bus_t * bus;
+		for (i = 0; i < list_count(node->bus_lane_list); i++)
+		{
+			bus = list_get(node->bus_lane_list, i);
+			fprintf(f,"BUS Lane %d :\n", i);
+			net_bus_dump_report(bus, f);
+		}
 	}
 
 	/* Finish */
@@ -164,13 +174,13 @@ void net_node_dump_report(struct net_node_t *node, FILE *f)
 
 
 struct net_buffer_t *net_node_add_input_buffer(struct net_node_t *node,
-	int bandwidth)
+		int bandwidth)
 {
 	struct net_buffer_t *buffer;
 	char name[MAX_STRING_SIZE];
 
 	snprintf(name, sizeof(name), "in_buf_%d",
-		list_count(node->input_buffer_list));
+			list_count(node->input_buffer_list));
 	buffer = net_buffer_create(node->net, node, bandwidth, name);
 	buffer->index = list_count(node->input_buffer_list);
 	list_add(node->input_buffer_list, buffer);
