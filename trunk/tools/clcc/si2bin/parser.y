@@ -46,11 +46,6 @@
 
 #define YYERROR_VERBOSE
 
-
-/* 'si2bin_inner_bin' and 'si2bin_inner_bin_entry' pointing to the current internal
- * binary that is set every time a new .global section is found. */
-struct si_arg_t *arg;
-
 %}
 
 
@@ -62,6 +57,7 @@ struct si_arg_t *arg;
 	struct si_label_t *label;
 	struct list_t *list;
 	struct si2bin_arg_t *arg;
+	struct si_arg_t *si_arg;
 }
 
  
@@ -105,6 +101,7 @@ struct si_arg_t *arg;
 %type<arg> maddr_qual
 %type<arg> waitcnt_elem
 %type<arg> waitcnt_arg
+%type<si_arg> ptr_stmt_list
 
 %%
 
@@ -275,9 +272,6 @@ args_section
 
 args_header
 	: TOK_ARGS TOK_NEW_LINE
-	{
-		arg = NULL;
-	}
 	;
 
 args_stmt_list
@@ -289,10 +283,11 @@ args_stmt_list
 args_stmt
 	: TOK_ID TOK_ID TOK_DECIMAL TOK_NEW_LINE
 	{
+		struct si_arg_t *arg;
 		int data_type;
 
 		data_type = str_map_string(&si_arg_data_type_map, $1->name);
-		arg = si_arg_create(si_arg_value, "arg");
+		arg = si_arg_create(si_arg_value, $2->name);
 		arg->value.data_type = data_type;
 		arg->value.num_elems = 1;
 		arg->value.constant_buffer_num = 1;
@@ -300,50 +295,42 @@ args_stmt
 		
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 
-		arg = NULL;
 		si2bin_id_free($1);
 		si2bin_id_free($2);
 	}
 	
 	| TOK_ID TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list TOK_NEW_LINE
 	{
-		int data_type;
+		struct si_arg_t *arg = $5;
 
-		data_type = str_map_string(&si_arg_data_type_map, $1->name);
-
-		if(!arg)
-		{
-			arg = si_arg_create(si_arg_pointer, $3->name);
-		}
-		else
-		{
-			si_arg_name_set(arg, $3->name);
-		}
+		/* Set new argument name */
+		si_arg_name_set(arg, $3->name);
 		
-		arg->pointer.data_type = data_type;
+		/* Initialize argument */
+		arg->pointer.data_type = str_map_string(&si_arg_data_type_map, $1->name);
 		arg->pointer.constant_buffer_num = 1;
 		arg->pointer.constant_offset = $4;
 
-		/* Set Defaults */
+		/* If UAV is not specified, default to 12 */
 		if (!arg->pointer.scope)
 		{
-			arg->pointer.scope = str_map_string(&si_arg_scope_map, "uav");
+			arg->pointer.scope = si_arg_uav;
 			arg->pointer.buffer_num = 12;
 		}
 
+		/* If access type not specified, default to RW */
 		if (!arg->pointer.access_type)
 			arg->pointer.access_type = str_map_string(&si_arg_access_type_map, "RW");
 
+		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
-
-		
-		arg = NULL;
 		si2bin_id_free($1);
 		si2bin_id_free($3);
 	}
 
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
 	{
+		struct si_arg_t *arg;
 		int data_type;
 
 		data_type = str_map_string(&si_arg_data_type_map, $1->name);
@@ -354,47 +341,44 @@ args_stmt
 		arg->value.constant_offset = $5;
 		
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
-
 		si2bin_id_free($1);
 	}
 
 ptr_stmt_list
-	: ptr_stmt
-	| ptr_stmt ptr_stmt_list
-	;
-
-ptr_stmt 
-	: scope
-	| TOK_ID
+	:
 	{
-		int access_type;
-		
-		access_type = str_map_string(&si_arg_access_type_map, $1->name);
-		
-		if (!arg)
-			arg = si_arg_create(si_arg_pointer, "arg");
+		struct si_arg_t *arg;
 
-		arg->pointer.access_type = access_type;
-		
-		si2bin_id_free($1);
+		/* Create an argument */
+		arg = si_arg_create(si_arg_pointer, "arg");
+		$$ = arg;
 	}
-	;
-
-scope
-	: TOK_UAV
+	| ptr_stmt_list TOK_ID
 	{
-		int scope;
-		
-		scope = str_map_string(&si_arg_scope_map, "uav");	
-		
-		if (!arg)
-			arg = si_arg_create(si_arg_pointer, "arg");
-		
-		arg->pointer.scope = scope;
-		arg->pointer.buffer_num = atoi($1->name + 3);
+		struct si_arg_t *arg = $1;
+		struct si2bin_id_t *id = $2;
 
-		si2bin_id_free($1);
+		/* Translate access type */
+		arg->pointer.access_type = str_map_string(&si_arg_access_type_map, arg->name);
+		if (!arg->pointer.access_type)
+			si2bin_yyerror_fmt("%s: invalid access type", id->name);
 
+		/* Free ID and return argument */
+		si2bin_id_free(id);
+		$$ = arg;
+	}
+	| ptr_stmt_list TOK_UAV
+	{
+		struct si_arg_t *arg = $1;
+		struct si2bin_id_t *id = $2;
+	
+		/* Obtain UAV index */
+		arg->pointer.scope = si_arg_uav;
+		arg->pointer.buffer_num = atoi(id->name + 3);
+
+		/* Free ID and return argument */
+		si2bin_id_free(id);
+		$$ = arg;
 	}
 	;
 
