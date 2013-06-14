@@ -140,6 +140,8 @@ struct frm_mod_t
 		enum frm_mod_data_width_t data_width;
 		enum frm_mod_logic_type_t logic; 
 		enum frm_mod_comp_t comparison;
+		int brev;	/* bit reverse; 0-false, 1-true */
+		int dst_cc;	/* dst condition code? 0-false, 1-ture */
 	} value;
 };
 
@@ -289,6 +291,8 @@ void frm_mod_free(struct frm_mod_t *mod);
 struct frm_mod_t *frm_mod_create_data_width(char *mod_name);
 struct frm_mod_t *frm_mod_create_logic(char *mod_name);
 struct frm_mod_t *frm_mod_create_comparison(char *mod_name);
+struct frm_mod_t *frm_mod_create_brev(char *mod_name);
+struct frm_mod_t *frm_mod_create_dst_cc(char *mod_name);
 struct frm_mod_t *frm_mod_create_with_name(char *name);
 
 
