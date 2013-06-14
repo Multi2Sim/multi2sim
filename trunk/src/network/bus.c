@@ -146,3 +146,22 @@ struct net_bus_t *net_bus_arbitration(struct net_node_t *bus_node,
 	}
 	return NULL;
 }
+
+void net_bus_dump_report(struct net_bus_t *bus, FILE *f)
+{
+	long long cycle;
+
+	/* Get current cycle */
+	cycle = esim_domain_cycle(net_domain_index);
+
+	fprintf(f, "%s.Bandwidth = %d\n",bus->name, bus->bandwidth);
+	fprintf(f, "%s.TransferredMessages = %lld\n", bus->name, bus->transferred_msgs);
+	fprintf(f, "%s.TransferredBytes = %lld\n", bus->name, bus->transferred_bytes);
+	fprintf(f, "%s.BusyCycles = %lld\n", bus->name, bus->busy_cycles);
+	fprintf(f, "%s.BytesPerCycle = %.4f\n", bus->name, cycle ?
+		(double) bus->transferred_bytes / cycle : 0.0);
+	fprintf(f, "%s.Utilization = %.4f\n", bus->name, cycle ?
+		(double) bus->transferred_bytes / (cycle *
+			bus->bandwidth) : 0.0);
+	fprintf(f, "\n");
+}

@@ -433,7 +433,7 @@ void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
 		}
 	}
 
-	net_routing_table_dump(routing_table, stderr);
+//	net_routing_table_dump(routing_table, stderr);
 	/* Find cycle in routing table */
 	net_routing_table_cycle_detection(routing_table);
 }
