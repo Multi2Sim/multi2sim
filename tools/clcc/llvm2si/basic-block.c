@@ -308,8 +308,7 @@ void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 	arg_list = list_create();
 	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
 	list_add(arg_list, arg_address);
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_uav11,
-			function->sreg_uav11 + 3));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(0, 3)); ///////////// FIXME
 	arg_soffset = si2bin_arg_create_literal(0);
 	arg_qual = si2bin_arg_create_maddr_qual();
 	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
@@ -395,8 +394,7 @@ void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
 	arg_list = list_create();
 	list_add(arg_list, arg_data);
 	list_add(arg_list, arg_address);
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_uav11,
-			function->sreg_uav11 + 3));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(0, 3)); ////////////// FIXME
 	arg_soffset = si2bin_arg_create_literal(0);
 	arg_qual = si2bin_arg_create_maddr_qual();
 	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
@@ -447,6 +445,7 @@ void llvm2si_basic_block_free(struct llvm2si_basic_block_t *basic_block)
 	
 	/* Rest */
 	str_free(basic_block->name);
+	str_free(basic_block->comment);
 	free(basic_block);
 }
 
@@ -454,6 +453,10 @@ void llvm2si_basic_block_free(struct llvm2si_basic_block_t *basic_block)
 void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f)
 {
 	struct si2bin_inst_t *inst;
+
+	/* Nothing is basic block is empty */
+	if (!basic_block->inst_list->count)
+		return;
 
 	/* Label with basic block name if not empty */
 	if (*basic_block->name)
@@ -483,6 +486,21 @@ void llvm2si_basic_block_add_inst(struct llvm2si_basic_block_t *basic_block,
 	/* Add instruction */
 	linked_list_add(basic_block->inst_list, inst);
 	inst->basic_block = basic_block;
+
+	/* If there was a comment added to the basic block, attach it to
+	 * the instruction being added now. */
+	if (basic_block->comment)
+	{
+		si2bin_inst_add_comment(inst, basic_block->comment);
+		basic_block->comment = str_free(basic_block->comment);
+	}
+}
+
+
+void llvm2si_basic_block_add_comment(struct llvm2si_basic_block_t *basic_block,
+		char *comment)
+{
+	basic_block->comment = str_set(basic_block->comment, comment);
 }
 
 
