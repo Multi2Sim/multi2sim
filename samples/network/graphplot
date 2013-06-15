@@ -62,7 +62,7 @@ GradiantColor = [
 ]
 # Global Variables
 
-GraphPlotName = "GraphPlot 1.0.0"
+GraphPlotName = "GraphPlot 1.0.1"
 Title = ""
 YRange = []
 XRange = []
@@ -109,6 +109,7 @@ BlockspcWidthRatio = 0.5
 BarspcWidthRatio = 0.1
 NodeWidthRatio = 0.2
 SwitchWidthRatio = 0.3
+BusWidthRatio = 0.4
 DummyWidthRatio = 0.1
 LinkWidthRatio = 0.05
 FirstYTic = 0.0
@@ -255,15 +256,27 @@ def ProcessKey(key, value):
 	elif key == "node":
 		global Nodes
 		Node = GetItems(value)
-		if len(Node) != 4:
-			error("Node requires 4 arguments")
-		try:
-			Node[0] = Node[0]
-		 	Node[1] = int(Node[1])
-			Node[2] = float(Node[2])
-			Node[3] = float(Node[3])
-		except:
-			error("wrong values for Node '%s'" % Node[i])
+		if int(Node[1]) == 3:
+			if len(Node) != 5:
+				error("Node requires 5 arguments when second argument is 3")
+			try:
+				Node[0] = Node[0]
+			 	Node[1] = int(Node[1])
+				Node[2] = float(Node[2])
+				Node[3] = float(Node[3])
+				Node[4] = int(Node[4])
+			except:
+				error("wrong values for Node '%s'" % Node[i])
+		else:
+			if len(Node) !=4:
+				error("Node Requires 4 arguments")
+			try:
+				Node[0] = Node[0]
+			 	Node[1] = int(Node[1])
+				Node[2] = float(Node[2])
+				Node[3] = float(Node[3])
+			except:
+				error("wrong values for Node '%s'" % Node[i])
 		Nodes.append(Node)
 
 	elif key == "link":
@@ -374,7 +387,10 @@ def DrawNodes(f):
 
 	# Draw nodes
 	for Node in Nodes:
-		[Name, nod_tp, x_coor, y_coor ] = Node
+		if len(Node) == 4:
+			[Name, nod_tp, x_coor, y_coor ] = Node
+		elif len(Node) == 5:
+			[Name, nod_tp, x_coor, y_coor , arbit_color ] = Node
 		Y = TranslateY(y_coor)
 		X = TranslateX(x_coor)
 		Center = PlotOrigX + X
@@ -408,6 +424,18 @@ def DrawNodes(f):
 
 			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
 				% (ChartColors[7][0], ChartColors[7][1], ChartColors[7][2], Center, PlotOrigY + Y, Width / 2))
+		
+		elif Node[1] == 3:
+			Color = GradiantColor[Node[4]]
+			Width = PlotWidth * BusWidthRatio / (max(XRangeDiff, YRangeDiff) + 1)
+			f.write("1 setgray %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (Center, PlotOrigY + Y, Width / 2 + 0.5))
+
+			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (Color[0], Color[1], Color[2], Center, PlotOrigY + Y, Width / 2))
+			f.write("0 0 0 C Tt %f %f N " % (PlotOrigX + X, PlotOrigY + Y + \
+				(0.3 *(PlotHeight / (YRangeDiff + 2)))))
+			f.write("(%s) Cshow stroke\n" % Node[0])
 		
 		else:
 			error("Node-Type is not recognized")
@@ -672,7 +700,10 @@ Possible pairs key-value are:
     Legend = {True|False}	Showing Legend (default = off).
     Copyright = {True|False}	Print copyright.
     Node = 'String' <n> <x>     String is the name. N is type [0 = end_node,
-         <y>                    1 = switch, 2 = dummy]. x and y are float
+         <y> [arbitrary]        1 = switch, 2 = dummy 3=bus]. x and y are float
+				When n=3, an arbitrary color can be chosen for
+				the node in the last argument (based on 
+				gradiant table)
     Link = <src_x> <src_y>      Color is to distinguish the utilization. 
          <dst_x> <dst_y>	Type of Link: 0=Uni-Line 1 =Uni-arrow
           <color> <type>	2= Bi-Line 3=Bi-arrow
