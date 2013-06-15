@@ -537,6 +537,30 @@ struct frm_mod_t *frm_mod_create_dst_cc(char *mod_name)
 	return mod;
 }
 
+struct frm_mod_t *frm_mod_create_tgt_u(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_tgt_u;
+	mod->value.tgt_u = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_tgt_lmt(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_tgt_lmt;
+	mod->value.tgt_lmt = 1;
+
+	return mod;
+}
+
 void frm_mod_free(struct frm_mod_t *mod)
 {
 	free(mod);
