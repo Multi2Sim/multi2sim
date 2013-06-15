@@ -21,7 +21,9 @@
 #define TOOLS_CLCC_FRM2BIN_INST_H
 
 #include <stdio.h>
+
 #include <arch/fermi/asm/asm.h>
+
 
 struct frm2bin_inst_t
 {
@@ -31,33 +33,33 @@ struct frm2bin_inst_t
 	struct list_t *arg_list;
 	/* modifier list */
 	struct list_t *mod_list;
-	int pred_num;   /* predicate number */
+	int pred_num;		/* predicate number */
 
 	/* Instruction bytes generated */
 	union frm_inst_dword_t inst_bytes;
 
-	int size;  /* Number of bytes */
+	int size;		/* Number of bytes */
 };
 
 /* def for predicate type */
 struct frm2bin_pred_t
 {
 	/* which predicate register to use */
-  	int number;
+	int number;
 };
 
-/* Returns a newly created frm2bin_inst_t object
- * with the op-code corresponding to the
- * 'inst_str' instruction. */
-struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, 
+/* Returns a newly created frm2bin_inst_t object with the op-code
+ * corresponding to the 'inst_str' instruction. */
+struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred,
 	char *name, struct list_t *arg_list);
 
 void frm2bin_inst_free(struct frm2bin_inst_t *inst);
+
 void frm2bin_inst_dump(struct frm2bin_inst_t *inst, FILE *f);
 
 void frm2bin_inst_gen(struct frm2bin_inst_t *inst);
 
-struct frm2bin_pred_t *frm2bin_pred_create (int number);
+struct frm2bin_pred_t *frm2bin_pred_create(int number);
 
 void frm2bin_pred_free(struct frm2bin_pred_t *pred);
 

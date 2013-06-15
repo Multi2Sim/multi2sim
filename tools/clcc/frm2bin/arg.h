@@ -142,6 +142,8 @@ struct frm_mod_t
 		enum frm_mod_comp_t comparison;
 		int brev;	/* bit reverse; 0-false, 1-true */
 		int dst_cc;	/* dst condition code? 0-false, 1-ture */
+		int tgt_u;	/* tgt_u , 0-false, 1-true */
+		int tgt_lmt;	/* tgt_lmt, 0-false, 1-ture */
 	} value;
 };
 
@@ -293,6 +295,8 @@ struct frm_mod_t *frm_mod_create_logic(char *mod_name);
 struct frm_mod_t *frm_mod_create_comparison(char *mod_name);
 struct frm_mod_t *frm_mod_create_brev(char *mod_name);
 struct frm_mod_t *frm_mod_create_dst_cc(char *mod_name);
+struct frm_mod_t *frm_mod_create_tgt_u(char *mod_name);
+struct frm_mod_t *frm_mod_create_tgt_lmt(char *mod_name);
 struct frm_mod_t *frm_mod_create_with_name(char *name);
 
 
