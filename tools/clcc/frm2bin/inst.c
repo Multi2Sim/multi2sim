@@ -88,13 +88,24 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 		{
 			mod_name = list_get(str_mod_list, index);
 			/* check which modifier it belongs to, then create a
-			 * mod object */
+			 * mod object, this should be changed later */
 			if (!strcmp(mod_name, "U32")
 				|| !strcmp(mod_name, "S32"))
 			{
 				/* create a modifier object, then add it to
 				 * the tail of the list */
 				mod = frm_mod_create_data_width(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "U8") ||
+				!strcmp(mod_name, "S8") ||
+				!strcmp(mod_name, "U16") ||
+				!strcmp(mod_name, "S16") ||
+				!strcmp(mod_name, "64") ||
+				!strcmp(mod_name, "128"))
+			{
+				/* create mod0_B_type modifier, add to list */
+				mod = frm_mod_create_mod0_B_type(mod_name);
 				list_add(mod_list, mod);
 			}
 			else if (!strcmp(mod_name, "AND") ||
@@ -116,10 +127,51 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 				mod = frm_mod_create_comparison(mod_name);
 				list_add(mod_list, mod);
 			}
+			else if (!strcmp(mod_name, "FMA64") ||
+				!strcmp(mod_name, "FMA32") ||
+				!strcmp(mod_name, "XLU") ||
+				!strcmp(mod_name, "ALU") ||
+				!strcmp(mod_name, "AGU") ||
+				!strcmp(mod_name, "SU") ||
+				!strcmp(mod_name, "FU") ||
+				!strcmp(mod_name, "FMUL"))
+			{
+				/* create comparison modifier, add to list */
+				mod = frm_mod_create_offs_mod1_A_op(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "RN") ||
+				!strcmp(mod_name, "RM") ||
+				!strcmp(mod_name, "RP") ||
+				!strcmp(mod_name, "RZ"))
+			{
+				/* create mod1_B_rnd modifier, add to list */
+				mod = frm_mod_create_gen0_mod1_B_rnd(mod_name);
+				list_add(mod_list, mod);
+			}
 			else if (!strcmp(mod_name, "BREV"))
 			{
 				/* create bit reverse modifier, add to list */
 				mod = frm_mod_create_brev(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "TRIG"))
+			{
+				/* create bit reverse modifier, add to list */
+				mod = frm_mod_create_offs_mod1_A_trig(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "SAT"))
+			{
+				/* create mod0_D_sat modifier, add to list */
+				mod = frm_mod_create_mod0_D_sat(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "FTZ") ||
+				!strcmp(mod_name, "FMZ"))
+			{
+				/* create ftzfmz modifier, add to list */
+				mod = frm_mod_create_mod0_D_ftzfmz(mod_name);
 				list_add(mod_list, mod);
 			}
 			else if (!strcmp(mod_name, "CC"))
@@ -138,6 +190,12 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 			{
 				/* create tgt_u modifier, add to list */
 				mod = frm_mod_create_tgt_u(mod_name);
+				list_add(mod_list, mod);
+			}
+			else if (!strcmp(mod_name, "W"))
+			{
+				/* create tgt_u modifier, add to list */
+				mod = frm_mod_create_mod0_A_w(mod_name);
 				list_add(mod_list, mod);
 			}
 			else
@@ -340,13 +398,40 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	{
 
 	/* encoding in [31:26], op in [18:16] */
-	/*
+
 	case FRM_FMT_FP_FFMA:
 
-		inst_bytes->mtbuf.enc = 0x3a;
-		inst_bytes->mtbuf.op = inst_info->opcode;
+		/* [3:0]: 0000 */
+		inst_bytes->general0.op0 = 0x0;
+
+		/* [9:4]: all 0s, default value */
+		inst_bytes->general0.mod0 = 0x0;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->general0.pred = inst->pred_num;
+		}
+		else
+		{
+			/* no predicate, value=7 */
+			inst_bytes->general0.pred = 0x7;
+		}
+
+		/* [48]: 0 */
+		inst_bytes->general0.dst_cc = 0x0;
+
+		/* [56:55]: 00, default value */
+		inst_bytes->general0_mod1_B.rnd = 0x0;
+
+		/* [57]: 0 */
+		inst_bytes->general0_mod1_B._const0 = 0x0;
+
+		/* [63:58]: 001100 */
+		inst_bytes->general0.op1 = 0xc;
+
 		break;
-	*/
+
 	
 	/* encoding in [:], op in [] */
 	case FRM_FMT_FP_FADD:
@@ -563,7 +648,6 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 	case FRM_FMT_INT_BFE:
 
-
 		/* [3:0]: 0011 */
 		inst_bytes->general0.op0 = 0x3;
 
@@ -601,17 +685,71 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
-	//case FRM_FMT_INT_SHR:
-	//	
-	//	inst_bytes->exp.enc = 0x3e;
-	//	/* No opcode: only 1 instruction */
-	//	break;
+	case FRM_FMT_INT_SHR:
 
-	//case FRM_FMT_INT_SHL:
-	//	
-	//	inst_bytes->exp.enc = 0x3e;
-	//	/* No opcode: only 1 instruction */
-	//	break;
+		/* [3:0]: 0011 */
+		inst_bytes->general0.op0 = 0x3;
+
+		/* [9:4]: 000000, [5], [9] are default values */
+		inst_bytes->general0.mod0 = 0x0;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->general0.pred = inst->pred_num;
+		}
+		else
+		{
+			/* no predicate, value=7 */
+			inst_bytes->general0.pred = 0x7;
+		}
+
+		/* [47:46]: 00, (default value not sure) */
+		inst_bytes->general0.src2_mod = 0x0;
+
+		/* [48]: 0, dst.cc (default value) */
+		inst_bytes->general0.dst_cc = 0x0;
+
+		/* [57:49]: 000000000 */
+		inst_bytes->general0.mod1 = 0x0;
+
+		/* [63:58]: 010110 */
+		inst_bytes->general0.op1 = 0x16;
+
+		break;
+
+	case FRM_FMT_INT_SHL:
+
+		/* [3:0]: 0011 */
+		inst_bytes->general0.op0 = 0x3;
+
+		/* [9:4]: 000000, [5], [9] are default values */
+		inst_bytes->general0.mod0 = 0x0;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->general0.pred = inst->pred_num;
+		}
+		else
+		{
+			/* no predicate, value=7 */
+			inst_bytes->general0.pred = 0x7;
+		}
+
+		/* [47:46]: 00, (default value not sure) */
+		inst_bytes->general0.src2_mod = 0x0;
+
+		/* [48]: 0, dst.cc (default value) */
+		inst_bytes->general0.dst_cc = 0x0;
+
+		/* [57:49]: 000000000 */
+		inst_bytes->general0.mod1 = 0x0;
+
+		/* [63:58]: 011000 */
+		inst_bytes->general0.op1 = 0x18;
+
+		break;
 
 	//case FRM_FMT_INT_LOP:
 	//	
@@ -776,11 +914,32 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* No opcode: only 1 instruction */
 		break;
 
-	//case FRM_FMT_LDST_STS:
-	//	
-	//	inst_bytes->exp.enc = 0x3e;
-	//	/* No opcode: only 1 instruction */
-	//	break;
+	case FRM_FMT_LDST_STS:
+
+		/* [3:0]: 0101 */
+		inst_bytes->offs.op0 = 0x5;
+
+		/* [9:4]: all 0s, default value */
+		inst_bytes->offs.mod0 = 0x0;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->offs.pred = inst->pred_num;
+		}
+		else
+		{
+			/* no predicate, value=7 */
+			inst_bytes->offs.pred = 0x7;
+		}
+
+		/* [57:42]: all 0s */
+		inst_bytes->offs.mod1 = 0x0;
+
+		/* [63:58]: 110010 */
+		inst_bytes->offs.op1 = 0x32;
+
+		break;
 
 	case FRM_FMT_CTRL_BRA:
 
@@ -835,11 +994,89 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	//	/* No opcode: only 1 instruction */
 	//	break;
 
-	//case FRM_FMT_CTRL_RET:
-	//	
-	//	inst_bytes->exp.enc = 0x3e;
-	//	/* No opcode: only 1 instruction */
-	//	break;
+	case FRM_FMT_CTRL_RET:
+
+		/* [3:0]: 0111 */
+		inst_bytes->general0.op0 = 0x7;
+
+		/* [9:4]: 011110 */
+		inst_bytes->general0.mod0 = 0x1e;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->general0.pred = inst->pred_num;
+		}
+		else
+		{
+			/* no predicate, value=7 */
+			inst_bytes->general0.pred = 0x7;
+		}
+
+		/* [19:14]: all 0s*/
+		inst_bytes->general0.dst = 0x0;
+
+		/* [25:20]: all 0s */
+		inst_bytes->general0.src1 = 0x0;
+
+		/* [45:26]: all 0s */
+		inst_bytes->general0.src2 = 0x0;
+
+		/* [47:46]: all 0s */
+		inst_bytes->general0.src2_mod = 0x0;
+
+		/* [48]: all 0s */
+		inst_bytes->general0.dst_cc = 0x0;
+
+		/* [57:49]: all 0s */
+		inst_bytes->general0.mod1 = 0x0;
+
+		/* [63:58]: 100100 */
+		inst_bytes->general0.op1 = 0x24;
+
+		break;
+
+	case FRM_FMT_CTRL_CONT:
+
+		/* [3:0]: 0111 */
+		inst_bytes->general0.op0 = 0x7;
+
+		/* [9:4]: 011110 */
+		inst_bytes->general0.mod0 = 0x1e;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->general0.pred = inst->pred_num;
+		}
+		else
+		{
+			/* no predicate, value=7 */
+			inst_bytes->general0.pred = 0x7;
+		}
+
+		/* [19:14]: all 0s*/
+		inst_bytes->general0.dst = 0x0;
+
+		/* [25:20]: all 0s */
+		inst_bytes->general0.src1 = 0x0;
+
+		/* [45:26]: all 0s */
+		inst_bytes->general0.src2 = 0x0;
+
+		/* [47:46]: all 0s */
+		inst_bytes->general0.src2_mod = 0x0;
+
+		/* [48]: all 0s */
+		inst_bytes->general0.dst_cc = 0x0;
+
+		/* [57:49]: all 0s */
+		inst_bytes->general0.mod1 = 0x0;
+
+		/* [63:58]: 101100 */
+		inst_bytes->general0.op1 = 0x2c;
+
+		break;
 
 	case FRM_FMT_CTRL_EXIT:
 
@@ -956,11 +1193,41 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	//case FRM_FMT_MISC_NOP:
-	//	
-	//	inst_bytes->exp.enc = 0x3e;
-	//	/* No opcode: only 1 instruction */
-	//	break;
+	case FRM_FMT_MISC_NOP:
+
+		/* [3:0]: 0100 */
+		inst_bytes->offs.op0 = 0x4;
+
+		/* [9:4]: all 0s, default value */
+		inst_bytes->offs.mod0 = 0x0;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->offs.pred = inst->pred_num;
+		}
+		else
+		{
+			/* no predicate, value=7 */
+			inst_bytes->offs.pred = 0x7;
+		}
+
+		/* [19:14]: all 0s */
+		inst_bytes->offs.dst = 0x0;
+
+		/* [25:20]: all 0s */
+		inst_bytes->offs.src1 = 0x0;
+
+		/* [41:26]: all 0s, default value */
+		inst_bytes->offs.offset = 0x0;
+
+		/* [57:42]: default value */
+		inst_bytes->offs.mod1 = 0x0;
+
+		/* [63:58]: 010000 */
+		inst_bytes->offs.op1 = 0x10;
+
+		break;
 
 	case FRM_FMT_MISC_S2R:
 
@@ -1127,6 +1394,33 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				break;
 			}
 
+			case frm_token_mod0_B_type:
+			{
+				/* data type */
+				if (mod->value.mod0_B_type == 0)
+					inst_bytes->mod0_B.type = 0x0;
+				else if (mod->value.mod0_B_type == 1)
+					inst_bytes->mod0_B.type = 0x1;
+				else if (mod->value.mod0_B_type == 2)
+					inst_bytes->mod0_B.type = 0x2;
+				else if (mod->value.mod0_B_type == 3)
+					inst_bytes->mod0_B.type = 0x3;
+				else if (mod->value.mod0_B_type == 4)
+					inst_bytes->mod0_B.type = 0x4;
+				else if (mod->value.mod0_B_type == 5)
+					inst_bytes->mod0_B.type = 0x5;
+				else if (mod->value.mod0_B_type == 6)
+					inst_bytes->mod0_B.type = 0x6;
+				else
+				{
+					frm2bin_yyerror_fmt
+						("Error unrecognized \
+							mod0_B_type \n");
+				}
+
+				break;
+			}
+
 			case frm_token_tgt_u:
 			{
 				/* target u? */
@@ -1145,6 +1439,88 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 					inst_bytes->tgt.noinc = 0x1;
 				else
 					inst_bytes->tgt.noinc = 0x0;
+
+				break;
+			}
+
+			case frm_token_mod0_A_w:
+			{
+				/* width? only mod0_A.neg_src1 matches, change later? */
+				if (mod->value.mod0_A_w == 1)
+					inst_bytes->mod0_A.neg_src1 = 0x1;
+				else
+					inst_bytes->mod0_A.neg_src1 = 0x0;
+
+				break;
+			}
+
+			case frm_token_mod0_D_ftzfmz:
+			{
+				if (mod->value.mod0_D_ftzfmz == 1)
+					inst_bytes->mod0_D.ftzfmz = 0x1;
+				else if (mod->value.mod0_D_ftzfmz == 2)
+					inst_bytes->mod0_D.ftzfmz = 0x2;
+				else
+					/* invalid mod0_D_ftzfmz */
+					inst_bytes->mod0_D.ftzfmz = 0x3;
+
+				break;
+			}
+
+			case frm_token_mod0_D_sat:
+			{
+				if (mod->value.mod0_D_sat == 1)
+					inst_bytes->mod0_D.sat = 0x1;
+				else
+					inst_bytes->mod0_D.sat = 0x0;
+
+				break;
+			}
+
+			case frm_token_gen0_mod1_B_rnd:
+			{
+				if (mod->value.gen0_mod1_B_rnd == 0)
+					inst_bytes->general0_mod1_B.rnd = 0x0;
+				else if (mod->value.gen0_mod1_B_rnd == 1)
+					inst_bytes->general0_mod1_B.rnd = 0x1;
+				else if (mod->value.gen0_mod1_B_rnd == 2)
+					inst_bytes->general0_mod1_B.rnd = 0x2;
+				else
+					inst_bytes->general0_mod1_B.rnd = 0x3;
+
+				break;
+			}
+
+			case frm_token_offs_mod1_A_trig:
+			{
+				if (mod->value.offs_mod1_A_trig == 1)
+					inst_bytes->offs_mod1_A.trig = 0x1;
+				else
+					inst_bytes->offs_mod1_A.trig = 0x0;
+
+				break;
+			}
+
+			case frm_token_offs_mod1_A_op:
+			{
+				if (mod->value.offs_mod1_A_op == 1)
+					inst_bytes->offs_mod1_A.op = 0x1;
+				else if (mod->value.offs_mod1_A_op == 2)
+					inst_bytes->offs_mod1_A.op = 0x2;
+				else if (mod->value.offs_mod1_A_op == 3)
+					inst_bytes->offs_mod1_A.op = 0x3;
+				else if (mod->value.offs_mod1_A_op == 4)
+					inst_bytes->offs_mod1_A.op = 0x4;
+				else if (mod->value.offs_mod1_A_op == 5)
+					inst_bytes->offs_mod1_A.op = 0x5;
+				else if (mod->value.offs_mod1_A_op == 6)
+					inst_bytes->offs_mod1_A.op = 0x6;
+				else if (mod->value.offs_mod1_A_op == 7)
+					inst_bytes->offs_mod1_A.op = 0x7;
+				else if (mod->value.offs_mod1_A_op == 8)
+					inst_bytes->offs_mod1_A.op = 0x8;
+				else
+					inst_bytes->offs_mod1_A.op = 0x0;
 
 				break;
 			}
@@ -1227,6 +1603,13 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 					arg->value.scalar_register.id;
 			}
 
+			else if (arg->type == frm_arg_zero_register)
+			{
+				/* [45:26]: src2, all 0s
+				 * Register Zero, reg that contains const value of 0 */
+				inst_bytes->general0.src2 = 0xfffff;
+			}
+
 			else if (arg->type == frm_arg_literal)
 			{
 				/* for immediate value */
@@ -1237,7 +1620,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			else
 			{
 				frm2bin_yyerror_fmt("Wrong frm_token_src2. \
-					[dis-inst.c]\n");
+					[inst.c]\n");
 			}
 			break;
 		}

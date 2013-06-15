@@ -318,6 +318,12 @@ DEFINST(CAL,
 	CTRL_CAL, 
 	CTRL, 
 	0x147)
+	
+DEFINST(CONT,
+	"%pred CONT",
+	CTRL_CONT,
+	CTRL,
+	0x2c7)
 
 DEFINST(RET, 
 	"%pred RET", 
