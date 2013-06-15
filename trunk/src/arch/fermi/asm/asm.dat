@@ -337,6 +337,11 @@ DEFINST(SSY,
 	CTRL, 
 	0x187)
 
+DEFINST(PCNT,
+	""%pred PCNT %tgt,
+	CTRL_PCNT,
+	CTRL,
+	0x2c7)
 
 /* MISC catogory instructions: 
  * NOP, S2R, B2R, LEPC, BAR, VOTE
