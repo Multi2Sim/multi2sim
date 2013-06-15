@@ -338,7 +338,7 @@ DEFINST(SSY,
 	0x187)
 
 DEFINST(PCNT,
-	""%pred PCNT %tgt,
+	"%pred PCNT %tgt",
 	CTRL_PCNT,
 	CTRL,
 	0x2c7)
