@@ -447,6 +447,46 @@ struct frm_mod_t *frm_mod_create_data_width(char *mod_name)
 	return mod;
 }
 
+struct frm_mod_t *frm_mod_create_mod0_B_type(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+	mod->type = frm_token_mod0_B_type;
+
+	if (!strcmp(mod_name, "U8"))
+	{
+		mod->value.mod0_B_type = 0;
+	}
+	else if (!strcmp(mod_name, "S8"))
+	{
+		mod->value.mod0_B_type = 1;
+	}
+	else if (!strcmp(mod_name, "U16"))
+	{
+		mod->value.mod0_B_type = 2;
+	}
+	else if (!strcmp(mod_name, "S16"))
+	{
+		mod->value.mod0_B_type = 3;
+	}
+	else if (!strcmp(mod_name, "64"))
+	{
+		mod->value.mod0_B_type = 5;
+	}
+	else if (!strcmp(mod_name, "128"))
+	{
+		mod->value.mod0_B_type = 6;
+	}
+	else
+	{
+		/* default: u32 */
+		mod->value.mod0_B_type = 4;
+	}
+
+	return mod;
+}
+
 struct frm_mod_t *frm_mod_create_logic(char *mod_name)
 {
 	struct frm_mod_t *mod;
@@ -557,6 +597,107 @@ struct frm_mod_t *frm_mod_create_tgt_lmt(char *mod_name)
 
 	mod->type = frm_token_tgt_lmt;
 	mod->value.tgt_lmt = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_mod0_A_w(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_mod0_A_w;
+	mod->value.mod0_A_w = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_mod0_D_ftzfmz(char* mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_mod0_D_ftzfmz;
+	if (!strcmp(mod_name, "FTZ"))
+		mod->value.mod0_D_ftzfmz = 1;
+	else if (!strcmp(mod_name, "FMZ"))
+		mod->value.mod0_D_ftzfmz = 2;
+	else
+		mod->value.mod0_D_ftzfmz = 3;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_gen0_mod1_B_rnd(char* mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_gen0_mod1_B_rnd;
+	if (!strcmp(mod_name, "RN"))
+		mod->value.gen0_mod1_B_rnd = 0;
+	else if (!strcmp(mod_name, "RM"))
+		mod->value.gen0_mod1_B_rnd = 1;
+	else if (!strcmp(mod_name, "RP"))
+		mod->value.gen0_mod1_B_rnd = 2;
+	else
+		mod->value.gen0_mod1_B_rnd = 3;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_mod0_D_sat(char* mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_mod0_D_sat;
+	mod->value.mod0_D_sat = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_offs_mod1_A_trig(char* mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_offs_mod1_A_trig;
+	mod->value.offs_mod1_A_trig = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_offs_mod1_A_op(char* mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_offs_mod1_A_op;
+	if (!strcmp(mod_name, "FMA64"))
+		mod->value.offs_mod1_A_op = 1;
+	else if (!strcmp(mod_name, "FMA32"))
+		mod->value.offs_mod1_A_op = 2;
+	else if (!strcmp(mod_name, "XLU"))
+		mod->value.offs_mod1_A_op = 3;
+	else if (!strcmp(mod_name, "ALU"))
+		mod->value.offs_mod1_A_op = 4;
+	else if (!strcmp(mod_name, "AGU"))
+		mod->value.offs_mod1_A_op = 5;
+	else if (!strcmp(mod_name, "SU"))
+		mod->value.offs_mod1_A_op = 6;
+	else if (!strcmp(mod_name, "FU"))
+		mod->value.offs_mod1_A_op = 7;
+	else if (!strcmp(mod_name, "FMUL"))
+		mod->value.offs_mod1_A_op = 8;
+	else
+		mod->value.offs_mod1_A_op = 0;
 
 	return mod;
 }

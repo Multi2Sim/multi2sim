@@ -144,6 +144,13 @@ struct frm_mod_t
 		int dst_cc;	/* dst condition code? 0-false, 1-ture */
 		int tgt_u;	/* tgt_u , 0-false, 1-true */
 		int tgt_lmt;	/* tgt_lmt, 0-false, 1-ture */
+		int mod0_A_w;	/* 0-default, 1-w */
+		int mod0_B_type;	/* 0-u8, 1-s8, 2-u16, 3-s16, 4-default, 5-64, 6-128 */
+		int mod0_D_sat;	/* 0-default, 1-sat */
+		int mod0_D_ftzfmz;	/* 0-default, 1-ftz, 2-fmz, 3-invalid */
+		int gen0_mod1_B_rnd;	/* 0-default, 1-rm, 2-rp, 3-rz */
+		int offs_mod1_A_trig;	/* 0-default, 1-trig */
+		int offs_mod1_A_op;	/* 0-default, fma64, fma32, xlu, alu, agu, su, fu, fmul */
 	} value;
 };
 
@@ -297,6 +304,13 @@ struct frm_mod_t *frm_mod_create_brev(char *mod_name);
 struct frm_mod_t *frm_mod_create_dst_cc(char *mod_name);
 struct frm_mod_t *frm_mod_create_tgt_u(char *mod_name);
 struct frm_mod_t *frm_mod_create_tgt_lmt(char *mod_name);
+struct frm_mod_t *frm_mod_create_mod0_A_w(char *mod_name);
+struct frm_mod_t *frm_mod_create_mod0_B_type(char *mod_name);
+struct frm_mod_t *frm_mod_create_mod0_D_sat(char* mod_name);
+struct frm_mod_t *frm_mod_create_mod0_D_ftzfmz(char* mod_name);
+struct frm_mod_t *frm_mod_create_gen0_mod1_B_rnd(char* mod_name);
+struct frm_mod_t *frm_mod_create_offs_mod1_A_trig(char* mod_name);
+struct frm_mod_t *frm_mod_create_offs_mod1_A_op(char* mod_name);
 struct frm_mod_t *frm_mod_create_with_name(char *name);
 
 
