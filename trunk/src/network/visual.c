@@ -33,6 +33,7 @@
 #include "node.h"
 #include "visual.h"
 #include "link.h"
+#include "buffer.h"
 
 static int key_compare (const void *ptr1, const void *ptr2)
 {
@@ -86,10 +87,12 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 		vertex = net_graph_vertex_create(graph, name);
 		vertex->node = node;
 
-		if (node->kind == net_node_switch || node->kind == net_node_bus)
+		if (node->kind == net_node_switch )
 			vertex->kind = net_vertex_switch;
 		else if (node->kind == net_node_end)
 			vertex->kind = net_vertex_end_node;
+		else if (node->kind == net_node_bus)
+			vertex->kind = net_vertex_bus;
 		else
 			vertex->kind = net_vertex_dummy;
 
@@ -97,7 +100,7 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 		graph->vertex_count++;
 	}
 
-	//creating the edges
+	/* creating the edges based on link list of network */
 	for(i = 0; i < list_count(net->link_list); i++)
 	{
 		int check = 0;
@@ -105,12 +108,10 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 		struct net_graph_edge_t *edge;
 
 		link = list_get(net->link_list, i);
-		char name[MAX_STRING_SIZE];
 
-		snprintf(name, sizeof(name), "%s_%s", link->src_node->name, link->dst_node->name);
-
-		edge = net_graph_edge_create(graph, name);
+		edge = net_graph_edge_create(graph);
 		edge->downstream = link;
+		edge->kind = net_edge_link;
 		for (int j = 0; j < list_count(graph->vertex_list); j++)
 		{
 			struct net_graph_vertex_t *vertex;
@@ -132,6 +133,7 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 					(temp_edge->dst_vertex == edge->src_vertex))
 			{
 				temp_edge->upstream = edge->downstream;
+				temp_edge->kind = net_edge_bilink;
 				check = 1;
 			}
 
@@ -148,6 +150,87 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 		else
 			net_graph_edge_free(edge);
 	}
+
+	/* Now that we have all the vertices (based on nodes) and
+	 *all the edges based on links we have to create edges
+	 *based on the bus connections to the Node(vertex) BUS*/
+	for (i = 0; i < list_count(graph->vertex_list); i++)
+	{
+		struct net_graph_vertex_t *vertex;
+		vertex = list_get(graph->vertex_list, i);
+		if (vertex->kind == net_vertex_bus)
+		{
+			struct net_node_t * bus_node;
+			bus_node = vertex->node;
+			for (int j = 0; j < list_count(bus_node->src_buffer_list); j++ )
+			{
+				struct net_buffer_t *src_buffer;
+				struct net_graph_vertex_t * src_vertex;
+
+				src_buffer = list_get(bus_node->src_buffer_list, j);
+				src_vertex = net_get_vertex_by_node(graph, src_buffer->node);
+				assert(src_vertex);
+
+				struct net_graph_edge_t * edge;
+				edge = net_graph_edge_create(graph);
+				edge->bus_vertex = vertex;
+				edge->kind = net_edge_bus;
+				edge->src_vertex = src_vertex;
+				edge->dst_vertex = vertex;
+
+				list_add(graph->edge_list, edge);
+				list_add(edge->src_vertex->outgoint_vertex_list, edge->dst_vertex);
+				edge->src_vertex->outdeg++;
+				list_add(edge->dst_vertex->incoming_vertex_list, edge->src_vertex);
+				edge->dst_vertex->indeg++;
+			}
+
+			for (int j = 0; j < list_count(bus_node->dst_buffer_list); j++ )
+			{
+				int check = 0;
+				struct net_buffer_t *dst_buffer;
+				struct net_graph_vertex_t * dst_vertex;
+
+				dst_buffer = list_get(bus_node->dst_buffer_list, j);
+				dst_vertex = net_get_vertex_by_node(graph, dst_buffer->node);
+				assert (dst_vertex);
+				struct net_graph_edge_t * edge;
+				edge = net_graph_edge_create(graph);
+				edge->bus_vertex = vertex;
+				edge->kind = net_edge_bus;
+				edge->src_vertex = vertex;
+				edge->dst_vertex = dst_vertex;
+
+				for (int l = 0; l < list_count(graph->edge_list); l++)
+				{
+					struct net_graph_edge_t *temp_edge;
+					temp_edge = list_get(graph->edge_list, l);
+					if ((temp_edge->src_vertex == dst_vertex) &&
+							(temp_edge->dst_vertex == vertex))
+					{
+						temp_edge->kind = net_edge_bibus;
+						check = 1;
+						break;
+					}
+				}
+
+				if (check == 0)
+				{
+					list_add(graph->edge_list, edge);
+					list_add(edge->src_vertex->outgoint_vertex_list, edge->dst_vertex);
+					edge->src_vertex->outdeg++;
+					list_add(edge->dst_vertex->incoming_vertex_list, edge->src_vertex);
+					edge->dst_vertex->indeg++;
+				}
+				else
+					net_graph_edge_free(edge);
+			}
+
+
+
+		}
+	}
+
 
 	/*IF Hierarchical method is used */
 	/*Step 2: Remove the cycle in the graph ; make sure it is connected ;*/
@@ -183,25 +266,40 @@ struct net_graph_t *net_visual_calc(struct net_t *net)
 			list_add(vertex->incoming_vertex_list, edge->src_vertex);
 			vertex->indeg++;
 
-			//creating two edges
-			//edge 1 called new_edge
+			/* creating two edges. First Edge is called new_edge and
+			 * second edge is ...well...called second edge*/
 			struct net_graph_edge_t *new_edge;
+			struct net_graph_edge_t *second_edge;
 
-			new_edge = net_graph_edge_create(graph, "new edge");
-			new_edge->downstream = edge->downstream;
-			if (edge->upstream)
+			new_edge = net_graph_edge_create(graph);
+			second_edge = net_graph_edge_create(graph);
+
+			if (edge->kind == net_edge_link)
+			{
+				new_edge->downstream = edge->downstream;
+				second_edge->downstream = new_edge->downstream;
+			}
+			else if (edge->kind == net_edge_bilink)
+			{
+				assert(edge->upstream);
+				new_edge->downstream = edge->downstream;
+				second_edge->downstream = new_edge->downstream;
+
 				new_edge->upstream = edge->upstream;
+				second_edge->upstream = edge->upstream;
+			}
+			else
+			{
+				assert(!edge->downstream);
+				new_edge->bus_vertex = edge->bus_vertex;
+				second_edge->bus_vertex = edge->bus_vertex;
+			}
+
+			new_edge->kind = edge->kind;
+			second_edge->kind = edge->kind;
 
 			new_edge->src_vertex = edge->src_vertex;
 			new_edge->dst_vertex = vertex;
-			//edge 2 second edge
-			struct net_graph_edge_t *second_edge;
-
-			second_edge = net_graph_edge_create(graph, "second edge");
-			second_edge->downstream = new_edge->downstream;
-			if (edge->upstream)
-				second_edge->upstream = edge->upstream;
-			second_edge->tail = new_edge;
 
 			second_edge->src_vertex = vertex;
 			second_edge->dst_vertex = edge->dst_vertex;
@@ -326,17 +424,15 @@ void net_graph_vertex_free (struct net_graph_vertex_t *vertex)
 	free(vertex);
 }
 
-struct net_graph_edge_t *net_graph_edge_create(struct net_graph_t *graph, char *name)
+struct net_graph_edge_t *net_graph_edge_create(struct net_graph_t *graph)
 {
 	struct net_graph_edge_t *edge;
 	edge = xcalloc(1, sizeof (struct net_graph_edge_t));
-	edge->name = xstrdup(name);
 	edge->graph = graph;
 	return edge;
 }
 void net_graph_edge_free (struct net_graph_edge_t *edge)
 {
-	free(edge->name);
 	free(edge);
 }
 
@@ -715,4 +811,19 @@ void net_graph_cross_reduction(struct net_graph_t *graph, int layer_count)
 		list_free(key_list);
 	}
 
+}
+
+struct net_graph_vertex_t *net_get_vertex_by_node(struct net_graph_t * graph,
+		struct net_node_t *node)
+{
+	assert(graph->net == node->net);
+	struct net_graph_vertex_t * vertex;
+
+	for (int i = 0; i < list_count(graph->vertex_list); i++)
+	{
+		vertex = list_get(graph->vertex_list, i);
+		if (vertex->node == node)
+			return vertex;
+	}
+	return NULL;
 }

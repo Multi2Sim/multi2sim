@@ -300,9 +300,9 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 				if (!strcasecmp(link_type, "Unidirectional"))
 				{
 					link_src_bsize = (src_buffer_size)
-											?  src_buffer_size : src_node->output_buffer_size;
+															?  src_buffer_size : src_node->output_buffer_size;
 					link_dst_bsize =  (dst_buffer_size)
-													?  dst_buffer_size : dst_node->input_buffer_size;
+																	?  dst_buffer_size : dst_node->input_buffer_size;
 
 					net_add_link(net, src_node, dst_node, bandwidth,
 							link_src_bsize, link_dst_bsize, v_channel_count);
@@ -561,22 +561,38 @@ void net_dump_visual(struct net_graph_t *graph, FILE *f)
 	{
 		struct net_graph_vertex_t *vertex;
 		vertex= list_get(graph->vertex_list, i);
-
-		fprintf(f, "node = %s %d %f %d \n", vertex->name, vertex->kind,
-				(double) vertex->x_coor/graph->xscale, vertex->y_coor);
+		if (vertex->kind != net_vertex_bus)
+			fprintf(f, "node = %s %d %f %d \n", vertex->name, vertex->kind,
+					(double) vertex->x_coor/graph->xscale, vertex->y_coor);
+		else
+		{
+			assert (vertex->node->kind == net_node_bus);
+			for (int j = 0; j < list_count(vertex->node->bus_lane_list); j++)
+			{
+				struct net_bus_t *bus_lane;
+				bus_lane = list_get(vertex->node->bus_lane_list, j);
+				vertex->bus_util_color += 	(int) ((cycle ?(double) bus_lane->transferred_bytes
+						/ (cycle * bus_lane->bandwidth) : 0.0) * 10);
+			}
+			vertex->bus_util_color /= list_count(vertex->node->bus_lane_list);
+			fprintf(f, "node = %s %d %f %d %d\n", vertex->name, vertex->kind,
+					(double) vertex->x_coor/graph->xscale,
+					vertex->y_coor, vertex->bus_util_color);
+		}
 
 	}
 	for (i = 0; i < list_count(graph->edge_list); i++)
 	{
 		struct net_graph_edge_t *edge;
 		edge= list_get(graph->edge_list, i);
-		if (!edge->upstream)
+		if (edge->kind == net_edge_link)
 			fprintf(f, "link = %f %d %f %d %d %d \n", (double) edge->src_vertex->x_coor / graph->xscale,
 					edge->src_vertex->y_coor,(double) edge->dst_vertex->x_coor / graph->xscale,
 					edge->dst_vertex->y_coor,(int) ((cycle ?(double) edge->downstream->transferred_bytes
 							/ (cycle * edge->downstream->bandwidth) : 0.0) * 10), 1);
-		else
+		else if (edge->kind == net_edge_bilink)
 		{
+			assert(edge->upstream);
 			fprintf(f, "link = %f %d %f %d %d %d \n", (double) edge->src_vertex->x_coor / graph->xscale
 					, edge->src_vertex->y_coor,	(double) edge->dst_vertex->x_coor / graph->xscale,
 					edge->dst_vertex->y_coor,(int) ((cycle ?(double) edge->downstream->transferred_bytes
@@ -585,6 +601,21 @@ void net_dump_visual(struct net_graph_t *graph, FILE *f)
 					, edge->dst_vertex->y_coor,	(double) edge->src_vertex->x_coor / graph->xscale
 					, edge->src_vertex->y_coor,	(int) ((cycle ?(double) edge->upstream->transferred_bytes
 							/ (cycle * edge->upstream->bandwidth) : 0.0) * 10), 2);
+		}
+		else if (edge->kind == net_edge_bus)
+		{
+			fprintf(f, "link = %f %d %f %d %d %d \n", (double) edge->src_vertex->x_coor / graph->xscale,
+					edge->src_vertex->y_coor,(double) edge->dst_vertex->x_coor / graph->xscale,
+					edge->dst_vertex->y_coor,edge->bus_vertex->bus_util_color, 1);
+		}
+		else if (edge->kind == net_edge_bibus)
+		{
+			fprintf(f, "link = %f %d %f %d %d %d \n", (double) edge->src_vertex->x_coor / graph->xscale
+					, edge->src_vertex->y_coor,	(double) edge->dst_vertex->x_coor / graph->xscale,
+					edge->dst_vertex->y_coor,edge->bus_vertex->bus_util_color, 2);
+			fprintf(f, "link = %f %d %f %d %d %d \n",(double) edge->dst_vertex->x_coor / graph->xscale
+					, edge->dst_vertex->y_coor,	(double) edge->src_vertex->x_coor / graph->xscale
+					, edge->src_vertex->y_coor,edge->bus_vertex->bus_util_color, 2);
 		}
 
 	}
@@ -743,16 +774,16 @@ void net_add_bidirectional_link(struct net_t *net,
 	int dst_buffer_size;
 
 	src_buffer_size = (link_src_bsize)
-								? link_src_bsize : src_node->output_buffer_size;
+												? link_src_bsize : src_node->output_buffer_size;
 	dst_buffer_size = (link_dst_bsize)
-								? link_dst_bsize : dst_node->input_buffer_size;
+												? link_dst_bsize : dst_node->input_buffer_size;
 	net_add_link(net, src_node, dst_node, bandwidth,
 			src_buffer_size, dst_buffer_size, vc_count);
 
 	src_buffer_size = (link_src_bsize)
-									? link_src_bsize : dst_node->output_buffer_size;
+													? link_src_bsize : dst_node->output_buffer_size;
 	dst_buffer_size = (link_dst_bsize)
-									? link_dst_bsize : src_node->input_buffer_size;
+													? link_dst_bsize : src_node->input_buffer_size;
 	net_add_link(net, dst_node, src_node, bandwidth,
 			src_buffer_size, dst_buffer_size, vc_count);
 
