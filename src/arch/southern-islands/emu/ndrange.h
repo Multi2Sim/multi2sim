@@ -68,7 +68,7 @@ struct si_ndrange_t
 	unsigned int inst_buffer_size;
 
 	/* Fetch shader memory containing Fetch shader instructions */
-	void *fs_buffer;
+	int fs_buffer_initialized;
 	unsigned int fs_buffer_ptr;
 	unsigned int fs_buffer_size;
 

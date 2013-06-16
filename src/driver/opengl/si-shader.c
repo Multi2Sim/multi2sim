@@ -173,14 +173,3 @@ void opengl_si_shader_create_ndrange_constant_buffers(
 {
 
 }
-
-void opengl_si_shader_create_ndrange_fetch_shader(struct si_ndrange_t *ndrange)
-{
-	if (ndrange->fs_buffer_size && ndrange->fs_buffer)
-	{
-		ndrange->fs_buffer_ptr = si_emu->video_mem_top;
-		si_emu->video_mem_top += ndrange->fs_buffer_size;	
-	}
-
-	return;
-}

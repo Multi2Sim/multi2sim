@@ -56,6 +56,5 @@ void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader,
 void opengl_si_shader_create_ndrange_tables(struct si_ndrange_t *ndrange);
 void opengl_si_shader_create_ndrange_constant_buffers(
 	struct si_ndrange_t *ndrange);
-void opengl_si_shader_create_ndrange_fetch_shader(struct si_ndrange_t *ndrange);
 
 #endif
