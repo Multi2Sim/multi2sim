@@ -21,8 +21,8 @@
 
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/asm/bin-file.h>
-#include <clcc/si2bin/arg.h>
-#include <clcc/si2bin/inst.h>
+#include <m2c/si2bin/arg.h>
+#include <m2c/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
