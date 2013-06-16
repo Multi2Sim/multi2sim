@@ -198,6 +198,12 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 				mod = frm_mod_create_mod0_A_w(mod_name);
 				list_add(mod_list, mod);
 			}
+			else if (!strcmp(mod_name, "S"))
+			{
+				/* create mod0_C_s modifier, add to list */
+				mod = frm_mod_create_mod0_C_s(mod_name);
+				list_add(mod_list, mod);
+			}
 			else
 			{
 				/* unsupported modifier */
@@ -397,7 +403,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	switch (inst_info->fmt)
 	{
 
-	/* encoding in [31:26], op in [18:16] */
+		/* encoding in [31:26], op in [18:16] */
 
 	case FRM_FMT_FP_FFMA:
 
@@ -432,10 +438,10 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	
-	/* encoding in [:], op in [] */
+
+		/* encoding in [:], op in [] */
 	case FRM_FMT_FP_FADD:
-		
+
 		inst_bytes->general0.op0 = 0x0;
 		/* [4] = 0, default value for other bits */
 		inst_bytes->general0.mod0 = 0x0;
@@ -451,7 +457,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		}
 		else
 		{
-			/*no predicate, value=7 */
+			/* no predicate, value=7 */
 			inst_bytes->general0.pred = 0x7;
 		}
 
@@ -1013,7 +1019,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			inst_bytes->general0.pred = 0x7;
 		}
 
-		/* [19:14]: all 0s*/
+		/* [19:14]: all 0s */
 		inst_bytes->general0.dst = 0x0;
 
 		/* [25:20]: all 0s */
@@ -1055,7 +1061,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			inst_bytes->general0.pred = 0x7;
 		}
 
-		/* [19:14]: all 0s*/
+		/* [19:14]: all 0s */
 		inst_bytes->general0.dst = 0x0;
 
 		/* [25:20]: all 0s */
@@ -1122,8 +1128,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			inst_bytes->tgt.pred = 0x7;
 		}
 
-		/* [14]: tgt_mod, immediate or const mem addr,
-		 * check the type of the 1st argument */
+		/* [14]: tgt_mod, immediate or const mem addr, check the type 
+		 * of the 1st argument */
 		arg = list_get(inst->arg_list, 0);
 
 		if (arg->type == frm_arg_literal)
@@ -1445,7 +1451,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 			case frm_token_mod0_A_w:
 			{
-				/* width? only mod0_A.neg_src1 matches, change later? */
+				/* width? only mod0_A.neg_src1 matches,
+				 * change later? */
 				if (mod->value.mod0_A_w == 1)
 					inst_bytes->mod0_A.neg_src1 = 0x1;
 				else
@@ -1605,8 +1612,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 			else if (arg->type == frm_arg_zero_register)
 			{
-				/* [45:26]: src2, all 0s
-				 * Register Zero, reg that contains const value of 0 */
+				/* [45:26]: src2, all 0s Register Zero, reg
+				 * that contains const value of 0 */
 				inst_bytes->general0.src2 = 0xfffff;
 			}
 
@@ -1817,6 +1824,16 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 					("Wrong frm_token_src1_offs. \
 					[dis-inst.c]\n");
 			}
+			break;
+		}
+
+		case frm_token_mod0_C_ccop:
+		{
+			if (arg->type == frm_arg_ccop)
+				/* maybe name "shamt" shoule be changed
+				 * later? */
+				inst_bytes->mod0_C.shamt = arg->value.ccop.op;
+
 			break;
 		}
 
