@@ -104,6 +104,11 @@ SR_[a-zA-Z0-9_]* {
   	return TOK_SPECIAL_REGISTER;
 }
 
+CC.[A-Z_]* {
+	frm2bin_yylval.id = frm_id_create(yytext);
+	return TOK_CCOP;
+}
+
 [a-zA-Z][a-zA-Z0-9_\.]* {
   	frm2bin_yylval.id = frm_id_create(yytext);
   	return TOK_ID;
