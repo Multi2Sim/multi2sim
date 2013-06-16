@@ -228,7 +228,7 @@ void si_emu_opengl_disasm(char *path, int opengl_shader_index)
 	si_program_bin = si_opengl_program_binary_create(file_buffer, file_size, path);
 	free_buffer(file_buffer);
 
-	// /* Basic info of the shader binary */
+	/* Basic info of the shader binary */
 	printf("This shader binary contains %d shaders\n\n", 
 		list_count(si_program_bin->shaders));
 	if (opengl_shader_index > list_count(si_program_bin->shaders) || 
