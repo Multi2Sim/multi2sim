@@ -1057,3 +1057,18 @@ void si_bin_enc_user_element_free(struct si_bin_enc_user_element_t *user_elem)
 	free(user_elem);
 }
 
+struct si_bin_compute_pgm_rsrc2_t *si_bin_compute_pgm_rsrc2_create()
+{
+	struct si_bin_compute_pgm_rsrc2_t *pgm_rsrc2;
+
+	/* Initialize */
+	pgm_rsrc2 = xcalloc(1, sizeof(struct si_bin_compute_pgm_rsrc2_t));
+	
+	/* Return */
+	return pgm_rsrc2;
+}
+
+void si_bin_compute_pgm_rsrc2_free(struct si_bin_compute_pgm_rsrc2_t *pgm_rsrc2)
+{
+	free(pgm_rsrc2);
+}

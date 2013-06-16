@@ -116,8 +116,12 @@ struct si2bin_inner_bin_t
 	char *name;
 
 	/* Program Resource */
-	int pgm_rsrc2;
-	
+	struct si_bin_compute_pgm_rsrc2_t *pgm_rsrc2;
+
+	/* Number of SGPRS and VGPRS */
+	int num_sgprs;
+	int num_vgprs;
+
 	/* Elements of type si_bin_enc_user_element_t */
 	struct list_t *user_element_list;
 
