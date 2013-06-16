@@ -88,6 +88,44 @@ struct str_map_t frm_arg_special_register_map =
 	}
 };
 
+struct str_map_t frm_arg_ccop_map =
+{
+	32,
+	{
+		{ "F", frm_arg_ccop_f},
+		{ "LT", frm_arg_ccop_lt},
+		{ "EQ", frm_arg_ccop_eq},
+		{ "LE", frm_arg_ccop_le},
+		{ "GT", frm_arg_ccop_gt},
+		{ "NE", frm_arg_ccop_ne},
+		{ "GE", frm_arg_ccop_ge},
+		{ "NUM", frm_arg_ccop_num},
+		{ "NAN", frm_arg_ccop_nan},
+		{ "LTU", frm_arg_ccop_ltu},
+		{ "EQU", frm_arg_ccop_equ},
+		{ "LEU", frm_arg_ccop_leu},
+		{ "GTU", frm_arg_ccop_gtu},
+		{ "NEU", frm_arg_ccop_neu},
+		{ "GEU", frm_arg_ccop_geu},
+		{ "T", frm_arg_ccop_t},
+		{ "OFF", frm_arg_ccop_off},
+		{ "LO", frm_arg_ccop_lo},
+		{ "SFF", frm_arg_ccop_sff},
+		{ "LS", frm_arg_ccop_ls},
+		{ "HI", frm_arg_ccop_hi},
+		{ "SFT", frm_arg_ccop_sft},
+		{ "HS", frm_arg_ccop_hs},
+		{ "OFT", frm_arg_ccop_oft},
+		{ "CSM_TA", frm_arg_ccop_csm_ta},
+		{ "CSM_TR", frm_arg_ccop_csm_tr},
+		{ "CSM_MX", frm_arg_ccop_csm_mx},
+		{ "FCSM_TA", frm_arg_ccop_fcsm_ta},
+		{ "FCSM_TR", frm_arg_ccop_fcsm_tr},
+		{ "FCSM_MX", frm_arg_ccop_fcsm_mx},
+		{ "RLE", frm_arg_ccop_rle},
+		{ "RGT", frm_arg_ccop_rgt},
+	}
+};
 
 struct frm_arg_t *frm_arg_create(void)
 {
@@ -198,6 +236,26 @@ struct frm_arg_t *frm_arg_create_predicate_register(char *name)
 	arg->value.predicate_register.id = atoi(&name[1]);
 
 	return arg;
+}
+
+struct frm_arg_t *frm_arg_create_ccop(char *name)
+{
+	struct frm_arg_t *arg;
+	int idx;
+
+	arg = frm_arg_create();
+	arg->type = frm_arg_ccop;
+
+	/* name: CC.op, count from the 4th element,
+	 * go though the map to see which string matches */
+	for (idx = 0; idx < (frm_arg_ccop_map.count - 1); idx ++)
+	{
+		if (!strcmp(&(name[3]), str_map_value(&frm_arg_ccop_map, idx)))
+			arg->value.ccop.op = idx;
+	}
+
+	return arg;
+
 }
 
 void frm_arg_free(struct frm_arg_t *arg)
@@ -613,7 +671,19 @@ struct frm_mod_t *frm_mod_create_mod0_A_w(char *mod_name)
 	return mod;
 }
 
-struct frm_mod_t *frm_mod_create_mod0_D_ftzfmz(char* mod_name)
+struct frm_mod_t *frm_mod_create_mod0_C_s(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_mod0_C_s;
+	mod->value.mod0_C_s = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_mod0_D_ftzfmz(char *mod_name)
 {
 	struct frm_mod_t *mod;
 
@@ -630,7 +700,7 @@ struct frm_mod_t *frm_mod_create_mod0_D_ftzfmz(char* mod_name)
 	return mod;
 }
 
-struct frm_mod_t *frm_mod_create_gen0_mod1_B_rnd(char* mod_name)
+struct frm_mod_t *frm_mod_create_gen0_mod1_B_rnd(char *mod_name)
 {
 	struct frm_mod_t *mod;
 
@@ -649,7 +719,7 @@ struct frm_mod_t *frm_mod_create_gen0_mod1_B_rnd(char* mod_name)
 	return mod;
 }
 
-struct frm_mod_t *frm_mod_create_mod0_D_sat(char* mod_name)
+struct frm_mod_t *frm_mod_create_mod0_D_sat(char *mod_name)
 {
 	struct frm_mod_t *mod;
 
@@ -673,7 +743,7 @@ struct frm_mod_t *frm_mod_create_offs_mod1_A_trig(char* mod_name)
 	return mod;
 }
 
-struct frm_mod_t *frm_mod_create_offs_mod1_A_op(char* mod_name)
+struct frm_mod_t *frm_mod_create_offs_mod1_A_op(char *mod_name)
 {
 	struct frm_mod_t *mod;
 

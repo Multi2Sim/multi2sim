@@ -40,6 +40,7 @@
 %token<id> TOK_ZERO_REGISTER
 %token<id> TOK_SCALAR_REGISTER
 %token<id> TOK_SPECIAL_REGISTER
+%token<id> TOK_CCOP
 %token<num> TOK_DECIMAL
 %token<id> TOK_HEX
 %token<id> TOK_PT
@@ -261,6 +262,14 @@ rl_arg
   	  	$$ = frm_arg_create_pt($1->name);
   	  	
   	  	frm_id_free($1);
+  	}
+  	
+  	/* CCOP, conditional code operation? */
+  	| TOK_CCOP
+  	{
+  		$$ = frm_arg_create_ccop($1->name);
+  		
+  		frm_id_free($1);
   	}
 
   	/* identifer  */

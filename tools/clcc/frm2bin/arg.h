@@ -42,6 +42,7 @@ enum frm_arg_type_t
 	frm_arg_const_maddr,
 	frm_arg_glob_maddr,
 	frm_arg_pt,
+	frm_arg_ccop,
 };
 
 /* NOTE: modify string map 'frm_arg_special_register_map' in asm.c together
@@ -105,6 +106,42 @@ enum frm_arg_special_register_type_t
 
 };
 
+enum frm_arg_ccop_type_t
+{
+	frm_arg_ccop_f = 0,
+	frm_arg_ccop_lt,
+	frm_arg_ccop_eq,
+	frm_arg_ccop_le,
+	frm_arg_ccop_gt,
+	frm_arg_ccop_ne,
+	frm_arg_ccop_ge,
+	frm_arg_ccop_num,
+	frm_arg_ccop_nan,
+	frm_arg_ccop_ltu,
+	frm_arg_ccop_equ,
+	frm_arg_ccop_leu,
+	frm_arg_ccop_gtu,
+	frm_arg_ccop_neu,
+	frm_arg_ccop_geu,
+	frm_arg_ccop_t,
+	frm_arg_ccop_off,
+	frm_arg_ccop_lo,
+	frm_arg_ccop_sff,
+	frm_arg_ccop_ls,
+	frm_arg_ccop_hi,
+	frm_arg_ccop_sft,
+	frm_arg_ccop_hs,
+	frm_arg_ccop_oft,
+	frm_arg_ccop_csm_ta,
+	frm_arg_ccop_csm_tr,
+	frm_arg_ccop_csm_mx,
+	frm_arg_ccop_fcsm_ta,
+	frm_arg_ccop_fcsm_tr,
+	frm_arg_ccop_fcsm_mx,
+	frm_arg_ccop_rle,
+	frm_arg_ccop_rgt,
+};
+
 /* logic type */
 enum frm_mod_logic_type_t
 {
@@ -146,6 +183,7 @@ struct frm_mod_t
 		int tgt_lmt;	/* tgt_lmt, 0-false, 1-ture */
 		int mod0_A_w;	/* 0-default, 1-w */
 		int mod0_B_type;	/* 0-u8, 1-s8, 2-u16, 3-s16, 4-default, 5-64, 6-128 */
+		int mod0_C_s;	/* 0-default, 1-s */
 		int mod0_D_sat;	/* 0-default, 1-sat */
 		int mod0_D_ftzfmz;	/* 0-default, 1-ftz, 2-fmz, 3-invalid */
 		int gen0_mod1_B_rnd;	/* 0-default, 1-rm, 2-rp, 3-rz */
@@ -257,6 +295,11 @@ struct frm_arg_t
 		
 		struct
 		{
+			int op;
+		} ccop;
+
+		struct
+		{
 			enum frm_arg_special_register_type_t type;
 		} special_register;
 		
@@ -286,6 +329,7 @@ struct frm_arg_t *frm_arg_create_predicate_register(char *name);
 struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset);
 struct frm_arg_t *frm_arg_create_glob_maddr(int reg_idx, int offset);
 struct frm_arg_t *frm_arg_create_pt(char* name);
+struct frm_arg_t *frm_arg_create_ccop(char* name);
 struct frm_arg_t *frm_arg_create_maddr(struct frm_arg_t *soffset,
 	struct frm_arg_t *qual, char *data_format, char *num_format);
 /*
@@ -306,6 +350,7 @@ struct frm_mod_t *frm_mod_create_tgt_u(char *mod_name);
 struct frm_mod_t *frm_mod_create_tgt_lmt(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_A_w(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_B_type(char *mod_name);
+struct frm_mod_t *frm_mod_create_mod0_C_s(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_D_sat(char* mod_name);
 struct frm_mod_t *frm_mod_create_mod0_D_ftzfmz(char* mod_name);
 struct frm_mod_t *frm_mod_create_gen0_mod1_B_rnd(char* mod_name);
