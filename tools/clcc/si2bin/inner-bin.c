@@ -205,6 +205,7 @@ struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name)
 	bin->name = xstrdup(name);
 
 	/* Set up user element list and program resource */
+	bin->pgm_rsrc2 = si_bin_compute_pgm_rsrc2_create();
 	bin->user_element_list = list_create();
 
 	/* Return */
@@ -237,6 +238,7 @@ void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 	list_free(bin->user_element_list);
 
 	/* Free Program Resource */
+	si_bin_compute_pgm_rsrc2_free(bin->pgm_rsrc2);
 
 	/* Free si2bin_inner_bin */
 	free(bin);

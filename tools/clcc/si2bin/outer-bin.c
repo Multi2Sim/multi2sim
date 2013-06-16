@@ -161,7 +161,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		inner_bin->file->header.e_ident[EI_ABIVERSION] = 1;
 
 		entry->header.d_machine = 26;
-		entry->header.d_type = 0; /* ???? */
+		entry->header.d_type = 4; /* ???? */
 
 		/* Metadata -> .rodata section of Outer ELF */
 
@@ -504,11 +504,11 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	
 		/* AMU_ABI_SI_NUM_VGPRS */
 		prog_info[65].address = 0x80001041;
-		prog_info[65].value = metadata->num_vgprs;
+		prog_info[65].value = inner_bin->num_vgprs;
 		
 		/* AMU_ABI_SI_NUM_SGPRS */
 		prog_info[66].address = 0x80001042;	
-		prog_info[66].value = metadata->num_sgprs;;
+		prog_info[66].value = inner_bin->num_sgprs;;
 		
 		/* AMU_ABI_SI_NUM_SGPRS_AVAIL */
 		prog_info[67].address = 0x80001863;
@@ -531,7 +531,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		
 		/* COMPUTE_PGM_RSRC2 */
 		prog_info[72].address = 0x00002e13;
-		prog_info[72].value = inner_bin->pgm_rsrc2;
+		prog_info[72].value = *((int*)inner_bin->pgm_rsrc2);
+
 
 		/* AMU_ABI_NUM_THREAD_PER_GROUP_X */
 		prog_info[73].address = 0x8000001c;
@@ -690,7 +691,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	}
 	
 
-        outer_bin->file->header.e_machine = 0x3fd;
+        outer_bin->file->header.e_machine = 0x3fd;  /* 0x3fe for pitcairn */
         outer_bin->file->header.e_version = 1;
 
         elf_enc_file_add_symbol_table(outer_bin->file, symbol_table);

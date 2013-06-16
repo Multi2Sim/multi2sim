@@ -150,6 +150,9 @@ struct si_bin_compute_pgm_rsrc2_t
 	unsigned int 			: 1;
 };
 
+struct si_bin_compute_pgm_rsrc2_t *si_bin_compute_pgm_rsrc2_create();
+void si_bin_compute_pgm_rsrc2_free(struct si_bin_compute_pgm_rsrc2_t *pgm_rsrc2);
+
 
 /* Encoding dictionary entry */
 struct si_bin_enc_dict_entry_t
