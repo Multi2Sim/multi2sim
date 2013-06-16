@@ -1,7 +1,7 @@
 SUBDIRS = \
 	runtime \
 	src \
-	tools
+	m2c
 
 images = \
 	images/alu_engine.png \

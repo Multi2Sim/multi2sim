@@ -20,11 +20,11 @@
 #include <assert.h>
 #include <getopt.h>
 
-#include <clcc/amd/amd.h>
-#include <clcc/cl2llvm/cl2llvm.h>
-#include <clcc/frm2bin/frm2bin.h>
-#include <clcc/llvm2si/llvm2si.h>
-#include <clcc/si2bin/si2bin.h>
+#include <m2c/amd/amd.h>
+#include <m2c/cl2llvm/cl2llvm.h>
+#include <m2c/frm2bin/frm2bin.h>
+#include <m2c/llvm2si/llvm2si.h>
+#include <m2c/si2bin/si2bin.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>

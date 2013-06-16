@@ -20,8 +20,8 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include <clcc/si2bin/arg.h>
-#include <clcc/si2bin/inst.h>
+#include <m2c/si2bin/arg.h>
+#include <m2c/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>

@@ -776,8 +776,8 @@ AC_SUBST([CFLAGS])
 
 M2S_INCLUDES=" \
 \
+-I\$(top_srcdir) \
 -I\$(top_srcdir)/src \
--I\$(top_srcdir)/tools \
 \
 "
 
@@ -867,16 +867,13 @@ AC_CONFIG_FILES([
 		src/lib/mhandle/Makefile
 		src/lib/util/Makefile
 
-		tools/Makefile
-
-		tools/clcc/Makefile
-		tools/clcc/amd/Makefile
-		tools/clcc/cl2llvm/Makefile
-		tools/clcc/frm2bin/Makefile
-		tools/clcc/llvm2si/Makefile
-		tools/clcc/si2bin/Makefile
-
-		tools/glcc/Makefile
+		m2c/Makefile
+		m2c/amd/Makefile
+		m2c/cl2llvm/Makefile
+		m2c/frm2bin/Makefile
+		m2c/gl/Makefile
+		m2c/llvm2si/Makefile
+		m2c/si2bin/Makefile
 		])
 AC_OUTPUT
 
