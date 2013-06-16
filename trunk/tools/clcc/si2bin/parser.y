@@ -102,6 +102,7 @@
 %type<arg> waitcnt_elem
 %type<arg> waitcnt_arg
 %type<si_arg> ptr_stmt_list
+%type<num> pgm_rsrc2_value
 
 %%
 
@@ -130,11 +131,6 @@ section
 	| data_section
 	| args_section
 	| text_section
-	{
-		si2bin_metadata->num_sgprs = si2bin_num_sgprs + 1;
-		si2bin_metadata->num_vgprs = si2bin_num_vgprs + 1;
-
-	}	
 	;
 
 global_section
@@ -154,11 +150,9 @@ global_section
 
 		si2bin_uniqueid ++;
 
-		si2bin_num_vgprs = 0;
-		si2bin_num_sgprs = 0;
-		
 		si2bin_id_free(id);
 	}
+	;
 
 mem_section
 	: mem_header
@@ -172,10 +166,30 @@ mem_header
 mem_stmt_list
 	: mem_stmt
 	| mem_stmt mem_stmt_list
-;
+	;
 
 mem_stmt
-	: TOK_NEW_LINE 
+	: TOK_ID TOK_EQ TOK_DECIMAL TOK_NEW_LINE 
+	{
+		if (!strcmp("uavprivate", $1->name))
+		{
+			si2bin_metadata->uavprivate = $3;
+		}
+		else if (!strcmp("hwregion", $1->name))
+		{	
+			si2bin_metadata->hwregion = $3;
+		}
+		else if (!strcmp("hwlocal", $1->name))
+		{
+			si2bin_metadata->hwlocal = $3;
+		}
+		else
+		{
+			si2bin_yyerror_fmt("Unrecognized memory assignment: %s", $1->name);
+		}
+
+		si2bin_id_free($1);
+	}
 	;
 
 data_section
@@ -190,19 +204,22 @@ data_header
 data_stmt_list
 	: data_stmt
 	| data_stmt data_stmt_list
-;
+	;
 
 data_stmt
 	: TOK_ID TOK_EQ TOK_DECIMAL TOK_NEW_LINE
 	{
 		if (!strcmp("userElementCount", $1->name))
 		{
+			warning("User has provided 'userElementCount' but this number is automatically calculated");
 		}
 		else if (!strcmp("NumVgprs", $1->name))
-		{
+		{	
+			warning("User has provided 'NumVgprs' but this number is automatically calculated");
 		}
 		else if (!strcmp("NumSgprs", $1->name))
 		{
+			warning("User has provided 'NumSgprs' but this number is automatically calculated");
 		}
 		else if (!strcmp("FloatMode", $1->name))
 		{
@@ -212,9 +229,13 @@ data_stmt
 		{	
 			si2bin_inner_bin->IeeeMode = $3;
 		}
+		else if (!strcmp("COMPUTE_PGM_RSRC2", $1->name))
+		{
+			warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
+		}
 		else
 		{
-			fatal("Unrecognized assignment");
+			si2bin_yyerror_fmt("Unrecognized assignment: %s", $1->name);
 		}
 
 		si2bin_id_free($1);
@@ -223,15 +244,17 @@ data_stmt
 	{
 		if (!strcmp("COMPUTE_PGM_RSRC2", $1->name))
 		{
-			int pgm_rsrc2;
-			
-			sscanf($3->name, "%x", &pgm_rsrc2);
-			si2bin_inner_bin->pgm_rsrc2 = pgm_rsrc2;
+			warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
+		}
+		else
+		{
+			si2bin_yyerror_fmt("Unrecognized assignment: %s", $1->name);
+		}
 
 			si2bin_id_free($1);
 			si2bin_id_free($3);
 
-		}
+		
 	}
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_EQ TOK_ID TOK_COMMA TOK_DECIMAL TOK_COMMA TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA TOK_NEW_LINE
 	{
@@ -257,12 +280,83 @@ data_stmt
 		si2bin_id_free($10);
 
 	}
-	| TOK_ID TOK_COLON TOK_ID TOK_EQ TOK_DECIMAL TOK_NEW_LINE
+	| TOK_ID TOK_COLON TOK_ID TOK_EQ pgm_rsrc2_value TOK_NEW_LINE
 	{
-		/* Added to accept COMPUTE_PGM_RSRC2:USER_SGPR */
+
+		if (strcmp("COMPUTE_PGM_RSRC2", $1->name))
+			si2bin_yyerror_fmt("Unrecognized assignment: %s", $1->name);
+		
+		if (!strcmp("SCRATCH_EN", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->scrach_en = $5;
+		}
+		else if (!strcmp("USER_SGPR", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->user_sgpr = $5;
+		}
+		else if (!strcmp("TRAP_PRESENT", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->trap_present = $5;
+		}
+		else if (!strcmp("TGID_X_EN", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->tgid_x_en = $5;
+		}
+		else if (!strcmp("TGID_Y_EN", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->tgid_y_en = $5;
+		}
+		else if (!strcmp("TGID_Z_EN", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->tgid_z_en = $5;
+		}
+		else if (!strcmp("TG_SIZE_EN", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->tg_size_en = $5;
+		}
+		else if (!strcmp("TIDIG_COMP_CNT", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->tidig_comp_cnt = $5;
+		}
+		else if (!strcmp("EXCP_EN_MSB", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->tgid_y_en = $5;
+		}
+		else if (!strcmp("LDS_SIZE", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->tgid_y_en = $5;
+		}
+		else if (!strcmp("EXCP_EN", $3->name))
+		{
+			si2bin_inner_bin->pgm_rsrc2->tgid_y_en = $5;
+		}
+		else
+		{
+			si2bin_yyerror_fmt("Unrecognized field of COMPUTE_PGM_RSRC2: %s", $3->name);
+		}
+
+
 		si2bin_id_free($1);
 		si2bin_id_free($3);
 	}
+	;
+
+pgm_rsrc2_value
+	: TOK_DECIMAL
+	{
+		$$ = $1;
+	}
+	| TOK_HEX
+	{
+		int pgm_rsrc2_field;
+		
+		sscanf($1->name, "%x", &pgm_rsrc2_field);
+
+		si2bin_id_free($1);
+		$$ = pgm_rsrc2_field;
+	}
+	;
+
 
 
 args_section
@@ -311,16 +405,6 @@ args_stmt
 		arg->pointer.constant_buffer_num = 1;
 		arg->pointer.constant_offset = $4;
 
-		/* If UAV is not specified, default to 12 */
-		if (!arg->pointer.scope)
-		{
-			arg->pointer.scope = si_arg_uav;
-			arg->pointer.buffer_num = 12;
-		}
-
-		/* If access type not specified, default to RW */
-		if (!arg->pointer.access_type)
-			arg->pointer.access_type = str_map_string(&si_arg_access_type_map, "RW");
 
 		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
@@ -349,8 +433,12 @@ ptr_stmt_list
 	{
 		struct si_arg_t *arg;
 
-		/* Create an argument */
+		/* Create an argument with defaults*/
 		arg = si_arg_create(si_arg_pointer, "arg");
+		arg->pointer.scope = si_arg_uav;
+		arg->pointer.buffer_num = 12;
+		arg->pointer.access_type = si_arg_read_write;
+		
 		$$ = arg;
 	}
 	| ptr_stmt_list TOK_ID
@@ -359,10 +447,8 @@ ptr_stmt_list
 		struct si2bin_id_t *id = $2;
 
 		/* Translate access type */
-		arg->pointer.access_type = str_map_string(&si_arg_access_type_map, arg->name);
-		if (!arg->pointer.access_type)
-			si2bin_yyerror_fmt("%s: invalid access type", id->name);
-
+		arg->pointer.access_type = str_map_string(&si_arg_access_type_map, id->name);
+		
 		/* Free ID and return argument */
 		si2bin_id_free(id);
 		$$ = arg;
@@ -502,8 +588,8 @@ operand
 		value = atoi($1->name + 1);
 		$$ = si2bin_arg_create_scalar_register(value); 
 
-		if (value > si2bin_num_sgprs)
-			si2bin_num_sgprs = value;
+		if (value > si2bin_inner_bin->num_sgprs)
+			si2bin_inner_bin->num_sgprs = value;
 		
 		si2bin_id_free($1);
 	}
@@ -515,8 +601,8 @@ operand
 		value = atoi($1->name + 1);
 		$$ = si2bin_arg_create_vector_register(value); 
 		
-		if (value > si2bin_num_vgprs)
-			si2bin_num_vgprs = value;
+		if (value > si2bin_inner_bin->num_vgprs)
+			si2bin_inner_bin->num_vgprs = value + 1;
 
 		si2bin_id_free($1);
 	}
@@ -584,8 +670,8 @@ arg
 			arg->value.scalar_register_series.low = low;
 			arg->value.scalar_register_series.high = high;
 
-			if (high > si2bin_num_sgprs)
-				si2bin_num_sgprs = high;
+			if (high > si2bin_inner_bin->num_sgprs)
+				si2bin_inner_bin->num_sgprs = high + 1;
 		}
 		else if (!strcmp(id->name, "v"))
 		{
@@ -593,8 +679,8 @@ arg
 			arg->value.vector_register_series.low = low;
 			arg->value.vector_register_series.high = high;
 			
-			if (high > si2bin_num_vgprs)
-				si2bin_num_vgprs = high;
+			if (high > si2bin_inner_bin->num_vgprs)
+				si2bin_inner_bin->num_vgprs = high + 1;
 		}
 		else
 		{
