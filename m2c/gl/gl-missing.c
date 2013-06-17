@@ -23,6 +23,18 @@
 
 
 /*
+ * Public Variables
+ */
+
+int gl_dump_all;
+char *gl_control_shader;
+char *gl_eval_shader;
+char *gl_geo_shader;
+
+
+
+
+/*
  * Private Functions
  */
 
@@ -55,7 +67,7 @@ void gl_done(void)
 
 
 void gl_compile(struct list_t *source_file_list,
-		struct list_t *llvm_file_list, int opt_level)
+	struct list_t *output_file_list)
 {
 	gl_missing();
 }

@@ -21,6 +21,7 @@
 #include <getopt.h>
 
 #include <m2c/amd/amd.h>
+#include <m2c/gl/gl.h>
 #include <m2c/cl2llvm/cl2llvm.h>
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
@@ -38,26 +39,29 @@
  */
 
 /* Output file name passed with option '-o' */
-char clcc_out_file_name[MAX_STRING_SIZE];
+char m2c_out_file_name[MAX_STRING_SIZE];
 
-int clcc_amd_run;  /* Run AMD native compiler */
-int clcc_preprocess_run;  /* Run stand-alone preprocessor */
-int clcc_cl2llvm_run;  /* Run OpenCL-to-LLVM stand-alone front-end */
-int clcc_frm2bin_run;  /* Run Fermi stand-alone assembler */
-int clcc_llvm2si_run;  /* Run LLVM-to-SI stand-alone back-end */
-int clcc_si2bin_run;  /* Run Southern Islands stand-alone assembler */
-int clcc_opt_level = 1;  /* Optimization level */
+/* OpenGL compiler options */
+int m2c_gl_run;  /* Run OpenGL native compiler */
+
+int m2c_amd_run;  /* Run AMD native compiler */
+int m2c_preprocess_run;  /* Run stand-alone preprocessor */
+int m2c_cl2llvm_run;  /* Run OpenCL-to-LLVM stand-alone front-end */
+int m2c_frm2bin_run;  /* Run Fermi stand-alone assembler */
+int m2c_llvm2si_run;  /* Run LLVM-to-SI stand-alone back-end */
+int m2c_si2bin_run;  /* Run Southern Islands stand-alone assembler */
+int m2c_opt_level = 1;  /* Optimization level */
 
 
 /* File names computed from source files */
-struct list_t *clcc_source_file_list;  /* Source file names */
-struct list_t *clcc_clp_file_list;  /* Preprocessed source list, extension '.clp' */
-struct list_t *clcc_llvm_file_list;  /* LLVM files, extension, '.llvm' */
-struct list_t *clcc_asm_file_list;  /* Assembly files, extension '.s' */
-struct list_t *clcc_bin_file_list;  /* Binary files, extension '.bin' */
+struct list_t *m2c_source_file_list;  /* Source file names */
+struct list_t *m2c_clp_file_list;  /* Preprocessed source list, extension '.clp' */
+struct list_t *m2c_llvm_file_list;  /* LLVM files, extension, '.llvm' */
+struct list_t *m2c_asm_file_list;  /* Assembly files, extension '.s' */
+struct list_t *m2c_bin_file_list;  /* Binary files, extension '.bin' */
 
 /* List of macros passed with '-D' options in the command line. */
-struct list_t *clcc_define_list;  /* Elements of type 'char *' */
+struct list_t *m2c_define_list;  /* Elements of type 'char *' */
 
 
 
@@ -88,7 +92,7 @@ static char *syntax =
 	"\tThis option must be combined with option '--amd-.\n"
 	"\n"
 	"--amd-dump-all, -a\n"
-	"\tDump all intermediate file is generated during compilation. This\n"
+	"\tDump all intermediate files is generated during compilation. This\n"
 	"\toption must be used together with '--amd'.\n"
 	"\n"
 	"--cl2llvm\n"
@@ -96,13 +100,35 @@ static char *syntax =
 	"\tsource files and generating LLVM outputs with the '.llvm'\n"
 	"\tfile extension.\n"
 	"\n"
-	"--define <symbol>=<value>, -D <symbol>=<value>\n"
+	"--define <symbol>=<value>, -D<symbol>=<value>\n"
 	"\tAdd a definition for additional symbols, equivalent to #define\n"
 	"\tcompiler directives. This argument can be used multiple times.\n"
 	"\n"
 	"--frm-asm\n"
 	"\tTreat the input files as source files containing Fermi assembly\n"
 	"\tcode. Run the Fermi assembler and generate a CUDA kernel binary.\n"
+	"\n"
+	"--gl\n"
+	"\tUse the OpenGL driver present on the machine to compile OpenGL\n"
+	"\tshaders. When this option is used, the list of sources files\n"
+	"\tshould be composed of exactly two file names: the first for\n"
+	"\tthe vertex shader and the second for the fragment shader.\n"
+	"\n"
+	"--gl-control <file>\n"
+	"\tSpecify a source file containing an OpenGL control shader. This\n"
+	"\toption must be used together with '--gl'.\n"
+	"\n"
+	"--gl-dump-all\n"
+	"\tDump all intermediate files generated during the compilation of\n"
+	"\tand OpenGL shader. This option must be used with '--gl'.\n"
+	"\n"
+	"--gl-eval <file>\n"
+	"\tSpecify a source file containing an OpenGL evaluation shader.\n"
+	"\tThis option must be used together with '--gl'.\n"
+	"\n"
+	"--gl-geo <file>\n"
+	"\tSpecify a source file containing an OpenGL geometry shader.\n"
+	"\tThis option must be used together with '--gl'.\n"
 	"\n"
 	"--help, -h\n"
 	"\tShow help message with command-line options.\n"
@@ -134,7 +160,7 @@ static char *syntax =
 
 
 
-static void clcc_process_option(const char *option, char *optarg)
+static void m2c_process_option(const char *option, char *optarg)
 {
 	/*
 	 * Native AMD related options
@@ -142,7 +168,7 @@ static void clcc_process_option(const char *option, char *optarg)
 	
 	if (!strcmp(option, "amd"))
 	{
-		clcc_amd_run = 1;
+		m2c_amd_run = 1;
 		return;
 	}
 
@@ -160,7 +186,7 @@ static void clcc_process_option(const char *option, char *optarg)
 
 	if (!strcmp(option, "define") || !strcmp(option, "D"))
 	{
-		list_add(clcc_define_list, xstrdup(optarg));
+		list_add(m2c_define_list, xstrdup(optarg));
 		return;
 	}
 
@@ -172,13 +198,43 @@ static void clcc_process_option(const char *option, char *optarg)
 
 	if (!strcmp(option, "cl2llvm"))
 	{
-		clcc_cl2llvm_run = 1;
+		m2c_cl2llvm_run = 1;
 		return;
 	}
 
 	if (!strcmp(option, "frm-asm"))
 	{
-		clcc_frm2bin_run = 1;
+		m2c_frm2bin_run = 1;
+		return;
+	}
+
+	if (!strcmp(option, "gl"))
+	{
+		m2c_gl_run = 1;
+		return;
+	}
+
+	if (!strcmp(option, "gl-control"))
+	{
+		gl_control_shader = optarg;
+		return;
+	}
+
+	if (!strcmp(option, "gl-dump-all"))
+	{
+		gl_dump_all = 1;
+		return;
+	}
+
+	if (!strcmp(option, "gl-eval"))
+	{
+		gl_eval_shader = optarg;
+		return;
+	}
+
+	if (!strcmp(option, "gl-geo"))
+	{
+		gl_geo_shader = optarg;
 		return;
 	}
 	
@@ -190,13 +246,13 @@ static void clcc_process_option(const char *option, char *optarg)
 
 	if (!strcmp(option, "llvm2si"))
 	{
-		clcc_llvm2si_run = 1;
+		m2c_llvm2si_run = 1;
 		return;
 	}
 
 	if (!strcmp(option, "o"))
 	{
-		snprintf(clcc_out_file_name, sizeof clcc_out_file_name,
+		snprintf(m2c_out_file_name, sizeof m2c_out_file_name,
 				"%s", optarg);
 		return;
 	}
@@ -204,23 +260,23 @@ static void clcc_process_option(const char *option, char *optarg)
 	if (!strcmp(option, "O"))
 	{
 		int err;
-		clcc_opt_level = str_to_int(optarg, &err);
+		m2c_opt_level = str_to_int(optarg, &err);
 		if (err)
 			fatal("%s: %s", optarg, str_error(err));
-		if (!IN_RANGE(clcc_opt_level, 0, 1))
+		if (!IN_RANGE(m2c_opt_level, 0, 1))
 			fatal("%s: invalid value", optarg);
 		return;
 	}
 
 	if (!strcmp(option, "preprocess") || !strcmp(option, "E"))
 	{
-		clcc_preprocess_run = 1;
+		m2c_preprocess_run = 1;
 		return;
 	}
 
 	if (!strcmp(option, "si-asm"))
 	{
-		clcc_si2bin_run = 1;
+		m2c_si2bin_run = 1;
 		return;
 	}
 
@@ -231,7 +287,7 @@ static void clcc_process_option(const char *option, char *optarg)
 }
 
 
-static void clcc_read_command_line(int argc, char **argv)
+static void m2c_read_command_line(int argc, char **argv)
 {
 	int option_index = 0;
 	int opt;
@@ -245,6 +301,11 @@ static void clcc_read_command_line(int argc, char **argv)
 		{ "amd-list", no_argument, 0, 'l' },
 		{ "cl2llvm", no_argument, 0, 0 },
 		{ "frm-asm", no_argument, 0, 0},
+		{ "gl", no_argument, 0, 0 },
+		{ "gl-control", required_argument, 0, 0 },
+		{ "gl-dump-all", no_argument, 0, 0 },
+		{ "gl-eval", required_argument, 0, 0 },
+		{ "gl-geo", required_argument, 0, 0 },
 		{ "define", required_argument, 0, 'D' },
 		{ "help", no_argument, 0, 'h' },
 		{ "llvm2si", no_argument, 0, 0 },
@@ -271,43 +332,43 @@ static void clcc_read_command_line(int argc, char **argv)
 		{
 			option[0] = opt;
 			option[1] = '\0';
-			clcc_process_option(option, optarg);
+			m2c_process_option(option, optarg);
 		}
 		else
 		{
-			clcc_process_option(long_options[option_index].name,
+			m2c_process_option(long_options[option_index].name,
 				optarg);
 		}
 	}
 
 	/* The rest are source files */
 	while (optind < argc)
-		list_add(clcc_source_file_list, xstrdup(argv[optind++]));
+		list_add(m2c_source_file_list, xstrdup(argv[optind++]));
 }
 
 
-/* If a file was specified with option '-o', replace the file name in the file
- * list with the output file. The file list must contain only one element. */
-static void clcc_replace_out_file_name(struct list_t *file_list)
+/* If a file was specified with option '-o', replace the first file name in the
+ * list with the output file. */
+static void m2c_replace_out_file_name(struct list_t *file_list)
 {
 	char *file_name;
 
 	/* Nothing to do if output file name is not given */
-	if (!clcc_out_file_name[0])
+	if (!m2c_out_file_name[0])
 		return;
 
 	/* Free old string */
-	assert(list_count(file_list) == 1);
+	assert(list_count(file_list));
 	file_name = list_get(file_list, 0);
 	free(file_name);
 
 	/* Set new name */
-	file_name = xstrdup(clcc_out_file_name);
+	file_name = xstrdup(m2c_out_file_name);
 	list_set(file_list, 0, file_name);
 }
 
 
-static void clcc_read_source_files(void)
+static void m2c_read_source_files(void)
 {
 	char *file_name_ptr;
 	char file_name[MAX_STRING_SIZE];
@@ -315,21 +376,21 @@ static void clcc_read_source_files(void)
 	int index;
 
 	/* Nothing to do for no sources */
-	if (!clcc_source_file_list->count)
+	if (!m2c_source_file_list->count)
 		return;
 
 	/* Option '-o' no allowed when multiple source files are given. */
-	if (clcc_source_file_list->count > 1 && clcc_out_file_name[0])
+	if (m2c_source_file_list->count > 1 && m2c_out_file_name[0])
 		fatal("option '-o' not allowed when multiple sources are given");
 
 	/* Create file names */
-	LIST_FOR_EACH(clcc_source_file_list, index)
+	LIST_FOR_EACH(m2c_source_file_list, index)
 	{
 		char *dot_str;
 		char *slash_str;
 
 		/* Get file name */
-		file_name_ptr = list_get(clcc_source_file_list, index);
+		file_name_ptr = list_get(m2c_source_file_list, index);
 
 		/* Get position of last '.' after last '/' */
 		dot_str = rindex(file_name_ptr, '.');
@@ -343,24 +404,24 @@ static void clcc_read_source_files(void)
 
 		/* Pre-processed source with '.clp' extension */
 		snprintf(file_name, sizeof file_name, "%s.clp", file_name_prefix);
-		list_add(clcc_clp_file_list, xstrdup(file_name));
+		list_add(m2c_clp_file_list, xstrdup(file_name));
 
 		/* LLVM binary with '.llvm' extension */
 		snprintf(file_name, sizeof file_name, "%s.llvm", file_name_prefix);
-		list_add(clcc_llvm_file_list, xstrdup(file_name));
+		list_add(m2c_llvm_file_list, xstrdup(file_name));
 
 		/* Assembly code with '.s' extension */
 		snprintf(file_name, sizeof file_name, "%s.s", file_name_prefix);
-		list_add(clcc_asm_file_list, xstrdup(file_name));
+		list_add(m2c_asm_file_list, xstrdup(file_name));
 
 		/* Final binary with '.bin' extension */
 		snprintf(file_name, sizeof file_name, "%s.bin", file_name_prefix);
-		list_add(clcc_bin_file_list, xstrdup(file_name));
+		list_add(m2c_bin_file_list, xstrdup(file_name));
 	}
 }
 
 
-static void clcc_preprocess(struct list_t *source_file_list,
+static void m2c_preprocess(struct list_t *source_file_list,
 		struct list_t *clp_file_list)
 {
 	char cmd[MAX_LONG_STRING_SIZE];
@@ -390,9 +451,9 @@ static void clcc_preprocess(struct list_t *source_file_list,
 		str_printf(&cmd_ptr, &cmd_size, "cpp %s -o %s", source_file, clp_file);
 
 		/* Add '-D' flags */
-		LIST_FOR_EACH(clcc_define_list, j)
+		LIST_FOR_EACH(m2c_define_list, j)
 		{
-			define = list_get(clcc_define_list, j);
+			define = list_get(m2c_define_list, j);
 			str_printf(&cmd_ptr, &cmd_size, " -D%s", define);
 		}
 
@@ -414,15 +475,15 @@ static void clcc_preprocess(struct list_t *source_file_list,
 }
 
 
-void clcc_init(void)
+void m2c_init(void)
 {
 	/* List of source files */
-	clcc_source_file_list = list_create();
-	clcc_clp_file_list = list_create();
-	clcc_llvm_file_list = list_create();
-	clcc_asm_file_list = list_create();
-	clcc_bin_file_list = list_create();
-	clcc_define_list = list_create();
+	m2c_source_file_list = list_create();
+	m2c_clp_file_list = list_create();
+	m2c_llvm_file_list = list_create();
+	m2c_asm_file_list = list_create();
+	m2c_bin_file_list = list_create();
+	m2c_define_list = list_create();
 
 	/* Initialize compiler modules */
 	cl2llvm_init();
@@ -432,39 +493,39 @@ void clcc_init(void)
 }
 
 
-void clcc_done(void)
+void m2c_done(void)
 {
 	int index;
 
 	/* Free list of source files */
-	LIST_FOR_EACH(clcc_source_file_list, index)
-		free(list_get(clcc_source_file_list, index));
-	list_free(clcc_source_file_list);
+	LIST_FOR_EACH(m2c_source_file_list, index)
+		free(list_get(m2c_source_file_list, index));
+	list_free(m2c_source_file_list);
 
 	/* Free list of pre-processed files */
-	LIST_FOR_EACH(clcc_clp_file_list, index)
-		free(list_get(clcc_clp_file_list, index));
-	list_free(clcc_clp_file_list);
+	LIST_FOR_EACH(m2c_clp_file_list, index)
+		free(list_get(m2c_clp_file_list, index));
+	list_free(m2c_clp_file_list);
 
 	/* Free list of LLVM object files */
-	LIST_FOR_EACH(clcc_llvm_file_list, index)
-		free(list_get(clcc_llvm_file_list, index));
-	list_free(clcc_llvm_file_list);
+	LIST_FOR_EACH(m2c_llvm_file_list, index)
+		free(list_get(m2c_llvm_file_list, index));
+	list_free(m2c_llvm_file_list);
 
 	/* Free list of assembly files */
-	LIST_FOR_EACH(clcc_asm_file_list, index)
-		free(list_get(clcc_asm_file_list, index));
-	list_free(clcc_asm_file_list);
+	LIST_FOR_EACH(m2c_asm_file_list, index)
+		free(list_get(m2c_asm_file_list, index));
+	list_free(m2c_asm_file_list);
 
 	/* Free list of binary files */
-	LIST_FOR_EACH(clcc_bin_file_list, index)
-		free(list_get(clcc_bin_file_list, index));
-	list_free(clcc_bin_file_list);
+	LIST_FOR_EACH(m2c_bin_file_list, index)
+		free(list_get(m2c_bin_file_list, index));
+	list_free(m2c_bin_file_list);
 
 	/* Free list of '#define' directives */
-	LIST_FOR_EACH(clcc_define_list, index)
-		free(list_get(clcc_define_list, index));
-	list_free(clcc_define_list);
+	LIST_FOR_EACH(m2c_define_list, index)
+		free(list_get(m2c_define_list, index));
+	list_free(m2c_define_list);
 
 	/* Finalize compiler modules */
 	cl2llvm_done();
@@ -477,14 +538,14 @@ void clcc_done(void)
 int main(int argc, char **argv)
 {
 	/* Initialize */
-	clcc_init();
+	m2c_init();
 
 	/* Read command line */
-	clcc_read_command_line(argc, argv);
+	m2c_read_command_line(argc, argv);
 
-	/* Process list of sources in 'clcc_source_file_list' and generate the
+	/* Process list of sources in 'm2c_source_file_list' and generate the
 	 * rest of the file lists. */
-	clcc_read_source_files();
+	m2c_read_source_files();
 
 	/* List AMD devices */
 	if (amd_list_devices)
@@ -494,65 +555,74 @@ int main(int argc, char **argv)
 	}
 
 	/* Native AMD compilation */
-	if (clcc_amd_run)
+	if (m2c_amd_run)
 	{
-		clcc_replace_out_file_name(clcc_bin_file_list);
-		clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
-		amd_compile(clcc_clp_file_list, clcc_bin_file_list);
+		m2c_replace_out_file_name(m2c_bin_file_list);
+		m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
+		amd_compile(m2c_clp_file_list, m2c_bin_file_list);
+		goto out;
+	}
+
+	/* OpenGL compilation */
+	if (m2c_gl_run)
+	{
+		m2c_replace_out_file_name(m2c_bin_file_list);
+		gl_compile(m2c_source_file_list, m2c_bin_file_list);
 		goto out;
 	}
 
 	/* Stand-alone pre-processor */
-	if (clcc_preprocess_run)
+	if (m2c_preprocess_run)
 	{
-		clcc_replace_out_file_name(clcc_clp_file_list);
-		clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
+		m2c_replace_out_file_name(m2c_clp_file_list);
+		m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
 		goto out;
 	}
 
 	/* OpenCL C to LLVM stand-alone front-end */
-	if (clcc_cl2llvm_run)
+	if (m2c_cl2llvm_run)
 	{
-		clcc_replace_out_file_name(clcc_llvm_file_list);
-		clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
-		cl2llvm_compile(clcc_clp_file_list, clcc_llvm_file_list, clcc_opt_level);
+		m2c_replace_out_file_name(m2c_llvm_file_list);
+		m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
+		cl2llvm_compile(m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
 		goto out;
 	}
 
 	/* LLVM to Southern Islands stand-alone back-end */
-	if (clcc_llvm2si_run)
+	if (m2c_llvm2si_run)
 	{
-		clcc_replace_out_file_name(clcc_asm_file_list);
-		llvm2si_compile(clcc_source_file_list, clcc_asm_file_list);
+		m2c_replace_out_file_name(m2c_asm_file_list);
+		llvm2si_compile(m2c_source_file_list, m2c_asm_file_list);
 		goto out;
 	}
 
 	/* Southern Islands assembler */
-	if (clcc_si2bin_run)
+	if (m2c_si2bin_run)
 	{
-		clcc_replace_out_file_name(clcc_bin_file_list);
-		si2bin_compile(clcc_source_file_list, clcc_bin_file_list);
+		m2c_replace_out_file_name(m2c_bin_file_list);
+		si2bin_compile(m2c_source_file_list, m2c_bin_file_list);
 		goto out;
 	}
 
 	/* Fermi assembler */
-	if (clcc_frm2bin_run)
+	if (m2c_frm2bin_run)
 	{
-		clcc_replace_out_file_name(clcc_bin_file_list);
-		frm2bin_compile(clcc_source_file_list, clcc_bin_file_list);
+		m2c_replace_out_file_name(m2c_bin_file_list);
+		frm2bin_compile(m2c_source_file_list, m2c_bin_file_list);
 		goto out;
 	}
 
 	/* Compilation steps */
-	clcc_replace_out_file_name(clcc_bin_file_list);
-	clcc_preprocess(clcc_source_file_list, clcc_clp_file_list);
-	cl2llvm_compile(clcc_clp_file_list, clcc_llvm_file_list, clcc_opt_level);
-	llvm2si_compile(clcc_llvm_file_list, clcc_asm_file_list);
-	si2bin_compile(clcc_asm_file_list, clcc_bin_file_list);
+	m2c_replace_out_file_name(m2c_bin_file_list);
+	m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
+	cl2llvm_compile(m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
+	llvm2si_compile(m2c_llvm_file_list, m2c_asm_file_list);
+	si2bin_compile(m2c_asm_file_list, m2c_bin_file_list);
 
 out:
 	/* Finish */
-	clcc_done();
+	m2c_done();
 	mhandle_done();
 	return 0;
 }
+
