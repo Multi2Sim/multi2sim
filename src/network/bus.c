@@ -25,15 +25,15 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
-#include "network.h"
-#include "net-system.h"
-#include "bus.h"
-#include "node.h"
 #include "buffer.h"
+#include "bus.h"
+#include "net-system.h"
+#include "network.h"
+#include "node.h"
 
 
-struct net_bus_t *net_bus_create(struct net_t *net, struct net_node_t * node,
-		int bandwidth, char *name)
+struct net_bus_t *net_bus_create(struct net_t *net, struct net_node_t *node,
+	int bandwidth, char *name)
 {
 	struct net_bus_t *bus;
 
@@ -98,7 +98,8 @@ static struct net_buffer_t *net_bus_arbiteration_per_lane(struct net_node_t
 	/* Find input buffer to fetch from */
 	for (i = 0; i < input_buffer_count; i++)
 	{
-		input_buffer_index = (last_input_node_index + i + 1) % input_buffer_count;
+		input_buffer_index = (last_input_node_index + i + 1) 
+			% input_buffer_count;
 		src_buffer = list_get(bus_node->src_buffer_list, input_buffer_index);
 
 		/* There must be a message at the head */
@@ -131,7 +132,6 @@ struct net_bus_t *net_bus_arbitration(struct net_node_t *bus_node,
 	int i;
 	struct net_bus_t *check_bus;
 
-
 	/* checks */
 	assert(buffer->bus);
 	assert(!buffer->link);
@@ -154,9 +154,11 @@ void net_bus_dump_report(struct net_bus_t *bus, FILE *f)
 	/* Get current cycle */
 	cycle = esim_domain_cycle(net_domain_index);
 
-	fprintf(f, "%s.Bandwidth = %d\n",bus->name, bus->bandwidth);
-	fprintf(f, "%s.TransferredMessages = %lld\n", bus->name, bus->transferred_msgs);
-	fprintf(f, "%s.TransferredBytes = %lld\n", bus->name, bus->transferred_bytes);
+	fprintf(f, "%s.Bandwidth = %d\n", bus->name, bus->bandwidth);
+	fprintf(f, "%s.TransferredMessages = %lld\n", bus->name,
+		bus->transferred_msgs);
+	fprintf(f, "%s.TransferredBytes = %lld\n", bus->name,
+		bus->transferred_bytes);
 	fprintf(f, "%s.BusyCycles = %lld\n", bus->name, bus->busy_cycles);
 	fprintf(f, "%s.BytesPerCycle = %.4f\n", bus->name, cycle ?
 		(double) bus->transferred_bytes / cycle : 0.0);

@@ -39,12 +39,12 @@ struct net_link_t
 	struct net_buffer_t *src_buffer;
 
 	int bandwidth;
-	long long busy;  /* Busy until this cycle inclusive */
+	long long busy;		/* Busy until this cycle inclusive */
 
 	/* Scheduling for link */
-	int virtual_channel; /* Number of Virtual Channels on a Link*/
-	long long sched_when; /* The last time a buffer was assigned to the Link */
-	struct net_buffer_t *sched_buffer; /* The output buffer to fetch data from*/
+	int virtual_channel;	/* Number of Virtual Channels on a Link*/
+	long long sched_when;	/* The last time a buffer was assigned to Link */
+	struct net_buffer_t *sched_buffer;	/* The output buffer to fetch from*/
 
 	/* Stats */
 	long long busy_cycles;
@@ -57,12 +57,12 @@ struct net_link_t
 void net_link_free(struct net_link_t *link);
 struct net_link_t *net_link_create(struct net_t *net,
 	struct net_node_t *src_node, struct net_node_t *dst_node,
-	int bandwidth,int link_src_bsize, int link_dst_bsize,  int vc);
-struct net_buffer_t *net_link_arbitrator_vc( struct net_link_t *link,
-		struct net_node_t *node);
+	int bandwidth, int link_src_bsize, int link_dst_bsize, int vc);
+
+struct net_buffer_t *net_link_arbitrator_vc(struct net_link_t *link,
+	struct net_node_t *node);
 
 void net_link_dump_report(struct net_link_t *link, FILE *f);
 
 
 #endif
-

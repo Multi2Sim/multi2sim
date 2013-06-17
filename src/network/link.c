@@ -149,7 +149,8 @@ struct net_buffer_t *net_link_arbitrator_vc(struct net_link_t *link,
 	for (i = 0; i < output_buffer_count; i++)
 	{
 		struct net_buffer_t *temp_out_buffer;
-		temp_out_buffer = list_get(src_node->output_buffer_list,i);
+
+		temp_out_buffer = list_get(src_node->output_buffer_list, i);
 		if (temp_out_buffer->link == link)
 			out_vc_count++;
 		if (out_vc_count == 1)
