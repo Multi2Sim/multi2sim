@@ -36,68 +36,81 @@
 
 #include "gl.h"
 
+/*
+ * Public Variables
+ */
+
+int gl_dump_all;  /* Dump intermediate files */
+char *gl_control_shader;
+char *gl_eval_shader;
+char *gl_geo_shader;
+
+/* These are passed as parameters in the source file list,
+ * declared as private variables. */
+static char *gl_vertex_shader;
+static char *gl_fragment_shader;
+
+
+
+
+/*
+ * Private Functions
+ */
 
 #define PROGRAM_BINARY_RETRIEVABLE_HINT  0x8257
 
-static char *syntax =
-	"Syntax: %s [<options>]\n"
-	"\tOptions:\n"
-	"\t-a\t\t\t\tDump intermediate ELF files\n"
-	"\t-v  <shader source file>\tVertex shader source code\n"
-	"\t-e  <shader source file>\tEvaluation shader source code\n"
-	"\t-c  <shader source file>\tControl shader source code\n"
-	"\t-g  <shader source file>\tGeometry shader source code\n"
-	"\t-f  <shader source file>\tFragment shader source code\n"
-	"\t-o\t\t\t\tOutput binary file name\n";
 
+/* FIXME - all variables and functions that are not exported in the '.h' should have the 'static' modifier */
+/* FIXME - 'gl_' prefix should be added to global and static variables/functions outside of function scopes */
 
-int dump_intermediate = 0;	/* Dump intermediate files */
 
 /* For context initialization */
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 typedef Bool (*glXMakeContextCurrentARBProc)(Display*, GLXDrawable, GLXDrawable, GLXContext);
-PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
-PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
-PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers;
-PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer;
-PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage;
-PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;
-PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
-PFNGLGETSHADERIVPROC glGetShaderiv;
-PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
-PFNGLCREATESHADERPROC glCreateShader;
-PFNGLSHADERSOURCEPROC glShaderSource;
-PFNGLCOMPILESHADERPROC glCompileShader;
-PFNGLCREATEPROGRAMPROC glCreateProgram;
-PFNGLATTACHSHADERPROC glAttachShader;
-PFNGLLINKPROGRAMPROC glLinkProgram;
-PFNGLGETPROGRAMIVPROC glGetProgramiv;
-PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
-PFNGLUSEPROGRAMPROC glUseProgram;
-PFNGLPROGRAMPARAMETERIPROC glProgramParameteri;
-PFNGLGETPROGRAMBINARYPROC glGetProgramBinary;
+static PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
+static PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
+static PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers;
+static PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer;
+static PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage;
+static PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;
+static PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
+static PFNGLGETSHADERIVPROC glGetShaderiv;
+static PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
+static PFNGLCREATESHADERPROC glCreateShader;
+static PFNGLSHADERSOURCEPROC glShaderSource;
+static PFNGLCOMPILESHADERPROC glCompileShader;
+static PFNGLCREATEPROGRAMPROC glCreateProgram;
+static PFNGLATTACHSHADERPROC glAttachShader;
+static PFNGLLINKPROGRAMPROC glLinkProgram;
+static PFNGLGETPROGRAMIVPROC glGetProgramiv;
+static PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
+static PFNGLUSEPROGRAMPROC glUseProgram;
+static PFNGLPROGRAMPARAMETERIPROC glProgramParameteri;
+static PFNGLGETPROGRAMBINARYPROC glGetProgramBinary;
 
-int pbuffer_width = 32;
-int pbuffer_height = 32;
-int framebuffer_width = 1024;
-int framebuffer_height = 768;
+/* FIXME - check if scope of these variables can be made local */
+static int pbuffer_width = 32;
+static int pbuffer_height = 32;
+static int framebuffer_width = 1024;
+static int framebuffer_height = 768;
 
 /* X & Context */
-Display* dpy ;
-int fbcount;
-GLXFBConfig* fbc;
-GLXContext ctx;
-GLXPbuffer pbuf;
+static Display* dpy ;
+static int fbcount;
+static GLXFBConfig* fbc;
+static GLXContext ctx;
+static GLXPbuffer pbuf;
 
 /* Buffer IDs */
-GLuint m_framebuffer1;
-GLuint m_colorRenderbuffer1;
-GLuint m_depthRenderbuffer;
+static GLuint m_framebuffer1;
+static GLuint m_colorRenderbuffer1;
+static GLuint m_depthRenderbuffer;
 
 static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
 static glXMakeContextCurrentARBProc glXMakeContextCurrentARB = 0;
 
-int opengl_context_init_x(unsigned int major_version, unsigned int minor_version)
+
+static int gl_context_init_x(unsigned int major_version, unsigned int minor_version)
 {
 	static int visual_attribs[] = 
 	{
@@ -218,7 +231,8 @@ int opengl_context_init_x(unsigned int major_version, unsigned int minor_version
 	return 0;
 }
 
-void opengl_context_init_buffer()
+
+static void gl_context_init_buffer()
 {
 	glGenFramebuffers(1, &m_framebuffer1);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer1);
@@ -241,7 +255,7 @@ void opengl_context_init_buffer()
 }
 
 
-int opengl_binary_is_elf(char *buf)
+static int gl_binary_is_elf(char *buf)
 {
 	char ELF_MAGIC[4] = { 0x7F, 0x45, 0x4C, 0x46 };
 	
@@ -249,7 +263,7 @@ int opengl_binary_is_elf(char *buf)
 }
 
 
-void opengl_shader_binary_analyze_inner_elf(char *file_name)
+static void gl_shader_binary_analyze_inner_elf(char *file_name)
 {
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;
@@ -291,7 +305,8 @@ void opengl_shader_binary_analyze_inner_elf(char *file_name)
 	elf_file_free(elf_file);
 }
 
-void opengl_shader_binary_analyze(char *file_name)
+
+static void gl_shader_binary_analyze(char *file_name)
 {
 	char ELF_MAGIC[4] = { 0x7F, 0x45, 0x4C, 0x46 };
 	char file_name_dest[MAX_STRING_SIZE];
@@ -321,7 +336,7 @@ void opengl_shader_binary_analyze(char *file_name)
 
 	file_buffer = (char *) read_buffer((char *) file_name, &file_size);
 	/* Shader binary may have different format */
-	if (opengl_binary_is_elf(file_buffer))
+	if (gl_binary_is_elf(file_buffer))
 	{
 		/* Read ELF file */
 		elf_file = elf_file_create_from_path(file_name);
@@ -408,7 +423,7 @@ void opengl_shader_binary_analyze(char *file_name)
 			fclose(f);
 
 			if (str_suffix(symbol->name, "ElfBinary_0_"))
-				opengl_shader_binary_analyze_inner_elf(file_name_dest);
+				gl_shader_binary_analyze_inner_elf(file_name_dest);
 		}
 	}
 	else
@@ -434,7 +449,8 @@ void opengl_shader_binary_analyze(char *file_name)
 	}
 }
 
-void opengl_check_compile_error(GLuint opengl_shader_id)
+
+static void gl_check_compile_error(GLuint id)
 {
 	char *log;
 	GLint result;
@@ -442,17 +458,15 @@ void opengl_check_compile_error(GLuint opengl_shader_id)
 	GLsizei written;
 
 	/* Check compilation errors */
-	glGetShaderiv(opengl_shader_id, GL_COMPILE_STATUS, &result);
-	if (result == GL_FALSE)
+	glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+	if (!result)
 	{
 		fprintf(stderr, "Shader compilation failed!\n");
-
-		glGetShaderiv(opengl_shader_id, GL_INFO_LOG_LENGTH, &logLen);
+		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &logLen);
 		if (logLen > 0)
 		{
 			log = (char *) xmalloc(logLen);
-			glGetShaderInfoLog(opengl_shader_id, logLen, &written,
-				log);
+			glGetShaderInfoLog(id, logLen, &written, log);
 			fprintf(stderr, "Shader log:\n%s", log);
 			free(log);
 			exit(1);
@@ -460,28 +474,34 @@ void opengl_check_compile_error(GLuint opengl_shader_id)
 	}
 }
 
-GLuint opengl_compile_shader(const GLchar ** opengl_shader_source,
-	GLenum opengl_shader_type)
-{
-	GLuint opengl_shader_id;
 
-	opengl_shader_id = glCreateShader(opengl_shader_type);
-	if (opengl_shader_id == 0)
-	{
-		fprintf(stderr, "Error creating shader.\n");
-		exit(1);
-	}
-	glShaderSource(opengl_shader_id, 1, opengl_shader_source, NULL);
-	glCompileShader(opengl_shader_id);
-	opengl_check_compile_error(opengl_shader_id);
-	return opengl_shader_id;
+/* FIXME - static GLuint gl_compile_shader(const GLchar *source, GLenum type, GLint size) */
+static GLuint gl_compile_shader(const GLchar **source, GLenum type)
+{
+	GLuint id;
+
+	/* Create shader */
+	id = glCreateShader(type);
+	if (!id)
+		fatal("cannot create shader");
+
+	/* Compile */
+	glShaderSource(id, 1, source, NULL);  /* FIXME - not NULL */
+	glCompileShader(id);
+	gl_check_compile_error(id);
+
+	/* Return shader ID */
+	return id;
 }
 
-int opengl_shader_binary_generator(const GLchar ** opengl_vertex_source,
-	const GLchar ** opengl_fragment_source,
-	const GLchar ** opengl_tessellation_control_source,
-	const GLchar ** opengl_tessellation_evaluation_source,
-	const GLchar ** opengl_geometry_source, char *outputfile)
+
+/* FIXME - Pass shader sizes as GLint extra arguments */
+/* FIXME - remove prefixes in local variables and function arguments */
+static int gl_shader_binary_generator(const GLchar **opengl_vertex_source,
+	const GLchar **opengl_fragment_source,
+	const GLchar **opengl_tessellation_control_source,
+	const GLchar **opengl_tessellation_evaluation_source,
+	const GLchar **opengl_geometry_source, char *outputfile)
 {
 	int i;
 	void *bin_buffer;
@@ -504,24 +524,22 @@ int opengl_shader_binary_generator(const GLchar ** opengl_vertex_source,
 
 	/* Compile shaders */
 	opengl_vertex_shader_id =
-		opengl_compile_shader(opengl_vertex_source, GL_VERTEX_SHADER);
+		gl_compile_shader(opengl_vertex_source, GL_VERTEX_SHADER);
 	if (opengl_tessellation_control_source)
 		opengl_tessellation_control_shader_id =
-			opengl_compile_shader
-			(opengl_tessellation_control_source,
-			GL_TESS_CONTROL_SHADER);
+			gl_compile_shader(opengl_tessellation_control_source,
+				GL_TESS_CONTROL_SHADER);
 	if (opengl_tessellation_evaluation_source)
 		opengl_tessellation_evaluation_shader_id =
-			opengl_compile_shader
-			(opengl_tessellation_evaluation_source,
-			GL_TESS_EVALUATION_SHADER);
+			gl_compile_shader(opengl_tessellation_evaluation_source,
+				GL_TESS_EVALUATION_SHADER);
 	if (opengl_geometry_source)
 		opengl_geometry_shader_id =
-			opengl_compile_shader(opengl_geometry_source,
-			GL_GEOMETRY_SHADER);
+			gl_compile_shader(opengl_geometry_source,
+				GL_GEOMETRY_SHADER);
 	opengl_fragment_shader_id =
-		opengl_compile_shader(opengl_fragment_source,
-		GL_FRAGMENT_SHADER);
+		gl_compile_shader(opengl_fragment_source,
+			GL_FRAGMENT_SHADER);
 
 	/* Create GL program */
 	GLuint glprogram = glCreateProgram();
@@ -586,169 +604,14 @@ int opengl_shader_binary_generator(const GLchar ** opengl_vertex_source,
 	fclose(f);
 
 	/* Process generated binary */
-	if (dump_intermediate)
-		opengl_shader_binary_analyze(outputfile);
+	if (gl_dump_all)
+		gl_shader_binary_analyze(outputfile);
 
 	free(bin_buffer);
 	return 0;
 }
 
 
-int gl_main(int argc, char *argv[])
-{
-	int argi;
-	int VS_source_size;
-	int FS_source_size;
-	int CT_source_size;
-	int EV_source_size;
-	int GM_source_size;
-
-	char *vsfile = NULL;
-	char *fsfile = NULL;
-	char *ctfile = NULL;
-	char *evfile = NULL;
-	char *gmfile = NULL;
-	char *output = "shader.bin";
-	char *VSShaderSource = NULL;
-	char *FSShaderSource = NULL;
-	char *CTShaderSource = NULL;
-	char *EVShaderSource = NULL;
-	char *GMShaderSource = NULL;
-
-	const GLchar **VSShaderArray = NULL;
-	const GLchar **CTShaderArray = NULL;
-	const GLchar **EVShaderArray = NULL;
-	const GLchar **GMShaderArray = NULL;
-	const GLchar **FSShaderArray = NULL;
-
-	/* No arguments */
-	if (argc == 1)
-	{
-		fprintf(stderr, syntax, argv[0]);
-		return 1;
-	}
-
-	for (argi = 1; argi < argc; argi++)
-	{
-		/* Dump intermediate ELF files */
-		if (!strcmp(argv[argi], "-a"))
-		{
-			argi++;
-			dump_intermediate = 1;
-			if (argc == 3 && dump_intermediate)
-			{
-				opengl_shader_binary_analyze(argv[argi]);
-				exit(1);
-			}	
-			continue;
-		}
-		/* vertex source */
-		if (!strcmp(argv[argi], "-v"))
-		{
-			argi++;
-			vsfile = argv[argi];
-			continue;
-		}
-
-		/* fragment source */
-		if (!strcmp(argv[argi], "-f"))
-		{
-			argi++;
-			fsfile = argv[argi];
-			continue;
-		}
-
-		/* control source */
-		if (!strcmp(argv[argi], "-c"))
-		{
-			argi++;
-			ctfile = argv[argi];
-			continue;
-		}
-
-		/* evaluation source */
-		if (!strcmp(argv[argi], "-e"))
-		{
-			argi++;
-			evfile = argv[argi];
-			continue;
-		}
-
-		/* geometry source */
-		if (!strcmp(argv[argi], "-g"))
-		{
-			argi++;
-			gmfile = argv[argi];
-			continue;
-		}
-
-		/* binary output name */
-		if (!strcmp(argv[argi], "-o"))
-		{
-			argi++;
-			output = argv[argi];
-			continue;
-		}
-	}
-
-	if (vsfile == NULL && fsfile == NULL)
-	{
-		printf("Error, need at least 1 vertex shader and 1 fragment shader\n");
-		exit(-1);
-	}
-
-	if (opengl_context_init_x(4,2))
-	{
-		opengl_context_init_buffer();
-	}
-
-	VSShaderSource = (GLchar *) read_buffer(vsfile, &VS_source_size);
-	VSShaderArray = xmalloc(VS_source_size);
-	VSShaderArray[0] = VSShaderSource;
-
-	FSShaderSource = (GLchar *) read_buffer(fsfile, &FS_source_size);
-	FSShaderArray = xmalloc(FS_source_size);
-	FSShaderArray[0] = FSShaderSource;
-
-	if (ctfile != NULL)
-	{
-		CTShaderSource =
-			(GLchar *) read_buffer(ctfile, &CT_source_size);
-		CTShaderArray = xmalloc(CT_source_size);
-		CTShaderArray[0] = CTShaderSource;
-	}
-
-	if (evfile != NULL)
-	{
-		EVShaderSource =
-			(GLchar *) read_buffer(evfile, &EV_source_size);
-		EVShaderArray = xmalloc(EV_source_size);
-		EVShaderArray[0] = EVShaderSource;
-	}
-
-	if (gmfile != NULL)
-	{
-		GMShaderSource =
-			(GLchar *) read_buffer(gmfile, &GM_source_size);
-		GMShaderArray = xmalloc(GM_source_size);
-		GMShaderArray[0] = GMShaderSource;
-	}
-
-	opengl_shader_binary_generator(VSShaderArray, FSShaderArray,
-		CTShaderArray, EVShaderArray, GMShaderArray, output);
-
-	/* Free */
-	free(VSShaderArray);
-	free(FSShaderArray);
-	if (CTShaderArray != NULL)
-		free(CTShaderArray);
-	if (EVShaderArray != NULL)
-		free(EVShaderArray);
-	if (GMShaderArray != NULL)
-		free(GMShaderArray);
-
-	return 0;
-}
 
 
 /*
@@ -766,7 +629,94 @@ void gl_done(void)
 
 
 void gl_compile(struct list_t *source_file_list,
-		struct list_t *output_file_list)
+	struct list_t *output_file_list)
 {
+	int VS_source_size;
+	int FS_source_size;
+	int CT_source_size;
+	int EV_source_size;
+	int GM_source_size;
+	
+	char *VSShaderSource = NULL;
+	char *FSShaderSource = NULL;
+	char *CTShaderSource = NULL;
+	char *EVShaderSource = NULL;
+	char *GMShaderSource = NULL;
+	char *output_file;
+
+	const GLchar **VSShaderArray = NULL;
+	const GLchar **FSShaderArray = NULL;
+	const GLchar **CTShaderArray = NULL;
+	const GLchar **EVShaderArray = NULL;
+	const GLchar **GMShaderArray = NULL;
+
+	/* Two sources needed for OpenGL */
+	if (source_file_list->count != 2)
+		fatal("2 source files expected, 1 for vertex, 1 for fragment shader");
+	
+	/* Extract vertex and fragment shader sources from 'source_file_list'. */
+	gl_vertex_shader = list_get(source_file_list, 0);
+	gl_fragment_shader = list_get(source_file_list, 1);
+
+	/* Output file is given in the first element of 'output_file_list'. */
+	assert(output_file_list->count == 2);
+	output_file = list_get(output_file_list, 0);
+	
+	/* Vertex shader */
+	VSShaderSource = (GLchar *) read_buffer(gl_vertex_shader, &VS_source_size);
+	VSShaderArray = xmalloc(VS_source_size);
+	VSShaderArray[0] = VSShaderSource;
+
+	/* Fragment shader */
+	FSShaderSource = (GLchar *) read_buffer(gl_fragment_shader, &FS_source_size);
+	FSShaderArray = xmalloc(FS_source_size);
+	FSShaderArray[0] = FSShaderSource;
+
+	/* FIXME - don't create arrays - just pass variables */
+	/* Control shader */
+	if (gl_control_shader)
+	{
+		CTShaderSource = (GLchar *) read_buffer(gl_control_shader, &CT_source_size);
+		CTShaderArray = xmalloc(CT_source_size);
+		CTShaderArray[0] = CTShaderSource;
+	}
+
+	/* Evaluation shader */
+	if (gl_eval_shader)
+	{
+		EVShaderSource = (GLchar *) read_buffer(gl_eval_shader, &EV_source_size);
+		EVShaderArray = xmalloc(EV_source_size);
+		EVShaderArray[0] = EVShaderSource;
+	}
+
+	/* Geometry shader */
+	if (gl_geo_shader)
+	{
+		GMShaderSource = (GLchar *) read_buffer(gl_geo_shader, &GM_source_size);
+		GMShaderArray = xmalloc(GM_source_size);
+		GMShaderArray[0] = GMShaderSource;
+	}
+
+	/* Initialize */
+	if (gl_context_init_x(4, 2))
+		gl_context_init_buffer();
+
+	/* Compile */
+	gl_shader_binary_generator(VSShaderArray, FSShaderArray,
+		CTShaderArray, EVShaderArray, GMShaderArray, output_file);
+	
+	/* Dump binary information */
+	if (gl_dump_all)
+		gl_shader_binary_analyze(output_file);
+
+	/* Free */
+	free(VSShaderArray);
+	free(FSShaderArray);
+	if (CTShaderArray)
+		free(CTShaderArray);
+	if (EVShaderArray)
+		free(EVShaderArray);
+	if (GMShaderArray)
+		free(GMShaderArray);
 }
 
