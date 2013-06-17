@@ -1,4 +1,4 @@
-/*
+/* 
  *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -29,12 +29,12 @@
 #include <lib/util/string.h>
 
 #include "net-system.h"
-#include "visual.h"
 #include "network.h"
 #include "node.h"
+#include "visual.h"
 
 
-/*
+/* 
  * Variables
  */
 
@@ -110,9 +110,7 @@ char *net_config_help =
 	"  node_B. Immediate next node that each packet must go through to get \n"
 	"      from node_A to node_C\n"
 	"  Virtual Channel. Is an optional field to choose a virtual channel on \n"
-	"  the link between node_A and node_B. \n"
-	"\n"
-	"\n";
+	"  the link between node_A and node_B. \n" "\n" "\n";
 
 char *net_err_end_nodes =
 	"\tAn attempt has been made to send a message from/to an intermediate\n"
@@ -149,15 +147,15 @@ char *net_err_can_send =
 	"\tbefore injecting it (use function 'net_can_send').\n";
 
 char *net_err_cycle =
-		"\tA cycle has been detected in the graph representing the routing table\n"
-		"\tfor a network. Routing cycles can cause deadlocks in simulations, that\n"
-		"\tcan in turn make the simulation stall with no output.\n";
+	"\tA cycle has been detected in the graph representing the routing table\n"
+	"\tfor a network. Routing cycles can cause deadlocks in simulations, that\n"
+	"\tcan in turn make the simulation stall with no output.\n";
 
 char *net_err_route_step =
-		"\tThere is a link missing between source node and next node for this  \n"
-		"\troute step. The route between source and destination node should go \n"
-		"\tthrough existing links/Buses that are defined in the configuration  \n"
-		"\tfile.  \n";
+	"\tThere is a link missing between source node and next node for this  \n"
+	"\troute step. The route between source and destination node should go \n"
+	"\tthrough existing links/Buses that are defined in the configuration  \n"
+	"\tfile.  \n";
 
 
 
@@ -180,9 +178,9 @@ char *net_visual_file_name = "";
 FILE *net_visual_file;
 
 char *net_sim_network_name = "";
-long long net_max_cycles = 1000000;  /* 1M cycles default */
-double net_injection_rate = 0.01;  /* 1 packet every 100 cycles */
-int net_msg_size = 1;  /* Message size in bytes */
+long long net_max_cycles = 1000000;	/* 1M cycles default */
+double net_injection_rate = 0.01;	/* 1 packet every 100 cycles */
+int net_msg_size = 1;			/* Message size in bytes */
 
 /* Frequency of the network system, and frequency domain, as returned by
  * function 'esim_new_domain'. */
@@ -191,13 +189,14 @@ int net_domain_index;
 
 
 
-/*
+/* 
  * Private Functions
  */
 
 static double exp_random(double lambda)
 {
 	double x = (double) random() / RAND_MAX;
+
 	return log(1 - x) / -lambda;
 }
 
@@ -213,10 +212,9 @@ static double exp_random(double lambda)
 void net_read_config(void)
 {
 	struct config_t *config;
+	struct list_t *net_name_list;
 	char *section;
 	int i;
-
-	struct list_t *net_name_list;
 
 	/* Configuration file */
 	if (!*net_config_file_name)
@@ -226,25 +224,29 @@ void net_read_config(void)
 	config = config_create(net_config_file_name);
 	if (*net_config_file_name)
 		config_load(config);
-	
+
 	/* Section with generic configuration parameters */
 	section = "General";
 
 	/* Frequency */
 	net_frequency = config_read_int(config, section,
-			"Frequency", net_frequency);
+		"Frequency", net_frequency);
 	if (!IN_RANGE(net_frequency, 1, ESIM_MAX_FREQUENCY))
-		fatal("%s: invalid value for 'Frequency'", net_config_file_name);
+		fatal("%s: invalid value for 'Frequency'",
+			net_config_file_name);
 
 
-	/* Create a temporary list of network names found in configuration file */
+	/* Create a temporary list of network names found in configuration
+	 * file */
 	net_name_list = list_create();
-	for (section = config_section_first(config); section; section = config_section_next(config))
+	for (section = config_section_first(config); section;
+		section = config_section_next(config))
 	{
+		char *delim = ".";
+
 		char section_str[MAX_STRING_SIZE];
 		char *token;
 		char *net_name;
-		char *delim = ".";
 
 		/* Create a copy of section name */
 		snprintf(section_str, sizeof section_str, "%s", section);
@@ -271,7 +273,8 @@ void net_read_config(void)
 	}
 
 	/* Print network names */
-	net_debug("%s: loading network configuration file\n", net_config_file_name);
+	net_debug("%s: loading network configuration file\n",
+		net_config_file_name);
 	net_debug("networks found:\n");
 	for (i = 0; i < net_name_list->count; i++)
 		net_debug("\t%s\n", (char *) list_get(net_name_list, i));
@@ -307,10 +310,14 @@ void net_init(void)
 	net_domain_index = esim_new_domain(net_frequency);
 
 	/* Register events */
-	EV_NET_SEND = esim_register_event_with_name(net_event_handler, net_domain_index, "net_send");
-	EV_NET_OUTPUT_BUFFER = esim_register_event_with_name(net_event_handler, net_domain_index, "net_output_buffer");
-	EV_NET_INPUT_BUFFER = esim_register_event_with_name(net_event_handler, net_domain_index, "net_input_buffer");
-	EV_NET_RECEIVE = esim_register_event_with_name(net_event_handler, net_domain_index, "net_receive");
+	EV_NET_SEND = esim_register_event_with_name(net_event_handler,
+		net_domain_index, "net_send");
+	EV_NET_OUTPUT_BUFFER = esim_register_event_with_name(net_event_handler,
+		net_domain_index, "net_output_buffer");
+	EV_NET_INPUT_BUFFER = esim_register_event_with_name(net_event_handler,
+		net_domain_index, "net_input_buffer");
+	EV_NET_RECEIVE = esim_register_event_with_name(net_event_handler,
+		net_domain_index, "net_receive");
 
 	/* Report file */
 	if (*net_report_file_name)
@@ -321,7 +328,7 @@ void net_init(void)
 				net_report_file_name);
 	}
 
-	/* Visualization File*/
+	/* Visualization File */
 	if (*net_visual_file_name)
 	{
 		net_visual_file = file_open_for_write(net_visual_file_name);
@@ -346,10 +353,12 @@ void net_done(void)
 			if (net_report_file)
 				net_dump_report(net, net_report_file);
 
-			/* Dump Visualization data in a 'graphplot' compatible file*/
+			/* Dump Visualization data in a 'graphplot'
+			 * compatible file */
 			if (net_visual_file)
 			{
 				struct net_graph_t *graph;
+
 				graph = net_visual_calc(net);
 				net_dump_visual(graph, net_visual_file);
 				net_graph_free(graph);
@@ -363,7 +372,7 @@ void net_done(void)
 	/* Close report file */
 	file_close(net_report_file);
 
-	/* Close visualization file*/
+	/* Close visualization file */
 	file_close(net_visual_file);
 }
 
@@ -410,8 +419,7 @@ struct net_t *net_find_next(void)
 void net_sim(char *debug_file_name)
 {
 	struct net_t *net;
-
-	double *inject_time;  /* Next injection time (one per node) */
+	double *inject_time;	/* Next injection time (one per node) */
 
 	/* Initialize */
 	debug_init();
@@ -458,10 +466,12 @@ void net_sim(char *debug_file_name)
 				continue;
 
 			/* Get a random destination node */
-			do {
+			do
+			{
 				dst_node = list_get(net->node_list, random() %
 					list_count(net->node_list));
-			} while (dst_node->kind != net_node_end || dst_node == node);
+			} while (dst_node->kind != net_node_end
+				|| dst_node == node);
 
 			/* Inject */
 			while (inject_time[i] < cycle)
@@ -492,4 +502,3 @@ void net_sim(char *debug_file_name)
 	mhandle_done();
 	exit(0);
 }
-

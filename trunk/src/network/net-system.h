@@ -1,4 +1,4 @@
-/*
+/* 
  *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -66,4 +66,3 @@ void net_sim(char *debug_file_name);
 
 
 #endif
-

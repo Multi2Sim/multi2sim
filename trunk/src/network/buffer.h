@@ -30,26 +30,25 @@ struct net_buffer_wakeup_t
 {
 	int event;
 	void *stack;
+
 };
-//gone
+
 enum net_buffer_kind_t
 {
-	net_buffer_invalid= 0, //net_invalid should be added [K]
+	net_buffer_invalid= 0,
 	net_buffer_link,
 	net_buffer_bus
 };
 
 struct net_buffer_t
 {
-	struct net_t *net;  /* Network it belongs to */
-	struct net_node_t *node;  /* Node where it belongs */
-	char *name;  /* String identifier */
-
-	int index;  /* Index in input/output buffer list of node */
-	int size;  /* Total size */
-	int count;  /* Occupied buffer size */
+	struct net_t *net;	/* Network it belongs to */
+	struct net_node_t *node;	/* Node where it belongs */
+	char *name;		/* String identifier */
+	int index;		/* Index in input/output buffer list of node */
+	int size;		/* Total size */
+	int count;		/* Occupied buffer size */
 	enum net_buffer_kind_t kind;
-
 
 	/* Cycle until a read/write operation on buffer lasts */
 	long long read_busy;
@@ -58,7 +57,7 @@ struct net_buffer_t
 	/* Link connected to buffer */
 	struct net_link_t *link;
 
-	/* BUS connected to buffer*/
+	/* BUS connected to buffer */
 	struct net_bus_t *bus;
 
 
@@ -66,11 +65,11 @@ struct net_buffer_t
 	struct list_t *msg_list;
 
 	/* Scheduling for output buffers */
-	long long sched_when;  /* Last cycle when scheduler was called */
-	struct net_buffer_t *sched_buffer;  /* Input buffer to fetch data from */
+	long long sched_when;	/* Last cycle when scheduler was called */
+	struct net_buffer_t *sched_buffer;	/* Input buffer to fetch from */
 
-	/* List of events to schedule when new space becomes available
-	 * in the buffer. Elements are of type 'struct net_buffer_wakeup_t' */
+	/* List of events to schedule when new space becomes available in the 
+	 * buffer. Elements are of type 'struct net_buffer_wakeup_t' */
 	struct linked_list_t *wakeup_list;
 
 	/* Stats */
@@ -83,8 +82,8 @@ struct net_buffer_t
 
 
 /* Functions */
-struct net_buffer_t *net_buffer_create(struct net_t *net, struct net_node_t *node,
-		int size, char *name);
+struct net_buffer_t *net_buffer_create(struct net_t *net,
+	struct net_node_t *node, int size, char *name);
 void net_buffer_free(struct net_buffer_t *buffer);
 
 void net_buffer_dump(struct net_buffer_t *buffer, FILE *f);
@@ -100,4 +99,3 @@ void net_buffer_update_occupancy(struct net_buffer_t *buffer);
 
 
 #endif
-

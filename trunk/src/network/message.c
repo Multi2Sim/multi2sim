@@ -194,12 +194,12 @@ void net_event_handler(int event, void *data)
 		{
 			net_buffer_wait(buffer, event, stack);
 			net_debug("msg "
-					"a=\"stall\" "
-					"net=\"%s\" "
-					"msg=%lld "
-					"why=\"not output buffer head\"\n",
-					net->name,
-					msg->id);
+				"a=\"stall\" "
+				"net=\"%s\" "
+				"msg=%lld "
+				"why=\"not output buffer head\"\n",
+				net->name,
+				msg->id);
 			return;
 		}
 
@@ -209,12 +209,12 @@ void net_event_handler(int event, void *data)
 			esim_schedule_event(event, stack,
 				buffer->read_busy - cycle + 1);
 			net_debug("msg "
-					"a=\"stall\" "
-					"net=\"%s\" "
-					"msg=%lld "
-					"why=\"output buffer busy\"\n",
-					net->name,
-					msg->id);
+				"a=\"stall\" "
+				"net=\"%s\" "
+				msg=%lld "
+				"why=\"output buffer busy\"\n",
+				net->name,
+				msg->id);
 			return;
 		}
 
@@ -369,7 +369,8 @@ void net_event_handler(int event, void *data)
 			/* 2. Check the destination buffer is full or not */
 			if (msg->size > input_buffer->size)
 				fatal("%s: message does not fit in buffer.\n%s",
-						net->name, net_err_large_message);
+					net->name, net_err_large_message);
+
 			if (input_buffer->count + msg->size > input_buffer->size)
 			{
 				net_buffer_wait(input_buffer, event, stack);
@@ -402,10 +403,10 @@ void net_event_handler(int event, void *data)
 			 * necessary data ; before here, the bus is not
 			 * assign to anything and is not updated so it can be 
 			 * assign to other buffers as well. If this certain
-			 * buffer wins that specific bus_lane the appropriate 
+			 * buffer wins that specific bus_lane the appropriate
 			 * fields will be updated. Contains: bus_lane
-			 * cin_buffer and cout_buffer and busy time as well
-			 * as buffer data itself */
+			 * cin_buffer and cout_buffer and busy time as well as
+			 * buffer data itself */
 			assert(updated_bus);
 			buffer->bus = updated_bus;
 			input_buffer->bus = updated_bus;
@@ -446,6 +447,7 @@ void net_event_handler(int event, void *data)
 	{
 		struct net_routing_table_entry_t *entry;
 		struct net_buffer_t *output_buffer;
+
 		int lat;
 
 		/* Debug */
