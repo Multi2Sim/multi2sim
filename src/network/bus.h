@@ -1,4 +1,4 @@
-/*
+/* 
  *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -22,29 +22,31 @@
 
 #include <stdio.h>
 
+
 struct net_bus_t
 {
-	struct net_t * net;
+	struct net_t *net;
 	struct net_node_t *node;
 	char *name;
 	int index;
-
 	int bandwidth;
-	long long busy;  /* Busy until this cycle inclusive */
+	long long busy;		/* Busy until this cycle inclusive */
 
 	/* Stats */
 	long long busy_cycles;
 	long long transferred_bytes;
 	long long transferred_msgs;
 
-	/* Scheduling*/
+	/* Scheduling */
 	long long sched_when;
 	struct net_buffer_t *sched_buffer;
 
 
 };
-struct net_bus_t *net_bus_create(struct net_t *net,struct net_node_t * node, int bandwidth, char *name);
+struct net_bus_t *net_bus_create(struct net_t *net, struct net_node_t *node,
+	int bandwidth, char *name);
 void net_bus_free(struct net_bus_t *bus);
-struct net_bus_t * net_bus_arbitration(struct net_node_t * bus_node, struct net_buffer_t *buffer);
+struct net_bus_t *net_bus_arbitration(struct net_node_t *bus_node,
+	struct net_buffer_t *buffer);
 void net_bus_dump_report(struct net_bus_t *bus, FILE *f);
 #endif

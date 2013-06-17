@@ -1,4 +1,4 @@
-/*
+/* 
  *  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -53,12 +53,9 @@ struct net_node_t
 	struct list_t *output_buffer_list;
 
 	/* BUS & scheduling */
-	struct list_t *bus_lane_list;	/* elements are of type struct
-	 	 	 	 	 	 	 	 	 * net_bus_t */
-	struct list_t *src_buffer_list;	/* elements are of type struct
-	 	 	 	 	 	 	 	 	 * net_buffer_t * */
-	struct list_t *dst_buffer_list;	/* elements are of type struct
-	 	 	 	 	 	 	 	 	 * net_buffer_t * */
+	struct list_t *bus_lane_list;	/* elements are of type net_bus_t */
+	struct list_t *src_buffer_list;	/* elements are of type struct net_buffer_t */
+	struct list_t *dst_buffer_list;	/* elements are of type struct net_buffer_t */
 	int last_node_index;
 
 	/* Stats */
