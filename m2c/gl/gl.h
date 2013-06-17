@@ -24,13 +24,21 @@
 struct list_t;
 
 
+/* Public variables */
+
+extern int gl_dump_all;
+extern char *gl_control_shader;
+extern char *gl_eval_shader;
+extern char *gl_geo_shader;
+
+
 /* Public functions */
 
 void gl_init(void);
 void gl_done(void);
 
 void gl_compile(struct list_t *source_file_list,
-		struct list_t *output_file_list);
+	struct list_t *output_file_list);
 
 #endif
 
