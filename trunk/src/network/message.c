@@ -211,7 +211,7 @@ void net_event_handler(int event, void *data)
 			net_debug("msg "
 				"a=\"stall\" "
 				"net=\"%s\" "
-				msg=%lld "
+			 	"msg=%lld "
 				"why=\"output buffer busy\"\n",
 				net->name,
 				msg->id);
