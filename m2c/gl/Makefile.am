@@ -1,16 +1,20 @@
+lib_LIBRARIES = libgl.a
+
 if HAVE_OPENGL
 
-bin_PROGRAMS = $(top_builddir)/bin/m2s-glcc
+libgl_a_SOURCES = \
+	\
+	gl.c \
+	gl.h
 
-__top_builddir__bin_m2s_glcc_SOURCES = \
-	glcc.c
+else
 
-INCLUDES = @M2S_INCLUDES@
-
-LDADD = \
-	$(top_builddir)/src/lib/util/libutil.a \
-	$(top_builddir)/src/lib/mhandle/libmhandle.a \
-	-lX11 -lGL 
+libgl_a_SOURCES = \
+	\
+	gl-missing.c \
+	gl.h
 
 endif
+
+INCLUDES = @M2S_INCLUDES@
 

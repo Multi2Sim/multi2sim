@@ -2,6 +2,7 @@ SUBDIRS = \
 	amd \
 	cl2llvm \
 	frm2bin \
+	gl \
 	llvm2si \
 	si2bin
 
@@ -22,6 +23,7 @@ LDADD = \
 	$(top_builddir)/m2c/amd/libamd.a \
 	$(top_builddir)/m2c/cl2llvm/libcl2llvm.a \
 	$(top_builddir)/m2c/frm2bin/libfrm2bin.a \
+	$(top_builddir)/m2c/gl/libgl.a \
 	$(top_builddir)/m2c/llvm2si/libllvm2si.a \
 	$(top_builddir)/m2c/si2bin/libsi2bin.a \
 	$(top_builddir)/src/arch/fermi/asm/libasm.a \
@@ -33,6 +35,10 @@ if HAVE_OPENCL
 LDADD += -lOpenCL \
 	-L$(AMDAPPSDKROOT)/lib/x86 \
 	-L$(AMDAPPSDKROOT)/lib/x86_64
+endif
+
+if HAVE_OPENGL
+LDADD += -lX11 -lGL 
 endif
 
 if HAVE_FLEX_BISON_AND_LLVM

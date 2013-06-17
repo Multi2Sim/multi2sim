@@ -1,4 +1,4 @@
-/*
+/* 
  *  Multi2Sim
  *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -17,35 +17,20 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_SI2BIN_METADATA_H
-#define M2C_SI2BIN_METADATA_H
+#ifndef M2C_GL_GL_H
+#define M2C_GL_GL_H
 
-/* Forward Declarations */
+/* Forward declarations */
 struct list_t;
-struct si_arg_t;
 
 
-/*
- * Metadata
- */
-	
-	
-struct si2bin_metadata_t
-{
+/* Public functions */
 
-	struct list_t *arg_list; /* Elements of type si_arg_t */
-	
-	int uniqueid;
-	int uavprivate;
-	int hwregion;
-	int hwlocal;
+void gl_init(void);
+void gl_done(void);
 
-};
-
-struct si2bin_metadata_t *si2bin_metadata_create(void);
-void si2bin_metadata_free(struct si2bin_metadata_t *metadata);
-
-void si2bin_metadata_add_arg(struct si2bin_metadata_t *metadata, struct si_arg_t *arg);
+void gl_compile(struct list_t *source_file_list,
+		struct list_t *output_file_list);
 
 #endif
 

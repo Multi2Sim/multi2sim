@@ -34,6 +34,8 @@
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 
+#include "gl.h"
+
 
 #define PROGRAM_BINARY_RETRIEVABLE_HINT  0x8257
 
@@ -238,36 +240,14 @@ void opengl_context_init_buffer()
 		printf("Success, finally did it!\n");
 }
 
-/* For read shaders */
-void *read_buffer(char *file_name, int *psize)
-{
-	FILE *f;
-	void *buf;
-	int size;
-
-	f = fopen(file_name, "rb");
-	if (!f)
-		return NULL;
-	fseek(f, 0, SEEK_END);
-	size = ftell(f);
-	fseek(f, 0, SEEK_SET);
-
-	buf = xmalloc(size + 1);
-	memset(buf, 0, size + 1);
-	fread(buf, 1, size, f);
-	if (psize)
-		*psize = size;
-	return buf;
-}
 
 int opengl_binary_is_elf(char *buf)
 {
 	char ELF_MAGIC[4] = { 0x7F, 0x45, 0x4C, 0x46 };
-	if (!memcmp(buf, ELF_MAGIC, sizeof(ELF_MAGIC)))
-		return 1;
-	else
-		return 0;
+	
+	return !memcmp(buf, ELF_MAGIC, sizeof(ELF_MAGIC));
 }
+
 
 void opengl_shader_binary_analyze_inner_elf(char *file_name)
 {
@@ -613,7 +593,8 @@ int opengl_shader_binary_generator(const GLchar ** opengl_vertex_source,
 	return 0;
 }
 
-int main(int argc, char *argv[])
+
+int gl_main(int argc, char *argv[])
 {
 	int argi;
 	int VS_source_size;
@@ -768,3 +749,24 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+
+/*
+ * Public functions
+ */
+
+void gl_init(void)
+{
+}
+
+
+void gl_done(void)
+{
+}
+
+
+void gl_compile(struct list_t *source_file_list,
+		struct list_t *output_file_list)
+{
+}
+
