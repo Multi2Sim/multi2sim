@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_CLCC_FRM2BIN_TOKEN_H
-#define TOOLS_CLCC_FRM2BIN_TOKEN_H
+#ifndef M2C_FRM2BIN_TOKEN_H
+#define M2C_FRM2BIN_TOKEN_H
 
 enum frm_token_type_t
 {

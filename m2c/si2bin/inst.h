@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TOOLS_CLCC_SI2BIN_INST_H
-#define TOOLS_CLCC_SI2BIN_INST_H
+#ifndef M2C_SI2BIN_INST_H
+#define M2C_SI2BIN_INST_H
 
 #include <stdio.h>
 #include <arch/southern-islands/asm/asm.h>
