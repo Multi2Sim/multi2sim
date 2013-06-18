@@ -230,8 +230,9 @@ external_def
 func_decl
 	: declarator_list TOK_ID TOK_PAR_OPEN arg_list TOK_PAR_CLOSE TOK_SEMICOLON
 	{
-		}
-
+		
+		cl2llvm_yyerror("function declarations not supported");
+	}
 	;
 
 func_def
@@ -476,10 +477,12 @@ addr_qual
 	}
 	| TOK_PRIVATE
 	{
+		cl2llvm_yyerror("'private' not supported");
 		$$ = 0;
 	}
 	| TOK_CONSTANT
 	{
+		cl2llvm_yyerror("'constant' not supported");
 		$$ = 0;
 	}
 	;
@@ -544,7 +547,13 @@ access_qual
 
 sc_spec
 	: TOK_EXTERN
+	{
+		cl2llvm_yyerror("'extern' not supported");
+	}
 	| TOK_STATIC
+	{
+		cl2llvm_yyerror("'static' not supported");
+	}
 	;
 
 stmt_list
@@ -722,12 +731,25 @@ stmt
 		cl2llvm_val_free($2);
 	}
 	| TOK_CONTINUE TOK_SEMICOLON
+	{
+		cl2llvm_yyerror("'continue' not supported");
+	}
 	| TOK_BREAK TOK_SEMICOLON
 	{
+		cl2llvm_yyerror("'break' not supported");
 	}
 	| switch_stmt
+	{
+		cl2llvm_yyerror("'switch' not supported");
+	}
 	| label_stmt
+	{
+		cl2llvm_yyerror("'label statements not supported");
+	}
 	| goto_stmt
+	{
+		cl2llvm_yyerror("'goto' not supported");
+	}
 	;
 
 func_call
@@ -782,6 +804,7 @@ func_call
 	}
 	| TOK_ID TOK_PAR_OPEN TOK_PAR_CLOSE
 	{
+		cl2llvm_yyerror("function calls with no parameters not supported");
 		$$ = NULL;
 	}
 	;
@@ -795,10 +818,12 @@ param_list
 	}
 	| array_deref_list TOK_EQUAL expr
 	{
+		cl2llvm_yyerror("array initializers not supported");
 		$$ = NULL;
 	}
 	| array_init
 	{
+		cl2llvm_yyerror("array initializers not supported");
 		$$ = NULL;
 	}
 	| param_list TOK_COMMA expr
@@ -808,10 +833,12 @@ param_list
 	}
 	| param_list TOK_COMMA array_init
 	{
+		cl2llvm_yyerror("array initializers not supported");
 		$$ = NULL;
 	}
 	| param_list TOK_COMMA array_deref_list TOK_EQUAL expr
 	{
+		cl2llvm_yyerror("array initializers not supported");
 		$$ = NULL;
 	}
 	;
@@ -831,6 +858,7 @@ init
 	}
 	| TOK_EQUAL array_init
 	{
+		cl2llvm_yyerror("array initializers not supported");
 		$$ = NULL;
 	}
 	;
@@ -903,7 +931,6 @@ declaration
 			/*if variable type is a vector*/
 			if (LLVMGetTypeKind($1->type_spec->llvm_type) == LLVMVectorTypeKind)
 			{	
-				printf("var is vector\n");
 				/*Go to entry block and declare variable*/
 				LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
 				var_addr = LLVMBuildAlloca(cl2llvm_builder, 
@@ -923,11 +950,9 @@ declaration
 				/* If initializer is present, store it. */
 				if (current_list_elem->cl2llvm_val != NULL)
 				{
-					printf("init is present\n");
 					if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->type_spec->llvm_type 
 						&& current_list_elem->cl2llvm_val->type->sign == $1->type_spec->sign)
 					{
-						printf("type is right\n");
 						LLVMBuildStore(cl2llvm_builder, 
 							current_list_elem->cl2llvm_val->val, var_addr);
 					}
@@ -2013,7 +2038,13 @@ expr
 		$$ = value;
 	}
 	| expr TOK_LOGICAL_AND expr
+	{
+		cl2llvm_yyerror("logical and '&&' not supported");
+	}
 	| expr TOK_LOGICAL_OR expr
+	{
+		cl2llvm_yyerror("logical or '!' supported");
+	}
 	| lvalue TOK_EQUAL expr
 	{
 		struct cl2llvm_val_t *value;
@@ -2296,15 +2327,32 @@ expr
 		$$ = value;
 	}
 	| lvalue TOK_AND_EQUAL expr
+	{
+		cl2llvm_yyerror("'&=' not supported");
+	}
 	| lvalue TOK_OR_EQUAL expr
+	{
+		cl2llvm_yyerror("'!=' not supported");
+	}
 	| lvalue TOK_EXCLUSIVE_EQUAL expr
+	{
+		cl2llvm_yyerror("'^=' not supported");
+	}
 	| lvalue TOK_SHIFT_RIGHT_EQUAL expr
+	{
+		cl2llvm_yyerror("'>>=' not supported");
+	}
 	| lvalue TOK_SHIFT_LEFT_EQUAL expr
+	{
+		cl2llvm_yyerror("'<<=' not supported");
+	}
 	| expr TOK_CONDITIONAL expr TOK_COLON expr
-
+	{
+		cl2llvm_yyerror("a'?'b':'c not supported");
+	}
 	| unary_expr
 	{
-		$$ = NULL;
+		$$ = $1;
 	}
 
 	| func_call
@@ -2314,38 +2362,57 @@ expr
 
 	| TOK_LOGICAL_NEGATE expr
 	{
+		cl2llvm_yyerror("'!' not supported");
 		$$ = NULL;
 	}
 
 	| expr TOK_BITWISE_AND expr
+	{
+		
+		cl2llvm_yyerror("bitwise and '&' not supported");
+	}
 	| expr TOK_BITWISE_OR expr
+	{
+		
+		cl2llvm_yyerror("bitwise or '|' not supported");
+	}
 	| expr TOK_BITWISE_EXCLUSIVE expr
+	{
+		
+		cl2llvm_yyerror("bitwise exclusive or '^' not supported");
+	}
 	;
 
 
 unary_expr
 	: lvalue TOK_INCREMENT %prec TOK_POSTFIX
 	{
+		cl2llvm_yyerror("post increment not supported");
 		$$ = NULL;
 	}
 	| TOK_INCREMENT lvalue %prec TOK_PREFIX
-	{
+	{	
+		cl2llvm_yyerror("pre-increment not supported");
 		$$ = NULL;
 	}
 	| TOK_DECREMENT lvalue %prec TOK_PREFIX
 	{
+		cl2llvm_yyerror("pre decrement not supported");
 		$$ = NULL;
 	}
 	| lvalue TOK_DECREMENT %prec TOK_POSTFIX
 	{
+		cl2llvm_yyerror("post decrement not supported");
 		$$ = NULL;
 	}
 	| TOK_MINUS primary %prec TOK_PREFIX
 	{
+		cl2llvm_yyerror("unary minus not supported");
 		$$ = NULL;
 	}
 	| TOK_PLUS primary %prec TOK_PREFIX
 	{
+		cl2llvm_yyerror("unary plus not supported");
 		$$ = NULL;
 	}
 	| TOK_PAR_OPEN type_spec TOK_PAR_CLOSE expr %prec TOK_PREFIX
@@ -2353,24 +2420,25 @@ unary_expr
 		struct cl2llvm_val_t *value;
 
 		value = llvm_type_cast($4, $2);
-		
+	
 		/* Free pointers */
 		cl2llvm_val_free($4);
 		cl2llvm_type_free($2);
-if(value != NULL)
-	printf("type cast not null\n");
 		$$ = value;
 	}
 	| TOK_SIZEOF TOK_PAR_OPEN type_spec TOK_PAR_CLOSE %prec TOK_PREFIX
 	{
+		cl2llvm_yyerror("'sizeof' not supported");
 		$$ = NULL;
 	}
 	| TOK_BITWISE_NOT expr
 	{
+		cl2llvm_yyerror("'~'not supported");
 		$$ = NULL;
 	}
 	| TOK_BITWISE_AND lvalue %prec TOK_PREFIX
 	{
+		cl2llvm_yyerror("'&' not supported");
 		$$ = NULL;
 	}
 	;
@@ -2728,46 +2796,57 @@ type_ptr_list
 type_name
 	: TOK_INTPTR_T
 	{
+		cl2llvm_yyerror("'intptr_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_PTRDIFF_T
 	{
+		cl2llvm_yyerror("'ptrdiff_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_UINTPTR_T
 	{
+		cl2llvm_yyerror("'uintptr_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_SAMPLER_T
 	{
+		cl2llvm_yyerror("'sampler_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_EVENT_T
 	{
+		cl2llvm_yyerror("'event_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_IMAGE2D_T
 	{
+		cl2llvm_yyerror("'image2d_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_IMAGE3D_T
 	{
+		cl2llvm_yyerror("'image3d_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_IMAGE2D_ARRAY_T
 	{
+		cl2llvm_yyerror("'image2d_array_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_IMAGE1D_T
 	{
+		cl2llvm_yyerror("'image1d_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_IMAGE1D_BUFFER_T
 	{
+		cl2llvm_yyerror("'image1d_buffer_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_IMAGE1D_ARRAY_T
 	{
+		cl2llvm_yyerror("'image1d_array_t' not supported");
 		$$ = NULL;
 	}
 	| TOK_UINT
