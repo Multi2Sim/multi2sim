@@ -108,6 +108,7 @@ struct llvm2si_function_t
 	int sreg_cb0;  /* CB0 (4 registers) */
 	int sreg_cb1;  /* CB1 (4 registers) */
 	int sreg_wgid;  /* Work-group ID (3 registers) */
+	int sreg_gsize;  /* Global size (3 register) */
 	int sreg_lsize;  /* Local size (3 registers) */
 	int sreg_offs;  /* Global offset (3 registers) */
 
