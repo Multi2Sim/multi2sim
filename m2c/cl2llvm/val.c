@@ -895,10 +895,16 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 	/* If types match, no type cast needed */
 	if (type1 == type2 && val1->type->sign == val2->type->sign)
 		return;
+	
+	/* If the types do not match and both are vector types, return error */
+	if (LLVMGetTypeKind(type1) == LLVMVectorTypeKind 
+		&& LLVMGetTypeKind(type2) == LLVMVectorTypeKind)
+	{
+		cl2llvm_yyerror("Type mis-match. (Type of both operands of a vector operator must be an exact match.)");
+	}
 
 	/* Obtain dominant type */
 	struct cl2llvm_type_t *type = type_cmp(val1, val2);
-	assert((type->llvm_type != type1 || type->llvm_type != type2) || ( type->sign != val1->type->sign || type->sign != val2->type->sign));
 
 	/* Whatever operand differs from the dominant type will be typecast
 	 * to it. */
