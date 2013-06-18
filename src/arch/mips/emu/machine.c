@@ -53,7 +53,8 @@ void mips_isa_JAL_impl(struct mips_ctx_t *ctx)
 void mips_isa_BEQ_impl(struct mips_ctx_t *ctx)
 {
 	if (MIPS_GPR_GET(RS) == MIPS_GPR_GET(RT))
-		RELBRANCH(SEXT32(SEXT32(IMM,16) << 2, 18));
+		RELBRANCH(SEXT32(IMM << 2,16));
+		//RELBRANCH(SEXT32(SEXT32(IMM,16) << 2, 18));
 	mips_isa_inst_debug("  regRS = %d and regRT = %d", MIPS_GPR_GET(RS), MIPS_GPR_GET(RT));
 }
 void mips_isa_BNE_impl(struct mips_ctx_t *ctx)
@@ -70,7 +71,8 @@ void mips_isa_BNE_impl(struct mips_ctx_t *ctx)
 void mips_isa_BLEZ_impl(struct mips_ctx_t *ctx)
 {
 	if ((int)(MIPS_GPR_GET(RS)) <= 0)
-		RELBRANCH(IMM << 2);
+		RELBRANCH(SEXT32(IMM << 2,16));
+		//RELBRANCH(IMM << 2);
 }
 void mips_isa_BGTZ_impl(struct mips_ctx_t *ctx)
 {
@@ -672,7 +674,7 @@ void mips_isa_WSBH_impl(struct mips_ctx_t *ctx)
 }
 void mips_isa_SEB_impl(struct mips_ctx_t *ctx)
 {
-	__MIPS_NOT_IMPL__
+	MIPS_GPR_SET(RD, SEXT32(BITS32(MIPS_GPR_GET(RT), 7, 0),16));
 }
 void mips_isa_SEH_impl(struct mips_ctx_t *ctx)
 {
