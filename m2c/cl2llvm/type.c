@@ -131,6 +131,18 @@ struct cl2llvm_type_t *type_cmp(struct cl2llvm_val_t *type1_w_sign, struct cl2ll
 			dom_type->sign = table[i].type1.sign;
 		}
 	}
+
+	/* If one type is of vector type, then return it as dominant type */
+	if (LLVMGetTypeKind(type1_type) == LLVMVectorTypeKind)
+	{
+		dom_type->llvm_type = type1_type;
+		dom_type->sign = type1_sign;
+	}
+	else if (LLVMGetTypeKind(type2_type) == LLVMVectorTypeKind)
+	{
+		dom_type->llvm_type = type2_type;
+		dom_type->sign = type2_sign;
+	}
 	return dom_type;
 }
 
