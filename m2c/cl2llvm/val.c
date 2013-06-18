@@ -23,6 +23,7 @@
 
 #include <lib/mhandle/mhandle.h>
 
+#include "function.h"
 #include "val.h"
 #include "type.h"
 #include "cl2llvm.h"
@@ -31,9 +32,12 @@ extern int temp_var_count;
 extern char temp_var_name[50];
 
 extern LLVMBuilderRef cl2llvm_builder;
+extern struct cl2llvm_function_t *cl2llvm_current_function;
+extern LLVMBasicBlockRef current_basic_block;
 
 struct cl2llvm_val_t *cl2llvm_val_create(void)
 {
+	int i;
 	struct cl2llvm_val_t *cl2llvm_val;
 	cl2llvm_val = xcalloc(1, sizeof(struct cl2llvm_val_t));
 
@@ -42,9 +46,10 @@ struct cl2llvm_val_t *cl2llvm_val_create(void)
 	
 	cl2llvm_val->type = cl2llvm_type;
 	cl2llvm_val->vector_indices = xmalloc(sizeof(struct cl2llvm_val_t *) * 17);
-
-	/* Initialize first element of vector_indices to NULL indicating that it is empty */
-	cl2llvm_val->vector_indices[0] = NULL;
+	
+	/* Initialize vector indices to NULL */
+	for (i = 0; i < 17; i++)
+		cl2llvm_val->vector_indices[i] = NULL;
 
 	return cl2llvm_val;
 }
@@ -62,7 +67,14 @@ struct cl2llvm_val_t *cl2llvm_val_create_w_init(LLVMValueRef val, int sign)
 
 void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val)
 {
+	int i;
+
 	free(cl2llvm_val->type);
+	for(i = 0; i < 16; i++)
+	{
+		if (cl2llvm_val->vector_indices[i])
+			cl2llvm_val_free(cl2llvm_val->vector_indices[i]);
+	}
 	free(cl2llvm_val->vector_indices);
 	free(cl2llvm_val);
 }
@@ -71,6 +83,13 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 {
 	struct cl2llvm_val_t *llvm_val = cl2llvm_val_create();
 
+	int i;
+	struct cl2llvm_type_t *elem_type;
+	struct cl2llvm_val_t *cast_original_val;
+	LLVMValueRef index;
+	LLVMValueRef vector_addr;
+	LLVMValueRef vector;
+	LLVMValueRef const_elems[16];
 	LLVMTypeRef fromtype = LLVMTypeOf(original_val->val);
 	LLVMTypeRef totype = totype_w_sign->llvm_type;
 	int fromsign = original_val->type->sign;
@@ -84,11 +103,77 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 	snprintf(temp_var_name, sizeof temp_var_name,
 		"tmp%d", temp_var_count++);
 
+	/* Check that fromtype is not a vector */
+	if (LLVMGetTypeKind(fromtype) == LLVMVectorTypeKind)
+	{
+		if (LLVMGetTypeKind(totype) == LLVMVectorTypeKind)
+			cl2llvm_yyerror("Casts between vector types are forbidden");
+		cl2llvm_yyerror("A vector may not be cast to any other type.");
+	}
+
+	/* If totype is a vector, create a vector whose components are equal to 
+	original_val */
+
+	if (LLVMGetTypeKind(totype) == LLVMVectorTypeKind)
+	{
+		/*Go to entry block and declare vector*/
+		LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block,
+			cl2llvm_current_function->branch_instr);
+		
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+			
+		vector_addr = LLVMBuildAlloca(cl2llvm_builder, 
+			totype, temp_var_name);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, current_basic_block);
+
+		/* Load vector */
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+	
+		vector = LLVMBuildLoad(cl2llvm_builder, vector_addr, temp_var_name);
+		
+		/* Create object to represent element type of totype */
+		elem_type = cl2llvm_type_create_w_init(LLVMGetElementType(totype), tosign);
+
+		/* If original_val is constant create a constant vector */
+		if (LLVMIsConstant(original_val->val))
+		{
+			cast_original_val = llvm_type_cast(original_val, elem_type);
+			for (i = 0; i < LLVMGetVectorSize(totype); i++)
+				const_elems[i] = cast_original_val->val;
+
+			vector = LLVMConstVector(const_elems, 	
+				LLVMGetVectorSize(totype));
+			llvm_val->val = vector;
+
+			cl2llvm_val_free(cast_original_val);
+		}
+		/* If original value is not constant insert elements */
+		else
+		{
+			for (i = 0; i < LLVMGetVectorSize(totype); i++)
+			{
+				index = LLVMConstInt(LLVMInt32Type(), i, 0);
+				cast_original_val = llvm_type_cast(original_val, elem_type);
+				snprintf(temp_var_name, sizeof temp_var_name,
+					"tmp%d", temp_var_count++);
+	
+				vector = LLVMBuildInsertElement(cl2llvm_builder, 
+					vector, cast_original_val->val, index, temp_var_name);
+				cl2llvm_val_free(cast_original_val);
+			}
+		}
+		cl2llvm_type_free(elem_type);
+		llvm_val->val = vector;
+	}
+
+
 	if (fromtype == LLVMInt64Type())
 	{
 		if (totype == LLVMDoubleType())
 		{
-		if (fromsign)
+			if (fromsign)
 			{
 				llvm_val->val =
 						LLVMBuildSIToFP(cl2llvm_builder,
@@ -783,6 +868,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 		llvm_val->type->sign = 1;
 	}
 	llvm_val->type->llvm_type = totype;
+	llvm_val->type->sign = tosign;
 	return llvm_val;
 }
 

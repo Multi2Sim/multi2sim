@@ -618,7 +618,6 @@ lvalue
 		symbol_val_dup = cl2llvm_val_create_w_init(symbol->cl2llvm_val->val, 
 			symbol->cl2llvm_val->type->sign);
 
-		symbol_val_dup->type->llvm_type = symbol->cl2llvm_val->type->llvm_type;
 
 		$$ = symbol_val_dup;
 	}
@@ -903,7 +902,8 @@ declaration
 			
 			/*if variable type is a vector*/
 			if (LLVMGetTypeKind($1->type_spec->llvm_type) == LLVMVectorTypeKind)
-			{
+			{	
+				printf("var is vector\n");
 				/*Go to entry block and declare variable*/
 				LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block, cl2llvm_current_function->branch_instr);
 				var_addr = LLVMBuildAlloca(cl2llvm_builder, 
@@ -923,9 +923,11 @@ declaration
 				/* If initializer is present, store it. */
 				if (current_list_elem->cl2llvm_val != NULL)
 				{
+					printf("init is present\n");
 					if (LLVMTypeOf(current_list_elem->cl2llvm_val->val) == $1->type_spec->llvm_type 
 						&& current_list_elem->cl2llvm_val->type->sign == $1->type_spec->sign)
 					{
+						printf("type is right\n");
 						LLVMBuildStore(cl2llvm_builder, 
 							current_list_elem->cl2llvm_val->val, var_addr);
 					}
@@ -976,7 +978,6 @@ declaration
 					$1->type_spec->llvm_type, array_length->val, 
 					current_list_elem->name) , $1->type_spec->sign, 
 					current_list_elem->name);
-				symbol->cl2llvm_val->type->llvm_type = $1->type_spec->llvm_type;
 				err = hash_table_insert(cl2llvm_current_function->symbol_table, 
 					current_list_elem->name, symbol);
 				if (!err)
@@ -1375,7 +1376,6 @@ expr
 	{
 		$$ = $2;
 	}
-
 	| expr TOK_PLUS expr
 	{
 		struct cl2llvm_type_t *type = cl2llvm_type_create();
@@ -1388,7 +1388,7 @@ expr
 			type->sign = op1->type->sign;
 		}
 		else
-		{
+	{
 			type->llvm_type = op2->type->llvm_type;
 			type->sign = op2->type->sign;
 		}
@@ -2350,8 +2350,16 @@ unary_expr
 	}
 	| TOK_PAR_OPEN type_spec TOK_PAR_CLOSE expr %prec TOK_PREFIX
 	{
-		llvm_type_cast($4, $2);
-		$$ = $4;
+		struct cl2llvm_val_t *value;
+
+		value = llvm_type_cast($4, $2);
+		
+		/* Free pointers */
+		cl2llvm_val_free($4);
+		cl2llvm_type_free($2);
+if(value != NULL)
+	printf("type cast not null\n");
+		$$ = value;
 	}
 	| TOK_SIZEOF TOK_PAR_OPEN type_spec TOK_PAR_CLOSE %prec TOK_PREFIX
 	{
