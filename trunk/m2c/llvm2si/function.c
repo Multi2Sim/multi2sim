@@ -303,18 +303,10 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 static void llvm2si_function_dump_data(struct llvm2si_function_t *function,
 		FILE *f)
 {
-	/* COMPUTE_PGM_RSRC2 */
-	union
-	{
-		struct si_bin_compute_pgm_rsrc2_t as_rsrc;
-		unsigned int as_uint;
-	} rsrc;
-
 	/* Section header */
 	fprintf(f, ".data\n");
 
 	/* User elements */
-	fprintf(f, "\tuserElementCount = 3\n");
 	fprintf(f, "\tuserElements[0] = PTR_UAV_TABLE, 0, s[%d:%d]\n",
 			function->sreg_uav_table, function->sreg_uav_table + 1);
 	fprintf(f, "\tuserElements[1] = IMM_CONST_BUFFER, 0, s[%d:%d]\n",
@@ -323,27 +315,16 @@ static void llvm2si_function_dump_data(struct llvm2si_function_t *function,
 			function->sreg_cb1, function->sreg_cb1 + 3);
 	fprintf(f, "\n");
 
-	/* Registers */
-	fprintf(f, "\tNumVgprs = %d\n", function->num_vregs);
-	fprintf(f, "\tNumSgprs = %d\n", function->num_sregs);
-	fprintf(f, "\n");
-
 	/* Floating-point mode */
 	fprintf(f, "\tFloatMode = 192\n");
 	fprintf(f, "\tIeeeMode = 0\n");
 	fprintf(f, "\n");
 
 	/* Program resources */
-	rsrc.as_uint = 0;
-	rsrc.as_rsrc.user_sgpr = function->sreg_wgid;
-	rsrc.as_rsrc.tgid_x_en = 1;
-	rsrc.as_rsrc.tgid_y_en = 1;
-	rsrc.as_rsrc.tgid_z_en = 1;
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2 = 0x%08x\n", rsrc.as_uint);
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:USER_SGPR = %d\n", rsrc.as_rsrc.user_sgpr);
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_X_EN = %d\n", rsrc.as_rsrc.tgid_x_en);
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Y_EN = %d\n", rsrc.as_rsrc.tgid_y_en);
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Z_EN = %d\n", rsrc.as_rsrc.tgid_z_en);
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:USER_SGPR = %d\n", function->sreg_wgid);
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_X_EN = %d\n", 1);
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Y_EN = %d\n", 1);
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Z_EN = %d\n", 1);
 	fprintf(f, "\n");
 }
 
@@ -470,31 +451,45 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function)
 	assert(!function->num_sregs);
 	assert(!function->num_vregs);
 
-	/* Allocate 2 scalar registers for UAV table */
+	/* Allocate 3 vector registers (v[0:2]) for local ID */
+	function->vreg_lid = llvm2si_function_alloc_vreg(function, 3, 1);
+	if (function->vreg_lid)
+		panic("%s: vreg_lid is expented to be 0", __FUNCTION__);
+
+	/* Allocate 2 scalar registers for UAV table. The value for these
+	 * registers is assigned by the runtime based on info found in the
+	 * 'userElements' metadata of the binary.*/
 	function->sreg_uav_table = llvm2si_function_alloc_sreg(function, 2, 1);
 
-	/* Allocate 4 scalar registers for CB0 */
+	/* Allocate 4 scalar registers for CB0, and 4 more for CB1. The
+	 * values for these registers will be assigned by the runtime based
+	 * on info present in the 'userElements' metadata. */
 	function->sreg_cb0 = llvm2si_function_alloc_sreg(function, 4, 1);
-
-	/* Allocate 4 scalar registers for CB1 */
 	function->sreg_cb1 = llvm2si_function_alloc_sreg(function, 4, 1);
 
-	/* Allocate 3 scalar registers for the work-group ID */
+	/* Allocate 3 scalar registers for the work-group ID. The content of
+	 * these register will be populated by the runtime based on info found
+	 * in COMPUTE_PGM_RSRC2 metadata. */
 	function->sreg_wgid = llvm2si_function_alloc_sreg(function, 3, 1);
 
-	/* Allocate 3 scalar registers for the local size */
-	function->sreg_lsize = llvm2si_function_alloc_sreg(function, 3, 1);
-
-	/* Allocate 3 scalar registers for the global offset */
-	function->sreg_offs = llvm2si_function_alloc_sreg(function, 3, 1);
-
-	/* Allocate 3 vector registers (v[0:2]) for local ID */
-	assert(!function->num_vregs);
-	function->vreg_lid = llvm2si_function_alloc_vreg(function, 3, 1);
-
-	/* Allocate 3 vector register for global ID */
-	function->vreg_gid = llvm2si_function_alloc_vreg(function, 3, 1);
-
+	/* Obtain global size in s[gsize:gsize+2].
+	 * s_buffer_load_dword s[gsize], s[cb0:cb0+3], 0x00
+	 * s_buffer_load_dword s[gsize+1], s[cb0:cb0+3], 0x01
+	 * s_buffer_load_dword s[gsize+2], s[cb0:cb0+3], 0x02
+	 */
+	llvm2si_basic_block_add_comment(basic_block, "Obtain global size");
+	function->sreg_gsize = llvm2si_function_alloc_sreg(function, 3, 1);
+	for (index = 0; index < 3; index++)
+	{
+		arg_list = list_create();
+		list_add(arg_list, si2bin_arg_create_scalar_register(
+				function->sreg_gsize + index));
+		list_add(arg_list, si2bin_arg_create_scalar_register_series(
+				function->sreg_cb0, function->sreg_cb0 + 3));
+		list_add(arg_list, si2bin_arg_create_literal(index));
+		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
+		llvm2si_basic_block_add_inst(basic_block, inst);
+	}
 
 	/* Obtain local size in s[lsize:lsize+2].
 	 *
@@ -503,6 +498,7 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function)
 	 * s_buffer_load_dword s[lsize+2], s[cb0:cb0+3], 0x06
 	 */
 	llvm2si_basic_block_add_comment(basic_block, "Obtain local size");
+	function->sreg_lsize = llvm2si_function_alloc_sreg(function, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
 		arg_list = list_create();
@@ -522,6 +518,7 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function)
 	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x1a
 	 */
 	llvm2si_basic_block_add_comment(basic_block, "Obtain global offset");
+	function->sreg_offs = llvm2si_function_alloc_sreg(function, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
 		arg_list = list_create();
@@ -541,6 +538,7 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function)
 	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], v[lid+dim]
 	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], s[offs+dim]
 	 */
+	function->vreg_gid = llvm2si_function_alloc_vreg(function, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
 		/* Comment */
