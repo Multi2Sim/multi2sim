@@ -478,6 +478,7 @@ struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val
 
 	/* Free pointers */
 	cl2llvm_type_free(component_type);
+	cl2llvm_val_free(lvalue);
 
 	return new_lvalue;
 }
