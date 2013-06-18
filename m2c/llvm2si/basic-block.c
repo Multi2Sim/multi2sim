@@ -159,8 +159,12 @@ void llvm2si_basic_block_emit_call(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeKind lltype_kind;
 
 	struct llvm2si_function_t *function;
-	struct llvm2si_symbol_t *symbol;
+	struct llvm2si_symbol_t *ret_symbol;
+	struct si2bin_inst_t *inst;
+	struct si2bin_arg_t *ret_arg;
+	struct list_t *arg_list;
 
+	int ret_vreg;
 	int num_args;
 	int dim;
 
@@ -216,12 +220,30 @@ void llvm2si_basic_block_emit_call(struct llvm2si_basic_block_t *basic_block,
 
 		/* Create new symbol associating it with the vector register
 		 * containing the global ID in the given dimension. */
-		symbol = llvm2si_symbol_create(var_name,
+		ret_symbol = llvm2si_symbol_create(var_name,
 				llvm2si_symbol_vector_register,
 				function->vreg_gid + dim);
 
 		/* Add to symbol table */
-		llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
+		llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
+	}
+	else if (!strcmp(func_name, "get_global_size"))
+	{
+		/* Allocate a new vector register to copy global size. */
+		ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
+		ret_arg = si2bin_arg_create_vector_register(ret_vreg);
+		ret_symbol = llvm2si_symbol_create(var_name,
+				llvm2si_symbol_vector_register, ret_vreg);
+
+		/* Create new vector register containing the global size.
+		 * v_mov_b32 vreg, s[gsize+dim]
+		 */
+		arg_list = list_create();
+		list_add(arg_list, ret_arg);
+		list_add(arg_list, si2bin_arg_create_scalar_register(
+				function->sreg_gsize + dim));
+		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
+		llvm2si_basic_block_add_inst(basic_block, inst);
 	}
 	else
 	{
