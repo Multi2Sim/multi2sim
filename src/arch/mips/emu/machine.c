@@ -281,11 +281,11 @@ void mips_isa_LDC2_impl(struct mips_ctx_t *ctx)
 	__MIPS_NOT_IMPL__
 }
 void mips_isa_SC_impl(struct mips_ctx_t *ctx)
-{
-	/*
+{      
 	unsigned int temp = MIPS_GPR_GET(RT);
-	if()
-*/
+	//	if()
+	mem_write(ctx->mem, MIPS_GPR_GET(RS) + IMM, 4, &temp);
+	MIPS_GPR_SET(RT, 1);
 	// FIXME: revisit details in m2s-1.3/srs/kernel/machine.def
 }
 void mips_isa_SWC1_impl(struct mips_ctx_t *ctx)
@@ -532,7 +532,7 @@ void mips_isa_BLTZ_impl(struct mips_ctx_t *ctx)
 void mips_isa_BGEZ_impl(struct mips_ctx_t *ctx)
 {
 	if ((int)MIPS_GPR_GET(RS) >= 0)
-		RELBRANCH(IMM << 2);
+		RELBRANCH(SEXT32(IMM << 2,16));
 }
 void mips_isa_BLTZL_impl(struct mips_ctx_t *ctx)
 {
