@@ -71,7 +71,7 @@ static char *syntax =
 	"\n"
 	"Syntax:\n"
 	"\n"
-	"\tm2s-clcc [<options>] <sources>\n"
+	"\tm2c [<options>] <sources>\n"
 	"\n"
 	"Options:\n"
 	"\n"
@@ -140,7 +140,8 @@ static char *syntax =
 	"-o <file>\n"
 	"\tOutput kernel binary. If no output file is specified, each kernel\n"
 	"\tsource is compiled into a kernel binary with the same name but\n"
-	"\tusing the '.bin' extension.\n"
+	"\tusing the '.bin' extension. When used, the option affects the\n"
+	"\tfirst file in the list of sources.\n"
 	"\n"
 	"-O <level> (-O1 default)\n"
 	"\tOptimization level. Supported values are:\n"
@@ -319,7 +320,7 @@ static void m2c_read_command_line(int argc, char **argv)
 	{
 		printf("\n");
 		printf("Multi2Sim " VERSION " OpenCL C Compiler\n");
-		printf("Please run 'm2s-clcc --help' for a list of command-line options\n");
+		printf("Please run 'm2c --help' for a list of command-line options\n");
 		printf("\n");
 		exit(0);
 	}
@@ -378,10 +379,6 @@ static void m2c_read_source_files(void)
 	/* Nothing to do for no sources */
 	if (!m2c_source_file_list->count)
 		return;
-
-	/* Option '-o' no allowed when multiple source files are given. */
-	if (m2c_source_file_list->count > 1 && m2c_out_file_name[0])
-		fatal("option '-o' not allowed when multiple sources are given");
 
 	/* Create file names */
 	LIST_FOR_EACH(m2c_source_file_list, index)
