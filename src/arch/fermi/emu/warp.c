@@ -268,6 +268,9 @@ void frm_warp_execute(struct frm_warp_t *warp)
 
 	/* Decode instruction */
 	frm_inst_decode(inst);
+	if (!inst->info)
+		fatal("%s: unrecognized instruction (%08x %08x)",
+			__FUNCTION__, inst->dword.word[0], inst->dword.word[1]);
 
 	/* Execute instruction */
 	switch (inst->info->fmt)
