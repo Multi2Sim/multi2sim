@@ -92,6 +92,8 @@ void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 {
 	LLVMValueRef llarg_op1;
 	LLVMValueRef llarg_op2;
+	LLVMTypeRef lltype;
+	LLVMTypeKind lltype_kind;
 
 	struct llvm2si_function_t *function;
 	struct llvm2si_symbol_t *ret_symbol;
@@ -108,6 +110,14 @@ void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 	/* Get function */
 	function = basic_block->function;
 	assert(function);
+
+	/* Only supported for 32-bit integers */
+	lltype = LLVMTypeOf(llinst);
+	lltype_kind = LLVMGetTypeKind(lltype);
+	if (lltype_kind != LLVMIntegerTypeKind ||
+			LLVMGetIntTypeWidth(lltype) != 32)
+		fatal("%s: only supported for 32-bit integers",
+				__FUNCTION__);
 
 	/* Only supported for 2 operands (op1, op2) */
 	num_operands = LLVMGetNumOperands(llinst);
@@ -138,7 +148,7 @@ void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
 	/* Emit effective address calculation.
-	 * v_add_i32 ret_vreg, vcc, arg_index, arg_pointer
+	 * v_add_i32 ret_vreg, vcc, arg_op1, arg_op2
 	 */
 	arg_list = list_create();
 	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
@@ -217,7 +227,6 @@ void llvm2si_basic_block_emit_call(struct llvm2si_basic_block_t *basic_block,
 	/* Built-in functions */
 	if (!strcmp(func_name, "get_global_id"))
 	{
-
 		/* Create new symbol associating it with the vector register
 		 * containing the global ID in the given dimension. */
 		ret_symbol = llvm2si_symbol_create(var_name,
@@ -234,6 +243,7 @@ void llvm2si_basic_block_emit_call(struct llvm2si_basic_block_t *basic_block,
 		ret_arg = si2bin_arg_create_vector_register(ret_vreg);
 		ret_symbol = llvm2si_symbol_create(var_name,
 				llvm2si_symbol_vector_register, ret_vreg);
+		llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
 		/* Create new vector register containing the global size.
 		 * v_mov_b32 vreg, s[gsize+dim]
@@ -441,6 +451,78 @@ void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 	list_add(arg_list, si2bin_arg_create_maddr(arg_soffset, arg_qual,
 			si_inst_buf_data_format_32, si_inst_buf_num_format_float));
 	inst = si2bin_inst_create(SI_INST_TBUFFER_LOAD_FORMAT_X, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+}
+
+
+void llvm2si_basic_block_emit_mul(struct llvm2si_basic_block_t *basic_block,
+		LLVMValueRef llinst)
+{
+	LLVMValueRef llarg_op1;
+	LLVMValueRef llarg_op2;
+	LLVMTypeRef lltype;
+	LLVMTypeKind lltype_kind;
+
+	struct llvm2si_function_t *function;
+	struct llvm2si_symbol_t *ret_symbol;
+	struct si2bin_arg_t *arg_op1;
+	struct si2bin_arg_t *arg_op2;
+	struct si2bin_inst_t *inst;
+	struct list_t *arg_list;
+
+	int num_operands;
+	int ret_vreg;
+
+	char *ret_name;
+
+	/* Get function */
+	function = basic_block->function;
+	assert(function);
+
+	/* Only supported for 2 operands (op1, op2) */
+	num_operands = LLVMGetNumOperands(llinst);
+	if (num_operands != 2)
+		fatal("%s: 2 operands supported, %d found",
+			__FUNCTION__, num_operands);
+
+	/* Only supported for 32-bit integers */
+	lltype = LLVMTypeOf(llinst);
+	lltype_kind = LLVMGetTypeKind(lltype);
+	if (lltype_kind != LLVMIntegerTypeKind ||
+			LLVMGetIntTypeWidth(lltype) != 32)
+		fatal("%s: only supported for 32-bit integers",
+				__FUNCTION__);
+
+	/* Get operands (vreg, literal) */
+	llarg_op1 = LLVMGetOperand(llinst, 0);
+	llarg_op2 = LLVMGetOperand(llinst, 1);
+	arg_op1 = llvm2si_function_translate_value(function, llarg_op1, NULL);
+	arg_op2 = llvm2si_function_translate_value(function, llarg_op2, NULL);
+
+	/* Only the first operand can be a constant, so swap them if there is
+	 * a constant in the second. */
+	if (arg_op2->type != si2bin_arg_vector_register)
+		si2bin_arg_swap(&arg_op1, &arg_op2);
+	si2bin_arg_valid_types(arg_op1, si2bin_arg_vector_register,
+			si2bin_arg_literal, si2bin_arg_literal_float);
+	si2bin_arg_valid_types(arg_op2, si2bin_arg_vector_register);
+
+	/* Allocate vector register and create symbol for return value */
+	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
+	ret_symbol = llvm2si_symbol_create(ret_name,
+			llvm2si_symbol_vector_register,
+			ret_vreg);
+	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
+
+	/* Emit effective address calculation.
+	 * v_mul_lo_i32 ret_vreg, arg_op1, arg_op2
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
+	list_add(arg_list, arg_op1);
+	list_add(arg_list, arg_op2);
+	inst = si2bin_inst_create(SI_INST_V_MUL_LO_U32, arg_list);
 	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
@@ -674,6 +756,11 @@ void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block)
 		case LLVMLoad:
 
 			llvm2si_basic_block_emit_load(basic_block, llinst);
+			break;
+
+		case LLVMMul:
+
+			llvm2si_basic_block_emit_mul(basic_block, llinst);
 			break;
 
 		case LLVMRet:
