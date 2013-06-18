@@ -23,6 +23,12 @@
 /* Forward declarations */
 struct list_t;
 
+struct gl_shader_source
+{
+	char *source;
+	unsigned int shader_type;
+	int size;
+};
 
 /* Public variables */
 

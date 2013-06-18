@@ -895,7 +895,7 @@ void si_wavefront_init_sreg_with_fetch_shader(struct si_wavefront_t *wavefront,
 	assert(num_regs == 2);
 	assert(sizeof(mem_ptr) == 8);
 
-	mem_ptr.addr = (unsigned int)ndrange->fs_buffer_ptr;
+	mem_ptr.addr = (unsigned int)ndrange->inst_buffer_size;
 
 	memcpy(&wavefront->sreg[first_reg], &mem_ptr, sizeof(mem_ptr));
 }
