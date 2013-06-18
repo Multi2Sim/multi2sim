@@ -51,18 +51,11 @@ static char *gl_vertex_shader;
 static char *gl_fragment_shader;
 
 
-
-
 /*
  * Private Functions
  */
 
 #define PROGRAM_BINARY_RETRIEVABLE_HINT  0x8257
-
-
-/* FIXME - all variables and functions that are not exported in the '.h' should have the 'static' modifier */
-/* FIXME - 'gl_' prefix should be added to global and static variables/functions outside of function scopes */
-
 
 /* For context initialization */
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
@@ -220,10 +213,10 @@ static int gl_context_init_x(unsigned int major_version, unsigned int minor_vers
 	else
 	{
 		printf("GL context init completed.\n");
-		printf("GL Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
-		printf("GL Renderer : %s\n", (const char*)glGetString(GL_RENDERER));
-		printf("GL Version (string) : %s\n", (const char*)glGetString(GL_VERSION));
-		printf("GLSL Version : %s\n", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+		printf("\tGL Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
+		printf("\tGL Renderer : %s\n", (const char*)glGetString(GL_RENDERER));
+		printf("\tGL Version (string) : %s\n", (const char*)glGetString(GL_VERSION));
+		printf("\tGLSL Version : %s\n", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 		return 1;
 	}
 	return 0;
@@ -251,8 +244,6 @@ static void gl_context_init_buffer()
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		printf("Failed to make complete framebuffer object %x\n",glCheckFramebufferStatus(GL_FRAMEBUFFER));
-	else
-		printf("Success, finally did it!\n");
 }
 
 
@@ -487,6 +478,7 @@ static GLuint gl_compile_shader(const GLchar *source, GLenum type, GLint size)
 
 	/* Compile */
 	glShaderSource(id, 1, &source, &size);
+
 	glCompileShader(id);
 	gl_check_compile_error(id);
 
@@ -507,6 +499,7 @@ static int gl_shader_binary_generator(struct list_t *source_list, char *outputfi
 	GLsizei written;
 	void *bin_buffer;
 	GLint bin_length;
+	GLint *bin_formats;
 
 	/* Create GL program */
 	GLuint glprogram = glCreateProgram();
@@ -517,7 +510,7 @@ static int gl_shader_binary_generator(struct list_t *source_list, char *outputfi
 		exit(1);
 	}
 
-	/* Compile shaders */
+	/* Compile and attach shaders */
 	LIST_FOR_EACH(source_list, i)
 	{
 		shader_source = list_get(source_list, i);
@@ -529,6 +522,7 @@ static int gl_shader_binary_generator(struct list_t *source_list, char *outputfi
 			glAttachShader(glprogram, shader_id);
 		}
 	}
+
 
 	/* Link */
 	glProgramParameteri(glprogram, PROGRAM_BINARY_RETRIEVABLE_HINT,
@@ -554,24 +548,61 @@ static int gl_shader_binary_generator(struct list_t *source_list, char *outputfi
 
 	/* Dump binary */
 	glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &formats);
-	GLint *binaryFormats = xcalloc(formats, sizeof(GLint));
-	glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, binaryFormats);
+	bin_formats = xcalloc(formats, sizeof(GLint));
+	glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, bin_formats);
 	for (i = 0; i < formats; i++)
-		printf("Format[%d]=%d\n", i, binaryFormats[i]);
+		printf("Shader format[%d] = 0x%x\n", i, bin_formats[i]);
 
 	glGetProgramiv(glprogram, GL_PROGRAM_BINARY_LENGTH, &bin_length);
-	printf("Shader binary has %d bytes\n", bin_length);
+	printf("Shader binary size = %d bytes\n", bin_length);
 
 	bin_buffer = xmalloc(bin_length);
-	glGetProgramBinary(glprogram, bin_length, NULL, (GLenum*)binaryFormats, bin_buffer);
+	glGetProgramBinary(glprogram, bin_length, NULL, (GLenum*)bin_formats, bin_buffer);
 	write_buffer(outputfile, bin_buffer, bin_length);
 
 	/* Process generated binary */
 	if (gl_dump_all)
 		gl_shader_binary_analyze(outputfile);
 
+	/* Free */
+	free(bin_formats);
 	free(bin_buffer);
 	return 0;
+}
+
+static char* gl_shader_file_read(const char* file_name, int *file_size)
+{
+	FILE* input ;
+	long size;
+	char *content;
+
+	input = fopen(file_name, "rb");
+	if(input == NULL) 
+		return NULL;
+
+	if(fseek(input, 0, SEEK_END) == -1) 
+		return NULL;
+	
+	size = ftell(input);
+	if(size == -1) 
+		return NULL;
+	if(fseek(input, 0, SEEK_SET) == -1) 
+		return NULL;
+
+	content = (char*) xcalloc(1, (size_t) size +1); 
+	if(content == NULL) 
+		return NULL;
+
+	fread(content, 1, (size_t)size, input);
+	if(ferror(input)) {
+		free(content);
+		return NULL;
+	}
+
+	fclose(input);
+	content[size] = '\0';
+	*file_size = size;
+	return content;
 }
 
 static struct gl_shader_source *gl_shader_source_create(char *source_file, unsigned int shader_type)
@@ -579,22 +610,29 @@ static struct gl_shader_source *gl_shader_source_create(char *source_file, unsig
 	struct gl_shader_source *shdr_src;
 	int source_size;
 
-	/* Allocate */
-	shdr_src = xcalloc(1, sizeof(struct gl_shader_source));
-
 	/* Initialize */
-	shdr_src->source = (GLchar *)read_buffer(source_file, &source_size);
-	shdr_src->shader_type = shader_type;
-	shdr_src->size = source_size;
+	if (source_file)
+	{
+		/* Allocate */
+		shdr_src = xcalloc(1, sizeof(struct gl_shader_source));
+	
+		shdr_src->source = gl_shader_file_read(source_file, &source_size);
+		if (!shdr_src->source)
+			fatal("Error loading shader source!");
+		shdr_src->shader_type = shader_type;
+		shdr_src->size = source_size;
 
-	/* Return */
-	return shdr_src;
+		/* Return */
+		return shdr_src;	
+	}
+	else
+		return NULL;
 }
 
 static void gl_shader_source_free(struct gl_shader_source *shdr_src)
 {
 	/* Free */
-	free_buffer((void*)shdr_src->source);
+	free(shdr_src->source);
 	free(shdr_src);
 }
 
@@ -603,7 +641,7 @@ static struct list_t *gl_shader_source_list_create()
 	struct list_t *lst;
 
 	/* Allocate */
-	lst = xcalloc(1, sizeof(struct list_t));
+	lst = list_create();
 
 	/* Return */
 	return lst;
@@ -621,6 +659,8 @@ static void gl_shader_source_list_free(struct list_t *shdr_src_lst)
 		if (shdr_src)
 			gl_shader_source_free(shdr_src);
 	}
+
+	list_free(shdr_src_lst);
 }
 
 static void gl_shader_source_list_add(struct list_t *shdr_src_lst, char *source_file, unsigned int shader_type)
@@ -630,28 +670,7 @@ static void gl_shader_source_list_add(struct list_t *shdr_src_lst, char *source_
 	shdr_src = gl_shader_source_create(source_file, shader_type);
 
 	if (shdr_src)
-	{
-		switch(shdr_src->shader_type)
-		{
-		case GL_VERTEX_SHADER:
-			list_insert(shdr_src_lst, 0, shdr_src);
-			break;
-		case GL_TESS_CONTROL_SHADER:
-			list_insert(shdr_src_lst, 1, shdr_src);
-			break;
-		case GL_TESS_EVALUATION_SHADER:
-			list_insert(shdr_src_lst, 2, shdr_src);
-			break;
-		case GL_GEOMETRY_SHADER:
-			list_insert(shdr_src_lst, 3, shdr_src);
-			break;
-		case GL_FRAGMENT_SHADER:
-			list_insert(shdr_src_lst, 4, shdr_src);
-			break;
-		default:
-			fatal("Unrecognized Shader Type!");
-		}
-	}
+		list_add(shdr_src_lst, shdr_src);
 }
 
 /*
@@ -684,7 +703,6 @@ void gl_compile(struct list_t *source_file_list,	struct list_t *output_file_list
 	/* Output file is given in the first element of 'output_file_list'. */
 	assert(output_file_list->count == 2);
 	output_file = list_get(output_file_list, 0);
-	
 	shdr_src_lst = gl_shader_source_list_create();
 
 	/* Create Shaders and add to shader source list */

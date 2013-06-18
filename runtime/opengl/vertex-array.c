@@ -474,6 +474,8 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 					/* Then send data to device memory */
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_write,
 						vbo->device_ptr, vbo->data, vbo->size);
+					/* Insert into vertex buffer table */
+					
 					/* Debug info */
 					opengl_debug("\tData send to device memory, device_ptr = %p\n", 
 						vbo->device_ptr);					
