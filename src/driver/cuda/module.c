@@ -35,7 +35,7 @@ struct cuda_module_t *cuda_module_create(char *binary_filename)
 	module = xcalloc(1, sizeof(struct cuda_module_t));
 	module->id = list_count(module_list);
 	module->ref_count = 1;
-	if (strncmp(binary_filename, "", 1))
+	if (*binary_filename)
 		module->elf_file = elf_file_create_from_path(binary_filename);
 
 	list_add(module_list, module);
