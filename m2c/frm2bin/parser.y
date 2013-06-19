@@ -48,6 +48,7 @@
 
 %right TOK_COMMA
 %right TOK_COLON
+%token TOK_ADD
 %right TOK_SEMICOLON
 %left TOK_OBRA
 %token TOK_CBRA
@@ -160,6 +161,13 @@ rl_arg_list
   	  	/* Return the arg list */
   	  	$$ = arg_list;
   	}
+  	
+  	|rl_arg TOK_ADD rl_arg_list
+  	{
+  		/* case: global memory [reg_idx + offset] */
+  		list_insert($3, 0, $1);
+  		$$ = $3;
+  	}
 
   	| rl_arg TOK_COMMA rl_arg_list
   	{
@@ -242,16 +250,37 @@ rl_arg
   	  	frm_id_free($6);
   	}
 
-  	/* global memory [reg] 
-  	 * [reg + offset] will be supported later */
+  	/* global memory [reg] */
   	| TOK_OBRA TOK_SCALAR_REGISTER TOK_CBRA
   	{
   	  	int reg_idx;
   	  	/* start from the 2nd character, 1st one is "R" */
   	  	reg_idx = atoi(($2->name) + 1);
-  	  	$$ = frm_arg_create_glob_maddr(reg_idx, 0);
+  	  	$$ = frm_arg_create_glob_maddr_reg(reg_idx);
 
   	  	frm_id_free($2);
+  	}
+  	
+  	/* global memory [reg + offset], reg part */
+  	| TOK_OBRA TOK_SCALAR_REGISTER 
+  	{
+  	  	int reg_idx;
+  	  	/* start from the 2nd character, 1st one is "R" */
+  	  	reg_idx = atoi(($2->name) + 1);
+  	  	$$ = frm_arg_create_glob_maddr_reg(reg_idx);
+
+  	  	frm_id_free($2);
+  	}
+  	
+  	/* global memory [reg + offset], offset part */
+  	| TOK_HEX TOK_CBRA
+  	{
+  	  	int value;
+
+  	  	sscanf($1->name, "%x", &value);
+  		$$ = frm_arg_create_glob_maddr_offset(value);
+  		
+  		frm_id_free($1);
   	}
 
   	/* for ISETP instruction */

@@ -329,8 +329,10 @@ struct frm_arg_t *frm_arg_create_literal(int value);
 struct frm_arg_t *frm_arg_create_scalar_register(char* name);
 struct frm_arg_t *frm_arg_create_special_register(char *name);
 struct frm_arg_t *frm_arg_create_predicate_register(char *name);
+struct frm_arg_t *frm_arg_create_zero_register(char *name);
 struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset);
-struct frm_arg_t *frm_arg_create_glob_maddr(int reg_idx, int offset);
+struct frm_arg_t *frm_arg_create_glob_maddr_reg(int reg_idx);
+struct frm_arg_t *frm_arg_create_glob_maddr_offset(int offset);
 struct frm_arg_t *frm_arg_create_pt(char* name);
 struct frm_arg_t *frm_arg_create_ccop(char* name);
 struct frm_arg_t *frm_arg_create_maddr(struct frm_arg_t *soffset,
