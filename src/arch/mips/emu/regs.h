@@ -37,6 +37,8 @@
 #define MIPS_GPR_GET(X) 		ctx->regs->regs_R[X]
 #define MIPS_GPR_SET(X,V)		ctx->regs->regs_R[X] = (V)
 
+#define MIPS_COP0_GET(X) 		ctx->regs->regs_cop0[X]
+
 #define MIPS_FPR_S_GET(X)		ctx->regs->regs_F.s[X]
 #define MIPS_FPR_S_SET(X, V)	ctx->regs->regs_F.s[X] = (V)
 

@@ -87,7 +87,7 @@ void mips_isa_ADDI_impl(struct mips_ctx_t *ctx)
 }
 void mips_isa_ADDIU_impl(struct mips_ctx_t *ctx)
 {
-	MIPS_GPR_SET(RT, MIPS_GPR_GET(RS) + SEXT32(IMM, 16));
+	MIPS_GPR_SET(RT, MIPS_GPR_GET(RS) + SEXT32((signed)IMM, 16));
 	mips_isa_inst_debug("  r%d -> r%d+0x%x", RT, RS, SEXT32(IMM, 16));
 }
 void mips_isa_SLTI_impl(struct mips_ctx_t *ctx)
@@ -169,16 +169,16 @@ void mips_isa_LW_impl(struct mips_ctx_t *ctx)
 	if ((BITS32(addr, 1, 0) | 0) == 1 )
 		fatal("LW: address error, effective address must be naturallty-aligned\n");
 	mem_read(ctx->mem, addr, 4, &temp);
-	//mips_isa_inst_debug("  value loaded: %x", temp);
 	MIPS_GPR_SET(RT, temp);
-	mips_isa_inst_debug("  $0x%x=>tmp0, tmp0+r%d=>tmp0, tmp0=>r%d", SEXT32(IMM,16), RS, RT);
+	mips_isa_inst_debug("  $0x%x=>tmp0, tmp0+r%d=>tmp0, tmp0=>r%d\n", SEXT32(IMM,16), RS, RT);
+	mips_isa_inst_debug("  value loaded: %x", temp);
 }
 void mips_isa_LBU_impl(struct mips_ctx_t *ctx)
 {
 	unsigned char temp;
-	unsigned int addr = MIPS_GPR_GET(RS) + IMM;
+	unsigned int addr = MIPS_GPR_GET(RS) + SEXT32((signed)IMM,16);
 	mem_read(ctx->mem, addr, sizeof(unsigned char), &temp);
-	MIPS_GPR_SET(RT, temp);
+	MIPS_GPR_SET(RT, (unsigned)temp);
 }
 void mips_isa_LHU_impl(struct mips_ctx_t *ctx)
 {
@@ -363,6 +363,7 @@ void mips_isa_SRAV_impl(struct mips_ctx_t *ctx)
 void mips_isa_JR_impl(struct mips_ctx_t *ctx)
 {
 	BRANCH(MIPS_GPR_GET(RS));
+	mips_isa_inst_debug(" target address=0x%x", MIPS_GPR_GET(RS));
 }
 void mips_isa_JALR_impl(struct mips_ctx_t *ctx)
 {
@@ -685,7 +686,7 @@ void mips_isa_RDHWR_impl(struct mips_ctx_t *ctx)
 	if (RD == 29)
 	{
 		MIPS_GPR_SET(RT, ctx->regs->regs_cop0[RD]);
-		mips_isa_inst_debug("  RDHWR with RD = 29");
+		mips_isa_inst_debug("  value in HW reg is 0x%x", MIPS_COP0_GET(RD));
 	}
 	//FIXME: This is implemented only for the case where RD is 29
 //	__MIPS_NOT_IMPL__
