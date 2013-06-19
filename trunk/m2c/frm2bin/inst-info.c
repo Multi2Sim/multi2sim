@@ -115,21 +115,22 @@ struct frm2bin_inst_info_t *frm2bin_inst_info_create(struct frm_inst_info_t *ins
 	info->inst_info = inst_info;
 
 	/* Create list of tokens from format string */
-	info->str_token_list = str_token_list_create(inst_info->fmt_str, ", []");
+	info->str_token_list =
+		str_token_list_create(inst_info->fmt_str, ", []+");
 	assert(info->str_token_list->count);
 
-	/* for Fermi, name should be the 2nd token, 1st token is predicate
-	 * in the name token, only the string before 1st % is name, others are modifier
-	 * it's different from southern-island 
-	 * extract inst-name and inst-mod token list from name_str */
+	/* for Fermi, name should be the 2nd token, 1st token is predicate in 
+	 * the name token, only the string before 1st % is name, others are
+	 * modifier it's different from southern-island extract inst-name
+	 * and inst-mod token list from name_str */
 	name_str = list_get(info->str_token_list, 1);
 	info->str_mod_list = str_token_list_create(name_str, "%");
 
-	/* extract inst name from 1st element of str_mod_list,
-	 * str_mod_list contains only modifier now */
+	/* extract inst name from 1st element of str_mod_list, str_mod_list
+	 * contains only modifier now */
 	info->name = list_remove_at(info->str_mod_list, 0);
 
-	/* create the mod_list*/
+	/* create the mod_list */
 	mod_list = list_create();
 	if (info->str_mod_list->count > 0)
 	{
@@ -146,10 +147,8 @@ struct frm2bin_inst_info_t *frm2bin_inst_info_create(struct frm_inst_info_t *ins
 	/* Create list of formal arguments */
 	info->token_list = list_create_with_size(5);
 
-	/* 1st argument starts from index-2, 
-	 * because index 0 is predicate, 
-	 * index 1 is instruction name
-	 * it's different from southern-island */
+	/* 1st argument starts from index-2, because index 0 is predicate,
+	 * index 1 is instruction name it's different from southern-island */
 	for (index = 2; index < info->str_token_list->count; index++)
 	{
 		/* Get token from format string */

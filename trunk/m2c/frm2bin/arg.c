@@ -163,14 +163,24 @@ struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset)
 	return arg;
 }
 
-struct frm_arg_t *frm_arg_create_glob_maddr(int reg_idx, int offset)
+struct frm_arg_t *frm_arg_create_glob_maddr_reg(int reg_idx)
 {
 	struct frm_arg_t *arg;
 
 	arg = frm_arg_create();
-	arg->type = frm_arg_glob_maddr;
-	arg->value.glob_maddr.reg_idx = reg_idx;
-	arg->value.glob_maddr.offset = offset;
+	arg->type = frm_arg_scalar_register;
+	arg->value.scalar_register.id = reg_idx;
+
+	return arg;
+}
+
+struct frm_arg_t *frm_arg_create_glob_maddr_offset(int offset)
+{
+	struct frm_arg_t *arg;
+
+	arg = frm_arg_create();
+	arg->type = frm_arg_literal;
+	arg->value.literal.val = offset;
 
 	return arg;
 }
