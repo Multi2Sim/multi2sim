@@ -245,9 +245,36 @@ void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin)
 }
 
 void si2bin_inner_bin_add_user_element(struct si2bin_inner_bin_t *bin, 
-		struct si_bin_enc_user_element_t *user_elem)
+		struct si_bin_enc_user_element_t *user_elem, int index)
 {
-	list_add(bin->user_element_list, user_elem);
+	int count;
+	
+	
+	count = list_count(bin->user_element_list);
+
+	if (count == index)
+	{
+		list_add(bin->user_element_list, user_elem);
+	}
+	else if (count > index)
+	{
+		if (list_get(bin->user_element_list, index))
+			fatal("userElement[%d] defined twice", index);
+
+		list_remove_at(bin->user_element_list, index);
+		list_insert(bin->user_element_list, index, user_elem);
+	}
+	else if (count < index)
+	{
+		while (count < index)
+		{
+			list_add(bin->user_element_list, NULL);
+			count = list_count(bin->user_element_list);
+		}
+
+		list_add(bin->user_element_list, user_elem);
+	}
+
 }
 
 void si2bin_inner_bin_add_entry(struct si2bin_inner_bin_t *bin,

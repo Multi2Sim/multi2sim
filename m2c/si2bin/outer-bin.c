@@ -405,7 +405,15 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 	
 		/* ELF_NOTE_ATI_CONSTANT_BUFFERS */
-
+		
+		/* Check for non-contiguous entries in user element list*/
+		k = 0;
+		LIST_FOR_EACH(inner_bin->user_element_list, k)
+		{
+			if(!(list_get(inner_bin->user_element_list, k)))
+				fatal("userElement[%d] missing", k);
+		}
+		
 
 		buff_num_offset = 0;
 
@@ -473,7 +481,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		prog_info[0].address = 0x80001000;
 		prog_info[0].value = list_count(inner_bin->user_element_list);
 		
-		/* AMU_ABI_USER_ELEMENTS (15 maximum) */
+		/* AMU_ABI_USER_ELEMENTS (16 maximum) */
 		for (k = 0; k < 16; k++)
 		{
 			prog_info[(k * 4) + 1].address = 0x80001000 + (k * 4) + 1;
