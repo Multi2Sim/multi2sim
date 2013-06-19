@@ -203,4 +203,14 @@ DESCRIPTION
 FILES
 	* src/network/
  
-	
+================================================================================
+AUTHOR
+	Benjamin Soper (soper.b@husky.neu.edu)
+
+DESCRIPTION
+
+	Benjamin has worked on the reverse engineering of the Kepler ISA and is the author of the Kepler disassembler.
+
+Files
+	* src/arch/kepler/asm/*
+
