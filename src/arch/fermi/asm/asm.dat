@@ -314,7 +314,7 @@ DEFINST(BRA,
 	0x107)
 
 DEFINST(CAL, 
-	"CAL%tgt_noinc %tgt", 
+	"%pred CAL%tgt_noinc %tgt", 
 	CTRL_CAL, 
 	CTRL, 
 	0x147)
@@ -338,7 +338,7 @@ DEFINST(EXIT,
 	0x207)
 
 DEFINST(SSY, 
-	"SSY %tgt", 
+	"%pred SSY %tgt", 
 	CTRL_SSY, 
 	CTRL, 
 	0x187)

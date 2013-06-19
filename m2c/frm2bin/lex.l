@@ -89,7 +89,7 @@ P[0-9]+ {
 }
 
 
-"RZ" {
+RZ {
   	frm2bin_yylval.id = frm_id_create(yytext);
   	return TOK_ZERO_REGISTER;
 }
