@@ -227,6 +227,16 @@ struct frm_arg_t *frm_arg_create_special_register(char *name)
 	return arg;
 }
 
+struct frm_arg_t *frm_arg_create_zero_register(char *name)
+{
+	struct frm_arg_t *arg;
+
+	arg = frm_arg_create();
+	arg->type = frm_arg_zero_register;
+
+	return arg;
+}
+
 struct frm_arg_t *frm_arg_create_predicate_register(char *name)
 {
 	struct frm_arg_t *arg;
@@ -623,7 +633,7 @@ struct frm_mod_t *frm_mod_create_brev(char *mod_name)
 	return mod;
 }
 
-struct frm_mod_t *frm_mod_create_dst_cc(char *mod_name)
+struct frm_mod_t *frm_mod_create_gen0_dst_cc(char *mod_name)
 {
 	struct frm_mod_t *mod;
 
@@ -667,6 +677,40 @@ struct frm_mod_t *frm_mod_create_mod0_A_w(char *mod_name)
 
 	mod->type = frm_token_mod0_A_w;
 	mod->value.mod0_A_w = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_mod0_A_redarv(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_mod0_A_redarv;
+	if (!strcmp(mod_name, "RED"))
+		mod->value.mod0_A_redarv = 0;
+	else
+		mod->value.mod0_A_redarv = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_mod0_A_op(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_mod0_A_op;
+	if (!strcmp(mod_name, "POPC"))
+		mod->value.mod0_A_op = 0;
+	else if (!strcmp(mod_name, "AND"))
+		mod->value.mod0_A_op = 1;
+	else if (!strcmp(mod_name, "OR"))
+		mod->value.mod0_A_op = 2;
+	else
+		mod->value.mod0_A_op = 3;
 
 	return mod;
 }
@@ -731,7 +775,19 @@ struct frm_mod_t *frm_mod_create_mod0_D_sat(char *mod_name)
 	return mod;
 }
 
-struct frm_mod_t *frm_mod_create_offs_mod1_A_trig(char* mod_name)
+struct frm_mod_t *frm_mod_create_mod0_D_x(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+
+	mod->type = frm_token_mod0_D_x;
+	mod->value.mod0_D_x = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_offs_mod1_A_trig(char *mod_name)
 {
 	struct frm_mod_t *mod;
 

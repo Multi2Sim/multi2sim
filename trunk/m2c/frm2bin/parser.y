@@ -184,10 +184,8 @@ rl_operand
 
   	| TOK_ZERO_REGISTER
   	{
-  	  	/* add later */
-		/*
-  	  	$$ = NULL;
-		*/
+		$$ = frm_arg_create_zero_register($1->name);
+  	  	frm_id_free($1);
   	}
 
   	| TOK_PRED_REGISTER
