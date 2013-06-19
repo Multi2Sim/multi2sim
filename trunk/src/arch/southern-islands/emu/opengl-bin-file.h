@@ -35,6 +35,43 @@ enum si_opengl_shader_binary_kind_t
 	SI_OPENGL_SHADER_INVALID
 };
 
+/* SPI_SHADER_PGM_RSRC2_VS */
+struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t
+{
+	unsigned int unknown1	: 8;
+	unsigned int unknown2	: 8;
+	unsigned int unknown3	: 8;
+	unsigned int user_sgpr	: 7;
+	unsigned int unknown4	: 1;
+};
+
+/* PA_CL_VS_OUT_CNTL */
+struct si_opengl_bin_pa_cl_vs_out_cntl_t
+{
+	unsigned int unknown1	: 8;
+	unsigned int unknown2	: 8;
+	unsigned int unknown3	: 8;
+	unsigned int unknown4	: 8;	
+};
+
+/* SPI_VS_OUT_CONFIG */
+struct si_opengl_spi_vs_out_config_t
+{
+	unsigned int vs_export_count		: 8;
+	unsigned int vs_half_pack	: 8;
+	unsigned int vs_export_fog 	: 8;
+	unsigned int vs_out_fog_vec_addr 	: 8;
+};
+
+/* SPI_SHADER_POS_FORMAT */
+struct si_opengl_spi_shader_pos_format
+{
+	unsigned int pos0_export_format 	: 8;
+	unsigned int pos1_export_format 	: 8;
+	unsigned int pos2_export_format 	: 8;
+	unsigned int pos3_export_format 	: 8;	
+};
+
 struct si_opengl_shader_binary_t
 {
 	/* Type of shader */
