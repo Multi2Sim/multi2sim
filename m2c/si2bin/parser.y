@@ -131,6 +131,15 @@ section
 	| data_section
 	| args_section
 	| text_section
+	{
+		/* Clean up tasks, symbol table, etc. when finished parsing kernel */
+		//si2bin_task_list_done();
+		//si2bin_symbol_table_init();
+
+		/* Set up new tasks, symbol table, etc. for next kernel */
+		//si2bin_task_list_init();
+		//si2bin_symbol_table_init();
+	}
 	;
 
 global_section
@@ -259,21 +268,21 @@ data_stmt
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_EQ TOK_ID TOK_COMMA TOK_DECIMAL TOK_COMMA TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA TOK_NEW_LINE
 	{
 		struct si_bin_enc_user_element_t *user_elem;
-		int data_class;
 
 
 		if (strcmp("userElements", $1->name))
-			fatal("User Elements not correctly specified: %s", $1->name);
+			si2bin_yyerror_fmt("User Elements not correctly specified: %s", $1->name);
 		
-		data_class = str_map_string(&si_bin_user_data_class, $6->name);
+		if ($3 > 15 || $3 < 0)
+			si2bin_yyerror_fmt("User Elements index is out of allowed range (0 to 15)");
 
 		user_elem = si_bin_enc_user_element_create();
-		user_elem->dataClass = data_class;
+		user_elem->dataClass = str_map_string(&si_bin_user_data_class, $6->name);
 		user_elem->apiSlot = $8;
 		user_elem->startUserReg = $12;
 		user_elem->userRegCount = $14 - $12 + 1;
 		
-		si2bin_inner_bin_add_user_element(si2bin_inner_bin, user_elem);
+		si2bin_inner_bin_add_user_element(si2bin_inner_bin, user_elem, $3);
 
 		si2bin_id_free($1);
 		si2bin_id_free($6);
@@ -378,17 +387,19 @@ args_stmt
 	: TOK_ID TOK_ID TOK_DECIMAL TOK_NEW_LINE
 	{
 		struct si_arg_t *arg;
-		int data_type;
 
-		data_type = str_map_string(&si_arg_data_type_map, $1->name);
+		
+		/* Create new arg */
 		arg = si_arg_create(si_arg_value, $2->name);
-		arg->value.data_type = data_type;
+		
+		/* Set arg fields */
+		arg->value.data_type = str_map_string(&si_arg_data_type_map, $1->name);
 		arg->value.num_elems = 1;
 		arg->value.constant_buffer_num = 1;
 		arg->value.constant_offset = $3;
 		
+		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
-
 		si2bin_id_free($1);
 		si2bin_id_free($2);
 	}
@@ -412,20 +423,23 @@ args_stmt
 		si2bin_id_free($3);
 	}
 
-	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
+	| TOK_ID TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
 	{
 		struct si_arg_t *arg;
-		int data_type;
 
-		data_type = str_map_string(&si_arg_data_type_map, $1->name);
-		arg = si_arg_create(si_arg_value, "arg");
-		arg->value.data_type = data_type;
-		arg->value.num_elems = $3;
-		arg->value.constant_buffer_num = 1;
-		arg->value.constant_offset = $5;
+		/* Create new argument */
+		arg = si_arg_create(si_arg_value, $2->name);
 		
+		/* Set argument fields */
+		arg->value.data_type = str_map_string(&si_arg_data_type_map, $1->name);
+		arg->value.num_elems = $4;
+		arg->value.constant_buffer_num = 1;
+		arg->value.constant_offset = $6;
+		
+		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 		si2bin_id_free($1);
+		si2bin_id_free($2);
 	}
 
 ptr_stmt_list
