@@ -37,6 +37,7 @@
 #include <arch/fermi/emu/isa.h>
 #include <arch/fermi/timing/gpu.h>
 #include <arch/fermi/timing/mem-config.h>
+#include <arch/kepler/asm/asm.h>
 #include <arch/mips/asm/asm.h>
 #include <arch/mips/emu/context.h>
 #include <arch/mips/emu/isa.h>
@@ -118,6 +119,8 @@ static char *frm_disasm_file_name = "";
 static char *frm_isa_debug_file_name = "";
 static char *frm_gpu_debug_file_name = "";
 static enum arch_sim_kind_t frm_sim_kind = arch_sim_kind_functional;
+
+static char *kpl_disasm_file_name = "";
 
 static char *arm_disasm_file_name = "";
 static char *arm_loader_debug_file_name = "";
@@ -466,6 +469,15 @@ static char *m2s_help =
 		"  --frm-sim {functional|detailed}\n"
 		"      Functional (default) or detailed simulation for the NVIDIA Fermi\n"
 		"      GPU model.\n"
+		"\n"
+		"\n"
+		"================================================================================\n"
+		"NVIDIA Kepler GPU Options\n"
+		"================================================================================\n"
+		"\n"
+		"  --kpl-disasm <file>\n"
+		"      Disassemble a Kepler kernel binary (cubin format). This option is\n"
+		"      incompatible with any other command-line option.\n"
 		"\n"
 		"\n"
 		"================================================================================\n"
@@ -1175,6 +1187,20 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 
 
 		/*
+		 * NVIDIA Kepler Options
+		 */
+
+		if (!strcmp(argv[argi], "--kpl-disasm"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			kpl_disasm_file_name = argv[++argi];
+			continue;
+		}
+
+
+
+
+		/*
 		 * ARM CPU Options
 		 */
 
@@ -1805,6 +1831,10 @@ int main(int argc, char **argv)
 	/* Fermi disassembler tool */
 	if (*frm_disasm_file_name)
 		frm_disasm(frm_disasm_file_name);
+
+	/* Kepler disassembler tool */
+	if (*kpl_disasm_file_name)
+		kpl_disasm(kpl_disasm_file_name);
 
 	/* ARM disassembler tool */
 	if (*arm_disasm_file_name)
