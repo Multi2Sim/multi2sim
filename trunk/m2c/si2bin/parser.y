@@ -132,13 +132,16 @@ section
 	| args_section
 	| text_section
 	{
-		/* Clean up tasks, symbol table, etc. when finished parsing kernel */
-		//si2bin_task_list_done();
-		//si2bin_symbol_table_init();
+		/* Process any tasks still left */
+		si2bin_task_list_process();
+		
+		/* Clean up tasks and symbol table when finished parsing kernel */
+		si2bin_task_list_done();
+		si2bin_symbol_table_done();
 
-		/* Set up new tasks, symbol table, etc. for next kernel */
-		//si2bin_task_list_init();
-		//si2bin_symbol_table_init();
+		/* Set up new tasks and symbol table for next kernel */
+		si2bin_task_list_init();
+		si2bin_symbol_table_init();
 	}
 	;
 
