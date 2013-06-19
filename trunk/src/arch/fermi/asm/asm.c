@@ -392,7 +392,7 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 	while (*fmt_str && size)
 	{
 		/* Character is a literal symbol */
-		if (*fmt_str != '%')
+		if (*fmt_str != '%' && *fmt_str != '+')
 		{
 			if (*fmt_str != ' ' || str != orig_str)
 				str_printf(&str, &size, "%c", *fmt_str);
@@ -400,6 +400,9 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			continue;
 		}
 
+		if (*fmt_str == '+')
+			++fmt_str;
+		
 		/* Character is a token */
 		++fmt_str;
 
