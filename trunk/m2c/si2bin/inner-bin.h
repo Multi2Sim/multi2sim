@@ -143,7 +143,7 @@ struct si2bin_inner_bin_t
 struct si2bin_inner_bin_t *si2bin_inner_bin_create(char *name);
 void si2bin_inner_bin_free(struct si2bin_inner_bin_t *bin);
 void si2bin_inner_bin_add_user_element(struct si2bin_inner_bin_t *bin,
-		struct si_bin_enc_user_element_t *user_elem);
+		struct si_bin_enc_user_element_t *user_elem, int index);
 
 void si2bin_inner_bin_add_entry(struct si2bin_inner_bin_t *bin, struct si2bin_inner_bin_entry_t *entry);
 void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_buffer_t *bin_buffer);
