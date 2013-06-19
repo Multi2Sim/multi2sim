@@ -90,7 +90,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 	LLVMValueRef vector_addr;
 	LLVMValueRef vector;
 	LLVMValueRef const_elems[16];
-	LLVMTypeRef fromtype = LLVMTypeOf(original_val->val);
+	LLVMTypeRef fromtype = original_val->type->llvm_type;
 	LLVMTypeRef totype = totype_w_sign->llvm_type;
 	int fromsign = original_val->type->sign;
 	int tosign = totype_w_sign->sign;
@@ -102,19 +102,26 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 
 	snprintf(temp_var_name, sizeof temp_var_name,
 		"tmp%d", temp_var_count++);
-
-	/* Check that fromtype is not a vector */
+		
+	/* Check that fromtype is not a vector, unless both types are identical. */
 	if (LLVMGetTypeKind(fromtype) == LLVMVectorTypeKind)
 	{
-		if (LLVMGetTypeKind(totype) == LLVMVectorTypeKind)
-			cl2llvm_yyerror("Casts between vector types are forbidden");
-		cl2llvm_yyerror("A vector may not be cast to any other type.");
+		if ((LLVMGetVectorSize(fromtype) != LLVMGetVectorSize(totype) 
+			|| LLVMGetElementType(fromtype) 
+			!= LLVMGetElementType(totype)) 
+			|| fromsign != tosign)
+		{
+			if (LLVMGetTypeKind(totype) == LLVMVectorTypeKind)
+				cl2llvm_yyerror("Casts between vector types are forbidden");
+			cl2llvm_yyerror("A vector may not be cast to any other type.");
+		}
 	}
 
 	/* If totype is a vector, create a vector whose components are equal to 
 	original_val */
 
-	if (LLVMGetTypeKind(totype) == LLVMVectorTypeKind)
+	if (LLVMGetTypeKind(totype) == LLVMVectorTypeKind
+		&& LLVMGetTypeKind(fromtype) != LLVMVectorTypeKind)
 	{
 		/*Go to entry block and declare vector*/
 		LLVMPositionBuilder(cl2llvm_builder, cl2llvm_current_function->entry_block,
