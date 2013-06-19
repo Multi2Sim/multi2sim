@@ -553,7 +553,16 @@ void frm_isa_LDL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_LDS_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	__NOT_IMPL__
+	unsigned int dst_id, src_id, addr;
+	unsigned int dst;
+
+	dst_id = inst->dword.offs.dst;
+	src_id = inst->dword.offs.src1;
+	addr = thread->gpr[src_id].v.i;
+
+	mem_read(thread->thread_block->shared_mem, addr, 4, &dst);
+	
+	thread->gpr[dst_id].v.i = dst;
 }
 
 void frm_isa_LDLK_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -609,7 +618,7 @@ void frm_isa_STS_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 	src_id = inst->dword.offs.src1;
 	addr = thread->gpr[src_id].v.i;
 
-	mem_write(frm_thread_create()->thread_block->shared_mem, addr, 4, &dst);
+	mem_write(thread->thread_block->shared_mem, addr, 4, &dst);
 }
 
 void frm_isa_STSUL_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -719,7 +728,9 @@ void frm_isa_LONGJMP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_SSY_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	//__NOT_IMPL__
+	//unsigned int tgt;
+	//tgt = inst->dword.tgt.target;
+	__NOT_IMPL__
 }
 
 void frm_isa_PBK_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -755,6 +766,7 @@ void frm_isa_EXIT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_NOP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
+	__NOT_IMPL__
 }
 
 void frm_isa_S2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)  // no format yet

@@ -270,25 +270,25 @@ DEFINST(SEL,
  */
 
 DEFINST(LD, 
-	"%pred LD%offs_op1_e%mod0_B_cop%mod0_B_type %dst, [%src1%offs]", 
+	"%pred LD%offs_op1_e%mod0_B_cop%mod0_B_type %dst, [%src1+%offs]", 
 	LDST_LD, 
 	LDST, 
 	0x105)
 
 DEFINST(LDS, 
-	"%pred LDS%mod0_B_type %dst, [%src1%offs]", 
+	"%pred LDS%mod0_B_type %dst, [%src1+%offs]", 
 	LDST_LDS, 
 	LDST, 
 	0x305)
 
 DEFINST(ST, 
-	"%pred ST%offs_op1_e%mod0_B_cop%mod0_B_type [%src1%offs], %dst", 
+	"%pred ST%offs_op1_e%mod0_B_cop%mod0_B_type [%src1+%offs], %dst", 
 	LDST_ST, 
 	LDST, 
 	0x125)
 
 DEFINST(STS, 
-	"%pred STS%mod0_B_type [%src1%offs], %dst", 
+	"%pred STS%mod0_B_type [%src1+%offs], %dst", 
 	LDST_STS, 
 	LDST, 
 	0x325)
