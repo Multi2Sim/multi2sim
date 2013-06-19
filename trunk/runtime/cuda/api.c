@@ -27,8 +27,10 @@
 #include "context.h"
 #include "debug.h"
 #include "device.h"
+#include "elf-format.h"
 #include "function.h"
 #include "list.h"
+#include "mhandle.h"
 #include "module.h"
 #include "stream.h"
 
@@ -551,6 +553,15 @@ CUresult cuModuleUnload(CUmodule hmod)
 
 CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 {
+	struct elf_file_t *kernel_bin;
+	struct elf_section_t *section;
+	char text_section_name[1024];
+	int text_section_index;
+	struct elf_section_t *text_section;
+
+	int i;
+	unsigned char inst_buffer_byte;
+
 	int ret;
 
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
@@ -565,6 +576,44 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 
 	/* Create function */
 	*hfunc = cuda_function_create(hmod, name);
+
+
+	kernel_bin = hmod->elf_file;
+	/* Look for .text.kernel_name section */
+	snprintf(text_section_name, sizeof text_section_name, ".text.%s", name);
+	text_section_index = 0;
+	for (i = 0; i < list_count(kernel_bin->section_list); ++i)
+	{
+		section = (struct elf_section_t *)list_get(kernel_bin->section_list, i);
+
+		if (!strncmp(section->name, text_section_name, sizeof text_section_name))
+		{
+			text_section_index = i;
+			break;
+		}
+	}
+	assert(text_section_index != 0);
+	/* Get .text.kernel_name section */
+	text_section = (struct elf_section_t *)list_get(kernel_bin->section_list, text_section_index);
+
+	/* Get instruction binary */
+	inst_buffer_size = text_section->header->sh_size;
+	inst_buffer = (unsigned long long int *)xcalloc(1, inst_buffer_size);
+	{
+		for (i = 0; i < inst_buffer_size; ++i)
+		{
+			elf_buffer_seek(&(kernel_bin->buffer), text_section->header->sh_offset + i);
+			elf_buffer_read(&(kernel_bin->buffer), &inst_buffer_byte, 1);
+			if (i % 8 == 0 || i % 8 == 1 || i % 8 == 2 || i % 8 == 3)
+				inst_buffer[i / 8] |= (unsigned long long int)(inst_buffer_byte) << (i * 8 + 32);
+			else
+				inst_buffer[i / 8] |= (unsigned long long int)(inst_buffer_byte) << (i * 8 - 32);
+		}
+	}
+
+
+
+
 
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, 
