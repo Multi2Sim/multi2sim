@@ -535,6 +535,9 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 				str_printf(&str, &size, "0x%x", inst.dword.general0.src2);
 		}
 
+		/* This is a special case for src2 and src3. For FFMA,
+		   the sequence of output from cuobjdump is somehow depends on the src2_mod  
+		   it prints src3 first when src2_mod < 2, however prints src2 first when src2_mod > 2 */
 		else if (inst_is_token(fmt_str,"src2_src3_FFMA", &len)) 
 		{
 			unsigned long long int bank_id;
@@ -553,7 +556,7 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			{
 				/* print out src2 */
 				if (inst.dword.general0.src2_mod == 0)
-					str_printf(&str, &size, "-R%d", inst.dword.general0.src2 & 0x3f);
+					str_printf(&str, &size, "R%d", inst.dword.general0.src2 & 0x3f);
 				else if (inst.dword.general0.src2_mod == 1)
 				{
 					if (bank_id == 0 && offset_in_bank == 0)
@@ -565,10 +568,6 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 					else
 						str_printf(&str, &size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
 				}
-				else if (inst.dword.general0.src2_mod == 2)
-					str_printf(&str, &size, "0x%x", inst.dword.general0.src2);
-				else if (inst.dword.general0.src2_mod == 3)
-					str_printf(&str, &size, "0x%x", inst.dword.general0.src2);
 
 				/* print out src3 */
 				if (src3 != 63)			
@@ -582,7 +581,8 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 					str_printf(&str, &size, "R%lld, ", src3);
 				else 
 					str_printf(&str, &size, "RZ, ");
-
+				
+				/* FIXME : we need to figure out how bit26 and bit28 control src2*/
 				if (bit26 == 0 && bit28 == 0)
 					str_printf(&str, &size, "c [0x0] [0x0]");
 				else if (bit26 == 1 && bit28 == 0)
