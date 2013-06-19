@@ -1626,8 +1626,13 @@ expr
 	}
 	| expr TOK_DIV expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+		
+		type = cl2llvm_type_create();
+		value = cl2llvm_val_create();
+
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
@@ -1645,8 +1650,17 @@ expr
 			type->sign = op1->type->sign;
 		}
 
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
 
-		switch (LLVMGetTypeKind(type->llvm_type))
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 			if (type->sign)
@@ -1676,6 +1690,8 @@ expr
 			
 			yyerror("invalid type of operands for addition");
 		}
+
+		/* Free pointers */
 		if ($1 != op1)
 			cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -1683,14 +1699,20 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| expr TOK_MOD expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
+	
+		type = cl2llvm_type_create();
+		value = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -1726,6 +1748,8 @@ expr
 			
 			yyerror("invalid type of operands for addition");
 		}
+		
+		/* Free pointers */
 		if ($1 != op1)
 			cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -1733,17 +1757,29 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
+
 		$$ = value;
 
 	}
 	| expr TOK_SHIFT_LEFT expr
+	{
+		cl2llvm_yyerror("'<<' not supported");
+	}
 	| expr TOK_SHIFT_RIGHT expr
+	{
+		cl2llvm_yyerror("'>>' not supported");
+	}
 	| expr TOK_EQUALITY expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
+
+		type = cl2llvm_type_create();
+		value = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -1759,7 +1795,17 @@ expr
 			type->sign = op1->type->sign;
 		}
 
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+		
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
@@ -1783,6 +1829,8 @@ expr
 
 			yyerror("invalid type of operands for equality");
 		}
+
+		/* Free pointers */
 		if ($1 != op1)
 			cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -1790,14 +1838,21 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| expr TOK_INEQUALITY expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
+
+		type = cl2llvm_type_create();
+		value = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -1813,7 +1868,17 @@ expr
 			type->sign = op1->type->sign;
 		}
 
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
@@ -1837,6 +1902,8 @@ expr
 
 			yyerror("invalid type of operands for addition");
 		}
+
+		/* Free pointers */
 		if ($1 != op1)
 			cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -1844,15 +1911,22 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 
 	}
 	| expr TOK_LESS expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
+
+		type = cl2llvm_type_create();
+		value = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -1868,7 +1942,17 @@ expr
 			type->sign = op1->type->sign;
 		}
 
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
@@ -1900,8 +1984,10 @@ expr
 
 		default:
 
-			yyerror("invalid type of operands for addition");
+			yyerror("invalid type of operands for comparison");
 		}
+
+		/* Free pointers */
 		if ($1 != op1)
 			cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -1909,15 +1995,21 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 
 	}
 	| expr TOK_GREATER expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
+
+		type = cl2llvm_type_create();
+		value = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -1933,7 +2025,17 @@ expr
 			type->sign = op1->type->sign;
 		}
 
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
@@ -1965,8 +2067,10 @@ expr
 
 		default:
 
-			yyerror("invalid type of operands for addition");
+			yyerror("invalid type of operands for comparison");
 		}
+
+		/* Free pointers */
 		if ($1 != op1)
 			cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -1974,14 +2078,20 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| expr TOK_LESS_EQUAL expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
+
+		type = cl2llvm_type_create();
+		value = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -1997,7 +2107,17 @@ expr
 			type->sign = op1->type->sign;
 		}
 
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
@@ -2029,8 +2149,10 @@ expr
 
 		default:
 
-			yyerror("invalid type of operands for addition");
+			yyerror("invalid type of operands for comparison");
 		}
+
+		/* Free pointers */
 		if ($1 != op1)
 			cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -2038,14 +2160,21 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| expr TOK_GREATER_EQUAL expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create();
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+		
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
+
+		type = cl2llvm_type_create();
+		value = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -2061,7 +2190,17 @@ expr
 			type->sign = op1->type->sign;
 		}
 
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
@@ -2093,8 +2232,10 @@ expr
 
 		default:
 
-			yyerror("invalid type of operands for addition");
+			yyerror("invalid type of operands for comparison");
 		}
+
+		/* Free pointers */
 		if ($1 != op1)
 			cl2llvm_val_free(op1);
 		else if ($3 != op2)
@@ -2102,6 +2243,8 @@ expr
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| expr TOK_LOGICAL_AND expr
@@ -2140,10 +2283,12 @@ expr
 	}
 	| lvalue TOK_ADD_EQUAL expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
-			$1->type->llvm_type , $1->type->sign);
-		struct cl2llvm_val_t *value;
-		
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;		struct cl2llvm_val_t *value;
+
+		type = cl2llvm_type_create_w_init(LLVMGetElementType(
+			$1->type->llvm_type), $1->type->sign);
+
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
@@ -2155,7 +2300,17 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
@@ -2186,14 +2341,19 @@ expr
 		cl2llvm_val_free(rval);
 		cl2llvm_val_free(lval);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| lvalue TOK_MINUS_EQUAL expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
-			$1->type->llvm_type , $1->type->sign);
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
 		
+		type = cl2llvm_type_create_w_init(LLVMGetElementType(
+			$1->type->llvm_type), $1->type->sign);
+
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
@@ -2205,7 +2365,17 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
@@ -2230,20 +2400,27 @@ expr
 		}
 
 		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
-
+	
+		/* Free pointers */
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(rval);
 		cl2llvm_val_free(lval);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| lvalue TOK_DIV_EQUAL expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
-			$1->type->llvm_type , $1->type->sign);
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
-		
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+
+		type = cl2llvm_type_create_w_init( 
+			LLVMGetElementType($1->type->llvm_type) , $1->type->sign);
+		value = cl2llvm_val_create();
+
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
@@ -2255,7 +2432,17 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 			if (type->sign)
@@ -2288,19 +2475,26 @@ expr
 	
 		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
 		
+		/* Free pointers */
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(rval);
 		cl2llvm_val_free(lval);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| lvalue TOK_MULT_EQUAL expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
-			$1->type->llvm_type , $1->type->sign);
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
-		
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+
+		type = cl2llvm_type_create_w_init(LLVMGetElementType(
+			$1->type->llvm_type), $1->type->sign);
+		value = cl2llvm_val_create();
+
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
@@ -2312,7 +2506,17 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
@@ -2338,19 +2542,26 @@ expr
 	
 		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
 	
+		/* Free pointers */
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(lval);
 		cl2llvm_val_free(rval);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| lvalue TOK_MOD_EQUAL expr
 	{
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( 
-			$1->type->llvm_type , $1->type->sign);
-		struct cl2llvm_val_t *value = cl2llvm_val_create();
-		
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+	
+		type = cl2llvm_type_create_w_init(LLVMGetElementType(
+			$1->type->llvm_type), $1->type->sign);
+		value = cl2llvm_val_create();
+
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
@@ -2362,7 +2573,17 @@ expr
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		
-		switch (LLVMGetTypeKind(type->llvm_type))
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 			if (type->sign)
@@ -2386,11 +2607,14 @@ expr
 	
 		LLVMBuildStore(cl2llvm_builder, value->val, $1->val);
 		
+		/* Free pointers */
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(rval);
 		cl2llvm_val_free(lval);
 		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
 		$$ = value;
 	}
 	| lvalue TOK_AND_EQUAL expr
