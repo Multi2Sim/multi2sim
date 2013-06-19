@@ -1,0 +1,133 @@
+/*
+ * DEFINST format
+ *      name: Instruction name
+ *      fmt_str: String representing the format for dissasembly
+ *      fmt: Instruction format
+ *      category: Instruction category
+ *              FP: Floating point instructions
+ *              INT: Integer instructions
+ *              CONV: Conversion instructions
+ *              MOV: Movement instructions
+ *              PRED: Predicate/CC instructions
+ *              TEX: Texture instructions
+ *              LDST: Compute load/store instructions
+ *              SURF: Surface memory instructions
+ *              CTRL: Control instructions
+ *              MISC: Miscellaneous instructions
+ *      opcode: Instruction opcode
+ */
+
+/* INT catogory instructions:
+ * IMAD, IMUL, IADD, ISETP 
+ */
+
+DEFINST(IMAD,
+        "%pred IMAD%IMAD_U32%IMAD_U32%IMAD_hi%IMAD_po%IMAD_sat%IMAD_x%IMAD_s, %dst%IMUL_cc, %src1, %src2, %src3",
+	0x1,
+	0x2,
+	0x2,
+	0x0)
+
+DEFINST(IMUL,
+        "%pred IMUL%IMUL_U32%IMUL_U32%IMUL_hi%IMUL_s, %dst%IMUL_cc, %src1, %src2",
+	0x1,
+	0x3,
+	0x0,
+	0x07)
+
+DEFINST(IADD,
+        "%pred IADD%IADD_sat%IADD_x%IADD_s, %dst%IADD_cc, %src1, %src2",
+	0x1,
+	0x3,
+	0x0,
+	0x02)
+
+DEFINST(ISETP,
+        "%pred0 ISETP%ISETP_SUFFIX%ISETP_U32%ISETP_x%ISETP_and%ISETP_s, %pred1, %pred2, %dst, %src1, %pred3",
+	0x1,
+        0x2,    
+        0x3,
+        0x1,
+	0x2)
+
+
+/* Control catogory instructions:
+ * EXIT, BRA
+ */
+
+DEFINST(EXIT,
+        "%pred EXIT%EXIT_keeprefcount, %cc",
+	0x0,
+        0x0,
+        0x30)
+
+DEFINST(BRA,
+        "%pred BRA%BRA_u%BRA_LMT %cc, %tgt",
+	0x0,
+        0x0,
+        0x24)
+
+
+/* Movement catogory instructions:
+ * MOV, MOV32I
+ */
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.FIX
+DEFINST(MOV,
+        "%pred MOV%MOV_s, %dst, %src, %constant(sometimes)???",
+	0x0,
+	0x3,
+        0x0,
+        0x13)
+
+DEFINST(MOV32I,
+        "%pred MOV32I%MOV32I_s, %dst, %src",
+	0x0,
+        0x3,
+        0x0,
+        0x13)
+
+
+/* Load/Store catogory instructions:
+ * LD, ST
+ */
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>FIX
+DEFINST(LD,
+        "%pred0 LD%LD_e%LD_cg%LD_u8%LD_s, %dst, %src (with offset?)",
+	0x0,
+        0x6)
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>FIX
+DEFINST(ST,
+        "%pred0 ST%ST_e%ST_cg%ST_u8%ST_s, %dst(with offset?), %src",
+	0x0,
+        0x7)
+
+
+/* Floating Point catogory instructions:
+ * DADD
+ */
+
+DEFINST(DADD,
+        "%pred0 DADD%DADD_rm%DADD_s, %dst, %src0, %src1",
+	0x1,
+        0x3,
+	0x0,
+	0x0e
+	)
+
+
+/* Misc catogory instructions:
+ * S2R
+ */
+
+DEFINST(S2R,
+        "%pred0 S2R%S2R_s, %dst, %src",
+	0x2,
+        0x0,
+	0x2,
+	0x0,
+	0x1,
+	0x9)
+
