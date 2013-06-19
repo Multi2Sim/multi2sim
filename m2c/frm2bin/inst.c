@@ -197,7 +197,7 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 				!strcmp(mod_name, "AND") ||
 				!strcmp(mod_name, "OR"))
 			{
-				/* create mod0_A_op, add to list*/
+				/* create mod0_A_op, add to list */
 				mod = frm_mod_create_mod0_A_op(mod_name);
 				list_add(mod_list, mod);
 			}
@@ -254,15 +254,16 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 
 	/* Try to create the instruction following all possible encodings for
 	 * the same instruction name. For Fermi, the name passed in contains
-	 * both the instructionname and modifiler list. so we use inst_name
+	 * both the instruction name and modifier list. so we use inst_name
 	 * created before */
 	snprintf(err_str, sizeof err_str, "invalid instruction: %s",
 		inst_name);
 	for (info = hash_table_get(frm2bin_inst_info_table, inst_name); info;
 		info = info->next)
 	{
-		/* Check number of arguments */
-		if (arg_list->count != info->token_list->count)
+		/* Check number of arguments, previously we only check !=,
+		 * but now we check >, because LD has optional offset argu */
+		if (arg_list->count > info->token_list->count)
 		{
 			printf("invalid # of args\n");
 			snprintf(err_str, sizeof err_str,
@@ -700,7 +701,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		/* [63:58]: 000010 */
 		inst_bytes->imm.op1 = 0x2;
-		
+
 		break;
 
 	case FRM_FMT_INT_ISCADD:
@@ -1004,7 +1005,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		break;
 
 	case FRM_FMT_LDST_ST:
-		
+
 		inst_bytes->offs.op0 = 0x5;
 		/* [4]=0, others default */
 		inst_bytes->offs.mod0 = 0x8;
@@ -1597,15 +1598,16 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			{
 				/* width? only mod0_A.abs_src1 matches,
 				 * change later? */
-				inst_bytes->mod0_A.abs_src1 = mod->value.mod0_A_redarv;
+				inst_bytes->mod0_A.abs_src1 =
+					mod->value.mod0_A_redarv;
 
 				break;
 			}
 
 			case frm_token_mod0_A_op:
 			{
-				/* width? only mod0_A.abs_src2 and satftz matches,
-				 * change later? */
+				/* width? only mod0_A.abs_src2 and satftz
+				 * matches, change later? */
 				if (mod->value.mod0_A_op == 0)
 				{
 					inst_bytes->mod0_A.satftz = 0;
@@ -1718,8 +1720,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 
 	/* Arguments */
-	assert(inst->arg_list->count == info->token_list->count);
-	printf("inst: %s, arg-count: %d\n", inst->info->name, inst->arg_list->count);
+	/* Previously we assert ==, it's changed because LD has optional arg */
+	assert(inst->arg_list->count <= info->token_list->count);
 	LIST_FOR_EACH(inst->arg_list, index)
 	{
 		/* Get argument */
@@ -1820,7 +1822,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			}
 			else
 			{
-				frm2bin_yyerror_fmt("Wrong frm_token_src1_neg. \
+				frm2bin_yyerror_fmt
+					("Wrong frm_token_src1_neg. \
 					[dis-inst.c]\n");
 			}
 
@@ -1863,7 +1866,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			}
 			else
 			{
-				frm2bin_yyerror_fmt("Wrong frm_token_src2_neg. \
+				frm2bin_yyerror_fmt
+					("Wrong frm_token_src2_neg. \
 					[inst.c]\n");
 			}
 
@@ -1927,7 +1931,16 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		case frm_token_offs:
 		{
-			/* []: */
+			/* [41:26]: offs */
+			if (arg->type == frm_arg_literal)
+			{
+				inst_bytes->offs.offset =
+					arg->value.literal.val;
+			}
+			else
+				frm2bin_yyerror_fmt
+					("Illegal frm_token_offs type!\n");
+
 			break;
 		}
 
@@ -2013,11 +2026,11 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 			/* temporial for LD dst, [src1 + offset] src1 is
 			 * combined with offset now */
-		case frm_token_src1_offs:
+/*		case frm_token_src1_offs:
 		{
 			if (arg->type == frm_arg_glob_maddr)
 			{
-				/* [25:20] */
+				//[25:20]
 				inst_bytes->general0.src1 =
 					arg->value.glob_maddr.reg_idx;
 			}
@@ -2028,7 +2041,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 					[dis-inst.c]\n");
 			}
 			break;
-		}
+		} */
 
 		case frm_token_mod0_C_ccop:
 		{

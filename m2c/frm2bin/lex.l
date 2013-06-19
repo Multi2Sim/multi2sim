@@ -32,6 +32,10 @@ void yyerror_lex(const char *msg);
   	return TOK_NEG;
 }
 
+"+" {
+	return TOK_ADD;
+}
+
 "(" {
   	return TOK_OPAR;
 }
@@ -119,7 +123,7 @@ CC.[A-Z_]* {
   	return TOK_HEX;
 }
 
-[+-]?[0-9]+ {
+[-]?[0-9]+ {
   	frm2bin_yylval.num = atoi(yytext);
   	return TOK_DECIMAL;
 }
