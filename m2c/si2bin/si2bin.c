@@ -135,9 +135,6 @@ void si2bin_compile(struct list_t *source_file_list,
 		/* Parse input */
 		si2bin_yyparse();
 
-		/* Process pending tasks */
-		si2bin_task_list_process();
-
 		/* Close source file */
 		fclose(si2bin_yyin);
 		

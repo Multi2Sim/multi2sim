@@ -212,9 +212,9 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 							scope, arg->pointer.buffer_num, 4, access_type);
 
 					if (((arg->pointer.constant_offset - offset) < 16) && j && !(arg->pointer.constant_offset % 16)) 
-						fatal("16 byte alignment not maintained in arg: %d", j);
+						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher", arg->name, offset + 16);
 
-					offset += arg->pointer.constant_offset;
+					offset = arg->pointer.constant_offset;
 
 					if (arg->pointer.scope == si_arg_uav && !(uav[arg->pointer.buffer_num]))
 					{
@@ -234,9 +234,9 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 							arg->value.constant_offset);
 
 					if (((arg->value.constant_offset - offset) < 16) && j && !(arg->value.constant_offset % 16)) 
-						fatal("16 byte alignment not maintained in arg %d", j);
+						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher", arg->name, offset + 16);
 
-					offset += arg->value.constant_offset;
+					offset = arg->value.constant_offset;
 
 					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
