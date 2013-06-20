@@ -25,6 +25,7 @@
 #include <m2c/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
@@ -329,23 +330,161 @@ static void llvm2si_function_dump_data(struct llvm2si_function_t *function,
 }
 
 
+/* Initialize CFG starting at LLVM basic block given in 'llbb' recursively.
+ * The function returns a newly created basic block that has already been
+ * added to the function, but not connected to other basic blocks. */
+static struct llvm2si_basic_block_t *llvm2si_function_add_cfg(
+	struct llvm2si_function_t *function, LLVMBasicBlockRef llbb)
+{
+	LLVMValueRef llbb_value;
+	LLVMValueRef llinst;
+	LLVMOpcode llopcode;
+	LLVMValueRef llbb_if_true_value;
+	LLVMValueRef llbb_if_false_value;
+	LLVMBasicBlockRef llbb_if_true;
+	LLVMBasicBlockRef llbb_if_false;
+
+	struct llvm2si_basic_block_t *basic_block_root;
+	struct llvm2si_basic_block_t *basic_block_if_true;
+	struct llvm2si_basic_block_t *basic_block_if_false;
+	struct llvm2si_basic_block_t *basic_block;
+
+	int num_operands;
+
+	char *name;
+	char *name_if_true;
+	char *name_if_false;
+
+	/* Nothing for NULL basic block */
+	if (!llbb)
+		return NULL;
+
+	/* Get basic block name */
+	llbb_value = LLVMBasicBlockAsValue(llbb);
+	name = (char *) LLVMGetValueName(llbb_value);
+	if (!name || !*name)
+		fatal("%s: anonymous LLVM basic blocks not allowed",
+			__FUNCTION__);
+
+	/* If basic block already exists, just return it */
+	basic_block = hash_table_get(function->basic_block_table, name);
+	if (basic_block)
+		return basic_block;
+	
+	/* Create root basic block */
+	basic_block_root = llvm2si_basic_block_create(llbb);
+	basic_block = basic_block_root;
+	llvm2si_function_add_basic_block(function, basic_block);
+
+	/* Keep adding basic blocks in a depth-first manner */
+	while (1)
+	{
+		/* Actions depending on basic block terminator */
+		llinst = LLVMGetBasicBlockTerminator(llbb);
+		llopcode = LLVMGetInstructionOpcode(llinst);
+		num_operands = LLVMGetNumOperands(llinst);
+
+		/* Unconditional branch */
+		if (llopcode == LLVMBr && num_operands == 1)
+		{
+			/* Form: br label <dest> */
+			llbb_if_true_value = LLVMGetOperand(llinst, 0);
+			llbb_if_true = LLVMValueAsBasicBlock(llbb_if_true_value);
+
+			/* If branch already exists, connect it and stop */
+			name_if_true = (char *) LLVMGetValueName(llbb_if_true_value);
+			basic_block_if_true = hash_table_get(function->basic_block_table,
+					name_if_true);
+			if (basic_block_if_true)
+			{
+				llvm2si_basic_block_connect(basic_block, basic_block_if_true);
+				return basic_block_root;
+			}
+
+			/* Create and connect next basic block */
+			basic_block_if_true = llvm2si_basic_block_create(llbb_if_true);
+			llvm2si_function_add_basic_block(function, basic_block_if_true);
+			llvm2si_basic_block_connect(basic_block, basic_block_if_true);
+
+			/* Continue iteratively with next basic block */
+			basic_block = basic_block_if_true;
+			llbb = llbb_if_true;
+		}
+
+		/* Conditional branch */
+		else if (llopcode == LLVMBr && num_operands == 3)
+		{
+			/* Form: br i1 <cond>, label <iftrue>, label <iffalse> */
+			llbb_if_true_value = LLVMGetOperand(llinst, 1);
+			llbb_if_false_value = LLVMGetOperand(llinst, 2);
+			llbb_if_true = LLVMValueAsBasicBlock(llbb_if_true_value);
+			llbb_if_false = LLVMValueAsBasicBlock(llbb_if_false_value);
+
+			/* Insert true branch recursively */
+			basic_block_if_true = llvm2si_function_add_cfg(function, llbb_if_true);
+			llvm2si_basic_block_connect(basic_block, basic_block_if_true);
+
+			/* If false branch already exists, connect it and stop */
+			name_if_false = (char *) LLVMGetValueName(llbb_if_false_value);
+			basic_block_if_false = hash_table_get(function->basic_block_table,
+					name_if_false);
+			if (basic_block_if_false)
+			{
+				llvm2si_basic_block_connect(basic_block, basic_block_if_false);
+				return basic_block_root;
+			}
+
+			/* Create and connect false branch */
+			basic_block_if_false = llvm2si_basic_block_create(llbb_if_false);
+			llvm2si_function_add_basic_block(function, basic_block_if_false);
+			llvm2si_basic_block_connect(basic_block, basic_block_if_false);
+
+			/* Continue iteratively with false branch */
+			basic_block = basic_block_if_false;
+			llbb = llbb_if_false;
+		}
+
+		/* Return */
+		else if (llopcode == LLVMRet)
+		{
+			/* Nothing to do for 'ret' */
+			return basic_block_root;
+		}
+
+		/* Other */
+		else
+		{
+			fatal("%s: block terminator not supported (%d)",
+				__FUNCTION__, llopcode);
+		}
+	}
+
+	/* Never get here */
+	return NULL;
+}
+
+
 struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 {
 	struct llvm2si_function_t *function;
+	LLVMBasicBlockRef llbb;
 
 	/* Allocate */
 	function = xcalloc(1, sizeof(struct llvm2si_function_t));
 	function->llfunction = llfunction;
 	function->name = xstrdup(LLVMGetValueName(llfunction));
-	function->basic_block_list = linked_list_create();
 	function->arg_list = list_create();
 	function->uav_list = list_create();
+	function->basic_block_list = linked_list_create();
+	function->basic_block_table = hash_table_create(0, 1);
 	function->symbol_table = llvm2si_symbol_table_create();
 
 	/* Standard basic blocks */
+	function->basic_block_entry = llvm2si_basic_block_create(NULL);
 	function->basic_block_header = llvm2si_basic_block_create(NULL);
 	function->basic_block_uavs = llvm2si_basic_block_create(NULL);
 	function->basic_block_args = llvm2si_basic_block_create(NULL);
+	llvm2si_function_add_basic_block(function, function->basic_block_entry);
 	llvm2si_function_add_basic_block(function, function->basic_block_header);
 	llvm2si_function_add_basic_block(function, function->basic_block_uavs);
 	llvm2si_function_add_basic_block(function, function->basic_block_args);
@@ -355,6 +494,21 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 			"Obtain UAV descriptors");
 	llvm2si_basic_block_add_comment(function->basic_block_args,
 			"Read kernel arguments from cb1");
+	
+	/* Create CFG for function */
+	llbb = LLVMGetEntryBasicBlock(function->llfunction);
+	function->basic_block_body = llvm2si_function_add_cfg(function, llbb);
+	assert(function->basic_block_body);
+
+	/* Connect initial basic blocks in CFG */
+	llvm2si_basic_block_connect(function->basic_block_entry,
+			function->basic_block_header);
+	llvm2si_basic_block_connect(function->basic_block_header,
+			function->basic_block_uavs);
+	llvm2si_basic_block_connect(function->basic_block_uavs,
+			function->basic_block_args);
+	llvm2si_basic_block_connect(function->basic_block_args,
+			function->basic_block_body);
 
 	/* Return */
 	return function;
@@ -381,6 +535,7 @@ void llvm2si_function_free(struct llvm2si_function_t *function)
 	list_free(function->uav_list);
 
 	/* Rest */
+	hash_table_free(function->basic_block_table);
 	llvm2si_symbol_table_free(function->symbol_table);
 	free(function->name);
 	free(function);
@@ -421,6 +576,72 @@ void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f)
 }
 
 
+void llvm2si_function_dump_cfg(struct llvm2si_function_t *function, FILE *f)
+{
+	struct llvm2si_basic_block_t *basic_block;
+	struct llvm2si_basic_block_t *pred;
+	struct llvm2si_basic_block_t *succ;
+
+	char *no_name;
+	char *comma;
+	char *empty_str;
+	char *sep;
+
+	int index;
+
+	/* Initialize strings */
+	comma = ",";
+	empty_str = "";
+	no_name = "<no-name>";
+
+	/* Empty function */
+	basic_block = function->basic_block_entry;
+	if (!basic_block)
+		fprintf(f, "Function %s: <empty>\n", function->name);
+
+	/* Print entry */
+	fprintf(f, "Function '%s': entry '%s'\n",
+		function->name, *basic_block->name ?
+		basic_block->name : no_name);
+
+	/* Iterate through all basic blocks */
+	index = 0;
+	LINKED_LIST_FOR_EACH(function->basic_block_list)
+	{
+		/* Basic block name */
+		basic_block = linked_list_get(function->basic_block_list);
+		fprintf(f, "%3d %s:", index, *basic_block->name ?
+			basic_block->name : no_name);
+
+		/* Print predecessors */
+		sep = empty_str;
+		fprintf(f, " pred={");
+		LINKED_LIST_FOR_EACH(basic_block->pred_list)
+		{
+			pred = linked_list_get(basic_block->pred_list);
+			fprintf(f, "%s%s", sep, *pred->name ?
+				pred->name : no_name);
+			sep = comma;
+		}
+
+		/* Print successors */
+		sep = empty_str;
+		fprintf(f, "}, succ={");
+		LINKED_LIST_FOR_EACH(basic_block->succ_list)
+		{
+			succ = linked_list_get(basic_block->succ_list);
+			fprintf(f, "%s%s", sep, *succ->name ?
+				succ->name : no_name);
+			sep = comma;
+		}
+
+		/* Next */
+		fprintf(f, "}\n");
+		index++;
+	}
+}
+
+
 void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block)
 {
@@ -428,10 +649,15 @@ void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
 	if (basic_block->function)
 		panic("%s: basic block '%s' already added to a function",
 				__FUNCTION__, basic_block->name);
+	
+	/* Insert basic block to hash table only if it is not anonymous */
+	if (*basic_block->name)
+		hash_table_insert(function->basic_block_table,
+			basic_block->name, basic_block);
 
 	/* Add basic block */
-	linked_list_add(function->basic_block_list, basic_block);
 	basic_block->function = function;
+	linked_list_add(function->basic_block_list, basic_block);
 }
 
 

@@ -44,6 +44,12 @@ struct llvm2si_basic_block_t
 	 * basic block. */
 	LLVMBasicBlockRef llbb;
 
+	/* Predecessor and successor lists of basic blocks. Basic blocks are
+	 * added to this lists by functions 'llvm2si_function_add_basic_block_
+	 * after' and 'llvm2si_function_add_basic_block_before'. */
+	struct linked_list_t *pred_list;
+	struct linked_list_t *succ_list;
+
 	/* Function where the basic block belongs. This field is populated
 	 * automatically when function 'llvm2si_function_add' is called. */
 	struct llvm2si_function_t *function;
@@ -71,6 +77,10 @@ void llvm2si_basic_block_add_comment(struct llvm2si_basic_block_t *basic_block,
 /* Emit SI code for the basic block. The function reads the LLVM basic block
  * stored in field 'llbb', and emits SI instructions into field 'inst_list'. */
 void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block);
+
+/* Connect 'basic_block' to 'basic_block_dest' in CFG. */
+void llvm2si_basic_block_connect(struct llvm2si_basic_block_t *basic_block,
+		struct llvm2si_basic_block_t *basic_block_dest);
 
 
 #endif

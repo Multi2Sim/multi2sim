@@ -642,6 +642,8 @@ struct llvm2si_basic_block_t *llvm2si_basic_block_create(LLVMBasicBlockRef llbb)
 	basic_block = xcalloc(1, sizeof(struct llvm2si_basic_block_t));
 	basic_block->llbb = llbb;
 	basic_block->inst_list = linked_list_create();
+	basic_block->pred_list = linked_list_create();
+	basic_block->succ_list = linked_list_create();
 
 	/* Name */
 	basic_block->name = str_set(basic_block->name, "");
@@ -651,6 +653,12 @@ struct llvm2si_basic_block_t *llvm2si_basic_block_create(LLVMBasicBlockRef llbb)
 		llbb_as_value = LLVMBasicBlockAsValue(llbb);
 		name = (char *) LLVMGetValueName(llbb_as_value);
 		basic_block->name = str_set(basic_block->name, name);
+
+		/* Do not allow LLVM basic blocks to be anonymous, since their
+		 * name is used for insertion in a hash table. */
+		if (!*basic_block->name)
+			fatal("%s: anonymous LLVM basic blocks forbidden",
+				__FUNCTION__);
 	}
 
 	/* Return */
@@ -664,6 +672,11 @@ void llvm2si_basic_block_free(struct llvm2si_basic_block_t *basic_block)
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
 		si2bin_inst_free(linked_list_get(basic_block->inst_list));
 	linked_list_free(basic_block->inst_list);
+
+	/* Free list of predecessors and successors. The elements of this list
+	 * are not freed here. They are freen by the function they belong to. */
+	linked_list_free(basic_block->pred_list);
+	linked_list_free(basic_block->succ_list);
 	
 	/* Rest */
 	str_free(basic_block->name);
@@ -676,7 +689,7 @@ void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f
 {
 	struct si2bin_inst_t *inst;
 
-	/* Nothing is basic block is empty */
+	/* Nothing if basic block is empty */
 	if (!basic_block->inst_list->count)
 		return;
 
@@ -780,3 +793,21 @@ void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block)
 		}
 	}
 }
+
+
+void llvm2si_basic_block_connect(struct llvm2si_basic_block_t *basic_block,
+		struct llvm2si_basic_block_t *basic_block_dest)
+{
+	/* Make sure that connection does not exist */
+	linked_list_find(basic_block->succ_list, basic_block_dest);
+	linked_list_find(basic_block_dest->pred_list, basic_block);
+	if (!basic_block->succ_list->error_code ||
+			!basic_block_dest->pred_list->error_code)
+		panic("%s: redundant connection between basic blocks",
+				__FUNCTION__);
+
+	/* Make connection */
+	linked_list_add(basic_block->succ_list, basic_block_dest);
+	linked_list_add(basic_block_dest->pred_list, basic_block);
+}
+
