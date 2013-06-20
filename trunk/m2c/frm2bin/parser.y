@@ -250,37 +250,39 @@ rl_arg
   	  	frm_id_free($6);
   	}
 
-  	/* global memory [reg] */
+  	/* global memory [reg], even shared memory? */
   	| TOK_OBRA TOK_SCALAR_REGISTER TOK_CBRA
   	{
   	  	int reg_idx;
   	  	/* start from the 2nd character, 1st one is "R" */
   	  	reg_idx = atoi(($2->name) + 1);
-  	  	$$ = frm_arg_create_glob_maddr_reg(reg_idx);
+  	  	$$ = frm_arg_create_glob_maddr(reg_idx, 0);
 
   	  	frm_id_free($2);
   	}
   	
-  	/* global memory [reg + offset], reg part */
-  	| TOK_OBRA TOK_SCALAR_REGISTER 
+  	/* global memory [reg + offset], even shared memory? */
+  	| TOK_OBRA TOK_SCALAR_REGISTER TOK_ADD TOK_HEX TOK_CBRA
   	{
   	  	int reg_idx;
+  	  	int offset;
   	  	/* start from the 2nd character, 1st one is "R" */
   	  	reg_idx = atoi(($2->name) + 1);
-  	  	$$ = frm_arg_create_glob_maddr_reg(reg_idx);
+  	  	sscanf($4->name, "%x", &offset);
+  	  	$$ = frm_arg_create_glob_maddr(reg_idx, offset);
 
   	  	frm_id_free($2);
+  	  	frm_id_free($4);
   	}
   	
-  	/* global memory [reg + offset], offset part */
-  	| TOK_HEX TOK_CBRA
+  	/* shared memory [offset], even global memory? */
+  	| TOK_OBRA TOK_HEX TOK_CBRA
   	{
-  	  	int value;
-
-  	  	sscanf($1->name, "%x", &value);
-  		$$ = frm_arg_create_glob_maddr_offset(value);
+  		int offset;
+  		sscanf($2->name, "%x", &offset);
+  		$$ = frm_arg_create_shared_maddr(0, offset);
   		
-  		frm_id_free($1);
+  		frm_id_free($2);
   	}
 
   	/* for ISETP instruction */

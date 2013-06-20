@@ -31,13 +31,13 @@
 #include "arg.h"
 
 
-/*
+/* 
  * Global Functions
  */
 
-/* Hash table indexed by an instruction name, returning the associated entry in
- * 'frm_inst_info' of type 'frm_inst_info_t'. The name of the instruction is
- * extracted from the first token of the format string. */
+/* Hash table indexed by an instruction name, returning the associated entry
+ * in 'frm_inst_info' of type 'frm_inst_info_t'. The name of the instruction
+ * is extracted from the first token of the format string. */
 struct hash_table_t *frm2bin_inst_info_table;
 
 
@@ -61,18 +61,21 @@ void frm2bin_inst_info_init(void)
 		/* Create instruction info object */
 		info = frm2bin_inst_info_create(inst_info);
 
-		/* Insert instruction info structure into hash table. There could
-		 * be already an instruction encoding with the same name. They
-		 * all formed a linked list. */
-		prev_info = hash_table_get(frm2bin_inst_info_table, info->name);
+		/* Insert instruction info structure into hash table. There
+		 * could be already an instruction encoding with the same
+		 * name. They all formed a linked list. */
+		prev_info =
+			hash_table_get(frm2bin_inst_info_table, info->name);
 		if (prev_info)
 		{
 			info->next = prev_info;
-			hash_table_set(frm2bin_inst_info_table, info->name, info);
+			hash_table_set(frm2bin_inst_info_table, info->name,
+				info);
 		}
 		else
 		{
-			hash_table_insert(frm2bin_inst_info_table, info->name, info);
+			hash_table_insert(frm2bin_inst_info_table, info->name,
+				info);
 		}
 	}
 }
@@ -116,7 +119,7 @@ struct frm2bin_inst_info_t *frm2bin_inst_info_create(struct frm_inst_info_t *ins
 
 	/* Create list of tokens from format string */
 	info->str_token_list =
-		str_token_list_create(inst_info->fmt_str, ", []+");
+		str_token_list_create(inst_info->fmt_str, ", []");
 	assert(info->str_token_list->count);
 
 	/* for Fermi, name should be the 2nd token, 1st token is predicate in 
