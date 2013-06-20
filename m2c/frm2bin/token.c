@@ -95,7 +95,7 @@ struct str_map_t frm_token_map =
 		{ "\%gen0_mod_data_width", frm_token_mod_data_width },
 		{ "\%gen0_mod_logic", frm_token_mod_logic },
 		{ "\%gen0_mod_comparison", frm_token_mod_comparison },
-	//	{ "\%src1\%offs", frm_token_src1_offs },
+		{ "\%src1+\%offs", frm_token_src1_offs },
 	}
 };
 
