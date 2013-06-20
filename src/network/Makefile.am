@@ -25,6 +25,9 @@ libnetwork_a_SOURCES = \
 	bus.c \
 	bus.h \
 	\
+	command.c \
+	command.h \
+	\
 	routing-table.c \
 	routing-table.h
 
