@@ -123,16 +123,27 @@ struct llvm2si_function_t
 	 * function argument using a buffer in global memory. */
 	struct list_t *uav_list;
 
-	/* List of basic blocks. Each element is of type
-	 * 'struct llvm2si_basic_block_t' */
+	/* List of all basic blocks */
 	struct linked_list_t *basic_block_list;
+
+	/* Hash table containing non-anonymous basic blocks (basic blocks that
+	 * were given a name). */
+	struct hash_table_t *basic_block_table;
+
+	/* First basic block in the function. This basic block is always empty,
+	 * serving as a "pre-header" to guarantee that all other basic blocks
+	 * have at least 1 predecessor (makes control-flow detection easier).
+	 * This basic block is the only one in the function with no
+	 * predecessor. */
+	struct llvm2si_basic_block_t *basic_block_entry;
 
 	/* Pre-defined basic blocks */
 	struct llvm2si_basic_block_t *basic_block_header;
 	struct llvm2si_basic_block_t *basic_block_uavs;
 	struct llvm2si_basic_block_t *basic_block_args;
+	struct llvm2si_basic_block_t *basic_block_body;
 
-	/* Symbol table associated with the function. */
+	/* Symbol table associated with the function, storing LLVM variables */
 	struct llvm2si_symbol_table_t *symbol_table;
 
 	/* While code is generated, this variable keeps track of the total
@@ -145,9 +156,23 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction);
 void llvm2si_function_free(struct llvm2si_function_t *function);
 void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f);
 
-/* Add a basic block to the function. */
+/* Dump the CFG for the function, as a list of all its basic blocks with their
+ * predecessors and successors. */
+void llvm2si_function_dump_cfg(struct llvm2si_function_t *function, FILE *f);
+
+/* Add a basic block to the function */
+/* Add a basic block to the function after basic block 'after'. If the value in
+ * 'after' is NULL, the basic block is added after the last basic block added
+ * using this function. */
 void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
+
+/* Add a basic block to the function before basic block 'before'. The value
+ * in 'before' can only be NULL if the function is empty. */
+void llvm2si_function_add_basic_block_before(
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block,
+		struct llvm2si_basic_block_t *before);
 
 /* Generate initialization code for the function in basic block
  * 'function->basic_block_header'. */
