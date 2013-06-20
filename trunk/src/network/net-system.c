@@ -32,7 +32,7 @@
 #include "network.h"
 #include "node.h"
 #include "visual.h"
-
+#include "command.h"
 
 /* 
  * Variables
@@ -179,7 +179,7 @@ FILE *net_visual_file;
 
 char *net_sim_network_name = "";
 long long net_max_cycles = 1000000;	/* 1M cycles default */
-double net_injection_rate = 0.01;	/* 1 packet every 100 cycles */
+double net_injection_rate = 0.001;	/* 1 packet every 1000 cycles */
 int net_msg_size = 1;			/* Message size in bytes */
 
 /* Frequency of the network system, and frequency domain, as returned by
@@ -235,6 +235,8 @@ void net_read_config(void)
 		fatal("%s: invalid value for 'Frequency'",
 			net_config_file_name);
 
+	/* Create frequency domain */
+	net_domain_index = esim_new_domain(net_frequency);
 
 	/* Create a temporary list of network names found in configuration
 	 * file */
@@ -306,10 +308,7 @@ void net_init(void)
 	/* Load network configuration file */
 	net_read_config();
 
-	/* Create frequency domain */
-	net_domain_index = esim_new_domain(net_frequency);
-
-	/* Register events */
+	/* Register events for network handler*/
 	EV_NET_SEND = esim_register_event_with_name(net_event_handler,
 		net_domain_index, "net_send");
 	EV_NET_OUTPUT_BUFFER = esim_register_event_with_name(net_event_handler,

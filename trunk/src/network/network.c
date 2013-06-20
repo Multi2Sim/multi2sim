@@ -33,18 +33,18 @@
 #include "node.h"
 #include "routing-table.h"
 #include "visual.h"
+#include "command.h"
 
 
 /* 
  * Private Functions
  */
 
-static void net_create_from_config_route_create(struct net_t *net, struct config_t *config, char *section)
+static void net_config_route_create(struct net_t *net, struct config_t *config, char *section)
 {
 	char *token;
 	char section_str[MAX_STRING_SIZE];
 	char *delim_sep = ":";
-
 
 	for (int i = 0; i < net->node_count; i++)
 	{
@@ -107,13 +107,52 @@ static void net_create_from_config_route_create(struct net_t *net, struct config
 					else
 						net_routing_table_route_create
 						(net->routing_table,
-							src_node_r,
-							dst_node_r,
-							nxt_node_r,
-							vc_used);
+								src_node_r,
+								dst_node_r,
+								nxt_node_r,
+								vc_used);
 				}
 			}
 		}
+	}
+}
+
+static void net_config_command_create(struct net_t *net, struct config_t *config, char *section)
+{
+	char *command_line;
+	char command_var[MAX_STRING_SIZE];
+
+	int command_var_id;
+
+	/* Checks */
+	if (net_injection_rate != 0.001)
+		fatal("Network %s:%s: Using Command section; \n"
+				"\t option --net-injection-rate should not be used \n",
+				net->name,section);
+	/* Read commands */
+	command_var_id = 0;
+	warning("Do NOT forget to implement the new stuff for injection and when \n"
+			"the x86 option is used \n");
+
+	/* Register events for command handler*/
+	EV_NET_COMMAND = esim_register_event_with_name(net_command_handler,
+			net_domain_index, "net_command");
+
+
+	while (1)
+	{
+		/* Get command */
+		snprintf(command_var, sizeof command_var, "Command[%d]", command_var_id);
+		command_line = config_read_string(config, section, command_var, NULL);
+		if (!command_line)
+			break;
+
+		/* Schedule event to process command */
+		command_line = xstrdup(command_line);
+		esim_schedule_event(EV_NET_COMMAND, command_line, 0);
+
+		/* Next command */
+		command_var_id++;
 	}
 }
 
@@ -389,13 +428,10 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 
 				if (!strcasecmp(link_type, "Unidirectional"))
 				{
-					link_src_bsize = (src_buffer_size)
-								? src_buffer_size : src_node->
-										output_buffer_size;
-					link_dst_bsize =
-							(dst_buffer_size) ?
-									dst_buffer_size : dst_node->
-									input_buffer_size;
+					link_src_bsize = (src_buffer_size)? src_buffer_size :
+							src_node->output_buffer_size;
+					link_dst_bsize = (dst_buffer_size) ?dst_buffer_size :
+							dst_node->input_buffer_size;
 
 					net_add_link(net, src_node, dst_node,
 							bandwidth, link_src_bsize,
@@ -483,10 +519,43 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 
 		/* Routes */
 		routing_type = 1;
-		net_create_from_config_route_create(net, config, section);
+		net_config_route_create(net, config, section);
 		config_check(config);
 	}
+	/* Commands */
+	for (section = config_section_first(config); section;
+			section = config_section_next(config))
+	{
+		char *delim = ".";
 
+		char *token;
+		char *token_endl;
+
+		/* First token must be 'Network' */
+		snprintf(section_str, sizeof section_str, "%s", section);
+		token = strtok(section_str, delim);
+		if (!token || strcasecmp(token, "Network"))
+			continue;
+
+		/* Second token must be the name of the network */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, name))
+			continue;
+
+		/* Third token must be 'Routes' */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, "Commands"))
+			continue;
+
+		token_endl = strtok(NULL, delim);
+		if (token_endl)
+			fatal("%s: %s: bad format for Commands section.\n%s",
+					name, section, net_err_config);
+
+		/* Routes */
+		net_config_command_create(net, config, section);
+		config_check(config);
+	}
 	/* If there is no route section, Floyd-Warshall calculates the
 	 * shortest path for all the nodes in the network */
 	if (routing_type == 0)
@@ -852,16 +921,16 @@ void net_add_bidirectional_link(struct net_t *net,
 	int dst_buffer_size;
 
 	src_buffer_size = (link_src_bsize)
-				? link_src_bsize : src_node->output_buffer_size;
+						? link_src_bsize : src_node->output_buffer_size;
 	dst_buffer_size = (link_dst_bsize)
-				? link_dst_bsize : dst_node->input_buffer_size;
+						? link_dst_bsize : dst_node->input_buffer_size;
 	net_add_link(net, src_node, dst_node, bandwidth,
 			src_buffer_size, dst_buffer_size, vc_count);
 
 	src_buffer_size = (link_src_bsize)
-				? link_src_bsize : dst_node->output_buffer_size;
+						? link_src_bsize : dst_node->output_buffer_size;
 	dst_buffer_size = (link_dst_bsize)
-				? link_dst_bsize : src_node->input_buffer_size;
+						? link_dst_bsize : src_node->input_buffer_size;
 	net_add_link(net, dst_node, src_node, bandwidth,
 			src_buffer_size, dst_buffer_size, vc_count);
 
