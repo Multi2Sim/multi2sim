@@ -1291,6 +1291,12 @@ static int mips_sys_writev_impl(struct mips_ctx_t *ctx)
 }
 
 
+static int mips_sys_getpid_impl(struct mips_ctx_t *ctx)
+{
+	return ctx->pid;
+}
+
+
 /*
  * Not implemented system calls
  */
@@ -1321,7 +1327,7 @@ SYS_NOT_IMPL(chmod)
 //SYS_NOT_IMPL(ni_syscall_17)
 SYS_NOT_IMPL(stat)
 SYS_NOT_IMPL(lseek)
-SYS_NOT_IMPL(getpid)
+//SYS_NOT_IMPL(getpid)
 SYS_NOT_IMPL(mount)
 //SYS_NOT_IMPL(oldumount)
 //SYS_NOT_IMPL(setuid16)
