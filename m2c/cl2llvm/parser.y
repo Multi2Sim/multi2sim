@@ -584,21 +584,21 @@ lvalue
 			yyerror("symbol undeclared first use in this program");
 		
 		/*Create array of indices*/
+	
+		if  (LLVMGetTypeKind(LLVMGetElementType(LLVMTypeOf(symbol->cl2llvm_val->val))) == LLVMPointerTypeKind)
+		{
+			printf("pointer deref\n");
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp%d", temp_var_count++);
+
+			array_ptr = LLVMBuildLoad(cl2llvm_builder, 
+				symbol->cl2llvm_val->val, temp_var_name);
+		
 		for(i = 0; i < list_count($2); i++)
 		{
 			current_index = list_get($2, i);
 			indices[i] = current_index->val;
 		}
-		LLVMTypeOf(indices[2]);
-
-		/*Load object pointer*/
-		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
-
-		array_ptr = LLVMBuildLoad(cl2llvm_builder, 
-			symbol->cl2llvm_val->val, temp_var_name);
-
-		/* Get element pointer */
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 		deref_ptr = cl2llvm_val_create_w_init(LLVMBuildGEP( 
@@ -606,6 +606,25 @@ lvalue
 			list_count($2), temp_var_name), 
 			symbol->cl2llvm_val->type->sign);
 
+		}
+		/*Load object pointer*/
+		else
+		{
+		indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
+		for(i = 0; i < list_count($2); i++)
+		{
+			current_index = list_get($2, i);
+			indices[i+1] = current_index->val;
+		}
+
+		/* Get element pointer */
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		deref_ptr = cl2llvm_val_create_w_init(LLVMBuildGEP( 
+			cl2llvm_builder, symbol->cl2llvm_val->val, indices,
+			list_count($2) + 1, temp_var_name), 
+			symbol->cl2llvm_val->type->sign);
+		}
 		/*Free pointers*/
 		LIST_FOR_EACH($2, i)
 		{
@@ -924,15 +943,10 @@ init_list
 declaration
 	: declarator_list init_list TOK_SEMICOLON
 	{
+		struct cl2llvm_val_t *cl2llvm_index;
 		LLVMTypeRef type;
-		LLVMValueRef index[1];
-		LLVMValueRef array_ptr;
-		struct cl2llvm_val_t *array_length;
 		struct cl2llvm_val_t *ptr;
-		LLVMValueRef array;
-		struct list_t *new_array_deref_list;
 		struct cl2llvm_val_t *value;
-		struct cl2llvm_val_t *value_dup;
 		int i;
 		struct cl2llvm_symbol_t *symbol;
 		struct cl2llvm_val_t *cast_to_val;
@@ -1016,6 +1030,7 @@ declaration
 			else
 			{		
 				int i;
+				int j;
 				
 				/* Check that array sizes are constants */
 				for (i = 0; i < list_count(
@@ -1029,10 +1044,20 @@ declaration
 				/* Create type for pointer to array. */
 				type = $1->type_spec->llvm_type;
 
-				for (i = 1; i < list_count(
+				for (i = 0; i < list_count(
 					current_list_elem->array_deref_list); i++)
 				{
-					type = LLVMPointerType(type, 0);
+					cl2llvm_index = list_get(current_list_elem->array_deref_list, i);
+					j = 0;
+					while(LLVMConstInt(LLVMInt1Type() ,1 ,0) 
+						== LLVMConstICmp(LLVMIntSLT, 
+						LLVMConstInt(LLVMInt32Type(), j,
+						0), cl2llvm_index->val))
+					{
+						j++;
+					}
+
+					type = LLVMArrayType(type, j);
 				}
 
 				/* Go to entry block and allocate array pointer */
@@ -1041,7 +1066,7 @@ declaration
 					cl2llvm_current_function->branch_instr);
 
 				ptr = cl2llvm_val_create_w_init( LLVMBuildAlloca( 
-					cl2llvm_builder, LLVMPointerType(type, 0),
+					cl2llvm_builder, type,
 					current_list_elem->name), 
 					$1->type_spec->sign);
 	
@@ -1049,87 +1074,6 @@ declaration
 					current_basic_block);
 
 
-				/* Go to entry block and allocate array */
-				LLVMPositionBuilder(cl2llvm_builder,
-					cl2llvm_current_function->entry_block,
-					cl2llvm_current_function->branch_instr);
-
-				array_length = list_get(
-					current_list_elem->array_deref_list, 0);
-				
-				snprintf(temp_var_name, sizeof(temp_var_name),
-					"tmp%d", temp_var_count++);
-
-				array = LLVMBuildArrayAlloca(cl2llvm_builder, type, 
-					array_length->val, temp_var_name);
-
-				LLVMPositionBuilderAtEnd(cl2llvm_builder,
-					current_basic_block);
-				
-				/* Store array */
-				LLVMBuildStore(cl2llvm_builder, array, ptr->val);
-
-				/* If array is multidimensional, continue to 
-				   allocate more arrays. */
-				if (list_count(current_list_elem->array_deref_list)
-					> 1)
-				{
-					/* Create next array type */
-					type = LLVMGetElementType(type);
-
-					/* Duplicate array deref list and remove
-					   first entry */
-					new_array_deref_list = list_create();
-					LIST_FOR_EACH(current_list_elem->array_deref_list, i)
-					{
-						value = list_get(current_list_elem->array_deref_list, i);
-						value_dup = 
-							cl2llvm_val_create_w_init(
-							value->val, 
-							value->type->sign);
-						list_add(new_array_deref_list,
-							value_dup);
-					}
-					value = list_get(new_array_deref_list, 0);
-					list_remove(new_array_deref_list, value);
-					cl2llvm_val_free(value);
-
-					/* Since array size must be a constant, we 
-					   can use the following method create a 
-					   loop conditional */
-					i = 0;
-					while(LLVMConstInt(LLVMInt1Type() ,1 ,0) 
-						== LLVMConstICmp(LLVMIntSLT, 
-						LLVMConstInt(LLVMInt32Type(), i,
-						0), array_length->val))
-					{
-						index[0] = LLVMConstInt( 
-							LLVMInt32Type(), i, 0);
-
-						snprintf(temp_var_name, 
-							sizeof(temp_var_name),
-							"tmp%d", temp_var_count++);
-
-						array_ptr = LLVMBuildGEP( 
-							cl2llvm_builder, array,
-							index, 1, temp_var_name);
-
-						cl2llvm_array_alloca(
-							new_array_deref_list, type,
-							array_ptr);
-						i++;
-					}
-
-					/* Free duplicated list */
-					LIST_FOR_EACH(new_array_deref_list, i)
-					{
-						value = list_get( 
-							new_array_deref_list, i);
-						cl2llvm_val_free(value);
-					}
-					list_free(new_array_deref_list);
-				
-				}		
 				
 				/* Create symbol */
 				symbol = cl2llvm_symbol_create_w_init( 
