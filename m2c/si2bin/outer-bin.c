@@ -117,6 +117,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	int cb[10];
 	int rodata_size;
 	int buff_num_offset;
+	int data_size;
 	
 	
 	rodata_size = 0;
@@ -204,14 +205,15 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				case si_arg_pointer:
 
 					data_type = str_map_value(&si_arg_data_type_map, arg->pointer.data_type);
+					data_size = si_arg_get_data_size(arg->pointer.data_type) * arg->pointer.num_elems;
 					scope = str_map_value(&si_arg_scope_map, arg->pointer.scope);
 					access_type = str_map_value(&si_arg_access_type_map, arg->pointer.access_type);
 
 					snprintf(line, sizeof line, ";pointer:%s:%s:1:%d:%d:%s:%d:%d:%s:0:0\n", arg->name, 
 							data_type, arg->pointer.constant_buffer_num, arg->pointer.constant_offset,
-							scope, arg->pointer.buffer_num, 4, access_type);
+							scope, arg->pointer.buffer_num, data_size, access_type);
 
-					if (((arg->pointer.constant_offset - offset) < 16) && j && !(arg->pointer.constant_offset % 16)) 
+					if (((arg->pointer.constant_offset - offset) < 16) && j) 
 						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher", arg->name, offset + 16);
 
 					offset = arg->pointer.constant_offset;
@@ -223,22 +225,34 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
+					if (arg->constarg)
+					{
+						snprintf(line, sizeof line, ";constarg:%d:%s\n", j, arg->name);
+						elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+					}
+
 					break;
 
 				case si_arg_value:
 
 					data_type = str_map_value(&si_arg_data_type_map, arg->value.data_type);
 
-					snprintf(line, sizeof line, ";value:%s%d:%s:%d:%d:%d\n", arg->name, j, 
+					snprintf(line, sizeof line, ";value:%s:%s:%d:%d:%d\n", arg->name, 
 							data_type, arg->value.num_elems, arg->value.constant_buffer_num, 
 							arg->value.constant_offset);
 
-					if (((arg->value.constant_offset - offset) < 16) && j && !(arg->value.constant_offset % 16)) 
+					if (((arg->value.constant_offset - offset) < 16) && j) 
 						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher", arg->name, offset + 16);
 
 					offset = arg->value.constant_offset;
 
 					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+					
+					if (arg->constarg)
+					{
+						snprintf(line, sizeof line, ";constarg:%d:%s\n", j, arg->name);
+						elf_enc_buffer_write(rodata_buffer, line, strlen(line));
+					}
 
 
 					break;
@@ -267,8 +281,20 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				case si_arg_pointer:
 
 					reflection = str_map_value(&si_arg_reflection_map, arg->pointer.data_type);
+					
+					if (arg->pointer.num_elems == 1)
+					{
+						snprintf(line, sizeof line, ";reflection:%d:%s*\n", j, reflection);
+					}
+					else if (arg->pointer.num_elems > 1)
+					{
+						snprintf(line, sizeof line, ";reflection:%d:%s%d*\n", j, reflection, arg->pointer.num_elems);
+					}
+					else
+					{
+						fatal("Invalid number of elements in argument: %s", arg->name);
+					}
 
-					snprintf(line, sizeof line, ";reflection:%d:%s*\n", j, reflection);
 					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
 					break;
@@ -276,8 +302,20 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				case si_arg_value:
 
 					reflection = str_map_value(&si_arg_reflection_map, arg->value.data_type);
+					
+					if (arg->value.num_elems == 1)
+					{
+						snprintf(line, sizeof line, ";reflection:%d:%s\n", j, reflection);
+					}
+					else if (arg->value.num_elems > 1)
+					{
+						snprintf(line, sizeof line, ";reflection:%d:%s%d\n", j, reflection, arg->value.num_elems);
+					}
+					else
+					{
+						fatal("Invalid number of elements in argument: %s", arg->name);
+					}
 
-					snprintf(line, sizeof line, ";reflection:%s\n", reflection);
 					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
 					break;
