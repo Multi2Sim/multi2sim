@@ -40,6 +40,7 @@ enum frm_arg_type_t
 	/*frm_arg_label,*/
 	frm_arg_maddr,
 	frm_arg_const_maddr,
+	frm_arg_shared_maddr,
 	frm_arg_glob_maddr,
 	frm_arg_pt,
 	frm_arg_ccop,
@@ -284,6 +285,14 @@ struct frm_arg_t
 
 		struct
 		{
+			unsigned int bank_idx;
+			/* offset within the bank */
+			unsigned int offset;
+		} shared_maddr;
+
+
+		struct
+		{
 			/* [reg + offset] */
 			/* index of the register used */
 			unsigned int reg_idx;
@@ -331,6 +340,8 @@ struct frm_arg_t *frm_arg_create_special_register(char *name);
 struct frm_arg_t *frm_arg_create_predicate_register(char *name);
 struct frm_arg_t *frm_arg_create_zero_register(char *name);
 struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset);
+struct frm_arg_t *frm_arg_create_shared_maddr(int bank_idx, int offset);
+struct frm_arg_t *frm_arg_create_glob_maddr(int reg_idx, int offset);
 struct frm_arg_t *frm_arg_create_glob_maddr_reg(int reg_idx);
 struct frm_arg_t *frm_arg_create_glob_maddr_offset(int offset);
 struct frm_arg_t *frm_arg_create_pt(char* name);

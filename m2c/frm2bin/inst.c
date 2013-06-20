@@ -262,8 +262,9 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 		info = info->next)
 	{
 		/* Check number of arguments, previously we only check !=,
-		 * but now we check >, because LD has optional offset argu */
-		if (arg_list->count > info->token_list->count)
+		 * but now we check >, because LD has optional offset argu.
+		 * instruction FFMA is exceptional here */
+		if ((arg_list->count > info->token_list->count) && (strcmp(inst_name, "FFMA")))
 		{
 			printf("invalid # of args\n");
 			snprintf(err_str, sizeof err_str,
@@ -282,7 +283,7 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 
 			/* Get formal argument from instruction info */
 			token = list_get(info->token_list, index);
-			assert(token);
+			assert(token || (!strcmp(inst_name, "FFMA")));
 
 			/* Check that actual argument type is acceptable for
 			 * token, right now this func always return success */
@@ -1632,6 +1633,13 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				break;
 			}
 
+			case frm_token_mod0_C_s:
+			{
+				inst_bytes->mod0_C.s = mod->value.mod0_C_s;
+
+				break;
+			}
+
 			case frm_token_mod0_D_ftzfmz:
 			{
 				if (mod->value.mod0_D_ftzfmz == 1)
@@ -1720,13 +1728,19 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 
 	/* Arguments */
-	/* Previously we assert ==, it's changed because LD has optional arg */
-	assert(inst->arg_list->count <= info->token_list->count);
+	/* Previously we assert ==, it's changed because LD has optional arg,
+	 * FFMA is not suitable for the following assert */
+	assert((inst->arg_list->count <= info->token_list->count) || (!strcmp(inst->info->name, "FFMA")));
 	LIST_FOR_EACH(inst->arg_list, index)
 	{
 		/* Get argument */
 		arg = list_get(inst->arg_list, index);
 		token = list_get(info->token_list, index);
+
+		/* play-around for FFMA */
+		if (index==3 && (!strcmp(inst->info->name, "FFMA")))
+			continue;
+
 		assert(arg);
 		assert(token);
 
@@ -1742,10 +1756,12 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				inst_bytes->general0.dst =
 					arg->value.scalar_register.id;
 			}
+			else if (arg->type == frm_arg_zero_register)
+				inst_bytes->general0.dst = 0b111111;
 			else
 			{
 				frm2bin_yyerror_fmt("Wrong frm_token_dst. \
-					[dis-inst.c]\n");
+					[inst.c]\n");
 			}
 
 			break;
@@ -1760,10 +1776,12 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				inst_bytes->general0.src1 =
 					arg->value.scalar_register.id;
 			}
+			else if (arg->type == frm_arg_zero_register)
+				inst_bytes->general0.src1 = 0b111111;
 			else
 			{
 				frm2bin_yyerror_fmt("Wrong frm_token_src1. \
-					[dis-inst.c]\n");
+					[inst.c]\n");
 			}
 			break;
 		}
@@ -1793,6 +1811,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			{
 				/* [45:26]: src2, all 0s Register Zero, reg
 				 * that contains const value of 0 */
+				inst_bytes->general0.src2_mod = 0x0;
 				inst_bytes->general0.src2 = 0xfffff;
 			}
 
@@ -1824,7 +1843,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			{
 				frm2bin_yyerror_fmt
 					("Wrong frm_token_src1_neg. \
-					[dis-inst.c]\n");
+					[inst.c]\n");
 			}
 
 			break;
@@ -1854,6 +1873,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			{
 				/* [45:26]: src2, all 0s Register Zero, reg
 				 * that contains const value of 0 */
+				inst_bytes->general0.src2_mod = 0x0;
 				inst_bytes->general0.src2 = 0xfffff;
 			}
 
@@ -1882,10 +1902,12 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				inst_bytes->general0_mod1_B.src3 =
 					arg->value.scalar_register.id;
 			}
+			else if (arg->type == frm_arg_zero_register)
+				inst_bytes->general0_mod1_B.src3 = 0b111111;
 			else
 			{
 				frm2bin_yyerror_fmt("Wrong frm_token_src3. \
-					[dis-inst.c]\n");
+					[inst.c]\n");
 			}
 			break;
 		}
@@ -1916,12 +1938,54 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			break;
 		}
 
+		case frm_token_src1_offs:
+		{
+			if (arg->type == frm_arg_glob_maddr)
+			{
+				inst_bytes->offs.src1 = arg->value.glob_maddr.reg_idx;
+				inst_bytes->offs.offset = arg->value.glob_maddr.offset;
+			}
+			else if (arg->type == frm_arg_shared_maddr)
+			{
+				inst_bytes->offs.src1 = arg->value.shared_maddr.bank_idx;
+				inst_bytes->offs.offset = arg->value.shared_maddr.offset;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt("Wrong tokne_src1_offs, expected \
+						glob_mme or shared_mem.\n");
+			}
+
+			break;
+		}
+
+		/* this shall be improved later, src2, src3 should be separated */
+		case frm_token_src2_src3_FFMA:
+		{
+			struct frm_arg_t *arg_tmp;
+			inst_bytes->general0.src2 = arg->value.scalar_register.id;
+			arg_tmp = list_get(inst->arg_list, index + 1);
+			inst_bytes->general0_mod1_D.src3 = arg_tmp->value.scalar_register.id;
+
+			break;
+		}
+
 		case frm_token_tgt:
 		{
 			if (arg->type == frm_arg_literal)
 			{
+				/* [45:26] */
+				inst_bytes->tgt.tgt_mod = 0x0;
 				inst_bytes->tgt.target =
 					arg->value.literal.val;
+			}
+			else if (arg->type == frm_arg_const_maddr)
+			{
+				/* [45:26] */
+				inst_bytes->tgt.tgt_mod = 0x1;
+				/* NOT know how to specifiy the const mem address */
+				inst_bytes->tgt.target =
+					arg->value.const_maddr.bank_idx;
 			}
 			else
 				frm2bin_yyerror_fmt
@@ -2016,10 +2080,15 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				/* will be improved later */
 				inst_bytes->general1.R = arg->value.pt.idx;
 			}
+			else if (arg->type == frm_arg_predicate_register)
+			{
+				/* [51:49] */
+				inst_bytes->general1.R = arg->value.predicate_register.id;
+			}
 			else
 			{
-				frm2bin_yyerror_fmt("Wrong frm_token_R. \
-					[dis-inst.c]\n");
+				frm2bin_yyerror_fmt("Wrong token. expected:token_R, but %d \
+					[dis-inst.c]\n", arg->type);
 			}
 			break;
 		}
