@@ -235,9 +235,6 @@ void net_read_config(void)
 		fatal("%s: invalid value for 'Frequency'",
 			net_config_file_name);
 
-	/* Create frequency domain */
-	net_domain_index = esim_new_domain(net_frequency);
-
 	/* Create a temporary list of network names found in configuration
 	 * file */
 	net_name_list = list_create();
@@ -307,6 +304,9 @@ void net_init(void)
 {
 	/* Load network configuration file */
 	net_read_config();
+
+	/* Create frequency domain */
+	net_domain_index = esim_new_domain(net_frequency);
 
 	/* Register events for network handler*/
 	EV_NET_SEND = esim_register_event_with_name(net_event_handler,
