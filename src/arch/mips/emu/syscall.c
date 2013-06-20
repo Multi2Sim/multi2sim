@@ -438,6 +438,10 @@ static int mips_sys_write_impl(struct mips_ctx_t *ctx)
 
 		/* Return written bytes */
 		free(buf);
+		/* Set reg a3 to 0 in case of success */
+		if (err !=0)
+			regs->regs_R[7] = 0;
+		else regs->regs_R[7] = 1;
 		return err;
 	}
 
