@@ -93,6 +93,7 @@
 %token TOK_ARGS
 %token TOK_DATA
 %token TOK_TEXT
+%token TOK_CONST
 
 %type<inst> instr
 %type<list> arg_list
@@ -101,6 +102,7 @@
 %type<arg> maddr_qual
 %type<arg> waitcnt_elem
 %type<arg> waitcnt_arg
+%type<si_arg> val_stmt_list
 %type<si_arg> ptr_stmt_list
 %type<num> pgm_rsrc2_value
 
@@ -387,13 +389,13 @@ args_stmt_list
 
 
 args_stmt
-	: TOK_ID TOK_ID TOK_DECIMAL TOK_NEW_LINE
+	: TOK_ID TOK_ID TOK_DECIMAL val_stmt_list TOK_NEW_LINE
 	{
-		struct si_arg_t *arg;
+		struct si_arg_t *arg = $4;
 
 		
-		/* Create new arg */
-		arg = si_arg_create(si_arg_value, $2->name);
+		/* Set argument name */
+		si_arg_name_set(arg, $2->name);
 		
 		/* Set arg fields */
 		arg->value.data_type = str_map_string(&si_arg_data_type_map, $1->name);
@@ -406,7 +408,24 @@ args_stmt
 		si2bin_id_free($1);
 		si2bin_id_free($2);
 	}
-	
+	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_ID TOK_DECIMAL val_stmt_list TOK_NEW_LINE
+	{
+		struct si_arg_t *arg = $7;
+
+		/* Set argument name */
+		si_arg_name_set(arg, $5->name);
+		
+		/* Set argument fields */
+		arg->value.data_type = str_map_string(&si_arg_data_type_map, $1->name);
+		arg->value.num_elems = $3;
+		arg->value.constant_buffer_num = 1;
+		arg->value.constant_offset = $6;
+		
+		/* Insert argument and free identifiers */
+		si2bin_metadata_add_arg(si2bin_metadata, arg);
+		si2bin_id_free($1);
+		si2bin_id_free($5);
+	}
 	| TOK_ID TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list TOK_NEW_LINE
 	{
 		struct si_arg_t *arg = $5;
@@ -415,6 +434,7 @@ args_stmt
 		si_arg_name_set(arg, $3->name);
 		
 		/* Initialize argument */
+		arg->pointer.num_elems = 1;
 		arg->pointer.data_type = str_map_string(&si_arg_data_type_map, $1->name);
 		arg->pointer.constant_buffer_num = 1;
 		arg->pointer.constant_offset = $4;
@@ -425,25 +445,48 @@ args_stmt
 		si2bin_id_free($1);
 		si2bin_id_free($3);
 	}
-
-	| TOK_ID TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_DECIMAL TOK_NEW_LINE
+	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list TOK_NEW_LINE
 	{
-		struct si_arg_t *arg;
+		struct si_arg_t *arg = $8;
 
-		/* Create new argument */
-		arg = si_arg_create(si_arg_value, $2->name);
+		/* Set new argument name */
+		si_arg_name_set(arg, $6->name);
 		
-		/* Set argument fields */
-		arg->value.data_type = str_map_string(&si_arg_data_type_map, $1->name);
-		arg->value.num_elems = $4;
-		arg->value.constant_buffer_num = 1;
-		arg->value.constant_offset = $6;
-		
+		/* Initialize argument */
+		arg->pointer.num_elems = $3;
+		arg->pointer.data_type = str_map_string(&si_arg_data_type_map, $1->name);
+		arg->pointer.constant_buffer_num = 1;
+		arg->pointer.constant_offset = $7;
+
+
 		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 		si2bin_id_free($1);
-		si2bin_id_free($2);
+		si2bin_id_free($6);
 	}
+	;
+	
+val_stmt_list
+	:
+	{
+		struct si_arg_t *arg;
+
+		/* Create an argument with defaults*/
+		arg = si_arg_create(si_arg_value, "arg");
+
+		$$ = arg;
+	}
+	| val_stmt_list TOK_CONST
+	{
+		struct si_arg_t *arg = $1;
+
+		/* set constarg field to true */
+		arg->constarg = 1;
+		
+		/* Return argument */
+		$$ = arg;
+	}
+	;
 
 ptr_stmt_list
 	:
@@ -481,6 +524,16 @@ ptr_stmt_list
 
 		/* Free ID and return argument */
 		si2bin_id_free(id);
+		$$ = arg;
+	}
+	| ptr_stmt_list TOK_CONST
+	{
+		struct si_arg_t *arg = $1;
+	
+		/* set constarg field to true */
+		arg->constarg = 1;
+
+		/* Return argument */
 		$$ = arg;
 	}
 	;

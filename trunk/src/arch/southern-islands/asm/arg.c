@@ -85,20 +85,22 @@ struct str_map_t si_arg_scope_map =
 	}
 };
 
+
+/* FIXME: Still need to figure out reflection for i1 and u1 */
 struct str_map_t si_arg_reflection_map =
 {
 	16,
 	{
 		{ "int1", si_arg_i1 },
-		{ "int8", si_arg_i8 },
-		{ "int16", si_arg_i16 },
+		{ "char", si_arg_i8 },
+		{ "short", si_arg_i16 },
 		{ "int", si_arg_i32 },
-		{ "int64", si_arg_i64 },
+		{ "long", si_arg_i64 },
 		{ "uint1", si_arg_u1 },
-		{ "uint8", si_arg_u8 },
-		{ "uint16", si_arg_u16 },
+		{ "uchar", si_arg_u8 },
+		{ "ushort", si_arg_u16 },
 		{ "uint", si_arg_u32 },
-		{ "uint64", si_arg_u64 },
+		{ "ulong", si_arg_u64 },
 		{ "float", si_arg_float },
 		{ "double", si_arg_double },
 		{ "struct", si_arg_struct },

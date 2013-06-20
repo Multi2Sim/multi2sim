@@ -134,6 +134,7 @@ struct si_arg_t
 	char *name;
 	int set;  /* Set to true when it is assigned */
 	int size; /* Inferred from metadata or user calls */
+	int constarg; /*Set to true when argument is constant */
 
 	union
 	{

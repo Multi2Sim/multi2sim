@@ -148,6 +148,10 @@ uav[0-9]+ {
 	return TOK_TEXT;
 }
 
+"const" {
+	return TOK_CONST;
+}
+
 [a-zA-Z_][a-zA-Z0-9_]* {   
 	si2bin_yylval.id = si2bin_id_create(yytext);
 	return TOK_ID; 
