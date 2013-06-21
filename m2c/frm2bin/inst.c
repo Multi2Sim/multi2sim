@@ -53,6 +53,8 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 
 	int index;
 
+	static long long int addr = 0;
+
 	/* string list for the modifier in the instruction */
 	struct list_t *str_mod_list;
 
@@ -66,6 +68,11 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 
 	/* Allocate */
 	inst = xcalloc(1, sizeof(struct frm2bin_inst_t));
+
+	/* assign current addr to the instruction, then increment the addr */
+	inst->addr = addr;
+	/* each instruction occupy 8 bytes? */
+	addr += 0x8;
 
 	/* Initialize */
 	if (!arg_list)
@@ -264,7 +271,8 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 		/* Check number of arguments, previously we only check !=,
 		 * but now we check >, because LD has optional offset argu.
 		 * instruction FFMA is exceptional here */
-		if ((arg_list->count > info->token_list->count) && (strcmp(inst_name, "FFMA")))
+		if ((arg_list->count > info->token_list->count)
+			&& (strcmp(inst_name, "FFMA")))
 		{
 			printf("invalid # of args\n");
 			snprintf(err_str, sizeof err_str,
@@ -904,7 +912,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 //		break;
 
 	case FRM_FMT_MOV_MOV:
-		
+
 		inst_bytes->general0.op0 = 0x4;
 		inst_bytes->general0.op1 = 0xa;
 		inst_bytes->general0.mod0 = 0x1e;
@@ -945,7 +953,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		inst_bytes->imm.src1 = 0x0;
 
 		/* [63:58]: 000110 */
-		inst_bytes->imm.op1 = 0x0;
+		inst_bytes->imm.op1 = 0x6;
 
 		break;
 
@@ -956,7 +964,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	//	break;
 
 	case FRM_FMT_LDST_LD:
-		
+
 		/* use offset format */
 		inst_bytes->offs.op0 = 0x5;
 		/* [4] = 0, others default */
@@ -973,7 +981,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		}
 		else
 		{
-			/*no predicate, value=7 */
+			/* no predicate, value=7 */
 			inst_bytes->offs.pred = 0x7;
 		}
 		break;
@@ -1083,6 +1091,9 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		/* [25:17]: all 0s */
 		inst_bytes->tgt._const0 = 0x0;
+
+		/* [49:26]: target, manually default */
+		inst_bytes->tgt.target = 0x0;
 
 		/* [57:46]: all 0s */
 		inst_bytes->tgt._reserved0 = 0x0;
@@ -1730,7 +1741,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 	/* Arguments */
 	/* Previously we assert ==, it's changed because LD has optional arg,
 	 * FFMA is not suitable for the following assert */
-	assert((inst->arg_list->count <= info->token_list->count) || (!strcmp(inst->info->name, "FFMA")));
+	assert((inst->arg_list->count <= info->token_list->count)
+		|| (!strcmp(inst->info->name, "FFMA")));
 	LIST_FOR_EACH(inst->arg_list, index)
 	{
 		/* Get argument */
@@ -1738,7 +1750,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		token = list_get(info->token_list, index);
 
 		/* play-around for FFMA */
-		if (index==3 && (!strcmp(inst->info->name, "FFMA")))
+		if (index == 3 && (!strcmp(inst->info->name, "FFMA")))
 			continue;
 
 		assert(arg);
@@ -1942,30 +1954,39 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		{
 			if (arg->type == frm_arg_glob_maddr)
 			{
-				inst_bytes->offs.src1 = arg->value.glob_maddr.reg_idx;
-				inst_bytes->offs.offset = arg->value.glob_maddr.offset;
+				inst_bytes->offs.src1 =
+					arg->value.glob_maddr.reg_idx;
+				inst_bytes->offs.offset =
+					arg->value.glob_maddr.offset;
 			}
 			else if (arg->type == frm_arg_shared_maddr)
 			{
-				inst_bytes->offs.src1 = arg->value.shared_maddr.bank_idx;
-				inst_bytes->offs.offset = arg->value.shared_maddr.offset;
+				inst_bytes->offs.src1 =
+					arg->value.shared_maddr.bank_idx;
+				inst_bytes->offs.offset =
+					arg->value.shared_maddr.offset;
 			}
 			else
 			{
-				frm2bin_yyerror_fmt("Wrong tokne_src1_offs, expected \
+				frm2bin_yyerror_fmt
+					("Wrong tokne_src1_offs, expected \
 						glob_mme or shared_mem.\n");
 			}
 
 			break;
 		}
 
-		/* this shall be improved later, src2, src3 should be separated */
+			/* this shall be improved later, src2, src3 should be 
+			 * separated */
 		case frm_token_src2_src3_FFMA:
 		{
 			struct frm_arg_t *arg_tmp;
-			inst_bytes->general0.src2 = arg->value.scalar_register.id;
+
+			inst_bytes->general0.src2 =
+				arg->value.scalar_register.id;
 			arg_tmp = list_get(inst->arg_list, index + 1);
-			inst_bytes->general0_mod1_D.src3 = arg_tmp->value.scalar_register.id;
+			inst_bytes->general0_mod1_D.src3 =
+				arg_tmp->value.scalar_register.id;
 
 			break;
 		}
@@ -1974,18 +1995,20 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		{
 			if (arg->type == frm_arg_literal)
 			{
-				/* [45:26] */
+				/* [45:26], tgt is only [49:26], improve
+				 * laster */
 				inst_bytes->tgt.tgt_mod = 0x0;
 				inst_bytes->tgt.target =
-					arg->value.literal.val;
+					((unsigned int)arg->value.literal.val - inst->addr - 8) ;
 			}
 			else if (arg->type == frm_arg_const_maddr)
 			{
-				/* [45:26] */
+				/* [14] */
 				inst_bytes->tgt.tgt_mod = 0x1;
-				/* NOT know how to specifiy the const mem address */
+				/* [45:42]: bank_id, [41:26]: offset */
 				inst_bytes->tgt.target =
-					arg->value.const_maddr.bank_idx;
+					(arg->value.const_maddr.bank_idx << 16)
+					+ arg->value.const_maddr.offset;
 			}
 			else
 				frm2bin_yyerror_fmt
@@ -2083,7 +2106,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			else if (arg->type == frm_arg_predicate_register)
 			{
 				/* [51:49] */
-				inst_bytes->general1.R = arg->value.predicate_register.id;
+				inst_bytes->general1.R =
+					arg->value.predicate_register.id;
 			}
 			else
 			{
