@@ -88,7 +88,7 @@ P[0-9]+ {
 
 @!P[0-9]+ {
 	/* atoi, start from the 3rd char, get the number */
-  	frm2bin_yylval.pred = frm2bin_pred_create(atoi(&yytext[2] + 8));
+  	frm2bin_yylval.pred = frm2bin_pred_create(atoi(&yytext[2]) + 8);
   	return TOK_PRED;
 }
 

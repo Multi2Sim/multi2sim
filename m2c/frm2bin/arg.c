@@ -163,13 +163,12 @@ struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset)
 	return arg;
 }
 
-struct frm_arg_t *frm_arg_create_shared_maddr(int bank_idx, int offset)
+struct frm_arg_t *frm_arg_create_shared_maddr(int offset)
 {
 	struct frm_arg_t *arg;
 
 	arg = frm_arg_create();
 	arg->type = frm_arg_shared_maddr;
-	arg->value.shared_maddr.bank_idx = bank_idx;
 	arg->value.shared_maddr.offset = offset;
 
 	return arg;
