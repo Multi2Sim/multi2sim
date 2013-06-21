@@ -29,9 +29,11 @@ enum frm_token_type_t
 	frm_token_dst,
 	frm_token_src1,
 	frm_token_src1_neg,
+	frm_token_src1_offs, /* for global-mem[] */
 	frm_token_src2,
 	frm_token_src2_neg,
-	frm_token_src2_src3_FFMA,
+	frm_token_src2_FFMA,
+	frm_token_src3_FFMA,
 	frm_token_src2_frm_sr,
 	frm_token_tgt,
 	frm_token_tgt_noinc,
@@ -49,6 +51,7 @@ enum frm_token_type_t
 	frm_token_mod0_A_u32,
 	frm_token_mod0_A_w,
 	frm_token_mod0_A_op,
+	frm_token_mod0_A_s,
 	frm_token_mod0_A_stype_s,
 	frm_token_mod0_A_dtype_s,
 	frm_token_mod0_B_u32,
@@ -89,7 +92,6 @@ enum frm_token_type_t
 	frm_token_mod_data_width,
 	frm_token_mod_logic,
 	frm_token_mod_comparison,
-	frm_token_src1_offs, /* for global-mem[] */
 
 	frm_token_count
 };
