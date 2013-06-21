@@ -126,7 +126,7 @@ DEFINST(IMUL,
 	0x143)
 
 DEFINST(IADD, 
-	"%pred IADD%mod0_D_sat%mod0_D_x %dst, %src1_neg, %src2_neg", 
+	"%pred IADD%mod0_A_s%mod0_D_sat%mod0_D_x %dst, %src1_neg, %src2_neg", 
 	INT_IADD, 
 	INT, 
 	0x123)
@@ -138,7 +138,7 @@ DEFINST(IADD32I,
 	0x012)
 
 DEFINST(ISCADD, 
-	"%pred ISCADD %dst, %src1, %src2, %mod0_C_shamt", 
+	"%pred ISCADD%mod0_A_s %dst, %src1, %src2, %mod0_C_shamt", 
 	INT_ISCADD, 
 	INT, 
 	0x103)
@@ -196,7 +196,7 @@ DEFINST(ISET,
 	0x023)
 
 DEFINST(ISETP, 
-	"%pred ISETP%gen1_cmp%mod0_A_u32%gen1_logic %P, %Q, %src1, %src2, %R", 
+	"%pred ISETP%gen1_cmp%mod0_A_u32%gen1_logic%mod0_A_s %P, %Q, %src1, %src2, %R", 
 	INT_ISETP, 
 	INT, 
 	0x033)
@@ -214,7 +214,7 @@ DEFINST(ICMP,
  */
 
 DEFINST(F2F, 
-	"%pred F2F%gen0_mod1_D %dst, %src2", 
+	"%pred F2F%mod0_A_dtype_s%gen0_src1_dtype_n%mod0_A_stype_s%gen0_src1_stype_n %dst, %src2", 
 	CONV_F2F, 
 	CONV, 
 	0x044)
@@ -314,7 +314,7 @@ DEFINST(BRA,
 	0x107)
 
 DEFINST(CAL, 
-	"%pred CAL%tgt_noinc %tgt", 
+	"%pred_no@P0 CAL%tgt_noinc %tgt", 
 	CTRL_CAL, 
 	CTRL, 
 	0x147)
@@ -338,16 +338,16 @@ DEFINST(EXIT,
 	0x207)
 
 DEFINST(SSY, 
-	"%pred SSY %tgt", 
+	"%pred_no@P0 SSY %tgt", 
 	CTRL_SSY, 
 	CTRL, 
 	0x187)
 
 DEFINST(PCNT,
-	"%pred PCNT %tgt",
+	"%pred_no@P0 PCNT %tgt",
 	CTRL_PCNT,
 	CTRL,
-	0x2c7)
+	0x1c7)
 
 /* MISC catogory instructions: 
  * NOP, S2R, B2R, LEPC, BAR, VOTE
