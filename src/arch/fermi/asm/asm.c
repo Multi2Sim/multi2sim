@@ -456,12 +456,17 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			offs = inst.dword.offs.offset;
 			
 			if (src1 != 63)
+			{
 				str_printf(&str, &size, "[R%lld", src1);
-			else 
-				str_printf(&str, &size, "[RZ");
+			//else 
+			//	str_printf(&str, &size, "[RZ");
 
-			if (offs)
-				str_printf(&str, &size, "+%#llx", offs);
+				if (offs != 0)
+					str_printf(&str, &size, "+%#llx", offs);
+			}
+
+			else
+				str_printf(&str, &size, "[0x%#llx", offs);
 
 			str_printf(&str, &size, "]");
 		}
