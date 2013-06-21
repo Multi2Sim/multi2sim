@@ -61,6 +61,9 @@ struct str_map_t si2bin_token_map =
 		{ "\%vop3_src0", si2bin_token_vop3_src0 },
 		{ "\%vop3_src1", si2bin_token_vop3_src1 },
 		{ "\%vop3_src2", si2bin_token_vop3_src2 },
+		{ "\%vop3_64_src0", si2bin_token_vop3_64_src0 },
+		{ "\%vop3_64_src1", si2bin_token_vop3_64_src1 },
+		{ "\%vop3_64_src2", si2bin_token_vop3_64_src2 },
 		{ "\%vop3_vdst", si2bin_token_vop3_vdst },
 		{ "\%vsrc0", si2bin_token_vsrc0 },
 		{ "\%vsrc1", si2bin_token_vsrc1 },
@@ -171,6 +174,11 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_
 			arg->type == si2bin_arg_literal_float ||
 			arg->type == si2bin_arg_vector_register ||
 			arg->type == si2bin_arg_scalar_register;
+	
+	case si2bin_token_vop3_64_src0:
+	case si2bin_token_vop3_64_src1:
+	case si2bin_token_vop3_64_src2:
+		return arg->type == si2bin_arg_scalar_register_series;
 	
 	case si2bin_token_vcc:
 		return arg->type == si2bin_arg_special_register &&
