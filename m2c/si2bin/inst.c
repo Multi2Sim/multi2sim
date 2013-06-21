@@ -869,6 +869,76 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				inst_bytes->vop3a.neg |= 0x4;
 			break;
 
+		case si2bin_token_vop3_64_src0:
+		{
+			
+			int low;
+			int high;
+
+			/* If operand is a scalar register series, check range */
+			if (arg->type == si2bin_arg_scalar_register_series)
+			{
+				low = arg->value.scalar_register_series.low;
+				high = arg->value.scalar_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be s[low:low+1]");
+			}
+
+			/* Encode */
+			inst_bytes->vop3a.src0 = si2bin_arg_encode_operand(arg);
+			
+			if (arg->abs)
+				inst_bytes->vop3a.abs |= 0x1;
+			if (arg->neg)
+				inst_bytes->vop3a.neg |= 0x1;
+			break;
+		}
+		case si2bin_token_vop3_64_src1:
+		{	
+			int low;
+			int high;
+
+			/* If operand is a scalar register series, check range */
+			if (arg->type == si2bin_arg_scalar_register_series)
+			{
+				low = arg->value.scalar_register_series.low;
+				high = arg->value.scalar_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be s[low:low+1]");
+			}
+
+			/* Encode */
+			inst_bytes->vop3a.src1 = si2bin_arg_encode_operand(arg);
+			
+			if (arg->abs)
+				inst_bytes->vop3a.abs |= 0x2;
+			if (arg->neg)
+				inst_bytes->vop3a.neg |= 0x2;
+			break;
+		}
+		case si2bin_token_vop3_64_src2:
+		{
+			int low;
+			int high;
+
+			/* If operand is a scalar register series, check range */
+			if (arg->type == si2bin_arg_scalar_register_series)
+			{
+				low = arg->value.scalar_register_series.low;
+				high = arg->value.scalar_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be s[low:low+1]");
+			}
+
+			/* Encode */
+			inst_bytes->vop3a.src2 = si2bin_arg_encode_operand(arg);
+			
+			if (arg->abs)
+				inst_bytes->vop3a.abs |= 0x4;
+			if (arg->neg)
+				inst_bytes->vop3a.neg |= 0x4;
+			break;
+		}
 		case si2bin_token_vop3_vdst:
 			
 			inst_bytes->vop3a.vdst = arg->value.vector_register.id;
@@ -877,7 +947,6 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_vsrc1:
 
 			/* Encode */
-			assert(arg->type == si2bin_arg_vector_register);
 			inst_bytes->vopc.vsrc1 = si2bin_arg_encode_operand(arg);
 			break;
 
