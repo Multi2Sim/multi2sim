@@ -87,7 +87,6 @@ rl_line
 	      /* write instruction binary to the buffer */
 	      elf_enc_buffer_write(text_section_buffer, inst->inst_bytes.bytes, inst->size);
 	
-	
 	      /* dump the instruction binary to the console */
 	      /*
 	      frm2bin_inst_dump(inst, stdout);
