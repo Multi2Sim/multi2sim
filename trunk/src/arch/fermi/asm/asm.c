@@ -416,7 +416,17 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			else if (pred > 7)
 				str_printf(&str, &size, "@!P%lld", pred - 8);
 		}
-
+		
+		else if (inst_is_token(fmt_str, "pred_no@P0", &len))
+		{
+			unsigned long long int pred;
+			pred = inst.dword.general0.pred;
+			if (pred < 7 && pred != 0)
+				str_printf(&str, &size, "@P%lld", pred);
+			else if (pred > 7)
+				str_printf(&str, &size, "@!P%lld", pred - 8);
+		}
+		
 		else if (inst_is_token(fmt_str,"dst", &len))
 		{
 			unsigned long long int dst;
@@ -686,8 +696,14 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			if (inst.dword.mod0_A.satftz)
 				str_printf(&str, &size, ".FTZ");
 		}
+		
+		else if (inst_is_token(fmt_str, "mod0_A_s", &len))
+		{
+			if (inst.dword.mod0_A.s)
+				str_printf(&str, &size, ".S");
+		}
 
-		else if (inst_is_token(fmt_str,"mod0_A_redarv", &len))
+		else if (inst_is_token(fmt_str, "mod0_A_redarv", &len))
 		{
 			if (inst.dword.mod0_A.abs_src1)
 				str_printf(&str, &size, ".ARV");
@@ -695,7 +711,7 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 				str_printf(&str, &size, ".RED");
 		}
 	
-		else if (inst_is_token(fmt_str,"mod0_A_u32", &len))
+		else if (inst_is_token(fmt_str, "mod0_A_u32", &len))
 		{
 			if (!inst.dword.mod0_A.satftz)
 				str_printf(&str, &size, ".U32");
@@ -798,13 +814,6 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 		else if (inst_is_token(fmt_str,"gen0_mod1_D_cmp", &len))
 		{
 			str_printf(&str, &size, "%s", str_map_value(&frm_inst_cmp_map, inst.dword.general0_mod1_D.cmp));
-		}
-
-		else if (inst_is_token(fmt_str,"gen0_mod1_D", &len))
-		{
-			//str_printf(&str, &size, "%s", str_map_value(&frm_inst_cmp_map, inst.dword.general0_mod1_D.cmp));
-			fatal("%s: gen0_mod1_D not supported: %s", __FUNCTION__,
-					fmt_str);
 		}
 
 		else if (inst_is_token(fmt_str,"gen0_src1_dtype", &len))
