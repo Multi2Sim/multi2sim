@@ -446,8 +446,27 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			else 	
 				str_printf(&str, &size, "RZ");
 		}
+		
+		else if (inst_is_token(fmt_str, "src1_offs", &len))
+		{
+			unsigned long long int src1;
+			unsigned long long int offs;
+				
+			src1 = inst.dword.general0.src1;
+			offs = inst.dword.offs.offset;
+			
+			if (src1 != 63)
+				str_printf(&str, &size, "[R%lld", src1);
+			else 
+				str_printf(&str, &size, "[RZ");
 
-		else if (inst_is_token(fmt_str,"src1_neg", &len))
+			if (offs)
+				str_printf(&str, &size, "+%#llx", offs);
+
+			str_printf(&str, &size, "]");
+		}
+
+		else if (inst_is_token(fmt_str, "src1_neg", &len))
 		{
 			unsigned long long int src1;
 			unsigned long long int src_mod;
