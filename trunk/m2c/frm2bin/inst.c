@@ -269,10 +269,8 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 		info = info->next)
 	{
 		/* Check number of arguments, previously we only check !=,
-		 * but now we check >, because LD has optional offset argu.
-		 * instruction FFMA is exceptional here */
-		if ((arg_list->count > info->token_list->count)
-			&& (strcmp(inst_name, "FFMA")))
+		 * but now we check >, because LD has optional offset argu */
+		if (arg_list->count > info->token_list->count)
 		{
 			printf("invalid # of args\n");
 			snprintf(err_str, sizeof err_str,
@@ -291,7 +289,7 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 
 			/* Get formal argument from instruction info */
 			token = list_get(info->token_list, index);
-			assert(token || (!strcmp(inst_name, "FFMA")));
+			assert(token);
 
 			/* Check that actual argument type is acceptable for
 			 * token, right now this func always return success */
@@ -781,8 +779,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* [3:0]: 0011 */
 		inst_bytes->general0.op0 = 0x3;
 
-		/* [9:4]: 000000, [5], [9] are default values */
-		inst_bytes->general0.mod0 = 0x0;
+		/* [9:4]: 000010, [5], [9] are default values */
+		inst_bytes->general0.mod0 = 0x2;
 
 		/* [13:10]: pred */
 		if (inst->pred_num >= 0)
@@ -1019,8 +1017,18 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* [4]=0, others default */
 		inst_bytes->offs.mod0 = 0x8;
 		inst_bytes->offs.mod1 = 0x0;
-		/* [13:10], default is always predicate true, pt7 */
-		inst_bytes->general0.pred = 0x7;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->offs.pred = inst->pred_num;
+		}
+		else
+		{
+			/* no predicate, value=7 */
+			inst_bytes->offs.pred = 0x7;
+		}
+
 		/* [63:59] = 10010, [58] default */
 		inst_bytes->offs.op1 = 0x24;
 		/* No opcode: only 1 instruction */
@@ -1031,8 +1039,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* [3:0]: 0101 */
 		inst_bytes->offs.op0 = 0x5;
 
-		/* [9:4]: all 0s, default value */
-		inst_bytes->offs.mod0 = 0x0;
+		/* [9:4]: 001000, default value */
+		inst_bytes->offs.mod0 = 0x8;
 
 		/* [13:10]: pred */
 		if (inst->pred_num >= 0)
@@ -1739,19 +1747,13 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 
 	/* Arguments */
-	/* Previously we assert ==, it's changed because LD has optional arg,
-	 * FFMA is not suitable for the following assert */
-	assert((inst->arg_list->count <= info->token_list->count)
-		|| (!strcmp(inst->info->name, "FFMA")));
+	/* Previously we assert ==, it's changed because LD has optional arg */
+	assert(inst->arg_list->count <= info->token_list->count);
 	LIST_FOR_EACH(inst->arg_list, index)
 	{
 		/* Get argument */
 		arg = list_get(inst->arg_list, index);
 		token = list_get(info->token_list, index);
-
-		/* play-around for FFMA */
-		if (index == 3 && (!strcmp(inst->info->name, "FFMA")))
-			continue;
 
 		assert(arg);
 		assert(token);
@@ -1824,7 +1826,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				/* [45:26]: src2, all 0s Register Zero, reg
 				 * that contains const value of 0 */
 				inst_bytes->general0.src2_mod = 0x0;
-				inst_bytes->general0.src2 = 0xfffff;
+				inst_bytes->general0.src2 = 0b111111;
 			}
 
 			else if (arg->type == frm_arg_literal)
@@ -1886,7 +1888,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				/* [45:26]: src2, all 0s Register Zero, reg
 				 * that contains const value of 0 */
 				inst_bytes->general0.src2_mod = 0x0;
-				inst_bytes->general0.src2 = 0xfffff;
+				inst_bytes->general0.src2 = 0b111111;
 			}
 
 			else if (arg->type == frm_arg_literal)
@@ -1954,8 +1956,12 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		{
 			if (arg->type == frm_arg_glob_maddr)
 			{
-				inst_bytes->offs.src1 =
-					arg->value.glob_maddr.reg_idx;
+				if (arg->value.glob_maddr.reg_idx == -1)
+					inst_bytes->offs.src1 = 0b111111;
+				else
+					inst_bytes->offs.src1 =
+						arg->value.glob_maddr.reg_idx;
+
 				inst_bytes->offs.offset =
 					arg->value.glob_maddr.offset;
 			}
@@ -1976,17 +1982,36 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			break;
 		}
 
-			/* this shall be improved later, src2, src3 should be 
-			 * separated */
-		case frm_token_src2_src3_FFMA:
+			/* these tokens are specifically for FFMA instruction 
+			 */
+		case frm_token_src2_FFMA:
 		{
-			struct frm_arg_t *arg_tmp;
+			if (arg->type == frm_arg_scalar_register)
+			{
+				inst_bytes->general0.src2 =
+					arg->value.scalar_register.id;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt
+					("Wrong token for src2_FFMA \n");
+			}
 
-			inst_bytes->general0.src2 =
-				arg->value.scalar_register.id;
-			arg_tmp = list_get(inst->arg_list, index + 1);
-			inst_bytes->general0_mod1_D.src3 =
-				arg_tmp->value.scalar_register.id;
+			break;
+		}
+
+		case frm_token_src3_FFMA:
+		{
+			if (arg->type == frm_arg_scalar_register)
+			{
+				inst_bytes->general0_mod1_D.src3 =
+					arg->value.scalar_register.id;
+			}
+			else
+			{
+				frm2bin_yyerror_fmt
+					("Wrong token for src2_FFMA \n");
+			}
 
 			break;
 		}
