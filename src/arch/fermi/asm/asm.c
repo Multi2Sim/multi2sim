@@ -480,25 +480,6 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 				else
 					str_printf(&str, &size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
 			}
-				/*else if (inst.dword.general0.src2_mod == 2)
-				{
-				int i; 
-				int j;
-				i = (inst.dword.fp_ffma.src2 & 0x4) >> 2;
-				j = inst.dword.fp_ffma.src2 & 0x1;
-					if (i == 0 && j == 0)
-						str_printf(&str, &size, "c [0x0] [0x0]");
-					else if (i == 1 && j == 0)
-						str_printf(&str, &size, "c [0x0] [0x4]");
-					else if (i == 0 && j == 1)
-						str_printf(&str, &size, "c [0x10] [0x0]");	
-					else if (i == 1 && j == 1)
-						str_printf(&str, &size, "c [0x10] [0x4]");
-				}
-				else if (inst.dword.fp_ffma.src2_mod == 3)
-					//str_printf(&str, &size, "0x%x", inst.dword.fp_ffma.src2);
-				else
-					fatal("%d: FRM_FMT_FP_FFMA.src2_mod not recognized", inst.dword.fp_ffma.src2_mod);*/
 			else if (inst.dword.general0.src2_mod == 2)
 				str_printf(&str, &size, "0x%x", inst.dword.general0.src2);
 			else if (inst.dword.general0.src2_mod == 3)
@@ -537,24 +518,20 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 
 		/* This is a special case for src2 and src3. For FFMA,
 		   the sequence of output from cuobjdump is somehow depends on the src2_mod  
-		   it prints src3 first when src2_mod < 2, however prints src2 first when src2_mod > 2 */
-		else if (inst_is_token(fmt_str,"src2_src3_FFMA", &len)) 
+		   it prints src3 first when src2_mod > 2, however prints src2 first when src2_mod < 2 */
+		else if (inst_is_token(fmt_str,"src2_FFMA", &len)) 
 		{
 			unsigned long long int bank_id;
 			unsigned long long int offset_in_bank;
 			unsigned long long int src3;
-			unsigned long long int bit26;
-			unsigned long long int bit28;
 
 			bank_id = inst.dword.general0.src2 >> 16;
 			offset_in_bank= inst.dword.general0.src2 & 0xffff;
 			src3 = inst.dword.general0_mod1_B.src3;
-			bit26 = inst.dword.general0.src2 & 0x1;
-			bit28 = inst.dword.general0.src2 >> 2 &0x1;
 
+			/* print out src2 */
 			if (inst.dword.general0.src2_mod < 2)
 			{
-				/* print out src2 */
 				if (inst.dword.general0.src2_mod == 0)
 					str_printf(&str, &size, "R%d", inst.dword.general0.src2 & 0x3f);
 				else if (inst.dword.general0.src2_mod == 1)
@@ -568,20 +545,39 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 					else
 						str_printf(&str, &size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
 				}
+			}
 
-				/* print out src3 */
+			/* print out src3 */
+			else
+			{
 				if (src3 != 63)			
 					str_printf(&str, &size, ", R%lld", src3);
 				else 
 					str_printf(&str, &size, ", RZ");
 			}
-			else 
+		}
+		
+		else if (inst_is_token(fmt_str, "src3_FFMA", &len))
+		{
+			unsigned long long int src3;
+			unsigned long long int bit26;
+			unsigned long long int bit28;
+			
+			src3 = inst.dword.general0_mod1_B.src3;
+			bit26 = inst.dword.general0.src2 & 0x1;
+			bit28 = inst.dword.general0.src2 >> 2 &0x1;
+		
+			/* print out src2 */
+			if (inst.dword.general0.src2_mod < 2)
 			{
 				if (src3 != 63)			
-					str_printf(&str, &size, "R%lld, ", src3);
+					str_printf(&str, &size, "R%lld", src3);
 				else 
-					str_printf(&str, &size, "RZ, ");
-				
+					str_printf(&str, &size, "RZ");
+			}
+
+			else
+			{
 				/* FIXME : we need to figure out how bit26 and bit28 control src2*/
 				if (bit26 == 0 && bit28 == 0)
 					str_printf(&str, &size, "c [0x0] [0x0]");

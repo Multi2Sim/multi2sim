@@ -24,7 +24,7 @@
  */
 
 DEFINST(FFMA, 
-	"%pred FFMA%mod0_D_ftzfmz%gen0_mod1_B_rnd%mod0_D_sat %dst, %src1, %src2_src3_FFMA", 
+	"%pred FFMA%mod0_D_ftzfmz%gen0_mod1_B_rnd%mod0_D_sat %dst, %src1, %src2_FFMA, %src3_FFMA", 
 	FP_FFMA, 
 	FP, 
 	0x0c0)
