@@ -38,6 +38,9 @@ struct frm2bin_inst_t
 	/* Instruction bytes generated */
 	union frm_inst_dword_t inst_bytes;
 
+	/* address of current instruction */
+	long long int addr;
+
 	int size;		/* Number of bytes */
 };
 
@@ -45,7 +48,7 @@ struct frm2bin_inst_t
 struct frm2bin_pred_t
 {
 	/* which predicate register to use */
-	int number;
+	unsigned int number;
 };
 
 /* Returns a newly created frm2bin_inst_t object with the op-code
