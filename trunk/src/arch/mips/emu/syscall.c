@@ -241,7 +241,7 @@ void mips_sys_call(struct mips_ctx_t *ctx)
 
 	/* Debug */
 	mips_sys_debug("'%s' (code %d, inst %lld, pid %d)\n",
-		mips_sys_call_name[code], code, mips_emu->inst_count, ctx->pid);
+		mips_sys_call_name[code], code, arch_mips->inst_count, ctx->pid);
 	mips_isa_call_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
 		mips_sys_call_name[code], code, arch_mips->inst_count, ctx->pid);
 
