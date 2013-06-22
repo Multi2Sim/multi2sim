@@ -1003,8 +1003,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			inst_bytes->offs.pred = 0x7;
 		}
 
-		/* [57:42]: all 0s */
-		inst_bytes->offs.mod1 = 0x0;
+		/* [57:42]: all 0s except [56] */
+		inst_bytes->offs.mod1 = 0x4000;
 
 		/* [63:58]: 110000 */
 		inst_bytes->offs.op1 = 0x30;
@@ -1053,8 +1053,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			inst_bytes->offs.pred = 0x7;
 		}
 
-		/* [57:42]: all 0s */
-		inst_bytes->offs.mod1 = 0x0;
+		/* [57:42]: all 0s, except [56] */
+		inst_bytes->offs.mod1 = 0x4000;
 
 		/* [63:58]: 110010 */
 		inst_bytes->offs.op1 = 0x32;
@@ -1089,7 +1089,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		else if (arg->type == frm_arg_const_maddr)
 			inst_bytes->tgt.tgt_mod = 0x1;
 		else
-			frm2bin_yyerror_fmt("SSY: wrong target type!\n");
+			frm2bin_yyerror_fmt("BRA: wrong target type!\n");
 
 		/* [15]: 0, default value */
 		inst_bytes->tgt.u = 0x0;
@@ -1242,7 +1242,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		else
 		{
 			/* no predicate, value=7 */
-			inst_bytes->tgt.pred = 0x7;
+			inst_bytes->tgt.pred = 0x0;
 		}
 
 		/* [14]: tgt_mod, immediate or const mem addr, check the type 
@@ -1285,7 +1285,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		else
 		{
 			/* no predicate, value=7 */
-			inst_bytes->tgt.pred = 0x7;
+			inst_bytes->tgt.pred = 0x0;
 		}
 
 		/* [14]: tgt_mod, immediate or const mem addr, check the type 
@@ -1297,7 +1297,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		else if (arg->type == frm_arg_const_maddr)
 			inst_bytes->tgt.tgt_mod = 0x1;
 		else
-			frm2bin_yyerror_fmt("SSY: wrong target type!\n");
+			frm2bin_yyerror_fmt("PCNT: wrong target type!\n");
 
 		/* [15]: 0, default value */
 		inst_bytes->tgt.u = 0x0;
@@ -1400,8 +1400,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* [25:20]: all 0s, no default value */
 		inst_bytes->general0.src1 = 0x0;
 
-		/* [45:26]: all 0s */
-		inst_bytes->general0.src2 = 0x0;
+		/* [45:26]: 00--111111, default */
+		inst_bytes->general0.src2 = 0x3f;
 
 		/* [47:46]: all 0s */
 		inst_bytes->general0.src2_mod = 0x0;
@@ -1409,8 +1409,8 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		/* [48]: all 0s */
 		inst_bytes->general0.dst_cc = 0x0;
 
-		/* [57:49]: all 0s, manually default */
-		inst_bytes->general0.mod1 = 0x0;
+		/* [57:49]: 001110111, default value */
+		inst_bytes->general0.mod1 = 0x77;
 
 		/* [63:58]: 010100 */
 		inst_bytes->general0.op1 = 0x14;
@@ -1832,7 +1832,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			else if (arg->type == frm_arg_literal)
 			{
 				/* for immediate value */
-				inst_bytes->general0.src2_mod = 0x2;
+				inst_bytes->general0.src2_mod = 0x3;
 				inst_bytes->general0.src2 =
 					arg->value.literal.val;
 			}
@@ -1894,7 +1894,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			else if (arg->type == frm_arg_literal)
 			{
 				/* for immediate value */
-				inst_bytes->general0.src2_mod = 0x2;
+				inst_bytes->general0.src2_mod = 0x3;
 				inst_bytes->general0.src2 =
 					arg->value.literal.val;
 			}
@@ -1967,8 +1967,11 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			}
 			else if (arg->type == frm_arg_shared_maddr)
 			{
-				inst_bytes->offs.src1 =
-					arg->value.shared_maddr.bank_idx;
+				if (arg->value.shared_maddr.bank_idx == -1)
+					inst_bytes->offs.src1 = 0b111111;
+				else
+					inst_bytes->offs.src1 =
+						arg->value.shared_maddr.bank_idx;
 				inst_bytes->offs.offset =
 					arg->value.shared_maddr.offset;
 			}
@@ -2141,25 +2144,6 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			}
 			break;
 		}
-
-			/* temporial for LD dst, [src1 + offset] src1 is
-			 * combined with offset now */
-/*		case frm_token_src1_offs:
-		{
-			if (arg->type == frm_arg_glob_maddr)
-			{
-				//[25:20]
-				inst_bytes->general0.src1 =
-					arg->value.glob_maddr.reg_idx;
-			}
-			else
-			{
-				frm2bin_yyerror_fmt
-					("Wrong frm_token_src1_offs. \
-					[dis-inst.c]\n");
-			}
-			break;
-		} */
 
 		case frm_token_mod0_C_ccop:
 		{
