@@ -279,7 +279,7 @@ rl_arg
   	{
   		int offset;
   		sscanf($2->name, "%x", &offset);
-  		$$ = frm_arg_create_shared_maddr(offset);
+  		$$ = frm_arg_create_shared_maddr(-1, offset);
   		
   		frm_id_free($2);
   	}
