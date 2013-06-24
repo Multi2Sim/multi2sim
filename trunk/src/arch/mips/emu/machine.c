@@ -99,7 +99,7 @@ void mips_isa_SLTI_impl(struct mips_ctx_t *ctx)
 }
 void mips_isa_SLTIU_impl(struct mips_ctx_t *ctx)
 {
-	if (MIPS_GPR_GET(RS) < (unsigned int) IMM)
+	if ((unsigned int)MIPS_GPR_GET(RS) < (unsigned int)SEXT32(IMM,16))
 		MIPS_GPR_SET(RT, 1);
 	else
 		MIPS_GPR_SET(RT, 0);
@@ -176,9 +176,10 @@ void mips_isa_LW_impl(struct mips_ctx_t *ctx)
 void mips_isa_LBU_impl(struct mips_ctx_t *ctx)
 {
 	unsigned char temp;
-	unsigned int addr = MIPS_GPR_GET(RS) + SEXT32((signed)IMM,16);
+	unsigned int addr = MIPS_GPR_GET(RS) + SEXT32(IMM,16);
 	mem_read(ctx->mem, addr, sizeof(unsigned char), &temp);
 	MIPS_GPR_SET(RT, (unsigned)temp);
+	mips_isa_inst_debug(" r%d=0x%x", RT, MIPS_GPR_GET(RT));
 }
 void mips_isa_LHU_impl(struct mips_ctx_t *ctx)
 {
@@ -226,6 +227,7 @@ void mips_isa_SW_impl(struct mips_ctx_t *ctx)
 	unsigned int addr = MIPS_GPR_GET(RS) + SEXT32(IMM,16);
 
 	mem_write(ctx->mem, addr, 4, &temp);
+	mips_isa_inst_debug(" value stored: 0x%x", temp);
 }
 
 
