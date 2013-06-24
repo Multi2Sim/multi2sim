@@ -927,11 +927,64 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 
 struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
 {
+	LLVMValueRef index;
+	struct cl2llvm_val_t *elem_bool1;
+	struct cl2llvm_val_t *elem_bool2;
+	struct cl2llvm_val_t *elem_val;
+	int i;
+
 	struct cl2llvm_val_t *bool_val = cl2llvm_val_create_w_init(value->val, value->type->sign);
 	
 	/* if value is i1 no conversion necessary */
 	if (LLVMTypeOf(value->val) == LLVMInt1Type())
 		return bool_val;
+
+	/* If value is a vector convert each value to a bool and return true if
+	   every component is true. Otherwise, return false. */
+	if (LLVMGetTypeKind(value->type->llvm_type) == LLVMVectorTypeKind)
+	{
+		index = LLVMConstInt(LLVMInt32Type(), 0, 0);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+
+		elem_val = cl2llvm_val_create_w_init(
+			LLVMBuildExtractElement(cl2llvm_builder, 
+			value->val, index, temp_var_name), 
+			value->type->sign);
+			
+		elem_bool1 = cl2llvm_val_bool(elem_val);
+
+		cl2llvm_val_free(elem_val);
+
+		for (i = 1; i < LLVMGetVectorSize(value->type->llvm_type); i++)
+		{
+			index = LLVMConstInt(LLVMInt32Type(), i, 0);
+
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp%d", temp_var_count++);
+
+			elem_val = cl2llvm_val_create_w_init(
+				LLVMBuildExtractElement(cl2llvm_builder, 
+				value->val, index, temp_var_name), 
+				value->type->sign);
+			
+			elem_bool2 = cl2llvm_val_bool(elem_val);
+			
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp%d", temp_var_count++);
+
+			elem_bool1->val = LLVMBuildAnd(cl2llvm_builder, elem_bool1->val, 
+				elem_bool2->val, temp_var_name);
+			cl2llvm_val_free(elem_val);
+
+			cl2llvm_val_free(elem_bool2);
+		}
+		cl2llvm_val_free(bool_val);
+		bool_val = elem_bool1;
+		return bool_val;
+	}
+
 	snprintf(temp_var_name, sizeof temp_var_name,
 		"tmp%d", temp_var_count++);
 
