@@ -203,6 +203,7 @@ void mips_isa_SB_impl(struct mips_ctx_t *ctx)
 	unsigned char temp = MIPS_GPR_GET(RT);
 	unsigned int addr = MIPS_GPR_GET(RS) + IMM;
 	mem_write(ctx->mem, addr, sizeof(unsigned char), &temp);
+	mips_isa_inst_debug("byte written: %x",temp);
 }
 void mips_isa_SH_impl(struct mips_ctx_t *ctx)
 {
