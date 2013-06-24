@@ -425,6 +425,7 @@ void mips_isa_MULTU_impl(struct mips_ctx_t *ctx)
 								(unsigned long int) MIPS_GPR_GET(RT);
 	ctx->regs->regs_LO = BITS64(temp, 31, 0);
 	ctx->regs->regs_HI = BITS64(temp, 63, 32);
+	mips_isa_inst_debug(" regHI=%x and regLO=%x",MIPS_REG_HI, MIPS_REG_LO);
 }
 void mips_isa_DIV_impl(struct mips_ctx_t *ctx)
 {
