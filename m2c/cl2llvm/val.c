@@ -927,10 +927,11 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 
 struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
 {
-	struct cl2llvm_val_t *bool_val = cl2llvm_val_create();
+	struct cl2llvm_val_t *bool_val = cl2llvm_val_create_w_init(value->val, value->type->sign);
 	
-	bool_val->type->sign = value->type->sign;
-
+	/* if value is i1 no conversion necessary */
+	if (LLVMTypeOf(value->val) == LLVMInt1Type())
+		return bool_val;
 	snprintf(temp_var_name, sizeof temp_var_name,
 		"tmp%d", temp_var_count++);
 

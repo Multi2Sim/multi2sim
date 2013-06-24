@@ -2505,11 +2505,105 @@ expr
 	}
 	| expr TOK_LOGICAL_AND expr
 	{
-		cl2llvm_yyerror("logical and '&&' not supported");
+		struct cl2llvm_val_t *bool1;
+		struct cl2llvm_val_t *bool2;
+		struct cl2llvm_val_t *value;
+		LLVMBasicBlockRef land_rhs;
+		LLVMBasicBlockRef land_end;
+		LLVMValueRef land_cond;
+
+		/* Create basic blocks */
+		land_rhs = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_rhs");
+		land_end = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_end");
+
+		/* Convert LHS to boolean value */
+		bool1 = cl2llvm_val_bool($1);
+
+		/* Create conditional branch. Branch will skip to end block if LHS
+		   is false */
+		LLVMBuildCondBr(cl2llvm_builder, bool1->val, land_rhs, land_end);
+		
+		/* Move builder to RHS block */
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, land_rhs);
+
+		/* Convert RHS to Bool */
+		bool2 = cl2llvm_val_bool($3);
+
+		/* Build branch to end block */
+		LLVMBuildBr(cl2llvm_builder, land_end);
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, land_end);
+
+		/* Position builder at end block */
+		
+		/* Build Phi node */
+		LLVMValueRef phi_vals[] = {LLVMConstInt(LLVMInt1Type(), 0, 0), bool2->val};
+		LLVMBasicBlockRef phi_blocks[] = {current_basic_block, land_rhs};
+		land_cond = LLVMBuildPhi(cl2llvm_builder, LLVMInt1Type(), "land_cond");
+		LLVMAddIncoming(land_cond, phi_vals, phi_blocks, 2);
+
+		/* Set current current basic block */
+		current_basic_block = land_end;
+
+		value = cl2llvm_val_create_w_init(land_cond, 1);
+
+		/* Free pointers */
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_val_free(bool1);
+		cl2llvm_val_free(bool2);
+	
+		$$ = value;
 	}
 	| expr TOK_LOGICAL_OR expr
 	{
-		cl2llvm_yyerror("logical or '!' supported");
+		struct cl2llvm_val_t *bool1;
+		struct cl2llvm_val_t *bool2;
+		struct cl2llvm_val_t *value;
+		LLVMBasicBlockRef land_rhs;
+		LLVMBasicBlockRef land_end;
+		LLVMValueRef land_cond;
+
+		/* Create basic blocks */
+		land_rhs = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_rhs");
+		land_end = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_end");
+
+		/* Convert LHS to boolean value */
+		bool1 = cl2llvm_val_bool($1);
+
+		/* Create conditional branch. Branch will skip to end block if LHS
+		   is true */
+		LLVMBuildCondBr(cl2llvm_builder, bool1->val, land_end, land_rhs);
+		
+		/* Move builder to RHS block */
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, land_rhs);
+
+		/* Convert RHS to Bool */
+		bool2 = cl2llvm_val_bool($3);
+
+		/* Build branch to end block */
+		LLVMBuildBr(cl2llvm_builder, land_end);
+
+		/* Position builder at end block */
+		LLVMPositionBuilderAtEnd(cl2llvm_builder, land_end);
+		
+		/* Build Phi node */
+		LLVMValueRef phi_vals[] = {LLVMConstInt(LLVMInt1Type(), 1, 0), bool2->val};
+		LLVMBasicBlockRef phi_blocks[] = {current_basic_block, land_rhs};
+		land_cond = LLVMBuildPhi(cl2llvm_builder, LLVMInt1Type(), "land_cond");
+		LLVMAddIncoming(land_cond, phi_vals, phi_blocks, 2);
+
+		/* Set current current basic block */
+		current_basic_block = land_end;
+
+		value = cl2llvm_val_create_w_init(land_cond, 1);
+
+		/* Free pointers */
+		cl2llvm_val_free($1);
+		cl2llvm_val_free($3);
+		cl2llvm_val_free(bool1);
+		cl2llvm_val_free(bool2);
+	
+		$$ = value;
 	}
 	| lvalue TOK_EQUAL expr
 	{
