@@ -157,7 +157,6 @@ void opencl_x86_device_make_fiber_ex(
 		void *args)
 {
 	arg_size *= sizeof(size_t);
-	assert(!(arg_size % sizeof(size_t)));
 	assert(!((size_t) fiber->stack_bottom % sizeof(size_t)));
 	assert(!(fiber->stack_size % sizeof(size_t)));
 
@@ -332,17 +331,14 @@ void opencl_x86_device_init_work_item(
 void opencl_x86_device_work_group_init(
 	struct opencl_x86_device_t *device,
 	struct opencl_x86_device_work_group_data_t *work_group,
-	struct opencl_x86_kernel_t *kernel,
-	int dims,
-	const size_t *global,
-	const size_t *local)
+	struct opencl_x86_device_exec_t *e)
 {
 	int i;
 	void *local_reserved; /* TODO: this needs to be restructured */
 
 	work_group->num_items = 1;
-	for (i = 0; i < dims; i++)
-		work_group->num_items *= local[i];
+	for (i = 0; i < e->dims; i++)
+		work_group->num_items *= e->local[i];
 
 	work_group->num_done = 0;
 	work_group->current_fiber = NULL;
@@ -357,8 +353,8 @@ void opencl_x86_device_work_group_init(
 		OPENCL_WORK_GROUP_STACK_SIZE * work_group->num_items);
 
 
-	if (kernel->local_reserved_bytes)
-		local_reserved = xmalloc(kernel->local_reserved_bytes);
+	if (e->kernel->local_reserved_bytes)
+		local_reserved = xmalloc(e->kernel->local_reserved_bytes);
 	else
 		local_reserved = NULL;
 
@@ -375,21 +371,21 @@ void opencl_x86_device_work_group_init(
 		work_group->work_item_data[i] = (struct opencl_x86_device_work_item_data_t *)
 			((char *) fiber->stack_bottom + fiber->stack_size);
 		opencl_x86_device_init_work_item(device, work_group->work_item_data[i],
-			dims, global, local, work_group, local_reserved);
+			e->dims, e->global, e->local, work_group, local_reserved);
 	}
 
 	/* set up params with local memory pointers sperate from those of other threads */
-	work_group->stack_params = (size_t *) xmalloc(sizeof (size_t) * kernel->stack_param_words);
-	memcpy(work_group->stack_params, kernel->stack_params, sizeof (size_t) * kernel->stack_param_words);
-	for (i = 0; i < kernel->num_params; i++)
-		if (kernel->param_info[i].mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
+	work_group->stack_params = (size_t *) xmalloc(sizeof (size_t) * e->kernel->stack_param_words);
+	memcpy(work_group->stack_params, e->ndrange->stack_params, sizeof (size_t) * e->kernel->stack_param_words);
+	for (i = 0; i < e->kernel->num_params; i++)
+		if (e->kernel->param_info[i].mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
 		{
-			int offset = kernel->param_info[i].stack_offset;
+			int offset = e->kernel->param_info[i].stack_offset;
 			if (posix_memalign((void **) (work_group->stack_params + offset),
-					OPENCL_WORK_GROUP_STACK_ALIGN, kernel->stack_params[offset]))
+					OPENCL_WORK_GROUP_STACK_ALIGN, e->ndrange->stack_params[offset]))
 				fatal("%s: out of memory", __FUNCTION__);
 			mhandle_register_ptr(*(void **) (work_group->stack_params + offset),
-					kernel->stack_params[offset]);
+					e->ndrange->stack_params[offset]);
 		}
 }
 
@@ -397,41 +393,20 @@ void opencl_x86_device_work_group_init(
 /* Blocking call to execute a work-group.
  * This code is function is run from within a core-assigned runtime thread */
 void opencl_x86_device_work_group_launch(
-	struct opencl_x86_kernel_t *kernel,
-	int dims,
-	const size_t *group_start,
-	const size_t *global,
-	const size_t *local,
-	const size_t *group_id,
+	int num,
+	struct opencl_x86_device_exec_t *exec,
 	struct opencl_x86_device_work_group_data_t *workgroup_data)
 {
+	struct opencl_x86_kernel_t *kernel = exec->kernel;
+	const size_t *group_global = exec->group_starts + 3 * num;
+	const size_t *local_size = exec->local;
+	const size_t *gid = exec->group_ids + 3 * num;
+
 	size_t i;
 	size_t j;
 	size_t k;
-	size_t local_size[3];
-	size_t group_global[3];
-	size_t gid[3];
 
 	assert(workgroup_data->num_items > 0);
-
-	/* we want to safely assume that we have all three dimensions.
-	 * but the arrays passed in may only have dims elements,
-	 * so we copy them and fill in the rest of the dimensions as having size 1. */
-	for (i = 0; i < 3; i++)
-	{
-		if (i < dims)
-		{
-			local_size[i] = local[i];
-			group_global[i] = group_start[i];
-			gid[i] = group_id[i];
-		}
-		else
-		{
-			local_size[i] = 1;
-			group_global[i] = 0;
-			gid[i] = 0;
-		}
-	}
 
 	/* Initialize stuff that changes per work group */
 	for (i = 0; i < local_size[2]; i++)
@@ -479,7 +454,7 @@ void opencl_x86_device_work_group_launch(
 		{
 			opencl_x86_device_switch_fiber(&workgroup_data->main_fiber,
 					workgroup_data->work_items + workgroup_data->current_item,
-					kernel->register_params);
+					exec->ndrange->register_params);
 		}
 	}
 }
@@ -531,8 +506,7 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 		pthread_mutex_unlock(&device->lock);
 
 		/* Initialize work-group data */
-		opencl_x86_device_work_group_init(device, &work_group_data,
-				exec->kernel, exec->dims, exec->global, exec->local);
+		opencl_x86_device_work_group_init(device, &work_group_data, exec);
 
 		/* Launch work-groups */
 		for (;;)
@@ -543,9 +517,8 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 				break;
 
 			/* Launch it */
-			opencl_x86_device_work_group_launch(exec->kernel,
-					exec->dims, exec->group_starts + 3 * num,
-					exec->global, exec->local, exec->group_ids + 3 * num, &work_group_data);
+			opencl_x86_device_work_group_launch(num, exec, &work_group_data);
+
 		}
 
 		/* Finalize work-group */

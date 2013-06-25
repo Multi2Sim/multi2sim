@@ -69,6 +69,7 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 
 	/* Free kernel */
 	list_free(kernel->entry_list);
+	opencl_object_release(kernel->program, OPENCL_OBJECT_PROGRAM, CL_INVALID_PROGRAM);
 	free(kernel);
 }
 
@@ -111,14 +112,6 @@ cl_kernel clCreateKernel(
 	opencl_debug("\tkernel_name = %s", kernel_name);
 	opencl_debug("\terrcode_ret = %p", errcode_ret);
 
-	/* Check valid program */
-	if (!opencl_object_verify(program, OPENCL_OBJECT_PROGRAM))
-	{
-		if (errcode_ret)
-			*errcode_ret = CL_INVALID_PROGRAM;
-		return NULL;
-	}
-
 	/* Check valid kernel name */
 	if (!kernel_name)
 	{
@@ -126,6 +119,16 @@ cl_kernel clCreateKernel(
 			*errcode_ret = CL_INVALID_VALUE;
 		return NULL;
 	}
+
+	/* Check valid program */
+	if (opencl_object_retain(program, OPENCL_OBJECT_PROGRAM, CL_INVALID_VALUE) != CL_SUCCESS)
+	{
+		if (errcode_ret)
+			*errcode_ret = CL_INVALID_PROGRAM;
+		return NULL;
+	}
+
+
 
 	/* Create kernel */
 	kernel = opencl_kernel_create();
@@ -154,6 +157,9 @@ cl_kernel clCreateKernel(
 		/* Add new entry to the generic kernel object */
 		opencl_kernel_add(kernel, device, arch_kernel, arch_program);
 	}
+
+	if (errcode_ret)
+		*errcode_ret = CL_SUCCESS;
 
 	/* Return kernel */
 	return kernel;

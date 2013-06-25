@@ -32,11 +32,7 @@
 #include "x86-kernel.h"
 #include "x86-program.h"
 
-
 #define MEMORY_ALIGN 16
-#define MAX_SSE_REG_PARAMS 4
-#define SSE_REG_SIZE_IN_WORDS (16 / sizeof (size_t))
-
 
 /*
  * Private Functions
@@ -208,10 +204,6 @@ struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 	kernel->num_params = (kernel->metadata[0] - 44) / 24;
 	opencl_debug("[%s] num params = %d", __FUNCTION__, kernel->num_params);
 	kernel->param_info = xcalloc(1, sizeof kernel->param_info[0] * kernel->num_params);
-	if (posix_memalign((void **) &kernel->register_params, MEMORY_ALIGN,
-			sizeof kernel->register_params[0] * MAX_SSE_REG_PARAMS))
-		fatal("%s: could not allocate aligned memory", __FUNCTION__);
-	mhandle_register_ptr(kernel->register_params, sizeof kernel->register_params[0] * MAX_SSE_REG_PARAMS);
 	stride = 8;
 	num_reg = 0;
 	stack_offset = 0;
@@ -273,7 +265,7 @@ struct opencl_x86_kernel_t *opencl_x86_kernel_create(
 		kernel->stack_param_words = stack_offset + SSE_REG_SIZE_IN_WORDS - remainder;
 
 	/* Reserve space for stack arguments */
-	kernel->stack_params = xcalloc(kernel->stack_param_words, sizeof(size_t));
+	kernel->cur_stack_params = xcalloc(kernel->stack_param_words, sizeof(size_t));
 	opencl_debug("[%s] kernel = %p", __FUNCTION__, (void*)kernel);
 
 	/* Return */
@@ -285,8 +277,7 @@ void opencl_x86_kernel_free(struct opencl_x86_kernel_t *kernel)
 {
 	opencl_debug("[%s] freeing x86 kernel", __FUNCTION__);
 	free(kernel->param_info);
-	free(kernel->stack_params);
-	free(kernel->register_params);
+	free(kernel->cur_stack_params);
 	free(kernel);
 }
 
@@ -308,7 +299,7 @@ int opencl_x86_kernel_set_arg(struct opencl_x86_kernel_t *kernel,
 	if (!arg_value)
 	{
 		/* Local memory */
-		kernel->stack_params[param_info->stack_offset] = arg_size;
+		kernel->cur_stack_params[param_info->stack_offset] = arg_size;
 	}
 	else if (param_info->mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_GLOBAL
 			|| param_info->mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_CONSTANT)
@@ -316,15 +307,15 @@ int opencl_x86_kernel_set_arg(struct opencl_x86_kernel_t *kernel,
 		void *addr = opencl_mem_get_buffer(*(cl_mem *) arg_value);
 		if (!addr)
 			return CL_INVALID_MEM_OBJECT;
-		memcpy(kernel->stack_params + param_info->stack_offset, &addr, sizeof addr);
+		memcpy(kernel->cur_stack_params + param_info->stack_offset, &addr, sizeof addr);
 	}
 	else if (param_info->is_stack)
 	{
-		memcpy(kernel->stack_params + param_info->stack_offset, arg_value, arg_size);
+		memcpy(kernel->cur_stack_params + param_info->stack_offset, arg_value, arg_size);
 	}
 	else
 	{
-		memcpy(kernel->register_params + param_info->reg_offset, arg_value, arg_size);
+		memcpy(kernel->cur_register_params + param_info->reg_offset, arg_value, arg_size);
 	}
 
 	/* Label argument as set */
@@ -405,7 +396,7 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 
 	opencl_debug("[%s] dims = %d", __FUNCTION__, work_dim);
 	opencl_debug("[%s] local size = (%d, %d, %d)", __FUNCTION__,
-		local_work_size[0], local_work_size[1], local_work_size[2]);
+		arch_ndrange->local_work_size[0], arch_ndrange->local_work_size[1], arch_ndrange->local_work_size[2]);
 	opencl_debug("[%s] global size = (%d, %d, %d)", __FUNCTION__,
 		global_work_size[0], global_work_size[1], global_work_size[2]);
 
@@ -425,9 +416,24 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 	if (!exec->group_ids)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* copy over register arguments */
+	size_t reg_size = sizeof x86_kernel->cur_register_params[0] * MAX_SSE_REG_PARAMS;
+	if (posix_memalign((void **) &arch_ndrange->register_params, MEMORY_ALIGN, reg_size))
+		fatal("%s: could not allocate aligned memory", __FUNCTION__);
+	mhandle_register_ptr(arch_ndrange->register_params, reg_size);
+	memcpy(arch_ndrange->register_params, x86_kernel->cur_register_params, reg_size);
+
+	/* copy over stack arguments */
+	arch_ndrange->stack_params = xmalloc(x86_kernel->stack_param_words * sizeof(size_t));
+	if (!arch_ndrange->stack_params)
+		fatal("%s: out of memory", __FUNCTION__);
+	memcpy(arch_ndrange->stack_params, x86_kernel->cur_stack_params, x86_kernel->stack_param_words * sizeof (size_t));
+	
+
 	pthread_mutex_init(&exec->mutex, NULL);
 
 	arch_ndrange->exec = exec;
+	exec->ndrange = arch_ndrange;
 
 	return arch_ndrange;
 }
