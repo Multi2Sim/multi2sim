@@ -397,14 +397,20 @@ void opencl_x86_device_work_group_launch(
 	struct opencl_x86_device_exec_t *exec,
 	struct opencl_x86_device_work_group_data_t *workgroup_data)
 {
-	struct opencl_x86_kernel_t *kernel = exec->kernel;
-	const size_t *group_global = exec->group_starts + 3 * num;
-	const size_t *local_size = exec->local;
-	const size_t *gid = exec->group_ids + 3 * num;
-
+	const unsigned int *local_size = exec->local;
 	size_t i;
 	size_t j;
 	size_t k;
+
+	unsigned int group_global[3] = {0, 0, 0};
+	unsigned int group_id[3] = {0, 0, 0};
+
+	opencl_nd_address(exec->dims, num, exec->groups, group_id);
+	for (i = 0; i < 3; i++)
+		group_global[i] = group_id[i] * local_size[i] + exec->offset[i];
+	
+	struct opencl_x86_kernel_t *kernel = exec->kernel;
+	
 
 	assert(workgroup_data->num_items > 0);
 
@@ -431,7 +437,7 @@ void opencl_x86_device_work_group_launch(
 				for (x = 0; x < 3; x++)
 				{
 					workitem_data->group_global[x] = (int32_t) group_global[x];
-					workitem_data->group_id[x] = (int32_t) gid[x];
+					workitem_data->group_id[x] = (int32_t) group_id[x];
 				}
 
 			}

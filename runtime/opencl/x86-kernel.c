@@ -392,6 +392,8 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 	{
 		exec->global[i] = arch_ndrange->global_work_size[i];
 		exec->local[i] = arch_ndrange->local_work_size[i];
+		exec->offset[i] = arch_ndrange->global_work_offset[i];
+		exec->groups[i] = arch_ndrange->global_work_size[i] / arch_ndrange->local_work_size[i];
 	}
 
 	opencl_debug("[%s] dims = %d", __FUNCTION__, work_dim);
@@ -408,13 +410,6 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 	}
 	exec->kernel = x86_kernel;
 	exec->next_group = 0;
-	exec->group_starts = xmalloc(3 * sizeof (size_t) * exec->num_groups);
-	if(!exec->group_starts)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	exec->group_ids = xmalloc(3 * sizeof (size_t) * exec->num_groups);
-	if (!exec->group_ids)
-		fatal("%s: out of memory", __FUNCTION__);
 
 	/* copy over register arguments */
 	size_t reg_size = sizeof x86_kernel->cur_register_params[0] * MAX_SSE_REG_PARAMS;
@@ -450,8 +445,6 @@ void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 {
 	opencl_debug("[%s] freeing x86 ndrange", __FUNCTION__);
 
-	free(ndrange->exec->group_starts);
-	free(ndrange->exec->group_ids);
 	pthread_mutex_destroy(&ndrange->exec->mutex);
 	free(ndrange->exec);
 }
@@ -459,10 +452,6 @@ void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange, 
 	unsigned int *work_group_start, unsigned int *work_group_count)
 {
-	int i;
-	int j;
-	int k;
-
 	struct opencl_x86_device_exec_t *exec;
 	struct opencl_x86_device_t *device = ndrange->arch_kernel->device;
 
@@ -472,43 +461,6 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange,
 		work_group_count[0], work_group_count[1], work_group_count[2]);
 
 	exec = ndrange->exec; 
-
-	/* Initialize work group information */
-	for (i = 0; i < work_group_count[2]; i++)
-	{
-		for (j = 0; j < work_group_count[1]; j++)
-		{
-			for (k = 0; k < work_group_count[0]; k++)
-			{
-				opencl_debug("[%s] initializing group (%d,%d,%d)",
-					__FUNCTION__, k, j, i);
-
-				int index = (i * work_group_count[1] * 
-					work_group_count[0]) + 
-					(j * work_group_count[0]) + k;
-
-				/* Initialize group offsets */
-				unsigned int *group_start;
-				group_start = exec->group_starts + 3 * index;
-				group_start[0] = exec->local[0] * 
-					(k + work_group_start[0]) + 
-					work_group_start[0];
-				group_start[1] = exec->local[1] * 
-					(j + work_group_start[1]) + 
-					work_group_start[1];
-				group_start[2] = exec->local[2] * 
-					(i + work_group_start[2]) + 
-					work_group_start[2];
-
-				/* Initialize group IDs */
-				unsigned int *group_id;
-				group_id = exec->group_ids + 3 * index;
-				group_id[0] = k + work_group_start[0];
-				group_id[1] = j + work_group_start[1];
-				group_id[2] = i + work_group_start[2];
-			}
-		}
-	}
 
 	pthread_mutex_lock(&device->lock);
 
@@ -541,3 +493,20 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange)
 	opencl_x86_ndrange_free(ndrange);
 }
 
+static int nd_address_rec(int stride, int cur, int dim, int addr, const unsigned int *size, unsigned int *pos)
+{
+	if (cur == dim)
+		return addr;
+	else
+	{
+		int rem = nd_address_rec(size[cur] * stride, cur + 1, dim, addr, size, pos);
+		pos[cur] = rem / stride;
+		return rem % stride;
+	}
+}
+
+/* convert a linear address into an n-dimensional address */
+void opencl_nd_address(int dim, int addr, const unsigned int *size, unsigned int *pos)
+{
+	nd_address_rec(1, 0, dim, addr, size, pos);
+}

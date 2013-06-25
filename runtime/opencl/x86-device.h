@@ -46,12 +46,12 @@ struct opencl_x86_device_exec_t
 	int dims;
 	unsigned int global[3];
 	unsigned int local[3];
+	unsigned int offset[3];
+	unsigned int groups[3];
 
 	pthread_mutex_t mutex;
 	int num_groups;
 	volatile int next_group;
-	unsigned int *group_starts;
-	unsigned int *group_ids;
 };
 
 
