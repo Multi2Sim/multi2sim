@@ -128,36 +128,32 @@ struct opencl_program_entry_t *opencl_program_add(struct opencl_program_t *progr
 void opencl_program_set_source(struct opencl_program_t *program,
 	unsigned int count, const char **strings, const size_t *lengths)
 {
-	char string[MAX_LONG_STRING_SIZE];
-	char source[MAX_LONG_STRING_SIZE];
-	char *source_ptr;
-
-	int length;
-	int source_size;
+	char *source = NULL;
+	int source_size = 0;
+	int source_pos = 0;
 	int i;
 	
 	/* Reconstruct source in one single null-terminated string */
-	source[0] = '\0';
-	source_ptr = source;
-	source_size = sizeof source;
 	for (i = 0; i < count; i++)
 	{
+		int length;
 		/* Reconstruct null-terminated string */
 		length = lengths && lengths[i] ? lengths[i] : strlen(strings[i]);
-		if (length >= sizeof string)
-			fatal("%s: buffer too small", __FUNCTION__);
-		memcpy(string, strings[i], length);
-		string[length] = '\0';
 
-		/* Add string to source */
-		str_printf(&source_ptr, &source_size, "%s\n", string);
-		if (!source_size)
-			fatal("%s: buffer too small", __FUNCTION__);
+		if (source_size - source_pos < length)
+		{
+			if (!source)
+				source = (char *)xmalloc(length);
+			else
+				source = (char *)xrealloc(source, source_size + length);
+		}
+		memcpy(source + source_pos, strings[i], length);
+		source_pos += length;
 	}
 
 	/* Set in program */
 	assert(!program->source);
-	program->source = xstrdup(source);
+	program->source = source;
 }
 
 
@@ -402,9 +398,18 @@ cl_int clBuildProgram(
 	void *binary;
 	unsigned int size;
 	FILE *f;
+	cl_device_id default_device;
 
 	int ret;
 	int i;
+
+	/* Some Rodinia benchmarks expect this to work */
+	if (num_devices == 0 && device_list == NULL)
+	{
+		num_devices = 1;
+		default_device = list_get(program->context->device_list, 0);
+		device_list = &default_device;
+	}
 
 	/* Debug */
 	opencl_debug("call '%s'", __FUNCTION__);
@@ -526,7 +531,45 @@ cl_int clGetProgramBuildInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__OPENCL_NOT_IMPL__
-	return 0;
+	cl_build_status status = CL_BUILD_NONE;
+	char str = '\0';
+/*	cl_program_binary_type type = CL_PROGRAM_BINARY_TYPE_COMPILED_OBJECT; */
+
+	switch (param_name)
+	{
+	case CL_PROGRAM_BUILD_STATUS:
+		return opencl_set_param(
+			&status,
+			sizeof status,
+			param_value_size,
+			param_value,
+			param_value_size_ret);
+
+	case CL_PROGRAM_BUILD_OPTIONS:
+		return opencl_set_param(
+			&str,
+			sizeof str,
+			param_value_size,
+			param_value,
+			param_value_size_ret);
+
+	case CL_PROGRAM_BUILD_LOG:
+		return opencl_set_param(
+			&str,
+			sizeof str,
+			param_value_size,
+			param_value,
+			param_value_size_ret);
+
+/*	case CL_PROGRAM_BINARY_TYPE:
+		return opencl_set_param(
+			&type,
+			sizeof type,
+			param_value_size,
+			param_value,
+			param_value_size_ret);*/
+	default:
+		return CL_INVALID_VALUE;
+	}
 }
 

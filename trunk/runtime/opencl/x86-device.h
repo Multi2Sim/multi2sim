@@ -41,6 +41,7 @@ struct opencl_x86_device_fiber_t
 struct opencl_x86_device_exec_t
 {
 	struct opencl_x86_kernel_t *kernel;
+	struct opencl_x86_ndrange_t *ndrange;
 
 	int dims;
 	unsigned int global[3];

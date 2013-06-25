@@ -24,6 +24,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Error Codes */
 #define CL_SUCCESS                                  0
@@ -1678,6 +1682,10 @@ clEnqueueWaitForEvents(cl_command_queue, cl_uint, const cl_event *);
 
 extern cl_int clEnqueueBarrier(cl_command_queue);
 extern void *clGetExtensionFunctionAddress(const char *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

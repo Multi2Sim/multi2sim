@@ -22,6 +22,9 @@
 
 #include "opencl.h"
 
+#define MAX_SSE_REG_PARAMS 4
+#define SSE_REG_SIZE_IN_WORDS (16 / sizeof (size_t))
+
 
 /* Forward declarations */
 struct opencl_x86_device_t;
@@ -91,7 +94,7 @@ enum opencl_x86_kernel_mem_arg_type_t
 
 struct opencl_x86_kernel_reg_arg_t
 {
-	int reg[4];
+	int reg[SSE_REG_SIZE_IN_WORDS];
 };
 
 
@@ -106,6 +109,10 @@ struct opencl_x86_kernel_arg_t
 	int size;
 };
 
+struct opencl_x86_kernel_mutable_args_t
+{
+
+};
 
 /* x86 kernel object. This structure contains the information that extends structure
  * opencl_kernel_t with information specific to x86. */
@@ -127,9 +134,9 @@ struct opencl_x86_kernel_t
 	unsigned int num_params;
 	struct opencl_x86_kernel_arg_t *param_info;
 	int stack_param_words;
-	size_t *stack_params;
-	struct opencl_x86_kernel_reg_arg_t *register_params;
 	size_t local_reserved_bytes;
+	size_t *cur_stack_params;
+	size_t cur_register_params[MAX_SSE_REG_PARAMS];
 };
 
 /*
@@ -142,6 +149,9 @@ struct opencl_x86_ndrange_t
 	struct opencl_ndrange_t *parent;	
 	struct opencl_x86_kernel_t *arch_kernel;
 	struct opencl_x86_device_exec_t *exec;
+
+	size_t *stack_params;
+	struct opencl_x86_kernel_reg_arg_t *register_params;
 
 	int work_dim;
 
