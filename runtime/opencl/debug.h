@@ -21,10 +21,13 @@
 #define RUNTIME_OPENCL_DEBUG_H
 
 /* Other messages */
-void warning(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void panic(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void m2s_opencl_warning(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void m2s_opencl_fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void m2s_opencl_panic(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
+#define warning m2s_opencl_warning
+#define fatal m2s_opencl_fatal
+#define panic m2s_opencl_panic
 
 #endif
 

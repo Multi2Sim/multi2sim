@@ -40,7 +40,6 @@
  * Private Functions
  */
 
-
 int dataIsZero(const char *data, size_t size)
 {
 	int i;
@@ -181,7 +180,10 @@ cl_int clGetDeviceIDs(
 		return CL_INVALID_VALUE;
 
 	/* Find devices matching search criterion */
-	match_info.device_type = device_type;
+	if (opencl_native_mode)
+		match_info.device_type = CL_DEVICE_TYPE_CPU;
+	else
+		match_info.device_type = device_type;
 	match_info.num_entries = num_entries;
 	match_info.devices = devices;
 	match_info.num_matches = 0;
