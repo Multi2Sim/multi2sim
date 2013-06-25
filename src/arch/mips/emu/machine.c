@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdint.h>
 #include <math.h>
 #include <lib/util/debug.h>
 #include <mem-system/memory.h>
@@ -423,11 +424,12 @@ void mips_isa_MULT_impl(struct mips_ctx_t *ctx)
 }
 void mips_isa_MULTU_impl(struct mips_ctx_t *ctx)
 {
-	unsigned long int temp = (unsigned long int) (MIPS_GPR_GET(RS)) *
-		(unsigned long int) (MIPS_GPR_GET(RT));
+	unsigned long long int temp = (unsigned long long int) (MIPS_GPR_GET(RS)) *
+		(unsigned long long int) (MIPS_GPR_GET(RT));
 	ctx->regs->regs_LO = BITS64(temp, 31, 0);
 	ctx->regs->regs_HI = BITS64(temp, 63, 32);
-	mips_isa_inst_debug(" regHI=%x and regLO=%x",MIPS_REG_HI, MIPS_REG_LO);
+	mips_isa_inst_debug(" r%d=%x, r%d=%x, prod=%llu\n",RS,MIPS_GPR_GET(RS),RT, MIPS_GPR_GET(RT), temp); 
+	mips_isa_inst_debug(" \t\t\tregHI=%x and regLO=%x",MIPS_REG_HI, MIPS_REG_LO);
 }
 void mips_isa_DIV_impl(struct mips_ctx_t *ctx)
 {
