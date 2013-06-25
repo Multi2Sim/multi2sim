@@ -110,7 +110,9 @@ void mips_isa_ANDI_impl(struct mips_ctx_t *ctx)
 }
 void mips_isa_ORI_impl(struct mips_ctx_t *ctx)
 {
-	MIPS_GPR_SET(RT, MIPS_GPR_GET(RS) | (unsigned int) IMM);
+	MIPS_GPR_SET(RT, MIPS_GPR_GET(RS) | ((unsigned int) (IMM) & ((1U << (16)) - 1)));
+		     // (unsigned int) IMM);
+	mips_isa_inst_debug(" r%d=0x%x", RT, MIPS_GPR_GET(RT));
 }
 void mips_isa_XORI_impl(struct mips_ctx_t *ctx)
 {
@@ -156,7 +158,7 @@ void mips_isa_LWL_impl(struct mips_ctx_t *ctx)
 {
 	unsigned char src[4];
 	unsigned char *dst = (unsigned char *)&MIPS_GPR_GET(RT);
-	unsigned int addr = MIPS_GPR_GET(RS) + IMM;
+	unsigned int addr = MIPS_GPR_GET(RS) + SEXT32(IMM,16);
 	int i, size = 4 - (addr & 3);
 	mem_read(ctx->mem, addr, size, src);
 	for	(i = 0; i < size; i++)
@@ -192,7 +194,7 @@ void mips_isa_LWR_impl(struct mips_ctx_t *ctx)
 {
 	unsigned char src[4];
 	unsigned char *dst = (unsigned char *) &MIPS_GPR_GET(RT);
-	unsigned int addr = MIPS_GPR_GET(RS) + IMM;
+	unsigned int addr = MIPS_GPR_GET(RS) + SEXT32(IMM,16);
 	int i, size = 1 + (addr & 3);
 	mem_read(ctx->mem, addr - size+ 1, size, src);
 	for (i = 0; i < size; i++)
@@ -421,8 +423,8 @@ void mips_isa_MULT_impl(struct mips_ctx_t *ctx)
 }
 void mips_isa_MULTU_impl(struct mips_ctx_t *ctx)
 {
-	unsigned long int temp = (unsigned long int) MIPS_GPR_GET(RS) *
-								(unsigned long int) MIPS_GPR_GET(RT);
+	unsigned long int temp = (unsigned long int) (MIPS_GPR_GET(RS)) *
+		(unsigned long int) (MIPS_GPR_GET(RT));
 	ctx->regs->regs_LO = BITS64(temp, 31, 0);
 	ctx->regs->regs_HI = BITS64(temp, 63, 32);
 	mips_isa_inst_debug(" regHI=%x and regLO=%x",MIPS_REG_HI, MIPS_REG_LO);
