@@ -77,3 +77,49 @@ void mips_isa_execute_inst(struct mips_ctx_t *ctx)
 //	if (debug_status(mips_isa_call_debug_category))
 //		mips_isa_debug_call(ctx);
 }
+
+/* Register File access */
+#define MIPS_COP0_GET(X) 		ctx->regs->regs_cop0[X]
+
+#define MIPS_FPR_S_GET(X)		ctx->regs->regs_F.s[X]
+#define MIPS_FPR_S_SET(X, V)	ctx->regs->regs_F.s[X] = (V)
+
+#define MIPS_FPR_D_GET(X)		ctx->regs->regs_F.d[X]
+#define MIPS_FPR_D_SET(X, V)	ctx->regs->regs_F.d[X] = (V)
+
+#define MIPS_REG_HI 			ctx->regs->regs_HI
+#define MIPS_REG_LO 			ctx->regs->regs_LO
+#define MIPS_REG_C_FPC_FCSR 	ctx->regs->regs_C.FCSR
+#define MIPS_REG_C_FPC_FIR 		ctx->regs->regs_C.FIR
+
+/* Instruction fields */
+#define RS 					ctx->inst.dword.standard.rs
+#define RD 					ctx->inst.dword.standard.rd
+#define SA 					ctx->inst.dword.standard.sa
+#define OFFSET 				ctx->inst.dword.offset_imm.offset
+#define RT					ctx->inst.dword.standard.rt
+#define IMM					ctx->inst.dword.offset_imm.offset
+#define	FT					ctx->inst.dword.standard.rt
+#define	FS					ctx->inst.dword.standard.rd
+#define	FD					ctx->inst.dword.standard.sa
+#define	TARGET				ctx->inst.dword.target.target
+
+unsigned int mips_gpr_get_value(struct mips_ctx_t* ctx, unsigned int reg_no)
+{
+	return (ctx->regs->regs_R[reg_no]);
+}
+
+void mips_gpr_set_value(struct mips_ctx_t *ctx, unsigned int reg_no, unsigned int value)
+{
+	ctx->regs->regs_R[reg_no] = (value);
+}
+
+void mips_isa_branch(struct mips_ctx_t *ctx, unsigned int dest)
+{
+	(ctx->n_next_ip) = dest;
+}
+
+void mips_isa_rel_branch(struct mips_ctx_t *ctx, unsigned int dest)
+{
+	ctx->n_next_ip = ctx->regs->pc + (dest) + 4;
+}
