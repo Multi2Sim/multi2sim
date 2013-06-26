@@ -402,9 +402,6 @@ void opencl_x86_device_work_group_launch(
 	for (int i = 0; i < 3; i++)
 		group_global[i] = (group_id[i] + exec->work_group_start[i]) * local_size[i] + nd->global_work_offset[i];
 	
-	struct opencl_x86_kernel_t *kernel = exec->kernel;
-	
-
 	assert(core->num_items > 0);
 	core->num_done = 0;
 
