@@ -200,5 +200,4 @@ void opencl_x86_ndrange_run_partial(
 		unsigned int *work_group_count);
 
 void opencl_nd_address(int dim, int addr, const unsigned int *size, unsigned int *pos);
-
 #endif

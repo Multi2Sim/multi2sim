@@ -407,15 +407,13 @@ void opencl_x86_device_work_group_launch(
 {
 	const unsigned int *local_size = exec->ndrange->local_work_size;
 	struct opencl_x86_ndrange_t *nd = exec->ndrange;
-	size_t i;
-	size_t j;
-	size_t k;
 
 	unsigned int group_global[3] = {0, 0, 0};
 	unsigned int group_id[3] = {0, 0, 0};
+	unsigned int local_id[3] = {0, 0, 0};
 
 	opencl_nd_address(nd->work_dim, num, exec->work_group_count, group_id);
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		group_global[i] = (group_id[i] + exec->work_group_start[i]) * local_size[i] + nd->global_work_offset[i];
 	
 	struct opencl_x86_kernel_t *kernel = exec->kernel;
@@ -424,39 +422,25 @@ void opencl_x86_device_work_group_launch(
 	assert(workgroup_data->num_items > 0);
 
 	/* Initialize stuff that changes per work group */
-	for (i = 0; i < local_size[2]; i++)
+	for (int i = 0; i < workgroup_data->num_items; i++)
 	{
-		for (j = 0; j < local_size[1]; j++)
+		struct opencl_x86_device_work_item_data_t *workitem_data;
+
+		workitem_data = workgroup_data->work_item_data[i];
+		opencl_nd_address(nd->work_dim, i, local_size, local_id);
+
+		for (int j = 0; j < 3; j++)
 		{
-			for (k = 0; k < local_size[0]; k++)
-			{
-				size_t id;
-				int x;
-				struct opencl_x86_device_work_item_data_t *workitem_data;
-
-				id = i * local_size[1] * local_size[0] + j * local_size[0] + k;
-				workitem_data = workgroup_data->work_item_data[id];
-
-				/* Set the global id */
-				workitem_data->global_id[0] = (int32_t) (group_global[0] + k);
-				workitem_data->global_id[1] = (int32_t) (group_global[1] + j);
-				workitem_data->global_id[2] = (int32_t) (group_global[2] + i);
-
-				/* Set group global start id and group id */
-				for (x = 0; x < 3; x++)
-				{
-					workitem_data->group_global[x] = (int32_t) group_global[x];
-					workitem_data->group_id[x] = (int32_t) group_id[x];
-				}
-
-			}
+			workitem_data->global_id[j] = group_global[j] + local_id[j];
+			workitem_data->group_global[j] = group_global[j];
+			workitem_data->group_id[j] = group_id[j];
 		}
 	}
 
 	workgroup_data->num_done = 0;
 
 	/* Make new contexts so that they start at the beginning of their functions again  */
-	for (i = 0; i < workgroup_data->num_items; i++)
+	for (int i = 0; i < workgroup_data->num_items; i++)
 		opencl_x86_device_make_fiber_ex(workgroup_data->work_items + i, kernel->func,
 			opencl_x86_device_exit_fiber, kernel->stack_param_words, workgroup_data->stack_params);
 
@@ -509,18 +493,18 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 	/* Lock */
 	pthread_mutex_lock(&device->lock);
 
-	/* Get work-groups until done */
+	/* Get kernels until done */
 	for (;;)
 	{
-		/* Get one more work-group */
+		/* Get one more kernel */
 		exec = opencl_x86_device_has_work(device, &count);
 		if (!exec)
 			break;
 
-		/* Unlock while processing work-group */
+		/* Unlock while processing kernel */
 		pthread_mutex_unlock(&device->lock);
 
-		/* Initialize work-group data */
+		/* Initialize kernel data */
 		opencl_x86_device_work_group_init(device, &work_group_data, exec);
 
 		/* Launch work-groups */
@@ -536,7 +520,7 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 
 		}
 
-		/* Finalize work-group */
+		/* Finalize kernel */
 		opencl_x86_device_work_group_done(&work_group_data, exec->kernel);
 
 		/* Lock again */
