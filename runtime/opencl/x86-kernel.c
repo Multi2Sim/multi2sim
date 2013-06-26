@@ -364,9 +364,7 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 		arch_ndrange->global_work_offset[i] = 0;
 		arch_ndrange->global_work_size[i] = 1;
 		arch_ndrange->local_work_size[i] = 1;
-		arch_ndrange->group_count[i] = 
-			arch_ndrange->global_work_size[i] / 
-			arch_ndrange->local_work_size[i];
+		arch_ndrange->group_count[i] = 1;
 	}
 
 	/* Calculate the number of work groups in the ND-Range */

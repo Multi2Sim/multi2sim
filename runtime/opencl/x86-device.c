@@ -286,6 +286,7 @@ void opencl_x86_device_barrier(int data)
 			% workgroup_data->num_items;
 
 	resume_fiber = workgroup_data->work_fibers + workgroup_data->current_item;
+	
 	opencl_x86_device_switch_fiber(sleep_fiber, resume_fiber, NULL);
 }
 
@@ -298,34 +299,51 @@ static opencl_x86_device_barrier_func_t opencl_x86_device_barrier_func
 
 
 void opencl_x86_device_init_work_item(
-	struct opencl_x86_device_t *device,
-	struct opencl_x86_device_work_item_data_t *work_item_data, 
-	int dims, 
-	const size_t *global, 
-	const size_t *local, 
-	struct opencl_x86_device_core_t *work_group_data,
-	void *local_reserved)
+	int i,
+	struct opencl_x86_ndrange_t *nd,
+	struct opencl_x86_device_core_t *core,
+	const unsigned int *group_global,
+	const unsigned int *group_id)
 {
-	int i;
+	int j;
+	struct opencl_x86_device_work_item_data_t *work_item_data;
+	const unsigned int *local_size = nd->local_work_size;
+	unsigned int local_id[3] = {0, 0, 0};
+
+	work_item_data = core->work_item_data[i];
 
 	memset(work_item_data, 0, sizeof(struct opencl_x86_device_work_item_data_t));
-	for (i = 0; i < 4; i++)
+
+	work_item_data->work_group_data = (int) core;
+	work_item_data->barrier_func = (int) &opencl_x86_device_barrier_func;
+	work_item_data->local_reserved = (int) core->local_reserved;
+	work_item_data->work_dim = nd->work_dim;
+	
+	assert(nd->work_dim > 0);
+
+	for (j = 0; j < nd->work_dim; j++)
 	{
-		work_item_data->global_size[i] = 1;
-		work_item_data->local_size[i] = 1;
+		work_item_data->global_size[j] = nd->global_work_size[j];
+		work_item_data->local_size[j] = nd->local_work_size[j];
 	}
 
-	work_item_data->work_group_data = (int) work_group_data;
-	work_item_data->barrier_func = (int) &opencl_x86_device_barrier_func;
-	work_item_data->local_reserved = (int) local_reserved;
-	work_item_data->work_dim = dims;
-	
-	assert(dims > 0);
-	for (i = 0; i < dims; i++)
+	for (j = nd->work_dim; j < 4; j++)
 	{
-		work_item_data->global_size[i] = global[i];
-		work_item_data->local_size[i] = local[i];
+		work_item_data->global_size[j] = 1;
+		work_item_data->local_size[j] = 1;
 	}
+
+	opencl_nd_address(nd->work_dim, i, local_size, local_id);
+
+	for (int j = 0; j < 3; j++)
+	{
+		work_item_data->global_id[j] = group_global[j] + local_id[j];
+		work_item_data->group_global[j] = group_global[j];
+		work_item_data->group_id[j] = group_id[j];
+	}
+
+	opencl_x86_device_make_fiber_ex(core->work_fibers + i, nd->arch_kernel->func,
+		opencl_x86_device_exit_fiber, nd->arch_kernel->stack_param_words, core->stack_params);
 } 
 
 
@@ -350,18 +368,6 @@ void opencl_x86_device_work_group_init(
 	else
 		work_group->local_reserved = NULL;
 
-	for (i = 0; i < work_group->num_items; i++)
-	{
-		opencl_x86_device_init_work_item(
-			device, 
-			work_group->work_item_data[i],
-			nd->work_dim, 
-			nd->global_work_size,
-			nd->local_work_size,
-			work_group,
-			work_group->local_reserved);
-	}
-
 	/* set up params with local memory pointers sperate from those of other threads */
 	work_group->stack_params = (size_t *) xmalloc(sizeof (size_t) * e->kernel->stack_param_words);
 	memcpy(work_group->stack_params, e->ndrange->stack_params, sizeof (size_t) * e->kernel->stack_param_words);
@@ -383,14 +389,14 @@ void opencl_x86_device_work_group_init(
 void opencl_x86_device_work_group_launch(
 	int num,
 	struct opencl_x86_device_exec_t *exec,
-	struct opencl_x86_device_core_t *workgroup_data)
+	struct opencl_x86_device_core_t *core)
 {
 	const unsigned int *local_size = exec->ndrange->local_work_size;
 	struct opencl_x86_ndrange_t *nd = exec->ndrange;
 
 	unsigned int group_global[3] = {0, 0, 0};
 	unsigned int group_id[3] = {0, 0, 0};
-	unsigned int local_id[3] = {0, 0, 0};
+
 
 	opencl_nd_address(nd->work_dim, num, exec->work_group_count, group_id);
 	for (int i = 0; i < 3; i++)
@@ -399,48 +405,28 @@ void opencl_x86_device_work_group_launch(
 	struct opencl_x86_kernel_t *kernel = exec->kernel;
 	
 
-	assert(workgroup_data->num_items > 0);
+	assert(core->num_items > 0);
+	core->num_done = 0;
 
 	/* Initialize stuff that changes per work group */
-	for (int i = 0; i < workgroup_data->num_items; i++)
+	for (core->current_item = 0; core->current_item < core->num_items; core->current_item++)
 	{
-		struct opencl_x86_device_work_item_data_t *workitem_data;
-
-		workitem_data = workgroup_data->work_item_data[i];
-		opencl_nd_address(nd->work_dim, i, local_size, local_id);
-
-		for (int j = 0; j < 3; j++)
-		{
-			workitem_data->global_id[j] = group_global[j] + local_id[j];
-			workitem_data->group_global[j] = group_global[j];
-			workitem_data->group_id[j] = group_id[j];
-		}
+		opencl_x86_device_init_work_item(core->current_item, nd, core, group_global, group_id);
 	}
 
-	workgroup_data->num_done = 0;
-
-	/* Make new contexts so that they start at the beginning of their functions again  */
-	for (int i = 0; i < workgroup_data->num_items; i++)
-		opencl_x86_device_make_fiber_ex(workgroup_data->work_fibers + i, kernel->func,
-			opencl_x86_device_exit_fiber, kernel->stack_param_words, workgroup_data->stack_params);
-
 	/* Launch fibers */
-	while (workgroup_data->num_items > workgroup_data->num_done)
+	for (core->current_item = 0; core->current_item < core->num_items; core->current_item++)
 	{
-		for (workgroup_data->current_item = 0;
-				workgroup_data->current_item < workgroup_data->num_items;
-				workgroup_data->current_item++)
-		{
-			opencl_x86_device_switch_fiber(&workgroup_data->main_fiber,
-					workgroup_data->work_fibers + workgroup_data->current_item,
-					exec->ndrange->register_params);
-		}
+		opencl_x86_device_switch_fiber(
+			&core->main_fiber,
+			core->work_fibers + core->current_item,
+			nd->register_params);
 	}
 }
 
 
 void opencl_x86_device_work_group_done(
-		struct opencl_x86_device_core_t *work_group_data,
+		struct opencl_x86_device_core_t *core,
 		struct opencl_x86_kernel_t *kernel)
 {
 	int i;
@@ -452,12 +438,12 @@ void opencl_x86_device_work_group_done(
 		if (kernel->param_info[i].mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
 		{
 			offset = kernel->param_info[i].stack_offset;
-			free((void *) work_group_data->stack_params[offset]);
+			free((void *) core->stack_params[offset]);
 		}
 	}
-	free(work_group_data->stack_params);
-	if (work_group_data->local_reserved)
-		free(work_group_data->local_reserved);
+	free(core->stack_params);
+	if (core->local_reserved)
+		free(core->local_reserved);
 }
 
 void opencl_x86_device_core_init(struct opencl_x86_device_core_t *work_group)
