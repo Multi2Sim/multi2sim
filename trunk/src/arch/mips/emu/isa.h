@@ -47,5 +47,10 @@ char *mips_isa_cstack_pop(struct mips_ctx_t *ctx);
 
 void mips_isa_branch(struct mips_ctx_t *ctx, unsigned int dest);
 
+void mips_isa_rel_branch(struct mips_ctx_t *ctx, unsigned int dest);
+
+unsigned int mips_gpr_get_value(struct mips_ctx_t* ctx, unsigned int reg_no);
+void mips_gpr_set_value(struct mips_ctx_t *ctx, unsigned int reg_no, unsigned int value);
+
 #endif
 
