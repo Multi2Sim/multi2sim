@@ -373,7 +373,6 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 	arch_ndrange->num_groups = arch_ndrange->group_count[0] * 
 		arch_ndrange->group_count[1] * arch_ndrange->group_count[2];
 
-	struct opencl_x86_device_exec_t *exec;
 
 	/* Check that all arguments are set */
 	for (i = 0; i < x86_kernel->num_params; i++)
@@ -383,33 +382,12 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 			fatal("%s: argument %d not set", __FUNCTION__, i);
 	}
 
-	/* Initialize execution information */
-	exec = xcalloc(1, sizeof(struct opencl_x86_device_exec_t));
-	exec->dims = work_dim;
-
-	/* FIXME Redundant */
-	for (i = 0; i < 3; i++)
-	{
-		exec->global[i] = arch_ndrange->global_work_size[i];
-		exec->local[i] = arch_ndrange->local_work_size[i];
-		exec->offset[i] = arch_ndrange->global_work_offset[i];
-		exec->groups[i] = arch_ndrange->global_work_size[i] / arch_ndrange->local_work_size[i];
-	}
 
 	opencl_debug("[%s] dims = %d", __FUNCTION__, work_dim);
 	opencl_debug("[%s] local size = (%d, %d, %d)", __FUNCTION__,
 		arch_ndrange->local_work_size[0], arch_ndrange->local_work_size[1], arch_ndrange->local_work_size[2]);
 	opencl_debug("[%s] global size = (%d, %d, %d)", __FUNCTION__,
 		global_work_size[0], global_work_size[1], global_work_size[2]);
-
-	exec->num_groups = 1;
-	for (i = 0; i < 3; i++)
-	{
-		assert(!(exec->global[i] % exec->local[i]));
-		exec->num_groups *= exec->global[i] / exec->local[i];
-	}
-	exec->kernel = x86_kernel;
-	exec->next_group = 0;
 
 	/* copy over register arguments */
 	size_t reg_size = sizeof x86_kernel->cur_register_params[0] * MAX_SSE_REG_PARAMS;
@@ -424,12 +402,6 @@ struct opencl_x86_ndrange_t *opencl_x86_ndrange_create(
 		fatal("%s: out of memory", __FUNCTION__);
 	memcpy(arch_ndrange->stack_params, x86_kernel->cur_stack_params, x86_kernel->stack_param_words * sizeof (size_t));
 	
-
-	pthread_mutex_init(&exec->mutex, NULL);
-
-	arch_ndrange->exec = exec;
-	exec->ndrange = arch_ndrange;
-
 	return arch_ndrange;
 }
 /* Initialize an ND-Range */
@@ -437,7 +409,14 @@ void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 {
 	opencl_debug("[%s] initing x86 ndrange", __FUNCTION__);
 
-	/* Nothing to do */
+	struct opencl_x86_device_exec_t *exec;
+	exec = xcalloc(1, sizeof(struct opencl_x86_device_exec_t));
+
+	pthread_mutex_init(&exec->mutex, NULL);
+
+	exec->ndrange = ndrange;
+	exec->kernel = ndrange->arch_kernel;
+	ndrange->exec = exec;
 }
 
 /* Finalize an ND-Range */
@@ -452,7 +431,7 @@ void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange, 
 	unsigned int *work_group_start, unsigned int *work_group_count)
 {
-	struct opencl_x86_device_exec_t *exec;
+	struct opencl_x86_device_exec_t *exec = ndrange->exec;
 	struct opencl_x86_device_t *device = ndrange->arch_kernel->device;
 
 	opencl_debug("[%s] running x86 partial ndrange", __FUNCTION__);
@@ -460,7 +439,12 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange,
 	opencl_debug("[%s] group count = (%d, %d, %d)", __FUNCTION__,
 		work_group_count[0], work_group_count[1], work_group_count[2]);
 
-	exec = ndrange->exec; 
+	memcpy(exec->work_group_start, work_group_start, sizeof (unsigned int) * 3);
+	memcpy(exec->work_group_count, work_group_count, sizeof (unsigned int) * 3);
+
+	exec->num_groups = 1;
+	for (int i = 0; i < 3; i++)
+		exec->num_groups *= work_group_count[i];
 
 	pthread_mutex_lock(&device->lock);
 
