@@ -23,7 +23,7 @@
 #include <pthread.h>
 
 #include "opencl.h"
-
+#define X86_MAX_WORK_GROUP_SIZE 1024
 
 typedef void (*opencl_x86_device_fiber_func_t)(void);
 typedef void (*opencl_x86_device_fiber_return_func_t)(void);
@@ -66,20 +66,20 @@ struct opencl_x86_device_work_item_data_t
 };
 
 
-struct opencl_x86_device_work_group_data_t
+struct opencl_x86_device_core_t
 {
 	int num_done;
 	int num_items;
 	int current_item;
 
 	struct opencl_x86_device_fiber_t main_fiber;
-	struct opencl_x86_device_fiber_t *current_fiber;
-	struct opencl_x86_device_fiber_t *work_items;
+	struct opencl_x86_device_fiber_t *work_fibers;
 
 	struct opencl_x86_device_work_item_data_t **work_item_data;
 
 	unsigned int *stack_params;
 	char *aligned_stacks;
+	void *local_reserved;
 };
 
 

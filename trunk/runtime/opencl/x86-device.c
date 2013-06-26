@@ -41,10 +41,10 @@
 #define OPENCL_WORK_GROUP_STACK_MASK  0xffffe000
 #define OPENCL_WORK_GROUP_DATA_OFFSET  -0x60
 
-static struct opencl_x86_device_work_group_data_t
+static struct opencl_x86_device_core_t
 		*opencl_x86_device_get_work_group_data(void)
 {
-	struct opencl_x86_device_work_group_data_t *data;
+	struct opencl_x86_device_core_t *data;
 
 	asm volatile (
 		"lea " XSTR(OPENCL_WORK_GROUP_STACK_SIZE) "(%%esp), %%eax\n\t"
@@ -70,6 +70,7 @@ static struct opencl_x86_device_exec_t *opencl_x86_device_has_work(
 	(*old_count)++;
 	return device->exec;
 }
+
 
 /* Get the next work-group in an NDRange */
 static int opencl_x86_device_get_next_work_group(
@@ -252,7 +253,7 @@ void opencl_x86_device_switch_fiber(volatile struct opencl_x86_device_fiber_t *c
 
 void opencl_x86_device_exit_fiber(void)
 {
-	struct opencl_x86_device_work_group_data_t *workgroup_data;
+	struct opencl_x86_device_core_t *workgroup_data;
 
 	void *new_esp;
 	void *new_eip;
@@ -274,17 +275,17 @@ void opencl_x86_device_exit_fiber(void)
 
 void opencl_x86_device_barrier(int data)
 {
-	struct opencl_x86_device_work_group_data_t *workgroup_data;
+	struct opencl_x86_device_core_t *workgroup_data;
 	struct opencl_x86_device_fiber_t *sleep_fiber;
 	struct opencl_x86_device_fiber_t *resume_fiber;
 
 	workgroup_data = opencl_x86_device_get_work_group_data();
 
-	sleep_fiber = workgroup_data->work_items + workgroup_data->current_item;
+	sleep_fiber = workgroup_data->work_fibers + workgroup_data->current_item;
 	workgroup_data->current_item = (workgroup_data->current_item + 1)
 			% workgroup_data->num_items;
 
-	resume_fiber = workgroup_data->work_items + workgroup_data->current_item;
+	resume_fiber = workgroup_data->work_fibers + workgroup_data->current_item;
 	opencl_x86_device_switch_fiber(sleep_fiber, resume_fiber, NULL);
 }
 
@@ -302,7 +303,7 @@ void opencl_x86_device_init_work_item(
 	int dims, 
 	const size_t *global, 
 	const size_t *local, 
-	struct opencl_x86_device_work_group_data_t *work_group_data,
+	struct opencl_x86_device_core_t *work_group_data,
 	void *local_reserved)
 {
 	int i;
@@ -330,11 +331,10 @@ void opencl_x86_device_init_work_item(
 
 void opencl_x86_device_work_group_init(
 	struct opencl_x86_device_t *device,
-	struct opencl_x86_device_work_group_data_t *work_group,
+	struct opencl_x86_device_core_t *work_group,
 	struct opencl_x86_device_exec_t *e)
 {
 	int i;
-	void *local_reserved; /* TODO: this needs to be restructured */
 	struct opencl_x86_ndrange_t *nd = e->ndrange;
 
 
@@ -343,35 +343,15 @@ void opencl_x86_device_work_group_init(
 		work_group->num_items *= e->ndrange->local_work_size[i];
 
 	work_group->num_done = 0;
-	work_group->current_fiber = NULL;
-	work_group->work_items = xmalloc(sizeof (struct opencl_x86_device_fiber_t) * work_group->num_items);
-	work_group->work_item_data = xmalloc(sizeof (struct opencl_x86_device_work_item_data_t *) * work_group->num_items);
-
-	if (posix_memalign((void **) &work_group->aligned_stacks,
-			OPENCL_WORK_GROUP_STACK_SIZE,
-			OPENCL_WORK_GROUP_STACK_SIZE * work_group->num_items))
-		fatal("%s: aligned memory allocation failure", __FUNCTION__);
-	mhandle_register_ptr(work_group->aligned_stacks,
-		OPENCL_WORK_GROUP_STACK_SIZE * work_group->num_items);
 
 
 	if (e->kernel->local_reserved_bytes)
-		local_reserved = xmalloc(e->kernel->local_reserved_bytes);
+		work_group->local_reserved = xmalloc(e->kernel->local_reserved_bytes);
 	else
-		local_reserved = NULL;
+		work_group->local_reserved = NULL;
 
 	for (i = 0; i < work_group->num_items; i++)
 	{
-		struct opencl_x86_device_fiber_t *fiber;
-
-		/* properly initialize the stack and work_group */
-		fiber = work_group->work_items + i;
-		fiber->stack_bottom = work_group->aligned_stacks
-			+ (i * OPENCL_WORK_GROUP_STACK_SIZE);
-		fiber->stack_size = OPENCL_WORK_GROUP_STACK_SIZE
-			- sizeof(struct opencl_x86_device_work_item_data_t);
-		work_group->work_item_data[i] = (struct opencl_x86_device_work_item_data_t *)
-			((char *) fiber->stack_bottom + fiber->stack_size);
 		opencl_x86_device_init_work_item(
 			device, 
 			work_group->work_item_data[i],
@@ -379,7 +359,7 @@ void opencl_x86_device_work_group_init(
 			nd->global_work_size,
 			nd->local_work_size,
 			work_group,
-			local_reserved);
+			work_group->local_reserved);
 	}
 
 	/* set up params with local memory pointers sperate from those of other threads */
@@ -403,7 +383,7 @@ void opencl_x86_device_work_group_init(
 void opencl_x86_device_work_group_launch(
 	int num,
 	struct opencl_x86_device_exec_t *exec,
-	struct opencl_x86_device_work_group_data_t *workgroup_data)
+	struct opencl_x86_device_core_t *workgroup_data)
 {
 	const unsigned int *local_size = exec->ndrange->local_work_size;
 	struct opencl_x86_ndrange_t *nd = exec->ndrange;
@@ -441,7 +421,7 @@ void opencl_x86_device_work_group_launch(
 
 	/* Make new contexts so that they start at the beginning of their functions again  */
 	for (int i = 0; i < workgroup_data->num_items; i++)
-		opencl_x86_device_make_fiber_ex(workgroup_data->work_items + i, kernel->func,
+		opencl_x86_device_make_fiber_ex(workgroup_data->work_fibers + i, kernel->func,
 			opencl_x86_device_exit_fiber, kernel->stack_param_words, workgroup_data->stack_params);
 
 	/* Launch fibers */
@@ -452,7 +432,7 @@ void opencl_x86_device_work_group_launch(
 				workgroup_data->current_item++)
 		{
 			opencl_x86_device_switch_fiber(&workgroup_data->main_fiber,
-					workgroup_data->work_items + workgroup_data->current_item,
+					workgroup_data->work_fibers + workgroup_data->current_item,
 					exec->ndrange->register_params);
 		}
 	}
@@ -460,15 +440,13 @@ void opencl_x86_device_work_group_launch(
 
 
 void opencl_x86_device_work_group_done(
-		struct opencl_x86_device_work_group_data_t *work_group_data,
+		struct opencl_x86_device_core_t *work_group_data,
 		struct opencl_x86_kernel_t *kernel)
 {
 	int i;
 	int offset;
 
-	free(work_group_data->work_items);
-	free(work_group_data->work_item_data);
-	free(work_group_data->aligned_stacks);
+
 	for (i = 0; i < kernel->num_params; i++)
 	{
 		if (kernel->param_info[i].mem_arg_type == OPENCL_X86_KERNEL_MEM_ARG_LOCAL)
@@ -478,6 +456,44 @@ void opencl_x86_device_work_group_done(
 		}
 	}
 	free(work_group_data->stack_params);
+	if (work_group_data->local_reserved)
+		free(work_group_data->local_reserved);
+}
+
+void opencl_x86_device_core_init(struct opencl_x86_device_core_t *work_group)
+{
+	work_group->work_fibers = xmalloc(sizeof (struct opencl_x86_device_fiber_t) * X86_MAX_WORK_GROUP_SIZE);
+	work_group->work_item_data = xmalloc(sizeof (struct opencl_x86_device_work_item_data_t *) * X86_MAX_WORK_GROUP_SIZE);
+
+	if (posix_memalign((void **) &work_group->aligned_stacks,
+			OPENCL_WORK_GROUP_STACK_SIZE,
+			OPENCL_WORK_GROUP_STACK_SIZE * X86_MAX_WORK_GROUP_SIZE))
+		fatal("%s: aligned memory allocation failure", __FUNCTION__);
+	mhandle_register_ptr(work_group->aligned_stacks,
+		OPENCL_WORK_GROUP_STACK_SIZE * X86_MAX_WORK_GROUP_SIZE);
+
+
+	for (int i = 0; i < X86_MAX_WORK_GROUP_SIZE; i++)
+	{
+		struct opencl_x86_device_fiber_t *fiber;
+
+		/* properly initialize the stack and work_group */
+		fiber = work_group->work_fibers + i;
+		fiber->stack_bottom = work_group->aligned_stacks
+			+ (i * OPENCL_WORK_GROUP_STACK_SIZE);
+		fiber->stack_size = OPENCL_WORK_GROUP_STACK_SIZE
+			- sizeof(struct opencl_x86_device_work_item_data_t);
+		work_group->work_item_data[i] = (struct opencl_x86_device_work_item_data_t *)
+			((char *) fiber->stack_bottom + fiber->stack_size);
+	}
+
+}
+
+void opencl_x86_device_core_treardown(struct opencl_x86_device_core_t *work_group_data)
+{
+	free(work_group_data->work_fibers);
+	free(work_group_data->work_item_data);
+	free(work_group_data->aligned_stacks);
 }
 
 
@@ -486,10 +502,11 @@ void opencl_x86_device_work_group_done(
 void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 {
 	struct opencl_x86_device_exec_t *exec;
-	struct opencl_x86_device_work_group_data_t work_group_data;
+	struct opencl_x86_device_core_t core;
 	int count = 0;
 	int num;
 
+	opencl_x86_device_core_init(&core);
 	/* Lock */
 	pthread_mutex_lock(&device->lock);
 
@@ -498,14 +515,15 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 	{
 		/* Get one more kernel */
 		exec = opencl_x86_device_has_work(device, &count);
-		if (!exec)
-			break;
 
 		/* Unlock while processing kernel */
 		pthread_mutex_unlock(&device->lock);
 
+		if (!exec)
+			break;
+
 		/* Initialize kernel data */
-		opencl_x86_device_work_group_init(device, &work_group_data, exec);
+		opencl_x86_device_work_group_init(device, &core, exec);
 
 		/* Launch work-groups */
 		for (;;)
@@ -516,12 +534,12 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 				break;
 
 			/* Launch it */
-			opencl_x86_device_work_group_launch(num, exec, &work_group_data);
+			opencl_x86_device_work_group_launch(num, exec, &core);
 
 		}
 
 		/* Finalize kernel */
-		opencl_x86_device_work_group_done(&work_group_data, exec->kernel);
+		opencl_x86_device_work_group_done(&core, exec->kernel);
 
 		/* Lock again */
 		pthread_mutex_lock(&device->lock);
@@ -532,6 +550,7 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 
 	/* Unlock */
 	pthread_mutex_unlock(&device->lock);
+	opencl_x86_device_core_treardown(&core);
 	return NULL;
 }
 
@@ -590,11 +609,11 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->max_parameter_size = sizeof (cl_ulong16);
 	parent->max_read_image_args = 0;
 	parent->max_samplers = 0;
-	parent->max_work_group_size = 1024;
+	parent->max_work_group_size = X86_MAX_WORK_GROUP_SIZE;
 	parent->max_work_item_dimensions = 3;
-	parent->max_work_item_sizes[0] = 1024;
-	parent->max_work_item_sizes[1] = 1024;
-	parent->max_work_item_sizes[2] = 1024;
+	parent->max_work_item_sizes[0] = X86_MAX_WORK_GROUP_SIZE;
+	parent->max_work_item_sizes[1] = X86_MAX_WORK_GROUP_SIZE;
+	parent->max_work_item_sizes[2] = X86_MAX_WORK_GROUP_SIZE;
 	parent->max_write_image_args = 0;
 	parent->mem_base_addr_align = sizeof (cl_float4);
 	parent->min_data_type_align_size = 1;
