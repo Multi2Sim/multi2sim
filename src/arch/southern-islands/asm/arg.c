@@ -89,14 +89,12 @@ struct str_map_t si_arg_scope_map =
 /* FIXME: Still need to figure out reflection for i1 and u1 */
 struct str_map_t si_arg_reflection_map =
 {
-	16,
+	14,
 	{
-		{ "int1", si_arg_i1 },
 		{ "char", si_arg_i8 },
 		{ "short", si_arg_i16 },
 		{ "int", si_arg_i32 },
 		{ "long", si_arg_i64 },
-		{ "uint1", si_arg_u1 },
 		{ "uchar", si_arg_u8 },
 		{ "ushort", si_arg_u16 },
 		{ "uint", si_arg_u32 },

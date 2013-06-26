@@ -564,7 +564,7 @@ text_stmt
 		elf_enc_buffer_write(si2bin_entry->text_section_buffer, inst->inst_bytes.bytes, inst->size);
 		
 		/* Dump Instruction Info */
-		/* si2bin_inst_dump(inst, stdout); */
+		//si2bin_inst_dump(inst, stdout);
 		si2bin_inst_free(inst);
 	}
 	
