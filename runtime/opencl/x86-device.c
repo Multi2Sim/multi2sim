@@ -335,10 +335,12 @@ void opencl_x86_device_work_group_init(
 {
 	int i;
 	void *local_reserved; /* TODO: this needs to be restructured */
+	struct opencl_x86_ndrange_t *nd = e->ndrange;
+
 
 	work_group->num_items = 1;
-	for (i = 0; i < e->dims; i++)
-		work_group->num_items *= e->local[i];
+	for (i = 0; i < nd->work_dim; i++)
+		work_group->num_items *= e->ndrange->local_work_size[i];
 
 	work_group->num_done = 0;
 	work_group->current_fiber = NULL;
@@ -370,8 +372,14 @@ void opencl_x86_device_work_group_init(
 			- sizeof(struct opencl_x86_device_work_item_data_t);
 		work_group->work_item_data[i] = (struct opencl_x86_device_work_item_data_t *)
 			((char *) fiber->stack_bottom + fiber->stack_size);
-		opencl_x86_device_init_work_item(device, work_group->work_item_data[i],
-			e->dims, e->global, e->local, work_group, local_reserved);
+		opencl_x86_device_init_work_item(
+			device, 
+			work_group->work_item_data[i],
+			nd->work_dim, 
+			nd->global_work_size,
+			nd->local_work_size,
+			work_group,
+			local_reserved);
 	}
 
 	/* set up params with local memory pointers sperate from those of other threads */
@@ -397,7 +405,8 @@ void opencl_x86_device_work_group_launch(
 	struct opencl_x86_device_exec_t *exec,
 	struct opencl_x86_device_work_group_data_t *workgroup_data)
 {
-	const unsigned int *local_size = exec->local;
+	const unsigned int *local_size = exec->ndrange->local_work_size;
+	struct opencl_x86_ndrange_t *nd = exec->ndrange;
 	size_t i;
 	size_t j;
 	size_t k;
@@ -405,9 +414,9 @@ void opencl_x86_device_work_group_launch(
 	unsigned int group_global[3] = {0, 0, 0};
 	unsigned int group_id[3] = {0, 0, 0};
 
-	opencl_nd_address(exec->dims, num, exec->groups, group_id);
+	opencl_nd_address(nd->work_dim, num, exec->work_group_count, group_id);
 	for (i = 0; i < 3; i++)
-		group_global[i] = group_id[i] * local_size[i] + exec->offset[i];
+		group_global[i] = (group_id[i] + exec->work_group_start[i]) * local_size[i] + nd->global_work_offset[i];
 	
 	struct opencl_x86_kernel_t *kernel = exec->kernel;
 	
