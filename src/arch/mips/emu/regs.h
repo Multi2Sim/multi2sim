@@ -34,9 +34,6 @@
 #define FPR_COUNT	32
 
 /* Register File access */
-#define MIPS_GPR_GET(X) 		ctx->regs->regs_R[X]
-#define MIPS_GPR_SET(X,V)		ctx->regs->regs_R[X] = (V)
-
 #define MIPS_COP0_GET(X) 		ctx->regs->regs_cop0[X]
 
 #define MIPS_FPR_S_GET(X)		ctx->regs->regs_F.s[X]
@@ -49,8 +46,6 @@
 #define MIPS_REG_LO 			ctx->regs->regs_LO
 #define MIPS_REG_C_FPC_FCSR 	ctx->regs->regs_C.FCSR
 #define MIPS_REG_C_FPC_FIR 		ctx->regs->regs_C.FIR
-#define BRANCH(V)				(ctx->n_next_ip) = V
-#define RELBRANCH(V)			 ctx->n_next_ip = ctx->regs->pc + (V) + 4
 
 /* Instruction fields */
 #define RS 					ctx->inst.dword.standard.rs
