@@ -453,7 +453,8 @@ cl_int clBuildProgram(
 
 	/* Read binary */
 	fseek(f, 0, SEEK_SET);
-	fread(binary, size, 1, f);
+	if (fread(binary, size, 1, f) != 1)
+		fatal("%s: cannot read file\n", __FUNCTION__);
 	fclose(f);
 	
 	/* Initialize program entries (per-device-type info) */

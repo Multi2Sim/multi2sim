@@ -68,9 +68,9 @@ struct opencl_x86_device_work_item_data_t
 
 struct opencl_x86_device_core_t
 {
-	int num_done;
+	volatile int num_done;
 	int num_items;
-	int current_item;
+	volatile int current_item;
 
 	struct opencl_x86_device_fiber_t main_fiber;
 	struct opencl_x86_device_fiber_t *work_fibers;
