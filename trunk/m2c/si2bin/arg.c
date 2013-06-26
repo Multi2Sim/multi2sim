@@ -67,11 +67,17 @@ struct si2bin_arg_t *si2bin_arg_create(void)
 struct si2bin_arg_t *si2bin_arg_create_literal(int value)
 {
 	struct si2bin_arg_t *arg;
-
 	arg = si2bin_arg_create();
-	arg->type = si2bin_arg_literal;
 	arg->value.literal.val = value;
 
+	/* Detect the special case where the literal constant is in range
+	 * [-16..64]. Some instructions can encode these values more
+	 * efficiently. Some others even only allow for these values. */
+	if (IN_RANGE(value, -16, 64))
+		arg->type = si2bin_arg_literal_reduced;
+	else
+		arg->type = si2bin_arg_literal;
+	
 	return arg;
 }
 
@@ -80,9 +86,17 @@ struct si2bin_arg_t *si2bin_arg_create_literal_float(float value)
 	struct si2bin_arg_t *arg;
 
 	arg = si2bin_arg_create();
-	arg->type = si2bin_arg_literal_float;
 	arg->value.literal_float.val = value;
 
+	/* Detect the special case where the literal float constant can
+	 * be encoded in a specific register based on value */
+	if (value == 0.5 || value == -0.5 || value == 1.0 || value == -1.0
+		|| value == 2.0 || value == -2.0 || value == 4.0
+		|| value == -4.0)
+		arg->type = si2bin_arg_literal_float_reduced;
+	else
+		arg->type = si2bin_arg_literal_float;
+		
 	return arg;
 }
 
@@ -235,7 +249,7 @@ int si2bin_arg_encode_operand(struct si2bin_arg_t *arg)
 	switch (arg->type)
 	{
 
-	case si2bin_arg_literal:
+	case si2bin_arg_literal_reduced:
 	{
 		int value;
 
@@ -244,11 +258,12 @@ int si2bin_arg_encode_operand(struct si2bin_arg_t *arg)
 			return value + 128;
 		if (IN_RANGE(value, -16, -1))
 			return 192 - value;
+		
 		si2bin_yyerror_fmt("invalid integer constant: %d", value);
 		break;
 	}
 
-	case si2bin_arg_literal_float:
+	case si2bin_arg_literal_float_reduced:
 	{
 		float value;
 
@@ -281,7 +296,7 @@ int si2bin_arg_encode_operand(struct si2bin_arg_t *arg)
 		id = arg->value.scalar_register.id;
 		if (IN_RANGE(id, 0, 103))
 			return id;
-
+		
 		si2bin_yyerror_fmt("invalid scalar register: s%d", id);
 		break;
 	}
@@ -294,7 +309,7 @@ int si2bin_arg_encode_operand(struct si2bin_arg_t *arg)
 		id = arg->value.scalar_register_series.low;
 		if (IN_RANGE(id, 0, 103))
 			return id;
-
+		
 		si2bin_yyerror_fmt("invalid scalar register: s%d", id);
 		break;
 	}

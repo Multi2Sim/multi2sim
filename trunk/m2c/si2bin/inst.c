@@ -304,7 +304,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		inst_bytes->smrd.op = inst_info->opcode;
 		break;
 	
-	/* encoding in [:], op in [] */
+	/* encoding in [31:26], op in [25:28] */
 	case SI_FMT_DS:
 		
 		inst_bytes->ds.enc = 0x36;
@@ -408,7 +408,27 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		
 		case si2bin_token_simm16:
 		{
-			inst_bytes->sopk.simm16 = si2bin_arg_encode_operand(arg);
+			int value;
+
+			if (arg->type == si2bin_arg_literal)
+			{
+				/* Literal constant other than [-16...64] */
+				if (arg->value.literal.val > 0xff)
+					si2bin_yyerror_fmt("%s: Literal in simm16 needs to fit in 16 bit field",
+						__FUNCTION__);
+				
+				inst_bytes->sopk.simm16 = arg->value.literal.val;
+
+			}
+			else
+			{
+
+				/* Encode */
+				value = si2bin_arg_encode_operand(arg);
+				if (!IN_RANGE(value, 0, 255))
+					si2bin_yyerror("invalid argument type");
+				inst_bytes->sopk.simm16 = value;
+			}
 			break;
 		}
 		
@@ -435,7 +455,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
+			if (arg->type == si2bin_arg_literal)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -466,7 +486,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
+			if (arg->type == si2bin_arg_literal)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -613,9 +633,19 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 			case si2bin_arg_literal:
 
+				if (arg->value.literal.val > 255)
+					si2bin_yyerror_fmt("%s: offset needs to fit in 8 bit field",
+						__FUNCTION__);
+				
 				inst_bytes->smrd.imm = 1;
 				inst_bytes->smrd.offset = arg->value.literal.val;
 				/* FIXME - check valid range of literal */
+				break;
+
+			case si2bin_arg_literal_reduced:
+				
+				inst_bytes->smrd.imm = 1;
+				inst_bytes->smrd.offset = arg->value.literal.val;
 				break;
 			
 			case si2bin_arg_scalar_register:
@@ -732,7 +762,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 		case si2bin_token_src0:
 
-			if (arg->type == si2bin_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
+			if (arg->type == si2bin_arg_literal)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -752,7 +782,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
+			if (arg->type == si2bin_arg_literal)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -776,7 +806,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal && !IN_RANGE(arg->value.literal.val, -16, 64))
+			if (arg->type == si2bin_arg_literal)
 			{
 				/* Literal constant other than [-16...64] is encoded by adding
 				 * four more bits to the instruction. */
@@ -939,6 +969,14 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				inst_bytes->vop3a.neg |= 0x4;
 			break;
 		}
+		
+		case si2bin_token_vop3_64_sdst:
+			
+			/* Encode */
+			inst_bytes->vop3a.src2 = si2bin_arg_encode_operand(arg);
+			
+			break;
+
 		case si2bin_token_vop3_vdst:
 			
 			inst_bytes->vop3a.vdst = arg->value.vector_register.id;
@@ -946,8 +984,21 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 		case si2bin_token_vsrc1:
 
-			/* Encode */
-			inst_bytes->vopc.vsrc1 = si2bin_arg_encode_operand(arg);
+			if (arg->type == si2bin_arg_literal)
+			{
+				/* Literal constant other than [-16...64] is encoded by adding
+				 * four more bits to the instruction. */
+				if (inst->size == 8)
+					si2bin_yyerror("only one literal allowed");
+				inst->size = 8;
+				inst_bytes->vop2.vsrc1 = 0xff;
+				inst_bytes->vop2.lit_cnst = arg->value.literal.val;
+			}
+			else
+			{
+				/* Encode */
+				inst_bytes->vopc.vsrc1 = si2bin_arg_encode_operand(arg);
+			}
 			break;
 
 		case si2bin_token_wait_cnt:
@@ -994,6 +1045,34 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 			break;
 
+		case si2bin_token_addr:
+			
+			/* Make sure argument is a vector register */
+			assert(arg->type == si2bin_arg_vector_register);
+			
+			/* Encode */
+			inst_bytes->ds.addr = arg->value.vector_register.id;
+			break;
+
+		case si2bin_token_data0:
+
+			/* Make sure argument is a vector register */
+			assert(arg->type == si2bin_arg_vector_register);
+
+			/* Encode */
+			inst_bytes->ds.data0 = arg->value.vector_register.id;
+			break;
+
+		case si2bin_token_ds_vdst:
+
+			/* Make sure argument is a vector register */
+			assert(arg->type == si2bin_arg_vector_register);
+
+			/* Encode */
+			inst_bytes->ds.vdst = arg->value.vector_register.id;
+			break;
+		
+		
 		default:
 			si2bin_yyerror_fmt("unsupported token for argument %d",
 				index + 1);

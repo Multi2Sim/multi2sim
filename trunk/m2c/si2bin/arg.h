@@ -41,7 +41,9 @@ enum si2bin_arg_type_t
 	si2bin_arg_mem_register,
 	si2bin_arg_special_register,
 	si2bin_arg_literal,
+	si2bin_arg_literal_reduced,
 	si2bin_arg_literal_float,
+	si2bin_arg_literal_float_reduced,
 	si2bin_arg_waitcnt,
 	si2bin_arg_label,
 	si2bin_arg_maddr,
@@ -79,12 +81,16 @@ struct si2bin_arg_t
 			int id;
 		} 
 		vector_register;
-		
+	
+		/* Used when 'type' is 'si2bin_arg_type_literal' or
+		 * 'si2bin_arg_type_literal_reduced' */
 		struct
 		{
 			int val;
 		} literal;
 		
+		/* Used when 'type' is 'si2bin_arg_type_literal_float' or
+		 * 'si2bin_arg_type_literal_float_reduced' */
 		struct
 		{
 			float val;

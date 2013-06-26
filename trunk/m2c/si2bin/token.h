@@ -57,10 +57,14 @@ enum si2bin_token_type_t
 	si2bin_token_vop3_64_src0,
 	si2bin_token_vop3_64_src1,
 	si2bin_token_vop3_64_src2,
+	si2bin_token_vop3_64_sdst,
 	si2bin_token_vop3_vdst,
 	si2bin_token_vsrc0,
 	si2bin_token_vsrc1,
 	si2bin_token_wait_cnt,
+	si2bin_token_addr,
+	si2bin_token_data0,
+	si2bin_token_ds_vdst,
 
 	si2bin_token_count
 };

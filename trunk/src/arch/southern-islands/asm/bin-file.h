@@ -89,7 +89,7 @@ typedef enum _E_SC_USER_DATA_CLASS
 	IMM_SAMPLER,                // immediate sampler descriptor
 	IMM_CONST_BUFFER,           // immediate const buffer descriptor
 	IMM_VERTEX_BUFFER,          // immediate vertex buffer descriptor
-	IMM_UAV = 4,                // immediate UAV descriptor
+	IMM_UAV,                    // immediate UAV descriptor
 	IMM_ALU_FLOAT_CONST,        // immediate float const (scalar or vector)
 	IMM_ALU_BOOL32_CONST,       // 32 immediate bools packed into a single UINT
 	IMM_GDS_COUNTER_RANGE,      // immediate UINT with GDS address range for counters
@@ -104,11 +104,11 @@ typedef enum _E_SC_USER_DATA_CLASS
 	IMM_CONTEXT_BASE,           // immediate HSAIL context base-address
 	IMM_LDS_ESGS_SIZE,          // immediate LDS ESGS size used in on-chip GS
 	SUB_PTR_FETCH_SHADER,       // fetch shader subroutine pointer
-	PTR_RESOURCE_TABLE = 17,    // flat/chunked resource table pointer
-	PTR_CONST_BUFFER_TABLE = 20,// flat/chunked const buffer table pointer
+	PTR_RESOURCE_TABLE,         // flat/chunked resource table pointer
+	PTR_CONST_BUFFER_TABLE,     // flat/chunked const buffer table pointer
 	PTR_INTERNAL_RESOURCE_TABLE,// flat/chunked internal resource table pointer
 	PTR_SAMPLER_TABLE,          // flat/chunked sampler table pointer
-	PTR_UAV_TABLE = 23,         // flat/chunked UAV resource table pointer
+	PTR_UAV_TABLE,              // flat/chunked UAV resource table pointer
 	PTR_INTERNAL_GLOBAL_TABLE,  // internal driver table pointer
 	PTR_VERTEX_BUFFER_TABLE,    // flat/chunked vertex buffer table pointer
 	PTR_SO_BUFFER_TABLE,        // flat/chunked stream-out buffer table pointer
