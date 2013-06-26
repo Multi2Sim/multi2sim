@@ -43,11 +43,8 @@ struct opencl_x86_device_exec_t
 	struct opencl_x86_kernel_t *kernel;
 	struct opencl_x86_ndrange_t *ndrange;
 
-	int dims;
-	unsigned int global[3];
-	unsigned int local[3];
-	unsigned int offset[3];
-	unsigned int groups[3];
+	unsigned int work_group_start[3];
+	unsigned int work_group_count[3];
 
 	pthread_mutex_t mutex;
 	int num_groups;
