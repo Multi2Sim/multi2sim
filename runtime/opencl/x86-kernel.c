@@ -475,20 +475,25 @@ void opencl_x86_ndrange_run(struct opencl_x86_ndrange_t *ndrange)
 	opencl_x86_ndrange_free(ndrange);
 }
 
-static int nd_address_rec(int stride, int cur, int dim, int addr, const unsigned int *size, unsigned int *pos)
-{
-	if (cur == dim)
-		return addr;
-	else
-	{
-		int rem = nd_address_rec(size[cur] * stride, cur + 1, dim, addr, size, pos);
-		pos[cur] = rem / stride;
-		return rem % stride;
-	}
-}
-
 /* convert a linear address into an n-dimensional address */
 void opencl_nd_address(int dim, int addr, const unsigned int *size, unsigned int *pos)
 {
-	nd_address_rec(1, 0, dim, addr, size, pos);
+	switch (dim)
+	{
+	case 1:
+		pos[0] = addr;
+		return;
+	case 2:
+		pos[1] = addr / size[0];
+		pos[0] = addr - (pos[1] * size[0]);
+		return;
+	case 3:
+		pos[2] = addr / size[1];
+		pos[1] = (addr - (pos[2] * size[1])) / size[0];
+		pos[0] = addr - ((pos[2] * size[1]) + pos[1]) * size[0];
+		return;
+	default:
+		fatal("%s: dim is greater than 3\n", __FUNCTION__);
+		return;
+	}
 }
