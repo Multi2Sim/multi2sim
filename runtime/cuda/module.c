@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include "../include/cuda.h"
 #include "elf-format.h"
 #include "list.h"
@@ -27,7 +29,7 @@
 struct list_t *module_list;
 
 /* Create a module */
-CUmodule cuda_module_create(void)
+CUmodule cuda_module_create(const char *cubin_path)
 {
 	CUmodule module;
 
@@ -35,6 +37,8 @@ CUmodule cuda_module_create(void)
 	module = (CUmodule)xcalloc(1, sizeof(struct CUmod_st));
 	module->id = list_count(module_list);
 	module->ref_count = 1;
+	assert(cubin_path);
+	module->elf_file = elf_file_create_from_path(cubin_path);
 
 	list_add(module_list, module);
 
@@ -46,6 +50,8 @@ void cuda_module_free(CUmodule module)
 {
 	list_remove(module_list, module);
 
+	assert(module->elf_file);
+	elf_file_free(module->elf_file);
 	module->ref_count--;
 	free(module);
 }

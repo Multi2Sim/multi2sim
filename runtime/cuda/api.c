@@ -492,7 +492,7 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 	cuda_debug_print(stdout, "\t(driver) in: filename = %s\n", fname);
 
 	/* Create module */
-	*module = cuda_module_create();
+	*module = cuda_module_create(fname);
 
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleLoad, fname);
@@ -503,7 +503,7 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 		fatal("native execution not supported.\n%s",
 				cuda_err_native);
 
-	cuda_debug_print(stdout, "\t(driver) out: module = %d\n", (*module)->id);
+	cuda_debug_print(stdout, "\t(driver) out: module_id = %d\n", (*module)->id);
 	cuda_debug_print(stdout, "\t(driver) out: return = %d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -553,71 +553,19 @@ CUresult cuModuleUnload(CUmodule hmod)
 
 CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 {
-	struct elf_file_t *kernel_bin;
-	struct elf_section_t *section;
-	char text_section_name[1024];
-	int text_section_index;
-	struct elf_section_t *text_section;
-
-	int i;
-	unsigned char inst_buffer_byte;
-
 	int ret;
 
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(driver) in: module_id = %d\n", hmod->id);
 	cuda_debug_print(stdout, "\t(driver) in: function_name = %s\n", name);
-	cuda_debug_print(stdout, "\t(internal) in: inst_buffer = %p\n",
-			inst_buffer);
-	cuda_debug_print(stdout, "\t(internal) in: inst_buffer_size = %u\n",
-			inst_buffer_size);
-	cuda_debug_print(stdout, "\t(internal) in: num_gpr_used = %u\n",
-			num_gpr_used);
 
 	/* Create function */
 	*hfunc = cuda_function_create(hmod, name);
 
-
-	kernel_bin = hmod->elf_file;
-	/* Look for .text.kernel_name section */
-	snprintf(text_section_name, sizeof text_section_name, ".text.%s", name);
-	text_section_index = 0;
-	for (i = 0; i < list_count(kernel_bin->section_list); ++i)
-	{
-		section = (struct elf_section_t *)list_get(kernel_bin->section_list, i);
-
-		if (!strncmp(section->name, text_section_name, sizeof text_section_name))
-		{
-			text_section_index = i;
-			break;
-		}
-	}
-	assert(text_section_index != 0);
-	/* Get .text.kernel_name section */
-	text_section = (struct elf_section_t *)list_get(kernel_bin->section_list, text_section_index);
-
-	/* Get instruction binary */
-	inst_buffer_size = text_section->header->sh_size;
-	inst_buffer = (unsigned long long int *)xcalloc(1, inst_buffer_size);
-	{
-		for (i = 0; i < inst_buffer_size; ++i)
-		{
-			elf_buffer_seek(&(kernel_bin->buffer), text_section->header->sh_offset + i);
-			elf_buffer_read(&(kernel_bin->buffer), &inst_buffer_byte, 1);
-			if (i % 8 == 0 || i % 8 == 1 || i % 8 == 2 || i % 8 == 3)
-				inst_buffer[i / 8] |= (unsigned long long int)(inst_buffer_byte) << (i * 8 + 32);
-			else
-				inst_buffer[i / 8] |= (unsigned long long int)(inst_buffer_byte) << (i * 8 - 32);
-		}
-	}
-
-
-
-
-
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, 
-			hmod->id, name, inst_buffer, inst_buffer_size, num_gpr_used);
+			hmod->id, name, (*hfunc)->inst_buffer,
+			(*hfunc)->inst_buffer_size, (*hfunc)->num_gpr_used);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
 	 * is running natively, system call CUDA_SYS_CODE is not supported. */
