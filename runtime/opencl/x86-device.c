@@ -119,37 +119,6 @@ static int opencl_x86_device_get_num_cores(void)
  * Public Functions
  */
 
-void opencl_x86_device_make_fiber(
-		struct opencl_x86_device_fiber_t *fiber,
-		opencl_x86_device_fiber_func_t fiber_func,
-		int num_args,
-		...)
-{
-	int i;
-	int *params;
-	int stack_words;
-	int *stack_bottom;
-
-	params = &num_args + 1;
-
-	assert(!((int) params % sizeof(int)));
-	assert(!((int) fiber->stack_bottom % sizeof(int)));
-	assert(!(fiber->stack_size % sizeof(int)));
-
-	stack_words = fiber->stack_size / sizeof(int);
-	stack_bottom = (int *) fiber->stack_bottom;
-
-	for (i = 0; i < num_args; i++)
-		stack_bottom[stack_words - num_args + i] = params[i];
-
-	/* Return address of fake 'calling function' */
-	stack_bottom[stack_words - num_args - 1] = 0;
-
-	fiber->eip = fiber_func;
-	fiber->esp = stack_bottom + stack_words - num_args - 1;
-}
-
-
 void opencl_x86_device_make_fiber_ex(
 		struct opencl_x86_device_fiber_t *fiber,
 		opencl_x86_device_fiber_func_t fiber_func,
@@ -171,84 +140,25 @@ void opencl_x86_device_make_fiber_ex(
 }
 
 
-void opencl_x86_device_switch_fiber(volatile struct opencl_x86_device_fiber_t *current,
-		volatile struct opencl_x86_device_fiber_t *dest,
-		volatile void *reg_values)
+void opencl_x86_device_reinit_work_item(struct opencl_x86_device_core_t *core)
 {
-	/* The following code has been added to prevent the compiler from
-	 * optimizing out the parts of the caller that set arguments 'current', 'dest',
-	 * and 'reg_values'. If it is omitted, using '-O3' will make gcc think
-	 * that these values are not used in the function, and the caller will
-	 * skip pushing them to the stack. Maybe there is a better way of disabling
-	 * this optimization?? For now, we just use some code that uses the variables,
-	 * by checking that 'current' and 'dest' are not NULL, and that 'reg_values'
-	 * is 16-byte aligned. */
-	if ((long) reg_values % 16)
-		panic("%s: 'reg_values' not aligned", __FUNCTION__);
-	if (!current || !dest)
-		panic("%s: 'current' or 'dest' is NULL", __FUNCTION__);
+	struct opencl_x86_device_work_item_data_t *work_item_data = core->work_item_data[0];
+	struct opencl_x86_device_fiber_t *fiber = core->work_fibers;
+	size_t size = core->nd->arch_kernel->stack_param_words * sizeof (size_t);
+	char *stack_top = (char *)fiber->stack_bottom + fiber->stack_size - size;
 
-	/* The useful code next */
-	asm volatile (
-		"push %%eax\n\t"		/* Push registers onto sp + 24 */
-		"push %%ebx\n\t"		/* sp + 20 */
-		"push %%ecx\n\t"		/* sp + 16 */
-		"push %%edx\n\t"		/* sp + 12 */
-		"push %%esi\n\t"		/* sp + 8 */
-		"push %%edi\n\t"		/* sp + 4 */
-		"push %%ebp\n\t"		/* sp */
+	opencl_nd_address(core->nd->work_dim, core->current_item, core->nd->local_work_size, work_item_data->global_id);
 
-		"mov %0, %%eax\n\t"		/* eax <= current */
-		"mov %1, %%edx\n\t"		/* edx <= dest */
-		"mov %2, %%ecx\n\t"		/* ecx <= reg_values */
+	work_item_data->global_id[0] += core->group_global[0];
+	work_item_data->global_id[1] += core->group_global[1];
+	work_item_data->global_id[2] += core->group_global[2];
 
-		"sub $0x80, %%esp\n\t"		/* Make room for SSE registers */
-		"movups %%xmm0, 0x0(%%esp)\n\t"
-		"movups %%xmm1, 0x10(%%esp)\n\t"
-		"movups %%xmm2, 0x20(%%esp)\n\t"
-		"movups %%xmm3, 0x30(%%esp)\n\t"
-		"movups %%xmm4, 0x40(%%esp)\n\t"
-		"movups %%xmm5, 0x50(%%esp)\n\t"
-		"movups %%xmm6, 0x60(%%esp)\n\t"
-		"movups %%xmm7, 0x70(%%esp)\n\t"
-
-		"test %%ecx, %%ecx\n\t"			/* Skip if 'reg_values' is NULL */
-		"je 1f\n\t"				/* Jump to 'switch_fiber_no_regs' */
-
-		"movaps 0x0(%%ecx), %%xmm0\n\t"		/* AMD uses xmm0-xmm3 to pass in parameters */
-		"movaps 0x10(%%ecx), %%xmm1\n\t"
-		"movaps 0x20(%%ecx), %%xmm2\n\t"
-		"movaps 0x30(%%ecx), %%xmm3\n\t"
-
-		"1:\n\t"			/* Former label 'switch_fiber_no_regs' */
-		"mov %%esp, (%%eax)\n\t"	/* current->esp <= esp */
-		"movl $2f, 0x4(%%eax)\n\t"	/* current->eip <= label 'switch_fiber_return' */
-
-		"mov (%%edx), %%esp\n\t"	/* esp <= dest->esp */
-		"jmp *0x4(%%edx)\n\t"		/* eip <= dest->eip */
-
-		"2:\n\t"			/* Former label 'switch_fiber_return' */
-		"movups 0x0(%%esp), %%xmm0\n\t"
-		"movups 0x10(%%esp), %%xmm1\n\t"
-		"movups 0x20(%%esp), %%xmm2\n\t"
-		"movups 0x30(%%esp), %%xmm3\n\t"
-		"movups 0x40(%%esp), %%xmm4\n\t"
-		"movups 0x50(%%esp), %%xmm5\n\t"
-		"movups 0x60(%%esp), %%xmm6\n\t"
-		"movups 0x70(%%esp), %%xmm7\n\t"
-		"add $0x80, %%esp\n\t"
-
-		"pop %%ebp\n\t"
-		"pop %%edi\n\t"
-		"pop %%esi\n\t"
-		"pop %%edx\n\t"
-		"pop %%ecx\n\t"
-		"pop %%ebx\n\t"
-		"pop %%eax\n\t"
-		:
-		: "g" (current), "g" (dest), "g" (reg_values)
-	);
+	memcpy(stack_top, core->stack_params, size);
+	fiber->eip = opencl_x86_work_item_entry_point;
+	fiber->esp = stack_top - sizeof (size_t);
+	*(size_t *)fiber->esp = (size_t)opencl_x86_device_exit_fiber;
 }
+
 
 
 void opencl_x86_device_exit_fiber(void)
@@ -261,8 +171,36 @@ void opencl_x86_device_exit_fiber(void)
 	workgroup_data = opencl_x86_device_get_work_group_data();
 	workgroup_data->num_done++;
 
-	new_esp = workgroup_data->main_fiber.esp;
-	new_eip = workgroup_data->main_fiber.eip;
+	/* exit to the main fiber.  This work-group is done */
+	if (workgroup_data->num_done == workgroup_data->num_items)
+	{
+		new_esp = workgroup_data->main_fiber.esp;
+		new_eip = workgroup_data->main_fiber.eip;
+	}
+	/* this work-group has barriers and therefore, one stack per work-item.
+	   switch to the next work-item's stack and initialize it if it is new */
+	else if (workgroup_data->hit_barrier)
+	{
+		int i = workgroup_data->current_item + 1;
+		struct opencl_x86_device_fiber_t *resume_fiber;
+
+		workgroup_data->current_item = i;
+		resume_fiber = workgroup_data->work_fibers + i;
+
+		if (workgroup_data->num_started++ == i)
+			opencl_x86_device_init_work_item(i, workgroup_data);
+
+		new_esp = resume_fiber->esp;
+		new_eip = resume_fiber->eip;
+	}
+	/* this work-group doesn't have barriers.  re-use the current work-item */
+	else
+	{
+		workgroup_data->current_item++;
+		opencl_x86_device_reinit_work_item(workgroup_data);
+		new_esp = workgroup_data->work_fibers->esp;
+		new_eip = workgroup_data->work_fibers->eip;
+	}
 
 	asm volatile (
 		"mov %0, %%esp\n\t"
@@ -275,19 +213,25 @@ void opencl_x86_device_exit_fiber(void)
 
 void opencl_x86_device_barrier(int data)
 {
+	int i;
 	struct opencl_x86_device_core_t *workgroup_data;
 	struct opencl_x86_device_fiber_t *sleep_fiber;
 	struct opencl_x86_device_fiber_t *resume_fiber;
 
 	workgroup_data = opencl_x86_device_get_work_group_data();
+	workgroup_data->hit_barrier = 1;
+	i = workgroup_data->current_item;
 
-	sleep_fiber = workgroup_data->work_fibers + workgroup_data->current_item;
-	workgroup_data->current_item = (workgroup_data->current_item + 1)
-			% workgroup_data->num_items;
+	sleep_fiber = workgroup_data->work_fibers + i;
+	i = (i + 1) % workgroup_data->num_items;
 
-	resume_fiber = workgroup_data->work_fibers + workgroup_data->current_item;
+	workgroup_data->current_item = i;
+	resume_fiber = workgroup_data->work_fibers + i;
 	
-	opencl_x86_device_switch_fiber(sleep_fiber, resume_fiber, NULL);
+	if (workgroup_data->num_started++ == i)
+		opencl_x86_device_init_work_item(i, workgroup_data);
+
+	opencl_x86_device_switch_fiber(sleep_fiber, resume_fiber);
 }
 
 
@@ -298,52 +242,43 @@ static opencl_x86_device_barrier_func_t opencl_x86_device_barrier_func
 		= opencl_x86_device_barrier;
 
 
-void opencl_x86_device_init_work_item(
-	int i,
-	struct opencl_x86_ndrange_t *nd,
-	struct opencl_x86_device_core_t *core,
-	const unsigned int *group_global,
-	const unsigned int *group_id)
+void opencl_x86_device_init_work_item(int i, struct opencl_x86_device_core_t *core)
 {
-	int j;
-	struct opencl_x86_device_work_item_data_t *work_item_data;
-	const unsigned int *local_size = nd->local_work_size;
-	unsigned int local_id[3] = {0, 0, 0};
+	struct opencl_x86_device_work_item_data_t *work_item_data = core->work_item_data[i];
+	struct opencl_x86_ndrange_t *nd = core->nd;
+	size_t arg_size =  nd->arch_kernel->stack_param_words * sizeof (size_t);
+	struct opencl_x86_device_fiber_t *fiber = core->work_fibers + i;
+	char *stack_top = (char *)fiber->stack_bottom + fiber->stack_size - arg_size;
 
-	work_item_data = core->work_item_data[i];
-
-	memset(work_item_data, 0, sizeof(struct opencl_x86_device_work_item_data_t));
-
-	work_item_data->work_group_data = (int) core;
-	work_item_data->barrier_func = (int) &opencl_x86_device_barrier_func;
 	work_item_data->local_reserved = (int) core->local_reserved;
 	work_item_data->work_dim = nd->work_dim;
 	
-	assert(nd->work_dim > 0);
+	work_item_data->group_global[0] = core->group_global[0];
+	work_item_data->group_global[1] = core->group_global[1];
+	work_item_data->group_global[2] = core->group_global[2];
 
-	for (j = 0; j < nd->work_dim; j++)
-	{
-		work_item_data->global_size[j] = nd->global_work_size[j];
-		work_item_data->local_size[j] = nd->local_work_size[j];
-	}
+	work_item_data->global_size[0] = nd->global_work_size[0];
+	work_item_data->global_size[1] = nd->global_work_size[1];
+	work_item_data->global_size[2] = nd->global_work_size[2];
 
-	for (j = nd->work_dim; j < 4; j++)
-	{
-		work_item_data->global_size[j] = 1;
-		work_item_data->local_size[j] = 1;
-	}
+	work_item_data->local_size[0] = nd->local_work_size[0];
+	work_item_data->local_size[1] = nd->local_work_size[1];
+	work_item_data->local_size[2] = nd->local_work_size[2];
 
-	opencl_nd_address(nd->work_dim, i, local_size, local_id);
+	work_item_data->group_id[0] = core->group_id[0];
+	work_item_data->group_id[1] = core->group_id[1];
+	work_item_data->group_id[2] = core->group_id[2];
 
-	for (int j = 0; j < 3; j++)
-	{
-		work_item_data->global_id[j] = group_global[j] + local_id[j];
-		work_item_data->group_global[j] = group_global[j];
-		work_item_data->group_id[j] = group_id[j];
-	}
+	opencl_nd_address(nd->work_dim, i, nd->local_work_size, work_item_data->global_id);
 
-	opencl_x86_device_make_fiber_ex(core->work_fibers + i, nd->arch_kernel->func,
-		opencl_x86_device_exit_fiber, nd->arch_kernel->stack_param_words, core->stack_params);
+	work_item_data->global_id[0] += core->group_global[0];
+	work_item_data->global_id[1] += core->group_global[1];
+	work_item_data->global_id[2] += core->group_global[2];
+
+	memcpy(stack_top, core->stack_params, arg_size);
+	fiber->eip = opencl_x86_work_item_entry_point;
+	fiber->esp = stack_top - sizeof (size_t);
+	*(size_t *) fiber->esp = (size_t) opencl_x86_device_exit_fiber;
 } 
 
 
@@ -360,8 +295,8 @@ void opencl_x86_device_work_group_init(
 	for (i = 0; i < nd->work_dim; i++)
 		work_group->num_items *= e->ndrange->local_work_size[i];
 
-	work_group->num_done = 0;
-
+	work_group->register_params = nd->register_params;
+	work_group->kernel_fn = nd->arch_kernel->func;
 
 	if (e->kernel->local_reserved_bytes)
 		work_group->local_reserved = xmalloc(e->kernel->local_reserved_bytes);
@@ -394,31 +329,20 @@ void opencl_x86_device_work_group_launch(
 	const unsigned int *local_size = exec->ndrange->local_work_size;
 	struct opencl_x86_ndrange_t *nd = exec->ndrange;
 
-	unsigned int group_global[3] = {0, 0, 0};
-	unsigned int group_id[3] = {0, 0, 0};
-
-
-	opencl_nd_address(nd->work_dim, num, exec->work_group_count, group_id);
+	opencl_nd_address(nd->work_dim, num, exec->work_group_count, core->group_id);
 	for (int i = 0; i < 3; i++)
-		group_global[i] = (group_id[i] + exec->work_group_start[i]) * local_size[i] + nd->global_work_offset[i];
+		core->group_global[i] = (core->group_id[i] + exec->work_group_start[i]) * local_size[i] + nd->global_work_offset[i];
 	
 	assert(core->num_items > 0);
+
+	core->num_started = 1;
 	core->num_done = 0;
+	core->current_item = 0;
+	core->nd = nd;
+	core->hit_barrier = 0;
 
-	/* Initialize stuff that changes per work group */
-	for (core->current_item = 0; core->current_item < core->num_items; core->current_item++)
-	{
-		opencl_x86_device_init_work_item(core->current_item, nd, core, group_global, group_id);
-	}
-
-	/* Launch fibers */
-	for (core->current_item = 0; core->current_item < core->num_items; core->current_item++)
-	{
-		opencl_x86_device_switch_fiber(
-			&core->main_fiber,
-			core->work_fibers + core->current_item,
-			nd->register_params);
-	}
+	opencl_x86_device_init_work_item(0, core);
+	opencl_x86_device_switch_fiber(&core->main_fiber, core->work_fibers);
 }
 
 
@@ -428,7 +352,6 @@ void opencl_x86_device_work_group_done(
 {
 	int i;
 	int offset;
-
 
 	for (i = 0; i < kernel->num_params; i++)
 	{
@@ -445,9 +368,6 @@ void opencl_x86_device_work_group_done(
 
 void opencl_x86_device_core_init(struct opencl_x86_device_core_t *work_group)
 {
-	work_group->work_fibers = xmalloc(sizeof (struct opencl_x86_device_fiber_t) * X86_MAX_WORK_GROUP_SIZE);
-	work_group->work_item_data = xmalloc(sizeof (struct opencl_x86_device_work_item_data_t *) * X86_MAX_WORK_GROUP_SIZE);
-
 	if (posix_memalign((void **) &work_group->aligned_stacks,
 			OPENCL_WORK_GROUP_STACK_SIZE,
 			OPENCL_WORK_GROUP_STACK_SIZE * X86_MAX_WORK_GROUP_SIZE))
@@ -459,6 +379,7 @@ void opencl_x86_device_core_init(struct opencl_x86_device_core_t *work_group)
 	for (int i = 0; i < X86_MAX_WORK_GROUP_SIZE; i++)
 	{
 		struct opencl_x86_device_fiber_t *fiber;
+		struct opencl_x86_device_work_item_data_t *work_item_data;
 
 		/* properly initialize the stack and work_group */
 		fiber = work_group->work_fibers + i;
@@ -466,16 +387,20 @@ void opencl_x86_device_core_init(struct opencl_x86_device_core_t *work_group)
 			+ (i * OPENCL_WORK_GROUP_STACK_SIZE);
 		fiber->stack_size = OPENCL_WORK_GROUP_STACK_SIZE
 			- sizeof(struct opencl_x86_device_work_item_data_t);
-		work_group->work_item_data[i] = (struct opencl_x86_device_work_item_data_t *)
+		
+		work_item_data = (struct opencl_x86_device_work_item_data_t *)
 			((char *) fiber->stack_bottom + fiber->stack_size);
+
+		work_item_data->work_group_data = (int) work_group;
+		work_item_data->barrier_func = (int) &opencl_x86_device_barrier_func;
+
+		work_group->work_item_data[i] = work_item_data;
 	}
 
 }
 
 void opencl_x86_device_core_treardown(struct opencl_x86_device_core_t *work_group_data)
 {
-	free(work_group_data->work_fibers);
-	free(work_group_data->work_item_data);
 	free(work_group_data->aligned_stacks);
 }
 

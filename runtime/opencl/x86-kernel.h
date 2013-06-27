@@ -109,10 +109,6 @@ struct opencl_x86_kernel_arg_t
 	int size;
 };
 
-struct opencl_x86_kernel_mutable_args_t
-{
-
-};
 
 /* x86 kernel object. This structure contains the information that extends structure
  * opencl_kernel_t with information specific to x86. */
@@ -136,7 +132,7 @@ struct opencl_x86_kernel_t
 	int stack_param_words;
 	size_t local_reserved_bytes;
 	size_t *cur_stack_params;
-	size_t cur_register_params[MAX_SSE_REG_PARAMS];
+	struct opencl_x86_kernel_reg_arg_t cur_register_params[MAX_SSE_REG_PARAMS];
 };
 
 /*

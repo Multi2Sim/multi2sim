@@ -54,32 +54,43 @@ struct opencl_x86_device_exec_t
 
 struct opencl_x86_device_work_item_data_t
 {
-	int work_group_data;  /* 0x60 (Not actually part of AMD runtime, padding_0) */
-	int barrier_func;  /* 0x5c (function *) */
-	int local_reserved;  /* 0x58 (void *) */
-	int work_dim;  /* 0x54 */
-	int group_global[4];  /* [0x50, 0x44] */
-	int global_size[4];  /* [0x40, 0x34] */
-	int local_size[4];  /* [0x30, 0x24] */
-	int group_id[4];  /* [0x20, 0x14] */
-	int global_id[4];  /* [0x10, 0x04] */
+	unsigned int work_group_data;  /* 0x60 (Not actually part of AMD runtime, padding_0) */
+	unsigned int barrier_func;  /* 0x5c (function *) */
+	unsigned int local_reserved;  /* 0x58 (void *) */
+	unsigned int work_dim;  /* 0x54 */
+	unsigned int group_global[4];  /* [0x50, 0x44] */
+	unsigned int global_size[4];  /* [0x40, 0x34] */
+	unsigned int local_size[4];  /* [0x30, 0x24] */
+	unsigned int group_id[4];  /* [0x20, 0x14] */
+	unsigned int global_id[4];  /* [0x10, 0x04] */
 };
 
+struct opencl_x86_ndrange_t;
 
 struct opencl_x86_device_core_t
 {
-	volatile int num_done;
-	int num_items;
-	volatile int current_item;
+	const void *register_params; /* this is accessed in assembly - don't move it */
+	const void *kernel_fn; /* so is this - don't move it either */
+	
+	struct opencl_x86_ndrange_t *nd; /* NDRange currently being executed */
+	unsigned int group_global[3]; /* lowest global ID of current group */
+	unsigned int group_id[3]; /* group ID of current group */
+
+	volatile int num_started; /* number of work-items that have been started */
+	volatile int num_done; /* number of work-items that are complete */
+	int num_items; /* number of work-items in the work group */
+	volatile int current_item; /* currently-executing work-item */
+	volatile int hit_barrier; /* has this work-group hit a barrier? */
+
+	unsigned int *stack_params; /* these parameters have the correct local buffers for this core */
+	char *aligned_stacks; 
+	void *local_reserved;
 
 	struct opencl_x86_device_fiber_t main_fiber;
-	struct opencl_x86_device_fiber_t *work_fibers;
+	struct opencl_x86_device_fiber_t work_fibers[X86_MAX_WORK_GROUP_SIZE];
+	struct opencl_x86_device_work_item_data_t *work_item_data[X86_MAX_WORK_GROUP_SIZE];
 
-	struct opencl_x86_device_work_item_data_t **work_item_data;
 
-	unsigned int *stack_params;
-	char *aligned_stacks;
-	void *local_reserved;
 };
 
 
@@ -134,12 +145,14 @@ void opencl_x86_device_make_fiber_ex(
 		void *args);
 void opencl_x86_device_switch_fiber(
 		volatile struct opencl_x86_device_fiber_t *current,
-		volatile struct opencl_x86_device_fiber_t *dest,
-		volatile void *reg_values);
+		volatile struct opencl_x86_device_fiber_t *dest);
 void opencl_x86_device_exit_fiber(void);
 void opencl_x86_device_barrier(int data);
 
 void *opencl_x86_device_core_func(struct opencl_x86_device_t *device);
 
+void opencl_x86_work_item_entry_point(void);
+
+void opencl_x86_device_init_work_item(int i, struct opencl_x86_device_core_t *core);
 
 #endif
