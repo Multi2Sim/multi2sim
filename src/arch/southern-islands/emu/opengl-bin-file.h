@@ -58,8 +58,8 @@ struct si_opengl_bin_pa_cl_vs_out_cntl_t
 struct si_opengl_spi_vs_out_config_t
 {
 	unsigned int vs_export_count		: 8;
-	unsigned int vs_half_pack	: 8;
-	unsigned int vs_export_fog 	: 8;
+	unsigned int vs_half_pack		: 8;
+	unsigned int vs_export_fog 		: 8;
 	unsigned int vs_out_fog_vec_addr 	: 8;
 };
 
@@ -70,6 +70,31 @@ struct si_opengl_spi_shader_pos_format
 	unsigned int pos1_export_format 	: 8;
 	unsigned int pos2_export_format 	: 8;
 	unsigned int pos3_export_format 	: 8;	
+};
+
+/* User Element entry */
+struct si_opengl_bin_enc_user_element_t
+{
+	unsigned int dataClass;
+	unsigned int apiSlot;
+	unsigned int startUserReg;
+	unsigned int userRegCount;
+};
+
+/* Encoding dictionary entry */
+struct si_opengl_bin_enc_dict_entry_t
+{
+	/* Info */
+	int num_vgpr_used;
+	int num_sgpr_used;
+	int lds_size_used;
+	int stack_size_used;
+
+	unsigned int userElementCount;
+	struct si_opengl_bin_enc_user_element_t userElements[16];
+
+	/* FIXME: currently only designed for Vertex Shader */
+	struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *shader_pgm_rsrc2_vs;
 };
 
 struct si_opengl_shader_binary_t
@@ -84,7 +109,8 @@ struct si_opengl_shader_binary_t
 	/* Pointer to ISA */
 	struct elf_buffer_t *shader_isa;
 
-	/* TODO: Encoding dictionary */
+	/* Encoding dictionary */
+	struct si_opengl_bin_enc_dict_entry_t *shader_enc_dict;
 
 };
 
@@ -105,6 +131,9 @@ void si_opengl_program_binary_free(struct si_opengl_program_binary_t *program_bi
 
 struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer, int size, char* name);
 void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shdr);
+
+struct si_opengl_bin_enc_user_element_t *si_opengl_bin_enc_user_element_create();
+void si_opengl_bin_enc_user_element_free(struct si_opengl_bin_enc_user_element_t *user_elem);
 
 
 
