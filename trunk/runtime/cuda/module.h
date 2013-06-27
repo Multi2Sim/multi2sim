@@ -31,7 +31,7 @@ struct CUmod_st
 	struct elf_file_t *elf_file;
 };
 
-CUmodule cuda_module_create(void);
+CUmodule cuda_module_create(const char *cubin_path);
 void cuda_module_free(CUmodule module);
 
 

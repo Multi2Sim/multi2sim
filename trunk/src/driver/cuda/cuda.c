@@ -258,14 +258,14 @@ int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 	struct mem_t *mem = ctx->mem;
 
 	struct cuda_module_t *module;
-	char binary_filename[MAX_STRING_SIZE] = "";
+	char cubin_path[MAX_STRING_SIZE] = "";
 
 	/* Get kernel binary */
 	if (regs->ecx != 0)
-		mem_read(mem, regs->ecx, MAX_STRING_SIZE, binary_filename);
+		mem_read(mem, regs->ecx, MAX_STRING_SIZE, cubin_path);
 	
 	/* Create module */
-	module = cuda_module_create(binary_filename);
+	module = cuda_module_create(cubin_path);
 
 	cuda_debug("\tout: module.id=0x%08x\n", module->id);
 

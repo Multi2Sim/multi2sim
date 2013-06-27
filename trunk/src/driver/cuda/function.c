@@ -34,9 +34,6 @@ struct cuda_function_t *cuda_function_create(struct cuda_module_t *module,
 	unsigned int inst_buffer_size, unsigned int num_gpr_used)
 {
 	struct cuda_function_t *function;
-	//char section_name[MAX_STRING_SIZE];
-	//struct elf_section_t *section;
-	//int i;
 
 	/* Initialize */
 	function = xcalloc(1, sizeof(struct cuda_function_t));

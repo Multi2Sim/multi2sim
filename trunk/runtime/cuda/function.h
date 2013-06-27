@@ -33,6 +33,7 @@ struct CUfunc_st
 
 	unsigned long long int *inst_buffer;
 	unsigned int inst_buffer_size;
+	unsigned int num_gpr_used;
 
 	struct list_t *arg_list;
 	CUdeviceptr **arg_array;
