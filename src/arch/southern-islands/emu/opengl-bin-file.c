@@ -32,6 +32,42 @@
  * Private Functions
  */
 
+typedef enum _E_SC_USER_DATA_CLASS
+{
+	IMM_RESOURCE,               // immediate resource descriptor
+	IMM_SAMPLER,                // immediate sampler descriptor
+	IMM_CONST_BUFFER,           // immediate const buffer descriptor
+	IMM_VERTEX_BUFFER,          // immediate vertex buffer descriptor
+	IMM_UAV,                    // immediate UAV descriptor
+	IMM_ALU_FLOAT_CONST,        // immediate float const (scalar or vector)
+	IMM_ALU_BOOL32_CONST,       // 32 immediate bools packed into a single UINT
+	IMM_GDS_COUNTER_RANGE,      // immediate UINT with GDS address range for counters
+	IMM_GDS_MEMORY_RANGE,       // immediate UINT with GDS address range for storage
+	IMM_GWS_BASE,               // immediate UINT with GWS resource base offset
+	IMM_WORK_ITEM_RANGE,        // immediate HSAIL work item range
+	IMM_WORK_GROUP_RANGE,       // immediate HSAIL work group range
+	IMM_DISPATCH_ID,            // immediate HSAIL dispatch ID
+	IMM_SCRATCH_BUFFER,         // immediate HSAIL scratch buffer descriptor
+	IMM_HEAP_BUFFER,            // immediate HSAIL heap buffer descriptor
+	IMM_KERNEL_ARG,             // immediate HSAIL kernel argument
+	IMM_CONTEXT_BASE,           // immediate HSAIL context base-address
+	IMM_LDS_ESGS_SIZE,          // immediate LDS ESGS size used in on-chip GS
+	SUB_PTR_FETCH_SHADER,       // fetch shader subroutine pointer
+	PTR_RESOURCE_TABLE,         // flat/chunked resource table pointer
+	PTR_CONST_BUFFER_TABLE,     // flat/chunked const buffer table pointer
+	PTR_INTERNAL_RESOURCE_TABLE,// flat/chunked internal resource table pointer
+	PTR_SAMPLER_TABLE,          // flat/chunked sampler table pointer
+	PTR_UAV_TABLE,              // flat/chunked UAV resource table pointer
+	PTR_INTERNAL_GLOBAL_TABLE,  // internal driver table pointer
+	PTR_VERTEX_BUFFER_TABLE,    // flat/chunked vertex buffer table pointer
+	PTR_SO_BUFFER_TABLE,        // flat/chunked stream-out buffer table pointer
+	PTR_EXTENDED_USER_DATA,     // extended user data in video memory
+	PTR_INDIRECT_RESOURCE,      // pointer to resource indirection table
+	PTR_INDIRECT_INTERNAL_RESOURCE,// pointer to internal resource indirection table
+	PTR_INDIRECT_UAV,           // pointer to UAV indirection table
+	E_SC_USER_DATA_CLASS_LAST
+} E_SC_USER_DATA_CLASS;
+
 
 static int si_opengl_shader_binary_get_isa_offset(struct si_opengl_shader_binary_t *shdr)
 {
@@ -99,6 +135,87 @@ static void si_opengl_shader_binary_set_isa(struct si_opengl_shader_binary_t *sh
 
 }
 
+static struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *si_opengl_bin_spi_shader_pgm_rsrc2_vs_create()
+{
+	struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *pgm_rsrc2;
+
+	/* Allocate */
+	pgm_rsrc2 = xcalloc(1, sizeof(struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t));
+
+	/* Return */	
+	return pgm_rsrc2;
+}
+
+static void si_opengl_bin_spi_shader_pgm_rsrc2_vs_free(struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *pgm_rsrc2)
+{
+	free(pgm_rsrc2);
+}
+
+static struct si_opengl_bin_enc_dict_entry_t *si_opengl_bin_enc_dict_entry_create()
+{
+	struct si_opengl_bin_enc_dict_entry_t *enc_dict;
+
+	/* Allocate */
+	enc_dict = xcalloc(1, sizeof(struct si_opengl_bin_enc_dict_entry_t));
+
+	/* Initialize */
+	enc_dict->shader_pgm_rsrc2_vs = si_opengl_bin_spi_shader_pgm_rsrc2_vs_create();
+
+	/* Return */	
+	return enc_dict;
+}
+
+static void si_opengl_bin_enc_dict_entry_free(struct si_opengl_bin_enc_dict_entry_t *enc_dict)
+{
+	si_opengl_bin_spi_shader_pgm_rsrc2_vs_free(enc_dict->shader_pgm_rsrc2_vs);
+	free(enc_dict);
+}
+
+static void si_opengl_shader_binary_set_enc_dict(struct si_opengl_shader_binary_t *shdr)
+{
+	struct si_opengl_bin_enc_dict_entry_t *enc_dict;
+
+	/* Allocate */
+	shdr->shader_enc_dict = si_opengl_bin_enc_dict_entry_create();
+	enc_dict = shdr->shader_enc_dict;
+
+	/* Initialize */
+	/* FIXME: should get this info from binary! */
+	switch(shdr->shader_kind)
+	{
+	case SI_OPENGL_SHADER_VERTEX:
+		/* Fetch shader */
+		enc_dict->userElements[0].dataClass = SUB_PTR_FETCH_SHADER;
+		enc_dict->userElements[0].apiSlot = 0x0; /* */
+		enc_dict->userElements[0].startUserReg = 0x00000002; /* s2, s3*/
+		enc_dict->userElements[0].userRegCount = 0x00000002;
+		/* Vertex Buffer Table */
+		enc_dict->userElements[0].dataClass = PTR_VERTEX_BUFFER_TABLE;
+		enc_dict->userElements[0].apiSlot = 0x0; /* ? */
+		enc_dict->userElements[0].startUserReg = 0x00000004;	/* s4, s5 */
+		enc_dict->userElements[0].userRegCount = 0x00000002;
+		break;
+	default:
+		break;
+	}
+}
+
+struct si_opengl_bin_enc_user_element_t *si_opengl_bin_enc_user_element_create()
+{
+	struct si_opengl_bin_enc_user_element_t *user_elem;
+
+	/* Initialize */
+	user_elem = xcalloc(1, sizeof(struct si_opengl_bin_enc_user_element_t));
+	
+	/* Return */
+	return user_elem;
+}
+
+void si_opengl_bin_enc_user_element_free(struct si_opengl_bin_enc_user_element_t *user_elem)
+{
+	free(user_elem);
+}
+
 struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer, int size, char* name)
 {
 	struct si_opengl_shader_binary_t *shdr;
@@ -112,7 +229,8 @@ struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer, i
 	{
 		si_opengl_shader_binary_set_type(shdr);
 		si_opengl_shader_binary_set_isa(shdr);
-		/* TODO: encoding dictionary */
+		/* FIXME: encoding dictionary currently use fixed settings */
+		si_opengl_shader_binary_set_enc_dict(shdr);
 	}
 
 	/* Return */
@@ -121,6 +239,7 @@ struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer, i
 
 void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shdr)
 {
+	si_opengl_bin_enc_dict_entry_free(shdr->shader_enc_dict);
 	elf_file_free(shdr->shader_elf);
 	free(shdr->shader_isa);
 	free(shdr);
