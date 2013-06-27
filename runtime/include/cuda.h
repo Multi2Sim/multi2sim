@@ -70,6 +70,10 @@
 #define cuEventDestroy                      cuEventDestroy_v2
 #define cuTexRefSetAddress2D                cuTexRefSetAddress2D_v3
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef unsigned int CUdeviceptr;
 typedef int CUdevice;
 typedef struct CUctx_st *CUcontext;
@@ -747,6 +751,10 @@ CUresult cuGraphicsResourceSetMapFlags(CUgraphicsResource resource, unsigned int
 CUresult cuGraphicsMapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
 CUresult cuGraphicsUnmapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
 CUresult cuGetExportTable(const void **ppExportTable, const CUuuid *pExportTableId);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

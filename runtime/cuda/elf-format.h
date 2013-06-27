@@ -114,7 +114,7 @@ int elf_symbol_read_content(struct elf_file_t *elf_file, struct elf_symbol_t *sy
 		struct elf_buffer_t *elf_buffer);
 
 struct elf_file_t *elf_file_create_from_buffer(void *ptr, int size, char *name);
-struct elf_file_t *elf_file_create_from_path(char *path);
+struct elf_file_t *elf_file_create_from_path(const char *path);
 void elf_file_free(struct elf_file_t *elf_file);
 
 void elf_file_read_header(char *path, Elf32_Ehdr *ehdr);

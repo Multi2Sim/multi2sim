@@ -553,7 +553,8 @@ static void elf_file_read_program_headers(struct elf_file_t *elf_file)
 }
 
 
-static struct elf_file_t *elf_file_create_from_allocated_buffer(void *buffer, int size, char *path)
+static struct elf_file_t *elf_file_create_from_allocated_buffer(void *buffer,
+		int size, const char *path)
 {
 	struct elf_file_t *elf_file;
 
@@ -594,7 +595,7 @@ struct elf_file_t *elf_file_create_from_buffer(void *ptr, int size, char *name)
 }
 
 
-struct elf_file_t *elf_file_create_from_path(char *path)
+struct elf_file_t *elf_file_create_from_path(const char *path)
 {
 	struct elf_file_t *elf_file;
 	struct stat st;

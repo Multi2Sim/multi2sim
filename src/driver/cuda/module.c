@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/elf-format.h>
 #include <lib/util/list.h>
@@ -27,7 +29,7 @@
 struct list_t *module_list;
 
 /* Create a module */
-struct cuda_module_t *cuda_module_create(char *binary_filename)
+struct cuda_module_t *cuda_module_create(char *cubin_path)
 {
 	struct cuda_module_t *module;
 
@@ -35,8 +37,8 @@ struct cuda_module_t *cuda_module_create(char *binary_filename)
 	module = xcalloc(1, sizeof(struct cuda_module_t));
 	module->id = list_count(module_list);
 	module->ref_count = 1;
-	if (*binary_filename)
-		module->elf_file = elf_file_create_from_path(binary_filename);
+	assert(cubin_path);
+	module->elf_file = elf_file_create_from_path(cubin_path);
 
 	list_add(module_list, module);
 
@@ -46,8 +48,8 @@ struct cuda_module_t *cuda_module_create(char *binary_filename)
 /* Free module */
 void cuda_module_free(struct cuda_module_t *module)
 {
-	if (module->elf_file)
-		elf_file_free(module->elf_file);
+	assert(module->elf_file);
+	elf_file_free(module->elf_file);
 
 	free(module);
 }

@@ -40,9 +40,6 @@
 
 CUmodule module;
 CUfunction function;
-unsigned int inst_buffer_size;
-unsigned long long int *inst_buffer;
-unsigned int num_gpr_used;
 cudaError_t cuda_rt_last_error;
 
 /* Error messages */
@@ -70,48 +67,48 @@ char *cuda_rt_err_param_note =
  * Private Functions
  */
 
-unsigned char get_uchar(const unsigned long long int *kernel_bin_section, int index)
+unsigned char get_uchar(const unsigned long long int *dev_func_bin_section, int index)
 {
-	return (unsigned char)((kernel_bin_section[index / 8] >> (index % 8 * 8)) & 0xff);
+	return (unsigned char)((dev_func_bin_section[index / 8] >> (index % 8 * 8)) & 0xff);
 }
 
-unsigned short get_ushort(const unsigned long long int *kernel_bin_section, int start_index)
+unsigned short get_ushort(const unsigned long long int *dev_func_bin_section, int start_index)
 {
-	return (unsigned short)((unsigned short)get_uchar(kernel_bin_section, start_index) |
-			((unsigned short)get_uchar(kernel_bin_section, start_index + 1)) << 8);
+	return (unsigned short)((unsigned short)get_uchar(dev_func_bin_section, start_index) |
+			((unsigned short)get_uchar(dev_func_bin_section, start_index + 1)) << 8);
 }
 
-unsigned int get_uint(const unsigned long long int *kernel_bin_section, int start_index)
+unsigned int get_uint(const unsigned long long int *dev_func_bin_section, int start_index)
 {
-	return (unsigned int)((unsigned int)get_uchar(kernel_bin_section, start_index) |
-			((unsigned int)get_uchar(kernel_bin_section, start_index + 1)) << 8 |
-			((unsigned int)get_uchar(kernel_bin_section, start_index + 2)) << 16 |
-			((unsigned int)get_uchar(kernel_bin_section, start_index + 3)) << 24);
+	return (unsigned int)((unsigned int)get_uchar(dev_func_bin_section, start_index) |
+			((unsigned int)get_uchar(dev_func_bin_section, start_index + 1)) << 8 |
+			((unsigned int)get_uchar(dev_func_bin_section, start_index + 2)) << 16 |
+			((unsigned int)get_uchar(dev_func_bin_section, start_index + 3)) << 24);
 }
 
-unsigned long long int get_ulonglong(const unsigned long long int *kernel_bin_section, int start_index)
+unsigned long long int get_ulonglong(const unsigned long long int *dev_func_bin_section, int start_index)
 {
 	return (unsigned long long int)
-		(((unsigned long long int)get_uint(kernel_bin_section, start_index)) << 32 |
-		((unsigned long long int)get_uint(kernel_bin_section, start_index + 4)));
+		(((unsigned long long int)get_uint(dev_func_bin_section, start_index)) << 32 |
+		((unsigned long long int)get_uint(dev_func_bin_section, start_index + 4)));
 }
 
-int get_str_len(const unsigned long long int *kernel_bin_section, int start_index)
+int get_str_len(const unsigned long long int *dev_func_bin_section, int start_index)
 {
 	int i;
 
-	for (i = start_index; get_uchar(kernel_bin_section, i) != '\0'; ++i)
+	for (i = start_index; get_uchar(dev_func_bin_section, i) != '\0'; ++i)
 		;
 
 	return i;
 }
 
-void get_str(unsigned char *s, const unsigned long long int *kernel_bin_section, int start_index, int end_index)
+void get_str(unsigned char *s, const unsigned long long int *dev_func_bin_section, int start_index, int end_index)
 {
 	int i;
 
 	for (i = start_index; i < end_index; ++i)
-		s[i - start_index] = get_uchar(kernel_bin_section, i);
+		s[i - start_index] = get_uchar(dev_func_bin_section, i);
 	s[i - start_index] = '\0';
 }
 
@@ -192,40 +189,53 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		dim3 *gDim,
 		int *wSize)
 {
+	char *cubin_path;
 	char *binary_filename;
+	char deviceFun_arr[1024];
 
-	const unsigned long long int *kernel_bin_section;
-	unsigned long long int kernel_bin_section_size;
+	const unsigned long long int *dev_func_bin_sec;
+	unsigned long long int dev_func_bin_sec_size;
 	int elf_head;
-
-	struct elf_file_t *kernel_bin;
-	struct elf_section_t *section;
-	char text_section_name[1024];
-	unsigned short int text_section_index;
-	struct elf_section_t *text_section;
+	struct elf_file_t *dev_func_bin;
+	FILE *dev_func_bin_f;
 
 	int i;
-	unsigned char inst_buffer_byte;
 
 	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n",
 			__FUNCTION__);
 
 	/* User can set an environment variable 'M2S_OPENCL_BINARY' to make the
  	 * runtime load that specific pre-compiled binary. */
-	binary_filename = getenv("M2S_CUDA_BINARY");
+	cubin_path = getenv("M2S_CUDA_BINARY");
+	if (cubin_path && !strchr(cubin_path, '/'))
+		fatal("Please set M2S_CUDA_BINARY to the path of the cubin file");
 
-	/* Get kernel binary */
-	if (!binary_filename)
+	/* Get device function identifier. If M2S_CUDA_BINARY is set, we assume
+	 * the binary filename (excluding .cubin) is the device function
+	 * identifier */
+	if (cubin_path)
 	{
-		/* Get the section containing kernel binary */
-		kernel_bin_section = (*(struct {int m; int v; const unsigned long long int *d; char *f;} **)fatCubinHandle)->d;
-		kernel_bin_section_size = *(((unsigned long long int *)kernel_bin_section) + 1) + 16;
-	
+		binary_filename = strrchr(cubin_path, '/') + 1;
+		assert(!strncmp(binary_filename + strlen(binary_filename) - 6,
+					".cubin", 6));
+		assert(strlen(binary_filename) < sizeof deviceFun_arr);
+		strncpy(deviceFun_arr, binary_filename, strlen(binary_filename) - 6);
+		deviceFun_arr[strlen(binary_filename) - 6] = '\0';
+		deviceFun = deviceFun_arr;
+	}
+
+	/* Get device function binary */
+	if (!cubin_path)
+	{
+		/* Get the section containing device function binary */
+		dev_func_bin_sec = (*(struct {int m; int v; const unsigned long long int *d; char *f;} **)fatCubinHandle)->d;
+		dev_func_bin_sec_size = *(((unsigned long long int *)dev_func_bin_sec) + 1) + 16;
+
 		/* Look for ELF head */
 		elf_head = -1;
-		for (i = 2; i < kernel_bin_section_size; ++i)
+		for (i = 2; i < dev_func_bin_sec_size; ++i)
 		{
-			if (get_uint(kernel_bin_section, i) == 0x464c457f)
+			if (get_uint(dev_func_bin_sec, i) == 0x464c457f)
 			{
 				elf_head = i;
 				break;
@@ -233,70 +243,28 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		}
 		assert(elf_head != -1);
 	
-		/* Get kernel binary 
+		/* Get device function binary 
 		 * Notice that this binary may be larger than the actual binary since we
 		 * cannot determine the end of the binary. */
-		kernel_bin = elf_file_create_from_buffer(
-				(void *)(kernel_bin_section + elf_head / sizeof(unsigned long long int)),
-				kernel_bin_section_size - elf_head * sizeof(unsigned long long int), NULL);
+		dev_func_bin = elf_file_create_from_buffer(
+				(void *)(dev_func_bin_sec + elf_head / sizeof(unsigned long long int)),
+				dev_func_bin_sec_size - elf_head * sizeof(unsigned long long int), NULL);
+
+		/* Save device function binary in a tmp file for later use in CUDA driver */
+		cubin_path = tmpnam(NULL);
+		dev_func_bin_f = fopen(cubin_path, "wb");
+		elf_buffer_dump(&(dev_func_bin->buffer), dev_func_bin_f);
+		fclose(dev_func_bin_f);
+		elf_file_free(dev_func_bin);
 	}
 	else
-		kernel_bin = elf_file_create_from_path(binary_filename);
+		dev_func_bin = elf_file_create_from_path(cubin_path);
 	
-	/* Look for .text.kernel_name section */
-	snprintf(text_section_name, sizeof text_section_name, ".text.%s", deviceFun);
-	text_section_index = 0;
-	for (i = 0; i < list_count(kernel_bin->section_list); ++i)
-	{
-		section = (struct elf_section_t *)list_get(kernel_bin->section_list, i);
-
-		if (!strncmp(section->name, text_section_name, sizeof text_section_name))
-		{
-			text_section_index = i;
-			break;
-		}
-	}
-	assert(text_section_index != 0);
-
-	/* Get .text.kernel_name section */
-	text_section = (struct elf_section_t *)list_get(kernel_bin->section_list, text_section_index);
-
-	/* Get instruction binary */
-	inst_buffer_size = text_section->header->sh_size;
-	inst_buffer = (unsigned long long int *)xcalloc(1, inst_buffer_size);
-	if (!binary_filename)
-	{
-		for (i = 0; i < inst_buffer_size / 8; ++i)
-		{
-			inst_buffer[i] = get_ulonglong(kernel_bin_section, elf_head +
-					text_section->header->sh_offset + i * 8);
-		}
-	}
-	else
-	{
-		for (i = 0; i < inst_buffer_size; ++i)
-		{
-			elf_buffer_seek(&(kernel_bin->buffer), text_section->header->sh_offset + i);
-			elf_buffer_read(&(kernel_bin->buffer), &inst_buffer_byte, 1);
-			if (i % 8 == 0 || i % 8 == 1 || i % 8 == 2 || i % 8 == 3)
-				inst_buffer[i / 8] |= (unsigned long long int)(inst_buffer_byte) << (i * 8 + 32);
-			else
-				inst_buffer[i / 8] |= (unsigned long long int)(inst_buffer_byte) << (i * 8 - 32);
-		}
-	}
-
-	/* Get GPR usage */
-	num_gpr_used = text_section->header->sh_info >> 24;
-
 	/* Load module */
-	cuModuleLoad(&module, binary_filename);
+	cuModuleLoad(&module, cubin_path);
 
-	/* Get function */
+	/* Get device function */
 	cuModuleGetFunction(&function, module, deviceFun);
-
-	/* Free */
-	free(inst_buffer);
-	elf_file_free(kernel_bin);
 
 	cuda_debug_print(stdout, "\treturn\n");
 }
