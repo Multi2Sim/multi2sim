@@ -425,31 +425,44 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 
 void opencl_x86_device_sync_init(struct opencl_x86_device_sync_t *sync)
 {
+#ifndef X86_DEVICE_SPIN_LOCKS
 	pthread_mutex_init(&sync->lock, NULL);
 	pthread_cond_init(&sync->cond, NULL);
+#endif
 	sync->count = 0;
 }
 
 void opencl_x86_device_sync_destroy(struct opencl_x86_device_sync_t *sync)
 {
+#ifndef X86_DEVICE_SPIN_LOCKS
 	pthread_mutex_destroy(&sync->lock);
 	pthread_cond_destroy(&sync->cond);
+#endif
 }
 
 void opencl_x86_device_sync_wait(struct opencl_x86_device_sync_t *sync, int value)
 {
+#ifndef X86_DEVICE_SPIN_LOCKS
 	pthread_mutex_lock(&sync->lock);
 	while (sync->count != value)
 		pthread_cond_wait(&sync->cond, &sync->lock);
 	pthread_mutex_unlock(&sync->lock);
+#else
+	while (sync->count != value);
+#endif
+
 }
 
 void opencl_x86_device_sync_post(struct opencl_x86_device_sync_t *sync)
 {
+#ifndef X86_DEVICE_SPIN_LOCKS
 	pthread_mutex_lock(&sync->lock);
 	sync->count++;
 	pthread_mutex_unlock(&sync->lock);
 	pthread_cond_broadcast(&sync->cond);
+#else
+	__sync_fetch_and_add(&sync->count, 1);
+#endif
 }
 
 
