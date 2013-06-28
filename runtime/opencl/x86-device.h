@@ -115,10 +115,12 @@ struct opencl_x86_device_t
 	struct opencl_x86_device_sync_t work_ready;
 	int core_done_count;
 
+	int set_queue_affinity;
 	int num_cores;
 	pthread_t *threads;
 
 	struct opencl_x86_device_exec_t *exec;
+	struct opencl_x86_device_core_t queue_core;
 };
 
 
@@ -138,18 +140,6 @@ void opencl_x86_device_mem_write(struct opencl_x86_device_t *device,
 void opencl_x86_device_mem_copy(struct opencl_x86_device_t *device,
 		void *device_dest_ptr, void *device_src_ptr,
 		unsigned int size);
-
-void opencl_x86_device_make_fiber(
-		struct opencl_x86_device_fiber_t *fiber,
-		opencl_x86_device_fiber_func_t fiber_func,
-		int num_args,
-		...);
-void opencl_x86_device_make_fiber_ex(
-		struct opencl_x86_device_fiber_t *fiber,
-		opencl_x86_device_fiber_func_t fiber_func,
-		opencl_x86_device_fiber_return_func_t return_func,
-		int arg_size,
-		void *args);
 void opencl_x86_device_switch_fiber(
 		volatile struct opencl_x86_device_fiber_t *current,
 		volatile struct opencl_x86_device_fiber_t *dest);
@@ -161,5 +151,8 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device);
 void opencl_x86_work_item_entry_point(void);
 
 void opencl_x86_device_init_work_item(int i, struct opencl_x86_device_core_t *core);
+void opencl_x86_device_run_exec(
+	struct opencl_x86_device_core_t *core,
+	struct opencl_x86_device_exec_t *exec);
 
 #endif

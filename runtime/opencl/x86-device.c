@@ -105,34 +105,9 @@ static int opencl_x86_device_get_num_cores(void)
 	return num_cores;
 }
 
-
-
-
-
 /*
  * Public Functions
  */
-
-void opencl_x86_device_make_fiber_ex(
-		struct opencl_x86_device_fiber_t *fiber,
-		opencl_x86_device_fiber_func_t fiber_func,
-		opencl_x86_device_fiber_return_func_t return_func,
-		int arg_size,
-		void *args)
-{
-	arg_size *= sizeof(size_t);
-	assert(!((size_t) fiber->stack_bottom % sizeof(size_t)));
-	assert(!(fiber->stack_size % sizeof(size_t)));
-
-	memcpy((char *) fiber->stack_bottom + fiber->stack_size
-			- arg_size, args, arg_size);
-
-	fiber->eip = fiber_func;
-	fiber->esp = (char *) fiber->stack_bottom + fiber->stack_size
-			- arg_size - sizeof (size_t);
-	*(size_t *) fiber->esp = (size_t) return_func;
-}
-
 
 void opencl_x86_device_reinit_work_item(struct opencl_x86_device_core_t *core)
 {
@@ -277,7 +252,6 @@ void opencl_x86_device_init_work_item(int i, struct opencl_x86_device_core_t *co
 
 
 void opencl_x86_device_work_group_init(
-	struct opencl_x86_device_t *device,
 	struct opencl_x86_device_core_t *work_group,
 	struct opencl_x86_device_exec_t *e)
 {
@@ -399,6 +373,30 @@ void opencl_x86_device_core_treardown(struct opencl_x86_device_core_t *work_grou
 }
 
 
+void opencl_x86_device_run_exec(
+	struct opencl_x86_device_core_t *core,
+	struct opencl_x86_device_exec_t *exec)
+{
+	/* Initialize kernel data */
+	opencl_x86_device_work_group_init(core, exec);
+
+	/* Launch work-groups */
+	for (;;)
+	{
+		/* Get next work-group */
+		int num = opencl_x86_device_get_next_work_group(exec);
+		if (num >= exec->num_groups)
+			break;
+
+		/* Launch it */
+		opencl_x86_device_work_group_launch(num, exec, core);
+
+	}
+
+	/* Finalize kernel */
+	opencl_x86_device_work_group_done(core, exec->kernel);
+}
+
 /* Each core on every device has a thread that runs this procedure
  * It polls for work-groups and launches them on its core */
 void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
@@ -406,7 +404,6 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 	struct opencl_x86_device_exec_t *exec;
 	struct opencl_x86_device_core_t core;
 	int count = 0;
-	int num;
 
 	opencl_x86_device_core_init(&core);
 
@@ -418,24 +415,7 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 		if (!exec)
 			break;
 
-		/* Initialize kernel data */
-		opencl_x86_device_work_group_init(device, &core, exec);
-
-		/* Launch work-groups */
-		for (;;)
-		{
-			/* Get next work-group */
-			num = opencl_x86_device_get_next_work_group(exec);
-			if (num >= exec->num_groups)
-				break;
-
-			/* Launch it */
-			opencl_x86_device_work_group_launch(num, exec, &core);
-
-		}
-
-		/* Finalize kernel */
-		opencl_x86_device_work_group_done(&core, exec->kernel);
+		opencl_x86_device_run_exec(&core, exec);
 
 		opencl_x86_device_sync_post(&device->cores_done);
 	}
@@ -489,6 +469,7 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	opencl_x86_device_sync_init(&device->cores_done);
 	device->exec = NULL;
 	device->core_done_count = 0;
+	device->set_queue_affinity = 0;
 
 	/* Initialize parent device */
 	parent->address_bits = 8 * sizeof (void *);
@@ -624,7 +605,7 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 
 	/* Initialize threads */
 	device->threads = xcalloc(device->num_cores, sizeof(pthread_t));
-	for (i = 0; i < device->num_cores; i++)
+	for (i = 0; i < device->num_cores - 1; i++)
 	{
 		cpu_set_t cpu_set;
 
@@ -640,6 +621,7 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 		CPU_SET(i, &cpu_set);
 		pthread_setaffinity_np(device->threads[i], sizeof cpu_set, &cpu_set);
 	}
+	opencl_x86_device_core_init(&device->queue_core);
 
 	opencl_debug("[%s] opencl_x86_device_t device = %p", __FUNCTION__, 
 		device);
