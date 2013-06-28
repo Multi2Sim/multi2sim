@@ -507,6 +507,7 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->image3d_max_depth = 0;
 	parent->image3d_max_height = 0;
 	parent->image3d_max_width = 0;
+	parent->linker_available = CL_FALSE;
 	parent->local_mem_size = INT_MAX;
 	parent->local_mem_type = CL_GLOBAL;
 	parent->max_clock_frequency = 0;

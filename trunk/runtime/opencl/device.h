@@ -34,10 +34,10 @@ struct _cl_device_id
 	cl_bool error_correction_support;
 	cl_device_exec_capabilities execution_capabilities;
 	const char *extensions;
-	cl_int global_mem_cache_size;
+	cl_ulong global_mem_cache_size;
 	cl_device_mem_cache_type global_mem_cache_type;
 	cl_uint global_mem_cacheline_size;
-	cl_int global_mem_size;
+	cl_ulong global_mem_size;
 	cl_bool host_unified_memory;
 	cl_bool image_support;
 	cl_int image2d_max_height;
@@ -45,6 +45,7 @@ struct _cl_device_id
 	cl_int image3d_max_depth;
 	cl_int image3d_max_height;
 	cl_int image3d_max_width;
+	cl_bool linker_available;
 	cl_ulong local_mem_size;
 	cl_device_local_mem_type local_mem_type;
 	cl_int max_clock_frequency;
