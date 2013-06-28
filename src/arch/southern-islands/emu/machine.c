@@ -3323,7 +3323,7 @@ void si_isa_V_ADD_I32_impl(struct si_work_item_t *work_item,
 	{
 		si_isa_debug("t%d: V%u<=(%d) (%d + %d)", work_item->id, 
 			INST.vdst, sum.as_int, s0.as_int, s1.as_int);
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, carry.as_uint);
 	}
 }
@@ -3359,7 +3359,7 @@ void si_isa_V_SUB_I32_impl(struct si_work_item_t *work_item,
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst,
 			dif.as_int);
-		si_isa_debug("wf_id%d: vcc<=(%u) ", work_item->id_in_wavefront, 
+		si_isa_debug("t%d: vcc<=(%u) ", work_item->id_in_wavefront, 
 			carry.as_uint);
 	}
 }
@@ -3395,7 +3395,7 @@ void si_isa_V_SUBREV_I32_impl(struct si_work_item_t *work_item,
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst,
 			dif.as_int);
-		si_isa_debug("wf_id%d: vcc<=(%u) ", work_item->id_in_wavefront, 
+		si_isa_debug("t%d: vcc<=(%u) ", work_item->id_in_wavefront, 
 			carry.as_uint);
 	}
 }
@@ -3439,7 +3439,7 @@ void si_isa_V_CMP_LT_F32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3470,7 +3470,7 @@ void si_isa_V_CMP_GT_F32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3510,7 +3510,7 @@ void si_isa_V_CMP_NGT_F32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3541,7 +3541,7 @@ void si_isa_V_CMP_NEQ_F32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3626,7 +3626,7 @@ void si_isa_V_CMP_LT_I32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3657,7 +3657,7 @@ void si_isa_V_CMP_EQ_I32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3688,7 +3688,7 @@ void si_isa_V_CMP_LE_I32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3719,7 +3719,7 @@ void si_isa_V_CMP_GT_I32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3750,7 +3750,7 @@ void si_isa_V_CMP_NE_I32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3781,7 +3781,7 @@ void si_isa_V_CMP_GE_I32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3821,7 +3821,7 @@ void si_isa_V_CMP_LT_U32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3860,7 +3860,7 @@ void si_isa_V_CMP_LE_U32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -3891,7 +3891,7 @@ void si_isa_V_CMP_GT_U32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%u) ",
+		si_isa_debug("t%d: vcc<=(%u) ",
 			work_item->id_in_wavefront, result.as_uint);
 	}
 }
@@ -4721,7 +4721,7 @@ void si_isa_V_CMP_LT_F32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -4767,7 +4767,7 @@ void si_isa_V_CMP_EQ_F32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -4821,7 +4821,7 @@ void si_isa_V_CMP_GT_F32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -4876,7 +4876,7 @@ void si_isa_V_CMP_NEQ_F32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -4922,7 +4922,7 @@ void si_isa_V_CMP_NLT_F32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5031,7 +5031,7 @@ void si_isa_V_CMP_LT_I32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5077,7 +5077,7 @@ void si_isa_V_CMP_EQ_I32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5123,7 +5123,7 @@ void si_isa_V_CMP_LE_I32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5169,7 +5169,7 @@ void si_isa_V_CMP_GT_I32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:%u]<=(%u) ",
+		si_isa_debug("t%d: S[%u:%u]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst, INST.vdst + 1, 
 			result.as_uint);
 	}
@@ -5215,7 +5215,7 @@ void si_isa_V_CMP_NE_I32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5261,7 +5261,7 @@ void si_isa_V_CMP_GE_I32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5310,7 +5310,7 @@ void si_isa_V_CMPX_EQ_I32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:%u],EXEC<=(%u) ",
+		si_isa_debug("t%d: S[%u:%u],EXEC<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst, INST.vdst+1,
 			result.as_uint);
 	}
@@ -5353,7 +5353,7 @@ void si_isa_V_CMP_LT_U32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5387,7 +5387,7 @@ void si_isa_V_CMP_LE_U32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5421,7 +5421,7 @@ void si_isa_V_CMP_GT_U32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5455,7 +5455,7 @@ void si_isa_V_CMP_LG_U32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5489,7 +5489,7 @@ void si_isa_V_CMP_GE_U32_VOP3a_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%u) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%u) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5558,7 +5558,7 @@ void si_isa_V_MED3_I32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: V[%u]<=(%d) ",
+		si_isa_debug("t%d: V[%u]<=(%d) ",
 			work_item->id_in_wavefront, INST.vdst, median.as_int);
 	}
 }
@@ -5603,10 +5603,10 @@ void si_isa_V_LSHR_B64_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u]<=(0x%x) ",
+		si_isa_debug("t%d: S[%u]<=(0x%x) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result_lo.as_uint);
-		si_isa_debug("wf_id%d: S[%u]<=(0x%x) ",
+		si_isa_debug("t%d: S[%u]<=(0x%x) ",
 			work_item->id_in_wavefront, INST.vdst + 1,
 			result_hi.as_uint);
 	}
@@ -5722,7 +5722,7 @@ void si_isa_V_ADD_F64_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%lgf) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%lgf) ",
 			work_item->id_in_wavefront, INST.vdst,
 			value.as_double);
 	}
@@ -5850,7 +5850,7 @@ void si_isa_V_MUL_F64_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%u:+1]<=(%lgf) ",
+		si_isa_debug("t%d: S[%u:+1]<=(%lgf) ",
 			work_item->id_in_wavefront, INST.vdst,
 			value.as_double);
 	}
@@ -5906,7 +5906,7 @@ void si_isa_V_ADDC_U32_VOP3b_impl(struct si_work_item_t *work_item,
 	{
 		si_isa_debug("t%d: V%u<=(%u) ", work_item->id, INST.vdst,
 			sum.as_uint);
-		si_isa_debug("wf_id%d: vcc<=(%u) ", work_item->id_in_wavefront, 
+		si_isa_debug("t%d: vcc<=(%u) ", work_item->id_in_wavefront, 
 			carry_out.as_uint);
 	}
 }
