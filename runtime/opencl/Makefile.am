@@ -117,6 +117,7 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	x86-device-wi.s
 
 AM_CFLAGS = -m32 -D_GNU_SOURCE
+AM_CCASFLAGS = -m32
 
 endif
 
