@@ -368,6 +368,14 @@ cl_int clGetDeviceInfo(
 			param_value, 
 			param_value_size_ret);
 
+	case CL_DEVICE_LINKER_AVAILABLE:
+		return opencl_set_param(
+			&device->linker_available, 
+			sizeof device->linker_available, 
+			param_value_size, 
+			param_value, 
+			param_value_size_ret);
+
 	case CL_DEVICE_LOCAL_MEM_SIZE:
 		return opencl_set_param(
 			&device->local_mem_size, 
