@@ -410,8 +410,6 @@ void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 	struct opencl_x86_device_exec_t *exec;
 	exec = xcalloc(1, sizeof(struct opencl_x86_device_exec_t));
 
-	pthread_mutex_init(&exec->mutex, NULL);
-
 	exec->ndrange = ndrange;
 	exec->kernel = ndrange->arch_kernel;
 	ndrange->exec = exec;
@@ -421,8 +419,6 @@ void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 {
 	opencl_debug("[%s] freeing x86 ndrange", __FUNCTION__);
-
-	pthread_mutex_destroy(&ndrange->exec->mutex);
 	free(ndrange->exec);
 }
 
@@ -444,22 +440,10 @@ void opencl_x86_ndrange_run_partial(struct opencl_x86_ndrange_t *ndrange,
 	for (int i = 0; i < 3; i++)
 		exec->num_groups *= work_group_count[i];
 
-	pthread_mutex_lock(&device->lock);
-
-	device->num_kernels++;
-	device->num_done = 0;
 	device->exec = exec;
-	pthread_cond_broadcast(&device->ready);
-
-	while (device->num_done != device->num_cores)
-	{
-		opencl_debug("[%s] num done = %d, num cores = %d", 
-			__FUNCTION__, device->num_done, device->num_cores);
-		pthread_cond_wait(&device->done, &device->lock);
-	}
-
-	pthread_mutex_unlock(&device->lock);
-
+	opencl_x86_device_sync_post(&device->work_ready);
+	device->core_done_count += device->num_cores;
+	opencl_x86_device_sync_wait(&device->cores_done, device->core_done_count);
 }
 
 /* Run an ND-Range */

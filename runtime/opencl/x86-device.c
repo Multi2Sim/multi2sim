@@ -64,10 +64,9 @@ static struct opencl_x86_device_core_t
 static struct opencl_x86_device_exec_t *opencl_x86_device_has_work(
 		struct opencl_x86_device_t *device, int *old_count)
 {
-	while (device->num_kernels == *old_count)
-		pthread_cond_wait(&device->ready, &device->lock);
-
 	(*old_count)++;
+
+	opencl_x86_device_sync_wait(&device->work_ready, *old_count);
 	return device->exec;
 }
 
@@ -76,12 +75,7 @@ static struct opencl_x86_device_exec_t *opencl_x86_device_has_work(
 static int opencl_x86_device_get_next_work_group(
 		struct opencl_x86_device_exec_t *exec)
 {
-	int val;
-
-	pthread_mutex_lock(&exec->mutex);
-	val = exec->next_group++;
-	pthread_mutex_unlock(&exec->mutex);
-	return val;
+	return __sync_fetch_and_add(&exec->next_group, 1);
 }
 
 
@@ -415,18 +409,12 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 	int num;
 
 	opencl_x86_device_core_init(&core);
-	/* Lock */
-	pthread_mutex_lock(&device->lock);
 
 	/* Get kernels until done */
 	for (;;)
 	{
 		/* Get one more kernel */
 		exec = opencl_x86_device_has_work(device, &count);
-
-		/* Unlock while processing kernel */
-		pthread_mutex_unlock(&device->lock);
-
 		if (!exec)
 			break;
 
@@ -449,17 +437,39 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 		/* Finalize kernel */
 		opencl_x86_device_work_group_done(&core, exec->kernel);
 
-		/* Lock again */
-		pthread_mutex_lock(&device->lock);
-		device->num_done++;
-		if (device->num_done == device->num_cores);
-			pthread_cond_signal(&device->done);
+		opencl_x86_device_sync_post(&device->cores_done);
 	}
-
-	/* Unlock */
-	pthread_mutex_unlock(&device->lock);
 	opencl_x86_device_core_treardown(&core);
 	return NULL;
+}
+
+void opencl_x86_device_sync_init(struct opencl_x86_device_sync_t *sync)
+{
+	pthread_mutex_init(&sync->lock, NULL);
+	pthread_cond_init(&sync->cond, NULL);
+	sync->count = 0;
+}
+
+void opencl_x86_device_sync_destroy(struct opencl_x86_device_sync_t *sync)
+{
+	pthread_mutex_destroy(&sync->lock);
+	pthread_cond_destroy(&sync->cond);
+}
+
+void opencl_x86_device_sync_wait(struct opencl_x86_device_sync_t *sync, int value)
+{
+	pthread_mutex_lock(&sync->lock);
+	while (sync->count != value)
+		pthread_cond_wait(&sync->cond, &sync->lock);
+	pthread_mutex_unlock(&sync->lock);
+}
+
+void opencl_x86_device_sync_post(struct opencl_x86_device_sync_t *sync)
+{
+	pthread_mutex_lock(&sync->lock);
+	sync->count++;
+	pthread_mutex_unlock(&sync->lock);
+	pthread_cond_broadcast(&sync->cond);
 }
 
 
@@ -475,9 +485,10 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	device->type = opencl_runtime_type_x86;
 	device->parent = parent;
 	device->num_cores = opencl_x86_device_get_num_cores();
-	device->num_kernels = 0;
-	device->num_done = 0;
+	opencl_x86_device_sync_init(&device->work_ready);
+	opencl_x86_device_sync_init(&device->cores_done);
 	device->exec = NULL;
+	device->core_done_count = 0;
 
 	/* Initialize parent device */
 	parent->address_bits = 8 * sizeof (void *);
@@ -610,11 +621,6 @@ struct opencl_x86_device_t *opencl_x86_device_create(
 	parent->arch_ndrange_run_partial_func =
 			(opencl_arch_ndrange_run_partial_func_t)
 			opencl_x86_ndrange_run_partial;
-
-	/* Initialize mutex and condition variables */
-	pthread_mutex_init(&device->lock, NULL);
-	pthread_cond_init(&device->ready, NULL);
-	pthread_cond_init(&device->done, NULL);
 
 	/* Initialize threads */
 	device->threads = xcalloc(device->num_cores, sizeof(pthread_t));
