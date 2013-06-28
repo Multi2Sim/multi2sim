@@ -41,121 +41,121 @@
 int net_debug_category;
 
 char *net_config_help =
-	"The network configuration file is a plain-text file following the\n"
-	"IniFile format. It specifies a set of networks, their nodes, and\n"
-	"connections between them. The following set of sections and variables\n"
-	"are allowed:\n"
-	"\n"
-	"Section '[ General ]' contains configuration parameters affecting the\n"
-	"whole network system.\n"
-	"\n"
-	"  Frequency = <value> (Default = 1000)\n"
-	"      Frequency for the network system in MHz.\n"
-	"\n"
-	"Section '[ Network.<name> ]' defines a network. The string specified in\n"
-	"<name> can be used in other configuration files to refer to\n"
-	"this network.\n"
-	"\n"
-	"  DefaultInputBufferSize = <size> (Required)\n"
-	"      Default size for input buffers in nodes and switches, specified\n"
-	"      in number of packets. When a node/switch is created in the network\n"
-	"      this size will be used if it is not specified.\n"
-	"  DefaultOutputBufferSize = <size> (Required)\n"
-	"      Default size for output buffers in nodes and switches in number\n"
-	"      or packets.\n"
-	"  DefaultBandwidth = <bandwidth> (Required)\n"
-	"      Default bandwidth for links in the network, specified in number of\n"
-	"      bytes per cycle. If a link's bandwidth is not specified, this value\n"
-	"      will be used.\n"
-	"\n"
-	"Sections '[ Network.<network>.Node.<node> ]' are used to define nodes in\n"
-	"network '<network>'.\n"
-	"\n"
-	"  Type = {EndNode|Switch} (Required)\n"
-	"      Type of node. End nodes can send and receive packets, while\n"
-	"      switches are used to forward packets between other switches and\n"
-	"      end nodes.\n"
-	"  InputBufferSize = <size> (Default = <network>.DefaultInputBufferSize)\n"
-	"      Size of input buffer in number of packets.\n"
-	"  OutputBufferSize = <size> (Default = <network>.DefaultOutputBufferSize)\n"
-	"      Size of output buffer in number of packets.\n"
-	"  Bandwidth = <bandwidth> (Default = <network>.DefaultBandwidth)\n"
-	"      For switches, bandwidth of internal crossbar communicating input\n"
-	"      with output buffers. For end nodes, this variable is ignored.\n"
-	"\n"
-	"Sections '[ Network.<network>.Link.<link> ]' are used to define links in\n"
-	"network <network>. A link connects an output buffer of a source node with\n"
-	"an input buffer of a destination node.\n"
-	"\n"
-	"  Source = <node> (Required)\n"
-	"      Source node. The node name is a node declared in a\n"
-	"      'Network.<network>.Node.<node>' section.\n"
-	"  Dest = <node> (Required)\n"
-	"      Destination node.\n"
-	"  Type = {Unidirectional|Bidirectional} (Default = Unidirectional)\n"
-	"      Link direction. Choosing a bidirectional link has the same effect\n"
-	"      as creating two unidirectional links in opposite directions.\n"
-	"  Bandwidth = <bandwidth> (Default = <network>.DefaultBandwidth)\n"
-	"      Bandwidth of the link in bytes per cycle.\n"
-	"  VC = <virtual channels> (Default = 1)\n"
-	"	Number of virtual channels a link can have.\n"
-	"\n"
-	"Section '[Network.<network>.Routes]' can be used (Optional) to define \n"
-	"routes and manually configure the routing table. For a route between \n"
-	"two end-nodes every route step from source to destination should be \n"
-	"identified. Each unidirectional route step follows the pattern:\n"
-	"  <node_A>.to.<node_C> = <node_B>:<Virtual Channel>\n"
-	"  node_A. Source node of a route step \n"
-	"  node_C. Destination node of a route step \n"
-	"  node_B. Immediate next node that each packet must go through to get \n"
-	"      from node_A to node_C\n"
-	"  Virtual Channel. Is an optional field to choose a virtual channel on \n"
-	"  the link between node_A and node_B. \n" "\n" "\n";
+		"The network configuration file is a plain-text file following the\n"
+		"IniFile format. It specifies a set of networks, their nodes, and\n"
+		"connections between them. The following set of sections and variables\n"
+		"are allowed:\n"
+		"\n"
+		"Section '[ General ]' contains configuration parameters affecting the\n"
+		"whole network system.\n"
+		"\n"
+		"  Frequency = <value> (Default = 1000)\n"
+		"      Frequency for the network system in MHz.\n"
+		"\n"
+		"Section '[ Network.<name> ]' defines a network. The string specified in\n"
+		"<name> can be used in other configuration files to refer to\n"
+		"this network.\n"
+		"\n"
+		"  DefaultInputBufferSize = <size> (Required)\n"
+		"      Default size for input buffers in nodes and switches, specified\n"
+		"      in number of packets. When a node/switch is created in the network\n"
+		"      this size will be used if it is not specified.\n"
+		"  DefaultOutputBufferSize = <size> (Required)\n"
+		"      Default size for output buffers in nodes and switches in number\n"
+		"      or packets.\n"
+		"  DefaultBandwidth = <bandwidth> (Required)\n"
+		"      Default bandwidth for links in the network, specified in number of\n"
+		"      bytes per cycle. If a link's bandwidth is not specified, this value\n"
+		"      will be used.\n"
+		"\n"
+		"Sections '[ Network.<network>.Node.<node> ]' are used to define nodes in\n"
+		"network '<network>'.\n"
+		"\n"
+		"  Type = {EndNode|Switch} (Required)\n"
+		"      Type of node. End nodes can send and receive packets, while\n"
+		"      switches are used to forward packets between other switches and\n"
+		"      end nodes.\n"
+		"  InputBufferSize = <size> (Default = <network>.DefaultInputBufferSize)\n"
+		"      Size of input buffer in number of packets.\n"
+		"  OutputBufferSize = <size> (Default = <network>.DefaultOutputBufferSize)\n"
+		"      Size of output buffer in number of packets.\n"
+		"  Bandwidth = <bandwidth> (Default = <network>.DefaultBandwidth)\n"
+		"      For switches, bandwidth of internal crossbar communicating input\n"
+		"      with output buffers. For end nodes, this variable is ignored.\n"
+		"\n"
+		"Sections '[ Network.<network>.Link.<link> ]' are used to define links in\n"
+		"network <network>. A link connects an output buffer of a source node with\n"
+		"an input buffer of a destination node.\n"
+		"\n"
+		"  Source = <node> (Required)\n"
+		"      Source node. The node name is a node declared in a\n"
+		"      'Network.<network>.Node.<node>' section.\n"
+		"  Dest = <node> (Required)\n"
+		"      Destination node.\n"
+		"  Type = {Unidirectional|Bidirectional} (Default = Unidirectional)\n"
+		"      Link direction. Choosing a bidirectional link has the same effect\n"
+		"      as creating two unidirectional links in opposite directions.\n"
+		"  Bandwidth = <bandwidth> (Default = <network>.DefaultBandwidth)\n"
+		"      Bandwidth of the link in bytes per cycle.\n"
+		"  VC = <virtual channels> (Default = 1)\n"
+		"	Number of virtual channels a link can have.\n"
+		"\n"
+		"Section '[Network.<network>.Routes]' can be used (Optional) to define \n"
+		"routes and manually configure the routing table. For a route between \n"
+		"two end-nodes every route step from source to destination should be \n"
+		"identified. Each unidirectional route step follows the pattern:\n"
+		"  <node_A>.to.<node_C> = <node_B>:<Virtual Channel>\n"
+		"  node_A. Source node of a route step \n"
+		"  node_C. Destination node of a route step \n"
+		"  node_B. Immediate next node that each packet must go through to get \n"
+		"      from node_A to node_C\n"
+		"  Virtual Channel. Is an optional field to choose a virtual channel on \n"
+		"  the link between node_A and node_B. \n" "\n" "\n";
 
 char *net_err_end_nodes =
-	"\tAn attempt has been made to send a message from/to an intermediate\n"
-	"\tswitch or bus. Both the initial source and the final destination\n"
-	"\tof a network message have to be end nodes.\n";
+		"\tAn attempt has been made to send a message from/to an intermediate\n"
+		"\tswitch or bus. Both the initial source and the final destination\n"
+		"\tof a network message have to be end nodes.\n";
 
 char *net_err_no_route =
-	"\tA message has been sent between two nodes with no possible route.\n"
-	"\tPlease redesign your network, considering that every pair of end\n"
-	"\tnodes sending messages to each other need to be connected with a\n"
-	"\tlink.\n";
+		"\tA message has been sent between two nodes with no possible route.\n"
+		"\tPlease redesign your network, considering that every pair of end\n"
+		"\tnodes sending messages to each other need to be connected with a\n"
+		"\tlink.\n";
 
 char *net_err_large_message =
-	"\tA message has been sent in a network where some input/output buffer\n"
-	"\tdoes not have enough capacity to hold it. Please redesign your\n"
-	"\tnetwork, considering that the size of each buffer should be at\n"
-	"\tleast as large as the largest possible message.\n";
+		"\tA message has been sent in a network where some input/output buffer\n"
+		"\tdoes not have enough capacity to hold it. Please redesign your\n"
+		"\tnetwork, considering that the size of each buffer should be at\n"
+		"\tleast as large as the largest possible message.\n";
 
 char *net_err_node_name_duplicate =
-	"\tA node has been added to a network with a name duplicate. Please make\n"
-	"\tsure that all intermediate and end nodes of your network have\n"
-	"\tdifferent names.\n";
+		"\tA node has been added to a network with a name duplicate. Please make\n"
+		"\tsure that all intermediate and end nodes of your network have\n"
+		"\tdifferent names.\n";
 
 char *net_err_config =
-	"\tA network is being loaded from an IniFile configuration file.\n"
-	"\tHowever, some feature of the provided file does not comply with the\n"
-	"\texpected format. Please run 'm2s --help-net-config' for a list of\n"
-	"\tpossible sections/variables in the network configuration file.\n";
+		"\tA network is being loaded from an IniFile configuration file.\n"
+		"\tHowever, some feature of the provided file does not comply with the\n"
+		"\texpected format. Please run 'm2s --help-net-config' for a list of\n"
+		"\tpossible sections/variables in the network configuration file.\n";
 
 char *net_err_can_send =
-	"\tAn attempt has been detected of injecting a package in a network\n"
-	"\tfrom a source node that has no available space in its output\n"
-	"\tbuffer. This can be solved by making sure a message can be sent\n"
-	"\tbefore injecting it (use function 'net_can_send').\n";
+		"\tAn attempt has been detected of injecting a package in a network\n"
+		"\tfrom a source node that has no available space in its output\n"
+		"\tbuffer. This can be solved by making sure a message can be sent\n"
+		"\tbefore injecting it (use function 'net_can_send').\n";
 
 char *net_err_cycle =
-	"\tA cycle has been detected in the graph representing the routing table\n"
-	"\tfor a network. Routing cycles can cause deadlocks in simulations, that\n"
-	"\tcan in turn make the simulation stall with no output.\n";
+		"\tA cycle has been detected in the graph representing the routing table\n"
+		"\tfor a network. Routing cycles can cause deadlocks in simulations, that\n"
+		"\tcan in turn make the simulation stall with no output.\n";
 
 char *net_err_route_step =
-	"\tThere is a link missing between source node and next node for this  \n"
-	"\troute step. The route between source and destination node should go \n"
-	"\tthrough existing links/Buses that are defined in the configuration  \n"
-	"\tfile.  \n";
+		"\tThere is a link missing between source node and next node for this  \n"
+		"\troute step. The route between source and destination node should go \n"
+		"\tthrough existing links/Buses that are defined in the configuration  \n"
+		"\tfile.  \n";
 
 
 
@@ -170,6 +170,8 @@ static struct hash_table_t *net_table;
 
 /* Configuration parameters */
 char *net_config_file_name = "";
+
+char *net_traffic_pattern = "";
 
 char *net_report_file_name = "";
 FILE *net_report_file;
@@ -201,7 +203,54 @@ static double exp_random(double lambda)
 }
 
 
+static void net_traffic_uniform(struct net_t *net, double *inject_time)
+{
+	while (1)
+	{
+		struct net_node_t *node;
+		struct net_node_t *dst_node;
+		long long cycle;
+		int i;
 
+		/* Get current cycle */
+		cycle = esim_domain_cycle(net_domain_index);
+		if (cycle >= net_max_cycles)
+			break;
+
+		/* Inject messages */
+		for (i = 0; i < net->node_count; i++)
+		{
+			/* Get end node */
+			node = list_get(net->node_list, i);
+			if (node->kind != net_node_end)
+				continue;
+
+			/* Turn for next injection? */
+			if (inject_time[i] > cycle)
+				continue;
+
+			/* Get a random destination node */
+			do
+			{
+				dst_node = list_get(net->node_list, random() %
+						list_count(net->node_list));
+			} while (dst_node->kind != net_node_end
+					|| dst_node == node);
+
+			/* Inject */
+			while (inject_time[i] < cycle)
+			{
+				inject_time[i] += exp_random(net_injection_rate);
+				if (net_can_send(net, node, dst_node, net_msg_size))
+					net_send(net, node, dst_node, net_msg_size);
+			}
+		}
+		/* Next cycle */
+		net_debug("___ cycle %lld ___\n", cycle);
+		esim_process_events(TRUE);
+	}
+
+}
 
 
 /*
@@ -218,7 +267,11 @@ void net_read_config(void)
 
 	/* Configuration file */
 	if (!*net_config_file_name)
+	{
+		net_domain_index = esim_new_domain(net_frequency);
 		return;
+	}
+
 
 	/* Open network configuration file */
 	config = config_create(net_config_file_name);
@@ -230,16 +283,19 @@ void net_read_config(void)
 
 	/* Frequency */
 	net_frequency = config_read_int(config, section,
-		"Frequency", net_frequency);
+			"Frequency", net_frequency);
 	if (!IN_RANGE(net_frequency, 1, ESIM_MAX_FREQUENCY))
 		fatal("%s: invalid value for 'Frequency'",
-			net_config_file_name);
+				net_config_file_name);
+
+	/* Create frequency domain */
+	net_domain_index = esim_new_domain(net_frequency);
 
 	/* Create a temporary list of network names found in configuration
 	 * file */
 	net_name_list = list_create();
 	for (section = config_section_first(config); section;
-		section = config_section_next(config))
+			section = config_section_next(config))
 	{
 		char *delim = ".";
 
@@ -273,7 +329,7 @@ void net_read_config(void)
 
 	/* Print network names */
 	net_debug("%s: loading network configuration file\n",
-		net_config_file_name);
+			net_config_file_name);
 	net_debug("networks found:\n");
 	for (i = 0; i < net_name_list->count; i++)
 		net_debug("\t%s\n", (char *) list_get(net_name_list, i));
@@ -305,18 +361,15 @@ void net_init(void)
 	/* Load network configuration file */
 	net_read_config();
 
-	/* Create frequency domain */
-	net_domain_index = esim_new_domain(net_frequency);
-
 	/* Register events for network handler*/
 	EV_NET_SEND = esim_register_event_with_name(net_event_handler,
-		net_domain_index, "net_send");
+			net_domain_index, "net_send");
 	EV_NET_OUTPUT_BUFFER = esim_register_event_with_name(net_event_handler,
-		net_domain_index, "net_output_buffer");
+			net_domain_index, "net_output_buffer");
 	EV_NET_INPUT_BUFFER = esim_register_event_with_name(net_event_handler,
-		net_domain_index, "net_input_buffer");
+			net_domain_index, "net_input_buffer");
 	EV_NET_RECEIVE = esim_register_event_with_name(net_event_handler,
-		net_domain_index, "net_receive");
+			net_domain_index, "net_receive");
 
 	/* Report file */
 	if (*net_report_file_name)
@@ -324,7 +377,7 @@ void net_init(void)
 		net_report_file = file_open_for_write(net_report_file_name);
 		if (!net_report_file)
 			fatal("%s: cannot write on network report file",
-				net_report_file_name);
+					net_report_file_name);
 	}
 
 	/* Visualization File */
@@ -346,7 +399,7 @@ void net_done(void)
 	if (net_table)
 	{
 		for (hash_table_find_first(net_table, (void **) &net); net;
-			hash_table_find_next(net_table, (void **) &net))
+				hash_table_find_next(net_table, (void **) &net))
 		{
 			/* Dump report for network */
 			if (net_report_file)
@@ -432,7 +485,6 @@ void net_sim(char *debug_file_name)
 	net = net_find(net_sim_network_name);
 	if (!net)
 		fatal("%s: network does not exist", net_sim_network_name);
-
 	/* Initialize */
 	inject_time = xcalloc(net->node_count, sizeof(double));
 
@@ -440,51 +492,29 @@ void net_sim(char *debug_file_name)
 
 	/* Simulation loop */
 	esim_process_events(TRUE);
-	while (1)
+	if (!strcmp(net_traffic_pattern, "") ||
+			(!strcmp(net_traffic_pattern, "uniform")))
 	{
-		struct net_node_t *node;
-		struct net_node_t *dst_node;
-		long long cycle;
-		int i;
-
-		/* Get current cycle */
-		cycle = esim_domain_cycle(net_domain_index);
-		if (cycle >= net_max_cycles)
-			break;
-
-		/* Inject messages */
-		for (i = 0; i < net->node_count; i++)
-		{
-			/* Get end node */
-			node = list_get(net->node_list, i);
-			if (node->kind != net_node_end)
-				continue;
-
-			/* Turn for next injection? */
-			if (inject_time[i] > cycle)
-				continue;
-
-			/* Get a random destination node */
-			do
-			{
-				dst_node = list_get(net->node_list, random() %
-					list_count(net->node_list));
-			} while (dst_node->kind != net_node_end
-				|| dst_node == node);
-
-			/* Inject */
-			while (inject_time[i] < cycle)
-			{
-				inject_time[i] += exp_random(net_injection_rate);
-				if (net_can_send(net, node, dst_node, net_msg_size))
-					net_send(net, node, dst_node, net_msg_size);
-			}
-		}
-
-		/* Next cycle */
-		net_debug("___ cycle %lld ___\n", cycle);
-		esim_process_events(TRUE);
+		net_traffic_uniform(net, inject_time);
 	}
+	else if (!strcmp(net_traffic_pattern, "command"))
+	{
+		while(1)
+		{
+			long long cycle;
+
+			cycle = esim_domain_cycle(net_domain_index);
+			if (cycle >= net_max_cycles)
+				break;
+
+			net_debug("___cycle %lld___ \n", cycle);
+			esim_process_events(TRUE);
+		}
+	}
+	else
+		fatal("Network %s: unknown traffic pattern (%s). \n", net->name
+				,net_traffic_pattern);
+
 
 	/* Drain events */
 	esim_process_all_events();

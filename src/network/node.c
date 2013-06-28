@@ -67,6 +67,26 @@ struct net_node_t *net_node_create(struct net_t *net,
 	return node;
 }
 
+struct net_buffer_t *net_get_buffer_by_name(struct net_node_t *node,
+		char *buffer_name)
+{
+	struct net_buffer_t *buffer;
+
+	int i;
+	for (i = 0; i < list_count(node->input_buffer_list); i++)
+	{
+		buffer = list_get(node->input_buffer_list, i);
+		if (!strcasecmp(buffer->name, buffer_name))
+			return buffer;
+	}
+	for (i = 0; i < list_count(node->output_buffer_list); i++)
+	{
+		buffer = list_get(node->output_buffer_list, i);
+		if (!strcasecmp(buffer->name, buffer_name))
+			return buffer;
+	}
+	return NULL;
+}
 
 void net_node_free(struct net_node_t *node)
 {

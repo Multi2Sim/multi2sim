@@ -87,5 +87,8 @@ struct net_bus_t *net_node_add_bus_lane(struct net_node_t *node);
 struct net_buffer_t *net_node_schedule(struct net_node_t *node,
 	struct net_buffer_t *output_buffer);
 
+struct net_buffer_t *net_get_buffer_by_name(struct net_node_t *node,
+		char *buffer_name);
+
 
 #endif
