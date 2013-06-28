@@ -44,9 +44,9 @@ extern char *cuda_err_version;
 extern char *cuda_err_native;
 extern char *cuda_rt_err_native;
 #define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", __FUNCTION__, \
-		cuda_err_not_impl);
+		cuda_err_not_impl)
 #define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", __FUNCTION__, \
-		cuda_rt_err_not_impl);
+		cuda_rt_err_not_impl)
 
 /* System Call Code */
 #define CUDA_SYS_CODE 328
