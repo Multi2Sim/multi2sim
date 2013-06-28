@@ -1368,6 +1368,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Traffic Pattern */
+		if (!strcmp(argv[argi], "--net-traffic-pattern"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			net_sim_last_option = argv[argi];
+			net_traffic_pattern = argv[++argi];
+			continue;
+		}
 		/* Cycles for network simulation */
 		if (!strcmp(argv[argi], "--net-max-cycles"))
 		{
