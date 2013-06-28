@@ -125,18 +125,25 @@ static void net_config_command_create(struct net_t *net, struct config_t *config
 	int command_var_id;
 
 	/* Checks */
-	if (net_injection_rate != 0.001)
+	if (net_injection_rate >= 0.001)
 		fatal("Network %s:%s: Using Command section; \n"
 				"\t option --net-injection-rate should not be used \n",
 				net->name,section);
 	/* Read commands */
+	net_injection_rate = 0;
+	if (strcmp(net_traffic_pattern, "") &&
+			(strcmp(net_traffic_pattern, "command")))
+		fatal("Network %s: Command option doesn't comply with other "
+				"traffic pattern\n (%s)", net->name,
+				net_traffic_pattern);
+	net_traffic_pattern = "command";
 	command_var_id = 0;
-	warning("Do NOT forget to implement the new stuff for injection and when \n"
-			"the x86 option is used \n");
 
 	/* Register events for command handler*/
 	EV_NET_COMMAND = esim_register_event_with_name(net_command_handler,
 			net_domain_index, "net_command");
+	EV_NET_COMMAND_RCV = esim_register_event_with_name(net_command_handler,
+			net_domain_index, "net_command_receive");
 
 
 	while (1)
@@ -148,8 +155,11 @@ static void net_config_command_create(struct net_t *net, struct config_t *config
 			break;
 
 		/* Schedule event to process command */
-		command_line = xstrdup(command_line);
-		esim_schedule_event(EV_NET_COMMAND, command_line, 0);
+		struct net_stack_t *stack;
+		stack = net_stack_create(net,ESIM_EV_NONE, NULL);
+		stack->net = net;
+		stack->command = xstrdup(command_line);
+		esim_schedule_event(EV_NET_COMMAND, stack, 0);
 
 		/* Next command */
 		command_var_id++;

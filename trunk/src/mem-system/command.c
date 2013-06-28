@@ -767,6 +767,10 @@ void mem_system_end_command_handler(int event, void *data)
 						link->name, expected_bytes, link->transferred_bytes);
 			}
 		}
+		else if (buffer->kind == net_buffer_bus)
+		{
+			fprintf(stderr, "The connection is a BUS. BUS check is not yet implemented \n");
+		}
 		/* FIXME: The same calculation may be required for BUS connections. */
 	}
 

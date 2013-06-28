@@ -26,6 +26,8 @@
  */
 
 extern int EV_NET_COMMAND;
+extern int EV_NET_COMMAND_RCV;
+extern int EV_NET_COMMAND_SEND;
 
 void net_command_handler(int event, void *data);
 
