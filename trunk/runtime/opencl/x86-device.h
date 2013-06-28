@@ -46,7 +46,6 @@ struct opencl_x86_device_exec_t
 	unsigned int work_group_start[3];
 	unsigned int work_group_count[3];
 
-	pthread_mutex_t mutex;
 	int num_groups;
 	volatile int next_group;
 };
@@ -93,6 +92,17 @@ struct opencl_x86_device_core_t
 
 };
 
+struct opencl_x86_device_sync_t
+{
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
+	volatile int count;
+};
+
+void opencl_x86_device_sync_init(struct opencl_x86_device_sync_t *sync);
+void opencl_x86_device_sync_destroy(struct opencl_x86_device_sync_t *sync);
+void opencl_x86_device_sync_wait(struct opencl_x86_device_sync_t *sync, int value);
+void opencl_x86_device_sync_post(struct opencl_x86_device_sync_t *sync);
 
 struct opencl_x86_device_t
 {
@@ -101,15 +111,12 @@ struct opencl_x86_device_t
 	/* Parent generic device object */
 	struct opencl_device_t *parent;
 
-	volatile int num_kernels;
-	volatile int num_done;
+	struct opencl_x86_device_sync_t cores_done;
+	struct opencl_x86_device_sync_t work_ready;
+	int core_done_count;
 
-	volatile int num_cores;
+	int num_cores;
 	pthread_t *threads;
-
-	pthread_mutex_t lock;
-	pthread_cond_t ready;
-	pthread_cond_t done;
 
 	struct opencl_x86_device_exec_t *exec;
 };
