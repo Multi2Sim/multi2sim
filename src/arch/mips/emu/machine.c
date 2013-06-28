@@ -147,7 +147,7 @@ void mips_isa_BGTZL_impl(struct mips_ctx_t *ctx)
 void mips_isa_LB_impl(struct mips_ctx_t *ctx)
 {
 	unsigned char temp;
-	unsigned int addr = mips_gpr_get_value(ctx,RS) + IMM;
+	unsigned int addr = mips_gpr_get_value(ctx,RS) + SEXT32(IMM,16);
 	mem_read(ctx->mem, addr, sizeof(unsigned char), &temp);
 	mips_gpr_set_value(ctx,RT, SEXT32(temp, 8));
 }
@@ -424,8 +424,8 @@ void mips_isa_MTLO_impl(struct mips_ctx_t *ctx)
 }
 void mips_isa_MULT_impl(struct mips_ctx_t *ctx)
 {
-	unsigned long int temp = (long int) mips_gpr_get_value(ctx,(int)RS) *
-			(long int) mips_gpr_get_value(ctx,(int)RT);
+	unsigned long long int temp = (long long int) mips_gpr_get_value(ctx,(int)RS) *
+			(long long int) mips_gpr_get_value(ctx,(int)RT);
 	ctx->regs->regs_LO = BITS64(temp, 31, 0);
 	ctx->regs->regs_HI = BITS64(temp, 63, 32);
 }
