@@ -21,11 +21,11 @@
 
 #include <lib/mhandle/mhandle.h>
 
+#include "debug.h"
 #include "linked-list.h"
 
 
-/* Creation */
-struct linked_list_t *linked_list_create()
+struct linked_list_t *linked_list_create(void)
 {
 	struct linked_list_t *list;
 
@@ -35,7 +35,6 @@ struct linked_list_t *linked_list_create()
 }
 
 
-/* Destruction */
 void linked_list_free(struct linked_list_t *list)
 {
 	linked_list_clear(list);
@@ -267,6 +266,7 @@ void linked_list_insert(struct linked_list_t *list, void *data)
 	list->error_code = LINKED_LIST_ERR_OK;
 	list->count++;
 	list->current = elem;
+	list->version++;
 }
 
 
@@ -317,6 +317,7 @@ void linked_list_remove(struct linked_list_t *list)
 	list->error_code = LINKED_LIST_ERR_OK;
 	list->count--;
 	list->current = elem->next;
+	list->version++;
 	free(elem);
 }
 
@@ -341,6 +342,7 @@ void linked_list_clear(struct linked_list_t *list)
 	list->tail = NULL;
 	list->head = NULL;
 	list->current = NULL;
+	list->version++;
 }
 
 
@@ -404,6 +406,7 @@ void linked_list_sort(struct linked_list_t *list, int (*comp)(const void *, cons
 	/* Set the first element as current element */
 	list->current_index = 0;
 	list->current = list->head;
+	list->version++;
 }
 
 
@@ -430,3 +433,86 @@ int linked_list_sorted(struct linked_list_t *list,
 	}
 	return 1;
 }
+
+
+
+/*
+ * Linked List Iterator Object
+ */
+
+struct linked_list_iter_t
+{
+	/* Associated list and its version */
+	struct linked_list_t *list;
+	int version;
+
+	/* Element of the linked list pointed to by the iterator */
+	struct linked_list_elem_t *elem;
+};
+
+
+static void linked_list_iter_check_version(struct linked_list_iter_t *iter)
+{
+	/* Check */
+	if (iter->version == iter->list->version)
+		return;
+	
+	/* Version mismatch */
+	panic("%s: version mismatch for linked list iterator.\n"
+		"\tAn iterator has been created to traverse a linked list, but the\n"
+		"\tcontent of the list has been modified during the iterator's\n"
+		"\tlifetime. This behavior is not allowed, since it can produce\n"
+		"\tinconsistencies.\n", __FUNCTION__);
+}
+
+
+struct linked_list_iter_t *linked_list_iter_create(struct linked_list_t *list)
+{
+	struct linked_list_iter_t *iter;
+
+	/* Initialize */
+	iter = xcalloc(1, sizeof(struct linked_list_iter_t));
+	iter->list = list;
+	iter->version = list->version;
+	iter->elem = list->head;
+
+	/* Return */
+	return iter;
+}
+
+
+void linked_list_iter_free(struct linked_list_iter_t *iter)
+{
+	linked_list_iter_check_version(iter);
+	free(iter);
+}
+
+
+void linked_list_iter_head(struct linked_list_iter_t *iter)
+{
+	linked_list_iter_check_version(iter);
+	iter->elem = iter->list->head;
+}
+
+
+void linked_list_iter_next(struct linked_list_iter_t *iter)
+{
+	linked_list_iter_check_version(iter);
+	if (iter->elem)
+		iter->elem = iter->elem->next;
+}
+
+
+int linked_list_iter_is_end(struct linked_list_iter_t *iter)
+{
+	linked_list_iter_check_version(iter);
+	return !iter->elem;
+}
+
+
+void *linked_list_iter_get(struct linked_list_iter_t *iter)
+{
+	linked_list_iter_check_version(iter);
+	return iter->elem ? iter->elem->data : NULL;
+}
+
