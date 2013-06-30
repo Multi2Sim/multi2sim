@@ -33,6 +33,7 @@
 
 #include "basic-block.h"
 #include "function.h"
+#include "struct-analysis.h"
 #include "symbol.h"
 #include "symbol-table.h"
 
@@ -478,6 +479,7 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	function->basic_block_list = linked_list_create();
 	function->basic_block_table = hash_table_create(0, 1);
 	function->symbol_table = llvm2si_symbol_table_create();
+	function->node_list = linked_list_create();
 
 	/* Standard basic blocks */
 	function->basic_block_entry = llvm2si_basic_block_create(NULL);
@@ -510,6 +512,9 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	llvm2si_basic_block_connect(function->basic_block_args,
 			function->basic_block_body);
 
+	/* Carry out structural analysis of CFG */
+	llvm2si_function_struct_analysis(function);
+
 	/* Return */
 	return function;
 }
@@ -533,6 +538,11 @@ void llvm2si_function_free(struct llvm2si_function_t *function)
 	LIST_FOR_EACH(function->uav_list, index)
 		llvm2si_function_uav_free(list_get(function->uav_list, index));
 	list_free(function->uav_list);
+
+	/* Free list of nodes in control tree (structural analysis) */
+	LINKED_LIST_FOR_EACH(function->node_list)
+		llvm2si_function_node_free(linked_list_get(function->node_list));
+	linked_list_free(function->node_list);
 
 	/* Rest */
 	hash_table_free(function->basic_block_table);

@@ -48,8 +48,15 @@ struct linked_list_t
 	int error_code;
 
 	/* Private */
-	struct linked_list_elem_t *head, *tail, *current;
+	struct linked_list_elem_t *head;
+	struct linked_list_elem_t *tail;
+	struct linked_list_elem_t *current;
 	int current_index;
+
+	/* Version number of the list state. Whenever a function call changes an
+	 * element of the list (insert/remove/update), the version number will
+	 * increase. */
+	int version;
 };
 
 
@@ -370,4 +377,33 @@ void linked_list_sort(struct linked_list_t *list,
 int linked_list_sorted(struct linked_list_t *list,
 	int (*comp)(const void *, const void *));
 
+
+
+
+/*
+ * Linked List Iterator Object
+ *
+ * This is an object pointing to an internal position of the linked list. It is
+ * used for list traversal purposes without affecting the internal position
+ * stored in the linked list. During the lifetime of an iterator, the linked
+ * list shouldn't change its state. If it does, a panic message will be issues
+ * by the iterator function.
+ */
+
+#define LINKED_LIST_ITER_FOR_EACH(iter) \
+	for (linked_list_iter_head((iter)); \
+		!linked_list_iter_is_end((iter)); \
+		linked_list_iter_next((iter)))
+
+struct linked_list_iter_t;
+
+struct linked_list_iter_t *linked_list_iter_create(struct linked_list_t *list);
+void linked_list_iter_free(struct linked_list_iter_t *iter);
+
+void linked_list_iter_head(struct linked_list_iter_t *iter);
+void linked_list_iter_next(struct linked_list_iter_t *iter);
+int linked_list_iter_is_end(struct linked_list_iter_t *iter);
+void *linked_list_iter_get(struct linked_list_iter_t *iter);
+
 #endif
+

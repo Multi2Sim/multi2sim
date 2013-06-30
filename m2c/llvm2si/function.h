@@ -31,6 +31,7 @@ struct linked_list_t;
 struct llvm2si_basic_block_t;
 struct llvm2si_function_t;
 struct llvm2si_symbol_t;
+struct llvm2si_function_node_t;
 struct si2bin_arg_t;
 
 
@@ -137,7 +138,7 @@ struct llvm2si_function_t
 	 * predecessor. */
 	struct llvm2si_basic_block_t *basic_block_entry;
 
-	/* Pre-defined basic blocks */
+	/* Predefined basic blocks */
 	struct llvm2si_basic_block_t *basic_block_header;
 	struct llvm2si_basic_block_t *basic_block_uavs;
 	struct llvm2si_basic_block_t *basic_block_args;
@@ -145,6 +146,15 @@ struct llvm2si_function_t
 
 	/* Symbol table associated with the function, storing LLVM variables */
 	struct llvm2si_symbol_table_t *symbol_table;
+
+	/* Control tree created during structural analysis */
+	struct linked_list_t *node_list;  /* Elements of type 'llvm2si_function_node_t' */
+	struct llvm2si_function_node_t *node_entry;
+
+	/* Global counter for pre-order traversal in structural analysis
+	 * procedure. This counter is incremented and assigned to each
+	 * llvm2si_function_node_t->preorder_id. */
+	int preorder_counter;
 
 	/* While code is generated, this variable keeps track of the total
 	 * amount of bytes pushed into the stack for this function. */

@@ -28,6 +28,7 @@
 /* Forward declarations */
 struct linked_list_t;
 struct llvm2si_function_t;
+struct llvm2si_function_node_t;
 struct si2bin_inst_t;
 
 
@@ -53,6 +54,11 @@ struct llvm2si_basic_block_t
 	/* Function where the basic block belongs. This field is populated
 	 * automatically when function 'llvm2si_function_add' is called. */
 	struct llvm2si_function_t *function;
+
+	/* Leaf node in control flow tree associated with the basic block. This
+	 * value is initialized by 'llvm2si_funciton_node_create_leaf' when the
+	 * basic block is passed. */
+	struct llvm2si_function_node_t *node;
 
 	/* List list of instructions forming the basic block. Each element is of
 	 * type 'struct si2bin_inst_t'. */
