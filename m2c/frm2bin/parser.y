@@ -160,13 +160,6 @@ rl_arg_list
   	  	/* Return the arg list */
   	  	$$ = arg_list;
   	}
-  	
-  	|rl_arg TOK_ADD rl_arg_list
-  	{
-  		/* case: global memory [reg_idx + offset] */
-  		list_insert($3, 0, $1);
-  		$$ = $3;
-  	}
 
   	| rl_arg TOK_COMMA rl_arg_list
   	{
@@ -240,7 +233,7 @@ rl_arg
   	  	}
   	  	else 
   	  	{
-  	  		frm2bin_yyerror_fmt("invalid constant memory identifer: %s", 
+  	  		frm2bin_yyerror_fmt("invalid constant memory identifier: %s", 
 				$1->name);
   	  	}
 

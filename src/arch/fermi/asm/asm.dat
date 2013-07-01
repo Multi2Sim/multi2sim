@@ -231,7 +231,7 @@ DEFINST(I2I,
 	CONV, 
 	0x074)
 
-/* MOV catogory instructions: 
+/* MOV category instructions: 
  * MOV, MOV32I, SEL, PRMT
  */
 
@@ -274,6 +274,12 @@ DEFINST(LD,
 	LDST_LD, 
 	LDST, 
 	0x105)
+	
+DEFINST(LDL, 
+	"%pred LDL%mod0_B_cop%mod0_B_type %dst, %src1_offs", 
+	LDST_LDL, 
+	LDST, 
+	0x305)
 
 DEFINST(LDS, 
 	"%pred LDS%mod0_B_type %dst, %src1_offs", 
@@ -286,6 +292,12 @@ DEFINST(ST,
 	LDST_ST, 
 	LDST, 
 	0x125)
+	
+DEFINST(STL,
+	"%pred STL%mod0_B_cop%mod0_B_type %src1_offs, %dst",
+	LDST_STL,
+	LDST,
+	0x195)
 
 DEFINST(STS, 
 	"%pred STS%mod0_B_type %src1_offs, %dst", 
@@ -342,6 +354,12 @@ DEFINST(SSY,
 	CTRL_SSY, 
 	CTRL, 
 	0x187)
+	
+DEFINST(PBK, 
+	"%pred PBK %tgt", 
+	CTRL_PBK, 
+	CTRL, 
+	0x1a7)
 
 DEFINST(PCNT,
 	"%pred_no@P0 PCNT %tgt",

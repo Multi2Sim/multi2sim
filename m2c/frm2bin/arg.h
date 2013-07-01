@@ -154,8 +154,12 @@ enum frm_mod_logic_type_t
 /* mod data width */
 enum frm_mod_data_width_t
 {
+	u16,
+	s16,
 	u32,
 	s32,
+	u64,
+	s64,
 };
 
 /* mod comparison type */
@@ -185,14 +189,17 @@ struct frm_mod_t
 		int mod0_A_w;	/* 0-default, 1-w */
 		int mod0_A_redarv;	/* 0-red, 1-arv */
 		int mod0_A_op;	/* 0-popc, 1-and, 2-or, 3-invalid */
+		int mod0_B_cop;	/* 0-ca, 1-cg, 2-lu, 3-cv */
 		int mod0_B_type;	/* 0-u8, 1-s8, 2-u16, 3-s16, 4-default, 5-64, 6-128 */
 		int mod0_C_s;	/* 0-default, 1-s */
 		int mod0_D_sat;	/* 0-default, 1-sat */
 		int mod0_D_x;	/* 0-default, 1-x */
 		int mod0_D_ftzfmz;	/* 0-default, 1-ftz, 2-fmz, 3-invalid */
 		int gen0_mod1_B_rnd;	/* 0-default, 1-rm, 2-rp, 3-rz */
+		int gen0_src1_dtype;	/* 0-default, 1-f16, 2-f32, 3-f64 */
 		int offs_mod1_A_trig;	/* 0-default, 1-trig */
 		int offs_mod1_A_op;	/* 0-default, fma64, fma32, xlu, alu, agu, su, fu, fmul */
+		int IMAD_mod;	/* for both IMAD_mod1 and IMAD_mod2, 0-u32, 1-s32 */
 	} value;
 };
 
@@ -358,6 +365,7 @@ void frm_arg_dump(struct frm_arg_t *inst_arg, FILE *f);
 void frm_mod_free(struct frm_mod_t *mod);
 
 struct frm_mod_t *frm_mod_create_data_width(char *mod_name);
+struct frm_mod_t *frm_mod_create_IMAD_mod(char *mod_name);
 struct frm_mod_t *frm_mod_create_logic(char *mod_name);
 struct frm_mod_t *frm_mod_create_comparison(char *mod_name);
 struct frm_mod_t *frm_mod_create_brev(char *mod_name);
@@ -367,11 +375,13 @@ struct frm_mod_t *frm_mod_create_tgt_lmt(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_A_w(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_A_redarv(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_A_op(char *mod_name);
+struct frm_mod_t *frm_mod_create_mod0_B_cop(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_B_type(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_C_s(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_D_sat(char* mod_name);
 struct frm_mod_t *frm_mod_create_mod0_D_x(char *mod_name);
 struct frm_mod_t *frm_mod_create_mod0_D_ftzfmz(char* mod_name);
+struct frm_mod_t *frm_mod_create_gen0_src1_dtype(char* mod_name);
 struct frm_mod_t *frm_mod_create_gen0_mod1_B_rnd(char* mod_name);
 struct frm_mod_t *frm_mod_create_offs_mod1_A_trig(char* mod_name);
 struct frm_mod_t *frm_mod_create_offs_mod1_A_op(char* mod_name);
