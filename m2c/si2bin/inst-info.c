@@ -79,8 +79,12 @@ void si2bin_inst_info_init(void)
 		prev_info = hash_table_get(si2bin_inst_info_table, info->name);
 		if (prev_info)
 		{
-			info->next = prev_info;
-			hash_table_set(si2bin_inst_info_table, info->name, info);
+			/* non vop3 instructions are added first into list. Add vop3 version to end of list */
+			prev_info->next = info;
+
+			/* non vop3 instructions are added first but vop3 version is added to the front of list */
+			//info->next = prev_info;
+			//hash_table_set(si2bin_inst_info_table, info->name, info);
 		}
 		else
 		{

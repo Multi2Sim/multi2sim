@@ -984,21 +984,12 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 		case si2bin_token_vsrc1:
 
-			if (arg->type == si2bin_arg_literal)
-			{
-				/* Literal constant other than [-16...64] is encoded by adding
-				 * four more bits to the instruction. */
-				if (inst->size == 8)
-					si2bin_yyerror("only one literal allowed");
-				inst->size = 8;
-				inst_bytes->vop2.vsrc1 = 0xff;
-				inst_bytes->vop2.lit_cnst = arg->value.literal.val;
-			}
-			else
-			{
-				/* Encode */
-				inst_bytes->vopc.vsrc1 = si2bin_arg_encode_operand(arg);
-			}
+			/* Make sure argument is a vector register */
+			assert(arg->type == si2bin_arg_vector_register);
+
+			/* Encode */
+			inst_bytes->vopc.vsrc1 = arg->value.vector_register.id;
+			
 			break;
 
 		case si2bin_token_wait_cnt:
