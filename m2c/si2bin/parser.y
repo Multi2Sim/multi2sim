@@ -88,6 +88,7 @@
 %token TOK_STAR
 %token TOK_EQ
 %token<id>  TOK_UAV
+%token TOK_HL
 %token TOK_GLOBAL
 %token TOK_MEM
 %token TOK_ARGS
@@ -524,6 +525,17 @@ ptr_stmt_list
 
 		/* Free ID and return argument */
 		si2bin_id_free(id);
+		$$ = arg;
+	}
+	| ptr_stmt_list TOK_HL
+	{
+		struct si_arg_t *arg = $1;
+	
+		/* Set scope to hl */
+		arg->pointer.scope = si_arg_hw_local;
+		arg->pointer.buffer_num = 1;
+
+		/* Return argument */
 		$$ = arg;
 	}
 	| ptr_stmt_list TOK_CONST

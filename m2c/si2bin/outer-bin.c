@@ -33,6 +33,18 @@
 
 #define NUM_PROG_INFO_ELEM 114
 
+struct str_map_t si2bin_outer_bin_device_map = 
+{
+	4,
+	{
+		{"invalid",        si2bin_outer_bin_invalid},
+		{"cape_verde",  si2bin_outer_bin_cape_verde},
+		{"pitcairn",      si2bin_outer_bin_pitcairn},
+		{"tahiti",          si2bin_outer_bin_tahiti},
+	}
+
+};
+
 struct si2bin_outer_bin_t *si2bin_outer_bin_create(void)
 {
 	struct si2bin_outer_bin_t *outer_bin;
@@ -45,6 +57,9 @@ struct si2bin_outer_bin_t *si2bin_outer_bin_create(void)
 	outer_bin->inner_bin_list = list_create();
 
 	outer_bin->metadata_list = list_create();
+
+	/* Set default device type to tahiti */
+	outer_bin->device = si2bin_outer_bin_tahiti;
 	
 	return outer_bin;
 
@@ -175,7 +190,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
 		/* Device */
-		snprintf(line, sizeof line, ";device:tahiti\n");
+		snprintf(line, sizeof line, ";device:%s\n", str_map_value(&si2bin_outer_bin_device_map, outer_bin->device));
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
 		/* Unique ID */
@@ -735,9 +750,25 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 	}
 	
+	switch (outer_bin->device)
+	{
+		case si2bin_outer_bin_cape_verde:
+			outer_bin->file->header.e_machine = 0;
+			break;
 
-        outer_bin->file->header.e_machine = 0x3fd;  /* 0x3fe for pitcairn */
-        outer_bin->file->header.e_version = 1;
+		case si2bin_outer_bin_pitcairn:
+			outer_bin->file->header.e_machine = 0x3fe;
+			break;
+
+		case si2bin_outer_bin_tahiti:
+			outer_bin->file->header.e_machine = 0x3fd;
+			break;
+
+		default:
+			fatal("%s: unrecognized device type", __FUNCTION__);
+	}
+        
+	outer_bin->file->header.e_version = 1;
 
         elf_enc_file_add_symbol_table(outer_bin->file, symbol_table);
 
