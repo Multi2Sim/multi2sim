@@ -87,6 +87,8 @@ enum frm_token_type_t
 	frm_token_IMAD_mod2,
 	frm_token_IMAD_hi,
 	frm_token_IMAD_sat,
+	frm_token_stype_sn,
+	frm_token_dtype_sn,
 
 	/* temporialy, will be deleted later */
 	frm_token_mod_data_width,

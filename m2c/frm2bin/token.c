@@ -93,6 +93,8 @@ struct str_map_t frm_token_map =
 		{ "\%IMAD_mod2", frm_token_IMAD_mod2 },
 		{ "\%IMAD_hi", frm_token_IMAD_hi },
 		{ "\%IMAD_sat", frm_token_IMAD_sat },
+		{"\%stype_sn", frm_token_stype_sn},
+		{"\%dtype_sn", frm_token_dtype_sn},
 
 		/* temporially, may be deleted later */
 		{ "\%gen0_mod_data_width", frm_token_mod_data_width },
