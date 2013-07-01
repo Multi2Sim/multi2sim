@@ -1415,3 +1415,31 @@ CUresult cuGetExportTable(const void **ppExportTable, const CUuuid *pExportTable
 	return CUDA_SUCCESS;
 }
 
+CUresult cuExit(void)
+{
+	int ret;
+
+	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
+
+	/* Free default device */
+	cuda_device_free(device);
+
+	/* Free lists */
+	list_free(context_list);
+	list_free(device_list);
+	list_free(module_list);
+	list_free(function_list);
+
+	ret = syscall(CUDA_SYS_CODE, cuda_call_cuExit);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this
+	 * library is running natively, system call CUDA_SYS_CODE is not
+	 * supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s", cuda_err_native);
+
+	cuda_debug_print(stdout, "\t(driver) out: return = %d\n", CUDA_SUCCESS);
+
+	return CUDA_SUCCESS;
+}
+

@@ -779,3 +779,22 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	return 0;
 }
 
+
+
+
+/*
+ * CUDA call - cuExit
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+int cuda_func_cuExit(struct x86_ctx_t *ctx)
+{
+	/* Free object list */
+	linked_list_free(cuda_object_list);
+
+	return 0;
+}
+
+

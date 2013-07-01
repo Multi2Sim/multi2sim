@@ -272,16 +272,7 @@ cudaError_t cudaDeviceReset(void)
 {
 	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 
-	/* Free default device */
-	cuda_device_free(device);
-
-	/* Free lists */
-	list_free(context_list);
-	list_free(device_list);
-	list_free(module_list);
-	list_free(function_list);
-
-	/* FIXME: free resources in simulator */
+	cuExit();
 
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
 
