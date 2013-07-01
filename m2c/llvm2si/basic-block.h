@@ -67,6 +67,7 @@ struct llvm2si_basic_block_t
 
 
 struct llvm2si_basic_block_t *llvm2si_basic_block_create(LLVMBasicBlockRef llbb);
+struct llvm2si_basic_block_t *llvm2si_basic_block_create_with_name(char *name);
 void llvm2si_basic_block_free(struct llvm2si_basic_block_t *basic_block);
 void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f);
 
