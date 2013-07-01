@@ -676,9 +676,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 		/* AMU_ABI_LDS_SIZE_USED */
 		prog_info[113].address = 0x80000082;
-		prog_info[113].value = 0;
+		prog_info[113].value = inner_bin->pgm_rsrc2->lds_size * 256;
 
-		
 		note = si2bin_inner_bin_note_create(1, 912, prog_info);
 		si2bin_inner_bin_entry_add_note(entry, note);
 
