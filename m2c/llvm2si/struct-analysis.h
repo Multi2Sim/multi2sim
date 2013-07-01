@@ -26,6 +26,7 @@
 /* Forward declarations */
 struct llvm2si_basic_block_t;
 struct llvm2si_function_t;
+struct linked_list_t;
 
 
 /* Kind of control tree node. The node can be a leaf representing a basic block
@@ -50,6 +51,10 @@ struct llvm2si_function_node_t
 	struct linked_list_t *succ_list;
 	struct linked_list_t *pred_list;
 
+	/* If the node is part of a higher-level abstract node, this field
+	 * points to it. If not, the field is NULL. */
+	struct llvm2si_function_node_t *parent;
+
 	/* Conditional fields depending on the node kind */
 	union
 	{
@@ -62,7 +67,7 @@ struct llvm2si_function_node_t
 		{
 			/* List of function nodes associated with the abstract
 			 * node. Elements of type 'llvm2si_function_node_t'. */
-			struct linked_list_t *elem_list;
+			struct linked_list_t *child_list;
 		} abstract;
 	};
 
@@ -79,10 +84,14 @@ struct llvm2si_function_node_t *llvm2si_function_node_create_leaf(
  * 'elem_list' will be copied internally, and should be initialized and freed by
  * the caller. */
 struct llvm2si_function_node_t *llvm2si_function_node_create_abstract(
-		struct llvm2si_function_t *function,
-		struct linked_list_t *elem_list);
+		struct llvm2si_function_t *function, char *name);
 
 void llvm2si_function_node_free(struct llvm2si_function_node_t *node);
+void llvm2si_function_node_dump(struct llvm2si_function_node_t *node, FILE *f);
+
+/* Dumping lists of nodes */
+void llvm2si_function_node_list_dump(struct linked_list_t *list, FILE *f);
+void llvm2si_function_node_list_dump_detail(struct linked_list_t *list, FILE *f);
 
 
 /*
