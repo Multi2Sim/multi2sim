@@ -26,12 +26,24 @@
 /* Forward Declarations */
 struct list_t;
 
+enum si2bin_outer_bin_device_t
+{
+	si2bin_outer_bin_invalid = 0,
+
+	si2bin_outer_bin_cape_verde,
+	si2bin_outer_bin_pitcairn,
+	si2bin_outer_bin_tahiti
+};
+
 /*
  * AMD External ELF Binary
  */
 
 struct si2bin_outer_bin_t
 {
+	/* Device Type */
+	enum si2bin_outer_bin_device_t device;
+
 	/* ELF file create internally.
 	 * Private field. */
 	struct elf_enc_file_t *file;
