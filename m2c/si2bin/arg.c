@@ -428,10 +428,26 @@ void si2bin_arg_dump(struct si2bin_arg_t *arg, FILE *f)
 			fprintf(f, " (0x%x)", value);
 		break;
 	}
+
+	case si2bin_arg_literal_reduced:
+	{
+		int value;
+
+		value = arg->value.literal.val;
+		fprintf(f, "<const_reduced> %d", value);
+		if (value)
+			fprintf(f, " (0x%x)", value);
+		break;
+	}
 		
 	case si2bin_arg_literal_float:
 
 		fprintf(f, "<const_float> %g", arg->value.literal_float.val);
+		break;
+	
+	case si2bin_arg_literal_float_reduced:
+
+		fprintf(f, "<const_float_reduced> %g", arg->value.literal_float.val);
 		break;
 
 	case si2bin_arg_waitcnt:
@@ -589,6 +605,7 @@ void si2bin_arg_dump_assembly(struct si2bin_arg_t *arg, FILE *f)
 		break;
 	
 	case si2bin_arg_literal:
+	case si2bin_arg_literal_reduced:
 	{
 		int value;
 		value = arg->value.literal.val;
@@ -597,6 +614,7 @@ void si2bin_arg_dump_assembly(struct si2bin_arg_t *arg, FILE *f)
 	}
 
 	case si2bin_arg_literal_float:
+	case si2bin_arg_literal_float_reduced:
 		fprintf(f, "%g", arg->value.literal_float.val);
 		break;
 
@@ -645,7 +663,7 @@ void si2bin_arg_dump_assembly(struct si2bin_arg_t *arg, FILE *f)
 	}
 
 	default:
-		fprintf(f, "error - not a valid argument type");
+		fatal("%s: error - not a valid argument type", __FUNCTION__);
 	}
 }
 

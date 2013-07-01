@@ -334,15 +334,15 @@ data_stmt
 		}
 		else if (!strcmp("EXCP_EN_MSB", $3->name))
 		{
-			si2bin_inner_bin->pgm_rsrc2->tgid_y_en = $5;
+			si2bin_inner_bin->pgm_rsrc2->excp_en_msb = $5;
 		}
 		else if (!strcmp("LDS_SIZE", $3->name))
 		{
-			si2bin_inner_bin->pgm_rsrc2->tgid_y_en = $5;
+			si2bin_inner_bin->pgm_rsrc2->lds_size = $5;
 		}
 		else if (!strcmp("EXCP_EN", $3->name))
 		{
-			si2bin_inner_bin->pgm_rsrc2->tgid_y_en = $5;
+			si2bin_inner_bin->pgm_rsrc2->excp_en = $5;
 		}
 		else
 		{
