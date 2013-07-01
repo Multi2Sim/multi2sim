@@ -147,6 +147,8 @@ struct frm_arg_t *frm_arg_create_literal(int value)
 	arg = frm_arg_create();
 	arg->type = frm_arg_literal;
 	arg->value.literal.val = value;
+	if (value < 0)
+		arg->neg = 1;
 
 	return arg;
 }
@@ -533,7 +535,15 @@ struct frm_mod_t *frm_mod_create_data_width(char *mod_name)
 	mod = frm_mod_create();
 	mod->type = frm_token_mod_data_width;
 
-	if (!strcmp(mod_name, "U32"))
+	if (!strcmp(mod_name, "U16"))
+	{
+		mod->value.data_width = u16;
+	}
+	else if (!strcmp(mod_name, "S16"))
+	{
+		mod->value.data_width = s16;
+	}
+	else if (!strcmp(mod_name, "U32"))
 	{
 		mod->value.data_width = u32;
 	}
@@ -541,9 +551,52 @@ struct frm_mod_t *frm_mod_create_data_width(char *mod_name)
 	{
 		mod->value.data_width = s32;
 	}
+	else if (!strcmp(mod_name, "U64"))
+	{
+		mod->value.data_width = u64;
+	}
+	else if (!strcmp(mod_name, "S64"))
+	{
+		mod->value.data_width = s64;
+	}
 	else
 	{
 		printf("wrong mod_name inside frm_mod_create_data_width !\n");
+	}
+
+	return mod;
+}
+
+/* modifier specifically for IMAD instruction */
+struct frm_mod_t *frm_mod_create_IMAD_mod(char *mod_name)
+{
+	struct frm_mod_t *mod;
+	/* use count to tell create IMAD_mod1 or IMAD_mod2 */
+	static int count = 0;
+
+	mod = frm_mod_create();
+	if (count == 0)
+	{
+		mod->type = frm_token_IMAD_mod1;
+		count ++;
+	}
+	else
+	{
+		mod->type = frm_token_IMAD_mod2;
+		count --;
+	}
+
+	if (!strcmp(mod_name, "U32"))
+	{
+		mod->value.IMAD_mod = 0;
+	}
+	else if (!strcmp(mod_name, "S32"))
+	{
+		mod->value.IMAD_mod = 1;
+	}
+	else
+	{
+		printf("wrong IMAD_mod !\n");
 	}
 
 	return mod;
@@ -584,6 +637,37 @@ struct frm_mod_t *frm_mod_create_mod0_B_type(char *mod_name)
 	{
 		/* default: u32 */
 		mod->value.mod0_B_type = 4;
+	}
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_mod0_B_cop(char *mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+	mod->type = frm_token_mod0_B_cop;
+
+	if (!strcmp(mod_name, "CA"))
+	{
+		mod->value.mod0_B_cop = 0;
+	}
+	else if (!strcmp(mod_name, "CG"))
+	{
+		mod->value.mod0_B_cop = 1;
+	}
+	else if (!strcmp(mod_name, "LU"))
+	{
+		mod->value.mod0_B_cop = 2;
+	}
+	else if (!strcmp(mod_name, "CV"))
+	{
+		mod->value.mod0_B_cop = 3;
+	}
+	else
+	{
+		printf("wrong mod0_b_cop!\n");
 	}
 
 	return mod;
@@ -663,6 +747,33 @@ struct frm_mod_t *frm_mod_create_brev(char *mod_name)
 
 	mod->type = frm_token_mod0_B_brev;
 	mod->value.brev = 1;
+
+	return mod;
+}
+
+struct frm_mod_t *frm_mod_create_gen0_src1_dtype(char* mod_name)
+{
+	struct frm_mod_t *mod;
+
+	mod = frm_mod_create();
+	mod->type = frm_token_gen0_src1_dtype;
+
+	if (!strcmp(mod_name, "F16"))
+	{
+		mod->value.gen0_src1_dtype = 1;
+	}
+	else if (!strcmp(mod_name, "F32"))
+	{
+		mod->value.gen0_src1_dtype = 2;
+	}
+	else if (!strcmp(mod_name, "F64"))
+	{
+		mod->value.gen0_src1_dtype = 3;
+	}
+	else
+	{
+		mod->value.gen0_src1_dtype = 0;
+	}
 
 	return mod;
 }

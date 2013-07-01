@@ -118,7 +118,7 @@ CC.[A-Z_]* {
   	return TOK_ID;
 }
 
-0x[0-9a-f]+ {
+[-]?0x[0-9a-f]+ {
   	frm2bin_yylval.id = frm_id_create(yytext);
   	return TOK_HEX;
 }
