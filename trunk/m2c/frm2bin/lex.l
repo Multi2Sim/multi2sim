@@ -113,7 +113,7 @@ CC.[A-Z_]* {
 	return TOK_CCOP;
 }
 
-[a-zA-Z][a-zA-Z0-9_\.]* {
+[-]?[a-zA-Z][a-zA-Z0-9_\.]* {
   	frm2bin_yylval.id = frm_id_create(yytext);
   	return TOK_ID;
 }
