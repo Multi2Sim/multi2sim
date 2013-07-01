@@ -171,6 +171,14 @@ enum frm_mod_comp_t
 	gt,
 	ne,
 	ge,
+	num,
+	nan,
+	ltu,
+	equ,
+	leu,
+	gtu,
+	geu,
+	neu,
 };
 
 /* type def for modifier */
@@ -346,7 +354,7 @@ struct frm_arg_t *frm_arg_create_scalar_register(char* name);
 struct frm_arg_t *frm_arg_create_special_register(char *name);
 struct frm_arg_t *frm_arg_create_predicate_register(char *name);
 struct frm_arg_t *frm_arg_create_zero_register(char *name);
-struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset);
+struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset, int negative);
 struct frm_arg_t *frm_arg_create_shared_maddr(int bank_idx, int offset);
 struct frm_arg_t *frm_arg_create_glob_maddr(int reg_idx, int offset);
 struct frm_arg_t *frm_arg_create_glob_maddr_reg(int reg_idx);

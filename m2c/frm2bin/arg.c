@@ -153,7 +153,7 @@ struct frm_arg_t *frm_arg_create_literal(int value)
 	return arg;
 }
 
-struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset)
+struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset, int negative)
 {
 	struct frm_arg_t *arg;
 
@@ -161,6 +161,14 @@ struct frm_arg_t *frm_arg_create_const_maddr(int bank_idx, int offset)
 	arg->type = frm_arg_const_maddr;
 	arg->value.const_maddr.bank_idx = bank_idx;
 	arg->value.const_maddr.offset = offset;
+	if (negative == 0)
+		arg->neg = 0;
+	else if (negative == 1)
+		arg->neg = 1;
+	else
+	{
+		frm2bin_yyerror_fmt("Error negative value for const_maddr argument!\n");
+	}
 
 	return arg;
 }
@@ -730,6 +738,38 @@ struct frm_mod_t *frm_mod_create_comparison(char *mod_name)
 	else if (!strcmp(mod_name, "GE"))
 	{
 		mod->value.comparison = ge;
+	}
+	else if (!strcmp(mod_name, "NUM"))
+	{
+		mod->value.comparison = num;
+	}
+	else if (!strcmp(mod_name, "NAN"))
+	{
+		mod->value.comparison = nan;
+	}
+	else if (!strcmp(mod_name, "LTU"))
+	{
+		mod->value.comparison = ltu;
+	}
+	else if (!strcmp(mod_name, "EQU"))
+	{
+		mod->value.comparison = equ;
+	}
+	else if (!strcmp(mod_name, "LEU"))
+	{
+		mod->value.comparison = leu;
+	}
+	else if (!strcmp(mod_name, "GTU"))
+	{
+		mod->value.comparison = gtu;
+	}
+	else if (!strcmp(mod_name, "GEU"))
+	{
+		mod->value.comparison = geu;
+	}
+	else if (!strcmp(mod_name, "NEU"))
+	{
+		mod->value.comparison = neu;
 	}
 	else
 	{

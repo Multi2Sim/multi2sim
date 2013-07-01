@@ -222,14 +222,16 @@ rl_arg
   	  	int bank_idx;
   	  	/* offset within a bank */
   	  	int offset;
+  	  	int negative;
 
-  	  	if (!strcmp($1->name, "c"))
+  	  	if (!strcmp($1->name, "c") || !strcmp($1->name, "-c"))
   	  	{
   	  		/* extract the hex value and assign it to the variable */
   	  	  	sscanf($3->name, "%x", &bank_idx);
   	  	  	sscanf($6->name, "%x", &offset);
+  	  	  	negative = strcmp($1->name, "c") ? 1 : 0;
 
-  	  	  	$$ = frm_arg_create_const_maddr(bank_idx, offset);
+  	  	  	$$ = frm_arg_create_const_maddr(bank_idx, offset, negative);
   	  	}
   	  	else 
   	  	{
