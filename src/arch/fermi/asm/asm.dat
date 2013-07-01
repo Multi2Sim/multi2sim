@@ -97,7 +97,12 @@ DEFINST(DMUL,
 	FP, 
 	0x141)
 
-//DMNMX
+DEFINST(DMNMX,
+		"%pred DMNMX %dst, %src1, %src2, %R",
+		FP_DMNMX,
+		FP,
+		0x021
+		)
 
 //DSET
 

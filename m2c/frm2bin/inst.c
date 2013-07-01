@@ -147,7 +147,15 @@ struct frm2bin_inst_t *frm2bin_inst_create(struct frm2bin_pred_t *pred, char *na
 				!strcmp(mod_name, "LE") ||
 				!strcmp(mod_name, "GT") ||
 				!strcmp(mod_name, "NE") ||
-				!strcmp(mod_name, "GE"))
+				!strcmp(mod_name, "GE") ||
+				!strcmp(mod_name, "NUM") ||
+				!strcmp(mod_name, "NAN") ||
+				!strcmp(mod_name, "LTU") ||
+				!strcmp(mod_name, "EQU") ||
+				!strcmp(mod_name, "LEU") ||
+				!strcmp(mod_name, "GTU") ||
+				!strcmp(mod_name, "GEU") ||
+				!strcmp(mod_name, "NEU"))
 			{
 				/* create comparison modifier, add to list */
 				mod = frm_mod_create_comparison(mod_name);
@@ -583,16 +591,6 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 		break;
 	*/
 	
-	/* encoding in [:], op in [] */
-	/*
-	case FRM_FMT_FP_DADD:
-		
-		inst_bytes->sopk.enc = 0xb;
-		inst_bytes->sopk.op = inst_info->opcode;
-		break;
-	*/
-
-	/* encoding in [:], op in [] */
 
 	case FRM_FMT_FP_DADD:
 
@@ -658,7 +656,37 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 
 		break;
 
-	/* encoding in [31:25], op in [16:9] */
+	case FRM_FMT_FP_DMNMX:
+
+		/* [3:0]: 0001 */
+		inst_bytes->general0.op0 = 0x1;
+
+		/* [9:4]: 000000, default value */
+		inst_bytes->general0.mod0 = 0x0;
+
+		/* [13:10]: pred */
+		if (inst->pred_num >= 0)
+		{
+			inst_bytes->general0.pred = inst->pred_num;
+		}
+		else
+		{
+			/* no predicate, value=7 */
+			inst_bytes->general0.pred = 0x7;
+		}
+
+		/* [47:46]: src2_mod, don't know the default value yet */
+
+		/* [48]: 0 , dst.cc, default value */
+		inst_bytes->general0.dst_cc = 0x0;
+
+		/* [57:49]: 000000000, default */
+		inst_bytes->general0.mod1 = 0x0;
+
+		/* [63:58]: 000010, [58] is default */
+		inst_bytes->general0.op1 = 0x2;
+
+		break;
 
 	case FRM_FMT_FP_DSETP:
 
@@ -1881,6 +1909,38 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				else if (mod->value.comparison == ge)
 				{
 					inst_bytes->general1.cmp = 0x6;
+				}
+				else if (mod->value.comparison == num)
+				{
+					inst_bytes->general1.cmp = 0x7;
+				}
+				else if (mod->value.comparison == nan)
+				{
+					inst_bytes->general1.cmp = 0x8;
+				}
+				else if (mod->value.comparison == ltu)
+				{
+					inst_bytes->general1.cmp = 0x9;
+				}
+				else if (mod->value.comparison == equ)
+				{
+					inst_bytes->general1.cmp = 0xa;
+				}
+				else if (mod->value.comparison == leu)
+				{
+					inst_bytes->general1.cmp = 0xb;
+				}
+				else if (mod->value.comparison == gtu)
+				{
+					inst_bytes->general1.cmp = 0xc;
+				}
+				else if (mod->value.comparison == geu)
+				{
+					inst_bytes->general1.cmp = 0xd;
+				}
+				else if (mod->value.comparison == neu)
+				{
+					inst_bytes->general1.cmp = 0xe;
 				}
 				else
 				{
