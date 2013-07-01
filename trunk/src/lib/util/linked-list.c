@@ -516,3 +516,17 @@ void *linked_list_iter_get(struct linked_list_iter_t *iter)
 	return iter->elem ? iter->elem->data : NULL;
 }
 
+
+int linked_list_iter_find(struct linked_list_iter_t *iter, void *data)
+{
+	struct linked_list_t *list = iter->list;
+
+	linked_list_iter_check_version(iter);
+	for (iter->elem = list->head; iter->elem; iter->elem = iter->elem->next)
+		if (iter->elem->data == data)
+			return 1;
+
+	/* Not found */
+	return 0;
+}
+

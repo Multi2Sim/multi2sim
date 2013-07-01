@@ -405,5 +405,10 @@ void linked_list_iter_next(struct linked_list_iter_t *iter);
 int linked_list_iter_is_end(struct linked_list_iter_t *iter);
 void *linked_list_iter_get(struct linked_list_iter_t *iter);
 
+/* Places the iterator at the first position of the list where 'data' is
+ * contained. The function returns true if 'data' is found. Otherwise, it
+ * returns false and places the iterator at the end of the list. */
+int linked_list_iter_find(struct linked_list_iter_t *iter, void *data);
+
 #endif
 
