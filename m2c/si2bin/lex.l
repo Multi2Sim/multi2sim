@@ -108,6 +108,10 @@ uav[0-9]+ {
 	return TOK_UAV;
 }
 
+"hl" {
+	return TOK_HL;
+}
+
 "format" {
 	return TOK_FORMAT;
 }
