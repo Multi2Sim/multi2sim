@@ -754,22 +754,6 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			str_printf(&str, &size, "%s", str_map_value (&frm_inst_op56_map,op));
 		}
 
-		else if (inst_is_token(fmt_str,"mod0_A_stype_s", &len))
-		{
-			if (inst.dword.mod0_A.neg_src1)
-				str_printf(&str, &size, ".S");
-			else
-				str_printf(&str, &size, ".U");
-		}	
-
-		else if (inst_is_token(fmt_str,"mod0_A_dtype_s", &len))
-		{
-			if (inst.dword.mod0_A.abs_src1)
-				str_printf(&str, &size, ".S");
-			else
-				str_printf(&str, &size, ".U");
-		}
-	
 		else if (inst_is_token(fmt_str,"mod0_B_u32", &len))
 		{
 			if (!inst.dword.mod0_B.type)
@@ -859,6 +843,28 @@ void frm_inst_dump(char *str, int size, void *buf, int inst_index)
 			unsigned long long int stype_n;
 			stype_n = inst.dword.general0.src1 >> 3 & 0x3;
 			str_printf(&str, &size, "%s", str_map_value (&frm_inst_stype_n_map, stype_n));
+		}
+
+		else if (inst_is_token(fmt_str,"stype_sn", &len))
+		{
+			unsigned long long int stype_n;
+			if (inst.dword.mod0_A.neg_src1)
+				str_printf(&str, &size, ".S");
+		        else
+			        str_printf(&str, &size, ".U");
+			stype_n = inst.dword.general0.src1 >> 3 & 0x3;
+				str_printf(&str, &size, "%s", str_map_value (&frm_inst_stype_n_map, stype_n));
+		}	
+
+		else if (inst_is_token(fmt_str,"dtype_sn", &len))
+		{
+			unsigned long long int dtype_n;
+			if (inst.dword.mod0_A.abs_src1)
+				str_printf(&str, &size, ".S");
+			else
+				str_printf(&str, &size, ".U");
+			dtype_n = inst.dword.general0.src1 & 0x3;
+			str_printf(&str, &size, "%s", str_map_value (&frm_inst_stype_n_map, dtype_n));
 		}
 
 		else if (inst_is_token(fmt_str,"offs_op1_e", &len))
