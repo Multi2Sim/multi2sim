@@ -52,6 +52,7 @@ char func_name[50];
 
 extern struct hash_table_t *cl2llvm_built_in_func_table;
 struct hash_table_t *cl2llvm_symbol_table;
+extern struct hash_table_t *cl2llvm_built_in_const_table;
 
 struct cl2llvm_function_t *cl2llvm_current_function;
 LLVMBasicBlockRef current_basic_block;
@@ -820,7 +821,7 @@ lvalue
 		struct cl2llvm_symbol_t *symbol;
 		struct cl2llvm_val_t *symbol_val_dup;
 
-		/*Access symbol from symbol table*/
+		/* Access symbol from symbol table */
 		symbol = hash_table_get(cl2llvm_current_function->symbol_table, $1);
 		if (!symbol)
 			yyerror("undefined identifier");
@@ -958,7 +959,18 @@ func_call
 	: TOK_ID TOK_PAR_OPEN param_list TOK_PAR_CLOSE
 	{
 		int *func_id;
-		
+		int i;
+		LLVMValueRef cast_param_array[100];
+		struct cl2llvm_arg_t *current_func_arg;
+		struct cl2llvm_val_t *current_param;
+		struct cl2llvm_function_t *function;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *cast_param;
+		LLVMValueRef llvm_val_func_ret;
+		struct cl2llvm_val_t *ret_val;
+		LLVMTypeRef llvm_param_types[100];
+		int offset = 0;
+
 		/* If function is found in the built-in function table but not the
 		   global symbol table, declare it and insert it into the  global
 		   symbol table. */
@@ -966,32 +978,44 @@ func_call
 		if (func_id && !hash_table_get(cl2llvm_symbol_table, $1))
 			func_declare(func_id);
 	
-
-		struct cl2llvm_function_t *function = hash_table_get(cl2llvm_symbol_table, $1);
+		/* Retrieve function specs from sybmol table */
+		function = hash_table_get(cl2llvm_symbol_table, $1);
 		if (!function)
 			yyerror("implicit declaration of function");
-		LLVMTypeRef param_types[100];
-		LLVMGetParamTypes(function->func_type, param_types);
 		
-		LLVMValueRef cast_param_array[100];
-		int i;
+		/* If specified function arg count differs from the arg count of
+		   the generated function, get offset */
+		if (function->arg_count != LLVMCountParamTypes(function->func_type))
+		{
+			LLVMGetParamTypes(function->func_type, llvm_param_types);
+
+			offset = LLVMCountParamTypes(function->func_type) -
+				function->arg_count;
+			for (i = 0; i < offset; i++)
+			{
+				cast_param_array[i] = LLVMConstInt(llvm_param_types[i], 0, 0);
+			}		
+		}
+
 		/* check that parameter types match */
 		for (i = 0; i < function->arg_count; i++)
 		{
-			struct cl2llvm_arg_t *current_func_arg = list_get(function->arg_list, i);
-			struct cl2llvm_val_t *current_param = list_get($3, i);
+			current_func_arg = list_get(function->arg_list, i);
+			current_param = list_get($3, i);
 			if (current_func_arg->type_spec->llvm_type != current_param->type->llvm_type)
 			{
-				struct cl2llvm_type_t *type = cl2llvm_type_create_w_init( current_func_arg->type_spec->llvm_type, current_func_arg->type_spec->sign);
-				struct cl2llvm_val_t *cast_param = llvm_type_cast(current_param, type);
+				type = cl2llvm_type_create_w_init( 
+					current_func_arg->type_spec->llvm_type,
+					current_func_arg->type_spec->sign);
+				cast_param = llvm_type_cast(current_param, type);
 				cl2llvm_type_free(type);
-				cast_param_array[i] = cast_param->val;
+				cast_param_array[i + offset] = cast_param->val;
 				cl2llvm_val_free(current_param);
 				cl2llvm_val_free(cast_param);
 			}
 			else
 			{
-				cast_param_array[i] = current_param->val;
+				cast_param_array[i + offset] = current_param->val;
 				cl2llvm_val_free(current_param);
 			}
 		}
@@ -1000,9 +1024,12 @@ func_call
 		snprintf(temp_var_name, sizeof temp_var_name,
 			"tmp%d", temp_var_count++);
 
-		LLVMValueRef llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
-			cast_param_array, function->arg_count, temp_var_name);
-		struct cl2llvm_val_t *ret_val = cl2llvm_val_create_w_init(llvm_val_func_ret, 	
+		/* Build function call */
+		llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
+			cast_param_array, function->arg_count + offset, temp_var_name);
+
+		/* Create return value */
+		ret_val = cl2llvm_val_create_w_init(llvm_val_func_ret, 	
 			function->sign);
 		
 		$$ = ret_val;
@@ -1129,6 +1156,8 @@ declaration
 		struct cl2llvm_val_t *cast_to_val;
 		int init_count = list_count($2);
 		struct cl2llvm_init_t *current_list_elem;
+		struct cl2llvm_symbol_t *err_symbol;
+		char error_message[50];
 		LLVMValueRef var_addr;
 
 		/*Create each sybmol in the init_list*/
@@ -1149,12 +1178,6 @@ declaration
 				/*Create symbol*/
 				symbol = cl2llvm_symbol_create_w_init( var_addr, 
 					$1->type_spec->sign, current_list_elem->name);
-
-				/*Insert symbol into symbol table*/
-				err = hash_table_insert(cl2llvm_current_function->symbol_table, 
-					current_list_elem->name, symbol);
-				if (!err)
-					yyerror("duplicated symbol");
 				
 				/* If initializer is present, store it. */
 				if (current_list_elem->cl2llvm_val != NULL)
@@ -1186,11 +1209,6 @@ declaration
 					$1->type_spec->sign, current_list_elem->name);
 				symbol->cl2llvm_val->type->llvm_type = $1->type_spec->llvm_type;
 
-				/*Insert symbol into symbol table*/
-				err = hash_table_insert(cl2llvm_current_function->symbol_table, 
-					current_list_elem->name, symbol);
-				if (!err)
-					yyerror("duplicated symbol");
 				
 				/*If initializer is present, cast initializer to declarator 
 				  type and store*/
@@ -1258,15 +1276,30 @@ declaration
 					ptr->val , $1->type_spec->sign, 
 					current_list_elem->name);
 
-				/* Insert array symbol into symbol table */
-				err = hash_table_insert(cl2llvm_current_function->symbol_table, 
-					current_list_elem->name, symbol);
-				if (!err)
-					yyerror("duplicated symbol");
 				
 				cl2llvm_val_free(ptr);
 
 			}
+			/* Insert symbol into symbol table */
+			err = hash_table_insert(cl2llvm_current_function->symbol_table, 
+				current_list_elem->name, symbol);
+			if (!err)
+			{
+				snprintf(error_message, sizeof error_message,
+					"Symbol '%s' previously declared.", current_list_elem->name);
+
+				cl2llvm_yyerror(error_message);
+			}
+			/* Check that symbol is not a reserved constant */
+			err_symbol = hash_table_get(cl2llvm_built_in_const_table, 
+				current_list_elem->name);
+			if (err_symbol)
+			{
+				snprintf(error_message, sizeof error_message,
+					"'%s' expected an identifier.", current_list_elem->name);
+				cl2llvm_yyerror(error_message);
+			}
+
 		}
 
 		/* Free pointers */
@@ -2729,7 +2762,7 @@ expr
 		struct cl2llvm_val_t *value;
 		struct cl2llvm_type_t *type; 
 		
-		type = cl2llvm_type_create_w_init($1->type->llvm_type , $1->type->sign);
+		type = cl2llvm_type_create_w_init(LLVMGetElementType($1->type->llvm_type) , $1->type->sign);
 
 		/* If lvalue is a component referenced vector. */
 		if ($1->vector_indices[0])
@@ -3148,8 +3181,74 @@ expr
 unary_expr
 	: lvalue TOK_INCREMENT %prec TOK_POSTFIX
 	{
-		cl2llvm_yyerror("post increment not supported");
-		$$ = NULL;
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *one;
+
+		/* Create constant one to add to variable */
+		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
+
+		type = cl2llvm_type_create_w_init(LLVMGetElementType(
+			$1->type->llvm_type), $1->type->sign);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
+			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
+			$1->type->sign);
+
+		/* Cast constant one to type of variable */
+		struct cl2llvm_val_t *cast_one = llvm_type_cast(one, type);
+	
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp%d", temp_var_count++);
+		
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			value = cl2llvm_val_create_w_init(
+				LLVMBuildAdd(cl2llvm_builder, lval->val, 
+				cast_one->val, temp_var_name), type->sign);
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value = cl2llvm_val_create_w_init(
+				LLVMBuildFAdd(cl2llvm_builder, lval->val, 
+				cast_one->val, temp_var_name), type->sign);
+			break;
+
+		default:
+
+			yyerror("invalid type of operand for post '++'");
+			value = cl2llvm_val_create();
+		}
+
+		LLVMBuildStore(cl2llvm_builder, lval->val, $1->val);
+		
+		cl2llvm_val_free($1);
+		cl2llvm_val_free(one);
+		cl2llvm_val_free(cast_one);
+		cl2llvm_val_free(lval);
+		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
+		$$ = value;
+
 	}
 	| TOK_INCREMENT lvalue %prec TOK_PREFIX
 	{	

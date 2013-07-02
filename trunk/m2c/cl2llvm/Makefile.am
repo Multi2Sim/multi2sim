@@ -25,6 +25,9 @@ libcl2llvm_a_SOURCES = \
 	declarator-list.h\
 	declarator-list.c\
 	\
+	enum-types.h\
+	enum-types.c\
+	\
 	format.h\
 	format.c\
 	\
