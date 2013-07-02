@@ -20,7 +20,6 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "device.h"
-#include "object.h"
 
 
 /* Create a device */
@@ -30,9 +29,9 @@ struct cuda_device_t *cuda_device_create()
 
 	/* Initialize */
 	device = xcalloc(1, sizeof(struct cuda_device_t));
-	device->id = cuda_object_new_id(CUDA_OBJ_DEVICE);
+	//device->id = cuda_object_new_id(CUDA_OBJ_DEVICE);
 
-	cuda_object_add(device);
+	//cuda_object_add(device);
 
 	return device;
 }
@@ -41,7 +40,7 @@ struct cuda_device_t *cuda_device_create()
 /* Free device */
 void cuda_device_free(struct cuda_device_t *device)
 {
-	cuda_object_remove(device);
+	//cuda_object_remove(device);
 
 	free(device);
 }

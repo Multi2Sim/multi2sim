@@ -20,7 +20,6 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "memory.h"
-#include "object.h"
 
 
 struct cuda_memory_t *cuda_memory_create(void)
@@ -29,10 +28,10 @@ struct cuda_memory_t *cuda_memory_create(void)
 
         /* Initialize */
         mem = xcalloc(1, sizeof(struct cuda_memory_t));
-        mem->id = cuda_object_new_id(CUDA_OBJ_MEMORY);
+        //mem->id = cuda_object_new_id(CUDA_OBJ_MEMORY);
         mem->ref_count = 1;
 
-        cuda_object_add(mem);
+        //cuda_object_add(mem);
 
         return mem;
 }
@@ -40,7 +39,7 @@ struct cuda_memory_t *cuda_memory_create(void)
 
 void cuda_memory_free(struct cuda_memory_t *mem)
 {
-        cuda_object_remove(mem);
+        //cuda_object_remove(mem);
 
         free(mem);
 }
