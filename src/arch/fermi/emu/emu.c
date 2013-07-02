@@ -18,7 +18,6 @@
  */
 
 #include <arch/common/arch.h>
-#include <driver/cuda/object.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>

@@ -19,10 +19,7 @@ libcuda_a_SOURCES = \
 	memory.h \
 	\
 	module.c \
-	module.h \
-	\
-	object.c \
-	object.h
+	module.h
 
 INCLUDES = @M2S_INCLUDES@
 

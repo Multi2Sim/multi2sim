@@ -751,7 +751,6 @@ CUresult cuGraphicsResourceSetMapFlags(CUgraphicsResource resource, unsigned int
 CUresult cuGraphicsMapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
 CUresult cuGraphicsUnmapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
 CUresult cuGetExportTable(const void **ppExportTable, const CUuuid *pExportTableId);
-CUresult cuExit(void);
 
 #ifdef __cplusplus
 }

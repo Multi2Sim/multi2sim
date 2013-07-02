@@ -272,7 +272,8 @@ cudaError_t cudaDeviceReset(void)
 {
 	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 
-	cuExit();
+	/* This function is not implemented for now since resources are freed in
+	 * cuda_done() */
 
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
 
