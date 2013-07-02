@@ -34,21 +34,32 @@
 extern LLVMModuleRef cl2llvm_module;
 extern struct hash_table_t *cl2llvm_symbol_table;
 
+#define BUILT_IN_FUNC_COUNT 9
+
 struct hash_table_t *built_in_func_table_create(void)
 {
+	int i;
+	char built_in_func_names[BUILT_IN_FUNC_COUNT][30] = {
+		"get_global_dim",
+		"get_global_id",
+		"get_global_size",
+		"get_local_size",
+		"get_local_id",
+		"get_num_groups",
+		"get_group_id",
+		"get_group_offset",
+		"barrier"
+	};
+
 	/* Create hash table */
 	struct hash_table_t *built_in_func_table = hash_table_create(200, 1);
 	
 	/* Insert function names and id numbers into hash table. */
-	hash_table_insert(built_in_func_table, "get_global_dim", intptr(0));
-	hash_table_insert(built_in_func_table, "get_global_id", intptr(1));
-	hash_table_insert(built_in_func_table, "get_global_size", intptr(2));
-	hash_table_insert(built_in_func_table, "get_local_size", intptr(3));
-	hash_table_insert(built_in_func_table, "get_local_id", intptr(4));
-	hash_table_insert(built_in_func_table, "get_num_groups", intptr(5));
-	hash_table_insert(built_in_func_table, "get_group_id", intptr(6));
-	hash_table_insert(built_in_func_table, "get_group_offset", intptr(7));
-	
+	for(i = 0; i < BUILT_IN_FUNC_COUNT; i++)
+	{
+		hash_table_insert(built_in_func_table, built_in_func_names[i],
+			intptr(i));
+	}
 	return built_in_func_table;
 }
 
@@ -309,6 +320,39 @@ void func_declare(int *func_id)
 			/* Free pointers */
 			cl2llvm_decl_list_struct_free(arg_decl1);
 		
+			break;
+
+		case 8:
+			/*Declare barrier*/
+	
+			/* Arguments */
+			args_array[0] = LLVMInt32Type();
+			args = list_create();
+			arg_decl1 = cl2llvm_decl_list_create();
+			arg_decl1->type_spec = 
+				cl2llvm_type_create_w_init(LLVMInt32Type(), 0);
+			arg1 = cl2llvm_arg_create(arg_decl1, "dimindex");
+			list_add(args, arg1);
+			args_array[1] = LLVMInt32Type();
+
+			/* Function */
+			function = cl2llvm_function_create("barrier", args);
+		
+			 function->func_type = LLVMFunctionType( LLVMVoidType(), 
+		 		args_array, 2, 0);
+	 		function->func = LLVMAddFunction(cl2llvm_module, 
+				"barrier", function->func_type);
+			function->sign = 1;
+			LLVMSetFunctionCallConv(function->func, LLVMCCallConv);
+			LLVMAddFunctionAttr(function->func, 1 << 5);
+	
+			/* Insert function in global symbol table */
+			hash_table_insert(cl2llvm_symbol_table, "barrier", 
+				function);
+
+			/* Free pointers */
+			cl2llvm_decl_list_struct_free(arg_decl1);
+
 			break;
 
 	}

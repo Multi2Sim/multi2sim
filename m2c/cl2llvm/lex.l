@@ -366,6 +366,8 @@ TOK_BREAK		(break)
 TOK_CASE		(case)
 TOK_CHAR		(char)|(signed[ \t\n]+char)|(char[ \t\n]+signed)
 TOK_CHARN		(char)(2|3|4|8|16)
+TOK_CLK_LOCAL_MEM_FENCE	(CLK_LOCAL_MEM_FENCE)
+TOK_CLK_GLOBAL_MEM_FENCE (CLK_GLOBAL_MEM_FENCE)
 TOK_CONSTANT		(__constant)|(constant)
 TOK_CONST		(const)
 TOK_CONTINUE		(continue)
@@ -763,6 +765,16 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
 	cl2llvm_yylval.const_int_val = extract_vector_size(yytext);
 	return TOK_CHARN;
+}
+{TOK_CLK_LOCAL_MEM_FENCE} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val_ull = 1;
+	return TOK_CONST_INT;
+}
+{TOK_CLK_GLOBAL_MEM_FENCE} {
+	cl2llvm_set_col_num(cl2llvm_get_col_num() + yyget_leng());
+	cl2llvm_yylval.const_int_val_ull = 2;
+	return TOK_CONST_INT;
 }
 {TOK_CONSTANT} {
 	cl2llvm_set_col_num(cl2llvm_get_col_num() + 8);
