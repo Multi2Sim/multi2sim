@@ -18,10 +18,16 @@
  */
 
 
+#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
+#include <lib/util/debug.h>
+#include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
+#include <lib/util/hash-table.h>
+#include <lib/util/string.h>
+
 
 #include "dram.h"
 #include "request.h"
@@ -35,22 +41,38 @@
 
 long long dram_system_max_cycles;
 
+int dram_debug_category;
+int dram_domain_index;
+int dram_frequency = 1000;
+
+char *dram_config_file_name = "";
+char *dram_report_file_name = "";
+FILE *dram_report_file;
+
+char *dram_sim_system_name = "";
+char *dram_config_help =
+		"The DRAM configuration file is a plain-text file following the\n"
+		"IniFile format.  \n" "\n" "\n";
+
 
 /*
  * Local Variable
  */
+
+static struct hash_table_t *dram_system_table;
 
 
 /*
  * Dram system
  */
 
-struct dram_system_t *dram_system_create(void)
+struct dram_system_t *dram_system_create(char *name)
 {
 	struct dram_system_t *system;
 
 	/* Initialize */
 	system = xcalloc(1, sizeof(struct dram_system_t));
+	system->name = xstrdup(name);
 	system->dram_controller_list = list_create();
 
 	/* Return */
@@ -68,6 +90,7 @@ void dram_system_free(struct dram_system_t *system)
 	list_free(system->dram_controller_list);
 
 	/* Free */
+	free(system->name);
 	free(system);
 }
 
@@ -87,16 +110,20 @@ void dram_system_dump(struct dram_system_t *system, FILE *f)
 }
 
 
-int dram_system_config_with_file(struct dram_system_t *system, char *file_name)
+struct dram_system_t *dram_system_config_with_file(struct config_t *config, char *system_name)
 {
 	int i, j;
 	unsigned int highest_addr = 0;
-	char section[16];
+	char *section;
+	char section_str[MAX_STRING_SIZE];
 	char *row_buffer_policy_map[] = {"OpenPage", "ClosePage", "hybird"};
 	char *scheduling_policy_map[] = {"RankBank", "BankRank"};
-	struct config_t *config;
+	struct dram_system_t *system;
 
-	/* Controller parameters */
+	/* Controller parameters
+	 * FIXME: we should create a default variation for times this values
+	 * are not assigned.
+	 * */
 	unsigned int num_physical_channels;
 	unsigned int request_queue_depth;
 	enum dram_controller_row_buffer_policy_t rb_policy;
@@ -116,26 +143,31 @@ int dram_system_config_with_file(struct dram_system_t *system, char *file_name)
 	unsigned int dram_timing_tCWL;
 	unsigned int dram_timing_tCCD;
 
-	/* Nothing to do if empty file name passed */
-	if (!file_name || !file_name[0])
-		return 0;
-
-	/* Open configuration file */
-	config = config_create(file_name);
-	config_load(config);
-
+	system = dram_system_create(system_name);
 	/* DRAM system configuration */
-	sprintf(section, "DRAMsystem");
-	dram_system_max_cycles = config_read_int(config, section, "NumCycle", dram_system_max_cycles);
-	system->num_logical_channels = config_read_int(config, section, "NumLogicalChannels", system->num_logical_channels);
+	snprintf(section_str, sizeof section_str, "DRAMsystem.%s", system_name);
+	for (section = config_section_first(config); section;
+			section = config_section_next(config))
+	{
+		if (strcasecmp(section, section_str))
+			continue;
+		dram_system_max_cycles = config_read_int(config, section,
+				"NumCycle", dram_system_max_cycles);
+		system->num_logical_channels = config_read_int(config, section,
+				"NumLogicalChannels", system->num_logical_channels);
+	}
 
-	/* Create controllers */
+
+
+	/* Create controllers
+	 * FIXME: Get the right variation that Rafa wants and act accordingly
+	 * */
 	for (i = 0; i < system->num_logical_channels; i++)
 	{
 		/* Section check */
 		sprintf(section, "Controller-%u", i);
 		if(!config_section_exists(config, section))
-			return 0;
+			return NULL;
 
 		/* Read configuration */
 		num_physical_channels = config_read_int(config, section, "NumPhysicalChannels", num_physical_channels);
@@ -207,12 +239,8 @@ int dram_system_config_with_file(struct dram_system_t *system, char *file_name)
 			dram_controller_add_dram(list_get(system->dram_controller_list, i), dram);
 		}
 	}
-
-	/* Config free */
-	config_free(config);
-
-	/* Return 1 on success */
-	return 1;
+	/* Return dram_system on success */
+	return system;
 }
 
 
@@ -338,4 +366,170 @@ unsigned int dram_encode_address(struct dram_system_t *system,
 
 	/* Return address */
 	return addr;
+}
+
+void dram_system_init(void)
+{
+	dram_system_read_config();
+
+	/* Register events */
+	EV_DRAM_COMMAND_RECEIVE = esim_register_event(dram_event_handler, dram_domain_index);
+	EV_DRAM_COMMAND_COMPLETE = esim_register_event(dram_event_handler, dram_domain_index);
+
+	if (*dram_report_file_name)
+	{
+		dram_report_file = file_open_for_write(dram_report_file_name);
+		if (!dram_report_file)
+			fatal("%s: cannot write on DRAM report file", dram_report_file_name);
+	}
+
+}
+void dram_system_sim (char *debug_file_name)
+{
+	struct dram_system_t *dram_system;
+
+	/* Initialize */
+	debug_init();
+	esim_init();
+	dram_system_init();
+	dram_debug_category = debug_new_category(debug_file_name);
+
+	/* Getting the simulation name */
+	if (!*dram_sim_system_name)
+		panic("%s: no DRAM simulation name", __FUNCTION__);
+	dram_system = dram_system_find(dram_sim_system_name);
+	if (!dram_system)
+		fatal("%s: DRAM system does not exist", dram_sim_system_name);
+
+	fprintf(stderr, "we are here and nothing is working \n");
+
+	dram_system_done();
+	esim_done();
+	debug_done();
+
+	mhandle_done();
+	exit(0);
+}
+
+void dram_system_read_config(void)
+{
+	int i ;
+	struct config_t *config;
+	struct list_t *dram_system_list;
+	char *section;
+
+	if (!*dram_config_file_name)
+	{
+		dram_domain_index = esim_new_domain(dram_frequency);
+		return;
+	}
+
+	config = config_create(dram_config_file_name);
+	if (*dram_config_file_name)
+		config_load(config);
+
+	/* Section with Generic Configuration Parameters */
+	section = "General";
+
+	/* Frequency */
+	dram_frequency = config_read_int(config, section, "Frequency", dram_frequency);
+	if (!IN_RANGE(dram_frequency, 1, ESIM_MAX_FREQUENCY))
+		fatal("%s: Invalid value for 'Frequency'", dram_config_file_name);
+
+	/* Creating the Frequency Domain */
+	dram_domain_index = esim_new_domain(dram_frequency);
+
+	/* Create a temporary List of all Dram Systems found in
+	 * the configuration file */
+	dram_system_list = list_create();
+	for (section = config_section_first(config); section;
+			section = config_section_next(config))
+	{
+		char *delim = ".";
+
+		char section_str[MAX_STRING_SIZE];
+		char *token;
+		char *dram_system_name;
+
+		/*Creating a copy of the name of the section */
+		snprintf(section_str, sizeof section_str, "%s", section);
+		section = section_str;
+
+		/* First Token Must be 'DRAMsystem' */
+		token = strtok(section, delim);
+		if (strcasecmp(token, "DRAMsystem"))
+			continue;
+
+		/* Second Token must be the system Name */
+		dram_system_name = strtok(NULL, delim);
+		if (!dram_system_name)
+			continue;
+
+		/* No third term is required */
+		token = strtok(NULL, delim);
+		if (token)
+			continue;
+
+		/* Insert the new DRAM system name */
+		dram_system_name = xstrdup(dram_system_name);
+		list_add(dram_system_list, dram_system_name);
+	}
+
+	/* Print DRAM system Names in debug */
+	dram_debug("%s: loading DRAM system configuration file \n",
+			dram_config_file_name);
+	dram_debug("DRAM systems found:\n");
+	for (i = 0; i < dram_system_list->count; i++)
+		dram_debug("\t%s\n", (char *) list_get(dram_system_list, i));
+	dram_debug("\n");
+
+	/* Load DRAM systems */
+	dram_system_table = hash_table_create(0, 0);
+	for ( i = 0; i < dram_system_list->count; i++)
+	{
+		struct dram_system_t *system;
+		char *dram_system_name;
+
+		dram_system_name = list_get(dram_system_list, i);
+		system = dram_system_config_with_file(config, dram_system_name);
+
+		hash_table_insert(dram_system_table, dram_system_name, system);
+	}
+	while (dram_system_list->count)
+		free(list_remove_at(dram_system_list, 0));
+	list_free(dram_system_list);
+	config_free(config);
+}
+
+struct dram_system_t *dram_system_find(char *dram_system_name)
+{
+	if (!dram_system_table)
+		return NULL;
+	return hash_table_get(dram_system_table, dram_system_name);
+}
+
+void dram_system_done(void)
+{
+	struct dram_system_t *system;
+
+	/* Free list of dram systems */
+	if (dram_system_table)
+	{
+		for (hash_table_find_first(dram_system_table, (void **) &system);
+				system ; hash_table_find_next(dram_system_table,
+						(void **) &system))
+		{
+			/* Dump Report for DRAM system */
+			if (dram_report_file)
+				dram_system_dump(system, dram_report_file);
+
+			dram_system_free(system);
+
+		}
+	}
+	hash_table_free(dram_system_table);
+
+	/* Close report File */
+	file_close(dram_report_file);
+
 }

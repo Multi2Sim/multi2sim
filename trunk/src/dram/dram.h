@@ -27,13 +27,9 @@
  * Global Variables
  */
 
-#define dram_debug(...) debug(dram_debug_category, __VA_ARGS__)
-extern int dram_debug_category;
 
 extern int EV_DRAM_COMMAND_RECEIVE;
 extern int EV_DRAM_COMMAND_COMPLETE;
-
-extern int dram_domain_index;
 
 
 
@@ -74,6 +70,7 @@ struct dram_t *dram_create(unsigned int num_ranks,
 //void dram_timing_config(); //FIXME: decide whether to use this function or not.
 void dram_free(struct dram_t *dram);
 void dram_dump(struct dram_t *dram, FILE *f);
+void dram_event_handler(int event, void *data);
 
 
 #endif

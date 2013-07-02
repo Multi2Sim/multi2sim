@@ -22,7 +22,7 @@
 #include <lib/mhandle/mhandle.h>
 
 #include "command.h"
-#include "dram.h"
+#include "dram-system.h"
 
 
 /*
