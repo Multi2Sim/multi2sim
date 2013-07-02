@@ -23,7 +23,7 @@
 
 /* Version */
 #define CUDA_VERSION_MAJOR 1
-#define CUDA_VERSION_MINOR 855
+#define CUDA_VERSION_MINOR 860
 struct cuda_version_t
 {
 	int major;

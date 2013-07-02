@@ -35,7 +35,6 @@
 #include "function-arg.h"
 #include "memory.h"
 #include "module.h"
-#include "object.h"
 
 
 /*
@@ -198,9 +197,6 @@ int cuda_func_versionCheck(struct x86_ctx_t *ctx)
 
 int cuda_func_cuInit(struct x86_ctx_t *ctx)
 {
-	/* Create object list */
-	cuda_object_list = linked_list_create();
-
 	/* Create module list*/
 	module_list = list_create();
 
@@ -423,25 +419,18 @@ int cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
 	unsigned int dptr;
 	unsigned int bytesize;
 
-	struct cuda_memory_t *cuda_mem;
-
 	dptr = regs->ecx;
 	bytesize = regs->edx;
 
 	cuda_debug("\tin: bytesize=%u\n", bytesize);
 
-	/* Create memory object */
-	cuda_mem = cuda_memory_create();
-	cuda_mem->size = bytesize;
-
 	/* Assign position in device global memory */
-	cuda_mem->device_ptr = frm_emu->global_mem_top;
 	frm_emu->global_mem_top += bytesize;
 	frm_emu->free_global_mem_size -= bytesize;
 
-	cuda_debug("\tout: dptr=0x%08x\n", cuda_mem->device_ptr);
+	cuda_debug("\tout: dptr=0x%08x\n", frm_emu->global_mem_top);
 
-	mem_write(mem, dptr, sizeof(unsigned int), &(cuda_mem->device_ptr));
+	mem_write(mem, dptr, sizeof(unsigned int), &(frm_emu->global_mem_top));
 
 	return 0;
 }
@@ -464,38 +453,10 @@ int cuda_func_cuMemFree(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	unsigned int dptr;
-	void *cuda_object;
-	unsigned int object_id;
-	unsigned int device_ptr;
-	unsigned int mem_id = 0;
-	struct cuda_memory_t *cuda_mem;
 
 	dptr = regs->ecx;
 
 	cuda_debug("\tin: dptr=0x%08x\n", dptr);
-
-	/* Look for memory object */
-	LINKED_LIST_FOR_EACH(cuda_object_list)
-	{
-		if (!(cuda_object = linked_list_get(cuda_object_list)))
-			fatal("%s: empty object", __FUNCTION__);
-		object_id = *((unsigned int *)cuda_object);
-		if (object_id >> 16 == CUDA_OBJ_MEMORY)
-		{
-			device_ptr = ((struct cuda_memory_t *)cuda_object)->device_ptr;
-			if (device_ptr == dptr)
-				mem_id = object_id;
-		}
-	}
-	if (mem_id == 0)
-		fatal("%s: requested CUDA object does not exist (id=0x%08x)",
-			__FUNCTION__, mem_id);
-
-	/* Free memory object */
-	cuda_mem = cuda_object_get(CUDA_OBJ_MEMORY, mem_id);
-	assert(cuda_mem->ref_count > 0);
-	if (!--cuda_mem->ref_count)
-		cuda_memory_free(cuda_mem);
 
 	return 0;
 }
@@ -778,23 +739,4 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	return 0;
 }
-
-
-
-
-/*
- * CUDA call - cuExit
- *
- * @return
- *	The return value is always 0 on success.
- */
-
-int cuda_func_cuExit(struct x86_ctx_t *ctx)
-{
-	/* Free object list */
-	linked_list_free(cuda_object_list);
-
-	return 0;
-}
-
 
