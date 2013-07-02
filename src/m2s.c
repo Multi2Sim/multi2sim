@@ -75,6 +75,7 @@
 #include <mem-system/mem-system.h>
 #include <mem-system/mmu.h>
 #include <network/net-system.h>
+#include <dram/dram-system.h>
 #include <sys/time.h>
 #include <visual/common/visual.h>
 
@@ -139,6 +140,8 @@ static enum arch_sim_kind_t mips_sim_kind = arch_sim_kind_functional;
 static char *mem_debug_file_name = "";
 
 static char *net_debug_file_name = "";
+
+static char *dram_debug_file_name = "";
 
 static long long m2s_max_time;  /* Max. simulation time in seconds (0 = no limit) */
 static long long m2s_loop_iter;  /* Number of iterations in main simulation loop */
@@ -444,7 +447,7 @@ static char *m2s_help =
 		"  --mips-disasm <file>\n"
 		"      Disassemble an MIPS binary using Multi2Sim's internal disassembler. This\n"
 		"      option is incompatible with any other command-line option.\n"
-	        "\n"
+		"\n"
 		"  --mips-debug-loader <file>\n"
 		"      Dump debug information extending the analysis of the ELF program binary.\n"
 		"      This information shows which ELF sections and symbols are loaded to the\n"
@@ -572,6 +575,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	int err;
 
 	char *net_sim_last_option = NULL;
+
+	char *dram_sim_last_option = NULL;
 
 	for (argi = 1; argi < argc; argi++)
 	{
@@ -1422,6 +1427,61 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/*
+		 * DRAM options
+		 */
+
+		/* DRAM debug file */
+		if (!strcmp(argv[argi], "--dram-debug"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			dram_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* DRAM configuration file */
+		if (!strcmp(argv[argi], "--dram-config"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			dram_config_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Help for DRAM configuration file */
+		if (!strcmp(argv[argi], "--dram-help"))
+		{
+			fprintf(stderr, "%s", dram_config_help);
+			continue;
+		}
+
+		/* Cycles for DRAM simulation */
+		if (!strcmp(argv[argi], "--dram-max-cycles"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			dram_sim_last_option = argv[argi];
+			dram_system_max_cycles = str_to_llint(argv[argi + 1], &err);
+			if (err)
+				fatal("option %s, value '%s': %s", argv[argi],
+						argv[argi + 1], str_error(err));
+			argi++;
+			continue;
+		}
+
+		/* Network report file */
+		if (!strcmp(argv[argi], "--dram-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			dram_report_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Network simulation */
+		if (!strcmp(argv[argi], "--dram-sim"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			dram_sim_system_name = argv[++argi];
+			continue;
+		}
 
 		/*
 		 * Rest
@@ -1517,6 +1577,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		fatal("option '%s' requires '--net-sim'", net_sim_last_option);
 	if (*net_sim_network_name && !*net_config_file_name)
 		fatal("option '--net-sim' requires '--net-config'");
+	if(!*dram_sim_system_name && dram_sim_last_option)
+		fatal("option '%s' requires '--dram-sim'", dram_sim_last_option);
 
 	/* Discard arguments used as options */
 	arg_discard = argi - 1;
@@ -1860,6 +1922,10 @@ int main(int argc, char **argv)
 	if (*net_sim_network_name)
 		net_sim(net_debug_file_name);
 
+	/* DRAM simulation Tool*/
+	if (*dram_sim_system_name)
+		dram_system_sim(dram_debug_file_name);
+
 	/* Southern Islands dump config file */
 	if (*si_gpu_dump_default_config_file_name)
 		si_gpu_dump_default_config(si_gpu_dump_default_config_file_name);
@@ -1868,6 +1934,7 @@ int main(int argc, char **argv)
 	debug_init();
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
+	dram_debug_category = debug_new_category(dram_debug_file_name);
 	glu_debug_category = debug_new_category(glu_debug_file_name);
 	glut_debug_category = debug_new_category(glut_debug_file_name);
 	glew_debug_category = debug_new_category(glew_debug_file_name);
@@ -1961,8 +2028,8 @@ int main(int argc, char **argv)
 			si_gpu_init, si_gpu_done, si_gpu_run,
 			si_gpu_dump, si_gpu_dump_summary,
 			si_gpu_fused_device ? si_mem_config_fused : si_mem_config_default,  /* FIXME */
-			si_mem_config_parse_entry,
-			si_mem_config_check);
+					si_mem_config_parse_entry,
+					si_mem_config_check);
 	arch_x86 = arch_register("x86", "x86", x86_sim_kind,
 			x86_emu_init, x86_emu_done, x86_emu_run,
 			x86_emu_dump, x86_emu_dump_summary,

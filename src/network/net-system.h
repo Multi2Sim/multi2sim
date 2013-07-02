@@ -40,10 +40,11 @@ extern int net_debug_category;
 
 /* Configuration parameters */
 extern char *net_config_file_name;
-extern char *net_traffic_pattern;
 extern char *net_report_file_name;
 extern char *net_visual_file_name;
 extern char *net_sim_network_name;
+
+extern char *net_traffic_pattern;
 
 extern long long net_max_cycles;
 extern double net_injection_rate;

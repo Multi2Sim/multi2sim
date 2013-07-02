@@ -21,13 +21,26 @@
 #define DRAM_DRAM_SYSTEM_H
 
 #include <stdio.h>
-
+#include "request.h"
+#include <lib/util/config.h>
 
 /*
  * Global variable
  */
 
+#define dram_debug(...) debug(dram_debug_category, __VA_ARGS__)
+
+extern int dram_debug_category;
+extern int dram_frequency;
+extern int dram_domain_index;
+
+extern char *dram_config_help;
+
 extern long long dram_system_max_cycles;
+
+extern char *dram_config_file_name;
+extern char *dram_report_file_name;
+extern char *dram_sim_system_name;
 
 
 /*
@@ -41,14 +54,16 @@ extern long long dram_system_max_cycles;
 
 struct dram_system_t
 {
+	char *name;
 	unsigned int num_logical_channels;
 	struct list_t *dram_controller_list;
 };
 
-struct dram_system_t *dram_system_create(void);
+struct dram_system_t *dram_system_create(char *name);
 void dram_system_free(struct dram_system_t *system);
 void dram_system_dump(struct dram_system_t *system, FILE *f);
-int dram_system_config_with_file(struct dram_system_t *system, char *file_name);
+struct dram_system_t *dram_system_config_with_file(struct config_t *config,
+		char *dram_system_name);
 int dram_system_get_request(struct dram_system_t *system, struct dram_request_t *request);
 void dram_system_process(struct dram_system_t *system);
 void dram_decode_address(struct dram_system_t *system,
@@ -66,6 +81,13 @@ unsigned int dram_encode_address(struct dram_system_t *system,
 			unsigned int bank_id,
 			unsigned int column_id,
 			unsigned int physical_channel_id);
+
+void dram_system_sim (char *debug_file_name);
+
+void dram_system_init(void);
+void dram_system_read_config(void);
+void dram_system_done(void);
+struct dram_system_t *dram_system_find(char *dram_system_name);
 
 
 #endif

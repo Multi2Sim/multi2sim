@@ -25,6 +25,7 @@
 #include <lib/util/string.h>
 
 #include "dram.h"
+#include "dram-system.h"
 #include "file-accessor.h"
 #include "request.h"
 #include "command.h"
