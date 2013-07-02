@@ -26,6 +26,7 @@
 /* Forward declarations */
 struct llvm2si_basic_block_t;
 struct llvm2si_function_t;
+struct list_t;
 struct linked_list_t;
 
 
@@ -74,6 +75,9 @@ struct llvm2si_function_node_t
 	/* Identifier assigned in pre-order traversal of the control tree, taken
 	 * from 'function->preorder_counter'. */
 	int preorder_id;
+
+	/* Color used for traversal algorithms */
+	int color;
 };
 
 struct llvm2si_function_node_t *llvm2si_function_node_create_leaf(
