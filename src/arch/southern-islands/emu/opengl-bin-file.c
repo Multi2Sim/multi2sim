@@ -190,59 +190,19 @@ static void si_opengl_shader_binary_set_enc_dict(struct si_opengl_shader_binary_
 		enc_dict->userElements[0].startUserReg = 0x00000002; /* s2, s3*/
 		enc_dict->userElements[0].userRegCount = 0x00000002;
 		/* Vertex Buffer Table */
-		enc_dict->userElements[0].dataClass = PTR_VERTEX_BUFFER_TABLE;
-		enc_dict->userElements[0].apiSlot = 0x0; /* ? */
-		enc_dict->userElements[0].startUserReg = 0x00000004;	/* s4, s5 */
-		enc_dict->userElements[0].userRegCount = 0x00000002;
+		enc_dict->userElements[1].dataClass = PTR_VERTEX_BUFFER_TABLE;
+		enc_dict->userElements[1].apiSlot = 0x0; /* ? */
+		enc_dict->userElements[1].startUserReg = 0x00000004;	/* s4, s5 */
+		enc_dict->userElements[1].userRegCount = 0x00000002;
+		/* Semantic mapping */
+		enc_dict->semanticsMapping[0].count = 0x0;
+		enc_dict->semanticsMapping[0].usageIndex = 0x0;
+		enc_dict->semanticsMapping[0].startUserReg = 0x4;
+		enc_dict->semanticsMapping[0].userRegCount = 0x4;
 		break;
 	default:
 		break;
 	}
-}
-
-struct si_opengl_bin_enc_user_element_t *si_opengl_bin_enc_user_element_create()
-{
-	struct si_opengl_bin_enc_user_element_t *user_elem;
-
-	/* Initialize */
-	user_elem = xcalloc(1, sizeof(struct si_opengl_bin_enc_user_element_t));
-	
-	/* Return */
-	return user_elem;
-}
-
-void si_opengl_bin_enc_user_element_free(struct si_opengl_bin_enc_user_element_t *user_elem)
-{
-	free(user_elem);
-}
-
-struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer, int size, char* name)
-{
-	struct si_opengl_shader_binary_t *shdr;
-
-	/* Allocate */
-	shdr = xcalloc(1, sizeof(struct si_opengl_shader_binary_t));
-
-	/* Initialize */
-	shdr->shader_elf = elf_file_create_from_buffer(buffer, size, name);
-	if (shdr->shader_elf)
-	{
-		si_opengl_shader_binary_set_type(shdr);
-		si_opengl_shader_binary_set_isa(shdr);
-		/* FIXME: encoding dictionary currently use fixed settings */
-		si_opengl_shader_binary_set_enc_dict(shdr);
-	}
-
-	/* Return */
-	return shdr;
-}
-
-void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shdr)
-{
-	si_opengl_bin_enc_dict_entry_free(shdr->shader_enc_dict);
-	elf_file_free(shdr->shader_elf);
-	free(shdr->shader_isa);
-	free(shdr);
 }
 
 static struct list_t *si_opengl_shaders_list_create(struct elf_file_t *binary)
@@ -321,3 +281,47 @@ void si_opengl_program_binary_free(struct si_opengl_program_binary_t *program_bi
 	free(program_bin);
 }
 
+struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer, int size, char* name)
+{
+	struct si_opengl_shader_binary_t *shdr;
+
+	/* Allocate */
+	shdr = xcalloc(1, sizeof(struct si_opengl_shader_binary_t));
+
+	/* Initialize */
+	shdr->shader_elf = elf_file_create_from_buffer(buffer, size, name);
+	if (shdr->shader_elf)
+	{
+		si_opengl_shader_binary_set_type(shdr);
+		si_opengl_shader_binary_set_isa(shdr);
+		/* FIXME: encoding dictionary currently use fixed settings */
+		si_opengl_shader_binary_set_enc_dict(shdr);
+	}
+
+	/* Return */
+	return shdr;
+}
+
+void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shdr)
+{
+	si_opengl_bin_enc_dict_entry_free(shdr->shader_enc_dict);
+	elf_file_free(shdr->shader_elf);
+	free(shdr->shader_isa);
+	free(shdr);
+}
+
+struct si_opengl_bin_enc_user_element_t *si_opengl_bin_enc_user_element_create()
+{
+	struct si_opengl_bin_enc_user_element_t *user_elem;
+
+	/* Initialize */
+	user_elem = xcalloc(1, sizeof(struct si_opengl_bin_enc_user_element_t));
+	
+	/* Return */
+	return user_elem;
+}
+
+void si_opengl_bin_enc_user_element_free(struct si_opengl_bin_enc_user_element_t *user_elem)
+{
+	free(user_elem);
+}
