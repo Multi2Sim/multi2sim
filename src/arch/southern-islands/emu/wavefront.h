@@ -51,16 +51,12 @@ struct si_wavefront_t
 	/* Scalar registers */
 	union si_reg_t sreg[256];
 
-	/* Predicate mask */
-	struct bit_map_t *pred;  /* work_item_count elements */
-
 	/* Flags updated during instruction execution */
 	unsigned int vector_mem_read : 1;
 	unsigned int vector_mem_write : 1;
 	unsigned int scalar_mem_read : 1;
 	unsigned int lds_read : 1;
 	unsigned int lds_write : 1;
-	unsigned int pred_mask_update : 1;
 	unsigned int mem_wait : 1;
 	unsigned int at_barrier : 1;  // Used for emu synchronization
 	unsigned int finished : 1;

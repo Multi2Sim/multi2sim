@@ -71,8 +71,4 @@ struct si_work_item_t
 struct si_work_item_t *si_work_item_create(void);
 void si_work_item_free(struct si_work_item_t *work_item);
 
-/* Consult and change predicate bits */  /* FIXME Remove */
-void si_work_item_set_pred(struct si_work_item_t *work_item, int pred);
-int si_work_item_get_pred(struct si_work_item_t *work_item);
-
 #endif

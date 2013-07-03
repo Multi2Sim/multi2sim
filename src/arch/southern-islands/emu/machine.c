@@ -3339,10 +3339,9 @@ void si_isa_V_ADD_I32_impl(struct si_work_item_t *work_item,
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d) (%d + %d)", work_item->id, 
+		si_isa_debug("t%d: V%u<=(%d) (%d + %d) ", work_item->id, 
 			INST.vdst, sum.as_int, s0.as_int, s1.as_int);
-		si_isa_debug("t%d: vcc<=(%u) ",
-			work_item->id_in_wavefront, carry.as_uint);
+		si_isa_debug("vcc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -3377,8 +3376,7 @@ void si_isa_V_SUB_I32_impl(struct si_work_item_t *work_item,
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst,
 			dif.as_int);
-		si_isa_debug("t%d: vcc<=(%u) ", work_item->id_in_wavefront, 
-			carry.as_uint);
+		si_isa_debug("vcc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -3413,8 +3411,7 @@ void si_isa_V_SUBREV_I32_impl(struct si_work_item_t *work_item,
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst,
 			dif.as_int);
-		si_isa_debug("t%d: vcc<=(%u) ", work_item->id_in_wavefront, 
-			carry.as_uint);
+		si_isa_debug("vcc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -4313,8 +4310,7 @@ void si_isa_V_BFE_U32_impl(struct si_work_item_t *work_item,
 	{
 		si_isa_debug("t%d: value:s0:%u, offset:s1:%u, width:s2:%u ",
 			work_item->id, s0.as_uint, s1.as_uint, s2.as_uint);
-		si_isa_debug("t%d: V%u<=(0x%x) ", work_item->id, INST.vdst,
-			result.as_uint);
+		si_isa_debug("V%u<=(0x%x) ", INST.vdst, result.as_uint);
 	}
 }
 #undef INST
@@ -5624,8 +5620,7 @@ void si_isa_V_LSHR_B64_impl(struct si_work_item_t *work_item,
 		si_isa_debug("t%d: S[%u]<=(0x%x) ",
 			work_item->id_in_wavefront, INST.vdst,
 			result_lo.as_uint);
-		si_isa_debug("t%d: S[%u]<=(0x%x) ",
-			work_item->id_in_wavefront, INST.vdst + 1,
+		si_isa_debug("S[%u]<=(0x%x) ", INST.vdst + 1,
 			result_hi.as_uint);
 	}
 }
@@ -5924,8 +5919,7 @@ void si_isa_V_ADDC_U32_VOP3b_impl(struct si_work_item_t *work_item,
 	{
 		si_isa_debug("t%d: V%u<=(%u) ", work_item->id, INST.vdst,
 			sum.as_uint);
-		si_isa_debug("t%d: vcc<=(%u) ", work_item->id_in_wavefront, 
-			carry_out.as_uint);
+		si_isa_debug("vcc<=(%u) ", carry_out.as_uint);
 	}
 }
 #undef INST
@@ -6054,15 +6048,15 @@ void si_isa_DS_WRITE2_B32_impl(struct si_work_item_t *work_item,
 	{
 		si_isa_debug("t%d: GDS[%u]<=(%u,%f) ", work_item->id, 
 			addr0.as_uint, data0.as_uint, data0.as_float);
-		si_isa_debug("t%d: GDS[%u]<=(%u,%f) ", work_item->id, 
-			addr1.as_uint, data0.as_uint, data0.as_float);
+		si_isa_debug("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint,
+			data0.as_float);
 	}
 	else
 	{
 		si_isa_debug("t%d: LDS[%u]<=(%u,%f) ", work_item->id, 
 			addr0.as_uint, data0.as_uint, data0.as_float);
-		si_isa_debug("t%d: LDS[%u]<=(%u,%f) ", work_item->id, 
-			addr1.as_uint, data1.as_uint, data1.as_float);
+		si_isa_debug("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, 
+			data1.as_float);
 	}
 }
 #undef INST
@@ -6359,9 +6353,8 @@ void si_isa_DS_READ2_B32_impl(struct si_work_item_t *work_item,
 		si_isa_debug("t%d: V%u<=(0x%x)(0x%x) ", work_item->id, 
 			INST.vdst, addr.as_uint+INST.offset0*4, 
 			data0.as_uint);
-		si_isa_debug("t%d: V%u<=(0x%x)(0x%x) ", work_item->id, 
-			INST.vdst+1, addr.as_uint+INST.offset1*4, 
-			data1.as_uint);
+		si_isa_debug("V%u<=(0x%x)(0x%x) ", INST.vdst+1, 
+			addr.as_uint+INST.offset1*4, data1.as_uint);
 	}
 }
 #undef INST
