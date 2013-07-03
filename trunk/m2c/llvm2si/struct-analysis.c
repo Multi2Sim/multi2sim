@@ -410,6 +410,74 @@ void llvm2si_function_dfs(struct llvm2si_function_t *function,
 }
 
 
+/* Recursive helper function for natural loop discovery */
+static void llvm2si_function_reach_under_node(
+		struct llvm2si_function_node_t *header_node,
+		struct llvm2si_function_node_t *node,
+		struct linked_list_t *reach_under_list)
+{
+	struct llvm2si_function_node_t *pred_node;
+
+	/* Label as visited and add node */
+	node->color = 1;
+	linked_list_add(reach_under_list, node);
+
+	/* Header reached */
+	if (node == header_node)
+		return;
+
+	/* Node with lower pre-order ID than the head reached. That means that
+	 * this is either a cross edge to another branch of the tree, or a
+	 * back-edge to a region on top of the tree. This indicates the
+	 * occurrence of an improper region. */
+	if (node->preorder_id < header_node->preorder_id)
+		return;
+
+	/* Add predecessors recursively */
+	LINKED_LIST_FOR_EACH(node->pred_list)
+	{
+		pred_node = linked_list_get(node->pred_list);
+		if (!pred_node->color)
+			llvm2si_function_reach_under_node(
+				header_node, pred_node, reach_under_list);
+	}
+}
+
+
+/* Discover the natural loop (interval) with header 'header_node'. The interval
+ * is composed of all those nodes with a path from the header to the tail that
+ * doesn't go through the header, where the tail is a node that is connected to
+ * the header with a back-edge. */
+void llvm2si_function_reach_under(struct llvm2si_function_t *function,
+		struct llvm2si_function_node_t *header_node,
+		struct linked_list_t *reach_under_list)
+{
+	struct llvm2si_function_node_t *node;
+	struct llvm2si_function_node_t *pred_node;
+
+	/* Reset output list */
+	linked_list_clear(reach_under_list);
+
+	/* Initialize nodes */
+	LINKED_LIST_FOR_EACH(function->node_list)
+	{
+		node = linked_list_get(function->node_list);
+		node->color = 0;  /* Not visited */
+	}
+
+	/* For all back-edges entering 'header_node', follow edges backwards and
+	 * keep adding nodes. */
+	LINKED_LIST_FOR_EACH(header_node->pred_list)
+	{
+		pred_node = linked_list_get(header_node->pred_list);
+		if (llvm2si_function_node_in_list(header_node,
+				pred_node->back_edge_list))
+			llvm2si_function_reach_under_node(header_node,
+					pred_node, reach_under_list);
+	}
+}
+
+
 /* Reduce the list of nodes in 'node_list' with a newly created abstract node,
  * returned as the function result.
  * Argument 'name' gives the name of the new abstract node.
@@ -587,48 +655,76 @@ void llvm2si_function_example(struct llvm2si_function_t *function)
 	function->node_entry = n1;
 }
 
+#define NEW_NODE(name) \
+	struct llvm2si_basic_block_t *bb_##name = llvm2si_basic_block_create_with_name(#name); \
+	struct llvm2si_function_node_t *name = llvm2si_function_node_create_leaf(function, bb_##name); \
+	linked_list_add(function->node_list, name);
+#define NEW_EDGE(u, v) \
+	llvm2si_function_node_connect(u, v)
 
 void llvm2si_function_example2(struct llvm2si_function_t *function)
 {
 	linked_list_clear(function->node_list);
 
-	struct llvm2si_basic_block_t *bb1 = llvm2si_basic_block_create_with_name("n1");
-	struct llvm2si_function_node_t *n1 = llvm2si_function_node_create_leaf(function, bb1);
-	linked_list_add(function->node_list, n1);
-	struct llvm2si_basic_block_t *bb2 = llvm2si_basic_block_create_with_name("n2");
-	struct llvm2si_function_node_t *n2 = llvm2si_function_node_create_leaf(function, bb2);
-	linked_list_add(function->node_list, n2);
-	struct llvm2si_basic_block_t *bb3 = llvm2si_basic_block_create_with_name("n3");
-	struct llvm2si_function_node_t *n3 = llvm2si_function_node_create_leaf(function, bb3);
-	linked_list_add(function->node_list, n3);
-	struct llvm2si_basic_block_t *bb4 = llvm2si_basic_block_create_with_name("n4");
-	struct llvm2si_function_node_t *n4 = llvm2si_function_node_create_leaf(function, bb4);
-	linked_list_add(function->node_list, n4);
-	struct llvm2si_basic_block_t *bb5 = llvm2si_basic_block_create_with_name("n5");
-	struct llvm2si_function_node_t *n5 = llvm2si_function_node_create_leaf(function, bb5);
-	linked_list_add(function->node_list, n5);
-	struct llvm2si_basic_block_t *bb6 = llvm2si_basic_block_create_with_name("n6");
-	struct llvm2si_function_node_t *n6 = llvm2si_function_node_create_leaf(function, bb6);
-	linked_list_add(function->node_list, n6);
-	struct llvm2si_basic_block_t *bb7 = llvm2si_basic_block_create_with_name("n7");
-	struct llvm2si_function_node_t *n7 = llvm2si_function_node_create_leaf(function, bb7);
-	linked_list_add(function->node_list, n7);
-	struct llvm2si_basic_block_t *bb8 = llvm2si_basic_block_create_with_name("n8");
-	struct llvm2si_function_node_t *n8 = llvm2si_function_node_create_leaf(function, bb8);
-	linked_list_add(function->node_list, n8);
+	NEW_NODE(n1);
+	NEW_NODE(n2);
+	NEW_NODE(n3);
+	NEW_NODE(n4);
+	NEW_NODE(n5);
+	NEW_NODE(n6);
+	NEW_NODE(n7);
+	NEW_NODE(n8);
 
-	llvm2si_function_node_connect(n1, n2);
-	llvm2si_function_node_connect(n1, n8);
-	llvm2si_function_node_connect(n2, n3);
-	llvm2si_function_node_connect(n2, n4);
-	llvm2si_function_node_connect(n3, n7);
-	llvm2si_function_node_connect(n7, n8);
-	llvm2si_function_node_connect(n4, n5);
-	llvm2si_function_node_connect(n5, n6);
-	llvm2si_function_node_connect(n6, n7);
-	llvm2si_function_node_connect(n6, n4);
+	NEW_EDGE(n1, n2);
+	NEW_EDGE(n1, n8);
+	NEW_EDGE(n2, n3);
+	NEW_EDGE(n2, n4);
+	NEW_EDGE(n3, n7);
+	NEW_EDGE(n7, n8);
+	NEW_EDGE(n4, n5);
+	NEW_EDGE(n5, n6);
+	NEW_EDGE(n6, n7);
+	NEW_EDGE(n6, n4);
 
 	function->node_entry = n1;
+}
+
+
+void llvm2si_function_example3(struct llvm2si_function_t *function)
+{
+	linked_list_clear(function->node_list);
+
+	NEW_NODE(A);
+	NEW_NODE(B);
+	NEW_NODE(C);
+	NEW_NODE(D);
+	NEW_NODE(E);
+	NEW_NODE(F);
+	NEW_NODE(G);
+	NEW_NODE(H);
+	NEW_NODE(I);
+	NEW_NODE(J);
+	NEW_NODE(K);
+	NEW_NODE(L);
+
+	NEW_EDGE(A, B);
+	NEW_EDGE(A, K);
+	NEW_EDGE(B, C);
+	NEW_EDGE(B, I);
+	NEW_EDGE(C, D);
+	NEW_EDGE(D, H);
+	NEW_EDGE(D, E);
+	NEW_EDGE(E, F);
+	NEW_EDGE(E, G);
+	NEW_EDGE(F, D);
+	NEW_EDGE(G, D);
+	NEW_EDGE(H, I);
+	NEW_EDGE(I, J);
+	NEW_EDGE(J, A);
+	NEW_EDGE(J, I);
+	NEW_EDGE(K, L);
+
+	function->node_entry = A;
 }
 
 
@@ -698,152 +794,6 @@ void llvm2si_function_reduce_example(struct llvm2si_function_t *function)
 
 	exit(1);
 }
-
-
-static int llvm2si_function_natural_loop_node(
-		struct llvm2si_function_node_t *root_node,
-		struct llvm2si_function_node_t *current_node,
-		struct linked_list_t *node_list)
-{
-	struct llvm2si_function_node_t *succ_node;
-	int back_path;
-
-	/* If node was already traverse, ignore */
-	if (current_node->color)
-		return 0;
-
-	/* Label as traversed */
-	current_node->color = 1;
-	back_path = 0;
-	
-	/* Check successors */
-	LINKED_LIST_FOR_EACH(current_node->succ_list)
-	{
-		/* Get successor */
-		succ_node = linked_list_get(current_node->succ_list);
-
-		/* Check if this is a back-edge to root node. If so, the node
-		 * should be added to the output list. */
-		if (succ_node == root_node && current_node->preorder_id >=
-				succ_node->preorder_id)
-			back_path = 1;
-
-		/* Check recursively for back-edges to root node. If so, node is
-		 * also added to the output list. This check needs to be done
-		 * even if 'back_path' is already set, since it could find a
-		 * larger set of nodes. */
-		if (llvm2si_function_natural_loop_node(root_node, succ_node,
-				node_list))
-			back_path = 1;
-	}
-
-	/* Add node to list if back path found */
-	if (back_path)
-		linked_list_add(node_list, current_node);
-
-	/* Return true is back path was found */
-	return back_path;
-}
-
-
-/* Obtain the natural loop with a header given in 'node'. The control tree must
- * be available in 'function' after having performed a pre-order traversal on
- * the control flow graph. This means that each node must have a valid value in
- * its 'node->preorder_id' counter.
- * The nodes forming the natural loop will be placed in 'node_list', which must
- * be an empty list when the instruction is called. If 'node' does not actually
- * head a loop, 'node_list' will be returned empty.
- * The function returns true if 'node' is the header of a loop, and false
- * otherwise. */
-int llvm2si_function_natural_loop(struct llvm2si_function_t *function,
-		struct llvm2si_function_node_t *node,
-		struct linked_list_t *node_list)
-{
-	struct llvm2si_function_node_t *tmp_node;
-
-	/* Preliminary checks */
-	assert(!node_list->count);
-	assert(node->preorder_id != -1);
-	assert(!node->parent);
-
-	/* Reset nodes' color */
-	LINKED_LIST_FOR_EACH(function->node_list)
-	{
-		tmp_node = linked_list_get(function->node_list);
-		tmp_node->color = 0;
-	}
-
-	/* Make recursive calls */
-	return llvm2si_function_natural_loop_node(node, node, node_list);
-}
-
-
-#if 0
-void llvm2si_function_natural_loop_example(struct llvm2si_function_t *function)
-{
-	/* Create example function */
-	llvm2si_function_example(function);
-
-	/* Get nodes */
-	linked_list_goto(function->node_list, 0);
-	struct llvm2si_function_node_t *n1 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 1);
-	struct llvm2si_function_node_t *n2 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 2);
-	struct llvm2si_function_node_t *n3 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 3);
-	struct llvm2si_function_node_t *n4 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 4);
-	struct llvm2si_function_node_t *n5 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 5);
-	struct llvm2si_function_node_t *n6 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 6);
-	struct llvm2si_function_node_t *n7 = linked_list_get(function->node_list);
-
-	/* Pre-order traversal */
-	llvm2si_function_preorder_traversal(function, NULL);
-
-	struct linked_list_t *node_list = linked_list_create();
-
-	printf("\n\n\n=== Loop from node 'n1' ===\n\n");
-	linked_list_clear(node_list);
-	llvm2si_function_natural_loop(function, n1, node_list);
-	llvm2si_function_node_list_dump(node_list, stdout);
-
-	printf("\n\n\n=== Loop from node 'n2' ===\n\n");
-	linked_list_clear(node_list);
-	llvm2si_function_natural_loop(function, n2, node_list);
-	llvm2si_function_node_list_dump(node_list, stdout);
-
-	printf("\n\n\n=== Loop from node 'n3' ===\n\n");
-	linked_list_clear(node_list);
-	llvm2si_function_natural_loop(function, n3, node_list);
-	llvm2si_function_node_list_dump(node_list, stdout);
-
-	printf("\n\n\n=== Loop from node 'n4' ===\n\n");
-	linked_list_clear(node_list);
-	llvm2si_function_natural_loop(function, n4, node_list);
-	llvm2si_function_node_list_dump(node_list, stdout);
-
-	printf("\n\n\n=== Loop from node 'n5' ===\n\n");
-	linked_list_clear(node_list);
-	llvm2si_function_natural_loop(function, n5, node_list);
-	llvm2si_function_node_list_dump(node_list, stdout);
-
-	printf("\n\n\n=== Loop from node 'n6' ===\n\n");
-	linked_list_clear(node_list);
-	llvm2si_function_natural_loop(function, n6, node_list);
-	llvm2si_function_node_list_dump(node_list, stdout);
-
-	printf("\n\n\n=== Loop from node 'n7' ===\n\n");
-	linked_list_clear(node_list);
-	llvm2si_function_natural_loop(function, n7, node_list);
-	llvm2si_function_node_list_dump(node_list, stdout);
-
-	printf("\n\n");
-	exit(0);
-}
-#endif
 
 
 /* Create a list of nodes and their edges identical to the CFG given by the
@@ -945,7 +895,7 @@ enum llvm2si_function_region_t llvm2si_function_region(
 	 */
 	
 	/* Obtain in 'node_list' the natural loop */
-	llvm2si_function_natural_loop(function, node, node_list);
+	llvm2si_function_reach_under(function, node, node_list);
 	
 	
 	/*** 1. Self-loop ***/
@@ -984,25 +934,28 @@ void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 	struct llvm2si_function_node_t *node;
 
 	struct linked_list_t *postorder_list;
+	struct linked_list_t *reach_under_list;
 	struct linked_list_t *node_list;
 
 	int reduction;
 	char *name;
 
-
-	return; //// Nothing
-
 	/* Create the control flow graph */
 	llvm2si_function_node_list_init(function);
 
-	/* Main algorithm, based on the pseudo-code given in "Advanced Compiler
-	 * Design and Implementation" by Steven S. Muchnick, page 206. */
+	/* Main algorithm, based on Sharir's original proposal for structural
+	 * analysis of control flow graphs. */
 	postorder_list = linked_list_create();
-	llvm2si_function_example2(function); /////////
+	reach_under_list = linked_list_create();
+	llvm2si_function_example3(function);
 	llvm2si_function_dfs(function, postorder_list);
 	llvm2si_function_dump_control_tree(function, stdout);
-	llvm2si_function_node_list_dump(postorder_list, stdout);
+
+	printf("reach_under = ");
+	llvm2si_function_node_list_dump(reach_under_list, stdout);
+	printf("\n");
 	exit(0);
+
 	node_list = linked_list_create();
 	do
 	{
@@ -1036,7 +989,7 @@ void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 
 			/* Identify cyclic region */
 			linked_list_clear(node_list);
-			llvm2si_function_natural_loop(function, node, node_list);
+			llvm2si_function_reach_under(function, node, node_list);
 
 			/* No region identified, remove one node and try again. */
 			linked_list_head(postorder_list);
