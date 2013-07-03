@@ -190,7 +190,7 @@ extern int frm_gpu_lds_num_ports;
 
 struct frm_gpu_t
 {
-	/* Grid running on it */
+	/* Grids */
 	struct frm_grid_t *grid;
 	int thread_blocks_per_sm;
 	int warps_per_sm;
@@ -199,19 +199,9 @@ struct frm_gpu_t
 	/* Streaming multiprocessors */
 	struct frm_sm_t **sms;
 
+	/* Lists */
 	struct list_t *sm_ready_list;
-
-	/* List of ready SM accepting thread blocks */
-	struct frm_sm_t *sm_ready_list_head;
-	struct frm_sm_t *sm_ready_list_tail;
-	int sm_ready_list_count;
-	int sm_ready_list_max;
-
-	/* List of busy SM */
-	struct frm_sm_t *sm_busy_list_head;
-	struct frm_sm_t *sm_busy_list_tail;
-	int sm_busy_list_count;
-	int sm_busy_list_max;
+	struct list_t *sm_busy_list;
 
 	/* List of deleted instructions */
 	struct linked_list_t *trash_uop_list;
