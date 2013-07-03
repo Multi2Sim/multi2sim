@@ -376,6 +376,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		elf_enc_buffer_write(rodata_buffer, ptr, 32);
 		free(ptr);
 
+		rodata_size = rodata_buffer->offset;
+
 
 		/* Kernel -> .text section */
 	        

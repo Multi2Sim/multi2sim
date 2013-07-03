@@ -374,6 +374,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		inst_bytes->vop3a.op = inst_info->opcode;
 		break;
 
+	/* encoding in [31:26], op in [25:17] */
+	case SI_FMT_VOP3b:
+
+		inst_bytes->vop3a.enc = 0x34;
+		inst_bytes->vop3a.op = inst_info->opcode;
+		break;
+
 	/* encoding in [:], op in [] */
 	case SI_FMT_VINTRP:
 		
@@ -389,7 +396,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		break;
 
 	default:
-		fatal("%s: unsupported format", __FUNCTION__);
+		si2bin_yyerror_fmt("%s: unsupported format", __FUNCTION__);
 	}
 
 	/* Arguments */
@@ -410,15 +417,15 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		{
 			int value;
 
-			if (arg->type == si2bin_arg_literal)
+			if (arg->type == si2bin_arg_literal || 
+				arg->type == si2bin_arg_literal_reduced)
 			{
 				/* Literal constant other than [-16...64] */
-				if (arg->value.literal.val > 0xff)
+				if (arg->value.literal.val > 0xff00)
 					si2bin_yyerror_fmt("%s: Literal in simm16 needs to fit in 16 bit field",
 						__FUNCTION__);
 				
 				inst_bytes->sopk.simm16 = arg->value.literal.val;
-
 			}
 			else
 			{
@@ -835,9 +842,21 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 				inst_bytes->mtbuf.vaddr = arg->value.vector_register.id;
 				break;
+			
+			case si2bin_arg_vector_register_series:
+				/* High register must be low plus 1 */
+				if (arg->value.vector_register_series.high !=
+						arg->value.vector_register_series.low + 1)
+					si2bin_yyerror("register series must be v[x:x+1]");
+				
+				inst_bytes->mtbuf.vaddr = 
+					arg->value.vector_register_series.low;
+
+				/* FIXME - Find way to verify that idxen and offen are set */
+				break;
 
 			default:
-				panic("%s: invalid argument type for token 'ssrc0'",
+				si2bin_yyerror_fmt("%s: invalid argument type for token 'vaddr'",
 					__FUNCTION__);
 			}
 			break;
@@ -973,7 +992,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_vop3_64_sdst:
 			
 			/* Encode */
-			inst_bytes->vop3a.src2 = si2bin_arg_encode_operand(arg);
+			inst_bytes->vop3b.sdst = si2bin_arg_encode_operand(arg);
 			
 			break;
 
