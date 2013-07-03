@@ -194,7 +194,7 @@ void si_ndrange_insert_buffer_into_vertex_buffer_table(struct si_ndrange_t *ndra
 	assert(vertex_buffer < SI_EMU_MAX_NUM_VERTEX_BUFFERS);
 	assert(sizeof(*buf_desc) <= SI_EMU_VERTEX_BUFFER_TABLE_ENTRY_SIZE);
 
-	/* Write the buffer resource descriptor into the UAV table */
+	/* Write the buffer resource descriptor into the Vertex Buffer table */
 	mem_write(si_emu->global_mem, ndrange->vertex_buffer_table +
 		vertex_buffer*SI_EMU_VERTEX_BUFFER_TABLE_ENTRY_SIZE, sizeof(*buf_desc),
 		buf_desc);
