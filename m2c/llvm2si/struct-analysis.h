@@ -22,6 +22,8 @@
 
 #include <stdio.h>
 
+#include <lib/util/string.h>
+
 
 /* Forward declarations */
 struct llvm2si_basic_block_t;
@@ -52,6 +54,11 @@ struct llvm2si_function_node_t
 	struct linked_list_t *succ_list;
 	struct linked_list_t *pred_list;
 
+	struct linked_list_t *forward_edge_list;
+	struct linked_list_t *back_edge_list;
+	struct linked_list_t *tree_edge_list;
+	struct linked_list_t *cross_edge_list;
+
 	/* If the node is part of a higher-level abstract node, this field
 	 * points to it. If not, the field is NULL. */
 	struct llvm2si_function_node_t *parent;
@@ -72,9 +79,9 @@ struct llvm2si_function_node_t
 		} abstract;
 	};
 
-	/* Identifier assigned in pre-order traversal of the control tree, taken
-	 * from 'function->preorder_counter'. */
+	/* Identifiers assigned during the depth-first search */
 	int preorder_id;
+	int postorder_id;
 
 	/* Color used for traversal algorithms */
 	int color;
@@ -98,9 +105,25 @@ void llvm2si_function_node_list_dump(struct linked_list_t *list, FILE *f);
 void llvm2si_function_node_list_dump_detail(struct linked_list_t *list, FILE *f);
 
 
+
+
 /*
- * Public Functions
+ * Function object
  */
+
+extern struct str_map_t llvm2si_function_region_map;
+enum llvm2si_function_region_t
+{
+	llvm2si_function_region_invalid,
+	llvm2si_function_region_block,
+	llvm2si_function_region_if_then,
+	llvm2si_function_region_if_then_else,
+	llvm2si_function_region_self_loop,
+	llvm2si_function_region_while_loop,
+	llvm2si_function_region_natural_loop,
+	llvm2si_function_region_improper
+};
+
 
 /* Create the function control tree by performing a structural analysis on the
  * control flow graph of the function. */

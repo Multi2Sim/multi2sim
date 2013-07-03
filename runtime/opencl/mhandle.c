@@ -195,7 +195,8 @@ static void mhandle_mark_corrupt(void *eff_ptr, unsigned long eff_size)
 static void mhandle_check_corrupt(void *eff_ptr, unsigned long eff_size, char *at)
 {
 	unsigned long i;
-	unsigned char *as_char = eff_ptr;
+	unsigned long size;
+	unsigned char *as_char;
 
 	int corrupt = 0;
 	int prev;
@@ -203,7 +204,13 @@ static void mhandle_check_corrupt(void *eff_ptr, unsigned long eff_size, char *a
 
 	void *ptr;
 
+	/* Calculate original pointer and size */
+	ptr = eff_ptr + MHANDLE_CORRUPT_RANGE;
+	size = eff_size - MHANDLE_CORRUPT_TOTAL;
+	as_char = eff_ptr;
+
 	/* Corruption before & after block */
+	assert(size > 0);
 	for (i = 0; i < MHANDLE_CORRUPT_RANGE; i++)
 		if (as_char[i] != MHANDLE_MARK_START)
 			corrupt = 1;
@@ -216,7 +223,6 @@ static void mhandle_check_corrupt(void *eff_ptr, unsigned long eff_size, char *a
 	/* Find contiguous blocks */
 	prev = -1;
 	next = -1;
-	ptr = eff_ptr + MHANDLE_CORRUPT_RANGE;
 	for (i = 0; i < mhandle_hash_table_size; i++)
 	{
 		if (mhandle_hash_table[i].active && !mhandle_hash_table[i].removed)
@@ -231,14 +237,20 @@ static void mhandle_check_corrupt(void *eff_ptr, unsigned long eff_size, char *a
 	}
 	
 	/* Notify */
-	fprintf(stderr, "\nfatal: %s: memory corrupted %s block (%p)\n",
-		at, corrupt == 1 ? "before" : "after", ptr);
+	fprintf(stderr, "\nfatal: %s: memory corrupted %s block (%p, %ld bytes)\n",
+		at, corrupt == 1 ? "before" : "after", ptr, size);
 	if (prev >= 0)
-		fprintf(stderr, "\tprev block: %s (%p)\n", mhandle_hash_table[prev].at,
-			mhandle_hash_table[prev].ptr);
+		fprintf(stderr, "\tprev block: %s (%p, %ld bytes)\n",
+			mhandle_hash_table[prev].at,
+			mhandle_hash_table[prev].ptr,
+			mhandle_hash_table[prev].size);
 	if (next >= 0)
-		fprintf(stderr, "\tnext block: %s (%p)\n", mhandle_hash_table[next].at,
-			mhandle_hash_table[next].ptr);
+	{
+		fprintf(stderr, "\tnext block: %s (%p, %ld bytes)\n",
+			mhandle_hash_table[next].at,
+			mhandle_hash_table[next].ptr,
+			mhandle_hash_table[next].size);
+	}
 	abort();
 }
 
@@ -410,7 +422,7 @@ char *mhandle_strdup(const char *s, char *at)
 
 	unsigned long size = strlen(s) + 1;
 	unsigned long eff_size;
-	
+
 	mhandle_init();
 
 	/* Allocate */
@@ -505,7 +517,11 @@ void __mhandle_done()
 
 void __mhandle_check(char *at)
 {
-	int i, count = 0;
+	int i;
+	int count = 0;
+
+	void *eff_ptr;
+	unsigned long eff_size;
 	
 	/* Check for corruption in all allocated blocks */
 	for (i = 0; i < mhandle_hash_table_size; i++)
@@ -513,8 +529,9 @@ void __mhandle_check(char *at)
 		if (mhandle_hash_table[i].active && !mhandle_hash_table[i].removed
 			&& mhandle_hash_table[i].corrupt_info)
 		{
-			mhandle_check_corrupt(mhandle_hash_table[i].ptr - MHANDLE_CORRUPT_RANGE,
-				mhandle_hash_table[i].size, mhandle_hash_table[i].at);
+			eff_ptr = mhandle_hash_table[i].ptr - MHANDLE_CORRUPT_RANGE;
+			eff_size = mhandle_hash_table[i].size + MHANDLE_CORRUPT_TOTAL;
+			mhandle_check_corrupt(eff_ptr, eff_size, mhandle_hash_table[i].at);
 			count++;
 		}
 	}

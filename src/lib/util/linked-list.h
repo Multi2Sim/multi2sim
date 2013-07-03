@@ -239,14 +239,16 @@ void linked_list_out(struct linked_list_t *list);
  * 	list.
  *
  * @return
- * 	No value is returned. The error code is set to one of the following values:
+ *      The element is returned at the position of the list given in 'index', or
+ *      NULL if 'index' points to the list tail. The error code is set to one
+ *      of the following values:
  *
  * 	LINKED_LIST_ERR_OK
  * 		No error.
  * 	LINKED_LIST_ERR_BOUNDS
  * 		Index out of bounds.
  */
-void linked_list_goto(struct linked_list_t *list, int index);
+void *linked_list_goto(struct linked_list_t *list, int index);
 
 
 /** Find the first occurrence of an element in the list.

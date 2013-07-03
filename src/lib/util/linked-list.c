@@ -171,12 +171,12 @@ void linked_list_out(struct linked_list_t *list)
 }
 
 
-void linked_list_goto(struct linked_list_t *list, int index)
+void *linked_list_goto(struct linked_list_t *list, int index)
 {
 	if (index < 0 || index > list->count)
 	{
 		list->error_code = LINKED_LIST_ERR_BOUNDS;
-		return;
+		return NULL;
 	}
 	list->error_code = LINKED_LIST_ERR_OK;
 	while (list->current_index < index)
@@ -190,6 +190,7 @@ void linked_list_goto(struct linked_list_t *list, int index)
 		list->current = list->current ? list->current->prev :
 			list->tail;
 	}
+	return list->current ? list->current->data : NULL;
 }
 
 
