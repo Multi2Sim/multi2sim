@@ -319,15 +319,17 @@ void llvm2si_function_node_disconnect(struct llvm2si_function_node_t *node,
 
 struct str_map_t llvm2si_function_region_map =
 {
-	7,
+	9,
 	{
 		{ "block", llvm2si_function_region_block },
 		{ "if-then", llvm2si_function_region_if_then },
 		{ "if-then-else", llvm2si_function_region_if_then_else },
-		{ "self-loop", llvm2si_function_region_self_loop },
 		{ "while-loop", llvm2si_function_region_while_loop },
-		{ "natural-loop", llvm2si_function_region_natural_loop },
-		{ "improper", llvm2si_function_region_improper }
+		{ "loop", llvm2si_function_region_loop },
+		{ "proper-interval", llvm2si_function_region_proper_interval },
+		{ "improper-interval", llvm2si_function_region_improper_interval },
+		{ "proper-outer-interval", llvm2si_function_region_proper_outer_interval },
+		{ "improper-outer-interval", llvm2si_function_region_improper_outer_interval }
 	}
 };
 
@@ -851,8 +853,8 @@ enum llvm2si_function_region_t llvm2si_function_region(
 		struct linked_list_t *node_list)
 {
 	struct llvm2si_function_node_t *succ_node;
-	struct llvm2si_function_node_t *head_node;
-	struct llvm2si_function_node_t *tail_node;
+	//struct llvm2si_function_node_t *head_node;
+	//struct llvm2si_function_node_t *tail_node;
 
 	/* List of nodes must be empty */
 	assert(!node_list->count);
@@ -865,6 +867,7 @@ enum llvm2si_function_region_t llvm2si_function_region(
 
 	/* Find consecutive nodes with only 1 successor, where that successor
 	 * has only one predecessor. */
+	printf("Process node '%s'\n", node->name);
 	while (node->succ_list->count == 1)
 	{
 		/* Get successor */
@@ -893,7 +896,7 @@ enum llvm2si_function_region_t llvm2si_function_region(
 	/*
 	 * Cyclic regions
 	 */
-	
+#if 0
 	/* Obtain in 'node_list' the natural loop */
 	llvm2si_function_reach_under(function, node, node_list);
 	
@@ -904,7 +907,7 @@ enum llvm2si_function_region_t llvm2si_function_region(
 	{
 		//llvm2si_function_node_list_dump(node_list, stdout);
 		//exit(0);
-		return llvm2si_function_region_self_loop;
+		return llvm2si_function_region_loop;
 	}
 
 
@@ -919,8 +922,9 @@ enum llvm2si_function_region_t llvm2si_function_region(
 				tail_node->succ_list->count == 1 &&
 				llvm2si_function_node_in_list(head_node,
 						tail_node->succ_list))
-			return llvm2si_function_region_natural_loop;
+			return llvm2si_function_region_while_loop;
 	}
+#endif
 
 	/* Nothing identified */
 	linked_list_clear(node_list);
@@ -931,75 +935,59 @@ enum llvm2si_function_region_t llvm2si_function_region(
 void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 {
 	enum llvm2si_function_region_t region;
+
 	struct llvm2si_function_node_t *node;
+	struct llvm2si_function_node_t *abs_node;
 
 	struct linked_list_t *postorder_list;
-	struct linked_list_t *reach_under_list;
-	struct linked_list_t *node_list;
-
-	int reduction;
-	char *name;
+	struct linked_list_t *region_list;
 
 	/* Create the control flow graph */
 	llvm2si_function_node_list_init(function);
+	llvm2si_function_example3(function);  /////
 
-	/* Main algorithm, based on Sharir's original proposal for structural
-	 * analysis of control flow graphs. */
+	/* Initialize */
+	region_list = linked_list_create();
+
+	/* Obtain the DFS spanning tree first, and a post-order traversal of
+	 * the CFG in 'postorder_list'. This list will be used for progressive
+	 * reduction steps. */
 	postorder_list = linked_list_create();
-	reach_under_list = linked_list_create();
-	llvm2si_function_example3(function);
 	llvm2si_function_dfs(function, postorder_list);
-	llvm2si_function_dump_control_tree(function, stdout);
 
-	printf("reach_under = ");
-	llvm2si_function_node_list_dump(reach_under_list, stdout);
-	printf("\n");
-	exit(0);
-
-	node_list = linked_list_create();
-	do
+	/* Sharir's algorithm */
+	while (postorder_list->count > 1)
 	{
-		reduction = 0;
-		linked_list_clear(postorder_list);
-		llvm2si_function_dfs(function, postorder_list);
-		while (postorder_list->count > 1 && !reduction)
+		/* Extract next node in post-order */
+		linked_list_head(postorder_list);
+		node = linked_list_remove(postorder_list);
+		assert(node);
+
+		/* Identify a region starting at 'node'. If a valid region is
+		 * found, reduce it into a new abstract node and reconstruct
+		 * DFS spanning tree. */
+		region = llvm2si_function_region(function, node, region_list);
+		if (region)
 		{
-			/* Get the node with lowest preorder ID */
+			/* Debug */
+			printf("\nRegion '%s' identified\n",
+					str_map_value(&llvm2si_function_region_map, region));
+
+			/* Reduce and reconstruct DFS */
+			abs_node = llvm2si_function_reduce(function,
+					region_list, region);
+			llvm2si_function_dfs(function, NULL);
+
+			/* Insert new abstract node in post-order list, to make
+			 * it be the next one to be processed. */
 			linked_list_head(postorder_list);
-			node = linked_list_get(postorder_list);
-
-			/* Identify region */
-			linked_list_clear(node_list);
-			region = llvm2si_function_region(function, node,
-					node_list);
-			if (region)
-			{
-				name = str_map_value(
-					&llvm2si_function_region_map, region);
-				printf("\n\nregion %s = ", name);
-				llvm2si_function_node_list_dump(node_list, stdout);
-				printf("\n");
-
-				reduction = 1;
-				llvm2si_function_reduce(function, node_list, region);
-				llvm2si_function_dump_control_tree(function, stdout);
-
-				break;
-			}
-
-			/* Identify cyclic region */
-			linked_list_clear(node_list);
-			llvm2si_function_reach_under(function, node, node_list);
-
-			/* No region identified, remove one node and try again. */
-			linked_list_head(postorder_list);
-			linked_list_remove(postorder_list);
+			linked_list_insert(postorder_list, abs_node);
 		}
-	} while (reduction);
+	}
 
 	/* Free data structures */
 	linked_list_free(postorder_list);
-	linked_list_free(node_list);
+	linked_list_free(region_list);
 }
 
 

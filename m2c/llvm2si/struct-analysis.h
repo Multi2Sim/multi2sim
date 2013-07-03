@@ -118,10 +118,12 @@ enum llvm2si_function_region_t
 	llvm2si_function_region_block,
 	llvm2si_function_region_if_then,
 	llvm2si_function_region_if_then_else,
-	llvm2si_function_region_self_loop,
 	llvm2si_function_region_while_loop,
-	llvm2si_function_region_natural_loop,
-	llvm2si_function_region_improper
+	llvm2si_function_region_loop,
+	llvm2si_function_region_proper_interval,
+	llvm2si_function_region_improper_interval,
+	llvm2si_function_region_proper_outer_interval,
+	llvm2si_function_region_improper_outer_interval
 };
 
 
