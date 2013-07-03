@@ -151,11 +151,6 @@ struct llvm2si_function_t
 	struct linked_list_t *node_list;  /* Elements of type 'llvm2si_function_node_t' */
 	struct llvm2si_function_node_t *node_entry;
 
-	/* Global counter for pre-order traversal in structural analysis
-	 * procedure. This counter is incremented and assigned to each
-	 * llvm2si_function_node_t->preorder_id. */
-	int preorder_counter;
-
 	/* While code is generated, this variable keeps track of the total
 	 * amount of bytes pushed into the stack for this function. */
 	unsigned int stack_size;
