@@ -475,7 +475,15 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_write,
 						vbo->device_ptr, vbo->data, vbo->size);
 					/* Insert into vertex buffer table */
-					
+
+					/* Set rendering mode */
+
+					/* Launch Vertex Shader */
+
+					/* Launch Fragment Shader*/
+
+					/* Display */
+
 					/* Debug info */
 					opengl_debug("\tData send to device memory, device_ptr = %p\n", 
 						vbo->device_ptr);					

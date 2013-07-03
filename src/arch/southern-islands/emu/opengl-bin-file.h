@@ -22,6 +22,8 @@
 
 #include <lib/util/elf-format.h>
 
+#define MAX_USER_ELEMENTS 16
+#define MAX_SEMANTICS_MAPPINGS 16
 
 /* Shader types */
 enum si_opengl_shader_binary_kind_t
@@ -81,6 +83,15 @@ struct si_opengl_bin_enc_user_element_t
 	unsigned int userRegCount;
 };
 
+/* FIXME: Totally unverified */
+struct si_opengl_bin_enc_semantic_mapping_t
+{
+	unsigned int count;
+	unsigned int usageIndex;
+	unsigned int startUserReg;
+	unsigned int userRegCount;
+};
+
 /* Encoding dictionary entry */
 struct si_opengl_bin_enc_dict_entry_t
 {
@@ -91,7 +102,10 @@ struct si_opengl_bin_enc_dict_entry_t
 	int stack_size_used;
 
 	unsigned int userElementCount;
-	struct si_opengl_bin_enc_user_element_t userElements[16];
+	struct si_opengl_bin_enc_user_element_t userElements[MAX_USER_ELEMENTS];
+
+	unsigned int semanticMappingCount;
+	struct si_opengl_bin_enc_semantic_mapping_t semanticsMapping[MAX_SEMANTICS_MAPPINGS];
 
 	/* FIXME: currently only designed for Vertex Shader */
 	struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *shader_pgm_rsrc2_vs;

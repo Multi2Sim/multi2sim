@@ -30,17 +30,17 @@
 #include "si-shader.h"
 #include "si-program.h"
 
-struct list_t *opengl_si_hader_list;
+struct list_t *opengl_si_shader_list;
 
 void opengl_si_shader_list_init(void)
 {
 	/* Already initialized */
-	if (opengl_si_hader_list)
+	if (opengl_si_shader_list)
 		return;
 
 	/* Initialize and add one empty element */
-	opengl_si_hader_list = list_create();
-	list_add(opengl_si_hader_list, NULL);
+	opengl_si_shader_list = list_create();
+	list_add(opengl_si_shader_list, NULL);
 }
 
 void opengl_si_shader_list_done(void)
@@ -49,17 +49,17 @@ void opengl_si_shader_list_done(void)
 	struct opengl_si_shader_t *shdr;
 
 	/* Not initialized */
-	if (!opengl_si_hader_list)
+	if (!opengl_si_shader_list)
 		return;
 
 	/* Free list of Southern Islands programs */
-	LIST_FOR_EACH(opengl_si_hader_list, index)
+	LIST_FOR_EACH(opengl_si_shader_list, index)
 	{
-		shdr = list_get(opengl_si_hader_list, index);
+		shdr = list_get(opengl_si_shader_list, index);
 		if (shdr)
 			opengl_si_shader_free(shdr);
 	}
-	list_free(opengl_si_hader_list);
+	list_free(opengl_si_shader_list);
 }
 
 /*
@@ -101,7 +101,7 @@ struct opengl_si_shader_t *opengl_si_shader_create(
 	}
 
 	/* Add to shader list, shader id is the index */
-	list_insert(opengl_si_hader_list, shader_id, shdr);
+	list_insert(opengl_si_shader_list, shader_id, shdr);
 
 	/* Return */
 	return shdr;
@@ -123,7 +123,7 @@ void opengl_si_shader_init( struct opengl_si_program_t *program, unsigned int sh
 	int i;
 
 	/* Get shader object */
-	shdr = list_get(opengl_si_hader_list, shader_id);
+	shdr = list_get(opengl_si_shader_list, shader_id);
 
 	/* Initialize */
 	shdr->program = program;

@@ -645,7 +645,20 @@ static int opengl_abi_si_shader_create_impl(struct x86_ctx_t *ctx)
 
 static int opengl_abi_si_shader_free_impl(struct x86_ctx_t *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct opengl_si_shader_t *shdr;
+
+	unsigned int shader_id;
+
+	/* Arguments */
+	shader_id = regs->ecx;
+	opengl_debug("\tshader_id=%d\n", shader_id);
+
+	/* Get and free */
+	shdr = list_get(opengl_si_shader_list, shader_id);
+	if (shdr)
+		opengl_si_shader_free(shdr);
+
 	return 0;
 }
 
