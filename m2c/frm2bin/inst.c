@@ -1886,59 +1886,59 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			{
 				/* right now only cares about isetp inst,
 				 * need improvement later */
-				if (mod->value.comparison == lt)
+				if (mod->value.comparison == frm_lt)
 				{
 					inst_bytes->general1.cmp = 0x1;
 				}
-				else if (mod->value.comparison == eq)
+				else if (mod->value.comparison == frm_eq)
 				{
 					inst_bytes->general1.cmp = 0x2;
 				}
-				else if (mod->value.comparison == le)
+				else if (mod->value.comparison == frm_le)
 				{
 					inst_bytes->general1.cmp = 0x3;
 				}
-				else if (mod->value.comparison == gt)
+				else if (mod->value.comparison == frm_gt)
 				{
 					inst_bytes->general1.cmp = 0x4;
 				}
-				else if (mod->value.comparison == ne)
+				else if (mod->value.comparison == frm_ne)
 				{
 					inst_bytes->general1.cmp = 0x5;
 				}
-				else if (mod->value.comparison == ge)
+				else if (mod->value.comparison == frm_ge)
 				{
 					inst_bytes->general1.cmp = 0x6;
 				}
-				else if (mod->value.comparison == num)
+				else if (mod->value.comparison == frm_num)
 				{
 					inst_bytes->general1.cmp = 0x7;
 				}
-				else if (mod->value.comparison == nan)
+				else if (mod->value.comparison == frm_nan)
 				{
 					inst_bytes->general1.cmp = 0x8;
 				}
-				else if (mod->value.comparison == ltu)
+				else if (mod->value.comparison == frm_ltu)
 				{
 					inst_bytes->general1.cmp = 0x9;
 				}
-				else if (mod->value.comparison == equ)
+				else if (mod->value.comparison == frm_equ)
 				{
 					inst_bytes->general1.cmp = 0xa;
 				}
-				else if (mod->value.comparison == leu)
+				else if (mod->value.comparison == frm_leu)
 				{
 					inst_bytes->general1.cmp = 0xb;
 				}
-				else if (mod->value.comparison == gtu)
+				else if (mod->value.comparison == frm_gtu)
 				{
 					inst_bytes->general1.cmp = 0xc;
 				}
-				else if (mod->value.comparison == geu)
+				else if (mod->value.comparison == frm_geu)
 				{
 					inst_bytes->general1.cmp = 0xd;
 				}
-				else if (mod->value.comparison == neu)
+				else if (mod->value.comparison == frm_neu)
 				{
 					inst_bytes->general1.cmp = 0xe;
 				}
