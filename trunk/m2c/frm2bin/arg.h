@@ -165,20 +165,20 @@ enum frm_mod_data_width_t
 /* mod comparison type */
 enum frm_mod_comp_t
 {
-	lt,
-	eq,
-	le,
-	gt,
-	ne,
-	ge,
-	num,
-	nan,
-	ltu,
-	equ,
-	leu,
-	gtu,
-	geu,
-	neu,
+	frm_lt,
+	frm_eq,
+	frm_le,
+	frm_gt,
+	frm_ne,
+	frm_ge,
+	frm_num,
+	frm_nan,
+	frm_ltu,
+	frm_equ,
+	frm_leu,
+	frm_gtu,
+	frm_geu,
+	frm_neu,
 };
 
 /* type def for modifier */
