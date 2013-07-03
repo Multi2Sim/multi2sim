@@ -246,8 +246,8 @@ void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thr
 	list_remove(frm_gpu->sm_ready_list, sm);
 	if (sm->thread_block_count < frm_gpu->thread_blocks_per_sm)
 		list_add(frm_gpu->sm_ready_list, sm);
-	if (!DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_busy, sm))
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_busy, sm);
+	if (list_index_of(frm_gpu->sm_busy_list, sm) == -1)
+		list_add(frm_gpu->sm_busy_list, sm);
 
 	/* Assign warps identifiers in SM */
 	//FRM_FOREACH_WARP_IN_THREADBLOCK(thread_block, warp_id)
@@ -297,21 +297,14 @@ void frm_sm_unmap_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *t
 
 	/* If compute unit accepts work-groups again, insert into 
 	 * 'sm_ready' list */
-	if (!DOUBLE_LINKED_LIST_MEMBER(frm_gpu, sm_ready, 
-		sm))
-	{
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_gpu, sm_ready, 
-			sm);
-	}
+	if (list_index_of(frm_gpu->sm_ready_list, sm) == -1)
+		list_add(frm_gpu->sm_ready_list, sm);
 	
 	/* If SM is not sm_busy anymore, remove it from 
 	 * 'sm_busy' list */
-	if (!sm->thread_block_count && DOUBLE_LINKED_LIST_MEMBER(frm_gpu,
-		sm_busy, sm))
-	{
-		DOUBLE_LINKED_LIST_REMOVE(frm_gpu, sm_busy, 
-			sm);
-	}
+	if (!sm->thread_block_count && 
+			list_index_of(frm_gpu->sm_busy_list, sm) != -1)
+		list_remove(frm_gpu->sm_busy_list, sm);
 
 	/* Trace */
 	frm_trace("si.unmap_wg cu=%d wg=%d\n", sm->id, thread_block->id);
