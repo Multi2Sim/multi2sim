@@ -1144,6 +1144,15 @@ void si_isa_S_MOVK_I32_impl(struct si_work_item_t *work_item,
 }
 #undef INST
 
+/* */
+#define INST SI_INST_SOPK
+void si_isa_S_CMPK_LE_U32_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
 /* D.i = D.i + signext(SIMM16). scc = overflow. */
 #define INST SI_INST_SOPK
 void si_isa_S_ADDK_I32_impl(struct si_work_item_t *work_item,
@@ -3225,6 +3234,15 @@ void si_isa_V_XOR_B32_impl(struct si_work_item_t *work_item,
 		si_isa_debug("t%d: V%u<=(%u)(%u ^ %u) ", work_item->id, 
 			INST.vdst, result.as_uint, s0.as_uint, s1.as_uint);
 	}
+}
+#undef INST
+
+/*D.u = ((1<<S0.u[4:0])-1) << S1.u[4:0]; S0=bitfield_width, S1=bitfield_offset. */
+#define INST SI_INST_VOP2
+void si_isa_V_BFM_B32_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	NOT_IMPL();
 }
 #undef INST
 

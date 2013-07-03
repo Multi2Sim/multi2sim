@@ -25,6 +25,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
+#include <lib/util/elf-format.h>
 
 #include "inner-bin.h"
 #include "inst.h"
@@ -113,7 +114,7 @@ void si2bin_compile(struct list_t *source_file_list,
 	int index;
 	char *output_file;
 	FILE *f;
-
+	
 	LIST_FOR_EACH(source_file_list, index)
 	{
 		/* Open source file */
@@ -131,7 +132,7 @@ void si2bin_compile(struct list_t *source_file_list,
 		/* Create output buffer */
 		si2bin_outer_bin = si2bin_outer_bin_create();
 		bin_buffer = elf_enc_buffer_create();
-
+		
 		/* Parse input */
 		si2bin_yyparse();
 
@@ -140,10 +141,11 @@ void si2bin_compile(struct list_t *source_file_list,
 		
 		/* Dump output buffer and free it */
 		si2bin_outer_bin_generate(si2bin_outer_bin, bin_buffer);
-
+		
+		/* Write contents of buffer to file */
 		elf_enc_buffer_write_to_file(bin_buffer, f);
 
-		/* Free Outer ELF */
+		/* Free Outer ELF and bin_buffer */
 		si2bin_outer_bin_free(si2bin_outer_bin);
 		elf_enc_buffer_free(bin_buffer);
 	}
