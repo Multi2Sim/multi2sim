@@ -51,25 +51,3 @@ void si_work_item_free(struct si_work_item_t *work_item)
 	free(work_item);
 }
 
-
-
-void si_work_item_set_pred(struct si_work_item_t *work_item, int pred)
-{
-	struct si_wavefront_t *wavefront = work_item->wavefront;
-
-	assert(work_item->id_in_wavefront >= 0 && 
-		work_item->id_in_wavefront < wavefront->work_item_count);
-	bit_map_set(wavefront->pred, work_item->id_in_wavefront, 1, !!pred);
-	wavefront->pred_mask_update = 1;
-}
-
-
-int si_work_item_get_pred(struct si_work_item_t *work_item)
-{
-	struct si_wavefront_t *wavefront = work_item->wavefront;
-
-	assert(work_item->id_in_wavefront >= 0 && 
-		work_item->id_in_wavefront < wavefront->work_item_count);
-	return bit_map_get(wavefront->pred, work_item->id_in_wavefront, 1);
-}
-

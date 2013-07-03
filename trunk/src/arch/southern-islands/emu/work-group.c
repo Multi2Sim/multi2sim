@@ -160,6 +160,23 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 				tid++;
 				lid++;
 
+				/* Initialize the execution mask */
+				if (work_item->id_in_wavefront < 32)
+				{
+					wavefront->sreg[SI_EXEC].as_uint |= 
+						1 << work_item->id_in_wavefront;
+				}
+				else if (work_item->id_in_wavefront < 64)
+				{
+					wavefront->sreg[SI_EXEC + 1].as_uint |= 
+						1 << work_item->id_in_wavefront;
+				}
+				else 
+				{
+					fatal("%s: invalid work-item id (%d)",
+						__FUNCTION__, 
+						work_item->id_in_wavefront);
+				}
 			}
 		}
 	}
@@ -274,11 +291,6 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 					user_elements[i].dataClass);
 			}
 		}
-
-		/* Initialize the execution mask */
-		wavefront->sreg[SI_EXEC].as_int = 0xffffffff;
-		wavefront->sreg[SI_EXEC + 1].as_int = 0xffffffff;
-		wavefront->sreg[SI_EXECZ].as_int = 0;
 	}
 
 	/* Statistics */
