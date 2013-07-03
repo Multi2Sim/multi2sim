@@ -672,7 +672,7 @@ struct llvm2si_basic_block_t *llvm2si_basic_block_create_with_name(char *name)
 
 	/* Create */
 	basic_block = llvm2si_basic_block_create(NULL);
-	str_set(basic_block->name, name);
+	basic_block->name = str_set(basic_block->name, name);
 	
 	/* Return */
 	return basic_block;
