@@ -717,59 +717,59 @@ struct frm_mod_t *frm_mod_create_comparison(char *mod_name)
 
 	if (!strcmp(mod_name, "LT"))
 	{
-		mod->value.comparison = lt;
+		mod->value.comparison = frm_lt;
 	}
 	else if (!strcmp(mod_name, "EQ"))
 	{
-		mod->value.comparison = eq;
+		mod->value.comparison = frm_eq;
 	}
 	else if (!strcmp(mod_name, "LE"))
 	{
-		mod->value.comparison = le;
+		mod->value.comparison = frm_le;
 	}
 	else if (!strcmp(mod_name, "GT"))
 	{
-		mod->value.comparison = gt;
+		mod->value.comparison = frm_gt;
 	}
 	else if (!strcmp(mod_name, "NE"))
 	{
-		mod->value.comparison = ne;
+		mod->value.comparison = frm_ne;
 	}
 	else if (!strcmp(mod_name, "GE"))
 	{
-		mod->value.comparison = ge;
+		mod->value.comparison = frm_ge;
 	}
 	else if (!strcmp(mod_name, "NUM"))
 	{
-		mod->value.comparison = num;
+		mod->value.comparison = frm_num;
 	}
 	else if (!strcmp(mod_name, "NAN"))
 	{
-		mod->value.comparison = nan;
+		mod->value.comparison = frm_nan;
 	}
 	else if (!strcmp(mod_name, "LTU"))
 	{
-		mod->value.comparison = ltu;
+		mod->value.comparison = frm_ltu;
 	}
 	else if (!strcmp(mod_name, "EQU"))
 	{
-		mod->value.comparison = equ;
+		mod->value.comparison = frm_equ;
 	}
 	else if (!strcmp(mod_name, "LEU"))
 	{
-		mod->value.comparison = leu;
+		mod->value.comparison = frm_leu;
 	}
 	else if (!strcmp(mod_name, "GTU"))
 	{
-		mod->value.comparison = gtu;
+		mod->value.comparison = frm_gtu;
 	}
 	else if (!strcmp(mod_name, "GEU"))
 	{
-		mod->value.comparison = geu;
+		mod->value.comparison = frm_geu;
 	}
 	else if (!strcmp(mod_name, "NEU"))
 	{
-		mod->value.comparison = neu;
+		mod->value.comparison = frm_neu;
 	}
 	else
 	{
