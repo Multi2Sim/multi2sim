@@ -49,7 +49,6 @@ struct si_wavefront_t *si_wavefront_create(int wavefront_id,
 	/* Initialize */
 	wavefront = xcalloc(1, sizeof(struct si_wavefront_t));
 	wavefront->id = wavefront_id;
-	wavefront->pred = bit_map_create(si_emu_wavefront_size);
 	si_wavefront_sreg_init(wavefront);
 
 	/* Create work items */
@@ -105,8 +104,6 @@ void si_wavefront_free(struct si_wavefront_t *wavefront)
 
 	/* Free wavefront */
 	
-	bit_map_free(wavefront->pred);
-
 	free(wavefront->work_items);
 
 	memset(wavefront, 0, sizeof(struct si_wavefront_t));
@@ -141,7 +138,6 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	wavefront->scalar_mem_read = 0;
 	wavefront->lds_write = 0;
 	wavefront->lds_read = 0;
-	wavefront->pred_mask_update = 0;
 	wavefront->mem_wait = 0;
 	wavefront->at_barrier = 0;
 	wavefront->barrier_inst = 0;
