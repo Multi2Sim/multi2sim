@@ -329,6 +329,7 @@ static void mem_config_read_general(struct config_t *config)
 	if (!IN_RANGE(mem_frequency, 1, ESIM_MAX_FREQUENCY))
 		fatal("%s: invalid value for 'Frequency'.\n%s",
 			mem_config_file_name, mem_err_config_note);
+	mem_domain_index = esim_new_domain(mem_frequency);
 
 	/* Page size */
 	mmu_page_size = config_read_int(config, section, "PageSize", 
@@ -1483,6 +1484,12 @@ static void mem_config_read_commands(struct config_t *config)
 	if (!config_section_exists(config, section))
 		return;
 
+	/* Register events related with commands */
+	EV_MEM_SYSTEM_COMMAND = esim_register_event_with_name(mem_system_command_handler,
+			mem_domain_index, "mem_system_command");
+	EV_MEM_SYSTEM_END_COMMAND = esim_register_event_with_name(mem_system_end_command_handler,
+			mem_domain_index, "mem_system_end_command");
+
 	/* Read commands */
 	command_var_id = 0;
 	while (1)
@@ -1517,9 +1524,17 @@ void mem_config_read(void)
 	 * by the user, create a default configuration for each architecture. */
 	config = config_create(mem_config_file_name);
 	if (!*mem_config_file_name)
+	{
+		/* Create Frequency domain */
+		mem_domain_index = esim_new_domain(mem_frequency);
+
+		/* Create default configuration files for each architectures */
 		arch_for_each(mem_config_default, config);
+	}
 	else
+	{
 		config_load(config);
+	}
 
 	/* Read general variables */
 	mem_config_read_general(config);

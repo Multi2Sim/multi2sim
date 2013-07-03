@@ -279,19 +279,21 @@ void linked_list_add(struct linked_list_t *list, void *data)
 }
 
 
-void linked_list_remove(struct linked_list_t *list)
+void *linked_list_remove(struct linked_list_t *list)
 {
 	struct linked_list_elem_t *elem;
+	void *data;
 	
 	/* Check bounds */
 	if (list->current_index == list->count)
 	{
 		list->error_code = LINKED_LIST_ERR_BOUNDS;
-		return;
+		return NULL;
 	}
 	
 	/* Remove current element */
 	elem = list->current;
+	data = elem->data;
 	if (list->count == 1)
 	{
 		list->tail = NULL;
@@ -320,6 +322,7 @@ void linked_list_remove(struct linked_list_t *list)
 	list->current = elem->next;
 	list->version++;
 	free(elem);
+	return data;
 }
 
 

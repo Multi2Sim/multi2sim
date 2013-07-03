@@ -330,14 +330,16 @@ void linked_list_add(struct linked_list_t *list, void *data);
  * 	List object.
  *
  * @return
- * 	No value is returned. The error code is set to one of the following values:
+ * 	The function returned the data associated with the element removed, or
+ * 	NULL if no element was removed. The error code is set to one of the
+ * 	following values:
  *
  * 	LINKED_LIST_ERR_OK
  * 		No error.
  * 	LINKED_LIST_ERR_BOUNDS
  * 		The current element is N (past the end of the list).
  */
-void linked_list_remove(struct linked_list_t *list);
+void *linked_list_remove(struct linked_list_t *list);
 
 
 /** Empty the list.
