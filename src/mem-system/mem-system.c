@@ -134,15 +134,6 @@ void mem_system_init(void)
 		fatal("%s: cannot open GPU cache report file",
 			mem_report_file_name);
 
-	/* Create Frequency domain */
-	mem_domain_index = esim_new_domain(mem_frequency);
-
-	/* Event handler for memory hierarchy commands */
-	EV_MEM_SYSTEM_COMMAND = esim_register_event_with_name(mem_system_command_handler,
-			mem_domain_index, "mem_system_command");
-	EV_MEM_SYSTEM_END_COMMAND = esim_register_event_with_name(mem_system_end_command_handler,
-			mem_domain_index, "mem_system_end_command");
-
 	/* NMOESI memory event-driven simulation */
 
 	EV_MOD_NMOESI_LOAD = esim_register_event_with_name(mod_handler_nmoesi_load,
