@@ -182,6 +182,13 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_
 		return arg->type == si2bin_arg_vector_register;
 
 	case si2bin_token_vsrc1:
+		
+		/* Token 'src' does not accept 'abs' of 'neg' function */
+		if (arg->abs)
+			return 0;
+		if (arg->neg)
+			return 0;
+		
 		return arg->type == si2bin_arg_vector_register;
 
 	case si2bin_token_vop3_64_svdst:
