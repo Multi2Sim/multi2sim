@@ -1095,6 +1095,7 @@ int frm_gpu_run(void)
 
 	struct frm_sm_t *sm;
 	struct frm_sm_t *sm_next;
+	int sm_id;
 
 	/* For efficiency when no Fermi emulation is selected, 
 	 * exit here if the list of existing grids is empty. */
@@ -1133,9 +1134,9 @@ int frm_gpu_run(void)
 	assert(grid);
 
 	/* Allocate thread blocks to SMs */
-	while (frm_gpu->sm_ready_list_head && list_head(grid->pending_thread_blocks))
+	while (list_head(frm_gpu->sm_ready_list) && list_head(grid->pending_thread_blocks))
 	{
-		frm_sm_map_thread_block(frm_gpu->sm_ready_list_head,
+		frm_sm_map_thread_block(list_head(frm_gpu->sm_ready_list),
 				list_head(grid->pending_thread_blocks));
 	}
 
@@ -1164,12 +1165,12 @@ int frm_gpu_run(void)
 		return TRUE;
 
 	/* Run one loop iteration on each busy SM */
-	for (sm = frm_gpu->sm_busy_list_head; sm;
-			sm = sm_next)
+	for (sm = list_head(frm_gpu->sm_busy_list), sm_id = 0; sm; 
+			sm = sm_next, sm_id++)
 	{
 		/* Store next busy SM, since this can change
 		 * during the SM simulation loop iteration. */
-		sm_next = sm->sm_busy_list_next;
+		sm_next = list_get(frm_gpu->sm_busy_list, sm_id + 1);
 
 		frm_gpu_debug("run sm[%d]\n", sm->id);
 
@@ -1178,7 +1179,7 @@ int frm_gpu_run(void)
 	}
 
 	/* If Grid finished execution in all SMs, free it. */
-	if (!frm_gpu->sm_busy_list_count)
+	if (!list_count(frm_gpu->sm_busy_list))
 	{
 		/* Dump Grid report */
 		frm_grid_dump(grid, frm_emu_report_file);
