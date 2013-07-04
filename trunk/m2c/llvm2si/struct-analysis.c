@@ -29,6 +29,7 @@
 
 #include "basic-block.h"
 #include "function.h"
+#include "llvm2si.h"
 #include "struct-analysis.h"
 
 
@@ -199,7 +200,11 @@ void llvm2si_function_node_dump(struct llvm2si_function_node_t *node, FILE *f)
 	}
 
 	/* Parent */
-	fprintf(f, "} structof='%s'", node->parent ? node->parent->name : "-");
+	fprintf(f, "} structof=");
+	if (node->parent)
+		fprintf(f, "'%s'", node->parent->name);
+	else
+		fprintf(f, "-");
 
 	/* List of child elements */
 	if (node->kind == llvm2si_function_node_abstract)
@@ -209,7 +214,16 @@ void llvm2si_function_node_dump(struct llvm2si_function_node_t *node, FILE *f)
 	}
 
 	/* Traversal IDs */
-	fprintf(f, " pre=%d post=%d", node->preorder_id, node->postorder_id);
+	fprintf(f, " pre=");
+	if (node->preorder_id == -1)
+		fprintf(f, "-");
+	else
+		fprintf(f, "%d", node->preorder_id);
+	fprintf(f, " post=");
+	if (node->postorder_id == -1)
+		fprintf(f, "-");
+	else
+		fprintf(f, "%d", node->postorder_id);
 
 	/* End */
 	fprintf(f, "\n");
@@ -385,8 +399,8 @@ void llvm2si_function_dfs(struct llvm2si_function_t *function,
 	LINKED_LIST_FOR_EACH(function->node_list)
 	{
 		node = linked_list_get(function->node_list);
-		node->preorder_id = 0;
-		node->postorder_id = 0;
+		node->preorder_id = -1;
+		node->postorder_id = -1;
 		node->color = 0;  /* White */
 		linked_list_clear(node->back_edge_list);
 		linked_list_clear(node->cross_edge_list);
@@ -525,7 +539,7 @@ struct llvm2si_function_node_t *llvm2si_function_reduce(
 	}
 
 	/* Figure out a name for the new abstract node */
-	snprintf(name, sizeof name, "%s_%d", str_map_value(
+	snprintf(name, sizeof name, "__%s_%d", str_map_value(
 			&llvm2si_function_node_region_map, region),
 			region_count);
 
@@ -642,54 +656,40 @@ struct llvm2si_function_node_t *llvm2si_function_reduce(
 }
 
 
-/* Replace the content of the function with the example on page 201 of
- * Muchnick's book. This function is used for debugging purposes. */
-void llvm2si_function_example(struct llvm2si_function_t *function)
-{
-	linked_list_clear(function->node_list);
-
-	struct llvm2si_basic_block_t *bb1 = llvm2si_basic_block_create_with_name("n1");
-	struct llvm2si_function_node_t *n1 = llvm2si_function_node_create_leaf(function, bb1);
-	linked_list_add(function->node_list, n1);
-	struct llvm2si_basic_block_t *bb2 = llvm2si_basic_block_create_with_name("n2");
-	struct llvm2si_function_node_t *n2 = llvm2si_function_node_create_leaf(function, bb2);
-	linked_list_add(function->node_list, n2);
-	struct llvm2si_basic_block_t *bb3 = llvm2si_basic_block_create_with_name("n3");
-	struct llvm2si_function_node_t *n3 = llvm2si_function_node_create_leaf(function, bb3);
-	linked_list_add(function->node_list, n3);
-	struct llvm2si_basic_block_t *bb4 = llvm2si_basic_block_create_with_name("n4");
-	struct llvm2si_function_node_t *n4 = llvm2si_function_node_create_leaf(function, bb4);
-	linked_list_add(function->node_list, n4);
-	struct llvm2si_basic_block_t *bb5 = llvm2si_basic_block_create_with_name("n5");
-	struct llvm2si_function_node_t *n5 = llvm2si_function_node_create_leaf(function, bb5);
-	linked_list_add(function->node_list, n5);
-	struct llvm2si_basic_block_t *bb6 = llvm2si_basic_block_create_with_name("n6");
-	struct llvm2si_function_node_t *n6 = llvm2si_function_node_create_leaf(function, bb6);
-	linked_list_add(function->node_list, n6);
-	struct llvm2si_basic_block_t *bb7 = llvm2si_basic_block_create_with_name("n7");
-	struct llvm2si_function_node_t *n7 = llvm2si_function_node_create_leaf(function, bb7);
-	linked_list_add(function->node_list, n7);
-
-	llvm2si_function_node_connect(n1, n2);
-	llvm2si_function_node_connect(n2, n3);
-	llvm2si_function_node_connect(n2, n4);
-	llvm2si_function_node_connect(n4, n2);
-	llvm2si_function_node_connect(n3, n5);
-	llvm2si_function_node_connect(n4, n5);
-	llvm2si_function_node_connect(n5, n3);
-	llvm2si_function_node_connect(n5, n6);
-	llvm2si_function_node_connect(n6, n5);
-	llvm2si_function_node_connect(n6, n7);
-
-	function->node_entry = n1;
-}
-
 #define NEW_NODE(name) \
 	struct llvm2si_basic_block_t *bb_##name = llvm2si_basic_block_create_with_name(#name); \
 	struct llvm2si_function_node_t *name = llvm2si_function_node_create_leaf(function, bb_##name); \
 	linked_list_add(function->node_list, name);
 #define NEW_EDGE(u, v) \
 	llvm2si_function_node_connect(u, v)
+
+/* Replace the content of the function with the example on page 201 of
+ * Muchnick's book. This function is used for debugging purposes. */
+void llvm2si_function_example(struct llvm2si_function_t *function)
+{
+	linked_list_clear(function->node_list);
+
+	NEW_NODE(n1);
+	NEW_NODE(n2);
+	NEW_NODE(n3);
+	NEW_NODE(n4);
+	NEW_NODE(n5);
+	NEW_NODE(n6);
+	NEW_NODE(n7);
+
+	NEW_EDGE(n1, n2);
+	NEW_EDGE(n2, n3);
+	NEW_EDGE(n2, n4);
+	NEW_EDGE(n4, n2);
+	NEW_EDGE(n3, n5);
+	NEW_EDGE(n4, n5);
+	NEW_EDGE(n5, n3);
+	NEW_EDGE(n5, n6);
+	NEW_EDGE(n6, n5);
+	NEW_EDGE(n6, n7);
+
+	function->node_entry = n1;
+}
 
 void llvm2si_function_example2(struct llvm2si_function_t *function)
 {
@@ -1002,7 +1002,7 @@ void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 		/* Extract next node in post-order */
 		linked_list_head(postorder_list);
 		node = linked_list_remove(postorder_list);
-		printf("Process node '%s'\n", node->name); //////////
+		llvm2si_debug("Processing node '%s'\n", node->name);
 		assert(node);
 
 		/* Identify a region starting at 'node'. If a valid region is
@@ -1022,11 +1022,17 @@ void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 			linked_list_insert(postorder_list, abs_node);
 
 			/* Debug */
-			printf("\nRegion '%s' identified: ", str_map_value(
-					&llvm2si_function_node_region_map, region));
-			llvm2si_function_node_list_dump(region_list, stdout);
-			printf("\n");
-			llvm2si_function_dump_control_tree(function, stdout);
+			if (debug_status(llvm2si_debug_category))
+			{
+				FILE *f = debug_file(llvm2si_debug_category);
+				fprintf(f, "\nRegion %s identified: ",
+					str_map_value(
+					&llvm2si_function_node_region_map,
+					region));
+				llvm2si_function_node_list_dump(region_list, f);
+				fprintf(f, "\n");
+				llvm2si_function_dump_control_tree(function, f);
+			}
 		}
 	}
 
@@ -1042,7 +1048,11 @@ void llvm2si_function_dump_control_tree(struct llvm2si_function_t *function,
 	struct linked_list_iter_t *iter;
 	struct llvm2si_function_node_t *node;
 
-	fprintf(f, "\nControl tree (edges: +forward, -back, *cross, |tree)\n");
+	/* Legend */
+	fprintf(f, "\nControl tree (edges: +forward, -back, *cross, "
+			"|tree, =>entry)\n");
+	
+	/* Dump all nodes */
 	iter = linked_list_iter_create(function->node_list);
 	LINKED_LIST_ITER_FOR_EACH(iter)
 	{
