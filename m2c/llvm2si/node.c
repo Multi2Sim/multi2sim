@@ -62,14 +62,12 @@ struct str_map_t llvm2si_node_region_map =
 
 
 static struct llvm2si_node_t *llvm2si_node_create(
-		struct llvm2si_function_t *function,
 		enum llvm2si_node_kind_t kind)
 {
 	struct llvm2si_node_t *node;
 
 	/* Initialize */
 	node = xcalloc(1, sizeof(struct llvm2si_node_t));
-	node->function = function;
 	node->kind = kind;
 	node->pred_list = linked_list_create();
 	node->succ_list = linked_list_create();
@@ -84,14 +82,12 @@ static struct llvm2si_node_t *llvm2si_node_create(
 
 
 struct llvm2si_node_t *llvm2si_node_create_leaf(
-		struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block)
 {
 	struct llvm2si_node_t *node;
 
 	/* Initialize */
-	node = llvm2si_node_create(function,
-			llvm2si_node_leaf);
+	node = llvm2si_node_create(llvm2si_node_leaf);
 	node->leaf.basic_block = basic_block;
 	node->name = str_set(node->name, basic_block->name);
 
@@ -105,15 +101,13 @@ struct llvm2si_node_t *llvm2si_node_create_leaf(
 
 
 struct llvm2si_node_t *llvm2si_node_create_abstract(
-		struct llvm2si_function_t *function,
 		enum llvm2si_node_region_t region,
 		char *name)
 {
 	struct llvm2si_node_t *node;
 
 	/* Initialize */
-	node = llvm2si_node_create(function,
-			llvm2si_node_abstract);
+	node = llvm2si_node_create(llvm2si_node_abstract);
 	node->name = str_set(node->name, name && *name ? name : "<abstract>");
 	node->abstract.region = region;
 	node->abstract.child_list = linked_list_create();
@@ -173,6 +167,23 @@ void llvm2si_node_list_dump(struct linked_list_t *list, FILE *f)
 	}
 	linked_list_iter_free(iter);
 	fprintf(f, "}");
+}
+
+
+void llvm2si_node_list_dump_buf(struct linked_list_t *list, char *buf, int size)
+{
+	struct llvm2si_node_t *node;
+
+	/* Reset buffer */
+	if (size)
+		*buf = '\0';
+
+	/* Dump elements */
+	LINKED_LIST_FOR_EACH(list)
+	{
+		node = linked_list_get(list);
+		str_printf(&buf, &size, "%s ", node->name);
+	}
 }
 
 
@@ -243,7 +254,7 @@ void llvm2si_node_dump(struct llvm2si_node_t *node, FILE *f)
 }
 
 
-void llvm2si_function_try_connect(struct llvm2si_node_t *node,
+void llvm2si_node_try_connect(struct llvm2si_node_t *node,
 		struct llvm2si_node_t *node_dest)
 {
 	/* Nothing if edge already exists */

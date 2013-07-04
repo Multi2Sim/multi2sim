@@ -21,11 +21,13 @@
 #define M2C_LLVM2SI_NODE_H
 
 struct linked_list_t;
+struct llvm2si_ctree_t;
 
 
 /* Kind of control tree node. The node can be a leaf representing a basic block
  * of the function, or an abstract node, representing a reduction of the control
  * flow graph. */
+extern struct str_map_t llvm2si_node_kind_map;
 enum llvm2si_node_kind_t
 {
 	llvm2si_node_kind_invalid,
@@ -55,8 +57,8 @@ struct llvm2si_node_t
 	enum llvm2si_node_kind_t kind;
 	char *name;
 
-	/* Function that the node belongs to */
-	struct llvm2si_function_t *function;
+	/* Control tree that the node belongs to */
+	struct llvm2si_ctree_t *ctree;
 
 	struct linked_list_t *succ_list;
 	struct linked_list_t *pred_list;
@@ -98,14 +100,12 @@ struct llvm2si_node_t
 };
 
 struct llvm2si_node_t *llvm2si_node_create_leaf(
-		struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
 
 /* Create an abstract node containing the list of nodes in 'elem_list'. The list
  * 'elem_list' will be copied internally, and should be initialized and freed by
  * the caller. */
 struct llvm2si_node_t *llvm2si_node_create_abstract(
-		struct llvm2si_function_t *function,
 		enum llvm2si_node_region_t region,
 		char *name);
 
@@ -117,7 +117,7 @@ int llvm2si_node_in_list(struct llvm2si_node_t *node,
 
 /* Try to create an edge between 'node' and 'node_dest'. If the edge already
  * exist, the function will ignore the call silently. */
-void llvm2si_function_try_connect(struct llvm2si_node_t *node,
+void llvm2si_node_try_connect(struct llvm2si_node_t *node,
 		struct llvm2si_node_t *node_dest);
 
 /* Create an edge between 'node' and 'node_dest'. There should be no existing
@@ -136,6 +136,8 @@ void llvm2si_node_disconnect(struct llvm2si_node_t *node,
 		
 /* Dumping lists of nodes */
 void llvm2si_node_list_dump(struct linked_list_t *list, FILE *f);
+void llvm2si_node_list_dump_buf(struct linked_list_t *list, char *buf,
+		int size);
 void llvm2si_node_list_dump_detail(struct linked_list_t *list, FILE *f);
 
 #endif

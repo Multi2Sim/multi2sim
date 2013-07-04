@@ -500,7 +500,7 @@ void config_write_bool(struct config_t *config, char *section, char *var, int va
 {
 	char value_str[MAX_LONG_STRING_SIZE];
 
-	strcpy(value_str, value ? "t" : "f");
+	strcpy(value_str, value ? "True" : "False");
 	config_write_string(config, section, var, value_str);
 }
 
