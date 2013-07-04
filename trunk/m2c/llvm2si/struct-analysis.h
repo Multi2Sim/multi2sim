@@ -17,16 +17,40 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_LLVM2SI_STRUCT_ANALYSIS_H
-#define M2C_LLVM2SI_STRUCT_ANALYSIS_H
+#ifndef M2C_LLVM2SI_CTREE_H
+#define M2C_LLVM2SI_CTREE_H
+
+#include <stdio.h>
+
+struct config_t;
+
+struct llvm2si_ctree_t
+{
+	struct linked_list_t *node_list;
+	struct llvm2si_node_t *node_entry;
+};
+
+struct llvm2si_ctree_t *llvm2si_ctree_create(void);
+void llvm2si_ctree_free(struct llvm2si_ctree_t *ctree);
+void llvm2si_ctree_dump(struct llvm2si_ctree_t *ctree, FILE *f);
+
+/* Add a node to the control tree */
+void llvm2si_ctree_add_node(struct llvm2si_ctree_t *ctree,
+		struct llvm2si_node_t *node);
+
+/* Free all nodes in the control tree and reset its entry. */
+void llvm2si_ctree_clear(struct llvm2si_ctree_t *ctree);
 
 /* Create the function control tree by performing a structural analysis on the
  * control flow graph of the function. */
-void llvm2si_function_struct_analysis(struct llvm2si_function_t *function);
+void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree);
 
-/* Dump the control tree created by the structural analysis. */
-void llvm2si_function_dump_control_tree(struct llvm2si_function_t *function,
-		FILE *f);
+/* Read/write the control tree from/to an INI file */
+void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
+		struct config_t *config);
+void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
+			struct config_t *config);
+
 
 #endif
 
