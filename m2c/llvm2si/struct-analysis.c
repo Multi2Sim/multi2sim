@@ -92,6 +92,7 @@ struct llvm2si_function_node_t *llvm2si_function_node_create_leaf(
 
 struct llvm2si_function_node_t *llvm2si_function_node_create_abstract(
 		struct llvm2si_function_t *function,
+		enum llvm2si_function_node_region_t region,
 		char *name)
 {
 	struct llvm2si_function_node_t *node;
@@ -100,6 +101,7 @@ struct llvm2si_function_node_t *llvm2si_function_node_create_abstract(
 	node = llvm2si_function_node_create(function,
 			llvm2si_function_node_abstract);
 	node->name = str_set(node->name, name && *name ? name : "<abstract>");
+	node->abstract.region = region;
 	node->abstract.child_list = linked_list_create();
 	
 	/* Return */
@@ -160,21 +162,6 @@ void llvm2si_function_node_list_dump(struct linked_list_t *list, FILE *f)
 }
 
 
-void llvm2si_function_node_list_dump_detail(struct linked_list_t *list, FILE *f)
-{
-	struct linked_list_iter_t *iter;
-	struct llvm2si_function_node_t *node;
-
-	iter = linked_list_iter_create(list);
-	LINKED_LIST_ITER_FOR_EACH(iter)
-	{
-		node = linked_list_iter_get(iter);
-		llvm2si_function_node_dump(node, f);
-	}
-	linked_list_iter_free(iter);
-}
-
-
 void llvm2si_function_node_dump(struct llvm2si_function_node_t *node, FILE *f)
 {
 	struct llvm2si_function_node_t *succ_node;
@@ -212,7 +199,7 @@ void llvm2si_function_node_dump(struct llvm2si_function_node_t *node, FILE *f)
 	}
 
 	/* Parent */
-	fprintf(f, "} structof=%s", node->parent ? node->parent->name : "-");
+	fprintf(f, "} structof='%s'", node->parent ? node->parent->name : "-");
 
 	/* List of child elements */
 	if (node->kind == llvm2si_function_node_abstract)
@@ -317,19 +304,19 @@ void llvm2si_function_node_disconnect(struct llvm2si_function_node_t *node,
  */
 
 
-struct str_map_t llvm2si_function_region_map =
+struct str_map_t llvm2si_function_node_region_map =
 {
 	9,
 	{
-		{ "block", llvm2si_function_region_block },
-		{ "if-then", llvm2si_function_region_if_then },
-		{ "if-then-else", llvm2si_function_region_if_then_else },
-		{ "while-loop", llvm2si_function_region_while_loop },
-		{ "loop", llvm2si_function_region_loop },
-		{ "proper-interval", llvm2si_function_region_proper_interval },
-		{ "improper-interval", llvm2si_function_region_improper_interval },
-		{ "proper-outer-interval", llvm2si_function_region_proper_outer_interval },
-		{ "improper-outer-interval", llvm2si_function_region_improper_outer_interval }
+		{ "block", llvm2si_function_node_block },
+		{ "if_then", llvm2si_function_node_if_then },
+		{ "if_then_else", llvm2si_function_node_if_then_else },
+		{ "while_loop", llvm2si_function_node_while_loop },
+		{ "loop", llvm2si_function_node_loop },
+		{ "proper_interval", llvm2si_function_node_proper_interval },
+		{ "improper_interval", llvm2si_function_node_improper_interval },
+		{ "proper_outer_interval", llvm2si_function_node_proper_outer_interval },
+		{ "improper_outer_interval", llvm2si_function_node_improper_outer_interval }
 	}
 };
 
@@ -490,7 +477,7 @@ void llvm2si_function_reach_under(struct llvm2si_function_t *function,
 struct llvm2si_function_node_t *llvm2si_function_reduce(
 		struct llvm2si_function_t *function,
 		struct linked_list_t *node_list,
-		enum llvm2si_function_region_t region)
+		enum llvm2si_function_node_region_t region)
 {
 	struct llvm2si_function_node_t *abs_node;
 	struct llvm2si_function_node_t *tmp_node;
@@ -500,7 +487,10 @@ struct llvm2si_function_node_t *llvm2si_function_reduce(
 	struct linked_list_t *out_node_list;
 	struct linked_list_t *in_node_list;
 
-	char *name;
+	char name[MAX_STRING_SIZE];
+
+	int region_count;
+	int cyclic_block;
 
 #ifndef NDEBUG
 
@@ -523,10 +513,42 @@ struct llvm2si_function_node_t *llvm2si_function_reduce(
 	}
 #endif
 
+	/* Find the number of existing regions of the same type with in order
+	 * to find a unique name for the new abstract node. */
+	region_count = 0;
+	LINKED_LIST_FOR_EACH(function->node_list)
+	{
+		tmp_node = linked_list_get(function->node_list);
+		if (tmp_node->kind == llvm2si_function_node_abstract &&
+				tmp_node->abstract.region == region)
+			region_count++;
+	}
+
+	/* Figure out a name for the new abstract node */
+	snprintf(name, sizeof name, "%s_%d", str_map_value(
+			&llvm2si_function_node_region_map, region),
+			region_count);
+
 	/* Create new abstract node */
-	name = str_map_value(&llvm2si_function_region_map, region);
-	abs_node = llvm2si_function_node_create_abstract(function, name);
+	abs_node = llvm2si_function_node_create_abstract(function,
+			region, name);
 	linked_list_add(function->node_list, abs_node);
+
+	/* Special case of block regions: record whether there is an edge that
+	 * goes from the last node into the first. In this case, this edge
+	 * should stay outside of the reduced region. */
+	cyclic_block = 0;
+	if (region == llvm2si_function_node_block)
+	{
+		in_node = linked_list_goto(node_list, 0);
+		out_node = linked_list_goto(node_list, node_list->count - 1);
+		assert(in_node && out_node);
+		if (llvm2si_function_node_in_list(in_node, out_node->succ_list))
+		{
+			cyclic_block = 1;
+			llvm2si_function_node_disconnect(out_node, in_node);
+		}
+	}
 
 	/* Create a list of incoming edges from the control tree into the
 	 * region given in 'node_list', and a list of outgoing edges from the
@@ -600,6 +622,11 @@ struct llvm2si_function_node_t *llvm2si_function_reduce(
 		tmp_node->parent = abs_node;
 		linked_list_add(abs_node->abstract.child_list, tmp_node);
 	}
+
+	/* Special case for block regions: if a cyclic block was detected, now
+	 * the cycle must be inserted as a self-loop in the abstract node. */
+	if (cyclic_block && !llvm2si_function_node_in_list(abs_node, abs_node->succ_list))
+		llvm2si_function_node_connect(abs_node, abs_node);
 
 	/* If entry node is part of the nodes that were replaced, set it to the
 	 * new abstract node. */
@@ -730,71 +757,21 @@ void llvm2si_function_example3(struct llvm2si_function_t *function)
 }
 
 
-/* This function has been written for debugging purposes of function
- * 'llvm2si_function_reduce'. It takes the example on page 201 of Muchnick's
- * book and reproduces the control tree reduction step by step. */
-void llvm2si_function_reduce_example(struct llvm2si_function_t *function)
+void llvm2si_function_example4(struct llvm2si_function_t *function)
 {
-	struct linked_list_t *node_list = linked_list_create();
+	linked_list_clear(function->node_list);
 
-	/* Create example function */
-	llvm2si_function_example(function);
+	NEW_NODE(A);
+	NEW_NODE(B);
+	NEW_NODE(C);
+	NEW_NODE(D);
 
-	/* Get nodes */
-	linked_list_goto(function->node_list, 0);
-	struct llvm2si_function_node_t *n1 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 1);
-	struct llvm2si_function_node_t *n2 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 2);
-	struct llvm2si_function_node_t *n3 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 3);
-	struct llvm2si_function_node_t *n4 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 4);
-	struct llvm2si_function_node_t *n5 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 5);
-	struct llvm2si_function_node_t *n6 = linked_list_get(function->node_list);
-	linked_list_goto(function->node_list, 6);
-	struct llvm2si_function_node_t *n7 = linked_list_get(function->node_list);
+	NEW_EDGE(A, B);
+	NEW_EDGE(B, C);
+	NEW_EDGE(C, D);
+	NEW_EDGE(D, A);
 
-	/* Stage 1 */
-	printf("\n\n\n====== STAGE 1 ======\n\n\n");
-	linked_list_clear(node_list);
-	linked_list_add(node_list, n2);
-	linked_list_add(node_list, n4);
-	struct llvm2si_function_node_t *n2a = llvm2si_function_reduce(function, node_list,
-			llvm2si_function_region_invalid);
-	llvm2si_function_dump_control_tree(function, stdout);
-
-	/* Stage 2 */
-	printf("\n\n\n====== STAGE 2 ======\n\n\n");
-	linked_list_clear(node_list);
-	linked_list_add(node_list, n5);
-	linked_list_add(node_list, n6);
-	struct llvm2si_function_node_t *n5a = llvm2si_function_reduce(function, node_list,
-			llvm2si_function_region_invalid);
-	llvm2si_function_dump_control_tree(function, stdout);
-
-	/* Stage 3 */
-	printf("\n\n\n====== STAGE 3 ======\n\n\n");
-	linked_list_clear(node_list);
-	linked_list_add(node_list, n3);
-	linked_list_add(node_list, n5a);
-	struct llvm2si_function_node_t *n3a = llvm2si_function_reduce(function, node_list,
-			llvm2si_function_region_invalid);
-	llvm2si_function_dump_control_tree(function, stdout);
-
-	/* Stage 4 */
-	printf("\n\n\n====== STAGE 4 ======\n\n\n");
-	linked_list_clear(node_list);
-	linked_list_add(node_list, n1);
-	linked_list_add(node_list, n2a);
-	linked_list_add(node_list, n3a);
-	linked_list_add(node_list, n7);
-	llvm2si_function_reduce(function, node_list,
-			llvm2si_function_region_invalid);
-	llvm2si_function_dump_control_tree(function, stdout);
-
-	exit(1);
+	function->node_entry = A;
 }
 
 
@@ -847,17 +824,15 @@ void llvm2si_function_node_list_init(struct llvm2si_function_t *function)
  * region is identified, the function returns true. Otherwise, it returns
  * false and 'node_list' remains empty.
  * List 'node_list' is an output list. */
-enum llvm2si_function_region_t llvm2si_function_region(
+enum llvm2si_function_node_region_t llvm2si_function_region(
 		struct llvm2si_function_t *function,
 		struct llvm2si_function_node_t *node,
 		struct linked_list_t *node_list)
 {
-	struct llvm2si_function_node_t *succ_node;
-	//struct llvm2si_function_node_t *head_node;
-	//struct llvm2si_function_node_t *tail_node;
 
-	/* List of nodes must be empty */
-	assert(!node_list->count);
+	/* Reset output region */
+	linked_list_clear(node_list);
+
 
 	/*
 	 * Acyclic regions
@@ -865,76 +840,142 @@ enum llvm2si_function_region_t llvm2si_function_region(
 
 	/*** 1. Block region ***/
 
-	/* Find consecutive nodes with only 1 successor, where that successor
-	 * has only one predecessor. */
-	printf("Process node '%s'\n", node->name);
-	while (node->succ_list->count == 1)
+	/* Find two consecutive nodes A and B, where A is the only predecessor
+	 * of B and B is the only successor of A. */
+	if (node->succ_list->count == 1)
 	{
-		/* Get successor */
-		linked_list_head(node->succ_list);
-		succ_node = linked_list_get(node->succ_list);
+		struct llvm2si_function_node_t *succ_node;
+
+		succ_node = linked_list_goto(node->succ_list, 0);
 		assert(succ_node);
 
-		/* Stop if successor has more than 1 predecessor */
-		assert(succ_node->pred_list->count > 0);
-		if (succ_node->pred_list->count > 1)
-			break;
-
-		/* Add node and move on */
-		linked_list_add(node_list, node);
-		node = succ_node;
+		if (succ_node != function->node_entry &&
+				succ_node->pred_list->count == 1)
+		{
+			linked_list_add(node_list, node);
+			linked_list_add(node_list, succ_node);
+			return llvm2si_function_node_block;
+		}
 	}
-	
-	/* Region identified */
-	if (node_list->count > 1)
-		return llvm2si_function_region_block;
-	
-	/* Restore node list */
-	linked_list_clear(node_list);
+
+
+	/*** 2. If-Then ***/
+
+	if (node->succ_list->count == 2)
+	{
+		struct llvm2si_function_node_t *then_node;
+		struct llvm2si_function_node_t *endif_node;
+		struct llvm2si_function_node_t *tmp_node;
+
+		/* Assume one order for 'then' and 'endif' blocks */
+		then_node = linked_list_goto(node->succ_list, 0);
+		endif_node = linked_list_goto(node->succ_list, 1);
+		assert(then_node && endif_node);
+
+		/* Reverse them if necessary */
+		if (llvm2si_function_node_in_list(then_node, endif_node->succ_list))
+		{
+			tmp_node = then_node;
+			then_node = endif_node;
+			endif_node = tmp_node;
+		}
+
+		/* Check conditions */
+		if (then_node->pred_list->count == 1 &&
+				llvm2si_function_node_in_list(node, then_node->pred_list) &&
+				then_node->succ_list->count == 1 &&
+				llvm2si_function_node_in_list(endif_node, then_node->succ_list))
+		{
+			linked_list_add(node_list, node);
+			linked_list_add(node_list, then_node);
+			linked_list_add(node_list, endif_node);
+			return llvm2si_function_node_if_then;
+		}
+	}
+
+
+	/*** 3. If-Then-Else ***/
+
+	if (node->succ_list->count == 2)
+	{
+		struct llvm2si_function_node_t *then_node;
+		struct llvm2si_function_node_t *else_node;
+		struct llvm2si_function_node_t *then_succ_node;
+		struct llvm2si_function_node_t *else_succ_node;
+
+		then_node = linked_list_goto(node->succ_list, 0);
+		else_node = linked_list_goto(node->succ_list, 1);
+		assert(then_node && else_node);
+
+		then_succ_node = linked_list_goto(then_node->succ_list, 0);
+		else_succ_node = linked_list_goto(else_node->succ_list, 0);
+
+		if (then_node->pred_list->count == 1 &&
+			else_node->pred_list->count == 1 &&
+			then_node != function->node_entry &&
+			else_node != function->node_entry &&
+			then_node->succ_list->count == 1 &&
+			else_node->succ_list->count == 1 &&
+			then_succ_node == else_succ_node &&
+			then_succ_node != function->node_entry &&
+			else_succ_node != function->node_entry)
+		{
+			linked_list_add(node_list, node);
+			linked_list_add(node_list, then_node);
+			linked_list_add(node_list, else_node);
+			return llvm2si_function_node_if_then_else;
+		}
+	}
 
 	
 	/*
 	 * Cyclic regions
 	 */
-#if 0
-	/* Obtain in 'node_list' the natural loop */
+
+	/* Obtain the interval in 'node_list' */
 	llvm2si_function_reach_under(function, node, node_list);
+	if (!node_list->count)
+		return llvm2si_function_node_region_invalid;
 	
-	
-	/*** 1. Self-loop ***/
-	if (node_list->count == 1 && llvm2si_function_node_in_list(node,
-			node->succ_list))
-	{
-		//llvm2si_function_node_list_dump(node_list, stdout);
-		//exit(0);
-		return llvm2si_function_region_loop;
-	}
 
-
-	/*** 2. Natural loop (do-while) ***/
+	/*** 1. While-loop ***/
 	if (node_list->count == 2)
 	{
-		head_node = linked_list_goto(node_list, 0);
-		tail_node = linked_list_goto(node_list, 1);
-		if (head_node->succ_list->count == 1 &&
-				llvm2si_function_node_in_list(tail_node,
-						head_node->succ_list) &&
+		struct llvm2si_function_node_t *head_node;
+		struct llvm2si_function_node_t *tail_node;
+
+		/* Obtain head and tail nodes */
+		head_node = node;
+		tail_node = linked_list_goto(node_list, 0);
+		if (tail_node == head_node)
+			linked_list_goto(node_list, 1);
+		assert(tail_node != head_node);
+
+		/* Check condition for while loop */
+		if (head_node->succ_list->count == 2 &&
+				llvm2si_function_node_in_list(tail_node, head_node->succ_list) &&
 				tail_node->succ_list->count == 1 &&
-				llvm2si_function_node_in_list(head_node,
-						tail_node->succ_list))
-			return llvm2si_function_region_while_loop;
+				llvm2si_function_node_in_list(head_node, tail_node->succ_list) &&
+				tail_node->pred_list->count == 1 &&
+				llvm2si_function_node_in_list(head_node, tail_node->pred_list))
+			return llvm2si_function_node_while_loop;
 	}
-#endif
+
+	/*** 2. Loop ***/
+	if (node_list->count == 1 && llvm2si_function_node_in_list(node,
+			node->succ_list))
+		return llvm2si_function_node_loop;
+
 
 	/* Nothing identified */
 	linked_list_clear(node_list);
-	return llvm2si_function_region_invalid;
+	return llvm2si_function_node_region_invalid;
 }
 
 
 void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 {
-	enum llvm2si_function_region_t region;
+	enum llvm2si_function_node_region_t region;
 
 	struct llvm2si_function_node_t *node;
 	struct llvm2si_function_node_t *abs_node;
@@ -944,7 +985,7 @@ void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 
 	/* Create the control flow graph */
 	llvm2si_function_node_list_init(function);
-	llvm2si_function_example3(function);  /////
+	//llvm2si_function_example3(function);  /////
 
 	/* Initialize */
 	region_list = linked_list_create();
@@ -956,11 +997,12 @@ void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 	llvm2si_function_dfs(function, postorder_list);
 
 	/* Sharir's algorithm */
-	while (postorder_list->count > 1)
+	while (postorder_list->count)
 	{
 		/* Extract next node in post-order */
 		linked_list_head(postorder_list);
 		node = linked_list_remove(postorder_list);
+		printf("Process node '%s'\n", node->name); //////////
 		assert(node);
 
 		/* Identify a region starting at 'node'. If a valid region is
@@ -969,10 +1011,6 @@ void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 		region = llvm2si_function_region(function, node, region_list);
 		if (region)
 		{
-			/* Debug */
-			printf("\nRegion '%s' identified\n",
-					str_map_value(&llvm2si_function_region_map, region));
-
 			/* Reduce and reconstruct DFS */
 			abs_node = llvm2si_function_reduce(function,
 					region_list, region);
@@ -982,6 +1020,13 @@ void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 			 * it be the next one to be processed. */
 			linked_list_head(postorder_list);
 			linked_list_insert(postorder_list, abs_node);
+
+			/* Debug */
+			printf("\nRegion '%s' identified: ", str_map_value(
+					&llvm2si_function_node_region_map, region));
+			llvm2si_function_node_list_dump(region_list, stdout);
+			printf("\n");
+			llvm2si_function_dump_control_tree(function, stdout);
 		}
 	}
 
@@ -994,7 +1039,19 @@ void llvm2si_function_struct_analysis(struct llvm2si_function_t *function)
 void llvm2si_function_dump_control_tree(struct llvm2si_function_t *function,
 		FILE *f)
 {
+	struct linked_list_iter_t *iter;
+	struct llvm2si_function_node_t *node;
+
 	fprintf(f, "\nControl tree (edges: +forward, -back, *cross, |tree)\n");
-	llvm2si_function_node_list_dump_detail(function->node_list, f);
+	iter = linked_list_iter_create(function->node_list);
+	LINKED_LIST_ITER_FOR_EACH(iter)
+	{
+		node = linked_list_iter_get(iter);
+		if (node == function->node_entry)
+			fprintf(f, "=>");
+		llvm2si_function_node_dump(node, f);
+	}
+	linked_list_iter_free(iter);
+	fprintf(f, "\n");
 }
 

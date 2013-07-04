@@ -42,6 +42,22 @@ enum llvm2si_function_node_kind_t
 	llvm2si_function_node_abstract
 };
 
+extern struct str_map_t llvm2si_function_node_region_map;
+enum llvm2si_function_node_region_t
+{
+	llvm2si_function_node_region_invalid,
+	llvm2si_function_node_block,
+	llvm2si_function_node_if_then,
+	llvm2si_function_node_if_then_else,
+	llvm2si_function_node_while_loop,
+	llvm2si_function_node_loop,
+	llvm2si_function_node_proper_interval,
+	llvm2si_function_node_improper_interval,
+	llvm2si_function_node_proper_outer_interval,
+	llvm2si_function_node_improper_outer_interval
+};
+
+
 /* Node of the control tree */
 struct llvm2si_function_node_t
 {
@@ -73,6 +89,9 @@ struct llvm2si_function_node_t
 
 		struct
 		{
+			/* Type of region */
+			enum llvm2si_function_node_region_t region;
+
 			/* List of function nodes associated with the abstract
 			 * node. Elements of type 'llvm2si_function_node_t'. */
 			struct linked_list_t *child_list;
@@ -95,7 +114,9 @@ struct llvm2si_function_node_t *llvm2si_function_node_create_leaf(
  * 'elem_list' will be copied internally, and should be initialized and freed by
  * the caller. */
 struct llvm2si_function_node_t *llvm2si_function_node_create_abstract(
-		struct llvm2si_function_t *function, char *name);
+		struct llvm2si_function_t *function,
+		enum llvm2si_function_node_region_t region,
+		char *name);
 
 void llvm2si_function_node_free(struct llvm2si_function_node_t *node);
 void llvm2si_function_node_dump(struct llvm2si_function_node_t *node, FILE *f);
@@ -110,22 +131,6 @@ void llvm2si_function_node_list_dump_detail(struct linked_list_t *list, FILE *f)
 /*
  * Function object
  */
-
-extern struct str_map_t llvm2si_function_region_map;
-enum llvm2si_function_region_t
-{
-	llvm2si_function_region_invalid,
-	llvm2si_function_region_block,
-	llvm2si_function_region_if_then,
-	llvm2si_function_region_if_then_else,
-	llvm2si_function_region_while_loop,
-	llvm2si_function_region_loop,
-	llvm2si_function_region_proper_interval,
-	llvm2si_function_region_improper_interval,
-	llvm2si_function_region_proper_outer_interval,
-	llvm2si_function_region_improper_outer_interval
-};
-
 
 /* Create the function control tree by performing a structural analysis on the
  * control flow graph of the function. */
