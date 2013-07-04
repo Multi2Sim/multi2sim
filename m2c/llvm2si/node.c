@@ -28,10 +28,10 @@
 #include <lib/util/string.h>
 
 #include "basic-block.h"
+#include "ctree.h"
 #include "function.h"
 #include "llvm2si.h"
 #include "node.h"
-#include "struct-analysis.h"
 
 
 struct str_map_t llvm2si_node_kind_map =

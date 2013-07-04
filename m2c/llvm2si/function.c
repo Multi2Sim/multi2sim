@@ -32,9 +32,9 @@
 #include <llvm-c/Core.h>
 
 #include "basic-block.h"
+#include "ctree.h"
 #include "function.h"
 #include "node.h"
-#include "struct-analysis.h"
 #include "symbol.h"
 #include "symbol-table.h"
 
