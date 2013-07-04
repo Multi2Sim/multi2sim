@@ -466,6 +466,57 @@ static struct llvm2si_basic_block_t *llvm2si_function_add_cfg(
 }
 
 
+/* Create a list of nodes and their edges identical to the CFG given by the
+ * function's basic blocks. */
+static void llvm2si_function_init_ctree(struct llvm2si_function_t *function)
+{
+	struct llvm2si_basic_block_t *basic_block;
+	struct llvm2si_basic_block_t *basic_block_succ;
+	struct llvm2si_node_t *node;
+	struct llvm2si_node_t *node_succ;
+	struct llvm2si_ctree_t *ctree;
+
+	/* Create control tree */
+	if (function->ctree)
+		panic("%s: control tree already created", __FUNCTION__);
+	function->ctree = llvm2si_ctree_create();
+	ctree = function->ctree;
+
+	/* Create the nodes */
+	assert(function->basic_block_entry);
+	LINKED_LIST_FOR_EACH(function->basic_block_list)
+	{
+		basic_block = linked_list_get(function->basic_block_list);
+		node = llvm2si_node_create_leaf(basic_block);
+		llvm2si_ctree_add_node(ctree, node);
+
+		/* Set head node */
+		if (basic_block == function->basic_block_entry)
+		{
+			assert(!ctree->node_entry);
+			ctree->node_entry = node;
+		}
+	}
+
+	/* An entry node must have been created */
+	assert(ctree->node_entry);
+
+	/* Add edges to the graph */
+	LINKED_LIST_FOR_EACH(function->basic_block_list)
+	{
+		basic_block = linked_list_get(function->basic_block_list);
+		node = basic_block->node;
+		LINKED_LIST_FOR_EACH(basic_block->succ_list)
+		{
+			basic_block_succ = linked_list_get(basic_block->succ_list);
+			node_succ = basic_block_succ->node;
+			assert(node_succ);
+			llvm2si_node_connect(node, node_succ);
+		}
+	}
+}
+
+
 struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 {
 	struct llvm2si_function_t *function;
@@ -480,7 +531,6 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	function->basic_block_list = linked_list_create();
 	function->basic_block_table = hash_table_create(0, 1);
 	function->symbol_table = llvm2si_symbol_table_create();
-	function->node_list = linked_list_create();
 
 	/* Standard basic blocks */
 	function->basic_block_entry = llvm2si_basic_block_create_with_name("entry");
@@ -513,8 +563,9 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	llvm2si_basic_block_connect(function->basic_block_args,
 			function->basic_block_body);
 
-	/* Carry out structural analysis of CFG */
-	llvm2si_function_struct_analysis(function);
+	/* Create control tree and perform structural analysis */
+	llvm2si_function_init_ctree(function);
+	llvm2si_ctree_structural_analysis(function->ctree);
 
 	/* Return */
 	return function;
@@ -540,10 +591,9 @@ void llvm2si_function_free(struct llvm2si_function_t *function)
 		llvm2si_function_uav_free(list_get(function->uav_list, index));
 	list_free(function->uav_list);
 
-	/* Free list of nodes in control tree (structural analysis) */
-	LINKED_LIST_FOR_EACH(function->node_list)
-		llvm2si_node_free(linked_list_get(function->node_list));
-	linked_list_free(function->node_list);
+	/* Free control tree */
+	if (function->ctree)
+		llvm2si_ctree_free(function->ctree);
 
 	/* Rest */
 	hash_table_free(function->basic_block_table);
@@ -985,3 +1035,5 @@ int llvm2si_function_alloc_vreg(struct llvm2si_function_t *function,
 	function->num_vregs += count;
 	return function->num_vregs - count;
 }
+
+
