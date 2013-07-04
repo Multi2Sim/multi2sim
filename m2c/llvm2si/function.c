@@ -482,10 +482,10 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	function->node_list = linked_list_create();
 
 	/* Standard basic blocks */
-	function->basic_block_entry = llvm2si_basic_block_create(NULL);
-	function->basic_block_header = llvm2si_basic_block_create(NULL);
-	function->basic_block_uavs = llvm2si_basic_block_create(NULL);
-	function->basic_block_args = llvm2si_basic_block_create(NULL);
+	function->basic_block_entry = llvm2si_basic_block_create_with_name("entry");
+	function->basic_block_header = llvm2si_basic_block_create_with_name("header");
+	function->basic_block_uavs = llvm2si_basic_block_create_with_name("uavs");
+	function->basic_block_args = llvm2si_basic_block_create_with_name("args");
 	llvm2si_function_add_basic_block(function, function->basic_block_entry);
 	llvm2si_function_add_basic_block(function, function->basic_block_header);
 	llvm2si_function_add_basic_block(function, function->basic_block_uavs);

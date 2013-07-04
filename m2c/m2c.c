@@ -52,7 +52,6 @@ int m2c_llvm2si_run;  /* Run LLVM-to-SI stand-alone back-end */
 int m2c_si2bin_run;  /* Run Southern Islands stand-alone assembler */
 int m2c_opt_level = 1;  /* Optimization level */
 
-
 /* File names computed from source files */
 struct list_t *m2c_source_file_list;  /* Source file names */
 struct list_t *m2c_clp_file_list;  /* Preprocessed source list, extension '.clp' */
@@ -136,6 +135,9 @@ static char *syntax =
 	"--llvm2si\n"
 	"\tInterpret sources as LLVM binaries and generate Southern Islands\n"
 	"\tassembly output in a '.s' file.\n"
+	"\n"
+	"--llvm2si-debug <file>\n"
+	"\tDebug information for the Southern Islands back-end.\n"
 	"\n"
 	"-o <file>\n"
 	"\tOutput kernel binary. If no output file is specified, each kernel\n"
@@ -251,6 +253,12 @@ static void m2c_process_option(const char *option, char *optarg)
 		return;
 	}
 
+	if (!strcmp(option, "llvm2si-debug"))
+	{
+		llvm2si_debug_file_name = optarg;
+		return;
+	}
+
 	if (!strcmp(option, "o"))
 	{
 		snprintf(m2c_out_file_name, sizeof m2c_out_file_name,
@@ -310,6 +318,7 @@ static void m2c_read_command_line(int argc, char **argv)
 		{ "define", required_argument, 0, 'D' },
 		{ "help", no_argument, 0, 'h' },
 		{ "llvm2si", no_argument, 0, 0 },
+		{ "llvm2si-debug", required_argument, 0, 0 },
 		{ "preprocess", no_argument, 0, 'E' },
 		{ "si-asm", no_argument, 0, 0 },
 		{ 0, 0, 0, 0 }
@@ -474,6 +483,9 @@ static void m2c_preprocess(struct list_t *source_file_list,
 
 void m2c_init(void)
 {
+	/* Libraries */
+	debug_init();
+
 	/* List of source files */
 	m2c_source_file_list = list_create();
 	m2c_clp_file_list = list_create();
@@ -529,6 +541,9 @@ void m2c_done(void)
 	llvm2si_done();
 	si2bin_done();
 	frm2bin_done();
+
+	/* Libraries */
+	debug_done();
 }
 
 
@@ -539,6 +554,9 @@ int main(int argc, char **argv)
 
 	/* Read command line */
 	m2c_read_command_line(argc, argv);
+
+	/* Debug categories */
+	llvm2si_debug_category = debug_new_category(llvm2si_debug_file_name);
 
 	/* Process list of sources in 'm2c_source_file_list' and generate the
 	 * rest of the file lists. */
