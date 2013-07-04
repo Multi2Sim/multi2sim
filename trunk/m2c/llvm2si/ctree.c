@@ -29,9 +29,9 @@
 #include <lib/util/string.h>
 
 #include "basic-block.h"
+#include "ctree.h"
 #include "llvm2si.h"
 #include "node.h"
-#include "struct-analysis.h"
 
 
 /*

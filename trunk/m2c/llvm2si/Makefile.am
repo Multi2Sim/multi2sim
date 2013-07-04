@@ -4,11 +4,11 @@ if HAVE_LLVM
 
 libllvm2si_a_SOURCES = \
 	\
-	struct-analysis.c \
-	struct-analysis.h \
-	\
 	basic-block.c \
 	basic-block.h \
+	\
+	ctree.c \
+	ctree.h \
 	\
 	function.c \
 	function.h \
