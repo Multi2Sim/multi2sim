@@ -31,7 +31,7 @@ struct linked_list_t;
 struct llvm2si_basic_block_t;
 struct llvm2si_function_t;
 struct llvm2si_symbol_t;
-struct llvm2si_function_node_t;
+struct llvm2si_node_t;
 struct si2bin_arg_t;
 
 
@@ -148,8 +148,8 @@ struct llvm2si_function_t
 	struct llvm2si_symbol_table_t *symbol_table;
 
 	/* Control tree created during structural analysis */
-	struct linked_list_t *node_list;  /* Elements of type 'llvm2si_function_node_t' */
-	struct llvm2si_function_node_t *node_entry;
+	struct linked_list_t *node_list;  /* Elements of type 'llvm2si_node_t' */
+	struct llvm2si_node_t *node_entry;
 
 	/* While code is generated, this variable keeps track of the total
 	 * amount of bytes pushed into the stack for this function. */
