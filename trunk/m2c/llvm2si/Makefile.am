@@ -16,6 +16,9 @@ libllvm2si_a_SOURCES = \
 	llvm2si.c \
 	llvm2si.h \
 	\
+	node.c \
+	node.h \
+	\
 	symbol.c \
 	symbol.h \
 	\

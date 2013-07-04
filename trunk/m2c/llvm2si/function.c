@@ -33,6 +33,7 @@
 
 #include "basic-block.h"
 #include "function.h"
+#include "node.h"
 #include "struct-analysis.h"
 #include "symbol.h"
 #include "symbol-table.h"
@@ -541,7 +542,7 @@ void llvm2si_function_free(struct llvm2si_function_t *function)
 
 	/* Free list of nodes in control tree (structural analysis) */
 	LINKED_LIST_FOR_EACH(function->node_list)
-		llvm2si_function_node_free(linked_list_get(function->node_list));
+		llvm2si_node_free(linked_list_get(function->node_list));
 	linked_list_free(function->node_list);
 
 	/* Rest */
