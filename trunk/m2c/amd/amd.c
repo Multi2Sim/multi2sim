@@ -298,17 +298,17 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 	size_t bin_sizes[AMD_MAX_DEVICES];
 	size_t bin_sizes_ret;
 	
-	char *source_file_ext;
 	char *program_source;
 	char *bin_bits[AMD_MAX_DEVICES];
 
 	cl_int err;
 		
-	/* Get source file without '.cl' suffix */
-	source_file_ext = ".cl";
+	/* Get source file without '.cl' or '.clp' suffix */
 	snprintf(out_file_name_root, sizeof out_file_name_root, "%s", source_file_name);
-	if (str_suffix(out_file_name_root, source_file_ext))
-		out_file_name_root[strlen(out_file_name_root) - strlen(source_file_ext)] = '\0';
+	if (str_suffix(out_file_name_root, ".cl"))
+		out_file_name_root[strlen(out_file_name_root) - 3] = '\0';
+	else if (str_suffix(out_file_name_root, ".clp"))
+		out_file_name_root[strlen(out_file_name_root) - 4] = '\0';
 
 
 	/* Read the program source */

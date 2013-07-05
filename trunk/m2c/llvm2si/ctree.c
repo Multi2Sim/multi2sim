@@ -247,7 +247,7 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 			region_count);
 
 	/* Create new abstract node */
-	abs_node = llvm2si_node_create_abstract(region, name);
+	abs_node = llvm2si_node_create_abstract(name, region);
 	llvm2si_ctree_add_node(ctree, abs_node);
 
 	/* Special case of block regions: record whether there is an edge that
@@ -359,8 +359,7 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 
 
 #define NEW_NODE(name) \
-	struct llvm2si_basic_block_t *bb_##name = llvm2si_basic_block_create_with_name(#name); \
-	struct llvm2si_node_t *name = llvm2si_node_create_leaf(bb_##name); \
+	struct llvm2si_node_t *name = llvm2si_node_create_leaf(#name); \
 	llvm2si_ctree_add_node(ctree, name);
 #define NEW_EDGE(u, v) \
 	llvm2si_node_connect(u, v)
@@ -686,6 +685,16 @@ void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree)
 	struct linked_list_t *postorder_list;
 	struct linked_list_t *region_list;
 
+	/* Dump into INI file */
+	{ /////
+/*		struct config_t *config;
+
+		config = config_create("ctree.ini");
+		config_load(config);
+		llvm2si_ctree_read_from_config(ctree, config);
+		config_free(config);*/
+	}
+
 	/* Initialize */
 	region_list = linked_list_create();
 
@@ -738,16 +747,6 @@ void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree)
 	/* Free data structures */
 	linked_list_free(postorder_list);
 	linked_list_free(region_list);
-
-	/* Dump into INI file */
-	{ /////
-		struct config_t *config;
-
-		config = config_create("struct-analysis.ini");
-		llvm2si_ctree_write_to_config(ctree, config);
-		config_save(config);
-		config_free(config);
-	}
 }
 
 
@@ -828,5 +827,52 @@ void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
 	}
 
 
+}
+
+
+void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
+		struct config_t *config)
+{
+	struct list_t *token_list;
+
+	char *section;
+	char *file_name;
+	char *node_name;
+	char *node_kind_str;
+	
+	enum llvm2si_node_kind_t node_kind;
+
+	/* Clear existing tree */
+	llvm2si_ctree_clear(ctree);
+
+	/* Read sections */
+	file_name = config_get_file_name(config);
+	CONFIG_SECTION_FOR_EACH(config, section)
+	{
+		/* Section name must be "Node <name>" */
+		token_list = str_token_list_create(section, " ");
+		if (token_list->count != 2 || strcasecmp(list_get(token_list,
+				0), "Node"))
+			fatal("%s: %s: invalid section name",
+					file_name, section);
+		node_name = list_get(token_list, 1);
+
+		/* Get node type */
+		node_kind_str = config_read_string(config, section, "Kind", "Leaf");
+		node_kind = str_map_string(&llvm2si_node_kind_map,
+				node_kind_str);
+		if (!node_kind)
+			fatal("%s: %s: invalid value for 'Kind'",
+					file_name, section);
+
+		printf("%s\n", node_name);
+
+		/* Free section name */
+		str_token_list_free(token_list);
+	}
+
+	/* There must be an entry */
+	if (!ctree->node_entry)
+		fatal("%s: no entry node found", file_name);
 }
 
