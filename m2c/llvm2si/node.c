@@ -81,28 +81,21 @@ static struct llvm2si_node_t *llvm2si_node_create(
 }
 
 
-struct llvm2si_node_t *llvm2si_node_create_leaf(
-		struct llvm2si_basic_block_t *basic_block)
+struct llvm2si_node_t *llvm2si_node_create_leaf(char *name)
 {
 	struct llvm2si_node_t *node;
 
 	/* Initialize */
 	node = llvm2si_node_create(llvm2si_node_leaf);
-	node->leaf.basic_block = basic_block;
-	node->name = str_set(node->name, basic_block->name);
-
-	/* Record node in basic block */
-	assert(!basic_block->node);
-	basic_block->node = node;
+	node->name = str_set(node->name, name);
 
 	/* Return */
 	return node;
 }
 
 
-struct llvm2si_node_t *llvm2si_node_create_abstract(
-		enum llvm2si_node_region_t region,
-		char *name)
+struct llvm2si_node_t *llvm2si_node_create_abstract(char *name,
+		enum llvm2si_node_region_t region)
 {
 	struct llvm2si_node_t *node;
 

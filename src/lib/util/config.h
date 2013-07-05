@@ -45,6 +45,9 @@ int config_var_remove(struct config_t *config, char *section, char *var);
 /* Enumeration of sections */
 char *config_section_first(struct config_t *config);
 char *config_section_next(struct config_t *config);
+#define CONFIG_SECTION_FOR_EACH(config, section) \
+	for (section = config_section_first(config); section; \
+		section = config_section_next(config))
 
 /* Add variables in a section; if section does not exists, it is created;
  * If variable already exists, replace old value;
