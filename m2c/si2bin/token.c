@@ -56,6 +56,7 @@ struct str_map_t si2bin_token_map =
 		{ "\%ssrc0", si2bin_token_ssrc0 },
 		{ "\%ssrc1", si2bin_token_ssrc1 },
 		{ "\%vaddr", si2bin_token_vaddr },
+		{ "\%svdst", si2bin_token_svdst },
 		{ "\%vdst", si2bin_token_vdst },
 		{ "\%vop3_64_svdst", si2bin_token_vop3_64_svdst },
 		{ "\%vop3_src0", si2bin_token_vop3_src0 },
@@ -66,6 +67,7 @@ struct str_map_t si2bin_token_map =
 		{ "\%vop3_64_src2", si2bin_token_vop3_64_src2 },
 		{ "\%vop3_64_sdst", si2bin_token_vop3_64_sdst },
 		{ "\%vop3_vdst", si2bin_token_vop3_vdst },
+		{ "\%vop3_64_vdst", si2bin_token_vop3_64_vdst },
 		{ "\%vsrc0", si2bin_token_vsrc0 },
 		{ "\%vsrc1", si2bin_token_vsrc1 },
 		{ "\%wait_cnt", si2bin_token_wait_cnt },
@@ -180,6 +182,16 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_
 	case si2bin_token_vop3_vdst:
 	case si2bin_token_vsrc0:
 		return arg->type == si2bin_arg_vector_register;
+	
+	case si2bin_token_64_src0:
+		return arg->type == si2bin_arg_vector_register_series ||
+			arg->type == si2bin_arg_scalar_register_series;
+
+	case si2bin_token_64_vdst:
+		return arg->type == si2bin_arg_vector_register_series;
+
+	case si2bin_token_svdst:
+		return arg->type == si2bin_arg_scalar_register;
 
 	case si2bin_token_vsrc1:
 		
@@ -206,8 +218,12 @@ int si2bin_token_is_arg_allowed(struct si2bin_token_t *token, struct si2bin_arg_
 	case si2bin_token_vop3_64_src0:
 	case si2bin_token_vop3_64_src1:
 	case si2bin_token_vop3_64_src2:
-		return arg->type == si2bin_arg_scalar_register_series || 
+		return arg->type == si2bin_arg_scalar_register_series ||
+			arg->type == si2bin_arg_vector_register_series ||
 			arg->type == si2bin_arg_special_register;
+	
+	case si2bin_token_vop3_64_vdst:
+		return arg->type == si2bin_arg_vector_register_series;
 	
 	case si2bin_token_vop3_64_sdst:
 		return arg->type == si2bin_arg_special_register;
