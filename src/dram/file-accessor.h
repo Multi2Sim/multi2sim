@@ -24,16 +24,6 @@
 
 
 /*
-ref - refresh
-pre - precharge
-act - activate
-wr - write
-rd - read
-nop - no operation
-*/
-
-
-/*
  * request_file_accessor
  */
 
@@ -50,6 +40,15 @@ struct request_file_accessor *request_file_accessor_create(void);
 void request_file_accessor_free(struct request_file_accessor *accessor);
 
 struct dram_request_t *request_file_accessor_get(struct request_file_accessor *accessor);
+
+/*
+ref - refresh
+pre - precharge
+act - activate
+wr - write
+rd - read
+nop - no operation
+*/
 
 
 /*

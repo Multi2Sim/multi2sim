@@ -23,6 +23,8 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
+#include <lib/util/file.h>
+
 
 #include "dram.h"
 #include "dram-system.h"
@@ -41,7 +43,7 @@ struct request_file_accessor *request_file_accessor_create(void)
 
 	/* Initialize */
 	accessor = xcalloc(1,sizeof(struct request_file_accessor));
-	accessor->f = fopen("requests.txt", "r");
+	accessor->f = fopen(dram_request_file_name, "rt");
 	if (!accessor->f)
 		fatal("%s: Cannot open requests.txt", __FUNCTION__);
 
@@ -58,7 +60,9 @@ void request_file_accessor_free(struct request_file_accessor *accessor)
 	free(accessor);
 }
 
-
+/*
+ * FIXME: Is it a problem with this approach that the accesses should be sorted?
+ * */
 struct dram_request_t *request_file_accessor_get(struct request_file_accessor *accessor)
 {
 	struct list_t *token_list;

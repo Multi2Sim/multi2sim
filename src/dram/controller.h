@@ -103,6 +103,8 @@ void dram_command_scheduler_dump(struct dram_command_scheduler_t *scheduler, FIL
 
 struct dram_controller_t
 {
+	char *name;
+
 	unsigned int id;
 	unsigned int lowest_addr, highest_addr;
 	unsigned int num_physical_channels;

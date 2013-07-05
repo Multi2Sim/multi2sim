@@ -47,12 +47,19 @@ int dram_frequency = 1000;
 
 char *dram_config_file_name = "";
 char *dram_report_file_name = "";
+char *dram_request_file_name = "";
 FILE *dram_report_file;
 
 char *dram_sim_system_name = "";
 char *dram_config_help =
 		"The DRAM configuration file is a plain-text file following the\n"
 		"IniFile format.  \n" "\n" "\n";
+
+char *dram_err_config =
+		"\tA DRAM system is being loaded from an IniFile configuration file.\n"
+		"\tHowever, some feature of the provided file does not comply with the\n"
+		"\texpected format. Please run 'm2s --help-dram-config' for a list of\n"
+		"\tpossible sections/variables in the DRAM configuration file.\n";
 
 
 /*
@@ -61,10 +68,43 @@ char *dram_config_help =
 
 static struct hash_table_t *dram_system_table;
 
+static void dram_config_request_create(struct dram_system_t *system, struct config_t *config,
+		char *section)
+{
+	char *request_line;
+	char request_var[MAX_STRING_SIZE];
+
+	int request_var_id;
+
+	/* Read Requests */
+	request_var_id = 0;
+
+	/* Register events for request handler*/
+	EV_DRAM_REQUEST = esim_register_event_with_name(dram_request_handler,
+			dram_domain_index, "dram_request");
+
+	while (1)
+	{
+		/* Get request */
+		snprintf(request_var, sizeof request_var, "Request[%d]", request_var_id);
+		request_line = config_read_string(config, section, request_var, NULL);
+		if (!request_line)
+			break;
+
+		/* Schedule event to process request */
+		request_line = xstrdup(request_line);
+		esim_schedule_event(EV_DRAM_REQUEST, request_line, 0);
+
+		/* Next command */
+		request_var_id++;
+	}
+}
+
 
 /*
  * Dram system
  */
+
 
 struct dram_system_t *dram_system_create(char *name)
 {
@@ -112,7 +152,8 @@ void dram_system_dump(struct dram_system_t *system, FILE *f)
 
 struct dram_system_t *dram_system_config_with_file(struct config_t *config, char *system_name)
 {
-	int i, j;
+	int j;
+	int controller_sections = 0;
 	unsigned int highest_addr = 0;
 	char *section;
 	char section_str[MAX_STRING_SIZE];
@@ -122,26 +163,26 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 
 	/* Controller parameters
 	 * FIXME: we should create a default variation for times this values
-	 * are not assigned.
+	 * are not assigned. For now we set it as DRAM DDR3 Micron
 	 * */
-	unsigned int num_physical_channels;
-	unsigned int request_queue_depth;
-	enum dram_controller_row_buffer_policy_t rb_policy;
-	enum dram_controller_scheduling_policy_t scheduling_policy;
+	unsigned int num_physical_channels = 1;
+	unsigned int request_queue_depth = 32;
+	enum dram_controller_row_buffer_policy_t rb_policy = open_page_row_buffer_policy;
+	enum dram_controller_scheduling_policy_t scheduling_policy = rank_bank_round_robin;
 
-	unsigned int dram_num_ranks;
-	unsigned int dram_num_devices_per_rank;
-	unsigned int dram_num_banks_per_device;
-	unsigned int dram_num_rows_per_bank;
-	unsigned int dram_num_columns_per_row;
-	unsigned int dram_num_bits_per_column;
+	unsigned int dram_num_ranks = 8;
+	unsigned int dram_num_devices_per_rank = 1;
+	unsigned int dram_num_banks_per_device = 1;
+	unsigned int dram_num_rows_per_bank = 8192;
+	unsigned int dram_num_columns_per_row = 1024;
+	unsigned int dram_num_bits_per_column = 16;
 
-	unsigned int dram_timing_tCAS;
-	unsigned int dram_timing_tRCD;
-	unsigned int dram_timing_tRP;
-	unsigned int dram_timing_tRAS;
-	unsigned int dram_timing_tCWL;
-	unsigned int dram_timing_tCCD;
+	unsigned int dram_timing_tCAS = 24;
+	unsigned int dram_timing_tRCD = 10;
+	unsigned int dram_timing_tRP = 10;
+	unsigned int dram_timing_tRAS = 24;
+	unsigned int dram_timing_tCWL = 9;
+	unsigned int dram_timing_tCCD = 4;
 
 	system = dram_system_create(system_name);
 	/* DRAM system configuration */
@@ -151,25 +192,46 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 	{
 		if (strcasecmp(section, section_str))
 			continue;
-		dram_system_max_cycles = config_read_int(config, section,
-				"NumCycle", dram_system_max_cycles);
 		system->num_logical_channels = config_read_int(config, section,
 				"NumLogicalChannels", system->num_logical_channels);
 	}
 
 
 
-	/* Create controllers
-	 * FIXME: Get the right variation that Rafa wants and act accordingly
-	 * */
-	for (i = 0; i < system->num_logical_channels; i++)
-	{
-		/* Section check */
-		sprintf(section, "Controller-%u", i);
-		if(!config_section_exists(config, section))
-			return NULL;
+	/* Create controllers */
 
-		/* Read configuration */
+	for (section = config_section_first(config); section;
+			section = config_section_next(config))
+	{
+		char *delim = ".";
+		char *token;
+		char *controller_name;
+
+		/* First token must be 'Network' */
+		snprintf(section_str, sizeof section_str, "%s", section);
+		token = strtok(section_str, delim);
+		if (!token || strcasecmp(token, "DRAMsystem"))
+			continue;
+
+		/* Second token must be the name of the network */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, system_name))
+			continue;
+
+		/* Third token must be 'Node' */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, "Controller"))
+			continue;
+
+		/* Get name */
+		controller_name = strtok(NULL, delim);
+		token = strtok(NULL, delim);
+		if (!controller_name || token)
+			fatal("%s:%s: wrong format for controller name .\n%s",
+					system->name, section, dram_err_config);
+
+		/* Read Properties */
+
 		num_physical_channels = config_read_int(config, section, "NumPhysicalChannels", num_physical_channels);
 		dram_num_ranks = config_read_int(config, section, "NumRanks", dram_num_ranks);
 		dram_num_devices_per_rank = config_read_int(config, section, "NumDevicesPerRank", dram_num_devices_per_rank);
@@ -192,8 +254,8 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 		controller = dram_controller_create(request_queue_depth, rb_policy, scheduling_policy);
 
 		/* Assign controller parameters */
-		controller->id = i;
-		if (!i)
+		controller->id = controller_sections;
+		if (!controller_sections)
 			controller->lowest_addr = 0;
 		else
 			controller->lowest_addr = highest_addr + 1;
@@ -224,11 +286,11 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 		{
 			struct dram_t *dram;
 			dram = dram_create(dram_num_ranks,
-						dram_num_devices_per_rank,
-						dram_num_banks_per_device,
-						dram_num_rows_per_bank,
-						dram_num_columns_per_row,
-						dram_num_bits_per_column);
+					dram_num_devices_per_rank,
+					dram_num_banks_per_device,
+					dram_num_rows_per_bank,
+					dram_num_columns_per_row,
+					dram_num_bits_per_column);
 
 			dram->timing_tCAS = dram_timing_tCAS;
 			dram->timing_tRCD = dram_timing_tRCD;
@@ -236,9 +298,50 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 			dram->timing_tRAS = dram_timing_tRAS;
 			dram->timing_tCWL = dram_timing_tCWL;
 
-			dram_controller_add_dram(list_get(system->dram_controller_list, i), dram);
+			dram_controller_add_dram(list_get(system->dram_controller_list, controller_sections), dram);
 		}
+		controller_sections++;
 	}
+
+	if (controller_sections != system->num_logical_channels)
+		fatal("%s: number of controllers should match the number of logical"
+				"channels \n%s", system->name, dram_err_config);
+
+	/* Request Section */
+	for (section = config_section_first(config); section;
+			section = config_section_next(config))
+	{
+		char *delim = ".";
+
+		char *token;
+		char *token_endl;
+
+		/* First token must be 'Network' */
+		snprintf(section_str, sizeof section_str, "%s", section);
+		token = strtok(section_str, delim);
+		if (!token || strcasecmp(token, "DRAMsystem"))
+			continue;
+
+		/* Second token must be the name of the network */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, system_name))
+			continue;
+
+		/* Third token must be 'Commands' */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, "Requests"))
+			continue;
+
+		token_endl = strtok(NULL, delim);
+		if (token_endl)
+			fatal("%s: %s: bad format for Commands section.\n%s",
+					system_name, section, dram_err_config);
+
+		/* Requests */
+		dram_config_request_create(system, config, section);
+		config_check(config);
+	}
+
 	/* Return dram_system on success */
 	return system;
 }
@@ -259,7 +362,7 @@ int dram_system_get_request(struct dram_system_t *system, struct dram_request_t 
 
 	/* Decode request address */
 	dram_decode_address(system, request->addr, &logical_channel_id,
-				NULL, NULL, NULL, NULL, NULL);
+			NULL, NULL, NULL, NULL, NULL);
 
 	/* Send request to the request queue*/
 	/* return 0 if request queue cannot take any request at this moment */
@@ -292,13 +395,13 @@ void dram_system_process(struct dram_system_t *system)
 
 
 void dram_decode_address(struct dram_system_t *system,
-			unsigned int addr,
-			unsigned int *logical_channel_id_ptr,
-			unsigned int *rank_id_ptr,
-			unsigned int *row_id_ptr,
-			unsigned int *bank_id_ptr,
-			unsigned int *column_id_ptr,
-			unsigned int *physical_channel_id_ptr)
+		unsigned int addr,
+		unsigned int *logical_channel_id_ptr,
+		unsigned int *rank_id_ptr,
+		unsigned int *row_id_ptr,
+		unsigned int *bank_id_ptr,
+		unsigned int *column_id_ptr,
+		unsigned int *physical_channel_id_ptr)
 {
 	int i;
 	unsigned int local_addr;
@@ -338,12 +441,12 @@ void dram_decode_address(struct dram_system_t *system,
 
 
 unsigned int dram_encode_address(struct dram_system_t *system,
-			unsigned int logical_channel_id,
-			unsigned int rank_id,
-			unsigned int row_id,
-			unsigned int bank_id,
-			unsigned int column_id,
-			unsigned int physical_channel_id)
+		unsigned int logical_channel_id,
+		unsigned int rank_id,
+		unsigned int row_id,
+		unsigned int bank_id,
+		unsigned int column_id,
+		unsigned int physical_channel_id)
 {
 	unsigned int addr;
 	struct dram_controller_t *controller;
@@ -376,12 +479,15 @@ void dram_system_init(void)
 	EV_DRAM_COMMAND_RECEIVE = esim_register_event(dram_event_handler, dram_domain_index);
 	EV_DRAM_COMMAND_COMPLETE = esim_register_event(dram_event_handler, dram_domain_index);
 
+
 	if (*dram_report_file_name)
 	{
 		dram_report_file = file_open_for_write(dram_report_file_name);
 		if (!dram_report_file)
 			fatal("%s: cannot write on DRAM report file", dram_report_file_name);
 	}
+
+
 
 }
 void dram_system_sim (char *debug_file_name)
@@ -401,7 +507,24 @@ void dram_system_sim (char *debug_file_name)
 	if (!dram_system)
 		fatal("%s: DRAM system does not exist", dram_sim_system_name);
 
-	fprintf(stderr, "we are here and nothing is working \n");
+	esim_process_events(TRUE);
+	while (1)
+	{
+		long long cycle;
+
+		cycle = esim_domain_cycle(dram_domain_index);
+
+		if (cycle >= dram_system_max_cycles)
+			break;
+
+		dram_system_process(dram_system);
+
+		/* Next Cycle */
+		dram_debug("___cycle %lld___\n", cycle);
+		esim_process_events(TRUE);
+
+
+	}
 
 	dram_system_done();
 	esim_done();

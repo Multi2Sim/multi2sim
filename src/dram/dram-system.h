@@ -41,7 +41,10 @@ extern long long dram_system_max_cycles;
 extern char *dram_config_file_name;
 extern char *dram_report_file_name;
 extern char *dram_sim_system_name;
+extern char *dram_request_file_name;
 
+/* Error messages */
+extern char *dram_err_config;
 
 /*
  * Local variable

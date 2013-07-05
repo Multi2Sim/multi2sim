@@ -1476,11 +1476,20 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Network report file */
+		/* DRAM report file */
 		if (!strcmp(argv[argi], "--dram-report"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			dram_report_file_name = argv[++argi];
+			continue;
+		}
+
+		/* DRAM request file */
+		if (!strcmp(argv[argi], "--dram-request"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			dram_sim_last_option = argv[argi];
+			dram_request_file_name = argv[++argi];
 			continue;
 		}
 

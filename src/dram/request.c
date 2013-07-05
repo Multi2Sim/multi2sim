@@ -23,6 +23,7 @@
 
 #include "request.h"
 
+int EV_DRAM_REQUEST;
 
 /*
  * Request
@@ -71,4 +72,12 @@ void dram_request_dump(struct dram_request_t *dram_request, FILE *f)
 	}
 
 	fprintf(f, "addr: %08X\n", dram_request->addr);
+}
+
+void dram_request_handler (int event, void *data)
+{
+	char *request = data;
+	fprintf(stderr,"We are here with request = %s \n", request);
+
+	free(request);
 }
