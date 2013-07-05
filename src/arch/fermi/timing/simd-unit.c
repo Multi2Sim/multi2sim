@@ -50,7 +50,6 @@ void frm_simd_complete(struct frm_simd_t *simd)
 	{
 		uop = list_get(simd->exec_buffer, list_index);
 		assert(uop);
-		frm_gpu_debug("uop name = %s\n", ((uop->inst).info)->name);
 
 		if (arch_fermi->cycle < uop->execute_ready)
 		{
@@ -112,7 +111,6 @@ void frm_simd_execute(struct frm_simd_t *simd)
 	{
 		uop = list_get(simd->decode_buffer, list_index);
 		assert(uop);
-		frm_gpu_debug("uop name = %s\n", ((uop->inst).info)->name);
 
 		instructions_processed++;
 
@@ -182,7 +180,6 @@ void frm_simd_decode(struct frm_simd_t *simd)
 	{
 		uop = list_get(simd->issue_buffer, list_index);
 		assert(uop);
-		frm_gpu_debug("uop name = %s\n", ((uop->inst).info)->name);
 
 		instructions_processed++;
 

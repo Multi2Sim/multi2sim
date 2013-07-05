@@ -62,8 +62,6 @@ int frm_calc_get_thread_blocks_per_sm(int threads_per_thread_block,
 		frm_emu_warp_size - 1) / frm_emu_warp_size;
 	max_thread_blocks_limitted_by_max_warps = 
 		frm_gpu_max_warps_per_sm / warps_per_thread_block;
-	frm_gpu_debug("max_thread_blocks_limitted_by_max_warps = %d\n",
-			max_thread_blocks_limitted_by_max_warps);
 
 	/* Get maximum number of thread blocks per SM as limited by the number 
 	 * of available registers, given the number of registers used per 
@@ -73,8 +71,6 @@ int frm_calc_get_thread_blocks_per_sm(int threads_per_thread_block,
 	max_thread_blocks_limitted_by_num_registers = registers_per_thread_block ?
 		frm_gpu_num_registers_per_sm / registers_per_thread_block :
 		frm_gpu_max_thread_blocks_per_sm;
-	frm_gpu_debug("max_thread_blocks_limitted_by_num_registers = %d\n",
-			max_thread_blocks_limitted_by_num_registers);
 
 	/* Get maximum number of thread blocks per SM as limited by the 
 	 * amount of available shared memory, given the shared memory used 
@@ -82,8 +78,6 @@ int frm_calc_get_thread_blocks_per_sm(int threads_per_thread_block,
 	max_thread_blocks_limitted_by_shared_mem = shared_mem_per_thread_block ?
 		frm_gpu_shared_mem_size / shared_mem_per_thread_block :
 		frm_gpu_max_thread_blocks_per_sm;
-	frm_gpu_debug("max_thread_blocks_limitted_by_shared_mem = %d\n",
-			max_thread_blocks_limitted_by_shared_mem);
 
 	/* Based on the limits above, calculate the actual limit of thread
 	 * blocks per SM. */
@@ -94,7 +88,6 @@ int frm_calc_get_thread_blocks_per_sm(int threads_per_thread_block,
 		max_thread_blocks_limitted_by_num_registers);
 	max_thread_blocks_per_sm = MIN(max_thread_blocks_per_sm, 
 		max_thread_blocks_limitted_by_shared_mem);
-	frm_gpu_debug("max_thread_blocks_per_sm = %d\n", max_thread_blocks_per_sm);
 
 	/* Return */
 	return max_thread_blocks_per_sm;

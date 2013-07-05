@@ -218,63 +218,70 @@ void frm_sm_free(struct frm_sm_t *sm)
 }
 
 
-void frm_sm_map_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *thread_block)
+void frm_sm_map_thread_block(struct frm_sm_t *sm, 
+		struct frm_thread_block_t *thread_block)
 {
 	struct frm_grid_t *grid;
-	//struct frm_warp_t *warp;
-	//int warp_id;
+	struct frm_warp_t *warp;
+
+	int warp_id;
 	int wiq_id;
+	int entry_index;
 
 	assert(sm->thread_block_count < frm_gpu->thread_blocks_per_sm);
 	assert(!thread_block->id_in_sm);
 
-	grid = thread_block->grid;
-
-	/* Assign a thread block to an available slot in an SM */
+	/* Assign thread block ID */
 	while (thread_block->id_in_sm < frm_gpu->thread_blocks_per_sm &&
 			sm->thread_blocks[thread_block->id_in_sm])
 		thread_block->id_in_sm++;
+
+	/* Assign thread block to a SM */
 	sm->thread_blocks[thread_block->id_in_sm] = thread_block;
 	sm->thread_block_count++;
 
-	/* All SMs were added to 'sm_ready' list in initialization. Here remove
-	 * SM from 'sm_ready' list first. Then determine if it is fully loaded.
-	 * If not, add it to the end of the 'sm_ready' list; otherwise, add it
-	 * to 'sm_busy' list */
-	assert(list_index_of(frm_gpu->sm_ready_list, sm) <
-			list_count(frm_gpu->sm_ready_list));
-	list_remove(frm_gpu->sm_ready_list, sm);
-	if (sm->thread_block_count < frm_gpu->thread_blocks_per_sm)
-		list_add(frm_gpu->sm_ready_list, sm);
+	/* Remove fully-loaded SM to 'sm_ready' list so that thread blocks
+	 * cannot be assigned to it any more */
+	if (sm->thread_block_count == frm_gpu->thread_blocks_per_sm)
+		list_remove(frm_gpu->sm_ready_list, sm);
+
+	/* Add SM to 'sm_busy' list if it has not been there */
 	if (list_index_of(frm_gpu->sm_busy_list, sm) == -1)
 		list_add(frm_gpu->sm_busy_list, sm);
 
-	/* Assign warps identifiers in SM */
-	//FRM_FOREACH_WARP_IN_THREADBLOCK(thread_block, warp_id)
-	//{
-	//	warp = grid->warps[warp_id];
-	//	warp->id_in_sm = thread_block->id_in_sm *
-	//		grid->warps_per_thread_block + 
-	//		warp->id_in_thread_block;
-	//}
+	/* Set up warps */
+	for (warp_id = 0; warp_id < thread_block->warp_count; warp_id++)
+	{
+		/* Assign ID */
+		warp = thread_block->warps[warp_id];
+		warp->id_in_sm = thread_block->id_in_sm *
+			thread_block->warp_count + warp_id;
 
-	/* Set warp instruction queue for thread block */
-	wiq_id = thread_block->id_in_sm % frm_gpu_num_warp_inst_queues;
-	thread_block->warp_inst_queue = sm->warp_inst_queues[wiq_id];
+		/* Assign warp instruction queue */
+		wiq_id = warp->id_in_sm % frm_gpu_num_warp_inst_queues;
+		warp->warp_inst_queue = sm->warp_inst_queues[wiq_id];
 
-	/* Insert warp into warp instruction queue */
-	frm_warp_inst_queue_map_warps(thread_block->warp_inst_queue,
-			thread_block);
+		/* Assign warp instruction queue entry */
+		entry_index = warp->id_in_sm / frm_gpu_num_warp_inst_queues;
+		warp->warp_inst_queue_entry =
+			warp->warp_inst_queue->entries[entry_index];
+
+		/* Initialize warp instruction queue entry */
+		warp->warp_inst_queue_entry->valid = 1;
+		warp->warp_inst_queue_entry->ready = 1;
+		warp->warp_inst_queue_entry->warp = warp;
+	}
 
 	/* Change thread block status to running */
+	grid = thread_block->grid;
 	list_remove(grid->pending_thread_blocks, thread_block);
 	list_add(grid->running_thread_blocks, thread_block);
 
 	/* Trace */
 	frm_trace("frm.map_tb sm=%d tb=%d t_first=%d t_count=%d w_first=%d "
-		"w_count=%d\n", sm->id, thread_block->id,
-		thread_block->threads[0]->id, thread_block->thread_count, 
-		thread_block->warps[0]->id, thread_block->warp_count);
+			"w_count=%d\n", sm->id, thread_block->id,
+			thread_block->threads[0]->id, thread_block->thread_count, 
+			thread_block->warps[0]->id, thread_block->warp_count);
 
 	/* Stats */
 	sm->mapped_thread_blocks++;
@@ -292,14 +299,14 @@ void frm_sm_unmap_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *t
 	sm->thread_block_count--;
 
 	/* Unmap warps from warp instruction queue */
-	frm_warp_inst_queue_unmap_warps(thread_block->warp_inst_queue, 
-		thread_block);
+	//frm_warp_inst_queue_unmap_warps(thread_block->warp_inst_queue, 
+	//		thread_block);
 
 	/* If compute unit accepts work-groups again, insert into 
 	 * 'sm_ready' list */
 	if (list_index_of(frm_gpu->sm_ready_list, sm) == -1)
 		list_add(frm_gpu->sm_ready_list, sm);
-	
+
 	/* If SM is not sm_busy anymore, remove it from 
 	 * 'sm_busy' list */
 	if (!sm->thread_block_count && 
@@ -334,7 +341,7 @@ void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 		/* Sanity check warp */
 		assert(warp->warp_inst_queue_entry);
 		assert(warp->warp_inst_queue_entry ==
-			sm->warp_inst_queues[wiq_id]->entries[i]);
+				sm->warp_inst_queues[wiq_id]->entries[i]);
 
 		/* Regardless of how many instructions have been fetched 
 		 * already, this should always be checked */
@@ -375,7 +382,7 @@ void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 		if (warp->warp_inst_queue_entry->wait_for_mem)
 		{
 			if (!warp->warp_inst_queue_entry->lgkm_cnt &&
-				!warp->warp_inst_queue_entry->vm_cnt)
+					!warp->warp_inst_queue_entry->vm_cnt)
 			{
 				warp->warp_inst_queue_entry->wait_for_mem =
 					0;	
@@ -399,9 +406,9 @@ void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 
 		/* Stall if fetch buffer full */
 		assert(list_count(sm->fetch_buffers[wiq_id]) <= 
-					frm_gpu_fe_fetch_buffer_size);
+				frm_gpu_fe_fetch_buffer_size);
 		if (list_count(sm->fetch_buffers[wiq_id]) == 
-					frm_gpu_fe_fetch_buffer_size)
+				frm_gpu_fe_fetch_buffer_size)
 		{
 			continue;
 		}
@@ -436,7 +443,6 @@ void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 		/* Debug */
 		//frm_inst_dump(inst_str, sizeof inst_str, 
 		//	warp->grid->inst_buffer, warp->pc / 8);
-		//frm_gpu_debug("inst_str = %s\n", inst_str);
 
 		/* Trace */
 		if (frm_tracing())
@@ -446,16 +452,16 @@ void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 			//	warp->grid->inst_buffer + warp->pc,
 			//	inst_str, sizeof inst_str);
 			str_single_spaces(inst_str_trimmed, 
-				sizeof inst_str_trimmed, 
-				inst_str);
+					sizeof inst_str_trimmed, 
+					inst_str);
 			frm_trace("si.new_inst id=%lld cu=%d ib=%d wg=%d "
-				"wf=%d uop_id=%lld stg=\"f\" asm=\"%s\"\n", 
-				uop->id_in_sm, sm->id, 
-				uop->warp_inst_queue_id, uop->thread_block->id, 
-				warp->id, uop->id_in_warp, 
-				inst_str_trimmed);
+					"wf=%d uop_id=%lld stg=\"f\" asm=\"%s\"\n", 
+					uop->id_in_sm, sm->id, 
+					uop->warp_inst_queue_id, uop->thread_block->id, 
+					warp->id, uop->id_in_warp, 
+					inst_str_trimmed);
 		}
-		
+
 		/* Update last memory accesses */
 		for (thread_id = uop->warp->threads[0]->id_in_warp; 
 				thread_id < uop->warp->thread_count; 
@@ -1234,7 +1240,7 @@ void frm_sm_run(struct frm_sm_t *sm)
 	int i;
 	//int active_fetch_buffer;  /* Fetch buffer chosen to issue this cycle */
 
-	/* SIMDs */
+	/* SIMD */
 	for (i = 0; i < sm->num_simd_units; i++)
 		frm_simd_run(sm->simd_units[i]);
 
