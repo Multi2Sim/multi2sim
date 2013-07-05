@@ -68,7 +68,6 @@ struct frm_sm_t
 	unsigned int num_simd_units;
 	struct frm_simd_t **simd_units;
 	/* TODO Make these into a configurable number of structures */
-	struct frm_scalar_unit_t scalar_unit;
 	struct frm_branch_unit_t branch_unit;
 	struct frm_vector_mem_unit_t vector_mem_unit;
 	struct frm_lds_t lds_unit;
@@ -79,8 +78,6 @@ struct frm_sm_t
 	long long warp_count;
 	long long inst_count; /* Total instructions */
 	long long branch_inst_count;
-	long long scalar_alu_inst_count;
-	long long scalar_mem_inst_count;
 	/* TODO Have one SIMD inst count per SIMD unit */
 	long long simd_inst_count;
 	long long vector_mem_inst_count;
