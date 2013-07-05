@@ -92,8 +92,14 @@ static void dram_config_request_create(struct dram_system_t *system, struct conf
 			break;
 
 		/* Schedule event to process request */
+		struct request_stack_t *stack;
+		stack = dram_request_stack_create();
+
 		request_line = xstrdup(request_line);
-		esim_schedule_event(EV_DRAM_REQUEST, request_line, 0);
+		stack->request_line = request_line;
+		stack->system = system;
+
+		esim_schedule_event(EV_DRAM_REQUEST, stack, 0);
 
 		/* Next command */
 		request_var_id++;
@@ -114,6 +120,7 @@ struct dram_system_t *dram_system_create(char *name)
 	system = xcalloc(1, sizeof(struct dram_system_t));
 	system->name = xstrdup(name);
 	system->dram_controller_list = list_create();
+	system->dram_request_list = list_create();
 
 	/* Return */
 	return system;
@@ -128,6 +135,11 @@ void dram_system_free(struct dram_system_t *system)
 	for (i = 0; i < system->num_logical_channels; i++)
 		dram_controller_free(list_get(system->dram_controller_list, i));
 	list_free(system->dram_controller_list);
+
+	/* Freeing the DRAM request list */
+	for (i = 0; i < list_count(system->dram_request_list); i++)
+		dram_request_free(list_get(system->dram_request_list, i));
+	list_free(system->dram_request_list);
 
 	/* Free */
 	free(system->name);
@@ -347,18 +359,18 @@ struct dram_system_t *dram_system_config_with_file(struct config_t *config, char
 }
 
 
-int dram_system_get_request(struct dram_system_t *system, struct dram_request_t *request)
+int dram_system_get_request(struct dram_system_t *system)
 {
 	unsigned int logical_channel_id;
 
 	struct dram_controller_t *controller;
 
+	struct dram_request_t *request;
+	request = list_get(system->dram_request_list, 0);
 	/* Do nothing if no request is passed */
 	if (!request)
 		return 0;
 
-	/* Assign pointer */
-	request->system = system;
 
 	/* Decode request address */
 	dram_decode_address(system, request->addr, &logical_channel_id,
@@ -517,13 +529,14 @@ void dram_system_sim (char *debug_file_name)
 		if (cycle >= dram_system_max_cycles)
 			break;
 
+		if ((list_count(dram_system->dram_request_list)) &&
+				dram_system_get_request(dram_system))
+			list_dequeue(dram_system->dram_request_list);
 		dram_system_process(dram_system);
 
 		/* Next Cycle */
 		dram_debug("___cycle %lld___\n", cycle);
 		esim_process_events(TRUE);
-
-
 	}
 
 	dram_system_done();
