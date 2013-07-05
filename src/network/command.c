@@ -218,7 +218,7 @@ void net_command_handler(int event, void *data)
 
 			stack->msg = net_send_ev(net, src_node, dst_node, msg_size,
 					EV_NET_COMMAND_RCV, stack);
-			fprintf(stderr, ">> Message %lld sent at %lld \n", msg_id,
+			fprintf(stderr, "\n Message %lld sent at %lld \n\n", msg_id,
 					cycle);
 
 		}
@@ -246,7 +246,7 @@ void net_command_handler(int event, void *data)
 				test_failed = 1;
 				str_printf(&msg_detail_str, &msg_detail_size,
 					"\t Message is either invalid, "
-					"not yet send or already received");
+					"not yet send or already received\n");
 			}
 
 			/* Checking : the node indicated in the receive command
@@ -500,7 +500,7 @@ void net_command_handler(int event, void *data)
 
 		assert(dst_node == msg->node);
 
-		fprintf(stderr, ">> Message %lld received at %lld \n", msg->id, cycle);
+		fprintf(stderr, "\n Message %lld received at %lld \n\n", msg->id, cycle);
 		net_receive(net, dst_node, msg);
 		net_stack_return(stack);
 	}

@@ -25,6 +25,8 @@
  * Local variable
  */
 
+extern int EV_DRAM_REQUEST;
+
 enum dram_request_type_t
 {
 	request_type_invalid,
@@ -51,6 +53,7 @@ struct dram_request_t
 struct dram_request_t *dram_request_create(void);
 void dram_request_free(struct dram_request_t *request);
 void dram_request_dump(struct dram_request_t *request, FILE *f);
+void dram_request_handler (int event, void *data);
 
 
 #endif

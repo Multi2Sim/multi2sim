@@ -125,7 +125,7 @@ static void net_config_command_create(struct net_t *net, struct config_t *config
 	int command_var_id;
 
 	/* Checks */
-	if (net_injection_rate >= 0.001)
+	if (net_injection_rate > 0.001)
 		fatal("Network %s:%s: Using Command section; \n"
 				"\t option --net-injection-rate should not be used \n",
 				net->name,section);
@@ -552,7 +552,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		if (!token || strcasecmp(token, name))
 			continue;
 
-		/* Third token must be 'Routes' */
+		/* Third token must be 'Commands' */
 		token = strtok(NULL, delim);
 		if (!token || strcasecmp(token, "Commands"))
 			continue;
@@ -562,7 +562,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 			fatal("%s: %s: bad format for Commands section.\n%s",
 					name, section, net_err_config);
 
-		/* Routes */
+		/* Commands */
 		net_config_command_create(net, config, section);
 		config_check(config);
 	}
