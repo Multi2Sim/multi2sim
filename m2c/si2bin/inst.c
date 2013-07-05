@@ -866,12 +866,65 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			/* Not encoded */
 			break;
 
+		case si2bin_token_svdst:
+
+			/* Check for scalar register */
+			assert(arg->type == si2bin_arg_scalar_register);
+			
+			/* Encode */
+			inst_bytes->vop1.vdst = si2bin_arg_encode_operand(arg);
+			break;
+
 		case si2bin_token_vdst:
 
 			/* Encode */
 			inst_bytes->vop1.vdst = arg->value.vector_register.id;
 			break;
+		
+		case si2bin_token_64_src0:
+		{
+			int low;
+			int high;
 
+			/* Check argument type */
+			if (arg->type == si2bin_arg_scalar_register_series)
+			{
+				low = arg->value.scalar_register_series.low;
+				high = arg->value.scalar_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be s[low:low+1]");
+			}
+			else if (arg->type == si2bin_arg_vector_register_series)
+			{
+				low = arg->value.vector_register_series.low;
+				high = arg->value.vector_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be v[low:low+1]");
+			}
+
+			/* Encode */
+			inst_bytes->vop1.src0 = si2bin_arg_encode_operand(arg);
+			break;
+		}
+	
+		case si2bin_token_64_vdst:
+		{
+			int low;
+			int high;
+
+			/* Check argument type */
+			if (arg->type == si2bin_arg_vector_register_series)
+			{
+				low = arg->value.vector_register_series.low;
+				high = arg->value.vector_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be v[low:low+1]");
+			}
+			
+			/* Encode */
+			inst_bytes->vop1.vdst = arg->value.vector_register_series.low;
+			break;
+		}
 		case si2bin_token_vop3_64_svdst:
 		{
 			int low;
@@ -932,6 +985,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
+			else if (arg->type == si2bin_arg_vector_register_series)
+			{
+				low = arg->value.vector_register_series.low;
+				high = arg->value.vector_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be v[low:low+1]");
+			}
 
 			/* Encode */
 			inst_bytes->vop3a.src0 = si2bin_arg_encode_operand(arg);
@@ -954,6 +1014,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				high = arg->value.scalar_register_series.high;
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
+			}
+			else if (arg->type == si2bin_arg_vector_register_series)
+			{
+				low = arg->value.vector_register_series.low;
+				high = arg->value.vector_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be v[low:low+1]");
 			}
 
 			/* Encode */
@@ -978,6 +1045,13 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				if (high != low + 1)
 					si2bin_yyerror("register series must be s[low:low+1]");
 			}
+			else if (arg->type == si2bin_arg_vector_register_series)
+			{
+				low = arg->value.vector_register_series.low;
+				high = arg->value.vector_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be v[low:low+1]");
+			}
 
 			/* Encode */
 			inst_bytes->vop3a.src2 = si2bin_arg_encode_operand(arg);
@@ -998,8 +1072,28 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 		case si2bin_token_vop3_vdst:
 			
+			/* Encode */
 			inst_bytes->vop3a.vdst = arg->value.vector_register.id;
 			break;
+
+		case si2bin_token_vop3_64_vdst:
+		{
+			int low;
+			int high;
+
+			/* Check argument type */
+			if (arg->type == si2bin_arg_vector_register_series)
+			{
+				low = arg->value.vector_register_series.low;
+				high = arg->value.vector_register_series.high;
+				if (high != low + 1)
+					si2bin_yyerror("register series must be v[low:low+1]");
+			}
+			
+			/* Encode */
+			inst_bytes->vop3a.vdst = arg->value.vector_register_series.low;
+			break;
+		}
 
 		case si2bin_token_vsrc1:
 
