@@ -44,7 +44,7 @@ struct frm_grid_t *frm_grid_create(struct cuda_function_t *function)
 	grid = xcalloc(1, sizeof(struct frm_grid_t));
 
 	/* Initialize grid */
-	grid->id = list_count(frm_emu->grids) - 1;
+	grid->id = list_count(frm_emu->grids);
 	strncpy(grid->name, function->name, MAX_STRING_SIZE);
 	grid->status = frm_grid_pending;
 	grid->function = function;

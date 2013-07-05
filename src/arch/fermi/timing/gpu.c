@@ -213,8 +213,6 @@ char *frm_gpu_config_file_name = "";
 char *frm_gpu_dump_default_config_file_name = "";
 char *frm_gpu_report_file_name = "";
 
-int frm_gpu_debug_category = 1;
-
 int frm_trace_category;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
@@ -532,27 +530,23 @@ static void frm_gpu_map_grid(struct frm_grid_t *grid)
 	/* Calculate the number of thread blocks per SM */
 	frm_gpu->thread_blocks_per_sm =
 		frm_calc_get_thread_blocks_per_sm(
-				grid->block_size,
-				grid->num_gpr_used,
+				grid->block_size, grid->num_gpr_used,
 				grid->local_mem_top);
 
+	/* Thread block cannot be assigned to SM */
 	if (!frm_gpu->thread_blocks_per_sm)
 	{
-		fatal("thread-block resources cannot be allocated to a SM.\n"
+		fatal("Thread blocks cannot be assigned to SMs.\n"
 				"\tA SM in the GPU has a limit in number of warps,\n"
 				"\tnumber of registers, and amount of shared memory.\n"
-				"\tIf the thread block size exceeds any of these limits,\n"
-				"\tthe grid cannot be executed.\n");
+				"\tIf a thread block requires more resources than\n"
+				"\tthese limits, it cannot be assigned to a SM.\n");
 	}
 
 	/* Calculate limit of warps and threads per SM */
 	frm_gpu->warps_per_sm = frm_gpu->thread_blocks_per_sm *
 		grid->thread_blocks[0]->warp_count;
 	frm_gpu->threads_per_sm = frm_gpu->warps_per_sm * frm_emu_warp_size;
-	frm_gpu_debug("%d thread blocks, %d warps, %d threads mapped per SM\n",
-			frm_gpu->thread_blocks_per_sm,
-			frm_gpu->warps_per_sm,
-			frm_gpu->threads_per_sm);
 }
 
 
@@ -976,11 +970,9 @@ void frm_gpu_done()
 	}
 	list_free(frm_gpu->sm_ready_list);
 	free(frm_gpu->sms);
-	frm_gpu_debug("SMs freed\n");
 
 	/* Free GPU */
 	free(frm_gpu);
-	frm_gpu_debug("GPU freed\n");
 
 	if(frm_spatial_report_active)
 		frm_sm_spatial_report_done();
@@ -1102,22 +1094,12 @@ int frm_gpu_run(void)
 	if (!list_count(frm_emu->grids))
 		return FALSE;
 
-	/* Start 1 grid in state 'pending' */
+	/* Map grids */
 	while ((grid = list_head(frm_emu->pending_grids)))
 	{
-		/* Currently not supported for more than 1 grid */
-		if (frm_gpu->grid)
-		{
-			fatal("%s: Fermi GPU timing simulation not supported for"
-					"multiple grids", __FUNCTION__);
-		}
-
 		/* Set grid status to 'running' */
 		list_remove(frm_emu->pending_grids, grid);
 		list_add(frm_emu->running_grids, grid);
-
-		/* Debug */
-		frm_gpu_debug("grid[%d] added to running list\n", grid->id);
 
 		/* Trace */
 		frm_trace("frm.new_grid id=%d tb_first=%d tb_count=%d\n", 
@@ -1129,18 +1111,17 @@ int frm_gpu_run(void)
 		frm_calc_plot();
 	}
 
-	/* Mapped Grid */
+	/* Get mapped grids */
 	grid = frm_gpu->grid;
 	assert(grid);
 
-	/* Allocate thread blocks to SMs */
-	while (list_head(frm_gpu->sm_ready_list) && list_head(grid->pending_thread_blocks))
+	/* Assign thread blocks to SMs */
+	while (list_head(frm_gpu->sm_ready_list) && 
+			list_head(grid->pending_thread_blocks))
 	{
 		frm_sm_map_thread_block(list_head(frm_gpu->sm_ready_list),
 				list_head(grid->pending_thread_blocks));
 	}
-
-	frm_gpu_debug("cycle = %lld\n", arch_fermi->cycle);
 
 	/* One more cycle */
 	arch_fermi->cycle++;
@@ -1154,7 +1135,7 @@ int frm_gpu_run(void)
 		esim_finish = esim_finish_frm_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((arch_fermi->cycle-frm_gpu->last_complete_cycle) > 1000000)
+	if ((arch_fermi->cycle - frm_gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Fermi GPU simulation stalled.\n%s", frm_err_stall);
 		esim_finish = esim_finish_stall;
@@ -1172,13 +1153,11 @@ int frm_gpu_run(void)
 		 * during the SM simulation loop iteration. */
 		sm_next = list_get(frm_gpu->sm_busy_list, sm_id + 1);
 
-		frm_gpu_debug("run sm[%d]\n", sm->id);
-
 		/* Run one cycle */
 		frm_sm_run(sm);
 	}
 
-	/* If Grid finished execution in all SMs, free it. */
+	/* Finish execution */
 	if (!list_count(frm_gpu->sm_busy_list))
 	{
 		/* Dump Grid report */

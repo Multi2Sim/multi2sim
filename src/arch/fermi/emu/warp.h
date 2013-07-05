@@ -114,6 +114,7 @@ struct frm_warp_t
 	int alu_engine_in_flight;  /* Number of in-flight uops in ALU engine */
 	long long sched_when;  /* GPU cycle when warp was last scheduled */
 	int uop_id_counter;
+	struct frm_warp_inst_queue_t *warp_inst_queue;
 	struct frm_warp_inst_queue_entry_t *warp_inst_queue_entry;
 
 

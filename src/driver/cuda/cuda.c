@@ -238,9 +238,6 @@ int cuda_func_cuDeviceTotalMem(struct x86_ctx_t *ctx)
 /*
  * CUDA call - cuModuleLoad
  *
- * @param CUmodule *pmod;
- *      Returned module.
- *
  * @param const char *fname;
  *      Filename of module to load.
  *
@@ -274,8 +271,8 @@ int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 /*
  * CUDA call - cuModuleUnload
  *
- * @param CUmodule hmod;
- *      The module to unload.
+ * @param unsign int module_id;
+ *      ID of the module to unload.
  *
  * @return
  *	The return value is always 0 on success.
@@ -304,14 +301,20 @@ int cuda_func_cuModuleUnload(struct x86_ctx_t *ctx)
 /*
  * CUDA call - cuModuleGetFunction
  *
- * @param CUfunction *pfunc;
- *      Returned function handle.
+ * @param unsinged int module_id;
+ *      ID of the module to retrieve function from.
  *
- * @param CUmodule mod;
- *      Module to retrieve function from.
- *
- * @param const char *name;
+ * @param char *function_name;
  *      Name of function to retrieve.
+ *
+ * @param unsigned long long int *inst_buffer;
+ *      Instruction binary of function.
+ *
+ * @param unsigned int inst_buffer_size;
+ *      Size of instruction binary.
+ *
+ * @param unsigned int num_gpr_used;
+ *      Number of GPRs used per thread.
  *
  * @return
  *	The return value is always 0 on success.

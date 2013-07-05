@@ -42,8 +42,6 @@ struct frm_thread_block_t
 	struct frm_grid_t *grid;
 	struct frm_sm_t *sm;
 
-	struct frm_warp_inst_queue_t *warp_inst_queue;
-
 	/* Double linked lists of thread_blocks */
 	struct frm_thread_block_t *pending_list_prev;
 	struct frm_thread_block_t *pending_list_next;

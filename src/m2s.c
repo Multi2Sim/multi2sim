@@ -1963,7 +1963,6 @@ int main(int argc, char **argv)
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
 	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
 	frm_isa_debug_category = debug_new_category(frm_isa_debug_file_name);
-	frm_gpu_debug_category = debug_new_category(frm_gpu_debug_file_name);
 	arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
 	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
 	arm_sys_debug_category = debug_new_category(arm_sys_debug_file_name);
