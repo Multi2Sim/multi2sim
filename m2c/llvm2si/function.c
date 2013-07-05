@@ -487,8 +487,11 @@ static void llvm2si_function_init_ctree(struct llvm2si_function_t *function)
 	LINKED_LIST_FOR_EACH(function->basic_block_list)
 	{
 		basic_block = linked_list_get(function->basic_block_list);
-		node = llvm2si_node_create_leaf(basic_block);
+		node = llvm2si_node_create_leaf(basic_block->name);
 		llvm2si_ctree_add_node(ctree, node);
+		
+		/* Associate node and basic block */
+		basic_block->node = node;
 
 		/* Set head node */
 		if (basic_block == function->basic_block_entry)

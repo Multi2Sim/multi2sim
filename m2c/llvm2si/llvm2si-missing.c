@@ -25,6 +25,12 @@
 
 #include "llvm2si.h"
 
+/* Public Variables */
+
+char *llvm2si_debug_file_name = "";
+int llvm2si_debug_category;
+
+
 
 /*
  * Private Functions

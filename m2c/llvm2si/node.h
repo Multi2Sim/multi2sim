@@ -99,15 +99,15 @@ struct llvm2si_node_t
 	int color;
 };
 
-struct llvm2si_node_t *llvm2si_node_create_leaf(
-		struct llvm2si_basic_block_t *basic_block);
+
+/* Create node of type leaf */
+struct llvm2si_node_t *llvm2si_node_create_leaf(char *name);
 
 /* Create an abstract node containing the list of nodes in 'elem_list'. The list
  * 'elem_list' will be copied internally, and should be initialized and freed by
  * the caller. */
-struct llvm2si_node_t *llvm2si_node_create_abstract(
-		enum llvm2si_node_region_t region,
-		char *name);
+struct llvm2si_node_t *llvm2si_node_create_abstract(char *name,
+		enum llvm2si_node_region_t region);
 
 void llvm2si_node_free(struct llvm2si_node_t *node);
 void llvm2si_node_dump(struct llvm2si_node_t *node, FILE *f);
