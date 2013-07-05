@@ -40,6 +40,12 @@ enum dram_request_type_t
  * Request
  */
 
+struct request_stack_t
+{
+	struct dram_system_t *system;
+	char *request_line;
+};
+
 struct dram_request_t
 {
 	long long id;
@@ -49,6 +55,8 @@ struct dram_request_t
 	struct dram_system_t *system;
 };
 
+struct request_stack_t *dram_request_stack_create(void);
+void dram_request_stack_free(struct request_stack_t *);
 
 struct dram_request_t *dram_request_create(void);
 void dram_request_free(struct dram_request_t *request);

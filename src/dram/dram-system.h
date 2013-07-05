@@ -60,6 +60,9 @@ struct dram_system_t
 	char *name;
 	unsigned int num_logical_channels;
 	struct list_t *dram_controller_list;
+
+	struct list_t *dram_request_list;
+	long long int request_count;
 };
 
 struct dram_system_t *dram_system_create(char *name);
@@ -67,7 +70,7 @@ void dram_system_free(struct dram_system_t *system);
 void dram_system_dump(struct dram_system_t *system, FILE *f);
 struct dram_system_t *dram_system_config_with_file(struct config_t *config,
 		char *dram_system_name);
-int dram_system_get_request(struct dram_system_t *system, struct dram_request_t *request);
+int dram_system_get_request(struct dram_system_t *system);
 void dram_system_process(struct dram_system_t *system);
 void dram_decode_address(struct dram_system_t *system,
 			unsigned int addr,
