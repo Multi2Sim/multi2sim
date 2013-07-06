@@ -32,6 +32,8 @@ struct list_t;
  */
 
 #define llvm2si_debug(...) debug(llvm2si_debug_category, __VA_ARGS__)
+
+extern char *llvm2si_config_file_name;
 extern char *llvm2si_debug_file_name;
 extern int llvm2si_debug_category;
 

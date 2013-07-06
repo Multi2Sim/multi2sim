@@ -136,6 +136,9 @@ static char *syntax =
 	"\tInterpret sources as LLVM binaries and generate Southern Islands\n"
 	"\tassembly output in a '.s' file.\n"
 	"\n"
+	"--llvm2si-config <file>\n"
+	"\tConfiguration file for Southern Islands back-end.\n"
+	"\n"
 	"--llvm2si-debug <file>\n"
 	"\tDebug information for the Southern Islands back-end.\n"
 	"\n"
@@ -253,6 +256,12 @@ static void m2c_process_option(const char *option, char *optarg)
 		return;
 	}
 
+	if (!strcmp(option, "llvm2si-config"))
+	{
+		llvm2si_config_file_name = optarg;
+		return;
+	}
+
 	if (!strcmp(option, "llvm2si-debug"))
 	{
 		llvm2si_debug_file_name = optarg;
@@ -318,12 +327,13 @@ static void m2c_read_command_line(int argc, char **argv)
 		{ "define", required_argument, 0, 'D' },
 		{ "help", no_argument, 0, 'h' },
 		{ "llvm2si", no_argument, 0, 0 },
+		{ "llvm2si-config", required_argument, 0, 0 },
 		{ "llvm2si-debug", required_argument, 0, 0 },
 		{ "preprocess", no_argument, 0, 'E' },
 		{ "si-asm", no_argument, 0, 0 },
 		{ 0, 0, 0, 0 }
 	};
-
+	
 	/* No arguments given */
 	if (argc == 1)
 	{
@@ -481,18 +491,24 @@ static void m2c_preprocess(struct list_t *source_file_list,
 }
 
 
+/* Initialization before reading command line */
+void m2c_pre_init(void)
+{
+	m2c_define_list = list_create();
+	m2c_source_file_list = list_create();
+}
+
+
 void m2c_init(void)
 {
 	/* Libraries */
 	debug_init();
 
 	/* List of source files */
-	m2c_source_file_list = list_create();
 	m2c_clp_file_list = list_create();
 	m2c_llvm_file_list = list_create();
 	m2c_asm_file_list = list_create();
 	m2c_bin_file_list = list_create();
-	m2c_define_list = list_create();
 
 	/* Initialize compiler modules */
 	cl2llvm_init();
@@ -549,11 +565,12 @@ void m2c_done(void)
 
 int main(int argc, char **argv)
 {
+	/* Read command line */
+	m2c_pre_init();
+	m2c_read_command_line(argc, argv);
+
 	/* Initialize */
 	m2c_init();
-
-	/* Read command line */
-	m2c_read_command_line(argc, argv);
 
 	/* Debug categories */
 	llvm2si_debug_category = debug_new_category(llvm2si_debug_file_name);

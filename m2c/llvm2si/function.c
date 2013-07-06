@@ -479,7 +479,7 @@ static void llvm2si_function_init_ctree(struct llvm2si_function_t *function)
 	/* Create control tree */
 	if (function->ctree)
 		panic("%s: control tree already created", __FUNCTION__);
-	function->ctree = llvm2si_ctree_create();
+	function->ctree = llvm2si_ctree_create(function->name);
 	ctree = function->ctree;
 
 	/* Create the nodes */
