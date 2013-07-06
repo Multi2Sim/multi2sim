@@ -20,5 +20,57 @@
 #ifndef M2C_COMMON_BASIC_BLOCK_H
 #define M2C_COMMON_BASIC_BLOCK_H
 
+#include <stdio.h>
+
+#include <lib/util/class.h>
+
+
+/* Class-related macros */
+#define BASIC_BLOCK_TYPE 0x4c1e17fa
+#define BASIC_BLOCK(p) CLASS_REINTERPRET_CAST((p), BASIC_BLOCK_TYPE, struct basic_block_t)
+#define BASIC_BLOCK_CLASS_OF(p) CLASS_OF((p), BASIC_BLOCK_TYPE)
+
+
+/* Class: basic_block_t
+ * Inherits: None
+ */
+struct basic_block_t
+{
+	/* Class information
+	 * WARNING - must be the first field */
+	struct class_t class_info;
+
+
+	/*** Public fields ***/
+
+	char *name;
+
+
+	/*** Private fields ***/
+
+	/* Predecessor and successor lists of basic blocks */
+	struct linked_list_t *pred_list;
+	struct linked_list_t *succ_list;
+
+	/* Node associated in control tree */
+	struct cnode_t *cnode;
+
+
+	/*** Virtual methods ***/
+
+	void (*free)(struct basic_block_t *basic_block);
+	void (*dump)(struct basic_block_t *basic_block, FILE *f);
+};
+
+
+struct basic_block_t *basic_block_create(char *name);
+void basic_block_free(struct basic_block_t *basic_block);
+
+/* Change basic block name */
+void basic_block_set_name(struct basic_block_t *basic_block, char *name);
+
+/* Connect 'basic_block' to 'basic_block_dest' in control flow graph */
+void basic_block_connect(struct basic_block_t *basic_block,
+		struct basic_block_t *basic_block_dest);
 
 #endif

@@ -578,7 +578,7 @@ static struct cnode_t *ctree_reduce(
 
 
 #define NEW_NODE(name) \
-	struct cnode_t *name = cnode_create_leaf(#name); \
+	struct cnode_t *name = cnode_create_leaf(#name, NULL); \
 	ctree_add_node(ctree, name);
 #define NEW_EDGE(u, v) \
 	cnode_connect(u, v)
@@ -1173,7 +1173,7 @@ void ctree_read_from_config(struct ctree_t *ctree,
 		/* Create node */
 		if (kind == cnode_leaf)
 		{
-			node = cnode_create_leaf(node_name);
+			node = cnode_create_leaf(node_name, NULL);
 		}
 		else
 		{
@@ -1302,3 +1302,50 @@ void ctree_compare(struct ctree_t *ctree1,
 	}
 }
 
+
+void ctree_load_from_cfg(struct ctree_t *ctree,
+		struct linked_list_t *basic_block_list,
+		struct basic_block_t *basic_block_entry)
+{
+	struct basic_block_t *basic_block;
+	struct basic_block_t *basic_block_succ;
+
+	struct cnode_t *node;
+	struct cnode_t *node_succ;
+
+	/* Clear first */
+	ctree_clear(ctree);
+
+	/* Create the nodes */
+	LINKED_LIST_FOR_EACH(basic_block_list)
+	{
+		basic_block = BASIC_BLOCK(linked_list_get(basic_block_list));
+		node = cnode_create_leaf(basic_block->name, basic_block);
+		ctree_add_node(ctree, node);
+		basic_block->cnode = node;
+
+		/* Set head node */
+		if (basic_block == basic_block_entry)
+		{
+			assert(!ctree->node_entry);
+			ctree->node_entry = node;
+		}
+	}
+
+	/* An entry node must have been created */
+	assert(ctree->node_entry);
+
+	/* Add edges to the graph */
+	LINKED_LIST_FOR_EACH(basic_block_list)
+	{
+		basic_block = BASIC_BLOCK(linked_list_get(basic_block_list));
+		node = basic_block->cnode;
+		LINKED_LIST_FOR_EACH(basic_block->succ_list)
+		{
+			basic_block_succ = BASIC_BLOCK(linked_list_get(basic_block->succ_list));
+			node_succ = basic_block_succ->cnode;
+			assert(node_succ);
+			cnode_connect(node, node_succ);
+		}
+	}
+}
