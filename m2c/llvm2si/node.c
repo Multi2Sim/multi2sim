@@ -38,8 +38,8 @@ struct str_map_t llvm2si_node_kind_map =
 {
 	2,
 	{
-		{ "leaf", llvm2si_node_leaf },
-		{ "abstract", llvm2si_node_abstract }
+		{ "Leaf", llvm2si_node_leaf },
+		{ "Abstract", llvm2si_node_abstract }
 	}
 };
 
@@ -75,6 +75,8 @@ static struct llvm2si_node_t *llvm2si_node_create(
 	node->forward_edge_list = linked_list_create();
 	node->cross_edge_list = linked_list_create();
 	node->tree_edge_list = linked_list_create();
+	node->preorder_id = -1;
+	node->postorder_id = -1;
 
 	/* Return */
 	return node;
@@ -317,5 +319,68 @@ void llvm2si_node_disconnect(struct llvm2si_node_t *node,
 	/* Remove it */
 	linked_list_remove(node->succ_list);
 	linked_list_remove(node_dest->pred_list);
+}
+
+
+void llvm2si_node_compare(struct llvm2si_node_t *node1,
+		struct llvm2si_node_t *node2)
+{
+	struct llvm2si_ctree_t *ctree1;
+	struct llvm2si_ctree_t *ctree2;
+	struct llvm2si_node_t *tmp_node;
+
+	char node_name1[MAX_STRING_SIZE];
+	char node_name2[MAX_STRING_SIZE];
+
+	int differ;
+
+	/* Store names */
+	ctree1 = node1->ctree;
+	ctree2 = node2->ctree;
+	snprintf(node_name1, sizeof node_name1, "%s.%s", ctree1->name, node1->name);
+	snprintf(node_name2, sizeof node_name2, "%s.%s", ctree2->name, node2->name);
+
+	/* Compare kind */
+	if (node1->kind != node2->kind)
+		fatal("node kind differs for '%s' and '%s'",
+				node_name1, node_name2);
+
+	/* Compare successors */
+	differ = node1->succ_list->count != node2->succ_list->count;
+	LINKED_LIST_FOR_EACH(node1->succ_list)
+	{
+		tmp_node = linked_list_get(node1->succ_list);
+		tmp_node = llvm2si_ctree_get_node(ctree2, tmp_node->name);
+		assert(tmp_node);
+		if (!llvm2si_node_in_list(tmp_node, node2->succ_list))
+			differ = 1;
+	}
+	if (differ)
+		fatal("successors differ for '%s' and '%s'",
+				node_name1, node_name2);
+
+	/* Abstract node */
+	if (node1->kind == llvm2si_node_abstract)
+	{
+		/* Compare region */
+		if (node1->abstract.region != node2->abstract.region)
+			fatal("region differs for '%s' and '%s'",
+					node_name1, node_name2);
+
+		/* Compare children */
+		differ = node1->abstract.child_list->count !=
+				node2->abstract.child_list->count;
+		LINKED_LIST_FOR_EACH(node1->abstract.child_list)
+		{
+			tmp_node = linked_list_get(node1->abstract.child_list);
+			tmp_node = llvm2si_ctree_get_node(ctree2, tmp_node->name);
+			assert(tmp_node);
+			if (!llvm2si_node_in_list(tmp_node, node2->abstract.child_list))
+				differ = 1;
+		}
+		if (differ)
+			fatal("children differ for '%s' and '%s'",
+					node_name1, node_name2);
+	}
 }
 

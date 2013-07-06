@@ -194,7 +194,7 @@ void *linked_list_goto(struct linked_list_t *list, int index)
 }
 
 
-void linked_list_find(struct linked_list_t *list, void *data)
+void *linked_list_find(struct linked_list_t *list, void *data)
 {
 	list->error_code = LINKED_LIST_ERR_OK;
 	list->current_index = 0;
@@ -204,8 +204,16 @@ void linked_list_find(struct linked_list_t *list, void *data)
 		list->current_index++;
 		list->current = list->current->next;
 	}
+
+	/* Not found */
 	if (!list->current)
+	{
 		list->error_code = LINKED_LIST_ERR_NOT_FOUND;
+		return NULL;
+	}
+
+	/* Found */
+	return data;
 }
 
 

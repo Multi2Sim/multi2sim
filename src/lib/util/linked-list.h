@@ -259,7 +259,8 @@ void *linked_list_goto(struct linked_list_t *list, int index);
  * 	Data to find.
  *
  * @return
- * 	No value is returned. The error code is set to one of the following values:
+ * 	If the value in 'data' is found, return 'data' itself. Otherwise, return
+ * 	NULL. The error code is set to one of the following values:
  *
  * 	LINKED_LIST_ERR_OK
  * 		No error. The value was found, and the current element is set to its
@@ -267,7 +268,7 @@ void *linked_list_goto(struct linked_list_t *list, int index);
  * 	LINKED_LIST_ERR_NOT_FOUND
  * 		Element not found.
  */
-void linked_list_find(struct linked_list_t *list, void *data);
+void *linked_list_find(struct linked_list_t *list, void *data);
 
 
 /** Return number of elements in the list. The value returned by this function can
