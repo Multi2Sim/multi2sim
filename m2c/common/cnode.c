@@ -81,13 +81,15 @@ static struct cnode_t *cnode_create(
 }
 
 
-struct cnode_t *cnode_create_leaf(char *name)
+struct cnode_t *cnode_create_leaf(char *name,
+		struct basic_block_t *basic_block)
 {
 	struct cnode_t *node;
 
 	/* Initialize */
 	node = cnode_create(cnode_leaf);
 	node->name = str_set(node->name, name);
+	node->leaf.basic_block = basic_block;
 
 	/* Return */
 	return node;

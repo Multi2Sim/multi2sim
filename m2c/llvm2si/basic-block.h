@@ -20,9 +20,10 @@
 #ifndef M2C_LLVM2SI_BASIC_BLOCK_H
 #define M2C_LLVM2SI_BASIC_BLOCK_H
 
+#include <llvm-c/Core.h>
 #include <stdio.h>
 
-#include <llvm-c/Core.h>
+#include <lib/util/class.h>
 
 
 /* Forward declarations */
@@ -30,11 +31,24 @@ struct linked_list_t;
 struct llvm2si_function_t;
 struct llvm2si_node_t;
 struct si2bin_inst_t;
+struct basic_block_t;
 
 
+/* Class-related macros */
+#define LLVM2SI_BASIC_BLOCK_TYPE 0xbf85a191
+#define LLVM2SI_BASIC_BLOCK(p) CLASS_REINTERPRET_CAST((p), \
+		LLVM2SI_BASIC_BLOCK_TYPE, struct llvm2si_basic_block_t)
+#define LLVM2SI_BASIC_BLOCK_CLASS_OF(p) CLASS_OF((p), LLVM2SI_BASIC_BLOCK_TYPE)
+
+
+/* Class: llvm2si_basic_block_t
+ * Inherits: basic_block_tm
+ */
 struct llvm2si_basic_block_t
 {
-	char *name;
+	/* Class information
+	 * WARNING - must be the first field */
+	struct class_t class_info;
 
 	/* Comment stored temporarily in the basic block to be attached to the
 	 * next instruction added. */
@@ -44,12 +58,6 @@ struct llvm2si_basic_block_t
 	 * that don't associate to an original LLVM block, such as the header
 	 * basic block. */
 	LLVMBasicBlockRef llbb;
-
-	/* Predecessor and successor lists of basic blocks. Basic blocks are
-	 * added to this lists by functions 'llvm2si_function_add_basic_block_
-	 * after' and 'llvm2si_function_add_basic_block_before'. */
-	struct linked_list_t *pred_list;
-	struct linked_list_t *succ_list;
 
 	/* Function where the basic block belongs. This field is populated
 	 * automatically when function 'llvm2si_function_add' is called. */
@@ -68,8 +76,14 @@ struct llvm2si_basic_block_t
 
 struct llvm2si_basic_block_t *llvm2si_basic_block_create(LLVMBasicBlockRef llbb);
 struct llvm2si_basic_block_t *llvm2si_basic_block_create_with_name(char *name);
-void llvm2si_basic_block_free(struct llvm2si_basic_block_t *basic_block);
-void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f);
+
+/* Destructor.
+ * Virtual function. */
+void llvm2si_basic_block_free(struct basic_block_t *basic_block);
+
+/* Dump the basic block into a file descriptor.
+ * Virtual function. */
+void llvm2si_basic_block_dump(struct basic_block_t *basic_block, FILE *f);
 
 /* Add one SI instruction to the 'inst_list' field of the basic block. */
 void llvm2si_basic_block_add_inst(struct llvm2si_basic_block_t *basic_block,
@@ -84,10 +98,6 @@ void llvm2si_basic_block_add_comment(struct llvm2si_basic_block_t *basic_block,
 /* Emit SI code for the basic block. The function reads the LLVM basic block
  * stored in field 'llbb', and emits SI instructions into field 'inst_list'. */
 void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block);
-
-/* Connect 'basic_block' to 'basic_block_dest' in CFG. */
-void llvm2si_basic_block_connect(struct llvm2si_basic_block_t *basic_block,
-		struct llvm2si_basic_block_t *basic_block_dest);
 
 
 #endif

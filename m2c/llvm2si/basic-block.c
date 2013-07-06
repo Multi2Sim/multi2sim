@@ -19,6 +19,7 @@
 
 #include <assert.h>
 
+#include <m2c/common/basic-block.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
@@ -635,28 +636,38 @@ void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
 struct llvm2si_basic_block_t *llvm2si_basic_block_create(LLVMBasicBlockRef llbb)
 {
 	LLVMValueRef llbb_as_value;
+
 	struct llvm2si_basic_block_t *basic_block;
+	struct basic_block_t *__basic_block;
+
 	char *name;
+
+	/* Initialize parent */
+	__basic_block = basic_block_create("<basic-block>");
 
 	/* Initialize */
 	basic_block = xcalloc(1, sizeof(struct llvm2si_basic_block_t));
 	basic_block->llbb = llbb;
 	basic_block->inst_list = linked_list_create();
-	basic_block->pred_list = linked_list_create();
-	basic_block->succ_list = linked_list_create();
+
+	/* Class information */
+	CLASS_INIT(basic_block, LLVM2SI_BASIC_BLOCK_TYPE, __basic_block);
+
+	/* Virtual functions */
+	__basic_block->free = llvm2si_basic_block_free;
+	__basic_block->dump = llvm2si_basic_block_dump;
 
 	/* Name */
-	basic_block->name = str_set(basic_block->name, "");
 	if (llbb)
 	{
 		/* Get name */
 		llbb_as_value = LLVMBasicBlockAsValue(llbb);
 		name = (char *) LLVMGetValueName(llbb_as_value);
-		basic_block->name = str_set(basic_block->name, name);
+		basic_block_set_name(__basic_block, name);
 
 		/* Do not allow LLVM basic blocks to be anonymous, since their
 		 * name is used for insertion in a hash table. */
-		if (!*basic_block->name)
+		if (!name || !*name)
 			fatal("%s: anonymous LLVM basic blocks forbidden",
 				__FUNCTION__);
 	}
@@ -672,43 +683,50 @@ struct llvm2si_basic_block_t *llvm2si_basic_block_create_with_name(char *name)
 
 	/* Create */
 	basic_block = llvm2si_basic_block_create(NULL);
-	basic_block->name = str_set(basic_block->name, name);
+	basic_block_set_name(BASIC_BLOCK(basic_block), name);
 	
 	/* Return */
 	return basic_block;
 }
 
 
-void llvm2si_basic_block_free(struct llvm2si_basic_block_t *basic_block)
+void llvm2si_basic_block_free(struct basic_block_t *__basic_block)
 {
+	struct llvm2si_basic_block_t *basic_block;
+
+	/* Get child instance */
+	assert(BASIC_BLOCK_CLASS_OF(__basic_block));
+	basic_block = LLVM2SI_BASIC_BLOCK(__basic_block);
+
+	/* Free parent */
+	basic_block_free(__basic_block);
+
 	/* Free list of instructions */
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
 		si2bin_inst_free(linked_list_get(basic_block->inst_list));
 	linked_list_free(basic_block->inst_list);
 
-	/* Free list of predecessors and successors. The elements of this list
-	 * are not freed here. They are freen by the function they belong to. */
-	linked_list_free(basic_block->pred_list);
-	linked_list_free(basic_block->succ_list);
-	
 	/* Rest */
-	str_free(basic_block->name);
 	str_free(basic_block->comment);
 	free(basic_block);
 }
 
 
-void llvm2si_basic_block_dump(struct llvm2si_basic_block_t *basic_block, FILE *f)
+void llvm2si_basic_block_dump(struct basic_block_t *__basic_block, FILE *f)
 {
+	struct llvm2si_basic_block_t *basic_block;
 	struct si2bin_inst_t *inst;
+
+	/* Get child instance */
+	basic_block = LLVM2SI_BASIC_BLOCK(__basic_block);
 
 	/* Nothing if basic block is empty */
 	if (!basic_block->inst_list->count)
 		return;
 
 	/* Label with basic block name if not empty */
-	if (*basic_block->name)
-		fprintf(f, "\n%s:\n", basic_block->name);
+	if (*__basic_block->name)
+		fprintf(f, "\n%s:\n", __basic_block->name);
 
 	/* Print list of instructions */
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
@@ -806,21 +824,3 @@ void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block)
 		}
 	}
 }
-
-
-void llvm2si_basic_block_connect(struct llvm2si_basic_block_t *basic_block,
-		struct llvm2si_basic_block_t *basic_block_dest)
-{
-	/* Make sure that connection does not exist */
-	linked_list_find(basic_block->succ_list, basic_block_dest);
-	linked_list_find(basic_block_dest->pred_list, basic_block);
-	if (!basic_block->succ_list->error_code ||
-			!basic_block_dest->pred_list->error_code)
-		panic("%s: redundant connection between basic blocks",
-				__FUNCTION__);
-
-	/* Make connection */
-	linked_list_add(basic_block->succ_list, basic_block_dest);
-	linked_list_add(basic_block_dest->pred_list, basic_block);
-}
-

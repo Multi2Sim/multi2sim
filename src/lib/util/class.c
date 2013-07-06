@@ -88,7 +88,9 @@ void *class_reinterpret_cast(void *p, unsigned int id)
 	/* Invalid cast */
 	if (!p)
 		panic("%s: invalid cast", __FUNCTION__);
-	return NULL;
+	
+	/* Return cast instance */
+	return p;
 }
 
 
