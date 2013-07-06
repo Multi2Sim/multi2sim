@@ -22,8 +22,10 @@
 
 #include <stdio.h>
 
+
 /*** Forward declarations ***/
 
+struct basic_block_t;
 struct config_t;
 
 
@@ -82,6 +84,12 @@ void ctree_read_from_config(struct ctree_t *ctree,
 /* Compare two control trees */
 void ctree_compare(struct ctree_t *ctree1,
 		struct ctree_t *ctree2);
+
+/* Initialize the control tree from a control flow graph given its entry basic
+ * block. */
+void ctree_load_from_cfg(struct ctree_t *ctree,
+		struct linked_list_t *basic_block_list,
+		struct basic_block_t *basic_block_entry);
 
 #endif
 

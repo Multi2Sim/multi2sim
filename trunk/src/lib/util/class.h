@@ -30,12 +30,16 @@
 /* Cast a class instance into any of its child/parent classes. If the cast is
  * invalid, program execution is aborted with a panic message. */
 #define CLASS_REINTERPRET_CAST(instance, id, type) \
-	((type) class_reinterpret_cast((instance), (id)))
+	((type *) class_reinterpret_cast((instance), (id)))
 
 /* Return true if the instance can be safely casted into type 'id' using macro
  * CLASS_REINTERPRET_CAST */
 #define CLASS_OF(instance, id) \
 	(class_try_reinterpret_cast((instance), (id)) != NULL)
+
+/* To be used in the constructor */
+#define CLASS_INIT(instance, id, parent) \
+	class_init(&(instance)->class_info, (id), (parent))
 
 
 /* Every structure considering itself a class must have a field of type
@@ -62,18 +66,21 @@ struct class_t
  * The value in 'parent' is an initialized class instance that this class will
  * inherit from, or 'NULL'.
  */
-void class_init(struct class_t *c, unsigned int id,
+void class_init(struct class_t *class_info, unsigned int id,
 		void *parent);
 
 /* Return the 'class_t' object at the beginning of any class instance */
 struct class_t *class_get(void *p);
 
 /* Given a class instance, reinterpret its type as any of its child or parent
- * classes. A panic message will occur if the reinterpretation is invalid. */
+ * classes. A panic message will occur if the reinterpretation is invalid.
+ * Should be used only through macro 'CLASS_REINTERPRET_CAST', which will be
+ * used in turn only through specific macros related to each class. */
 void *class_reinterpret_cast(void *p, unsigned int id);
 
 /* Same as 'class_reinterpret_cast', but the function does not fail if the cast
- * is invalid. Instead, it returns NULL. */
+ * is invalid. Instead, it returns NULL. Should be used only through macro
+ * 'CLASS_OF'. */
 void *class_try_reinterpret_cast(void *p, unsigned int id);
 
 #endif

@@ -20,6 +20,7 @@
 #ifndef M2C_COMMON_CNODE_H
 #define M2C_COMMON_CNODE_H
 
+struct basic_block_t;
 struct linked_list_t;
 struct ctree_t;
 
@@ -77,7 +78,7 @@ struct cnode_t
 	{
 		struct
 		{
-			struct llvm2si_basic_block_t *basic_block;
+			struct basic_block_t *basic_block;
 		} leaf;
 
 		struct
@@ -101,7 +102,8 @@ struct cnode_t
 
 
 /* Create node of type leaf */
-struct cnode_t *cnode_create_leaf(char *name);
+struct cnode_t *cnode_create_leaf(char *name,
+		struct basic_block_t *basic_block);
 
 /* Create an abstract node containing the list of nodes in 'elem_list'. The list
  * 'elem_list' will be copied internally, and should be initialized and freed by
