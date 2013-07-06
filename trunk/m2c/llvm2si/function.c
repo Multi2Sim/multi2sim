@@ -21,6 +21,8 @@
 
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/asm/bin-file.h>
+#include <m2c/common/ctree.h>
+#include <m2c/common/cnode.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
@@ -32,9 +34,7 @@
 #include <llvm-c/Core.h>
 
 #include "basic-block.h"
-#include "ctree.h"
 #include "function.h"
-#include "node.h"
 #include "symbol.h"
 #include "symbol-table.h"
 
@@ -472,14 +472,15 @@ static void llvm2si_function_init_ctree(struct llvm2si_function_t *function)
 {
 	struct llvm2si_basic_block_t *basic_block;
 	struct llvm2si_basic_block_t *basic_block_succ;
-	struct llvm2si_node_t *node;
-	struct llvm2si_node_t *node_succ;
-	struct llvm2si_ctree_t *ctree;
+
+	struct cnode_t *node;
+	struct cnode_t *node_succ;
+	struct ctree_t *ctree;
 
 	/* Create control tree */
 	if (function->ctree)
 		panic("%s: control tree already created", __FUNCTION__);
-	function->ctree = llvm2si_ctree_create(function->name);
+	function->ctree = ctree_create(function->name);
 	ctree = function->ctree;
 
 	/* Create the nodes */
@@ -487,8 +488,8 @@ static void llvm2si_function_init_ctree(struct llvm2si_function_t *function)
 	LINKED_LIST_FOR_EACH(function->basic_block_list)
 	{
 		basic_block = linked_list_get(function->basic_block_list);
-		node = llvm2si_node_create_leaf(basic_block->name);
-		llvm2si_ctree_add_node(ctree, node);
+		node = cnode_create_leaf(basic_block->name);
+		ctree_add_node(ctree, node);
 		
 		/* Associate node and basic block */
 		basic_block->node = node;
@@ -514,7 +515,7 @@ static void llvm2si_function_init_ctree(struct llvm2si_function_t *function)
 			basic_block_succ = linked_list_get(basic_block->succ_list);
 			node_succ = basic_block_succ->node;
 			assert(node_succ);
-			llvm2si_node_connect(node, node_succ);
+			cnode_connect(node, node_succ);
 		}
 	}
 }
@@ -568,7 +569,7 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 
 	/* Create control tree and perform structural analysis */
 	llvm2si_function_init_ctree(function);
-	llvm2si_ctree_structural_analysis(function->ctree);
+	ctree_structural_analysis(function->ctree);
 
 	/* Return */
 	return function;
@@ -596,7 +597,7 @@ void llvm2si_function_free(struct llvm2si_function_t *function)
 
 	/* Free control tree */
 	if (function->ctree)
-		llvm2si_ctree_free(function->ctree);
+		ctree_free(function->ctree);
 
 	/* Rest */
 	hash_table_free(function->basic_block_table);

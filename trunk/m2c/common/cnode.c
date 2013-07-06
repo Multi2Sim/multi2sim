@@ -28,46 +28,44 @@
 #include <lib/util/string.h>
 
 #include "basic-block.h"
+#include "cnode.h"
 #include "ctree.h"
-#include "function.h"
-#include "llvm2si.h"
-#include "node.h"
 
 
-struct str_map_t llvm2si_node_kind_map =
+struct str_map_t cnode_kind_map =
 {
 	2,
 	{
-		{ "Leaf", llvm2si_node_leaf },
-		{ "Abstract", llvm2si_node_abstract }
+		{ "Leaf", cnode_leaf },
+		{ "Abstract", cnode_abstract }
 	}
 };
 
 
-struct str_map_t llvm2si_node_region_map =
+struct str_map_t cnode_region_map =
 {
 	9,
 	{
-		{ "block", llvm2si_node_block },
-		{ "if_then", llvm2si_node_if_then },
-		{ "if_then_else", llvm2si_node_if_then_else },
-		{ "while_loop", llvm2si_node_while_loop },
-		{ "loop", llvm2si_node_loop },
-		{ "proper_interval", llvm2si_node_proper_interval },
-		{ "improper_interval", llvm2si_node_improper_interval },
-		{ "proper_outer_interval", llvm2si_node_proper_outer_interval },
-		{ "improper_outer_interval", llvm2si_node_improper_outer_interval }
+		{ "block", cnode_block },
+		{ "if_then", cnode_if_then },
+		{ "if_then_else", cnode_if_then_else },
+		{ "while_loop", cnode_while_loop },
+		{ "loop", cnode_loop },
+		{ "proper_interval", cnode_proper_interval },
+		{ "improper_interval", cnode_improper_interval },
+		{ "proper_outer_interval", cnode_proper_outer_interval },
+		{ "improper_outer_interval", cnode_improper_outer_interval }
 	}
 };
 
 
-static struct llvm2si_node_t *llvm2si_node_create(
-		enum llvm2si_node_kind_t kind)
+static struct cnode_t *cnode_create(
+		enum cnode_kind_t kind)
 {
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	/* Initialize */
-	node = xcalloc(1, sizeof(struct llvm2si_node_t));
+	node = xcalloc(1, sizeof(struct cnode_t));
 	node->kind = kind;
 	node->pred_list = linked_list_create();
 	node->succ_list = linked_list_create();
@@ -83,12 +81,12 @@ static struct llvm2si_node_t *llvm2si_node_create(
 }
 
 
-struct llvm2si_node_t *llvm2si_node_create_leaf(char *name)
+struct cnode_t *cnode_create_leaf(char *name)
 {
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	/* Initialize */
-	node = llvm2si_node_create(llvm2si_node_leaf);
+	node = cnode_create(cnode_leaf);
 	node->name = str_set(node->name, name);
 
 	/* Return */
@@ -96,13 +94,13 @@ struct llvm2si_node_t *llvm2si_node_create_leaf(char *name)
 }
 
 
-struct llvm2si_node_t *llvm2si_node_create_abstract(char *name,
-		enum llvm2si_node_region_t region)
+struct cnode_t *cnode_create_abstract(char *name,
+		enum cnode_region_t region)
 {
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	/* Initialize */
-	node = llvm2si_node_create(llvm2si_node_abstract);
+	node = cnode_create(cnode_abstract);
 	node->name = str_set(node->name, name && *name ? name : "<abstract>");
 	node->abstract.region = region;
 	node->abstract.child_list = linked_list_create();
@@ -112,9 +110,9 @@ struct llvm2si_node_t *llvm2si_node_create_abstract(char *name,
 }
 
 
-void llvm2si_node_free(struct llvm2si_node_t *node)
+void cnode_free(struct cnode_t *node)
 {
-	if (node->kind == llvm2si_node_abstract)
+	if (node->kind == cnode_abstract)
 		linked_list_free(node->abstract.child_list);
 	linked_list_free(node->pred_list);
 	linked_list_free(node->succ_list);
@@ -131,7 +129,7 @@ void llvm2si_node_free(struct llvm2si_node_t *node)
  * argument. This function does not call 'linked_list_find'. Instead, it
  * traverses the list using a dedicated iterator, so that the current element of
  * the list is not lost. */
-int llvm2si_node_in_list(struct llvm2si_node_t *node,
+int cnode_in_list(struct cnode_t *node,
 		struct linked_list_t *list)
 {
 	struct linked_list_iter_t *iter;
@@ -145,11 +143,11 @@ int llvm2si_node_in_list(struct llvm2si_node_t *node,
 }
 
 
-void llvm2si_node_list_dump(struct linked_list_t *list, FILE *f)
+void cnode_list_dump(struct linked_list_t *list, FILE *f)
 {
 	char *comma;
 	struct linked_list_iter_t *iter;
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	comma = "";
 	fprintf(f, "{");
@@ -165,9 +163,9 @@ void llvm2si_node_list_dump(struct linked_list_t *list, FILE *f)
 }
 
 
-void llvm2si_node_list_dump_buf(struct linked_list_t *list, char *buf, int size)
+void cnode_list_dump_buf(struct linked_list_t *list, char *buf, int size)
 {
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	/* Reset buffer */
 	if (size)
@@ -182,18 +180,18 @@ void llvm2si_node_list_dump_buf(struct linked_list_t *list, char *buf, int size)
 }
 
 
-void llvm2si_node_dump(struct llvm2si_node_t *node, FILE *f)
+void cnode_dump(struct cnode_t *node, FILE *f)
 {
-	struct llvm2si_node_t *succ_node;
+	struct cnode_t *succ_node;
 	char *no_name;
 	char *comma;
 
 	no_name = "<no-name>";
 	fprintf(f, "Node '%s':", *node->name ? node->name : no_name);
-	fprintf(f, " type=%s", str_map_value(&llvm2si_node_kind_map,
+	fprintf(f, " type=%s", str_map_value(&cnode_kind_map,
 			node->kind));
 	fprintf(f, " pred=");
-	llvm2si_node_list_dump(node->pred_list, f);
+	cnode_list_dump(node->pred_list, f);
 
 	/* List of successors */
 	fprintf(f, " succ={");
@@ -202,16 +200,16 @@ void llvm2si_node_dump(struct llvm2si_node_t *node, FILE *f)
 	{
 		succ_node = linked_list_get(node->succ_list);
 		fprintf(f, "%s", comma);
-		if (llvm2si_node_in_list(succ_node,
+		if (cnode_in_list(succ_node,
 				node->back_edge_list))
 			fprintf(f, "-");
-		else if (llvm2si_node_in_list(succ_node,
+		else if (cnode_in_list(succ_node,
 				node->forward_edge_list))
 			fprintf(f, "+");
-		else if (llvm2si_node_in_list(succ_node,
+		else if (cnode_in_list(succ_node,
 				node->tree_edge_list))
 			fprintf(f, "|");
-		else if (llvm2si_node_in_list(succ_node,
+		else if (cnode_in_list(succ_node,
 				node->cross_edge_list))
 			fprintf(f, "*");
 		fprintf(f, "%s", succ_node->name);
@@ -226,10 +224,10 @@ void llvm2si_node_dump(struct llvm2si_node_t *node, FILE *f)
 		fprintf(f, "-");
 
 	/* List of child elements */
-	if (node->kind == llvm2si_node_abstract)
+	if (node->kind == cnode_abstract)
 	{
 		fprintf(f, " children=");
-		llvm2si_node_list_dump(node->abstract.child_list, f);
+		cnode_list_dump(node->abstract.child_list, f);
 	}
 
 	/* Traversal IDs */
@@ -249,22 +247,22 @@ void llvm2si_node_dump(struct llvm2si_node_t *node, FILE *f)
 }
 
 
-void llvm2si_node_try_connect(struct llvm2si_node_t *node,
-		struct llvm2si_node_t *node_dest)
+void cnode_try_connect(struct cnode_t *node,
+		struct cnode_t *node_dest)
 {
 	/* Nothing if edge already exists */
-	if (llvm2si_node_in_list(node_dest, node->succ_list))
+	if (cnode_in_list(node_dest, node->succ_list))
 		return;
 
 	/* Add edge */
-	assert(!llvm2si_node_in_list(node, node_dest->pred_list));
+	assert(!cnode_in_list(node, node_dest->pred_list));
 	linked_list_add(node->succ_list, node_dest);
 	linked_list_add(node_dest->pred_list, node);
 }
 
 
-void llvm2si_node_connect(struct llvm2si_node_t *node,
-		struct llvm2si_node_t *node_dest)
+void cnode_connect(struct cnode_t *node,
+		struct cnode_t *node_dest)
 {
 #ifndef NDEBUG
 
@@ -283,8 +281,8 @@ void llvm2si_node_connect(struct llvm2si_node_t *node,
 }
 
 
-void llvm2si_node_try_disconnect(struct llvm2si_node_t *node,
-		struct llvm2si_node_t *node_dest)
+void cnode_try_disconnect(struct cnode_t *node,
+		struct cnode_t *node_dest)
 {
 	/* Check if connection exists */
 	linked_list_find(node->succ_list, node_dest);
@@ -305,8 +303,8 @@ void llvm2si_node_try_disconnect(struct llvm2si_node_t *node,
 }
 
 
-void llvm2si_node_disconnect(struct llvm2si_node_t *node,
-		struct llvm2si_node_t *node_dest)
+void cnode_disconnect(struct cnode_t *node,
+		struct cnode_t *node_dest)
 {
 	/* Make sure that connection exists */
 	linked_list_find(node->succ_list, node_dest);
@@ -322,12 +320,12 @@ void llvm2si_node_disconnect(struct llvm2si_node_t *node,
 }
 
 
-void llvm2si_node_compare(struct llvm2si_node_t *node1,
-		struct llvm2si_node_t *node2)
+void cnode_compare(struct cnode_t *node1,
+		struct cnode_t *node2)
 {
-	struct llvm2si_ctree_t *ctree1;
-	struct llvm2si_ctree_t *ctree2;
-	struct llvm2si_node_t *tmp_node;
+	struct ctree_t *ctree1;
+	struct ctree_t *ctree2;
+	struct cnode_t *tmp_node;
 
 	char node_name1[MAX_STRING_SIZE];
 	char node_name2[MAX_STRING_SIZE];
@@ -350,9 +348,9 @@ void llvm2si_node_compare(struct llvm2si_node_t *node1,
 	LINKED_LIST_FOR_EACH(node1->succ_list)
 	{
 		tmp_node = linked_list_get(node1->succ_list);
-		tmp_node = llvm2si_ctree_get_node(ctree2, tmp_node->name);
+		tmp_node = ctree_get_node(ctree2, tmp_node->name);
 		assert(tmp_node);
-		if (!llvm2si_node_in_list(tmp_node, node2->succ_list))
+		if (!cnode_in_list(tmp_node, node2->succ_list))
 			differ = 1;
 	}
 	if (differ)
@@ -360,7 +358,7 @@ void llvm2si_node_compare(struct llvm2si_node_t *node1,
 				node_name1, node_name2);
 
 	/* Abstract node */
-	if (node1->kind == llvm2si_node_abstract)
+	if (node1->kind == cnode_abstract)
 	{
 		/* Compare region */
 		if (node1->abstract.region != node2->abstract.region)
@@ -373,9 +371,9 @@ void llvm2si_node_compare(struct llvm2si_node_t *node1,
 		LINKED_LIST_FOR_EACH(node1->abstract.child_list)
 		{
 			tmp_node = linked_list_get(node1->abstract.child_list);
-			tmp_node = llvm2si_ctree_get_node(ctree2, tmp_node->name);
+			tmp_node = ctree_get_node(ctree2, tmp_node->name);
 			assert(tmp_node);
-			if (!llvm2si_node_in_list(tmp_node, node2->abstract.child_list))
+			if (!cnode_in_list(tmp_node, node2->abstract.child_list))
 				differ = 1;
 		}
 		if (differ)

@@ -1,6 +1,7 @@
 SUBDIRS = \
 	amd \
 	cl2llvm \
+	common \
 	frm2bin \
 	gl \
 	llvm2si \
@@ -22,6 +23,7 @@ INCLUDES = @M2S_INCLUDES@
 LDADD = \
 	$(top_builddir)/m2c/amd/libamd.a \
 	$(top_builddir)/m2c/cl2llvm/libcl2llvm.a \
+	$(top_builddir)/m2c/common/libcommon.a \
 	$(top_builddir)/m2c/frm2bin/libfrm2bin.a \
 	$(top_builddir)/m2c/gl/libgl.a \
 	$(top_builddir)/m2c/llvm2si/libllvm2si.a \

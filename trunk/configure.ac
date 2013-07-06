@@ -870,6 +870,7 @@ AC_CONFIG_FILES([
 
 		m2c/Makefile
 		m2c/amd/Makefile
+		m2c/common/Makefile
 		m2c/cl2llvm/Makefile
 		m2c/frm2bin/Makefile
 		m2c/gl/Makefile
