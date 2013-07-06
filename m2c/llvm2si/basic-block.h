@@ -56,9 +56,9 @@ struct llvm2si_basic_block_t
 	struct llvm2si_function_t *function;
 
 	/* Leaf node in control flow tree associated with the basic block. This
-	 * value is initialized by 'llvm2si_funciton_node_create_leaf' when the
+	 * value is initialized by 'cnode_create_leaf' when the
 	 * basic block is passed. */
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	/* List list of instructions forming the basic block. Each element is of
 	 * type 'struct si2bin_inst_t'. */

@@ -17,48 +17,71 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_LLVM2SI_CTREE_H
-#define M2C_LLVM2SI_CTREE_H
+#ifndef M2C_COMMON_CTREE_H
+#define M2C_COMMON_CTREE_H
 
 #include <stdio.h>
 
+/*** Forward declarations ***/
+
 struct config_t;
 
-struct llvm2si_ctree_t
+
+
+/*
+ * Variables
+ */
+
+#define ctree_debug(...) debug(ctree_debug_category, __VA_ARGS__)
+
+extern char *ctree_config_file_name;
+extern char *ctree_debug_file_name;
+extern int ctree_debug_category;
+
+
+
+/*
+ * Control Tree Object
+ */
+
+struct ctree_t
 {
 	char *name;
 	struct linked_list_t *node_list;
-	struct llvm2si_node_t *node_entry;
+	struct cnode_t *node_entry;
 };
 
-struct llvm2si_ctree_t *llvm2si_ctree_create(char *name);
-void llvm2si_ctree_free(struct llvm2si_ctree_t *ctree);
-void llvm2si_ctree_dump(struct llvm2si_ctree_t *ctree, FILE *f);
+void ctree_init(void);
+void ctree_done(void);
+
+struct ctree_t *ctree_create(char *name);
+void ctree_free(struct ctree_t *ctree);
+void ctree_dump(struct ctree_t *ctree, FILE *f);
 
 /* Add a node to the control tree */
-void llvm2si_ctree_add_node(struct llvm2si_ctree_t *ctree,
-		struct llvm2si_node_t *node);
+void ctree_add_node(struct ctree_t *ctree,
+		struct cnode_t *node);
 
 /* Search a node by its name */
-struct llvm2si_node_t *llvm2si_ctree_get_node(struct llvm2si_ctree_t *ctree,
+struct cnode_t *ctree_get_node(struct ctree_t *ctree,
 		char *name);
 
 /* Free all nodes in the control tree and reset its entry. */
-void llvm2si_ctree_clear(struct llvm2si_ctree_t *ctree);
+void ctree_clear(struct ctree_t *ctree);
 
 /* Create the function control tree by performing a structural analysis on the
  * control flow graph of the function. */
-void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree);
+void ctree_structural_analysis(struct ctree_t *ctree);
 
 /* Read/write the control tree from/to an INI file */
-void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
+void ctree_write_to_config(struct ctree_t *ctree,
 		struct config_t *config);
-void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
+void ctree_read_from_config(struct ctree_t *ctree,
 			struct config_t *config, char *name);
 
 /* Compare two control trees */
-void llvm2si_ctree_compare(struct llvm2si_ctree_t *ctree1,
-		struct llvm2si_ctree_t *ctree2);
+void ctree_compare(struct ctree_t *ctree1,
+		struct ctree_t *ctree2);
 
 #endif
 

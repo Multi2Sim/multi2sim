@@ -23,6 +23,7 @@
 #include <m2c/amd/amd.h>
 #include <m2c/gl/gl.h>
 #include <m2c/cl2llvm/cl2llvm.h>
+#include <m2c/common/ctree.h>
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
 #include <m2c/si2bin/si2bin.h>
@@ -208,6 +209,18 @@ static void m2c_process_option(const char *option, char *optarg)
 		return;
 	}
 
+	if (!strcmp(option, "ctree-config"))
+	{
+		ctree_config_file_name = optarg;
+		return;
+	}
+
+	if (!strcmp(option, "ctree-debug"))
+	{
+		ctree_debug_file_name = optarg;
+		return;
+	}
+
 	if (!strcmp(option, "frm-asm"))
 	{
 		m2c_frm2bin_run = 1;
@@ -253,18 +266,6 @@ static void m2c_process_option(const char *option, char *optarg)
 	if (!strcmp(option, "llvm2si"))
 	{
 		m2c_llvm2si_run = 1;
-		return;
-	}
-
-	if (!strcmp(option, "llvm2si-config"))
-	{
-		llvm2si_config_file_name = optarg;
-		return;
-	}
-
-	if (!strcmp(option, "llvm2si-debug"))
-	{
-		llvm2si_debug_file_name = optarg;
 		return;
 	}
 
@@ -318,6 +319,8 @@ static void m2c_read_command_line(int argc, char **argv)
 		{ "amd-dump-all", no_argument, 0, 'a' },
 		{ "amd-list", no_argument, 0, 'l' },
 		{ "cl2llvm", no_argument, 0, 0 },
+		{ "ctree-config", required_argument, 0, 0 },
+		{ "ctree-debug", required_argument, 0, 0 },
 		{ "frm-asm", no_argument, 0, 0},
 		{ "gl", no_argument, 0, 0 },
 		{ "gl-control", required_argument, 0, 0 },
@@ -327,8 +330,6 @@ static void m2c_read_command_line(int argc, char **argv)
 		{ "define", required_argument, 0, 'D' },
 		{ "help", no_argument, 0, 'h' },
 		{ "llvm2si", no_argument, 0, 0 },
-		{ "llvm2si-config", required_argument, 0, 0 },
-		{ "llvm2si-debug", required_argument, 0, 0 },
 		{ "preprocess", no_argument, 0, 'E' },
 		{ "si-asm", no_argument, 0, 0 },
 		{ 0, 0, 0, 0 }
@@ -515,6 +516,7 @@ void m2c_init(void)
 	llvm2si_init();
 	si2bin_init();
 	frm2bin_init();
+	ctree_init();
 }
 
 
@@ -557,6 +559,7 @@ void m2c_done(void)
 	llvm2si_done();
 	si2bin_done();
 	frm2bin_done();
+	ctree_done();
 
 	/* Libraries */
 	debug_done();
@@ -571,9 +574,6 @@ int main(int argc, char **argv)
 
 	/* Initialize */
 	m2c_init();
-
-	/* Debug categories */
-	llvm2si_debug_category = debug_new_category(llvm2si_debug_file_name);
 
 	/* Process list of sources in 'm2c_source_file_list' and generate the
 	 * rest of the file lists. */

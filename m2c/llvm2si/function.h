@@ -148,7 +148,7 @@ struct llvm2si_function_t
 	struct llvm2si_symbol_table_t *symbol_table;
 
 	/* Control tree */
-	struct llvm2si_ctree_t *ctree;
+	struct ctree_t *ctree;
 
 	/* While code is generated, this variable keeps track of the total
 	 * amount of bytes pushed into the stack for this function. */
