@@ -27,6 +27,7 @@
 
 /* Public Variables */
 
+char *llvm2si_config_file_name = "";
 char *llvm2si_debug_file_name = "";
 int llvm2si_debug_category;
 

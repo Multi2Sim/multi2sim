@@ -35,6 +35,11 @@
 
 
 /*
+ * Variables
+ */
+
+
+/*
  * Private Functions
  */
 
@@ -423,6 +428,7 @@ void llvm2si_ctree_example2(struct llvm2si_ctree_t *ctree)
 void llvm2si_ctree_example3(struct llvm2si_ctree_t *ctree)
 {
 	linked_list_clear(ctree->node_list);
+	ctree->name = str_set(ctree->name, "Sharir");
 
 	NEW_NODE(A);
 	NEW_NODE(B);
@@ -455,6 +461,18 @@ void llvm2si_ctree_example3(struct llvm2si_ctree_t *ctree)
 	NEW_EDGE(K, L);
 
 	ctree->node_entry = A;
+
+	
+	
+	/* Dump into INI file */
+	{ /////
+		struct config_t *config;
+
+		config = config_create("sharir-in.ini");
+		llvm2si_ctree_write_to_config(ctree, config);
+		config_save(config);
+		config_free(config);
+	}
 }
 
 
@@ -636,12 +654,19 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
  * Public Functions
  */
 
-struct llvm2si_ctree_t *llvm2si_ctree_create(void)
+
+struct llvm2si_ctree_t *llvm2si_ctree_create(char *name)
 {
 	struct llvm2si_ctree_t *ctree;
 
+	/* No anonymous */
+	if (!name || !*name)
+		fatal("%s: anonymous control tree not valid",
+				__FUNCTION__);
+
 	/* Initialize */
 	ctree = xcalloc(1, sizeof(struct llvm2si_ctree_t));
+	ctree->name = str_set(ctree->name, name);
 	ctree->node_list = linked_list_create();
 
 	/* Return */
@@ -651,8 +676,10 @@ struct llvm2si_ctree_t *llvm2si_ctree_create(void)
 
 void llvm2si_ctree_free(struct llvm2si_ctree_t *ctree)
 {
+	/* Free */
 	llvm2si_ctree_clear(ctree);
 	linked_list_free(ctree->node_list);
+	ctree->name = str_free(ctree->name);
 	free(ctree);
 }
 
@@ -684,16 +711,6 @@ void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree)
 
 	struct linked_list_t *postorder_list;
 	struct linked_list_t *region_list;
-
-	/* Dump into INI file */
-	{ /////
-/*		struct config_t *config;
-
-		config = config_create("ctree.ini");
-		config_load(config);
-		llvm2si_ctree_read_from_config(ctree, config);
-		config_free(config);*/
-	}
 
 	/* Initialize */
 	region_list = linked_list_create();
@@ -773,6 +790,50 @@ void llvm2si_ctree_dump(struct llvm2si_ctree_t *ctree, FILE *f)
 }
 
 
+struct llvm2si_node_t *llvm2si_ctree_get_node(struct llvm2si_ctree_t *ctree,
+		char *name)
+{
+	struct llvm2si_node_t *node;
+
+	/* Search node */
+	LINKED_LIST_FOR_EACH(ctree->node_list)
+	{
+		node = linked_list_get(ctree->node_list);
+		if (!strcmp(node->name, name))
+			return node;
+	}
+
+	/* Not find */
+	return NULL;
+}
+
+
+void llvm2si_ctree_get_node_list(struct llvm2si_ctree_t *ctree,
+		struct linked_list_t *node_list, char *node_list_str)
+{
+	struct list_t *token_list;
+	struct llvm2si_node_t *node;
+
+	char *name;
+	int index;
+
+	/* Clear list */
+	linked_list_clear(node_list);
+
+	/* Extract nodes */
+	token_list = str_token_list_create(node_list_str, ", ");
+	LIST_FOR_EACH(token_list, index)
+	{
+		name = list_get(token_list, index);
+		node = llvm2si_ctree_get_node(ctree, name);
+		if (!node)
+			fatal("%s: invalid node name", name);
+		linked_list_add(node_list, node);
+	}
+	str_token_list_free(token_list);
+}
+
+
 void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
 		struct config_t *config)
 {
@@ -781,12 +842,21 @@ void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
 	char section[MAX_STRING_SIZE];
 	char buf[MAX_STRING_SIZE];
 
+	/* Control tree must have entry node */
+	if (!ctree->node_entry)
+		fatal("%s: control tree without entry node", __FUNCTION__);
+
+	/* Dump control tree section */
+	snprintf(section, sizeof section, "CTree.%s", ctree->name);
+	config_write_string(config, section, "Entry", ctree->node_entry->name);
+
 	/* Write information about the node */
 	LINKED_LIST_FOR_EACH(ctree->node_list)
 	{
 		/* Get node */
 		node = linked_list_get(ctree->node_list);
-		snprintf(section, sizeof section, "Node %s", node->name);
+		snprintf(section, sizeof section, "CTree.%s.Node.%s",
+				ctree->name, node->name);
 		if (config_section_exists(config, section))
 			fatal("%s: duplicate node name ('%s')", __FUNCTION__,
 					node->name);
@@ -794,21 +864,10 @@ void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
 		/* Dump node properties */
 		config_write_string(config, section, "Kind", str_map_value(
 				&llvm2si_node_kind_map, node->kind));
-		if (ctree->node_entry == node)
-			config_write_bool(config, section, "Entry", 1);
 
 		/* Successors */
 		llvm2si_node_list_dump_buf(node->succ_list, buf, sizeof buf);
 		config_write_string(config, section, "Succ", buf);
-
-		/* Predecessors */
-		llvm2si_node_list_dump_buf(node->pred_list, buf, sizeof buf);
-		config_write_string(config, section, "Pred", buf);
-
-		/* Parent */
-		if (node->parent)
-			config_write_string(config, section, "StructOf",
-					node->parent->name);
 
 		/* Abstract node */
 		if (node->kind == llvm2si_node_abstract)
@@ -831,48 +890,185 @@ void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
 
 
 void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
-		struct config_t *config)
+		struct config_t *config, char *name)
 {
 	struct list_t *token_list;
+	struct linked_list_iter_t *iter;
+	struct llvm2si_node_t *node;
 
+	char section_str[MAX_STRING_SIZE];
 	char *section;
 	char *file_name;
 	char *node_name;
-	char *node_kind_str;
+	char *kind_str;
+	char *region_str;
 	
-	enum llvm2si_node_kind_t node_kind;
+	enum llvm2si_node_kind_t kind;
+	enum llvm2si_node_region_t region;
 
 	/* Clear existing tree */
 	llvm2si_ctree_clear(ctree);
 
-	/* Read sections */
+	/* Set tree name */
+	ctree->name = str_set(ctree->name, name);
+
+	/* Check that it exists in configuration file */
+	snprintf(section_str, sizeof section_str, "CTree.%s", name);
+	if (!config_section_exists(config, section_str))
+		fatal("%s: %s: tree not found", __FUNCTION__, name);
+
+	/* Read nodes */
 	file_name = config_get_file_name(config);
 	CONFIG_SECTION_FOR_EACH(config, section)
 	{
-		/* Section name must be "Node <name>" */
-		token_list = str_token_list_create(section, " ");
-		if (token_list->count != 2 || strcasecmp(list_get(token_list,
-				0), "Node"))
-			fatal("%s: %s: invalid section name",
-					file_name, section);
-		node_name = list_get(token_list, 1);
-
-		/* Get node type */
-		node_kind_str = config_read_string(config, section, "Kind", "Leaf");
-		node_kind = str_map_string(&llvm2si_node_kind_map,
-				node_kind_str);
-		if (!node_kind)
+		/* Section name must be "CTree.<tree>.Node.<node>" */
+		token_list = str_token_list_create(section, ".");
+		if (token_list->count != 4 ||
+				strcasecmp(list_get(token_list, 0), "CTree") ||
+				strcasecmp(list_get(token_list, 1), name) ||
+				strcasecmp(list_get(token_list, 2), "Node"))
+		{
+			str_token_list_free(token_list);
+			continue;
+		}
+		
+		/* Get node properties */
+		node_name = list_get(token_list, 3);
+		kind_str = config_read_string(config, section, "Kind", "Leaf");
+		kind = str_map_string_case(&llvm2si_node_kind_map, kind_str);
+		if (!kind)
 			fatal("%s: %s: invalid value for 'Kind'",
 					file_name, section);
 
-		printf("%s\n", node_name);
+		/* Create node */
+		if (kind == llvm2si_node_leaf)
+		{
+			node = llvm2si_node_create_leaf(node_name);
+		}
+		else
+		{
+			/* Read region */
+			region_str = config_read_string(config, section,
+					"Region", "");
+			region = str_map_string_case(&llvm2si_node_region_map,
+					region_str);
+			if (!region)
+				fatal("%s: %s: invalid or missing 'Region'",
+						file_name, node_name);
+
+			/* Create node */
+			node = llvm2si_node_create_abstract(node_name, region);
+		}
+
+		/* Add node */
+		llvm2si_ctree_add_node(ctree, node);
 
 		/* Free section name */
 		str_token_list_free(token_list);
 	}
 
-	/* There must be an entry */
+	/* Read node properties */
+	iter = linked_list_iter_create(ctree->node_list);
+	LINKED_LIST_ITER_FOR_EACH(iter)
+	{
+		char *node_list_str;
+
+		struct linked_list_t *node_list;
+		struct llvm2si_node_t *tmp_node;
+
+		/* Get section name */
+		node = linked_list_iter_get(iter);
+		snprintf(section_str, sizeof section_str, "CTree.%s.Node.%s",
+				ctree->name, node->name);
+		section = section_str;
+
+		/* Successors */
+		node_list_str = config_read_string(config, section, "Succ", "");
+		node_list = linked_list_create();
+		llvm2si_ctree_get_node_list(ctree, node_list, node_list_str);
+		LINKED_LIST_FOR_EACH(node_list)
+		{
+			tmp_node = linked_list_get(node_list);
+			if (llvm2si_node_in_list(tmp_node, node->succ_list))
+				fatal("%s.%s: duplicate successor", ctree->name,
+						node->name);
+			llvm2si_node_connect(node, tmp_node);
+		}
+		linked_list_free(node_list);
+
+		/* Abstract node */
+		if (node->kind == llvm2si_node_abstract)
+		{
+			/* Children */
+			node_list_str = config_read_string(config, section, "Child", "");
+			node_list = linked_list_create();
+			llvm2si_ctree_get_node_list(ctree, node_list, node_list_str);
+			LINKED_LIST_FOR_EACH(node_list)
+			{
+				tmp_node = linked_list_get(node_list);
+				tmp_node->parent = node;
+				if (llvm2si_node_in_list(tmp_node, node->abstract.child_list))
+					fatal("%s.%s: duplicate child", ctree->name,
+							node->name);
+				linked_list_add(node->abstract.child_list, tmp_node);
+			}
+			linked_list_free(node_list);
+		}
+	}
+	linked_list_iter_free(iter);
+
+	/* Read entry node name */
+	snprintf(section_str, sizeof section_str, "CTree.%s", name);
+	node_name = config_read_string(config, section_str, "Entry", NULL);
+	if (!node_name)
+		fatal("%s: %s: no entry node", __FUNCTION__, name);
+	ctree->node_entry = llvm2si_ctree_get_node(ctree, node_name);
 	if (!ctree->node_entry)
-		fatal("%s: no entry node found", file_name);
+		fatal("%s: %s: invalid node name", __FUNCTION__, node_name);
+
+	/* Check configuration file syntax */
+	config_check(config);
+}
+
+
+void llvm2si_ctree_compare(struct llvm2si_ctree_t *ctree1,
+		struct llvm2si_ctree_t *ctree2)
+{
+	struct llvm2si_node_t *node;
+	struct llvm2si_node_t *node2;
+
+	/* Compare entry nodes */
+	assert(ctree1->node_entry);
+	assert(ctree2->node_entry);
+	if (strcmp(ctree1->node_entry->name, ctree2->node_entry->name))
+		fatal("'%s' vs '%s': entry nodes differ", ctree1->name,
+				ctree2->name);
+	
+	/* Check that all nodes in tree 1 are in tree 2 */
+	LINKED_LIST_FOR_EACH(ctree1->node_list)
+	{
+		node = linked_list_get(ctree1->node_list);
+		if (!llvm2si_ctree_get_node(ctree2, node->name))
+			fatal("node '%s.%s' not present in tree '%s'",
+				ctree1->name, node->name, ctree2->name);
+	}
+
+	/* Check that all nodes in tree 2 are in tree 1 */
+	LINKED_LIST_FOR_EACH(ctree2->node_list)
+	{
+		node = linked_list_get(ctree2->node_list);
+		if (!llvm2si_ctree_get_node(ctree1, node->name))
+			fatal("node '%s.%s' not present in tree '%s'",
+				ctree2->name, node->name, ctree1->name);
+	}
+
+	/* Compare all nodes */
+	LINKED_LIST_FOR_EACH(ctree1->node_list)
+	{
+		node = linked_list_get(ctree1->node_list);
+		node2 = llvm2si_ctree_get_node(ctree2, node->name);
+		assert(node2);
+		llvm2si_node_compare(node, node2);
+	}
 }
 

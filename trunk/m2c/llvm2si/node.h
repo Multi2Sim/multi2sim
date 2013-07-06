@@ -140,5 +140,9 @@ void llvm2si_node_list_dump_buf(struct linked_list_t *list, char *buf,
 		int size);
 void llvm2si_node_list_dump_detail(struct linked_list_t *list, FILE *f);
 
+/* Compare two nodes */
+void llvm2si_node_compare(struct llvm2si_node_t *node1,
+		struct llvm2si_node_t *node2);
+
 #endif
 

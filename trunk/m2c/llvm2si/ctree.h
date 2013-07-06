@@ -26,17 +26,22 @@ struct config_t;
 
 struct llvm2si_ctree_t
 {
+	char *name;
 	struct linked_list_t *node_list;
 	struct llvm2si_node_t *node_entry;
 };
 
-struct llvm2si_ctree_t *llvm2si_ctree_create(void);
+struct llvm2si_ctree_t *llvm2si_ctree_create(char *name);
 void llvm2si_ctree_free(struct llvm2si_ctree_t *ctree);
 void llvm2si_ctree_dump(struct llvm2si_ctree_t *ctree, FILE *f);
 
 /* Add a node to the control tree */
 void llvm2si_ctree_add_node(struct llvm2si_ctree_t *ctree,
 		struct llvm2si_node_t *node);
+
+/* Search a node by its name */
+struct llvm2si_node_t *llvm2si_ctree_get_node(struct llvm2si_ctree_t *ctree,
+		char *name);
 
 /* Free all nodes in the control tree and reset its entry. */
 void llvm2si_ctree_clear(struct llvm2si_ctree_t *ctree);
@@ -49,8 +54,11 @@ void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree);
 void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
 		struct config_t *config);
 void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
-			struct config_t *config);
+			struct config_t *config, char *name);
 
+/* Compare two control trees */
+void llvm2si_ctree_compare(struct llvm2si_ctree_t *ctree1,
+		struct llvm2si_ctree_t *ctree2);
 
 #endif
 
