@@ -11,6 +11,9 @@ libutil_a_SOURCES = \
 	buffer.c \
 	buffer.h \
 	\
+	class.c \
+	class.h \
+	\
 	config.c \
 	config.h \
 	\

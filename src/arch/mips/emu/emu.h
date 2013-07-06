@@ -19,11 +19,27 @@
 
 #ifndef ARCH_MIPS_EMU_EMU_H
 #define ARCH_MIPS_EMU_EMU_H
+
 #include <pthread.h>
 
+#include <lib/util/class.h>
 
+
+/* Class-related macros */
+#define MIPS_EMU_TYPE  0xa6bf6ea9
+#define MIPS_EMU(p)  CLASS_REINTERPRET_CAST((p), MIPS_EMU_TYPE, struct mips_emu_t)
+#define IS_MIPS_EMU(p)  CLASS_OF((p), MIPS_EMU_TYPE)
+
+
+/* Class 'mips_emu_t'
+ * Inherits from 'emu_t'
+ */
 struct mips_emu_t
 {
+	/* Class information
+	 * WARNING - must be the first field */
+	struct class_t class_info;
+
 	/* pid & address_space_index assignment */
 	int current_pid;
 
