@@ -22,9 +22,24 @@
 
 #include <stdio.h>
 
+#include <lib/util/class.h>
 
+
+/* Class-related macros */
+#define EVG_EMU_TYPE  0x69b79dc4
+#define EVG_EMU(p)  CLASS_REINTERPRET_CAST((p), EVG_EMU_TYPE, struct evg_emu_t)
+#define IS_EVG_EMU(p)  CLASS_OF((p), EVG_EMU_TYPE)
+
+
+/* Class 'evg_emu_t'
+ * Inherits from 'emu_t'
+ */
 struct evg_emu_t
 {
+	/* Class information
+	 * WARNING - must be the first field */
+	struct class_t class_info;
+
 	/* OpenCL objects */
 	struct evg_opencl_repo_t *opencl_repo;
 	struct evg_opencl_platform_t *opencl_platform;
