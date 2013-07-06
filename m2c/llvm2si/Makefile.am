@@ -7,17 +7,11 @@ libllvm2si_a_SOURCES = \
 	basic-block.c \
 	basic-block.h \
 	\
-	ctree.c \
-	ctree.h \
-	\
 	function.c \
 	function.h \
 	\
 	llvm2si.c \
 	llvm2si.h \
-	\
-	node.c \
-	node.h \
 	\
 	symbol.c \
 	symbol.h \

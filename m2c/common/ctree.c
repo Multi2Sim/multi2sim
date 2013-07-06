@@ -29,25 +29,239 @@
 #include <lib/util/string.h>
 
 #include "basic-block.h"
+#include "cnode.h"
 #include "ctree.h"
-#include "llvm2si.h"
-#include "node.h"
 
 
 /*
  * Variables
  */
 
+char *ctree_config_file_name = "";
+char *ctree_debug_file_name = "";
+int ctree_debug_category;
+
+/* List of control trees created during the parsing of the configuration file,
+ * to keep track of loaded control trees. */
+static struct linked_list_t *ctree_list;
+
+
+
+
 
 /*
  * Private Functions
  */
 
+/* Return a created control tree given its name. */
+static struct ctree_t *llvm2si_get_ctree(char *name)
+{
+	struct ctree_t *ctree;
+
+	/* Search control tree */
+	LINKED_LIST_FOR_EACH(ctree_list)
+	{
+		ctree = linked_list_get(ctree_list);
+		if (!strcmp(ctree->name, name))
+			return ctree;
+	}
+
+	/* Not found */
+	return NULL;
+}
+
+
+/* Process one command read from the control tree configuration file */
+static void ctree_process_command(char *string)
+{
+	struct list_t *token_list;
+	char *command;
+
+	/* Get list of tokens */
+	token_list = str_token_list_create(string, " ");
+	command = list_get(token_list, 0);
+	if (!command)
+		fatal("%s: empty command", __FUNCTION__);
+	
+	/* Process command */
+	if (!strcasecmp(command, "LoadCTree"))
+	{
+		struct ctree_t *ctree;
+		struct config_t *ctree_config;
+
+		char *file_name;
+		char *ctree_name;
+
+		/* Syntax: LoadCTree <file> <name> */
+		if (token_list->count != 3)
+			fatal("%s: %s: invalid number of arguments",
+					__FUNCTION__, command);
+		file_name = list_get(token_list, 1);
+		ctree_name = list_get(token_list, 2);
+
+		/* Open control tree INI file */
+		ctree_config = config_create(file_name);
+		config_load(ctree_config);
+		
+		/* Load control tree */
+		ctree = ctree_create(ctree_name);
+		ctree_read_from_config(ctree, ctree_config, ctree_name);
+		linked_list_add(ctree_list, ctree);
+
+		/* Close */
+		config_free(ctree_config);
+	}
+	else if (!strcasecmp(command, "SaveCTree"))
+	{
+		struct ctree_t *ctree;
+		struct config_t *ctree_config;
+
+		char *file_name;
+		char *ctree_name;
+
+		/* Syntax: SaveCTree <file> <name> */
+		if (token_list->count != 3)
+			fatal("%s: %s: invalid number of arguments",
+					__FUNCTION__, command);
+		file_name = list_get(token_list, 1);
+		ctree_name = list_get(token_list, 2);
+
+		/* Get control tree */
+		ctree = llvm2si_get_ctree(ctree_name);
+		if (!ctree)
+			fatal("%s: %s: invalid control tree",
+					__FUNCTION__, ctree_name);
+
+		/* Save control tree in INI file */
+		ctree_config = config_create(file_name);
+		ctree_write_to_config(ctree, ctree_config);
+		config_save(ctree_config);
+		config_free(ctree_config);
+	}
+	else if (!strcasecmp(command, "RenameCTree"))
+	{
+		struct ctree_t *ctree;
+
+		char *ctree_name;
+		char *ctree_name2;
+
+		/* Syntax: RenameCTree <ctree> <name> */
+		if (token_list->count != 3)
+			fatal("%s: %s: invalid number of arguments",
+					__FUNCTION__, command);
+		ctree_name = list_get(token_list, 1);
+		ctree_name2 = list_get(token_list, 2);
+
+		/* Get control tree */
+		ctree = llvm2si_get_ctree(ctree_name);
+		if (!ctree)
+			fatal("%s: %s: invalid control tree",
+					__FUNCTION__, ctree_name);
+
+		/* Rename */
+		ctree->name = str_set(ctree->name, ctree_name2);
+	}
+	else if (!strcasecmp(command, "CompareCTree"))
+	{
+		struct ctree_t *ctree1;
+		struct ctree_t *ctree2;
+
+		char *ctree_name1;
+		char *ctree_name2;
+
+		/* Syntax: CompareCTree <ctree1> <ctree2> */
+		if (token_list->count != 3)
+			fatal("%s: %s: invalid number of arguments",
+					__FUNCTION__, command);
+		ctree_name1 = list_get(token_list, 1);
+		ctree_name2 = list_get(token_list, 2);
+
+		/* Get first control tree */
+		ctree1 = llvm2si_get_ctree(ctree_name1);
+		if (!ctree1)
+			fatal("%s: %s: invalid control tree",
+					__FUNCTION__, ctree_name1);
+
+		/* Get second control tree */
+		ctree2 = llvm2si_get_ctree(ctree_name2);
+		if (!ctree2)
+			fatal("%s: %s: invalid control tree",
+					__FUNCTION__, ctree_name2);
+
+		/* Compare them */
+		ctree_compare(ctree1, ctree2);
+	}
+	else if (!strcasecmp(command, "StructuralAnalysis"))
+	{
+		struct ctree_t *ctree;
+		char *ctree_name;
+
+		/* Syntax: StructuralAnalysis <ctree> */
+		if (token_list->count != 2)
+			fatal("%s: %s: invalid syntax",
+					__FUNCTION__, command);
+		ctree_name = list_get(token_list, 1);
+
+		/* Get control tree */
+		ctree = llvm2si_get_ctree(ctree_name);
+		if (!ctree)
+			fatal("%s: %s: invalid control tree",
+					__FUNCTION__, ctree_name);
+
+		/* Structural analysis */
+		ctree_structural_analysis(ctree);
+	}
+	else
+		fatal("%s: invalid command: %s", __FUNCTION__, command);
+	
+	/* Free tokens */
+	str_token_list_free(token_list);
+}
+
+
+static void ctree_read_config(void)
+{
+	struct config_t *config;
+
+	char var[MAX_STRING_SIZE];
+	char *section;
+	char *value;
+
+	int index;
+
+	/* No file specified */
+	if (!*ctree_config_file_name)
+		return;
+
+	/* Load configuration */
+	config = config_create(ctree_config_file_name);
+	config_load(config);
+
+	/* Process commands */
+	section = "Commands";
+	for (index = 0;; index++)
+	{
+		/* Read next command */
+		snprintf(var, sizeof var, "Command[%d]", index);
+		value = config_read_string(config, section, var, NULL);
+		if (!value)
+			break;
+
+		/* Process command */
+		ctree_process_command(value);
+	}
+	
+	/* Close configuration file */
+	config_check(config);
+	config_free(config);
+}
+
+
 /* Recursive DFS traversal for a node. */
-static int llvm2si_ctree_dfs_node(struct llvm2si_node_t *node,
+static int ctree_dfs_node(struct cnode_t *node,
 		struct linked_list_t *postorder_list, int time)
 {
-	struct llvm2si_node_t *succ_node;
+	struct cnode_t *succ_node;
 
 	node->color = 1;  /* Gray */
 	node->preorder_id = time++;
@@ -73,7 +287,7 @@ static int llvm2si_ctree_dfs_node(struct llvm2si_node_t *node,
 		{
 			/* This is a tree-edge */
 			linked_list_add(node->tree_edge_list, succ_node);
-			time = llvm2si_ctree_dfs_node(succ_node,
+			time = ctree_dfs_node(succ_node,
 					postorder_list, time);
 		}
 	}
@@ -91,10 +305,10 @@ static int llvm2si_ctree_dfs_node(struct llvm2si_node_t *node,
  * We follow the algorithm presented in  http://www.personal.kent.edu/
  *    ~rmuhamma/Algorithms/MyAlgorithms/GraphAlgor/depthSearch.htm
  */
-static void llvm2si_ctree_dfs(struct llvm2si_ctree_t *ctree,
+static void ctree_dfs(struct ctree_t *ctree,
 		struct linked_list_t *postorder_list)
 {
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	/* Function must have an entry */
 	assert(ctree->node_entry);
@@ -117,17 +331,17 @@ static void llvm2si_ctree_dfs(struct llvm2si_ctree_t *ctree,
 	}
 
 	/* Initiate recursion */
-	llvm2si_ctree_dfs_node(ctree->node_entry, postorder_list, 0);
+	ctree_dfs_node(ctree->node_entry, postorder_list, 0);
 }
 
 
 /* Recursive helper function for natural loop discovery */
-static void llvm2si_ctree_reach_under_node(
-		struct llvm2si_node_t *header_node,
-		struct llvm2si_node_t *node,
+static void ctree_reach_under_node(
+		struct cnode_t *header_node,
+		struct cnode_t *node,
 		struct linked_list_t *reach_under_list)
 {
-	struct llvm2si_node_t *pred_node;
+	struct cnode_t *pred_node;
 
 	/* Label as visited and add node */
 	node->color = 1;
@@ -149,7 +363,7 @@ static void llvm2si_ctree_reach_under_node(
 	{
 		pred_node = linked_list_get(node->pred_list);
 		if (!pred_node->color)
-			llvm2si_ctree_reach_under_node(
+			ctree_reach_under_node(
 				header_node, pred_node, reach_under_list);
 	}
 }
@@ -159,12 +373,12 @@ static void llvm2si_ctree_reach_under_node(
  * is composed of all those nodes with a path from the header to the tail that
  * doesn't go through the header, where the tail is a node that is connected to
  * the header with a back-edge. */
-static void llvm2si_ctree_reach_under(struct llvm2si_ctree_t *ctree,
-		struct llvm2si_node_t *header_node,
+static void ctree_reach_under(struct ctree_t *ctree,
+		struct cnode_t *header_node,
 		struct linked_list_t *reach_under_list)
 {
-	struct llvm2si_node_t *node;
-	struct llvm2si_node_t *pred_node;
+	struct cnode_t *node;
+	struct cnode_t *pred_node;
 
 	/* Reset output list */
 	linked_list_clear(reach_under_list);
@@ -181,9 +395,9 @@ static void llvm2si_ctree_reach_under(struct llvm2si_ctree_t *ctree,
 	LINKED_LIST_FOR_EACH(header_node->pred_list)
 	{
 		pred_node = linked_list_get(header_node->pred_list);
-		if (llvm2si_node_in_list(header_node,
+		if (cnode_in_list(header_node,
 				pred_node->back_edge_list))
-			llvm2si_ctree_reach_under_node(header_node,
+			ctree_reach_under_node(header_node,
 					pred_node, reach_under_list);
 	}
 }
@@ -196,15 +410,15 @@ static void llvm2si_ctree_reach_under(struct llvm2si_ctree_t *ctree,
  * Likewise, all outgoing edges from any node in the list will come from
  * 'node'.
  */
-static struct llvm2si_node_t *llvm2si_ctree_reduce(
-		struct llvm2si_ctree_t *ctree,
+static struct cnode_t *ctree_reduce(
+		struct ctree_t *ctree,
 		struct linked_list_t *node_list,
-		enum llvm2si_node_region_t region)
+		enum cnode_region_t region)
 {
-	struct llvm2si_node_t *abs_node;
-	struct llvm2si_node_t *tmp_node;
-	struct llvm2si_node_t *out_node;
-	struct llvm2si_node_t *in_node;
+	struct cnode_t *abs_node;
+	struct cnode_t *tmp_node;
+	struct cnode_t *out_node;
+	struct cnode_t *in_node;
 
 	struct linked_list_t *out_node_list;
 	struct linked_list_t *in_node_list;
@@ -225,7 +439,7 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 	LINKED_LIST_FOR_EACH(node_list)
 	{
 		tmp_node = linked_list_get(node_list);
-		if (!llvm2si_node_in_list(tmp_node,
+		if (!cnode_in_list(tmp_node,
 				ctree->node_list))
 			panic("%s: node not in control tree",
 					__FUNCTION__);
@@ -241,33 +455,33 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 	LINKED_LIST_FOR_EACH(ctree->node_list)
 	{
 		tmp_node = linked_list_get(ctree->node_list);
-		if (tmp_node->kind == llvm2si_node_abstract &&
+		if (tmp_node->kind == cnode_abstract &&
 				tmp_node->abstract.region == region)
 			region_count++;
 	}
 
 	/* Figure out a name for the new abstract node */
 	snprintf(name, sizeof name, "__%s_%d", str_map_value(
-			&llvm2si_node_region_map, region),
+			&cnode_region_map, region),
 			region_count);
 
 	/* Create new abstract node */
-	abs_node = llvm2si_node_create_abstract(name, region);
-	llvm2si_ctree_add_node(ctree, abs_node);
+	abs_node = cnode_create_abstract(name, region);
+	ctree_add_node(ctree, abs_node);
 
 	/* Special case of block regions: record whether there is an edge that
 	 * goes from the last node into the first. In this case, this edge
 	 * should stay outside of the reduced region. */
 	cyclic_block = 0;
-	if (region == llvm2si_node_block)
+	if (region == cnode_block)
 	{
 		in_node = linked_list_goto(node_list, 0);
 		out_node = linked_list_goto(node_list, node_list->count - 1);
 		assert(in_node && out_node);
-		if (llvm2si_node_in_list(in_node, out_node->succ_list))
+		if (cnode_in_list(in_node, out_node->succ_list))
 		{
 			cyclic_block = 1;
-			llvm2si_node_disconnect(out_node, in_node);
+			cnode_disconnect(out_node, in_node);
 		}
 	}
 
@@ -286,8 +500,8 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 		LINKED_LIST_FOR_EACH(tmp_node->pred_list)
 		{
 			in_node = linked_list_get(tmp_node->pred_list);
-			if (!llvm2si_node_in_list(in_node, node_list) &&
-					!llvm2si_node_in_list(in_node,
+			if (!cnode_in_list(in_node, node_list) &&
+					!cnode_in_list(in_node,
 					in_node_list))
 				linked_list_add(in_node_list, in_node);
 		}
@@ -297,8 +511,8 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 		LINKED_LIST_FOR_EACH(tmp_node->succ_list)
 		{
 			out_node = linked_list_get(tmp_node->succ_list);
-			if (!llvm2si_node_in_list(out_node, node_list) &&
-					!llvm2si_node_in_list(out_node,
+			if (!cnode_in_list(out_node, node_list) &&
+					!cnode_in_list(out_node,
 					out_node_list))
 				linked_list_add(out_node_list, out_node);
 		}
@@ -312,12 +526,12 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 		LINKED_LIST_FOR_EACH(in_node_list)
 		{
 			in_node = linked_list_get(in_node_list);
-			llvm2si_node_try_disconnect(in_node, tmp_node);
+			cnode_try_disconnect(in_node, tmp_node);
 		}
 		LINKED_LIST_FOR_EACH(out_node_list)
 		{
 			out_node = linked_list_get(out_node_list);
-			llvm2si_node_try_disconnect(tmp_node, out_node);
+			cnode_try_disconnect(tmp_node, out_node);
 		}
 	}
 
@@ -326,12 +540,12 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 	LINKED_LIST_FOR_EACH(in_node_list)
 	{
 		in_node = linked_list_get(in_node_list);
-		llvm2si_node_connect(in_node, abs_node);
+		cnode_connect(in_node, abs_node);
 	}
 	LINKED_LIST_FOR_EACH(out_node_list)
 	{
 		out_node = linked_list_get(out_node_list);
-		llvm2si_node_connect(abs_node, out_node);
+		cnode_connect(abs_node, out_node);
 	}
 
 	/* Add all nodes as child nodes of the new abstract node */
@@ -346,12 +560,12 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 
 	/* Special case for block regions: if a cyclic block was detected, now
 	 * the cycle must be inserted as a self-loop in the abstract node. */
-	if (cyclic_block && !llvm2si_node_in_list(abs_node, abs_node->succ_list))
-		llvm2si_node_connect(abs_node, abs_node);
+	if (cyclic_block && !cnode_in_list(abs_node, abs_node->succ_list))
+		cnode_connect(abs_node, abs_node);
 
 	/* If entry node is part of the nodes that were replaced, set it to the
 	 * new abstract node. */
-	if (llvm2si_node_in_list(ctree->node_entry, node_list))
+	if (cnode_in_list(ctree->node_entry, node_list))
 		ctree->node_entry = abs_node;
 
 	/* Free list of outgoing and incoming edges */
@@ -364,14 +578,14 @@ static struct llvm2si_node_t *llvm2si_ctree_reduce(
 
 
 #define NEW_NODE(name) \
-	struct llvm2si_node_t *name = llvm2si_node_create_leaf(#name); \
-	llvm2si_ctree_add_node(ctree, name);
+	struct cnode_t *name = cnode_create_leaf(#name); \
+	ctree_add_node(ctree, name);
 #define NEW_EDGE(u, v) \
-	llvm2si_node_connect(u, v)
+	cnode_connect(u, v)
 
 /* Replace the content of the function with the example on page 201 of
  * Muchnick's book. This function is used for debugging purposes. */
-void llvm2si_ctree_example(struct llvm2si_ctree_t *ctree)
+void ctree_example(struct ctree_t *ctree)
 {
 	linked_list_clear(ctree->node_list);
 
@@ -397,7 +611,7 @@ void llvm2si_ctree_example(struct llvm2si_ctree_t *ctree)
 	ctree->node_entry = n1;
 }
 
-void llvm2si_ctree_example2(struct llvm2si_ctree_t *ctree)
+void ctree_example2(struct ctree_t *ctree)
 {
 	linked_list_clear(ctree->node_list);
 
@@ -425,7 +639,7 @@ void llvm2si_ctree_example2(struct llvm2si_ctree_t *ctree)
 }
 
 
-void llvm2si_ctree_example3(struct llvm2si_ctree_t *ctree)
+void ctree_example3(struct ctree_t *ctree)
 {
 	linked_list_clear(ctree->node_list);
 	ctree->name = str_set(ctree->name, "Sharir");
@@ -469,14 +683,14 @@ void llvm2si_ctree_example3(struct llvm2si_ctree_t *ctree)
 		struct config_t *config;
 
 		config = config_create("sharir-in.ini");
-		llvm2si_ctree_write_to_config(ctree, config);
+		ctree_write_to_config(ctree, config);
 		config_save(config);
 		config_free(config);
 	}
 }
 
 
-void llvm2si_ctree_example4(struct llvm2si_ctree_t *ctree)
+void ctree_example4(struct ctree_t *ctree)
 {
 	linked_list_clear(ctree->node_list);
 
@@ -499,9 +713,9 @@ void llvm2si_ctree_example4(struct llvm2si_ctree_t *ctree)
  * region is identified, the function returns true. Otherwise, it returns
  * false and 'node_list' remains empty.
  * List 'node_list' is an output list. */
-static enum llvm2si_node_region_t llvm2si_ctree_region(
-		struct llvm2si_ctree_t *ctree,
-		struct llvm2si_node_t *node,
+static enum cnode_region_t ctree_region(
+		struct ctree_t *ctree,
+		struct cnode_t *node,
 		struct linked_list_t *node_list)
 {
 
@@ -519,7 +733,7 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
 	 * of B and B is the only successor of A. */
 	if (node->succ_list->count == 1)
 	{
-		struct llvm2si_node_t *succ_node;
+		struct cnode_t *succ_node;
 
 		succ_node = linked_list_goto(node->succ_list, 0);
 		assert(succ_node);
@@ -529,7 +743,7 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
 		{
 			linked_list_add(node_list, node);
 			linked_list_add(node_list, succ_node);
-			return llvm2si_node_block;
+			return cnode_block;
 		}
 	}
 
@@ -538,9 +752,9 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
 
 	if (node->succ_list->count == 2)
 	{
-		struct llvm2si_node_t *then_node;
-		struct llvm2si_node_t *endif_node;
-		struct llvm2si_node_t *tmp_node;
+		struct cnode_t *then_node;
+		struct cnode_t *endif_node;
+		struct cnode_t *tmp_node;
 
 		/* Assume one order for 'then' and 'endif' blocks */
 		then_node = linked_list_goto(node->succ_list, 0);
@@ -548,7 +762,7 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
 		assert(then_node && endif_node);
 
 		/* Reverse them if necessary */
-		if (llvm2si_node_in_list(then_node, endif_node->succ_list))
+		if (cnode_in_list(then_node, endif_node->succ_list))
 		{
 			tmp_node = then_node;
 			then_node = endif_node;
@@ -557,14 +771,14 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
 
 		/* Check conditions */
 		if (then_node->pred_list->count == 1 &&
-				llvm2si_node_in_list(node, then_node->pred_list) &&
+				cnode_in_list(node, then_node->pred_list) &&
 				then_node->succ_list->count == 1 &&
-				llvm2si_node_in_list(endif_node, then_node->succ_list))
+				cnode_in_list(endif_node, then_node->succ_list))
 		{
 			linked_list_add(node_list, node);
 			linked_list_add(node_list, then_node);
 			linked_list_add(node_list, endif_node);
-			return llvm2si_node_if_then;
+			return cnode_if_then;
 		}
 	}
 
@@ -573,10 +787,10 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
 
 	if (node->succ_list->count == 2)
 	{
-		struct llvm2si_node_t *then_node;
-		struct llvm2si_node_t *else_node;
-		struct llvm2si_node_t *then_succ_node;
-		struct llvm2si_node_t *else_succ_node;
+		struct cnode_t *then_node;
+		struct cnode_t *else_node;
+		struct cnode_t *then_succ_node;
+		struct cnode_t *else_succ_node;
 
 		then_node = linked_list_goto(node->succ_list, 0);
 		else_node = linked_list_goto(node->succ_list, 1);
@@ -598,7 +812,7 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
 			linked_list_add(node_list, node);
 			linked_list_add(node_list, then_node);
 			linked_list_add(node_list, else_node);
-			return llvm2si_node_if_then_else;
+			return cnode_if_then_else;
 		}
 	}
 
@@ -608,16 +822,16 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
 	 */
 
 	/* Obtain the interval in 'node_list' */
-	llvm2si_ctree_reach_under(ctree, node, node_list);
+	ctree_reach_under(ctree, node, node_list);
 	if (!node_list->count)
-		return llvm2si_node_region_invalid;
+		return cnode_region_invalid;
 	
 
 	/*** 1. While-loop ***/
 	if (node_list->count == 2)
 	{
-		struct llvm2si_node_t *head_node;
-		struct llvm2si_node_t *tail_node;
+		struct cnode_t *head_node;
+		struct cnode_t *tail_node;
 
 		/* Obtain head and tail nodes */
 		head_node = node;
@@ -628,23 +842,23 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
 
 		/* Check condition for while loop */
 		if (head_node->succ_list->count == 2 &&
-				llvm2si_node_in_list(tail_node, head_node->succ_list) &&
+				cnode_in_list(tail_node, head_node->succ_list) &&
 				tail_node->succ_list->count == 1 &&
-				llvm2si_node_in_list(head_node, tail_node->succ_list) &&
+				cnode_in_list(head_node, tail_node->succ_list) &&
 				tail_node->pred_list->count == 1 &&
-				llvm2si_node_in_list(head_node, tail_node->pred_list))
-			return llvm2si_node_while_loop;
+				cnode_in_list(head_node, tail_node->pred_list))
+			return cnode_while_loop;
 	}
 
 	/*** 2. Loop ***/
-	if (node_list->count == 1 && llvm2si_node_in_list(node,
+	if (node_list->count == 1 && cnode_in_list(node,
 			node->succ_list))
-		return llvm2si_node_loop;
+		return cnode_loop;
 
 
 	/* Nothing identified */
 	linked_list_clear(node_list);
-	return llvm2si_node_region_invalid;
+	return cnode_region_invalid;
 }
 
 
@@ -655,9 +869,26 @@ static enum llvm2si_node_region_t llvm2si_ctree_region(
  */
 
 
-struct llvm2si_ctree_t *llvm2si_ctree_create(char *name)
+void ctree_init(void)
 {
-	struct llvm2si_ctree_t *ctree;
+	ctree_debug_category = debug_new_category(ctree_debug_file_name);
+	ctree_list = linked_list_create();
+	ctree_read_config();
+}
+
+
+void ctree_done(void)
+{
+	/* Free list of control trees */
+	LINKED_LIST_FOR_EACH(ctree_list)
+		ctree_free(linked_list_get(ctree_list));
+	linked_list_free(ctree_list);
+}
+
+
+struct ctree_t *ctree_create(char *name)
+{
+	struct ctree_t *ctree;
 
 	/* No anonymous */
 	if (!name || !*name)
@@ -665,7 +896,7 @@ struct llvm2si_ctree_t *llvm2si_ctree_create(char *name)
 				__FUNCTION__);
 
 	/* Initialize */
-	ctree = xcalloc(1, sizeof(struct llvm2si_ctree_t));
+	ctree = xcalloc(1, sizeof(struct ctree_t));
 	ctree->name = str_set(ctree->name, name);
 	ctree->node_list = linked_list_create();
 
@@ -674,40 +905,39 @@ struct llvm2si_ctree_t *llvm2si_ctree_create(char *name)
 }
 
 
-void llvm2si_ctree_free(struct llvm2si_ctree_t *ctree)
+void ctree_free(struct ctree_t *ctree)
 {
-	/* Free */
-	llvm2si_ctree_clear(ctree);
+	ctree_clear(ctree);
 	linked_list_free(ctree->node_list);
 	ctree->name = str_free(ctree->name);
 	free(ctree);
 }
 
 
-void llvm2si_ctree_add_node(struct llvm2si_ctree_t *ctree,
-		struct llvm2si_node_t *node)
+void ctree_add_node(struct ctree_t *ctree,
+		struct cnode_t *node)
 {
-	assert(!llvm2si_node_in_list(node, ctree->node_list));
+	assert(!cnode_in_list(node, ctree->node_list));
 	linked_list_add(ctree->node_list, node);
 	node->ctree = ctree;
 }
 
 
-void llvm2si_ctree_clear(struct llvm2si_ctree_t *ctree)
+void ctree_clear(struct ctree_t *ctree)
 {
 	LINKED_LIST_FOR_EACH(ctree->node_list)
-		llvm2si_node_free(linked_list_get(ctree->node_list));
+		cnode_free(linked_list_get(ctree->node_list));
 	linked_list_clear(ctree->node_list);
 	ctree->node_entry = NULL;
 }
 
 
-void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree)
+void ctree_structural_analysis(struct ctree_t *ctree)
 {
-	enum llvm2si_node_region_t region;
+	enum cnode_region_t region;
 
-	struct llvm2si_node_t *node;
-	struct llvm2si_node_t *abs_node;
+	struct cnode_t *node;
+	struct cnode_t *abs_node;
 
 	struct linked_list_t *postorder_list;
 	struct linked_list_t *region_list;
@@ -719,7 +949,7 @@ void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree)
 	 * the CFG in 'postorder_list'. This list will be used for progressive
 	 * reduction steps. */
 	postorder_list = linked_list_create();
-	llvm2si_ctree_dfs(ctree, postorder_list);
+	ctree_dfs(ctree, postorder_list);
 
 	/* Sharir's algorithm */
 	while (postorder_list->count)
@@ -727,19 +957,19 @@ void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree)
 		/* Extract next node in post-order */
 		linked_list_head(postorder_list);
 		node = linked_list_remove(postorder_list);
-		llvm2si_debug("Processing node '%s'\n", node->name);
+		ctree_debug("Processing node '%s'\n", node->name);
 		assert(node);
 
 		/* Identify a region starting at 'node'. If a valid region is
 		 * found, reduce it into a new abstract node and reconstruct
 		 * DFS spanning tree. */
-		region = llvm2si_ctree_region(ctree, node, region_list);
+		region = ctree_region(ctree, node, region_list);
 		if (region)
 		{
 			/* Reduce and reconstruct DFS */
-			abs_node = llvm2si_ctree_reduce(ctree,
+			abs_node = ctree_reduce(ctree,
 					region_list, region);
-			llvm2si_ctree_dfs(ctree, NULL);
+			ctree_dfs(ctree, NULL);
 
 			/* Insert new abstract node in post-order list, to make
 			 * it be the next one to be processed. */
@@ -747,16 +977,16 @@ void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree)
 			linked_list_insert(postorder_list, abs_node);
 
 			/* Debug */
-			if (debug_status(llvm2si_debug_category))
+			if (debug_status(ctree_debug_category))
 			{
-				FILE *f = debug_file(llvm2si_debug_category);
+				FILE *f = debug_file(ctree_debug_category);
 				fprintf(f, "\nRegion %s identified: ",
 					str_map_value(
-					&llvm2si_node_region_map,
+					&cnode_region_map,
 					region));
-				llvm2si_node_list_dump(region_list, f);
+				cnode_list_dump(region_list, f);
 				fprintf(f, "\n");
-				llvm2si_ctree_dump(ctree, f);
+				ctree_dump(ctree, f);
 			}
 		}
 	}
@@ -767,10 +997,10 @@ void llvm2si_ctree_structural_analysis(struct llvm2si_ctree_t *ctree)
 }
 
 
-void llvm2si_ctree_dump(struct llvm2si_ctree_t *ctree, FILE *f)
+void ctree_dump(struct ctree_t *ctree, FILE *f)
 {
 	struct linked_list_iter_t *iter;
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	/* Legend */
 	fprintf(f, "\nControl tree (edges: +forward, -back, *cross, "
@@ -783,17 +1013,17 @@ void llvm2si_ctree_dump(struct llvm2si_ctree_t *ctree, FILE *f)
 		node = linked_list_iter_get(iter);
 		if (node == ctree->node_entry)
 			fprintf(f, "=>");
-		llvm2si_node_dump(node, f);
+		cnode_dump(node, f);
 	}
 	linked_list_iter_free(iter);
 	fprintf(f, "\n");
 }
 
 
-struct llvm2si_node_t *llvm2si_ctree_get_node(struct llvm2si_ctree_t *ctree,
+struct cnode_t *ctree_get_node(struct ctree_t *ctree,
 		char *name)
 {
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	/* Search node */
 	LINKED_LIST_FOR_EACH(ctree->node_list)
@@ -808,11 +1038,11 @@ struct llvm2si_node_t *llvm2si_ctree_get_node(struct llvm2si_ctree_t *ctree,
 }
 
 
-void llvm2si_ctree_get_node_list(struct llvm2si_ctree_t *ctree,
+void ctree_get_node_list(struct ctree_t *ctree,
 		struct linked_list_t *node_list, char *node_list_str)
 {
 	struct list_t *token_list;
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	char *name;
 	int index;
@@ -825,7 +1055,7 @@ void llvm2si_ctree_get_node_list(struct llvm2si_ctree_t *ctree,
 	LIST_FOR_EACH(token_list, index)
 	{
 		name = list_get(token_list, index);
-		node = llvm2si_ctree_get_node(ctree, name);
+		node = ctree_get_node(ctree, name);
 		if (!node)
 			fatal("%s: invalid node name", name);
 		linked_list_add(node_list, node);
@@ -834,10 +1064,10 @@ void llvm2si_ctree_get_node_list(struct llvm2si_ctree_t *ctree,
 }
 
 
-void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
+void ctree_write_to_config(struct ctree_t *ctree,
 		struct config_t *config)
 {
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	char section[MAX_STRING_SIZE];
 	char buf[MAX_STRING_SIZE];
@@ -863,23 +1093,23 @@ void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
 
 		/* Dump node properties */
 		config_write_string(config, section, "Kind", str_map_value(
-				&llvm2si_node_kind_map, node->kind));
+				&cnode_kind_map, node->kind));
 
 		/* Successors */
-		llvm2si_node_list_dump_buf(node->succ_list, buf, sizeof buf);
+		cnode_list_dump_buf(node->succ_list, buf, sizeof buf);
 		config_write_string(config, section, "Succ", buf);
 
 		/* Abstract node */
-		if (node->kind == llvm2si_node_abstract)
+		if (node->kind == cnode_abstract)
 		{
 			/* Children */
-			llvm2si_node_list_dump_buf(node->abstract.child_list,
+			cnode_list_dump_buf(node->abstract.child_list,
 					buf, sizeof buf);
 			config_write_string(config, section, "Child", buf);
 
 			/* Region */
 			config_write_string(config, section, "Region",
-					str_map_value(&llvm2si_node_region_map,
+					str_map_value(&cnode_region_map,
 					node->abstract.region));
 		}
 
@@ -889,12 +1119,12 @@ void llvm2si_ctree_write_to_config(struct llvm2si_ctree_t *ctree,
 }
 
 
-void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
+void ctree_read_from_config(struct ctree_t *ctree,
 		struct config_t *config, char *name)
 {
 	struct list_t *token_list;
 	struct linked_list_iter_t *iter;
-	struct llvm2si_node_t *node;
+	struct cnode_t *node;
 
 	char section_str[MAX_STRING_SIZE];
 	char *section;
@@ -903,11 +1133,11 @@ void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
 	char *kind_str;
 	char *region_str;
 	
-	enum llvm2si_node_kind_t kind;
-	enum llvm2si_node_region_t region;
+	enum cnode_kind_t kind;
+	enum cnode_region_t region;
 
 	/* Clear existing tree */
-	llvm2si_ctree_clear(ctree);
+	ctree_clear(ctree);
 
 	/* Set tree name */
 	ctree->name = str_set(ctree->name, name);
@@ -935,33 +1165,33 @@ void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
 		/* Get node properties */
 		node_name = list_get(token_list, 3);
 		kind_str = config_read_string(config, section, "Kind", "Leaf");
-		kind = str_map_string_case(&llvm2si_node_kind_map, kind_str);
+		kind = str_map_string_case(&cnode_kind_map, kind_str);
 		if (!kind)
 			fatal("%s: %s: invalid value for 'Kind'",
 					file_name, section);
 
 		/* Create node */
-		if (kind == llvm2si_node_leaf)
+		if (kind == cnode_leaf)
 		{
-			node = llvm2si_node_create_leaf(node_name);
+			node = cnode_create_leaf(node_name);
 		}
 		else
 		{
 			/* Read region */
 			region_str = config_read_string(config, section,
 					"Region", "");
-			region = str_map_string_case(&llvm2si_node_region_map,
+			region = str_map_string_case(&cnode_region_map,
 					region_str);
 			if (!region)
 				fatal("%s: %s: invalid or missing 'Region'",
 						file_name, node_name);
 
 			/* Create node */
-			node = llvm2si_node_create_abstract(node_name, region);
+			node = cnode_create_abstract(node_name, region);
 		}
 
 		/* Add node */
-		llvm2si_ctree_add_node(ctree, node);
+		ctree_add_node(ctree, node);
 
 		/* Free section name */
 		str_token_list_free(token_list);
@@ -974,7 +1204,7 @@ void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
 		char *node_list_str;
 
 		struct linked_list_t *node_list;
-		struct llvm2si_node_t *tmp_node;
+		struct cnode_t *tmp_node;
 
 		/* Get section name */
 		node = linked_list_iter_get(iter);
@@ -985,29 +1215,29 @@ void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
 		/* Successors */
 		node_list_str = config_read_string(config, section, "Succ", "");
 		node_list = linked_list_create();
-		llvm2si_ctree_get_node_list(ctree, node_list, node_list_str);
+		ctree_get_node_list(ctree, node_list, node_list_str);
 		LINKED_LIST_FOR_EACH(node_list)
 		{
 			tmp_node = linked_list_get(node_list);
-			if (llvm2si_node_in_list(tmp_node, node->succ_list))
+			if (cnode_in_list(tmp_node, node->succ_list))
 				fatal("%s.%s: duplicate successor", ctree->name,
 						node->name);
-			llvm2si_node_connect(node, tmp_node);
+			cnode_connect(node, tmp_node);
 		}
 		linked_list_free(node_list);
 
 		/* Abstract node */
-		if (node->kind == llvm2si_node_abstract)
+		if (node->kind == cnode_abstract)
 		{
 			/* Children */
 			node_list_str = config_read_string(config, section, "Child", "");
 			node_list = linked_list_create();
-			llvm2si_ctree_get_node_list(ctree, node_list, node_list_str);
+			ctree_get_node_list(ctree, node_list, node_list_str);
 			LINKED_LIST_FOR_EACH(node_list)
 			{
 				tmp_node = linked_list_get(node_list);
 				tmp_node->parent = node;
-				if (llvm2si_node_in_list(tmp_node, node->abstract.child_list))
+				if (cnode_in_list(tmp_node, node->abstract.child_list))
 					fatal("%s.%s: duplicate child", ctree->name,
 							node->name);
 				linked_list_add(node->abstract.child_list, tmp_node);
@@ -1022,7 +1252,7 @@ void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
 	node_name = config_read_string(config, section_str, "Entry", NULL);
 	if (!node_name)
 		fatal("%s: %s: no entry node", __FUNCTION__, name);
-	ctree->node_entry = llvm2si_ctree_get_node(ctree, node_name);
+	ctree->node_entry = ctree_get_node(ctree, node_name);
 	if (!ctree->node_entry)
 		fatal("%s: %s: invalid node name", __FUNCTION__, node_name);
 
@@ -1031,11 +1261,11 @@ void llvm2si_ctree_read_from_config(struct llvm2si_ctree_t *ctree,
 }
 
 
-void llvm2si_ctree_compare(struct llvm2si_ctree_t *ctree1,
-		struct llvm2si_ctree_t *ctree2)
+void ctree_compare(struct ctree_t *ctree1,
+		struct ctree_t *ctree2)
 {
-	struct llvm2si_node_t *node;
-	struct llvm2si_node_t *node2;
+	struct cnode_t *node;
+	struct cnode_t *node2;
 
 	/* Compare entry nodes */
 	assert(ctree1->node_entry);
@@ -1048,7 +1278,7 @@ void llvm2si_ctree_compare(struct llvm2si_ctree_t *ctree1,
 	LINKED_LIST_FOR_EACH(ctree1->node_list)
 	{
 		node = linked_list_get(ctree1->node_list);
-		if (!llvm2si_ctree_get_node(ctree2, node->name))
+		if (!ctree_get_node(ctree2, node->name))
 			fatal("node '%s.%s' not present in tree '%s'",
 				ctree1->name, node->name, ctree2->name);
 	}
@@ -1057,7 +1287,7 @@ void llvm2si_ctree_compare(struct llvm2si_ctree_t *ctree1,
 	LINKED_LIST_FOR_EACH(ctree2->node_list)
 	{
 		node = linked_list_get(ctree2->node_list);
-		if (!llvm2si_ctree_get_node(ctree1, node->name))
+		if (!ctree_get_node(ctree1, node->name))
 			fatal("node '%s.%s' not present in tree '%s'",
 				ctree2->name, node->name, ctree1->name);
 	}
@@ -1066,9 +1296,9 @@ void llvm2si_ctree_compare(struct llvm2si_ctree_t *ctree1,
 	LINKED_LIST_FOR_EACH(ctree1->node_list)
 	{
 		node = linked_list_get(ctree1->node_list);
-		node2 = llvm2si_ctree_get_node(ctree2, node->name);
+		node2 = ctree_get_node(ctree2, node->name);
 		assert(node2);
-		llvm2si_node_compare(node, node2);
+		cnode_compare(node, node2);
 	}
 }
 
