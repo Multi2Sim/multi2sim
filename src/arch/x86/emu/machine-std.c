@@ -48,7 +48,7 @@
 void x86_isa_##stdop##_al_imm8_impl(struct x86_ctx_t *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned char al = x86_isa_load_reg(ctx, x86_reg_al); \
+	unsigned char al = x86_isa_load_reg(ctx, x86_inst_reg_al); \
 	unsigned char imm8 = ctx->inst.imm.b; \
 	unsigned long flags = regs->eflags; \
 	enum x86_dep_t cin_dep = cin ? x86_dep_cf : 0; \
@@ -67,7 +67,7 @@ void x86_isa_##stdop##_al_imm8_impl(struct x86_ctx_t *ctx) \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_reg(ctx, x86_reg_al, al); \
+		x86_isa_store_reg(ctx, x86_inst_reg_al, al); \
 		x86_uinst_new(ctx, uinst, x86_dep_eax, cin_dep, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
 		x86_uinst_new(ctx, uinst, x86_dep_eax, cin_dep, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
@@ -80,7 +80,7 @@ void x86_isa_##stdop##_al_imm8_impl(struct x86_ctx_t *ctx) \
 void x86_isa_##stdop##_ax_imm16_impl(struct x86_ctx_t *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned short ax = x86_isa_load_reg(ctx, x86_reg_ax); \
+	unsigned short ax = x86_isa_load_reg(ctx, x86_inst_reg_ax); \
 	unsigned short imm16 = ctx->inst.imm.w; \
 	unsigned long flags = regs->eflags; \
 	enum x86_dep_t cin_dep = cin ? x86_dep_cf : 0; \
@@ -99,7 +99,7 @@ void x86_isa_##stdop##_ax_imm16_impl(struct x86_ctx_t *ctx) \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_reg(ctx, x86_reg_ax, ax); \
+		x86_isa_store_reg(ctx, x86_inst_reg_ax, ax); \
 		x86_uinst_new(ctx, uinst, x86_dep_eax, cin_dep, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
 		x86_uinst_new(ctx, uinst, x86_dep_eax, cin_dep, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
@@ -112,7 +112,7 @@ void x86_isa_##stdop##_ax_imm16_impl(struct x86_ctx_t *ctx) \
 void x86_isa_##stdop##_eax_imm32_impl(struct x86_ctx_t *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned int eax = x86_isa_load_reg(ctx, x86_reg_eax); \
+	unsigned int eax = x86_isa_load_reg(ctx, x86_inst_reg_eax); \
 	unsigned int imm32 = ctx->inst.imm.d; \
 	unsigned long flags = regs->eflags; \
 	enum x86_dep_t cin_dep = cin ? x86_dep_cf : 0; \
@@ -131,7 +131,7 @@ void x86_isa_##stdop##_eax_imm32_impl(struct x86_ctx_t *ctx) \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_reg(ctx, x86_reg_eax, eax); \
+		x86_isa_store_reg(ctx, x86_inst_reg_eax, eax); \
 		x86_uinst_new(ctx, uinst, x86_dep_eax, cin_dep, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
 		x86_uinst_new(ctx, uinst, x86_dep_eax, cin_dep, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \

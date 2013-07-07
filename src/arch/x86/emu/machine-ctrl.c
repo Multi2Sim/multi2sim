@@ -43,11 +43,11 @@
 #define assert __COMPILATION_ERROR__
 
 
-#define CF x86_isa_get_flag(ctx, x86_flag_cf)
-#define ZF x86_isa_get_flag(ctx, x86_flag_zf)
-#define SF x86_isa_get_flag(ctx, x86_flag_sf)
-#define OF x86_isa_get_flag(ctx, x86_flag_of)
-#define PF x86_isa_get_flag(ctx, x86_flag_pf)
+#define CF x86_isa_get_flag(ctx, x86_inst_flag_cf)
+#define ZF x86_isa_get_flag(ctx, x86_inst_flag_zf)
+#define SF x86_isa_get_flag(ctx, x86_inst_flag_sf)
+#define OF x86_isa_get_flag(ctx, x86_inst_flag_of)
+#define PF x86_isa_get_flag(ctx, x86_inst_flag_pf)
 
 
 #define cc_a	(!CF && !ZF)
@@ -150,7 +150,7 @@ void x86_isa_jecxz_rel8_impl(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + ctx->inst.imm.b;
-	if (!x86_isa_load_reg(ctx, x86_reg_ecx))
+	if (!x86_isa_load_reg(ctx, x86_inst_reg_ecx))
 		regs->eip = ctx->target_eip;
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
@@ -161,7 +161,7 @@ void x86_isa_jcxz_rel8_impl(struct x86_ctx_t *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + ctx->inst.imm.b;
-	if (!x86_isa_load_reg(ctx, x86_reg_cx))
+	if (!x86_isa_load_reg(ctx, x86_inst_reg_cx))
 		regs->eip = ctx->target_eip;
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }

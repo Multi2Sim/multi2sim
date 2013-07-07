@@ -24,6 +24,7 @@
 #include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 #include <mem-system/spec-mem.h>
 
@@ -48,7 +49,7 @@ unsigned char x86_isa_host_fpenv[28];
 /* Table including references to functions in machine.c
  * that implement machine instructions. */
 typedef void (*x86_isa_inst_func_t)(struct x86_ctx_t *ctx);
-static x86_isa_inst_func_t x86_isa_inst_func[x86_opcode_count] =
+static x86_isa_inst_func_t x86_isa_inst_func[x86_inst_opcode_count] =
 {
 	NULL /* for op_none */
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) , x86_isa_##name##_impl
@@ -134,17 +135,17 @@ void x86_isa_error(struct x86_ctx_t *ctx, char *fmt, ...)
  * Instruction statistics
  */
 
-static long long x86_inst_freq[x86_opcode_count];
+static long long x86_inst_freq[x86_inst_opcode_count];
 
 
 void x86_isa_inst_stat_dump(FILE *f)
 {
 	int i;
-	for (i = 1; i < x86_opcode_count; i++)
+	for (i = 1; i < x86_inst_opcode_count; i++)
 	{
 		if (!x86_inst_freq[i])
 			continue;
-		fprintf(f, "%s    %lld\n", x86_inst_name(i), x86_inst_freq[i]);
+		fprintf(f, "%s    %lld\n", x86_inst_get_name(i), x86_inst_freq[i]);
 	}
 }
 
@@ -152,7 +153,7 @@ void x86_isa_inst_stat_dump(FILE *f)
 void x86_isa_inst_stat_reset(void)
 {
 	int i;
-	for (i = 1; i < x86_opcode_count; i++)
+	for (i = 1; i < x86_inst_opcode_count; i++)
 		x86_inst_freq[i] = 0;
 }
 
@@ -254,7 +255,7 @@ static struct
 };
 
 
-void x86_isa_set_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag)
+void x86_isa_set_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -262,7 +263,7 @@ void x86_isa_set_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag)
 }
 
 
-void x86_isa_clear_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag)
+void x86_isa_clear_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -270,7 +271,7 @@ void x86_isa_clear_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag)
 }
 
 
-int x86_isa_get_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag)
+int x86_isa_get_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -284,7 +285,7 @@ int x86_isa_get_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag)
 static unsigned int x86_isa_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
 
 
-unsigned int x86_isa_load_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg)
+unsigned int x86_isa_load_reg(struct x86_ctx_t *ctx, enum x86_inst_reg_t reg)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -297,7 +298,7 @@ unsigned int x86_isa_load_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg)
 }
 
 
-void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg, unsigned int value)
+void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_inst_reg_t reg, unsigned int value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -307,7 +308,7 @@ void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg, unsigned int v
 	mask = x86_isa_bit_mask[x86_isa_reg_info[reg].size];
 	reg_ptr = (void *) regs + x86_isa_reg_info[reg].shift;
 	*reg_ptr = (*reg_ptr & ~mask) | (value & mask);
-	x86_isa_inst_debug("  %s <- 0x%x", x86_reg_name[reg], value);
+	x86_isa_inst_debug("  %s <- 0x%x", str_map_value(&x86_inst_reg_map, reg), value);
 }
 
 
@@ -326,17 +327,17 @@ static unsigned int x86_isa_linear_address(struct x86_ctx_t *ctx, unsigned int o
 		return offset;
 	
 	/* Segment override */
-	if (ctx->inst.segment != x86_reg_gs)
+	if (ctx->inst.segment != x86_inst_reg_gs)
 	{
 		x86_isa_error(ctx, "segment override not supported");
 		return 0;
 	}
 
 	/* GLibc segment at TLS entry 6 */
-	if (x86_isa_load_reg(ctx, x86_reg_gs) != 0x33)
+	if (x86_isa_load_reg(ctx, x86_inst_reg_gs) != 0x33)
 	{
 		x86_isa_error(ctx, "isa_linear_address: gs = 0x%x",
-				x86_isa_load_reg(ctx, x86_reg_gs));
+				x86_isa_load_reg(ctx, x86_inst_reg_gs));
 		return 0;
 	}
 
@@ -409,7 +410,7 @@ unsigned char x86_isa_load_rm8(struct x86_ctx_t *ctx)
 	unsigned char value;
 
 	if (ctx->inst.modrm_mod == 0x03)
-		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_reg_al);
+		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_al);
 
 	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 1, &value);
 	x86_isa_inst_debug("  [0x%x]=0x%x", x86_isa_effective_address(ctx), value);
@@ -422,7 +423,7 @@ unsigned short x86_isa_load_rm16(struct x86_ctx_t *ctx)
 	unsigned short value;
 
 	if (ctx->inst.modrm_mod == 0x03)
-		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_reg_ax);
+		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_ax);
 
 	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 2, &value);
 	x86_isa_inst_debug("  [0x%x]=0x%x", x86_isa_effective_address(ctx), value);
@@ -435,7 +436,7 @@ unsigned int x86_isa_load_rm32(struct x86_ctx_t *ctx)
 	unsigned int value;
 
 	if (ctx->inst.modrm_mod == 0x03)
-		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_reg_eax);
+		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_eax);
 
 	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 4, &value);
 	x86_isa_inst_debug("  [0x%x]=0x%x", x86_isa_effective_address(ctx), value);
@@ -448,7 +449,7 @@ unsigned short x86_isa_load_r32m16(struct x86_ctx_t *ctx)
 	unsigned short value;
 
 	if (ctx->inst.modrm_mod == 0x03)
-		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_reg_eax);
+		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_eax);
 
 	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 2, &value);
 	x86_isa_inst_debug("  [0x%x]=0x%x", x86_isa_effective_address(ctx), value);
@@ -470,7 +471,7 @@ void x86_isa_store_rm8(struct x86_ctx_t *ctx, unsigned char value)
 {
 	if (ctx->inst.modrm_mod == 0x03)
 	{
-		x86_isa_store_reg(ctx, ctx->inst.modrm_rm + x86_reg_al, value);
+		x86_isa_store_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_al, value);
 		return;
 	}
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 1, &value);
@@ -482,7 +483,7 @@ void x86_isa_store_rm16(struct x86_ctx_t *ctx, unsigned short value)
 {
 	if (ctx->inst.modrm_mod == 0x03)
 	{
-		x86_isa_store_reg(ctx, ctx->inst.modrm_rm + x86_reg_ax, value);
+		x86_isa_store_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_ax, value);
 		return;
 	}
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 2, &value);
@@ -494,7 +495,7 @@ void x86_isa_store_rm32(struct x86_ctx_t *ctx, unsigned int value)
 {
 	if (ctx->inst.modrm_mod == 0x03)
 	{
-		x86_isa_store_reg(ctx, ctx->inst.modrm_rm + x86_reg_eax, value);
+		x86_isa_store_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_eax, value);
 		return;
 	}
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 4, &value);
@@ -731,11 +732,11 @@ unsigned short x86_isa_load_fpu_status(struct x86_ctx_t *ctx)
 
 void x86_isa_dump_xmm(struct x86_ctx_t *ctx, unsigned char *value, FILE *f)
 {
-	union x86_xmm_reg_t *xmm;
+	union x86_inst_xmm_reg_t *xmm;
 	char *comma;
 	int i;
 
-	xmm = (union x86_xmm_reg_t *) value;
+	xmm = (union x86_inst_xmm_reg_t *) value;
 	for (i = 0; i < 16; i++)
 		fprintf(f, "%02x ", xmm->as_uchar[i]);
 
@@ -859,7 +860,7 @@ void x86_isa_store_xmmm128(struct x86_ctx_t *ctx, unsigned char *value)
 
 void x86_isa_init(void)
 {
-	x86_disasm_init();
+	x86_asm_init();
 	x86_uinst_init();
 }
 
@@ -867,7 +868,7 @@ void x86_isa_init(void)
 void x86_isa_done(void)
 {
 	x86_uinst_done();
-	x86_disasm_done();
+	x86_asm_done();
 }
 
 

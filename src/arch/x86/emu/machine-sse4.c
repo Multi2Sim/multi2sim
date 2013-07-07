@@ -54,8 +54,8 @@ static char *x86_isa_err_sse4 =
 void x86_isa_pcmpeqq_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
 #ifdef HAVE_SSE4
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm128(ctx, src.as_uchar);

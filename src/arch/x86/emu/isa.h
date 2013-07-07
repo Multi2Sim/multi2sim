@@ -42,12 +42,12 @@ void x86_isa_mem_read(struct x86_ctx_t *ctx, unsigned int addr, int size, void *
 void x86_isa_mem_write(struct x86_ctx_t *ctx, unsigned int addr, int size, void *buf);
 
 void x86_isa_dump_flags(struct x86_ctx_t *ctx, FILE *f);
-void x86_isa_set_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag);
-void x86_isa_clear_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag);
-int x86_isa_get_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag);
+void x86_isa_set_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag);
+void x86_isa_clear_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag);
+int x86_isa_get_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag);
 
-unsigned int x86_isa_load_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg);
-void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg, unsigned int value);
+unsigned int x86_isa_load_reg(struct x86_ctx_t *ctx, enum x86_inst_reg_t reg);
+void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_inst_reg_t reg, unsigned int value);
 
 unsigned char x86_isa_load_rm8(struct x86_ctx_t *ctx);
 unsigned short x86_isa_load_rm16(struct x86_ctx_t *ctx);
@@ -59,21 +59,21 @@ void x86_isa_store_rm16(struct x86_ctx_t *ctx, unsigned short value);
 void x86_isa_store_rm32(struct x86_ctx_t *ctx, unsigned int value);
 void x86_isa_store_m64(struct x86_ctx_t *ctx, unsigned long long value);
 
-#define x86_isa_load_r8(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_reg_al)
-#define x86_isa_load_r16(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_reg_ax)
-#define x86_isa_load_r32(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_reg_eax)
-#define x86_isa_load_sreg(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_reg_es)
-#define x86_isa_store_r8(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_reg_al, value)
-#define x86_isa_store_r16(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_reg_ax, value)
-#define x86_isa_store_r32(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_reg_eax, value)
-#define x86_isa_store_sreg(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_reg_es, value)
+#define x86_isa_load_r8(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_inst_reg_al)
+#define x86_isa_load_r16(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_inst_reg_ax)
+#define x86_isa_load_r32(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_inst_reg_eax)
+#define x86_isa_load_sreg(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_inst_reg_es)
+#define x86_isa_store_r8(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_inst_reg_al, value)
+#define x86_isa_store_r16(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_inst_reg_ax, value)
+#define x86_isa_store_r32(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_inst_reg_eax, value)
+#define x86_isa_store_sreg(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_inst_reg_es, value)
 
-#define x86_isa_load_ir8(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_reg_al)
-#define x86_isa_load_ir16(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_reg_ax)
-#define x86_isa_load_ir32(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_reg_eax)
-#define x86_isa_store_ir8(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_reg_al, value)
-#define x86_isa_store_ir16(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_reg_ax, value)
-#define x86_isa_store_ir32(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_reg_eax, value)
+#define x86_isa_load_ir8(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_inst_reg_al)
+#define x86_isa_load_ir16(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_inst_reg_ax)
+#define x86_isa_load_ir32(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_inst_reg_eax)
+#define x86_isa_store_ir8(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_inst_reg_al, value)
+#define x86_isa_store_ir16(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_inst_reg_ax, value)
+#define x86_isa_store_ir32(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_inst_reg_eax, value)
 
 void x86_isa_load_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value);
 void x86_isa_store_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value);

@@ -1899,7 +1899,7 @@ int main(int argc, char **argv)
 
 	/* x86 disassembler tool */
 	if (*x86_disasm_file_name)
-		x86_disasm_file(x86_disasm_file_name);
+		x86_asm_disassemble_binary(x86_disasm_file_name);
 
 	/* Evergreen disassembler tool */
 	if (*evg_disasm_file_name)

@@ -22,8 +22,13 @@
 
 #include <lib/util/class.h>
 
+struct asm_t;
 struct x86_inst_t;
 
+
+/*
+ * Class 'x86_asm_t'
+ */
 
 /* Class macros */
 #define X86_ASM_TYPE 0xeae356fd
@@ -50,23 +55,30 @@ struct x86_asm_t
 	 * decoding instructions. */
 	struct x86_inst_info_elem_t *inst_info_table[0x100];
 	struct x86_inst_info_elem_t *inst_info_table_0f[0x100];
+
+	/* Look-up table returning true if a byte is an x86 prefix */
+	unsigned char is_prefix[0x100];
 };
 
+
+struct x86_asm_t *x86_asm_create(void);
+void x86_asm_free(struct asm_t *as);
+
+
+
+
+/*
+ * Public static functions (not related with 'x86_asm_t')
+ */
 
 /* There is only one instance of the x86 disassembler, initialized and finalized
  * in 'x86_asm_init' and 'x86_asm_done'. */
 extern struct x86_asm_t *x86_asm;
 
+void x86_asm_init(void);
+void x86_asm_done(void);
 
-void x86_disasm_init(void);
-void x86_disasm_done(void);
-
-struct x86_asm_t *x86_asm_create(void);
-void x86_asm_free(struct x86_asm_t *as);
-
-/* Disassemble and dump */
-void x86_disasm(void *buf, unsigned int eip, volatile struct x86_inst_t *inst);
-void x86_disasm_file(char *file_name);
+void x86_asm_disassemble_binary(char *path);
 
 
 #endif
