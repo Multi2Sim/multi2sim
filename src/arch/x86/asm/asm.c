@@ -334,6 +334,8 @@ void x86_asm_disassemble_binary(char *path)
 
 	struct x86_inst_t inst;
 	int curr_sym;
+	int index;
+
 	int i;
 
 	/* Open ELF file */
@@ -341,16 +343,16 @@ void x86_asm_disassemble_binary(char *path)
 	elf_file = elf_file_create_from_path(path);
 
 	/* Read sections */
-	for (i = 0; i < list_count(elf_file->section_list); i++)
+	LIST_FOR_EACH(elf_file->section_list, index)
 	{
 		/* Get section and skip if it does not contain code */
-		section = list_get(elf_file->section_list, i);
+		section = list_get(elf_file->section_list, index);
 		if (!(section->header->sh_flags & SHF_EXECINSTR))
 			continue;
 		buffer = &section->buffer;
 
 		/* Title */
-		printf("**\n** Disassembly for section '%s'\n**\n\n", section->name);
+		printf("Disassembly of section %s:\n", section->name);
 
 		/* Disassemble */
 		curr_sym = 0;
@@ -358,11 +360,14 @@ void x86_asm_disassemble_binary(char *path)
 		while (buffer->pos < buffer->size)
 		{
 			unsigned int eip;
+
 			char str[MAX_STRING_SIZE];
+			unsigned char *ptr;
 
 			/* Read instruction */
 			eip = section->header->sh_addr + buffer->pos;
-			x86_inst_decode(&inst, eip, elf_buffer_tell(buffer));
+			ptr = elf_buffer_tell(buffer);
+			x86_inst_decode(&inst, eip, ptr);
 			if (inst.size)
 			{
 				elf_buffer_read(buffer, NULL, inst.size);
@@ -371,7 +376,7 @@ void x86_asm_disassemble_binary(char *path)
 			else
 			{
 				elf_buffer_read(buffer, NULL, 1);
-				strcpy(str, "???");
+				snprintf(str, sizeof str, "???");
 			}
 
 			/* Symbol */
@@ -383,12 +388,33 @@ void x86_asm_disassemble_binary(char *path)
 			if (symbol && symbol->value == eip)
 				printf("\n%08x <%s>:\n", eip, symbol->name);
 
-			/* Print */
-			printf("%8x:  %s\n", eip, str);
+			/* Address */
+			printf("%8x:\t", eip);
+
+			/* Hex dump of bytes 0..6 */
+			for (i = 0; i < 7; i++)
+			{
+				if (i < inst.size)
+					printf("%02x ", ptr[i]);
+				else
+					printf("   ");
+			}
+
+			/* Instruction */
+			printf("\t%s\n", str);
+
+			/* Hex dump of bytes 7..13 */
+			if (inst.size > 7)
+			{
+				printf("%8x:\t", eip + 7);
+				for (i = 7; i < 14 && i < inst.size; i++)
+					printf("%02x ", ptr[i]);
+				printf("\n");
+			}
 		}
 
 		/* Pad */
-		printf("\n\n");
+		printf("\n");
 	}
 
 	/* Free ELF */

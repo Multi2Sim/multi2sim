@@ -223,10 +223,13 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 {
 	struct x86_inst_info_t *info;
 
-	int word;
 	int length;
+	int name_printed;
+	int name_length;
+	int i;
 
 	char *fmt;
+	char *fmt_first_arg;
 
 	/* Get instruction information from the globally initialized x86
 	 * assembler. */
@@ -238,9 +241,13 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 	if (size)
 		*buf = '\0';
 
-	/* Dump instruction */
-	word = 0;
+	/* Get instruction name length */
+	name_printed = 0;
 	fmt = info->fmt;
+	fmt_first_arg = index(fmt, '_');
+	name_length = fmt_first_arg ? fmt_first_arg - fmt : strlen(fmt);
+
+	/* Dump instruction */
 	while (*fmt)
 	{
 		/* Assume no token found */
@@ -469,8 +476,16 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 		{
 			if (*fmt == '_')
 			{
-				str_printf(&buf, &size, "%s", word ? ", " : " ");
-				word++;
+				if (name_printed)
+				{
+					str_printf(&buf, &size, ",");
+				}
+				else
+				{
+					name_printed = 1;
+					for (i = 0; i < 7 - name_length; i++)
+						str_printf(&buf, &size, " ");
+				}
 			}
 			else
 			{
