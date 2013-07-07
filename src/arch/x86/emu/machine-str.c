@@ -94,7 +94,7 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 		{ \
 			x86_isa_##X##_run(ctx); \
 			regs->ecx--; \
-			if (x86_isa_get_flag(ctx, x86_flag_zf)) \
+			if (x86_isa_get_flag(ctx, x86_inst_flag_zf)) \
 				regs->eip -= ctx->inst.size; \
 		} \
 		\
@@ -116,7 +116,7 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 		{ \
 			x86_isa_##X##_run(ctx); \
 			regs->ecx--; \
-			if (!x86_isa_get_flag(ctx, x86_flag_zf)) \
+			if (!x86_isa_get_flag(ctx, x86_inst_flag_zf)) \
 				regs->eip -= ctx->inst.size; \
 		} \
 		\
@@ -172,8 +172,8 @@ static void x86_isa_cmpsb_run(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	regs->eflags = flags;
-	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
-	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
+	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
 }
 
 
@@ -230,8 +230,8 @@ static void x86_isa_cmpsd_run(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__ \
 
 	regs->eflags = flags;
-	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
-	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
+	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
 }
 
 
@@ -370,8 +370,8 @@ static void x86_isa_movsb_run(struct x86_ctx_t *ctx)
 	x86_isa_mem_read(ctx, regs->esi, 1, &m8);
 	x86_isa_mem_write(ctx, regs->edi, 1, &m8);
 
-	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
-	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
+	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
 }
 
 
@@ -408,8 +408,8 @@ static void x86_isa_movsw_run(struct x86_ctx_t *ctx)
 	x86_isa_mem_read(ctx, regs->esi, 2, &m16);
 	x86_isa_mem_write(ctx, regs->edi, 2, &m16);
 
-	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -2 : 2;
-	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -2 : 2;
+	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -2 : 2;
+	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -2 : 2;
 
 }
 
@@ -446,8 +446,8 @@ static void x86_isa_movsd_run(struct x86_ctx_t *ctx)
 	x86_isa_mem_read(ctx, regs->esi, 4, &m32);
 	x86_isa_mem_write(ctx, regs->edi, 4, &m32);
 
-	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
-	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
+	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
 
 }
 
@@ -537,7 +537,7 @@ static void x86_isa_scasb_run(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned char al = x86_isa_load_reg(ctx, x86_reg_al);
+	unsigned char al = x86_isa_load_reg(ctx, x86_inst_reg_al);
 	unsigned char m8;
 	unsigned long flags = regs->eflags;
 
@@ -558,7 +558,7 @@ static void x86_isa_scasb_run(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__ \
 
 	regs->eflags = flags;
-	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
 
 }
 
@@ -589,7 +589,7 @@ static void x86_isa_scasd_run(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned int eax = x86_isa_load_reg(ctx, x86_reg_eax);
+	unsigned int eax = x86_isa_load_reg(ctx, x86_inst_reg_eax);
 	unsigned int m32;
 	unsigned long flags = regs->eflags;
 
@@ -610,7 +610,7 @@ static void x86_isa_scasd_run(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__ \
 
 	regs->eflags = flags;
-	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
 
 }
 
@@ -641,11 +641,11 @@ static void x86_isa_stosb_run(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned char m8 = x86_isa_load_reg(ctx, x86_reg_al);
-	unsigned int addr = x86_isa_load_reg(ctx, x86_reg_edi);
+	unsigned char m8 = x86_isa_load_reg(ctx, x86_inst_reg_al);
+	unsigned int addr = x86_isa_load_reg(ctx, x86_inst_reg_edi);
 	
 	x86_isa_mem_write(ctx, addr, 1, &m8);
-	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
 }
 
 
@@ -675,11 +675,11 @@ static void x86_isa_stosd_run(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned int m32 = x86_isa_load_reg(ctx, x86_reg_eax);
-	unsigned int addr = x86_isa_load_reg(ctx, x86_reg_edi);
+	unsigned int m32 = x86_isa_load_reg(ctx, x86_inst_reg_eax);
+	unsigned int addr = x86_isa_load_reg(ctx, x86_inst_reg_edi);
 	
 	x86_isa_mem_write(ctx, addr, 4, &m32);
-	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
 }
 
 

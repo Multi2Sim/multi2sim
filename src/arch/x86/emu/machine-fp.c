@@ -256,7 +256,7 @@ void x86_isa_fcmovb_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (x86_isa_get_flag(ctx, x86_flag_cf))
+	if (x86_isa_get_flag(ctx, x86_inst_flag_cf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, 0, x86_dep_st0, 0, 0, 0);
@@ -267,7 +267,7 @@ void x86_isa_fcmove_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (x86_isa_get_flag(ctx, x86_flag_zf))
+	if (x86_isa_get_flag(ctx, x86_inst_flag_zf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
@@ -278,7 +278,7 @@ void x86_isa_fcmovbe_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (x86_isa_get_flag(ctx, x86_flag_cf) || x86_isa_get_flag(ctx, x86_flag_zf))
+	if (x86_isa_get_flag(ctx, x86_inst_flag_cf) || x86_isa_get_flag(ctx, x86_inst_flag_zf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, x86_dep_zps, x86_dep_st0, 0, 0, 0);
@@ -289,7 +289,7 @@ void x86_isa_fcmovu_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (x86_isa_get_flag(ctx, x86_flag_pf))
+	if (x86_isa_get_flag(ctx, x86_inst_flag_pf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
@@ -300,7 +300,7 @@ void x86_isa_fcmovnb_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (!x86_isa_get_flag(ctx, x86_flag_cf))
+	if (!x86_isa_get_flag(ctx, x86_inst_flag_cf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, 0, x86_dep_st0, 0, 0, 0);
@@ -311,7 +311,7 @@ void x86_isa_fcmovne_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (!x86_isa_get_flag(ctx, x86_flag_zf))
+	if (!x86_isa_get_flag(ctx, x86_inst_flag_zf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
@@ -322,7 +322,7 @@ void x86_isa_fcmovnbe_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (!x86_isa_get_flag(ctx, x86_flag_cf) && !x86_isa_get_flag(ctx, x86_flag_zf))
+	if (!x86_isa_get_flag(ctx, x86_inst_flag_cf) && !x86_isa_get_flag(ctx, x86_inst_flag_zf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, x86_dep_zps, x86_dep_st0, 0, 0, 0);
@@ -333,7 +333,7 @@ void x86_isa_fcmovnu_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (!x86_isa_get_flag(ctx, x86_flag_pf))
+	if (!x86_isa_get_flag(ctx, x86_inst_flag_pf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
@@ -1345,7 +1345,7 @@ void x86_isa_fnstcw_m16_impl(struct x86_ctx_t *ctx)
 void x86_isa_fnstsw_ax_impl(struct x86_ctx_t *ctx)
 {
 	unsigned short status = x86_isa_load_fpu_status(ctx);
-	x86_isa_store_reg(ctx, x86_reg_ax, status);
+	x86_isa_store_reg(ctx, x86_inst_reg_ax, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_fpst, 0, 0, x86_dep_eax, 0, 0, 0);
 }
@@ -1694,7 +1694,7 @@ void x86_isa_fstp_sti_impl(struct x86_ctx_t *ctx)
 void x86_isa_fstsw_ax_impl(struct x86_ctx_t *ctx)
 {
 	unsigned short status = x86_isa_load_fpu_status(ctx);
-	x86_isa_store_reg(ctx, x86_reg_ax, status);
+	x86_isa_store_reg(ctx, x86_inst_reg_ax, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_fpst, 0, 0, x86_dep_eax, 0, 0, 0);
 }

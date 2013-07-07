@@ -57,17 +57,9 @@ struct x86_asm_t *x86_asm;
 #define ID    0x8000  /* for imm */
 
 
-/* Containers for opcode infos. We need this because an info can belong to
- * different lists when there are registers embedded in the opcodes. */
-struct x86_inst_info_elem_t
-{
-	struct x86_inst_info_t *info;
-	struct x86_inst_info_elem_t *next;
-};
-
-
 /* List of possible prefixes */
-static unsigned char x86_prefixes[] = {
+static unsigned char x86_asm_prefixes[] =
+{
 	0xf0,  /* lock */
 	0xf2,  /* repnz */
 	0xf3,  /* rep */
@@ -80,103 +72,6 @@ static unsigned char x86_prefixes[] = {
 	0x64,  /* use fs */
 	0x65   /* use gs */
 };
-static unsigned char x86_byte_is_prefix[256];
-
-
-/* Register names */
-char *x86_reg_name[x86_reg_count] =
-{
-	"",
-
-	"eax",
-	"ecx",
-	"edx",
-	"ebx",
-	"esp",
-	"ebp",
-	"esi",
-	"edi",
-
-	"ax",
-	"cx",
-	"dx",
-	"bx",
-	"sp",
-	"bp",
-	"si",
-	"di",
-
-	"al",
-	"cl",
-	"dl",
-	"bl",
-	"ah",
-	"ch",
-	"dh",
-	"bh",
-
-	"es",
-	"cs",
-	"ss",
-	"ds",
-	"fs",
-	"gs"
-};
-
-
-/* Table indexed by pairs ModRM.mod and ModRM.rm, containing
- * information about what will come next and effective address
- * computation. */
-struct x86_modrm_table_entry_t {
-	enum x86_reg_t ea_base;
-	int disp_size;
-	int sib_size;
-};
-
-
-static struct x86_modrm_table_entry_t modrm_table[32] =
-{
-	{x86_reg_eax, 0, 0},
-	{x86_reg_ecx, 0, 0},
-	{x86_reg_edx, 0, 0},
-	{x86_reg_ebx, 0, 0},
-	{x86_reg_none, 0, 1},
-	{x86_reg_none, 4, 0},
-	{x86_reg_esi, 0, 0},
-	{x86_reg_edi, 0, 0},
-
-	{x86_reg_eax, 1, 0},
-	{x86_reg_ecx, 1, 0},
-	{x86_reg_edx, 1, 0},
-	{x86_reg_ebx, 1, 0},
-	{x86_reg_none, 1, 1},
-	{x86_reg_ebp, 1, 0},
-	{x86_reg_esi, 1, 0},
-	{x86_reg_edi, 1, 0},
-
-	{x86_reg_eax, 4, 0},
-	{x86_reg_ecx, 4, 0},
-	{x86_reg_edx, 4, 0},
-	{x86_reg_ebx, 4, 0},
-	{x86_reg_none, 4, 1},
-	{x86_reg_ebp, 4, 0},
-	{x86_reg_esi, 4, 0},
-	{x86_reg_edi, 4, 0},
-
-	{x86_reg_none, 0, 0},
-	{x86_reg_none, 0, 0},
-	{x86_reg_none, 0, 0},
-	{x86_reg_none, 0, 0},
-	{x86_reg_none, 0, 0},
-	{x86_reg_none, 0, 0},
-	{x86_reg_none, 0, 0},
-	{x86_reg_none, 0, 0}
-};
-
-
-/* Table to obtain the scale
- * from its decoded value */
-unsigned int ea_scale_table[4] = { 1, 2, 4, 8};
 
 
 static void x86_asm_inst_info_insert_at(struct x86_inst_info_elem_t **table,
@@ -252,27 +147,6 @@ static void x86_asm_inst_info_elem_free_list(struct x86_inst_info_elem_t *elem)
  * Public Functions
  */
 
-void x86_disasm_init()
-{
-	/* Host restrictions */
-	M2S_HOST_GUEST_MATCH(sizeof(union x86_xmm_reg_t), 16);
-
-	/* Create disassembler */
-	assert(!x86_asm);
-	x86_asm = x86_asm_create();
-
-}
-
-
-void x86_disasm_done()
-{
-	/* Free disassembler */
-	assert(x86_asm);
-	x86_asm_free(x86_asm);
-	x86_asm = NULL;
-}
-
-
 struct x86_asm_t *x86_asm_create(void)
 {
 	struct x86_asm_t *as;
@@ -290,11 +164,10 @@ struct x86_asm_t *x86_asm_create(void)
 	as = xcalloc(1, sizeof(struct x86_asm_t));
 
 	/* Initialize instruction information list */
-	as->inst_info_list = xcalloc(x86_opcode_count, sizeof(struct x86_inst_info_t));
-	as->inst_info_list[0].fmt = "";
+	as->inst_info_list = xcalloc(x86_inst_opcode_count, sizeof(struct x86_inst_info_t));
 #define DEFINST(__name, __op1, __op2, __op3, __modrm, __imm, __prefixes) \
-	info = &as->inst_info_list[op_##__name]; \
-	info->opcode = op_##__name; \
+	info = &as->inst_info_list[x86_inst_##__name]; \
+	info->opcode = x86_inst_##__name; \
 	info->op1 = __op1; \
 	info->op2 = __op2; \
 	info->op3 = __op3; \
@@ -306,14 +179,13 @@ struct x86_asm_t *x86_asm_create(void)
 #undef DEFINST
 
 	/* Initialize table of prefixes */
-	/* FIXME */
-	for (i = 0; i < sizeof(x86_prefixes); i++)
-		x86_byte_is_prefix[x86_prefixes[i]] = 1;
+	for (i = 0; i < sizeof(x86_asm_prefixes); i++)
+		as->is_prefix[x86_asm_prefixes[i]] = 1;
 
 	/* Initialize x86_opcode_info_table. This table contains lists of
 	 * information about machine instructions. To find an instruction
 	 * in the table, it can be indexed by the first byte of its opcode. */
-	for (op = 1; op < x86_opcode_count; op++)
+	for (op = 1; op < x86_inst_opcode_count; op++)
 	{
 		/* Insert into table */
 		info = &as->inst_info_list[op];
@@ -397,19 +269,22 @@ struct x86_asm_t *x86_asm_create(void)
 	}
 	/* Class information */
 	CLASS_INIT(as, X86_ASM_TYPE, __as);
+	__as->free = x86_asm_free;
 
 	/* Return */
 	return as;
 }
 
 
-void x86_asm_free(struct x86_asm_t *as)
+void x86_asm_free(struct asm_t *__as)
 {
-	struct asm_t *__as;
+	struct x86_asm_t *as;
 	int i;
 
+	/* Get class instance */
+	as = X86_ASM(__as);
+
 	/* Free parent */
-	__as = ASM(as);
 	asm_free(__as);
 
 	/* Free instruction info tables */
@@ -425,196 +300,32 @@ void x86_asm_free(struct x86_asm_t *as)
 }
 
 
-/* Pointer to 'inst' is declared volatile to avoid optimizations when calling 'memset' */
-void x86_disasm(void *buf, unsigned int eip, volatile struct x86_inst_t *inst)
+
+
+/*
+ * Static Public Functions
+ * (not related with 'x86_asm_t' class)
+ */
+
+void x86_asm_init(void)
 {
-	struct x86_asm_t *as = x86_asm;  /* FIXME */
+	/* Host restrictions */
+	M2S_HOST_GUEST_MATCH(sizeof(union x86_inst_xmm_reg_t), 16);
 
-	struct x86_inst_info_elem_t **table;
-	struct x86_inst_info_elem_t *elem;
-	struct x86_inst_info_t *info;
+	/* Create disassembler */
+	assert(!x86_asm);
+	x86_asm = x86_asm_create();
 
-	int index;
-	unsigned int buf32;
-	struct x86_modrm_table_entry_t *modrm_table_entry;
-
-	/* Initialize instruction */
-	memset((void *) inst, 0, sizeof(struct x86_inst_t));
-	inst->eip = eip;
-	inst->op_size = 4;
-	inst->addr_size = 4;
-
-	/* Prefixes */
-	while (x86_byte_is_prefix[* (unsigned char *) buf])
-	{
-		switch (* (unsigned char *) buf)
-		{
-
-		case 0xf0:
-			/* lock prefix is ignored */
-			break;
-
-		case 0xf2:
-			inst->prefixes |= x86_prefix_repnz;
-			break;
-
-		case 0xf3:
-			inst->prefixes |= x86_prefix_rep;
-			break;
-
-		case 0x66:
-			inst->prefixes |= x86_prefix_op;
-			inst->op_size = 2;
-			break;
-
-		case 0x67:
-			inst->prefixes |= x86_prefix_addr;
-			inst->addr_size = 2;
-			break;
-
-		case 0x2e:
-			inst->segment = x86_reg_cs;
-			break;
-
-		case 0x36:
-			inst->segment = x86_reg_ss;
-			break;
-
-		case 0x3e:
-			inst->segment = x86_reg_ds;
-			break;
-
-		case 0x26:
-			inst->segment = x86_reg_es;
-			break;
-
-		case 0x64:
-			inst->segment = x86_reg_fs;
-			break;
-
-		case 0x65:
-			inst->segment = x86_reg_gs;
-			break;
-
-		default:
-			panic("%s: invalid prefix", __FUNCTION__);
-
-		}
-
-		/* One more prefix */
-		buf++;
-		inst->prefix_size++;
-	}
-
-	/* Find instruction */
-	buf32 = * (unsigned int *) buf;
-	inst->opcode = x86_op_none;
-	table = * (unsigned char *) buf == 0x0f ? as->inst_info_table_0f : as->inst_info_table;
-	index = * (unsigned char *) buf == 0x0f ? * (unsigned char *) (buf + 1): * (unsigned char *) buf;
-	for (elem = table[index]; elem; elem = elem->next)
-	{
-		info = elem->info;
-		if (info->nomatch_mask && (buf32 & info->nomatch_mask) ==
-			info->nomatch_result)
-			continue;
-		if ((buf32 & info->match_mask) == info->match_result
-			&& info->prefixes == inst->prefixes)
-			break;
-	}
-
-	/* Instruction not implemented */
-	if (!elem)
-		return;
-	
-	/* Instruction found */
-	inst->format = info->fmt;
-	inst->opcode = info->opcode;
-	inst->opcode_size = info->opcode_size;
-	inst->modrm_size = info->modrm_size;
-	inst->opindex = (buf32 >> info->opindex_shift) & 0x7;
-	buf += inst->opcode_size;  /* Skip opcode */
-
-	/* Decode the ModR/M field */
-	if (inst->modrm_size)
-	{
-		/* Split modrm into fields */
-		inst->modrm = * (unsigned char *) buf;
-		inst->modrm_mod = (inst->modrm & 0xc0) >> 6;
-		inst->modrm_reg = (inst->modrm & 0x38) >> 3;
-		inst->modrm_rm = inst->modrm & 0x07;
-		inst->reg = inst->modrm_reg;
-
-		/* Access ModRM table */
-		modrm_table_entry = &modrm_table[(inst->modrm_mod << 3)
-			| inst->modrm_rm];
-		inst->sib_size = modrm_table_entry->sib_size;
-		inst->disp_size = modrm_table_entry->disp_size;
-		inst->ea_base = modrm_table_entry->ea_base;
-		buf += inst->modrm_size;  /* Skip modrm */
-
-		/* Decode SIB */
-		if (inst->sib_size)
-		{
-			inst->sib = * (unsigned char *) buf;
-			inst->sib_scale = (inst->sib & 0xc0) >> 6;
-			inst->sib_index = (inst->sib & 0x38) >> 3;
-			inst->sib_base = inst->sib & 0x07;
-			inst->ea_scale = ea_scale_table[inst->sib_scale];
-			inst->ea_index = inst->sib_index == 0x04 ? x86_reg_none :
-				inst->sib_index + x86_reg_eax;
-			inst->ea_base = inst->sib_base + x86_reg_eax;
-			if (inst->sib_base == 0x05 && inst->modrm_mod == 0x00)
-			{
-				inst->ea_base = x86_reg_none;
-				inst->disp_size = 4;
-			}
-			buf += inst->sib_size;  /* Skip SIB */
-		}
-
-		/* Decode Displacement */
-		switch (inst->disp_size)
-		{
-		case 1:
-			inst->disp = * (int8_t *) buf;
-			break;
-
-		case 2:
-			inst->disp = * (int16_t *) buf;
-			break;
-
-		case 4:
-			inst->disp = * (int32_t *) buf;
-			break;
-		}
-		buf += inst->disp_size;  /* Skip disp */
-	}
-
-	/* Decode Immediate */
-	inst->imm_size = info->imm_size;
-	switch (inst->imm_size)
-	{
-	case 1:
-		inst->imm.b = * (uint8_t *) buf;
-		break;
-
-	case 2:
-		inst->imm.w = * (uint16_t *) buf;
-		break;
-
-	case 4:
-		inst->imm.d = * (unsigned int *) buf;
-		break;
-	}
-	buf += inst->imm_size;  /* Skip imm */
-
-	/* Calculate total size */
-	inst->size = inst->prefix_size + inst->opcode_size + inst->modrm_size +
-		inst->sib_size + inst->disp_size + inst->imm_size;
 }
 
 
-/* Stand-alone disassembler */
-void x86_disasm_file(char *file_name)
+void x86_asm_done(void)
+{
+	x86_asm_free(ASM(x86_asm));
+}
+
+
+void x86_asm_disassemble_binary(char *path)
 {
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;
@@ -626,8 +337,8 @@ void x86_disasm_file(char *file_name)
 	int i;
 
 	/* Open ELF file */
-	x86_disasm_init();
-	elf_file = elf_file_create_from_path(file_name);
+	x86_asm_init();
+	elf_file = elf_file_create_from_path(path);
 
 	/* Read sections */
 	for (i = 0; i < list_count(elf_file->section_list); i++)
@@ -651,7 +362,7 @@ void x86_disasm_file(char *file_name)
 
 			/* Read instruction */
 			eip = section->header->sh_addr + buffer->pos;
-			x86_disasm(elf_buffer_tell(buffer), eip, &inst);
+			x86_inst_decode(&inst, eip, elf_buffer_tell(buffer));
 			if (inst.size)
 			{
 				elf_buffer_read(buffer, NULL, inst.size);
@@ -682,7 +393,7 @@ void x86_disasm_file(char *file_name)
 
 	/* Free ELF */
 	elf_file_free(elf_file);
-	x86_disasm_done();
+	x86_asm_done();
 
 	/* End */
 	mhandle_done();

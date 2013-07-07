@@ -48,8 +48,8 @@
 
 void x86_isa_addps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -82,8 +82,8 @@ void x86_isa_addps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_addss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -116,8 +116,8 @@ void x86_isa_addss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_andps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm128(ctx, src.as_uchar);
@@ -155,8 +155,8 @@ void x86_isa_andps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cmppd_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 	int imm8 = ctx->inst.imm.b;
@@ -192,8 +192,8 @@ void x86_isa_cmppd_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cmpps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 	int imm8 = ctx->inst.imm.b;
@@ -229,7 +229,7 @@ void x86_isa_cmpps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cvtsi2ss_xmm_rm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t dest;
 	unsigned int src;
 
 	int spec_mode;
@@ -263,7 +263,7 @@ void x86_isa_cvtsi2ss_xmm_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cvttss2si_r32_xmmm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t xmm;
+	union x86_inst_xmm_reg_t xmm;
 	unsigned int r32;
 
 	int spec_mode;
@@ -294,8 +294,8 @@ void x86_isa_cvttss2si_r32_xmmm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_divps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -328,8 +328,8 @@ void x86_isa_divps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_divss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -368,8 +368,8 @@ void x86_isa_ldmxcsr_m32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_maxps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -402,8 +402,8 @@ void x86_isa_maxps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_maxss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -436,8 +436,8 @@ void x86_isa_maxss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_minps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -470,8 +470,8 @@ void x86_isa_minps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_minss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -504,7 +504,7 @@ void x86_isa_minss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movaps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t xmm;
+	union x86_inst_xmm_reg_t xmm;
 
 	x86_isa_load_xmmm128(ctx, xmm.as_uchar);
 	x86_isa_store_xmm(ctx, xmm.as_uchar);
@@ -515,7 +515,7 @@ void x86_isa_movaps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movaps_xmmm128_xmm_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t xmm;
+	union x86_inst_xmm_reg_t xmm;
 
 	x86_isa_load_xmm(ctx, xmm.as_uchar);
 	x86_isa_store_xmmm128(ctx, xmm.as_uchar);
@@ -526,8 +526,8 @@ void x86_isa_movaps_xmmm128_xmm_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movhlps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t xmm1;
-	union x86_xmm_reg_t xmm2;
+	union x86_inst_xmm_reg_t xmm1;
+	union x86_inst_xmm_reg_t xmm2;
 
 	x86_isa_load_xmm(ctx, xmm1.as_uchar);
 	x86_isa_load_xmmm128(ctx, xmm2.as_uchar);
@@ -540,8 +540,8 @@ void x86_isa_movhlps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movlhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t xmm1;
-	union x86_xmm_reg_t xmm2;
+	union x86_inst_xmm_reg_t xmm1;
+	union x86_inst_xmm_reg_t xmm2;
 
 	x86_isa_load_xmm(ctx, xmm1.as_uchar);
 	x86_isa_load_xmmm128(ctx, xmm2.as_uchar);
@@ -584,7 +584,7 @@ void x86_isa_movss_xmmm32_xmm_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movups_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t xmm;
+	union x86_inst_xmm_reg_t xmm;
 
 	x86_isa_load_xmmm128(ctx, xmm.as_uchar);
 	x86_isa_store_xmm(ctx, xmm.as_uchar);
@@ -595,7 +595,7 @@ void x86_isa_movups_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movups_xmmm128_xmm_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t xmm;
+	union x86_inst_xmm_reg_t xmm;
 
 	x86_isa_load_xmm(ctx, xmm.as_uchar);
 	x86_isa_store_xmmm128(ctx, xmm.as_uchar);
@@ -606,8 +606,8 @@ void x86_isa_movups_xmmm128_xmm_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mulps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -640,8 +640,8 @@ void x86_isa_mulps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mulss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -674,8 +674,8 @@ void x86_isa_mulss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_orps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm128(ctx, src.as_uchar);
@@ -700,7 +700,7 @@ void x86_isa_orps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_pextrw_r32_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t xmm;
+	union x86_inst_xmm_reg_t xmm;
 	unsigned char imm8;
 	unsigned int result;
 
@@ -721,7 +721,7 @@ void x86_isa_pextrw_r32_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_pinsrw_xmm_r32m16_imm8_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t xmm;
+	union x86_inst_xmm_reg_t xmm;
 	unsigned short r32m16;
 	unsigned char imm8;
 	
@@ -739,7 +739,7 @@ void x86_isa_pinsrw_xmm_r32m16_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_pmovmskb_r32_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t src;
 	unsigned int r32;
 
 	x86_isa_load_xmmm128(ctx, src.as_uchar);
@@ -763,8 +763,8 @@ void x86_isa_pmovmskb_r32_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_shufps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 	unsigned char imm;
 
 	x86_isa_load_xmm(ctx, dest.as_uchar);
@@ -784,8 +784,8 @@ void x86_isa_shufps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_sqrtps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -818,8 +818,8 @@ void x86_isa_sqrtps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_sqrtss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -858,8 +858,8 @@ void x86_isa_stmxcsr_m32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_subps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -892,8 +892,8 @@ void x86_isa_subps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_subss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -926,8 +926,8 @@ void x86_isa_subss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_ucomisd_xmm_xmmm64_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 	
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned long eflags = regs->eflags;
@@ -968,8 +968,8 @@ void x86_isa_ucomisd_xmm_xmmm64_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_ucomiss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 	
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned long eflags = regs->eflags;
@@ -1010,8 +1010,8 @@ void x86_isa_ucomiss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_unpckhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -1044,8 +1044,8 @@ void x86_isa_unpckhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_unpcklps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	int spec_mode;
 
@@ -1078,8 +1078,8 @@ void x86_isa_unpcklps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_xorps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 {
-	union x86_xmm_reg_t dest;
-	union x86_xmm_reg_t src;
+	union x86_inst_xmm_reg_t dest;
+	union x86_inst_xmm_reg_t src;
 
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm128(ctx, src.as_uchar);

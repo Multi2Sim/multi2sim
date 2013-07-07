@@ -20,6 +20,8 @@
 #ifndef ARCH_COMMON_ASM_H
 #define ARCH_COMMON_ASM_H
 
+#include <stdio.h>
+
 #include <lib/util/class.h>
 
 
@@ -41,15 +43,18 @@ struct asm_t
 	
 	/*** Virtual methods ***/
 
-	void (*decode_binary)(char *path);
-
-	void (*decode_buffer)(void *ptr, int size);
-
 	void (*free)(struct asm_t *as);
 };
 
 
 struct asm_t *asm_create(void);
 void asm_free(struct asm_t *as);
+
+/* Function used when processing format strings in 'asm.dat'. Given a pointer
+ * to the middle of a format string in 'fmt', return whether 'token' is
+ * present at that position. If it is, the token length is returned in
+ * 'length', which the disassembler can use to advance its position in the
+ * format string. */
+int asm_is_token(char *fmt, char *token, int *length);
 
 #endif
