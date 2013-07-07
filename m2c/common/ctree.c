@@ -403,6 +403,127 @@ static void ctree_reach_under(struct ctree_t *ctree,
 }
 
 
+/* Given an abstract node of type 'block' that was just reduced, take its
+ * sub-block regions and flatten them to avoid hierarchical blocks.
+ */
+static void ctree_flatten_block(struct ctree_t *ctree,
+		struct cnode_t *abs_node)
+{
+	struct linked_list_t *node_list;
+
+	struct cnode_t *in_node;
+	struct cnode_t *out_node;
+	struct cnode_t *tmp_node;
+
+	FILE *f;
+
+	/* Initialize */
+	node_list = linked_list_create();
+
+	/* Get nodes */
+	assert(!abs_node->parent);
+	assert(abs_node->kind == cnode_abstract);
+	assert(abs_node->abstract.region == cnode_block);
+	assert(abs_node->abstract.child_list->count == 2);
+	in_node = linked_list_goto(abs_node->abstract.child_list, 0);
+	out_node = linked_list_goto(abs_node->abstract.child_list, 1);
+
+	/* Remove existing connection between child nodes */
+	cnode_disconnect(in_node, out_node);
+	assert(!in_node->pred_list->count);
+	assert(!in_node->succ_list->count);
+	assert(!out_node->pred_list->count);
+	assert(!out_node->succ_list->count);
+
+	/* Add elements of 'in_node' to 'node_list' */
+	if (in_node->kind == cnode_leaf)
+	{
+		/* Save node */
+		linked_list_add(node_list, in_node);
+
+		/* Remove from children */
+		in_node = linked_list_find(abs_node->abstract.child_list, in_node);
+		assert(in_node);
+		linked_list_remove(abs_node->abstract.child_list);
+	}
+	else
+	{
+		/* Save child nodes */
+		assert(in_node->abstract.region == cnode_block);
+		LINKED_LIST_FOR_EACH(in_node->abstract.child_list)
+			linked_list_add(node_list,
+				linked_list_get(in_node->abstract.child_list));
+
+		/* Remove from parent node */
+		in_node = linked_list_find(abs_node->abstract.child_list, in_node);
+		assert(in_node);
+		linked_list_remove(abs_node->abstract.child_list);
+
+		/* Remove from control tree */
+		in_node = linked_list_find(ctree->node_list, in_node);
+		assert(in_node);
+		linked_list_remove(ctree->node_list);
+
+		/* Free node */
+		cnode_free(in_node);
+	}
+
+	/* Add elements of 'out_node' to 'node_list' */
+	if (out_node->kind == cnode_leaf)
+	{
+		/* Save node */
+		linked_list_add(node_list, out_node);
+
+		/* Remove from children */
+		out_node = linked_list_find(abs_node->abstract.child_list, out_node);
+		assert(out_node);
+		linked_list_remove(abs_node->abstract.child_list);
+	}
+	else
+	{
+		/* Save child nodes */
+		assert(out_node->abstract.region == cnode_block);
+		LINKED_LIST_FOR_EACH(out_node->abstract.child_list)
+			linked_list_add(node_list,
+				linked_list_get(out_node->abstract.child_list));
+
+		/* Remove from parent node */
+		out_node = linked_list_find(abs_node->abstract.child_list, out_node);
+		assert(out_node);
+		linked_list_remove(abs_node->abstract.child_list);
+
+		/* Remove from control tree */
+		out_node = linked_list_find(ctree->node_list, out_node);
+		assert(out_node);
+		linked_list_remove(ctree->node_list);
+
+		/* Free node */
+		cnode_free(out_node);
+	}
+
+	/* Adopt orphan nodes */
+	assert(!abs_node->abstract.child_list->count);
+	LINKED_LIST_FOR_EACH(node_list)
+	{
+		tmp_node = linked_list_get(node_list);
+		linked_list_add(abs_node->abstract.child_list, tmp_node);
+		tmp_node->parent = abs_node;
+	}
+
+	/* Debug */
+	f = debug_file(ctree_debug_category);
+	if (f)
+	{
+		fprintf(f, "Flatten block region '%s' -> ", abs_node->name);
+		cnode_list_dump(node_list, f);
+		fprintf(f, "\n");
+	}
+
+	/* Done */
+	linked_list_free(node_list);
+}
+
+
 /* Reduce the list of nodes in 'node_list' with a newly created abstract node,
  * returned as the function result.
  * Argument 'name' gives the name of the new abstract node.
@@ -425,8 +546,9 @@ static struct cnode_t *ctree_reduce(
 
 	char name[MAX_STRING_SIZE];
 
-	int region_count;
 	int cyclic_block;
+
+	FILE *f;
 
 #ifndef NDEBUG
 
@@ -449,25 +571,26 @@ static struct cnode_t *ctree_reduce(
 	}
 #endif
 
-	/* Find the number of existing regions of the same type with in order
-	 * to find a unique name for the new abstract node. */
-	region_count = 0;
-	LINKED_LIST_FOR_EACH(ctree->node_list)
-	{
-		tmp_node = linked_list_get(ctree->node_list);
-		if (tmp_node->kind == cnode_abstract &&
-				tmp_node->abstract.region == region)
-			region_count++;
-	}
-
 	/* Figure out a name for the new abstract node */
-	snprintf(name, sizeof name, "__%s_%d", str_map_value(
-			&cnode_region_map, region),
-			region_count);
+	assert(region);
+	snprintf(name, sizeof name, "__%s_%d",
+		str_map_value(&cnode_region_map, region),
+		ctree->name_counter[region]);
+	ctree->name_counter[region]++;
 
 	/* Create new abstract node */
 	abs_node = cnode_create_abstract(name, region);
 	ctree_add_node(ctree, abs_node);
+
+	/* Debug */
+	f = debug_file(ctree_debug_category);
+	if (f)
+	{
+		fprintf(f, "\nReducing %s region: ",
+			str_map_value(&cnode_region_map, region));
+		cnode_list_dump(node_list, f);
+		fprintf(f, " -> '%s'\n", abs_node->name);
+	}
 
 	/* Special case of block regions: record whether there is an edge that
 	 * goes from the last node into the first. In this case, this edge
@@ -572,6 +695,34 @@ static struct cnode_t *ctree_reduce(
 	linked_list_free(out_node_list);
 	linked_list_free(in_node_list);
 
+	/* Special case for nested block regions: when a block has been created
+	 * from block+leaf, leaf+block, or block+block, then the new
+	 * hierarchical structure should be flattened into one single block.
+	 */
+	if (region == cnode_block)
+	{
+		int in_node_is_block;
+		int in_node_is_leaf;
+		int out_node_is_block;
+		int out_node_is_leaf;
+
+		assert(node_list->count == 2);
+		in_node = linked_list_goto(node_list, 0);
+		out_node = linked_list_goto(node_list, 1);
+		assert(in_node && out_node);
+
+		in_node_is_block = in_node->kind == cnode_abstract &&
+				in_node->abstract.region == cnode_block;
+		out_node_is_block = out_node->kind == cnode_abstract &&
+				out_node->abstract.region == cnode_block;
+		in_node_is_leaf = in_node->kind == cnode_leaf;
+		out_node_is_leaf = out_node->kind == cnode_leaf;
+		if ((in_node_is_block && out_node_is_block) ||
+				(in_node_is_block && out_node_is_leaf) ||
+				(in_node_is_leaf && out_node_is_block))
+			ctree_flatten_block(ctree, abs_node);
+	}
+
 	/* Return created abstract node */
 	return abs_node;
 }
@@ -675,18 +826,6 @@ void ctree_example3(struct ctree_t *ctree)
 	NEW_EDGE(K, L);
 
 	ctree->node_entry = A;
-
-	
-	
-	/* Dump into INI file */
-	{ /////
-		struct config_t *config;
-
-		config = config_create("sharir-in.ini");
-		ctree_write_to_config(ctree, config);
-		config_save(config);
-		config_free(config);
-	}
 }
 
 
@@ -942,6 +1081,8 @@ void ctree_structural_analysis(struct ctree_t *ctree)
 	struct linked_list_t *postorder_list;
 	struct linked_list_t *region_list;
 
+	FILE *f;
+
 	/* Initialize */
 	region_list = linked_list_create();
 
@@ -967,8 +1108,7 @@ void ctree_structural_analysis(struct ctree_t *ctree)
 		if (region)
 		{
 			/* Reduce and reconstruct DFS */
-			abs_node = ctree_reduce(ctree,
-					region_list, region);
+			abs_node = ctree_reduce(ctree, region_list, region);
 			ctree_dfs(ctree, NULL);
 
 			/* Insert new abstract node in post-order list, to make
@@ -977,23 +1117,18 @@ void ctree_structural_analysis(struct ctree_t *ctree)
 			linked_list_insert(postorder_list, abs_node);
 
 			/* Debug */
-			if (debug_status(ctree_debug_category))
-			{
-				FILE *f = debug_file(ctree_debug_category);
-				fprintf(f, "\nRegion %s identified: ",
-					str_map_value(
-					&cnode_region_map,
-					region));
-				cnode_list_dump(region_list, f);
-				fprintf(f, "\n");
+			f = debug_file(ctree_debug_category);
+			if (f)
 				ctree_dump(ctree, f);
-			}
 		}
 	}
 
 	/* Free data structures */
 	linked_list_free(postorder_list);
 	linked_list_free(region_list);
+
+	/* Debug */
+	ctree_debug("Done.\n");
 }
 
 
