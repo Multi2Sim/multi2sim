@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <zlib.h>
 
 #include <lib/mhandle/mhandle.h>

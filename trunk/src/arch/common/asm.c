@@ -12,35 +12,32 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
+ *  You should have received as copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_COMMON_EMU_H
-#define ARCH_COMMON_EMU_H
+#include <lib/mhandle/mhandle.h>
 
-#include <lib/util/class.h>
+#include "asm.h"
 
 
-/* Class macros */
-#define EMU_TYPE 0x8896802f
-#define EMU(p) (CLASS_REINTERPRET_CAST(p, EMU_TYPE, struct emu_t))
-#define EMU_CLASS_OF(p) (CLASS_OF(p, EMU_TYPE))
-
-struct emu_t
+struct asm_t *asm_create(void)
 {
-	/* First field - 'emu_t' is a class */
-	struct class_t class_info;
+	struct asm_t *as;
 
-	
-	/*** Virtual methods ***/
+	/* Intialize */
+	as = xcalloc(1, sizeof(struct asm_t));
 
-	void (*free)(struct emu_t *emu);
-};
+	/* Class information */
+	CLASS_INIT(as, ASM_TYPE, NULL);
+
+	/* Return */
+	return as;
+}
 
 
-struct emu_t *emu_create(void);
-void emu_free(struct emu_t *emu);
-
-#endif
+void asm_free(struct asm_t *as)
+{
+	free(as);
+}

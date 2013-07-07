@@ -57,18 +57,18 @@
 /* Endian control */
 #define SWAPH(X)	(((((half)(X)) & 0xff) << 8) | \
 			((((half)(X)) & 0xff00) >> 8))
-#define SWAPW(X)	((((uint32_t)(X)) << 24) |			\
-			((((uint32_t)(X)) << 8)  & 0x00ff0000) |		\
-			((((uint32_t)(X)) >> 8)  & 0x0000ff00) |		\
-			((((uint32_t)(X)) >> 24) & 0x000000ff))
-#define SWAPDW(X)	((((uint64_t)(X)) << 56) |				\
-			((((uint64_t)(X)) << 40) & 0x00ff000000000000ULL) |	\
-			((((uint64_t)(X)) << 24) & 0x0000ff0000000000ULL) |	\
-			((((uint64_t)(X)) << 8)  & 0x000000ff00000000ULL) |	\
-			((((uint64_t)(X)) >> 8)  & 0x00000000ff000000ULL) |	\
-			((((uint64_t)(X)) >> 24) & 0x0000000000ff0000ULL) |	\
-			((((uint64_t)(X)) >> 40) & 0x000000000000ff00ULL) |	\
-			((((uint64_t)(X)) >> 56) & 0x00000000000000ffULL))
+#define SWAPW(X)	((((unsigned int)(X)) << 24) |			\
+			((((unsigned int)(X)) << 8)  & 0x00ff0000) |		\
+			((((unsigned int)(X)) >> 8)  & 0x0000ff00) |		\
+			((((unsigned int)(X)) >> 24) & 0x000000ff))
+#define SWAPDW(X)	((((unsigned long long)(X)) << 56) |				\
+			((((unsigned long long)(X)) << 40) & 0x00ff000000000000ULL) |	\
+			((((unsigned long long)(X)) << 24) & 0x0000ff0000000000ULL) |	\
+			((((unsigned long long)(X)) << 8)  & 0x000000ff00000000ULL) |	\
+			((((unsigned long long)(X)) >> 8)  & 0x00000000ff000000ULL) |	\
+			((((unsigned long long)(X)) >> 24) & 0x0000000000ff0000ULL) |	\
+			((((unsigned long long)(X)) >> 40) & 0x000000000000ff00ULL) |	\
+			((((unsigned long long)(X)) >> 56) & 0x00000000000000ffULL))
 
 
 /* Sign extension */
@@ -82,17 +82,17 @@
 					((unsigned long long) (X)) & ((1ULL << (B)) - 1))
 
 /* Extract bits from HI to LO from X */
-#define BITS16(X, HI, LO)	((((uint16_t)(X))>>(LO))&((1U<<((HI)-(LO)+1))-1))
-#define BITS32(X, HI, LO)	((((uint32_t)(X))>>(LO))&((1U<<((HI)-(LO)+1))-1))
-#define BITS64(X, HI, LO)	((((uint64_t)(X))>>(LO))&((1ULL<<((HI)-(LO)+1ULL))-1ULL))
+#define BITS16(X, HI, LO)	((((unsigned short)(X))>>(LO))&((1U<<((HI)-(LO)+1))-1))
+#define BITS32(X, HI, LO)	((((unsigned int)(X))>>(LO))&((1U<<((HI)-(LO)+1))-1))
+#define BITS64(X, HI, LO)	((((unsigned long long)(X))>>(LO))&((1ULL<<((HI)-(LO)+1ULL))-1ULL))
 
 /* Bit-handling macros */
-#define GETBIT32(X, B)		((uint32_t)(X)&(1U<<(B)))
-#define GETBIT64(X, B)		((uint64_t)(X)&(1ULL<<(B)))
-#define SETBIT32(X, B)		((uint32_t)(X)|(1U<<(B)))
-#define SETBIT64(X, B)		((uint64_t)(X)|(1ULL<<(B)))
-#define CLEARBIT32(X, B)	((uint32_t)(X)&(~(1U<<(B))))
-#define CLEARBIT64(X, B)	((uint64_t)(X)&(~(1ULL<<(B))))
+#define GETBIT32(X, B)		((unsigned int)(X)&(1U<<(B)))
+#define GETBIT64(X, B)		((unsigned long long)(X)&(1ULL<<(B)))
+#define SETBIT32(X, B)		((unsigned int)(X)|(1U<<(B)))
+#define SETBIT64(X, B)		((unsigned long long)(X)|(1ULL<<(B)))
+#define CLEARBIT32(X, B)	((unsigned int)(X)&(~(1U<<(B))))
+#define CLEARBIT64(X, B)	((unsigned long long)(X)&(~(1ULL<<(B))))
 #define SETBITVALUE32(X, B, V)	((V) ? SETBIT32((X),(B)) : CLEARBIT32((X),(B)))
 #define SETBITVALUE64(X, B, V)	((V) ? SETBIT64((X),(B)) : CLEARBIT64((X),(B)))
 

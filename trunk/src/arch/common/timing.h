@@ -17,30 +17,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_COMMON_EMU_H
-#define ARCH_COMMON_EMU_H
+#ifndef ARCH_COMMON_TIMING_H
+#define ARCH_COMMON_TIMING_H
 
 #include <lib/util/class.h>
 
 
 /* Class macros */
-#define EMU_TYPE 0x8896802f
-#define EMU(p) (CLASS_REINTERPRET_CAST(p, EMU_TYPE, struct emu_t))
-#define EMU_CLASS_OF(p) (CLASS_OF(p, EMU_TYPE))
+#define TIMING_TYPE 0x29276c06
+#define TIMING(p) (CLASS_REINTERPRET_CAST(p, TIMING_TYPE, struct timing_t))
+#define TIMING_CLASS_OF(p) (CLASS_OF(p, TIMING_TYPE))
 
-struct emu_t
+struct timing_t
 {
-	/* First field - 'emu_t' is a class */
+	/* This is a class
+	 * WARNING - must be the first field */
 	struct class_t class_info;
 
 	
 	/*** Virtual methods ***/
 
-	void (*free)(struct emu_t *emu);
+	void (*free)(struct timing_t *timing);
 };
 
 
-struct emu_t *emu_create(void);
-void emu_free(struct emu_t *emu);
+struct timing_t *timing_create(void);
+void timing_free(struct timing_t *timing);
 
 #endif
+

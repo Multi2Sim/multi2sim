@@ -20,7 +20,11 @@
 #ifndef ARCH_X86_EMU_ISA_H
 #define ARCH_X86_EMU_ISA_H
 
+#include <stdio.h>
+
 #include <arch/x86/asm/asm.h>
+#include <arch/x86/asm/inst.h>
+
 
 /* Forward type declarations */
 struct x86_ctx_t;

@@ -26,9 +26,9 @@
 
 
 /* Class-related macros */
-#define EVG_EMU_TYPE  0x69b79dc4
-#define EVG_EMU(p)  CLASS_REINTERPRET_CAST((p), EVG_EMU_TYPE, struct evg_emu_t)
-#define IS_EVG_EMU(p)  CLASS_OF((p), EVG_EMU_TYPE)
+#define EVG_EMU_TYPE 0x69b79dc4
+#define EVG_EMU(p) CLASS_REINTERPRET_CAST((p), EVG_EMU_TYPE, struct evg_emu_t)
+#define EVG_EMU_CLASS_OF(p) CLASS_OF((p), EVG_EMU_TYPE)
 
 
 /* Class 'evg_emu_t'
