@@ -27,9 +27,9 @@
 
 
 /* Class-related macros */
-#define FRM_EMU_TYPE  0x02c1f8fd
-#define FRM_EMU(p)  CLASS_REINTERPRET_CAST((p), FRM_EMU_TYPE, struct frm_emu_t)
-#define IS_FRM_EMU(p)  CLASS_OF((p), FRM_EMU_TYPE)
+#define FRM_EMU_TYPE 0x02c1f8fd
+#define FRM_EMU(p) CLASS_REINTERPRET_CAST((p), FRM_EMU_TYPE, struct frm_emu_t)
+#define FRM_EMU_CLASS_OF(p) CLASS_OF((p), FRM_EMU_TYPE)
 
 
 /* Class 'frm_emu_t'

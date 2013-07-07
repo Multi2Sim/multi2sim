@@ -481,7 +481,7 @@ void x86_isa_cpuid_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cwde_impl(struct x86_ctx_t *ctx)
 {
-	unsigned int eax = (int16_t) x86_isa_load_reg(ctx, x86_reg_ax);
+	unsigned int eax = (short) x86_isa_load_reg(ctx, x86_reg_ax);
 	x86_isa_store_reg(ctx, x86_reg_eax, eax);
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
@@ -1400,7 +1400,7 @@ void x86_isa_movsx_r32_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movsx_r32_rm16_impl(struct x86_ctx_t *ctx)
 {
-	unsigned int value = (int16_t) x86_isa_load_rm16(ctx);
+	unsigned int value = (short) x86_isa_load_rm16(ctx);
 	x86_isa_store_r32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_rm16, 0, 0, x86_dep_r32, 0, 0, 0);

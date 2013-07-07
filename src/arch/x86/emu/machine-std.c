@@ -241,7 +241,7 @@ void x86_isa_##stdop##_rm16_imm8_impl(struct x86_ctx_t *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned short rm16 = x86_isa_load_rm16(ctx); \
-	unsigned short imm8 = (int8_t) ctx->inst.imm.b; \
+	unsigned short imm8 = (char) ctx->inst.imm.b; \
 	unsigned long flags = regs->eflags; \
 	enum x86_dep_t cin_dep = cin ? x86_dep_cf : 0; \
 	__X86_ISA_ASM_START__ \
@@ -273,7 +273,7 @@ void x86_isa_##stdop##_rm32_imm8_impl(struct x86_ctx_t *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned int rm32 = x86_isa_load_rm32(ctx); \
-	unsigned int imm8 = (int8_t) ctx->inst.imm.b; \
+	unsigned int imm8 = (char) ctx->inst.imm.b; \
 	unsigned long flags = regs->eflags; \
 	enum x86_dep_t cin_dep = cin ? x86_dep_cf : 0; \
 	__X86_ISA_ASM_START__ \

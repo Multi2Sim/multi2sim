@@ -20,7 +20,10 @@
 #ifndef ARCH_X86_EMU_CONTEXT_H
 #define ARCH_X86_EMU_CONTEXT_H
 
+#include <pthread.h>
+
 #include <arch/x86/asm/asm.h>
+#include <arch/x86/asm/inst.h>
 
 
 /* Forward declarations */

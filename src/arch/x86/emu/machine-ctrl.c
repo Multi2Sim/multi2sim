@@ -83,7 +83,7 @@ void x86_isa_set##cc##_rm8_impl(struct x86_ctx_t *ctx) \
 void x86_isa_j##cc##_rel8_impl(struct x86_ctx_t *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	ctx->target_eip = regs->eip + (int8_t) ctx->inst.imm.b; \
+	ctx->target_eip = regs->eip + (char) ctx->inst.imm.b; \
 	if (cc_##cc) \
 		regs->eip = ctx->target_eip; \
 	x86_uinst_new(ctx, x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \

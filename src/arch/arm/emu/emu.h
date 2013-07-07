@@ -27,9 +27,9 @@
 
 
 /* Class-related macros */
-#define ARM_EMU_TYPE  0xe7045419
-#define ARM_EMU(p)  CLASS_REINTERPRET_CAST((p), ARM_EMU_TYPE, struct arm_emu_t)
-#define IS_ARM_EMU(p)  CLASS_OF((p), ARM_EMU_TYPE)
+#define ARM_EMU_TYPE 0xe7045419
+#define ARM_EMU(p) CLASS_REINTERPRET_CAST((p), ARM_EMU_TYPE, struct arm_emu_t)
+#define ARM_EMU_CLASS_OF(p) CLASS_OF((p), ARM_EMU_TYPE)
 
 
 /* Class 'arm_emu_t'

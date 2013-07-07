@@ -17,5 +17,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/mhandle/mhandle.h>
+
 #include "emu.h"
+
+
+struct emu_t *emu_create(void)
+{
+	struct emu_t *timing;
+
+	/* Initialize */
+	timing = xcalloc(1, sizeof(struct emu_t));
+
+	/* Class information */
+	CLASS_INIT(timing, EMU_TYPE, NULL);
+
+	/* Return */
+	return timing;
+}
+
+
+void emu_free(struct emu_t *timing)
+{
+	free(timing);
+}
 
