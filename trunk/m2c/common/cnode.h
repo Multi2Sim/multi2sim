@@ -40,6 +40,7 @@ extern struct str_map_t cnode_region_map;
 enum cnode_region_t
 {
 	cnode_region_invalid,
+
 	cnode_block,
 	cnode_if_then,
 	cnode_if_then_else,
@@ -48,7 +49,9 @@ enum cnode_region_t
 	cnode_proper_interval,
 	cnode_improper_interval,
 	cnode_proper_outer_interval,
-	cnode_improper_outer_interval
+	cnode_improper_outer_interval,
+
+	cnode_region_count
 };
 
 

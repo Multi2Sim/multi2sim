@@ -22,6 +22,8 @@
 
 #include <stdio.h>
 
+#include "cnode.h"
+
 
 /*** Forward declarations ***/
 
@@ -49,6 +51,13 @@ extern int ctree_debug_category;
 struct ctree_t
 {
 	char *name;
+
+	/* Counters used to assign names to new nodes. A different counter is
+	 * used for each possible abstract node region.
+	 */
+	unsigned int name_counter[cnode_region_count];
+
+	/* List of nodes and entry node */
 	struct linked_list_t *node_list;
 	struct cnode_t *node_entry;
 };
