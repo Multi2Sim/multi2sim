@@ -22,9 +22,6 @@ libtiming_a_SOURCES = \
 	mem-config.c \
 	mem-config.h \
 	\
-	scalar-unit.c \
-	scalar-unit.h \
-	\
 	simd-unit.c \
 	simd-unit.h \
 	\
