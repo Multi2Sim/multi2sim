@@ -254,7 +254,7 @@ static void x86_trace_cache_entry_dump(struct x86_trace_cache_t *trace_cache,
 		mem_read(mem, addr, sizeof mop_bytes, mop_bytes);
 
 		/* Disassemble */
-		x86_disasm(mop_bytes, addr, &inst);
+		x86_inst_decode(&inst, addr, mop_bytes);
 
 		/* Extract instruction name */
 		mop_name_end = index(inst.format, '_');

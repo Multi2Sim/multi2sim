@@ -17,6 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <ctype.h>
+#include <string.h>
+
 #include <lib/mhandle/mhandle.h>
 
 #include "asm.h"
@@ -40,4 +44,26 @@ struct asm_t *asm_create(void)
 void asm_free(struct asm_t *as)
 {
 	free(as);
+}
+
+
+int asm_is_token(char *fmt, char *token, int *length_ptr)
+{
+	int length;
+	int is_token;
+
+	assert(token);
+	assert(fmt);
+
+	/* Check for token */
+	length = strlen(token);
+	is_token = !strncmp(fmt, token, length) &&
+		!isalnum(fmt[length]);
+
+	/* Return its length if found */
+	if (is_token && length_ptr)
+		*length_ptr = length;
+
+	/* Result */
+	return is_token;
 }

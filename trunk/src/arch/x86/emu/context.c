@@ -295,8 +295,8 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 	mem->safe = mem_safe_mode;
 
 	/* Disassemble */
-	x86_disasm(buffer_ptr, regs->eip, &ctx->inst);
-	if (ctx->inst.opcode == x86_op_none && !spec_mode)
+	x86_inst_decode(&ctx->inst, regs->eip, buffer_ptr);
+	if (ctx->inst.opcode == x86_inst_opcode_invalid && !spec_mode)
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)",
 			regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
