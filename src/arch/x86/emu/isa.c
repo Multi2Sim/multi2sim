@@ -18,6 +18,7 @@
  */
 
 #include <stdarg.h>
+#include <string.h>
 
 #include <arch/common/arch.h>
 #include <lib/util/misc.h>

@@ -186,9 +186,9 @@ struct si_mem_ptr_t
 
 
 /* Class-related macros */
-#define SI_EMU_TYPE  0x9469771f
-#define SI_EMU(p)  CLASS_REINTERPRET_CAST((p), SI_EMU_TYPE, struct si_emu_t)
-#define IS_SI_EMU(p)  CLASS_OF((p), SI_EMU_TYPE)
+#define SI_EMU_TYPE 0x9469771f
+#define SI_EMU(p) CLASS_REINTERPRET_CAST((p), SI_EMU_TYPE, struct si_emu_t)
+#define SI_EMU_CLASS_OF(p) CLASS_OF((p), SI_EMU_TYPE)
 
 
 /* Class 'si_emu_t'
