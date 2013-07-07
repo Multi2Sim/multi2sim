@@ -67,7 +67,7 @@ struct frm_uop_t
 	unsigned int ready : 1;
 	unsigned int mem_wait_inst : 1;
 	unsigned int barrier_wait_inst : 1;
-	unsigned int warp_last_inst : 1;   /* Last instruction in the WF */
+	unsigned int warp_last_inst : 1;   /* Last instruction in the warp */
 	unsigned int vector_mem_read : 1;
 	unsigned int vector_mem_write : 1;
 	unsigned int scalar_mem_read : 1;
