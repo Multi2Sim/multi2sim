@@ -175,6 +175,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	int elf_head;
 	struct elf_file_t *dev_func_bin;
 	FILE *dev_func_bin_f;
+	int abi_version;
 
 	CUmodule module;
 
@@ -247,16 +248,27 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 		dev_func_bin_f = fopen(cubin_path, "wb");
 		elf_buffer_dump(&(dev_func_bin->buffer), dev_func_bin_f);
 		fclose(dev_func_bin_f);
-		elf_file_free(dev_func_bin);
 	}
 	else
 		dev_func_bin = elf_file_create_from_path(cubin_path);
+
+	/* Check for Fermi binary. Support for Fermi only for now. */
+	elf_buffer_seek(&(dev_func_bin->buffer), 8);
+	elf_buffer_read(&(dev_func_bin->buffer), &abi_version, 1);
+	if (abi_version != 4 && abi_version != 6)
+		fatal("\tThe cubin file has a unrecognized ABI version (%d).\n"
+				"\tMulti2Sim CUDA library is currently\n"
+				"compatible with Fermi binary only.",
+				abi_version);
 
 	/* Load module */
 	cuModuleLoad(&module, cubin_path);
 
 	/* Get device function */
 	cuModuleGetFunction(&function, module, deviceFun);
+
+	/* Free */
+	elf_file_free(dev_func_bin);
 
 	cuda_debug_print(stdout, "\treturn\n");
 }

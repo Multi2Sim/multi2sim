@@ -22,7 +22,6 @@
 
 #include "branch-unit.h"
 #include "lds-unit.h"
-#include "scalar-unit.h"
 #include "vector-mem-unit.h"
 
 

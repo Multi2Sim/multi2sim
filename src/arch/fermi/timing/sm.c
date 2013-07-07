@@ -319,7 +319,7 @@ void frm_sm_unmap_thread_block(struct frm_sm_t *sm, struct frm_thread_block_t *t
 
 void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 {
-	int i, j;
+	int j;
 	int instructions_processed = 0;
 	int thread_id;
 	struct frm_warp_t *warp;
@@ -330,178 +330,165 @@ void frm_sm_fetch(struct frm_sm_t *sm, int wiq_id)
 	char inst_str[1024];
 	char inst_str_trimmed[1024];
 
-	for (i = 0; i < frm_gpu_max_warps_per_sm; i++)
+	warp = sm->warp_inst_queues[wiq_id]->entries[0]->warp;
+
+	/* No warp */
+	if (!warp) 
+		return;
+
+	/* Sanity check warp */
+	assert(warp->warp_inst_queue_entry);
+
+	/* If instruction is ready the next cycle */
+	if (warp->warp_inst_queue_entry->ready_next_cycle)
 	{
-		warp = sm->warp_inst_queues[wiq_id]->entries[i]->warp;
-
-		/* No warp */
-		if (!warp) 
-			continue;
-
-		/* Sanity check warp */
-		assert(warp->warp_inst_queue_entry);
-		assert(warp->warp_inst_queue_entry ==
-				sm->warp_inst_queues[wiq_id]->entries[i]);
-
-		/* Regardless of how many instructions have been fetched 
-		 * already, this should always be checked */
-		if (warp->warp_inst_queue_entry->ready_next_cycle)
-		{
-			/* Allow instruction to be fetched next cycle */
-			warp->warp_inst_queue_entry->ready = 1;
-			warp->warp_inst_queue_entry->ready_next_cycle = 0;
-			continue;
-		}
-
-		/* Only fetch a fixed number of instructions per cycle */
-		if (instructions_processed == frm_gpu_fe_fetch_width)
-			continue;
-
-		/* Wavefront isn't ready (previous instruction is still 
-		 * in flight) */
-		if (!warp->warp_inst_queue_entry->ready)
-			continue;
-
-		/* If the warp finishes, there still may be outstanding 
-		 * memory operations, so if the entry is marked finished 
-		 * the warp must also be finished, but not vice-versa */
-		if (warp->warp_inst_queue_entry->warp_finished)
-		{
-			assert(warp->finished);
-			continue;
-		}
-
-		/* Wavefront is finished but other warps from workgroup 
-		 * remain.  There may still be outstanding memory operations, 
-		 * but no more instructions should be fetched. */
-		if (warp->finished)
-			continue;
-
-		/* Wavefront is ready but waiting on outstanding 
-		 * memory instructions */
-		if (warp->warp_inst_queue_entry->wait_for_mem)
-		{
-			if (!warp->warp_inst_queue_entry->lgkm_cnt &&
-					!warp->warp_inst_queue_entry->vm_cnt)
-			{
-				warp->warp_inst_queue_entry->wait_for_mem =
-					0;	
-			}
-			else
-			{
-				/* TODO Show a waiting state in visualization 
-				 * tool */
-				/* XXX uop is already freed */
-				continue;
-			}
-		}
-
-		/* Wavefront is ready but waiting at barrier */
-		if (warp->warp_inst_queue_entry->wait_for_barrier)
-		{
-			/* TODO Show a waiting state in visualization tool */
-			/* XXX uop is already freed */
-			continue;
-		}
-
-		/* Stall if fetch buffer full */
-		assert(list_count(sm->fetch_buffers[wiq_id]) <= 
-				frm_gpu_fe_fetch_buffer_size);
-		if (list_count(sm->fetch_buffers[wiq_id]) == 
-				frm_gpu_fe_fetch_buffer_size)
-		{
-			continue;
-		}
-
-		/* Emulate instruction */
-		frm_warp_execute(warp);
-
-		warp_inst_queue_entry = warp->warp_inst_queue_entry;
-		warp_inst_queue_entry->ready = 0;
-
-		/* Create uop */
-		uop = frm_uop_create();
-		uop->warp = warp;
-		uop->thread_block = warp->thread_block;
-		uop->sm = sm;
-		uop->id_in_sm = sm->uop_id_counter++;
-		uop->id_in_warp = warp->uop_id_counter++;
-		uop->warp_inst_queue_id = wiq_id;
-		uop->vector_mem_read = warp->vector_mem_read;
-		uop->vector_mem_write = warp->vector_mem_write;
-		uop->scalar_mem_read = warp->scalar_mem_read;
-		uop->lds_read = warp->lds_read;
-		uop->lds_write = warp->lds_write;
-		uop->warp_inst_queue_entry = warp->warp_inst_queue_entry;
-		uop->warp_last_inst = warp->finished;
-		uop->mem_wait_inst = warp->mem_wait;
-		uop->barrier_wait_inst = warp->barrier;
-		uop->inst = warp->inst;
-		uop->cycle_created = arch_fermi->cycle;
-		assert(warp->thread_block && uop->thread_block);
-
-		/* Debug */
-		//frm_inst_dump(inst_str, sizeof inst_str, 
-		//	warp->grid->inst_buffer, warp->pc / 8);
-
-		/* Trace */
-		if (frm_tracing())
-		{
-			//frm_inst_dump(&warp->inst, warp->inst_size, 
-			//	warp->pc, 
-			//	warp->grid->inst_buffer + warp->pc,
-			//	inst_str, sizeof inst_str);
-			str_single_spaces(inst_str_trimmed, 
-					sizeof inst_str_trimmed, 
-					inst_str);
-			frm_trace("si.new_inst id=%lld cu=%d ib=%d wg=%d "
-					"wf=%d uop_id=%lld stg=\"f\" asm=\"%s\"\n", 
-					uop->id_in_sm, sm->id, 
-					uop->warp_inst_queue_id, uop->thread_block->id, 
-					warp->id, uop->id_in_warp, 
-					inst_str_trimmed);
-		}
-
-		/* Update last memory accesses */
-		for (thread_id = uop->warp->threads[0]->id_in_warp; 
-				thread_id < uop->warp->thread_count; 
-				thread_id++)
-		{
-			thread = uop->warp->threads[thread_id];
-			thread_uop = 
-				&uop->thread_uop[thread->id_in_warp];
-
-			/* Global memory */
-			thread_uop->global_mem_access_addr = 
-				thread->global_mem_access_addr;
-			thread_uop->global_mem_access_size = 
-				thread->global_mem_access_size;
-
-			/* LDS */
-			thread_uop->lds_access_count = 
-				thread->lds_access_count;
-			for (j = 0; j < thread->lds_access_count; j++)
-			{
-				thread_uop->lds_access_kind[j] = 
-					thread->lds_access_type[j];
-				thread_uop->lds_access_addr[j] = 
-					thread->lds_access_addr[j];
-				thread_uop->lds_access_size[j] = 
-					thread->lds_access_size[j];
-			}
-		}
-
-		/* Access instruction cache. Record the time when the 
-		 * instruction will have been fetched, as per the latency 
-		 * of the instruction memory. */
-		uop->fetch_ready = arch_fermi->cycle + frm_gpu_fe_fetch_latency;
-
-		/* Insert into fetch buffer */
-		list_enqueue(sm->fetch_buffers[wiq_id], uop);
-
-		instructions_processed++;
-		sm->inst_count++;
+		warp->warp_inst_queue_entry->ready = 1;
+		warp->warp_inst_queue_entry->ready_next_cycle = 0;
+		return;
 	}
+
+	/* Only fetch a fixed number of instructions per cycle */
+	if (instructions_processed == frm_gpu_fe_fetch_width)
+		return;
+
+	/* WIQ entry not ready */
+	if (!warp->warp_inst_queue_entry->ready)
+		return;
+
+	/* If the warp finishes, there still may be outstanding 
+	 * memory operations, so if the entry is marked finished 
+	 * the warp must also be finished, but not vice-versa */
+	if (warp->warp_inst_queue_entry->warp_finished)
+	{
+		assert(warp->finished);
+		return;
+	}
+
+	/* Warp is finished but other warps from thread block
+	 * remain.  There may still be outstanding memory operations, 
+	 * but no more instructions should be fetched. */
+	if (warp->finished)
+		return;
+
+	/* Warp is ready but waiting on outstanding 
+	 * memory instructions */
+	if (warp->warp_inst_queue_entry->wait_for_mem)
+	{
+		if (!warp->warp_inst_queue_entry->lgkm_cnt &&
+				!warp->warp_inst_queue_entry->vm_cnt)
+		{
+			warp->warp_inst_queue_entry->wait_for_mem =
+				0;	
+		}
+		else
+		{
+			/* TODO Show a waiting state in visualization 
+			 * tool */
+			/* XXX uop is already freed */
+			return;
+		}
+	}
+
+	/* Warp is ready but waiting at barrier */
+	if (warp->warp_inst_queue_entry->wait_for_barrier)
+	{
+		/* TODO Show a waiting state in visualization tool */
+		/* XXX uop is already freed */
+		return;
+	}
+
+	/* If fetch buffer full */
+	if (list_count(sm->fetch_buffers[wiq_id]) == 
+			frm_gpu_fe_fetch_buffer_size)
+		return;
+
+	/* Emulate instruction */
+	frm_warp_execute(warp);
+
+	warp_inst_queue_entry = warp->warp_inst_queue_entry;
+	warp_inst_queue_entry->ready = 0;
+
+	/* Create uop */
+	uop = frm_uop_create();
+	uop->warp = warp;
+	uop->thread_block = warp->thread_block;
+	uop->sm = sm;
+	uop->id_in_sm = sm->uop_id_counter++;
+	uop->id_in_warp = warp->uop_id_counter++;
+	uop->warp_inst_queue_id = wiq_id;
+	uop->vector_mem_read = warp->vector_mem_read;
+	uop->vector_mem_write = warp->vector_mem_write;
+	uop->lds_read = warp->lds_read;
+	uop->lds_write = warp->lds_write;
+	uop->warp_inst_queue_entry = warp->warp_inst_queue_entry;
+	uop->warp_last_inst = warp->finished;
+	uop->mem_wait_inst = warp->mem_wait;
+	uop->barrier_wait_inst = warp->barrier;
+	uop->inst = warp->inst;
+	uop->cycle_created = arch_fermi->cycle;
+	assert(warp->thread_block && uop->thread_block);
+
+	/* Debug */
+	//frm_inst_dump(inst_str, sizeof inst_str, 
+	//	warp->grid->inst_buffer, warp->pc / 8);
+
+	/* Trace */
+	if (frm_tracing())
+	{
+		//frm_inst_dump(&warp->inst, warp->inst_size, 
+		//	warp->pc, 
+		//	warp->grid->inst_buffer + warp->pc,
+		//	inst_str, sizeof inst_str);
+		str_single_spaces(inst_str_trimmed, 
+				sizeof inst_str_trimmed, 
+				inst_str);
+		frm_trace("si.new_inst id=%lld cu=%d ib=%d wg=%d "
+				"wf=%d uop_id=%lld stg=\"f\" asm=\"%s\"\n", 
+				uop->id_in_sm, sm->id, 
+				uop->warp_inst_queue_id, uop->thread_block->id, 
+				warp->id, uop->id_in_warp, 
+				inst_str_trimmed);
+	}
+
+	/* Update last memory accesses */
+	for (thread_id = uop->warp->threads[0]->id_in_warp; 
+			thread_id < uop->warp->thread_count; 
+			thread_id++)
+	{
+		thread = uop->warp->threads[thread_id];
+		thread_uop = 
+			&uop->thread_uop[thread->id_in_warp];
+
+		/* Global memory */
+		thread_uop->global_mem_access_addr = 
+			thread->global_mem_access_addr;
+		thread_uop->global_mem_access_size = 
+			thread->global_mem_access_size;
+
+		/* LDS */
+		thread_uop->lds_access_count = 
+			thread->lds_access_count;
+		for (j = 0; j < thread->lds_access_count; j++)
+		{
+			thread_uop->lds_access_kind[j] = 
+				thread->lds_access_type[j];
+			thread_uop->lds_access_addr[j] = 
+				thread->lds_access_addr[j];
+			thread_uop->lds_access_size[j] = 
+				thread->lds_access_size[j];
+		}
+	}
+
+	/* Access instruction cache. Record the time when the 
+	 * instruction will have been fetched, as per the latency 
+	 * of the instruction memory. */
+	uop->fetch_ready = arch_fermi->cycle + frm_gpu_fe_fetch_latency;
+
+	/* Insert into fetch buffer */
+	list_enqueue(sm->fetch_buffers[wiq_id], uop);
+
+	instructions_processed++;
+	sm->inst_count++;
 }
 
 /* Decode the instruction type */
@@ -1272,7 +1259,7 @@ void frm_sm_run(struct frm_sm_t *sm)
 	//}
 
 	/* Fetch */
-	for (i = 0; i < sm->num_simd_units; i++)
+	for (i = 0; i < sm->num_warp_inst_queues; i++)
 		frm_sm_fetch(sm, i);
 
 	/* Stats */
@@ -1280,6 +1267,5 @@ void frm_sm_run(struct frm_sm_t *sm)
 
 	if(frm_spatial_report_active)
 		frm_sm_interval_update(sm);
-
 }
 

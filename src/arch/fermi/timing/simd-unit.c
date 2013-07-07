@@ -38,33 +38,31 @@
 void frm_simd_complete(struct frm_simd_t *simd)
 {
 	struct frm_uop_t *uop;
-	int list_entries;
+	int num_insts;
 	int list_index = 0;
 	int i;
 
-	list_entries = list_count(simd->exec_buffer);
+	num_insts = list_count(simd->exec_buffer);
 
-	assert(list_entries <= frm_gpu_simd_exec_buffer_size);
+	assert(num_insts <= frm_gpu_simd_exec_buffer_size);
 
-	for (i = 0; i < list_entries; i++)
+	for (i = 0; i < num_insts; i++)
 	{
 		uop = list_get(simd->exec_buffer, list_index);
 		assert(uop);
 
+		/* Uop not ready */
 		if (arch_fermi->cycle < uop->execute_ready)
 		{
 			list_index++;
 			continue;
 		}
 
-		/* Check for "end" instruction */
+		/* Check if the last instruction */
 		if (uop->warp_last_inst)
 		{
-			/* If the uop completes the warp, set a bit 
-			 * so that the hardware wont try to fetch any 
-			 * more instructions for it */
-			uop->thread_block->sm_finished_count++;
 			uop->warp_inst_queue_entry->warp_finished = 1;
+			uop->thread_block->sm_finished_count++;
 
 			/* Check if warp finishes a work-group */
 			assert(uop->thread_block);
@@ -97,17 +95,17 @@ void frm_simd_complete(struct frm_simd_t *simd)
 void frm_simd_execute(struct frm_simd_t *simd)
 {
 	struct frm_uop_t *uop;
-	int list_entries;
+	int num_insts;
 	int list_index = 0;
 	int instructions_processed = 0;
 	int i;
 
-	list_entries = list_count(simd->decode_buffer);
+	num_insts = list_count(simd->decode_buffer);
 
 	/* Sanity check the decode buffer */
-	assert(list_entries <= frm_gpu_simd_decode_buffer_size);
+	assert(num_insts <= frm_gpu_simd_decode_buffer_size);
 
-	for (i = 0; i < list_entries; i++)
+	for (i = 0; i < num_insts; i++)
 	{
 		uop = list_get(simd->decode_buffer, list_index);
 		assert(uop);
@@ -167,16 +165,16 @@ void frm_simd_decode(struct frm_simd_t *simd)
 {
 	struct frm_uop_t *uop;
 	int instructions_processed = 0;
-	int list_entries;
+	int num_insts;
 	int list_index = 0;
 	int i;
 
-	list_entries = list_count(simd->issue_buffer);
+	num_insts = list_count(simd->issue_buffer);
 
 	/* Sanity check the issue buffer */
-	assert(list_entries <= frm_gpu_simd_issue_buffer_size);
+	assert(num_insts <= frm_gpu_simd_issue_buffer_size);
 
-	for (i = 0; i < list_entries; i++)
+	for (i = 0; i < num_insts; i++)
 	{
 		uop = list_get(simd->issue_buffer, list_index);
 		assert(uop);
