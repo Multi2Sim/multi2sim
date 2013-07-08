@@ -210,6 +210,16 @@ struct si2bin_arg_t *llvm2si_function_translate_value(
 		LLVMValueRef llvalue,
 		struct llvm2si_symbol_t **symbol_ptr);
 
+/* Convert an argument of type literal (any variant) into a vector register by
+ * emitting a 'v_mob_b32' instruction. The original argument is consumed and
+ * make part of the new instruction, while a new argument instance is returned
+ * containing the new vector register. If the original argument was not a
+ * literal, it will be returned directly, and no instruction is emitted. */
+struct si2bin_arg_t *llvm2si_function_const_to_vreg(
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block,
+		struct si2bin_arg_t *arg);
+
 /* Allocate 'count' scalar/vector registers where the first register
  * identifier is a multiple of 'align'. */
 int llvm2si_function_alloc_sreg(struct llvm2si_function_t *function,
