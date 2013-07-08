@@ -22,9 +22,15 @@
 
 #include <stdio.h>
 
+
 /* Forward declarations */
 struct list_t;
 
+extern struct frm2bin_inner_bin_t *frm2bin_inner_bin;
+
+extern struct frm2bin_outer_bin_t *frm2bin_outer_bin;
+
+extern struct frm2bin_inner_bin_entry_t *frm2bin_entry;
 
 /* Command-line option for assembler set */
 extern int frm2bin_assemble;
@@ -33,12 +39,16 @@ extern int frm2bin_assemble;
 extern struct elf_enc_buffer_t *text_section_buffer;
 
 int frm2bin_yylex(void);
+
 int frm2bin_yyparse(void);
+
 void frm2bin_yyerror(const char *s);
 void frm2bin_yyerror_fmt(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 extern int frm2bin_yylineno;
+
 extern FILE *frm2bin_yyin;
+
 extern char *frm2bin_yytext;
 
 /*
@@ -46,7 +56,9 @@ extern char *frm2bin_yytext;
  */
 
 void frm2bin_init(void);
+
 void frm2bin_done(void);
+
 void frm2bin_compile(struct list_t *source_file_list,
 		struct list_t *bin_file_list);
 

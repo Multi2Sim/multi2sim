@@ -32,6 +32,12 @@ libfrm2bin_a_SOURCES = \
 	token.c \
 	token.h \
 	\
+	inner-bin.c \
+	inner-bin.h \
+	\
+	outer-bin.c \
+	outer-bin.h \
+	\
 	lex.l \
 	parser.y
 
