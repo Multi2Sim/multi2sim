@@ -31,6 +31,8 @@
 
 #include "inst.h"
 #include "inst-info.h"
+#include "inner-bin.h"
+#include "outer-bin.h"
 #include "frm2bin.h"
 #include "parser.h"
 #include "symbol.h"
@@ -39,6 +41,13 @@
 #include "stream.h"
 */
 
+struct frm2bin_outer_bin_t *frm2bin_outer_bin;
+
+struct frm2bin_inner_bin_t *frm2bin_inner_bin;
+
+struct frm2bin_inner_bin_entry_t *frm2bin_entry;
+
+struct elf_enc_buffer_t *bin_buffer;
 
 int frm2bin_assemble;		/* Command-line option set */
 
@@ -74,7 +83,7 @@ void frm2bin_yyerror_fmt(char *fmt, ...)
 
 
 
-/*
+/* 
  * Public Functions
  */
 
@@ -125,11 +134,14 @@ void frm2bin_compile(struct list_t *source_file_list,
 		 * now */
 		text_section_buffer = elf_enc_buffer_create();
 
+		frm2bin_outer_bin = frm2bin_outer_bin_create();
+		bin_buffer = elf_enc_buffer_create();
+
 		/* Parse input */
 		frm2bin_yyparse();
 
 		/* call the Fermi disassbmler for text_section it's just a
-		 * temporial implementation */
+		 * temporarily implementation */
 		frm_disasm_text_section_buffer(text_section_buffer);
 
 		/* free the text_section buffer */
@@ -144,6 +156,13 @@ void frm2bin_compile(struct list_t *source_file_list,
 
 		/* Close */
 		fclose(frm2bin_yyin);
+
+		/* Dump output buffer and free it */
+		frm2bin_outer_bin_generate(frm2bin_outer_bin, bin_buffer);
+
+		/* Free Outer ELF and bin_buffer */
+		frm2bin_outer_bin_free(frm2bin_outer_bin);
+		elf_enc_buffer_free(bin_buffer);
 	}
 }
 
