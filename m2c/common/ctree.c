@@ -796,7 +796,6 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 		{
 			linked_list_add(node_list, node);
 			linked_list_add(node_list, then_node);
-			linked_list_add(node_list, endif_node);
 			return cnode_if_then;
 		}
 	}
@@ -883,7 +882,13 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 				cnode_in_list(head_node, tail_node->pred_list) &&
 				tail_node != ctree->node_entry &&
 				exit_node != head_node)
+		{
+			/* Make sure that head node is shown first */
+			linked_list_clear(node_list);
+			linked_list_add(node_list, head_node);
+			linked_list_add(node_list, tail_node);
 			return cnode_while_loop;
+		}
 	}
 
 	

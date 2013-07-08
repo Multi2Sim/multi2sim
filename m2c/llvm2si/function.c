@@ -911,6 +911,88 @@ void llvm2si_function_emit_body(struct llvm2si_function_t *function)
 }
 
 
+static void llvm2si_function_emit_if_then(
+		struct llvm2si_function_t *function,
+		struct cnode_t *node)
+{
+	struct cnode_t *if_node;
+	struct cnode_t *then_node;
+
+	struct llvm2si_basic_block_t *if_bb;
+	struct llvm2si_basic_block_t *then_bb;
+
+	struct llvm2si_symbol_t *cond_symbol;
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+
+	LLVMBasicBlockRef llbb;
+	LLVMValueRef llinst;
+	LLVMValueRef llcond;
+
+	int cond_sreg;
+	int tos_sreg;
+
+	char *cond_name;
+
+	/* Identify the two nodes */
+	assert(node->kind == cnode_abstract);
+	assert(node->abstract.region == cnode_if_then);
+	assert(node->abstract.child_list->count == 2);
+	if_node = linked_list_goto(node->abstract.child_list, 0);
+	then_node = linked_list_goto(node->abstract.child_list, 1);
+
+	/* Get basic blocks. 'If' node should be a leaf. */
+	then_node = cnode_get_last_leaf(then_node);
+	assert(if_node->kind == cnode_leaf);
+	assert(then_node->kind == cnode_leaf);
+	if_bb = LLVM2SI_BASIC_BLOCK(if_node->leaf.basic_block);
+	then_bb = LLVM2SI_BASIC_BLOCK(then_node->leaf.basic_block);
+
+
+	/*** Code for 'If' block ***/
+
+	/* Get 'If' basic block terminator */
+	llbb = if_bb->llbb;
+	llinst = LLVMGetBasicBlockTerminator(llbb);
+	assert(llinst);
+	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
+	assert(LLVMGetNumOperands(llinst) == 3);
+
+	/* Get symbol associated with condition variable */
+	llcond = LLVMGetOperand(llinst, 0);
+	cond_name = (char *) LLVMGetValueName(llcond);
+	cond_symbol = llvm2si_symbol_table_lookup(function->symbol_table, cond_name);
+	assert(cond_symbol);
+	assert(cond_symbol->type == llvm2si_symbol_scalar_register);
+	assert(cond_symbol->count == 2);
+	cond_sreg = cond_symbol->reg;
+
+	/* Allocate two scalar registers to push the active mask */
+	tos_sreg = llvm2si_function_alloc_sreg(function, 2, 2);
+
+	/* Emit active mask push and set at the end of the 'If' block.
+	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(cond_sreg, cond_sreg + 1));
+	inst = si2bin_inst_create(SI_INST_S_AND_SAVEEXEC_B64, arg_list);
+	llvm2si_basic_block_add_inst(if_bb, inst);
+
+
+	/*** Code for 'then' block ***/
+
+	/* Pop the active mask.
+	 * s_mov_b64 exec, <tos_sreg>
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
+	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
+	llvm2si_basic_block_add_inst(then_bb, inst);
+}
+
+
 static void llvm2si_function_emit_if_then_else(
 		struct llvm2si_function_t *function,
 		struct cnode_t *node)
@@ -1040,6 +1122,11 @@ void llvm2si_function_emit_control_flow(struct llvm2si_function_t *function)
 			/* Ignore blocks */
 			break;
 
+		case cnode_if_then:
+
+			llvm2si_function_emit_if_then(function, node);
+			break;
+
 		case cnode_if_then_else:
 
 			llvm2si_function_emit_if_then_else(function, node);
@@ -1148,6 +1235,38 @@ struct si2bin_arg_t *llvm2si_function_translate_value(
 	/* Return argument and symbol */
 	PTR_ASSIGN(symbol_ptr, symbol);
 	return arg;
+}
+
+
+struct si2bin_arg_t *llvm2si_function_const_to_vreg(
+		struct llvm2si_function_t *function,
+		struct llvm2si_basic_block_t *basic_block,
+		struct si2bin_arg_t *arg)
+{
+	struct si2bin_arg_t *ret_arg;
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+	int vreg;
+
+	/* If argument is not a literal of any kind, don't convert. */
+	if (!SI2BIN_ARG_IS_CONSTANT(arg))
+		return arg;
+
+	/* Allocate vector register */
+	vreg = llvm2si_function_alloc_vreg(function, 1, 1);
+	ret_arg = si2bin_arg_create_vector_register(vreg);
+
+	/* Copy constant to vector register.
+	 * v_mov_b32 <vreg>, <const>
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(vreg));
+	list_add(arg_list, arg);
+	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+
+	/* Return new argument */
+	return ret_arg;
 }
 
 
