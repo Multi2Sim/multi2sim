@@ -34,7 +34,10 @@ struct llvm2si_symbol_t
 {
 	char *name;
 	enum llvm2si_symbol_type_t type;
+
+	/* Register ID and number of registers */
 	int reg;
+	int count;
 
 	/* Flag indicating whether the symbol contains a global memory
 	 * address. */
@@ -45,8 +48,15 @@ struct llvm2si_symbol_t
 	int uav_index;
 };
 
-struct llvm2si_symbol_t *llvm2si_symbol_create(char *name,
-		enum llvm2si_symbol_type_t type, int reg);
+
+struct llvm2si_symbol_t *llvm2si_symbol_create_vreg(char *name, int vreg);
+struct llvm2si_symbol_t *llvm2si_symbol_create_sreg(char *name, int sreg);
+
+struct llvm2si_symbol_t *llvm2si_symbol_create_vreg_series(char *name,
+		int vreg_lo, int vreg_hi);
+struct llvm2si_symbol_t *llvm2si_symbol_create_sreg_series(char *name,
+		int sreg_lo, int sreg_hi);
+
 void llvm2si_symbol_free(struct llvm2si_symbol_t *symbol);
 void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f);
 

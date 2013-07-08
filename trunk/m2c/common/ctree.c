@@ -1414,6 +1414,8 @@ void ctree_load_from_cfg(struct ctree_t *ctree,
 	struct cnode_t *node;
 	struct cnode_t *node_succ;
 
+	FILE *f;
+
 	/* Clear first */
 	ctree_clear(ctree);
 
@@ -1449,4 +1451,13 @@ void ctree_load_from_cfg(struct ctree_t *ctree,
 			cnode_connect(node, node_succ);
 		}
 	}
+
+	/* Debug */
+	f = debug_file(ctree_debug_category);
+	if (f)
+	{
+		fprintf(f, "Control tree created:\n");
+		ctree_dump(ctree, f);
+	}
 }
+

@@ -382,6 +382,44 @@ void cnode_reconnect_source(struct cnode_t *src_node,
 }
 
 
+struct cnode_t *cnode_get_first_leaf(struct cnode_t *node)
+{
+	struct cnode_t *child_node;
+
+	/* Traverse syntax tree down */
+	while (node->kind == cnode_abstract)
+	{
+		linked_list_head(node->abstract.child_list);
+		child_node = linked_list_get(node->abstract.child_list);
+		assert(child_node);
+		node = child_node;
+	}
+
+	/* Return leaf */
+	assert(node->kind == cnode_leaf);
+	return node;
+}
+
+
+struct cnode_t *cnode_get_last_leaf(struct cnode_t *node)
+{
+	struct cnode_t *child_node;
+
+	/* Traverse syntax tree down */
+	while (node->kind == cnode_abstract)
+	{
+		linked_list_tail(node->abstract.child_list);
+		child_node = linked_list_get(node->abstract.child_list);
+		assert(child_node);
+		node = child_node;
+	}
+
+	/* Return leaf */
+	assert(node->kind == cnode_leaf);
+	return node;
+}
+
+
 void cnode_compare(struct cnode_t *node1,
 		struct cnode_t *node2)
 {

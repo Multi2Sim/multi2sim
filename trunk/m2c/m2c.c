@@ -51,7 +51,7 @@ int m2c_cl2llvm_run;  /* Run OpenCL-to-LLVM stand-alone front-end */
 int m2c_frm2bin_run;  /* Run Fermi stand-alone assembler */
 int m2c_llvm2si_run;  /* Run LLVM-to-SI stand-alone back-end */
 int m2c_si2bin_run;  /* Run Southern Islands stand-alone assembler */
-int m2c_opt_level = 1;  /* Optimization level */
+int m2c_opt_level = 2;  /* Optimization level */
 
 /* File names computed from source files */
 struct list_t *m2c_source_file_list;  /* Source file names */
@@ -280,9 +280,10 @@ static void m2c_process_option(const char *option, char *optarg)
 	{
 		int err;
 		m2c_opt_level = str_to_int(optarg, &err);
+		amd_opt_level = m2c_opt_level;
 		if (err)
 			fatal("%s: %s", optarg, str_error(err));
-		if (!IN_RANGE(m2c_opt_level, 0, 1))
+		if (!IN_RANGE(m2c_opt_level, 0, 2))
 			fatal("%s: invalid value", optarg);
 		return;
 	}

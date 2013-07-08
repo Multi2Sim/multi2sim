@@ -284,8 +284,7 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 	llvm2si_basic_block_add_inst(basic_block, inst);
 
 	/* Insert argument name in symbol table, using its vector register. */
-	symbol = llvm2si_symbol_create(arg->name,
-		llvm2si_symbol_vector_register, arg->vreg);
+	symbol = llvm2si_symbol_create_vreg(arg->name, arg->vreg);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
 
 	/* If argument is an object in global memory, create a UAV
@@ -342,21 +341,25 @@ static struct llvm2si_basic_block_t *llvm2si_function_add_cfg(
 	LLVMValueRef llbb_value;
 	LLVMValueRef llinst;
 	LLVMOpcode llopcode;
+
 	LLVMValueRef llbb_if_true_value;
 	LLVMValueRef llbb_if_false_value;
+	LLVMValueRef llbb_next_value;
+
 	LLVMBasicBlockRef llbb_if_true;
 	LLVMBasicBlockRef llbb_if_false;
+	LLVMBasicBlockRef llbb_next;
 
 	struct llvm2si_basic_block_t *basic_block_root;
 	struct llvm2si_basic_block_t *basic_block_if_true;
 	struct llvm2si_basic_block_t *basic_block_if_false;
+	struct llvm2si_basic_block_t *basic_block_next;
 	struct llvm2si_basic_block_t *basic_block;
 
 	int num_operands;
 
 	char *name;
-	char *name_if_true;
-	char *name_if_false;
+	char *name_next;
 
 	/* Nothing for NULL basic block */
 	if (!llbb)
@@ -379,7 +382,8 @@ static struct llvm2si_basic_block_t *llvm2si_function_add_cfg(
 	basic_block = basic_block_root;
 	llvm2si_function_add_basic_block(function, basic_block);
 
-	/* Keep adding basic blocks in a depth-first manner */
+	/* Keep adding basic blocks in a depth-first manner, either iteratively
+	 * for blocks with one successor, or recursively for blocks with two. */
 	while (1)
 	{
 		/* Actions depending on basic block terminator */
@@ -391,65 +395,58 @@ static struct llvm2si_basic_block_t *llvm2si_function_add_cfg(
 		if (llopcode == LLVMBr && num_operands == 1)
 		{
 			/* Form: br label <dest> */
-			llbb_if_true_value = LLVMGetOperand(llinst, 0);
-			llbb_if_true = LLVMValueAsBasicBlock(llbb_if_true_value);
+			llbb_next_value = LLVMGetOperand(llinst, 0);
+			llbb_next = LLVMValueAsBasicBlock(llbb_next_value);
 
 			/* If branch already exists, connect it and stop */
-			name_if_true = (char *) LLVMGetValueName(llbb_if_true_value);
-			basic_block_if_true = hash_table_get(function->basic_block_table,
-					name_if_true);
-			if (basic_block_if_true)
+			name_next = (char *) LLVMGetValueName(llbb_next_value);
+			basic_block_next = hash_table_get(function->basic_block_table,
+					name_next);
+			if (basic_block_next)
 			{
 				basic_block_connect(BASIC_BLOCK(basic_block),
-						BASIC_BLOCK(basic_block_if_true));
+						BASIC_BLOCK(basic_block_next));
 				return basic_block_root;
 			}
 
 			/* Create and connect next basic block */
-			basic_block_if_true = llvm2si_basic_block_create(llbb_if_true);
-			llvm2si_function_add_basic_block(function, basic_block_if_true);
+			basic_block_next = llvm2si_basic_block_create(llbb_next);
+			llvm2si_function_add_basic_block(function, basic_block_next);
 			basic_block_connect(BASIC_BLOCK(basic_block),
-					BASIC_BLOCK(basic_block_if_true));
+					BASIC_BLOCK(basic_block_next));
 
 			/* Continue iteratively with next basic block */
-			basic_block = basic_block_if_true;
-			llbb = llbb_if_true;
+			basic_block = basic_block_next;
+			llbb = llbb_next;
 		}
 
 		/* Conditional branch */
 		else if (llopcode == LLVMBr && num_operands == 3)
 		{
-			/* Form: br i1 <cond>, label <iftrue>, label <iffalse> */
-			llbb_if_true_value = LLVMGetOperand(llinst, 1);
-			llbb_if_false_value = LLVMGetOperand(llinst, 2);
+			/* Form: br i1 <cond>, label <iftrue>, label <iffalse>
+			 * For some reason, LLVM stores the 'then' block as the
+			 * last operand of the instruction (see
+			 * Instructions.cpp, constructor BranchInst::BranchInst
+			 */
+			llbb_if_true_value = LLVMGetOperand(llinst, 2);
+			llbb_if_false_value = LLVMGetOperand(llinst, 1);
 			llbb_if_true = LLVMValueAsBasicBlock(llbb_if_true_value);
 			llbb_if_false = LLVMValueAsBasicBlock(llbb_if_false_value);
 
 			/* Insert true branch recursively */
-			basic_block_if_true = llvm2si_function_add_cfg(function, llbb_if_true);
+			basic_block_if_true = llvm2si_function_add_cfg(function,
+					llbb_if_true);
 			basic_block_connect(BASIC_BLOCK(basic_block),
 					BASIC_BLOCK(basic_block_if_true));
 
-			/* If false branch already exists, connect it and stop */
-			name_if_false = (char *) LLVMGetValueName(llbb_if_false_value);
-			basic_block_if_false = hash_table_get(function->basic_block_table,
-					name_if_false);
-			if (basic_block_if_false)
-			{
-				basic_block_connect(BASIC_BLOCK(basic_block),
-						BASIC_BLOCK(basic_block_if_false));
-				return basic_block_root;
-			}
-
-			/* Create and connect false branch */
-			basic_block_if_false = llvm2si_basic_block_create(llbb_if_false);
-			llvm2si_function_add_basic_block(function, basic_block_if_false);
+			/* Insert false branch recursively */
+			basic_block_if_false = llvm2si_function_add_cfg(function,
+					llbb_if_false);
 			basic_block_connect(BASIC_BLOCK(basic_block),
 					BASIC_BLOCK(basic_block_if_false));
 
-			/* Continue iteratively with false branch */
-			basic_block = basic_block_if_false;
-			llbb = llbb_if_false;
+			/* Done */
+			return basic_block_root;
 		}
 
 		/* Return */
@@ -580,6 +577,9 @@ void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f)
 	struct llvm2si_basic_block_t *basic_block;
 	struct llvm2si_function_arg_t *function_arg;
 
+	struct linked_list_t *node_list;
+	struct cnode_t *node;
+
 	int index;
 
 	/* Function name */
@@ -596,11 +596,21 @@ void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f)
 
 	/* Dump basic blocks */
 	fprintf(f, ".text\n");
-	LINKED_LIST_FOR_EACH(function->basic_block_list)
+	node_list = linked_list_create();
+	ctree_traverse(function->ctree, node_list, NULL);
+	LINKED_LIST_FOR_EACH(node_list)
 	{
-		basic_block = LLVM2SI_BASIC_BLOCK(linked_list_get(function->basic_block_list));
+		/* Skip abstract nodes */
+		node = linked_list_get(node_list);
+		if (node->kind != cnode_leaf)
+			continue;
+
+		/* Dump block */
+		basic_block = LLVM2SI_BASIC_BLOCK(node->leaf.basic_block);
+		assert(basic_block);
 		llvm2si_basic_block_dump(BASIC_BLOCK(basic_block), f);
 	}
+	linked_list_free(node_list);
 	fprintf(f, "\n");
 
 	/* Dump section '.data' */
@@ -867,88 +877,37 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function)
 }
 
 
-void llvm2si_function_emit_body(struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block)
+void llvm2si_function_emit_body(struct llvm2si_function_t *function)
 {
-	LLVMValueRef llfunction;
-	LLVMBasicBlockRef llbb;
+	struct linked_list_t *node_list;
+	struct llvm2si_basic_block_t *basic_block;
+	struct cnode_t *node;
 
-	/* Iterate through the function basic blocks */
-	llfunction = function->llfunction;
-	for (llbb = LLVMGetFirstBasicBlock(llfunction); llbb;
-			llbb = LLVMGetNextBasicBlock(llbb))
+	/* Emit body using a depth-first traversal of the syntax tree. Notice
+	 * that it doesn't matter whether we do pre- or post-order, since we're
+	 * only considering leaf nodes. */
+	node_list = linked_list_create();
+	ctree_traverse(function->ctree, node_list, NULL);
+
+	/* Emit code for basic blocks */
+	LINKED_LIST_FOR_EACH(node_list)
 	{
-		/* Create an SI basic block and add it to the function */
-		basic_block = llvm2si_basic_block_create(llbb);
-		llvm2si_function_add_basic_block(function, basic_block);
+		/* Skip abstract nodes */
+		node = linked_list_get(node_list);
+		if (node->kind != cnode_leaf)
+			continue;
+
+		/* Skip nodes that don't belong to function body */
+		basic_block = LLVM2SI_BASIC_BLOCK(node->leaf.basic_block);
+		if (!basic_block->llbb)
+			continue;
 
 		/* Emit code for the basic block */
 		llvm2si_basic_block_emit(basic_block);
 	}
-}
 
-
-/* Given a list of exactly three nodes forming an 'if-then-else' region,
- * identify which node corresponds to what part, based on their inter-
- * dependencies, and the terminator of the 'if' block. */
-static void llvm2si_function_identify_if_then_else(
-		struct linked_list_t *node_list,
-		struct cnode_t **if_node_ptr,
-		struct cnode_t **then_node_ptr,
-		struct cnode_t **else_node_ptr)
-{
-	struct cnode_t *if_node;
-	struct cnode_t *then_node;
-	struct cnode_t *else_node;
-
-	struct cnode_t *node0;
-	struct cnode_t *node1;
-	struct cnode_t *node2;
-
-	/* Get list nodes */
-	assert(node_list->count == 3);
-	node0 = linked_list_goto(node_list, 0);
-	node1 = linked_list_goto(node_list, 1);
-	node2 = linked_list_goto(node_list, 2);
-
-	/* Get 'if' node */
-	if (cnode_in_list(node0, node1->pred_list) &&
-			cnode_in_list(node0, node2->pred_list))
-	{
-		if_node = node0;
-		then_node = node1;
-		else_node = node2;
-	}
-	else if (cnode_in_list(node1, node0->pred_list) &&
-			cnode_in_list(node1, node2->pred_list))
-	{
-		if_node = node1;
-		then_node = node0;
-		else_node = node2;
-	}
-	else if (cnode_in_list(node2, node0->pred_list) &&
-			cnode_in_list(node2, node1->pred_list))
-	{
-		if_node = node2;
-		then_node = node0;
-		else_node = node1;
-	}
-	else
-	{
-		if_node = NULL;
-		then_node = NULL;
-		else_node = NULL;
-		panic("%s: unexpected node order",
-				__FUNCTION__);
-	}
-
-	/***********/
-	/* FIXME */
-
-	/* Return */
-	*if_node_ptr = if_node;
-	*then_node_ptr = then_node;
-	*else_node_ptr = else_node;
+	/* Free structures */
+	linked_list_free(node_list);
 }
 
 
@@ -960,11 +919,96 @@ static void llvm2si_function_emit_if_then_else(
 	struct cnode_t *then_node;
 	struct cnode_t *else_node;
 
+	struct llvm2si_basic_block_t *if_bb;
+	struct llvm2si_basic_block_t *then_bb;
+	struct llvm2si_basic_block_t *else_bb;
+
+	struct llvm2si_symbol_t *cond_symbol;
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+
+	LLVMBasicBlockRef llbb;
+	LLVMValueRef llinst;
+	LLVMValueRef llcond;
+
+	int cond_sreg;
+	int tos_sreg;
+
+	char *cond_name;
+
 	/* Identify the three nodes */
 	assert(node->kind == cnode_abstract);
 	assert(node->abstract.region == cnode_if_then_else);
-	llvm2si_function_identify_if_then_else(node->abstract.child_list,
-			&if_node, &then_node, &else_node);
+	assert(node->abstract.child_list->count == 3);
+	if_node = linked_list_goto(node->abstract.child_list, 0);
+	then_node = linked_list_goto(node->abstract.child_list, 1);
+	else_node = linked_list_goto(node->abstract.child_list, 2);
+
+	/* Get basic blocks. 'If' node should be a leaf. */
+	then_node = cnode_get_last_leaf(then_node);
+	else_node = cnode_get_last_leaf(else_node);
+	assert(if_node->kind == cnode_leaf);
+	assert(then_node->kind == cnode_leaf);
+	assert(else_node->kind == cnode_leaf);
+	if_bb = LLVM2SI_BASIC_BLOCK(if_node->leaf.basic_block);
+	then_bb = LLVM2SI_BASIC_BLOCK(then_node->leaf.basic_block);
+	else_bb = LLVM2SI_BASIC_BLOCK(else_node->leaf.basic_block);
+
+
+	/*** Code for 'If' block ***/
+
+	/* Get 'If' basic block terminator */
+	llbb = if_bb->llbb;
+	llinst = LLVMGetBasicBlockTerminator(llbb);
+	assert(llinst);
+	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
+	assert(LLVMGetNumOperands(llinst) == 3);
+
+	/* Get symbol associated with condition variable */
+	llcond = LLVMGetOperand(llinst, 0);
+	cond_name = (char *) LLVMGetValueName(llcond);
+	cond_symbol = llvm2si_symbol_table_lookup(function->symbol_table, cond_name);
+	assert(cond_symbol);
+	assert(cond_symbol->type == llvm2si_symbol_scalar_register);
+	assert(cond_symbol->count == 2);
+	cond_sreg = cond_symbol->reg;
+
+	/* Allocate two scalar registers to push the active mask */
+	tos_sreg = llvm2si_function_alloc_sreg(function, 2, 2);
+
+	/* Emit active mask push and set at the end of the 'If' block.
+	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(cond_sreg, cond_sreg + 1));
+	inst = si2bin_inst_create(SI_INST_S_AND_SAVEEXEC_B64, arg_list);
+	llvm2si_basic_block_add_inst(if_bb, inst);
+
+
+	/*** Code for 'then' block ***/
+
+	/* Invert active mask and-ing it with the top of the stack.
+	 * s_andn2_b64 exec, <tos_sreg>, exec
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
+	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
+	inst = si2bin_inst_create(SI_INST_S_ANDN2_B64, arg_list);
+	llvm2si_basic_block_add_inst(then_bb, inst);
+
+
+	/*** Code for 'else' block ***/
+
+	/* Pop the active mask.
+	 * s_mov_b64 exec, <tos_sreg>
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
+	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
+	llvm2si_basic_block_add_inst(else_bb, inst);
 }
 
 
@@ -973,11 +1017,11 @@ void llvm2si_function_emit_control_flow(struct llvm2si_function_t *function)
 	struct linked_list_t *node_list;
 	struct cnode_t *node;
 
-	/* Emit control flow actions using a pre-order traversal of the control
+	/* Emit control flow actions using a post-order traversal of the syntax
 	 * tree (not control-flow graph), from inner to outer control flow
-	 * structures. Which specific pre-order traversal does not matter. */
+	 * structures. Which specific post-order traversal does not matter. */
 	node_list = linked_list_create();
-	ctree_traverse(function->ctree, node_list, NULL);
+	ctree_traverse(function->ctree, NULL, node_list);
 
 	/* Traverse nodes */
 	LINKED_LIST_FOR_EACH(node_list)
