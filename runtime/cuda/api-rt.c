@@ -258,7 +258,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	if (abi_version != 4 && abi_version != 6)
 		fatal("\tThe cubin file has a unrecognized ABI version (%d).\n"
 				"\tMulti2Sim CUDA library is currently\n"
-				"compatible with Fermi binary only.",
+				"\tcompatible with Fermi binary only.",
 				abi_version);
 
 	/* Load module */
