@@ -138,6 +138,25 @@ void cnode_try_disconnect(struct cnode_t *node,
 /* Disconnect 'node' and 'node_dest'. An edge must exist between both. */
 void cnode_disconnect(struct cnode_t *node,
 		struct cnode_t *node_dest);
+
+/* Try to reconnect a source node with a new destination node. This is
+ * equivalent to disconnecting and connecting it, except that the order
+ * of the edge within the successor list of the source node is
+ * guaranteed to stay the same. If an edge already exists between the
+ * source and the new destination, the original edge will just be
+ * completely removed. */
+void cnode_reconnect_dest(struct cnode_t *src_node,
+		struct cnode_t *dest_node,
+		struct cnode_t *new_dest_node);
+
+/* Try to replace the source node of an edge. This is equivalent to
+ * disconnecting and connecting it, except that the order of the
+ * predecessor list of the destination node is guaranteed to stay
+ * intact. If an edge already exists between the new source and the
+ * destination, the original edge will just be completely removed. */
+void cnode_reconnect_source(struct cnode_t *src_node,
+		struct cnode_t *dest_node,
+		struct cnode_t *new_src_node);
 		
 /* Dumping lists of nodes */
 void cnode_list_dump(struct linked_list_t *list, FILE *f);

@@ -322,6 +322,66 @@ void cnode_disconnect(struct cnode_t *node,
 }
 
 
+void cnode_reconnect_dest(struct cnode_t *src_node,
+		struct cnode_t *dest_node,
+		struct cnode_t *new_dest_node)
+{
+	/* Old and new destination must be different */
+	if (dest_node == new_dest_node)
+		panic("%s: old and new nodes are the same", __FUNCTION__);
+
+	/* Connection must exist */
+	linked_list_find(src_node->succ_list, dest_node);
+	linked_list_find(dest_node->pred_list, src_node);
+	if (src_node->succ_list->error_code ||
+			dest_node->pred_list->error_code)
+		panic("%s: old edge does not exist", __FUNCTION__);
+
+	/* Remove old edge */
+	linked_list_remove(src_node->succ_list);
+	linked_list_remove(dest_node->pred_list);
+
+	/* If new edge does not already exists, create it here. Notice that the
+	 * successor of 'src_node' will be inserted in the exact same position.
+	 * This behavior is critical for some uses of this function. */
+	if (!cnode_in_list(src_node, new_dest_node->pred_list))
+	{
+		linked_list_insert(src_node->succ_list, new_dest_node);
+		linked_list_add(new_dest_node->pred_list, src_node);
+	}
+}
+
+
+void cnode_reconnect_source(struct cnode_t *src_node,
+		struct cnode_t *dest_node,
+		struct cnode_t *new_src_node)
+{
+	/* Old and new sources must be different */
+	if (src_node == new_src_node)
+		panic("%s: old and new nodes are the same", __FUNCTION__);
+
+	/* Connection must exist */
+	linked_list_find(src_node->succ_list, dest_node);
+	linked_list_find(dest_node->pred_list, src_node);
+	if (src_node->succ_list->error_code ||
+			dest_node->pred_list->error_code)
+		panic("%s: old edge does not exist", __FUNCTION__);
+
+	/* Remove old edge */
+	linked_list_remove(src_node->succ_list);
+	linked_list_remove(dest_node->pred_list);
+
+	/* If new edge does not already exists, create it here. Notice that the
+	 * predecessor of 'dst_node' will be inserted in the exact same position.
+	 * This behavior is critical for some uses of this function. */
+	if (!cnode_in_list(dest_node, new_src_node->succ_list))
+	{
+		linked_list_insert(dest_node->pred_list, new_src_node);
+		linked_list_add(new_src_node->succ_list, dest_node);
+	}
+}
+
+
 void cnode_compare(struct cnode_t *node1,
 		struct cnode_t *node2)
 {

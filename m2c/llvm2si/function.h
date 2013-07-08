@@ -194,6 +194,10 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function);
 void llvm2si_function_emit_body(struct llvm2si_function_t *function,
 		struct llvm2si_basic_block_t *basic_block);
 
+/* Emit additional instructions managing active masks and active mask stacks
+ * related with the function control flow. */
+void llvm2si_function_emit_control_flow(struct llvm2si_function_t *function);
+
 /* Create a Southern Islands instruction argument from an LLVM value. The type
  * of argument created depends on the LLVM value as follows:
  *   - If the LLVM value is an integer constant, the Southern Islands argument
