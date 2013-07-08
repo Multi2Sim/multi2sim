@@ -132,10 +132,8 @@ void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 	arg_op1 = llvm2si_function_translate_value(function, llarg_op1, NULL);
 	arg_op2 = llvm2si_function_translate_value(function, llarg_op2, NULL);
 
-	/* Only the first operand can be a constant, so swap them if there is
-	 * a constant in the second. */
-	if (arg_op2->type != si2bin_arg_vector_register)
-		si2bin_arg_swap(&arg_op1, &arg_op2);
+	/* Second operand cannot be a constant */
+	arg_op2 = llvm2si_function_const_to_vreg(function, basic_block, arg_op2);
 	si2bin_arg_valid_types(arg_op1, si2bin_arg_vector_register,
 			si2bin_arg_literal, si2bin_arg_literal_reduced,
 			si2bin_arg_literal_float, si2bin_arg_literal_float_reduced);
@@ -420,7 +418,8 @@ void llvm2si_basic_block_emit_icmp(struct llvm2si_basic_block_t *basic_block,
 		invert = 1;
 	}
 
-	/* Valid argument types */
+	/* Valid argument types. Argument 2 cannot be a literal. */
+	arg_op2 = llvm2si_function_const_to_vreg(function, basic_block, arg_op2);
 	si2bin_arg_valid_types(arg_op1, si2bin_arg_vector_register,
 			si2bin_arg_literal, si2bin_arg_literal_reduced,
 			si2bin_arg_literal_float, si2bin_arg_literal_float_reduced);
@@ -734,6 +733,7 @@ void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
 	/* Get data operand (vreg) */
 	llarg_data = LLVMGetOperand(llinst, 0);
 	arg_data = llvm2si_function_translate_value(function, llarg_data, NULL);
+	arg_data = llvm2si_function_const_to_vreg(function, basic_block, arg_data);
 	si2bin_arg_valid_types(arg_data, si2bin_arg_vector_register);
 
 	/* Get address operand (vreg) */
@@ -792,8 +792,6 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
 
-	enum si_inst_opcode_t opcode;
-
 	struct llvm2si_function_t *function;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_arg_t *arg_op1;
@@ -830,16 +828,8 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
 	arg_op1 = llvm2si_function_translate_value(function, llarg_op1, NULL);
 	arg_op2 = llvm2si_function_translate_value(function, llarg_op2, NULL);
 
-	/* If first argument is a constant, flip operands */
-	opcode = SI_INST_V_SUB_I32;
-	if (SI2BIN_ARG_IS_CONSTANT(arg_op2))
-	{
-		si2bin_arg_swap(&arg_op1, &arg_op2);
-		arg_op1->value.literal.val = -arg_op1->value.literal.val;
-		opcode = SI_INST_V_ADD_I32;
-	}
-
-	/* Valid argument types */
+	/* Operand 2 cannot be a constant */
+	arg_op2 = llvm2si_function_const_to_vreg(function, basic_block, arg_op2);
 	si2bin_arg_valid_types(arg_op1, si2bin_arg_vector_register,
 			si2bin_arg_literal, si2bin_arg_literal_reduced,
 			si2bin_arg_literal_float, si2bin_arg_literal_float_reduced);
@@ -859,7 +849,7 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
 	list_add(arg_list, arg_op1);
 	list_add(arg_list, arg_op2);
-	inst = si2bin_inst_create(opcode, arg_list);
+	inst = si2bin_inst_create(SI_INST_V_SUB_I32, arg_list);
 	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
