@@ -455,7 +455,13 @@ static struct llvm2si_basic_block_t *llvm2si_function_add_cfg(
 		/* Return */
 		else if (llopcode == LLVMRet)
 		{
-			/* Nothing to do for 'ret' */
+			/* Multiple exists not allowed */
+			if (function->basic_block_exit)
+				fatal("%s: multiple exit blocks in LLVM function '%s'",
+						__FUNCTION__, function->name);
+
+			/* Set this block as exit block */
+			function->basic_block_exit = basic_block_root;
 			return basic_block_root;
 		}
 
@@ -507,6 +513,11 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	llbb = LLVMGetEntryBasicBlock(function->llfunction);
 	function->basic_block_body = llvm2si_function_add_cfg(function, llbb);
 	assert(function->basic_block_body);
+
+	/* An exit basic block must have been found by 'llvm2si_function_add_cfg' */
+	if (!function->basic_block_exit)
+		fatal("%s: no exit block found in LLVM function '%s'",
+				__FUNCTION__, function->name);
 
 	/* Connect initial basic blocks in CFG */
 	basic_block_connect(BASIC_BLOCK(function->basic_block_entry),
