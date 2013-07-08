@@ -157,6 +157,14 @@ void cnode_reconnect_dest(struct cnode_t *src_node,
 void cnode_reconnect_source(struct cnode_t *src_node,
 		struct cnode_t *dest_node,
 		struct cnode_t *new_src_node);
+
+/* Starting at 'node', traverse the syntax tree (not control tree) in depth-
+ * first and return the first leaf node found (could be 'node' itself). */
+struct cnode_t *cnode_get_first_leaf(struct cnode_t *node);
+
+/* Starting at 'node', traverse the syntax tree (not control tree) in depth-
+ * first and return the last leaf node found (could be 'node' itself). */
+struct cnode_t *cnode_get_last_leaf(struct cnode_t *node);
 		
 /* Dumping lists of nodes */
 void cnode_list_dump(struct linked_list_t *list, FILE *f);

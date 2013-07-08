@@ -50,6 +50,13 @@ enum si2bin_arg_type_t
 	si2bin_arg_maddr_qual
 };
 
+/* Return true if the argument type is any kind of literal */
+#define SI2BIN_ARG_IS_CONSTANT(arg) \
+	((arg)->type == si2bin_arg_literal || \
+	(arg)->type == si2bin_arg_literal_reduced || \
+	(arg)->type == si2bin_arg_literal_float || \
+	(arg)->type == si2bin_arg_literal_float_reduced)
+
 struct si2bin_arg_t 
 {
 	enum si2bin_arg_type_t type;

@@ -31,6 +31,7 @@ struct list_t;
  */
 
 extern int amd_dump_all;
+extern int amd_opt_level;
 extern int amd_list_devices;
 extern char *amd_device_name;
 
