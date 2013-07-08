@@ -143,6 +143,7 @@ struct llvm2si_function_t
 	struct llvm2si_basic_block_t *basic_block_uavs;
 	struct llvm2si_basic_block_t *basic_block_args;
 	struct llvm2si_basic_block_t *basic_block_body;
+	struct llvm2si_basic_block_t *basic_block_exit;
 
 	/* Symbol table associated with the function, storing LLVM variables */
 	struct llvm2si_symbol_table_t *symbol_table;
