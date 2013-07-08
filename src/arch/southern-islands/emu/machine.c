@@ -3922,6 +3922,16 @@ void si_isa_V_CMP_NE_U32_impl(struct si_work_item_t *work_item,
 #undef INST
 
 
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_GE_U32_impl(struct si_work_item_t *work_item,
+	struct si_inst_t *inst)
+{
+	NOT_IMPL();
+}
+#undef INST
+
+
+
 /*
  * VOP3a
  */

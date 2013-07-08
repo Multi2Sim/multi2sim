@@ -1058,6 +1058,16 @@ DEFINST(V_CMP_NE_U32,
 	0
 )
 
+DEFINST(V_CMP_GE_U32,
+	" v_cmp_ge_u32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	198,
+	4,
+	0
+)
+
+
+
 /*
  * VOP3a 
  */
