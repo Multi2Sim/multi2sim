@@ -91,10 +91,11 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 
 		/* Create a basic block and generate body in it */
 		basic_block = llvm2si_basic_block_create(NULL);
-		llvm2si_function_add_basic_block(function,
-				basic_block);
-
+		llvm2si_function_add_basic_block(function, basic_block);
 		llvm2si_function_emit_body(function, basic_block);
+
+		/* Emit control flow actions */
+		llvm2si_function_emit_control_flow(function);
 
 		/* Dump and free function */
 		llvm2si_function_dump(function, f);
