@@ -64,6 +64,14 @@ void yyerror_lex(const char *msg);
   	return TOK_AMP;
 }
 
+".global" {
+	return TOK_GLOBAL;
+}
+
+".text" {
+	return TOK_TEXT;
+}
+
 "\n" {
   	return TOK_NEW_LINE;
 }

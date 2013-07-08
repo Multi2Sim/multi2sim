@@ -14,6 +14,8 @@
 #include "arg.h"
 #include "inst.h"
 #include "inst-info.h"
+#include "inner-bin.h"
+#include "outer-bin.h"
 
 /*
 #include "stream.h"
@@ -59,6 +61,8 @@
 %token TOK_ABS
 %token TOK_NEG
 %token TOK_NUM
+%token TOK_GLOBAL
+%token TOK_TEXT
 
 %type<inst> rl_instr
 %type<list> rl_arg_list
@@ -67,34 +71,115 @@
 
 %%
 
-rl_input
-	:  /* empty */
-	| rl_line rl_input
-;
 
-rl_line
-	: TOK_NEW_LINE
-	| rl_instr  TOK_SEMICOLON TOK_NEW_LINE
+program
+	: kernel_list
+	| TOK_NEW_LINE kernel_list
+	;
+
+kernel_list
+	: kernel
+	| kernel kernel_list
+	;
+
+kernel
+	: global_section section_list
+	;
+
+section_list
+	: section
+	| section section_list
+	;
+
+global_section
+	: TOK_GLOBAL TOK_ID TOK_NEW_LINE
 	{
-	      struct frm2bin_inst_t *inst = $1;
-	      
-	      /* Generate code */
-	      /*
-	      frm_stream_add_inst(frm_out_stream, inst);
-	      */
-	      frm2bin_inst_gen(inst);
-	      
-	      /* write instruction binary to the buffer */
-	      elf_enc_buffer_write(text_section_buffer, inst->inst_bytes.bytes, inst->size);
-	
-	      /* dump the instruction binary to the console */
-	      /*
-	      frm2bin_inst_dump(inst, stdout);
-	      */
-	
-	      frm2bin_inst_free(inst);
+		struct frm_id_t *id = $2;
+
+		frm2bin_inner_bin = frm2bin_inner_bin_create(id->name);
+		//frm2bin_metadata = frm2bin_metadata_create();
+		frm2bin_entry = frm2bin_inner_bin_entry_create();
+
+		//frm2bin_metadata->uniqueid = frm2bin_uniqueid;
+
+		frm2bin_inner_bin_add_entry(frm2bin_inner_bin, frm2bin_entry);
+
+		frm2bin_outer_bin_add(frm2bin_outer_bin, frm2bin_inner_bin);
+
+		//frm2bin_uniqueid ++;
+
+		frm_id_free(id);
 	}
-;
+	;
+	
+section
+	: text_section
+	{
+	
+		/* do nothing right now */
+		/* Process any tasks still left */
+		//frm2bin_task_list_process();
+		
+		/* Clean up tasks and symbol table when finished parsing kernel */
+		//frm2bin_task_list_done();
+		//frm2bin_symbol_table_done();
+
+		/* Set up new tasks and symbol table for next kernel */
+		//frm2bin_task_list_init();
+		//frm2bin_symbol_table_init();
+	}
+	;
+
+text_section
+	: text_header
+	| text_header text_stmt_list
+	;
+
+text_header
+	: TOK_TEXT TOK_NEW_LINE
+	;
+
+text_stmt_list
+	: text_stmt
+	| text_stmt text_stmt_list
+	;
+
+text_stmt
+	: rl_instr TOK_SEMICOLON TOK_NEW_LINE
+	{
+		//struct FRM2bin_inst_t *inst = $1;
+
+		/* Generate code */
+		//frm2bin_inst_gen(inst);
+		//elf_enc_buffer_write(frm2bin_entry->text_section_buffer, inst->inst_bytes.bytes, inst->size);
+		
+		/* Dump Instruction Info */
+		//frm2bin_inst_dump(inst, stdout);
+		//frm2bin_inst_free(inst);
+		
+		
+		struct frm2bin_inst_t *inst = $1;
+	      
+		/* Generate code */
+		/*
+		frm_stream_add_inst(frm_out_stream, inst);
+		*/
+		frm2bin_inst_gen(inst);
+		
+		/* write instruction binary to the buffer */
+		elf_enc_buffer_write(text_section_buffer, inst->inst_bytes.bytes, inst->size);
+		
+		/* dump the instruction binary to the console */
+		/*
+		frm2bin_inst_dump(inst, stdout);
+		*/
+		
+		frm2bin_inst_free(inst);
+	}
+	
+	| TOK_NEW_LINE
+;	
+
 
 rl_instr
 	: TOK_PRED TOK_ID rl_arg_list
