@@ -42,6 +42,7 @@
  * Global Variables
  */
 
+int amd_opt_level = -1;  /* Not specified */
 int amd_dump_all;
 int amd_list_devices;
 char *amd_device_name = "";
@@ -339,6 +340,11 @@ static void amd_compile_source(char *source_file_name, char *out_file_name,
 				" -save-temps=%s/%s", dir, out_file_name_root);
 		mkdir(dir, 0755);
 	}
+
+	/* Optimization level */
+	if (amd_opt_level != -1)
+		str_printf(&compiler_flags_ptr, &compiler_flags_size, " -O%d",
+				amd_opt_level);
 
 	/* Compile source */
 	err = clBuildProgram(program, 1, &device->device_id, compiler_flags, NULL, NULL);

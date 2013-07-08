@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
@@ -33,8 +35,8 @@ struct str_map_t llvm2si_symbol_type_map =
 };
 
 
-struct llvm2si_symbol_t *llvm2si_symbol_create(char *name,
-		enum llvm2si_symbol_type_t type, int reg)
+static struct llvm2si_symbol_t *llvm2si_symbol_create(char *name,
+		enum llvm2si_symbol_type_t type, int reg, int count)
 {
 	struct llvm2si_symbol_t *symbol;
 
@@ -47,9 +49,42 @@ struct llvm2si_symbol_t *llvm2si_symbol_create(char *name,
 	symbol->name = xstrdup(name);
 	symbol->type = type;
 	symbol->reg = reg;
+	symbol->count = count;
 
 	/* Return */
 	return symbol;
+}
+
+
+struct llvm2si_symbol_t *llvm2si_symbol_create_vreg(char *name, int vreg)
+{
+	return llvm2si_symbol_create(name, llvm2si_symbol_vector_register,
+			vreg, 1);
+}
+
+
+struct llvm2si_symbol_t *llvm2si_symbol_create_sreg(char *name, int sreg)
+{
+	return llvm2si_symbol_create(name, llvm2si_symbol_scalar_register,
+			sreg, 1);
+}
+
+
+struct llvm2si_symbol_t *llvm2si_symbol_create_vreg_series(char *name,
+		int vreg_lo, int vreg_hi)
+{
+	assert(vreg_hi > vreg_lo);
+	return llvm2si_symbol_create(name, llvm2si_symbol_vector_register,
+			vreg_lo, vreg_hi - vreg_lo + 1);
+}
+
+
+struct llvm2si_symbol_t *llvm2si_symbol_create_sreg_series(char *name,
+		int sreg_lo, int sreg_hi)
+{
+	assert(sreg_hi > sreg_lo);
+	return llvm2si_symbol_create(name, llvm2si_symbol_scalar_register,
+			sreg_lo, sreg_hi - sreg_lo + 1);
 }
 
 

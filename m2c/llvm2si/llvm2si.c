@@ -53,7 +53,6 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 	FILE *f;
 
 	struct llvm2si_function_t *function;
-	struct llvm2si_basic_block_t *basic_block;
 
 	/* Create memory buffer with source file */
 	err = LLVMCreateMemoryBufferWithContentsOfFile(source_file,
@@ -88,13 +87,7 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 		/* Emit code for function */
 		llvm2si_function_emit_header(function);
 		llvm2si_function_emit_args(function);
-
-		/* Create a basic block and generate body in it */
-		basic_block = llvm2si_basic_block_create(NULL);
-		llvm2si_function_add_basic_block(function, basic_block);
-		llvm2si_function_emit_body(function, basic_block);
-
-		/* Emit control flow actions */
+		llvm2si_function_emit_body(function);
 		llvm2si_function_emit_control_flow(function);
 
 		/* Dump and free function */

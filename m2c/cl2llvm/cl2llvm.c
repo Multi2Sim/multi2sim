@@ -205,6 +205,7 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 
 		switch (opt_level)
 		{
+		case 2:
 		case 1:
 			LLVMAddCFGSimplificationPass(pm);
 			LLVMAddPromoteMemoryToRegisterPass(pm);

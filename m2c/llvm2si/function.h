@@ -191,8 +191,7 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function);
 /* Emit code for the function body. The first basic block of the function will
  * be added at the end of 'basic_block', which should be already part of the
  * function. As the code emission progresses, new basic blocks will be created. */
-void llvm2si_function_emit_body(struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block);
+void llvm2si_function_emit_body(struct llvm2si_function_t *function);
 
 /* Emit additional instructions managing active masks and active mask stacks
  * related with the function control flow. */

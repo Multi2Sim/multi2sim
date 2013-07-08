@@ -144,9 +144,7 @@ void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
 	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
-	ret_symbol = llvm2si_symbol_create(ret_name,
-			llvm2si_symbol_vector_register,
-			ret_vreg);
+	ret_symbol = llvm2si_symbol_create_vreg(ret_name, ret_vreg);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
 	/* Emit addition.
@@ -231,20 +229,17 @@ void llvm2si_basic_block_emit_call(struct llvm2si_basic_block_t *basic_block,
 	{
 		/* Create new symbol associating it with the vector register
 		 * containing the global ID in the given dimension. */
-		ret_symbol = llvm2si_symbol_create(var_name,
-				llvm2si_symbol_vector_register,
+		ret_symbol = llvm2si_symbol_create_vreg(var_name,
 				function->vreg_gid + dim);
-
-		/* Add to symbol table */
-		llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
+		llvm2si_symbol_table_add_symbol(function->symbol_table,
+				ret_symbol);
 	}
 	else if (!strcmp(func_name, "get_global_size"))
 	{
 		/* Allocate a new vector register to copy global size. */
 		ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
 		ret_arg = si2bin_arg_create_vector_register(ret_vreg);
-		ret_symbol = llvm2si_symbol_create(var_name,
-				llvm2si_symbol_vector_register, ret_vreg);
+		ret_symbol = llvm2si_symbol_create_vreg(var_name, ret_vreg);
 		llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
 		/* Create new vector register containing the global size.
@@ -320,9 +315,7 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
 	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
-	ret_symbol = llvm2si_symbol_create(ret_name,
-			llvm2si_symbol_vector_register,
-			ret_vreg);
+	ret_symbol = llvm2si_symbol_create_vreg(ret_name, ret_vreg);
 	llvm2si_symbol_set_uav_index(ret_symbol, ptr_symbol->uav_index);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
@@ -435,9 +428,9 @@ void llvm2si_basic_block_emit_icmp(struct llvm2si_basic_block_t *basic_block,
 
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
-	ret_sreg_series = llvm2si_function_alloc_sreg(function, 2, 1);
-	ret_symbol = llvm2si_symbol_create(ret_name,
-			llvm2si_symbol_scalar_register, ret_sreg_series);
+	ret_sreg_series = llvm2si_function_alloc_sreg(function, 2, 2);
+	ret_symbol = llvm2si_symbol_create_sreg_series(ret_name,
+			ret_sreg_series, ret_sreg_series + 1);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
 	/* Choose instruction based on predicate */
@@ -600,9 +593,7 @@ void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
 	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
-	ret_symbol = llvm2si_symbol_create(ret_name,
-			llvm2si_symbol_vector_register,
-			ret_vreg);
+	ret_symbol = llvm2si_symbol_create_vreg(ret_name, ret_vreg);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
 	/* Emit memory load instruction.
@@ -679,9 +670,7 @@ void llvm2si_basic_block_emit_mul(struct llvm2si_basic_block_t *basic_block,
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
 	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
-	ret_symbol = llvm2si_symbol_create(ret_name,
-			llvm2si_symbol_vector_register,
-			ret_vreg);
+	ret_symbol = llvm2si_symbol_create_vreg(ret_name, ret_vreg);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
 	/* Emit effective address calculation.
@@ -803,6 +792,8 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
 
+	enum si_inst_opcode_t opcode;
+
 	struct llvm2si_function_t *function;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_arg_t *arg_op1;
@@ -839,21 +830,25 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
 	arg_op1 = llvm2si_function_translate_value(function, llarg_op1, NULL);
 	arg_op2 = llvm2si_function_translate_value(function, llarg_op2, NULL);
 
+	/* If first argument is a constant, flip operands */
+	opcode = SI_INST_V_SUB_I32;
+	if (SI2BIN_ARG_IS_CONSTANT(arg_op2))
+	{
+		si2bin_arg_swap(&arg_op1, &arg_op2);
+		arg_op1->value.literal.val = -arg_op1->value.literal.val;
+		opcode = SI_INST_V_ADD_I32;
+	}
+
 	/* Valid argument types */
 	si2bin_arg_valid_types(arg_op1, si2bin_arg_vector_register,
 			si2bin_arg_literal, si2bin_arg_literal_reduced,
 			si2bin_arg_literal_float, si2bin_arg_literal_float_reduced);
 	si2bin_arg_valid_types(arg_op2, si2bin_arg_vector_register);
-	/* FIXME - what happens if the second argument is a constant?
-	 * In the 'add' instruction we can switch them, but here we can't.
-	 */
 
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
 	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
-	ret_symbol = llvm2si_symbol_create(ret_name,
-			llvm2si_symbol_vector_register,
-			ret_vreg);
+	ret_symbol = llvm2si_symbol_create_vreg(ret_name, ret_vreg);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
 	/* Emit subtraction.
@@ -864,7 +859,7 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
 	list_add(arg_list, arg_op1);
 	list_add(arg_list, arg_op2);
-	inst = si2bin_inst_create(SI_INST_V_SUB_I32, arg_list);
+	inst = si2bin_inst_create(opcode, arg_list);
 	llvm2si_basic_block_add_inst(basic_block, inst);
 }
 
@@ -1017,6 +1012,7 @@ void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block)
 
 	/* Iterate over LLVM instructions */
 	llbb = basic_block->llbb;
+	assert(llbb);
 	for (llinst = LLVMGetFirstInstruction(llbb); llinst;
 			llinst = LLVMGetNextInstruction(llinst))
 	{
