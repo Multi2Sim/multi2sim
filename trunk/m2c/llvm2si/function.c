@@ -888,6 +888,131 @@ void llvm2si_function_emit_body(struct llvm2si_function_t *function,
 }
 
 
+/* Given a list of exactly three nodes forming an 'if-then-else' region,
+ * identify which node corresponds to what part, based on their inter-
+ * dependencies, and the terminator of the 'if' block. */
+static void llvm2si_function_identify_if_then_else(
+		struct linked_list_t *node_list,
+		struct cnode_t **if_node_ptr,
+		struct cnode_t **then_node_ptr,
+		struct cnode_t **else_node_ptr)
+{
+	struct cnode_t *if_node;
+	struct cnode_t *then_node;
+	struct cnode_t *else_node;
+
+	struct cnode_t *node0;
+	struct cnode_t *node1;
+	struct cnode_t *node2;
+
+	/* Get list nodes */
+	assert(node_list->count == 3);
+	node0 = linked_list_goto(node_list, 0);
+	node1 = linked_list_goto(node_list, 1);
+	node2 = linked_list_goto(node_list, 2);
+
+	/* Get 'if' node */
+	if (cnode_in_list(node0, node1->pred_list) &&
+			cnode_in_list(node0, node2->pred_list))
+	{
+		if_node = node0;
+		then_node = node1;
+		else_node = node2;
+	}
+	else if (cnode_in_list(node1, node0->pred_list) &&
+			cnode_in_list(node1, node2->pred_list))
+	{
+		if_node = node1;
+		then_node = node0;
+		else_node = node2;
+	}
+	else if (cnode_in_list(node2, node0->pred_list) &&
+			cnode_in_list(node2, node1->pred_list))
+	{
+		if_node = node2;
+		then_node = node0;
+		else_node = node1;
+	}
+	else
+	{
+		if_node = NULL;
+		then_node = NULL;
+		else_node = NULL;
+		panic("%s: unexpected node order",
+				__FUNCTION__);
+	}
+
+	/***********/
+	/* FIXME */
+
+	/* Return */
+	*if_node_ptr = if_node;
+	*then_node_ptr = then_node;
+	*else_node_ptr = else_node;
+}
+
+
+static void llvm2si_function_emit_if_then_else(
+		struct llvm2si_function_t *function,
+		struct cnode_t *node)
+{
+	struct cnode_t *if_node;
+	struct cnode_t *then_node;
+	struct cnode_t *else_node;
+
+	/* Identify the three nodes */
+	assert(node->kind == cnode_abstract);
+	assert(node->abstract.region == cnode_if_then_else);
+	llvm2si_function_identify_if_then_else(node->abstract.child_list,
+			&if_node, &then_node, &else_node);
+}
+
+
+void llvm2si_function_emit_control_flow(struct llvm2si_function_t *function)
+{
+	struct linked_list_t *node_list;
+	struct cnode_t *node;
+
+	/* Emit control flow actions using a pre-order traversal of the control
+	 * tree (not control-flow graph), from inner to outer control flow
+	 * structures. Which specific pre-order traversal does not matter. */
+	node_list = linked_list_create();
+	ctree_traverse(function->ctree, node_list, NULL);
+
+	/* Traverse nodes */
+	LINKED_LIST_FOR_EACH(node_list)
+	{
+		/* Ignore leaf nodes */
+		node = linked_list_get(node_list);
+		if (node->kind == cnode_leaf)
+			continue;
+
+		/* Check control structure */
+		switch (node->abstract.region)
+		{
+
+		case cnode_block:
+
+			/* Ignore blocks */
+			break;
+
+		case cnode_if_then_else:
+
+			llvm2si_function_emit_if_then_else(function, node);
+			break;
+
+		default:
+			fatal("%s: region %s not supported", __FUNCTION__,
+					str_map_value(&cnode_region_map,
+					node->abstract.region));
+		}
+	}
+
+	/* Free structures */
+	linked_list_free(node_list);
+}
+
+
 static struct si2bin_arg_t *llvm2si_function_translate_const_value(
 		struct llvm2si_function_t *function,
 		LLVMValueRef llvalue)

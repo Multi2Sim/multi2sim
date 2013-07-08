@@ -542,9 +542,13 @@ static struct cnode_t *ctree_reduce(
 	struct cnode_t *tmp_node;
 	struct cnode_t *out_node;
 	struct cnode_t *in_node;
+	struct cnode_t *src_node;
+	struct cnode_t *dest_node;
 
-	struct linked_list_t *out_node_list;
-	struct linked_list_t *in_node_list;
+	struct linked_list_t *out_edge_src_list;
+	struct linked_list_t *out_edge_dest_list;
+	struct linked_list_t *in_edge_src_list;
+	struct linked_list_t *in_edge_dest_list;
 
 	char name[MAX_STRING_SIZE];
 
@@ -613,64 +617,62 @@ static struct cnode_t *ctree_reduce(
 	/* Create a list of incoming edges from the control tree into the
 	 * region given in 'node_list', and a list of outgoing edges from the
 	 * region in 'node_list' into the rest of the control tree. */
-	out_node_list = linked_list_create();
-	in_node_list = linked_list_create();
+	in_edge_src_list = linked_list_create();
+	in_edge_dest_list = linked_list_create();
+	out_edge_src_list = linked_list_create();
+	out_edge_dest_list = linked_list_create();
 	LINKED_LIST_FOR_EACH(node_list)
 	{
 		/* Get node in region 'node_list' */
 		tmp_node = linked_list_get(node_list);
 
-		/* Traverse incoming edges, and store in 'in_node_list' those
+		/* Traverse incoming edges, and store those
 		 * that come from outside of 'node_list'. */
 		LINKED_LIST_FOR_EACH(tmp_node->pred_list)
 		{
 			in_node = linked_list_get(tmp_node->pred_list);
-			if (!cnode_in_list(in_node, node_list) &&
-					!cnode_in_list(in_node,
-					in_node_list))
-				linked_list_add(in_node_list, in_node);
+			if (!cnode_in_list(in_node, node_list))
+			{
+				linked_list_add(in_edge_src_list, in_node);
+				linked_list_add(in_edge_dest_list, tmp_node);
+			}
 		}
 
-		/* Traverse outgoing edges, and store in 'out_node_list' those
+		/* Traverse outgoing edges, and store those
 		 * that go outside of 'node_list'. */
 		LINKED_LIST_FOR_EACH(tmp_node->succ_list)
 		{
 			out_node = linked_list_get(tmp_node->succ_list);
-			if (!cnode_in_list(out_node, node_list) &&
-					!cnode_in_list(out_node,
-					out_node_list))
-				linked_list_add(out_node_list, out_node);
+			if (!cnode_in_list(out_node, node_list))
+			{
+				linked_list_add(out_edge_src_list, tmp_node);
+				linked_list_add(out_edge_dest_list, out_node);
+			}
 		}
 	}
 
-	/* Remove all incoming/outgoing edges from/to the region outside of
-	 * 'node_list'. */
-	LINKED_LIST_FOR_EACH(node_list)
+	/* Reconnect incoming edges to the new abstract node */
+	while (in_edge_src_list->count || in_edge_dest_list->count)
 	{
-		tmp_node = linked_list_get(node_list);
-		LINKED_LIST_FOR_EACH(in_node_list)
-		{
-			in_node = linked_list_get(in_node_list);
-			cnode_try_disconnect(in_node, tmp_node);
-		}
-		LINKED_LIST_FOR_EACH(out_node_list)
-		{
-			out_node = linked_list_get(out_node_list);
-			cnode_try_disconnect(tmp_node, out_node);
-		}
+		linked_list_head(in_edge_src_list);
+		linked_list_head(in_edge_dest_list);
+		src_node = linked_list_remove(in_edge_src_list);
+		dest_node = linked_list_remove(in_edge_dest_list);
+		assert(src_node);
+		assert(dest_node);
+		cnode_reconnect_dest(src_node, dest_node, abs_node);
 	}
 
-	/* Add all incoming/outgoing edges as predecessors/successors of the new
-	 * abstract node. */
-	LINKED_LIST_FOR_EACH(in_node_list)
+	/* Reconnect outgoing edges from the new abstract node */
+	while (out_edge_src_list->count || out_edge_dest_list->count)
 	{
-		in_node = linked_list_get(in_node_list);
-		cnode_connect(in_node, abs_node);
-	}
-	LINKED_LIST_FOR_EACH(out_node_list)
-	{
-		out_node = linked_list_get(out_node_list);
-		cnode_connect(abs_node, out_node);
+		linked_list_head(out_edge_src_list);
+		linked_list_head(out_edge_dest_list);
+		src_node = linked_list_remove(out_edge_src_list);
+		dest_node = linked_list_remove(out_edge_dest_list);
+		assert(src_node);
+		assert(dest_node);
+		cnode_reconnect_source(src_node, dest_node, abs_node);
 	}
 
 	/* Add all nodes as child nodes of the new abstract node */
@@ -693,9 +695,11 @@ static struct cnode_t *ctree_reduce(
 	if (cnode_in_list(ctree->node_entry, node_list))
 		ctree->node_entry = abs_node;
 
-	/* Free list of outgoing and incoming edges */
-	linked_list_free(out_node_list);
-	linked_list_free(in_node_list);
+	/* Free structures */
+	linked_list_free(in_edge_src_list);
+	linked_list_free(in_edge_dest_list);
+	linked_list_free(out_edge_src_list);
+	linked_list_free(out_edge_dest_list);
 
 	/* Special case for block regions: in order to avoid nested blocks,
 	 * block regions are flattened when we detect that one block contains
@@ -716,125 +720,6 @@ static struct cnode_t *ctree_reduce(
 
 	/* Return created abstract node */
 	return abs_node;
-}
-
-
-#define NEW_NODE(name) \
-	struct cnode_t *name = cnode_create_leaf(#name, NULL); \
-	ctree_add_node(ctree, name);
-#define NEW_EDGE(u, v) \
-	cnode_connect(u, v)
-
-/* Replace the content of the function with the example on page 201 of
- * Muchnick's book. This function is used for debugging purposes. */
-void ctree_example(struct ctree_t *ctree)
-{
-	linked_list_clear(ctree->node_list);
-
-	NEW_NODE(n1);
-	NEW_NODE(n2);
-	NEW_NODE(n3);
-	NEW_NODE(n4);
-	NEW_NODE(n5);
-	NEW_NODE(n6);
-	NEW_NODE(n7);
-
-	NEW_EDGE(n1, n2);
-	NEW_EDGE(n2, n3);
-	NEW_EDGE(n2, n4);
-	NEW_EDGE(n4, n2);
-	NEW_EDGE(n3, n5);
-	NEW_EDGE(n4, n5);
-	NEW_EDGE(n5, n3);
-	NEW_EDGE(n5, n6);
-	NEW_EDGE(n6, n5);
-	NEW_EDGE(n6, n7);
-
-	ctree->node_entry = n1;
-}
-
-void ctree_example2(struct ctree_t *ctree)
-{
-	linked_list_clear(ctree->node_list);
-
-	NEW_NODE(n1);
-	NEW_NODE(n2);
-	NEW_NODE(n3);
-	NEW_NODE(n4);
-	NEW_NODE(n5);
-	NEW_NODE(n6);
-	NEW_NODE(n7);
-	NEW_NODE(n8);
-
-	NEW_EDGE(n1, n2);
-	NEW_EDGE(n1, n8);
-	NEW_EDGE(n2, n3);
-	NEW_EDGE(n2, n4);
-	NEW_EDGE(n3, n7);
-	NEW_EDGE(n7, n8);
-	NEW_EDGE(n4, n5);
-	NEW_EDGE(n5, n6);
-	NEW_EDGE(n6, n7);
-	NEW_EDGE(n6, n4);
-
-	ctree->node_entry = n1;
-}
-
-
-void ctree_example3(struct ctree_t *ctree)
-{
-	linked_list_clear(ctree->node_list);
-	ctree->name = str_set(ctree->name, "Sharir");
-
-	NEW_NODE(A);
-	NEW_NODE(B);
-	NEW_NODE(C);
-	NEW_NODE(D);
-	NEW_NODE(E);
-	NEW_NODE(F);
-	NEW_NODE(G);
-	NEW_NODE(H);
-	NEW_NODE(I);
-	NEW_NODE(J);
-	NEW_NODE(K);
-	NEW_NODE(L);
-
-	NEW_EDGE(A, B);
-	NEW_EDGE(A, K);
-	NEW_EDGE(B, C);
-	NEW_EDGE(B, I);
-	NEW_EDGE(C, D);
-	NEW_EDGE(D, H);
-	NEW_EDGE(D, E);
-	NEW_EDGE(E, F);
-	NEW_EDGE(E, G);
-	NEW_EDGE(F, D);
-	NEW_EDGE(G, D);
-	NEW_EDGE(H, I);
-	NEW_EDGE(I, J);
-	NEW_EDGE(J, A);
-	NEW_EDGE(J, I);
-	NEW_EDGE(K, L);
-
-	ctree->node_entry = A;
-}
-
-
-void ctree_example4(struct ctree_t *ctree)
-{
-	linked_list_clear(ctree->node_list);
-
-	NEW_NODE(A);
-	NEW_NODE(B);
-	NEW_NODE(C);
-	NEW_NODE(D);
-
-	NEW_EDGE(A, B);
-	NEW_EDGE(B, C);
-	NEW_EDGE(C, D);
-	NEW_EDGE(D, A);
-
-	ctree->node_entry = A;
 }
 
 
@@ -1008,6 +893,32 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 }
 
 
+static void ctree_traverse_node(struct cnode_t *node,
+		struct linked_list_t *preorder_list,
+		struct linked_list_t *postorder_list)
+{
+	struct cnode_t *child_node;
+
+	/* Pre-order visit */
+	if (preorder_list)
+		linked_list_add(preorder_list, node);
+
+	/* Visit children */
+	if (node->kind == cnode_abstract)
+	{
+		LINKED_LIST_FOR_EACH(node->abstract.child_list)
+		{
+			child_node = linked_list_get(node->abstract.child_list);
+			ctree_traverse_node(child_node, preorder_list, postorder_list);
+		}
+	}
+
+	/* Post-order visit */
+	if (postorder_list)
+		linked_list_add(postorder_list, node);
+}
+
+
 
 
 /*
@@ -1090,6 +1001,10 @@ void ctree_structural_analysis(struct ctree_t *ctree)
 
 	FILE *f;
 
+	/* Debug */
+	ctree_debug("Starting structural analysis on tree '%s'\n\n",
+			ctree->name);
+
 	/* Initialize */
 	region_list = linked_list_create();
 
@@ -1134,8 +1049,52 @@ void ctree_structural_analysis(struct ctree_t *ctree)
 	linked_list_free(postorder_list);
 	linked_list_free(region_list);
 
+	/* Remember that we have run a structural analysis */
+	ctree->structural_analysis_done = 1;
+
 	/* Debug */
-	ctree_debug("Done.\n");
+	ctree_debug("Done.\n\n");
+}
+
+
+void ctree_traverse(struct ctree_t *ctree, struct linked_list_t *preorder_list,
+		struct linked_list_t *postorder_list)
+{
+	FILE *f;
+
+	/* A structural analysis must have been run first */
+	if (!ctree->structural_analysis_done)
+		fatal("%s: %s: tree traversal required previous structural"
+				" analysis", __FUNCTION__, ctree->name);
+
+	/* Clear lists */
+	if (preorder_list)
+		linked_list_clear(preorder_list);
+	if (postorder_list)
+		linked_list_clear(postorder_list);
+
+	/* Traverse tree recursively */
+	ctree_traverse_node(ctree->node_entry, preorder_list, postorder_list);
+
+	/* Debug */
+	f = debug_file(ctree_debug_category);
+	if (f)
+	{
+		if (preorder_list)
+		{
+			fprintf(f, "Traversal of tree '%s' in pre-order:\n",
+					ctree->name);
+			cnode_list_dump(preorder_list, f);
+			fprintf(f, "\n\n");
+		}
+		if (postorder_list)
+		{
+			fprintf(f, "Traversal of tree '%s' in post-order:\n",
+					ctree->name);
+			cnode_list_dump(postorder_list, f);
+			fprintf(f, "\n\n");
+		}
+	}
 }
 
 

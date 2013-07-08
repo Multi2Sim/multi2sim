@@ -53,13 +53,16 @@ struct ctree_t
 	char *name;
 
 	/* Counters used to assign names to new nodes. A different counter is
-	 * used for each possible abstract node region.
-	 */
+	 * used for each possible abstract node region. */
 	unsigned int name_counter[cnode_region_count];
 
 	/* List of nodes and entry node */
 	struct linked_list_t *node_list;
 	struct cnode_t *node_entry;
+
+	/* Flag indicating whether a structural analysis has been run on the
+	 * control tree. */
+	int structural_analysis_done;
 };
 
 void ctree_init(void);
@@ -83,6 +86,15 @@ void ctree_clear(struct ctree_t *ctree);
 /* Create the function control tree by performing a structural analysis on the
  * control flow graph of the function. */
 void ctree_structural_analysis(struct ctree_t *ctree);
+
+/* Depth-first traversal of the control tree following the abstract nodes'
+ * children (as opposed to successor/predecessor traversal of the control flow
+ * graph). A structural analysis must have been run on the control tree first.
+ * The function returns two lists with all tree nodes, listed in pre-order
+ * and post-order, respectively. Either list can be NULL if that specific
+ * ordering is of no interest to the caller. */
+void ctree_traverse(struct ctree_t *ctree, struct linked_list_t *preorder_list,
+		struct linked_list_t *postorder_list);
 
 /* Read/write the control tree from/to an INI file */
 void ctree_write_to_config(struct ctree_t *ctree,
