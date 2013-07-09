@@ -10,6 +10,9 @@ libasm_a_SOURCES = \
 	asm.h \
 	\
 	bin-file.c \
-	bin-file.h 
+	bin-file.h \
+	\
+	input.c \
+	input.h
 INCLUDES = @M2S_INCLUDES@
 
