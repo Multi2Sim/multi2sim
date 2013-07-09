@@ -1182,6 +1182,110 @@ void ctree_dump(struct ctree_t *ctree, FILE *f)
 }
 
 
+#ifdef HAVE_LLVM
+
+static struct cnode_t *ctree_add_llvm_cfg_node(struct ctree_t *ctree,
+		LLVMBasicBlockRef llbb)
+{
+	struct cnode_t *node;
+	struct cnode_t *succ_node;
+	struct cnode_t *true_node;
+	struct cnode_t *false_node;
+
+	LLVMValueRef llinst;
+	LLVMValueRef llbb_value;
+	LLVMValueRef succ_llbb_value;
+	LLVMValueRef true_llbb_value;
+	LLVMValueRef false_llbb_value;
+
+	LLVMBasicBlockRef succ_llbb;
+	LLVMBasicBlockRef true_llbb;
+	LLVMBasicBlockRef false_llbb;
+
+	LLVMOpcode llopcode;
+
+	int num_operands;
+
+	char *name;
+
+
+	/* Get basic block name */
+	llbb_value = LLVMBasicBlockAsValue(llbb);
+	name = (char *) LLVMGetValueName(llbb_value);
+	if (!name || !*name)
+		fatal("%s: anonymous LLVM basic blocks not allowed",
+			__FUNCTION__);
+
+	/* If node already exists, just return it */
+	node = hash_table_get(ctree->node_table, name);
+	if (node)
+		return node;
+
+	/* Create node */
+	node = cnode_create_leaf(name, NULL);
+	ctree_add_node(ctree, node);
+
+	/* Get basic block terminator */
+	llinst = LLVMGetBasicBlockTerminator(llbb);
+	llopcode = LLVMGetInstructionOpcode(llinst);
+	num_operands = LLVMGetNumOperands(llinst);
+
+	/* Unconditional branch: br label <dest> */
+	if (llopcode == LLVMBr && num_operands == 1)
+	{
+		succ_llbb_value = LLVMGetOperand(llinst, 0);
+		succ_llbb = LLVMValueAsBasicBlock(succ_llbb_value);
+		succ_node = ctree_add_llvm_cfg_node(ctree, succ_llbb);
+		cnode_connect(node, succ_node);
+		return node;
+	}
+
+	/* Conditional branch: br i1 <cond>, label <iftrue>, label <iffalse>
+	 * For some reason, LLVM stores the 'then' block as the last operand of
+	 * the instruction (see Instructions.cpp, constructor
+	 * BranchInst::BranchInst */
+	if (llopcode == LLVMBr && num_operands == 3)
+	{
+		true_llbb_value = LLVMGetOperand(llinst, 2);
+		true_llbb = LLVMValueAsBasicBlock(true_llbb_value);
+		true_node = ctree_add_llvm_cfg_node(ctree, true_llbb);
+		cnode_connect(node, true_node);
+
+		false_llbb_value = LLVMGetOperand(llinst, 1);
+		false_llbb = LLVMValueAsBasicBlock(false_llbb_value);
+		false_node = ctree_add_llvm_cfg_node(ctree, false_llbb);
+		cnode_connect(node, false_node);
+
+		return node;
+	}
+
+	/* Function exit: ret */
+	if (llopcode == LLVMRet)
+		return node;
+
+	/* Invalid terminator */
+	fatal("%s: block terminator not supported (%d)",
+		__FUNCTION__, llopcode);
+	return NULL;
+}
+
+
+struct cnode_t *ctree_add_llvm_cfg(struct ctree_t *ctree,
+		LLVMValueRef llfunction)
+{
+	LLVMBasicBlockRef llbb;
+
+	/* Obtain entry basic block */
+	llbb = LLVMGetEntryBasicBlock(llfunction);
+	assert(llbb);
+
+	/* Insert basic block recursively */
+	return ctree_add_llvm_cfg_node(ctree, llbb);
+}
+
+#endif  /* HAVE_LLVM */
+
+
 struct cnode_t *ctree_get_node(struct ctree_t *ctree, char *name)
 {
 	return hash_table_get(ctree->node_table, name);
