@@ -24,6 +24,10 @@
 
 #include "cnode.h"
 
+#ifdef HAVE_LLVM
+#include <llvm-c/Core.h>
+#endif
+
 
 /*** Forward declarations ***/
 
@@ -74,6 +78,15 @@ void ctree_dump(struct ctree_t *ctree, FILE *f);
 
 /* Add a node to the control tree */
 void ctree_add_node(struct ctree_t *ctree, struct cnode_t *node);
+
+/* Given an LLVM function, create one node for each basic block. Nodes are then
+ * connected following the same structure as the control flow graph of the LLVM
+ * function, and they are inserted into the control tree. The node
+ * corresponding to the LLVM entry basic block is returned. */
+#if HAVE_LLVM
+struct cnode_t *ctree_add_llvm_cfg(struct ctree_t *ctree,
+		LLVMValueRef llfunction);
+#endif
 
 /* Search a node by its name */
 struct cnode_t *ctree_get_node(struct ctree_t *ctree, char *name);

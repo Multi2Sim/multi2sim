@@ -332,153 +332,10 @@ static void llvm2si_function_dump_data(struct llvm2si_function_t *function,
 }
 
 
-/* Initialize CFG starting at LLVM basic block given in 'llbb' recursively.
- * The function returns a newly created basic block that has already been
- * added to the function, but not connected to other basic blocks. */
-static struct llvm2si_basic_block_t *llvm2si_function_add_cfg(
-	struct llvm2si_function_t *function, LLVMBasicBlockRef llbb)
-{
-	LLVMValueRef llbb_value;
-	LLVMValueRef llinst;
-	LLVMOpcode llopcode;
-
-	LLVMValueRef llbb_if_true_value;
-	LLVMValueRef llbb_if_false_value;
-	LLVMValueRef llbb_next_value;
-
-	LLVMBasicBlockRef llbb_if_true;
-	LLVMBasicBlockRef llbb_if_false;
-	LLVMBasicBlockRef llbb_next;
-
-	struct llvm2si_basic_block_t *basic_block_root;
-	struct llvm2si_basic_block_t *basic_block_if_true;
-	struct llvm2si_basic_block_t *basic_block_if_false;
-	struct llvm2si_basic_block_t *basic_block_next;
-	struct llvm2si_basic_block_t *basic_block;
-
-	int num_operands;
-
-	char *name;
-	char *name_next;
-
-	/* Nothing for NULL basic block */
-	if (!llbb)
-		return NULL;
-
-	/* Get basic block name */
-	llbb_value = LLVMBasicBlockAsValue(llbb);
-	name = (char *) LLVMGetValueName(llbb_value);
-	if (!name || !*name)
-		fatal("%s: anonymous LLVM basic blocks not allowed",
-			__FUNCTION__);
-
-	/* If basic block already exists, just return it */
-	basic_block = hash_table_get(function->basic_block_table, name);
-	if (basic_block)
-		return basic_block;
-	
-	/* Create root basic block */
-	basic_block_root = llvm2si_basic_block_create(llbb);
-	basic_block = basic_block_root;
-	llvm2si_function_add_basic_block(function, basic_block);
-
-	/* Keep adding basic blocks in a depth-first manner, either iteratively
-	 * for blocks with one successor, or recursively for blocks with two. */
-	while (1)
-	{
-		/* Actions depending on basic block terminator */
-		llinst = LLVMGetBasicBlockTerminator(llbb);
-		llopcode = LLVMGetInstructionOpcode(llinst);
-		num_operands = LLVMGetNumOperands(llinst);
-
-		/* Unconditional branch */
-		if (llopcode == LLVMBr && num_operands == 1)
-		{
-			/* Form: br label <dest> */
-			llbb_next_value = LLVMGetOperand(llinst, 0);
-			llbb_next = LLVMValueAsBasicBlock(llbb_next_value);
-
-			/* If branch already exists, connect it and stop */
-			name_next = (char *) LLVMGetValueName(llbb_next_value);
-			basic_block_next = hash_table_get(function->basic_block_table,
-					name_next);
-			if (basic_block_next)
-			{
-				basic_block_connect(BASIC_BLOCK(basic_block),
-						BASIC_BLOCK(basic_block_next));
-				return basic_block_root;
-			}
-
-			/* Create and connect next basic block */
-			basic_block_next = llvm2si_basic_block_create(llbb_next);
-			llvm2si_function_add_basic_block(function, basic_block_next);
-			basic_block_connect(BASIC_BLOCK(basic_block),
-					BASIC_BLOCK(basic_block_next));
-
-			/* Continue iteratively with next basic block */
-			basic_block = basic_block_next;
-			llbb = llbb_next;
-		}
-
-		/* Conditional branch */
-		else if (llopcode == LLVMBr && num_operands == 3)
-		{
-			/* Form: br i1 <cond>, label <iftrue>, label <iffalse>
-			 * For some reason, LLVM stores the 'then' block as the
-			 * last operand of the instruction (see
-			 * Instructions.cpp, constructor BranchInst::BranchInst
-			 */
-			llbb_if_true_value = LLVMGetOperand(llinst, 2);
-			llbb_if_false_value = LLVMGetOperand(llinst, 1);
-			llbb_if_true = LLVMValueAsBasicBlock(llbb_if_true_value);
-			llbb_if_false = LLVMValueAsBasicBlock(llbb_if_false_value);
-
-			/* Insert true branch recursively */
-			basic_block_if_true = llvm2si_function_add_cfg(function,
-					llbb_if_true);
-			basic_block_connect(BASIC_BLOCK(basic_block),
-					BASIC_BLOCK(basic_block_if_true));
-
-			/* Insert false branch recursively */
-			basic_block_if_false = llvm2si_function_add_cfg(function,
-					llbb_if_false);
-			basic_block_connect(BASIC_BLOCK(basic_block),
-					BASIC_BLOCK(basic_block_if_false));
-
-			/* Done */
-			return basic_block_root;
-		}
-
-		/* Return */
-		else if (llopcode == LLVMRet)
-		{
-			/* Multiple exists not allowed */
-			if (function->basic_block_exit)
-				fatal("%s: multiple exit blocks in LLVM function '%s'",
-						__FUNCTION__, function->name);
-
-			/* Set this block as exit block */
-			function->basic_block_exit = basic_block_root;
-			return basic_block_root;
-		}
-
-		/* Other */
-		else
-		{
-			fatal("%s: block terminator not supported (%d)",
-				__FUNCTION__, llopcode);
-		}
-	}
-
-	/* Never get here */
-	return NULL;
-}
-
-
 struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 {
 	struct llvm2si_function_t *function;
-	LLVMBasicBlockRef llbb;
+	struct ctree_t *ctree;
 
 	/* Allocate */
 	function = xcalloc(1, sizeof(struct llvm2si_function_t));
@@ -489,7 +346,32 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	function->basic_block_list = linked_list_create();
 	function->basic_block_table = hash_table_create(0, 1);
 	function->symbol_table = llvm2si_symbol_table_create();
+	function->ctree = ctree = ctree_create(function->name);
 
+	/* Create pre-defined nodes in control tree */
+	function->entry_node = cnode_create_leaf("entry", NULL);
+	function->header_node = cnode_create_leaf("header", NULL);
+	function->uavs_node = cnode_create_leaf("uavs", NULL);
+	function->args_node = cnode_create_leaf("args", NULL);
+	ctree_add_node(ctree, function->entry_node);
+	ctree_add_node(ctree, function->header_node);
+	ctree_add_node(ctree, function->uavs_node);
+	ctree_add_node(ctree, function->args_node);
+
+	/* Add all nodes from the LLVM control flow graph */
+	function->body_node = ctree_add_llvm_cfg(ctree, llfunction);
+
+	/* Connect nodes */
+	cnode_connect(function->entry_node, function->header_node);
+	cnode_connect(function->header_node, function->uavs_node);
+	cnode_connect(function->uavs_node, function->args_node);
+	cnode_connect(function->args_node, function->body_node);
+
+	/* Dump */
+	ctree_dump(ctree, stdout);
+
+
+#if 0
 	/* Standard basic blocks */
 	function->basic_block_entry = llvm2si_basic_block_create_with_name("entry");
 	function->basic_block_header = llvm2si_basic_block_create_with_name("header");
@@ -528,9 +410,11 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 
 	/* Create control tree and perform structural analysis */
 	function->ctree = ctree_create(function->name);
+
 	ctree_load_from_cfg(function->ctree, function->basic_block_list,
 			BASIC_BLOCK(function->basic_block_entry));
 	ctree_structural_analysis(function->ctree);
+#endif
 
 	/* Return */
 	return function;

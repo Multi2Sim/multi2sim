@@ -33,6 +33,10 @@ LDADD = \
 	$(top_builddir)/src/lib/util/libutil.a \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a
 
+if HAVE_LLVM
+AM_CFLAGS = $(LLVM_CFLAGS)
+endif
+
 if HAVE_OPENCL
 LDADD += -lOpenCL \
 	-L$(AMDAPPSDKROOT)/lib/x86 \

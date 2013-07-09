@@ -145,6 +145,13 @@ struct llvm2si_function_t
 	struct llvm2si_basic_block_t *basic_block_body;
 	struct llvm2si_basic_block_t *basic_block_exit;
 
+	/* Predefined nodes */
+	struct cnode_t *entry_node;
+	struct cnode_t *header_node;
+	struct cnode_t *uavs_node;
+	struct cnode_t *args_node;
+	struct cnode_t *body_node;
+
 	/* Symbol table associated with the function, storing LLVM variables */
 	struct llvm2si_symbol_table_t *symbol_table;
 
