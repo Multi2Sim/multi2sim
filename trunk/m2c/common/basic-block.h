@@ -50,7 +50,7 @@ struct basic_block_t
 
 	/*** Virtual methods ***/
 
-	void (*free)(struct basic_block_t *basic_block);
+	void (*destroy)(struct basic_block_t *basic_block);
 	void (*dump)(struct basic_block_t *basic_block, FILE *f);
 };
 

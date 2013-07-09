@@ -70,7 +70,9 @@ struct llvm2si_basic_block_t
 
 
 /* Constructor */
-struct llvm2si_basic_block_t *llvm2si_basic_block_create(struct cnode_t *cnode);
+struct llvm2si_basic_block_t *llvm2si_basic_block_create(
+		struct llvm2si_function_t *function,
+		struct cnode_t *cnode);
 
 /* Destructor.
  * Virtual function. */
