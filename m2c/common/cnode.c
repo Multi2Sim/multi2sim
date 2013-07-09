@@ -129,8 +129,24 @@ struct cnode_t *cnode_create_abstract(char *name,
 
 void cnode_free(struct cnode_t *node)
 {
-	if (node->kind == cnode_abstract)
+	switch (node->kind)
+	{
+	case cnode_abstract:
+
 		linked_list_free(node->abstract.child_list);
+		break;
+
+	case cnode_leaf:
+
+		/* Virtual call to basic block destructor */
+		if (node->leaf.basic_block)
+			node->leaf.basic_block->destroy(node->leaf.basic_block);
+		break;
+
+	default:
+		abort();
+	}
+
 	linked_list_free(node->pred_list);
 	linked_list_free(node->succ_list);
 	linked_list_free(node->back_edge_list);
@@ -142,10 +158,18 @@ void cnode_free(struct cnode_t *node)
 }
 
 
-/* Return true if 'node' is in the linked list of nodes passed as the second
- * argument. This function does not call 'linked_list_find'. Instead, it
- * traverses the list using a dedicated iterator, so that the current element of
- * the list is not lost. */
+struct basic_block_t *cnode_get_basic_block(struct cnode_t *node)
+{
+	/* Check that basic block if a leaf */
+	if (node->kind != cnode_leaf)
+		panic("%s: node '%s' is not a leaf",
+				__FUNCTION__, node->name);
+
+	/* Return associated basic block */
+	return node->leaf.basic_block;
+}
+
+
 int cnode_in_list(struct cnode_t *node,
 		struct linked_list_t *list)
 {

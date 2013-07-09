@@ -30,15 +30,20 @@ struct basic_block_t *basic_block_create(struct cnode_t *node)
 {
 	struct basic_block_t *basic_block;
 
+	/* Check that 'node' is a leaf node */
+	if (node->kind != cnode_leaf)
+		fatal("%s: node '%s' is not a leaf",
+				__FUNCTION__, node->name);
+
 	/* Check that 'node' doesn't have a basic block */
-	if (node->basic_block)
+	if (node->leaf.basic_block)
 		fatal("%s: node '%s' already contains a basic block",
 				__FUNCTION__, node->name);
 
 	/* Initialize */
 	basic_block = xcalloc(1, sizeof(struct basic_block_t));
 	basic_block->node = node;
-	node->basic_block = basic_block;
+	node->leaf.basic_block = basic_block;
 
 	/* Class information */
 	CLASS_INIT(basic_block, BASIC_BLOCK_TYPE, NULL);
