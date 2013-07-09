@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <m2c/common/basic-block.h>
+#include <m2c/common/cnode.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
@@ -860,21 +861,16 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
  * Public Functions
  */
 
-struct llvm2si_basic_block_t *llvm2si_basic_block_create(LLVMBasicBlockRef llbb)
+struct llvm2si_basic_block_t *llvm2si_basic_block_create(struct cnode_t *cnode)
 {
-	LLVMValueRef llbb_as_value;
-
 	struct llvm2si_basic_block_t *basic_block;
 	struct basic_block_t *__basic_block;
 
-	char *name;
-
 	/* Initialize parent */
-	__basic_block = basic_block_create("<basic-block>");
+	__basic_block = basic_block_create(cnode);
 
 	/* Initialize */
 	basic_block = xcalloc(1, sizeof(struct llvm2si_basic_block_t));
-	basic_block->llbb = llbb;
 	basic_block->inst_list = linked_list_create();
 
 	/* Class information */
@@ -884,34 +880,6 @@ struct llvm2si_basic_block_t *llvm2si_basic_block_create(LLVMBasicBlockRef llbb)
 	__basic_block->free = llvm2si_basic_block_free;
 	__basic_block->dump = llvm2si_basic_block_dump;
 
-	/* Name */
-	if (llbb)
-	{
-		/* Get name */
-		llbb_as_value = LLVMBasicBlockAsValue(llbb);
-		name = (char *) LLVMGetValueName(llbb_as_value);
-		basic_block_set_name(__basic_block, name);
-
-		/* Do not allow LLVM basic blocks to be anonymous, since their
-		 * name is used for insertion in a hash table. */
-		if (!name || !*name)
-			fatal("%s: anonymous LLVM basic blocks forbidden",
-				__FUNCTION__);
-	}
-
-	/* Return */
-	return basic_block;
-}
-
-
-struct llvm2si_basic_block_t *llvm2si_basic_block_create_with_name(char *name)
-{
-	struct llvm2si_basic_block_t *basic_block;
-
-	/* Create */
-	basic_block = llvm2si_basic_block_create(NULL);
-	basic_block_set_name(BASIC_BLOCK(basic_block), name);
-	
 	/* Return */
 	return basic_block;
 }
@@ -951,9 +919,8 @@ void llvm2si_basic_block_dump(struct basic_block_t *__basic_block, FILE *f)
 	if (!basic_block->inst_list->count)
 		return;
 
-	/* Label with basic block name if not empty */
-	if (*__basic_block->name)
-		fprintf(f, "\n%s:\n", __basic_block->name);
+	/* Label with node's name */
+	fprintf(f, "\n%s:\n", __basic_block->node->name);
 
 	/* Print list of instructions */
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
@@ -994,14 +961,13 @@ void llvm2si_basic_block_add_comment(struct llvm2si_basic_block_t *basic_block,
 }
 
 
-void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block)
+void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block,
+		LLVMBasicBlockRef llbb)
 {
 	LLVMValueRef llinst;
-	LLVMBasicBlockRef llbb;
 	LLVMOpcode llopcode;
 
 	/* Iterate over LLVM instructions */
-	llbb = basic_block->llbb;
 	assert(llbb);
 	for (llinst = LLVMGetFirstInstruction(llbb); llinst;
 			llinst = LLVMGetNextInstruction(llinst))

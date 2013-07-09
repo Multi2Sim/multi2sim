@@ -1125,8 +1125,8 @@ void ctree_traverse(struct ctree_t *ctree, struct linked_list_t *preorder_list,
 
 	/* A structural analysis must have been run first */
 	if (!ctree->structural_analysis_done)
-		fatal("%s: %s: tree traversal required previous structural"
-				" analysis", __FUNCTION__, ctree->name);
+		fatal("%s: %s: tree traversal requires structural analysis",
+				__FUNCTION__, ctree->name);
 
 	/* Clear lists */
 	if (preorder_list)
@@ -1224,6 +1224,7 @@ static struct cnode_t *ctree_add_llvm_cfg_node(struct ctree_t *ctree,
 	/* Create node */
 	node = cnode_create_leaf(name, NULL);
 	ctree_add_node(ctree, node);
+	node->llbb = llbb;
 
 	/* Get basic block terminator */
 	llinst = LLVMGetBasicBlockTerminator(llbb);
@@ -1555,62 +1556,3 @@ void ctree_compare(struct ctree_t *ctree1,
 		cnode_compare(node, node2);
 	}
 }
-
-
-void ctree_load_from_cfg(struct ctree_t *ctree,
-		struct linked_list_t *basic_block_list,
-		struct basic_block_t *basic_block_entry)
-{
-	struct basic_block_t *basic_block;
-	struct basic_block_t *basic_block_succ;
-
-	struct cnode_t *node;
-	struct cnode_t *node_succ;
-
-	FILE *f;
-
-	/* Clear first */
-	ctree_clear(ctree);
-
-	/* Create the nodes */
-	LINKED_LIST_FOR_EACH(basic_block_list)
-	{
-		basic_block = BASIC_BLOCK(linked_list_get(basic_block_list));
-		node = cnode_create_leaf(basic_block->name, basic_block);
-		ctree_add_node(ctree, node);
-		basic_block->cnode = node;
-
-		/* Set head node */
-		if (basic_block == basic_block_entry)
-		{
-			assert(!ctree->entry_node);
-			ctree->entry_node = node;
-		}
-	}
-
-	/* An entry node must have been created */
-	assert(ctree->entry_node);
-
-	/* Add edges to the graph */
-	LINKED_LIST_FOR_EACH(basic_block_list)
-	{
-		basic_block = BASIC_BLOCK(linked_list_get(basic_block_list));
-		node = basic_block->cnode;
-		LINKED_LIST_FOR_EACH(basic_block->succ_list)
-		{
-			basic_block_succ = BASIC_BLOCK(linked_list_get(basic_block->succ_list));
-			node_succ = basic_block_succ->cnode;
-			assert(node_succ);
-			cnode_connect(node, node_succ);
-		}
-	}
-
-	/* Debug */
-	f = debug_file(ctree_debug_category);
-	if (f)
-	{
-		fprintf(f, "Control tree created:\n");
-		ctree_dump(ctree, f);
-	}
-}
-

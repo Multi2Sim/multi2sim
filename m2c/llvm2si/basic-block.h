@@ -54,11 +54,6 @@ struct llvm2si_basic_block_t
 	 * next instruction added. */
 	char *comment;
 
-	/* Associated LLVM basic block. It can be NULL for those SI basic blocks
-	 * that don't associate to an original LLVM block, such as the header
-	 * basic block. */
-	LLVMBasicBlockRef llbb;
-
 	/* Function where the basic block belongs. This field is populated
 	 * automatically when function 'llvm2si_function_add' is called. */
 	struct llvm2si_function_t *function;
@@ -74,8 +69,8 @@ struct llvm2si_basic_block_t
 };
 
 
-struct llvm2si_basic_block_t *llvm2si_basic_block_create(LLVMBasicBlockRef llbb);
-struct llvm2si_basic_block_t *llvm2si_basic_block_create_with_name(char *name);
+/* Constructor */
+struct llvm2si_basic_block_t *llvm2si_basic_block_create(struct cnode_t *cnode);
 
 /* Destructor.
  * Virtual function. */
@@ -95,9 +90,9 @@ void llvm2si_basic_block_add_inst(struct llvm2si_basic_block_t *basic_block,
 void llvm2si_basic_block_add_comment(struct llvm2si_basic_block_t *basic_block,
 		char *comment);
 
-/* Emit SI code for the basic block. The function reads the LLVM basic block
- * stored in field 'llbb', and emits SI instructions into field 'inst_list'. */
-void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block);
+/* Emit SI code for the basic block into field 'inst_list'. */
+void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block,
+		LLVMBasicBlockRef llbb);
 
 
 #endif
