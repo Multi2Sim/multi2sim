@@ -171,15 +171,8 @@ static void si_opengl_bin_enc_dict_entry_free(struct si_opengl_bin_enc_dict_entr
 	free(enc_dict);
 }
 
-static void si_opengl_shader_binary_set_enc_dict(struct si_opengl_shader_binary_t *shdr)
+static void si_opengl_enc_dict_set_userElements(struct si_opengl_shader_binary_t *shdr, struct si_opengl_bin_enc_dict_entry_t *enc_dict)
 {
-	struct si_opengl_bin_enc_dict_entry_t *enc_dict;
-
-	/* Allocate */
-	shdr->shader_enc_dict = si_opengl_bin_enc_dict_entry_create();
-	enc_dict = shdr->shader_enc_dict;
-
-	/* Initialize */
 	/* FIXME: should get this info from binary! */
 	switch(shdr->shader_kind)
 	{
@@ -194,6 +187,18 @@ static void si_opengl_shader_binary_set_enc_dict(struct si_opengl_shader_binary_
 		enc_dict->userElements[1].apiSlot = 0x0; /* ? */
 		enc_dict->userElements[1].startUserReg = 0x00000004;	/* s4, s5 */
 		enc_dict->userElements[1].userRegCount = 0x00000002;
+		break;
+	default:
+		break;
+	}
+}
+
+static void si_opengl_enc_dict_set_semanticMappings(struct si_opengl_shader_binary_t *shdr, struct si_opengl_bin_enc_dict_entry_t *enc_dict)
+{
+	/* FIXME: should get this info from binary! */
+	switch(shdr->shader_kind)
+	{
+	case SI_OPENGL_SHADER_VERTEX:
 		/* Semantic mapping */
 		enc_dict->semanticsMapping[0].count = 0x0;
 		enc_dict->semanticsMapping[0].usageIndex = 0x0;
@@ -203,6 +208,34 @@ static void si_opengl_shader_binary_set_enc_dict(struct si_opengl_shader_binary_
 	default:
 		break;
 	}
+}
+
+static void si_opengl_enc_dict_set_inputs(struct si_opengl_shader_binary_t *shdr, struct si_opengl_bin_enc_dict_entry_t *enc_dict)
+{
+
+	/* FIXME: should get this info from binary! */
+	switch(shdr->shader_kind)
+	{
+	case SI_OPENGL_SHADER_VERTEX:
+		/* Inputs */
+		break;
+	default:
+		break;
+	}
+}
+
+static void si_opengl_shader_binary_set_enc_dict(struct si_opengl_shader_binary_t *shdr)
+{
+	struct si_opengl_bin_enc_dict_entry_t *enc_dict;
+
+	/* Allocate */
+	shdr->shader_enc_dict = si_opengl_bin_enc_dict_entry_create();
+	enc_dict = shdr->shader_enc_dict;
+
+	/* Initialize */
+	si_opengl_enc_dict_set_userElements(shdr, enc_dict);
+	si_opengl_enc_dict_set_semanticMappings(shdr, enc_dict);
+	si_opengl_enc_dict_set_inputs(shdr, enc_dict);
 }
 
 static struct list_t *si_opengl_shaders_list_create(struct elf_file_t *binary)
