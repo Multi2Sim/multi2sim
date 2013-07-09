@@ -405,6 +405,53 @@ void cnode_reconnect_source(struct cnode_t *src_node,
 }
 
 
+void cnode_insert_before(struct cnode_t *node, struct cnode_t *before)
+{
+	struct cnode_t *parent;
+
+	/* Make connection */
+	cnode_connect(node, before);
+
+	/* Check parent */
+	parent = before->parent;
+	if (!parent)
+		return;
+
+	/* Insert in common parent */
+	node->parent = parent;
+	assert(parent->kind == cnode_abstract);
+	assert(!cnode_in_list(node, parent->abstract.child_list));
+	linked_list_find(parent->abstract.child_list, before);
+	assert(!parent->abstract.child_list->error_code);
+	linked_list_insert(parent->abstract.child_list, node);
+}
+
+
+void cnode_insert_after(struct cnode_t *node, struct cnode_t *after)
+{
+	struct cnode_t *parent;
+	struct linked_list_t *child_list;
+
+	/* Make connection */
+	cnode_connect(after, node);
+
+	/* Check parent */
+	parent = after->parent;
+	if (!parent)
+		return;
+
+	/* Insert in common parent */
+	node->parent = parent;
+	assert(parent->kind == cnode_abstract);
+	child_list = parent->abstract.child_list;
+	assert(!cnode_in_list(node, child_list));
+	linked_list_find(child_list, after);
+	assert(!child_list->error_code);
+	linked_list_next(child_list);
+	linked_list_insert(child_list, node);
+}
+
+
 struct cnode_t *cnode_get_first_leaf(struct cnode_t *node)
 {
 	struct cnode_t *child_node;

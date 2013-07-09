@@ -1165,10 +1165,7 @@ static void llvm2si_function_emit_while_loop(
 	/* Insert pre-header node into control tree */
 	llvm2si_function_add_basic_block(function, pre_bb);
 	ctree_add_node(function->ctree, pre_node);
-	cnode_connect(pre_node, head_node);
-	linked_list_head(node->abstract.child_list);
-	linked_list_insert(node->abstract.child_list, pre_node);
-	pre_node->parent = node;
+	cnode_insert_before(pre_node, head_node);
 	pre_node->role = cnode_role_pre;
 
 	/* Insert exit node into control tree */
@@ -1315,6 +1312,15 @@ void llvm2si_function_emit_control_flow(struct llvm2si_function_t *function)
 
 	/* Free structures */
 	linked_list_free(node_list);
+
+	/* FIXME - We can remove this once the insertion of pre-header and exit
+	 * nodes is done in ctree_reduce. */
+	FILE *f = debug_file(ctree_debug_category);
+	if (f)
+	{
+		fprintf(f, "Control tree after emitting control flow:\n");
+		ctree_dump(function->ctree, f);
+	}
 }
 
 
