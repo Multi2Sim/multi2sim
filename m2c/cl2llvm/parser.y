@@ -1419,6 +1419,7 @@ for_loop
 
 		/*Prepare to build for end*/
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $1->for_end);
+		current_basic_block = $1->for_end;
 
 		/*Free for_blocks*/
 		cl2llvm_for_blocks_free($1);
@@ -1497,6 +1498,7 @@ for_loop_header
 			
 		/*Prepare to build for loop statements*/
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>5->for_stmt);
+		current_basic_block = $<llvm_for_blocks>5->for_stmt;
 
 		/*Free pointers*/
 		if ($9 != NULL)
@@ -1572,7 +1574,7 @@ for_loop_header
 
 		/*Prepare to build for loop statements*/
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_for_blocks>4->for_stmt);
-
+		current_basic_block = $<llvm_for_blocks>4->for_stmt;
 		/*Free pointers*/
 		if ($8 != NULL)
 			cl2llvm_val_free($8);

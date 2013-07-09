@@ -338,7 +338,7 @@ void func_declare(int *func_id)
 			/* Function */
 			function = cl2llvm_function_create("barrier", args);
 		
-			 function->func_type = LLVMFunctionType( LLVMVoidType(), 
+			function->func_type = LLVMFunctionType( LLVMInt32Type(), 
 		 		args_array, 2, 0);
 	 		function->func = LLVMAddFunction(cl2llvm_module, 
 				"barrier", function->func_type);
