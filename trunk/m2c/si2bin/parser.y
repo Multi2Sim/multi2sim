@@ -354,6 +354,24 @@ data_stmt
 		si2bin_id_free($1);
 		si2bin_id_free($3);
 	}
+	| TOK_ID TOK_OPAR TOK_FLOAT TOK_COMMA TOK_FLOAT TOK_COMMA TOK_FLOAT TOK_COMMA TOK_FLOAT TOK_CPAR TOK_NEW_LINE
+	{
+		if (!strcmp("float4", $1->name))
+		{
+			struct si2bin_outer_bin_float4_t *float4;
+			
+			/* Create float4 object and add it to the outer bin */
+			float4 = si2bin_outer_bin_float4_create($3, $5, $7, $9);
+			si2bin_outer_bin_add_float4(si2bin_outer_bin, float4);	
+			
+			/* Free id's */
+			si2bin_id_free($1);	
+		}
+		else
+		{
+			si2bin_yyerror_fmt("Data added to the global section is declared in float4 blocks");
+		}
+	}
 	;
 
 pgm_rsrc2_value

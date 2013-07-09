@@ -45,6 +45,28 @@ struct str_map_t si2bin_outer_bin_device_map =
 
 };
 
+struct si2bin_outer_bin_float4_t *si2bin_outer_bin_float4_create(float x, float y, float z, float w)
+{
+	struct si2bin_outer_bin_float4_t *float4;
+	
+	/* Initialize */
+	float4 = xcalloc(1, sizeof(struct si2bin_outer_bin_float4_t));
+	
+	float4->x = x;
+	float4->y = y;
+	float4->z = z;
+	float4->w = w;
+
+	/* Return */
+	return float4;
+}
+
+void si2bin_outer_bin_float4_free(struct si2bin_outer_bin_float4_t *float4)
+{
+	free(float4);
+}
+
+
 struct si2bin_outer_bin_t *si2bin_outer_bin_create(void)
 {
 	struct si2bin_outer_bin_t *outer_bin;
@@ -53,6 +75,8 @@ struct si2bin_outer_bin_t *si2bin_outer_bin_create(void)
 	outer_bin = xcalloc(1, sizeof(struct si2bin_outer_bin_t));
 
 	outer_bin->file = elf_enc_file_create();
+
+	outer_bin->float4_list = list_create();
 
 	outer_bin->inner_bin_list = list_create();
 
@@ -71,6 +95,12 @@ void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin)
 
 	elf_enc_file_free(outer_bin->file);
 	
+	LIST_FOR_EACH(outer_bin->float4_list, i)
+	{
+		si2bin_outer_bin_float4_free(list_get(outer_bin->float4_list, i));
+	}
+	list_free(outer_bin->float4_list);
+	
 	LIST_FOR_EACH(outer_bin->inner_bin_list, i)
 	{
 		si2bin_inner_bin_free(list_get(outer_bin->inner_bin_list, i));
@@ -84,6 +114,12 @@ void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin)
 	list_free(outer_bin->metadata_list);
 	
 	free(outer_bin);
+}
+
+void si2bin_outer_bin_add_float4(struct si2bin_outer_bin_t *outer_bin,
+		struct si2bin_outer_bin_float4_t *float4)
+{
+	list_add(outer_bin->float4_list, float4);	
 }
 
 void si2bin_outer_bin_add(struct si2bin_outer_bin_t *outer_bin,
@@ -106,6 +142,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	struct elf_enc_buffer_t *rodata_buffer;
 	struct elf_enc_buffer_t *text_buffer;
 	struct elf_enc_buffer_t *kernel_buffer;
+	struct elf_enc_symbol_t *global_symbol;
 	struct elf_enc_symbol_t *header_symbol;
 	struct elf_enc_symbol_t *metadata_symbol;
 	struct elf_enc_symbol_t *kernel_symbol;
@@ -116,6 +153,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	struct si_arg_t *arg;
 	struct si_bin_enc_user_element_t *user_elem;
 	struct pt_note_prog_info_entry_t prog_info[NUM_PROG_INFO_ELEM];
+	struct si2bin_outer_bin_float4_t *float4;
 
 	char line[MAX_LONG_STRING_SIZE];
 	char *data_type;
@@ -132,6 +170,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	int cb[10];
 	int rodata_size;
 	int buff_num_offset;
+	int buff_size;
 	int data_size;
 	
 	
@@ -150,7 +189,29 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
  	rodata_section = elf_enc_section_create(".rodata", rodata_buffer, rodata_buffer);
         rodata_section->header.sh_type = SHT_PROGBITS;
 	
+	/* Check if global symbol is needed */
+	if (list_count(outer_bin->float4_list) != 0)
+	{	
+		/* Add contents of float4 list to rodata section */
+		LIST_FOR_EACH(outer_bin->float4_list, i)
+		{
+			float4 = list_get(outer_bin->float4_list, i);
+			elf_enc_buffer_write(rodata_buffer, float4, 
+					sizeof(struct si2bin_outer_bin_float4_t));
+		}
+		
+		/* Add global symbol correspoding to float4 elements */
+		snprintf(line, sizeof line, "__OpenCL_%d_global", 2);
 
+		global_symbol = elf_enc_symbol_create(line);
+		global_symbol->symbol.st_shndx = 4;
+		global_symbol->symbol.st_size = rodata_buffer->offset - rodata_size;
+		global_symbol->symbol.st_value = rodata_size;
+		global_symbol->symbol.st_info = ELF32_ST_TYPE(STT_OBJECT);
+		elf_enc_symbol_table_add(symbol_table, global_symbol);
+
+		rodata_size = rodata_buffer->offset;
+	}
 
 	LIST_FOR_EACH(outer_bin->inner_bin_list, i)
 	{
@@ -275,6 +336,13 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				default:
 					fatal("Unrecognized argument type: arg %d", j);
 			}
+		}
+		
+		/* Data Required */
+		if (list_count(outer_bin->float4_list) > 0)
+		{
+			snprintf(line, sizeof line, ";memory:datareqd\n");
+			elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 		}
 
 		/* Function ID */
@@ -403,7 +471,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 
 		/* ELF_NOTE_ATI_UAV */
-		ptr = xcalloc(1, (16 * buff_num_offset));
+		buff_size = 16 * buff_num_offset;
+		ptr = xcalloc(1, buff_size);
 		
 		buff_num_offset = 0;
 		
@@ -426,7 +495,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 			buff_num_offset++;
 		}
 	
-		note = si2bin_inner_bin_note_create(16, 48, ptr);
+		note = si2bin_inner_bin_note_create(16, buff_size, ptr);
 		si2bin_inner_bin_entry_add_note(entry, note);
 		free(ptr);
 
@@ -482,9 +551,10 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				buff_num_offset++;
 			}
 		}
-
-		ptr = xcalloc(1, (8 * buff_num_offset));
-
+		
+		buff_size = 8 * buff_num_offset;
+		ptr = xcalloc(1, (buff_size));
+		
 		/* CB Symbols */
 		for (k = 0; k < 10; k++)
 		{
@@ -505,14 +575,22 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 				if (k == 1)
 					ptr[(buff_num_offset - 1) * 8 + 4] = list_count(metadata->arg_list);
+				
+				if (k == 2)
+				{
+					if (list_count(outer_bin->float4_list) == 0)
+						fatal("%s: Constant Buffer 2 is used but nothing has been\
+							 added to a global symbol", __FUNCTION__);
+
+					ptr[(buff_num_offset - 1) * 8 + 4] = list_count(outer_bin->float4_list);
+				}
 
 				buff_num_offset--;
 			}
 
 		}
 		
-
-		note = si2bin_inner_bin_note_create(10, 16, ptr);
+		note = si2bin_inner_bin_note_create(10, buff_size, ptr);
 		si2bin_inner_bin_entry_add_note(entry, note);
 		free(ptr);
 
@@ -725,13 +803,13 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 		/* Generate Inner Bin File */
 		si2bin_inner_bin_generate(inner_bin, kernel_buffer);
-		
-		
+			
 		/* Output Kernel */
-		/* f = file_open_for_write("kernel");
+		/*FILE *f;
+		f = file_open_for_write("kernel");
 		elf_enc_buffer_write_to_file(kernel_buffer, f);
-		file_close(f);
-		*/
+		file_close(f);*/
+	
 
 
 
@@ -773,7 +851,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	outer_bin->file->header.e_version = 1;
 
         elf_enc_file_add_symbol_table(outer_bin->file, symbol_table);
-
+	
         elf_enc_file_add_buffer(outer_bin->file, rodata_buffer);
         elf_enc_file_add_section(outer_bin->file, rodata_section);
 
