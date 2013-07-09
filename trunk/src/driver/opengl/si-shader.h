@@ -49,12 +49,12 @@ void opengl_si_shader_init( struct opengl_si_program_t *program, unsigned int sh
 
 
 struct si_ndrange_t;
+void opengl_si_shader_create_ndrange_constant_buffers(
+	struct si_ndrange_t *ndrange);
 void opengl_si_shader_setup_ndrange_constant_buffers(
 	struct si_ndrange_t *ndrange);
 void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader, 
 	struct si_ndrange_t *ndrange);
 void opengl_si_shader_create_ndrange_tables(struct si_ndrange_t *ndrange);
-void opengl_si_shader_create_ndrange_constant_buffers(
-	struct si_ndrange_t *ndrange);
 
 #endif

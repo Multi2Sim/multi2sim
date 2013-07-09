@@ -354,7 +354,6 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 		vattrib->normalized = normalized;
 		vattrib->stride = stride;
 		vattrib->pointer = (unsigned int)pointer;
-		vattrib->enabled = GL_TRUE;
 		vattrib->vbo = buffer_obj;
 	}
 }
@@ -459,9 +458,9 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 		for (i = 0; i < MAX_VERTEX_ATTRIBS; ++i)
 		{
 			vattrib = vao->attribs[i];
-			vbo = vattrib->vbo;
 			if (vattrib->enabled)
 			{
+				vbo = vattrib->vbo;
 				if (vbo)
 				{
 					/* If already copied to device memory, free it */
