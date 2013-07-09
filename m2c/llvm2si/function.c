@@ -208,8 +208,10 @@ static void llvm2si_function_add_uav(struct llvm2si_function_t *function,
 	assert(!uav->function);
 	uav->function = function;
 
-	/* Obtain basic block */
-	basic_block = function->basic_block_uavs;
+	/* Get basic block or create it */
+	basic_block = LLVM2SI_BASIC_BLOCK(function->uavs_node->basic_block);
+	if (!basic_block)
+		basic_block = llvm2si_basic_block_create(function->uavs_node);
 
 	/* Allocate 4 aligned scalar registers */
 	uav->sreg = llvm2si_function_alloc_sreg(function, 4, 4);
@@ -247,8 +249,10 @@ static void llvm2si_function_add_arg(struct llvm2si_function_t *function,
 	if (arg->function)
 		panic("%s: argument already added", __FUNCTION__);
 
-	/* Select basic block */
-	basic_block = function->basic_block_args;
+	/* Get basic block, or create it */
+	basic_block = LLVM2SI_BASIC_BLOCK(function->args_node->basic_block);
+	if (!basic_block)
+		basic_block = llvm2si_basic_block_create(function->args_node);
 
 	/* Add argument */
 	list_add(function->arg_list, arg);
@@ -343,78 +347,28 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	function->name = xstrdup(LLVMGetValueName(llfunction));
 	function->arg_list = list_create();
 	function->uav_list = list_create();
-	function->basic_block_list = linked_list_create();
-	function->basic_block_table = hash_table_create(0, 1);
 	function->symbol_table = llvm2si_symbol_table_create();
 	function->ctree = ctree = ctree_create(function->name);
 
 	/* Create pre-defined nodes in control tree */
-	function->entry_node = cnode_create_leaf("entry", NULL);
 	function->header_node = cnode_create_leaf("header", NULL);
 	function->uavs_node = cnode_create_leaf("uavs", NULL);
 	function->args_node = cnode_create_leaf("args", NULL);
-	ctree_add_node(ctree, function->entry_node);
 	ctree_add_node(ctree, function->header_node);
 	ctree_add_node(ctree, function->uavs_node);
 	ctree_add_node(ctree, function->args_node);
+	ctree->entry_node = function->header_node;
 
 	/* Add all nodes from the LLVM control flow graph */
 	function->body_node = ctree_add_llvm_cfg(ctree, llfunction);
 
 	/* Connect nodes */
-	cnode_connect(function->entry_node, function->header_node);
 	cnode_connect(function->header_node, function->uavs_node);
 	cnode_connect(function->uavs_node, function->args_node);
 	cnode_connect(function->args_node, function->body_node);
 
 	/* Dump */
 	ctree_dump(ctree, stdout);
-
-
-#if 0
-	/* Standard basic blocks */
-	function->basic_block_entry = llvm2si_basic_block_create_with_name("entry");
-	function->basic_block_header = llvm2si_basic_block_create_with_name("header");
-	function->basic_block_uavs = llvm2si_basic_block_create_with_name("uavs");
-	function->basic_block_args = llvm2si_basic_block_create_with_name("args");
-	llvm2si_function_add_basic_block(function, function->basic_block_entry);
-	llvm2si_function_add_basic_block(function, function->basic_block_header);
-	llvm2si_function_add_basic_block(function, function->basic_block_uavs);
-	llvm2si_function_add_basic_block(function, function->basic_block_args);
-
-	/* Comments in basic blocks */
-	llvm2si_basic_block_add_comment(function->basic_block_uavs,
-			"Obtain UAV descriptors");
-	llvm2si_basic_block_add_comment(function->basic_block_args,
-			"Read kernel arguments from cb1");
-	
-	/* Create CFG for function */
-	llbb = LLVMGetEntryBasicBlock(function->llfunction);
-	function->basic_block_body = llvm2si_function_add_cfg(function, llbb);
-	assert(function->basic_block_body);
-
-	/* An exit basic block must have been found by 'llvm2si_function_add_cfg' */
-	if (!function->basic_block_exit)
-		fatal("%s: no exit block found in LLVM function '%s'",
-				__FUNCTION__, function->name);
-
-	/* Connect initial basic blocks in CFG */
-	basic_block_connect(BASIC_BLOCK(function->basic_block_entry),
-			BASIC_BLOCK(function->basic_block_header));
-	basic_block_connect(BASIC_BLOCK(function->basic_block_header),
-			BASIC_BLOCK(function->basic_block_uavs));
-	basic_block_connect(BASIC_BLOCK(function->basic_block_uavs),
-			BASIC_BLOCK(function->basic_block_args));
-	basic_block_connect(BASIC_BLOCK(function->basic_block_args),
-			BASIC_BLOCK(function->basic_block_body));
-
-	/* Create control tree and perform structural analysis */
-	function->ctree = ctree_create(function->name);
-
-	ctree_load_from_cfg(function->ctree, function->basic_block_list,
-			BASIC_BLOCK(function->basic_block_entry));
-	ctree_structural_analysis(function->ctree);
-#endif
 
 	/* Return */
 	return function;
@@ -423,16 +377,7 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 
 void llvm2si_function_free(struct llvm2si_function_t *function)
 {
-	struct llvm2si_basic_block_t *basic_block;
 	int index;
-
-	/* Free list of basic blocks */
-	LINKED_LIST_FOR_EACH(function->basic_block_list)
-	{
-		basic_block = LLVM2SI_BASIC_BLOCK(linked_list_get(function->basic_block_list));
-		llvm2si_basic_block_free(BASIC_BLOCK(basic_block));
-	}
-	linked_list_free(function->basic_block_list);
 
 	/* Free list of arguments */
 	LIST_FOR_EACH(function->arg_list, index)
@@ -449,7 +394,6 @@ void llvm2si_function_free(struct llvm2si_function_t *function)
 		ctree_free(function->ctree);
 
 	/* Rest */
-	hash_table_free(function->basic_block_table);
 	llvm2si_symbol_table_free(function->symbol_table);
 	free(function->name);
 	free(function);
@@ -489,9 +433,12 @@ void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f)
 		if (node->kind != cnode_leaf)
 			continue;
 
-		/* Dump block */
+		/* Get node's basic block */
 		basic_block = LLVM2SI_BASIC_BLOCK(node->leaf.basic_block);
-		assert(basic_block);
+		if (!basic_block)
+			continue;
+
+		/* Dump code of basic block */
 		llvm2si_basic_block_dump(BASIC_BLOCK(basic_block), f);
 	}
 	linked_list_free(node_list);
@@ -500,84 +447,6 @@ void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f)
 	/* Dump section '.data' */
 	llvm2si_function_dump_data(function, f);
 	fprintf(f, "\n");
-}
-
-
-void llvm2si_function_dump_cfg(struct llvm2si_function_t *function, FILE *f)
-{
-	struct llvm2si_basic_block_t *basic_block;
-	struct llvm2si_basic_block_t *pred;
-	struct llvm2si_basic_block_t *succ;
-
-	char *comma;
-	char *empty_str;
-	char *sep;
-
-	int index;
-
-	/* Initialize strings */
-	comma = ",";
-	empty_str = "";
-
-	/* Empty function */
-	basic_block = function->basic_block_entry;
-	if (!basic_block)
-		fprintf(f, "Function %s: <empty>\n", function->name);
-
-	/* Print entry */
-	fprintf(f, "Function '%s': entry '%s'\n",
-		function->name, BASIC_BLOCK(basic_block)->name);
-
-	/* Iterate through all basic blocks */
-	index = 0;
-	LINKED_LIST_FOR_EACH(function->basic_block_list)
-	{
-		/* Basic block name */
-		basic_block = linked_list_get(function->basic_block_list);
-		fprintf(f, "%3d %s:", index, BASIC_BLOCK(basic_block)->name);
-
-		/* Print predecessors */
-		sep = empty_str;
-		fprintf(f, " pred={");
-		LINKED_LIST_FOR_EACH(BASIC_BLOCK(basic_block)->pred_list)
-		{
-			pred = linked_list_get(BASIC_BLOCK(basic_block)->pred_list);
-			fprintf(f, "%s%s", sep, BASIC_BLOCK(pred)->name);
-			sep = comma;
-		}
-
-		/* Print successors */
-		sep = empty_str;
-		fprintf(f, "}, succ={");
-		LINKED_LIST_FOR_EACH(BASIC_BLOCK(basic_block)->succ_list)
-		{
-			succ = linked_list_get(BASIC_BLOCK(basic_block)->succ_list);
-			fprintf(f, "%s%s", sep, BASIC_BLOCK(succ)->name);
-			sep = comma;
-		}
-
-		/* Next */
-		fprintf(f, "}\n");
-		index++;
-	}
-}
-
-
-void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block)
-{
-	/* Check that basic block does not belong to any other function. */
-	if (basic_block->function)
-		panic("%s: basic block '%s' already added to a function",
-				__FUNCTION__, BASIC_BLOCK(basic_block)->name);
-	
-	/* Insert basic block to hash table only if it is not anonymous */
-	hash_table_insert(function->basic_block_table,
-		BASIC_BLOCK(basic_block)->name, basic_block);
-
-	/* Add basic block */
-	basic_block->function = function;
-	linked_list_add(function->basic_block_list, basic_block);
 }
 
 
@@ -590,8 +459,8 @@ void llvm2si_function_emit_header(struct llvm2si_function_t *function)
 	char comment[MAX_STRING_SIZE];
 	int index;
 
-	/* Select basic block */
-	basic_block = function->basic_block_header;
+	/* Create header basic block */
+	basic_block = llvm2si_basic_block_create(function->header_node);
 
 	/* Function must be empty at this point */
 	assert(!function->num_sregs);
@@ -763,35 +632,27 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function)
 
 void llvm2si_function_emit_body(struct llvm2si_function_t *function)
 {
-	struct linked_list_t *node_list;
 	struct llvm2si_basic_block_t *basic_block;
+
+	struct ctree_t *ctree;
 	struct cnode_t *node;
 
-	/* Emit body using a depth-first traversal of the syntax tree. Notice
-	 * that it doesn't matter whether we do pre- or post-order, since we're
-	 * only considering leaf nodes. */
-	node_list = linked_list_create();
-	ctree_traverse(function->ctree, node_list, NULL);
-
 	/* Emit code for basic blocks */
-	LINKED_LIST_FOR_EACH(node_list)
+	ctree = function->ctree;
+	LINKED_LIST_FOR_EACH(ctree->node_list)
 	{
-		/* Skip abstract nodes */
-		node = linked_list_get(node_list);
-		if (node->kind != cnode_leaf)
-			continue;
+		/* Get node */
+		node = linked_list_get(ctree->node_list);
+		assert(node->kind == cnode_leaf);
 
-		/* Skip nodes that don't belong to function body */
+		/* Skip nodes with no basic block associated */
 		basic_block = LLVM2SI_BASIC_BLOCK(node->leaf.basic_block);
-		if (!basic_block->llbb)
+		if (!basic_block)
 			continue;
 
 		/* Emit code for the basic block */
-		llvm2si_basic_block_emit(basic_block);
+		llvm2si_basic_block_emit(basic_block, node->llbb);
 	}
-
-	/* Free structures */
-	linked_list_free(node_list);
 }
 
 
@@ -840,7 +701,7 @@ static void llvm2si_function_emit_if_then(
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llbb = if_bb->llbb;
+	llbb = if_node->llbb;
 	llinst = LLVMGetBasicBlockTerminator(llbb);
 	assert(llinst);
 	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
@@ -933,7 +794,7 @@ static void llvm2si_function_emit_if_then_else(
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llbb = if_bb->llbb;
+	llbb = if_node->llbb;
 	llinst = LLVMGetBasicBlockTerminator(llbb);
 	assert(llinst);
 	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
@@ -1037,27 +898,29 @@ static void llvm2si_function_emit_while_loop(
 	assert(tail_node->kind == cnode_leaf);
 	head_bb = LLVM2SI_BASIC_BLOCK(head_node->leaf.basic_block);
 	tail_bb = LLVM2SI_BASIC_BLOCK(tail_node->leaf.basic_block);
+	assert(head_bb);
+	assert(tail_bb);
 
 	/* Create pre-header and exit basic blocks */
 	snprintf(pre_name, sizeof pre_name, "%s_pre", node->name);
+	pre_node = cnode_create_leaf(pre_name, NULL);
+	pre_bb = llvm2si_basic_block_create(pre_node);
+
+	/* Create exit basic block */
 	snprintf(exit_name, sizeof exit_name, "%s_exit", node->name);
-	pre_bb = llvm2si_basic_block_create_with_name(pre_name);
-	exit_bb = llvm2si_basic_block_create_with_name(exit_name);
-	pre_node = cnode_create_leaf(pre_name, BASIC_BLOCK(pre_bb));
-	exit_node = cnode_create_leaf(exit_name, BASIC_BLOCK(exit_bb));
+	exit_node = cnode_create_leaf(exit_name, NULL);
+	exit_bb = llvm2si_basic_block_create(exit_node);
 
 	/* Insert pre-header node into control tree */
-	llvm2si_function_add_basic_block(function, pre_bb);
 	ctree_add_node(function->ctree, pre_node);
 	cnode_insert_before(pre_node, head_node);
+	cnode_connect(pre_node, head_node);
 	pre_node->role = cnode_role_pre;
 
 	/* Insert exit node into control tree */
-	llvm2si_function_add_basic_block(function, exit_bb);
 	ctree_add_node(function->ctree, exit_node);
+	cnode_insert_after(exit_node, tail_node);
 	cnode_connect(head_node, exit_node);
-	linked_list_add(node->abstract.child_list, exit_node);
-	exit_node->parent = node;
 	exit_node->role = cnode_role_exit;
 
 
@@ -1094,7 +957,7 @@ static void llvm2si_function_emit_while_loop(
 	 * s_branch <head_block>
 	 */
 	arg_list = list_create();
-	list_add(arg_list, si2bin_arg_create_label(BASIC_BLOCK(head_bb)->name));
+	list_add(arg_list, si2bin_arg_create_label(head_node->name));
 	inst = si2bin_inst_create(SI_INST_S_BRANCH, arg_list);
 	llvm2si_basic_block_add_inst(tail_bb, inst);
 
@@ -1102,7 +965,7 @@ static void llvm2si_function_emit_while_loop(
 	/*** Code for head block ***/
 
 	/* Get head block terminator */
-	llbb = head_bb->llbb;
+	llbb = head_node->llbb;
 	llinst = LLVMGetBasicBlockTerminator(llbb);
 	assert(llinst);
 	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
@@ -1148,6 +1011,10 @@ void llvm2si_function_emit_control_flow(struct llvm2si_function_t *function)
 {
 	struct linked_list_t *node_list;
 	struct cnode_t *node;
+
+	/* Perform structural analysis */
+	assert(!function->ctree->structural_analysis_done);
+	ctree_structural_analysis(function->ctree);
 
 	/* Emit control flow actions using a post-order traversal of the syntax
 	 * tree (not control-flow graph), from inner to outer control flow

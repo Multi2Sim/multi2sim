@@ -409,13 +409,11 @@ void cnode_insert_before(struct cnode_t *node, struct cnode_t *before)
 {
 	struct cnode_t *parent;
 
-	/* Make connection */
-	cnode_connect(node, before);
-
 	/* Check parent */
 	parent = before->parent;
 	if (!parent)
-		return;
+		panic("%s: node '%s' has no parent",
+				__FUNCTION__, before->name);
 
 	/* Insert in common parent */
 	node->parent = parent;
@@ -432,13 +430,11 @@ void cnode_insert_after(struct cnode_t *node, struct cnode_t *after)
 	struct cnode_t *parent;
 	struct linked_list_t *child_list;
 
-	/* Make connection */
-	cnode_connect(after, node);
-
 	/* Check parent */
 	parent = after->parent;
 	if (!parent)
-		return;
+		panic("%s: node '%s' has no parent",
+				__FUNCTION__, after->name);
 
 	/* Insert in common parent */
 	node->parent = parent;

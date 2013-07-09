@@ -64,7 +64,8 @@ struct ctree_t
 	struct linked_list_t *node_list;
 	struct hash_table_t *node_table;
 
-	/* Root node */
+	/* Root node.
+	 * Read/Write access. */
 	struct cnode_t *entry_node;
 
 	/* Flag indicating whether a structural analysis has been run on the
@@ -114,12 +115,6 @@ void ctree_read_from_config(struct ctree_t *ctree, struct config_t *config,
 
 /* Compare two control trees */
 void ctree_compare(struct ctree_t *ctree1, struct ctree_t *ctree2);
-
-/* Initialize the control tree from a control flow graph given its entry basic
- * block. */
-void ctree_load_from_cfg(struct ctree_t *ctree,
-		struct linked_list_t *basic_block_list,
-		struct basic_block_t *basic_block_entry);
 
 
 

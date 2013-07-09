@@ -20,6 +20,10 @@
 #ifndef M2C_COMMON_CNODE_H
 #define M2C_COMMON_CNODE_H
 
+#ifdef HAVE_LLVM
+#include <llvm-c/Core.h>
+#endif
+
 struct basic_block_t;
 struct linked_list_t;
 struct ctree_t;
@@ -81,6 +85,9 @@ struct cnode_t
 	/* Control tree that the node belongs to */
 	struct ctree_t *ctree;
 
+	/* Basic block associated with node */
+	struct basic_block_t *basic_block;
+
 	struct linked_list_t *succ_list;
 	struct linked_list_t *pred_list;
 
@@ -130,6 +137,14 @@ struct cnode_t
 
 	/* Color used for traversal algorithms */
 	int color;
+
+#ifdef HAVE_LLVM
+	/* When the node is created automatically from an LLVM function's
+	 * control flow graph, this fields contains the associated LLVM
+	 * basic block. */
+	LLVMBasicBlockRef llbb;
+#endif
+
 };
 
 
@@ -187,15 +202,16 @@ void cnode_reconnect_source(struct cnode_t *src_node,
 		struct cnode_t *dest_node,
 		struct cnode_t *new_src_node);
 
-/* Insert node 'node' before node 'before', meaning that an edge
- * 'node'=>'before' is created, and that 'node' will appear right before node
- * 'before' in their common abstract parent node. If 'before' doesn't have a
- * parent node, this function is equivalent to 'cnode_connect'. */
+/* Make 'node' take the same parent as 'before' and place it right before it in
+ * its child list. Node 'before' must have a parent.
+ * This does not insert the node into the control tree structures (an extra
+ * call to 'cnode_add_node' is needed). */
 void cnode_insert_before(struct cnode_t *node, struct cnode_t *before);
 
-/* Create an edge 'after'=>'node'. Node 'node' will appear right after node
- * 'after' in their common parent's child list. If 'after doesn't have a parent
- * node, the call is equivalent to 'cnode_connect(after, node)'. */
+/* Make 'node' take the same parent as 'after' and place it right after it in
+ * its child list. Node 'after' must have a parent.
+ * This does not insert the node into the control tree structures (an extra
+ * call to 'cnode_add_node' is needed). */
 void cnode_insert_after(struct cnode_t *node, struct cnode_t *after);
 
 /* Starting at 'node', traverse the syntax tree (not control tree) in depth-

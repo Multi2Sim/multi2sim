@@ -24,36 +24,28 @@
 
 #include <lib/util/class.h>
 
+/* Forward declarations */
+struct cnode_t;
 
-/* Class-related macros */
-#define BASIC_BLOCK_TYPE 0x4c1e17fa
-#define BASIC_BLOCK(p) CLASS_REINTERPRET_CAST((p), BASIC_BLOCK_TYPE, struct basic_block_t)
-#define BASIC_BLOCK_CLASS_OF(p) CLASS_OF((p), BASIC_BLOCK_TYPE)
+
 
 
 /* Class: basic_block_t
  * Inherits: None
  */
+
+#define BASIC_BLOCK_TYPE 0x4c1e17fa
+#define BASIC_BLOCK(p) CLASS_REINTERPRET_CAST((p), BASIC_BLOCK_TYPE, struct basic_block_t)
+#define BASIC_BLOCK_CLASS_OF(p) CLASS_OF((p), BASIC_BLOCK_TYPE)
+
 struct basic_block_t
 {
 	/* Class information
 	 * WARNING - must be the first field */
 	struct class_t class_info;
 
-
-	/*** Public fields ***/
-
-	char *name;
-
-
-	/*** Private fields ***/
-
-	/* Predecessor and successor lists of basic blocks */
-	struct linked_list_t *pred_list;
-	struct linked_list_t *succ_list;
-
 	/* Node associated in control tree */
-	struct cnode_t *cnode;
+	struct cnode_t *node;
 
 
 	/*** Virtual methods ***/
@@ -63,14 +55,7 @@ struct basic_block_t
 };
 
 
-struct basic_block_t *basic_block_create(char *name);
+struct basic_block_t *basic_block_create(struct cnode_t *cnode);
 void basic_block_free(struct basic_block_t *basic_block);
-
-/* Change basic block name */
-void basic_block_set_name(struct basic_block_t *basic_block, char *name);
-
-/* Connect 'basic_block' to 'basic_block_dest' in control flow graph */
-void basic_block_connect(struct basic_block_t *basic_block,
-		struct basic_block_t *basic_block_dest);
 
 #endif

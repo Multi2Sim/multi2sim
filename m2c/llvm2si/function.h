@@ -124,29 +124,7 @@ struct llvm2si_function_t
 	 * function argument using a buffer in global memory. */
 	struct list_t *uav_list;
 
-	/* List of all basic blocks */
-	struct linked_list_t *basic_block_list;
-
-	/* Hash table containing non-anonymous basic blocks (basic blocks that
-	 * were given a name). */
-	struct hash_table_t *basic_block_table;
-
-	/* First basic block in the function. This basic block is always empty,
-	 * serving as a "pre-header" to guarantee that all other basic blocks
-	 * have at least 1 predecessor (makes control-flow detection easier).
-	 * This basic block is the only one in the function with no
-	 * predecessor. */
-	struct llvm2si_basic_block_t *basic_block_entry;
-
-	/* Predefined basic blocks */
-	struct llvm2si_basic_block_t *basic_block_header;
-	struct llvm2si_basic_block_t *basic_block_uavs;
-	struct llvm2si_basic_block_t *basic_block_args;
-	struct llvm2si_basic_block_t *basic_block_body;
-	struct llvm2si_basic_block_t *basic_block_exit;
-
 	/* Predefined nodes */
-	struct cnode_t *entry_node;
 	struct cnode_t *header_node;
 	struct cnode_t *uavs_node;
 	struct cnode_t *args_node;
@@ -167,10 +145,6 @@ struct llvm2si_function_t
 struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction);
 void llvm2si_function_free(struct llvm2si_function_t *function);
 void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f);
-
-/* Dump the CFG for the function, as a list of all its basic blocks with their
- * predecessors and successors. */
-void llvm2si_function_dump_cfg(struct llvm2si_function_t *function, FILE *f);
 
 /* Add a basic block to the function */
 /* Add a basic block to the function after basic block 'after'. If the value in
