@@ -23,6 +23,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
+#include <lib/util/hash-table.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
@@ -311,7 +312,7 @@ static void ctree_dfs(struct ctree_t *ctree,
 	struct cnode_t *node;
 
 	/* Function must have an entry */
-	assert(ctree->node_entry);
+	assert(ctree->entry_node);
 
 	/* Clear postorder list */
 	if (postorder_list)
@@ -331,7 +332,7 @@ static void ctree_dfs(struct ctree_t *ctree,
 	}
 
 	/* Initiate recursion */
-	ctree_dfs_node(ctree->node_entry, postorder_list, 0);
+	ctree_dfs_node(ctree->entry_node, postorder_list, 0);
 }
 
 
@@ -692,8 +693,8 @@ static struct cnode_t *ctree_reduce(
 
 	/* If entry node is part of the nodes that were replaced, set it to the
 	 * new abstract node. */
-	if (cnode_in_list(ctree->node_entry, node_list))
-		ctree->node_entry = abs_node;
+	if (cnode_in_list(ctree->entry_node, node_list))
+		ctree->entry_node = abs_node;
 
 	/* Free structures */
 	linked_list_free(in_edge_src_list);
@@ -752,7 +753,7 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 		assert(succ_node);
 
 		if (node != succ_node &&
-				succ_node != ctree->node_entry &&
+				succ_node != ctree->entry_node &&
 				succ_node->pred_list->count == 1)
 		{
 			linked_list_add(node_list, node);
@@ -790,7 +791,7 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 		if (then_node->pred_list->count == 1 &&
 				then_node->succ_list->count == 1 &&
 				cnode_in_list(endif_node, then_node->succ_list) &&
-				then_node != ctree->node_entry &&
+				then_node != ctree->entry_node &&
 				node != then_node &&
 				node != endif_node)
 		{
@@ -828,13 +829,13 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 		 * 'endif_node' to be the same as 'node'. */
 		if (then_node->pred_list->count == 1 &&
 			else_node->pred_list->count == 1 &&
-			then_node != ctree->node_entry &&
-			else_node != ctree->node_entry &&
+			then_node != ctree->entry_node &&
+			else_node != ctree->entry_node &&
 			then_node->succ_list->count == 1 &&
 			else_node->succ_list->count == 1 &&
 			then_succ_node == else_succ_node &&
-			then_succ_node != ctree->node_entry &&
-			else_succ_node != ctree->node_entry)
+			then_succ_node != ctree->entry_node &&
+			else_succ_node != ctree->entry_node)
 		{
 			/* Create list of nodes - notice order! */
 			linked_list_add(node_list, node);
@@ -895,7 +896,7 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 				cnode_in_list(head_node, tail_node->succ_list) &&
 				tail_node->pred_list->count == 1 &&
 				cnode_in_list(head_node, tail_node->pred_list) &&
-				tail_node != ctree->node_entry &&
+				tail_node != ctree->entry_node &&
 				exit_node != head_node)
 		{
 			/* Create node list. The order is important, so we make
@@ -1004,6 +1005,7 @@ struct ctree_t *ctree_create(char *name)
 	ctree = xcalloc(1, sizeof(struct ctree_t));
 	ctree->name = str_set(ctree->name, name);
 	ctree->node_list = linked_list_create();
+	ctree->node_table = hash_table_create(0, 1);
 
 	/* Return */
 	return ctree;
@@ -1014,7 +1016,8 @@ void ctree_free(struct ctree_t *ctree)
 {
 	ctree_clear(ctree);
 	linked_list_free(ctree->node_list);
-	ctree->name = str_free(ctree->name);
+	hash_table_free(ctree->node_table);
+	str_free(ctree->name);
 	free(ctree);
 }
 
@@ -1022,8 +1025,17 @@ void ctree_free(struct ctree_t *ctree)
 void ctree_add_node(struct ctree_t *ctree,
 		struct cnode_t *node)
 {
+	/* Insert node in list */
 	assert(!cnode_in_list(node, ctree->node_list));
 	linked_list_add(ctree->node_list, node);
+
+	/* Insert in hash table */
+	if (!hash_table_insert(ctree->node_table, node->name, node))
+		fatal("%s: duplicate node name ('%s')",
+				__FUNCTION__, node->name);
+
+	/* Record tree in node */
+	assert(!node->ctree);
 	node->ctree = ctree;
 }
 
@@ -1033,7 +1045,8 @@ void ctree_clear(struct ctree_t *ctree)
 	LINKED_LIST_FOR_EACH(ctree->node_list)
 		cnode_free(linked_list_get(ctree->node_list));
 	linked_list_clear(ctree->node_list);
-	ctree->node_entry = NULL;
+	hash_table_clear(ctree->node_table);
+	ctree->entry_node = NULL;
 }
 
 
@@ -1122,7 +1135,7 @@ void ctree_traverse(struct ctree_t *ctree, struct linked_list_t *preorder_list,
 		linked_list_clear(postorder_list);
 
 	/* Traverse tree recursively */
-	ctree_traverse_node(ctree->node_entry, preorder_list, postorder_list);
+	ctree_traverse_node(ctree->entry_node, preorder_list, postorder_list);
 
 	/* Debug */
 	f = debug_file(ctree_debug_category);
@@ -1160,7 +1173,7 @@ void ctree_dump(struct ctree_t *ctree, FILE *f)
 	LINKED_LIST_ITER_FOR_EACH(iter)
 	{
 		node = linked_list_iter_get(iter);
-		if (node == ctree->node_entry)
+		if (node == ctree->entry_node)
 			fprintf(f, "=>");
 		cnode_dump(node, f);
 	}
@@ -1169,21 +1182,9 @@ void ctree_dump(struct ctree_t *ctree, FILE *f)
 }
 
 
-struct cnode_t *ctree_get_node(struct ctree_t *ctree,
-		char *name)
+struct cnode_t *ctree_get_node(struct ctree_t *ctree, char *name)
 {
-	struct cnode_t *node;
-
-	/* Search node */
-	LINKED_LIST_FOR_EACH(ctree->node_list)
-	{
-		node = linked_list_get(ctree->node_list);
-		if (!strcmp(node->name, name))
-			return node;
-	}
-
-	/* Not find */
-	return NULL;
+	return hash_table_get(ctree->node_table, name);
 }
 
 
@@ -1222,12 +1223,12 @@ void ctree_write_to_config(struct ctree_t *ctree,
 	char buf[MAX_STRING_SIZE];
 
 	/* Control tree must have entry node */
-	if (!ctree->node_entry)
+	if (!ctree->entry_node)
 		fatal("%s: control tree without entry node", __FUNCTION__);
 
 	/* Dump control tree section */
 	snprintf(section, sizeof section, "CTree.%s", ctree->name);
-	config_write_string(config, section, "Entry", ctree->node_entry->name);
+	config_write_string(config, section, "Entry", ctree->entry_node->name);
 
 	/* Write information about the node */
 	LINKED_LIST_FOR_EACH(ctree->node_list)
@@ -1401,8 +1402,8 @@ void ctree_read_from_config(struct ctree_t *ctree,
 	node_name = config_read_string(config, section_str, "Entry", NULL);
 	if (!node_name)
 		fatal("%s: %s: no entry node", __FUNCTION__, name);
-	ctree->node_entry = ctree_get_node(ctree, node_name);
-	if (!ctree->node_entry)
+	ctree->entry_node = ctree_get_node(ctree, node_name);
+	if (!ctree->entry_node)
 		fatal("%s: %s: invalid node name", __FUNCTION__, node_name);
 
 	/* Check configuration file syntax */
@@ -1417,9 +1418,9 @@ void ctree_compare(struct ctree_t *ctree1,
 	struct cnode_t *node2;
 
 	/* Compare entry nodes */
-	assert(ctree1->node_entry);
-	assert(ctree2->node_entry);
-	if (strcmp(ctree1->node_entry->name, ctree2->node_entry->name))
+	assert(ctree1->entry_node);
+	assert(ctree2->entry_node);
+	if (strcmp(ctree1->entry_node->name, ctree2->entry_node->name))
 		fatal("'%s' vs '%s': entry nodes differ", ctree1->name,
 				ctree2->name);
 	
@@ -1478,13 +1479,13 @@ void ctree_load_from_cfg(struct ctree_t *ctree,
 		/* Set head node */
 		if (basic_block == basic_block_entry)
 		{
-			assert(!ctree->node_entry);
-			ctree->node_entry = node;
+			assert(!ctree->entry_node);
+			ctree->entry_node = node;
 		}
 	}
 
 	/* An entry node must have been created */
-	assert(ctree->node_entry);
+	assert(ctree->entry_node);
 
 	/* Add edges to the graph */
 	LINKED_LIST_FOR_EACH(basic_block_list)

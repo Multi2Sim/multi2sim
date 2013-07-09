@@ -187,6 +187,17 @@ void cnode_reconnect_source(struct cnode_t *src_node,
 		struct cnode_t *dest_node,
 		struct cnode_t *new_src_node);
 
+/* Insert node 'node' before node 'before', meaning that an edge
+ * 'node'=>'before' is created, and that 'node' will appear right before node
+ * 'before' in their common abstract parent node. If 'before' doesn't have a
+ * parent node, this function is equivalent to 'cnode_connect'. */
+void cnode_insert_before(struct cnode_t *node, struct cnode_t *before);
+
+/* Create an edge 'after'=>'node'. Node 'node' will appear right after node
+ * 'after' in their common parent's child list. If 'after doesn't have a parent
+ * node, the call is equivalent to 'cnode_connect(after, node)'. */
+void cnode_insert_after(struct cnode_t *node, struct cnode_t *after);
+
 /* Starting at 'node', traverse the syntax tree (not control tree) in depth-
  * first and return the first leaf node found (could be 'node' itself). */
 struct cnode_t *cnode_get_first_leaf(struct cnode_t *node);

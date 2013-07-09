@@ -56,29 +56,27 @@ struct ctree_t
 	 * used for each possible abstract node region. */
 	unsigned int name_counter[cnode_region_count];
 
-	/* List of nodes and entry node */
+	/* Nodes are kept in a linked list and a hash table */
 	struct linked_list_t *node_list;
-	struct cnode_t *node_entry;
+	struct hash_table_t *node_table;
+
+	/* Root node */
+	struct cnode_t *entry_node;
 
 	/* Flag indicating whether a structural analysis has been run on the
 	 * control tree. */
 	int structural_analysis_done;
 };
 
-void ctree_init(void);
-void ctree_done(void);
-
 struct ctree_t *ctree_create(char *name);
 void ctree_free(struct ctree_t *ctree);
 void ctree_dump(struct ctree_t *ctree, FILE *f);
 
 /* Add a node to the control tree */
-void ctree_add_node(struct ctree_t *ctree,
-		struct cnode_t *node);
+void ctree_add_node(struct ctree_t *ctree, struct cnode_t *node);
 
 /* Search a node by its name */
-struct cnode_t *ctree_get_node(struct ctree_t *ctree,
-		char *name);
+struct cnode_t *ctree_get_node(struct ctree_t *ctree, char *name);
 
 /* Free all nodes in the control tree and reset its entry. */
 void ctree_clear(struct ctree_t *ctree);
@@ -97,14 +95,12 @@ void ctree_traverse(struct ctree_t *ctree, struct linked_list_t *preorder_list,
 		struct linked_list_t *postorder_list);
 
 /* Read/write the control tree from/to an INI file */
-void ctree_write_to_config(struct ctree_t *ctree,
-		struct config_t *config);
-void ctree_read_from_config(struct ctree_t *ctree,
-			struct config_t *config, char *name);
+void ctree_write_to_config(struct ctree_t *ctree, struct config_t *config);
+void ctree_read_from_config(struct ctree_t *ctree, struct config_t *config,
+		char *name);
 
 /* Compare two control trees */
-void ctree_compare(struct ctree_t *ctree1,
-		struct ctree_t *ctree2);
+void ctree_compare(struct ctree_t *ctree1, struct ctree_t *ctree2);
 
 /* Initialize the control tree from a control flow graph given its entry basic
  * block. */
@@ -112,5 +108,15 @@ void ctree_load_from_cfg(struct ctree_t *ctree,
 		struct linked_list_t *basic_block_list,
 		struct basic_block_t *basic_block_entry);
 
-#endif
 
+
+/*
+ * Public Functions
+ * (Not related with 'ctree_t' object)
+ */
+
+void ctree_init(void);
+void ctree_done(void);
+
+
+#endif
