@@ -84,7 +84,6 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 		/* Create function */
 		function = llvm2si_function_create(llfunction);
 
-#if 0
 		/* Emit code for function */
 		llvm2si_function_emit_header(function);
 		llvm2si_function_emit_args(function);
@@ -94,7 +93,6 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 		/* Dump code */
 		llvm2si_function_dump(function, f);
 
-#endif
 		/* Done */
 		llvm2si_function_free(function);
 	}
