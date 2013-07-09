@@ -41,17 +41,34 @@ enum cnode_region_t
 {
 	cnode_region_invalid,
 
-	cnode_block,
-	cnode_if_then,
-	cnode_if_then_else,
-	cnode_while_loop,
-	cnode_loop,
-	cnode_proper_interval,
-	cnode_improper_interval,
-	cnode_proper_outer_interval,
-	cnode_improper_outer_interval,
+	cnode_region_block,
+	cnode_region_if_then,
+	cnode_region_if_then_else,
+	cnode_region_while_loop,
+	cnode_region_loop,
+	cnode_region_proper_interval,
+	cnode_region_improper_interval,
+	cnode_region_proper_outer_interval,
+	cnode_region_improper_outer_interval,
 
 	cnode_region_count
+};
+
+
+extern struct str_map_t cnode_role_map;
+enum cnode_role_t
+{
+	cnode_role_invalid,
+
+	cnode_role_if,
+	cnode_role_then,
+	cnode_role_else,
+	cnode_role_head,
+	cnode_role_tail,
+	cnode_role_pre,  /* Loop pre-header */
+	cnode_role_exit,  /* Loop exit */
+
+	cnode_role_count
 };
 
 
@@ -75,6 +92,18 @@ struct cnode_t
 	/* If the node is part of a higher-level abstract node, this field
 	 * points to it. If not, the field is NULL. */
 	struct cnode_t *parent;
+
+	/* Role that the node plays inside of its parent abstract node.
+	 * This field is other than 'cnode_role_invalid' only when 'parent' is
+	 * not NULL. */
+	enum cnode_role_t role;
+
+	/* Flags indicating when a node with role 'cnode_role_head' belonging
+	 * to a parent region 'while_loop' exists the loop when its condition
+	 * is evaluated to true or false. Only one of these two flags can be
+	 * set. */
+	int exit_if_true;
+	int exit_if_false;
 
 	/* Conditional fields depending on the node kind */
 	union

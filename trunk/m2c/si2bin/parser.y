@@ -867,22 +867,15 @@ arg
 	{
 		struct si2bin_arg_t *arg;
 		struct si2bin_id_t *id;
-		struct si2bin_symbol_t *symbol;
 
-		/* Get symbol or create it */
+		/* Get ID */
 		id = $1;
-		symbol = hash_table_get(si2bin_symbol_table, id->name);
-		if (!symbol)
-		{
-			symbol = si2bin_symbol_create(id->name);
-			hash_table_insert(si2bin_symbol_table, id->name, symbol);
-		}
 		
 		/* Create argument */
-		arg = si2bin_arg_create_label(symbol);
-
-		/* Return */
+		arg = si2bin_arg_create_label(id->name);
 		si2bin_id_free(id);
+
+		/* Return argument */
 		$$ = arg;
 	}
 

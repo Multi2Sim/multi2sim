@@ -547,23 +547,32 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 		case si2bin_token_label:
 		{
-			struct si2bin_symbol_t *label;
+			struct si2bin_symbol_t *symbol;
 			struct si2bin_task_t *task;
 
-
-
+			/* Search symbol in symbol table */
 			assert(arg->type == si2bin_arg_label);
-			label = arg->value.label.symbol;
-			if (label->defined)
+			symbol = hash_table_get(si2bin_symbol_table, arg->value.label.name);
+
+			/* Create symbol if it doesn't exist */
+			if (!symbol)
 			{
-				inst_bytes->sopp.simm16 = (label->value -
-						si2bin_entry->text_section_buffer->offset) / 4 - 1;
+				symbol = si2bin_symbol_create(arg->value.label.name);
+				hash_table_insert(si2bin_symbol_table, symbol->name, symbol);
+			}
+
+			/* If symbol is defined, resolve label right away. Otherwise,
+			 * program a deferred task to resolve it. */
+			if (symbol->defined)
+			{
+				inst_bytes->sopp.simm16 = (symbol->value -
+						si2bin_entry->text_section_buffer
+						->offset) / 4 - 1;
 			}
 			else
 			{
-				/* We create a task to complete this instruction once the
-				 * label is defined. */
-				task = si2bin_task_create(si2bin_entry->text_section_buffer->offset, label);
+				task = si2bin_task_create(si2bin_entry->text_section_buffer
+						->offset, symbol);
 				list_add(si2bin_task_list, task);
 			}
 			break;
