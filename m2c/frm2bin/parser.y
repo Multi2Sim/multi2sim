@@ -46,6 +46,7 @@
 %token<num> TOK_DECIMAL
 %token<id> TOK_HEX
 %token<id> TOK_PT
+%token<id> TOK_ARG_TYPE
 %right<id> TOK_ID
 
 %right TOK_COMMA
@@ -62,6 +63,7 @@
 %token TOK_NEG
 %token TOK_NUM
 %token TOK_GLOBAL
+%token TOK_ARGS
 %token TOK_TEXT
 
 %type<inst> rl_instr
@@ -91,6 +93,27 @@ section_list
 	| section section_list
 	;
 
+section
+	: args_section
+	{
+		/* do nothing right now */
+	}
+	| text_section
+	{
+		/* do nothing right now */
+		/* Process any tasks still left */
+		/* si2bin_task_list_process(); */
+		
+		/* Clean up tasks and symbol table when finished parsing kernel */
+		/* si2bin_task_list_done(); */
+		/* si2bin_symbol_table_done(); */
+
+		/* Set up new tasks and symbol table for next kernel */
+		/* si2bin_task_list_init(); */
+		/* si2bin_symbol_table_init(); */
+	}
+	;
+
 global_section
 	: TOK_GLOBAL TOK_ID TOK_NEW_LINE
 	{
@@ -111,22 +134,25 @@ global_section
 		frm_id_free(id);
 	}
 	;
-	
-section
-	: text_section
-	{
-	
-		/* do nothing right now */
-		/* Process any tasks still left */
-		//frm2bin_task_list_process();
-		
-		/* Clean up tasks and symbol table when finished parsing kernel */
-		//frm2bin_task_list_done();
-		//frm2bin_symbol_table_done();
 
-		/* Set up new tasks and symbol table for next kernel */
-		//frm2bin_task_list_init();
-		//frm2bin_symbol_table_init();
+args_section
+	: args_header
+	| args_header args_stmt_list
+	;
+
+args_header
+	: TOK_ARGS TOK_NEW_LINE
+	;
+
+args_stmt_list
+	: args_stmt
+	| args_stmt args_stmt_list
+	;
+
+args_stmt
+	: TOK_ARG_TYPE TOK_NEW_LINE
+	{
+		/* do nothing yet */
 	}
 	;
 
@@ -179,7 +205,6 @@ text_stmt
 	
 	| TOK_NEW_LINE
 ;	
-
 
 rl_instr
 	: TOK_PRED TOK_ID rl_arg_list
