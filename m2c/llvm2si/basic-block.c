@@ -861,7 +861,9 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
  * Public Functions
  */
 
-struct llvm2si_basic_block_t *llvm2si_basic_block_create(struct cnode_t *cnode)
+struct llvm2si_basic_block_t *llvm2si_basic_block_create(
+		struct llvm2si_function_t *function,
+		struct cnode_t *cnode)
 {
 	struct llvm2si_basic_block_t *basic_block;
 	struct basic_block_t *__basic_block;
@@ -871,13 +873,14 @@ struct llvm2si_basic_block_t *llvm2si_basic_block_create(struct cnode_t *cnode)
 
 	/* Initialize */
 	basic_block = xcalloc(1, sizeof(struct llvm2si_basic_block_t));
+	basic_block->function = function;
 	basic_block->inst_list = linked_list_create();
 
 	/* Class information */
 	CLASS_INIT(basic_block, LLVM2SI_BASIC_BLOCK_TYPE, __basic_block);
 
 	/* Virtual functions */
-	__basic_block->free = llvm2si_basic_block_free;
+	__basic_block->destroy = llvm2si_basic_block_free;
 	__basic_block->dump = llvm2si_basic_block_dump;
 
 	/* Return */

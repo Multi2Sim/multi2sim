@@ -85,9 +85,6 @@ struct cnode_t
 	/* Control tree that the node belongs to */
 	struct ctree_t *ctree;
 
-	/* Basic block associated with node */
-	struct basic_block_t *basic_block;
-
 	struct linked_list_t *succ_list;
 	struct linked_list_t *pred_list;
 
@@ -161,27 +158,30 @@ struct cnode_t *cnode_create_abstract(char *name,
 void cnode_free(struct cnode_t *node);
 void cnode_dump(struct cnode_t *node, FILE *f);
 
-int cnode_in_list(struct cnode_t *node,
-		struct linked_list_t *list);
+/* Return the basic block associated to the node. This function makes a sanity
+ * check on the node type: it must be a leaf. */
+struct basic_block_t *cnode_get_basic_block(struct cnode_t *node);
+
+/* Return true if 'node' is in the linked list of nodes passed as the second
+ * argument. This function does not call 'linked_list_find'. Instead, it
+ * traverses the list using a dedicated iterator, so that the current element of
+ * the list is not lost. */
+int cnode_in_list(struct cnode_t *node, struct linked_list_t *list);
 
 /* Try to create an edge between 'node' and 'node_dest'. If the edge already
  * exist, the function will ignore the call silently. */
-void cnode_try_connect(struct cnode_t *node,
-		struct cnode_t *node_dest);
+void cnode_try_connect(struct cnode_t *node, struct cnode_t *node_dest);
 
 /* Create an edge between 'node' and 'node_dest'. There should be no existing
  * edge for this source and destination when calling this function. */
-void cnode_connect(struct cnode_t *node,
-		struct cnode_t *node_dest);
+void cnode_connect(struct cnode_t *node, struct cnode_t *node_dest);
 
 /* Try to remove an edge between 'node' and 'node_dest'. If the edge does not
  * exist, the function exists silently. */
-void cnode_try_disconnect(struct cnode_t *node,
-		struct cnode_t *node_dest);
+void cnode_try_disconnect(struct cnode_t *node, struct cnode_t *node_dest);
 
 /* Disconnect 'node' and 'node_dest'. An edge must exist between both. */
-void cnode_disconnect(struct cnode_t *node,
-		struct cnode_t *node_dest);
+void cnode_disconnect(struct cnode_t *node, struct cnode_t *node_dest);
 
 /* Try to reconnect a source node with a new destination node. This is
  * equivalent to disconnecting and connecting it, except that the order
