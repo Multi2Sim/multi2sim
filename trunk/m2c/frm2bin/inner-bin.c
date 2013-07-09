@@ -217,7 +217,7 @@ struct frm2bin_inner_bin_t *frm2bin_inner_bin_create(char *name)
 
 void frm2bin_inner_bin_free(struct frm2bin_inner_bin_t *bin)
 {
-	struct frm_bin_enc_user_element_t *user_elem;
+	/* struct frm_bin_enc_user_element_t *user_elem; */
 	int i;
 
 	/* Free list elements and list */
@@ -234,7 +234,7 @@ void frm2bin_inner_bin_free(struct frm2bin_inner_bin_t *bin)
 	/* Free User Element List */
 	LIST_FOR_EACH(bin->user_element_list, i)
 	{
-		user_elem = list_get(bin->user_element_list, i);
+		/* user_elem = list_get(bin->user_element_list, i); */
 		/* frm_bin_enc_user_element_free(user_elem); */
 	}
 	list_free(bin->user_element_list);
