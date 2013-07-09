@@ -46,15 +46,30 @@ struct str_map_t cnode_region_map =
 {
 	9,
 	{
-		{ "block", cnode_block },
-		{ "if_then", cnode_if_then },
-		{ "if_then_else", cnode_if_then_else },
-		{ "while_loop", cnode_while_loop },
-		{ "loop", cnode_loop },
-		{ "proper_interval", cnode_proper_interval },
-		{ "improper_interval", cnode_improper_interval },
-		{ "proper_outer_interval", cnode_proper_outer_interval },
-		{ "improper_outer_interval", cnode_improper_outer_interval }
+		{ "block", cnode_region_block },
+		{ "if_then", cnode_region_if_then },
+		{ "if_then_else", cnode_region_if_then_else },
+		{ "while_loop", cnode_region_while_loop },
+		{ "loop", cnode_region_loop },
+		{ "proper_interval", cnode_region_proper_interval },
+		{ "improper_interval", cnode_region_improper_interval },
+		{ "proper_outer_interval", cnode_region_proper_outer_interval },
+		{ "improper_outer_interval", cnode_region_improper_outer_interval }
+	}
+};
+
+
+struct str_map_t cnode_role_map =
+{
+	7,
+	{
+		{ "if", cnode_role_if },
+		{ "then", cnode_role_then },
+		{ "else", cnode_role_else },
+		{ "head", cnode_role_head },
+		{ "tail", cnode_role_tail },
+		{ "pre", cnode_role_pre },
+		{ "exit", cnode_role_exit }
 	}
 };
 
@@ -225,6 +240,20 @@ void cnode_dump(struct cnode_t *node, FILE *f)
 	else
 		fprintf(f, "-");
 
+	/* Role */
+	if (node->role)
+		fprintf(f, " role=%s", str_map_value(
+				&cnode_role_map, node->role));
+
+	/* Loop head nodes exit if false/true */
+	if (node->role == cnode_role_head)
+	{
+		if (node->exit_if_false)
+			fprintf(f, " exit_if_false");
+		if (node->exit_if_true)
+			fprintf(f, "exit_if_true");
+	}
+
 	/* List of child elements */
 	if (node->kind == cnode_abstract)
 	{
@@ -233,16 +262,10 @@ void cnode_dump(struct cnode_t *node, FILE *f)
 	}
 
 	/* Traversal IDs */
-	fprintf(f, " pre=");
-	if (node->preorder_id == -1)
-		fprintf(f, "-");
-	else
-		fprintf(f, "%d", node->preorder_id);
-	fprintf(f, " post=");
-	if (node->postorder_id == -1)
-		fprintf(f, "-");
-	else
-		fprintf(f, "%d", node->postorder_id);
+	if (node->preorder_id != -1)
+		fprintf(f, " pre=%d", node->preorder_id);
+	if (node->postorder_id != -1)
+		fprintf(f, " post=%d", node->postorder_id);
 
 	/* End */
 	fprintf(f, "\n");
