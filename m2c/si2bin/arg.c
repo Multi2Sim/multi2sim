@@ -215,13 +215,13 @@ struct si2bin_arg_t *si2bin_arg_create_maddr_qual(void)
 }
 
 
-struct si2bin_arg_t *si2bin_arg_create_label(struct si2bin_symbol_t *symbol)
+struct si2bin_arg_t *si2bin_arg_create_label(char *name)
 {
 	struct si2bin_arg_t *arg;
 
 	arg = si2bin_arg_create();
 	arg->type = si2bin_arg_label;
-	arg->value.label.symbol = symbol;
+	arg->value.label.name = xstrdup(name);
 
 	return arg;
 }
@@ -236,6 +236,11 @@ void si2bin_arg_free(struct si2bin_arg_t *arg)
 
 		si2bin_arg_free(arg->value.maddr.soffset);
 		si2bin_arg_free(arg->value.maddr.qual);
+		break;
+
+	case si2bin_arg_label:
+
+		free(arg->value.label.name);
 		break;
 
 	default:
@@ -655,12 +660,18 @@ void si2bin_arg_dump_assembly(struct si2bin_arg_t *arg, FILE *f)
 	
 	case si2bin_arg_maddr_qual:
 	{
-		if(arg->value.maddr_qual.idxen)
+		if (arg->value.maddr_qual.idxen)
 			fprintf(f, "idxen");
 		else if(arg->value.maddr_qual.offset)
 			fprintf(f, "offset");
 		else
 			fprintf(f, "offen");
+		break;
+	}
+
+	case si2bin_arg_label:
+	{
+		fprintf(f, " %s", arg->value.label.name);
 		break;
 	}
 

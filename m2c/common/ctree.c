@@ -423,7 +423,7 @@ static void ctree_flatten_block(struct ctree_t *ctree,
 	/* Get nodes */
 	assert(!abs_node->parent);
 	assert(abs_node->kind == cnode_abstract);
-	assert(abs_node->abstract.region == cnode_block);
+	assert(abs_node->abstract.region == cnode_region_block);
 	assert(abs_node->abstract.child_list->count == 2);
 	in_node = linked_list_goto(abs_node->abstract.child_list, 0);
 	out_node = linked_list_goto(abs_node->abstract.child_list, 1);
@@ -437,10 +437,10 @@ static void ctree_flatten_block(struct ctree_t *ctree,
 
 	/* Add elements of 'in_node' to 'node_list' */
 	if (in_node->kind == cnode_abstract &&
-			in_node->abstract.region == cnode_block)
+			in_node->abstract.region == cnode_region_block)
 	{
 		/* Save child nodes */
-		assert(in_node->abstract.region == cnode_block);
+		assert(in_node->abstract.region == cnode_region_block);
 		LINKED_LIST_FOR_EACH(in_node->abstract.child_list)
 			linked_list_add(node_list,
 				linked_list_get(in_node->abstract.child_list));
@@ -471,10 +471,10 @@ static void ctree_flatten_block(struct ctree_t *ctree,
 
 	/* Add elements of 'out_node' to 'node_list' */
 	if (out_node->kind == cnode_abstract &&
-			out_node->abstract.region == cnode_block)
+			out_node->abstract.region == cnode_region_block)
 	{
 		/* Save child nodes */
-		assert(out_node->abstract.region == cnode_block);
+		assert(out_node->abstract.region == cnode_region_block);
 		LINKED_LIST_FOR_EACH(out_node->abstract.child_list)
 			linked_list_add(node_list,
 				linked_list_get(out_node->abstract.child_list));
@@ -602,7 +602,7 @@ static struct cnode_t *ctree_reduce(
 	 * goes from the last node into the first. In this case, this edge
 	 * should stay outside of the reduced region. */
 	cyclic_block = 0;
-	if (region == cnode_block)
+	if (region == cnode_region_block)
 	{
 		in_node = linked_list_goto(node_list, 0);
 		out_node = linked_list_goto(node_list, node_list->count - 1);
@@ -704,7 +704,7 @@ static struct cnode_t *ctree_reduce(
 	/* Special case for block regions: in order to avoid nested blocks,
 	 * block regions are flattened when we detect that one block contains
 	 * another. */
-	if (region == cnode_block)
+	if (region == cnode_region_block)
 	{
 		assert(node_list->count == 2);
 		in_node = linked_list_goto(node_list, 0);
@@ -712,9 +712,9 @@ static struct cnode_t *ctree_reduce(
 		assert(in_node && out_node);
 
 		if ((in_node->kind == cnode_abstract &&
-				in_node->abstract.region == cnode_block) ||
+				in_node->abstract.region == cnode_region_block) ||
 				(out_node->kind == cnode_abstract &&
-				out_node->abstract.region == cnode_block))
+				out_node->abstract.region == cnode_region_block))
 			ctree_flatten_block(ctree, abs_node);
 	}
 
@@ -757,7 +757,7 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 		{
 			linked_list_add(node_list, node);
 			linked_list_add(node_list, succ_node);
-			return cnode_block;
+			return cnode_region_block;
 		}
 	}
 
@@ -794,9 +794,16 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 				node != then_node &&
 				node != endif_node)
 		{
+			/* Create node list - order important! */
 			linked_list_add(node_list, node);
 			linked_list_add(node_list, then_node);
-			return cnode_if_then;
+
+			/* Set node roles */
+			node->role = cnode_role_if;
+			then_node->role = cnode_role_then;
+
+			/* Return region */
+			return cnode_region_if_then;
 		}
 	}
 
@@ -829,10 +836,18 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 			then_succ_node != ctree->node_entry &&
 			else_succ_node != ctree->node_entry)
 		{
+			/* Create list of nodes - notice order! */
 			linked_list_add(node_list, node);
 			linked_list_add(node_list, then_node);
 			linked_list_add(node_list, else_node);
-			return cnode_if_then_else;
+
+			/* Assign roles */
+			node->role = cnode_role_if;
+			then_node->role = cnode_role_then;
+			else_node->role = cnode_role_else;
+
+			/* Return region */
+			return cnode_region_if_then_else;
 		}
 	}
 
@@ -840,7 +855,7 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 	if (cnode_in_list(node, node->succ_list))
 	{
 		linked_list_add(node_list, node);
-		return cnode_loop;
+		return cnode_region_loop;
 	}
 
 
@@ -883,11 +898,39 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 				tail_node != ctree->node_entry &&
 				exit_node != head_node)
 		{
-			/* Make sure that head node is shown first */
+			/* Create node list. The order is important, so we make
+			 * sure that head node is shown first */
 			linked_list_clear(node_list);
 			linked_list_add(node_list, head_node);
 			linked_list_add(node_list, tail_node);
-			return cnode_while_loop;
+
+			/* Set node roles */
+			head_node->role = cnode_role_head;
+			tail_node->role = cnode_role_tail;
+
+			/* Determine here whether the loop exists when the condition
+			 * in its head node is evaluated to true or false - we need
+			 * this info later!
+			 *
+			 * This is inferred from the order in which the head's
+			 * outgoing edges show up in its successor list. The edge
+			 * occurring first points to basic block 'if_true' of the
+			 * LLVM 'br' instruction, while the second edge points to
+			 * basic block 'if_false'.
+			 *
+			 * Thus, if edge head=>tail is the first, the loop exists
+			 * if the head condition is false. If edge head=>tail is
+			 * the second, it exists if the condition is true.
+			 */
+			linked_list_find(head_node->succ_list, tail_node);
+			assert(!head_node->succ_list->error_code);
+			head_node->exit_if_false = head_node->succ_list
+					->current_index == 0;
+			head_node->exit_if_true = head_node->succ_list
+					->current_index == 1;
+
+			/* Return region */
+			return cnode_region_while_loop;
 		}
 	}
 
