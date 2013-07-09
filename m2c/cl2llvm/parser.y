@@ -3185,7 +3185,7 @@ unary_expr
 	{
 		struct cl2llvm_type_t *switch_type;
 		struct cl2llvm_type_t *type;
-		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *value_plus_one;
 		struct cl2llvm_val_t *one;
 
 		/* Create constant one to add to variable */
@@ -3220,7 +3220,7 @@ unary_expr
 		{
 		case LLVMIntegerTypeKind:
 
-			value = cl2llvm_val_create_w_init(
+			value_plus_one = cl2llvm_val_create_w_init(
 				LLVMBuildAdd(cl2llvm_builder, lval->val, 
 				cast_one->val, temp_var_name), type->sign);
 			break;
@@ -3229,7 +3229,7 @@ unary_expr
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value = cl2llvm_val_create_w_init(
+			value_plus_one = cl2llvm_val_create_w_init(
 				LLVMBuildFAdd(cl2llvm_builder, lval->val, 
 				cast_one->val, temp_var_name), type->sign);
 			break;
@@ -3237,19 +3237,19 @@ unary_expr
 		default:
 
 			yyerror("invalid type of operand for post '++'");
-			value = cl2llvm_val_create();
+			value_plus_one = cl2llvm_val_create();
 		}
-
-		LLVMBuildStore(cl2llvm_builder, lval->val, $1->val);
 		
-		cl2llvm_val_free($1);
+		LLVMBuildStore(cl2llvm_builder, value_plus_one->val, $1->val);
+		
 		cl2llvm_val_free(one);
+		cl2llvm_val_free(value_plus_one);
 		cl2llvm_val_free(cast_one);
 		cl2llvm_val_free(lval);
 		cl2llvm_type_free(type);
 		cl2llvm_type_free(switch_type);
 
-		$$ = value;
+		$$ = $1;
 
 	}
 	| TOK_INCREMENT lvalue %prec TOK_PREFIX
