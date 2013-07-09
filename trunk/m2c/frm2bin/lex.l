@@ -68,12 +68,20 @@ void yyerror_lex(const char *msg);
 	return TOK_GLOBAL;
 }
 
+".args" {
+	return TOK_ARGS;
+}
+
 ".text" {
 	return TOK_TEXT;
 }
 
 "\n" {
   	return TOK_NEW_LINE;
+}
+
+.[bfsu][0-9]+ {
+	return TOK_ARG_TYPE;
 }
 
 "pt" {
