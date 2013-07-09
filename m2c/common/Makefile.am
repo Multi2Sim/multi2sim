@@ -11,7 +11,9 @@ libcommon_a_SOURCES = \
 	ctree.c \
 	ctree.h
 
+if HAVE_LLVM
 AM_CFLAGS = $(LLVM_CFLAGS)
+endif
 
 INCLUDES = @M2S_INCLUDES@
 
