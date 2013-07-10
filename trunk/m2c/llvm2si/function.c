@@ -36,6 +36,7 @@
 
 #include "basic-block.h"
 #include "function.h"
+#include "phi.h"
 #include "symbol.h"
 #include "symbol-table.h"
 
@@ -353,6 +354,7 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	function->uav_list = list_create();
 	function->symbol_table = llvm2si_symbol_table_create();
 	function->ctree = ctree = ctree_create(function->name);
+	function->phi_list = linked_list_create();
 
 	/* Create pre-defined nodes in control tree */
 	function->header_node = cnode_create_leaf("header");
@@ -393,6 +395,10 @@ void llvm2si_function_free(struct llvm2si_function_t *function)
 	/* Free control tree */
 	if (function->ctree)
 		ctree_free(function->ctree);
+
+	/* Free list of 'phi' entries */
+	assert(!function->phi_list->count);
+	linked_list_free(function->phi_list);
 
 	/* Rest */
 	llvm2si_symbol_table_free(function->symbol_table);
@@ -675,6 +681,44 @@ void llvm2si_function_emit_body(struct llvm2si_function_t *function)
 
 	/* Free structures */
 	linked_list_free(node_list);
+}
+
+
+void llvm2si_function_emit_phi(struct llvm2si_function_t *function)
+{
+	struct llvm2si_phi_t *phi;
+	struct llvm2si_basic_block_t *basic_block;
+	struct list_t *arg_list;
+	struct si2bin_inst_t *inst;
+	struct si2bin_arg_t *src_value;
+
+	while (function->phi_list->count)
+	{
+		/* Extract element from list */
+		linked_list_head(function->phi_list);
+		phi = linked_list_remove(function->phi_list);
+
+		/* Get basic block */
+		basic_block = LLVM2SI_BASIC_BLOCK(cnode_get_basic_block(
+				phi->src_node));
+		assert(basic_block);
+
+		/* Get source value */
+		src_value = llvm2si_function_translate_value(function,
+				phi->src_value, NULL);
+
+		/* Copy source value to destination value.
+		 * s_mov_b32 <dest_value>, <src_value>
+		 */
+		arg_list = list_create();
+		list_add(arg_list, phi->dest_value);
+		list_add(arg_list, src_value);
+		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
+		llvm2si_basic_block_add_inst(basic_block, inst);
+
+		/* Free phi object */
+		llvm2si_phi_free(phi);
+	}
 }
 
 
