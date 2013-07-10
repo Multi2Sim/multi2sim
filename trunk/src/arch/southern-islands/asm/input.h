@@ -39,10 +39,12 @@ enum si_input_data_type_t
 
 struct si_input_t
 {
-	enum si_input_data_type_t type;
 	unsigned int usage_index; /* The associated vertex attribute index */
 	int set;  /* Set to true when it is assigned */
-	int size; /* Inferred from metadata or user calls */
+
+	enum si_input_data_type_t type;
+	int num_elems;
+	int size;
 	unsigned int device_ptr; 
 };
 

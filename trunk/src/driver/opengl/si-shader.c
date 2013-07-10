@@ -293,6 +293,40 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 	
 }
 
+void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
+		struct si_ndrange_t *ndrange)
+{
+	struct si_input_t *input;
+	struct si_buffer_desc_t buffer_desc;
+
+	int index;
+
+	/* Shader inputs */
+	LIST_FOR_EACH(shdr->shader_bin->shader_enc_dict->input_list, index)
+	{
+		input = list_get(shdr->shader_bin->shader_enc_dict->input_list, index);
+		assert(input);
+
+		/* Check that input was set */
+		if (!input->set)
+			fatal("%s: shader %p: input #%d not set",
+				__FUNCTION__, shdr, input->usage_index);
+
+		/* Create descriptor for input */
+		opengl_si_create_buffer_desc(
+			input->device_ptr,
+			input->size,
+			input->num_elems,
+			input->type, &buffer_desc);
+
+		/* Add to Vertex Buffer table */
+		si_ndrange_insert_buffer_into_vertex_buffer_table(
+			ndrange, &buffer_desc,
+			input->usage_index);
+	}
+
+}
+
 static void opengl_si_create_buffer_desc(unsigned int base_addr,
 	unsigned int size, int num_elems, 
 	enum si_input_data_type_t data_type,
