@@ -193,7 +193,6 @@ LLVMBasicBlockRef current_basic_block;
 %type<llvm_value_ref> primary
 %type<llvm_value_ref> lvalue
 %type<list_val_t> array_deref_list
-%type<llvm_value_ref> struct_deref_list
 %type<llvm_value_ref> maybe_expr
 %type<llvm_value_ref> expr
 %type<list_val_t> vec_literal_param_two_elem
@@ -205,7 +204,6 @@ LLVMBasicBlockRef current_basic_block;
 %type<list_val_t> param_list
 %type<llvm_value_ref> func_call
 %type<llvm_type_ref> type_name
-%type<const_int_val> type_ptr_list
 %type<const_int_val> addr_qual
 %type<llvm_type_ref> type_spec
 %type<decl_list> declarator
@@ -565,135 +563,24 @@ stmt_list
 	;
 
 lvalue
-	: type_ptr_list TOK_ID array_deref_list
+	: TOK_PAR_OPEN lvalue TOK_PAR_CLOSE %prec TOK_MULT
 	{
-		struct cl2llvm_val_t *ptr;
-		int i;
-		struct cl2llvm_symbol_t *symbol;
-		struct cl2llvm_val_t *current_index;
-		LLVMValueRef deref_ptr;
-		LLVMValueRef indices[CL2LLVM_MAX_NUM_ARRAY_INDEX_DIM];
-
-		/*Retrieve symbol from table*/
-	 	symbol = hash_table_get(cl2llvm_current_function->symbol_table, $2);
-		if (symbol == NULL)	
-			yyerror("symbol undeclared first use in this program");
-		
-		deref_ptr = symbol->cl2llvm_val->val;
-
-		/* Loop through all dereference operators */	
-		for (i = 0; i < list_count($3); i++)
-		{
-			if  (LLVMGetTypeKind(LLVMGetElementType(LLVMTypeOf(
-				deref_ptr))) == LLVMPointerTypeKind)
-			{
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
-			
-				deref_ptr = LLVMBuildLoad(cl2llvm_builder, 
-					deref_ptr, temp_var_name);
-
-				current_index = list_get($3, i);
-				indices[0] = current_index->val;
-
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
-				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
-					deref_ptr, indices, 1, 
-					temp_var_name);
-				
-			}
-			else if (LLVMGetTypeKind(LLVMGetElementType(LLVMTypeOf(
-				deref_ptr))) == LLVMArrayTypeKind)
-
-			{
-				indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
-				indices[1] = LLVMConstInt(LLVMInt32Type(), 0, 0);
-				
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
-				
-				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
-					deref_ptr, indices, 2, temp_var_name); 
-
-				current_index = list_get($3, i);
-				indices[0] = current_index->val;
-				
-
-				/* Get element pointer */
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
-
-				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
-					deref_ptr, indices, 1, temp_var_name);
-			}
-			else
-				cl2llvm_yyerror("Subscripted value is neither array nor pointer");
-		}
-		for (i = 0; i < $1; i++)
-		{
-			if  (LLVMGetTypeKind(LLVMGetElementType(LLVMTypeOf(
-				deref_ptr))) == LLVMPointerTypeKind)
-			{
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
-			
-				deref_ptr = LLVMBuildLoad(cl2llvm_builder, 
-					deref_ptr, temp_var_name);
-
-			}
-			else if (LLVMGetTypeKind(LLVMGetElementType(LLVMTypeOf(
-				deref_ptr))) == LLVMArrayTypeKind)
-
-			{
-				indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
-				indices[1] = LLVMConstInt(LLVMInt32Type(), 0, 0);
-				
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
-				
-				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
-					deref_ptr, indices, 2, temp_var_name); 
-
-				indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
-				
-				/* Get element pointer */
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
-
-				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
-					deref_ptr, indices, 1, temp_var_name);
-			}
-			else
-				cl2llvm_yyerror("Invalid type argument of unary '*'.");
-		}
-		ptr = cl2llvm_val_create_w_init(deref_ptr, 
-			symbol->cl2llvm_val->type->sign);
-
-		/*Free pointers*/
-		LIST_FOR_EACH($3, i)
-		{
-			cl2llvm_val_free(list_get($3, i));
-		}
-		list_free($3);
-
-		$$ = ptr;
+		$$ = $2;
 	}
-	| TOK_ID array_deref_list %prec TOK_MINUS
+	| lvalue array_deref_list %prec TOK_MULT
 	{
 		struct cl2llvm_val_t *ptr;
 		int i;
-		struct cl2llvm_symbol_t *symbol;
 		struct cl2llvm_val_t *current_index;
 		LLVMValueRef deref_ptr;
 		LLVMValueRef indices[CL2LLVM_MAX_NUM_ARRAY_INDEX_DIM];
 
 		/*Retrieve symbol from table*/
-	 	symbol = hash_table_get(cl2llvm_current_function->symbol_table, $1);
+	 	/*symbol = hash_table_get(cl2llvm_current_function->symbol_table, $1);
 		if (symbol == NULL)	
-			yyerror("symbol undeclared first use in this program");
+			yyerror("symbol undeclared first use in this program");*/
 		
-		deref_ptr = symbol->cl2llvm_val->val;
+		deref_ptr = $1->val;
 
 		/* Loop through all dereference operators */	
 		for (i = 0; i < list_count($2); i++)
@@ -746,7 +633,7 @@ lvalue
 		}
 
 		ptr = cl2llvm_val_create_w_init(deref_ptr, 
-			symbol->cl2llvm_val->type->sign);
+			$1->type->sign);
 
 		/*Free pointers*/
 		LIST_FOR_EACH($2, i)
@@ -754,65 +641,56 @@ lvalue
 			cl2llvm_val_free(list_get($2, i));
 		}
 		list_free($2);
+		cl2llvm_val_free($1);
 
 		$$ = ptr;
 	}
-	| type_ptr_list TOK_ID
+	| TOK_MULT lvalue %prec TOK_MINUS
 	{
 		struct cl2llvm_val_t *ptr;
-		int i;
-		struct cl2llvm_symbol_t *symbol;
 		LLVMValueRef deref_ptr;
 		LLVMValueRef indices[CL2LLVM_MAX_NUM_ARRAY_INDEX_DIM];
 
-		/*Retrieve symbol from table*/
-	 	symbol = hash_table_get(cl2llvm_current_function->symbol_table, $2);
-		if (symbol == NULL)	
-			yyerror("symbol undeclared first use in this program");
-		
-		deref_ptr = symbol->cl2llvm_val->val;
+		deref_ptr = $2->val;
 
-		/* Loop through all dereference operators */	
-		for (i = 0; i < $1; i++)
+		if  (LLVMGetTypeKind(LLVMGetElementType(LLVMTypeOf(
+			deref_ptr))) == LLVMPointerTypeKind)
 		{
-			if  (LLVMGetTypeKind(LLVMGetElementType(LLVMTypeOf(
-				deref_ptr))) == LLVMPointerTypeKind)
-			{
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp%d", temp_var_count++);
 			
-				deref_ptr = LLVMBuildLoad(cl2llvm_builder, 
-					deref_ptr, temp_var_name);
+			deref_ptr = LLVMBuildLoad(cl2llvm_builder, 
+				deref_ptr, temp_var_name);
 
-			}
-			else if (LLVMGetTypeKind(LLVMGetElementType(LLVMTypeOf(
-				deref_ptr))) == LLVMArrayTypeKind)
-
-			{
-				indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
-				indices[1] = LLVMConstInt(LLVMInt32Type(), 0, 0);
-				
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
-				
-				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
-					deref_ptr, indices, 2, temp_var_name); 
-
-				indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
-				
-				/* Get element pointer */
-				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
-
-				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
-					deref_ptr, indices, 1, temp_var_name);
-			}
-			else
-				cl2llvm_yyerror("Invalid type argument of unary '*'.");
 		}
+		else if (LLVMGetTypeKind(LLVMGetElementType(LLVMTypeOf(
+			deref_ptr))) == LLVMArrayTypeKind)
+
+		{
+			indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
+			indices[1] = LLVMConstInt(LLVMInt32Type(), 0, 0);
+				
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp%d", temp_var_count++);
+				
+			deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
+				deref_ptr, indices, 2, temp_var_name); 
+
+			indices[0] = LLVMConstInt(LLVMInt32Type(), 0, 0);
+				
+			/* Get element pointer */
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp%d", temp_var_count++);
+
+			deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
+				deref_ptr, indices, 1, temp_var_name);
+		}
+		else
+			cl2llvm_yyerror("Invalid type argument of unary '*'.");
+		
 
 		ptr = cl2llvm_val_create_w_init(deref_ptr, 
-			symbol->cl2llvm_val->type->sign);
+			$2->type->sign);
 
 		$$ = ptr;
 	}
@@ -833,59 +711,25 @@ lvalue
 
 		$$ = symbol_val_dup;
 	}
-	| struct_deref_list
+	| lvalue TOK_STRUCT_REF TOK_ID
 	{
-		$$ = $1;
-	}
-	;
-
-struct_deref_list
-	: TOK_ID TOK_STRUCT_REF TOK_ID
-	{
-		struct cl2llvm_symbol_t *symbol;
-		struct cl2llvm_val_t *value;
 
 		
 		/* Get symbol from hash table */
-		symbol = hash_table_get(cl2llvm_current_function->symbol_table, $1);
+	/*	symbol = hash_table_get(cl2llvm_current_function->symbol_table, $1);
 		if (!symbol)	
 			yyerror("symbol undeclared first use in this program");
-
-		/* Duplicate symbol value */
-		value = cl2llvm_val_create_w_init(symbol->cl2llvm_val->val, 
-			symbol->cl2llvm_val->type->sign);
+*/
 
 		/* If symbol is a vector retrieve the specified indices */
-		if (LLVMGetTypeKind(LLVMGetElementType(symbol->cl2llvm_val->type->llvm_type))
-			== LLVMVectorTypeKind)
-		{	
-			cl2llvm_get_vector_indices(value, $3);
-		}
-		$$ = value;
-	}
-	| TOK_ID array_deref_list TOK_STRUCT_REF TOK_ID array_deref_list
-	{
-		$$ = NULL;
-	}
-	| TOK_ID array_deref_list TOK_STRUCT_REF TOK_ID
-	{
-		$$ = NULL;
-	}
-	| TOK_ID TOK_STRUCT_REF TOK_ID array_deref_list
-	{
-		$$ = NULL;
-	}
-	| struct_deref_list TOK_STRUCT_REF TOK_ID
-	{
-		/* If struct_deref_list is a vector emit error. */
 		if (LLVMGetTypeKind(LLVMGetElementType($1->type->llvm_type))
 			== LLVMVectorTypeKind)
-			cl2llvm_yyerror("Dereferencing something that is not a pointer, struct or union");
-
-		$$ = NULL;
+		{	
+			cl2llvm_get_vector_indices($1, $3);
+		}
+		$$ = $1;
 	}
 	;
-
 
 array_deref_list
 	: TOK_BRACKET_OPEN expr TOK_BRACKET_CLOSE
@@ -1021,12 +865,20 @@ func_call
 		}
 		list_free($3);
 
-		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
 
 		/* Build function call */
-		llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
-			cast_param_array, function->arg_count + offset, temp_var_name);
+		if (LLVMGetReturnType(function->func_type) == LLVMVoidType())
+		{
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp%d", temp_var_count++);
+			llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
+				cast_param_array, function->arg_count + offset, "");
+		}
+		else
+		{
+			llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
+				cast_param_array, function->arg_count + offset, temp_var_name);
+		}
 
 		/* Create return value */
 		ret_val = cl2llvm_val_create_w_init(llvm_val_func_ret, 	
@@ -3518,7 +3370,7 @@ primary
 			LLVMConstReal(LLVMDoubleType(), $1), 1);
 		$$ = value;
 	}
-	| lvalue
+	| lvalue %prec TOK_MINUS
 	{
 		int i;
 		int component_count = 0;
@@ -3625,34 +3477,20 @@ type_spec
 	{
 		$$ = $1;
 	}
-	| type_name type_ptr_list
+	| type_spec TOK_MULT
 	{
-		int i = 0;
-		LLVMTypeRef ptr_type = NULL;
-		do
-		{
-			if(i)
-				ptr_type = LLVMPointerType(ptr_type, 0);
-			else
-				ptr_type = LLVMPointerType($1->llvm_type, 0);
-			i++;
-		} while(i < $2);
-		struct cl2llvm_type_t *type = cl2llvm_type_create_w_init(ptr_type, $1->sign);
+		LLVMTypeRef ptr_type;
+		struct cl2llvm_type_t *type;
+		
+		/* Create pointer type */
+		ptr_type = LLVMPointerType($1->llvm_type, 0);
+		
+		type = cl2llvm_type_create_w_init(ptr_type, $1->sign);
+	
+		/* Free pointers */
 		cl2llvm_type_free($1);
-		LLVMGetTypeKind(type->llvm_type);
+		
 		$$ = type;
-	}
-	;
-
-type_ptr_list
-	: TOK_MULT
-	{
-		int ptr_count = 1;
-		$$ = ptr_count;
-	}
-	| type_ptr_list TOK_MULT
-	{
-		$$ = ++$1;
 	}
 	;
 
