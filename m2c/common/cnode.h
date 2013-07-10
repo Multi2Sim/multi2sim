@@ -146,8 +146,7 @@ struct cnode_t
 
 
 /* Create node of type leaf */
-struct cnode_t *cnode_create_leaf(char *name,
-		struct basic_block_t *basic_block);
+struct cnode_t *cnode_create_leaf(char *name);
 
 /* Create an abstract node containing the list of nodes in 'elem_list'. The list
  * 'elem_list' will be copied internally, and should be initialized and freed by
