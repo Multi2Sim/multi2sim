@@ -21,6 +21,7 @@
 
 #include <m2c/common/basic-block.h>
 #include <m2c/common/cnode.h>
+#include <m2c/common/ctree.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
@@ -32,6 +33,7 @@
 
 #include "basic-block.h"
 #include "function.h"
+#include "phi.h"
 #include "symbol.h"
 #include "symbol-table.h"
 
@@ -690,16 +692,34 @@ void llvm2si_basic_block_emit_phi(struct llvm2si_basic_block_t *basic_block,
 {
 	struct llvm2si_function_t *function;
 	struct llvm2si_symbol_t *ret_symbol;
-	struct si2bin_inst_t *inst;
-	struct list_t *arg_list;
+	struct cnode_t *node;
+	struct si2bin_arg_t *arg;
+	struct llvm2si_phi_t *phi;
+
+	LLVMTypeRef lltype;
+	LLVMTypeKind lltype_kind;
+	LLVMValueRef llvalue;
+	LLVMValueRef llbb_value;
+	LLVMBasicBlockRef llbb;
 
 	char *ret_name;
+	char *llbb_name;
 
 	int ret_vreg;
+	int num_operands;
+	int i;
 
 	/* Get function */
 	function = basic_block->function;
 	assert(function);
+
+	/* Only supported for 32-bit integers */
+	lltype = LLVMTypeOf(llinst);
+	lltype_kind = LLVMGetTypeKind(lltype);
+	if (lltype_kind != LLVMIntegerTypeKind ||
+			LLVMGetIntTypeWidth(lltype) != 32)
+		fatal("%s: only supported for 32-bit integers",
+				__FUNCTION__);
 
 	/* Allocate vector register and create symbol for return value */
 	ret_name = (char *) LLVMGetValueName(llinst);
@@ -707,14 +727,29 @@ void llvm2si_basic_block_emit_phi(struct llvm2si_basic_block_t *basic_block,
 	ret_symbol = llvm2si_symbol_create_vreg(ret_name, ret_vreg);
 	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
 
-	/* FIXME
-	 * v_mov_b32 <ret_vreg>, 0
-	 */
-	arg_list = list_create();
-	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
-	list_add(arg_list, si2bin_arg_create_literal(0));
-	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
+	/* Process arguments */
+	num_operands = LLVMCountIncoming(llinst);
+	for (i = 0; i < num_operands; i++)
+	{
+		/* Get source basic block */
+		llbb = LLVMGetIncomingBlock(llinst, i);
+		llbb_value = LLVMBasicBlockAsValue(llbb);
+		llbb_name = (char *) LLVMGetValueName(llbb_value);
+		node = ctree_get_node(function->ctree, llbb_name);
+		if (!node)
+			panic("%s: cannot find node '%s'",
+					__FUNCTION__, llbb_name);
+
+		/* Get source value */
+		llvalue = LLVMGetIncomingValue(llinst, i);
+
+		/* Create destination argument */
+		arg = si2bin_arg_create_vector_register(ret_vreg);
+
+		/* Create 'phi' element and add it. */
+		phi = llvm2si_phi_create(node, llvalue, arg);
+		linked_list_add(function->phi_list, phi);
+	}
 }
 
 

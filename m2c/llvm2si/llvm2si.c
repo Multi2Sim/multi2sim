@@ -88,6 +88,7 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 		llvm2si_function_emit_header(function);
 		llvm2si_function_emit_args(function);
 		llvm2si_function_emit_body(function);
+		llvm2si_function_emit_phi(function);
 		llvm2si_function_emit_control_flow(function);
 
 		/* Dump code */
