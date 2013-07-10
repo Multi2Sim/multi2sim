@@ -34,7 +34,7 @@ struct opengl_buffer_obj_t;
 /* Generic vertex attribute */
 struct opengl_vertex_attrib_t
 {
-	int size;
+	int size;	/* Note, this is the number of component, from 1 to 4 or BGRA */
 	unsigned int type;
 	unsigned int format;
 	unsigned int stride;
