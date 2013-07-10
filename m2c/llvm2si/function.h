@@ -136,6 +136,10 @@ struct llvm2si_function_t
 	/* Control tree */
 	struct ctree_t *ctree;
 
+	/* List of elements found in LLVM 'phi' instructions during emission of
+	 * the function body. */
+	struct linked_list_t *phi_list;
+
 	/* While code is generated, this variable keeps track of the total
 	 * amount of bytes pushed into the stack for this function. */
 	unsigned int stack_size;
@@ -173,6 +177,10 @@ void llvm2si_function_emit_args(struct llvm2si_function_t *function);
  * be added at the end of 'basic_block', which should be already part of the
  * function. As the code emission progresses, new basic blocks will be created. */
 void llvm2si_function_emit_body(struct llvm2si_function_t *function);
+
+/* Emit code for the phi elements that were encountered during the emission of
+ * the function body, comming from LLVM phi nodes. */
+void llvm2si_function_emit_phi(struct llvm2si_function_t *function);
 
 /* Emit additional instructions managing active masks and active mask stacks
  * related with the function control flow. */
