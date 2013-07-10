@@ -172,6 +172,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	int buff_num_offset;
 	int buff_size;
 	int data_size;
+	int imm_cb_found;
+	int ptr_cb_table_found;
 	
 	
 	rodata_size = 0;
@@ -216,6 +218,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	LIST_FOR_EACH(outer_bin->inner_bin_list, i)
 	{
 		offset = 0;
+		ptr_cb_table_found = 0;
+		imm_cb_found = 0;
 
 		for(j = 0; j < 20; j++)
 			uav[j] = 0;
@@ -547,10 +551,34 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 			
 			if (user_elem->dataClass == IMM_CONST_BUFFER)
 			{
+				/* Cannot have both IMM_CONST_BUFFER and PTR_CONST_BUFFER_TABLE */
+				if (ptr_cb_table_found)
+					fatal("Cannot have both IMM_CONST_BUFFER and PTR_CONST_BUFFER_TABLE");	
+				
 				cb[user_elem->apiSlot] = 1;
 				buff_num_offset++;
+				imm_cb_found = 1;
+			}
+			else if (user_elem->dataClass == PTR_CONST_BUFFER_TABLE)
+			{
+				/* Cannot have both IMM_CONST_BUFFER and PTR_CONST_BUFFER_TABLE */
+				if (imm_cb_found)
+					fatal("Cannot have both IMM_CONST_BUFFER and PTR_CONST_BUFFER_TABLE");	
+			
+				/* If PTR_CONST_BUFFER_TABLE is found, manually set cb's */
+				cb[0] = 1;
+				
+				if (list_count(metadata->arg_list) > 0)
+					cb[1] = 1;
+				
+				if (list_count(outer_bin->float4_list) > 0)
+					cb[2] = 1;
+
+				buff_num_offset = cb[0] + cb[1] + cb[2];
+				ptr_cb_table_found = 1;
 			}
 		}
+		
 		
 		buff_size = 8 * buff_num_offset;
 		ptr = xcalloc(1, (buff_size));

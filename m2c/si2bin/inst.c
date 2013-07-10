@@ -702,6 +702,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 
 			case SI_INST_S_BUFFER_LOAD_DWORD:
 			case SI_INST_S_BUFFER_LOAD_DWORDX2:
+			case SI_INST_S_BUFFER_LOAD_DWORDX4:
 
 				/* High register must be low plus 3 */
 				if (arg->value.scalar_register_series.high !=
@@ -710,7 +711,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				break;
 
 			default:
-				fatal("%s: unsupported opcode for 'series_sbase' token: %s",
+				si2bin_yyerror_fmt("%s: unsupported opcode for 'series_sbase' token: %s",
 						__FUNCTION__, info->name);
 			}
 
@@ -734,6 +735,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				break;
 
 			case SI_INST_S_LOAD_DWORDX4:
+			case SI_INST_S_BUFFER_LOAD_DWORDX4:
 
 				/* High register must be low plus 3 */
 				if (arg->value.scalar_register_series.high !=
@@ -742,7 +744,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				break;
 
 			default:
-				fatal("%s: unsupported opcode for 'series_sdst' token: %s",
+				si2bin_yyerror_fmt("%s: unsupported opcode for 'series_sdst' token: %s",
 						__FUNCTION__, info->name);
 			}
 
