@@ -40,14 +40,15 @@ enum si_input_data_type_t
 struct si_input_t
 {
 	enum si_input_data_type_t type;
-	unsigned int usage_index;
+	unsigned int usage_index; /* The associated vertex attribute index */
 	int set;  /* Set to true when it is assigned */
 	int size; /* Inferred from metadata or user calls */
 	unsigned int device_ptr; 
 };
 
-struct si_input_t *si_input_create(enum si_input_data_type_t type);
+struct si_input_t *si_input_create();
 void si_input_free(struct si_input_t *input);
+void si_input_set_usage_index(struct si_input_t *input, unsigned int usage_index);
 int si_input_get_data_size(enum si_input_data_type_t data_type);
 
 #endif

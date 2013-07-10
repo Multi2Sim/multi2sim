@@ -30,24 +30,29 @@
  * Public Functions
  */
 
-struct si_input_t *si_input_create(enum si_input_data_type_t type)
+struct si_input_t *si_input_create()
 {
 	struct si_input_t *input;
 
 	/* Allocate */
 	input = xcalloc(1, sizeof(struct si_input_t));
 
-	/* Initialize */
-	input->type = type;
+	/* NOTE:  the data type input expected is configured by runtime call glVertexAttribPointer */
 
 	/* Return */	
 	return input;
 }
+
 void si_input_free(struct si_input_t *input)
 {
 	free(input);
 }
 
+void si_input_set_usage_index(struct si_input_t *input, unsigned int usage_index)
+{
+	if (input)
+		input->usage_index = usage_index;
+}
 
 /* Infer inputs size from its data type */
 int si_input_get_data_size(enum si_input_data_type_t data_type)

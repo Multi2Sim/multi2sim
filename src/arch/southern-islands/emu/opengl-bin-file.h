@@ -113,7 +113,7 @@ struct si_opengl_bin_enc_dict_entry_t
 	unsigned int semanticMappingCount;
 	struct si_opengl_bin_enc_semantic_mapping_t semanticsMapping[MAX_SEMANTICS_MAPPINGS];
 
-	struct list_t *input_list; /* Elements of type si_input_t */
+	struct list_t *input_list; /* - Equivalent to arg_list in OpenCL, elements of type si_input_t */
 
 	/* FIXME: currently only designed for Vertex Shader */
 	struct si_opengl_bin_spi_shader_pgm_rsrc2_vs_t *shader_pgm_rsrc2_vs;

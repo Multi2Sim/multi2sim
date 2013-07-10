@@ -22,6 +22,7 @@
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
+#include <arch/southern-islands/asm/input.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <driver/glut/frame-buffer.h>
@@ -663,7 +664,49 @@ static int opengl_abi_si_shader_free_impl(struct x86_ctx_t *ctx)
 }
 
 /*
- * OpenGL ABI call #11 - si_ndrange_initialize
+ * OpenGL ABI call #13 - si_shader_set_input
+ *
+ * Set up the expected input in a shader 
+ *
+ */
+
+static int opengl_abi_si_shader_set_input_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct opengl_si_shader_t *shdr;
+	struct list_t *input_list;
+	struct si_input_t *input;
+
+	unsigned int shader_id;
+	unsigned int device_ptr;
+	unsigned int num_elems;
+	unsigned int size;
+	unsigned int index;
+
+	/* Arguments */
+	shader_id = regs->ecx;
+	device_ptr = regs->edx;
+	num_elems = regs->esi;
+	size = regs->edi;
+	index = regs->ebp;
+	opengl_debug("\tshader_id=%d, device_ptr=%d, num_elems=%d, size=%d, index=%d\n",
+		shader_id, device_ptr, num_elems, size, index);
+
+	/* Shader has the indices of vertex attribute array in its encoding dictionary */
+	shdr = list_get(opengl_si_shader_list, shader_id);
+	input_list = shdr->shader_bin->shader_enc_dict->input_list;
+	input = list_get(input_list, index);
+	if (!input || input->usage_index != index)
+		fatal("Vertex attribute array at index %d is not needed by the vertex shader\n", index);
+	input->set = 1;
+	input->device_ptr = device_ptr;
+	input->size = size;
+
+	return 0;
+}
+
+/*
+ * OpenGL ABI call #14- si_ndrange_initialize
  *
  * Create and initialize an ND-Range for the supplied shader.
  *
@@ -707,7 +750,7 @@ static int opengl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #12 - si_ndrange_get_num_buffer_entries
+ * OpenGL ABI call #15 - si_ndrange_get_num_buffer_entries
  *
  * Returns the number of available buffer entries in the waiting 
  * work-group queue.
@@ -731,7 +774,7 @@ static int opengl_abi_si_ndrange_get_num_buffer_entries_impl(
 }
 
 /*
- * OpenGL ABI call #13 - si_ndrange_send_work_groups
+ * OpenGL ABI call #16 - si_ndrange_send_work_groups
  *
  * Receives a range of work-group IDs to add to the waiting 
  * work-group queue. The x86 context performing this call
@@ -804,7 +847,7 @@ static int opengl_abi_si_ndrange_send_work_groups_impl(struct x86_ctx_t *ctx)
 }
 
 /*
- * OpenGL ABI call #14 - si_ndrange_finish
+ * OpenGL ABI call #17 - si_ndrange_finish
  *
  * Tells the driver that there are no more work groups to execute
  * from the ND-Range.
@@ -867,7 +910,7 @@ static int opengl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
 
 
 /*
- * OpenGL ABI call #15 - si_ndrange_pass_mem_objs
+ * OpenGL ABI call #18 - si_ndrange_pass_mem_objs
  *
  * @return int
  *

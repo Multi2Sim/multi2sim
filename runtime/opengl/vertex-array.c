@@ -27,6 +27,8 @@
 #include "list.h"
 #include "linked-list.h"
 #include "mhandle.h"
+#include "shader.h"
+#include "program.h"
 #include "vertex-array.h"
 
 /* Global variables */
@@ -442,11 +444,23 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	struct opengl_vertex_array_obj_t *vao;
 	struct opengl_vertex_attrib_t *vattrib;
 	struct opengl_buffer_obj_t *vbo;
+	struct opengl_program_obj_t *program_obj;
+	struct opengl_shader_obj_t *shader_obj;
+	unsigned int vertex_shader_id;
 	int i;
 
 	/* Debug */
 	opengl_debug("API call %s(%x, %d, %d)\n", 
 		__FUNCTION__, mode, first, count);
+
+	/* Find the ID of current vertex shader */
+	program_obj = opengl_ctx->program_binding_point;
+	LIST_FOR_EACH(program_obj->shaders, i)
+	{
+		shader_obj = list_get(program_obj->shaders, i);
+		if (shader_obj && shader_obj->type == GL_VERTEX_SHADER )
+			vertex_shader_id = shader_obj->id;
+	}
 
 	/* Send data to GPU from indexed vertex attribute array
 	 * Vertex shader binary has the index of expected attribute array
@@ -455,6 +469,7 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	vao = opengl_ctx->vao_binding_point;
 	if (vao)
 	{
+		/* Send vertex attribute data to device memory */
 		for (i = 0; i < MAX_VERTEX_ATTRIBS; ++i)
 		{
 			vattrib = vao->attribs[i];
@@ -473,24 +488,26 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 					/* Then send data to device memory */
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_write,
 						vbo->device_ptr, vbo->data, vbo->size);
-					/* Insert into vertex buffer table */
-
-					/* Set rendering mode */
-
-					/* Launch Vertex Shader */
-
-					/* Launch Fragment Shader*/
-
-					/* Display */
+					/* Insert to input list */
+					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_shader_set_input,
+						vertex_shader_id, vbo->device_ptr, vattrib->size, vbo->size, i);
 
 					/* Debug info */
-					opengl_debug("\tData send to device memory, device_ptr = %p\n", 
-						vbo->device_ptr);					
+					opengl_debug("\tVBO #%d data send to device memory, device_ptr = %p\n",
+						vbo->id, vbo->device_ptr);
 				}
 				else
 					fatal("Vertex Attribute at index %d is used with no data", i);
 			}
 		}
+		/* Set rendering mode */
+
+		/* Launch Vertex Shader */
+
+		/* Launch Fragment Shader*/
+
+		/* Display */
+	
 	}
 	else
 		opengl_debug("\tNo Vertex Array is available to render!\n");
