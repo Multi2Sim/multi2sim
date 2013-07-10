@@ -165,6 +165,7 @@ struct x86_asm_t *x86_asm_create(void)
 
 	/* Initialize instruction information list */
 	as->inst_info_list = xcalloc(x86_inst_opcode_count, sizeof(struct x86_inst_info_t));
+	as->inst_info_list[x86_inst_opcode_invalid].fmt = "";
 #define DEFINST(__name, __op1, __op2, __op3, __modrm, __imm, __prefixes) \
 	info = &as->inst_info_list[x86_inst_##__name]; \
 	info->opcode = x86_inst_##__name; \
@@ -267,7 +268,8 @@ struct x86_asm_t *x86_asm_create(void)
 		if (info->imm & ID)
 			info->imm_size = 4;
 	}
-	/* Class information */
+
+	/* Populate class information and virtual functions */
 	CLASS_INIT(as, X86_ASM_TYPE, __as);
 	__as->free = x86_asm_free;
 
