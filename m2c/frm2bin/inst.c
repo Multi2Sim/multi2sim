@@ -2215,7 +2215,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 					arg->value.scalar_register.id;
 			}
 			else if (arg->type == frm_arg_zero_register)
-				inst_bytes->general0.dst = 0b111111;
+				inst_bytes->general0.dst = 0x3f;
 			else
 			{
 				frm2bin_yyerror_fmt("Wrong frm_token_dst. \
@@ -2235,7 +2235,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 					arg->value.scalar_register.id;
 			}
 			else if (arg->type == frm_arg_zero_register)
-				inst_bytes->general0.src1 = 0b111111;
+				inst_bytes->general0.src1 = 0x3f;
 			else
 			{
 				frm2bin_yyerror_fmt("Wrong frm_token_src1. \
@@ -2270,7 +2270,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				/* [45:26]: src2, all 0s Register Zero, reg
 				 * that contains const value of 0 */
 				inst_bytes->general0.src2_mod = 0x0;
-				inst_bytes->general0.src2 = 0b111111;
+				inst_bytes->general0.src2 = 0x3f;
 			}
 
 			else if (arg->type == frm_arg_literal)
@@ -2332,7 +2332,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 				/* [45:26]: src2, all 0s Register Zero, reg
 				 * that contains const value of 0 */
 				inst_bytes->general0.src2_mod = 0x0;
-				inst_bytes->general0.src2 = 0b111111;
+				inst_bytes->general0.src2 = 0x3f;
 			}
 
 			else if (arg->type == frm_arg_literal)
@@ -2361,7 +2361,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 					arg->value.scalar_register.id;
 			}
 			else if (arg->type == frm_arg_zero_register)
-				inst_bytes->general0_mod1_B.src3 = 0b111111;
+				inst_bytes->general0_mod1_B.src3 = 0x3f;
 			else
 			{
 				frm2bin_yyerror_fmt("Wrong frm_token_src3. \
@@ -2383,7 +2383,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			if (arg->type == frm_arg_glob_maddr)
 			{
 				if (arg->value.glob_maddr.reg_idx == -1)
-					inst_bytes->offs.src1 = 0b111111;
+					inst_bytes->offs.src1 = 0x3f;
 				else
 					inst_bytes->offs.src1 =
 						arg->value.glob_maddr.reg_idx;
@@ -2394,7 +2394,7 @@ void frm2bin_inst_gen(struct frm2bin_inst_t *inst)
 			else if (arg->type == frm_arg_shared_maddr)
 			{
 				if (arg->value.shared_maddr.bank_idx == -1)
-					inst_bytes->offs.src1 = 0b111111;
+					inst_bytes->offs.src1 = 0x3f;
 				else
 					inst_bytes->offs.src1 =
 						arg->value.shared_maddr.bank_idx;
