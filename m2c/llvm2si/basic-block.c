@@ -685,6 +685,39 @@ void llvm2si_basic_block_emit_mul(struct llvm2si_basic_block_t *basic_block,
 }
 
 
+void llvm2si_basic_block_emit_phi(struct llvm2si_basic_block_t *basic_block,
+		LLVMValueRef llinst)
+{
+	struct llvm2si_function_t *function;
+	struct llvm2si_symbol_t *ret_symbol;
+	struct si2bin_inst_t *inst;
+	struct list_t *arg_list;
+
+	char *ret_name;
+
+	int ret_vreg;
+
+	/* Get function */
+	function = basic_block->function;
+	assert(function);
+
+	/* Allocate vector register and create symbol for return value */
+	ret_name = (char *) LLVMGetValueName(llinst);
+	ret_vreg = llvm2si_function_alloc_vreg(function, 1, 1);
+	ret_symbol = llvm2si_symbol_create_vreg(ret_name, ret_vreg);
+	llvm2si_symbol_table_add_symbol(function->symbol_table, ret_symbol);
+
+	/* FIXME
+	 * v_mov_b32 <ret_vreg>, 0
+	 */
+	arg_list = list_create();
+	list_add(arg_list, si2bin_arg_create_vector_register(ret_vreg));
+	list_add(arg_list, si2bin_arg_create_literal(0));
+	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
+	llvm2si_basic_block_add_inst(basic_block, inst);
+}
+
+
 void llvm2si_basic_block_emit_ret(struct llvm2si_basic_block_t *basic_block,
 		LLVMValueRef llinst)
 {
@@ -1012,6 +1045,11 @@ void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block,
 		case LLVMMul:
 
 			llvm2si_basic_block_emit_mul(basic_block, llinst);
+			break;
+
+		case LLVMPHI:
+
+			llvm2si_basic_block_emit_phi(basic_block, llinst);
 			break;
 
 		case LLVMRet:

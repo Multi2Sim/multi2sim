@@ -355,9 +355,9 @@ struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction)
 	function->ctree = ctree = ctree_create(function->name);
 
 	/* Create pre-defined nodes in control tree */
-	function->header_node = cnode_create_leaf("header", NULL);
-	function->uavs_node = cnode_create_leaf("uavs", NULL);
-	function->args_node = cnode_create_leaf("args", NULL);
+	function->header_node = cnode_create_leaf("header");
+	function->uavs_node = cnode_create_leaf("uavs");
+	function->args_node = cnode_create_leaf("args");
 	ctree_add_node(ctree, function->header_node);
 	ctree_add_node(ctree, function->uavs_node);
 	ctree_add_node(ctree, function->args_node);
@@ -663,11 +663,12 @@ void llvm2si_function_emit_body(struct llvm2si_function_t *function)
 		if (node->kind != cnode_leaf)
 			continue;
 
-		/* Skip existing basic blocks */
-		if (node->leaf.basic_block)
+		/* Skip nodes with no LLVM code to translate */
+		if (!node->llbb)
 			continue;
 
 		/* Create basic block and emit the code */
+		assert(!node->leaf.basic_block);
 		basic_block = llvm2si_basic_block_create(function, node);
 		llvm2si_basic_block_emit(basic_block, node->llbb);
 	}
@@ -896,53 +897,50 @@ static void llvm2si_function_emit_while_loop(
 	int cond_sreg;
 	int tos_sreg;
 
-	char pre_name[MAX_STRING_SIZE];
-	char exit_name[MAX_STRING_SIZE];
-
 	char *cond_name;
 
 
 	/* Identify the two nodes */
 	assert(node->kind == cnode_abstract);
 	assert(node->abstract.region == cnode_region_while_loop);
-	assert(node->abstract.child_list->count == 2);
-	head_node = linked_list_goto(node->abstract.child_list, 0);
-	tail_node = linked_list_goto(node->abstract.child_list, 1);
+	assert(node->abstract.child_list->count == 4);
+	pre_node = linked_list_goto(node->abstract.child_list, 0);
+	head_node = linked_list_goto(node->abstract.child_list, 1);
+	tail_node = linked_list_goto(node->abstract.child_list, 2);
+	exit_node = linked_list_goto(node->abstract.child_list, 3);
 
 	/* Make sure roles match */
+	assert(pre_node->role == cnode_role_pre);
 	assert(head_node->role == cnode_role_head);
 	assert(tail_node->role == cnode_role_tail);
+	assert(exit_node->role == cnode_role_exit);
 
-	/* Get basic blocks. Head node should be a leaf. */
+	/* Get basic blocks. Pre-header/head/exit nodes should be a leaves.
+	 * Tail node can be an abstract node, which we need to track down to
+	 * its last leaf to introduce control flow at the end.
+	 *
+	 * Basic blocks must exist associated to the head and the tail blocks:
+	 * they come from LLVM blocks already emitted. But pre-header and exit
+	 * blocks have been inserted during the structural analysis, so they
+	 * contain no basic block yet.
+	 */
 	tail_node = cnode_get_last_leaf(tail_node);
+	assert(pre_node->kind == cnode_leaf);
 	assert(head_node->kind == cnode_leaf);
 	assert(tail_node->kind == cnode_leaf);
+	assert(exit_node->kind == cnode_leaf);
+	pre_bb = LLVM2SI_BASIC_BLOCK(pre_node->leaf.basic_block);
 	head_bb = LLVM2SI_BASIC_BLOCK(head_node->leaf.basic_block);
 	tail_bb = LLVM2SI_BASIC_BLOCK(tail_node->leaf.basic_block);
+	exit_bb = LLVM2SI_BASIC_BLOCK(exit_node->leaf.basic_block);
+	assert(!pre_bb);
 	assert(head_bb);
 	assert(tail_bb);
+	assert(!exit_bb);
 
 	/* Create pre-header and exit basic blocks */
-	snprintf(pre_name, sizeof pre_name, "%s_pre", node->name);
-	pre_node = cnode_create_leaf(pre_name, NULL);
 	pre_bb = llvm2si_basic_block_create(function, pre_node);
-
-	/* Create exit basic block */
-	snprintf(exit_name, sizeof exit_name, "%s_exit", node->name);
-	exit_node = cnode_create_leaf(exit_name, NULL);
 	exit_bb = llvm2si_basic_block_create(function, exit_node);
-
-	/* Insert pre-header node into control tree */
-	ctree_add_node(function->ctree, pre_node);
-	cnode_insert_before(pre_node, head_node);
-	cnode_connect(pre_node, head_node);
-	pre_node->role = cnode_role_pre;
-
-	/* Insert exit node into control tree */
-	ctree_add_node(function->ctree, exit_node);
-	cnode_insert_after(exit_node, tail_node);
-	cnode_connect(head_node, exit_node);
-	exit_node->role = cnode_role_exit;
 
 
 	/*** Code for pre-header block ***/
@@ -1080,15 +1078,6 @@ void llvm2si_function_emit_control_flow(struct llvm2si_function_t *function)
 
 	/* Free structures */
 	linked_list_free(node_list);
-
-	/* FIXME - We can remove this once the insertion of pre-header and exit
-	 * nodes is done in ctree_reduce. */
-	FILE *f = debug_file(ctree_debug_category);
-	if (f)
-	{
-		fprintf(f, "Control tree after emitting control flow:\n");
-		ctree_dump(function->ctree, f);
-	}
 }
 
 

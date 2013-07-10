@@ -719,6 +719,45 @@ static struct cnode_t *ctree_reduce(
 			ctree_flatten_block(ctree, abs_node);
 	}
 
+	/* Special case for while loops: a pre-header and exit blocks are added
+	 * into the region. */
+	if (region == cnode_region_while_loop)
+	{
+		struct cnode_t *head_node;
+		struct cnode_t *tail_node;
+		struct cnode_t *pre_node;
+		struct cnode_t *exit_node;
+
+		char pre_name[MAX_STRING_SIZE];
+		char exit_name[MAX_STRING_SIZE];
+
+		/* Get original nodes */
+		assert(node_list->count == 2);
+		head_node = linked_list_goto(node_list, 0);
+		tail_node = linked_list_goto(node_list, 1);
+		assert(head_node->kind == cnode_leaf);
+		assert(head_node->role == cnode_role_head);
+		assert(tail_node->role == cnode_role_tail);
+
+		/* Create pre-header and exit nodes */
+		snprintf(pre_name, sizeof pre_name, "%s_pre", abs_node->name);
+		snprintf(exit_name, sizeof exit_name, "%s_exit", abs_node->name);
+		pre_node = cnode_create_leaf(pre_name);
+		exit_node = cnode_create_leaf(exit_name);
+
+		/* Insert pre-header node into control tree */
+		ctree_add_node(ctree, pre_node);
+		cnode_insert_before(pre_node, head_node);
+		cnode_connect(pre_node, head_node);
+		pre_node->role = cnode_role_pre;
+
+		/* Insert exit node into control tree */
+		ctree_add_node(ctree, exit_node);
+		cnode_insert_after(exit_node, tail_node);
+		cnode_connect(head_node, exit_node);
+		exit_node->role = cnode_role_exit;
+	}
+
 	/* Return created abstract node */
 	return abs_node;
 }
@@ -1222,7 +1261,7 @@ static struct cnode_t *ctree_add_llvm_cfg_node(struct ctree_t *ctree,
 		return node;
 
 	/* Create node */
-	node = cnode_create_leaf(name, NULL);
+	node = cnode_create_leaf(name);
 	ctree_add_node(ctree, node);
 	node->llbb = llbb;
 
@@ -1428,7 +1467,7 @@ void ctree_read_from_config(struct ctree_t *ctree,
 		/* Create node */
 		if (kind == cnode_leaf)
 		{
-			node = cnode_create_leaf(node_name, NULL);
+			node = cnode_create_leaf(node_name);
 		}
 		else
 		{
