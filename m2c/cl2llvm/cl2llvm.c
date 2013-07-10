@@ -88,6 +88,11 @@ void cl2llvm_yyerror_fmt(char *fmt, ...)
 	exit(1);
 }
 
+void cl2llvm_warning(char *s)
+{
+	printf("%s:%d:%d: warning: %s\n", cl2llvm_file_name,
+		cl2llvm_yyget_lineno(), cl2llvm_get_col_num(), s);
+}
 
 void cl2llvm_init(void)
 {
@@ -178,7 +183,7 @@ void cl2llvm_compile(struct list_t *source_file_list, struct list_t *llvm_file_l
 	char *llvm_file_name;
 
 	/* This code activates debug information for bison */
-	/*
+	/*	
 	 * extern int cl2llvm_yydebug;
 	 * cl2llvm_yydebug = 1;
 	 */

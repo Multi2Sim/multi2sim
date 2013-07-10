@@ -42,6 +42,9 @@ char temp_var_name[50];
 void cl2llvm_yyerror(char *s);
 void cl2llvm_yyerror_fmt(char *fmt, ...);
 
+
+void cl2llvm_warning(char *s);
+
 extern FILE *cl2llvm_yyin;
 extern char *cl2llvm_file_name;
 

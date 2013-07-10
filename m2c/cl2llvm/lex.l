@@ -288,6 +288,7 @@ U			(unsigned)
 S			(signed)
 
 PREPROCESSOR		((\#)[ \t]+[0-9]+[ \t]+\"[^\"\`]*\"[ \t]*(\n))
+EXTENSION		((\#pragma)[ \t]+(OPENCL)[ \t]+(EXTENSION)[ \t]+[^\n]*)
 TOK_ID			[a-zA-Z_][a-zA-Z0-9_]*
 CONST_HEX		0[xX][a-fA-F0-9]+
 CONST_HEX_U		0[xX][a-fA-F0-9]+{CU}
@@ -444,7 +445,11 @@ TOK_TYPENAME		({TOK_TYPEDEF}[ ]+{TOK_INT})
 	cl2llvm_file_name = extract_file_name(yytext);
 	list_add(cl2llvm_preprcr_file_list, cl2llvm_file_name);
 }
-
+{EXTENSION} {
+	yyset_lineno(yyget_lineno() + 1);
+	cl2llvm_set_col_num(0);
+	cl2llvm_warning("Extensions are not supported by m2c");
+}
 [\n] { 
 	yyset_lineno(yyget_lineno() + 1);
 	cl2llvm_set_col_num(0);
