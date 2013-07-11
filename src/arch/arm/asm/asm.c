@@ -1982,29 +1982,34 @@ int arm_dissassembly_mode_tag(struct list_t * thumb_symbol_list, unsigned int ad
 	unsigned int tag_index;
 	unsigned int i;
 
+	tag_index = 0;
+	symbol = NULL;
 	for (i = 0; i < list_count(thumb_symbol_list); ++i)
 	{
-		symbol = (struct elf_symbol_t*)list_get(thumb_symbol_list,i);
-		if(symbol->value > addr)
+		symbol = list_get(thumb_symbol_list, i);
+		if (symbol->value > addr)
 		{
 			tag_index = i - 1;
 			break;
 		}
-		//printf("Symbol value = %x   %s\n", symbol->value, symbol->name);
 	}
 
+	/* Get symbol */
+	/* FIXME - Rafa - I added the '!symbol' check below, since this was
+	 * segfaulting for the 'hello.s' sample program provided in
+	 * 'm2s-client-kit/local-tests/test-auto/arm-asm'. */
 	symbol = (struct elf_symbol_t *) list_get(thumb_symbol_list, tag_index);
-
-	if(!strncmp(symbol->name, "$a",2))
-	{
+	if (!symbol)
+		return ARM_DISASM;
+		
+	/* Possible symbols */
+	if (!strcmp(symbol->name, "$a"))
 		disasm_mode = ARM_DISASM;
-	}
-	else if(!strncmp(symbol->name, "$t",2))
-	{
+	else if (!strcmp(symbol->name, "$t"))
 		disasm_mode = THUMB_DISASM;
-	}
 
-	return(disasm_mode);
+	/* Return */
+	return disasm_mode;
 }
 
 void arm_thumb16_inst_hex_dump(FILE *f , void *inst_ptr , unsigned int inst_addr)
