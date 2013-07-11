@@ -88,22 +88,23 @@ struct hash_table_t
 
 static int hash_table_get_index(struct hash_table_t *table, char *key)
 {
-	int index = 0;
-	int len;
-	int i;
+	unsigned int c;
+	unsigned int hash;
+	unsigned int prime;
 
-	len = strlen(key);
-	if (table->case_sensitive)
+	hash = 5381;
+	prime = 16777619;
+	while (*key)
 	{
-		for (i = 0; i < len; i++)
-			index = (index * 37 + key[i]) % table->size;
+		c = * (unsigned char *) key;
+		if (!table->case_sensitive)
+			c = tolower(c);
+		hash = (hash ^ c) * prime;
+		key++;
 	}
-	else
-	{
-		for (i = 0; i < len; i++)
-			index = (index * 37 + tolower(key[i])) % table->size;
-	}
-	return index;
+	hash %= table->size;
+
+	return hash;
 }
 
 
