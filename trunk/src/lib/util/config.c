@@ -63,6 +63,13 @@ struct config_t
 	 * The keys are strings "<section>\n<variable>".
 	 * The values are SECTION_VARIABLE_ALLOWED/SECTION_VARIABLE_MANDATORY */
 	struct hash_table_t *allowed_items;
+
+	/* Redundant linked list containing section names. This extra
+	 * information is added to keep track of the order in which sections
+	 * were loaded from a file or created by the user. Altering this order
+	 * when saving the file could be annoying. Each element is an allocated
+	 * string of type 'char *'. */
+	struct linked_list_t *section_list;
 };
 
 
@@ -155,12 +162,14 @@ static int get_var_value_from_item(char *item, char *var, int var_size,
 static int config_insert_section(struct config_t *config, char *section)
 {
 	char section_trim[MAX_LONG_STRING_SIZE];
-	int err;
+	int ret;
 
 	str_single_spaces(section_trim, sizeof section_trim, section);
-	err = !hash_table_insert(config->items, section, (void *) 1);
+	ret = hash_table_insert(config->items, section_trim, (void *) 1);
+	if (ret)
+		linked_list_add(config->section_list, xstrdup(section_trim));
 
-	return err;
+	return !ret;
 }
 
 
@@ -209,6 +218,7 @@ struct config_t *config_create(char *filename)
 	config->file_name = xstrdup(filename);
 	config->items = hash_table_create(HASH_TABLE_SIZE, 0);
 	config->allowed_items = hash_table_create(HASH_TABLE_SIZE, 0);
+	config->section_list = linked_list_create();
 
 	/* Return */
 	return config;
@@ -223,8 +233,7 @@ void config_free(struct config_t *config)
 	char var[MAX_LONG_STRING_SIZE];
 
 	/* Free variable values */
-	for (item = hash_table_find_first(config->items, &value);
-		item; item = hash_table_find_next(config->items, &value))
+	HASH_TABLE_FOR_EACH(config->items, item, value)
 	{
 		get_section_var_from_item(item, section, sizeof section,
 			var, sizeof var);
@@ -235,6 +244,11 @@ void config_free(struct config_t *config)
 		}
 		assert(value == ITEM_ALLOWED || value == ITEM_MANDATORY);
 	}
+
+	/* Free section list */
+	LINKED_LIST_FOR_EACH(config->section_list)
+		str_free(linked_list_get(config->section_list));
+	linked_list_free(config->section_list);
 
 	/* Free rest */
 	free(config->file_name);
@@ -334,7 +348,6 @@ void config_load(struct config_t *config)
 
 void config_save(struct config_t *config)
 {
-	struct linked_list_t *section_list;
 	char *section;
 	char *item, *value;
 	FILE *f;
@@ -344,26 +357,16 @@ void config_save(struct config_t *config)
 	if (!f)
 		fatal("%s: cannot save configuration file", config->file_name);
 	
-	/* Create a list with all sections first */
-	section_list = linked_list_create();
-	for (item = hash_table_find_first(config->items, (void **) &value); item;
-		item = hash_table_find_next(config->items, (void **) &value))
-	{
-		if (value == (char *) 1)
-			linked_list_add(section_list, item);
-	}
-
 	/* Dump all variables for each section */
-	for (linked_list_head(section_list); !linked_list_is_end(section_list); linked_list_next(section_list))
+	LINKED_LIST_FOR_EACH(config->section_list)
 	{
 		char section_buf[MAX_LONG_STRING_SIZE];
 		char var_buf[MAX_LONG_STRING_SIZE];
 
-		section = linked_list_get(section_list);
+		section = linked_list_get(config->section_list);
 		fprintf(f, "[ %s ]\n", section);
 
-		for (item = hash_table_find_first(config->items, (void **) &value); item;
-			item = hash_table_find_next(config->items, (void **) &value))
+		HASH_TABLE_FOR_EACH(config->items, item, value)
 		{
 			get_section_var_from_item(item, section_buf, sizeof section_buf,
 				var_buf, sizeof var_buf);
@@ -374,9 +377,6 @@ void config_save(struct config_t *config)
 		fprintf(f, "\n");
 	}
 
-	/* Free section list */
-	linked_list_free(section_list);
-	
 	/* close file */
 	fclose(f);
 }
@@ -422,35 +422,15 @@ int config_key_remove(struct config_t *config, char *section, char *key)
 
 char *config_section_first(struct config_t *config)
 {
-	char *item;
-	char section[MAX_LONG_STRING_SIZE];
-	char var[MAX_LONG_STRING_SIZE];
-
-	item = hash_table_find_first(config->items, NULL);
-	if (!item)
-		return NULL;
-	get_section_var_from_item(item, section, sizeof section,
-		var, sizeof var);
-	if (!var[0])
-		return item;
-	return config_section_next(config);
+	linked_list_head(config->section_list);
+	return linked_list_get(config->section_list);
 }
 
 
 char *config_section_next(struct config_t *config)
 {
-	char *item;
-	char section[MAX_LONG_STRING_SIZE];
-	char var[MAX_LONG_STRING_SIZE];
-
-	do {
-		item = hash_table_find_next(config->items, NULL);
-		if (!item)
-			return NULL;
-		get_section_var_from_item(item, section, sizeof section,
-			var, sizeof var);
-	} while (var[0]);
-	return item;
+	linked_list_next(config->section_list);
+	return linked_list_get(config->section_list);
 }
 
 
