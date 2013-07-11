@@ -657,7 +657,6 @@ unsigned int arm_ctx_check_fault(struct arm_ctx_t *ctx)
 
 void arm_ctx_execute(struct arm_ctx_t *ctx)
 {
-	struct arch_t *arch = arm_emu->arch;
 	struct arm_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -805,9 +804,9 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 		arm_isa_execute_inst(ctx);
 
 	/* Statistics */
-	arch->inst_count++;
+	arch_arm->inst_count++;
 
-	if((arch->inst_count % 10) == 0)
+	if ((arch_arm->inst_count % 10) == 0)
 	{
 		arm_isa_inst_debug("Register Debug Dump\n");
 		arm_isa_inst_debug(
@@ -952,7 +951,6 @@ void arm_ctx_finish(struct arm_ctx_t *ctx, int status)
 
 static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
 {
-	struct arch_t *arch = arm_emu->arch;
 	enum arm_ctx_status_t status_diff;
 
 	/* Remove contexts from the following lists:
@@ -1012,9 +1010,9 @@ static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t s
 	/* Start/stop arm timer depending on whether there are any contexts
 	 * currently running. */
 	if (arm_emu->running_list_count)
-		m2s_timer_start(arch->timer);
+		m2s_timer_start(arch_arm->timer);
 	else
-		m2s_timer_stop(arch->timer);
+		m2s_timer_stop(arch_arm->timer);
 }
 
 void arm_ctx_set_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
