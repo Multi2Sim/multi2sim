@@ -63,5 +63,8 @@ int opencl_si_program_valid_binary(void *device, void *binary,
 	unsigned int length)
 {
 	Elf32_Ehdr *h = (Elf32_Ehdr *) binary;
-	return h->e_machine == 0x3fd;
+
+	return (h->e_machine == 0x3fd ||  /* Tahiti */
+		h->e_machine == 0x3fe ||  /* Pitcairn */
+		h->e_machine == 0x3ff);   /* Capeverde */
 }
