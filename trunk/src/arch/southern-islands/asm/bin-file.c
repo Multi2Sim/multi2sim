@@ -792,15 +792,50 @@ static void si_bin_file_read_enc_dict(struct si_bin_file_t *bin_file)
 		elf_buffer_read(buffer, NULL, sizeof(struct si_bin_enc_dict_entry_header_t));
 		list_add(bin_file->enc_dict, enc_dict_entry);
 
-		/* Store encoding dictionary entry for Southern Islands (code 9) */
+		/* Store encoding dictionary entry for Southern Islands.
+		 * Apparently the valid code changes by driver version */
 		if (enc_dict_entry->header->d_machine == 9)
 		{
-			bin_file->enc_dict_entry_southern_islands = enc_dict_entry;
+			/* Driver XXX */
+			elf_debug("machine = %d (tahiti or pitcairn)\n", 
+				enc_dict_entry->header->d_machine);
+			bin_file->enc_dict_entry_southern_islands = 
+				enc_dict_entry;
+		}
+		else if (enc_dict_entry->header->d_machine == 25)
+		{
+			/* This entry is always present but doesn't seem
+			 * useful information.  We should probably figure
+			 * out what is stored here. */
+			elf_debug("machine = 25 (skip this entry)\n");
 		}
 		else if (enc_dict_entry->header->d_machine == 26)
 		{
-			/* Southern Islands has code 26 */
-			bin_file->enc_dict_entry_southern_islands = enc_dict_entry;
+			/* Driver XXX */
+			elf_debug("machine = %d (tahiti or pitcairn)\n", 
+				enc_dict_entry->header->d_machine);
+			bin_file->enc_dict_entry_southern_islands = 
+				enc_dict_entry;
+		}
+		else if (enc_dict_entry->header->d_machine == 27)
+		{
+			/* Driver 12.4 */
+			elf_debug("machine = %d (tahiti or pitcairn)\n", 
+				enc_dict_entry->header->d_machine);
+			bin_file->enc_dict_entry_southern_islands = 
+				enc_dict_entry;
+		}
+		else if (enc_dict_entry->header->d_machine == 28)
+		{
+			elf_debug("machine = %d (capeverde)\n", 
+				enc_dict_entry->header->d_machine);
+			bin_file->enc_dict_entry_southern_islands = 
+				enc_dict_entry;
+		}
+		else
+	 	{
+			fatal("%s: unknown machine number (%d)\n", __FUNCTION__, 
+				enc_dict_entry->header->d_machine);
 		}
 	}
 
@@ -1072,3 +1107,4 @@ void si_bin_compute_pgm_rsrc2_free(struct si_bin_compute_pgm_rsrc2_t *pgm_rsrc2)
 {
 	free(pgm_rsrc2);
 }
+
