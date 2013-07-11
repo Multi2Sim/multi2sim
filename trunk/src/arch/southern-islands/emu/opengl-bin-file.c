@@ -174,6 +174,7 @@ static void si_opengl_bin_enc_dict_entry_free(struct si_opengl_bin_enc_dict_entr
 	si_opengl_bin_spi_shader_pgm_rsrc2_vs_free(enc_dict->shader_pgm_rsrc2_vs);
 	LIST_FOR_EACH(enc_dict->input_list, i)
 		si_input_free(list_get(enc_dict->input_list, i));
+	list_free(enc_dict->input_list);
 	free(enc_dict);
 }
 
