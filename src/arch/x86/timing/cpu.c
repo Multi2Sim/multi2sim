@@ -66,7 +66,7 @@ char *x86_config_help =
 	"\n"
 	"Section '[ General ]':\n"
 	"\n"
-	"  Frequency = <freq> (Default = 3000 MHz)\n"
+	"  Frequency = <freq> (Default = 1000 MHz)\n"
 	"      Frequency in MHz for the x86 CPU. Value between 1 and 10K.\n"
 	"  Cores = <num_cores> (Default = 1)\n"
 	"      Number of cores.\n"
@@ -690,7 +690,7 @@ void x86_cpu_read_config(void)
 
 	section = "General";
 
-	arch_x86->frequency = config_read_int(config, section, "Frequency", 3000);
+	arch_x86->frequency = config_read_int(config, section, "Frequency", 1000);
 	if (!IN_RANGE(arch_x86->frequency, 1, ESIM_MAX_FREQUENCY))
 		fatal("%s: invalid value for 'Frequency'.", x86_config_file_name);
 

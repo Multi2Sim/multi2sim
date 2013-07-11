@@ -64,6 +64,7 @@ EXTRA_DIST = \
 	samples/memory/example-4/x86-config \
 	samples/memory/example-4/evg-config \
 	samples/memory/example-4/README \
+	samples/network/graphplot \
 	samples/network/mesh_9_wo_r.txt \
 	samples/network/mesh_9_route.txt \
 	samples/x86/test-threads \
