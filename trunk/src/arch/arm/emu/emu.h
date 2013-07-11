@@ -92,9 +92,6 @@ struct arm_emu_t
 	struct arm_ctx_t *alloc_list_tail;
 	int alloc_list_count;
 	int alloc_list_max;
-	
-	/* Architecture */
-	struct arch_t *arch;
 };
 
 enum arm_emu_list_kind_t
