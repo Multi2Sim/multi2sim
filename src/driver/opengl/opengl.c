@@ -115,9 +115,6 @@ static opengl_abi_call_t opengl_abi_call_table[opengl_abi_call_count + 1] =
  * OpenGL global variables
  */
 
-/* OpenGL Context */
-struct opengl_context_t *opengl_driver_ctx;
-
 void opengl_init(void)
 {
 }
