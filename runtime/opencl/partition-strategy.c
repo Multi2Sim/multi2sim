@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "opencl.h"
+//#include "opencl.h"
 #include "partition-strategy.h"
 
 /* include strategies here */
@@ -25,14 +25,14 @@ const struct opencl_partition_strategy *get_strategy()
 	char *value = getenv("M2S_OPENCL_PARTITION_STRATEGY_ID");
 	if (!value)
 	{
-		opencl_debug("[%s] using default strategy", __FUNCTION__);
+//		opencl_debug("[%s] using default strategy", __FUNCTION__);
 		return strats; // first "default" strategy.
 	}
 	else
 	{
 		int idx = atoi(value);
 		assert(idx >= 0 && idx < sizeof strats / sizeof strats[0]);
-		opencl_debug("[%s] using strategy %d", __FUNCTION__, idx);
+//		opencl_debug("[%s] using strategy %d", __FUNCTION__, idx);
 		return strats + idx;
 	}
 }
