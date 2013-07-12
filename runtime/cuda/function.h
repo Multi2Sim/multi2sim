@@ -29,14 +29,11 @@ struct CUfunc_st
 
 	char *name;
 
-	void *host_func_ptr;
+	/* Instruction buffer, i.e., .text section in cubin */
+	unsigned int inst_buf_size;
+	unsigned long long int *inst_buf;
 
-	unsigned int module_id;
-
-	unsigned long long int *inst_buffer;
-	unsigned int inst_buffer_size;
-	unsigned int num_gpr_used;
-
+	/* Mandatory fields according to NVIDIA's docs */
 	int binaryVersion;
 	int constSizeBytes;
 	int localSizeBytes;
@@ -45,8 +42,8 @@ struct CUfunc_st
 	int ptxVersion;
 	int sharedSizeBytes;
 
-	int num_args;
-	void **arg_ptr_array;
+	/* Used to find the function in the function list */
+	void *host_func_ptr;
 };
 
 CUfunction cuda_function_create(CUmodule module, const char *function_name);

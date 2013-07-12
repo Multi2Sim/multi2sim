@@ -724,9 +724,13 @@ cudaError_t cudaFuncSetCacheConfig(const void *func,
 cudaError_t cudaLaunch(const void *func)
 {
 	CUfunction function;
-	struct cuda_function_arg_t *arg;
+
+	unsigned int num_args;
+	void ** arg_ptr_array;
 	unsigned int *func_dim;
+
 	int i;
+	struct cuda_function_arg_t *arg;
 
 	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(runtime) in: func = %p\n", func);
@@ -744,13 +748,12 @@ cudaError_t cudaLaunch(const void *func)
 		fatal("%s: no function found", __FUNCTION__);
 
 	/* Get arguments */
-	function->num_args = list_count(execution_stack) - 1;
-	function->arg_ptr_array = (void **)xcalloc(function->num_args,
-			sizeof(void *));
-	for (i = function->num_args - 1; i >= 0; i--)
+	num_args = list_count(execution_stack) - 1;
+	arg_ptr_array = (void **)xcalloc(num_args, sizeof(void *));
+	for (i = num_args - 1; i >= 0; i--)
 	{
 		arg = (struct cuda_function_arg_t *)list_pop(execution_stack);
-		function->arg_ptr_array[i] = arg->ptr;
+		arg_ptr_array[i] = arg->ptr;
 	}
 
 	/* Get dim */
@@ -761,10 +764,13 @@ cudaError_t cudaLaunch(const void *func)
 	/* Launch kernel */
 	cuLaunchKernel(function, func_dim[0], func_dim[1], func_dim[2], 
 			func_dim[3], func_dim[4], func_dim[5], 
-			0, NULL, function->arg_ptr_array, NULL);
+			0, NULL, arg_ptr_array, NULL);
 
 	/* Free */
-	free(func_dim);
+	if (func_dim)
+		free(func_dim);
+	if (arg_ptr_array)
+		free(arg_ptr_array);
 
 	cuda_rt_last_error = cudaSuccess;
 
