@@ -105,7 +105,7 @@
 %type<arg> waitcnt_arg
 %type<si_arg> val_stmt_list
 %type<si_arg> ptr_stmt_list
-%type<num> pgm_rsrc2_value
+%type<num> hex_or_dec_value
 
 %%
 
@@ -151,21 +151,23 @@ section
 global_section
 	: TOK_GLOBAL TOK_ID TOK_NEW_LINE
 	{
-		struct si2bin_id_t *id = $2;
-
-		si2bin_inner_bin = si2bin_inner_bin_create(id->name);
+		/* Create new objects for each kernel */
+		si2bin_inner_bin = si2bin_inner_bin_create($2->name);
 		si2bin_metadata = si2bin_metadata_create();
 		si2bin_entry = si2bin_inner_bin_entry_create();
-
+		
+		/* Add objects and values to over all elf (outer_bin) */
 		si2bin_metadata->uniqueid = si2bin_uniqueid;
-
 		si2bin_inner_bin_add_entry(si2bin_inner_bin, si2bin_entry);
-
 		si2bin_outer_bin_add(si2bin_outer_bin, si2bin_inner_bin, si2bin_metadata);
 
+		/* Increment id */
 		si2bin_uniqueid ++;
 
-		si2bin_id_free(id);
+		/* Free id */
+		si2bin_id_free($2);
+		
+		si2bin_yylineno--;
 	}
 	;
 
@@ -186,6 +188,7 @@ mem_stmt_list
 mem_stmt
 	: TOK_ID TOK_EQ TOK_DECIMAL TOK_NEW_LINE 
 	{
+		/* Find memory information and store it in metadata */
 		if (!strcmp("uavprivate", $1->name))
 		{
 			si2bin_metadata->uavprivate = $3;
@@ -202,7 +205,8 @@ mem_stmt
 		{
 			si2bin_yyerror_fmt("Unrecognized memory assignment: %s", $1->name);
 		}
-
+		
+		/* Free id */
 		si2bin_id_free($1);
 	}
 	;
@@ -222,8 +226,9 @@ data_stmt_list
 	;
 
 data_stmt
-	: TOK_ID TOK_EQ TOK_DECIMAL TOK_NEW_LINE
+	: TOK_ID TOK_EQ hex_or_dec_value TOK_NEW_LINE
 	{
+		/* Find data section info */
 		if (!strcmp("userElementCount", $1->name))
 		{
 			warning("User has provided 'userElementCount' but this number is automatically calculated");
@@ -248,16 +253,11 @@ data_stmt
 		{
 			warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
 		}
-		else
-		{
-			si2bin_yyerror_fmt("Unrecognized assignment: %s", $1->name);
+		else if(!strcmp("rat_op", $1->name))
+		{	
+			si2bin_inner_bin->rat_op = $3;
 		}
-
-		si2bin_id_free($1);
-	}
-	| TOK_ID TOK_EQ TOK_HEX TOK_NEW_LINE
-	{
-		if (!strcmp("COMPUTE_PGM_RSRC2", $1->name))
+		else if (!strcmp("COMPUTE_PGM_RSRC2", $1->name))
 		{
 			warning("User has provided 'COMPUTE_PGM_RSRC2' but this number is automatically calculated from provided PGM_RSRC2 fields");
 		}
@@ -266,38 +266,44 @@ data_stmt
 			si2bin_yyerror_fmt("Unrecognized assignment: %s", $1->name);
 		}
 
-			si2bin_id_free($1);
-			si2bin_id_free($3);
-
-		
+		/* Free id */
+		si2bin_id_free($1);
 	}
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_EQ TOK_ID TOK_COMMA TOK_DECIMAL TOK_COMMA TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA TOK_NEW_LINE
 	{
 		struct si_bin_enc_user_element_t *user_elem;
+		int err;
 
-
+		/* check for correct syntax */
 		if (strcmp("userElements", $1->name))
 			si2bin_yyerror_fmt("User Elements not correctly specified: %s", $1->name);
 		
+		/* Make sure userElement index is in correct range */
 		if ($3 > 15 || $3 < 0)
 			si2bin_yyerror_fmt("User Elements index is out of allowed range (0 to 15)");
 
+		/* Create userElement object */
 		user_elem = si_bin_enc_user_element_create();
-		user_elem->dataClass = str_map_string(&si_bin_user_data_class, $6->name);
+		user_elem->dataClass = str_map_string_err(&si_bin_user_data_class, $6->name, &err);
+		if (err)
+			si2bin_yyerror_fmt("Unrecognized data class: %s", $6->name);
+
 		user_elem->apiSlot = $8;
 		user_elem->startUserReg = $12;
 		user_elem->userRegCount = $14 - $12 + 1;
 		
+		/* Add userElement to userElement list */
 		si2bin_inner_bin_add_user_element(si2bin_inner_bin, user_elem, $3);
 
+		/* Free id */
 		si2bin_id_free($1);
 		si2bin_id_free($6);
 		si2bin_id_free($10);
 
 	}
-	| TOK_ID TOK_COLON TOK_ID TOK_EQ pgm_rsrc2_value TOK_NEW_LINE
+	| TOK_ID TOK_COLON TOK_ID TOK_EQ hex_or_dec_value TOK_NEW_LINE
 	{
-
+		/* Find pgm_rsrc2 information */
 		if (strcmp("COMPUTE_PGM_RSRC2", $1->name))
 			si2bin_yyerror_fmt("Unrecognized assignment: %s", $1->name);
 		
@@ -350,7 +356,7 @@ data_stmt
 			si2bin_yyerror_fmt("Unrecognized field of COMPUTE_PGM_RSRC2: %s", $3->name);
 		}
 
-
+		/* Free id's */
 		si2bin_id_free($1);
 		si2bin_id_free($3);
 	}
@@ -374,19 +380,19 @@ data_stmt
 	}
 	;
 
-pgm_rsrc2_value
+hex_or_dec_value
 	: TOK_DECIMAL
 	{
 		$$ = $1;
 	}
 	| TOK_HEX
 	{
-		int pgm_rsrc2_field;
+		int value;
 		
-		sscanf($1->name, "%x", &pgm_rsrc2_field);
+		sscanf($1->name, "%x", &value);
 
 		si2bin_id_free($1);
-		$$ = pgm_rsrc2_field;
+		$$ = value;
 	}
 	;
 
@@ -411,13 +417,17 @@ args_stmt
 	: TOK_ID TOK_ID TOK_DECIMAL val_stmt_list TOK_NEW_LINE
 	{
 		struct si_arg_t *arg = $4;
+		int err;
 
 		
 		/* Set argument name */
 		si_arg_name_set(arg, $2->name);
 		
 		/* Set arg fields */
-		arg->value.data_type = str_map_string(&si_arg_data_type_map, $1->name);
+		arg->value.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
+		if(err)
+			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->name);
+		
 		arg->value.num_elems = 1;
 		arg->value.constant_buffer_num = 1;
 		arg->value.constant_offset = $3;
@@ -430,12 +440,16 @@ args_stmt
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_ID TOK_DECIMAL val_stmt_list TOK_NEW_LINE
 	{
 		struct si_arg_t *arg = $7;
+		int err;
 
 		/* Set argument name */
 		si_arg_name_set(arg, $5->name);
 		
 		/* Set argument fields */
-		arg->value.data_type = str_map_string(&si_arg_data_type_map, $1->name);
+		arg->value.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
+		if (err)
+			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->name);
+		
 		arg->value.num_elems = $3;
 		arg->value.constant_buffer_num = 1;
 		arg->value.constant_offset = $6;
@@ -448,13 +462,17 @@ args_stmt
 	| TOK_ID TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list TOK_NEW_LINE
 	{
 		struct si_arg_t *arg = $5;
+		int err;
 
 		/* Set new argument name */
 		si_arg_name_set(arg, $3->name);
 		
 		/* Initialize argument */
 		arg->pointer.num_elems = 1;
-		arg->pointer.data_type = str_map_string(&si_arg_data_type_map, $1->name);
+		arg->pointer.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
+		if (err)
+			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->name);
+
 		arg->pointer.constant_buffer_num = 1;
 		arg->pointer.constant_offset = $4;
 
@@ -467,13 +485,17 @@ args_stmt
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list TOK_NEW_LINE
 	{
 		struct si_arg_t *arg = $8;
+		int err;
 
 		/* Set new argument name */
 		si_arg_name_set(arg, $6->name);
 		
 		/* Initialize argument */
 		arg->pointer.num_elems = $3;
-		arg->pointer.data_type = str_map_string(&si_arg_data_type_map, $1->name);
+		arg->pointer.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
+		if (err)
+			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->name);
+		
 		arg->pointer.constant_buffer_num = 1;
 		arg->pointer.constant_offset = $7;
 
@@ -524,9 +546,12 @@ ptr_stmt_list
 	{
 		struct si_arg_t *arg = $1;
 		struct si2bin_id_t *id = $2;
+		int err;
 
 		/* Translate access type */
-		arg->pointer.access_type = str_map_string(&si_arg_access_type_map, id->name);
+		arg->pointer.access_type = str_map_string_err(&si_arg_access_type_map, id->name, &err);
+		if (err)
+			si2bin_yyerror_fmt("Unrecognized access type: %s", id->name);
 		
 		/* Free ID and return argument */
 		si2bin_id_free(id);
@@ -688,8 +713,8 @@ operand
 		value = atoi($1->name + 1);
 		$$ = si2bin_arg_create_scalar_register(value); 
 
-		if (value > si2bin_inner_bin->num_sgprs)
-			si2bin_inner_bin->num_sgprs = value;
+		if (value >= si2bin_inner_bin->num_sgprs)
+			si2bin_inner_bin->num_sgprs = value + 1;
 		
 		si2bin_id_free($1);
 	}
@@ -701,7 +726,7 @@ operand
 		value = atoi($1->name + 1);
 		$$ = si2bin_arg_create_vector_register(value); 
 		
-		if (value > si2bin_inner_bin->num_vgprs)
+		if (value >= si2bin_inner_bin->num_vgprs)
 			si2bin_inner_bin->num_vgprs = value + 1;
 
 		si2bin_id_free($1);
@@ -770,7 +795,7 @@ arg
 			arg->value.scalar_register_series.low = low;
 			arg->value.scalar_register_series.high = high;
 
-			if (high > si2bin_inner_bin->num_sgprs)
+			if (high >= si2bin_inner_bin->num_sgprs)
 				si2bin_inner_bin->num_sgprs = high + 1;
 		}
 		else if (!strcmp(id->name, "v"))
@@ -779,7 +804,7 @@ arg
 			arg->value.vector_register_series.low = low;
 			arg->value.vector_register_series.high = high;
 			
-			if (high > si2bin_inner_bin->num_vgprs)
+			if (high >= si2bin_inner_bin->num_vgprs)
 				si2bin_inner_bin->num_vgprs = high + 1;
 		}
 		else
