@@ -1,4 +1,4 @@
-/*
+/* 
  *  Multi2Sim
  *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
  *
@@ -31,27 +31,31 @@
 #include "metadata.h"
 #include "outer-bin.h"
 
+
 #define NUM_PROG_INFO_ELEM 114
+#define MAX_UAV_NUM 25
+#define MAX_CB_NUM 25
 
 struct str_map_t si2bin_outer_bin_device_map = 
 {
 	4,
 	{
-		{"invalid",        si2bin_outer_bin_invalid},
-		{"cape_verde",  si2bin_outer_bin_cape_verde},
-		{"pitcairn",      si2bin_outer_bin_pitcairn},
-		{"tahiti",          si2bin_outer_bin_tahiti},
+		{"invalid", si2bin_outer_bin_invalid},
+		{"capeverde", si2bin_outer_bin_cape_verde},
+		{"pitcairn", si2bin_outer_bin_pitcairn},
+		{"tahiti", si2bin_outer_bin_tahiti},
 	}
 
 };
 
-struct si2bin_outer_bin_float4_t *si2bin_outer_bin_float4_create(float x, float y, float z, float w)
+struct si2bin_outer_bin_float4_t *si2bin_outer_bin_float4_create(float x,
+		float y, float z, float w)
 {
 	struct si2bin_outer_bin_float4_t *float4;
-	
+
 	/* Initialize */
 	float4 = xcalloc(1, sizeof(struct si2bin_outer_bin_float4_t));
-	
+
 	float4->x = x;
 	float4->y = y;
 	float4->z = z;
@@ -74,17 +78,16 @@ struct si2bin_outer_bin_t *si2bin_outer_bin_create(void)
 	/* Initialize */
 	outer_bin = xcalloc(1, sizeof(struct si2bin_outer_bin_t));
 
+	/* Create Lists */
 	outer_bin->file = elf_enc_file_create();
-
 	outer_bin->float4_list = list_create();
-
 	outer_bin->inner_bin_list = list_create();
-
 	outer_bin->metadata_list = list_create();
 
 	/* Set default device type to tahiti */
 	outer_bin->device = si2bin_outer_bin_tahiti;
-	
+
+	/* Return */
 	return outer_bin;
 
 }
@@ -94,13 +97,13 @@ void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin)
 	int i;
 
 	elf_enc_file_free(outer_bin->file);
-	
+
 	LIST_FOR_EACH(outer_bin->float4_list, i)
 	{
 		si2bin_outer_bin_float4_free(list_get(outer_bin->float4_list, i));
 	}
 	list_free(outer_bin->float4_list);
-	
+
 	LIST_FOR_EACH(outer_bin->inner_bin_list, i)
 	{
 		si2bin_inner_bin_free(list_get(outer_bin->inner_bin_list, i));
@@ -112,18 +115,19 @@ void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin)
 		si2bin_metadata_free(list_get(outer_bin->metadata_list, i));
 	}
 	list_free(outer_bin->metadata_list);
-	
+
 	free(outer_bin);
 }
 
 void si2bin_outer_bin_add_float4(struct si2bin_outer_bin_t *outer_bin,
 		struct si2bin_outer_bin_float4_t *float4)
 {
-	list_add(outer_bin->float4_list, float4);	
+	list_add(outer_bin->float4_list, float4);
 }
 
 void si2bin_outer_bin_add(struct si2bin_outer_bin_t *outer_bin,
-		struct si2bin_inner_bin_t *inner_bin, struct si2bin_metadata_t *metadata)
+		struct si2bin_inner_bin_t *inner_bin,
+		struct si2bin_metadata_t *metadata)
 {
 	list_add(outer_bin->inner_bin_list, inner_bin);
 	list_add(outer_bin->metadata_list, metadata);
@@ -166,8 +170,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	int j;
 	int k;
 	int offset;
-	int uav[20];
-	int cb[10];
+	int uav[MAX_UAV_NUM];
+	int cb[MAX_CB_NUM];
 	int rodata_size;
 	int buff_num_offset;
 	int buff_size;
@@ -180,22 +184,22 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 	/* Create Text Section */
 	text_buffer = elf_enc_buffer_create();
-        text_section = elf_enc_section_create(".text", text_buffer, text_buffer);
-        text_section->header.sh_type = SHT_PROGBITS;
-        text_section->header.sh_flags = SHF_EXECINSTR | SHF_ALLOC;
-	
+	text_section = elf_enc_section_create(".text", text_buffer, text_buffer);
+	text_section->header.sh_type = SHT_PROGBITS;
+	text_section->header.sh_flags = SHF_EXECINSTR | SHF_ALLOC;
+
 	/* Create .symtab section and .strtab section */
-        symbol_table = elf_enc_symbol_table_create(".symtab", ".strtab");
-	
+	symbol_table = elf_enc_symbol_table_create(".symtab", ".strtab");
+
 	/* Create .rodata section */
 	rodata_buffer = elf_enc_buffer_create();
- 	rodata_section = elf_enc_section_create(".rodata", rodata_buffer, rodata_buffer);
-        rodata_section->header.sh_type = SHT_PROGBITS;
-        rodata_section->header.sh_flags = SHF_ALLOC;
-	
+	rodata_section = elf_enc_section_create(".rodata", rodata_buffer, rodata_buffer);
+	rodata_section->header.sh_type = SHT_PROGBITS;
+	rodata_section->header.sh_flags = SHF_ALLOC;
+
 	/* Check if global symbol is needed */
 	if (list_count(outer_bin->float4_list) != 0)
-	{	
+	{
 		/* Add contents of float4 list to rodata section */
 		LIST_FOR_EACH(outer_bin->float4_list, i)
 		{
@@ -203,7 +207,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 			elf_enc_buffer_write(rodata_buffer, float4, 
 					sizeof(struct si2bin_outer_bin_float4_t));
 		}
-		
+
 		/* Add global symbol correspoding to float4 elements */
 		snprintf(line, sizeof line, "__OpenCL_%d_global", 2);
 
@@ -219,15 +223,16 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 	LIST_FOR_EACH(outer_bin->inner_bin_list, i)
 	{
+		/* Intialize values at each iteration */
 		offset = 0;
 		ptr_cb_table_found = 0;
 		imm_cb_found = 0;
 
-		for(j = 0; j < 20; j++)
+		for (j = 0; j < MAX_UAV_NUM; j++)
 			uav[j] = 0;
 
-		for(j = 0; j < 10; j++)
-			cb[j] = 0;		
+		for (j = 0; j < MAX_CB_NUM; j++)
+			cb[j] = 0;
 
 		kernel_buffer = elf_enc_buffer_create();
 
@@ -243,12 +248,13 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		inner_bin->file->header.e_ident[EI_OSABI] = 0x64;
 		inner_bin->file->header.e_ident[EI_ABIVERSION] = 1;
 
-		entry->header.d_type = 4; /* ???? */
-		
+		entry->header.d_type = 4;	/* ???? */
+
+		/* d_machine values based on model */
 		switch (outer_bin->device)
 		{
 			case si2bin_outer_bin_cape_verde:
-				entry->header.d_machine = 28;
+    				entry->header.d_machine = 28;
 				break;
 
 			case si2bin_outer_bin_pitcairn:
@@ -280,7 +286,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		/* Unique ID */
 		snprintf(line, sizeof line, ";uniqueid:%d\n", metadata->uniqueid);
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
-		
+
 		/* Memory - uavprivate */
 		snprintf(line, sizeof line, ";memory:uavprivate:%d\n", metadata->uavprivate);
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
@@ -303,27 +309,44 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 			{
 				case si_arg_pointer:
 
-					data_type = str_map_value(&si_arg_data_type_map, arg->pointer.data_type);
-					data_size = si_arg_get_data_size(arg->pointer.data_type) * arg->pointer.num_elems;
-					scope = str_map_value(&si_arg_scope_map, arg->pointer.scope);
-					access_type = str_map_value(&si_arg_access_type_map, arg->pointer.access_type);
+					data_type =
+						str_map_value(&si_arg_data_type_map,
+						arg->pointer.data_type);
+					data_size =
+						si_arg_get_data_size(arg->pointer.
+						data_type) * arg->pointer.num_elems;
+					scope = str_map_value(&si_arg_scope_map,
+						arg->pointer.scope);
+					access_type =
+						str_map_value(&si_arg_access_type_map,
+						arg->pointer.access_type);
 
-					snprintf(line, sizeof line, ";pointer:%s:%s:1:%d:%d:%s:%d:%d:%s:0:0\n", arg->name, 
-							data_type, arg->pointer.constant_buffer_num, arg->pointer.constant_offset,
-							scope, arg->pointer.buffer_num, data_size, access_type);
+					snprintf(line, sizeof line,
+						";pointer:%s:%s:1:%d:%d:%s:%d:%d:%s:0:0\n",
+						arg->name, data_type,
+						arg->pointer.constant_buffer_num,
+						arg->pointer.constant_offset, scope,
+						arg->pointer.buffer_num, data_size,
+						access_type);
 
+					
+					/* Check for 16 byte alignment */
 					if (((arg->pointer.constant_offset - offset) < 16) && j) 
-						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher", arg->name, offset + 16);
+						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher", 
+							arg->name, offset + 16);
 
 					offset = arg->pointer.constant_offset;
-
-					if (arg->pointer.scope == si_arg_uav && !(uav[arg->pointer.buffer_num]))
+					
+					/* Mark which uav's are being used */
+					if (arg->pointer.scope == si_arg_uav
+						&& !(uav[arg->pointer.buffer_num]))
 					{
 						uav[arg->pointer.buffer_num] = 1;
 					}
 
 					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
-
+					
+					/* Include const_arg line only if pointer is marked with "const" */
 					if (arg->constarg)
 					{
 						snprintf(line, sizeof line, ";constarg:%d:%s\n", j, arg->name);
@@ -334,22 +357,31 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 				case si_arg_value:
 
-					data_type = str_map_value(&si_arg_data_type_map, arg->value.data_type);
+					data_type = 
+						str_map_value(&si_arg_data_type_map, 
+						arg->value.data_type);
 
-					snprintf(line, sizeof line, ";value:%s:%s:%d:%d:%d\n", arg->name, 
-							data_type, arg->value.num_elems, arg->value.constant_buffer_num, 
-							arg->value.constant_offset);
+					snprintf(line, sizeof line, 
+						";value:%s:%s:%d:%d:%d\n", arg->name, data_type, 
+						arg->value.num_elems, arg->value.constant_buffer_num, 
+						arg->value.constant_offset);
 
+					/* Check for 16 byte alignment */
 					if (((arg->value.constant_offset - offset) < 16) && j) 
-						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher", arg->name, offset + 16);
+						fatal("16 byte alignment not maintained in argument: %s - Expected offset of %d or higher",
+							arg->name, offset + 16);
 
 					offset = arg->value.constant_offset;
 
 					elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 					
+					/* Include const_arg line only if pointer is marked with "const" */
 					if (arg->constarg)
 					{
-						snprintf(line, sizeof line, ";constarg:%d:%s\n", j, arg->name);
+						snprintf(line, sizeof line, 
+							";constarg:%d:%s\n",
+							j, arg->name);
+						
 						elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 					}
 
@@ -369,7 +401,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		}
 
 		/* Function ID */
-		snprintf(line, sizeof line, ";function:1:%d\n", metadata->uniqueid + 3);
+		snprintf(line, sizeof line, 
+			";function:1:%d\n", metadata->uniqueid + 3);
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
 		/* Private ID */
@@ -386,15 +419,19 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 			{
 				case si_arg_pointer:
 
-					reflection = str_map_value(&si_arg_reflection_map, arg->pointer.data_type);
+					reflection = str_map_value(&si_arg_reflection_map, 
+						arg->pointer.data_type);
 					
 					if (arg->pointer.num_elems == 1)
 					{
-						snprintf(line, sizeof line, ";reflection:%d:%s*\n", j, reflection);
+						snprintf(line, sizeof line, 
+							";reflection:%d:%s*\n",j, reflection);
 					}
 					else if (arg->pointer.num_elems > 1)
 					{
-						snprintf(line, sizeof line, ";reflection:%d:%s%d*\n", j, reflection, arg->pointer.num_elems);
+						snprintf(line, sizeof line, 
+							";reflection:%d:%s%d*\n", j, reflection,
+							arg->pointer.num_elems);
 					}
 					else
 					{
@@ -407,15 +444,20 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 				case si_arg_value:
 
-					reflection = str_map_value(&si_arg_reflection_map, arg->value.data_type);
+					reflection = 
+						str_map_value(&si_arg_reflection_map,
+						arg->value.data_type);
 					
 					if (arg->value.num_elems == 1)
 					{
-						snprintf(line, sizeof line, ";reflection:%d:%s\n", j, reflection);
+						snprintf(line, sizeof line, 
+							";reflection:%d:%s\n", j, reflection);
 					}
 					else if (arg->value.num_elems > 1)
 					{
-						snprintf(line, sizeof line, ";reflection:%d:%s%d\n", j, reflection, arg->value.num_elems);
+						snprintf(line, sizeof line, 
+							";reflection:%d:%s%d\n", j, reflection,
+							arg->value.num_elems);
 					}
 					else
 					{
@@ -433,11 +475,13 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		}								
 
 		/* ARGEND */
-		snprintf(line, sizeof line, ";ARGEND:__OpenCL_%s_kernel\n", inner_bin->name);
+		snprintf(line, sizeof line, ";ARGEND:__OpenCL_%s_kernel\n",
+			inner_bin->name);
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
-
-		snprintf(line, sizeof line, "__OpenCL_%s_metadata", inner_bin->name);
+		/* Create metadata symbol and store it */
+		snprintf(line, sizeof line, "__OpenCL_%s_metadata", 
+			inner_bin->name);
 
 		metadata_symbol = elf_enc_symbol_create(line);
 		metadata_symbol->symbol.st_shndx = 4;
@@ -446,14 +490,14 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		metadata_symbol->symbol.st_info = ELF32_ST_TYPE(STT_OBJECT);
 		elf_enc_symbol_table_add(symbol_table, metadata_symbol);
 
-
+		/* Increment rodata size */
 		rodata_size = rodata_buffer->offset;
 
 
 
-		/* Header ->  .rodata section */
-
-		snprintf(line, sizeof line, "__OpenCL_%s_header", inner_bin->name);
+		/* Create header symbol and store it */
+		snprintf(line, sizeof line, "__OpenCL_%s_header", 
+			inner_bin->name);
 
 		header_symbol = elf_enc_symbol_create(line);
 		header_symbol->symbol.st_shndx = 4;
@@ -461,6 +505,10 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		header_symbol->symbol.st_value = rodata_size;
 		header_symbol->symbol.st_info = ELF32_ST_TYPE(STT_OBJECT);
 		elf_enc_symbol_table_add(symbol_table, header_symbol);
+
+		/* Create header - Header is not always set the way it is here but
+		 * changing it does not seem to affect the program
+		 */
 
 		ptr = xcalloc(1, 32);
 		ptr[20] = 1;
@@ -486,7 +534,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 		buff_num_offset = 0;
 
-		for (k = 0; k < 20; k++)
+		for (k = 0; k < MAX_UAV_NUM; k++)
 		{
 			if (uav[k])
 				buff_num_offset++;
@@ -500,7 +548,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		buff_num_offset = 0;
 		
 		/* UAV Symbols */
-		for (k = 0; k < 20; k++)
+		for (k = 0; k < MAX_UAV_NUM; k++)
 		{
 			if (!uav[k])
 				continue;
@@ -603,7 +651,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		ptr = xcalloc(1, (buff_size));
 		
 		/* CB Symbols */
-		for (k = 0; k < 10; k++)
+		for (k = 0; k < MAX_CB_NUM; k++)
 		{
 			if (cb[k])
 			{
@@ -621,7 +669,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					ptr[(buff_num_offset - 1) * 8 + 4] = 0xf;
 
 				if (k == 1)
-					ptr[(buff_num_offset - 1) * 8 + 4] = list_count(metadata->arg_list);
+					ptr[(buff_num_offset - 1) * 8 + 4] = 
+						list_count(metadata->arg_list);
 				
 				if (k == 2)
 				{
@@ -629,7 +678,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 						fatal("%s: Constant Buffer 2 is used but nothing has been\
 							 added to a global symbol", __FUNCTION__);
 
-					ptr[(buff_num_offset - 1) * 8 + 4] = list_count(outer_bin->float4_list);
+					ptr[(buff_num_offset - 1) * 8 + 4] = 
+						list_count(outer_bin->float4_list);
 				}
 
 				buff_num_offset--;
@@ -735,11 +785,11 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		
 		/* AMU_ABI_RAT_OP_IS_USED */
 		prog_info[77].address = 0x8000001f;
-		prog_info[77].value = inner_bin->rat_op * 256;
+		prog_info[77].value = inner_bin->rat_op;
 
 		/* AMU_ABI_UAV_RESOURCE_MASK_0 */
 		prog_info[78].address = 0x80001843;
-		prog_info[78].value = inner_bin->rat_op * 256;
+		prog_info[78].value = inner_bin->rat_op;
 		
 		prog_info[79].address = 0x80001844;
 		prog_info[79].value = 0;
@@ -835,8 +885,8 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 
 		/* ELF_NOTE_ATI_UAV_OP_MASK */
 		ptr = xcalloc(1, 128);
-
-		ptr[1] = inner_bin->rat_op;
+		
+		*((int*)ptr) = inner_bin->rat_op;
 
 		note = si2bin_inner_bin_note_create(17, 128, ptr);
 		si2bin_inner_bin_entry_add_note(entry, note);
@@ -851,16 +901,15 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		/* Generate Inner Bin File */
 		si2bin_inner_bin_generate(inner_bin, kernel_buffer);
 			
-		/* Output Kernel */
-		FILE *f;
+		/* Output Inner ELF */
+		/* FILE *f;
 		snprintf(line, sizeof line, "%s_kernel", inner_bin->name);
 		f = file_open_for_write(line);
 		elf_enc_buffer_write_to_file(kernel_buffer, f);
-		file_close(f);
+		file_close(f); */
+
 	
-
-
-
+		/* Create kernel symbol and add it to the symbol table */
 		snprintf(line, sizeof line, "__OpenCL_%s_kernel", inner_bin->name);
 
 		kernel_symbol = elf_enc_symbol_create(line);
@@ -871,17 +920,19 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		elf_enc_symbol_table_add(symbol_table, kernel_symbol);
 
 
-		elf_enc_buffer_write(text_buffer, kernel_buffer->ptr, kernel_buffer->offset);
+		elf_enc_buffer_write(text_buffer, kernel_buffer->ptr,
+			kernel_buffer->offset);
 
 
 		elf_enc_buffer_free(kernel_buffer);
 
 	}
 	
+	/* Set e_machine value on outer elf */
 	switch (outer_bin->device)
 	{
 		case si2bin_outer_bin_cape_verde:
-			outer_bin->file->header.e_machine = 0;
+			outer_bin->file->header.e_machine = 0x3ff;
 			break;
 
 		case si2bin_outer_bin_pitcairn:
@@ -898,16 +949,18 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
         
 	outer_bin->file->header.e_version = 1;
 
+	/* Add symbol table to outer elf */
         elf_enc_file_add_symbol_table(outer_bin->file, symbol_table);
 	
+	/* Create and rodata section and add it to outer elf */
         elf_enc_file_add_buffer(outer_bin->file, rodata_buffer);
         elf_enc_file_add_section(outer_bin->file, rodata_section);
 
+	/* Create text section and add it to outer elf */
         elf_enc_file_add_buffer(outer_bin->file, text_buffer);
         elf_enc_file_add_section(outer_bin->file, text_section);
 
+	/* Generate final binary */
         elf_enc_file_generate(outer_bin->file, buffer);
-
-
 }
 
