@@ -641,6 +641,8 @@ void elf_enc_file_generate(struct elf_enc_file_t *file,
 		{
 			buffer = list_get(file->buffer_list, j);
 			segment->header.p_filesz += buffer->size;
+			if (segment->header.p_type == PT_LOAD)
+				segment->header.p_memsz += buffer->size;
 		}
 	}
 	

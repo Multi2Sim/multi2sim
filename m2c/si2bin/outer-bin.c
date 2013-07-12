@@ -182,6 +182,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	text_buffer = elf_enc_buffer_create();
         text_section = elf_enc_section_create(".text", text_buffer, text_buffer);
         text_section->header.sh_type = SHT_PROGBITS;
+        text_section->header.sh_flags = SHF_EXECINSTR | SHF_ALLOC;
 	
 	/* Create .symtab section and .strtab section */
         symbol_table = elf_enc_symbol_table_create(".symtab", ".strtab");
@@ -190,6 +191,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	rodata_buffer = elf_enc_buffer_create();
  	rodata_section = elf_enc_section_create(".rodata", rodata_buffer, rodata_buffer);
         rodata_section->header.sh_type = SHT_PROGBITS;
+        rodata_section->header.sh_flags = SHF_ALLOC;
 	
 	/* Check if global symbol is needed */
 	if (list_count(outer_bin->float4_list) != 0)
@@ -241,8 +243,25 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		inner_bin->file->header.e_ident[EI_OSABI] = 0x64;
 		inner_bin->file->header.e_ident[EI_ABIVERSION] = 1;
 
-		entry->header.d_machine = 26;
 		entry->header.d_type = 4; /* ???? */
+		
+		switch (outer_bin->device)
+		{
+			case si2bin_outer_bin_cape_verde:
+				entry->header.d_machine = 28;
+				break;
+
+			case si2bin_outer_bin_pitcairn:
+				entry->header.d_machine = 27;
+				break;
+
+			case si2bin_outer_bin_tahiti:
+				entry->header.d_machine = 26;
+				break;
+
+			default:
+				fatal("%s: unrecognized device type", __FUNCTION__);
+		}
 
 		/* Metadata -> .rodata section of Outer ELF */
 
@@ -350,7 +369,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		}
 
 		/* Function ID */
-		snprintf(line, sizeof line, ";function:1:%d\n", metadata->uniqueid + 2);
+		snprintf(line, sizeof line, ";function:1:%d\n", metadata->uniqueid + 3);
 		elf_enc_buffer_write(rodata_buffer, line, strlen(line));
 
 		/* Private ID */
@@ -716,11 +735,11 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		
 		/* AMU_ABI_RAT_OP_IS_USED */
 		prog_info[77].address = 0x8000001f;
-		prog_info[77].value = 0x1c00;
+		prog_info[77].value = inner_bin->rat_op * 256;
 
 		/* AMU_ABI_UAV_RESOURCE_MASK_0 */
 		prog_info[78].address = 0x80001843;
-		prog_info[78].value = 0x1c00;
+		prog_info[78].value = inner_bin->rat_op * 256;
 		
 		prog_info[79].address = 0x80001844;
 		prog_info[79].value = 0;
@@ -817,9 +836,9 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		/* ELF_NOTE_ATI_UAV_OP_MASK */
 		ptr = xcalloc(1, 128);
 
-		ptr[1] = 0x1c;
+		ptr[1] = inner_bin->rat_op;
 
-		note = si2bin_inner_bin_note_create(17, 4, ptr);
+		note = si2bin_inner_bin_note_create(17, 128, ptr);
 		si2bin_inner_bin_entry_add_note(entry, note);
 		free(ptr);
 
@@ -833,10 +852,11 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		si2bin_inner_bin_generate(inner_bin, kernel_buffer);
 			
 		/* Output Kernel */
-		/*FILE *f;
-		f = file_open_for_write("kernel");
+		FILE *f;
+		snprintf(line, sizeof line, "%s_kernel", inner_bin->name);
+		f = file_open_for_write(line);
 		elf_enc_buffer_write_to_file(kernel_buffer, f);
-		file_close(f);*/
+		file_close(f);
 	
 
 
