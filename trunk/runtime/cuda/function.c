@@ -113,7 +113,7 @@ void cuda_function_free(CUfunction function)
 {
 	list_remove(function_list, function);
 
-	free(function->arg_array);
+	free(function->arg_ptr_array);
 	free(function->inst_buffer);
 	free(function->name);
 	free(function);
