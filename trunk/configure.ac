@@ -1,4 +1,4 @@
-AC_INIT([multi2sim], [4.1])
+AC_INIT([multi2sim], [4.2])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/m2s.c])
 AM_INIT_AUTOMAKE([nostdinc])

@@ -41,6 +41,9 @@
  * Global Variables
  */
 
+/* Command-line options */
+char *si2bin_machine_name = "tahiti";
+
 /* Current source file name being assembled. Set internally in function
  * 'si2bin_compile()' */
 char *si2bin_source_file;
