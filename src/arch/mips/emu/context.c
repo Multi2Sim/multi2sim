@@ -659,8 +659,9 @@ void mips_ctx_execute(struct mips_ctx_t *ctx)
 	buffer_ptr = mem_get_buffer(mem, (regs->pc), 4, mem_access_exec);
 
 	/* FIXME: Mips speculative mode execution to be added */
-	/*if (!buffer_ptr)
-	{
+	if (!buffer_ptr)
+		fatal("mem_get_buffer error\n");
+	/*{
 		 Disable safe mode. If a part of the 20 read bytes does not belong to the
 		 * actual instruction, and they lie on a page with no permissions, this would
 		 * generate an undesired protection fault.
