@@ -23,22 +23,17 @@
 
 extern struct list_t *device_list;
 
-struct compute_capability_t
-{
-	int major;
-	int minor;
-};
-
 struct cuda_device_t
 {
-	CUdevice device;  /* CUdevice is also an id */
+	/* CUdevice is also an ID */
+	CUdevice device;
+
 	char *name;
 
-	struct compute_capability_t cc;
 	int attributes[CU_DEVICE_ATTRIBUTE_MAX];
 };
 
-struct cuda_device_t *cuda_device_create(void);
+struct cuda_device_t *cuda_device_create(int device_type);
 void cuda_device_free(struct cuda_device_t *device);
 
 
