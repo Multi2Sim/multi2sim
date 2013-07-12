@@ -101,7 +101,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 	llvm_val->type->sign = original_val->type->sign;
 
 	snprintf(temp_var_name, sizeof temp_var_name,
-		"tmp%d", temp_var_count++);
+		"tmp_%d", temp_var_count++);
 		
 	/* Check that fromtype is not a vector, unless both types are identical. */
 	if (LLVMGetTypeKind(fromtype) == LLVMVectorTypeKind)
@@ -128,7 +128,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 			cl2llvm_current_function->branch_instr);
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 			
 		vector_addr = LLVMBuildAlloca(cl2llvm_builder, 
 			totype, temp_var_name);
@@ -136,7 +136,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 
 		/* Load vector */
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 	
 		vector = LLVMBuildLoad(cl2llvm_builder, vector_addr, temp_var_name);
 		
@@ -164,7 +164,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 				index = LLVMConstInt(LLVMInt32Type(), i, 0);
 				cast_original_val = llvm_type_cast(original_val, elem_type);
 				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
+					"tmp_%d", temp_var_count++);
 	
 				vector = LLVMBuildInsertElement(cl2llvm_builder, 
 					vector, cast_original_val->val, index, temp_var_name);
@@ -946,7 +946,7 @@ struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
 		index = LLVMConstInt(LLVMInt32Type(), 0, 0);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		elem_val = cl2llvm_val_create_w_init(
 			LLVMBuildExtractElement(cl2llvm_builder, 
@@ -962,7 +962,7 @@ struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
 			index = LLVMConstInt(LLVMInt32Type(), i, 0);
 
 			snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 
 			elem_val = cl2llvm_val_create_w_init(
 				LLVMBuildExtractElement(cl2llvm_builder, 
@@ -972,7 +972,7 @@ struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
 			elem_bool2 = cl2llvm_val_bool(elem_val);
 			
 			snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 
 			elem_bool1->val = LLVMBuildAnd(cl2llvm_builder, elem_bool1->val, 
 				elem_bool2->val, temp_var_name);
@@ -986,7 +986,7 @@ struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
 	}
 
 	snprintf(temp_var_name, sizeof temp_var_name,
-		"tmp%d", temp_var_count++);
+		"tmp_%d", temp_var_count++);
 
 	if (LLVMTypeOf(value->val) == LLVMDoubleType())
 	{

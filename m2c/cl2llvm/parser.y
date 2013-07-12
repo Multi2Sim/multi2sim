@@ -589,7 +589,7 @@ lvalue
 				deref_ptr))) == LLVMPointerTypeKind)
 			{
 				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
+					"tmp_%d", temp_var_count++);
 			
 				deref_ptr = LLVMBuildLoad(cl2llvm_builder, 
 					deref_ptr, temp_var_name);
@@ -598,7 +598,7 @@ lvalue
 				indices[0] = current_index->val;
 
 				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
+					"tmp_%d", temp_var_count++);
 				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
 					deref_ptr, indices, 1, 
 					temp_var_name);
@@ -612,7 +612,7 @@ lvalue
 				indices[1] = LLVMConstInt(LLVMInt32Type(), 0, 0);
 				
 				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
+					"tmp_%d", temp_var_count++);
 				
 				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
 					deref_ptr, indices, 2, temp_var_name); 
@@ -623,7 +623,7 @@ lvalue
 
 				/* Get element pointer */
 				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
+					"tmp_%d", temp_var_count++);
 
 				deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
 					deref_ptr, indices, 1, temp_var_name);
@@ -657,7 +657,7 @@ lvalue
 			deref_ptr))) == LLVMPointerTypeKind)
 		{
 			snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 			
 			deref_ptr = LLVMBuildLoad(cl2llvm_builder, 
 				deref_ptr, temp_var_name);
@@ -671,7 +671,7 @@ lvalue
 			indices[1] = LLVMConstInt(LLVMInt32Type(), 0, 0);
 				
 			snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 				
 			deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
 				deref_ptr, indices, 2, temp_var_name); 
@@ -680,7 +680,7 @@ lvalue
 				
 			/* Get element pointer */
 			snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 
 			deref_ptr = LLVMBuildGEP(cl2llvm_builder, 
 				deref_ptr, indices, 1, temp_var_name);
@@ -869,13 +869,14 @@ func_call
 		/* Build function call */
 		if (LLVMGetReturnType(function->func_type) == LLVMVoidType())
 		{
-			snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
 			llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
 				cast_param_array, function->arg_count + offset, "");
 		}
 		else
 		{
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp_%d", temp_var_count++);
+
 			llvm_val_func_ret = LLVMBuildCall(cl2llvm_builder, function->func,
 				cast_param_array, function->arg_count + offset, temp_var_name);
 		}
@@ -1579,7 +1580,7 @@ expr
 		}
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 		
 		value = cl2llvm_val_create();
 
@@ -1652,7 +1653,7 @@ expr
 		}
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 
 		value = cl2llvm_val_create();
 		switch (LLVMGetTypeKind(switch_type->llvm_type))
@@ -1699,7 +1700,7 @@ expr
 		value = cl2llvm_val_create();
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -1777,7 +1778,7 @@ expr
 		value = cl2llvm_val_create();
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -1852,7 +1853,7 @@ expr
 		struct cl2llvm_val_t *value;
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 	
 		type = cl2llvm_type_create();
 		value = cl2llvm_val_create();
@@ -1914,7 +1915,7 @@ expr
 		value = cl2llvm_val_create();
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -1978,7 +1979,7 @@ expr
 		value = cl2llvm_val_create();
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -2038,7 +2039,7 @@ expr
 		struct cl2llvm_val_t *value;
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		type = cl2llvm_type_create();
 		value = cl2llvm_val_create();
@@ -2111,7 +2112,7 @@ expr
 		struct cl2llvm_val_t *value;
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		type = cl2llvm_type_create();
 		value = cl2llvm_val_create();
@@ -2185,7 +2186,7 @@ expr
 		struct cl2llvm_val_t *value;
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		type = cl2llvm_type_create();
 		value = cl2llvm_val_create();
@@ -2268,7 +2269,7 @@ expr
 		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		type = cl2llvm_type_create();
 		value = cl2llvm_val_create();
@@ -2350,7 +2351,7 @@ expr
 		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		type = cl2llvm_type_create();
 		value = cl2llvm_val_create();
@@ -2433,7 +2434,7 @@ expr
 		struct cl2llvm_val_t *value;
 		
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 
 		type = cl2llvm_type_create();
 		value = cl2llvm_val_create();
@@ -2646,7 +2647,7 @@ expr
 			$1->type->llvm_type), $1->type->sign);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
@@ -2654,7 +2655,7 @@ expr
 		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
 	
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
@@ -2711,7 +2712,7 @@ expr
 			$1->type->llvm_type), $1->type->sign);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
@@ -2719,7 +2720,7 @@ expr
 		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
@@ -2778,7 +2779,7 @@ expr
 		value = cl2llvm_val_create();
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
@@ -2786,7 +2787,7 @@ expr
 		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
@@ -2852,7 +2853,7 @@ expr
 		value = cl2llvm_val_create();
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
@@ -2860,7 +2861,7 @@ expr
 		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
@@ -2919,7 +2920,7 @@ expr
 		value = cl2llvm_val_create();
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
@@ -2927,7 +2928,7 @@ expr
 		struct cl2llvm_val_t *rval = llvm_type_cast($3, type);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
@@ -3047,7 +3048,7 @@ unary_expr
 			$1->type->llvm_type), $1->type->sign);
 
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
@@ -3056,7 +3057,7 @@ unary_expr
 		struct cl2llvm_val_t *cast_one = llvm_type_cast(one, type);
 	
 		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		
 		/* Create an object that will hold the type of the operands.
 		   This extra object is necessary since in the case of a vector 
@@ -3182,7 +3183,7 @@ vec_literal
 		current_vec_elem = NULL;
 
 		snprintf(temp_var_name, sizeof(temp_var_name),
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		/* Create type object to represent element type */
 		elem_type = cl2llvm_type_create_w_init(LLVMGetElementType($2->llvm_type), $2->sign);
 		/*Go to entry block and declare vector*/
@@ -3243,12 +3244,12 @@ vec_literal
 					cast_val = llvm_type_cast(current_vec_elem, elem_type);
 					
 					snprintf(temp_var_name, sizeof(temp_var_name),
-						"tmp%d", temp_var_count++);
+						"tmp_%d", temp_var_count++);
 
 					LLVMValueRef vector_load = LLVMBuildLoad( cl2llvm_builder, vec_addr, temp_var_name);
 
 					snprintf(temp_var_name, sizeof(temp_var_name),
-						"tmp%d", temp_var_count++);
+						"tmp_%d", temp_var_count++);
 					cast_index = llvm_type_cast(cl2llvm_index, elem_type);
 
 					new_vector = LLVMBuildInsertElement( cl2llvm_builder, vector_load, cast_val->val, cl2llvm_index->val, temp_var_name);
@@ -3379,7 +3380,7 @@ primary
 		LLVMValueRef component;
 		
 		snprintf(temp_var_name, sizeof(temp_var_name),
-			"tmp%d", temp_var_count++);
+			"tmp_%d", temp_var_count++);
 		struct cl2llvm_val_t *value = cl2llvm_val_create_w_init(
 			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
 			$1->type->sign);
@@ -3406,7 +3407,7 @@ primary
 			{
 
 				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
+					"tmp_%d", temp_var_count++);
 
 				/* Go to entry block and allocate new vector */
 				LLVMPositionBuilder(cl2llvm_builder, 
@@ -3422,20 +3423,20 @@ primary
 
 				/* Load new vector */
 				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
+					"tmp_%d", temp_var_count++);
 				new_vector = LLVMBuildLoad(cl2llvm_builder, new_vector_addr,
 					temp_var_name);
 
 				while ($1->vector_indices[i])
 				{
 					snprintf(temp_var_name, sizeof temp_var_name,
-						"tmp%d", temp_var_count++);
+						"tmp_%d", temp_var_count++);
 					component = LLVMBuildExtractElement(cl2llvm_builder, 
 						value->val, $1->vector_indices[i]->val,
 						temp_var_name);
 
 					snprintf(temp_var_name, sizeof temp_var_name,
-						"tmp%d", temp_var_count++);
+						"tmp_%d", temp_var_count++);
 					new_vector = LLVMBuildInsertElement(cl2llvm_builder, 
 						new_vector, component, $1->vector_indices[i]->val,
 						temp_var_name);
@@ -3447,7 +3448,7 @@ primary
 			else if (component_count == 1)
 			{
 				snprintf(temp_var_name, sizeof temp_var_name,
-					"tmp%d", temp_var_count++);
+					"tmp_%d", temp_var_count++);
 				
 				component = LLVMBuildExtractElement(cl2llvm_builder, 
 					value->val, $1->vector_indices[0]->val,
