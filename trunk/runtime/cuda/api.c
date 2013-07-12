@@ -565,8 +565,8 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuModuleGetFunction, 
-			hmod->id, name, (*hfunc)->inst_buffer,
-			(*hfunc)->inst_buffer_size, (*hfunc)->num_gpr_used);
+			hmod->id, name, (*hfunc)->inst_buf,
+			(*hfunc)->inst_buf_size, (*hfunc)->numRegs);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
