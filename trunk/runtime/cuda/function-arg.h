@@ -49,16 +49,13 @@ struct cuda_function_arg_t
 {
 	int id;
 
-	enum cuda_mem_scope_t mem_scope;
-	enum cuda_function_arg_kind_t kind;
-	enum cuda_function_arg_access_type_t access_type;
-
-	unsigned int value;
+	void *ptr;
 	int size;
+	int offset;
 };
 
-struct cuda_function_arg_t *cuda_function_arg_create(CUfunction function,
-		unsigned int value, int size);
+struct cuda_function_arg_t *cuda_function_arg_create(const void *ptr, 
+		int size, int offset);
 void cuda_function_arg_free(CUfunction function, 
 		struct cuda_function_arg_t *arg);
 

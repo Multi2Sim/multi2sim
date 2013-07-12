@@ -1005,7 +1005,7 @@ void frm_disasm(char *path)
 				frm_inst_dump(inst_str, sizeof inst_str, section->buffer.ptr, inst_index);
 				printf("%s;\n", inst_str);
 			}
-			printf("\t\t.........................................\n\n\n");
+			printf("\t\t....................................................\n\n\n");
 		}
 		if (!strncmp(section->name, ".rodata", 7))
 		{

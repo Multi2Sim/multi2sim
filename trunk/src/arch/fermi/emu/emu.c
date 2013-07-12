@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+
 #include <arch/common/arch.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
@@ -144,35 +146,33 @@ int frm_emu_run(void)
 		list_add(frm_emu->running_grids, grid);
 	}
 
-	/* Run one instruction of each warp in each thread block of each running
-	 * grid */
+	/* Run one instruction */
 	while ((grid = list_head(frm_emu->running_grids)))
 	{
-		/* Execute an instruction from each thread block */
 		while ((thread_block = list_head(grid->running_thread_blocks)))
 		{
-			/* Run an instruction from each warp */
 			while ((warp = list_head(thread_block->running_warps)))
 			{
-				/* Execute instruction in warp */
+				if (warp->finished || warp->at_barrier)
+					continue;
+
 				frm_warp_execute(warp);
 			}
 		}
 	}
 
 	/* Free finished grids */
+	assert(list_count(frm_emu->pending_grids) == 0 &&
+			list_count(frm_emu->running_grids) == 0);
 	while ((grid = list_head(frm_emu->finished_grids)))
 	{
 		/* Dump grid report */
 		frm_grid_dump(grid, frm_emu_report_file);
 
-		/* Stop if maximum number of CUDA functions reached */
-		if (frm_emu_max_functions && frm_emu->grid_count >= 
-				frm_emu_max_functions)
-			esim_finish = esim_finish_frm_max_functions;
-
-		/* Remove grid from finished list and free */
+		/* Remove grid from finished list */
 		list_remove(frm_emu->finished_grids, grid);
+
+		/* Free grid */
 		frm_grid_free(grid);
 	}
 

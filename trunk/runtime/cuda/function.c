@@ -48,7 +48,6 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 
 	function = (CUfunction)xcalloc(1, sizeof(struct CUfunc_st));
 	function->id = list_count(function_list);
-	function->ref_count = 1;
 	function->name = xstrdup(function_name);
 	function->module_id = module->id;
 
@@ -105,8 +104,6 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 	/* Get GPR usage */
 	function->num_gpr_used = text_sec->header->sh_info >> 24;
 
-	function->arg_list = list_create();
-
 	list_add(function_list, function);
 
 	return function;
@@ -114,20 +111,11 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 
 void cuda_function_free(CUfunction function)
 {
-	int i;
-
 	list_remove(function_list, function);
 
-	for (i = 0; i < list_count(function->arg_list); i++)
-	{
-		cuda_function_arg_free(function, 
-				(struct cuda_function_arg_t *)list_get(
-					function->arg_list, i));
-	}
-	list_free(function->arg_list);
+	free(function->arg_array);
 	free(function->inst_buffer);
 	free(function->name);
-	function->ref_count--;
 	free(function);
 }
 

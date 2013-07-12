@@ -44,10 +44,9 @@ struct frm_warp_t
 	int thread_count;
 	struct frm_thread_t **threads;
 
+	/* PC */
 	unsigned int pc;
 	int inst_size;
-
-	struct frm_thread_t *scalar_thread;
 
 	/* Current instructions */
 	struct frm_inst_t inst;
@@ -71,6 +70,7 @@ struct frm_warp_t
 	unsigned int lds_read : 1;
 	unsigned int lds_write : 1;
 	unsigned int mem_wait : 1;
+	unsigned int at_barrier : 1;
 	unsigned int barrier : 1;
 	unsigned int finished : 1;
 	unsigned int vector_mem_glc : 1;

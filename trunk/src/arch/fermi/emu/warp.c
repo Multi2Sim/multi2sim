@@ -256,6 +256,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	warp->active_mask_push = 0;
 	warp->active_mask_pop = 0;
 	warp->inst_size = 8;
+	warp->at_barrier = 0;
 
 	/* Get instruction */
 	inst = &warp->inst;

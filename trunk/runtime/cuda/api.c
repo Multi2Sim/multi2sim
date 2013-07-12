@@ -556,8 +556,8 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 	int ret;
 
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug_print(stdout, "\t(driver) in: module_id = %d\n", hmod->id);
-	cuda_debug_print(stdout, "\t(driver) in: function_name = %s\n", name);
+	cuda_debug_print(stdout, "\t(driver) in: module = %p\n", hmod);
+	cuda_debug_print(stdout, "\t(driver) in: name = %s\n", name);
 
 	/* Create function */
 	*hfunc = cuda_function_create(hmod, name);
@@ -573,7 +573,7 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 		fatal("native execution not supported.\n%s",
 				cuda_err_native);
 
-	cuda_debug_print(stdout, "\t(driver) out: function_id = %d\n", (*hfunc)->id);
+	cuda_debug_print(stdout, "\t(driver) out: function = %p\n", hfunc);
 	cuda_debug_print(stdout, "\t(driver) out: return = %d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
