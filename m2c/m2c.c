@@ -78,20 +78,21 @@ static char *syntax =
 	"--amd\n"
 	"\tUse AMD's OpenCL driver installed on the machine to compile the\n"
 	"\tsources. This tool will act as a command-line wrapper of the native\n"
-	"\tAMD compiler.\n"
+	"\tAMD compiler. If the '-O<opt>' option is used, it will be passed\n"
+	"\tdirectly to the native compiler.\n"
 	"\n"
-	"--amd-list, -l\n"
+	"--amd-list\n"
 	"\tPrint a list of available devices for the native AMD driver. This\n"
 	"\toption should be used together with option '--amd'.\n"
 	"\n"
-	"--amd-device <device1>[,<device2>...], -d <device1>[,<device2>...]\n"
+	"--amd-device <device1>[,<device2>...]\n"
 	"\tSelect a list of target devices for native AMD compilation. There\n"
 	"\tshould be no spaces between device names/identifiers when separated\n"
 	"\tby commas. When more than one device is selected, all binaries are\n"
 	"\tpacked into one single Multi2Sim-specific ELF binary format.\n"
 	"\tThis option must be combined with option '--amd-.\n"
 	"\n"
-	"--amd-dump-all, -a\n"
+	"--amd-dump-all\n"
 	"\tDump all intermediate files is generated during compilation. This\n"
 	"\toption must be used together with '--amd'.\n"
 	"\n"
@@ -104,7 +105,7 @@ static char *syntax =
 	"\tAdd a definition for additional symbols, equivalent to #define\n"
 	"\tcompiler directives. This argument can be used multiple times.\n"
 	"\n"
-	"--frm-asm\n"
+	"--frm-asm, --frm2bin\n"
 	"\tTreat the input files as source files containing Fermi assembly\n"
 	"\tcode. Run the Fermi assembler and generate a CUDA kernel binary.\n"
 	"\n"
@@ -143,23 +144,26 @@ static char *syntax =
 	"--llvm2si-debug <file>\n"
 	"\tDebug information for the Southern Islands back-end.\n"
 	"\n"
+	"-m <arch>\n"
+	"\tTarget architecture for the generated binary. Each assembler has a\n"
+	"\tdifferent set of possible values (* means default):\n\n"
+	"\tSouthern Islands: capeverde, pitcairn, tahiti*\n"
+	"\n"
 	"-o <file>\n"
 	"\tOutput kernel binary. If no output file is specified, each kernel\n"
 	"\tsource is compiled into a kernel binary with the same name but\n"
 	"\tusing the '.bin' extension. When used, the option affects the\n"
 	"\tfirst file in the list of sources.\n"
 	"\n"
-	"-O <level> (-O1 default)\n"
-	"\tOptimization level. Supported values are:\n"
-	"\t  -O0    No optimizations.\n"
-	"\t  -O1    Optimizations at the LLVM level.\n"
+	"-O <level> (default = -O2)\n"
+	"\tOptimization level.\n"
 	"\n"
 	"--preprocess, -E\n"
 	"\tRun the stand-alone C preprocessor. This command is equivalent to\n"
 	"\tan external call to command 'cpp', replacing compiler directives\n"
 	"\tand macros.\n"
 	"\n"
-	"--si-asm\n"
+	"--si-asm, --si2bin\n"
 	"\tTreat the input files as source files containing Southern Islands\n"
 	"\tassembly code. Run the Southern Islands assembler and generate a\n"
 	"\tkernel binary.\n"
@@ -179,27 +183,27 @@ static void m2c_process_option(const char *option, char *optarg)
 		return;
 	}
 
-	if (!strcmp(option, "amd-dump-all") || !strcmp(option, "a"))
+	if (!strcmp(option, "amd-dump-all"))
 	{
 		amd_dump_all = 1;
 		return;
 	}
 
-	if (!strcmp(option, "amd-device") || !strcmp(option, "d"))
+	if (!strcmp(option, "amd-device"))
 	{
 		amd_device_name = optarg;
+		return;
+	}
+
+	if (!strcmp(option, "amd-list"))
+	{
+		amd_list_devices = 1;
 		return;
 	}
 
 	if (!strcmp(option, "define") || !strcmp(option, "D"))
 	{
 		list_add(m2c_define_list, xstrdup(optarg));
-		return;
-	}
-
-	if (!strcmp(option, "amd-list") || !strcmp(option, "l"))
-	{
-		amd_list_devices = 1;
 		return;
 	}
 
@@ -221,7 +225,7 @@ static void m2c_process_option(const char *option, char *optarg)
 		return;
 	}
 
-	if (!strcmp(option, "frm-asm"))
+	if (!strcmp(option, "frm-asm") || !strcmp(option, "frm2bin"))
 	{
 		m2c_frm2bin_run = 1;
 		return;
@@ -269,6 +273,12 @@ static void m2c_process_option(const char *option, char *optarg)
 		return;
 	}
 
+	if (!strcmp(option, "m"))
+	{
+		si2bin_machine_name = optarg;
+		return;
+	}
+
 	if (!strcmp(option, "o"))
 	{
 		snprintf(m2c_out_file_name, sizeof m2c_out_file_name,
@@ -294,7 +304,7 @@ static void m2c_process_option(const char *option, char *optarg)
 		return;
 	}
 
-	if (!strcmp(option, "si-asm"))
+	if (!strcmp(option, "si-asm") || !strcmp(option, "si2bin"))
 	{
 		m2c_si2bin_run = 1;
 		return;
@@ -316,13 +326,14 @@ static void m2c_read_command_line(int argc, char **argv)
 	static struct option long_options[] =
 	{
 		{ "amd", no_argument, 0, 0 },
-		{ "amd-device", required_argument, 0, 'd' },
-		{ "amd-dump-all", no_argument, 0, 'a' },
-		{ "amd-list", no_argument, 0, 'l' },
+		{ "amd-device", required_argument, 0, 0 },
+		{ "amd-dump-all", no_argument, 0, 0 },
+		{ "amd-list", no_argument, 0, 0 },
 		{ "cl2llvm", no_argument, 0, 0 },
 		{ "ctree-config", required_argument, 0, 0 },
 		{ "ctree-debug", required_argument, 0, 0 },
-		{ "frm-asm", no_argument, 0, 0},
+		{ "frm-asm", no_argument, 0, 0 },
+		{ "frm2bin", no_argument, 0, 0 },
 		{ "gl", no_argument, 0, 0 },
 		{ "gl-control", required_argument, 0, 0 },
 		{ "gl-dump-all", no_argument, 0, 0 },
@@ -333,6 +344,7 @@ static void m2c_read_command_line(int argc, char **argv)
 		{ "llvm2si", no_argument, 0, 0 },
 		{ "preprocess", no_argument, 0, 'E' },
 		{ "si-asm", no_argument, 0, 0 },
+		{ "si2bin", no_argument, 0, 0 },
 		{ 0, 0, 0, 0 }
 	};
 	
@@ -347,7 +359,7 @@ static void m2c_read_command_line(int argc, char **argv)
 	}
 	
 	/* Process options */
-	while ((opt = getopt_long(argc, argv, "ad:hlo:D:EO:", long_options,
+	while ((opt = getopt_long(argc, argv, "ho:D:EO:m:", long_options,
 			&option_index)) != -1)
 	{
 		if (opt)
