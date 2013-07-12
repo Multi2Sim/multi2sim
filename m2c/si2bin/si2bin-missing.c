@@ -25,6 +25,14 @@
 #include "si2bin.h"
 
 
+/*
+ * Global Variables
+ * (Just there to safisfy link-time references).
+ */
+
+char *si2bin_machine_name;
+
+
 
 
 /*

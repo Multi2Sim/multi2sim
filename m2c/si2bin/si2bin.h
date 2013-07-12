@@ -26,6 +26,8 @@
 struct list_t;
 struct elf_enc_buffer_t;
 
+/* Command-line options */
+extern char *si2bin_machine_name;
 
 /* Output buffer of the currently assembled file.
  * Internal use only. */
