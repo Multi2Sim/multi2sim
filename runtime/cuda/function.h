@@ -46,10 +46,7 @@ struct CUfunc_st
 	int sharedSizeBytes;
 
 	int num_args;
-	void **arg_array;
-
-	unsigned int global_sizes[3];  /* Number of thread blocks in a grid */
-	unsigned int local_sizes[3];  /* Number of threads in a thread block */
+	void **arg_ptr_array;
 };
 
 CUfunction cuda_function_create(CUmodule module, const char *function_name);
