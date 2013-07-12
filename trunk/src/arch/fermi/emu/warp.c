@@ -290,9 +290,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
 		frm_isa_debug("inst 0x%llx executed\n", inst->dword.dword);
 		break;
 	default:
-		for (thread_id = warp->threads[0]->id_in_warp; 
-				thread_id < (warp)->thread_count; 
-				thread_id++)
+		for (thread_id = 0; thread_id < warp->thread_count; thread_id++)
 		{
 			thread = warp->threads[thread_id];
 			(*frm_isa_inst_func[inst->info->inst])(thread, inst);
