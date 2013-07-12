@@ -13,6 +13,7 @@ struct even_strategy_info_t
 {
 	int num_devices;
 	unsigned int dims;
+	unsigned int part_dim;
 	unsigned int *groups;
 	int *done;
 	unsigned int total_rows;
@@ -25,6 +26,7 @@ void *even_strategy_create(int num_devices, unsigned int dims, const unsigned in
 	int i;
 	char *ratio_data;
 	struct even_strategy_info_t *info = (struct even_strategy_info_t *)calloc(1, sizeof (struct even_strategy_info_t));
+
 	info->num_devices = num_devices;
 	info->dims = dims;
 	info->groups = (unsigned int *)calloc(dims, sizeof (unsigned int));
@@ -42,7 +44,12 @@ void *even_strategy_create(int num_devices, unsigned int dims, const unsigned in
 		for (i = 0; i < num_devices; i++)
 			info->device_rows[i] = 1;
 
-	normalize_proportions(groups[dims - 1], num_devices, info->device_rows);
+	for (i = dims - 1; i >= 0; i--)
+		if (groups[i] > info->part_dim)
+			info->part_dim = i;
+
+	normalize_proportions(groups[info->part_dim], num_devices, info->device_rows);
+	info->previous_rows[0] = 0;
 	for (i = 0; i < num_devices - 1; i++)
 		info->previous_rows[i + 1] = info->previous_rows[i] + info->device_rows[i];
 
@@ -62,14 +69,20 @@ int even_strategy_get_partition(void *inst, int id, int desired_groups, unsigned
 	
 		unsigned int i;
 
-		for (i = 0; i < info->dims - 1; i++)
+		for (i = 0; i < info->dims; i++)
 		{
-			group_offset[i] = 0;
-			group_count[i] = info->groups[i];
+			if (i == info->part_dim)
+			{
+				group_offset[i] = info->previous_rows[id] + start_offset;
+				group_count[i] = size;
+			}
+			else
+			{
+				group_offset[i] = 0;
+				group_count[i] = info->groups[i];
+	
+			}
 		}
-
-		group_offset[info->dims - 1] = info->previous_rows[id] + start_offset;
-		group_count[info->dims - 1] = size;
 		info->done[id]++;
 		return 1;
 	}

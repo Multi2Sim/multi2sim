@@ -461,6 +461,7 @@ void normalize_proportions(unsigned int new_sum, unsigned int count, unsigned in
 
 unsigned int convert_fraction(unsigned int num, unsigned int den, unsigned int new_den)
 {
-	return (num * new_den) / den;
+	unsigned long long product = num * new_den;
+	return product / den;
 }
 
