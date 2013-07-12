@@ -437,6 +437,10 @@ cudaError_t cudaGetDeviceCount(int *count)
 
 cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp *prop_ptr, int device)
 {
+	struct cuda_device_t *dev;
+	unsigned int free;
+	unsigned int total;
+
 	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(runtime) in: device = %d\n", device);
 
@@ -452,88 +456,152 @@ cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp *prop_ptr, int device)
 		fatal("%s: invalid device (%d).\n%s", __FUNCTION__,
 				device, cuda_rt_err_param_note);
 
-	/* Get device properties. */
-	if (device == 0)
-	{
-		/* The following parameters are calibrated against GeForce GTX
-		 * 480 for now. */	
-		strncpy(prop_ptr->name, "Multi2Sim GeForce GTX 480", 
-				sizeof prop_ptr->name);
-		prop_ptr->totalGlobalMem = 1610153984;
-		prop_ptr->sharedMemPerBlock = 49152;
-		prop_ptr->regsPerBlock = 32768;
-		prop_ptr->warpSize = 32;
-		prop_ptr->memPitch = 2147483647;
-		prop_ptr->maxThreadsPerBlock = 1024;
-		prop_ptr->maxThreadsDim[0] = 1024;
-		prop_ptr->maxThreadsDim[1] = 1024;
-		prop_ptr->maxThreadsDim[2] = 64;
-		prop_ptr->maxGridSize[0] = 65535;
-		prop_ptr->maxGridSize[1] = 65535;
-		prop_ptr->maxGridSize[2] = 65535;
-		prop_ptr->clockRate = 1401000;
-		prop_ptr->totalConstMem = 65536;
-		prop_ptr->major = 2;
-		prop_ptr->minor = 0;
-		prop_ptr->textureAlignment = 512;
-		prop_ptr->texturePitchAlignment = 32;
-		prop_ptr->deviceOverlap = 1;
-		prop_ptr->multiProcessorCount = 15;
-		prop_ptr->kernelExecTimeoutEnabled = 1;
-		prop_ptr->integrated = 0;
-		prop_ptr->canMapHostMemory = 1;
-		prop_ptr->computeMode = 0;
-		prop_ptr->maxTexture1D = 65536;
-		prop_ptr->maxTexture1DMipmap = 16384;
-		prop_ptr->maxTexture1DLinear = 134217728;
-		prop_ptr->maxTexture2D[0] = 65536;
-		prop_ptr->maxTexture2D[1] = 65535;
-		prop_ptr->maxTexture2DMipmap[0] = 16384;
-		prop_ptr->maxTexture2DMipmap[1] = 16384;
-		prop_ptr->maxTexture2DLinear[0] = 65000;
-		prop_ptr->maxTexture2DLinear[1] = 65000;
-		prop_ptr->maxTexture2DLinear[2] = 1048544;
-		prop_ptr->maxTexture2DGather[0] = 16384;
-		prop_ptr->maxTexture2DGather[1] = 16384;
-		prop_ptr->maxTexture3D[0] = 2048;
-		prop_ptr->maxTexture3D[1] = 2048;
-		prop_ptr->maxTexture3D[2] = 2048;
-		prop_ptr->maxTextureCubemap = 16384;
-		prop_ptr->maxTexture1DLayered[0] = 16384;
-		prop_ptr->maxTexture1DLayered[1] = 2048;
-		prop_ptr->maxTexture2DLayered[0] = 16384;
-		prop_ptr->maxTexture2DLayered[1] = 16384;
-		prop_ptr->maxTexture2DLayered[2] = 2048;
-		prop_ptr->maxTextureCubemapLayered[0] = 16384;
-		prop_ptr->maxTextureCubemapLayered[1] = 2046;
-		prop_ptr->maxSurface1D = 65536;
-		prop_ptr->maxSurface2D[0] = 65536;
-		prop_ptr->maxSurface2D[1] = 32768;
-		prop_ptr->maxSurface3D[0] = 65536;
-		prop_ptr->maxSurface3D[1] = 32768;
-		prop_ptr->maxSurface3D[2] = 2048;
-		prop_ptr->maxSurface1DLayered[0] = 65536;
-		prop_ptr->maxSurface1DLayered[1] = 2048;
-		prop_ptr->maxSurface2DLayered[0] = 65536;
-		prop_ptr->maxSurface2DLayered[1] = 32768;
-		prop_ptr->maxSurface2DLayered[2] = 2048;
-		prop_ptr->maxSurfaceCubemap = 32768;
-		prop_ptr->maxSurfaceCubemapLayered[0] = 32768;
-		prop_ptr->maxSurfaceCubemapLayered[1] = 2046;
-		prop_ptr->surfaceAlignment = 512;
-		prop_ptr->concurrentKernels = 1;
-		prop_ptr->ECCEnabled = 0;
-		prop_ptr->pciBusID = 2;
-		prop_ptr->pciDeviceID = 0;
-		prop_ptr->pciDomainID = 0;
-		prop_ptr->tccDriver = 0;
-		prop_ptr->asyncEngineCount = 1;
-		prop_ptr->unifiedAddressing = 0;
-		prop_ptr->memoryClockRate = 1848000;
-		prop_ptr->memoryBusWidth = 384;
-		prop_ptr->l2CacheSize = 786432;
-		prop_ptr->maxThreadsPerMultiProcessor = 1536;
-	}
+	/* Get device */
+	dev = (struct cuda_device_t *)list_get(device_list, device);
+
+	/* Get device properties */
+	strncpy(prop_ptr->name, dev->name, sizeof prop_ptr->name);
+	cuMemGetInfo(&free, &total);
+	prop_ptr->totalGlobalMem = total;
+	prop_ptr->sharedMemPerBlock =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK];
+	prop_ptr->regsPerBlock =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK];
+	prop_ptr->warpSize = dev->attributes[CU_DEVICE_ATTRIBUTE_WARP_SIZE];
+	prop_ptr->memPitch = dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_PITCH];
+	prop_ptr->maxThreadsPerBlock =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK];
+	prop_ptr->maxThreadsDim[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X];
+	prop_ptr->maxThreadsDim[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y];
+	prop_ptr->maxThreadsDim[2] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z];
+	prop_ptr->maxGridSize[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X];
+	prop_ptr->maxGridSize[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y];
+	prop_ptr->maxGridSize[2] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z];
+	prop_ptr->clockRate = dev->attributes[CU_DEVICE_ATTRIBUTE_CLOCK_RATE];
+	prop_ptr->totalConstMem =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY];
+	prop_ptr->major =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR];
+	prop_ptr->minor =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR];
+	prop_ptr->textureAlignment =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT];
+	prop_ptr->texturePitchAlignment =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_TEXTURE_PITCH_ALIGNMENT];
+	prop_ptr->deviceOverlap =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_GPU_OVERLAP];
+	prop_ptr->multiProcessorCount =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT];
+	prop_ptr->kernelExecTimeoutEnabled =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT];
+	prop_ptr->integrated = dev->attributes[CU_DEVICE_ATTRIBUTE_INTEGRATED];
+	prop_ptr->canMapHostMemory =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY];
+	prop_ptr->computeMode =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_MODE];
+	prop_ptr->maxTexture1D =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_WIDTH];
+	prop_ptr->maxTexture1DMipmap =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_MIPMAPPED_WIDTH];
+	prop_ptr->maxTexture1DLinear =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_LINEAR_WIDTH];
+	prop_ptr->maxTexture2D[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_WIDTH];
+	prop_ptr->maxTexture2D[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_HEIGHT];
+	prop_ptr->maxTexture2DMipmap[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_MIPMAPPED_WIDTH];
+	prop_ptr->maxTexture2DMipmap[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_MIPMAPPED_HEIGHT];
+	prop_ptr->maxTexture2DLinear[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_LINEAR_WIDTH];
+	prop_ptr->maxTexture2DLinear[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_LINEAR_HEIGHT];
+	prop_ptr->maxTexture2DLinear[2] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_LINEAR_PITCH];
+	prop_ptr->maxTexture2DGather[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_GATHER_WIDTH];
+	prop_ptr->maxTexture2DGather[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_GATHER_HEIGHT];
+	prop_ptr->maxTexture3D[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_WIDTH];
+	prop_ptr->maxTexture3D[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_HEIGHT];
+	prop_ptr->maxTexture3D[2] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_DEPTH];
+	prop_ptr->maxTextureCubemap =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURECUBEMAP_WIDTH];
+	prop_ptr->maxTexture1DLayered[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_LAYERED_WIDTH];
+	prop_ptr->maxTexture1DLayered[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_LAYERED_LAYERS];
+	prop_ptr->maxTexture2DLayered[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_LAYERED_WIDTH];
+	prop_ptr->maxTexture2DLayered[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_LAYERED_HEIGHT];
+	prop_ptr->maxTexture2DLayered[2] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_LAYERED_LAYERS];
+	prop_ptr->maxTextureCubemapLayered[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURECUBEMAP_LAYERED_WIDTH];
+	prop_ptr->maxTextureCubemapLayered[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURECUBEMAP_LAYERED_LAYERS];
+	prop_ptr->maxSurface1D =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE1D_WIDTH];
+	prop_ptr->maxSurface2D[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE2D_WIDTH];
+	prop_ptr->maxSurface2D[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE2D_HEIGHT];
+	prop_ptr->maxSurface3D[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE3D_WIDTH];
+	prop_ptr->maxSurface3D[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE3D_HEIGHT];
+	prop_ptr->maxSurface3D[2] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE3D_DEPTH];
+	prop_ptr->maxSurface1DLayered[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE1D_LAYERED_WIDTH];
+	prop_ptr->maxSurface1DLayered[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE1D_LAYERED_LAYERS];
+	prop_ptr->maxSurface2DLayered[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE2D_LAYERED_WIDTH];
+	prop_ptr->maxSurface2DLayered[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE2D_LAYERED_HEIGHT];
+	prop_ptr->maxSurface2DLayered[2] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACE2D_LAYERED_LAYERS];
+	prop_ptr->maxSurfaceCubemap =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACECUBEMAP_WIDTH];
+	prop_ptr->maxSurfaceCubemapLayered[0] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACECUBEMAP_LAYERED_WIDTH];
+	prop_ptr->maxSurfaceCubemapLayered[1] =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_SURFACECUBEMAP_LAYERED_LAYERS];
+	prop_ptr->surfaceAlignment =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_SURFACE_ALIGNMENT];
+	prop_ptr->concurrentKernels =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_CONCURRENT_KERNELS];
+	prop_ptr->ECCEnabled = dev->attributes[CU_DEVICE_ATTRIBUTE_ECC_ENABLED];
+	prop_ptr->pciBusID = dev->attributes[CU_DEVICE_ATTRIBUTE_PCI_BUS_ID];
+	prop_ptr->pciDeviceID =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID];
+	prop_ptr->pciDomainID =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_PCI_DOMAIN_ID];
+	prop_ptr->tccDriver = dev->attributes[CU_DEVICE_ATTRIBUTE_TCC_DRIVER];
+	prop_ptr->asyncEngineCount =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT];
+	prop_ptr->unifiedAddressing =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING];
+	prop_ptr->memoryClockRate =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE];
+	prop_ptr->memoryBusWidth =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH];
+	prop_ptr->l2CacheSize =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE];
+	prop_ptr->maxThreadsPerMultiProcessor =
+		dev->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR];
 
 	cuda_debug_print(stdout, "\t(runtime) out: prop_ptr = %p\n", prop_ptr);
 

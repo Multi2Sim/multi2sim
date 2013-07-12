@@ -132,8 +132,8 @@ CUresult cuInit(unsigned int Flags)
 	module_list = list_create();
 	function_list = list_create();
 
-	/* Create a default device */
-	device = cuda_device_create();
+	/* Create a Fermi device */
+	device = cuda_device_create(0);
 
 	/* Syscall */
 	ret = syscall(CUDA_SYS_CODE, cuda_call_cuInit);
@@ -230,6 +230,8 @@ CUresult cuDeviceGetName(char *name, int len, CUdevice dev)
 
 CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 {
+	struct cuda_device_t *device;
+
 	cuda_debug_print(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(driver) in: dev = %d\n", dev);
 
@@ -240,10 +242,11 @@ CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	*major = (((struct cuda_device_t *)list_get(
-					device_list, dev))->cc).major;
-	*minor = (((struct cuda_device_t *)list_get(
-					device_list, dev))->cc).minor;
+	device = (struct cuda_device_t *)list_get(device_list, dev);
+	*major =
+		device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR];
+	*minor =
+		device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR];
 
 	cuda_debug_print(stdout, "\t(driver) out: major = [%p] %d\n", 
 			major, *major);
