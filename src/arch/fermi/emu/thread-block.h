@@ -20,6 +20,8 @@
 #ifndef FERMI_EMU_THREADBLOCK_H
 #define FERMI_EMU_THREADBLOCK_H
 
+#include <lib/util/string.h>
+
 
 enum frm_thread_block_status_t
 {
@@ -32,14 +34,18 @@ struct frm_thread_block_t
 {
 	/* ID */
 	int id;
-	char name[1024];
 	int id_3d[3];
+
+	/* Name */
+	char name[MAX_STRING_SIZE];
 
 	/* Status */
 	enum frm_thread_block_status_t status;
 
 	/* Grid it belongs to */
 	struct frm_grid_t *grid;
+
+	/* SM it is mapped to */
 	struct frm_sm_t *sm;
 
 	/* Double linked lists of thread_blocks */
@@ -62,11 +68,8 @@ struct frm_thread_block_t
 	int thread_count;
 	struct frm_thread_t **threads;
 
-	/* List of warps in barrier */
-	struct frm_warp_t *barrier_list_head;
-	struct frm_warp_t *barrier_list_tail;
-	int barrier_list_count;
-	int barrier_list_max;
+	/* Barrier information */
+	unsigned int num_warps_at_barrier;
 
 	/* Fields introduced for architectural simulation */
 	int id_in_sm;

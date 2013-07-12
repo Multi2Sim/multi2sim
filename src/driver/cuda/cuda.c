@@ -682,17 +682,17 @@ int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 	extra = args[10];
 
 	/* Debug */
-	cuda_debug("\tfunction_id=0x%08x\n", function_id);
-	cuda_debug("\tgridDimX=%u\n", gridDim[0]);
-	cuda_debug("\tgridDimY=%u\n", gridDim[1]);
-	cuda_debug("\tgridDimZ=%u\n", gridDim[2]);
-	cuda_debug("\tblockDimX=%u\n", blockDim[0]);
-	cuda_debug("\tblockDimY=%u\n", blockDim[1]);
-	cuda_debug("\tblockDimZ=%u\n", blockDim[2]);
-	cuda_debug("\tsharedMemBytes=%u\n", sharedMemBytes);
-	cuda_debug("\thStream=0x%08x\n", hStream);
-	cuda_debug("\tkernelParams=0x%08x\n", kernelParams);
-	cuda_debug("\textra=%u\n", extra);
+	cuda_debug("\tfunction_id = 0x%08x\n", function_id);
+	cuda_debug("\tgridDimX = %u\n", gridDim[0]);
+	cuda_debug("\tgridDimY = %u\n", gridDim[1]);
+	cuda_debug("\tgridDimZ = %u\n", gridDim[2]);
+	cuda_debug("\tblockDimX = %u\n", blockDim[0]);
+	cuda_debug("\tblockDimY = %u\n", blockDim[1]);
+	cuda_debug("\tblockDimZ = %u\n", blockDim[2]);
+	cuda_debug("\tsharedMemBytes = %u\n", sharedMemBytes);
+	cuda_debug("\thStream = 0x%08x\n", hStream);
+	cuda_debug("\tkernelParams = 0x%08x\n", kernelParams);
+	cuda_debug("\textra = %u\n", extra);
 
 	/* Get function */
 	function = list_get(function_list, function_id);

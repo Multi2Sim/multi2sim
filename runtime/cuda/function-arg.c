@@ -24,27 +24,25 @@
 #include "mhandle.h"
 
 
-struct cuda_function_arg_t *cuda_function_arg_create(CUfunction function,
-		unsigned int value, int size)
+struct cuda_function_arg_t *cuda_function_arg_create(const void *ptr, 
+		int size, int offset)
 {
 	struct cuda_function_arg_t *arg;
 
-	/* Initialize */
+	/* Create a new function argument */
 	arg = (struct cuda_function_arg_t *)xcalloc(1, 
 			sizeof(struct cuda_function_arg_t));
-	arg->id = list_count(function->arg_list);
-	arg->value = value;
-	arg->size = size;
 
-	list_add(function->arg_list, arg);
+	/* Initialize */
+	arg->ptr = (void *)ptr;
+	arg->size = size;
+	arg->offset = offset;
 
 	return arg;
 }
 
 void cuda_function_arg_free(CUfunction function, struct cuda_function_arg_t *arg)
 {
-	list_remove(function->arg_list, arg);
-
 	free(arg);
 }
 
