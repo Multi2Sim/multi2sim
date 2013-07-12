@@ -678,7 +678,13 @@ void frm_isa_SUQ_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_BRA_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	//__NOT_IMPL__
+//	struct frm_warp_t *warp;
+//
+//	warp = thread->warp;
+//
+//	printf("1warp->pc = %x\n", warp->pc);
+//	warp->pc = inst->dword.tgt.target - 8;
+//	printf("2warp->pc = %x\n", warp->pc);
 }
 
 void frm_isa_BRX_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -728,9 +734,6 @@ void frm_isa_LONGJMP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_SSY_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	//unsigned int tgt;
-	//tgt = inst->dword.tgt.target;
-	__NOT_IMPL__
 }
 
 void frm_isa_PBK_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
@@ -766,7 +769,6 @@ void frm_isa_EXIT_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_NOP_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	__NOT_IMPL__
 }
 
 void frm_isa_S2R_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)  // no format yet
@@ -795,7 +797,29 @@ void frm_isa_LEPC_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 
 void frm_isa_BAR_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)
 {
-	__NOT_IMPL__
+	struct frm_thread_block_t *thread_block;
+	struct frm_warp_t *warp;
+
+	int warp_id;
+
+	thread_block = thread->thread_block;
+	warp = thread->warp;
+
+	/* Set flag to suspend warp execution */
+	warp->at_barrier = 1;
+
+	thread_block->num_warps_at_barrier++;
+
+	/* Continue execution when all warps in the thread block reach the
+	 * barrier*/
+	if (thread_block->num_warps_at_barrier == thread_block->warp_count)
+	{
+		for (warp_id = 0; warp_id < thread_block->warp_count;
+				warp_id++)
+			thread_block->warps[warp_id]->at_barrier = 0;
+
+		thread_block->num_warps_at_barrier = 0;
+	}
 }
 
 void frm_isa_VOTE_impl(struct frm_thread_t *thread, struct frm_inst_t *inst)

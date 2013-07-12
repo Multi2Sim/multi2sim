@@ -38,7 +38,10 @@
  * Global Variables
  */
 
-CUfunction function;
+/* Execution stack */
+struct list_t *execution_stack;
+struct list_t *runtime_func_list;
+
 cudaError_t cuda_rt_last_error;
 
 /* Error messages */
@@ -106,7 +109,7 @@ void **__cudaRegisterFatBinary(void *fatCubin)
 	fatCubinHandle = xcalloc(1, sizeof(void *));
 	*fatCubinHandle = fatCubin;
 
-	cuda_debug_print(stdout, "\treturn\n");
+	cuda_debug_print(stdout, "\t(runtime) out: return\n");
 
 	return fatCubinHandle;
 }
@@ -119,7 +122,7 @@ void __cudaUnregisterFatBinary(void **fatCubinHandle)
 	if (fatCubinHandle != NULL)
 		free(fatCubinHandle);
 
-	cuda_debug_print(stdout, "\treturn\n");
+	cuda_debug_print(stdout, "\t(runtime) out: return\n");
 }
 
 void __cudaRegisterVar(void **fatCubinHandle,
@@ -178,6 +181,7 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	char abi_version;
 
 	CUmodule module;
+	CUfunction function;
 
 	void *ptr;
 	int size;
@@ -185,14 +189,25 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 
 	cuda_debug_print(stdout, "CUDA runtime internal function '%s'\n",
 			__FUNCTION__);
+	cuda_debug_print(stdout, "\t(runtime) in: hostFun = %p\n", hostFun);
+	cuda_debug_print(stdout, "\t(runtime) in: deviceFun = %s\n", deviceFun);
+	cuda_debug_print(stdout, "\t(runtime) in: deviceName = %s\n",
+			deviceName);
+	cuda_debug_print(stdout, "\t(runtime) in: thread_limit = %d\n",
+			thread_limit);
+	cuda_debug_print(stdout, "\t(runtime) in: tid = %p\n", tid);
+	cuda_debug_print(stdout, "\t(runtime) in: bid = %p\n", bid);
+	cuda_debug_print(stdout, "\t(runtime) in: bDim = %p\n", bDim);
+	cuda_debug_print(stdout, "\t(runtime) in: gDim = %p\n", gDim);
+	cuda_debug_print(stdout, "\t(runtime) in: wSize = %p\n", wSize);
 
 	/* User can set an environment variable 'M2S_OPENCL_BINARY' to make the
 	 * runtime load that specific pre-compiled binary. */
 	cubin_path = getenv("M2S_CUDA_BINARY");
 	if (cubin_path && !strchr(cubin_path, '/'))
 	{
-		fatal("\tPlease set M2S_CUDA_BINARY to the path of the cubin\n"
-				"\tfile");
+		fatal("%s: Please set M2S_CUDA_BINARY to the path of the cubin",
+				__FUNCTION__);
 	}
 
 	/* Get device function identifier. If M2S_CUDA_BINARY is set, we assume
@@ -256,10 +271,10 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	elf_buffer_seek(&(dev_func_bin->buffer), 8);
 	elf_buffer_read(&(dev_func_bin->buffer), &abi_version, 1);
 	if (abi_version < 4 || abi_version > 6)
-		fatal("\tThe cubin file has a unrecognized ABI version (0x%x).\n"
+		fatal("%s: The cubin has a unrecognized ABI version (0x%x).\n"
 				"\tMulti2Sim CUDA library is currently\n"
 				"\tcompatible with Fermi binary only.",
-				abi_version);
+				__FUNCTION__, abi_version);
 
 	/* Load module */
 	cuModuleLoad(&module, cubin_path);
@@ -267,10 +282,21 @@ void __cudaRegisterFunction(void **fatCubinHandle,
 	/* Get device function */
 	cuModuleGetFunction(&function, module, deviceFun);
 
+	/* Save host function pointer, which is used as an index to find the
+	 * function */
+	function->host_func_ptr = (void *)hostFun;
+
+	/* Create list */
+	if (!runtime_func_list)
+		runtime_func_list = list_create();
+
+	/* Add function to stack */
+	list_add(runtime_func_list, &function);
+
 	/* Free */
 	elf_file_free(dev_func_bin);
 
-	cuda_debug_print(stdout, "\treturn\n");
+	cuda_debug_print(stdout, "\t(runtime) out: return\n");
 }
 
 
@@ -428,8 +454,8 @@ cudaError_t cudaGetDeviceProperties(struct cudaDeviceProp *prop_ptr, int device)
 	prop_ptr->maxGridSize[3] = 65535; // 64M
 	prop_ptr->clockRate = 500000;
 	prop_ptr->totalConstMem = 65535; //64M
-	prop_ptr->major = 1;
-	prop_ptr->minor = 3;
+	prop_ptr->major = 2;
+	prop_ptr->minor = 0;
 	prop_ptr->textureAlignment = 512;
 	prop_ptr->texturePitchAlignment = 32;
 	prop_ptr->deviceOverlap = 1;
@@ -593,20 +619,32 @@ cudaError_t cudaEventElapsedTime(float *ms, cudaEvent_t start, cudaEvent_t end)
 	return cudaSuccess;
 }
 
-cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem __dv(0), cudaStream_t stream __dv(0))
+cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, 
+		size_t sharedMem __dv(0), cudaStream_t stream __dv(0))
 {
+	unsigned int *func_dim;
+
 	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(runtime) in: gridDim = %u %u %u\n", 
 			gridDim.x, gridDim.y, gridDim.z);
 	cuda_debug_print(stdout, "\t(runtime) in: blockDim = %u %u %u\n", 
 			blockDim.x, blockDim.y, blockDim.z);
 
-	function->global_sizes[0] = gridDim.x;
-	function->global_sizes[1] = gridDim.y;
-	function->global_sizes[2] = gridDim.z;
-	function->local_sizes[0] = blockDim.x;
-	function->local_sizes[1] = blockDim.y;
-	function->local_sizes[2] = blockDim.z;
+	/* Create stack */
+	if (!execution_stack)
+		execution_stack = list_create();
+
+	/* Create function dim */
+	func_dim = (unsigned int *)xcalloc(1, sizeof(dim3) + sizeof(dim3));
+	func_dim[0] = gridDim.x;
+	func_dim[1] = gridDim.y;
+	func_dim[2] = gridDim.z;
+	func_dim[3] = blockDim.x;
+	func_dim[4] = blockDim.y;
+	func_dim[5] = blockDim.z;
+
+	/* Push to stack */
+	list_push(execution_stack, func_dim);
 
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
 
@@ -617,12 +655,18 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem __dv
 
 cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 {
+	struct cuda_function_arg_t *func_arg;
+
 	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 	cuda_debug_print(stdout, "\t(runtime) in: arg = %p\n", arg);
 	cuda_debug_print(stdout, "\t(runtime) in: size = %d\n", size);
 	cuda_debug_print(stdout, "\t(runtime) in: offset = %d\n", offset);
 
-	cuda_function_arg_create(function, *(CUdeviceptr *)arg, size);
+	/* Create function argument */
+	func_arg = cuda_function_arg_create(arg, size, offset);
+
+	/* Push to stack */
+	list_push(execution_stack, func_arg);
 
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
 
@@ -631,31 +675,63 @@ cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 	return cudaSuccess;
 }
 
-cudaError_t cudaFuncSetCacheConfig(const void *func, enum cudaFuncCache cacheConfig)
+cudaError_t cudaFuncSetCacheConfig(const void *func, 
+		enum cudaFuncCache cacheConfig)
 {
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
 }
 
-cudaError_t cudaLaunch(const void *entry)
+cudaError_t cudaLaunch(const void *func)
 {
+	CUfunction function;
+	struct cuda_function_arg_t *arg;
+	unsigned int *func_dim;
 	int i;
 
 	cuda_debug_print(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug_print(stdout, "\t(runtime) in: entry = %p\n", entry);
+	cuda_debug_print(stdout, "\t(runtime) in: func = %p\n", func);
 
-	/* Setup arguments */
-	function->arg_array = (CUdeviceptr **)xcalloc(list_count(function->arg_list), sizeof(CUdeviceptr *));
-	for (i = 0; i < list_count(function->arg_list); ++i)
-		(function->arg_array)[i] = 
-			&(((struct cuda_function_arg_t *)list_get(function->arg_list, i))->value);
+	/* Get function */
+	for (i = 0; i < list_count(runtime_func_list); i++)
+	{
+		function = *(CUfunction *)list_get(runtime_func_list, i);
+		if (function->host_func_ptr == func)
+			break;
+	}
+
+	/* If no function found */
+	if (i == list_count(runtime_func_list))
+		fatal("%s: no function found", __FUNCTION__);
+
+	/* Get arguments */
+	function->num_args = list_count(execution_stack) - 1;
+	function->arg_array = (void **)xcalloc(function->num_args,
+			sizeof(void *));
+	for (i = function->num_args - 1; i >= 0; i--)
+	{
+		arg = (struct cuda_function_arg_t *)list_pop(execution_stack);
+		function->arg_array[i] = arg->ptr;
+	}
+
+	/* Get dim */
+	func_dim = (unsigned int *)list_pop(execution_stack);
+	function->global_sizes[0] = func_dim[0];
+	function->global_sizes[1] = func_dim[1];
+	function->global_sizes[2] = func_dim[2];
+	function->local_sizes[0] = func_dim[3];
+	function->local_sizes[1] = func_dim[4];
+	function->local_sizes[2] = func_dim[5];
+	free(func_dim);
+
+	assert(list_count(execution_stack) == 0);
 
 	/* Launch kernel */
 	cuLaunchKernel(function, function->global_sizes[0],
 			function->global_sizes[1], function->global_sizes[2], 
 			function->local_sizes[0], function->local_sizes[1], 
 			function->local_sizes[2], 
-			0, NULL, (void **)function->arg_array, NULL);
+			0, NULL, function->arg_array, NULL);
 
 	cuda_debug_print(stdout, "\t(runtime) out: return = %d\n", cudaSuccess);
 

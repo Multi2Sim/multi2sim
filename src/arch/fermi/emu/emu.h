@@ -50,8 +50,7 @@ struct frm_emu_t
 	/* Global memory */
 	struct mem_t *global_mem;
 	unsigned int global_mem_top;
-	unsigned int free_global_mem_size;
-	unsigned int total_global_mem_size;
+	struct mem_t *shared_mem; /* shared with the CPU */
 
 	/* Constant memory, which is organized as 16 banks of 64KB each. */
 	struct mem_t *const_mem;
@@ -60,6 +59,9 @@ struct frm_emu_t
 	 * are initialized. A warning will be issued by the simulator
 	 * if an uninitialized element is used by the kernel. */
 	int const_mem_init[32];
+
+	unsigned int free_global_mem_size;
+	unsigned int total_global_mem_size;
 
 	/* Stats */
 	int grid_count;  /* Number of CUDA functions executed */

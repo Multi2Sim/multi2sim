@@ -26,20 +26,30 @@ extern struct list_t *function_list;
 struct CUfunc_st
 {
 	int id;
-	int ref_count;
 
 	char *name;
+
+	void *host_func_ptr;
+
 	unsigned int module_id;
 
 	unsigned long long int *inst_buffer;
 	unsigned int inst_buffer_size;
 	unsigned int num_gpr_used;
 
-	struct list_t *arg_list;
-	CUdeviceptr **arg_array;
+	int binaryVersion;
+	int constSizeBytes;
+	int localSizeBytes;
+	int maxThreadsPerBlock;
+	int numRegs;
+	int ptxVersion;
+	int sharedSizeBytes;
 
-	int global_sizes[3];  /* #thread-blocks in a grid */
-	int local_sizes[3];
+	int num_args;
+	void **arg_array;
+
+	unsigned int global_sizes[3];  /* Number of thread blocks in a grid */
+	unsigned int local_sizes[3];  /* Number of threads in a thread block */
 };
 
 CUfunction cuda_function_create(CUmodule module, const char *function_name);

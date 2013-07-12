@@ -43,6 +43,7 @@ struct frm_thread_block_t *frm_thread_block_create()
 	thread_block = xcalloc(1, sizeof(struct frm_thread_block_t));
 	thread_block->shared_mem = mem_create();
 	thread_block->shared_mem->safe = 0;
+	thread_block->num_warps_at_barrier = 0;
 
 	/* Return */
 	return thread_block;

@@ -35,6 +35,8 @@ struct cuda_device_t *cuda_device_create(void)
 	device->device = list_count(device_list);
 	device->name = xstrdup("Multi2Sim Fermi Device");
 	/* Tesla C2050 */
+	device->cc.major = 2;
+	device->cc.minor = 0;
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK] = 512;
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X] = 1024;
 	device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y] = 1024;
