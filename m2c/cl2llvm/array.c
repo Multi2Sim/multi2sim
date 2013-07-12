@@ -52,7 +52,7 @@ void cl2llvm_array_alloca(struct list_t *array_deref_list, LLVMTypeRef type, LLV
 	array_length = list_get(array_deref_list, 0);
 	
 	snprintf(temp_var_name, sizeof(temp_var_name),
-		"tmp%d", temp_var_count++);
+		"tmp__%d", temp_var_count++);
 
 	array = LLVMBuildArrayAlloca(cl2llvm_builder, type, 
 		array_length->val, temp_var_name);
@@ -91,7 +91,7 @@ void cl2llvm_array_alloca(struct list_t *array_deref_list, LLVMTypeRef type, LLV
 			index[0] = LLVMConstInt(LLVMInt32Type(), i, 0);
 			
 			snprintf(temp_var_name, sizeof(temp_var_name),
-				"tmp%d", temp_var_count++);
+				"tmp__%d", temp_var_count++);
 
 			array_ptr = LLVMBuildGEP(cl2llvm_builder, array, index, 1,
 				temp_var_name);

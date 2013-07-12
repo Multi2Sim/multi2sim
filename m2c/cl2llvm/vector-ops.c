@@ -54,7 +54,7 @@ void expand_vectors(struct list_t *elem_list)
 
 
 				snprintf(temp_var_name, sizeof(temp_var_name),
-					"tmp%d", temp_var_count++);
+					"tmp_%d", temp_var_count++);
 
 				current_vec_elem = cl2llvm_val_create_w_init( LLVMBuildExtractElement(cl2llvm_builder, current_elem->val, cl2llvm_index->val, temp_var_name), current_elem->type->sign);
 				list_insert(elem_list, index + vec_index, current_vec_elem);
@@ -401,7 +401,7 @@ struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val
 	LLVMValueRef new_lvalue_val;
 	
 	snprintf(temp_var_name, sizeof(temp_var_name),
-		"tmp%d", temp_var_count++);
+		"tmp_%d", temp_var_count++);
 
 	/* Load vector */
 	lvalue = cl2llvm_val_create_w_init(LLVMBuildLoad(cl2llvm_builder, lvalue_addr->val,
@@ -440,7 +440,7 @@ struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val
 		for (i = 0; i < component_count; i++)
 		{
 			snprintf(temp_var_name, sizeof(temp_var_name),
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 
 			llvm_index = LLVMConstInt(LLVMInt32Type(), i, 0);
 
@@ -448,7 +448,7 @@ struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val
 			component = LLVMBuildExtractElement(cl2llvm_builder, rvalue->val, llvm_index, temp_var_name);
 
 			snprintf(temp_var_name, sizeof(temp_var_name),
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 
 			/* Insert component into lvalue */
 			new_lvalue_val = LLVMBuildInsertElement(cl2llvm_builder, new_lvalue_val, 
@@ -464,7 +464,7 @@ struct cl2llvm_val_t *cl2llvm_build_component_wise_assignment(struct cl2llvm_val
 		for (i = 0; i < component_count; i++)
 		{
 			snprintf(temp_var_name, sizeof(temp_var_name),
-				"tmp%d", temp_var_count++);
+				"tmp_%d", temp_var_count++);
 
 			/* Insert component into lvalue */
 			new_lvalue_val = LLVMBuildInsertElement(cl2llvm_builder, new_lvalue_val, 
