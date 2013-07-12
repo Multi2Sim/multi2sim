@@ -70,7 +70,7 @@ struct opencl_x86_program_t *opencl_x86_program_create(
 		fatal("%s: no '.text' section in binary", __FUNCTION__);
 
 	/* Extract section to temporary file */
-	program->file_name = xstrdup("./tmp_XXXXXX");
+	program->file_name = xstrdup("/tmp/tmp_XXXXXX");
 	f = mkstemp(program->file_name);
 	if (f == -1)
 		fatal("%s: could not create temporary file", __FUNCTION__);
