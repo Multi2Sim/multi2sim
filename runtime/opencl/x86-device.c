@@ -75,7 +75,15 @@ static struct opencl_x86_device_exec_t *opencl_x86_device_has_work(
 static int opencl_x86_device_get_next_work_group(
 		struct opencl_x86_device_exec_t *exec)
 {
+#ifndef X86_DEVICE_SPIN_LOCKS
+	int next;
+	pthread_mutex_lock(&exec->next_group_lock);
+	next = exec->next_group++;
+	pthread_mutex_unlock(&exec->next_group_lock);
+	return next;
+#else
 	return __sync_fetch_and_add(&exec->next_group, 1);
+#endif
 }
 
 
