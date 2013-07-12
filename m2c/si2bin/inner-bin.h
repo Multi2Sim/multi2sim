@@ -118,6 +118,9 @@ struct si2bin_inner_bin_t
 	/* Program Resource */
 	struct si_bin_compute_pgm_rsrc2_t *pgm_rsrc2;
 
+	/* RAT_OP */
+	int rat_op;
+
 	/* Number of SGPRS and VGPRS */
 	int num_sgprs;
 	int num_vgprs;
@@ -147,9 +150,6 @@ void si2bin_inner_bin_add_user_element(struct si2bin_inner_bin_t *bin,
 
 void si2bin_inner_bin_add_entry(struct si2bin_inner_bin_t *bin, struct si2bin_inner_bin_entry_t *entry);
 void si2bin_inner_bin_generate(struct si2bin_inner_bin_t *bin, struct elf_enc_buffer_t *bin_buffer);
-
-void si2bin_inner_bin_create_file(struct elf_enc_buffer_t *text_section_buffer, struct elf_enc_buffer_t *bin_buffer);
-
 
 #endif
 
