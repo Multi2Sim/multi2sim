@@ -48,6 +48,9 @@ struct opencl_x86_device_exec_t
 	unsigned int work_group_count[3];
 
 	int num_groups;
+#ifndef X86_DEVICE_SPIN_LOCKS
+	pthread_mutex_t next_group_lock;
+#endif
 	volatile int next_group;
 };
 
