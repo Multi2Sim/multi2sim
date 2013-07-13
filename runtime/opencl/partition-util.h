@@ -1,6 +1,10 @@
 #ifndef __PARTITION_UTIL_H__
 #define __PARTITION_UTIL_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "list.h"
 #include "partition-util-time.h"
 
@@ -59,5 +63,13 @@ unsigned int get_centroid_distance(int dims, unsigned int *cube, unsigned int *p
 unsigned int proportions_from_string(const char *str, unsigned int count, unsigned int *prop);
 void normalize_proportions(unsigned int new_sum, unsigned int count, unsigned int *prop);
 unsigned int convert_fraction(unsigned int num, unsigned int den, unsigned int new_den);
+
+void shape_local_size(unsigned int work_dim, size_t total, const size_t *global, size_t *local);
+size_t get_factor(size_t *num);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif
