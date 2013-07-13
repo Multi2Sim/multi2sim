@@ -152,7 +152,16 @@ args_stmt_list
 args_stmt
 	: TOK_ARG_TYPE TOK_NEW_LINE
 	{
-		/* do nothing yet */
+		int size;
+		
+		/* check the size of the current argument */
+		/* format for tok_arg_type: .i32, .i64, .f32, .f64 */
+		size = (atoi(($1->name) + 2)) / 4;
+		
+		/* increase the kernel argument total size */
+		frm2bin_inner_bin->arg_totalSize += size;
+		
+		frm_id_free($1);
 	}
 	;
 
@@ -193,7 +202,11 @@ text_stmt
 		frm2bin_inst_gen(inst);
 		
 		/* write instruction binary to the buffer */
+		/* This will be deleted later */
 		elf_enc_buffer_write(text_section_buffer, inst->inst_bytes.bytes, inst->size);
+		
+		/* write instruction binary to text section buffer */
+		elf_enc_buffer_write(frm2bin_entry->text_section_buffer, inst->inst_bytes.bytes, inst->size);
 		
 		/* dump the instruction binary to the console */
 		/*

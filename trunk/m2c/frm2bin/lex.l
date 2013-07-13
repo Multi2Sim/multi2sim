@@ -81,6 +81,7 @@ void yyerror_lex(const char *msg);
 }
 
 .[bfsu][0-9]+ {
+	frm2bin_yylval.id = frm_id_create(yytext);
 	return TOK_ARG_TYPE;
 }
 
