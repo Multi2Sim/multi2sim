@@ -98,5 +98,42 @@ void frm2bin_outer_bin_generate(struct frm2bin_outer_bin_t *outer_bin,
 	struct elf_enc_buffer_t *buffer)
 {
 	/* do nothing temporarily */
+	int i;
+
+	struct frm2bin_inner_bin_t *inner_bin;
+
+	struct elf_enc_section_t *text_section;
+
+	struct elf_enc_buffer_t *text_buffer;
+	struct elf_enc_buffer_t *kernel_buffer;
+
+	/* Create Text Section */
+	text_buffer = elf_enc_buffer_create();
+	text_section =
+		elf_enc_section_create(".text", text_buffer, text_buffer);
+
+	/* loop over all inner kernels */
+	LIST_FOR_EACH(outer_bin->inner_bin_list, i)
+	{
+		/* a lot processing here */
+
+		kernel_buffer = elf_enc_buffer_create();
+
+		inner_bin = list_get(outer_bin->inner_bin_list, i);
+
+		/* Generate Inner Bin File */
+		frm2bin_inner_bin_generate(inner_bin, kernel_buffer);
+
+		/* write (inner) kernel_buffer to (outer) text_buffer */
+		elf_enc_buffer_write(text_buffer, kernel_buffer->ptr,
+			kernel_buffer->offset);
+
+		/* free kernel_buffer */
+		elf_enc_buffer_free(kernel_buffer);
+	}
+
+	/* Add Text Section and Text Buffer to Outer ELF */
+	elf_enc_file_add_buffer(outer_bin->file, text_buffer);
+	elf_enc_file_add_section(outer_bin->file, text_section);
 }
 
