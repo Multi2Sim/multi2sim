@@ -22,9 +22,6 @@
 
 #include <stdio.h>
 
-#include <lib/util/class.h>
-
-
 /* UAV table */
 #define SI_EMU_MAX_NUM_UAVS 16
 #define SI_EMU_UAV_TABLE_ENTRY_SIZE 32
@@ -185,21 +182,8 @@ struct si_mem_ptr_t
 }__attribute__((packed));
 
 
-/* Class-related macros */
-#define SI_EMU_TYPE 0x9469771f
-#define SI_EMU(p) CLASS_REINTERPRET_CAST((p), SI_EMU_TYPE, struct si_emu_t)
-#define SI_EMU_CLASS_OF(p) CLASS_OF((p), SI_EMU_TYPE)
-
-
-/* Class 'si_emu_t'
- * Inherits from 'emu_t'
- */
 struct si_emu_t
 {
-	/* Class information
-	 * WARNING - must be the first field */
-	struct class_t class_info;
-
 	/* Memory */
 	struct mem_t *video_mem;  /* local to the GPU */
 	unsigned int video_mem_top;

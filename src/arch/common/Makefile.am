@@ -8,14 +8,8 @@ libcommon_a_SOURCES = \
 	asm.c \
 	asm.h \
 	\
-	emu.c \
-	emu.h \
-	\
 	runtime.c \
-	runtime.h \
-	\
-	timing.c \
-	timing.h
+	runtime.h
 
 INCLUDES = @M2S_INCLUDES@
 
