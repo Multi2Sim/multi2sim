@@ -88,17 +88,20 @@ struct frm2bin_inner_bin_entry_t
 	struct elf_enc_section_t *data_section;  /* Private field */
 
 	/* Not known what those following sections are for */
-	struct elf_enc_buffer_t *constant0_section_buffer;	/* Public field */
-	struct elf_enc_section_t *constant0_section;		/* Private field */
+	struct elf_enc_buffer_t *nv_constant0_section_buffer;	/* Public field */
+	struct elf_enc_section_t *nv_constant0_section;		/* Private field */
 
-	struct elf_enc_buffer_t *info_section_buffer;	/* Public field */
-	struct elf_enc_section_t *info_section;		/* Private field */
+	struct elf_enc_buffer_t *nv_constant16_section_buffer;	/* Public field */
+	struct elf_enc_section_t *nv_constant16_section;		/* Private field */
 
-	struct elf_enc_buffer_t *shared_section_buffer;	/* Public field */
-	struct elf_enc_section_t *shared_section;	/* Private field */
+	struct elf_enc_buffer_t *nv_info_section_buffer;	/* Public field */
+	struct elf_enc_section_t *nv_info_section;		/* Private field */
 
-	struct elf_enc_buffer_t *local_section_buffer;	/* Public field */
-	struct elf_enc_section_t *local_section;	/* Private field */
+	struct elf_enc_buffer_t *nv_shared_section_buffer;	/* Public field */
+	struct elf_enc_section_t *nv_shared_section;	/* Private field */
+
+	//struct elf_enc_buffer_t *nv_local_section_buffer;	/* Public field */
+	//struct elf_enc_section_t *nv_local_section;	/* Private field */
 
 	/* Symbol table associated with the encoding dictionary entry. It is
 	 * initialized internally, and the user can just add new symbols
@@ -138,6 +141,9 @@ struct frm2bin_inner_bin_t
 
 	/* Elements of type frm_bin_enc_user_element_t */
 	struct list_t *user_element_list;
+
+	/* total size of kernel arguments */
+	int arg_totalSize;
 
 	/* FloatMode */
 	//int FloatMode;

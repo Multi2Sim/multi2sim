@@ -138,6 +138,31 @@ struct frm2bin_inner_bin_entry_t *frm2bin_inner_bin_entry_create(void)
 			entry->data_section_buffer);
 	entry->data_section->header.sh_type = SHT_PROGBITS;
 	
+	/* .nv.info section initialization */
+	entry->nv_info_section_buffer = elf_enc_buffer_create();
+	entry->nv_info_section = elf_enc_section_create(".nv.info", entry->nv_info_section_buffer,
+		entry->nv_info_section_buffer);
+	entry->nv_info_section->header.sh_type = SHT_LOPROC;
+
+	/* .nv.constant0 section initialization */
+	entry->nv_constant0_section_buffer = elf_enc_buffer_create();
+	entry->nv_constant0_section = elf_enc_section_create(".nv.constant0", entry->nv_constant0_section_buffer,
+		entry->nv_constant0_section_buffer);
+	entry->nv_constant0_section->header.sh_type = SHT_PROGBITS;
+
+	/* .nv.constant0 section initialization */
+	entry->nv_constant16_section_buffer = elf_enc_buffer_create();
+	entry->nv_constant16_section = elf_enc_section_create(".nv.constant16", entry->nv_constant16_section_buffer,
+		entry->nv_constant16_section_buffer);
+	entry->nv_constant16_section->header.sh_type = SHT_PROGBITS;
+
+	/* .nv.shared section initialization */
+	entry->nv_shared_section_buffer = elf_enc_buffer_create();
+	entry->nv_shared_section = elf_enc_section_create(".nv.shared", entry->nv_shared_section_buffer,
+		entry->nv_shared_section_buffer);
+	entry->nv_shared_section->header.sh_type = SHT_NOBITS;
+
+
 	/* Symbol Table Initialization */
 	entry->symbol_table = elf_enc_symbol_table_create(".symtab", ".strtab");
 
@@ -169,7 +194,7 @@ void frm2bin_inner_bin_entry_free(struct frm2bin_inner_bin_entry_t *entry)
 
 
 void frm2bin_inner_bin_entry_add_note(struct frm2bin_inner_bin_entry_t *entry,
-		struct frm2bin_inner_bin_note_t *note)
+	struct frm2bin_inner_bin_note_t *note)
 {
 	/* do nothing. Fermi doesn't have note */
 	list_add(entry->note_list, note);
@@ -178,7 +203,7 @@ void frm2bin_inner_bin_entry_add_note(struct frm2bin_inner_bin_entry_t *entry,
 
 
 
-/*
+/* 
  * AMD Internal Binary Object
  */
 
@@ -194,11 +219,15 @@ struct frm2bin_inner_bin_t *frm2bin_inner_bin_create(char *name)
 	bin->file = elf_enc_file_create();
 	bin->entry_list = list_create();
 
+	/* Initialize the argument total size to 0 */
+	bin->arg_totalSize = 0;
+
 	/* Create buffer and segment for encoding dictionary */
 	buffer = elf_enc_buffer_create();
 	elf_enc_file_add_buffer(bin->file, buffer);
-	
-	segment = elf_enc_segment_create("Encoding Dictionary", buffer, buffer);
+
+	segment =
+		elf_enc_segment_create("Encoding Dictionary", buffer, buffer);
 	elf_enc_file_add_segment(bin->file, segment);
 
 	segment->header.p_type = PT_LOPROC + 2;
@@ -222,7 +251,7 @@ void frm2bin_inner_bin_free(struct frm2bin_inner_bin_t *bin)
 
 	/* Free list elements and list */
 	LIST_FOR_EACH(bin->entry_list, i)
-		frm2bin_inner_bin_entry_free(list_get(bin->entry_list ,i));
+		frm2bin_inner_bin_entry_free(list_get(bin->entry_list, i));
 	list_free(bin->entry_list);
 
 	/* Free elf_enc_file */
@@ -296,6 +325,7 @@ void frm2bin_inner_bin_add_entry(struct frm2bin_inner_bin_t *bin,
         //
 	//note_segment->header.p_type = PT_NOTE;
 
+
 	/* Add text section and text buffer section to elf_enc_file */
 	elf_enc_file_add_buffer(bin->file, entry->text_section_buffer);
 	elf_enc_file_add_section(bin->file, entry->text_section);
@@ -303,6 +333,27 @@ void frm2bin_inner_bin_add_entry(struct frm2bin_inner_bin_t *bin,
 	/* Add data section and data buffer section to elf_enc_file */
 	elf_enc_file_add_buffer(bin->file, entry->data_section_buffer);
 	elf_enc_file_add_section(bin->file, entry->data_section);
+
+	/* Add constant0 section and constant0 buffer section to elf_enc_file */
+	elf_enc_file_add_buffer(bin->file, entry->nv_constant0_section_buffer);
+	elf_enc_file_add_section(bin->file, entry->nv_constant0_section);
+
+	/* Add constant0 section and constant0 buffer section to elf_enc_file */
+	elf_enc_file_add_buffer(bin->file, entry->nv_constant16_section_buffer);
+	elf_enc_file_add_section(bin->file, entry->nv_constant16_section);
+
+
+	/* Add info section and info buffer section to elf_enc_file */
+	elf_enc_file_add_buffer(bin->file, entry->nv_info_section_buffer);
+	elf_enc_file_add_section(bin->file, entry->nv_info_section);
+
+	/* Add shared section and shared buffer section to elf_enc_file */
+	elf_enc_file_add_buffer(bin->file, entry->nv_shared_section_buffer);
+	elf_enc_file_add_section(bin->file, entry->nv_shared_section);
+
+	/* Add local section and local buffer section to elf_enc_file */
+	//elf_enc_file_add_buffer(bin->file, entry->nv_local_section_buffer);
+	//elf_enc_file_add_section(bin->file, entry->nv_local_section);
 
 	/* Add symbol table section and text buffer section to elf_enc_file */
 	elf_enc_file_add_symbol_table(bin->file, entry->symbol_table);
@@ -322,70 +373,107 @@ void frm2bin_inner_bin_generate(struct frm2bin_inner_bin_t *bin,
 	struct elf_enc_buffer_t *bin_buffer)
 {
 	int i;
-	int namesz;
-	int start;
-	int end;
-	int buf_offset;
-	int phtab_size;
+	unsigned int *tmp_buf;
 
-	char *name;
-
-	struct frm2bin_inner_bin_note_t *note;
+//	int namesz;
+//	int start;
+//	int end;
+//	int buf_offset;
+//	int phtab_size;
+//
+//	char *name;
+//
+//	struct frm2bin_inner_bin_note_t *note;
 	struct frm2bin_inner_bin_entry_t *entry;
-	struct elf_enc_buffer_t *enc_dict;
-	struct elf_enc_buffer_t *buffer;
+//	struct elf_enc_buffer_t *enc_dict;
+//	struct elf_enc_buffer_t *buffer;
+//
+//
+//	namesz = 8;
+//	name = "ATI CAL";
+//
+//	enc_dict = list_get(bin->file->buffer_list, 2);
+//
+//	phtab_size = sizeof(Elf32_Phdr) * list_count(bin->file->segment_list);
 
-
-	namesz = 8;
-	name = "ATI CAL";
-
-	enc_dict = list_get(bin->file->buffer_list, 2);
-
-	phtab_size = sizeof(Elf32_Phdr) * list_count(bin->file->segment_list);
+	//struct elf_enc_section_t *section;
+	//struct elf_enc_buffer_t *buffer;
 
 	LIST_FOR_EACH(bin->entry_list, i)
 	{
 		entry = list_get(bin->entry_list, i);
 
-		LIST_FOR_EACH(entry->note_list, i)
+		/* generate the constant0 section */
+
+		/* create an array with all 0s */
+		tmp_buf = (unsigned int *) xmalloc(0x20 + bin->arg_totalSize);
+		memset(tmp_buf, 0, (0x20 + bin->arg_totalSize));
+
+		/* fill constant0 section will 0s */
+		elf_enc_buffer_write(entry->nv_constant0_section_buffer,
+			tmp_buf, (0x20 + bin->arg_totalSize));
+
+		free(tmp_buf);
+
+		/* generate the .nv.info.kernName section */
+		if (bin->arg_totalSize == 0)
+		{
+			/* no parameter */
+			tmp_buf = (unsigned int *) xmalloc(12);
+			*tmp_buf++ = 0x00080a04;
+
+			/* FIXME: symbol index of constant0 section */
+			*tmp_buf++ = entry->nv_constant0_section->index;
+			*tmp_buf = 0x200000;
+		}
+		else
 		{
 
-			/* Write name, size, type, etc. to buffer */
-			note = list_get(entry->note_list, i);
-			elf_enc_buffer_write(entry->note_buffer, &namesz, 4);
-			elf_enc_buffer_write(entry->note_buffer, &note->size, 4);
-			elf_enc_buffer_write(entry->note_buffer, &note->type, 4);
-			elf_enc_buffer_write(entry->note_buffer, name, 8);
-			elf_enc_buffer_write(entry->note_buffer, note->payload,
-					note->size);
 		}
 
-		start = entry->note_buffer->index;
-		end = entry->symbol_table->string_table_buffer->index;
-
-		/* Calculate offset and type for enc_dict */
-		for (i = start; i <= end; i++)
-		{
-			buffer = list_get(bin->file->buffer_list, i);
-			entry->header.d_size += buffer->size;
-		}
-
-		buf_offset = 0;
-
-		for (i = 0; i < start; i++)
-		{
-			buffer = list_get(bin->file->buffer_list, i);
-			buf_offset += buffer->size;
-		}
-
-		entry->header.d_offset = sizeof(Elf32_Ehdr) + phtab_size +
-			sizeof(struct frm2bin_inner_bin_entry_header_t) *
-			list_count(bin->entry_list) + buf_offset;
+		/* doesn't know how to populate local, shared and constant16
+		 * section yet */
 
 
-		/* Write information to enc_dict */
-		elf_enc_buffer_write(enc_dict, &entry->header,
-			sizeof(struct frm2bin_inner_bin_entry_header_t));
+//		LIST_FOR_EACH(entry->note_list, i)
+//		{
+//
+//			/* Write name, size, type, etc. to buffer */
+//			note = list_get(entry->note_list, i);
+//			elf_enc_buffer_write(entry->note_buffer, &namesz, 4);
+//			elf_enc_buffer_write(entry->note_buffer, &note->size, 4);
+//			elf_enc_buffer_write(entry->note_buffer, &note->type, 4);
+//			elf_enc_buffer_write(entry->note_buffer, name, 8);
+//			elf_enc_buffer_write(entry->note_buffer, note->payload,
+//					note->size);
+//		}
+//
+//		start = entry->note_buffer->index;
+//		end = entry->symbol_table->string_table_buffer->index;
+//
+//		/* Calculate offset and type for enc_dict */
+//		for (i = start; i <= end; i++)
+//		{
+//			buffer = list_get(bin->file->buffer_list, i);
+//			entry->header.d_size += buffer->size;
+//		}
+//
+//		buf_offset = 0;
+//
+//		for (i = 0; i < start; i++)
+//		{
+//			buffer = list_get(bin->file->buffer_list, i);
+//			buf_offset += buffer->size;
+//		}
+//
+//		entry->header.d_offset = sizeof(Elf32_Ehdr) + phtab_size +
+//			sizeof(struct frm2bin_inner_bin_entry_header_t) *
+//			list_count(bin->entry_list) + buf_offset;
+//
+//
+//		/* Write information to enc_dict */
+//		elf_enc_buffer_write(enc_dict, &entry->header,
+//			sizeof(struct frm2bin_inner_bin_entry_header_t));
 
 	}
 
@@ -395,6 +483,9 @@ void frm2bin_inner_bin_generate(struct frm2bin_inner_bin_t *bin,
 
 	/* Write elf_enc_file to buffer */
 	elf_enc_file_generate(bin->file, bin_buffer);
+
+	/* write kernel buffer to bin buffer */
+	//elf_enc_buffer_write();
 
 }
 
