@@ -23,24 +23,8 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#include <lib/util/class.h>
-
-
-/* Class-related macros */
-#define ARM_EMU_TYPE 0xe7045419
-#define ARM_EMU(p) CLASS_REINTERPRET_CAST((p), ARM_EMU_TYPE, struct arm_emu_t)
-#define ARM_EMU_CLASS_OF(p) CLASS_OF((p), ARM_EMU_TYPE)
-
-
-/* Class 'arm_emu_t'
- * Inherits from 'emu_t'
- */
 struct arm_emu_t
 {
-	/* Class information
-	 * WARNING - must be the first field */
-	struct class_t class_info;
-
 	/* pid & address_space_index assignment */
 	int current_pid;
 

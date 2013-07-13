@@ -22,25 +22,11 @@
 
 #include <stdio.h>
 
-#include <lib/util/class.h>
 #include <lib/util/list.h>
 
 
-/* Class-related macros */
-#define FRM_EMU_TYPE 0x02c1f8fd
-#define FRM_EMU(p) CLASS_REINTERPRET_CAST((p), FRM_EMU_TYPE, struct frm_emu_t)
-#define FRM_EMU_CLASS_OF(p) CLASS_OF((p), FRM_EMU_TYPE)
-
-
-/* Class 'frm_emu_t'
- * Inherits from 'emu_t'
- */
 struct frm_emu_t
 {
-	/* Class information
-	 * WARNING - must be the first field */
-	struct class_t class_info;
-
 	/* List of grids */
 	struct list_t *grids;
 	struct list_t *pending_grids;
