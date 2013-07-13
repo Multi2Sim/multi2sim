@@ -23,24 +23,8 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#include <lib/util/class.h>
-
-
-/* Class-related macros */
-#define X86_EMU_TYPE 0x24b56ce3
-#define X86_EMU(p) CLASS_REINTERPRET_CAST((p), X86_EMU_TYPE, struct x86_emu_t)
-#define X86_EMU_CLASS_OF(p) CLASS_OF((p), X86_EMU_TYPE)
-
-
-/* Class 'x86_emu_t'
- * Inherits from 'emu_t'
- */
 struct x86_emu_t
 {
-	/* Class information
-	 * WARNING - must be the first field */
-	struct class_t class_info;
-
 	/* pid & address_space_index assignment */
 	int current_pid;
 
