@@ -35,7 +35,6 @@ CLASS_FORWARD_DECLARATION(Node);
 struct linked_list_t;
 
 
-
 /*
  * Class 'Node'
  */
@@ -50,25 +49,6 @@ enum node_kind_t
 	node_leaf,
 	node_abstract
 };
-
-extern struct str_map_t node_region_map;
-enum node_region_t
-{
-	node_region_invalid,
-
-	node_region_block,
-	node_region_if_then,
-	node_region_if_then_else,
-	node_region_while_loop,
-	node_region_loop,
-	node_region_proper_interval,
-	node_region_improper_interval,
-	node_region_proper_outer_interval,
-	node_region_improper_outer_interval,
-
-	node_region_count
-};
-
 
 extern struct str_map_t node_role_map;
 enum node_role_t
@@ -90,7 +70,7 @@ enum node_role_t
 /* Node of the control tree */
 CLASS_BEGIN(Node, Object)
 	
-	enum node_kind_t kind;
+	/* Node name */
 	char *name;
 
 	/* Control tree that the node belongs to */
@@ -120,31 +100,96 @@ CLASS_BEGIN(Node, Object)
 	int exit_if_true;
 	int exit_if_false;
 
-	/* Conditional fields depending on the node kind */
-	union
-	{
-		struct
-		{
-			BasicBlock *basic_block;
-		} leaf;
-
-		struct
-		{
-			/* Type of region */
-			enum node_region_t region;
-
-			/* List of function nodes associated with the abstract
-			 * node. Elements of type 'node_t'. */
-			struct linked_list_t *child_list;
-		} abstract;
-	};
-
 	/* Identifiers assigned during the depth-first search */
 	int preorder_id;
 	int postorder_id;
 
 	/* Color used for traversal algorithms */
 	int color;
+
+
+	/*** Virtual functions ***/
+
+	void (*NodeCompare)(Node *self, Node *node);
+
+CLASS_END(Node)
+
+
+void NodeCreate(Node *self, char *name);
+void NodeDestroy(Node *self);
+
+/* Virtual function inherited from class Object */
+void NodeDump(Object *self, FILE *f);
+
+/* Return true if 'node' is in the linked list of nodes passed as the second
+ * argument. This function does not call 'linked_list_find'. Instead, it
+ * traverses the list using a dedicated iterator, so that the current element of
+ * the list is not lost. */
+int NodeInList(Node *self, struct linked_list_t *list);
+
+/* Try to create an edge between 'node' and 'node_dest'. If the edge already
+ * exist, the function will ignore the call silently. */
+void NodeTryConnect(Node *self, Node *node_dest);
+
+/* Create an edge between 'node' and 'node_dest'. There should be no existing
+ * edge for this source and destination when calling this function. */
+void NodeConnect(Node *self, Node *node_dest);
+
+/* Try to remove an edge between 'node' and 'node_dest'. If the edge does not
+ * exist, the function exists silently. */
+void NodeTryDisconnect(Node *self, Node *node_dest);
+
+/* Disconnect 'node' and 'node_dest'. An edge must exist between both. */
+void NodeDisconnect(Node *self, Node *node_dest);
+
+/* Try to reconnect a source node with a new destination node. This is
+ * equivalent to disconnecting and connecting it, except that the order
+ * of the edge within the successor list of the source node is
+ * guaranteed to stay the same. If an edge already exists between the
+ * source and the new destination, the original edge will just be
+ * completely removed. */
+void NodeReconnectDest(Node *self, Node *dest_node, Node *new_dest_node);
+
+/* Try to replace the source node of an edge. This is equivalent to
+ * disconnecting and connecting it, except that the order of the
+ * predecessor list of the destination node is guaranteed to stay
+ * intact. If an edge already exists between the new source and the
+ * destination, the original edge will just be completely removed. */
+void NodeReconnectSource(Node *self, Node *dest_node, Node *new_src_node);
+
+/* Make 'node' take the same parent as 'before' and place it right before it in
+ * its child list. Node 'before' must have a parent.
+ * This does not insert the node into the control tree structures (an extra
+ * call to 'node_add_node' is needed). */
+void NodeInsertBefore(Node *self, Node *before);
+
+/* Make 'node' take the same parent as 'after' and place it right after it in
+ * its child list. Node 'after' must have a parent.
+ * This does not insert the node into the control tree structures (an extra
+ * call to 'node_add_node' is needed). */
+void NodeInsertAfter(Node *self, Node *after);
+
+/* Starting at 'node', traverse the syntax tree (not control tree) in depth-
+ * first and return the first leaf node found (could be 'node' itself). */
+Node *NodeGetFirstLeaf(Node *self);
+
+/* Starting at 'node', traverse the syntax tree (not control tree) in depth-
+ * first and return the last leaf node found (could be 'node' itself). */
+Node *NodeGetLastLeaf(Node *self);
+		
+/* Compare two nodes */
+void NodeCompare(Node *self, Node *node2);
+
+
+
+
+/*
+ * Class 'LeafNode'
+ */
+
+CLASS_BEGIN(LeafNode, Node)
+
+	BasicBlock *basic_block;
 
 #ifdef HAVE_LLVM
 	/* When the node is created automatically from an LLVM function's
@@ -153,86 +198,76 @@ CLASS_BEGIN(Node, Object)
 	LLVMBasicBlockRef llbb;
 #endif
 
-CLASS_END(Node)
+
+CLASS_END(LeafNode)
 
 
-void NodeCreate(Node *self, enum node_kind_t kind, char *name,
-		enum node_region_t region);
-void NodeDestroy(Node *self);
+void LeafNodeCreate(LeafNode *self, char *name);
+void LeafNodeDestroy(LeafNode *self);
 
-/* Virtual function inherited from class Object */
-void NodeDump(Object *self, FILE *f);
+/* Virtual function from class 'Object' */
+void LeafNodeDump(Object *self, FILE *f);
 
-/* Return the basic block associated to the node. This function makes a sanity
- * check on the node type: it must be a leaf. */
-BasicBlock *NodeGetBasicBlock(Node *node);
 
-/* Return true if 'node' is in the linked list of nodes passed as the second
- * argument. This function does not call 'linked_list_find'. Instead, it
- * traverses the list using a dedicated iterator, so that the current element of
- * the list is not lost. */
-int NodeInList(Node *node, struct linked_list_t *list);
 
-/* Try to create an edge between 'node' and 'node_dest'. If the edge already
- * exist, the function will ignore the call silently. */
-void NodeTryConnect(Node *node, Node *node_dest);
 
-/* Create an edge between 'node' and 'node_dest'. There should be no existing
- * edge for this source and destination when calling this function. */
-void NodeConnect(Node *node, Node *node_dest);
+/*
+ * Class 'AbstractNode'
+ */
 
-/* Try to remove an edge between 'node' and 'node_dest'. If the edge does not
- * exist, the function exists silently. */
-void NodeTryDisconnect(Node *node, Node *node_dest);
+extern struct str_map_t abstract_node_region_map;
+typedef enum
+{
+	AbstractNodeRegionInvalid,
 
-/* Disconnect 'node' and 'node_dest'. An edge must exist between both. */
-void NodeDisconnect(Node *node, Node *node_dest);
+	AbstractNodeBlock,
+	AbstractNodeIfThen,
+	AbstractNodeIfThenElse,
+	AbstractNodeWhileLoop,
+	AbstractNodeLoop,
+	AbstractNodeProperInterval,
+	AbstractNodeImproperInterval,
+	AbstractNodeProperOuterInterval,
+	AbstractNodeImproperOuterInterval,
 
-/* Try to reconnect a source node with a new destination node. This is
- * equivalent to disconnecting and connecting it, except that the order
- * of the edge within the successor list of the source node is
- * guaranteed to stay the same. If an edge already exists between the
- * source and the new destination, the original edge will just be
- * completely removed. */
-void NodeReconnectDest(Node *src_node,
-		Node *dest_node,
-		Node *new_dest_node);
+	AbstractNodeRegionCount
+} AbstractNodeRegion;
 
-/* Try to replace the source node of an edge. This is equivalent to
- * disconnecting and connecting it, except that the order of the
- * predecessor list of the destination node is guaranteed to stay
- * intact. If an edge already exists between the new source and the
- * destination, the original edge will just be completely removed. */
-void NodeReconnectSource(Node *src_node, Node *dest_node,
-		Node *new_src_node);
 
-/* Make 'node' take the same parent as 'before' and place it right before it in
- * its child list. Node 'before' must have a parent.
- * This does not insert the node into the control tree structures (an extra
- * call to 'node_add_node' is needed). */
-void NodeInsertBefore(Node *node, Node *before);
+CLASS_BEGIN(AbstractNode, Node)
 
-/* Make 'node' take the same parent as 'after' and place it right after it in
- * its child list. Node 'after' must have a parent.
- * This does not insert the node into the control tree structures (an extra
- * call to 'node_add_node' is needed). */
-void NodeInsertAfter(Node *node, Node *after);
+	/* Type of region */
+	AbstractNodeRegion region;
 
-/* Starting at 'node', traverse the syntax tree (not control tree) in depth-
- * first and return the first leaf node found (could be 'node' itself). */
-Node *NodeGetFirstLeaf(Node *node);
+	/* List of function nodes associated with the abstract
+ 	 * node. Elements of type 'node_t'. */
+	struct linked_list_t *child_list;
 
-/* Starting at 'node', traverse the syntax tree (not control tree) in depth-
- * first and return the last leaf node found (could be 'node' itself). */
-Node *NodeGetLastLeaf(Node *node);
-		
+CLASS_END(AbstractNode)
+
+
+void AbstractNodeCreate(AbstractNode *self, char *name, AbstractNodeRegion region);
+void AbstractNodeDestroy(AbstractNode *self);
+
+/* Virtual function from class 'Object' */
+void AbstractNodeDump(Object *self, FILE *f);
+
+/* Virtual function from class 'Node' */
+void AbstractNodeCompare(Node *self, Node *node);
+
+
+
+
+/*
+ * Non-Class Functions
+ */
+
 /* Dumping lists of nodes */
-void node_list_dump(struct linked_list_t *list, FILE *f);
-void node_list_dump_buf(struct linked_list_t *list, char *buf, int size);
-void node_list_dump_detail(struct linked_list_t *list, FILE *f);
+void NodeListDump(struct linked_list_t *list, FILE *f);
+void NodeListDumpBuf(struct linked_list_t *list, char *buf, int size);
+void NodeListDumpDetail(struct linked_list_t *list, FILE *f);
 
-/* Compare two nodes */
-void NodeCompare(Node *node1, Node *node2);
+
 
 #endif
 

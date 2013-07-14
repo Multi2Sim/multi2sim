@@ -187,6 +187,9 @@ void *class_new(struct class_t *c);
 void class_delete(void *p);
 int class_instance_of(void *p, struct class_t *c);
 
+/* Return the last child class of object in 'p' */
+struct class_t *class_of(void *p);
+
 /* Dump information about all classes registered */
 void class_dump(FILE *f);
 

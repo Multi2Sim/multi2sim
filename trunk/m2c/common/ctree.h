@@ -62,7 +62,7 @@ CLASS_BEGIN(CTree, Object)
 
 	/* Counters used to assign names to new nodes. A different counter is
 	 * used for each possible abstract node region. */
-	unsigned int name_counter[node_region_count];
+	unsigned int name_counter[AbstractNodeRegionCount];
 
 	/* Nodes are kept in a linked list and a hash table */
 	struct linked_list_t *node_list;
@@ -93,7 +93,7 @@ void CTreeAddNode(CTree *ctree, Node *node);
  * function, and they are inserted into the control tree. The node
  * corresponding to the LLVM entry basic block is returned. */
 #if HAVE_LLVM
-Node *CTreeAddLlvmCFG(CTree *ctree, LLVMValueRef llfunction);
+LeafNode *CTreeAddLlvmCFG(CTree *ctree, LLVMValueRef llfunction);
 #endif
 
 /* Search a node by its name */
