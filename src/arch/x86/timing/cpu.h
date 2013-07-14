@@ -396,10 +396,10 @@ CLASS_END(X86Cpu)
 void X86CpuCreate(X86Cpu *self);
 void X86CpuDestroy(X86Cpu *self);
 
-void X86CpuDump(FILE *f);
-void X86CpuDumpSummary(FILE *f);
+void X86CpuDump(Object *self, FILE *f);
+void X86CpuDumpSummary(Timing *self, FILE *f);
 
-int X86CpuRun(void);
+int X86CpuRun(Timing *self);
 
 
 

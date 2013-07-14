@@ -36,16 +36,18 @@ CLASS_END(ARMCpu)
 void ARMCpuCreate(ARMCpu *self);
 void ARMCpuDestroy(ARMCpu *self);
 
-int ARMCpuRun(void);
+int ARMCpuRun(Timing *self);
 
-void ARMCpuDump(FILE *f);
-void ARMCpuDumpSummary(FILE *f);
+void ARMCpuDump(Object *self, FILE *f);
+void ARMCpuDumpSummary(Timing *self, FILE *f);
 
 
 
 /*
- * Public Functions
+ * Non-Class Stuff
  */
+
+extern ARMCpu *arm_cpu;
 
 void arm_cpu_read_config(void);
 

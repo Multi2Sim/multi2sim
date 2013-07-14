@@ -636,6 +636,11 @@ void EvgGpuCreate(EvgGpu *self)
 		compute_unit->id = compute_unit_id;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(self, ready, compute_unit);
 	}
+
+	/* Virtual functions */
+	asObject(self)->Dump = EvgGpuDump;
+	asTiming(self)->DumpSummary = EvgGpuDumpSummary;
+	asTiming(self)->Run = EvgGpuRun;
 }
 
 
@@ -654,12 +659,12 @@ void EvgGpuDestroy(EvgGpu *self)
 }
 
 
-void EvgGpuDump(FILE *f)
+void EvgGpuDump(Object *self, FILE *f)
 {
 }
 
 
-void EvgGpuDumpSummary(FILE *f)
+void EvgGpuDumpSummary(Timing *self, FILE *f)
 {
 	double inst_per_cycle;
 
@@ -668,9 +673,9 @@ void EvgGpuDumpSummary(FILE *f)
 }
 
 
-int EvgGpuRun(void)
+int EvgGpuRun(Timing *self)
 {
-	EvgGpu *self = evg_gpu;
+	EvgGpu *gpu = asEvgGpu(self);
 
 	struct evg_ndrange_t *ndrange;
 
@@ -686,7 +691,7 @@ int EvgGpuRun(void)
 	while ((ndrange = evg_emu->pending_ndrange_list_head))
 	{
 		/* Currently not supported for more than 1 ND-Range */
-		if (self->ndrange)
+		if (gpu->ndrange)
 			fatal("%s: Evergreen GPU timing simulation not supported for multiple ND-Ranges",
 				__FUNCTION__);
 
@@ -709,12 +714,12 @@ int EvgGpuRun(void)
 	}
 
 	/* Mapped ND-Range */
-	ndrange = self->ndrange;
+	ndrange = gpu->ndrange;
 	assert(ndrange);
 
 	/* Allocate work-groups to compute units */
-	while (self->ready_list_head && ndrange->pending_list_head)
-		evg_compute_unit_map_work_group(self->ready_list_head,
+	while (gpu->ready_list_head && ndrange->pending_list_head)
+		evg_compute_unit_map_work_group(gpu->ready_list_head,
 			ndrange->pending_list_head);
 
 	/* One more cycle */
@@ -729,7 +734,7 @@ int EvgGpuRun(void)
 		esim_finish = esim_finish_evg_max_inst;
 	
 	/* Stop if there was a simulation stall */
-	if (arch_evergreen->cycle - self->last_complete_cycle > 1000000)
+	if (arch_evergreen->cycle - gpu->last_complete_cycle > 1000000)
 	{
 		warning("Evergreen GPU simulation stalled.\n%s",
 			evg_err_stall);
@@ -744,7 +749,7 @@ int EvgGpuRun(void)
 	evg_gpu_uop_trash_empty();
 
 	/* Run one loop iteration on each busy compute unit */
-	for (compute_unit = self->busy_list_head; compute_unit;
+	for (compute_unit = gpu->busy_list_head; compute_unit;
 		compute_unit = compute_unit_next)
 	{
 		/* Store next busy compute unit, since this can change
@@ -759,7 +764,7 @@ int EvgGpuRun(void)
 	evg_faults_insert();
 
 	/* If ND-Range finished execution in all compute units, free it. */
-	if (!self->busy_list_count)
+	if (!gpu->busy_list_count)
 	{
 		/* Dump ND-Range report */
 		evg_ndrange_dump(ndrange, evg_emu_report_file);

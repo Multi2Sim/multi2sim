@@ -78,9 +78,13 @@ void arch_dump(struct arch_t *arch, FILE *f)
 	int i;
 
 	Emu *emu;
+	Timing *timing;
+
+	/* Get objects */
+	emu = arch->emu;
+	timing = arch->timing;
 
 	/* Nothing to print if architecture was not active */
-	emu = arch->emu;
 	if (!emu->instructions)
 		return;
 
@@ -109,8 +113,8 @@ void arch_dump(struct arch_t *arch, FILE *f)
 	/* Timing simulator */
 	fprintf(f, "Cycles = %lld\n", arch->cycle);
 	fprintf(f, "\n");
-	if (arch->timing_dump_func)
-		arch->timing_dump_func(f);
+	assert(timing->DumpSummary);
+	timing->DumpSummary(timing, f);
 }
 
 
@@ -120,11 +124,11 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 	double cycles_per_sec;
 	double cycle_time;  /* In nanoseconds */
 
-	Emu *emu;
+	Emu *emu = arch->emu;
+	Timing *timing = arch->timing;
 
 	/* If no instruction was run for this architecture, skip
 	 * statistics summary. */
-	emu = arch->emu;
 	if (!emu->instructions)
 		return;
 
@@ -145,7 +149,8 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 		fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 
 		/* Architecture-specific */
-		arch->timing_dump_summary_func(f);
+		assert(timing->DumpSummary);
+		timing->DumpSummary(timing, f);
 	}
 
 	/* End */
@@ -188,9 +193,6 @@ struct arch_t *arch_register(char *name, char *prefix,
 		arch_timing_read_config_func_t timing_read_config_func,
 		arch_timing_init_func_t timing_init_func,
 		arch_timing_done_func_t timing_done_func,
-		arch_timing_run_func_t timing_run_func,
-		arch_timing_dump_func_t timing_dump_func,
-		arch_timing_dump_summary_func_t timing_dump_summary_func,
 		arch_mem_config_default_func_t mem_config_default_func,
 		arch_mem_config_parse_entry_func_t mem_config_parse_entry_func,
 		arch_mem_config_check_func_t mem_config_check_func)
@@ -216,12 +218,9 @@ struct arch_t *arch_register(char *name, char *prefix,
 	arch->timing_read_config_func = timing_read_config_func;
 	arch->timing_init_func = timing_init_func;
 	arch->timing_done_func = timing_done_func;
-	arch->timing_dump_func = timing_dump_func;
-	arch->timing_dump_summary_func = timing_dump_summary_func;
 	arch->mem_config_default_func = mem_config_default_func;
 	arch->mem_config_parse_entry_func = mem_config_parse_entry_func;
 	arch->mem_config_check_func = mem_config_check_func;
-	arch->timing_run_func = timing_run_func;
 
 	/* Add architecture and return it */
 	arch_list[arch_list_count++] = arch;
@@ -352,6 +351,7 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 	int i;
 
 	Emu *emu;
+	Timing *timing;
 
 	/* Reset active emulation and timing simulation counters */
 	*num_emu_active_ptr = 0;
@@ -366,7 +366,7 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 		{
 			/* Emulation iteration */
 			emu = arch->emu;
-			assert(emu->Run);
+			assert(emu && emu->Run);
 			arch->active = emu->Run(emu);
 
 			/* Increase number of active emulations if the architecture
@@ -385,7 +385,9 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 			if (run)
 			{
 				/* Do it... */
-				arch->active = arch->timing_run_func();
+				timing = arch->timing;
+				assert(timing && timing->Run);
+				arch->active = timing->Run(timing);
 
 				/* ... but only update the last timing
 				 * simulation cycle if there was an effective
