@@ -29,12 +29,26 @@
 
 CLASS_BEGIN(Timing, Object)
 	
+	/*** Virtual functions ***/
+
+	/* Print statistics summary */
+	void (*DumpSummary)(Timing *self, FILE *f);
+
+	/* Virtual abstract function to run one step of the timing simulation
+	 * loop. The function returns TRUE if any valid simulation was
+	 * performed by the architecture. */
+	int (*Run)(Timing *self);
+
 CLASS_END(Timing)
 
 
 void TimingCreate(Timing *self);
 void TimingDestroy(Timing *self);
 
+void TimingDump(Object *self, FILE *f);
+void TimingDumpSummary(Timing *self, FILE *f);
+
+int TimingRun(Timing *self);
+
 
 #endif
-

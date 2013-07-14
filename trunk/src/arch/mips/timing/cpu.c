@@ -24,10 +24,52 @@
 
 #include "cpu.h"
 
+/*
+ * Class 'MIPSCpu'
+ */
+
+CLASS_IMPLEMENTATION(MIPSCpu);
+
+void MIPSCpuCreate(MIPSCpu *self)
+{
+	/* Parent */
+	TimingCreate(asTiming(self));
+
+	/* Virtual functions */
+	asObject(self)->Dump = MIPSCpuDump;
+	asTiming(self)->DumpSummary = MIPSCpuDumpSummary;
+	asTiming(self)->Run = MIPSCpuRun;
+}
+
+
+void MIPSCpuDestroy(MIPSCpu *self)
+{
+}
+
+
+void MIPSCpuDump(Object *self, FILE *f)
+{
+}
+
+
+void MIPSCpuDumpSummary(Timing *self, FILE *f)
+{
+}
+
+
+int MIPSCpuRun(Timing *self)
+{
+	return FALSE;
+}
+
+
+
 
 /*
  * Public Functions
  */
+
+MIPSCpu *mips_cpu;
 
 void mips_cpu_read_config(void)
 {
@@ -40,20 +82,5 @@ void mips_cpu_init(void)
 
 
 void mips_cpu_done(void)
-{
-}
-
-void mips_cpu_dump(FILE *f)
-{
-}
-
-/* Run one iteration of timing simulation. Return TRUE if still running. */
-int mips_cpu_run(void)
-{
-	return FALSE;
-}
-
-/* TODO: Implement the Mips cpu dump for the cycle accurate simulation */
-void mips_cpu_dump_summary(FILE *f)
 {
 }

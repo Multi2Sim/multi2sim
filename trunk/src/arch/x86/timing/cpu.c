@@ -983,6 +983,11 @@ void X86CpuCreate(X86Cpu *self)
 	self->core = xcalloc(x86_cpu_num_cores, sizeof(struct x86_core_t));
 	X86_CORE_FOR_EACH
 		x86_cpu_core_init(self, core);
+
+	/* Virtual functions */
+	asObject(self)->Dump = X86CpuDump;
+	asTiming(self)->DumpSummary = X86CpuDumpSummary;
+	asTiming(self)->Run = X86CpuRun;
 }
 
 
@@ -997,20 +1002,20 @@ void X86CpuDestroy(X86Cpu *self)
 }
 
 
-void X86CpuDump(FILE *f)
+void X86CpuDump(Object *self, FILE *f)
 {
-	X86Cpu *self = x86_cpu;
+	X86Cpu *cpu = asX86Cpu(self);
 
 	int core;
 	int thread;
 	
 	/* General information */
 	fprintf(f, "\n");
-	fprintf(f, "LastDump = %lld   ; Cycle of last dump\n", self->last_dump);
+	fprintf(f, "LastDump = %lld   ; Cycle of last dump\n", cpu->last_dump);
 	fprintf(f, "IPCLastDump = %.4g   ; IPC since last dump\n",
-			arch_x86->cycle - self->last_dump > 0 ?
-			(double) (self->num_committed_uinst - self->last_committed)
-			/ (arch_x86->cycle - self->last_dump) : 0);
+			arch_x86->cycle - cpu->last_dump > 0 ?
+			(double) (cpu->num_committed_uinst - cpu->last_committed)
+			/ (arch_x86->cycle - cpu->last_dump) : 0);
 	fprintf(f, "\n");
 
 	/* Cores */
@@ -1056,40 +1061,40 @@ void X86CpuDump(FILE *f)
 	}
 
 	/* Register last dump */
-	self->last_dump = arch_x86->cycle;
-	self->last_committed = self->num_committed_uinst;
+	cpu->last_dump = arch_x86->cycle;
+	cpu->last_committed = cpu->num_committed_uinst;
 
 	/* End */
 	fprintf(f, "\n\n");
 }
 
 
-void X86CpuDumpSummary(FILE *f)
+void X86CpuDumpSummary(Timing *self, FILE *f)
 {
-	X86Cpu *self = x86_cpu;
+	X86Cpu *cpu = asX86Cpu(self);
 
 	double inst_per_cycle;
 	double uinst_per_cycle;
 	double branch_acc;
 
 	/* Calculate statistics */
-	inst_per_cycle = arch_x86->cycle ? (double) self->num_committed_inst / arch_x86->cycle : 0.0;
-	uinst_per_cycle = arch_x86->cycle ? (double) self->num_committed_uinst / arch_x86->cycle : 0.0;
-	branch_acc = self->num_branch_uinst ? (double) (self->num_branch_uinst - self->num_mispred_branch_uinst) / self->num_branch_uinst : 0.0;
+	inst_per_cycle = arch_x86->cycle ? (double) cpu->num_committed_inst / arch_x86->cycle : 0.0;
+	uinst_per_cycle = arch_x86->cycle ? (double) cpu->num_committed_uinst / arch_x86->cycle : 0.0;
+	branch_acc = cpu->num_branch_uinst ? (double) (cpu->num_branch_uinst - cpu->num_mispred_branch_uinst) / cpu->num_branch_uinst : 0.0;
 
 	/* Print statistics */
-	fprintf(f, "FastForwardInstructions = %lld\n", self->num_fast_forward_inst);
-	fprintf(f, "CommittedInstructions = %lld\n", self->num_committed_inst);
+	fprintf(f, "FastForwardInstructions = %lld\n", cpu->num_fast_forward_inst);
+	fprintf(f, "CommittedInstructions = %lld\n", cpu->num_committed_inst);
 	fprintf(f, "CommittedInstructionsPerCycle = %.4g\n", inst_per_cycle);
-	fprintf(f, "CommittedMicroInstructions = %lld\n", self->num_committed_uinst);
+	fprintf(f, "CommittedMicroInstructions = %lld\n", cpu->num_committed_uinst);
 	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
 }
 
 
-int X86CpuRun(void)
+int X86CpuRun(Timing *self)
 {
-	X86Cpu *self = x86_cpu;
+	X86Cpu *cpu = asX86Cpu(self);
 
 	/* Stop if no context is running */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
@@ -1101,7 +1106,7 @@ int X86CpuRun(void)
 		x86_cpu_run_fast_forward();
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (x86_emu_max_inst && self->num_committed_inst >=
+	if (x86_emu_max_inst && cpu->num_committed_inst >=
 			x86_emu_max_inst - x86_cpu_fast_forward_count)
 		esim_finish = esim_finish_x86_max_inst;
 

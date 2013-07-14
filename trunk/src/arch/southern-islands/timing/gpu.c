@@ -1268,6 +1268,11 @@ void SIGpuCreate(SIGpu *self)
 		self->compute_units[compute_unit_id] = compute_unit;
 		list_add(self->available_compute_units, compute_unit);
 	}
+
+	/* Virtual functions */
+	asObject(self)->Dump = SIGpuDump;
+	asTiming(self)->DumpSummary = SIGpuDumpSummary;
+	asTiming(self)->Run = SIGpuRun;
 }
 
 
@@ -1289,19 +1294,19 @@ void SIGpuDestroy(SIGpu *self)
 }
 
 
-void si_gpu_dump(FILE *f)
+void SIGpuDump(Object *self, FILE *f)
 {
 }
 
 
-void si_gpu_dump_summary(FILE *f)
+void SIGpuDumpSummary(Timing *self, FILE *f)
 {
 }
 
 
-int si_gpu_run(void)
+int SIGpuRun(Timing *self)
 {
-	SIGpu *self = si_gpu;
+	SIGpu *gpu = asSIGpu(self);
 
 	struct si_compute_unit_t *compute_unit;
 	struct si_ndrange_t *ndrange;
@@ -1321,7 +1326,7 @@ int si_gpu_run(void)
 	assert(ndrange);
 
 	/* Allocate work-groups to compute units */
-	while (list_count(self->available_compute_units) && 
+	while (list_count(gpu->available_compute_units) && 
 		list_count(si_emu->waiting_work_groups))
 	{
 		work_group_id = (long) list_dequeue(
@@ -1333,7 +1338,7 @@ int si_gpu_run(void)
 			(void *)work_group_id);
 
 		si_compute_unit_map_work_group(
-			list_dequeue(self->available_compute_units),
+			list_dequeue(gpu->available_compute_units),
 			work_group);
 	}
 
@@ -1355,7 +1360,7 @@ int si_gpu_run(void)
 	}
 
 	/* Stop if there was a simulation stall */
-	if ((arch_southern_islands->cycle-self->last_complete_cycle) > 
+	if ((arch_southern_islands->cycle-gpu->last_complete_cycle) > 
 		1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", 
@@ -1374,7 +1379,7 @@ int si_gpu_run(void)
 	/* Run one loop iteration on each busy compute unit */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = self->compute_units[compute_unit_id];
+		compute_unit = gpu->compute_units[compute_unit_id];
 
 		/* Run one cycle */
 		si_compute_unit_run(compute_unit);

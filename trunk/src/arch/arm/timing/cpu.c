@@ -35,6 +35,11 @@ void ARMCpuCreate(ARMCpu *self)
 {
 	/* Parent */
 	TimingCreate(asTiming(self));
+
+	/* Virtual functions */
+	asObject(self)->Dump = ARMCpuDump;
+	asTiming(self)->DumpSummary = ARMCpuDumpSummary;
+	asTiming(self)->Run = ARMCpuRun;
 }
 
 
@@ -43,17 +48,17 @@ void ARMCpuDestroy(ARMCpu *self)
 }
 
 
-void ARMCpuDump(FILE *f)
+void ARMCpuDump(Object *self, FILE *f)
 {
 }
 
 
-void ARMCpuDumpSummary(FILE *f)
+void ARMCpuDumpSummary(Timing *self, FILE *f)
 {
 }
 
 
-int ARMCpuRun(void)
+int ARMCpuRun(Timing *self)
 {
 	return FALSE;
 }
@@ -62,8 +67,11 @@ int ARMCpuRun(void)
 
 
 /*
- * Public Functions
+ * Non-Class Public Stuff
  */
+
+ARMCpu *arm_cpu;
+
 
 void arm_cpu_read_config(void)
 {

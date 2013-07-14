@@ -956,11 +956,6 @@ void frm_gpu_done()
 }
 
 
-void frm_gpu_dump(FILE *f)
-{
-}
-
-
 void frm_gpu_dump_default_config(char *filename)
 {
 	FILE *f;
@@ -1076,6 +1071,11 @@ void FrmGpuCreate(FrmGpu *self)
 		sm->id = sm_id;
 		list_add(self->sm_ready_list, sm);
 	}
+
+	/* Virtual functions */
+	asObject(self)->Dump = FrmGpuDump;
+	asTiming(self)->DumpSummary = FrmGpuDumpSummary;
+	asTiming(self)->Run = FrmGpuRun;
 }
 
 
@@ -1094,14 +1094,19 @@ void FrmGpuDestroy(FrmGpu *self)
 }
 
 
-void FrmGpuDumpSummary(FILE *f)
+void FrmGpuDump(Object *self, FILE *f)
 {
 }
 
 
-int FrmGpuRun(void)
+void FrmGpuDumpSummary(Timing *self, FILE *f)
 {
-	FrmGpu *self = frm_gpu;
+}
+
+
+int FrmGpuRun(Timing *self)
+{
+	FrmGpu *gpu = asFrmGpu(self);
 
 	struct frm_grid_t *grid;
 
@@ -1137,14 +1142,14 @@ int FrmGpuRun(void)
 	}
 
 	/* Get mapped grids */
-	grid = self->grid;
+	grid = gpu->grid;
 	assert(grid);
 
 	/* Assign thread blocks to SMs */
-	while (list_head(self->sm_ready_list) && 
+	while (list_head(gpu->sm_ready_list) && 
 			list_head(grid->pending_thread_blocks))
 	{
-		frm_sm_map_thread_block(list_head(self->sm_ready_list),
+		frm_sm_map_thread_block(list_head(gpu->sm_ready_list),
 				list_head(grid->pending_thread_blocks));
 	}
 
@@ -1160,7 +1165,7 @@ int FrmGpuRun(void)
 		esim_finish = esim_finish_frm_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((arch_fermi->cycle - self->last_complete_cycle) > 1000000)
+	if ((arch_fermi->cycle - gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Fermi GPU simulation stalled.\n%s", frm_err_stall);
 		esim_finish = esim_finish_stall;
@@ -1171,19 +1176,19 @@ int FrmGpuRun(void)
 		return TRUE;
 
 	/* Run one loop iteration on each busy SM */
-	for (sm = list_head(self->sm_busy_list), sm_id = 0; sm; 
+	for (sm = list_head(gpu->sm_busy_list), sm_id = 0; sm; 
 			sm = sm_next, sm_id++)
 	{
 		/* Store next busy SM, since this can change
 		 * during the SM simulation loop iteration. */
-		sm_next = list_get(self->sm_busy_list, sm_id + 1);
+		sm_next = list_get(gpu->sm_busy_list, sm_id + 1);
 
 		/* Run one cycle */
 		frm_sm_run(sm);
 	}
 
 	/* Finish execution */
-	if (!list_count(self->sm_busy_list))
+	if (!list_count(gpu->sm_busy_list))
 	{
 		/* Dump Grid report */
 		frm_grid_dump(grid, frm_emu_report_file);

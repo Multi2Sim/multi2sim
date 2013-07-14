@@ -20,21 +20,37 @@
 #ifndef ARCH_MIPS_TIMING_CPU_H
 #define ARCH_MIPS_TIMING_CPU_H
 
-#include <stdio.h>
+#include <arch/common/timing.h>
+
+
+/*
+ * Class 'MIPSCpu'
+ */
+
+CLASS_BEGIN(MIPSCpu, Timing)
+
+CLASS_END(MIPSCpu)
+
+void MIPSCpuCreate(MIPSCpu *self);
+void MIPSCpuDestroy(MIPSCpu *self);
+
+void MIPSCpuDump(Object *self, FILE *f);
+void MIPSCpuDumpSummary(Timing *self, FILE *f);
+
+int MIPSCpuRun(Timing *self);
+
+
 
 
 /*
  * Public Functions
  */
 
+extern MIPSCpu *mips_cpu;
+
 void mips_cpu_read_config(void);
 
 void mips_cpu_init(void);
 void mips_cpu_done(void);
-
-int mips_cpu_run(void);
-
-void mips_cpu_dump(FILE *f);
-void mips_cpu_dump_summary(FILE *f);
 
 #endif

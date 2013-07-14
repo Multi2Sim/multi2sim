@@ -236,10 +236,10 @@ CLASS_END(FrmGpu)
 void FrmGpuCreate(FrmGpu *self);
 void FrmGpuDestroy(FrmGpu *self);
 
-void frm_gpu_dump(FILE *f);
-void FrmGpuDumpSummary(FILE *f);
+void FrmGpuDump(Object *self, FILE *f);
+void FrmGpuDumpSummary(Timing *self, FILE *f);
 
-int FrmGpuRun(void);
+int FrmGpuRun(Timing *self);
 
 
 
