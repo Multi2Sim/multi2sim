@@ -1991,7 +1991,7 @@ int arm_dissassembly_mode_tag(struct list_t * thumb_symbol_list, unsigned int ad
 	int hi;
 
 	lo = 0;
-	hi = list_count(thumb_symbol_list);
+	hi = list_count(thumb_symbol_list) - 1;
 
 	while(lo <= hi)
 	{
@@ -2019,10 +2019,6 @@ int arm_dissassembly_mode_tag(struct list_t * thumb_symbol_list, unsigned int ad
 	}
 	*/
 
-	/* Get symbol */
-	/* FIXME - Rafa - I added the '!symbol' check below, since this was
-	 * segfaulting for the 'hello.s' sample program provided in
-	 * 'm2s-client-kit/local-tests/test-auto/arm-asm'. */
 	tag_index = mid;
 	symbol = (struct elf_symbol_t *) list_get(thumb_symbol_list, tag_index);
 	if (!symbol)
