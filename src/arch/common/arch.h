@@ -22,6 +22,12 @@
 
 #include <stdio.h>
 
+#include <lib/util/class.h>
+
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(Emu);
+
 
 
 /*
@@ -45,9 +51,6 @@ typedef void (*arch_callback_func_t)(struct arch_t *arch, void *user_data);
 
 typedef void (*arch_emu_init_func_t)(void);
 typedef void (*arch_emu_done_func_t)(void);
-typedef int (*arch_emu_run_func_t)(void);
-typedef void (*arch_emu_dump_func_t)(FILE *f);
-typedef void (*arch_emu_dump_summary_func_t)(FILE *f);
 
 typedef void (*arch_timing_read_config_func_t)(void);
 typedef void (*arch_timing_init_func_t)(void);
@@ -91,9 +94,6 @@ struct arch_t
 	/* Call-back functions for emulator */
 	arch_emu_init_func_t emu_init_func;
 	arch_emu_done_func_t emu_done_func;
-	arch_emu_run_func_t emu_run_func;
-	arch_emu_dump_func_t emu_dump_func;
-	arch_emu_dump_summary_func_t emu_dump_summary_func;
 
 	/* Call-back functions for timing simulator */
 	arch_timing_read_config_func_t timing_read_config_func;
@@ -108,16 +108,15 @@ struct arch_t
 	arch_mem_config_parse_entry_func_t mem_config_parse_entry_func;
 	arch_mem_config_check_func_t mem_config_check_func;
 
+	/* Emulator */
+	Emu *emu;
+
 	/* List of entry modules to the memory hierarchy. Each element of this list
 	 * is of type 'mod_t'. */
 	struct linked_list_t *mem_entry_mod_list;
 
-	/* Timer for activity */
-	struct m2s_timer_t *timer;
-
 	/* Counters */
 	long long cycle;
-	long long inst_count;
 };
 
 
@@ -154,9 +153,6 @@ struct arch_t *arch_register(char *name, char *prefix,
 		enum arch_sim_kind_t sim_kind,
 		arch_emu_init_func_t emu_init_func,
 		arch_emu_done_func_t emu_done_func,
-		arch_emu_run_func_t emu_run_func,
-		arch_emu_dump_func_t emu_dump_func,
-		arch_emu_dump_summary_func_t emu_dump_summary_func,
 		arch_timing_read_config_func_t timing_read_config_func,
 		arch_timing_init_func_t timing_init_func,
 		arch_timing_done_func_t timing_done_func,

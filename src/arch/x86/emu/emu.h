@@ -88,10 +88,11 @@ CLASS_END(X86Emu)
 void X86EmuCreate(X86Emu *self);
 void X86EmuDestroy(X86Emu *self);
 
-int X86EmuRun(void);
+/* Virtual function from class 'Emu' */
+int X86EmuRun(Emu *self);
 
-void X86EmuDump(FILE *f);
-void X86EmuDumpSummary(FILE *f);
+void X86EmuDump(Object *self, FILE *f);
+void X86EmuDumpSummary(Emu *self, FILE *f);
 
 void X86EmuProcessEvents(X86Emu *self);
 void X86EmuProcessEventsSchedule(X86Emu *self);

@@ -61,7 +61,7 @@ void mips_isa_execute_inst(struct mips_ctx_t *ctx)
 	if (debug_status(mips_isa_inst_debug_category))
 	{
 		mips_isa_inst_debug("%d %8lld %x: ", ctx->pid,
-			arch_mips->inst_count, ctx->regs->pc);
+			asEmu(mips_emu)->instructions, ctx->regs->pc);
 		mips_inst_debug_dump(&ctx->inst, debug_file(mips_isa_inst_debug_category));
 	}
 

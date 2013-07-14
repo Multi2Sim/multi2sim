@@ -1198,11 +1198,11 @@ void si_gpu_dump_report(void)
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
 	inst_per_cycle = arch_southern_islands->cycle ? 
-		(double)(arch_southern_islands->inst_count/arch_southern_islands->cycle) : 0.0;
+		(double)(asEmu(si_emu)->instructions/arch_southern_islands->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
 	fprintf(f, "WorkGroupCount = %lld\n", si_emu->work_group_count);
-	fprintf(f, "Instructions = %lld\n", arch_southern_islands->inst_count);
+	fprintf(f, "Instructions = %lld\n", asEmu(si_emu)->instructions);
 	fprintf(f, "ScalarALUInstructions = %lld\n", 
 		si_emu->scalar_alu_inst_count);
 	fprintf(f, "ScalarMemInstructions = %lld\n", 
@@ -1329,7 +1329,7 @@ int si_gpu_run(void)
 	}
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (si_emu_max_inst && arch_southern_islands->inst_count >= 
+	if (si_emu_max_inst && asEmu(si_emu)->instructions >= 
 		si_emu_max_inst)
 	{
 		esim_finish = esim_finish_si_max_inst;

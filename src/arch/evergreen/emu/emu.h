@@ -86,9 +86,11 @@ CLASS_END(EvgEmu)
 void EvgEmuCreate(EvgEmu *self);
 void EvgEmuDestroy(EvgEmu *self);
 
-void EvgEmuDump(FILE *f);
-void EvgEmuDumpSummary(FILE *f);
-int EvgEmuRun(void);
+void EvgEmuDump(Object *self, FILE *f);
+void EvgEmuDumpSummary(Emu *self, FILE *f);
+
+/* Virtual function from class 'Emu' */
+int EvgEmuRun(Emu *self);
 
 
 

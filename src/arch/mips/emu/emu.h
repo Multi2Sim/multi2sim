@@ -102,12 +102,14 @@ CLASS_END(MIPSEmu)
 void MIPSEmuCreate(MIPSEmu *self);
 void MIPSEmuDestroy(MIPSEmu *self);
 
-void MIPSEmuDump(FILE *f);
-void MIPSEmuDumpSummary(FILE *f);
+void MIPSEmuDump(Object *self, FILE *f);
+void MIPSEmuDumpSummary(Emu *self, FILE *f);
 
-int MIPSEmuRun(void);
+/* Virtual function from class 'Emu' */
+int MIPSEmuRun(Emu *emu);
 
 void MIPSEmuProcessEventsSchedule(MIPSEmu *self);
+
 
 /* FIXME - Functions below should be removed */
 int MIPSEmuListMember(MIPSEmu *self, enum mips_emu_list_kind_t list,

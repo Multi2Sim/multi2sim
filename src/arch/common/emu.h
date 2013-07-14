@@ -25,15 +25,44 @@
 
 /*
  * Class 'Emu'
+ * Base class for the emulators of all architectures.
  */
 
 CLASS_BEGIN(Emu, Object)
+
+	/* Name of emulator */
+	char *name;
 	
+	/* Timer keeping track of emulator activity */
+	struct m2s_timer_t *timer;
+
+	/* Number of emulated instructions */
+	long long instructions;
+
+
+	/*** Virtual functions ***/
+
+	/* Run one iteration of the emulation loop for the architecture. If
+	 * there was an active emulation, the function returns TRUE. This is
+	 * a virtual and abstract function (no implementation for 'Emu'). */
+	int (*Run)(Emu *self);
+
+	/* Dump statistics summary */
+	void (*DumpSummary)(Emu *self, FILE *f);
+
 CLASS_END(Emu)
 
 
-void EmuCreate(Emu *self);
+void EmuCreate(Emu *self, char *name);
 void EmuDestroy(Emu *self);
+
+/* Virtual function from class 'Object' */
+void EmuDump(Object *self, FILE *f);
+
+/* Virtual function to print statistics summary. The statistics part that is
+ * common for all architectures is done in this implementation, which should be
+ * invoked by the child. */
+void EmuDumpSummary(Emu *self, FILE *f);
 
 
 #endif

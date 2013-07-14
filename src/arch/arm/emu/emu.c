@@ -44,11 +44,17 @@ CLASS_IMPLEMENTATION(ARMEmu);
 
 void ARMEmuCreate(ARMEmu *self)
 {
-	/* Initialize */
-	self->current_pid = 1000;  /* Initial assigned pid */
+	/* Parent */
+	EmuCreate(asEmu(self), "ARM");
 
-	/* Initialize mutex for variables controlling calls to 'arm_emu_process_events()' */
+	/* Initialize */
+	self->current_pid = 100;
 	pthread_mutex_init(&self->process_events_mutex, NULL);
+
+	/* Virtual functions */
+	asObject(self)->Dump = ARMEmuDump;
+	asEmu(self)->DumpSummary = ARMEmuDumpSummary;
+	asEmu(self)->Run = ARMEmuRun;
 }
 
 
@@ -68,16 +74,22 @@ void ARMEmuDestroy(ARMEmu *self)
 }
 
 
-void ARMEmuDump(FILE *f)
+void ARMEmuDump(Object *self, FILE *f)
 {
+	/* Call parent */
+	EmuDump(self, f);
 }
 
 
-void ARMEmuDumpSummary(FILE *f)
+void ARMEmuDumpSummary(Emu *self, FILE *f)
 {
-	ARMEmu *self = arm_emu;
+	ARMEmu *emu = asARMEmu(self);
 
-	fprintf(f, "Contexts = %d\n", self->running_list_max);
+	/* Call parent */
+	EmuDumpSummary(self, f);
+
+	/* More statistics */
+	fprintf(f, "Contexts = %d\n", emu->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
 }
 
@@ -170,17 +182,17 @@ void ARMEmuProcessEventsSchedule(ARMEmu *self)
 }
 
 
-int ARMEmuRun(void)
+int ARMEmuRun(Emu *self)
 {
-	ARMEmu *self = arm_emu;
+	ARMEmu *emu = asARMEmu(self);
 	struct arm_ctx_t *ctx;
 
 	/* Stop if there is no context running */
-	if (self->finished_list_count >= self->context_list_count)
+	if (emu->finished_list_count >= emu->context_list_count)
 		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (arm_emu_max_inst && arch_arm->inst_count >= arm_emu_max_inst)
+	if (arm_emu_max_inst && self->instructions >= arm_emu_max_inst)
 		esim_finish = esim_finish_arm_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
@@ -192,12 +204,12 @@ int ARMEmuRun(void)
 		return TRUE;
 
 	/* Run an instruction from every running process */
-	for (ctx = self->running_list_head; ctx; ctx = ctx->running_list_next)
+	for (ctx = emu->running_list_head; ctx; ctx = ctx->running_list_next)
 		arm_ctx_execute(ctx);
 
 	/* Free finished contexts */
-	while (self->finished_list_head)
-		arm_ctx_free(self->finished_list_head);
+	while (emu->finished_list_head)
+		arm_ctx_free(emu->finished_list_head);
 
 	/* Still running */
 	return TRUE;

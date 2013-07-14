@@ -462,7 +462,7 @@ static void x86_cpu_dump_report(void)
 		return;
 	
 	/* Get CPU timer value */
-	now = m2s_timer_get_value(arch_x86->timer);
+	now = m2s_timer_get_value(asEmu(x86_emu)->timer);
 
 	/* Dump CPU configuration */
 	fprintf(f, ";\n; CPU Configuration\n;\n\n");
@@ -1045,11 +1045,11 @@ void x86_cpu_run_fast_forward(void)
 {
 	/* Fast-forward simulation. Run 'x86_cpu_fast_forward' iterations of the x86
 	 * emulation loop until any simulation end reason is detected. */
-	while (arch_x86->inst_count < x86_cpu_fast_forward_count && !esim_finish)
-		X86EmuRun();
+	while (asEmu(x86_emu)->instructions < x86_cpu_fast_forward_count && !esim_finish)
+		X86EmuRun(asEmu(x86_emu));
 
 	/* Record number of instructions in fast-forward execution. */
-	x86_cpu->num_fast_forward_inst = arch_x86->inst_count;
+	x86_cpu->num_fast_forward_inst = asEmu(x86_emu)->instructions;
 
 	/* Output warning if simulation finished during fast-forward execution. */
 	if (esim_finish)
@@ -1066,7 +1066,8 @@ int x86_cpu_run(void)
 		return FALSE;
 
 	/* Fast-forward simulation */
-	if (x86_cpu_fast_forward_count && arch_x86->inst_count < x86_cpu_fast_forward_count)
+	if (x86_cpu_fast_forward_count && asEmu(x86_emu)->instructions
+			< x86_cpu_fast_forward_count)
 		x86_cpu_run_fast_forward();
 
 	/* Stop if maximum number of CPU instructions exceeded */

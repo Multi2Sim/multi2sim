@@ -199,9 +199,9 @@ void evg_ndrange_set_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_stat
 
 	/* Start/stop Evergreen timer depending on ND-Range states */
 	if (evg_emu->running_ndrange_list_count)
-		m2s_timer_start(arch_evergreen->timer);
+		m2s_timer_start(asEmu(evg_emu)->timer);
 	else
-		m2s_timer_stop(arch_evergreen->timer);
+		m2s_timer_stop(asEmu(evg_emu)->timer);
 
 	/* Update it */
 	ndrange->status |= status;

@@ -49,6 +49,9 @@ CLASS_IMPLEMENTATION(EvgEmu);
 
 void EvgEmuCreate(EvgEmu *self)
 {
+	/* Parent */
+	EmuCreate(asEmu(self), "Evergreen");
+
 	/* Memories */
 	self->const_mem = mem_create();
 	self->const_mem->safe = 0;
@@ -59,6 +62,11 @@ void EvgEmuCreate(EvgEmu *self)
 	self->opencl_repo = evg_opencl_repo_create();
 	self->opencl_platform = evg_opencl_platform_create(self);
 	self->opencl_device = evg_opencl_device_create(self);
+
+	/* Virtual functions */
+	asObject(self)->Dump = EvgEmuDump;
+	asEmu(self)->DumpSummary = EvgEmuDumpSummary;
+	asEmu(self)->Run = EvgEmuRun;
 }
 
 
@@ -78,23 +86,28 @@ void EvgEmuDestroy(EvgEmu *self)
 }
 
 
-void EvgEmuDump(FILE *f)
+void EvgEmuDump(Object *self, FILE *f)
 {
+	/* Call parent */
+	EmuDump(self, f);
 }
 
 
-void EvgEmuDumpSummary(FILE *f)
+void EvgEmuDumpSummary(Emu *self, FILE *f)
 {
-	EvgEmu *self = evg_emu;
+	EvgEmu *emu = asEvgEmu(evg_emu);
 
-	fprintf(f, "NDRangeCount = %d\n", self->ndrange_count);
+	/* Call parent */
+	EmuDumpSummary(self, f);
+
+	/* More statistics */
+	fprintf(f, "NDRangeCount = %d\n", emu->ndrange_count);
 }
 
 
-/* One iteration of emulator. Return TRUE if the emulation is still running. */
-int EvgEmuRun(void)
+int EvgEmuRun(Emu *self)
 {
-	EvgEmu *self = evg_emu;
+	EvgEmu *emu = asEvgEmu(self);
 
 	struct evg_ndrange_t *ndrange;
 	struct evg_ndrange_t *ndrange_next;
@@ -106,11 +119,11 @@ int EvgEmuRun(void)
 	struct evg_wavefront_t *wavefront_next;
 
 	/* Exit if there are no ND-Ranges to emulate */
-	if (!self->ndrange_list_count)
+	if (!emu->ndrange_list_count)
 		return FALSE;
 
 	/* Start any ND-Range in state 'pending' */
-	while ((ndrange = self->pending_ndrange_list_head))
+	while ((ndrange = emu->pending_ndrange_list_head))
 	{
 		/* Set all ready work-groups to running */
 		while ((work_group = ndrange->pending_list_head))
@@ -126,7 +139,7 @@ int EvgEmuRun(void)
 
 	/* Run one instruction of each wavefront in each work-group of each
 	 * ND-Range that is in status 'running'. */
-	for (ndrange = self->running_ndrange_list_head; ndrange; ndrange = ndrange_next)
+	for (ndrange = emu->running_ndrange_list_head; ndrange; ndrange = ndrange_next)
 	{
 		/* Save next ND-Range in state 'running'. This is done because the state
 		 * might change during the execution of the ND-Range. */
@@ -151,13 +164,13 @@ int EvgEmuRun(void)
 	}
 
 	/* Free ND-Ranges that finished */
-	while ((ndrange = self->finished_ndrange_list_head))
+	while ((ndrange = emu->finished_ndrange_list_head))
 	{
 		/* Dump ND-Range report */
 		evg_ndrange_dump(ndrange, evg_emu_report_file);
 
 		/* Stop if maximum number of kernels reached */
-		if (evg_emu_max_kernels && self->ndrange_count >= evg_emu_max_kernels)
+		if (evg_emu_max_kernels && emu->ndrange_count >= evg_emu_max_kernels)
 			esim_finish = esim_finish_evg_max_kernels;
 
 		/* Extract from list of finished ND-Ranges and free */

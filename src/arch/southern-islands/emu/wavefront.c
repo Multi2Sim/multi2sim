@@ -151,7 +151,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		&wavefront->inst, 0);
 
 	/* Stats */
-	arch_southern_islands->inst_count++;
+	asEmu(si_emu)->instructions++;
 	wavefront->emu_inst_count++;
 	wavefront->inst_count++;
 

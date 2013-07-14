@@ -49,6 +49,9 @@ CLASS_IMPLEMENTATION(SIEmu);
 
 void SIEmuCreate(SIEmu *self)
 {
+	/* Parent */
+	EmuCreate(asEmu(self), "SouthernIslands");
+
 	/* Initialize */
 	self->video_mem = mem_create();
 	self->video_mem->safe = 0;
@@ -57,7 +60,12 @@ void SIEmuCreate(SIEmu *self)
 	self->running_work_groups = list_create();
 	
 	/* Set global memory to video memory by default */
-	self->global_mem = self->video_mem; 
+	self->global_mem = self->video_mem;
+
+	/* Virtual functions */
+	asObject(self)->Dump = SIEmuDump;
+	asEmu(self)->DumpSummary = SIEmuDumpSummary;
+	asEmu(self)->Run = SIEmuRun;
 }
 
 
@@ -72,33 +80,35 @@ void SIEmuDestroy(SIEmu *self)
 }
 
 
-void SIEmuDump(FILE *f)
+void SIEmuDump(Object *self, FILE *f)
 {
+	/* Call parent */
+	EmuDump(self, f);
 }
 
 
-void SIEmuDumpSummary(FILE *f)
+void SIEmuDumpSummary(Emu *self, FILE *f)
 {
-	SIEmu *self = si_emu;
+	SIEmu *emu = asSIEmu(self);
 
-	fprintf(f, "NDRangeCount = %d\n", self->ndrange_count);
-	fprintf(f, "WorkGroupCount = %lld\n", self->work_group_count);
-	fprintf(f, "BranchInstructions = %lld\n", self->branch_inst_count);
-	fprintf(f, "LDSInstructions = %lld\n", self->lds_inst_count);
-	fprintf(f, "ScalarALUInstructions = %lld\n", 
-		self->scalar_alu_inst_count);
-	fprintf(f, "ScalarMemInstructions = %lld\n", 
-		self->scalar_mem_inst_count);
-	fprintf(f, "VectorALUInstructions = %lld\n", 
-		self->vector_alu_inst_count);
-	fprintf(f, "VectorMemInstructions = %lld\n", 
-		self->vector_mem_inst_count);
+	/* Call parent */
+	EmuDumpSummary(self, f);
+
+	/* More statistics */
+	fprintf(f, "NDRangeCount = %d\n", emu->ndrange_count);
+	fprintf(f, "WorkGroupCount = %lld\n", emu->work_group_count);
+	fprintf(f, "BranchInstructions = %lld\n", emu->branch_inst_count);
+	fprintf(f, "LDSInstructions = %lld\n", emu->lds_inst_count);
+	fprintf(f, "ScalarALUInstructions = %lld\n", emu->scalar_alu_inst_count);
+	fprintf(f, "ScalarMemInstructions = %lld\n", emu->scalar_mem_inst_count);
+	fprintf(f, "VectorALUInstructions = %lld\n", emu->vector_alu_inst_count);
+	fprintf(f, "VectorMemInstructions = %lld\n", emu->vector_mem_inst_count);
 }
 
 
-int SIEmuRun(void)
+int SIEmuRun(Emu *self)
 {
-	SIEmu *self = si_emu;
+	SIEmu *emu = asSIEmu(self);
 
 	struct si_ndrange_t *ndrange;
 	struct si_wavefront_t *wavefront;
@@ -107,23 +117,23 @@ int SIEmuRun(void)
 	int wavefront_id;
 	long work_group_id;
 
-	if (!list_count(self->running_work_groups) &&
-		list_count(self->waiting_work_groups))
+	if (!list_count(emu->running_work_groups) &&
+		list_count(emu->waiting_work_groups))
 	{
-		work_group_id = (long)list_dequeue(self->waiting_work_groups);
-		list_enqueue(self->running_work_groups, (void*)work_group_id);
+		work_group_id = (long)list_dequeue(emu->waiting_work_groups);
+		list_enqueue(emu->running_work_groups, (void*)work_group_id);
 	}
 
 	/* For efficiency when no Southern Islands emulation is selected, 
 	 * exit here if the list of existing ND-Ranges is empty. */
-	if (!list_count(self->running_work_groups))
+	if (!list_count(emu->running_work_groups))
 		return FALSE;
 
-	assert(self->ndrange);
-	ndrange = self->ndrange;
+	assert(emu->ndrange);
+	ndrange = emu->ndrange;
 
 	/* Instantiate the next work-group */
-	work_group_id = (long)list_bottom(self->running_work_groups);
+	work_group_id = (long)list_bottom(emu->running_work_groups);
 	work_group = si_work_group_create(work_group_id, ndrange);
 
 	/* Execute the work-group to completion */
@@ -142,13 +152,13 @@ int SIEmuRun(void)
 	}
 
 	/* Remove work group from running list */
-	list_dequeue(self->running_work_groups);
+	list_dequeue(emu->running_work_groups);
 
 	/* Free work group */
 	si_work_group_free(work_group);
 
 	/* If there is not more work groups to run, let driver know */
-	if (!list_count(self->waiting_work_groups))
+	if (!list_count(emu->waiting_work_groups))
 	{
 		opencl_si_request_work();
 	}

@@ -1026,10 +1026,10 @@ void frm_gpu_dump_report(void)
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
 	inst_per_cycle = arch_fermi->cycle ? 
-		(double)(arch_fermi->inst_count / arch_fermi->cycle) : 0.0;
+		(double)(asEmu(frm_emu)->instructions / arch_fermi->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "GridCount = %d\n", frm_emu->grid_count);
-	fprintf(f, "Instructions = %lld\n", arch_fermi->inst_count);
+	fprintf(f, "Instructions = %lld\n", asEmu(frm_emu)->instructions);
 	fprintf(f, "BranchInstructions = %lld\n", frm_emu->branch_inst_count);
 	fprintf(f, "ALUInstructions = %lld\n", frm_emu->vector_alu_inst_count);
 	fprintf(f, "SharedMemInstructions = %lld\n", frm_emu->lds_inst_count);
@@ -1131,7 +1131,7 @@ int frm_gpu_run(void)
 		esim_finish = esim_finish_frm_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
-	if (frm_emu_max_inst && arch_fermi->inst_count >= frm_emu_max_inst)
+	if (frm_emu_max_inst && asEmu(frm_emu)->instructions >= frm_emu_max_inst)
 		esim_finish = esim_finish_frm_max_inst;
 
 	/* Stop if there was a simulation stall */
