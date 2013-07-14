@@ -20,12 +20,24 @@
 #ifndef ARCH_EVERGREEN_EMU_OPENCL_DEVICE_H
 #define ARCH_EVERGREEN_EMU_OPENCL_DEVICE_H
 
+#include <lib/util/class.h>
+
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(EvgEmu);
+
+
+/*
+ * Object 'evg_opencl_device_t'
+ */
+
 struct evg_opencl_device_t
 {
 	unsigned int id;
+	EvgEmu *emu;
 };
 
-struct evg_opencl_device_t *evg_opencl_device_create(void);
+struct evg_opencl_device_t *evg_opencl_device_create(EvgEmu *emu);
 void evg_opencl_device_free(struct evg_opencl_device_t *device);
 
 struct mem_t;

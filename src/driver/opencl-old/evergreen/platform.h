@@ -20,13 +20,23 @@
 #ifndef ARCH_EVERGREEN_EMU_OPENCL_PLATFORM_H
 #define ARCH_EVERGREEN_EMU_OPENCL_PLATFORM_H
 
+#include <lib/util/class.h>
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(EvgEmu);
+
+
+/*
+ * Object 'evg_opencl_platform_t'
+ */
 
 struct evg_opencl_platform_t
 {
 	unsigned int id;
+	EvgEmu *emu;
 };
 
-struct evg_opencl_platform_t *evg_opencl_platform_create(void);
+struct evg_opencl_platform_t *evg_opencl_platform_create(EvgEmu *emu);
 void evg_opencl_platform_free(struct evg_opencl_platform_t *platform);
 
 unsigned int evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform,
