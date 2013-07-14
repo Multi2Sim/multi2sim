@@ -165,28 +165,28 @@ void NodeDump(Object *self, FILE *f);
 
 /* Return the basic block associated to the node. This function makes a sanity
  * check on the node type: it must be a leaf. */
-BasicBlock *node_get_basic_block(Node *node);
+BasicBlock *NodeGetBasicBlock(Node *node);
 
 /* Return true if 'node' is in the linked list of nodes passed as the second
  * argument. This function does not call 'linked_list_find'. Instead, it
  * traverses the list using a dedicated iterator, so that the current element of
  * the list is not lost. */
-int node_in_list(Node *node, struct linked_list_t *list);
+int NodeInList(Node *node, struct linked_list_t *list);
 
 /* Try to create an edge between 'node' and 'node_dest'. If the edge already
  * exist, the function will ignore the call silently. */
-void node_try_connect(Node *node, Node *node_dest);
+void NodeTryConnect(Node *node, Node *node_dest);
 
 /* Create an edge between 'node' and 'node_dest'. There should be no existing
  * edge for this source and destination when calling this function. */
-void node_connect(Node *node, Node *node_dest);
+void NodeConnect(Node *node, Node *node_dest);
 
 /* Try to remove an edge between 'node' and 'node_dest'. If the edge does not
  * exist, the function exists silently. */
-void node_try_disconnect(Node *node, Node *node_dest);
+void NodeTryDisconnect(Node *node, Node *node_dest);
 
 /* Disconnect 'node' and 'node_dest'. An edge must exist between both. */
-void node_disconnect(Node *node, Node *node_dest);
+void NodeDisconnect(Node *node, Node *node_dest);
 
 /* Try to reconnect a source node with a new destination node. This is
  * equivalent to disconnecting and connecting it, except that the order
@@ -194,7 +194,7 @@ void node_disconnect(Node *node, Node *node_dest);
  * guaranteed to stay the same. If an edge already exists between the
  * source and the new destination, the original edge will just be
  * completely removed. */
-void node_reconnect_dest(Node *src_node,
+void NodeReconnectDest(Node *src_node,
 		Node *dest_node,
 		Node *new_dest_node);
 
@@ -203,28 +203,28 @@ void node_reconnect_dest(Node *src_node,
  * predecessor list of the destination node is guaranteed to stay
  * intact. If an edge already exists between the new source and the
  * destination, the original edge will just be completely removed. */
-void node_reconnect_source(Node *src_node, Node *dest_node,
+void NodeReconnectSource(Node *src_node, Node *dest_node,
 		Node *new_src_node);
 
 /* Make 'node' take the same parent as 'before' and place it right before it in
  * its child list. Node 'before' must have a parent.
  * This does not insert the node into the control tree structures (an extra
  * call to 'node_add_node' is needed). */
-void node_insert_before(Node *node, Node *before);
+void NodeInsertBefore(Node *node, Node *before);
 
 /* Make 'node' take the same parent as 'after' and place it right after it in
  * its child list. Node 'after' must have a parent.
  * This does not insert the node into the control tree structures (an extra
  * call to 'node_add_node' is needed). */
-void node_insert_after(Node *node, Node *after);
+void NodeInsertAfter(Node *node, Node *after);
 
 /* Starting at 'node', traverse the syntax tree (not control tree) in depth-
  * first and return the first leaf node found (could be 'node' itself). */
-Node *node_get_first_leaf(Node *node);
+Node *NodeGetFirstLeaf(Node *node);
 
 /* Starting at 'node', traverse the syntax tree (not control tree) in depth-
  * first and return the last leaf node found (could be 'node' itself). */
-Node *node_get_last_leaf(Node *node);
+Node *NodeGetLastLeaf(Node *node);
 		
 /* Dumping lists of nodes */
 void node_list_dump(struct linked_list_t *list, FILE *f);
@@ -232,7 +232,7 @@ void node_list_dump_buf(struct linked_list_t *list, char *buf, int size);
 void node_list_dump_detail(struct linked_list_t *list, FILE *f);
 
 /* Compare two nodes */
-void node_compare(Node *node1, Node *node2);
+void NodeCompare(Node *node1, Node *node2);
 
 #endif
 

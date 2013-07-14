@@ -21,6 +21,7 @@
 #define M2C_LLVM2SI_FUNCTION_H
 
 #include <arch/southern-islands/asm/arg.h>
+#include <lib/util/class.h>
 #include <llvm-c/Core.h>
 
 #include <stdio.h>
@@ -30,22 +31,28 @@
 CLASS_FORWARD_DECLARATION(Node);
 CLASS_FORWARD_DECLARATION(Llvm2siFunction);
 CLASS_FORWARD_DECLARATION(Llvm2siBasicBlock);
+CLASS_FORWARD_DECLARATION(Llvm2siSymbol);
+CLASS_FORWARD_DECLARATION(Llvm2siSymbolTable);
 struct linked_list_t;
-struct llvm2si_symbol_t;
 struct llvm2si_node_t;
 struct si2bin_arg_t;
 
 
 
 /*
- * Function Argument
+ * Class 'Llvm2siFunctionArg'
  */
 
-struct llvm2si_function_arg_t
-{
+CLASS_BEGIN(Llvm2siFunctionArg, Object)
+
+	/* Inherits from 'si_arg_t'.
+	 * FIXME: if we port all or part of the SI assembler to work with
+	 * classes, this should be a real inheritance. */
+	struct si_arg_t *si_arg;
+
 	char *name;
 	LLVMValueRef llarg;  /* Associated LLVM argument */
-	struct si_arg_t *si_arg;  /* Inherited from 'si_arg_t'. */
+
 
 
 	/* The fields below are populated when the argument is inserted into
@@ -56,22 +63,25 @@ struct llvm2si_function_arg_t
 	int uav_index;  /* For arguments of type 'si_arg_pointer', and scope 'si_arg_uav' */
 	int sreg;  /* Scalar register identifier containing the argument */
 	int vreg;  /* Vector register where argument was copied */
-};
+
+CLASS_END(Llvm2siFunctionArg)
 
 
-struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg);
-void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg);
-void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE *f);
+void Llvm2siFunctionArgCreate(Llvm2siFunctionArg *self, LLVMValueRef llarg);
+void Llvm2siFunctionArgDestroy(Llvm2siFunctionArg *self);
+
+/* Virtual function from class 'Object' */
+void Llvm2siFunctionArgDump(Object *self, FILE *f);
 
 
 
 
 /*
- * Function UAV Object
+ * Class 'Llvm2siFunctionUAV'
  */
 
-struct llvm2si_function_uav_t
-{
+CLASS_BEGIN(Llvm2siFunctionUAV, Object)
+
 	/* Function where it belongs */
 	Llvm2siFunction *function;
 
@@ -82,10 +92,11 @@ struct llvm2si_function_uav_t
 	/* Base scalar register of a group of 4 assigned to the UAV. This
 	 * register identifier is a multiple of 4. */
 	int sreg;
-};
 
-struct llvm2si_function_uav_t *llvm2si_function_uav_create(void);
-void llvm2si_function_uav_free(struct llvm2si_function_uav_t *uav);
+CLASS_END(Llvm2siFunctionUAV)
+
+void Llvm2siFunctionUAVCreate(Llvm2siFunctionUAV *self);
+void Llvm2siFunctionUAVDestroy(Llvm2siFunctionUAV *self);
 
 
 
@@ -132,7 +143,7 @@ CLASS_BEGIN(Llvm2siFunction, Object)
 	Node *body_node;
 
 	/* Symbol table associated with the function, storing LLVM variables */
-	struct llvm2si_symbol_table_t *symbol_table;
+	Llvm2siSymbolTable *symbol_table;
 
 	/* Control tree */
 	CTree *ctree;
@@ -170,25 +181,25 @@ void llvm2si_function_add_basic_block_before(
 
 /* Generate initialization code for the function in basic block
  * 'function->basic_block_header'. */
-void llvm2si_function_emit_header(Llvm2siFunction *function);
+void Llvm2siFunctionEmitHeader(Llvm2siFunction *function);
 
 /* Emit code to load arguments into registers. The code will be emitted in
  * 'function->basic_block_args'. UAVs will be created and loaded in
  * 'function->basic_block_uavs', as they are needed by new arguments. */
-void llvm2si_function_emit_args(Llvm2siFunction *function);
+void Llvm2siFunctionEmitArgs(Llvm2siFunction *function);
 
 /* Emit code for the function body. The first basic block of the function will
  * be added at the end of 'basic_block', which should be already part of the
  * function. As the code emission progresses, new basic blocks will be created. */
-void llvm2si_function_emit_body(Llvm2siFunction *function);
+void Llvm2siFunctionEmitBody(Llvm2siFunction *function);
 
 /* Emit code for the phi elements that were encountered during the emission of
  * the function body, comming from LLVM phi nodes. */
-void llvm2si_function_emit_phi(Llvm2siFunction *function);
+void Llvm2siFunctionEmitPhi(Llvm2siFunction *function);
 
 /* Emit additional instructions managing active masks and active mask stacks
  * related with the function control flow. */
-void llvm2si_function_emit_control_flow(Llvm2siFunction *function);
+void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *function);
 
 /* Create a Southern Islands instruction argument from an LLVM value. The type
  * of argument created depends on the LLVM value as follows:
@@ -198,26 +209,26 @@ void llvm2si_function_emit_control_flow(Llvm2siFunction *function);
  *     will be the vector register associated with that symbol. In this case,
  *     the symbol is returned in the 'symbol_ptr' argument.
  */
-struct si2bin_arg_t *llvm2si_function_translate_value(
+struct si2bin_arg_t *Llvm2siFunctionTranslateValue(
 		Llvm2siFunction *function,
 		LLVMValueRef llvalue,
-		struct llvm2si_symbol_t **symbol_ptr);
+		Llvm2siSymbol **symbol_ptr);
 
 /* Convert an argument of type literal (any variant) into a vector register by
  * emitting a 'v_mob_b32' instruction. The original argument is consumed and
  * make part of the new instruction, while a new argument instance is returned
  * containing the new vector register. If the original argument was not a
  * literal, it will be returned directly, and no instruction is emitted. */
-struct si2bin_arg_t *llvm2si_function_const_to_vreg(
+struct si2bin_arg_t *Llvm2siFunctionConstToVReg(
 		Llvm2siFunction *function,
 		Llvm2siBasicBlock *basic_block,
 		struct si2bin_arg_t *arg);
 
 /* Allocate 'count' scalar/vector registers where the first register
  * identifier is a multiple of 'align'. */
-int llvm2si_function_alloc_sreg(Llvm2siFunction *function,
+int Llvm2siFunctionAllocSReg(Llvm2siFunction *function,
 		int count, int align);
-int llvm2si_function_alloc_vreg(Llvm2siFunction *function,
+int Llvm2siFunctionAllocVReg(Llvm2siFunction *function,
 		int count, int align);
 
 #endif

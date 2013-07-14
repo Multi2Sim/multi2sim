@@ -26,6 +26,13 @@
 #include "symbol.h"
 
 
+/*
+ * Class 'Llvm2siSymbol'
+ */
+
+CLASS_IMPLEMENTATION(Llvm2siSymbol);
+
+
 struct str_map_t llvm2si_symbol_type_map =
 {
 	3, {
@@ -35,69 +42,65 @@ struct str_map_t llvm2si_symbol_type_map =
 };
 
 
-static struct llvm2si_symbol_t *llvm2si_symbol_create(char *name,
+static void Llvm2siSymbolCreate(Llvm2siSymbol *self, char *name,
 		enum llvm2si_symbol_type_t type, int reg, int count)
 {
-	struct llvm2si_symbol_t *symbol;
-
 	/* Check valid name */
 	if (!name || !*name)
 		fatal("%s: empty symbol name", __FUNCTION__);
 
 	/* Initialize */
-	symbol = xcalloc(1, sizeof(struct llvm2si_symbol_t));
-	symbol->name = xstrdup(name);
-	symbol->type = type;
-	symbol->reg = reg;
-	symbol->count = count;
-
-	/* Return */
-	return symbol;
+	self->name = str_set(self->name, name);
+	self->type = type;
+	self->reg = reg;
+	self->count = count;
 }
 
 
-struct llvm2si_symbol_t *llvm2si_symbol_create_vreg(char *name, int vreg)
+void Llvm2siSymbolCreateVReg(Llvm2siSymbol *self, char *name, int vreg)
 {
-	return llvm2si_symbol_create(name, llvm2si_symbol_vector_register,
+	Llvm2siSymbolCreate(self, name, llvm2si_symbol_vector_register,
 			vreg, 1);
 }
 
 
-struct llvm2si_symbol_t *llvm2si_symbol_create_sreg(char *name, int sreg)
+void Llvm2siSymbolCreateSReg(Llvm2siSymbol *self, char *name, int sreg)
 {
-	return llvm2si_symbol_create(name, llvm2si_symbol_scalar_register,
+	Llvm2siSymbolCreate(self, name, llvm2si_symbol_scalar_register,
 			sreg, 1);
 }
 
 
-struct llvm2si_symbol_t *llvm2si_symbol_create_vreg_series(char *name,
+void Llvm2siSymbolCreateVRegSeries(Llvm2siSymbol *self, char *name,
 		int vreg_lo, int vreg_hi)
 {
 	assert(vreg_hi > vreg_lo);
-	return llvm2si_symbol_create(name, llvm2si_symbol_vector_register,
+	Llvm2siSymbolCreate(self, name, llvm2si_symbol_vector_register,
 			vreg_lo, vreg_hi - vreg_lo + 1);
 }
 
 
-struct llvm2si_symbol_t *llvm2si_symbol_create_sreg_series(char *name,
+void Llvm2siSymbolCreateSRegSeries(Llvm2siSymbol *self, char *name,
 		int sreg_lo, int sreg_hi)
 {
 	assert(sreg_hi > sreg_lo);
-	return llvm2si_symbol_create(name, llvm2si_symbol_scalar_register,
+	Llvm2siSymbolCreate(self, name, llvm2si_symbol_scalar_register,
 			sreg_lo, sreg_hi - sreg_lo + 1);
 }
 
 
-void llvm2si_symbol_free(struct llvm2si_symbol_t *symbol)
+void Llvm2siSymbolDestroy(Llvm2siSymbol *self)
 {
-	free(symbol->name);
-	free(symbol);
+	self->name = str_free(self->name);
 }
 
 
-void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f)
+void Llvm2siSymbolDump(Object *self, FILE *f)
 {
+	Llvm2siSymbol *symbol;
+
 	/* Name, type, register */
+	symbol = asLlvm2siSymbol(self);
 	fprintf(f, "name='%s', type=%s, reg=%d", symbol->name,
 			str_map_value(&llvm2si_symbol_type_map, symbol->type),
 			symbol->reg);
@@ -111,10 +114,8 @@ void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f)
 }
 
 
-void llvm2si_symbol_set_uav_index(struct llvm2si_symbol_t *symbol,
-		int uav_index)
+void Llvm2siSymbolSetUAVIndex(Llvm2siSymbol *self, int uav_index)
 {
-	symbol->address = 1;
-	symbol->uav_index = uav_index;
+	self->address = 1;
+	self->uav_index = uav_index;
 }
-

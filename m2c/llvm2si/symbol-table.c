@@ -26,60 +26,59 @@
 #include "symbol-table.h"
 
 
-struct llvm2si_symbol_table_t *llvm2si_symbol_table_create(void)
+/*
+ * Class 'Llvm2siSymbolTable'
+ */
+
+CLASS_IMPLEMENTATION(Llvm2siSymbolTable);
+
+void Llvm2siSymbolTableCreate(Llvm2siSymbolTable *self)
 {
-	struct llvm2si_symbol_table_t *table;
-
-	/* Initialize */
-	table = xcalloc(1, sizeof(struct llvm2si_symbol_table_t));
-	table->table = hash_table_create(30, TRUE);
-
-	/* Return */
-	return table;
+	self->table = hash_table_create(30, TRUE);
 }
 
 
-void llvm2si_symbol_table_free(struct llvm2si_symbol_table_t *table)
+void Llvm2siSymbolTableDestroy(Llvm2siSymbolTable *self)
 {
 	char *key;
-	struct llvm2si_symbol_t *symbol;
+	Llvm2siSymbol *symbol;
 
 	/* Free symbol hash table */
-	HASH_TABLE_FOR_EACH(table->table, key, symbol)
-		llvm2si_symbol_free(symbol);
-	hash_table_free(table->table);
-
-	/* Rest */
-	free(table);
+	HASH_TABLE_FOR_EACH(self->table, key, symbol)
+		delete(symbol);
+	hash_table_free(self->table);
 }
 
 
-void llvm2si_symbol_table_dump(struct llvm2si_symbol_table_t *table, FILE *f)
+void Llvm2siSymbolTableDump(Object *self, FILE *f)
 {
-	char *key;
-	struct llvm2si_symbol_t *symbol;
+	Llvm2siSymbolTable *symbol_table;
+	Llvm2siSymbol *symbol;
 
+	char *key;
+
+	symbol_table = asLlvm2siSymbolTable(self);
 	fprintf(f, "Symbol table:\n");
-	HASH_TABLE_FOR_EACH(table->table, key, symbol)
-		llvm2si_symbol_dump(symbol, f);
+	HASH_TABLE_FOR_EACH(symbol_table->table, key, symbol)
+		Llvm2siSymbolDump(asObject(symbol), f);
 	fprintf(f, "\n");
 }
 
 
-void llvm2si_symbol_table_add_symbol(struct llvm2si_symbol_table_t *table,
-		struct llvm2si_symbol_t *symbol)
+void Llvm2siSymbolTableAddSymbol(Llvm2siSymbolTable *self,
+		Llvm2siSymbol *symbol)
 {
 	int ok;
 
-	ok = hash_table_insert(table->table, symbol->name, symbol);
+	ok = hash_table_insert(self->table, symbol->name, symbol);
 	if (!ok)
 		fatal("%s: %s: duplicate symbol",
 			__FUNCTION__, symbol->name);
 }
 
 
-struct llvm2si_symbol_t *llvm2si_symbol_table_lookup(struct llvm2si_symbol_table_t *table,
+Llvm2siSymbol *Llvm2siSymbolTableLookup(Llvm2siSymbolTable *self,
 		const char *name)
 {
-	return hash_table_get(table->table, (char *) name);
+	return hash_table_get(self->table, (char *) name);
 }

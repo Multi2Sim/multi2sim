@@ -66,17 +66,17 @@ void Llvm2siBasicBlockDestroy(Llvm2siBasicBlock *self);
 void Llvm2siBasicBlockDump(Object *self, FILE *f);
 
 /* Add one SI instruction to the 'inst_list' field of the basic block. */
-void llvm2si_basic_block_add_inst(Llvm2siBasicBlock *basic_block,
+void Llvm2siBasicBlockAddInst(Llvm2siBasicBlock *basic_block,
 		struct si2bin_inst_t *inst);
 
 /* Add a comment to a basic block. The comment will be attached to the next
- * instruction added with 'llvm2si_basic_block_add_inst'. If not other
+ * instruction added with 'Llvm2siBasicBlockAddInst'. If not other
  * instruction is added to the basic block, the comment won't have any effect. */
-void llvm2si_basic_block_add_comment(Llvm2siBasicBlock *basic_block,
+void Llvm2siBasicBlockAddComment(Llvm2siBasicBlock *basic_block,
 		char *comment);
 
 /* Emit SI code for the basic block into field 'inst_list'. */
-void llvm2si_basic_block_emit(Llvm2siBasicBlock *basic_block,
+void Llvm2siBasicBlockEmit(Llvm2siBasicBlock *basic_block,
 		LLVMBasicBlockRef llbb);
 
 
