@@ -22,6 +22,58 @@
 
 #include <stdio.h>
 
+#include <arch/common/emu.h>
+
+
+
+/*
+ * Class 'SIEmu'
+ */
+
+CLASS_BEGIN(SIEmu, Emu)
+
+	/* Memory */
+	struct mem_t *video_mem;  /* local to the GPU */
+	unsigned int video_mem_top;
+	struct mem_t *shared_mem; /* shared with the CPU */
+	struct mem_t *global_mem; /* will point to video_mem or shared_mem */
+
+	/* Current ND-Range */
+	struct si_ndrange_t *ndrange;
+
+	/* Work-group lists */
+	struct list_t *waiting_work_groups;
+	struct list_t *running_work_groups;
+
+	/* Statistics */
+	int ndrange_count;  /* Number of OpenCL kernels executed */
+	long long work_group_count;  /* Number of OpenCL work groups executed */
+	long long scalar_alu_inst_count;  /* Scalar ALU instructions executed */
+	long long scalar_mem_inst_count;  /* Scalar mem instructions executed */
+	long long branch_inst_count;  /* Branch instructions executed */
+	long long vector_alu_inst_count;  /* Vector ALU instructions executed */
+	long long lds_inst_count;  /* LDS instructions executed */
+	long long vector_mem_inst_count;  /* Vector mem instructions executed */
+	long long export_inst_count; /* Export instructions executed */
+
+CLASS_END(SIEmu)
+
+void SIEmuCreate(SIEmu *self);
+void SIEmuDestroy(SIEmu *self);
+
+int SIEmuRun(void);
+
+void SIEmuDump(FILE *f);
+void SIEmuDumpSummary(FILE *f);
+
+
+
+
+
+/*
+ * Non-Class Stuff
+ */
+
 /* UAV table */
 #define SI_EMU_MAX_NUM_UAVS 16
 #define SI_EMU_UAV_TABLE_ENTRY_SIZE 32
@@ -182,36 +234,6 @@ struct si_mem_ptr_t
 }__attribute__((packed));
 
 
-struct si_emu_t
-{
-	/* Memory */
-	struct mem_t *video_mem;  /* local to the GPU */
-	unsigned int video_mem_top;
-	struct mem_t *shared_mem; /* shared with the CPU */
-	struct mem_t *global_mem; /* will point to video_mem or shared_mem */
-
-	/* Current ND-Range */
-	struct si_ndrange_t *ndrange;
-
-	/* Work-group lists */
-	struct list_t *waiting_work_groups;
-	struct list_t *running_work_groups;
-
-	/* Statistics */
-	int ndrange_count;  /* Number of OpenCL kernels executed */
-	long long work_group_count;  /* Number of OpenCL work groups executed */
-	long long scalar_alu_inst_count;  /* Scalar ALU instructions executed */
-	long long scalar_mem_inst_count;  /* Scalar mem instructions executed */
-	long long branch_inst_count;  /* Branch instructions executed */
-	long long vector_alu_inst_count;  /* Vector ALU instructions executed */
-	long long lds_inst_count;  /* LDS instructions executed */
-	long long vector_mem_inst_count;  /* Vector mem instructions executed */
-	long long export_inst_count; /* Export instructions executed */
-};
-
-/* Forward declaration */
-struct x86_ctx_t;
-
 extern long long si_emu_max_cycles;
 extern long long si_emu_max_inst;
 extern int si_emu_max_kernels;
@@ -222,21 +244,11 @@ extern FILE *si_emu_report_file;
 
 extern int si_emu_wavefront_size;
 
-extern struct si_emu_t *si_emu;
+extern SIEmu *si_emu;
 
-
-
-/*
- * Public Functions
- */
 
 void si_emu_init(void);
 void si_emu_done(void);
-
-int si_emu_run(void);
-
-void si_emu_dump(FILE *f);
-void si_emu_dump_summary(FILE *f);
 
 void si_emu_disasm(char *path);
 void si_emu_opengl_disasm(char *path, int opengl_shader_index);

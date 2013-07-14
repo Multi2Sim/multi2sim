@@ -42,11 +42,128 @@
 
 
 /*
- * Global variables
+ * Class 'SIEmu'
  */
 
+CLASS_IMPLEMENTATION(SIEmu);
 
-struct si_emu_t *si_emu;
+void SIEmuCreate(SIEmu *self)
+{
+	/* Initialize */
+	self->video_mem = mem_create();
+	self->video_mem->safe = 0;
+	self->video_mem_top = 0;
+	self->waiting_work_groups = list_create();
+	self->running_work_groups = list_create();
+	
+	/* Set global memory to video memory by default */
+	self->global_mem = self->video_mem; 
+}
+
+
+void SIEmuDestroy(SIEmu *self)
+{
+	/* Free emulator memory */
+	mem_free(self->video_mem);
+
+	/* Free the work-group queues */
+	list_free(self->waiting_work_groups);
+	list_free(self->running_work_groups);
+}
+
+
+void SIEmuDump(FILE *f)
+{
+}
+
+
+void SIEmuDumpSummary(FILE *f)
+{
+	SIEmu *self = si_emu;
+
+	fprintf(f, "NDRangeCount = %d\n", self->ndrange_count);
+	fprintf(f, "WorkGroupCount = %lld\n", self->work_group_count);
+	fprintf(f, "BranchInstructions = %lld\n", self->branch_inst_count);
+	fprintf(f, "LDSInstructions = %lld\n", self->lds_inst_count);
+	fprintf(f, "ScalarALUInstructions = %lld\n", 
+		self->scalar_alu_inst_count);
+	fprintf(f, "ScalarMemInstructions = %lld\n", 
+		self->scalar_mem_inst_count);
+	fprintf(f, "VectorALUInstructions = %lld\n", 
+		self->vector_alu_inst_count);
+	fprintf(f, "VectorMemInstructions = %lld\n", 
+		self->vector_mem_inst_count);
+}
+
+
+int SIEmuRun(void)
+{
+	SIEmu *self = si_emu;
+
+	struct si_ndrange_t *ndrange;
+	struct si_wavefront_t *wavefront;
+	struct si_work_group_t *work_group;
+
+	int wavefront_id;
+	long work_group_id;
+
+	if (!list_count(self->running_work_groups) &&
+		list_count(self->waiting_work_groups))
+	{
+		work_group_id = (long)list_dequeue(self->waiting_work_groups);
+		list_enqueue(self->running_work_groups, (void*)work_group_id);
+	}
+
+	/* For efficiency when no Southern Islands emulation is selected, 
+	 * exit here if the list of existing ND-Ranges is empty. */
+	if (!list_count(self->running_work_groups))
+		return FALSE;
+
+	assert(self->ndrange);
+	ndrange = self->ndrange;
+
+	/* Instantiate the next work-group */
+	work_group_id = (long)list_bottom(self->running_work_groups);
+	work_group = si_work_group_create(work_group_id, ndrange);
+
+	/* Execute the work-group to completion */
+	while (!work_group->finished_emu)
+	{
+		SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+		{
+			wavefront = work_group->wavefronts[wavefront_id];
+
+			if (wavefront->finished || wavefront->at_barrier)
+				continue;
+
+			/* Execute instruction in wavefront */
+			si_wavefront_execute(wavefront);
+		}
+	}
+
+	/* Remove work group from running list */
+	list_dequeue(self->running_work_groups);
+
+	/* Free work group */
+	si_work_group_free(work_group);
+
+	/* If there is not more work groups to run, let driver know */
+	if (!list_count(self->waiting_work_groups))
+	{
+		opencl_si_request_work();
+	}
+
+	/* Still emulating */
+	return TRUE;
+}
+
+
+
+/*
+ * Non-Class
+ */
+
+SIEmu *si_emu;
 
 long long si_emu_max_cycles = 0;
 long long si_emu_max_inst = 0;
@@ -61,37 +178,22 @@ int si_emu_wavefront_size = 64;
 int si_emu_num_mapped_const_buffers = 2;  /* CB0, CB1 by default */
 
 
-
-/*
- * GPU Kernel (Functional Simulator) Public Functions
- */
-
-
-/* Initialize GPU kernel */
 void si_emu_init(void)
 {
+	/* Classes */
+	CLASS_REGISTER(SIEmu);
+
 	/* Open report file */
 	if (*si_emu_report_file_name)
 	{
-		si_emu_report_file = file_open_for_write(
-			si_emu_report_file_name);
+		si_emu_report_file = file_open_for_write(si_emu_report_file_name);
 		if (!si_emu_report_file)
-		{
 			fatal("%s: cannot open report for Southern Islands "
 				"emulator", si_emu_report_file_name);
-		}
 	}
 
-	/* Initialize */
-	si_emu = xcalloc(1, sizeof(struct si_emu_t));
-	si_emu->video_mem = mem_create();
-	si_emu->video_mem->safe = 0;
-	si_emu->video_mem_top = 0;
-	si_emu->waiting_work_groups = list_create();
-	si_emu->running_work_groups = list_create();
-
-	/* Set global memory to video memory by default */
-	si_emu->global_mem = si_emu->video_mem; 
+	/* Create emulator */
+	si_emu = new(SIEmu);
 
 	/* Initialize disassembler (decoding tables...) */
 	si_disasm_init();
@@ -101,8 +203,7 @@ void si_emu_init(void)
 }
 
 
-/* Finalize GPU kernel */
-void si_emu_done()
+void si_emu_done(void)
 {
 	/* GPU report */
 	if (si_emu_report_file)
@@ -114,38 +215,8 @@ void si_emu_done()
 	/* Finalize ISA */
 	si_isa_done();
 
-	/* Free emulator memory */
-	mem_free(si_emu->video_mem);
-
-	/* Free the work-group queues */
-	list_free(si_emu->waiting_work_groups);
-	list_free(si_emu->running_work_groups);
-
-	/* Free the emulator */
-	memset(si_emu, 0, sizeof(struct si_emu_t));
-	free(si_emu);
-}
-
-
-void si_emu_dump(FILE *f)
-{
-}
-
-
-void si_emu_dump_summary(FILE *f)
-{
-	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
-	fprintf(f, "WorkGroupCount = %lld\n", si_emu->work_group_count);
-	fprintf(f, "BranchInstructions = %lld\n", si_emu->branch_inst_count);
-	fprintf(f, "LDSInstructions = %lld\n", si_emu->lds_inst_count);
-	fprintf(f, "ScalarALUInstructions = %lld\n", 
-		si_emu->scalar_alu_inst_count);
-	fprintf(f, "ScalarMemInstructions = %lld\n", 
-		si_emu->scalar_mem_inst_count);
-	fprintf(f, "VectorALUInstructions = %lld\n", 
-		si_emu->vector_alu_inst_count);
-	fprintf(f, "VectorMemInstructions = %lld\n", 
-		si_emu->vector_mem_inst_count);
+	/* Free emulator */
+	delete(si_emu);
 }
 
 
@@ -252,66 +323,5 @@ void si_emu_opengl_disasm(char *path, int opengl_shader_index)
 	/* End */
 	mhandle_done();
 	exit(0);
-}
-
-/* Run one iteration of the Southern Islands GPU emulation loop.
- * Return TRUE if still running. */
-int si_emu_run(void)
-{
-	struct si_ndrange_t *ndrange;
-	struct si_wavefront_t *wavefront;
-	struct si_work_group_t *work_group;
-
-	int wavefront_id;
-	long work_group_id;
-
-	if (!list_count(si_emu->running_work_groups) &&
-		list_count(si_emu->waiting_work_groups))
-	{
-		work_group_id = (long)list_dequeue(si_emu->waiting_work_groups);
-		list_enqueue(si_emu->running_work_groups, (void*)work_group_id);
-	}
-
-	/* For efficiency when no Southern Islands emulation is selected, 
-	 * exit here if the list of existing ND-Ranges is empty. */
-	if (!list_count(si_emu->running_work_groups))
-		return FALSE;
-
-	assert(si_emu->ndrange);
-	ndrange = si_emu->ndrange;
-
-	/* Instantiate the next work-group */
-	work_group_id = (long)list_bottom(si_emu->running_work_groups);
-	work_group = si_work_group_create(work_group_id, ndrange);
-
-	/* Execute the work-group to completion */
-	while (!work_group->finished_emu)
-	{
-		SI_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
-		{
-			wavefront = work_group->wavefronts[wavefront_id];
-
-			if (wavefront->finished || wavefront->at_barrier)
-				continue;
-
-			/* Execute instruction in wavefront */
-			si_wavefront_execute(wavefront);
-		}
-	}
-
-	/* Remove work group from running list */
-	list_dequeue(si_emu->running_work_groups);
-
-	/* Free work group */
-	si_work_group_free(work_group);
-
-	/* If there is not more work groups to run, let driver know */
-	if (!list_count(si_emu->waiting_work_groups))
-	{
-		opencl_si_request_work();
-	}
-
-	/* Still emulating */
-	return TRUE;
 }
 

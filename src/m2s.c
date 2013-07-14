@@ -2022,8 +2022,8 @@ int main(int argc, char **argv)
 			evg_mem_config_parse_entry,
 			evg_mem_config_check);
 	arch_fermi = arch_register("Fermi", "frm", frm_sim_kind,
-			frm_emu_init, frm_emu_done, frm_emu_run,
-			frm_emu_dump, frm_emu_dump_summary,
+			frm_emu_init, frm_emu_done, FrmEmuRun,
+			FrmEmuDump, FrmEmuDumpSummary,
 			frm_gpu_read_config,
 			frm_gpu_init, frm_gpu_done, frm_gpu_run,
 			frm_gpu_dump, frm_gpu_dump_summary,
@@ -2031,8 +2031,8 @@ int main(int argc, char **argv)
 			frm_mem_config_parse_entry,
 			frm_mem_config_check);
 	arch_mips = arch_register("MIPS", "mips", mips_sim_kind,
-			mips_emu_init, mips_emu_done, mips_emu_run,
-			mips_emu_dump, mips_emu_dump_summary,
+			mips_emu_init, mips_emu_done, MIPSEmuRun,
+			MIPSEmuDump, MIPSEmuDumpSummary,
 			mips_cpu_read_config,
 			mips_cpu_init, mips_cpu_done, mips_cpu_run,
 			mips_cpu_dump, mips_cpu_dump_summary,
@@ -2040,8 +2040,8 @@ int main(int argc, char **argv)
 			mips_mem_config_parse_entry,
 			mips_mem_config_check);
 	arch_southern_islands = arch_register("SouthernIslands", "si", si_sim_kind,
-			si_emu_init, si_emu_done, si_emu_run,
-			si_emu_dump, si_emu_dump_summary,
+			si_emu_init, si_emu_done, SIEmuRun,
+			SIEmuDump, SIEmuDumpSummary,
 			si_gpu_read_config,
 			si_gpu_init, si_gpu_done, si_gpu_run,
 			si_gpu_dump, si_gpu_dump_summary,

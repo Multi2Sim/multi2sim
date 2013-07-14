@@ -25,6 +25,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/linked-list.h>
+#include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
@@ -37,51 +38,148 @@
 
 
 /*
- * Global variables
+ * Class 'FrmEmu'
  */
 
-struct frm_emu_t *frm_emu;
+CLASS_IMPLEMENTATION(FrmEmu);
 
-long long frm_emu_max_cycles = 0;
-long long frm_emu_max_inst = 0;
-int frm_emu_max_functions = 0;
+void FrmEmuCreate(FrmEmu *self)
+{
+        /* Initialize */
+	self->grids = list_create();
+	self->pending_grids = list_create();
+	self->running_grids = list_create();
+	self->finished_grids = list_create();
+        self->global_mem = mem_create();
+        self->global_mem->safe = 0;
+        self->global_mem_top = 0;
+        self->total_global_mem_size = 1 << 31; /* 2GB */
+        self->free_global_mem_size = 1 << 31; /* 2GB */
+        self->const_mem = mem_create();
+        self->const_mem->safe = 0;
+}
+
+
+void FrmEmuDestroy(FrmEmu *self)
+{
+	/* Free grids */
+	list_free(self->grids);
+	list_free(self->pending_grids);
+	list_free(self->running_grids);
+	list_free(self->finished_grids);
+        mem_free(self->const_mem);
+        mem_free(self->global_mem);
+}
+
+
+void FrmEmuDump(FILE *f)
+{
+}
+
+
+void FrmEmuDumpSummary(FILE *f)
+{
+}
+
+
+
+/* One iteration of emulator. Return TRUE if emulation is still running. */
+int FrmEmuRun(void)
+{
+	FrmEmu *self = frm_emu;
+
+	struct frm_grid_t *grid;
+	struct frm_thread_block_t *thread_block;
+	struct frm_warp_t *warp;
+
+	/* Stop emulation if no grid needs running */
+	if (!list_count(self->grids))
+		return FALSE;
+
+	/* Remove grid and its thread blocks from pending list, and add them to
+	 * running list */
+	while ((grid = list_head(self->pending_grids)))
+	{
+		while ((thread_block = list_head(grid->pending_thread_blocks)))
+		{
+			list_remove(grid->pending_thread_blocks, thread_block);
+			list_add(grid->running_thread_blocks, thread_block);
+		}
+
+		list_remove(self->pending_grids, grid);
+		list_add(self->running_grids, grid);
+	}
+
+	/* Run one instruction */
+	while ((grid = list_head(self->running_grids)))
+	{
+		while ((thread_block = list_head(grid->running_thread_blocks)))
+		{
+			while ((warp = list_head(thread_block->running_warps)))
+			{
+				if (warp->finished || warp->at_barrier)
+					continue;
+
+				frm_warp_execute(warp);
+			}
+		}
+	}
+
+	/* Free finished grids */
+	assert(list_count(self->pending_grids) == 0 &&
+			list_count(self->running_grids) == 0);
+	while ((grid = list_head(self->finished_grids)))
+	{
+		/* Dump grid report */
+		frm_grid_dump(grid, frm_emu_report_file);
+
+		/* Remove grid from finished list */
+		list_remove(self->finished_grids, grid);
+
+		/* Free grid */
+		frm_grid_free(grid);
+	}
+
+	/* Continue emulation */
+	return TRUE;
+}
+
+
+
+
+/*
+ * Non-Class Stuff
+ */
+
+long long frm_emu_max_cycles;
+long long frm_emu_max_inst;
+int frm_emu_max_functions;
 
 char *frm_emu_cuda_binary_name = "";
 char *frm_emu_report_file_name = "";
-FILE *frm_emu_report_file = NULL;
+FILE *frm_emu_report_file;
 
 int frm_emu_warp_size = 32;
 
-
+FrmEmu *frm_emu;
 
 
 void frm_emu_init(void)
 {
+	/* Classes */
+	CLASS_REGISTER(FrmEmu);
+
 	/* Open report file */
 	if (*frm_emu_report_file_name)
 	{
-		frm_emu_report_file = file_open_for_write(
-			frm_emu_report_file_name);
+		frm_emu_report_file = file_open_for_write(frm_emu_report_file_name);
 		if (!frm_emu_report_file)
-		{
 			fatal("%s: cannot open report for Fermi emulator", 
 				frm_emu_report_file_name);
-		}
 	}
 
-        /* Initialize */
-        frm_emu = xcalloc(1, sizeof(struct frm_emu_t));
-	frm_emu->grids = list_create();
-	frm_emu->pending_grids = list_create();
-	frm_emu->running_grids = list_create();
-	frm_emu->finished_grids = list_create();
-        frm_emu->global_mem = mem_create();
-        frm_emu->global_mem->safe = 0;
-        frm_emu->global_mem_top = 0;
-        frm_emu->total_global_mem_size = 1 << 31; /* 2GB */
-        frm_emu->free_global_mem_size = 1 << 31; /* 2GB */
-        frm_emu->const_mem = mem_create();
-        frm_emu->const_mem->safe = 0;
+	/* Create emulator */
+	frm_emu = new(FrmEmu);
 
 	/* Initialize disassembler (decoding tables...) */
 	frm_disasm_init();
@@ -103,84 +201,7 @@ void frm_emu_done(void)
 	/* Finalize ISA */
 	frm_isa_done();
 
-	/* Free grids */
-	list_free(frm_emu->grids);
-	list_free(frm_emu->pending_grids);
-	list_free(frm_emu->running_grids);
-	list_free(frm_emu->finished_grids);
-        mem_free(frm_emu->const_mem);
-        mem_free(frm_emu->global_mem);
-
-	/* Finalize GPU emulator */
-        free(frm_emu);
+	/* Free emulator */
+	delete(frm_emu);
 }
 
-
-void frm_emu_dump(FILE *f)
-{
-}
-
-
-/* One iteration of emulator. Return TRUE if emulation is still running. */
-int frm_emu_run(void)
-{
-	struct frm_grid_t *grid;
-	struct frm_thread_block_t *thread_block;
-	struct frm_warp_t *warp;
-
-	/* Stop emulation if no grid needs running */
-	if (!list_count(frm_emu->grids))
-		return FALSE;
-
-	/* Remove grid and its thread blocks from pending list, and add them to
-	 * running list */
-	while ((grid = list_head(frm_emu->pending_grids)))
-	{
-		while ((thread_block = list_head(grid->pending_thread_blocks)))
-		{
-			list_remove(grid->pending_thread_blocks, thread_block);
-			list_add(grid->running_thread_blocks, thread_block);
-		}
-
-		list_remove(frm_emu->pending_grids, grid);
-		list_add(frm_emu->running_grids, grid);
-	}
-
-	/* Run one instruction */
-	while ((grid = list_head(frm_emu->running_grids)))
-	{
-		while ((thread_block = list_head(grid->running_thread_blocks)))
-		{
-			while ((warp = list_head(thread_block->running_warps)))
-			{
-				if (warp->finished || warp->at_barrier)
-					continue;
-
-				frm_warp_execute(warp);
-			}
-		}
-	}
-
-	/* Free finished grids */
-	assert(list_count(frm_emu->pending_grids) == 0 &&
-			list_count(frm_emu->running_grids) == 0);
-	while ((grid = list_head(frm_emu->finished_grids)))
-	{
-		/* Dump grid report */
-		frm_grid_dump(grid, frm_emu_report_file);
-
-		/* Remove grid from finished list */
-		list_remove(frm_emu->finished_grids, grid);
-
-		/* Free grid */
-		frm_grid_free(grid);
-	}
-
-	/* Continue emulation */
-	return TRUE;
-}
-
-
-void frm_emu_dump_summary(FILE *f)
-{
-}

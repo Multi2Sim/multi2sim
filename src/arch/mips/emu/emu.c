@@ -35,233 +35,148 @@
 
 
 /*
- * Global variables
+ * Class 'MIPSEmu'
  */
 
-/* Configuration parameters */
-long long mips_emu_max_inst = 0;
-long long mips_emu_max_cycles = 0;
-long long mips_emu_max_time = 0;
-enum arch_sim_kind_t mips_emu_sim_kind = arch_sim_kind_functional;
+CLASS_IMPLEMENTATION(MIPSEmu);
 
-/* MIPS emulator and architecture */
-struct mips_emu_t *mips_emu;
-struct arch_t *mips_emu_arch;
-
-
-
-
-/*
- * Public functions
- */
-
-
-/* Initialization */
-
-void mips_emu_init(void)
+void MIPSEmuCreate(MIPSEmu *self)
 {
-	union
-	{
-		unsigned int as_uint;
-		unsigned char as_uchar[4];
-	} endian;
-
-	/* Endian check */
-	endian.as_uint = 0x33221100;
-	if (endian.as_uchar[0])
-		fatal("%s: host machine is not little endian", __FUNCTION__);
-
-	/* Host types */
-	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
-	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
-	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
-
-	/* Register architecture */
-	//mips_emu_arch = arch_list_register("MIPS", "mips");
-	//mips_emu_arch->sim_kind = mips_emu_sim_kind;
-
-	/* Initialization */
-	mips_sys_init();
-	mips_asm_init();
-
-	/* Allocate */
-	mips_emu = xcalloc(1, sizeof(struct mips_emu_t));
-
-	/* Initialize */
-	mips_emu->current_pid = 1000;  /* Initial assigned pid */
-	//mips_emu->timer = m2s_timer_create("mips emulation timer");
-
-	/* Initialize mutex for variables controlling calls to 'mips_emu_process_events()' */
-	pthread_mutex_init(&mips_emu->process_events_mutex, NULL);
+	self->current_pid = 1000;
+	pthread_mutex_init(&self->process_events_mutex, NULL);
 }
 
 
-/* Finalization */
-void mips_emu_done(void)
+void MIPSEmuDestroy(MIPSEmu *self)
 {
 	struct mips_ctx_t *ctx;
 
 	/* Finish all contexts */
-	for (ctx = mips_emu->context_list_head; ctx; ctx = ctx->context_list_next)
+	for (ctx = self->context_list_head; ctx; ctx = ctx->context_list_next)
 		if (!mips_ctx_get_status(ctx, mips_ctx_finished))
 			mips_ctx_finish(ctx, 0);
 
 	/* Free contexts */
-	while (mips_emu->context_list_head)
-		mips_ctx_free(mips_emu->context_list_head);
+	while (self->context_list_head)
+		mips_ctx_free(self->context_list_head);
 
-	/* Finalize GPU */
-	/*evg_emu_done();
-	si_emu_done();*/
-	/*frm_emu_done();*/
-
-	/* Free */
-	//m2s_timer_free(mips_emu->timer);
-	free(mips_emu);
-	mips_asm_done();
-
-	/* End */
-//	mips_isa_done();
-	mips_sys_done();
 }
 
-void mips_emu_dump(FILE *f)
+
+void MIPSEmuDump(FILE *f)
 {
 }
 
-void mips_emu_dump_summary(FILE *f)
+
+void MIPSEmuDumpSummary(FILE *f)
 {
-	/*	double time_in_sec;
-		double inst_per_sec;*/
+	MIPSEmu *self = mips_emu;
 
-	/* No statistic dump if there was no Mips simulation */
-	//if (!mips_emu->inst_count)
-		//	return;
-
-	/* Functional simulation */
-	//time_in_sec = (double) m2s_timer_get_value(mips_emu->timer) / 1.0e6;
-	//inst_per_sec = time_in_sec > 0.0 ? (double) mips_emu->inst_count / time_in_sec : 0.0;
-	//fprintf(f, "[ Mips ]\n");
-	//fprintf(f, "SimType = %s\n", mips_emu_sim_kind == arch_sim_kind_functional ?
-	//		"Functional" : "Detailed");
-	//fprintf(f, "Time = %.2f\n", time_in_sec);
-	//fprintf(f, "Instructions = %lld\n", mips_emu->inst_count);
-	//fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
-	fprintf(f, "Contexts = %d\n", mips_emu->running_list_max);
+	fprintf(f, "Contexts = %d\n", self->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
-
-	/* Detailed simulation */
-	//if (mips_emu_sim_kind == arch_sim_kind_detailed)
-	//	mips_cpu_dump_summary(f);
-
-	/* End */
-	//fprintf(f, "\n");
 }
 
 
-void mips_emu_list_insert_head(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx)
+void MIPSEmuListInsertHead(MIPSEmu *self, enum mips_emu_list_kind_t list,
+		struct mips_ctx_t *ctx)
 {
-	assert(!mips_emu_list_member(list, ctx));
+	assert(!MIPSEmuListMember(self, list, ctx));
 	switch (list)
 	{
 	case mips_emu_list_context:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(mips_emu, context, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(self, context, ctx);
 		break;
 
 	case mips_emu_list_running:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(mips_emu, running, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(self, running, ctx);
 		break;
 
 	case mips_emu_list_finished:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(mips_emu, finished, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(self, finished, ctx);
 		break;
 
 	case mips_emu_list_zombie:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(mips_emu, zombie, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(self, zombie, ctx);
 		break;
 
 	case mips_emu_list_suspended:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(mips_emu, suspended, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(self, suspended, ctx);
 		break;
 
 	case mips_emu_list_alloc:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(mips_emu, alloc, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(self, alloc, ctx);
 		break;
 	}
 }
 
 
-void mips_emu_list_insert_tail(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx)
+void MIPSEmuListInsertTail(MIPSEmu *self, enum mips_emu_list_kind_t list,
+		struct mips_ctx_t *ctx)
 {
-	assert(!mips_emu_list_member(list, ctx));
+	assert(!MIPSEmuListMember(self, list, ctx));
 	switch (list) {
-	case mips_emu_list_context: DOUBLE_LINKED_LIST_INSERT_TAIL(mips_emu, context, ctx); break;
-	case mips_emu_list_running: DOUBLE_LINKED_LIST_INSERT_TAIL(mips_emu, running, ctx); break;
-	case mips_emu_list_finished: DOUBLE_LINKED_LIST_INSERT_TAIL(mips_emu, finished, ctx); break;
-	case mips_emu_list_zombie: DOUBLE_LINKED_LIST_INSERT_TAIL(mips_emu, zombie, ctx); break;
-	case mips_emu_list_suspended: DOUBLE_LINKED_LIST_INSERT_TAIL(mips_emu, suspended, ctx); break;
-	case mips_emu_list_alloc: DOUBLE_LINKED_LIST_INSERT_TAIL(mips_emu, alloc, ctx); break;
+	case mips_emu_list_context: DOUBLE_LINKED_LIST_INSERT_TAIL(self, context, ctx); break;
+	case mips_emu_list_running: DOUBLE_LINKED_LIST_INSERT_TAIL(self, running, ctx); break;
+	case mips_emu_list_finished: DOUBLE_LINKED_LIST_INSERT_TAIL(self, finished, ctx); break;
+	case mips_emu_list_zombie: DOUBLE_LINKED_LIST_INSERT_TAIL(self, zombie, ctx); break;
+	case mips_emu_list_suspended: DOUBLE_LINKED_LIST_INSERT_TAIL(self, suspended, ctx); break;
+	case mips_emu_list_alloc: DOUBLE_LINKED_LIST_INSERT_TAIL(self, alloc, ctx); break;
 	}
 }
 
 
-void mips_emu_list_remove(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx)
+void MIPSEmuListRemove(MIPSEmu *self, enum mips_emu_list_kind_t list,
+		struct mips_ctx_t *ctx)
 {
-	assert(mips_emu_list_member(list, ctx));
+	assert(MIPSEmuListMember(self, list, ctx));
 	switch (list) {
-	case mips_emu_list_context: DOUBLE_LINKED_LIST_REMOVE(mips_emu, context, ctx); break;
-	case mips_emu_list_running: DOUBLE_LINKED_LIST_REMOVE(mips_emu, running, ctx); break;
-	case mips_emu_list_finished: DOUBLE_LINKED_LIST_REMOVE(mips_emu, finished, ctx); break;
-	case mips_emu_list_zombie: DOUBLE_LINKED_LIST_REMOVE(mips_emu, zombie, ctx); break;
-	case mips_emu_list_suspended: DOUBLE_LINKED_LIST_REMOVE(mips_emu, suspended, ctx); break;
-	case mips_emu_list_alloc: DOUBLE_LINKED_LIST_REMOVE(mips_emu, alloc, ctx); break;
+	case mips_emu_list_context: DOUBLE_LINKED_LIST_REMOVE(self, context, ctx); break;
+	case mips_emu_list_running: DOUBLE_LINKED_LIST_REMOVE(self, running, ctx); break;
+	case mips_emu_list_finished: DOUBLE_LINKED_LIST_REMOVE(self, finished, ctx); break;
+	case mips_emu_list_zombie: DOUBLE_LINKED_LIST_REMOVE(self, zombie, ctx); break;
+	case mips_emu_list_suspended: DOUBLE_LINKED_LIST_REMOVE(self, suspended, ctx); break;
+	case mips_emu_list_alloc: DOUBLE_LINKED_LIST_REMOVE(self, alloc, ctx); break;
 	}
 }
 
 
-int mips_emu_list_member(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx)
+int MIPSEmuListMember(MIPSEmu *self, enum mips_emu_list_kind_t list,
+		struct mips_ctx_t *ctx)
 {
 	switch (list) {
-	case mips_emu_list_context: return DOUBLE_LINKED_LIST_MEMBER(mips_emu, context, ctx);
-	case mips_emu_list_running: return DOUBLE_LINKED_LIST_MEMBER(mips_emu, running, ctx);
-	case mips_emu_list_finished: return DOUBLE_LINKED_LIST_MEMBER(mips_emu, finished, ctx);
-	case mips_emu_list_zombie: return DOUBLE_LINKED_LIST_MEMBER(mips_emu, zombie, ctx);
-	case mips_emu_list_suspended: return DOUBLE_LINKED_LIST_MEMBER(mips_emu, suspended, ctx);
-	case mips_emu_list_alloc: return DOUBLE_LINKED_LIST_MEMBER(mips_emu, alloc, ctx);
+	case mips_emu_list_context: return DOUBLE_LINKED_LIST_MEMBER(self, context, ctx);
+	case mips_emu_list_running: return DOUBLE_LINKED_LIST_MEMBER(self, running, ctx);
+	case mips_emu_list_finished: return DOUBLE_LINKED_LIST_MEMBER(self, finished, ctx);
+	case mips_emu_list_zombie: return DOUBLE_LINKED_LIST_MEMBER(self, zombie, ctx);
+	case mips_emu_list_suspended: return DOUBLE_LINKED_LIST_MEMBER(self, suspended, ctx);
+	case mips_emu_list_alloc: return DOUBLE_LINKED_LIST_MEMBER(self, alloc, ctx);
 	}
 	return 0;
 }
 
 
-/* Schedule a call to 'mips_emu_process_events' */
-void mips_emu_process_events_schedule()
+void MIPSEmuProcessEventsSchedule(MIPSEmu *self)
 {
-	pthread_mutex_lock(&mips_emu->process_events_mutex);
-	mips_emu->process_events_force = 1;
-	pthread_mutex_unlock(&mips_emu->process_events_mutex);
+	pthread_mutex_lock(&self->process_events_mutex);
+	self->process_events_force = 1;
+	pthread_mutex_unlock(&self->process_events_mutex);
 }
 
 
-
-
-
-/*
- * Functional simulation loop
- */
-
-/* Run one iteration of the MIPS emulation loop. Return TRUE if still running. */
-int mips_emu_run(void)
+int MIPSEmuRun(void)
 {
+	MIPSEmu *self = mips_emu;
+
 	struct mips_ctx_t *ctx;
 
 	/* Stop if there is no context running */
-	if (mips_emu->finished_list_count >= mips_emu->context_list_count)
+	if (self->finished_list_count >= self->context_list_count)
 		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
@@ -277,13 +192,56 @@ int mips_emu_run(void)
 		return TRUE;
 
 	/* Run an instruction from every running process */
-	for (ctx = mips_emu->running_list_head; ctx; ctx = ctx->running_list_next)
+	for (ctx = self->running_list_head; ctx; ctx = ctx->running_list_next)
 		mips_ctx_execute(ctx);
 
 	/* Free finished contexts */
-	while (mips_emu->finished_list_head)
-		mips_ctx_free(mips_emu->finished_list_head);
+	while (self->finished_list_head)
+		mips_ctx_free(self->finished_list_head);
 
 	/* Still running */
 	return TRUE;
 }
+
+
+
+
+/*
+ * Non-Class Stuff
+ */
+
+
+long long mips_emu_max_inst;
+long long mips_emu_max_cycles;
+long long mips_emu_max_time;
+enum arch_sim_kind_t mips_emu_sim_kind = arch_sim_kind_functional;
+
+MIPSEmu *mips_emu;
+
+
+void mips_emu_init(void)
+{
+	/* Classes */
+	CLASS_REGISTER(MIPSEmu);
+
+	/* Initialization */
+	mips_sys_init();
+	mips_asm_init();
+
+	/* Create emulator */
+	mips_emu = new(MIPSEmu);
+}
+
+
+void mips_emu_done(void)
+{
+	/* Free emulator */
+	delete(mips_emu);
+
+	/* Free */
+	mips_asm_done();
+
+	/* End */
+	mips_sys_done();
+}
+
