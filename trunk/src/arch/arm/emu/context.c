@@ -106,7 +106,7 @@ static struct arm_ctx_t *arm_ctx_do_create()
 	 * corresponding lists. The arm_ctx_running parameter has no
 	 * effect, since it will be updated later. */
 	arm_ctx_set_status(ctx, arm_ctx_running);
-	arm_emu_list_insert_head(arm_emu_list_context, ctx);
+	ARMEmuListInsertHead(arm_emu, arm_emu_list_context, ctx);
 
 	/* Structures */
 	ctx->regs = arm_regs_create();
@@ -570,11 +570,11 @@ void arm_ctx_free(struct arm_ctx_t *ctx)
 
 	/* Remove context from finished contexts list. This should
 	 * be the only list the context is in right now. */
-	assert(!arm_emu_list_member(arm_emu_list_running, ctx));
-	assert(!arm_emu_list_member(arm_emu_list_suspended, ctx));
-	assert(!arm_emu_list_member(arm_emu_list_zombie, ctx));
-	assert(arm_emu_list_member(arm_emu_list_finished, ctx));
-	arm_emu_list_remove(arm_emu_list_finished, ctx);
+	assert(!ARMEmuListMember(arm_emu, arm_emu_list_running, ctx));
+	assert(!ARMEmuListMember(arm_emu, arm_emu_list_suspended, ctx));
+	assert(!ARMEmuListMember(arm_emu, arm_emu_list_zombie, ctx));
+	assert(ARMEmuListMember(arm_emu, arm_emu_list_finished, ctx));
+	ARMEmuListRemove(arm_emu, arm_emu_list_finished, ctx);
 
 	/* Free private structures */
 	arm_regs_free(ctx->regs);
@@ -615,7 +615,7 @@ void arm_ctx_free(struct arm_ctx_t *ctx)
 	free(ctx->cstack);
 
 	/* Remove context from contexts list and free */
-	arm_emu_list_remove(arm_emu_list_context, ctx);
+	ARMEmuListRemove(arm_emu, arm_emu_list_context, ctx);
 	arm_ctx_debug("context %d freed\n", ctx->pid);
 
 	free(ctx);
@@ -881,7 +881,7 @@ void arm_ctx_finish_group(struct arm_ctx_t *ctx, int status)
 	}
 
 	/* Process events */
-	arm_emu_process_events_schedule();
+	ARMEmuProcessEventsSchedule(arm_emu);
 }
 
 
@@ -925,7 +925,7 @@ void arm_ctx_finish(struct arm_ctx_t *ctx, int status)
 			ctx->exit_signal, ctx->parent->pid);
 		sim_sigset_add(&ctx->parent->signal_mask_table->pending,
 			ctx->exit_signal);
-		arm_emu_process_events_schedule();
+		ARMEmuProcessEventsSchedule();
 	}
 
 	 If clear_child_tid was set, a futex() call must be performed on
@@ -946,7 +946,7 @@ void arm_ctx_finish(struct arm_ctx_t *ctx, int status)
 	/* Finish context */
 	arm_ctx_set_status(ctx, ctx->parent ? arm_ctx_zombie : arm_ctx_finished);
 	ctx->exit_code = status;
-	arm_emu_process_events_schedule();
+	ARMEmuProcessEventsSchedule(arm_emu);
 }
 
 static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
@@ -955,16 +955,16 @@ static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t s
 
 	/* Remove contexts from the following lists:
 	 *   running, suspended, zombie */
-	if (arm_emu_list_member(arm_emu_list_running, ctx))
-		arm_emu_list_remove(arm_emu_list_running, ctx);
-	if (arm_emu_list_member(arm_emu_list_suspended, ctx))
-		arm_emu_list_remove(arm_emu_list_suspended, ctx);
-	if (arm_emu_list_member(arm_emu_list_zombie, ctx))
-		arm_emu_list_remove(arm_emu_list_zombie, ctx);
-	if (arm_emu_list_member(arm_emu_list_finished, ctx))
-		arm_emu_list_remove(arm_emu_list_finished, ctx);
-	if (arm_emu_list_member(arm_emu_list_alloc, ctx))
-		arm_emu_list_remove(arm_emu_list_alloc, ctx);
+	if (ARMEmuListMember(arm_emu, arm_emu_list_running, ctx))
+		ARMEmuListRemove(arm_emu, arm_emu_list_running, ctx);
+	if (ARMEmuListMember(arm_emu, arm_emu_list_suspended, ctx))
+		ARMEmuListRemove(arm_emu, arm_emu_list_suspended, ctx);
+	if (ARMEmuListMember(arm_emu, arm_emu_list_zombie, ctx))
+		ARMEmuListRemove(arm_emu, arm_emu_list_zombie, ctx);
+	if (ARMEmuListMember(arm_emu, arm_emu_list_finished, ctx))
+		ARMEmuListRemove(arm_emu, arm_emu_list_finished, ctx);
+	if (ARMEmuListMember(arm_emu, arm_emu_list_alloc, ctx))
+		ARMEmuListRemove(arm_emu, arm_emu_list_alloc, ctx);
 
 	/* If the difference between the old and new status lies in other
 	 * states other than 'arm_ctx_specmode', a reschedule is marked. */
@@ -988,15 +988,15 @@ static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t s
 
 	/* Insert context into the corresponding lists. */
 	if (ctx->status & arm_ctx_running)
-		arm_emu_list_insert_head(arm_emu_list_running, ctx);
+		ARMEmuListInsertHead(arm_emu, arm_emu_list_running, ctx);
 	if (ctx->status & arm_ctx_zombie)
-		arm_emu_list_insert_head(arm_emu_list_zombie, ctx);
+		ARMEmuListInsertHead(arm_emu, arm_emu_list_zombie, ctx);
 	if (ctx->status & arm_ctx_finished)
-		arm_emu_list_insert_head(arm_emu_list_finished, ctx);
+		ARMEmuListInsertHead(arm_emu, arm_emu_list_finished, ctx);
 	if (ctx->status & arm_ctx_suspended)
-		arm_emu_list_insert_head(arm_emu_list_suspended, ctx);
+		ARMEmuListInsertHead(arm_emu, arm_emu_list_suspended, ctx);
 	if (ctx->status & arm_ctx_alloc)
-		arm_emu_list_insert_head(arm_emu_list_alloc, ctx);
+		ARMEmuListInsertHead(arm_emu, arm_emu_list_alloc, ctx);
 
 	/* Dump new status (ignore 'arm_ctx_specmode' status, it's too frequent) */
 	if (debug_status(arm_ctx_debug_category) && (status_diff & ~arm_ctx_spec_mode))

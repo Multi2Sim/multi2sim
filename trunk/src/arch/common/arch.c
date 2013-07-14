@@ -30,6 +30,8 @@
 
 #include "arch.h"
 #include "asm.h"
+#include "emu.h"
+#include "timing.h"
 
 
 /*
@@ -243,6 +245,8 @@ void arch_init(void)
 
 	/* Classes */
 	CLASS_REGISTER(Asm);
+	CLASS_REGISTER(Emu);
+	CLASS_REGISTER(Timing);
 
 	/* Initialize all architectures */
 	for (i = 0; i < arch_list_count; i++)

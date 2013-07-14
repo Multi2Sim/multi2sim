@@ -23,9 +23,27 @@
 #include <pthread.h>
 #include <stdio.h>
 
-struct arm_emu_t
+#include <arch/common/emu.h>
+
+
+/*
+ * Class 'ARMEmu'
+ */
+
+enum arm_emu_list_kind_t
 {
-	/* pid & address_space_index assignment */
+	arm_emu_list_context = 0,
+	arm_emu_list_running,
+	arm_emu_list_suspended,
+	arm_emu_list_zombie,
+	arm_emu_list_finished,
+	arm_emu_list_alloc
+};
+
+
+CLASS_BEGIN(ARMEmu, Emu)
+
+	/* PID assigned */
 	int current_pid;
 
 	/* Schedule next call to 'x86_emu_process_events()'.
@@ -76,43 +94,41 @@ struct arm_emu_t
 	struct arm_ctx_t *alloc_list_tail;
 	int alloc_list_count;
 	int alloc_list_max;
-};
 
-enum arm_emu_list_kind_t
-{
-	arm_emu_list_context = 0,
-	arm_emu_list_running,
-	arm_emu_list_suspended,
-	arm_emu_list_zombie,
-	arm_emu_list_finished,
-	arm_emu_list_alloc
-};
+CLASS_END(ARMEmu)
 
-int arm_emu_list_member(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
-void arm_emu_list_remove(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
-void arm_emu_list_insert_tail(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
-void arm_emu_list_insert_head(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
-void arm_emu_dump_summary(FILE *f);
 
-extern struct arm_emu_t *arm_emu;
+void ARMEmuCreate(ARMEmu *self);
+void ARMEmuDestroy(ARMEmu *self);
 
-extern long long arm_emu_max_cycles;
-extern long long arm_emu_max_inst;
-extern long long arm_emu_max_time;
+int ARMEmuRun(void);
+
+void ARMEmuDump(FILE *f);
+void ARMEmuDumpSummary(FILE *f);
+
+void ARMEmuProcessEventsSchedule(ARMEmu *self);
+
+/* FIXME - Ugly functions below to be removed */
+int ARMEmuListMember(ARMEmu *emu, enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
+void ARMEmuListRemove(ARMEmu *emu, enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
+void ARMEmuListInsertTail(ARMEmu *emu, enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
+void ARMEmuListInsertHead(ARMEmu *emu, enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
 
 
 
 
 /*
- * Public Functions
+ * Non-Class
  */
+
+extern ARMEmu *arm_emu;
+
+extern long long arm_emu_max_cycles;
+extern long long arm_emu_max_inst;
+extern long long arm_emu_max_time;
 
 void arm_emu_init(void);
 void arm_emu_done(void);
-void arm_emu_dump(FILE *f);
 
-int arm_emu_run(void);
-
-void arm_emu_process_events_schedule();
 
 #endif

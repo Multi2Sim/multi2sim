@@ -385,7 +385,7 @@ static int arm_sys_read_impl(struct arm_ctx_t *ctx)
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = 1;  /* POLLIN */
 	arm_ctx_set_status(ctx, arm_ctx_suspended | arm_ctx_read);
-	arm_emu_process_events_schedule();
+	ARMEmuProcessEventsSchedule(arm_emu);
 
 	/* Free allocated buffer. Return value doesn't matter,
 	 * it will be overwritten when context wakes up from blocking call. */
@@ -458,7 +458,7 @@ static int arm_sys_write_impl(struct arm_ctx_t *ctx)
 	arm_sys_debug("  blocking write - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
 	arm_ctx_set_status(ctx, arm_ctx_suspended | arm_ctx_write);
-	arm_emu_process_events_schedule();
+	ARMEmuProcessEventsSchedule(arm_emu);
 
 	/* Return value doesn't matter here. It will be overwritten when the
 	 * context wakes up after blocking call. */
