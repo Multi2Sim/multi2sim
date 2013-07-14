@@ -168,8 +168,8 @@ uav[0-9]+ {
 	return TOK_FLOAT_DECL;
 }
 
-".dword" {
-	return TOK_DWORD_DECL;
+".half" {
+	return TOK_HALF_DECL;
 }
 
 ".word" {

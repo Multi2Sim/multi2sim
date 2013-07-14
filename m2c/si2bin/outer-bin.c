@@ -218,13 +218,13 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				case si2bin_data_word:
 					elf_enc_buffer_write(rodata_buffer, 
 						&data->word_value, 
-						sizeof(unsigned short));
+						sizeof(unsigned int));
 					break;
 				
-				case si2bin_data_dword:
+				case si2bin_data_half:
 					elf_enc_buffer_write(rodata_buffer, 
-						&data->dword_value, 
-						sizeof(unsigned int));
+						&data->half_value, 
+						sizeof(unsigned short));
 					break;
 				
 				case si2bin_data_byte:
@@ -661,6 +661,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					fatal("Cannot have both IMM_CONST_BUFFER and PTR_CONST_BUFFER_TABLE");	
 				
 				cb[user_elem->apiSlot] = 1;
+
 				buff_num_offset++;
 				imm_cb_found = 1;
 			}
@@ -683,6 +684,10 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				ptr_cb_table_found = 1;
 			}
 		}
+
+		/* Check if data values have been added without using constant buffer 2 */
+		if ( (!cb[2]) &&  (list_count(outer_bin->data_list) > 0) )
+			fatal("Data values have been added but constant buffer 2 has not been specified");
 		
 		
 		buff_size = 8 * buff_num_offset;
