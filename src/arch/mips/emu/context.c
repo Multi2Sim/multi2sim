@@ -103,7 +103,7 @@ static struct mips_ctx_t *mips_ctx_do_create()
 	 * corresponding lists. The mips_ctx_running parameter has no
 	 * effect, since it will be updated later. */
 	mips_ctx_set_status(ctx, mips_ctx_running);
-	mips_emu_list_insert_head(mips_emu_list_context, ctx);
+	MIPSEmuListInsertHead(mips_emu, mips_emu_list_context, ctx);
 
 	/* Structures */
 	ctx->regs = mips_regs_create();
@@ -532,11 +532,11 @@ void mips_ctx_free(struct mips_ctx_t *ctx)
 
 	/* Remove context from finished contexts list. This should
 	 * be the only list the context is in right now. */
-	assert(!mips_emu_list_member(mips_emu_list_running, ctx));
-	assert(!mips_emu_list_member(mips_emu_list_suspended, ctx));
-	assert(!mips_emu_list_member(mips_emu_list_zombie, ctx));
-	assert(mips_emu_list_member(mips_emu_list_finished, ctx));
-	mips_emu_list_remove(mips_emu_list_finished, ctx);
+	assert(!MIPSEmuListMember(mips_emu, mips_emu_list_running, ctx));
+	assert(!MIPSEmuListMember(mips_emu, mips_emu_list_suspended, ctx));
+	assert(!MIPSEmuListMember(mips_emu, mips_emu_list_zombie, ctx));
+	assert(MIPSEmuListMember(mips_emu, mips_emu_list_finished, ctx));
+	MIPSEmuListRemove(mips_emu, mips_emu_list_finished, ctx);
 
 	/* Free private structures */
 	mips_regs_free(ctx->regs);
@@ -577,7 +577,7 @@ void mips_ctx_free(struct mips_ctx_t *ctx)
 	free(ctx->cstack);
 
 	/* Remove context from contexts list and free */
-	mips_emu_list_remove(mips_emu_list_context, ctx);
+	MIPSEmuListRemove(mips_emu, mips_emu_list_context, ctx);
 	mips_ctx_debug("context %d freed\n", ctx->pid);
 
 	free(ctx);
@@ -729,7 +729,7 @@ void mips_ctx_finish_group(struct mips_ctx_t *ctx, int status)
 	}
 
 	/* Process events */
-	mips_emu_process_events_schedule();
+	MIPSEmuProcessEventsSchedule(mips_emu);
 }
 
 
@@ -773,7 +773,7 @@ void mips_ctx_finish(struct mips_ctx_t *ctx, int status)
 			ctx->exit_signal, ctx->parent->pid);
 		sim_sigset_add(&ctx->parent->signal_mask_table->pending,
 			ctx->exit_signal);
-		mips_emu_process_events_schedule();
+		MIPSEmuProcessEventsSchedule();
 	}
 
 	 If clear_child_tid was set, a futex() call must be performed on
@@ -794,7 +794,7 @@ void mips_ctx_finish(struct mips_ctx_t *ctx, int status)
 	/* Finish context */
 	mips_ctx_set_status(ctx, ctx->parent ? mips_ctx_zombie : mips_ctx_finished);
 	ctx->exit_code = status;
-	mips_emu_process_events_schedule();
+	MIPSEmuProcessEventsSchedule(mips_emu);
 }
 
 static void mips_ctx_update_status(struct mips_ctx_t *ctx, enum mips_ctx_status_t status)
@@ -803,16 +803,16 @@ static void mips_ctx_update_status(struct mips_ctx_t *ctx, enum mips_ctx_status_
 
 	/* Remove contexts from the following lists:
 	 *   running, suspended, zombie */
-	if (mips_emu_list_member(mips_emu_list_running, ctx))
-		mips_emu_list_remove(mips_emu_list_running, ctx);
-	if (mips_emu_list_member(mips_emu_list_suspended, ctx))
-		mips_emu_list_remove(mips_emu_list_suspended, ctx);
-	if (mips_emu_list_member(mips_emu_list_zombie, ctx))
-		mips_emu_list_remove(mips_emu_list_zombie, ctx);
-	if (mips_emu_list_member(mips_emu_list_finished, ctx))
-		mips_emu_list_remove(mips_emu_list_finished, ctx);
-	if (mips_emu_list_member(mips_emu_list_alloc, ctx))
-		mips_emu_list_remove(mips_emu_list_alloc, ctx);
+	if (MIPSEmuListMember(mips_emu, mips_emu_list_running, ctx))
+		MIPSEmuListRemove(mips_emu, mips_emu_list_running, ctx);
+	if (MIPSEmuListMember(mips_emu, mips_emu_list_suspended, ctx))
+		MIPSEmuListRemove(mips_emu, mips_emu_list_suspended, ctx);
+	if (MIPSEmuListMember(mips_emu, mips_emu_list_zombie, ctx))
+		MIPSEmuListRemove(mips_emu, mips_emu_list_zombie, ctx);
+	if (MIPSEmuListMember(mips_emu, mips_emu_list_finished, ctx))
+		MIPSEmuListRemove(mips_emu, mips_emu_list_finished, ctx);
+	if (MIPSEmuListMember(mips_emu, mips_emu_list_alloc, ctx))
+		MIPSEmuListRemove(mips_emu, mips_emu_list_alloc, ctx);
 
 	/* If the difference between the old and new status lies in other
 	 * states other than 'mips_ctx_specmode', a reschedule is marked. */
@@ -836,15 +836,15 @@ static void mips_ctx_update_status(struct mips_ctx_t *ctx, enum mips_ctx_status_
 
 	/* Insert context into the corresponding lists. */
 	if (ctx->status & mips_ctx_running)
-		mips_emu_list_insert_head(mips_emu_list_running, ctx);
+		MIPSEmuListInsertHead(mips_emu, mips_emu_list_running, ctx);
 	if (ctx->status & mips_ctx_zombie)
-		mips_emu_list_insert_head(mips_emu_list_zombie, ctx);
+		MIPSEmuListInsertHead(mips_emu, mips_emu_list_zombie, ctx);
 	if (ctx->status & mips_ctx_finished)
-		mips_emu_list_insert_head(mips_emu_list_finished, ctx);
+		MIPSEmuListInsertHead(mips_emu, mips_emu_list_finished, ctx);
 	if (ctx->status & mips_ctx_suspended)
-		mips_emu_list_insert_head(mips_emu_list_suspended, ctx);
+		MIPSEmuListInsertHead(mips_emu, mips_emu_list_suspended, ctx);
 	if (ctx->status & mips_ctx_alloc)
-		mips_emu_list_insert_head(mips_emu_list_alloc, ctx);
+		MIPSEmuListInsertHead(mips_emu, mips_emu_list_alloc, ctx);
 
 	/* Dump new status (ignore 'mips_ctx_specmode' status, it's too frequent) */
 	if (debug_status(mips_ctx_debug_category) && (status_diff & ~mips_ctx_spec_mode))
