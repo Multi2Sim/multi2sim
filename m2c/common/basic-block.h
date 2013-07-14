@@ -25,7 +25,7 @@
 #include <lib/util/class.h>
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(Node);
+CLASS_FORWARD_DECLARATION(LeafNode);
 
 
 /*
@@ -35,12 +35,12 @@ CLASS_FORWARD_DECLARATION(Node);
 CLASS_BEGIN(BasicBlock, Object)
 
 	/* Node associated in control tree */
-	Node *node;
+	LeafNode *node;
 
 CLASS_END(BasicBlock)
 
 
-void BasicBlockCreate(BasicBlock *self, Node *node);
+void BasicBlockCreate(BasicBlock *self, LeafNode *node);
 void BasicBlockDestroy(BasicBlock *self);
 
 

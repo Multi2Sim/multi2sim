@@ -519,6 +519,8 @@ void m2c_init(void)
 {
 	/* Classes */
 	CLASS_REGISTER(Node);
+	CLASS_REGISTER(LeafNode);
+	CLASS_REGISTER(AbstractNode);
 	CLASS_REGISTER(BasicBlock);
 	CLASS_REGISTER(CTree);
 

@@ -59,7 +59,7 @@ CLASS_END(Llvm2siBasicBlock)
 
 
 void Llvm2siBasicBlockCreate(Llvm2siBasicBlock *self,
-		Llvm2siFunction *function, Node *node);
+		Llvm2siFunction *function, LeafNode *node);
 void Llvm2siBasicBlockDestroy(Llvm2siBasicBlock *self);
 
 /* Virtual function from class Object */

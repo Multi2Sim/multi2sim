@@ -203,8 +203,7 @@ static void Llvm2siFunctionAddUAV(Llvm2siFunction *self,
 	uav->function = self;
 
 	/* Get basic block or create it */
-	basic_block = asLlvm2siBasicBlock(NodeGetBasicBlock(
-			self->uavs_node));
+	basic_block = asLlvm2siBasicBlock(self->uavs_node->basic_block);
 	if (!basic_block)
 		basic_block = new(Llvm2siBasicBlock, self,
 				self->uavs_node);
@@ -246,11 +245,9 @@ static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 		panic("%s: argument already added", __FUNCTION__);
 
 	/* Get basic block, or create it */
-	basic_block = asLlvm2siBasicBlock(NodeGetBasicBlock(
-			self->args_node));
+	basic_block = asLlvm2siBasicBlock(self->args_node->basic_block);
 	if (!basic_block)
-		basic_block = new(Llvm2siBasicBlock, self,
-				self->args_node);
+		basic_block = new(Llvm2siBasicBlock, self, self->args_node);
 
 	/* Add argument */
 	list_add(self->arg_list, arg);
@@ -355,21 +352,21 @@ void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction)
 	self->phi_list = linked_list_create();
 
 	/* Create pre-defined nodes in control tree */
-	self->header_node = new(Node, node_leaf, "header", node_region_invalid);
-	self->uavs_node = new(Node, node_leaf, "uavs", node_region_invalid);
-	self->args_node = new(Node, node_leaf, "args", node_region_invalid);
-	CTreeAddNode(ctree, self->header_node);
-	CTreeAddNode(ctree, self->uavs_node);
-	CTreeAddNode(ctree, self->args_node);
-	ctree->entry_node = self->header_node;
+	self->header_node = new(LeafNode, "header");
+	self->uavs_node = new(LeafNode, "uavs");
+	self->args_node = new(LeafNode, "args");
+	CTreeAddNode(ctree, asNode(self->header_node));
+	CTreeAddNode(ctree, asNode(self->uavs_node));
+	CTreeAddNode(ctree, asNode(self->args_node));
+	ctree->entry_node = asNode(self->header_node);
 
 	/* Add all nodes from the LLVM control flow graph */
 	self->body_node = CTreeAddLlvmCFG(ctree, llfunction);
 
 	/* Connect nodes */
-	NodeConnect(self->header_node, self->uavs_node);
-	NodeConnect(self->uavs_node, self->args_node);
-	NodeConnect(self->args_node, self->body_node);
+	NodeConnect(asNode(self->header_node), asNode(self->uavs_node));
+	NodeConnect(asNode(self->uavs_node), asNode(self->args_node));
+	NodeConnect(asNode(self->args_node), asNode(self->body_node));
 }
 
 
@@ -433,11 +430,11 @@ void Llvm2siFunctionDump(Object *self, FILE *f)
 	{
 		/* Skip abstract nodes */
 		node = linked_list_get(node_list);
-		if (node->kind != node_leaf)
+		if (!isLeafNode(node))
 			continue;
 
 		/* Get node's basic block */
-		basic_block = asLlvm2siBasicBlock(node->leaf.basic_block);
+		basic_block = asLlvm2siBasicBlock(asLeafNode(node)->basic_block);
 		if (!basic_block)
 			continue;
 
@@ -661,17 +658,17 @@ void Llvm2siFunctionEmitBody(Llvm2siFunction *self)
 	{
 		/* Skip abstract nodes */
 		node = linked_list_get(node_list);
-		if (node->kind != node_leaf)
+		if (!isLeafNode(node))
 			continue;
 
 		/* Skip nodes with no LLVM code to translate */
-		if (!node->llbb)
+		if (!asLeafNode(node)->llbb)
 			continue;
 
 		/* Create basic block and emit the code */
-		assert(!node->leaf.basic_block);
-		basic_block = new(Llvm2siBasicBlock, self, node);
-		Llvm2siBasicBlockEmit(basic_block, node->llbb);
+		assert(!asLeafNode(node)->basic_block);
+		basic_block = new(Llvm2siBasicBlock, self, asLeafNode(node));
+		Llvm2siBasicBlockEmit(basic_block, asLeafNode(node)->llbb);
 	}
 
 	/* Free structures */
@@ -681,6 +678,7 @@ void Llvm2siFunctionEmitBody(Llvm2siFunction *self)
 
 void Llvm2siFunctionEmitPhi(Llvm2siFunction *self)
 {
+	LeafNode *node;
 	Llvm2siPhi *phi;
 	Llvm2siBasicBlock *basic_block;
 	struct list_t *arg_list;
@@ -694,8 +692,8 @@ void Llvm2siFunctionEmitPhi(Llvm2siFunction *self)
 		phi = linked_list_remove(self->phi_list);
 
 		/* Get basic block */
-		basic_block = asLlvm2siBasicBlock(NodeGetBasicBlock(
-				phi->src_node));
+		node = asLeafNode(phi->src_node);
+		basic_block = asLlvm2siBasicBlock(node->basic_block);
 		assert(basic_block);
 
 		/* Get source value */
@@ -739,11 +737,11 @@ static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 	char *cond_name;
 
 	/* Identify the two nodes */
-	assert(node->kind == node_abstract);
-	assert(node->abstract.region == node_region_if_then);
-	assert(node->abstract.child_list->count == 2);
-	if_node = linked_list_goto(node->abstract.child_list, 0);
-	then_node = linked_list_goto(node->abstract.child_list, 1);
+	assert(isAbstractNode(node));
+	assert(asAbstractNode(node)->region == AbstractNodeIfThen);
+	assert(asAbstractNode(node)->child_list->count == 2);
+	if_node = linked_list_goto(asAbstractNode(node)->child_list, 0);
+	then_node = linked_list_goto(asAbstractNode(node)->child_list, 1);
 
 	/* Make sure roles match */
 	assert(if_node->role == node_role_if);
@@ -751,16 +749,16 @@ static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 
 	/* Get basic blocks. 'If' node should be a leaf. */
 	then_node = NodeGetLastLeaf(then_node);
-	assert(if_node->kind == node_leaf);
-	assert(then_node->kind == node_leaf);
-	if_bb = asLlvm2siBasicBlock(if_node->leaf.basic_block);
-	then_bb = asLlvm2siBasicBlock(then_node->leaf.basic_block);
+	assert(isLeafNode(if_node));
+	assert(isLeafNode(then_node));
+	if_bb = asLlvm2siBasicBlock(asLeafNode(if_node)->basic_block);
+	then_bb = asLlvm2siBasicBlock(asLeafNode(then_node)->basic_block);
 
 
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llbb = if_node->llbb;
+	llbb = asLeafNode(if_node)->llbb;
 	llinst = LLVMGetBasicBlockTerminator(llbb);
 	assert(llinst);
 	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
@@ -825,12 +823,12 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	char *cond_name;
 
 	/* Identify the three nodes */
-	assert(node->kind == node_abstract);
-	assert(node->abstract.region == node_region_if_then_else);
-	assert(node->abstract.child_list->count == 3);
-	if_node = linked_list_goto(node->abstract.child_list, 0);
-	then_node = linked_list_goto(node->abstract.child_list, 1);
-	else_node = linked_list_goto(node->abstract.child_list, 2);
+	assert(isAbstractNode(node));
+	assert(asAbstractNode(node)->region == AbstractNodeIfThenElse);
+	assert(asAbstractNode(node)->child_list->count == 3);
+	if_node = linked_list_goto(asAbstractNode(node)->child_list, 0);
+	then_node = linked_list_goto(asAbstractNode(node)->child_list, 1);
+	else_node = linked_list_goto(asAbstractNode(node)->child_list, 2);
 
 	/* Make sure roles match */
 	assert(if_node->role == node_role_if);
@@ -840,18 +838,18 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	/* Get basic blocks. 'If' node should be a leaf. */
 	then_node = NodeGetLastLeaf(then_node);
 	else_node = NodeGetLastLeaf(else_node);
-	assert(if_node->kind == node_leaf);
-	assert(then_node->kind == node_leaf);
-	assert(else_node->kind == node_leaf);
-	if_bb = asLlvm2siBasicBlock(if_node->leaf.basic_block);
-	then_bb = asLlvm2siBasicBlock(then_node->leaf.basic_block);
-	else_bb = asLlvm2siBasicBlock(else_node->leaf.basic_block);
+	assert(isLeafNode(if_node));
+	assert(isLeafNode(then_node));
+	assert(isLeafNode(else_node));
+	if_bb = asLlvm2siBasicBlock(asLeafNode(if_node)->basic_block);
+	then_bb = asLlvm2siBasicBlock(asLeafNode(then_node)->basic_block);
+	else_bb = asLlvm2siBasicBlock(asLeafNode(else_node)->basic_block);
 
 
 	/*** Code for 'If' block ***/
 
 	/* Get 'If' basic block terminator */
-	llbb = if_node->llbb;
+	llbb = asLeafNode(if_node)->llbb;
 	llinst = LLVMGetBasicBlockTerminator(llbb);
 	assert(llinst);
 	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
@@ -934,13 +932,13 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 
 
 	/* Identify the two nodes */
-	assert(node->kind == node_abstract);
-	assert(node->abstract.region == node_region_while_loop);
-	assert(node->abstract.child_list->count == 4);
-	pre_node = linked_list_goto(node->abstract.child_list, 0);
-	head_node = linked_list_goto(node->abstract.child_list, 1);
-	tail_node = linked_list_goto(node->abstract.child_list, 2);
-	exit_node = linked_list_goto(node->abstract.child_list, 3);
+	assert(isAbstractNode(node));
+	assert(asAbstractNode(node)->region == AbstractNodeWhileLoop);
+	assert(asAbstractNode(node)->child_list->count == 4);
+	pre_node = linked_list_goto(asAbstractNode(node)->child_list, 0);
+	head_node = linked_list_goto(asAbstractNode(node)->child_list, 1);
+	tail_node = linked_list_goto(asAbstractNode(node)->child_list, 2);
+	exit_node = linked_list_goto(asAbstractNode(node)->child_list, 3);
 
 	/* Make sure roles match */
 	assert(pre_node->role == node_role_pre);
@@ -958,22 +956,22 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	 * contain no basic block yet.
 	 */
 	tail_node = NodeGetLastLeaf(tail_node);
-	assert(pre_node->kind == node_leaf);
-	assert(head_node->kind == node_leaf);
-	assert(tail_node->kind == node_leaf);
-	assert(exit_node->kind == node_leaf);
-	pre_bb = asLlvm2siBasicBlock(pre_node->leaf.basic_block);
-	head_bb = asLlvm2siBasicBlock(head_node->leaf.basic_block);
-	tail_bb = asLlvm2siBasicBlock(tail_node->leaf.basic_block);
-	exit_bb = asLlvm2siBasicBlock(exit_node->leaf.basic_block);
+	assert(isLeafNode(pre_node));
+	assert(isLeafNode(head_node));
+	assert(isLeafNode(tail_node));
+	assert(isLeafNode(exit_node));
+	pre_bb = asLlvm2siBasicBlock(asLeafNode(pre_node)->basic_block);
+	head_bb = asLlvm2siBasicBlock(asLeafNode(head_node)->basic_block);
+	tail_bb = asLlvm2siBasicBlock(asLeafNode(tail_node)->basic_block);
+	exit_bb = asLlvm2siBasicBlock(asLeafNode(exit_node)->basic_block);
 	assert(!pre_bb);
 	assert(head_bb);
 	assert(tail_bb);
 	assert(!exit_bb);
 
 	/* Create pre-header and exit basic blocks */
-	pre_bb = new(Llvm2siBasicBlock, self, pre_node);
-	exit_bb = new(Llvm2siBasicBlock, self, exit_node);
+	pre_bb = new(Llvm2siBasicBlock, self, asLeafNode(pre_node));
+	exit_bb = new(Llvm2siBasicBlock, self, asLeafNode(exit_node));
 
 
 	/*** Code for pre-header block ***/
@@ -1017,7 +1015,7 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	/*** Code for head block ***/
 
 	/* Get head block terminator */
-	llbb = head_node->llbb;
+	llbb = asLeafNode(head_node)->llbb;
 	llinst = LLVMGetBasicBlockTerminator(llbb);
 	assert(llinst);
 	assert(LLVMGetInstructionOpcode(llinst) == LLVMBr);
@@ -1075,37 +1073,37 @@ void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *self)
 	{
 		/* Ignore leaf nodes */
 		node = linked_list_get(node_list);
-		if (node->kind == node_leaf)
+		if (isLeafNode(node))
 			continue;
 
 		/* Check control structure */
-		switch (node->abstract.region)
+		switch (asAbstractNode(node)->region)
 		{
 
-		case node_region_block:
+		case AbstractNodeBlock:
 
 			/* Ignore blocks */
 			break;
 
-		case node_region_if_then:
+		case AbstractNodeIfThen:
 
 			Llvm2siFunctionEmitIfThen(self, node);
 			break;
 
-		case node_region_if_then_else:
+		case AbstractNodeIfThenElse:
 
 			Llvm2siFunctionEmitIfThenElse(self, node);
 			break;
 
-		case node_region_while_loop:
+		case AbstractNodeWhileLoop:
 
 			Llvm2siFunctionEmitWhileLoop(self, node);
 			break;
 
 		default:
 			fatal("%s: region %s not supported", __FUNCTION__,
-					str_map_value(&node_region_map,
-					node->abstract.region));
+					str_map_value(&abstract_node_region_map,
+					asAbstractNode(node)->region));
 		}
 	}
 

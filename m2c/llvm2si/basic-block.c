@@ -932,7 +932,7 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
 CLASS_IMPLEMENTATION(Llvm2siBasicBlock);
 
 void Llvm2siBasicBlockCreate(Llvm2siBasicBlock *self,
-		Llvm2siFunction *function, Node *node)
+		Llvm2siFunction *function, LeafNode *node)
 {
 	/* Parent */
 	BasicBlockCreate(asBasicBlock(self), node);
@@ -961,6 +961,7 @@ void Llvm2siBasicBlockDestroy(Llvm2siBasicBlock *self)
 void Llvm2siBasicBlockDump(Object *self, FILE *f)
 {
 	Llvm2siBasicBlock *basic_block;
+	LeafNode *node;
 	struct si2bin_inst_t *inst;
 
 	/* Nothing if basic block is empty */
@@ -969,7 +970,8 @@ void Llvm2siBasicBlockDump(Object *self, FILE *f)
 		return;
 
 	/* Label with node's name */
-	fprintf(f, "\n%s:\n", asBasicBlock(basic_block)->node->name);
+	node = asBasicBlock(basic_block)->node;
+	fprintf(f, "\n%s:\n", asNode(node)->name);
 
 	/* Print list of instructions */
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
