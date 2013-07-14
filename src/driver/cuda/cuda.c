@@ -621,7 +621,7 @@ static void cuda_abi_frm_kernel_launch_finish(void *user_data)
 
 	/* Force the x86 emulator to check which suspended contexts can wakeup,
 	 * based on their new state. */
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 }
 
 static int cuda_abi_frm_kernel_launch_can_wakeup(struct x86_ctx_t *ctx,

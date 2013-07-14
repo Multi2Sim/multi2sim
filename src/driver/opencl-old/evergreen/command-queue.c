@@ -116,7 +116,7 @@ void evg_opencl_command_queue_complete(struct evg_opencl_command_queue_t *comman
 
 	/* x86 contexts might be waiting for the command queue to get empty
 	 * (e.g., suspended in a 'clFinish' call. Check events. */
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 }
 
 

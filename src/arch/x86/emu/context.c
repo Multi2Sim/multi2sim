@@ -522,7 +522,7 @@ void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_can_wakeup_callback_func_t c
 	ctx->wakeup_callback_func = wakeup_callback_func;
 	ctx->wakeup_callback_data = wakeup_callback_data;
 	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_callback);
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 }
 
 
@@ -564,7 +564,7 @@ void x86_ctx_finish_group(struct x86_ctx_t *ctx, int state)
 	}
 
 	/* Process events */
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 }
 
 
@@ -605,7 +605,7 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int state)
 			ctx->exit_signal, ctx->parent->pid);
 		x86_sigset_add(&ctx->parent->signal_mask_table->pending,
 			ctx->exit_signal);
-		x86_emu_process_events_schedule();
+		X86EmuProcessEventsSchedule(x86_emu);
 	}
 
 	/* If clear_child_tid was set, a futex() call must be performed on
@@ -625,7 +625,7 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int state)
 	/* Finish context */
 	x86_ctx_set_state(ctx, ctx->parent ? x86_ctx_zombie : x86_ctx_finished);
 	ctx->exit_code = state;
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 }
 
 

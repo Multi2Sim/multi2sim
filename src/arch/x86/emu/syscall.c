@@ -467,7 +467,7 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = 1;  /* POLLIN */
 	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_read);
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 
 	/* Free allocated buffer. Return value doesn't matter,
 	 * it will be overwritten when context wakes up from blocking call. */
@@ -540,7 +540,7 @@ static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  blocking write - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
 	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_write);
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 
 	/* Return value doesn't matter here. It will be overwritten when the
 	 * context wakes up after blocking call. */
@@ -1243,8 +1243,8 @@ static int x86_sys_kill_impl(struct x86_ctx_t *ctx)
 	/* Send signal */
 	x86_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
 	x86_ctx_host_thread_suspend_cancel(temp_ctx);
-	x86_emu_process_events_schedule();
-	x86_emu_process_events();
+	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEvents(x86_emu);
 
 	/* Success */
 	return 0;
@@ -2615,7 +2615,7 @@ static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
 	/* New timer inserted, so interrupt current 'ke_host_thread_timer'
 	 * waiting for the next timer expiration. */
 	x86_ctx_host_thread_timer_cancel(ctx);
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 
 	/* Return */
 	return 0;
@@ -2677,8 +2677,8 @@ static int x86_sys_sigreturn_impl(struct x86_ctx_t *ctx)
 {
 	x86_signal_handler_return(ctx);
 
-	x86_emu_process_events_schedule();
-	x86_emu_process_events();
+	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEvents(x86_emu);
 
 	return 0;
 }
@@ -3688,7 +3688,7 @@ static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
 	/* Suspend process */
 	ctx->wakeup_time = now + total;
 	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_nanosleep);
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 	return 0;
 }
 
@@ -4001,7 +4001,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = guest_fds.events;
 	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_poll);
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 	return 0;
 }
 
@@ -4151,8 +4151,8 @@ static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 
 	/* A change in the signal mask can cause pending signals to be
 	 * able to execute, so check this. */
-	x86_emu_process_events_schedule();
-	x86_emu_process_events();
+	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEvents(x86_emu);
 
 	return 0;
 }
@@ -4198,8 +4198,8 @@ static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
 	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_sigsuspend);
 
 	/* New signal mask may cause new events */
-	x86_emu_process_events_schedule();
-	x86_emu_process_events();
+	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEvents(x86_emu);
 	return 0;
 }
 
@@ -5592,8 +5592,8 @@ static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
 	/* Send signal */
 	x86_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
 	x86_ctx_host_thread_suspend_cancel(temp_ctx);
-	x86_emu_process_events_schedule();
-	x86_emu_process_events();
+	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEvents(x86_emu);
 	return 0;
 }
 

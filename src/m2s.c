@@ -2004,8 +2004,8 @@ int main(int argc, char **argv)
 
 	/* Initialization of architectures */
 	arch_arm = arch_register("ARM", "arm", arm_sim_kind,
-			arm_emu_init, arm_emu_done, arm_emu_run,
-			arm_emu_dump, arm_emu_dump_summary,
+			arm_emu_init, arm_emu_done, ARMEmuRun,
+			ARMEmuDump, ARMEmuDumpSummary,
 			arm_cpu_read_config,
 			arm_cpu_init, arm_cpu_done, arm_cpu_run,
 			arm_cpu_dump, arm_cpu_dump_summary,
@@ -2049,8 +2049,8 @@ int main(int argc, char **argv)
 					si_mem_config_parse_entry,
 					si_mem_config_check);
 	arch_x86 = arch_register("x86", "x86", x86_sim_kind,
-			x86_emu_init, x86_emu_done, x86_emu_run,
-			x86_emu_dump, x86_emu_dump_summary,
+			x86_emu_init, x86_emu_done, X86EmuRun,
+			X86EmuDump, X86EmuDumpSummary,
 			x86_cpu_read_config,
 			x86_cpu_init, x86_cpu_done, x86_cpu_run,
 			x86_cpu_dump, x86_cpu_dump_summary,
