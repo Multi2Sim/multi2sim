@@ -21,6 +21,7 @@
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/class.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
@@ -28,6 +29,7 @@
 #include <lib/util/timer.h>
 
 #include "arch.h"
+#include "asm.h"
 
 
 /*
@@ -238,6 +240,9 @@ void arch_init(void)
 {
 	struct arch_t *arch;
 	int i;
+
+	/* Classes */
+	CLASS_REGISTER(Asm);
 
 	/* Initialize all architectures */
 	for (i = 0; i < arch_list_count; i++)

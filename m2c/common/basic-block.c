@@ -23,15 +23,20 @@
 #include <lib/util/string.h>
 
 #include "basic-block.h"
-#include "cnode.h"
+#include "node.h"
 
 
-struct basic_block_t *basic_block_create(struct cnode_t *node)
+/*
+ * Class 'BasicBlock'
+ */
+
+CLASS_IMPLEMENTATION(BasicBlock);
+
+
+void BasicBlockCreate(BasicBlock *self, Node *node)
 {
-	struct basic_block_t *basic_block;
-
 	/* Check that 'node' is a leaf node */
-	if (node->kind != cnode_leaf)
+	if (node->kind != node_leaf)
 		fatal("%s: node '%s' is not a leaf",
 				__FUNCTION__, node->name);
 
@@ -41,19 +46,12 @@ struct basic_block_t *basic_block_create(struct cnode_t *node)
 				__FUNCTION__, node->name);
 
 	/* Initialize */
-	basic_block = xcalloc(1, sizeof(struct basic_block_t));
-	basic_block->node = node;
-	node->leaf.basic_block = basic_block;
-
-	/* Class information */
-	CLASS_INIT(basic_block, BASIC_BLOCK_TYPE, NULL);
-
-	/* Return */
-	return basic_block;
+	self->node = node;
+	node->leaf.basic_block = self;
 }
 
 
-void basic_block_free(struct basic_block_t *basic_block)
+void BasicBlockDestroy(BasicBlock *self)
 {
-	free(basic_block);
 }
+

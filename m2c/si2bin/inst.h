@@ -22,10 +22,11 @@
 
 #include <stdio.h>
 #include <arch/southern-islands/asm/asm.h>
+#include <lib/util/class.h>
 
 
 /* Forward declarations */
-struct llvm2si_basic_block_t;
+CLASS_FORWARD_DECLARATION(Llvm2siBasicBlock);
 
 
 struct si2bin_inst_t
@@ -43,7 +44,7 @@ struct si2bin_inst_t
 
 	/* For LLVM-to-SI back-end: basic block that the instruction
 	 * belongs to. */
-	struct llvm2si_basic_block_t *basic_block;
+	Llvm2siBasicBlock *basic_block;
 
 	/* Comment attached to the instruction, which will be dumped together
 	 * with it. */

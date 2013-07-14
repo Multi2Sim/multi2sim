@@ -25,38 +25,23 @@
 #include <lib/util/class.h>
 
 /* Forward declarations */
-struct cnode_t;
+CLASS_FORWARD_DECLARATION(Node);
 
 
-
-
-/* Class: basic_block_t
- * Inherits: None
+/*
+ * Class 'BasicBlock'
  */
 
-#define BASIC_BLOCK_TYPE 0x4c1e17fa
-#define BASIC_BLOCK(p) CLASS_REINTERPRET_CAST((p), BASIC_BLOCK_TYPE, struct basic_block_t)
-#define BASIC_BLOCK_CLASS_OF(p) CLASS_OF((p), BASIC_BLOCK_TYPE)
-
-struct basic_block_t
-{
-	/* Class information
-	 * WARNING - must be the first field */
-	struct class_t class_info;
+CLASS_BEGIN(BasicBlock, Object)
 
 	/* Node associated in control tree */
-	struct cnode_t *node;
+	Node *node;
+
+CLASS_END(BasicBlock)
 
 
-	/*** Virtual methods ***/
+void BasicBlockCreate(BasicBlock *self, Node *node);
+void BasicBlockDestroy(BasicBlock *self);
 
-	void (*destroy)(struct basic_block_t *basic_block);
-
-	void (*dump)(struct basic_block_t *basic_block, FILE *f);
-};
-
-
-struct basic_block_t *basic_block_create(struct cnode_t *cnode);
-void basic_block_free(struct basic_block_t *basic_block);
 
 #endif

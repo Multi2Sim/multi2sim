@@ -27,9 +27,10 @@
 
 
 /* Forward declarations */
+CLASS_FORWARD_DECLARATION(Node);
+CLASS_FORWARD_DECLARATION(Llvm2siFunction);
+CLASS_FORWARD_DECLARATION(Llvm2siBasicBlock);
 struct linked_list_t;
-struct llvm2si_basic_block_t;
-struct llvm2si_function_t;
 struct llvm2si_symbol_t;
 struct llvm2si_node_t;
 struct si2bin_arg_t;
@@ -50,7 +51,7 @@ struct llvm2si_function_arg_t
 	/* The fields below are populated when the argument is inserted into
 	 * a function with a call to 'llvm2si_function_add_arg()'. */
 
-	struct llvm2si_function_t *function;  /* Function it belongs to */
+	Llvm2siFunction *function;  /* Function it belongs to */
 	int index;  /* Index occupied in function argument list */
 	int uav_index;  /* For arguments of type 'si_arg_pointer', and scope 'si_arg_uav' */
 	int sreg;  /* Scalar register identifier containing the argument */
@@ -72,7 +73,7 @@ void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *function_arg, FILE
 struct llvm2si_function_uav_t
 {
 	/* Function where it belongs */
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 
 	/* UAV index in 'function->uav_list'. Uav10 has an index 0, uav11 has
 	 * index 1, etc. */
@@ -90,11 +91,11 @@ void llvm2si_function_uav_free(struct llvm2si_function_uav_t *uav);
 
 
 /*
- * Function Object
+ * Class 'Llvm2siFunction'
  */
 
-struct llvm2si_function_t
-{
+CLASS_BEGIN(Llvm2siFunction, Object)
+	
 	/* Function name */
 	char *name;
 
@@ -125,16 +126,16 @@ struct llvm2si_function_t
 	struct list_t *uav_list;
 
 	/* Predefined nodes */
-	struct cnode_t *header_node;
-	struct cnode_t *uavs_node;
-	struct cnode_t *args_node;
-	struct cnode_t *body_node;
+	Node *header_node;
+	Node *uavs_node;
+	Node *args_node;
+	Node *body_node;
 
 	/* Symbol table associated with the function, storing LLVM variables */
 	struct llvm2si_symbol_table_t *symbol_table;
 
 	/* Control tree */
-	struct ctree_t *ctree;
+	CTree *ctree;
 
 	/* List of elements found in LLVM 'phi' instructions during emission of
 	 * the function body. */
@@ -143,48 +144,51 @@ struct llvm2si_function_t
 	/* While code is generated, this variable keeps track of the total
 	 * amount of bytes pushed into the stack for this function. */
 	unsigned int stack_size;
-};
+
+CLASS_END(Llvm2siFunction)
 
 
-struct llvm2si_function_t *llvm2si_function_create(LLVMValueRef llfunction);
-void llvm2si_function_free(struct llvm2si_function_t *function);
-void llvm2si_function_dump(struct llvm2si_function_t *function, FILE *f);
+void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction);
+void Llvm2siFunctionDestroy(Llvm2siFunction *self);
+
+/* Virtual function from class Object */
+void Llvm2siFunctionDump(Object *self, FILE *f);
 
 /* Add a basic block to the function */
 /* Add a basic block to the function after basic block 'after'. If the value in
  * 'after' is NULL, the basic block is added after the last basic block added
  * using this function. */
-void llvm2si_function_add_basic_block(struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block);
+void llvm2si_function_add_basic_block(Llvm2siFunction *function,
+		Llvm2siBasicBlock *basic_block);
 
 /* Add a basic block to the function before basic block 'before'. The value
  * in 'before' can only be NULL if the function is empty. */
 void llvm2si_function_add_basic_block_before(
-		struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block,
-		struct llvm2si_basic_block_t *before);
+		Llvm2siFunction *function,
+		Llvm2siBasicBlock *basic_block,
+		Llvm2siBasicBlock *before);
 
 /* Generate initialization code for the function in basic block
  * 'function->basic_block_header'. */
-void llvm2si_function_emit_header(struct llvm2si_function_t *function);
+void llvm2si_function_emit_header(Llvm2siFunction *function);
 
 /* Emit code to load arguments into registers. The code will be emitted in
  * 'function->basic_block_args'. UAVs will be created and loaded in
  * 'function->basic_block_uavs', as they are needed by new arguments. */
-void llvm2si_function_emit_args(struct llvm2si_function_t *function);
+void llvm2si_function_emit_args(Llvm2siFunction *function);
 
 /* Emit code for the function body. The first basic block of the function will
  * be added at the end of 'basic_block', which should be already part of the
  * function. As the code emission progresses, new basic blocks will be created. */
-void llvm2si_function_emit_body(struct llvm2si_function_t *function);
+void llvm2si_function_emit_body(Llvm2siFunction *function);
 
 /* Emit code for the phi elements that were encountered during the emission of
  * the function body, comming from LLVM phi nodes. */
-void llvm2si_function_emit_phi(struct llvm2si_function_t *function);
+void llvm2si_function_emit_phi(Llvm2siFunction *function);
 
 /* Emit additional instructions managing active masks and active mask stacks
  * related with the function control flow. */
-void llvm2si_function_emit_control_flow(struct llvm2si_function_t *function);
+void llvm2si_function_emit_control_flow(Llvm2siFunction *function);
 
 /* Create a Southern Islands instruction argument from an LLVM value. The type
  * of argument created depends on the LLVM value as follows:
@@ -195,7 +199,7 @@ void llvm2si_function_emit_control_flow(struct llvm2si_function_t *function);
  *     the symbol is returned in the 'symbol_ptr' argument.
  */
 struct si2bin_arg_t *llvm2si_function_translate_value(
-		struct llvm2si_function_t *function,
+		Llvm2siFunction *function,
 		LLVMValueRef llvalue,
 		struct llvm2si_symbol_t **symbol_ptr);
 
@@ -205,15 +209,15 @@ struct si2bin_arg_t *llvm2si_function_translate_value(
  * containing the new vector register. If the original argument was not a
  * literal, it will be returned directly, and no instruction is emitted. */
 struct si2bin_arg_t *llvm2si_function_const_to_vreg(
-		struct llvm2si_function_t *function,
-		struct llvm2si_basic_block_t *basic_block,
+		Llvm2siFunction *function,
+		Llvm2siBasicBlock *basic_block,
 		struct si2bin_arg_t *arg);
 
 /* Allocate 'count' scalar/vector registers where the first register
  * identifier is a multiple of 'align'. */
-int llvm2si_function_alloc_sreg(struct llvm2si_function_t *function,
+int llvm2si_function_alloc_sreg(Llvm2siFunction *function,
 		int count, int align);
-int llvm2si_function_alloc_vreg(struct llvm2si_function_t *function,
+int llvm2si_function_alloc_vreg(Llvm2siFunction *function,
 		int count, int align);
 
 #endif

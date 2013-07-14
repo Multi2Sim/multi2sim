@@ -25,30 +25,24 @@
 #include <lib/util/class.h>
 
 
-/* Class macros */
-#define ASM_TYPE 0x46c0ba31
-#define ASM(p) (CLASS_REINTERPRET_CAST(p, ASM_TYPE, struct asm_t))
-#define ASM_CLASS_OF(p) (CLASS_OF(p, ASM_TYPE))
-
-
-/* Class:	asm_t
- * Inherits:	-
+/*
+ * Class 'Asm'
  */
-struct asm_t
-{
-	/* This is as class
-	 * WARNING - must be the first field */
-	struct class_t class_info;
 
+CLASS_BEGIN(Asm, Object)
 	
-	/*** Virtual methods ***/
-
-	void (*free)(struct asm_t *as);
-};
+CLASS_END(Asm)
 
 
-struct asm_t *asm_create(void);
-void asm_free(struct asm_t *as);
+void AsmCreate(Asm *self);
+void AsmDestroy(Asm *self);
+
+
+
+
+/*
+ * Non-Class Functions
+ */
 
 /* Function used when processing format strings in 'asm.dat'. Given a pointer
  * to the middle of a format string in 'fmt', return whether 'token' is
@@ -57,4 +51,6 @@ void asm_free(struct asm_t *as);
  * format string. */
 int asm_is_token(char *fmt, char *token, int *length);
 
+
 #endif
+

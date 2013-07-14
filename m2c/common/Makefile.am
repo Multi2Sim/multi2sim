@@ -5,8 +5,8 @@ libcommon_a_SOURCES = \
 	basic-block.c \
 	basic-block.h \
 	\
-	cnode.c \
-	cnode.h \
+	node.c \
+	node.h \
 	\
 	ctree.c \
 	ctree.h

@@ -22,7 +22,10 @@
 
 #include <stdio.h>
 
-#include "cnode.h"
+#include <lib/util/class.h>
+
+#include "node.h"
+
 
 #ifdef HAVE_LLVM
 #include <llvm-c/Core.h>
@@ -31,7 +34,7 @@
 
 /*** Forward declarations ***/
 
-struct basic_block_t;
+CLASS_FORWARD_DECLARATION(BasicBlock);
 struct config_t;
 
 
@@ -49,16 +52,17 @@ extern int ctree_debug_category;
 
 
 /*
- * Control Tree Object
+ * Class 'CTree'
  */
 
-struct ctree_t
-{
+CLASS_BEGIN(CTree, Object)
+	
+	/* Name of control tree */
 	char *name;
 
 	/* Counters used to assign names to new nodes. A different counter is
 	 * used for each possible abstract node region. */
-	unsigned int name_counter[cnode_region_count];
+	unsigned int name_counter[node_region_count];
 
 	/* Nodes are kept in a linked list and a hash table */
 	struct linked_list_t *node_list;
@@ -66,38 +70,41 @@ struct ctree_t
 
 	/* Root node.
 	 * Read/Write access. */
-	struct cnode_t *entry_node;
+	Node *entry_node;
 
 	/* Flag indicating whether a structural analysis has been run on the
 	 * control tree. */
 	int structural_analysis_done;
-};
 
-struct ctree_t *ctree_create(char *name);
-void ctree_free(struct ctree_t *ctree);
-void ctree_dump(struct ctree_t *ctree, FILE *f);
+CLASS_END(CTree)
+
+
+void CTreeCreate(CTree *self, char *name);
+void CTreeDestroy(CTree *self);
+
+/* Virtual function from class Object */
+void CTreeDump(Object *self, FILE *f);
 
 /* Add a node to the control tree */
-void ctree_add_node(struct ctree_t *ctree, struct cnode_t *node);
+void ctree_add_node(CTree *ctree, Node *node);
 
 /* Given an LLVM function, create one node for each basic block. Nodes are then
  * connected following the same structure as the control flow graph of the LLVM
  * function, and they are inserted into the control tree. The node
  * corresponding to the LLVM entry basic block is returned. */
 #if HAVE_LLVM
-struct cnode_t *ctree_add_llvm_cfg(struct ctree_t *ctree,
-		LLVMValueRef llfunction);
+Node *ctree_add_llvm_cfg(CTree *ctree, LLVMValueRef llfunction);
 #endif
 
 /* Search a node by its name */
-struct cnode_t *ctree_get_node(struct ctree_t *ctree, char *name);
+Node *ctree_get_node(CTree *ctree, char *name);
 
 /* Free all nodes in the control tree and reset its entry. */
-void ctree_clear(struct ctree_t *ctree);
+void ctree_clear(CTree *ctree);
 
 /* Create the function control tree by performing a structural analysis on the
  * control flow graph of the function. */
-void ctree_structural_analysis(struct ctree_t *ctree);
+void ctree_structural_analysis(CTree *ctree);
 
 /* Depth-first traversal of the control tree following the abstract nodes'
  * children (as opposed to successor/predecessor traversal of the control flow
@@ -105,16 +112,16 @@ void ctree_structural_analysis(struct ctree_t *ctree);
  * The function returns two lists with all tree nodes, listed in pre-order
  * and post-order, respectively. Either list can be NULL if that specific
  * ordering is of no interest to the caller. */
-void ctree_traverse(struct ctree_t *ctree, struct linked_list_t *preorder_list,
+void ctree_traverse(CTree *ctree, struct linked_list_t *preorder_list,
 		struct linked_list_t *postorder_list);
 
 /* Read/write the control tree from/to an INI file */
-void ctree_write_to_config(struct ctree_t *ctree, struct config_t *config);
-void ctree_read_from_config(struct ctree_t *ctree, struct config_t *config,
+void ctree_write_to_config(CTree *ctree, struct config_t *config);
+void ctree_read_from_config(CTree *ctree, struct config_t *config,
 		char *name);
 
 /* Compare two control trees */
-void ctree_compare(struct ctree_t *ctree1, struct ctree_t *ctree2);
+void ctree_compare(CTree *ctree1, CTree *ctree2);
 
 
 

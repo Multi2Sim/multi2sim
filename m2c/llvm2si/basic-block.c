@@ -20,7 +20,7 @@
 #include <assert.h>
 
 #include <m2c/common/basic-block.h>
-#include <m2c/common/cnode.h>
+#include <m2c/common/node.h>
 #include <m2c/common/ctree.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
@@ -91,7 +91,7 @@ static int llvm2si_get_pointed_lltype_size(LLVMTypeRef lltype)
  * Private Functions
  */
 
-void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
+static void llvm2si_basic_block_emit_add(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
 	LLVMValueRef llarg_op1;
@@ -99,7 +99,7 @@ void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
 
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_arg_t *arg_op1;
 	struct si2bin_arg_t *arg_op2;
@@ -161,7 +161,7 @@ void llvm2si_basic_block_emit_add(struct llvm2si_basic_block_t *basic_block,
 }
 
 
-void llvm2si_basic_block_emit_call(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit_call(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
 	LLVMValueRef llfunction;
@@ -169,7 +169,7 @@ void llvm2si_basic_block_emit_call(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
 
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_inst_t *inst;
 	struct si2bin_arg_t *ret_arg;
@@ -261,14 +261,14 @@ void llvm2si_basic_block_emit_call(struct llvm2si_basic_block_t *basic_block,
 }
 
 
-void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit_getelementptr(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
 	LLVMValueRef llarg_ptr;
 	LLVMValueRef llarg_index;
 	LLVMTypeRef lltype_ptr;
 
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 	struct llvm2si_symbol_t *ptr_symbol;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_arg_t *arg_ptr;
@@ -364,7 +364,7 @@ void llvm2si_basic_block_emit_getelementptr(struct llvm2si_basic_block_t *basic_
 }
 
 
-void llvm2si_basic_block_emit_icmp(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit_icmp(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
 	LLVMValueRef llarg_op1;
@@ -373,7 +373,7 @@ void llvm2si_basic_block_emit_icmp(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeKind lltype_kind;
 	LLVMIntPredicate llpred;
 
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_arg_t *arg_op1;
 	struct si2bin_arg_t *arg_op2;
@@ -530,14 +530,14 @@ void llvm2si_basic_block_emit_icmp(struct llvm2si_basic_block_t *basic_block,
 }
 
 
-void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit_load(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
 	LLVMValueRef llarg_address;
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
 
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 	struct llvm2si_function_uav_t *uav;
 	struct llvm2si_symbol_t *addr_symbol;
 	struct llvm2si_symbol_t *ret_symbol;
@@ -616,7 +616,7 @@ void llvm2si_basic_block_emit_load(struct llvm2si_basic_block_t *basic_block,
 }
 
 
-void llvm2si_basic_block_emit_mul(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit_mul(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
 	LLVMValueRef llarg_op1;
@@ -624,7 +624,7 @@ void llvm2si_basic_block_emit_mul(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
 
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_arg_t *arg_op1;
 	struct si2bin_arg_t *arg_op2;
@@ -687,14 +687,14 @@ void llvm2si_basic_block_emit_mul(struct llvm2si_basic_block_t *basic_block,
 }
 
 
-void llvm2si_basic_block_emit_phi(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit_phi(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 	struct llvm2si_symbol_t *ret_symbol;
-	struct cnode_t *node;
+	Node *node;
 	struct si2bin_arg_t *arg;
-	struct llvm2si_phi_t *phi;
+	Llvm2siPhi *phi;
 
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
@@ -747,13 +747,13 @@ void llvm2si_basic_block_emit_phi(struct llvm2si_basic_block_t *basic_block,
 		arg = si2bin_arg_create_vector_register(ret_vreg);
 
 		/* Create 'phi' element and add it. */
-		phi = llvm2si_phi_create(node, llvalue, arg);
+		phi = new(Llvm2siPhi, node, llvalue, arg);
 		linked_list_add(function->phi_list, phi);
 	}
 }
 
 
-void llvm2si_basic_block_emit_ret(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit_ret(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
 	struct list_t *arg_list;
@@ -768,7 +768,7 @@ void llvm2si_basic_block_emit_ret(struct llvm2si_basic_block_t *basic_block,
 }
 
 
-void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit_store(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
 	LLVMValueRef llarg_data;
@@ -776,7 +776,7 @@ void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
 
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 	struct llvm2si_function_uav_t *uav;
 	struct llvm2si_symbol_t *addr_symbol;
 	struct si2bin_inst_t *inst;
@@ -853,7 +853,7 @@ void llvm2si_basic_block_emit_store(struct llvm2si_basic_block_t *basic_block,
 }
 
 
-void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit_sub(Llvm2siBasicBlock *basic_block,
 		LLVMValueRef llinst)
 {
 	LLVMValueRef llarg_op1;
@@ -861,7 +861,7 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
 
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 	struct llvm2si_symbol_t *ret_symbol;
 	struct si2bin_arg_t *arg_op1;
 	struct si2bin_arg_t *arg_op2;
@@ -929,69 +929,47 @@ void llvm2si_basic_block_emit_sub(struct llvm2si_basic_block_t *basic_block,
  * Public Functions
  */
 
-struct llvm2si_basic_block_t *llvm2si_basic_block_create(
-		struct llvm2si_function_t *function,
-		struct cnode_t *cnode)
-{
-	struct llvm2si_basic_block_t *basic_block;
-	struct basic_block_t *__basic_block;
+CLASS_IMPLEMENTATION(Llvm2siBasicBlock);
 
-	/* Initialize parent */
-	__basic_block = basic_block_create(cnode);
+void Llvm2siBasicBlockCreate(Llvm2siBasicBlock *self,
+		Llvm2siFunction *function, Node *node)
+{
+	/* Parent */
+	BasicBlockCreate(asBasicBlock(self), node);
 
 	/* Initialize */
-	basic_block = xcalloc(1, sizeof(struct llvm2si_basic_block_t));
-	basic_block->function = function;
-	basic_block->inst_list = linked_list_create();
-
-	/* Class information */
-	CLASS_INIT(basic_block, LLVM2SI_BASIC_BLOCK_TYPE, __basic_block);
+	self->function = function;
+	self->inst_list = linked_list_create();
 
 	/* Virtual functions */
-	__basic_block->destroy = llvm2si_basic_block_free;
-	__basic_block->dump = llvm2si_basic_block_dump;
-
-	/* Return */
-	return basic_block;
+	asObject(self)->Dump = Llvm2siBasicBlockDump;
 }
 
 
-void llvm2si_basic_block_free(struct basic_block_t *__basic_block)
+void Llvm2siBasicBlockDestroy(Llvm2siBasicBlock *self)
 {
-	struct llvm2si_basic_block_t *basic_block;
-
-	/* Get child instance */
-	assert(BASIC_BLOCK_CLASS_OF(__basic_block));
-	basic_block = LLVM2SI_BASIC_BLOCK(__basic_block);
-
-	/* Free parent */
-	basic_block_free(__basic_block);
-
 	/* Free list of instructions */
-	LINKED_LIST_FOR_EACH(basic_block->inst_list)
-		si2bin_inst_free(linked_list_get(basic_block->inst_list));
-	linked_list_free(basic_block->inst_list);
+	LINKED_LIST_FOR_EACH(self->inst_list)
+		si2bin_inst_free(linked_list_get(self->inst_list));
+	linked_list_free(self->inst_list);
 
 	/* Rest */
-	str_free(basic_block->comment);
-	free(basic_block);
+	self->comment = str_free(self->comment);
 }
 
 
-void llvm2si_basic_block_dump(struct basic_block_t *__basic_block, FILE *f)
+void Llvm2siBasicBlockDump(Object *self, FILE *f)
 {
-	struct llvm2si_basic_block_t *basic_block;
+	Llvm2siBasicBlock *basic_block;
 	struct si2bin_inst_t *inst;
 
-	/* Get child instance */
-	basic_block = LLVM2SI_BASIC_BLOCK(__basic_block);
-
 	/* Nothing if basic block is empty */
+	basic_block = asLlvm2siBasicBlock(self);
 	if (!basic_block->inst_list->count)
 		return;
 
 	/* Label with node's name */
-	fprintf(f, "\n%s:\n", __basic_block->node->name);
+	fprintf(f, "\n%s:\n", asBasicBlock(basic_block)->node->name);
 
 	/* Print list of instructions */
 	LINKED_LIST_FOR_EACH(basic_block->inst_list)
@@ -1002,7 +980,7 @@ void llvm2si_basic_block_dump(struct basic_block_t *__basic_block, FILE *f)
 }
 
 
-void llvm2si_basic_block_add_inst(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_add_inst(Llvm2siBasicBlock *basic_block,
 		struct si2bin_inst_t *inst)
 {
 	/* Check that the instruction does not belong to any other basic
@@ -1025,14 +1003,14 @@ void llvm2si_basic_block_add_inst(struct llvm2si_basic_block_t *basic_block,
 }
 
 
-void llvm2si_basic_block_add_comment(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_add_comment(Llvm2siBasicBlock *basic_block,
 		char *comment)
 {
 	basic_block->comment = str_set(basic_block->comment, comment);
 }
 
 
-void llvm2si_basic_block_emit(struct llvm2si_basic_block_t *basic_block,
+void llvm2si_basic_block_emit(Llvm2siBasicBlock *basic_block,
 		LLVMBasicBlockRef llbb)
 {
 	LLVMValueRef llinst;
