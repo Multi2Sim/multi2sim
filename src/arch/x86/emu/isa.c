@@ -104,7 +104,7 @@ void x86_isa_error(struct x86_ctx_t *ctx, char *fmt, ...)
 
 	/* Error */
 	fprintf(stderr, "fatal: x86 context %d at 0x%08x inst %lld: ",
-		ctx->pid, ctx->curr_eip, arch_x86->inst_count);
+		ctx->pid, ctx->curr_eip, asEmu(x86_emu)->instructions);
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 	exit(1);
@@ -893,7 +893,7 @@ void x86_isa_execute_inst(struct x86_ctx_t *ctx)
 	if (debug_status(x86_isa_inst_debug_category))
 	{
 		x86_isa_inst_debug("%d %8lld %x: ", ctx->pid,
-			arch_x86->inst_count, ctx->curr_eip);
+			asEmu(x86_emu)->instructions, ctx->curr_eip);
 		x86_inst_dump(&ctx->inst, debug_file(x86_isa_inst_debug_category));
 		x86_isa_inst_debug("  (%d bytes)", ctx->inst.size);
 	}

@@ -2004,8 +2004,7 @@ int main(int argc, char **argv)
 
 	/* Initialization of architectures */
 	arch_arm = arch_register("ARM", "arm", arm_sim_kind,
-			arm_emu_init, arm_emu_done, ARMEmuRun,
-			ARMEmuDump, ARMEmuDumpSummary,
+			arm_emu_init, arm_emu_done,
 			arm_cpu_read_config,
 			arm_cpu_init, arm_cpu_done, arm_cpu_run,
 			arm_cpu_dump, arm_cpu_dump_summary,
@@ -2013,8 +2012,7 @@ int main(int argc, char **argv)
 			arm_mem_config_parse_entry,
 			arm_mem_config_check);
 	arch_evergreen = arch_register("Evergreen", "evg", evg_sim_kind,
-			evg_emu_init, evg_emu_done, EvgEmuRun,
-			EvgEmuDump, EvgEmuDumpSummary,
+			evg_emu_init, evg_emu_done,
 			evg_gpu_read_config,
 			evg_gpu_init, evg_gpu_done, evg_gpu_run,
 			evg_gpu_dump, evg_gpu_dump_summary,
@@ -2022,8 +2020,7 @@ int main(int argc, char **argv)
 			evg_mem_config_parse_entry,
 			evg_mem_config_check);
 	arch_fermi = arch_register("Fermi", "frm", frm_sim_kind,
-			frm_emu_init, frm_emu_done, FrmEmuRun,
-			FrmEmuDump, FrmEmuDumpSummary,
+			frm_emu_init, frm_emu_done,
 			frm_gpu_read_config,
 			frm_gpu_init, frm_gpu_done, frm_gpu_run,
 			frm_gpu_dump, frm_gpu_dump_summary,
@@ -2031,8 +2028,7 @@ int main(int argc, char **argv)
 			frm_mem_config_parse_entry,
 			frm_mem_config_check);
 	arch_mips = arch_register("MIPS", "mips", mips_sim_kind,
-			mips_emu_init, mips_emu_done, MIPSEmuRun,
-			MIPSEmuDump, MIPSEmuDumpSummary,
+			mips_emu_init, mips_emu_done,
 			mips_cpu_read_config,
 			mips_cpu_init, mips_cpu_done, mips_cpu_run,
 			mips_cpu_dump, mips_cpu_dump_summary,
@@ -2040,17 +2036,15 @@ int main(int argc, char **argv)
 			mips_mem_config_parse_entry,
 			mips_mem_config_check);
 	arch_southern_islands = arch_register("SouthernIslands", "si", si_sim_kind,
-			si_emu_init, si_emu_done, SIEmuRun,
-			SIEmuDump, SIEmuDumpSummary,
+			si_emu_init, si_emu_done,
 			si_gpu_read_config,
 			si_gpu_init, si_gpu_done, si_gpu_run,
 			si_gpu_dump, si_gpu_dump_summary,
 			si_gpu_fused_device ? si_mem_config_fused : si_mem_config_default,  /* FIXME */
-					si_mem_config_parse_entry,
-					si_mem_config_check);
+			si_mem_config_parse_entry,
+			si_mem_config_check);
 	arch_x86 = arch_register("x86", "x86", x86_sim_kind,
-			x86_emu_init, x86_emu_done, X86EmuRun,
-			X86EmuDump, X86EmuDumpSummary,
+			x86_emu_init, x86_emu_done,
 			x86_cpu_read_config,
 			x86_cpu_init, x86_cpu_done, x86_cpu_run,
 			x86_cpu_dump, x86_cpu_dump_summary,
@@ -2058,6 +2052,15 @@ int main(int argc, char **argv)
 			x86_mem_config_parse_entry,
 			x86_mem_config_check);
 	arch_init();
+
+	/* FIXME - Temporary */
+	arch_arm->emu = asEmu(arm_emu);
+	arch_evergreen->emu = asEmu(evg_emu);
+	arch_fermi->emu = asEmu(frm_emu);
+	arch_mips->emu = asEmu(mips_emu);
+	arch_southern_islands->emu = asEmu(si_emu);
+	arch_x86->emu = asEmu(x86_emu);
+	/*********************/
 
 	/* Network and memory system */
 	net_init();

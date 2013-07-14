@@ -696,7 +696,7 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 
 	arm_mode = arm_ctx_operate_mode_tag(ctx->thumb_symbol_list, (ctx->regs->pc -2));
 
-	if(arm_mode == ARM)
+	if (arm_mode == ARM)
 	{
 		if(ctx->regs->cpsr.thumb)
 		{
@@ -706,9 +706,9 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 		else
 			ctx->regs->cpsr.thumb = 0;
 	}
-	else if(arm_mode == THUMB)
+	else if (arm_mode == THUMB)
 	{
-		if(ctx->regs->cpsr.thumb == 0)
+		if (ctx->regs->cpsr.thumb == 0)
 		{
 			ctx->regs->cpsr.thumb = 1;
 			ctx->regs->pc = ctx->regs->pc - 2;
@@ -746,9 +746,9 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 
 
 	/* Disassemble */
-	if(ctx->regs->cpsr.thumb)
+	if (ctx->regs->cpsr.thumb)
 	{
-		if(arm_test_thumb32(buffer_ptr))
+		if (arm_test_thumb32(buffer_ptr))
 		{
 			ctx->regs->pc += 2;
 			buffer_ptr = mem_get_buffer(mem, (regs->pc - 4), 4, mem_access_exec);
@@ -804,9 +804,9 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 		arm_isa_execute_inst(ctx);
 
 	/* Statistics */
-	arch_arm->inst_count++;
+	++asEmu(arm_emu)->instructions;
 
-	if ((arch_arm->inst_count % 10) == 0)
+	if ((asEmu(arm_emu)->instructions % 10) == 0)
 	{
 		arm_isa_inst_debug("Register Debug Dump\n");
 		arm_isa_inst_debug(
@@ -1010,9 +1010,9 @@ static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t s
 	/* Start/stop arm timer depending on whether there are any contexts
 	 * currently running. */
 	if (arm_emu->running_list_count)
-		m2s_timer_start(arch_arm->timer);
+		m2s_timer_start(asEmu(arm_emu)->timer);
 	else
-		m2s_timer_stop(arch_arm->timer);
+		m2s_timer_stop(asEmu(arm_emu)->timer);
 }
 
 void arm_ctx_set_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)

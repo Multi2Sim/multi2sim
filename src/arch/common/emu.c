@@ -18,6 +18,7 @@
  */
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/timer.h>
 
 #include "emu.h"
 
@@ -31,12 +32,42 @@
 CLASS_IMPLEMENTATION(Emu);
 
 
-void EmuCreate(Emu *self)
+void EmuCreate(Emu *self, char *name)
 {
+	/* Initialize */
+	self->name = xstrdup(name);
+	self->timer = m2s_timer_create(name);
+
+	/* Virtual functions */
+	asObject(self)->Dump = EmuDump;
 }
 
 
 void EmuDestroy(Emu *self)
 {
+	free(self->name);
+	m2s_timer_free(self->timer);
 }
 
+
+void EmuDump(Object *self, FILE *f)
+{
+	/* Call parent */
+	ObjectDump(asObject(self), f);
+}
+
+
+void EmuDumpSummary(Emu *self, FILE *f)
+{
+	double time_in_sec;
+	double inst_per_sec;
+
+	time_in_sec = (double) m2s_timer_get_value(self->timer) / 1.0e6;
+	inst_per_sec = time_in_sec > 0.0 ? (double) self->instructions / time_in_sec : 0.0;
+
+	fprintf(f, "[ %s ]\n", self->name);
+	fprintf(f, "RealTime = %.2f [s]\n", time_in_sec);
+	fprintf(f, "Instructions = %lld\n", self->instructions);
+	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
+
+}

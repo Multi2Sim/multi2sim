@@ -334,7 +334,7 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	warp->pc += warp->inst_size;
 
 	/* Stats */
-	arch_fermi->inst_count++;
+	asEmu(frm_emu)->instructions++;
 	warp->emu_inst_count++;
 	warp->inst_count++;
 }

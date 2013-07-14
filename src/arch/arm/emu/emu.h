@@ -101,10 +101,14 @@ CLASS_END(ARMEmu)
 void ARMEmuCreate(ARMEmu *self);
 void ARMEmuDestroy(ARMEmu *self);
 
-int ARMEmuRun(void);
+/* Virtual function from class 'Object' */
+void ARMEmuDump(Object *self, FILE *f);
 
-void ARMEmuDump(FILE *f);
-void ARMEmuDumpSummary(FILE *f);
+/* Virtual function from class 'Emu' */
+void ARMEmuDumpSummary(Emu *self, FILE *f);
+
+/* Virtual function from class 'Emu' */
+int ARMEmuRun(Emu *self);
 
 void ARMEmuProcessEventsSchedule(ARMEmu *self);
 

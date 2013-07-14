@@ -45,6 +45,9 @@ CLASS_IMPLEMENTATION(FrmEmu);
 
 void FrmEmuCreate(FrmEmu *self)
 {
+	/* Parent */
+	EmuCreate(asEmu(self), "Fermi");
+
         /* Initialize */
 	self->grids = list_create();
 	self->pending_grids = list_create();
@@ -57,6 +60,11 @@ void FrmEmuCreate(FrmEmu *self)
         self->free_global_mem_size = 1 << 31; /* 2GB */
         self->const_mem = mem_create();
         self->const_mem->safe = 0;
+
+        /* Virtual functions */
+        asObject(self)->Dump = FrmEmuDump;
+        asEmu(self)->DumpSummary = FrmEmuDumpSummary;
+        asEmu(self)->Run = FrmEmuRun;
 }
 
 
@@ -72,33 +80,35 @@ void FrmEmuDestroy(FrmEmu *self)
 }
 
 
-void FrmEmuDump(FILE *f)
+void FrmEmuDump(Object *self, FILE *f)
 {
+	/* Call parent */
+	EmuDump(self, f);
 }
 
 
-void FrmEmuDumpSummary(FILE *f)
+void FrmEmuDumpSummary(Emu *self, FILE *f)
 {
+	/* Call parent */
+	EmuDumpSummary(self, f);
 }
 
 
-
-/* One iteration of emulator. Return TRUE if emulation is still running. */
-int FrmEmuRun(void)
+int FrmEmuRun(Emu *self)
 {
-	FrmEmu *self = frm_emu;
+	FrmEmu *emu = asFrmEmu(self);
 
 	struct frm_grid_t *grid;
 	struct frm_thread_block_t *thread_block;
 	struct frm_warp_t *warp;
 
 	/* Stop emulation if no grid needs running */
-	if (!list_count(self->grids))
+	if (!list_count(emu->grids))
 		return FALSE;
 
 	/* Remove grid and its thread blocks from pending list, and add them to
 	 * running list */
-	while ((grid = list_head(self->pending_grids)))
+	while ((grid = list_head(emu->pending_grids)))
 	{
 		while ((thread_block = list_head(grid->pending_thread_blocks)))
 		{
@@ -106,12 +116,12 @@ int FrmEmuRun(void)
 			list_add(grid->running_thread_blocks, thread_block);
 		}
 
-		list_remove(self->pending_grids, grid);
-		list_add(self->running_grids, grid);
+		list_remove(emu->pending_grids, grid);
+		list_add(emu->running_grids, grid);
 	}
 
 	/* Run one instruction */
-	while ((grid = list_head(self->running_grids)))
+	while ((grid = list_head(emu->running_grids)))
 	{
 		while ((thread_block = list_head(grid->running_thread_blocks)))
 		{
@@ -126,15 +136,15 @@ int FrmEmuRun(void)
 	}
 
 	/* Free finished grids */
-	assert(list_count(self->pending_grids) == 0 &&
-			list_count(self->running_grids) == 0);
-	while ((grid = list_head(self->finished_grids)))
+	assert(list_count(emu->pending_grids) == 0 &&
+			list_count(emu->running_grids) == 0);
+	while ((grid = list_head(emu->finished_grids)))
 	{
 		/* Dump grid report */
 		frm_grid_dump(grid, frm_emu_report_file);
 
 		/* Remove grid from finished list */
-		list_remove(self->finished_grids, grid);
+		list_remove(emu->finished_grids, grid);
 
 		/* Free grid */
 		frm_grid_free(grid);

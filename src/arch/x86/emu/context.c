@@ -311,7 +311,7 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 	x86_isa_execute_inst(ctx);
 	
 	/* Statistics */
-	arch_x86->inst_count++;
+	asEmu(x86_emu)->instructions++;
 }
 
 
@@ -409,9 +409,9 @@ static void x86_ctx_update_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t sta
 	/* Start/stop x86 timer depending on whether there are any contexts
 	 * currently running. */
 	if (x86_emu->running_list_count)
-		m2s_timer_start(arch_x86->timer);
+		m2s_timer_start(asEmu(x86_emu)->timer);
 	else
-		m2s_timer_stop(arch_x86->timer);
+		m2s_timer_stop(asEmu(x86_emu)->timer);
 }
 
 
