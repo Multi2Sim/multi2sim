@@ -361,7 +361,7 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 	{
 		imm = (op2 & (0x000000ff));
 		rotate = ((op2 >> 8) & 0x0000000f);
-		op_val = (arm_rotr(imm, rotate));
+		op_val = (arm_rotr(imm, rotate * 2));
 	}
 
 	else if (cat == reg)

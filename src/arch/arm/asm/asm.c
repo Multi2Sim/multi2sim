@@ -1980,10 +1980,34 @@ int arm_dissassembly_mode_tag(struct list_t * thumb_symbol_list, unsigned int ad
 	int disasm_mode;
 
 	unsigned int tag_index;
-	unsigned int i;
+	//unsigned int i;
 
 	tag_index = 0;
 	symbol = NULL;
+
+	// Binary search
+	int lo;
+	int mid;
+	int hi;
+
+	lo = 0;
+	hi = list_count(thumb_symbol_list);
+
+	while(lo <= hi)
+	{
+		mid = (lo + hi) / 2;
+		symbol = list_get(thumb_symbol_list, mid);
+
+		if(addr < symbol->value)
+			hi = mid - 1;
+		else if(addr > symbol->value)
+			lo = mid + 1;
+		else
+			lo = mid + 1;
+	}
+
+	/* Linear Search
+	 * Deprecated
 	for (i = 0; i < list_count(thumb_symbol_list); ++i)
 	{
 		symbol = list_get(thumb_symbol_list, i);
@@ -1993,11 +2017,13 @@ int arm_dissassembly_mode_tag(struct list_t * thumb_symbol_list, unsigned int ad
 			break;
 		}
 	}
+	*/
 
 	/* Get symbol */
 	/* FIXME - Rafa - I added the '!symbol' check below, since this was
 	 * segfaulting for the 'hello.s' sample program provided in
 	 * 'm2s-client-kit/local-tests/test-auto/arm-asm'. */
+	tag_index = mid;
 	symbol = (struct elf_symbol_t *) list_get(thumb_symbol_list, tag_index);
 	if (!symbol)
 		return ARM_DISASM;
@@ -2176,6 +2202,7 @@ void arm_emu_disasm(char *path)
 		}
 	}
 	list_free(thumb_symbol_list);
+	arm_disasm_done();
 	/* Free external ELF */
 	elf_file_free(elf_file);
 }
