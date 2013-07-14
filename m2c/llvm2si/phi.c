@@ -22,24 +22,23 @@
 #include "phi.h"
 
 
-struct llvm2si_phi_t *llvm2si_phi_create(struct cnode_t *src_node,
+
+/*
+ * Class 'Llvm2siPhi'
+ */
+
+CLASS_IMPLEMENTATION(Llvm2siPhi);
+
+void Llvm2siPhiCreate(Llvm2siPhi *self, Node *src_node,
 		LLVMValueRef src_value, struct si2bin_arg_t *dest_value)
 {
-	struct llvm2si_phi_t *phi;
-
-	/* Initialize */
-	phi = xcalloc(1, sizeof(struct llvm2si_phi_t));
-	phi->src_node = src_node;
-	phi->src_value = src_value;
-	phi->dest_value = dest_value;
-
-	/* Return */
-	return phi;
+	self->src_node = src_node;
+	self->src_value = src_value;
+	self->dest_value = dest_value;
 }
 
 
-void llvm2si_phi_free(struct llvm2si_phi_t *phi)
+void Llvm2siPhiDestroy(Llvm2siPhi *self)
 {
-	free(phi);
 }
 

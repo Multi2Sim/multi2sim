@@ -20,67 +20,173 @@
 #ifndef LIB_UTIL_CLASS_H
 #define LIB_UTIL_CLASS_H
 
-/* Cast class instance into 'class_t' */
-#ifndef NDEBUG
-#define CLASS(p) (class_get((p)))
-#else
-#define CLASS(p) ((struct class_t *) (p))
-#endif
 
-/* Cast a class instance into any of its child/parent classes. If the cast is
- * invalid, program execution is aborted with a panic message. */
-#define CLASS_REINTERPRET_CAST(instance, id, type) \
-	((type *) class_reinterpret_cast((instance), (id)))
-
-/* Return true if the instance can be safely casted into type 'id' using macro
- * CLASS_REINTERPRET_CAST */
-#define CLASS_OF(instance, id) \
-	(class_try_reinterpret_cast((instance), (id)) != NULL)
-
-/* To be used in the constructor */
-#define CLASS_INIT(instance, id, parent) \
-	class_init(&(instance)->class_info, (id), (parent))
+#include <assert.h>
+#include <stdio.h>
 
 
-/* Every structure considering itself a class must have a field of type
- * 'struct class_t' (notice no pointer) as its first field. */
 struct class_t
 {
-	/* Magic word identifying a class instance */
-	char magic[4];  /* = [ 'C', 'L', 'A', 'S' ] */
+	/* Name of the class */
+	char *name;
 
-	/* Unique class identifier */
+	/* Unique identifier of the class, calculated as a hash function of its
+	 * name during initialization. */
 	unsigned int id;
 
-	/* Inheritance information */
+	/* Total size of the class structure, considering both the user fields
+	 * and the '__parent' and '__info' metadata fields. */
+	unsigned int size;
+
+	/* Offset where field '__info' can be found, relative to the beginning
+	 * of the class data structure. */
+	unsigned int info_offset;
+
+	/* Class parent */
 	struct class_t *parent;
-	struct class_t *child;
+
+	/* Class destructor */
+	void (*destroy)(void *ptr);
+
+	/* Next class in class list */
+	struct class_t *next;
 };
 
-/* A class constructor must call this function by passing its 'class_t' first
- * field by reference.
- * The value in 'id' is a unique identifier for the class. This identifier
- * should be a 32-bit checksum of the class type name. This value can be
- * calculated using command-line tool 'cksum'. For example:
- *	printf "%08x\n" `cksum <<< "my_class_t"`
- * The value in 'parent' is an initialized class instance that this class will
- * inherit from, or 'NULL'.
+
+struct class_info_t
+{
+	struct class_info_t *parent;
+	struct class_info_t *child;
+	struct class_t *c;
+};
+
+
+/*
+ * Base class 'Object'
  */
-void class_init(struct class_t *class_info, unsigned int id,
-		void *parent);
 
-/* Return the 'class_t' object at the beginning of any class instance */
-struct class_t *class_get(void *p);
+typedef struct _Object Object;
 
-/* Given a class instance, reinterpret its type as any of its child or parent
- * classes. A panic message will occur if the reinterpretation is invalid.
- * Should be used only through macro 'CLASS_REINTERPRET_CAST', which will be
- * used in turn only through specific macros related to each class. */
-void *class_reinterpret_cast(void *p, unsigned int id);
+struct _Object
+{
+	/* Class information, first field */
+	struct class_info_t __info;
 
-/* Same as 'class_reinterpret_cast', but the function does not fail if the cast
- * is invalid. Instead, it returns NULL. Should be used only through macro
- * 'CLASS_OF'. */
-void *class_try_reinterpret_cast(void *p, unsigned int id);
+	
+	/*** Virtual functions ***/
+
+	void (*Dump)(Object *self, FILE *f);
+};
+
+extern struct class_t ObjectClass;
+
+static inline int isObject(void *p)
+{
+	assert(((Object *) p)->__info.c);
+	assert(((Object *) p)->__info.c->id == ObjectClass.id);
+	return 1;
+}
+
+static inline Object *asObject(void *p)
+{
+	assert(isObject(p));
+	return (Object *) p;
+}
+
+void ObjectCreate(Object *self);
+void ObjectDestroy(Object *self);
+
+void ObjectDump(Object *self, FILE *f);
+
+
+
+
+/*
+ * Class definition macros
+ */
+
+#define CLASS_BEGIN(name, parent) \
+	\
+	static struct class_t *name##ParentClass \
+			__attribute__((unused)) = &parent##Class; \
+	extern struct class_t name##Class; \
+	\
+	typedef struct _##name name; \
+	struct _##name \
+	{ \
+		parent __parent; \
+		struct class_info_t __info;
+		/* ... user fields follow here ... */
+
+
+#define CLASS_END(name) \
+		\
+		/* ... user fields end here ... */ \
+	}; \
+	\
+	/* Prototype for destructor */ \
+	void name##Destroy(name *self); \
+	\
+	/* Check if object is instance of class */ \
+	static inline int is##name(void *p) \
+	{ \
+		return class_instance_of(p, &name##Class); \
+	} \
+	\
+	/* Cast to class */ \
+	static inline name *as##name(void *p) \
+	{ \
+		assert(is##name(p)); \
+		return (name *) p; \
+	}
+
+
+#define CLASS_FORWARD_DECLARATION(name) \
+	struct _##name; \
+	typedef struct _##name name;
+
+
+#define CLASS_IMPLEMENTATION(name) \
+	struct class_t name##Class;
+
+
+#define CLASS_REGISTER(_name) \
+	do { \
+		_name instance; \
+		class_init(); \
+		_name##Class.name = #_name; \
+		_name##Class.size = sizeof(_name); \
+		_name##Class.info_offset = (unsigned int) \
+				((void *) &instance.__info - \
+				(void *) &instance); \
+		_name##Class.parent = _name##ParentClass; \
+		_name##Class.destroy = (void(*)(void *)) _name##Destroy; \
+		class_register(&_name##Class); \
+	} while (0)
+
+
+#define new(name, ...) \
+	({ \
+		name *__p = class_new(&name##Class); \
+		name##Create(__p, ##__VA_ARGS__); \
+		__p; \
+	})
+
+#define delete(var) class_delete((var))
+
+
+extern struct class_t *class_list_head;
+extern struct class_t *class_list_tail;
+
+void class_init(void);
+void class_register(struct class_t *c);
+unsigned int class_compute_id(char *name);
+void *class_new(struct class_t *c);
+void class_delete(void *p);
+int class_instance_of(void *p, struct class_t *c);
+
+/* Dump information about all classes registered */
+void class_dump(FILE *f);
 
 #endif
+

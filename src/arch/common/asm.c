@@ -26,26 +26,30 @@
 #include "asm.h"
 
 
-struct asm_t *asm_create(void)
+
+/*
+ * Class 'Asm'
+ */
+
+
+CLASS_IMPLEMENTATION(Asm);
+
+
+void AsmCreate(Asm *self)
 {
-	struct asm_t *as;
-
-	/* Intialize */
-	as = xcalloc(1, sizeof(struct asm_t));
-
-	/* Class information */
-	CLASS_INIT(as, ASM_TYPE, NULL);
-
-	/* Return */
-	return as;
 }
 
 
-void asm_free(struct asm_t *as)
+void AsmDestroy(Asm *self)
 {
-	free(as);
 }
 
+
+
+
+/*
+ * Non-Class Functions
+ */
 
 int asm_is_token(char *fmt, char *token, int *length_ptr)
 {
@@ -67,3 +71,4 @@ int asm_is_token(char *fmt, char *token, int *length_ptr)
 	/* Result */
 	return is_token;
 }
+

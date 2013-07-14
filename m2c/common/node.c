@@ -28,138 +28,126 @@
 #include <lib/util/string.h>
 
 #include "basic-block.h"
-#include "cnode.h"
 #include "ctree.h"
+#include "node.h"
 
 
-struct str_map_t cnode_kind_map =
+struct str_map_t node_kind_map =
 {
 	2,
 	{
-		{ "Leaf", cnode_leaf },
-		{ "Abstract", cnode_abstract }
+		{ "Leaf", node_leaf },
+		{ "Abstract", node_abstract }
 	}
 };
 
 
-struct str_map_t cnode_region_map =
+struct str_map_t node_region_map =
 {
 	9,
 	{
-		{ "block", cnode_region_block },
-		{ "if_then", cnode_region_if_then },
-		{ "if_then_else", cnode_region_if_then_else },
-		{ "while_loop", cnode_region_while_loop },
-		{ "loop", cnode_region_loop },
-		{ "proper_interval", cnode_region_proper_interval },
-		{ "improper_interval", cnode_region_improper_interval },
-		{ "proper_outer_interval", cnode_region_proper_outer_interval },
-		{ "improper_outer_interval", cnode_region_improper_outer_interval }
+		{ "block", node_region_block },
+		{ "if_then", node_region_if_then },
+		{ "if_then_else", node_region_if_then_else },
+		{ "while_loop", node_region_while_loop },
+		{ "loop", node_region_loop },
+		{ "proper_interval", node_region_proper_interval },
+		{ "improper_interval", node_region_improper_interval },
+		{ "proper_outer_interval", node_region_proper_outer_interval },
+		{ "improper_outer_interval", node_region_improper_outer_interval }
 	}
 };
 
 
-struct str_map_t cnode_role_map =
+struct str_map_t node_role_map =
 {
 	7,
 	{
-		{ "if", cnode_role_if },
-		{ "then", cnode_role_then },
-		{ "else", cnode_role_else },
-		{ "head", cnode_role_head },
-		{ "tail", cnode_role_tail },
-		{ "pre", cnode_role_pre },
-		{ "exit", cnode_role_exit }
+		{ "if", node_role_if },
+		{ "then", node_role_then },
+		{ "else", node_role_else },
+		{ "head", node_role_head },
+		{ "tail", node_role_tail },
+		{ "pre", node_role_pre },
+		{ "exit", node_role_exit }
 	}
 };
 
 
-static struct cnode_t *cnode_create(
-		enum cnode_kind_t kind)
-{
-	struct cnode_t *node;
 
+/*
+ * Public Functions
+ */
+
+CLASS_IMPLEMENTATION(Node);
+
+void NodeCreate(Node *self, enum node_kind_t kind, char *name,
+		enum node_region_t region)
+{
 	/* Initialize */
-	node = xcalloc(1, sizeof(struct cnode_t));
-	node->kind = kind;
-	node->pred_list = linked_list_create();
-	node->succ_list = linked_list_create();
-	node->back_edge_list = linked_list_create();
-	node->forward_edge_list = linked_list_create();
-	node->cross_edge_list = linked_list_create();
-	node->tree_edge_list = linked_list_create();
-	node->preorder_id = -1;
-	node->postorder_id = -1;
+	self->kind = kind;
+	self->name = str_set(self->name, name);
+	self->pred_list = linked_list_create();
+	self->succ_list = linked_list_create();
+	self->back_edge_list = linked_list_create();
+	self->forward_edge_list = linked_list_create();
+	self->cross_edge_list = linked_list_create();
+	self->tree_edge_list = linked_list_create();
+	self->preorder_id = -1;
+	self->postorder_id = -1;
 
-	/* Return */
-	return node;
-}
-
-
-struct cnode_t *cnode_create_leaf(char *name)
-{
-	struct cnode_t *node;
-
-	/* Initialize */
-	node = cnode_create(cnode_leaf);
-	node->name = str_set(node->name, name);
-
-	/* Return */
-	return node;
-}
-
-
-struct cnode_t *cnode_create_abstract(char *name,
-		enum cnode_region_t region)
-{
-	struct cnode_t *node;
-
-	/* Initialize */
-	node = cnode_create(cnode_abstract);
-	node->name = str_set(node->name, name && *name ? name : "<abstract>");
-	node->abstract.region = region;
-	node->abstract.child_list = linked_list_create();
-	
-	/* Return */
-	return node;
-}
-
-
-void cnode_free(struct cnode_t *node)
-{
-	switch (node->kind)
+	/* Based on type */
+	switch (self->kind)
 	{
-	case cnode_abstract:
+	case node_leaf:
 
-		linked_list_free(node->abstract.child_list);
 		break;
 
-	case cnode_leaf:
+	case node_abstract:
 
-		/* Virtual call to basic block destructor */
-		if (node->leaf.basic_block)
-			node->leaf.basic_block->destroy(node->leaf.basic_block);
+		self->abstract.region = region;
+		self->abstract.child_list = linked_list_create();
+		break;
+
+	default:
+		abort();
+	}
+}
+
+
+void NodeDestroy(Node *self)
+{
+	switch (self->kind)
+	{
+	case node_abstract:
+
+		linked_list_free(self->abstract.child_list);
+		break;
+
+	case node_leaf:
+
+		if (self->leaf.basic_block)
+			delete(self->leaf.basic_block);
 		break;
 
 	default:
 		abort();
 	}
 
-	linked_list_free(node->pred_list);
-	linked_list_free(node->succ_list);
-	linked_list_free(node->back_edge_list);
-	linked_list_free(node->forward_edge_list);
-	linked_list_free(node->tree_edge_list);
-	linked_list_free(node->cross_edge_list);
-	str_free(node->name);
-	free(node);
+	linked_list_free(self->pred_list);
+	linked_list_free(self->succ_list);
+	linked_list_free(self->back_edge_list);
+	linked_list_free(self->forward_edge_list);
+	linked_list_free(self->tree_edge_list);
+	linked_list_free(self->cross_edge_list);
+	self->name = str_free(self->name);
 }
 
 
-struct basic_block_t *cnode_get_basic_block(struct cnode_t *node)
+BasicBlock *node_get_basic_block(Node *node)
 {
 	/* Check that basic block if a leaf */
-	if (node->kind != cnode_leaf)
+	if (node->kind != node_leaf)
 		panic("%s: node '%s' is not a leaf",
 				__FUNCTION__, node->name);
 
@@ -168,7 +156,7 @@ struct basic_block_t *cnode_get_basic_block(struct cnode_t *node)
 }
 
 
-int cnode_in_list(struct cnode_t *node,
+int node_in_list(Node *node,
 		struct linked_list_t *list)
 {
 	struct linked_list_iter_t *iter;
@@ -182,11 +170,11 @@ int cnode_in_list(struct cnode_t *node,
 }
 
 
-void cnode_list_dump(struct linked_list_t *list, FILE *f)
+void node_list_dump(struct linked_list_t *list, FILE *f)
 {
 	char *comma;
 	struct linked_list_iter_t *iter;
-	struct cnode_t *node;
+	Node *node;
 
 	comma = "";
 	fprintf(f, "{");
@@ -202,9 +190,9 @@ void cnode_list_dump(struct linked_list_t *list, FILE *f)
 }
 
 
-void cnode_list_dump_buf(struct linked_list_t *list, char *buf, int size)
+void node_list_dump_buf(struct linked_list_t *list, char *buf, int size)
 {
-	struct cnode_t *node;
+	Node *node;
 
 	/* Reset buffer */
 	if (size)
@@ -219,18 +207,20 @@ void cnode_list_dump_buf(struct linked_list_t *list, char *buf, int size)
 }
 
 
-void cnode_dump(struct cnode_t *node, FILE *f)
+void NodeDump(Object *self, FILE *f)
 {
-	struct cnode_t *succ_node;
+	Node *node;
+	Node *succ_node;
 	char *no_name;
 	char *comma;
 
+	node = asNode(self);
 	no_name = "<no-name>";
 	fprintf(f, "Node '%s':", *node->name ? node->name : no_name);
-	fprintf(f, " type=%s", str_map_value(&cnode_kind_map,
+	fprintf(f, " type=%s", str_map_value(&node_kind_map,
 			node->kind));
 	fprintf(f, " pred=");
-	cnode_list_dump(node->pred_list, f);
+	node_list_dump(node->pred_list, f);
 
 	/* List of successors */
 	fprintf(f, " succ={");
@@ -239,16 +229,16 @@ void cnode_dump(struct cnode_t *node, FILE *f)
 	{
 		succ_node = linked_list_get(node->succ_list);
 		fprintf(f, "%s", comma);
-		if (cnode_in_list(succ_node,
+		if (node_in_list(succ_node,
 				node->back_edge_list))
 			fprintf(f, "-");
-		else if (cnode_in_list(succ_node,
+		else if (node_in_list(succ_node,
 				node->forward_edge_list))
 			fprintf(f, "+");
-		else if (cnode_in_list(succ_node,
+		else if (node_in_list(succ_node,
 				node->tree_edge_list))
 			fprintf(f, "|");
-		else if (cnode_in_list(succ_node,
+		else if (node_in_list(succ_node,
 				node->cross_edge_list))
 			fprintf(f, "*");
 		fprintf(f, "%s", succ_node->name);
@@ -265,10 +255,10 @@ void cnode_dump(struct cnode_t *node, FILE *f)
 	/* Role */
 	if (node->role)
 		fprintf(f, " role=%s", str_map_value(
-				&cnode_role_map, node->role));
+				&node_role_map, node->role));
 
 	/* Loop head nodes exit if false/true */
-	if (node->role == cnode_role_head)
+	if (node->role == node_role_head)
 	{
 		if (node->exit_if_false)
 			fprintf(f, " exit_if_false");
@@ -277,10 +267,10 @@ void cnode_dump(struct cnode_t *node, FILE *f)
 	}
 
 	/* List of child elements */
-	if (node->kind == cnode_abstract)
+	if (node->kind == node_abstract)
 	{
 		fprintf(f, " children=");
-		cnode_list_dump(node->abstract.child_list, f);
+		node_list_dump(node->abstract.child_list, f);
 	}
 
 	/* Traversal IDs */
@@ -294,22 +284,22 @@ void cnode_dump(struct cnode_t *node, FILE *f)
 }
 
 
-void cnode_try_connect(struct cnode_t *node,
-		struct cnode_t *node_dest)
+void node_try_connect(Node *node,
+		Node *node_dest)
 {
 	/* Nothing if edge already exists */
-	if (cnode_in_list(node_dest, node->succ_list))
+	if (node_in_list(node_dest, node->succ_list))
 		return;
 
 	/* Add edge */
-	assert(!cnode_in_list(node, node_dest->pred_list));
+	assert(!node_in_list(node, node_dest->pred_list));
 	linked_list_add(node->succ_list, node_dest);
 	linked_list_add(node_dest->pred_list, node);
 }
 
 
-void cnode_connect(struct cnode_t *node,
-		struct cnode_t *node_dest)
+void node_connect(Node *node,
+		Node *node_dest)
 {
 #ifndef NDEBUG
 
@@ -328,8 +318,8 @@ void cnode_connect(struct cnode_t *node,
 }
 
 
-void cnode_try_disconnect(struct cnode_t *node,
-		struct cnode_t *node_dest)
+void node_try_disconnect(Node *node,
+		Node *node_dest)
 {
 	/* Check if connection exists */
 	linked_list_find(node->succ_list, node_dest);
@@ -350,8 +340,8 @@ void cnode_try_disconnect(struct cnode_t *node,
 }
 
 
-void cnode_disconnect(struct cnode_t *node,
-		struct cnode_t *node_dest)
+void node_disconnect(Node *node,
+		Node *node_dest)
 {
 	/* Make sure that connection exists */
 	linked_list_find(node->succ_list, node_dest);
@@ -367,9 +357,9 @@ void cnode_disconnect(struct cnode_t *node,
 }
 
 
-void cnode_reconnect_dest(struct cnode_t *src_node,
-		struct cnode_t *dest_node,
-		struct cnode_t *new_dest_node)
+void node_reconnect_dest(Node *src_node,
+		Node *dest_node,
+		Node *new_dest_node)
 {
 	/* Old and new destination must be different */
 	if (dest_node == new_dest_node)
@@ -389,7 +379,7 @@ void cnode_reconnect_dest(struct cnode_t *src_node,
 	/* If new edge does not already exists, create it here. Notice that the
 	 * successor of 'src_node' will be inserted in the exact same position.
 	 * This behavior is critical for some uses of this function. */
-	if (!cnode_in_list(src_node, new_dest_node->pred_list))
+	if (!node_in_list(src_node, new_dest_node->pred_list))
 	{
 		linked_list_insert(src_node->succ_list, new_dest_node);
 		linked_list_add(new_dest_node->pred_list, src_node);
@@ -397,9 +387,9 @@ void cnode_reconnect_dest(struct cnode_t *src_node,
 }
 
 
-void cnode_reconnect_source(struct cnode_t *src_node,
-		struct cnode_t *dest_node,
-		struct cnode_t *new_src_node)
+void node_reconnect_source(Node *src_node,
+		Node *dest_node,
+		Node *new_src_node)
 {
 	/* Old and new sources must be different */
 	if (src_node == new_src_node)
@@ -419,7 +409,7 @@ void cnode_reconnect_source(struct cnode_t *src_node,
 	/* If new edge does not already exists, create it here. Notice that the
 	 * predecessor of 'dst_node' will be inserted in the exact same position.
 	 * This behavior is critical for some uses of this function. */
-	if (!cnode_in_list(dest_node, new_src_node->succ_list))
+	if (!node_in_list(dest_node, new_src_node->succ_list))
 	{
 		linked_list_insert(dest_node->pred_list, new_src_node);
 		linked_list_add(new_src_node->succ_list, dest_node);
@@ -427,9 +417,9 @@ void cnode_reconnect_source(struct cnode_t *src_node,
 }
 
 
-void cnode_insert_before(struct cnode_t *node, struct cnode_t *before)
+void node_insert_before(Node *node, Node *before)
 {
-	struct cnode_t *parent;
+	Node *parent;
 
 	/* Check parent */
 	parent = before->parent;
@@ -439,17 +429,17 @@ void cnode_insert_before(struct cnode_t *node, struct cnode_t *before)
 
 	/* Insert in common parent */
 	node->parent = parent;
-	assert(parent->kind == cnode_abstract);
-	assert(!cnode_in_list(node, parent->abstract.child_list));
+	assert(parent->kind == node_abstract);
+	assert(!node_in_list(node, parent->abstract.child_list));
 	linked_list_find(parent->abstract.child_list, before);
 	assert(!parent->abstract.child_list->error_code);
 	linked_list_insert(parent->abstract.child_list, node);
 }
 
 
-void cnode_insert_after(struct cnode_t *node, struct cnode_t *after)
+void node_insert_after(Node *node, Node *after)
 {
-	struct cnode_t *parent;
+	Node *parent;
 	struct linked_list_t *child_list;
 
 	/* Check parent */
@@ -460,9 +450,9 @@ void cnode_insert_after(struct cnode_t *node, struct cnode_t *after)
 
 	/* Insert in common parent */
 	node->parent = parent;
-	assert(parent->kind == cnode_abstract);
+	assert(parent->kind == node_abstract);
 	child_list = parent->abstract.child_list;
-	assert(!cnode_in_list(node, child_list));
+	assert(!node_in_list(node, child_list));
 	linked_list_find(child_list, after);
 	assert(!child_list->error_code);
 	linked_list_next(child_list);
@@ -470,12 +460,12 @@ void cnode_insert_after(struct cnode_t *node, struct cnode_t *after)
 }
 
 
-struct cnode_t *cnode_get_first_leaf(struct cnode_t *node)
+Node *node_get_first_leaf(Node *node)
 {
-	struct cnode_t *child_node;
+	Node *child_node;
 
 	/* Traverse syntax tree down */
-	while (node->kind == cnode_abstract)
+	while (node->kind == node_abstract)
 	{
 		linked_list_head(node->abstract.child_list);
 		child_node = linked_list_get(node->abstract.child_list);
@@ -484,17 +474,17 @@ struct cnode_t *cnode_get_first_leaf(struct cnode_t *node)
 	}
 
 	/* Return leaf */
-	assert(node->kind == cnode_leaf);
+	assert(node->kind == node_leaf);
 	return node;
 }
 
 
-struct cnode_t *cnode_get_last_leaf(struct cnode_t *node)
+Node *node_get_last_leaf(Node *node)
 {
-	struct cnode_t *child_node;
+	Node *child_node;
 
 	/* Traverse syntax tree down */
-	while (node->kind == cnode_abstract)
+	while (node->kind == node_abstract)
 	{
 		linked_list_tail(node->abstract.child_list);
 		child_node = linked_list_get(node->abstract.child_list);
@@ -503,17 +493,16 @@ struct cnode_t *cnode_get_last_leaf(struct cnode_t *node)
 	}
 
 	/* Return leaf */
-	assert(node->kind == cnode_leaf);
+	assert(node->kind == node_leaf);
 	return node;
 }
 
 
-void cnode_compare(struct cnode_t *node1,
-		struct cnode_t *node2)
+void node_compare(Node *node1, Node *node2)
 {
-	struct ctree_t *ctree1;
-	struct ctree_t *ctree2;
-	struct cnode_t *tmp_node;
+	CTree *ctree1;
+	CTree *ctree2;
+	Node *tmp_node;
 
 	char node_name1[MAX_STRING_SIZE];
 	char node_name2[MAX_STRING_SIZE];
@@ -538,7 +527,7 @@ void cnode_compare(struct cnode_t *node1,
 		tmp_node = linked_list_get(node1->succ_list);
 		tmp_node = ctree_get_node(ctree2, tmp_node->name);
 		assert(tmp_node);
-		if (!cnode_in_list(tmp_node, node2->succ_list))
+		if (!node_in_list(tmp_node, node2->succ_list))
 			differ = 1;
 	}
 	if (differ)
@@ -546,7 +535,7 @@ void cnode_compare(struct cnode_t *node1,
 				node_name1, node_name2);
 
 	/* Abstract node */
-	if (node1->kind == cnode_abstract)
+	if (node1->kind == node_abstract)
 	{
 		/* Compare region */
 		if (node1->abstract.region != node2->abstract.region)
@@ -561,7 +550,7 @@ void cnode_compare(struct cnode_t *node1,
 			tmp_node = linked_list_get(node1->abstract.child_list);
 			tmp_node = ctree_get_node(ctree2, tmp_node->name);
 			assert(tmp_node);
-			if (!cnode_in_list(tmp_node, node2->abstract.child_list))
+			if (!node_in_list(tmp_node, node2->abstract.child_list))
 				differ = 1;
 		}
 		if (differ)

@@ -23,7 +23,9 @@
 #include <m2c/amd/amd.h>
 #include <m2c/gl/gl.h>
 #include <m2c/cl2llvm/cl2llvm.h>
+#include <m2c/common/basic-block.h>
 #include <m2c/common/ctree.h>
+#include <m2c/common/node.h>
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
 #include <m2c/si2bin/si2bin.h>
@@ -515,6 +517,11 @@ void m2c_pre_init(void)
 
 void m2c_init(void)
 {
+	/* Classes */
+	CLASS_REGISTER(Node);
+	CLASS_REGISTER(BasicBlock);
+	CLASS_REGISTER(CTree);
+
 	/* Libraries */
 	debug_init();
 

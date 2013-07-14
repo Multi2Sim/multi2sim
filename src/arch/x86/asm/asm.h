@@ -20,30 +20,17 @@
 #ifndef X86_ASM_H
 #define X86_ASM_H
 
+#include <arch/common/asm.h>
 #include <lib/util/class.h>
 
-struct asm_t;
 struct x86_inst_t;
 
 
 /*
- * Class 'x86_asm_t'
+ * Class 'X86Asm'
  */
 
-/* Class macros */
-#define X86_ASM_TYPE 0xeae356fd
-#define X86_ASM(p) (CLASS_REINTERPRET_CAST(p, X86_ASM_TYPE, struct x86_asm_t))
-#define X86_ASM_CLASS_OF(p) (CLASS_OF(p, X86_ASM_TYPE))
-
-
-/* Class:	x86_asm_t
- * Inherits:	asm_t
- */
-struct x86_asm_t
-{
-	/* Class information
-	 * WARNING - must be first field */
-	struct class_t class_info;
+CLASS_BEGIN(X86Asm, Asm)
 
 	/* Array containing 'x86_inst_opcode_count' elements of type
 	 * 'x86_inst_info_t' allocated contiguously, and storing instructions
@@ -58,22 +45,22 @@ struct x86_asm_t
 
 	/* Look-up table returning true if a byte is an x86 prefix */
 	unsigned char is_prefix[0x100];
-};
+
+CLASS_END(X86Asm)
 
 
-struct x86_asm_t *x86_asm_create(void);
-void x86_asm_free(struct asm_t *as);
+void X86AsmCreate(X86Asm *self);
+void X86AsmDestroy(X86Asm *self);
 
 
 
 
 /*
- * Public static functions (not related with 'x86_asm_t')
+ * Non-class Public Functions
  */
 
-/* There is only one instance of the x86 disassembler, initialized and finalized
- * in 'x86_asm_init' and 'x86_asm_done'. */
-extern struct x86_asm_t *x86_asm;
+/* One public instance of the x86 disassembler */
+extern X86Asm *x86_asm;
 
 void x86_asm_init(void);
 void x86_asm_done(void);

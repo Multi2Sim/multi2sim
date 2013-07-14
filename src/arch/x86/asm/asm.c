@@ -36,7 +36,7 @@
  */
 
 /* Global unique x86 disassembler */
-struct x86_asm_t *x86_asm;
+X86Asm *x86_asm;
 
 
 /*** Constants used in 'asm.dat' ***/
@@ -93,7 +93,7 @@ static void x86_asm_inst_info_insert_at(struct x86_inst_info_elem_t **table,
 }
 
 
-static void x86_asm_inst_info_insert(struct x86_asm_t *as,
+static void x86_asm_inst_info_insert(X86Asm *as,
 		struct x86_inst_info_t *info)
 {
 	struct x86_inst_info_elem_t *elem;
@@ -147,27 +147,25 @@ static void x86_asm_inst_info_elem_free_list(struct x86_inst_info_elem_t *elem)
  * Public Functions
  */
 
-struct x86_asm_t *x86_asm_create(void)
-{
-	struct x86_asm_t *as;
-	struct asm_t *__as;
 
+CLASS_IMPLEMENTATION(X86Asm);
+
+
+void X86AsmCreate(X86Asm *self)
+{
 	struct x86_inst_info_t *info;
 
 	int op;
 	int i;
 
-	/* Create parent */
-	__as = asm_create();
-
-	/* Initialize */
-	as = xcalloc(1, sizeof(struct x86_asm_t));
+	/* Initialize parent */
+	AsmCreate(asAsm(self));
 
 	/* Initialize instruction information list */
-	as->inst_info_list = xcalloc(x86_inst_opcode_count, sizeof(struct x86_inst_info_t));
-	as->inst_info_list[x86_inst_opcode_invalid].fmt = "";
+	self->inst_info_list = xcalloc(x86_inst_opcode_count, sizeof(struct x86_inst_info_t));
+	self->inst_info_list[x86_inst_opcode_invalid].fmt = "";
 #define DEFINST(__name, __op1, __op2, __op3, __modrm, __imm, __prefixes) \
-	info = &as->inst_info_list[x86_inst_##__name]; \
+	info = &self->inst_info_list[x86_inst_##__name]; \
 	info->opcode = x86_inst_##__name; \
 	info->op1 = __op1; \
 	info->op2 = __op2; \
@@ -181,7 +179,7 @@ struct x86_asm_t *x86_asm_create(void)
 
 	/* Initialize table of prefixes */
 	for (i = 0; i < sizeof(x86_asm_prefixes); i++)
-		as->is_prefix[x86_asm_prefixes[i]] = 1;
+		self->is_prefix[x86_asm_prefixes[i]] = 1;
 
 	/* Initialize x86_opcode_info_table. This table contains lists of
 	 * information about machine instructions. To find an instruction
@@ -189,8 +187,8 @@ struct x86_asm_t *x86_asm_create(void)
 	for (op = 1; op < x86_inst_opcode_count; op++)
 	{
 		/* Insert into table */
-		info = &as->inst_info_list[op];
-		x86_asm_inst_info_insert(as, info);
+		info = &self->inst_info_list[op];
+		x86_asm_inst_info_insert(self, info);
 
 		/* Compute 'match_mask' and 'mach_result' fields. Start with
 		 * the 'modrm' field in the instruction format definition. */
@@ -268,37 +266,22 @@ struct x86_asm_t *x86_asm_create(void)
 		if (info->imm & ID)
 			info->imm_size = 4;
 	}
-
-	/* Populate class information and virtual functions */
-	CLASS_INIT(as, X86_ASM_TYPE, __as);
-	__as->free = x86_asm_free;
-
-	/* Return */
-	return as;
 }
 
 
-void x86_asm_free(struct asm_t *__as)
+void X86AsmDestroy(X86Asm *self)
 {
-	struct x86_asm_t *as;
 	int i;
-
-	/* Get class instance */
-	as = X86_ASM(__as);
-
-	/* Free parent */
-	asm_free(__as);
 
 	/* Free instruction info tables */
 	for (i = 0; i < 0x100; i++)
 	{
-		x86_asm_inst_info_elem_free_list(as->inst_info_table[i]);
-		x86_asm_inst_info_elem_free_list(as->inst_info_table_0f[i]);
+		x86_asm_inst_info_elem_free_list(self->inst_info_table[i]);
+		x86_asm_inst_info_elem_free_list(self->inst_info_table_0f[i]);
 	}
 	
 	/* Free */
-	free(as->inst_info_list);
-	free(as);
+	free(self->inst_info_list);
 }
 
 
@@ -314,16 +297,18 @@ void x86_asm_init(void)
 	/* Host restrictions */
 	M2S_HOST_GUEST_MATCH(sizeof(union x86_inst_xmm_reg_t), 16);
 
+	/* Classes */
+	CLASS_REGISTER(X86Asm);
+
 	/* Create disassembler */
 	assert(!x86_asm);
-	x86_asm = x86_asm_create();
-
+	x86_asm = new(X86Asm);
 }
 
 
 void x86_asm_done(void)
 {
-	x86_asm_free(ASM(x86_asm));
+	delete(x86_asm);
 }
 
 

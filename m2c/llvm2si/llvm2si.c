@@ -35,6 +35,7 @@
 #include "basic-block.h"
 #include "function.h"
 #include "llvm2si.h"
+#include "phi.h"
 
 
 /*
@@ -52,7 +53,7 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 	char *message;
 	FILE *f;
 
-	struct llvm2si_function_t *function;
+	Llvm2siFunction *function;
 
 	/* Create memory buffer with source file */
 	err = LLVMCreateMemoryBufferWithContentsOfFile(source_file,
@@ -82,7 +83,7 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 			continue;
 
 		/* Create function */
-		function = llvm2si_function_create(llfunction);
+		function = new(Llvm2siFunction, llfunction);
 
 		/* Emit code for function */
 		llvm2si_function_emit_header(function);
@@ -92,10 +93,10 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 		llvm2si_function_emit_control_flow(function);
 
 		/* Dump code */
-		llvm2si_function_dump(function, f);
+		Llvm2siFunctionDump(asObject(function), f);
 
 		/* Done */
-		llvm2si_function_free(function);
+		delete(function);
 	}
 
 	/* Close output file */
@@ -115,6 +116,10 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 
 void llvm2si_init(void)
 {
+	/* Classes */
+	CLASS_REGISTER(Llvm2siBasicBlock);
+	CLASS_REGISTER(Llvm2siPhi);
+	CLASS_REGISTER(Llvm2siFunction);
 }
 
 
