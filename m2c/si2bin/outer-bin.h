@@ -25,6 +25,7 @@
 
 /* Forward Declarations */
 struct list_t;
+struct si2bin_data_t;
 
 enum si2bin_outer_bin_device_t
 {
@@ -36,21 +37,6 @@ enum si2bin_outer_bin_device_t
 };
 
 /*
- * Float4 Struct
- */
-
-struct si2bin_outer_bin_float4_t
-{
-	float x;
-	float y;
-	float z;
-	float w;
-};
-
-struct si2bin_outer_bin_float4_t *si2bin_outer_bin_float4_create(float x, float y, float z, float w);
-void si2bin_outer_bin_float4_free(struct si2bin_outer_bin_float4_t *float4);
-
-/*
  * AMD External ELF Binary
  */
 
@@ -59,8 +45,8 @@ struct si2bin_outer_bin_t
 	/* Device Type */
 	enum si2bin_outer_bin_device_t device;
 
-	/* List of float4 elements to be added to global buffer */
-	struct list_t *float4_list;
+	/* List of si2bin_data_t elements to be added to global buffer */
+	struct list_t *data_list;
 
 	/* ELF file create internally.
 	 * Private field. */
@@ -76,8 +62,8 @@ struct si2bin_outer_bin_t
 
 struct si2bin_outer_bin_t *si2bin_outer_bin_create(void);
 void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin);
-void si2bin_outer_bin_add_float4(struct si2bin_outer_bin_t *outer_bin,
-		struct si2bin_outer_bin_float4_t *float4);
+void si2bin_outer_bin_add_data(struct si2bin_outer_bin_t *outer_bin,
+		struct si2bin_data_t *data);
 void si2bin_outer_bin_add(struct si2bin_outer_bin_t *outer_bin,
 		struct si2bin_inner_bin_t *inner_bin, struct si2bin_metadata_t *metadata);
 void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
