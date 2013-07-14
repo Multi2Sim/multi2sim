@@ -268,7 +268,7 @@ void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 	if (uop->active_mask_pop)
 	{
 		evg_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"pop\" cnt=%d top=%d mask=\"",
-			arch_evergreen->cycle,
+			asTiming(evg_gpu)->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,
@@ -282,7 +282,7 @@ void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 	if (uop->active_mask_push)
 	{
 		evg_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"push\" cnt=%d top=%d mask=\"",
-			arch_evergreen->cycle,
+			asTiming(evg_gpu)->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,

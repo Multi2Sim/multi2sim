@@ -1159,8 +1159,8 @@ void si_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = arch_southern_islands->cycle ? 
-		(double)(asEmu(si_emu)->instructions/arch_southern_islands->cycle) : 0.0;
+	inst_per_cycle = asTiming(si_gpu)->cycle ? 
+		(double)(asEmu(si_emu)->instructions/asTiming(si_gpu)->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
 	fprintf(f, "WorkGroupCount = %lld\n", si_emu->work_group_count);
@@ -1175,7 +1175,7 @@ void si_gpu_dump_report(void)
 	fprintf(f, "LDSInstructions = %lld\n", si_emu->lds_inst_count);
 	fprintf(f, "VectorMemInstructions = %lld\n", 
 		si_emu->vector_mem_inst_count);
-	fprintf(f, "Cycles = %lld\n", arch_southern_islands->cycle);
+	fprintf(f, "Cycles = %lld\n", asTiming(si_gpu)->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
@@ -1301,6 +1301,8 @@ void SIGpuDump(Object *self, FILE *f)
 
 void SIGpuDumpSummary(Timing *self, FILE *f)
 {
+	/* Call parent */
+	TimingDumpSummary(self, f);
 }
 
 
@@ -1343,10 +1345,10 @@ int SIGpuRun(Timing *self)
 	}
 
 	/* One more cycle */
-	arch_southern_islands->cycle++;
+	asTiming(si_gpu)->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (si_emu_max_cycles && arch_southern_islands->cycle >= 
+	if (si_emu_max_cycles && asTiming(si_gpu)->cycle >= 
 		si_emu_max_cycles)
 	{
 		esim_finish = esim_finish_si_max_cycles;
@@ -1360,7 +1362,7 @@ int SIGpuRun(Timing *self)
 	}
 
 	/* Stop if there was a simulation stall */
-	if ((arch_southern_islands->cycle-gpu->last_complete_cycle) > 
+	if ((asTiming(si_gpu)->cycle-gpu->last_complete_cycle) > 
 		1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", 

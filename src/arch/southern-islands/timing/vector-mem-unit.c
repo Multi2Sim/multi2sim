@@ -53,7 +53,7 @@ void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 		assert(uop);
 
 		/* Uop is not ready */
-		if (arch_southern_islands->cycle < uop->write_ready)
+		if (asTiming(si_gpu)->cycle < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -73,7 +73,7 @@ void si_vector_mem_complete(struct si_vector_mem_unit_t *vector_mem)
 
 		/* Statistics */
 		vector_mem->inst_count++;
-		si_gpu->last_complete_cycle = arch_southern_islands->cycle;
+		si_gpu->last_complete_cycle = asTiming(si_gpu)->cycle;
 	}
 }
 
@@ -132,7 +132,7 @@ void si_vector_mem_write(struct si_vector_mem_unit_t *vector_mem)
 		}
 
 		/* Access complete, remove the uop from the queue */
-		uop->write_ready = arch_southern_islands->cycle + 
+		uop->write_ready = asTiming(si_gpu)->cycle + 
 			si_gpu_vector_mem_write_latency;
 
 		/* In the above context, access means any of the 
@@ -191,7 +191,7 @@ void si_vector_mem_mem(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch_southern_islands->cycle < uop->read_ready)
+		if (asTiming(si_gpu)->cycle < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -301,7 +301,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch_southern_islands->cycle < uop->decode_ready)
+		if (asTiming(si_gpu)->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -334,7 +334,7 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->read_ready = arch_southern_islands->cycle + 
+		uop->read_ready = asTiming(si_gpu)->cycle + 
 			si_gpu_vector_mem_read_latency;
 
 		list_remove(vector_mem->decode_buffer, uop);
@@ -368,7 +368,7 @@ void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch_southern_islands->cycle < uop->issue_ready)
+		if (asTiming(si_gpu)->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -401,7 +401,7 @@ void si_vector_mem_decode(struct si_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->decode_ready = arch_southern_islands->cycle + 
+		uop->decode_ready = asTiming(si_gpu)->cycle + 
 			si_gpu_vector_mem_decode_latency;
 
 		list_remove(vector_mem->issue_buffer, uop);

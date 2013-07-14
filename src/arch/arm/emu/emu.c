@@ -195,10 +195,6 @@ int ARMEmuRun(Emu *self)
 	if (arm_emu_max_inst && self->instructions >= arm_emu_max_inst)
 		esim_finish = esim_finish_arm_max_inst;
 
-	/* Stop if maximum number of cycles exceeded */
-	if (arm_emu_max_cycles && arch_arm->cycle >= arm_emu_max_cycles)
-		esim_finish = esim_finish_arm_max_cycles;
-
 	/* Stop if any previous reason met */
 	if (esim_finish)
 		return TRUE;

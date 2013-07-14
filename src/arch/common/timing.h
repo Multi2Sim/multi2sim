@@ -22,13 +22,22 @@
 
 #include <lib/util/class.h>
 
+/* Forward declarations */
+
 
 /*
  * Class 'Timing'
  */
 
 CLASS_BEGIN(Timing, Object)
+
+	/* Architecture that this timing simulator belongs to */
+	struct arch_t *arch;
 	
+	/* Current cycle */
+	long long cycle;
+
+
 	/*** Virtual functions ***/
 
 	/* Print statistics summary */

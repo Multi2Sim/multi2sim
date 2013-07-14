@@ -994,8 +994,8 @@ void frm_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = arch_fermi->cycle ? 
-		(double)(asEmu(frm_emu)->instructions / arch_fermi->cycle) : 0.0;
+	inst_per_cycle = asTiming(frm_gpu)->cycle ? 
+		(double)(asEmu(frm_emu)->instructions / asTiming(frm_gpu)->cycle) : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "GridCount = %d\n", frm_emu->grid_count);
 	fprintf(f, "Instructions = %lld\n", asEmu(frm_emu)->instructions);
@@ -1003,7 +1003,7 @@ void frm_gpu_dump_report(void)
 	fprintf(f, "ALUInstructions = %lld\n", frm_emu->vector_alu_inst_count);
 	fprintf(f, "SharedMemInstructions = %lld\n", frm_emu->lds_inst_count);
 	fprintf(f, "GlobalMemInstructions = %lld\n", frm_emu->vector_mem_inst_count);
-	fprintf(f, "Cycles = %lld\n", arch_fermi->cycle);
+	fprintf(f, "Cycles = %lld\n", asTiming(frm_gpu)->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
@@ -1101,6 +1101,8 @@ void FrmGpuDump(Object *self, FILE *f)
 
 void FrmGpuDumpSummary(Timing *self, FILE *f)
 {
+	/* Call parent */
+	TimingDumpSummary(self, f);
 }
 
 
@@ -1154,10 +1156,10 @@ int FrmGpuRun(Timing *self)
 	}
 
 	/* One more cycle */
-	arch_fermi->cycle++;
+	asTiming(frm_gpu)->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (frm_emu_max_cycles && arch_fermi->cycle >= frm_emu_max_cycles)
+	if (frm_emu_max_cycles && asTiming(frm_gpu)->cycle >= frm_emu_max_cycles)
 		esim_finish = esim_finish_frm_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
@@ -1165,7 +1167,7 @@ int FrmGpuRun(Timing *self)
 		esim_finish = esim_finish_frm_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((arch_fermi->cycle - gpu->last_complete_cycle) > 1000000)
+	if ((asTiming(frm_gpu)->cycle - gpu->last_complete_cycle) > 1000000)
 	{
 		warning("Fermi GPU simulation stalled.\n%s", frm_err_stall);
 		esim_finish = esim_finish_stall;

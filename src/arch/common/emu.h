@@ -32,6 +32,9 @@ CLASS_BEGIN(Emu, Object)
 
 	/* Name of emulator */
 	char *name;
+
+	/* Architecture it belongs to */
+	struct arch_t *arch;
 	
 	/* Timer keeping track of emulator activity */
 	struct m2s_timer_t *timer;

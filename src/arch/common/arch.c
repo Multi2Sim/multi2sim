@@ -105,13 +105,12 @@ void arch_dump(struct arch_t *arch, FILE *f)
 	assert(emu->DumpSummary);
 	emu->DumpSummary(emu, f);
 
-
 	/* Continue with timing simulator only it active */
 	if (arch->sim_kind == arch_sim_kind_functional)
 		return;
 
 	/* Timing simulator */
-	fprintf(f, "Cycles = %lld\n", arch->cycle);
+	fprintf(f, "Cycles = %lld\n", timing->cycle);
 	fprintf(f, "\n");
 	assert(timing->DumpSummary);
 	timing->DumpSummary(timing, f);
@@ -139,22 +138,48 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 	/* Timing simulation statistics */
 	if (arch->sim_kind == arch_sim_kind_detailed)
 	{
-		/* Standard */
-		time_in_sec = (double) m2s_timer_get_value(emu->timer) / 1.0e6;
-		cycles_per_sec = time_in_sec > 0.0 ? (double) arch->cycle / time_in_sec : 0.0;
-		cycle_time = (double) esim_domain_cycle_time(arch->domain_index) / 1000.0;
-		fprintf(f, "SimTime = %.2f [ns]\n", arch->cycle * cycle_time);
-		fprintf(f, "Frequency = %d [MHz]\n", arch->frequency);
-		fprintf(f, "Cycles = %lld\n", arch->cycle);
-		fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
-
 		/* Architecture-specific */
 		assert(timing->DumpSummary);
 		timing->DumpSummary(timing, f);
+
+		/* Calculate statistics */
+		time_in_sec = (double) m2s_timer_get_value(emu->timer) / 1.0e6;
+		cycles_per_sec = time_in_sec > 0.0 ? (double) timing->cycle / time_in_sec : 0.0;
+		cycle_time = (double) esim_domain_cycle_time(arch->domain_index) / 1000.0;
+
+		/* Print */
+		fprintf(f, "SimTime = %.2f [ns]\n", timing->cycle * cycle_time);
+		fprintf(f, "Frequency = %d [MHz]\n", arch->frequency);
+		fprintf(f, "Cycles = %lld\n", timing->cycle);
+		fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 	}
 
 	/* End */
 	fprintf(f, "\n");
+}
+
+
+void arch_set_asm(struct arch_t *arch, Asm *as)
+{
+	arch->as = as;
+	if (as)
+		as->arch = arch;
+}
+
+
+void arch_set_emu(struct arch_t *arch, Emu *emu)
+{
+	arch->emu = emu;
+	if (emu)
+		emu->arch = arch;
+}
+
+
+void arch_set_timing(struct arch_t *arch, Timing *timing)
+{
+	arch->timing = timing;
+	if (timing)
+		timing->arch = arch;
 }
 
 
