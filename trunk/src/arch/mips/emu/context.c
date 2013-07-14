@@ -685,7 +685,7 @@ void mips_ctx_execute(struct mips_ctx_t *ctx)
 	mips_isa_execute_inst(ctx);
 
 	/* Statistics */
-	arch_mips->inst_count++;
+	asEmu(mips_emu)->instructions++;
 }
 
 /* Finish a context group. This call does a subset of action of the 'mips_ctx_finish'
@@ -858,9 +858,9 @@ static void mips_ctx_update_status(struct mips_ctx_t *ctx, enum mips_ctx_status_
 	/* Start/stop mips timer depending on whether there are any contexts
 	 * currently running. */
 	if (mips_emu->running_list_count)
-		m2s_timer_start(arch_mips->timer);
+		m2s_timer_start(asEmu(mips_emu)->timer);
 	else
-		m2s_timer_stop(arch_mips->timer);
+		m2s_timer_stop(asEmu(mips_emu)->timer);
 }
 
 void mips_ctx_set_status(struct mips_ctx_t *ctx, enum mips_ctx_status_t status)

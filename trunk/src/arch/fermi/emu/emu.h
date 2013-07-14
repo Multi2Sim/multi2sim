@@ -69,10 +69,11 @@ CLASS_END(FrmEmu)
 void FrmEmuCreate(FrmEmu *self);
 void FrmEmuDestroy(FrmEmu *self);
 
-void FrmEmuDump(FILE *f);
-void FrmEmuDumpSummary(FILE *f);
+void FrmEmuDump(Object *self, FILE *f);
+void FrmEmuDumpSummary(Emu *self, FILE *f);
 
-int FrmEmuRun(void);
+/* Virtual function from class 'Emu' */
+int FrmEmuRun(Emu *emu);
 
 
 

@@ -68,11 +68,17 @@ CLASS_IMPLEMENTATION(X86Emu);
 
 void X86EmuCreate(X86Emu *self)
 {
+	/* Parent */
+	EmuCreate(asEmu(self), "x86");
+
 	/* Initialize */
 	self->current_pid = 100;
-	
-	/* Initialize mutex for variables controlling calls to 'X86EmuProcessEvents()' */
 	pthread_mutex_init(&self->process_events_mutex, NULL);
+
+	/* Virtual functions */
+	asObject(self)->Dump = X86EmuDump;
+	asEmu(self)->DumpSummary = X86EmuDumpSummary;
+	asEmu(self)->Run = X86EmuRun;
 }
 
 
@@ -92,25 +98,30 @@ void X86EmuDestroy(X86Emu *self)
 }
 
 
-void X86EmuDump(FILE *f)
+void X86EmuDump(Object *self, FILE *f)
 {
-	X86Emu *self = x86_emu;
 	struct x86_ctx_t *ctx;
-	X86Emu *emu;
+	X86Emu *emu = asX86Emu(self);
 
-	emu = asX86Emu(self);
+	/* Call parent */
+	EmuDump(self, f);
+
+	/* More */
 	fprintf(f, "List of contexts (shows in any order)\n\n");
 	DOUBLE_LINKED_LIST_FOR_EACH(emu, context, ctx)
 		x86_ctx_dump(ctx, f);
 }
 
 
-void X86EmuDumpSummary(FILE *f)
+void X86EmuDumpSummary(Emu *self, FILE *f)
 {
-	X86Emu *self = x86_emu;
+	X86Emu *emu = asX86Emu(self);
 
-	/* Functional simulation */
-	fprintf(f, "Contexts = %d\n", self->running_list_max);
+	/* Call parent */
+	EmuDumpSummary(self, f);
+
+	/* More statistics */
+	fprintf(f, "Contexts = %d\n", emu->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
 }
 
@@ -677,18 +688,17 @@ void X86EmuProcessEvents(X86Emu *self)
 }
 
 
-/* Run one iteration of the x86 emulation loop. Return TRUE if still running. */
-int X86EmuRun(void)
+int X86EmuRun(Emu *self)
 {
-	X86Emu *self = x86_emu;
+	X86Emu *emu = asX86Emu(self);
 	struct x86_ctx_t *ctx;
 
 	/* Stop if there is no context running */
-	if (self->finished_list_count >= self->context_list_count)
+	if (emu->finished_list_count >= emu->context_list_count)
 		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (x86_emu_max_inst && arch_x86->inst_count >= x86_emu_max_inst)
+	if (x86_emu_max_inst && asEmu(x86_emu)->instructions >= x86_emu_max_inst)
 		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
@@ -700,12 +710,12 @@ int X86EmuRun(void)
 		return TRUE;
 
 	/* Run an instruction from every running process */
-	for (ctx = self->running_list_head; ctx; ctx = ctx->running_list_next)
+	for (ctx = emu->running_list_head; ctx; ctx = ctx->running_list_next)
 		x86_ctx_execute(ctx);
 
 	/* Free finished contexts */
-	while (self->finished_list_head)
-		x86_ctx_free(self->finished_list_head);
+	while (emu->finished_list_head)
+		x86_ctx_free(emu->finished_list_head);
 
 	/* Process list of suspended contexts */
 	X86EmuProcessEvents(x86_emu);

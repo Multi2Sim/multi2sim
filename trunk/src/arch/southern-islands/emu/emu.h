@@ -61,11 +61,11 @@ CLASS_END(SIEmu)
 void SIEmuCreate(SIEmu *self);
 void SIEmuDestroy(SIEmu *self);
 
-int SIEmuRun(void);
+void SIEmuDump(Object *self, FILE *f);
+void SIEmuDumpSummary(Emu *self, FILE *f);
 
-void SIEmuDump(FILE *f);
-void SIEmuDumpSummary(FILE *f);
-
+/* Virtual function from class 'Emu' */
+int SIEmuRun(Emu *self);
 
 
 

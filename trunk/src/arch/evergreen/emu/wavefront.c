@@ -320,7 +320,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 
 		/* Stats */
-		arch_evergreen->inst_count++;
+		asEmu(evg_emu)->instructions++;
 		wavefront->inst_count++;
 		wavefront->cf_inst_count++;
 		if (inst->info->flags & EVG_INST_FLAG_MEM)
@@ -367,7 +367,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 		
 		/* Statistics */
-		arch_evergreen->inst_count++;
+		asEmu(evg_emu)->instructions++;
 		wavefront->inst_count += alu_group->inst_count;
 		wavefront->alu_inst_count += alu_group->inst_count;
 		wavefront->alu_group_count++;
@@ -421,7 +421,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		}
 
 		/* Statistics */
-		arch_evergreen->inst_count++;
+		asEmu(evg_emu)->instructions++;
 		wavefront->inst_count++;
 		wavefront->tc_inst_count++;
 		if (inst->info->flags & EVG_INST_FLAG_MEM)

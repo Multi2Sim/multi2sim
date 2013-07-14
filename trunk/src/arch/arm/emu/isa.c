@@ -2045,7 +2045,8 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 	if (debug_status(arm_isa_inst_debug_category))
 	{
 		arm_isa_inst_debug("%d %8lld %x: ", ctx->pid,
-			arch_arm->inst_count, ctx->curr_ip);
+				asEmu(arm_emu)->instructions,
+				ctx->curr_ip);
 		if(ctx->regs->cpsr.thumb)
 		{
 			if(ctx->inst_type == THUMB32)

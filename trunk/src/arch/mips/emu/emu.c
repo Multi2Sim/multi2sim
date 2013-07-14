@@ -42,8 +42,17 @@ CLASS_IMPLEMENTATION(MIPSEmu);
 
 void MIPSEmuCreate(MIPSEmu *self)
 {
-	self->current_pid = 1000;
+	/* Parent */
+	EmuCreate(asEmu(self), "MIPS");
+
+	/* Initialize */
+	self->current_pid = 100;
 	pthread_mutex_init(&self->process_events_mutex, NULL);
+
+	/* Virtual functions */
+	asObject(self)->Dump = MIPSEmuDump;
+	asEmu(self)->DumpSummary = MIPSEmuDumpSummary;
+	asEmu(self)->Run = MIPSEmuRun;
 }
 
 
@@ -63,16 +72,22 @@ void MIPSEmuDestroy(MIPSEmu *self)
 }
 
 
-void MIPSEmuDump(FILE *f)
+void MIPSEmuDump(Object *self, FILE *f)
 {
+	/* Call parent */
+	EmuDump(self, f);
 }
 
 
-void MIPSEmuDumpSummary(FILE *f)
+void MIPSEmuDumpSummary(Emu *self, FILE *f)
 {
-	MIPSEmu *self = mips_emu;
+	MIPSEmu *emu = asMIPSEmu(self);
 
-	fprintf(f, "Contexts = %d\n", self->running_list_max);
+	/* Call parent */
+	EmuDumpSummary(self, f);
+
+	/* More statistics */
+	fprintf(f, "Contexts = %d\n", emu->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
 }
 
@@ -169,18 +184,18 @@ void MIPSEmuProcessEventsSchedule(MIPSEmu *self)
 }
 
 
-int MIPSEmuRun(void)
+int MIPSEmuRun(Emu *self)
 {
-	MIPSEmu *self = mips_emu;
+	MIPSEmu *emu = asMIPSEmu(self);
 
 	struct mips_ctx_t *ctx;
 
 	/* Stop if there is no context running */
-	if (self->finished_list_count >= self->context_list_count)
+	if (emu->finished_list_count >= emu->context_list_count)
 		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (mips_emu_max_inst && arch_mips->inst_count >= mips_emu_max_inst)
+	if (mips_emu_max_inst && asEmu(mips_emu)->instructions >= mips_emu_max_inst)
 		esim_finish = esim_finish_mips_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
@@ -192,12 +207,12 @@ int MIPSEmuRun(void)
 		return TRUE;
 
 	/* Run an instruction from every running process */
-	for (ctx = self->running_list_head; ctx; ctx = ctx->running_list_next)
+	for (ctx = emu->running_list_head; ctx; ctx = ctx->running_list_next)
 		mips_ctx_execute(ctx);
 
 	/* Free finished contexts */
-	while (self->finished_list_head)
-		mips_ctx_free(self->finished_list_head);
+	while (emu->finished_list_head)
+		mips_ctx_free(emu->finished_list_head);
 
 	/* Still running */
 	return TRUE;

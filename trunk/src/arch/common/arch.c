@@ -57,7 +57,6 @@ struct arch_t *arch_create(char *name, char *prefix)
 	arch->name = xstrdup(name);
 	arch->prefix = xstrdup(prefix);
 	arch->mem_entry_mod_list = linked_list_create();
-	arch->timer = m2s_timer_create(name);
 
 	/* Return */
 	return arch;
@@ -69,7 +68,6 @@ void arch_free(struct arch_t *arch)
 	free(arch->name);
 	free(arch->prefix);
 	linked_list_free(arch->mem_entry_mod_list);
-	m2s_timer_free(arch->timer);
 	free(arch);
 }
 
@@ -79,8 +77,11 @@ void arch_dump(struct arch_t *arch, FILE *f)
 	double time_in_sec;
 	int i;
 
+	Emu *emu;
+
 	/* Nothing to print if architecture was not active */
-	if (!arch->inst_count)
+	emu = arch->emu;
+	if (!emu->instructions)
 		return;
 
 	/* Header */
@@ -92,13 +93,13 @@ void arch_dump(struct arch_t *arch, FILE *f)
 	fprintf(f, "\n\n");
 
 	/* Emulator */
-	time_in_sec = (double) m2s_timer_get_value(arch->timer) / 1.0e6;
+	time_in_sec = (double) m2s_timer_get_value(emu->timer) / 1.0e6;
 	fprintf(f, "SimKind = %s\n", str_map_value(&arch_sim_kind_map, arch->sim_kind));
 	fprintf(f, "Time = %.2f\n", time_in_sec);
-	fprintf(f, "Instructions = %lld\n", arch->inst_count);
+	fprintf(f, "Instructions = %lld\n", emu->instructions);
 	fprintf(f, "\n");
-	if (arch->emu_dump_func)
-		arch->emu_dump_func(f);
+	assert(emu->DumpSummary);
+	emu->DumpSummary(emu, f);
 
 
 	/* Continue with timing simulator only it active */
@@ -116,30 +117,26 @@ void arch_dump(struct arch_t *arch, FILE *f)
 void arch_dump_summary(struct arch_t *arch, FILE *f)
 {
 	double time_in_sec;
-	double inst_per_sec;
 	double cycles_per_sec;
 	double cycle_time;  /* In nanoseconds */
 
+	Emu *emu;
+
 	/* If no instruction was run for this architecture, skip
 	 * statistics summary. */
-	if (!arch->inst_count)
+	emu = arch->emu;
+	if (!emu->instructions)
 		return;
 
-	/* Standard emulation statistics */
-	time_in_sec = (double) m2s_timer_get_value(arch->timer) / 1.0e6;
-	inst_per_sec = time_in_sec > 0.0 ? (double) arch->inst_count / time_in_sec : 0.0;
-	fprintf(f, "[ %s ]\n", arch->name);
-	fprintf(f, "RealTime = %.2f [s]\n", time_in_sec);
-	fprintf(f, "Instructions = %lld\n", arch->inst_count);
-	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
-
 	/* Architecture-specific emulation statistics */
-	arch->emu_dump_summary_func(f);
+	assert(emu->DumpSummary);
+	emu->DumpSummary(emu, f);
 
 	/* Timing simulation statistics */
 	if (arch->sim_kind == arch_sim_kind_detailed)
 	{
 		/* Standard */
+		time_in_sec = (double) m2s_timer_get_value(emu->timer) / 1.0e6;
 		cycles_per_sec = time_in_sec > 0.0 ? (double) arch->cycle / time_in_sec : 0.0;
 		cycle_time = (double) esim_domain_cycle_time(arch->domain_index) / 1000.0;
 		fprintf(f, "SimTime = %.2f [ns]\n", arch->cycle * cycle_time);
@@ -188,9 +185,6 @@ struct arch_t *arch_register(char *name, char *prefix,
 		enum arch_sim_kind_t sim_kind,
 		arch_emu_init_func_t emu_init_func,
 		arch_emu_done_func_t emu_done_func,
-		arch_emu_run_func_t emu_run_func,
-		arch_emu_dump_func_t emu_dump_func,
-		arch_emu_dump_summary_func_t emu_dump_summary_func,
 		arch_timing_read_config_func_t timing_read_config_func,
 		arch_timing_init_func_t timing_init_func,
 		arch_timing_done_func_t timing_done_func,
@@ -219,9 +213,6 @@ struct arch_t *arch_register(char *name, char *prefix,
 	arch->sim_kind = sim_kind;
 	arch->emu_init_func = emu_init_func;
 	arch->emu_done_func = emu_done_func;
-	arch->emu_dump_func = emu_dump_func;
-	arch->emu_dump_summary_func = emu_dump_summary_func;
-	arch->emu_run_func = emu_run_func;
 	arch->timing_read_config_func = timing_read_config_func;
 	arch->timing_init_func = timing_init_func;
 	arch->timing_done_func = timing_done_func;
@@ -360,6 +351,8 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 	int run;
 	int i;
 
+	Emu *emu;
+
 	/* Reset active emulation and timing simulation counters */
 	*num_emu_active_ptr = 0;
 	*num_timing_active_ptr = 0;
@@ -372,7 +365,9 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 		if (arch->sim_kind == arch_sim_kind_functional)
 		{
 			/* Emulation iteration */
-			arch->active = arch->emu_run_func();
+			emu = arch->emu;
+			assert(emu->Run);
+			arch->active = emu->Run(emu);
 
 			/* Increase number of active emulations if the architecture
 			 * actually performed a useful emulation iteration. */
