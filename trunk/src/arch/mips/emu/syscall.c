@@ -372,7 +372,7 @@ static int mips_sys_read_impl(struct mips_ctx_t *ctx)
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = 1;  /* POLLIN */
 	mips_ctx_set_status(ctx, mips_ctx_suspended | mips_ctx_read);
-	mips_emu_process_events_schedule();
+	MIPSEmuProcessEventsSchedule(mips_emu);
 
 	/* Free allocated buffer. Return value doesn't matter,
 	 * it will be overwritten when context wakes up from blocking call. */
@@ -449,7 +449,7 @@ static int mips_sys_write_impl(struct mips_ctx_t *ctx)
 	mips_sys_debug("  blocking write - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
 	mips_ctx_set_status(ctx, mips_ctx_suspended | mips_ctx_write);
-	mips_emu_process_events_schedule();
+	MIPSEmuProcessEventsSchedule(mips_emu);
 
 	/* Return value doesn't matter here. It will be overwritten when the
 	 * context wakes up after blocking call. */

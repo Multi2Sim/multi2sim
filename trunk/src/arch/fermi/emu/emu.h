@@ -22,11 +22,15 @@
 
 #include <stdio.h>
 
-#include <lib/util/list.h>
+#include <arch/common/emu.h>
 
 
-struct frm_emu_t
-{
+/*
+ * Class 'FrmEmu'
+ */
+
+CLASS_BEGIN(FrmEmu, Emu)
+	
 	/* List of grids */
 	struct list_t *grids;
 	struct list_t *pending_grids;
@@ -58,7 +62,24 @@ struct frm_emu_t
 	long long lds_inst_count;  /* LDS instructions executed */
 	long long vector_mem_inst_count;  /* Vector mem instructions executed */
 	long long export_inst_count; /* Export instruction executed */
-};
+
+CLASS_END(FrmEmu)
+
+
+void FrmEmuCreate(FrmEmu *self);
+void FrmEmuDestroy(FrmEmu *self);
+
+void FrmEmuDump(FILE *f);
+void FrmEmuDumpSummary(FILE *f);
+
+int FrmEmuRun(void);
+
+
+
+
+/*
+ * Public Stuff
+ */
 
 extern long long frm_emu_max_cycles;
 extern long long frm_emu_max_inst;
@@ -71,15 +92,10 @@ extern FILE *frm_emu_report_file;
 extern int frm_emu_warp_size;
 extern char *err_frm_cuda_note;
 
-extern struct frm_emu_t *frm_emu;
+extern FrmEmu *frm_emu;
 
 void frm_emu_init(void);
 void frm_emu_done(void);
-void frm_emu_dump(FILE *f);
-
-int frm_emu_run(void);
-
-void frm_emu_dump_summary(FILE *f);
 
 #endif
 

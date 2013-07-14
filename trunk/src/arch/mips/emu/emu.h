@@ -22,9 +22,26 @@
 
 #include <pthread.h>
 
-struct mips_emu_t
+#include <arch/common/emu.h>
+
+
+/*
+ * Class 'MIPSEmu'
+ */
+
+enum mips_emu_list_kind_t
 {
-	/* pid & address_space_index assignment */
+	mips_emu_list_context = 0,
+	mips_emu_list_running,
+	mips_emu_list_suspended,
+	mips_emu_list_zombie,
+	mips_emu_list_finished,
+	mips_emu_list_alloc
+};
+
+CLASS_BEGIN(MIPSEmu, Emu)
+
+	/* PID counter */
 	int current_pid;
 
 	/* Schedule next call to 'x86_emu_process_events()'.
@@ -78,25 +95,38 @@ struct mips_emu_t
 
 	/* Stats */
 	long long inst_count;  /* Number of emulated instructions */
-};
 
-enum mips_emu_list_kind_t
-{
-	mips_emu_list_context = 0,
-	mips_emu_list_running,
-	mips_emu_list_suspended,
-	mips_emu_list_zombie,
-	mips_emu_list_finished,
-	mips_emu_list_alloc
-};
+CLASS_END(MIPSEmu)
 
-int mips_emu_list_member(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx);
-void mips_emu_list_remove(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx);
-void mips_emu_list_insert_tail(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx);
-void mips_emu_list_insert_head(enum mips_emu_list_kind_t list, struct mips_ctx_t *ctx);
-void mips_emu_dump_summary(FILE *f);
 
-extern struct mips_emu_t *mips_emu;
+void MIPSEmuCreate(MIPSEmu *self);
+void MIPSEmuDestroy(MIPSEmu *self);
+
+void MIPSEmuDump(FILE *f);
+void MIPSEmuDumpSummary(FILE *f);
+
+int MIPSEmuRun(void);
+
+void MIPSEmuProcessEventsSchedule(MIPSEmu *self);
+
+/* FIXME - Functions below should be removed */
+int MIPSEmuListMember(MIPSEmu *self, enum mips_emu_list_kind_t list,
+		struct mips_ctx_t *ctx);
+void MIPSEmuListRemove(MIPSEmu *self, enum mips_emu_list_kind_t list,
+		struct mips_ctx_t *ctx);
+void MIPSEmuListInsertTail(MIPSEmu *self, enum mips_emu_list_kind_t list,
+		struct mips_ctx_t *ctx);
+void MIPSEmuListInsertHead(MIPSEmu *self, enum mips_emu_list_kind_t list,
+		struct mips_ctx_t *ctx);
+
+
+
+
+/*
+ * Non-Class Functions
+ */
+
+extern MIPSEmu *mips_emu;
 extern struct arch_t *mips_emu_arch;
 
 extern enum arch_sim_kind_t mips_emu_sim_kind;
@@ -105,20 +135,8 @@ extern long long mips_emu_max_cycles;
 extern long long mips_emu_max_inst;
 extern long long mips_emu_max_time;
 
-
-
-/*
- * Public Functions
- */
-
 void mips_emu_init(void);
 void mips_emu_done(void);
-void mips_emu_dump(FILE *f);
-
-int mips_emu_run(void);
-
-void mips_emu_process_events_schedule();
 
 
 #endif
-
