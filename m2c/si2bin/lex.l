@@ -136,8 +136,8 @@ uav[0-9]+ {
 	return TOK_GLOBAL;
 }
 
-".mem" {
-	return TOK_MEM;
+".metadata" {
+	return TOK_METADATA;
 }
 
 ".args" {
@@ -154,6 +154,14 @@ uav[0-9]+ {
 
 "const" {
 	return TOK_CONST;
+}
+
+".int" {
+	return TOK_INT_DECL;
+}
+
+".float" {
+	return TOK_FLOAT_DECL;
 }
 
 [a-zA-Z_][a-zA-Z0-9_]* {   
