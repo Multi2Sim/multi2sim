@@ -50,7 +50,7 @@ static int x86_cpu_can_fetch(int core, int thread)
 		return 0;
 	
 	/* Fetch stalled or context evict signal activated */
-	if (X86_THREAD.fetch_stall_until >= arch_x86->cycle || ctx->evict_signal)
+	if (X86_THREAD.fetch_stall_until >= asTiming(x86_cpu)->cycle || ctx->evict_signal)
 		return 0;
 	
 	/* Fetch queue must have not exceeded the limit of stored bytes
@@ -385,14 +385,14 @@ static void x86_cpu_fetch_core(int core)
 		/* If current thread is stalled, it means that we just switched to it.
 		 * No fetching and no switching either. */
 		thread = X86_CORE.fetch_current;
-		if (X86_THREAD.fetch_stall_until >= arch_x86->cycle)
+		if (X86_THREAD.fetch_stall_until >= asTiming(x86_cpu)->cycle)
 			break;
 
 		/* Switch thread if:
 		 * - Quantum expired for current thread.
 		 * - Long latency instruction is in progress. */
 		must_switch = !x86_cpu_can_fetch(core, thread);
-		must_switch = must_switch || arch_x86->cycle - X86_CORE.fetch_switch_when >
+		must_switch = must_switch || asTiming(x86_cpu)->cycle - X86_CORE.fetch_switch_when >
 			x86_cpu_thread_quantum + x86_cpu_thread_switch_penalty;
 		must_switch = must_switch ||
 			x86_event_queue_long_latency(core, thread);
@@ -425,8 +425,8 @@ static void x86_cpu_fetch_core(int core)
 			if (new != thread)
 			{
 				X86_CORE.fetch_current = new;
-				X86_CORE.fetch_switch_when = arch_x86->cycle;
-				X86_THREAD_IDX(new).fetch_stall_until = arch_x86->cycle + x86_cpu_thread_switch_penalty - 1;
+				X86_CORE.fetch_switch_when = asTiming(x86_cpu)->cycle;
+				X86_THREAD_IDX(new).fetch_stall_until = asTiming(x86_cpu)->cycle + x86_cpu_thread_switch_penalty - 1;
 			}
 		}
 

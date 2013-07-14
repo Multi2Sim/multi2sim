@@ -50,7 +50,7 @@ void frm_branch_unit_complete(struct frm_branch_unit_t *branch_unit)
 		uop = list_get(branch_unit->write_buffer, list_index);
 		assert(uop);
 
-		if (arch_fermi->cycle < uop->write_ready)
+		if (asTiming(frm_gpu)->cycle < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -70,7 +70,7 @@ void frm_branch_unit_complete(struct frm_branch_unit_t *branch_unit)
 
 		/* Statistics */
 		branch_unit->inst_count++;
-		frm_gpu->last_complete_cycle = arch_fermi->cycle;
+		frm_gpu->last_complete_cycle = asTiming(frm_gpu)->cycle;
 	}
 }
 
@@ -95,7 +95,7 @@ void frm_branch_unit_write(struct frm_branch_unit_t *branch_unit)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch_fermi->cycle < uop->execute_ready)
+		if (asTiming(frm_gpu)->cycle < uop->execute_ready)
 		{
 			list_index++;
 			continue;
@@ -128,7 +128,7 @@ void frm_branch_unit_write(struct frm_branch_unit_t *branch_unit)
 			continue;
 		}
 
-		uop->write_ready = arch_fermi->cycle + 
+		uop->write_ready = asTiming(frm_gpu)->cycle + 
 			frm_gpu_branch_unit_write_latency;
 		list_remove(branch_unit->exec_buffer, uop);
 		list_enqueue(branch_unit->write_buffer, uop);
@@ -161,7 +161,7 @@ void frm_branch_unit_execute(struct frm_branch_unit_t *branch_unit)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch_fermi->cycle < uop->read_ready)
+		if (asTiming(frm_gpu)->cycle < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -195,7 +195,7 @@ void frm_branch_unit_execute(struct frm_branch_unit_t *branch_unit)
 		}
 
 		/* Branch */
-		uop->execute_ready = arch_fermi->cycle + 
+		uop->execute_ready = asTiming(frm_gpu)->cycle + 
 			frm_gpu_branch_unit_exec_latency;
 
 		/* Transfer the uop to the outstanding execution buffer */
@@ -230,7 +230,7 @@ void frm_branch_unit_read(struct frm_branch_unit_t *branch_unit)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch_fermi->cycle < uop->decode_ready)
+		if (asTiming(frm_gpu)->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -263,7 +263,7 @@ void frm_branch_unit_read(struct frm_branch_unit_t *branch_unit)
 			continue;
 		}
 
-		uop->read_ready = arch_fermi->cycle + 
+		uop->read_ready = asTiming(frm_gpu)->cycle + 
 			frm_gpu_branch_unit_read_latency;
 
 		list_remove(branch_unit->decode_buffer, uop);
@@ -297,7 +297,7 @@ void frm_branch_unit_decode(struct frm_branch_unit_t *branch_unit)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch_fermi->cycle < uop->issue_ready)
+		if (asTiming(frm_gpu)->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -330,7 +330,7 @@ void frm_branch_unit_decode(struct frm_branch_unit_t *branch_unit)
 			continue;
 		}
 
-		uop->decode_ready = arch_fermi->cycle + 
+		uop->decode_ready = asTiming(frm_gpu)->cycle + 
 			frm_gpu_branch_unit_decode_latency;
 
 		list_remove(branch_unit->issue_buffer, uop);

@@ -198,10 +198,6 @@ int MIPSEmuRun(Emu *self)
 	if (mips_emu_max_inst && asEmu(mips_emu)->instructions >= mips_emu_max_inst)
 		esim_finish = esim_finish_mips_max_inst;
 
-	/* Stop if maximum number of cycles exceeded */
-	if (mips_emu_max_cycles && arch_mips->cycle >= mips_emu_max_cycles)
-		esim_finish = esim_finish_mips_max_cycles;
-
 	/* Stop if any previous reason met */
 	if (esim_finish)
 		return TRUE;

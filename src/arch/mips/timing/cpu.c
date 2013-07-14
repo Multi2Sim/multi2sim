@@ -54,6 +54,8 @@ void MIPSCpuDump(Object *self, FILE *f)
 
 void MIPSCpuDumpSummary(Timing *self, FILE *f)
 {
+	/* Call parent */
+	TimingDumpSummary(self, f);
 }
 
 

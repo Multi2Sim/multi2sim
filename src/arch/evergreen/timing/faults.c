@@ -295,7 +295,7 @@ void evg_faults_insert(void)
 	{
 		linked_list_head(evg_fault_list);
 		fault = linked_list_get(evg_fault_list);
-		if (!fault || fault->cycle > arch_evergreen->cycle)
+		if (!fault || fault->cycle > asTiming(evg_gpu)->cycle)
 			break;
 
 		/* Insert fault depending on fault type */
@@ -314,10 +314,10 @@ void evg_faults_insert(void)
 
 			/* Initial debug */
 			evg_faults_debug("fault clk=%lld cu=%d type=\"ams\" stack=%d am=%d bit=%d ",
-				arch_evergreen->cycle,
+				asTiming(evg_gpu)->cycle,
 				fault->compute_unit_id, fault->stack_id,
 				fault->active_mask_id, fault->bit);
-			assert(fault->cycle == arch_evergreen->cycle);
+			assert(fault->cycle == asTiming(evg_gpu)->cycle);
 			compute_unit = evg_gpu->compute_units[fault->compute_unit_id];
 
 			/* If compute unit is idle, dismiss */
@@ -396,11 +396,11 @@ void evg_faults_insert(void)
 
 			/* Initial debug */
 			evg_faults_debug("fault clk=%lld cu=%d type=\"reg\" reg=%d bit=%d ",
-				arch_evergreen->cycle,
+				asTiming(evg_gpu)->cycle,
 				fault->compute_unit_id,
 				fault->reg_id,
 				fault->bit);
-			assert(fault->cycle == arch_evergreen->cycle);
+			assert(fault->cycle == asTiming(evg_gpu)->cycle);
 			compute_unit = evg_gpu->compute_units[fault->compute_unit_id];
 
 			/* If compute unit is idle, dismiss */
@@ -524,11 +524,11 @@ void evg_faults_insert(void)
 
 			/* Initial debug */
 			evg_faults_debug("fault clk=%lld cu=%d type=\"mem\" byte=%d bit=%d ",
-				arch_evergreen->cycle,
+				asTiming(evg_gpu)->cycle,
 				fault->compute_unit_id,
 				fault->byte,
 				fault->bit);
-			assert(fault->cycle == arch_evergreen->cycle);
+			assert(fault->cycle == asTiming(evg_gpu)->cycle);
 			compute_unit = evg_gpu->compute_units[fault->compute_unit_id];
 
 			/* If compute unit is idle, dismiss */

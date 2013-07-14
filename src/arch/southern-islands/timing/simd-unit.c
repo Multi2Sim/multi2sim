@@ -50,7 +50,7 @@ void si_simd_complete(struct si_simd_t *simd)
 		uop = list_get(simd->exec_buffer, list_index);
 		assert(uop);
 
-		if (arch_southern_islands->cycle < uop->execute_ready)
+		if (asTiming(si_gpu)->cycle < uop->execute_ready)
 		{
 			list_index++;
 			continue;
@@ -67,7 +67,7 @@ void si_simd_complete(struct si_simd_t *simd)
 
 		/* Statistics */
 		simd->inst_count++;
-		si_gpu->last_complete_cycle = arch_southern_islands->cycle;
+		si_gpu->last_complete_cycle = asTiming(si_gpu)->cycle;
 	}
 }
 
@@ -92,7 +92,7 @@ void si_simd_execute(struct si_simd_t *simd)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch_southern_islands->cycle < uop->decode_ready)
+		if (asTiming(si_gpu)->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -127,7 +127,7 @@ void si_simd_execute(struct si_simd_t *simd)
 
 		/* Includes time for pipelined read-exec-write of 
 		 * all subwavefronts */
-		uop->execute_ready = arch_southern_islands->cycle + 
+		uop->execute_ready = asTiming(si_gpu)->cycle + 
 			si_gpu_simd_exec_latency;
 
 		/* Transfer the uop to the outstanding execution buffer */
@@ -164,7 +164,7 @@ void si_simd_decode(struct si_simd_t *simd)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch_southern_islands->cycle < uop->issue_ready)
+		if (asTiming(si_gpu)->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -197,7 +197,7 @@ void si_simd_decode(struct si_simd_t *simd)
 			continue;
 		}
 
-		uop->decode_ready = arch_southern_islands->cycle + si_gpu_simd_decode_latency;
+		uop->decode_ready = asTiming(si_gpu)->cycle + si_gpu_simd_decode_latency;
 		list_remove(simd->issue_buffer, uop);
 		list_enqueue(simd->decode_buffer, uop);
 

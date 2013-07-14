@@ -54,7 +54,7 @@ void frm_vector_mem_complete(struct frm_vector_mem_unit_t *vector_mem)
 		assert(uop);
 
 		/* Uop is not ready */
-		if (arch_fermi->cycle < uop->write_ready)
+		if (asTiming(frm_gpu)->cycle < uop->write_ready)
 		{
 			list_index++;
 			continue;
@@ -74,7 +74,7 @@ void frm_vector_mem_complete(struct frm_vector_mem_unit_t *vector_mem)
 
 		/* Statistics */
 		vector_mem->inst_count++;
-		frm_gpu->last_complete_cycle = arch_fermi->cycle;
+		frm_gpu->last_complete_cycle = asTiming(frm_gpu)->cycle;
 	}
 }
 
@@ -133,7 +133,7 @@ void frm_vector_mem_write(struct frm_vector_mem_unit_t *vector_mem)
 		}
 
 		/* Access complete, remove the uop from the queue */
-		uop->write_ready = arch_fermi->cycle + 
+		uop->write_ready = asTiming(frm_gpu)->cycle + 
 			frm_gpu_vector_mem_write_latency;
 
 		/* In the above context, access means any of the 
@@ -192,7 +192,7 @@ void frm_vector_mem_mem(struct frm_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch_fermi->cycle < uop->read_ready)
+		if (asTiming(frm_gpu)->cycle < uop->read_ready)
 		{
 			list_index++;
 			continue;
@@ -307,7 +307,7 @@ void frm_vector_mem_read(struct frm_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop is not ready yet */
-		if (arch_fermi->cycle < uop->decode_ready)
+		if (asTiming(frm_gpu)->cycle < uop->decode_ready)
 		{
 			list_index++;
 			continue;
@@ -340,7 +340,7 @@ void frm_vector_mem_read(struct frm_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->read_ready = arch_fermi->cycle + 
+		uop->read_ready = asTiming(frm_gpu)->cycle + 
 			frm_gpu_vector_mem_read_latency;
 
 		list_remove(vector_mem->decode_buffer, uop);
@@ -374,7 +374,7 @@ void frm_vector_mem_decode(struct frm_vector_mem_unit_t *vector_mem)
 		instructions_processed++;
 
 		/* Uop not ready yet */
-		if (arch_fermi->cycle < uop->issue_ready)
+		if (asTiming(frm_gpu)->cycle < uop->issue_ready)
 		{
 			list_index++;
 			continue;
@@ -407,7 +407,7 @@ void frm_vector_mem_decode(struct frm_vector_mem_unit_t *vector_mem)
 			continue;
 		}
 
-		uop->decode_ready = arch_fermi->cycle + 
+		uop->decode_ready = asTiming(frm_gpu)->cycle + 
 			frm_gpu_vector_mem_decode_latency;
 
 		list_remove(vector_mem->issue_buffer, uop);

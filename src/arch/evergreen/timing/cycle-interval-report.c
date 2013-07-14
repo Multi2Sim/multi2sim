@@ -24,6 +24,7 @@
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 
+#include "gpu.h"
 #include "uop.h"
 
 #include "cycle-interval-report.h"
@@ -90,7 +91,7 @@ void evg_cu_spatial_report_dump(struct evg_compute_unit_t *compute_unit)
 			compute_unit->inflight_mem_accesses,
 			compute_unit->tex_engine.interval_inst_count,
 			compute_unit->alu_engine.interval_inst_count,
-			arch_evergreen->cycle);
+			asTiming(evg_gpu)->cycle);
 
 }
 
@@ -133,7 +134,7 @@ void evg_cu_interval_update(struct evg_compute_unit_t *compute_unit)
 {
 	/* If interval - reset the counters in all the engines */
 	compute_unit->interval_cycle ++;
-	if (!(arch_evergreen->cycle % spatial_profiling_interval))
+	if (!(asTiming(evg_gpu)->cycle % spatial_profiling_interval))
 	{
 		evg_cu_spatial_report_dump(compute_unit);
 

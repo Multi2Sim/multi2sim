@@ -2049,23 +2049,24 @@ int main(int argc, char **argv)
 
 	/* FIXME - Temporary */
 
-	arch_arm->emu = asEmu(arm_emu);
-	arch_arm->timing = asTiming(arm_cpu);
+	arch_set_emu(arch_arm, asEmu(arm_emu));
+	arch_set_timing(arch_arm, asTiming(arm_cpu));
 
-	arch_evergreen->emu = asEmu(evg_emu);
-	arch_evergreen->timing = asTiming(evg_gpu);
+	arch_set_emu(arch_evergreen, asEmu(evg_emu));
+	arch_set_timing(arch_evergreen, asTiming(evg_gpu));
 
-	arch_fermi->emu = asEmu(frm_emu);
-	arch_fermi->timing = asTiming(frm_gpu);
+	arch_set_emu(arch_fermi, asEmu(frm_emu));
+	arch_set_timing(arch_fermi, asTiming(frm_gpu));
 
-	arch_mips->emu = asEmu(mips_emu);
-	arch_mips->timing = asTiming(mips_cpu);
+	arch_set_emu(arch_mips, asEmu(mips_emu));
+	arch_set_timing(arch_mips, asTiming(mips_cpu));
 
-	arch_southern_islands->emu = asEmu(si_emu);
-	arch_southern_islands->timing = asTiming(si_gpu);
+	arch_set_emu(arch_southern_islands, asEmu(si_emu));
+	arch_set_timing(arch_southern_islands, asTiming(si_gpu));
 
-	arch_x86->emu = asEmu(x86_emu);
-	arch_x86->timing = asTiming(x86_cpu);
+	arch_set_emu(arch_x86, asEmu(x86_emu));
+	arch_set_timing(arch_x86, asTiming(x86_cpu));
+
 	/*********************/
 
 	/* Network and memory system */

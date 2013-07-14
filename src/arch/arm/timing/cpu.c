@@ -55,6 +55,8 @@ void ARMCpuDump(Object *self, FILE *f)
 
 void ARMCpuDumpSummary(Timing *self, FILE *f)
 {
+	/* Call parent */
+	TimingDumpSummary(asTiming(self), f);
 }
 
 
@@ -82,9 +84,14 @@ void arm_cpu_init(void)
 {
 	/* Classes */
 	CLASS_REGISTER(ARMCpu);
+
+	/* Create CPU */
+	arm_cpu = new(ARMCpu);
 }
 
 
 void arm_cpu_done(void)
 {
+	/* Free CPU */
+	delete(arm_cpu);
 }

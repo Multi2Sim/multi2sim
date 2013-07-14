@@ -75,7 +75,7 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		store->in_event_queue = 1;
 		store->issued = 1;
-		store->issue_when = arch_x86->cycle;
+		store->issue_when = asTiming(x86_cpu)->cycle;
 	
 		/* Statistics */
 		X86_CORE.num_issued_uinst_array[store->uinst->opcode]++;
@@ -144,7 +144,7 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		load->in_event_queue = 1;
 		load->issued = 1;
-		load->issue_when = arch_x86->cycle;
+		load->issue_when = asTiming(x86_cpu)->cycle;
 		
 		/* Statistics */
 		X86_CORE.num_issued_uinst_array[load->uinst->opcode]++;
@@ -232,7 +232,7 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		prefetch->in_event_queue = 1;
 		prefetch->issued = 1;
-		prefetch->issue_when = arch_x86->cycle;
+		prefetch->issue_when = asTiming(x86_cpu)->cycle;
 		
 		/* Statistics */
 		X86_CORE.num_issued_uinst_array[prefetch->uinst->opcode]++;
@@ -302,8 +302,8 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 		assert(!uop->in_event_queue);
 		assert(lat > 0);
 		uop->issued = 1;
-		uop->issue_when = arch_x86->cycle;
-		uop->when = arch_x86->cycle + lat;
+		uop->issue_when = asTiming(x86_cpu)->cycle;
+		uop->when = asTiming(x86_cpu)->cycle + lat;
 		x86_event_queue_insert(X86_CORE.event_queue, uop);
 		
 		/* Statistics */

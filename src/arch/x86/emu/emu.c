@@ -701,10 +701,6 @@ int X86EmuRun(Emu *self)
 	if (x86_emu_max_inst && asEmu(x86_emu)->instructions >= x86_emu_max_inst)
 		esim_finish = esim_finish_x86_max_inst;
 
-	/* Stop if maximum number of cycles exceeded */
-	if (x86_emu_max_cycles && arch_x86->cycle >= x86_emu_max_cycles)
-		esim_finish = esim_finish_x86_max_cycles;
-
 	/* Stop if any previous reason met */
 	if (esim_finish)
 		return TRUE;
