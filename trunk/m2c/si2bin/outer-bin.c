@@ -30,6 +30,8 @@
 
 #include "metadata.h"
 #include "outer-bin.h"
+#include "data.h"
+#include "si2bin.h"
 
 
 #define NUM_PROG_INFO_ELEM 114
@@ -48,29 +50,6 @@ struct str_map_t si2bin_outer_bin_device_map =
 
 };
 
-struct si2bin_outer_bin_float4_t *si2bin_outer_bin_float4_create(float x,
-		float y, float z, float w)
-{
-	struct si2bin_outer_bin_float4_t *float4;
-
-	/* Initialize */
-	float4 = xcalloc(1, sizeof(struct si2bin_outer_bin_float4_t));
-
-	float4->x = x;
-	float4->y = y;
-	float4->z = z;
-	float4->w = w;
-
-	/* Return */
-	return float4;
-}
-
-void si2bin_outer_bin_float4_free(struct si2bin_outer_bin_float4_t *float4)
-{
-	free(float4);
-}
-
-
 struct si2bin_outer_bin_t *si2bin_outer_bin_create(void)
 {
 	struct si2bin_outer_bin_t *outer_bin;
@@ -80,12 +59,9 @@ struct si2bin_outer_bin_t *si2bin_outer_bin_create(void)
 
 	/* Create Lists */
 	outer_bin->file = elf_enc_file_create();
-	outer_bin->float4_list = list_create();
+	outer_bin->data_list = list_create();
 	outer_bin->inner_bin_list = list_create();
 	outer_bin->metadata_list = list_create();
-
-	/* Set default device type to tahiti */
-	outer_bin->device = si2bin_outer_bin_tahiti;
 
 	/* Return */
 	return outer_bin;
@@ -98,11 +74,11 @@ void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin)
 
 	elf_enc_file_free(outer_bin->file);
 
-	LIST_FOR_EACH(outer_bin->float4_list, i)
+	LIST_FOR_EACH(outer_bin->data_list, i)
 	{
-		si2bin_outer_bin_float4_free(list_get(outer_bin->float4_list, i));
+		si2bin_data_free(list_get(outer_bin->data_list, i));
 	}
-	list_free(outer_bin->float4_list);
+	list_free(outer_bin->data_list);
 
 	LIST_FOR_EACH(outer_bin->inner_bin_list, i)
 	{
@@ -119,10 +95,10 @@ void si2bin_outer_bin_free(struct si2bin_outer_bin_t *outer_bin)
 	free(outer_bin);
 }
 
-void si2bin_outer_bin_add_float4(struct si2bin_outer_bin_t *outer_bin,
-		struct si2bin_outer_bin_float4_t *float4)
+void si2bin_outer_bin_add_data(struct si2bin_outer_bin_t *outer_bin,
+		struct si2bin_data_t *data)
 {
-	list_add(outer_bin->float4_list, float4);
+	list_add(outer_bin->data_list, data);
 }
 
 void si2bin_outer_bin_add(struct si2bin_outer_bin_t *outer_bin,
@@ -157,7 +133,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	struct si_arg_t *arg;
 	struct si_bin_enc_user_element_t *user_elem;
 	struct pt_note_prog_info_entry_t prog_info[NUM_PROG_INFO_ELEM];
-	struct si2bin_outer_bin_float4_t *float4;
+	struct si2bin_data_t *data;
 
 	char line[MAX_LONG_STRING_SIZE];
 	char *data_type;
@@ -165,6 +141,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	char *access_type;
 	char *reflection;
 	char *ptr;
+	unsigned char byte;
 
 	int i;
 	int j;
@@ -176,11 +153,19 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	int buff_num_offset;
 	int buff_size;
 	int data_size;
+	int glob_size;
 	int imm_cb_found;
 	int ptr_cb_table_found;
-	
-	
-	rodata_size = 0;
+		
+
+	/* Set machine type */
+	outer_bin->device = str_map_string_case(&si2bin_outer_bin_device_map, si2bin_machine_name);
+
+	if(outer_bin->device == si2bin_outer_bin_invalid)
+	{
+		fatal("Invalid machine type");
+	}
+
 
 	/* Create Text Section */
 	text_buffer = elf_enc_buffer_create();
@@ -197,18 +182,48 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 	rodata_section->header.sh_type = SHT_PROGBITS;
 	rodata_section->header.sh_flags = SHF_ALLOC;
 
+	rodata_size = 0;
+	byte = 0;
+	
 	/* Check if global symbol is needed */
-	if (list_count(outer_bin->float4_list) != 0)
+	if (list_count(outer_bin->data_list) != 0)
 	{
-		/* Add contents of float4 list to rodata section */
-		LIST_FOR_EACH(outer_bin->float4_list, i)
+		LIST_FOR_EACH(outer_bin->data_list, i)
 		{
-			float4 = list_get(outer_bin->float4_list, i);
-			elf_enc_buffer_write(rodata_buffer, float4, 
-					sizeof(struct si2bin_outer_bin_float4_t));
-		}
+			data = list_get(outer_bin->data_list, i);
+			switch (data->data_type)
+			{
+				case si2bin_data_invalid:
+					fatal("Type for .data element %d is not set", i);
+					break;
 
-		/* Add global symbol correspoding to float4 elements */
+				case si2bin_data_int:
+					elf_enc_buffer_write(rodata_buffer, 
+						&data->int_value, 
+						sizeof(int));
+					printf("\n value: %d", data->int_value);
+					break;
+
+				case si2bin_data_float:
+					elf_enc_buffer_write(rodata_buffer, 
+						&data->float_value, 
+						sizeof(float));
+					printf("\n value: %f", data->float_value);
+					break;
+			}
+		}
+		
+		/* Global section has to have a size that is a multiple of 16 */
+		while ((rodata_buffer->offset % 16) != 0)
+		{
+			elf_enc_buffer_write(rodata_buffer, &byte,
+				sizeof(unsigned char));
+		}
+		
+		/* Get number of elements to be used later in cb2 */
+		glob_size = rodata_buffer->offset / 16;
+					
+		/* Add global symbol correspoding to data elements */
 		snprintf(line, sizeof line, "__OpenCL_%d_global", 2);
 
 		global_symbol = elf_enc_symbol_create(line);
@@ -394,7 +409,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		}
 		
 		/* Data Required */
-		if (list_count(outer_bin->float4_list) > 0)
+		if (list_count(outer_bin->data_list) > 0)
 		{
 			snprintf(line, sizeof line, ";memory:datareqd\n");
 			elf_enc_buffer_write(rodata_buffer, line, strlen(line));
@@ -638,7 +653,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				if (list_count(metadata->arg_list) > 0)
 					cb[1] = 1;
 				
-				if (list_count(outer_bin->float4_list) > 0)
+				if (list_count(outer_bin->data_list) > 0)
 					cb[2] = 1;
 
 				buff_num_offset = cb[0] + cb[1] + cb[2];
@@ -674,12 +689,11 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 				
 				if (k == 2)
 				{
-					if (list_count(outer_bin->float4_list) == 0)
-						fatal("%s: Constant Buffer 2 is used but nothing has been\
-							 added to a global symbol", __FUNCTION__);
+					if (list_count(outer_bin->data_list) == 0)
+						fatal("%s: Constant Buffer 2 is used but nothing has been added to a global symbol",
+							 __FUNCTION__);
 
-					ptr[(buff_num_offset - 1) * 8 + 4] = 
-						list_count(outer_bin->float4_list);
+					ptr[(buff_num_offset - 1) * 8 + 4] = glob_size;
 				}
 
 				buff_num_offset--;
@@ -902,11 +916,11 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		si2bin_inner_bin_generate(inner_bin, kernel_buffer);
 			
 		/* Output Inner ELF */
-		/* FILE *f;
+		FILE *f;
 		snprintf(line, sizeof line, "%s_kernel", inner_bin->name);
 		f = file_open_for_write(line);
 		elf_enc_buffer_write_to_file(kernel_buffer, f);
-		file_close(f); */
+		file_close(f);
 
 	
 		/* Create kernel symbol and add it to the symbol table */

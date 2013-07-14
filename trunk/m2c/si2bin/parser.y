@@ -33,6 +33,7 @@
 #include <lib/util/string.h>
 
 #include "arg.h"
+#include "data.h"
 #include "inner-bin.h"
 #include "id.h"
 #include "inst.h"
@@ -90,11 +91,13 @@
 %token<id>  TOK_UAV
 %token TOK_HL
 %token TOK_GLOBAL
-%token TOK_MEM
+%token TOK_METADATA
 %token TOK_ARGS
 %token TOK_DATA
 %token TOK_TEXT
 %token TOK_CONST
+%token TOK_INT_DECL
+%token TOK_FLOAT_DECL
 
 %type<inst> instr
 %type<list> arg_list
@@ -130,7 +133,7 @@ section_list
 	;
 
 section
-	: mem_section
+	: metadata_section
 	| data_section
 	| args_section
 	| text_section
@@ -149,7 +152,7 @@ section
 	;
 
 global_section
-	: TOK_GLOBAL TOK_ID TOK_NEW_LINE
+	: TOK_GLOBAL TOK_ID
 	{
 		/* Create new objects for each kernel */
 		si2bin_inner_bin = si2bin_inner_bin_create($2->name);
@@ -166,27 +169,25 @@ global_section
 
 		/* Free id */
 		si2bin_id_free($2);
-		
-		si2bin_yylineno--;
-	}
+	} TOK_NEW_LINE
 	;
 
-mem_section
-	: mem_header
-	| mem_header mem_stmt_list
+metadata_section
+	: metadata_header
+	| metadata_header metadata_stmt_list
 	;
 
-mem_header
-	: TOK_MEM TOK_NEW_LINE
+metadata_header
+	: TOK_METADATA TOK_NEW_LINE
 	;
 
-mem_stmt_list
-	: mem_stmt
-	| mem_stmt mem_stmt_list
+metadata_stmt_list
+	: metadata_stmt
+	| metadata_stmt metadata_stmt_list
 	;
 
-mem_stmt
-	: TOK_ID TOK_EQ TOK_DECIMAL TOK_NEW_LINE 
+metadata_stmt
+	: TOK_ID TOK_EQ hex_or_dec_value
 	{
 		/* Find memory information and store it in metadata */
 		if (!strcmp("uavprivate", $1->name))
@@ -201,35 +202,7 @@ mem_stmt
 		{
 			si2bin_metadata->hwlocal = $3;
 		}
-		else
-		{
-			si2bin_yyerror_fmt("Unrecognized memory assignment: %s", $1->name);
-		}
-		
-		/* Free id */
-		si2bin_id_free($1);
-	}
-	;
-
-data_section
-	: data_header
-	| data_header data_stmt_list
-	;
-
-data_header
-	: TOK_DATA TOK_NEW_LINE
-	;
-
-data_stmt_list
-	: data_stmt
-	| data_stmt data_stmt_list
-	;
-
-data_stmt
-	: TOK_ID TOK_EQ hex_or_dec_value TOK_NEW_LINE
-	{
-		/* Find data section info */
-		if (!strcmp("userElementCount", $1->name))
+		else if (!strcmp("userElementCount", $1->name))
 		{
 			warning("User has provided 'userElementCount' but this number is automatically calculated");
 		}
@@ -268,8 +241,8 @@ data_stmt
 
 		/* Free id */
 		si2bin_id_free($1);
-	}
-	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_EQ TOK_ID TOK_COMMA TOK_DECIMAL TOK_COMMA TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA TOK_NEW_LINE
+	} TOK_NEW_LINE
+	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_EQ TOK_ID TOK_COMMA TOK_DECIMAL TOK_COMMA TOK_ID TOK_OBRA TOK_DECIMAL TOK_COLON TOK_DECIMAL TOK_CBRA
 	{
 		struct si_bin_enc_user_element_t *user_elem;
 		int err;
@@ -300,8 +273,8 @@ data_stmt
 		si2bin_id_free($6);
 		si2bin_id_free($10);
 
-	}
-	| TOK_ID TOK_COLON TOK_ID TOK_EQ hex_or_dec_value TOK_NEW_LINE
+	} TOK_NEW_LINE
+	| TOK_ID TOK_COLON TOK_ID TOK_EQ hex_or_dec_value
 	{
 		/* Find pgm_rsrc2 information */
 		if (strcmp("COMPUTE_PGM_RSRC2", $1->name))
@@ -359,25 +332,7 @@ data_stmt
 		/* Free id's */
 		si2bin_id_free($1);
 		si2bin_id_free($3);
-	}
-	| TOK_ID TOK_OPAR TOK_FLOAT TOK_COMMA TOK_FLOAT TOK_COMMA TOK_FLOAT TOK_COMMA TOK_FLOAT TOK_CPAR TOK_NEW_LINE
-	{
-		if (!strcmp("float4", $1->name))
-		{
-			struct si2bin_outer_bin_float4_t *float4;
-			
-			/* Create float4 object and add it to the outer bin */
-			float4 = si2bin_outer_bin_float4_create($3, $5, $7, $9);
-			si2bin_outer_bin_add_float4(si2bin_outer_bin, float4);	
-			
-			/* Free id's */
-			si2bin_id_free($1);	
-		}
-		else
-		{
-			si2bin_yyerror_fmt("Data added to the global section is declared in float4 blocks");
-		}
-	}
+	} TOK_NEW_LINE
 	;
 
 hex_or_dec_value
@@ -397,6 +352,82 @@ hex_or_dec_value
 	;
 
 
+data_section
+	: data_header
+	| data_header data_stmt_list
+	;
+
+data_header
+	: TOK_DATA TOK_NEW_LINE
+	;
+
+data_stmt_list
+	: data_stmt
+	| data_stmt data_stmt_list
+	;
+
+data_stmt
+	: TOK_ID TOK_COLON
+	{	
+		si2bin_id_free($1);
+	}
+	| TOK_ID TOK_COLON TOK_NEW_LINE
+	{
+		si2bin_id_free($1);
+	}
+	| TOK_INT_DECL int_vals
+	| TOK_FLOAT_DECL float_vals
+	;
+
+int_vals
+	: 
+	| int_vals TOK_NEW_LINE
+	| int_vals TOK_DECIMAL TOK_COMMA
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_int;
+		data->int_value = $2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	}
+	| int_vals TOK_DECIMAL
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_int;
+		data->int_value = $2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	} TOK_NEW_LINE
+	;
+
+float_vals
+	: 
+	| float_vals TOK_NEW_LINE
+	| float_vals TOK_FLOAT TOK_COMMA
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_float;
+		data->float_value = $2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	}	
+	| float_vals TOK_FLOAT
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_float;
+		data->float_value = $2;
+
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	} TOK_NEW_LINE
+	;
 
 args_section
 	: args_header
@@ -414,7 +445,7 @@ args_stmt_list
 
 
 args_stmt
-	: TOK_ID TOK_ID TOK_DECIMAL val_stmt_list TOK_NEW_LINE
+	: TOK_ID TOK_ID TOK_DECIMAL val_stmt_list
 	{
 		struct si_arg_t *arg = $4;
 		int err;
@@ -436,8 +467,8 @@ args_stmt
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 		si2bin_id_free($1);
 		si2bin_id_free($2);
-	}
-	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_ID TOK_DECIMAL val_stmt_list TOK_NEW_LINE
+	} TOK_NEW_LINE
+	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_ID TOK_DECIMAL val_stmt_list
 	{
 		struct si_arg_t *arg = $7;
 		int err;
@@ -458,8 +489,8 @@ args_stmt
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 		si2bin_id_free($1);
 		si2bin_id_free($5);
-	}
-	| TOK_ID TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list TOK_NEW_LINE
+	} TOK_NEW_LINE
+	| TOK_ID TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list
 	{
 		struct si_arg_t *arg = $5;
 		int err;
@@ -476,13 +507,12 @@ args_stmt
 		arg->pointer.constant_buffer_num = 1;
 		arg->pointer.constant_offset = $4;
 
-
 		/* Insert argument and free identifiers */
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 		si2bin_id_free($1);
 		si2bin_id_free($3);
-	}
-	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list TOK_NEW_LINE
+	} TOK_NEW_LINE
+	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list
 	{
 		struct si_arg_t *arg = $8;
 		int err;
@@ -504,7 +534,7 @@ args_stmt
 		si2bin_metadata_add_arg(si2bin_metadata, arg);
 		si2bin_id_free($1);
 		si2bin_id_free($6);
-	}
+	} TOK_NEW_LINE
 	;
 	
 val_stmt_list
@@ -610,7 +640,7 @@ text_stmt_list
 text_stmt
 	: label TOK_NEW_LINE
 
-	| instr TOK_NEW_LINE
+	| instr
 	{
 		struct si2bin_inst_t *inst = $1;
 
@@ -621,7 +651,7 @@ text_stmt
 		/* Dump Instruction Info */
 		//si2bin_inst_dump(inst, stdout);
 		si2bin_inst_free(inst);
-	}
+	} TOK_NEW_LINE
 	
 	| TOK_NEW_LINE
 ;

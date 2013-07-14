@@ -14,6 +14,9 @@ libsi2bin_a_SOURCES = \
 	arg.c \
 	arg.h \
 	\
+	data.h \
+	data.c \
+	\
 	inner-bin.c \
 	inner-bin.h \
 	\
