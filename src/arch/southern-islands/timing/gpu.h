@@ -259,10 +259,10 @@ CLASS_END(SIGpu)
 void SIGpuCreate(SIGpu *self);
 void SIGpuDestroy(SIGpu *self);
 
-void si_gpu_dump(FILE *f);
-void si_gpu_dump_summary(FILE *f);
+void SIGpuDump(Object *self, FILE *f);
+void SIGpuDumpSummary(Timing *self, FILE *f);
 
-int si_gpu_run(void);
+int SIGpuRun(Timing *self);
 
 
 

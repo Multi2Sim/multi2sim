@@ -117,10 +117,10 @@ CLASS_END(EvgGpu)
 void EvgGpuCreate(EvgGpu *self);
 void EvgGpuDestroy(EvgGpu *self);
 
-void EvgGpuDump(FILE *f);
-void EvgGpuDumpSummary(FILE *f);
+void EvgGpuDump(Object *self, FILE *f);
+void EvgGpuDumpSummary(Timing *self, FILE *f);
 
-int EvgGpuRun(void);
+int EvgGpuRun(Timing *self);
 
 
 

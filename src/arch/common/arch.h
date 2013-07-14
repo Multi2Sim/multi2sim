@@ -27,6 +27,7 @@
 
 /* Forward declarations */
 CLASS_FORWARD_DECLARATION(Emu);
+CLASS_FORWARD_DECLARATION(Timing);
 
 
 
@@ -55,9 +56,6 @@ typedef void (*arch_emu_done_func_t)(void);
 typedef void (*arch_timing_read_config_func_t)(void);
 typedef void (*arch_timing_init_func_t)(void);
 typedef void (*arch_timing_done_func_t)(void);
-typedef int (*arch_timing_run_func_t)(void);
-typedef void (*arch_timing_dump_func_t)(FILE *f);
-typedef void (*arch_timing_dump_summary_func_t)(FILE *f);
 
 typedef void (*arch_mem_config_default_func_t)(struct config_t *config);
 typedef void (*arch_mem_config_parse_entry_func_t)(struct config_t *config, char *section);
@@ -99,9 +97,6 @@ struct arch_t
 	arch_timing_read_config_func_t timing_read_config_func;
 	arch_timing_init_func_t timing_init_func;
 	arch_timing_done_func_t timing_done_func;
-	arch_timing_run_func_t timing_run_func;
-	arch_timing_dump_func_t timing_dump_func;
-	arch_timing_dump_summary_func_t timing_dump_summary_func;
 
 	/* Call-back functions used in by the memory hierarchy */
 	arch_mem_config_default_func_t mem_config_default_func;
@@ -110,6 +105,9 @@ struct arch_t
 
 	/* Emulator */
 	Emu *emu;
+
+	/* Timing simulator */
+	Timing *timing;
 
 	/* List of entry modules to the memory hierarchy. Each element of this list
 	 * is of type 'mod_t'. */
@@ -156,9 +154,6 @@ struct arch_t *arch_register(char *name, char *prefix,
 		arch_timing_read_config_func_t timing_read_config_func,
 		arch_timing_init_func_t timing_init_func,
 		arch_timing_done_func_t timing_done_func,
-		arch_timing_run_func_t timing_run_func,
-		arch_timing_dump_func_t timing_dump_func,
-		arch_timing_dump_summary_func_t timing_dump_summary_func,
 		arch_mem_config_default_func_t mem_config_default_func,
 		arch_mem_config_parse_entry_func_t mem_config_parse_entry_func,
 		arch_mem_config_check_func_t mem_config_check_func);
