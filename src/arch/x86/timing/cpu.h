@@ -20,6 +20,7 @@
 #ifndef X86_ARCH_TIMING_CPU_H
 #define X86_ARCH_TIMING_CPU_H
 
+#include <arch/common/timing.h>
 #include <arch/x86/emu/uinst.h>
 
 
@@ -32,9 +33,6 @@ struct x86_uop_t;
 extern int x86_cpu_error_debug_category;
 
 
-
-/* CPU variable */
-extern struct x86_cpu_t *x86_cpu;
 
 extern char *x86_config_help;
 
@@ -320,9 +318,44 @@ struct x86_core_t
 };
 
 
-/* Processor */
-struct x86_cpu_t
-{
+
+
+/*
+ * Public Functions
+ */
+
+void x86_cpu_read_config(void);
+
+void x86_cpu_init(void);
+void x86_cpu_done(void);
+
+void x86_cpu_update_occupancy_stats(void);
+
+int x86_cpu_pipeline_empty(int core, int thread);
+void x86_cpu_evict_context(int core, int thread);
+void x86_cpu_schedule(void);
+
+void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop);
+void x86_cpu_uop_trace_list_empty(void);
+
+void x86_cpu_run_stages(void);
+void x86_cpu_fetch(void);
+void x86_cpu_decode(void);
+void x86_cpu_dispatch(void);
+void x86_cpu_issue(void);
+void x86_cpu_writeback(void);
+void x86_cpu_commit(void);
+void x86_cpu_recover(int core, int thread);
+
+
+
+
+/*
+ * Class 'X86Cpu'
+ */
+
+CLASS_BEGIN(X86Cpu, Timing)
+
 	/* Array of cores */
 	struct x86_core_t *core;
 
@@ -356,42 +389,26 @@ struct x86_cpu_t
 	/* For dumping */
 	long long last_committed;
 	long long last_dump;
-};
+
+CLASS_END(X86Cpu)
+
+
+void X86CpuCreate(X86Cpu *self);
+void X86CpuDestroy(X86Cpu *self);
+
+void X86CpuDump(FILE *f);
+void X86CpuDumpSummary(FILE *f);
+
+int X86CpuRun(void);
 
 
 
 
 /*
- * Public Functions
+ * Public
  */
 
-void x86_cpu_read_config(void);
-
-void x86_cpu_init(void);
-void x86_cpu_done(void);
-
-void x86_cpu_dump(FILE *f);
-void x86_cpu_dump_summary(FILE *f);
-
-void x86_cpu_update_occupancy_stats(void);
-
-int x86_cpu_pipeline_empty(int core, int thread);
-void x86_cpu_evict_context(int core, int thread);
-void x86_cpu_schedule(void);
-
-void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop);
-void x86_cpu_uop_trace_list_empty(void);
-
-void x86_cpu_run_stages(void);
-void x86_cpu_fetch(void);
-void x86_cpu_decode(void);
-void x86_cpu_dispatch(void);
-void x86_cpu_issue(void);
-void x86_cpu_writeback(void);
-void x86_cpu_commit(void);
-void x86_cpu_recover(int core, int thread);
-
-int x86_cpu_run(void);
+extern X86Cpu *x86_cpu;
 
 
 #endif

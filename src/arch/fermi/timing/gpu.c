@@ -378,7 +378,9 @@ int frm_gpu_lds_latency = 2;
 int frm_gpu_lds_block_size = 64;
 int frm_gpu_lds_num_ports = 2;
 
-struct frm_gpu_t *frm_gpu;
+FrmGpu *frm_gpu;
+
+
 
 /*
  * Private Functions
@@ -389,32 +391,6 @@ struct frm_gpu_t *frm_gpu;
 
 #define FRM_TRACE_VERSION_MAJOR		1
 #define FRM_TRACE_VERSION_MINOR		1
-
-
-static void frm_gpu_device_init(void)
-{
-	struct frm_sm_t *sm;
-	int sm_id;
-
-	/* Initialize GPU */
-	frm_gpu = xcalloc(1, sizeof(struct frm_gpu_t));
-
-	/* Initialize SMs */
-	frm_gpu->sms = xcalloc(frm_gpu_num_sms, sizeof(struct frm_sm_t *));
-	frm_gpu->sm_ready_list = list_create();
-	FRM_GPU_FOREACH_SM(sm_id)
-	{
-		frm_gpu->sms[sm_id] = frm_sm_create();
-		sm = frm_gpu->sms[sm_id];
-		sm->id = sm_id;
-		list_add(frm_gpu->sm_ready_list, sm);
-	}
-
-	/* Trace */
-	frm_trace_header("frm.init version=\"%d.%d\" num_sms=%d\n",
-			FRM_TRACE_VERSION_MAJOR, FRM_TRACE_VERSION_MINOR,
-			frm_gpu_num_sms);
-}
 
 
 /* FIXME */
@@ -938,6 +914,9 @@ void frm_gpu_read_config(void)
 
 void frm_gpu_init(void)
 {
+	/* Classes */
+	CLASS_REGISTER(FrmGpu);
+
 	/* Trace */
 	frm_trace_category = trace_new_category();
 
@@ -947,34 +926,29 @@ void frm_gpu_init(void)
 		fatal("%s: cannot open GPU pipeline report file",
 				frm_gpu_report_file_name);
 
+	/* Trace */
+	frm_trace_header("frm.init version=\"%d.%d\" num_sms=%d\n",
+			FRM_TRACE_VERSION_MAJOR, FRM_TRACE_VERSION_MINOR,
+			frm_gpu_num_sms);
+
+	/* Create GPU */
+	frm_gpu = new(FrmGpu);
+
 	/* Initializations */
-	frm_gpu_device_init();
 	frm_uop_init();
 }
 
 
 void frm_gpu_done()
 {
-	struct frm_sm_t *sm;
-
-	int sm_id;
-
 	/* GPU pipeline report */
 	frm_gpu_dump_report();
 
-	/* Free SMs */
-	FRM_GPU_FOREACH_SM(sm_id)
-	{
-		sm = frm_gpu->sms[sm_id];
-		frm_sm_free(sm);
-	}
-	list_free(frm_gpu->sm_ready_list);
-	free(frm_gpu->sms);
-
 	/* Free GPU */
-	free(frm_gpu);
+	delete(frm_gpu);
 
-	if(frm_spatial_report_active)
+	/* Spatial report */
+	if (frm_spatial_report_active)
 		frm_sm_spatial_report_done();
 
 	/* Finalizations */
@@ -1075,19 +1049,70 @@ void frm_gpu_dump_report(void)
 	file_close(f);
 }
 
-void frm_gpu_dump_summary(FILE *f)
+
+
+/*
+ * Class 'FrmGpu'
+ */
+
+CLASS_IMPLEMENTATION(FrmGpu);
+
+
+void FrmGpuCreate(FrmGpu *self)
+{
+	struct frm_sm_t *sm;
+	int sm_id;
+
+	/* Parent */
+	TimingCreate(asTiming(self));
+
+	/* Initialize SMs */
+	self->sms = xcalloc(frm_gpu_num_sms, sizeof(struct frm_sm_t *));
+	self->sm_ready_list = list_create();
+	FRM_GPU_FOREACH_SM(sm_id)
+	{
+		self->sms[sm_id] = frm_sm_create();
+		sm = self->sms[sm_id];
+		sm->id = sm_id;
+		list_add(self->sm_ready_list, sm);
+	}
+}
+
+
+void FrmGpuDestroy(FrmGpu *self)
+{
+	struct frm_sm_t *sm;
+	int sm_id;
+
+	FRM_GPU_FOREACH_SM(sm_id)
+	{
+		sm = self->sms[sm_id];
+		frm_sm_free(sm);
+	}
+	list_free(self->sm_ready_list);
+	free(self->sms);
+}
+
+
+void FrmGpuDumpSummary(FILE *f)
 {
 }
 
 
-/* Run one iteration of detailed simulation. Return TRUE if still running. */
-int frm_gpu_run(void)
+int FrmGpuRun(void)
 {
+	FrmGpu *self = frm_gpu;
+
 	struct frm_grid_t *grid;
 
 	struct frm_sm_t *sm;
 	struct frm_sm_t *sm_next;
 	int sm_id;
+
+	/* FIXME - temporarily disabled due to segfault.
+	 * Feature not available for 4.2 anyway. */
+	fatal("%s: Fermi timing simulation not supported yet",
+			__FUNCTION__);
 
 	/* For efficiency when no Fermi emulation is selected, 
 	 * exit here if the list of existing grids is empty. */
@@ -1112,14 +1137,14 @@ int frm_gpu_run(void)
 	}
 
 	/* Get mapped grids */
-	grid = frm_gpu->grid;
+	grid = self->grid;
 	assert(grid);
 
 	/* Assign thread blocks to SMs */
-	while (list_head(frm_gpu->sm_ready_list) && 
+	while (list_head(self->sm_ready_list) && 
 			list_head(grid->pending_thread_blocks))
 	{
-		frm_sm_map_thread_block(list_head(frm_gpu->sm_ready_list),
+		frm_sm_map_thread_block(list_head(self->sm_ready_list),
 				list_head(grid->pending_thread_blocks));
 	}
 
@@ -1135,7 +1160,7 @@ int frm_gpu_run(void)
 		esim_finish = esim_finish_frm_max_inst;
 
 	/* Stop if there was a simulation stall */
-	if ((arch_fermi->cycle - frm_gpu->last_complete_cycle) > 1000000)
+	if ((arch_fermi->cycle - self->last_complete_cycle) > 1000000)
 	{
 		warning("Fermi GPU simulation stalled.\n%s", frm_err_stall);
 		esim_finish = esim_finish_stall;
@@ -1146,19 +1171,19 @@ int frm_gpu_run(void)
 		return TRUE;
 
 	/* Run one loop iteration on each busy SM */
-	for (sm = list_head(frm_gpu->sm_busy_list), sm_id = 0; sm; 
+	for (sm = list_head(self->sm_busy_list), sm_id = 0; sm; 
 			sm = sm_next, sm_id++)
 	{
 		/* Store next busy SM, since this can change
 		 * during the SM simulation loop iteration. */
-		sm_next = list_get(frm_gpu->sm_busy_list, sm_id + 1);
+		sm_next = list_get(self->sm_busy_list, sm_id + 1);
 
 		/* Run one cycle */
 		frm_sm_run(sm);
 	}
 
 	/* Finish execution */
-	if (!list_count(frm_gpu->sm_busy_list))
+	if (!list_count(self->sm_busy_list))
 	{
 		/* Dump Grid report */
 		frm_grid_dump(grid, frm_emu_report_file);
@@ -1179,4 +1204,3 @@ int frm_gpu_run(void)
 	/* Still simulating */
 	return TRUE;
 }
-

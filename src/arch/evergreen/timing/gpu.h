@@ -20,7 +20,7 @@
 #ifndef ARCH_EVERGREEN_TIMING_GPU_H
 #define ARCH_EVERGREEN_TIMING_GPU_H
 
-#include <stdio.h>
+#include <arch/common/timing.h>
 
 
 /* Trace */
@@ -68,8 +68,22 @@ extern int evg_gpu_tex_engine_fetch_queue_size;
 extern int evg_gpu_tex_engine_load_queue_size;
 
 
-struct evg_gpu_t
-{
+#define EVG_GPU_FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
+	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < evg_gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
+
+#define EVG_GPU_FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(WAVEFRONT, SUBWAVEFRONT_ID, WORK_ITEM_ID) \
+	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first + (SUBWAVEFRONT_ID) * evg_gpu_num_stream_cores; \
+		(WORK_ITEM_ID) <= MIN((WAVEFRONT)->work_item_id_first + ((SUBWAVEFRONT_ID) + 1) \
+			* evg_gpu_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
+		(WORK_ITEM_ID)++)
+
+
+/*
+ * Class 'EvgGpu'
+ */
+
+CLASS_BEGIN(EvgGpu, Timing)
+
 	/* ND-Range running on it */
 	struct evg_ndrange_t *ndrange;
 	int work_groups_per_compute_unit;
@@ -95,40 +109,41 @@ struct evg_gpu_t
 	struct linked_list_t *trash_uop_list;
 
 	/* Last cycle when an instructions completed in any engine. This is used
-	 * to decide when to stop simulation if there was a simulation stall. */
+ 	 * to decide when to stop simulation if there was a simulation stall. */
 	long long last_complete_cycle;
-};
 
-extern struct evg_gpu_t *evg_gpu;
+CLASS_END(EvgGpu)
 
-#define EVG_GPU_FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
-	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < evg_gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
+void EvgGpuCreate(EvgGpu *self);
+void EvgGpuDestroy(EvgGpu *self);
 
-#define EVG_GPU_FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(WAVEFRONT, SUBWAVEFRONT_ID, WORK_ITEM_ID) \
-	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first + (SUBWAVEFRONT_ID) * evg_gpu_num_stream_cores; \
-		(WORK_ITEM_ID) <= MIN((WAVEFRONT)->work_item_id_first + ((SUBWAVEFRONT_ID) + 1) \
-			* evg_gpu_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
-		(WORK_ITEM_ID)++)
+void EvgGpuDump(FILE *f);
+void EvgGpuDumpSummary(FILE *f);
+
+int EvgGpuRun(void);
+
+
 
 
 /*
  * Public Functions
  */
 
+extern EvgGpu *evg_gpu;
+
 void evg_gpu_read_config(void);
 
 void evg_gpu_init(void);
 void evg_gpu_done(void);
-void evg_gpu_dump(FILE *f);
 
 void evg_gpu_dump_report(void);
-void evg_gpu_dump_summary(FILE *f);
 
 struct evg_uop_t;
 void evg_gpu_uop_trash_add(struct evg_uop_t *uop);
 void evg_gpu_uop_trash_empty(void);
 
-int evg_gpu_run(void);
+
+
 
 #endif
 
