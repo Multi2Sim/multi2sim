@@ -28,7 +28,7 @@ enum si2bin_data_type_t
 	si2bin_data_short,
 	si2bin_data_float,
 	si2bin_data_word,
-	si2bin_data_dword,
+	si2bin_data_half,
 	si2bin_data_byte
 };
 
@@ -41,8 +41,8 @@ struct si2bin_data_t
 		int int_value;
 		short short_value;
 		float float_value;
-		unsigned short word_value;
-		unsigned int dword_value;
+		unsigned int word_value;
+		unsigned short half_value;
 		unsigned char byte_value;
 	};
 

@@ -97,12 +97,9 @@
 %token TOK_TEXT
 %token TOK_CONST
 %token TOK_INT_DECL
-%token TOK_LONG_DECL
 %token TOK_SHORT_DECL
 %token TOK_FLOAT_DECL
-%token TOK_DOUBLE_DECL
-%token TOK_QWORD_DECL
-%token TOK_DWORD_DECL
+%token TOK_HALF_DECL
 %token TOK_WORD_DECL
 %token TOK_BYTE_DECL
 
@@ -386,7 +383,7 @@ data_stmt
 	| TOK_SHORT_DECL short_vals
 	| TOK_FLOAT_DECL float_vals
 	| TOK_WORD_DECL word_vals
-	| TOK_DWORD_DECL dword_vals
+	| TOK_HALF_DECL half_vals
 	| TOK_BYTE_DECL byte_vals
 	;
 
@@ -474,7 +471,7 @@ word_vals
 		
 		data = si2bin_data_create();
 		data->data_type = si2bin_data_word;
-		data->word_value = (unsigned short)$2;
+		data->word_value = (unsigned int)$2;
 		
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	}
@@ -484,32 +481,32 @@ word_vals
 		
 		data = si2bin_data_create();
 		data->data_type = si2bin_data_word;
-		data->word_value = (unsigned short)$2;
+		data->word_value = (unsigned int)$2;
 		
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	} TOK_NEW_LINE
 	;
 
-dword_vals
+half_vals
 	: 
-	| dword_vals TOK_NEW_LINE
-	| dword_vals hex_or_dec_value TOK_COMMA
+	| half_vals TOK_NEW_LINE
+	| half_vals hex_or_dec_value TOK_COMMA
 	{
 		struct si2bin_data_t *data;
 		
 		data = si2bin_data_create();
-		data->data_type = si2bin_data_dword;
-		data->dword_value = (unsigned int)$2;
+		data->data_type = si2bin_data_half;
+		data->half_value = (unsigned short)$2;
 		
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	}
-	| dword_vals hex_or_dec_value
+	| half_vals hex_or_dec_value
 	{ 
 		struct si2bin_data_t *data;
 		
 		data = si2bin_data_create();
-		data->data_type = si2bin_data_dword;
-		data->dword_value = (unsigned int)$2;
+		data->data_type = si2bin_data_half;
+		data->half_value = (unsigned short)$2;
 		
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	} TOK_NEW_LINE
