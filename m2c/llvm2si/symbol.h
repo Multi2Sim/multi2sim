@@ -22,7 +22,15 @@
 
 #include <stdio.h>
 
-/* NOTE: update 'llvm2si_symbol_type_map' if this enumeration is extended. */
+#include <lib/util/class.h>
+
+
+
+/*
+ * Class 'Llvm2siSymbol'
+ */
+
+extern struct str_map_t llvm2si_symbol_type_map;
 enum llvm2si_symbol_type_t
 {
 	llvm2si_symbol_type_invalid = 0,
@@ -30,8 +38,9 @@ enum llvm2si_symbol_type_t
 	llvm2si_symbol_scalar_register
 };
 
-struct llvm2si_symbol_t
-{
+
+CLASS_BEGIN(Llvm2siSymbol, Object)
+
 	char *name;
 	enum llvm2si_symbol_type_t type;
 
@@ -46,24 +55,27 @@ struct llvm2si_symbol_t
 	/* If the symbol represents a global memory address (flag 'address'
 	 * is set to 1, UAV identifier (0=uav10, 1=uav11, ...). */
 	int uav_index;
-};
+
+CLASS_END(Llvm2siSymbol)
 
 
-struct llvm2si_symbol_t *llvm2si_symbol_create_vreg(char *name, int vreg);
-struct llvm2si_symbol_t *llvm2si_symbol_create_sreg(char *name, int sreg);
+void Llvm2siSymbolCreateVReg(Llvm2siSymbol *self, char *name, int vreg);
+void Llvm2siSymbolCreateSReg(Llvm2siSymbol *self, char *name, int sreg);
 
-struct llvm2si_symbol_t *llvm2si_symbol_create_vreg_series(char *name,
+void Llvm2siSymbolCreateVRegSeries(Llvm2siSymbol *self, char *name,
 		int vreg_lo, int vreg_hi);
-struct llvm2si_symbol_t *llvm2si_symbol_create_sreg_series(char *name,
+void Llvm2siSymbolCreateSRegSeries(Llvm2siSymbol *self, char *name,
 		int sreg_lo, int sreg_hi);
 
-void llvm2si_symbol_free(struct llvm2si_symbol_t *symbol);
-void llvm2si_symbol_dump(struct llvm2si_symbol_t *symbol, FILE *f);
+void Llvm2siSymbolDestroy(Llvm2siSymbol *self);
+
+/* Virtual function from class 'Object' */
+void Llvm2siSymbolDump(Object *self, FILE *f);
 
 /* Set the symbol type to an address to global memory (flag 'address' is set to
  * 1) and associate it with a UAV as specified in 'uav_index' (0=uav10, 1=uav11,
  * ...). */
-void llvm2si_symbol_set_uav_index(struct llvm2si_symbol_t *symbol,
+void Llvm2siSymbolSetUAVIndex(Llvm2siSymbol *symbol,
 		int uav_index);
 
 

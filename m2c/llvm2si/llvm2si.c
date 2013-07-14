@@ -36,6 +36,8 @@
 #include "function.h"
 #include "llvm2si.h"
 #include "phi.h"
+#include "symbol.h"
+#include "symbol-table.h"
 
 
 /*
@@ -86,11 +88,11 @@ static void llvm2si_compile_file(char *source_file, char *output_file)
 		function = new(Llvm2siFunction, llfunction);
 
 		/* Emit code for function */
-		llvm2si_function_emit_header(function);
-		llvm2si_function_emit_args(function);
-		llvm2si_function_emit_body(function);
-		llvm2si_function_emit_phi(function);
-		llvm2si_function_emit_control_flow(function);
+		Llvm2siFunctionEmitHeader(function);
+		Llvm2siFunctionEmitArgs(function);
+		Llvm2siFunctionEmitBody(function);
+		Llvm2siFunctionEmitPhi(function);
+		Llvm2siFunctionEmitControlFlow(function);
 
 		/* Dump code */
 		Llvm2siFunctionDump(asObject(function), f);
@@ -120,6 +122,10 @@ void llvm2si_init(void)
 	CLASS_REGISTER(Llvm2siBasicBlock);
 	CLASS_REGISTER(Llvm2siPhi);
 	CLASS_REGISTER(Llvm2siFunction);
+	CLASS_REGISTER(Llvm2siFunctionArg);
+	CLASS_REGISTER(Llvm2siFunctionUAV);
+	CLASS_REGISTER(Llvm2siSymbol);
+	CLASS_REGISTER(Llvm2siSymbolTable);
 }
 
 

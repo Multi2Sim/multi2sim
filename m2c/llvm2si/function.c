@@ -42,11 +42,13 @@
 
 
 /*
- * Function Argument Object
+ * Class 'Llvm2siFunctionArg'
  */
 
+CLASS_IMPLEMENTATION(Llvm2siFunctionArg);
+
 /* Return a Southern Islands argument type from an LLVM type. */
-static enum si_arg_data_type_t llvm2si_function_arg_get_data_type(LLVMTypeRef lltype)
+static enum si_arg_data_type_t Llvm2siFunctionArgGetDataType(LLVMTypeRef lltype)
 {
 	LLVMTypeKind lltype_kind;
 	int bit_width;
@@ -78,9 +80,8 @@ static enum si_arg_data_type_t llvm2si_function_arg_get_data_type(LLVMTypeRef ll
 }
 
 
-struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg)
+void Llvm2siFunctionArgCreate(Llvm2siFunctionArg *self, LLVMValueRef llarg)
 {
-	struct llvm2si_function_arg_t *arg;
 	struct si_arg_t *si_arg;
 
 	LLVMTypeRef lltype;
@@ -101,37 +102,34 @@ struct llvm2si_function_arg_t *llvm2si_function_arg_create(LLVMValueRef llarg)
 		lltype = LLVMGetElementType(lltype);
 		si_arg = si_arg_create(si_arg_pointer, name);
 		si_arg->pointer.scope = si_arg_uav;
-		si_arg->pointer.data_type = llvm2si_function_arg_get_data_type(lltype);
+		si_arg->pointer.data_type = Llvm2siFunctionArgGetDataType(lltype);
 	}
 	else
 	{
 		si_arg = si_arg_create(si_arg_value, name);
-		si_arg->value.data_type = llvm2si_function_arg_get_data_type(lltype);
+		si_arg->value.data_type = Llvm2siFunctionArgGetDataType(lltype);
 	}
 
-	/* Initialize 'arg' object */
-	arg = xcalloc(1, sizeof(struct llvm2si_function_arg_t));
-	arg->name = xstrdup(name);
-	arg->llarg = llarg;
-	arg->si_arg = si_arg;
-
-	/* Return */
-	return arg;
+	/* Initialize */
+	self->name = str_set(self->name, name);
+	self->llarg = llarg;
+	self->si_arg = si_arg;
 }
 
 
-void llvm2si_function_arg_free(struct llvm2si_function_arg_t *arg)
+void Llvm2siFunctionArgDestroy(Llvm2siFunctionArg *self)
 {
-	assert(arg->name);
-	assert(arg->si_arg);
-	str_free(arg->name);
-	si_arg_free(arg->si_arg);
-	free(arg);
+	assert(self->name);
+	assert(self->si_arg);
+	self->name = str_free(self->name);
+	si_arg_free(self->si_arg);
 }
 
 
-void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *arg, FILE *f)
+
+void Llvm2siFunctionArgDump(Object *self, FILE *f)
 {
+	Llvm2siFunctionArg *arg = asLlvm2siFunctionArg(self);
 	struct si_arg_t *si_arg = arg->si_arg;
 
 	switch (si_arg->type)
@@ -167,61 +165,56 @@ void llvm2si_function_arg_dump(struct llvm2si_function_arg_t *arg, FILE *f)
 
 
 /*
- * Function UAV Object
+ * Class 'Llvm2siFunctionUAV'
  */
 
-struct llvm2si_function_uav_t *llvm2si_function_uav_create(void)
+CLASS_IMPLEMENTATION(Llvm2siFunctionUAV);
+
+
+void Llvm2siFunctionUAVCreate(Llvm2siFunctionUAV *self)
 {
-	struct llvm2si_function_uav_t *uav;
-
-	/* Initialize */
-	uav = xcalloc(1, sizeof(struct llvm2si_function_uav_t));
-
-	/* Return */
-	return uav;
 }
 
 
-void llvm2si_function_uav_free(struct llvm2si_function_uav_t *uav)
+void Llvm2siFunctionUAVDestroy(Llvm2siFunctionUAV *self)
 {
-	free(uav);
 }
 
 
 
 
 /*
- * Function Object
+ * Private Functions
  */
 
 /* Add a UAV to the UAV list. This function allocates a series of 4 aligned
  * scalar registers to the UAV, populating its 'index' and 'sreg' fields.
  * The UAV object will be freed automatically after calling this function.
  * Emit the code needed to load UAV into 'function->basic_block_uavs' */
-static void llvm2si_function_add_uav(Llvm2siFunction *function,
-		struct llvm2si_function_uav_t *uav)
+static void Llvm2siFunctionAddUAV(Llvm2siFunction *self,
+		Llvm2siFunctionUAV *uav)
 {
 	struct list_t *arg_list;
 	struct si2bin_inst_t *inst;
 	Llvm2siBasicBlock *basic_block;
 
-	/* Associate UAV with function */
+	/* Associate UAV with self */
 	assert(!uav->function);
-	uav->function = function;
+	uav->function = self;
 
 	/* Get basic block or create it */
-	basic_block = asLlvm2siBasicBlock(node_get_basic_block(
-			function->uavs_node));
+	basic_block = asLlvm2siBasicBlock(NodeGetBasicBlock(
+			self->uavs_node));
 	if (!basic_block)
-		basic_block = new(Llvm2siBasicBlock, function,
-				function->uavs_node);
+		basic_block = new(Llvm2siBasicBlock, self,
+				self->uavs_node);
 
 	/* Allocate 4 aligned scalar registers */
-	uav->sreg = llvm2si_function_alloc_sreg(function, 4, 4);
+	uav->sreg = Llvm2siFunctionAllocSReg(self, 4, 4);
 
 	/* Insert to UAV list */
-	uav->index = function->uav_list->count;
-	list_add(function->uav_list, uav);
+	uav->index = self->uav_list->count;
+	list_add(self->uav_list, uav);
 
 	/* Emit code to load UAV.
 	 * s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
@@ -230,54 +223,54 @@ static void llvm2si_function_add_uav(Llvm2siFunction *function,
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(
 			uav->sreg, uav->sreg + 3));
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(
-			function->sreg_uav_table, function->sreg_uav_table + 1));
+			self->sreg_uav_table, self->sreg_uav_table + 1));
 	list_add(arg_list, si2bin_arg_create_literal((uav->index + 10) * 8));
 	inst = si2bin_inst_create(SI_INST_S_LOAD_DWORDX4, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
+	Llvm2siBasicBlockAddInst(basic_block, inst);
 }
 
 
 /* Add argument 'arg' into the list of arguments of 'function', and emit code
  * to load it into 'function->basic_block_args'. */
-static void llvm2si_function_add_arg(Llvm2siFunction *function,
-		struct llvm2si_function_arg_t *arg)
+static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
+		Llvm2siFunctionArg *arg)
 {
 	struct list_t *arg_list;
 	struct si2bin_inst_t *inst;
-	struct llvm2si_symbol_t *symbol;
+	Llvm2siSymbol *symbol;
 	Llvm2siBasicBlock *basic_block;
-	struct llvm2si_function_uav_t *uav;
+	Llvm2siFunctionUAV *uav;
 
-	/* Check that argument does not belong to a function yet */
+	/* Check that argument does not belong to a self yet */
 	if (arg->function)
 		panic("%s: argument already added", __FUNCTION__);
 
 	/* Get basic block, or create it */
-	basic_block = asLlvm2siBasicBlock(node_get_basic_block(
-			function->args_node));
+	basic_block = asLlvm2siBasicBlock(NodeGetBasicBlock(
+			self->args_node));
 	if (!basic_block)
-		basic_block = new(Llvm2siBasicBlock, function,
-				function->args_node);
+		basic_block = new(Llvm2siBasicBlock, self,
+				self->args_node);
 
 	/* Add argument */
-	list_add(function->arg_list, arg);
-	arg->function = function;
-	arg->index = function->arg_list->count - 1;
+	list_add(self->arg_list, arg);
+	arg->function = self;
+	arg->index = self->arg_list->count - 1;
 
 	/* Allocate 1 scalar and 1 vector register for the argument */
-	arg->sreg = llvm2si_function_alloc_sreg(function, 1, 1);
-	arg->vreg = llvm2si_function_alloc_vreg(function, 1, 1);
+	arg->sreg = Llvm2siFunctionAllocSReg(self, 1, 1);
+	arg->vreg = Llvm2siFunctionAllocVReg(self, 1, 1);
 
 	/* Generate code to load argument into a scalar register.
 	 * s_buffer_load_dword s[arg], s[cb1:cb1+3], idx*4
 	 */
 	arg_list = list_create();
 	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
-	list_add(arg_list, si2bin_arg_create_scalar_register_series(function->sreg_cb1,
-			function->sreg_cb1 + 3));
+	list_add(arg_list, si2bin_arg_create_scalar_register_series(self->sreg_cb1,
+			self->sreg_cb1 + 3));
 	list_add(arg_list, si2bin_arg_create_literal(arg->index * 4));
 	inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
+	Llvm2siBasicBlockAddInst(basic_block, inst);
 
 	/* Copy argument into a vector register. This vector register will be
 	 * used for convenience during code emission, so that we don't have to
@@ -290,11 +283,11 @@ static void llvm2si_function_add_arg(Llvm2siFunction *function,
 	list_add(arg_list, si2bin_arg_create_vector_register(arg->vreg));
 	list_add(arg_list, si2bin_arg_create_scalar_register(arg->sreg));
 	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
+	Llvm2siBasicBlockAddInst(basic_block, inst);
 
 	/* Insert argument name in symbol table, using its vector register. */
-	symbol = llvm2si_symbol_create_vreg(arg->name, arg->vreg);
-	llvm2si_symbol_table_add_symbol(function->symbol_table, symbol);
+	symbol = new_ctor(Llvm2siSymbol, CreateVReg, arg->name, arg->vreg);
+	Llvm2siSymbolTableAddSymbol(self->symbol_table, symbol);
 
 	/* If argument is an object in global memory, create a UAV
 	 * associated with it. */
@@ -302,29 +295,28 @@ static void llvm2si_function_add_arg(Llvm2siFunction *function,
 			arg->si_arg->pointer.scope == si_arg_uav)
 	{
 		/* New UAV */
-		uav = llvm2si_function_uav_create();
-		llvm2si_function_add_uav(function, uav);
+		uav = new(Llvm2siFunctionUAV);
+		Llvm2siFunctionAddUAV(self, uav);
 
 		/* Store UAV index in argument and symbol */
-		llvm2si_symbol_set_uav_index(symbol, uav->index);
+		Llvm2siSymbolSetUAVIndex(symbol, uav->index);
 		arg->uav_index = uav->index;
 	}
 }
 
 
-static void llvm2si_function_dump_data(Llvm2siFunction *function,
-		FILE *f)
+static void Llvm2siFunctionDumpData(Llvm2siFunction *self, FILE *f)
 {
 	/* Section header */
 	fprintf(f, ".data\n");
 
 	/* User elements */
 	fprintf(f, "\tuserElements[0] = PTR_UAV_TABLE, 0, s[%d:%d]\n",
-			function->sreg_uav_table, function->sreg_uav_table + 1);
+			self->sreg_uav_table, self->sreg_uav_table + 1);
 	fprintf(f, "\tuserElements[1] = IMM_CONST_BUFFER, 0, s[%d:%d]\n",
-			function->sreg_cb0, function->sreg_cb0 + 3);
+			self->sreg_cb0, self->sreg_cb0 + 3);
 	fprintf(f, "\tuserElements[2] = IMM_CONST_BUFFER, 1, s[%d:%d]\n",
-			function->sreg_cb1, function->sreg_cb1 + 3);
+			self->sreg_cb1, self->sreg_cb1 + 3);
 	fprintf(f, "\n");
 
 	/* Floating-point mode */
@@ -333,7 +325,7 @@ static void llvm2si_function_dump_data(Llvm2siFunction *function,
 	fprintf(f, "\n");
 
 	/* Program resources */
-	fprintf(f, "\tCOMPUTE_PGM_RSRC2:USER_SGPR = %d\n", function->sreg_wgid);
+	fprintf(f, "\tCOMPUTE_PGM_RSRC2:USER_SGPR = %d\n", self->sreg_wgid);
 	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_X_EN = %d\n", 1);
 	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Y_EN = %d\n", 1);
 	fprintf(f, "\tCOMPUTE_PGM_RSRC2:TGID_Z_EN = %d\n", 1);
@@ -358,7 +350,7 @@ void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction)
 	self->name = str_set(self->name, (char *) LLVMGetValueName(llfunction));
 	self->arg_list = list_create();
 	self->uav_list = list_create();
-	self->symbol_table = llvm2si_symbol_table_create();
+	self->symbol_table = new(Llvm2siSymbolTable);
 	self->ctree = ctree = new(CTree, self->name);
 	self->phi_list = linked_list_create();
 
@@ -366,18 +358,18 @@ void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction)
 	self->header_node = new(Node, node_leaf, "header", node_region_invalid);
 	self->uavs_node = new(Node, node_leaf, "uavs", node_region_invalid);
 	self->args_node = new(Node, node_leaf, "args", node_region_invalid);
-	ctree_add_node(ctree, self->header_node);
-	ctree_add_node(ctree, self->uavs_node);
-	ctree_add_node(ctree, self->args_node);
+	CTreeAddNode(ctree, self->header_node);
+	CTreeAddNode(ctree, self->uavs_node);
+	CTreeAddNode(ctree, self->args_node);
 	ctree->entry_node = self->header_node;
 
 	/* Add all nodes from the LLVM control flow graph */
-	self->body_node = ctree_add_llvm_cfg(ctree, llfunction);
+	self->body_node = CTreeAddLlvmCFG(ctree, llfunction);
 
 	/* Connect nodes */
-	node_connect(self->header_node, self->uavs_node);
-	node_connect(self->uavs_node, self->args_node);
-	node_connect(self->args_node, self->body_node);
+	NodeConnect(self->header_node, self->uavs_node);
+	NodeConnect(self->uavs_node, self->args_node);
+	NodeConnect(self->args_node, self->body_node);
 }
 
 
@@ -387,12 +379,12 @@ void Llvm2siFunctionDestroy(Llvm2siFunction *self)
 
 	/* Free list of arguments */
 	LIST_FOR_EACH(self->arg_list, index)
-		llvm2si_function_arg_free(list_get(self->arg_list, index));
+		delete(asLlvm2siFunctionArg(list_get(self->arg_list, index)));
 	list_free(self->arg_list);
 
 	/* Free list of UAVs */
 	LIST_FOR_EACH(self->uav_list, index)
-		llvm2si_function_uav_free(list_get(self->uav_list, index));
+		delete(asLlvm2siFunctionUAV(list_get(self->uav_list, index)));
 	list_free(self->uav_list);
 
 	/* Free control tree */
@@ -404,7 +396,7 @@ void Llvm2siFunctionDestroy(Llvm2siFunction *self)
 	linked_list_free(self->phi_list);
 
 	/* Rest */
-	llvm2si_symbol_table_free(self->symbol_table);
+	delete(self->symbol_table);
 	self->name = str_free(self->name);
 }
 
@@ -415,7 +407,7 @@ void Llvm2siFunctionDump(Object *self, FILE *f)
 	Llvm2siFunction *function;
 	Node *node;
 
-	struct llvm2si_function_arg_t *function_arg;
+	Llvm2siFunctionArg *function_arg;
 	struct linked_list_t *node_list;
 
 	int index;
@@ -429,14 +421,14 @@ void Llvm2siFunctionDump(Object *self, FILE *f)
 	LIST_FOR_EACH(function->arg_list, index)
 	{
 		function_arg = list_get(function->arg_list, index);
-		llvm2si_function_arg_dump(function_arg, f);
+		Llvm2siFunctionArgDump(asObject(function_arg), f);
 	}
 	fprintf(f, "\n");
 
 	/* Dump basic blocks */
 	fprintf(f, ".text\n");
 	node_list = linked_list_create();
-	ctree_traverse(function->ctree, node_list, NULL);
+	CTreeTraverse(function->ctree, node_list, NULL);
 	LINKED_LIST_FOR_EACH(node_list)
 	{
 		/* Skip abstract nodes */
@@ -456,12 +448,12 @@ void Llvm2siFunctionDump(Object *self, FILE *f)
 	fprintf(f, "\n");
 
 	/* Dump section '.data' */
-	llvm2si_function_dump_data(function, f);
+	Llvm2siFunctionDumpData(function, f);
 	fprintf(f, "\n");
 }
 
 
-void llvm2si_function_emit_header(Llvm2siFunction *function)
+void Llvm2siFunctionEmitHeader(Llvm2siFunction *self)
 {
 	Llvm2siBasicBlock *basic_block;
 	struct si2bin_inst_t *inst;
@@ -471,50 +463,50 @@ void llvm2si_function_emit_header(Llvm2siFunction *function)
 	int index;
 
 	/* Create header basic block */
-	basic_block = new(Llvm2siBasicBlock, function, function->header_node);
+	basic_block = new(Llvm2siBasicBlock, self, self->header_node);
 
 	/* Function must be empty at this point */
-	assert(!function->num_sregs);
-	assert(!function->num_vregs);
+	assert(!self->num_sregs);
+	assert(!self->num_vregs);
 
 	/* Allocate 3 vector registers (v[0:2]) for local ID */
-	function->vreg_lid = llvm2si_function_alloc_vreg(function, 3, 1);
-	if (function->vreg_lid)
+	self->vreg_lid = Llvm2siFunctionAllocVReg(self, 3, 1);
+	if (self->vreg_lid)
 		panic("%s: vreg_lid is expented to be 0", __FUNCTION__);
 
 	/* Allocate 2 scalar registers for UAV table. The value for these
 	 * registers is assigned by the runtime based on info found in the
 	 * 'userElements' metadata of the binary.*/
-	function->sreg_uav_table = llvm2si_function_alloc_sreg(function, 2, 1);
+	self->sreg_uav_table = Llvm2siFunctionAllocSReg(self, 2, 1);
 
 	/* Allocate 4 scalar registers for CB0, and 4 more for CB1. The
 	 * values for these registers will be assigned by the runtime based
 	 * on info present in the 'userElements' metadata. */
-	function->sreg_cb0 = llvm2si_function_alloc_sreg(function, 4, 1);
-	function->sreg_cb1 = llvm2si_function_alloc_sreg(function, 4, 1);
+	self->sreg_cb0 = Llvm2siFunctionAllocSReg(self, 4, 1);
+	self->sreg_cb1 = Llvm2siFunctionAllocSReg(self, 4, 1);
 
 	/* Allocate 3 scalar registers for the work-group ID. The content of
 	 * these register will be populated by the runtime based on info found
 	 * in COMPUTE_PGM_RSRC2 metadata. */
-	function->sreg_wgid = llvm2si_function_alloc_sreg(function, 3, 1);
+	self->sreg_wgid = Llvm2siFunctionAllocSReg(self, 3, 1);
 
 	/* Obtain global size in s[gsize:gsize+2].
 	 * s_buffer_load_dword s[gsize], s[cb0:cb0+3], 0x00
 	 * s_buffer_load_dword s[gsize+1], s[cb0:cb0+3], 0x01
 	 * s_buffer_load_dword s[gsize+2], s[cb0:cb0+3], 0x02
 	 */
-	llvm2si_basic_block_add_comment(basic_block, "Obtain global size");
-	function->sreg_gsize = llvm2si_function_alloc_sreg(function, 3, 1);
+	Llvm2siBasicBlockAddComment(basic_block, "Obtain global size");
+	self->sreg_gsize = Llvm2siFunctionAllocSReg(self, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_scalar_register(
-				function->sreg_gsize + index));
+				self->sreg_gsize + index));
 		list_add(arg_list, si2bin_arg_create_scalar_register_series(
-				function->sreg_cb0, function->sreg_cb0 + 3));
+				self->sreg_cb0, self->sreg_cb0 + 3));
 		list_add(arg_list, si2bin_arg_create_literal(index));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		llvm2si_basic_block_add_inst(basic_block, inst);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
 	}
 
 	/* Obtain local size in s[lsize:lsize+2].
@@ -523,18 +515,18 @@ void llvm2si_function_emit_header(Llvm2siFunction *function)
 	 * s_buffer_load_dword s[lsize+1], s[cb0:cb0+3], 0x05
 	 * s_buffer_load_dword s[lsize+2], s[cb0:cb0+3], 0x06
 	 */
-	llvm2si_basic_block_add_comment(basic_block, "Obtain local size");
-	function->sreg_lsize = llvm2si_function_alloc_sreg(function, 3, 1);
+	Llvm2siBasicBlockAddComment(basic_block, "Obtain local size");
+	self->sreg_lsize = Llvm2siFunctionAllocSReg(self, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_scalar_register(
-				function->sreg_lsize + index));
+				self->sreg_lsize + index));
 		list_add(arg_list, si2bin_arg_create_scalar_register_series(
-				function->sreg_cb0, function->sreg_cb0 + 3));
+				self->sreg_cb0, self->sreg_cb0 + 3));
 		list_add(arg_list, si2bin_arg_create_literal(4 + index));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		llvm2si_basic_block_add_inst(basic_block, inst);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
 	}
 
 	/* Obtain global offset in s[offs:offs+2].
@@ -543,18 +535,18 @@ void llvm2si_function_emit_header(Llvm2siFunction *function)
 	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x19
 	 * s_buffer_load_dword s[offs], s[cb0:cb0+3], 0x1a
 	 */
-	llvm2si_basic_block_add_comment(basic_block, "Obtain global offset");
-	function->sreg_offs = llvm2si_function_alloc_sreg(function, 3, 1);
+	Llvm2siBasicBlockAddComment(basic_block, "Obtain global offset");
+	self->sreg_offs = Llvm2siFunctionAllocSReg(self, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_scalar_register(
-				function->sreg_offs + index));
+				self->sreg_offs + index));
 		list_add(arg_list, si2bin_arg_create_scalar_register_series(
-				function->sreg_cb0, function->sreg_cb0 + 3));
+				self->sreg_cb0, self->sreg_cb0 + 3));
 		list_add(arg_list, si2bin_arg_create_literal(0x18 + index));
 		inst = si2bin_inst_create(SI_INST_S_BUFFER_LOAD_DWORD, arg_list);
-		llvm2si_basic_block_add_inst(basic_block, inst);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
 	}
 
 	/* Calculate global ID in dimensions [0:2] and store it in v[3:5].
@@ -564,84 +556,84 @@ void llvm2si_function_emit_header(Llvm2siFunction *function)
 	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], v[lid+dim]
 	 * v_add_i32 v[gid+dim], vcc, v[gid+dim], s[offs+dim]
 	 */
-	function->vreg_gid = llvm2si_function_alloc_vreg(function, 3, 1);
+	self->vreg_gid = Llvm2siFunctionAllocVReg(self, 3, 1);
 	for (index = 0; index < 3; index++)
 	{
 		/* Comment */
 		snprintf(comment, sizeof comment, "Calculate global ID "
 				"in dimension %d", index);
-		llvm2si_basic_block_add_comment(basic_block, comment);
+		Llvm2siBasicBlockAddComment(basic_block, comment);
 
 		/* v_mov_b32 */
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_vector_register(
-				function->vreg_gid + index));
+				self->vreg_gid + index));
 		list_add(arg_list, si2bin_arg_create_scalar_register(
-				function->sreg_lsize + index));
+				self->sreg_lsize + index));
 		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
-		llvm2si_basic_block_add_inst(basic_block, inst);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
 
 		/* v_mul_i32_i24 */
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_vector_register(
-				function->vreg_gid + index));
+				self->vreg_gid + index));
 		list_add(arg_list, si2bin_arg_create_scalar_register(
-				function->sreg_wgid + index));
+				self->sreg_wgid + index));
 		list_add(arg_list, si2bin_arg_create_vector_register(
-				function->vreg_gid + index));
+				self->vreg_gid + index));
 		inst = si2bin_inst_create(SI_INST_V_MUL_I32_I24, arg_list);
-		llvm2si_basic_block_add_inst(basic_block, inst);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
 
 		/* v_add_i32 */
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_vector_register(
-				function->vreg_gid + index));
+				self->vreg_gid + index));
 		list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
 		list_add(arg_list, si2bin_arg_create_vector_register(
-				function->vreg_gid + index));
+				self->vreg_gid + index));
 		list_add(arg_list, si2bin_arg_create_vector_register(
-				function->vreg_lid + index));
+				self->vreg_lid + index));
 		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
-		llvm2si_basic_block_add_inst(basic_block, inst);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
 
 		/* v_add_i32 */
 		arg_list = list_create();
 		list_add(arg_list, si2bin_arg_create_vector_register(
-				function->vreg_gid + index));
+				self->vreg_gid + index));
 		list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_vcc));
 		list_add(arg_list, si2bin_arg_create_scalar_register(
-				function->sreg_offs + index));
+				self->sreg_offs + index));
 		list_add(arg_list, si2bin_arg_create_vector_register(
-				function->vreg_gid + index));
+				self->vreg_gid + index));
 		inst = si2bin_inst_create(SI_INST_V_ADD_I32, arg_list);
-		llvm2si_basic_block_add_inst(basic_block, inst);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
 	}
 }
 
 
-void llvm2si_function_emit_args(Llvm2siFunction *function)
+void Llvm2siFunctionEmitArgs(Llvm2siFunction *self)
 {
 	LLVMValueRef llfunction;
 	LLVMValueRef llarg;
 
-	struct llvm2si_function_arg_t *arg;
+	Llvm2siFunctionArg *arg;
 
 	/* Emit code for each argument individually */
-	llfunction = function->llfunction;
+	llfunction = self->llfunction;
 	for (llarg = LLVMGetFirstParam(llfunction); llarg;
 			llarg = LLVMGetNextParam(llarg))
 	{
 		/* Create function argument and add it */
-		arg = llvm2si_function_arg_create(llarg);
+		arg = new(Llvm2siFunctionArg, llarg);
 
 		/* Add the argument to the list. This call will cause the
 		 * corresponding code to be emitted. */
-		llvm2si_function_add_arg(function, arg);
+		Llvm2siFunctionAddArg(self, arg);
 	}
 }
 
 
-void llvm2si_function_emit_body(Llvm2siFunction *function)
+void Llvm2siFunctionEmitBody(Llvm2siFunction *self)
 {
 	Llvm2siBasicBlock *basic_block;
 	struct linked_list_t *node_list;
@@ -654,15 +646,15 @@ void llvm2si_function_emit_body(Llvm2siFunction *function)
 	 * structural analysis that produces the control tree from the
 	 * control flow graph.
 	 */
-	ctree = function->ctree;
+	ctree = self->ctree;
 	assert(!ctree->structural_analysis_done);
-	ctree_structural_analysis(ctree);
+	CTreeStructuralAnalysis(ctree);
 
 	/* Whether we use a pre- or a post-order traversal does not matter,
 	 * since we are only considering the leaf nodes.
 	 */
 	node_list = linked_list_create();
-	ctree_traverse(ctree, node_list, NULL);
+	CTreeTraverse(ctree, node_list, NULL);
 
 	/* Emit code for basic blocks */
 	LINKED_LIST_FOR_EACH(node_list)
@@ -678,8 +670,8 @@ void llvm2si_function_emit_body(Llvm2siFunction *function)
 
 		/* Create basic block and emit the code */
 		assert(!node->leaf.basic_block);
-		basic_block = new(Llvm2siBasicBlock, function, node);
-		llvm2si_basic_block_emit(basic_block, node->llbb);
+		basic_block = new(Llvm2siBasicBlock, self, node);
+		Llvm2siBasicBlockEmit(basic_block, node->llbb);
 	}
 
 	/* Free structures */
@@ -687,7 +679,7 @@ void llvm2si_function_emit_body(Llvm2siFunction *function)
 }
 
 
-void llvm2si_function_emit_phi(Llvm2siFunction *function)
+void Llvm2siFunctionEmitPhi(Llvm2siFunction *self)
 {
 	Llvm2siPhi *phi;
 	Llvm2siBasicBlock *basic_block;
@@ -695,19 +687,19 @@ void llvm2si_function_emit_phi(Llvm2siFunction *function)
 	struct si2bin_inst_t *inst;
 	struct si2bin_arg_t *src_value;
 
-	while (function->phi_list->count)
+	while (self->phi_list->count)
 	{
 		/* Extract element from list */
-		linked_list_head(function->phi_list);
-		phi = linked_list_remove(function->phi_list);
+		linked_list_head(self->phi_list);
+		phi = linked_list_remove(self->phi_list);
 
 		/* Get basic block */
-		basic_block = asLlvm2siBasicBlock(node_get_basic_block(
+		basic_block = asLlvm2siBasicBlock(NodeGetBasicBlock(
 				phi->src_node));
 		assert(basic_block);
 
 		/* Get source value */
-		src_value = llvm2si_function_translate_value(function,
+		src_value = Llvm2siFunctionTranslateValue(self,
 				phi->src_value, NULL);
 
 		/* Copy source value to destination value.
@@ -717,7 +709,7 @@ void llvm2si_function_emit_phi(Llvm2siFunction *function)
 		list_add(arg_list, phi->dest_value);
 		list_add(arg_list, src_value);
 		inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
-		llvm2si_basic_block_add_inst(basic_block, inst);
+		Llvm2siBasicBlockAddInst(basic_block, inst);
 
 		/* Free phi object */
 		delete(phi);
@@ -725,8 +717,7 @@ void llvm2si_function_emit_phi(Llvm2siFunction *function)
 }
 
 
-static void llvm2si_function_emit_if_then(Llvm2siFunction *function,
-		Node *node)
+static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 {
 	Node *if_node;
 	Node *then_node;
@@ -734,7 +725,7 @@ static void llvm2si_function_emit_if_then(Llvm2siFunction *function,
 	Llvm2siBasicBlock *if_bb;
 	Llvm2siBasicBlock *then_bb;
 
-	struct llvm2si_symbol_t *cond_symbol;
+	Llvm2siSymbol *cond_symbol;
 	struct list_t *arg_list;
 	struct si2bin_inst_t *inst;
 
@@ -759,7 +750,7 @@ static void llvm2si_function_emit_if_then(Llvm2siFunction *function,
 	assert(then_node->role == node_role_then);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
-	then_node = node_get_last_leaf(then_node);
+	then_node = NodeGetLastLeaf(then_node);
 	assert(if_node->kind == node_leaf);
 	assert(then_node->kind == node_leaf);
 	if_bb = asLlvm2siBasicBlock(if_node->leaf.basic_block);
@@ -778,14 +769,14 @@ static void llvm2si_function_emit_if_then(Llvm2siFunction *function,
 	/* Get symbol associated with condition variable */
 	llcond = LLVMGetOperand(llinst, 0);
 	cond_name = (char *) LLVMGetValueName(llcond);
-	cond_symbol = llvm2si_symbol_table_lookup(function->symbol_table, cond_name);
+	cond_symbol = Llvm2siSymbolTableLookup(self->symbol_table, cond_name);
 	assert(cond_symbol);
 	assert(cond_symbol->type == llvm2si_symbol_scalar_register);
 	assert(cond_symbol->count == 2);
 	cond_sreg = cond_symbol->reg;
 
 	/* Allocate two scalar registers to push the active mask */
-	tos_sreg = llvm2si_function_alloc_sreg(function, 2, 2);
+	tos_sreg = Llvm2siFunctionAllocSReg(self, 2, 2);
 
 	/* Emit active mask push and set at the end of the 'If' block.
 	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
@@ -794,7 +785,7 @@ static void llvm2si_function_emit_if_then(Llvm2siFunction *function,
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(cond_sreg, cond_sreg + 1));
 	inst = si2bin_inst_create(SI_INST_S_AND_SAVEEXEC_B64, arg_list);
-	llvm2si_basic_block_add_inst(if_bb, inst);
+	Llvm2siBasicBlockAddInst(if_bb, inst);
 
 
 	/*** Code for 'then' block ***/
@@ -806,13 +797,11 @@ static void llvm2si_function_emit_if_then(Llvm2siFunction *function,
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
 	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
-	llvm2si_basic_block_add_inst(then_bb, inst);
+	Llvm2siBasicBlockAddInst(then_bb, inst);
 }
 
 
-static void llvm2si_function_emit_if_then_else(
-		Llvm2siFunction *function,
-		Node *node)
+static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 {
 	Node *if_node;
 	Node *then_node;
@@ -822,7 +811,7 @@ static void llvm2si_function_emit_if_then_else(
 	Llvm2siBasicBlock *then_bb;
 	Llvm2siBasicBlock *else_bb;
 
-	struct llvm2si_symbol_t *cond_symbol;
+	Llvm2siSymbol *cond_symbol;
 	struct list_t *arg_list;
 	struct si2bin_inst_t *inst;
 
@@ -849,8 +838,8 @@ static void llvm2si_function_emit_if_then_else(
 	assert(else_node->role == node_role_else);
 
 	/* Get basic blocks. 'If' node should be a leaf. */
-	then_node = node_get_last_leaf(then_node);
-	else_node = node_get_last_leaf(else_node);
+	then_node = NodeGetLastLeaf(then_node);
+	else_node = NodeGetLastLeaf(else_node);
 	assert(if_node->kind == node_leaf);
 	assert(then_node->kind == node_leaf);
 	assert(else_node->kind == node_leaf);
@@ -871,14 +860,14 @@ static void llvm2si_function_emit_if_then_else(
 	/* Get symbol associated with condition variable */
 	llcond = LLVMGetOperand(llinst, 0);
 	cond_name = (char *) LLVMGetValueName(llcond);
-	cond_symbol = llvm2si_symbol_table_lookup(function->symbol_table, cond_name);
+	cond_symbol = Llvm2siSymbolTableLookup(self->symbol_table, cond_name);
 	assert(cond_symbol);
 	assert(cond_symbol->type == llvm2si_symbol_scalar_register);
 	assert(cond_symbol->count == 2);
 	cond_sreg = cond_symbol->reg;
 
 	/* Allocate two scalar registers to push the active mask */
-	tos_sreg = llvm2si_function_alloc_sreg(function, 2, 2);
+	tos_sreg = Llvm2siFunctionAllocSReg(self, 2, 2);
 
 	/* Emit active mask push and set at the end of the 'If' block.
 	 * s_and_saveexec_b64 <tos_sreg> <cond_sreg>
@@ -887,7 +876,7 @@ static void llvm2si_function_emit_if_then_else(
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(cond_sreg, cond_sreg + 1));
 	inst = si2bin_inst_create(SI_INST_S_AND_SAVEEXEC_B64, arg_list);
-	llvm2si_basic_block_add_inst(if_bb, inst);
+	Llvm2siBasicBlockAddInst(if_bb, inst);
 
 
 	/*** Code for 'then' block ***/
@@ -900,7 +889,7 @@ static void llvm2si_function_emit_if_then_else(
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
 	inst = si2bin_inst_create(SI_INST_S_ANDN2_B64, arg_list);
-	llvm2si_basic_block_add_inst(then_bb, inst);
+	Llvm2siBasicBlockAddInst(then_bb, inst);
 
 
 	/*** Code for 'else' block ***/
@@ -912,13 +901,11 @@ static void llvm2si_function_emit_if_then_else(
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
 	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
-	llvm2si_basic_block_add_inst(else_bb, inst);
+	Llvm2siBasicBlockAddInst(else_bb, inst);
 }
 
 
-static void llvm2si_function_emit_while_loop(
-		Llvm2siFunction *function,
-		Node *node)
+static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 {
 	Node *head_node;
 	Node *tail_node;
@@ -930,7 +917,7 @@ static void llvm2si_function_emit_while_loop(
 	Llvm2siBasicBlock *pre_bb;
 	Llvm2siBasicBlock *exit_bb;
 
-	struct llvm2si_symbol_t *cond_symbol;
+	Llvm2siSymbol *cond_symbol;
 	struct list_t *arg_list;
 	struct si2bin_inst_t *inst;
 
@@ -970,7 +957,7 @@ static void llvm2si_function_emit_while_loop(
 	 * blocks have been inserted during the structural analysis, so they
 	 * contain no basic block yet.
 	 */
-	tail_node = node_get_last_leaf(tail_node);
+	tail_node = NodeGetLastLeaf(tail_node);
 	assert(pre_node->kind == node_leaf);
 	assert(head_node->kind == node_leaf);
 	assert(tail_node->kind == node_leaf);
@@ -985,14 +972,14 @@ static void llvm2si_function_emit_while_loop(
 	assert(!exit_bb);
 
 	/* Create pre-header and exit basic blocks */
-	pre_bb = new(Llvm2siBasicBlock, function, pre_node);
-	exit_bb = new(Llvm2siBasicBlock, function, exit_node);
+	pre_bb = new(Llvm2siBasicBlock, self, pre_node);
+	exit_bb = new(Llvm2siBasicBlock, self, exit_node);
 
 
 	/*** Code for pre-header block ***/
 
 	/* Allocate two scalar registers to push the active mask */
-	tos_sreg = llvm2si_function_alloc_sreg(function, 2, 2);
+	tos_sreg = Llvm2siFunctionAllocSReg(self, 2, 2);
 
 	/* Push active mask.
 	 * s_mov_b64 <tos_sreg>, exec
@@ -1001,7 +988,7 @@ static void llvm2si_function_emit_while_loop(
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
 	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
-	llvm2si_basic_block_add_inst(pre_bb, inst);
+	Llvm2siBasicBlockAddInst(pre_bb, inst);
 
 
 	/*** Code for exit block ***/
@@ -1013,7 +1000,7 @@ static void llvm2si_function_emit_while_loop(
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(tos_sreg, tos_sreg + 1));
 	inst = si2bin_inst_create(SI_INST_S_MOV_B64, arg_list);
-	llvm2si_basic_block_add_inst(exit_bb, inst);
+	Llvm2siBasicBlockAddInst(exit_bb, inst);
 
 
 	/*** Code for tail block ***/
@@ -1024,7 +1011,7 @@ static void llvm2si_function_emit_while_loop(
 	arg_list = list_create();
 	list_add(arg_list, si2bin_arg_create_label(head_node->name));
 	inst = si2bin_inst_create(SI_INST_S_BRANCH, arg_list);
-	llvm2si_basic_block_add_inst(tail_bb, inst);
+	Llvm2siBasicBlockAddInst(tail_bb, inst);
 
 
 	/*** Code for head block ***/
@@ -1039,7 +1026,7 @@ static void llvm2si_function_emit_while_loop(
 	/* Get symbol associated with condition variable */
 	llcond = LLVMGetOperand(llinst, 0);
 	cond_name = (char *) LLVMGetValueName(llcond);
-	cond_symbol = llvm2si_symbol_table_lookup(function->symbol_table, cond_name);
+	cond_symbol = Llvm2siSymbolTableLookup(self->symbol_table, cond_name);
 	assert(cond_symbol);
 	assert(cond_symbol->type == llvm2si_symbol_scalar_register);
 	assert(cond_symbol->count == 2);
@@ -1060,7 +1047,7 @@ static void llvm2si_function_emit_while_loop(
 	list_add(arg_list, si2bin_arg_create_special_register(si_inst_special_reg_exec));
 	list_add(arg_list, si2bin_arg_create_scalar_register_series(cond_sreg, cond_sreg + 1));
 	inst = si2bin_inst_create(opcode, arg_list);
-	llvm2si_basic_block_add_inst(head_bb, inst);
+	Llvm2siBasicBlockAddInst(head_bb, inst);
 
 	/* Exit loop if no more work-items are active.
 	 * s_cbranch_execz <exit_node>
@@ -1068,11 +1055,11 @@ static void llvm2si_function_emit_while_loop(
 	arg_list = list_create();
 	list_add(arg_list, si2bin_arg_create_label(exit_node->name));
 	inst = si2bin_inst_create(SI_INST_S_CBRANCH_EXECZ, arg_list);
-	llvm2si_basic_block_add_inst(head_bb, inst);
+	Llvm2siBasicBlockAddInst(head_bb, inst);
 }
 
 
-void llvm2si_function_emit_control_flow(Llvm2siFunction *function)
+void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *self)
 {
 	struct linked_list_t *node_list;
 	Node *node;
@@ -1081,7 +1068,7 @@ void llvm2si_function_emit_control_flow(Llvm2siFunction *function)
 	 * tree (not control-flow graph), from inner to outer control flow
 	 * structures. Which specific post-order traversal does not matter. */
 	node_list = linked_list_create();
-	ctree_traverse(function->ctree, NULL, node_list);
+	CTreeTraverse(self->ctree, NULL, node_list);
 
 	/* Traverse nodes */
 	LINKED_LIST_FOR_EACH(node_list)
@@ -1102,17 +1089,17 @@ void llvm2si_function_emit_control_flow(Llvm2siFunction *function)
 
 		case node_region_if_then:
 
-			llvm2si_function_emit_if_then(function, node);
+			Llvm2siFunctionEmitIfThen(self, node);
 			break;
 
 		case node_region_if_then_else:
 
-			llvm2si_function_emit_if_then_else(function, node);
+			Llvm2siFunctionEmitIfThenElse(self, node);
 			break;
 
 		case node_region_while_loop:
 
-			llvm2si_function_emit_while_loop(function, node);
+			Llvm2siFunctionEmitWhileLoop(self, node);
 			break;
 
 		default:
@@ -1127,9 +1114,8 @@ void llvm2si_function_emit_control_flow(Llvm2siFunction *function)
 }
 
 
-static struct si2bin_arg_t *llvm2si_function_translate_const_value(
-		Llvm2siFunction *function,
-		LLVMValueRef llvalue)
+static struct si2bin_arg_t *Llvm2siFunctionTranslateConstValue(
+		Llvm2siFunction *self, LLVMValueRef llvalue)
 {
 	LLVMTypeRef lltype;
 	LLVMTypeKind lltype_kind;
@@ -1167,12 +1153,10 @@ static struct si2bin_arg_t *llvm2si_function_translate_const_value(
 }
 
 
-struct si2bin_arg_t *llvm2si_function_translate_value(
-		Llvm2siFunction *function,
-		LLVMValueRef llvalue,
-		struct llvm2si_symbol_t **symbol_ptr)
+struct si2bin_arg_t *Llvm2siFunctionTranslateValue(Llvm2siFunction *self,
+		LLVMValueRef llvalue, Llvm2siSymbol **symbol_ptr)
 {
-	struct llvm2si_symbol_t *symbol;
+	Llvm2siSymbol *symbol;
 	struct si2bin_arg_t *arg;
 
 	char *name;
@@ -1182,7 +1166,7 @@ struct si2bin_arg_t *llvm2si_function_translate_value(
 
 	/* Treat constants separately */
 	if (LLVMIsConstant(llvalue))
-		return llvm2si_function_translate_const_value(function, llvalue);
+		return Llvm2siFunctionTranslateConstValue(self, llvalue);
 
 	/* Get name */
 	name = (char *) LLVMGetValueName(llvalue);
@@ -1190,7 +1174,7 @@ struct si2bin_arg_t *llvm2si_function_translate_value(
 		fatal("%s: anonymous values not supported", __FUNCTION__);
 
 	/* Look up symbol */
-	symbol = llvm2si_symbol_table_lookup(function->symbol_table, name);
+	symbol = Llvm2siSymbolTableLookup(self->symbol_table, name);
 	if (!symbol)
 		fatal("%s: %s: symbol not found", __FUNCTION__, name);
 
@@ -1221,10 +1205,8 @@ struct si2bin_arg_t *llvm2si_function_translate_value(
 }
 
 
-struct si2bin_arg_t *llvm2si_function_const_to_vreg(
-		Llvm2siFunction *function,
-		Llvm2siBasicBlock *basic_block,
-		struct si2bin_arg_t *arg)
+struct si2bin_arg_t *Llvm2siFunctionConstToVReg(Llvm2siFunction *self,
+		Llvm2siBasicBlock *basic_block, struct si2bin_arg_t *arg)
 {
 	struct si2bin_arg_t *ret_arg;
 	struct list_t *arg_list;
@@ -1236,7 +1218,7 @@ struct si2bin_arg_t *llvm2si_function_const_to_vreg(
 		return arg;
 
 	/* Allocate vector register */
-	vreg = llvm2si_function_alloc_vreg(function, 1, 1);
+	vreg = Llvm2siFunctionAllocVReg(self, 1, 1);
 	ret_arg = si2bin_arg_create_vector_register(vreg);
 
 	/* Copy constant to vector register.
@@ -1246,30 +1228,26 @@ struct si2bin_arg_t *llvm2si_function_const_to_vreg(
 	list_add(arg_list, si2bin_arg_create_vector_register(vreg));
 	list_add(arg_list, arg);
 	inst = si2bin_inst_create(SI_INST_V_MOV_B32, arg_list);
-	llvm2si_basic_block_add_inst(basic_block, inst);
+	Llvm2siBasicBlockAddInst(basic_block, inst);
 
 	/* Return new argument */
 	return ret_arg;
 }
 
 
-int llvm2si_function_alloc_sreg(Llvm2siFunction *function,
-		int count, int align)
+int Llvm2siFunctionAllocSReg(Llvm2siFunction *self, int count, int align)
 {
-	function->num_sregs = (function->num_sregs + align - 1)
+	self->num_sregs = (self->num_sregs + align - 1)
 			/ align * align;
-	function->num_sregs += count;
-	return function->num_sregs - count;
+	self->num_sregs += count;
+	return self->num_sregs - count;
 }
 
 
-int llvm2si_function_alloc_vreg(Llvm2siFunction *function,
-		int count, int align)
+int Llvm2siFunctionAllocVReg(Llvm2siFunction *self, int count, int align)
 {
-	function->num_vregs = (function->num_vregs + align - 1)
+	self->num_vregs = (self->num_vregs + align - 1)
 			/ align * align;
-	function->num_vregs += count;
-	return function->num_vregs - count;
+	self->num_vregs += count;
+	return self->num_vregs - count;
 }
-
-

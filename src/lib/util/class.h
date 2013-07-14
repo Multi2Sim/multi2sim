@@ -165,12 +165,14 @@ void ObjectDump(Object *self, FILE *f);
 	} while (0)
 
 
-#define new(name, ...) \
+#define new_ctor(name, ctor, ...) \
 	({ \
 		name *__p = class_new(&name##Class); \
-		name##Create(__p, ##__VA_ARGS__); \
+		name##ctor(__p, ##__VA_ARGS__); \
 		__p; \
 	})
+
+#define new(name, ...) new_ctor(name, Create, ##__VA_ARGS__)
 
 #define delete(var) class_delete((var))
 

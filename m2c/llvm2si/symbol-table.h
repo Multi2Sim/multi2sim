@@ -22,29 +22,35 @@
 
 #include <stdio.h>
 
+#include <lib/util/class.h>
+
 
 /* Forward declarations */
+CLASS_FORWARD_DECLARATION(Llvm2siSymbol);
 struct hash_table_t;
-struct llvm2si_symbol_t;
 
 
 
 /*
- * Symbol Table Object
+ * Class 'Llvm2siSymbolTable'
  */
 
-struct llvm2si_symbol_table_t
-{
+CLASS_BEGIN(Llvm2siSymbolTable, Object)
+	
 	struct hash_table_t *table;
-};
 
-struct llvm2si_symbol_table_t *llvm2si_symbol_table_create(void);
-void llvm2si_symbol_table_free(struct llvm2si_symbol_table_t *table);
-void llvm2si_symbol_table_dump(struct llvm2si_symbol_table_t *table, FILE *f);
+CLASS_END(Llvm2siSymbolTable)
 
-void llvm2si_symbol_table_add_symbol(struct llvm2si_symbol_table_t *table,
-		struct llvm2si_symbol_t *symbol);
-struct llvm2si_symbol_t *llvm2si_symbol_table_lookup(struct llvm2si_symbol_table_t *table,
+
+void Llvm2siSymbolTableCreate(Llvm2siSymbolTable *self);
+void Llvm2siSymbolTableDestroy(Llvm2siSymbolTable *self);
+
+/* Virtual function from class 'Object' */
+void Llvm2siSymbolTableDump(Object *self, FILE *f);
+
+void Llvm2siSymbolTableAddSymbol(Llvm2siSymbolTable *table,
+		Llvm2siSymbol *symbol);
+Llvm2siSymbol *Llvm2siSymbolTableLookup(Llvm2siSymbolTable *table,
 		const char *name);
 
 #endif
