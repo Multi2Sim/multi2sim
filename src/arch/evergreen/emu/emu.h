@@ -22,8 +22,15 @@
 
 #include <stdio.h>
 
-struct evg_emu_t
-{
+#include <arch/common/emu.h>
+
+
+/*
+ * Class 'EvgEmu'
+ */
+
+CLASS_BEGIN(EvgEmu, Emu)
+
 	/* OpenCL objects */
 	struct evg_opencl_repo_t *opencl_repo;
 	struct evg_opencl_platform_t *opencl_platform;
@@ -72,8 +79,22 @@ struct evg_emu_t
 
 	/* Stats */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
-};
 
+CLASS_END(EvgEmu)
+
+
+void EvgEmuCreate(EvgEmu *self);
+void EvgEmuDestroy(EvgEmu *self);
+
+void EvgEmuDump(FILE *f);
+void EvgEmuDumpSummary(FILE *f);
+int EvgEmuRun(void);
+
+
+
+/*
+ * Non-Class Stuff
+ */
 
 extern long long evg_emu_max_cycles;
 extern long long evg_emu_max_inst;
@@ -88,19 +109,15 @@ extern int evg_emu_wavefront_size;
 extern char *evg_err_opencl_note;
 extern char *evg_err_opencl_param_note;
 
+extern EvgEmu *evg_emu;
 
-extern struct evg_emu_t *evg_emu;
 
 void evg_emu_init(void);
 void evg_emu_done(void);
-void evg_emu_dump(FILE *f);
-
-void evg_emu_dump_summary(FILE *f);
-
-int evg_emu_run(void);
 
 void evg_emu_disasm(char *path);
 void evg_emu_opengl_disasm(char *path, int opengl_shader_index);
+
 
 #endif
 

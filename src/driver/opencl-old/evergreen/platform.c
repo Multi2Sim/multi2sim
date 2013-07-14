@@ -28,24 +28,28 @@
 #include "repo.h"
 
 
-struct evg_opencl_platform_t *evg_opencl_platform_create()
+struct evg_opencl_platform_t *evg_opencl_platform_create(EvgEmu *emu)
 {
 	struct evg_opencl_platform_t *platform;
 
 	/* Initialize */
 	platform = xcalloc(1, sizeof(struct evg_opencl_platform_t));
-	platform->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+	platform->id = evg_opencl_repo_new_object_id(emu->opencl_repo,
 		evg_opencl_object_platform);
+	platform->emu = emu;
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, platform);
+	evg_opencl_repo_add_object(emu->opencl_repo, platform);
 	return platform;
 }
 
 
 void evg_opencl_platform_free(struct evg_opencl_platform_t *platform)
 {
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, platform);
+	EvgEmu *emu;
+
+	emu = platform->emu;
+	evg_opencl_repo_remove_object(emu->opencl_repo, platform);
 	free(platform);
 }
 

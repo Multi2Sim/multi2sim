@@ -2013,8 +2013,8 @@ int main(int argc, char **argv)
 			arm_mem_config_parse_entry,
 			arm_mem_config_check);
 	arch_evergreen = arch_register("Evergreen", "evg", evg_sim_kind,
-			evg_emu_init, evg_emu_done, evg_emu_run,
-			evg_emu_dump, evg_emu_dump_summary,
+			evg_emu_init, evg_emu_done, EvgEmuRun,
+			EvgEmuDump, EvgEmuDumpSummary,
 			evg_gpu_read_config,
 			evg_gpu_init, evg_gpu_done, evg_gpu_run,
 			evg_gpu_dump, evg_gpu_dump_summary,

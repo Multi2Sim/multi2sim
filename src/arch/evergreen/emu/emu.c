@@ -42,15 +42,144 @@
 
 
 /*
- * Global variables
+ * Class 'EvgEmu'
+ */
+
+CLASS_IMPLEMENTATION(EvgEmu);
+
+void EvgEmuCreate(EvgEmu *self)
+{
+	/* Memories */
+	self->const_mem = mem_create();
+	self->const_mem->safe = 0;
+	self->global_mem = mem_create();
+	self->global_mem->safe = 0;
+
+	/* Initialize OpenCL objects */
+	self->opencl_repo = evg_opencl_repo_create();
+	self->opencl_platform = evg_opencl_platform_create(self);
+	self->opencl_device = evg_opencl_device_create(self);
+}
+
+
+void EvgEmuDestroy(EvgEmu *self)
+{
+	/* Free ND-Ranges */
+	while (self->ndrange_list_count)
+		evg_ndrange_free(self->ndrange_list_head);
+
+	/* Free OpenCL objects */
+	evg_opencl_repo_free_all_objects(self->opencl_repo);
+	evg_opencl_repo_free(self->opencl_repo);
+
+	/* Finalize GPU kernel */
+	mem_free(self->const_mem);
+	mem_free(self->global_mem);
+}
+
+
+void EvgEmuDump(FILE *f)
+{
+}
+
+
+void EvgEmuDumpSummary(FILE *f)
+{
+	EvgEmu *self = evg_emu;
+
+	fprintf(f, "NDRangeCount = %d\n", self->ndrange_count);
+}
+
+
+/* One iteration of emulator. Return TRUE if the emulation is still running. */
+int EvgEmuRun(void)
+{
+	EvgEmu *self = evg_emu;
+
+	struct evg_ndrange_t *ndrange;
+	struct evg_ndrange_t *ndrange_next;
+
+	struct evg_work_group_t *work_group;
+	struct evg_work_group_t *work_group_next;
+
+	struct evg_wavefront_t *wavefront;
+	struct evg_wavefront_t *wavefront_next;
+
+	/* Exit if there are no ND-Ranges to emulate */
+	if (!self->ndrange_list_count)
+		return FALSE;
+
+	/* Start any ND-Range in state 'pending' */
+	while ((ndrange = self->pending_ndrange_list_head))
+	{
+		/* Set all ready work-groups to running */
+		while ((work_group = ndrange->pending_list_head))
+		{
+			evg_work_group_clear_status(work_group, evg_work_group_pending);
+			evg_work_group_set_status(work_group, evg_work_group_running);
+		}
+
+		/* Set is in state 'running' */
+		evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
+		evg_ndrange_set_status(ndrange, evg_ndrange_running);
+	}
+
+	/* Run one instruction of each wavefront in each work-group of each
+	 * ND-Range that is in status 'running'. */
+	for (ndrange = self->running_ndrange_list_head; ndrange; ndrange = ndrange_next)
+	{
+		/* Save next ND-Range in state 'running'. This is done because the state
+		 * might change during the execution of the ND-Range. */
+		ndrange_next = ndrange->running_ndrange_list_next;
+
+		/* Execute an instruction from each work-group */
+		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
+		{
+			/* Save next running work-group */
+			work_group_next = work_group->running_list_next;
+
+			/* Run an instruction from each wavefront */
+			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next)
+			{
+				/* Save next running wavefront */
+				wavefront_next = wavefront->running_list_next;
+
+				/* Execute instruction in wavefront */
+				evg_wavefront_execute(wavefront);
+			}
+		}
+	}
+
+	/* Free ND-Ranges that finished */
+	while ((ndrange = self->finished_ndrange_list_head))
+	{
+		/* Dump ND-Range report */
+		evg_ndrange_dump(ndrange, evg_emu_report_file);
+
+		/* Stop if maximum number of kernels reached */
+		if (evg_emu_max_kernels && self->ndrange_count >= evg_emu_max_kernels)
+			esim_finish = esim_finish_evg_max_kernels;
+
+		/* Extract from list of finished ND-Ranges and free */
+		evg_ndrange_free(ndrange);
+	}
+
+	/* Still emulating */
+	return TRUE;
+}
+
+
+
+/*
+ * Non-Class Stuff
  */
 
 
-struct evg_emu_t *evg_emu;
+EvgEmu *evg_emu;
 
-long long evg_emu_max_cycles = 0;
-long long evg_emu_max_inst = 0;
-int evg_emu_max_kernels = 0;
+long long evg_emu_max_cycles;
+long long evg_emu_max_inst;
+int evg_emu_max_kernels;
 
 char *evg_emu_opencl_binary_name = "";
 char *evg_emu_report_file_name = "";
@@ -59,10 +188,11 @@ FILE *evg_emu_report_file = NULL;
 int evg_emu_wavefront_size = 64;
 
 
-
-
 void evg_emu_init(void)
 {
+	/* Classes */
+	CLASS_REGISTER(EvgEmu);
+
 	/* Open report file */
 	if (*evg_emu_report_file_name)
 	{
@@ -72,23 +202,14 @@ void evg_emu_init(void)
 				evg_emu_report_file_name);
 	}
 
-	/* Initialize */
-	evg_emu = xcalloc(1, sizeof(struct evg_emu_t));
-	evg_emu->const_mem = mem_create();
-	evg_emu->const_mem->safe = 0;
-	evg_emu->global_mem = mem_create();
-	evg_emu->global_mem->safe = 0;
+	/* Create emulator */
+	evg_emu = new(EvgEmu);
 
 	/* Initialize disassembler (decoding tables...) */
 	evg_disasm_init();
 
 	/* Initialize ISA (instruction execution tables...) */
 	evg_isa_init();
-
-	/* Initialize OpenCL objects */
-	evg_emu->opencl_repo = evg_opencl_repo_create();
-	evg_emu->opencl_platform = evg_opencl_platform_create();
-	evg_emu->opencl_device = evg_opencl_device_create();
 }
 
 
@@ -98,39 +219,17 @@ void evg_emu_done()
 	if (evg_emu_report_file)
 		fclose(evg_emu_report_file);
 
-	/* Free ND-Ranges */
-	while (evg_emu->ndrange_list_count)
-		evg_ndrange_free(evg_emu->ndrange_list_head);
-
-	/* Free OpenCL objects */
-	evg_opencl_repo_free_all_objects(evg_emu->opencl_repo);
-	evg_opencl_repo_free(evg_emu->opencl_repo);
-
 	/* Finalize disassembler */
 	evg_disasm_done();
 
 	/* Finalize ISA */
 	evg_isa_done();
 
-	/* Finalize GPU kernel */
-	mem_free(evg_emu->const_mem);
-	mem_free(evg_emu->global_mem);
-	free(evg_emu);
+	/* Free emulator */
+	delete(evg_emu);
 }
 
 
-void evg_emu_dump(FILE *f)
-{
-}
-
-
-void evg_emu_dump_summary(FILE *f)
-{
-	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
-}
-
-
-/* GPU disassembler tool */
 void evg_emu_disasm(char *path)
 {
 	struct elf_file_t *elf_file;
@@ -182,7 +281,7 @@ void evg_emu_disasm(char *path)
 	exit(0);
 }
 
-/* GPU OpenGL disassembler tool */
+
 void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 {
 	void *file_buffer;
@@ -226,78 +325,3 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 	exit(0);
 }
 
-
-/* One iteration of emulator. Return TRUE if the emulation is still running. */
-int evg_emu_run(void)
-{
-	struct evg_ndrange_t *ndrange;
-	struct evg_ndrange_t *ndrange_next;
-
-	struct evg_work_group_t *work_group;
-	struct evg_work_group_t *work_group_next;
-
-	struct evg_wavefront_t *wavefront;
-	struct evg_wavefront_t *wavefront_next;
-
-	/* Exit if there are no ND-Ranges to emulate */
-	if (!evg_emu->ndrange_list_count)
-		return FALSE;
-
-	/* Start any ND-Range in state 'pending' */
-	while ((ndrange = evg_emu->pending_ndrange_list_head))
-	{
-		/* Set all ready work-groups to running */
-		while ((work_group = ndrange->pending_list_head))
-		{
-			evg_work_group_clear_status(work_group, evg_work_group_pending);
-			evg_work_group_set_status(work_group, evg_work_group_running);
-		}
-
-		/* Set is in state 'running' */
-		evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
-		evg_ndrange_set_status(ndrange, evg_ndrange_running);
-	}
-
-	/* Run one instruction of each wavefront in each work-group of each
-	 * ND-Range that is in status 'running'. */
-	for (ndrange = evg_emu->running_ndrange_list_head; ndrange; ndrange = ndrange_next)
-	{
-		/* Save next ND-Range in state 'running'. This is done because the state
-		 * might change during the execution of the ND-Range. */
-		ndrange_next = ndrange->running_ndrange_list_next;
-
-		/* Execute an instruction from each work-group */
-		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
-		{
-			/* Save next running work-group */
-			work_group_next = work_group->running_list_next;
-
-			/* Run an instruction from each wavefront */
-			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next)
-			{
-				/* Save next running wavefront */
-				wavefront_next = wavefront->running_list_next;
-
-				/* Execute instruction in wavefront */
-				evg_wavefront_execute(wavefront);
-			}
-		}
-	}
-
-	/* Free ND-Ranges that finished */
-	while ((ndrange = evg_emu->finished_ndrange_list_head))
-	{
-		/* Dump ND-Range report */
-		evg_ndrange_dump(ndrange, evg_emu_report_file);
-
-		/* Stop if maximum number of kernels reached */
-		if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
-			esim_finish = esim_finish_evg_max_kernels;
-
-		/* Extract from list of finished ND-Ranges and free */
-		evg_ndrange_free(ndrange);
-	}
-
-	/* Still emulating */
-	return TRUE;
-}
