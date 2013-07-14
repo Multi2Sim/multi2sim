@@ -160,9 +160,26 @@ uav[0-9]+ {
 	return TOK_INT_DECL;
 }
 
+".short" {
+	return TOK_SHORT_DECL;
+}
+
 ".float" {
 	return TOK_FLOAT_DECL;
 }
+
+".dword" {
+	return TOK_DWORD_DECL;
+}
+
+".word" {
+	return TOK_WORD_DECL;
+}
+	
+".byte" {
+	return TOK_BYTE_DECL;
+}
+
 
 [a-zA-Z_][a-zA-Z0-9_]* {   
 	si2bin_yylval.id = si2bin_id_create(yytext);
