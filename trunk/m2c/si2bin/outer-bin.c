@@ -201,14 +201,36 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					elf_enc_buffer_write(rodata_buffer, 
 						&data->int_value, 
 						sizeof(int));
-					printf("\n value: %d", data->int_value);
+					break;
+							
+				case si2bin_data_short:
+					elf_enc_buffer_write(rodata_buffer, 
+						&data->short_value, 
+						sizeof(short));
 					break;
 
 				case si2bin_data_float:
 					elf_enc_buffer_write(rodata_buffer, 
 						&data->float_value, 
 						sizeof(float));
-					printf("\n value: %f", data->float_value);
+					break;
+				
+				case si2bin_data_word:
+					elf_enc_buffer_write(rodata_buffer, 
+						&data->word_value, 
+						sizeof(unsigned short));
+					break;
+				
+				case si2bin_data_dword:
+					elf_enc_buffer_write(rodata_buffer, 
+						&data->dword_value, 
+						sizeof(unsigned int));
+					break;
+				
+				case si2bin_data_byte:
+					elf_enc_buffer_write(rodata_buffer, 
+						&data->byte_value, 
+						sizeof(unsigned char));
 					break;
 			}
 		}
@@ -219,6 +241,7 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 			elf_enc_buffer_write(rodata_buffer, &byte,
 				sizeof(unsigned char));
 		}
+		
 		
 		/* Get number of elements to be used later in cb2 */
 		glob_size = rodata_buffer->offset / 16;
@@ -916,11 +939,11 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 		si2bin_inner_bin_generate(inner_bin, kernel_buffer);
 			
 		/* Output Inner ELF */
-		FILE *f;
+		/* FILE *f;
 		snprintf(line, sizeof line, "%s_kernel", inner_bin->name);
 		f = file_open_for_write(line);
 		elf_enc_buffer_write_to_file(kernel_buffer, f);
-		file_close(f);
+		file_close(f); */
 
 	
 		/* Create kernel symbol and add it to the symbol table */

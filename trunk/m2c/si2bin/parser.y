@@ -97,7 +97,14 @@
 %token TOK_TEXT
 %token TOK_CONST
 %token TOK_INT_DECL
+%token TOK_LONG_DECL
+%token TOK_SHORT_DECL
 %token TOK_FLOAT_DECL
+%token TOK_DOUBLE_DECL
+%token TOK_QWORD_DECL
+%token TOK_DWORD_DECL
+%token TOK_WORD_DECL
+%token TOK_BYTE_DECL
 
 %type<inst> instr
 %type<list> arg_list
@@ -376,7 +383,11 @@ data_stmt
 		si2bin_id_free($1);
 	}
 	| TOK_INT_DECL int_vals
+	| TOK_SHORT_DECL short_vals
 	| TOK_FLOAT_DECL float_vals
+	| TOK_WORD_DECL word_vals
+	| TOK_DWORD_DECL dword_vals
+	| TOK_BYTE_DECL byte_vals
 	;
 
 int_vals
@@ -404,6 +415,31 @@ int_vals
 	} TOK_NEW_LINE
 	;
 
+short_vals
+	: 
+	| short_vals TOK_NEW_LINE
+	| short_vals TOK_DECIMAL TOK_COMMA
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_short;
+		data->short_value = (short)$2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	}
+	| short_vals TOK_DECIMAL
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_short;
+		data->short_value = (short)$2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	} TOK_NEW_LINE
+	;
+
 float_vals
 	: 
 	| float_vals TOK_NEW_LINE
@@ -425,6 +461,81 @@ float_vals
 		data->data_type = si2bin_data_float;
 		data->float_value = $2;
 
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	} TOK_NEW_LINE
+	;
+
+word_vals
+	: 
+	| word_vals TOK_NEW_LINE
+	| word_vals hex_or_dec_value TOK_COMMA
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_word;
+		data->word_value = (unsigned short)$2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	}
+	| word_vals hex_or_dec_value
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_word;
+		data->word_value = (unsigned short)$2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	} TOK_NEW_LINE
+	;
+
+dword_vals
+	: 
+	| dword_vals TOK_NEW_LINE
+	| dword_vals hex_or_dec_value TOK_COMMA
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_dword;
+		data->dword_value = (unsigned int)$2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	}
+	| dword_vals hex_or_dec_value
+	{ 
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_dword;
+		data->dword_value = (unsigned int)$2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	} TOK_NEW_LINE
+	;
+
+byte_vals
+	: 
+	| byte_vals TOK_NEW_LINE
+	| byte_vals hex_or_dec_value TOK_COMMA
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_byte;
+		data->byte_value = (unsigned char)$2;
+		
+		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
+	}
+	| byte_vals hex_or_dec_value
+	{
+		struct si2bin_data_t *data;
+		
+		data = si2bin_data_create();
+		data->data_type = si2bin_data_byte;
+		data->byte_value = (unsigned char)$2;
+		
 		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
 	} TOK_NEW_LINE
 	;
@@ -458,7 +569,7 @@ args_stmt
 		arg->value.data_type = str_map_string_err(&si_arg_data_type_map, $1->name, &err);
 		if(err)
 			si2bin_yyerror_fmt("Unrecognized data type: %s", $1->name);
-		
+
 		arg->value.num_elems = 1;
 		arg->value.constant_buffer_num = 1;
 		arg->value.constant_offset = $3;
@@ -639,7 +750,6 @@ text_stmt_list
 
 text_stmt
 	: label TOK_NEW_LINE
-
 	| instr
 	{
 		struct si2bin_inst_t *inst = $1;
@@ -652,8 +762,6 @@ text_stmt
 		//si2bin_inst_dump(inst, stdout);
 		si2bin_inst_free(inst);
 	} TOK_NEW_LINE
-	
-	| TOK_NEW_LINE
 ;
 
 label
