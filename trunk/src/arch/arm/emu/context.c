@@ -618,6 +618,7 @@ void arm_ctx_free(struct arm_ctx_t *ctx)
 	ARMEmuListRemove(arm_emu, arm_emu_list_context, ctx);
 	arm_ctx_debug("context %d freed\n", ctx->pid);
 
+	list_free(ctx->thumb_symbol_list);
 	free(ctx);
 }
 
