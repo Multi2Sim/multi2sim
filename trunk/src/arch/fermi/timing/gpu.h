@@ -20,6 +20,9 @@
 #ifndef FERMI_TIMING_GPU_H
 #define FERMI_TIMING_GPU_H
 
+#include <arch/common/timing.h>
+
+
 /* Trace */
 #define frm_tracing() trace_status(frm_trace_category)
 #define frm_trace(...) trace(frm_trace_category, __VA_ARGS__)
@@ -183,29 +186,6 @@ extern int frm_gpu_lds_latency;
 extern int frm_gpu_lds_block_size;
 extern int frm_gpu_lds_num_ports;
 
-struct frm_gpu_t
-{
-	/* Grids */
-	struct frm_grid_t *grid;
-	int thread_blocks_per_sm;
-	int warps_per_sm;
-	int threads_per_sm;
-
-	/* Streaming multiprocessors */
-	struct frm_sm_t **sms;
-
-	/* Lists */
-	struct list_t *sm_ready_list;
-	struct list_t *sm_busy_list;
-
-	/* List of deleted instructions */
-	struct linked_list_t *trash_uop_list;
-
-	long long int last_complete_cycle;
-};
-
-extern struct frm_gpu_t *frm_gpu;
-
 #define FRM_GPU_FOREACH_SM(SM_ID) \
 	for ((SM_ID) = 0; (SM_ID) < frm_gpu_num_sms; (SM_ID)++)
 
@@ -227,18 +207,56 @@ struct frm_lds_t;
 
 
 /*
+ * Class 'FrmGpu
+ */
+
+CLASS_BEGIN(FrmGpu, Timing)
+
+	/* Grids */
+	struct frm_grid_t *grid;
+	int thread_blocks_per_sm;
+	int warps_per_sm;
+	int threads_per_sm;
+
+	/* Streaming multiprocessors */
+	struct frm_sm_t **sms;
+
+	/* Lists */
+	struct list_t *sm_ready_list;
+	struct list_t *sm_busy_list;
+
+	/* List of deleted instructions */
+	struct linked_list_t *trash_uop_list;
+
+	long long int last_complete_cycle;
+
+CLASS_END(FrmGpu)
+
+
+void FrmGpuCreate(FrmGpu *self);
+void FrmGpuDestroy(FrmGpu *self);
+
+void frm_gpu_dump(FILE *f);
+void FrmGpuDumpSummary(FILE *f);
+
+int FrmGpuRun(void);
+
+
+
+
+/*
  * Public Functions
  */
+
+extern FrmGpu *frm_gpu;
 
 void frm_gpu_read_config(void);
 
 void frm_gpu_init(void);
 void frm_gpu_done(void);
-void frm_gpu_dump(FILE *f);
 
 void frm_gpu_dump_default_config(char *filename);
 void frm_gpu_dump_report(void);
-void frm_gpu_dump_summary(FILE *f);
 
 void frm_gpu_uop_trash_add(struct frm_uop_t *uop);
 void frm_gpu_uop_trash_empty(void);
@@ -246,8 +264,6 @@ void frm_gpu_uop_trash_empty(void);
 void frm_sm_run_simd(struct frm_sm_t *sm);
 void frm_sm_run_scalar_unit(struct frm_sm_t *sm);
 void frm_sm_run_branch_unit(struct frm_sm_t *sm);
-
-int frm_gpu_run(void);
 
 void frm_simd_run(struct frm_simd_t *simd);
 void frm_scalar_unit_run(struct frm_scalar_unit_t *scalar_unit);

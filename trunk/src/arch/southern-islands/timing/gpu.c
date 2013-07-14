@@ -409,7 +409,8 @@ int si_gpu_lds_latency = 2;
 int si_gpu_lds_block_size = 64;
 int si_gpu_lds_num_ports = 2;
 
-struct si_gpu_t *si_gpu;
+
+
 
 /*
  * Private Functions
@@ -421,35 +422,6 @@ struct si_gpu_t *si_gpu;
 #define SI_TRACE_VERSION_MAJOR		1
 #define SI_TRACE_VERSION_MINOR		1
 
-
-static void si_gpu_device_init(void)
-{
-	struct si_compute_unit_t *compute_unit;
-	int compute_unit_id;
-
-	/* Initialize */
-	si_gpu = xcalloc(1, sizeof(struct si_gpu_t));
-
-	si_gpu->available_compute_units = list_create();
-	si_gpu->compute_units = xcalloc(si_gpu_num_compute_units, 
-		sizeof(void *));
-
-	/* Initialize compute units */
-	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-	{
-		compute_unit = si_compute_unit_create();
-		compute_unit->id = compute_unit_id;
-
-		si_gpu->compute_units[compute_unit_id] = compute_unit;
-
-		list_add(si_gpu->available_compute_units, compute_unit);
-	}
-
-	/* Trace */
-	si_trace_header("si.init version=\"%d.%d\" num_compute_units=%d\n",
-		SI_TRACE_VERSION_MAJOR, SI_TRACE_VERSION_MINOR,
-		si_gpu_num_compute_units);
-}
 
 void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
 {
@@ -1106,6 +1078,9 @@ void si_gpu_read_config(void)
 
 void si_gpu_init(void)
 {
+	/* Classes */
+	CLASS_REGISTER(SIGpu);
+
 	/* Trace */
 	si_trace_category = trace_new_category();
 
@@ -1114,47 +1089,34 @@ void si_gpu_init(void)
 			!file_can_open_for_write(si_gpu_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",
 			si_gpu_report_file_name);
+	
+	/* Create GPU */
+	si_gpu = new(SIGpu);
 
 	/* Initializations */
-	si_gpu_device_init();
 	si_uop_init();
+
+	/* Trace */
+	si_trace_header("si.init version=\"%d.%d\" num_compute_units=%d\n",
+		SI_TRACE_VERSION_MAJOR, SI_TRACE_VERSION_MINOR,
+		si_gpu_num_compute_units);
 }
 
 
 void si_gpu_done(void)
 {
-	struct si_compute_unit_t *compute_unit;
-	int compute_unit_id;
-
 	/* GPU pipeline report */
 	si_gpu_dump_report();
 
-	/* Free stream cores, compute units, and device */
-	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-	{
-		compute_unit = si_gpu->compute_units[compute_unit_id];
-		si_compute_unit_free(compute_unit);
-	}
-	free(si_gpu->compute_units);
-
-	/* Free available compute unit list */
-	list_free(si_gpu->available_compute_units);
-
 	/* Free GPU */
-	memset(si_gpu, 0, sizeof(struct si_gpu_t));
-	free(si_gpu);
+	delete(si_gpu);
 
-	if(si_spatial_report_active)
+	/* Spatial report */
+	if (si_spatial_report_active)
 		si_cu_spatial_report_done();
-
 
 	/* Finalizations */
 	si_uop_done();
-}
-
-
-void si_gpu_dump(FILE *f)
-{
 }
 
 
@@ -1276,14 +1238,71 @@ void si_gpu_dump_report(void)
 	file_close(f);
 }
 
+
+
+
+/*
+ * Class 'SIGpu'
+ */
+
+CLASS_IMPLEMENTATION(SIGpu);
+
+void SIGpuCreate(SIGpu *self)
+{
+	struct si_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
+	/* Parent */
+	TimingCreate(asTiming(self));
+	
+	/* Initialize */
+	self->available_compute_units = list_create();
+	self->compute_units = xcalloc(si_gpu_num_compute_units, 
+		sizeof(void *));
+
+	/* Initialize compute units */
+	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		compute_unit = si_compute_unit_create();
+		compute_unit->id = compute_unit_id;
+		self->compute_units[compute_unit_id] = compute_unit;
+		list_add(self->available_compute_units, compute_unit);
+	}
+}
+
+
+void SIGpuDestroy(SIGpu *self)
+{
+	struct si_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
+	/* Free stream cores, compute units, and device */
+	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		compute_unit = self->compute_units[compute_unit_id];
+		si_compute_unit_free(compute_unit);
+	}
+	free(self->compute_units);
+
+	/* Free available compute unit list */
+	list_free(self->available_compute_units);
+}
+
+
+void si_gpu_dump(FILE *f)
+{
+}
+
+
 void si_gpu_dump_summary(FILE *f)
 {
 }
 
 
-/* Run one iteration of timing simulation. Return TRUE if still running. */
 int si_gpu_run(void)
 {
+	SIGpu *self = si_gpu;
+
 	struct si_compute_unit_t *compute_unit;
 	struct si_ndrange_t *ndrange;
 	struct si_work_group_t *work_group;
@@ -1302,7 +1321,7 @@ int si_gpu_run(void)
 	assert(ndrange);
 
 	/* Allocate work-groups to compute units */
-	while (list_count(si_gpu->available_compute_units) && 
+	while (list_count(self->available_compute_units) && 
 		list_count(si_emu->waiting_work_groups))
 	{
 		work_group_id = (long) list_dequeue(
@@ -1314,7 +1333,7 @@ int si_gpu_run(void)
 			(void *)work_group_id);
 
 		si_compute_unit_map_work_group(
-			list_dequeue(si_gpu->available_compute_units),
+			list_dequeue(self->available_compute_units),
 			work_group);
 	}
 
@@ -1336,7 +1355,7 @@ int si_gpu_run(void)
 	}
 
 	/* Stop if there was a simulation stall */
-	if ((arch_southern_islands->cycle-si_gpu->last_complete_cycle) > 
+	if ((arch_southern_islands->cycle-self->last_complete_cycle) > 
 		1000000)
 	{
 		warning("Southern Islands GPU simulation stalled.\n%s", 
@@ -1355,7 +1374,7 @@ int si_gpu_run(void)
 	/* Run one loop iteration on each busy compute unit */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = si_gpu->compute_units[compute_unit_id];
+		compute_unit = self->compute_units[compute_unit_id];
 
 		/* Run one cycle */
 		si_compute_unit_run(compute_unit);
@@ -1364,4 +1383,13 @@ int si_gpu_run(void)
 	/* Still running */
 	return TRUE;
 }
+
+
+
+/*
+ * Public Stuff
+ */
+
+SIGpu *si_gpu;
+
 

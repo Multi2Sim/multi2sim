@@ -26,11 +26,42 @@
 
 
 /*
- * Global Variables
+ * Class 'ARMCpu'
  */
 
+CLASS_IMPLEMENTATION(ARMCpu);
 
-/* 
+void ARMCpuCreate(ARMCpu *self)
+{
+	/* Parent */
+	TimingCreate(asTiming(self));
+}
+
+
+void ARMCpuDestroy(ARMCpu *self)
+{
+}
+
+
+void ARMCpuDump(FILE *f)
+{
+}
+
+
+void ARMCpuDumpSummary(FILE *f)
+{
+}
+
+
+int ARMCpuRun(void)
+{
+	return FALSE;
+}
+
+
+
+
+/*
  * Public Functions
  */
 
@@ -41,28 +72,11 @@ void arm_cpu_read_config(void)
 
 void arm_cpu_init(void)
 {
+	/* Classes */
+	CLASS_REGISTER(ARMCpu);
 }
 
 
 void arm_cpu_done(void)
-{
-}
-
-
-void arm_cpu_dump(FILE *f)
-{
-}
-
-
-/* Run one iteration of timing simulation. Return TRUE if the timing simulation
- * is still running. */
-int arm_cpu_run(void)
-{
-	return FALSE;
-}
-
-
-/* TODO: Implement the Arm cpu dump for the cycle accurate simulation */
-void arm_cpu_dump_summary(FILE *f)
 {
 }

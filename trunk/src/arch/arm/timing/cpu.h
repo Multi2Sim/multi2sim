@@ -22,6 +22,26 @@
 
 #include <stdio.h>
 
+#include <arch/common/timing.h>
+
+
+/*
+ * Class 'ARMCpu'
+ */
+
+CLASS_BEGIN(ARMCpu, Timing)
+
+CLASS_END(ARMCpu)
+
+void ARMCpuCreate(ARMCpu *self);
+void ARMCpuDestroy(ARMCpu *self);
+
+int ARMCpuRun(void);
+
+void ARMCpuDump(FILE *f);
+void ARMCpuDumpSummary(FILE *f);
+
+
 
 /*
  * Public Functions
@@ -31,10 +51,5 @@ void arm_cpu_read_config(void);
 
 void arm_cpu_init(void);
 void arm_cpu_done(void);
-
-int arm_cpu_run(void);
-
-void arm_cpu_dump(FILE *f);
-void arm_cpu_dump_summary(FILE *f);
 
 #endif

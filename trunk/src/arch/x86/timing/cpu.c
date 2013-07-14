@@ -245,8 +245,7 @@ char *x86_config_help =
 	"\n";
 
 
-/* Main Processor Global Variable */
-struct x86_cpu_t *x86_cpu;
+X86Cpu *x86_cpu;
 
 /* Trace */
 int x86_trace_category;
@@ -640,25 +639,26 @@ static void x86_cpu_dump_report(void)
 }
 
 
-static void x86_cpu_thread_init(int core, int thread)
+static void x86_cpu_thread_init(X86Cpu *cpu, int core, int thread)
 {
 }
 
 
-static void x86_cpu_core_init(int core)
+static void x86_cpu_core_init(X86Cpu *cpu, int core)
 {
 	int thread;
-	X86_CORE.thread = xcalloc(x86_cpu_num_threads, sizeof(struct x86_thread_t));
-	X86_THREAD_FOR_EACH
-		x86_cpu_thread_init(core, thread);
 
-	X86_CORE.prefetch_history = prefetch_history_create();
+	cpu->core[core].thread = xcalloc(x86_cpu_num_threads, sizeof(struct x86_thread_t));
+	for (thread = 0; thread < x86_cpu_num_threads; thread++)
+		x86_cpu_thread_init(cpu, core, thread);
+
+	cpu->core[core].prefetch_history = prefetch_history_create();
 }
 
-static void x86_cpu_core_done(int core)
+static void x86_cpu_core_done(X86Cpu *cpu, int core)
 {
-	free(X86_CORE.thread);
-	prefetch_history_free(X86_CORE.prefetch_history);
+	free(cpu->core[core].thread);
+	prefetch_history_free(cpu->core[core].prefetch_history);
 }
 
 
@@ -782,19 +782,14 @@ void x86_cpu_read_config(void)
 
 void x86_cpu_init(void)
 {
-	int core;
+	/* Classes */
+	CLASS_REGISTER(X86Cpu);
 
 	/* Trace */
 	x86_trace_category = trace_new_category();
 
-	/* Initialize */
-	x86_cpu = xcalloc(1, sizeof(struct x86_cpu_t));
-	x86_cpu->uop_trace_list = linked_list_create();
-
-	/* Initialize cores */
-	x86_cpu->core = xcalloc(x86_cpu_num_cores, sizeof(struct x86_core_t));
-	X86_CORE_FOR_EACH
-		x86_cpu_core_init(core);
+	/* Create CPU */
+	x86_cpu = new(X86Cpu);
 
 	/* Components of an x86 CPU */
 	x86_reg_file_init();
@@ -818,8 +813,6 @@ void x86_cpu_init(void)
 /* Finalization */
 void x86_cpu_done()
 {
-	int core;
-
 	/* Dump CPU report */
 	x86_cpu_dump_report();
 
@@ -839,98 +832,8 @@ void x86_cpu_done()
 	x86_reg_file_done();
 	x86_fu_done();
 
-	/* Free processor */
-	X86_CORE_FOR_EACH
-		x86_cpu_core_done(core);
-
-	free(x86_cpu->core);
-	free(x86_cpu);
-}
-
-
-void x86_cpu_dump(FILE *f)
-{
-	int core;
-	int thread;
-	
-	/* General information */
-	fprintf(f, "\n");
-	fprintf(f, "LastDump = %lld   ; Cycle of last dump\n", x86_cpu->last_dump);
-	fprintf(f, "IPCLastDump = %.4g   ; IPC since last dump\n",
-			arch_x86->cycle - x86_cpu->last_dump > 0 ?
-			(double) (x86_cpu->num_committed_uinst - x86_cpu->last_committed)
-			/ (arch_x86->cycle - x86_cpu->last_dump) : 0);
-	fprintf(f, "\n");
-
-	/* Cores */
-	X86_CORE_FOR_EACH
-	{
-		fprintf(f, "-------\n");
-		fprintf(f, "Core %d\n", core);
-		fprintf(f, "-------\n\n");
-		
-		fprintf(f, "Event Queue:\n");
-		x86_uop_linked_list_dump(X86_CORE.event_queue, f);
-
-		fprintf(f, "Reorder Buffer:\n");
-		x86_rob_dump(core, f);
-
-		X86_THREAD_FOR_EACH
-		{
-			fprintf(f, "----------------------\n");
-			fprintf(f, "Thread %d (in core %d)\n", thread, core);
-			fprintf(f, "----------------------\n\n");
-			
-			fprintf(f, "Fetch queue:\n");
-			x86_uop_list_dump(X86_THREAD.fetch_queue, f);
-
-			fprintf(f, "Uop queue:\n");
-			x86_uop_list_dump(X86_THREAD.uop_queue, f);
-
-			fprintf(f, "Instruction Queue:\n");
-			x86_uop_linked_list_dump(X86_THREAD.iq, f);
-
-			fprintf(f, "Load Queue:\n");
-			x86_uop_linked_list_dump(X86_THREAD.lq, f);
-
-			fprintf(f, "Store Queue:\n");
-			x86_uop_linked_list_dump(X86_THREAD.sq, f);
-
-			x86_reg_file_dump(core, thread, f);
-			if (X86_THREAD.ctx)
-				fprintf(f, "MappedContext = %d\n", X86_THREAD.ctx->pid);
-			
-			fprintf(f, "\n");
-		}
-	}
-
-	/* Register last dump */
-	x86_cpu->last_dump = arch_x86->cycle;
-	x86_cpu->last_committed = x86_cpu->num_committed_uinst;
-
-	/* End */
-	fprintf(f, "\n\n");
-}
-
-
-void x86_cpu_dump_summary(FILE *f)
-{
-	double inst_per_cycle;
-	double uinst_per_cycle;
-	double branch_acc;
-
-	/* Calculate statistics */
-	inst_per_cycle = arch_x86->cycle ? (double) x86_cpu->num_committed_inst / arch_x86->cycle : 0.0;
-	uinst_per_cycle = arch_x86->cycle ? (double) x86_cpu->num_committed_uinst / arch_x86->cycle : 0.0;
-	branch_acc = x86_cpu->num_branch_uinst ? (double) (x86_cpu->num_branch_uinst - x86_cpu->num_mispred_branch_uinst) / x86_cpu->num_branch_uinst : 0.0;
-
-	/* Print statistics */
-	fprintf(f, "FastForwardInstructions = %lld\n", x86_cpu->num_fast_forward_inst);
-	fprintf(f, "CommittedInstructions = %lld\n", x86_cpu->num_committed_inst);
-	fprintf(f, "CommittedInstructionsPerCycle = %.4g\n", inst_per_cycle);
-	fprintf(f, "CommittedMicroInstructions = %lld\n", x86_cpu->num_committed_uinst);
-	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
-	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
+	/* Free CPU */
+	delete(x86_cpu);
 }
 
 
@@ -1058,9 +961,136 @@ void x86_cpu_run_fast_forward(void)
 }
 
 
-/* Run one iteration of timing simulation. Return TRUE if still running. */
-int x86_cpu_run(void)
+
+/*
+ * Class 'X86Cpu'
+ */
+
+CLASS_IMPLEMENTATION(X86Cpu);
+
+
+void X86CpuCreate(X86Cpu *self)
 {
+	int core;
+
+	/* Parent */
+	TimingCreate(asTiming(self));
+	
+	/* Initialize */
+	self->uop_trace_list = linked_list_create();
+
+	/* Initialize cores */
+	self->core = xcalloc(x86_cpu_num_cores, sizeof(struct x86_core_t));
+	X86_CORE_FOR_EACH
+		x86_cpu_core_init(self, core);
+}
+
+
+void X86CpuDestroy(X86Cpu *self)
+{
+	int core;
+
+	X86_CORE_FOR_EACH
+		x86_cpu_core_done(self, core);
+
+	free(self->core);
+}
+
+
+void X86CpuDump(FILE *f)
+{
+	X86Cpu *self = x86_cpu;
+
+	int core;
+	int thread;
+	
+	/* General information */
+	fprintf(f, "\n");
+	fprintf(f, "LastDump = %lld   ; Cycle of last dump\n", self->last_dump);
+	fprintf(f, "IPCLastDump = %.4g   ; IPC since last dump\n",
+			arch_x86->cycle - self->last_dump > 0 ?
+			(double) (self->num_committed_uinst - self->last_committed)
+			/ (arch_x86->cycle - self->last_dump) : 0);
+	fprintf(f, "\n");
+
+	/* Cores */
+	X86_CORE_FOR_EACH
+	{
+		fprintf(f, "-------\n");
+		fprintf(f, "Core %d\n", core);
+		fprintf(f, "-------\n\n");
+		
+		fprintf(f, "Event Queue:\n");
+		x86_uop_linked_list_dump(X86_CORE.event_queue, f);
+
+		fprintf(f, "Reorder Buffer:\n");
+		x86_rob_dump(core, f);
+
+		X86_THREAD_FOR_EACH
+		{
+			fprintf(f, "----------------------\n");
+			fprintf(f, "Thread %d (in core %d)\n", thread, core);
+			fprintf(f, "----------------------\n\n");
+			
+			fprintf(f, "Fetch queue:\n");
+			x86_uop_list_dump(X86_THREAD.fetch_queue, f);
+
+			fprintf(f, "Uop queue:\n");
+			x86_uop_list_dump(X86_THREAD.uop_queue, f);
+
+			fprintf(f, "Instruction Queue:\n");
+			x86_uop_linked_list_dump(X86_THREAD.iq, f);
+
+			fprintf(f, "Load Queue:\n");
+			x86_uop_linked_list_dump(X86_THREAD.lq, f);
+
+			fprintf(f, "Store Queue:\n");
+			x86_uop_linked_list_dump(X86_THREAD.sq, f);
+
+			x86_reg_file_dump(core, thread, f);
+			if (X86_THREAD.ctx)
+				fprintf(f, "MappedContext = %d\n", X86_THREAD.ctx->pid);
+			
+			fprintf(f, "\n");
+		}
+	}
+
+	/* Register last dump */
+	self->last_dump = arch_x86->cycle;
+	self->last_committed = self->num_committed_uinst;
+
+	/* End */
+	fprintf(f, "\n\n");
+}
+
+
+void X86CpuDumpSummary(FILE *f)
+{
+	X86Cpu *self = x86_cpu;
+
+	double inst_per_cycle;
+	double uinst_per_cycle;
+	double branch_acc;
+
+	/* Calculate statistics */
+	inst_per_cycle = arch_x86->cycle ? (double) self->num_committed_inst / arch_x86->cycle : 0.0;
+	uinst_per_cycle = arch_x86->cycle ? (double) self->num_committed_uinst / arch_x86->cycle : 0.0;
+	branch_acc = self->num_branch_uinst ? (double) (self->num_branch_uinst - self->num_mispred_branch_uinst) / self->num_branch_uinst : 0.0;
+
+	/* Print statistics */
+	fprintf(f, "FastForwardInstructions = %lld\n", self->num_fast_forward_inst);
+	fprintf(f, "CommittedInstructions = %lld\n", self->num_committed_inst);
+	fprintf(f, "CommittedInstructionsPerCycle = %.4g\n", inst_per_cycle);
+	fprintf(f, "CommittedMicroInstructions = %lld\n", self->num_committed_uinst);
+	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
+	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
+}
+
+
+int X86CpuRun(void)
+{
+	X86Cpu *self = x86_cpu;
+
 	/* Stop if no context is running */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
 		return FALSE;
@@ -1071,7 +1101,7 @@ int x86_cpu_run(void)
 		x86_cpu_run_fast_forward();
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (x86_emu_max_inst && x86_cpu->num_committed_inst >=
+	if (x86_emu_max_inst && self->num_committed_inst >=
 			x86_emu_max_inst - x86_cpu_fast_forward_count)
 		esim_finish = esim_finish_x86_max_inst;
 
@@ -1099,3 +1129,5 @@ int x86_cpu_run(void)
 	/* Still simulating */
 	return TRUE;
 }
+
+

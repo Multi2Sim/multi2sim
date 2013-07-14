@@ -20,6 +20,8 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_GPU_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_GPU_H
 
+#include <arch/common/timing.h>
+
 
 /* Trace */
 #define si_tracing() trace_status(si_trace_category)
@@ -190,23 +192,6 @@ extern int si_gpu_lds_latency;
 extern int si_gpu_lds_block_size;
 extern int si_gpu_lds_num_ports;
 
-struct si_gpu_t
-{
-	/* ND-Range running on it */
-	int work_groups_per_wavefront_pool;
-	int work_groups_per_compute_unit;
-
-	/* Compute units */
-	struct si_compute_unit_t **compute_units;
-
-	/* List of ready compute units accepting work-groups */
-	struct list_t *available_compute_units;
-
-	long long int last_complete_cycle;
-};
-
-extern struct si_gpu_t *si_gpu;
-
 #define SI_GPU_FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
 	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < si_gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
 
@@ -229,11 +214,9 @@ void si_gpu_read_config(void);
 
 void si_gpu_init(void);
 void si_gpu_done(void);
-void si_gpu_dump(FILE *f);
 
 void si_gpu_dump_default_config(char *filename);
 void si_gpu_dump_report(void);
-void si_gpu_dump_summary(FILE *f);
 
 void si_gpu_uop_trash_add(struct si_uop_t *uop);
 void si_gpu_uop_trash_empty(void);
@@ -245,12 +228,50 @@ void si_compute_unit_run_branch_unit(struct si_compute_unit_t *compute_unit);
 struct si_ndrange_t;
 void si_gpu_map_ndrange(struct si_ndrange_t *ndrange);
 
-int si_gpu_run(void);
-
 void si_simd_run(struct si_simd_t *simd);
 void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit);
 void si_branch_unit_run(struct si_branch_unit_t *branch_unit);
 void si_vector_mem_run(struct si_vector_mem_unit_t *vector_mem);
 void si_lds_run(struct si_lds_t *lds);
 
+
+
+/*
+ * Class 'SIGpu'
+ */
+
+CLASS_BEGIN(SIGpu, Timing)
+
+	/* ND-Range running on it */
+	int work_groups_per_wavefront_pool;
+	int work_groups_per_compute_unit;
+
+	/* Compute units */
+	struct si_compute_unit_t **compute_units;
+
+	/* List of ready compute units accepting work-groups */
+	struct list_t *available_compute_units;
+
+	long long int last_complete_cycle;
+
+CLASS_END(SIGpu)
+
+void SIGpuCreate(SIGpu *self);
+void SIGpuDestroy(SIGpu *self);
+
+void si_gpu_dump(FILE *f);
+void si_gpu_dump_summary(FILE *f);
+
+int si_gpu_run(void);
+
+
+
+/*
+ * Public
+ */
+
+extern SIGpu *si_gpu;
+
+
 #endif
+
