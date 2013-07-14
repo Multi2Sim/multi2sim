@@ -137,10 +137,10 @@ CLASS_BEGIN(Llvm2siFunction, Object)
 	struct list_t *uav_list;
 
 	/* Predefined nodes */
-	Node *header_node;
-	Node *uavs_node;
-	Node *args_node;
-	Node *body_node;
+	LeafNode *header_node;
+	LeafNode *uavs_node;
+	LeafNode *args_node;
+	LeafNode *body_node;
 
 	/* Symbol table associated with the function, storing LLVM variables */
 	Llvm2siSymbolTable *symbol_table;

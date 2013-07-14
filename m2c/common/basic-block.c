@@ -33,21 +33,16 @@
 CLASS_IMPLEMENTATION(BasicBlock);
 
 
-void BasicBlockCreate(BasicBlock *self, Node *node)
+void BasicBlockCreate(BasicBlock *self, LeafNode *node)
 {
-	/* Check that 'node' is a leaf node */
-	if (node->kind != node_leaf)
-		fatal("%s: node '%s' is not a leaf",
-				__FUNCTION__, node->name);
-
 	/* Check that 'node' doesn't have a basic block */
-	if (node->leaf.basic_block)
+	if (node->basic_block)
 		fatal("%s: node '%s' already contains a basic block",
-				__FUNCTION__, node->name);
+				__FUNCTION__, asNode(node)->name);
 
 	/* Initialize */
 	self->node = node;
-	node->leaf.basic_block = self;
+	node->basic_block = self;
 }
 
 

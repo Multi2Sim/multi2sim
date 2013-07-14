@@ -32,29 +32,155 @@
 #include "node.h"
 
 
+/*
+ * Class 'LeafNode'
+ */
+
+CLASS_IMPLEMENTATION(LeafNode)
+
+void LeafNodeCreate(LeafNode *self, char *name)
+{
+	/* Parent */
+	NodeCreate(asNode(self), name);
+
+	/* Virtual functions */
+	asObject(self)->Dump = LeafNodeDump;
+}
+
+
+void LeafNodeDestroy(LeafNode *self)
+{
+	if (self->basic_block)
+		delete(self->basic_block);
+}
+
+
+void LeafNodeDump(Object *self, FILE *f)
+{
+	/* Parent */
+	NodeDump(self, f);
+
+	/* Type */
+	fprintf(f, " type=leaf");
+}
+
+
+
+
+/*
+ * Class 'AbstractNode'
+ */
+
+CLASS_IMPLEMENTATION(AbstractNode)
+
+
+struct str_map_t abstract_node_region_map =
+{
+	9,
+	{
+		{ "block", AbstractNodeBlock },
+		{ "if_then", AbstractNodeIfThen },
+		{ "if_then_else", AbstractNodeIfThenElse },
+		{ "while_loop", AbstractNodeWhileLoop },
+		{ "loop", AbstractNodeLoop },
+		{ "proper_interval", AbstractNodeProperInterval },
+		{ "improper_interval", AbstractNodeImproperInterval },
+		{ "proper_outer_interval", AbstractNodeProperOuterInterval },
+		{ "improper_outer_interval", AbstractNodeImproperOuterInterval }
+	}
+};
+
+
+void AbstractNodeCreate(AbstractNode *self, char *name, AbstractNodeRegion region)
+{
+	/* Parent */
+	NodeCreate(asNode(self), name);
+
+	/* Initialize */
+	self->region = region;
+	self->child_list = linked_list_create();
+
+	/* Virtual functions */
+	asObject(self)->Dump = AbstractNodeDump;
+	asNode(self)->NodeCompare = AbstractNodeCompare;
+}
+
+
+void AbstractNodeDestroy(AbstractNode *self)
+{
+	linked_list_free(self->child_list);
+}
+	
+	
+void AbstractNodeDump(Object *self, FILE *f)
+{
+	AbstractNode *node;
+
+	/* Dump parent */
+	NodeDump(self, f);
+
+	/* Type */
+	node = asAbstractNode(self);
+	fprintf(f, " type=abstract");
+
+	/* List of child elements */
+	fprintf(f, " children=");
+	NodeListDump(node->child_list, f);
+}
+
+
+void AbstractNodeCompare(Node *self, Node *node2)
+{
+	AbstractNode *abs_node;
+	AbstractNode *abs_node2;
+	Node *tmp_node;
+
+	int differ;
+
+	/* Call parent compare function */
+	NodeCompare(self, node2);
+
+	/* Parent has compared whether the two subclasses are the same, so here
+	 * we can assume that 'node2' is also an abstract node. */
+	abs_node = asAbstractNode(self);
+	abs_node2 = asAbstractNode(node2);
+
+	/* Compare region */
+	if (abs_node->region != abs_node2->region)
+		fatal("region differs for '%s' and '%s'",
+				self->name, node2->name);
+
+	/* Compare children */
+	differ = abs_node->child_list->count != abs_node2->child_list->count;
+	LINKED_LIST_FOR_EACH(abs_node->child_list)
+	{
+		tmp_node = linked_list_get(abs_node->child_list);
+		tmp_node = CTreeGetNode(node2->ctree, tmp_node->name);
+		assert(tmp_node);
+		if (!NodeInList(tmp_node, abs_node2->child_list))
+			differ = 1;
+	}
+	if (differ)
+		fatal("children differ for '%s' and '%s'",
+				self->name, node2->name);
+}
+
+
+
+
+/*
+ * Class 'Node'
+ */
+
+CLASS_IMPLEMENTATION(Node);
+
+
 struct str_map_t node_kind_map =
 {
 	2,
 	{
 		{ "Leaf", node_leaf },
 		{ "Abstract", node_abstract }
-	}
-};
-
-
-struct str_map_t node_region_map =
-{
-	9,
-	{
-		{ "block", node_region_block },
-		{ "if_then", node_region_if_then },
-		{ "if_then_else", node_region_if_then_else },
-		{ "while_loop", node_region_while_loop },
-		{ "loop", node_region_loop },
-		{ "proper_interval", node_region_proper_interval },
-		{ "improper_interval", node_region_improper_interval },
-		{ "proper_outer_interval", node_region_proper_outer_interval },
-		{ "improper_outer_interval", node_region_improper_outer_interval }
 	}
 };
 
@@ -74,18 +200,9 @@ struct str_map_t node_role_map =
 };
 
 
-
-/*
- * Public Functions
- */
-
-CLASS_IMPLEMENTATION(Node);
-
-void NodeCreate(Node *self, enum node_kind_t kind, char *name,
-		enum node_region_t region)
+void NodeCreate(Node *self, char *name)
 {
 	/* Initialize */
-	self->kind = kind;
 	self->name = str_set(self->name, name);
 	self->pred_list = linked_list_create();
 	self->succ_list = linked_list_create();
@@ -96,44 +213,13 @@ void NodeCreate(Node *self, enum node_kind_t kind, char *name,
 	self->preorder_id = -1;
 	self->postorder_id = -1;
 
-	/* Based on type */
-	switch (self->kind)
-	{
-	case node_leaf:
-
-		break;
-
-	case node_abstract:
-
-		self->abstract.region = region;
-		self->abstract.child_list = linked_list_create();
-		break;
-
-	default:
-		abort();
-	}
+	/* Virtual functions */
+	self->NodeCompare = NodeCompare;
 }
 
 
 void NodeDestroy(Node *self)
 {
-	switch (self->kind)
-	{
-	case node_abstract:
-
-		linked_list_free(self->abstract.child_list);
-		break;
-
-	case node_leaf:
-
-		if (self->leaf.basic_block)
-			delete(self->leaf.basic_block);
-		break;
-
-	default:
-		abort();
-	}
-
 	linked_list_free(self->pred_list);
 	linked_list_free(self->succ_list);
 	linked_list_free(self->back_edge_list);
@@ -141,18 +227,6 @@ void NodeDestroy(Node *self)
 	linked_list_free(self->tree_edge_list);
 	linked_list_free(self->cross_edge_list);
 	self->name = str_free(self->name);
-}
-
-
-BasicBlock *NodeGetBasicBlock(Node *self)
-{
-	/* Check that basic block if a leaf */
-	if (self->kind != node_leaf)
-		panic("%s: node '%s' is not a leaf",
-				__FUNCTION__, self->name);
-
-	/* Return associated basic block */
-	return self->leaf.basic_block;
 }
 
 
@@ -179,10 +253,8 @@ void NodeDump(Object *self, FILE *f)
 	node = asNode(self);
 	no_name = "<no-name>";
 	fprintf(f, "Node '%s':", *node->name ? node->name : no_name);
-	fprintf(f, " type=%s", str_map_value(&node_kind_map,
-			node->kind));
 	fprintf(f, " pred=");
-	node_list_dump(node->pred_list, f);
+	NodeListDump(node->pred_list, f);
 
 	/* List of successors */
 	fprintf(f, " succ={");
@@ -228,21 +300,11 @@ void NodeDump(Object *self, FILE *f)
 			fprintf(f, "exit_if_true");
 	}
 
-	/* List of child elements */
-	if (node->kind == node_abstract)
-	{
-		fprintf(f, " children=");
-		node_list_dump(node->abstract.child_list, f);
-	}
-
 	/* Traversal IDs */
 	if (node->preorder_id != -1)
 		fprintf(f, " pre=%d", node->preorder_id);
 	if (node->postorder_id != -1)
 		fprintf(f, " post=%d", node->postorder_id);
-
-	/* End */
-	fprintf(f, "\n");
 }
 
 
@@ -373,39 +435,37 @@ void NodeReconnectSource(Node *src_node, Node *dest_node, Node *new_src_node)
 
 void NodeInsertBefore(Node *self, Node *before)
 {
-	Node *parent;
+	AbstractNode *parent;
 
 	/* Check parent */
-	parent = before->parent;
+	parent = asAbstractNode(before->parent);
 	if (!parent)
 		panic("%s: node '%s' has no parent",
 				__FUNCTION__, before->name);
 
 	/* Insert in common parent */
-	self->parent = parent;
-	assert(parent->kind == node_abstract);
-	assert(!NodeInList(self, parent->abstract.child_list));
-	linked_list_find(parent->abstract.child_list, before);
-	assert(!parent->abstract.child_list->error_code);
-	linked_list_insert(parent->abstract.child_list, self);
+	self->parent = asNode(parent);
+	assert(!NodeInList(self, parent->child_list));
+	linked_list_find(parent->child_list, before);
+	assert(!parent->child_list->error_code);
+	linked_list_insert(parent->child_list, self);
 }
 
 
 void NodeInsertAfter(Node *self, Node *after)
 {
-	Node *parent;
+	AbstractNode *parent;
 	struct linked_list_t *child_list;
 
 	/* Check parent */
-	parent = after->parent;
+	parent = asAbstractNode(after->parent);
 	if (!parent)
 		panic("%s: node '%s' has no parent",
 				__FUNCTION__, after->name);
 
 	/* Insert in common parent */
-	self->parent = parent;
-	assert(parent->kind == node_abstract);
-	child_list = parent->abstract.child_list;
+	self->parent = asNode(parent);
+	child_list = parent->child_list;
 	assert(!NodeInList(self, child_list));
 	linked_list_find(child_list, after);
 	assert(!child_list->error_code);
@@ -417,38 +477,42 @@ void NodeInsertAfter(Node *self, Node *after)
 Node *NodeGetFirstLeaf(Node *self)
 {
 	Node *child_node;
+	Node *node;
 
 	/* Traverse syntax tree down */
-	while (self->kind == node_abstract)
+	node = self;
+	while (isAbstractNode(node))
 	{
-		linked_list_head(self->abstract.child_list);
-		child_node = linked_list_get(self->abstract.child_list);
+		linked_list_head(asAbstractNode(node)->child_list);
+		child_node = linked_list_get(asAbstractNode(node)->child_list);
 		assert(child_node);
-		self = child_node;
+		node = child_node;
 	}
 
 	/* Return leaf */
-	assert(self->kind == node_leaf);
-	return self;
+	assert(isLeafNode(node));
+	return node;
 }
 
 
 Node *NodeGetLastLeaf(Node *self)
 {
 	Node *child_node;
+	Node *node;
 
 	/* Traverse syntax tree down */
-	while (self->kind == node_abstract)
+	node = self;
+	while (isAbstractNode(node))
 	{
-		linked_list_tail(self->abstract.child_list);
-		child_node = linked_list_get(self->abstract.child_list);
+		linked_list_tail(asAbstractNode(node)->child_list);
+		child_node = linked_list_get(asAbstractNode(node)->child_list);
 		assert(child_node);
-		self = child_node;
+		node = child_node;
 	}
 
 	/* Return leaf */
-	assert(self->kind == node_leaf);
-	return self;
+	assert(isLeafNode(node));
+	return node;
 }
 
 
@@ -470,7 +534,7 @@ void NodeCompare(Node *self, Node *node2)
 	snprintf(node_name2, sizeof node_name2, "%s.%s", ctree2->name, node2->name);
 
 	/* Compare kind */
-	if (self->kind != node2->kind)
+	if (class_of(self) != class_of(node2))
 		fatal("node kind differs for '%s' and '%s'",
 				node_name1, node_name2);
 
@@ -487,30 +551,6 @@ void NodeCompare(Node *self, Node *node2)
 	if (differ)
 		fatal("successors differ for '%s' and '%s'",
 				node_name1, node_name2);
-
-	/* Abstract node */
-	if (self->kind == node_abstract)
-	{
-		/* Compare region */
-		if (self->abstract.region != node2->abstract.region)
-			fatal("region differs for '%s' and '%s'",
-					node_name1, node_name2);
-
-		/* Compare children */
-		differ = self->abstract.child_list->count !=
-				node2->abstract.child_list->count;
-		LINKED_LIST_FOR_EACH(self->abstract.child_list)
-		{
-			tmp_node = linked_list_get(self->abstract.child_list);
-			tmp_node = CTreeGetNode(ctree2, tmp_node->name);
-			assert(tmp_node);
-			if (!NodeInList(tmp_node, node2->abstract.child_list))
-				differ = 1;
-		}
-		if (differ)
-			fatal("children differ for '%s' and '%s'",
-					node_name1, node_name2);
-	}
 }
 
 
@@ -519,7 +559,7 @@ void NodeCompare(Node *self, Node *node2)
  * Non-Class Functions
  */
 
-void node_list_dump(struct linked_list_t *list, FILE *f)
+void NodeListDump(struct linked_list_t *list, FILE *f)
 {
 	char *comma;
 	struct linked_list_iter_t *iter;
@@ -539,7 +579,7 @@ void node_list_dump(struct linked_list_t *list, FILE *f)
 }
 
 
-void node_list_dump_buf(struct linked_list_t *list, char *buf, int size)
+void NodeListDumpBuf(struct linked_list_t *list, char *buf, int size)
 {
 	Node *node;
 

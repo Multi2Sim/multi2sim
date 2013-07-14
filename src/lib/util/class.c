@@ -250,6 +250,24 @@ static void class_dump_parents(struct class_t *c, FILE *f)
 }
 
 
+struct class_t *class_of(void *p)
+{
+	struct class_info_t *info;
+
+	/* Find the child-most destructor */
+	info = &((Object *) p)->__info;
+	assert(info->c);
+	while (info->child)
+	{
+		info = info->child;
+		assert(info->c);
+	}
+	
+	/* Return the class */
+	return info->c;
+}
+
+
 void class_dump(FILE *f)
 {
 	struct class_t *c;

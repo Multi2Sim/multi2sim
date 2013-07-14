@@ -408,7 +408,7 @@ static void CTreeReachUnder(CTree *self, Node *header_node,
 /* Given an abstract node of type 'block' that was just reduced, take its
  * sub-block regions and flatten them to avoid hierarchical blocks.
  */
-static void CTreeFlattenBlock(CTree *self, Node *abs_node)
+static void CTreeFlattenBlock(CTree *self, AbstractNode *abs_node)
 {
 	struct linked_list_t *node_list;
 
@@ -422,12 +422,11 @@ static void CTreeFlattenBlock(CTree *self, Node *abs_node)
 	node_list = linked_list_create();
 
 	/* Get nodes */
-	assert(!abs_node->parent);
-	assert(abs_node->kind == node_abstract);
-	assert(abs_node->abstract.region == node_region_block);
-	assert(abs_node->abstract.child_list->count == 2);
-	in_node = linked_list_goto(abs_node->abstract.child_list, 0);
-	out_node = linked_list_goto(abs_node->abstract.child_list, 1);
+	assert(!asNode(abs_node)->parent);
+	assert(abs_node->region == AbstractNodeBlock);
+	assert(abs_node->child_list->count == 2);
+	in_node = linked_list_goto(abs_node->child_list, 0);
+	out_node = linked_list_goto(abs_node->child_list, 1);
 
 	/* Remove existing connection between child nodes */
 	NodeDisconnect(in_node, out_node);
@@ -437,19 +436,19 @@ static void CTreeFlattenBlock(CTree *self, Node *abs_node)
 	assert(!out_node->succ_list->count);
 
 	/* Add elements of 'in_node' to 'node_list' */
-	if (in_node->kind == node_abstract &&
-			in_node->abstract.region == node_region_block)
+	if (isAbstractNode(in_node) && asAbstractNode(in_node)->region
+			== AbstractNodeBlock)
 	{
 		/* Save child nodes */
-		assert(in_node->abstract.region == node_region_block);
-		LINKED_LIST_FOR_EACH(in_node->abstract.child_list)
+		assert(asAbstractNode(in_node)->region == AbstractNodeBlock);
+		LINKED_LIST_FOR_EACH(asAbstractNode(in_node)->child_list)
 			linked_list_add(node_list,
-				linked_list_get(in_node->abstract.child_list));
+				linked_list_get(asAbstractNode(in_node)->child_list));
 
 		/* Remove from parent node */
-		in_node = linked_list_find(abs_node->abstract.child_list, in_node);
+		in_node = linked_list_find(abs_node->child_list, in_node);
 		assert(in_node);
-		linked_list_remove(abs_node->abstract.child_list);
+		linked_list_remove(abs_node->child_list);
 
 		/* Remove from control tree */
 		in_node = linked_list_find(self->node_list, in_node);
@@ -465,25 +464,24 @@ static void CTreeFlattenBlock(CTree *self, Node *abs_node)
 		linked_list_add(node_list, in_node);
 
 		/* Remove from children */
-		in_node = linked_list_find(abs_node->abstract.child_list, in_node);
+		in_node = linked_list_find(abs_node->child_list, in_node);
 		assert(in_node);
-		linked_list_remove(abs_node->abstract.child_list);
+		linked_list_remove(abs_node->child_list);
 	}
 
 	/* Add elements of 'out_node' to 'node_list' */
-	if (out_node->kind == node_abstract &&
-			out_node->abstract.region == node_region_block)
+	if (isAbstractNode(out_node) && asAbstractNode(out_node)->region
+			== AbstractNodeBlock)
 	{
 		/* Save child nodes */
-		assert(out_node->abstract.region == node_region_block);
-		LINKED_LIST_FOR_EACH(out_node->abstract.child_list)
-			linked_list_add(node_list,
-				linked_list_get(out_node->abstract.child_list));
+		LINKED_LIST_FOR_EACH(asAbstractNode(out_node)->child_list)
+			linked_list_add(node_list, linked_list_get(
+				asAbstractNode(out_node)->child_list));
 
 		/* Remove from parent node */
-		out_node = linked_list_find(abs_node->abstract.child_list, out_node);
+		out_node = linked_list_find(abs_node->child_list, out_node);
 		assert(out_node);
-		linked_list_remove(abs_node->abstract.child_list);
+		linked_list_remove(abs_node->child_list);
 
 		/* Remove from control tree */
 		out_node = linked_list_find(self->node_list, out_node);
@@ -499,26 +497,26 @@ static void CTreeFlattenBlock(CTree *self, Node *abs_node)
 		linked_list_add(node_list, out_node);
 
 		/* Remove from children */
-		out_node = linked_list_find(abs_node->abstract.child_list, out_node);
+		out_node = linked_list_find(abs_node->child_list, out_node);
 		assert(out_node);
-		linked_list_remove(abs_node->abstract.child_list);
+		linked_list_remove(abs_node->child_list);
 	}
 
 	/* Adopt orphan nodes */
-	assert(!abs_node->abstract.child_list->count);
+	assert(!abs_node->child_list->count);
 	LINKED_LIST_FOR_EACH(node_list)
 	{
 		tmp_node = linked_list_get(node_list);
-		linked_list_add(abs_node->abstract.child_list, tmp_node);
-		tmp_node->parent = abs_node;
+		linked_list_add(abs_node->child_list, tmp_node);
+		tmp_node->parent = asNode(abs_node);
 	}
 
 	/* Debug */
 	f = debug_file(ctree_debug_category);
 	if (f)
 	{
-		fprintf(f, "Flatten block region '%s' -> ", abs_node->name);
-		node_list_dump(node_list, f);
+		fprintf(f, "Flatten block region '%s' -> ", asNode(abs_node)->name);
+		NodeListDump(node_list, f);
 		fprintf(f, "\n");
 	}
 
@@ -534,11 +532,10 @@ static void CTreeFlattenBlock(CTree *self, Node *abs_node)
  * Likewise, all outgoing edges from any node in the list will come from
  * 'node'.
  */
-static Node *CTreeReduce(CTree *self,
-		struct linked_list_t *node_list,
-		enum node_region_t region)
+static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
+		AbstractNodeRegion region)
 {
-	Node *abs_node;
+	AbstractNode *abs_node;
 	Node *tmp_node;
 	Node *out_node;
 	Node *in_node;
@@ -580,29 +577,29 @@ static Node *CTreeReduce(CTree *self,
 	/* Figure out a name for the new abstract node */
 	assert(region);
 	snprintf(name, sizeof name, "__%s_%d",
-		str_map_value(&node_region_map, region),
+		str_map_value(&abstract_node_region_map, region),
 		self->name_counter[region]);
 	self->name_counter[region]++;
 
 	/* Create new abstract node */
-	abs_node = new(Node, node_abstract, name, region);
-	CTreeAddNode(self, abs_node);
+	abs_node = new(AbstractNode, name, region);
+	CTreeAddNode(self, asNode(abs_node));
 
 	/* Debug */
 	f = debug_file(ctree_debug_category);
 	if (f)
 	{
 		fprintf(f, "\nReducing %s region: ",
-			str_map_value(&node_region_map, region));
-		node_list_dump(node_list, f);
-		fprintf(f, " -> '%s'\n", abs_node->name);
+			str_map_value(&abstract_node_region_map, region));
+		NodeListDump(node_list, f);
+		fprintf(f, " -> '%s'\n", asNode(abs_node)->name);
 	}
 
 	/* Special case of block regions: record whether there is an edge that
 	 * goes from the last node into the first. In this case, this edge
 	 * should stay outside of the reduced region. */
 	cyclic_block = 0;
-	if (region == node_region_block)
+	if (region == AbstractNodeBlock)
 	{
 		in_node = linked_list_goto(node_list, 0);
 		out_node = linked_list_goto(node_list, node_list->count - 1);
@@ -660,7 +657,7 @@ static Node *CTreeReduce(CTree *self,
 		dest_node = linked_list_remove(in_edge_dest_list);
 		assert(src_node);
 		assert(dest_node);
-		NodeReconnectDest(src_node, dest_node, abs_node);
+		NodeReconnectDest(src_node, dest_node, asNode(abs_node));
 	}
 
 	/* Reconnect outgoing edges from the new abstract node */
@@ -672,28 +669,29 @@ static Node *CTreeReduce(CTree *self,
 		dest_node = linked_list_remove(out_edge_dest_list);
 		assert(src_node);
 		assert(dest_node);
-		NodeReconnectSource(src_node, dest_node, abs_node);
+		NodeReconnectSource(src_node, dest_node, asNode(abs_node));
 	}
 
 	/* Add all nodes as child nodes of the new abstract node */
-	assert(!abs_node->abstract.child_list->count);
+	assert(!abs_node->child_list->count);
 	LINKED_LIST_FOR_EACH(node_list)
 	{
 		tmp_node = linked_list_get(node_list);
 		assert(!tmp_node->parent);
-		tmp_node->parent = abs_node;
-		linked_list_add(abs_node->abstract.child_list, tmp_node);
+		tmp_node->parent = asNode(abs_node);
+		linked_list_add(abs_node->child_list, tmp_node);
 	}
 
 	/* Special case for block regions: if a cyclic block was detected, now
 	 * the cycle must be inserted as a self-loop in the abstract node. */
-	if (cyclic_block && !NodeInList(abs_node, abs_node->succ_list))
-		NodeConnect(abs_node, abs_node);
+	if (cyclic_block && !NodeInList(asNode(abs_node),
+			asNode(abs_node)->succ_list))
+		NodeConnect(asNode(abs_node), asNode(abs_node));
 
 	/* If entry node is part of the nodes that were replaced, set it to the
 	 * new abstract node. */
 	if (NodeInList(self->entry_node, node_list))
-		self->entry_node = abs_node;
+		self->entry_node = asNode(abs_node);
 
 	/* Free structures */
 	linked_list_free(in_edge_src_list);
@@ -704,57 +702,57 @@ static Node *CTreeReduce(CTree *self,
 	/* Special case for block regions: in order to avoid nested blocks,
 	 * block regions are flattened when we detect that one block contains
 	 * another. */
-	if (region == node_region_block)
+	if (region == AbstractNodeBlock)
 	{
 		assert(node_list->count == 2);
 		in_node = linked_list_goto(node_list, 0);
 		out_node = linked_list_goto(node_list, 1);
 		assert(in_node && out_node);
 
-		if ((in_node->kind == node_abstract &&
-				in_node->abstract.region == node_region_block) ||
-				(out_node->kind == node_abstract &&
-				out_node->abstract.region == node_region_block))
+		if ((isAbstractNode(in_node) &&
+				asAbstractNode(in_node)->region == AbstractNodeBlock) ||
+				(isAbstractNode(out_node) &&
+				asAbstractNode(out_node)->region == AbstractNodeBlock))
 			CTreeFlattenBlock(self, abs_node);
 	}
 
 	/* Special case for while loops: a pre-header and exit blocks are added
 	 * into the region. */
-	if (region == node_region_while_loop)
+	if (region == AbstractNodeWhileLoop)
 	{
 		Node *head_node;
 		Node *tail_node;
-		Node *pre_node;
-		Node *exit_node;
+		LeafNode *pre_node;
+		LeafNode *exit_node;
 
 		char pre_name[MAX_STRING_SIZE];
 		char exit_name[MAX_STRING_SIZE];
 
 		/* Get original nodes */
 		assert(node_list->count == 2);
-		head_node = linked_list_goto(node_list, 0);
-		tail_node = linked_list_goto(node_list, 1);
-		assert(head_node->kind == node_leaf);
+		head_node = asNode(linked_list_goto(node_list, 0));
+		tail_node = asNode(linked_list_goto(node_list, 1));
+		assert(isLeafNode(head_node));
 		assert(head_node->role == node_role_head);
 		assert(tail_node->role == node_role_tail);
 
 		/* Create pre-header and exit nodes */
-		snprintf(pre_name, sizeof pre_name, "%s_pre", abs_node->name);
-		snprintf(exit_name, sizeof exit_name, "%s_exit", abs_node->name);
-		pre_node = new(Node, node_leaf, pre_name, node_region_invalid);
-		exit_node = new(Node, node_leaf, exit_name, node_region_invalid);
+		snprintf(pre_name, sizeof pre_name, "%s_pre", asNode(abs_node)->name);
+		snprintf(exit_name, sizeof exit_name, "%s_exit", asNode(abs_node)->name);
+		pre_node = new(LeafNode, pre_name);
+		exit_node = new(LeafNode, exit_name);
 
 		/* Insert pre-header node into control tree */
-		CTreeAddNode(self, pre_node);
-		NodeInsertBefore(pre_node, head_node);
-		NodeConnect(pre_node, head_node);
-		pre_node->role = node_role_pre;
+		CTreeAddNode(self, asNode(pre_node));
+		NodeInsertBefore(asNode(pre_node), head_node);
+		NodeConnect(asNode(pre_node), head_node);
+		asNode(pre_node)->role = node_role_pre;
 
 		/* Insert exit node into control tree */
-		CTreeAddNode(self, exit_node);
-		NodeInsertAfter(exit_node, tail_node);
-		NodeConnect(head_node, exit_node);
-		exit_node->role = node_role_exit;
+		CTreeAddNode(self, asNode(exit_node));
+		NodeInsertAfter(asNode(exit_node), tail_node);
+		NodeConnect(head_node, asNode(exit_node));
+		asNode(exit_node)->role = node_role_exit;
 	}
 
 	/* Return created abstract node */
@@ -767,7 +765,7 @@ static Node *CTreeReduce(CTree *self,
  * region is identified, the function returns true. Otherwise, it returns
  * false and 'node_list' remains empty.
  * List 'node_list' is an output list. */
-static enum node_region_t CTreeRegion(CTree *self, Node *node,
+static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 		struct linked_list_t *node_list)
 {
 
@@ -796,7 +794,7 @@ static enum node_region_t CTreeRegion(CTree *self, Node *node,
 		{
 			linked_list_add(node_list, node);
 			linked_list_add(node_list, succ_node);
-			return node_region_block;
+			return AbstractNodeBlock;
 		}
 	}
 
@@ -842,7 +840,7 @@ static enum node_region_t CTreeRegion(CTree *self, Node *node,
 			then_node->role = node_role_then;
 
 			/* Return region */
-			return node_region_if_then;
+			return AbstractNodeIfThen;
 		}
 	}
 
@@ -886,7 +884,7 @@ static enum node_region_t CTreeRegion(CTree *self, Node *node,
 			else_node->role = node_role_else;
 
 			/* Return region */
-			return node_region_if_then_else;
+			return AbstractNodeIfThenElse;
 		}
 	}
 
@@ -894,7 +892,7 @@ static enum node_region_t CTreeRegion(CTree *self, Node *node,
 	if (NodeInList(node, node->succ_list))
 	{
 		linked_list_add(node_list, node);
-		return node_region_loop;
+		return AbstractNodeLoop;
 	}
 
 
@@ -906,7 +904,7 @@ static enum node_region_t CTreeRegion(CTree *self, Node *node,
 	/* Obtain the interval in 'node_list' */
 	CTreeReachUnder(self, node, node_list);
 	if (!node_list->count)
-		return node_region_invalid;
+		return AbstractNodeRegionInvalid;
 	
 
 	/*** 1. While-loop ***/
@@ -969,14 +967,14 @@ static enum node_region_t CTreeRegion(CTree *self, Node *node,
 					->current_index == 1;
 
 			/* Return region */
-			return node_region_while_loop;
+			return AbstractNodeWhileLoop;
 		}
 	}
 
 	
 	/* Nothing identified */
 	linked_list_clear(node_list);
-	return node_region_invalid;
+	return AbstractNodeRegionInvalid;
 }
 
 
@@ -991,11 +989,11 @@ static void CTreeTraverseNode(CTree *self, Node *node,
 		linked_list_add(preorder_list, node);
 
 	/* Visit children */
-	if (node->kind == node_abstract)
+	if (isAbstractNode(node))
 	{
-		LINKED_LIST_FOR_EACH(node->abstract.child_list)
+		LINKED_LIST_FOR_EACH(asAbstractNode(node)->child_list)
 		{
-			child_node = linked_list_get(node->abstract.child_list);
+			child_node = linked_list_get(asAbstractNode(node)->child_list);
 			CTreeTraverseNode(self, child_node, preorder_list, postorder_list);
 		}
 	}
@@ -1056,7 +1054,10 @@ void CTreeDump(Object *self, FILE *f)
 		node = linked_list_iter_get(iter);
 		if (node == ctree->entry_node)
 			fprintf(f, "=>");
-		NodeDump(asObject(node), f);
+
+		/* Call the virtual function */
+		asObject(node)->Dump(asObject(node), f);
+		fprintf(f, "\n");
 	}
 	linked_list_iter_free(iter);
 	fprintf(f, "\n");
@@ -1092,10 +1093,10 @@ void CTreeClear(CTree *self)
 
 void CTreeStructuralAnalysis(CTree *self)
 {
-	enum node_region_t region;
+	AbstractNodeRegion region;
 
 	Node *node;
-	Node *abs_node;
+	AbstractNode *abs_node;
 
 	struct linked_list_t *postorder_list;
 	struct linked_list_t *region_list;
@@ -1186,14 +1187,14 @@ void CTreeTraverse(CTree *self, struct linked_list_t *preorder_list,
 		{
 			fprintf(f, "Traversal of tree '%s' in pre-order:\n",
 					self->name);
-			node_list_dump(preorder_list, f);
+			NodeListDump(preorder_list, f);
 			fprintf(f, "\n\n");
 		}
 		if (postorder_list)
 		{
 			fprintf(f, "Traversal of tree '%s' in post-order:\n",
 					self->name);
-			node_list_dump(postorder_list, f);
+			NodeListDump(postorder_list, f);
 			fprintf(f, "\n\n");
 		}
 	}
@@ -1202,12 +1203,12 @@ void CTreeTraverse(CTree *self, struct linked_list_t *preorder_list,
 
 #ifdef HAVE_LLVM
 
-static Node *CTreeAddLlvmCFGNode(CTree *self, LLVMBasicBlockRef llbb)
+static LeafNode *CTreeAddLlvmCFGNode(CTree *self, LLVMBasicBlockRef llbb)
 {
-	Node *node;
-	Node *succ_node;
-	Node *true_node;
-	Node *false_node;
+	LeafNode *node;
+	LeafNode *succ_node;
+	LeafNode *true_node;
+	LeafNode *false_node;
 
 	LLVMValueRef llinst;
 	LLVMValueRef llbb_value;
@@ -1239,8 +1240,8 @@ static Node *CTreeAddLlvmCFGNode(CTree *self, LLVMBasicBlockRef llbb)
 		return node;
 
 	/* Create node */
-	node = new(Node, node_leaf, name, node_region_invalid);
-	CTreeAddNode(self, node);
+	node = new(LeafNode, name);
+	CTreeAddNode(self, asNode(node));
 	node->llbb = llbb;
 
 	/* Get basic block terminator */
@@ -1254,7 +1255,7 @@ static Node *CTreeAddLlvmCFGNode(CTree *self, LLVMBasicBlockRef llbb)
 		succ_llbb_value = LLVMGetOperand(llinst, 0);
 		succ_llbb = LLVMValueAsBasicBlock(succ_llbb_value);
 		succ_node = CTreeAddLlvmCFGNode(self, succ_llbb);
-		NodeConnect(node, succ_node);
+		NodeConnect(asNode(node), asNode(succ_node));
 		return node;
 	}
 
@@ -1267,12 +1268,12 @@ static Node *CTreeAddLlvmCFGNode(CTree *self, LLVMBasicBlockRef llbb)
 		true_llbb_value = LLVMGetOperand(llinst, 2);
 		true_llbb = LLVMValueAsBasicBlock(true_llbb_value);
 		true_node = CTreeAddLlvmCFGNode(self, true_llbb);
-		NodeConnect(node, true_node);
+		NodeConnect(asNode(node), asNode(true_node));
 
 		false_llbb_value = LLVMGetOperand(llinst, 1);
 		false_llbb = LLVMValueAsBasicBlock(false_llbb_value);
 		false_node = CTreeAddLlvmCFGNode(self, false_llbb);
-		NodeConnect(node, false_node);
+		NodeConnect(asNode(node), asNode(false_node));
 
 		return node;
 	}
@@ -1288,7 +1289,7 @@ static Node *CTreeAddLlvmCFGNode(CTree *self, LLVMBasicBlockRef llbb)
 }
 
 
-Node *CTreeAddLlvmCFG(CTree *self, LLVMValueRef llfunction)
+LeafNode *CTreeAddLlvmCFG(CTree *self, LLVMValueRef llfunction)
 {
 	LLVMBasicBlockRef llbb;
 
@@ -1362,25 +1363,30 @@ void CTreeWriteToConfig(CTree *self, struct config_t *config)
 					node->name);
 
 		/* Dump node properties */
-		config_write_string(config, section, "Kind", str_map_value(
-				&node_kind_map, node->kind));
+		if (isAbstractNode(node))
+			config_write_string(config, section, "Kind", "Abstract");
+		else if (isLeafNode(node))
+			config_write_string(config, section, "Kind", "Leaf");
+		else
+			fatal("%s: unknown type of node '%s'", __FUNCTION__,
+					node->name);
 
 		/* Successors */
-		node_list_dump_buf(node->succ_list, buf, sizeof buf);
+		NodeListDumpBuf(node->succ_list, buf, sizeof buf);
 		config_write_string(config, section, "Succ", buf);
 
 		/* Abstract node */
-		if (node->kind == node_abstract)
+		if (isAbstractNode(node))
 		{
 			/* Children */
-			node_list_dump_buf(node->abstract.child_list,
+			NodeListDumpBuf(asAbstractNode(node)->child_list,
 					buf, sizeof buf);
 			config_write_string(config, section, "Child", buf);
 
 			/* Region */
 			config_write_string(config, section, "Region",
-					str_map_value(&node_region_map,
-					node->abstract.region));
+					str_map_value(&abstract_node_region_map,
+					asAbstractNode(node)->region));
 		}
 
 	}
@@ -1403,7 +1409,7 @@ void CTreeReadFromConfig(CTree *self, struct config_t *config, char *name)
 	char *region_str;
 	
 	enum node_kind_t kind;
-	enum node_region_t region;
+	AbstractNodeRegion region;
 
 	/* Clear existing tree */
 	CTreeClear(self);
@@ -1442,21 +1448,21 @@ void CTreeReadFromConfig(CTree *self, struct config_t *config, char *name)
 		/* Create node */
 		if (kind == node_leaf)
 		{
-			node = new(Node, node_leaf, node_name, node_region_invalid);
+			node = asNode(new(LeafNode, node_name));
 		}
 		else
 		{
 			/* Read region */
 			region_str = config_read_string(config, section,
 					"Region", "");
-			region = str_map_string_case(&node_region_map,
+			region = str_map_string_case(&abstract_node_region_map,
 					region_str);
 			if (!region)
 				fatal("%s: %s: invalid or missing 'Region'",
 						file_name, node_name);
 
 			/* Create node */
-			node = new(Node, node_abstract, node_name, region);
+			node = asNode(new(AbstractNode, node_name, region));
 		}
 
 		/* Add node */
@@ -1496,7 +1502,7 @@ void CTreeReadFromConfig(CTree *self, struct config_t *config, char *name)
 		linked_list_free(node_list);
 
 		/* Abstract node */
-		if (node->kind == node_abstract)
+		if (isAbstractNode(node))
 		{
 			/* Children */
 			node_list_str = config_read_string(config, section, "Child", "");
@@ -1506,10 +1512,10 @@ void CTreeReadFromConfig(CTree *self, struct config_t *config, char *name)
 			{
 				tmp_node = linked_list_get(node_list);
 				tmp_node->parent = node;
-				if (NodeInList(tmp_node, node->abstract.child_list))
+				if (NodeInList(tmp_node, asAbstractNode(node)->child_list))
 					fatal("%s.%s: duplicate child", self->name,
 							node->name);
-				linked_list_add(node->abstract.child_list, tmp_node);
+				linked_list_add(asAbstractNode(node)->child_list, tmp_node);
 			}
 			linked_list_free(node_list);
 		}
