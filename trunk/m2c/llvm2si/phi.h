@@ -22,19 +22,25 @@
 
 #include <llvm-c/Core.h>
 
+#include <lib/util/class.h>
+
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(Node);
+
 
 /*
- * Object Phi
+ * Class 'Llvm2siPhi'
+ * This class represents an entry in the list of elements of a 'phi'
+ * instruction in the LLVM code.
  */
 
-/* This object represents an entry in the list of elements of a 'phi'
- * instruction in the LLVM code. */
-struct llvm2si_phi_t
-{
+CLASS_BEGIN(Llvm2siPhi, Object)
+	
 	/* Source node in the control tree to take the source value from. This
 	 * node is extracted from the basic block argument in an entry of the
 	 * 'phi' LLVM instruction. */
-	struct cnode_t *src_node;
+	Node *src_node;
 
 	/* Value to take from the source basic block, as it appears in one of
 	 * the arguments of the 'phi' LLVM instruction. */
@@ -44,13 +50,14 @@ struct llvm2si_phi_t
 	 * into. This object must be created by the caller, but will be freed
 	 * internally. */
 	struct si2bin_arg_t *dest_value;
-};
+
+CLASS_END(Llvm2siPhi);
 
 
-struct llvm2si_phi_t *llvm2si_phi_create(struct cnode_t *src_node,
+void Llvm2siPhiCreate(Llvm2siPhi *self, Node *src_node,
 		LLVMValueRef src_value, struct si2bin_arg_t *dest_value);
 
-void llvm2si_phi_free(struct llvm2si_phi_t *phi);
+void Llvm2siPhiDestroy(Llvm2siPhi *self);
 
 
 #endif

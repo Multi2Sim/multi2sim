@@ -30,8 +30,8 @@
 #include <lib/util/string.h>
 
 #include "basic-block.h"
-#include "cnode.h"
 #include "ctree.h"
+#include "node.h"
 
 
 /*
@@ -55,9 +55,9 @@ static struct linked_list_t *ctree_list;
  */
 
 /* Return a created control tree given its name. */
-static struct ctree_t *llvm2si_get_ctree(char *name)
+static CTree *llvm2si_get_ctree(char *name)
 {
-	struct ctree_t *ctree;
+	CTree *ctree;
 
 	/* Search control tree */
 	LINKED_LIST_FOR_EACH(ctree_list)
@@ -87,7 +87,7 @@ static void ctree_process_command(char *string)
 	/* Process command */
 	if (!strcasecmp(command, "LoadCTree"))
 	{
-		struct ctree_t *ctree;
+		CTree *ctree;
 		struct config_t *ctree_config;
 
 		char *file_name;
@@ -105,7 +105,7 @@ static void ctree_process_command(char *string)
 		config_load(ctree_config);
 		
 		/* Load control tree */
-		ctree = ctree_create(ctree_name);
+		ctree = new(CTree, ctree_name);
 		ctree_read_from_config(ctree, ctree_config, ctree_name);
 		linked_list_add(ctree_list, ctree);
 
@@ -114,7 +114,7 @@ static void ctree_process_command(char *string)
 	}
 	else if (!strcasecmp(command, "SaveCTree"))
 	{
-		struct ctree_t *ctree;
+		CTree *ctree;
 		struct config_t *ctree_config;
 
 		char *file_name;
@@ -141,7 +141,7 @@ static void ctree_process_command(char *string)
 	}
 	else if (!strcasecmp(command, "RenameCTree"))
 	{
-		struct ctree_t *ctree;
+		CTree *ctree;
 
 		char *ctree_name;
 		char *ctree_name2;
@@ -164,8 +164,8 @@ static void ctree_process_command(char *string)
 	}
 	else if (!strcasecmp(command, "CompareCTree"))
 	{
-		struct ctree_t *ctree1;
-		struct ctree_t *ctree2;
+		CTree *ctree1;
+		CTree *ctree2;
 
 		char *ctree_name1;
 		char *ctree_name2;
@@ -194,7 +194,7 @@ static void ctree_process_command(char *string)
 	}
 	else if (!strcasecmp(command, "StructuralAnalysis"))
 	{
-		struct ctree_t *ctree;
+		CTree *ctree;
 		char *ctree_name;
 
 		/* Syntax: StructuralAnalysis <ctree> */
@@ -259,10 +259,10 @@ static void ctree_read_config(void)
 
 
 /* Recursive DFS traversal for a node. */
-static int ctree_dfs_node(struct cnode_t *node,
+static int ctree_dfs_node(Node *node,
 		struct linked_list_t *postorder_list, int time)
 {
-	struct cnode_t *succ_node;
+	Node *succ_node;
 
 	node->color = 1;  /* Gray */
 	node->preorder_id = time++;
@@ -306,10 +306,10 @@ static int ctree_dfs_node(struct cnode_t *node,
  * We follow the algorithm presented in  http://www.personal.kent.edu/
  *    ~rmuhamma/Algorithms/MyAlgorithms/GraphAlgor/depthSearch.htm
  */
-static void ctree_dfs(struct ctree_t *ctree,
+static void ctree_dfs(CTree *ctree,
 		struct linked_list_t *postorder_list)
 {
-	struct cnode_t *node;
+	Node *node;
 
 	/* Function must have an entry */
 	assert(ctree->entry_node);
@@ -338,11 +338,11 @@ static void ctree_dfs(struct ctree_t *ctree,
 
 /* Recursive helper function for natural loop discovery */
 static void ctree_reach_under_node(
-		struct cnode_t *header_node,
-		struct cnode_t *node,
+		Node *header_node,
+		Node *node,
 		struct linked_list_t *reach_under_list)
 {
-	struct cnode_t *pred_node;
+	Node *pred_node;
 
 	/* Label as visited and add node */
 	node->color = 1;
@@ -374,12 +374,12 @@ static void ctree_reach_under_node(
  * is composed of all those nodes with a path from the header to the tail that
  * doesn't go through the header, where the tail is a node that is connected to
  * the header with a back-edge. */
-static void ctree_reach_under(struct ctree_t *ctree,
-		struct cnode_t *header_node,
+static void ctree_reach_under(CTree *ctree,
+		Node *header_node,
 		struct linked_list_t *reach_under_list)
 {
-	struct cnode_t *node;
-	struct cnode_t *pred_node;
+	Node *node;
+	Node *pred_node;
 
 	/* Reset output list */
 	linked_list_clear(reach_under_list);
@@ -396,7 +396,7 @@ static void ctree_reach_under(struct ctree_t *ctree,
 	LINKED_LIST_FOR_EACH(header_node->pred_list)
 	{
 		pred_node = linked_list_get(header_node->pred_list);
-		if (cnode_in_list(header_node,
+		if (node_in_list(header_node,
 				pred_node->back_edge_list))
 			ctree_reach_under_node(header_node,
 					pred_node, reach_under_list);
@@ -407,14 +407,14 @@ static void ctree_reach_under(struct ctree_t *ctree,
 /* Given an abstract node of type 'block' that was just reduced, take its
  * sub-block regions and flatten them to avoid hierarchical blocks.
  */
-static void ctree_flatten_block(struct ctree_t *ctree,
-		struct cnode_t *abs_node)
+static void ctree_flatten_block(CTree *ctree,
+		Node *abs_node)
 {
 	struct linked_list_t *node_list;
 
-	struct cnode_t *in_node;
-	struct cnode_t *out_node;
-	struct cnode_t *tmp_node;
+	Node *in_node;
+	Node *out_node;
+	Node *tmp_node;
 
 	FILE *f;
 
@@ -423,25 +423,25 @@ static void ctree_flatten_block(struct ctree_t *ctree,
 
 	/* Get nodes */
 	assert(!abs_node->parent);
-	assert(abs_node->kind == cnode_abstract);
-	assert(abs_node->abstract.region == cnode_region_block);
+	assert(abs_node->kind == node_abstract);
+	assert(abs_node->abstract.region == node_region_block);
 	assert(abs_node->abstract.child_list->count == 2);
 	in_node = linked_list_goto(abs_node->abstract.child_list, 0);
 	out_node = linked_list_goto(abs_node->abstract.child_list, 1);
 
 	/* Remove existing connection between child nodes */
-	cnode_disconnect(in_node, out_node);
+	node_disconnect(in_node, out_node);
 	assert(!in_node->pred_list->count);
 	assert(!in_node->succ_list->count);
 	assert(!out_node->pred_list->count);
 	assert(!out_node->succ_list->count);
 
 	/* Add elements of 'in_node' to 'node_list' */
-	if (in_node->kind == cnode_abstract &&
-			in_node->abstract.region == cnode_region_block)
+	if (in_node->kind == node_abstract &&
+			in_node->abstract.region == node_region_block)
 	{
 		/* Save child nodes */
-		assert(in_node->abstract.region == cnode_region_block);
+		assert(in_node->abstract.region == node_region_block);
 		LINKED_LIST_FOR_EACH(in_node->abstract.child_list)
 			linked_list_add(node_list,
 				linked_list_get(in_node->abstract.child_list));
@@ -457,7 +457,7 @@ static void ctree_flatten_block(struct ctree_t *ctree,
 		linked_list_remove(ctree->node_list);
 
 		/* Free node */
-		cnode_free(in_node);
+		delete(in_node);
 	}
 	else
 	{
@@ -471,11 +471,11 @@ static void ctree_flatten_block(struct ctree_t *ctree,
 	}
 
 	/* Add elements of 'out_node' to 'node_list' */
-	if (out_node->kind == cnode_abstract &&
-			out_node->abstract.region == cnode_region_block)
+	if (out_node->kind == node_abstract &&
+			out_node->abstract.region == node_region_block)
 	{
 		/* Save child nodes */
-		assert(out_node->abstract.region == cnode_region_block);
+		assert(out_node->abstract.region == node_region_block);
 		LINKED_LIST_FOR_EACH(out_node->abstract.child_list)
 			linked_list_add(node_list,
 				linked_list_get(out_node->abstract.child_list));
@@ -491,7 +491,7 @@ static void ctree_flatten_block(struct ctree_t *ctree,
 		linked_list_remove(ctree->node_list);
 
 		/* Free node */
-		cnode_free(out_node);
+		delete(out_node);
 	}
 	else
 	{
@@ -518,7 +518,7 @@ static void ctree_flatten_block(struct ctree_t *ctree,
 	if (f)
 	{
 		fprintf(f, "Flatten block region '%s' -> ", abs_node->name);
-		cnode_list_dump(node_list, f);
+		node_list_dump(node_list, f);
 		fprintf(f, "\n");
 	}
 
@@ -534,17 +534,16 @@ static void ctree_flatten_block(struct ctree_t *ctree,
  * Likewise, all outgoing edges from any node in the list will come from
  * 'node'.
  */
-static struct cnode_t *ctree_reduce(
-		struct ctree_t *ctree,
+static Node *ctree_reduce(CTree *ctree,
 		struct linked_list_t *node_list,
-		enum cnode_region_t region)
+		enum node_region_t region)
 {
-	struct cnode_t *abs_node;
-	struct cnode_t *tmp_node;
-	struct cnode_t *out_node;
-	struct cnode_t *in_node;
-	struct cnode_t *src_node;
-	struct cnode_t *dest_node;
+	Node *abs_node;
+	Node *tmp_node;
+	Node *out_node;
+	Node *in_node;
+	Node *src_node;
+	Node *dest_node;
 
 	struct linked_list_t *out_edge_src_list;
 	struct linked_list_t *out_edge_dest_list;
@@ -568,7 +567,7 @@ static struct cnode_t *ctree_reduce(
 	LINKED_LIST_FOR_EACH(node_list)
 	{
 		tmp_node = linked_list_get(node_list);
-		if (!cnode_in_list(tmp_node,
+		if (!node_in_list(tmp_node,
 				ctree->node_list))
 			panic("%s: node not in control tree",
 					__FUNCTION__);
@@ -581,12 +580,12 @@ static struct cnode_t *ctree_reduce(
 	/* Figure out a name for the new abstract node */
 	assert(region);
 	snprintf(name, sizeof name, "__%s_%d",
-		str_map_value(&cnode_region_map, region),
+		str_map_value(&node_region_map, region),
 		ctree->name_counter[region]);
 	ctree->name_counter[region]++;
 
 	/* Create new abstract node */
-	abs_node = cnode_create_abstract(name, region);
+	abs_node = new(Node, node_abstract, name, region);
 	ctree_add_node(ctree, abs_node);
 
 	/* Debug */
@@ -594,8 +593,8 @@ static struct cnode_t *ctree_reduce(
 	if (f)
 	{
 		fprintf(f, "\nReducing %s region: ",
-			str_map_value(&cnode_region_map, region));
-		cnode_list_dump(node_list, f);
+			str_map_value(&node_region_map, region));
+		node_list_dump(node_list, f);
 		fprintf(f, " -> '%s'\n", abs_node->name);
 	}
 
@@ -603,15 +602,15 @@ static struct cnode_t *ctree_reduce(
 	 * goes from the last node into the first. In this case, this edge
 	 * should stay outside of the reduced region. */
 	cyclic_block = 0;
-	if (region == cnode_region_block)
+	if (region == node_region_block)
 	{
 		in_node = linked_list_goto(node_list, 0);
 		out_node = linked_list_goto(node_list, node_list->count - 1);
 		assert(in_node && out_node);
-		if (cnode_in_list(in_node, out_node->succ_list))
+		if (node_in_list(in_node, out_node->succ_list))
 		{
 			cyclic_block = 1;
-			cnode_disconnect(out_node, in_node);
+			node_disconnect(out_node, in_node);
 		}
 	}
 
@@ -632,7 +631,7 @@ static struct cnode_t *ctree_reduce(
 		LINKED_LIST_FOR_EACH(tmp_node->pred_list)
 		{
 			in_node = linked_list_get(tmp_node->pred_list);
-			if (!cnode_in_list(in_node, node_list))
+			if (!node_in_list(in_node, node_list))
 			{
 				linked_list_add(in_edge_src_list, in_node);
 				linked_list_add(in_edge_dest_list, tmp_node);
@@ -644,7 +643,7 @@ static struct cnode_t *ctree_reduce(
 		LINKED_LIST_FOR_EACH(tmp_node->succ_list)
 		{
 			out_node = linked_list_get(tmp_node->succ_list);
-			if (!cnode_in_list(out_node, node_list))
+			if (!node_in_list(out_node, node_list))
 			{
 				linked_list_add(out_edge_src_list, tmp_node);
 				linked_list_add(out_edge_dest_list, out_node);
@@ -661,7 +660,7 @@ static struct cnode_t *ctree_reduce(
 		dest_node = linked_list_remove(in_edge_dest_list);
 		assert(src_node);
 		assert(dest_node);
-		cnode_reconnect_dest(src_node, dest_node, abs_node);
+		node_reconnect_dest(src_node, dest_node, abs_node);
 	}
 
 	/* Reconnect outgoing edges from the new abstract node */
@@ -673,7 +672,7 @@ static struct cnode_t *ctree_reduce(
 		dest_node = linked_list_remove(out_edge_dest_list);
 		assert(src_node);
 		assert(dest_node);
-		cnode_reconnect_source(src_node, dest_node, abs_node);
+		node_reconnect_source(src_node, dest_node, abs_node);
 	}
 
 	/* Add all nodes as child nodes of the new abstract node */
@@ -688,12 +687,12 @@ static struct cnode_t *ctree_reduce(
 
 	/* Special case for block regions: if a cyclic block was detected, now
 	 * the cycle must be inserted as a self-loop in the abstract node. */
-	if (cyclic_block && !cnode_in_list(abs_node, abs_node->succ_list))
-		cnode_connect(abs_node, abs_node);
+	if (cyclic_block && !node_in_list(abs_node, abs_node->succ_list))
+		node_connect(abs_node, abs_node);
 
 	/* If entry node is part of the nodes that were replaced, set it to the
 	 * new abstract node. */
-	if (cnode_in_list(ctree->entry_node, node_list))
+	if (node_in_list(ctree->entry_node, node_list))
 		ctree->entry_node = abs_node;
 
 	/* Free structures */
@@ -705,28 +704,28 @@ static struct cnode_t *ctree_reduce(
 	/* Special case for block regions: in order to avoid nested blocks,
 	 * block regions are flattened when we detect that one block contains
 	 * another. */
-	if (region == cnode_region_block)
+	if (region == node_region_block)
 	{
 		assert(node_list->count == 2);
 		in_node = linked_list_goto(node_list, 0);
 		out_node = linked_list_goto(node_list, 1);
 		assert(in_node && out_node);
 
-		if ((in_node->kind == cnode_abstract &&
-				in_node->abstract.region == cnode_region_block) ||
-				(out_node->kind == cnode_abstract &&
-				out_node->abstract.region == cnode_region_block))
+		if ((in_node->kind == node_abstract &&
+				in_node->abstract.region == node_region_block) ||
+				(out_node->kind == node_abstract &&
+				out_node->abstract.region == node_region_block))
 			ctree_flatten_block(ctree, abs_node);
 	}
 
 	/* Special case for while loops: a pre-header and exit blocks are added
 	 * into the region. */
-	if (region == cnode_region_while_loop)
+	if (region == node_region_while_loop)
 	{
-		struct cnode_t *head_node;
-		struct cnode_t *tail_node;
-		struct cnode_t *pre_node;
-		struct cnode_t *exit_node;
+		Node *head_node;
+		Node *tail_node;
+		Node *pre_node;
+		Node *exit_node;
 
 		char pre_name[MAX_STRING_SIZE];
 		char exit_name[MAX_STRING_SIZE];
@@ -735,27 +734,27 @@ static struct cnode_t *ctree_reduce(
 		assert(node_list->count == 2);
 		head_node = linked_list_goto(node_list, 0);
 		tail_node = linked_list_goto(node_list, 1);
-		assert(head_node->kind == cnode_leaf);
-		assert(head_node->role == cnode_role_head);
-		assert(tail_node->role == cnode_role_tail);
+		assert(head_node->kind == node_leaf);
+		assert(head_node->role == node_role_head);
+		assert(tail_node->role == node_role_tail);
 
 		/* Create pre-header and exit nodes */
 		snprintf(pre_name, sizeof pre_name, "%s_pre", abs_node->name);
 		snprintf(exit_name, sizeof exit_name, "%s_exit", abs_node->name);
-		pre_node = cnode_create_leaf(pre_name);
-		exit_node = cnode_create_leaf(exit_name);
+		pre_node = new(Node, node_leaf, pre_name, node_region_invalid);
+		exit_node = new(Node, node_leaf, exit_name, node_region_invalid);
 
 		/* Insert pre-header node into control tree */
 		ctree_add_node(ctree, pre_node);
-		cnode_insert_before(pre_node, head_node);
-		cnode_connect(pre_node, head_node);
-		pre_node->role = cnode_role_pre;
+		node_insert_before(pre_node, head_node);
+		node_connect(pre_node, head_node);
+		pre_node->role = node_role_pre;
 
 		/* Insert exit node into control tree */
 		ctree_add_node(ctree, exit_node);
-		cnode_insert_after(exit_node, tail_node);
-		cnode_connect(head_node, exit_node);
-		exit_node->role = cnode_role_exit;
+		node_insert_after(exit_node, tail_node);
+		node_connect(head_node, exit_node);
+		exit_node->role = node_role_exit;
 	}
 
 	/* Return created abstract node */
@@ -768,8 +767,8 @@ static struct cnode_t *ctree_reduce(
  * region is identified, the function returns true. Otherwise, it returns
  * false and 'node_list' remains empty.
  * List 'node_list' is an output list. */
-static enum cnode_region_t ctree_region(struct ctree_t *ctree,
-		struct cnode_t *node, struct linked_list_t *node_list)
+static enum node_region_t ctree_region(CTree *ctree,
+		Node *node, struct linked_list_t *node_list)
 {
 
 	/* Reset output region */
@@ -786,7 +785,7 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 	 * of B and B is the only successor of A. */
 	if (node->succ_list->count == 1)
 	{
-		struct cnode_t *succ_node;
+		Node *succ_node;
 
 		succ_node = linked_list_goto(node->succ_list, 0);
 		assert(succ_node);
@@ -797,7 +796,7 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 		{
 			linked_list_add(node_list, node);
 			linked_list_add(node_list, succ_node);
-			return cnode_region_block;
+			return node_region_block;
 		}
 	}
 
@@ -806,9 +805,9 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 
 	if (node->succ_list->count == 2)
 	{
-		struct cnode_t *then_node;
-		struct cnode_t *endif_node;
-		struct cnode_t *tmp_node;
+		Node *then_node;
+		Node *endif_node;
+		Node *tmp_node;
 
 		/* Assume one order for 'then' and 'endif' blocks */
 		then_node = linked_list_goto(node->succ_list, 0);
@@ -816,7 +815,7 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 		assert(then_node && endif_node);
 
 		/* Reverse them if necessary */
-		if (cnode_in_list(then_node, endif_node->succ_list))
+		if (node_in_list(then_node, endif_node->succ_list))
 		{
 			tmp_node = then_node;
 			then_node = endif_node;
@@ -829,7 +828,7 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 		 */
 		if (then_node->pred_list->count == 1 &&
 				then_node->succ_list->count == 1 &&
-				cnode_in_list(endif_node, then_node->succ_list) &&
+				node_in_list(endif_node, then_node->succ_list) &&
 				then_node != ctree->entry_node &&
 				node != then_node &&
 				node != endif_node)
@@ -839,11 +838,11 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 			linked_list_add(node_list, then_node);
 
 			/* Set node roles */
-			node->role = cnode_role_if;
-			then_node->role = cnode_role_then;
+			node->role = node_role_if;
+			then_node->role = node_role_then;
 
 			/* Return region */
-			return cnode_region_if_then;
+			return node_region_if_then;
 		}
 	}
 
@@ -852,10 +851,10 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 
 	if (node->succ_list->count == 2)
 	{
-		struct cnode_t *then_node;
-		struct cnode_t *else_node;
-		struct cnode_t *then_succ_node;
-		struct cnode_t *else_succ_node;
+		Node *then_node;
+		Node *else_node;
+		Node *then_succ_node;
+		Node *else_succ_node;
 
 		then_node = linked_list_goto(node->succ_list, 0);
 		else_node = linked_list_goto(node->succ_list, 1);
@@ -882,20 +881,20 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 			linked_list_add(node_list, else_node);
 
 			/* Assign roles */
-			node->role = cnode_role_if;
-			then_node->role = cnode_role_then;
-			else_node->role = cnode_role_else;
+			node->role = node_role_if;
+			then_node->role = node_role_then;
+			else_node->role = node_role_else;
 
 			/* Return region */
-			return cnode_region_if_then_else;
+			return node_region_if_then_else;
 		}
 	}
 
 	/*** 4. Loop ***/
-	if (cnode_in_list(node, node->succ_list))
+	if (node_in_list(node, node->succ_list))
 	{
 		linked_list_add(node_list, node);
-		return cnode_region_loop;
+		return node_region_loop;
 	}
 
 
@@ -907,15 +906,15 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 	/* Obtain the interval in 'node_list' */
 	ctree_reach_under(ctree, node, node_list);
 	if (!node_list->count)
-		return cnode_region_invalid;
+		return node_region_invalid;
 	
 
 	/*** 1. While-loop ***/
 	if (node_list->count == 2 && node->succ_list->count == 2)
 	{
-		struct cnode_t *head_node;
-		struct cnode_t *tail_node;
-		struct cnode_t *exit_node;
+		Node *head_node;
+		Node *tail_node;
+		Node *exit_node;
 
 		/* Obtain head and tail nodes */
 		head_node = node;
@@ -932,9 +931,9 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 
 		/* Check condition for while loop */
 		if (tail_node->succ_list->count == 1 &&
-				cnode_in_list(head_node, tail_node->succ_list) &&
+				node_in_list(head_node, tail_node->succ_list) &&
 				tail_node->pred_list->count == 1 &&
-				cnode_in_list(head_node, tail_node->pred_list) &&
+				node_in_list(head_node, tail_node->pred_list) &&
 				tail_node != ctree->entry_node &&
 				exit_node != head_node)
 		{
@@ -945,8 +944,8 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 			linked_list_add(node_list, tail_node);
 
 			/* Set node roles */
-			head_node->role = cnode_role_head;
-			tail_node->role = cnode_role_tail;
+			head_node->role = node_role_head;
+			tail_node->role = node_role_tail;
 
 			/* Determine here whether the loop exists when the condition
 			 * in its head node is evaluated to true or false - we need
@@ -970,29 +969,29 @@ static enum cnode_region_t ctree_region(struct ctree_t *ctree,
 					->current_index == 1;
 
 			/* Return region */
-			return cnode_region_while_loop;
+			return node_region_while_loop;
 		}
 	}
 
 	
 	/* Nothing identified */
 	linked_list_clear(node_list);
-	return cnode_region_invalid;
+	return node_region_invalid;
 }
 
 
-static void ctree_traverse_node(struct cnode_t *node,
+static void ctree_traverse_node(Node *node,
 		struct linked_list_t *preorder_list,
 		struct linked_list_t *postorder_list)
 {
-	struct cnode_t *child_node;
+	Node *child_node;
 
 	/* Pre-order visit */
 	if (preorder_list)
 		linked_list_add(preorder_list, node);
 
 	/* Visit children */
-	if (node->kind == cnode_abstract)
+	if (node->kind == node_abstract)
 	{
 		LINKED_LIST_FOR_EACH(node->abstract.child_list)
 		{
@@ -1013,59 +1012,62 @@ static void ctree_traverse_node(struct cnode_t *node,
  * Public Functions
  */
 
+CLASS_IMPLEMENTATION(CTree);
 
-void ctree_init(void)
+
+void CTreeCreate(CTree *self, char *name)
 {
-	ctree_debug_category = debug_new_category(ctree_debug_file_name);
-	ctree_list = linked_list_create();
-	ctree_read_config();
-}
-
-
-void ctree_done(void)
-{
-	/* Free list of control trees */
-	LINKED_LIST_FOR_EACH(ctree_list)
-		ctree_free(linked_list_get(ctree_list));
-	linked_list_free(ctree_list);
-}
-
-
-struct ctree_t *ctree_create(char *name)
-{
-	struct ctree_t *ctree;
-
 	/* No anonymous */
 	if (!name || !*name)
-		fatal("%s: anonymous control tree not valid",
-				__FUNCTION__);
+		fatal("%s: no name given", __FUNCTION__);
 
 	/* Initialize */
-	ctree = xcalloc(1, sizeof(struct ctree_t));
-	ctree->name = str_set(ctree->name, name);
-	ctree->node_list = linked_list_create();
-	ctree->node_table = hash_table_create(0, 1);
-
-	/* Return */
-	return ctree;
+	self->name = str_set(self->name, name);
+	self->node_list = linked_list_create();
+	self->node_table = hash_table_create(0, 1);
 }
 
 
-void ctree_free(struct ctree_t *ctree)
+void CTreeDestroy(CTree *self)
 {
-	ctree_clear(ctree);
-	linked_list_free(ctree->node_list);
-	hash_table_free(ctree->node_table);
-	str_free(ctree->name);
-	free(ctree);
+	ctree_clear(self);
+	linked_list_free(self->node_list);
+	hash_table_free(self->node_table);
+	str_free(self->name);
 }
 
 
-void ctree_add_node(struct ctree_t *ctree,
-		struct cnode_t *node)
+void CTreeDump(Object *self, FILE *f)
+{
+	struct linked_list_iter_t *iter;
+
+	CTree *ctree;
+	Node *node;
+
+	/* Legend */
+	ctree = asCTree(self);
+	fprintf(f, "\nControl tree (edges: +forward, -back, *cross, "
+			"|tree, =>entry)\n");
+	
+	/* Dump all nodes */
+	iter = linked_list_iter_create(ctree->node_list);
+	LINKED_LIST_ITER_FOR_EACH(iter)
+	{
+		node = linked_list_iter_get(iter);
+		if (node == ctree->entry_node)
+			fprintf(f, "=>");
+		NodeDump(asObject(node), f);
+	}
+	linked_list_iter_free(iter);
+	fprintf(f, "\n");
+}
+
+
+void ctree_add_node(CTree *ctree,
+		Node *node)
 {
 	/* Insert node in list */
-	assert(!cnode_in_list(node, ctree->node_list));
+	assert(!node_in_list(node, ctree->node_list));
 	linked_list_add(ctree->node_list, node);
 
 	/* Insert in hash table */
@@ -1079,22 +1081,22 @@ void ctree_add_node(struct ctree_t *ctree,
 }
 
 
-void ctree_clear(struct ctree_t *ctree)
+void ctree_clear(CTree *ctree)
 {
 	LINKED_LIST_FOR_EACH(ctree->node_list)
-		cnode_free(linked_list_get(ctree->node_list));
+		delete(linked_list_get(ctree->node_list));
 	linked_list_clear(ctree->node_list);
 	hash_table_clear(ctree->node_table);
 	ctree->entry_node = NULL;
 }
 
 
-void ctree_structural_analysis(struct ctree_t *ctree)
+void ctree_structural_analysis(CTree *ctree)
 {
-	enum cnode_region_t region;
+	enum node_region_t region;
 
-	struct cnode_t *node;
-	struct cnode_t *abs_node;
+	Node *node;
+	Node *abs_node;
 
 	struct linked_list_t *postorder_list;
 	struct linked_list_t *region_list;
@@ -1141,7 +1143,7 @@ void ctree_structural_analysis(struct ctree_t *ctree)
 			/* Debug */
 			f = debug_file(ctree_debug_category);
 			if (f)
-				ctree_dump(ctree, f);
+				CTreeDump(asObject(ctree), f);
 		}
 	}
 
@@ -1157,7 +1159,7 @@ void ctree_structural_analysis(struct ctree_t *ctree)
 }
 
 
-void ctree_traverse(struct ctree_t *ctree, struct linked_list_t *preorder_list,
+void ctree_traverse(CTree *ctree, struct linked_list_t *preorder_list,
 		struct linked_list_t *postorder_list)
 {
 	FILE *f;
@@ -1184,52 +1186,29 @@ void ctree_traverse(struct ctree_t *ctree, struct linked_list_t *preorder_list,
 		{
 			fprintf(f, "Traversal of tree '%s' in pre-order:\n",
 					ctree->name);
-			cnode_list_dump(preorder_list, f);
+			node_list_dump(preorder_list, f);
 			fprintf(f, "\n\n");
 		}
 		if (postorder_list)
 		{
 			fprintf(f, "Traversal of tree '%s' in post-order:\n",
 					ctree->name);
-			cnode_list_dump(postorder_list, f);
+			node_list_dump(postorder_list, f);
 			fprintf(f, "\n\n");
 		}
 	}
 }
 
 
-void ctree_dump(struct ctree_t *ctree, FILE *f)
-{
-	struct linked_list_iter_t *iter;
-	struct cnode_t *node;
-
-	/* Legend */
-	fprintf(f, "\nControl tree (edges: +forward, -back, *cross, "
-			"|tree, =>entry)\n");
-	
-	/* Dump all nodes */
-	iter = linked_list_iter_create(ctree->node_list);
-	LINKED_LIST_ITER_FOR_EACH(iter)
-	{
-		node = linked_list_iter_get(iter);
-		if (node == ctree->entry_node)
-			fprintf(f, "=>");
-		cnode_dump(node, f);
-	}
-	linked_list_iter_free(iter);
-	fprintf(f, "\n");
-}
-
-
 #ifdef HAVE_LLVM
 
-static struct cnode_t *ctree_add_llvm_cfg_node(struct ctree_t *ctree,
+static Node *ctree_add_llvm_cfg_node(CTree *ctree,
 		LLVMBasicBlockRef llbb)
 {
-	struct cnode_t *node;
-	struct cnode_t *succ_node;
-	struct cnode_t *true_node;
-	struct cnode_t *false_node;
+	Node *node;
+	Node *succ_node;
+	Node *true_node;
+	Node *false_node;
 
 	LLVMValueRef llinst;
 	LLVMValueRef llbb_value;
@@ -1261,7 +1240,7 @@ static struct cnode_t *ctree_add_llvm_cfg_node(struct ctree_t *ctree,
 		return node;
 
 	/* Create node */
-	node = cnode_create_leaf(name);
+	node = new(Node, node_leaf, name, node_region_invalid);
 	ctree_add_node(ctree, node);
 	node->llbb = llbb;
 
@@ -1276,7 +1255,7 @@ static struct cnode_t *ctree_add_llvm_cfg_node(struct ctree_t *ctree,
 		succ_llbb_value = LLVMGetOperand(llinst, 0);
 		succ_llbb = LLVMValueAsBasicBlock(succ_llbb_value);
 		succ_node = ctree_add_llvm_cfg_node(ctree, succ_llbb);
-		cnode_connect(node, succ_node);
+		node_connect(node, succ_node);
 		return node;
 	}
 
@@ -1289,12 +1268,12 @@ static struct cnode_t *ctree_add_llvm_cfg_node(struct ctree_t *ctree,
 		true_llbb_value = LLVMGetOperand(llinst, 2);
 		true_llbb = LLVMValueAsBasicBlock(true_llbb_value);
 		true_node = ctree_add_llvm_cfg_node(ctree, true_llbb);
-		cnode_connect(node, true_node);
+		node_connect(node, true_node);
 
 		false_llbb_value = LLVMGetOperand(llinst, 1);
 		false_llbb = LLVMValueAsBasicBlock(false_llbb_value);
 		false_node = ctree_add_llvm_cfg_node(ctree, false_llbb);
-		cnode_connect(node, false_node);
+		node_connect(node, false_node);
 
 		return node;
 	}
@@ -1310,7 +1289,7 @@ static struct cnode_t *ctree_add_llvm_cfg_node(struct ctree_t *ctree,
 }
 
 
-struct cnode_t *ctree_add_llvm_cfg(struct ctree_t *ctree,
+Node *ctree_add_llvm_cfg(CTree *ctree,
 		LLVMValueRef llfunction)
 {
 	LLVMBasicBlockRef llbb;
@@ -1326,17 +1305,17 @@ struct cnode_t *ctree_add_llvm_cfg(struct ctree_t *ctree,
 #endif  /* HAVE_LLVM */
 
 
-struct cnode_t *ctree_get_node(struct ctree_t *ctree, char *name)
+Node *ctree_get_node(CTree *ctree, char *name)
 {
 	return hash_table_get(ctree->node_table, name);
 }
 
 
-void ctree_get_node_list(struct ctree_t *ctree,
+void ctree_get_node_list(CTree *ctree,
 		struct linked_list_t *node_list, char *node_list_str)
 {
 	struct list_t *token_list;
-	struct cnode_t *node;
+	Node *node;
 
 	char *name;
 	int index;
@@ -1358,10 +1337,10 @@ void ctree_get_node_list(struct ctree_t *ctree,
 }
 
 
-void ctree_write_to_config(struct ctree_t *ctree,
+void ctree_write_to_config(CTree *ctree,
 		struct config_t *config)
 {
-	struct cnode_t *node;
+	Node *node;
 
 	char section[MAX_STRING_SIZE];
 	char buf[MAX_STRING_SIZE];
@@ -1387,23 +1366,23 @@ void ctree_write_to_config(struct ctree_t *ctree,
 
 		/* Dump node properties */
 		config_write_string(config, section, "Kind", str_map_value(
-				&cnode_kind_map, node->kind));
+				&node_kind_map, node->kind));
 
 		/* Successors */
-		cnode_list_dump_buf(node->succ_list, buf, sizeof buf);
+		node_list_dump_buf(node->succ_list, buf, sizeof buf);
 		config_write_string(config, section, "Succ", buf);
 
 		/* Abstract node */
-		if (node->kind == cnode_abstract)
+		if (node->kind == node_abstract)
 		{
 			/* Children */
-			cnode_list_dump_buf(node->abstract.child_list,
+			node_list_dump_buf(node->abstract.child_list,
 					buf, sizeof buf);
 			config_write_string(config, section, "Child", buf);
 
 			/* Region */
 			config_write_string(config, section, "Region",
-					str_map_value(&cnode_region_map,
+					str_map_value(&node_region_map,
 					node->abstract.region));
 		}
 
@@ -1413,12 +1392,12 @@ void ctree_write_to_config(struct ctree_t *ctree,
 }
 
 
-void ctree_read_from_config(struct ctree_t *ctree,
+void ctree_read_from_config(CTree *ctree,
 		struct config_t *config, char *name)
 {
 	struct list_t *token_list;
 	struct linked_list_iter_t *iter;
-	struct cnode_t *node;
+	Node *node;
 
 	char section_str[MAX_STRING_SIZE];
 	char *section;
@@ -1427,8 +1406,8 @@ void ctree_read_from_config(struct ctree_t *ctree,
 	char *kind_str;
 	char *region_str;
 	
-	enum cnode_kind_t kind;
-	enum cnode_region_t region;
+	enum node_kind_t kind;
+	enum node_region_t region;
 
 	/* Clear existing tree */
 	ctree_clear(ctree);
@@ -1459,29 +1438,29 @@ void ctree_read_from_config(struct ctree_t *ctree,
 		/* Get node properties */
 		node_name = list_get(token_list, 3);
 		kind_str = config_read_string(config, section, "Kind", "Leaf");
-		kind = str_map_string_case(&cnode_kind_map, kind_str);
+		kind = str_map_string_case(&node_kind_map, kind_str);
 		if (!kind)
 			fatal("%s: %s: invalid value for 'Kind'",
 					file_name, section);
 
 		/* Create node */
-		if (kind == cnode_leaf)
+		if (kind == node_leaf)
 		{
-			node = cnode_create_leaf(node_name);
+			node = new(Node, node_leaf, node_name, node_region_invalid);
 		}
 		else
 		{
 			/* Read region */
 			region_str = config_read_string(config, section,
 					"Region", "");
-			region = str_map_string_case(&cnode_region_map,
+			region = str_map_string_case(&node_region_map,
 					region_str);
 			if (!region)
 				fatal("%s: %s: invalid or missing 'Region'",
 						file_name, node_name);
 
 			/* Create node */
-			node = cnode_create_abstract(node_name, region);
+			node = new(Node, node_abstract, node_name, region);
 		}
 
 		/* Add node */
@@ -1498,7 +1477,7 @@ void ctree_read_from_config(struct ctree_t *ctree,
 		char *node_list_str;
 
 		struct linked_list_t *node_list;
-		struct cnode_t *tmp_node;
+		Node *tmp_node;
 
 		/* Get section name */
 		node = linked_list_iter_get(iter);
@@ -1513,15 +1492,15 @@ void ctree_read_from_config(struct ctree_t *ctree,
 		LINKED_LIST_FOR_EACH(node_list)
 		{
 			tmp_node = linked_list_get(node_list);
-			if (cnode_in_list(tmp_node, node->succ_list))
+			if (node_in_list(tmp_node, node->succ_list))
 				fatal("%s.%s: duplicate successor", ctree->name,
 						node->name);
-			cnode_connect(node, tmp_node);
+			node_connect(node, tmp_node);
 		}
 		linked_list_free(node_list);
 
 		/* Abstract node */
-		if (node->kind == cnode_abstract)
+		if (node->kind == node_abstract)
 		{
 			/* Children */
 			node_list_str = config_read_string(config, section, "Child", "");
@@ -1531,7 +1510,7 @@ void ctree_read_from_config(struct ctree_t *ctree,
 			{
 				tmp_node = linked_list_get(node_list);
 				tmp_node->parent = node;
-				if (cnode_in_list(tmp_node, node->abstract.child_list))
+				if (node_in_list(tmp_node, node->abstract.child_list))
 					fatal("%s.%s: duplicate child", ctree->name,
 							node->name);
 				linked_list_add(node->abstract.child_list, tmp_node);
@@ -1555,11 +1534,10 @@ void ctree_read_from_config(struct ctree_t *ctree,
 }
 
 
-void ctree_compare(struct ctree_t *ctree1,
-		struct ctree_t *ctree2)
+void ctree_compare(CTree *ctree1, CTree *ctree2)
 {
-	struct cnode_t *node;
-	struct cnode_t *node2;
+	Node *node;
+	Node *node2;
 
 	/* Compare entry nodes */
 	assert(ctree1->entry_node);
@@ -1592,6 +1570,29 @@ void ctree_compare(struct ctree_t *ctree1,
 		node = linked_list_get(ctree1->node_list);
 		node2 = ctree_get_node(ctree2, node->name);
 		assert(node2);
-		cnode_compare(node, node2);
+		node_compare(node, node2);
 	}
 }
+
+
+
+/*
+ * Non-Class Functions
+ */
+
+void ctree_init(void)
+{
+	ctree_debug_category = debug_new_category(ctree_debug_file_name);
+	ctree_list = linked_list_create();
+	ctree_read_config();
+}
+
+
+void ctree_done(void)
+{
+	/* Free list of control trees */
+	LINKED_LIST_FOR_EACH(ctree_list)
+		delete(linked_list_get(ctree_list));
+	linked_list_free(ctree_list);
+}
+

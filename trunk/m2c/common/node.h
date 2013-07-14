@@ -17,73 +17,84 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2C_COMMON_CNODE_H
-#define M2C_COMMON_CNODE_H
+#ifndef M2C_COMMON_NODE_H
+#define M2C_COMMON_NODE_H
+
+#include <lib/util/class.h>
+
 
 #ifdef HAVE_LLVM
 #include <llvm-c/Core.h>
 #endif
 
-struct basic_block_t;
-struct linked_list_t;
-struct ctree_t;
 
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(BasicBlock);
+CLASS_FORWARD_DECLARATION(CTree);
+CLASS_FORWARD_DECLARATION(Node);
+struct linked_list_t;
+
+
+
+/*
+ * Class 'Node'
+ */
 
 /* Kind of control tree node. The node can be a leaf representing a basic block
  * of the function, or an abstract node, representing a reduction of the control
  * flow graph. */
-extern struct str_map_t cnode_kind_map;
-enum cnode_kind_t
+extern struct str_map_t node_kind_map;
+enum node_kind_t
 {
-	cnode_kind_invalid,
-	cnode_leaf,
-	cnode_abstract
+	node_kind_invalid,
+	node_leaf,
+	node_abstract
 };
 
-extern struct str_map_t cnode_region_map;
-enum cnode_region_t
+extern struct str_map_t node_region_map;
+enum node_region_t
 {
-	cnode_region_invalid,
+	node_region_invalid,
 
-	cnode_region_block,
-	cnode_region_if_then,
-	cnode_region_if_then_else,
-	cnode_region_while_loop,
-	cnode_region_loop,
-	cnode_region_proper_interval,
-	cnode_region_improper_interval,
-	cnode_region_proper_outer_interval,
-	cnode_region_improper_outer_interval,
+	node_region_block,
+	node_region_if_then,
+	node_region_if_then_else,
+	node_region_while_loop,
+	node_region_loop,
+	node_region_proper_interval,
+	node_region_improper_interval,
+	node_region_proper_outer_interval,
+	node_region_improper_outer_interval,
 
-	cnode_region_count
+	node_region_count
 };
 
 
-extern struct str_map_t cnode_role_map;
-enum cnode_role_t
+extern struct str_map_t node_role_map;
+enum node_role_t
 {
-	cnode_role_invalid,
+	node_role_invalid,
 
-	cnode_role_if,
-	cnode_role_then,
-	cnode_role_else,
-	cnode_role_head,
-	cnode_role_tail,
-	cnode_role_pre,  /* Loop pre-header */
-	cnode_role_exit,  /* Loop exit */
+	node_role_if,
+	node_role_then,
+	node_role_else,
+	node_role_head,
+	node_role_tail,
+	node_role_pre,  /* Loop pre-header */
+	node_role_exit,  /* Loop exit */
 
-	cnode_role_count
+	node_role_count
 };
 
 
 /* Node of the control tree */
-struct cnode_t
-{
-	enum cnode_kind_t kind;
+CLASS_BEGIN(Node, Object)
+	
+	enum node_kind_t kind;
 	char *name;
 
 	/* Control tree that the node belongs to */
-	struct ctree_t *ctree;
+	CTree *ctree;
 
 	struct linked_list_t *succ_list;
 	struct linked_list_t *pred_list;
@@ -95,14 +106,14 @@ struct cnode_t
 
 	/* If the node is part of a higher-level abstract node, this field
 	 * points to it. If not, the field is NULL. */
-	struct cnode_t *parent;
+	Node *parent;
 
 	/* Role that the node plays inside of its parent abstract node.
-	 * This field is other than 'cnode_role_invalid' only when 'parent' is
+	 * This field is other than 'node_role_invalid' only when 'parent' is
 	 * not NULL. */
-	enum cnode_role_t role;
+	enum node_role_t role;
 
-	/* Flags indicating when a node with role 'cnode_role_head' belonging
+	/* Flags indicating when a node with role 'node_role_head' belonging
 	 * to a parent region 'while_loop' exists the loop when its condition
 	 * is evaluated to true or false. Only one of these two flags can be
 	 * set. */
@@ -114,16 +125,16 @@ struct cnode_t
 	{
 		struct
 		{
-			struct basic_block_t *basic_block;
+			BasicBlock *basic_block;
 		} leaf;
 
 		struct
 		{
 			/* Type of region */
-			enum cnode_region_t region;
+			enum node_region_t region;
 
 			/* List of function nodes associated with the abstract
-			 * node. Elements of type 'cnode_t'. */
+			 * node. Elements of type 'node_t'. */
 			struct linked_list_t *child_list;
 		} abstract;
 	};
@@ -142,45 +153,40 @@ struct cnode_t
 	LLVMBasicBlockRef llbb;
 #endif
 
-};
+CLASS_END(Node)
 
 
-/* Create node of type leaf */
-struct cnode_t *cnode_create_leaf(char *name);
+void NodeCreate(Node *self, enum node_kind_t kind, char *name,
+		enum node_region_t region);
+void NodeDestroy(Node *self);
 
-/* Create an abstract node containing the list of nodes in 'elem_list'. The list
- * 'elem_list' will be copied internally, and should be initialized and freed by
- * the caller. */
-struct cnode_t *cnode_create_abstract(char *name,
-		enum cnode_region_t region);
-
-void cnode_free(struct cnode_t *node);
-void cnode_dump(struct cnode_t *node, FILE *f);
+/* Virtual function inherited from class Object */
+void NodeDump(Object *self, FILE *f);
 
 /* Return the basic block associated to the node. This function makes a sanity
  * check on the node type: it must be a leaf. */
-struct basic_block_t *cnode_get_basic_block(struct cnode_t *node);
+BasicBlock *node_get_basic_block(Node *node);
 
 /* Return true if 'node' is in the linked list of nodes passed as the second
  * argument. This function does not call 'linked_list_find'. Instead, it
  * traverses the list using a dedicated iterator, so that the current element of
  * the list is not lost. */
-int cnode_in_list(struct cnode_t *node, struct linked_list_t *list);
+int node_in_list(Node *node, struct linked_list_t *list);
 
 /* Try to create an edge between 'node' and 'node_dest'. If the edge already
  * exist, the function will ignore the call silently. */
-void cnode_try_connect(struct cnode_t *node, struct cnode_t *node_dest);
+void node_try_connect(Node *node, Node *node_dest);
 
 /* Create an edge between 'node' and 'node_dest'. There should be no existing
  * edge for this source and destination when calling this function. */
-void cnode_connect(struct cnode_t *node, struct cnode_t *node_dest);
+void node_connect(Node *node, Node *node_dest);
 
 /* Try to remove an edge between 'node' and 'node_dest'. If the edge does not
  * exist, the function exists silently. */
-void cnode_try_disconnect(struct cnode_t *node, struct cnode_t *node_dest);
+void node_try_disconnect(Node *node, Node *node_dest);
 
 /* Disconnect 'node' and 'node_dest'. An edge must exist between both. */
-void cnode_disconnect(struct cnode_t *node, struct cnode_t *node_dest);
+void node_disconnect(Node *node, Node *node_dest);
 
 /* Try to reconnect a source node with a new destination node. This is
  * equivalent to disconnecting and connecting it, except that the order
@@ -188,48 +194,45 @@ void cnode_disconnect(struct cnode_t *node, struct cnode_t *node_dest);
  * guaranteed to stay the same. If an edge already exists between the
  * source and the new destination, the original edge will just be
  * completely removed. */
-void cnode_reconnect_dest(struct cnode_t *src_node,
-		struct cnode_t *dest_node,
-		struct cnode_t *new_dest_node);
+void node_reconnect_dest(Node *src_node,
+		Node *dest_node,
+		Node *new_dest_node);
 
 /* Try to replace the source node of an edge. This is equivalent to
  * disconnecting and connecting it, except that the order of the
  * predecessor list of the destination node is guaranteed to stay
  * intact. If an edge already exists between the new source and the
  * destination, the original edge will just be completely removed. */
-void cnode_reconnect_source(struct cnode_t *src_node,
-		struct cnode_t *dest_node,
-		struct cnode_t *new_src_node);
+void node_reconnect_source(Node *src_node, Node *dest_node,
+		Node *new_src_node);
 
 /* Make 'node' take the same parent as 'before' and place it right before it in
  * its child list. Node 'before' must have a parent.
  * This does not insert the node into the control tree structures (an extra
- * call to 'cnode_add_node' is needed). */
-void cnode_insert_before(struct cnode_t *node, struct cnode_t *before);
+ * call to 'node_add_node' is needed). */
+void node_insert_before(Node *node, Node *before);
 
 /* Make 'node' take the same parent as 'after' and place it right after it in
  * its child list. Node 'after' must have a parent.
  * This does not insert the node into the control tree structures (an extra
- * call to 'cnode_add_node' is needed). */
-void cnode_insert_after(struct cnode_t *node, struct cnode_t *after);
+ * call to 'node_add_node' is needed). */
+void node_insert_after(Node *node, Node *after);
 
 /* Starting at 'node', traverse the syntax tree (not control tree) in depth-
  * first and return the first leaf node found (could be 'node' itself). */
-struct cnode_t *cnode_get_first_leaf(struct cnode_t *node);
+Node *node_get_first_leaf(Node *node);
 
 /* Starting at 'node', traverse the syntax tree (not control tree) in depth-
  * first and return the last leaf node found (could be 'node' itself). */
-struct cnode_t *cnode_get_last_leaf(struct cnode_t *node);
+Node *node_get_last_leaf(Node *node);
 		
 /* Dumping lists of nodes */
-void cnode_list_dump(struct linked_list_t *list, FILE *f);
-void cnode_list_dump_buf(struct linked_list_t *list, char *buf,
-		int size);
-void cnode_list_dump_detail(struct linked_list_t *list, FILE *f);
+void node_list_dump(struct linked_list_t *list, FILE *f);
+void node_list_dump_buf(struct linked_list_t *list, char *buf, int size);
+void node_list_dump_detail(struct linked_list_t *list, FILE *f);
 
 /* Compare two nodes */
-void cnode_compare(struct cnode_t *node1,
-		struct cnode_t *node2);
+void node_compare(Node *node1, Node *node2);
 
 #endif
 

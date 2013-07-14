@@ -17,107 +17,262 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
+#include <lib/mhandle/mhandle.h>
 
 #include "class.h"
 #include "debug.h"
 
 
-void class_init(struct class_t *class_info, unsigned int id,
-		void *parent)
+/*
+ * Class 'Object'
+ */
+
+struct class_t ObjectClass;
+
+void ObjectCreate(Object *self)
 {
-	struct class_t *parent_class_info;
+	/* Virtual functions */
+	self->Dump = ObjectDump;
+}
 
-	/* Set class identifier */
-	class_info->id = id;
 
-	/* Magic */
-	class_info->magic[0] = 'C';
-	class_info->magic[1] = 'L';
-	class_info->magic[2] = 'A';
-	class_info->magic[3] = 'S';
+void ObjectDestroy(Object *self)
+{
+}
 
-	/* Parent */
-	if (parent)
+
+void ObjectDump(Object *self, FILE *f)
+{
+	struct class_info_t *info;
+	char *comma;
+
+	fprintf(f, "Object @%p: ", self);
+	info = &self->__info;
+	comma = "";
+	while (info)
 	{
-		/* Parent instantce is a class */
-		parent_class_info = CLASS(parent);
-
-		/* Parent cannot have a child yet */
-		if (parent_class_info->child)
-			panic("%s: parent class already has a child",
-					__FUNCTION__);
-
-		/* Set parent */
-		parent_class_info->child = class_info;
-		class_info->parent = parent_class_info;
+		assert(info->c);
+		fprintf(f, "%s%s", comma, info->c->name);
+		info = info->child;
+		comma = " <- ";
 	}
+	fprintf(f, "\n");
 }
 
 
-struct class_t *class_get(void *p)
+
+
+/*
+ * Class functions
+ */
+
+struct class_t *class_list_head;
+struct class_t *class_list_tail;
+
+
+void class_init(void)
 {
-	struct class_t *class_info;
-	int is_class;
+	Object o;
 
-	/* Convert */
-	class_info = p;
-	is_class = class_info->magic[0] == 'C' &&
-			class_info->magic[1] == 'L' &&
-			class_info->magic[2] == 'A' &&
-			class_info->magic[3] == 'S';
+	/* Already initialized */
+	if (ObjectClass.id)
+		return;
 	
-	/* Not a class */
-	if (!is_class)
-		panic("%s: not a class instance", __FUNCTION__);
+	/* Initialize object class */
+	ObjectClass.name = "Object";
+	ObjectClass.id = class_compute_id(ObjectClass.name);
+	ObjectClass.size = sizeof(Object);
+	ObjectClass.info_offset =  (unsigned int) ((void *) &o.__info
+			- (void *) &o);
+	assert(ObjectClass.info_offset == 0);
+	ObjectClass.parent = NULL;
+	ObjectClass.destroy = (void (*)(void *)) ObjectDestroy;
 
-	/* Converted */
-	return class_info;
+	/* Insert to class list */
+	assert(!class_list_head);
+	assert(!class_list_tail);
+	class_list_head = &ObjectClass;
+	class_list_tail = &ObjectClass;
 }
 
 
-void *class_reinterpret_cast(void *p, unsigned int id)
+void class_register(struct class_t *c)
 {
-	/* NULL is cast to NULL */
-	if (!p)
-		return NULL;
+	/* Check that class has not been registered before */
+	if (c->id)
+		panic("%s: class '%s' registered twice",
+			__FUNCTION__, c->name);
 	
-	/* Try to reinterpret */
-	p = class_try_reinterpret_cast(p, id);
+	/* Compute class ID */
+	assert(c->name && *c->name);
+	c->id = class_compute_id(c->name);
+	assert(c->id);
+	
+	/* Insert into class list */
+	assert(class_list_tail);
+	class_list_tail->next = c;
+	class_list_tail = c;
+}
 
-	/* Invalid cast */
-	if (!p)
-		panic("%s: invalid cast", __FUNCTION__);
-	
-	/* Return cast instance */
+
+unsigned int class_compute_id(char *name)
+{
+	unsigned char *str;
+	unsigned int prime;
+	unsigned int id;
+
+	/* Hash function */
+	str = (unsigned char *) name;
+	id = 5381;
+	prime = 16777619;
+	while (*str)
+	{
+		id = (id ^ *str) * prime;
+		str++;
+	}
+
+	/* Return calculated hash */
+	return id;
+}
+
+
+void *class_new(struct class_t *c)
+{
+	struct class_info_t *info;
+	struct class_info_t *child_info;
+	struct class_info_t *parent_info;
+	void *p;
+
+	/* Allocate */
+	p = xcalloc(1, c->size);
+
+	/* Initialize 'class_info' fields */
+	child_info = NULL;
+	info = (struct class_info_t *) (p + c->info_offset);
+	do
+	{
+		/* Class must be registered */
+		if (!c->id)
+			panic("%s: class has not been registered "
+				" - use CLASS_REGISTER()",
+				__FUNCTION__);
+
+		/* Get parent class info */
+		parent_info = c->parent ?
+			(struct class_info_t *) (p + c->parent->info_offset)
+			: NULL;
+
+		/* Get current class info and initialize */
+		info = (struct class_info_t *) (p + c->info_offset);
+		info->c = c;
+		info->parent = parent_info;
+		info->child = child_info;
+
+		/* Move to parent class */
+		c = c->parent;
+		child_info = info;
+		info = parent_info;
+	} while (c);
+
+	/* Return */
 	return p;
 }
 
 
-void *class_try_reinterpret_cast(void *p, unsigned int id)
+void class_delete(void *p)
 {
-	struct class_t *class_info;
-	struct class_t *tmp_class_info;
+	struct class_info_t *info;
 
-	/* NULL is cast to NULL */
-	if (!p)
-		return NULL;
-
-	/* Get class */
-	class_info = CLASS(p);
-
-	/* Search parents */
-	for (tmp_class_info = class_info; tmp_class_info;
-			tmp_class_info = tmp_class_info->parent)
-		if (tmp_class_info->id == id)
-			return tmp_class_info;
+	/* Find the child-most destructor */
+	info = &((Object *) p)->__info;
+	while (info->child)
+		info = info->child;
 	
-	/* Search children */
-	for (tmp_class_info = class_info->child; tmp_class_info;
-			tmp_class_info = tmp_class_info->child)
-		if (tmp_class_info->id == id)
-			return tmp_class_info;
+	/* Call destructors in child-to-parent order */
+	while (info)
+	{
+		assert(info->c);
+		assert(info->c->destroy);
+		info->c->destroy(p);
+		info = info->parent;
+	}
 
-	/* Invalid cast */
-	return NULL;
+	/* Free memory */
+	free(p);
 }
+
+
+int class_instance_of(void *p, struct class_t *c)
+{
+	struct class_info_t *info;
+
+	/* NULL pointer always casts successfully */
+	assert(c);
+	if (!p)
+		return 1;
+
+	/* Find child with matching ID */
+	info = &((Object *) p)->__info;
+	while (info)
+	{
+		assert(info->c);
+		if (info->c->id == c->id)
+			return 1;
+		info = info->child;
+	}
+
+	/* Not found */
+	return 0;
+}
+
+
+static void class_dump_parents(struct class_t *c, FILE *f)
+{
+	char *comma;
+
+	/* No parent */
+	if (!c->parent)
+	{
+		fprintf(f, "-\n");
+		return;
+	}
+
+	/* Parent list */
+	c = c->parent;
+	comma = "";
+	while (c)
+	{
+		fprintf(f, "%s%s", comma, c->name);
+		c = c->parent;
+		comma = " -> ";
+	}
+	fprintf(f, "\n");
+}
+
+
+void class_dump(FILE *f)
+{
+	struct class_t *c;
+
+	fprintf(f, "\nRegistered classes:\n\n");
+	c = class_list_head;
+	while (c)
+	{
+		/* Name */
+		fprintf(f, "[ Class %s ]\n", c->name);
+
+		/* Inheritance */
+		fprintf(f, "Parents = ");
+		class_dump_parents(c, f);
+
+		/* Other fields */
+		fprintf(f, "ID = 0x%x\n", c->id);
+		fprintf(f, "Size = %u\n", c->size);
+		fprintf(f, "InfoOffset = %u\n", c->info_offset);
+
+		/* Next */
+		c = c->next;
+		fprintf(f, "\n");
+	}
+}
+
