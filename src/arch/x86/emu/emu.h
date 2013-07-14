@@ -23,12 +23,19 @@
 #include <pthread.h>
 #include <stdio.h>
 
-struct x86_emu_t
-{
-	/* pid & address_space_index assignment */
+#include <arch/common/emu.h>
+
+
+/*
+ * Class 'X86Emu'
+ */
+
+CLASS_BEGIN(X86Emu, Emu)
+
+	/* PID assignment */
 	int current_pid;
 
-	/* Schedule next call to 'x86_emu_process_events()'.
+	/* Schedule next call to 'X86EmuProcessEvents()'.
 	 * The call will only be effective if 'process_events_force' is set.
 	 * This flag should be accessed thread-safely locking 'process_events_mutex'. */
 	pthread_mutex_t process_events_mutex;
@@ -74,11 +81,28 @@ struct x86_emu_t
 	struct x86_ctx_t *finished_list_tail;
 	int finished_list_count;
 	int finished_list_max;
-};
+
+CLASS_END(X86Emu)
 
 
-/* x86 emulator and architecture */
-extern struct x86_emu_t *x86_emu;
+void X86EmuCreate(X86Emu *self);
+void X86EmuDestroy(X86Emu *self);
+
+int X86EmuRun(void);
+
+void X86EmuDump(FILE *f);
+void X86EmuDumpSummary(FILE *f);
+
+void X86EmuProcessEvents(X86Emu *self);
+void X86EmuProcessEventsSchedule(X86Emu *self);
+
+
+
+/*
+ * Non-Class
+ */
+
+extern X86Emu *x86_emu;
 
 extern long long x86_emu_max_cycles;
 extern long long x86_emu_max_inst;
@@ -86,22 +110,8 @@ extern char x86_emu_last_inst_bytes[20];
 extern int x86_emu_last_inst_size;
 extern int x86_emu_process_prefetch_hints;
 
-
-
-/*
- * Public Functions
- */
-
 void x86_emu_init(void);
 void x86_emu_done(void);
-
-int x86_emu_run(void);
-
-void x86_emu_dump(FILE *f);
-void x86_emu_dump_summary(FILE *f);
-
-void x86_emu_process_events(void);
-void x86_emu_process_events_schedule(void);
 
 
 #endif

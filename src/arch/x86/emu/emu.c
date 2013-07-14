@@ -55,130 +55,84 @@ char x86_emu_last_inst_bytes[20];
 int x86_emu_last_inst_size = 0;
 int x86_emu_process_prefetch_hints = 0;
 
-struct x86_emu_t *x86_emu;
+X86Emu *x86_emu;
 
 
 
 
 /*
- * Public functions
+ * Class 'X86Emu'
  */
 
+CLASS_IMPLEMENTATION(X86Emu);
 
-/* Initialization */
-
-void x86_emu_init(void)
+void X86EmuCreate(X86Emu *self)
 {
-	union
-	{
-		unsigned int as_uint;
-		unsigned char as_uchar[4];
-	} endian;
-
-	/* Endian check */
-	endian.as_uint = 0x33221100;
-	if (endian.as_uchar[0])
-		fatal("%s: host machine is not little endian", __FUNCTION__);
-
-	/* Host types */
-	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
-	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
-	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
-
-	/* Create */
-	x86_emu = xcalloc(1, sizeof(struct x86_emu_t));
-
 	/* Initialize */
-	x86_sys_init();
-	x86_isa_init();
-
-	/* Initialize */
-	x86_emu->current_pid = 100;  /* Initial assigned pid */
+	self->current_pid = 100;
 	
-	/* Initialize mutex for variables controlling calls to 'x86_emu_process_events()' */
-	pthread_mutex_init(&x86_emu->process_events_mutex, NULL);
-
-#ifdef HAVE_OPENGL
-	/* GLUT */
-	glut_init();
-	/* GLEW */
-	glew_init();
-	/* GLU */
-	glu_init();
-#endif
-
-	/* OpenGL */
-	opengl_init();
+	/* Initialize mutex for variables controlling calls to 'X86EmuProcessEvents()' */
+	pthread_mutex_init(&self->process_events_mutex, NULL);
 }
 
 
-/* Finalization */
-void x86_emu_done(void)
+void X86EmuDestroy(X86Emu *self)
 {
 	struct x86_ctx_t *ctx;
 
-#ifdef HAVE_OPENGL
-	glut_done();
-	glew_done();
-	glu_done();
-#endif
-
-	/* Finalize OpenGl */
-	opengl_done();
-
 	/* Finish all contexts */
-	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)
+	for (ctx = self->context_list_head; ctx; ctx = ctx->context_list_next)
 		if (!x86_ctx_get_state(ctx, x86_ctx_finished))
 			x86_ctx_finish(ctx, 0);
 
 	/* Free contexts */
-	while (x86_emu->context_list_head)
-		x86_ctx_free(x86_emu->context_list_head);
+	while (self->context_list_head)
+		x86_ctx_free(self->context_list_head);
 	
-	/* Free */
-	free(x86_emu);
-
-	/* End */
-	x86_isa_done();
-	x86_sys_done();
 }
 
 
-void x86_emu_dump(FILE *f)
+void X86EmuDump(FILE *f)
 {
+	X86Emu *self = x86_emu;
 	struct x86_ctx_t *ctx;
+	X86Emu *emu;
 
+	emu = asX86Emu(self);
 	fprintf(f, "List of contexts (shows in any order)\n\n");
-	DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, context, ctx)
+	DOUBLE_LINKED_LIST_FOR_EACH(emu, context, ctx)
 		x86_ctx_dump(ctx, f);
 }
 
 
-void x86_emu_dump_summary(FILE *f)
+void X86EmuDumpSummary(FILE *f)
 {
+	X86Emu *self = x86_emu;
+
 	/* Functional simulation */
-	fprintf(f, "Contexts = %d\n", x86_emu->running_list_max);
+	fprintf(f, "Contexts = %d\n", self->running_list_max);
 	fprintf(f, "Memory = %lu\n", mem_max_mapped_space);
 }
 
 
-/* Schedule a call to 'x86_emu_process_events' */
-void x86_emu_process_events_schedule()
+/* Schedule a call to 'X86EmuProcessEvents' */
+void X86EmuProcessEventsSchedule(X86Emu *self)
 {
-	pthread_mutex_lock(&x86_emu->process_events_mutex);
-	x86_emu->process_events_force = 1;
-	pthread_mutex_unlock(&x86_emu->process_events_mutex);
+	pthread_mutex_lock(&self->process_events_mutex);
+	self->process_events_force = 1;
+	pthread_mutex_unlock(&self->process_events_mutex);
 }
 
 
 /* Function that suspends the host thread waiting for an event to occur.
  * When the event finally occurs (i.e., before the function finishes, a
- * call to 'x86_emu_process_events' is scheduled.
+ * call to 'X86EmuProcessEvents' is scheduled.
  * The argument 'arg' is the associated guest context. */
-static void *x86_emu_host_thread_suspend(void *arg)
+static void *X86EmuHostThreadSuspend(void *arg)
 {
 	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
 	long long now = esim_real_time();
+	X86Emu *self = x86_emu;
 
 	/* Detach this thread - we don't want the parent to have to join it to release
 	 * its resources. The thread termination can be observed by atomically checking
@@ -260,18 +214,19 @@ static void *x86_emu_host_thread_suspend(void *arg)
 	}
 
 	/* Event occurred - thread finishes */
-	pthread_mutex_lock(&x86_emu->process_events_mutex);
-	x86_emu->process_events_force = 1;
+	pthread_mutex_lock(&self->process_events_mutex);
+	self->process_events_force = 1;
 	ctx->host_thread_suspend_active = 0;
-	pthread_mutex_unlock(&x86_emu->process_events_mutex);
+	pthread_mutex_unlock(&self->process_events_mutex);
 	return NULL;
 }
 
 
 /* Function that suspends the host thread waiting for a timer to expire,
- * and then schedules a call to 'x86_emu_process_events'. */
-static void *x86_emu_host_thread_timer(void *arg)
+ * and then schedules a call to 'X86EmuProcessEvents'. */
+static void *X86EmuHostThreadTimer(void *arg)
 {
+	X86Emu *self = x86_emu;
 	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
 	long long now = esim_real_time();
 	struct timespec ts;
@@ -291,40 +246,40 @@ static void *x86_emu_host_thread_timer(void *arg)
 		nanosleep(&ts, NULL);
 	}
 
-	/* Timer expired, schedule call to 'x86_emu_process_events' */
-	pthread_mutex_lock(&x86_emu->process_events_mutex);
-	x86_emu->process_events_force = 1;
+	/* Timer expired, schedule call to 'X86EmuProcessEvents' */
+	pthread_mutex_lock(&self->process_events_mutex);
+	self->process_events_force = 1;
 	ctx->host_thread_timer_active = 0;
-	pthread_mutex_unlock(&x86_emu->process_events_mutex);
+	pthread_mutex_unlock(&self->process_events_mutex);
 	return NULL;
 }
 
 
 /* Check for events detected in spawned host threads, like waking up contexts or
  * sending signals.
- * The list is only processed if flag 'x86_emu->process_events_force' is set. */
-void x86_emu_process_events()
+ * The list is only processed if flag 'self->process_events_force' is set. */
+void X86EmuProcessEvents(X86Emu *self)
 {
 	struct x86_ctx_t *ctx, *next;
 	long long now = esim_real_time();
 	
 	/* Check if events need actually be checked. */
-	pthread_mutex_lock(&x86_emu->process_events_mutex);
-	if (!x86_emu->process_events_force)
+	pthread_mutex_lock(&self->process_events_mutex);
+	if (!self->process_events_force)
 	{
-		pthread_mutex_unlock(&x86_emu->process_events_mutex);
+		pthread_mutex_unlock(&self->process_events_mutex);
 		return;
 	}
 	
-	/* By default, no subsequent call to 'x86_emu_process_events' is assumed */
-	x86_emu->process_events_force = 0;
+	/* By default, no subsequent call to 'X86EmuProcessEvents' is assumed */
+	self->process_events_force = 0;
 
 	/*
 	 * LOOP 1
 	 * Look at the list of suspended contexts and try to find
 	 * one that needs to be waken up.
 	 */
-	for (ctx = x86_emu->suspended_list_head; ctx; ctx = next)
+	for (ctx = self->suspended_list_head; ctx; ctx = next)
 	{
 		/* Save next */
 		next = ctx->suspended_list_next;
@@ -337,7 +292,7 @@ void x86_emu_process_events()
 			uint32_t sec, usec;
 			uint64_t diff;
 
-			/* If 'x86_emu_host_thread_suspend' is still running for this context, do nothing. */
+			/* If 'X86EmuHostThreadSuspend' is still running for this context, do nothing. */
 			if (ctx->host_thread_suspend_active)
 				continue;
 
@@ -369,9 +324,9 @@ void x86_emu_process_events()
 				continue;
 			}
 
-			/* No event available, launch 'x86_emu_host_thread_suspend' again */
+			/* No event available, launch 'X86EmuHostThreadSuspend' again */
 			ctx->host_thread_suspend_active = 1;
-			if (pthread_create(&ctx->host_thread_suspend, NULL, x86_emu_host_thread_suspend, ctx))
+			if (pthread_create(&ctx->host_thread_suspend, NULL, X86EmuHostThreadSuspend, ctx))
 				fatal("syscall 'poll': could not create child thread");
 			continue;
 		}
@@ -390,7 +345,7 @@ void x86_emu_process_events()
 			}
 
 			/* No event available. The context will never awake on its own, so no
-			 * 'x86_emu_host_thread_suspend' is necessary. */
+			 * 'X86EmuHostThreadSuspend' is necessary. */
 			continue;
 		}
 
@@ -403,7 +358,7 @@ void x86_emu_process_events()
 			struct pollfd host_fds;
 			int err;
 
-			/* If 'x86_emu_host_thread_suspend' is still running for this context, do nothing. */
+			/* If 'X86EmuHostThreadSuspend' is still running for this context, do nothing. */
 			if (ctx->host_thread_suspend_active)
 				continue;
 
@@ -463,9 +418,9 @@ void x86_emu_process_events()
 				continue;
 			}
 
-			/* No event available, launch 'x86_emu_host_thread_suspend' again */
+			/* No event available, launch 'X86EmuHostThreadSuspend' again */
 			ctx->host_thread_suspend_active = 1;
-			if (pthread_create(&ctx->host_thread_suspend, NULL, x86_emu_host_thread_suspend, ctx))
+			if (pthread_create(&ctx->host_thread_suspend, NULL, X86EmuHostThreadSuspend, ctx))
 				fatal("syscall 'poll': could not create child thread");
 			continue;
 		}
@@ -480,7 +435,7 @@ void x86_emu_process_events()
 			void *buf;
 			struct pollfd host_fds;
 
-			/* If 'x86_emu_host_thread_suspend' is still running for this context, do nothing. */
+			/* If 'X86EmuHostThreadSuspend' is still running for this context, do nothing. */
 			if (ctx->host_thread_suspend_active)
 				continue;
 
@@ -525,9 +480,9 @@ void x86_emu_process_events()
 				continue;
 			}
 
-			/* Data is not ready to be written - launch 'x86_emu_host_thread_suspend' again */
+			/* Data is not ready to be written - launch 'X86EmuHostThreadSuspend' again */
 			ctx->host_thread_suspend_active = 1;
-			if (pthread_create(&ctx->host_thread_suspend, NULL, x86_emu_host_thread_suspend, ctx))
+			if (pthread_create(&ctx->host_thread_suspend, NULL, X86EmuHostThreadSuspend, ctx))
 				fatal("syscall 'write': could not create child thread");
 			continue;
 		}
@@ -541,7 +496,7 @@ void x86_emu_process_events()
 			void *buf;
 			struct pollfd host_fds;
 
-			/* If 'x86_emu_host_thread_suspend' is still running for this context, do nothing. */
+			/* If 'X86EmuHostThreadSuspend' is still running for this context, do nothing. */
 			if (ctx->host_thread_suspend_active)
 				continue;
 
@@ -587,9 +542,9 @@ void x86_emu_process_events()
 				continue;
 			}
 
-			/* Data is not ready. Launch 'x86_emu_host_thread_suspend' again */
+			/* Data is not ready. Launch 'X86EmuHostThreadSuspend' again */
 			ctx->host_thread_suspend_active = 1;
-			if (pthread_create(&ctx->host_thread_suspend, NULL, x86_emu_host_thread_suspend, ctx))
+			if (pthread_create(&ctx->host_thread_suspend, NULL, X86EmuHostThreadSuspend, ctx))
 				fatal("syscall 'read': could not create child thread");
 			continue;
 		}
@@ -618,7 +573,7 @@ void x86_emu_process_events()
 			}
 
 			/* No event available. Since this context won't wake up on its own, no
-			 * 'x86_emu_host_thread_suspend' is needed. */
+			 * 'X86EmuHostThreadSuspend' is needed. */
 			continue;
 		}
 
@@ -654,7 +609,7 @@ void x86_emu_process_events()
 	 * LOOP 2
 	 * Check list of all contexts for expired timers.
 	 */
-	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)
+	for (ctx = self->context_list_head; ctx; ctx = ctx->context_list_next)
 	{
 		int sig[3] = { 14, 26, 27 };  /* SIGALRM, SIGVTALRM, SIGPROF */
 		int i;
@@ -674,10 +629,10 @@ void x86_emu_process_events()
 
 			/* Timer expired - send a signal.
 			 * The target process might be suspended, so the host thread is canceled, and a new
-			 * call to 'x86_emu_process_events' is scheduled. Since 'ke_process_events_mutex' is
+			 * call to 'X86EmuProcessEvents' is scheduled. Since 'ke_process_events_mutex' is
 			 * already locked, the thread-unsafe version of 'x86_ctx_host_thread_suspend_cancel' is used. */
 			__x86_ctx_host_thread_suspend_cancel(ctx);
-			x86_emu->process_events_force = 1;
+			self->process_events_force = 1;
 			x86_sigset_add(&ctx->signal_mask_table->pending, sig[i]);
 
 			/* Calculate next occurrence */
@@ -701,7 +656,7 @@ void x86_emu_process_events()
 		if (ctx->host_thread_timer_wakeup)
 		{
 			ctx->host_thread_timer_active = 1;
-			if (pthread_create(&ctx->host_thread_timer, NULL, x86_emu_host_thread_timer, ctx))
+			if (pthread_create(&ctx->host_thread_timer, NULL, X86EmuHostThreadTimer, ctx))
 				fatal("%s: could not create child thread", __FUNCTION__);
 		}
 	}
@@ -711,31 +666,25 @@ void x86_emu_process_events()
 	 * LOOP 3
 	 * Process pending signals in running contexts to launch signal handlers
 	 */
-	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
+	for (ctx = self->running_list_head; ctx; ctx = ctx->running_list_next)
 	{
 		x86_signal_handler_check(ctx);
 	}
 
 	
 	/* Unlock */
-	pthread_mutex_unlock(&x86_emu->process_events_mutex);
+	pthread_mutex_unlock(&self->process_events_mutex);
 }
 
 
-
-
-/*
- * Functional simulation loop
- */
-
-
 /* Run one iteration of the x86 emulation loop. Return TRUE if still running. */
-int x86_emu_run(void)
+int X86EmuRun(void)
 {
+	X86Emu *self = x86_emu;
 	struct x86_ctx_t *ctx;
 
 	/* Stop if there is no context running */
-	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
+	if (self->finished_list_count >= self->context_list_count)
 		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
@@ -751,16 +700,88 @@ int x86_emu_run(void)
 		return TRUE;
 
 	/* Run an instruction from every running process */
-	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
+	for (ctx = self->running_list_head; ctx; ctx = ctx->running_list_next)
 		x86_ctx_execute(ctx);
 
 	/* Free finished contexts */
-	while (x86_emu->finished_list_head)
-		x86_ctx_free(x86_emu->finished_list_head);
+	while (self->finished_list_head)
+		x86_ctx_free(self->finished_list_head);
 
 	/* Process list of suspended contexts */
-	x86_emu_process_events();
+	X86EmuProcessEvents(x86_emu);
 
 	/* Still running */
 	return TRUE;
 }
+
+
+
+
+/*
+ * Non-Class Functions
+ */
+
+
+void x86_emu_init(void)
+{
+	union
+	{
+		unsigned int as_uint;
+		unsigned char as_uchar[4];
+	} endian;
+
+	/* Endian check */
+	endian.as_uint = 0x33221100;
+	if (endian.as_uchar[0])
+		fatal("%s: host machine is not little endian", __FUNCTION__);
+
+	/* Host types */
+	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
+	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
+	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
+
+	/* Classes */
+	CLASS_REGISTER(X86Emu);
+
+	/* Create x86 emulator */
+	x86_emu = new(X86Emu);
+
+	/* Initialize */
+	x86_sys_init();
+	x86_isa_init();
+
+#ifdef HAVE_OPENGL
+	/* GLUT */
+	glut_init();
+	/* GLEW */
+	glew_init();
+	/* GLU */
+	glu_init();
+#endif
+
+	/* OpenGL */
+	opengl_init();
+}
+
+
+/* Finalization */
+void x86_emu_done(void)
+{
+
+#ifdef HAVE_OPENGL
+	glut_done();
+	glew_done();
+	glu_done();
+#endif
+
+	/* Finalize OpenGl */
+	opengl_done();
+
+	/* End */
+	x86_isa_done();
+	x86_sys_done();
+
+	/* Free emulator */
+	delete(x86_emu);
+}
+

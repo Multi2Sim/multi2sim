@@ -1302,5 +1302,5 @@ void opencl_si_request_work()
 		driver_state.ready_for_work = 1;
 	}
 
-	x86_emu_process_events_schedule();
+	X86EmuProcessEventsSchedule(x86_emu);
 }

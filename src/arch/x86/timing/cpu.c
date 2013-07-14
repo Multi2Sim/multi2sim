@@ -1046,7 +1046,7 @@ void x86_cpu_run_fast_forward(void)
 	/* Fast-forward simulation. Run 'x86_cpu_fast_forward' iterations of the x86
 	 * emulation loop until any simulation end reason is detected. */
 	while (arch_x86->inst_count < x86_cpu_fast_forward_count && !esim_finish)
-		x86_emu_run();
+		X86EmuRun();
 
 	/* Record number of instructions in fast-forward execution. */
 	x86_cpu->num_fast_forward_inst = arch_x86->inst_count;
@@ -1093,7 +1093,7 @@ int x86_cpu_run(void)
 	x86_cpu_run_stages();
 
 	/* Process host threads generating events */
-	x86_emu_process_events();
+	X86EmuProcessEvents(x86_emu);
 
 	/* Still simulating */
 	return TRUE;
