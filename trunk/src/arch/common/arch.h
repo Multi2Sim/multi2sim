@@ -26,6 +26,7 @@
 
 
 /* Forward declarations */
+CLASS_FORWARD_DECLARATION(Asm);
 CLASS_FORWARD_DECLARATION(Emu);
 CLASS_FORWARD_DECLARATION(Timing);
 
@@ -103,6 +104,9 @@ struct arch_t
 	arch_mem_config_parse_entry_func_t mem_config_parse_entry_func;
 	arch_mem_config_check_func_t mem_config_check_func;
 
+	/* Disassembler */
+	Asm *as;
+
 	/* Emulator */
 	Emu *emu;
 
@@ -112,15 +116,16 @@ struct arch_t
 	/* List of entry modules to the memory hierarchy. Each element of this list
 	 * is of type 'mod_t'. */
 	struct linked_list_t *mem_entry_mod_list;
-
-	/* Counters */
-	long long cycle;
 };
 
 
 struct arch_t *arch_create(char *name, char *prefix);
 void arch_free(struct arch_t *arch);
 void arch_dump(struct arch_t *arch, FILE *f);
+
+void arch_set_asm(struct arch_t *arch, Asm *as);
+void arch_set_emu(struct arch_t *arch, Emu *emu);
+void arch_set_timing(struct arch_t *arch, Timing *timing);
 
 void arch_dump_summary(struct arch_t *arch, FILE *f);
 

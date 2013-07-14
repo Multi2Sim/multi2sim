@@ -1,3 +1,22 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2013  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <arch/common/arch.h>
 #include <arch/fermi/emu/emu.h>
 #include <lib/esim/esim.h>
@@ -6,6 +25,7 @@
 #include <lib/util/file.h>
 #include <lib/util/string.h>
 
+#include "gpu.h"
 #include "sm.h"
 #include "cycle-interval-report.h"
 
@@ -75,7 +95,7 @@ void frm_sm_spatial_report_dump(struct frm_sm_t *sm)
 			sm->id,
 			sm->vector_mem_unit.inflight_mem_accesses,
 			sm->interval_mapped_thread_blocks,
-			arch_fermi->cycle);
+			asTiming(frm_gpu)->cycle);
 
 }
 
@@ -107,7 +127,7 @@ void frm_sm_interval_update(struct frm_sm_t *sm)
 {
 	/* If interval - reset the counters in all the engines */
 	sm->interval_cycle ++;
-	if (!(arch_fermi->cycle % spatial_profiling_interval))
+	if (!(asTiming(frm_gpu)->cycle % spatial_profiling_interval))
 	{
 		frm_sm_spatial_report_dump(sm);
 

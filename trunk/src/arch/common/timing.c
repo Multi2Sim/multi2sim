@@ -33,6 +33,8 @@ CLASS_IMPLEMENTATION(Timing);
 
 void TimingCreate(Timing *self)
 {
+	/* Virtual functions */
+	asObject(self)->Dump = TimingDump;
 }
 
 
@@ -40,3 +42,12 @@ void TimingDestroy(Timing *self)
 {
 }
 
+
+void TimingDump(Object *self, FILE *f)
+{
+}
+
+
+void TimingDumpSummary(Timing *self, FILE *f)
+{
+}

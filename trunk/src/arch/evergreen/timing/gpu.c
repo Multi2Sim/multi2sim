@@ -511,12 +511,12 @@ void evg_gpu_dump_report(void)
 
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = arch_evergreen->cycle ? (double) asEmu(evg_emu)->instructions
-			/ arch_evergreen->cycle : 0.0;
+	inst_per_cycle = asTiming(evg_gpu)->cycle ? (double) asEmu(evg_emu)->instructions
+			/ asTiming(evg_gpu)->cycle : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
 	fprintf(f, "Instructions = %lld\n", asEmu(evg_emu)->instructions);
-	fprintf(f, "Cycles = %lld\n", arch_evergreen->cycle);
+	fprintf(f, "Cycles = %lld\n", asTiming(evg_gpu)->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
@@ -668,7 +668,13 @@ void EvgGpuDumpSummary(Timing *self, FILE *f)
 {
 	double inst_per_cycle;
 
-	inst_per_cycle = arch_evergreen->cycle ? (double) asEmu(evg_emu)->instructions / arch_evergreen->cycle : 0.0;
+	/* Call parent */
+	TimingDumpSummary(asTiming(self), f);
+
+	/* Additional statistics */
+	inst_per_cycle = asTiming(evg_gpu)->cycle ?
+			(double) asEmu(evg_emu)->instructions
+			/ asTiming(evg_gpu)->cycle : 0.0;
 	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
 }
 
@@ -723,10 +729,10 @@ int EvgGpuRun(Timing *self)
 			ndrange->pending_list_head);
 
 	/* One more cycle */
-	arch_evergreen->cycle++;
+	asTiming(evg_gpu)->cycle++;
 
 	/* Stop if maximum number of GPU cycles exceeded */
-	if (evg_emu_max_cycles && arch_evergreen->cycle >= evg_emu_max_cycles)
+	if (evg_emu_max_cycles && asTiming(evg_gpu)->cycle >= evg_emu_max_cycles)
 		esim_finish = esim_finish_evg_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
@@ -734,7 +740,7 @@ int EvgGpuRun(Timing *self)
 		esim_finish = esim_finish_evg_max_inst;
 	
 	/* Stop if there was a simulation stall */
-	if (arch_evergreen->cycle - gpu->last_complete_cycle > 1000000)
+	if (asTiming(evg_gpu)->cycle - gpu->last_complete_cycle > 1000000)
 	{
 		warning("Evergreen GPU simulation stalled.\n%s",
 			evg_err_stall);

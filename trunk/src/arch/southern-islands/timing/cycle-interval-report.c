@@ -1,3 +1,22 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <arch/common/arch.h>
 #include <arch/southern-islands/emu/emu.h>
 #include <lib/esim/esim.h>
@@ -6,10 +25,12 @@
 #include <lib/util/file.h>
 #include <lib/util/string.h>
 
+#include "gpu.h"
 #include "uop.h"
 #include "cycle-interval-report.h"
 
 #include "compute-unit.h"
+
 
 int si_spatial_report_active = 0 ;
 
@@ -80,7 +101,7 @@ void si_cu_spatial_report_dump(struct si_compute_unit_t *compute_unit)
 		compute_unit->interval_unmapped_work_groups,
 		compute_unit->interval_alu_issued,
 		compute_unit->interval_lds_issued,
-		arch_southern_islands->cycle);
+		asTiming(si_gpu)->cycle);
 
 
 }
@@ -133,7 +154,7 @@ void si_cu_interval_update(struct si_compute_unit_t *compute_unit)
 	/* If interval - reset the counters in all the engines */
 	compute_unit->interval_cycle ++;
 
-	if (!(arch_southern_islands->cycle % spatial_profiling_interval))
+	if (!(asTiming(si_gpu)->cycle % spatial_profiling_interval))
 	{
 		si_cu_spatial_report_dump(compute_unit);
 

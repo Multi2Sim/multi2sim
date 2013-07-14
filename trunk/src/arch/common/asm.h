@@ -31,6 +31,9 @@
 
 CLASS_BEGIN(Asm, Object)
 	
+	/* Architecture that it belongs to */
+	struct arch_t *arch;
+
 CLASS_END(Asm)
 
 

@@ -470,7 +470,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 		uop->mem_wait_inst = wavefront->mem_wait;
 		uop->barrier_wait_inst = wavefront->barrier_inst;
 		uop->inst = wavefront->inst;
-		uop->cycle_created = arch_southern_islands->cycle;
+		uop->cycle_created = asTiming(si_gpu)->cycle;
 		uop->glc = wavefront->vector_mem_glc;
 		assert(wavefront->work_group && uop->work_group);
 		
@@ -522,7 +522,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 		/* Access instruction cache. Record the time when the 
 		 * instruction will have been fetched, as per the latency 
 		 * of the instruction memory. */
-		uop->fetch_ready = arch_southern_islands->cycle + si_gpu_fe_fetch_latency;
+		uop->fetch_ready = asTiming(si_gpu)->cycle + si_gpu_fe_fetch_latency;
 
 		/* Insert into fetch buffer */
 		list_enqueue(compute_unit->fetch_buffers[active_fb], uop);
@@ -573,7 +573,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (arch_southern_islands->cycle < uop->fetch_ready)
+			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -592,7 +592,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 					issue_buffer) < 
 					si_gpu_branch_unit_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = arch_southern_islands->cycle + 
+				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
 					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->
 					fetch_buffers[active_fb], oldest_uop);
@@ -648,7 +648,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (arch_southern_islands->cycle < uop->fetch_ready)
+			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -667,7 +667,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 					issue_buffer) < 
 					si_gpu_scalar_unit_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = arch_southern_islands->cycle + 
+				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
 					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->
 					fetch_buffers[active_fb], oldest_uop);
@@ -728,7 +728,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (arch_southern_islands->cycle < uop->fetch_ready)
+			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -747,7 +747,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 					issue_buffer) < 
 					si_gpu_simd_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = arch_southern_islands->cycle + 
+				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
 					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->
 					fetch_buffers[active_fb], oldest_uop);
@@ -792,7 +792,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (arch_southern_islands->cycle < uop->fetch_ready)
+			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -811,7 +811,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 					vector_mem_unit.issue_buffer) < 
 					si_gpu_vector_mem_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = arch_southern_islands->cycle + 
+				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
 					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->
 					fetch_buffers[active_fb], oldest_uop);
@@ -859,7 +859,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 
 			/* Skip all uops that have not yet completed 
 			 * the fetch */
-			if (arch_southern_islands->cycle < uop->fetch_ready)
+			if (asTiming(si_gpu)->cycle < uop->fetch_ready)
 			{
 				list_index++;
 				continue;
@@ -878,7 +878,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 					compute_unit->lds_unit.issue_buffer) < 
 					si_gpu_lds_issue_buffer_size)
 			{
-				oldest_uop->issue_ready = arch_southern_islands->cycle + 
+				oldest_uop->issue_ready = asTiming(si_gpu)->cycle + 
 					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->
 					fetch_buffers[active_fb], oldest_uop);
@@ -908,7 +908,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 		assert(uop);
 
 		/* Skip all uops that have not yet completed the fetch */
-		if (arch_southern_islands->cycle < uop->fetch_ready)
+		if (asTiming(si_gpu)->cycle < uop->fetch_ready)
 		{
 			continue;
 		}
@@ -934,7 +934,7 @@ void si_compute_unit_update_fetch_visualization(
 		assert(uop);
 
 		/* Skip all uops that have not yet completed the fetch */
-		if (arch_southern_islands->cycle < uop->fetch_ready)
+		if (asTiming(si_gpu)->cycle < uop->fetch_ready)
 		{
 			continue;
 		}
@@ -970,7 +970,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		assert(uop);
 
 		/* Skip all uops that have not yet completed the fetch */
-		if (arch_southern_islands->cycle < uop->fetch_ready)
+		if (asTiming(si_gpu)->cycle < uop->fetch_ready)
 		{
 			list_index++;
 			continue;
@@ -1032,7 +1032,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 					continue;
 				}
 
-				uop->issue_ready = arch_southern_islands->cycle + 
+				uop->issue_ready = asTiming(si_gpu)->cycle + 
 					si_gpu_fe_issue_latency;
 				list_remove(compute_unit->
 					fetch_buffers[active_fb], uop);
@@ -1077,7 +1077,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 					continue;
 				}
 
-				uop->issue_ready = arch_southern_islands->cycle + 
+				uop->issue_ready = asTiming(si_gpu)->cycle + 
 					si_gpu_fe_issue_latency;
 				list_remove(
 					compute_unit->
@@ -1126,7 +1126,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = arch_southern_islands->cycle + 
+			uop->issue_ready = asTiming(si_gpu)->cycle + 
 				si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], 
 				uop);
@@ -1172,7 +1172,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = arch_southern_islands->cycle + 
+			uop->issue_ready = asTiming(si_gpu)->cycle + 
 				si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], 
 				uop);
@@ -1225,7 +1225,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = arch_southern_islands->cycle + 
+			uop->issue_ready = asTiming(si_gpu)->cycle + 
 				si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], 
 				uop);
@@ -1273,7 +1273,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = arch_southern_islands->cycle + 
+			uop->issue_ready = asTiming(si_gpu)->cycle + 
 				si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], 
 				uop);
@@ -1322,7 +1322,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 
-			uop->issue_ready = arch_southern_islands->cycle + 
+			uop->issue_ready = asTiming(si_gpu)->cycle + 
 				si_gpu_fe_issue_latency;
 			list_remove(compute_unit->fetch_buffers[active_fb], 
 				uop);
@@ -1363,7 +1363,7 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 		return;
 
 	/* Fetch buffer chosen to issue this cycle */
-	active_fetch_buffer = arch_southern_islands->cycle % 
+	active_fetch_buffer = asTiming(si_gpu)->cycle % 
 		compute_unit->num_wavefront_pools;
 
 	assert(active_fetch_buffer >= 0 && 

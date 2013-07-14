@@ -227,7 +227,7 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 
 	/* Remove context from contexts list and free */
 	DOUBLE_LINKED_LIST_REMOVE(x86_emu, context, ctx);
-	x86_ctx_debug("#%lld ctx %d freed\n", arch_x86->cycle, ctx->pid);
+	x86_ctx_debug("#%lld ctx %d freed\n", asTiming(x86_cpu)->cycle, ctx->pid);
 
 	/* Free context */
 	free(ctx);
@@ -403,7 +403,7 @@ static void x86_ctx_update_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t sta
 	{
 		str_map_flags(&x86_ctx_status_map, ctx->state, state_str, sizeof state_str);
 		x86_ctx_debug("#%lld ctx %d changed state to %s\n",
-			arch_x86->cycle, ctx->pid, state_str);
+			asTiming(x86_cpu)->cycle, ctx->pid, state_str);
 	}
 
 	/* Start/stop x86 timer depending on whether there are any contexts
