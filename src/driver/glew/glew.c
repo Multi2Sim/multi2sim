@@ -67,12 +67,12 @@ char *glew_call_name[glew_call_count + 1] =
 
 /* Forward declarations of GLEW runtime functions */
 #define X86_GLEW_DEFINE_CALL(name, code) \
-	static int glew_abi_##name(struct x86_ctx_t *ctx);
+	static int glew_abi_##name(X86Context *ctx);
 #include "glew.dat"
 #undef X86_GLEW_DEFINE_CALL
 
 /* List of GLEW runtime functions */
-typedef int (*glew_abi_func_t)(struct x86_ctx_t *ctx);
+typedef int (*glew_abi_func_t)(X86Context *ctx);
 static glew_abi_func_t glew_abi_table[glew_call_count + 1] =
 {
 	NULL,
@@ -107,7 +107,7 @@ void glew_done(void)
 }
 
 
-int glew_abi_call(struct x86_ctx_t *ctx)
+int glew_abi_call(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -174,7 +174,7 @@ struct glew_version_t
 	int minor;
 };
 
-static int glew_abi_init(struct x86_ctx_t *ctx)
+static int glew_abi_init(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;

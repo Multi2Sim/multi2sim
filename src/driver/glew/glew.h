@@ -20,9 +20,10 @@
 #ifndef DRIVER_GLEW_GLEW_H
 #define DRIVER_GLEW_GLEW_H
 
+#include <lib/util/class.h>
 
 /* Forward type declaration */
-struct x86_ctx_t;
+CLASS_FORWARD_DECLARATION(X86Context);
 
 
 /*
@@ -40,7 +41,7 @@ extern int glew_debug_category;
 void glew_init(void);
 void glew_done(void);
 
-int glew_abi_call(struct x86_ctx_t *ctx);
+int glew_abi_call(X86Context *ctx);
 
 
 #endif

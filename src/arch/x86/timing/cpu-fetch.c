@@ -40,7 +40,7 @@
 
 static int x86_cpu_can_fetch(int core, int thread)
 {
-	struct x86_ctx_t *ctx = X86_THREAD.ctx;
+	X86Context *ctx = X86_THREAD.ctx;
 
 	unsigned int phy_addr;
 	unsigned int block;
@@ -79,7 +79,7 @@ static int x86_cpu_can_fetch(int core, int thread)
  * the function. Otherwise, the first decoded uop is returned. */
 static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trace_cache)
 {
-	struct x86_ctx_t *ctx = X86_THREAD.ctx;
+	X86Context *ctx = X86_THREAD.ctx;
 
 	struct x86_uop_t *uop;
 	struct x86_uop_t *ret_uop;
@@ -275,7 +275,7 @@ static int x86_cpu_fetch_thread_trace_cache(int core, int thread)
 
 static void x86_cpu_fetch_thread(int core, int thread)
 {
-	struct x86_ctx_t *ctx = X86_THREAD.ctx;
+	X86Context *ctx = X86_THREAD.ctx;
 	struct x86_uop_t *uop;
 
 	unsigned int phy_addr;

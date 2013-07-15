@@ -69,7 +69,7 @@
 
 
 #define op_setcc(cc, idep1, idep2) \
-void x86_isa_set##cc##_rm8_impl(struct x86_ctx_t *ctx) \
+void x86_isa_set##cc##_rm8_impl(X86Context *ctx) \
 { \
 	if (cc_##cc) \
 		x86_isa_store_rm8(ctx, 1); \
@@ -80,7 +80,7 @@ void x86_isa_set##cc##_rm8_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_jcc_rel8(cc, idep1, idep2) \
-void x86_isa_j##cc##_rel8_impl(struct x86_ctx_t *ctx) \
+void x86_isa_j##cc##_rel8_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	ctx->target_eip = regs->eip + (char) ctx->inst.imm.b; \
@@ -91,7 +91,7 @@ void x86_isa_j##cc##_rel8_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_jcc_rel32(cc, idep1, idep2) \
-void x86_isa_j##cc##_rel32_impl(struct x86_ctx_t *ctx) \
+void x86_isa_j##cc##_rel32_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	ctx->target_eip = regs->eip + ctx->inst.imm.d; \
@@ -102,7 +102,7 @@ void x86_isa_j##cc##_rel32_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_cmov_r16_rm16(cc, idep1, idep2) \
-void x86_isa_cmov##cc##_r16_rm16_impl(struct x86_ctx_t *ctx) \
+void x86_isa_cmov##cc##_r16_rm16_impl(X86Context *ctx) \
 { \
 	if (cc_##cc) \
 		x86_isa_store_r16(ctx, x86_isa_load_rm16(ctx)); \
@@ -111,7 +111,7 @@ void x86_isa_cmov##cc##_r16_rm16_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_cmov_r32_rm32(cc, idep1, idep2) \
-void x86_isa_cmov##cc##_r32_rm32_impl(struct x86_ctx_t *ctx) \
+void x86_isa_cmov##cc##_r32_rm32_impl(X86Context *ctx) \
 { \
 	if (cc_##cc) \
 		x86_isa_store_r32(ctx, x86_isa_load_rm32(ctx)); \
@@ -145,7 +145,7 @@ op_cc_all(cmov_r16_rm16)
 op_cc_all(cmov_r32_rm32)
 
 
-void x86_isa_jecxz_rel8_impl(struct x86_ctx_t *ctx)
+void x86_isa_jecxz_rel8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -156,7 +156,7 @@ void x86_isa_jecxz_rel8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_jcxz_rel8_impl(struct x86_ctx_t *ctx)
+void x86_isa_jcxz_rel8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 

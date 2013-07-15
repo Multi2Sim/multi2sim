@@ -262,7 +262,7 @@ static char x86_signal_retcode[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
 
 
 /* Run a signal handler */
-void x86_signal_handler_run(struct x86_ctx_t *ctx, int sig)
+void x86_signal_handler_run(X86Context *ctx, int sig)
 {
 	unsigned int handler;
 	struct x86_sigframe sigframe;
@@ -332,7 +332,7 @@ void x86_signal_handler_run(struct x86_ctx_t *ctx, int sig)
 
 
 /* Return from a signal handler */
-void x86_signal_handler_return(struct x86_ctx_t *ctx)
+void x86_signal_handler_return(X86Context *ctx)
 {
 	/* Change context status */
 	if (!x86_ctx_get_state(ctx, x86_ctx_handler))
@@ -358,7 +358,7 @@ void x86_signal_handler_return(struct x86_ctx_t *ctx)
  *    system call itself, which must be repeated.
  *   -If flag 'SA_RESTART' is not set, the return address is the instruction
  *    next to the system call, and register 'eax' is set to -EINTR. */
-void x86_signal_handler_check_intr(struct x86_ctx_t *ctx)
+void x86_signal_handler_check_intr(X86Context *ctx)
 {
 	int sig;
 
@@ -398,7 +398,7 @@ void x86_signal_handler_check_intr(struct x86_ctx_t *ctx)
 }
 
 
-void x86_signal_handler_check(struct x86_ctx_t *ctx)
+void x86_signal_handler_check(X86Context *ctx)
 {
 	int sig;
 

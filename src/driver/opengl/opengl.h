@@ -20,6 +20,12 @@
 #ifndef DRIVER_OPENGL_OPENGL_H
 #define DRIVER_OPENGL_OPENGL_H
 
+#include <lib/util/class.h>
+
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Context);
+
 
 /*
  * OPENGL system call interface
@@ -35,8 +41,7 @@ extern int opengl_debug_category;
 void opengl_init(void);
 void opengl_done(void);
 
-struct x86_ctx_t;
-int opengl_abi_call(struct x86_ctx_t *ctx);
+int opengl_abi_call(X86Context *ctx);
 
 
 #endif

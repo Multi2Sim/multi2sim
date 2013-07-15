@@ -120,7 +120,7 @@ void evg_opencl_command_queue_complete(struct evg_opencl_command_queue_t *comman
 }
 
 
-int evg_opencl_command_queue_can_wakeup(struct x86_ctx_t *ctx, void *data)
+int evg_opencl_command_queue_can_wakeup(X86Context *ctx, void *data)
 {
 	struct evg_opencl_command_queue_t *command_queue;
 	struct linked_list_t *command_list;

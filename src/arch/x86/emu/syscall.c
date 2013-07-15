@@ -101,13 +101,13 @@ enum
 
 /* Forward declarations of system calls */
 #define DEFSYSCALL(name, code) \
-	static int x86_sys_##name##_impl(struct x86_ctx_t *ctx);
+	static int x86_sys_##name##_impl(X86Context *ctx);
 #include "syscall.dat"
 #undef DEFSYSCALL
 
 
 /* System call functions */
-static int (*x86_sys_call_func[x86_sys_code_count + 1])(struct x86_ctx_t *ctx) =
+static int (*x86_sys_call_func[x86_sys_code_count + 1])(X86Context *ctx) =
 {
 #define DEFSYSCALL(name, code) x86_sys_##name##_impl,
 #include "syscall.dat"
@@ -273,7 +273,7 @@ void x86_sys_dump(FILE *f)
 }
 
 
-void x86_sys_call(struct x86_ctx_t *ctx)
+void x86_sys_call(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct runtime_t *runtime;
@@ -341,7 +341,7 @@ void x86_sys_call(struct x86_ctx_t *ctx)
  * System call 'exit' (code 1)
  */
 
-static int x86_sys_exit_impl(struct x86_ctx_t *ctx)
+static int x86_sys_exit_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	int status;
@@ -362,7 +362,7 @@ static int x86_sys_exit_impl(struct x86_ctx_t *ctx)
  * System call 'close' (code 2)
  */
 
-static int x86_sys_close_impl(struct x86_ctx_t *ctx)
+static int x86_sys_close_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct x86_file_desc_t *fd;
@@ -400,7 +400,7 @@ static int x86_sys_close_impl(struct x86_ctx_t *ctx)
  * System call 'read' (code 3)
  */
 
-static int x86_sys_read_impl(struct x86_ctx_t *ctx)
+static int x86_sys_read_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -482,7 +482,7 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
  * System call 'write' (code 4)
  */
 
-static int x86_sys_write_impl(struct x86_ctx_t *ctx)
+static int x86_sys_write_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -577,7 +577,7 @@ static struct str_map_t sys_open_flags_map =
 	}
 };
 
-static struct x86_file_desc_t *x86_sys_open_virtual(struct x86_ctx_t *ctx,
+static struct x86_file_desc_t *x86_sys_open_virtual(X86Context *ctx,
 		char *path, int flags, int mode)
 {
 	char temp_path[MAX_PATH_SIZE];
@@ -610,7 +610,7 @@ static struct x86_file_desc_t *x86_sys_open_virtual(struct x86_ctx_t *ctx,
 	return desc;
 }
 
-static int x86_sys_open_impl(struct x86_ctx_t *ctx)
+static int x86_sys_open_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -699,12 +699,12 @@ static struct str_map_t sys_waitpid_options_map =
 	}
 };
 
-static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
+static int x86_sys_waitpid_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
-	struct x86_ctx_t *child;
+	X86Context *child;
 
 	int pid;
 	int options;
@@ -759,7 +759,7 @@ static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
  * System call 'unlink' (code 10)
  */
 
-static int x86_sys_unlink_impl(struct x86_ctx_t *ctx)
+static int x86_sys_unlink_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -803,7 +803,7 @@ static char *err_sys_execve_note =
 	"\tthe guest application to run a shell command. Multi2Sim will execute this\n"
 	"\tcommand natively, and then finish the calling context.\n";
 
-static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
+static int x86_sys_execve_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -922,7 +922,7 @@ static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
  * System call 'chdir' (code 12)
  */
 
-static int x86_sys_chdir_impl(struct x86_ctx_t *ctx)
+static int x86_sys_chdir_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct x86_loader_t *loader = ctx->loader;
@@ -980,7 +980,7 @@ static int x86_sys_chdir_impl(struct x86_ctx_t *ctx)
  * System call 'time' (code 13)
  */
 
-static int x86_sys_time_impl(struct x86_ctx_t *ctx)
+static int x86_sys_time_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1008,7 +1008,7 @@ static int x86_sys_time_impl(struct x86_ctx_t *ctx)
  * System call 'chmod' (code 15)
  */
 
-static int x86_sys_chmod_impl(struct x86_ctx_t *ctx)
+static int x86_sys_chmod_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1048,7 +1048,7 @@ static int x86_sys_chmod_impl(struct x86_ctx_t *ctx)
  * System call 'lseek' (code 19)
  */
 
-static int x86_sys_lseek_impl(struct x86_ctx_t *ctx)
+static int x86_sys_lseek_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1084,7 +1084,7 @@ static int x86_sys_lseek_impl(struct x86_ctx_t *ctx)
  * System call 'getpid' (code 20)
  */
 
-static int x86_sys_getpid_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getpid_impl(X86Context *ctx)
 {
 	return ctx->pid;
 }
@@ -1108,7 +1108,7 @@ static void sys_utime_guest_to_host(struct utimbuf *host, struct sim_utimbuf *gu
 	host->modtime = guest->modtime;
 }
 
-static int x86_sys_utime_impl(struct x86_ctx_t *ctx)
+static int x86_sys_utime_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1171,7 +1171,7 @@ static struct str_map_t sys_access_mode_map =
 	}
 };
 
-static int x86_sys_access_impl(struct x86_ctx_t *ctx)
+static int x86_sys_access_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1220,10 +1220,10 @@ static int x86_sys_access_impl(struct x86_ctx_t *ctx)
  * System call 'kill' (code 37)
  */
 
-static int x86_sys_kill_impl(struct x86_ctx_t *ctx)
+static int x86_sys_kill_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
-	struct x86_ctx_t *temp_ctx;
+	X86Context *temp_ctx;
 
 	int pid;
 	int sig;
@@ -1257,7 +1257,7 @@ static int x86_sys_kill_impl(struct x86_ctx_t *ctx)
  * System call 'rename' (code 38)
  */
 
-static int x86_sys_rename_impl(struct x86_ctx_t *ctx)
+static int x86_sys_rename_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1311,7 +1311,7 @@ static int x86_sys_rename_impl(struct x86_ctx_t *ctx)
  * System call 'mkdir' (code 39)
  */
 
-static int x86_sys_mkdir_impl(struct x86_ctx_t *ctx)
+static int x86_sys_mkdir_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1355,7 +1355,7 @@ static int x86_sys_mkdir_impl(struct x86_ctx_t *ctx)
  * System call 'dup' (code 41)
  */
 
-static int x86_sys_dup_impl(struct x86_ctx_t *ctx)
+static int x86_sys_dup_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1399,7 +1399,7 @@ static int x86_sys_dup_impl(struct x86_ctx_t *ctx)
  * System call 'pipe' (code 42)
  */
 
-static int x86_sys_pipe_impl(struct x86_ctx_t *ctx)
+static int x86_sys_pipe_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1465,7 +1465,7 @@ static void sys_times_host_to_guest(struct sim_tms *guest, struct tms *host)
 	guest->cstime = host->tms_cstime;
 }
 
-static int x86_sys_times_impl(struct x86_ctx_t *ctx)
+static int x86_sys_times_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1502,7 +1502,7 @@ static int x86_sys_times_impl(struct x86_ctx_t *ctx)
  * System call 'brk' (code 45)
  */
 
-static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
+static int x86_sys_brk_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1576,7 +1576,7 @@ static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
  *   -DIR [31..30]: direction (01=Write, 10=Read, 11=R/W).
  */
 
-static int x86_sys_ioctl_impl(struct x86_ctx_t *ctx)
+static int x86_sys_ioctl_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1637,7 +1637,7 @@ static int x86_sys_ioctl_impl(struct x86_ctx_t *ctx)
  * System call 'getppid' (code 64)
  */
 
-static int x86_sys_getppid_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getppid_impl(X86Context *ctx)
 {
 	/* Return 1 if there is no parent */
 	if (!ctx->parent)
@@ -1683,7 +1683,7 @@ struct sim_rlimit
 	unsigned int max;
 };
 
-static int x86_sys_setrlimit_impl(struct x86_ctx_t *ctx)
+static int x86_sys_setrlimit_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1783,7 +1783,7 @@ static void sys_rusage_host_to_guest(struct sim_rusage *guest, struct rusage *ho
 	guest->nivcsw = host->ru_nivcsw;
 }
 
-static int x86_sys_getrusage_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getrusage_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1830,7 +1830,7 @@ static int x86_sys_getrusage_impl(struct x86_ctx_t *ctx)
  * System call 'gettimeofday' (code 78)
  */
 
-static int x86_sys_gettimeofday_impl(struct x86_ctx_t *ctx)
+static int x86_sys_gettimeofday_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1874,7 +1874,7 @@ static int x86_sys_gettimeofday_impl(struct x86_ctx_t *ctx)
  * System call 'readlink' (code 85)
  */
 
-static int x86_sys_readlink_impl(struct x86_ctx_t *ctx)
+static int x86_sys_readlink_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1972,7 +1972,7 @@ static struct str_map_t sys_mmap_flags_map =
 	}
 };
 
-static int x86_sys_mmap(struct x86_ctx_t *ctx, unsigned int addr, unsigned int len,
+static int x86_sys_mmap(X86Context *ctx, unsigned int addr, unsigned int len,
 	int prot, int flags, int guest_fd, int offset)
 {
 	struct mem_t *mem = ctx->mem;
@@ -2080,7 +2080,7 @@ static int x86_sys_mmap(struct x86_ctx_t *ctx, unsigned int addr, unsigned int l
 	return addr;
 }
 
-static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
+static int x86_sys_mmap_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -2126,7 +2126,7 @@ static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
  * System call 'munmap' (code 91)
  */
 
-static int x86_sys_munmap_impl(struct x86_ctx_t *ctx)
+static int x86_sys_munmap_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -2159,7 +2159,7 @@ static int x86_sys_munmap_impl(struct x86_ctx_t *ctx)
  * System call 'fchmod' (code 94)
  */
 
-static int x86_sys_fchmod_impl(struct x86_ctx_t *ctx)
+static int x86_sys_fchmod_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -2225,7 +2225,7 @@ static void sim_statfs_host_to_guest(struct sim_statfs_t *host, struct statfs *g
 	host->frsize = guest->f_frsize;
 }
 
-static int x86_sys_statfs_impl(struct x86_ctx_t *ctx)
+static int x86_sys_statfs_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -2342,7 +2342,7 @@ static struct str_map_t sys_socket_type_map =
 	}
 };
 
-static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
+static int x86_sys_socketcall_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -2571,7 +2571,7 @@ static void sim_itimerval_dump(struct sim_itimerval *sim_itimerval)
 		sim_itimerval->it_value.tv_sec, sim_itimerval->it_value.tv_usec);
 }
 
-static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
+static int x86_sys_setitimer_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -2628,7 +2628,7 @@ static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
  * System call 'getitimer' (code 105)
  */
 
-static int x86_sys_getitimer_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getitimer_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -2673,7 +2673,7 @@ static int x86_sys_getitimer_impl(struct x86_ctx_t *ctx)
  * System call 'sigreturn' (code 119)
  */
 
-static int x86_sys_sigreturn_impl(struct x86_ctx_t *ctx)
+static int x86_sys_sigreturn_impl(X86Context *ctx)
 {
 	x86_signal_handler_return(ctx);
 
@@ -2768,7 +2768,7 @@ struct sim_user_desc
 	unsigned int useable:1;
 };
 
-static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
+static int x86_sys_clone_impl(X86Context *ctx)
 {
 	/* Prototype: long sys_clone(unsigned long clone_flags, unsigned long newsp,
 	 * 	int __user *parent_tid, int unused, int __user *child_tid);
@@ -2787,7 +2787,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 
 	char flags_str[MAX_STRING_SIZE];
 
-	struct x86_ctx_t *new_ctx;
+	X86Context *new_ctx;
 
 	/* Arguments */
 	flags = regs->ebx;
@@ -2829,7 +2829,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 				__FUNCTION__, err_x86_sys_note);
 
 		/* Create new context sharing memory image */
-		new_ctx = x86_ctx_clone(ctx);
+		new_ctx = new_ctor(X86Context, CreateAndClone, ctx);
 	}
 	else
 	{
@@ -2839,7 +2839,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 				__FUNCTION__, err_x86_sys_note);
 
 		/* Create new context replicating memory image */
-		new_ctx = x86_ctx_fork(ctx);
+		new_ctx = new_ctor(X86Context, CreateAndFork, ctx);
 	}
 
 	/* Flag CLONE_THREAD.
@@ -2936,7 +2936,7 @@ static struct sim_utsname sim_utsname =
 	""
 };
 
-static int x86_sys_newuname_impl(struct x86_ctx_t *ctx)
+static int x86_sys_newuname_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -2962,7 +2962,7 @@ static int x86_sys_newuname_impl(struct x86_ctx_t *ctx)
  * System call 'mprotect' (code 125)
  */
 
-static int x86_sys_mprotect_impl(struct x86_ctx_t *ctx)
+static int x86_sys_mprotect_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -2997,7 +2997,7 @@ static int x86_sys_mprotect_impl(struct x86_ctx_t *ctx)
  * System call 'llseek' (code 140)
  */
 
-static int x86_sys_llseek_impl(struct x86_ctx_t *ctx)
+static int x86_sys_llseek_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -3065,7 +3065,7 @@ struct sys_guest_dirent_t
 	char d_name[];
 } __attribute__((packed));
 
-static int x86_sys_getdents_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getdents_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -3177,7 +3177,7 @@ static void sim_fd_set_dump(char *fd_set_name, fd_set *fds, int n)
 
 /* Read bitmap of 'guest_fd's from guest memory, and store it into
  * a bitmap of 'host_fd's into host memory. */
-static int sim_fd_set_read(struct x86_ctx_t *ctx, uint32_t addr,
+static int sim_fd_set_read(X86Context *ctx, uint32_t addr,
 	fd_set *fds, int n)
 {
 	struct mem_t *mem = ctx->mem;
@@ -3210,7 +3210,7 @@ static int sim_fd_set_read(struct x86_ctx_t *ctx, uint32_t addr,
 
 /* Read bitmap of 'host_fd's from host memory, and store it into
  * a bitmap of 'guest_fd's into guest memory. */
-static void sim_fd_set_write(struct x86_ctx_t *ctx, unsigned int addr,
+static void sim_fd_set_write(X86Context *ctx, unsigned int addr,
 	fd_set *fds, int n)
 {
 	struct mem_t *mem = ctx->mem;
@@ -3245,7 +3245,7 @@ static void sim_fd_set_write(struct x86_ctx_t *ctx, unsigned int addr,
 	}
 }
 
-static int x86_sys_select_impl(struct x86_ctx_t *ctx)
+static int x86_sys_select_impl(X86Context *ctx)
 {
 	/* System call prototype:
 	 * int select(int n, fd_set *inp, fd_set *outp, fd_set *exp, struct timeval *tvp);
@@ -3333,7 +3333,7 @@ static struct str_map_t sys_msync_flags_map =
 	}
 };
 
-static int x86_sys_msync_impl(struct x86_ctx_t *ctx)
+static int x86_sys_msync_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -3363,7 +3363,7 @@ static int x86_sys_msync_impl(struct x86_ctx_t *ctx)
  * System call 'writev' (code 146)
  */
 
-static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
+static int x86_sys_writev_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -3447,7 +3447,7 @@ struct sys_sysctl_args_t
 	unsigned int newlen;
 };
 
-static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
+static int x86_sys_sysctl_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -3499,7 +3499,7 @@ static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
  * System call 'sched_setparam' (code 154)
  */
 
-static int x86_sys_sched_setparam_impl(struct x86_ctx_t *ctx)
+static int x86_sys_sched_setparam_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -3527,7 +3527,7 @@ static int x86_sys_sched_setparam_impl(struct x86_ctx_t *ctx)
  * System call 'sched_getparam' (code 155)
  */
 
-static int x86_sys_sched_getparam_impl(struct x86_ctx_t *ctx)
+static int x86_sys_sched_getparam_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -3555,7 +3555,7 @@ static int x86_sys_sched_getparam_impl(struct x86_ctx_t *ctx)
  * System call 'sched_getscheduler' (code 157)
  */
 
-static int x86_sys_sched_getscheduler_impl(struct x86_ctx_t *ctx)
+static int x86_sys_sched_getscheduler_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -3576,7 +3576,7 @@ static int x86_sys_sched_getscheduler_impl(struct x86_ctx_t *ctx)
  * System call 'sched_get_priority_max' (code 159)
  */
 
-static int x86_sys_sched_get_priority_max_impl(struct x86_ctx_t *ctx)
+static int x86_sys_sched_get_priority_max_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -3617,7 +3617,7 @@ static int x86_sys_sched_get_priority_max_impl(struct x86_ctx_t *ctx)
  * System call 'sched_get_priority_min' (code 160)
  */
 
-static int x86_sys_sched_get_priority_min_impl(struct x86_ctx_t *ctx)
+static int x86_sys_sched_get_priority_min_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -3658,7 +3658,7 @@ static int x86_sys_sched_get_priority_min_impl(struct x86_ctx_t *ctx)
  * System call 'nanosleep' (code 162)
  */
 
-static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
+static int x86_sys_nanosleep_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -3699,7 +3699,7 @@ static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
  * System call 'mremap' (code 163)
  */
 
-static int x86_sys_mremap_impl(struct x86_ctx_t *ctx)
+static int x86_sys_mremap_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -3784,7 +3784,7 @@ static struct str_map_t x86_sys_clock_gettime_clk_id_map =
 	}
 };
 
-static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
+static int x86_sys_clock_gettime_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -3897,7 +3897,7 @@ struct sim_pollfd_t
 	unsigned short revents;
 };
 
-static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
+static int x86_sys_poll_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4012,7 +4012,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
  * System call 'rt_sigaction' (code 174)
  */
 
-static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
+static int x86_sys_rt_sigaction_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4084,7 +4084,7 @@ static struct str_map_t sys_sigprocmask_how_map =
 	}
 };
 
-static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
+static int x86_sys_rt_sigprocmask_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4164,7 +4164,7 @@ static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
  * System call 'rt_sigsuspend' (code 179)
  */
 
-static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
+static int x86_sys_rt_sigsuspend_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4210,7 +4210,7 @@ static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
  * System call 'getcwd' (code 183)
  */
 
-static int x86_sys_getcwd_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getcwd_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4247,7 +4247,7 @@ static int x86_sys_getcwd_impl(struct x86_ctx_t *ctx)
  * System call 'getrlimit' (code 191)
  */
 
-static int x86_sys_getrlimit_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getrlimit_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4310,7 +4310,7 @@ static int x86_sys_getrlimit_impl(struct x86_ctx_t *ctx)
  * System call 'mmap2' (code 192)
  */
 
-static int x86_sys_mmap2_impl(struct x86_ctx_t *ctx)
+static int x86_sys_mmap2_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -4352,7 +4352,7 @@ static int x86_sys_mmap2_impl(struct x86_ctx_t *ctx)
  * System call 'ftruncate64' (code 194)
  */
 
-static int x86_sys_ftruncate64_impl(struct x86_ctx_t *ctx)
+static int x86_sys_ftruncate64_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -4438,7 +4438,7 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 		guest->size, guest->blksize, guest->blocks);
 }
 
-static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
+static int x86_sys_stat64_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4488,7 +4488,7 @@ static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
  * System call 'lstat64' (code 196)
  */
 
-static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
+static int x86_sys_lstat64_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4537,7 +4537,7 @@ static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
  * System call 'fstat64' (code 197)
  */
 
-static int x86_sys_fstat64_impl(struct x86_ctx_t *ctx)
+static int x86_sys_fstat64_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4578,7 +4578,7 @@ static int x86_sys_fstat64_impl(struct x86_ctx_t *ctx)
  * System call 'getuid' (code 199)
  */
 
-static int x86_sys_getuid_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getuid_impl(X86Context *ctx)
 {
 	return getuid();
 }
@@ -4590,7 +4590,7 @@ static int x86_sys_getuid_impl(struct x86_ctx_t *ctx)
  * System call 'getgid' (code 200)
  */
 
-static int x86_sys_getgid_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getgid_impl(X86Context *ctx)
 {
 	return getgid();
 }
@@ -4602,7 +4602,7 @@ static int x86_sys_getgid_impl(struct x86_ctx_t *ctx)
  * System call 'geteuid' (code 201)
  */
 
-static int x86_sys_geteuid_impl(struct x86_ctx_t *ctx)
+static int x86_sys_geteuid_impl(X86Context *ctx)
 {
 	return geteuid();
 }
@@ -4614,7 +4614,7 @@ static int x86_sys_geteuid_impl(struct x86_ctx_t *ctx)
  * System call 'getegid' (code 202)
  */
 
-static int x86_sys_getegid_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getegid_impl(X86Context *ctx)
 {
 	return getegid();
 }
@@ -4626,7 +4626,7 @@ static int x86_sys_getegid_impl(struct x86_ctx_t *ctx)
  * System call 'chown' (code 212)
  */
 
-static int x86_sys_chown_impl(struct x86_ctx_t *ctx)
+static int x86_sys_chown_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4672,7 +4672,7 @@ static int x86_sys_chown_impl(struct x86_ctx_t *ctx)
  * System call 'madvise' (219)
  */
 
-static int x86_sys_madvise_impl(struct x86_ctx_t *ctx)
+static int x86_sys_madvise_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -4715,7 +4715,7 @@ struct guest_dirent64_t
 	char d_name[];
 } __attribute__((packed));
 
-static int x86_sys_getdents64_impl(struct x86_ctx_t *ctx)
+static int x86_sys_getdents64_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -4821,7 +4821,7 @@ static struct str_map_t sys_fcntl_cmp_map =
 	}
 };
 
-static int x86_sys_fcntl64_impl(struct x86_ctx_t *ctx)
+static int x86_sys_fcntl64_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -4912,7 +4912,7 @@ static int x86_sys_fcntl64_impl(struct x86_ctx_t *ctx)
  * System call 'gettid' (code 224)
  */
 
-static int x86_sys_gettid_impl(struct x86_ctx_t *ctx)
+static int x86_sys_gettid_impl(X86Context *ctx)
 {
 	/* FIXME: return different 'tid' for threads, but the system call
 	 * 'getpid' should return the same 'pid' for threads from the same group
@@ -4946,7 +4946,7 @@ static struct str_map_t sys_futex_cmd_map =
 	}
 };
 
-static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
+static int x86_sys_futex_impl(X86Context *ctx)
 {
 	/* Prototype: sys_futex(void *addr1, int op, int val1, struct timespec *timeout,
 	 *   void *addr2, int val3); */
@@ -5037,7 +5037,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 	case 4: /* FUTEX_CMP_REQUEUE */
 	{
 		int requeued = 0;
-		struct x86_ctx_t *temp_ctx;
+		X86Context *temp_ctx;
 
 		/* 'ptimeout' is interpreted here as an integer; only supported for INTMAX */
 		if (timeout_ptr != 0x7fffffff)
@@ -5159,11 +5159,11 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
  * System call 'sched_setaffinity' (code 241)
  */
 
-static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
+static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
-	struct x86_ctx_t *target_ctx;
+	X86Context *target_ctx;
 
 	int err = 0;
 	int pid;
@@ -5254,11 +5254,11 @@ out:
  * System call 'sched_getaffinity' (code 242)
  */
 
-static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
+static int x86_sys_sched_getaffinity_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
-	struct x86_ctx_t *target_ctx;
+	X86Context *target_ctx;
 
 	int pid;
 	int size;
@@ -5314,7 +5314,7 @@ static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
  * System call 'set_thread_area' (code 243)
  */
 
-static int x86_sys_set_thread_area_impl(struct x86_ctx_t *ctx)
+static int x86_sys_set_thread_area_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -5373,7 +5373,7 @@ static int x86_sys_set_thread_area_impl(struct x86_ctx_t *ctx)
  * System call 'fadvise64' (code 250)
  */
 
-static int x86_sys_fadvise64_impl(struct x86_ctx_t *ctx)
+static int x86_sys_fadvise64_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -5404,7 +5404,7 @@ static int x86_sys_fadvise64_impl(struct x86_ctx_t *ctx)
  * System call 'exit_group' (code 252)
  */
 
-static int x86_sys_exit_group_impl(struct x86_ctx_t *ctx)
+static int x86_sys_exit_group_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -5426,7 +5426,7 @@ static int x86_sys_exit_group_impl(struct x86_ctx_t *ctx)
  * System call 'set_tid_address' (code 258)
  */
 
-static int x86_sys_set_tid_address_impl(struct x86_ctx_t *ctx)
+static int x86_sys_set_tid_address_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -5447,7 +5447,7 @@ static int x86_sys_set_tid_address_impl(struct x86_ctx_t *ctx)
  * System call 'clock_getres' (code 266)
  */
 
-static int x86_sys_clock_getres_impl(struct x86_ctx_t *ctx)
+static int x86_sys_clock_getres_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -5510,7 +5510,7 @@ static void sim_statfs64_host_to_guest(struct sim_statfs64_t *host, struct statf
 	host->frsize = guest->f_frsize;
 }
 
-static int x86_sys_statfs64_impl(struct x86_ctx_t *ctx)
+static int x86_sys_statfs64_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -5562,7 +5562,7 @@ static int x86_sys_statfs64_impl(struct x86_ctx_t *ctx)
  * System call 'tgkill' (code 270)
  */
 
-static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
+static int x86_sys_tgkill_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -5570,7 +5570,7 @@ static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
 	int pid;
 	int sig;
 
-	struct x86_ctx_t *temp_ctx;
+	X86Context *temp_ctx;
 
 	/* Arguments */
 	tgid = regs->ebx;
@@ -5604,7 +5604,7 @@ static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
  * System call 'openat' (code 295)
  */
 
-static int x86_sys_openat_impl(struct x86_ctx_t *ctx)
+static int x86_sys_openat_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -5684,7 +5684,7 @@ static int x86_sys_openat_impl(struct x86_ctx_t *ctx)
  * System call 'set_robust_list' (code 311)
  */
 
-static int x86_sys_set_robust_list_impl(struct x86_ctx_t *ctx)
+static int x86_sys_set_robust_list_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -5714,7 +5714,7 @@ static int x86_sys_set_robust_list_impl(struct x86_ctx_t *ctx)
  */
 
 #define SYS_NOT_IMPL(NAME) \
-	static int x86_sys_##NAME##_impl(struct x86_ctx_t *ctx) \
+	static int x86_sys_##NAME##_impl(X86Context *ctx) \
 	{ \
 		struct x86_regs_t *regs = ctx->regs; \
 		fatal("%s: system call not implemented (code %d, inst %lld, pid %d).\n%s", \

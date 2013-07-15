@@ -38,13 +38,13 @@
 #define assert __COMPILATION_ERROR__
 
 
-void x86_isa_palignr_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_palignr_xmm_xmmm128_imm8_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_pshufb_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_pshufb_xmm_xmmm128_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }

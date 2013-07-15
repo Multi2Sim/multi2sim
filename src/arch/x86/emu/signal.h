@@ -56,10 +56,10 @@ void x86_signal_handler_table_free(struct x86_signal_handler_table_t *table);
 struct x86_signal_handler_table_t *x86_signal_handler_table_link(struct x86_signal_handler_table_t *table);
 void x86_signal_handler_table_unlink(struct x86_signal_handler_table_t *table);
 
-void x86_signal_handler_run(struct x86_ctx_t *ctx, int sig);
-void x86_signal_handler_return(struct x86_ctx_t *ctx);
-void x86_signal_handler_check(struct x86_ctx_t *ctx);
-void x86_signal_handler_check_intr(struct x86_ctx_t *ctx);
+void x86_signal_handler_run(X86Context *ctx, int sig);
+void x86_signal_handler_return(X86Context *ctx);
+void x86_signal_handler_check(X86Context *ctx);
+void x86_signal_handler_check_intr(X86Context *ctx);
 
 char *x86_signal_name(int signum);
 void x86_sigaction_dump(struct x86_sigaction_t *sim_sigaction, FILE *f);

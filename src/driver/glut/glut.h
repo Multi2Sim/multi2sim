@@ -22,9 +22,11 @@
 
 #include <pthread.h>
 
+#include <lib/util/class.h>
+
 
 /* Forward type declaration */
-struct x86_ctx_t;
+CLASS_FORWARD_DECLARATION(X86Context);
 
 
 /*
@@ -44,7 +46,7 @@ extern pthread_mutex_t glut_mutex;
 void glut_init(void);
 void glut_done(void);
 
-int glut_abi_call(struct x86_ctx_t *ctx);
+int glut_abi_call(X86Context *ctx);
 
 
 #endif

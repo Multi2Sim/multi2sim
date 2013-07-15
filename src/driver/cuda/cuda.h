@@ -20,6 +20,12 @@
 #ifndef DRIVER_CUDA_CUDA_H
 #define DRIVER_CUDA_CUDA_H
 
+#include <lib/util/class.h>
+
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Context);
+
 
 /* Version */
 struct cuda_version_t
@@ -48,14 +54,13 @@ enum cuda_call_t
 };
 
 /* Prototype of CUDA driver functions */
-struct x86_ctx_t;
-typedef int (*cuda_func_t)(struct x86_ctx_t *ctx);
+typedef int (*cuda_func_t)(X86Context *ctx);
 
 /* Functions */
-int cuda_abi_call(struct x86_ctx_t *ctx);
+int cuda_abi_call(X86Context *ctx);
 
 #define CUDA_DEFINE_CALL(name) \
-	int cuda_func_##name(struct x86_ctx_t *ctx);
+	int cuda_func_##name(X86Context *ctx);
 #include "cuda.dat"
 #undef CUDA_DEFINE_CALL
 

@@ -48,7 +48,7 @@ unsigned char x86_isa_host_fpenv[28];
 
 /* Table including references to functions in machine.c
  * that implement machine instructions. */
-typedef void (*x86_isa_inst_func_t)(struct x86_ctx_t *ctx);
+typedef void (*x86_isa_inst_func_t)(X86Context *ctx);
 static x86_isa_inst_func_t x86_isa_inst_func[x86_inst_opcode_count] =
 {
 	NULL /* for op_none */
@@ -65,7 +65,7 @@ static x86_isa_inst_func_t x86_isa_inst_func[x86_inst_opcode_count] =
  *            Macros are defined after these two functions.
  */
 
-void x86_isa_mem_read(struct x86_ctx_t *ctx, unsigned int addr, int size, void *buf)
+void x86_isa_mem_read(X86Context *ctx, unsigned int addr, int size, void *buf)
 {
 	/* Speculative mode read */
 	if (ctx->state & x86_ctx_spec_mode)
@@ -79,7 +79,7 @@ void x86_isa_mem_read(struct x86_ctx_t *ctx, unsigned int addr, int size, void *
 }
 
 
-void x86_isa_mem_write(struct x86_ctx_t *ctx, unsigned int addr, int size, void *buf)
+void x86_isa_mem_write(X86Context *ctx, unsigned int addr, int size, void *buf)
 {
 	/* Speculative mode write */
 	if (ctx->state & x86_ctx_spec_mode)
@@ -93,7 +93,7 @@ void x86_isa_mem_write(struct x86_ctx_t *ctx, unsigned int addr, int size, void 
 }
 
 
-void x86_isa_error(struct x86_ctx_t *ctx, char *fmt, ...)
+void x86_isa_error(X86Context *ctx, char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -159,7 +159,7 @@ void x86_isa_inst_stat_reset(void)
 
 
 /* Trace call debugging */
-static void x86_isa_debug_call(struct x86_ctx_t *ctx)
+static void x86_isa_debug_call(X86Context *ctx)
 {
 	struct elf_symbol_t *from;
 	struct elf_symbol_t *to;
@@ -255,7 +255,7 @@ static struct
 };
 
 
-void x86_isa_set_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag)
+void x86_isa_set_flag(X86Context *ctx, enum x86_inst_flag_t flag)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -263,7 +263,7 @@ void x86_isa_set_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag)
 }
 
 
-void x86_isa_clear_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag)
+void x86_isa_clear_flag(X86Context *ctx, enum x86_inst_flag_t flag)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -271,7 +271,7 @@ void x86_isa_clear_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag)
 }
 
 
-int x86_isa_get_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag)
+int x86_isa_get_flag(X86Context *ctx, enum x86_inst_flag_t flag)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -285,7 +285,7 @@ int x86_isa_get_flag(struct x86_ctx_t *ctx, enum x86_inst_flag_t flag)
 static unsigned int x86_isa_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
 
 
-unsigned int x86_isa_load_reg(struct x86_ctx_t *ctx, enum x86_inst_reg_t reg)
+unsigned int x86_isa_load_reg(X86Context *ctx, enum x86_inst_reg_t reg)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -298,7 +298,7 @@ unsigned int x86_isa_load_reg(struct x86_ctx_t *ctx, enum x86_inst_reg_t reg)
 }
 
 
-void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_inst_reg_t reg, unsigned int value)
+void x86_isa_store_reg(X86Context *ctx, enum x86_inst_reg_t reg, unsigned int value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -320,7 +320,7 @@ void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_inst_reg_t reg, unsigned 
 
 /* Return the final address obtained from binding address 'addr' inside
  * the corresponding segment. The segment boundaries are checked. */
-static unsigned int x86_isa_linear_address(struct x86_ctx_t *ctx, unsigned int offset)
+static unsigned int x86_isa_linear_address(X86Context *ctx, unsigned int offset)
 {
 	/* No segment override */
 	if (!ctx->inst.segment)
@@ -353,7 +353,7 @@ static unsigned int x86_isa_linear_address(struct x86_ctx_t *ctx, unsigned int o
 
 
 /* Return the effective address obtained from the 'SIB' and 'disp' fields */
-unsigned int x86_isa_effective_address(struct x86_ctx_t *ctx)
+unsigned int x86_isa_effective_address(X86Context *ctx)
 {
 	unsigned int addr;
 
@@ -384,7 +384,7 @@ unsigned int x86_isa_effective_address(struct x86_ctx_t *ctx)
 
 /* Return the effective address obtained from the
  * immediate field. */
-unsigned int x86_isa_moffs_address(struct x86_ctx_t *ctx)
+unsigned int x86_isa_moffs_address(X86Context *ctx)
 {
 	unsigned int addr;
 
@@ -405,7 +405,7 @@ unsigned int x86_isa_moffs_address(struct x86_ctx_t *ctx)
  */
 
 
-unsigned char x86_isa_load_rm8(struct x86_ctx_t *ctx)
+unsigned char x86_isa_load_rm8(X86Context *ctx)
 {
 	unsigned char value;
 
@@ -418,7 +418,7 @@ unsigned char x86_isa_load_rm8(struct x86_ctx_t *ctx)
 }
 
 
-unsigned short x86_isa_load_rm16(struct x86_ctx_t *ctx)
+unsigned short x86_isa_load_rm16(X86Context *ctx)
 {
 	unsigned short value;
 
@@ -431,7 +431,7 @@ unsigned short x86_isa_load_rm16(struct x86_ctx_t *ctx)
 }
 
 
-unsigned int x86_isa_load_rm32(struct x86_ctx_t *ctx)
+unsigned int x86_isa_load_rm32(X86Context *ctx)
 {
 	unsigned int value;
 
@@ -444,7 +444,7 @@ unsigned int x86_isa_load_rm32(struct x86_ctx_t *ctx)
 }
 
 
-unsigned short x86_isa_load_r32m16(struct x86_ctx_t *ctx)
+unsigned short x86_isa_load_r32m16(X86Context *ctx)
 {
 	unsigned short value;
 
@@ -457,7 +457,7 @@ unsigned short x86_isa_load_r32m16(struct x86_ctx_t *ctx)
 }
 
 
-unsigned long long x86_isa_load_m64(struct x86_ctx_t *ctx)
+unsigned long long x86_isa_load_m64(X86Context *ctx)
 {
 	unsigned long long value;
 
@@ -467,7 +467,7 @@ unsigned long long x86_isa_load_m64(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_store_rm8(struct x86_ctx_t *ctx, unsigned char value)
+void x86_isa_store_rm8(X86Context *ctx, unsigned char value)
 {
 	if (ctx->inst.modrm_mod == 0x03)
 	{
@@ -479,7 +479,7 @@ void x86_isa_store_rm8(struct x86_ctx_t *ctx, unsigned char value)
 }
 
 
-void x86_isa_store_rm16(struct x86_ctx_t *ctx, unsigned short value)
+void x86_isa_store_rm16(X86Context *ctx, unsigned short value)
 {
 	if (ctx->inst.modrm_mod == 0x03)
 	{
@@ -491,7 +491,7 @@ void x86_isa_store_rm16(struct x86_ctx_t *ctx, unsigned short value)
 }
 
 
-void x86_isa_store_rm32(struct x86_ctx_t *ctx, unsigned int value)
+void x86_isa_store_rm32(X86Context *ctx, unsigned int value)
 {
 	if (ctx->inst.modrm_mod == 0x03)
 	{
@@ -503,7 +503,7 @@ void x86_isa_store_rm32(struct x86_ctx_t *ctx, unsigned int value)
 }
 
 
-void x86_isa_store_m64(struct x86_ctx_t *ctx, unsigned long long value)
+void x86_isa_store_m64(X86Context *ctx, unsigned long long value)
 {
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 8, &value);
 	x86_isa_inst_debug("  [0x%x] <- 0x%llx", x86_isa_effective_address(ctx), value);
@@ -517,7 +517,7 @@ void x86_isa_store_m64(struct x86_ctx_t *ctx, unsigned long long value)
  */
 
 
-void x86_isa_load_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
+void x86_isa_load_fpu(X86Context *ctx, int index, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	int eff_index;
@@ -541,7 +541,7 @@ void x86_isa_load_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
 }
 
 
-void x86_isa_store_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
+void x86_isa_store_fpu(X86Context *ctx, int index, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -567,7 +567,7 @@ void x86_isa_store_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
 }
 
 
-void x86_isa_push_fpu(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_push_fpu(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -588,7 +588,7 @@ void x86_isa_push_fpu(struct x86_ctx_t *ctx, unsigned char *value)
 }
 
 
-void x86_isa_pop_fpu(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_pop_fpu(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -610,7 +610,7 @@ void x86_isa_pop_fpu(struct x86_ctx_t *ctx, unsigned char *value)
 }
 
 
-double x86_isa_load_double(struct x86_ctx_t *ctx)
+double x86_isa_load_double(X86Context *ctx)
 {
 	double value;
 
@@ -652,26 +652,26 @@ float x86_isa_extended_to_float(unsigned char *e)
 }
 
 
-void x86_isa_load_extended(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_load_extended(X86Context *ctx, unsigned char *value)
 {
 	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 10, value);
 }
 
 
-void x86_isa_store_extended(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_store_extended(X86Context *ctx, unsigned char *value)
 {
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 10, value);
 }
 
 
-void x86_isa_store_double(struct x86_ctx_t *ctx, double value)
+void x86_isa_store_double(X86Context *ctx, double value)
 {
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 8, &value);
 	x86_isa_inst_debug("  [0x%x] <- %g", x86_isa_effective_address(ctx), value);
 }
 
 
-float x86_isa_load_float(struct x86_ctx_t *ctx)
+float x86_isa_load_float(X86Context *ctx)
 {
 	float value;
 
@@ -682,7 +682,7 @@ float x86_isa_load_float(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_store_float(struct x86_ctx_t *ctx, float value)
+void x86_isa_store_float(X86Context *ctx, float value)
 {
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 4, &value);
 	x86_isa_inst_debug("  [0x%x] <- %g", x86_isa_effective_address(ctx), (double) value);
@@ -691,7 +691,7 @@ void x86_isa_store_float(struct x86_ctx_t *ctx, float value)
 
 /* Store the code bits (14, 10, 9, and 8) of the FPU state word into
  * the 'code' register. */
-void x86_isa_store_fpu_code(struct x86_ctx_t *ctx, unsigned short status)
+void x86_isa_store_fpu_code(X86Context *ctx, unsigned short status)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -705,7 +705,7 @@ void x86_isa_store_fpu_code(struct x86_ctx_t *ctx, unsigned short status)
 
 /* Read the state register, by building it from the 'top' and
  * 'code' fields. */
-unsigned short x86_isa_load_fpu_status(struct x86_ctx_t *ctx)
+unsigned short x86_isa_load_fpu_status(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned short status = 0;
@@ -730,7 +730,7 @@ unsigned short x86_isa_load_fpu_status(struct x86_ctx_t *ctx)
  * XMM Registers
  */
 
-void x86_isa_dump_xmm(struct x86_ctx_t *ctx, unsigned char *value, FILE *f)
+void x86_isa_dump_xmm(X86Context *ctx, unsigned char *value, FILE *f)
 {
 	union x86_inst_xmm_reg_t *xmm;
 	char *comma;
@@ -750,7 +750,7 @@ void x86_isa_dump_xmm(struct x86_ctx_t *ctx, unsigned char *value, FILE *f)
 }
 
 
-void x86_isa_load_xmm(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_load_xmm(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -758,7 +758,7 @@ void x86_isa_load_xmm(struct x86_ctx_t *ctx, unsigned char *value)
 }
 
 
-void x86_isa_store_xmm(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_store_xmm(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -767,7 +767,7 @@ void x86_isa_store_xmm(struct x86_ctx_t *ctx, unsigned char *value)
 
 
 /* Load a 32-bit value into the lower 32 bits of 'value' */
-void x86_isa_load_xmmm32(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_load_xmmm32(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -781,7 +781,7 @@ void x86_isa_load_xmmm32(struct x86_ctx_t *ctx, unsigned char *value)
 
 
 /* Store the low 32 bits of 'value' into an XMM register or memory */
-void x86_isa_store_xmmm32(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_store_xmmm32(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -796,7 +796,7 @@ void x86_isa_store_xmmm32(struct x86_ctx_t *ctx, unsigned char *value)
 
 /* Load a 64-bit value into the LSB of 'value'.
  * If 'value' is a 128-bit array, its upper 64 bits will not be initialized. */
-void x86_isa_load_xmmm64(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_load_xmmm64(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -810,7 +810,7 @@ void x86_isa_load_xmmm64(struct x86_ctx_t *ctx, unsigned char *value)
 
 
 /* Store the low 64 bits of 'value' into an XMM register or memory */
-void x86_isa_store_xmmm64(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_store_xmmm64(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -824,7 +824,7 @@ void x86_isa_store_xmmm64(struct x86_ctx_t *ctx, unsigned char *value)
 
 
 /* Load a 128-bit value into XMM register */
-void x86_isa_load_xmmm128(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_load_xmmm128(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -838,7 +838,7 @@ void x86_isa_load_xmmm128(struct x86_ctx_t *ctx, unsigned char *value)
 
 
 /* Store a 128-bit value into an XMM register of 128-bit memory location. */
-void x86_isa_store_xmmm128(struct x86_ctx_t *ctx, unsigned char *value)
+void x86_isa_store_xmmm128(X86Context *ctx, unsigned char *value)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -872,7 +872,7 @@ void x86_isa_done(void)
 }
 
 
-void x86_isa_execute_inst(struct x86_ctx_t *ctx)
+void x86_isa_execute_inst(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
