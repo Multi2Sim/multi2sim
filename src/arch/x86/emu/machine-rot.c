@@ -48,7 +48,7 @@
 void x86_isa_##xxx##_rm8_1_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned char rm8 = x86_isa_load_rm8(ctx); \
+	unsigned char rm8 = X86ContextLoadRm8(ctx); \
 	unsigned char count = 1; \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -66,7 +66,7 @@ void x86_isa_##xxx##_rm8_1_impl(X86Context *ctx) \
 		: "al", "cl" \
 	); \
 	__X86_ISA_ASM_END__ \
-	x86_isa_store_rm8(ctx, rm8); \
+	X86ContextStoreRm8(ctx, rm8); \
 	regs->eflags = flags; \
 	x86_uinst_new(ctx, x86_uinst_shift, idep, x86_dep_rm8, 0, x86_dep_rm8, x86_dep_cf, x86_dep_of, 0); \
 }
@@ -76,8 +76,8 @@ void x86_isa_##xxx##_rm8_1_impl(X86Context *ctx) \
 void x86_isa_##xxx##_rm8_cl_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned char rm8 = x86_isa_load_rm8(ctx); \
-	unsigned char count = x86_isa_load_reg(ctx, x86_inst_reg_cl); \
+	unsigned char rm8 = X86ContextLoadRm8(ctx); \
+	unsigned char count = X86ContextLoadReg(ctx, x86_inst_reg_cl); \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -94,7 +94,7 @@ void x86_isa_##xxx##_rm8_cl_impl(X86Context *ctx) \
 		: "al", "cl" \
 	); \
 	__X86_ISA_ASM_END__ \
-	x86_isa_store_rm8(ctx, rm8); \
+	X86ContextStoreRm8(ctx, rm8); \
 	regs->eflags = flags; \
 	x86_uinst_new(ctx, x86_uinst_shift, idep, x86_dep_rm8, x86_dep_ecx, x86_dep_rm8, x86_dep_cf, x86_dep_of, 0); \
 }
@@ -104,7 +104,7 @@ void x86_isa_##xxx##_rm8_cl_impl(X86Context *ctx) \
 void x86_isa_##xxx##_rm8_imm8_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned char rm8 = x86_isa_load_rm8(ctx); \
+	unsigned char rm8 = X86ContextLoadRm8(ctx); \
 	unsigned char count = ctx->inst.imm.b; \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -122,7 +122,7 @@ void x86_isa_##xxx##_rm8_imm8_impl(X86Context *ctx) \
 		: "al", "cl" \
 	); \
 	__X86_ISA_ASM_END__ \
-	x86_isa_store_rm8(ctx, rm8); \
+	X86ContextStoreRm8(ctx, rm8); \
 	regs->eflags = flags; \
 	x86_uinst_new(ctx, x86_uinst_shift, idep, x86_dep_rm8, 0, x86_dep_rm8, x86_dep_cf, x86_dep_of, 0); \
 }
@@ -132,7 +132,7 @@ void x86_isa_##xxx##_rm8_imm8_impl(X86Context *ctx) \
 void x86_isa_##xxx##_rm16_1_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned short rm16 = x86_isa_load_rm16(ctx); \
+	unsigned short rm16 = X86ContextLoadRm16(ctx); \
 	unsigned char count = 1; \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -150,7 +150,7 @@ void x86_isa_##xxx##_rm16_1_impl(X86Context *ctx) \
 		: "ax", "cl" \
 	); \
 	__X86_ISA_ASM_END__ \
-	x86_isa_store_rm16(ctx, rm16); \
+	X86ContextStoreRm16(ctx, rm16); \
 	regs->eflags = flags; \
 	x86_uinst_new(ctx, x86_uinst_shift, idep, x86_dep_rm16, 0, x86_dep_rm16, x86_dep_cf, x86_dep_of, 0); \
 }
@@ -160,8 +160,8 @@ void x86_isa_##xxx##_rm16_1_impl(X86Context *ctx) \
 void x86_isa_##xxx##_rm16_cl_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned short rm16 = x86_isa_load_rm16(ctx); \
-	unsigned char count = x86_isa_load_reg(ctx, x86_inst_reg_cl); \
+	unsigned short rm16 = X86ContextLoadRm16(ctx); \
+	unsigned char count = X86ContextLoadReg(ctx, x86_inst_reg_cl); \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -178,7 +178,7 @@ void x86_isa_##xxx##_rm16_cl_impl(X86Context *ctx) \
 		: "ax", "cl" \
 	); \
 	__X86_ISA_ASM_END__ \
-	x86_isa_store_rm16(ctx, rm16); \
+	X86ContextStoreRm16(ctx, rm16); \
 	regs->eflags = flags; \
 	x86_uinst_new(ctx, x86_uinst_shift, idep, x86_dep_rm16, x86_dep_ecx, x86_dep_rm16, x86_dep_cf, x86_dep_of, 0); \
 }
@@ -188,7 +188,7 @@ void x86_isa_##xxx##_rm16_cl_impl(X86Context *ctx) \
 void x86_isa_##xxx##_rm16_imm8_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned short rm16 = x86_isa_load_rm16(ctx); \
+	unsigned short rm16 = X86ContextLoadRm16(ctx); \
 	unsigned char count = ctx->inst.imm.b; \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -206,7 +206,7 @@ void x86_isa_##xxx##_rm16_imm8_impl(X86Context *ctx) \
 		: "ax", "cl" \
 	); \
 	__X86_ISA_ASM_END__ \
-	x86_isa_store_rm16(ctx, rm16); \
+	X86ContextStoreRm16(ctx, rm16); \
 	regs->eflags = flags; \
 	x86_uinst_new(ctx, x86_uinst_shift, idep, x86_dep_rm16, 0, x86_dep_rm16, x86_dep_cf, x86_dep_of, 0); \
 }
@@ -216,7 +216,7 @@ void x86_isa_##xxx##_rm16_imm8_impl(X86Context *ctx) \
 void x86_isa_##xxx##_rm32_1_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned int rm32 = x86_isa_load_rm32(ctx); \
+	unsigned int rm32 = X86ContextLoadRm32(ctx); \
 	unsigned char count = 1; \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -234,7 +234,7 @@ void x86_isa_##xxx##_rm32_1_impl(X86Context *ctx) \
 		: "eax", "cl" \
 	); \
 	__X86_ISA_ASM_END__ \
-	x86_isa_store_rm32(ctx, rm32); \
+	X86ContextStoreRm32(ctx, rm32); \
 	regs->eflags = flags; \
 	x86_uinst_new(ctx, x86_uinst_shift, idep, x86_dep_rm32, 0, x86_dep_rm32, x86_dep_cf, x86_dep_of, 0); \
 }
@@ -244,8 +244,8 @@ void x86_isa_##xxx##_rm32_1_impl(X86Context *ctx) \
 void x86_isa_##xxx##_rm32_cl_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned int rm32 = x86_isa_load_rm32(ctx); \
-	unsigned char count = x86_isa_load_reg(ctx, x86_inst_reg_cl); \
+	unsigned int rm32 = X86ContextLoadRm32(ctx); \
+	unsigned char count = X86ContextLoadReg(ctx, x86_inst_reg_cl); \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -262,7 +262,7 @@ void x86_isa_##xxx##_rm32_cl_impl(X86Context *ctx) \
 		: "eax", "cl" \
 	); \
 	__X86_ISA_ASM_END__ \
-	x86_isa_store_rm32(ctx, rm32); \
+	X86ContextStoreRm32(ctx, rm32); \
 	regs->eflags = flags; \
 	x86_uinst_new(ctx, x86_uinst_shift, idep, x86_dep_rm32, x86_dep_ecx, x86_dep_rm32, x86_dep_cf, x86_dep_of, 0); \
 }
@@ -272,7 +272,7 @@ void x86_isa_##xxx##_rm32_cl_impl(X86Context *ctx) \
 void x86_isa_##xxx##_rm32_imm8_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
-	unsigned int rm32 = x86_isa_load_rm32(ctx); \
+	unsigned int rm32 = X86ContextLoadRm32(ctx); \
 	unsigned char count = ctx->inst.imm.b; \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -290,7 +290,7 @@ void x86_isa_##xxx##_rm32_imm8_impl(X86Context *ctx) \
 		: "eax", "cl" \
 	); \
 	__X86_ISA_ASM_END__ \
-	x86_isa_store_rm32(ctx, rm32); \
+	X86ContextStoreRm32(ctx, rm32); \
 	regs->eflags = flags; \
 	x86_uinst_new(ctx, x86_uinst_shift, idep, x86_dep_rm32, 0, x86_dep_rm32, x86_dep_cf, x86_dep_of, 0); \
 }

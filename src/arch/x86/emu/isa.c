@@ -37,19 +37,16 @@
 #include "uinst.h"
 
 
-/* Debug categories */
-int x86_isa_call_debug_category;
-int x86_isa_inst_debug_category;
 
-/* Variables used to preserve host state before running assembly */
-long x86_isa_host_flags;
-unsigned char x86_isa_host_fpenv[28];
+/*
+ * Non-Class Stuff
+ */
 
 
 /* Table including references to functions in machine.c
  * that implement machine instructions. */
-typedef void (*x86_isa_inst_func_t)(X86Context *ctx);
-static x86_isa_inst_func_t x86_isa_inst_func[x86_inst_opcode_count] =
+typedef void (*X86ContextInstFunc)(X86Context *ctx);
+static X86ContextInstFunc x86_context_inst_func[x86_inst_opcode_count] =
 {
 	NULL /* for op_none */
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) , x86_isa_##name##_impl
@@ -57,83 +54,13 @@ static x86_isa_inst_func_t x86_isa_inst_func[x86_inst_opcode_count] =
 #undef DEFINST
 };
 
+/* Debug categories */
+int x86_context_call_debug_category;
+int x86_context_isa_debug_category;
 
-
-/*
- * Memory access based on 'x86_isa_spec_mode'
- * IMPORTANT: This should be the first section in the file.
- *            Macros are defined after these two functions.
- */
-
-void x86_isa_mem_read(X86Context *ctx, unsigned int addr, int size, void *buf)
-{
-	/* Speculative mode read */
-	if (ctx->state & X86ContextSpecMode)
-	{
-		spec_mem_read(ctx->spec_mem, addr, size, buf);
-		return;
-	}
-
-	/* Read in regular mode */
-	mem_read(ctx->mem, addr, size, buf);
-}
-
-
-void x86_isa_mem_write(X86Context *ctx, unsigned int addr, int size, void *buf)
-{
-	/* Speculative mode write */
-	if (ctx->state & X86ContextSpecMode)
-	{
-		spec_mem_write(ctx->spec_mem, addr, size, buf);
-		return;
-	}
-
-	/* Write in regular mode */
-	mem_write(ctx->mem, addr, size, buf);
-}
-
-
-void x86_isa_error(X86Context *ctx, char *fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-
-	/* No error shown on speculative mode */
-	if (ctx->state & X86ContextSpecMode)
-		return;
-
-	/* Error */
-	fprintf(stderr, "fatal: x86 context %d at 0x%08x inst %lld: ",
-		ctx->pid, ctx->curr_eip, asEmu(x86_emu)->instructions);
-	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
-	exit(1);
-}
-
-
-/* Macros defined to prevent accidental use of 'mem_<xx>' instructions.
- * Error messages should only be shown based on speculative execution. */
-#define mem_access __COMPILATION_ERROR__
-#define mem_read __COMPILATION_ERROR__
-#define mem_write __COMPILATION_ERROR__
-#define mem_zero __COMPILATION_ERROR__
-#define mem_read_string __COMPILATION_ERROR__
-#define mem_write_string __COMPILATION_ERROR__
-#define mem_get_buffer __COMPILATION_ERROR__
-#define fatal __COMPILATION_ERROR__
-#define panic __COMPILATION_ERROR__
-#define warning __COMPILATION_ERROR__
-#ifdef assert
-#undef assert
-#endif
-#define assert __COMPILATION_ERROR__
-
-
-
-
-/*
- * Instruction statistics
- */
+/* Variables used to preserve host state before running assembly */
+long x86_context_host_flags;
+unsigned char x86_context_host_fpenv[28];
 
 static long long x86_inst_freq[x86_inst_opcode_count];
 
@@ -158,59 +85,161 @@ void x86_isa_inst_stat_reset(void)
 }
 
 
-/* Trace call debugging */
-static void x86_isa_debug_call(X86Context *ctx)
+void X86ContextDoubleToExtended(double f, unsigned char *e)
 {
-	struct elf_symbol_t *from;
-	struct elf_symbol_t *to;
+	asm volatile ("fldl %1; fstpt %0\n\t"
+			: "=m" (*e) : "m" (f));
+}
 
-	struct x86_loader_t *loader = ctx->loader;
-	struct x86_regs_t *regs = ctx->regs;
 
-	char *action;
-	int i;
+double X86ContextExtendedToDouble(unsigned char *e)
+{
+	double f;
+	asm volatile ("fldt %1; fstpl %0\n\t"
+			: "=m" (f) : "m" (*e));
+	return f;
+}
 
-	/* Do nothing on speculative mode */
-	if (ctx->state & X86ContextSpecMode)
-		return;
 
-	/* Call or return. Otherwise, exit */
-	if (!strncmp(ctx->inst.format, "call", 4))
-		action = "call";
-	else if (!strncmp(ctx->inst.format, "ret", 3))
-		action = "ret";
-	else
-		return;
+void X86ContextFloatToExtended(float f, unsigned char *e)
+{
+	asm volatile ("flds %1; fstpt %0\n\t"
+			: "=m" (*e) : "m" (f));
+}
 
-	/* Debug it */
-	for (i = 0; i < ctx->function_level; i++)
-		x86_isa_call_debug("| ");
-	from = elf_symbol_get_by_address(loader->elf_file, ctx->curr_eip, NULL);
-	to = elf_symbol_get_by_address(loader->elf_file, regs->eip, NULL);
-	if (from)
-		x86_isa_call_debug("%s", from->name);
-	else
-		x86_isa_call_debug("0x%x", ctx->curr_eip);
-	x86_isa_call_debug(" - %s to ", action);
-	if (to)
-		x86_isa_call_debug("%s", to->name);
-	else
-		x86_isa_call_debug("0x%x", regs->eip);
-	x86_isa_call_debug("\n");
 
-	/* Change current level */
-	if (strncmp(ctx->inst.format, "call", 4))
-		ctx->function_level--;
-	else
-		ctx->function_level++;
+float X86ContextExtendedToFloat(unsigned char *e)
+{
+	float f;
+	asm volatile ("fldt %1; fstps %0\n\t"
+			: "=m" (f) : "m" (*e));
+	return f;
 }
 
 
 
 
+
 /*
- * Integer registers
+ * Class 'X86Context'
+ * Additional functions.
  */
+
+/*
+ * Memory access based on 'x86_isa_spec_mode'
+ * IMPORTANT: This should be the first section in the file.
+ *            Macros are defined after these two functions.
+ */
+
+void X86ContextMemRead(X86Context *self, unsigned int addr, int size, void *buf)
+{
+	/* Speculative mode read */
+	if (self->state & X86ContextSpecMode)
+	{
+		spec_mem_read(self->spec_mem, addr, size, buf);
+		return;
+	}
+
+	/* Read in regular mode */
+	mem_read(self->mem, addr, size, buf);
+}
+
+
+void X86ContextMemWrite(X86Context *self, unsigned int addr, int size, void *buf)
+{
+	/* Speculative mode write */
+	if (self->state & X86ContextSpecMode)
+	{
+		spec_mem_write(self->spec_mem, addr, size, buf);
+		return;
+	}
+
+	/* Write in regular mode */
+	mem_write(self->mem, addr, size, buf);
+}
+
+
+void X86ContextError(X86Context *self, char *fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+
+	/* No error shown on speculative mode */
+	if (self->state & X86ContextSpecMode)
+		return;
+
+	/* Error */
+	fprintf(stderr, "fatal: x86 context %d at 0x%08x inst %lld: ",
+		self->pid, self->curr_eip, asEmu(x86_emu)->instructions);
+	vfprintf(stderr, fmt, va);
+	fprintf(stderr, "\n");
+	exit(1);
+}
+
+
+/* Macros defined to prevent accidental use of 'mem_<xx>' instructions.
+ * Error messages should only be shown based on speculative execution. */
+#define mem_access __COMPILATION_ERROR__
+#define mem_read __COMPILATION_ERROR__
+#define mem_write __COMPILATION_ERROR__
+#define mem_zero __COMPILATION_ERROR__
+#define mem_read_string __COMPILATION_ERROR__
+#define mem_write_string __COMPILATION_ERROR__
+#define mem_get_buffer __COMPILATION_ERROR__
+#define fatal __COMPILATION_ERROR__
+#define panic __COMPILATION_ERROR__
+#define warning __COMPILATION_ERROR__
+#ifdef assert
+#undef assert
+#endif
+#define assert __COMPILATION_ERROR__
+
+
+static void X86ContextDebugCallInst(X86Context *self)
+{
+	struct elf_symbol_t *from;
+	struct elf_symbol_t *to;
+
+	struct x86_loader_t *loader = self->loader;
+	struct x86_regs_t *regs = self->regs;
+
+	char *action;
+	int i;
+
+	/* Do nothing on speculative mode */
+	if (self->state & X86ContextSpecMode)
+		return;
+
+	/* Call or return. Otherwise, exit */
+	if (!strncmp(self->inst.format, "call", 4))
+		action = "call";
+	else if (!strncmp(self->inst.format, "ret", 3))
+		action = "ret";
+	else
+		return;
+
+	/* Debug it */
+	for (i = 0; i < self->function_level; i++)
+		X86ContextDebugCall("| ");
+	from = elf_symbol_get_by_address(loader->elf_file, self->curr_eip, NULL);
+	to = elf_symbol_get_by_address(loader->elf_file, regs->eip, NULL);
+	if (from)
+		X86ContextDebugCall("%s", from->name);
+	else
+		X86ContextDebugCall("0x%x", self->curr_eip);
+	X86ContextDebugCall(" - %s to ", action);
+	if (to)
+		X86ContextDebugCall("%s", to->name);
+	else
+		X86ContextDebugCall("0x%x", regs->eip);
+	X86ContextDebugCall("\n");
+
+	/* Change current level */
+	if (strncmp(self->inst.format, "call", 4))
+		self->function_level--;
+	else
+		self->function_level++;
+}
 
 
 /* Shift and size inside the x86_regs_t structure. This table is indexed by the
@@ -219,7 +248,7 @@ static struct
 {
 	int shift;
 	int size;
-} x86_isa_reg_info[] =
+} x86_context_regs_info[] =
 {
 	{ 0, 0 },
 	{ 0, 4 },	/* 1. eax */
@@ -255,25 +284,25 @@ static struct
 };
 
 
-void x86_isa_set_flag(X86Context *ctx, enum x86_inst_flag_t flag)
+void X86ContextSetFlag(X86Context *self, enum x86_inst_flag_t flag)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	regs->eflags = SETBIT32(regs->eflags, flag);
 }
 
 
-void x86_isa_clear_flag(X86Context *ctx, enum x86_inst_flag_t flag)
+void X86ContextClearFlag(X86Context *self, enum x86_inst_flag_t flag)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	regs->eflags = CLEARBIT32(regs->eflags, flag);
 }
 
 
-int x86_isa_get_flag(X86Context *ctx, enum x86_inst_flag_t flag)
+int X86ContextGetFlag(X86Context *self, enum x86_inst_flag_t flag)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	return GETBIT32(regs->eflags, flag) > 0;
 }
@@ -282,273 +311,251 @@ int x86_isa_get_flag(X86Context *ctx, enum x86_inst_flag_t flag)
 /* Load/store the value of a register. If the register size is less than 32 bits,
  * it is zero-extended. These functions work for reg = reg_none, too. */
 
-static unsigned int x86_isa_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
+static unsigned int x86_context_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
 
 
-unsigned int x86_isa_load_reg(X86Context *ctx, enum x86_inst_reg_t reg)
+unsigned int X86ContextLoadReg(X86Context *self, enum x86_inst_reg_t reg)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	unsigned int mask;
 	unsigned int *reg_ptr;
 
-	mask = x86_isa_bit_mask[x86_isa_reg_info[reg].size];
-	reg_ptr = (void *) regs + x86_isa_reg_info[reg].shift;
+	mask = x86_context_bit_mask[x86_context_regs_info[reg].size];
+	reg_ptr = (void *) regs + x86_context_regs_info[reg].shift;
 	return *reg_ptr & mask;
 }
 
 
-void x86_isa_store_reg(X86Context *ctx, enum x86_inst_reg_t reg, unsigned int value)
+void X86ContextStoreReg(X86Context *self, enum x86_inst_reg_t reg, unsigned int value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	unsigned int mask;
 	unsigned int *reg_ptr;
 
-	mask = x86_isa_bit_mask[x86_isa_reg_info[reg].size];
-	reg_ptr = (void *) regs + x86_isa_reg_info[reg].shift;
+	mask = x86_context_bit_mask[x86_context_regs_info[reg].size];
+	reg_ptr = (void *) regs + x86_context_regs_info[reg].shift;
 	*reg_ptr = (*reg_ptr & ~mask) | (value & mask);
-	x86_isa_inst_debug("  %s <- 0x%x", str_map_value(&x86_inst_reg_map, reg), value);
+	X86ContextDebugISA("  %s <- 0x%x", str_map_value(&x86_inst_reg_map, reg), value);
 }
 
 
-
-
-/*
- * Effective address computation
- */
-
 /* Return the final address obtained from binding address 'addr' inside
  * the corresponding segment. The segment boundaries are checked. */
-static unsigned int x86_isa_linear_address(X86Context *ctx, unsigned int offset)
+static unsigned int X86ContextLinearAddress(X86Context *self, unsigned int offset)
 {
 	/* No segment override */
-	if (!ctx->inst.segment)
+	if (!self->inst.segment)
 		return offset;
 	
 	/* Segment override */
-	if (ctx->inst.segment != x86_inst_reg_gs)
+	if (self->inst.segment != x86_inst_reg_gs)
 	{
-		x86_isa_error(ctx, "segment override not supported");
+		X86ContextError(self, "segment override not supported");
 		return 0;
 	}
 
 	/* GLibc segment at TLS entry 6 */
-	if (x86_isa_load_reg(ctx, x86_inst_reg_gs) != 0x33)
+	if (X86ContextLoadReg(self, x86_inst_reg_gs) != 0x33)
 	{
-		x86_isa_error(ctx, "isa_linear_address: gs = 0x%x",
-				x86_isa_load_reg(ctx, x86_inst_reg_gs));
+		X86ContextError(self, "isa_linear_address: gs = 0x%x",
+				X86ContextLoadReg(self, x86_inst_reg_gs));
 		return 0;
 	}
 
-	if (!ctx->glibc_segment_base)
+	if (!self->glibc_segment_base)
 	{
-		x86_isa_error(ctx, "isa_linear_address: glibc segment not set");
+		X86ContextError(self, "isa_linear_address: glibc segment not set");
 		return 0;
 	}
 
 	/* Return address */
-	return ctx->glibc_segment_base + offset;
+	return self->glibc_segment_base + offset;
 }
 
 
 /* Return the effective address obtained from the 'SIB' and 'disp' fields */
-unsigned int x86_isa_effective_address(X86Context *ctx)
+unsigned int X86ContextEffectiveAddress(X86Context *self)
 {
 	unsigned int addr;
 
 	/* Check 'modrm_mod' field */
-	if (ctx->inst.modrm_mod == 3)
+	if (self->inst.modrm_mod == 3)
 	{
-		x86_isa_error(ctx, "%s: wrong value for 'modrm_mod'", __FUNCTION__);
+		X86ContextError(self, "%s: wrong value for 'modrm_mod'", __FUNCTION__);
 		return 0;
 	}
 
 	/* Address */
-	addr = x86_isa_load_reg(ctx, ctx->inst.ea_base) +
-		x86_isa_load_reg(ctx, ctx->inst.ea_index) * ctx->inst.ea_scale +
-		ctx->inst.disp;
+	addr = X86ContextLoadReg(self, self->inst.ea_base) +
+		X86ContextLoadReg(self, self->inst.ea_index) * self->inst.ea_scale +
+		self->inst.disp;
 	
 	/* Add segment base */
-	addr = x86_isa_linear_address(ctx, addr);
+	addr = X86ContextLinearAddress(self, addr);
 
 	/* Record effective address in context. This address is used later in the
 	 * generation of micro-instructions. We need to record it to avoid calling this
 	 * function again later, since the source register used to calculate the effective
 	 * address can be overwritten after the instruction emulation. */
-	ctx->effective_address = addr;
+	self->effective_address = addr;
 
 	return addr;
 }
 
 
-/* Return the effective address obtained from the
- * immediate field. */
-unsigned int x86_isa_moffs_address(X86Context *ctx)
+unsigned int X86ContextMoffsAddress(X86Context *self)
 {
 	unsigned int addr;
 
 	/* Immediate value as effective address. */
-	addr = ctx->inst.imm.d;
+	addr = self->inst.imm.d;
 
 	/* Add segment base */
-	addr = x86_isa_linear_address(ctx, addr);
+	addr = X86ContextLinearAddress(self, addr);
 
 	return addr;
 }
 
 
-
-
-/*
- * Register/Memory dependences
- */
-
-
-unsigned char x86_isa_load_rm8(X86Context *ctx)
+unsigned char X86ContextLoadRm8(X86Context *self)
 {
 	unsigned char value;
 
-	if (ctx->inst.modrm_mod == 0x03)
-		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_al);
+	if (self->inst.modrm_mod == 0x03)
+		return X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_al);
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 1, &value);
-	x86_isa_inst_debug("  [0x%x]=0x%x", x86_isa_effective_address(ctx), value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 1, &value);
+	X86ContextDebugISA("  [0x%x]=0x%x", X86ContextEffectiveAddress(self), value);
 	return value;
 }
 
 
-unsigned short x86_isa_load_rm16(X86Context *ctx)
+unsigned short X86ContextLoadRm16(X86Context *self)
 {
 	unsigned short value;
 
-	if (ctx->inst.modrm_mod == 0x03)
-		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_ax);
+	if (self->inst.modrm_mod == 0x03)
+		return X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_ax);
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 2, &value);
-	x86_isa_inst_debug("  [0x%x]=0x%x", x86_isa_effective_address(ctx), value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 2, &value);
+	X86ContextDebugISA("  [0x%x]=0x%x", X86ContextEffectiveAddress(self), value);
 	return value;
 }
 
 
-unsigned int x86_isa_load_rm32(X86Context *ctx)
+unsigned int X86ContextLoadRm32(X86Context *self)
 {
 	unsigned int value;
 
-	if (ctx->inst.modrm_mod == 0x03)
-		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_eax);
+	if (self->inst.modrm_mod == 0x03)
+		return X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_eax);
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 4, &value);
-	x86_isa_inst_debug("  [0x%x]=0x%x", x86_isa_effective_address(ctx), value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 4, &value);
+	X86ContextDebugISA("  [0x%x]=0x%x", X86ContextEffectiveAddress(self), value);
 	return value;
 }
 
 
-unsigned short x86_isa_load_r32m16(X86Context *ctx)
+unsigned short X86ContextLoadR32M16(X86Context *self)
 {
 	unsigned short value;
 
-	if (ctx->inst.modrm_mod == 0x03)
-		return x86_isa_load_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_eax);
+	if (self->inst.modrm_mod == 0x03)
+		return X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_eax);
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 2, &value);
-	x86_isa_inst_debug("  [0x%x]=0x%x", x86_isa_effective_address(ctx), value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 2, &value);
+	X86ContextDebugISA("  [0x%x]=0x%x", X86ContextEffectiveAddress(self), value);
 	return value;
 }
 
 
-unsigned long long x86_isa_load_m64(X86Context *ctx)
+unsigned long long X86ContextLoadM64(X86Context *self)
 {
 	unsigned long long value;
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 8, &value);
-	x86_isa_inst_debug("  [0x%x]=0x%llx", x86_isa_effective_address(ctx), value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 8, &value);
+	X86ContextDebugISA("  [0x%x]=0x%llx", X86ContextEffectiveAddress(self), value);
 	return value;
 }
 
 
-void x86_isa_store_rm8(X86Context *ctx, unsigned char value)
+void X86ContextStoreRm8(X86Context *self, unsigned char value)
 {
-	if (ctx->inst.modrm_mod == 0x03)
+	if (self->inst.modrm_mod == 0x03)
 	{
-		x86_isa_store_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_al, value);
+		X86ContextStoreReg(self, self->inst.modrm_rm + x86_inst_reg_al, value);
 		return;
 	}
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 1, &value);
-	x86_isa_inst_debug("  [0x%x] <- 0x%x", x86_isa_effective_address(ctx), value);
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 1, &value);
+	X86ContextDebugISA("  [0x%x] <- 0x%x", X86ContextEffectiveAddress(self), value);
 }
 
 
-void x86_isa_store_rm16(X86Context *ctx, unsigned short value)
+void X86ContextStoreRm16(X86Context *self, unsigned short value)
 {
-	if (ctx->inst.modrm_mod == 0x03)
+	if (self->inst.modrm_mod == 0x03)
 	{
-		x86_isa_store_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_ax, value);
+		X86ContextStoreReg(self, self->inst.modrm_rm + x86_inst_reg_ax, value);
 		return;
 	}
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 2, &value);
-	x86_isa_inst_debug("  [0x%x] <- 0x%x", x86_isa_effective_address(ctx), value);
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 2, &value);
+	X86ContextDebugISA("  [0x%x] <- 0x%x", X86ContextEffectiveAddress(self), value);
 }
 
 
-void x86_isa_store_rm32(X86Context *ctx, unsigned int value)
+void X86ContextStoreRm32(X86Context *self, unsigned int value)
 {
-	if (ctx->inst.modrm_mod == 0x03)
+	if (self->inst.modrm_mod == 0x03)
 	{
-		x86_isa_store_reg(ctx, ctx->inst.modrm_rm + x86_inst_reg_eax, value);
+		X86ContextStoreReg(self, self->inst.modrm_rm + x86_inst_reg_eax, value);
 		return;
 	}
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 4, &value);
-	x86_isa_inst_debug("  [0x%x] <- 0x%x", x86_isa_effective_address(ctx), value);
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 4, &value);
+	X86ContextDebugISA("  [0x%x] <- 0x%x", X86ContextEffectiveAddress(self), value);
 }
 
 
-void x86_isa_store_m64(X86Context *ctx, unsigned long long value)
+void X86ContextStoreM64(X86Context *self, unsigned long long value)
 {
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 8, &value);
-	x86_isa_inst_debug("  [0x%x] <- 0x%llx", x86_isa_effective_address(ctx), value);
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 8, &value);
+	X86ContextDebugISA("  [0x%x] <- 0x%llx", X86ContextEffectiveAddress(self), value);
 }
 
 
-
-
-/*
- * Floating-point
- */
-
-
-void x86_isa_load_fpu(X86Context *ctx, int index, unsigned char *value)
+void X86ContextLoadFpu(X86Context *self, int index, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 	int eff_index;
 
 	if (index < 0 || index >= 8)
 	{
-		x86_isa_error(ctx, "%s: invalid value for 'index'", __FUNCTION__);
+		X86ContextError(self, "%s: invalid value for 'index'", __FUNCTION__);
 		return;
 	}
 
 	eff_index = (regs->fpu_top + index) % 8;
 	if (!regs->fpu_stack[eff_index].valid)
 	{
-		x86_isa_error(ctx, "%s: invalid FPU stack entry", __FUNCTION__);
+		X86ContextError(self, "%s: invalid FPU stack entry", __FUNCTION__);
 		return;
 	}
 
 	memcpy(value, regs->fpu_stack[eff_index].value, 10);
-	if (debug_status(x86_isa_inst_debug_category))
-		x86_isa_inst_debug("  st(%d)=%g", index, x86_isa_extended_to_double(value));
+	if (debug_status(x86_context_isa_debug_category))
+		X86ContextDebugISA("  st(%d)=%g", index, X86ContextExtendedToDouble(value));
 }
 
 
-void x86_isa_store_fpu(X86Context *ctx, int index, unsigned char *value)
+void X86ContextStoreFpu(X86Context *self, int index, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	/* Check valid index */
 	if (index < 0 || index >= 8)
 	{
-		x86_isa_error(ctx, "%s: invalid value for 'index'", __FUNCTION__);
+		X86ContextError(self, "%s: invalid value for 'index'", __FUNCTION__);
 		return;
 	}
 
@@ -556,30 +563,30 @@ void x86_isa_store_fpu(X86Context *ctx, int index, unsigned char *value)
 	index = (regs->fpu_top + index) % 8;
 	if (!regs->fpu_stack[index].valid)
 	{
-		x86_isa_error(ctx, "%s: invalid FPU stack entry", __FUNCTION__);
+		X86ContextError(self, "%s: invalid FPU stack entry", __FUNCTION__);
 		return;
 	}
 
 	/* Store value */
 	memcpy(regs->fpu_stack[index].value, value, 10);
-	if (debug_status(x86_isa_inst_debug_category))
-		x86_isa_inst_debug("  st(%d) <- %g", index, x86_isa_extended_to_double(value));
+	if (debug_status(x86_context_isa_debug_category))
+		X86ContextDebugISA("  st(%d) <- %g", index, X86ContextExtendedToDouble(value));
 }
 
 
-void x86_isa_push_fpu(X86Context *ctx, unsigned char *value)
+void X86ContextPushFpu(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	/* Debug */
-	if (debug_status(x86_isa_inst_debug_category))
-		x86_isa_inst_debug("  st(0) <- %g (pushed)", x86_isa_extended_to_double(value));
+	if (debug_status(x86_context_isa_debug_category))
+		X86ContextDebugISA("  st(0) <- %g (pushed)", X86ContextExtendedToDouble(value));
 
 	/* Get stack top */
 	regs->fpu_top = (regs->fpu_top + 7) % 8;
 	if (regs->fpu_stack[regs->fpu_top].valid)
 	{
-		x86_isa_error(ctx, "%s: unexpected valid entry", __FUNCTION__);
+		X86ContextError(self, "%s: unexpected valid entry", __FUNCTION__);
 		return;
 	}
 
@@ -588,112 +595,80 @@ void x86_isa_push_fpu(X86Context *ctx, unsigned char *value)
 }
 
 
-void x86_isa_pop_fpu(X86Context *ctx, unsigned char *value)
+void X86ContextPopFpu(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	/* Check valid entry */
 	if (!regs->fpu_stack[regs->fpu_top].valid)
 	{
-		x86_isa_error(ctx, "%s: unexpected invalid entry", __FUNCTION__);
+		X86ContextError(self, "%s: unexpected invalid entry", __FUNCTION__);
 		return;
 	}
 
 	if (value)
 	{
 		memcpy(value, regs->fpu_stack[regs->fpu_top].value, 10);
-		if (debug_status(x86_isa_inst_debug_category))
-			x86_isa_inst_debug("  st(0) -> %g (popped)", x86_isa_extended_to_double(value));
+		if (debug_status(x86_context_isa_debug_category))
+			X86ContextDebugISA("  st(0) -> %g (popped)", X86ContextExtendedToDouble(value));
 	}
 	regs->fpu_stack[regs->fpu_top].valid = 0;
 	regs->fpu_top = (regs->fpu_top + 1) % 8;
 }
 
 
-double x86_isa_load_double(X86Context *ctx)
+double X86ContextLoadDouble(X86Context *self)
 {
 	double value;
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 8, &value);
-	x86_isa_inst_debug("  [0x%x]=%g", x86_isa_effective_address(ctx), value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 8, &value);
+	X86ContextDebugISA("  [0x%x]=%g", X86ContextEffectiveAddress(self), value);
 	return value;
 }
 
 
-void x86_isa_double_to_extended(double f, unsigned char *e)
+void X86ContextLoadExtended(X86Context *self, unsigned char *value)
 {
-	asm volatile ("fldl %1; fstpt %0\n\t"
-			: "=m" (*e) : "m" (f));
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 10, value);
 }
 
 
-double x86_isa_extended_to_double(unsigned char *e)
+void X86ContextStoreExtended(X86Context *self, unsigned char *value)
 {
-	double f;
-	asm volatile ("fldt %1; fstpl %0\n\t"
-			: "=m" (f) : "m" (*e));
-	return f;
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 10, value);
 }
 
 
-void x86_isa_float_to_extended(float f, unsigned char *e)
+void X86ContextStoreDouble(X86Context *self, double value)
 {
-	asm volatile ("flds %1; fstpt %0\n\t"
-			: "=m" (*e) : "m" (f));
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 8, &value);
+	X86ContextDebugISA("  [0x%x] <- %g", X86ContextEffectiveAddress(self), value);
 }
 
 
-float x86_isa_extended_to_float(unsigned char *e)
-{
-	float f;
-	asm volatile ("fldt %1; fstps %0\n\t"
-			: "=m" (f) : "m" (*e));
-	return f;
-}
-
-
-void x86_isa_load_extended(X86Context *ctx, unsigned char *value)
-{
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 10, value);
-}
-
-
-void x86_isa_store_extended(X86Context *ctx, unsigned char *value)
-{
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 10, value);
-}
-
-
-void x86_isa_store_double(X86Context *ctx, double value)
-{
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 8, &value);
-	x86_isa_inst_debug("  [0x%x] <- %g", x86_isa_effective_address(ctx), value);
-}
-
-
-float x86_isa_load_float(X86Context *ctx)
+float X86ContextLoadFloat(X86Context *self)
 {
 	float value;
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 4, &value);
-	x86_isa_inst_debug("  [0x%x]=%g", x86_isa_effective_address(ctx), (double) value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 4, &value);
+	X86ContextDebugISA("  [0x%x]=%g", X86ContextEffectiveAddress(self), (double) value);
 
 	return value;
 }
 
 
-void x86_isa_store_float(X86Context *ctx, float value)
+void X86ContextStoreFloat(X86Context *self, float value)
 {
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 4, &value);
-	x86_isa_inst_debug("  [0x%x] <- %g", x86_isa_effective_address(ctx), (double) value);
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 4, &value);
+	X86ContextDebugISA("  [0x%x] <- %g", X86ContextEffectiveAddress(self), (double) value);
 }
 
 
 /* Store the code bits (14, 10, 9, and 8) of the FPU state word into
  * the 'code' register. */
-void x86_isa_store_fpu_code(X86Context *ctx, unsigned short status)
+void X86ContextStoreFpuCode(X86Context *self, unsigned short status)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	regs->fpu_code = 0;
 	if (GETBIT32(status, 14))
@@ -705,14 +680,14 @@ void x86_isa_store_fpu_code(X86Context *ctx, unsigned short status)
 
 /* Read the state register, by building it from the 'top' and
  * 'code' fields. */
-unsigned short x86_isa_load_fpu_status(X86Context *ctx)
+unsigned short X86ContextLoadFpuStatus(X86Context *self)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 	unsigned short status = 0;
 
 	if (regs->fpu_top < 0 || regs->fpu_top >= 8)
 	{
-		x86_isa_error(ctx, "%s: wrong FPU stack top", __FUNCTION__);
+		X86ContextError(self, "%s: wrong FPU stack top", __FUNCTION__);
 		return 0;
 	}
 
@@ -724,13 +699,7 @@ unsigned short x86_isa_load_fpu_status(X86Context *ctx)
 }
 
 
-
-
-/*
- * XMM Registers
- */
-
-void x86_isa_dump_xmm(X86Context *ctx, unsigned char *value, FILE *f)
+void X86ContextDumpXMM(X86Context *self, unsigned char *value, FILE *f)
 {
 	union x86_inst_xmm_reg_t *xmm;
 	char *comma;
@@ -750,131 +719,110 @@ void x86_isa_dump_xmm(X86Context *ctx, unsigned char *value, FILE *f)
 }
 
 
-void x86_isa_load_xmm(X86Context *ctx, unsigned char *value)
+void X86ContextLoadXMM(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
-	memcpy(value, &regs->xmm[ctx->inst.modrm_reg], 16);
+	memcpy(value, &regs->xmm[self->inst.modrm_reg], 16);
 }
 
 
-void x86_isa_store_xmm(X86Context *ctx, unsigned char *value)
+void X86ContextStoreXMM(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
-	memcpy(&regs->xmm[ctx->inst.modrm_reg], value, 16);
+	memcpy(&regs->xmm[self->inst.modrm_reg], value, 16);
 }
 
 
 /* Load a 32-bit value into the lower 32 bits of 'value' */
-void x86_isa_load_xmmm32(X86Context *ctx, unsigned char *value)
+void X86ContextLoadXMMM32(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
-	if (ctx->inst.modrm_mod == 3)
+	if (self->inst.modrm_mod == 3)
 	{
-		memcpy(value, regs->xmm[ctx->inst.modrm_rm], 4);
+		memcpy(value, regs->xmm[self->inst.modrm_rm], 4);
 		return;
 	}
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 4, value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 4, value);
 }
 
 
 /* Store the low 32 bits of 'value' into an XMM register or memory */
-void x86_isa_store_xmmm32(X86Context *ctx, unsigned char *value)
+void X86ContextStoreXMMM32(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
-	if (ctx->inst.modrm_mod == 3)
+	if (self->inst.modrm_mod == 3)
 	{
-		memcpy(&regs->xmm[ctx->inst.modrm_rm], value, 4);
+		memcpy(&regs->xmm[self->inst.modrm_rm], value, 4);
 		return;
 	}
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 4, value);
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 4, value);
 }
 
 
 /* Load a 64-bit value into the LSB of 'value'.
  * If 'value' is a 128-bit array, its upper 64 bits will not be initialized. */
-void x86_isa_load_xmmm64(X86Context *ctx, unsigned char *value)
+void X86ContextLoadXMMM64(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
-	if (ctx->inst.modrm_mod == 0x03)
+	if (self->inst.modrm_mod == 0x03)
 	{
-		memcpy(value, &regs->xmm[ctx->inst.modrm_rm], 8);
+		memcpy(value, &regs->xmm[self->inst.modrm_rm], 8);
 		return;
 	}
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 8, value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 8, value);
 }
 
 
 /* Store the low 64 bits of 'value' into an XMM register or memory */
-void x86_isa_store_xmmm64(X86Context *ctx, unsigned char *value)
+void X86ContextStoreXMMM64(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
-	if (ctx->inst.modrm_mod == 0x03)
+	if (self->inst.modrm_mod == 0x03)
 	{
-		memcpy(&regs->xmm[ctx->inst.modrm_rm], value, 8);
+		memcpy(&regs->xmm[self->inst.modrm_rm], value, 8);
 		return;
 	}
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 8, value);
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 8, value);
 }
 
 
 /* Load a 128-bit value into XMM register */
-void x86_isa_load_xmmm128(X86Context *ctx, unsigned char *value)
+void X86ContextLoadXMMM128(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
-	if (ctx->inst.modrm_mod == 3)
+	if (self->inst.modrm_mod == 3)
 	{
-		memcpy(value, regs->xmm[ctx->inst.modrm_rm], 16);
+		memcpy(value, regs->xmm[self->inst.modrm_rm], 16);
 		return;
 	}
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 16, value);
+	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 16, value);
 }
 
 
 /* Store a 128-bit value into an XMM register of 128-bit memory location. */
-void x86_isa_store_xmmm128(X86Context *ctx, unsigned char *value)
+void X86ContextStoreXMMM128(X86Context *self, unsigned char *value)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
-	if (ctx->inst.modrm_mod == 3)
+	if (self->inst.modrm_mod == 3)
 	{
-		memcpy(&regs->xmm[ctx->inst.modrm_rm], value, 16);
+		memcpy(&regs->xmm[self->inst.modrm_rm], value, 16);
 		return;
 	}
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 16, value);
+	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 16, value);
 }
 
 
-
-
-/*
- * Public Functions
- */
-
-
-void x86_isa_init(void)
+void X86ContextExecuteInst(X86Context *self)
 {
-	x86_asm_init();
-	x86_uinst_init();
-}
-
-
-void x86_isa_done(void)
-{
-	x86_uinst_done();
-	x86_asm_done();
-}
-
-
-void x86_isa_execute_inst(X86Context *ctx)
-{
-	struct x86_regs_t *regs = ctx->regs;
+	struct x86_regs_t *regs = self->regs;
 
 	/* Clear existing list of microinstructions, though the architectural
 	 * simulator might have cleared it already.
@@ -882,33 +830,32 @@ void x86_isa_execute_inst(X86Context *ctx)
 	x86_uinst_clear();
 
 	/* Set last, current, and target instruction addresses */
-	ctx->last_eip = ctx->curr_eip;
-	ctx->curr_eip = regs->eip;
-	ctx->target_eip = 0;
+	self->last_eip = self->curr_eip;
+	self->curr_eip = regs->eip;
+	self->target_eip = 0;
 
 	/* Reset effective address */
-	ctx->effective_address = 0;
+	self->effective_address = 0;
 
 	/* Debug */
-	if (debug_status(x86_isa_inst_debug_category))
+	if (debug_status(x86_context_isa_debug_category))
 	{
-		x86_isa_inst_debug("%d %8lld %x: ", ctx->pid,
-			asEmu(x86_emu)->instructions, ctx->curr_eip);
-		x86_inst_dump(&ctx->inst, debug_file(x86_isa_inst_debug_category));
-		x86_isa_inst_debug("  (%d bytes)", ctx->inst.size);
+		X86ContextDebugISA("%d %8lld %x: ", self->pid,
+			asEmu(x86_emu)->instructions, self->curr_eip);
+		x86_inst_dump(&self->inst, debug_file(x86_context_isa_debug_category));
+		X86ContextDebugISA("  (%d bytes)", self->inst.size);
 	}
 
 	/* Call instruction emulation function */
-	regs->eip = regs->eip + ctx->inst.size;
-	if (ctx->inst.opcode)
-		x86_isa_inst_func[ctx->inst.opcode](ctx);
+	regs->eip = regs->eip + self->inst.size;
+	if (self->inst.opcode)
+		x86_context_inst_func[self->inst.opcode](self);
 	
 	/* Statistics */
-	x86_inst_freq[ctx->inst.opcode]++;
+	x86_inst_freq[self->inst.opcode]++;
 
 	/* Debug */
-	x86_isa_inst_debug("\n");
-	if (debug_status(x86_isa_call_debug_category))
-		x86_isa_debug_call(ctx);
+	X86ContextDebugISA("\n");
+	if (debug_status(x86_context_call_debug_category))
+		X86ContextDebugCallInst(self);
 }
-

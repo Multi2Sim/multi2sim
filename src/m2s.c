@@ -1963,9 +1963,9 @@ int main(int argc, char **argv)
 	opengl_debug_category = debug_new_category(opengl_debug_file_name);
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	cuda_debug_category = debug_new_category(cuda_debug_file_name);
-	x86_ctx_debug_category = debug_new_category(x86_ctx_debug_file_name);
-	x86_isa_inst_debug_category = debug_new_category(x86_isa_debug_file_name);
-	x86_isa_call_debug_category = debug_new_category(x86_call_debug_file_name);
+	x86_context_debug_category = debug_new_category(x86_ctx_debug_file_name);
+	x86_context_isa_debug_category = debug_new_category(x86_isa_debug_file_name);
+	x86_context_call_debug_category = debug_new_category(x86_call_debug_file_name);
 	x86_loader_debug_category = debug_new_category(x86_loader_debug_file_name);
 	x86_sys_debug_category = debug_new_category(x86_sys_debug_file_name);
 	x86_trace_cache_debug_category = debug_new_category(x86_trace_cache_debug_file_name);
