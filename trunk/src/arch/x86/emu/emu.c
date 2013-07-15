@@ -88,8 +88,8 @@ void X86EmuDestroy(X86Emu *self)
 
 	/* Finish all contexts */
 	for (ctx = self->context_list_head; ctx; ctx = ctx->context_list_next)
-		if (!x86_ctx_get_state(ctx, x86_ctx_finished))
-			x86_ctx_finish(ctx, 0);
+		if (!X86ContextGetState(ctx, X86ContextFinished))
+			X86ContextFinish(ctx, 0);
 
 	/* Free contexts */
 	while (self->context_list_head)
@@ -100,7 +100,7 @@ void X86EmuDestroy(X86Emu *self)
 
 void X86EmuDump(Object *self, FILE *f)
 {
-	X86Context *ctx;
+	X86Context *context;
 	X86Emu *emu = asX86Emu(self);
 
 	/* Call parent */
@@ -108,8 +108,8 @@ void X86EmuDump(Object *self, FILE *f)
 
 	/* More */
 	fprintf(f, "List of contexts (shows in any order)\n\n");
-	DOUBLE_LINKED_LIST_FOR_EACH(emu, context, ctx)
-		x86_ctx_dump(ctx, f);
+	DOUBLE_LINKED_LIST_FOR_EACH(emu, context, context)
+		X86ContextDump(asObject(context), f);
 }
 
 
@@ -151,7 +151,7 @@ static void *X86EmuHostThreadSuspend(void *arg)
 	pthread_detach(pthread_self());
 
 	/* Context suspended in 'poll' system call */
-	if (x86_ctx_get_state(ctx, x86_ctx_nanosleep))
+	if (X86ContextGetState(ctx, X86ContextNanosleep))
 	{
 		long long timeout;
 		
@@ -160,7 +160,7 @@ static void *X86EmuHostThreadSuspend(void *arg)
 		usleep(timeout);
 	
 	}
-	else if (x86_ctx_get_state(ctx, x86_ctx_poll))
+	else if (X86ContextGetState(ctx, X86ContextPoll))
 	{
 		struct x86_file_desc_t *fd;
 		struct pollfd host_fds;
@@ -186,7 +186,7 @@ static void *X86EmuHostThreadSuspend(void *arg)
 		if (err < 0)
 			fatal("syscall 'poll': unexpected error in host 'poll'");
 	}
-	else if (x86_ctx_get_state(ctx, x86_ctx_read))
+	else if (X86ContextGetState(ctx, X86ContextRead))
 	{
 		struct x86_file_desc_t *fd;
 		struct pollfd host_fds;
@@ -204,7 +204,7 @@ static void *X86EmuHostThreadSuspend(void *arg)
 		if (err < 0)
 			fatal("syscall 'read': unexpected error in host 'poll'");
 	}
-	else if (x86_ctx_get_state(ctx, x86_ctx_write))
+	else if (X86ContextGetState(ctx, X86ContextWrite))
 	{
 		struct x86_file_desc_t *fd;
 		struct pollfd host_fds;
@@ -296,7 +296,7 @@ void X86EmuProcessEvents(X86Emu *self)
 		next = ctx->suspended_list_next;
 
 		/* Context is suspended in 'nanosleep' system call. */
-		if (x86_ctx_get_state(ctx, x86_ctx_nanosleep))
+		if (X86ContextGetState(ctx, X86ContextNanosleep))
 		{
 			unsigned int rmtp = ctx->regs->ecx;
 			unsigned long long zero = 0;
@@ -314,7 +314,7 @@ void X86EmuProcessEvents(X86Emu *self)
 					mem_write(ctx->mem, rmtp, 8, &zero);
 				x86_sys_debug("syscall 'nanosleep' - continue (pid %d)\n", ctx->pid);
 				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_nanosleep);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextNanosleep);
 				continue;
 			}
 
@@ -331,7 +331,7 @@ void X86EmuProcessEvents(X86Emu *self)
 				}
 				ctx->regs->eax = -EINTR;
 				x86_sys_debug("syscall 'nanosleep' - interrupted by signal (pid %d)\n", ctx->pid);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_nanosleep);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextNanosleep);
 				continue;
 			}
 
@@ -343,7 +343,7 @@ void X86EmuProcessEvents(X86Emu *self)
 		}
 
 		/* Context suspended in 'rt_sigsuspend' system call */
-		if (x86_ctx_get_state(ctx, x86_ctx_sigsuspend))
+		if (X86ContextGetState(ctx, X86ContextSigsuspend))
 		{
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
@@ -351,7 +351,7 @@ void X86EmuProcessEvents(X86Emu *self)
 				x86_signal_handler_check_intr(ctx);
 				ctx->signal_mask_table->blocked = ctx->signal_mask_table->backup;
 				x86_sys_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_sigsuspend);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextSigsuspend);
 				continue;
 			}
 
@@ -361,7 +361,7 @@ void X86EmuProcessEvents(X86Emu *self)
 		}
 
 		/* Context suspended in 'poll' system call */
-		if (x86_ctx_get_state(ctx, x86_ctx_poll))
+		if (X86ContextGetState(ctx, X86ContextPoll))
 		{
 			uint32_t prevents = ctx->regs->ebx + 6;
 			uint16_t revents = 0;
@@ -383,7 +383,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			{
 				x86_signal_handler_check_intr(ctx);
 				x86_sys_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_poll);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextPoll);
 				continue;
 			}
 
@@ -402,7 +402,7 @@ void X86EmuProcessEvents(X86Emu *self)
 				ctx->regs->eax = 1;
 				x86_sys_debug("syscall poll - continue (pid %d) - POLLOUT occurred in file\n", ctx->pid);
 				x86_sys_debug("  retval=%d\n", ctx->regs->eax);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_poll);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextPoll);
 				continue;
 			}
 
@@ -414,7 +414,7 @@ void X86EmuProcessEvents(X86Emu *self)
 				ctx->regs->eax = 1;
 				x86_sys_debug("syscall poll - continue (pid %d) - POLLIN occurred in file\n", ctx->pid);
 				x86_sys_debug("  retval=%d\n", ctx->regs->eax);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_poll);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextPoll);
 				continue;
 			}
 
@@ -425,7 +425,7 @@ void X86EmuProcessEvents(X86Emu *self)
 				mem_write(ctx->mem, prevents, 2, &revents);
 				x86_sys_debug("syscall poll - continue (pid %d) - time out\n", ctx->pid);
 				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_poll);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextPoll);
 				continue;
 			}
 
@@ -438,7 +438,7 @@ void X86EmuProcessEvents(X86Emu *self)
 
 
 		/* Context suspended in a 'write' system call  */
-		if (x86_ctx_get_state(ctx, x86_ctx_write))
+		if (X86ContextGetState(ctx, X86ContextWrite))
 		{
 			struct x86_file_desc_t *fd;
 			int count, err;
@@ -455,7 +455,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			{
 				x86_signal_handler_check_intr(ctx);
 				x86_sys_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_write);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextWrite);
 				continue;
 			}
 
@@ -487,7 +487,7 @@ void X86EmuProcessEvents(X86Emu *self)
 
 				x86_sys_debug("syscall write - continue (pid %d)\n", ctx->pid);
 				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_write);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextWrite);
 				continue;
 			}
 
@@ -499,7 +499,7 @@ void X86EmuProcessEvents(X86Emu *self)
 		}
 
 		/* Context suspended in 'read' system call */
-		if (x86_ctx_get_state(ctx, x86_ctx_read))
+		if (X86ContextGetState(ctx, X86ContextRead))
 		{
 			struct x86_file_desc_t *fd;
 			uint32_t pbuf;
@@ -516,7 +516,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			{
 				x86_signal_handler_check_intr(ctx);
 				x86_sys_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_read);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextRead);
 				continue;
 			}
 
@@ -549,7 +549,7 @@ void X86EmuProcessEvents(X86Emu *self)
 
 				x86_sys_debug("syscall 'read' - continue (pid %d)\n", ctx->pid);
 				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_read);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextRead);
 				continue;
 			}
 
@@ -561,13 +561,13 @@ void X86EmuProcessEvents(X86Emu *self)
 		}
 
 		/* Context suspended in a 'waitpid' system call */
-		if (x86_ctx_get_state(ctx, x86_ctx_waitpid))
+		if (X86ContextGetState(ctx, X86ContextWaitpid))
 		{
 			X86Context *child;
 			uint32_t pstatus;
 
 			/* A zombie child is available to 'waitpid' it */
-			child = x86_ctx_get_zombie(ctx, ctx->wakeup_pid);
+			child = X86ContextGetZombie(ctx, ctx->wakeup_pid);
 			if (child)
 			{
 				/* Continue with 'waitpid' system call */
@@ -575,11 +575,11 @@ void X86EmuProcessEvents(X86Emu *self)
 				ctx->regs->eax = child->pid;
 				if (pstatus)
 					mem_write(ctx->mem, pstatus, 4, &child->exit_code);
-				x86_ctx_set_state(child, x86_ctx_finished);
+				X86ContextSetState(child, X86ContextFinished);
 
 				x86_sys_debug("syscall waitpid - continue (pid %d)\n", ctx->pid);
 				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_waitpid);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextWaitpid);
 				continue;
 			}
 
@@ -593,13 +593,13 @@ void X86EmuProcessEvents(X86Emu *self)
 		 * calls started using it. It is nicer, since it allows for a check of wake up
 		 * conditions together with the system call itself, without having distributed
 		 * code for the implementation of a system call (e.g. 'read'). */
-		if (x86_ctx_get_state(ctx, x86_ctx_callback))
+		if (X86ContextGetState(ctx, X86ContextCallback))
 		{
 			assert(ctx->can_wakeup_callback_func);
 			if (ctx->can_wakeup_callback_func(ctx, ctx->can_wakeup_callback_data))
 			{
 				/* Set context status to 'running' again. */
-				x86_ctx_clear_state(ctx, x86_ctx_suspended | x86_ctx_callback);
+				X86ContextClearState(ctx, X86ContextSuspended | X86ContextCallback);
 
 				/* Call wake up function */
 				if (ctx->wakeup_callback_func)
@@ -642,7 +642,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			 * The target process might be suspended, so the host thread is canceled, and a new
 			 * call to 'X86EmuProcessEvents' is scheduled. Since 'ke_process_events_mutex' is
 			 * already locked, the thread-unsafe version of 'x86_ctx_host_thread_suspend_cancel' is used. */
-			__x86_ctx_host_thread_suspend_cancel(ctx);
+			X86ContextHostThreadSuspendCancelUnsafe(ctx);
 			self->process_events_force = 1;
 			x86_sigset_add(&ctx->signal_mask_table->pending, sig[i]);
 
@@ -707,7 +707,7 @@ int X86EmuRun(Emu *self)
 
 	/* Run an instruction from every running process */
 	for (ctx = emu->running_list_head; ctx; ctx = ctx->running_list_next)
-		x86_ctx_execute(ctx);
+		X86ContextExecute(ctx);
 
 	/* Free finished contexts */
 	while (emu->finished_list_head)
@@ -718,6 +718,18 @@ int X86EmuRun(Emu *self)
 
 	/* Still running */
 	return TRUE;
+}
+
+
+/* Search a context based on its PID */
+X86Context *X86EmuGetContext(X86Emu *self, int pid)
+{
+	X86Context *context;
+
+	context = self->context_list_head;
+	while (context && context->pid != pid)
+		context = context->context_list_next;
+	return context;
 }
 
 

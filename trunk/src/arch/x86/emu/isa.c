@@ -68,7 +68,7 @@ static x86_isa_inst_func_t x86_isa_inst_func[x86_inst_opcode_count] =
 void x86_isa_mem_read(X86Context *ctx, unsigned int addr, int size, void *buf)
 {
 	/* Speculative mode read */
-	if (ctx->state & x86_ctx_spec_mode)
+	if (ctx->state & X86ContextSpecMode)
 	{
 		spec_mem_read(ctx->spec_mem, addr, size, buf);
 		return;
@@ -82,7 +82,7 @@ void x86_isa_mem_read(X86Context *ctx, unsigned int addr, int size, void *buf)
 void x86_isa_mem_write(X86Context *ctx, unsigned int addr, int size, void *buf)
 {
 	/* Speculative mode write */
-	if (ctx->state & x86_ctx_spec_mode)
+	if (ctx->state & X86ContextSpecMode)
 	{
 		spec_mem_write(ctx->spec_mem, addr, size, buf);
 		return;
@@ -99,7 +99,7 @@ void x86_isa_error(X86Context *ctx, char *fmt, ...)
 	va_start(va, fmt);
 
 	/* No error shown on speculative mode */
-	if (ctx->state & x86_ctx_spec_mode)
+	if (ctx->state & X86ContextSpecMode)
 		return;
 
 	/* Error */
@@ -171,7 +171,7 @@ static void x86_isa_debug_call(X86Context *ctx)
 	int i;
 
 	/* Do nothing on speculative mode */
-	if (ctx->state & x86_ctx_spec_mode)
+	if (ctx->state & X86ContextSpecMode)
 		return;
 
 	/* Call or return. Otherwise, exit */

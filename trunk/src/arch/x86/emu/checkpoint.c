@@ -508,7 +508,7 @@ static void save_thread(X86Context *ctx)
 {
 	cfg_push_unique();
 
-	if (x86_ctx_get_state(ctx, x86_ctx_spec_mode))
+	if (X86ContextGetState(ctx, X86ContextSpecMode))
 	{
 		save_regs(ctx->backup_regs);
 	}
