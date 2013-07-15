@@ -299,6 +299,7 @@ struct str_map_t frm_gpu_register_alloc_granularity_map =
 enum frm_gpu_register_alloc_granularity_t frm_gpu_register_alloc_granularity;
 
 /* Device parameters */
+int frm_gpu_frequency = 1000;
 int frm_gpu_num_sms = 1;
 int frm_gpu_num_warp_inst_queues = 2;
 
@@ -559,10 +560,11 @@ void frm_gpu_read_config(void)
 	/* Device */
 	section = "Device";
 
-	arch_fermi->frequency = config_read_int(gpu_config, section, "Frequency", 1000);
-	if (!IN_RANGE(arch_fermi->frequency, 1, ESIM_MAX_FREQUENCY))
+	frm_gpu_frequency = config_read_int(gpu_config, section, "Frequency", frm_gpu_frequency);
+	if (!IN_RANGE(frm_gpu_frequency, 1, ESIM_MAX_FREQUENCY))
 		fatal("%s: invalid value for 'Frequency'.\n%s",
 				frm_gpu_config_file_name, err_note);
+
 	frm_gpu_num_sms = config_read_int(gpu_config, section, "NumSMs", frm_gpu_num_sms);
 	if (frm_gpu_num_sms < 1)
 		fatal("%s: invalid value for 'NumSMs'.\n%s", 
@@ -1060,6 +1062,10 @@ void FrmGpuCreate(FrmGpu *self)
 
 	/* Parent */
 	TimingCreate(asTiming(self));
+
+	/* Frequency */
+	asTiming(self)->frequency = frm_gpu_frequency;
+	asTiming(self)->frequency_domain = esim_new_domain(frm_gpu_frequency);
 
 	/* Initialize SMs */
 	self->sms = xcalloc(frm_gpu_num_sms, sizeof(struct frm_sm_t *));

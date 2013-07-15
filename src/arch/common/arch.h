@@ -71,10 +71,6 @@ struct arch_t
 	/* Simulation kind - must be assigned externally */
 	enum arch_sim_kind_t sim_kind;
 
-	/* Frequency and frequency domain, as returned by 'esim_new_domain()'. */
-	int frequency;
-	int domain_index;
-
 	/* Flag indicating whether a simulation loop for this architecture
 	 * performed a useful work. This flag is updated with the return value
 	 * of functions 'emu_run_func' and 'timing_run_func'. */

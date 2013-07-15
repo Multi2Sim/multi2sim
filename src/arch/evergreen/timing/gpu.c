@@ -145,6 +145,8 @@ int evg_gpu_num_stream_cores = 16;
 int evg_gpu_num_registers = 16384;
 int evg_gpu_register_alloc_size = 32;
 
+int evg_gpu_frequency = 700;
+
 struct str_map_t evg_gpu_register_alloc_granularity_map =
 {
 	2, {
@@ -190,7 +192,7 @@ static void evg_config_dump(FILE *f)
 {
 	/* Device configuration */
 	fprintf(f, "[ Config.Device ]\n");
-	fprintf(f, "Frequency = %d\n", arch_evergreen->frequency);
+	fprintf(f, "Frequency = %d\n", evg_gpu_frequency);
 	fprintf(f, "NumComputeUnits = %d\n", evg_gpu_num_compute_units);
 	fprintf(f, "NumStreamCores = %d\n", evg_gpu_num_stream_cores);
 	fprintf(f, "NumRegisters = %d\n", evg_gpu_num_registers);
@@ -305,8 +307,9 @@ void evg_gpu_read_config(void)
 	/* Device */
 	section = "Device";
 
-	arch_evergreen->frequency = config_read_int(gpu_config, section, "Frequency", 700);
-	if (!IN_RANGE(arch_evergreen->frequency, 1, ESIM_MAX_FREQUENCY))
+	/* Frequency */
+	evg_gpu_frequency = config_read_int(gpu_config, section, "Frequency", evg_gpu_frequency);
+	if (!IN_RANGE(evg_gpu_frequency, 1, ESIM_MAX_FREQUENCY))
 		fatal("%s: invalid value for 'Frequency'.\n%s",
 				evg_gpu_config_file_name, err_note);
 
@@ -625,6 +628,10 @@ void EvgGpuCreate(EvgGpu *self)
 
 	/* Parent */
 	TimingCreate(asTiming(self));
+
+	/* Frequency */
+	asTiming(self)->frequency = evg_gpu_frequency;
+	asTiming(self)->frequency_domain = esim_new_domain(evg_gpu_frequency);
 
 	/* Initialize */
 	self->trash_uop_list = linked_list_create();
