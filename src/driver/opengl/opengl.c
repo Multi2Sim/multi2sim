@@ -671,24 +671,30 @@ static int opengl_abi_si_shader_free_impl(X86Context *ctx)
 static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	struct opengl_si_shader_t *shdr;
 	struct list_t *input_list;
 	struct si_input_t *input;
 
+	unsigned int args[6];
 	unsigned int shader_id;
 	unsigned int device_ptr;
 	unsigned int num_elems;
+	unsigned int data_type;
 	unsigned int size;
 	unsigned int index;
 
 	/* Arguments */
-	shader_id = regs->ecx;
-	device_ptr = regs->edx;
-	num_elems = regs->esi;
-	size = regs->edi;
-	index = regs->ebp;
-	opengl_debug("\tshader_id = %d, device_ptr = 0x%d, num_elems = %d, size = %d, index = %d\n",
-		shader_id, device_ptr, num_elems, size, index);
+	mem_read(mem, regs->ecx, 6 * sizeof(unsigned int), args);
+	shader_id = args[0];
+	device_ptr = args[1];
+	num_elems = args[2];
+	data_type = args[3];
+	size = args[4];
+	index = args[5];
+	opengl_debug("\tshader_id = %d, device_ptr = 0x%d, num_elems = %d, type = %d, size = %d, index = %d\n",
+		shader_id, device_ptr, num_elems, data_type, size, index);
 
 	/* Shader has the indices of vertex attribute array in its encoding dictionary */
 	shdr = list_get(opengl_si_shader_list, shader_id);
@@ -700,6 +706,7 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 	{
 		input->set = 1;
 		input->num_elems = num_elems;
+		input->type = si_input_get_type(data_type);
 		input->device_ptr = device_ptr;
 		input->size = size;
 	}

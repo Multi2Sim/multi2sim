@@ -23,6 +23,7 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/string.h>
+#include <runtime/include/GL/gl.h>
 
 #include "input.h"
 
@@ -52,6 +53,44 @@ void si_input_set_usage_index(struct si_input_t *input, unsigned int usage_index
 {
 	if (input)
 		input->usage_index = usage_index;
+}
+
+unsigned int si_input_get_type(unsigned int gl_data_type)
+{
+	switch(gl_data_type)
+	{
+
+	case GL_BYTE:
+		return si_input_byte;
+	case GL_UNSIGNED_BYTE:
+		return si_input_ubyte;
+	case GL_SHORT:
+		return si_input_short;
+	case GL_UNSIGNED_SHORT:
+		return si_input_ushort;
+	case GL_INT:
+		return si_input_int;
+	case GL_UNSIGNED_INT:
+		return si_input_uint;
+	case GL_HALF_FLOAT:
+		return si_input_hfloat;
+	case GL_FLOAT:
+		return si_input_float;
+	case GL_DOUBLE:
+		return si_input_double;
+	case GL_FIXED:
+		return si_input_fixed;
+	case GL_INT_2_10_10_10_REV:
+		return si_input_int_2_10_10_10_rev;
+	case GL_UNSIGNED_INT_2_10_10_10_REV:
+		return si_input_uint_2_10_10_10_rev;
+	default:
+		fatal("Unrecognized GLenum type=%x",gl_data_type);
+		break;
+	}
+
+	/* Return */
+	return 0;
 }
 
 /* Infer inputs size from its data type */
