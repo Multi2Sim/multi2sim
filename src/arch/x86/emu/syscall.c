@@ -205,55 +205,7 @@ static struct str_map_t x86_sys_error_code_map =
 };
 
 
-void x86_sys_init(void)
-{
-	/* Host constants for 'errno' must match */
-	M2S_HOST_GUEST_MATCH(EPERM, SIM_EPERM);
-	M2S_HOST_GUEST_MATCH(ENOENT, SIM_ENOENT);
-	M2S_HOST_GUEST_MATCH(ESRCH, SIM_ESRCH);
-	M2S_HOST_GUEST_MATCH(EINTR, SIM_EINTR);
-	M2S_HOST_GUEST_MATCH(EIO, SIM_EIO);
-	M2S_HOST_GUEST_MATCH(ENXIO, SIM_ENXIO);
-	M2S_HOST_GUEST_MATCH(E2BIG, SIM_E2BIG);
-	M2S_HOST_GUEST_MATCH(ENOEXEC, SIM_ENOEXEC);
-	M2S_HOST_GUEST_MATCH(EBADF, SIM_EBADF);
-	M2S_HOST_GUEST_MATCH(ECHILD, SIM_ECHILD);
-	M2S_HOST_GUEST_MATCH(EAGAIN, SIM_EAGAIN);
-	M2S_HOST_GUEST_MATCH(ENOMEM, SIM_ENOMEM);
-	M2S_HOST_GUEST_MATCH(EACCES, SIM_EACCES);
-	M2S_HOST_GUEST_MATCH(EFAULT, SIM_EFAULT);
-	M2S_HOST_GUEST_MATCH(ENOTBLK, SIM_ENOTBLK);
-	M2S_HOST_GUEST_MATCH(EBUSY, SIM_EBUSY);
-	M2S_HOST_GUEST_MATCH(EEXIST, SIM_EEXIST);
-	M2S_HOST_GUEST_MATCH(EXDEV, SIM_EXDEV);
-	M2S_HOST_GUEST_MATCH(ENODEV, SIM_ENODEV);
-	M2S_HOST_GUEST_MATCH(ENOTDIR, SIM_ENOTDIR);
-	M2S_HOST_GUEST_MATCH(EISDIR, SIM_EISDIR);
-	M2S_HOST_GUEST_MATCH(EINVAL, SIM_EINVAL);
-	M2S_HOST_GUEST_MATCH(ENFILE, SIM_ENFILE);
-	M2S_HOST_GUEST_MATCH(EMFILE, SIM_EMFILE);
-	M2S_HOST_GUEST_MATCH(ENOTTY, SIM_ENOTTY);
-	M2S_HOST_GUEST_MATCH(ETXTBSY, SIM_ETXTBSY);
-	M2S_HOST_GUEST_MATCH(EFBIG, SIM_EFBIG);
-	M2S_HOST_GUEST_MATCH(ENOSPC, SIM_ENOSPC);
-	M2S_HOST_GUEST_MATCH(ESPIPE, SIM_ESPIPE);
-	M2S_HOST_GUEST_MATCH(EROFS, SIM_EROFS);
-	M2S_HOST_GUEST_MATCH(EMLINK, SIM_EMLINK);
-	M2S_HOST_GUEST_MATCH(EPIPE, SIM_EPIPE);
-	M2S_HOST_GUEST_MATCH(EDOM, SIM_EDOM);
-	M2S_HOST_GUEST_MATCH(ERANGE, SIM_ERANGE);
-}
-
-
-void x86_sys_done(void)
-{
-	/* Print summary */
-	if (debug_status(x86_sys_debug_category))
-		x86_sys_dump(debug_file(x86_sys_debug_category));
-}
-
-
-void x86_sys_dump(FILE *f)
+void x86_sys_dump_stats(FILE *f)
 {
 	int i;
 
@@ -273,9 +225,11 @@ void x86_sys_dump(FILE *f)
 }
 
 
-void x86_sys_call(X86Context *ctx)
+void X86ContextSyscall(X86Context *self)
 {
-	struct x86_regs_t *regs = ctx->regs;
+	X86Emu *emu = self->emu;
+
+	struct x86_regs_t *regs = self->regs;
 	struct runtime_t *runtime;
 
 	int code;
@@ -295,10 +249,10 @@ void x86_sys_call(X86Context *ctx)
 
 		/* Debug */
 		x86_sys_debug("%s runtime ABI call (code %d, inst %lld, pid %d)\n",
-			runtime->name, code, asEmu(x86_emu)->instructions, ctx->pid);
+			runtime->name, code, asEmu(emu)->instructions, self->pid);
 
 		/* Run runtime ABI call */
-		err = runtime_abi_call(runtime, ctx);
+		err = runtime_abi_call(runtime, self);
 
 		/* Set return value in 'eax'. */
 		regs->eax = err;
@@ -313,16 +267,16 @@ void x86_sys_call(X86Context *ctx)
 
 	/* Debug */
 	x86_sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
-		x86_sys_call_name[code], code, asEmu(x86_emu)->instructions, ctx->pid);
+		x86_sys_call_name[code], code, asEmu(emu)->instructions, self->pid);
 	X86ContextDebugCall("system call '%s' (code %d, inst %lld, pid %d)\n",
-		x86_sys_call_name[code], code, asEmu(x86_emu)->instructions, ctx->pid);
+		x86_sys_call_name[code], code, asEmu(emu)->instructions, self->pid);
 
 	/* Perform system call */
-	err = x86_sys_call_func[code](ctx);
+	err = x86_sys_call_func[code](self);
 
 	/* Set return value in 'eax', except for 'sigreturn' system call. Also, if the
 	 * context got suspended, the wake up routine will set the return value. */
-	if (code != x86_sys_code_sigreturn && !X86ContextGetState(ctx, X86ContextSuspended))
+	if (code != x86_sys_code_sigreturn && !X86ContextGetState(self, X86ContextSuspended))
 		regs->eax = err;
 
 	/* Debug */
@@ -402,6 +356,8 @@ static int x86_sys_close_impl(X86Context *ctx)
 
 static int x86_sys_read_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -467,7 +423,7 @@ static int x86_sys_read_impl(X86Context *ctx)
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = 1;  /* POLLIN */
 	X86ContextSetState(ctx, X86ContextSuspended | X86ContextRead);
-	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
 
 	/* Free allocated buffer. Return value doesn't matter,
 	 * it will be overwritten when context wakes up from blocking call. */
@@ -484,6 +440,8 @@ static int x86_sys_read_impl(X86Context *ctx)
 
 static int x86_sys_write_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -540,7 +498,7 @@ static int x86_sys_write_impl(X86Context *ctx)
 	x86_sys_debug("  blocking write - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
 	X86ContextSetState(ctx, X86ContextSuspended | X86ContextWrite);
-	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
 
 	/* Return value doesn't matter here. It will be overwritten when the
 	 * context wakes up after blocking call. */
@@ -1222,6 +1180,8 @@ static int x86_sys_access_impl(X86Context *ctx)
 
 static int x86_sys_kill_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	X86Context *temp_ctx;
 
@@ -1236,15 +1196,15 @@ static int x86_sys_kill_impl(X86Context *ctx)
 
 	/* Find context. We assume program correctness, so fatal if context is
 	 * not found, rather than return error code. */
-	temp_ctx = X86EmuGetContext(x86_emu, pid);
+	temp_ctx = X86EmuGetContext(emu, pid);
 	if (!temp_ctx)
 		fatal("%s: invalid pid %d", __FUNCTION__, pid);
 
 	/* Send signal */
 	x86_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
 	X86ContextHostThreadSuspendCancel(temp_ctx);
-	X86EmuProcessEventsSchedule(x86_emu);
-	X86EmuProcessEvents(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
+	X86EmuProcessEvents(emu);
 
 	/* Success */
 	return 0;
@@ -2573,6 +2533,8 @@ static void sim_itimerval_dump(struct sim_itimerval *sim_itimerval)
 
 static int x86_sys_setitimer_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -2606,7 +2568,7 @@ static int x86_sys_setitimer_impl(X86Context *ctx)
 	if (which >= 3)
 		fatal("%s: invalid value for 'which'", __FUNCTION__);
 
-	/* Set 'itimer_value' (x86_emu_timer domain) and 'itimer_interval' (usec) */
+	/* Set 'itimer_value' and 'itimer_interval' (usec) */
 	ctx->itimer_value[which] = now + itimerval.it_value.tv_sec * 1000000
 		+ itimerval.it_value.tv_usec;
 	ctx->itimer_interval[which] = itimerval.it_interval.tv_sec * 1000000
@@ -2615,7 +2577,7 @@ static int x86_sys_setitimer_impl(X86Context *ctx)
 	/* New timer inserted, so interrupt current 'ke_host_thread_timer'
 	 * waiting for the next timer expiration. */
 	X86ContextHostThreadTimerCancel(ctx);
-	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
 
 	/* Return */
 	return 0;
@@ -2675,10 +2637,12 @@ static int x86_sys_getitimer_impl(X86Context *ctx)
 
 static int x86_sys_sigreturn_impl(X86Context *ctx)
 {
-	x86_signal_handler_return(ctx);
+	X86Emu *emu = ctx->emu;
 
-	X86EmuProcessEventsSchedule(x86_emu);
-	X86EmuProcessEvents(x86_emu);
+	X86ContextReturnFromSignalHandler(ctx);
+
+	X86EmuProcessEventsSchedule(emu);
+	X86EmuProcessEvents(emu);
 
 	return 0;
 }
@@ -3660,6 +3624,8 @@ static int x86_sys_sched_get_priority_min_impl(X86Context *ctx)
 
 static int x86_sys_nanosleep_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -3688,7 +3654,7 @@ static int x86_sys_nanosleep_impl(X86Context *ctx)
 	/* Suspend process */
 	ctx->wakeup_time = now + total;
 	X86ContextSetState(ctx, X86ContextSuspended | X86ContextNanosleep);
-	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
 	return 0;
 }
 
@@ -3899,6 +3865,8 @@ struct sim_pollfd_t
 
 static int x86_sys_poll_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -4001,7 +3969,7 @@ static int x86_sys_poll_impl(X86Context *ctx)
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = guest_fds.events;
 	X86ContextSetState(ctx, X86ContextSuspended | X86ContextPoll);
-	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
 	return 0;
 }
 
@@ -4086,6 +4054,8 @@ static struct str_map_t sys_sigprocmask_how_map =
 
 static int x86_sys_rt_sigprocmask_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -4151,8 +4121,8 @@ static int x86_sys_rt_sigprocmask_impl(X86Context *ctx)
 
 	/* A change in the signal mask can cause pending signals to be
 	 * able to execute, so check this. */
-	X86EmuProcessEventsSchedule(x86_emu);
-	X86EmuProcessEvents(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
+	X86EmuProcessEvents(emu);
 
 	return 0;
 }
@@ -4166,6 +4136,8 @@ static int x86_sys_rt_sigprocmask_impl(X86Context *ctx)
 
 static int x86_sys_rt_sigsuspend_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 
@@ -4198,8 +4170,8 @@ static int x86_sys_rt_sigsuspend_impl(X86Context *ctx)
 	X86ContextSetState(ctx, X86ContextSuspended | X86ContextSigsuspend);
 
 	/* New signal mask may cause new events */
-	X86EmuProcessEventsSchedule(x86_emu);
-	X86EmuProcessEvents(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
+	X86EmuProcessEvents(emu);
 	return 0;
 }
 
@@ -4948,6 +4920,8 @@ static struct str_map_t sys_futex_cmd_map =
 
 static int x86_sys_futex_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	/* Prototype: sys_futex(void *addr1, int op, int val1, struct timespec *timeout,
 	 *   void *addr2, int val3); */
 
@@ -5019,7 +4993,7 @@ static int x86_sys_futex_impl(X86Context *ctx)
 		/* Suspend thread in the futex. */
 		ctx->wakeup_futex = addr1;
 		ctx->wakeup_futex_bitset = bitset;
-		ctx->wakeup_futex_sleep = ++x86_emu->futex_sleep_count;
+		ctx->wakeup_futex_sleep = ++emu->futex_sleep_count;
 		X86ContextSetState(ctx, X86ContextSuspended | X86ContextFutex);
 		return 0;
 	}
@@ -5054,7 +5028,7 @@ static int x86_sys_futex_impl(X86Context *ctx)
 		x86_sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, ret);
 
 		/* The rest of the threads waiting in futex 'addr1' are requeued into futex 'addr2' */
-		for (temp_ctx = x86_emu->suspended_list_head; temp_ctx;
+		for (temp_ctx = emu->suspended_list_head; temp_ctx;
 				temp_ctx = temp_ctx->suspended_list_next)
 		{
 			if (X86ContextGetState(temp_ctx, X86ContextFutex)
@@ -5161,6 +5135,8 @@ static int x86_sys_futex_impl(X86Context *ctx)
 
 static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 	X86Context *target_ctx;
@@ -5203,7 +5179,7 @@ static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 
 	/* Find context associated with 'pid'. If the value given in 'pid' is
 	 * zero, the current context is used. */
-	target_ctx = pid ? X86EmuGetContext(x86_emu, pid) : ctx;
+	target_ctx = pid ? X86EmuGetContext(emu, pid) : ctx;
 	if (!target_ctx)
 	{
 		err = -ESRCH;
@@ -5239,7 +5215,7 @@ static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 	/* Changing the context affinity might force it to be evicted and unmapped
 	 * from the current node where it is running (timing simulation only). We
 	 * need to force a call to the scheduler. */
-	x86_emu->schedule_signal = 1;
+	emu->schedule_signal = 1;
 
 out:
 	/* Success */
@@ -5256,6 +5232,8 @@ out:
 
 static int x86_sys_sched_getaffinity_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
 	X86Context *target_ctx;
@@ -5284,7 +5262,7 @@ static int x86_sys_sched_getaffinity_impl(X86Context *ctx)
 
 	/* Find context associated with 'pid'. If the value given in 'pid' is
 	 * zero, the current context is used. */
-	target_ctx = pid ? X86EmuGetContext(x86_emu, pid) : ctx;
+	target_ctx = pid ? X86EmuGetContext(emu, pid) : ctx;
 	if (!target_ctx)
 		return -ESRCH;
 
@@ -5564,6 +5542,8 @@ static int x86_sys_statfs64_impl(X86Context *ctx)
 
 static int x86_sys_tgkill_impl(X86Context *ctx)
 {
+	X86Emu *emu = ctx->emu;
+
 	struct x86_regs_t *regs = ctx->regs;
 
 	int tgid;
@@ -5585,15 +5565,15 @@ static int x86_sys_tgkill_impl(X86Context *ctx)
 			__FUNCTION__, err_x86_sys_note);
 
 	/* Find context referred by pid. */
-	temp_ctx = X86EmuGetContext(x86_emu, pid);
+	temp_ctx = X86EmuGetContext(emu, pid);
 	if (!temp_ctx)
 		fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
 
 	/* Send signal */
 	x86_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
 	X86ContextHostThreadSuspendCancel(temp_ctx);
-	X86EmuProcessEventsSchedule(x86_emu);
-	X86EmuProcessEvents(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
+	X86EmuProcessEvents(emu);
 	return 0;
 }
 
@@ -5716,9 +5696,10 @@ static int x86_sys_set_robust_list_impl(X86Context *ctx)
 #define SYS_NOT_IMPL(NAME) \
 	static int x86_sys_##NAME##_impl(X86Context *ctx) \
 	{ \
+		X86Emu *emu = ctx->emu; \
 		struct x86_regs_t *regs = ctx->regs; \
 		fatal("%s: system call not implemented (code %d, inst %lld, pid %d).\n%s", \
-			__FUNCTION__, regs->eax, asEmu(x86_emu)->instructions, ctx->pid, \
+			__FUNCTION__, regs->eax, asEmu(emu)->instructions, ctx->pid, \
 			err_x86_sys_note); \
 		return 0; \
 	}

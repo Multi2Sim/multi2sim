@@ -1069,7 +1069,7 @@ void x86_isa_int_imm8_impl(X86Context *ctx)
 	/* Do system call if not in speculative mode */
 	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
-		x86_sys_call(ctx);
+		X86ContextSyscall(ctx);
 
 	x86_uinst_new(ctx, x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
 }

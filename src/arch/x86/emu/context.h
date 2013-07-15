@@ -138,7 +138,7 @@ CLASS_BEGIN(X86Context, Object)
 	/* The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
 	 * is launched for this context (by caller).
 	 * It is clear when the context finished (by the host thread).
-	 * It should be accessed safely by locking global mutex 'x86_emu->process_events_mutex'. */
+	 * It should be accessed safely by locking global mutex 'process_events_mutex'. */
 	pthread_t host_thread_suspend;  /* Thread */
 	int host_thread_suspend_active;  /* Thread-spawned flag */
 
@@ -158,7 +158,7 @@ CLASS_BEGIN(X86Context, Object)
 	int wakeup_pid;  /* Pid waiting for (waitpid) */
 	unsigned int wakeup_futex;  /* Address of futex where context is suspended */
 	unsigned int wakeup_futex_bitset;  /* Bit mask for selective futex wakeup */
-	long long wakeup_futex_sleep;  /* Assignment from x86_emu->futex_sleep_count */
+	long long wakeup_futex_sleep;  /* Assignment from futex_sleep_count */
 
 	/* Generic callback function (and data to pass to it) to call when a
 	 * context gets suspended in a system call to check whether it should be
@@ -241,12 +241,22 @@ void X86ContextExitRobustList(X86Context *self);
 void X86ContextProcSelfMaps(X86Context *self, char *path, int size);
 void X86ContextProcCPUInfo(X86Context *self, char *path, int size);
 
+/* Function that suspends the host thread waiting for an event to occur.
+ * When the event finally occurs (i.e., before the function finishes, a
+ * call to 'X86EmuProcessEvents' is scheduled.
+ * The argument 'arg' is the associated guest context. */
+void *X86EmuHostThreadSuspend(void *self);
+
+/* Function that suspends the host thread waiting for a timer to expire,
+ * and then schedules a call to 'X86EmuProcessEvents'. */
+void *X86ContextHostThreadTimer(void *self);
+
+
 
 
 /*
  * Non-Class
  */
-
 
 #define X86ContextDebug(...) debug(x86_context_debug_category, __VA_ARGS__)
 extern int x86_context_debug_category;

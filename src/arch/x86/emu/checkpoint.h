@@ -20,9 +20,20 @@
 #ifndef ARCH_X86_EMU_CHECKPOINT_H
 #define ARCH_X86_EMU_CHECKPOINT_H
 
-/* Architectural state checkpoints */
-void x86_checkpoint_load(char *path);
-void x86_checkpoint_save(char *path);
+#include <lib/util/class.h>
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Emu);
+
+
+
+/*
+ * Class 'X86Emu'
+ * Additional functions
+ */
+
+void X86EmuLoadCheckpoint(X86Emu *self, char *file_name);
+void X86EmuSaveCheckpoint(X86Emu *self, char *file_name);
 
 #endif
 
