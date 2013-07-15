@@ -668,12 +668,14 @@ int main(int argc, char **argv)
 
 	/* Compilation steps */
 	fprintf(stderr,
+		"\n"
 		"* WARNING: The version of Multi2C released together with Multi2Sim *\n"
 		"* 4.2 is aimed to be a preliminary version of an open-source       *\n"
 		"* OpenCL compiler generating compatible binaries for real GPUs.    *\n"
 		"* Important features of OpenCL C are still missing or not fully    *\n"
 		"* supported. To request support or provide contributions, please   *\n"
-		"* email development@multi2sim.org.                                 *\n\n");
+		"* email development@multi2sim.org.                                 *\n"
+		"\n");
 	m2c_replace_out_file_name(m2c_bin_file_list);
 	m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
 	cl2llvm_compile(m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
