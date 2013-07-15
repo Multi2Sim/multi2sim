@@ -21,6 +21,36 @@
 #define ARCH_X86_EMU_SIGNAL_H
 
 
+/*
+ * Class 'X86Context'
+ * Additional functions
+ */
+
+/* Run a signal handler */
+void X86ContextRunSignalHandler(X86Context *self, int sig);
+
+/* Return from a signal handler */
+void X86ContextReturnFromSignalHandler(X86Context *self);
+
+void X86ContextCheckSignalHandler(X86Context *self);
+
+/* Check any pending signal, and run the corresponding signal handler by
+ * considering that the signal interrupted a system call ('syscall_intr').
+ * This has the following implication on the return address from the signal
+ * handler:
+ *   -If flag 'SA_RESTART' is set for the handler, the return address is the
+ *    system call itself, which must be repeated.
+ *   -If flag 'SA_RESTART' is not set, the return address is the instruction
+ *    next to the system call, and register 'eax' is set to -EINTR. */
+void X86ContextCheckSignalHandlerIntr(X86Context *self);
+
+
+
+
+/*
+ * Object 'x86_signal_mask_table_t'
+ */
+
 /* Every context (parent and children) has its own masks */
 struct x86_signal_mask_table_t
 {
@@ -34,6 +64,11 @@ struct x86_signal_mask_table_t
 struct x86_signal_mask_table_t *x86_signal_mask_table_create(void);
 void x86_signal_mask_table_free(struct x86_signal_mask_table_t *table);
 
+
+
+/*
+ * Object 'x86_signal_handler_table_t'
+ */
 
 struct x86_signal_handler_table_t
 {
@@ -56,10 +91,11 @@ void x86_signal_handler_table_free(struct x86_signal_handler_table_t *table);
 struct x86_signal_handler_table_t *x86_signal_handler_table_link(struct x86_signal_handler_table_t *table);
 void x86_signal_handler_table_unlink(struct x86_signal_handler_table_t *table);
 
-void x86_signal_handler_run(X86Context *ctx, int sig);
-void x86_signal_handler_return(X86Context *ctx);
-void x86_signal_handler_check(X86Context *ctx);
-void x86_signal_handler_check_intr(X86Context *ctx);
+
+
+/*
+ * Public Functions
+ */
 
 char *x86_signal_name(int signum);
 void x86_sigaction_dump(struct x86_sigaction_t *sim_sigaction, FILE *f);

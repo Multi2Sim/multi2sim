@@ -18,6 +18,8 @@
  */
 
 #include <assert.h>
+#include <poll.h>
+#include <unistd.h>
 
 #include <arch/common/arch.h>
 #include <arch/x86/timing/cpu.h>
@@ -517,7 +519,7 @@ void X86ContextFinishGroup(X86Context *self, int state)
 		if (X86ContextGetState(aux, X86ContextZombie))
 			X86ContextSetState(aux, X86ContextFinished);
 		if (X86ContextGetState(aux, X86ContextHandler))
-			x86_signal_handler_return(aux);
+			X86ContextReturnFromSignalHandler(aux);
 		X86ContextHostThreadSuspendCancel(aux);
 		X86ContextHostThreadTimerCancel(aux);
 
@@ -588,7 +590,7 @@ void X86ContextFinish(X86Context *self, int state)
 
 	/* If we are in a signal handler, stop it. */
 	if (X86ContextGetState(self, X86ContextHandler))
-		x86_signal_handler_return(self);
+		X86ContextReturnFromSignalHandler(self);
 
 	/* Finish context */
 	X86ContextSetState(self, self->parent ? X86ContextZombie : X86ContextFinished);
@@ -788,6 +790,134 @@ void X86ContextProcCPUInfo(X86Context *self, char *path, int size)
 	/* Close file */
 	fclose(f);
 }
+
+
+void *X86EmuHostThreadSuspend(void *arg)
+{
+	X86Context *self = asX86Context(arg);
+	X86Emu *emu = self->emu;
+
+	long long now = esim_real_time();
+
+	/* Detach this thread - we don't want the parent to have to join it to release
+	 * its resources. The thread termination can be observed by atomically checking
+	 * the 'self->host_thread_suspend_active' flag. */
+	pthread_detach(pthread_self());
+
+	/* Context suspended in 'poll' system call */
+	if (X86ContextGetState(self, X86ContextNanosleep))
+	{
+		long long timeout;
+
+		/* Calculate remaining sleep time in microseconds */
+		timeout = self->wakeup_time > now ? self->wakeup_time - now : 0;
+		usleep(timeout);
+
+	}
+	else if (X86ContextGetState(self, X86ContextPoll))
+	{
+		struct x86_file_desc_t *fd;
+		struct pollfd host_fds;
+		int err, timeout;
+
+		/* Get file descriptor */
+		fd = x86_file_desc_table_entry_get(self->file_desc_table, self->wakeup_fd);
+		if (!fd)
+			fatal("syscall 'poll': invalid 'wakeup_fd'");
+
+		/* Calculate timeout for host call in milliseconds from now */
+		if (!self->wakeup_time)
+			timeout = -1;
+		else if (self->wakeup_time < now)
+			timeout = 0;
+		else
+			timeout = (self->wakeup_time - now) / 1000;
+
+		/* Perform blocking host 'poll' */
+		host_fds.fd = fd->host_fd;
+		host_fds.events = ((self->wakeup_events & 4) ? POLLOUT : 0) | ((self->wakeup_events & 1) ? POLLIN : 0);
+		err = poll(&host_fds, 1, timeout);
+		if (err < 0)
+			fatal("syscall 'poll': unexpected error in host 'poll'");
+	}
+	else if (X86ContextGetState(self, X86ContextRead))
+	{
+		struct x86_file_desc_t *fd;
+		struct pollfd host_fds;
+		int err;
+
+		/* Get file descriptor */
+		fd = x86_file_desc_table_entry_get(self->file_desc_table, self->wakeup_fd);
+		if (!fd)
+			fatal("syscall 'read': invalid 'wakeup_fd'");
+
+		/* Perform blocking host 'poll' */
+		host_fds.fd = fd->host_fd;
+		host_fds.events = POLLIN;
+		err = poll(&host_fds, 1, -1);
+		if (err < 0)
+			fatal("syscall 'read': unexpected error in host 'poll'");
+	}
+	else if (X86ContextGetState(self, X86ContextWrite))
+	{
+		struct x86_file_desc_t *fd;
+		struct pollfd host_fds;
+		int err;
+
+		/* Get file descriptor */
+		fd = x86_file_desc_table_entry_get(self->file_desc_table, self->wakeup_fd);
+		if (!fd)
+			fatal("syscall 'write': invalid 'wakeup_fd'");
+
+		/* Perform blocking host 'poll' */
+		host_fds.fd = fd->host_fd;
+		host_fds.events = POLLOUT;
+		err = poll(&host_fds, 1, -1);
+		if (err < 0)
+			fatal("syscall 'write': unexpected error in host 'write'");
+
+	}
+
+	/* Event occurred - thread finishes */
+	pthread_mutex_lock(&emu->process_events_mutex);
+	emu->process_events_force = 1;
+	self->host_thread_suspend_active = 0;
+	pthread_mutex_unlock(&emu->process_events_mutex);
+	return NULL;
+}
+
+
+void *X86ContextHostThreadTimer(void *arg)
+{
+	X86Context *self = asX86Context(arg);
+	X86Emu *emu = self->emu;
+
+	long long now = esim_real_time();
+	struct timespec ts;
+	long long sleep_time;  /* In usec */
+
+	/* Detach this thread - we don't want the parent to have to join it to release
+	 * its resources. The thread termination can be observed by thread-safely checking
+	 * the 'self->host_thread_timer_active' flag. */
+	pthread_detach(pthread_self());
+
+	/* Calculate sleep time, and sleep only if it is greater than 0 */
+	if (self->host_thread_timer_wakeup > now)
+	{
+		sleep_time = self->host_thread_timer_wakeup - now;
+		ts.tv_sec = sleep_time / 1000000;
+		ts.tv_nsec = (sleep_time % 1000000) * 1000;  /* nsec */
+		nanosleep(&ts, NULL);
+	}
+
+	/* Timer expired, schedule call to 'X86EmuProcessEvents' */
+	pthread_mutex_lock(&emu->process_events_mutex);
+	emu->process_events_force = 1;
+	self->host_thread_timer_active = 0;
+	pthread_mutex_unlock(&emu->process_events_mutex);
+	return NULL;
+}
+
 
 
 

@@ -138,137 +138,6 @@ void X86EmuProcessEventsSchedule(X86Emu *self)
 }
 
 
-/* Function that suspends the host thread waiting for an event to occur.
- * When the event finally occurs (i.e., before the function finishes, a
- * call to 'X86EmuProcessEvents' is scheduled.
- * The argument 'arg' is the associated guest context. */
-static void *X86EmuHostThreadSuspend(void *arg)
-{
-	X86Context *ctx = (X86Context *) arg;
-	long long now = esim_real_time();
-	X86Emu *self = x86_emu;
-
-	/* Detach this thread - we don't want the parent to have to join it to release
-	 * its resources. The thread termination can be observed by atomically checking
-	 * the 'ctx->host_thread_suspend_active' flag. */
-	pthread_detach(pthread_self());
-
-	/* Context suspended in 'poll' system call */
-	if (X86ContextGetState(ctx, X86ContextNanosleep))
-	{
-		long long timeout;
-		
-		/* Calculate remaining sleep time in microseconds */
-		timeout = ctx->wakeup_time > now ? ctx->wakeup_time - now : 0;
-		usleep(timeout);
-	
-	}
-	else if (X86ContextGetState(ctx, X86ContextPoll))
-	{
-		struct x86_file_desc_t *fd;
-		struct pollfd host_fds;
-		int err, timeout;
-		
-		/* Get file descriptor */
-		fd = x86_file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
-		if (!fd)
-			fatal("syscall 'poll': invalid 'wakeup_fd'");
-
-		/* Calculate timeout for host call in milliseconds from now */
-		if (!ctx->wakeup_time)
-			timeout = -1;
-		else if (ctx->wakeup_time < now)
-			timeout = 0;
-		else
-			timeout = (ctx->wakeup_time - now) / 1000;
-
-		/* Perform blocking host 'poll' */
-		host_fds.fd = fd->host_fd;
-		host_fds.events = ((ctx->wakeup_events & 4) ? POLLOUT : 0) | ((ctx->wakeup_events & 1) ? POLLIN : 0);
-		err = poll(&host_fds, 1, timeout);
-		if (err < 0)
-			fatal("syscall 'poll': unexpected error in host 'poll'");
-	}
-	else if (X86ContextGetState(ctx, X86ContextRead))
-	{
-		struct x86_file_desc_t *fd;
-		struct pollfd host_fds;
-		int err;
-
-		/* Get file descriptor */
-		fd = x86_file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
-		if (!fd)
-			fatal("syscall 'read': invalid 'wakeup_fd'");
-
-		/* Perform blocking host 'poll' */
-		host_fds.fd = fd->host_fd;
-		host_fds.events = POLLIN;
-		err = poll(&host_fds, 1, -1);
-		if (err < 0)
-			fatal("syscall 'read': unexpected error in host 'poll'");
-	}
-	else if (X86ContextGetState(ctx, X86ContextWrite))
-	{
-		struct x86_file_desc_t *fd;
-		struct pollfd host_fds;
-		int err;
-
-		/* Get file descriptor */
-		fd = x86_file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
-		if (!fd)
-			fatal("syscall 'write': invalid 'wakeup_fd'");
-
-		/* Perform blocking host 'poll' */
-		host_fds.fd = fd->host_fd;
-		host_fds.events = POLLOUT;
-		err = poll(&host_fds, 1, -1);
-		if (err < 0)
-			fatal("syscall 'write': unexpected error in host 'write'");
-
-	}
-
-	/* Event occurred - thread finishes */
-	pthread_mutex_lock(&self->process_events_mutex);
-	self->process_events_force = 1;
-	ctx->host_thread_suspend_active = 0;
-	pthread_mutex_unlock(&self->process_events_mutex);
-	return NULL;
-}
-
-
-/* Function that suspends the host thread waiting for a timer to expire,
- * and then schedules a call to 'X86EmuProcessEvents'. */
-static void *X86EmuHostThreadTimer(void *arg)
-{
-	X86Emu *self = x86_emu;
-	X86Context *ctx = (X86Context *) arg;
-	long long now = esim_real_time();
-	struct timespec ts;
-	long long sleep_time;  /* In usec */
-
-	/* Detach this thread - we don't want the parent to have to join it to release
-	 * its resources. The thread termination can be observed by thread-safely checking
-	 * the 'ctx->host_thread_timer_active' flag. */
-	pthread_detach(pthread_self());
-
-	/* Calculate sleep time, and sleep only if it is greater than 0 */
-	if (ctx->host_thread_timer_wakeup > now)
-	{
-		sleep_time = ctx->host_thread_timer_wakeup - now;
-		ts.tv_sec = sleep_time / 1000000;
-		ts.tv_nsec = (sleep_time % 1000000) * 1000;  /* nsec */
-		nanosleep(&ts, NULL);
-	}
-
-	/* Timer expired, schedule call to 'X86EmuProcessEvents' */
-	pthread_mutex_lock(&self->process_events_mutex);
-	self->process_events_force = 1;
-	ctx->host_thread_timer_active = 0;
-	pthread_mutex_unlock(&self->process_events_mutex);
-	return NULL;
-}
-
-
 /* Check for events detected in spawned host threads, like waking up contexts or
  * sending signals.
  * The list is only processed if flag 'self->process_events_force' is set. */
@@ -351,7 +220,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
-				x86_signal_handler_check_intr(ctx);
+				X86ContextCheckSignalHandlerIntr(ctx);
 				ctx->signal_mask_table->blocked = ctx->signal_mask_table->backup;
 				x86_sys_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
 				X86ContextClearState(ctx, X86ContextSuspended | X86ContextSigsuspend);
@@ -384,7 +253,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
-				x86_signal_handler_check_intr(ctx);
+				X86ContextCheckSignalHandlerIntr(ctx);
 				x86_sys_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
 				X86ContextClearState(ctx, X86ContextSuspended | X86ContextPoll);
 				continue;
@@ -456,7 +325,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
-				x86_signal_handler_check_intr(ctx);
+				X86ContextCheckSignalHandlerIntr(ctx);
 				x86_sys_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
 				X86ContextClearState(ctx, X86ContextSuspended | X86ContextWrite);
 				continue;
@@ -517,7 +386,7 @@ void X86EmuProcessEvents(X86Emu *self)
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
-				x86_signal_handler_check_intr(ctx);
+				X86ContextCheckSignalHandlerIntr(ctx);
 				x86_sys_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
 				X86ContextClearState(ctx, X86ContextSuspended | X86ContextRead);
 				continue;
@@ -670,7 +539,7 @@ void X86EmuProcessEvents(X86Emu *self)
 		if (ctx->host_thread_timer_wakeup)
 		{
 			ctx->host_thread_timer_active = 1;
-			if (pthread_create(&ctx->host_thread_timer, NULL, X86EmuHostThreadTimer, ctx))
+			if (pthread_create(&ctx->host_thread_timer, NULL, X86ContextHostThreadTimer, ctx))
 				fatal("%s: could not create child thread", __FUNCTION__);
 		}
 	}
@@ -682,7 +551,7 @@ void X86EmuProcessEvents(X86Emu *self)
 	 */
 	for (ctx = self->running_list_head; ctx; ctx = ctx->running_list_next)
 	{
-		x86_signal_handler_check(ctx);
+		X86ContextCheckSignalHandler(ctx);
 	}
 
 	
@@ -701,7 +570,7 @@ int X86EmuRun(Emu *self)
 		return FALSE;
 
 	/* Stop if maximum number of CPU instructions exceeded */
-	if (x86_emu_max_inst && asEmu(x86_emu)->instructions >= x86_emu_max_inst)
+	if (x86_emu_max_inst && asEmu(self)->instructions >= x86_emu_max_inst)
 		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if any previous reason met */
@@ -717,7 +586,7 @@ int X86EmuRun(Emu *self)
 		delete(emu->finished_list_head);
 
 	/* Process list of suspended contexts */
-	X86EmuProcessEvents(x86_emu);
+	X86EmuProcessEvents(emu);
 
 	/* Still running */
 	return TRUE;
@@ -866,7 +735,6 @@ void x86_emu_init(void)
 	x86_emu = new(X86Emu);
 
 	/* Initialize */
-	x86_sys_init();
 	x86_asm_init();
 	x86_uinst_init();
 
@@ -900,7 +768,10 @@ void x86_emu_done(void)
 	/* End */
 	x86_uinst_done();
 	x86_asm_done();
-	x86_sys_done();
+
+	/* Print system call summary */
+	if (debug_status(x86_sys_debug_category))
+		x86_sys_dump_stats(debug_file(x86_sys_debug_category));
 
 	/* Free emulator */
 	delete(x86_emu);

@@ -24,7 +24,7 @@
 #include "regs.h"
 
 
-struct x86_regs_t *x86_regs_create()
+struct x86_regs_t *x86_regs_create(void)
 {
 	struct x86_regs_t *regs;
 

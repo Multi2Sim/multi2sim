@@ -161,6 +161,8 @@ void X86ContextMemWrite(X86Context *self, unsigned int addr, int size, void *buf
 
 void X86ContextError(X86Context *self, char *fmt, ...)
 {
+	X86Emu *emu = self->emu;
+
 	va_list va;
 	va_start(va, fmt);
 
@@ -170,7 +172,7 @@ void X86ContextError(X86Context *self, char *fmt, ...)
 
 	/* Error */
 	fprintf(stderr, "fatal: x86 context %d at 0x%08x inst %lld: ",
-		self->pid, self->curr_eip, asEmu(x86_emu)->instructions);
+		self->pid, self->curr_eip, asEmu(emu)->instructions);
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 	exit(1);
@@ -822,6 +824,7 @@ void X86ContextStoreXMMM128(X86Context *self, unsigned char *value)
 
 void X86ContextExecuteInst(X86Context *self)
 {
+	X86Emu *emu = self->emu;
 	struct x86_regs_t *regs = self->regs;
 
 	/* Clear existing list of microinstructions, though the architectural
@@ -841,7 +844,7 @@ void X86ContextExecuteInst(X86Context *self)
 	if (debug_status(x86_context_isa_debug_category))
 	{
 		X86ContextDebugISA("%d %8lld %x: ", self->pid,
-			asEmu(x86_emu)->instructions, self->curr_eip);
+			asEmu(emu)->instructions, self->curr_eip);
 		x86_inst_dump(&self->inst, debug_file(x86_context_isa_debug_category));
 		X86ContextDebugISA("  (%d bytes)", self->inst.size);
 	}
