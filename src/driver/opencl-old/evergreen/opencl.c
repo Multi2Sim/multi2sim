@@ -1704,7 +1704,7 @@ int evg_opencl_clFinish_impl(X86Context *ctx, int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue_id);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	X86ContextSuspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clFinish_wakeup, NULL);
 
 	/* Return value ignored by caller, since context is getting suspended.
@@ -1806,7 +1806,7 @@ int evg_opencl_clEnqueueReadBuffer_impl(X86Context *ctx, int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 	
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	X86ContextSuspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueReadBuffer_wakeup, NULL);
 
 	/* Return value ignored by caller, since context is getting suspended.
@@ -1907,7 +1907,7 @@ int evg_opencl_clEnqueueWriteBuffer_impl(X86Context *ctx, int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	X86ContextSuspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueWriteBuffer_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2009,7 +2009,7 @@ int evg_opencl_clEnqueueCopyBuffer_impl(X86Context *ctx, int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	X86ContextSuspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueCopyBuffer_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2137,7 +2137,7 @@ int evg_opencl_clEnqueueReadImage_impl(X86Context *ctx, int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	X86ContextSuspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueReadImage_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2229,7 +2229,7 @@ int evg_opencl_clEnqueueMapBuffer_impl(X86Context *ctx, int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	X86ContextSuspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueMapBuffer_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2431,7 +2431,7 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(X86Context *ctx, int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue_id);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	X86ContextSuspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueNDRangeKernel_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */

@@ -106,13 +106,13 @@ static void x86_cpu_alloc_context(X86Context *ctx)
 	int thread = ctx->thread;
 
 	assert(!X86_THREAD.ctx);
-	assert(x86_ctx_get_state(ctx, x86_ctx_mapped));
-	assert(!x86_ctx_get_state(ctx, x86_ctx_alloc));
+	assert(X86ContextGetState(ctx, X86ContextMapped));
+	assert(!X86ContextGetState(ctx, X86ContextAlloc));
 	assert(!ctx->evict_signal);
 
 	/* Update context state */
 	ctx->alloc_cycle = asTiming(x86_cpu)->cycle;
-	x86_ctx_set_state(ctx, x86_ctx_alloc);
+	X86ContextSetState(ctx, X86ContextAlloc);
 
 	/* Update node state */
 	X86_THREAD.ctx = ctx;
@@ -139,8 +139,8 @@ static void x86_cpu_map_context(X86Context *ctx)
 	int thread;
 	int node;
 
-	assert(!x86_ctx_get_state(ctx, x86_ctx_alloc));
-	assert(!x86_ctx_get_state(ctx, x86_ctx_mapped));
+	assert(!X86ContextGetState(ctx, X86ContextAlloc));
+	assert(!X86ContextGetState(ctx, X86ContextMapped));
 	assert(!ctx->evict_signal);
 
 	/* From the nodes (core/thread) that the context has affinity with, find
@@ -173,7 +173,7 @@ static void x86_cpu_map_context(X86Context *ctx)
 	/* Update context state */
 	ctx->core = core;
 	ctx->thread = thread;
-	x86_ctx_set_state(ctx, x86_ctx_mapped);
+	X86ContextSetState(ctx, X86ContextMapped);
 
 	/* Add context to the node's mapped list */
 	DOUBLE_LINKED_LIST_INSERT_TAIL(&X86_THREAD, mapped, ctx);
@@ -194,11 +194,11 @@ static void x86_cpu_unmap_context(X86Context *ctx)
 	int thread = ctx->thread;
 
 	assert(DOUBLE_LINKED_LIST_MEMBER(&X86_THREAD, mapped, ctx));
-	assert(x86_ctx_get_state(ctx, x86_ctx_mapped));
-	assert(!x86_ctx_get_state(ctx, x86_ctx_alloc));
+	assert(X86ContextGetState(ctx, X86ContextMapped));
+	assert(!X86ContextGetState(ctx, X86ContextAlloc));
 
 	/* Update context state */
-	x86_ctx_clear_state(ctx, x86_ctx_mapped);
+	X86ContextClearState(ctx, X86ContextMapped);
 
 	/* Remove context from node's mapped list */
 	DOUBLE_LINKED_LIST_REMOVE(&X86_THREAD, mapped, ctx);
@@ -208,7 +208,7 @@ static void x86_cpu_unmap_context(X86Context *ctx)
 		asTiming(x86_cpu)->cycle, ctx->pid, core, thread);
 
 	/* If context is finished, free it. */
-	if (x86_ctx_get_state(ctx, x86_ctx_finished))
+	if (X86ContextGetState(ctx, X86ContextFinished))
 	{
 		/* Trace */
 		x86_trace("x86.end_ctx ctx=%d\n", ctx->pid);
@@ -252,8 +252,8 @@ static void x86_cpu_evict_context_signal(X86Context *ctx)
 	int thread = ctx->thread;
 
 	assert(ctx);
-	assert(x86_ctx_get_state(ctx, x86_ctx_alloc));
-	assert(x86_ctx_get_state(ctx, x86_ctx_mapped));
+	assert(X86ContextGetState(ctx, X86ContextAlloc));
+	assert(X86ContextGetState(ctx, X86ContextMapped));
 	assert(X86_THREAD.ctx == ctx);
 	assert(DOUBLE_LINKED_LIST_MEMBER(&X86_THREAD, mapped, ctx));
 	assert(!ctx->evict_signal);
@@ -283,11 +283,11 @@ static void x86_cpu_schedule_node(int core, int thread)
 	ctx = X86_THREAD.ctx;
 	if (ctx)
 	{
-		assert(x86_ctx_get_state(ctx, x86_ctx_alloc));
-		assert(x86_ctx_get_state(ctx, x86_ctx_mapped));
+		assert(X86ContextGetState(ctx, X86ContextAlloc));
+		assert(X86ContextGetState(ctx, X86ContextMapped));
 
 		/* Context not in 'running' state */
-		if (!ctx->evict_signal && !x86_ctx_get_state(ctx, x86_ctx_running))
+		if (!ctx->evict_signal && !X86ContextGetState(ctx, X86ContextRunning))
 			x86_cpu_evict_context_signal(ctx);
 
 		/* Context lost affinity with node */
@@ -303,8 +303,8 @@ static void x86_cpu_schedule_node(int core, int thread)
 			/* Find a running context mapped to the same node */
 			DOUBLE_LINKED_LIST_FOR_EACH(&X86_THREAD, mapped, tmp_ctx)
 			{
-				if (tmp_ctx != ctx && x86_ctx_get_state(tmp_ctx,
-						x86_ctx_running))
+				if (tmp_ctx != ctx && X86ContextGetState(tmp_ctx,
+						X86ContextRunning))
 				{
 					found = 1;
 					break;
@@ -334,7 +334,7 @@ static void x86_cpu_schedule_node(int core, int thread)
 		/* Unmap a context if it lost affinity with the node or if it
 		 * finished execution. */
 		if (!bit_map_get(ctx->affinity, node, 1) ||
-				x86_ctx_get_state(ctx, x86_ctx_finished))
+				X86ContextGetState(ctx, X86ContextFinished))
 			x86_cpu_unmap_context(ctx);
 	}
 
@@ -351,7 +351,7 @@ static void x86_cpu_schedule_node(int core, int thread)
 				continue;
 
 			/* Not running */
-			if (!x86_ctx_get_state(tmp_ctx, x86_ctx_running))
+			if (!X86ContextGetState(tmp_ctx, X86ContextRunning))
 				continue;
 
 			/* Good candidate */
@@ -384,9 +384,9 @@ void x86_cpu_evict_context(int core, int thread)
 	X86Context *ctx = X86_THREAD.ctx;
 
 	assert(ctx);
-	assert(x86_ctx_get_state(ctx, x86_ctx_alloc));
-	assert(x86_ctx_get_state(ctx, x86_ctx_mapped));
-	assert(!x86_ctx_get_state(ctx, x86_ctx_spec_mode));
+	assert(X86ContextGetState(ctx, X86ContextAlloc));
+	assert(X86ContextGetState(ctx, X86ContextMapped));
+	assert(!X86ContextGetState(ctx, X86ContextSpecMode));
 	assert(!X86_THREAD.rob_count);
 	assert(ctx->evict_signal);
 
@@ -395,7 +395,7 @@ void x86_cpu_evict_context(int core, int thread)
 	X86_THREAD.fetch_neip = 0;
 
 	/* Update context state */
-	x86_ctx_clear_state(ctx, x86_ctx_alloc);
+	X86ContextClearState(ctx, X86ContextAlloc);
 	ctx->evict_cycle = asTiming(x86_cpu)->cycle;
 	ctx->evict_signal = 0;
 
@@ -436,7 +436,7 @@ void x86_cpu_schedule(void)
 	 * to any node (core/thread); for example, a new context, or a
 	 * context that has changed its affinity. */
 	DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, running, ctx)
-		if (!x86_ctx_get_state(ctx, x86_ctx_mapped))
+		if (!X86ContextGetState(ctx, X86ContextMapped))
 			x86_cpu_map_context(ctx);
 
 	/* Scheduling done individually for each node (core/thread) */
