@@ -51,6 +51,7 @@ struct si_input_t
 struct si_input_t *si_input_create();
 void si_input_free(struct si_input_t *input);
 void si_input_set_usage_index(struct si_input_t *input, unsigned int usage_index);
+unsigned int si_input_get_type(unsigned int gl_data_type);
 int si_input_get_data_size(enum si_input_data_type_t data_type);
 
 #endif
