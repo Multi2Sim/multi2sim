@@ -737,7 +737,7 @@ int cuda_func_cuLaunchKernel(X86Context *ctx)
 	frm_grid_set_free_notify_func(grid, cuda_abi_frm_kernel_launch_finish, info);
 
 	/* Suspend x86 context until grid finishes */
-	x86_ctx_suspend(ctx, cuda_abi_frm_kernel_launch_can_wakeup, info,
+	X86ContextSuspend(ctx, cuda_abi_frm_kernel_launch_can_wakeup, info,
 			cuda_abi_frm_kernel_launch_wakeup, info);
 
 	return 0;

@@ -48,7 +48,7 @@ static int x86_cpu_can_commit_thread(int core, int thread)
 
 	/* Sanity check - If the context is running, we assume that something is
 	 * going wrong if more than 1M cycles go by without committing an inst. */
-	if (!ctx || !x86_ctx_get_state(ctx, x86_ctx_running))
+	if (!ctx || !X86ContextGetState(ctx, X86ContextRunning))
 		X86_THREAD.last_commit_cycle = asTiming(x86_cpu)->cycle;
 	if (asTiming(x86_cpu)->cycle - X86_THREAD.last_commit_cycle > 1000000)
 	{

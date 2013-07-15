@@ -43,6 +43,30 @@ typedef void (*x86_ctx_wakeup_callback_func_t)(X86Context *self, void *data);
  * Class 'X86Context'
  */
 
+typedef enum
+{
+	X86ContextRunning      = 0x00001,  /* it is able to run instructions */
+	X86ContextSpecMode     = 0x00002,  /* executing in speculative mode */
+	X86ContextSuspended    = 0x00004,  /* suspended in a system call */
+	X86ContextFinished     = 0x00008,  /* no more inst to execute */
+	X86ContextExclusive    = 0x00010,  /* executing in excl mode */
+	X86ContextLocked       = 0x00020,  /* another context is running in excl mode */
+	X86ContextHandler      = 0x00040,  /* executing a signal handler */
+	X86ContextSigsuspend   = 0x00080,  /* suspended after syscall 'sigsuspend' */
+	X86ContextNanosleep    = 0x00100,  /* suspended after syscall 'nanosleep' */
+	X86ContextPoll         = 0x00200,  /* 'poll' system call */
+	X86ContextRead         = 0x00400,  /* 'read' system call */
+	X86ContextWrite        = 0x00800,  /* 'write' system call */
+	X86ContextWaitpid      = 0x01000,  /* 'waitpid' system call */
+	X86ContextZombie       = 0x02000,  /* zombie context */
+	X86ContextFutex        = 0x04000,  /* suspended in a futex */
+	X86ContextAlloc        = 0x08000,  /* allocated to a core/thread */
+	X86ContextCallback     = 0x10000,  /* suspended after syscall with callback */
+	X86ContextMapped       = 0x20000,  /* mapped to a core/thread */
+	X86ContextNone         = 0x00000
+} X86ContextState;
+
+
 CLASS_BEGIN(X86Context, Object)
 	
 	/* Context properties */
@@ -177,29 +201,6 @@ CLASS_BEGIN(X86Context, Object)
 
 CLASS_END(X86Context)
 
-enum x86_ctx_state_t
-{
-	x86_ctx_running      = 0x00001,  /* it is able to run instructions */
-	x86_ctx_spec_mode    = 0x00002,  /* executing in speculative mode */
-	x86_ctx_suspended    = 0x00004,  /* suspended in a system call */
-	x86_ctx_finished     = 0x00008,  /* no more inst to execute */
-	x86_ctx_exclusive    = 0x00010,  /* executing in excl mode */
-	x86_ctx_locked       = 0x00020,  /* another context is running in excl mode */
-	x86_ctx_handler      = 0x00040,  /* executing a signal handler */
-	x86_ctx_sigsuspend   = 0x00080,  /* suspended after syscall 'sigsuspend' */
-	x86_ctx_nanosleep    = 0x00100,  /* suspended after syscall 'nanosleep' */
-	x86_ctx_poll         = 0x00200,  /* 'poll' system call */
-	x86_ctx_read         = 0x00400,  /* 'read' system call */
-	x86_ctx_write        = 0x00800,  /* 'write' system call */
-	x86_ctx_waitpid      = 0x01000,  /* 'waitpid' system call */
-	x86_ctx_zombie       = 0x02000,  /* zombie context */
-	x86_ctx_futex        = 0x04000,  /* suspended in a futex */
-	x86_ctx_alloc        = 0x08000,  /* allocated to a core/thread */
-	x86_ctx_callback     = 0x10000,  /* suspended after syscall with callback */
-	x86_ctx_mapped       = 0x20000,  /* mapped to a core/thread */
-	x86_ctx_none         = 0x00000
-};
-
 
 void X86ContextCreate(X86Context *self);
 void X86ContextCreateAndClone(X86Context *self, X86Context *cloned);
@@ -207,39 +208,38 @@ void X86ContextCreateAndFork(X86Context *self, X86Context *forked);
 
 void X86ContextDestroy(X86Context *self);
 
-void x86_ctx_dump(X86Context *self, FILE *f);
+void X86ContextDump(Object *self, FILE *f);
 
 /* Thread safe/unsafe versions */
-void __x86_ctx_host_thread_suspend_cancel(X86Context *self);
-void x86_ctx_host_thread_suspend_cancel(X86Context *self);
-void __x86_ctx_host_thread_timer_cancel(X86Context *self);
-void x86_ctx_host_thread_timer_cancel(X86Context *self);
+void X86ContextHostThreadSuspendCancelUnsafe(X86Context *self);
+void X86ContextHostThreadSuspendCancel(X86Context *self);
+void X86ContextHostThreadTimerCancelUnsafe(X86Context *self);
+void X86ContextHostThreadTimerCancel(X86Context *self);
 
-void x86_ctx_suspend(X86Context *self,
+void X86ContextSuspend(X86Context *self,
 	x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func,
 	void *can_wakeup_callback_data, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
 	void *wakeup_callback_data);
 
-void x86_ctx_finish(X86Context *self, int state);
-void x86_ctx_finish_group(X86Context *self, int state);
-void x86_ctx_execute(X86Context *self);
+void X86ContextFinish(X86Context *self, int state);
+void X86ContextFinishGroup(X86Context *self, int state);
+void X86ContextExecute(X86Context *self);
 
-void x86_ctx_set_eip(X86Context *self, unsigned int eip);
-void x86_ctx_recover(X86Context *self);
+void X86ContextSetEip(X86Context *self, unsigned int eip);
+void X86ContextRecover(X86Context *self);
 
-X86Context *x86_ctx_get(int pid);
-X86Context *x86_ctx_get_zombie(X86Context *parent, int pid);
+X86Context *X86ContextGetZombie(X86Context *parent, int pid);
 
-int x86_ctx_get_state(X86Context *self, enum x86_ctx_state_t state);
-void x86_ctx_set_state(X86Context *self, enum x86_ctx_state_t state);
-void x86_ctx_clear_state(X86Context *self, enum x86_ctx_state_t state);
+int X86ContextGetState(X86Context *self, X86ContextState state);
+void X86ContextSetState(X86Context *self, X86ContextState state);
+void X86ContextClearState(X86Context *self, X86ContextState state);
 
-int x86_ctx_futex_wake(X86Context *self, unsigned int futex,
+int X86ContextFutexWake(X86Context *self, unsigned int futex,
 	unsigned int count, unsigned int bitset);
-void x86_ctx_exit_robust_list(X86Context *self);
+void X86ContextExitRobustList(X86Context *self);
 
-void x86_ctx_gen_proc_self_maps(X86Context *self, char *path, int size);
-void x86_ctx_gen_proc_cpuinfo(X86Context *self, char *path, int size);
+void X86ContextProcSelfMaps(X86Context *self, char *path, int size);
+void X86ContextProcCPUInfo(X86Context *self, char *path, int size);
 
 #endif
 

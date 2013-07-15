@@ -322,7 +322,7 @@ void x86_sys_call(X86Context *ctx)
 
 	/* Set return value in 'eax', except for 'sigreturn' system call. Also, if the
 	 * context got suspended, the wake up routine will set the return value. */
-	if (code != x86_sys_code_sigreturn && !x86_ctx_get_state(ctx, x86_ctx_suspended))
+	if (code != x86_sys_code_sigreturn && !X86ContextGetState(ctx, X86ContextSuspended))
 		regs->eax = err;
 
 	/* Debug */
@@ -351,7 +351,7 @@ static int x86_sys_exit_impl(X86Context *ctx)
 	x86_sys_debug("  status=0x%x\n", status);
 
 	/* Finish context */
-	x86_ctx_finish(ctx, status);
+	X86ContextFinish(ctx, status);
 	return 0;
 }
 
@@ -466,7 +466,7 @@ static int x86_sys_read_impl(X86Context *ctx)
 	x86_sys_debug("  blocking read - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = 1;  /* POLLIN */
-	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_read);
+	X86ContextSetState(ctx, X86ContextSuspended | X86ContextRead);
 	X86EmuProcessEventsSchedule(x86_emu);
 
 	/* Free allocated buffer. Return value doesn't matter,
@@ -539,7 +539,7 @@ static int x86_sys_write_impl(X86Context *ctx)
 	/* Blocking write - suspend thread */
 	x86_sys_debug("  blocking write - process suspended\n");
 	ctx->wakeup_fd = guest_fd;
-	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_write);
+	X86ContextSetState(ctx, X86ContextSuspended | X86ContextWrite);
 	X86EmuProcessEventsSchedule(x86_emu);
 
 	/* Return value doesn't matter here. It will be overwritten when the
@@ -589,11 +589,11 @@ static struct x86_file_desc_t *x86_sys_open_virtual(X86Context *ctx,
 
 	/* Virtual file /proc/self/maps */
 	if (!strcmp(path, "/proc/self/maps"))
-		x86_ctx_gen_proc_self_maps(ctx, temp_path, sizeof temp_path);
+		X86ContextProcSelfMaps(ctx, temp_path, sizeof temp_path);
 	
 	/* Virtual file /proc/cpuinfo */
 	else if (!strcmp(path, "/proc/cpuinfo"))
-		x86_ctx_gen_proc_cpuinfo(ctx, temp_path, sizeof temp_path);
+		X86ContextProcCPUInfo(ctx, temp_path, sizeof temp_path);
 
 	/* No file found */
 	if (!temp_path[0])
@@ -727,14 +727,14 @@ static int x86_sys_waitpid_impl(X86Context *ctx)
 			__FUNCTION__, err_x86_sys_note);
 
 	/* Look for a zombie child. */
-	child = x86_ctx_get_zombie(ctx, pid);
+	child = X86ContextGetZombie(ctx, pid);
 
 	/* If there is no child and the flag WNOHANG was not specified,
 	 * we get suspended until the specified child finishes. */
 	if (!child && !(options & 0x1))
 	{
 		ctx->wakeup_pid = pid;
-		x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_waitpid);
+		X86ContextSetState(ctx, X86ContextSuspended | X86ContextWaitpid);
 		return 0;
 	}
 
@@ -744,7 +744,7 @@ static int x86_sys_waitpid_impl(X86Context *ctx)
 	{
 		if (status_ptr)
 			mem_write(mem, status_ptr, 4, &child->exit_code);
-		x86_ctx_set_state(child, x86_ctx_finished);
+		X86ContextSetState(child, X86ContextFinished);
 		return child->pid;
 	}
 
@@ -896,7 +896,7 @@ static int x86_sys_execve_impl(X86Context *ctx)
 		warning("%s: child context executed natively.\n%s",
 			__FUNCTION__, err_sys_execve_note);
 		exit_code = system(list_get(arg_list, 2));
-		x86_ctx_finish(ctx, exit_code);
+		X86ContextFinish(ctx, exit_code);
 
 		/* Free arguments and exit */
 		for (i = 0; i < list_count(arg_list); i++)
@@ -1236,13 +1236,13 @@ static int x86_sys_kill_impl(X86Context *ctx)
 
 	/* Find context. We assume program correctness, so fatal if context is
 	 * not found, rather than return error code. */
-	temp_ctx = x86_ctx_get(pid);
+	temp_ctx = X86EmuGetContext(x86_emu, pid);
 	if (!temp_ctx)
 		fatal("%s: invalid pid %d", __FUNCTION__, pid);
 
 	/* Send signal */
 	x86_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
-	x86_ctx_host_thread_suspend_cancel(temp_ctx);
+	X86ContextHostThreadSuspendCancel(temp_ctx);
 	X86EmuProcessEventsSchedule(x86_emu);
 	X86EmuProcessEvents(x86_emu);
 
@@ -2614,7 +2614,7 @@ static int x86_sys_setitimer_impl(X86Context *ctx)
 
 	/* New timer inserted, so interrupt current 'ke_host_thread_timer'
 	 * waiting for the next timer expiration. */
-	x86_ctx_host_thread_timer_cancel(ctx);
+	X86ContextHostThreadTimerCancel(ctx);
 	X86EmuProcessEventsSchedule(x86_emu);
 
 	/* Return */
@@ -3687,7 +3687,7 @@ static int x86_sys_nanosleep_impl(X86Context *ctx)
 
 	/* Suspend process */
 	ctx->wakeup_time = now + total;
-	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_nanosleep);
+	X86ContextSetState(ctx, X86ContextSuspended | X86ContextNanosleep);
 	X86EmuProcessEventsSchedule(x86_emu);
 	return 0;
 }
@@ -4000,7 +4000,7 @@ static int x86_sys_poll_impl(X86Context *ctx)
 		ctx->wakeup_time = now + (long long) timeout * 1000;
 	ctx->wakeup_fd = guest_fd;
 	ctx->wakeup_events = guest_fds.events;
-	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_poll);
+	X86ContextSetState(ctx, X86ContextSuspended | X86ContextPoll);
 	X86EmuProcessEventsSchedule(x86_emu);
 	return 0;
 }
@@ -4195,7 +4195,7 @@ static int x86_sys_rt_sigsuspend_impl(X86Context *ctx)
 	/* Save old mask and set new one, then suspend. */
 	ctx->signal_mask_table->backup = ctx->signal_mask_table->blocked;
 	ctx->signal_mask_table->blocked = new_set;
-	x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_sigsuspend);
+	X86ContextSetState(ctx, X86ContextSuspended | X86ContextSigsuspend);
 
 	/* New signal mask may cause new events */
 	X86EmuProcessEventsSchedule(x86_emu);
@@ -5020,7 +5020,7 @@ static int x86_sys_futex_impl(X86Context *ctx)
 		ctx->wakeup_futex = addr1;
 		ctx->wakeup_futex_bitset = bitset;
 		ctx->wakeup_futex_sleep = ++x86_emu->futex_sleep_count;
-		x86_ctx_set_state(ctx, x86_ctx_suspended | x86_ctx_futex);
+		X86ContextSetState(ctx, X86ContextSuspended | X86ContextFutex);
 		return 0;
 	}
 
@@ -5029,7 +5029,7 @@ static int x86_sys_futex_impl(X86Context *ctx)
 	{
 		/* Default bitset value (all bits set) */
 		bitset = cmd == 10 ? val3 : 0xffffffff;
-		ret = x86_ctx_futex_wake(ctx, addr1, val1, bitset);
+		ret = X86ContextFutexWake(ctx, addr1, val1, bitset);
 		x86_sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, ret);
 		return ret;
 	}
@@ -5050,14 +5050,14 @@ static int x86_sys_futex_impl(X86Context *ctx)
 
 		/* Wake up 'val1' threads from futex at 'addr1'. The number of woken up threads
 		 * is the return value of the system call. */
-		ret = x86_ctx_futex_wake(ctx, addr1, val1, 0xffffffff);
+		ret = X86ContextFutexWake(ctx, addr1, val1, 0xffffffff);
 		x86_sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, ret);
 
 		/* The rest of the threads waiting in futex 'addr1' are requeued into futex 'addr2' */
 		for (temp_ctx = x86_emu->suspended_list_head; temp_ctx;
 				temp_ctx = temp_ctx->suspended_list_next)
 		{
-			if (x86_ctx_get_state(temp_ctx, x86_ctx_futex)
+			if (X86ContextGetState(temp_ctx, X86ContextFutex)
 					&& temp_ctx->wakeup_futex == addr1)
 			{
 				temp_ctx->wakeup_futex = addr2;
@@ -5110,7 +5110,7 @@ static int x86_sys_futex_impl(X86Context *ctx)
 		}
 		mem_write(mem, addr2, 4, &newval);
 
-		ret = x86_ctx_futex_wake(ctx, addr1, val1, 0xffffffff);
+		ret = X86ContextFutexWake(ctx, addr1, val1, 0xffffffff);
 
 		switch (cmp)
 		{
@@ -5136,7 +5136,7 @@ static int x86_sys_futex_impl(X86Context *ctx)
 			fatal("%s: FUTEX_WAKE_OP: invalid condition", __FUNCTION__);
 		}
 		if (cond)
-			ret += x86_ctx_futex_wake(ctx, addr2, val2, 0xffffffff);
+			ret += X86ContextFutexWake(ctx, addr2, val2, 0xffffffff);
 
 		/* FIXME: we are returning the total number of threads waken up
 		 * counting both calls to x86_ctx_futex_wake. Is this correct? */
@@ -5203,7 +5203,7 @@ static int x86_sys_sched_setaffinity_impl(X86Context *ctx)
 
 	/* Find context associated with 'pid'. If the value given in 'pid' is
 	 * zero, the current context is used. */
-	target_ctx = pid ? x86_ctx_get(pid) : ctx;
+	target_ctx = pid ? X86EmuGetContext(x86_emu, pid) : ctx;
 	if (!target_ctx)
 	{
 		err = -ESRCH;
@@ -5284,7 +5284,7 @@ static int x86_sys_sched_getaffinity_impl(X86Context *ctx)
 
 	/* Find context associated with 'pid'. If the value given in 'pid' is
 	 * zero, the current context is used. */
-	target_ctx = pid ? x86_ctx_get(pid) : ctx;
+	target_ctx = pid ? X86EmuGetContext(x86_emu, pid) : ctx;
 	if (!target_ctx)
 		return -ESRCH;
 
@@ -5415,7 +5415,7 @@ static int x86_sys_exit_group_impl(X86Context *ctx)
 	x86_sys_debug("  status=%d\n", status);
 
 	/* Finish */
-	x86_ctx_finish_group(ctx, status);
+	X86ContextFinishGroup(ctx, status);
 	return 0;
 }
 
@@ -5585,13 +5585,13 @@ static int x86_sys_tgkill_impl(X86Context *ctx)
 			__FUNCTION__, err_x86_sys_note);
 
 	/* Find context referred by pid. */
-	temp_ctx = x86_ctx_get(pid);
+	temp_ctx = X86EmuGetContext(x86_emu, pid);
 	if (!temp_ctx)
 		fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
 
 	/* Send signal */
 	x86_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
-	x86_ctx_host_thread_suspend_cancel(temp_ctx);
+	X86ContextHostThreadSuspendCancel(temp_ctx);
 	X86EmuProcessEventsSchedule(x86_emu);
 	X86EmuProcessEvents(x86_emu);
 	return 0;

@@ -836,7 +836,7 @@ static int opengl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 	driver_state.ready_for_work = 0;
 
 	/* Suspend x86 context until driver needs more work */
-	x86_ctx_suspend(ctx, 
+	X86ContextSuspend(ctx, 
 		opengl_abi_si_ndrange_send_work_groups_can_wakeup, NULL,
 		opengl_abi_si_ndrange_send_work_groups_wakeup, NULL);
 
@@ -898,7 +898,7 @@ static int opengl_abi_si_ndrange_finish_impl(X86Context *ctx)
 	else 
 	{
 		/* Suspend x86 context until simulation completes */
-		x86_ctx_suspend(ctx, opengl_abi_si_ndrange_finish_can_wakeup, 
+		X86ContextSuspend(ctx, opengl_abi_si_ndrange_finish_can_wakeup, 
 			NULL, opengl_abi_si_ndrange_finish_wakeup, NULL);
 	}
 

@@ -58,7 +58,7 @@ void x86_isa_addps_xmm_xmmm128_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -92,7 +92,7 @@ void x86_isa_addss_xmm_xmmm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -166,7 +166,7 @@ void x86_isa_cmppd_xmm_xmmm128_imm8_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		switch (imm8)
@@ -203,7 +203,7 @@ void x86_isa_cmpps_xmm_xmmm128_imm8_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		switch (imm8)
@@ -239,7 +239,7 @@ void x86_isa_cvtsi2ss_xmm_rm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -272,7 +272,7 @@ void x86_isa_cvttss2si_r32_xmmm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -304,7 +304,7 @@ void x86_isa_divps_xmm_xmmm128_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -338,7 +338,7 @@ void x86_isa_divss_xmm_xmmm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -378,7 +378,7 @@ void x86_isa_maxps_xmm_xmmm128_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -412,7 +412,7 @@ void x86_isa_maxss_xmm_xmmm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -446,7 +446,7 @@ void x86_isa_minps_xmm_xmmm128_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -480,7 +480,7 @@ void x86_isa_minss_xmm_xmmm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -616,7 +616,7 @@ void x86_isa_mulps_xmm_xmmm128_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -650,7 +650,7 @@ void x86_isa_mulss_xmm_xmmm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -794,7 +794,7 @@ void x86_isa_sqrtps_xmm_xmmm128_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -828,7 +828,7 @@ void x86_isa_sqrtss_xmm_xmmm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -868,7 +868,7 @@ void x86_isa_subps_xmm_xmmm128_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -902,7 +902,7 @@ void x86_isa_subss_xmm_xmmm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -939,7 +939,7 @@ void x86_isa_ucomisd_xmm_xmmm64_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -981,7 +981,7 @@ void x86_isa_ucomiss_xmm_xmmm32_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -1020,7 +1020,7 @@ void x86_isa_unpckhps_xmm_xmmm128_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
@@ -1054,7 +1054,7 @@ void x86_isa_unpcklps_xmm_xmmm128_impl(X86Context *ctx)
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	spec_mode = x86_ctx_get_state(ctx, x86_ctx_spec_mode);
+	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
 	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
