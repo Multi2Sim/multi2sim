@@ -49,7 +49,7 @@ void x86_isa_f2xm1_impl(X86Context *ctx)
 	unsigned char st0[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -64,8 +64,8 @@ void x86_isa_f2xm1_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_exp, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -76,7 +76,7 @@ void x86_isa_fabs_impl(X86Context *ctx)
 	unsigned char st0[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -91,8 +91,8 @@ void x86_isa_fabs_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sign, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -104,8 +104,8 @@ void x86_isa_fadd_m32_impl(X86Context *ctx)
 	float m32;
 	unsigned short status;
 
-	m32 = x86_isa_load_float(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m32 = X86ContextLoadFloat(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -121,8 +121,8 @@ void x86_isa_fadd_m32_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_add, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -134,8 +134,8 @@ void x86_isa_fadd_m64_impl(X86Context *ctx)
 	double m64;
 	unsigned short status;
 
-	m64 = x86_isa_load_double(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m64 = X86ContextLoadDouble(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -151,8 +151,8 @@ void x86_isa_fadd_m64_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_add, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -163,8 +163,8 @@ void x86_isa_fadd_st0_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -180,8 +180,8 @@ void x86_isa_fadd_st0_sti_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_add, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -192,8 +192,8 @@ void x86_isa_fadd_sti_st0_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -209,8 +209,8 @@ void x86_isa_fadd_sti_st0_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, ctx->inst.opindex, sti);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_add, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
@@ -219,7 +219,7 @@ void x86_isa_fadd_sti_st0_impl(X86Context *ctx)
 void x86_isa_faddp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fadd_sti_st0_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -230,7 +230,7 @@ void x86_isa_fchs_impl(X86Context *ctx)
 	unsigned char st0[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -245,8 +245,8 @@ void x86_isa_fchs_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sign, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -255,9 +255,9 @@ void x86_isa_fchs_impl(X86Context *ctx)
 void x86_isa_fcmovb_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (x86_isa_get_flag(ctx, x86_inst_flag_cf))
-		x86_isa_store_fpu(ctx, 0, sti);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	if (X86ContextGetFlag(ctx, x86_inst_flag_cf))
+		X86ContextStoreFpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -266,9 +266,9 @@ void x86_isa_fcmovb_st0_sti_impl(X86Context *ctx)
 void x86_isa_fcmove_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (x86_isa_get_flag(ctx, x86_inst_flag_zf))
-		x86_isa_store_fpu(ctx, 0, sti);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	if (X86ContextGetFlag(ctx, x86_inst_flag_zf))
+		X86ContextStoreFpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -277,9 +277,9 @@ void x86_isa_fcmove_st0_sti_impl(X86Context *ctx)
 void x86_isa_fcmovbe_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (x86_isa_get_flag(ctx, x86_inst_flag_cf) || x86_isa_get_flag(ctx, x86_inst_flag_zf))
-		x86_isa_store_fpu(ctx, 0, sti);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	if (X86ContextGetFlag(ctx, x86_inst_flag_cf) || X86ContextGetFlag(ctx, x86_inst_flag_zf))
+		X86ContextStoreFpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, x86_dep_zps, x86_dep_st0, 0, 0, 0);
 }
@@ -288,9 +288,9 @@ void x86_isa_fcmovbe_st0_sti_impl(X86Context *ctx)
 void x86_isa_fcmovu_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (x86_isa_get_flag(ctx, x86_inst_flag_pf))
-		x86_isa_store_fpu(ctx, 0, sti);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	if (X86ContextGetFlag(ctx, x86_inst_flag_pf))
+		X86ContextStoreFpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -299,9 +299,9 @@ void x86_isa_fcmovu_st0_sti_impl(X86Context *ctx)
 void x86_isa_fcmovnb_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (!x86_isa_get_flag(ctx, x86_inst_flag_cf))
-		x86_isa_store_fpu(ctx, 0, sti);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	if (!X86ContextGetFlag(ctx, x86_inst_flag_cf))
+		X86ContextStoreFpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -310,9 +310,9 @@ void x86_isa_fcmovnb_st0_sti_impl(X86Context *ctx)
 void x86_isa_fcmovne_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (!x86_isa_get_flag(ctx, x86_inst_flag_zf))
-		x86_isa_store_fpu(ctx, 0, sti);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	if (!X86ContextGetFlag(ctx, x86_inst_flag_zf))
+		X86ContextStoreFpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -321,9 +321,9 @@ void x86_isa_fcmovne_st0_sti_impl(X86Context *ctx)
 void x86_isa_fcmovnbe_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (!x86_isa_get_flag(ctx, x86_inst_flag_cf) && !x86_isa_get_flag(ctx, x86_inst_flag_zf))
-		x86_isa_store_fpu(ctx, 0, sti);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	if (!X86ContextGetFlag(ctx, x86_inst_flag_cf) && !X86ContextGetFlag(ctx, x86_inst_flag_zf))
+		X86ContextStoreFpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, x86_dep_zps, x86_dep_st0, 0, 0, 0);
 }
@@ -332,9 +332,9 @@ void x86_isa_fcmovnbe_st0_sti_impl(X86Context *ctx)
 void x86_isa_fcmovnu_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	if (!x86_isa_get_flag(ctx, x86_inst_flag_pf))
-		x86_isa_store_fpu(ctx, 0, sti);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	if (!X86ContextGetFlag(ctx, x86_inst_flag_pf))
+		X86ContextStoreFpu(ctx, 0, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -346,8 +346,8 @@ void x86_isa_fcom_m32_impl(X86Context *ctx)
 	float m32;
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	m32 = x86_isa_load_float(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
+	m32 = X86ContextLoadFloat(ctx);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -361,7 +361,7 @@ void x86_isa_fcom_m32_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_mem32, 0, x86_dep_fpst, 0, 0, 0);
 }
@@ -373,8 +373,8 @@ void x86_isa_fcom_m64_impl(X86Context *ctx)
 	double m64;
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	m64 = x86_isa_load_double(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
+	m64 = X86ContextLoadDouble(ctx);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -388,7 +388,7 @@ void x86_isa_fcom_m64_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_mem64, 0, x86_dep_fpst, 0, 0, 0);
 }
@@ -399,8 +399,8 @@ void x86_isa_fcom_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -415,7 +415,7 @@ void x86_isa_fcom_sti_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
 }
@@ -424,7 +424,7 @@ void x86_isa_fcom_sti_impl(X86Context *ctx)
 void x86_isa_fcomp_m32_impl(X86Context *ctx)
 {
 	x86_isa_fcom_m32_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -433,7 +433,7 @@ void x86_isa_fcomp_m32_impl(X86Context *ctx)
 void x86_isa_fcomp_m64_impl(X86Context *ctx)
 {
 	x86_isa_fcom_m64_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -442,7 +442,7 @@ void x86_isa_fcomp_m64_impl(X86Context *ctx)
 void x86_isa_fcomp_sti_impl(X86Context *ctx)
 {
 	x86_isa_fcom_sti_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -453,8 +453,8 @@ void x86_isa_fcompp_impl(X86Context *ctx)
 	unsigned char st0[10], st1[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, 1, st1);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 1, st1);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -469,9 +469,9 @@ void x86_isa_fcompp_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu_code(ctx, status);
-	x86_isa_pop_fpu(ctx, NULL);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextStoreFpuCode(ctx, status);
+	X86ContextPopFpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_st1, 0, x86_dep_fpst, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
@@ -485,8 +485,8 @@ void x86_isa_fcomi_st0_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned long flags = regs->eflags;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -512,7 +512,7 @@ void x86_isa_fcomi_st0_sti_impl(X86Context *ctx)
 void x86_isa_fcomip_st0_sti_impl(X86Context *ctx)
 {
 	x86_isa_fcomi_st0_sti_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -524,8 +524,8 @@ void x86_isa_fucomi_st0_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned long flags = regs->eflags;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -551,7 +551,7 @@ void x86_isa_fucomi_st0_sti_impl(X86Context *ctx)
 void x86_isa_fucomip_st0_sti_impl(X86Context *ctx)
 {
 	x86_isa_fucomi_st0_sti_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -562,7 +562,7 @@ void x86_isa_fcos_impl(X86Context *ctx)
 	unsigned char st0[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -577,8 +577,8 @@ void x86_isa_fcos_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_cos, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -590,8 +590,8 @@ void x86_isa_fdiv_m32_impl(X86Context *ctx)
 	float m32;
 	unsigned short status;
 
-	m32 = x86_isa_load_float(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m32 = X86ContextLoadFloat(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -607,8 +607,8 @@ void x86_isa_fdiv_m32_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_div, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -620,8 +620,8 @@ void x86_isa_fdiv_m64_impl(X86Context *ctx)
 	double m64;
 	unsigned short status;
 
-	m64 = x86_isa_load_double(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m64 = X86ContextLoadDouble(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -637,8 +637,8 @@ void x86_isa_fdiv_m64_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_div, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -649,8 +649,8 @@ void x86_isa_fdiv_st0_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -666,8 +666,8 @@ void x86_isa_fdiv_st0_sti_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -678,8 +678,8 @@ void x86_isa_fdiv_sti_st0_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -695,8 +695,8 @@ void x86_isa_fdiv_sti_st0_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, ctx->inst.opindex, sti);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
@@ -705,7 +705,7 @@ void x86_isa_fdiv_sti_st0_impl(X86Context *ctx)
 void x86_isa_fdivp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fdiv_sti_st0_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -717,8 +717,8 @@ void x86_isa_fdivr_m32_impl(X86Context *ctx)
 	float m32;
 	unsigned short status;
 
-	m32 = x86_isa_load_float(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m32 = X86ContextLoadFloat(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -734,8 +734,8 @@ void x86_isa_fdivr_m32_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_div, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -747,8 +747,8 @@ void x86_isa_fdivr_m64_impl(X86Context *ctx)
 	double m64;
 	unsigned short status;
 
-	m64 = x86_isa_load_double(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m64 = X86ContextLoadDouble(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -764,8 +764,8 @@ void x86_isa_fdivr_m64_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_div, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -776,8 +776,8 @@ void x86_isa_fdivr_st0_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -793,8 +793,8 @@ void x86_isa_fdivr_st0_sti_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -805,8 +805,8 @@ void x86_isa_fdivr_sti_st0_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -822,8 +822,8 @@ void x86_isa_fdivr_sti_st0_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, ctx->inst.opindex, sti);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
@@ -832,7 +832,7 @@ void x86_isa_fdivr_sti_st0_impl(X86Context *ctx)
 void x86_isa_fdivrp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fdivr_sti_st0_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -843,7 +843,7 @@ void x86_isa_fild_m16_impl(X86Context *ctx)
 	short m16;
 	unsigned char e[10];
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 2, &m16);
+	X86ContextMemRead(ctx, X86ContextEffectiveAddress(ctx), 2, &m16);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -854,7 +854,7 @@ void x86_isa_fild_m16_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, e);
+	X86ContextPushFpu(ctx, e);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_mem16, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -866,7 +866,7 @@ void x86_isa_fild_m32_impl(X86Context *ctx)
 	int m32;
 	unsigned char e[10];
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 4, &m32);
+	X86ContextMemRead(ctx, X86ContextEffectiveAddress(ctx), 4, &m32);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -877,7 +877,7 @@ void x86_isa_fild_m32_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, e);
+	X86ContextPushFpu(ctx, e);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_mem32, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -889,7 +889,7 @@ void x86_isa_fild_m64_impl(X86Context *ctx)
 	long long m64;
 	unsigned char e[10];
 
-	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 8, &m64);
+	X86ContextMemRead(ctx, X86ContextEffectiveAddress(ctx), 8, &m64);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -900,7 +900,7 @@ void x86_isa_fild_m64_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, e);
+	X86ContextPushFpu(ctx, e);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_mem64, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -912,7 +912,7 @@ void x86_isa_fist_m16_impl(X86Context *ctx)
 	short m16;
 	unsigned char e[10];
 
-	x86_isa_load_fpu(ctx, 0, e);
+	X86ContextLoadFpu(ctx, 0, e);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -923,7 +923,7 @@ void x86_isa_fist_m16_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 2, &m16);
+	X86ContextMemWrite(ctx, X86ContextEffectiveAddress(ctx), 2, &m16);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem16, 0, 0, 0);
 }
@@ -934,7 +934,7 @@ void x86_isa_fist_m32_impl(X86Context *ctx)
 	int m32;
 	unsigned char e[10];
 
-	x86_isa_load_fpu(ctx, 0, e);
+	X86ContextLoadFpu(ctx, 0, e);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -945,7 +945,7 @@ void x86_isa_fist_m32_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 4, &m32);
+	X86ContextMemWrite(ctx, X86ContextEffectiveAddress(ctx), 4, &m32);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem32, 0, 0, 0);
 }
@@ -956,7 +956,7 @@ void x86_isa_fist_m64_impl(X86Context *ctx)
 	long long m64;
 	unsigned char e[10];
 
-	x86_isa_load_fpu(ctx, 0, e);
+	X86ContextLoadFpu(ctx, 0, e);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -967,7 +967,7 @@ void x86_isa_fist_m64_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 8, &m64);
+	X86ContextMemWrite(ctx, X86ContextEffectiveAddress(ctx), 8, &m64);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem64, 0, 0, 0);
 }
@@ -976,7 +976,7 @@ void x86_isa_fist_m64_impl(X86Context *ctx)
 void x86_isa_fistp_m16_impl(X86Context *ctx)
 {
 	x86_isa_fist_m16_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -985,7 +985,7 @@ void x86_isa_fistp_m16_impl(X86Context *ctx)
 void x86_isa_fistp_m32_impl(X86Context *ctx)
 {
 	x86_isa_fist_m32_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -994,7 +994,7 @@ void x86_isa_fistp_m32_impl(X86Context *ctx)
 void x86_isa_fistp_m64_impl(X86Context *ctx)
 {
 	x86_isa_fist_m64_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -1012,7 +1012,7 @@ void x86_isa_fld1_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, v);
+	X86ContextPushFpu(ctx, v);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1031,7 +1031,7 @@ void x86_isa_fldl2e_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, v);
+	X86ContextPushFpu(ctx, v);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1050,7 +1050,7 @@ void x86_isa_fldl2t_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, v);
+	X86ContextPushFpu(ctx, v);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1069,7 +1069,7 @@ void x86_isa_fldpi_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, v);
+	X86ContextPushFpu(ctx, v);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1088,7 +1088,7 @@ void x86_isa_fldlg2_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, v);
+	X86ContextPushFpu(ctx, v);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1107,7 +1107,7 @@ void x86_isa_fldln2_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, v);
+	X86ContextPushFpu(ctx, v);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1126,7 +1126,7 @@ void x86_isa_fldz_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_push_fpu(ctx, v);
+	X86ContextPushFpu(ctx, v);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1138,9 +1138,9 @@ void x86_isa_fld_m32_impl(X86Context *ctx)
 	unsigned char e[10];
 	float m32;
 
-	m32 = x86_isa_load_float(ctx);
-	x86_isa_float_to_extended(m32, e);
-	x86_isa_push_fpu(ctx, e);
+	m32 = X86ContextLoadFloat(ctx);
+	X86ContextFloatToExtended(m32, e);
+	X86ContextPushFpu(ctx, e);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_mem32, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1152,9 +1152,9 @@ void x86_isa_fld_m64_impl(X86Context *ctx)
 	unsigned char e[10];
 	double m64;
 
-	m64 = x86_isa_load_double(ctx);
-	x86_isa_double_to_extended(m64, e);
-	x86_isa_push_fpu(ctx, e);
+	m64 = X86ContextLoadDouble(ctx);
+	X86ContextDoubleToExtended(m64, e);
+	X86ContextPushFpu(ctx, e);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_mem64, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1165,8 +1165,8 @@ void x86_isa_fld_m80_impl(X86Context *ctx)
 {
 	unsigned char e[10];
 
-	x86_isa_load_extended(ctx, e);
-	x86_isa_push_fpu(ctx, e);
+	X86ContextLoadExtended(ctx, e);
+	X86ContextPushFpu(ctx, e);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_mem80, 0, 0, x86_dep_st0, 0, 0, 0);
@@ -1176,8 +1176,8 @@ void x86_isa_fld_m80_impl(X86Context *ctx)
 void x86_isa_fld_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	x86_isa_push_fpu(ctx, sti);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	X86ContextPushFpu(ctx, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, 0, 0, x86_dep_fpaux, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -1193,8 +1193,8 @@ void x86_isa_fldcw_m16_impl(X86Context *ctx)
 	unsigned short value;
 	int spec_mode;
 
-	addr = x86_isa_effective_address(ctx);
-	x86_isa_mem_read(ctx, addr, 2, &value);
+	addr = X86ContextEffectiveAddress(ctx);
+	X86ContextMemRead(ctx, addr, 2, &value);
 
 	/* Mask all floating-point exception on wrong path */
 	spec_mode = X86ContextGetState(ctx, X86ContextSpecMode);
@@ -1215,8 +1215,8 @@ void x86_isa_fmul_m32_impl(X86Context *ctx)
 	float m32;
 	unsigned short status;
 
-	m32 = x86_isa_load_float(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m32 = X86ContextLoadFloat(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1232,8 +1232,8 @@ void x86_isa_fmul_m32_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_mult, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1245,8 +1245,8 @@ void x86_isa_fmul_m64_impl(X86Context *ctx)
 	double m64;
 	unsigned short status;
 
-	m64 = x86_isa_load_double(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m64 = X86ContextLoadDouble(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1262,8 +1262,8 @@ void x86_isa_fmul_m64_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_mult, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1274,8 +1274,8 @@ void x86_isa_fmul_st0_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1291,8 +1291,8 @@ void x86_isa_fmul_st0_sti_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_mult, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1303,8 +1303,8 @@ void x86_isa_fmul_sti_st0_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1320,8 +1320,8 @@ void x86_isa_fmul_sti_st0_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, ctx->inst.opindex, sti);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_mult, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
@@ -1330,7 +1330,7 @@ void x86_isa_fmul_sti_st0_impl(X86Context *ctx)
 void x86_isa_fmulp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fmul_sti_st0_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -1344,8 +1344,8 @@ void x86_isa_fnstcw_m16_impl(X86Context *ctx)
 
 void x86_isa_fnstsw_ax_impl(X86Context *ctx)
 {
-	unsigned short status = x86_isa_load_fpu_status(ctx);
-	x86_isa_store_reg(ctx, x86_inst_reg_ax, status);
+	unsigned short status = X86ContextLoadFpuStatus(ctx);
+	X86ContextStoreReg(ctx, x86_inst_reg_ax, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_fpst, 0, 0, x86_dep_eax, 0, 0, 0);
 }
@@ -1356,8 +1356,8 @@ void x86_isa_fpatan_impl(X86Context *ctx)
 	unsigned char st0[10], st1[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, 1, st1);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 1, st1);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1373,9 +1373,9 @@ void x86_isa_fpatan_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 1, st1);
-	x86_isa_pop_fpu(ctx, NULL);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 1, st1);
+	X86ContextPopFpu(ctx, NULL);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_atan, x86_dep_st0, x86_dep_st1, 0, x86_dep_st1, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
@@ -1387,8 +1387,8 @@ void x86_isa_fprem_impl(X86Context *ctx)
 	unsigned char st0[10], st1[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, 1, st1);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 1, st1);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1405,8 +1405,8 @@ void x86_isa_fprem_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_div, x86_dep_st0, x86_dep_st1, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1417,8 +1417,8 @@ void x86_isa_fprem1_impl(X86Context *ctx)
 	unsigned char st0[10], st1[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, 1, st1);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 1, st1);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1435,8 +1435,8 @@ void x86_isa_fprem1_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_div, x86_dep_st0, x86_dep_st1, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1447,7 +1447,7 @@ void x86_isa_fptan_impl(X86Context *ctx)
 	unsigned char st0[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1463,12 +1463,12 @@ void x86_isa_fptan_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
+	X86ContextStoreFpu(ctx, 0, st0);
 
 	x86_uinst_new(ctx, x86_uinst_fp_tan, x86_dep_st0, 0, 0, x86_dep_st0, x86_dep_st1, 0, 0);
 
 	x86_isa_fld1_impl(ctx);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpuCode(ctx, status);
 }
 
 
@@ -1477,7 +1477,7 @@ void x86_isa_frndint_impl(X86Context *ctx)
 	unsigned char st0[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1492,8 +1492,8 @@ void x86_isa_frndint_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_round, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1504,8 +1504,8 @@ void x86_isa_fscale_impl(X86Context *ctx)
 	unsigned char st0[10], st1[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, 1, st1);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 1, st1);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1522,8 +1522,8 @@ void x86_isa_fscale_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_exp, x86_dep_st0, x86_dep_st1, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1534,7 +1534,7 @@ void x86_isa_fsin_impl(X86Context *ctx)
 	unsigned char st0[10];
 	short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1549,8 +1549,8 @@ void x86_isa_fsin_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sin, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1561,7 +1561,7 @@ void x86_isa_fsincos_impl(X86Context *ctx)
 	unsigned char st0[10], vsin[10], vcos[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1579,9 +1579,9 @@ void x86_isa_fsincos_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, vsin);
-	x86_isa_push_fpu(ctx, vcos);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, vsin);
+	X86ContextPushFpu(ctx, vcos);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_sincos, x86_dep_st1, 0, 0, x86_dep_st0, x86_dep_st1, 0, 0);
@@ -1593,7 +1593,7 @@ void x86_isa_fsqrt_impl(X86Context *ctx)
 	unsigned char st0[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1608,8 +1608,8 @@ void x86_isa_fsqrt_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sqrt, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1620,9 +1620,9 @@ void x86_isa_fst_m32_impl(X86Context *ctx)
 	unsigned char st0[10];
 	float m32;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	m32 = x86_isa_extended_to_float(st0);
-	x86_isa_store_float(ctx, m32);
+	X86ContextLoadFpu(ctx, 0, st0);
+	m32 = X86ContextExtendedToFloat(st0);
+	X86ContextStoreFloat(ctx, m32);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem32, 0, 0, 0);
 }
@@ -1633,9 +1633,9 @@ void x86_isa_fst_m64_impl(X86Context *ctx)
 	unsigned char st0[10];
 	double m64;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	m64 = x86_isa_extended_to_double(st0);
-	x86_isa_store_double(ctx, m64);
+	X86ContextLoadFpu(ctx, 0, st0);
+	m64 = X86ContextExtendedToDouble(st0);
+	X86ContextStoreDouble(ctx, m64);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem64, 0, 0, 0);
 }
@@ -1645,8 +1645,8 @@ void x86_isa_fst_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_store_fpu(ctx, ctx->inst.opindex, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextStoreFpu(ctx, ctx->inst.opindex, st0);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_sti, 0, 0, 0);
 }
@@ -1655,7 +1655,7 @@ void x86_isa_fst_sti_impl(X86Context *ctx)
 void x86_isa_fstp_m32_impl(X86Context *ctx)
 {
 	x86_isa_fst_m32_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -1664,7 +1664,7 @@ void x86_isa_fstp_m32_impl(X86Context *ctx)
 void x86_isa_fstp_m64_impl(X86Context *ctx)
 {
 	x86_isa_fst_m64_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -1674,8 +1674,8 @@ void x86_isa_fstp_m80_impl(X86Context *ctx)
 {
 	unsigned char m80[10];
 
-	x86_isa_pop_fpu(ctx, m80);
-	x86_isa_store_extended(ctx, m80);
+	X86ContextPopFpu(ctx, m80);
+	X86ContextStoreExtended(ctx, m80);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem80, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
@@ -1685,7 +1685,7 @@ void x86_isa_fstp_m80_impl(X86Context *ctx)
 void x86_isa_fstp_sti_impl(X86Context *ctx)
 {
 	x86_isa_fst_sti_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -1693,8 +1693,8 @@ void x86_isa_fstp_sti_impl(X86Context *ctx)
 
 void x86_isa_fstsw_ax_impl(X86Context *ctx)
 {
-	unsigned short status = x86_isa_load_fpu_status(ctx);
-	x86_isa_store_reg(ctx, x86_inst_reg_ax, status);
+	unsigned short status = X86ContextLoadFpuStatus(ctx);
+	X86ContextStoreReg(ctx, x86_inst_reg_ax, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_fpst, 0, 0, x86_dep_eax, 0, 0, 0);
 }
@@ -1706,8 +1706,8 @@ void x86_isa_fsub_m32_impl(X86Context *ctx)
 	float m32;
 	unsigned short status;
 
-	m32 = x86_isa_load_float(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m32 = X86ContextLoadFloat(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1723,8 +1723,8 @@ void x86_isa_fsub_m32_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub,	x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1736,8 +1736,8 @@ void x86_isa_fsub_m64_impl(X86Context *ctx)
 	double m64;
 	unsigned short status;
 
-	m64 = x86_isa_load_double(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m64 = X86ContextLoadDouble(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1753,8 +1753,8 @@ void x86_isa_fsub_m64_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1765,8 +1765,8 @@ void x86_isa_fsub_st0_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1782,8 +1782,8 @@ void x86_isa_fsub_st0_sti_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1794,8 +1794,8 @@ void x86_isa_fsub_sti_st0_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1811,8 +1811,8 @@ void x86_isa_fsub_sti_st0_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, ctx->inst.opindex, sti);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
@@ -1821,7 +1821,7 @@ void x86_isa_fsub_sti_st0_impl(X86Context *ctx)
 void x86_isa_fsubp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fsub_sti_st0_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -1833,8 +1833,8 @@ void x86_isa_fsubr_m32_impl(X86Context *ctx)
 	float m32;
 	unsigned short status;
 
-	m32 = x86_isa_load_float(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m32 = X86ContextLoadFloat(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1850,8 +1850,8 @@ void x86_isa_fsubr_m32_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1863,8 +1863,8 @@ void x86_isa_fsubr_m64_impl(X86Context *ctx)
 	double m64;
 	unsigned short status;
 
-	m64 = x86_isa_load_double(ctx);
-	x86_isa_load_fpu(ctx, 0, st0);
+	m64 = X86ContextLoadDouble(ctx);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1880,8 +1880,8 @@ void x86_isa_fsubr_m64_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1892,8 +1892,8 @@ void x86_isa_fsubr_st0_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1909,8 +1909,8 @@ void x86_isa_fsubr_st0_sti_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 0, st0);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 0, st0);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
@@ -1921,8 +1921,8 @@ void x86_isa_fsubr_sti_st0_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1938,8 +1938,8 @@ void x86_isa_fsubr_sti_st0_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, ctx->inst.opindex, sti);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
@@ -1948,7 +1948,7 @@ void x86_isa_fsubr_sti_st0_impl(X86Context *ctx)
 void x86_isa_fsubrp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fsubr_sti_st0_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -1960,7 +1960,7 @@ void x86_isa_fstcw_m16_impl(X86Context *ctx)
 	unsigned short value = regs->fpu_ctrl;
 
 	/* Store value of FP control word */
-	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 2, &value);
+	X86ContextMemWrite(ctx, X86ContextEffectiveAddress(ctx), 2, &value);
 
 	/* Micro-instructions */
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_fpcw, 0, 0, x86_dep_mem32, 0, 0, 0);
@@ -1972,7 +1972,7 @@ void x86_isa_ftst_impl(X86Context *ctx)
 	unsigned char st0[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1987,7 +1987,7 @@ void x86_isa_ftst_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, 0, 0, x86_dep_fpst, 0, 0, 0);
 }
@@ -1998,8 +1998,8 @@ void x86_isa_fucom_sti_impl(X86Context *ctx)
 	unsigned char st0[10], sti[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -2014,7 +2014,7 @@ void x86_isa_fucom_sti_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
 }
@@ -2023,7 +2023,7 @@ void x86_isa_fucom_sti_impl(X86Context *ctx)
 void x86_isa_fucomp_sti_impl(X86Context *ctx)
 {
 	x86_isa_fucom_sti_impl(ctx);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -2034,8 +2034,8 @@ void x86_isa_fucompp_impl(X86Context *ctx)
 	unsigned char st0[10], st1[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, 1, st1);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 1, st1);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -2050,9 +2050,9 @@ void x86_isa_fucompp_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu_code(ctx, status);
-	x86_isa_pop_fpu(ctx, NULL);
-	x86_isa_pop_fpu(ctx, NULL);
+	X86ContextStoreFpuCode(ctx, status);
+	X86ContextPopFpu(ctx, NULL);
+	X86ContextPopFpu(ctx, NULL);
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_st1, 0, x86_dep_fpst, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
@@ -2065,7 +2065,7 @@ void x86_isa_fxam_impl(X86Context *ctx)
 	unsigned char st0[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -2080,7 +2080,7 @@ void x86_isa_fxam_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, 0, 0, x86_dep_fpst, 0, 0, 0);
 }
@@ -2089,10 +2089,10 @@ void x86_isa_fxam_impl(X86Context *ctx)
 void x86_isa_fxch_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
-	x86_isa_store_fpu(ctx, 0, sti);
-	x86_isa_store_fpu(ctx, ctx->inst.opindex, st0);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, ctx->inst.opindex, sti);
+	X86ContextStoreFpu(ctx, 0, sti);
+	X86ContextStoreFpu(ctx, ctx->inst.opindex, st0);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, x86_dep_sti, 0, 0);
 }
@@ -2103,8 +2103,8 @@ void x86_isa_fyl2x_impl(X86Context *ctx)
 	unsigned char st0[10], st1[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, 1, st1);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 1, st1);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -2120,9 +2120,9 @@ void x86_isa_fyl2x_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 1, st1);
-	x86_isa_pop_fpu(ctx, NULL);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 1, st1);
+	X86ContextPopFpu(ctx, NULL);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_log, x86_dep_st0, x86_dep_st1, 0, x86_dep_st1, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
@@ -2134,8 +2134,8 @@ void x86_isa_fyl2xp1_impl(X86Context *ctx)
 	unsigned char st0[10], st1[10];
 	unsigned short status;
 
-	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, 1, st1);
+	X86ContextLoadFpu(ctx, 0, st0);
+	X86ContextLoadFpu(ctx, 1, st1);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -2151,9 +2151,9 @@ void x86_isa_fyl2xp1_impl(X86Context *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, 1, st1);
-	x86_isa_pop_fpu(ctx, NULL);
-	x86_isa_store_fpu_code(ctx, status);
+	X86ContextStoreFpu(ctx, 1, st1);
+	X86ContextPopFpu(ctx, NULL);
+	X86ContextStoreFpuCode(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_log, x86_dep_st0, x86_dep_st1, 0, x86_dep_st1, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);

@@ -53,8 +53,8 @@ void x86_isa_addpd_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -74,7 +74,7 @@ void x86_isa_addpd_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_add, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -87,8 +87,8 @@ void x86_isa_addsd_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -108,7 +108,7 @@ void x86_isa_addsd_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_add, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -119,8 +119,8 @@ void x86_isa_andpd_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -134,7 +134,7 @@ void x86_isa_andpd_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_and, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -147,8 +147,8 @@ void x86_isa_cvtdq2pd_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -168,7 +168,7 @@ void x86_isa_cvtdq2pd_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
@@ -180,8 +180,8 @@ void x86_isa_cvtdq2ps_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -201,7 +201,7 @@ void x86_isa_cvtdq2ps_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -214,8 +214,8 @@ void x86_isa_cvtps2pd_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -235,7 +235,7 @@ void x86_isa_cvtps2pd_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
@@ -247,8 +247,8 @@ void x86_isa_cvtsi2sd_xmm_rm32_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	src = x86_isa_load_rm32(ctx);
-	x86_isa_load_xmm(ctx, dest.as_uchar);
+	src = X86ContextLoadRm32(ctx);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -268,7 +268,7 @@ void x86_isa_cvtsi2sd_xmm_rm32_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmm, x86_dep_rm32, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -279,7 +279,7 @@ void x86_isa_cvttsd2si_r32_xmmm64_impl(X86Context *ctx)
 	unsigned char xmm[16];
 	unsigned int r32;
 
-	x86_isa_load_xmmm64(ctx, xmm);
+	X86ContextLoadXMMM64(ctx, xmm);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -304,7 +304,7 @@ void x86_isa_cvtsd2si_r32_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -335,8 +335,8 @@ void x86_isa_cvtsd2ss_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -356,7 +356,7 @@ void x86_isa_cvtsd2ss_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
@@ -368,8 +368,8 @@ void x86_isa_cvtpd2ps_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -389,7 +389,7 @@ void x86_isa_cvtpd2ps_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -402,8 +402,8 @@ void x86_isa_cvtss2sd_xmm_xmmm32_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm32(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM32(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -423,7 +423,7 @@ void x86_isa_cvtss2sd_xmm_xmmm32_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm32, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -436,8 +436,8 @@ void x86_isa_cvttpd2dq_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -457,7 +457,7 @@ void x86_isa_cvttpd2dq_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -470,8 +470,8 @@ void x86_isa_cvttps2dq_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -491,7 +491,7 @@ void x86_isa_cvttps2dq_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -504,8 +504,8 @@ void x86_isa_divpd_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -525,7 +525,7 @@ void x86_isa_divpd_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_div, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -538,8 +538,8 @@ void x86_isa_divsd_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -559,7 +559,7 @@ void x86_isa_divsd_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_div, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -572,8 +572,8 @@ void x86_isa_maxpd_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -593,7 +593,7 @@ void x86_isa_maxpd_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -606,8 +606,8 @@ void x86_isa_maxsd_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -627,7 +627,7 @@ void x86_isa_maxsd_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_comp, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -640,8 +640,8 @@ void x86_isa_minpd_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -661,7 +661,7 @@ void x86_isa_minpd_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -674,8 +674,8 @@ void x86_isa_minsd_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -695,7 +695,7 @@ void x86_isa_minsd_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_comp, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -705,8 +705,8 @@ void x86_isa_movapd_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
-	x86_isa_load_xmmm128(ctx, xmm.as_uchar);
-	x86_isa_store_xmm(ctx, xmm.as_uchar);
+	X86ContextLoadXMMM128(ctx, xmm.as_uchar);
+	X86ContextStoreXMM(ctx, xmm.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -716,8 +716,8 @@ void x86_isa_movapd_xmmm128_xmm_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
-	x86_isa_load_xmm(ctx, xmm.as_uchar);
-	x86_isa_store_xmmm128(ctx, xmm.as_uchar);
+	X86ContextLoadXMM(ctx, xmm.as_uchar);
+	X86ContextStoreXMMM128(ctx, xmm.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -728,9 +728,9 @@ void x86_isa_movd_xmm_rm32_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t xmm;
 
 	memset(xmm.as_uchar, 0, sizeof xmm);
-	xmm.as_uint[0] = x86_isa_load_rm32(ctx);
+	xmm.as_uint[0] = X86ContextLoadRm32(ctx);
 
-	x86_isa_store_xmm(ctx, xmm.as_uchar);
+	X86ContextStoreXMM(ctx, xmm.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_rm32, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -740,8 +740,8 @@ void x86_isa_movd_rm32_xmm_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
-	x86_isa_load_xmm(ctx, xmm.as_uchar);
-	x86_isa_store_rm32(ctx, xmm.as_uint[0]);
+	X86ContextLoadXMM(ctx, xmm.as_uchar);
+	X86ContextStoreRm32(ctx, xmm.as_uint[0]);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_rm32, 0, 0, 0);
 }
@@ -751,8 +751,8 @@ void x86_isa_movdqa_xmm_xmmm128_impl(X86Context *ctx)
 {
 	unsigned char xmm[16];
 
-	x86_isa_load_xmmm128(ctx, xmm);
-	x86_isa_store_xmm(ctx, xmm);
+	X86ContextLoadXMMM128(ctx, xmm);
+	X86ContextStoreXMM(ctx, xmm);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -762,8 +762,8 @@ void x86_isa_movdqa_xmmm128_xmm_impl(X86Context *ctx)
 {
 	unsigned char xmm[16];
 
-	x86_isa_load_xmm(ctx, xmm);
-	x86_isa_store_xmmm128(ctx, xmm);
+	X86ContextLoadXMM(ctx, xmm);
+	X86ContextStoreXMMM128(ctx, xmm);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -773,8 +773,8 @@ void x86_isa_movdqu_xmm_xmmm128_impl(X86Context *ctx)
 {
 	unsigned char xmm[16];
 
-	x86_isa_load_xmmm128(ctx, xmm);
-	x86_isa_store_xmm(ctx, xmm);
+	X86ContextLoadXMMM128(ctx, xmm);
+	X86ContextStoreXMM(ctx, xmm);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -784,8 +784,8 @@ void x86_isa_movdqu_xmmm128_xmm_impl(X86Context *ctx)
 {
 	unsigned char xmm[16];
 
-	x86_isa_load_xmm(ctx, xmm);
-	x86_isa_store_xmmm128(ctx, xmm);
+	X86ContextLoadXMM(ctx, xmm);
+	X86ContextStoreXMMM128(ctx, xmm);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -795,9 +795,9 @@ void x86_isa_movhpd_xmm_m64_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
-	x86_isa_load_xmm(ctx, xmm.as_uchar);
-	xmm.as_uint64[1] = x86_isa_load_m64(ctx);
-	x86_isa_store_xmm(ctx, xmm.as_uchar);
+	X86ContextLoadXMM(ctx, xmm.as_uchar);
+	xmm.as_uint64[1] = X86ContextLoadM64(ctx);
+	X86ContextStoreXMM(ctx, xmm.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -807,8 +807,8 @@ void x86_isa_movhpd_m64_xmm_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
-	x86_isa_load_xmm(ctx, xmm.as_uchar);
-	x86_isa_store_m64(ctx, xmm.as_uint64[1]);
+	X86ContextLoadXMM(ctx, xmm.as_uchar);
+	X86ContextStoreM64(ctx, xmm.as_uint64[1]);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
 }
@@ -818,9 +818,9 @@ void x86_isa_movlpd_xmm_m64_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
-	x86_isa_load_xmm(ctx, xmm.as_uchar);
-	xmm.as_uint64[0] = x86_isa_load_m64(ctx);
-	x86_isa_store_xmm(ctx, xmm.as_uchar);
+	X86ContextLoadXMM(ctx, xmm.as_uchar);
+	xmm.as_uint64[0] = X86ContextLoadM64(ctx);
+	X86ContextStoreXMM(ctx, xmm.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -830,8 +830,8 @@ void x86_isa_movlpd_m64_xmm_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
-	x86_isa_load_xmm(ctx, xmm.as_uchar);
-	x86_isa_store_m64(ctx, xmm.as_uint64[0]);
+	X86ContextLoadXMM(ctx, xmm.as_uchar);
+	X86ContextStoreM64(ctx, xmm.as_uint64[0]);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
 }
@@ -842,7 +842,7 @@ void x86_isa_movmskpd_r32_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t src;
 	unsigned int r32;
 
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -866,7 +866,7 @@ void x86_isa_movmskps_r32_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t src;
 	unsigned int r32;
 
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -887,7 +887,7 @@ void x86_isa_movmskps_r32_xmmm128_impl(X86Context *ctx)
 
 void x86_isa_movntdq_m128_xmm_impl(X86Context *ctx)
 {
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
@@ -896,8 +896,8 @@ void x86_isa_movq_xmm_xmmm64_impl(X86Context *ctx)
 	unsigned char value[16];
 
 	memset(value, 0, 16);
-	x86_isa_load_xmmm64(ctx, value);
-	x86_isa_store_xmm(ctx, value);
+	X86ContextLoadXMMM64(ctx, value);
+	X86ContextStoreXMM(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm64, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -911,8 +911,8 @@ void x86_isa_movq_xmmm64_xmm_impl(X86Context *ctx)
 	memset(value, 0, 16);
 	if (ctx->inst.modrm_mod == 3)
 		memcpy(&regs->xmm[ctx->inst.modrm_rm], value, 16);
-	x86_isa_load_xmm(ctx, value);
-	x86_isa_store_xmmm64(ctx, value);
+	X86ContextLoadXMM(ctx, value);
+	X86ContextStoreXMMM64(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
 }
@@ -925,11 +925,11 @@ void x86_isa_movsd_xmm_xmmm64_impl(X86Context *ctx)
 	/* xmm <= m64: bits 127-64 of xmm set to 0.
 	 * xmm <= xmm: bits 127-64 unmodified */
 	if (ctx->inst.modrm_mod == 3)
-		x86_isa_load_xmm(ctx, value);
+		X86ContextLoadXMM(ctx, value);
 	else
 		memset(value, 0, 16);
-	x86_isa_load_xmmm64(ctx, value);
-	x86_isa_store_xmm(ctx, value);
+	X86ContextLoadXMMM64(ctx, value);
+	X86ContextStoreXMM(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmmm64, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -941,8 +941,8 @@ void x86_isa_movsd_xmmm64_xmm_impl(X86Context *ctx)
 
 	/* xmm <= xmm: bits 127-64 unmodified.
 	 * m64 <= xmm: copy 64 bits to memory */
-	x86_isa_load_xmm(ctx, value);
-	x86_isa_store_xmmm64(ctx, value);
+	X86ContextLoadXMM(ctx, value);
+	X86ContextStoreXMMM64(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
 }
@@ -955,8 +955,8 @@ void x86_isa_mulpd_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -976,7 +976,7 @@ void x86_isa_mulpd_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_mult, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -989,8 +989,8 @@ void x86_isa_mulsd_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -1010,7 +1010,7 @@ void x86_isa_mulsd_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_mult, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1021,8 +1021,8 @@ void x86_isa_orpd_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1036,7 +1036,7 @@ void x86_isa_orpd_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_or, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1047,8 +1047,8 @@ void x86_isa_paddb_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1062,7 +1062,7 @@ void x86_isa_paddb_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_add, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1073,8 +1073,8 @@ void x86_isa_paddw_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1088,7 +1088,7 @@ void x86_isa_paddw_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_add, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1099,8 +1099,8 @@ void x86_isa_paddd_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1114,7 +1114,7 @@ void x86_isa_paddd_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_add, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1125,8 +1125,8 @@ void x86_isa_paddq_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1140,7 +1140,7 @@ void x86_isa_paddq_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_add, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1151,8 +1151,8 @@ void x86_isa_pand_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1166,7 +1166,7 @@ void x86_isa_pand_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_and, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1177,8 +1177,8 @@ void x86_isa_pandn_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1192,7 +1192,7 @@ void x86_isa_pandn_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_nand, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1203,8 +1203,8 @@ void x86_isa_pcmpeqb_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1218,7 +1218,7 @@ void x86_isa_pcmpeqb_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1229,8 +1229,8 @@ void x86_isa_pcmpeqw_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1244,7 +1244,7 @@ void x86_isa_pcmpeqw_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1255,8 +1255,8 @@ void x86_isa_pcmpeqd_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1270,7 +1270,7 @@ void x86_isa_pcmpeqd_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1281,8 +1281,8 @@ void x86_isa_pcmpgtb_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1296,7 +1296,7 @@ void x86_isa_pcmpgtb_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1307,8 +1307,8 @@ void x86_isa_pcmpgtw_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1322,7 +1322,7 @@ void x86_isa_pcmpgtw_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1333,8 +1333,8 @@ void x86_isa_pcmpgtd_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1348,7 +1348,7 @@ void x86_isa_pcmpgtd_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1359,8 +1359,8 @@ void x86_isa_por_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1374,7 +1374,7 @@ void x86_isa_por_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_or, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1385,12 +1385,12 @@ void x86_isa_pshufd_xmm_xmmm128_imm8_impl(X86Context *ctx)
 	unsigned int src[4], dst[4];
 	unsigned char imm = ctx->inst.imm.b;
 
-	x86_isa_load_xmmm128(ctx, (unsigned char *) src);
+	X86ContextLoadXMMM128(ctx, (unsigned char *) src);
 	dst[0] = src[imm & 3];
 	dst[1] = src[(imm >> 2) & 3];
 	dst[2] = src[(imm >> 4) & 3];
 	dst[3] = src[(imm >> 6) & 3];
-	x86_isa_store_xmm(ctx, (unsigned char *) dst);
+	X86ContextStoreXMM(ctx, (unsigned char *) dst);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shuf, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1404,7 +1404,7 @@ void x86_isa_pslldq_xmmm128_imm8_impl(X86Context *ctx)
 	int count;
 	int i;
 
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 	count = ctx->inst.imm.b;
 	if (count > 16)
 		count = 16;
@@ -1414,7 +1414,7 @@ void x86_isa_pslldq_xmmm128_imm8_impl(X86Context *ctx)
 		dest.as_uchar[i + count] = src.as_uchar[i];
 
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
 
@@ -1424,7 +1424,7 @@ void x86_isa_pslld_xmmm128_imm8_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmmm128(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, dest.as_uchar);
 	memset(src.as_uchar, 0, sizeof src);
 	src.as_uchar[0] = ctx->inst.imm.b;
 
@@ -1440,7 +1440,7 @@ void x86_isa_pslld_xmmm128_imm8_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -1451,8 +1451,8 @@ void x86_isa_pslld_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1466,7 +1466,7 @@ void x86_isa_pslld_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1477,7 +1477,7 @@ void x86_isa_psllw_xmmm128_imm8_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmmm128(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, dest.as_uchar);
 	memset(src.as_uchar, 0, sizeof src);
 	src.as_uchar[0] = ctx->inst.imm.b;
 
@@ -1493,7 +1493,7 @@ void x86_isa_psllw_xmmm128_imm8_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -1504,8 +1504,8 @@ void x86_isa_psllw_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1519,7 +1519,7 @@ void x86_isa_psllw_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1530,7 +1530,7 @@ void x86_isa_psllq_xmmm128_imm8_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmmm128(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, dest.as_uchar);
 	memset(src.as_uchar, 0, sizeof src);
 	src.as_uchar[0] = ctx->inst.imm.b;
 
@@ -1546,7 +1546,7 @@ void x86_isa_psllq_xmmm128_imm8_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -1557,8 +1557,8 @@ void x86_isa_psllq_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1572,7 +1572,7 @@ void x86_isa_psllq_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1583,7 +1583,7 @@ void x86_isa_psraw_xmmm128_imm8_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmmm128(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, dest.as_uchar);
 	memset(src.as_uchar, 0, sizeof src);
 	src.as_uchar[0] = ctx->inst.imm.b;
 
@@ -1599,7 +1599,7 @@ void x86_isa_psraw_xmmm128_imm8_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -1610,8 +1610,8 @@ void x86_isa_psraw_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1625,7 +1625,7 @@ void x86_isa_psraw_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1636,7 +1636,7 @@ void x86_isa_psrlw_xmmm128_imm8_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmmm128(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, dest.as_uchar);
 	memset(src.as_uchar, 0, sizeof src);
 	src.as_uchar[0] = ctx->inst.imm.b;
 
@@ -1652,7 +1652,7 @@ void x86_isa_psrlw_xmmm128_imm8_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -1663,7 +1663,7 @@ void x86_isa_psrad_xmmm128_imm8_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmmm128(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, dest.as_uchar);
 	memset(src.as_uchar, 0, sizeof src);
 	src.as_uchar[0] = ctx->inst.imm.b;
 
@@ -1679,7 +1679,7 @@ void x86_isa_psrad_xmmm128_imm8_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -1690,8 +1690,8 @@ void x86_isa_psrad_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1705,7 +1705,7 @@ void x86_isa_psrad_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1716,8 +1716,8 @@ void x86_isa_psrlw_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1731,7 +1731,7 @@ void x86_isa_psrlw_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1742,8 +1742,8 @@ void x86_isa_psrld_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1757,7 +1757,7 @@ void x86_isa_psrld_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1768,7 +1768,7 @@ void x86_isa_psrld_xmmm128_imm8_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmmm128(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, dest.as_uchar);
 	memset(src.as_uchar, 0, sizeof src);
 	src.as_uchar[0] = ctx->inst.imm.b;
 
@@ -1784,7 +1784,7 @@ void x86_isa_psrld_xmmm128_imm8_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -1795,8 +1795,8 @@ void x86_isa_psrlq_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1810,7 +1810,7 @@ void x86_isa_psrlq_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1821,7 +1821,7 @@ void x86_isa_psrlq_xmmm128_imm8_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmmm128(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, dest.as_uchar);
 	memset(src.as_uchar, 0, sizeof src);
 	src.as_uchar[0] = ctx->inst.imm.b;
 
@@ -1837,7 +1837,7 @@ void x86_isa_psrlq_xmmm128_imm8_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
@@ -1851,7 +1851,7 @@ void x86_isa_psrldq_xmmm128_imm8_impl(X86Context *ctx)
 	int count;
 	int i;
 
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 	count = ctx->inst.imm.b;
 	if (count > 16)
 		count = 16;
@@ -1861,7 +1861,7 @@ void x86_isa_psrldq_xmmm128_imm8_impl(X86Context *ctx)
 		dest.as_uchar[i] = src.as_uchar[i + count];
 
 
-	x86_isa_store_xmmm128(ctx, dest.as_uchar);
+	X86ContextStoreXMMM128(ctx, dest.as_uchar);
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
 
@@ -1871,8 +1871,8 @@ void x86_isa_psubb_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1886,7 +1886,7 @@ void x86_isa_psubb_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_sub, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1897,8 +1897,8 @@ void x86_isa_psubw_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1912,7 +1912,7 @@ void x86_isa_psubw_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_sub, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1923,8 +1923,8 @@ void x86_isa_psubd_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1938,7 +1938,7 @@ void x86_isa_psubd_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 	x86_uinst_new(ctx, x86_uinst_xmm_sub, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
@@ -1948,8 +1948,8 @@ void x86_isa_psubq_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1963,7 +1963,7 @@ void x86_isa_psubq_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 	x86_uinst_new(ctx, x86_uinst_xmm_sub, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
@@ -1973,8 +1973,8 @@ void x86_isa_punpcklbw_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1988,7 +1988,7 @@ void x86_isa_punpcklbw_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shuf, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -1999,8 +1999,8 @@ void x86_isa_punpcklwd_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2014,7 +2014,7 @@ void x86_isa_punpcklwd_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shuf, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2025,8 +2025,8 @@ void x86_isa_punpckldq_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2040,7 +2040,7 @@ void x86_isa_punpckldq_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shuf, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2051,8 +2051,8 @@ void x86_isa_punpcklqdq_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2066,7 +2066,7 @@ void x86_isa_punpcklqdq_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shuf, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2077,8 +2077,8 @@ void x86_isa_pxor_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2092,7 +2092,7 @@ void x86_isa_pxor_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_xor, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2105,8 +2105,8 @@ void x86_isa_sqrtpd_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -2126,7 +2126,7 @@ void x86_isa_sqrtpd_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_sqrt, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2139,8 +2139,8 @@ void x86_isa_sqrtsd_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -2160,7 +2160,7 @@ void x86_isa_sqrtsd_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_sqrt, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2173,8 +2173,8 @@ void x86_isa_subpd_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -2194,7 +2194,7 @@ void x86_isa_subpd_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_sub, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2207,8 +2207,8 @@ void x86_isa_subsd_xmm_xmmm64_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm64(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -2228,7 +2228,7 @@ void x86_isa_subsd_xmm_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_fp_sub, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2241,8 +2241,8 @@ void x86_isa_unpckhpd_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -2262,7 +2262,7 @@ void x86_isa_unpckhpd_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shuf, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2275,8 +2275,8 @@ void x86_isa_unpcklpd_xmm_xmmm128_impl(X86Context *ctx)
 
 	int spec_mode;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -2296,7 +2296,7 @@ void x86_isa_unpcklpd_xmm_xmmm128_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shuf, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -2307,8 +2307,8 @@ void x86_isa_xorpd_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -2322,7 +2322,7 @@ void x86_isa_xorpd_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_xor, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }

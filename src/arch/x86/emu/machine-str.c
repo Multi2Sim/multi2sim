@@ -94,7 +94,7 @@ static void x86_isa_rep_init(X86Context *ctx)
 		{ \
 			x86_isa_##X##_run(ctx); \
 			regs->ecx--; \
-			if (x86_isa_get_flag(ctx, x86_inst_flag_zf)) \
+			if (X86ContextGetFlag(ctx, x86_inst_flag_zf)) \
 				regs->eip -= ctx->inst.size; \
 		} \
 		\
@@ -116,7 +116,7 @@ static void x86_isa_rep_init(X86Context *ctx)
 		{ \
 			x86_isa_##X##_run(ctx); \
 			regs->ecx--; \
-			if (!x86_isa_get_flag(ctx, x86_inst_flag_zf)) \
+			if (!X86ContextGetFlag(ctx, x86_inst_flag_zf)) \
 				regs->eip -= ctx->inst.size; \
 		} \
 		\
@@ -153,8 +153,8 @@ static void x86_isa_cmpsb_run(X86Context *ctx)
 	unsigned char op2;
 	unsigned long flags;
 
-	x86_isa_mem_read(ctx, regs->esi, 1, &op1);
-	x86_isa_mem_read(ctx, regs->edi, 1, &op2);
+	X86ContextMemRead(ctx, regs->esi, 1, &op1);
+	X86ContextMemRead(ctx, regs->edi, 1, &op2);
 	flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
@@ -172,8 +172,8 @@ static void x86_isa_cmpsb_run(X86Context *ctx)
 	__X86_ISA_ASM_END__
 
 	regs->eflags = flags;
-	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
-	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
+	regs->esi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -1 : 1;
+	regs->edi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -1 : 1;
 }
 
 
@@ -211,8 +211,8 @@ static void x86_isa_cmpsd_run(X86Context *ctx)
 	unsigned int op2;
 	unsigned long flags;
 
-	x86_isa_mem_read(ctx, regs->edi, 4, &op1);
-	x86_isa_mem_read(ctx, regs->esi, 4, &op2);
+	X86ContextMemRead(ctx, regs->edi, 4, &op1);
+	X86ContextMemRead(ctx, regs->esi, 4, &op2);
 	flags = regs->eflags;
 
 	__X86_ISA_ASM_START__ \
@@ -230,8 +230,8 @@ static void x86_isa_cmpsd_run(X86Context *ctx)
 	__X86_ISA_ASM_END__ \
 
 	regs->eflags = flags;
-	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
-	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
+	regs->esi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -4 : 4;
+	regs->edi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -4 : 4;
 }
 
 
@@ -268,7 +268,7 @@ void x86_isa_insb_impl(X86Context *ctx)
 
 	x86_isa_insb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_insb_run(ctx);
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
@@ -296,7 +296,7 @@ void x86_isa_insd_impl(X86Context *ctx)
 
 	x86_isa_insd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_insd_run(ctx);
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
@@ -324,7 +324,7 @@ void x86_isa_lodsb_impl(X86Context *ctx)
 
 	x86_isa_lodsb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_lodsb_run(ctx);
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
@@ -352,7 +352,7 @@ void x86_isa_lodsd_impl(X86Context *ctx)
 
 	x86_isa_lodsd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_lodsd_run(ctx);
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
@@ -367,11 +367,11 @@ static void x86_isa_movsb_run(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned char m8;
 
-	x86_isa_mem_read(ctx, regs->esi, 1, &m8);
-	x86_isa_mem_write(ctx, regs->edi, 1, &m8);
+	X86ContextMemRead(ctx, regs->esi, 1, &m8);
+	X86ContextMemWrite(ctx, regs->edi, 1, &m8);
 
-	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
-	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
+	regs->edi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -1 : 1;
+	regs->esi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -1 : 1;
 }
 
 
@@ -405,11 +405,11 @@ static void x86_isa_movsw_run(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned short m16;
 
-	x86_isa_mem_read(ctx, regs->esi, 2, &m16);
-	x86_isa_mem_write(ctx, regs->edi, 2, &m16);
+	X86ContextMemRead(ctx, regs->esi, 2, &m16);
+	X86ContextMemWrite(ctx, regs->edi, 2, &m16);
 
-	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -2 : 2;
-	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -2 : 2;
+	regs->edi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -2 : 2;
+	regs->esi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -2 : 2;
 
 }
 
@@ -443,11 +443,11 @@ static void x86_isa_movsd_run(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int m32;
 
-	x86_isa_mem_read(ctx, regs->esi, 4, &m32);
-	x86_isa_mem_write(ctx, regs->edi, 4, &m32);
+	X86ContextMemRead(ctx, regs->esi, 4, &m32);
+	X86ContextMemWrite(ctx, regs->edi, 4, &m32);
 
-	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
-	regs->esi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
+	regs->edi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -4 : 4;
+	regs->esi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -4 : 4;
 
 }
 
@@ -495,7 +495,7 @@ void x86_isa_outsb_impl(X86Context *ctx)
 
 	x86_isa_outsb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_outsb_run(ctx);
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
@@ -523,7 +523,7 @@ void x86_isa_outsd_impl(X86Context *ctx)
 
 	x86_isa_outsd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_outsd_run(ctx);
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
@@ -537,11 +537,11 @@ static void x86_isa_scasb_run(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned char al = x86_isa_load_reg(ctx, x86_inst_reg_al);
+	unsigned char al = X86ContextLoadReg(ctx, x86_inst_reg_al);
 	unsigned char m8;
 	unsigned long flags = regs->eflags;
 
-	x86_isa_mem_read(ctx, regs->edi, 1, &m8);
+	X86ContextMemRead(ctx, regs->edi, 1, &m8);
 
 	__X86_ISA_ASM_START__ \
 	asm volatile (
@@ -558,7 +558,7 @@ static void x86_isa_scasb_run(X86Context *ctx)
 	__X86_ISA_ASM_END__ \
 
 	regs->eflags = flags;
-	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
+	regs->edi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -1 : 1;
 
 }
 
@@ -589,11 +589,11 @@ static void x86_isa_scasd_run(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned int eax = x86_isa_load_reg(ctx, x86_inst_reg_eax);
+	unsigned int eax = X86ContextLoadReg(ctx, x86_inst_reg_eax);
 	unsigned int m32;
 	unsigned long flags = regs->eflags;
 
-	x86_isa_mem_read(ctx, regs->edi, 4, &m32);
+	X86ContextMemRead(ctx, regs->edi, 4, &m32);
 
 	__X86_ISA_ASM_START__ \
 	asm volatile (
@@ -610,7 +610,7 @@ static void x86_isa_scasd_run(X86Context *ctx)
 	__X86_ISA_ASM_END__ \
 
 	regs->eflags = flags;
-	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
+	regs->edi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -4 : 4;
 
 }
 
@@ -641,11 +641,11 @@ static void x86_isa_stosb_run(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned char m8 = x86_isa_load_reg(ctx, x86_inst_reg_al);
-	unsigned int addr = x86_isa_load_reg(ctx, x86_inst_reg_edi);
+	unsigned char m8 = X86ContextLoadReg(ctx, x86_inst_reg_al);
+	unsigned int addr = X86ContextLoadReg(ctx, x86_inst_reg_edi);
 	
-	x86_isa_mem_write(ctx, addr, 1, &m8);
-	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -1 : 1;
+	X86ContextMemWrite(ctx, addr, 1, &m8);
+	regs->edi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -1 : 1;
 }
 
 
@@ -675,11 +675,11 @@ static void x86_isa_stosd_run(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned int m32 = x86_isa_load_reg(ctx, x86_inst_reg_eax);
-	unsigned int addr = x86_isa_load_reg(ctx, x86_inst_reg_edi);
+	unsigned int m32 = X86ContextLoadReg(ctx, x86_inst_reg_eax);
+	unsigned int addr = X86ContextLoadReg(ctx, x86_inst_reg_edi);
 	
-	x86_isa_mem_write(ctx, addr, 4, &m32);
-	regs->edi += x86_isa_get_flag(ctx, x86_inst_flag_df) ? -4 : 4;
+	X86ContextMemWrite(ctx, addr, 4, &m32);
+	regs->edi += X86ContextGetFlag(ctx, x86_inst_flag_df) ? -4 : 4;
 }
 
 

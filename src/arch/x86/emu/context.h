@@ -27,21 +27,18 @@
 
 
 /* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Emu);
 CLASS_FORWARD_DECLARATION(X86Context);
 struct bit_map_t;
 
 
 
-#define x86_ctx_debug(...) debug(x86_ctx_debug_category, __VA_ARGS__)
-extern int x86_ctx_debug_category;
-
-typedef int (*x86_ctx_can_wakeup_callback_func_t)(X86Context *self, void *data);
-typedef void (*x86_ctx_wakeup_callback_func_t)(X86Context *self, void *data);
-
-
 /*
  * Class 'X86Context'
  */
+
+typedef int (*X86ContextCanWakeupFunc)(X86Context *self, void *data);
+typedef void (*X86ContextWakeupFunc)(X86Context *self, void *data);
 
 typedef enum
 {
@@ -69,6 +66,9 @@ typedef enum
 
 CLASS_BEGIN(X86Context, Object)
 	
+	/* Emulator it belongs to */
+	X86Emu *emu;
+
 	/* Context properties */
 	int state;
 	int pid;  /* Context ID */
@@ -163,8 +163,8 @@ CLASS_BEGIN(X86Context, Object)
 	/* Generic callback function (and data to pass to it) to call when a
 	 * context gets suspended in a system call to check whether it should be
 	 * waken up, and once it is waken up, respectively */
-	x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func;
-	x86_ctx_wakeup_callback_func_t wakeup_callback_func;
+	X86ContextCanWakeupFunc can_wakeup_callback_func;
+	X86ContextWakeupFunc wakeup_callback_func;
 	void *can_wakeup_callback_data;
 	void *wakeup_callback_data;
 
@@ -202,7 +202,7 @@ CLASS_BEGIN(X86Context, Object)
 CLASS_END(X86Context)
 
 
-void X86ContextCreate(X86Context *self);
+void X86ContextCreate(X86Context *self, X86Emu *emu);
 void X86ContextCreateAndClone(X86Context *self, X86Context *cloned);
 void X86ContextCreateAndFork(X86Context *self, X86Context *forked);
 
@@ -217,8 +217,8 @@ void X86ContextHostThreadTimerCancelUnsafe(X86Context *self);
 void X86ContextHostThreadTimerCancel(X86Context *self);
 
 void X86ContextSuspend(X86Context *self,
-	x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func,
-	void *can_wakeup_callback_data, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
+	X86ContextCanWakeupFunc can_wakeup_callback_func,
+	void *can_wakeup_callback_data, X86ContextWakeupFunc wakeup_callback_func,
 	void *wakeup_callback_data);
 
 void X86ContextFinish(X86Context *self, int state);
@@ -240,6 +240,18 @@ void X86ContextExitRobustList(X86Context *self);
 
 void X86ContextProcSelfMaps(X86Context *self, char *path, int size);
 void X86ContextProcCPUInfo(X86Context *self, char *path, int size);
+
+
+
+/*
+ * Non-Class
+ */
+
+
+#define X86ContextDebug(...) debug(x86_context_debug_category, __VA_ARGS__)
+extern int x86_context_debug_category;
+
+extern struct str_map_t x86_context_state_map;
 
 #endif
 

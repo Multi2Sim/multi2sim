@@ -119,7 +119,7 @@ static void x86_cpu_alloc_context(X86Context *ctx)
 	X86_THREAD.fetch_neip = ctx->regs->eip;
 
 	/* Debug */
-	x86_ctx_debug("#%lld ctx %d in node %d/%d allocated\n",
+	X86ContextDebug("#%lld ctx %d in node %d/%d allocated\n",
 		asTiming(x86_cpu)->cycle, ctx->pid, core, thread);
 
 	/* Trace */
@@ -179,7 +179,7 @@ static void x86_cpu_map_context(X86Context *ctx)
 	DOUBLE_LINKED_LIST_INSERT_TAIL(&X86_THREAD, mapped, ctx);
 
 	/* Debug */
-	x86_ctx_debug("#%lld ctx %d mapped to node %d/%d\n",
+	X86ContextDebug("#%lld ctx %d mapped to node %d/%d\n",
 		asTiming(x86_cpu)->cycle, ctx->pid, core, thread);
 }
 
@@ -204,7 +204,7 @@ static void x86_cpu_unmap_context(X86Context *ctx)
 	DOUBLE_LINKED_LIST_REMOVE(&X86_THREAD, mapped, ctx);
 
 	/* Debug */
-	x86_ctx_debug("#%lld ctx %d unmapped from node %d/%d\n",
+	X86ContextDebug("#%lld ctx %d unmapped from node %d/%d\n",
 		asTiming(x86_cpu)->cycle, ctx->pid, core, thread);
 
 	/* If context is finished, free it. */
@@ -260,7 +260,7 @@ static void x86_cpu_evict_context_signal(X86Context *ctx)
 
 	/* Set eviction signal. */
 	ctx->evict_signal = 1;
-	x86_ctx_debug("#%lld ctx %d signaled for eviction from node %d/%d\n",
+	X86ContextDebug("#%lld ctx %d signaled for eviction from node %d/%d\n",
 		asTiming(x86_cpu)->cycle, ctx->pid, core, thread);
 
 	/* If pipeline is already empty for the thread, effective eviction can
@@ -400,7 +400,7 @@ void x86_cpu_evict_context(int core, int thread)
 	ctx->evict_signal = 0;
 
 	/* Debug */
-	x86_ctx_debug("#%lld ctx %d evicted from node %d/%d\n",
+	X86ContextDebug("#%lld ctx %d evicted from node %d/%d\n",
 		asTiming(x86_cpu)->cycle, ctx->pid, core, thread);
 
 	/* Trace */
@@ -430,7 +430,7 @@ void x86_cpu_schedule(void)
 	/* OK, we have to schedule. Uncheck the schedule signal here, since
 	 * upcoming actions might set it again for a second scheduler call. */
 	x86_emu->schedule_signal = 0;
-	x86_ctx_debug("#%lld schedule\n", asTiming(x86_cpu)->cycle);
+	X86ContextDebug("#%lld schedule\n", asTiming(x86_cpu)->cycle);
 
 	/* Check if there is any running context that is currently not mapped
 	 * to any node (core/thread); for example, a new context, or a

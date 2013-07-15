@@ -57,8 +57,8 @@ void x86_isa_pcmpeqq_xmm_xmmm128_impl(X86Context *ctx)
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
 
-	x86_isa_load_xmm(ctx, dest.as_uchar);
-	x86_isa_load_xmmm128(ctx, src.as_uchar);
+	X86ContextLoadXMM(ctx, dest.as_uchar);
+	X86ContextLoadXMMM128(ctx, src.as_uchar);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -72,12 +72,12 @@ void x86_isa_pcmpeqq_xmm_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_xmm(ctx, dest.as_uchar);
+	X86ContextStoreXMM(ctx, dest.as_uchar);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_comp, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 
 #else
-	x86_isa_error(ctx, "%s: SSE4 instruction not supported.\n%s",
+	X86ContextError(ctx, "%s: SSE4 instruction not supported.\n%s",
 			__FUNCTION__, x86_isa_err_sse4);
 #endif
 }
@@ -85,25 +85,25 @@ void x86_isa_pcmpeqq_xmm_xmmm128_impl(X86Context *ctx)
 
 void x86_isa_pcmpistri_xmm_xmmm128_imm8_impl(X86Context *ctx)
 {
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
 void x86_isa_pinsrb_xmm_r32m8_imm8_impl(X86Context *ctx)
 {
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
 void x86_isa_pinsrd_xmm_rm32_imm8_impl(X86Context *ctx)
 {
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
 void x86_isa_ptest_xmm_xmmm128_impl(X86Context *ctx)
 {
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 

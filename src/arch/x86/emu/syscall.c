@@ -314,7 +314,7 @@ void x86_sys_call(X86Context *ctx)
 	/* Debug */
 	x86_sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
 		x86_sys_call_name[code], code, asEmu(x86_emu)->instructions, ctx->pid);
-	x86_isa_call_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
+	X86ContextDebugCall("system call '%s' (code %d, inst %lld, pid %d)\n",
 		x86_sys_call_name[code], code, asEmu(x86_emu)->instructions, ctx->pid);
 
 	/* Perform system call */

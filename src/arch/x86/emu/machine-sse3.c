@@ -40,13 +40,13 @@
 
 void x86_isa_palignr_xmm_xmmm128_imm8_impl(X86Context *ctx)
 {
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
 void x86_isa_pshufb_xmm_xmmm128_impl(X86Context *ctx)
 {
-	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
+	X86ContextError(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 

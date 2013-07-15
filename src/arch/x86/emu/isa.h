@@ -30,94 +30,106 @@
 CLASS_FORWARD_DECLARATION(X86Context);
 
 
-#define x86_isa_call_debug(...) debug(x86_isa_call_debug_category, __VA_ARGS__)
-#define x86_isa_inst_debug(...) debug(x86_isa_inst_debug_category, __VA_ARGS__)
 
-extern int x86_isa_call_debug_category;
-extern int x86_isa_inst_debug_category;
+/*
+ * Class 'X86Context'
+ * Additional functions.
+ */
 
-void x86_isa_error(X86Context *ctx, char *fmt, ...);
+void X86ContextError(X86Context *ctx, char *fmt, ...);
 
-void x86_isa_mem_read(X86Context *ctx, unsigned int addr, int size, void *buf);
-void x86_isa_mem_write(X86Context *ctx, unsigned int addr, int size, void *buf);
+void X86ContextMemRead(X86Context *ctx, unsigned int addr, int size, void *buf);
+void X86ContextMemWrite(X86Context *ctx, unsigned int addr, int size, void *buf);
 
-void x86_isa_dump_flags(X86Context *ctx, FILE *f);
-void x86_isa_set_flag(X86Context *ctx, enum x86_inst_flag_t flag);
-void x86_isa_clear_flag(X86Context *ctx, enum x86_inst_flag_t flag);
-int x86_isa_get_flag(X86Context *ctx, enum x86_inst_flag_t flag);
+void X86ContextSetFlag(X86Context *ctx, enum x86_inst_flag_t flag);
+void X86ContextClearFlag(X86Context *ctx, enum x86_inst_flag_t flag);
+int X86ContextGetFlag(X86Context *ctx, enum x86_inst_flag_t flag);
 
-unsigned int x86_isa_load_reg(X86Context *ctx, enum x86_inst_reg_t reg);
-void x86_isa_store_reg(X86Context *ctx, enum x86_inst_reg_t reg, unsigned int value);
+unsigned int X86ContextLoadReg(X86Context *ctx, enum x86_inst_reg_t reg);
+void X86ContextStoreReg(X86Context *ctx, enum x86_inst_reg_t reg, unsigned int value);
 
-unsigned char x86_isa_load_rm8(X86Context *ctx);
-unsigned short x86_isa_load_rm16(X86Context *ctx);
-unsigned int x86_isa_load_rm32(X86Context *ctx);
-unsigned short x86_isa_load_r32m16(X86Context *ctx);
-unsigned long long x86_isa_load_m64(X86Context *ctx);
-void x86_isa_store_rm8(X86Context *ctx, unsigned char value);
-void x86_isa_store_rm16(X86Context *ctx, unsigned short value);
-void x86_isa_store_rm32(X86Context *ctx, unsigned int value);
-void x86_isa_store_m64(X86Context *ctx, unsigned long long value);
+unsigned char X86ContextLoadRm8(X86Context *ctx);
+unsigned short X86ContextLoadRm16(X86Context *ctx);
+unsigned int X86ContextLoadRm32(X86Context *ctx);
+unsigned short X86ContextLoadR32M16(X86Context *ctx);
+unsigned long long X86ContextLoadM64(X86Context *ctx);
+void X86ContextStoreRm8(X86Context *ctx, unsigned char value);
+void X86ContextStoreRm16(X86Context *ctx, unsigned short value);
+void X86ContextStoreRm32(X86Context *ctx, unsigned int value);
+void X86ContextStoreM64(X86Context *ctx, unsigned long long value);
 
-#define x86_isa_load_r8(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_inst_reg_al)
-#define x86_isa_load_r16(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_inst_reg_ax)
-#define x86_isa_load_r32(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_inst_reg_eax)
-#define x86_isa_load_sreg(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_inst_reg_es)
-#define x86_isa_store_r8(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_inst_reg_al, value)
-#define x86_isa_store_r16(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_inst_reg_ax, value)
-#define x86_isa_store_r32(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_inst_reg_eax, value)
-#define x86_isa_store_sreg(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_inst_reg_es, value)
+#define x86_isa_load_r8(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_al)
+#define x86_isa_load_r16(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_ax)
+#define x86_isa_load_r32(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_eax)
+#define x86_isa_load_sreg(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_es)
+#define x86_isa_store_r8(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_al, value)
+#define x86_isa_store_r16(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_ax, value)
+#define x86_isa_store_r32(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_eax, value)
+#define x86_isa_store_sreg(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_es, value)
 
-#define x86_isa_load_ir8(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_inst_reg_al)
-#define x86_isa_load_ir16(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_inst_reg_ax)
-#define x86_isa_load_ir32(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_inst_reg_eax)
-#define x86_isa_store_ir8(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_inst_reg_al, value)
-#define x86_isa_store_ir16(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_inst_reg_ax, value)
-#define x86_isa_store_ir32(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_inst_reg_eax, value)
+#define x86_isa_load_ir8(ctx) X86ContextLoadReg(ctx, ctx->inst.opindex + x86_inst_reg_al)
+#define x86_isa_load_ir16(ctx) X86ContextLoadReg(ctx, ctx->inst.opindex + x86_inst_reg_ax)
+#define x86_isa_load_ir32(ctx) X86ContextLoadReg(ctx, ctx->inst.opindex + x86_inst_reg_eax)
+#define x86_isa_store_ir8(ctx, value) X86ContextStoreReg(ctx, ctx->inst.opindex + x86_inst_reg_al, value)
+#define x86_isa_store_ir16(ctx, value) X86ContextStoreReg(ctx, ctx->inst.opindex + x86_inst_reg_ax, value)
+#define x86_isa_store_ir32(ctx, value) X86ContextStoreReg(ctx, ctx->inst.opindex + x86_inst_reg_eax, value)
 
-void x86_isa_load_fpu(X86Context *ctx, int index, unsigned char *value);
-void x86_isa_store_fpu(X86Context *ctx, int index, unsigned char *value);
-void x86_isa_pop_fpu(X86Context *ctx, unsigned char *value);
-void x86_isa_push_fpu(X86Context *ctx, unsigned char *value);
+void X86ContextLoadFpu(X86Context *ctx, int index, unsigned char *value);
+void X86ContextStoreFpu(X86Context *ctx, int index, unsigned char *value);
+void X86ContextPopFpu(X86Context *ctx, unsigned char *value);
+void X86ContextPushFpu(X86Context *ctx, unsigned char *value);
 
-float x86_isa_load_float(X86Context *ctx);
-double x86_isa_load_double(X86Context *ctx);
-void x86_isa_load_extended(X86Context *ctx, unsigned char *value);
-void x86_isa_store_float(X86Context *ctx, float value);
-void x86_isa_store_double(X86Context *ctx, double value);
-void x86_isa_store_extended(X86Context *ctx, unsigned char *value);
+float X86ContextLoadFloat(X86Context *ctx);
+double X86ContextLoadDouble(X86Context *ctx);
+void X86ContextLoadExtended(X86Context *ctx, unsigned char *value);
+void X86ContextStoreFloat(X86Context *ctx, float value);
+void X86ContextStoreDouble(X86Context *ctx, double value);
+void X86ContextStoreExtended(X86Context *ctx, unsigned char *value);
 
-void x86_isa_dump_xmm(X86Context *ctx, unsigned char *value, FILE *f);
-void x86_isa_load_xmm(X86Context *ctx, unsigned char *value);
-void x86_isa_store_xmm(X86Context *ctx, unsigned char *value);
-void x86_isa_load_xmmm32(X86Context *ctx, unsigned char *value);
-void x86_isa_store_xmmm32(X86Context *ctx, unsigned char *value);
-void x86_isa_load_xmmm64(X86Context *ctx, unsigned char *value);
-void x86_isa_store_xmmm64(X86Context *ctx, unsigned char *value);
-void x86_isa_load_xmmm128(X86Context *ctx, unsigned char *value);
-void x86_isa_store_xmmm128(X86Context *ctx, unsigned char *value);
+void X86ContextDumpXMM(X86Context *ctx, unsigned char *value, FILE *f);
+void X86ContextLoadXMM(X86Context *ctx, unsigned char *value);
+void X86ContextStoreXMM(X86Context *ctx, unsigned char *value);
+void X86ContextLoadXMMM32(X86Context *ctx, unsigned char *value);
+void X86ContextStoreXMMM32(X86Context *ctx, unsigned char *value);
+void X86ContextLoadXMMM64(X86Context *ctx, unsigned char *value);
+void X86ContextStoreXMMM64(X86Context *ctx, unsigned char *value);
+void X86ContextLoadXMMM128(X86Context *ctx, unsigned char *value);
+void X86ContextStoreXMMM128(X86Context *ctx, unsigned char *value);
 
-void x86_isa_double_to_extended(double f, unsigned char *e);
-double x86_isa_extended_to_double(unsigned char *e);
-void x86_isa_float_to_extended(float f, unsigned char *e);
-float x86_isa_extended_to_float(unsigned char *e);
+void X86ContextStoreFpuCode(X86Context *ctx, unsigned short status);
+unsigned short X86ContextLoadFpuStatus(X86Context *ctx);
 
-void x86_isa_store_fpu_code(X86Context *ctx, unsigned short status);
-unsigned short x86_isa_load_fpu_status(X86Context *ctx);
-
-unsigned int x86_isa_effective_address(X86Context *ctx);
-unsigned int x86_isa_moffs_address(X86Context *ctx);
+unsigned int X86ContextEffectiveAddress(X86Context *ctx);
+unsigned int X86ContextMoffsAddress(X86Context *ctx);
 
 void x86_isa_init(void);
 void x86_isa_done(void);
 
-void x86_isa_execute_inst(X86Context *ctx);
+void X86ContextExecuteInst(X86Context *ctx);
+
+
+
+
+/*
+ * Non-Class Stuff
+ */
+
+#define X86ContextDebugCall(...) debug(x86_context_call_debug_category, __VA_ARGS__)
+#define X86ContextDebugISA(...) debug(x86_context_isa_debug_category, __VA_ARGS__)
+
+extern int x86_context_call_debug_category;
+extern int x86_context_isa_debug_category;
 
 void x86_isa_trace_call_init(char *filename);
 void x86_isa_trace_call_done(void);
 
 void x86_isa_inst_stat_dump(FILE *f);
 void x86_isa_inst_stat_reset(void);
+
+void X86ContextDoubleToExtended(double f, unsigned char *e);
+double X86ContextExtendedToDouble(unsigned char *e);
+void X86ContextFloatToExtended(float f, unsigned char *e);
+float X86ContextExtendedToFloat(unsigned char *e);
 
 #endif
 

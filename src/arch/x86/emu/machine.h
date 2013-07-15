@@ -21,20 +21,20 @@
 #define ARCH_X86_EMU_MACHINE_H
 
 
-extern long x86_isa_host_flags;
+extern long x86_context_host_flags;
 
 #define __X86_ISA_ASM_START__ asm volatile ( \
 	"pushf\n\t" \
 	"pop %0\n\t" \
-	: "=m" (x86_isa_host_flags));
+	: "=m" (x86_context_host_flags));
 
 #define __X86_ISA_ASM_END__ asm volatile ( \
 	"push %0\n\t" \
 	"popf\n\t" \
-	: "=m" (x86_isa_host_flags));
+	: "=m" (x86_context_host_flags));
 
 
-extern unsigned char x86_isa_host_fpenv[28];
+extern unsigned char x86_context_host_fpenv[28];
 
 #define __X86_ISA_FP_ASM_START__ asm volatile ( \
 	"pushf\n\t" \
@@ -42,7 +42,7 @@ extern unsigned char x86_isa_host_fpenv[28];
 	"fnstenv %1\n\t" /* store host FPU environment */ \
 	"fnclex\n\t" /* clear host FP exceptions */ \
 	"fldcw %2\n\t" \
-	: "=m" (x86_isa_host_flags), "=m" (*x86_isa_host_fpenv) \
+	: "=m" (x86_context_host_flags), "=m" (*x86_context_host_fpenv) \
 	: "m" (ctx->regs->fpu_ctrl));
 
 #define __X86_ISA_FP_ASM_END__ asm volatile ( \
@@ -50,8 +50,8 @@ extern unsigned char x86_isa_host_fpenv[28];
 	"popf\n\t" \
 	"fnstcw %1\n\t" \
 	"fldenv %2\n\t" /* restore host FPU environment */ \
-	: "=m" (x86_isa_host_flags), "=m" (ctx->regs->fpu_ctrl) \
-	: "m" (*x86_isa_host_fpenv));
+	: "=m" (x86_context_host_flags), "=m" (ctx->regs->fpu_ctrl) \
+	: "m" (*x86_context_host_fpenv));
 
 
 /* References to functions emulating x86 instructions */

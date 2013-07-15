@@ -766,7 +766,8 @@ void x86_emu_init(void)
 
 	/* Initialize */
 	x86_sys_init();
-	x86_isa_init();
+	x86_asm_init();
+	x86_uinst_init();
 
 #ifdef HAVE_OPENGL
 	/* GLUT */
@@ -796,7 +797,8 @@ void x86_emu_done(void)
 	opengl_done();
 
 	/* End */
-	x86_isa_done();
+	x86_uinst_done();
+	x86_asm_done();
 	x86_sys_done();
 
 	/* Free emulator */
