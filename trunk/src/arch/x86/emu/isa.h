@@ -58,21 +58,21 @@ void X86ContextStoreRm16(X86Context *ctx, unsigned short value);
 void X86ContextStoreRm32(X86Context *ctx, unsigned int value);
 void X86ContextStoreM64(X86Context *ctx, unsigned long long value);
 
-#define x86_isa_load_r8(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_al)
-#define x86_isa_load_r16(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_ax)
-#define x86_isa_load_r32(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_eax)
-#define x86_isa_load_sreg(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_es)
-#define x86_isa_store_r8(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_al, value)
-#define x86_isa_store_r16(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_ax, value)
-#define x86_isa_store_r32(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_eax, value)
-#define x86_isa_store_sreg(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_es, value)
+#define X86ContextLoadR8(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_al)
+#define X86ContextLoadR16(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_ax)
+#define X86ContextLoadR32(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_eax)
+#define X86ContextLoadSReg(ctx) X86ContextLoadReg(ctx, ctx->inst.reg + x86_inst_reg_es)
+#define X86ContextStoreR8(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_al, value)
+#define X86ContextStoreR16(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_ax, value)
+#define X86ContextStoreR32(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_eax, value)
+#define X86ContextStoreSReg(ctx, value) X86ContextStoreReg(ctx, ctx->inst.reg + x86_inst_reg_es, value)
 
-#define x86_isa_load_ir8(ctx) X86ContextLoadReg(ctx, ctx->inst.opindex + x86_inst_reg_al)
-#define x86_isa_load_ir16(ctx) X86ContextLoadReg(ctx, ctx->inst.opindex + x86_inst_reg_ax)
-#define x86_isa_load_ir32(ctx) X86ContextLoadReg(ctx, ctx->inst.opindex + x86_inst_reg_eax)
-#define x86_isa_store_ir8(ctx, value) X86ContextStoreReg(ctx, ctx->inst.opindex + x86_inst_reg_al, value)
-#define x86_isa_store_ir16(ctx, value) X86ContextStoreReg(ctx, ctx->inst.opindex + x86_inst_reg_ax, value)
-#define x86_isa_store_ir32(ctx, value) X86ContextStoreReg(ctx, ctx->inst.opindex + x86_inst_reg_eax, value)
+#define X86ContextLoadIR8(ctx) X86ContextLoadReg(ctx, ctx->inst.opindex + x86_inst_reg_al)
+#define X86ContextLoadIR16(ctx) X86ContextLoadReg(ctx, ctx->inst.opindex + x86_inst_reg_ax)
+#define X86ContextLoadIR32(ctx) X86ContextLoadReg(ctx, ctx->inst.opindex + x86_inst_reg_eax)
+#define X86ContextStoreIR8(ctx, value) X86ContextStoreReg(ctx, ctx->inst.opindex + x86_inst_reg_al, value)
+#define X86ContextStoreIR16(ctx, value) X86ContextStoreReg(ctx, ctx->inst.opindex + x86_inst_reg_ax, value)
+#define X86ContextStoreIR32(ctx, value) X86ContextStoreReg(ctx, ctx->inst.opindex + x86_inst_reg_eax, value)
 
 void X86ContextLoadFpu(X86Context *ctx, int index, unsigned char *value);
 void X86ContextStoreFpu(X86Context *ctx, int index, unsigned char *value);
@@ -101,9 +101,6 @@ unsigned short X86ContextLoadFpuStatus(X86Context *ctx);
 
 unsigned int X86ContextEffectiveAddress(X86Context *ctx);
 unsigned int X86ContextMoffsAddress(X86Context *ctx);
-
-void x86_isa_init(void);
-void x86_isa_done(void);
 
 void X86ContextExecuteInst(X86Context *ctx);
 

@@ -291,7 +291,7 @@ void x86_isa_cvttsd2si_r32_xmmm64_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_r32(ctx, r32);
+	X86ContextStoreR32(ctx, r32);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm64, 0, 0, x86_dep_r32, 0, 0, 0);
 }
@@ -323,7 +323,7 @@ void x86_isa_cvtsd2si_r32_xmmm64_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_r32(ctx, r32);
+	X86ContextStoreR32(ctx, r32);
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm64, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
@@ -855,7 +855,7 @@ void x86_isa_movmskpd_r32_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_r32(ctx, r32);
+	X86ContextStoreR32(ctx, r32);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_r32, 0, 0, 0);
 }
@@ -879,7 +879,7 @@ void x86_isa_movmskps_r32_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_r32(ctx, r32);
+	X86ContextStoreR32(ctx, r32);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_r32, 0, 0, 0);
 }
