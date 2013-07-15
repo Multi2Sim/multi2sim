@@ -24,7 +24,6 @@
 
 #include "opencl.h"
 #define X86_MAX_WORK_GROUP_SIZE 1024
-#define X86_DEVICE_SPIN_LOCKS
 
 typedef void (*opencl_x86_device_fiber_func_t)(void);
 typedef void (*opencl_x86_device_fiber_return_func_t)(void);
@@ -48,7 +47,7 @@ struct opencl_x86_device_exec_t
 	unsigned int work_group_count[3];
 
 	int num_groups;
-#ifndef X86_DEVICE_SPIN_LOCKS
+#ifndef HAVE_SYNC_BUILTINS
 	pthread_mutex_t next_group_lock;
 #endif
 	volatile int next_group;
@@ -98,7 +97,7 @@ struct opencl_x86_device_core_t
 
 struct opencl_x86_device_sync_t
 {
-#ifndef X86_DEVICE_SPIN_LOCKS
+#ifndef HAVE_SYNC_BUILTINS
 	pthread_mutex_t lock;
 	pthread_cond_t cond;
 #endif 
