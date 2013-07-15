@@ -22,9 +22,11 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "reg-file.h"
 #include "rob.h"
+#include "thread.h"
 
 
 /* Global variables */

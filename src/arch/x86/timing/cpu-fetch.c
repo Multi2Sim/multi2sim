@@ -31,10 +31,12 @@
 #include <mem-system/module.h>
 
 #include "bpred.h"
+#include "core.h"
 #include "cpu.h"
 #include "event-queue.h"
 #include "fetch-queue.h"
 #include "reg-file.h"
+#include "thread.h"
 #include "trace-cache.h"
 
 

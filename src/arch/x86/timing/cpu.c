@@ -35,6 +35,7 @@
 #include <mem-system/prefetch-history.h>
 
 #include "bpred.h"
+#include "core.h"
 #include "cpu.h"
 #include "event-queue.h"
 #include "fetch-queue.h"
@@ -44,6 +45,7 @@
 #include "mem-config.h"
 #include "reg-file.h"
 #include "rob.h"
+#include "thread.h"
 #include "trace-cache.h"
 #include "uop-queue.h"
 
@@ -640,29 +642,6 @@ static void x86_cpu_dump_report(void)
 }
 
 
-static void x86_cpu_thread_init(X86Cpu *cpu, int core, int thread)
-{
-}
-
-
-static void x86_cpu_core_init(X86Cpu *cpu, int core)
-{
-	int thread;
-
-	cpu->core[core].thread = xcalloc(x86_cpu_num_threads, sizeof(struct x86_thread_t));
-	for (thread = 0; thread < x86_cpu_num_threads; thread++)
-		x86_cpu_thread_init(cpu, core, thread);
-
-	cpu->core[core].prefetch_history = prefetch_history_create();
-}
-
-static void x86_cpu_core_done(X86Cpu *cpu, int core)
-{
-	free(cpu->core[core].thread);
-	prefetch_history_free(cpu->core[core].prefetch_history);
-}
-
-
 
 
 /*
@@ -785,6 +764,8 @@ void x86_cpu_init(void)
 {
 	/* Classes */
 	CLASS_REGISTER(X86Cpu);
+	CLASS_REGISTER(X86Core);
+	CLASS_REGISTER(X86Thread);
 
 	/* Trace */
 	x86_trace_category = trace_new_category();
@@ -972,7 +953,7 @@ CLASS_IMPLEMENTATION(X86Cpu);
 
 void X86CpuCreate(X86Cpu *self)
 {
-	int core;
+	int i;
 
 	/* Parent */
 	TimingCreate(asTiming(self));
@@ -984,10 +965,10 @@ void X86CpuCreate(X86Cpu *self)
 	/* Misc */
 	self->uop_trace_list = linked_list_create();
 
-	/* Initialize cores */
-	self->core = xcalloc(x86_cpu_num_cores, sizeof(struct x86_core_t));
-	X86_CORE_FOR_EACH
-		x86_cpu_core_init(self, core);
+	/* Create cores */
+	self->cores = xcalloc(x86_cpu_num_cores, sizeof(X86Core *));
+	for (i = 0; i < x86_cpu_num_cores; i++)
+		self->cores[i] = new(X86Core, self);
 
 	/* Virtual functions */
 	asObject(self)->Dump = X86CpuDump;
@@ -1001,12 +982,12 @@ void X86CpuCreate(X86Cpu *self)
 
 void X86CpuDestroy(X86Cpu *self)
 {
-	int core;
+	int i;
 
-	X86_CORE_FOR_EACH
-		x86_cpu_core_done(self, core);
-
-	free(self->core);
+	/* Free cores */
+	for (i = 0; i < x86_cpu_num_cores; i++)
+		delete(self->cores[i]);
+	free(self->cores);
 }
 
 

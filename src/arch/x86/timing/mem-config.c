@@ -28,8 +28,10 @@
 #include <mem-system/mem-system.h>
 #include <mem-system/module.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "mem-config.h"
+#include "thread.h"
 
 
 void X86CpuMemConfigDefault(Timing *self, struct config_t *config)

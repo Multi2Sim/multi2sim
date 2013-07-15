@@ -27,10 +27,12 @@
 #include <lib/util/debug.h>
 
 #include "bpred.h"
+#include "core.h"
 #include "cpu.h"
 #include "fu.h"
 #include "reg-file.h"
 #include "rob.h"
+#include "thread.h"
 #include "trace-cache.h"
 
 

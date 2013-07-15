@@ -29,7 +29,9 @@
 #include <lib/util/misc.h>
 #include <lib/util/list.h>
 
+#include "core.h"
 #include "cpu.h"
+#include "thread.h"
 
 
 /*

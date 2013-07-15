@@ -27,9 +27,11 @@
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "trace-cache.h"
 #include "uop.h"
+#include "thread.h"
 
 
 /* Debug */
@@ -98,7 +100,7 @@ void x86_trace_cache_init(void)
 	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 	{
 		snprintf(name, sizeof name,"Core[%d].Thread[%d].TraceCache", core, thread);
-		X86_THREAD.trace_cache = x86_trace_cache_create(name, &x86_cpu->core[core].thread[thread]);
+		X86_THREAD.trace_cache = x86_trace_cache_create(name, x86_cpu->cores[core]->threads[thread]);
 	}
 }
 
@@ -118,7 +120,7 @@ void x86_trace_cache_done(void)
 }
 
 
-struct x86_trace_cache_t *x86_trace_cache_create(char *name, struct x86_thread_t *thread)
+struct x86_trace_cache_t *x86_trace_cache_create(char *name, X86Thread *thread)
 {
 	struct x86_trace_cache_t *trace_cache;
 	struct x86_trace_cache_entry_t *entry;

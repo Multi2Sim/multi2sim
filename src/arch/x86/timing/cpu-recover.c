@@ -26,6 +26,7 @@
 #include <lib/esim/trace.h>
 #include <lib/util/misc.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "event-queue.h"
 #include "fetch-queue.h"
@@ -33,6 +34,7 @@
 #include "load-store-queue.h"
 #include "reg-file.h"
 #include "rob.h"
+#include "thread.h"
 #include "trace-cache.h"
 #include "uop-queue.h"
 
