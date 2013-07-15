@@ -39,6 +39,7 @@ static unsigned int opengl_vertex_array_obj_assign_id();
 
 static struct opengl_vertex_attrib_t *opengl_vertex_attrib_create();
 static void opengl_vertex_attrib_free(struct opengl_vertex_attrib_t *vattrib);
+static unsigned int opengl_vertex_attrib_get_element_size(unsigned int num_elems, unsigned int data_type);
 
 static struct opengl_vertex_array_obj_t *opengl_vertex_array_obj_create();
 static void opengl_vertex_array_obj_free(struct opengl_vertex_array_obj_t *vao);
@@ -84,6 +85,17 @@ static void opengl_vertex_attrib_free(struct opengl_vertex_attrib_t *vattrib)
 
 	/* Free */
 	free(vattrib);
+}
+
+
+static unsigned int opengl_vertex_attrib_get_element_size(unsigned int num_elems, unsigned int data_type)
+{
+	if (data_type != GL_INT_2_10_10_10_REV && data_type != GL_UNSIGNED_INT_2_10_10_10_REV)
+	{
+		return num_elems*opengl_context_get_data_size(data_type);
+	}
+	else
+		return opengl_context_get_data_size(data_type);
 }
 
 static struct opengl_vertex_array_obj_t *opengl_vertex_array_obj_create(unsigned int attribs_count)
@@ -356,6 +368,7 @@ void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean norm
 		vattrib->normalized = normalized;
 		vattrib->stride = stride;
 		vattrib->pointer = (unsigned int)pointer;
+		vattrib->element_size = opengl_vertex_attrib_get_element_size(size, type);
 		vattrib->vbo = buffer_obj;
 	}
 }
@@ -438,7 +451,6 @@ void glPrimitiveRestartIndex (GLuint index)
 
 /* Drawing Commands [2.8.3] [2.8.2] */
 
-
 void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 {
 	struct opengl_vertex_array_obj_t *vao;
@@ -447,7 +459,18 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	struct opengl_program_obj_t *program_obj;
 	struct opengl_shader_obj_t *shader_obj;
 	unsigned int vertex_shader_id;
-	int i;
+
+	unsigned int num_workitems;
+	unsigned int work_dim = 1; /* Currently always choose 1D */
+	unsigned int global_work_offset[3];
+	unsigned int global_work_size[3];
+	unsigned int local_work_size[3];
+	unsigned int group_count[3];
+	unsigned int work_group_start[3];
+	unsigned int work_group_count[3];
+	int max_work_groups_to_send;
+
+	int i, j;
 
 	/* Debug */
 	opengl_debug("API call %s(%x, %d, %d)\n", 
@@ -478,12 +501,14 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 				vbo = vattrib->vbo;
 				if (vbo)
 				{
+					/* FIXME: data offset is not considered in current implementation */
 					/* If already copied to device memory, free it */
 					if (vbo->device_ptr)
 						syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_free,
 							vbo->device_ptr);
 					/* Otherwise just allocate space in device memory */
-					vbo->device_ptr = (void*)syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_alloc,
+					vbo->device_ptr = (void*)syscall(OPENGL_SYSCALL_CODE, 
+						opengl_abi_si_mem_alloc,
 						vbo->size);
 					/* Then send data to device memory */
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_write,
@@ -492,6 +517,36 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_shader_set_input,
 						vertex_shader_id, vbo->device_ptr, vattrib->size, vbo->size, i);
 
+					/* Data is ready, now start processing NDrange information */
+					/* Calculate # of workitems */
+					num_workitems = vbo->size / vattrib->element_size;
+					/* Work sizes */
+					for (j = 0; j < work_dim; j++)
+					{
+						global_work_offset[j] = 0;
+						global_work_size[j] = num_workitems;
+						local_work_size[j] = num_workitems;
+						assert(!(global_work_size[j] % 	local_work_size[j]));
+						group_count[j] = global_work_size[j] / local_work_size[j];
+
+					}
+
+					/* Unused dimensions */
+					for (j = work_dim; j < 3; j++)
+					{
+						global_work_offset[j] = 0;
+						global_work_size[j] = 1;
+						local_work_size[j] = 1;
+						group_count[j] = global_work_size[j] / local_work_size[j];
+					}
+
+					for (j = 0; j < 3; j++)
+					{
+						work_group_start[j] = 0;
+						work_group_count[j] = group_count[j];
+					}
+
+				
 					/* Debug info */
 					opengl_debug("\tVBO #%d data send to device memory, device_ptr = %p\n",
 						vbo->id, vbo->device_ptr);
@@ -500,9 +555,27 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 					fatal("Vertex Attribute at index %d is used with no data", i);
 			}
 		}
-		/* Set rendering mode */
 
 		/* Launch Vertex Shader */
+		syscall(OPENGL_SYSCALL_CODE, 
+			opengl_abi_si_ndrange_initialize,
+			vertex_shader_id, work_dim, global_work_offset, global_work_size, local_work_size);
+	
+		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_pass_mem_objs);
+
+
+		syscall(OPENGL_SYSCALL_CODE,
+			opengl_abi_si_ndrange_get_num_buffer_entries,
+			&max_work_groups_to_send);
+
+		syscall(OPENGL_SYSCALL_CODE, 
+			opengl_abi_si_ndrange_send_work_groups, 
+			&work_group_start[0], &work_group_count[0],
+			group_count);
+
+		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_finish);
+
+		/* Set rendering mode */
 
 		/* Launch Fragment Shader*/
 
