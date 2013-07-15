@@ -105,7 +105,7 @@ void x86_isa_j##cc##_rel32_impl(X86Context *ctx) \
 void x86_isa_cmov##cc##_r16_rm16_impl(X86Context *ctx) \
 { \
 	if (cc_##cc) \
-		x86_isa_store_r16(ctx, X86ContextLoadRm16(ctx)); \
+		X86ContextStoreR16(ctx, X86ContextLoadRm16(ctx)); \
 	x86_uinst_new(ctx, x86_uinst_move, idep1, idep2, x86_dep_rm16, x86_dep_r16, 0, 0, 0); \
 }
 
@@ -114,7 +114,7 @@ void x86_isa_cmov##cc##_r16_rm16_impl(X86Context *ctx) \
 void x86_isa_cmov##cc##_r32_rm32_impl(X86Context *ctx) \
 { \
 	if (cc_##cc) \
-		x86_isa_store_r32(ctx, X86ContextLoadRm32(ctx)); \
+		X86ContextStoreR32(ctx, X86ContextLoadRm32(ctx)); \
 	x86_uinst_new(ctx, x86_uinst_move, idep1, idep2, x86_dep_rm32, x86_dep_r32, 0, 0, 0); \
 }
 

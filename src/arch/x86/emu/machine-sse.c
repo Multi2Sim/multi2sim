@@ -286,7 +286,7 @@ void x86_isa_cvttss2si_r32_xmmm32_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	x86_isa_store_r32(ctx, r32);
+	X86ContextStoreR32(ctx, r32);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_conv, x86_dep_xmmm32, 0, 0, x86_dep_r32, 0, 0, 0);
 }
@@ -713,7 +713,7 @@ void x86_isa_pextrw_r32_xmmm128_imm8_impl(X86Context *ctx)
 	/* Select 2-byte word from 'xmm' pointed to by 'imm8',
 	 * and place it in the 2 LSBytes of 'result' */
 	result = xmm.as_ushort[imm8];
-	x86_isa_store_r32(ctx, result);
+	X86ContextStoreR32(ctx, result);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_r32, 0, 0, 0);
 }
@@ -755,7 +755,7 @@ void x86_isa_pmovmskb_r32_xmmm128_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_store_r32(ctx, r32);
+	X86ContextStoreR32(ctx, r32);
 
 	x86_uinst_new(ctx, x86_uinst_xmm_shift, x86_dep_xmmm128, 0, 0, x86_dep_r32, 0, 0, 0);
 }
