@@ -25,6 +25,9 @@
 
 #include <arch/common/emu.h>
 
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Context);
+
 
 /*
  * Class 'X86Emu'
@@ -53,32 +56,32 @@ CLASS_BEGIN(X86Emu, Emu)
 	int schedule_signal;
 
 	/* List of contexts */
-	struct x86_ctx_t *context_list_head;
-	struct x86_ctx_t *context_list_tail;
+	X86Context *context_list_head;
+	X86Context *context_list_tail;
 	int context_list_count;
 	int context_list_max;
 
 	/* List of running contexts */
-	struct x86_ctx_t *running_list_head;
-	struct x86_ctx_t *running_list_tail;
+	X86Context *running_list_head;
+	X86Context *running_list_tail;
 	int running_list_count;
 	int running_list_max;
 
 	/* List of suspended contexts */
-	struct x86_ctx_t *suspended_list_head;
-	struct x86_ctx_t *suspended_list_tail;
+	X86Context *suspended_list_head;
+	X86Context *suspended_list_tail;
 	int suspended_list_count;
 	int suspended_list_max;
 
 	/* List of zombie contexts */
-	struct x86_ctx_t *zombie_list_head;
-	struct x86_ctx_t *zombie_list_tail;
+	X86Context *zombie_list_head;
+	X86Context *zombie_list_tail;
 	int zombie_list_count;
 	int zombie_list_max;
 
 	/* List of finished contexts */
-	struct x86_ctx_t *finished_list_head;
-	struct x86_ctx_t *finished_list_tail;
+	X86Context *finished_list_head;
+	X86Context *finished_list_tail;
 	int finished_list_count;
 	int finished_list_max;
 

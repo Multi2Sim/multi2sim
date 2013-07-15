@@ -78,7 +78,7 @@ cuda_func_t cuda_func_table[cuda_call_count + 1] =
  * CUDA Global Functions
  */
 
-int cuda_abi_call(struct x86_ctx_t *ctx)
+int cuda_abi_call(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -168,7 +168,7 @@ void cuda_done(void)
  *	The return value is always 0.
  */
 
-int cuda_func_versionCheck(struct x86_ctx_t *ctx)
+int cuda_func_versionCheck(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -195,7 +195,7 @@ int cuda_func_versionCheck(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuInit(struct x86_ctx_t *ctx)
+int cuda_func_cuInit(X86Context *ctx)
 {
 	/* Create module list*/
 	module_list = list_create();
@@ -216,7 +216,7 @@ int cuda_func_cuInit(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuDeviceTotalMem(struct x86_ctx_t *ctx)
+int cuda_func_cuDeviceTotalMem(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -245,7 +245,7 @@ int cuda_func_cuDeviceTotalMem(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
+int cuda_func_cuModuleLoad(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -278,7 +278,7 @@ int cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuModuleUnload(struct x86_ctx_t *ctx)
+int cuda_func_cuModuleUnload(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -320,7 +320,7 @@ int cuda_func_cuModuleUnload(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
+int cuda_func_cuModuleGetFunction(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -378,7 +378,7 @@ int cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuMemGetInfo(struct x86_ctx_t *ctx)
+int cuda_func_cuMemGetInfo(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -414,7 +414,7 @@ int cuda_func_cuMemGetInfo(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
+int cuda_func_cuMemAlloc(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -451,7 +451,7 @@ int cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuMemFree(struct x86_ctx_t *ctx)
+int cuda_func_cuMemFree(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -483,7 +483,7 @@ int cuda_func_cuMemFree(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuMemcpyHtoD(struct x86_ctx_t *ctx)
+int cuda_func_cuMemcpyHtoD(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -529,7 +529,7 @@ int cuda_func_cuMemcpyHtoD(struct x86_ctx_t *ctx)
  *	The return value is always 0 on success.
  */
 
-int cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
+int cuda_func_cuMemcpyDtoH(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -624,7 +624,7 @@ static void cuda_abi_frm_kernel_launch_finish(void *user_data)
 	X86EmuProcessEventsSchedule(x86_emu);
 }
 
-static int cuda_abi_frm_kernel_launch_can_wakeup(struct x86_ctx_t *ctx,
+static int cuda_abi_frm_kernel_launch_can_wakeup(X86Context *ctx,
 		void *user_data)
 {
 	struct cuda_abi_frm_kernel_launch_info_t *info = user_data;
@@ -635,7 +635,7 @@ static int cuda_abi_frm_kernel_launch_can_wakeup(struct x86_ctx_t *ctx,
 	return info->finished;
 }
 
-static void cuda_abi_frm_kernel_launch_wakeup(struct x86_ctx_t *ctx,
+static void cuda_abi_frm_kernel_launch_wakeup(X86Context *ctx,
 		void *user_data)
 {
 	struct cuda_abi_frm_kernel_launch_info_t *info = user_data;
@@ -644,7 +644,7 @@ static void cuda_abi_frm_kernel_launch_wakeup(struct x86_ctx_t *ctx,
 	free(info);
 }
 
-int cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
+int cuda_func_cuLaunchKernel(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;

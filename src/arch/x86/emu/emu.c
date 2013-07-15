@@ -84,7 +84,7 @@ void X86EmuCreate(X86Emu *self)
 
 void X86EmuDestroy(X86Emu *self)
 {
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 
 	/* Finish all contexts */
 	for (ctx = self->context_list_head; ctx; ctx = ctx->context_list_next)
@@ -93,14 +93,14 @@ void X86EmuDestroy(X86Emu *self)
 
 	/* Free contexts */
 	while (self->context_list_head)
-		x86_ctx_free(self->context_list_head);
+		delete(self->context_list_head);
 	
 }
 
 
 void X86EmuDump(Object *self, FILE *f)
 {
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 	X86Emu *emu = asX86Emu(self);
 
 	/* Call parent */
@@ -141,7 +141,7 @@ void X86EmuProcessEventsSchedule(X86Emu *self)
  * The argument 'arg' is the associated guest context. */
 static void *X86EmuHostThreadSuspend(void *arg)
 {
-	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
+	X86Context *ctx = (X86Context *) arg;
 	long long now = esim_real_time();
 	X86Emu *self = x86_emu;
 
@@ -238,7 +238,7 @@ static void *X86EmuHostThreadSuspend(void *arg)
 static void *X86EmuHostThreadTimer(void *arg)
 {
 	X86Emu *self = x86_emu;
-	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
+	X86Context *ctx = (X86Context *) arg;
 	long long now = esim_real_time();
 	struct timespec ts;
 	long long sleep_time;  /* In usec */
@@ -271,7 +271,7 @@ static void *X86EmuHostThreadTimer(void *arg)
  * The list is only processed if flag 'self->process_events_force' is set. */
 void X86EmuProcessEvents(X86Emu *self)
 {
-	struct x86_ctx_t *ctx, *next;
+	X86Context *ctx, *next;
 	long long now = esim_real_time();
 	
 	/* Check if events need actually be checked. */
@@ -298,10 +298,10 @@ void X86EmuProcessEvents(X86Emu *self)
 		/* Context is suspended in 'nanosleep' system call. */
 		if (x86_ctx_get_state(ctx, x86_ctx_nanosleep))
 		{
-			uint32_t rmtp = ctx->regs->ecx;
-			uint64_t zero = 0;
-			uint32_t sec, usec;
-			uint64_t diff;
+			unsigned int rmtp = ctx->regs->ecx;
+			unsigned long long zero = 0;
+			unsigned int sec, usec;
+			unsigned long long diff;
 
 			/* If 'X86EmuHostThreadSuspend' is still running for this context, do nothing. */
 			if (ctx->host_thread_suspend_active)
@@ -563,7 +563,7 @@ void X86EmuProcessEvents(X86Emu *self)
 		/* Context suspended in a 'waitpid' system call */
 		if (x86_ctx_get_state(ctx, x86_ctx_waitpid))
 		{
-			struct x86_ctx_t *child;
+			X86Context *child;
 			uint32_t pstatus;
 
 			/* A zombie child is available to 'waitpid' it */
@@ -691,7 +691,7 @@ void X86EmuProcessEvents(X86Emu *self)
 int X86EmuRun(Emu *self)
 {
 	X86Emu *emu = asX86Emu(self);
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 
 	/* Stop if there is no context running */
 	if (emu->finished_list_count >= emu->context_list_count)
@@ -711,7 +711,7 @@ int X86EmuRun(Emu *self)
 
 	/* Free finished contexts */
 	while (emu->finished_list_head)
-		x86_ctx_free(emu->finished_list_head);
+		delete(emu->finished_list_head);
 
 	/* Process list of suspended contexts */
 	X86EmuProcessEvents(x86_emu);
@@ -730,13 +730,16 @@ int X86EmuRun(Emu *self)
 
 void x86_emu_init(void)
 {
+	/* Classes */
+	CLASS_REGISTER(X86Emu);
+	CLASS_REGISTER(X86Context);
+
+	/* Endian check */
 	union
 	{
 		unsigned int as_uint;
 		unsigned char as_uchar[4];
 	} endian;
-
-	/* Endian check */
 	endian.as_uint = 0x33221100;
 	if (endian.as_uchar[0])
 		fatal("%s: host machine is not little endian", __FUNCTION__);
@@ -745,9 +748,6 @@ void x86_emu_init(void)
 	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
 	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
 	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
-
-	/* Classes */
-	CLASS_REGISTER(X86Emu);
 
 	/* Create x86 emulator */
 	x86_emu = new(X86Emu);

@@ -74,13 +74,13 @@ struct x86_loader_t *x86_loader_link(struct x86_loader_t *ld);
 void x86_loader_unlink(struct x86_loader_t *ld);
 
 void x86_loader_convert_filename(struct x86_loader_t *ld, char *file_name);
-void x86_loader_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full_path, int size);
+void x86_loader_get_full_path(X86Context *ctx, char *file_name, char *full_path, int size);
 
-void x86_loader_add_args(struct x86_ctx_t *ctx, int argc, char **argv);
-void x86_loader_add_cmdline(struct x86_ctx_t *ctx, char *cmdline);
-void x86_loader_set_cwd(struct x86_ctx_t *ctx, char *cwd);
-void x86_loader_set_redir(struct x86_ctx_t *ctx, char *stdin, char *stdout);
-void x86_loader_load_exe(struct x86_ctx_t *ctx, char *exe);
+void x86_loader_add_args(X86Context *ctx, int argc, char **argv);
+void x86_loader_add_cmdline(X86Context *ctx, char *cmdline);
+void x86_loader_set_cwd(X86Context *ctx, char *cwd);
+void x86_loader_set_redir(X86Context *ctx, char *stdin, char *stdout);
+void x86_loader_load_exe(X86Context *ctx, char *exe);
 
 void x86_loader_load_from_ctx_config(struct config_t *config, char *section);
 void x86_loader_load_from_command_line(int argc, char **argv);

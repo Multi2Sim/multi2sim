@@ -20,9 +20,11 @@
 #ifndef DRIVER_GLU_GLU_H
 #define DRIVER_GLU_GLU_H
 
+#include <lib/util/class.h>
+
 
 /* Forward type declaration */
-struct x86_ctx_t;
+CLASS_FORWARD_DECLARATION(X86Context);
 
 
 /*
@@ -40,7 +42,7 @@ extern int glu_debug_category;
 void glu_init(void);
 void glu_done(void);
 
-int glu_abi_call(struct x86_ctx_t *ctx);
+int glu_abi_call(X86Context *ctx);
 
 
 #endif

@@ -47,8 +47,8 @@ void x86_checkpoint_save(char *file_name);
 static void load_processes();
 static void save_processes();
 static void load_process();
-static void save_process(struct x86_ctx_t *ctx);
-static void save_process_misc(struct x86_ctx_t *ctx);
+static void save_process(X86Context *ctx);
+static void save_process_misc(X86Context *ctx);
 static void load_memory(struct mem_t *mem);
 static void save_memory(struct mem_t *mem);
 static void load_memory_data(struct mem_t *mem);
@@ -58,9 +58,9 @@ static void save_memory_page(struct mem_page_t *page);
 static void load_fds(struct x86_file_desc_table_t *fdt);
 static void load_fd(struct x86_file_desc_table_t *fdt);
 static void save_fds(struct x86_file_desc_table_t *fdt);
-static void load_threads(struct x86_ctx_t *ctx);
-static void save_threads(struct x86_ctx_t *ctx);
-static void save_thread(struct x86_ctx_t *ctx);
+static void load_threads(X86Context *ctx);
+static void save_threads(X86Context *ctx);
+static void save_thread(X86Context *ctx);
 static void load_regs(struct x86_regs_t *regs);
 static void save_regs(struct x86_regs_t *regs);
 
@@ -160,7 +160,7 @@ static void save_processes()
 {
 	const int MAX_NUM_PIDS = 1024;
 	int pids[MAX_NUM_PIDS];
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 	int num_pids;
 
 	cfg_push("processes");
@@ -183,12 +183,13 @@ static void save_processes()
 	cfg_pop();
 }
 
-static void load_process()
+
+static void load_process(void)
 {
-	struct x86_ctx_t * ctx;
+	X86Context * ctx;
 	struct x86_loader_t *ld;
 
-	ctx = x86_ctx_create();
+	ctx = new(X86Context);
 	ctx->glibc_segment_base = load_int32("glibc_base");
 	ctx->glibc_segment_limit = load_int32("glibc_limit");
 
@@ -213,7 +214,7 @@ static void load_process()
 	load_threads(ctx);
 }
 
-static void save_process(struct x86_ctx_t *ctx)
+static void save_process(X86Context *ctx)
 {
 	cfg_push("%d", ctx->pid);
 
@@ -225,7 +226,7 @@ static void save_process(struct x86_ctx_t *ctx)
 	cfg_pop();
 }
 
-static void save_process_misc(struct x86_ctx_t *ctx)
+static void save_process_misc(X86Context *ctx)
 {
 	struct x86_loader_t *ld;
 
@@ -453,7 +454,7 @@ static void save_fds(struct x86_file_desc_table_t *fdt)
 	cfg_pop();
 }
 
-static void load_threads(struct x86_ctx_t *process_ctx)
+static void load_threads(X86Context *process_ctx)
 {
 	int first;
 
@@ -463,7 +464,7 @@ static void load_threads(struct x86_ctx_t *process_ctx)
 
 	while (cfg_next_child())
 	{
-		struct x86_ctx_t *thread_ctx;
+		X86Context *thread_ctx;
 		if (first)
 		{
 			thread_ctx = process_ctx;
@@ -471,7 +472,8 @@ static void load_threads(struct x86_ctx_t *process_ctx)
 		}
 		else
 		{
-			thread_ctx = x86_ctx_clone(process_ctx);
+			thread_ctx = new_ctor(X86Context, CreateAndClone,
+					process_ctx);
 		}
 
 		load_regs(thread_ctx->regs);
@@ -482,9 +484,9 @@ static void load_threads(struct x86_ctx_t *process_ctx)
 	cfg_pop();
 }
 
-static void save_threads(struct x86_ctx_t *process_ctx)
+static void save_threads(X86Context *process_ctx)
 {
-	struct x86_ctx_t *thread_ctx;
+	X86Context *thread_ctx;
 
 	cfg_push("threads");
 
@@ -502,7 +504,7 @@ static void save_threads(struct x86_ctx_t *process_ctx)
 	cfg_pop();
 }
 
-static void save_thread(struct x86_ctx_t *ctx)
+static void save_thread(X86Context *ctx)
 {
 	cfg_push_unique();
 

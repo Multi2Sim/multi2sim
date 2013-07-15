@@ -20,13 +20,17 @@
 #ifndef DRIVER_OPENCL_OPENCL_H
 #define DRIVER_OPENCL_OPENCL_H
 
+#include <lib/util/class.h>
+
+
 /* Forward type declaration */
-struct x86_ctx_t;
+CLASS_FORWARD_DECLARATION(X86Context);
+
 
 #define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
 extern int opencl_debug_category;
 
-int opencl_abi_call(struct x86_ctx_t *ctx);
+int opencl_abi_call(X86Context *ctx);
 
 void opencl_init(void);
 void opencl_done(void);

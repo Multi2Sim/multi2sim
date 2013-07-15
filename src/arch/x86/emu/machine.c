@@ -46,19 +46,19 @@
 #define assert __COMPILATION_ERROR__
 
 
-void x86_isa_bound_r16_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_bound_r16_rm32_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_bound_r32_rm64_impl(struct x86_ctx_t *ctx)
+void x86_isa_bound_r32_rm64_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_bsf_r32_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_bsf_r32_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -88,7 +88,7 @@ void x86_isa_bsf_r32_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_bsr_r32_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_bsr_r32_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -118,7 +118,7 @@ void x86_isa_bsr_r32_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_bswap_ir32_impl(struct x86_ctx_t *ctx)
+void x86_isa_bswap_ir32_impl(X86Context *ctx)
 {
 	unsigned int ir32 = x86_isa_load_ir32(ctx);
 
@@ -139,7 +139,7 @@ void x86_isa_bswap_ir32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_bt_rm32_r32_impl(struct x86_ctx_t *ctx)
+void x86_isa_bt_rm32_r32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -168,7 +168,7 @@ void x86_isa_bt_rm32_r32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_bt_rm32_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_bt_rm32_imm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -197,7 +197,7 @@ void x86_isa_bt_rm32_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_bts_rm32_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_bts_rm32_imm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -228,7 +228,7 @@ void x86_isa_bts_rm32_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_call_rel32_impl(struct x86_ctx_t *ctx)
+void x86_isa_call_rel32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -244,7 +244,7 @@ void x86_isa_call_rel32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_call_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_call_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -260,7 +260,7 @@ void x86_isa_call_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cbw_impl(struct x86_ctx_t *ctx)
+void x86_isa_cbw_impl(X86Context *ctx)
 {
 	unsigned short ax = (char) x86_isa_load_reg(ctx, x86_inst_reg_al);
 	x86_isa_store_reg(ctx, x86_inst_reg_ax, ax);
@@ -269,7 +269,7 @@ void x86_isa_cbw_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cdq_impl(struct x86_ctx_t *ctx)
+void x86_isa_cdq_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	int signed_eax = regs->eax;
@@ -280,7 +280,7 @@ void x86_isa_cdq_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cld_impl(struct x86_ctx_t *ctx)
+void x86_isa_cld_impl(X86Context *ctx)
 {
 	x86_isa_clear_flag(ctx, x86_inst_flag_df);
 
@@ -288,7 +288,7 @@ void x86_isa_cld_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cmpxchg_rm32_r32_impl(struct x86_ctx_t *ctx)
+void x86_isa_cmpxchg_rm32_r32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -325,7 +325,7 @@ void x86_isa_cmpxchg_rm32_r32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cmpxchg8b_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_cmpxchg8b_m64_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -363,7 +363,7 @@ void x86_isa_cmpxchg8b_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cpuid_impl(struct x86_ctx_t *ctx)
+void x86_isa_cpuid_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int info = 0;
@@ -479,7 +479,7 @@ void x86_isa_cpuid_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cwde_impl(struct x86_ctx_t *ctx)
+void x86_isa_cwde_impl(X86Context *ctx)
 {
 	unsigned int eax = (short) x86_isa_load_reg(ctx, x86_inst_reg_ax);
 	x86_isa_store_reg(ctx, x86_inst_reg_eax, eax);
@@ -488,7 +488,7 @@ void x86_isa_cwde_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_dec_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_dec_rm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -517,7 +517,7 @@ void x86_isa_dec_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_dec_rm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_dec_rm16_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -546,7 +546,7 @@ void x86_isa_dec_rm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_dec_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_dec_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -575,7 +575,7 @@ void x86_isa_dec_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_dec_ir16_impl(struct x86_ctx_t *ctx)
+void x86_isa_dec_ir16_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -604,7 +604,7 @@ void x86_isa_dec_ir16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_dec_ir32_impl(struct x86_ctx_t *ctx)
+void x86_isa_dec_ir32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -633,7 +633,7 @@ void x86_isa_dec_ir32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_div_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_div_rm8_impl(X86Context *ctx)
 {
 	int skip_emulation;
 	int spec_mode;
@@ -673,7 +673,7 @@ void x86_isa_div_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_div_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_div_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -719,13 +719,13 @@ void x86_isa_div_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_hlt_impl(struct x86_ctx_t *ctx)
+void x86_isa_hlt_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: 'hlt' instruction", __FUNCTION__);
 }
 
 
-void x86_isa_idiv_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_idiv_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -776,7 +776,7 @@ void x86_isa_idiv_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_imul_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_imul_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -810,7 +810,7 @@ void x86_isa_imul_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_imul_r32_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_imul_r32_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -841,7 +841,7 @@ void x86_isa_imul_r32_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_imul_r32_rm32_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_imul_r32_rm32_imm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -873,7 +873,7 @@ void x86_isa_imul_r32_rm32_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_imul_r32_rm32_imm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_imul_r32_rm32_imm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -905,7 +905,7 @@ void x86_isa_imul_r32_rm32_imm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_inc_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_inc_rm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -934,7 +934,7 @@ void x86_isa_inc_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_inc_rm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_inc_rm16_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -963,7 +963,7 @@ void x86_isa_inc_rm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_inc_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_inc_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -992,7 +992,7 @@ void x86_isa_inc_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_inc_ir16_impl(struct x86_ctx_t *ctx)
+void x86_isa_inc_ir16_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1021,7 +1021,7 @@ void x86_isa_inc_ir16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_inc_ir32_impl(struct x86_ctx_t *ctx)
+void x86_isa_inc_ir32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1050,13 +1050,13 @@ void x86_isa_inc_ir32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_int_3_impl(struct x86_ctx_t *ctx)
+void x86_isa_int_3_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_int_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_int_imm8_impl(X86Context *ctx)
 {
 	int spec_mode;
 	unsigned int num;
@@ -1075,14 +1075,14 @@ void x86_isa_int_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_into_impl(struct x86_ctx_t *ctx)
+void x86_isa_into_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
 
-void x86_isa_jmp_rel8_impl(struct x86_ctx_t *ctx)
+void x86_isa_jmp_rel8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1093,7 +1093,7 @@ void x86_isa_jmp_rel8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_jmp_rel32_impl(struct x86_ctx_t *ctx)
+void x86_isa_jmp_rel32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1104,7 +1104,7 @@ void x86_isa_jmp_rel32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_jmp_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_jmp_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1115,7 +1115,7 @@ void x86_isa_jmp_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_lea_r32_m_impl(struct x86_ctx_t *ctx)
+void x86_isa_lea_r32_m_impl(X86Context *ctx)
 {
 	unsigned int value = x86_isa_effective_address(ctx);
 
@@ -1131,7 +1131,7 @@ void x86_isa_lea_r32_m_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_leave_impl(struct x86_ctx_t *ctx)
+void x86_isa_leave_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1155,24 +1155,24 @@ void x86_isa_leave_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_lfence_impl(struct x86_ctx_t *ctx)
+void x86_isa_lfence_impl(X86Context *ctx)
 {
 }
 
 
-void x86_isa_lock_xadd_rm8_r8_impl(struct x86_ctx_t *ctx)
+void x86_isa_lock_xadd_rm8_r8_impl(X86Context *ctx)
 {
 	x86_isa_xadd_rm8_r8_impl(ctx);
 }
 
 
-void x86_isa_lock_xadd_rm32_r32_impl(struct x86_ctx_t *ctx)
+void x86_isa_lock_xadd_rm32_r32_impl(X86Context *ctx)
 {
 	x86_isa_xadd_rm32_r32_impl(ctx);
 }
 
 
-void x86_isa_mov_rm8_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_rm8_imm8_impl(X86Context *ctx)
 {
 	unsigned char value = ctx->inst.imm.b;
 	x86_isa_store_rm8(ctx, value);
@@ -1181,7 +1181,7 @@ void x86_isa_mov_rm8_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_r8_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_r8_rm8_impl(X86Context *ctx)
 {
 	unsigned char value = x86_isa_load_rm8(ctx);
 	x86_isa_store_r8(ctx, value);
@@ -1190,7 +1190,7 @@ void x86_isa_mov_r8_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_rm8_r8_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_rm8_r8_impl(X86Context *ctx)
 {
 	unsigned char value = x86_isa_load_r8(ctx);
 	x86_isa_store_rm8(ctx, value);
@@ -1199,7 +1199,7 @@ void x86_isa_mov_rm8_r8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_rm16_r16_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_rm16_r16_impl(X86Context *ctx)
 {
 	unsigned short value = x86_isa_load_r16(ctx);
 	x86_isa_store_rm16(ctx, value);
@@ -1208,7 +1208,7 @@ void x86_isa_mov_rm16_r16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_rm32_r32_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_rm32_r32_impl(X86Context *ctx)
 {
 	unsigned int value = x86_isa_load_r32(ctx);
 	x86_isa_store_rm32(ctx, value);
@@ -1217,7 +1217,7 @@ void x86_isa_mov_rm32_r32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_r16_rm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_r16_rm16_impl(X86Context *ctx)
 {
 	unsigned short value = x86_isa_load_rm16(ctx);
 	x86_isa_store_r16(ctx, value);
@@ -1226,7 +1226,7 @@ void x86_isa_mov_r16_rm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_r32_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_r32_rm32_impl(X86Context *ctx)
 {
 	unsigned int value = x86_isa_load_rm32(ctx);
 	x86_isa_store_r32(ctx, value);
@@ -1235,7 +1235,7 @@ void x86_isa_mov_r32_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_al_moffs8_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_al_moffs8_impl(X86Context *ctx)
 {
 	unsigned char value;
 
@@ -1247,7 +1247,7 @@ void x86_isa_mov_al_moffs8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_ax_moffs16_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_ax_moffs16_impl(X86Context *ctx)
 {
 	unsigned short value;
 
@@ -1259,7 +1259,7 @@ void x86_isa_mov_ax_moffs16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_eax_moffs32_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_eax_moffs32_impl(X86Context *ctx)
 {
 	unsigned int value;
 
@@ -1271,7 +1271,7 @@ void x86_isa_mov_eax_moffs32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_moffs8_al_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_moffs8_al_impl(X86Context *ctx)
 {
 	unsigned char value = x86_isa_load_reg(ctx, x86_inst_reg_al);
 	x86_isa_mem_write(ctx, x86_isa_moffs_address(ctx), 1, &value);
@@ -1281,7 +1281,7 @@ void x86_isa_mov_moffs8_al_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_moffs16_ax_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_moffs16_ax_impl(X86Context *ctx)
 {
 	unsigned short value = x86_isa_load_reg(ctx, x86_inst_reg_ax);
 	x86_isa_mem_write(ctx, x86_isa_moffs_address(ctx), 2, &value);
@@ -1291,7 +1291,7 @@ void x86_isa_mov_moffs16_ax_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_moffs32_eax_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_moffs32_eax_impl(X86Context *ctx)
 {
 	unsigned int value = x86_isa_load_reg(ctx, x86_inst_reg_eax);
 	x86_isa_mem_write(ctx, x86_isa_moffs_address(ctx), 4, &value);
@@ -1301,7 +1301,7 @@ void x86_isa_mov_moffs32_eax_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_ir8_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_ir8_imm8_impl(X86Context *ctx)
 {
 	unsigned char value = ctx->inst.imm.b;
 	x86_isa_store_ir8(ctx, value);
@@ -1310,7 +1310,7 @@ void x86_isa_mov_ir8_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_ir16_imm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_ir16_imm16_impl(X86Context *ctx)
 {
 	unsigned short value = ctx->inst.imm.w;
 	x86_isa_store_ir16(ctx, value);
@@ -1319,7 +1319,7 @@ void x86_isa_mov_ir16_imm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_ir32_imm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_ir32_imm32_impl(X86Context *ctx)
 {
 	unsigned int value = ctx->inst.imm.d;
 	x86_isa_store_ir32(ctx, value);
@@ -1328,7 +1328,7 @@ void x86_isa_mov_ir32_imm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_rm16_imm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_rm16_imm16_impl(X86Context *ctx)
 {
 	unsigned short value = ctx->inst.imm.w;
 	x86_isa_store_rm16(ctx, value);
@@ -1337,7 +1337,7 @@ void x86_isa_mov_rm16_imm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_rm32_imm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_rm32_imm32_impl(X86Context *ctx)
 {
 	unsigned int value = ctx->inst.imm.d;
 	x86_isa_store_rm32(ctx, value);
@@ -1346,7 +1346,7 @@ void x86_isa_mov_rm32_imm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_rm16_sreg_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_rm16_sreg_impl(X86Context *ctx)
 {
 	unsigned short value = x86_isa_load_sreg(ctx);
 	if (ctx->inst.reg != 5)
@@ -1357,13 +1357,13 @@ void x86_isa_mov_rm16_sreg_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_rm32_sreg_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_rm32_sreg_impl(X86Context *ctx)
 {
 	x86_isa_mov_rm16_sreg_impl(ctx);
 }
 
 
-void x86_isa_mov_sreg_rm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_sreg_rm16_impl(X86Context *ctx)
 {
 	unsigned short value = x86_isa_load_rm16(ctx);
 	if (ctx->inst.reg != 5)
@@ -1374,13 +1374,13 @@ void x86_isa_mov_sreg_rm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mov_sreg_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_mov_sreg_rm32_impl(X86Context *ctx)
 {
 	x86_isa_mov_sreg_rm16_impl(ctx);
 }
 
 
-void x86_isa_movsx_r16_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_movsx_r16_rm8_impl(X86Context *ctx)
 {
 	unsigned short value = (char) x86_isa_load_rm8(ctx);
 	x86_isa_store_r16(ctx, value);
@@ -1389,7 +1389,7 @@ void x86_isa_movsx_r16_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movsx_r32_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_movsx_r32_rm8_impl(X86Context *ctx)
 {
 	unsigned int value = (char) x86_isa_load_rm8(ctx);
 	x86_isa_store_r32(ctx, value);
@@ -1398,7 +1398,7 @@ void x86_isa_movsx_r32_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movsx_r32_rm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_movsx_r32_rm16_impl(X86Context *ctx)
 {
 	unsigned int value = (short) x86_isa_load_rm16(ctx);
 	x86_isa_store_r32(ctx, value);
@@ -1407,7 +1407,7 @@ void x86_isa_movsx_r32_rm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movzx_r16_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_movzx_r16_rm8_impl(X86Context *ctx)
 {
 	unsigned char value = x86_isa_load_rm8(ctx);
 	x86_isa_store_r16(ctx, value);
@@ -1416,7 +1416,7 @@ void x86_isa_movzx_r16_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movzx_r32_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_movzx_r32_rm8_impl(X86Context *ctx)
 {
 	unsigned char value = x86_isa_load_rm8(ctx);
 	x86_isa_store_r32(ctx, value);
@@ -1425,7 +1425,7 @@ void x86_isa_movzx_r32_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movzx_r32_rm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_movzx_r32_rm16_impl(X86Context *ctx)
 {
 	unsigned short value = x86_isa_load_rm16(ctx);
 	x86_isa_store_r32(ctx, value);
@@ -1434,7 +1434,7 @@ void x86_isa_movzx_r32_rm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mul_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_mul_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1468,7 +1468,7 @@ void x86_isa_mul_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_neg_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_neg_rm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1497,7 +1497,7 @@ void x86_isa_neg_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_neg_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_neg_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1526,22 +1526,22 @@ void x86_isa_neg_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_nop_impl(struct x86_ctx_t *ctx)
+void x86_isa_nop_impl(X86Context *ctx)
 {
 }
 
 
-void x86_isa_nop_rm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_nop_rm16_impl(X86Context *ctx)
 {
 }
 
 
-void x86_isa_nop_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_nop_rm32_impl(X86Context *ctx)
 {
 }
 
 
-void x86_isa_not_rm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_not_rm8_impl(X86Context *ctx)
 {
 	unsigned char value = x86_isa_load_rm8(ctx);
 
@@ -1552,7 +1552,7 @@ void x86_isa_not_rm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_not_rm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_not_rm16_impl(X86Context *ctx)
 {
 	unsigned short value = x86_isa_load_rm16(ctx);
 	value = ~value;
@@ -1562,7 +1562,7 @@ void x86_isa_not_rm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_not_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_not_rm32_impl(X86Context *ctx)
 {
 	unsigned int value = x86_isa_load_rm32(ctx);
 	value = ~value;
@@ -1572,48 +1572,48 @@ void x86_isa_not_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_out_imm8_al_impl(struct x86_ctx_t *ctx)
+void x86_isa_out_imm8_al_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_out_imm8_ax_impl(struct x86_ctx_t *ctx)
+void x86_isa_out_imm8_ax_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_out_imm8_eax_impl(struct x86_ctx_t *ctx)
+void x86_isa_out_imm8_eax_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_out_dx_al_impl(struct x86_ctx_t *ctx)
+void x86_isa_out_dx_al_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_out_dx_ax_impl(struct x86_ctx_t *ctx)
+void x86_isa_out_dx_ax_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_out_dx_eax_impl(struct x86_ctx_t *ctx)
+void x86_isa_out_dx_eax_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_pause_impl(struct x86_ctx_t *ctx)
+void x86_isa_pause_impl(X86Context *ctx)
 {
 }
 
 
-void x86_isa_pop_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_pop_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value;
@@ -1628,7 +1628,7 @@ void x86_isa_pop_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_pop_ir32_impl(struct x86_ctx_t *ctx)
+void x86_isa_pop_ir32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value;
@@ -1649,7 +1649,7 @@ void x86_isa_pop_ir32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_popf_impl(struct x86_ctx_t *ctx)
+void x86_isa_popf_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1668,7 +1668,7 @@ void x86_isa_popf_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_prefetcht0_m8_impl(struct x86_ctx_t *ctx)
+void x86_isa_prefetcht0_m8_impl(X86Context *ctx)
 {
 	unsigned int eff_addr;
 
@@ -1685,22 +1685,22 @@ void x86_isa_prefetcht0_m8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_prefetcht1_impl(struct x86_ctx_t *ctx)
+void x86_isa_prefetcht1_impl(X86Context *ctx)
 {
 }
 
 
-void x86_isa_prefetcht2_impl(struct x86_ctx_t *ctx)
+void x86_isa_prefetcht2_impl(X86Context *ctx)
 {
 }
 
 
-void x86_isa_prefetchnta_impl(struct x86_ctx_t *ctx)
+void x86_isa_prefetchnta_impl(X86Context *ctx)
 {
 }
 
 
-void x86_isa_push_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_push_imm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value = (char) ctx->inst.imm.b;
@@ -1714,7 +1714,7 @@ void x86_isa_push_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_push_imm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_push_imm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value = ctx->inst.imm.d;
@@ -1728,7 +1728,7 @@ void x86_isa_push_imm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_push_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_push_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value = x86_isa_load_rm32(ctx);
@@ -1742,7 +1742,7 @@ void x86_isa_push_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_push_ir32_impl(struct x86_ctx_t *ctx)
+void x86_isa_push_ir32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value = x86_isa_load_ir32(ctx);
@@ -1756,7 +1756,7 @@ void x86_isa_push_ir32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_pushf_impl(struct x86_ctx_t *ctx)
+void x86_isa_pushf_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1770,7 +1770,7 @@ void x86_isa_pushf_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_rdtsc_impl(struct x86_ctx_t *ctx)
+void x86_isa_rdtsc_impl(X86Context *ctx)
 {
 	unsigned int eax, edx;
 
@@ -1792,7 +1792,7 @@ void x86_isa_rdtsc_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_ret_impl(struct x86_ctx_t *ctx)
+void x86_isa_ret_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1813,13 +1813,13 @@ void x86_isa_ret_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_repz_ret_impl(struct x86_ctx_t *ctx)
+void x86_isa_repz_ret_impl(X86Context *ctx)
 {
 	x86_isa_ret_impl(ctx);
 }
 
 
-void x86_isa_ret_imm16_impl(struct x86_ctx_t *ctx)
+void x86_isa_ret_imm16_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned short pop;
@@ -1842,7 +1842,7 @@ void x86_isa_ret_imm16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_sahf_impl(struct x86_ctx_t *ctx)
+void x86_isa_sahf_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1855,12 +1855,12 @@ void x86_isa_sahf_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_sfence_impl(struct x86_ctx_t *ctx)
+void x86_isa_sfence_impl(X86Context *ctx)
 {
 }
 
 
-void x86_isa_shld_rm16_r16_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_shld_rm16_r16_imm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1893,7 +1893,7 @@ void x86_isa_shld_rm16_r16_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_shld_rm16_r16_cl_impl(struct x86_ctx_t *ctx)
+void x86_isa_shld_rm16_r16_cl_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1927,7 +1927,7 @@ void x86_isa_shld_rm16_r16_cl_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_shld_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_shld_rm32_r32_imm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1960,7 +1960,7 @@ void x86_isa_shld_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_shld_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
+void x86_isa_shld_rm32_r32_cl_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1994,7 +1994,7 @@ void x86_isa_shld_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_shrd_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_shrd_rm32_r32_imm8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -2027,7 +2027,7 @@ void x86_isa_shrd_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_shrd_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
+void x86_isa_shrd_rm32_r32_cl_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -2061,7 +2061,7 @@ void x86_isa_shrd_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_std_impl(struct x86_ctx_t *ctx)
+void x86_isa_std_impl(X86Context *ctx)
 {
 	x86_isa_set_flag(ctx, x86_inst_flag_df);
 
@@ -2069,7 +2069,7 @@ void x86_isa_std_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_xadd_rm8_r8_impl(struct x86_ctx_t *ctx)
+void x86_isa_xadd_rm8_r8_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -2103,7 +2103,7 @@ void x86_isa_xadd_rm8_r8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_xadd_rm32_r32_impl(struct x86_ctx_t *ctx)
+void x86_isa_xadd_rm32_r32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -2137,7 +2137,7 @@ void x86_isa_xadd_rm32_r32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_xchg_ir16_ax_impl(struct x86_ctx_t *ctx)
+void x86_isa_xchg_ir16_ax_impl(X86Context *ctx)
 {
 	unsigned short ax, ir16;
 
@@ -2150,7 +2150,7 @@ void x86_isa_xchg_ir16_ax_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_xchg_ir32_eax_impl(struct x86_ctx_t *ctx)
+void x86_isa_xchg_ir32_eax_impl(X86Context *ctx)
 {
 	unsigned int eax, ir32;
 
@@ -2163,7 +2163,7 @@ void x86_isa_xchg_ir32_eax_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_xchg_rm8_r8_impl(struct x86_ctx_t *ctx)
+void x86_isa_xchg_rm8_r8_impl(X86Context *ctx)
 {
 	unsigned char rm8;
 	unsigned char r8;
@@ -2177,7 +2177,7 @@ void x86_isa_xchg_rm8_r8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_xchg_rm16_r16_impl(struct x86_ctx_t *ctx)
+void x86_isa_xchg_rm16_r16_impl(X86Context *ctx)
 {
 	unsigned short rm16;
 	unsigned short r16;
@@ -2191,7 +2191,7 @@ void x86_isa_xchg_rm16_r16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_xchg_rm32_r32_impl(struct x86_ctx_t *ctx)
+void x86_isa_xchg_rm32_r32_impl(X86Context *ctx)
 {
 	unsigned int rm32;
 	unsigned int r32;

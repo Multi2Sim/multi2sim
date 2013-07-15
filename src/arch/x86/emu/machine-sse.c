@@ -46,7 +46,7 @@
 #define assert __COMPILATION_ERROR__
 
 
-void x86_isa_addps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_addps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -80,7 +80,7 @@ void x86_isa_addps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_addss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_addss_xmm_xmmm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -114,7 +114,7 @@ void x86_isa_addss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_andps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_andps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -153,7 +153,7 @@ void x86_isa_andps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 	); \
 	__X86_ISA_ASM_END__
 
-void x86_isa_cmppd_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_cmppd_xmm_xmmm128_imm8_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -190,7 +190,7 @@ void x86_isa_cmppd_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cmpps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_cmpps_xmm_xmmm128_imm8_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -227,7 +227,7 @@ void x86_isa_cmpps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cvtsi2ss_xmm_rm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_cvtsi2ss_xmm_rm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	unsigned int src;
@@ -261,7 +261,7 @@ void x86_isa_cvtsi2ss_xmm_rm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_cvttss2si_r32_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_cvttss2si_r32_xmmm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 	unsigned int r32;
@@ -292,7 +292,7 @@ void x86_isa_cvttss2si_r32_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_divps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_divps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -326,7 +326,7 @@ void x86_isa_divps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_divss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_divss_xmm_xmmm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -360,13 +360,13 @@ void x86_isa_divss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_ldmxcsr_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_ldmxcsr_m32_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_maxps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_maxps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -400,7 +400,7 @@ void x86_isa_maxps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_maxss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_maxss_xmm_xmmm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -434,7 +434,7 @@ void x86_isa_maxss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_minps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_minps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -468,7 +468,7 @@ void x86_isa_minps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_minss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_minss_xmm_xmmm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -502,7 +502,7 @@ void x86_isa_minss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movaps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_movaps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
@@ -513,7 +513,7 @@ void x86_isa_movaps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movaps_xmmm128_xmm_impl(struct x86_ctx_t *ctx)
+void x86_isa_movaps_xmmm128_xmm_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
@@ -524,7 +524,7 @@ void x86_isa_movaps_xmmm128_xmm_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movhlps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_movhlps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm1;
 	union x86_inst_xmm_reg_t xmm2;
@@ -538,7 +538,7 @@ void x86_isa_movhlps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movlhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_movlhps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm1;
 	union x86_inst_xmm_reg_t xmm2;
@@ -552,7 +552,7 @@ void x86_isa_movlhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_movss_xmm_xmmm32_impl(X86Context *ctx)
 {
 	unsigned char value[16];
 
@@ -569,7 +569,7 @@ void x86_isa_movss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movss_xmmm32_xmm_impl(struct x86_ctx_t *ctx)
+void x86_isa_movss_xmmm32_xmm_impl(X86Context *ctx)
 {
 	unsigned char value[16];
 
@@ -582,7 +582,7 @@ void x86_isa_movss_xmmm32_xmm_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movups_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_movups_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
@@ -593,7 +593,7 @@ void x86_isa_movups_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_movups_xmmm128_xmm_impl(struct x86_ctx_t *ctx)
+void x86_isa_movups_xmmm128_xmm_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 
@@ -604,7 +604,7 @@ void x86_isa_movups_xmmm128_xmm_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mulps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_mulps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -638,7 +638,7 @@ void x86_isa_mulps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_mulss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_mulss_xmm_xmmm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -672,7 +672,7 @@ void x86_isa_mulss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_orps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_orps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -698,7 +698,7 @@ void x86_isa_orps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_pextrw_r32_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_pextrw_r32_xmmm128_imm8_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 	unsigned char imm8;
@@ -719,7 +719,7 @@ void x86_isa_pextrw_r32_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_pinsrw_xmm_r32m16_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_pinsrw_xmm_r32m16_imm8_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t xmm;
 	unsigned short r32m16;
@@ -737,7 +737,7 @@ void x86_isa_pinsrw_xmm_r32m16_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_pmovmskb_r32_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_pmovmskb_r32_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t src;
 	unsigned int r32;
@@ -761,7 +761,7 @@ void x86_isa_pmovmskb_r32_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_shufps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
+void x86_isa_shufps_xmm_xmmm128_imm8_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -782,7 +782,7 @@ void x86_isa_shufps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_sqrtps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_sqrtps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -816,7 +816,7 @@ void x86_isa_sqrtps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_sqrtss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_sqrtss_xmm_xmmm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -850,13 +850,13 @@ void x86_isa_sqrtss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_stmxcsr_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_stmxcsr_m32_impl(X86Context *ctx)
 {
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
 
 
-void x86_isa_subps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_subps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -890,7 +890,7 @@ void x86_isa_subps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_subss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_subss_xmm_xmmm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -924,7 +924,7 @@ void x86_isa_subss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_ucomisd_xmm_xmmm64_impl(struct x86_ctx_t *ctx)
+void x86_isa_ucomisd_xmm_xmmm64_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -966,7 +966,7 @@ void x86_isa_ucomisd_xmm_xmmm64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_ucomiss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
+void x86_isa_ucomiss_xmm_xmmm32_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -1008,7 +1008,7 @@ void x86_isa_ucomiss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_unpckhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_unpckhps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -1042,7 +1042,7 @@ void x86_isa_unpckhps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_unpcklps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_unpcklps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
@@ -1076,7 +1076,7 @@ void x86_isa_unpcklps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_xorps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
+void x86_isa_xorps_xmm_xmmm128_impl(X86Context *ctx)
 {
 	union x86_inst_xmm_reg_t dest;
 	union x86_inst_xmm_reg_t src;
