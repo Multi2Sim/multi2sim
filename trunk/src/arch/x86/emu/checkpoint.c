@@ -186,10 +186,10 @@ static void save_processes()
 
 static void load_process(void)
 {
-	X86Context * ctx;
+	X86Context *ctx;
 	struct x86_loader_t *ld;
 
-	ctx = new(X86Context);
+	ctx = new(X86Context, x86_emu);
 	ctx->glibc_segment_base = load_int32("glibc_base");
 	ctx->glibc_segment_limit = load_int32("glibc_limit");
 

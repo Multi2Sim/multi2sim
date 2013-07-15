@@ -702,7 +702,7 @@ void x86_loader_load_from_ctx_config(struct config_t *config, char *section)
 	config_file_name = config_get_file_name(config);
 
 	/* Create new context */
-	ctx = new(X86Context);
+	ctx = new(X86Context, x86_emu);
 	ld = ctx->loader;
 		
 	/* Executable */
@@ -757,7 +757,7 @@ void x86_loader_load_from_command_line(int argc, char **argv)
 	char buf[MAX_STRING_SIZE];
 
 	/* Create context */
-	ctx = new(X86Context);
+	ctx = new(X86Context, x86_emu);
 	ld = ctx->loader;
 
 	/* Arguments and environment */

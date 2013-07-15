@@ -43,11 +43,11 @@
 #define assert __COMPILATION_ERROR__
 
 
-#define CF x86_isa_get_flag(ctx, x86_inst_flag_cf)
-#define ZF x86_isa_get_flag(ctx, x86_inst_flag_zf)
-#define SF x86_isa_get_flag(ctx, x86_inst_flag_sf)
-#define OF x86_isa_get_flag(ctx, x86_inst_flag_of)
-#define PF x86_isa_get_flag(ctx, x86_inst_flag_pf)
+#define CF X86ContextGetFlag(ctx, x86_inst_flag_cf)
+#define ZF X86ContextGetFlag(ctx, x86_inst_flag_zf)
+#define SF X86ContextGetFlag(ctx, x86_inst_flag_sf)
+#define OF X86ContextGetFlag(ctx, x86_inst_flag_of)
+#define PF X86ContextGetFlag(ctx, x86_inst_flag_pf)
 
 
 #define cc_a	(!CF && !ZF)
@@ -72,9 +72,9 @@
 void x86_isa_set##cc##_rm8_impl(X86Context *ctx) \
 { \
 	if (cc_##cc) \
-		x86_isa_store_rm8(ctx, 1); \
+		X86ContextStoreRm8(ctx, 1); \
 	else \
-		x86_isa_store_rm8(ctx, 0); \
+		X86ContextStoreRm8(ctx, 0); \
 	x86_uinst_new(ctx, x86_uinst_move, idep1, idep2, 0, x86_dep_rm8, 0, 0, 0); \
 }
 
@@ -105,7 +105,7 @@ void x86_isa_j##cc##_rel32_impl(X86Context *ctx) \
 void x86_isa_cmov##cc##_r16_rm16_impl(X86Context *ctx) \
 { \
 	if (cc_##cc) \
-		x86_isa_store_r16(ctx, x86_isa_load_rm16(ctx)); \
+		x86_isa_store_r16(ctx, X86ContextLoadRm16(ctx)); \
 	x86_uinst_new(ctx, x86_uinst_move, idep1, idep2, x86_dep_rm16, x86_dep_r16, 0, 0, 0); \
 }
 
@@ -114,7 +114,7 @@ void x86_isa_cmov##cc##_r16_rm16_impl(X86Context *ctx) \
 void x86_isa_cmov##cc##_r32_rm32_impl(X86Context *ctx) \
 { \
 	if (cc_##cc) \
-		x86_isa_store_r32(ctx, x86_isa_load_rm32(ctx)); \
+		x86_isa_store_r32(ctx, X86ContextLoadRm32(ctx)); \
 	x86_uinst_new(ctx, x86_uinst_move, idep1, idep2, x86_dep_rm32, x86_dep_r32, 0, 0, 0); \
 }
 
@@ -150,7 +150,7 @@ void x86_isa_jecxz_rel8_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + ctx->inst.imm.b;
-	if (!x86_isa_load_reg(ctx, x86_inst_reg_ecx))
+	if (!X86ContextLoadReg(ctx, x86_inst_reg_ecx))
 		regs->eip = ctx->target_eip;
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
@@ -161,7 +161,7 @@ void x86_isa_jcxz_rel8_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + ctx->inst.imm.b;
-	if (!x86_isa_load_reg(ctx, x86_inst_reg_cx))
+	if (!X86ContextLoadReg(ctx, x86_inst_reg_cx))
 		regs->eip = ctx->target_eip;
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
