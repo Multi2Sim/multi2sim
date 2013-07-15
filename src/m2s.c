@@ -1820,6 +1820,11 @@ static void m2s_init(void)
 	unsigned int max_id;
 	unsigned int id;
 
+	/* Classes */
+	CLASS_REGISTER(Asm);
+	CLASS_REGISTER(Emu);
+	CLASS_REGISTER(Timing);
+
 	/* Compute simulation ID */
 	gettimeofday(&tv, NULL);
 	min_id = str_alnum_to_int("10000");

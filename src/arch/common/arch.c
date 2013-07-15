@@ -237,11 +237,6 @@ void arch_init(void)
 	struct arch_t *arch;
 	int i;
 
-	/* Classes */
-	CLASS_REGISTER(Asm);
-	CLASS_REGISTER(Emu);
-	CLASS_REGISTER(Timing);
-
 	/* Initialize all architectures */
 	for (i = 0; i < arch_list_count; i++)
 	{
