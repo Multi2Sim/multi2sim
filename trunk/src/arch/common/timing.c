@@ -54,6 +54,11 @@ void TimingDestroy(Timing *self)
 
 void TimingDump(Object *self, FILE *f)
 {
+}
+
+
+void TimingDumpSummary(Timing *self, FILE *f)
+{
 	double time_in_sec;
 	double cycles_per_sec;
 	double cycle_time;  /* In nanoseconds */
@@ -73,18 +78,13 @@ void TimingDump(Object *self, FILE *f)
 	/* Calculate statistics */
 	time_in_sec = (double) m2s_timer_get_value(emu->timer) / 1.0e6;
 	cycles_per_sec = time_in_sec > 0.0 ? (double) timing->cycle / time_in_sec : 0.0;
-	cycle_time = (double) esim_domain_cycle_time(arch->domain_index) / 1000.0;
+	cycle_time = (double) esim_domain_cycle_time(timing->frequency_domain) / 1000.0;
 
 	/* Print */
 	fprintf(f, "SimTime = %.2f [ns]\n", timing->cycle * cycle_time);
-	fprintf(f, "Frequency = %d [MHz]\n", arch->frequency);
+	fprintf(f, "Frequency = %d [MHz]\n", timing->frequency);
 	fprintf(f, "Cycles = %lld\n", timing->cycle);
 	fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
-}
-
-
-void TimingDumpSummary(Timing *self, FILE *f)
-{
 }
 
 

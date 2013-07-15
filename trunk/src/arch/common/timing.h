@@ -38,6 +38,12 @@ CLASS_BEGIN(Timing, Object)
 	/* Current cycle */
 	long long cycle;
 
+	/* Frequency domain, as returned by 'esim_new_domain()'.
+	 * This variable is initialized by the child class. */
+	int frequency;
+	int frequency_domain;
+
+
 
 	/*** Virtual functions ***/
 
