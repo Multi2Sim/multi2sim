@@ -156,6 +156,11 @@ section
 	;
 
 global_section
+	: global_header
+	| global_header TOK_NEW_LINE
+	;
+
+global_header
 	: TOK_GLOBAL TOK_ID
 	{
 		/* Create new objects for each kernel */
@@ -175,6 +180,8 @@ global_section
 		si2bin_id_free($2);
 	} TOK_NEW_LINE
 	;
+
+
 
 metadata_section
 	: metadata_header
@@ -337,6 +344,7 @@ metadata_stmt
 		si2bin_id_free($1);
 		si2bin_id_free($3);
 	} TOK_NEW_LINE
+	| TOK_NEW_LINE
 	;
 
 hex_or_dec_value
@@ -643,6 +651,7 @@ args_stmt
 		si2bin_id_free($1);
 		si2bin_id_free($6);
 	} TOK_NEW_LINE
+	| TOK_NEW_LINE
 	;
 	
 val_stmt_list
@@ -759,6 +768,7 @@ text_stmt
 		//si2bin_inst_dump(inst, stdout);
 		si2bin_inst_free(inst);
 	} TOK_NEW_LINE
+	| TOK_NEW_LINE
 ;
 
 label
