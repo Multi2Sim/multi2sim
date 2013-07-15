@@ -22,7 +22,33 @@
 
 /* Forward type declarations */
 struct config_t;
+struct elf_file_t;
 
+
+
+/*
+ * Class 'X86Context'
+ * Additional Functions
+ */
+
+void X86ContextAddArgsVector(X86Context *self, int argc, char **argv);
+void X86ContextAddArgsString(X86Context *self, char *args);
+void X86ContextAddEnv(X86Context *self, char *env);
+
+void X86ContextLoadELFSections(X86Context *self, struct elf_file_t *elf_file);
+void X86ContextLoadInterp(X86Context *self);
+void X86ContextLoadProgramHeaders(X86Context *self);
+unsigned int X86ContextLoadAV(X86Context *self, unsigned int where);
+void X86ContextLoadStack(X86Context *self);
+
+void X86ContextLoadExe(X86Context *self, char *exe);
+void X86ContextGetFullPath(X86Context *self, char *file_name, char *full_path, int size);
+
+
+
+/*
+ * Object 'x86_loader_t'
+ */
 
 struct x86_loader_t
 {
@@ -62,28 +88,23 @@ struct x86_loader_t
 };
 
 
+struct x86_loader_t *x86_loader_create(void);
+void x86_loader_free(struct x86_loader_t *loader);
+
+struct x86_loader_t *x86_loader_link(struct x86_loader_t *loader);
+void x86_loader_unlink(struct x86_loader_t *loader);
+
+
+
+
+/*
+ * Public
+ */
+
 #define x86_loader_debug(...) debug(x86_loader_debug_category, __VA_ARGS__)
 extern int x86_loader_debug_category;
 
 extern char *x86_loader_help;
-
-struct x86_loader_t *x86_loader_create(void);
-void x86_loader_free(struct x86_loader_t *ld);
-
-struct x86_loader_t *x86_loader_link(struct x86_loader_t *ld);
-void x86_loader_unlink(struct x86_loader_t *ld);
-
-void x86_loader_convert_filename(struct x86_loader_t *ld, char *file_name);
-void x86_loader_get_full_path(X86Context *ctx, char *file_name, char *full_path, int size);
-
-void x86_loader_add_args(X86Context *ctx, int argc, char **argv);
-void x86_loader_add_cmdline(X86Context *ctx, char *cmdline);
-void x86_loader_set_cwd(X86Context *ctx, char *cwd);
-void x86_loader_set_redir(X86Context *ctx, char *stdin, char *stdout);
-void x86_loader_load_exe(X86Context *ctx, char *exe);
-
-void x86_loader_load_from_ctx_config(struct config_t *config, char *section);
-void x86_loader_load_from_command_line(int argc, char **argv);
 
 
 #endif
