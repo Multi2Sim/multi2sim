@@ -1076,6 +1076,9 @@ void FrmGpuCreate(FrmGpu *self)
 	asObject(self)->Dump = FrmGpuDump;
 	asTiming(self)->DumpSummary = FrmGpuDumpSummary;
 	asTiming(self)->Run = FrmGpuRun;
+	asTiming(self)->MemConfigCheck = FrmGpuMemConfigCheck;
+	asTiming(self)->MemConfigDefault = FrmGpuMemConfigDefault;
+	asTiming(self)->MemConfigParseEntry = FrmGpuMemConfigParseEntry;
 }
 
 

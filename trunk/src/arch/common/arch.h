@@ -58,10 +58,6 @@ typedef void (*arch_timing_read_config_func_t)(void);
 typedef void (*arch_timing_init_func_t)(void);
 typedef void (*arch_timing_done_func_t)(void);
 
-typedef void (*arch_mem_config_default_func_t)(struct config_t *config);
-typedef void (*arch_mem_config_parse_entry_func_t)(struct config_t *config, char *section);
-typedef void (*arch_mem_config_check_func_t)(struct config_t *config);
-
 
 struct arch_t
 {
@@ -98,11 +94,6 @@ struct arch_t
 	arch_timing_read_config_func_t timing_read_config_func;
 	arch_timing_init_func_t timing_init_func;
 	arch_timing_done_func_t timing_done_func;
-
-	/* Call-back functions used in by the memory hierarchy */
-	arch_mem_config_default_func_t mem_config_default_func;
-	arch_mem_config_parse_entry_func_t mem_config_parse_entry_func;
-	arch_mem_config_check_func_t mem_config_check_func;
 
 	/* Disassembler */
 	Asm *as;
@@ -158,10 +149,7 @@ struct arch_t *arch_register(char *name, char *prefix,
 		arch_emu_done_func_t emu_done_func,
 		arch_timing_read_config_func_t timing_read_config_func,
 		arch_timing_init_func_t timing_init_func,
-		arch_timing_done_func_t timing_done_func,
-		arch_mem_config_default_func_t mem_config_default_func,
-		arch_mem_config_parse_entry_func_t mem_config_parse_entry_func,
-		arch_mem_config_check_func_t mem_config_check_func);
+		arch_timing_done_func_t timing_done_func);
 
 void arch_for_each(arch_callback_func_t callback_func, void *user_data);
 

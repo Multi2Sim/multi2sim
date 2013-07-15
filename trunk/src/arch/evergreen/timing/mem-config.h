@@ -20,11 +20,14 @@
 #ifndef ARCH_EVERGREEN_TIMING_MEM_CONFIG_H
 #define ARCH_EVERGREEN_TIMING_MEM_CONFIG_H
 
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(Timing);
 struct config_t;
 
-void evg_mem_config_default(struct config_t *config);
-void evg_mem_config_parse_entry(struct config_t *config, char *section);
-void evg_mem_config_check(struct config_t *config);
+/* Functions for class 'EvgGpu' */
+void EvgGpuMemConfigDefault(Timing *self, struct config_t *config);
+void EvgGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *section);
+void EvgGpuMemConfigCheck(Timing *self, struct config_t *config);
 
 
 #endif
