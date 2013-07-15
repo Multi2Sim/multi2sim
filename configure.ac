@@ -219,6 +219,41 @@ fi
 
 
 
+###############################
+# Test for __sync_XXX built-ins
+###############################
+
+saved_flags="$CFLAGS"
+CFLAGS="-Wall -Werror"
+AC_MSG_CHECKING([for __sync_XXX built-in functions])
+have_sync_builtins="no"
+AC_LINK_IFELSE(
+	[
+		AC_LANG_PROGRAM(
+			[[ ]],
+			[[
+				int a = 0, b = 0;
+				__sync_fetch_and_add(&a, b);
+				return 0;
+			]]
+		)
+	],
+	[
+		have_sync_builtins="yes"
+	]
+)
+AC_MSG_RESULT($have_sync_builtins)
+CFLAGS="$saved_flags"
+
+AM_CONDITIONAL(HAVE_SYNC_BUILTINS, test x$have_sync_builtins = xyes)
+if test x$have_sync_builtins = xyes
+then
+	AC_DEFINE(HAVE_SYNC_BUILTINS, [1])
+fi
+
+
+
+
 ##################
 # Test flag '-m32'
 ##################
