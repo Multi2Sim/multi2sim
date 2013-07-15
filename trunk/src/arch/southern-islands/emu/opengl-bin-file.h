@@ -21,6 +21,7 @@
 #define ARCH_SOUTHERN_ISLANDS_EMU_OPENGL_BIN_FILE_H
 
 #include <lib/util/elf-format.h>
+#include <src/arch/southern-islands/asm/bin-file.h>
 
 #define MAX_USER_ELEMENTS 16
 #define MAX_SEMANTICS_MAPPINGS 16
@@ -74,15 +75,6 @@ struct si_opengl_spi_shader_pos_format
 	unsigned int pos3_export_format 	: 8;	
 };
 
-/* User Element entry */
-struct si_opengl_bin_enc_user_element_t
-{
-	unsigned int dataClass;
-	unsigned int apiSlot;
-	unsigned int startUserReg;
-	unsigned int userRegCount;
-};
-
 /* FIXME: Totally unverified */
 struct si_opengl_bin_enc_semantic_mapping_t
 {
@@ -108,7 +100,7 @@ struct si_opengl_bin_enc_dict_entry_t
 	int stack_size_used;
 
 	unsigned int userElementCount;
-	struct si_opengl_bin_enc_user_element_t userElements[MAX_USER_ELEMENTS];
+	struct si_bin_enc_user_element_t userElements[MAX_USER_ELEMENTS];
 
 	unsigned int semanticMappingCount;
 	struct si_opengl_bin_enc_semantic_mapping_t semanticsMapping[MAX_SEMANTICS_MAPPINGS];
@@ -154,8 +146,8 @@ void si_opengl_program_binary_free(struct si_opengl_program_binary_t *program_bi
 struct si_opengl_shader_binary_t *si_opengl_shader_binary_create(void *buffer, int size, char* name);
 void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shdr);
 
-struct si_opengl_bin_enc_user_element_t *si_opengl_bin_enc_user_element_create();
-void si_opengl_bin_enc_user_element_free(struct si_opengl_bin_enc_user_element_t *user_elem);
+struct si_bin_enc_user_element_t *si_opengl_bin_enc_user_element_create();
+void si_opengl_bin_enc_user_element_free(struct si_bin_enc_user_element_t *user_elem);
 
 
 

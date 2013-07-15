@@ -175,4 +175,6 @@ void opengl_context_init();
 void opengl_context_destroy();
 void opengl_context_set_error(struct opengl_context_t *context, unsigned int err);
 
+unsigned int opengl_context_get_data_size(unsigned int data_type);
+
 #endif

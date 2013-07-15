@@ -34,6 +34,10 @@ struct opengl_si_shader_t
 	/* AMD Shader binary (internal ELF) */
 	struct si_opengl_shader_binary_t *shader_bin;
 
+	/* Memory requirements */
+	int mem_size_local;
+	int mem_size_private;	
+
 };
 
 extern struct list_t *opengl_si_shader_list;
@@ -53,6 +57,8 @@ void opengl_si_shader_create_ndrange_constant_buffers(
 	struct si_ndrange_t *ndrange);
 void opengl_si_shader_setup_ndrange_constant_buffers(
 	struct si_ndrange_t *ndrange);
+void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
+		struct si_ndrange_t *ndrange);
 void opengl_si_shader_debug_ndrange_state(struct opengl_si_shader_t *shader, 
 	struct si_ndrange_t *ndrange);
 void opengl_si_shader_create_ndrange_tables(struct si_ndrange_t *ndrange);

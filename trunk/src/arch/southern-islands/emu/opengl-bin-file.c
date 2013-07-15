@@ -24,6 +24,7 @@
 #include <lib/util/string.h>
 
 #include <src/arch/southern-islands/asm/input.h>
+#include <src/arch/southern-islands/asm/bin-file.h>
 #include "opengl-bin-file.h"
 
 
@@ -32,43 +33,6 @@
 /*
  * Private Functions
  */
-
-typedef enum _E_SC_USER_DATA_CLASS
-{
-	IMM_RESOURCE,               // immediate resource descriptor
-	IMM_SAMPLER,                // immediate sampler descriptor
-	IMM_CONST_BUFFER,           // immediate const buffer descriptor
-	IMM_VERTEX_BUFFER,          // immediate vertex buffer descriptor
-	IMM_UAV,                    // immediate UAV descriptor
-	IMM_ALU_FLOAT_CONST,        // immediate float const (scalar or vector)
-	IMM_ALU_BOOL32_CONST,       // 32 immediate bools packed into a single UINT
-	IMM_GDS_COUNTER_RANGE,      // immediate UINT with GDS address range for counters
-	IMM_GDS_MEMORY_RANGE,       // immediate UINT with GDS address range for storage
-	IMM_GWS_BASE,               // immediate UINT with GWS resource base offset
-	IMM_WORK_ITEM_RANGE,        // immediate HSAIL work item range
-	IMM_WORK_GROUP_RANGE,       // immediate HSAIL work group range
-	IMM_DISPATCH_ID,            // immediate HSAIL dispatch ID
-	IMM_SCRATCH_BUFFER,         // immediate HSAIL scratch buffer descriptor
-	IMM_HEAP_BUFFER,            // immediate HSAIL heap buffer descriptor
-	IMM_KERNEL_ARG,             // immediate HSAIL kernel argument
-	IMM_CONTEXT_BASE,           // immediate HSAIL context base-address
-	IMM_LDS_ESGS_SIZE,          // immediate LDS ESGS size used in on-chip GS
-	SUB_PTR_FETCH_SHADER,       // fetch shader subroutine pointer
-	PTR_RESOURCE_TABLE,         // flat/chunked resource table pointer
-	PTR_CONST_BUFFER_TABLE,     // flat/chunked const buffer table pointer
-	PTR_INTERNAL_RESOURCE_TABLE,// flat/chunked internal resource table pointer
-	PTR_SAMPLER_TABLE,          // flat/chunked sampler table pointer
-	PTR_UAV_TABLE,              // flat/chunked UAV resource table pointer
-	PTR_INTERNAL_GLOBAL_TABLE,  // internal driver table pointer
-	PTR_VERTEX_BUFFER_TABLE,    // flat/chunked vertex buffer table pointer
-	PTR_SO_BUFFER_TABLE,        // flat/chunked stream-out buffer table pointer
-	PTR_EXTENDED_USER_DATA,     // extended user data in video memory
-	PTR_INDIRECT_RESOURCE,      // pointer to resource indirection table
-	PTR_INDIRECT_INTERNAL_RESOURCE,// pointer to internal resource indirection table
-	PTR_INDIRECT_UAV,           // pointer to UAV indirection table
-	E_SC_USER_DATA_CLASS_LAST
-} E_SC_USER_DATA_CLASS;
-
 
 static int si_opengl_shader_binary_get_isa_offset(struct si_opengl_shader_binary_t *shdr)
 {
@@ -362,18 +326,18 @@ void si_opengl_shader_binary_free(struct si_opengl_shader_binary_t *shdr)
 	free(shdr);
 }
 
-struct si_opengl_bin_enc_user_element_t *si_opengl_bin_enc_user_element_create()
+struct si_bin_enc_user_element_t *si_opengl_bin_enc_user_element_create()
 {
-	struct si_opengl_bin_enc_user_element_t *user_elem;
+	struct si_bin_enc_user_element_t *user_elem;
 
 	/* Initialize */
-	user_elem = xcalloc(1, sizeof(struct si_opengl_bin_enc_user_element_t));
+	user_elem = xcalloc(1, sizeof(struct si_bin_enc_user_element_t));
 	
 	/* Return */
 	return user_elem;
 }
 
-void si_opengl_bin_enc_user_element_free(struct si_opengl_bin_enc_user_element_t *user_elem)
+void si_opengl_bin_enc_user_element_free(struct si_bin_enc_user_element_t *user_elem)
 {
 	free(user_elem);
 }
