@@ -21,9 +21,11 @@
 
 #include <lib/util/linked-list.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "load-store-queue.h"
 #include "uop.h"
+#include "thread.h"
 
 
 char *x86_lsq_kind_map[] = { "Shared", "Private" };

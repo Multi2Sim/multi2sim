@@ -28,12 +28,14 @@
 #include <mem-system/module.h>
 #include <mem-system/prefetch-history.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "event-queue.h"
 #include "fu.h"
 #include "inst-queue.h"
 #include "load-store-queue.h"
 #include "reg-file.h"
+#include "thread.h"
 #include "trace-cache.h"
 
 

@@ -25,8 +25,10 @@
 #include <lib/util/config.h>
 #include <lib/util/string.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "fu.h"
+#include "thread.h"
 
 
 /*

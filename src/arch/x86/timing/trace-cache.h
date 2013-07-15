@@ -20,6 +20,12 @@
 #ifndef X86_ARCH_TIMING_TRACE_CACHE_H
 #define X86_ARCH_TIMING_TRACE_CACHE_H
 
+#include <lib/util/class.h>
+
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Thread);
+
 
 /* Debug */
 #define x86_trace_cache_debugging() debug_status(x86_trace_cache_debug_category)
@@ -80,7 +86,7 @@ struct x86_trace_cache_t
 	char *name;
 
 	/* Thread where it belongs */
-	struct x86_thread_t *thread;
+	X86Thread *thread;
 
 	/* Trace cache lines ('sets' * 'assoc' elements) */
 	struct x86_trace_cache_entry_t *entry;
@@ -117,7 +123,7 @@ void x86_trace_cache_init(void);
 void x86_trace_cache_done(void);
 void x86_trace_cache_dump_report(struct x86_trace_cache_t *trace_cache, FILE *f);
 
-struct x86_trace_cache_t *x86_trace_cache_create(char *name, struct x86_thread_t *thread);
+struct x86_trace_cache_t *x86_trace_cache_create(char *name, X86Thread *thread);
 void x86_trace_cache_free(struct x86_trace_cache_t *trace_cache);
 
 void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_uop_t *uop);

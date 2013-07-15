@@ -5,6 +5,9 @@ libtiming_a_SOURCES = \
 	bpred.c \
 	bpred.h \
 	\
+	core.c \
+	core.h \
+	\
 	cpu.c \
 	cpu.h \
 	cpu-commit.c \
@@ -39,6 +42,9 @@ libtiming_a_SOURCES = \
 	\
 	rob.c \
 	rob.h \
+	\
+	thread.c \
+	thread.h \
 	\
 	trace-cache.c \
 	trace-cache.h \

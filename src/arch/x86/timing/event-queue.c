@@ -23,8 +23,10 @@
 #include <arch/x86/emu/emu.h>
 #include <lib/util/linked-list.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "event-queue.h"
+#include "thread.h"
 #include "uop.h"
 
 

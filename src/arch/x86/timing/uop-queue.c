@@ -22,9 +22,11 @@
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "uop.h"
 #include "uop-queue.h"
+#include "thread.h"
 
 
 int x86_uop_queue_size;

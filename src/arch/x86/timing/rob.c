@@ -22,9 +22,11 @@
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "rob.h"
 #include "uop.h"
+#include "thread.h"
 
 
 

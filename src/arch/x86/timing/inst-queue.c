@@ -21,8 +21,10 @@
 
 #include <lib/util/linked-list.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "inst-queue.h"
+#include "thread.h"
 
 
 char *x86_iq_kind_map[] = { "Shared", "Private" };

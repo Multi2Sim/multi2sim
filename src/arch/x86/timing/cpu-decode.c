@@ -23,8 +23,10 @@
 #include <lib/util/list.h>
 #include <mem-system/module.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "fetch-queue.h"
+#include "thread.h"
 #include "uop.h"
 #include "uop-queue.h"
 

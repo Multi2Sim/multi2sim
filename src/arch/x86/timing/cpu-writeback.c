@@ -24,8 +24,10 @@
 #include <lib/esim/trace.h>
 #include <lib/util/linked-list.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "reg-file.h"
+#include "thread.h"
 
 
 static void x86_cpu_writeback_core(int core)
