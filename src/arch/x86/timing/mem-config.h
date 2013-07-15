@@ -22,9 +22,9 @@
 
 struct config_t;
 
-void x86_mem_config_default(struct config_t *config);
-void x86_mem_config_parse_entry(struct config_t *config, char *section);
-void x86_mem_config_check(struct config_t *config);
+void X86CpuMemConfigDefault(Timing *self, struct config_t *config);
+void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *section);
+void X86CpuMemConfigCheck(Timing *self, struct config_t *config);
 
 
 #endif

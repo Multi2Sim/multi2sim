@@ -20,11 +20,19 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_MEM_CONFIG_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_MEM_CONFIG_H
 
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(Timing);
 struct config_t;
 
-void si_mem_config_fused(struct config_t *config);
-void si_mem_config_default(struct config_t *config);
-void si_mem_config_parse_entry(struct config_t *config, char *section);
-void si_mem_config_check(struct config_t *config);
+
+/*
+ * Class 'SIGpu'
+ * (Extra functions)
+ */
+
+void SIGpuMemConfigFused(Timing *self, struct config_t *config);
+void SIGpuMemConfigDefault(Timing *self, struct config_t *config);
+void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *section);
+void SIGpuMemConfigCheck(Timing *self, struct config_t *config);
 
 #endif

@@ -23,6 +23,7 @@
 #include <lib/util/class.h>
 
 /* Forward declarations */
+struct config_t;
 
 
 /*
@@ -48,6 +49,14 @@ CLASS_BEGIN(Timing, Object)
 	 * performed by the architecture. */
 	int (*Run)(Timing *self);
 
+	/* Function related with the creation of default memory hierarchies and
+	 * processing of memory configuration files. These are all abstract
+	 * functions that must be overridden by children. */
+	void (*MemConfigDefault)(Timing *self, struct config_t *config);
+	void (*MemConfigCheck)(Timing *self, struct config_t *config);
+	void (*MemConfigParseEntry)(Timing *self, struct config_t *config,
+			char *section);
+
 CLASS_END(Timing)
 
 
@@ -58,6 +67,10 @@ void TimingDump(Object *self, FILE *f);
 void TimingDumpSummary(Timing *self, FILE *f);
 
 int TimingRun(Timing *self);
+
+void TimingMemConfigDefault(Timing *self, struct config_t *config);
+void TimingMemConfigCheck(Timing *self, struct config_t *config);
+void TimingMemConfigParseEntry(Timing *self, struct config_t *config, char *section);
 
 
 #endif

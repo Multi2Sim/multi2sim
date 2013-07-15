@@ -20,11 +20,14 @@
 #ifndef ARCH_FERMI_TIMING_MEM_CONFIG_H
 #define ARCH_FERMI_TIMING_MEM_CONFIG_H
 
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(Timing);
 struct config_t;
 
-void frm_mem_config_default(struct config_t *config);
-void frm_mem_config_parse_entry(struct config_t *config, char *section);
-void frm_mem_config_check(struct config_t *config);
+/* Functions for class 'FrmGpu' */
+void FrmGpuMemConfigDefault(Timing *self, struct config_t *config);
+void FrmGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *section);
+void FrmGpuMemConfigCheck(Timing *self, struct config_t *config);
 
 
 #endif

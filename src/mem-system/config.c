@@ -283,18 +283,17 @@ static char *err_mem_disjoint =
 static void mem_config_default(struct arch_t *arch, void *user_data)
 {
 	struct config_t *config = user_data;
+	Timing *timing;
 
 	/* Only for architectures in detailed simulation */
 	if (arch->sim_kind != arch_sim_kind_detailed)
 		return;
 
-	/* Architecture must have registered its 'mem_config_default' function */
-	if (!arch->mem_config_default_func)
-		panic("%s: no default memory configuration for %s",
-				__FUNCTION__, arch->name);
-
-	/* Call function for default memory configuration */
-	arch->mem_config_default_func(config);
+	/* Create default configuration */
+	timing = arch->timing;
+	assert(timing);
+	assert(timing->MemConfigDefault);
+	timing->MemConfigDefault(timing, config);
 }
 
 
@@ -302,17 +301,15 @@ static void mem_config_check(struct arch_t *arch, void *user_data)
 {
 	struct config_t *config = user_data;
 
+	Timing *timing;
+
 	/* Only for architectures in detailed simulation */
 	if (arch->sim_kind != arch_sim_kind_detailed)
 		return;
 
-	/* Architecture must have registers 'mem_config_check' function */
-	if (!arch->mem_config_check_func)
-		panic("%s: not default memory check for %s",
-				__FUNCTION__, arch->name);
-
-	/* Call function for memory check */
-	arch->mem_config_check_func(config);
+	/* Check configuration */
+	timing = arch->timing;
+	timing->MemConfigCheck(timing, config);
 }
 
 
@@ -1045,6 +1042,8 @@ static void mem_config_read_entries(struct config_t *config)
 
 	struct arch_t *arch;
 
+	Timing *timing;
+
 	/* Debug */
 	mem_debug("Processing entries to the memory system:\n");
 	mem_debug("\n");
@@ -1096,15 +1095,10 @@ static void mem_config_read_entries(struct config_t *config)
 				"\toption '--%s-sim detailed' to use this memory entry.\n",
 				mem_config_file_name, section, arch->name, arch->name, arch->prefix);
 
-		/* Check that callback functions are valid */
-		if (!arch->mem_config_parse_entry_func)
-			fatal("%s: section [%s]: %s architecture does not support entries.\n"
-				"\tPlease contact development@multi2sim.org to report this problem.\n",
-				mem_config_file_name, section, arch->name);
-
 		/* Call function to process entry. Each architecture implements its own ways
 		 * to process entries to the memory hierarchy. */
-		arch->mem_config_parse_entry_func(config, section);
+		timing = arch->timing;
+		timing->MemConfigParseEntry(timing, config, section);
 	}
 
 	/* After processing all [Entry <name>] sections, check that all architectures
