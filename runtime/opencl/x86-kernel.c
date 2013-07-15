@@ -410,7 +410,7 @@ void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 	struct opencl_x86_device_exec_t *exec;
 	exec = xcalloc(1, sizeof(struct opencl_x86_device_exec_t));
 
-#ifndef X86_DEVICE_SPIN_LOCKS
+#ifndef HAVE_SYNC_BUILTINS
 	pthread_mutex_init(&exec->next_group_lock, NULL);
 #endif
 	exec->ndrange = ndrange;
@@ -422,7 +422,7 @@ void opencl_x86_ndrange_init(struct opencl_x86_ndrange_t *ndrange)
 void opencl_x86_ndrange_free(struct opencl_x86_ndrange_t *ndrange)
 {
 	opencl_debug("[%s] freeing x86 ndrange", __FUNCTION__);
-#ifndef X86_DEVICE_SPIN_LOCKS
+#ifndef HAVE_SYNC_BUILTINS
 	pthread_mutex_destroy(&ndrange->exec->next_group_lock);
 #endif
 	free(ndrange->exec);

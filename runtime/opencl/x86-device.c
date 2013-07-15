@@ -75,7 +75,7 @@ static struct opencl_x86_device_exec_t *opencl_x86_device_has_work(
 static int opencl_x86_device_get_next_work_group(
 		struct opencl_x86_device_exec_t *exec)
 {
-#ifndef X86_DEVICE_SPIN_LOCKS
+#ifndef HAVE_SYNC_BUILTINS
 	int next;
 	pthread_mutex_lock(&exec->next_group_lock);
 	next = exec->next_group++;
@@ -433,7 +433,7 @@ void *opencl_x86_device_core_func(struct opencl_x86_device_t *device)
 
 void opencl_x86_device_sync_init(struct opencl_x86_device_sync_t *sync)
 {
-#ifndef X86_DEVICE_SPIN_LOCKS
+#ifndef HAVE_SYNC_BUILTINS
 	pthread_mutex_init(&sync->lock, NULL);
 	pthread_cond_init(&sync->cond, NULL);
 #endif
@@ -442,7 +442,7 @@ void opencl_x86_device_sync_init(struct opencl_x86_device_sync_t *sync)
 
 void opencl_x86_device_sync_destroy(struct opencl_x86_device_sync_t *sync)
 {
-#ifndef X86_DEVICE_SPIN_LOCKS
+#ifndef HAVE_SYNC_BUILTINS
 	pthread_mutex_destroy(&sync->lock);
 	pthread_cond_destroy(&sync->cond);
 #endif
@@ -450,7 +450,7 @@ void opencl_x86_device_sync_destroy(struct opencl_x86_device_sync_t *sync)
 
 void opencl_x86_device_sync_wait(struct opencl_x86_device_sync_t *sync, int value)
 {
-#ifndef X86_DEVICE_SPIN_LOCKS
+#ifndef HAVE_SYNC_BUILTINS
 	pthread_mutex_lock(&sync->lock);
 	while (sync->count != value)
 		pthread_cond_wait(&sync->cond, &sync->lock);
@@ -463,7 +463,7 @@ void opencl_x86_device_sync_wait(struct opencl_x86_device_sync_t *sync, int valu
 
 void opencl_x86_device_sync_post(struct opencl_x86_device_sync_t *sync)
 {
-#ifndef X86_DEVICE_SPIN_LOCKS
+#ifndef HAVE_SYNC_BUILTINS
 	pthread_mutex_lock(&sync->lock);
 	sync->count++;
 	pthread_mutex_unlock(&sync->lock);
