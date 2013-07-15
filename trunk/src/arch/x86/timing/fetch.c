@@ -34,6 +34,7 @@
 #include "core.h"
 #include "cpu.h"
 #include "event-queue.h"
+#include "fetch.h"
 #include "fetch-queue.h"
 #include "reg-file.h"
 #include "thread.h"
