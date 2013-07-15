@@ -23,11 +23,13 @@
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "inst-queue.h"
 #include "load-store-queue.h"
 #include "reg-file.h"
 #include "rob.h"
+#include "thread.h"
 #include "trace-cache.h"
 
 

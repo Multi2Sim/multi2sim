@@ -25,7 +25,9 @@
 #include <lib/util/string.h>
 
 #include "bpred.h"
+#include "core.h"
 #include "cpu.h"
+#include "thread.h"
 #include "uop.h"
 
 

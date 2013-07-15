@@ -22,8 +22,10 @@
 #include <lib/esim/trace.h>
 #include <lib/util/list.h>
 
+#include "core.h"
 #include "cpu.h"
 #include "uop.h"
+#include "thread.h"
 
 
 int x86_fetch_queue_size;
