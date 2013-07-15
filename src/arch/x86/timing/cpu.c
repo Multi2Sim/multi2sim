@@ -256,6 +256,7 @@ int x86_trace_category;
 char *x86_config_file_name = "";
 char *x86_cpu_report_file_name = "";
 
+int x86_cpu_frequency = 1000;
 int x86_cpu_num_cores = 1;
 int x86_cpu_num_threads = 1;
 
@@ -307,7 +308,7 @@ static void x86_cpu_config_dump(FILE *f)
 {
 	/* General configuration */
 	fprintf(f, "[ Config.General ]\n");
-	fprintf(f, "Frequency = %d\n", arch_x86->frequency);
+	fprintf(f, "Frequency = %d\n", x86_cpu_frequency);
 	fprintf(f, "Cores = %d\n", x86_cpu_num_cores);
 	fprintf(f, "Threads = %d\n", x86_cpu_num_threads);
 	fprintf(f, "FastForward = %lld\n", x86_cpu_fast_forward_count);
@@ -690,8 +691,8 @@ void x86_cpu_read_config(void)
 
 	section = "General";
 
-	arch_x86->frequency = config_read_int(config, section, "Frequency", 1000);
-	if (!IN_RANGE(arch_x86->frequency, 1, ESIM_MAX_FREQUENCY))
+	x86_cpu_frequency = config_read_int(config, section, "Frequency", x86_cpu_frequency);
+	if (!IN_RANGE(x86_cpu_frequency, 1, ESIM_MAX_FREQUENCY))
 		fatal("%s: invalid value for 'Frequency'.", x86_config_file_name);
 
 	x86_cpu_num_cores = config_read_int(config, section, "Cores", x86_cpu_num_cores);
@@ -976,7 +977,11 @@ void X86CpuCreate(X86Cpu *self)
 	/* Parent */
 	TimingCreate(asTiming(self));
 	
-	/* Initialize */
+	/* Frequency */
+	asTiming(self)->frequency = x86_cpu_frequency;
+	asTiming(self)->frequency_domain = esim_new_domain(x86_cpu_frequency);
+
+	/* Misc */
 	self->uop_trace_list = linked_list_create();
 
 	/* Initialize cores */
@@ -1080,9 +1085,6 @@ void X86CpuDumpSummary(Timing *self, FILE *f)
 	double uinst_per_cycle;
 	double branch_acc;
 
-	/* Call parent */
-	TimingDumpSummary(self, f);
-
 	/* Calculate statistics */
 	inst_per_cycle = asTiming(x86_cpu)->cycle ? (double) cpu->num_committed_inst / asTiming(x86_cpu)->cycle : 0.0;
 	uinst_per_cycle = asTiming(x86_cpu)->cycle ? (double) cpu->num_committed_uinst / asTiming(x86_cpu)->cycle : 0.0;
@@ -1095,6 +1097,9 @@ void X86CpuDumpSummary(Timing *self, FILE *f)
 	fprintf(f, "CommittedMicroInstructions = %lld\n", cpu->num_committed_uinst);
 	fprintf(f, "CommittedMicroInstructionsPerCycle = %.4g\n", uinst_per_cycle);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
+
+	/* Call parent */
+	TimingDumpSummary(self, f);
 }
 
 

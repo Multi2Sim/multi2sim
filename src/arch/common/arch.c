@@ -254,8 +254,6 @@ void arch_init(void)
 			/* Read configuration file */
 			arch->timing_read_config_func();
 
-			/* Register frequency domain */
-			arch->domain_index = esim_new_domain(arch->frequency);
 		}
 
 		/* Initialize emulator */
@@ -263,7 +261,10 @@ void arch_init(void)
 
 		/* Initialize timing simulator */
 		if (arch->sim_kind == arch_sim_kind_detailed)
+		{
+			/* Register frequency domain */
 			arch->timing_init_func();
+		}
 	}
 }
 
@@ -382,15 +383,16 @@ void arch_run(int *num_emu_active_ptr, int *num_timing_active_ptr)
 			/* Check whether the architecture should actually run an
 			 * iteration. If it is working at a slower frequency than
 			 * the main simulation loop, we must skip this call. */
-			cycle = esim_domain_cycle(arch->domain_index);
+			timing = arch->timing;
+			assert(timing);
+			assert(timing->frequency_domain);
+			cycle = esim_domain_cycle(timing->frequency_domain);
 			run = cycle != arch->last_timing_cycle;
 
 			/* Timing simulation iteration */
 			if (run)
 			{
 				/* Do it... */
-				timing = arch->timing;
-				assert(timing && timing->Run);
 				arch->active = timing->Run(timing);
 
 				/* ... but only update the last timing

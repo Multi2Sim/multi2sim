@@ -329,6 +329,7 @@ struct str_map_t si_gpu_register_alloc_granularity_map =
 enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
 
 /* Device parameters */
+int si_gpu_frequency = 925;
 int si_gpu_num_compute_units = 32;
 
 /* Compute unit parameters */
@@ -462,7 +463,7 @@ void si_config_dump(FILE *f)
 {
 	/* Device */
 	fprintf(f, "[ Config.Device ]\n");
-	fprintf(f, "Frequency = %d\n", arch_southern_islands->frequency);
+	fprintf(f, "Frequency = %d\n", si_gpu_frequency);
 	fprintf(f, "NumComputeUnits = %d\n", si_gpu_num_compute_units);
 	fprintf(f, "\n");
 
@@ -612,9 +613,9 @@ void si_gpu_read_config(void)
 	/* Device */
 	section = "Device";
 
-	arch_southern_islands->frequency = config_read_int(gpu_config, section,
-			"Frequency", 925);
-	if (!IN_RANGE(arch_southern_islands->frequency, 1, ESIM_MAX_FREQUENCY))
+	si_gpu_frequency = config_read_int(gpu_config, section,
+			"Frequency", si_gpu_frequency);
+	if (!IN_RANGE(si_gpu_frequency, 1, ESIM_MAX_FREQUENCY))
 		fatal("%s: invalid value for 'Frequency'.\n%s",
 			si_gpu_config_file_name, err_note);
 
@@ -1255,6 +1256,10 @@ void SIGpuCreate(SIGpu *self)
 	/* Parent */
 	TimingCreate(asTiming(self));
 	
+	/* Frequency */
+	asTiming(self)->frequency = si_gpu_frequency;
+	asTiming(self)->frequency_domain = esim_new_domain(si_gpu_frequency);
+
 	/* Initialize */
 	self->available_compute_units = list_create();
 	self->compute_units = xcalloc(si_gpu_num_compute_units, 
