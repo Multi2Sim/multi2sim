@@ -20,11 +20,12 @@
 #ifndef ARCH_EVERGREEN_EMU_OPENCL_COMMAND_QUEUE_H
 #define ARCH_EVERGREEN_EMU_OPENCL_COMMAND_QUEUE_H
 
+#include <lib/util/class.h>
 
-/* Forward declaration of x86 context used below in callback function. This
- * dependence would be removed if OpenCL API implementation was in 'arch/x86/emu'
- * instead. Is this a better option? */
-struct x86_ctx_t;
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Context);
+
 
 enum evg_opencl_command_type_t
 {
@@ -72,7 +73,7 @@ void evg_opencl_command_queue_complete(struct evg_opencl_command_queue_t *comman
 
 /* Callback function of type 'x86_ctx_wakeup_callback_func_t'.
  * Argument 'data' is type-casted to 'struct evg_opencl_command_queue_t' */
-int evg_opencl_command_queue_can_wakeup(struct x86_ctx_t *ctx, void *data);
+int evg_opencl_command_queue_can_wakeup(X86Context *ctx, void *data);
 
 
 #endif

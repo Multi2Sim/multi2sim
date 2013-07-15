@@ -23,7 +23,7 @@
 #include <stdio.h>
 
 /* Forward type declarations */
-struct x86_ctx_t;
+CLASS_FORWARD_DECLARATION(X86Context);
 
 
 #define x86_sys_debug(...) debug(x86_sys_debug_category, __VA_ARGS__)
@@ -34,7 +34,7 @@ void x86_sys_init(void);
 void x86_sys_done(void);
 void x86_sys_dump(FILE *f);
 
-void x86_sys_call(struct x86_ctx_t *ctx);
+void x86_sys_call(X86Context *ctx);
  
 
 #endif

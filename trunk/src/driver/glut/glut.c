@@ -75,12 +75,12 @@ char *glut_call_name[glut_call_count + 1] =
 
 /* Forward declarations of GLUT runtime functions */
 #define X86_GLUT_DEFINE_CALL(name, code) \
-	static int glut_abi_##name(struct x86_ctx_t *ctx);
+	static int glut_abi_##name(X86Context *ctx);
 #include "glut.dat"
 #undef X86_GLUT_DEFINE_CALL
 
 /* List of GLUT runtime functions */
-typedef int (*glut_abi_func_t)(struct x86_ctx_t *ctx);
+typedef int (*glut_abi_func_t)(X86Context *ctx);
 static glut_abi_func_t glut_abi_table[glut_call_count + 1] =
 {
 	NULL,
@@ -662,7 +662,7 @@ void glut_done(void)
 }
 
 
-int glut_abi_call(struct x86_ctx_t *ctx)
+int glut_abi_call(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -745,7 +745,7 @@ struct glut_version_t
 	int minor;
 };
 
-static int glut_abi_init(struct x86_ctx_t *ctx)
+static int glut_abi_init(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -785,7 +785,7 @@ static int glut_abi_init(struct x86_ctx_t *ctx)
  *	The return value is always 0.
  */
 
-static int glut_abi_get_event(struct x86_ctx_t *ctx)
+static int glut_abi_get_event(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -900,7 +900,7 @@ static void *glut_thread_func(void *arg)
 	return NULL;
 }
 
-static int glut_abi_new_window(struct x86_ctx_t *ctx)
+static int glut_abi_new_window(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -961,7 +961,7 @@ static int glut_abi_new_window(struct x86_ctx_t *ctx)
  *	The function always returns 0
  */
 
-static int glut_abi_test_draw(struct x86_ctx_t *ctx)
+static int glut_abi_test_draw(X86Context *ctx)
 {
 	int width;
 	int height;

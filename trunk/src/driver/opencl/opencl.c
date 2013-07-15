@@ -80,13 +80,13 @@ char *opencl_abi_call_name[opencl_abi_call_count + 1] =
 
 /* Forward declarations of OpenCL Runtime functions */
 #define OPENCL_ABI_CALL(name, code) \
-	static int opencl_abi_##name##_impl(struct x86_ctx_t *ctx);
+	static int opencl_abi_##name##_impl(X86Context *ctx);
 #include "opencl.dat"
 #undef OPENCL_ABI_CALL
 
 
 /* List of OpenCL Runtime functions */
-typedef int (*opencl_abi_call_t)(struct x86_ctx_t *ctx);
+typedef int (*opencl_abi_call_t)(X86Context *ctx);
 static opencl_abi_call_t opencl_abi_call_table[opencl_abi_call_count + 1] =
 {
 	NULL,
@@ -102,7 +102,7 @@ int opencl_debug_category;
 
 
 
-int opencl_abi_call(struct x86_ctx_t *ctx)
+int opencl_abi_call(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -174,7 +174,7 @@ struct opencl_version_t
 	int minor;
 };
 
-static int opencl_abi_init_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_init_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -219,7 +219,7 @@ static int opencl_abi_init_impl(struct x86_ctx_t *ctx)
  *	ABI calls taking device pointers as input arguments.
  */
 
-static int opencl_abi_si_mem_alloc_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_mem_alloc_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -268,7 +268,7 @@ static int opencl_abi_si_mem_alloc_impl(struct x86_ctx_t *ctx)
  *	The function does not have any return value.
  */
 
-static int opencl_abi_si_mem_read_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_mem_read_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -326,7 +326,7 @@ static int opencl_abi_si_mem_read_impl(struct x86_ctx_t *ctx)
  *	The function does not have any return value.
  */
 
-static int opencl_abi_si_mem_write_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_mem_write_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -385,7 +385,7 @@ static int opencl_abi_si_mem_write_impl(struct x86_ctx_t *ctx)
  *	The function does not have any return value.
  */
 
-static int opencl_abi_si_mem_copy_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_mem_copy_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -434,7 +434,7 @@ static int opencl_abi_si_mem_copy_impl(struct x86_ctx_t *ctx)
  *	No value is returned.
  */
 
-static int opencl_abi_si_mem_free_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_mem_free_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -464,7 +464,7 @@ static int opencl_abi_si_mem_free_impl(struct x86_ctx_t *ctx)
  *	Unique program ID.
  */
 
-static int opencl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_program_create_impl(X86Context *ctx)
 {
 	struct opencl_si_program_t *program;
 
@@ -501,7 +501,7 @@ static int opencl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
  *	No return value.
  */
 
-static int opencl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_program_set_binary_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_program_t *program;
@@ -556,7 +556,7 @@ static int opencl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
  *	Unique kernel ID.
  */
 
-static int opencl_abi_si_kernel_create_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_kernel_create_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -629,7 +629,7 @@ static int opencl_abi_si_kernel_create_impl(struct x86_ctx_t *ctx)
  *	Unique kernel ID.
  */
 
-static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_kernel_set_arg_value_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_kernel_t *kernel;
@@ -717,7 +717,7 @@ static int opencl_abi_si_kernel_set_arg_value_impl(struct x86_ctx_t *ctx)
  *	Unique kernel ID.
  */
 
-static int opencl_abi_si_kernel_set_arg_pointer_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_kernel_set_arg_pointer_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opencl_si_kernel_t *kernel;
@@ -781,7 +781,7 @@ static int opencl_abi_si_kernel_set_arg_pointer_impl(struct x86_ctx_t *ctx)
  *	Unique kernel ID.
  */
 
-static int opencl_abi_si_kernel_set_arg_image_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_kernel_set_arg_image_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -823,7 +823,7 @@ static int opencl_abi_si_kernel_set_arg_image_impl(struct x86_ctx_t *ctx)
  *	Unique kernel ID.
  */
 
-static int opencl_abi_si_kernel_set_arg_sampler_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_kernel_set_arg_sampler_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -878,7 +878,7 @@ static int opencl_abi_si_kernel_set_arg_sampler_impl(struct x86_ctx_t *ctx)
  *	Unique kernel ID.
  */
 
-static int opencl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 {
 	struct elf_buffer_t *elf_buffer;
 	struct mem_t *mem = ctx->mem;
@@ -1000,7 +1000,7 @@ static int opencl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
 
 
 static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
-	struct x86_ctx_t *ctx)
+	X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1048,7 +1048,7 @@ static int opencl_abi_si_ndrange_get_num_buffer_entries_impl(
  */
 
 static int opencl_abi_si_ndrange_send_work_groups_can_wakeup(
-	struct x86_ctx_t *ctx, void *user_data)
+	X86Context *ctx, void *user_data)
 {
 	assert(!user_data);
 
@@ -1056,12 +1056,12 @@ static int opencl_abi_si_ndrange_send_work_groups_can_wakeup(
 }
 
 static void opencl_abi_si_ndrange_send_work_groups_wakeup(
-	struct x86_ctx_t *ctx, void *user_data)
+	X86Context *ctx, void *user_data)
 {
 	assert(!user_data);
 }
 
-static int opencl_abi_si_ndrange_send_work_groups_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -1145,7 +1145,7 @@ static int opencl_abi_si_ndrange_send_work_groups_impl(struct x86_ctx_t *ctx)
  *	The function always returns 0.
  */
 
-static int opencl_abi_si_ndrange_finish_can_wakeup(struct x86_ctx_t *ctx, 
+static int opencl_abi_si_ndrange_finish_can_wakeup(X86Context *ctx, 
 	void *user_data)
 {
 	assert(!user_data);
@@ -1153,7 +1153,7 @@ static int opencl_abi_si_ndrange_finish_can_wakeup(struct x86_ctx_t *ctx,
 	return driver_state.ndrange_complete;
 }
 
-static void opencl_abi_si_ndrange_finish_wakeup(struct x86_ctx_t *ctx, 
+static void opencl_abi_si_ndrange_finish_wakeup(X86Context *ctx, 
 	void *user_data)
 {
 	assert(!user_data);
@@ -1171,7 +1171,7 @@ static void opencl_abi_si_ndrange_finish_wakeup(struct x86_ctx_t *ctx,
 	si_emu->ndrange = NULL;
 }
 
-static int opencl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_ndrange_finish_impl(X86Context *ctx)
 {
 	driver_state.wait_for_ndrange_completion = 1;
 
@@ -1216,7 +1216,7 @@ static int opencl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
  *	The function always returns 0.
  */
 
-static int opencl_abi_si_ndrange_pass_mem_objs_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 {
 	struct opencl_si_kernel_t *kernel;
 	struct si_ndrange_t *ndrange;
@@ -1275,7 +1275,7 @@ static int opencl_abi_si_ndrange_pass_mem_objs_impl(struct x86_ctx_t *ctx)
  *	The function always returns 0.
  */
 
-static int opencl_abi_si_ndrange_set_fused_impl(struct x86_ctx_t *ctx)
+static int opencl_abi_si_ndrange_set_fused_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 

@@ -44,7 +44,7 @@
 #define assert __COMPILATION_ERROR__
 
 
-void x86_isa_f2xm1_impl(struct x86_ctx_t *ctx)
+void x86_isa_f2xm1_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	unsigned short status;
@@ -71,7 +71,7 @@ void x86_isa_f2xm1_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fabs_impl(struct x86_ctx_t *ctx)
+void x86_isa_fabs_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	unsigned short status;
@@ -98,7 +98,7 @@ void x86_isa_fabs_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fadd_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fadd_m32_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	float m32;
@@ -128,7 +128,7 @@ void x86_isa_fadd_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fadd_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fadd_m64_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	double m64;
@@ -158,7 +158,7 @@ void x86_isa_fadd_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fadd_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fadd_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -187,7 +187,7 @@ void x86_isa_fadd_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fadd_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fadd_sti_st0_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -216,7 +216,7 @@ void x86_isa_fadd_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_faddp_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_faddp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fadd_sti_st0_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -225,7 +225,7 @@ void x86_isa_faddp_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fchs_impl(struct x86_ctx_t *ctx)
+void x86_isa_fchs_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	unsigned short status;
@@ -252,7 +252,7 @@ void x86_isa_fchs_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcmovb_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcmovb_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -263,7 +263,7 @@ void x86_isa_fcmovb_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcmove_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcmove_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -274,7 +274,7 @@ void x86_isa_fcmove_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcmovbe_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcmovbe_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -285,7 +285,7 @@ void x86_isa_fcmovbe_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcmovu_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcmovu_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -296,7 +296,7 @@ void x86_isa_fcmovu_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcmovnb_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcmovnb_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -307,7 +307,7 @@ void x86_isa_fcmovnb_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcmovne_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcmovne_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -318,7 +318,7 @@ void x86_isa_fcmovne_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcmovnbe_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcmovnbe_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -329,7 +329,7 @@ void x86_isa_fcmovnbe_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcmovnu_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcmovnu_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -340,7 +340,7 @@ void x86_isa_fcmovnu_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcom_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcom_m32_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	float m32;
@@ -367,7 +367,7 @@ void x86_isa_fcom_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcom_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcom_m64_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	double m64;
@@ -394,7 +394,7 @@ void x86_isa_fcom_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcom_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcom_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -421,7 +421,7 @@ void x86_isa_fcom_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcomp_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcomp_m32_impl(X86Context *ctx)
 {
 	x86_isa_fcom_m32_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -430,7 +430,7 @@ void x86_isa_fcomp_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcomp_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcomp_m64_impl(X86Context *ctx)
 {
 	x86_isa_fcom_m64_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -439,7 +439,7 @@ void x86_isa_fcomp_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcomp_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcomp_sti_impl(X86Context *ctx)
 {
 	x86_isa_fcom_sti_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -448,7 +448,7 @@ void x86_isa_fcomp_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcompp_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcompp_impl(X86Context *ctx)
 {
 	unsigned char st0[10], st1[10];
 	unsigned short status;
@@ -479,7 +479,7 @@ void x86_isa_fcompp_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcomi_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcomi_st0_sti_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned char st0[10], sti[10];
@@ -509,7 +509,7 @@ void x86_isa_fcomi_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcomip_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcomip_st0_sti_impl(X86Context *ctx)
 {
 	x86_isa_fcomi_st0_sti_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -518,7 +518,7 @@ void x86_isa_fcomip_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fucomi_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fucomi_st0_sti_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned char st0[10], sti[10];
@@ -548,7 +548,7 @@ void x86_isa_fucomi_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fucomip_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fucomip_st0_sti_impl(X86Context *ctx)
 {
 	x86_isa_fucomi_st0_sti_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -557,7 +557,7 @@ void x86_isa_fucomip_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fcos_impl(struct x86_ctx_t *ctx)
+void x86_isa_fcos_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	unsigned short status;
@@ -584,7 +584,7 @@ void x86_isa_fcos_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdiv_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdiv_m32_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	float m32;
@@ -614,7 +614,7 @@ void x86_isa_fdiv_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdiv_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdiv_m64_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	double m64;
@@ -644,7 +644,7 @@ void x86_isa_fdiv_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdiv_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdiv_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -673,7 +673,7 @@ void x86_isa_fdiv_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdiv_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdiv_sti_st0_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -702,7 +702,7 @@ void x86_isa_fdiv_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdivp_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdivp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fdiv_sti_st0_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -711,7 +711,7 @@ void x86_isa_fdivp_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdivr_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdivr_m32_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	float m32;
@@ -741,7 +741,7 @@ void x86_isa_fdivr_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdivr_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdivr_m64_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	double m64;
@@ -771,7 +771,7 @@ void x86_isa_fdivr_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdivr_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdivr_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -800,7 +800,7 @@ void x86_isa_fdivr_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdivr_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdivr_sti_st0_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -829,7 +829,7 @@ void x86_isa_fdivr_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fdivrp_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fdivrp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fdivr_sti_st0_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -838,7 +838,7 @@ void x86_isa_fdivrp_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fild_m16_impl(struct x86_ctx_t *ctx)
+void x86_isa_fild_m16_impl(X86Context *ctx)
 {
 	short m16;
 	unsigned char e[10];
@@ -861,7 +861,7 @@ void x86_isa_fild_m16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fild_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fild_m32_impl(X86Context *ctx)
 {
 	int m32;
 	unsigned char e[10];
@@ -884,7 +884,7 @@ void x86_isa_fild_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fild_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fild_m64_impl(X86Context *ctx)
 {
 	long long m64;
 	unsigned char e[10];
@@ -907,7 +907,7 @@ void x86_isa_fild_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fist_m16_impl(struct x86_ctx_t *ctx)
+void x86_isa_fist_m16_impl(X86Context *ctx)
 {
 	short m16;
 	unsigned char e[10];
@@ -929,7 +929,7 @@ void x86_isa_fist_m16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fist_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fist_m32_impl(X86Context *ctx)
 {
 	int m32;
 	unsigned char e[10];
@@ -951,7 +951,7 @@ void x86_isa_fist_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fist_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fist_m64_impl(X86Context *ctx)
 {
 	long long m64;
 	unsigned char e[10];
@@ -973,7 +973,7 @@ void x86_isa_fist_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fistp_m16_impl(struct x86_ctx_t *ctx)
+void x86_isa_fistp_m16_impl(X86Context *ctx)
 {
 	x86_isa_fist_m16_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -982,7 +982,7 @@ void x86_isa_fistp_m16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fistp_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fistp_m32_impl(X86Context *ctx)
 {
 	x86_isa_fist_m32_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -991,7 +991,7 @@ void x86_isa_fistp_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fistp_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fistp_m64_impl(X86Context *ctx)
 {
 	x86_isa_fist_m64_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -1000,7 +1000,7 @@ void x86_isa_fistp_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fld1_impl(struct x86_ctx_t *ctx)
+void x86_isa_fld1_impl(X86Context *ctx)
 {
 	unsigned char v[10];
 
@@ -1019,7 +1019,7 @@ void x86_isa_fld1_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fldl2e_impl(struct x86_ctx_t *ctx)
+void x86_isa_fldl2e_impl(X86Context *ctx)
 {
 	unsigned char v[10];
 
@@ -1038,7 +1038,7 @@ void x86_isa_fldl2e_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fldl2t_impl(struct x86_ctx_t *ctx)
+void x86_isa_fldl2t_impl(X86Context *ctx)
 {
 	unsigned char v[10];
 
@@ -1057,7 +1057,7 @@ void x86_isa_fldl2t_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fldpi_impl(struct x86_ctx_t *ctx)
+void x86_isa_fldpi_impl(X86Context *ctx)
 {
 	unsigned char v[10];
 
@@ -1076,7 +1076,7 @@ void x86_isa_fldpi_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fldlg2_impl(struct x86_ctx_t *ctx)
+void x86_isa_fldlg2_impl(X86Context *ctx)
 {
 	unsigned char v[10];
 
@@ -1095,7 +1095,7 @@ void x86_isa_fldlg2_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fldln2_impl(struct x86_ctx_t *ctx)
+void x86_isa_fldln2_impl(X86Context *ctx)
 {
 	unsigned char v[10];
 
@@ -1114,7 +1114,7 @@ void x86_isa_fldln2_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fldz_impl(struct x86_ctx_t *ctx)
+void x86_isa_fldz_impl(X86Context *ctx)
 {
 	unsigned char v[10];
 
@@ -1133,7 +1133,7 @@ void x86_isa_fldz_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fld_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fld_m32_impl(X86Context *ctx)
 {
 	unsigned char e[10];
 	float m32;
@@ -1147,7 +1147,7 @@ void x86_isa_fld_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fld_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fld_m64_impl(X86Context *ctx)
 {
 	unsigned char e[10];
 	double m64;
@@ -1161,7 +1161,7 @@ void x86_isa_fld_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fld_m80_impl(struct x86_ctx_t *ctx)
+void x86_isa_fld_m80_impl(X86Context *ctx)
 {
 	unsigned char e[10];
 
@@ -1173,7 +1173,7 @@ void x86_isa_fld_m80_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fld_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fld_sti_impl(X86Context *ctx)
 {
 	unsigned char sti[10];
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -1185,7 +1185,7 @@ void x86_isa_fld_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fldcw_m16_impl(struct x86_ctx_t *ctx)
+void x86_isa_fldcw_m16_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -1209,7 +1209,7 @@ void x86_isa_fldcw_m16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fmul_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fmul_m32_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	float m32;
@@ -1239,7 +1239,7 @@ void x86_isa_fmul_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fmul_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fmul_m64_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	double m64;
@@ -1269,7 +1269,7 @@ void x86_isa_fmul_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fmul_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fmul_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -1298,7 +1298,7 @@ void x86_isa_fmul_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fmul_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fmul_sti_st0_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -1327,7 +1327,7 @@ void x86_isa_fmul_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fmulp_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fmulp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fmul_sti_st0_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -1336,13 +1336,13 @@ void x86_isa_fmulp_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fnstcw_m16_impl(struct x86_ctx_t *ctx)
+void x86_isa_fnstcw_m16_impl(X86Context *ctx)
 {
 	x86_isa_fstcw_m16_impl(ctx);
 }
 
 
-void x86_isa_fnstsw_ax_impl(struct x86_ctx_t *ctx)
+void x86_isa_fnstsw_ax_impl(X86Context *ctx)
 {
 	unsigned short status = x86_isa_load_fpu_status(ctx);
 	x86_isa_store_reg(ctx, x86_inst_reg_ax, status);
@@ -1351,7 +1351,7 @@ void x86_isa_fnstsw_ax_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fpatan_impl(struct x86_ctx_t *ctx)
+void x86_isa_fpatan_impl(X86Context *ctx)
 {
 	unsigned char st0[10], st1[10];
 	unsigned short status;
@@ -1382,7 +1382,7 @@ void x86_isa_fpatan_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fprem_impl(struct x86_ctx_t *ctx)
+void x86_isa_fprem_impl(X86Context *ctx)
 {
 	unsigned char st0[10], st1[10];
 	unsigned short status;
@@ -1412,7 +1412,7 @@ void x86_isa_fprem_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fprem1_impl(struct x86_ctx_t *ctx)
+void x86_isa_fprem1_impl(X86Context *ctx)
 {
 	unsigned char st0[10], st1[10];
 	unsigned short status;
@@ -1442,7 +1442,7 @@ void x86_isa_fprem1_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fptan_impl(struct x86_ctx_t *ctx)
+void x86_isa_fptan_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	unsigned short status;
@@ -1472,7 +1472,7 @@ void x86_isa_fptan_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_frndint_impl(struct x86_ctx_t *ctx)
+void x86_isa_frndint_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	unsigned short status;
@@ -1499,7 +1499,7 @@ void x86_isa_frndint_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fscale_impl(struct x86_ctx_t *ctx)
+void x86_isa_fscale_impl(X86Context *ctx)
 {
 	unsigned char st0[10], st1[10];
 	unsigned short status;
@@ -1529,7 +1529,7 @@ void x86_isa_fscale_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsin_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsin_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	short status;
@@ -1556,7 +1556,7 @@ void x86_isa_fsin_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsincos_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsincos_impl(X86Context *ctx)
 {
 	unsigned char st0[10], vsin[10], vcos[10];
 	unsigned short status;
@@ -1588,7 +1588,7 @@ void x86_isa_fsincos_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsqrt_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsqrt_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	unsigned short status;
@@ -1615,7 +1615,7 @@ void x86_isa_fsqrt_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fst_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fst_m32_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	float m32;
@@ -1628,7 +1628,7 @@ void x86_isa_fst_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fst_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fst_m64_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	double m64;
@@ -1641,7 +1641,7 @@ void x86_isa_fst_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fst_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fst_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 
@@ -1652,7 +1652,7 @@ void x86_isa_fst_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fstp_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fstp_m32_impl(X86Context *ctx)
 {
 	x86_isa_fst_m32_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -1661,7 +1661,7 @@ void x86_isa_fstp_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fstp_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fstp_m64_impl(X86Context *ctx)
 {
 	x86_isa_fst_m64_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -1670,7 +1670,7 @@ void x86_isa_fstp_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fstp_m80_impl(struct x86_ctx_t *ctx)
+void x86_isa_fstp_m80_impl(X86Context *ctx)
 {
 	unsigned char m80[10];
 
@@ -1682,7 +1682,7 @@ void x86_isa_fstp_m80_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fstp_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fstp_sti_impl(X86Context *ctx)
 {
 	x86_isa_fst_sti_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -1691,7 +1691,7 @@ void x86_isa_fstp_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fstsw_ax_impl(struct x86_ctx_t *ctx)
+void x86_isa_fstsw_ax_impl(X86Context *ctx)
 {
 	unsigned short status = x86_isa_load_fpu_status(ctx);
 	x86_isa_store_reg(ctx, x86_inst_reg_ax, status);
@@ -1700,7 +1700,7 @@ void x86_isa_fstsw_ax_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsub_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsub_m32_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	float m32;
@@ -1730,7 +1730,7 @@ void x86_isa_fsub_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsub_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsub_m64_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	double m64;
@@ -1760,7 +1760,7 @@ void x86_isa_fsub_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsub_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsub_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -1789,7 +1789,7 @@ void x86_isa_fsub_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsub_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsub_sti_st0_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -1818,7 +1818,7 @@ void x86_isa_fsub_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsubp_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsubp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fsub_sti_st0_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -1827,7 +1827,7 @@ void x86_isa_fsubp_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsubr_m32_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsubr_m32_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	float m32;
@@ -1857,7 +1857,7 @@ void x86_isa_fsubr_m32_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsubr_m64_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsubr_m64_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	double m64;
@@ -1887,7 +1887,7 @@ void x86_isa_fsubr_m64_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsubr_st0_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsubr_st0_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -1916,7 +1916,7 @@ void x86_isa_fsubr_st0_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsubr_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsubr_sti_st0_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -1945,7 +1945,7 @@ void x86_isa_fsubr_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fsubrp_sti_st0_impl(struct x86_ctx_t *ctx)
+void x86_isa_fsubrp_sti_st0_impl(X86Context *ctx)
 {
 	x86_isa_fsubr_sti_st0_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -1954,7 +1954,7 @@ void x86_isa_fsubrp_sti_st0_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fstcw_m16_impl(struct x86_ctx_t *ctx)
+void x86_isa_fstcw_m16_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned short value = regs->fpu_ctrl;
@@ -1967,7 +1967,7 @@ void x86_isa_fstcw_m16_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_ftst_impl(struct x86_ctx_t *ctx)
+void x86_isa_ftst_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	unsigned short status;
@@ -1993,7 +1993,7 @@ void x86_isa_ftst_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fucom_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fucom_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	unsigned short status;
@@ -2020,7 +2020,7 @@ void x86_isa_fucom_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fucomp_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fucomp_sti_impl(X86Context *ctx)
 {
 	x86_isa_fucom_sti_impl(ctx);
 	x86_isa_pop_fpu(ctx, NULL);
@@ -2029,7 +2029,7 @@ void x86_isa_fucomp_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fucompp_impl(struct x86_ctx_t *ctx)
+void x86_isa_fucompp_impl(X86Context *ctx)
 {
 	unsigned char st0[10], st1[10];
 	unsigned short status;
@@ -2060,7 +2060,7 @@ void x86_isa_fucompp_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fxam_impl(struct x86_ctx_t *ctx)
+void x86_isa_fxam_impl(X86Context *ctx)
 {
 	unsigned char st0[10];
 	unsigned short status;
@@ -2086,7 +2086,7 @@ void x86_isa_fxam_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fxch_sti_impl(struct x86_ctx_t *ctx)
+void x86_isa_fxch_sti_impl(X86Context *ctx)
 {
 	unsigned char st0[10], sti[10];
 	x86_isa_load_fpu(ctx, 0, st0);
@@ -2098,7 +2098,7 @@ void x86_isa_fxch_sti_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fyl2x_impl(struct x86_ctx_t *ctx)
+void x86_isa_fyl2x_impl(X86Context *ctx)
 {
 	unsigned char st0[10], st1[10];
 	unsigned short status;
@@ -2129,7 +2129,7 @@ void x86_isa_fyl2x_impl(struct x86_ctx_t *ctx)
 }
 
 
-void x86_isa_fyl2xp1_impl(struct x86_ctx_t *ctx)
+void x86_isa_fyl2xp1_impl(X86Context *ctx)
 {
 	unsigned char st0[10], st1[10];
 	unsigned short status;

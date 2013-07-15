@@ -100,7 +100,7 @@
 
 /* Allocate (effectively start running) a context that is already mapped to a
  * node (core/thread). */
-static void x86_cpu_alloc_context(struct x86_ctx_t *ctx)
+static void x86_cpu_alloc_context(X86Context *ctx)
 {
 	int core = ctx->core;
 	int thread = ctx->thread;
@@ -130,7 +130,7 @@ static void x86_cpu_alloc_context(struct x86_ctx_t *ctx)
 
 /* Map a context to a node. The node is chosen with the minimum number of
  * contexts currently mapped to it. */
-static void x86_cpu_map_context(struct x86_ctx_t *ctx)
+static void x86_cpu_map_context(X86Context *ctx)
 {
 	int min_core;
 	int min_thread;
@@ -188,7 +188,7 @@ static void x86_cpu_map_context(struct x86_ctx_t *ctx)
  * to the node. A context is unmapped from a node either because it lost
  * affinity with the node, or because it finished execution.
  * A context must have been evicted from the node before being unmapped. */
-static void x86_cpu_unmap_context(struct x86_ctx_t *ctx)
+static void x86_cpu_unmap_context(X86Context *ctx)
 {
 	int core = ctx->core;
 	int thread = ctx->thread;
@@ -214,7 +214,7 @@ static void x86_cpu_unmap_context(struct x86_ctx_t *ctx)
 		x86_trace("x86.end_ctx ctx=%d\n", ctx->pid);
 
 		/* Free context */
-		x86_ctx_free(ctx);
+		delete(ctx);
 	}
 }
 
@@ -227,7 +227,7 @@ static void x86_cpu_unmap_context(struct x86_ctx_t *ctx)
  * there is any allocated context that has exceeded its quantum. */
 static void x86_cpu_update_min_alloc_cycle(void)
 {
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 
 	int core;
 	int thread;
@@ -246,7 +246,7 @@ static void x86_cpu_update_min_alloc_cycle(void)
 /* Activate the 'evict_signal' flag of an allocated context and start
  * flushing the node pipeline. Once the last instruction reaches the
  * commit stage, the context will be effectively evicted. */
-static void x86_cpu_evict_context_signal(struct x86_ctx_t *ctx)
+static void x86_cpu_evict_context_signal(X86Context *ctx)
 {
 	int core = ctx->core;
 	int thread = ctx->thread;
@@ -274,8 +274,8 @@ static void x86_cpu_evict_context_signal(struct x86_ctx_t *ctx)
 /* Scheduling actions for all contexts currently mapped to a node (core/thread). */
 static void x86_cpu_schedule_node(int core, int thread)
 {
-	struct x86_ctx_t *ctx;
-	struct x86_ctx_t *tmp_ctx;
+	X86Context *ctx;
+	X86Context *tmp_ctx;
 
 	int node = core * x86_cpu_num_threads + thread;
 
@@ -381,7 +381,7 @@ int x86_cpu_pipeline_empty(int core, int thread)
 
 void x86_cpu_evict_context(int core, int thread)
 {
-	struct x86_ctx_t *ctx = X86_THREAD.ctx;
+	X86Context *ctx = X86_THREAD.ctx;
 
 	assert(ctx);
 	assert(x86_ctx_get_state(ctx, x86_ctx_alloc));
@@ -411,7 +411,7 @@ void x86_cpu_evict_context(int core, int thread)
 
 void x86_cpu_schedule(void)
 {
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 
 	int quantum_expired;
 	int core;

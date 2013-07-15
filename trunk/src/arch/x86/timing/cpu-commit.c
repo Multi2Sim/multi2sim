@@ -44,7 +44,7 @@ static char *err_x86_cpu_commit_stall =
 static int x86_cpu_can_commit_thread(int core, int thread)
 {
 	struct x86_uop_t *uop;
-	struct x86_ctx_t *ctx = X86_THREAD.ctx;
+	X86Context *ctx = X86_THREAD.ctx;
 
 	/* Sanity check - If the context is running, we assume that something is
 	 * going wrong if more than 1M cycles go by without committing an inst. */
@@ -83,7 +83,7 @@ static int x86_cpu_can_commit_thread(int core, int thread)
 
 static void x86_cpu_commit_thread(int core, int thread, int quant)
 {
-	struct x86_ctx_t *ctx = X86_THREAD.ctx;
+	X86Context *ctx = X86_THREAD.ctx;
 	struct x86_uop_t *uop;
 	int recover = 0;
 

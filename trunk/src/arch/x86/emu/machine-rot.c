@@ -45,7 +45,7 @@
 
 
 #define op_xxx_rm8_1_impl(xxx, idep) \
-void x86_isa_##xxx##_rm8_1_impl(struct x86_ctx_t *ctx) \
+void x86_isa_##xxx##_rm8_1_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned char rm8 = x86_isa_load_rm8(ctx); \
@@ -73,7 +73,7 @@ void x86_isa_##xxx##_rm8_1_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_xxx_rm8_cl_impl(xxx, idep) \
-void x86_isa_##xxx##_rm8_cl_impl(struct x86_ctx_t *ctx) \
+void x86_isa_##xxx##_rm8_cl_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned char rm8 = x86_isa_load_rm8(ctx); \
@@ -101,7 +101,7 @@ void x86_isa_##xxx##_rm8_cl_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_xxx_rm8_imm8_impl(xxx, idep) \
-void x86_isa_##xxx##_rm8_imm8_impl(struct x86_ctx_t *ctx) \
+void x86_isa_##xxx##_rm8_imm8_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned char rm8 = x86_isa_load_rm8(ctx); \
@@ -129,7 +129,7 @@ void x86_isa_##xxx##_rm8_imm8_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_xxx_rm16_1_impl(xxx, idep) \
-void x86_isa_##xxx##_rm16_1_impl(struct x86_ctx_t *ctx) \
+void x86_isa_##xxx##_rm16_1_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned short rm16 = x86_isa_load_rm16(ctx); \
@@ -157,7 +157,7 @@ void x86_isa_##xxx##_rm16_1_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_xxx_rm16_cl_impl(xxx, idep) \
-void x86_isa_##xxx##_rm16_cl_impl(struct x86_ctx_t *ctx) \
+void x86_isa_##xxx##_rm16_cl_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned short rm16 = x86_isa_load_rm16(ctx); \
@@ -185,7 +185,7 @@ void x86_isa_##xxx##_rm16_cl_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_xxx_rm16_imm8_impl(xxx, idep) \
-void x86_isa_##xxx##_rm16_imm8_impl(struct x86_ctx_t *ctx) \
+void x86_isa_##xxx##_rm16_imm8_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned short rm16 = x86_isa_load_rm16(ctx); \
@@ -213,7 +213,7 @@ void x86_isa_##xxx##_rm16_imm8_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_xxx_rm32_1_impl(xxx, idep) \
-void x86_isa_##xxx##_rm32_1_impl(struct x86_ctx_t *ctx) \
+void x86_isa_##xxx##_rm32_1_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned int rm32 = x86_isa_load_rm32(ctx); \
@@ -241,7 +241,7 @@ void x86_isa_##xxx##_rm32_1_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_xxx_rm32_cl_impl(xxx, idep) \
-void x86_isa_##xxx##_rm32_cl_impl(struct x86_ctx_t *ctx) \
+void x86_isa_##xxx##_rm32_cl_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned int rm32 = x86_isa_load_rm32(ctx); \
@@ -269,7 +269,7 @@ void x86_isa_##xxx##_rm32_cl_impl(struct x86_ctx_t *ctx) \
 
 
 #define op_xxx_rm32_imm8_impl(xxx, idep) \
-void x86_isa_##xxx##_rm32_imm8_impl(struct x86_ctx_t *ctx) \
+void x86_isa_##xxx##_rm32_imm8_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned int rm32 = x86_isa_load_rm32(ctx); \

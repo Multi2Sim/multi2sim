@@ -67,12 +67,12 @@ char *glu_call_name[glu_call_count + 1] =
 
 /* Forward declarations of GLU runtime functions */
 #define X86_GLU_DEFINE_CALL(name, code) \
-	static int glu_abi_##name(struct x86_ctx_t *ctx);
+	static int glu_abi_##name(X86Context *ctx);
 #include "glu.dat"
 #undef X86_GLU_DEFINE_CALL
 
 /* List of GLU runtime functions */
-typedef int (*glu_abi_func_t)(struct x86_ctx_t *ctx);
+typedef int (*glu_abi_func_t)(X86Context *ctx);
 static glu_abi_func_t glu_abi_table[glu_call_count + 1] =
 {
 	NULL,
@@ -107,7 +107,7 @@ void glu_done(void)
 }
 
 
-int glu_abi_call(struct x86_ctx_t *ctx)
+int glu_abi_call(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -174,7 +174,7 @@ struct glu_version_t
 	int minor;
 };
 
-static int glu_abi_init(struct x86_ctx_t *ctx)
+static int glu_abi_init(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;

@@ -137,11 +137,11 @@ struct x86_thread_t
 {
 	/* Context currently running in this thread. This is a context present
 	 * in the thread's 'mapped' list. */
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 
 	/* Double-linked list of mapped contexts */
-	struct x86_ctx_t *mapped_list_head;
-	struct x86_ctx_t *mapped_list_tail;
+	X86Context *mapped_list_head;
+	X86Context *mapped_list_tail;
 	int mapped_list_count;
 	int mapped_list_max;
 

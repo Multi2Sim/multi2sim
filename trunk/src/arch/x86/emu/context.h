@@ -27,30 +27,35 @@
 
 
 /* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Context);
 struct bit_map_t;
-struct x86_ctx_t;
 
 
 
 #define x86_ctx_debug(...) debug(x86_ctx_debug_category, __VA_ARGS__)
 extern int x86_ctx_debug_category;
 
-typedef int (*x86_ctx_can_wakeup_callback_func_t)(struct x86_ctx_t *ctx, void *data);
-typedef void (*x86_ctx_wakeup_callback_func_t)(struct x86_ctx_t *ctx, void *data);
+typedef int (*x86_ctx_can_wakeup_callback_func_t)(X86Context *self, void *data);
+typedef void (*x86_ctx_wakeup_callback_func_t)(X86Context *self, void *data);
 
-struct x86_ctx_t
-{
+
+/*
+ * Class 'X86Context'
+ */
+
+CLASS_BEGIN(X86Context, Object)
+	
 	/* Context properties */
 	int state;
 	int pid;  /* Context ID */
 	int address_space_index;  /* Virtual memory address space index */
 
 	/* Parent context */
-	struct x86_ctx_t *parent;
+	X86Context *parent;
 
 	/* Context group initiator. There is only one group parent (if not NULL)
 	 * with many group children, no tree organization. */
-	struct x86_ctx_t *group_parent;
+	X86Context *group_parent;
 
 	int exit_signal;  /* Signal to send parent when finished */
 	int exit_code;  /* For zombie contexts */
@@ -140,15 +145,15 @@ struct x86_ctx_t
 	void *wakeup_callback_data;
 
 	/* Links to contexts forming a linked list. */
-	struct x86_ctx_t *context_list_next, *context_list_prev;
-	struct x86_ctx_t *running_list_next, *running_list_prev;
-	struct x86_ctx_t *suspended_list_next, *suspended_list_prev;
-	struct x86_ctx_t *finished_list_next, *finished_list_prev;
-	struct x86_ctx_t *zombie_list_next, *zombie_list_prev;
+	X86Context *context_list_next, *context_list_prev;
+	X86Context *running_list_next, *running_list_prev;
+	X86Context *suspended_list_next, *suspended_list_prev;
+	X86Context *finished_list_next, *finished_list_prev;
+	X86Context *zombie_list_next, *zombie_list_prev;
 
 	/* List of contexts mapped to a hardware core/thread. This list is
 	 * managed by the timing simulator for scheduling purposes. */
-	struct x86_ctx_t *mapped_list_next, *mapped_list_prev;
+	X86Context *mapped_list_next, *mapped_list_prev;
 
 	/* Substructures */
 	struct x86_loader_t *loader;
@@ -169,7 +174,8 @@ struct x86_ctx_t
 	/* Number of non-speculate micro-instructions.
 	 * Updated by the architectural simulator at the commit stage. */
 	long long inst_count;
-};
+
+CLASS_END(X86Context)
 
 enum x86_ctx_state_t
 {
@@ -194,45 +200,46 @@ enum x86_ctx_state_t
 	x86_ctx_none         = 0x00000
 };
 
-struct x86_ctx_t *x86_ctx_create(void);
-void x86_ctx_free(struct x86_ctx_t *ctx);
 
-void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f);
+void X86ContextCreate(X86Context *self);
+void X86ContextCreateAndClone(X86Context *self, X86Context *cloned);
+void X86ContextCreateAndFork(X86Context *self, X86Context *forked);
 
-struct x86_ctx_t *x86_ctx_clone(struct x86_ctx_t *ctx);
-struct x86_ctx_t *x86_ctx_fork(struct x86_ctx_t *ctx);
+void X86ContextDestroy(X86Context *self);
+
+void x86_ctx_dump(X86Context *self, FILE *f);
 
 /* Thread safe/unsafe versions */
-void __x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx);
-void x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx);
-void __x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx);
-void x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx);
+void __x86_ctx_host_thread_suspend_cancel(X86Context *self);
+void x86_ctx_host_thread_suspend_cancel(X86Context *self);
+void __x86_ctx_host_thread_timer_cancel(X86Context *self);
+void x86_ctx_host_thread_timer_cancel(X86Context *self);
 
-void x86_ctx_suspend(struct x86_ctx_t *ctx,
+void x86_ctx_suspend(X86Context *self,
 	x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func,
 	void *can_wakeup_callback_data, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
 	void *wakeup_callback_data);
 
-void x86_ctx_finish(struct x86_ctx_t *ctx, int state);
-void x86_ctx_finish_group(struct x86_ctx_t *ctx, int state);
-void x86_ctx_execute(struct x86_ctx_t *ctx);
+void x86_ctx_finish(X86Context *self, int state);
+void x86_ctx_finish_group(X86Context *self, int state);
+void x86_ctx_execute(X86Context *self);
 
-void x86_ctx_set_eip(struct x86_ctx_t *ctx, unsigned int eip);
-void x86_ctx_recover(struct x86_ctx_t *ctx);
+void x86_ctx_set_eip(X86Context *self, unsigned int eip);
+void x86_ctx_recover(X86Context *self);
 
-struct x86_ctx_t *x86_ctx_get(int pid);
-struct x86_ctx_t *x86_ctx_get_zombie(struct x86_ctx_t *parent, int pid);
+X86Context *x86_ctx_get(int pid);
+X86Context *x86_ctx_get_zombie(X86Context *parent, int pid);
 
-int x86_ctx_get_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state);
-void x86_ctx_set_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state);
-void x86_ctx_clear_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state);
+int x86_ctx_get_state(X86Context *self, enum x86_ctx_state_t state);
+void x86_ctx_set_state(X86Context *self, enum x86_ctx_state_t state);
+void x86_ctx_clear_state(X86Context *self, enum x86_ctx_state_t state);
 
-int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex,
+int x86_ctx_futex_wake(X86Context *self, unsigned int futex,
 	unsigned int count, unsigned int bitset);
-void x86_ctx_exit_robust_list(struct x86_ctx_t *ctx);
+void x86_ctx_exit_robust_list(X86Context *self);
 
-void x86_ctx_gen_proc_self_maps(struct x86_ctx_t *ctx, char *path, int size);
-void x86_ctx_gen_proc_cpuinfo(struct x86_ctx_t *ctx, char *path, int size);
+void x86_ctx_gen_proc_self_maps(X86Context *self, char *path, int size);
+void x86_ctx_gen_proc_cpuinfo(X86Context *self, char *path, int size);
 
 #endif
 

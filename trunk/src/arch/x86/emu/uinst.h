@@ -20,10 +20,10 @@
 #ifndef ARCH_X86_EMU_UINST_H
 #define ARCH_X86_EMU_UINST_H
 
-#include <stdio.h>
+#include <lib/util/class.h>
 
 /* Forward declaration */
-struct x86_ctx_t;
+CLASS_FORWARD_DECLARATION(X86Context);
 
 
 /* Micro-instruction dependences.
@@ -301,11 +301,11 @@ void x86_uinst_free(struct x86_uinst_t *uinst);
 	{ if (x86_uinst_active) \
 	__x86_uinst_new_mem(ctx, opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 
-void __x86_uinst_new(struct x86_ctx_t *ctx, enum x86_uinst_opcode_t opcode,
+void __x86_uinst_new(X86Context *ctx, enum x86_uinst_opcode_t opcode,
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
 	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
 	enum x86_dep_t odep3);
-void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
+void __x86_uinst_new_mem(X86Context *ctx,
 	enum x86_uinst_opcode_t opcode, unsigned int addr, int size,
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
 	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,

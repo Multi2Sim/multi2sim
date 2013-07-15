@@ -219,7 +219,7 @@ static int x86_uinst_effaddr_emitted;
  * Otherwise, return 0. 
  * Also returns a regular dependence corresponding the memory dependence data type. */
 static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index, 
-		struct x86_ctx_t *ctx, enum x86_dep_t *mem_regular_dep)
+		X86Context *ctx, enum x86_dep_t *mem_regular_dep)
 {
 	int dep;
 
@@ -273,7 +273,7 @@ static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index,
 }
 
 
-static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
+static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index, X86Context *ctx)
 {
 	struct x86_uinst_t *new_uinst;
 
@@ -295,7 +295,7 @@ static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index, struct 
 }
 
 
-static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
+static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index, X86Context *ctx)
 {
 	int dep;
 
@@ -416,7 +416,7 @@ static int x86_uinst_add_idep(struct x86_uinst_t *uinst, enum x86_dep_t dep)
 }
 
 
-static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
+static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, X86Context *ctx)
 {
 	struct x86_uinst_t *new_uinst;
 	enum x86_dep_t mem_regular_dep;
@@ -466,7 +466,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x8
 }
 
 
-static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
+static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, X86Context *ctx)
 {
 	struct x86_uinst_t *new_uinst;
 	enum x86_dep_t mem_regular_dep;
@@ -560,7 +560,7 @@ void x86_uinst_free(struct x86_uinst_t *uinst)
 }
 
 
-void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
+void __x86_uinst_new_mem(X86Context *ctx,
 	enum x86_uinst_opcode_t opcode, unsigned int address, int size,
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
 	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
@@ -600,7 +600,7 @@ void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
 }
 
 
-void __x86_uinst_new(struct x86_ctx_t *ctx,
+void __x86_uinst_new(X86Context *ctx,
 	enum x86_uinst_opcode_t opcode, enum x86_dep_t idep0, enum x86_dep_t idep1,
 	enum x86_dep_t idep2, enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
 	enum x86_dep_t odep3)

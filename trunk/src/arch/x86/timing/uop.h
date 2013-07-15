@@ -34,7 +34,7 @@ struct x86_uop_t
 	long long id_in_core;  /* Unique ID in core */
 
 	/* Context info */
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 	int core;
 	int thread;
 

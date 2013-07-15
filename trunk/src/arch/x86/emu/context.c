@@ -69,172 +69,157 @@ static struct str_map_t x86_ctx_status_map =
 };
 
 
-static struct x86_ctx_t *ctx_do_create()
-{
-	struct x86_ctx_t *ctx;
 
+/*
+ * Class 'X86Context'
+ */
+
+CLASS_IMPLEMENTATION(X86Context);
+
+static void X86ContextDoCreate(X86Context *self)
+{
 	int num_nodes;
 	int i;
 	
 	/* Initialize */
-	ctx = xcalloc(1, sizeof(struct x86_ctx_t));
-	ctx->pid = x86_emu->current_pid++;
+	self->pid = x86_emu->current_pid++;
 
 	/* Update state so that the context is inserted in the
 	 * corresponding lists. The x86_ctx_running parameter has no
 	 * effect, since it will be updated later. */
-	x86_ctx_set_state(ctx, x86_ctx_running);
-	DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, context, ctx);
+	x86_ctx_set_state(self, x86_ctx_running);
+	DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, context, self);
 
 	/* Structures */
-	ctx->regs = x86_regs_create();
-	ctx->backup_regs = x86_regs_create();
-	ctx->signal_mask_table = x86_signal_mask_table_create();
+	self->regs = x86_regs_create();
+	self->backup_regs = x86_regs_create();
+	self->signal_mask_table = x86_signal_mask_table_create();
 
 	/* Thread affinity mask, used only for timing simulation. It is
 	 * initialized to all 1's. */
 	num_nodes = x86_cpu_num_cores * x86_cpu_num_threads;
-	ctx->affinity = bit_map_create(num_nodes);
+	self->affinity = bit_map_create(num_nodes);
 	for (i = 0; i < num_nodes; i++)
-		bit_map_set(ctx->affinity, i, 1, 1);
-	
-	/* Return context */
-	return ctx;
+		bit_map_set(self->affinity, i, 1, 1);
 }
 
 
-struct x86_ctx_t *x86_ctx_create(void)
+void X86ContextCreate(X86Context *self)
 {
-	struct x86_ctx_t *ctx;
-
-	ctx = ctx_do_create();
+	/* Baseline initialization */
+	X86ContextDoCreate(self);
 
 	/* Loader */
-	ctx->loader = x86_loader_create();
+	self->loader = x86_loader_create();
 
 	/* Memory */
-	ctx->address_space_index = mmu_address_space_new();
-	ctx->mem = mem_create();
-	ctx->spec_mem = spec_mem_create(ctx->mem);
+	self->address_space_index = mmu_address_space_new();
+	self->mem = mem_create();
+	self->spec_mem = spec_mem_create(self->mem);
 
 	/* Signal handlers and file descriptor table */
-	ctx->signal_handler_table = x86_signal_handler_table_create();
-	ctx->file_desc_table = x86_file_desc_table_create();
-
-	return ctx;
+	self->signal_handler_table = x86_signal_handler_table_create();
+	self->file_desc_table = x86_file_desc_table_create();
 }
 
 
-struct x86_ctx_t *x86_ctx_clone(struct x86_ctx_t *ctx)
+void X86ContextCreateAndClone(X86Context *self, X86Context *cloned)
 {
-        struct x86_ctx_t *new;
-
-	new = ctx_do_create();
+	/* Baseline initialization */
+	X86ContextDoCreate(self);
 
 	/* Register file contexts are copied from parent. */
-	x86_regs_copy(new->regs, ctx->regs);
+	x86_regs_copy(self->regs, cloned->regs);
 
 	/* The memory image of the cloned context if the same.
 	 * The memory structure must be only freed by the parent
 	 * when all its children have been killed.
 	 * The set of signal handlers is the same, too. */
-	new->address_space_index = ctx->address_space_index;
-	new->mem = mem_link(ctx->mem);
-	new->spec_mem = spec_mem_create(new->mem);
+	self->address_space_index = cloned->address_space_index;
+	self->mem = mem_link(cloned->mem);
+	self->spec_mem = spec_mem_create(self->mem);
 
 	/* Loader */
-	new->loader = x86_loader_link(ctx->loader);
+	self->loader = x86_loader_link(cloned->loader);
 
 	/* Signal handlers and file descriptor table */
-	new->signal_handler_table = x86_signal_handler_table_link(ctx->signal_handler_table);
-	new->file_desc_table = x86_file_desc_table_link(ctx->file_desc_table);
+	self->signal_handler_table = x86_signal_handler_table_link(cloned->signal_handler_table);
+	self->file_desc_table = x86_file_desc_table_link(cloned->file_desc_table);
 
 	/* Libc segment */
-	new->glibc_segment_base = ctx->glibc_segment_base;
-	new->glibc_segment_limit = ctx->glibc_segment_limit;
+	self->glibc_segment_base = cloned->glibc_segment_base;
+	self->glibc_segment_limit = cloned->glibc_segment_limit;
 
 	/* Update other fields. */
-	new->parent = ctx;
-
-	/* Return new context */
-	return new;
-
+	self->parent = cloned;
 }
 
 
-struct x86_ctx_t *x86_ctx_fork(struct x86_ctx_t *ctx)
+void X86ContextCreateAndFork(X86Context *self, X86Context *forked)
 {
-	struct x86_ctx_t *new;
-
-	new = ctx_do_create();
+	/* Initialize baseline contect */
+	X86ContextDoCreate(self);
 
 	/* Copy registers */
-	x86_regs_copy(new->regs, ctx->regs);
+	x86_regs_copy(self->regs, forked->regs);
 
 	/* Memory */
-	new->address_space_index = mmu_address_space_new();
-	new->mem = mem_create();
-	new->spec_mem = spec_mem_create(new->mem);
-	mem_clone(new->mem, ctx->mem);
+	self->address_space_index = mmu_address_space_new();
+	self->mem = mem_create();
+	self->spec_mem = spec_mem_create(self->mem);
+	mem_clone(self->mem, forked->mem);
 
 	/* Loader */
-	new->loader = x86_loader_link(ctx->loader);
+	self->loader = x86_loader_link(forked->loader);
 
 	/* Signal handlers and file descriptor table */
-	new->signal_handler_table = x86_signal_handler_table_create();
-	new->file_desc_table = x86_file_desc_table_create();
+	self->signal_handler_table = x86_signal_handler_table_create();
+	self->file_desc_table = x86_file_desc_table_create();
 
 	/* Libc segment */
-	new->glibc_segment_base = ctx->glibc_segment_base;
-	new->glibc_segment_limit = ctx->glibc_segment_limit;
+	self->glibc_segment_base = forked->glibc_segment_base;
+	self->glibc_segment_limit = forked->glibc_segment_limit;
 
 	/* Set parent */
-	new->parent = ctx;
-
-	/* Return new context */
-	return new;
+	self->parent = forked;
 }
 
 
-/* Free a context */
-void x86_ctx_free(struct x86_ctx_t *ctx)
+void X86ContextDestroy(X86Context *self)
 {
 	/* If context is not finished/zombie, finish it first.
 	 * This removes all references to current freed context. */
-	if (!x86_ctx_get_state(ctx, x86_ctx_finished | x86_ctx_zombie))
-		x86_ctx_finish(ctx, 0);
+	if (!x86_ctx_get_state(self, x86_ctx_finished | x86_ctx_zombie))
+		x86_ctx_finish(self, 0);
 	
 	/* Remove context from finished contexts list. This should
 	 * be the only list the context is in right now. */
-	assert(!DOUBLE_LINKED_LIST_MEMBER(x86_emu, running, ctx));
-	assert(!DOUBLE_LINKED_LIST_MEMBER(x86_emu, suspended, ctx));
-	assert(!DOUBLE_LINKED_LIST_MEMBER(x86_emu, zombie, ctx));
-	assert(DOUBLE_LINKED_LIST_MEMBER(x86_emu, finished, ctx));
-	DOUBLE_LINKED_LIST_REMOVE(x86_emu, finished, ctx);
+	assert(!DOUBLE_LINKED_LIST_MEMBER(x86_emu, running, self));
+	assert(!DOUBLE_LINKED_LIST_MEMBER(x86_emu, suspended, self));
+	assert(!DOUBLE_LINKED_LIST_MEMBER(x86_emu, zombie, self));
+	assert(DOUBLE_LINKED_LIST_MEMBER(x86_emu, finished, self));
+	DOUBLE_LINKED_LIST_REMOVE(x86_emu, finished, self);
 		
 	/* Free private structures */
-	x86_regs_free(ctx->regs);
-	x86_regs_free(ctx->backup_regs);
-	x86_signal_mask_table_free(ctx->signal_mask_table);
-	spec_mem_free(ctx->spec_mem);
-	bit_map_free(ctx->affinity);
+	x86_regs_free(self->regs);
+	x86_regs_free(self->backup_regs);
+	x86_signal_mask_table_free(self->signal_mask_table);
+	spec_mem_free(self->spec_mem);
+	bit_map_free(self->affinity);
 
 	/* Unlink shared structures */
-	x86_loader_unlink(ctx->loader);
-	x86_signal_handler_table_unlink(ctx->signal_handler_table);
-	x86_file_desc_table_unlink(ctx->file_desc_table);
-	mem_unlink(ctx->mem);
+	x86_loader_unlink(self->loader);
+	x86_signal_handler_table_unlink(self->signal_handler_table);
+	x86_file_desc_table_unlink(self->file_desc_table);
+	mem_unlink(self->mem);
 
 	/* Remove context from contexts list and free */
-	DOUBLE_LINKED_LIST_REMOVE(x86_emu, context, ctx);
-	x86_ctx_debug("#%lld ctx %d freed\n", asTiming(x86_cpu)->cycle, ctx->pid);
-
-	/* Free context */
-	free(ctx);
+	DOUBLE_LINKED_LIST_REMOVE(x86_emu, context, self);
+	x86_ctx_debug("#%lld context %d freed\n", asTiming(x86_cpu)->cycle, self->pid);
 }
 
 
-void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
+void x86_ctx_dump(X86Context *ctx, FILE *f)
 {
 	char state_str[MAX_STRING_SIZE];
 
@@ -265,7 +250,7 @@ void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 }
 
 
-void x86_ctx_execute(struct x86_ctx_t *ctx)
+void x86_ctx_execute(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -318,7 +303,7 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 /* Force a new 'eip' value for the context. The forced value should be the same as
  * the current 'eip' under normal circumstances. If it is not, speculative execution
  * starts, which will end on the next call to 'x86_ctx_recover'. */
-void x86_ctx_set_eip(struct x86_ctx_t *ctx, unsigned int eip)
+void x86_ctx_set_eip(X86Context *ctx, unsigned int eip)
 {
 	/* Entering specmode */
 	if (ctx->regs->eip != eip && !x86_ctx_get_state(ctx, x86_ctx_spec_mode))
@@ -333,7 +318,7 @@ void x86_ctx_set_eip(struct x86_ctx_t *ctx, unsigned int eip)
 }
 
 
-void x86_ctx_recover(struct x86_ctx_t *ctx)
+void x86_ctx_recover(X86Context *ctx)
 {
 	assert(x86_ctx_get_state(ctx, x86_ctx_spec_mode));
 	x86_ctx_clear_state(ctx, x86_ctx_spec_mode);
@@ -342,13 +327,13 @@ void x86_ctx_recover(struct x86_ctx_t *ctx)
 }
 
 
-int x86_ctx_get_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
+int x86_ctx_get_state(X86Context *ctx, enum x86_ctx_state_t state)
 {
 	return (ctx->state & state) > 0;
 }
 
 
-static void x86_ctx_update_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
+static void x86_ctx_update_state(X86Context *ctx, enum x86_ctx_state_t state)
 {
 	enum x86_ctx_state_t status_diff;
 	char state_str[MAX_STRING_SIZE];
@@ -415,13 +400,13 @@ static void x86_ctx_update_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t sta
 }
 
 
-void x86_ctx_set_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
+void x86_ctx_set_state(X86Context *ctx, enum x86_ctx_state_t state)
 {
 	x86_ctx_update_state(ctx, ctx->state | state);
 }
 
 
-void x86_ctx_clear_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
+void x86_ctx_clear_state(X86Context *ctx, enum x86_ctx_state_t state)
 {
 	x86_ctx_update_state(ctx, ctx->state & ~state);
 }
@@ -429,9 +414,9 @@ void x86_ctx_clear_state(struct x86_ctx_t *ctx, enum x86_ctx_state_t state)
 
 /* Look for a context matching pid in the list of existing
  * contexts of the kernel. */
-struct x86_ctx_t *x86_ctx_get(int pid)
+X86Context *x86_ctx_get(int pid)
 {
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 
 	ctx = x86_emu->context_list_head;
 	while (ctx && ctx->pid != pid)
@@ -443,9 +428,9 @@ struct x86_ctx_t *x86_ctx_get(int pid)
 /* Look for zombie child. If 'pid' is -1, the first finished child
  * in the zombie contexts list is return. Otherwise, 'pid' is the
  * pid of the child process. If no child has finished, return NULL. */
-struct x86_ctx_t *x86_ctx_get_zombie(struct x86_ctx_t *parent, int pid)
+X86Context *x86_ctx_get_zombie(X86Context *parent, int pid)
 {
-	struct x86_ctx_t *ctx;
+	X86Context *ctx;
 
 	for (ctx = x86_emu->zombie_list_head; ctx; ctx = ctx->zombie_list_next)
 	{
@@ -461,7 +446,7 @@ struct x86_ctx_t *x86_ctx_get_zombie(struct x86_ctx_t *parent, int pid)
 /* If the context is running a 'x86_emu_host_thread_suspend' thread,
  * cancel it and schedule call to 'x86_emu_process_events' */
 
-void __x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx)
+void __x86_ctx_host_thread_suspend_cancel(X86Context *ctx)
 {
 	if (ctx->host_thread_suspend_active)
 	{
@@ -473,7 +458,7 @@ void __x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx)
 	}
 }
 
-void x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx)
+void x86_ctx_host_thread_suspend_cancel(X86Context *ctx)
 {
 	pthread_mutex_lock(&x86_emu->process_events_mutex);
 	__x86_ctx_host_thread_suspend_cancel(ctx);
@@ -484,7 +469,7 @@ void x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx)
 /* If the context is running a 'ke_host_thread_timer' thread,
  * cancel it and schedule call to 'x86_emu_process_events' */
 
-void __x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx)
+void __x86_ctx_host_thread_timer_cancel(X86Context *ctx)
 {
 	if (ctx->host_thread_timer_active)
 	{
@@ -496,7 +481,7 @@ void __x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx)
 	}
 }
 
-void x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx)
+void x86_ctx_host_thread_timer_cancel(X86Context *ctx)
 {
 	pthread_mutex_lock(&x86_emu->process_events_mutex);
 	__x86_ctx_host_thread_timer_cancel(ctx);
@@ -507,7 +492,7 @@ void x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx)
 /* Suspend a context, using the specified callback function and data to decide
  * whether the process can wake up every time the x86 emulation events are
  * processed. */
-void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func,
+void x86_ctx_suspend(X86Context *ctx, x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func,
 	void *can_wakeup_callback_data, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
 	void *wakeup_callback_data)
 {
@@ -528,9 +513,9 @@ void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_can_wakeup_callback_func_t c
 
 /* Finish a context group. This call does a subset of action of the 'x86_ctx_finish'
  * call, but for all parent and child contexts sharing a memory map. */
-void x86_ctx_finish_group(struct x86_ctx_t *ctx, int state)
+void x86_ctx_finish_group(X86Context *ctx, int state)
 {
-	struct x86_ctx_t *aux;
+	X86Context *aux;
 
 	/* Get group parent */
 	if (ctx->group_parent)
@@ -573,9 +558,9 @@ void x86_ctx_finish_group(struct x86_ctx_t *ctx, int state)
  * a call to 'waitpid'.
  * The children of the finished context will set their 'parent' attribute to NULL.
  * The zombie children will be finished. */
-void x86_ctx_finish(struct x86_ctx_t *ctx, int state)
+void x86_ctx_finish(X86Context *ctx, int state)
 {
-	struct x86_ctx_t *aux;
+	X86Context *aux;
 	
 	/* Context already finished */
 	if (x86_ctx_get_state(ctx, x86_ctx_finished | x86_ctx_zombie))
@@ -629,10 +614,10 @@ void x86_ctx_finish(struct x86_ctx_t *ctx, int state)
 }
 
 
-int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex, unsigned int count, unsigned int bitset)
+int x86_ctx_futex_wake(X86Context *ctx, unsigned int futex, unsigned int count, unsigned int bitset)
 {
 	int wakeup_count = 0;
-	struct x86_ctx_t *wakeup_ctx;
+	X86Context *wakeup_ctx;
 
 	/* Look for threads suspended in this futex */
 	while (count)
@@ -668,7 +653,7 @@ int x86_ctx_futex_wake(struct x86_ctx_t *ctx, unsigned int futex, unsigned int c
 }
 
 
-void x86_ctx_exit_robust_list(struct x86_ctx_t *ctx)
+void x86_ctx_exit_robust_list(X86Context *ctx)
 {
 	unsigned int next, lock_entry, offset, lock_word;
 
@@ -710,7 +695,7 @@ void x86_ctx_exit_robust_list(struct x86_ctx_t *ctx)
 
 
 /* Generate virtual file '/proc/self/maps' and return it in 'path'. */
-void x86_ctx_gen_proc_self_maps(struct x86_ctx_t *ctx, char *path, int size)
+void x86_ctx_gen_proc_self_maps(X86Context *ctx, char *path, int size)
 {
 	unsigned int start, end;
 	enum mem_access_t perm, page_perm;
@@ -764,7 +749,7 @@ void x86_ctx_gen_proc_self_maps(struct x86_ctx_t *ctx, char *path, int size)
 
 
 /* Generate virtual file '/proc/cpuinfo' and return it in 'path'. */
-void x86_ctx_gen_proc_cpuinfo(struct x86_ctx_t *ctx, char *path, int size)
+void x86_ctx_gen_proc_cpuinfo(X86Context *ctx, char *path, int size)
 {
 	FILE *f = NULL;
 	

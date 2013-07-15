@@ -91,13 +91,13 @@ char *opengl_abi_call_name[opengl_abi_call_count + 1] =
 
 /* Forward declarations of OpenGL Runtime functions */
 #define OPENGL_ABI_CALL(name, code) \
-	static int opengl_abi_##name##_impl(struct x86_ctx_t *ctx);
+	static int opengl_abi_##name##_impl(X86Context *ctx);
 #include "opengl.dat"
 #undef OPENGL_ABI_CALL
 
 
 /* List of OpenGL Runtime functions */
-typedef int (*opengl_abi_call_t)(struct x86_ctx_t *ctx);
+typedef int (*opengl_abi_call_t)(X86Context *ctx);
 static opengl_abi_call_t opengl_abi_call_table[opengl_abi_call_count + 1] =
 {
 	NULL,
@@ -125,7 +125,7 @@ void opengl_done(void)
 }
 
 
-int opengl_abi_call(struct x86_ctx_t *ctx)
+int opengl_abi_call(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -183,7 +183,7 @@ struct opengl_version_t
 	int minor;
 };
 
-static int opengl_abi_init_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_init_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -218,7 +218,7 @@ static int opengl_abi_init_impl(struct x86_ctx_t *ctx)
  *	The function always returns 0.
  */
 
-static int opengl_abi_done_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_done_impl(X86Context *ctx)
 {
 	/* Free */
 	opengl_si_program_list_done();
@@ -244,7 +244,7 @@ static int opengl_abi_done_impl(struct x86_ctx_t *ctx)
  *	ABI calls taking device pointers as input arguments.
  */
 
-static int opengl_abi_si_mem_alloc_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_mem_alloc_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -293,7 +293,7 @@ static int opengl_abi_si_mem_alloc_impl(struct x86_ctx_t *ctx)
  *	The function does not have any return value.
  */
 
-static int opengl_abi_si_mem_read_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_mem_read_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -351,7 +351,7 @@ static int opengl_abi_si_mem_read_impl(struct x86_ctx_t *ctx)
  *	The function does not have any return value.
  */
 
-static int opengl_abi_si_mem_write_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_mem_write_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -410,7 +410,7 @@ static int opengl_abi_si_mem_write_impl(struct x86_ctx_t *ctx)
  *	The function does not have any return value.
  */
 
-static int opengl_abi_si_mem_copy_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_mem_copy_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -459,7 +459,7 @@ static int opengl_abi_si_mem_copy_impl(struct x86_ctx_t *ctx)
  *	No value is returned.
  */
 
-static int opengl_abi_si_mem_free_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_mem_free_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -488,7 +488,7 @@ static int opengl_abi_si_mem_free_impl(struct x86_ctx_t *ctx)
  *	Program ID.
  */
 
-static int opengl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_program_create_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opengl_si_program_t *program;
@@ -517,7 +517,7 @@ static int opengl_abi_si_program_create_impl(struct x86_ctx_t *ctx)
  *	No value is returned.
  */
 
-static int opengl_abi_si_program_free_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_program_free_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opengl_si_program_t *program;
@@ -561,7 +561,7 @@ static int opengl_abi_si_program_free_impl(struct x86_ctx_t *ctx)
  *	No return value.
  */
 
-static int opengl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_program_set_binary_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opengl_si_program_t *program;
@@ -608,7 +608,7 @@ static int opengl_abi_si_program_set_binary_impl(struct x86_ctx_t *ctx)
  *	No return value.
  */
 
-static int opengl_abi_si_shader_create_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_shader_create_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opengl_si_program_t *program;
@@ -641,7 +641,7 @@ static int opengl_abi_si_shader_create_impl(struct x86_ctx_t *ctx)
  *
  */
 
-static int opengl_abi_si_shader_free_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_shader_free_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opengl_si_shader_t *shdr;
@@ -667,7 +667,7 @@ static int opengl_abi_si_shader_free_impl(struct x86_ctx_t *ctx)
  *
  */
 
-static int opengl_abi_si_shader_set_input_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct opengl_si_shader_t *shdr;
@@ -735,7 +735,7 @@ static int opengl_abi_si_shader_set_input_impl(struct x86_ctx_t *ctx)
  *	Unique shader ID.
  */
 
-static int opengl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 {
 	__NOT_IMPL__
 
@@ -764,7 +764,7 @@ static int opengl_abi_si_ndrange_initialize_impl(struct x86_ctx_t *ctx)
 
 
 static int opengl_abi_si_ndrange_get_num_buffer_entries_impl(
-	struct x86_ctx_t *ctx)
+	X86Context *ctx)
 {
 	__NOT_IMPL__
 	return 0;
@@ -791,7 +791,7 @@ static int opengl_abi_si_ndrange_get_num_buffer_entries_impl(
  */
 
 static int opengl_abi_si_ndrange_send_work_groups_can_wakeup(
-	struct x86_ctx_t *ctx, void *user_data)
+	X86Context *ctx, void *user_data)
 {
 	assert(!user_data);
 
@@ -799,12 +799,12 @@ static int opengl_abi_si_ndrange_send_work_groups_can_wakeup(
 }
 
 static void opengl_abi_si_ndrange_send_work_groups_wakeup(
-	struct x86_ctx_t *ctx, void *user_data)
+	X86Context *ctx, void *user_data)
 {
 	assert(!user_data);
 }
 
-static int opengl_abi_si_ndrange_send_work_groups_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
@@ -854,7 +854,7 @@ static int opengl_abi_si_ndrange_send_work_groups_impl(struct x86_ctx_t *ctx)
  *	The function always returns 0.
  */
 
-static int opengl_abi_si_ndrange_finish_can_wakeup(struct x86_ctx_t *ctx, 
+static int opengl_abi_si_ndrange_finish_can_wakeup(X86Context *ctx, 
 	void *user_data)
 {
 	assert(!user_data);
@@ -862,7 +862,7 @@ static int opengl_abi_si_ndrange_finish_can_wakeup(struct x86_ctx_t *ctx,
 	return driver_state.ndrange_complete;
 }
 
-static void opengl_abi_si_ndrange_finish_wakeup(struct x86_ctx_t *ctx, 
+static void opengl_abi_si_ndrange_finish_wakeup(X86Context *ctx, 
 	void *user_data)
 {
 	assert(!user_data);
@@ -878,7 +878,7 @@ static void opengl_abi_si_ndrange_finish_wakeup(struct x86_ctx_t *ctx,
 	si_emu->ndrange = NULL;
 }
 
-static int opengl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_ndrange_finish_impl(X86Context *ctx)
 {
 	driver_state.wait_for_ndrange_completion = 1;
 
@@ -914,7 +914,7 @@ static int opengl_abi_si_ndrange_finish_impl(struct x86_ctx_t *ctx)
  *	The function always returns 0.
  */
 
-static int opengl_abi_si_ndrange_pass_mem_objs_impl(struct x86_ctx_t *ctx)
+static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 {
 	__NOT_IMPL__
 	return 0;
