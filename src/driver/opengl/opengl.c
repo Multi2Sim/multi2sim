@@ -25,6 +25,7 @@
 #include <arch/southern-islands/asm/input.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
+#include <arch/southern-islands/timing/gpu.h>
 #include <driver/glut/frame-buffer.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -686,7 +687,7 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 	num_elems = regs->esi;
 	size = regs->edi;
 	index = regs->ebp;
-	opengl_debug("\tshader_id=%d, device_ptr=%d, num_elems=%d, size=%d, index=%d\n",
+	opengl_debug("\tshader_id = %d, device_ptr = 0x%d, num_elems = %d, size = %d, index = %d\n",
 		shader_id, device_ptr, num_elems, size, index);
 
 	/* Shader has the indices of vertex attribute array in its encoding dictionary */
@@ -695,9 +696,13 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 	input = list_get(input_list, index);
 	if (!input || input->usage_index != index)
 		fatal("Vertex attribute array at index %d is not needed by the vertex shader\n", index);
-	input->set = 1;
-	input->device_ptr = device_ptr;
-	input->size = size;
+	else
+	{
+		input->set = 1;
+		input->num_elems = num_elems;
+		input->device_ptr = device_ptr;
+		input->size = size;
+	}
 
 	return 0;
 }
@@ -709,7 +714,7 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
  *
  * @param int shader_id
  *
- * 	Shader ID, as returned by ABI call 'si_shader_create'
+ * 	Shader ID, assigned in OpenGL runtime and bound to certain OpenGL program
  *
  * @param int work_dim
  *
@@ -737,7 +742,98 @@ static int opengl_abi_si_shader_set_input_impl(X86Context *ctx)
 
 static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	struct elf_buffer_t *elf_buffer;
+	struct opengl_si_shader_t *shader;
+	struct si_bin_enc_user_element_t *user_elements;
+	struct si_ndrange_t *ndrange;
+
+	int i;
+	int shader_id;
+	int user_element_count;
+	int work_dim;
+
+	unsigned int global_offset_ptr;
+	unsigned int global_size_ptr;
+	unsigned int local_size_ptr;
+
+	unsigned int global_offset[3];
+	unsigned int global_size[3];
+	unsigned int local_size[3];
+
+
+	/* Arguments */
+	shader_id = regs->ecx;
+	work_dim = regs->edx;
+	global_offset_ptr = regs->esi;
+	global_size_ptr = regs->edi;
+	local_size_ptr = regs->ebp;
+	opengl_debug("\tshader_id=%d, work_dim=%d\n", shader_id, work_dim);
+	opengl_debug("\tglobal_offset_ptr=0x%x, global_size_ptr=0x%x, "
+		"local_size_ptr=0x%x\n", global_offset_ptr, global_size_ptr, 
+		local_size_ptr);
+	
+	/* Debug */
+	assert(IN_RANGE(work_dim, 1, 3));
+	mem_read(mem, global_offset_ptr, work_dim * 4, global_offset);
+	mem_read(mem, global_size_ptr, work_dim * 4, global_size);
+	mem_read(mem, local_size_ptr, work_dim * 4, local_size);
+	for (i = 0; i < work_dim; i++)
+		opengl_debug("\tglobal_offset[%d] = %u\n", i, global_offset[i]);
+	for (i = 0; i < work_dim; i++)
+		opengl_debug("\tglobal_size[%d] = %u\n", i, global_size[i]);
+	for (i = 0; i < work_dim; i++)
+		opengl_debug("\tlocal_size[%d] = %u\n", i, local_size[i]);
+
+	/* Get shader */
+	shader = list_get(opengl_si_shader_list, shader_id);
+	if (!shader)
+		fatal("%s: invalid shader ID (%d)", __FUNCTION__, shader_id);
+
+	/* Create ND-Range */
+	ndrange = si_ndrange_create();
+	// ndrange->local_mem_top = shader->mem_size_local;
+	ndrange->num_sgpr_used = shader->shader_bin->
+		shader_enc_dict->num_sgpr_used;
+	ndrange->num_vgpr_used = shader->shader_bin->
+		shader_enc_dict->num_vgpr_used;
+	ndrange->wg_id_sgpr = shader->shader_bin->
+		shader_enc_dict->shader_pgm_rsrc2_vs->user_sgpr;
+	si_ndrange_setup_size(ndrange, global_size, local_size, work_dim);
+
+	/* Copy user elements from shader to ND-Range */
+	user_element_count = shader->shader_bin->
+		shader_enc_dict->userElementCount;
+	user_elements = shader->shader_bin->shader_enc_dict->
+		userElements;
+	ndrange->userElementCount = user_element_count;
+	for (i = 0; i < user_element_count; i++)
+	{
+		ndrange->userElements[i] = user_elements[i];
+	}
+
+	/* Set up instruction memory */
+	/* Initialize wavefront instruction buffer and PC */
+	elf_buffer = shader->shader_bin->shader_isa;
+	if (!elf_buffer->size)
+		fatal("%s: cannot load shader code", __FUNCTION__);
+
+	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, 
+		elf_buffer->size, 0);
+
+	assert(!driver_state.shader);
+	driver_state.shader = shader;
+
+	assert(!driver_state.ndrange);
+	driver_state.ndrange = ndrange;
+
+	assert(!si_emu->ndrange);
+	si_emu->ndrange = ndrange;
+
+	if (si_gpu)
+		si_gpu_map_ndrange(ndrange);
 
 	/* No return value */
 	return 0;
@@ -766,7 +862,25 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 static int opengl_abi_si_ndrange_get_num_buffer_entries_impl(
 	X86Context *ctx)
 {
-	__NOT_IMPL__
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int host_ptr;
+
+	int available_buffer_entries;
+
+	/* Arguments */
+	host_ptr = regs->ecx;
+
+	available_buffer_entries = SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
+		list_count(si_emu->waiting_work_groups);
+
+	opengl_debug("\tavailable buffer entries = %d\n", 
+		available_buffer_entries);
+
+	mem_write(mem, host_ptr, sizeof available_buffer_entries,
+		&available_buffer_entries);
+
 	return 0;
 }
 
@@ -807,28 +921,62 @@ static void opengl_abi_si_ndrange_send_work_groups_wakeup(
 static int opengl_abi_si_ndrange_send_work_groups_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
-	int i;
-	int work_group_count;
-	int work_group_start_id;
+	int i, j, k;
+
+	unsigned int work_group_start_ptr;
+	unsigned int work_group_count_ptr;
+	unsigned int work_group_sizes_ptr;
+	unsigned int work_group_start[3];
+	unsigned int work_group_count[3];
+	unsigned int work_group_sizes[3];
+	unsigned int total_num_groups;
 
 	long work_group_id;
 
-	/* Arguments */
-	work_group_start_id = regs->ecx;
-	work_group_count = regs->edx;
+	assert(driver_state.ndrange);
+	assert(driver_state.ndrange->const_buf_table);
+	assert(driver_state.ndrange->uav_table);
+	assert(driver_state.ndrange->resource_table);
 
-	assert(work_group_count <= SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
+	/* Arguments */
+	work_group_start_ptr = regs->ecx;
+	work_group_count_ptr = regs->edx;
+	work_group_sizes_ptr = regs->esi;
+
+	mem_read(mem, work_group_start_ptr, 3 * 4, work_group_start);
+	mem_read(mem, work_group_count_ptr, 3 * 4, work_group_count);
+	mem_read(mem, work_group_sizes_ptr, 3 * 4, work_group_sizes);
+
+	total_num_groups = work_group_count[2] * work_group_count[1] * 
+		work_group_count[0];
+	assert(total_num_groups <= SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -
 		list_count(si_emu->waiting_work_groups));
 
-	opengl_debug("    receiving work groups %d through %d\n",
-		work_group_start_id, work_group_start_id+work_group_count-1);
+	opengl_debug("\treceiving work groups (%d,%d,%d) through (%d,%d,%d)\n",
+		work_group_start[0], work_group_start[1], work_group_start[2],
+		work_group_start[0] + work_group_count[0] - 1, 
+		work_group_start[1] + work_group_count[1] - 1, 
+		work_group_start[2] + work_group_count[2] - 1);
 
 	/* Receive work groups (add them to the waiting queue) */
-	for (i = 0; i < work_group_count; i++)
+	for (i = work_group_start[2]; i < work_group_start[2] + work_group_count[2]; i++)
 	{
-		work_group_id = work_group_start_id + i;
-		list_enqueue(si_emu->waiting_work_groups, (void*)work_group_id);
+		for (j = work_group_start[1]; j < work_group_start[1] + work_group_count[1]; j++)
+		{
+			for (k = work_group_start[0]; k < work_group_start[0] + work_group_count[0]; k++)
+			{
+				work_group_id = (i * work_group_sizes[1] * 
+					work_group_sizes[0]) + (j * 
+					work_group_sizes[0]) + k;
+
+				list_enqueue(si_emu->waiting_work_groups, 
+					(void*)work_group_id);
+				opengl_debug("\tadding wg %ld\n", 
+					work_group_id);
+			}
+		}
 	}
 
 	/* XXX Later, check if waiting queue is still under a threshold.  
@@ -916,7 +1064,19 @@ static int opengl_abi_si_ndrange_finish_impl(X86Context *ctx)
 
 static int opengl_abi_si_ndrange_pass_mem_objs_impl(X86Context *ctx)
 {
-	__NOT_IMPL__
+	struct opengl_si_shader_t *shader;
+	struct si_ndrange_t *ndrange;
+
+	shader = driver_state.shader;
+	ndrange = driver_state.ndrange;
+
+	opengl_si_shader_create_ndrange_tables(ndrange); 
+	opengl_si_shader_create_ndrange_constant_buffers(ndrange); 
+	opengl_si_shader_setup_ndrange_constant_buffers(ndrange);
+	opengl_si_shader_setup_ndrange_inputs(shader, ndrange);
+	opengl_si_shader_debug_ndrange_state(shader, ndrange);
+
 	return 0;
+	__NOT_IMPL__;
 }
 

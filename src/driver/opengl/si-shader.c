@@ -19,7 +19,8 @@
 
 #include <assert.h>
 
-#include <arch/southern-islands/asm/input.h> 
+#include <arch/southern-islands/asm/input.h>
+#include <arch/southern-islands/asm/bin-file.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h> 
 #include <arch/southern-islands/emu/isa.h>
 #include <arch/southern-islands/emu/ndrange.h>
@@ -32,15 +33,183 @@
 #include <lib/util/list.h>
 #include <../runtime/include/GL/gl.h>
  
+#include "opengl.h"
 #include "si-shader.h"
 #include "si-program.h"
 
 struct list_t *opengl_si_shader_list;
 
+/*
+ * Private Functions
+ */
+
 static void opengl_si_create_buffer_desc(unsigned int base_addr,
 	unsigned int size, int num_elems, 
 	enum si_input_data_type_t data_type,
-	struct si_buffer_desc_t *buffer_desc);
+	struct si_buffer_desc_t *buffer_desc)
+{
+	int num_format;
+	int data_format;
+	int elem_size;
+
+	/* Zero-out the buffer resource descriptor */
+	assert(sizeof(struct si_buffer_desc_t) == 16);
+	memset(buffer_desc, 0, sizeof(struct si_buffer_desc_t));
+
+	num_format = SI_BUF_DESC_NUM_FMT_INVALID;
+	data_format = SI_BUF_DESC_DATA_FMT_INVALID;
+
+	switch (data_type)
+	{
+
+	case si_input_byte:
+	case si_input_ubyte:
+
+		num_format = SI_BUF_DESC_NUM_FMT_SINT;
+		switch (num_elems)
+		{
+		case 1:
+			data_format = SI_BUF_DESC_DATA_FMT_8;
+			break;
+
+		case 2:
+			data_format = SI_BUF_DESC_DATA_FMT_8_8;
+			break;
+
+		case 4:
+			data_format = SI_BUF_DESC_DATA_FMT_8_8_8_8;
+			break;
+
+		default:
+			fatal("%s: invalid number of i8/u8 elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 1 * num_elems;
+		break;
+
+	case si_input_short:
+	case si_input_ushort:
+
+		num_format = SI_BUF_DESC_NUM_FMT_SINT;
+		switch (num_elems)
+		{
+
+		case 1:
+			data_format = SI_BUF_DESC_DATA_FMT_16;
+			break;
+
+		case 2:
+			data_format = SI_BUF_DESC_DATA_FMT_16_16;
+			break;
+
+		case 4:
+			data_format = SI_BUF_DESC_DATA_FMT_16_16_16_16;
+			break;
+
+		default:
+			fatal("%s: invalid number of i16/u16 elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 2 * num_elems;
+		break;
+
+	case si_input_int:
+	case si_input_uint:
+
+		num_format = SI_BUF_DESC_NUM_FMT_SINT;
+		switch (num_elems)
+		{
+
+		case 1:
+			data_format = SI_BUF_DESC_DATA_FMT_32;
+			break;
+
+		case 2:
+			data_format = SI_BUF_DESC_DATA_FMT_32_32;
+			break;
+
+		case 3:
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
+			break;
+
+		case 4:
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
+			break;
+
+		default:
+			fatal("%s: invalid number of i32/u32 elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 4 * num_elems;
+		break;
+
+	case si_input_hfloat:
+	case si_input_float:
+
+		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
+		switch (num_elems)
+		{
+		case 1:
+			data_format = SI_BUF_DESC_DATA_FMT_32;
+			break;
+
+		case 2:
+			data_format = SI_BUF_DESC_DATA_FMT_32_32;
+			break;
+
+		case 3:
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
+			break;
+
+		case 4:
+			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
+			break;
+
+		default:
+			fatal("%s: invalid number of float elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 4 * num_elems;
+		break;
+
+	case si_input_int_2_10_10_10_rev:
+	case si_input_uint_2_10_10_10_rev:
+
+		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
+		switch (num_elems)
+		{
+		case 1:
+			data_format = 	SI_BUF_DESC_DATA_FMT_2_10_10_10;
+			break;
+
+		default:
+			fatal("%s: invalid number of elements (%d)",
+					__FUNCTION__, num_elems);
+		}
+		elem_size = 4 * num_elems;
+		break;
+
+
+	default:
+		fatal("%s: invalid data type for SI buffer (%d)",
+			__FUNCTION__, data_type);
+	}
+	assert(num_format != SI_BUF_DESC_NUM_FMT_INVALID);
+	assert(data_format != SI_BUF_DESC_DATA_FMT_INVALID);
+
+	buffer_desc->base_addr = base_addr;
+	buffer_desc->num_format = num_format;
+	buffer_desc->data_format = data_format;
+	buffer_desc->elem_size = elem_size;
+	buffer_desc->num_records = size;
+
+	return;
+
+}
+
+/*
+ * Public Functions
+ */
 
 void opengl_si_shader_list_init(void)
 {
@@ -71,10 +240,6 @@ void opengl_si_shader_list_done(void)
 	}
 	list_free(opengl_si_shader_list);
 }
-
-/*
- * Public Functions
- */
 
 struct opengl_si_shader_t *opengl_si_shader_create(
 	unsigned int shader_id, unsigned int shader_kind)
@@ -319,175 +484,14 @@ void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
 			input->num_elems,
 			input->type, &buffer_desc);
 
+		printf("\tInput created, device_ptr=%d, size=%d, num_elems=%d, type=%x\n", 
+			input->device_ptr, input->size, input->num_elems, input->type);
+
 		/* Add to Vertex Buffer table */
 		si_ndrange_insert_buffer_into_vertex_buffer_table(
 			ndrange, &buffer_desc,
 			input->usage_index);
 	}
-
-}
-
-static void opengl_si_create_buffer_desc(unsigned int base_addr,
-	unsigned int size, int num_elems, 
-	enum si_input_data_type_t data_type,
-	struct si_buffer_desc_t *buffer_desc)
-{
-	int num_format;
-	int data_format;
-	int elem_size;
-
-	/* Zero-out the buffer resource descriptor */
-	assert(sizeof(struct si_buffer_desc_t) == 16);
-	memset(buffer_desc, 0, sizeof(struct si_buffer_desc_t));
-
-	num_format = SI_BUF_DESC_NUM_FMT_INVALID;
-	data_format = SI_BUF_DESC_DATA_FMT_INVALID;
-
-	switch (data_type)
-	{
-
-	case si_input_byte:
-	case si_input_ubyte:
-
-		num_format = SI_BUF_DESC_NUM_FMT_SINT;
-		switch (num_elems)
-		{
-		case 1:
-			data_format = SI_BUF_DESC_DATA_FMT_8;
-			break;
-
-		case 2:
-			data_format = SI_BUF_DESC_DATA_FMT_8_8;
-			break;
-
-		case 4:
-			data_format = SI_BUF_DESC_DATA_FMT_8_8_8_8;
-			break;
-
-		default:
-			fatal("%s: invalid number of i8/u8 elements (%d)",
-					__FUNCTION__, num_elems);
-		}
-		elem_size = 1 * num_elems;
-		break;
-
-	case si_input_short:
-	case si_input_ushort:
-
-		num_format = SI_BUF_DESC_NUM_FMT_SINT;
-		switch (num_elems)
-		{
-
-		case 1:
-			data_format = SI_BUF_DESC_DATA_FMT_16;
-			break;
-
-		case 2:
-			data_format = SI_BUF_DESC_DATA_FMT_16_16;
-			break;
-
-		case 4:
-			data_format = SI_BUF_DESC_DATA_FMT_16_16_16_16;
-			break;
-
-		default:
-			fatal("%s: invalid number of i16/u16 elements (%d)",
-					__FUNCTION__, num_elems);
-		}
-		elem_size = 2 * num_elems;
-		break;
-
-	case si_input_int:
-	case si_input_uint:
-
-		num_format = SI_BUF_DESC_NUM_FMT_SINT;
-		switch (num_elems)
-		{
-
-		case 1:
-			data_format = SI_BUF_DESC_DATA_FMT_32;
-			break;
-
-		case 2:
-			data_format = SI_BUF_DESC_DATA_FMT_32_32;
-			break;
-
-		case 3:
-			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
-			break;
-
-		case 4:
-			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
-			break;
-
-		default:
-			fatal("%s: invalid number of i32/u32 elements (%d)",
-					__FUNCTION__, num_elems);
-		}
-		elem_size = 4 * num_elems;
-		break;
-
-	case si_input_hfloat:
-	case si_input_float:
-
-		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
-		switch (num_elems)
-		{
-		case 1:
-			data_format = SI_BUF_DESC_DATA_FMT_32;
-			break;
-
-		case 2:
-			data_format = SI_BUF_DESC_DATA_FMT_32_32;
-			break;
-
-		case 3:
-			data_format = SI_BUF_DESC_DATA_FMT_32_32_32;
-			break;
-
-		case 4:
-			data_format = SI_BUF_DESC_DATA_FMT_32_32_32_32;
-			break;
-
-		default:
-			fatal("%s: invalid number of float elements (%d)",
-					__FUNCTION__, num_elems);
-		}
-		elem_size = 4 * num_elems;
-		break;
-
-	case si_input_int_2_10_10_10_rev:
-	case si_input_uint_2_10_10_10_rev:
-
-		num_format = SI_BUF_DESC_NUM_FMT_FLOAT;
-		switch (num_elems)
-		{
-		case 1:
-			data_format = 	SI_BUF_DESC_DATA_FMT_2_10_10_10;
-			break;
-
-		default:
-			fatal("%s: invalid number of elements (%d)",
-					__FUNCTION__, num_elems);
-		}
-		elem_size = 4 * num_elems;
-		break;
-
-
-	default:
-		fatal("%s: invalid data type for SI buffer (%d)",
-			__FUNCTION__, data_type);
-	}
-	assert(num_format != SI_BUF_DESC_NUM_FMT_INVALID);
-	assert(data_format != SI_BUF_DESC_DATA_FMT_INVALID);
-
-	buffer_desc->base_addr = base_addr;
-	buffer_desc->num_format = num_format;
-	buffer_desc->data_format = data_format;
-	buffer_desc->elem_size = elem_size;
-	buffer_desc->num_records = size;
-
-	return;
 
 }
 
