@@ -988,6 +988,9 @@ void X86CpuCreate(X86Cpu *self)
 	asObject(self)->Dump = X86CpuDump;
 	asTiming(self)->DumpSummary = X86CpuDumpSummary;
 	asTiming(self)->Run = X86CpuRun;
+	asTiming(self)->MemConfigCheck = X86CpuMemConfigCheck;
+	asTiming(self)->MemConfigDefault = X86CpuMemConfigDefault;
+	asTiming(self)->MemConfigParseEntry = X86CpuMemConfigParseEntry;
 }
 
 

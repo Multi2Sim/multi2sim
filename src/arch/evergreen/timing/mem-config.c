@@ -32,7 +32,7 @@
 #include "mem-config.h"
 
 
-void evg_mem_config_default(struct config_t *config)
+void EvgGpuMemConfigDefault(Timing *self, struct config_t *config)
 {
 	char section[MAX_STRING_SIZE];
 	char str[MAX_STRING_SIZE];
@@ -116,7 +116,8 @@ void evg_mem_config_default(struct config_t *config)
 }
 
 
-void evg_mem_config_parse_entry(struct config_t *config, char *section)
+void EvgGpuMemConfigParseEntry(Timing *self, struct config_t *config,
+		char *section)
 {
 	char *file_name;
 	char *module_name;
@@ -184,7 +185,7 @@ void evg_mem_config_parse_entry(struct config_t *config, char *section)
 }
 
 
-void evg_mem_config_check(struct config_t *config)
+void EvgGpuMemConfigCheck(Timing *self, struct config_t *config)
 {
 	struct evg_compute_unit_t *compute_unit;
 	int compute_unit_id;

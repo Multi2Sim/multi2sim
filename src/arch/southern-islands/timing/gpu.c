@@ -1273,6 +1273,9 @@ void SIGpuCreate(SIGpu *self)
 	asObject(self)->Dump = SIGpuDump;
 	asTiming(self)->DumpSummary = SIGpuDumpSummary;
 	asTiming(self)->Run = SIGpuRun;
+	asTiming(self)->MemConfigCheck = SIGpuMemConfigCheck;
+	asTiming(self)->MemConfigDefault = SIGpuMemConfigDefault;
+	asTiming(self)->MemConfigParseEntry = SIGpuMemConfigParseEntry;
 }
 
 

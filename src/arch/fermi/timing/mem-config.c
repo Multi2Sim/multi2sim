@@ -35,7 +35,7 @@
 
 
 
-void frm_mem_config_check(struct config_t *config)
+void FrmGpuMemConfigCheck(Timing *self, struct config_t *config)
 {
 	struct frm_sm_t *sm;
 	int sm_id;
@@ -56,7 +56,7 @@ void frm_mem_config_check(struct config_t *config)
 }
 
 
-void frm_mem_config_default(struct config_t *config)
+void FrmGpuMemConfigDefault(Timing *self, struct config_t *config)
 {
 	char section[MAX_STRING_SIZE];
 	char str[MAX_STRING_SIZE];
@@ -241,7 +241,7 @@ void frm_mem_config_default(struct config_t *config)
 }
 
 
-void frm_mem_config_parse_entry(struct config_t *config, char *section)
+void FrmGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *section)
 {
 	char *file_name;
 	char *module_name;

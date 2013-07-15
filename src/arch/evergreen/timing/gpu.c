@@ -641,6 +641,9 @@ void EvgGpuCreate(EvgGpu *self)
 	asObject(self)->Dump = EvgGpuDump;
 	asTiming(self)->DumpSummary = EvgGpuDumpSummary;
 	asTiming(self)->Run = EvgGpuRun;
+	asTiming(self)->MemConfigCheck = EvgGpuMemConfigCheck;
+	asTiming(self)->MemConfigDefault = EvgGpuMemConfigDefault;
+	asTiming(self)->MemConfigParseEntry = EvgGpuMemConfigParseEntry;
 }
 
 

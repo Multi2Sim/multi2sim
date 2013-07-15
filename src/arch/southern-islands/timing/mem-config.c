@@ -32,7 +32,7 @@
 #include "gpu.h"
 #include "compute-unit.h"
 
-void si_mem_config_default(struct config_t *config)
+void SIGpuMemConfigDefault(Timing *self, struct config_t *config)
 {
 	char section[MAX_STRING_SIZE];
 	char str[MAX_STRING_SIZE];
@@ -244,7 +244,7 @@ void si_mem_config_default(struct config_t *config)
 	config_write_int(config, section, "DefaultBandwidth", 264);
 }
 
-void si_mem_config_fused(struct config_t *config)
+void SIGpuMemConfigFused(Timing *self, struct config_t *config)
 {
 	char section[MAX_STRING_SIZE];
 	char str[MAX_STRING_SIZE];
@@ -383,7 +383,7 @@ void si_mem_config_fused(struct config_t *config)
 }
 
 
-void si_mem_config_parse_entry(struct config_t *config, char *section)
+void SIGpuMemConfigParseEntry(Timing *self, struct config_t *config, char *section)
 {
 	char *file_name;
 	char *vector_module_name;
@@ -514,7 +514,7 @@ void si_mem_config_parse_entry(struct config_t *config, char *section)
 }
 
 
-void si_mem_config_check(struct config_t *config)
+void SIGpuMemConfigCheck(Timing *self, struct config_t *config)
 {
 	struct si_compute_unit_t *compute_unit;
 	int compute_unit_id;

@@ -119,10 +119,6 @@ void arch_dump(struct arch_t *arch, FILE *f)
 
 void arch_dump_summary(struct arch_t *arch, FILE *f)
 {
-	double time_in_sec;
-	double cycles_per_sec;
-	double cycle_time;  /* In nanoseconds */
-
 	Emu *emu = arch->emu;
 	Timing *timing = arch->timing;
 
@@ -141,17 +137,6 @@ void arch_dump_summary(struct arch_t *arch, FILE *f)
 		/* Architecture-specific */
 		assert(timing->DumpSummary);
 		timing->DumpSummary(timing, f);
-
-		/* Calculate statistics */
-		time_in_sec = (double) m2s_timer_get_value(emu->timer) / 1.0e6;
-		cycles_per_sec = time_in_sec > 0.0 ? (double) timing->cycle / time_in_sec : 0.0;
-		cycle_time = (double) esim_domain_cycle_time(arch->domain_index) / 1000.0;
-
-		/* Print */
-		fprintf(f, "SimTime = %.2f [ns]\n", timing->cycle * cycle_time);
-		fprintf(f, "Frequency = %d [MHz]\n", arch->frequency);
-		fprintf(f, "Cycles = %lld\n", timing->cycle);
-		fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 	}
 
 	/* End */
@@ -217,10 +202,7 @@ struct arch_t *arch_register(char *name, char *prefix,
 		arch_emu_done_func_t emu_done_func,
 		arch_timing_read_config_func_t timing_read_config_func,
 		arch_timing_init_func_t timing_init_func,
-		arch_timing_done_func_t timing_done_func,
-		arch_mem_config_default_func_t mem_config_default_func,
-		arch_mem_config_parse_entry_func_t mem_config_parse_entry_func,
-		arch_mem_config_check_func_t mem_config_check_func)
+		arch_timing_done_func_t timing_done_func)
 {
 	struct arch_t *arch;
 
@@ -243,9 +225,6 @@ struct arch_t *arch_register(char *name, char *prefix,
 	arch->timing_read_config_func = timing_read_config_func;
 	arch->timing_init_func = timing_init_func;
 	arch->timing_done_func = timing_done_func;
-	arch->mem_config_default_func = mem_config_default_func;
-	arch->mem_config_parse_entry_func = mem_config_parse_entry_func;
-	arch->mem_config_check_func = mem_config_check_func;
 
 	/* Add architecture and return it */
 	arch_list[arch_list_count++] = arch;
