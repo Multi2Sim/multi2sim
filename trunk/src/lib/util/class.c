@@ -109,6 +109,7 @@ void class_register(struct class_t *c)
 	assert(c->id);
 	
 	/* Insert into class list */
+	assert(class_list_head);
 	assert(class_list_tail);
 	class_list_tail->next = c;
 	class_list_tail = c;
