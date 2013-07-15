@@ -130,21 +130,10 @@ void x86_cpu_done(void);
 
 void x86_cpu_update_occupancy_stats(void);
 
-int x86_cpu_pipeline_empty(int core, int thread);
-void x86_cpu_evict_context(int core, int thread);
-void x86_cpu_schedule(void);
-
 void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop);
 void x86_cpu_uop_trace_list_empty(void);
 
 void x86_cpu_run_stages(void);
-void x86_cpu_fetch(void);
-void x86_cpu_decode(void);
-void x86_cpu_dispatch(void);
-void x86_cpu_issue(void);
-void x86_cpu_writeback(void);
-void x86_cpu_commit(void);
-void x86_cpu_recover(int core, int thread);
 
 
 

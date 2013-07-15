@@ -33,6 +33,7 @@
 #include "event-queue.h"
 #include "fu.h"
 #include "inst-queue.h"
+#include "issue.h"
 #include "load-store-queue.h"
 #include "reg-file.h"
 #include "thread.h"

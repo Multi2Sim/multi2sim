@@ -32,6 +32,7 @@
 #include "fetch-queue.h"
 #include "inst-queue.h"
 #include "load-store-queue.h"
+#include "recover.h"
 #include "reg-file.h"
 #include "rob.h"
 #include "thread.h"

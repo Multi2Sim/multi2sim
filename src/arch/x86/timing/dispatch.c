@@ -25,6 +25,7 @@
 
 #include "core.h"
 #include "cpu.h"
+#include "dispatch.h"
 #include "inst-queue.h"
 #include "load-store-queue.h"
 #include "reg-file.h"
