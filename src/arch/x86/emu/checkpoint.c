@@ -32,6 +32,7 @@
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
 
+#include "checkpoint.h"
 #include "context.h"
 #include "emu.h"
 #include "file-desc.h"
@@ -39,14 +40,14 @@
 #include "regs.h"
 
 
-void x86_checkpoint_load(char *file_name);
-void x86_checkpoint_save(char *file_name);
+void X86EmuLoadCheckpoint(X86Emu *self, char *file_name);
+void X86EmuSaveCheckpoint(X86Emu *self, char *file_name);
 
 /* High level "load/save part of architectural state" functions */
 
-static void load_processes();
-static void save_processes();
-static void load_process();
+static void load_processes(X86Emu *emu);
+static void save_processes(X86Emu *emu);
+static void load_process(X86Emu *emu);
 static void save_process(X86Context *ctx);
 static void save_process_misc(X86Context *ctx);
 static void load_memory(struct mem_t *mem);
@@ -66,16 +67,16 @@ static void save_regs(struct x86_regs_t *regs);
 
 /* Configuration element stack */
 
-static void cfg_init();
-static void cfg_done();
+static void cfg_init(void);
+static void cfg_done(void);
 static void cfg_push(char *fmt, ...);
-static void cfg_push_unique();
-static void cfg_pop();
+static void cfg_push_unique(void);
+static void cfg_pop(void);
 static void cfg_descend(char *key);
 static int cfg_try_descend(char *key);
-static int cfg_next_child();
-static struct cfg_stack_elem_t *cfg_top();
-static char *cfg_path();
+static int cfg_next_child(void);
+static struct cfg_stack_elem_t *cfg_top(void);
+static char *cfg_path(void);
 
 /* Low level helper functions */
 
@@ -97,7 +98,7 @@ static void save_str_list(char *key, struct linked_list_t *list);
 
 static void save_raw_str(char *var);
 
-static void check();
+static void check(void);
 static int index_of(int *array, int value, int n);
 
 /* Pointer to the whole checkpoint */
@@ -110,32 +111,35 @@ struct cfg_stack_elem_t
 	char *key;
 	int child_idx;
 };
-static struct cfg_stack_elem_t *cfg_stack_elem_create();
-static void cfg_stack_elem_free();
+
+static struct cfg_stack_elem_t *cfg_stack_elem_create(
+	struct bin_config_elem_t *elem,
+	char *key);
+static void cfg_stack_elem_free(struct cfg_stack_elem_t *elem);
 
 struct list_t *cfg_stack;
 static int cfg_unique_num;
 
-void x86_checkpoint_load(char *file_name)
+void X86EmuLoadCheckpoint(X86Emu *self, char *file_name)
 {
 	ckp = bin_config_create(file_name);
 	bin_config_load(ckp);
 	check();
 	cfg_init();
 
-	load_processes();
+	load_processes(self);
 
 	cfg_done();
 	bin_config_free(ckp);
 	ckp = NULL;
 }
 
-void x86_checkpoint_save(char *file_name)
+void X86EmuSaveCheckpoint(X86Emu *self, char *file_name)
 {
 	ckp = bin_config_create(file_name);
 	cfg_init();
 
-	save_processes();
+	save_processes(self);
 
 	bin_config_save(ckp);
 	check();
@@ -144,19 +148,20 @@ void x86_checkpoint_save(char *file_name)
 	ckp = NULL;
 }
 
-static void load_processes()
+static void load_processes(X86Emu *emu)
 {
 	cfg_descend("processes");
 
-	while (cfg_next_child()) {
-		load_process();
+	while (cfg_next_child())
+	{
+		load_process(emu);
 		cfg_pop();
 	}
 
 	cfg_pop();
 }
 
-static void save_processes()
+static void save_processes(X86Emu *emu)
 {
 	const int MAX_NUM_PIDS = 1024;
 	int pids[MAX_NUM_PIDS];
@@ -169,7 +174,7 @@ static void save_processes()
 
 	/* Since we do not keep an explicit list of processes, iterate over
 	 * contexts and keep track which pids have already been saved. */
-	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)
+	for (ctx = emu->context_list_head; ctx; ctx = ctx->context_list_next)
 	{
 		if (index_of(pids, ctx->pid, num_pids) == -1)
 		{
@@ -184,12 +189,12 @@ static void save_processes()
 }
 
 
-static void load_process(void)
+static void load_process(X86Emu *emu)
 {
 	X86Context *ctx;
 	struct x86_loader_t *ld;
 
-	ctx = new(X86Context, x86_emu);
+	ctx = new(X86Context, emu);
 	ctx->glibc_segment_base = load_int32("glibc_base");
 	ctx->glibc_segment_limit = load_int32("glibc_limit");
 
@@ -486,12 +491,13 @@ static void load_threads(X86Context *process_ctx)
 
 static void save_threads(X86Context *process_ctx)
 {
+	X86Emu *emu = process_ctx->emu;
 	X86Context *thread_ctx;
 
 	cfg_push("threads");
 
 	/* Iterate over threads belonging to the process represented by ctx */
-	for (thread_ctx = x86_emu->context_list_head;
+	for (thread_ctx = emu->context_list_head;
 	     thread_ctx;
 	     thread_ctx = thread_ctx->context_list_next) 
 	{
@@ -658,7 +664,7 @@ static void save_regs(struct x86_regs_t *regs)
 	cfg_pop();
 }
 
-static void check()
+static void check(void)
 {
 	switch(ckp->error_code) {
 	case BIN_CONFIG_ERR_OK:
@@ -688,7 +694,7 @@ static int index_of(int *array, int value, int n)
 	return -1;
 }
 
-static void cfg_init()
+static void cfg_init(void)
 {
 	cfg_stack = list_create();
 	/* dummy root cfg node */
@@ -696,7 +702,7 @@ static void cfg_init()
 	cfg_unique_num = 0;
 }
 
-static void cfg_done()
+static void cfg_done(void)
 {
 	cfg_pop(); /* pop dummy node */
 	list_free(cfg_stack);
@@ -716,7 +722,7 @@ static void cfg_push(char *fmt, ...)
 	list_push(cfg_stack, cfg_stack_elem_create(cfg, buf));
 }
 
-static void cfg_push_unique()
+static void cfg_push_unique(void)
 {
 	struct bin_config_elem_t *cfg;
 	char buf[MAX_STRING_SIZE];
@@ -736,7 +742,7 @@ static void save_raw_str(char *str)
 	cfg_unique_num++;
 }
 
-static void cfg_pop()
+static void cfg_pop(void)
 {
 	cfg_stack_elem_free(cfg_top());
 	list_pop(cfg_stack);
@@ -762,7 +768,7 @@ static void cfg_descend(char *key)
 			ckp->file_name, cfg_path(), key);
 }
 
-static int cfg_next_child()
+static int cfg_next_child(void)
 {
 	struct bin_config_elem_t *child;
 	char *key;
@@ -784,12 +790,12 @@ static int cfg_next_child()
 	return 1;
 }
 
-static struct cfg_stack_elem_t *cfg_top()
+static struct cfg_stack_elem_t *cfg_top(void)
 {
 	return (struct cfg_stack_elem_t *)list_top(cfg_stack);
 }
 
-static char *cfg_path()
+static char *cfg_path(void)
 {
 	static char buf[MAX_STRING_SIZE];
 	int i;

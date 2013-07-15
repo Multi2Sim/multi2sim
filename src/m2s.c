@@ -2058,7 +2058,7 @@ int main(int argc, char **argv)
 
 	/* Load architectural state checkpoint */
 	if (x86_load_checkpoint_file_name[0])
-		x86_checkpoint_load(x86_load_checkpoint_file_name);
+		X86EmuLoadCheckpoint(x86_emu, x86_load_checkpoint_file_name);
 
 	/* Load programs */
 	m2s_load_programs(argc, argv);
@@ -2068,7 +2068,7 @@ int main(int argc, char **argv)
 
 	/* Save architectural state checkpoint */
 	if (x86_save_checkpoint_file_name[0])
-		x86_checkpoint_save(x86_save_checkpoint_file_name);
+		X86EmuSaveCheckpoint(x86_emu, x86_save_checkpoint_file_name);
 
 	/* Flush event-driven simulation, only if the reason for simulation
 	 * completion was not a simulation stall. If it was, draining the

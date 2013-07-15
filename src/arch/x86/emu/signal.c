@@ -33,7 +33,9 @@
 #include "syscall.h"
 
 
-/* Signals */
+/*
+ * Public Stuff (no class)
+ */
 
 struct str_map_t x86_signal_map =
 {
@@ -168,7 +170,7 @@ void x86_sigset_dump(unsigned long long sim_sigset, FILE *f)
 
 
 /*
- * Signal Mask Table
+ * Object 'x86_signal_mask_table_t'
  */
 
 struct x86_signal_mask_table_t *x86_signal_mask_table_create(void)
@@ -189,7 +191,7 @@ void x86_signal_mask_table_free(struct x86_signal_mask_table_t *table)
 
 
 /*
- * Signal Handler Table
+ * Object 'x86_signal_handler_table_t'
  */
 
 struct x86_signal_handler_table_t *x86_signal_handler_table_create(void)
@@ -229,7 +231,8 @@ void x86_signal_handler_table_unlink(struct x86_signal_handler_table_t *table)
 
 
 /*
- * Signal Handlers
+ * Class 'X86Context'
+ * Additional functions
  */
 
 
@@ -261,8 +264,7 @@ struct x86_sigframe
 static char x86_signal_retcode[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
 
 
-/* Run a signal handler */
-void x86_signal_handler_run(X86Context *ctx, int sig)
+void X86ContextRunSignalHandler(X86Context *ctx, int sig)
 {
 	unsigned int handler;
 	struct x86_sigframe sigframe;
@@ -331,8 +333,7 @@ void x86_signal_handler_run(X86Context *ctx, int sig)
 }
 
 
-/* Return from a signal handler */
-void x86_signal_handler_return(X86Context *ctx)
+void X86ContextReturnFromSignalHandler(X86Context *ctx)
 {
 	/* Change context status */
 	if (!X86ContextGetState(ctx, X86ContextHandler))
@@ -350,15 +351,7 @@ void x86_signal_handler_return(X86Context *ctx)
 }
 
 
-/* Check any pending signal, and run the corresponding signal handler by
- * considering that the signal interrupted a system call ('syscall_intr').
- * This has the following implication on the return address from the signal
- * handler:
- *   -If flag 'SA_RESTART' is set for the handler, the return address is the
- *    system call itself, which must be repeated.
- *   -If flag 'SA_RESTART' is not set, the return address is the instruction
- *    next to the system call, and register 'eax' is set to -EINTR. */
-void x86_signal_handler_check_intr(X86Context *ctx)
+void X86ContextCheckSignalHandlerIntr(X86Context *ctx)
 {
 	int sig;
 
@@ -392,13 +385,13 @@ void x86_signal_handler_check_intr(X86Context *ctx)
 	}
 
 	/* Run the signal handler */
-	x86_signal_handler_run(ctx, sig);
+	X86ContextRunSignalHandler(ctx, sig);
 	x86_sigset_del(&ctx->signal_mask_table->pending, sig);
 
 }
 
 
-void x86_signal_handler_check(X86Context *ctx)
+void X86ContextCheckSignalHandler(X86Context *ctx)
 {
 	int sig;
 
@@ -417,7 +410,7 @@ void x86_signal_handler_check(X86Context *ctx)
 		if (x86_sigset_member(&ctx->signal_mask_table->pending, sig) &&
 			!x86_sigset_member(&ctx->signal_mask_table->blocked, sig))
 		{
-			x86_signal_handler_run(ctx, sig);
+			X86ContextRunSignalHandler(ctx, sig);
 			x86_sigset_del(&ctx->signal_mask_table->pending, sig);
 			break;
 		}
