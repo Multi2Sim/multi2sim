@@ -30,7 +30,9 @@
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/config.h>
 #include <lib/util/debug.h>
+#include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
 #include <mem-system/memory.h>
@@ -39,6 +41,7 @@
 #include "emu.h"
 #include "file-desc.h"
 #include "isa.h"
+#include "loader.h"
 #include "regs.h"
 #include "signal.h"
 #include "syscall.h"
@@ -730,6 +733,104 @@ X86Context *X86EmuGetContext(X86Emu *self, int pid)
 	while (context && context->pid != pid)
 		context = context->context_list_next;
 	return context;
+}
+
+
+void X86EmuLoadContextsFromConfig(X86Emu *self, struct config_t *config, char *section)
+{
+	X86Context *ctx;
+	struct x86_loader_t *loader;
+
+	char buf[MAX_STRING_SIZE];
+
+	char *exe;
+	char *cwd;
+	char *args;
+	char *env;
+
+	char *in;
+	char *out;
+
+	char *config_file_name;
+
+	/* Get configuration file name for errors */
+	config_file_name = config_get_file_name(config);
+
+	/* Create new context */
+	ctx = new(X86Context, self);
+	loader = ctx->loader;
+
+	/* Executable */
+	exe = config_read_string(config, section, "Exe", "");
+	exe = str_set(NULL, exe);
+	if (!*exe)
+		fatal("%s: [%s]: invalid executable", config_file_name,
+			section);
+
+	/* Arguments */
+	args = config_read_string(config, section, "Args", "");
+	linked_list_add(loader->args, exe);
+	X86ContextAddArgsString(ctx, args);
+
+	/* Environment variables */
+	env = config_read_string(config, section, "Env", "");
+	X86ContextAddEnv(ctx, env);
+
+	/* Current working directory */
+	cwd = config_read_string(config, section, "Cwd", "");
+	if (*cwd)
+		loader->cwd = str_set(NULL, cwd);
+	else
+	{
+		/* Get current directory */
+		loader->cwd = getcwd(buf, sizeof buf);
+		if (!loader->cwd)
+			panic("%s: buffer too small", __FUNCTION__);
+
+		/* Duplicate string */
+		loader->cwd = str_set(NULL, loader->cwd);
+	}
+
+	/* Standard input */
+	in = config_read_string(config, section, "Stdin", "");
+	loader->stdin_file = str_set(NULL, in);
+
+	/* Standard output */
+	out = config_read_string(config, section, "Stdout", "");
+	loader->stdout_file = str_set(NULL, out);
+
+	/* Load executable */
+	X86ContextLoadExe(ctx, exe);
+}
+
+
+void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv)
+{
+	X86Context *ctx;
+	struct x86_loader_t *loader;
+
+	char buf[MAX_STRING_SIZE];
+
+	/* Create context */
+	ctx = new(X86Context, self);
+	loader = ctx->loader;
+
+	/* Arguments and environment */
+	X86ContextAddArgsVector(ctx, argc, argv);
+	X86ContextAddEnv(ctx, "");
+
+	/* Get current directory */
+	loader->cwd = getcwd(buf, sizeof buf);
+	if (!loader->cwd)
+		panic("%s: buffer too small", __FUNCTION__);
+	loader->cwd = str_set(NULL, loader->cwd);
+
+	/* Redirections */
+	loader->stdin_file = str_set(NULL, "");
+	loader->stdout_file = str_set(NULL, "");
+
+	/* Load executable */
+	X86ContextLoadExe(ctx, argv[0]);
 }
 
 

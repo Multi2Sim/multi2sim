@@ -27,6 +27,8 @@
 
 /* Forward declarations */
 CLASS_FORWARD_DECLARATION(X86Context);
+struct config_t;
+
 
 
 /*
@@ -100,6 +102,9 @@ void X86EmuProcessEvents(X86Emu *self);
 void X86EmuProcessEventsSchedule(X86Emu *self);
 
 X86Context *X86EmuGetContext(X86Emu *self, int pid);
+
+void X86EmuLoadContextsFromConfig(X86Emu *self, struct config_t *config, char *section);
+void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv);
 
 
 

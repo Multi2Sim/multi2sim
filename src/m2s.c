@@ -1626,7 +1626,7 @@ static void m2s_load_programs(int argc, char **argv)
 		switch (ehdr.e_machine)
 		{
 		case EM_386:
-			x86_loader_load_from_command_line(argc - 1, argv + 1);
+			X86EmuLoadContextFromCommandLine(x86_emu, argc - 1, argv + 1);
 			break;
 
 		case EM_ARM:
@@ -1668,7 +1668,7 @@ static void m2s_load_programs(int argc, char **argv)
 		switch (ehdr.e_machine)
 		{
 		case EM_386:
-			x86_loader_load_from_ctx_config(config, section);
+			X86EmuLoadContextsFromConfig(x86_emu, config, section);
 			break;
 
 		case EM_ARM:
