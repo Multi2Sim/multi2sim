@@ -514,8 +514,15 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_mem_write,
 						vbo->device_ptr, vbo->data, vbo->size);
 					/* Insert to input list */
+					unsigned int sys_args[6];
+					sys_args[0] = (unsigned int)vertex_shader_id;
+					sys_args[1] = (unsigned int)vbo->device_ptr;
+					sys_args[2] = (unsigned int)vattrib->size;
+					sys_args[3] = (unsigned int)vattrib->type;
+					sys_args[4] = (unsigned int)vbo->size;
+					sys_args[5] = (unsigned int)i;
 					syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_shader_set_input,
-						vertex_shader_id, vbo->device_ptr, vattrib->size, vbo->size, i);
+						sys_args);
 
 					/* Data is ready, now start processing NDrange information */
 					/* Calculate # of workitems */
