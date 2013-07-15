@@ -35,19 +35,27 @@
 #include <mem-system/prefetch-history.h>
 
 #include "bpred.h"
+#include "commit.h"
 #include "core.h"
 #include "cpu.h"
+#include "decode.h"
+#include "dispatch.h"
 #include "event-queue.h"
+#include "fetch.h"
 #include "fetch-queue.h"
 #include "fu.h"
 #include "inst-queue.h"
+#include "issue.h"
 #include "load-store-queue.h"
 #include "mem-config.h"
+#include "recover.h"
 #include "reg-file.h"
 #include "rob.h"
+#include "sched.h"
 #include "thread.h"
 #include "trace-cache.h"
 #include "uop-queue.h"
+#include "writeback.h"
 
 
 /*

@@ -26,8 +26,10 @@
 
 #include "core.h"
 #include "cpu.h"
+#include "recover.h"
 #include "reg-file.h"
 #include "thread.h"
+#include "writeback.h"
 
 
 static void x86_cpu_writeback_core(int core)
