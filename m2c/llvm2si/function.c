@@ -305,7 +305,7 @@ static void Llvm2siFunctionAddArg(Llvm2siFunction *self,
 static void Llvm2siFunctionDumpData(Llvm2siFunction *self, FILE *f)
 {
 	/* Section header */
-	fprintf(f, ".data\n");
+	fprintf(f, ".metadata\n");
 
 	/* User elements */
 	fprintf(f, "\tuserElements[0] = PTR_UAV_TABLE, 0, s[%d:%d]\n",
