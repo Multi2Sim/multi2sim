@@ -20,7 +20,17 @@
 #ifndef ARCH_X86_TIMING_FETCH_H
 #define ARCH_X86_TIMING_FETCH_H
 
-void x86_cpu_fetch(void);
+#include <lib/util/class.h>
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Cpu);
+
+
+/*
+ * Class 'X86Cpu'
+ */
+
+void X86CpuFetch(X86Cpu *self);
 
 #endif
 

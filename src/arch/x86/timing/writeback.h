@@ -20,7 +20,29 @@
 #ifndef ARCH_X86_TIMING_WRITEBACK_H
 #define ARCH_X86_TIMING_WRITEBACK_H
 
-void x86_cpu_writeback(void);
+#include <lib/util/class.h>
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Cpu);
+CLASS_FORWARD_DECLARATION(X86Core);
+CLASS_FORWARD_DECLARATION(X86Thread);
+
+
+
+/*
+ * Class 'X86Core'
+ */
+
+void X86CoreWriteback(X86Core *self);
+
+
+
+/*
+ * Class 'X86Cpu'
+ */
+
+void X86CpuWriteback(X86Cpu *self);
+
 
 #endif
 

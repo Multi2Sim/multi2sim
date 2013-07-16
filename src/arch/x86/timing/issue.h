@@ -20,7 +20,19 @@
 #ifndef ARCH_X86_TIMING_ISSUE_H
 #define ARCH_X86_TIMING_ISSUE_H
 
-void x86_cpu_issue(void);
+#include <lib/util/class.h>
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Cpu);
+CLASS_FORWARD_DECLARATION(X86Core);
+CLASS_FORWARD_DECLARATION(X86Thread);
+
+
+/*
+ * Class 'X86Cpu'
+ */
+
+void X86CpuIssue(X86Cpu *self);
 
 #endif
 
