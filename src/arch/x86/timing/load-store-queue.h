@@ -21,6 +21,10 @@
 #define X86_ARCH_TIMING_LOAD_STORE_QUEUE_H
 
 
+/*
+ * Public
+ */
+
 extern char *x86_lsq_kind_map[];
 extern enum x86_lsq_kind_t
 {
@@ -29,16 +33,21 @@ extern enum x86_lsq_kind_t
 } x86_lsq_kind;
 extern int x86_lsq_size;
 
-void x86_lsq_init(void);
-void x86_lsq_done(void);
 
-int x86_lsq_can_insert(struct x86_uop_t *uop);
-void x86_lsq_insert(struct x86_uop_t *uop);
-void x86_lsq_recover(int core, int thread);
 
-void x86_lq_remove(int core, int thread);
-void x86_sq_remove(int core, int thread);
-void x86_preq_remove(int core, int thread);
+/*
+ * Class 'X86Thread'
+ */
+
+void X86ThreadInitLSQ(X86Thread *self);
+void X86ThreadFreeLSQ(X86Thread *self);
+
+int X86ThreadCanInsertInLSQ(X86Thread *self, struct x86_uop_t *uop);
+void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop);
+void X86ThreadRecoverLSQ(X86Thread *self);
+
+void X86ThreadRemoveFromLQ(X86Thread *self);
+void X86ThreadRemoveFromSQ(X86Thread *self);
+void X86ThreadRemovePreQ(X86Thread *self);
 
 #endif
-

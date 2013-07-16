@@ -32,75 +32,66 @@ enum x86_iq_kind_t x86_iq_kind;
 int x86_iq_size;
 
 
-void x86_iq_init()
+void X86ThreadInitIQ(X86Thread *self)
 {
-	int core;
-	int thread;
-
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
-		X86_THREAD.iq = linked_list_create();
+	self->iq = linked_list_create();
 }
 
 
-void x86_iq_done()
+void X86ThreadFreeIQ(X86Thread *self)
 {
 	struct linked_list_t *iq;
 	struct x86_uop_t *uop;
 
-	int core;
-	int thread;
-
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+	iq = self->iq;
+	linked_list_head(iq);
+	while (linked_list_count(iq))
 	{
-		iq = X86_THREAD.iq;
-		linked_list_head(iq);
-		while (linked_list_count(iq))
-		{
-			uop = linked_list_get(iq);
-			uop->in_iq = 0;
-			linked_list_remove(iq);
-			x86_uop_free_if_not_queued(uop);
-		}
-		linked_list_free(iq);
+		uop = linked_list_get(iq);
+		uop->in_iq = 0;
+		linked_list_remove(iq);
+		x86_uop_free_if_not_queued(uop);
 	}
+	linked_list_free(iq);
 }
 
 
-int x86_iq_can_insert(struct x86_uop_t *uop)
+int X86ThreadCanInsertInIQ(X86Thread *self, struct x86_uop_t *uop)
 {
-	int core = uop->core;
-	int thread = uop->thread;
-	int count, size;
+	X86Core *core = self->core;
+
+	int count;
+	int size;
 
 	size = x86_iq_kind == x86_iq_kind_private ? x86_iq_size : x86_iq_size * x86_cpu_num_threads;
-	count = x86_iq_kind == x86_iq_kind_private ? X86_THREAD.iq_count : X86_CORE.iq_count;
+	count = x86_iq_kind == x86_iq_kind_private ? self->iq_count : core->iq_count;
 	return count < size;
 }
 
 
 /* Insert a uop into the corresponding IQ. Since this is a non-FIFO queue,
  * the insertion position doesn't matter. */
-void x86_iq_insert(struct x86_uop_t *uop)
+void X86ThreadInsertInIQ(X86Thread *self, struct x86_uop_t *uop)
 {
-	int core = uop->core;
-	int thread = uop->thread;
-	struct linked_list_t *iq = X86_THREAD.iq;
+	X86Core *core = self->core;
+	struct linked_list_t *iq = self->iq;
 
 	assert(!uop->in_iq);
 	linked_list_out(iq);
 	linked_list_insert(iq, uop);
 	uop->in_iq = 1;
 
-	X86_CORE.iq_count++;
-	X86_THREAD.iq_count++;
+	core->iq_count++;
+	self->iq_count++;
 }
 
 
 /* Remove the uop in the current position of the linked list representing
  * the IQ of the specified thread. */
-void x86_iq_remove(int core, int thread)
+void X86ThreadRemoveFromIQ(X86Thread *self)
 {
-	struct linked_list_t *iq = X86_THREAD.iq;
+	X86Core *core = self->core;
+	struct linked_list_t *iq = self->iq;
 	struct x86_uop_t *uop;
 
 	uop = linked_list_get(iq);
@@ -108,16 +99,16 @@ void x86_iq_remove(int core, int thread)
 	linked_list_remove(iq);
 	uop->in_iq = 0;
 
-	assert(X86_CORE.iq_count && X86_THREAD.iq_count);
-	X86_CORE.iq_count--;
-	X86_THREAD.iq_count--;
+	assert(core->iq_count && self->iq_count);
+	core->iq_count--;
+	self->iq_count--;
 }
 
 
 /* Remove all speculative uops from the current thread */
-void x86_iq_recover(int core, int thread)
+void X86ThreadRecoverIQ(X86Thread *self)
 {
-	struct linked_list_t *iq = X86_THREAD.iq;
+	struct linked_list_t *iq = self->iq;
 	struct x86_uop_t *uop;
 
 	linked_list_head(iq);
@@ -125,7 +116,7 @@ void x86_iq_recover(int core, int thread)
 	{
 		uop = linked_list_get(iq);
 		if (uop->specmode) {
-			x86_iq_remove(core, thread);
+			X86ThreadRemoveFromIQ(self);
 			x86_uop_free_if_not_queued(uop);
 			continue;
 		}

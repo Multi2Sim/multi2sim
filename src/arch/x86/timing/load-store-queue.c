@@ -33,95 +33,87 @@ enum x86_lsq_kind_t x86_lsq_kind;
 int x86_lsq_size;
 
 
-void x86_lsq_init()
-{
-	int core;
-	int thread;
 
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
-	{
-		X86_THREAD.lq = linked_list_create();
-		X86_THREAD.sq = linked_list_create();
-		X86_THREAD.preq = linked_list_create();
-	}
+/*
+ * Class 'X86Thread'
+ */
+
+void X86ThreadInitLSQ(X86Thread *self)
+{
+	self->lq = linked_list_create();
+	self->sq = linked_list_create();
+	self->preq = linked_list_create();
 }
 
 
-void x86_lsq_done()
+void X86ThreadFreeLSQ(X86Thread *self)
 {
-	struct linked_list_t *lq, *sq, *preq;
+	struct linked_list_t *lq;
+	struct linked_list_t *sq;
+	struct linked_list_t *preq;
 	struct x86_uop_t *uop;
 
-	int core;
-	int thread;
-
 	/* Load queue */
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+	lq = self->lq;
+	linked_list_head(lq);
+	while (linked_list_count(lq))
 	{
-		lq = X86_THREAD.lq;
-		linked_list_head(lq);
-		while (linked_list_count(lq))
-		{
-			uop = linked_list_get(lq);
-			uop->in_lq = 0;
-			linked_list_remove(lq);
-			x86_uop_free_if_not_queued(uop);
-		}
-		linked_list_free(lq);
+		uop = linked_list_get(lq);
+		uop->in_lq = 0;
+		linked_list_remove(lq);
+		x86_uop_free_if_not_queued(uop);
 	}
+	linked_list_free(lq);
 
 	/* Store queue */
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+	sq = self->sq;
+	linked_list_head(sq);
+	while (linked_list_count(sq))
 	{
-		sq = X86_THREAD.sq;
-		linked_list_head(sq);
-		while (linked_list_count(sq))
-		{
-			uop = linked_list_get(sq);
-			uop->in_sq = 0;
-			linked_list_remove(sq);
-			x86_uop_free_if_not_queued(uop);
-		}
-		linked_list_free(sq);
+		uop = linked_list_get(sq);
+		uop->in_sq = 0;
+		linked_list_remove(sq);
+		x86_uop_free_if_not_queued(uop);
 	}
+	linked_list_free(sq);
 
 	/* Prefetch queue */
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+	preq = self->preq;
+	linked_list_head(preq);
+	while (linked_list_count(preq))
 	{
-		preq = X86_THREAD.preq;
-		linked_list_head(preq);
-		while (linked_list_count(preq))
-		{
-			uop = linked_list_get(preq);
-			uop->in_preq = 0;
-			linked_list_remove(preq);
-			x86_uop_free_if_not_queued(uop);
-		}
-		linked_list_free(preq);
+		uop = linked_list_get(preq);
+		uop->in_preq = 0;
+		linked_list_remove(preq);
+		x86_uop_free_if_not_queued(uop);
 	}
+	linked_list_free(preq);
 }
 
 
-int x86_lsq_can_insert(struct x86_uop_t *uop)
+int X86ThreadCanInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 {
-	int core = uop->core;
-	int thread = uop->thread;
-	int count, size;
+	X86Core *core = self->core;
 
+	int count;
+	int size;
+
+	assert(uop->core == core->id);
+	assert(uop->thread == self->id_in_core);
 	size = x86_lsq_kind == x86_lsq_kind_private ? x86_lsq_size : x86_lsq_size * x86_cpu_num_threads;
-	count = x86_lsq_kind == x86_lsq_kind_private ? X86_THREAD.lsq_count : X86_CORE.lsq_count;
+	count = x86_lsq_kind == x86_lsq_kind_private ? self->lsq_count : core->lsq_count;
 	return count < size;
 }
 
 
 /* Insert uop into corresponding load/store queue */
-void x86_lsq_insert(struct x86_uop_t *uop)
+void X86ThreadInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 {
-	int core = uop->core;
-	int thread = uop->thread;
-	struct linked_list_t *lq = X86_THREAD.lq;
-	struct linked_list_t *sq = X86_THREAD.sq;
-	struct linked_list_t *preq = X86_THREAD.preq;
+	X86Core *core = self->core;
+
+	struct linked_list_t *lq = self->lq;
+	struct linked_list_t *sq = self->sq;
+	struct linked_list_t *preq = self->preq;
 
 	assert(!uop->in_lq && !uop->in_sq);
 	assert(uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_store ||
@@ -145,17 +137,17 @@ void x86_lsq_insert(struct x86_uop_t *uop)
 		linked_list_insert(preq, uop);
 		uop->in_preq = 1;
 	}
-	X86_CORE.lsq_count++;
-	X86_THREAD.lsq_count++;
+	core->lsq_count++;
+	self->lsq_count++;
 }
 
 
 /* Remove all speculative uops from a given load/store queue in the
  * given thread. */
-void x86_lsq_recover(int core, int thread)
+void X86ThreadRecoverLSQ(X86Thread *self)
 {
-	struct linked_list_t *lq = X86_THREAD.lq;
-	struct linked_list_t *sq = X86_THREAD.sq;
+	struct linked_list_t *lq = self->lq;
+	struct linked_list_t *sq = self->sq;
 	struct x86_uop_t *uop;
 
 	/* Recover load queue */
@@ -165,7 +157,7 @@ void x86_lsq_recover(int core, int thread)
 		uop = linked_list_get(lq);
 		if (uop->specmode)
 		{
-			x86_lq_remove(core, thread);
+			X86ThreadRemoveFromLQ(self);
 			x86_uop_free_if_not_queued(uop);
 			continue;
 		}
@@ -179,7 +171,7 @@ void x86_lsq_recover(int core, int thread)
 		uop = linked_list_get(sq);
 		if (uop->specmode)
 		{
-			x86_sq_remove(core, thread);
+			X86ThreadRemoveFromSQ(self);
 			x86_uop_free_if_not_queued(uop);
 			continue;
 		}
@@ -190,9 +182,11 @@ void x86_lsq_recover(int core, int thread)
 
 /* Remove the uop in the current position of the linked list representing
  * the load queue of the specified thread. */
-void x86_lq_remove(int core, int thread)
+void X86ThreadRemoveFromLQ(X86Thread *self)
 {
-	struct linked_list_t *lq = X86_THREAD.lq;
+	X86Core *core = self->core;
+
+	struct linked_list_t *lq = self->lq;
 	struct x86_uop_t *uop;
 
 	uop = linked_list_get(lq);
@@ -200,16 +194,18 @@ void x86_lq_remove(int core, int thread)
 	linked_list_remove(lq);
 	uop->in_lq = 0;
 
-	assert(X86_CORE.lsq_count && X86_THREAD.lsq_count);
-	X86_CORE.lsq_count--;
-	X86_THREAD.lsq_count--;
+	assert(core->lsq_count && self->lsq_count);
+	core->lsq_count--;
+	self->lsq_count--;
 }
 
 
 /* Remove an uop in the current position of the store queue */
-void x86_sq_remove(int core, int thread)
+void X86ThreadRemoveFromSQ(X86Thread *self)
 {
-	struct linked_list_t *sq = X86_THREAD.sq;
+	X86Core *core = self->core;
+
+	struct linked_list_t *sq = self->sq;
 	struct x86_uop_t *uop;
 
 	uop = linked_list_get(sq);
@@ -218,15 +214,17 @@ void x86_sq_remove(int core, int thread)
 	linked_list_remove(sq);
 	uop->in_sq = 0;
 
-	assert(X86_CORE.lsq_count && X86_THREAD.lsq_count);
-	X86_CORE.lsq_count--;
-	X86_THREAD.lsq_count--;
+	assert(core->lsq_count && self->lsq_count);
+	core->lsq_count--;
+	self->lsq_count--;
 }
 
 /* Remove an uop in the current position of the prefetch queue */
-void x86_preq_remove(int core, int thread)
+void X86ThreadRemovePreQ(X86Thread *self)
 {
-	struct linked_list_t *preq = X86_THREAD.preq;
+	X86Core *core = self->core;
+
+	struct linked_list_t *preq = self->preq;
 	struct x86_uop_t *uop;
  
 	uop = linked_list_get(preq);
@@ -235,7 +233,8 @@ void x86_preq_remove(int core, int thread)
 	linked_list_remove(preq);
 	uop->in_preq = 0;
  
-	assert(X86_CORE.lsq_count && X86_THREAD.lsq_count);
-	X86_CORE.lsq_count--;
-	X86_THREAD.lsq_count--;
+	assert(core->lsq_count && self->lsq_count);
+	core->lsq_count--;
+	self->lsq_count--;
 }
+
