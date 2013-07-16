@@ -52,8 +52,16 @@ enum x86_dispatch_stall_t
 
 CLASS_BEGIN(X86Core, Object)
 
+	/* CPU that it belongs to */
+	X86Cpu *cpu;
+
 	/* Array of threads */
 	X86Thread **threads;
+
+	char *name;
+
+	/* Unique ID in CPU */
+	int id;
 
 	/* Shared structures */
 	struct linked_list_t *event_queue;
@@ -130,6 +138,8 @@ CLASS_END(X86Core)
 
 void X86CoreCreate(X86Core *self, X86Cpu *cpu);
 void X86CoreDestroy(X86Core *self);
+
+void X86CoreSetName(X86Core *self, char *name);
 
 #endif
 

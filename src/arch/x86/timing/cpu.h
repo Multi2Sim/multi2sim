@@ -26,6 +26,8 @@
 
 /* Forward declarations */
 CLASS_FORWARD_DECLARATION(X86Core);
+CLASS_FORWARD_DECLARATION(X86Cpu);
+CLASS_FORWARD_DECLARATION(X86Emu);
 struct x86_uop_t;
 
 
@@ -109,6 +111,7 @@ extern int x86_trace_category;
 
 
 /* Fast access macros */
+/* FIXME ------ remove below ----------- */
 #define X86_CORE  (*x86_cpu->cores[core])
 #define X86_THREAD  (*X86_CORE.threads[thread])
 #define X86_CORE_IDX(x)  (*x86_cpu->cores[(x)])
@@ -116,6 +119,9 @@ extern int x86_trace_category;
 #define X86_CORE_THREAD_IDX(x, y)  (*x86_cpu->cores[(x)]->threads[(y)])
 #define X86_CORE_FOR_EACH  for (core = 0; core < x86_cpu_num_cores; core++)
 #define X86_THREAD_FOR_EACH  for (thread = 0; thread < x86_cpu_num_threads; thread++)
+
+extern X86Cpu *x86_cpu;
+
 
 
 
@@ -133,8 +139,6 @@ void x86_cpu_update_occupancy_stats(void);
 void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop);
 void x86_cpu_uop_trace_list_empty(void);
 
-void x86_cpu_run_stages(void);
-
 
 
 
@@ -143,6 +147,9 @@ void x86_cpu_run_stages(void);
  */
 
 CLASS_BEGIN(X86Cpu, Timing)
+
+	/* Associated emulator */
+	X86Emu *emu;
 
 	/* Array of cores */
 	X86Core **cores;
@@ -181,22 +188,19 @@ CLASS_BEGIN(X86Cpu, Timing)
 CLASS_END(X86Cpu)
 
 
-void X86CpuCreate(X86Cpu *self);
+void X86CpuCreate(X86Cpu *self, X86Emu *emu);
 void X86CpuDestroy(X86Cpu *self);
 
 void X86CpuDump(Object *self, FILE *f);
 void X86CpuDumpSummary(Timing *self, FILE *f);
+void X86CpuDumpReport(X86Cpu *self, FILE *f);
+void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats,
+		char *prefix, int peak_ipc);
 
 int X86CpuRun(Timing *self);
+void X86CpuRunStages(X86Cpu *self);
 
-
-
-
-/*
- * Public
- */
-
-extern X86Cpu *x86_cpu;
+void X86CpuFastForward(X86Cpu *self);
 
 
 #endif

@@ -30,6 +30,7 @@
 #include <lib/util/file.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
+#include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
 #include <mem-system/prefetch-history.h>
@@ -391,51 +392,6 @@ static void x86_cpu_config_dump(FILE *f)
 }
 
 
-static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix, int peak_ipc)
-{
-	long long uinst_int_count = 0;
-	long long uinst_logic_count = 0;
-	long long uinst_fp_count = 0;
-	long long uinst_mem_count = 0;
-	long long uinst_ctrl_count = 0;
-	long long uinst_total = 0;
-
-	char *name;
-	enum x86_uinst_flag_t flags;
-	int i;
-
-	for (i = 0; i < x86_uinst_opcode_count; i++)
-	{
-		name = x86_uinst_info[i].name;
-		flags = x86_uinst_info[i].flags;
-
-		fprintf(f, "%s.Uop.%s = %lld\n", prefix, name, uop_stats[i]);
-		if (flags & X86_UINST_INT)
-			uinst_int_count += uop_stats[i];
-		if (flags & X86_UINST_LOGIC)
-			uinst_logic_count += uop_stats[i];
-		if (flags & X86_UINST_FP)
-			uinst_fp_count += uop_stats[i];
-		if (flags & X86_UINST_MEM)
-			uinst_mem_count += uop_stats[i];
-		if (flags & X86_UINST_CTRL)
-			uinst_ctrl_count += uop_stats[i];
-		uinst_total += uop_stats[i];
-	}
-	fprintf(f, "%s.Integer = %lld\n", prefix, uinst_int_count);
-	fprintf(f, "%s.Logic = %lld\n", prefix, uinst_logic_count);
-	fprintf(f, "%s.FloatingPoint = %lld\n", prefix, uinst_fp_count);
-	fprintf(f, "%s.Memory = %lld\n", prefix, uinst_mem_count);
-	fprintf(f, "%s.Ctrl = %lld\n", prefix, uinst_ctrl_count);
-	fprintf(f, "%s.WndSwitch = %lld\n", prefix, uop_stats[x86_uinst_call] + uop_stats[x86_uinst_ret]);
-	fprintf(f, "%s.Total = %lld\n", prefix, uinst_total);
-	fprintf(f, "%s.IPC = %.4g\n", prefix, asTiming(x86_cpu)->cycle ? (double) uinst_total / asTiming(x86_cpu)->cycle : 0.0);
-	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, asTiming(x86_cpu)->cycle && peak_ipc ?
-		(double) uinst_total / asTiming(x86_cpu)->cycle / peak_ipc : 0.0);
-	fprintf(f, "\n");
-}
-
-
 #define DUMP_DISPATCH_STAT(NAME) { \
 	fprintf(f, "Dispatch.Stall." #NAME " = %lld\n", X86_CORE.dispatch_stall[x86_dispatch_stall_##NAME]); \
 }
@@ -456,197 +412,6 @@ static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix,
 	fprintf(f, #NAME ".Full = %lld\n", X86_THREAD.ITEM##_full); \
 	fprintf(f, #NAME ".Reads = %lld\n", X86_THREAD.ITEM##_reads); \
 	fprintf(f, #NAME ".Writes = %lld\n", X86_THREAD.ITEM##_writes); \
-}
-
-
-static void x86_cpu_dump_report(void)
-{
-	FILE *f;
-	int core, thread;
-
-	long long now;
-
-	/* Open file */
-	f = file_open_for_write(x86_cpu_report_file_name);
-	if (!f)
-		return;
-	
-	/* Get CPU timer value */
-	now = m2s_timer_get_value(asEmu(x86_emu)->timer);
-
-	/* Dump CPU configuration */
-	fprintf(f, ";\n; CPU Configuration\n;\n\n");
-	x86_cpu_config_dump(f);
-	
-	/* Report for the complete processor */
-	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	fprintf(f, "; Global statistics\n");
-	fprintf(f, "[ Global ]\n\n");
-	fprintf(f, "Cycles = %lld\n", asTiming(x86_cpu)->cycle);
-	fprintf(f, "Time = %.2f\n", (double) now / 1000000);
-	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) asTiming(x86_cpu)->cycle / now * 1000000 : 0.0);
-	fprintf(f, "MemoryUsed = %lu\n", (long) mem_mapped_space);
-	fprintf(f, "MemoryUsedMax = %lu\n", (long) mem_max_mapped_space);
-	fprintf(f, "\n");
-
-	/* Dispatch stage */
-	fprintf(f, "; Dispatch stage\n");
-	x86_cpu_dump_uop_report(f, x86_cpu->num_dispatched_uinst_array, "Dispatch", x86_cpu_dispatch_width);
-
-	/* Issue stage */
-	fprintf(f, "; Issue stage\n");
-	x86_cpu_dump_uop_report(f, x86_cpu->num_issued_uinst_array, "Issue", x86_cpu_issue_width);
-
-	/* Commit stage */
-	fprintf(f, "; Commit stage\n");
-	x86_cpu_dump_uop_report(f, x86_cpu->num_committed_uinst_array, "Commit", x86_cpu_commit_width);
-
-	/* Committed branches */
-	fprintf(f, "; Committed branches\n");
-	fprintf(f, ";    Branches - Number of committed control uops\n");
-	fprintf(f, ";    Squashed - Number of mispredicted uops squashed from the ROB\n");
-	fprintf(f, ";    Mispred - Number of mispredicted branches in the correct path\n");
-	fprintf(f, ";    PredAcc - Prediction accuracy\n");
-	fprintf(f, "Commit.Branches = %lld\n", x86_cpu->num_branch_uinst);
-	fprintf(f, "Commit.Squashed = %lld\n", x86_cpu->num_squashed_uinst);
-	fprintf(f, "Commit.Mispred = %lld\n", x86_cpu->num_mispred_branch_uinst);
-	fprintf(f, "Commit.PredAcc = %.4g\n", x86_cpu->num_branch_uinst ?
-		(double) (x86_cpu->num_branch_uinst - x86_cpu->num_mispred_branch_uinst) / x86_cpu->num_branch_uinst : 0.0);
-	fprintf(f, "\n");
-	
-	/* Report for each core */
-	X86_CORE_FOR_EACH
-	{
-		/* Core */
-		fprintf(f, "\n; Statistics for core %d\n", core);
-		fprintf(f, "[ c%d ]\n\n", core);
-
-		/* Functional units */
-		x86_fu_dump_report(X86_CORE.fu, f);
-
-		/* Dispatch slots */
-		if (x86_cpu_dispatch_kind == x86_cpu_dispatch_kind_timeslice)
-		{
-			fprintf(f, "; Dispatch slots usage (sum = cycles * dispatch width)\n");
-			fprintf(f, ";    used - dispatch slot was used by a non-spec uop\n");
-			fprintf(f, ";    spec - used by a mispeculated uop\n");
-			fprintf(f, ";    ctx - no context allocated to thread\n");
-			fprintf(f, ";    uopq,rob,iq,lsq,rename - no space in structure\n");
-			DUMP_DISPATCH_STAT(used);
-			DUMP_DISPATCH_STAT(spec);
-			DUMP_DISPATCH_STAT(uop_queue);
-			DUMP_DISPATCH_STAT(rob);
-			DUMP_DISPATCH_STAT(iq);
-			DUMP_DISPATCH_STAT(lsq);
-			DUMP_DISPATCH_STAT(rename);
-			DUMP_DISPATCH_STAT(ctx);
-			fprintf(f, "\n");
-		}
-
-		/* Dispatch stage */
-		fprintf(f, "; Dispatch stage\n");
-		x86_cpu_dump_uop_report(f, X86_CORE.num_dispatched_uinst_array, "Dispatch", x86_cpu_dispatch_width);
-
-		/* Issue stage */
-		fprintf(f, "; Issue stage\n");
-		x86_cpu_dump_uop_report(f, X86_CORE.num_issued_uinst_array, "Issue", x86_cpu_issue_width);
-
-		/* Commit stage */
-		fprintf(f, "; Commit stage\n");
-		x86_cpu_dump_uop_report(f, X86_CORE.num_committed_uinst_array, "Commit", x86_cpu_commit_width);
-
-		/* Committed branches */
-		fprintf(f, "; Committed branches\n");
-		fprintf(f, "Commit.Branches = %lld\n", X86_CORE.num_branch_uinst);
-		fprintf(f, "Commit.Squashed = %lld\n", X86_CORE.num_squashed_uinst);
-		fprintf(f, "Commit.Mispred = %lld\n", X86_CORE.num_mispred_branch_uinst);
-		fprintf(f, "Commit.PredAcc = %.4g\n", X86_CORE.num_branch_uinst ?
-			(double) (X86_CORE.num_branch_uinst - X86_CORE.num_mispred_branch_uinst) / X86_CORE.num_branch_uinst : 0.0);
-		fprintf(f, "\n");
-
-		/* Occupancy stats */
-		fprintf(f, "; Structure statistics (reorder buffer, instruction queue,\n");
-		fprintf(f, "; load-store queue, and integer/floating-point register file)\n");
-		fprintf(f, ";    Size - Available size\n");
-		fprintf(f, ";    Occupancy - Average number of occupied entries\n");
-		fprintf(f, ";    Full - Number of cycles when the structure was full\n");
-		fprintf(f, ";    Reads, Writes - Accesses to the structure\n");
-		if (x86_rob_kind == x86_rob_kind_shared)
-			DUMP_CORE_STRUCT_STATS(ROB, rob);
-		if (x86_iq_kind == x86_iq_kind_shared)
-		{
-			DUMP_CORE_STRUCT_STATS(IQ, iq);
-			fprintf(f, "IQ.WakeupAccesses = %lld\n", X86_CORE.iq_wakeup_accesses);
-		}
-		if (x86_lsq_kind == x86_lsq_kind_shared)
-			DUMP_CORE_STRUCT_STATS(LSQ, lsq);
-		if (x86_reg_file_kind == x86_reg_file_kind_shared)
-		{
-			DUMP_CORE_STRUCT_STATS(RF_Int, reg_file_int);
-			DUMP_CORE_STRUCT_STATS(RF_Fp, reg_file_fp);
-		}
-		fprintf(f, "\n");
-
-		/* Report for each thread */
-		X86_THREAD_FOR_EACH
-		{
-			fprintf(f, "\n; Statistics for core %d - thread %d\n", core, thread);
-			fprintf(f, "[ c%dt%d ]\n\n", core, thread);
-
-			/* Dispatch stage */
-			fprintf(f, "; Dispatch stage\n");
-			x86_cpu_dump_uop_report(f, X86_THREAD.num_dispatched_uinst_array, "Dispatch", x86_cpu_dispatch_width);
-
-			/* Issue stage */
-			fprintf(f, "; Issue stage\n");
-			x86_cpu_dump_uop_report(f, X86_THREAD.num_issued_uinst_array, "Issue", x86_cpu_issue_width);
-
-			/* Commit stage */
-			fprintf(f, "; Commit stage\n");
-			x86_cpu_dump_uop_report(f, X86_THREAD.num_committed_uinst_array, "Commit", x86_cpu_commit_width);
-
-			/* Committed branches */
-			fprintf(f, "; Committed branches\n");
-			fprintf(f, "Commit.Branches = %lld\n", X86_THREAD.num_branch_uinst);
-			fprintf(f, "Commit.Squashed = %lld\n", X86_THREAD.num_squashed_uinst);
-			fprintf(f, "Commit.Mispred = %lld\n", X86_THREAD.num_mispred_branch_uinst);
-			fprintf(f, "Commit.PredAcc = %.4g\n", X86_THREAD.num_branch_uinst ?
-				(double) (X86_THREAD.num_branch_uinst - X86_THREAD.num_mispred_branch_uinst) / X86_THREAD.num_branch_uinst : 0.0);
-			fprintf(f, "\n");
-
-			/* Occupancy stats */
-			fprintf(f, "; Structure statistics (reorder buffer, instruction queue, load-store queue,\n");
-			fprintf(f, "; integer/floating-point register file, and renaming table)\n");
-			if (x86_rob_kind == x86_rob_kind_private)
-				DUMP_THREAD_STRUCT_STATS(ROB, rob);
-			if (x86_iq_kind == x86_iq_kind_private)
-			{
-				DUMP_THREAD_STRUCT_STATS(IQ, iq);
-				fprintf(f, "IQ.WakeupAccesses = %lld\n", X86_THREAD.iq_wakeup_accesses);
-			}
-			if (x86_lsq_kind == x86_lsq_kind_private)
-				DUMP_THREAD_STRUCT_STATS(LSQ, lsq);
-			if (x86_reg_file_kind == x86_reg_file_kind_private)
-			{
-				DUMP_THREAD_STRUCT_STATS(RF_Int, reg_file_int);
-				DUMP_THREAD_STRUCT_STATS(RF_Fp, reg_file_fp);
-			}
-			fprintf(f, "RAT.IntReads = %lld\n", X86_THREAD.rat_int_reads);
-			fprintf(f, "RAT.IntWrites = %lld\n", X86_THREAD.rat_int_writes);
-			fprintf(f, "RAT.FpReads = %lld\n", X86_THREAD.rat_fp_reads);
-			fprintf(f, "RAT.FpWrites = %lld\n", X86_THREAD.rat_fp_writes);
-			fprintf(f, "BTB.Reads = %lld\n", X86_THREAD.btb_reads);
-			fprintf(f, "BTB.Writes = %lld\n", X86_THREAD.btb_writes);
-			fprintf(f, "\n");
-
-			/* Trace cache stats */
-			if (X86_THREAD.trace_cache)
-				x86_trace_cache_dump_report(X86_THREAD.trace_cache, f);
-		}
-	}
-
-	/* Close */
-	fclose(f);
 }
 
 
@@ -779,7 +544,7 @@ void x86_cpu_init(void)
 	x86_trace_category = trace_new_category();
 
 	/* Create CPU */
-	x86_cpu = new(X86Cpu);
+	x86_cpu = new(X86Cpu, x86_emu);
 
 	/* Components of an x86 CPU */
 	x86_reg_file_init();
@@ -801,11 +566,8 @@ void x86_cpu_init(void)
 
 
 /* Finalization */
-void x86_cpu_done()
+void x86_cpu_done(void)
 {
-	/* Dump CPU report */
-	x86_cpu_dump_report();
-
 	/* Uop trace list */
 	x86_cpu_uop_trace_list_empty();
 	linked_list_free(x86_cpu->uop_trace_list);
@@ -914,43 +676,6 @@ void x86_cpu_uop_trace_list_empty(void)
 }
 
 
-void x86_cpu_run_stages()
-{
-	/* Context scheduler */
-	x86_cpu_schedule();
-
-	/* Stages */
-	x86_cpu_commit();
-	x86_cpu_writeback();
-	x86_cpu_issue();
-	x86_cpu_dispatch();
-	x86_cpu_decode();
-	x86_cpu_fetch();
-
-	/* Update stats for structures occupancy */
-	if (x86_cpu_occupancy_stats)
-		x86_cpu_update_occupancy_stats();
-}
-
-
-/* Run fast-forward simulation */
-void x86_cpu_run_fast_forward(void)
-{
-	/* Fast-forward simulation. Run 'x86_cpu_fast_forward' iterations of the x86
-	 * emulation loop until any simulation end reason is detected. */
-	while (asEmu(x86_emu)->instructions < x86_cpu_fast_forward_count && !esim_finish)
-		X86EmuRun(asEmu(x86_emu));
-
-	/* Record number of instructions in fast-forward execution. */
-	x86_cpu->num_fast_forward_inst = asEmu(x86_emu)->instructions;
-
-	/* Output warning if simulation finished during fast-forward execution. */
-	if (esim_finish)
-		warning("x86 fast-forwarding finished simulation.\n%s",
-				x86_cpu_err_fast_forward);
-}
-
-
 
 /*
  * Class 'X86Cpu'
@@ -959,9 +684,15 @@ void x86_cpu_run_fast_forward(void)
 CLASS_IMPLEMENTATION(X86Cpu);
 
 
-void X86CpuCreate(X86Cpu *self)
+void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 {
+	X86Core *core;
+	X86Thread *thread;
+
+	char name[MAX_STRING_SIZE];
+
 	int i;
+	int j;
 
 	/* Parent */
 	TimingCreate(asTiming(self));
@@ -970,13 +701,31 @@ void X86CpuCreate(X86Cpu *self)
 	asTiming(self)->frequency = x86_cpu_frequency;
 	asTiming(self)->frequency_domain = esim_new_domain(x86_cpu_frequency);
 
-	/* Misc */
+	/* Initialize */
+	self->emu = emu;
 	self->uop_trace_list = linked_list_create();
 
 	/* Create cores */
 	self->cores = xcalloc(x86_cpu_num_cores, sizeof(X86Core *));
 	for (i = 0; i < x86_cpu_num_cores; i++)
 		self->cores[i] = new(X86Core, self);
+
+	/* Assign names and IDs to cores and threads */
+	for (i = 0; i < x86_cpu_num_cores; i++)
+	{
+		core = self->cores[i];
+		snprintf(name, sizeof name, "c%d", i);
+		X86CoreSetName(core, name);
+		core->id = i;
+		for (j = 0; j < x86_cpu_num_threads; j++)
+		{
+			thread = core->threads[j];
+			snprintf(name, sizeof name, "c%dt%d", i, j);
+			X86ThreadSetName(thread, name);
+			thread->id_in_core = j;
+			thread->id_in_cpu = i * x86_cpu_num_threads + j;
+		}
+	}
 
 	/* Virtual functions */
 	asObject(self)->Dump = X86CpuDump;
@@ -991,6 +740,15 @@ void X86CpuCreate(X86Cpu *self)
 void X86CpuDestroy(X86Cpu *self)
 {
 	int i;
+	FILE *f;
+
+	/* Dump report */
+	f = file_open_for_write(x86_cpu_report_file_name);
+	if (f)
+	{
+		X86CpuDumpReport(self, f);
+		fclose(f);
+	}
 
 	/* Free cores */
 	for (i = 0; i < x86_cpu_num_cores; i++)
@@ -1092,18 +850,259 @@ void X86CpuDumpSummary(Timing *self, FILE *f)
 }
 
 
+void X86CpuDumpReport(X86Cpu *self, FILE *f)
+{
+	X86Emu *emu = self->emu;
+	int core, thread;
+
+	long long now;
+
+	/* Get CPU timer value */
+	now = m2s_timer_get_value(asEmu(emu)->timer);
+
+	/* Dump CPU configuration */
+	fprintf(f, ";\n; CPU Configuration\n;\n\n");
+	x86_cpu_config_dump(f);
+
+	/* Report for the complete processor */
+	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
+	fprintf(f, "; Global statistics\n");
+	fprintf(f, "[ Global ]\n\n");
+	fprintf(f, "Cycles = %lld\n", asTiming(x86_cpu)->cycle);
+	fprintf(f, "Time = %.2f\n", (double) now / 1000000);
+	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) asTiming(x86_cpu)->cycle / now * 1000000 : 0.0);
+	fprintf(f, "MemoryUsed = %lu\n", (long) mem_mapped_space);
+	fprintf(f, "MemoryUsedMax = %lu\n", (long) mem_max_mapped_space);
+	fprintf(f, "\n");
+
+	/* Dispatch stage */
+	fprintf(f, "; Dispatch stage\n");
+	X86CpuDumpUopReport(self, f, x86_cpu->num_dispatched_uinst_array,
+			"Dispatch", x86_cpu_dispatch_width);
+
+	/* Issue stage */
+	fprintf(f, "; Issue stage\n");
+	X86CpuDumpUopReport(self, f, x86_cpu->num_issued_uinst_array,
+			"Issue", x86_cpu_issue_width);
+
+	/* Commit stage */
+	fprintf(f, "; Commit stage\n");
+	X86CpuDumpUopReport(self, f, x86_cpu->num_committed_uinst_array,
+			"Commit", x86_cpu_commit_width);
+
+	/* Committed branches */
+	fprintf(f, "; Committed branches\n");
+	fprintf(f, ";    Branches - Number of committed control uops\n");
+	fprintf(f, ";    Squashed - Number of mispredicted uops squashed from the ROB\n");
+	fprintf(f, ";    Mispred - Number of mispredicted branches in the correct path\n");
+	fprintf(f, ";    PredAcc - Prediction accuracy\n");
+	fprintf(f, "Commit.Branches = %lld\n", x86_cpu->num_branch_uinst);
+	fprintf(f, "Commit.Squashed = %lld\n", x86_cpu->num_squashed_uinst);
+	fprintf(f, "Commit.Mispred = %lld\n", x86_cpu->num_mispred_branch_uinst);
+	fprintf(f, "Commit.PredAcc = %.4g\n", x86_cpu->num_branch_uinst ?
+		(double) (x86_cpu->num_branch_uinst - x86_cpu->num_mispred_branch_uinst) / x86_cpu->num_branch_uinst : 0.0);
+	fprintf(f, "\n");
+
+	/* Report for each core */
+	X86_CORE_FOR_EACH
+	{
+		/* Core */
+		fprintf(f, "\n; Statistics for core %d\n", core);
+		fprintf(f, "[ c%d ]\n\n", core);
+
+		/* Functional units */
+		x86_fu_dump_report(X86_CORE.fu, f);
+
+		/* Dispatch slots */
+		if (x86_cpu_dispatch_kind == x86_cpu_dispatch_kind_timeslice)
+		{
+			fprintf(f, "; Dispatch slots usage (sum = cycles * dispatch width)\n");
+			fprintf(f, ";    used - dispatch slot was used by a non-spec uop\n");
+			fprintf(f, ";    spec - used by a mispeculated uop\n");
+			fprintf(f, ";    ctx - no context allocated to thread\n");
+			fprintf(f, ";    uopq,rob,iq,lsq,rename - no space in structure\n");
+			DUMP_DISPATCH_STAT(used);
+			DUMP_DISPATCH_STAT(spec);
+			DUMP_DISPATCH_STAT(uop_queue);
+			DUMP_DISPATCH_STAT(rob);
+			DUMP_DISPATCH_STAT(iq);
+			DUMP_DISPATCH_STAT(lsq);
+			DUMP_DISPATCH_STAT(rename);
+			DUMP_DISPATCH_STAT(ctx);
+			fprintf(f, "\n");
+		}
+
+		/* Dispatch stage */
+		fprintf(f, "; Dispatch stage\n");
+		X86CpuDumpUopReport(self, f, X86_CORE.num_dispatched_uinst_array,
+				"Dispatch", x86_cpu_dispatch_width);
+
+		/* Issue stage */
+		fprintf(f, "; Issue stage\n");
+		X86CpuDumpUopReport(self, f, X86_CORE.num_issued_uinst_array,
+				"Issue", x86_cpu_issue_width);
+
+		/* Commit stage */
+		fprintf(f, "; Commit stage\n");
+		X86CpuDumpUopReport(self, f, X86_CORE.num_committed_uinst_array,
+				"Commit", x86_cpu_commit_width);
+
+		/* Committed branches */
+		fprintf(f, "; Committed branches\n");
+		fprintf(f, "Commit.Branches = %lld\n", X86_CORE.num_branch_uinst);
+		fprintf(f, "Commit.Squashed = %lld\n", X86_CORE.num_squashed_uinst);
+		fprintf(f, "Commit.Mispred = %lld\n", X86_CORE.num_mispred_branch_uinst);
+		fprintf(f, "Commit.PredAcc = %.4g\n", X86_CORE.num_branch_uinst ?
+				(double) (X86_CORE.num_branch_uinst -
+				X86_CORE.num_mispred_branch_uinst)
+				/ X86_CORE.num_branch_uinst : 0.0);
+		fprintf(f, "\n");
+
+		/* Occupancy stats */
+		fprintf(f, "; Structure statistics (reorder buffer, instruction queue,\n");
+		fprintf(f, "; load-store queue, and integer/floating-point register file)\n");
+		fprintf(f, ";    Size - Available size\n");
+		fprintf(f, ";    Occupancy - Average number of occupied entries\n");
+		fprintf(f, ";    Full - Number of cycles when the structure was full\n");
+		fprintf(f, ";    Reads, Writes - Accesses to the structure\n");
+		if (x86_rob_kind == x86_rob_kind_shared)
+			DUMP_CORE_STRUCT_STATS(ROB, rob);
+		if (x86_iq_kind == x86_iq_kind_shared)
+		{
+			DUMP_CORE_STRUCT_STATS(IQ, iq);
+			fprintf(f, "IQ.WakeupAccesses = %lld\n", X86_CORE.iq_wakeup_accesses);
+		}
+		if (x86_lsq_kind == x86_lsq_kind_shared)
+			DUMP_CORE_STRUCT_STATS(LSQ, lsq);
+		if (x86_reg_file_kind == x86_reg_file_kind_shared)
+		{
+			DUMP_CORE_STRUCT_STATS(RF_Int, reg_file_int);
+			DUMP_CORE_STRUCT_STATS(RF_Fp, reg_file_fp);
+		}
+		fprintf(f, "\n");
+
+		/* Report for each thread */
+		X86_THREAD_FOR_EACH
+		{
+			fprintf(f, "\n; Statistics for core %d - thread %d\n", core, thread);
+			fprintf(f, "[ c%dt%d ]\n\n", core, thread);
+
+			/* Dispatch stage */
+			fprintf(f, "; Dispatch stage\n");
+			X86CpuDumpUopReport(self, f, X86_THREAD.num_dispatched_uinst_array,
+					"Dispatch", x86_cpu_dispatch_width);
+
+			/* Issue stage */
+			fprintf(f, "; Issue stage\n");
+			X86CpuDumpUopReport(self, f, X86_THREAD.num_issued_uinst_array,
+					"Issue", x86_cpu_issue_width);
+
+			/* Commit stage */
+			fprintf(f, "; Commit stage\n");
+			X86CpuDumpUopReport(self, f, X86_THREAD.num_committed_uinst_array,
+					"Commit", x86_cpu_commit_width);
+
+			/* Committed branches */
+			fprintf(f, "; Committed branches\n");
+			fprintf(f, "Commit.Branches = %lld\n", X86_THREAD.num_branch_uinst);
+			fprintf(f, "Commit.Squashed = %lld\n", X86_THREAD.num_squashed_uinst);
+			fprintf(f, "Commit.Mispred = %lld\n", X86_THREAD.num_mispred_branch_uinst);
+			fprintf(f, "Commit.PredAcc = %.4g\n", X86_THREAD.num_branch_uinst ?
+				(double) (X86_THREAD.num_branch_uinst - X86_THREAD.num_mispred_branch_uinst) / X86_THREAD.num_branch_uinst : 0.0);
+			fprintf(f, "\n");
+
+			/* Occupancy stats */
+			fprintf(f, "; Structure statistics (reorder buffer, instruction queue, load-store queue,\n");
+			fprintf(f, "; integer/floating-point register file, and renaming table)\n");
+			if (x86_rob_kind == x86_rob_kind_private)
+				DUMP_THREAD_STRUCT_STATS(ROB, rob);
+			if (x86_iq_kind == x86_iq_kind_private)
+			{
+				DUMP_THREAD_STRUCT_STATS(IQ, iq);
+				fprintf(f, "IQ.WakeupAccesses = %lld\n", X86_THREAD.iq_wakeup_accesses);
+			}
+			if (x86_lsq_kind == x86_lsq_kind_private)
+				DUMP_THREAD_STRUCT_STATS(LSQ, lsq);
+			if (x86_reg_file_kind == x86_reg_file_kind_private)
+			{
+				DUMP_THREAD_STRUCT_STATS(RF_Int, reg_file_int);
+				DUMP_THREAD_STRUCT_STATS(RF_Fp, reg_file_fp);
+			}
+			fprintf(f, "RAT.IntReads = %lld\n", X86_THREAD.rat_int_reads);
+			fprintf(f, "RAT.IntWrites = %lld\n", X86_THREAD.rat_int_writes);
+			fprintf(f, "RAT.FpReads = %lld\n", X86_THREAD.rat_fp_reads);
+			fprintf(f, "RAT.FpWrites = %lld\n", X86_THREAD.rat_fp_writes);
+			fprintf(f, "BTB.Reads = %lld\n", X86_THREAD.btb_reads);
+			fprintf(f, "BTB.Writes = %lld\n", X86_THREAD.btb_writes);
+			fprintf(f, "\n");
+
+			/* Trace cache stats */
+			if (X86_THREAD.trace_cache)
+				x86_trace_cache_dump_report(X86_THREAD.trace_cache, f);
+		}
+	}
+}
+
+
+void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats,
+		char *prefix, int peak_ipc)
+{
+	long long uinst_int_count = 0;
+	long long uinst_logic_count = 0;
+	long long uinst_fp_count = 0;
+	long long uinst_mem_count = 0;
+	long long uinst_ctrl_count = 0;
+	long long uinst_total = 0;
+
+	char *name;
+	enum x86_uinst_flag_t flags;
+	int i;
+
+	for (i = 0; i < x86_uinst_opcode_count; i++)
+	{
+		name = x86_uinst_info[i].name;
+		flags = x86_uinst_info[i].flags;
+
+		fprintf(f, "%s.Uop.%s = %lld\n", prefix, name, uop_stats[i]);
+		if (flags & X86_UINST_INT)
+			uinst_int_count += uop_stats[i];
+		if (flags & X86_UINST_LOGIC)
+			uinst_logic_count += uop_stats[i];
+		if (flags & X86_UINST_FP)
+			uinst_fp_count += uop_stats[i];
+		if (flags & X86_UINST_MEM)
+			uinst_mem_count += uop_stats[i];
+		if (flags & X86_UINST_CTRL)
+			uinst_ctrl_count += uop_stats[i];
+		uinst_total += uop_stats[i];
+	}
+	fprintf(f, "%s.Integer = %lld\n", prefix, uinst_int_count);
+	fprintf(f, "%s.Logic = %lld\n", prefix, uinst_logic_count);
+	fprintf(f, "%s.FloatingPoint = %lld\n", prefix, uinst_fp_count);
+	fprintf(f, "%s.Memory = %lld\n", prefix, uinst_mem_count);
+	fprintf(f, "%s.Ctrl = %lld\n", prefix, uinst_ctrl_count);
+	fprintf(f, "%s.WndSwitch = %lld\n", prefix, uop_stats[x86_uinst_call] + uop_stats[x86_uinst_ret]);
+	fprintf(f, "%s.Total = %lld\n", prefix, uinst_total);
+	fprintf(f, "%s.IPC = %.4g\n", prefix, asTiming(x86_cpu)->cycle ? (double) uinst_total / asTiming(x86_cpu)->cycle : 0.0);
+	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, asTiming(x86_cpu)->cycle && peak_ipc ?
+		(double) uinst_total / asTiming(x86_cpu)->cycle / peak_ipc : 0.0);
+	fprintf(f, "\n");
+}
+
+
 int X86CpuRun(Timing *self)
 {
 	X86Cpu *cpu = asX86Cpu(self);
+	X86Emu *emu = cpu->emu;
 
 	/* Stop if no context is running */
-	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
+	if (emu->finished_list_count >= emu->context_list_count)
 		return FALSE;
 
 	/* Fast-forward simulation */
-	if (x86_cpu_fast_forward_count && asEmu(x86_emu)->instructions
+	if (x86_cpu_fast_forward_count && asEmu(emu)->instructions
 			< x86_cpu_fast_forward_count)
-		x86_cpu_run_fast_forward();
+		X86CpuFastForward(cpu);
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && cpu->num_committed_inst >=
@@ -1111,7 +1110,7 @@ int X86CpuRun(Timing *self)
 		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
-	if (x86_emu_max_cycles && asTiming(x86_cpu)->cycle >= x86_emu_max_cycles)
+	if (x86_emu_max_cycles && self->cycle >= x86_emu_max_cycles)
 		esim_finish = esim_finish_x86_max_cycles;
 
 	/* Stop if any previous reason met */
@@ -1126,13 +1125,50 @@ int X86CpuRun(Timing *self)
 	x86_cpu_uop_trace_list_empty();
 
 	/* Processor stages */
-	x86_cpu_run_stages();
+	X86CpuRunStages(cpu);
 
 	/* Process host threads generating events */
-	X86EmuProcessEvents(x86_emu);
+	X86EmuProcessEvents(emu);
 
 	/* Still simulating */
 	return TRUE;
 }
 
 
+void X86CpuRunStages(X86Cpu *self)
+{
+	/* Context scheduler */
+	X86CpuSchedule(self);
+
+	/* Stages */
+	x86_cpu_commit();
+	x86_cpu_writeback();
+	x86_cpu_issue();
+	x86_cpu_dispatch();
+	x86_cpu_decode();
+	x86_cpu_fetch();
+
+	/* Update stats for structures occupancy */
+	if (x86_cpu_occupancy_stats)
+		x86_cpu_update_occupancy_stats();
+}
+
+
+/* Run fast-forward simulation */
+void X86CpuFastForward(X86Cpu *self)
+{
+	X86Emu *emu = self->emu;
+
+	/* Fast-forward simulation. Run 'x86_cpu_fast_forward' iterations of the x86
+	 * emulation loop until any simulation end reason is detected. */
+	while (asEmu(emu)->instructions < x86_cpu_fast_forward_count && !esim_finish)
+		X86EmuRun(asEmu(emu));
+
+	/* Record number of instructions in fast-forward execution. */
+	x86_cpu->num_fast_forward_inst = asEmu(emu)->instructions;
+
+	/* Output warning if simulation finished during fast-forward execution. */
+	if (esim_finish)
+		warning("x86 fast-forwarding finished simulation.\n%s",
+				x86_cpu_err_fast_forward);
+}

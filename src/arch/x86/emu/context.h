@@ -122,8 +122,8 @@ CLASS_BEGIN(X86Context, Object)
 
 	/* If context is in state 'mapped', these two variables represent the
 	 * node (core/thread) associated with the context. */
-	int core;
-	int thread;
+	int core_index;
+	int thread_index;
 
 
 

@@ -27,6 +27,7 @@
 /* Forward declarations */
 CLASS_FORWARD_DECLARATION(X86Context);
 CLASS_FORWARD_DECLARATION(X86Core);
+CLASS_FORWARD_DECLARATION(X86Cpu);
 
 
 
@@ -35,6 +36,17 @@ CLASS_FORWARD_DECLARATION(X86Core);
  */
 
 CLASS_BEGIN(X86Thread, Object)
+
+	/* Core and CPU that it belongs to */
+	X86Core *core;
+	X86Cpu *cpu;
+
+	/* IDs */
+	int id_in_core;
+	int id_in_cpu;
+
+	/* Name */
+	char *name;
 
 	/* Context currently running in this thread. This is a context present
 	 * in the thread's 'mapped' list. */
@@ -144,6 +156,11 @@ CLASS_END(X86Thread)
 
 void X86ThreadCreate(X86Thread *self, X86Core *core);
 void X86ThreadDestroy(X86Thread *self);
+
+void X86ThreadSetName(X86Thread *self, char *name);
+
+int X86ThreadIsPipelineEmpty(X86Thread *self);
+
 
 #endif
 
