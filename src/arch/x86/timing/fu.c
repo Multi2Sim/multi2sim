@@ -79,9 +79,7 @@ void X86CoreDumpFunctionalUnitsReport(X86Core *self, FILE *f)
 int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 {
 	enum x86_fu_class_t fu_class;
-
-	int core = uop->core;
-	struct x86_fu_t *fu = X86_CORE.fu;
+	struct x86_fu_t *fu = self->fu;
 
 	int i;
 

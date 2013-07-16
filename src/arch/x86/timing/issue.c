@@ -180,7 +180,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n",
-			load->id_in_core, load->core);
+			load->id_in_core, core->id);
 	}
 	
 	return quant;
@@ -271,7 +271,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n",
-			prefetch->id_in_core, prefetch->core);
+			prefetch->id_in_core, core->id);
 	}
 	
 	return quantum;
@@ -343,7 +343,7 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n",
-			uop->id_in_core, uop->core);
+			uop->id_in_core, core->id);
 	}
 	
 	return quant;

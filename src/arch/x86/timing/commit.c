@@ -54,7 +54,6 @@ static char *err_commit_stall =
 int X86ThreadCanCommit(X86Thread *self)
 {
 	X86Cpu *cpu = self->cpu;
-	X86Core *core = self->core;
 	X86Context *ctx = self->ctx;
 	struct x86_uop_t *uop;
 
@@ -77,7 +76,7 @@ int X86ThreadCanCommit(X86Thread *self)
 	/* Get instruction from ROB head */
 	uop = X86ThreadGetROBHead(self);
 	assert(x86_uop_exists(uop));
-	assert(uop->core == core->id && uop->thread == self->id_in_core);
+	assert(uop->thread == self);
 
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
 	 * if the call to 'X86ThreadIsUopReady' shows input registers to be ready. */
@@ -109,8 +108,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		/* Get instruction at the head of the ROB */
 		uop = X86ThreadGetROBHead(self);
 		assert(x86_uop_exists(uop));
-		assert(uop->core == core->id);
-		assert(uop->thread == self->id_in_core);
+		assert(uop->thread == self);
 		assert(!recover);
 		
 		/* Mispredicted branch */
@@ -162,7 +160,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		if (x86_tracing())
 		{
 			x86_trace("x86.inst id=%lld core=%d stg=\"co\"\n",
-				uop->id_in_core, uop->core);
+				uop->id_in_core, core->id);
 			x86_cpu_uop_trace_list_add(uop);
 		}
 

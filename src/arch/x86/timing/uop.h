@@ -21,6 +21,16 @@
 #define X86_ARCH_TIMING_UOP_H
 
 #include <arch/x86/emu/uinst.h>
+#include <lib/util/class.h>
+
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Thread);
+
+
+/*
+ * Object 'x86_uop_t'
+ */
 
 struct x86_uop_t
 {
@@ -33,10 +43,9 @@ struct x86_uop_t
 	long long id;  /* Unique ID */
 	long long id_in_core;  /* Unique ID in core */
 
-	/* Context info */
+	/* Software context and hardware thread where uop belongs */
 	X86Context *ctx;
-	int core;
-	int thread;
+	X86Thread *thread;
 
 	/* Fetch info */
 	unsigned int eip;  /* Address of x86 macro-instruction */

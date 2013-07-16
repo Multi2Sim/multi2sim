@@ -122,7 +122,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"di\"\n",
-			uop->id_in_core, uop->core);
+			uop->id_in_core, core->id);
 
 	}
 

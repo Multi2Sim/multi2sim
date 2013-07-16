@@ -78,13 +78,14 @@ struct x86_uop_t *X86ThreadRemoveFromFetchQueue(X86Thread *self, int index)
 
 void X86ThreadRecoverFetchQueue(X86Thread *self)
 {
+	X86Core *core = self->core;
 	struct list_t *fetchq = self->fetch_queue;
 	struct x86_uop_t *uop;
 
 	while (list_count(fetchq))
 	{
 		uop = list_get(fetchq, list_count(fetchq) - 1);
-		assert(uop->thread == self->id_in_core);
+		assert(uop->thread == self);
 		if (!uop->specmode)
 			break;
 		uop = X86ThreadRemoveFromFetchQueue(self, list_count(fetchq) - 1);
@@ -93,7 +94,7 @@ void X86ThreadRecoverFetchQueue(X86Thread *self)
 		if (x86_tracing())
 		{
 			x86_trace("x86.inst id=%lld core=%d stg=\"sq\"\n",
-				uop->id_in_core, uop->core);
+				uop->id_in_core, core->id);
 			x86_cpu_uop_trace_list_add(uop);
 		}
 

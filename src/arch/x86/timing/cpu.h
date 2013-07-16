@@ -137,7 +137,6 @@ void x86_cpu_done(void);
 void x86_cpu_update_occupancy_stats(void);
 
 void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop);
-void x86_cpu_uop_trace_list_empty(void);
 
 
 
@@ -199,8 +198,9 @@ void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats,
 
 int X86CpuRun(Timing *self);
 void X86CpuRunStages(X86Cpu *self);
-
 void X86CpuFastForward(X86Cpu *self);
+
+void X86CpuEmptyTraceList(X86Cpu *self);
 
 
 #endif

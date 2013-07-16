@@ -98,8 +98,7 @@ int X86ThreadCanInsertInLSQ(X86Thread *self, struct x86_uop_t *uop)
 	int count;
 	int size;
 
-	assert(uop->core == core->id);
-	assert(uop->thread == self->id_in_core);
+	assert(uop->thread == self);
 	size = x86_lsq_kind == x86_lsq_kind_private ? x86_lsq_size : x86_lsq_size * x86_cpu_num_threads;
 	count = x86_lsq_kind == x86_lsq_kind_private ? self->lsq_count : core->lsq_count;
 	return count < size;

@@ -39,6 +39,8 @@
 
 static void X86ThreadDecode(X86Thread *self)
 {
+	X86Core *core = self->core;
+
 	struct list_t *fetchq = self->fetch_queue;
 	struct list_t *uopq = self->uop_queue;
 	struct x86_uop_t *uop;
@@ -83,7 +85,7 @@ static void X86ThreadDecode(X86Thread *self)
 
 				/* Trace */
 				x86_trace("x86.inst id=%lld core=%d stg=\"dec\"\n",
-					uop->id_in_core, uop->core);
+					uop->id_in_core, core->id);
 
 				/* Next */
 				uop = list_get(fetchq, 0);

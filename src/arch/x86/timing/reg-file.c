@@ -179,8 +179,7 @@ int X86ThreadCanRenameUop(X86Thread *self, struct x86_uop_t *uop)
 	X86Core *core = self->core;
 
 	/* Detect negative cases. */
-	assert(uop->core == core->id);
-	assert(uop->thread == self->id_in_core);
+	assert(uop->thread == self);
 	if (x86_reg_file_kind == x86_reg_file_kind_private)
 	{
 		if (self->reg_file_int_count + uop->ph_int_odep_count > x86_reg_file_int_local_size)
@@ -264,16 +263,13 @@ int X86ThreadRequestXMMReg(X86Thread *self)
 
 void X86ThreadRenameUop(X86Thread *self, struct x86_uop_t *uop)
 {
-	X86Core *core = self->core;
-
 	int dep;
 	int loreg, streg, phreg, ophreg;
 	int flag_phreg, flag_count;
 	struct x86_reg_file_t *reg_file = self->reg_file;
 
 	/* Checks */
-	assert(uop->core == core->id);
-	assert(uop->thread == self->id_in_core);
+	assert(uop->thread == self);
 
 	/* Update floating-point top of stack */
 	if (uop->uinst->opcode == x86_uinst_fp_pop)
@@ -416,8 +412,7 @@ int X86ThreadIsUopReady(X86Thread *self, struct x86_uop_t *uop)
 	int phreg;
 	int dep;
 	
-	assert(uop->core == self->core->id);
-	assert(uop->thread == self->id_in_core);
+	assert(uop->thread == self);
 	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++)
 	{
 		loreg = uop->uinst->idep[dep];
@@ -459,8 +454,7 @@ void X86ThreadWriteUop(X86Thread *self, struct x86_uop_t *uop)
 	int loreg;
 	int phreg;
 
-	assert(uop->core == self->core->id);
-	assert(uop->thread == self->id_in_core);
+	assert(uop->thread == self);
 	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
 	{
 		loreg = uop->uinst->odep[dep];
@@ -488,8 +482,7 @@ void X86ThreadUndoUop(X86Thread *self, struct x86_uop_t *uop)
 
 	/* Undo mappings in reverse order, in case an instruction has a
 	 * duplicated output dependence. */
-	assert(uop->core == core->id);
-	assert(uop->thread == self->id_in_core);
+	assert(uop->thread == self);
 	assert(uop->specmode);
 	for (dep = X86_UINST_MAX_ODEPS - 1; dep >= 0; dep--)
 	{
@@ -591,8 +584,7 @@ void X86ThreadCommitUop(X86Thread *self, struct x86_uop_t *uop)
 	int dep, loreg, phreg, ophreg;
 
 	assert(!uop->specmode);
-	assert(uop->core == core->id);
-	assert(uop->thread == self->id_in_core);
+	assert(uop->thread == self);
 	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
 	{
 		loreg = uop->uinst->odep[dep];
