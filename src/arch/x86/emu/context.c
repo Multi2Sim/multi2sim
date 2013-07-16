@@ -195,7 +195,8 @@ void X86ContextDestroy(X86Context *self)
 
 	/* Remove context from contexts list and free */
 	DOUBLE_LINKED_LIST_REMOVE(emu, context, self);
-	X86ContextDebug("#%lld context %d freed\n", asTiming(x86_cpu)->cycle, self->pid);
+	X86ContextDebug("inst %lld: context %d freed\n",
+			asEmu(emu)->instructions, self->pid);
 }
 
 
@@ -372,8 +373,8 @@ static void X86ContextUpdateState(X86Context *self, X86ContextState state)
 	if (debug_status(x86_context_debug_category) && (status_diff & ~X86ContextSpecMode))
 	{
 		str_map_flags(&x86_context_state_map, self->state, state_str, sizeof state_str);
-		X86ContextDebug("#%lld ctx %d changed state to %s\n",
-			asTiming(x86_cpu)->cycle, self->pid, state_str);
+		X86ContextDebug("inst %lld: ctx %d changed state to %s\n",
+			asEmu(emu)->instructions, self->pid, state_str);
 	}
 
 	/* Start/stop x86 timer depending on whether there are any contexts

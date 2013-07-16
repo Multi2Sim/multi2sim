@@ -79,6 +79,8 @@ struct x86_uop_t *X86ThreadRemoveFromFetchQueue(X86Thread *self, int index)
 void X86ThreadRecoverFetchQueue(X86Thread *self)
 {
 	X86Core *core = self->core;
+	X86Cpu *cpu = self->cpu;
+
 	struct list_t *fetchq = self->fetch_queue;
 	struct x86_uop_t *uop;
 
@@ -95,7 +97,7 @@ void X86ThreadRecoverFetchQueue(X86Thread *self)
 		{
 			x86_trace("x86.inst id=%lld core=%d stg=\"sq\"\n",
 				uop->id_in_core, core->id);
-			x86_cpu_uop_trace_list_add(uop);
+			X86CpuAddToTraceList(cpu, uop);
 		}
 
 		/* Free */

@@ -78,6 +78,8 @@ void X86CoreDumpFunctionalUnitsReport(X86Core *self, FILE *f)
  * be reserved. */
 int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 {
+	X86Cpu *cpu = self->cpu;
+
 	enum x86_fu_class_t fu_class;
 	struct x86_fu_t *fu = self->fu;
 
@@ -92,18 +94,21 @@ int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop)
 
 	/* First time uop tries to reserve f.u. */
 	if (!uop->issue_try_when)
-		uop->issue_try_when = asTiming(x86_cpu)->cycle;
+		uop->issue_try_when = asTiming(cpu)->cycle;
 
 	/* Find a free f.u. */
 	assert(fu_class > x86_fu_none && fu_class < x86_fu_count);
 	assert(x86_fu_res_pool[fu_class].count <= X86_FU_RES_MAX);
-	for (i = 0; i < x86_fu_res_pool[fu_class].count; i++) {
-		if (fu->cycle_when_free[fu_class][i] <= asTiming(x86_cpu)->cycle) {
+	for (i = 0; i < x86_fu_res_pool[fu_class].count; i++)
+	{
+		if (fu->cycle_when_free[fu_class][i] <= asTiming(cpu)->cycle)
+		{
 			assert(x86_fu_res_pool[fu_class].issuelat > 0);
 			assert(x86_fu_res_pool[fu_class].oplat > 0);
-			fu->cycle_when_free[fu_class][i] = asTiming(x86_cpu)->cycle + x86_fu_res_pool[fu_class].issuelat;
+			fu->cycle_when_free[fu_class][i] = asTiming(cpu)->cycle
+					+ x86_fu_res_pool[fu_class].issuelat;
 			fu->accesses[fu_class]++;
-			fu->waiting_time[fu_class] += asTiming(x86_cpu)->cycle - uop->issue_try_when;
+			fu->waiting_time[fu_class] += asTiming(cpu)->cycle - uop->issue_try_when;
 			return x86_fu_res_pool[fu_class].oplat;
 		}
 	}
