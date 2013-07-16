@@ -22,6 +22,7 @@
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
+#include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/asm/input.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
@@ -500,7 +501,7 @@ static int opengl_abi_si_program_create_impl(X86Context *ctx)
 
 	/* Create program */
 	program = opengl_si_program_create(program_id);
-	opengl_debug("\tnew program ID = %d\n", program->id);
+	opengl_debug("\tnew program_id = %d\n", program->id);
 
 	/* Return program ID */
 	return program->id;
@@ -577,7 +578,7 @@ static int opengl_abi_si_program_set_binary_impl(X86Context *ctx)
 	program_id = regs->ecx;
 	bin_ptr = regs->edx;
 	bin_size = regs->esi;
-	opengl_debug("\tprogram_id=%d, bin_ptr=0x%x, size=%u\n",
+	opengl_debug("\tprogram_id = %d, bin_ptr = 0x%x, size = %u\n",
 			program_id, bin_ptr, bin_size);
 
 	/* Get program */
@@ -625,11 +626,14 @@ static int opengl_abi_si_shader_create_impl(X86Context *ctx)
 	opengl_debug("\tprogram_id=%d, shader_id=%d, type=%x\n", program_id, shader_id, shader_type);
 
 	/* Create a shader object, will be initialized with shaders in program object */
-	opengl_si_shader_create(shader_id, shader_type);
 	program = list_get(opengl_si_program_list, program_id);
 	if (program)
+	{
+		opengl_si_shader_create(shader_id, shader_type);	
 		opengl_si_shader_init(program, shader_id);
-	
+	}
+
+	/* Return */	
 	return 0;
 }
 
@@ -777,8 +781,8 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	global_offset_ptr = regs->esi;
 	global_size_ptr = regs->edi;
 	local_size_ptr = regs->ebp;
-	opengl_debug("\tshader_id=%d, work_dim=%d\n", shader_id, work_dim);
-	opengl_debug("\tglobal_offset_ptr=0x%x, global_size_ptr=0x%x, "
+	opengl_debug("\tshader_id = %d, work_dim = %d\n", shader_id, work_dim);
+	opengl_debug("\tglobal_offset_ptr = 0x%x, global_size_ptr = 0x%x, "
 		"local_size_ptr=0x%x\n", global_offset_ptr, global_size_ptr, 
 		local_size_ptr);
 	
@@ -801,7 +805,7 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 
 	/* Create ND-Range */
 	ndrange = si_ndrange_create();
-	// ndrange->local_mem_top = shader->mem_size_local;
+	ndrange->local_mem_top = shader->mem_size_local;
 	ndrange->num_sgpr_used = shader->shader_bin->
 		shader_enc_dict->num_sgpr_used;
 	ndrange->num_vgpr_used = shader->shader_bin->

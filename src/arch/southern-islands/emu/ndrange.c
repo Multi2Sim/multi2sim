@@ -212,7 +212,7 @@ void si_ndrange_insert_buffer_into_const_buf_table(struct si_ndrange_t *ndrange,
 	assert(const_buf_num < SI_EMU_MAX_NUM_CONST_BUFS);
 	assert(sizeof(*buf_desc) <= SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE);
 
-	/* Write the buffer resource descriptor into the UAV table */
+	/* Write the buffer resource descriptor into the constant buffer table */
 	mem_write(si_emu->global_mem, ndrange->const_buf_table +
 		const_buf_num*SI_EMU_CONST_BUF_TABLE_ENTRY_SIZE, 
 		sizeof(*buf_desc), buf_desc);
