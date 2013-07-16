@@ -18,6 +18,7 @@
  */
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/string.h>
 
 #include "core.h"
 #include "cpu.h"
@@ -34,6 +35,9 @@ void X86CoreCreate(X86Core *self, X86Cpu *cpu)
 {
 	int i;
 
+	/* Initialize */
+	self->cpu = cpu;
+
 	/* Create threads */
 	self->threads = xcalloc(x86_cpu_num_threads, sizeof(X86Thread *));
 	for (i = 0; i < x86_cpu_num_threads; i++)
@@ -48,6 +52,9 @@ void X86CoreDestroy(X86Core *self)
 {
 	int i;
 
+	/* Name */
+	self->name = str_free(self->name);
+
 	/* Free threads */
 	for (i = 0; i < x86_cpu_num_threads; i++)
 		delete(self->threads[i]);
@@ -57,3 +64,8 @@ void X86CoreDestroy(X86Core *self)
 	prefetch_history_free(self->prefetch_history);
 }
 
+
+void X86CoreSetName(X86Core *self, char *name)
+{
+	self->name = str_set(self->name, name);
+}
