@@ -20,13 +20,20 @@
 #ifndef X86_ARCH_TIMING_UOP_QUEUE_H
 #define X86_ARCH_TIMING_UOP_QUEUE_H
 
-
+/*
+ * Public
+ */
 extern int x86_uop_queue_size;
 
-void x86_uop_queue_init(void);
-void x86_uop_queue_done(void);
 
-void x86_uop_queue_recover(int core, int thread);
+
+/*
+ * Class 'X86Thread'
+ */
+
+void X86ThreadInitUopQueue(X86Thread *self);
+void X86ThreadFreeUopQueue(X86Thread *self);
+void X86ThreadRecoverUopQueue(X86Thread *self);
 
 #endif
 

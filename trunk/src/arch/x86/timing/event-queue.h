@@ -21,14 +21,25 @@
 #define X86_ARCH_TIMING_EVENT_QUEUE_H
 
 
-void x86_event_queue_init(void);
-void x86_event_queue_done(void);
+/*
+ * Class 'X86Core'
+ */
 
-int x86_event_queue_long_latency(int core, int thread);
-int x86_event_queue_cache_miss(int core, int thread);
-void x86_event_queue_insert(struct linked_list_t *event_queue, struct x86_uop_t *uop);
-struct x86_uop_t *x86_event_queue_extract(struct linked_list_t *event_queue);
-void x86_event_queue_recover(int core, int thread);
+void X86CoreInitEventQueue(X86Core *self);
+void X86CoreFreeEventQueue(X86Core *self);
+
+void X86CoreInsertInEventQueue(X86Core *self, struct x86_uop_t *uop);
+struct x86_uop_t *X86CoreExtractFromEventQueue(X86Core *self);
+
+
+
+/*
+ * Class 'X86Thread'
+ */
+
+int X86ThreadLongLatencyInEventQueue(X86Thread *self);
+int X86ThreadCacheMissInEventQueue(X86Thread *self);
+void X86ThreadRecoverEventQueue(X86Thread *self);
 
 
 #endif

@@ -53,10 +53,10 @@ void X86ThreadRecover(X86Thread *self)
 	/* Remove instructions of this thread in fetch queue, uop queue,
 	 * instruction queue, store queue, load queue, and event queue. */
 	x86_fetch_queue_recover(core->id, self->id_in_core);
-	x86_uop_queue_recover(core->id, self->id_in_core);
+	X86ThreadRecoverUopQueue(self);
 	x86_iq_recover(core->id, self->id_in_core);
 	x86_lsq_recover(core->id, self->id_in_core);
-	x86_event_queue_recover(core->id, self->id_in_core);
+	X86ThreadRecoverEventQueue(self);
 
 	/* Remove instructions from ROB, restoring the state of the
 	 * physical register file. */

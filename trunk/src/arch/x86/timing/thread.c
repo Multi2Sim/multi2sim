@@ -43,11 +43,18 @@ void X86ThreadCreate(X86Thread *self, X86Core *core)
 	/* Initialize */
 	self->core = core;
 	self->cpu = core->cpu;
+
+	/* Structures */
+	X86ThreadInitUopQueue(self);
 }
 
 
 void X86ThreadDestroy(X86Thread *self)
 {
+	/* Structures */
+	X86ThreadFreeUopQueue(self);
+
+	/* Finalize */
 	self->name = str_free(self->name);
 }
 

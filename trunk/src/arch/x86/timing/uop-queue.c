@@ -32,45 +32,37 @@
 int x86_uop_queue_size;
 
 
-void x86_uop_queue_init()
+void X86ThreadInitUopQueue(X86Thread *self)
 {
-	int core;
-	int thread;
-
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
-		X86_THREAD.uop_queue = list_create_with_size(x86_uop_queue_size);
+	self->uop_queue = list_create_with_size(x86_uop_queue_size);
 }
 
 
-void x86_uop_queue_done()
+void X86ThreadFreeUopQueue(X86Thread *self)
 {
-	int core, thread;
 	struct list_t *uop_queue;
 	struct x86_uop_t *uop;
 
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+	uop_queue = self->uop_queue;
+	while (list_count(uop_queue))
 	{
-		uop_queue = X86_THREAD.uop_queue;
-		while (list_count(uop_queue))
-		{
-			uop = list_remove_at(uop_queue, 0);
-			uop->in_uop_queue = 0;
-			x86_uop_free_if_not_queued(uop);
-		}
-		list_free(uop_queue);
+		uop = list_remove_at(uop_queue, 0);
+		uop->in_uop_queue = 0;
+		x86_uop_free_if_not_queued(uop);
 	}
+	list_free(uop_queue);
 }
 
 
-void x86_uop_queue_recover(int core, int thread)
+void X86ThreadRecoverUopQueue(X86Thread *self)
 {
-	struct list_t *uop_queue = X86_THREAD.uop_queue;
+	struct list_t *uop_queue = self->uop_queue;
 	struct x86_uop_t *uop;
 
 	while (list_count(uop_queue))
 	{
 		uop = list_get(uop_queue, list_count(uop_queue) - 1);
-		assert(uop->thread == thread);
+		assert(uop->thread == self->id_in_core);
 		if (!uop->specmode)
 			break;
 		list_remove_at(uop_queue, list_count(uop_queue) - 1);

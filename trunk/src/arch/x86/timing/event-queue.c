@@ -30,25 +30,27 @@
 #include "uop.h"
 
 
-void x86_event_queue_init()
-{
-	int core;
 
-	X86_CORE_FOR_EACH
-		X86_CORE.event_queue = linked_list_create();
+/*
+ * Class 'X86Core'
+ */
+
+void X86CoreInitEventQueue(X86Core *self)
+{
+	self->event_queue = linked_list_create();
 }
 
 
-void x86_event_queue_done()
+void X86CoreFreeEventQueue(X86Core *self)
 {
-	int core;
+	struct x86_uop_t *uop;
 
-	X86_CORE_FOR_EACH
+	while (linked_list_count(self->event_queue))
 	{
-		while (linked_list_count(X86_CORE.event_queue))
-			x86_uop_free_if_not_queued(x86_event_queue_extract(X86_CORE.event_queue));
-		linked_list_free(X86_CORE.event_queue);
+		uop = X86CoreExtractFromEventQueue(self);
+		x86_uop_free_if_not_queued(uop);
 	}
+	linked_list_free(self->event_queue);
 }
 
 
@@ -61,47 +63,15 @@ static int eventq_compare(const void *item1, const void *item2)
 }
 
 
-int x86_event_queue_long_latency(int core, int thread)
+void X86CoreInsertInEventQueue(X86Core *self, struct x86_uop_t *uop)
 {
-	struct linked_list_t *event_queue = X86_CORE.event_queue;
-	struct x86_uop_t *uop;
-	
-	LINKED_LIST_FOR_EACH(event_queue)
-	{
-		uop = linked_list_get(event_queue);
-		if (uop->thread != thread)
-			continue;
-		if (asTiming(x86_cpu)->cycle - uop->issue_when > 20)
-			return 1;
-	}
-	return 0;
-}
-
-
-int x86_event_queue_cache_miss(int core, int thread)
-{
-	struct linked_list_t *event_queue = X86_CORE.event_queue;
-	struct x86_uop_t *uop;
-
-	LINKED_LIST_FOR_EACH(event_queue)
-	{
-		uop = linked_list_get(event_queue);
-		if (uop->thread != thread || uop->uinst->opcode != x86_uinst_load)
-			continue;
-		if (asTiming(x86_cpu)->cycle - uop->issue_when > 5)
-			return 1;
-	}
-	return 0;
-}
-
-
-void x86_event_queue_insert(struct linked_list_t *event_queue, struct x86_uop_t *uop)
-{
+	struct linked_list_t *event_queue = self->event_queue;
 	struct x86_uop_t *item;
 
 	assert(!uop->in_event_queue);
 	linked_list_head(event_queue);
-	for (;;) {
+	for (;;)
+	{
 		item = linked_list_get(event_queue);
 		if (!item || eventq_compare(uop, item) < 0)
 			break;
@@ -112,8 +82,9 @@ void x86_event_queue_insert(struct linked_list_t *event_queue, struct x86_uop_t 
 }
 
 
-struct x86_uop_t *x86_event_queue_extract(struct linked_list_t *event_queue)
+struct x86_uop_t *X86CoreExtractFromEventQueue(X86Core *self)
 {
+	struct linked_list_t *event_queue = self->event_queue;
 	struct x86_uop_t *uop;
 
 	if (!linked_list_count(event_queue))
@@ -129,16 +100,65 @@ struct x86_uop_t *x86_event_queue_extract(struct linked_list_t *event_queue)
 }
 
 
-void x86_event_queue_recover(int core, int thread)
+
+
+/*
+ * Class 'X86Thread'
+ */
+
+int X86ThreadLongLatencyInEventQueue(X86Thread *self)
 {
-	struct linked_list_t *event_queue = X86_CORE.event_queue;
+	X86Cpu *cpu = self->cpu;
+	X86Core *core = self->core;
+
+	struct linked_list_t *event_queue = core->event_queue;
+	struct x86_uop_t *uop;
+	
+	LINKED_LIST_FOR_EACH(event_queue)
+	{
+		uop = linked_list_get(event_queue);
+		if (uop->thread != self->id_in_core)
+			continue;
+		if (asTiming(cpu)->cycle - uop->issue_when > 20)
+			return 1;
+	}
+	return 0;
+}
+
+
+int X86ThreadCacheMissInEventQueue(X86Thread *self)
+{
+	X86Cpu *cpu = self->cpu;
+	X86Core *core = self->core;
+
+	struct linked_list_t *event_queue = core->event_queue;
+	struct x86_uop_t *uop;
+
+	LINKED_LIST_FOR_EACH(event_queue)
+	{
+		uop = linked_list_get(event_queue);
+		if (uop->thread != self->id_in_core ||
+				uop->uinst->opcode != x86_uinst_load)
+			continue;
+		if (asTiming(cpu)->cycle - uop->issue_when > 5)
+			return 1;
+	}
+	return 0;
+}
+
+
+void X86ThreadRecoverEventQueue(X86Thread *self)
+{
+	X86Core *core = self->core;
+
+	struct linked_list_t *event_queue = core->event_queue;
 	struct x86_uop_t *uop;
 
 	linked_list_head(event_queue);
 	while (!linked_list_is_end(event_queue))
 	{
 		uop = linked_list_get(event_queue);
-		if (uop->thread == thread && uop->specmode)
+		if (uop->thread == self->id_in_core && uop->specmode)
 		{
 			linked_list_remove(event_queue);
 			uop->in_event_queue = 0;
