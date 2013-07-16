@@ -46,14 +46,13 @@ static int x86_rob_total_size = 0;
 
 
 /*
- * Class 'X86Cpu'
+ * Class 'X86Core'
  */
 
 
-void X86CpuInitROB(X86Cpu *self)
+void X86CoreInitROB(X86Core *self)
 {
-	int core;
-	int thread;
+	X86Thread *thread;
 	int i;
 
 	switch (x86_rob_kind)
@@ -62,15 +61,13 @@ void X86CpuInitROB(X86Cpu *self)
 	case x86_rob_kind_private:
 
 		/* Initialization */
-		for (core = 0; core < x86_cpu_num_cores; core++)
+		for (i = 0; i < x86_cpu_num_threads; i++)
 		{
-			for (thread = 0; thread < x86_cpu_num_threads; thread++)
-			{
-				x86_cpu->cores[core]->threads[thread]->rob_left_bound = thread * x86_rob_size;
-				x86_cpu->cores[core]->threads[thread]->rob_right_bound = (thread + 1) * x86_rob_size - 1;
-				x86_cpu->cores[core]->threads[thread]->rob_head = x86_cpu->cores[core]->threads[thread]->rob_left_bound;
-				x86_cpu->cores[core]->threads[thread]->rob_tail = x86_cpu->cores[core]->threads[thread]->rob_left_bound;
-			}
+			thread = self->threads[i];
+			thread->rob_left_bound = i * x86_rob_size;
+			thread->rob_right_bound = (i + 1) * x86_rob_size - 1;
+			thread->rob_head = thread->rob_left_bound;
+			thread->rob_tail = thread->rob_left_bound;
 		}
 
 		break;
@@ -81,51 +78,30 @@ void X86CpuInitROB(X86Cpu *self)
 
 	/* Create ROBs */
 	x86_rob_total_size = x86_rob_size * x86_cpu_num_threads;
-	for (core = 0; core < x86_cpu_num_cores; core++)
-	{
-		x86_cpu->cores[core]->rob = list_create_with_size(x86_rob_total_size);
-		for (i = 0; i < x86_rob_total_size; i++)
-			list_add(x86_cpu->cores[core]->rob, NULL);
-	}
+	self->rob = list_create_with_size(x86_rob_total_size);
+	for (i = 0; i < x86_rob_total_size; i++)
+		list_add(self->rob, NULL);
 }
 
 
-void X86CpuFreeROB(X86Cpu *self)
+void X86CoreFreeROB(X86Core *self)
 {
-	int core, i;
+	int i;
 	struct x86_uop_t *uop;
 
-	switch (x86_rob_kind)
+	assert(list_count(self->rob) == x86_rob_total_size);
+	for (i = 0; i < x86_rob_total_size; i++)
 	{
-	case x86_rob_kind_private:
-		break;
-	
-	case x86_rob_kind_shared:
-		break;
-	}
-
-	X86_CORE_FOR_EACH
-	{
-		assert(list_count(x86_cpu->cores[core]->rob) == x86_rob_total_size);
-		for (i = 0; i < x86_rob_total_size; i++)
+		uop = list_get(self->rob, i);
+		if (uop)
 		{
-			uop = list_get(x86_cpu->cores[core]->rob, i);
-			if (uop)
-			{
-				uop->in_rob = 0;
-				x86_uop_free_if_not_queued(uop);
-			}
+			uop->in_rob = 0;
+			x86_uop_free_if_not_queued(uop);
 		}
-		list_free(x86_cpu->cores[core]->rob);
 	}
+	list_free(self->rob);
 }
 
-
-
-
-/*
- * Class 'X86Core'
- */
 
 static void X86CoreTrimROB(X86Core *self)
 {
