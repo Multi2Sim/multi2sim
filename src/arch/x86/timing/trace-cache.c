@@ -34,62 +34,14 @@
 #include "thread.h"
 
 
-/* Debug */
-int x86_trace_cache_debug_category;
 
-/* Parameters */
-int x86_trace_cache_present;  /* Use trace cache */
-int x86_trace_cache_num_sets;  /* Number of sets */
-int x86_trace_cache_assoc;  /* Number of ways */
-int x86_trace_cache_trace_size;  /* Maximum number of uops in a trace */
-int x86_trace_cache_branch_max;  /* Maximum number of branches in a trace */
-int x86_trace_cache_queue_size;  /* Fetch queue for pre-decoded uops */
+/*
+ * Class 'X86Thread'
+ */
 
-
-void x86_trace_cache_read_config(struct config_t *config)
+void X86ThreadInitTraceCache(X86Thread *self)
 {
-	char *section;
-	char *file_name;
-
-	/* Section in configuration file */
-	section = "TraceCache";
-	file_name = config_get_file_name(config);
-
-	/* Read variables */
-	x86_trace_cache_present = config_read_bool(config, section, "Present", 0);
-	x86_trace_cache_num_sets = config_read_int(config, section, "Sets", 64);
-	x86_trace_cache_assoc = config_read_int(config, section, "Assoc", 4);
-	x86_trace_cache_trace_size = config_read_int(config, section, "TraceSize", 16);
-	x86_trace_cache_branch_max = config_read_int(config, section, "BranchMax", 3);
-	x86_trace_cache_queue_size = config_read_int(config, section, "QueueSize", 32);
-
-	/* Integrity checks */
-	if ((x86_trace_cache_num_sets & (x86_trace_cache_num_sets - 1)) || !x86_trace_cache_num_sets)
-		fatal("%s: %s: 'Sets' must be a power of 2 greater than 0",
-			file_name, section);
-	if ((x86_trace_cache_assoc & (x86_trace_cache_assoc - 1)) || !x86_trace_cache_assoc)
-		fatal("%s: %s: 'Assoc' must be a power of 2 greater than 0",
-			file_name, section);
-	if (!x86_trace_cache_trace_size)
-		fatal("%s: %s: Invalid value for 'TraceSize'",
-			file_name, section);
-	if (!x86_trace_cache_branch_max)
-		fatal("%s: %s: Invalid value for 'BranchMax'",
-			file_name, section);
-	if (x86_trace_cache_branch_max > x86_trace_cache_trace_size)
-		fatal("%s: %s: 'BranchMax' must be equal or less than 'TraceSize'",
-			file_name, section);
-	if (x86_trace_cache_branch_max > 31)
-		fatal("%s: %s: Maximum value for 'BranchMax' is 31",
-			file_name, section);
-}
-
-
-void x86_trace_cache_init(void)
-{
-	int core;
-	int thread;
-
+	X86Core *core = self->core;
 	char name[MAX_STRING_SIZE];
 
 	/* Trace cache present */
@@ -97,73 +49,27 @@ void x86_trace_cache_init(void)
 		return;
 
 	/* Initialization */
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
-	{
-		snprintf(name, sizeof name,"Core[%d].Thread[%d].TraceCache", core, thread);
-		X86_THREAD.trace_cache = x86_trace_cache_create(name, x86_cpu->cores[core]->threads[thread]);
-	}
+	snprintf(name, sizeof name,"Core[%d].Thread[%d].TraceCache",
+			core->id, self->id_in_core);
+	self->trace_cache = x86_trace_cache_create(name);
 }
 
 
-void x86_trace_cache_done(void)
+void X86ThreadFreeTraceCache(X86Thread *self)
 {
-	int core;
-	int thread;
-
 	/* Trace cache present */
 	if (!x86_trace_cache_present)
 		return;
 	
 	/* Finalization */
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
-		x86_trace_cache_free(X86_THREAD.trace_cache);
+	x86_trace_cache_free(self->trace_cache);
 }
 
 
-struct x86_trace_cache_t *x86_trace_cache_create(char *name, X86Thread *thread)
+void X86ThreadDumpTraceCacheReport(X86Thread *self, FILE *f)
 {
-	struct x86_trace_cache_t *trace_cache;
-	struct x86_trace_cache_entry_t *entry;
+	struct x86_trace_cache_t *trace_cache = self->trace_cache;
 
-	int set;
-	int way;
-
-	/* Initialize */
-	trace_cache = xcalloc(1, sizeof(struct x86_trace_cache_t));
-	trace_cache->thread = thread;
-
-	/* Entries */
-	trace_cache->name = xstrdup(name);
-	trace_cache->entry = xcalloc(x86_trace_cache_num_sets * x86_trace_cache_assoc,
-		X86_TRACE_CACHE_ENTRY_SIZE);
-	trace_cache->temp = xcalloc(1, X86_TRACE_CACHE_ENTRY_SIZE);
-
-	/* Initialize LRU counter */
-	for (set = 0; set < x86_trace_cache_num_sets; set++)
-	{
-		for (way = 0; way < x86_trace_cache_assoc; way++)
-		{
-			entry = X86_TRACE_CACHE_ENTRY(set, way);
-			entry->counter = way;
-		}
-	}
-
-	/* Return */
-	return trace_cache;
-}
-
-
-void x86_trace_cache_free(struct x86_trace_cache_t *trace_cache)
-{
-	free(trace_cache->name);
-	free(trace_cache->entry);
-	free(trace_cache->temp);
-	free(trace_cache);
-}
-
-
-void x86_trace_cache_dump_report(struct x86_trace_cache_t *trace_cache, FILE *f)
-{
 	fprintf(f, "; Trace cache - parameters\n");
 	fprintf(f, "TraceCache.Sets = %d\n", x86_trace_cache_num_sets);
 	fprintf(f, "TraceCache.Assoc = %d\n", x86_trace_cache_assoc);
@@ -207,7 +113,7 @@ static void x86_trace_cache_pred_dump(int pred, int num, FILE *f)
 
 
 /* Dump trace line */
-static void x86_trace_cache_entry_dump(struct x86_trace_cache_t *trace_cache,
+static void X86ThraceDumpTraceCacheEntry(X86Thread *self,
 	struct x86_trace_cache_entry_t *entry, FILE *f)
 {
 	struct mem_t *mem;
@@ -215,8 +121,8 @@ static void x86_trace_cache_entry_dump(struct x86_trace_cache_t *trace_cache,
 	int i;
 
 	/* Get memory object for the thread */
-	assert(trace_cache->thread->ctx && trace_cache->thread->ctx->mem);
-	mem = trace_cache->thread->ctx->mem;
+	assert(self->ctx && self->ctx->mem);
+	mem = self->ctx->mem;
 
 	/* Tag and number of branches */
 	fprintf(f, "tag = 0x%x, ", entry->tag);
@@ -273,8 +179,9 @@ static void x86_trace_cache_entry_dump(struct x86_trace_cache_t *trace_cache,
 
 
 /* Flush temporary trace of committed instructions back into the trace cache */
-static void x86_trace_cache_flush(struct x86_trace_cache_t *trace_cache)
+static void X86ThreadFlushTraceCache(X86Thread *self)
 {
+	struct x86_trace_cache_t *trace_cache = self->trace_cache;
 	struct x86_trace_cache_entry_t *entry;
 	struct x86_trace_cache_entry_t *found_entry;
 	struct x86_trace_cache_entry_t *trace = trace_cache->temp;
@@ -359,7 +266,7 @@ static void x86_trace_cache_flush(struct x86_trace_cache_t *trace_cache)
 		f = debug_file(x86_trace_cache_debug_category);
 		fprintf(f, "** Commit trace **\n");
 		fprintf(f, "Set = %d, Way = %d\n", set, found_way);
-		x86_trace_cache_entry_dump(trace_cache, found_entry, f);
+		X86ThraceDumpTraceCacheEntry(self, found_entry, f);
 		fprintf(f, "\n");
 	}
 
@@ -369,8 +276,9 @@ static void x86_trace_cache_flush(struct x86_trace_cache_t *trace_cache)
 }
 
 
-void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_uop_t *uop)
+void X86ThreadRecordUopInTraceCache(X86Thread *self, struct x86_uop_t *uop)
 {
+	struct x86_trace_cache_t *trace_cache = self->trace_cache;
 	struct x86_trace_cache_entry_t *trace = trace_cache->temp;
 	int taken;
 
@@ -383,7 +291,7 @@ void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_u
 	assert(uop->eip);
 	assert(uop->id == uop->mop_id);
 	if (trace->uop_count + uop->mop_count > x86_trace_cache_trace_size)
-		x86_trace_cache_flush(trace_cache);
+		X86ThreadFlushTraceCache(self);
 
 	/* If even after flushing the current trace, the number of micro-instructions
 	 * does not fit in a trace line, this macro-instruction cannot be stored. */
@@ -411,14 +319,15 @@ void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_u
 		trace->branch_count++;
 		trace->target = uop->target_neip;
 		if (trace->branch_count == x86_trace_cache_branch_max)
-			x86_trace_cache_flush(trace_cache);
+			X86ThreadFlushTraceCache(self);
 	}
 }
 
 
-int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, unsigned int eip, int pred,
+int X86ThreadLookupTraceCache(X86Thread *self, unsigned int eip, int pred,
 	int *ptr_mop_count, unsigned int **ptr_mop_array, unsigned int *ptr_neip)
 {
+	struct x86_trace_cache_t *trace_cache = self->trace_cache;
 	struct x86_trace_cache_entry_t *entry;
 	struct x86_trace_cache_entry_t *found_entry;
 
@@ -477,7 +386,7 @@ int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, unsigned int e
 	{
 		f = debug_file(x86_trace_cache_debug_category);
 		fprintf(f, "Hit - Set = %d, Way = %d\n", set, way);
-		x86_trace_cache_entry_dump(trace_cache, found_entry, f);
+		X86ThraceDumpTraceCacheEntry(self, found_entry, f);
 		fprintf(f, "Next trace prediction = %c\n", taken ? 'T' : 'n');
 		fprintf(f, "Next fetch address = 0x%x\n", neip);
 		fprintf(f, "\n");
@@ -492,3 +401,104 @@ int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, unsigned int e
 	return 1;
 }
 
+
+
+
+/*
+ * Object 'x86_trace_cache_t'
+ */
+
+struct x86_trace_cache_t *x86_trace_cache_create(char *name)
+{
+	struct x86_trace_cache_t *trace_cache;
+	struct x86_trace_cache_entry_t *entry;
+
+	int set;
+	int way;
+
+	/* Initialize */
+	trace_cache = xcalloc(1, sizeof(struct x86_trace_cache_t));
+	trace_cache->name = xstrdup(name);
+	trace_cache->entry = xcalloc(x86_trace_cache_num_sets * x86_trace_cache_assoc,
+		X86_TRACE_CACHE_ENTRY_SIZE);
+	trace_cache->temp = xcalloc(1, X86_TRACE_CACHE_ENTRY_SIZE);
+
+	/* Initialize LRU counter */
+	for (set = 0; set < x86_trace_cache_num_sets; set++)
+	{
+		for (way = 0; way < x86_trace_cache_assoc; way++)
+		{
+			entry = X86_TRACE_CACHE_ENTRY(set, way);
+			entry->counter = way;
+		}
+	}
+
+	/* Return */
+	return trace_cache;
+}
+
+
+void x86_trace_cache_free(struct x86_trace_cache_t *trace_cache)
+{
+	free(trace_cache->name);
+	free(trace_cache->entry);
+	free(trace_cache->temp);
+	free(trace_cache);
+}
+
+
+
+
+/*
+ * Public
+ */
+
+/* Debug */
+int x86_trace_cache_debug_category;
+
+/* Parameters */
+int x86_trace_cache_present;  /* Use trace cache */
+int x86_trace_cache_num_sets;  /* Number of sets */
+int x86_trace_cache_assoc;  /* Number of ways */
+int x86_trace_cache_trace_size;  /* Maximum number of uops in a trace */
+int x86_trace_cache_branch_max;  /* Maximum number of branches in a trace */
+int x86_trace_cache_queue_size;  /* Fetch queue for pre-decoded uops */
+
+
+void X86ReadTraceCacheConfig(struct config_t *config)
+{
+	char *section;
+	char *file_name;
+
+	/* Section in configuration file */
+	section = "TraceCache";
+	file_name = config_get_file_name(config);
+
+	/* Read variables */
+	x86_trace_cache_present = config_read_bool(config, section, "Present", 0);
+	x86_trace_cache_num_sets = config_read_int(config, section, "Sets", 64);
+	x86_trace_cache_assoc = config_read_int(config, section, "Assoc", 4);
+	x86_trace_cache_trace_size = config_read_int(config, section, "TraceSize", 16);
+	x86_trace_cache_branch_max = config_read_int(config, section, "BranchMax", 3);
+	x86_trace_cache_queue_size = config_read_int(config, section, "QueueSize", 32);
+
+	/* Integrity checks */
+	if ((x86_trace_cache_num_sets & (x86_trace_cache_num_sets - 1)) || !x86_trace_cache_num_sets)
+		fatal("%s: %s: 'Sets' must be a power of 2 greater than 0",
+			file_name, section);
+	if ((x86_trace_cache_assoc & (x86_trace_cache_assoc - 1)) || !x86_trace_cache_assoc)
+		fatal("%s: %s: 'Assoc' must be a power of 2 greater than 0",
+			file_name, section);
+	if (!x86_trace_cache_trace_size)
+		fatal("%s: %s: Invalid value for 'TraceSize'",
+			file_name, section);
+	if (!x86_trace_cache_branch_max)
+		fatal("%s: %s: Invalid value for 'BranchMax'",
+			file_name, section);
+	if (x86_trace_cache_branch_max > x86_trace_cache_trace_size)
+		fatal("%s: %s: 'BranchMax' must be equal or less than 'TraceSize'",
+			file_name, section);
+	if (x86_trace_cache_branch_max > 31)
+		fatal("%s: %s: Maximum value for 'BranchMax' is 31",
+			file_name, section);
+}

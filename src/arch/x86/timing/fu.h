@@ -20,11 +20,36 @@
 #ifndef X86_ARCH_TIMING_FU_H
 #define X86_ARCH_TIMING_FU_H
 
+#include <lib/util/class.h>
+
 #include "uop.h"
 
 
-#define X86_FU_RES_MAX  10
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Core);
+struct config_t;
 
+
+/*
+ * Class 'X86Core'
+ */
+
+void X86CoreInitFunctionalUnits(X86Core *self);
+void X86CoreFreeFunctionalUnits(X86Core *self);
+
+void X86CoreDumpFunctionalUnitsReport(X86Core *self, FILE *f);
+
+int X86CoreReserveFunctionalUnit(X86Core *self, struct x86_uop_t *uop);
+void X86CoreReleaseAllFunctionalUnits(X86Core *self);
+
+
+
+
+/*
+ * Public
+ */
+
+#define X86_FU_RES_MAX  10
 
 /* WARNING:
  * For every entry in this enumeration, array 'x86_fu_name' should be modified
@@ -79,19 +104,12 @@ struct x86_fu_res_t
 	int issuelat;
 };
 
+extern char *x86_fu_name[x86_fu_count];
 extern struct x86_fu_res_t x86_fu_res_pool[x86_fu_count];
+extern enum x86_fu_class_t x86_fu_class_table[x86_uinst_opcode_count];
 
-void x86_fu_init(void);
-void x86_fu_done(void);
-
-int x86_fu_reserve(struct x86_uop_t *uop);
-void x86_fu_release(int core);
-
-struct config_t;
-void x86_fu_read_config(struct config_t *config);
-void x86_fu_config_dump(FILE *f);
-
-void x86_fu_dump_report(struct x86_fu_t *fu, FILE *f);
+void X86ReadFunctionalUnitsConfig(struct config_t *config);
+void X86DumpFunctionalUnitsConfig(FILE *f);
 
 
 #endif
