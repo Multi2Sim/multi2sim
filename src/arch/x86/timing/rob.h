@@ -43,17 +43,11 @@ extern int x86_rob_size;
 
 
 /*
- * Class 'X86Cpu'
- */
-
-void X86CpuInitROB(X86Cpu *self);
-void X86CpuFreeROB(X86Cpu *self);
-
-
-
-/*
  * Class 'X86Core'
  */
+
+void X86CoreInitROB(X86Core *self);
+void X86CoreFreeROB(X86Core *self);
 
 void X86CoreDumpROB(X86Core *self, FILE *f);
 int X86CoreCanEnqueueInROB(X86Core *self, struct x86_uop_t *uop);

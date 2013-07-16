@@ -416,8 +416,7 @@ static void X86CoreFetch(X86Core *self)
 		must_switch = !X86ThreadCanFetch(thread);
 		must_switch = must_switch || asTiming(cpu)->cycle - self->fetch_switch_when >
 			x86_cpu_thread_quantum + x86_cpu_thread_switch_penalty;
-		must_switch = must_switch ||
-			x86_event_queue_long_latency(self->id, thread->id_in_core);
+		must_switch = must_switch || X86ThreadLongLatencyInEventQueue(thread);
 
 		/* Switch thread */
 		if (must_switch)
@@ -442,7 +441,7 @@ static void X86CoreFetch(X86Core *self)
 					continue;
 
 				/* Choose it if it is not stalled */
-				if (!x86_event_queue_long_latency(self->id, new_index))
+				if (!X86ThreadLongLatencyInEventQueue(new_thread))
 					break;
 			}
 				

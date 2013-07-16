@@ -323,7 +323,7 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		uop->issued = 1;
 		uop->issue_when = asTiming(cpu)->cycle;
 		uop->when = asTiming(cpu)->cycle + lat;
-		x86_event_queue_insert(core->event_queue, uop);
+		X86CoreInsertInEventQueue(core, uop);
 		
 		/* Statistics */
 		core->num_issued_uinst_array[uop->uinst->opcode]++;

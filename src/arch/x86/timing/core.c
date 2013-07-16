@@ -22,6 +22,8 @@
 
 #include "core.h"
 #include "cpu.h"
+#include "event-queue.h"
+#include "rob.h"
 #include "thread.h"
 
 
@@ -45,6 +47,10 @@ void X86CoreCreate(X86Core *self, X86Cpu *cpu)
 
 	/* Prefetcher */
 	self->prefetch_history = prefetch_history_create();
+
+	/* Structures */
+	X86CoreInitROB(self);
+	X86CoreInitEventQueue(self);
 }
 
 
@@ -62,6 +68,10 @@ void X86CoreDestroy(X86Core *self)
 
 	/* Prefetcher */
 	prefetch_history_free(self->prefetch_history);
+
+	/* Structures */
+	X86CoreFreeROB(self);
+	X86CoreFreeEventQueue(self);
 }
 
 
