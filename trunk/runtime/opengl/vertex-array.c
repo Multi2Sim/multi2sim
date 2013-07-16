@@ -570,7 +570,6 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 	
 		syscall(OPENGL_SYSCALL_CODE, opengl_abi_si_ndrange_pass_mem_objs);
 
-
 		syscall(OPENGL_SYSCALL_CODE,
 			opengl_abi_si_ndrange_get_num_buffer_entries,
 			&max_work_groups_to_send);

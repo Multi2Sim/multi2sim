@@ -484,7 +484,7 @@ void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,
 			input->num_elems,
 			input->type, &buffer_desc);
 
-		printf("\tInput created, device_ptr=%d, size=%d, num_elems=%d, type=%x\n", 
+		opengl_debug("\tinput created, device_ptr = %d, size = %d, num_elems = %d, type = %x\n", 
 			input->device_ptr, input->size, input->num_elems, input->type);
 
 		/* Add to Vertex Buffer table */
