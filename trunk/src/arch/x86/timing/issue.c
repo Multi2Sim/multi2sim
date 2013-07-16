@@ -70,7 +70,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 			break;
 
 		/* Remove store from store queue */
-		x86_sq_remove(core->id, self->id_in_core);
+		X86ThreadRemoveFromSQ(self);
 
 		/* create and fill the mod_client_info_t object */
 		client_info = mod_client_info_create(self->data_mod);
@@ -141,7 +141,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 
 		/* Remove from load queue */
 		assert(load->uinst->opcode == x86_uinst_load);
-		x86_lq_remove(core->id, self->id_in_core);
+		X86ThreadRemoveFromLQ(self);
 
 		/* create and fill the mod_client_info_t object */
 		client_info = mod_client_info_create(self->data_mod);
@@ -216,7 +216,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 		{
 			/* remove from queue. do not prefetch. */
 			assert(prefetch->uinst->opcode == x86_uinst_prefetch);
-			x86_preq_remove(core->id, self->id_in_core);
+			X86ThreadRemovePreQ(self);
 			prefetch->completed = 1;
 			x86_uop_free_if_not_queued(prefetch);
 			continue;
@@ -233,7 +233,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 
 		/* Remove from prefetch queue */
 		assert(prefetch->uinst->opcode == x86_uinst_prefetch);
-		x86_preq_remove(core->id, self->id_in_core);
+		X86ThreadRemovePreQ(self);
 
 		/* Access memory system */
 		mod_access(self->data_mod, mod_access_prefetch,
@@ -315,7 +315,7 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		
 		/* Instruction was issued to the corresponding fu.
 		 * Remove it from IQ */
-		x86_iq_remove(core->id, self->id_in_core);
+		X86ThreadRemoveFromIQ(self);
 		
 		/* Schedule inst in Event Queue */
 		assert(!uop->in_event_queue);

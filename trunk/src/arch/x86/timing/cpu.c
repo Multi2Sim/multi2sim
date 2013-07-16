@@ -551,8 +551,6 @@ void x86_cpu_init(void)
 	x86_bpred_init();
 	x86_trace_cache_init();
 	x86_fetch_queue_init();
-	x86_iq_init();
-	x86_lsq_init();
 	x86_fu_init();
 
 	/* Trace */
@@ -571,8 +569,6 @@ void x86_cpu_done(void)
 
 	/* Finalize structures */
 	x86_fetch_queue_done();
-	x86_iq_done();
-	x86_lsq_done();
 	x86_bpred_done();
 	x86_trace_cache_done();
 	x86_reg_file_done();

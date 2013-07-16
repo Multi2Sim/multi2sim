@@ -28,6 +28,8 @@
 #include "core.h"
 #include "cpu.h"
 #include "fetch-queue.h"
+#include "inst-queue.h"
+#include "load-store-queue.h"
 #include "thread.h"
 #include "uop-queue.h"
 
@@ -46,6 +48,8 @@ void X86ThreadCreate(X86Thread *self, X86Core *core)
 
 	/* Structures */
 	X86ThreadInitUopQueue(self);
+	X86ThreadInitLSQ(self);
+	X86ThreadInitIQ(self);
 }
 
 
@@ -53,6 +57,8 @@ void X86ThreadDestroy(X86Thread *self)
 {
 	/* Structures */
 	X86ThreadFreeUopQueue(self);
+	X86ThreadFreeLSQ(self);
+	X86ThreadFreeIQ(self);
 
 	/* Finalize */
 	self->name = str_free(self->name);

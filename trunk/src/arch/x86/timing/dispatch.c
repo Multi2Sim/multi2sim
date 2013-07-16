@@ -51,9 +51,9 @@ static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 	/* If iq/lq/sq/rob full, done */
 	if (!X86CoreCanEnqueueInROB(core, uop))
 		return x86_dispatch_stall_rob;
-	if (!(uop->flags & X86_UINST_MEM) && !x86_iq_can_insert(uop))
+	if (!(uop->flags & X86_UINST_MEM) && !X86ThreadCanInsertInIQ(self, uop))
 		return x86_dispatch_stall_iq;
-	if ((uop->flags & X86_UINST_MEM) && !x86_lsq_can_insert(uop))
+	if ((uop->flags & X86_UINST_MEM) && !X86ThreadCanInsertInLSQ(self, uop))
 		return x86_dispatch_stall_lsq;
 	if (!x86_reg_file_can_rename(uop))
 		return x86_dispatch_stall_rename;
@@ -96,7 +96,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		/* Non memory instruction into IQ */
 		if (!(uop->flags & X86_UINST_MEM))
 		{
-			x86_iq_insert(uop);
+			X86ThreadInsertInIQ(self, uop);
 			core->iq_writes++;
 			self->iq_writes++;
 		}
@@ -104,7 +104,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		/* Memory instructions into the LSQ */
 		if (uop->flags & X86_UINST_MEM)
 		{
-			x86_lsq_insert(uop);
+			X86ThreadInsertInLSQ(self, uop);
 			core->lsq_writes++;
 			self->lsq_writes++;
 		}
