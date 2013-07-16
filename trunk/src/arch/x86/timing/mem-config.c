@@ -112,10 +112,14 @@ void X86CpuMemConfigDefault(Timing *self, struct config_t *config)
 
 void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *section)
 {
+	X86Cpu *cpu = asX86Cpu(self);
+	X86Core *core;
+	X86Thread *thread;
+
 	char *file_name;
 
-	int core;
-	int thread;
+	int core_index;
+	int thread_index;
 
 	int unified_present;
 	int data_inst_present;
@@ -144,36 +148,38 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 			file_name, section);
 
 	/* Read core */
-	core = config_read_int(config, section, "Core", -1);
-	if (core < 0)
+	core_index = config_read_int(config, section, "Core", -1);
+	if (core_index < 0)
 		fatal("%s: section [%s]: invalid or missing value for 'Core'",
 			file_name, section);
 
 	/* Read thread */
-	thread = config_read_int(config, section, "Thread", -1);
-	if (thread < 0)
+	thread_index = config_read_int(config, section, "Thread", -1);
+	if (thread_index < 0)
 		fatal("%s: section [%s]: invalid or missing value for 'Thread'",
 			file_name, section);
 
 	/* Check bounds */
-	if (core >= x86_cpu_num_cores || thread >= x86_cpu_num_threads)
+	if (core_index >= x86_cpu_num_cores || thread_index >= x86_cpu_num_threads)
 	{
 		warning("%s: section [%s] ignored, referring to x86 Core %d, Thread %d.\n"
 			"\tThis section refers to a core or thread that does not currently exists.\n"
 			"\tPlease review your x86 configuration file if this behavior is not desired.\n",
-			file_name, section, core, thread);
+			file_name, section, core_index, thread_index);
 		return;
 	}
 
 	/* Check that entry has not been assigned before */
-	if (X86_THREAD.data_mod || X86_THREAD.inst_mod)
+	core = cpu->cores[core_index];
+	thread = core->threads[thread_index];
+	if (thread->data_mod || thread->inst_mod)
 	{
-		assert(X86_THREAD.data_mod && X86_THREAD.inst_mod);
+		assert(thread->data_mod && thread->inst_mod);
 		fatal("%s: section [%s]: entry from Core %d, Thread %d already assigned.\n"
 			"\tA different [Entry <name>] section in the memory configuration file has already\n"
 			"\tassigned an entry for this particular core and thread. Please review your\n"
 			"\tconfiguration file to avoid duplicates.\n",
-			file_name, section, core, thread);
+			file_name, section, core_index, thread_index);
 	}
 
 	/* Read modules */
@@ -192,50 +198,59 @@ void X86CpuMemConfigParseEntry(Timing *self, struct config_t *config, char *sect
 	}
 
 	/* Assign data module */
-	X86_THREAD.data_mod = mem_system_get_mod(data_module_name);
-	if (!X86_THREAD.data_mod)
+	thread->data_mod = mem_system_get_mod(data_module_name);
+	if (!thread->data_mod)
 		fatal("%s: section [%s]: '%s' is not a valid module name.\n"
 			"\tThe given module name must match a module declared in a section\n"
 			"\t[Module <name>] in the memory configuration file.\n",
 			file_name, section, data_module_name);
 
 	/* Assign instruction module */
-	X86_THREAD.inst_mod = mem_system_get_mod(inst_module_name);
-	if (!X86_THREAD.inst_mod)
+	thread->inst_mod = mem_system_get_mod(inst_module_name);
+	if (!thread->inst_mod)
 		fatal("%s: section [%s]: '%s' is not a valid module name.\n"
 			"\tThe given module name must match a module declared in a section\n"
 			"\t[Module <name>] in the memory configuration file.\n",
 			file_name, section, inst_module_name);
 	
 	/* Add modules to entry list */
-	linked_list_add(arch_x86->mem_entry_mod_list, X86_THREAD.data_mod);
-	if (X86_THREAD.data_mod != X86_THREAD.inst_mod)
-		linked_list_add(arch_x86->mem_entry_mod_list, X86_THREAD.inst_mod);
+	linked_list_add(arch_x86->mem_entry_mod_list, thread->data_mod);
+	if (thread->data_mod != thread->inst_mod)
+		linked_list_add(arch_x86->mem_entry_mod_list, thread->inst_mod);
 
 	/* Debug */
-	mem_debug("\tx86 Core %d, Thread %d\n", core, thread);
-	mem_debug("\t\tEntry for instructions -> %s\n", X86_THREAD.inst_mod->name);
-	mem_debug("\t\tEntry for data -> %s\n", X86_THREAD.data_mod->name);
+	mem_debug("\tx86 Core %d, Thread %d\n", core_index, thread_index);
+	mem_debug("\t\tEntry for instructions -> %s\n", thread->inst_mod->name);
+	mem_debug("\t\tEntry for data -> %s\n", thread->data_mod->name);
 	mem_debug("\n");
 }
 
 
 void X86CpuMemConfigCheck(Timing *self, struct config_t *config)
 {
-	int core;
-	int thread;
+	X86Cpu *cpu = asX86Cpu(self);
+	X86Core *core;
+	X86Thread *thread;
+
+	int i;
+	int j;
 
 	char *file_name;
 
 	/* Check that all cores/threads have an entry to the memory hierarchy. */
 	file_name = config_get_file_name(config);
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+	for (i = 0; i < x86_cpu_num_cores; i++)
 	{
-		if (!X86_THREAD.data_mod || !X86_THREAD.inst_mod)
-			fatal("%s: x86 Core %d, Thread %d lacks a data/instruction entry to memory.\n"
-				"\tPlease add a new [Entry <name>] section in your memory configuration\n"
-				"\tfile to associate this hardware thread with a memory module.\n",
-				file_name, core, thread);
+		core = cpu->cores[i];
+		for (j = 0; j < x86_cpu_num_threads; j++)
+		{
+			thread = core->threads[j];
+			if (!thread->data_mod || !thread->inst_mod)
+				fatal("%s: x86 Core %d, Thread %d lacks a data/instruction entry to memory.\n"
+						"\tPlease add a new [Entry <name>] section in your memory configuration\n"
+						"\tfile to associate this hardware thread with a memory module.\n",
+						file_name, i, j);
+		}
 	}
 }
 

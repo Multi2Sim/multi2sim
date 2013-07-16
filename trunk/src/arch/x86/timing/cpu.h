@@ -31,17 +31,95 @@ CLASS_FORWARD_DECLARATION(X86Emu);
 struct x86_uop_t;
 
 
-/* Error debug */
+
+
+/* Fast access macros */
+/* FIXME ------ remove below ----------- */
+#define X86_CORE  (*x86_cpu->cores[core])
+#define X86_THREAD  (*X86_CORE.threads[thread])
+#define X86_CORE_IDX(x)  (*x86_cpu->cores[(x)])
+#define X86_THREAD_IDX(x)  (*X86_CORE.threads[(x)])
+#define X86_CORE_THREAD_IDX(x, y)  (*x86_cpu->cores[(x)]->threads[(y)])
+#define X86_CORE_FOR_EACH  for (core = 0; core < x86_cpu_num_cores; core++)
+#define X86_THREAD_FOR_EACH  for (thread = 0; thread < x86_cpu_num_threads; thread++)
+
+
+
+/*
+ * Class 'X86Cpu'
+ */
+
+CLASS_BEGIN(X86Cpu, Timing)
+
+	/* Associated emulator */
+	X86Emu *emu;
+
+	/* Array of cores */
+	X86Core **cores;
+
+	/* Some fields */
+	long long uop_id_counter;  /* Counter of uop ID assignment */
+	char *stage;  /* Name of currently simulated stage */
+
+	/* From all contexts in the 'alloc' list of 'x86_emu', minimum value
+	 * of variable 'ctx->alloc_cycle'. This value is used to decide whether
+	 * the scheduler should be called at all to check for any context whose
+	 * execution quantum has expired. These variables are updated by calling
+	 * 'x86_cpu_update_min_alloc_cycle' */
+	long long min_alloc_cycle;
+	
+	/* List containing uops that need to report an 'end_inst' trace event */
+	struct linked_list_t *uop_trace_list;
+
+	/* Statistics */
+	long long num_fast_forward_inst;  /* Fast-forwarded x86 instructions */
+	long long num_fetched_uinst;
+	long long num_dispatched_uinst_array[x86_uinst_opcode_count];
+	long long num_issued_uinst_array[x86_uinst_opcode_count];
+	long long num_committed_uinst_array[x86_uinst_opcode_count];
+	long long num_committed_uinst;  /* Committed micro-instructions */
+	long long num_committed_inst;  /* Committed x86 instructions */
+	long long num_squashed_uinst;
+	long long num_branch_uinst;
+	long long num_mispred_branch_uinst;
+	double time;
+
+	/* For dumping */
+	long long last_committed;
+	long long last_dump;
+
+CLASS_END(X86Cpu)
+
+
+void X86CpuCreate(X86Cpu *self, X86Emu *emu);
+void X86CpuDestroy(X86Cpu *self);
+
+void X86CpuDump(Object *self, FILE *f);
+void X86CpuDumpSummary(Timing *self, FILE *f);
+void X86CpuDumpReport(X86Cpu *self, FILE *f);
+void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats,
+		char *prefix, int peak_ipc);
+
+int X86CpuRun(Timing *self);
+void X86CpuRunStages(X86Cpu *self);
+void X86CpuFastForward(X86Cpu *self);
+
+void X86CpuAddToTraceList(X86Cpu *self, struct x86_uop_t *uop);
+void X86CpuEmptyTraceList(X86Cpu *self);
+
+void X86CpuUpdateOccupancyStats(X86Cpu *self);
+
+
+
+
+/*
+ * Public
+ */
+
 #define x86_cpu_error_debug(...) debug(x86_cpu_error_debug_category, __VA_ARGS__)
 extern int x86_cpu_error_debug_category;
 
-
-
 extern char *x86_config_help;
-
-
-
-/* Processor parameters */
 
 extern char *x86_config_file_name;
 extern char *x86_cpu_report_file_name;
@@ -110,97 +188,9 @@ extern int x86_cpu_commit_width;
 extern int x86_trace_category;
 
 
-/* Fast access macros */
-/* FIXME ------ remove below ----------- */
-#define X86_CORE  (*x86_cpu->cores[core])
-#define X86_THREAD  (*X86_CORE.threads[thread])
-#define X86_CORE_IDX(x)  (*x86_cpu->cores[(x)])
-#define X86_THREAD_IDX(x)  (*X86_CORE.threads[(x)])
-#define X86_CORE_THREAD_IDX(x, y)  (*x86_cpu->cores[(x)]->threads[(y)])
-#define X86_CORE_FOR_EACH  for (core = 0; core < x86_cpu_num_cores; core++)
-#define X86_THREAD_FOR_EACH  for (thread = 0; thread < x86_cpu_num_threads; thread++)
-
-extern X86Cpu *x86_cpu;
-
-
-
-
-/*
- * Public Functions
- */
-
-void x86_cpu_read_config(void);
-
-void x86_cpu_init(void);
-void x86_cpu_done(void);
-
-void x86_cpu_update_occupancy_stats(void);
-
-void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop);
-
-
-
-
-/*
- * Class 'X86Cpu'
- */
-
-CLASS_BEGIN(X86Cpu, Timing)
-
-	/* Associated emulator */
-	X86Emu *emu;
-
-	/* Array of cores */
-	X86Core **cores;
-
-	/* Some fields */
-	long long uop_id_counter;  /* Counter of uop ID assignment */
-	char *stage;  /* Name of currently simulated stage */
-
-	/* From all contexts in the 'alloc' list of 'x86_emu', minimum value
-	 * of variable 'ctx->alloc_cycle'. This value is used to decide whether
-	 * the scheduler should be called at all to check for any context whose
-	 * execution quantum has expired. These variables are updated by calling
-	 * 'x86_cpu_update_min_alloc_cycle' */
-	long long min_alloc_cycle;
-	
-	/* List containing uops that need to report an 'end_inst' trace event */
-	struct linked_list_t *uop_trace_list;
-
-	/* Statistics */
-	long long num_fast_forward_inst;  /* Fast-forwarded x86 instructions */
-	long long num_fetched_uinst;
-	long long num_dispatched_uinst_array[x86_uinst_opcode_count];
-	long long num_issued_uinst_array[x86_uinst_opcode_count];
-	long long num_committed_uinst_array[x86_uinst_opcode_count];
-	long long num_committed_uinst;  /* Committed micro-instructions */
-	long long num_committed_inst;  /* Committed x86 instructions */
-	long long num_squashed_uinst;
-	long long num_branch_uinst;
-	long long num_mispred_branch_uinst;
-	double time;
-
-	/* For dumping */
-	long long last_committed;
-	long long last_dump;
-
-CLASS_END(X86Cpu)
-
-
-void X86CpuCreate(X86Cpu *self, X86Emu *emu);
-void X86CpuDestroy(X86Cpu *self);
-
-void X86CpuDump(Object *self, FILE *f);
-void X86CpuDumpSummary(Timing *self, FILE *f);
-void X86CpuDumpReport(X86Cpu *self, FILE *f);
-void X86CpuDumpUopReport(X86Cpu *self, FILE *f, long long *uop_stats,
-		char *prefix, int peak_ipc);
-
-int X86CpuRun(Timing *self);
-void X86CpuRunStages(X86Cpu *self);
-void X86CpuFastForward(X86Cpu *self);
-
-void X86CpuEmptyTraceList(X86Cpu *self);
+void X86CpuReadConfig(void);
+void X86CpuInit(void);
+void X86CpuDone(void);
 
 
 #endif

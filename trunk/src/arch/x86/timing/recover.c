@@ -48,6 +48,7 @@ void X86ThreadRecover(X86Thread *self)
 {
 	X86Cpu *cpu = self->cpu;
 	X86Core *core = self->core;
+
 	struct x86_uop_t *uop;
 
 	/* Remove instructions of this thread in fetch queue, uop queue,
@@ -90,7 +91,7 @@ void X86ThreadRecover(X86Thread *self)
 		{
 			x86_trace("x86.inst id=%lld core=%d stg=\"sq\"\n",
 				uop->id_in_core, core->id);
-			x86_cpu_uop_trace_list_add(uop);
+			X86CpuAddToTraceList(cpu, uop);
 		}
 
 		/* Remove entry in ROB */
@@ -106,7 +107,7 @@ void X86ThreadRecover(X86Thread *self)
 	
 		/* Stall fetch and set eip to fetch. */
 		self->fetch_stall_until = MAX(self->fetch_stall_until,
-				asTiming(x86_cpu)->cycle + x86_cpu_recover_penalty - 1);
+				asTiming(cpu)->cycle + x86_cpu_recover_penalty - 1);
 		self->fetch_neip = self->ctx->regs->eip;
 	}
 }

@@ -114,6 +114,7 @@ static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 static int X86ThreadIssueLQ(X86Thread *self, int quant)
 {
 	X86Core *core = self->core;
+	X86Cpu *cpu = self->cpu;
 
 	struct linked_list_t *lq = self->lq;
 	struct x86_uop_t *load;
@@ -156,7 +157,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		 * prevent the uop from being freed. */
 		load->in_event_queue = 1;
 		load->issued = 1;
-		load->issue_when = asTiming(x86_cpu)->cycle;
+		load->issue_when = asTiming(cpu)->cycle;
 		
 		/* Statistics */
 		core->num_issued_uinst_array[load->uinst->opcode]++;
@@ -167,7 +168,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 		self->lsq_reads++;
 		self->reg_file_int_reads += load->ph_int_idep_count;
 		self->reg_file_fp_reads += load->ph_fp_idep_count;
-		x86_cpu->num_issued_uinst_array[load->uinst->opcode]++;
+		cpu->num_issued_uinst_array[load->uinst->opcode]++;
 		if (load->trace_cache)
 			self->trace_cache->num_issued_uinst++;
 
@@ -190,6 +191,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 {
 	X86Core *core = self->core;
+	X86Cpu *cpu = self->cpu;
 
 	struct linked_list_t *preq = self->preq;
 	struct x86_uop_t *prefetch;
@@ -247,7 +249,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 		 * prevent the uop from being freed. */
 		prefetch->in_event_queue = 1;
 		prefetch->issued = 1;
-		prefetch->issue_when = asTiming(x86_cpu)->cycle;
+		prefetch->issue_when = asTiming(cpu)->cycle;
 		
 		/* Statistics */
 		core->num_issued_uinst_array[prefetch->uinst->opcode]++;
@@ -258,7 +260,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 		self->lsq_reads++;
 		self->reg_file_int_reads += prefetch->ph_int_idep_count;
 		self->reg_file_fp_reads += prefetch->ph_fp_idep_count;
-		x86_cpu->num_issued_uinst_array[prefetch->uinst->opcode]++;
+		cpu->num_issued_uinst_array[prefetch->uinst->opcode]++;
 		if (prefetch->trace_cache)
 			self->trace_cache->num_issued_uinst++;
 
@@ -334,7 +336,7 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		self->iq_reads++;
 		self->reg_file_int_reads += uop->ph_int_idep_count;
 		self->reg_file_fp_reads += uop->ph_fp_idep_count;
-		x86_cpu->num_issued_uinst_array[uop->uinst->opcode]++;
+		cpu->num_issued_uinst_array[uop->uinst->opcode]++;
 		if (uop->trace_cache)
 			self->trace_cache->num_issued_uinst++;
 

@@ -247,18 +247,21 @@ void arch_init(void)
 		if (arch->sim_kind == arch_sim_kind_detailed)
 		{
 			/* Read configuration file */
-			arch->timing_read_config_func();
+			if (arch->timing_read_config_func)
+				arch->timing_read_config_func();
 
 		}
 
 		/* Initialize emulator */
-		arch->emu_init_func();
+		if (arch->emu_init_func)
+			arch->emu_init_func();
 
 		/* Initialize timing simulator */
 		if (arch->sim_kind == arch_sim_kind_detailed)
 		{
 			/* Register frequency domain */
-			arch->timing_init_func();
+			if (arch->timing_init_func)
+				arch->timing_init_func();
 		}
 	}
 }
@@ -277,8 +280,12 @@ void arch_done(void)
 
 		/* Free functional/timing simulator */
 		if (arch->sim_kind == arch_sim_kind_detailed)
-			arch->timing_done_func();
-		arch->emu_done_func();
+		{
+			if (arch->timing_done_func)
+				arch->timing_done_func();
+		}
+		if (arch->emu_done_func)
+			arch->emu_done_func();
 
 		/* Free architecture */
 		arch_free(arch);

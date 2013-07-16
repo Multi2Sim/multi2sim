@@ -161,7 +161,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		{
 			x86_trace("x86.inst id=%lld core=%d stg=\"co\"\n",
 				uop->id_in_core, core->id);
-			x86_cpu_uop_trace_list_add(uop);
+			X86CpuAddToTraceList(cpu, uop);
 		}
 
 		/* Retire instruction */
