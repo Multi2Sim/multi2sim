@@ -858,7 +858,7 @@ void x86_reg_file_check_integrity(int core, int thread)
 	 * registers of instructions in the rob are busy */
 	for (i = 0; i < X86_THREAD.rob_count; i++)
 	{
-		uop = x86_rob_get(core, thread, i);
+		uop = X86GetROBEntry(x86_cpu->cores[core]->threads[thread], i);
 		assert(uop);
 		for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
 		{

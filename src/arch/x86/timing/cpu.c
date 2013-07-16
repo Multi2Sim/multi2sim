@@ -552,7 +552,7 @@ void x86_cpu_init(void)
 	x86_trace_cache_init();
 	x86_fetch_queue_init();
 	x86_uop_queue_init();
-	x86_rob_init();
+	X86CpuInitROB(x86_cpu);
 	x86_iq_init();
 	x86_lsq_init();
 	x86_event_queue_init();
@@ -575,7 +575,7 @@ void x86_cpu_done(void)
 	/* Finalize structures */
 	x86_fetch_queue_done();
 	x86_uop_queue_done();
-	x86_rob_done();
+	X86CpuFreeROB(x86_cpu);
 	x86_iq_done();
 	x86_lsq_done();
 	x86_event_queue_done();
@@ -784,7 +784,7 @@ void X86CpuDump(Object *self, FILE *f)
 		x86_uop_linked_list_dump(X86_CORE.event_queue, f);
 
 		fprintf(f, "Reorder Buffer:\n");
-		x86_rob_dump(core, f);
+		X86CoreDumpROB(cpu->cores[core], f);
 
 		X86_THREAD_FOR_EACH
 		{

@@ -38,6 +38,7 @@
  * return x86_dispatch_stall_used. */
 static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 {
+	X86Core *core = self->core;
 	struct list_t *uopq = self->uop_queue;
 	struct x86_uop_t *uop;
 
@@ -48,7 +49,7 @@ static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 			x86_dispatch_stall_ctx : x86_dispatch_stall_uop_queue;
 
 	/* If iq/lq/sq/rob full, done */
-	if (!x86_rob_can_enqueue(uop))
+	if (!X86CoreCanEnqueueInROB(core, uop))
 		return x86_dispatch_stall_rob;
 	if (!(uop->flags & X86_UINST_MEM) && !x86_iq_can_insert(uop))
 		return x86_dispatch_stall_iq;
@@ -88,7 +89,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		x86_reg_file_rename(uop);
 		
 		/* Insert in ROB */
-		x86_rob_enqueue(uop);
+		X86CoreEnqueueInROB(core, uop);
 		core->rob_writes++;
 		self->rob_writes++;
 		
