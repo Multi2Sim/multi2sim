@@ -148,6 +148,9 @@ static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric dig
 
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
+static X86Cpu *x86_cpu;
+
+
 static char *m2s_help =
 		"Syntax:\n"
 		"\n"
@@ -2048,12 +2051,13 @@ int main(int argc, char **argv)
 	arch_set_timing(arch_southern_islands, asTiming(si_gpu));
 
 	/* x86 */
-	X86Cpu *x86_cpu;
 	X86CpuInit();
 	if (x86_sim_kind == arch_sim_kind_detailed)
+	{
 		x86_cpu = new(X86Cpu, x86_emu);
+		arch_set_timing(arch_x86, asTiming(x86_cpu));
+	}
 	arch_set_emu(arch_x86, asEmu(x86_emu));
-	arch_set_timing(arch_x86, asTiming(x86_cpu));
 
 
 	/* Network and memory system */
