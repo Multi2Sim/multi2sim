@@ -134,8 +134,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 		uop->id_in_core = core->uop_id_counter++;
 
 		uop->ctx = ctx;
-		uop->core = core->id;
-		uop->thread = self->id_in_core;
+		uop->thread = self;
 
 		uop->mop_count = uinst_count;
 		uop->mop_size = ctx->inst.size;
@@ -177,7 +176,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 
 			/* Command */
 			str_printf(&str_ptr, &str_size, "x86.new_inst id=%lld core=%d",
-				uop->id_in_core, uop->core);
+				uop->id_in_core, core->id);
 
 			/* Speculative mode */
 			if (uop->specmode)

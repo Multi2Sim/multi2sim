@@ -64,14 +64,14 @@ void X86CoreWriteback(X86Core *self)
 		/* Check element integrity */
 		assert(x86_uop_exists(uop));
 		assert(uop->when == asTiming(cpu)->cycle);
-		assert(uop->core == self->id);
+		assert(uop->thread->core == self);
 		assert(uop->ready);
 		assert(!uop->completed);
 		
 		/* Extract element from event queue. */
 		linked_list_remove(self->event_queue);
 		uop->in_event_queue = 0;
-		thread = self->threads[uop->thread];
+		thread = uop->thread;
 		
 		/* If a mispredicted branch is solved and recovery is configured to be
 		 * performed at writeback, schedule it for the end of the iteration. */
@@ -85,7 +85,7 @@ void X86CoreWriteback(X86Core *self)
 		 * committed before issuing. */
 		if (uop->in_rob)
 			x86_trace("x86.inst id=%lld core=%d stg=\"wb\"\n",
-				uop->id_in_core, uop->core);
+				uop->id_in_core, self->id);
 
 		/* Writeback */
 		uop->completed = 1;
