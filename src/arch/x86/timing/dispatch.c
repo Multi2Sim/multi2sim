@@ -55,7 +55,7 @@ static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 		return x86_dispatch_stall_iq;
 	if ((uop->flags & X86_UINST_MEM) && !X86ThreadCanInsertInLSQ(self, uop))
 		return x86_dispatch_stall_lsq;
-	if (!x86_reg_file_can_rename(uop))
+	if (!X86ThreadCanRenameUop(self, uop))
 		return x86_dispatch_stall_rename;
 	
 	return x86_dispatch_stall_used;
@@ -86,7 +86,7 @@ static int X86ThreadDispatch(X86Thread *self, int quantum)
 		uop->in_uop_queue = 0;
 		
 		/* Rename */
-		x86_reg_file_rename(uop);
+		X86ThreadRenameUop(self, uop);
 		
 		/* Insert in ROB */
 		X86CoreEnqueueInROB(core, uop);

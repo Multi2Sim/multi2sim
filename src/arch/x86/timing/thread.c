@@ -30,6 +30,7 @@
 #include "fetch-queue.h"
 #include "inst-queue.h"
 #include "load-store-queue.h"
+#include "reg-file.h"
 #include "thread.h"
 #include "uop-queue.h"
 
@@ -50,6 +51,7 @@ void X86ThreadCreate(X86Thread *self, X86Core *core)
 	X86ThreadInitUopQueue(self);
 	X86ThreadInitLSQ(self);
 	X86ThreadInitIQ(self);
+	X86ThreadInitRegFile(self);
 }
 
 
@@ -59,6 +61,7 @@ void X86ThreadDestroy(X86Thread *self)
 	X86ThreadFreeUopQueue(self);
 	X86ThreadFreeLSQ(self);
 	X86ThreadFreeIQ(self);
+	X86ThreadFreeRegFile(self);
 
 	/* Finalize */
 	self->name = str_free(self->name);

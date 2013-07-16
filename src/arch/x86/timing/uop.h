@@ -102,11 +102,11 @@ void x86_uop_free_if_not_queued(struct x86_uop_t *uop);
 void x86_uop_dump(struct x86_uop_t *uop, FILE *f);
 
 int x86_uop_exists(struct x86_uop_t *uop);
+void x86_uop_count_deps(struct x86_uop_t *uop);
 
 struct linked_list_t;
 void x86_uop_list_dump(struct list_t *uop_list, FILE *f);
 void x86_uop_linked_list_dump(struct linked_list_t *uop_list, FILE *f);
-void x86_uop_linked_list_check_if_ready(struct linked_list_t *uop_list);
 
 
 #endif
