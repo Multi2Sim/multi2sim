@@ -132,7 +132,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 
 		/* Trace cache */
 		if (x86_trace_cache_present)
-			x86_trace_cache_new_uop(self->trace_cache, uop);
+			X86ThreadRecordUopInTraceCache(self, uop);
 			
 		/* Statistics */
 		self->last_commit_cycle = asTiming(cpu)->cycle;
@@ -177,7 +177,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		if (recover)
 		{
 			X86ThreadRecover(self);
-			x86_fu_release(core->id);
+			X86CoreReleaseAllFunctionalUnits(core);
 		}
 	}
 

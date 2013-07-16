@@ -371,7 +371,7 @@ static void x86_cpu_config_dump(FILE *f)
 	fprintf(f, "\n");
 
 	/* Functional units */
-	x86_fu_config_dump(f);
+	X86DumpFunctionalUnitsConfig(f);
 	
 	/* Branch Predictor */
 	fprintf(f, "[ Config.BranchPredictor ]\n");
@@ -507,13 +507,13 @@ void x86_cpu_read_config(void)
 	X86ReadRegFileConfig(config);
 
 	/* Functional Units */
-	x86_fu_read_config(config);
+	X86ReadFunctionalUnitsConfig(config);
 
 	/* Branch predictor */
 	X86ReadBranchPredConfig(config);
 
 	/* Trace Cache */
-	x86_trace_cache_read_config(config);
+	X86ReadTraceCacheConfig(config);
 
 	/* Close file */
 	config_check(config);
@@ -534,10 +534,6 @@ void x86_cpu_init(void)
 	/* Create CPU */
 	x86_cpu = new(X86Cpu, x86_emu);
 
-	/* Components of an x86 CPU */
-	x86_trace_cache_init();
-	x86_fu_init();
-
 	/* Trace */
 	x86_trace_header("x86.init version=\"%d.%d\" num_cores=%d num_threads=%d\n",
 		X86_TRACE_VERSION_MAJOR, X86_TRACE_VERSION_MINOR,
@@ -551,10 +547,6 @@ void x86_cpu_done(void)
 	/* Uop trace list */
 	x86_cpu_uop_trace_list_empty();
 	linked_list_free(x86_cpu->uop_trace_list);
-
-	/* Finalize structures */
-	x86_trace_cache_done();
-	x86_fu_done();
 
 	/* Free CPU */
 	delete(x86_cpu);
@@ -883,7 +875,7 @@ void X86CpuDumpReport(X86Cpu *self, FILE *f)
 		fprintf(f, "[ c%d ]\n\n", core);
 
 		/* Functional units */
-		x86_fu_dump_report(X86_CORE.fu, f);
+		X86CoreDumpFunctionalUnitsReport(x86_cpu->cores[core], f);
 
 		/* Dispatch slots */
 		if (x86_cpu_dispatch_kind == x86_cpu_dispatch_kind_timeslice)
@@ -1010,7 +1002,7 @@ void X86CpuDumpReport(X86Cpu *self, FILE *f)
 
 			/* Trace cache stats */
 			if (X86_THREAD.trace_cache)
-				x86_trace_cache_dump_report(X86_THREAD.trace_cache, f);
+				X86ThreadDumpTraceCacheReport(x86_cpu->cores[core]->threads[thread], f);
 		}
 	}
 }

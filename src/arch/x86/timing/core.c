@@ -23,6 +23,7 @@
 #include "core.h"
 #include "cpu.h"
 #include "event-queue.h"
+#include "fu.h"
 #include "rob.h"
 #include "thread.h"
 
@@ -51,6 +52,7 @@ void X86CoreCreate(X86Core *self, X86Cpu *cpu)
 	/* Structures */
 	X86CoreInitROB(self);
 	X86CoreInitEventQueue(self);
+	X86CoreInitFunctionalUnits(self);
 }
 
 
@@ -72,6 +74,7 @@ void X86CoreDestroy(X86Core *self)
 	/* Structures */
 	X86CoreFreeROB(self);
 	X86CoreFreeEventQueue(self);
+	X86CoreFreeFunctionalUnits(self);
 }
 
 

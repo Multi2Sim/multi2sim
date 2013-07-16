@@ -33,6 +33,7 @@
 #include "load-store-queue.h"
 #include "reg-file.h"
 #include "thread.h"
+#include "trace-cache.h"
 #include "uop-queue.h"
 
 
@@ -55,6 +56,7 @@ void X86ThreadCreate(X86Thread *self, X86Core *core)
 	X86ThreadInitRegFile(self);
 	X86ThreadInitFetchQueue(self);
 	X86ThreadInitBranchPred(self);
+	X86ThreadInitTraceCache(self);
 }
 
 
@@ -67,6 +69,7 @@ void X86ThreadDestroy(X86Thread *self)
 	X86ThreadFreeRegFile(self);
 	X86ThreadFreeFetchQueue(self);
 	X86ThreadFreeBranchPred(self);
+	X86ThreadFreeTraceCache(self);
 
 	/* Finalize */
 	self->name = str_free(self->name);

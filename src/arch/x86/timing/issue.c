@@ -303,10 +303,10 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		uop->ready = 1;  /* avoid next call to 'X86ThreadIsUopReady' */
 		
 		/* Run the instruction in its corresponding functional unit.
-		 * If the instruction does not require a functional unit, 'x86_fu_reserve'
+		 * If the instruction does not require a functional unit, 'X86CoreReserveFunctionalUnit'
 		 * returns 1 cycle latency. If there is no functional unit available,
-		 * 'x86_fu_reserve' returns 0. */
-		lat = x86_fu_reserve(uop);
+		 * 'X86CoreReserveFunctionalUnit' returns 0. */
+		lat = X86CoreReserveFunctionalUnit(core, uop);
 		if (!lat)
 		{
 			linked_list_next(iq);
