@@ -173,8 +173,8 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 
 	/* If context eviction signal is activated and pipeline is empty,
 	 * deallocate context. */
-	if (ctx->evict_signal && x86_cpu_pipeline_empty(core, thread))
-		x86_cpu_evict_context(core, thread);
+	if (ctx->evict_signal && X86ThreadIsPipelineEmpty(&X86_THREAD))
+		X86ThreadEvictContext(&X86_THREAD, ctx);
 }
 
 
