@@ -40,15 +40,22 @@
 #include "trace-cache.h"
 
 
-static int x86_cpu_issue_sq(int core, int thread, int quant)
+/*
+ * Class 'X86Thread'
+ */
+
+static int X86ThreadIssueSQ(X86Thread *self, int quantum)
 {
+	X86Cpu *cpu = self->cpu;
+	X86Core *core = self->core;
+
 	struct x86_uop_t *store;
-	struct linked_list_t *sq = X86_THREAD.sq;
+	struct linked_list_t *sq = self->sq;
 	struct mod_client_info_t *client_info;
 
 	/* Process SQ */
 	linked_list_head(sq);
-	while (!linked_list_is_end(sq) && quant)
+	while (!linked_list_is_end(sq) && quantum)
 	{
 		/* Get store */
 		store = linked_list_get(sq);
@@ -59,54 +66,56 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 			break;
 
 		/* Check that memory system entry is ready */
-		if (!mod_can_access(X86_THREAD.data_mod, store->phy_addr))
+		if (!mod_can_access(self->data_mod, store->phy_addr))
 			break;
 
 		/* Remove store from store queue */
-		x86_sq_remove(core, thread);
+		x86_sq_remove(core->id, self->id_in_core);
 
 		/* create and fill the mod_client_info_t object */
-		client_info = mod_client_info_create(X86_THREAD.data_mod);
+		client_info = mod_client_info_create(self->data_mod);
 		client_info->prefetcher_eip = store->eip;
 
 		/* Issue store */
-		mod_access(X86_THREAD.data_mod, mod_access_store,
-		       store->phy_addr, NULL, X86_CORE.event_queue, store, client_info);
+		mod_access(self->data_mod, mod_access_store,
+		       store->phy_addr, NULL, core->event_queue, store, client_info);
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
 		 * prevent the uop from being freed. */
 		store->in_event_queue = 1;
 		store->issued = 1;
-		store->issue_when = asTiming(x86_cpu)->cycle;
+		store->issue_when = asTiming(cpu)->cycle;
 	
 		/* Statistics */
-		X86_CORE.num_issued_uinst_array[store->uinst->opcode]++;
-		X86_CORE.lsq_reads++;
-		X86_CORE.reg_file_int_reads += store->ph_int_idep_count;
-		X86_CORE.reg_file_fp_reads += store->ph_fp_idep_count;
-		X86_THREAD.num_issued_uinst_array[store->uinst->opcode]++;
-		X86_THREAD.lsq_reads++;
-		X86_THREAD.reg_file_int_reads += store->ph_int_idep_count;
-		X86_THREAD.reg_file_fp_reads += store->ph_fp_idep_count;
-		x86_cpu->num_issued_uinst_array[store->uinst->opcode]++;
+		core->num_issued_uinst_array[store->uinst->opcode]++;
+		core->lsq_reads++;
+		core->reg_file_int_reads += store->ph_int_idep_count;
+		core->reg_file_fp_reads += store->ph_fp_idep_count;
+		self->num_issued_uinst_array[store->uinst->opcode]++;
+		self->lsq_reads++;
+		self->reg_file_int_reads += store->ph_int_idep_count;
+		self->reg_file_fp_reads += store->ph_fp_idep_count;
+		cpu->num_issued_uinst_array[store->uinst->opcode]++;
 		if (store->trace_cache)
-			X86_THREAD.trace_cache->num_issued_uinst++;
+			self->trace_cache->num_issued_uinst++;
 
 		/* One more instruction, update quantum. */
-		quant--;
+		quantum--;
 		
 		/* MMU statistics */
 		if (*mmu_report_file_name)
 			mmu_access_page(store->phy_addr, mmu_access_write);
 	}
-	return quant;
+	return quantum;
 }
 
 
-static int x86_cpu_issue_lq(int core, int thread, int quant)
+static int X86ThreadIssueLQ(X86Thread *self, int quant)
 {
-	struct linked_list_t *lq = X86_THREAD.lq;
+	X86Core *core = self->core;
+
+	struct linked_list_t *lq = self->lq;
 	struct x86_uop_t *load;
 	struct mod_client_info_t *client_info;
 
@@ -124,7 +133,7 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		load->ready = 1;
 
 		/* Check that memory system is accessible */
-		if (!mod_can_access(X86_THREAD.data_mod, load->phy_addr))
+		if (!mod_can_access(self->data_mod, load->phy_addr))
 		{
 			linked_list_next(lq);
 			continue;
@@ -132,15 +141,15 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 
 		/* Remove from load queue */
 		assert(load->uinst->opcode == x86_uinst_load);
-		x86_lq_remove(core, thread);
+		x86_lq_remove(core->id, self->id_in_core);
 
 		/* create and fill the mod_client_info_t object */
-		client_info = mod_client_info_create(X86_THREAD.data_mod);
+		client_info = mod_client_info_create(self->data_mod);
 		client_info->prefetcher_eip = load->eip;
 
 		/* Access memory system */
-		mod_access(X86_THREAD.data_mod, mod_access_load,
-			load->phy_addr, NULL, X86_CORE.event_queue, load, client_info);
+		mod_access(self->data_mod, mod_access_load,
+			load->phy_addr, NULL, core->event_queue, load, client_info);
 
 		/* The cache system will place the load at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
@@ -150,17 +159,17 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		load->issue_when = asTiming(x86_cpu)->cycle;
 		
 		/* Statistics */
-		X86_CORE.num_issued_uinst_array[load->uinst->opcode]++;
-		X86_CORE.lsq_reads++;
-		X86_CORE.reg_file_int_reads += load->ph_int_idep_count;
-		X86_CORE.reg_file_fp_reads += load->ph_fp_idep_count;
-		X86_THREAD.num_issued_uinst_array[load->uinst->opcode]++;
-		X86_THREAD.lsq_reads++;
-		X86_THREAD.reg_file_int_reads += load->ph_int_idep_count;
-		X86_THREAD.reg_file_fp_reads += load->ph_fp_idep_count;
+		core->num_issued_uinst_array[load->uinst->opcode]++;
+		core->lsq_reads++;
+		core->reg_file_int_reads += load->ph_int_idep_count;
+		core->reg_file_fp_reads += load->ph_fp_idep_count;
+		self->num_issued_uinst_array[load->uinst->opcode]++;
+		self->lsq_reads++;
+		self->reg_file_int_reads += load->ph_int_idep_count;
+		self->reg_file_fp_reads += load->ph_fp_idep_count;
 		x86_cpu->num_issued_uinst_array[load->uinst->opcode]++;
 		if (load->trace_cache)
-			X86_THREAD.trace_cache->num_issued_uinst++;
+			self->trace_cache->num_issued_uinst++;
 
 		/* One more instruction issued, update quantum. */
 		quant--;
@@ -177,14 +186,17 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 	return quant;
 }
 
-static int x86_cpu_issue_preq(int core, int thread, int quant)
+
+static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 {
-	struct linked_list_t *preq = X86_THREAD.preq;
+	X86Core *core = self->core;
+
+	struct linked_list_t *preq = self->preq;
 	struct x86_uop_t *prefetch;
 
 	/* Process preq */
 	linked_list_head(preq);
-	while (!linked_list_is_end(preq) && quant)
+	while (!linked_list_is_end(preq) && quantum)
 	{
 		/* Get element from prefetch queue. If it is not ready, go to the next one */
 		prefetch = linked_list_get(preq);
@@ -199,12 +211,12 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		 * memory traffic. Even though the cache will realise a "hit" on redundant 
 		 * prefetches, its still helpful to avoid going to the memory (cache). 
 		 */
-		if (prefetch_history_is_redundant(X86_CORE.prefetch_history,
-							   X86_THREAD.data_mod, prefetch->phy_addr))
+		if (prefetch_history_is_redundant(core->prefetch_history,
+							   self->data_mod, prefetch->phy_addr))
 		{
 			/* remove from queue. do not prefetch. */
 			assert(prefetch->uinst->opcode == x86_uinst_prefetch);
-			x86_preq_remove(core, thread);
+			x86_preq_remove(core->id, self->id_in_core);
 			prefetch->completed = 1;
 			x86_uop_free_if_not_queued(prefetch);
 			continue;
@@ -213,7 +225,7 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		prefetch->ready = 1;
 
 		/* Check that memory system is accessible */
-		if (!mod_can_access(X86_THREAD.data_mod, prefetch->phy_addr))
+		if (!mod_can_access(self->data_mod, prefetch->phy_addr))
 		{
 			linked_list_next(preq);
 			continue;
@@ -221,14 +233,14 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 
 		/* Remove from prefetch queue */
 		assert(prefetch->uinst->opcode == x86_uinst_prefetch);
-		x86_preq_remove(core, thread);
+		x86_preq_remove(core->id, self->id_in_core);
 
 		/* Access memory system */
-		mod_access(X86_THREAD.data_mod, mod_access_prefetch,
-			prefetch->phy_addr, NULL, X86_CORE.event_queue, prefetch, NULL);
+		mod_access(self->data_mod, mod_access_prefetch,
+			prefetch->phy_addr, NULL, core->event_queue, prefetch, NULL);
 
 		/* Record prefetched address */
-		prefetch_history_record(X86_CORE.prefetch_history, prefetch->phy_addr);
+		prefetch_history_record(core->prefetch_history, prefetch->phy_addr);
 
 		/* The cache system will place the prefetch at the head of the
 		 * event queue when it is ready. For now, mark "in_event_queue" to
@@ -238,20 +250,20 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 		prefetch->issue_when = asTiming(x86_cpu)->cycle;
 		
 		/* Statistics */
-		X86_CORE.num_issued_uinst_array[prefetch->uinst->opcode]++;
-		X86_CORE.lsq_reads++;
-		X86_CORE.reg_file_int_reads += prefetch->ph_int_idep_count;
-		X86_CORE.reg_file_fp_reads += prefetch->ph_fp_idep_count;
-		X86_THREAD.num_issued_uinst_array[prefetch->uinst->opcode]++;
-		X86_THREAD.lsq_reads++;
-		X86_THREAD.reg_file_int_reads += prefetch->ph_int_idep_count;
-		X86_THREAD.reg_file_fp_reads += prefetch->ph_fp_idep_count;
+		core->num_issued_uinst_array[prefetch->uinst->opcode]++;
+		core->lsq_reads++;
+		core->reg_file_int_reads += prefetch->ph_int_idep_count;
+		core->reg_file_fp_reads += prefetch->ph_fp_idep_count;
+		self->num_issued_uinst_array[prefetch->uinst->opcode]++;
+		self->lsq_reads++;
+		self->reg_file_int_reads += prefetch->ph_int_idep_count;
+		self->reg_file_fp_reads += prefetch->ph_fp_idep_count;
 		x86_cpu->num_issued_uinst_array[prefetch->uinst->opcode]++;
 		if (prefetch->trace_cache)
-			X86_THREAD.trace_cache->num_issued_uinst++;
+			self->trace_cache->num_issued_uinst++;
 
 		/* One more instruction issued, update quantum. */
-		quant--;
+		quantum--;
 		
 		/* MMU statistics */
 		if (*mmu_report_file_name)
@@ -262,12 +274,16 @@ static int x86_cpu_issue_preq(int core, int thread, int quant)
 			prefetch->id_in_core, prefetch->core);
 	}
 	
-	return quant;
+	return quantum;
 }
 
-static int x86_cpu_issue_iq(int core, int thread, int quant)
+
+static int X86ThreadIssueIQ(X86Thread *self, int quant)
 {
-	struct linked_list_t *iq = X86_THREAD.iq;
+	X86Cpu *cpu = self->cpu;
+	X86Core *core = self->core;
+
+	struct linked_list_t *iq = self->iq;
 	struct x86_uop_t *uop;
 	int lat;
 
@@ -299,28 +315,28 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 		
 		/* Instruction was issued to the corresponding fu.
 		 * Remove it from IQ */
-		x86_iq_remove(core, thread);
+		x86_iq_remove(core->id, self->id_in_core);
 		
 		/* Schedule inst in Event Queue */
 		assert(!uop->in_event_queue);
 		assert(lat > 0);
 		uop->issued = 1;
-		uop->issue_when = asTiming(x86_cpu)->cycle;
-		uop->when = asTiming(x86_cpu)->cycle + lat;
-		x86_event_queue_insert(X86_CORE.event_queue, uop);
+		uop->issue_when = asTiming(cpu)->cycle;
+		uop->when = asTiming(cpu)->cycle + lat;
+		x86_event_queue_insert(core->event_queue, uop);
 		
 		/* Statistics */
-		X86_CORE.num_issued_uinst_array[uop->uinst->opcode]++;
-		X86_CORE.iq_reads++;
-		X86_CORE.reg_file_int_reads += uop->ph_int_idep_count;
-		X86_CORE.reg_file_fp_reads += uop->ph_fp_idep_count;
-		X86_THREAD.num_issued_uinst_array[uop->uinst->opcode]++;
-		X86_THREAD.iq_reads++;
-		X86_THREAD.reg_file_int_reads += uop->ph_int_idep_count;
-		X86_THREAD.reg_file_fp_reads += uop->ph_fp_idep_count;
+		core->num_issued_uinst_array[uop->uinst->opcode]++;
+		core->iq_reads++;
+		core->reg_file_int_reads += uop->ph_int_idep_count;
+		core->reg_file_fp_reads += uop->ph_fp_idep_count;
+		self->num_issued_uinst_array[uop->uinst->opcode]++;
+		self->iq_reads++;
+		self->reg_file_int_reads += uop->ph_int_idep_count;
+		self->reg_file_fp_reads += uop->ph_fp_idep_count;
 		x86_cpu->num_issued_uinst_array[uop->uinst->opcode]++;
 		if (uop->trace_cache)
-			X86_THREAD.trace_cache->num_issued_uinst++;
+			self->trace_cache->num_issued_uinst++;
 
 		/* One more instruction issued, update quantum. */
 		quant--;
@@ -334,26 +350,29 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 }
 
 
-static int x86_cpu_issue_thread_lsq(int core, int thread, int quant)
+static int X86ThreadIssueLSQ(X86Thread *self, int quantum)
 {
-	quant = x86_cpu_issue_lq(core, thread, quant);
-	quant = x86_cpu_issue_sq(core, thread, quant);
-	quant = x86_cpu_issue_preq(core, thread, quant);
+	quantum = X86ThreadIssueLQ(self, quantum);
+	quantum = X86ThreadIssueSQ(self, quantum);
+	quantum = X86ThreadIssuePreQ(self, quantum);
 
-	return quant;
+	return quantum;
 }
 
 
-static int x86_cpu_issue_thread_iq(int core, int thread, int quant)
-{
-	quant = x86_cpu_issue_iq(core, thread, quant);
-	return quant;
-}
 
 
-static void x86_cpu_issue_core(int core)
+
+/*
+ * Class 'X86Core'
+ */
+
+static void X86CoreIssue(X86Core *self)
 {
-	int skip, quant;
+	X86Thread *thread;
+
+	int skip;
+	int quantum;
 
 	switch (x86_cpu_issue_kind)
 	{
@@ -361,22 +380,26 @@ static void x86_cpu_issue_core(int core)
 	case x86_cpu_issue_kind_shared:
 	{
 		/* Issue LSQs */
-		quant = x86_cpu_issue_width;
+		quantum = x86_cpu_issue_width;
 		skip = x86_cpu_num_threads;
-		do {
-			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
-			quant = x86_cpu_issue_thread_lsq(core, X86_CORE.issue_current, quant);
+		do
+		{
+			self->issue_current = (self->issue_current + 1) % x86_cpu_num_threads;
+			thread = self->threads[self->issue_current];
+			quantum = X86ThreadIssueLSQ(thread, quantum);
 			skip--;
-		} while (skip && quant);
+		} while (skip && quantum);
 
 		/* Issue IQs */
-		quant = x86_cpu_issue_width;
+		quantum = x86_cpu_issue_width;
 		skip = x86_cpu_num_threads;
-		do {
-			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
-			quant = x86_cpu_issue_thread_iq(core, X86_CORE.issue_current, quant);
+		do
+		{
+			self->issue_current = (self->issue_current + 1) % x86_cpu_num_threads;
+			thread = self->threads[self->issue_current];
+			quantum = X86ThreadIssueIQ(thread, quantum);
 			skip--;
-		} while (skip && quant);
+		} while (skip && quantum);
 		
 		break;
 	}
@@ -384,22 +407,26 @@ static void x86_cpu_issue_core(int core)
 	case x86_cpu_issue_kind_timeslice:
 	{
 		/* Issue LSQs */
-		quant = x86_cpu_issue_width;
+		quantum = x86_cpu_issue_width;
 		skip = x86_cpu_num_threads;
-		do {
-			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
-			quant = x86_cpu_issue_thread_lsq(core, X86_CORE.issue_current, quant);
+		do
+		{
+			self->issue_current = (self->issue_current + 1) % x86_cpu_num_threads;
+			thread = self->threads[self->issue_current];
+			quantum = X86ThreadIssueLSQ(thread, quantum);
 			skip--;
-		} while (skip && quant == x86_cpu_issue_width);
+		} while (skip && quantum == x86_cpu_issue_width);
 
 		/* Issue IQs */
-		quant = x86_cpu_issue_width;
+		quantum = x86_cpu_issue_width;
 		skip = x86_cpu_num_threads;
-		do {
-			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
-			quant = x86_cpu_issue_thread_iq(core, X86_CORE.issue_current, quant);
+		do
+		{
+			self->issue_current = (self->issue_current + 1) % x86_cpu_num_threads;
+			thread = self->threads[self->issue_current];
+			quantum = X86ThreadIssueIQ(thread, quantum);
 			skip--;
-		} while (skip && quant == x86_cpu_issue_width);
+		} while (skip && quantum == x86_cpu_issue_width);
 
 		break;
 	}
@@ -410,11 +437,17 @@ static void x86_cpu_issue_core(int core)
 }
 
 
-void x86_cpu_issue()
-{
-	int core;
 
-	x86_cpu->stage = "issue";
-	X86_CORE_FOR_EACH
-		x86_cpu_issue_core(core);
+
+/*
+ * Class 'X86Cpu'
+ */
+
+void X86CpuIssue(X86Cpu *self)
+{
+	int i;
+
+	self->stage = "issue";
+	for (i = 0; i < x86_cpu_num_cores; i++)
+		X86CoreIssue(self->cores[i]);
 }

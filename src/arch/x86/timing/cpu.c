@@ -1141,12 +1141,12 @@ void X86CpuRunStages(X86Cpu *self)
 	X86CpuSchedule(self);
 
 	/* Stages */
-	x86_cpu_commit();
-	x86_cpu_writeback();
-	x86_cpu_issue();
-	x86_cpu_dispatch();
-	x86_cpu_decode();
-	x86_cpu_fetch();
+	X86CpuCommit(self);
+	X86CpuWriteback(self);
+	X86CpuIssue(self);
+	X86CpuDispatch(self);
+	X86CpuDecode(self);
+	X86CpuFetch(self);
 
 	/* Update stats for structures occupancy */
 	if (x86_cpu_occupancy_stats)

@@ -32,10 +32,17 @@
 #include "uop-queue.h"
 
 
-static void x86_cpu_decode_thread(int core, int thread)
+
+/*
+ * Class 'X86Thread'
+ */
+
+static void X86ThreadDecode(X86Thread *self)
 {
-	struct list_t *fetchq = X86_THREAD.fetch_queue;
-	struct list_t *uopq = X86_THREAD.uop_queue;
+	X86Core *core = self->core;
+
+	struct list_t *fetchq = self->fetch_queue;
+	struct list_t *uopq = self->uop_queue;
 	struct x86_uop_t *uop;
 	int i;
 
@@ -54,8 +61,9 @@ static void x86_cpu_decode_thread(int core, int thread)
 		 * into the uop queue in one single decode slot. */
 		if (uop->trace_cache)
 		{
-			do {
-				x86_fetch_queue_remove(core, thread, 0);
+			do
+			{
+				x86_fetch_queue_remove(core->id, self->id_in_core, 0);
 				list_add(uopq, uop);
 				uop->in_uop_queue = 1;
 				uop = list_get(fetchq, 0);
@@ -66,11 +74,12 @@ static void x86_cpu_decode_thread(int core, int thread)
 		/* Decode one macro-instruction coming from a block in the instruction
 		 * cache. If the cache access finished, extract it from the fetch queue. */
 		assert(!uop->mop_index);
-		if (!mod_in_flight_access(X86_THREAD.inst_mod, uop->fetch_access, uop->fetch_address))
+		if (!mod_in_flight_access(self->inst_mod, uop->fetch_access, uop->fetch_address))
 		{
-			do {
+			do
+			{
 				/* Move from fetch queue to uop queue */
-				x86_fetch_queue_remove(core, thread, 0);
+				x86_fetch_queue_remove(core->id, self->id_in_core, 0);
 				list_add(uopq, uop);
 				uop->in_uop_queue = 1;
 
@@ -87,20 +96,19 @@ static void x86_cpu_decode_thread(int core, int thread)
 }
 
 
-static void x86_cpu_decode_core(int core)
+
+
+/*
+ * Class 'X86Cpu'
+ */
+
+void X86CpuDecode(X86Cpu *self)
 {
-	int thread;
+	int i;
+	int j;
 
-	X86_THREAD_FOR_EACH
-		x86_cpu_decode_thread(core, thread);
-}
-
-
-void x86_cpu_decode()
-{
-	int core;
-
-	x86_cpu->stage = "decode";
-	X86_CORE_FOR_EACH
-		x86_cpu_decode_core(core);
+	self->stage = "decode";
+	for (i = 0; i < x86_cpu_num_cores; i++)
+		for (j = 0; j < x86_cpu_num_threads; j++)
+			X86ThreadDecode(self->cores[i]->threads[j]);
 }
