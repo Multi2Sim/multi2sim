@@ -246,12 +246,12 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 		return 0;
 	
 	/* Access BTB, branch predictor, and trace cache */
-	eip_branch = x86_bpred_btb_next_branch(self->bpred,
-		self->fetch_neip, self->inst_mod->block_size);
-	mpred = eip_branch ? x86_bpred_lookup_multiple(self->bpred,
-		eip_branch, x86_trace_cache_branch_max) : 0;
+	eip_branch = X86ThreadGetNextBranch(self,
+			self->fetch_neip, self->inst_mod->block_size);
+	mpred = eip_branch ? X86ThreadLookupBranchPredMultiple(self,
+			eip_branch, x86_trace_cache_branch_max) : 0;
 	hit = x86_trace_cache_lookup(self->trace_cache, self->fetch_neip, mpred,
-		&mop_count, &mop_array, &neip);
+			&mop_count, &mop_array, &neip);
 	if (!hit)
 		return 0;
 	
@@ -274,7 +274,7 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 		 * to have the necessary information to update it at commit. */
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			x86_bpred_lookup(self->bpred, uop);
+			X86ThreadLookupBranchPred(self, uop);
 			uop->pred_neip = i == mop_count - 1 ? neip :
 				mop_array[i + 1];
 		}
@@ -344,8 +344,8 @@ static void X86ThreadFetch(X86Thread *self)
 		 * stop fetching from this block and set new fetch address. */
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			target = x86_bpred_btb_lookup(self->bpred, uop);
-			taken = target && x86_bpred_lookup(self->bpred, uop);
+			target = X86ThreadLookupBTB(self, uop);
+			taken = target && X86ThreadLookupBranchPred(self, uop);
 			if (taken)
 			{
 				self->fetch_neip = target;

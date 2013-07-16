@@ -39,8 +39,6 @@
 
 static void X86ThreadDecode(X86Thread *self)
 {
-	X86Core *core = self->core;
-
 	struct list_t *fetchq = self->fetch_queue;
 	struct list_t *uopq = self->uop_queue;
 	struct x86_uop_t *uop;
@@ -63,7 +61,7 @@ static void X86ThreadDecode(X86Thread *self)
 		{
 			do
 			{
-				x86_fetch_queue_remove(core->id, self->id_in_core, 0);
+				X86ThreadRemoveFromFetchQueue(self, 0);
 				list_add(uopq, uop);
 				uop->in_uop_queue = 1;
 				uop = list_get(fetchq, 0);
@@ -79,7 +77,7 @@ static void X86ThreadDecode(X86Thread *self)
 			do
 			{
 				/* Move from fetch queue to uop queue */
-				x86_fetch_queue_remove(core->id, self->id_in_core, 0);
+				X86ThreadRemoveFromFetchQueue(self, 0);
 				list_add(uopq, uop);
 				uop->in_uop_queue = 1;
 
