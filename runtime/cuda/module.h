@@ -26,8 +26,8 @@ extern struct list_t *module_list;
 struct CUmod_st
 {
 	unsigned int id;
-	int ref_count;
 
+	/* Cubin */
 	struct elf_file_t *elf_file;
 };
 

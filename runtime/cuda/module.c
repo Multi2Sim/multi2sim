@@ -33,11 +33,11 @@ CUmodule cuda_module_create(const char *cubin_path)
 {
 	CUmodule module;
 
-	/* Initialize */
+	/* Create module */
 	module = (CUmodule)xcalloc(1, sizeof(struct CUmod_st));
+
+	/* Initialize */
 	module->id = list_count(module_list);
-	module->ref_count = 1;
-	assert(cubin_path);
 	module->elf_file = elf_file_create_from_path(cubin_path);
 
 	list_add(module_list, module);
@@ -50,9 +50,8 @@ void cuda_module_free(CUmodule module)
 {
 	list_remove(module_list, module);
 
-	assert(module->elf_file);
-	elf_file_free(module->elf_file);
-	module->ref_count--;
+	if (module->elf_file)
+		elf_file_free(module->elf_file);
 	free(module);
 }
 

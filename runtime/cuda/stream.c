@@ -30,10 +30,11 @@ CUstream cuda_stream_create(void)
 {
 	CUstream stream;
 
-	/* Initialize */
+	/* Create stream */
 	stream = (CUstream)xcalloc(1, sizeof(struct CUstream_st));
+
+	/* Initialize */
 	stream->id = list_count(stream_list);
-	stream->ref_count = 1;
 
 	list_add(stream_list, stream);
 
@@ -45,7 +46,6 @@ void cuda_stream_free(CUstream stream)
 {
 	list_remove(stream_list, stream);
 
-	stream->ref_count--;
 	free(stream);
 }
 

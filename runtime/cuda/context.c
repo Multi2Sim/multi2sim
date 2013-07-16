@@ -30,12 +30,13 @@ CUcontext cuda_context_create(CUdevice device)
 {
 	CUcontext context;
 
-	/* Initialize */
+	/* Create context */
 	context = (CUcontext)xcalloc(1, sizeof(struct CUctx_st));
+
+	/* Initialize */
 	context->id = list_count(context_list);
-	context->ref_count = 1;
 	context->device = device;
-	context->version = 4000;
+	context->version = 5000;
 
 	list_add(context_list, context);
 
@@ -47,7 +48,6 @@ void cuda_context_free(CUcontext context)
 {
 	list_remove(context_list, context);
 
-	context->ref_count--;
 	free(context);
 }
 

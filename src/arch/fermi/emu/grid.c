@@ -274,7 +274,7 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 			thread->thread_block = thread_block;
 			thread->grid = grid;
 
-			/* Save thread IDs in register R0 */
+			/* Save thread IDs in special register R0 */
 			thread->sr[FRM_SR_Tid_X].v.i = tid % 
 				grid->block_size3[0];
 			thread->sr[FRM_SR_Tid_Y].v.i = tid / 
@@ -282,13 +282,16 @@ static void frm_grid_setup_arrays(struct frm_grid_t *grid)
 			thread->sr[FRM_SR_Tid_Z].v.i = tid / 
 				(grid->block_size3[0] * grid->block_size3[1]);
 
-			/* Save thread block IDs in register R1 */
+			/* Save thread block IDs in special register R1 */
 			thread->sr[FRM_SR_CTAid_X].v.i = bid % 
 				grid->block_count3[0];
 			thread->sr[FRM_SR_CTAid_Y].v.i = bid / 
 				grid->block_count3[0];
 			thread->sr[FRM_SR_CTAid_Z].v.i = bid / 
 				(grid->block_count3[0] * grid->block_count3[1]);
+
+			/* Set predicate register #7 to 1 */
+			thread->pr[7] = 1;
 
 			/* Link thread with warp */
 			thread->warp->threads[thread->id_in_warp] = thread;
@@ -324,16 +327,15 @@ void frm_grid_setup_size(struct frm_grid_t *grid, unsigned int *block_count,
 	frm_grid_setup_arrays(grid);
 
 	/* Debug */
-	frm_isa_debug("block_count = %d (%d,%d,%d)\n", grid->block_count,
-			grid->block_count3[0], grid->block_count3[1],
-			grid->block_count3[2]);
-	frm_isa_debug("block_size = %d (%d,%d,%d)\n", grid->block_size,
-			grid->block_size3[0], grid->block_size3[1],
-			grid->block_size3[2]);
-	frm_isa_debug("grid_size = %d (%d,%d,%d)\n", grid->grid_size,
-			grid->grid_size3[0], grid->grid_size3[1],
-			grid->grid_size3[2]);
-	frm_isa_debug("\n");
+	frm_isa_debug("%s:%d: block count = (%d,%d,%d)\n", 
+			__FUNCTION__, __LINE__, grid->block_count3[0],
+			grid->block_count3[1], grid->block_count3[2]);
+	frm_isa_debug("%s:%d: block size = (%d,%d,%d)\n", 
+			__FUNCTION__, __LINE__, grid->block_size3[0], 
+			grid->block_size3[1], grid->block_size3[2]);
+	frm_isa_debug("%s:%d: grid size = (%d,%d,%d)\n", 
+			__FUNCTION__, __LINE__, grid->grid_size3[0], 
+			grid->grid_size3[1], grid->grid_size3[2]);
 }
 
 

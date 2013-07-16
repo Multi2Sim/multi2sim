@@ -40,8 +40,8 @@ struct cuda_device_t *cuda_device_create(int device_type)
 	{
 		/* GeForce GTX 480 */
 		device->name = xstrdup("Multi2Sim GeForce GTX 480");
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK] =
-			1024;
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK]
+			= 1024;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X] = 1024;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y] = 1024;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z] = 64;
@@ -50,8 +50,8 @@ struct cuda_device_t *cuda_device_create(int device_type)
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z] = 65535;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK]
 			= 49152;
-		device->attributes[CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY] =
-			65536;
+		device->attributes[CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY]
+			= 65536;
 		device->attributes[CU_DEVICE_ATTRIBUTE_WARP_SIZE] = 32;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_PITCH] = 2147483647;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK]
@@ -59,19 +59,24 @@ struct cuda_device_t *cuda_device_create(int device_type)
 		device->attributes[CU_DEVICE_ATTRIBUTE_CLOCK_RATE] = 1401000;
 		device->attributes[CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT] = 512;
 		device->attributes[CU_DEVICE_ATTRIBUTE_GPU_OVERLAP] = 1;
-		device->attributes[CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT] =
-			15;
+		device->attributes[CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT]
+			= 15;
 		device->attributes[CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT] = 1;
 		device->attributes[CU_DEVICE_ATTRIBUTE_INTEGRATED] = 0;
 		device->attributes[CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY] = 1;
 		device->attributes[CU_DEVICE_ATTRIBUTE_COMPUTE_MODE] = 0;
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_WIDTH] = 65536;
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_WIDTH] = 65536;
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_WIDTH]
+			= 65536;
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_WIDTH]
+			= 65536;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_HEIGHT]
 			= 65535;
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_WIDTH] = 2048;
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_HEIGHT] = 2048;
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_DEPTH] = 2048;
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_WIDTH]
+			= 2048;
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_HEIGHT]
+			= 2048;
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_DEPTH]
+			= 2048;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_LAYERED_WIDTH]
 			= 16384;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_LAYERED_HEIGHT]
@@ -84,9 +89,10 @@ struct cuda_device_t *cuda_device_create(int device_type)
 		device->attributes[CU_DEVICE_ATTRIBUTE_PCI_BUS_ID] = 2;
 		device->attributes[CU_DEVICE_ATTRIBUTE_PCI_DEVICE_ID] = 0;
 		device->attributes[CU_DEVICE_ATTRIBUTE_TCC_DRIVER] = 0;
-		device->attributes[CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE] =
-			1848000;
-		device->attributes[CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH] = 384;
+		device->attributes[CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE]
+			= 1848000;
+		device->attributes[CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH]
+			= 384;
 		device->attributes[CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE] = 786432;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR]
 			= 1536;
@@ -97,8 +103,8 @@ struct cuda_device_t *cuda_device_create(int device_type)
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_LAYERED_LAYERS]
 			= 2048;
 		device->attributes[CU_DEVICE_ATTRIBUTE_CAN_TEX2D_GATHER] = 1;
-		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_GATHER_WIDTH] =
-			16384;
+		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_GATHER_WIDTH]
+			= 16384;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_GATHER_HEIGHT]
 			= 16384;
 		device->attributes[CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE3D_WIDTH_ALTERNATE]

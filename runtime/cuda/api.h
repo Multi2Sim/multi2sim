@@ -21,37 +21,13 @@
 #define RUNTIME_CUDA_API_H
 
 
-/* Version */
-#define CUDA_VERSION_MAJOR 1
-#define CUDA_VERSION_MINOR 860
-struct cuda_version_t
-{
-	int major;
-	int minor;
-};
-
 /* Debug */
-extern int cuda_debug;
-#define cuda_debug_print(stream, ...) (cuda_debug ? fprintf((stream), \
-			__VA_ARGS__) : (void) 0)
-#define cuda_debug_print(stream, ...) (cuda_debug ? fprintf((stream), \
-			__VA_ARGS__) : (void) 0)
+void cuda_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
-/* Error */
-extern char *cuda_err_not_impl;
-extern char *cuda_rt_err_not_impl;
-extern char *cuda_err_version;
-extern char *cuda_err_native;
-extern char *cuda_rt_err_native;
-#define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", __FUNCTION__, \
-		cuda_err_not_impl)
-#define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", __FUNCTION__, \
-		cuda_rt_err_not_impl)
-
-/* System Call Code */
+/* Syscall code */
 #define CUDA_SYS_CODE 328
 
-/* List of CUDA Calls */
+/* List of CUDA calls */
 enum cuda_call_t
 {
 	cuda_call_invalid,
@@ -62,16 +38,7 @@ enum cuda_call_t
 };
 
 /* For CUDA runtime */
-extern CUmodule module;
-extern CUfunction function;
 #define __dv(v)
-struct __fatDeviceText
-{
-	int m;
-	int v;
-	const unsigned long long* d;
-	char* f;
-};
 
 /* For CUDA driver */
 extern struct cuda_device_t *device;

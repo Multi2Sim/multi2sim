@@ -26,7 +26,6 @@ extern struct list_t *memory_object_list;
 struct cuda_memory_object_t
 {
 	unsigned int id;
-	int ref_count;
 
 	unsigned int size;
 	unsigned int host_ptr;
