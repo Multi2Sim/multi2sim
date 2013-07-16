@@ -58,7 +58,7 @@ void opengl_done(void)
 }
 
 
-int opengl_abi_call(struct x86_ctx_t *ctx)
+int opengl_abi_call(X86Context *context)
 {
 	__OPENGL_MISSING__
 	return 0;
