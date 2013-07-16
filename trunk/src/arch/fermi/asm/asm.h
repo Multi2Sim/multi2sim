@@ -127,11 +127,13 @@ struct frm_fmt_general1_t
 	unsigned long long int src2 : 20; /* 45:26 */
 	unsigned long long int src2_mod : 2; /* 47:46 */
 	unsigned long long int dst_cc : 1; /* 48 */
-	unsigned long long int R : 4; /* 52:49 */
+	unsigned long long int R : 3; /* 51:49 */
+	unsigned long long int _reserved0: 1; /* 52 */
 	unsigned long long int logic : 2; /* 54:53 */
 	unsigned long long int cmp : 4; /* 58:55 */
 	unsigned long long int op1 : 5; /* 63:59 */
 };
+
 struct frm_fmt_imm_t
 {
 	unsigned long long int op0 : 4; /* 3:0 */

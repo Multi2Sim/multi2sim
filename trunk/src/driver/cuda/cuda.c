@@ -92,8 +92,7 @@ int cuda_abi_call(X86Context *ctx)
 			__FUNCTION__, code, cuda_err_code);
 
 	/* Debug */
-	cuda_debug("CUDA call '%s' (code %d)\n",
-		cuda_call_name[code], code);
+	cuda_debug("CUDA call '%s' (code %d)\n", cuda_call_name[code], code);
 
 	/* Call */
 	assert(cuda_func_table[code]);
