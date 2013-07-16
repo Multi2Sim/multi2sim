@@ -83,8 +83,8 @@ void X86ThreadRecover(X86Thread *self)
 		
 		/* Undo map */
 		if (!uop->completed)
-			x86_reg_file_write(uop);
-		x86_reg_file_undo(uop);
+			X86ThreadWriteUop(self, uop);
+		X86ThreadUndoUop(self, uop);
 
 		/* Trace */
 		if (x86_tracing())

@@ -82,6 +82,71 @@ int x86_uop_exists(struct x86_uop_t *uop)
 }
 
 
+/* Set the number of logical/physical registers needed by an instruction.
+ * If there are only flags as destination dependences, only one register is
+ * needed. Otherwise, one register per destination operand is needed, and the
+ * output flags will be mapped to one of the destination physical registers
+ * used for operands. */
+void x86_uop_count_deps(struct x86_uop_t *uop)
+{
+	int dep;
+	int loreg;
+
+	int int_count;
+	int fp_count;
+	int flag_count;
+	int xmm_count;
+
+	/* Initialize */
+	uop->idep_count = 0;
+	uop->odep_count = 0;
+	uop->ph_int_idep_count = 0;
+	uop->ph_fp_idep_count = 0;
+	uop->ph_xmm_idep_count = 0;
+	uop->ph_int_odep_count = 0;
+	uop->ph_fp_odep_count = 0;
+	uop->ph_xmm_odep_count = 0;
+
+	/* Output dependences */
+	int_count = fp_count = flag_count = xmm_count = 0;
+	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
+	{
+		loreg = uop->uinst->odep[dep];
+		if (X86_DEP_IS_FLAG(loreg))
+			flag_count++;
+		else if (X86_DEP_IS_INT_REG(loreg))
+			int_count++;
+		else if (X86_DEP_IS_FP_REG(loreg))
+			fp_count++;
+		else if (X86_DEP_IS_XMM_REG(loreg))
+			xmm_count++;
+	}
+	uop->odep_count = flag_count + int_count + fp_count + xmm_count;
+	uop->ph_int_odep_count = flag_count && !int_count ? 1 : int_count;
+	uop->ph_fp_odep_count = fp_count;
+	uop->ph_xmm_odep_count = xmm_count;
+
+	/* Input dependences */
+	int_count = fp_count = flag_count = xmm_count = 0;
+	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++)
+	{
+		loreg = uop->uinst->idep[dep];
+		if (X86_DEP_IS_FLAG(loreg))
+			flag_count++;
+		else if (X86_DEP_IS_INT_REG(loreg))
+			int_count++;
+		else if (X86_DEP_IS_FP_REG(loreg))
+			fp_count++;
+		else if (X86_DEP_IS_XMM_REG(loreg))
+			xmm_count++;
+	}
+	uop->idep_count = flag_count + int_count + fp_count + xmm_count;
+	uop->ph_int_idep_count = flag_count + int_count;
+	uop->ph_fp_idep_count = fp_count;
+	uop->ph_xmm_idep_count = xmm_count;
+}
+
+
 void x86_uop_list_dump(struct list_t *list, FILE *f)
 {
 	struct x86_uop_t *uop;
@@ -111,22 +176,3 @@ void x86_uop_linked_list_dump(struct linked_list_t *uop_list, FILE *f)
 		linked_list_next(uop_list);
 	}
 }
-
-
-/* Update 'uop->ready' field of all instructions in a list as per the result
- * obtained by 'x86_reg_file_ready'. The 'uop->ready' field is redundant and should always
- * match the return value of 'x86_reg_file_ready' while an uop is in the ROB.
- * A debug message is dumped when the uop transitions to ready. */
-void x86_uop_linked_list_check_if_ready(struct linked_list_t *uop_list)
-{
-	struct x86_uop_t *uop;
-
-	LINKED_LIST_FOR_EACH(uop_list)
-	{
-		uop = linked_list_get(uop_list);
-		if (uop->ready || !x86_reg_file_ready(uop))
-			continue;
-		uop->ready = 1;
-	}
-}
-

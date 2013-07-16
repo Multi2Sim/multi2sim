@@ -125,7 +125,7 @@ static int X86ThreadIssueLQ(X86Thread *self, int quant)
 	{
 		/* Get element from load queue. If it is not ready, go to the next one */
 		load = linked_list_get(lq);
-		if (!load->ready && !x86_reg_file_ready(load))
+		if (!load->ready && !X86ThreadIsUopReady(self, load))
 		{
 			linked_list_next(lq);
 			continue;
@@ -200,7 +200,7 @@ static int X86ThreadIssuePreQ(X86Thread *self, int quantum)
 	{
 		/* Get element from prefetch queue. If it is not ready, go to the next one */
 		prefetch = linked_list_get(preq);
-		if (!prefetch->ready && !x86_reg_file_ready(prefetch))
+		if (!prefetch->ready && !X86ThreadIsUopReady(self, prefetch))
 		{
 			linked_list_next(preq);
 			continue;
@@ -295,12 +295,12 @@ static int X86ThreadIssueIQ(X86Thread *self, int quant)
 		uop = linked_list_get(iq);
 		assert(x86_uop_exists(uop));
 		assert(!(uop->flags & X86_UINST_MEM));
-		if (!uop->ready && !x86_reg_file_ready(uop))
+		if (!uop->ready && !X86ThreadIsUopReady(self, uop))
 		{
 			linked_list_next(iq);
 			continue;
 		}
-		uop->ready = 1;  /* avoid next call to 'x86_reg_file_ready' */
+		uop->ready = 1;  /* avoid next call to 'X86ThreadIsUopReady' */
 		
 		/* Run the instruction in its corresponding functional unit.
 		 * If the instruction does not require a functional unit, 'x86_fu_reserve'

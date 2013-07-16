@@ -20,8 +20,20 @@
 #ifndef X86_ARCH_TIMING_REG_FILE_H
 #define X86_ARCH_TIMING_REG_FILE_H
 
+#include <lib/util/class.h>
+
 #include "uop.h"
 
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Thread);
+struct config_t;
+struct x86_uop_t;
+
+
+/*
+ * Public
+ */
 
 #define X86_REG_FILE_MIN_INT_SIZE  (x86_dep_int_count + X86_UINST_MAX_ODEPS)
 #define X86_REG_FILE_MIN_FP_SIZE  (x86_dep_fp_count + X86_UINST_MAX_ODEPS)
@@ -33,9 +45,56 @@ extern enum x86_reg_file_kind_t
 	x86_reg_file_kind_shared = 0,
 	x86_reg_file_kind_private
 } x86_reg_file_kind;
+
 extern int x86_reg_file_int_size;
 extern int x86_reg_file_fp_size;
 extern int x86_reg_file_xmm_size;
+
+extern int x86_reg_file_int_local_size;
+extern int x86_reg_file_fp_local_size;
+extern int x86_reg_file_xmm_local_size;
+
+
+
+
+/*
+ * Public
+ */
+
+void X86ReadRegFileConfig(struct config_t *config);
+
+
+
+/*
+ * Class 'X86Core'
+ */
+
+void X86ThreadInitRegFile(X86Thread *self);
+void X86ThreadFreeRegFile(X86Thread *self);
+void X86ThreadDumpRegFile(X86Thread *self, FILE *f);
+
+int X86ThreadRequestIntReg(X86Thread *self);
+int X86ThreadRequestFPReg(X86Thread *self);
+int X86ThreadRequestXMMReg(X86Thread *self);
+
+int X86ThreadCanRenameUop(X86Thread *self, struct x86_uop_t *uop);
+void X86ThreadRenameUop(X86Thread *self, struct x86_uop_t *uop);
+
+int X86ThreadIsUopReady(X86Thread *self, struct x86_uop_t *uop);
+void X86ThreadIsUopListReady(X86Thread *self, struct linked_list_t *uop_list);
+
+void X86ThreadWriteUop(X86Thread *self, struct x86_uop_t *uop);
+void X86ThreadUndoUop(X86Thread *self, struct x86_uop_t *uop);
+void X86ThreadCommitUop(X86Thread *self, struct x86_uop_t *uop);
+
+void X86ThreadCheckRegFile(X86Thread *self);
+
+
+
+
+/*
+ * Object 'x86_reg_file_t'
+ */
 
 struct x86_phreg_t
 {
@@ -59,7 +118,7 @@ struct x86_reg_file_t
 	int fp_phreg_count;
 	int *fp_free_phreg;
 	int fp_free_phreg_count;
-	
+
 	/* XMM registers */
 	int xmm_rat[x86_dep_xmm_count];
 	struct x86_phreg_t *xmm_phreg;
@@ -68,21 +127,8 @@ struct x86_reg_file_t
 	int xmm_free_phreg_count;
 };
 
-void x86_reg_file_init(void);
-void x86_reg_file_done(void);
-
 struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size, int xmm_size);
 void x86_reg_file_free(struct x86_reg_file_t *reg_file);
-
-void x86_reg_file_dump(int core, int thread, FILE *f);
-void x86_reg_file_count_deps(struct x86_uop_t *uop);
-int x86_reg_file_can_rename(struct x86_uop_t *uop);
-void x86_reg_file_rename(struct x86_uop_t *uop);
-int x86_reg_file_ready(struct x86_uop_t *uop);
-void x86_reg_file_write(struct x86_uop_t *uop);
-void x86_reg_file_undo(struct x86_uop_t *uop);
-void x86_reg_file_commit(struct x86_uop_t *uop);
-void x86_reg_file_check_integrity(int core, int thread);
 
 
 #endif

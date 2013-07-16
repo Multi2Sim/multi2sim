@@ -89,7 +89,7 @@ void X86CoreWriteback(X86Core *self)
 
 		/* Writeback */
 		uop->completed = 1;
-		x86_reg_file_write(uop);
+		X86ThreadWriteUop(thread, uop);
 		self->reg_file_int_writes += uop->ph_int_odep_count;
 		self->reg_file_fp_writes += uop->ph_fp_odep_count;
 		self->iq_wakeup_accesses++;

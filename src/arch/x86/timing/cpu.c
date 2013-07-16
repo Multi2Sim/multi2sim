@@ -491,20 +491,20 @@ void x86_cpu_read_config(void)
 
 	x86_uop_queue_size = config_read_int(config, section, "UopQueueSize", 32);
 
-	x86_rob_kind = config_read_enum(config, section, "RobKind", x86_rob_kind_private, x86_rob_kind_map, 2);
+	x86_rob_kind = config_read_enum(config, section, "RobKind",
+			x86_rob_kind_private, x86_rob_kind_map, 2);
 	x86_rob_size = config_read_int(config, section, "RobSize", 64);
 
-	x86_iq_kind = config_read_enum(config, section, "IqKind", x86_iq_kind_private, x86_iq_kind_map, 2);
+	x86_iq_kind = config_read_enum(config, section, "IqKind",
+			x86_iq_kind_private, x86_iq_kind_map, 2);
 	x86_iq_size = config_read_int(config, section, "IqSize", 40);
 
-	x86_lsq_kind = config_read_enum(config, section, "LsqKind", x86_lsq_kind_private, x86_lsq_kind_map, 2);
+	x86_lsq_kind = config_read_enum(config, section, "LsqKind",
+			x86_lsq_kind_private, x86_lsq_kind_map, 2);
 	x86_lsq_size = config_read_int(config, section, "LsqSize", 20);
 
-	x86_reg_file_kind = config_read_enum(config, section, "RfKind", x86_reg_file_kind_private, x86_reg_file_kind_map, 2);
-	x86_reg_file_int_size = config_read_int(config, section, "RfIntSize", 80);
-	x86_reg_file_fp_size = config_read_int(config, section, "RfFpSize", 40);
-	x86_reg_file_xmm_size = config_read_int(config, section, "RfXmmSize", 40);
-
+	/* Register file */
+	X86ReadRegFileConfig(config);
 
 	/* Functional Units */
 	x86_fu_read_config(config);
@@ -547,7 +547,6 @@ void x86_cpu_init(void)
 	x86_cpu = new(X86Cpu, x86_emu);
 
 	/* Components of an x86 CPU */
-	x86_reg_file_init();
 	x86_bpred_init();
 	x86_trace_cache_init();
 	x86_fetch_queue_init();
@@ -571,7 +570,6 @@ void x86_cpu_done(void)
 	x86_fetch_queue_done();
 	x86_bpred_done();
 	x86_trace_cache_done();
-	x86_reg_file_done();
 	x86_fu_done();
 
 	/* Free CPU */
@@ -797,7 +795,7 @@ void X86CpuDump(Object *self, FILE *f)
 			fprintf(f, "Store Queue:\n");
 			x86_uop_linked_list_dump(X86_THREAD.sq, f);
 
-			x86_reg_file_dump(core, thread, f);
+			X86ThreadDumpRegFile(cpu->cores[core]->threads[thread], f);
 			if (X86_THREAD.ctx)
 				fprintf(f, "MappedContext = %d\n", X86_THREAD.ctx->pid);
 			
