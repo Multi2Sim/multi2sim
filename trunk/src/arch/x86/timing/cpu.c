@@ -545,7 +545,7 @@ void x86_cpu_init(void)
 void x86_cpu_done(void)
 {
 	/* Uop trace list */
-	x86_cpu_uop_trace_list_empty();
+	X86CpuEmptyTraceList(x86_cpu);
 	linked_list_free(x86_cpu->uop_trace_list);
 
 	/* Free CPU */
@@ -614,30 +614,6 @@ void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop)
 	linked_list_add(x86_cpu->uop_trace_list, uop);
 }
 
-
-void x86_cpu_uop_trace_list_empty(void)
-{
-	struct linked_list_t *uop_trace_list;
-	struct x86_uop_t *uop;
-
-	uop_trace_list = x86_cpu->uop_trace_list;
-	while (uop_trace_list->count)
-	{
-		/* Remove from list */
-		linked_list_head(uop_trace_list);
-		uop = linked_list_get(uop_trace_list);
-		linked_list_remove(uop_trace_list);
-		assert(uop->in_uop_trace_list);
-
-		/* Trace */
-		x86_trace("x86.end_inst id=%lld core=%d\n",
-			uop->id_in_core, uop->core);
-
-		/* Free uop */
-		uop->in_uop_trace_list = 0;
-		x86_uop_free_if_not_queued(uop);
-	}
-}
 
 
 
@@ -1086,7 +1062,7 @@ int X86CpuRun(Timing *self)
 
 	/* Empty uop trace list. This dumps the last trace line for instructions
 	 * that were freed in the previous simulation cycle. */
-	x86_cpu_uop_trace_list_empty();
+	X86CpuEmptyTraceList(cpu);
 
 	/* Processor stages */
 	X86CpuRunStages(cpu);
@@ -1135,4 +1111,33 @@ void X86CpuFastForward(X86Cpu *self)
 	if (esim_finish)
 		warning("x86 fast-forwarding finished simulation.\n%s",
 				x86_cpu_err_fast_forward);
+}
+
+
+void X86CpuEmptyTraceList(X86Cpu *self)
+{
+	X86Thread *thread;
+	X86Core *core;
+	struct linked_list_t *uop_trace_list;
+	struct x86_uop_t *uop;
+
+	uop_trace_list = self->uop_trace_list;
+	while (uop_trace_list->count)
+	{
+		/* Remove from list */
+		linked_list_head(uop_trace_list);
+		uop = linked_list_get(uop_trace_list);
+		thread = uop->thread;
+		core = thread->core;
+		linked_list_remove(uop_trace_list);
+		assert(uop->in_uop_trace_list);
+
+		/* Trace */
+		x86_trace("x86.end_inst id=%lld core=%d\n",
+			uop->id_in_core, core->id);
+
+		/* Free uop */
+		uop->in_uop_trace_list = 0;
+		x86_uop_free_if_not_queued(uop);
+	}
 }

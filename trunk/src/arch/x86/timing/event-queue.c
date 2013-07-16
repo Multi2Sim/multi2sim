@@ -117,7 +117,7 @@ int X86ThreadLongLatencyInEventQueue(X86Thread *self)
 	LINKED_LIST_FOR_EACH(event_queue)
 	{
 		uop = linked_list_get(event_queue);
-		if (uop->thread != self->id_in_core)
+		if (uop->thread != self)
 			continue;
 		if (asTiming(cpu)->cycle - uop->issue_when > 20)
 			return 1;
@@ -137,8 +137,7 @@ int X86ThreadCacheMissInEventQueue(X86Thread *self)
 	LINKED_LIST_FOR_EACH(event_queue)
 	{
 		uop = linked_list_get(event_queue);
-		if (uop->thread != self->id_in_core ||
-				uop->uinst->opcode != x86_uinst_load)
+		if (uop->thread != self || uop->uinst->opcode != x86_uinst_load)
 			continue;
 		if (asTiming(cpu)->cycle - uop->issue_when > 5)
 			return 1;
@@ -158,7 +157,7 @@ void X86ThreadRecoverEventQueue(X86Thread *self)
 	while (!linked_list_is_end(event_queue))
 	{
 		uop = linked_list_get(event_queue);
-		if (uop->thread == self->id_in_core && uop->specmode)
+		if (uop->thread == self && uop->specmode)
 		{
 			linked_list_remove(event_queue);
 			uop->in_event_queue = 0;

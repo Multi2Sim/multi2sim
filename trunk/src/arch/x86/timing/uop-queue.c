@@ -56,13 +56,14 @@ void X86ThreadFreeUopQueue(X86Thread *self)
 
 void X86ThreadRecoverUopQueue(X86Thread *self)
 {
+	X86Core *core = self->core;
 	struct list_t *uop_queue = self->uop_queue;
 	struct x86_uop_t *uop;
 
 	while (list_count(uop_queue))
 	{
 		uop = list_get(uop_queue, list_count(uop_queue) - 1);
-		assert(uop->thread == self->id_in_core);
+		assert(uop->thread == self);
 		if (!uop->specmode)
 			break;
 		list_remove_at(uop_queue, list_count(uop_queue) - 1);
@@ -72,7 +73,7 @@ void X86ThreadRecoverUopQueue(X86Thread *self)
 		if (x86_tracing())
 		{
 			x86_trace("x86.inst id=%lld core=%d stg=\"sq\"\n",
-				uop->id_in_core, uop->core);
+				uop->id_in_core, core->id);
 			x86_cpu_uop_trace_list_add(uop);
 		}
 

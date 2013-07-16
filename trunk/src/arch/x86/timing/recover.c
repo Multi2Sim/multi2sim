@@ -69,8 +69,7 @@ void X86ThreadRecover(X86Thread *self)
 
 		/* If we already removed all speculative instructions,
 		 * the work is finished */
-		assert(uop->core == core->id);
-		assert(uop->thread == self->id_in_core);
+		assert(uop->thread == self);
 		if (!uop->specmode)
 			break;
 		
@@ -90,7 +89,7 @@ void X86ThreadRecover(X86Thread *self)
 		if (x86_tracing())
 		{
 			x86_trace("x86.inst id=%lld core=%d stg=\"sq\"\n",
-				uop->id_in_core, uop->core);
+				uop->id_in_core, core->id);
 			x86_cpu_uop_trace_list_add(uop);
 		}
 
