@@ -65,7 +65,7 @@ void glut_done(void)
 }
 
 
-int glut_abi_call(struct x86_ctx_t *ctx)
+int glut_abi_call(X86Context *context)
 {
 	__GLUT_MISSING__
 	return 0;
