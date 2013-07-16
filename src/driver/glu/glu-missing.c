@@ -18,6 +18,7 @@
  */
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/class.h>
 #include <lib/util/debug.h>
 
 #include "glu.h"
@@ -61,7 +62,7 @@ void glu_done(void)
 }
 
 
-int glu_abi_call(struct x86_ctx_t *ctx)
+int glu_abi_call(X86Context *context)
 {
 	__GLU_MISSING__
 	return 0;

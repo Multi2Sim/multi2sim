@@ -61,7 +61,7 @@ void glew_done(void)
 }
 
 
-int glew_abi_call(struct x86_ctx_t *ctx)
+int glew_abi_call(X86Context *context)
 {
 	__GLEW_MISSING__
 	return 0;
