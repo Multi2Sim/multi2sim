@@ -20,6 +20,17 @@
 #ifndef X86_ARCH_TIMING_ROB_H
 #define X86_ARCH_TIMING_ROB_H
 
+#include <lib/util/class.h>
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Cpu);
+CLASS_FORWARD_DECLARATION(X86Core);
+CLASS_FORWARD_DECLARATION(X86Thread);
+
+
+/*
+ * Public
+ */
 
 extern char *x86_rob_kind_map[];
 extern enum x86_rob_kind_t
@@ -29,18 +40,37 @@ extern enum x86_rob_kind_t
 } x86_rob_kind;
 extern int x86_rob_size;
 
-void x86_rob_init(void);
-void x86_rob_done(void);
-void x86_rob_dump(int core, FILE *f);
 
-int x86_rob_can_enqueue(struct x86_uop_t *uop);
-void x86_rob_enqueue(struct x86_uop_t *uop);
-int x86_rob_can_dequeue(int core, int thread);
-struct x86_uop_t *x86_rob_head(int core, int thread);
-void x86_rob_remove_head(int core, int thread);
-struct x86_uop_t *x86_rob_tail(int core, int thread);
-void x86_rob_remove_tail(int core, int thread);
-struct x86_uop_t *x86_rob_get(int core, int thread, int index);
+
+/*
+ * Class 'X86Cpu'
+ */
+
+void X86CpuInitROB(X86Cpu *self);
+void X86CpuFreeROB(X86Cpu *self);
+
+
+
+/*
+ * Class 'X86Core'
+ */
+
+void X86CoreDumpROB(X86Core *self, FILE *f);
+int X86CoreCanEnqueueInROB(X86Core *self, struct x86_uop_t *uop);
+void X86CoreEnqueueInROB(X86Core *self, struct x86_uop_t *uop);
+
+
+/*
+ * Class 'X86Thread'
+ */
+
+int X86ThreadCanDequeueFromROB(X86Thread *self);
+struct x86_uop_t *X86ThreadGetROBHead(X86Thread *self);
+void X86ThreadRemoveROBHead(X86Thread *self);
+struct x86_uop_t *X86ThreadGetROBTail(X86Thread *self);
+void X86ThreadRemoveROBTail(X86Thread *self);
+struct x86_uop_t *X86GetROBEntry(X86Thread *self, int index);
+
 
 #endif
 

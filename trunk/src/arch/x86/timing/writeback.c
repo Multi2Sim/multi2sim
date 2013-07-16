@@ -101,7 +101,7 @@ void X86CoreWriteback(X86Core *self)
 		/* Recovery. This must be performed at last, because lots of uops might be
 		 * freed, which interferes with the temporary extraction from the event_queue. */
 		if (recover)
-			x86_cpu_recover(self->id, thread->id_in_core);
+			X86ThreadRecover(thread);
 	}
 }
 

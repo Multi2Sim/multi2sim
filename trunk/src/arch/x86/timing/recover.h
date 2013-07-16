@@ -20,7 +20,17 @@
 #ifndef ARCH_X86_TIMING_RECOVER_H
 #define ARCH_X86_TIMING_RECOVER_H
 
-void x86_cpu_recover(int core, int thread);
+#include <lib/util/class.h>
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Thread);
+
+
+/*
+ * Class 'X86Thread'
+ */
+
+void X86ThreadRecover(X86Thread *self);
 
 #endif
 
