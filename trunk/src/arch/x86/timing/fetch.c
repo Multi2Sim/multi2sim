@@ -250,7 +250,7 @@ static int X86ThreadFetchTraceCache(X86Thread *self)
 			self->fetch_neip, self->inst_mod->block_size);
 	mpred = eip_branch ? X86ThreadLookupBranchPredMultiple(self,
 			eip_branch, x86_trace_cache_branch_max) : 0;
-	hit = x86_trace_cache_lookup(self->trace_cache, self->fetch_neip, mpred,
+	hit = X86ThreadLookupTraceCache(self, self->fetch_neip, mpred,
 			&mop_count, &mop_array, &neip);
 	if (!hit)
 		return 0;

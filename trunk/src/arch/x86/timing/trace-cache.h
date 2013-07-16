@@ -25,13 +25,32 @@
 
 /* Forward declarations */
 CLASS_FORWARD_DECLARATION(X86Thread);
+struct config_t;
 
 
-/* Debug */
-#define x86_trace_cache_debugging() debug_status(x86_trace_cache_debug_category)
-#define x86_trace_cache_debug(...) debug(x86_trace_cache_debug_category, __VA_ARGS__)
-extern int x86_trace_cache_debug_category;
 
+/*
+ * Class 'X86Thread'
+ */
+
+void X86ThreadInitTraceCache(X86Thread *self);
+void X86ThreadFreeTraceCache(X86Thread *self);
+
+void X86ThreadDumpTraceCacheReport(X86Thread *self, FILE *f);
+
+void X86ThreadRecordUopInTraceCache(X86Thread *self, struct x86_uop_t *uop);
+int X86ThreadLookupTraceCache(X86Thread *self, unsigned int eip, int pred,
+	int *ptr_mop_count, unsigned int **ptr_mop_array, unsigned int *ptr_neip);
+
+
+
+
+/*
+ * Object 'x86_trace_cache_t'
+ */
+
+struct x86_trace_cache_t *x86_trace_cache_create(char *name);
+void x86_trace_cache_free(struct x86_trace_cache_t *trace_cache);
 
 #define X86_TRACE_CACHE_ENTRY_SIZE \
 	(sizeof(struct x86_trace_cache_entry_t) + \
@@ -85,9 +104,6 @@ struct x86_trace_cache_t
 {
 	char *name;
 
-	/* Thread where it belongs */
-	X86Thread *thread;
-
 	/* Trace cache lines ('sets' * 'assoc' elements) */
 	struct x86_trace_cache_entry_t *entry;
 
@@ -108,6 +124,17 @@ struct x86_trace_cache_t
 };
 
 
+
+
+/*
+ * Public
+ */
+
+/* Debug */
+#define x86_trace_cache_debugging() debug_status(x86_trace_cache_debug_category)
+#define x86_trace_cache_debug(...) debug(x86_trace_cache_debug_category, __VA_ARGS__)
+extern int x86_trace_cache_debug_category;
+
 extern int x86_trace_cache_present;
 extern int x86_trace_cache_num_sets;
 extern int x86_trace_cache_assoc;
@@ -116,20 +143,7 @@ extern int x86_trace_cache_branch_max;
 extern int x86_trace_cache_queue_size;
 
 
-struct config_t;
-void x86_trace_cache_read_config(struct config_t *config);
-
-void x86_trace_cache_init(void);
-void x86_trace_cache_done(void);
-void x86_trace_cache_dump_report(struct x86_trace_cache_t *trace_cache, FILE *f);
-
-struct x86_trace_cache_t *x86_trace_cache_create(char *name, X86Thread *thread);
-void x86_trace_cache_free(struct x86_trace_cache_t *trace_cache);
-
-void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_uop_t *uop);
-int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, unsigned int eip, int pred,
-	int *ptr_mop_count, unsigned int **ptr_mop_array, unsigned int *ptr_neip);
-
+void X86ReadTraceCacheConfig(struct config_t *config);
 
 #endif
 
