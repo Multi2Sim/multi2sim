@@ -26,9 +26,9 @@ extern struct list_t *context_list;
 struct CUctx_st
 {
 	unsigned int id;
-	int ref_count;
 
 	CUdevice device;
+
 	unsigned int version;
 };
 

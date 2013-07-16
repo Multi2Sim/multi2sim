@@ -21,34 +21,8 @@
 #define RUNTIME_CUDA_FUNCTION_ARG_H
 
 
-enum cuda_mem_scope_t
-{
-	CUDA_MEM_SCOPE_NONE = 0,
-	CUDA_MEM_SCOPE_GLOBAL,
-	CUDA_MEM_SCOPE_LOCAL,
-	CUDA_MEM_SCOPE_PRIVATE,
-	CUDA_MEM_SCOPE_CONSTANT
-};
-
-enum cuda_function_arg_kind_t
-{
-	CUDA_FUNCTION_ARG_KIND_NONE = 0,
-	CUDA_FUNCTION_ARG_KIND_VALUE,
-	CUDA_FUNCTION_ARG_KIND_POINTER
-};
-
-enum cuda_function_arg_access_type_t
-{
-	CUDA_FUNCTION_ARG_NONE = 0,
-	CUDA_FUNCTION_ARG_READ_ONLY,
-	CUDA_FUNCTION_ARG_WRITE_ONLY,
-	CUDA_FUNCTION_ARG_READ_WRITE
-};
-
 struct cuda_function_arg_t
 {
-	int id;
-
 	void *ptr;
 	int size;
 	int offset;

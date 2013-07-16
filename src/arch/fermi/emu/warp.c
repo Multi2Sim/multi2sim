@@ -264,8 +264,8 @@ void frm_warp_execute(struct frm_warp_t *warp)
 		((warp->inst_buffer)[warp->pc / warp->inst_size]) >> 32;
 	((inst->dword).word)[1] = 
 		(warp->inst_buffer)[warp->pc / warp->inst_size];
-	frm_isa_debug("warp[%d] executes instruction 0x%0llx\n", warp->id,
-			inst->dword.dword);
+	frm_isa_debug("%s:%d: warp[%d] executes instruction 0x%0llx\n", 
+			__FUNCTION__, __LINE__, warp->id, inst->dword.dword);
 
 	/* Decode instruction */
 	frm_inst_decode(inst);
@@ -287,7 +287,6 @@ void frm_warp_execute(struct frm_warp_t *warp)
 			thread = warp->threads[thread_id];
 			(*frm_isa_inst_func[inst->info->inst])(thread, inst);
 		}
-		frm_isa_debug("inst 0x%llx executed\n", inst->dword.dword);
 		break;
 	default:
 		for (thread_id = 0; thread_id < warp->thread_count; thread_id++)
@@ -295,7 +294,6 @@ void frm_warp_execute(struct frm_warp_t *warp)
 			thread = warp->threads[thread_id];
 			(*frm_isa_inst_func[inst->info->inst])(thread, inst);
 		}
-		frm_isa_debug("inst 0x%llx executed\n", inst->dword.dword);
 		break;
 	}
 

@@ -53,6 +53,7 @@ CUfunction cuda_function_create(CUmodule module, const char *function_name)
 	function->id = list_count(function_list);
 	function->name = xstrdup(function_name);
 
+	/* Get cubin */
 	dev_func_bin = module->elf_file;
 
 	/* Look for .text.device_function_name section */

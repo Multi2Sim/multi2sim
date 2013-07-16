@@ -26,7 +26,6 @@ extern struct list_t *stream_list;
 struct CUstream_st
 {
 	unsigned int id;
-	int ref_count;
 };
 
 CUstream cuda_stream_create(void);

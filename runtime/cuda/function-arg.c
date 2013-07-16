@@ -41,7 +41,8 @@ struct cuda_function_arg_t *cuda_function_arg_create(const void *ptr,
 	return arg;
 }
 
-void cuda_function_arg_free(CUfunction function, struct cuda_function_arg_t *arg)
+void cuda_function_arg_free(CUfunction function, 
+		struct cuda_function_arg_t *arg)
 {
 	free(arg);
 }

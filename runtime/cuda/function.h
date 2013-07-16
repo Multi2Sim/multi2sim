@@ -43,7 +43,7 @@ struct CUfunc_st
 	int sharedSizeBytes;
 
 	/* Used to find the function in the function list */
-	void *host_func_ptr;
+	unsigned int host_func_ptr;
 };
 
 CUfunction cuda_function_create(CUmodule module, const char *function_name);
