@@ -25,6 +25,7 @@
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
+#include "bpred.h"
 #include "core.h"
 #include "cpu.h"
 #include "fetch-queue.h"
@@ -52,6 +53,8 @@ void X86ThreadCreate(X86Thread *self, X86Core *core)
 	X86ThreadInitLSQ(self);
 	X86ThreadInitIQ(self);
 	X86ThreadInitRegFile(self);
+	X86ThreadInitFetchQueue(self);
+	X86ThreadInitBranchPred(self);
 }
 
 
@@ -62,6 +65,8 @@ void X86ThreadDestroy(X86Thread *self)
 	X86ThreadFreeLSQ(self);
 	X86ThreadFreeIQ(self);
 	X86ThreadFreeRegFile(self);
+	X86ThreadFreeFetchQueue(self);
+	X86ThreadFreeBranchPred(self);
 
 	/* Finalize */
 	self->name = str_free(self->name);

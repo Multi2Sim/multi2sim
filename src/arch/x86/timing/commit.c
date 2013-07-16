@@ -125,8 +125,8 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		/* Branches update branch predictor and btb */
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			x86_bpred_update(self->bpred, uop);
-			x86_bpred_btb_update(self->bpred, uop);
+			X86ThreadUpdateBranchPred(self, uop);
+			X86ThreadUpdateBTB(self, uop);
 			self->btb_writes++;
 		}
 

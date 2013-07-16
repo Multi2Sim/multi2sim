@@ -509,20 +509,8 @@ void x86_cpu_read_config(void)
 	/* Functional Units */
 	x86_fu_read_config(config);
 
-
-	/* Branch Predictor */
-
-	section = "BranchPredictor";
-
-	x86_bpred_kind = config_read_enum(config, section, "Kind", x86_bpred_kind_twolevel, x86_bpred_kind_map, 6);
-	x86_bpred_btb_sets = config_read_int(config, section, "BTB.Sets", 256);
-	x86_bpred_btb_assoc = config_read_int(config, section, "BTB.Assoc", 4);
-	x86_bpred_bimod_size = config_read_int(config, section, "Bimod.Size", 1024);
-	x86_bpred_choice_size = config_read_int(config, section, "Choice.Size", 1024);
-	x86_bpred_ras_size = config_read_int(config, section, "RAS.Size", 32);
-	x86_bpred_twolevel_l1size = config_read_int(config, section, "TwoLevel.L1Size", 1);
-	x86_bpred_twolevel_l2size = config_read_int(config, section, "TwoLevel.L2Size", 1024);
-	x86_bpred_twolevel_hist_size = config_read_int(config, section, "TwoLevel.HistorySize", 8);
+	/* Branch predictor */
+	X86ReadBranchPredConfig(config);
 
 	/* Trace Cache */
 	x86_trace_cache_read_config(config);
@@ -547,9 +535,7 @@ void x86_cpu_init(void)
 	x86_cpu = new(X86Cpu, x86_emu);
 
 	/* Components of an x86 CPU */
-	x86_bpred_init();
 	x86_trace_cache_init();
-	x86_fetch_queue_init();
 	x86_fu_init();
 
 	/* Trace */
@@ -567,8 +553,6 @@ void x86_cpu_done(void)
 	linked_list_free(x86_cpu->uop_trace_list);
 
 	/* Finalize structures */
-	x86_fetch_queue_done();
-	x86_bpred_done();
 	x86_trace_cache_done();
 	x86_fu_done();
 
