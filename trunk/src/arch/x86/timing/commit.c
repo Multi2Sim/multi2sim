@@ -80,10 +80,10 @@ int X86ThreadCanCommit(X86Thread *self)
 	assert(uop->core == core->id && uop->thread == self->id_in_core);
 
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
-	 * if the call to 'x86_reg_file_ready' shows input registers to be ready. */
+	 * if the call to 'X86ThreadIsUopReady' shows input registers to be ready. */
 	if (uop->uinst->opcode == x86_uinst_store)
 	{
-		if (!uop->ready && x86_reg_file_ready(uop))
+		if (!uop->ready && X86ThreadIsUopReady(self, uop))
 			uop->ready = 1;
 		return uop->ready;
 	}
@@ -120,7 +120,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 	
 		/* Free physical registers */
 		assert(!uop->specmode);
-		x86_reg_file_commit(uop);
+		X86ThreadCommitUop(self, uop);
 		
 		/* Branches update branch predictor and btb */
 		if (uop->flags & X86_UINST_CTRL)

@@ -39,6 +39,7 @@
 #include "reg-file.h"
 #include "thread.h"
 #include "trace-cache.h"
+#include "uop.h"
 
 
 
@@ -153,7 +154,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 
 		/* Process uop dependences and classify them in integer, floating-point,
 		 * flags, etc. */
-		x86_reg_file_count_deps(uop);
+		x86_uop_count_deps(uop);
 
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
