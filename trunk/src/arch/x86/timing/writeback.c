@@ -32,39 +32,46 @@
 #include "writeback.h"
 
 
-static void x86_cpu_writeback_core(int core)
+
+/*
+ * Class 'X86Core'
+ */
+
+void X86CoreWriteback(X86Core *self)
 {
+	X86Cpu *cpu = self->cpu;
+	X86Thread *thread;
+
 	struct x86_uop_t *uop;
 
-	int thread;
 	int recover = 0;
 
 	for (;;)
 	{
 		/* Pick element from the head of the event queue */
-		linked_list_head(X86_CORE.event_queue);
-		uop = linked_list_get(X86_CORE.event_queue);
+		linked_list_head(self->event_queue);
+		uop = linked_list_get(self->event_queue);
 		if (!uop)
 			break;
 
 		/* A memory uop placed in the event queue is always complete.
 		 * Other uops are complete when uop->when is equals to current cycle. */
 		if (uop->flags & X86_UINST_MEM)
-			uop->when = asTiming(x86_cpu)->cycle;
-		if (uop->when > asTiming(x86_cpu)->cycle)
+			uop->when = asTiming(cpu)->cycle;
+		if (uop->when > asTiming(cpu)->cycle)
 			break;
 		
 		/* Check element integrity */
 		assert(x86_uop_exists(uop));
-		assert(uop->when == asTiming(x86_cpu)->cycle);
-		assert(uop->core == core);
+		assert(uop->when == asTiming(cpu)->cycle);
+		assert(uop->core == self->id);
 		assert(uop->ready);
 		assert(!uop->completed);
 		
 		/* Extract element from event queue. */
-		linked_list_remove(X86_CORE.event_queue);
+		linked_list_remove(self->event_queue);
 		uop->in_event_queue = 0;
-		thread = uop->thread;
+		thread = self->threads[uop->thread];
 		
 		/* If a mispredicted branch is solved and recovery is configured to be
 		 * performed at writeback, schedule it for the end of the iteration. */
@@ -83,28 +90,34 @@ static void x86_cpu_writeback_core(int core)
 		/* Writeback */
 		uop->completed = 1;
 		x86_reg_file_write(uop);
-		X86_CORE.reg_file_int_writes += uop->ph_int_odep_count;
-		X86_CORE.reg_file_fp_writes += uop->ph_fp_odep_count;
-		X86_CORE.iq_wakeup_accesses++;
-		X86_THREAD.reg_file_int_writes += uop->ph_int_odep_count;
-		X86_THREAD.reg_file_fp_writes += uop->ph_fp_odep_count;
-		X86_THREAD.iq_wakeup_accesses++;
+		self->reg_file_int_writes += uop->ph_int_odep_count;
+		self->reg_file_fp_writes += uop->ph_fp_odep_count;
+		self->iq_wakeup_accesses++;
+		thread->reg_file_int_writes += uop->ph_int_odep_count;
+		thread->reg_file_fp_writes += uop->ph_fp_odep_count;
+		thread->iq_wakeup_accesses++;
 		x86_uop_free_if_not_queued(uop);
 
 		/* Recovery. This must be performed at last, because lots of uops might be
 		 * freed, which interferes with the temporary extraction from the event_queue. */
 		if (recover)
-			x86_cpu_recover(core, thread);
+			x86_cpu_recover(self->id, thread->id_in_core);
 	}
 }
 
 
-void x86_cpu_writeback()
-{
-	int core;
 
-	x86_cpu->stage = "writeback";
-	X86_CORE_FOR_EACH
-		x86_cpu_writeback_core(core);
+
+/*
+ * Class 'X86Cpu'
+ */
+
+void X86CpuWriteback(X86Cpu *self)
+{
+	int i;
+
+	self->stage = "writeback";
+	for (i = 0; i < x86_cpu_num_cores; i++)
+		X86CoreWriteback(self->cores[i]);
 }
 

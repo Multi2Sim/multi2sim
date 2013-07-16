@@ -20,7 +20,34 @@
 #ifndef ARCH_X86_TIMING_COMMIT_H
 #define ARCH_X86_TIMING_COMMIT_H
 
-void x86_cpu_commit(void);
+#include <lib/util/class.h>
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Cpu);
+CLASS_FORWARD_DECLARATION(X86Core);
+CLASS_FORWARD_DECLARATION(X86Thread);
+
+
+/*
+ * Class 'X86Thread'
+ */
+
+int X86ThreadCanCommit(X86Thread *self);
+void X86ThreadCommit(X86Thread *self, int quantum);
+
+
+/*
+ * Class 'X86Core'
+ */
+
+void X86CoreCommit(X86Core *self);
+
+
+/*
+ * Class 'X86Cpu'
+ */
+void X86CpuCommit(X86Cpu *self);
+
 
 #endif
 

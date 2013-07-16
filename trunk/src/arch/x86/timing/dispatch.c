@@ -36,15 +36,15 @@
 
 /* Return the reason why a thread cannot be dispatched. If it can,
  * return x86_dispatch_stall_used. */
-static enum x86_dispatch_stall_t x86_cpu_can_dispatch_thread(int core, int thread)
+static enum x86_dispatch_stall_t X86ThreadCanDispatch(X86Thread *self)
 {
-	struct list_t *uopq = X86_THREAD.uop_queue;
+	struct list_t *uopq = self->uop_queue;
 	struct x86_uop_t *uop;
 
 	/* Uop queue empty. */
 	uop = list_get(uopq, 0);
 	if (!uop)
-		return !X86_THREAD.ctx || !X86ContextGetState(X86_THREAD.ctx, X86ContextRunning) ?
+		return !self->ctx || !X86ContextGetState(self->ctx, X86ContextRunning) ?
 			x86_dispatch_stall_ctx : x86_dispatch_stall_uop_queue;
 
 	/* If iq/lq/sq/rob full, done */
@@ -61,23 +61,26 @@ static enum x86_dispatch_stall_t x86_cpu_can_dispatch_thread(int core, int threa
 }
 
 
-static int x86_cpu_dispatch_thread(int core, int thread, int quant)
+static int X86ThreadDispatch(X86Thread *self, int quantum)
 {
+	X86Core *core = self->core;
+	X86Cpu *cpu = self->cpu;
+
 	struct x86_uop_t *uop;
 	enum x86_dispatch_stall_t stall;
 
-	while (quant)
+	while (quantum)
 	{
 		/* Check if we can decode */
-		stall = x86_cpu_can_dispatch_thread(core, thread);
+		stall = X86ThreadCanDispatch(self);
 		if (stall != x86_dispatch_stall_used)
 		{
-			X86_CORE.dispatch_stall[stall] += quant;
+			core->dispatch_stall[stall] += quantum;
 			break;
 		}
 	
 		/* Get entry from uop queue */
-		uop = list_remove_at(X86_THREAD.uop_queue, 0);
+		uop = list_remove_at(self->uop_queue, 0);
 		assert(x86_uop_exists(uop));
 		uop->in_uop_queue = 0;
 		
@@ -86,35 +89,35 @@ static int x86_cpu_dispatch_thread(int core, int thread, int quant)
 		
 		/* Insert in ROB */
 		x86_rob_enqueue(uop);
-		X86_CORE.rob_writes++;
-		X86_THREAD.rob_writes++;
+		core->rob_writes++;
+		self->rob_writes++;
 		
 		/* Non memory instruction into IQ */
 		if (!(uop->flags & X86_UINST_MEM))
 		{
 			x86_iq_insert(uop);
-			X86_CORE.iq_writes++;
-			X86_THREAD.iq_writes++;
+			core->iq_writes++;
+			self->iq_writes++;
 		}
 		
 		/* Memory instructions into the LSQ */
 		if (uop->flags & X86_UINST_MEM)
 		{
 			x86_lsq_insert(uop);
-			X86_CORE.lsq_writes++;
-			X86_THREAD.lsq_writes++;
+			core->lsq_writes++;
+			self->lsq_writes++;
 		}
 		
 		/* Statistics */
-		X86_CORE.dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
-		X86_THREAD.num_dispatched_uinst_array[uop->uinst->opcode]++;
-		X86_CORE.num_dispatched_uinst_array[uop->uinst->opcode]++;
-		x86_cpu->num_dispatched_uinst_array[uop->uinst->opcode]++;
+		core->dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
+		self->num_dispatched_uinst_array[uop->uinst->opcode]++;
+		core->num_dispatched_uinst_array[uop->uinst->opcode]++;
+		cpu->num_dispatched_uinst_array[uop->uinst->opcode]++;
 		if (uop->trace_cache)
-			X86_THREAD.trace_cache->num_dispatched_uinst++;
+			self->trace_cache->num_dispatched_uinst++;
 		
 		/* Another instruction dispatched, update quantum. */
-		quant--;
+		quantum--;
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"di\"\n",
@@ -122,14 +125,16 @@ static int x86_cpu_dispatch_thread(int core, int thread, int quant)
 
 	}
 
-	return quant;
+	return quantum;
 }
 
 
-static void x86_cpu_dispatch_core(int core)
+static void X86CoreDispatch(X86Core *self)
 {
+	X86Thread *thread;
+
 	int skip = x86_cpu_num_threads;
-	int quant = x86_cpu_dispatch_width;
+	int quantum = x86_cpu_dispatch_width;
 	int remain;
 
 	switch (x86_cpu_dispatch_kind)
@@ -137,30 +142,35 @@ static void x86_cpu_dispatch_core(int core)
 
 	case x86_cpu_dispatch_kind_shared:
 		
-		do {
-			X86_CORE.dispatch_current = (X86_CORE.dispatch_current + 1) % x86_cpu_num_threads;
-			remain = x86_cpu_dispatch_thread(core, X86_CORE.dispatch_current, 1);
+		do
+		{
+			self->dispatch_current = (self->dispatch_current + 1) % x86_cpu_num_threads;
+			thread = self->threads[self->dispatch_current];
+			remain = X86ThreadDispatch(thread, 1);
 			skip = remain ? skip - 1 : x86_cpu_num_threads;
-			quant = remain ? quant : quant - 1;
-		} while (quant && skip);
+			quantum = remain ? quantum : quantum - 1;
+		} while (quantum && skip);
 		break;
 	
 	case x86_cpu_dispatch_kind_timeslice:
 		
-		do {
-			X86_CORE.dispatch_current = (X86_CORE.dispatch_current + 1) % x86_cpu_num_threads;
+		do
+		{
+			self->dispatch_current = (self->dispatch_current + 1) % x86_cpu_num_threads;
+			thread = self->threads[self->dispatch_current];
 			skip--;
-		} while (skip && x86_cpu_can_dispatch_thread(core, X86_CORE.dispatch_current) != x86_dispatch_stall_used);
-		x86_cpu_dispatch_thread(core, X86_CORE.dispatch_current, quant);
+		} while (skip && X86ThreadCanDispatch(thread) != x86_dispatch_stall_used);
+		X86ThreadDispatch(thread, quantum);
 		break;
 	}
 }
 
 
-void x86_cpu_dispatch()
+void X86CpuDispatch(X86Cpu *self)
 {
-	int core;
-	x86_cpu->stage = "dispatch";
-	X86_CORE_FOR_EACH
-		x86_cpu_dispatch_core(core);
+	int i;
+
+	self->stage = "dispatch";
+	for (i = 0; i < x86_cpu_num_cores; i++)
+		X86CoreDispatch(self->cores[i]);
 }

@@ -20,7 +20,17 @@
 #ifndef ARCH_X86_TIMING_DECODE_H
 #define ARCH_X86_TIMING_DECODE_H
 
-void x86_cpu_decode(void);
+#include <lib/util/class.h>
+
+/* Forward declarations */
+CLASS_FORWARD_DECLARATION(X86Cpu);
+
+
+/*
+ * Class 'X86Cpu'
+ */
+
+void X86CpuDecode(X86Cpu *self);
 
 #endif
 

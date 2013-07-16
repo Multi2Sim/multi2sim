@@ -39,38 +39,45 @@
 #include "trace-cache.h"
 
 
-static char *err_x86_cpu_commit_stall =
+static char *err_commit_stall =
 	"\tThe CPU commit stage has not received any instruction for 1M\n"
 	"\tcycles. Most likely, this means that a deadlock condition\n"
 	"\toccurred in the management of some modeled structure (network,\n"
 	"\tcache system, core queues, etc.).\n";
 
 
-static int x86_cpu_can_commit_thread(int core, int thread)
+
+/*
+ * Class 'X86Thread'
+ */
+
+int X86ThreadCanCommit(X86Thread *self)
 {
+	X86Cpu *cpu = self->cpu;
+	X86Core *core = self->core;
+	X86Context *ctx = self->ctx;
 	struct x86_uop_t *uop;
-	X86Context *ctx = X86_THREAD.ctx;
 
 	/* Sanity check - If the context is running, we assume that something is
 	 * going wrong if more than 1M cycles go by without committing an inst. */
 	if (!ctx || !X86ContextGetState(ctx, X86ContextRunning))
-		X86_THREAD.last_commit_cycle = asTiming(x86_cpu)->cycle;
-	if (asTiming(x86_cpu)->cycle - X86_THREAD.last_commit_cycle > 1000000)
+		self->last_commit_cycle = asTiming(cpu)->cycle;
+	if (asTiming(cpu)->cycle - self->last_commit_cycle > 1000000)
 	{
-		warning("core-thread %d-%d: simulation ended due to commit stall.\n%s",
-			core, thread, err_x86_cpu_commit_stall);
+		warning("thread %s: simulation ended due to commit stall.\n%s",
+			self->name, err_commit_stall);
 		esim_finish = esim_finish_stall;
 	}
 
 	/* If there is no instruction in the ROB, or the instruction is not
 	 * located at the ROB head in shared approaches, end. */
-	if (!x86_rob_can_dequeue(core, thread))
+	if (!x86_rob_can_dequeue(core->id, self->id_in_core))
 		return 0;
 
 	/* Get instruction from ROB head */
-	uop = x86_rob_head(core, thread);
+	uop = x86_rob_head(core->id, self->id_in_core);
 	assert(x86_uop_exists(uop));
-	assert(uop->core == core && uop->thread == thread);
+	assert(uop->core == core->id && uop->thread == self->id_in_core);
 
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
 	 * if the call to 'x86_reg_file_ready' shows input registers to be ready. */
@@ -86,21 +93,24 @@ static int x86_cpu_can_commit_thread(int core, int thread)
 }
 
 
-static void x86_cpu_commit_thread(int core, int thread, int quant)
+void X86ThreadCommit(X86Thread *self, int quant)
 {
-	X86Context *ctx = X86_THREAD.ctx;
+	X86Cpu *cpu = self->cpu;
+	X86Core *core = self->core;
+	X86Context *ctx = self->ctx;
+
 	struct x86_uop_t *uop;
 	int recover = 0;
 
 	/* Commit stage for thread */
 	assert(ctx);
-	while (quant && x86_cpu_can_commit_thread(core, thread))
+	while (quant && X86ThreadCanCommit(self))
 	{
 		/* Get instruction at the head of the ROB */
-		uop = x86_rob_head(core, thread);
+		uop = x86_rob_head(core->id, self->id_in_core);
 		assert(x86_uop_exists(uop));
-		assert(uop->core == core);
-		assert(uop->thread == thread);
+		assert(uop->core == core->id);
+		assert(uop->thread == self->id_in_core);
 		assert(!recover);
 		
 		/* Mispredicted branch */
@@ -115,36 +125,36 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 		/* Branches update branch predictor and btb */
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			x86_bpred_update(X86_THREAD.bpred, uop);
-			x86_bpred_btb_update(X86_THREAD.bpred, uop);
-			X86_THREAD.btb_writes++;
+			x86_bpred_update(self->bpred, uop);
+			x86_bpred_btb_update(self->bpred, uop);
+			self->btb_writes++;
 		}
 
 		/* Trace cache */
 		if (x86_trace_cache_present)
-			x86_trace_cache_new_uop(X86_THREAD.trace_cache, uop);
+			x86_trace_cache_new_uop(self->trace_cache, uop);
 			
 		/* Statistics */
-		X86_THREAD.last_commit_cycle = asTiming(x86_cpu)->cycle;
-		X86_THREAD.num_committed_uinst_array[uop->uinst->opcode]++;
-		X86_CORE.num_committed_uinst_array[uop->uinst->opcode]++;
-		x86_cpu->num_committed_uinst_array[uop->uinst->opcode]++;
-		x86_cpu->num_committed_uinst++;
+		self->last_commit_cycle = asTiming(cpu)->cycle;
+		self->num_committed_uinst_array[uop->uinst->opcode]++;
+		core->num_committed_uinst_array[uop->uinst->opcode]++;
+		cpu->num_committed_uinst_array[uop->uinst->opcode]++;
+		cpu->num_committed_uinst++;
 		ctx->inst_count++;
 		if (uop->trace_cache)
-			X86_THREAD.trace_cache->num_committed_uinst++;
+			self->trace_cache->num_committed_uinst++;
 		if (!uop->mop_index)
-			x86_cpu->num_committed_inst++;
+			cpu->num_committed_inst++;
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			X86_THREAD.num_branch_uinst++;
-			X86_CORE.num_branch_uinst++;
-			x86_cpu->num_branch_uinst++;
+			self->num_branch_uinst++;
+			core->num_branch_uinst++;
+			cpu->num_branch_uinst++;
 			if (uop->neip != uop->pred_neip)
 			{
-				X86_THREAD.num_mispred_branch_uinst++;
-				X86_CORE.num_mispred_branch_uinst++;
-				x86_cpu->num_mispred_branch_uinst++;
+				self->num_mispred_branch_uinst++;
+				core->num_mispred_branch_uinst++;
+				cpu->num_mispred_branch_uinst++;
 			}
 		}
 
@@ -157,31 +167,37 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 		}
 
 		/* Retire instruction */
-		x86_rob_remove_head(core, thread);
-		X86_CORE.rob_reads++;
-		X86_THREAD.rob_reads++;
+		x86_rob_remove_head(core->id, self->id_in_core);
+		core->rob_reads++;
+		self->rob_reads++;
 		quant--;
 
 		/* Recover. Functional units are cleared when processor
 		 * recovers at commit. */
 		if (recover)
 		{
-			x86_cpu_recover(core, thread);
-			x86_fu_release(core);
+			x86_cpu_recover(core->id, self->id_in_core);
+			x86_fu_release(core->id);
 		}
 	}
 
 	/* If context eviction signal is activated and pipeline is empty,
 	 * deallocate context. */
-	if (ctx->evict_signal && X86ThreadIsPipelineEmpty(&X86_THREAD))
-		X86ThreadEvictContext(&X86_THREAD, ctx);
+	if (ctx->evict_signal && X86ThreadIsPipelineEmpty(self))
+		X86ThreadEvictContext(self, ctx);
 }
 
 
-static void x86_cpu_commit_core(int core)
+
+
+/*
+ * Class 'X86Core'
+ */
+
+void X86CoreCommit(X86Core *self)
 {
 	int pass;
-	int quant;
+	int quantum;
 	int new;
 
 	/* Commit stage for core */
@@ -189,15 +205,16 @@ static void x86_cpu_commit_core(int core)
 	{
 
 	case x86_cpu_commit_kind_shared:
+
 		pass = x86_cpu_num_threads;
-		quant = x86_cpu_commit_width;
-		while (quant && pass)
+		quantum = x86_cpu_commit_width;
+		while (quantum && pass)
 		{
-			X86_CORE.commit_current = (X86_CORE.commit_current + 1) % x86_cpu_num_threads;
-			if (x86_cpu_can_commit_thread(core, X86_CORE.commit_current))
+			self->commit_current = (self->commit_current + 1) % x86_cpu_num_threads;
+			if (X86ThreadCanCommit(self->threads[self->commit_current]))
 			{
-				x86_cpu_commit_thread(core, X86_CORE.commit_current, 1);
-				quant--;
+				X86ThreadCommit(self->threads[self->commit_current], 1);
+				quantum--;
 				pass = x86_cpu_num_threads;
 			}
 			else
@@ -208,24 +225,31 @@ static void x86_cpu_commit_core(int core)
 	case x86_cpu_commit_kind_timeslice:
 	
 		/* look for a not empty VB */
-		new = (X86_CORE.commit_current + 1) % x86_cpu_num_threads;
-		while (new != X86_CORE.commit_current && !x86_cpu_can_commit_thread(core, new))
+		new = (self->commit_current + 1) % x86_cpu_num_threads;
+		while (new != self->commit_current &&
+				!X86ThreadCanCommit(self->threads[new]))
 			new = (new + 1) % x86_cpu_num_threads;
 		
-		/* commit new thread */
-		X86_CORE.commit_current = new;
-		x86_cpu_commit_thread(core, new, x86_cpu_commit_width);
+		/* Commit new thread */
+		self->commit_current = new;
+		X86ThreadCommit(self->threads[new], x86_cpu_commit_width);
 		break;
 	
 	}
 }
 
 
-void x86_cpu_commit()
-{
-	int core;
 
-	x86_cpu->stage = "commit";
-	X86_CORE_FOR_EACH
-		x86_cpu_commit_core(core);
+
+/*
+ * Class 'X86Cpu'
+ */
+
+void X86CpuCommit(X86Cpu *self)
+{
+	int i;
+
+	self->stage = "commit";
+	for (i = 0; i < x86_cpu_num_cores; i++)
+		X86CoreCommit(self->cores[i]);
 }
