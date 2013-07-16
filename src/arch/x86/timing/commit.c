@@ -71,11 +71,11 @@ int X86ThreadCanCommit(X86Thread *self)
 
 	/* If there is no instruction in the ROB, or the instruction is not
 	 * located at the ROB head in shared approaches, end. */
-	if (!x86_rob_can_dequeue(core->id, self->id_in_core))
+	if (!X86ThreadCanDequeueFromROB(self))
 		return 0;
 
 	/* Get instruction from ROB head */
-	uop = x86_rob_head(core->id, self->id_in_core);
+	uop = X86ThreadGetROBHead(self);
 	assert(x86_uop_exists(uop));
 	assert(uop->core == core->id && uop->thread == self->id_in_core);
 
@@ -107,7 +107,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 	while (quant && X86ThreadCanCommit(self))
 	{
 		/* Get instruction at the head of the ROB */
-		uop = x86_rob_head(core->id, self->id_in_core);
+		uop = X86ThreadGetROBHead(self);
 		assert(x86_uop_exists(uop));
 		assert(uop->core == core->id);
 		assert(uop->thread == self->id_in_core);
@@ -167,7 +167,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		}
 
 		/* Retire instruction */
-		x86_rob_remove_head(core->id, self->id_in_core);
+		X86ThreadRemoveROBHead(self);
 		core->rob_reads++;
 		self->rob_reads++;
 		quant--;
@@ -176,7 +176,7 @@ void X86ThreadCommit(X86Thread *self, int quant)
 		 * recovers at commit. */
 		if (recover)
 		{
-			x86_cpu_recover(core->id, self->id_in_core);
+			X86ThreadRecover(self);
 			x86_fu_release(core->id);
 		}
 	}

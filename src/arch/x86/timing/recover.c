@@ -40,40 +40,46 @@
 #include "uop-queue.h"
 
 
-void x86_cpu_recover(int core, int thread)
+/*
+ * Class 'X86Thread'
+ */
+
+void X86ThreadRecover(X86Thread *self)
 {
+	X86Cpu *cpu = self->cpu;
+	X86Core *core = self->core;
 	struct x86_uop_t *uop;
 
 	/* Remove instructions of this thread in fetch queue, uop queue,
 	 * instruction queue, store queue, load queue, and event queue. */
-	x86_fetch_queue_recover(core, thread);
-	x86_uop_queue_recover(core, thread);
-	x86_iq_recover(core, thread);
-	x86_lsq_recover(core, thread);
-	x86_event_queue_recover(core, thread);
+	x86_fetch_queue_recover(core->id, self->id_in_core);
+	x86_uop_queue_recover(core->id, self->id_in_core);
+	x86_iq_recover(core->id, self->id_in_core);
+	x86_lsq_recover(core->id, self->id_in_core);
+	x86_event_queue_recover(core->id, self->id_in_core);
 
 	/* Remove instructions from ROB, restoring the state of the
 	 * physical register file. */
 	for (;;)
 	{
 		/* Get instruction */
-		uop = x86_rob_tail(core, thread);
+		uop = X86ThreadGetROBTail(self);
 		if (!uop)
 			break;
 
 		/* If we already removed all speculative instructions,
 		 * the work is finished */
-		assert(uop->core == core);
-		assert(uop->thread == thread);
+		assert(uop->core == core->id);
+		assert(uop->thread == self->id_in_core);
 		if (!uop->specmode)
 			break;
 		
 		/* Statistics */
 		if (uop->trace_cache)
-			X86_THREAD.trace_cache->num_squashed_uinst++;
-		X86_THREAD.num_squashed_uinst++;
-		X86_CORE.num_squashed_uinst++;
-		x86_cpu->num_squashed_uinst++;
+			self->trace_cache->num_squashed_uinst++;
+		self->num_squashed_uinst++;
+		core->num_squashed_uinst++;
+		cpu->num_squashed_uinst++;
 		
 		/* Undo map */
 		if (!uop->completed)
@@ -89,15 +95,20 @@ void x86_cpu_recover(int core, int thread)
 		}
 
 		/* Remove entry in ROB */
-		x86_rob_remove_tail(core, thread);
+		X86ThreadRemoveROBTail(self);
 	}
 
-	/* If we actually fetched wrong instructions, recover emulator */
-	if (X86ContextGetState(X86_THREAD.ctx, X86ContextSpecMode))
-		X86ContextRecover(X86_THREAD.ctx);
+	/* Check state of fetch stage and mapped context, if still any */
+	if (self->ctx)
+	{
+		/* If we actually fetched wrong instructions, recover emulator */
+		if (X86ContextGetState(self->ctx, X86ContextSpecMode))
+			X86ContextRecover(self->ctx);
 	
-	/* Stall fetch and set eip to fetch. */
-	X86_THREAD.fetch_stall_until = MAX(X86_THREAD.fetch_stall_until, asTiming(x86_cpu)->cycle + x86_cpu_recover_penalty - 1);
-	X86_THREAD.fetch_neip = X86_THREAD.ctx->regs->eip;
+		/* Stall fetch and set eip to fetch. */
+		self->fetch_stall_until = MAX(self->fetch_stall_until,
+				asTiming(x86_cpu)->cycle + x86_cpu_recover_penalty - 1);
+		self->fetch_neip = self->ctx->regs->eip;
+	}
 }
 
