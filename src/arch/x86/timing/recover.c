@@ -52,7 +52,7 @@ void X86ThreadRecover(X86Thread *self)
 
 	/* Remove instructions of this thread in fetch queue, uop queue,
 	 * instruction queue, store queue, load queue, and event queue. */
-	x86_fetch_queue_recover(core->id, self->id_in_core);
+	X86ThreadRecoverFetchQueue(self);
 	X86ThreadRecoverUopQueue(self);
 	X86ThreadRecoverIQ(self);
 	X86ThreadRecoverLSQ(self);

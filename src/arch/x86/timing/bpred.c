@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
@@ -31,65 +32,6 @@
 #include "uop.h"
 
 
-#define BTB_ENTRY(SET, WAY) (&bpred->btb[(SET) * x86_bpred_btb_assoc + (WAY)])
-
-/* BTB Entry */
-struct btb_entry_t
-{
-	unsigned int source;  /* eip */
-	unsigned int target;  /* neip */
-	int counter;  /* LRU counter */
-};
-
-
-/* Branch Predictor Structure */
-struct x86_bpred_t
-{
-	char *name;
-
-	/* RAS */
-	unsigned int *ras;
-	int ras_index;
-	
-	/* BTB - array of x86_bpred_btb_sets*x86_bpred_btb_assoc entries of
-	 * type btb_entry_t. */
-	struct btb_entry_t *btb;
-	
-	/* bimod - array of bimodal counters indexed by PC
-	 *   0,1 - Branch not taken.
-	 *   2,3 - Branch taken. */
-	char *bimod;
-
-	/* Two-level adaptive branch predictor. It contains a
-	 * BHT (branch history table) and PHT (pattern history table). */
-	unsigned int *twolevel_bht;  /* array of level1_size branch history registers */
-	char *twolevel_pht;  /* array of level2_size*2^hist_size 2-bit counters */
-	
-	/* choice - array of bimodal counters indexed by PC
-	 *   0,1 - Use bimodal predictor.
-	 *   2,3 - Use two-level adaptive predictor */
-	char *choice;
-
-	/* Stats */
-	long long accesses;
-	long long hits;
-};
-
-
-char *x86_bpred_kind_map[] = { "Perfect", "Taken", "NotTaken", "Bimodal", "TwoLevel", "Combined" };
-enum x86_bpred_kind_t x86_bpred_kind;
-int x86_bpred_btb_sets;  /* Number of BTB sets */
-int x86_bpred_btb_assoc;  /* Number of BTB ways */
-int x86_bpred_ras_size;  /* Return address stack size */
-int x86_bpred_bimod_size;  /* Number of entries for bimodal predictor */
-int x86_bpred_choice_size;  /* Number of entries for choice predictor */
-
-int x86_bpred_twolevel_l1size;  /* Two-level adaptive predictor: level-1 size */
-int x86_bpred_twolevel_l2size;  /* Two-level adaptive predictor: level-2 size */
-int x86_bpred_twolevel_hist_size;  /* Two-level adaptive predictor: level-2 history size */
-static int x86_bpred_twolevel_l2height;
-
-
 
 
 /*
@@ -97,127 +39,26 @@ static int x86_bpred_twolevel_l2height;
  */
 
 
-void x86_bpred_init()
+void X86ThreadInitBranchPred(X86Thread *self)
 {
 	char name[MAX_STRING_SIZE];
 
-	int core;
-	int thread;
-
-	/* Two-level branch predictor parameter */
-	x86_bpred_twolevel_l2height = 1 << x86_bpred_twolevel_hist_size;
-	
-	/* Integrity */
-	if (x86_bpred_bimod_size & (x86_bpred_bimod_size - 1))
-		fatal("number of entries in bimodal precitor must be a power of 2");
-	if (x86_bpred_choice_size & (x86_bpred_choice_size - 1))
-		fatal("number of entries in choice predictor must be power of 2");
-	if (x86_bpred_btb_sets & (x86_bpred_btb_sets - 1))
-		fatal("number of BTB sets must be a power of 2");
-	if (x86_bpred_btb_assoc & (x86_bpred_btb_assoc - 1))
-		fatal("BTB associativity must be a power of 2");
-	
-	if (x86_bpred_twolevel_hist_size < 1 || x86_bpred_twolevel_hist_size > 30)
-		fatal("predictor history size must be >=1 and <=30");
-	if (x86_bpred_twolevel_l1size & (x86_bpred_twolevel_l1size - 1))
-		fatal("two-level predictor sizes must be power of 2");
-	if (x86_bpred_twolevel_l2size & (x86_bpred_twolevel_l2size - 1))
-		fatal("two-level predictor sizes must be power of 2");
-	
-	/* Initialization */
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
-	{
-		snprintf(name, sizeof name, "c%dt%d.bpred", core, thread);
-		X86_THREAD.bpred = x86_bpred_create(name);
-	}
+	snprintf(name, sizeof name, "%s.bpred", self->name);
+	self->bpred = x86_bpred_create(name);
 }
 
 
-void x86_bpred_done()
+void X86ThreadFreeBranchPred(X86Thread *self)
 {
-	int core;
-	int thread;
-
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
-		x86_bpred_free(X86_THREAD.bpred);
-}
-
-
-struct x86_bpred_t *x86_bpred_create(char *name)
-{
-	struct x86_bpred_t *bpred;
-
-	int i;
-	int j;
-
-	/* Initialize */
-	bpred = xcalloc(1, sizeof(struct x86_bpred_t));
-	bpred->name = xstrdup(name);
-	bpred->ras = xcalloc(x86_bpred_ras_size, sizeof(unsigned int));
-
-	/* Bimodal predictor */
-	if (x86_bpred_kind == x86_bpred_kind_bimod || x86_bpred_kind == x86_bpred_kind_comb)
-	{
-		bpred->bimod = xcalloc(x86_bpred_bimod_size, sizeof(char));
-		for (i = 0; i < x86_bpred_bimod_size; i++)
-			bpred->bimod[i] = 2;
-	}
-
-	/* Two-level adaptive branch predictor */
-	if (x86_bpred_kind == x86_bpred_kind_twolevel || x86_bpred_kind == x86_bpred_kind_comb)
-	{
-		bpred->twolevel_bht = xcalloc(x86_bpred_twolevel_l1size, sizeof(unsigned int));
-		bpred->twolevel_pht = xcalloc(x86_bpred_twolevel_l2size * x86_bpred_twolevel_l2height, sizeof(char));
-		for (i = 0; i < x86_bpred_twolevel_l2size * x86_bpred_twolevel_l2height; i++)
-			bpred->twolevel_pht[i] = 2;
-	}
-	
-	/* Choice predictor */
-	if (x86_bpred_kind == x86_bpred_kind_comb)
-	{
-		bpred->choice = xcalloc(x86_bpred_choice_size, sizeof(char));
-		for (i = 0; i < x86_bpred_choice_size; i++)
-			bpred->choice[i] = 2;
-	}
-
-	/* Allocate BTB and assign LRU counters */
-	bpred->btb = xcalloc(x86_bpred_btb_sets * x86_bpred_btb_assoc, sizeof(struct btb_entry_t));
-	for (i = 0; i < x86_bpred_btb_sets; i++)
-		for (j = 0; j < x86_bpred_btb_assoc; j++)
-			BTB_ENTRY(i, j)->counter = j;
-	
-	/* Return */
-	return bpred;
-}
-
-
-void x86_bpred_free(struct x86_bpred_t *bpred)
-{
-	/* Bimodal table */
-	if (x86_bpred_kind == x86_bpred_kind_bimod || x86_bpred_kind == x86_bpred_kind_comb)
-		free(bpred->bimod);
-
-	/* Two-level adaptive predictor tables */
-	if (x86_bpred_kind == x86_bpred_kind_twolevel || x86_bpred_kind == x86_bpred_kind_comb) {
-		free(bpred->twolevel_bht);
-		free(bpred->twolevel_pht);
-	}
-
-	/* Choice table */
-	if (x86_bpred_kind == x86_bpred_kind_comb)
-		free(bpred->choice);
-	
-	/* Free */
-	free(bpred->name);
-	free(bpred->btb);
-	free(bpred->ras);
-	free(bpred);
+	x86_bpred_free(self->bpred);
 }
 
 
 /* Return prediction for an address (0=not taken, 1=taken) */
-int x86_bpred_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
+int X86ThreadLookupBranchPred(X86Thread *self, struct x86_uop_t *uop)
 {
+	struct x86_bpred_t *bpred = self->bpred;
+
 	/* If branch predictor is accessed, a BTB hit must have occurred before, which
 	 * provides information about the branch, i.e., target address and whether it
 	 * is a call, ret, jump, or conditional branch. Thus, branches other than
@@ -286,14 +127,16 @@ int x86_bpred_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
  * adaptive predictors, since they use global history. The prediction of the
  * primary branch is stored in the least significant bit (bit 0), whereas the prediction
  * of the last branch is stored in bit 'count-1'. */
-int x86_bpred_lookup_multiple(struct x86_bpred_t *bpred, unsigned int eip, int count)
+int X86ThreadLookupBranchPredMultiple(X86Thread *self, unsigned int eip, int count)
 {
+	struct x86_bpred_t *bpred = self->bpred;
+
 	int i, pred, temp_pred;
 	unsigned int bht_index, pht_col;
 	unsigned int bhr;  /* branch history register = pht_row */
 
 	/* First make a regular prediction. This updates the necessary fields in the
-	 * uop for a later call to x86_bpred_update, and makes the first prediction
+	 * uop for a later call to X86ThreadUpdateBranchPred, and makes the first prediction
 	 * considering known characteristics of the primary branch. */
 	assert(x86_bpred_kind == x86_bpred_kind_twolevel);
 	bht_index = eip & (x86_bpred_twolevel_l1size - 1);
@@ -316,8 +159,9 @@ int x86_bpred_lookup_multiple(struct x86_bpred_t *bpred, unsigned int eip, int c
 }
 
 
-void x86_bpred_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
+void X86ThreadUpdateBranchPred(X86Thread *self, struct x86_uop_t *uop)
 {
+	struct x86_bpred_t *bpred = self->bpred;
 	int taken;
 	char *pctr;  /* pointer to 2-bit counter */
 	unsigned int *pbhr;  /* pointer to branch history register */
@@ -373,9 +217,10 @@ void x86_bpred_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
 /* Lookup BTB. If it contains the uop address, return target. The BTB also contains
  * information about the type of branch, i.e., jump, call, ret, or conditional. If
  * instruction is call or ret, access RAS instead of BTB. */
-unsigned int x86_bpred_btb_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
+unsigned int X86ThreadLookupBTB(X86Thread *self, struct x86_uop_t *uop)
 {
-	struct btb_entry_t *entry;
+	struct x86_bpred_t *bpred = self->bpred;
+	struct x86_bpred_btb_entry_t *entry;
 	unsigned int way, set, target = 0;
 	int hit = 0;
 
@@ -393,7 +238,7 @@ unsigned int x86_bpred_btb_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *u
 	set = uop->eip & (x86_bpred_btb_sets - 1);
 	for (way = 0; way < x86_bpred_btb_assoc; way++)
 	{
-		entry = BTB_ENTRY(set, way);
+		entry = X86_BPRED_BTB_ENTRY(set, way);
 		if (entry->source != uop->eip)
 			continue;
 		target = entry->target;
@@ -424,9 +269,10 @@ unsigned int x86_bpred_btb_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *u
 
 
 /* Update BTB */
-void x86_bpred_btb_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
+void X86ThreadUpdateBTB(X86Thread *self, struct x86_uop_t *uop)
 {
-	struct btb_entry_t *entry, *found = NULL;
+	struct x86_bpred_t *bpred = self->bpred;
+	struct x86_bpred_btb_entry_t *entry, *found = NULL;
 	int way, set;
 
 	/* No update for perfect branch predictor */
@@ -437,7 +283,7 @@ void x86_bpred_btb_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
 	set = uop->eip & (x86_bpred_btb_sets - 1);
 	for (way = 0; way < x86_bpred_btb_assoc; way++)
 	{
-		entry = BTB_ENTRY(set, way);
+		entry = X86_BPRED_BTB_ENTRY(set, way);
 		if (entry->source == uop->eip)
 		{
 			found = entry;
@@ -450,7 +296,7 @@ void x86_bpred_btb_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
 	{
 		for (way = 0; way < x86_bpred_btb_assoc; way++)
 		{
-			entry = BTB_ENTRY(set, way);
+			entry = X86_BPRED_BTB_ENTRY(set, way);
 			entry->counter--;
 			if (entry->counter < 0) {
 				entry->counter = x86_bpred_btb_assoc - 1;
@@ -465,7 +311,7 @@ void x86_bpred_btb_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
 	{
 		for (way = 0; way < x86_bpred_btb_assoc; way++)
 		{
-			entry = BTB_ENTRY(set, way);
+			entry = X86_BPRED_BTB_ENTRY(set, way);
 			if (entry->counter > found->counter)
 				entry->counter--;
 		}
@@ -477,11 +323,12 @@ void x86_bpred_btb_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop)
 
 /* Find address of next branch after eip within current block.
  * This is useful for accessing the trace
- * cache. At that point, the uop is not ready to call x86_bpred_btb_lookup, since
+ * cache. At that point, the uop is not ready to call X86ThreadLookupBTB, since
  * functional simulation has not happened yet. */
-unsigned int x86_bpred_btb_next_branch(struct x86_bpred_t *bpred, unsigned int eip, unsigned int bsize)
+unsigned int X86ThreadGetNextBranch(X86Thread *self, unsigned int eip, unsigned int bsize)
 {
-	struct btb_entry_t *entry;
+	struct x86_bpred_t *bpred = self->bpred;
+	struct x86_bpred_btb_entry_t *entry;
 	unsigned int limit;
 	int set, way;
 
@@ -492,7 +339,7 @@ unsigned int x86_bpred_btb_next_branch(struct x86_bpred_t *bpred, unsigned int e
 		set = eip & (x86_bpred_btb_sets - 1);
 		for (way = 0; way < x86_bpred_btb_assoc; way++)
 		{
-			entry = BTB_ENTRY(set, way);
+			entry = X86_BPRED_BTB_ENTRY(set, way);
 			if (entry->source == eip)
 				return eip;
 		}
@@ -501,3 +348,138 @@ unsigned int x86_bpred_btb_next_branch(struct x86_bpred_t *bpred, unsigned int e
 	return 0;
 }
 
+
+
+
+/*
+ * Object 'x86_bpred_t'
+ */
+
+struct x86_bpred_t *x86_bpred_create(char *name)
+{
+	struct x86_bpred_t *bpred;
+
+	int i;
+	int j;
+
+	/* Initialize */
+	bpred = xcalloc(1, sizeof(struct x86_bpred_t));
+	bpred->name = xstrdup(name);
+	bpred->ras = xcalloc(x86_bpred_ras_size, sizeof(unsigned int));
+
+	/* Bimodal predictor */
+	if (x86_bpred_kind == x86_bpred_kind_bimod || x86_bpred_kind == x86_bpred_kind_comb)
+	{
+		bpred->bimod = xcalloc(x86_bpred_bimod_size, sizeof(char));
+		for (i = 0; i < x86_bpred_bimod_size; i++)
+			bpred->bimod[i] = 2;
+	}
+
+	/* Two-level adaptive branch predictor */
+	if (x86_bpred_kind == x86_bpred_kind_twolevel || x86_bpred_kind == x86_bpred_kind_comb)
+	{
+		bpred->twolevel_bht = xcalloc(x86_bpred_twolevel_l1size, sizeof(unsigned int));
+		bpred->twolevel_pht = xcalloc(x86_bpred_twolevel_l2size * x86_bpred_twolevel_l2height, sizeof(char));
+		for (i = 0; i < x86_bpred_twolevel_l2size * x86_bpred_twolevel_l2height; i++)
+			bpred->twolevel_pht[i] = 2;
+	}
+
+	/* Choice predictor */
+	if (x86_bpred_kind == x86_bpred_kind_comb)
+	{
+		bpred->choice = xcalloc(x86_bpred_choice_size, sizeof(char));
+		for (i = 0; i < x86_bpred_choice_size; i++)
+			bpred->choice[i] = 2;
+	}
+
+	/* Allocate BTB and assign LRU counters */
+	bpred->btb = xcalloc(x86_bpred_btb_sets * x86_bpred_btb_assoc, sizeof(struct x86_bpred_btb_entry_t));
+	for (i = 0; i < x86_bpred_btb_sets; i++)
+		for (j = 0; j < x86_bpred_btb_assoc; j++)
+			X86_BPRED_BTB_ENTRY(i, j)->counter = j;
+
+	/* Return */
+	return bpred;
+}
+
+
+void x86_bpred_free(struct x86_bpred_t *bpred)
+{
+	/* Bimodal table */
+	if (x86_bpred_kind == x86_bpred_kind_bimod || x86_bpred_kind == x86_bpred_kind_comb)
+		free(bpred->bimod);
+
+	/* Two-level adaptive predictor tables */
+	if (x86_bpred_kind == x86_bpred_kind_twolevel || x86_bpred_kind == x86_bpred_kind_comb) {
+		free(bpred->twolevel_bht);
+		free(bpred->twolevel_pht);
+	}
+
+	/* Choice table */
+	if (x86_bpred_kind == x86_bpred_kind_comb)
+		free(bpred->choice);
+
+	/* Free */
+	free(bpred->name);
+	free(bpred->btb);
+	free(bpred->ras);
+	free(bpred);
+}
+
+
+
+/*
+ * Public
+ */
+
+char *x86_bpred_kind_map[] = { "Perfect", "Taken", "NotTaken", "Bimodal", "TwoLevel", "Combined" };
+enum x86_bpred_kind_t x86_bpred_kind;
+int x86_bpred_btb_sets;  /* Number of BTB sets */
+int x86_bpred_btb_assoc;  /* Number of BTB ways */
+int x86_bpred_ras_size;  /* Return address stack size */
+int x86_bpred_bimod_size;  /* Number of entries for bimodal predictor */
+int x86_bpred_choice_size;  /* Number of entries for choice predictor */
+
+int x86_bpred_twolevel_l1size;  /* Two-level adaptive predictor: level-1 size */
+int x86_bpred_twolevel_l2size;  /* Two-level adaptive predictor: level-2 size */
+int x86_bpred_twolevel_hist_size;  /* Two-level adaptive predictor: level-2 history size */
+int x86_bpred_twolevel_l2height;
+
+
+void X86ReadBranchPredConfig(struct config_t *config)
+{
+	char *section;
+
+	section = "BranchPredictor";
+
+	x86_bpred_kind = config_read_enum(config, section, "Kind",
+			x86_bpred_kind_twolevel, x86_bpred_kind_map, 6);
+	x86_bpred_btb_sets = config_read_int(config, section, "BTB.Sets", 256);
+	x86_bpred_btb_assoc = config_read_int(config, section, "BTB.Assoc", 4);
+	x86_bpred_bimod_size = config_read_int(config, section, "Bimod.Size", 1024);
+	x86_bpred_choice_size = config_read_int(config, section, "Choice.Size", 1024);
+	x86_bpred_ras_size = config_read_int(config, section, "RAS.Size", 32);
+	x86_bpred_twolevel_l1size = config_read_int(config, section, "TwoLevel.L1Size", 1);
+	x86_bpred_twolevel_l2size = config_read_int(config, section, "TwoLevel.L2Size", 1024);
+	x86_bpred_twolevel_hist_size = config_read_int(config, section, "TwoLevel.HistorySize", 8);
+
+	/* Two-level branch predictor parameter */
+	x86_bpred_twolevel_l2height = 1 << x86_bpred_twolevel_hist_size;
+
+	/* Integrity */
+	if (x86_bpred_bimod_size & (x86_bpred_bimod_size - 1))
+		fatal("number of entries in bimodal precitor must be a power of 2");
+	if (x86_bpred_choice_size & (x86_bpred_choice_size - 1))
+		fatal("number of entries in choice predictor must be power of 2");
+	if (x86_bpred_btb_sets & (x86_bpred_btb_sets - 1))
+		fatal("number of BTB sets must be a power of 2");
+	if (x86_bpred_btb_assoc & (x86_bpred_btb_assoc - 1))
+		fatal("BTB associativity must be a power of 2");
+
+	if (x86_bpred_twolevel_hist_size < 1 || x86_bpred_twolevel_hist_size > 30)
+		fatal("predictor history size must be >=1 and <=30");
+	if (x86_bpred_twolevel_l1size & (x86_bpred_twolevel_l1size - 1))
+		fatal("two-level predictor sizes must be power of 2");
+	if (x86_bpred_twolevel_l2size & (x86_bpred_twolevel_l2size - 1))
+		fatal("two-level predictor sizes must be power of 2");
+}
