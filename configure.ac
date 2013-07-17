@@ -55,6 +55,78 @@ AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap se
 
 
 
+###############
+# Debug/Profile
+###############
+
+debug=false
+CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG"
+AC_ARG_ENABLE(debug,
+[  --enable-debug    Turn on debugging],
+[
+	case "${enableval}" in
+	yes)
+		debug=true
+		
+		# Add flag '-Wno-error=deprecated-declarations' only if it is supported.
+		# This flag prevents warnings caused by newer GTK versions that would cause with -Werror
+		saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
+		CFLAGS="-Wno-error=deprecated-declarations"
+		AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+				[ AC_MSG_RESULT([yes]) ]
+				[ saved_flags="$saved_flags -Wno-error=deprecated-declarations" ],
+				[ AC_MSG_RESULT([no]) ]
+			)
+		CFLAGS="$saved_flags"
+		;;
+	no)
+		;;
+	*)
+		AC_MSG_ERROR(bad value ${enableval} for --enable-debug)
+		;;
+	esac
+],
+[])
+
+profile=false
+AC_ARG_ENABLE(profile,
+[  --enable-profile    Turn on profiling],
+[
+	case "${enableval}" in
+	yes)
+		CFLAGS+=" -pg"
+		profile=true
+		;;
+	no)
+		;;
+	*)
+		AC_MSG_ERROR(bad value ${enableval} for --enable-profile)
+		;;
+	esac
+],
+[])
+
+AC_ARG_ENABLE(no-strict-aliasing,
+[  --enable-no-strict-aliasing    Allow for no strict aliasing],
+[
+	case "${enableval}" in
+	yes)
+		CFLAGS+=" -fno-strict-aliasing"
+		;;
+	no)
+		;;
+	*)
+		AC_MSG_ERROR(bad value ${enableval} for --enable-no-strict-aliasing)
+		;;
+	esac
+],
+[])
+AC_SUBST([CFLAGS])
+
+
+
+
 ################
 # Test for 'sed'
 ################
@@ -89,7 +161,7 @@ LIBS="-lm"
 # Try program
 AC_LINK_IFELSE(
 	[
-		AC_LANG_PROGRAM([[#include <math.h>]], [[double x = sin(1.0);]])
+		AC_LANG_PROGRAM([[#include <math.h>]], [[return sin(1.0);]])
 	],
 	[
 		AC_MSG_RESULT(yes)
@@ -628,6 +700,13 @@ then
 	# We will decide if we want those with our --enable-debug.
 	LLVM_CFLAGS=`$LLVM_CONFIG --cflags | sed "s/\(\-DNDEBUG\>\)\|\(\-g\>\)\|\(\-O2\>\)//g"`
 
+	# In profile mode, flag '-pg' interferes with LLVM's flags
+	# -fomit-frame-pointer.
+	if test x$profile = xtrue
+	then
+		LLVM_CFLAGS=`echo "$LLVM_CFLAGS" | sed "s/-fomit-frame-pointer\>//g"`
+	fi
+
 	LLVM_CXXFLAGS=`$LLVM_CONFIG --cxxflags`
 	LLVM_LDFLAGS=`$LLVM_CONFIG --ldflags`
 	LLVM_LIBS=`$LLVM_CONFIG --libs`
@@ -734,74 +813,6 @@ DATADIR=`eval echo $datadir`
 AC_SUBST([DATADIR])
 PKGDATADIR="$datadir/multi2sim"
 AC_SUBST([PKGDATADIR])
-
-
-
-
-###################
-# Debug and profile
-###################
-
-debug=false
-CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG"
-AC_ARG_ENABLE(debug,
-[  --enable-debug    Turn on debugging],
-[
-	case "${enableval}" in
-	yes)
-		debug=true
-		
-		# Add flag '-Wno-error=deprecated-declarations' only if it is supported.
-		# This flag prevents warnings caused by newer GTK versions that would cause with -Werror
-		saved_flags="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
-		CFLAGS="-Wno-error=deprecated-declarations"
-		AC_MSG_CHECKING([whether CC supports -Wno-error=deprecated-declarations])
-		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
-				[ AC_MSG_RESULT([yes]) ]
-				[ saved_flags="$saved_flags -Wno-error=deprecated-declarations" ],
-				[ AC_MSG_RESULT([no]) ]
-			)
-		CFLAGS="$saved_flags"
-		;;
-	no)
-		;;
-	*)
-		AC_MSG_ERROR(bad value ${enableval} for --enable-debug)
-		;;
-	esac
-],
-[])
-AC_ARG_ENABLE(profile,
-[  --enable-profile    Turn on profiling],
-[
-	case "${enableval}" in
-	yes)
-		CFLAGS+=" -pg"
-		;;
-	no)
-		;;
-	*)
-		AC_MSG_ERROR(bad value ${enableval} for --enable-profile)
-		;;
-	esac
-],
-[])
-AC_ARG_ENABLE(no-strict-aliasing,
-[  --enable-no-strict-aliasing    Allow for no strict aliasing],
-[
-	case "${enableval}" in
-	yes)
-		CFLAGS+=" -fno-strict-aliasing"
-		;;
-	no)
-		;;
-	*)
-		AC_MSG_ERROR(bad value ${enableval} for --enable-no-strict-aliasing)
-		;;
-	esac
-],
-[])
-AC_SUBST([CFLAGS])
 
 
 
