@@ -35,7 +35,7 @@ static char *opencl_err_version =
 	"\tYour OpenCL program is using a version of the Multi2Sim Runtime library\n"
 	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
-	"\tMulti2Sim OpenCL Runtime library ('libm2s-clrt').\n";
+	"\tMulti2Sim OpenCL Runtime library ('libm2s-opencl.so').\n";
 
 static char *opencl_err_native =
 	"\tYou are running on the real machine an OpenCL program linked with\n"

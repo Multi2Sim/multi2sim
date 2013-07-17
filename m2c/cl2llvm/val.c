@@ -17,15 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 #include <lib/mhandle/mhandle.h>
 
 #include "function.h"
 #include "val.h"
-#include "type.h"
 #include "cl2llvm.h"
 
 extern int temp_var_count;

@@ -18,16 +18,13 @@
  */
 
 #include <assert.h>
-#include <string.h>
 
 #include <arch/southern-islands/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 
-#include "inner-bin.h"
 #include "outer-bin.h"
 #include "si2bin.h"
 #include "symbol.h"

@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 #include <getopt.h>
 #include <unistd.h>
 
@@ -26,12 +25,10 @@
 #include <m2c/cl2llvm/cl2llvm.h>
 #include <m2c/common/basic-block.h>
 #include <m2c/common/ctree.h>
-#include <m2c/common/node.h>
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
 #include <m2c/si2bin/si2bin.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/misc.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
