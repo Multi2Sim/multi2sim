@@ -24,7 +24,6 @@
 
 #include "context.h"
 #include "isa.h"
-#include "machine.h"
 #include "regs.h"
 
 

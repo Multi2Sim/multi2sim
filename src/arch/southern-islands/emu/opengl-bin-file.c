@@ -24,7 +24,6 @@
 #include <lib/util/string.h>
 
 #include <src/arch/southern-islands/asm/input.h>
-#include <src/arch/southern-islands/asm/bin-file.h>
 #include "opengl-bin-file.h"
 
 

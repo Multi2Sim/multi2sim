@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/southern-islands/asm/bin-file.h>
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/timing/gpu.h>

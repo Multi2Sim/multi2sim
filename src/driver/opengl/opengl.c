@@ -17,22 +17,17 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
-#include <arch/southern-islands/asm/asm.h>
 #include <arch/southern-islands/asm/input.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
 #include <arch/southern-islands/timing/gpu.h>
-#include <driver/glut/frame-buffer.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
-#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "opengl.h"

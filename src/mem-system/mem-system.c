@@ -27,7 +27,6 @@
 #include <network/network.h>
 
 #include "cache.h"
-#include "command.h"
 #include "config.h"
 #include "local-mem-protocol.h"
 #include "mem-system.h"

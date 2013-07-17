@@ -23,12 +23,10 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
-#include <lib/util/string.h>
 
 #include "buffer.h"
 #include "bus.h"
 #include "net-system.h"
-#include "network.h"
 #include "node.h"
 
 

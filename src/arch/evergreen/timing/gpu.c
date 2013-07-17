@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/common/arch.h>
 #include <arch/evergreen/emu/emu.h>
 #include <arch/evergreen/emu/ndrange.h>
 #include <driver/opencl-old/evergreen/bin-file.h>
@@ -32,7 +30,6 @@
 #include <lib/util/file.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/misc.h>
-#include <lib/util/timer.h>
 
 #include "calc.h"
 #include "compute-unit.h"

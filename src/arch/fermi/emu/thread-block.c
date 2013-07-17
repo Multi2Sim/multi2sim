@@ -17,14 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/list.h>
-#include <lib/util/misc.h>
 #include <mem-system/memory.h>
 
-#include "grid.h"
 #include "thread-block.h"
 #include "thread.h"
 #include "warp.h"

@@ -17,14 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/common/arch.h>
-#include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/thread-block.h>
-#include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
-#include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <arch/fermi/emu/warp.h>
 

@@ -17,14 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/fermi/emu/grid.h>
-#include <arch/fermi/emu/warp.h>
-#include <arch/fermi/emu/thread-block.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
-#include <lib/util/list.h>
 
 #include "gpu.h"
 #include "warp-inst-queue.h"

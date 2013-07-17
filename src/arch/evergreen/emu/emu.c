@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/common/arch.h>
 #include <arch/evergreen/emu/opengl-bin-file.h>
-#include <arch/evergreen/timing/gpu.h>
 #include <driver/opencl-old/evergreen/bin-file.h>
 #include <driver/opencl-old/evergreen/device.h>
 #include <driver/opencl-old/evergreen/platform.h>
@@ -31,7 +29,6 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
