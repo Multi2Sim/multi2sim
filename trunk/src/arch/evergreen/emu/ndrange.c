@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/common/arch.h>
 #include <driver/opencl-old/evergreen/bin-file.h>
 #include <driver/opencl-old/evergreen/command-queue.h>
 #include <driver/opencl-old/evergreen/kernel.h>

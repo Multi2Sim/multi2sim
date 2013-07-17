@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
@@ -26,14 +25,12 @@
 #include <arch/x86/emu/regs.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <mem-system/memory.h>
 
 #include "cuda.h"
 #include "function.h"
 #include "function-arg.h"
-#include "memory.h"
 #include "module.h"
 
 

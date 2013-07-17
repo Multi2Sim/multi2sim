@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -33,7 +32,6 @@
 #include <sys/time.h>
 #include <sys/times.h>
 
-#include <arch/common/arch.h>
 #include <arch/common/runtime.h>
 #include <arch/x86/timing/cpu.h>
 #include <lib/esim/esim.h>

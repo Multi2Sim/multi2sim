@@ -20,7 +20,6 @@
 
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/list.h>

@@ -32,7 +32,6 @@
 #include "network.h"
 #include "node.h"
 #include "visual.h"
-#include "command.h"
 
 /* 
  * Variables

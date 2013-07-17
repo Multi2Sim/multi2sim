@@ -18,18 +18,12 @@
  */
 
 #include <assert.h>
-#include <unistd.h>
 
-#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
-#include <lib/util/file.h>
 
-#include "net-system.h"
 #include "network.h"
-#include "routing-table.h"
 #include "node.h"
 #include "visual.h"
 #include "link.h"

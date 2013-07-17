@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/common/arch.h>
 #include <arch/fermi/emu/emu.h>
 #include <arch/fermi/emu/grid.h>
 #include <arch/fermi/emu/thread-block.h>
@@ -31,7 +29,6 @@
 #include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
-#include <lib/util/timer.h>
 
 #include "calc.h"
 #include "cycle-interval-report.h"

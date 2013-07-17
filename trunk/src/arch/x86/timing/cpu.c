@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/common/arch.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <lib/esim/esim.h>
@@ -33,7 +31,6 @@
 #include <lib/util/string.h>
 #include <lib/util/timer.h>
 #include <mem-system/memory.h>
-#include <mem-system/prefetch-history.h>
 
 #include "bpred.h"
 #include "commit.h"
@@ -41,7 +38,6 @@
 #include "cpu.h"
 #include "decode.h"
 #include "dispatch.h"
-#include "event-queue.h"
 #include "fetch.h"
 #include "fetch-queue.h"
 #include "fu.h"
@@ -49,7 +45,6 @@
 #include "issue.h"
 #include "load-store-queue.h"
 #include "mem-config.h"
-#include "recover.h"
 #include "reg-file.h"
 #include "rob.h"
 #include "sched.h"

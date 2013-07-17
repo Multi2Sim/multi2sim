@@ -28,7 +28,6 @@
 #include "command.h"
 #include "network.h"
 #include "node.h"
-#include "message.h"
 #include "buffer.h"
 
 int EV_NET_COMMAND;

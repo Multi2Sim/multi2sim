@@ -17,12 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 #include <errno.h>
 #include <poll.h>
 #include <unistd.h>
 
-#include <arch/common/arch.h>
 #include <arch/x86/timing/cpu.h>
 #include <driver/glew/glew.h>
 #include <driver/glu/glu.h>
@@ -40,7 +38,6 @@
 #include "context.h"
 #include "emu.h"
 #include "file-desc.h"
-#include "isa.h"
 #include "loader.h"
 #include "regs.h"
 #include "signal.h"

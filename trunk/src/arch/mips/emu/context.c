@@ -18,12 +18,9 @@
  */
 
 
-#include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <arch/common/arch.h>
-#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>
