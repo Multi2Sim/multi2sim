@@ -17,15 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <lib/util/list.h>
-#include <llvm-c/Core.h>
 
 #include "vector-ops.h"
-#include "val.h"
 
 extern LLVMBuilderRef cl2llvm_builder;
 extern char temp_var_name[50];

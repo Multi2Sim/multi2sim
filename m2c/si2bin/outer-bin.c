@@ -17,18 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
 
 #include <arch/southern-islands/asm/arg.h>
 #include <arch/southern-islands/asm/bin-file.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-encode.h>
-#include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
-#include "metadata.h"
 #include "outer-bin.h"
 #include "data.h"
 #include "si2bin.h"

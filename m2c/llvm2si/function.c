@@ -17,22 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/southern-islands/asm/arg.h>
-#include <arch/southern-islands/asm/bin-file.h>
-#include <m2c/common/basic-block.h>
 #include <m2c/common/ctree.h>
-#include <m2c/common/node.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/hash-table.h>
 #include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
-#include <llvm-c/Core.h>
 
 #include "basic-block.h"
 #include "function.h"

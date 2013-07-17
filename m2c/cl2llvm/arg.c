@@ -17,15 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
-#include <stdio.h>
 
-#include <llvm-c/Core.h>
 #include <lib/mhandle/mhandle.h>
 
-#include "declarator-list.h"
-#include "type.h"
-#include "symbol.h"
 #include "arg.h"
 
 struct cl2llvm_arg_t *cl2llvm_arg_create(struct cl2llvm_decl_list_t *decl_list, char *name)

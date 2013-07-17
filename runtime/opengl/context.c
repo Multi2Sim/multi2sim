@@ -42,7 +42,7 @@ static char *opengl_err_version =
 	"\tYour OpenGL program is using a version of the Multi2Sim Runtime library\n"
 	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
-	"\tMulti2Sim OpenGL Runtime library ('libm2s-opengl').\n";
+	"\tMulti2Sim OpenGL Runtime library ('libm2s-opengl.so').\n";
 
 
 struct opengl_version_t

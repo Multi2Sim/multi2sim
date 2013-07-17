@@ -18,10 +18,8 @@
  */
 
 #include <stdarg.h>
-#include <stdio.h>
 
 /*
-#include <arch/fermi/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 */
 
@@ -29,16 +27,10 @@
 #include <lib/util/elf-encode.h>
 #include <lib/util/list.h>
 
-#include "inst.h"
 #include "inst-info.h"
-#include "inner-bin.h"
 #include "outer-bin.h"
 #include "frm2bin.h"
-#include "parser.h"
-#include "symbol.h"
 /*
-#include "task.h"
-#include "stream.h"
 */
 
 struct frm2bin_outer_bin_t *frm2bin_outer_bin;

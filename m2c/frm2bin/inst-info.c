@@ -19,7 +19,6 @@
 
 #include <assert.h>
 
-#include <arch/fermi/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
@@ -27,7 +26,6 @@
 #include <lib/util/string.h>
 
 #include "inst-info.h"
-#include "token.h"
 #include "arg.h"
 
 

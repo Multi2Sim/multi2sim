@@ -17,15 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 
-#include <llvm-c/Core.h>
 #include <lib/util/hash-table.h>
-#include <lib/util/list.h>
 #include <lib/mhandle/mhandle.h>
 
-#include "declarator-list.h"
 #include "built-in-funcs.h"
 #include "type.h"
 #include "arg.h"

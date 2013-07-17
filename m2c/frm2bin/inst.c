@@ -19,24 +19,18 @@
 
 #include <assert.h>
 
-#include <arch/fermi/asm/asm.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
 #include <lib/util/list.h>
-#include <lib/util/misc.h>
 #include <lib/util/string.h>
 
 #include "arg.h"
 #include "frm2bin.h"
 #include "inst.h"
 #include "inst-info.h"
-#include "symbol.h"
-#include "token.h"
 
 /*
-#include "stream.h"
-#include "task.h"
 */
 
 

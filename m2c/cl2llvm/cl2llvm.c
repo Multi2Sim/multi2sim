@@ -17,27 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <llvm-c/Analysis.h>
 #include <llvm-c/BitWriter.h>
-#include <llvm-c/Core.h>
-#include <llvm-c/ExecutionEngine.h>
-#include <llvm-c/Target.h>
-#include <llvm-c/Transforms/Scalar.h>
 #include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
-#include <lib/util/list.h>
 
 #include "enum-types.h"
-#include "arg.h"
 #include "cl2llvm.h"
-#include "declarator-list.h"
 #include "function.h"
-#include "parser.h"
 #include "symbol.h"
 #include "type.h"
 #include "built-in-funcs.h"

@@ -17,7 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <elf.h>
 
 
 /* #include <arch/fermi/asm/bin-file.h> */
@@ -26,8 +25,6 @@
 #include <lib/util/elf-encode.h>
 #include <lib/util/file.h>
 #include <lib/util/list.h>
-#include <lib/util/misc.h>
-#include <lib/util/string.h>
 
 #include "inner-bin.h"
 
