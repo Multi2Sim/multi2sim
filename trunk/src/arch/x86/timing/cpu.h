@@ -33,18 +33,6 @@ struct x86_uop_t;
 
 
 
-/* Fast access macros */
-/* FIXME ------ remove below ----------- */
-#define X86_CORE  (*x86_cpu->cores[core])
-#define X86_THREAD  (*X86_CORE.threads[thread])
-#define X86_CORE_IDX(x)  (*x86_cpu->cores[(x)])
-#define X86_THREAD_IDX(x)  (*X86_CORE.threads[(x)])
-#define X86_CORE_THREAD_IDX(x, y)  (*x86_cpu->cores[(x)]->threads[(y)])
-#define X86_CORE_FOR_EACH  for (core = 0; core < x86_cpu_num_cores; core++)
-#define X86_THREAD_FOR_EACH  for (thread = 0; thread < x86_cpu_num_threads; thread++)
-
-
-
 /*
  * Class 'X86Cpu'
  */

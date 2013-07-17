@@ -740,8 +740,8 @@ void X86ContextProcCPUInfo(X86Context *self, char *path, int size)
 {
 	FILE *f = NULL;
 	
-	int core;
-	int thread;
+	int i;
+	int j;
 	int node;
 	int fd;
 
@@ -750,40 +750,43 @@ void X86ContextProcCPUInfo(X86Context *self, char *path, int size)
 	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
 		fatal("ctx_gen_proc_self_maps: cannot create temporary file");
 
-	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+	for (i = 0; i < x86_cpu_num_cores; i++)
 	{
-		node = core * x86_cpu_num_threads + thread;
-		fprintf(f, "processor : %d\n", node);
-		fprintf(f, "vendor_id : Multi2Sim\n");
-		fprintf(f, "cpu family : 6\n");
-		fprintf(f, "model : 23\n");
-		fprintf(f, "model name : Multi2Sim\n");
-		fprintf(f, "stepping : 6\n");
-		fprintf(f, "microcode : 0x607\n");
-		fprintf(f, "cpu MHz : 800.000\n");
-		fprintf(f, "cache size : 3072 KB\n");
-		fprintf(f, "physical id : 0\n");
-		fprintf(f, "siblings : %d\n", x86_cpu_num_cores * x86_cpu_num_threads);
-		fprintf(f, "core id : %d\n", core);
-		fprintf(f, "cpu cores : %d\n", x86_cpu_num_cores);
-		fprintf(f, "apicid : %d\n", node);
-		fprintf(f, "initial apicid : %d\n", node);
-		fprintf(f, "fpu : yes\n");
-		fprintf(f, "fpu_exception : yes\n");
-		fprintf(f, "cpuid level : 10\n");
-		fprintf(f, "wp : yes\n");
-		fprintf(f, "flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr "
-				"pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse "
-				"sse2 ss ht tm pbe syscall nx lm constant_tsc arch_perfmon "
-				"pebs bts rep_good nopl aperfmperf pni dtes64 monitor ds_cpl "
-				"vmx est tm2 ssse3 cx16 xtpr pdcm sse4_1 lahf_lm ida dtherm "
-				"tpr_shadow vnmi flexpriority\n");
-		fprintf(f, "bogomips : 4189.40\n");
-		fprintf(f, "clflush size : 32\n");
-		fprintf(f, "cache_alignment : 32\n");
-		fprintf(f, "address sizes : 32 bits physical, 32 bits virtual\n");
-		fprintf(f, "power management :\n");
-		fprintf(f, "\n");
+		for (j = 0; j < x86_cpu_num_threads; j++)
+		{
+			node = i * x86_cpu_num_threads + j;
+			fprintf(f, "processor : %d\n", node);
+			fprintf(f, "vendor_id : Multi2Sim\n");
+			fprintf(f, "cpu family : 6\n");
+			fprintf(f, "model : 23\n");
+			fprintf(f, "model name : Multi2Sim\n");
+			fprintf(f, "stepping : 6\n");
+			fprintf(f, "microcode : 0x607\n");
+			fprintf(f, "cpu MHz : 800.000\n");
+			fprintf(f, "cache size : 3072 KB\n");
+			fprintf(f, "physical id : 0\n");
+			fprintf(f, "siblings : %d\n", x86_cpu_num_cores * x86_cpu_num_threads);
+			fprintf(f, "core id : %d\n", i);
+			fprintf(f, "cpu cores : %d\n", x86_cpu_num_cores);
+			fprintf(f, "apicid : %d\n", node);
+			fprintf(f, "initial apicid : %d\n", node);
+			fprintf(f, "fpu : yes\n");
+			fprintf(f, "fpu_exception : yes\n");
+			fprintf(f, "cpuid level : 10\n");
+			fprintf(f, "wp : yes\n");
+			fprintf(f, "flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr "
+					"pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse "
+					"sse2 ss ht tm pbe syscall nx lm constant_tsc arch_perfmon "
+					"pebs bts rep_good nopl aperfmperf pni dtes64 monitor ds_cpl "
+					"vmx est tm2 ssse3 cx16 xtpr pdcm sse4_1 lahf_lm ida dtherm "
+					"tpr_shadow vnmi flexpriority\n");
+			fprintf(f, "bogomips : 4189.40\n");
+			fprintf(f, "clflush size : 32\n");
+			fprintf(f, "cache_alignment : 32\n");
+			fprintf(f, "address sizes : 32 bits physical, 32 bits virtual\n");
+			fprintf(f, "power management :\n");
+			fprintf(f, "\n");
+		}
 	}
 
 	/* Close file */
