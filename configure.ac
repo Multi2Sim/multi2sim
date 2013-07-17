@@ -55,6 +55,81 @@ AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap se
 
 
 
+###########################
+# Test for ({ ... }) syntax
+###########################
+
+AC_MSG_CHECKING([for code blocks within parentheses])
+
+# Try
+AC_COMPILE_IFELSE(
+	[
+		AC_LANG_PROGRAM([], [
+			return ({1;});
+		])
+	],
+	[
+		AC_MSG_RESULT(yes)
+	],
+	[
+		AC_MSG_RESULT(no)
+		AC_MSG_ERROR([
+
+	Your compiler does not support code blocks within parentheses. While
+	this syntax is not standard C, most recent compilers accept it as valid.
+	The code related with classes and objects introduced in Multi2Sim 4.2
+	relies on this syntax to be available. Please make sure that your
+	compiler accepts a simple program with the following content:
+
+		int main()
+		{
+			return ({1;});
+		}]
+		)
+	]
+)
+
+
+
+
+#################################
+# Test for typedef redeclarations
+#################################
+
+AC_MSG_CHECKING([for typedef redeclarations])
+
+# Try
+AC_COMPILE_IFELSE(
+	[
+		AC_LANG_PROGRAM([], [
+			struct my_struct_t;
+			typedef struct MyType my_struct_t;
+			typedef struct MyType my_struct_t;
+		])
+	],
+	[
+		AC_MSG_RESULT(yes)
+	],
+	[
+		AC_MSG_RESULT(no)
+		AC_MSG_ERROR([
+
+	Your compiler does not support redeclarations of the same type using
+	'typedef'. While this feature is an extension of ISO C, most recent
+	compilers accept it as valid. The code related with objects and classes
+	introduced in Multi2Sim 4.2 relies on this feature. Please make sure
+	that your compiler accepts a simple program with the following content
+	(the line repetition is intentional):
+
+		typedef char CHAR;
+		typedef char CHAR;]
+		)
+	]
+)
+
+
+
+
 ###############
 # Debug/Profile
 ###############
