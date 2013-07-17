@@ -37,8 +37,8 @@ void X86CpuMemConfigDefault(Timing *self, struct config_t *config)
 	char section[MAX_STRING_SIZE];
 	char str[MAX_STRING_SIZE];
 
-	int core;
-	int thread;
+	int i;
+	int j;
 
 	/* Cache geometry for L1 */
 	snprintf(section, sizeof section, "CacheGeometry x86-geo-l1");
@@ -57,24 +57,24 @@ void X86CpuMemConfigDefault(Timing *self, struct config_t *config)
 	config_write_string(config, section, "Policy", "LRU");
 
 	/* L1 caches and entries */
-	X86_CORE_FOR_EACH
+	for (i = 0; i < x86_cpu_num_cores; i++)
 	{
 		/* L1 cache */
-		snprintf(section, sizeof section, "Module x86-l1-%d", core);
+		snprintf(section, sizeof section, "Module x86-l1-%d", i);
 		config_write_string(config, section, "Type", "Cache");
 		config_write_string(config, section, "Geometry", "x86-geo-l1");
 		config_write_string(config, section, "LowNetwork", "x86-net-l1-l2");
 		config_write_string(config, section, "LowModules", "x86-l2");
 
 		/* Entry */
-		snprintf(str, sizeof str, "x86-l1-%d", core);
-		X86_THREAD_FOR_EACH
+		snprintf(str, sizeof str, "x86-l1-%d", i);
+		for (j = 0; j < x86_cpu_num_threads; j++)
 		{
 			snprintf(section, sizeof section, "Entry x86-core-%d-thread-%d",
-				core, thread);
+				i, j);
 			config_write_string(config, section, "Arch", "x86");
-			config_write_int(config, section, "Core", core);
-			config_write_int(config, section, "Thread", thread);
+			config_write_int(config, section, "Core", i);
+			config_write_int(config, section, "Thread", j);
 			config_write_string(config, section, "Module", str);
 		}
 	}
