@@ -2051,6 +2051,15 @@ int main(int argc, char **argv)
 	arch_set_timing(arch_southern_islands, asTiming(si_gpu));
 
 	/* x86 */
+	/* FIXME
+	 * The code above and below is in an intermediate state on the process
+	 * of converting all architectures' disassemblers, emulators and timing
+	 * simulators into independent classes. All those arch_register calls
+	 * and their associated call-backs will go away.
+	 * For now, this has been done for x86 only. Notice how variable 'x86_cpu'
+	 * is now defined privately only in this file. This code will look much
+	 * better once the process finish. But now we need to release 4.2...
+	 */
 	X86CpuInit();
 	if (x86_sim_kind == arch_sim_kind_detailed)
 	{

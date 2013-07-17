@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <getopt.h>
+#include <unistd.h>
 
 #include <m2c/amd/amd.h>
 #include <m2c/gl/gl.h>
@@ -383,6 +384,54 @@ static void m2c_read_command_line(int argc, char **argv)
 }
 
 
+/* Replace all file names in a list with temporary files with the same
+ * name extension as the original name. */
+static void m2c_replace_temp_file_name(struct list_t *file_list)
+{
+	int index;
+
+	char *name;
+	char *name_ext;
+	char new_name[MAX_STRING_SIZE];
+
+	LIST_FOR_EACH(file_list, index)
+	{
+		/* Get old name and its extension */
+		name = list_get(file_list, index);
+		name_ext = rindex(name, '.');
+		if (!name_ext || rindex(name_ext, '/'))
+			name_ext = "";
+
+		/* Create new file */
+		strcpy(new_name, "/tmp/XXXXXX");
+		mktemp(new_name);
+		if (name_ext)
+			strcat(new_name, name_ext);
+
+		/* Replace it */
+		free(name);
+		list_set(file_list, index, xstrdup(new_name));
+	}
+}
+
+
+/* Remove all files in a file list if they have been created in the '/tmp'
+ * directory. */
+static void m2c_remove_temp_file_name(struct list_t *file_list)
+{
+	int index;
+
+	char *name;
+
+	LIST_FOR_EACH(file_list, index)
+	{
+		name = list_get(file_list, index);
+		if (str_prefix(name, "/tmp/"))
+			unlink(name);
+	}
+}
+
+
 /* If a file was specified with option '-o', replace the first file name in the
  * list with the output file. */
 static void m2c_replace_out_file_name(struct list_t *file_list)
@@ -611,9 +660,11 @@ int main(int argc, char **argv)
 	/* Native AMD compilation */
 	if (m2c_amd_run)
 	{
+		m2c_replace_temp_file_name(m2c_clp_file_list);
 		m2c_replace_out_file_name(m2c_bin_file_list);
 		m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
 		amd_compile(m2c_clp_file_list, m2c_bin_file_list);
+		m2c_remove_temp_file_name(m2c_clp_file_list);
 		goto out;
 	}
 
@@ -636,9 +687,11 @@ int main(int argc, char **argv)
 	/* OpenCL C to LLVM stand-alone front-end */
 	if (m2c_cl2llvm_run)
 	{
+		m2c_replace_temp_file_name(m2c_clp_file_list);
 		m2c_replace_out_file_name(m2c_llvm_file_list);
 		m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
 		cl2llvm_compile(m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
+		m2c_remove_temp_file_name(m2c_clp_file_list);
 		goto out;
 	}
 
@@ -666,7 +719,7 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	/* Compilation steps */
+	/* For now, let's give this warning */
 	fprintf(stderr,
 		"\n"
 		"* WARNING: The version of Multi2C released together with Multi2Sim *\n"
@@ -676,11 +729,23 @@ int main(int argc, char **argv)
 		"* supported. To request support or provide contributions, please   *\n"
 		"* email development@multi2sim.org.                                 *\n"
 		"\n");
+
+	/* Replace temporary and output file names */
+	m2c_replace_temp_file_name(m2c_clp_file_list);
+	m2c_replace_temp_file_name(m2c_llvm_file_list);
+	m2c_replace_temp_file_name(m2c_asm_file_list);
 	m2c_replace_out_file_name(m2c_bin_file_list);
+
+	/* Compilation steps */
 	m2c_preprocess(m2c_source_file_list, m2c_clp_file_list);
 	cl2llvm_compile(m2c_clp_file_list, m2c_llvm_file_list, m2c_opt_level);
 	llvm2si_compile(m2c_llvm_file_list, m2c_asm_file_list);
 	si2bin_compile(m2c_asm_file_list, m2c_bin_file_list);
+
+	/* Remove temporary files */
+	m2c_remove_temp_file_name(m2c_clp_file_list);
+	m2c_remove_temp_file_name(m2c_llvm_file_list);
+	m2c_remove_temp_file_name(m2c_asm_file_list);
 
 out:
 	/* Finish */
