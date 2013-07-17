@@ -17,9 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/common/arch.h>
-#include <arch/mips/emu/emu.h>
-#include <lib/esim/esim.h>
 #include <lib/util/misc.h>
 
 #include "cpu.h"

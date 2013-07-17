@@ -17,14 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
-#include <lib/util/bit-map.h>
-#include <lib/util/linked-list.h>
-#include <lib/util/list.h>
 
-#include "wavefront.h"
 #include "work-item.h"
 
 

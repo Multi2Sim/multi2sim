@@ -20,7 +20,6 @@
 
 #include <arch/evergreen/emu/emu.h>
 #include <arch/x86/emu/emu.h>
-#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>

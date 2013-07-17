@@ -17,17 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/common/arch.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/misc.h>
-#include <mem-system/memory.h>
 
 #include "context.h"
 #include "isa.h"
-#include "machine.h"
 #include "regs.h"
-#include "syscall.h"
 
 
 /* Debug categories */

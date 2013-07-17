@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/common/arch.h>
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/emu.h>
 #include <arch/x86/emu/regs.h>
@@ -27,7 +25,6 @@
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>
 #include <lib/util/misc.h>
-#include <lib/util/list.h>
 
 #include "core.h"
 #include "cpu.h"

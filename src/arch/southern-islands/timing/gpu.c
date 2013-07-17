@@ -17,9 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/common/arch.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/work-group.h>
 #include <driver/opencl/opencl.h>
@@ -32,7 +30,6 @@
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <lib/util/timer.h>
 
 #include "calc.h"
 #include "compute-unit.h"

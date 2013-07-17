@@ -17,25 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 
-#include <arch/common/arch.h>
-#include <arch/southern-islands/asm/bin-file.h>
-#include <arch/southern-islands/timing/gpu.h>
 #include <driver/opencl/opencl.h>
-#include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/file.h>
 #include <lib/util/list.h>
 #include <lib/util/misc.h>
 #include <lib/util/string.h>
-#include <lib/util/timer.h>
 #include <mem-system/memory.h>
 
 #include "emu.h"
 #include "isa.h"
-#include "ndrange.h"
 #include "opengl-bin-file.h"
 #include "wavefront.h"
 #include "work-group.h"

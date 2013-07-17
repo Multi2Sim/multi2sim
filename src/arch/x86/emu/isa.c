@@ -20,7 +20,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include <arch/common/arch.h>
 #include <lib/util/misc.h>
 #include <lib/util/debug.h>
 #include <lib/util/elf-format.h>

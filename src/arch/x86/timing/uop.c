@@ -21,7 +21,6 @@
 #include <lib/util/list.h>
 #include <lib/util/linked-list.h>
 
-#include "reg-file.h"
 #include "uop.h"
 
 

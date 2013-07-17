@@ -17,11 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <arch/common/arch.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -34,7 +32,6 @@
 #include <mem-system/memory.h>
 
 #include "context.h"
-#include "emu.h"
 #include "file.h"
 #include "isa.h"
 #include "regs.h"
