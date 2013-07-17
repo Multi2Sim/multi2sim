@@ -517,14 +517,14 @@ void X86CpuDestroy(X86Cpu *self)
 		fclose(f);
 	}
 
+	/* Uop trace list */
+	X86CpuEmptyTraceList(self);
+	linked_list_free(self->uop_trace_list);
+
 	/* Free cores */
 	for (i = 0; i < x86_cpu_num_cores; i++)
 		delete(self->cores[i]);
 	free(self->cores);
-
-	/* Uop trace list */
-	X86CpuEmptyTraceList(self);
-	linked_list_free(self->uop_trace_list);
 }
 
 
