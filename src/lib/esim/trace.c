@@ -125,9 +125,6 @@ void __trace(int category, int print_cycle, char *fmt, ...)
 	int len;
 	long long cycle;
 
-	/* Get current cycle */
-	cycle = esim_cycle();
-
 	/* Get category */
 	assert(category > 0);
 	c = list_get(trace_category_list, category);
@@ -145,10 +142,14 @@ void __trace(int category, int print_cycle, char *fmt, ...)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Dump current cycle */
-	if (cycle > trace_last_cycle && print_cycle)
+	if (print_cycle)
 	{
-		gzprintf(trace_file, "c clk=%lld\n", cycle);
-		trace_last_cycle = cycle;
+		cycle = esim_cycle();
+		if (cycle > trace_last_cycle)
+		{
+			gzprintf(trace_file, "c clk=%lld\n", cycle);
+			trace_last_cycle = cycle;
+		}
 	}
 
 	/* Dump message */
