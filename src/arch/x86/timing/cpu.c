@@ -422,11 +422,6 @@ void X86CpuInit(void)
 
 	/* Trace */
 	x86_trace_category = trace_new_category();
-
-	/* Trace */
-	x86_trace_header("x86.init version=\"%d.%d\" num_cores=%d num_threads=%d\n",
-		X86_TRACE_VERSION_MAJOR, X86_TRACE_VERSION_MINOR,
-		x86_cpu_num_cores, x86_cpu_num_threads);
 }
 
 
@@ -496,6 +491,11 @@ void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 	asTiming(self)->MemConfigCheck = X86CpuMemConfigCheck;
 	asTiming(self)->MemConfigDefault = X86CpuMemConfigDefault;
 	asTiming(self)->MemConfigParseEntry = X86CpuMemConfigParseEntry;
+
+	/* Trace */
+	x86_trace_header("x86.init version=\"%d.%d\" num_cores=%d num_threads=%d\n",
+		X86_TRACE_VERSION_MAJOR, X86_TRACE_VERSION_MINOR,
+		x86_cpu_num_cores, x86_cpu_num_threads);
 }
 
 
