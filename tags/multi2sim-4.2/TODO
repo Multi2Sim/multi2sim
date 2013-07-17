@@ -1,0 +1,41 @@
+********************************************************************************
+Memory System
+********************************************************************************
+
+- Documentation on directories in memory hierarchy, especially on the meaning of Hits/Misses statistics in main memory.
+- New mechanism to assign entries into the memory hierarchy, that doesn't rely on the mem-system being aware of all architectures in the system. Call-back functions should be registered by each architecture to process [Entry xxx] sections of the memory configuration files.
+
+
+********************************************************************************
+Network
+********************************************************************************
+
+
+
+********************************************************************************
+Fermi
+********************************************************************************
+
+- Remove MAX_STRING_SIZE from all names in grid, warp, etc. ('.h' files) and remove include of 'lib/util/string.h' in the headers.
+- Disassembler should output the same text as original Fermi disassembler (cuobjdump).
+- Emulator shouldn't load the PTX code from the x86 binary. Instead, it should read an external '.cubin' file and extract the ISA from there.
+
+
+********************************************************************************
+x86
+********************************************************************************
+
+- Documentation for checkpoints.
+- Documentation for XMM register renaming.
+- Documentation for prefetching.
+- Trace cache test in M2S-Cluster (m2s-client-kit/remote-tests/test-x86-trace-cache.sh) shows slowdowns for most benchmarks in any configuration of the trace cache. This is probably due to the bad behavior of the multiple branch prediction used instead of regular sophisticated predictors. Some debugging needs to be done here.
+
+
+
+********************************************************************************
+Southern Islands
+********************************************************************************
+
+- Review code to adhere to coding guidelines in README.
+
+

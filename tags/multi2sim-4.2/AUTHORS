@@ -1,0 +1,216 @@
+================================================================================
+AUTHOR
+	Dana Schaa (dschaa@ece.neu.edu)
+
+DESCRIPTION
+
+	Dana is one of the authors of the AMD Southern Islands architectural
+	model, including the disassembler, functional simulator, timing
+	simulator, and visualization tool.
+
+	Dana has implemented the NMOESI coherence protocol, the mechanism used
+	in the memory hierarchy to communicate between caches shared by CPU and
+	GPU timing models.
+
+FILES
+	* All files in src/arch/southern-islands
+	* src/mem-system/directory.c
+	* src/mem-system/mem-system.c
+	* src/mem-system/config.c
+	* src/mem-system/local-mem-protocol.c
+	* src/mem-system/module.c
+	* src/mem-system/nmoesi-protocol.c
+
+================================================================================
+
+AUTHOR
+	Rustam Miftakhutdinov (rustam@mail.utexas.edu)
+
+DESCRIPTION
+
+	Rustam has implemented support for application checkpointing in the x86
+	emulator, adding options --x86-load-checkpoint, --x86-save-checkpoint,
+	and --x86-last-inst to the command-line interface.
+
+FILES
+	* src/arch/x86/emu/checkpoint.c
+	* src/arch/x86/emu/x86-emu.h
+
+
+================================================================================
+
+AUTHOR
+	Sudhanshu Shukla (sudhan@iitk.ac.in)
+
+DESCRIPTION
+	
+	Sudhanshu has implemented support for a set of SSE instructions in the
+	x86 emulator. He has implemented a register renaming mechanism for XMM
+	registers in the x86 timing simulator, and improved the algorithm of
+	micro-code generation for SSE instructions.
+
+FILES
+	* src/arch/x86/emu/machine-xmm.c
+	* src/arch/x86/emu/uinst.c
+	* src/arch/x86/timing/reg-file.c
+
+================================================================================
+AUTHOR
+	Zhongliang Chen (zhonchen@ece.neu.edu)
+
+DESCRIPTION
+
+	Zhongliang is one of the authors of the NVIDIA CUDA libraries and the 
+	NVIDIA Fermi architectural model. He has implemented the NVIDIA Fermi 
+	disassembler and functional simulator.
+
+FILES
+	* All files in src/arch/fermi
+	* All files in tools/libm2s-cuda
+
+===============================================================================
+AUTHOR
+	Yash Ukidave (yukidave@ece.neu.edu)
+
+DESCRIPTION
+
+	Yash is one of the authors of the ARM CPU architectural model. He has
+	implemented the ARM disassembler and functional simulator for ARM v7
+	ISA.
+
+FILES
+	* All files in src/arch/arm
+
+===============================================================================
+AUTHOR
+        Xiang Gong (xgong@ece.neu.edu)	
+
+DESCRIPTION
+
+	Xiang is one of the authors of the OpenGL libraries and OpenGL module.
+	He has implemented the shader disassembler and functional simulator for
+	OpenGL.
+
+FILES
+	* All files in src/tools/libm2s-opengl/
+	* All files in src/tools/m2s-opengl-kc/
+	* src/arch/x86/opengl*
+
+===============================================================================
+AUTHOR
+	Vaivaswatha N (vaivaswatha@hpc.serc.iisc.in)
+
+DESCRIPTION
+
+	Vaivaswatha has implemented support for prefetching. He has added
+	support for the x86 prefetch0 instruction, the memory system support for 
+	prefetch reqeuests and a global history buffer based hardware prefetcher
+	in the memory system.
+
+FILES
+	* src/mem-system/prefetch-history.c
+	* src/mem-system/prefetcher.c
+	* src/mem-system/nmoesi-protocol.c
+	* src/arch/x86/timing/cpu-issue.c
+	* src/arch/x86/emu/machine.c
+
+================================================================================
+AUTHOR
+	Mark Wilkening (wilkening.m@husky.neu.edu)
+
+DESCRIPTION
+
+	Mark is one of the authors of the AMD Southern Islands architectural
+	model, including the disassembler, functional simulator, timing
+	simulator, and visualization tool.
+
+FILES
+	* All files in src/arch/southern-islands
+	
+================================================================================
+AUTHOR
+	Perhaad Mistry (pmistry@ece.neu.edu)
+
+DESCRIPTION
+
+    Perhaad has worked on building binaries of benchmark suites and adding 
+    statistics reporting to the Evergreen architectural simulator
+    
+FILES
+	* src/arch/evergreen/*report*
+	
+================================================================================	
+AUTHOR
+	Fritz Previlon (previlon@ece.neu.edu)
+
+DESCRIPTION
+
+    Fritz has worked on the MIPS architecture, including diassembler,
+    emulator, and timing simulator.
+    
+FILES
+	* src/arch/mips/*
+	
+================================================================================	
+AUTHOR
+	Shu Chen (chen.sh@husky.neu.edu)
+
+DESCRIPTION
+
+	Shu has worked on the DRAM model.
+
+FILES
+	* src/dram/*
+
+================================================================================	
+AUTHOR
+	Tushar Swamy (swamy.t@husky.neu.edu)
+
+DESCRIPTION
+
+	Tushar has implemented the Southern Islands assembler for 'm2s-clcc'. He
+	has also implemented the ELF encoding library. He has extended support
+	for the Southern Islands disassembler and emulator.
+
+FILES
+	* tools/clcc/si2bin/*
+	* src/lib/util/elf-encode.{c|h}
+	* src/arch/southern-islands/asm/*
+	* src/arch/southern-islands/emu/*
+
+
+================================================================================
+AUTHOR
+	Chris Barton (barton.ch@husky.neu.edu)
+
+DESCRIPTION
+
+	Chris is the author of the OpenCL compiler front-end.
+
+FILES
+	* All files in tools/clcc/cl2llvm
+
+
+================================================================================
+AUTHOR
+	Amir Kavyan Ziabari (aziabari@ece.neu.edu)
+
+DESCRIPTION
+	Amir has implemented the Interconnection Network in Mutli2sim. He has 
+	designed and implemented routing and data-flow schemes in CPU and GPU
+	internal networks. 
+
+FILES
+	* src/network/
+ 
+================================================================================
+AUTHOR
+	Benjamin Soper (soper.b@husky.neu.edu)
+
+DESCRIPTION
+
+	Benjamin has worked on the reverse engineering of the Kepler ISA and is the author of the Kepler disassembler.
+
+Files
+	* src/arch/kepler/asm/*
+

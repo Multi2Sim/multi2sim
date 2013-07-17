@@ -1,0 +1,10 @@
+This file shows the m2s command line appended before the target executable. The 
+command line utilizes the memory configuration present in "mem-config", the x86 
+configuration present in "x86-config" and the SI GPU configuration in 
+"si-config".
+
+The configuration files present implement a similar memory hierarchy as the 
+files shown in example-4. However the Everygreen GPU compute units are 
+replaced with SI compute units.
+
+m2s --x86-sim detailed --x86-config x86-config --si-sim detailed --si-config si-config --mem-config mem-config 

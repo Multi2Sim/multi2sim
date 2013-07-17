@@ -1,0 +1,99 @@
+[Network.net0]
+DefaultInputBufferSize = 1024 
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 256 
+
+; 4 switches 
+[Network.net0.Node.sw0]
+Type = Switch
+
+[Network.net0.Node.sw1]
+Type = Switch
+
+[Network.net0.Node.sw2]
+Type = Switch
+
+[Network.net0.Node.sw3]
+Type = Switch
+
+; 2 L2s
+
+[Network.net0.Node.n0]
+Type = EndNode
+
+[Network.net0.Node.n1]
+Type = EndNode
+
+; 4 Main Memory access points
+
+[Network.net0.Node.n2]
+Type = EndNode
+
+[Network.net0.Node.n3]
+Type = EndNode
+
+[Network.net0.Node.n4]
+Type = EndNode
+
+[Network.net0.Node.n5]
+Type = EndNode
+
+
+; Making a ring with 4 switches
+
+[Network.net0.Link.sw0-sw1]
+Source = sw0
+Dest = sw1
+Type = Bidirectional
+
+[Network.net0.Link.sw1-sw2]
+Source = sw1
+Dest = sw2
+Type = Bidirectional
+
+[Network.net0.Link.sw2-sw3]
+Source = sw2
+Dest = sw3
+Type = Bidirectional
+
+[Network.net0.Link.sw3-sw0]
+Source = sw3
+Dest = sw0
+Type = Bidirectional
+
+; Links from Switches to Main Memory
+
+[Network.net0.Link.sw0-n2]
+Source = sw0
+Dest = n2
+Type = Bidirectional
+
+[Network.net0.Link.sw1-n3]
+Source = sw1
+Dest = n3
+Type = Bidirectional
+
+[Network.net0.Link.sw2-n4]
+Source = sw2
+Dest = n4
+Type = Bidirectional
+
+[Network.net0.Link.sw3-n5]
+Source = sw3
+Dest = n5
+Type = Bidirectional
+
+; Links from Switches to L2 caches
+
+[Network.net0.Link.sw1-n0]
+Source = sw1
+Dest = n0
+Type = Bidirectional
+
+
+[Network.net0.Link.sw2-n1]
+Source = sw2
+Dest = n1
+Type = Bidirectional
+
+

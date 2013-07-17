@@ -1,0 +1,732 @@
+#!/usr/bin/python
+
+# Copyright (C) 2006 Rafael Ubal Tena, Amir Kavyan Ziabari
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+
+import sys
+import math
+from tempfile import NamedTemporaryFile
+
+# Constants
+TotalColors = 40
+
+ChartColors = [
+	[0.823, 0.411, 0.117], # Chocolate
+	[0.647, 0.164, 0.164], # Brown
+	[0.294, 0.000, 0.509], # Indigo
+	[0.000, 0.000, 0.803], # Dodge Blue
+	[0.501, 0.000, 0.501], # Purple
+	[0.000, 0.749, 1.000], # Deep Sky Blue
+	[0.603, 0.803, 0.196], # Yello Green
+	[0.486, 0.988, 0.000], # Lawn Green
+	[0.196, 0.803, 0.196], # Lime Green
+	[0.000, 0.501, 0.000]  # Green
+]
+GrayColors = [
+	[0.000, 0.000, 0.000],
+	[0.111, 0.111, 0.111],
+	[0.222, 0.222, 0.222],
+	[0.333, 0.333, 0.333],
+	[0.444, 0.444, 0.444],
+	[0.556, 0.556, 0.556],
+	[0.667, 0.667, 0.667],
+	[0.778, 0.778, 0.778],
+	[0.889, 0.889, 0.889],
+	[1.000, 1.000, 1.000],
+	[1.000, 1.000, 1.000]
+]
+GradiantColor = [
+	[0.890, 0.890, 0.890], # Gray
+	[0.780, 0.082, 0.521], # Medium Violet Red
+	[1.000, 0.078, 0.576], # Deep Pink
+	[1.000, 0.411, 0.705], # Hot Pink
+	[1.000, 0.713, 0.756], # Light Pink
+	[0.941, 0.901, 0.549], # Khaki
+	[1.000, 1.000, 0.000], # Yellow
+	[1.000, 0.843, 0.000], # Light Orange 
+	[1.000, 0.647, 0.000], # Dark Orange
+	[1.000, 0.000, 0.000], # Red 
+	[0.862, 0.078, 0.235]  # Crimson
+]
+# Global Variables
+
+GraphPlotName = "GraphPlot 1.0.3"
+Title = ""
+YRange = []
+XRange = []
+XLabel = ""
+YLabel = ""
+YRangeDiff = 0.0
+XRangeDiff = 0.0
+Copyright = True
+PaintColor = True 
+Legend = False
+Nodes = []
+Links = []
+NodeWidth = 16 
+
+PageX1 = 0
+PageY1 = 0
+PageX2 = 0
+PageY2 = 0
+
+BoxH = 60
+BoxW = 12
+YLabelDistance = 50
+XLabelDistance = 50
+TitleHeight = 0
+# Plot parameters
+PlotOrigX = 100.0
+PlotOrigY = 500.0
+PlotWidth = 500.0
+PlotHeight = 350.0
+
+KeyDistance = 70
+YLabelDistance = 50
+Legendwidth = 60
+KeyHeight = 0
+XLabelHeight = 0
+GroupsHeight = 0
+TitleHeight = 0
+
+KeyRowHeight = 15.0
+KeyColumns = 2
+
+BreakWidthRatio = 0.5
+BlockspcWidthRatio = 0.5
+BarspcWidthRatio = 0.1
+NodeWidthRatio = 0.2
+SwitchWidthRatio = 0.3
+BusWidthRatio = 0.15
+DummyWidthRatio = 0.1
+LinkWidthRatio = 0.05
+FirstYTic = 0.0
+YTicsDistance = 0.0
+	
+
+
+def warning(msg):
+	sys.stderr.write("Warning: %s\n" % msg)
+
+
+
+def error(msg):
+	sys.stderr.write("Error: %s\n" % msg)
+	sys.exit(1)
+
+
+def InRange(Val, Low, High):
+	if Val < Low: return Low
+	if Val > High: return High
+	return Val
+
+def TranslateY(y):
+	c = PlotHeight / (YRangeDiff)
+	a = (PlotHeight - c)/ YRangeDiff
+	b = - (PlotHeight - c) * YRange[0] / (YRangeDiff)
+	return (c/2) + a * y + b
+
+def TranslateX(x):
+	c = PlotWidth / (XRangeDiff)
+	a = (PlotWidth - c)/ (XRangeDiff)
+	b = - (PlotWidth - c) * (XRange[0]) / (XRangeDiff)
+	return c/2 + a * x + b
+
+def GetItems(s):
+	Items = []
+	while True:
+		s = s.strip()
+		if len(s) == 0:
+			break
+		
+		if s[0] == "\"":
+			s = s[1:]
+			idx = s.find("\"")
+			if idx < 0: error("'%s': wrong string format" % s)
+			Items.append(s[:idx])
+			s = s[idx + 1:]
+		
+		elif s[0] == "'":
+			s = s[1:]
+			idx = s.find("'")
+			if idx < 0: error("'%s': wrong string format" % s)
+			Items.append(s[:idx])
+			s = s[idx + 1:]
+		
+		else:
+			idx = s.find(' ')
+			if idx < 0:
+				Items.append(s)
+				break
+			Items.append(s[:idx])
+			s = s[idx + 1:]
+	return Items
+
+def StrToBool(key, s):
+	s = s.strip().lower()
+	if s == "true":
+		return True
+	elif s == "false":
+		return False
+	else:
+		error("key '%s' must be 'True' or 'False'" % key)
+
+def StrToFloat(key, s):
+	try:
+		result = float(s)
+	except:
+		error("'%s' is not a valid floating point number" % key)
+	return result
+
+def ProcessKey(key, value):
+	
+	key = key.lower().strip();	
+	if key == "title":
+
+		global Title
+		Title = GetItems(value)
+		Title = Title[0]
+
+	elif key == "yrange":
+		global YRange, YRangeDiff
+		YRange = value.split()
+		if len(YRange) != 2:
+			error("YRange must contain 2 elements")
+		for i in range(len(YRange)):
+			YRange[i] = StrToFloat("YRange[%d]" % i, YRange[i])
+		YRangeDiff = YRange[1] - YRange[0]
+		if (YRangeDiff <= 0.0):
+			error("YRange length is 0")
+
+
+	elif key == "xlabel":
+		
+		global XLabel
+		XLabel = GetItems(value)
+		XLabel = XLabel[0]
+	
+	elif key == "ylabel":
+		
+		global YLabel
+		YLabel = GetItems(value)
+		YLabel = YLabel[0]
+
+
+	elif key == "plotwidth":
+		
+		global PlotWidth
+		PlotWidth = int(value)
+		if not InRange(PlotWidth, 100, 1000):
+			error("PlotWidth must be in range [100..1000]")
+	
+	elif key == "plotheight":
+		
+		global PlotHeight
+		PlotHeight = int(value)
+		if not InRange(PlotHeight, 100, 1000):
+			error("PlotHeight must be in range [100..1000]")
+		
+	elif key == "copyright":
+		
+		global Copyright
+		Copyright = StrToBool(key, value)
+	
+		
+	elif key == "color":
+		
+		global PaintColor
+		PaintColor = StrToBool(key, value)
+
+	elif key == "legend":
+		global Legend
+		Legend = StrToBool (key, value)
+
+	elif key == "node":
+		global Nodes
+		Node = GetItems(value)
+		if int(Node[1]) == 3:
+			if len(Node) != 5:
+				error("Node requires 5 arguments when second argument is 3")
+			try:
+				Node[0] = Node[0]
+			 	Node[1] = int(Node[1])
+				Node[2] = float(Node[2])
+				Node[3] = float(Node[3])
+				Node[4] = int(Node[4])
+			except:
+				error("wrong values for Node '%s'" % Node[i])
+		else:
+			if len(Node) !=4:
+				error("Node Requires 4 arguments")
+			try:
+				Node[0] = Node[0]
+			 	Node[1] = int(Node[1])
+				Node[2] = float(Node[2])
+				Node[3] = float(Node[3])
+			except:
+				error("wrong values for Node '%s'" % Node[i])
+		Nodes.append(Node)
+
+	elif key == "link":
+		global Links
+		Link = GetItems(value)
+		if len(Link) != 6:
+			error("Link requires 5 arguments")
+		try:
+			Link[0] = float(Link[0])
+			Link[1] = float(Link[1])
+			Link[2] = float(Link[2])
+			Link[3] = float(Link[3])
+			Link[4] = int(Link[4])
+			Link[5] = int(Link[5])
+		except:
+			error("Wrong values for Link")
+		Links.append(Link)
+
+	else:
+		error("'" + key + "': key not recognized")
+
+def ReadFile(name):
+	
+	try:
+		f = open(name, "r")
+	except:
+		error(name + ": cannot find input file");
+
+	for line in f:
+		
+		#Do not Process empty Lines
+		line = line.strip()
+		if line == "" or line[0] == "#":
+			continue
+
+		#Process a pair Key = Value
+		eqpos = line.find("=");
+		if eqpos >= 0:
+			ProcessKey(line[:eqpos], line[eqpos + 1:]);
+			continue
+	f.close()	
+	ComputeXRange()
+	ComputeYRange()
+
+
+def ComputeXRange():
+	
+	#YRange
+	global XRange, XRangeDiff, PlotWidth, PlotOrigX
+	XRangeSpecified = XRange != []
+	if not XRangeSpecified:
+		XRange = [0, 0]
+		for Node in Nodes:
+			XRange[0] = min(XRange[0], Node[2])
+			XRange[1] = max(XRange[1], Node[2])
+		XRangeDiff = XRange[1] - XRange[0]
+		if XRangeDiff <= 0.0:
+			error("XRange Difference <= 0")
+
+def ComputeYRange():
+	
+	#YRange
+	global YRange, YRangeDiff, PlotHeight, PlotOrigY
+	YRangeSpecified = YRange != []
+	if not YRangeSpecified:
+		YRange = [0, 0]
+		for Node in Nodes:
+			YRange[0] = min(YRange[0], Node[3]) 
+			YRange[1] = max(YRange[1], Node[3])
+		YRangeDiff = YRange[1] - YRange[0]
+		if YRangeDiff <= 0.0:
+			error("YRange Difference <= 0")
+
+
+
+def DrawTitle(f):
+	if Title == "":
+		return
+	elif Legend:
+		TitleX = PlotOrigX - Legendwidth + PlotWidth/2
+	elif not Legend:
+		TitleX = PlotOrigX + PlotWidth/2
+	f.write("0 0 0 C Tb %f %f N " % (TitleX, PlotOrigY - 20))
+	f.write("(%s) Cshow stroke\n" % Title)
+
+
+
+def DrawLegend(f):
+	if Legend:
+		f.write("0 0 0 C Tb %f %f N " % (PlotOrigX - Legendwidth, PlotOrigY + PlotHeight - Legendwidth))
+		f.write("(%s) Cshow stroke\n" % "Utilization")
+		for Color in range(0,11):
+			BoxX = PlotOrigX - Legendwidth - Legendwidth/2
+			BoxY = PlotOrigY + PlotHeight - Legendwidth - (Color +2) * BoxW
+			f.write("%f %f %f C " % (GradiantColor[Color][0], GradiantColor[Color][1], GradiantColor[Color][2]))
+			f.write("%f %f %f %f FillBox " % (BoxX, BoxY , BoxH, BoxW))
+			f.write("stroke\n")
+
+
+			f.write("0 0 0 C Tt %f %f N " % (BoxX - BoxW, BoxY + BoxH/20 ))
+			f.write("(%d%%) Cshow stroke\n " % (Color * 10));
+
+				
+				
+
+def DrawNodes(f):
+
+
+	# Draw nodes
+	for Node in Nodes:
+		if len(Node) == 4:
+			[Name, nod_tp, x_coor, y_coor ] = Node
+		elif len(Node) == 5:
+			[Name, nod_tp, x_coor, y_coor , arbit_color ] = Node
+		Y = TranslateY(y_coor)
+		X = TranslateX(x_coor)
+		Center = PlotOrigX + X
+		if Node[1] == 0:
+			Width = PlotWidth * NodeWidthRatio / (max(XRangeDiff, YRangeDiff) + 1)
+			f.write("1 setgray %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (Center, PlotOrigY + Y, Width / 2 + 0.5))
+
+			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (ChartColors[5][0], ChartColors[5][1], ChartColors[5][2], Center, PlotOrigY + Y, Width / 2))
+
+			f.write("0 0 0 C Tt %f %f N " % (PlotOrigX + X, PlotOrigY ++ Y + \
+				 (0.3 *(PlotHeight / (YRangeDiff + 2)))))
+			f.write("(%s) Cshow stroke\n" % Node[0])
+		elif Node[1] == 1:
+
+			Width = PlotWidth * SwitchWidthRatio / (max(XRangeDiff, YRangeDiff) + 1)
+			f.write("1 setgray %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (Center, PlotOrigY + Y, Width / 2 + 0.5))
+
+			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (ChartColors[2][0], ChartColors[2][1], ChartColors[2][2], Center, PlotOrigY + Y, Width / 2))
+
+			f.write("0 0 0 C Tt %f %f N " % (PlotOrigX + X, PlotOrigY + Y + \
+				(0.3 *(PlotHeight / (YRangeDiff + 2)))))
+			f.write("(%s) Cshow stroke\n" % Node[0])
+		elif Node[1] == 2:
+			Width = PlotWidth * DummyWidthRatio / (max(XRangeDiff, YRangeDiff) + 1)
+			f.write("1 setgray %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (Center, PlotOrigY + Y, Width / 2 + 0.5))
+
+			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (ChartColors[7][0], ChartColors[7][1], ChartColors[7][2], Center, PlotOrigY + Y, Width / 2))
+		
+		elif Node[1] == 3:
+			if Node[4] <= 10:
+				Color = GradiantColor[Node[4]]
+			elif Node[4] > 10 and Node[4] <=20:
+				Color = ChartColors[Node[4] - 11]
+			elif Node[4] > 20 and Node[4] <=30:
+				Color = GrayColors[Node[4] - 21]
+			elif Node[4] > 30:
+				error("Unknown Color for the last argument")
+			Width = PlotWidth * BusWidthRatio / (max(XRangeDiff, YRangeDiff) + 1)
+			f.write("1 setgray %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (Center, PlotOrigY + Y, Width / 2 + 0.5))
+
+			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
+				% (Color[0], Color[1], Color[2], Center, PlotOrigY + Y, Width / 2))
+			f.write("0 0 0 C Tt %f %f N " % (PlotOrigX + X, PlotOrigY + Y + \
+				(0.3 *(PlotHeight / (YRangeDiff + 2)))))
+			f.write("(%s) Cshow stroke\n" % Node[0])
+		
+		else:
+			error("Node-Type is not recognized")
+
+	f.write("grestore\n")
+
+def DrawLinks(f):
+
+	# Set plot region as clipping path
+	f.write("gsave %f %f N %f 0 V 0 %f V %f 0 V closepath clip\n" % (PlotOrigX, PlotOrigY, PlotWidth, PlotHeight, -PlotWidth))
+	for Link in Links:
+		X1 = TranslateX(Link[0])
+		Y1 = TranslateY(Link[1])
+		X2 = TranslateX(Link[2])
+		Y2 = TranslateY(Link[3])
+		Color = GradiantColor[Link[4]]
+		if Link[5] == 0:
+			f.write("%f %f %f setrgbcolor %f %f N 3 setlinewidth %f %f V closepath stroke\n" \
+				 % (Color[0], Color[1], Color[2], PlotOrigX + X1, PlotOrigY + Y1, X2 - X1, Y2 - Y1))
+
+		elif Link[5] == 1:
+			Y_MID = (Y2 + Y1)/2
+			X_MID = (X2 + X1)/2
+			Cprime = math.sqrt(pow(X2-X1,2)+pow(Y2-Y1,2))
+			C = Cprime / 12
+			if (X2-X1) != 0: 
+				Alpha = math.atan((Y2-Y1)/(X2-X1))
+			else:
+				Alpha = math.radians(90)
+			if Alpha < 0:
+				C = 0 - C
+			Betha = math.radians(12)
+			A = C * math.cos(Alpha+Betha)
+			B = C * math.sin(Alpha+Betha)
+			SignA = 1
+			if Y2 == Y1 :
+				if X2 > X1:
+					SignA =-1
+			elif Y2 > Y1:
+				SignA =-1
+
+			f.write("%f %f %f setrgbcolor %f %f N 3 setlinewidth %f %f V closepath stroke\n" \
+				% (Color[0], Color[1], Color[2], PlotOrigX + X1, PlotOrigY + Y1, X2 - X1, Y2 - Y1))
+			f.write("%f %f %f setrgbcolor %f %f N 3 setlinewidth %f %f V closepath stroke\n" \
+				% (Color[0], Color[1], Color[2], PlotOrigX + X_MID, PlotOrigY + Y_MID, SignA * A,SignA *B))
+		elif Link[5] == 2:
+			Cprime = math.sqrt(pow(X2-X1,2)+pow(Y2-Y1,2))
+			C = Cprime / 12
+			if (X2-X1) != 0: 
+				Alpha = math.atan((Y2-Y1)/(X2-X1))
+			else:
+				Alpha = math.radians(90)
+			Betha = math.radians(12)
+			A = C * math.cos(Alpha+Betha)
+			B = C * math.sin(Alpha+Betha)
+			Width = PlotWidth * LinkWidthRatio / (max(XRangeDiff, YRangeDiff) + 1)
+			Del = Width
+			ADel = Del * math.sin(Alpha)
+			BDel = Del * math.cos(Alpha)
+			SignA = 1
+			SignB = 1
+			if Y2 == Y1 :
+				if X2 > X1:
+					SignA =-1
+					SignB = -1
+			elif Y2 > Y1:
+				SignA =-1
+				SignB = -1
+			if (Y2-Y1) * (X2-X1) <0:
+				SignA = -1
+				SignB = -1
+			if (X2-X1) < 0 and (Y2-Y1) > 0:
+				SignA = 1
+				SignB = 1			
+			X1 = X1 - SignB * ADel
+			Y1 = Y1 + SignB * BDel
+			X2 = X2 - SignB * ADel
+			Y2 = Y2 + SignB * BDel
+			Y_MID = (Y2 + Y1)/2
+			X_MID = (X2 + X1)/2
+			f.write("%f %f %f setrgbcolor %f %f N 3 setlinewidth %f %f V closepath stroke\n" \
+				% (Color[0], Color[1], Color[2], PlotOrigX + X1, PlotOrigY + Y1, X2 - X1, Y2 - Y1))
+			f.write("%f %f %f setrgbcolor %f %f N 3 setlinewidth %f %f V closepath stroke\n" \
+				% (Color[0], Color[1], Color[2], PlotOrigX + X_MID, PlotOrigY + Y_MID, SignA * A,SignA *B))
+				
+
+def WriteHeader(f):
+	f.write("""
+/M {moveto} bind def
+/L {lineto} bind def
+/R {rmoveto} bind def
+/V {rlineto} bind def
+/N {newpath M} bind def
+/C {setrgbcolor} bind def
+
+/LTdef {0.25 setlinewidth 0 setgray} bind def
+/LTdef2 {0.5 setlinewidth 0 setgray} bind def
+/LTdef3 {0.75 setlinewidth 0 setgray} bind def
+/LTdef4 {1.0 setlinewidth 0 setgray} bind def
+/LTthick {1.25 setlinewidth 0 setgray} bind def
+/LTthick2 {1.5 setlinewidth 0 setgray} bind def
+LTdef
+	
+/FillBox {/h exch def /w exch def /y exch def /x exch def
+  gsave x y N w 0 V 0 h V w neg 0 V 0 h neg V fill stroke
+  x y N 0 setgray w 0 V 0 h V w neg 0 V 0 h neg V LTdef stroke grestore} def
+
+/FillTrap {/h exch def /w exch def /y exch def /x exch def
+  gsave x 2 sub y N w 0 V 4 h V w neg 0 V -4 h neg V fill stroke
+  x 2 sub y N 0 setgray w 0 V 4 h V w neg 0 V -4 h neg V LTdef stroke grestore} def
+
+/Rshow {dup stringwidth pop neg 0 R show} def
+/Cshow {dup stringwidth pop -2 div 0 R show} def
+/Tt {/Times-Roman findfont 5 scalefont setfont} def
+/Ts {/Helvetica findfont 8 scalefont setfont} def
+/Tn {/Helvetica findfont 11 scalefont setfont} def
+/Tb {/Times-Roman findfont 14 scalefont setfont} def
+""")
+
+	f.write("""
+/Point {gsave newpath 0.3 0 360 arc fill stroke grestore} def
+
+/PatBox0 {/h exch def /w exch def /y exch def /x exch def
+  gsave x y N w 0 V 0 h V w neg 0 V 0 h neg V clip
+  /dist 2.5 def
+  0 dist w {/i exch def /shift 0 def 0 dist sqrt h {/j exch def
+    x i add shift add y j add Point
+    /shift dist 2 div shift sub def
+  } for } for
+  stroke grestore} def
+
+/PatBox1 {/h exch def /w exch def /y exch def /x exch def
+  gsave x y N w 0 V 0 h V w neg 0 V 0 h neg V clip
+  /dist 5 def
+  0 dist w {/i exch def /shift 0 def 0 dist sqrt h {/j exch def
+    x i add shift add y j add Point
+    /shift dist 2 div shift sub def
+  } for } for
+  stroke grestore} def
+
+/PatBox2 {/h exch def /w exch def /y exch def /x exch def
+  gsave x y N w 0 V 0 h V w neg 0 V 0 h neg V clip
+  h neg 4 w {/now exch def x now add y M h h V} for
+  stroke grestore} def
+
+/PatBox3 {/h exch def /w exch def /y exch def /x exch def
+  gsave x y N w 0 V 0 h V w neg 0 V 0 h neg V clip
+  0 5 w h add {/now exch def x y now add M w w neg V} for
+  h neg 5 w {/now exch def x now add y M h h V} for
+  stroke grestore} def
+
+/PatBox4 {/h exch def /w exch def /y exch def /x exch def
+  gsave x y N w 0 V 0 h V w neg 0 V 0 h neg V clip
+  0 4 w h add {/now exch def x y now add M w w neg V} for
+  stroke grestore} def
+
+/PatBox5 {/h exch def /w exch def /y exch def /x exch def
+  gsave x y N w 0 V 0 h V w neg 0 V 0 h neg V clip
+  0 2 h {/now exch def x y now add M w 0 V} for
+  stroke grestore} def
+
+/PatBox6 {/h exch def /w exch def /y exch def /x exch def
+  gsave 0.9 setgray
+  x y N w 0 V 0 h V w neg 0 V 0 h neg V fill stroke grestore} def
+
+/PatBox7 {/h exch def /w exch def /y exch def /x exch def
+  gsave 0.6 setgray
+  x y N w 0 V 0 h V w neg 0 V 0 h neg V fill stroke grestore} def
+
+/PatBox8 {/h exch def /w exch def /y exch def /x exch def
+  gsave 0.3 setgray
+  x y N w 0 V 0 h V w neg 0 V 0 h neg V fill stroke grestore} def
+
+/PatBox9 {/h exch def /w exch def /y exch def /x exch def
+  x y N w 0 V 0 h V w neg 0 V 0 h neg V fill stroke} def
+
+""")
+
+def Plot(FileName):
+
+	# Open Destionation file and create a Temp file
+	f = NamedTemporaryFile(mode='w+t')
+	try:
+		outf = open(FileName, "wt")
+	except:
+		error(FileName + ": cannot open output file")
+	
+	# Header
+	WriteHeader(f)
+	DrawLinks(f)
+	DrawNodes(f)
+
+	DrawLegend(f)	
+
+	# Draw Plot Region
+	f.write("newpath 0 0 0 C %f %f M\n" % (PlotOrigX, PlotOrigY))
+	f.write("%f %f V %f %f V\n" % (PlotWidth, 0, 0, PlotHeight));
+	f.write("%f %f V %f %f V\n" % (-PlotWidth, 0, 0, -PlotHeight));
+	f.write("stroke\n");
+
+	DrawTitle(f)
+
+	# CopyRight
+	if Copyright:
+		str = "%s, by R.Ubal & A.Ziabari" % GraphPlotName
+		f.write("Tt %f %f N " % (PlotOrigX + PlotWidth + 5, PlotOrigY + PlotHeight / 2))
+		f.write("gsave 0 0 0 C 90 rotate (%s) Cshow grestore stroke\n" % str)
+	
+	# Trailer
+	PageX1 = PlotOrigX - YLabelDistance - Legendwidth/2
+	PageY1 = PlotOrigY - XLabelDistance
+	PageX2 = PlotOrigX + PlotWidth + YLabelDistance + Legendwidth/2
+	PageY2 = PlotOrigY + PlotHeight + TitleHeight + 5
+	if YLabel != "":
+		PageX1 = PageX1 - 20
+	if Title != "":
+		PageY2 = PageY2 + 15
+	if Legend:
+		PageX2 = PageX2 - Legendwidth
+		PageX1 = PageX1 - Legendwidth
+	PageWidth = PageX2 - PageX1
+	PageHeight = PageY2 - PageY1
+
+	#Write Header into output file
+	outf.write("%!PS-Adobe-2.0 EPSF-2.0\n")
+	#outf.write("%%Trailer\n")
+	outf.write("%%%%BoundingBox: %d %d %d %d\n" % (PageX1, PageY1, PageX2, PageY2))
+	if PageX2 - PageX1 > PageY2 - PageY1:
+		outf.write("%%Orientation: Portrait\n")
+
+	# Copy Temp File into output File
+	f.seek(0)
+	for line in f:
+		outf.write(line)
+	f.close()
+	outf.close()
+
+# Main program
+
+syntax = GraphPlotName + """
+A tool to generate Graph Drawings  with EPS output.
+
+Syntax: barplot <datafile> <out>
+      <datafile>      File with plotting Data and graph information
+      <out>           Output 'eps' file
+
+
+The format of <datafile> is:
+	# This is a comment
+	[Key1 = Value1]
+	[Key2 = Value2] ...
+	
+
+Possible pairs key-value are:
+
+    Title = 'String'		String appearing over the plot.
+    YRange = <MinY> <MaxY>	Starting and ending plotted y-coordinates.
+    XLabel = 'String'		X-axis label.
+    YLabel = 'String'		Y-axis label.
+    PlotWidth = <n>		Width of plot region.
+    PlotHeight = <n>		Height of plot region.
+    Legend = {True|False}	Showing Legend (default = off).
+    Copyright = {True|False}	Print copyright.
+    Node = 'String' <n> <x>     String is the name. N is type [0 = end_node,
+         <y> [arbitrary]        1 = switch, 2 = dummy 3=bus]. x and y are float
+				When n=3, an arbitrary color can be chosen for
+				the node in the last argument from the list 
+				below.
+    Link = <src_x> <src_y>      Color is to distinguish the utilization. 
+         <dst_x> <dst_y>	Type of Link: 0=Uni-Line 1 =Uni-arrow
+          <color> <type>	2= Bi-Line 3=Bi-arrow
+
+List of arbitrary colors are:
+
+#0 = Gray,           #1 = Medium Velvet, #2 = Deep Pink,      #3 = Hot Pink,
+#4 = Light Pink,     #5 = Khaki,         #6 = Yellow.         #7 = Light Orange,
+#8 = Dark Orange,    #9 = Red,           #10 = Crimson,       #11 = Chocolate,
+#12 = Brown,         #13 = Indigo,       #14 = Dudge Blue,    #15 = Purple,
+#16 = Deep Sky Blue, #17 = Yello Green,  #18 = Lawn Green,    #19 = Lime Green,
+#20 = Green,         #21 = Black,        #22-29: Gray Shades, #30: White
+"""
+if len(sys.argv) != 3:
+	print syntax
+	sys.exit(1)
+
+ReadFile(sys.argv[1])
+Plot(sys.argv[2])

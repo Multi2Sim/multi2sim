@@ -1,0 +1,5 @@
+SUBDIRS = \
+	esim \
+	mhandle \
+	util
+

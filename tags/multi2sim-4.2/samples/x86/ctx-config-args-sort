@@ -1,0 +1,8 @@
+[ Context 0 ]
+Exe = test-args.x86
+Args = how are you
+StdOut = context-0.out
+
+[ Context 1 ]
+Exe = test-sort.x86
+Stdout = context-1.out
