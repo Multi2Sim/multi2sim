@@ -19,7 +19,6 @@
 
 #include <assert.h>
 #include <CL/cl.h>
-#include <stdio.h>
 #include <sys/stat.h>
 
 #include <lib/mhandle/mhandle.h>

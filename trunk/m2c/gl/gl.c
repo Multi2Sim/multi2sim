@@ -17,14 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <X11/X.h>
-#include <X11/Xlib.h>
-#include <GL/gl.h>
 #include <GL/glx.h>
-#include <stdio.h>
 #include <sys/stat.h>
-#include <string.h>
-#include <unistd.h>
 #include <assert.h>
 
 #include <lib/mhandle/mhandle.h>
