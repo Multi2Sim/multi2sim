@@ -643,7 +643,6 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 	}
 	else if (fromtype == LLVMInt1Type())
 	{
-		printf("casting from i1 to");
 		if (totype == LLVMDoubleType())
 		{
 			if (fromsign)
@@ -719,10 +718,8 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 		}
 		else if (totype == LLVMInt32Type())
 		{
-			printf("i32");
 			if (fromsign)
 			{
-				printf("1\n");
 				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
 					  original_val->val, LLVMInt32Type(),
 					temp_var_name);
