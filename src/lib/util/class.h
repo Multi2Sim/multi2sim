@@ -25,6 +25,81 @@
 #include <stdio.h>
 
 
+/*
+ * All classes must be defined here. In the latest versions of 'gcc' this is
+ * not needed. But multiple definitions of the same type using 'typedef' is
+ * not allowed in standard C. This is why they need to be protected by the
+ * '#ifdef' guard in this file, instead of appearing in multiple class
+ * forward declarations.
+ */
+
+#define CLASS_DECLARE(name) \
+	typedef struct _##name name
+
+
+/*
+ * Multi2Sim Classes
+ */
+
+CLASS_DECLARE(ARMAsm);
+CLASS_DECLARE(ARMEmu);
+CLASS_DECLARE(ARMCpu);
+
+CLASS_DECLARE(EvgAsm);
+CLASS_DECLARE(EvgEmu);
+CLASS_DECLARE(EvgGpu);
+
+CLASS_DECLARE(FrmAsm);
+CLASS_DECLARE(FrmEmu);
+CLASS_DECLARE(FrmGpu);
+
+CLASS_DECLARE(MIPSAsm);
+CLASS_DECLARE(MIPSEmu);
+CLASS_DECLARE(MIPSCpu);
+
+CLASS_DECLARE(Asm);
+CLASS_DECLARE(Emu);
+CLASS_DECLARE(Timing);
+
+CLASS_DECLARE(Object);
+
+CLASS_DECLARE(SIAsm);
+CLASS_DECLARE(SIEmu);
+CLASS_DECLARE(SIGpu);
+
+CLASS_DECLARE(X86Asm);
+CLASS_DECLARE(X86Emu);
+CLASS_DECLARE(X86Cpu);
+CLASS_DECLARE(X86Context);
+CLASS_DECLARE(X86Thread);
+CLASS_DECLARE(X86Core);
+
+
+/*
+ * Multi2C Classes
+ */
+
+CLASS_DECLARE(Node);
+CLASS_DECLARE(LeafNode);
+CLASS_DECLARE(AbstractNode);
+CLASS_DECLARE(CTree);
+CLASS_DECLARE(BasicBlock);
+
+CLASS_DECLARE(Llvm2siPhi);
+CLASS_DECLARE(Llvm2siSymbol);
+CLASS_DECLARE(Llvm2siSymbolTable);
+CLASS_DECLARE(Llvm2siBasicBlock);
+CLASS_DECLARE(Llvm2siFunction);
+CLASS_DECLARE(Llvm2siFunctionUAV);
+CLASS_DECLARE(Llvm2siFunctionArg);
+
+
+
+/*
+ * Class
+ */
+
+
 struct class_t
 {
 	/* Name of the class */
@@ -61,11 +136,11 @@ struct class_info_t
 };
 
 
+
+
 /*
  * Base class 'Object'
  */
-
-typedef struct _Object Object;
 
 struct _Object
 {
@@ -111,7 +186,6 @@ void ObjectDump(Object *self, FILE *f);
 			__attribute__((unused)) = &parent##Class; \
 	extern struct class_t name##Class; \
 	\
-	typedef struct _##name name; \
 	struct _##name \
 	{ \
 		parent __parent; \
@@ -139,11 +213,6 @@ void ObjectDump(Object *self, FILE *f);
 		assert(is##name(p)); \
 		return (name *) p; \
 	}
-
-
-#define CLASS_FORWARD_DECLARATION(name) \
-	struct _##name; \
-	typedef struct _##name name;
 
 
 #define CLASS_IMPLEMENTATION(name) \
@@ -192,6 +261,7 @@ struct class_t *class_of(void *p);
 
 /* Dump information about all classes registered */
 void class_dump(FILE *f);
+
 
 #endif
 

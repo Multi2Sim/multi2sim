@@ -24,7 +24,6 @@
 
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Thread);
 struct config_t;
 
 

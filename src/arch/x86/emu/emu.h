@@ -24,9 +24,9 @@
 #include <stdio.h>
 
 #include <arch/common/emu.h>
+#include <lib/util/class.h>
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Context);
 struct config_t;
 
 

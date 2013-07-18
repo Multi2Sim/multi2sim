@@ -29,9 +29,6 @@
 
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(BasicBlock);
-CLASS_FORWARD_DECLARATION(CTree);
-CLASS_FORWARD_DECLARATION(Node);
 struct linked_list_t;
 
 

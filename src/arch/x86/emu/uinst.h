@@ -22,9 +22,6 @@
 
 #include <lib/util/class.h>
 
-/* Forward declaration */
-CLASS_FORWARD_DECLARATION(X86Context);
-
 
 /* Micro-instruction dependences.
  * WARNING: update 'x86_uinst_dep_name' if modified (uinst.c).
