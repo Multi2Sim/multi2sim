@@ -25,10 +25,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(Llvm2siBasicBlock);
-
-
 struct si2bin_inst_t
 {
 	enum si_inst_opcode_t opcode;

@@ -22,9 +22,7 @@
 
 #include <stdio.h>
 
-/* Forward type declarations */
-CLASS_FORWARD_DECLARATION(X86Emu);
-CLASS_FORWARD_DECLARATION(X86Context);
+#include <lib/util/class.h>
 
 
 

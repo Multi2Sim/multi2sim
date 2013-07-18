@@ -23,9 +23,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Context);
-
 
 enum evg_opencl_command_type_t
 {

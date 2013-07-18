@@ -23,7 +23,6 @@
 #include <lib/util/class.h>
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Thread);
 struct x86_uop_t;
 struct config_t;
 
