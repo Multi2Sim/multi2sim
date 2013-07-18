@@ -28,11 +28,6 @@
 
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(Node);
-CLASS_FORWARD_DECLARATION(Llvm2siFunction);
-CLASS_FORWARD_DECLARATION(Llvm2siBasicBlock);
-CLASS_FORWARD_DECLARATION(Llvm2siSymbol);
-CLASS_FORWARD_DECLARATION(Llvm2siSymbolTable);
 struct linked_list_t;
 struct llvm2si_node_t;
 struct si2bin_arg_t;

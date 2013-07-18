@@ -22,12 +22,6 @@
 
 #include <lib/util/class.h>
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Cpu);
-CLASS_FORWARD_DECLARATION(X86Core);
-CLASS_FORWARD_DECLARATION(X86Thread);
-
-
 /*
  * Public
  */

@@ -24,8 +24,6 @@
 
 #include <lib/util/class.h>
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(LeafNode);
 
 
 /*

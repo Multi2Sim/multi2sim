@@ -25,10 +25,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward type declaration */
-CLASS_FORWARD_DECLARATION(X86Context);
-
-
 /*
  * GLUT system call interface
  *

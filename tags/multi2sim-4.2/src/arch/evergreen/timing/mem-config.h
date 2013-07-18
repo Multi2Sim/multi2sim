@@ -20,8 +20,9 @@
 #ifndef ARCH_EVERGREEN_TIMING_MEM_CONFIG_H
 #define ARCH_EVERGREEN_TIMING_MEM_CONFIG_H
 
+#include <lib/util/class.h>
+
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(Timing);
 struct config_t;
 
 /* Functions for class 'EvgGpu' */

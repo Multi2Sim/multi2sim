@@ -23,10 +23,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(EvgEmu);
-
-
 /*
  * Object 'evg_opencl_device_t'
  */

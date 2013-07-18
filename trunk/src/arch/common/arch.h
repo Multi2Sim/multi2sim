@@ -25,13 +25,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(Asm);
-CLASS_FORWARD_DECLARATION(Emu);
-CLASS_FORWARD_DECLARATION(Timing);
-
-
-
 /*
  * Architecture Object
  */

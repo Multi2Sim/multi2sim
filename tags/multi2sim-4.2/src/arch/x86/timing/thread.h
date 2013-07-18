@@ -24,12 +24,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Context);
-CLASS_FORWARD_DECLARATION(X86Core);
-CLASS_FORWARD_DECLARATION(X86Cpu);
-
-
 
 /*
  * Class 'X86Thread'

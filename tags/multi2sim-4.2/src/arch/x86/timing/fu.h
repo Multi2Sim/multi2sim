@@ -26,7 +26,6 @@
 
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Core);
 struct config_t;
 
 

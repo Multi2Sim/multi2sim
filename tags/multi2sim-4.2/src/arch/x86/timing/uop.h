@@ -24,9 +24,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Thread);
-
 
 /*
  * Object 'x86_uop_t'

@@ -23,10 +23,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward type declaration */
-CLASS_FORWARD_DECLARATION(X86Context);
-
-
 #define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
 extern int opencl_debug_category;
 

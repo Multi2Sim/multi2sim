@@ -25,11 +25,6 @@
 #include <mem-system/prefetch-history.h>
 
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Cpu);
-CLASS_FORWARD_DECLARATION(X86Thread);
-
-
 
 /*
  * Class 'X86Core'

@@ -24,11 +24,10 @@
 
 #include <arch/x86/asm/asm.h>
 #include <arch/x86/asm/inst.h>
+#include <lib/util/class.h>
 
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Emu);
-CLASS_FORWARD_DECLARATION(X86Context);
 struct bit_map_t;
 
 

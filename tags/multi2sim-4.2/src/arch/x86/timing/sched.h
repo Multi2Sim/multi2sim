@@ -20,9 +20,6 @@
 #ifndef ARCH_X86_TIMING_SCHED_H
 #define ARCH_X86_TIMING_SCHED_H
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Cpu);
-
 
 /*
  * Class 'X86Thread'

@@ -26,7 +26,6 @@
 
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(Llvm2siSymbol);
 struct hash_table_t;
 
 

@@ -22,12 +22,10 @@
 
 #include <arch/common/timing.h>
 #include <arch/x86/emu/uinst.h>
+#include <lib/util/class.h>
 
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(X86Core);
-CLASS_FORWARD_DECLARATION(X86Cpu);
-CLASS_FORWARD_DECLARATION(X86Emu);
 struct x86_uop_t;
 
 

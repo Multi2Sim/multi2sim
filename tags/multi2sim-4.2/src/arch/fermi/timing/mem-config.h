@@ -21,7 +21,6 @@
 #define ARCH_FERMI_TIMING_MEM_CONFIG_H
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(Timing);
 struct config_t;
 
 /* Functions for class 'FrmGpu' */
