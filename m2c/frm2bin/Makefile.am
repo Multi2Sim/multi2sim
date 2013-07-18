@@ -1,7 +1,7 @@
 # Define these even if Flex/Bison are not present. Automake does not support
 # conditional definition of 'AM_YFLAGS'.
 AM_YFLAGS = -d -p frm2bin_yy
-AM_LFLAGS = -P frm2bin_yy -o lex.yy.c
+AM_LFLAGS = -Pfrm2bin_yy -olex.yy.c
 
 lib_LIBRARIES = libfrm2bin.a
 
