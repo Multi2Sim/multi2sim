@@ -77,6 +77,7 @@ void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val)
 
 struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct cl2llvm_type_t *totype_w_sign)
 {
+	printf("entering type cast function\n");
 	struct cl2llvm_val_t *llvm_val = cl2llvm_val_create();
 
 	int i;
@@ -642,6 +643,7 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 	}
 	else if (fromtype == LLVMInt1Type())
 	{
+		printf("casting from i1 to");
 		if (totype == LLVMDoubleType())
 		{
 			if (fromsign)
@@ -717,8 +719,10 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct
 		}
 		else if (totype == LLVMInt32Type())
 		{
+			printf("i32");
 			if (fromsign)
 			{
+				printf("1\n");
 				llvm_val->val = LLVMBuildSExt(cl2llvm_builder,
 					  original_val->val, LLVMInt32Type(),
 					temp_var_name);
@@ -919,6 +923,9 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 	{
 		*new_val2 = llvm_type_cast(val2, type);
 	}
+
+	/* Free pointers */
+	cl2llvm_type_free(type);
 }
 
 struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
