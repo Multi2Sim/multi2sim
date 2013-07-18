@@ -32,9 +32,7 @@
 #endif
 
 
-/*** Forward declarations ***/
-
-CLASS_FORWARD_DECLARATION(BasicBlock);
+/* Forward declarations */
 struct config_t;
 
 

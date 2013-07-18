@@ -23,9 +23,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward declaration */
-CLASS_FORWARD_DECLARATION(X86Context);
-
 /* Function tables */
 extern char *evg_opencl_func_name[];
 extern int evg_opencl_func_argc[];

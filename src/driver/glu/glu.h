@@ -23,10 +23,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward type declaration */
-CLASS_FORWARD_DECLARATION(X86Context);
-
-
 /*
  * GLU system call interface
  *

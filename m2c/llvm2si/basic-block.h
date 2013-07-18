@@ -27,7 +27,6 @@
 
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(Llvm2siFunction);
 struct linked_list_t;
 struct si2bin_inst_t;
 

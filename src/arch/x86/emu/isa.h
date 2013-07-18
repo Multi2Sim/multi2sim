@@ -24,10 +24,7 @@
 
 #include <arch/x86/asm/asm.h>
 #include <arch/x86/asm/inst.h>
-
-
-/* Forward type declarations */
-CLASS_FORWARD_DECLARATION(X86Context);
+#include <lib/util/class.h>
 
 
 

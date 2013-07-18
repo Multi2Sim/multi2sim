@@ -21,7 +21,6 @@
 #define ARCH_SOUTHERN_ISLANDS_TIMING_MEM_CONFIG_H
 
 /* Forward declarations */
-CLASS_FORWARD_DECLARATION(Timing);
 struct config_t;
 
 

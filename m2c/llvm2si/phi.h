@@ -25,9 +25,6 @@
 #include <lib/util/class.h>
 
 
-/* Forward declarations */
-CLASS_FORWARD_DECLARATION(Node);
-
 
 /*
  * Class 'Llvm2siPhi'
