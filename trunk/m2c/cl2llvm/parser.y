@@ -262,7 +262,7 @@ func_def
 					"'...' before ',' token");
 		
 		/* Read function arguments and create an array of argument types */
-		else
+		else if(list_get($4, $4->head))
 		{
 			for (i = 0; i < arg_count; i++)
 			{
@@ -274,6 +274,8 @@ func_def
 				func_args[i] = current_arg->type_spec->llvm_type;
 			}
 		}
+		else 
+			arg_count = 0;
 
 		/* Define function */
 		function_type = LLVMFunctionType(
@@ -691,6 +693,8 @@ lvalue
 
 		ptr = cl2llvm_val_create_w_init(deref_ptr, 
 			$2->type->sign);
+
+		cl2llvm_val_free($2);
 
 		$$ = ptr;
 	}
@@ -2074,8 +2078,8 @@ expr
 
 			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ,
 				op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
@@ -2084,8 +2088,8 @@ expr
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder,
 				LLVMRealOEQ, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
@@ -2147,8 +2151,8 @@ expr
 
 			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE,
 				op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
@@ -2157,8 +2161,8 @@ expr
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealONE, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
@@ -2231,8 +2235,8 @@ expr
 					LLVMIntULT, op1->val, op2->val, 
 					temp_var_name);
 			}
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
@@ -2241,8 +2245,8 @@ expr
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealOLT, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
@@ -2314,8 +2318,8 @@ expr
 					LLVMIntUGT, op1->val, op2->val, 
 					temp_var_name);
 			}
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
@@ -2324,8 +2328,8 @@ expr
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealOGT, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
@@ -2396,8 +2400,8 @@ expr
 					LLVMIntULE, op1->val, op2->val, 
 					temp_var_name);
 			}
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
@@ -2406,8 +2410,8 @@ expr
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealOLE, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
@@ -2479,8 +2483,8 @@ expr
 					LLVMIntUGE, op1->val, op2->val, 
 					temp_var_name);
 			}
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
@@ -2489,8 +2493,8 @@ expr
 
 			value->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealOGE, op1->val, op2->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			value->type->sign = 1;
+			value->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
