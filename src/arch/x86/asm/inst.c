@@ -36,36 +36,36 @@
 struct str_map_t x86_inst_reg_map =
 {
 	30, {
-		{ "eax", x86_inst_reg_eax },
-		{ "ecx", x86_inst_reg_ecx },
-		{ "edx", x86_inst_reg_edx },
-		{ "ebx", x86_inst_reg_ebx },
-		{ "esp", x86_inst_reg_esp },
-		{ "ebp", x86_inst_reg_ebp },
-		{ "esi", x86_inst_reg_esi },
-		{ "edi", x86_inst_reg_edi },
-		{ "ax", x86_inst_reg_ax },
-		{ "cx", x86_inst_reg_cx },
-		{ "dx", x86_inst_reg_dx },
-		{ "bx", x86_inst_reg_bx },
-		{ "sp", x86_inst_reg_sp },
-		{ "bp", x86_inst_reg_bp },
-		{ "si", x86_inst_reg_si },
-		{ "di", x86_inst_reg_di },
-		{ "al", x86_inst_reg_al },
-		{ "cl", x86_inst_reg_cl },
-		{ "dl", x86_inst_reg_dl },
-		{ "bl", x86_inst_reg_bl },
-		{ "ah", x86_inst_reg_ah },
-		{ "ch", x86_inst_reg_ch },
-		{ "dh", x86_inst_reg_dh },
-		{ "bh", x86_inst_reg_bh },
-		{ "es", x86_inst_reg_es },
-		{ "cs", x86_inst_reg_cs },
-		{ "ss", x86_inst_reg_ss },
-		{ "ds", x86_inst_reg_ds },
-		{ "fs", x86_inst_reg_fs },
-		{ "gs", x86_inst_reg_gs }
+		{ "eax", X86InstRegEax },
+		{ "ecx", X86InstRegEcx },
+		{ "edx", X86InstRegEdx },
+		{ "ebx", X86InstRegEbx },
+		{ "esp", X86InstRegEsp },
+		{ "ebp", X86InstRegEbp },
+		{ "esi", X86InstRegEsi },
+		{ "edi", X86InstRegEdi },
+		{ "ax", X86InstRegAx },
+		{ "cx", X86InstRegCx },
+		{ "dx", X86InstRegDx },
+		{ "bx", X86InstRegBx },
+		{ "sp", X86InstRegSp },
+		{ "bp", X86InstRegBp },
+		{ "si", X86InstRegSi },
+		{ "di", X86InstRegDi },
+		{ "al", X86InstRegAl },
+		{ "cl", X86InstRegCl },
+		{ "dl", X86InstRegDl },
+		{ "bl", X86InstRegBl },
+		{ "ah", X86InstRegAh },
+		{ "ch", X86InstRegCh },
+		{ "dh", X86InstRegDh },
+		{ "bh", X86InstRegBh },
+		{ "es", X86InstRegEs },
+		{ "cs", X86InstRegCs },
+		{ "ss", X86InstRegSs },
+		{ "ds", X86InstRegDs },
+		{ "fs", X86InstRegFs },
+		{ "gs", X86InstRegGs }
 	}
 };
 
@@ -75,7 +75,7 @@ struct str_map_t x86_inst_reg_map =
  * computation. */
 struct x86_inst_modrm_table_entry_t
 {
-	enum x86_inst_reg_t ea_base;
+	X86InstReg ea_base;
 	int disp_size;
 	int sib_size;
 };
@@ -83,41 +83,41 @@ struct x86_inst_modrm_table_entry_t
 
 static struct x86_inst_modrm_table_entry_t x86_inst_modrm_table[32] =
 {
-	{x86_inst_reg_eax, 0, 0},
-	{x86_inst_reg_ecx, 0, 0},
-	{x86_inst_reg_edx, 0, 0},
-	{x86_inst_reg_ebx, 0, 0},
-	{x86_inst_reg_none, 0, 1},
-	{x86_inst_reg_none, 4, 0},
-	{x86_inst_reg_esi, 0, 0},
-	{x86_inst_reg_edi, 0, 0},
+	{X86InstRegEax, 0, 0},
+	{X86InstRegEcx, 0, 0},
+	{X86InstRegEdx, 0, 0},
+	{X86InstRegEbx, 0, 0},
+	{X86InstRegNone, 0, 1},
+	{X86InstRegNone, 4, 0},
+	{X86InstRegEsi, 0, 0},
+	{X86InstRegEdi, 0, 0},
 
-	{x86_inst_reg_eax, 1, 0},
-	{x86_inst_reg_ecx, 1, 0},
-	{x86_inst_reg_edx, 1, 0},
-	{x86_inst_reg_ebx, 1, 0},
-	{x86_inst_reg_none, 1, 1},
-	{x86_inst_reg_ebp, 1, 0},
-	{x86_inst_reg_esi, 1, 0},
-	{x86_inst_reg_edi, 1, 0},
+	{X86InstRegEax, 1, 0},
+	{X86InstRegEcx, 1, 0},
+	{X86InstRegEdx, 1, 0},
+	{X86InstRegEbx, 1, 0},
+	{X86InstRegNone, 1, 1},
+	{X86InstRegEbp, 1, 0},
+	{X86InstRegEsi, 1, 0},
+	{X86InstRegEdi, 1, 0},
 
-	{x86_inst_reg_eax, 4, 0},
-	{x86_inst_reg_ecx, 4, 0},
-	{x86_inst_reg_edx, 4, 0},
-	{x86_inst_reg_ebx, 4, 0},
-	{x86_inst_reg_none, 4, 1},
-	{x86_inst_reg_ebp, 4, 0},
-	{x86_inst_reg_esi, 4, 0},
-	{x86_inst_reg_edi, 4, 0},
+	{X86InstRegEax, 4, 0},
+	{X86InstRegEcx, 4, 0},
+	{X86InstRegEdx, 4, 0},
+	{X86InstRegEbx, 4, 0},
+	{X86InstRegNone, 4, 1},
+	{X86InstRegEbp, 4, 0},
+	{X86InstRegEsi, 4, 0},
+	{X86InstRegEdi, 4, 0},
 
-	{x86_inst_reg_none, 0, 0},
-	{x86_inst_reg_none, 0, 0},
-	{x86_inst_reg_none, 0, 0},
-	{x86_inst_reg_none, 0, 0},
-	{x86_inst_reg_none, 0, 0},
-	{x86_inst_reg_none, 0, 0},
-	{x86_inst_reg_none, 0, 0},
-	{x86_inst_reg_none, 0, 0}
+	{X86InstRegNone, 0, 0},
+	{X86InstRegNone, 0, 0},
+	{X86InstRegNone, 0, 0},
+	{X86InstRegNone, 0, 0},
+	{X86InstRegNone, 0, 0},
+	{X86InstRegNone, 0, 0},
+	{X86InstRegNone, 0, 0},
+	{X86InstRegNone, 0, 0}
 };
 
 
@@ -129,94 +129,80 @@ unsigned int x86_inst_ea_scale_table[4] = { 1, 2, 4, 8 };
 
 
 /*
- * Private Functions
+ * Class 'X86Inst'
  */
 
-static void x86_inst_moffs_addr_dump_buf(struct x86_inst_t *inst, char **pbuf, int *psize)
+void X86InstCreate(X86Inst *self)
 {
-	enum x86_inst_reg_t reg;
-
-	reg = inst->segment ? inst->segment : x86_inst_reg_ds;
-	str_printf(pbuf, psize, "%s:0x%x", str_map_value(&x86_inst_reg_map, reg), inst->imm.d);
 }
 
 
-static void x86_inst_addr_dump_buf(struct x86_inst_t *inst, char **pbuf, int *psize)
+void X86InstDestroy(X86Inst *self)
+{
+}
+
+
+static void X86InstMoffsAddrDumpBuf(X86Inst *self, char **pbuf, int *psize)
+{
+	X86InstReg reg;
+
+	reg = self->segment ? self->segment : X86InstRegDs;
+	str_printf(pbuf, psize, "%s:0x%x", str_map_value(&x86_inst_reg_map, reg), self->imm.d);
+}
+
+
+static void X86InstAddrDumpBuf(X86Inst *self, char **pbuf, int *psize)
 {
 	int putsign = 0;
 	char seg[20];
-	assert(inst->modrm_mod != 0x03);
+	assert(self->modrm_mod != 0x03);
 
 	/* Segment */
 	seg[0] = 0;
-	if (inst->segment) {
-		assert(inst->segment >= 0 && inst->segment < x86_inst_reg_count);
-		strcpy(seg, str_map_value(&x86_inst_reg_map, inst->segment));
+	if (self->segment) {
+		assert(self->segment >= 0 && self->segment < X86InstRegCount);
+		strcpy(seg, str_map_value(&x86_inst_reg_map, self->segment));
 		strcat(seg, ":");
 	}
 
 	/* When there is only a displacement */
-	if (!inst->ea_base && !inst->ea_index) {
+	if (!self->ea_base && !self->ea_index) {
 		if (!seg[0])
 			strcpy(seg, "ds:");
-		str_printf(pbuf, psize, "%s0x%x", seg, inst->disp);
+		str_printf(pbuf, psize, "%s0x%x", seg, self->disp);
 		return;
 	}
 
 	str_printf(pbuf, psize, "%s[", seg);
-	if (inst->ea_base) {
-		str_printf(pbuf, psize, "%s", str_map_value(&x86_inst_reg_map, inst->ea_base));
+	if (self->ea_base) {
+		str_printf(pbuf, psize, "%s", str_map_value(&x86_inst_reg_map, self->ea_base));
 		putsign = 1;
 	}
-	if (inst->ea_index) {
+	if (self->ea_index) {
 		str_printf(pbuf, psize, "%s%s", putsign ? "+" : "",
-			str_map_value(&x86_inst_reg_map, inst->ea_index));
-		if (inst->ea_scale > 1)
-			str_printf(pbuf, psize, "*%d", inst->ea_scale);
+			str_map_value(&x86_inst_reg_map, self->ea_index));
+		if (self->ea_scale > 1)
+			str_printf(pbuf, psize, "*%d", self->ea_scale);
 		putsign = 1;
 	}
-	if (inst->disp > 0)
-		str_printf(pbuf, psize, "%s0x%x", putsign ? "+" : "", inst->disp);
-	if (inst->disp < 0)
-		str_printf(pbuf, psize, "-0x%x", -inst->disp);
+	if (self->disp > 0)
+		str_printf(pbuf, psize, "%s0x%x", putsign ? "+" : "", self->disp);
+	if (self->disp < 0)
+		str_printf(pbuf, psize, "-0x%x", -self->disp);
 	str_printf(pbuf, psize, "]");
 }
 
 
-
-
-/*
- * Public Functions
- */
-
-struct x86_inst_t *x86_inst_create(void)
-{
-	struct x86_inst_t *inst;
-
-	/* Initialize */
-	inst = xcalloc(1, sizeof(struct x86_inst_t));
-
-	/* Return */
-	return inst;
-}
-
-
-void x86_inst_free(struct x86_inst_t *inst)
-{
-	free(inst);
-}
-
-
-void x86_inst_dump(struct x86_inst_t *inst, FILE *f)
+void X86InstDump(X86Inst *self, FILE *f)
 {
 	char buf[MAX_LONG_STRING_SIZE];
 
-	x86_inst_dump_buf(inst, buf, sizeof buf);
+	X86InstDumpBuf(self, buf, sizeof buf);
 	fprintf(f, "%s", buf);
 }
 
 
-void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
+void X86InstDumpBuf(X86Inst *inst, char *buf, int size)
 {
 	struct x86_inst_info_t *info;
 
@@ -231,7 +217,7 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 	/* Get instruction information from the globally initialized x86
 	 * assembler. */
 	assert(x86_asm);
-	assert(IN_RANGE(inst->opcode, 0, x86_inst_opcode_count - 1));
+	assert(IN_RANGE(inst->opcode, 0, X86InstOpcodeCount - 1));
 	info = &x86_asm->inst_info_list[inst->opcode];
 
 	/* Null-terminate output string in case 'fmt' is empty */
@@ -254,28 +240,28 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 		if (asm_is_token(fmt, "r8", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->modrm_reg + x86_inst_reg_al));
+					inst->modrm_reg + X86InstRegAl));
 		}
 		else if (asm_is_token(fmt, "r16", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->modrm_reg + x86_inst_reg_ax));
+					inst->modrm_reg + X86InstRegAx));
 		}
 		else if (asm_is_token(fmt, "r32", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map, 
-					inst->modrm_reg + x86_inst_reg_eax));
+					inst->modrm_reg + X86InstRegEax));
 		}
 		else if (asm_is_token(fmt, "rm8", &length))
 		{
 			if (inst->modrm_mod == 0x03)
 				str_printf(&buf, &size, "%s",
 					str_map_value(&x86_inst_reg_map, 
-					inst->modrm_rm + x86_inst_reg_al));
+					inst->modrm_rm + X86InstRegAl));
 			else
 			{
 				str_printf(&buf, &size, "BYTE PTR ");
-				x86_inst_addr_dump_buf(inst, &buf, &size);
+				X86InstAddrDumpBuf(inst, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "rm16", &length))
@@ -283,11 +269,11 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 			if (inst->modrm_mod == 0x03)
 				str_printf(&buf, &size, "%s",
 					str_map_value(&x86_inst_reg_map,
-					inst->modrm_rm + x86_inst_reg_ax));
+					inst->modrm_rm + X86InstRegAx));
 			else
 			{
 				str_printf(&buf, &size, "WORD PTR ");
-				x86_inst_addr_dump_buf(inst, &buf, &size);
+				X86InstAddrDumpBuf(inst, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "rm32", &length))
@@ -295,38 +281,38 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 			if (inst->modrm_mod == 0x03)
 				str_printf(&buf, &size, "%s",
 					str_map_value(&x86_inst_reg_map,
-					inst->modrm_rm + x86_inst_reg_eax));
+					inst->modrm_rm + X86InstRegEax));
 			else
 			{
 				str_printf(&buf, &size, "DWORD PTR ");
-				x86_inst_addr_dump_buf(inst, &buf, &size);
+				X86InstAddrDumpBuf(inst, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "r32m8", &length))
 		{
 			if (inst->modrm_mod == 3)
 				str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->modrm_rm + x86_inst_reg_eax));
+					inst->modrm_rm + X86InstRegEax));
 			else
 			{
 				str_printf(&buf, &size, "BYTE PTR ");
-				x86_inst_addr_dump_buf(inst, &buf, &size);
+				X86InstAddrDumpBuf(inst, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "r32m16", &length))
 		{
 			if (inst->modrm_mod == 3)
 				str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-						inst->modrm_rm + x86_inst_reg_eax));
+						inst->modrm_rm + X86InstRegEax));
 			else
 			{
 				str_printf(&buf, &size, "WORD PTR ");
-				x86_inst_addr_dump_buf(inst, &buf, &size);
+				X86InstAddrDumpBuf(inst, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "m", &length))
 		{
-			x86_inst_addr_dump_buf(inst, &buf, &size);
+			X86InstAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "imm8", &length))
 		{
@@ -354,45 +340,45 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 		}
 		else if (asm_is_token(fmt, "moffs8", &length))
 		{
-			x86_inst_moffs_addr_dump_buf(inst, &buf, &size);
+			X86InstMoffsAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "moffs16", &length))
 		{
-			x86_inst_moffs_addr_dump_buf(inst, &buf, &size);
+			X86InstMoffsAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "moffs32", &length))
 		{
-			x86_inst_moffs_addr_dump_buf(inst, &buf, &size);
+			X86InstMoffsAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m8", &length))
 		{
 			str_printf(&buf, &size, "BYTE PTR ");
-			x86_inst_addr_dump_buf(inst, &buf, &size);
+			X86InstAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m16", &length))
 		{
 			str_printf(&buf, &size, "WORD PTR ");
-			x86_inst_addr_dump_buf(inst, &buf, &size);
+			X86InstAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m32", &length))
 		{
 			str_printf(&buf, &size, "DWORD PTR ");
-			x86_inst_addr_dump_buf(inst, &buf, &size);
+			X86InstAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m64", &length))
 		{
 			str_printf(&buf, &size, "QWORD PTR ");
-			x86_inst_addr_dump_buf(inst, &buf, &size);
+			X86InstAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m80", &length))
 		{
 			str_printf(&buf, &size, "TBYTE PTR ");
-			x86_inst_addr_dump_buf(inst, &buf, &size);
+			X86InstAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m128", &length))
 		{
 			str_printf(&buf, &size, "XMMWORD PTR ");
-			x86_inst_addr_dump_buf(inst, &buf, &size);
+			X86InstAddrDumpBuf(inst, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "st0", &length))
 		{
@@ -405,22 +391,22 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 		else if (asm_is_token(fmt, "ir8", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->opindex + x86_inst_reg_al));
+					inst->opindex + X86InstRegAl));
 		}
 		else if (asm_is_token(fmt, "ir16", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->opindex + x86_inst_reg_ax));
+					inst->opindex + X86InstRegAx));
 		}
 		else if (asm_is_token(fmt, "ir32", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->opindex + x86_inst_reg_eax));
+					inst->opindex + X86InstRegEax));
 		}
 		else if (asm_is_token(fmt, "sreg", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->reg + x86_inst_reg_es));
+					inst->reg + X86InstRegEs));
 		}
 		else if (asm_is_token(fmt, "xmmm32", &length))
 		{
@@ -429,7 +415,7 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 			else
 			{
 				str_printf(&buf, &size, "DWORD PTR ");
-				x86_inst_addr_dump_buf(inst, &buf, &size);
+				X86InstAddrDumpBuf(inst, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "xmmm64", &length))
@@ -439,7 +425,7 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 			else
 			{
 				str_printf(&buf, &size, "QWORD PTR ");
-				x86_inst_addr_dump_buf(inst, &buf, &size);
+				X86InstAddrDumpBuf(inst, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "xmmm128", &length))
@@ -449,7 +435,7 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 			else
 			{
 				str_printf(&buf, &size, "XMMWORD PTR ");
-				x86_inst_addr_dump_buf(inst, &buf, &size);
+				X86InstAddrDumpBuf(inst, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "xmm", &length))
@@ -494,16 +480,16 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 }
 
 
-char *x86_inst_get_name(enum x86_inst_opcode_t opcode)
+char *X86InstGetName(X86InstOpcode opcode)
 {
 	assert(x86_asm);
-	if (!IN_RANGE(opcode, 1, x86_inst_opcode_count - 1))
+	if (!IN_RANGE(opcode, 1, X86InstOpcodeCount - 1))
 		return "<invalid>";
 	return x86_asm->inst_info_list[opcode].fmt;
 }
 
 
-void x86_inst_decode(struct x86_inst_t *inst, unsigned int eip, void *buf)
+void X86InstDecode(X86Inst *inst, unsigned int eip, void *buf)
 {
 	struct x86_inst_info_elem_t **table;
 	struct x86_inst_info_elem_t *elem;
@@ -571,45 +557,45 @@ void x86_inst_decode(struct x86_inst_t *inst, unsigned int eip, void *buf)
 			break;
 
 		case 0xf2:
-			inst->prefixes |= x86_inst_prefix_repnz;
+			inst->prefixes |= X86InstPrefixRepnz;
 			break;
 
 		case 0xf3:
-			inst->prefixes |= x86_inst_prefix_rep;
+			inst->prefixes |= X86InstPrefixRep;
 			break;
 
 		case 0x66:
-			inst->prefixes |= x86_inst_prefix_op;
+			inst->prefixes |= X86InstPrefixOp;
 			inst->op_size = 2;
 			break;
 
 		case 0x67:
-			inst->prefixes |= x86_inst_prefix_addr;
+			inst->prefixes |= X86InstPrefixAddr;
 			inst->addr_size = 2;
 			break;
 
 		case 0x2e:
-			inst->segment = x86_inst_reg_cs;
+			inst->segment = X86InstRegCs;
 			break;
 
 		case 0x36:
-			inst->segment = x86_inst_reg_ss;
+			inst->segment = X86InstRegSs;
 			break;
 
 		case 0x3e:
-			inst->segment = x86_inst_reg_ds;
+			inst->segment = X86InstRegDs;
 			break;
 
 		case 0x26:
-			inst->segment = x86_inst_reg_es;
+			inst->segment = X86InstRegEs;
 			break;
 
 		case 0x64:
-			inst->segment = x86_inst_reg_fs;
+			inst->segment = X86InstRegFs;
 			break;
 
 		case 0x65:
-			inst->segment = x86_inst_reg_gs;
+			inst->segment = X86InstRegGs;
 			break;
 
 		default:
@@ -625,7 +611,7 @@ void x86_inst_decode(struct x86_inst_t *inst, unsigned int eip, void *buf)
 	/* Obtain lookup table and index */
 	buf8 = * (unsigned char *) buf;
 	buf32 = * (unsigned int *) buf;
-	inst->opcode = x86_inst_opcode_invalid;
+	inst->opcode = X86InstOpcodeInvalid;
 	if (buf8 == 0x0f)
 	{
 		table = x86_asm->inst_info_table_0f;
@@ -687,12 +673,12 @@ void x86_inst_decode(struct x86_inst_t *inst, unsigned int eip, void *buf)
 			inst->sib_index = (inst->sib & 0x38) >> 3;
 			inst->sib_base = inst->sib & 0x07;
 			inst->ea_scale = x86_inst_ea_scale_table[inst->sib_scale];
-			inst->ea_index = inst->sib_index == 0x04 ? x86_inst_reg_none :
-				inst->sib_index + x86_inst_reg_eax;
-			inst->ea_base = inst->sib_base + x86_inst_reg_eax;
+			inst->ea_index = inst->sib_index == 0x04 ? X86InstRegNone :
+				inst->sib_index + X86InstRegEax;
+			inst->ea_base = inst->sib_base + X86InstRegEax;
 			if (inst->sib_base == 0x05 && inst->modrm_mod == 0x00)
 			{
-				inst->ea_base = x86_inst_reg_none;
+				inst->ea_base = X86InstRegNone;
 				inst->disp_size = 4;
 			}
 			buf += inst->sib_size;  /* Skip SIB */

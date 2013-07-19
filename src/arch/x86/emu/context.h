@@ -92,7 +92,7 @@ CLASS_BEGIN(X86Context, Object)
 	unsigned int target_eip;  /* Target address for branch, even if not taken */
 
 	/* Currently emulated instruction */
-	struct x86_inst_t inst;
+	X86Inst inst;
 
 	/* Recorded virtual memory address for last emulated instruction */
 	unsigned int effective_address;

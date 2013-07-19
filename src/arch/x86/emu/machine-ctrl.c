@@ -41,11 +41,11 @@
 #define assert __COMPILATION_ERROR__
 
 
-#define CF X86ContextGetFlag(ctx, x86_inst_flag_cf)
-#define ZF X86ContextGetFlag(ctx, x86_inst_flag_zf)
-#define SF X86ContextGetFlag(ctx, x86_inst_flag_sf)
-#define OF X86ContextGetFlag(ctx, x86_inst_flag_of)
-#define PF X86ContextGetFlag(ctx, x86_inst_flag_pf)
+#define CF X86ContextGetFlag(ctx, X86InstFlagCF)
+#define ZF X86ContextGetFlag(ctx, X86InstFlagZF)
+#define SF X86ContextGetFlag(ctx, X86InstFlagSF)
+#define OF X86ContextGetFlag(ctx, X86InstFlagOF)
+#define PF X86ContextGetFlag(ctx, X86InstFlagPF)
 
 
 #define cc_a	(!CF && !ZF)
@@ -148,7 +148,7 @@ void x86_isa_jecxz_rel8_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + ctx->inst.imm.b;
-	if (!X86ContextLoadReg(ctx, x86_inst_reg_ecx))
+	if (!X86ContextLoadReg(ctx, X86InstRegEcx))
 		regs->eip = ctx->target_eip;
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
@@ -159,7 +159,7 @@ void x86_isa_jcxz_rel8_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	ctx->target_eip = regs->eip + ctx->inst.imm.b;
-	if (!X86ContextLoadReg(ctx, x86_inst_reg_cx))
+	if (!X86ContextLoadReg(ctx, X86InstRegCx))
 		regs->eip = ctx->target_eip;
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }

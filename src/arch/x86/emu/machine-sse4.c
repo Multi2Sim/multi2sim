@@ -52,8 +52,8 @@ static char *x86_isa_err_sse4 =
 void x86_isa_pcmpeqq_xmm_xmmm128_impl(X86Context *ctx)
 {
 #ifdef HAVE_SSE4
-	union x86_inst_xmm_reg_t dest;
-	union x86_inst_xmm_reg_t src;
+	X86InstXMMReg dest;
+	X86InstXMMReg src;
 
 	X86ContextLoadXMM(ctx, dest.as_uchar);
 	X86ContextLoadXMMM128(ctx, src.as_uchar);

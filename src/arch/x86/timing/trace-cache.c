@@ -150,7 +150,7 @@ static void X86ThraceDumpTraceCacheEntry(X86Thread *self,
 		int mem_safe;
 		int mop_name_length;
 
-		struct x86_inst_t inst;
+		X86Inst inst;
 
 		/* Disable memory safe mode */
 		mem_safe = mem->safe;
@@ -161,7 +161,7 @@ static void X86ThraceDumpTraceCacheEntry(X86Thread *self,
 		mem_read(mem, addr, sizeof mop_bytes, mop_bytes);
 
 		/* Disassemble */
-		x86_inst_decode(&inst, addr, mop_bytes);
+		X86InstDecode(&inst, addr, mop_bytes);
 
 		/* Extract instruction name */
 		mop_name_end = index(inst.format, '_');
