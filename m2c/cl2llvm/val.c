@@ -77,7 +77,6 @@ void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val)
 
 struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct cl2llvm_type_t *totype_w_sign)
 {
-	printf("entering type cast function\n");
 	struct cl2llvm_val_t *llvm_val = cl2llvm_val_create();
 
 	int i;
