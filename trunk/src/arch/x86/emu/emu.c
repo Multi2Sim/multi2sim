@@ -66,14 +66,47 @@ X86Emu *x86_emu;
 
 CLASS_IMPLEMENTATION(X86Emu);
 
-void X86EmuCreate(X86Emu *self)
+void X86EmuCreate(X86Emu *self, X86Asm *as)
 {
 	/* Parent */
 	EmuCreate(asEmu(self), "x86");
 
 	/* Initialize */
+	self->as = as;
 	self->current_pid = 100;
 	pthread_mutex_init(&self->process_events_mutex, NULL);
+
+	/* Endian check */
+	union
+	{
+		unsigned int as_uint;
+		unsigned char as_uchar[4];
+	} endian;
+	endian.as_uint = 0x33221100;
+	if (endian.as_uchar[0])
+		fatal("%s: host machine is not little endian", __FUNCTION__);
+
+	/* Host types */
+	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
+	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
+	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
+
+	/* Micro-instructions - FIXME - should be part of class */
+	x86_uinst_init();
+
+#ifdef HAVE_OPENGL
+	/* GLUT - FIXME - should be part of class */
+	glut_init();
+
+	/* GLEW - FIXME - should be part of class */
+	glew_init();
+
+	/* GLU - FIXME - should be part of class */
+	glu_init();
+#endif
+
+	/* OpenGL - FIXME - should be part of class */
+	opengl_init();
 
 	/* Virtual functions */
 	asObject(self)->Dump = X86EmuDump;
@@ -95,6 +128,27 @@ void X86EmuDestroy(X86Emu *self)
 	while (self->context_list_head)
 		delete(self->context_list_head);
 	
+#ifdef HAVE_OPENGL
+
+	/* GLUT  - FIXME - should be part of class */
+	glut_done();
+
+	/* GLEW - FIXME - should be part of class */
+	glew_done();
+
+	/* GLU - FIXME - should be part of class */
+	glu_done();
+#endif
+
+	/* Finalize OpenGl - FIXME - should be part of class */
+	opengl_done();
+
+	/* Micro-instructions  - FIXME - should be part of class */
+	x86_uinst_done();
+
+	/* Print system call summary */
+	if (debug_status(x86_sys_debug_category))
+		x86_sys_dump_stats(debug_file(x86_sys_debug_category));
 }
 
 
@@ -698,79 +752,3 @@ void X86EmuLoadContextFromCommandLine(X86Emu *self, int argc, char **argv)
 	/* Load executable */
 	X86ContextLoadExe(ctx, argv[0]);
 }
-
-
-
-
-/*
- * Non-Class Functions
- */
-
-
-void x86_emu_init(void)
-{
-	/* Classes */
-	CLASS_REGISTER(X86Emu);
-	CLASS_REGISTER(X86Context);
-
-	/* Endian check */
-	union
-	{
-		unsigned int as_uint;
-		unsigned char as_uchar[4];
-	} endian;
-	endian.as_uint = 0x33221100;
-	if (endian.as_uchar[0])
-		fatal("%s: host machine is not little endian", __FUNCTION__);
-
-	/* Host types */
-	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
-	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
-	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
-
-	/* Create x86 emulator */
-	x86_emu = new(X86Emu);
-
-	/* Initialize */
-	x86_asm_init();
-	x86_uinst_init();
-
-#ifdef HAVE_OPENGL
-	/* GLUT */
-	glut_init();
-	/* GLEW */
-	glew_init();
-	/* GLU */
-	glu_init();
-#endif
-
-	/* OpenGL */
-	opengl_init();
-}
-
-
-/* Finalization */
-void x86_emu_done(void)
-{
-
-#ifdef HAVE_OPENGL
-	glut_done();
-	glew_done();
-	glu_done();
-#endif
-
-	/* Finalize OpenGl */
-	opengl_done();
-
-	/* End */
-	x86_uinst_done();
-	x86_asm_done();
-
-	/* Print system call summary */
-	if (debug_status(x86_sys_debug_category))
-		x86_sys_dump_stats(debug_file(x86_sys_debug_category));
-
-	/* Free emulator */
-	delete(x86_emu);
-}
-

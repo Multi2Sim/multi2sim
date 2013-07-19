@@ -61,28 +61,6 @@ int x86_context_isa_debug_category;
 long x86_context_host_flags;
 unsigned char x86_context_host_fpenv[28];
 
-static long long x86_inst_freq[X86InstOpcodeCount];
-
-
-void x86_isa_inst_stat_dump(FILE *f)
-{
-	int i;
-	for (i = 1; i < X86InstOpcodeCount; i++)
-	{
-		if (!x86_inst_freq[i])
-			continue;
-		fprintf(f, "%s    %lld\n", X86InstGetName(i), x86_inst_freq[i]);
-	}
-}
-
-
-void x86_isa_inst_stat_reset(void)
-{
-	int i;
-	for (i = 1; i < X86InstOpcodeCount; i++)
-		x86_inst_freq[i] = 0;
-}
-
 
 void X86ContextDoubleToExtended(double f, unsigned char *e)
 {
@@ -853,9 +831,6 @@ void X86ContextExecuteInst(X86Context *self)
 	if (self->inst.opcode)
 		x86_context_inst_func[self->inst.opcode](self);
 	
-	/* Statistics */
-	x86_inst_freq[self->inst.opcode]++;
-
 	/* Debug */
 	X86ContextDebugISA("\n");
 	if (debug_status(x86_context_call_debug_category))

@@ -20,6 +20,7 @@
 
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/work-group.h>
+#include <arch/x86/emu/emu.h>
 #include <driver/opencl/opencl.h>
 #include <lib/esim/esim.h>
 #include <lib/esim/trace.h>
@@ -1381,7 +1382,7 @@ int SIGpuRun(Timing *self)
 
 	/* If we're out of work, request more */
 	if (!list_count(si_emu->waiting_work_groups))
-		opencl_si_request_work();
+		opencl_si_request_work(x86_emu);
 
 	/* Run one loop iteration on each busy compute unit */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)

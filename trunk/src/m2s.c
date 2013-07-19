@@ -48,7 +48,9 @@
 #include <arch/x86/emu/isa.h>
 #include <arch/x86/emu/loader.h>
 #include <arch/x86/emu/syscall.h>
+#include <arch/x86/timing/core.h>
 #include <arch/x86/timing/cpu.h>
+#include <arch/x86/timing/thread.h>
 #include <arch/x86/timing/trace-cache.h>
 #include <driver/cuda/cuda.h>
 #include <driver/glu/glu.h>
@@ -142,6 +144,7 @@ static char m2s_sim_id[10];  /* Pseudo-unique simulation ID (5 alpha-numeric dig
 
 static volatile int m2s_signal_received;  /* Signal received by handler (0 = none */
 
+static X86Asm *x86_asm;
 static X86Cpu *x86_cpu;
 
 
@@ -1821,6 +1824,12 @@ static void m2s_init(void)
 	CLASS_REGISTER(Asm);
 	CLASS_REGISTER(Emu);
 	CLASS_REGISTER(Timing);
+	CLASS_REGISTER(X86Asm);
+	CLASS_REGISTER(X86Context);
+	CLASS_REGISTER(X86Core);
+	CLASS_REGISTER(X86Cpu);
+	CLASS_REGISTER(X86Emu);
+	CLASS_REGISTER(X86Thread);
 
 	/* Compute simulation ID */
 	gettimeofday(&tv, NULL);
@@ -1899,7 +1908,15 @@ int main(int argc, char **argv)
 
 	/* x86 disassembler tool */
 	if (*x86_disasm_file_name)
-		x86_asm_disassemble_binary(x86_disasm_file_name);
+	{
+		X86Asm *as;
+
+		as = new(X86Asm);
+		X86AsmDisassembleBinary(as, x86_disasm_file_name);
+		delete(as);
+
+		goto end;
+	}
 
 	/* Evergreen disassembler tool */
 	if (*evg_disasm_file_name)
@@ -1941,7 +1958,7 @@ int main(int argc, char **argv)
 	if (*net_sim_network_name)
 		net_sim(net_debug_file_name);
 
-	/* DRAM simulation Tool*/
+	/* DRAM simulation Tool */
 	if (*dram_sim_system_name)
 		dram_system_sim(dram_debug_file_name);
 
@@ -2024,7 +2041,7 @@ int main(int argc, char **argv)
 			si_gpu_read_config,
 			si_gpu_init, si_gpu_done);
 	arch_x86 = arch_register("x86", "x86", x86_sim_kind,
-			x86_emu_init, x86_emu_done,
+			NULL, NULL,
 			X86CpuReadConfig,
 			NULL, NULL);
 	arch_init();
@@ -2054,7 +2071,8 @@ int main(int argc, char **argv)
 	 * is now defined privately only in this file. This code will look much
 	 * better once the process finish. But now we need to release 4.2...
 	 */
-	X86CpuInit();
+	x86_asm = new(X86Asm);
+	x86_emu = new(X86Emu, x86_asm);
 	if (x86_sim_kind == arch_sim_kind_detailed)
 	{
 		x86_cpu = new(X86Cpu, x86_emu);
@@ -2094,7 +2112,8 @@ int main(int argc, char **argv)
 	/* x86 */
 	if (x86_cpu)
 		delete(x86_cpu);
-	X86CpuDone();
+	delete(x86_emu);
+	delete(x86_asm);
 
 	/* Finalization of architectures */
 	arch_done();
@@ -2115,8 +2134,10 @@ int main(int argc, char **argv)
 	esim_done();
 	trace_done();
 	debug_done();
-	mhandle_done();
 
+
+end:
 	/* End */
+	mhandle_done();
 	return 0;
 }

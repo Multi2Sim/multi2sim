@@ -137,6 +137,9 @@ typedef union
 /* x86 Instruction */
 CLASS_BEGIN(X86Inst, Object)
 
+	/* X86 assembler used to decode instruction */
+	X86Asm *as;
+
 	unsigned int eip;  /* position inside the code */
 	int size;  /* number of instruction bytes */
 	X86InstOpcode opcode;
@@ -191,11 +194,15 @@ CLASS_BEGIN(X86Inst, Object)
 CLASS_END(X86Inst)
 
 
-void X86InstCreate(X86Inst *self);
+void X86InstCreate(X86Inst *self, X86Asm *as);
 void X86InstDestroy(X86Inst *self);
 
 void X86InstDump(X86Inst *self, FILE *f);
 void X86InstDumpBuf(X86Inst *self, char *buf, int size);
+
+/* Clear all fields. This function is useful to reuse the same instruction
+ * object among different calls to X86InstDecode for efficiency. */
+void X86InstClear(X86Inst *self);
 
 /* Populate fields of instruction 'inst' after decoding the instruction bytes
  * provided in 'buf'. The value in 'eip' should give the virtual address of
@@ -249,11 +256,6 @@ struct x86_inst_info_elem_t
 	struct x86_inst_info_t *info;
 	struct x86_inst_info_elem_t *next;
 };
-
-
-/* Return an instruction name given an opcode, or string '<invalid>' if the
- * opcode value does not exist. */
-char *X86InstGetName(X86InstOpcode opcode);
 
 
 #endif

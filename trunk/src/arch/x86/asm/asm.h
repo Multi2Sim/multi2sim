@@ -23,8 +23,6 @@
 #include <arch/common/asm.h>
 #include <lib/util/class.h>
 
-struct X86Inst;
-
 
 /*
  * Class 'X86Asm'
@@ -52,20 +50,13 @@ CLASS_END(X86Asm)
 void X86AsmCreate(X86Asm *self);
 void X86AsmDestroy(X86Asm *self);
 
+/* Return an instruction name given an opcode, or string '<invalid>' if the
+ * opcode value does not exist. */
+char *X86AsmGetInstName(X86Asm *self, int opcode);
 
-
-
-/*
- * Non-class Public Functions
- */
-
-/* One public instance of the x86 disassembler */
-extern X86Asm *x86_asm;
-
-void x86_asm_init(void);
-void x86_asm_done(void);
-
-void x86_asm_disassemble_binary(char *path);
+/* Disassemble the content of file given in 'path' and dump the output in
+ * 'stdout', with a similar format as tool 'objdump'. */
+void X86AsmDisassembleBinary(X86Asm *self, char *path);
 
 
 #endif

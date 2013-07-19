@@ -31,7 +31,7 @@ int opencl_abi_call(X86Context *ctx);
 void opencl_init(void);
 void opencl_done(void);
 
-void opencl_si_request_work();
+void opencl_si_request_work(X86Emu *emu);
 
 #endif
 

@@ -28,10 +28,6 @@
 #include "inst.h"
 
 
-/*
- * Variables
- */
-
 /* Register names */
 struct str_map_t x86_inst_reg_map =
 {
@@ -132,13 +128,17 @@ unsigned int x86_inst_ea_scale_table[4] = { 1, 2, 4, 8 };
  * Class 'X86Inst'
  */
 
-void X86InstCreate(X86Inst *self)
+void X86InstCreate(X86Inst *self, X86Asm *as)
 {
+	self->as = as;
+	X86InstClear(self);
 }
 
 
 void X86InstDestroy(X86Inst *self)
 {
+	X86InstClear(self);
+	self->as = NULL;
 }
 
 
@@ -202,8 +202,10 @@ void X86InstDump(X86Inst *self, FILE *f)
 }
 
 
-void X86InstDumpBuf(X86Inst *inst, char *buf, int size)
+void X86InstDumpBuf(X86Inst *self, char *buf, int size)
 {
+	X86Asm *as;
+
 	struct x86_inst_info_t *info;
 
 	int length;
@@ -216,9 +218,10 @@ void X86InstDumpBuf(X86Inst *inst, char *buf, int size)
 
 	/* Get instruction information from the globally initialized x86
 	 * assembler. */
-	assert(x86_asm);
-	assert(IN_RANGE(inst->opcode, 0, X86InstOpcodeCount - 1));
-	info = &x86_asm->inst_info_list[inst->opcode];
+	as = self->as;
+	assert(as);
+	assert(IN_RANGE(self->opcode, 0, X86InstOpcodeCount - 1));
+	info = &as->inst_info_list[self->opcode];
 
 	/* Null-terminate output string in case 'fmt' is empty */
 	if (size)
@@ -240,145 +243,145 @@ void X86InstDumpBuf(X86Inst *inst, char *buf, int size)
 		if (asm_is_token(fmt, "r8", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->modrm_reg + X86InstRegAl));
+					self->modrm_reg + X86InstRegAl));
 		}
 		else if (asm_is_token(fmt, "r16", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->modrm_reg + X86InstRegAx));
+					self->modrm_reg + X86InstRegAx));
 		}
 		else if (asm_is_token(fmt, "r32", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map, 
-					inst->modrm_reg + X86InstRegEax));
+					self->modrm_reg + X86InstRegEax));
 		}
 		else if (asm_is_token(fmt, "rm8", &length))
 		{
-			if (inst->modrm_mod == 0x03)
+			if (self->modrm_mod == 0x03)
 				str_printf(&buf, &size, "%s",
 					str_map_value(&x86_inst_reg_map, 
-					inst->modrm_rm + X86InstRegAl));
+					self->modrm_rm + X86InstRegAl));
 			else
 			{
 				str_printf(&buf, &size, "BYTE PTR ");
-				X86InstAddrDumpBuf(inst, &buf, &size);
+				X86InstAddrDumpBuf(self, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "rm16", &length))
 		{
-			if (inst->modrm_mod == 0x03)
+			if (self->modrm_mod == 0x03)
 				str_printf(&buf, &size, "%s",
 					str_map_value(&x86_inst_reg_map,
-					inst->modrm_rm + X86InstRegAx));
+					self->modrm_rm + X86InstRegAx));
 			else
 			{
 				str_printf(&buf, &size, "WORD PTR ");
-				X86InstAddrDumpBuf(inst, &buf, &size);
+				X86InstAddrDumpBuf(self, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "rm32", &length))
 		{
-			if (inst->modrm_mod == 0x03)
+			if (self->modrm_mod == 0x03)
 				str_printf(&buf, &size, "%s",
 					str_map_value(&x86_inst_reg_map,
-					inst->modrm_rm + X86InstRegEax));
+					self->modrm_rm + X86InstRegEax));
 			else
 			{
 				str_printf(&buf, &size, "DWORD PTR ");
-				X86InstAddrDumpBuf(inst, &buf, &size);
+				X86InstAddrDumpBuf(self, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "r32m8", &length))
 		{
-			if (inst->modrm_mod == 3)
+			if (self->modrm_mod == 3)
 				str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->modrm_rm + X86InstRegEax));
+					self->modrm_rm + X86InstRegEax));
 			else
 			{
 				str_printf(&buf, &size, "BYTE PTR ");
-				X86InstAddrDumpBuf(inst, &buf, &size);
+				X86InstAddrDumpBuf(self, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "r32m16", &length))
 		{
-			if (inst->modrm_mod == 3)
+			if (self->modrm_mod == 3)
 				str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-						inst->modrm_rm + X86InstRegEax));
+						self->modrm_rm + X86InstRegEax));
 			else
 			{
 				str_printf(&buf, &size, "WORD PTR ");
-				X86InstAddrDumpBuf(inst, &buf, &size);
+				X86InstAddrDumpBuf(self, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "m", &length))
 		{
-			X86InstAddrDumpBuf(inst, &buf, &size);
+			X86InstAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "imm8", &length))
 		{
-			str_printf(&buf, &size, "0x%x", inst->imm.b);
+			str_printf(&buf, &size, "0x%x", self->imm.b);
 		}
 		else if (asm_is_token(fmt, "imm16", &length))
 		{
-			str_printf(&buf, &size, "0x%x", inst->imm.w);
+			str_printf(&buf, &size, "0x%x", self->imm.w);
 		}
 		else if (asm_is_token(fmt, "imm32", &length))
 		{
-			str_printf(&buf, &size, "0x%x", inst->imm.d);
+			str_printf(&buf, &size, "0x%x", self->imm.d);
 		}
 		else if (asm_is_token(fmt, "rel8", &length))
 		{
-			str_printf(&buf, &size, "%x", (int8_t) inst->imm.b + inst->eip + inst->size);
+			str_printf(&buf, &size, "%x", (int8_t) self->imm.b + self->eip + self->size);
 		}
 		else if (asm_is_token(fmt, "rel16", &length))
 		{
-			str_printf(&buf, &size, "%x", (int16_t) inst->imm.w + inst->eip + inst->size);
+			str_printf(&buf, &size, "%x", (int16_t) self->imm.w + self->eip + self->size);
 		}
 		else if (asm_is_token(fmt, "rel32", &length))
 		{
-			str_printf(&buf, &size, "%x", inst->imm.d + inst->eip + inst->size);
+			str_printf(&buf, &size, "%x", self->imm.d + self->eip + self->size);
 		}
 		else if (asm_is_token(fmt, "moffs8", &length))
 		{
-			X86InstMoffsAddrDumpBuf(inst, &buf, &size);
+			X86InstMoffsAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "moffs16", &length))
 		{
-			X86InstMoffsAddrDumpBuf(inst, &buf, &size);
+			X86InstMoffsAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "moffs32", &length))
 		{
-			X86InstMoffsAddrDumpBuf(inst, &buf, &size);
+			X86InstMoffsAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m8", &length))
 		{
 			str_printf(&buf, &size, "BYTE PTR ");
-			X86InstAddrDumpBuf(inst, &buf, &size);
+			X86InstAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m16", &length))
 		{
 			str_printf(&buf, &size, "WORD PTR ");
-			X86InstAddrDumpBuf(inst, &buf, &size);
+			X86InstAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m32", &length))
 		{
 			str_printf(&buf, &size, "DWORD PTR ");
-			X86InstAddrDumpBuf(inst, &buf, &size);
+			X86InstAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m64", &length))
 		{
 			str_printf(&buf, &size, "QWORD PTR ");
-			X86InstAddrDumpBuf(inst, &buf, &size);
+			X86InstAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m80", &length))
 		{
 			str_printf(&buf, &size, "TBYTE PTR ");
-			X86InstAddrDumpBuf(inst, &buf, &size);
+			X86InstAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "m128", &length))
 		{
 			str_printf(&buf, &size, "XMMWORD PTR ");
-			X86InstAddrDumpBuf(inst, &buf, &size);
+			X86InstAddrDumpBuf(self, &buf, &size);
 		}
 		else if (asm_is_token(fmt, "st0", &length))
 		{
@@ -386,61 +389,61 @@ void X86InstDumpBuf(X86Inst *inst, char *buf, int size)
 		}
 		else if (asm_is_token(fmt, "sti", &length))
 		{
-			str_printf(&buf, &size, "st(%d)", inst->opindex);
+			str_printf(&buf, &size, "st(%d)", self->opindex);
 		}
 		else if (asm_is_token(fmt, "ir8", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->opindex + X86InstRegAl));
+					self->opindex + X86InstRegAl));
 		}
 		else if (asm_is_token(fmt, "ir16", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->opindex + X86InstRegAx));
+					self->opindex + X86InstRegAx));
 		}
 		else if (asm_is_token(fmt, "ir32", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->opindex + X86InstRegEax));
+					self->opindex + X86InstRegEax));
 		}
 		else if (asm_is_token(fmt, "sreg", &length))
 		{
 			str_printf(&buf, &size, "%s", str_map_value(&x86_inst_reg_map,
-					inst->reg + X86InstRegEs));
+					self->reg + X86InstRegEs));
 		}
 		else if (asm_is_token(fmt, "xmmm32", &length))
 		{
-			if (inst->modrm_mod == 3)
-				str_printf(&buf, &size, "xmm%d", inst->modrm_rm);
+			if (self->modrm_mod == 3)
+				str_printf(&buf, &size, "xmm%d", self->modrm_rm);
 			else
 			{
 				str_printf(&buf, &size, "DWORD PTR ");
-				X86InstAddrDumpBuf(inst, &buf, &size);
+				X86InstAddrDumpBuf(self, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "xmmm64", &length))
 		{
-			if (inst->modrm_mod == 0x03)
-				str_printf(&buf, &size, "xmm%d", inst->modrm_rm);
+			if (self->modrm_mod == 0x03)
+				str_printf(&buf, &size, "xmm%d", self->modrm_rm);
 			else
 			{
 				str_printf(&buf, &size, "QWORD PTR ");
-				X86InstAddrDumpBuf(inst, &buf, &size);
+				X86InstAddrDumpBuf(self, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "xmmm128", &length))
 		{
-			if (inst->modrm_mod == 0x03)
-				str_printf(&buf, &size, "xmm%d", inst->modrm_rm);
+			if (self->modrm_mod == 0x03)
+				str_printf(&buf, &size, "xmm%d", self->modrm_rm);
 			else
 			{
 				str_printf(&buf, &size, "XMMWORD PTR ");
-				X86InstAddrDumpBuf(inst, &buf, &size);
+				X86InstAddrDumpBuf(self, &buf, &size);
 			}
 		}
 		else if (asm_is_token(fmt, "xmm", &length))
 		{
-			str_printf(&buf, &size, "xmm%d", inst->modrm_reg);
+			str_printf(&buf, &size, "xmm%d", self->modrm_reg);
 		}
 
 		/* Token was found, advance format string and continue */
@@ -480,17 +483,52 @@ void X86InstDumpBuf(X86Inst *inst, char *buf, int size)
 }
 
 
-char *X86InstGetName(X86InstOpcode opcode)
+void X86InstClear(X86Inst *self)
 {
-	assert(x86_asm);
-	if (!IN_RANGE(opcode, 1, X86InstOpcodeCount - 1))
-		return "<invalid>";
-	return x86_asm->inst_info_list[opcode].fmt;
+	self->eip = 0;
+	self->size = 0;
+	self->opcode = 0;
+	self->format = NULL;
+
+	self->prefix_size = 0;
+	self->opcode_size = 0;
+	self->modrm_size = 0;
+	self->sib_size = 0;
+	self->disp_size = 0;
+	self->imm_size = 0;
+
+	self->opindex = 0;
+	self->segment = 0;
+	self->prefixes = 0;
+
+	self->op_size = 0;
+	self->addr_size = 0;
+
+	self->modrm = 0;
+	self->modrm_mod = 0;
+	self->modrm_reg = 0;
+	self->modrm_rm = 0;
+
+	self->sib = 0;
+	self->sib_scale = 0;
+	self->sib_index = 0;
+	self->sib_base = 0;
+
+	self->disp = 0;
+	self->imm.d = 0;
+
+	self->ea_base = 0;
+	self->ea_index = 0;
+	self->ea_scale = 0;
+
+	self->reg = 0;
 }
 
 
-void X86InstDecode(X86Inst *inst, unsigned int eip, void *buf)
+void X86InstDecode(X86Inst *self, unsigned int eip, void *buf)
 {
+	X86Asm *as;
+
 	struct x86_inst_info_elem_t **table;
 	struct x86_inst_info_elem_t *elem;
 	struct x86_inst_info_t *info;
@@ -501,53 +539,18 @@ void X86InstDecode(X86Inst *inst, unsigned int eip, void *buf)
 	unsigned char buf8;
 	unsigned int buf32;
 
-	/* Assembler must be initialized */
-	assert(x86_asm);
-
+	/* Get assembler */
+	as = self->as;
+	assert(as);
 
 	/* Initialize instruction */
-
-	inst->eip = eip;
-	inst->size = 0;
-	inst->opcode = 0;
-	inst->format = NULL;
-
-	inst->prefix_size = 0;
-	inst->opcode_size = 0;
-	inst->modrm_size = 0;
-	inst->sib_size = 0;
-	inst->disp_size = 0;
-	inst->imm_size = 0;
-
-	inst->opindex = 0;
-	inst->segment = 0;
-	inst->prefixes = 0;
-
-	inst->op_size = 4;
-	inst->addr_size = 4;
-
-	inst->modrm = 0;
-	inst->modrm_mod = 0;
-	inst->modrm_reg = 0;
-	inst->modrm_rm = 0;
-
-	inst->sib = 0;
-	inst->sib_scale = 0;
-	inst->sib_index = 0;
-	inst->sib_base = 0;
-
-	inst->disp = 0;
-	inst->imm.d = 0;
-
-	inst->ea_base = 0;
-	inst->ea_index = 0;
-	inst->ea_scale = 0;
-
-	inst->reg = 0;
-
+	X86InstClear(self);
+	self->eip = eip;
+	self->op_size = 4;
+	self->addr_size = 4;
 
 	/* Prefixes */
-	while (x86_asm->is_prefix[* (unsigned char *) buf])
+	while (as->is_prefix[* (unsigned char *) buf])
 	{
 		switch (* (unsigned char *) buf)
 		{
@@ -557,45 +560,45 @@ void X86InstDecode(X86Inst *inst, unsigned int eip, void *buf)
 			break;
 
 		case 0xf2:
-			inst->prefixes |= X86InstPrefixRepnz;
+			self->prefixes |= X86InstPrefixRepnz;
 			break;
 
 		case 0xf3:
-			inst->prefixes |= X86InstPrefixRep;
+			self->prefixes |= X86InstPrefixRep;
 			break;
 
 		case 0x66:
-			inst->prefixes |= X86InstPrefixOp;
-			inst->op_size = 2;
+			self->prefixes |= X86InstPrefixOp;
+			self->op_size = 2;
 			break;
 
 		case 0x67:
-			inst->prefixes |= X86InstPrefixAddr;
-			inst->addr_size = 2;
+			self->prefixes |= X86InstPrefixAddr;
+			self->addr_size = 2;
 			break;
 
 		case 0x2e:
-			inst->segment = X86InstRegCs;
+			self->segment = X86InstRegCs;
 			break;
 
 		case 0x36:
-			inst->segment = X86InstRegSs;
+			self->segment = X86InstRegSs;
 			break;
 
 		case 0x3e:
-			inst->segment = X86InstRegDs;
+			self->segment = X86InstRegDs;
 			break;
 
 		case 0x26:
-			inst->segment = X86InstRegEs;
+			self->segment = X86InstRegEs;
 			break;
 
 		case 0x64:
-			inst->segment = X86InstRegFs;
+			self->segment = X86InstRegFs;
 			break;
 
 		case 0x65:
-			inst->segment = X86InstRegGs;
+			self->segment = X86InstRegGs;
 			break;
 
 		default:
@@ -605,21 +608,21 @@ void X86InstDecode(X86Inst *inst, unsigned int eip, void *buf)
 
 		/* One more prefix */
 		buf++;
-		inst->prefix_size++;
+		self->prefix_size++;
 	}
 
 	/* Obtain lookup table and index */
 	buf8 = * (unsigned char *) buf;
 	buf32 = * (unsigned int *) buf;
-	inst->opcode = X86InstOpcodeInvalid;
+	self->opcode = X86InstOpcodeInvalid;
 	if (buf8 == 0x0f)
 	{
-		table = x86_asm->inst_info_table_0f;
+		table = as->inst_info_table_0f;
 		index = * (unsigned char *) (buf + 1);
 	}
 	else
 	{
-		table = x86_asm->inst_info_table;
+		table = as->inst_info_table;
 		index = buf8;
 	}
 
@@ -631,7 +634,7 @@ void X86InstDecode(X86Inst *inst, unsigned int eip, void *buf)
 			info->nomatch_result)
 			continue;
 		if ((buf32 & info->match_mask) == info->match_result
-			&& info->prefixes == inst->prefixes)
+			&& info->prefixes == self->prefixes)
 			break;
 	}
 
@@ -640,87 +643,87 @@ void X86InstDecode(X86Inst *inst, unsigned int eip, void *buf)
 		return;
 
 	/* Instruction found */
-	inst->format = info->fmt;
-	inst->opcode = info->opcode;
-	inst->opcode_size = info->opcode_size;
-	inst->modrm_size = info->modrm_size;
-	inst->opindex = (buf32 >> info->opindex_shift) & 0x7;
-	buf += inst->opcode_size;  /* Skip opcode */
+	self->format = info->fmt;
+	self->opcode = info->opcode;
+	self->opcode_size = info->opcode_size;
+	self->modrm_size = info->modrm_size;
+	self->opindex = (buf32 >> info->opindex_shift) & 0x7;
+	buf += self->opcode_size;  /* Skip opcode */
 
 	/* Decode the ModR/M field */
-	if (inst->modrm_size)
+	if (self->modrm_size)
 	{
 		/* Split modrm into fields */
-		inst->modrm = * (unsigned char *) buf;
-		inst->modrm_mod = (inst->modrm & 0xc0) >> 6;
-		inst->modrm_reg = (inst->modrm & 0x38) >> 3;
-		inst->modrm_rm = inst->modrm & 0x07;
-		inst->reg = inst->modrm_reg;
+		self->modrm = * (unsigned char *) buf;
+		self->modrm_mod = (self->modrm & 0xc0) >> 6;
+		self->modrm_reg = (self->modrm & 0x38) >> 3;
+		self->modrm_rm = self->modrm & 0x07;
+		self->reg = self->modrm_reg;
 
 		/* Access ModRM table */
-		modrm_table_entry = &x86_inst_modrm_table[(inst->modrm_mod << 3)
-			| inst->modrm_rm];
-		inst->sib_size = modrm_table_entry->sib_size;
-		inst->disp_size = modrm_table_entry->disp_size;
-		inst->ea_base = modrm_table_entry->ea_base;
-		buf += inst->modrm_size;  /* Skip modrm */
+		modrm_table_entry = &x86_inst_modrm_table[(self->modrm_mod << 3)
+			| self->modrm_rm];
+		self->sib_size = modrm_table_entry->sib_size;
+		self->disp_size = modrm_table_entry->disp_size;
+		self->ea_base = modrm_table_entry->ea_base;
+		buf += self->modrm_size;  /* Skip modrm */
 
 		/* Decode SIB */
-		if (inst->sib_size)
+		if (self->sib_size)
 		{
-			inst->sib = * (unsigned char *) buf;
-			inst->sib_scale = (inst->sib & 0xc0) >> 6;
-			inst->sib_index = (inst->sib & 0x38) >> 3;
-			inst->sib_base = inst->sib & 0x07;
-			inst->ea_scale = x86_inst_ea_scale_table[inst->sib_scale];
-			inst->ea_index = inst->sib_index == 0x04 ? X86InstRegNone :
-				inst->sib_index + X86InstRegEax;
-			inst->ea_base = inst->sib_base + X86InstRegEax;
-			if (inst->sib_base == 0x05 && inst->modrm_mod == 0x00)
+			self->sib = * (unsigned char *) buf;
+			self->sib_scale = (self->sib & 0xc0) >> 6;
+			self->sib_index = (self->sib & 0x38) >> 3;
+			self->sib_base = self->sib & 0x07;
+			self->ea_scale = x86_inst_ea_scale_table[self->sib_scale];
+			self->ea_index = self->sib_index == 0x04 ? X86InstRegNone :
+				self->sib_index + X86InstRegEax;
+			self->ea_base = self->sib_base + X86InstRegEax;
+			if (self->sib_base == 0x05 && self->modrm_mod == 0x00)
 			{
-				inst->ea_base = X86InstRegNone;
-				inst->disp_size = 4;
+				self->ea_base = X86InstRegNone;
+				self->disp_size = 4;
 			}
-			buf += inst->sib_size;  /* Skip SIB */
+			buf += self->sib_size;  /* Skip SIB */
 		}
 
 		/* Decode Displacement */
-		switch (inst->disp_size)
+		switch (self->disp_size)
 		{
 		case 1:
-			inst->disp = * (int8_t *) buf;
+			self->disp = * (int8_t *) buf;
 			break;
 
 		case 2:
-			inst->disp = * (int16_t *) buf;
+			self->disp = * (int16_t *) buf;
 			break;
 
 		case 4:
-			inst->disp = * (int32_t *) buf;
+			self->disp = * (int32_t *) buf;
 			break;
 		}
-		buf += inst->disp_size;  /* Skip disp */
+		buf += self->disp_size;  /* Skip disp */
 	}
 
 	/* Decode Immediate */
-	inst->imm_size = info->imm_size;
-	switch (inst->imm_size)
+	self->imm_size = info->imm_size;
+	switch (self->imm_size)
 	{
 	case 1:
-		inst->imm.b = * (unsigned char *) buf;
+		self->imm.b = * (unsigned char *) buf;
 		break;
 
 	case 2:
-		inst->imm.w = * (unsigned short *) buf;
+		self->imm.w = * (unsigned short *) buf;
 		break;
 
 	case 4:
-		inst->imm.d = * (unsigned int *) buf;
+		self->imm.d = * (unsigned int *) buf;
 		break;
 	}
-	buf += inst->imm_size;  /* Skip imm */
+	buf += self->imm_size;  /* Skip imm */
 
 	/* Calculate total size */
-	inst->size = inst->prefix_size + inst->opcode_size + inst->modrm_size +
-		inst->sib_size + inst->disp_size + inst->imm_size;
+	self->size = self->prefix_size + self->opcode_size + self->modrm_size +
+		self->sib_size + self->disp_size + self->imm_size;
 }
