@@ -44,8 +44,9 @@ void *even_strategy_create(int num_devices, unsigned int dims, const unsigned in
 		for (i = 0; i < num_devices; i++)
 			info->device_rows[i] = 1;
 
-	for (i = dims - 1; i >= 0; i--)
-		if (groups[i] > info->part_dim)
+
+	for (i = 1; i < dims; i++)
+		if (groups[i] >= groups[info->part_dim])
 			info->part_dim = i;
 
 	normalize_proportions(groups[info->part_dim], num_devices, info->device_rows);
