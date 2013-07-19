@@ -114,7 +114,10 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	relative-runtime-partition-strategy.c \
 	relative-runtime-partition-strategy.h \
 	\
-	x86-device-wi.s
+	x86-device-wi.s \
+	\
+	throughput-overhead-partition-strategy.c \
+	throughput-overhead-partition-strategy.h
 
 AM_CFLAGS = -m32 -D_GNU_SOURCE
 AM_CCASFLAGS = -m32
