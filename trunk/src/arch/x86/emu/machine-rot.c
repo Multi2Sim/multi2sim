@@ -75,7 +75,7 @@ void x86_isa_##xxx##_rm8_cl_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned char rm8 = X86ContextLoadRm8(ctx); \
-	unsigned char count = X86ContextLoadReg(ctx, x86_inst_reg_cl); \
+	unsigned char count = X86ContextLoadReg(ctx, X86InstRegCl); \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -159,7 +159,7 @@ void x86_isa_##xxx##_rm16_cl_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned short rm16 = X86ContextLoadRm16(ctx); \
-	unsigned char count = X86ContextLoadReg(ctx, x86_inst_reg_cl); \
+	unsigned char count = X86ContextLoadReg(ctx, X86InstRegCl); \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -243,7 +243,7 @@ void x86_isa_##xxx##_rm32_cl_impl(X86Context *ctx) \
 { \
 	struct x86_regs_t *regs = ctx->regs; \
 	unsigned int rm32 = X86ContextLoadRm32(ctx); \
-	unsigned char count = X86ContextLoadReg(ctx, x86_inst_reg_cl); \
+	unsigned char count = X86ContextLoadReg(ctx, X86InstRegCl); \
 	unsigned long flags = regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \

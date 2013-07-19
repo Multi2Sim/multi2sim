@@ -23,7 +23,7 @@
 #include <arch/common/asm.h>
 #include <lib/util/class.h>
 
-struct x86_inst_t;
+struct X86Inst;
 
 
 /*
@@ -33,11 +33,11 @@ struct x86_inst_t;
 CLASS_BEGIN(X86Asm, Asm)
 
 	/* Array containing 'x86_inst_opcode_count' elements of type
-	 * 'x86_inst_info_t' allocated contiguously, and storing instructions
+	 * 'X86InstInfo' allocated contiguously, and storing instructions
 	 * information as given in 'asm.dat'. */
 	struct x86_inst_info_t *inst_info_list;
 
-	/* Arrays containing 256 elements of type 'x86_inst_info_elem_t *'
+	/* Arrays containing 256 elements of type 'X86InstInfoElem *'
 	 * allocated contiguously. These tables are used for lookups when
 	 * decoding instructions. */
 	struct x86_inst_info_elem_t *inst_info_table[0x100];

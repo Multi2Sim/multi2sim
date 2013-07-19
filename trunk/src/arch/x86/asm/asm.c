@@ -159,8 +159,8 @@ void X86AsmCreate(X86Asm *self)
 	AsmCreate(asAsm(self));
 
 	/* Initialize instruction information list */
-	self->inst_info_list = xcalloc(x86_inst_opcode_count, sizeof(struct x86_inst_info_t));
-	self->inst_info_list[x86_inst_opcode_invalid].fmt = "";
+	self->inst_info_list = xcalloc(X86InstOpcodeCount, sizeof(struct x86_inst_info_t));
+	self->inst_info_list[X86InstOpcodeInvalid].fmt = "";
 #define DEFINST(__name, __op1, __op2, __op3, __modrm, __imm, __prefixes) \
 	info = &self->inst_info_list[x86_inst_##__name]; \
 	info->opcode = x86_inst_##__name; \
@@ -181,7 +181,7 @@ void X86AsmCreate(X86Asm *self)
 	/* Initialize x86_opcode_info_table. This table contains lists of
 	 * information about machine instructions. To find an instruction
 	 * in the table, it can be indexed by the first byte of its opcode. */
-	for (op = 1; op < x86_inst_opcode_count; op++)
+	for (op = 1; op < X86InstOpcodeCount; op++)
 	{
 		/* Insert into table */
 		info = &self->inst_info_list[op];
@@ -292,7 +292,7 @@ void X86AsmDestroy(X86Asm *self)
 void x86_asm_init(void)
 {
 	/* Host restrictions */
-	M2S_HOST_GUEST_MATCH(sizeof(union x86_inst_xmm_reg_t), 16);
+	M2S_HOST_GUEST_MATCH(sizeof(X86InstXMMReg), 16);
 
 	/* Classes */
 	CLASS_REGISTER(X86Asm);
@@ -316,7 +316,7 @@ void x86_asm_disassemble_binary(char *path)
 	struct elf_buffer_t *buffer;
 	struct elf_symbol_t *symbol;
 
-	struct x86_inst_t inst;
+	X86Inst inst;
 	int curr_sym;
 	int index;
 
@@ -351,11 +351,11 @@ void x86_asm_disassemble_binary(char *path)
 			/* Read instruction */
 			eip = section->header->sh_addr + buffer->pos;
 			ptr = elf_buffer_tell(buffer);
-			x86_inst_decode(&inst, eip, ptr);
+			X86InstDecode(&inst, eip, ptr);
 			if (inst.size)
 			{
 				elf_buffer_read(buffer, NULL, inst.size);
-				x86_inst_dump_buf(&inst, str, MAX_STRING_SIZE);
+				X86InstDumpBuf(&inst, str, MAX_STRING_SIZE);
 			}
 			else
 			{
