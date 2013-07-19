@@ -32,10 +32,6 @@
  * Variables
  */
 
-/* Global unique x86 disassembler */
-X86Asm *x86_asm;
-
-
 /*** Constants used in 'asm.dat' ***/
 
 /* For fields 'op1', 'op2', 'modrm', 'imm' */
@@ -141,7 +137,7 @@ static void x86_asm_inst_info_elem_free_list(struct x86_inst_info_elem_t *elem)
 
 
 /*
- * Public Functions
+ * Class 'X86Asm'
  */
 
 
@@ -282,34 +278,7 @@ void X86AsmDestroy(X86Asm *self)
 }
 
 
-
-
-/*
- * Static Public Functions
- * (not related with 'x86_asm_t' class)
- */
-
-void x86_asm_init(void)
-{
-	/* Host restrictions */
-	M2S_HOST_GUEST_MATCH(sizeof(X86InstXMMReg), 16);
-
-	/* Classes */
-	CLASS_REGISTER(X86Asm);
-
-	/* Create disassembler */
-	assert(!x86_asm);
-	x86_asm = new(X86Asm);
-}
-
-
-void x86_asm_done(void)
-{
-	delete(x86_asm);
-}
-
-
-void x86_asm_disassemble_binary(char *path)
+void X86AsmDisassembleBinary(X86Asm *self, char *path)
 {
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;
@@ -323,8 +292,10 @@ void x86_asm_disassemble_binary(char *path)
 	int i;
 
 	/* Open ELF file */
-	x86_asm_init();
 	elf_file = elf_file_create_from_path(path);
+
+	/* Initialize statically allocated instruction */
+	X86InstCreate(&inst, self);
 
 	/* Read sections */
 	LIST_FOR_EACH(elf_file->section_list, index)
@@ -401,11 +372,17 @@ void x86_asm_disassemble_binary(char *path)
 		printf("\n");
 	}
 
+	/* Destroy static instruction */
+	X86InstDestroy(&inst);
+
 	/* Free ELF */
 	elf_file_free(elf_file);
-	x86_asm_done();
+}
 
-	/* End */
-	mhandle_done();
-	exit(0);
+
+char *X86AsmGetInstName(X86Asm *self, int opcode)
+{
+	if (!IN_RANGE(opcode, 1, X86InstOpcodeCount - 1))
+		return "<invalid>";
+	return self->inst_info_list[opcode].fmt;
 }

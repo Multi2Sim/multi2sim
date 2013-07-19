@@ -21,6 +21,7 @@
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/wavefront.h>
 #include <arch/southern-islands/emu/work-group.h>
+#include <arch/x86/emu/emu.h>
 #include <driver/opencl/opencl.h>
 #include <lib/esim/trace.h>
 #include <lib/mhandle/mhandle.h>
@@ -318,10 +319,8 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
 	list_remove(si_emu->running_work_groups, (void*)work_group_id);
 
 	if (!list_count(si_emu->running_work_groups) && 
-		!list_count(si_emu->waiting_work_groups))
-	{
-		opencl_si_request_work();
-	}
+			!list_count(si_emu->waiting_work_groups))
+		opencl_si_request_work(x86_emu);
 
 	/* If compute unit is not already in the available list, place
 	 * it there */

@@ -413,25 +413,6 @@ void X86CpuReadConfig(void)
 }
 
 
-void X86CpuInit(void)
-{
-	/* Classes */
-	CLASS_REGISTER(X86Cpu);
-	CLASS_REGISTER(X86Core);
-	CLASS_REGISTER(X86Thread);
-
-	/* Trace */
-	x86_trace_category = trace_new_category();
-}
-
-
-/* Finalization */
-void X86CpuDone(void)
-{
-}
-
-
-
 
 
 /*
@@ -454,6 +435,10 @@ void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 	/* Parent */
 	TimingCreate(asTiming(self));
 	
+	/* Trace */
+	/* FIXME - should be made part of class */
+	x86_trace_category = trace_new_category();
+
 	/* Frequency */
 	asTiming(self)->frequency = x86_cpu_frequency;
 	asTiming(self)->frequency_domain = esim_new_domain(x86_cpu_frequency);

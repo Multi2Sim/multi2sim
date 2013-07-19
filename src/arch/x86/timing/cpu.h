@@ -175,8 +175,6 @@ extern int x86_trace_category;
 
 
 void X86CpuReadConfig(void);
-void X86CpuInit(void);
-void X86CpuDone(void);
 
 
 #endif

@@ -1281,11 +1281,15 @@ static int opencl_abi_si_ndrange_set_fused_impl(X86Context *ctx)
 
 	return 0;
 }
+
+
+
+
 /*
  *  Helper functions
  */
 
-void opencl_si_request_work()
+void opencl_si_request_work(X86Emu *emu)
 {
 	if (driver_state.wait_for_ndrange_completion && 
 		!list_count(si_emu->running_work_groups) && 
@@ -1300,5 +1304,5 @@ void opencl_si_request_work()
 		driver_state.ready_for_work = 1;
 	}
 
-	X86EmuProcessEventsSchedule(x86_emu);
+	X86EmuProcessEventsSchedule(emu);
 }
