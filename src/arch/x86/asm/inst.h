@@ -22,93 +22,100 @@
 
 #include <stdio.h>
 
+#include <lib/util/class.h>
+
+
+
+/*
+ * Class 'X86Inst'
+ */
 
 /* List of opcodes */
-enum x86_inst_opcode_t
+typedef enum
 {
-	x86_inst_opcode_invalid = 0,
+	X86InstOpcodeInvalid = 0,
 
 #define DEFINST(name, op1, op2, op3, modrm, imm, prefixes) \
 	x86_inst_##name,
 #include "asm.dat"
 #undef DEFINST
 
-	x86_inst_opcode_count
-};
+	X86InstOpcodeCount
+} X86InstOpcode;
 
 
 /* Prefixes */
-enum x86_inst_prefix_t
+typedef enum
 {
-	x86_inst_prefix_none = 0x00,
-	x86_inst_prefix_rep = 0x01,
-	x86_inst_prefix_repz = 0x01,  /* same value as rep */
-	x86_inst_prefix_repnz = 0x02,
-	x86_inst_prefix_lock = 0x04,
-	x86_inst_prefix_addr = 0x08,  /* address-size override */
-	x86_inst_prefix_op = 0x10  /* operand-size override */
-};
+	X86InstPrefixNone = 0x00,
+	X86InstPrefixRep = 0x01,
+	X86InstPrefixRepz = 0x01,  /* same value as rep */
+	X86InstPrefixRepnz = 0x02,
+	X86InstPrefixLock = 0x04,
+	X86InstPrefixAddr = 0x08,  /* address-size override */
+	X86InstPrefixOp = 0x10  /* operand-size override */
+} X86InstPrefix;
 
 
 /* Registers */
 extern struct str_map_t x86_inst_reg_map;
-enum x86_inst_reg_t
+typedef enum
 {
-	x86_inst_reg_none = 0,
+	X86InstRegNone = 0,
 
-	x86_inst_reg_eax,
-	x86_inst_reg_ecx,
-	x86_inst_reg_edx,
-	x86_inst_reg_ebx,
-	x86_inst_reg_esp,
-	x86_inst_reg_ebp,
-	x86_inst_reg_esi,
-	x86_inst_reg_edi,
+	X86InstRegEax,
+	X86InstRegEcx,
+	X86InstRegEdx,
+	X86InstRegEbx,
+	X86InstRegEsp,
+	X86InstRegEbp,
+	X86InstRegEsi,
+	X86InstRegEdi,
 
-	x86_inst_reg_ax,
-	x86_inst_reg_cx,
-	x86_inst_reg_dx,
-	x86_inst_reg_bx,
-	x86_inst_reg_sp,
-	x86_inst_reg_bp,
-	x86_inst_reg_si,
-	x86_inst_reg_di,
+	X86InstRegAx,
+	X86InstRegCx,
+	X86InstRegDx,
+	X86InstRegBx,
+	X86InstRegSp,
+	X86InstRegBp,
+	X86InstRegSi,
+	X86InstRegDi,
 
-	x86_inst_reg_al,
-	x86_inst_reg_cl,
-	x86_inst_reg_dl,
-	x86_inst_reg_bl,
-	x86_inst_reg_ah,
-	x86_inst_reg_ch,
-	x86_inst_reg_dh,
-	x86_inst_reg_bh,
+	X86InstRegAl,
+	X86InstRegCl,
+	X86InstRegDl,
+	X86InstRegBl,
+	X86InstRegAh,
+	X86InstRegCh,
+	X86InstRegDh,
+	X86InstRegBh,
 
-	x86_inst_reg_es,
-	x86_inst_reg_cs,
-	x86_inst_reg_ss,
-	x86_inst_reg_ds,
-	x86_inst_reg_fs,
-	x86_inst_reg_gs,
+	X86InstRegEs,
+	X86InstRegCs,
+	X86InstRegSs,
+	X86InstRegDs,
+	X86InstRegFs,
+	X86InstRegGs,
 
-	x86_inst_reg_count
-};
+	X86InstRegCount
+} X86InstReg;
 
 
 /* Flags */
-enum x86_inst_flag_t
+typedef enum
 {
-	x86_inst_flag_cf = 0,
-	x86_inst_flag_pf = 2,
-	x86_inst_flag_af = 4,
-	x86_inst_flag_zf = 6,
-	x86_inst_flag_sf = 7,
-	x86_inst_flag_df = 10,
-	x86_inst_flag_of = 11
-};
+	X86InstFlagCF = 0,
+	X86InstFlagPF = 2,
+	X86InstFlagAF = 4,
+	X86InstFlagZF = 6,
+	X86InstFlagSF = 7,
+	X86InstFlagDF = 10,
+	X86InstFlagOF = 11
+} X86InstFlag;
 
 
 /* XMM register */
-union x86_inst_xmm_reg_t
+typedef union
 {
 	unsigned char as_uchar[16];
 	signed char as_char[16];
@@ -124,13 +131,89 @@ union x86_inst_xmm_reg_t
 
 	float as_float[4];
 	double as_double[2];
-};
+} X86InstXMMReg;
+
+
+/* x86 Instruction */
+CLASS_BEGIN(X86Inst, Object)
+
+	unsigned int eip;  /* position inside the code */
+	int size;  /* number of instruction bytes */
+	X86InstOpcode opcode;
+	char *format;  /* format of the instruction */
+	
+	/* Size of fields */
+	int prefix_size;
+	int opcode_size;
+	int modrm_size;
+	int sib_size;
+	int disp_size;
+	int imm_size;
+
+	/* Index in the opcode. This is a value between 0 and 7, which
+	 * is present in some instructions at op1 or op2. */
+	int opindex;
+
+	/* Prefixes */
+	X86InstReg segment;  /* Reg. used to override segment */
+	int prefixes;  /* Mask of prefixes of type 'X86InstPrefix' */
+	int op_size;  /* Operand size: 2 or 4, default 4 */
+	int addr_size;  /* Address size: 2 or 4, default 4 */
+	
+	/* ModR/M Field */
+	unsigned char modrm;  /* ModR/M field */
+	unsigned char modrm_mod;  /* mod field of ModR/M */
+	unsigned char modrm_reg;  /* reg field of ModR/M */
+	unsigned char modrm_rm;  /* rm field of ModR/M */
+
+	/* SIB Field */
+	unsigned char sib;  /* SIB field */
+	unsigned char sib_scale;  /* Scale field of SIB */
+	unsigned char sib_index;  /* Index field of SIB */
+	unsigned char sib_base;  /* Base field of SIB */
+
+	/* Displacement and Immediate */
+	int disp;
+	union {
+		unsigned char b;
+		unsigned short w;
+		unsigned int d;
+	} imm;
+
+	/* Effective address */
+	X86InstReg ea_base;
+	X86InstReg ea_index;
+	unsigned int ea_scale;
+
+	/* Register */
+	int reg;  /* same as modrm_reg */
+
+CLASS_END(X86Inst)
+
+
+void X86InstCreate(X86Inst *self);
+void X86InstDestroy(X86Inst *self);
+
+void X86InstDump(X86Inst *self, FILE *f);
+void X86InstDumpBuf(X86Inst *self, char *buf, int size);
+
+/* Populate fields of instruction 'inst' after decoding the instruction bytes
+ * provided in 'buf'. The value in 'eip' should give the virtual address of
+ * the instruction, used for branch decoding purposes. */
+void X86InstDecode(X86Inst *self, unsigned int eip, void *buf);
+
+
+
+
+/*
+ * Public
+ */
 
 
 /* This structure contains information derived from 'asm.dat'. */
 struct x86_inst_info_t
 {
-	enum x86_inst_opcode_t opcode;
+	X86InstOpcode opcode;
 
 	unsigned int op1;
 	unsigned int op2;
@@ -138,7 +221,7 @@ struct x86_inst_info_t
 	unsigned int modrm;
 	unsigned int imm;
 
-	/* Mask of prefixes of type 'enum x86_inst_prefix_t' */
+	/* Mask of prefixes of type 'X86InstPrefix' */
 	int prefixes;
 
 	/* Format string */
@@ -168,76 +251,9 @@ struct x86_inst_info_elem_t
 };
 
 
-/* x86 Instruction */
-struct x86_inst_t
-{
-	unsigned int eip;  /* position inside the code */
-	int size;  /* number of instruction bytes */
-	enum x86_inst_opcode_t opcode;
-	char *format;  /* format of the instruction */
-	
-	/* Size of fields */
-	int prefix_size;
-	int opcode_size;
-	int modrm_size;
-	int sib_size;
-	int disp_size;
-	int imm_size;
-
-	/* Index in the opcode. This is a value between 0 and 7, which
-	 * is present in some instructions at op1 or op2. */
-	int opindex;
-
-	/* Prefixes */
-	enum x86_inst_reg_t segment;  /* Reg. used to override segment */
-	int prefixes;  /* Mask of prefixes of type 'enum x86_inst_prefix_t' */
-	int op_size;  /* Operand size: 2 or 4, default 4 */
-	int addr_size;  /* Address size: 2 or 4, default 4 */
-	
-	/* ModR/M Field */
-	unsigned char modrm;  /* ModR/M field */
-	unsigned char modrm_mod;  /* mod field of ModR/M */
-	unsigned char modrm_reg;  /* reg field of ModR/M */
-	unsigned char modrm_rm;  /* rm field of ModR/M */
-
-	/* SIB Field */
-	unsigned char sib;  /* SIB field */
-	unsigned char sib_scale;  /* Scale field of SIB */
-	unsigned char sib_index;  /* Index field of SIB */
-	unsigned char sib_base;  /* Base field of SIB */
-
-	/* Displacement and Immediate */
-	int disp;
-	union {
-		unsigned char b;
-		unsigned short w;
-		unsigned int d;
-	} imm;
-
-	/* Effective address */
-	enum x86_inst_reg_t ea_base;
-	enum x86_inst_reg_t ea_index;
-	unsigned int ea_scale;
-
-	/* Register */
-	int reg;  /* same as modrm_reg */
-};
-
-
-struct x86_inst_t *x86_inst_create(void);
-void x86_inst_free(struct x86_inst_t *inst);
-
-void x86_inst_dump(struct x86_inst_t *inst, FILE *f);
-void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size);
-
 /* Return an instruction name given an opcode, or string '<invalid>' if the
  * opcode value does not exist. */
-char *x86_inst_get_name(enum x86_inst_opcode_t opcode);
-
-/* Populate fields of instruction 'inst' after decoding the instruction bytes
- * provided in 'buf'. The value in 'eip' should give the virtual address of
- * the instruction, used for branch decoding purposes. */
-void x86_inst_decode(struct x86_inst_t *inst, unsigned int eip, void *buf);
+char *X86InstGetName(X86InstOpcode opcode);
 
 
 #endif

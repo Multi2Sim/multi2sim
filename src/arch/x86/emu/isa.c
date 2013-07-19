@@ -45,7 +45,7 @@
 /* Table including references to functions in machine.c
  * that implement machine instructions. */
 typedef void (*X86ContextInstFunc)(X86Context *ctx);
-static X86ContextInstFunc x86_context_inst_func[x86_inst_opcode_count] =
+static X86ContextInstFunc x86_context_inst_func[X86InstOpcodeCount] =
 {
 	NULL /* for op_none */
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) , x86_isa_##name##_impl
@@ -61,17 +61,17 @@ int x86_context_isa_debug_category;
 long x86_context_host_flags;
 unsigned char x86_context_host_fpenv[28];
 
-static long long x86_inst_freq[x86_inst_opcode_count];
+static long long x86_inst_freq[X86InstOpcodeCount];
 
 
 void x86_isa_inst_stat_dump(FILE *f)
 {
 	int i;
-	for (i = 1; i < x86_inst_opcode_count; i++)
+	for (i = 1; i < X86InstOpcodeCount; i++)
 	{
 		if (!x86_inst_freq[i])
 			continue;
-		fprintf(f, "%s    %lld\n", x86_inst_get_name(i), x86_inst_freq[i]);
+		fprintf(f, "%s    %lld\n", X86InstGetName(i), x86_inst_freq[i]);
 	}
 }
 
@@ -79,7 +79,7 @@ void x86_isa_inst_stat_dump(FILE *f)
 void x86_isa_inst_stat_reset(void)
 {
 	int i;
-	for (i = 1; i < x86_inst_opcode_count; i++)
+	for (i = 1; i < X86InstOpcodeCount; i++)
 		x86_inst_freq[i] = 0;
 }
 
@@ -285,7 +285,7 @@ static struct
 };
 
 
-void X86ContextSetFlag(X86Context *self, enum x86_inst_flag_t flag)
+void X86ContextSetFlag(X86Context *self, X86InstFlag flag)
 {
 	struct x86_regs_t *regs = self->regs;
 
@@ -293,7 +293,7 @@ void X86ContextSetFlag(X86Context *self, enum x86_inst_flag_t flag)
 }
 
 
-void X86ContextClearFlag(X86Context *self, enum x86_inst_flag_t flag)
+void X86ContextClearFlag(X86Context *self, X86InstFlag flag)
 {
 	struct x86_regs_t *regs = self->regs;
 
@@ -301,7 +301,7 @@ void X86ContextClearFlag(X86Context *self, enum x86_inst_flag_t flag)
 }
 
 
-int X86ContextGetFlag(X86Context *self, enum x86_inst_flag_t flag)
+int X86ContextGetFlag(X86Context *self, X86InstFlag flag)
 {
 	struct x86_regs_t *regs = self->regs;
 
@@ -315,7 +315,7 @@ int X86ContextGetFlag(X86Context *self, enum x86_inst_flag_t flag)
 static unsigned int x86_context_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
 
 
-unsigned int X86ContextLoadReg(X86Context *self, enum x86_inst_reg_t reg)
+unsigned int X86ContextLoadReg(X86Context *self, X86InstReg reg)
 {
 	struct x86_regs_t *regs = self->regs;
 
@@ -328,7 +328,7 @@ unsigned int X86ContextLoadReg(X86Context *self, enum x86_inst_reg_t reg)
 }
 
 
-void X86ContextStoreReg(X86Context *self, enum x86_inst_reg_t reg, unsigned int value)
+void X86ContextStoreReg(X86Context *self, X86InstReg reg, unsigned int value)
 {
 	struct x86_regs_t *regs = self->regs;
 
@@ -351,17 +351,17 @@ static unsigned int X86ContextLinearAddress(X86Context *self, unsigned int offse
 		return offset;
 	
 	/* Segment override */
-	if (self->inst.segment != x86_inst_reg_gs)
+	if (self->inst.segment != X86InstRegGs)
 	{
 		X86ContextError(self, "segment override not supported");
 		return 0;
 	}
 
 	/* GLibc segment at TLS entry 6 */
-	if (X86ContextLoadReg(self, x86_inst_reg_gs) != 0x33)
+	if (X86ContextLoadReg(self, X86InstRegGs) != 0x33)
 	{
 		X86ContextError(self, "isa_linear_address: gs = 0x%x",
-				X86ContextLoadReg(self, x86_inst_reg_gs));
+				X86ContextLoadReg(self, X86InstRegGs));
 		return 0;
 	}
 
@@ -425,7 +425,7 @@ unsigned char X86ContextLoadRm8(X86Context *self)
 	unsigned char value;
 
 	if (self->inst.modrm_mod == 0x03)
-		return X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_al);
+		return X86ContextLoadReg(self, self->inst.modrm_rm + X86InstRegAl);
 
 	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 1, &value);
 	X86ContextDebugISA("  [0x%x]=0x%x", X86ContextEffectiveAddress(self), value);
@@ -438,7 +438,7 @@ unsigned short X86ContextLoadRm16(X86Context *self)
 	unsigned short value;
 
 	if (self->inst.modrm_mod == 0x03)
-		return X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_ax);
+		return X86ContextLoadReg(self, self->inst.modrm_rm + X86InstRegAx);
 
 	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 2, &value);
 	X86ContextDebugISA("  [0x%x]=0x%x", X86ContextEffectiveAddress(self), value);
@@ -451,7 +451,7 @@ unsigned int X86ContextLoadRm32(X86Context *self)
 	unsigned int value;
 
 	if (self->inst.modrm_mod == 0x03)
-		return X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_eax);
+		return X86ContextLoadReg(self, self->inst.modrm_rm + X86InstRegEax);
 
 	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 4, &value);
 	X86ContextDebugISA("  [0x%x]=0x%x", X86ContextEffectiveAddress(self), value);
@@ -464,7 +464,7 @@ unsigned short X86ContextLoadR32M16(X86Context *self)
 	unsigned short value;
 
 	if (self->inst.modrm_mod == 0x03)
-		return X86ContextLoadReg(self, self->inst.modrm_rm + x86_inst_reg_eax);
+		return X86ContextLoadReg(self, self->inst.modrm_rm + X86InstRegEax);
 
 	X86ContextMemRead(self, X86ContextEffectiveAddress(self), 2, &value);
 	X86ContextDebugISA("  [0x%x]=0x%x", X86ContextEffectiveAddress(self), value);
@@ -486,7 +486,7 @@ void X86ContextStoreRm8(X86Context *self, unsigned char value)
 {
 	if (self->inst.modrm_mod == 0x03)
 	{
-		X86ContextStoreReg(self, self->inst.modrm_rm + x86_inst_reg_al, value);
+		X86ContextStoreReg(self, self->inst.modrm_rm + X86InstRegAl, value);
 		return;
 	}
 	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 1, &value);
@@ -498,7 +498,7 @@ void X86ContextStoreRm16(X86Context *self, unsigned short value)
 {
 	if (self->inst.modrm_mod == 0x03)
 	{
-		X86ContextStoreReg(self, self->inst.modrm_rm + x86_inst_reg_ax, value);
+		X86ContextStoreReg(self, self->inst.modrm_rm + X86InstRegAx, value);
 		return;
 	}
 	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 2, &value);
@@ -510,7 +510,7 @@ void X86ContextStoreRm32(X86Context *self, unsigned int value)
 {
 	if (self->inst.modrm_mod == 0x03)
 	{
-		X86ContextStoreReg(self, self->inst.modrm_rm + x86_inst_reg_eax, value);
+		X86ContextStoreReg(self, self->inst.modrm_rm + X86InstRegEax, value);
 		return;
 	}
 	X86ContextMemWrite(self, X86ContextEffectiveAddress(self), 4, &value);
@@ -702,11 +702,11 @@ unsigned short X86ContextLoadFpuStatus(X86Context *self)
 
 void X86ContextDumpXMM(X86Context *self, unsigned char *value, FILE *f)
 {
-	union x86_inst_xmm_reg_t *xmm;
+	X86InstXMMReg *xmm;
 	char *comma;
 	int i;
 
-	xmm = (union x86_inst_xmm_reg_t *) value;
+	xmm = (X86InstXMMReg *) value;
 	for (i = 0; i < 16; i++)
 		fprintf(f, "%02x ", xmm->as_uchar[i]);
 
@@ -844,7 +844,7 @@ void X86ContextExecuteInst(X86Context *self)
 	{
 		X86ContextDebugISA("%d %8lld %x: ", self->pid,
 			asEmu(emu)->instructions, self->curr_eip);
-		x86_inst_dump(&self->inst, debug_file(x86_context_isa_debug_category));
+		X86InstDump(&self->inst, debug_file(x86_context_isa_debug_category));
 		X86ContextDebugISA("  (%d bytes)", self->inst.size);
 	}
 

@@ -262,8 +262,8 @@ void x86_isa_call_rm32_impl(X86Context *ctx)
 
 void x86_isa_cbw_impl(X86Context *ctx)
 {
-	unsigned short ax = (char) X86ContextLoadReg(ctx, x86_inst_reg_al);
-	X86ContextStoreReg(ctx, x86_inst_reg_ax, ax);
+	unsigned short ax = (char) X86ContextLoadReg(ctx, X86InstRegAl);
+	X86ContextStoreReg(ctx, X86InstRegAx, ax);
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
 }
@@ -282,7 +282,7 @@ void x86_isa_cdq_impl(X86Context *ctx)
 
 void x86_isa_cld_impl(X86Context *ctx)
 {
-	X86ContextClearFlag(ctx, x86_inst_flag_df);
+	X86ContextClearFlag(ctx, X86InstFlagDF);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
 }
@@ -316,7 +316,7 @@ void x86_isa_cmpxchg_rm32_r32_impl(X86Context *ctx)
 	__X86_ISA_ASM_END__
 
 	regs->eflags = flags;
-	X86ContextStoreReg(ctx, x86_inst_reg_eax, eax);
+	X86ContextStoreReg(ctx, X86InstRegEax, eax);
 	X86ContextStoreRm32(ctx, rm32);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_eax, x86_dep_rm32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
@@ -341,13 +341,13 @@ void x86_isa_cmpxchg8b_m64_impl(X86Context *ctx)
 
 	if (edx_eax == m64)
 	{
-		X86ContextSetFlag(ctx, x86_inst_flag_zf);
+		X86ContextSetFlag(ctx, X86InstFlagZF);
 		m64 = ((unsigned long long) ecx << 32) | ebx;
 		X86ContextStoreM64(ctx, m64);
 	}
 	else
 	{
-		X86ContextClearFlag(ctx, x86_inst_flag_zf);
+		X86ContextClearFlag(ctx, X86InstFlagZF);
 		regs->edx = m64 >> 32;
 		regs->eax = m64;
 	}
@@ -373,17 +373,17 @@ void x86_isa_cpuid_impl(X86Context *ctx)
 
 	case 0x0:
 
-		X86ContextStoreReg(ctx, x86_inst_reg_eax, 0x2);
-		X86ContextStoreReg(ctx, x86_inst_reg_ebx, 0x756e6547);
-		X86ContextStoreReg(ctx, x86_inst_reg_ecx, 0x6c65746e);
-		X86ContextStoreReg(ctx, x86_inst_reg_edx, 0x49656e69);
+		X86ContextStoreReg(ctx, X86InstRegEax, 0x2);
+		X86ContextStoreReg(ctx, X86InstRegEbx, 0x756e6547);
+		X86ContextStoreReg(ctx, X86InstRegEcx, 0x6c65746e);
+		X86ContextStoreReg(ctx, X86InstRegEdx, 0x49656e69);
 		break;
 
 	case 0x1:
 
-		X86ContextStoreReg(ctx, x86_inst_reg_eax, 0x00000f29);
-		X86ContextStoreReg(ctx, x86_inst_reg_ebx, 0x0102080b);
-		X86ContextStoreReg(ctx, x86_inst_reg_ecx, 0x00004400);
+		X86ContextStoreReg(ctx, X86InstRegEax, 0x00000f29);
+		X86ContextStoreReg(ctx, X86InstRegEbx, 0x0102080b);
+		X86ContextStoreReg(ctx, X86InstRegEcx, 0x00004400);
 
 		/* EDX register returns CPU features information. */
 		info = SETBITVALUE32(info, 31, 1);  /* PBE - Pend Brk En */
@@ -416,55 +416,55 @@ void x86_isa_cpuid_impl(X86Context *ctx)
 		info = SETBITVALUE32(info, 1, 1);  /* VME - Virtual-8086 Mode Enhancement */
 		info = SETBITVALUE32(info, 0, 1);  /* FPU - x87 FPU on Chip */
 
-		X86ContextStoreReg(ctx, x86_inst_reg_edx, info);
+		X86ContextStoreReg(ctx, X86InstRegEdx, info);
 		break;
 
 	case 0x2:
 
-		X86ContextStoreReg(ctx, x86_inst_reg_eax, 0);
-		X86ContextStoreReg(ctx, x86_inst_reg_ebx, 0);
-		X86ContextStoreReg(ctx, x86_inst_reg_ecx, 0);
-		X86ContextStoreReg(ctx, x86_inst_reg_edx, 0);
+		X86ContextStoreReg(ctx, X86InstRegEax, 0);
+		X86ContextStoreReg(ctx, X86InstRegEbx, 0);
+		X86ContextStoreReg(ctx, X86InstRegEcx, 0);
+		X86ContextStoreReg(ctx, X86InstRegEdx, 0);
 		break;
 
 	case 0x80000000:
 
-		X86ContextStoreReg(ctx, x86_inst_reg_eax, 0x80000004);
-		X86ContextStoreReg(ctx, x86_inst_reg_ebx, 0);
-		X86ContextStoreReg(ctx, x86_inst_reg_ecx, 0);
-		X86ContextStoreReg(ctx, x86_inst_reg_edx, 0);
+		X86ContextStoreReg(ctx, X86InstRegEax, 0x80000004);
+		X86ContextStoreReg(ctx, X86InstRegEbx, 0);
+		X86ContextStoreReg(ctx, X86InstRegEcx, 0);
+		X86ContextStoreReg(ctx, X86InstRegEdx, 0);
 		break;
 
 	case 0x80000001:
 
-		X86ContextStoreReg(ctx, x86_inst_reg_eax, 0);
-		X86ContextStoreReg(ctx, x86_inst_reg_ebx, 0);
-		X86ContextStoreReg(ctx, x86_inst_reg_ecx, 0);
-		X86ContextStoreReg(ctx, x86_inst_reg_edx, 0);
+		X86ContextStoreReg(ctx, X86InstRegEax, 0);
+		X86ContextStoreReg(ctx, X86InstRegEbx, 0);
+		X86ContextStoreReg(ctx, X86InstRegEcx, 0);
+		X86ContextStoreReg(ctx, X86InstRegEdx, 0);
 		break;
 
 	case 0x80000002:
 
-		X86ContextStoreReg(ctx, x86_inst_reg_eax, 0x20202020);
-		X86ContextStoreReg(ctx, x86_inst_reg_ebx, 0x20202020);
-		X86ContextStoreReg(ctx, x86_inst_reg_ecx, 0x20202020);
-		X86ContextStoreReg(ctx, x86_inst_reg_edx, 0x20202020);
+		X86ContextStoreReg(ctx, X86InstRegEax, 0x20202020);
+		X86ContextStoreReg(ctx, X86InstRegEbx, 0x20202020);
+		X86ContextStoreReg(ctx, X86InstRegEcx, 0x20202020);
+		X86ContextStoreReg(ctx, X86InstRegEdx, 0x20202020);
 		break;
 
 	case 0x80000003:
 
-		X86ContextStoreReg(ctx, x86_inst_reg_eax, 0x6e492020);
-		X86ContextStoreReg(ctx, x86_inst_reg_ebx, 0x286c6574);
-		X86ContextStoreReg(ctx, x86_inst_reg_ecx, 0x58202952);
-		X86ContextStoreReg(ctx, x86_inst_reg_edx, 0x286e6f65);
+		X86ContextStoreReg(ctx, X86InstRegEax, 0x6e492020);
+		X86ContextStoreReg(ctx, X86InstRegEbx, 0x286c6574);
+		X86ContextStoreReg(ctx, X86InstRegEcx, 0x58202952);
+		X86ContextStoreReg(ctx, X86InstRegEdx, 0x286e6f65);
 		break;
 
 	case 0x80000004:
 
-		X86ContextStoreReg(ctx, x86_inst_reg_eax, 0x20294d54);
-		X86ContextStoreReg(ctx, x86_inst_reg_ebx, 0x20555043);
-		X86ContextStoreReg(ctx, x86_inst_reg_ecx, 0x30382e32);
-		X86ContextStoreReg(ctx, x86_inst_reg_edx, 0x7a4847);
+		X86ContextStoreReg(ctx, X86InstRegEax, 0x20294d54);
+		X86ContextStoreReg(ctx, X86InstRegEbx, 0x20555043);
+		X86ContextStoreReg(ctx, X86InstRegEcx, 0x30382e32);
+		X86ContextStoreReg(ctx, X86InstRegEdx, 0x7a4847);
 		break;
 
 	default:
@@ -481,8 +481,8 @@ void x86_isa_cpuid_impl(X86Context *ctx)
 
 void x86_isa_cwde_impl(X86Context *ctx)
 {
-	unsigned int eax = (short) X86ContextLoadReg(ctx, x86_inst_reg_ax);
-	X86ContextStoreReg(ctx, x86_inst_reg_eax, eax);
+	unsigned int eax = (short) X86ContextLoadReg(ctx, X86InstRegAx);
+	X86ContextStoreReg(ctx, X86InstRegEax, eax);
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
 }
@@ -638,7 +638,7 @@ void x86_isa_div_rm8_impl(X86Context *ctx)
 	int skip_emulation;
 	int spec_mode;
 
-	unsigned short ax = X86ContextLoadReg(ctx, x86_inst_reg_ax);
+	unsigned short ax = X86ContextLoadReg(ctx, X86InstRegAx);
 	unsigned char rm8 = X86ContextLoadRm8(ctx);
 
 	if (!rm8) {
@@ -667,7 +667,7 @@ void x86_isa_div_rm8_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	X86ContextStoreReg(ctx, x86_inst_reg_ax, ax);
+	X86ContextStoreReg(ctx, X86InstRegAx, ax);
 
 	x86_uinst_new(ctx, x86_uinst_div, x86_dep_eax, x86_dep_rm8, 0, x86_dep_eax, 0, 0, 0);
 }
@@ -712,8 +712,8 @@ void x86_isa_div_rm32_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	X86ContextStoreReg(ctx, x86_inst_reg_eax, eax);
-	X86ContextStoreReg(ctx, x86_inst_reg_edx, edx);
+	X86ContextStoreReg(ctx, X86InstRegEax, eax);
+	X86ContextStoreReg(ctx, X86InstRegEdx, edx);
 
 	x86_uinst_new(ctx, x86_uinst_div, x86_dep_edx, x86_dep_eax, x86_dep_rm32, x86_dep_eax, x86_dep_edx, 0, 0);
 }
@@ -769,8 +769,8 @@ void x86_isa_idiv_rm32_impl(X86Context *ctx)
 		__X86_ISA_ASM_END__
 	}
 
-	X86ContextStoreReg(ctx, x86_inst_reg_eax, eax);
-	X86ContextStoreReg(ctx, x86_inst_reg_edx, edx);
+	X86ContextStoreReg(ctx, X86InstRegEax, eax);
+	X86ContextStoreReg(ctx, X86InstRegEdx, edx);
 
 	x86_uinst_new(ctx, x86_uinst_div, x86_dep_rm32, x86_dep_eax, 0, x86_dep_eax, x86_dep_edx, 0, 0);
 }
@@ -780,7 +780,7 @@ void x86_isa_imul_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned int eax = X86ContextLoadReg(ctx, x86_inst_reg_eax);
+	unsigned int eax = X86ContextLoadReg(ctx, X86InstRegEax);
 	unsigned int rm32 = X86ContextLoadRm32(ctx);
 	unsigned long flags = regs->eflags;
 	unsigned int edx;
@@ -802,8 +802,8 @@ void x86_isa_imul_rm32_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	X86ContextStoreReg(ctx, x86_inst_reg_eax, eax);
-	X86ContextStoreReg(ctx, x86_inst_reg_edx, edx);
+	X86ContextStoreReg(ctx, X86InstRegEax, eax);
+	X86ContextStoreReg(ctx, X86InstRegEdx, edx);
 	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_eax, x86_dep_edx, x86_dep_cf, x86_dep_of);
@@ -1146,7 +1146,7 @@ void x86_isa_leave_impl(X86Context *ctx)
 
 	X86ContextMemRead(ctx, regs->esp, 4, &value);
 	regs->esp += 4;
-	X86ContextStoreReg(ctx, x86_inst_reg_ebp, value);
+	X86ContextStoreReg(ctx, X86InstRegEbp, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_ebp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1240,7 +1240,7 @@ void x86_isa_mov_al_moffs8_impl(X86Context *ctx)
 	unsigned char value;
 
 	X86ContextMemRead(ctx, X86ContextMoffsAddress(ctx), 1, &value);
-	X86ContextStoreReg(ctx, x86_inst_reg_al, value);
+	X86ContextStoreReg(ctx, X86InstRegAl, value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, X86ContextMoffsAddress(ctx), 1, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
@@ -1252,7 +1252,7 @@ void x86_isa_mov_ax_moffs16_impl(X86Context *ctx)
 	unsigned short value;
 
 	X86ContextMemRead(ctx, X86ContextMoffsAddress(ctx), 2, &value);
-	X86ContextStoreReg(ctx, x86_inst_reg_ax, value);
+	X86ContextStoreReg(ctx, X86InstRegAx, value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, X86ContextMoffsAddress(ctx), 2, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
@@ -1264,7 +1264,7 @@ void x86_isa_mov_eax_moffs32_impl(X86Context *ctx)
 	unsigned int value;
 
 	X86ContextMemRead(ctx, X86ContextMoffsAddress(ctx), 4, &value);
-	X86ContextStoreReg(ctx, x86_inst_reg_eax, value);
+	X86ContextStoreReg(ctx, X86InstRegEax, value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, X86ContextMoffsAddress(ctx), 4, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
@@ -1273,7 +1273,7 @@ void x86_isa_mov_eax_moffs32_impl(X86Context *ctx)
 
 void x86_isa_mov_moffs8_al_impl(X86Context *ctx)
 {
-	unsigned char value = X86ContextLoadReg(ctx, x86_inst_reg_al);
+	unsigned char value = X86ContextLoadReg(ctx, X86InstRegAl);
 	X86ContextMemWrite(ctx, X86ContextMoffsAddress(ctx), 1, &value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1283,7 +1283,7 @@ void x86_isa_mov_moffs8_al_impl(X86Context *ctx)
 
 void x86_isa_mov_moffs16_ax_impl(X86Context *ctx)
 {
-	unsigned short value = X86ContextLoadReg(ctx, x86_inst_reg_ax);
+	unsigned short value = X86ContextLoadReg(ctx, X86InstRegAx);
 	X86ContextMemWrite(ctx, X86ContextMoffsAddress(ctx), 2, &value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1293,7 +1293,7 @@ void x86_isa_mov_moffs16_ax_impl(X86Context *ctx)
 
 void x86_isa_mov_moffs32_eax_impl(X86Context *ctx)
 {
-	unsigned int value = X86ContextLoadReg(ctx, x86_inst_reg_eax);
+	unsigned int value = X86ContextLoadReg(ctx, X86InstRegEax);
 	X86ContextMemWrite(ctx, X86ContextMoffsAddress(ctx), 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1438,7 +1438,7 @@ void x86_isa_mul_rm32_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	unsigned int eax = X86ContextLoadReg(ctx, x86_inst_reg_eax);
+	unsigned int eax = X86ContextLoadReg(ctx, X86InstRegEax);
 	unsigned int rm32 = X86ContextLoadRm32(ctx);
 	unsigned long flags = regs->eflags;
 	unsigned int edx;
@@ -1460,8 +1460,8 @@ void x86_isa_mul_rm32_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	X86ContextStoreReg(ctx, x86_inst_reg_eax, eax);
-	X86ContextStoreReg(ctx, x86_inst_reg_edx, edx);
+	X86ContextStoreReg(ctx, X86InstRegEax, eax);
+	X86ContextStoreReg(ctx, X86InstRegEdx, edx);
 	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_edx, x86_dep_eax, x86_dep_of, x86_dep_cf);
@@ -1705,7 +1705,7 @@ void x86_isa_push_imm8_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value = (char) ctx->inst.imm.b;
 
-	X86ContextStoreReg(ctx, x86_inst_reg_esp, regs->esp - 4);
+	X86ContextStoreReg(ctx, X86InstRegEsp, regs->esp - 4);
 	X86ContextMemWrite(ctx, regs->esp, 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
@@ -1719,7 +1719,7 @@ void x86_isa_push_imm32_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value = ctx->inst.imm.d;
 
-	X86ContextStoreReg(ctx, x86_inst_reg_esp, regs->esp - 4);
+	X86ContextStoreReg(ctx, X86InstRegEsp, regs->esp - 4);
 	X86ContextMemWrite(ctx, regs->esp, 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
@@ -1733,7 +1733,7 @@ void x86_isa_push_rm32_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value = X86ContextLoadRm32(ctx);
 
-	X86ContextStoreReg(ctx, x86_inst_reg_esp, regs->esp - 4);
+	X86ContextStoreReg(ctx, X86InstRegEsp, regs->esp - 4);
 	X86ContextMemWrite(ctx, regs->esp, 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
@@ -1747,7 +1747,7 @@ void x86_isa_push_ir32_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 	unsigned int value = X86ContextLoadIR32(ctx);
 
-	X86ContextStoreReg(ctx, x86_inst_reg_esp, regs->esp - 4);
+	X86ContextStoreReg(ctx, X86InstRegEsp, regs->esp - 4);
 	X86ContextMemWrite(ctx, regs->esp, 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
@@ -1760,7 +1760,7 @@ void x86_isa_pushf_impl(X86Context *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	X86ContextStoreReg(ctx, x86_inst_reg_esp, regs->esp - 4);
+	X86ContextStoreReg(ctx, X86InstRegEsp, regs->esp - 4);
 	X86ContextMemWrite(ctx, regs->esp, 4, &regs->eflags);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
@@ -1785,8 +1785,8 @@ void x86_isa_rdtsc_impl(X86Context *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	X86ContextStoreReg(ctx, x86_inst_reg_edx, edx);
-	X86ContextStoreReg(ctx, x86_inst_reg_eax, eax);
+	X86ContextStoreReg(ctx, X86InstRegEdx, edx);
+	X86ContextStoreReg(ctx, X86InstRegEax, eax);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_eax, x86_dep_edx, 0, 0);
 }
@@ -1847,7 +1847,7 @@ void x86_isa_sahf_impl(X86Context *ctx)
 	struct x86_regs_t *regs = ctx->regs;
 
 	regs->eflags &= ~0xff;
-	regs->eflags |= X86ContextLoadReg(ctx, x86_inst_reg_ah);
+	regs->eflags |= X86ContextLoadReg(ctx, X86InstRegAh);
 	regs->eflags &= ~0x28;
 	regs->eflags |= 0x2;
 
@@ -1899,7 +1899,7 @@ void x86_isa_shld_rm16_r16_cl_impl(X86Context *ctx)
 
 	unsigned short rm16 = X86ContextLoadRm16(ctx);
 	unsigned short r16 = X86ContextLoadR16(ctx);
-	unsigned char cl = X86ContextLoadReg(ctx, x86_inst_reg_cl);
+	unsigned char cl = X86ContextLoadReg(ctx, X86InstRegCl);
 	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
@@ -1966,7 +1966,7 @@ void x86_isa_shld_rm32_r32_cl_impl(X86Context *ctx)
 
 	unsigned int rm32 = X86ContextLoadRm32(ctx);
 	unsigned int r32 = X86ContextLoadR32(ctx);
-	unsigned char cl = X86ContextLoadReg(ctx, x86_inst_reg_cl);
+	unsigned char cl = X86ContextLoadReg(ctx, X86InstRegCl);
 	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
@@ -2033,7 +2033,7 @@ void x86_isa_shrd_rm32_r32_cl_impl(X86Context *ctx)
 
 	unsigned int rm32 = X86ContextLoadRm32(ctx);
 	unsigned int r32 = X86ContextLoadR32(ctx);
-	unsigned char cl = X86ContextLoadReg(ctx, x86_inst_reg_cl);
+	unsigned char cl = X86ContextLoadReg(ctx, X86InstRegCl);
 	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
@@ -2063,7 +2063,7 @@ void x86_isa_shrd_rm32_r32_cl_impl(X86Context *ctx)
 
 void x86_isa_std_impl(X86Context *ctx)
 {
-	X86ContextSetFlag(ctx, x86_inst_flag_df);
+	X86ContextSetFlag(ctx, X86InstFlagDF);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
 }
@@ -2141,9 +2141,9 @@ void x86_isa_xchg_ir16_ax_impl(X86Context *ctx)
 {
 	unsigned short ax, ir16;
 
-	ax = X86ContextLoadReg(ctx, x86_inst_reg_ax);
+	ax = X86ContextLoadReg(ctx, X86InstRegAx);
 	ir16 = X86ContextLoadIR16(ctx);
-	X86ContextStoreReg(ctx, x86_inst_reg_ax, ir16);
+	X86ContextStoreReg(ctx, X86InstRegAx, ir16);
 	X86ContextStoreIR16(ctx, ax);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_ir16, x86_dep_eax, 0, x86_dep_ir16, x86_dep_eax, 0, 0);
@@ -2154,9 +2154,9 @@ void x86_isa_xchg_ir32_eax_impl(X86Context *ctx)
 {
 	unsigned int eax, ir32;
 
-	eax = X86ContextLoadReg(ctx, x86_inst_reg_eax);
+	eax = X86ContextLoadReg(ctx, X86InstRegEax);
 	ir32 = X86ContextLoadIR32(ctx);
-	X86ContextStoreReg(ctx, x86_inst_reg_eax, ir32);
+	X86ContextStoreReg(ctx, X86InstRegEax, ir32);
 	X86ContextStoreIR32(ctx, eax);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_ir32, x86_dep_eax, 0, x86_dep_ir32, x86_dep_eax, 0, 0);

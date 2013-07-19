@@ -285,9 +285,9 @@ static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index, X86Cont
 	/* Emit 'effaddr' */
 	new_uinst = x86_uinst_create();
 	new_uinst->opcode = x86_uinst_effaddr;
-	new_uinst->idep[0] = ctx->inst.segment ? ctx->inst.segment - x86_inst_reg_es + x86_dep_es : x86_dep_none;
-	new_uinst->idep[1] = ctx->inst.ea_base ? ctx->inst.ea_base - x86_inst_reg_eax + x86_dep_eax : x86_dep_none;
-	new_uinst->idep[2] = ctx->inst.ea_index ? ctx->inst.ea_index - x86_inst_reg_eax + x86_dep_eax : x86_dep_none;
+	new_uinst->idep[0] = ctx->inst.segment ? ctx->inst.segment - X86InstRegEs + x86_dep_es : x86_dep_none;
+	new_uinst->idep[1] = ctx->inst.ea_base ? ctx->inst.ea_base - X86InstRegEax + x86_dep_eax : x86_dep_none;
+	new_uinst->idep[2] = ctx->inst.ea_index ? ctx->inst.ea_index - X86InstRegEax + x86_dep_eax : x86_dep_none;
 	new_uinst->odep[0] = x86_dep_ea;
 	list_add(x86_uinst_list, new_uinst);
 }
@@ -313,19 +313,19 @@ static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index, X86Context
 	case x86_dep_easeg:
 
 		uinst->dep[index] = ctx->inst.segment ? ctx->inst.segment
-			- x86_inst_reg_es + x86_dep_es : x86_dep_none;
+			- X86InstRegEs + x86_dep_es : x86_dep_none;
 		break;
 
 	case x86_dep_eabas:
 
 		uinst->dep[index] = ctx->inst.ea_base ? ctx->inst.ea_base
-			- x86_inst_reg_eax + x86_dep_eax : x86_dep_none;
+			- X86InstRegEax + x86_dep_eax : x86_dep_none;
 		break;
 
 	case x86_dep_eaidx:
 
 		uinst->dep[index] = ctx->inst.ea_index ? ctx->inst.ea_index
-			- x86_inst_reg_eax + x86_dep_eax : x86_dep_none;
+			- X86InstRegEax + x86_dep_eax : x86_dep_none;
 		break;
 
 	/* If we reached this point, 'rmXXX' dependences are actually registers.

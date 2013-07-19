@@ -181,7 +181,7 @@ static struct x86_uop_t *X86ThreadFetchInst(X86Thread *self, int fetch_trace_cac
 			/* Macro-instruction name */
 			if (!uinst_index)
 			{
-				x86_inst_dump_buf(&ctx->inst, inst_name, sizeof inst_name);
+				X86InstDumpBuf(&ctx->inst, inst_name, sizeof inst_name);
 				str_printf(&str_ptr, &str_size, " asm=\"%s\"", inst_name);
 			}
 

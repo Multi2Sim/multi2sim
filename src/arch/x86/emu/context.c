@@ -262,8 +262,8 @@ void X86ContextExecute(X86Context *self)
 	mem->safe = mem_safe_mode;
 
 	/* Disassemble */
-	x86_inst_decode(&self->inst, regs->eip, buffer_ptr);
-	if (self->inst.opcode == x86_inst_opcode_invalid && !spec_mode)
+	X86InstDecode(&self->inst, regs->eip, buffer_ptr);
+	if (self->inst.opcode == X86InstOpcodeInvalid && !spec_mode)
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)",
 			regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 

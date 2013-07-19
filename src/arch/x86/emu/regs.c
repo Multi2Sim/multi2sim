@@ -83,13 +83,13 @@ void x86_regs_dump(struct x86_regs_t *regs, FILE *f)
 	fprintf(f, "  eip=%08x\n", regs->eip);
 	fprintf(f, "  flags=%04x (cf=%d  pf=%d  af=%d  zf=%d  sf=%d  df=%d  of=%d)\n",
 		regs->eflags,
-		(regs->eflags & (1 << x86_inst_flag_cf)) > 0,
-		(regs->eflags & (1 << x86_inst_flag_pf)) > 0,
-		(regs->eflags & (1 << x86_inst_flag_af)) > 0,
-		(regs->eflags & (1 << x86_inst_flag_zf)) > 0,
-		(regs->eflags & (1 << x86_inst_flag_sf)) > 0,
-		(regs->eflags & (1 << x86_inst_flag_df)) > 0,
-		(regs->eflags & (1 << x86_inst_flag_of)) > 0);
+		(regs->eflags & (1 << X86InstFlagCF)) > 0,
+		(regs->eflags & (1 << X86InstFlagPF)) > 0,
+		(regs->eflags & (1 << X86InstFlagAF)) > 0,
+		(regs->eflags & (1 << X86InstFlagZF)) > 0,
+		(regs->eflags & (1 << X86InstFlagSF)) > 0,
+		(regs->eflags & (1 << X86InstFlagDF)) > 0,
+		(regs->eflags & (1 << X86InstFlagOF)) > 0);
 	
 	/* Floating-point stack */
 	fprintf(f, "  fpu_stack (last=top): ");
