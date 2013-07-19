@@ -37,6 +37,9 @@ struct config_t;
 
 CLASS_BEGIN(X86Emu, Emu)
 
+	/* Associated disassembler */
+	X86Asm *as;
+
 	/* PID assignment */
 	int current_pid;
 
@@ -90,7 +93,7 @@ CLASS_BEGIN(X86Emu, Emu)
 CLASS_END(X86Emu)
 
 
-void X86EmuCreate(X86Emu *self);
+void X86EmuCreate(X86Emu *self, X86Asm *as);
 void X86EmuDestroy(X86Emu *self);
 
 int X86EmuRun(Emu *self);
@@ -119,10 +122,6 @@ extern long long x86_emu_max_inst;
 extern char x86_emu_last_inst_bytes[20];
 extern int x86_emu_last_inst_size;
 extern int x86_emu_process_prefetch_hints;
-
-void x86_emu_init(void);
-void x86_emu_done(void);
-
 
 #endif
 

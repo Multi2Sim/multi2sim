@@ -18,6 +18,7 @@
  */
 
 
+#include <arch/x86/emu/emu.h>
 #include <driver/opencl/opencl.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
@@ -152,9 +153,7 @@ int SIEmuRun(Emu *self)
 
 	/* If there is not more work groups to run, let driver know */
 	if (!list_count(emu->waiting_work_groups))
-	{
-		opencl_si_request_work();
-	}
+		opencl_si_request_work(x86_emu);
 
 	/* Still emulating */
 	return TRUE;
