@@ -25,6 +25,16 @@ struct cube_t
 	struct list_t *list; /* each int *, allocated 2 * dims ints. */
 };
 
+struct stop_watch_t
+{
+	long long total;
+	long long start;
+};
+
+void stop_watch_new_interval(struct stop_watch_t *sw, long long now);
+long long stop_watch_done(struct stop_watch_t *sw);
+long long stop_watch_all(struct stop_watch_t *sw, long long now);
+
 struct cube_t *cube_init(int dims, const unsigned int *size);
 void cube_remove_region(struct cube_t *cube, const unsigned int *start, const unsigned int *size);
 void cube_destroy(struct cube_t *cube);
@@ -66,6 +76,7 @@ unsigned int convert_fraction(unsigned int num, unsigned int den, unsigned int n
 
 void shape_local_size(unsigned int work_dim, size_t total, const size_t *global, size_t *local);
 size_t get_factor(size_t *num);
+unsigned int round_up_not_more(unsigned int value, unsigned int factor, unsigned int max);
 
 #ifdef __cplusplus
 }
