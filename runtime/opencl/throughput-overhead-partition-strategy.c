@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <math.h>
 #include "throughput-overhead-partition-strategy.h"
 #include "partition-util.h"
 
@@ -9,132 +11,178 @@ static int to_partition_times = 3;
 struct to_device_info_t
 {
 	long long overhead;
-	long long start;
-	long long total_time;
-	size_t groups_running;
-	size_t groups_done;
-	int times;
-
+	struct stop_watch_t time;
+	unsigned int num_planes_done;
+	unsigned int num_planes_running;
+	int num_launches;
 };
+
 
 struct to_partition_info_t
 {
-	int num_devices;
+	struct partition_info_t *part;
 	struct to_device_info_t *devices;
-	unsigned int *groups;
-	unsigned int dims;
 	unsigned int part_dim;
-	int max_invokes;
-	int num_invokes;
-	size_t num_done;
+	int num_launches_left;
+	unsigned int num_planes_assigned;
+	unsigned int groups_per_plane;
 };
 
 
-void *throughput_overhead_strategy_create(int num_devices, unsigned int dims, const unsigned int *groups)
+void to_partition_get_overheads(int num_devices, struct to_device_info_t *devices)
 {
-	int i;
 	const char *overhead_data;
 	unsigned int *overheads;
+	int i;
 
-	struct to_partition_info_t *info = (struct to_partition_info_t *)calloc(1, sizeof (struct to_partition_info_t));
-	info->devices = (struct to_device_info_t *)calloc(num_devices, sizeof (struct to_device_info_t));
-	info->groups = (unsigned int *)calloc(dims, sizeof (unsigned int));
-	memcpy(info->groups, groups, dims * sizeof (unsigned int));
-	
 	overhead_data = getenv(M2S_OPENCL_DEVICE_OVERHEAD_NS);
-
 	overheads = (unsigned int *)calloc(num_devices, sizeof (unsigned int)); /* zero-fill */
 	if (overhead_data) /* keep overheds 0 by default */
 		proportions_from_string(overhead_data, num_devices, overheads);	
 
 	/* populate overheads for devices */
 	for (i = 0; i < num_devices; i++)
-		info->devices[i].overhead = overheads[i];
+		devices[i].overhead = overheads[i];
 
 	free(overheads);
+}
+
+
+void *throughput_overhead_strategy_create(int num_devices, unsigned int dims, const unsigned int *groups)
+{
+	int i;
+
+	struct to_partition_info_t *info = (struct to_partition_info_t *)calloc(1, sizeof (struct to_partition_info_t));
+	info->part = partition_info_create(num_devices, dims, groups);
+	info->devices = (struct to_device_info_t *)calloc(num_devices, sizeof (struct to_device_info_t));
+	
+
+	to_partition_get_overheads(num_devices, info->devices);
 
 	/* determine which dimension to partition */
 	for (i = 1; i < dims; i++)
 		if (groups[i] >= groups[info->part_dim])
 			info->part_dim = i;
 
-	info->max_invokes = num_devices * to_partition_times;
-	
+	/* now that it's calculated, how many groups per plane are there? */
+	info->groups_per_plane = 1;
+	for (i = 0; i < dims; i++)
+		if (i != info->part_dim)
+			info->groups_per_plane *= groups[i];
+
+	info->num_launches_left = num_devices * to_partition_times;
+		
 	return info;
 }
+
+
+float to_get_throughput(struct to_device_info_t *dev, struct to_device_info_t *safe, long long now)
+{
+	/* no completed work, estimate throughput */
+	if (dev->num_planes_done == 0)
+	{
+		/* no scheduled work, estimate by copying 'safe' device rate */
+		if (dev->num_planes_running == 0)
+			return to_get_throughput(safe, NULL, now);
+		else
+			return (float)dev->num_planes_running / (now - dev->time.start);
+	}
+	else
+		return (float)dev->num_planes_done / dev->time.total;
+
+}
+
+unsigned int to_partition_determine_planes(struct to_partition_info_t *info, struct to_device_info_t *device, int desired_groups, long long now)
+{
+	unsigned int num_planes;
+	unsigned int num_planes_left = info->part->groups[info->part_dim] - info->num_planes_assigned;
+	int i;
+
+	if (device->num_launches == 0)
+	{
+		num_planes = round_up_not_more(
+			desired_groups, 
+			info->groups_per_plane, 
+			info->groups_per_plane * num_planes_left) / info->groups_per_plane;
+	}
+	else
+	{
+		unsigned int num_planes_left = info->part->groups[info->part_dim] - info->num_planes_assigned;
+		unsigned int segments_left;
+		unsigned int num_planes_allocatable;
+
+		if (info->num_launches_left < info->part->num_devices)
+			segments_left = 1;
+		else
+			segments_left = info->num_launches_left / info->part->num_devices;
+
+		num_planes_allocatable = convert_fraction(1, segments_left, num_planes_left);
+
+		float device_throughput;
+		float total_throughput = 0;
+		for (i = 0; i < info->part->num_devices; i++)
+		{
+			struct to_device_info_t *dev = info->devices + i;
+			float cur_throughput = to_get_throughput(dev, device, now);
+			
+			if (dev == device)
+				device_throughput = cur_throughput;
+			total_throughput += cur_throughput;
+		}
+		return ceil(device_throughput * num_planes_allocatable / total_throughput);
+	}
+	printf("For device: %d, %d planes.\n", device - info->devices, num_planes);
+	return num_planes;
+}
+
 
 int throughput_overhead_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
 {
 	int i;
-	unsigned int job;
+	unsigned int num_planes;
+	long long now = get_time();
 	struct to_partition_info_t *info = (struct to_partition_info_t *)inst;
 	struct to_device_info_t *device = info->devices + id;
-	unsigned int groups_left = info->groups[info->part_dim] - info->num_done;
 
 	/* we're only going to partition down one dimension */
-	unsigned int size = 1;
-	for (i = 0; i < info->dims; i++)
+	for (i = 0; i < info->part->dims; i++)
 	{
 		if (i != info->part_dim)
 		{
 			group_offset[i] = 0;
-			group_count[i] = info->groups[i];
-			size *= group_count[i];
+			group_count[i] = info->part->groups[i];
 		}
 	}
+	group_offset[info->part_dim] = info->num_planes_assigned; /* just start where we left off */
 	
+	/* record the effects of the last group */
+	stop_watch_new_interval(&device->time, now);
+	device->num_planes_done += device->num_planes_running;
+	device->num_planes_running = 0;
+
+	num_planes = to_partition_determine_planes(info, device, desired_groups, now);
 
 	/* this is the first time for this device */
-	if (device->times == 0) 		
+
+
+	if (num_planes != 0)
 	{
-		job = closest_multiple_not_more(size, desired_groups, size * groups_left);
+		group_count[info->part_dim] = num_planes;
+		device->num_planes_running = num_planes;
+		device->num_launches++;
+		info->num_planes_assigned += num_planes;
+		if (info->num_launches_left > 1)
+			info->num_launches_left--;
+		return 1;
 	}
 	else
-	{
-		long long now = get_time();
-		device->times++;
-		device->groups_done += device->groups_running;
-		device->total_time += now - device->start;
-		
-
-		/* calculate total throughput */
-		double total_rate = 0;
-		double self_rate = 0;
-
-		for (i = 0; i < info->num_devices; i++)
-		{
-			struct to_device_info_t *d = info->devices + i;
-			double rate;
-			if (d->times > 0)
-				rate = (double)d->groups_done / (d->total_time - d->times * d->overhead);
-			else
-				rate = (double)d->groups_running / (now - d->start);
-
-			total_rate += rate;
-			if (i == id)
-				self_rate = rate;
-		}
-
-		unsigned int consider = groups_left * (info->max_invokes - info->num_invokes) / info->max_invokes;
-		job = convert_fraction(self_rate, total_rate, consider);
-		job = closest_multiple_not_more(size, job, size * groups_left);
-		
-	}
-
-	group_count[info->part_dim] = job;
-	group_offset[info->part_dim] = info->num_done;
-	info->num_done += job;
-	device->groups_running = job;
-	info->num_invokes++;
-
-	device->start = get_time();
-	return 1;
+		return 0;
 }
 
 void throughput_overhead_strategy_destroy(void *inst)
 {
 	struct to_partition_info_t *info = (struct to_partition_info_t *)inst;
-	free(info->groups);
+	partition_info_free(info->part);
 	free(info->devices);
 	free(info);
 }
