@@ -131,7 +131,6 @@ unsigned int to_partition_determine_planes(struct to_partition_info_t *info, str
 		}
 		return ceil(device_throughput * num_planes_allocatable / total_throughput);
 	}
-	printf("For device: %d, %d planes.\n", device - info->devices, num_planes);
 	return num_planes;
 }
 
