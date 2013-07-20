@@ -60,6 +60,15 @@ unsigned int closest_multiple_not_more(unsigned int value, unsigned int factor, 
 		return MIN(factor, max);
 }
 
+unsigned int round_up_not_more(unsigned int value, unsigned int factor, unsigned int max)
+{
+	unsigned int rem = value % factor;
+	if (rem != 0)
+		return MIN(value + factor - rem, max);
+	else
+		return MIN(value, max);
+}
+
 
 struct cube_t *cube_init(int dims, const unsigned int *size)
 {
@@ -533,4 +542,11 @@ void shape_local_size(unsigned int work_dim, size_t total, const size_t *global,
 				dim_done++;
 		}
 	}
+}
+
+void stop_watch_new_interval(struct stop_watch_t *sw, long long now)
+{
+	if (sw->start != 0)
+		sw->total += now - sw->start;
+	sw->start = now;
 }
