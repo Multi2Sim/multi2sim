@@ -129,7 +129,11 @@ unsigned int to_partition_determine_planes(struct to_partition_info_t *info, str
 				device_throughput = cur_throughput;
 			total_throughput += cur_throughput;
 		}
-		return ceil(device_throughput * num_planes_allocatable / total_throughput);
+		float f = device_throughput * num_planes_allocatable / total_throughput;
+		if ((int)f < f)
+			return f + 1;
+		else
+			return f;
 	}
 	return num_planes;
 }

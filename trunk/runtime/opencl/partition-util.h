@@ -78,6 +78,16 @@ void shape_local_size(unsigned int work_dim, size_t total, const size_t *global,
 size_t get_factor(size_t *num);
 unsigned int round_up_not_more(unsigned int value, unsigned int factor, unsigned int max);
 
+unsigned int pick_partition_dimension(unsigned int dims, const unsigned int *groups);
+
+void populate_partition_info(
+	unsigned int start, 
+	unsigned int size, 
+	unsigned int part_dim, 
+	struct partition_info_t *info, 
+	unsigned int *group_offset, 
+	unsigned int *group_count);
+
 #ifdef __cplusplus
 }
 #endif

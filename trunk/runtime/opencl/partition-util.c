@@ -30,6 +30,43 @@ static unsigned int primes[] =
 947, 953, 967, 971, 977, 983, 991, 997, 1009, 1013, 
 1019, 1021, 1031};
 
+void populate_partition_info(
+	unsigned int start, 
+	unsigned int size, 
+	unsigned int part_dim, 
+	struct partition_info_t *info, 
+	unsigned int *group_offset, 
+	unsigned int *group_count)
+{
+	unsigned int i;
+
+	for (i = 0; i < info->dims; i++)
+	{
+		if (i != part_dim)
+		{
+			group_offset[i] = 0;
+			group_count[i] = info->groups[i];
+		}
+		else
+		{
+			group_offset[i] = start;
+			group_count[i] = size;
+		}
+	}
+}
+
+unsigned int pick_partition_dimension(unsigned int dims, const unsigned int *groups)
+{
+	unsigned int chosen = 0;
+	unsigned int i;
+	
+	for (i = 1; i < dims; i++)
+		if (groups[i] >= groups[chosen])
+			chosen = i;
+
+	return chosen;
+}
+
 struct partition_info_t *partition_info_create(int num_devices, unsigned int dims, const unsigned int *groups)
 {
 	struct partition_info_t *info = (struct partition_info_t *)calloc(1, sizeof (struct partition_info_t));

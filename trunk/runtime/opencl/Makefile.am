@@ -117,7 +117,13 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	x86-device-wi.s \
 	\
 	throughput-overhead-partition-strategy.c \
-	throughput-overhead-partition-strategy.h
+	throughput-overhead-partition-strategy.h \
+	\
+	block-by-block-partition-strategy.c \
+	block-by-block-partition-strategy.h \
+	\
+	numa-partition-strategy.c \
+	numa-partition-strategy.h
 
 AM_CFLAGS = -m32 -D_GNU_SOURCE
 AM_CCASFLAGS = -m32
