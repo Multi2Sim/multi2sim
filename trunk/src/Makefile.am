@@ -15,6 +15,7 @@ AM_LIBTOOLFLAGS = --preserve-dup-deps
 INCLUDES = @M2S_INCLUDES@
 
 LDADD = \
+	$(top_builddir)/src/driver/common/libcommon.a \
 	$(top_builddir)/src/driver/cuda/libcuda.a \
 	$(top_builddir)/src/driver/glu/libglu.a \
 	$(top_builddir)/src/driver/glut/libglut.a \
