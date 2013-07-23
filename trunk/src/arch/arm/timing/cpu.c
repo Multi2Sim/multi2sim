@@ -26,8 +26,6 @@
  * Class 'ARMCpu'
  */
 
-CLASS_IMPLEMENTATION(ARMCpu);
-
 void ARMCpuCreate(ARMCpu *self)
 {
 	/* Parent */

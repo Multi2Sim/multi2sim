@@ -419,9 +419,6 @@ void X86CpuReadConfig(void)
  * Class 'X86Cpu'
  */
 
-CLASS_IMPLEMENTATION(X86Cpu);
-
-
 void X86CpuCreate(X86Cpu *self, X86Emu *emu)
 {
 	X86Core *core;

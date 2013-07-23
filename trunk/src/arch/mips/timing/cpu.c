@@ -25,8 +25,6 @@
  * Class 'MIPSCpu'
  */
 
-CLASS_IMPLEMENTATION(MIPSCpu);
-
 void MIPSCpuCreate(MIPSCpu *self)
 {
 	/* Parent */

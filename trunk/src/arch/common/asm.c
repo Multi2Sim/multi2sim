@@ -30,9 +30,6 @@
  */
 
 
-CLASS_IMPLEMENTATION(Asm);
-
-
 void AsmCreate(Asm *self)
 {
 }

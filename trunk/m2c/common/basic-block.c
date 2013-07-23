@@ -28,9 +28,6 @@
  * Class 'BasicBlock'
  */
 
-CLASS_IMPLEMENTATION(BasicBlock);
-
-
 void BasicBlockCreate(BasicBlock *self, LeafNode *node)
 {
 	/* Check that 'node' doesn't have a basic block */

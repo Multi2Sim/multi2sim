@@ -31,8 +31,6 @@
  * Class 'LeafNode'
  */
 
-CLASS_IMPLEMENTATION(LeafNode)
-
 void LeafNodeCreate(LeafNode *self, char *name)
 {
 	/* Parent */
@@ -65,9 +63,6 @@ void LeafNodeDump(Object *self, FILE *f)
 /*
  * Class 'AbstractNode'
  */
-
-CLASS_IMPLEMENTATION(AbstractNode)
-
 
 struct str_map_t abstract_node_region_map =
 {
@@ -166,9 +161,6 @@ void AbstractNodeCompare(Node *self, Node *node2)
 /*
  * Class 'Node'
  */
-
-CLASS_IMPLEMENTATION(Node);
-
 
 struct str_map_t node_kind_map =
 {

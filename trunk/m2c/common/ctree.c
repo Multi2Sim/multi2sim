@@ -1005,9 +1005,6 @@ static void CTreeTraverseNode(CTree *self, Node *node,
  * Public Functions
  */
 
-CLASS_IMPLEMENTATION(CTree);
-
-
 void CTreeCreate(CTree *self, char *name)
 {
 	/* No anonymous */

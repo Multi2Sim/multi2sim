@@ -36,8 +36,6 @@
  * Class 'FrmEmu'
  */
 
-CLASS_IMPLEMENTATION(FrmEmu);
-
 void FrmEmuCreate(FrmEmu *self)
 {
 	/* Parent */

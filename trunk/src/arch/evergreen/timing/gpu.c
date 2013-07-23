@@ -616,8 +616,6 @@ void evg_gpu_uop_trash_add(struct evg_uop_t *uop)
  * Class 'EvgGpu'
  */
 
-CLASS_IMPLEMENTATION(EvgGpu);
-
 void EvgGpuCreate(EvgGpu *self)
 {
 	struct evg_compute_unit_t *compute_unit;
