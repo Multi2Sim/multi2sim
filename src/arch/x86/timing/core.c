@@ -32,8 +32,6 @@
  * Class 'X86Core'
  */
 
-CLASS_IMPLEMENTATION(X86Core);
-
 void X86CoreCreate(X86Core *self, X86Cpu *cpu)
 {
 	int i;

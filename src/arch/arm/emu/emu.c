@@ -33,9 +33,6 @@
  * Class 'ARMEmu'
  */
 
-CLASS_IMPLEMENTATION(ARMEmu);
-
-
 void ARMEmuCreate(ARMEmu *self)
 {
 	/* Parent */

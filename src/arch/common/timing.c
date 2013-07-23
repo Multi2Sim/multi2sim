@@ -33,9 +33,6 @@
  */
 
 
-CLASS_IMPLEMENTATION(Timing);
-
-
 void TimingCreate(Timing *self)
 {
 	/* Virtual functions */

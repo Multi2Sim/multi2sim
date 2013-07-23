@@ -39,8 +39,6 @@
  * Class 'SIEmu'
  */
 
-CLASS_IMPLEMENTATION(SIEmu);
-
 void SIEmuCreate(SIEmu *self)
 {
 	/* Parent */

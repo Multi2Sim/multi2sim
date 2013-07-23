@@ -1244,8 +1244,6 @@ void si_gpu_dump_report(void)
  * Class 'SIGpu'
  */
 
-CLASS_IMPLEMENTATION(SIGpu);
-
 void SIGpuCreate(SIGpu *self)
 {
 	struct si_compute_unit_t *compute_unit;

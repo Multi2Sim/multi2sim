@@ -42,8 +42,6 @@
  * Class 'EvgEmu'
  */
 
-CLASS_IMPLEMENTATION(EvgEmu);
-
 void EvgEmuCreate(EvgEmu *self)
 {
 	/* Parent */

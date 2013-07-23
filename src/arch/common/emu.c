@@ -29,9 +29,6 @@
  */
 
 
-CLASS_IMPLEMENTATION(Emu);
-
-
 void EmuCreate(Emu *self, char *name)
 {
 	/* Initialize */

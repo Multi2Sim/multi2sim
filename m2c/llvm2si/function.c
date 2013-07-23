@@ -38,8 +38,6 @@
  * Class 'Llvm2siFunctionArg'
  */
 
-CLASS_IMPLEMENTATION(Llvm2siFunctionArg);
-
 /* Return a Southern Islands argument type from an LLVM type. */
 static enum si_arg_data_type_t Llvm2siFunctionArgGetDataType(LLVMTypeRef lltype)
 {
@@ -160,9 +158,6 @@ void Llvm2siFunctionArgDump(Object *self, FILE *f)
 /*
  * Class 'Llvm2siFunctionUAV'
  */
-
-CLASS_IMPLEMENTATION(Llvm2siFunctionUAV);
-
 
 void Llvm2siFunctionUAVCreate(Llvm2siFunctionUAV *self)
 {
@@ -328,8 +323,6 @@ static void Llvm2siFunctionDumpData(Llvm2siFunction *self, FILE *f)
 /*
  * Public Functions
  */
-
-CLASS_IMPLEMENTATION(Llvm2siFunction);
 
 void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction)
 {
