@@ -192,6 +192,7 @@ static void opengl_si_create_buffer_desc(unsigned int base_addr,
 	assert(data_format != SI_BUF_DESC_DATA_FMT_INVALID);
 
 	buffer_desc->base_addr = base_addr;
+	buffer_desc->stride = elem_size;
 	buffer_desc->num_format = num_format;
 	buffer_desc->data_format = data_format;
 	buffer_desc->elem_size = elem_size;
