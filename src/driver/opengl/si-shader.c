@@ -449,7 +449,6 @@ void opengl_si_shader_setup_ndrange_constant_buffers(
 	/* FIXME Offset in the global buffer where data segment exists */
 	/* FIXME Offset in buffer for printf support */
 	/* FIXME Size of the printf buffer */
-	
 }
 
 void opengl_si_shader_setup_ndrange_inputs(struct opengl_si_shader_t *shdr,

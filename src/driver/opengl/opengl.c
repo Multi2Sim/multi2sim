@@ -20,6 +20,7 @@
 
 #include <arch/x86/emu/context.h>
 #include <arch/x86/emu/regs.h>
+#include <arch/southern-islands/asm/fetch-shader.h>
 #include <arch/southern-islands/asm/input.h>
 #include <arch/southern-islands/emu/ndrange.h>
 #include <arch/southern-islands/emu/opengl-bin-file.h>
@@ -753,6 +754,7 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 
 	struct elf_buffer_t *elf_buffer;
 	struct opengl_si_shader_t *shader;
+	struct si_fetch_shader_t *fs;
 	struct si_bin_enc_user_element_t *user_elements;
 	struct si_ndrange_t *ndrange;
 
@@ -769,7 +771,6 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	unsigned int global_size[3];
 	unsigned int local_size[3];
 
-
 	/* Arguments */
 	shader_id = regs->ecx;
 	work_dim = regs->edx;
@@ -778,7 +779,7 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 	local_size_ptr = regs->ebp;
 	opengl_debug("\tshader_id = %d, work_dim = %d\n", shader_id, work_dim);
 	opengl_debug("\tglobal_offset_ptr = 0x%x, global_size_ptr = 0x%x, "
-		"local_size_ptr=0x%x\n", global_offset_ptr, global_size_ptr, 
+		"local_size_ptr = 0x%x\n", global_offset_ptr, global_size_ptr, 
 		local_size_ptr);
 	
 	/* Debug */
@@ -828,6 +829,11 @@ static int opengl_abi_si_ndrange_initialize_impl(X86Context *ctx)
 
 	si_ndrange_setup_inst_mem(ndrange, elf_buffer->ptr, 
 		elf_buffer->size, 0);
+
+	/* Create fetch shader */
+	fs = si_fetch_shader_create(shader);
+	si_ndrange_setup_fs_mem(ndrange, fs->isa, fs->size, 0);
+	si_fetch_shader_free(fs);
 
 	assert(!driver_state.shader);
 	driver_state.shader = shader;

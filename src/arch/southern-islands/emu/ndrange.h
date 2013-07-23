@@ -69,7 +69,7 @@ struct si_ndrange_t
 
 	/* Fetch shader memory containing Fetch shader instructions */
 	int fs_buffer_initialized;
-	unsigned int fs_buffer_ptr;
+	unsigned int fs_buffer_ptr; /* Relative offset */
 	unsigned int fs_buffer_size;
 
 	/* Local memory top to assign to local arguments.

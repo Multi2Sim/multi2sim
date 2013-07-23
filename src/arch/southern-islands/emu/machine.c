@@ -1317,35 +1317,32 @@ void si_isa_S_NOT_B32_impl(struct si_work_item_t *work_item,
 void si_isa_S_SWAPPC_B64_impl(struct si_work_item_t *work_item,
 	struct si_inst_t *inst)
 {
-	/* FIXME: uncomment when fetch shader is ready */
-	// union si_reg_t pc_lo;
-	// union si_reg_t s0_lo;
-	// union si_reg_t s0_hi;
+	unsigned int pc;
+	union si_reg_t s0_lo;
+	union si_reg_t s0_hi;
 
-	// /* Load operands from registers */
-	// s0_lo.as_uint = si_isa_read_sreg(work_item, INST.ssrc0);
-	// s0_hi.as_uint = si_isa_read_sreg(work_item, INST.ssrc0 + 1);
+	/* Load operands from registers */
+	s0_lo.as_uint = si_isa_read_sreg(work_item, INST.ssrc0);
+	s0_hi.as_uint = si_isa_read_sreg(work_item, INST.ssrc0 + 1);
 
-	// /* PC is implemented as 32-bit*/
-	// assert(s0_hi.as_uint == 0);
+	/* PC is implemented as 32-bit offset */
+	assert(s0_hi.as_uint == 0);
 
-	// /* Load the PC */
-	// pc_lo.as_uint = work_item->wavefront->pc + 4;  // XXX Next instruction?
+	/* Write the results */
+	si_isa_write_sreg(work_item, INST.sdst, work_item->wavefront->pc + 4);
+	si_isa_write_sreg(work_item, INST.sdst + 1, 0);
 
-	// /* Write the results */
-	// si_isa_write_sreg(work_item, INST.sdst, pc_lo.as_uint);
-	// si_isa_write_sreg(work_item, INST.sdst + 1, 0);
+	/* Set the new PC */
+	pc = work_item->wavefront->pc;
+	work_item->wavefront->pc = s0_lo.as_uint - 4; /* FIXME: -4 should be unneccesary */
 
-	// /* Set the new PC */
-	// work_item->wavefront->pc = s0_lo.as_uint;
-
-	// /* Print isa debug information. */
-	// if (debug_status(si_isa_debug_category))
-	// {
-	// 	si_isa_debug("S%u<=(0x%x) ", INST.sdst, pc_lo.as_uint);
-	// 	si_isa_debug("S%u<=(0x%x) ", INST.sdst + 1, s0_hi.as_uint);
-	// 	si_isa_debug("PC<=(0x%x)", s0_lo.as_uint);
-	// }
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(0x%x) ", INST.sdst, pc + 4);
+		si_isa_debug("S%u<=(0x%x) ", INST.sdst + 1, s0_hi.as_uint);
+		si_isa_debug("PC<=(0x%x)", work_item->wavefront->pc);
+	}
 }
 #undef INST
 

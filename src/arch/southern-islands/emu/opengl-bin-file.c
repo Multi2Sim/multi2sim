@@ -174,8 +174,12 @@ static void si_opengl_enc_dict_set_semanticMappings(struct si_opengl_shader_bina
 		/* Semantic mapping */
 		enc_dict->semanticsMapping[0].count = 0x0;
 		enc_dict->semanticsMapping[0].usageIndex = 0x0;
-		enc_dict->semanticsMapping[0].startUserReg = 0x4;
+		enc_dict->semanticsMapping[0].startUserReg = 0x8;
 		enc_dict->semanticsMapping[0].userRegCount = 0x4;
+		enc_dict->semanticsMapping[1].count = 0x0;
+		enc_dict->semanticsMapping[1].usageIndex = 0x1;
+		enc_dict->semanticsMapping[1].startUserReg = 0x4;
+		enc_dict->semanticsMapping[1].userRegCount = 0x4;
 		break;
 	default:
 		break;
