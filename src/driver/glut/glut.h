@@ -22,7 +22,7 @@
 
 #include <pthread.h>
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /*

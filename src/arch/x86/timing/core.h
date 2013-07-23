@@ -21,7 +21,7 @@
 #define X86_ARCH_TIMING_CORE_H
 
 #include <arch/x86/emu/uinst.h>
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 #include <mem-system/prefetch-history.h>
 
 

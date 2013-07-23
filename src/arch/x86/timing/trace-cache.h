@@ -20,7 +20,7 @@
 #ifndef X86_ARCH_TIMING_TRACE_CACHE_H
 #define X86_ARCH_TIMING_TRACE_CACHE_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /* Forward declarations */

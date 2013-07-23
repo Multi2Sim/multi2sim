@@ -20,7 +20,7 @@
 #ifndef ARCH_COMMON_TIMING_H
 #define ARCH_COMMON_TIMING_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 /* Forward declarations */
 struct config_t;

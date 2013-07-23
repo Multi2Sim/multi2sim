@@ -20,7 +20,7 @@
 #ifndef DRIVER_GLEW_GLEW_H
 #define DRIVER_GLEW_GLEW_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 /*
  * GLEW system call interface

@@ -30,6 +30,7 @@ LDADD = \
 	$(top_builddir)/m2c/common/libcommon.a \
 	$(top_builddir)/src/arch/fermi/asm/libasm.a \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
+	$(top_builddir)/src/lib/class/libclass.a \
 	$(top_builddir)/src/lib/util/libutil.a \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a
 

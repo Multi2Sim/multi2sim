@@ -20,7 +20,7 @@
 #ifndef DRIVER_CUDA_CUDA_H
 #define DRIVER_CUDA_CUDA_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /* Version */
