@@ -76,21 +76,26 @@ void *throughput_overhead_strategy_create(int num_devices, unsigned int dims, co
 }
 
 
-float to_get_throughput(struct to_device_info_t *dev, struct to_device_info_t *safe, long long now)
+long long to_device_latency_per_plane(struct to_device_info_t *dev, struct to_device_info_t *safe, long long now)
 {
-	/* no completed work, estimate throughput */
 	if (dev->num_planes_done == 0)
 	{
-		/* no scheduled work, estimate by copying 'safe' device rate */
 		if (dev->num_planes_running == 0)
-			return to_get_throughput(safe, NULL, now);
+			return to_device_latency_per_plane(safe, NULL, now);
 		else
-			return (float)dev->num_planes_running / (now - dev->time.start);
+			return (now - dev->time.start) / dev->num_planes_running;
 	}
 	else
-		return (float)dev->num_planes_done / dev->time.total;
-
+	{
+		long long overhead = dev->overhead * dev->num_launches;
+		if (overhead > dev->time.total)
+			return 0;
+		else
+			return (overhead - dev->time.total) / dev->num_planes_done;
+	
+	}
 }
+
 
 unsigned int to_partition_determine_planes(struct to_partition_info_t *info, struct to_device_info_t *device, int desired_groups, long long now)
 {
@@ -100,10 +105,15 @@ unsigned int to_partition_determine_planes(struct to_partition_info_t *info, str
 
 	if (device->num_launches == 0)
 	{
-		num_planes = round_up_not_more(
-			desired_groups, 
-			info->groups_per_plane, 
-			info->groups_per_plane * num_planes_left) / info->groups_per_plane;
+		/* Get 10% / to_partition_times of the work to start */
+		num_planes = info->part->groups[info->part_dim] / (10 * to_partition_times);
+		if (num_planes > num_planes_left)
+			num_planes = num_planes_left;
+		else if (num_planes < desired_groups)
+			num_planes = round_up_not_more(
+				desired_groups, 
+				info->groups_per_plane, 
+				info->groups_per_plane * num_planes_left) / info->groups_per_plane;
 	}
 	else
 	{
@@ -118,12 +128,13 @@ unsigned int to_partition_determine_planes(struct to_partition_info_t *info, str
 
 		num_planes_allocatable = convert_fraction(1, segments_left, num_planes_left);
 
+		/* calculate projected latency */
 		float device_throughput;
 		float total_throughput = 0;
 		for (i = 0; i < info->part->num_devices; i++)
 		{
 			struct to_device_info_t *dev = info->devices + i;
-			float cur_throughput = to_get_throughput(dev, device, now);
+			float cur_throughput = 1.0 / (to_device_latency_per_plane(dev, device, now) + dev->overhead);
 			
 			if (dev == device)
 				device_throughput = cur_throughput;

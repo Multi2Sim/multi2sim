@@ -11,6 +11,8 @@
 #include "relative-runtime-partition-strategy.h"
 #include "throughput-overhead-partition-strategy.h"
 #include "numa-partition-strategy.h"
+#include "block-by-block-partition-strategy.h"
+#include "first-done-partition-strategy.h"
 
 /* forward declartion for default strategy. */
 void *default_strategy_create(int num_devices, unsigned int dims, const unsigned int *groups);
@@ -22,7 +24,9 @@ static struct opencl_partition_strategy strats[] = {
 	{even_strategy_create, even_strategy_get_partition, even_strategy_destroy},
 	{relative_runtime_strategy_create, relative_runtime_strategy_get_partition, relative_runtime_strategy_destroy},
 	{throughput_overhead_strategy_create, throughput_overhead_strategy_get_partition, throughput_overhead_strategy_destroy},
-	{numa_strategy_create, numa_strategy_get_partition, numa_strategy_destroy}};
+	{numa_strategy_create, numa_strategy_get_partition, numa_strategy_destroy},
+	{block_by_block_strategy_create, block_by_block_strategy_get_partition, block_by_block_strategy_destroy},
+	{first_done_strategy_create, first_done_strategy_get_partition, first_done_strategy_destroy}};
 
 const struct opencl_partition_strategy *get_strategy()
 {
