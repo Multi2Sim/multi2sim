@@ -2016,7 +2016,6 @@ int main(int argc, char **argv)
 	runtime_register("GLU", "GLU", "m2s-glu", 331, (runtime_abi_func_t) glu_abi_call);
 
 	/* Initialization of drivers */
-	opencl_init();
 	cuda_init();
 
 	/* Initialization of libraries */
@@ -2131,7 +2130,6 @@ int main(int argc, char **argv)
 	net_done();
 
 	/* Finalization of drivers */
-	opencl_done();
 	cuda_done();
 
 	/* Finalization of libraries */

@@ -45,6 +45,9 @@ struct si_ndrange_t
 	/* ID */
 	int id;  /* Sequential ND-Range ID (given by si_emu->ndrange_count) */
 
+	/* OpenCL driver that created the ND-Range (if any) */
+	OpenclDriver *opencl_driver;
+
 	/* Number of work dimensions */
 	unsigned int work_dim;
 

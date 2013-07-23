@@ -29,9 +29,12 @@
 
 CLASS_BEGIN(Driver, Object)
 
+	/* Associated emulator */
+	X86Emu *emu;
+
 CLASS_END(Driver)
 
-void DriverCreate(Driver *self);
+void DriverCreate(Driver *self, X86Emu *emu);
 void DriverDestroy(Driver *self);
 
 

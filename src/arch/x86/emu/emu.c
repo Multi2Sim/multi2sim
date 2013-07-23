@@ -25,6 +25,7 @@
 #include <driver/glew/glew.h>
 #include <driver/glu/glu.h>
 #include <driver/glut/glut.h>
+#include <driver/opencl/opencl.h>
 #include <driver/opengl/opengl.h>
 #include <lib/esim/esim.h>
 #include <lib/mhandle/mhandle.h>
@@ -89,6 +90,9 @@ void X86EmuCreate(X86Emu *self, X86Asm *as)
 	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
 	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
 
+	/* Drivers */
+	self->opencl_driver = new(OpenclDriver, self);
+
 	/* Micro-instructions - FIXME - should be part of class */
 	x86_uinst_init();
 
@@ -143,6 +147,9 @@ void X86EmuDestroy(X86Emu *self)
 
 	/* Micro-instructions  - FIXME - should be part of class */
 	x86_uinst_done();
+
+	/* Drivers */
+	delete(self->opencl_driver);
 
 	/* Print system call summary */
 	if (debug_status(x86_sys_debug_category))
