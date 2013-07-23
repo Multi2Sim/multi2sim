@@ -36,8 +36,6 @@
  * Class 'X86Thread'
  */
 
-CLASS_IMPLEMENTATION(X86Thread);
-
 void X86ThreadCreate(X86Thread *self, X86Core *core)
 {
 	/* Initialize */

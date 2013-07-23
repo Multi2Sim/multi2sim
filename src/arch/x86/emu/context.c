@@ -46,8 +46,6 @@
  * Class 'X86Context'
  */
 
-CLASS_IMPLEMENTATION(X86Context);
-
 static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 {
 	int num_nodes;

@@ -33,8 +33,6 @@
  * Class 'MIPSEmu'
  */
 
-CLASS_IMPLEMENTATION(MIPSEmu);
-
 void MIPSEmuCreate(MIPSEmu *self)
 {
 	/* Parent */

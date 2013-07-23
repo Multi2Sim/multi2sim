@@ -30,8 +30,6 @@
  * Class 'Llvm2siSymbolTable'
  */
 
-CLASS_IMPLEMENTATION(Llvm2siSymbolTable);
-
 void Llvm2siSymbolTableCreate(Llvm2siSymbolTable *self)
 {
 	self->table = hash_table_create(30, TRUE);

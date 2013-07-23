@@ -27,8 +27,6 @@
  * Class 'Llvm2siPhi'
  */
 
-CLASS_IMPLEMENTATION(Llvm2siPhi);
-
 void Llvm2siPhiCreate(Llvm2siPhi *self, Node *src_node,
 		LLVMValueRef src_value, struct si2bin_arg_t *dest_value)
 {

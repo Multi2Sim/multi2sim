@@ -24,6 +24,16 @@
 
 
 /*
+ * Class variables
+ */
+
+#define CLASS(name) struct class_t name##Class;
+#include "class.dat"
+#undef CLASS
+
+
+
+/*
  * Class 'Object'
  */
 

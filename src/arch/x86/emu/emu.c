@@ -64,8 +64,6 @@ X86Emu *x86_emu;
  * Class 'X86Emu'
  */
 
-CLASS_IMPLEMENTATION(X86Emu);
-
 void X86EmuCreate(X86Emu *self, X86Asm *as)
 {
 	/* Parent */

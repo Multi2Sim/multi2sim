@@ -925,8 +925,6 @@ static void Llvm2siBasicBlockEmitSub(Llvm2siBasicBlock *self,
  * Public Functions
  */
 
-CLASS_IMPLEMENTATION(Llvm2siBasicBlock);
-
 void Llvm2siBasicBlockCreate(Llvm2siBasicBlock *self,
 		Llvm2siFunction *function, LeafNode *node)
 {

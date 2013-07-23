@@ -141,9 +141,6 @@ static void x86_asm_inst_info_elem_free_list(struct x86_inst_info_elem_t *elem)
  */
 
 
-CLASS_IMPLEMENTATION(X86Asm);
-
-
 void X86AsmCreate(X86Asm *self)
 {
 	struct x86_inst_info_t *info;

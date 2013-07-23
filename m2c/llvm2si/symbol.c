@@ -29,9 +29,6 @@
  * Class 'Llvm2siSymbol'
  */
 
-CLASS_IMPLEMENTATION(Llvm2siSymbol);
-
-
 struct str_map_t llvm2si_symbol_type_map =
 {
 	3, {

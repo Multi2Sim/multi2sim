@@ -1049,9 +1049,6 @@ void frm_gpu_dump_report(void)
  * Class 'FrmGpu'
  */
 
-CLASS_IMPLEMENTATION(FrmGpu);
-
-
 void FrmGpuCreate(FrmGpu *self)
 {
 	struct frm_sm_t *sm;
