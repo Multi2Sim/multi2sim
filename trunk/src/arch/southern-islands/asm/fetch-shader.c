@@ -1,0 +1,300 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <assert.h>
+
+#include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
+#include <lib/util/list.h>
+#include <src/driver/opengl/si-shader.h>
+
+#include "asm.h"
+#include "fetch-shader.h"
+
+
+struct si_fs_inst_t
+{
+	unsigned int size;
+	void *data;
+};
+
+/*
+ * Private Functions
+ */
+
+static struct si_fs_inst_t *si_fs_inst_create(enum si_fmt_enum inst_fmt)
+{
+	struct si_fs_inst_t *inst;
+
+	/* Allocate */
+	inst = xcalloc(1, sizeof(struct si_fs_inst_t));
+
+	/* Return */
+	return inst;
+}
+
+static void si_fs_inst_free(struct si_fs_inst_t *inst)
+{
+	free(inst->data);
+	free(inst);
+}
+
+static void si_fs_inst_as_smrd(struct si_fs_inst_t *inst)
+{
+	struct si_fmt_smrd_t *smrd;
+
+	/* Allocate */
+	smrd = xcalloc(1, sizeof(struct si_fmt_smrd_t));
+
+	/* Set instruction */
+	inst->data = smrd;
+	inst->size = 4;
+}
+
+static void si_fs_inst_set_smrd(struct si_fmt_smrd_t *smrd,
+	unsigned int op, unsigned int sdst, unsigned int sbase, unsigned int imm, unsigned int offset)
+{
+	smrd->enc = 0x18; /* 0b11000 */
+	smrd->op = op;
+	smrd->sdst = sdst;
+	smrd->sbase = sbase >> 1; /* The LSB is ignored */
+	smrd->imm = imm;
+	smrd->offset = offset;
+}
+
+static void si_fs_inst_as_vop1(struct si_fs_inst_t *inst)
+{
+	struct si_fmt_vop1_t *vop1;
+
+	/* Allocate */
+	vop1 = xcalloc(1, sizeof(struct si_fmt_vop1_t));
+
+	/* Set instruction */
+	inst->data = vop1;
+	inst->size = 4;
+}
+
+static void si_fs_inst_set_vop1(struct si_fmt_vop1_t *vop1,
+	unsigned int vdst, unsigned int op, unsigned int src0)
+{
+	vop1->enc = 0x3F;
+	vop1->vdst = vdst;
+	vop1->op = op;
+	vop1->src0 = src0;
+}
+
+static void si_fs_inst_as_vop2(struct si_fs_inst_t *inst)
+{
+	struct si_fmt_vop2_t *vop2;
+
+	/* Allocate */
+	vop2 = xcalloc(1, sizeof(struct si_fmt_vop2_t));
+
+	/* Set instruction */
+	inst->data = vop2;
+	inst->size = 4;
+}
+
+static void si_fs_inst_set_vop2(struct si_fmt_vop2_t *vop2,
+	unsigned int op, unsigned int vdst, unsigned int vsrc1, unsigned int ssrc0)
+{
+	vop2->enc = 0;
+	vop2->op = op;
+	vop2->vdst = vdst;
+	vop2->vsrc1 = vsrc1;
+	vop2->src0 = ssrc0;
+}
+
+static void si_fs_inst_as_sopp(struct si_fs_inst_t *inst)
+{
+	struct si_fmt_sopp_t *sopp;
+
+	/* Allocate */
+	sopp = xcalloc(1, sizeof(struct si_fmt_sopp_t));
+
+	/* Set instruction */
+	inst->data = sopp;
+	inst->size = 4;
+}
+
+static void si_fs_inst_set_sopp(struct si_fmt_sopp_t *sopp,
+	unsigned int op, unsigned int simm)
+{
+	sopp->enc = 0x17F; 
+	sopp->op = op;
+	sopp->simm16 = simm;
+}
+
+static void si_fs_inst_as_mtbuf(struct si_fs_inst_t *inst)
+{
+	struct si_fmt_mtbuf_t *mtbuf;
+
+	/* Allocate */
+	mtbuf = xcalloc(1, sizeof(struct si_fmt_mtbuf_t));
+
+	/* Set instruction */
+	inst->data = mtbuf;
+	inst->size = 8;
+}
+
+static void si_fs_inst_set_mtbuf(struct si_fmt_mtbuf_t *mtbuf,
+	unsigned int soffset, unsigned int tfe, unsigned int slc, 
+	unsigned int srsrc, unsigned int vdata, unsigned int vaddr, 
+	unsigned int enc, unsigned int nfmt, unsigned int dfmt,
+	unsigned int op, unsigned int addr64, unsigned int glc,
+	unsigned int idxen, unsigned int offen, unsigned int offset)
+{
+	mtbuf->soffset = soffset;
+	mtbuf->tfe = tfe;
+	mtbuf->slc = slc;
+	mtbuf->srsrc = srsrc;
+	mtbuf->vdata = vdata;
+	mtbuf->vaddr = vaddr;
+	mtbuf->enc = 0x3A;
+	mtbuf->nfmt = nfmt;
+	mtbuf->dfmt = dfmt;
+	mtbuf->op = op;
+	mtbuf->addr64 = addr64;
+	mtbuf->glc = glc;
+	mtbuf->idxen = idxen;
+	mtbuf->offen = offen;
+	mtbuf->offset = offset;
+}
+
+static void si_fs_inst_as_sop1(struct si_fs_inst_t *inst)
+{
+	struct si_fmt_sop1_t *sop1;
+
+	/* Allocate */
+	sop1 = xcalloc(1, sizeof(struct si_fmt_sop1_t));
+
+	/* Set instruction */
+	inst->data = sop1;
+	inst->size = 4;
+}
+
+static void si_fs_inst_set_sop1(struct si_fmt_sop1_t *sop1,
+	unsigned int sdst, unsigned int op, unsigned int ssrc0)
+{
+	sop1->enc = 0x17D;
+	sop1->sdst = sdst;
+	sop1->op = op;
+	sop1->ssrc0 = ssrc0;
+}
+
+/*
+ * Public Functions
+ */
+
+struct si_fetch_shader_t *si_fetch_shader_create(struct opengl_si_shader_t *shdr)
+{
+	struct si_fetch_shader_t *fs;
+	struct si_fs_inst_t *fs_inst;
+	struct semantic_count;
+	int i;
+	unsigned int isa_buf_size = 0;
+	void *isa_data_ptr;
+
+	/* Allocate */
+	fs = xcalloc(1, sizeof(struct si_fetch_shader_t));
+	fs->isa_list = list_create();
+
+	/* FIXME: temporary solution, should be generated by fs compiler */
+	/* Load vertex buffer descriptor into 4 scalar registers */
+	/* Create s_load_dword4 instruction and add to instruction list */
+	fs_inst = si_fs_inst_create(SI_FMT_SMRD);
+	si_fs_inst_as_smrd(fs_inst);
+	si_fs_inst_set_smrd(fs_inst->data, 0x2, 0x1C, 0x4, 0x1, 0x0);
+	list_add(fs->isa_list, fs_inst);
+
+	/* Create v_add_i32 instruction and add to instruction list */
+	fs_inst = si_fs_inst_create(SI_FMT_VOP2);
+	si_fs_inst_as_vop2(fs_inst);
+	si_fs_inst_set_vop2(fs_inst->data, 0x25, 0x8, 0x0, 0x0);
+	list_add(fs->isa_list, fs_inst);
+
+	/* Create s_waitcnt instruction and add to instruction list */
+	fs_inst = si_fs_inst_create(SI_FMT_SOPP);
+	si_fs_inst_as_sopp(fs_inst);
+	si_fs_inst_set_sopp(fs_inst->data, 0xC, 0x7F);
+	list_add(fs->isa_list, fs_inst);
+
+	/* Create t_buffer_load instruction and add to instruction list */
+	fs_inst = si_fs_inst_create(SI_FMT_MTBUF);
+	si_fs_inst_as_mtbuf(fs_inst);
+	si_fs_inst_set_mtbuf(fs_inst->data, 0x0, 0x0, 0x0, 0x1C, 0x8, 0x4, 0x8, 0x7, 0xe, 0x3, 0x0, 0x0, 0x1, 0x0, 0x0);
+	list_add(fs->isa_list, fs_inst);
+
+	/* Create s_waitcnt instruction and add to instruction list */
+	fs_inst = si_fs_inst_create(SI_FMT_SOPP);
+	si_fs_inst_as_sopp(fs_inst);
+	si_fs_inst_set_sopp(fs_inst->data, 0xC, 0x7F);
+	list_add(fs->isa_list, fs_inst);
+
+	fs_inst = si_fs_inst_create(SI_FMT_VOP1);
+	si_fs_inst_as_vop1(fs_inst);
+	si_fs_inst_set_vop1(fs_inst->data, 0x0, 0x1, 0x8);
+	list_add(fs->isa_list, fs_inst);
+
+	/* Create s_swappc instruction and add to instruction list */
+	fs_inst = si_fs_inst_create(SI_FMT_SOP1);
+	si_fs_inst_as_sop1(fs_inst);
+	si_fs_inst_set_sop1(fs_inst->data, 0x2, 0x21, 0x2);
+	list_add(fs->isa_list, fs_inst);
+
+	/* Calculate ISA buffer size and allocate */
+	LIST_FOR_EACH(fs->isa_list, i)
+	{
+		fs_inst = list_get(fs->isa_list, i);
+		if (!fs_inst || !fs_inst->size)
+			fatal("Instruction size = 0!");
+		else
+			isa_buf_size += fs_inst->size;
+	}
+
+	fs->isa = xcalloc(1, isa_buf_size);
+	fs->size = isa_buf_size;
+
+	/* Copy instructions to buffer */
+	isa_data_ptr = fs->isa;
+	LIST_FOR_EACH(fs->isa_list, i)
+	{
+		fs_inst = list_get(fs->isa_list, i);
+		if (!fs_inst->size)
+			fatal("Empty Instruction!");
+		memcpy(isa_data_ptr, fs_inst->data, fs_inst->size);
+		isa_data_ptr += fs_inst->size;
+	}
+
+	/* Return */
+	return fs;
+}
+
+void si_fetch_shader_free(struct si_fetch_shader_t *fs)
+{	
+	int i;
+
+	/* Free */
+	LIST_FOR_EACH(fs->isa_list, i)
+		si_fs_inst_free(list_get(fs->isa_list, i));
+	list_free(fs->isa_list);
+	free(fs->isa);
+	free(fs);
+}
+

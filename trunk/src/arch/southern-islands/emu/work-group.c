@@ -54,7 +54,7 @@ struct si_work_group_t *si_work_group_create(unsigned int work_group_id,
 	int work_item_gidy_start;
 	int work_item_gidz_start;
 
-	/* Number of in work-items in work-group */
+	/* Number of work-items in work-group */
 	unsigned int work_items_per_group = ndrange->local_size3[0] * 
 		ndrange->local_size3[1] * ndrange->local_size3[2];
 	assert(work_items_per_group > 0);
