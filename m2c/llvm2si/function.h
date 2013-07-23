@@ -21,7 +21,7 @@
 #define M2C_LLVM2SI_FUNCTION_H
 
 #include <arch/southern-islands/asm/arg.h>
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 #include <llvm-c/Core.h>
 
 #include <stdio.h>

@@ -20,7 +20,7 @@
 #ifndef DRIVER_OPENGL_OPENGL_H
 #define DRIVER_OPENGL_OPENGL_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /*

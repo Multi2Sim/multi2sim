@@ -20,7 +20,7 @@
 #ifndef ARCH_EVERGREEN_EMU_OPENCL_H
 #define ARCH_EVERGREEN_EMU_OPENCL_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /* Function tables */

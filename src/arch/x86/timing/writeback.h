@@ -20,7 +20,7 @@
 #ifndef ARCH_X86_TIMING_WRITEBACK_H
 #define ARCH_X86_TIMING_WRITEBACK_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /*

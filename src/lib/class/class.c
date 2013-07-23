@@ -18,9 +18,9 @@
  */
 
 #include <lib/mhandle/mhandle.h>
+#include <lib/util/debug.h>
 
 #include "class.h"
-#include "debug.h"
 
 
 /*

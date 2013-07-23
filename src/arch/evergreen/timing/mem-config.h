@@ -20,7 +20,7 @@
 #ifndef ARCH_EVERGREEN_TIMING_MEM_CONFIG_H
 #define ARCH_EVERGREEN_TIMING_MEM_CONFIG_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 /* Forward declarations */
 struct config_t;

@@ -20,7 +20,7 @@
 #ifndef M2C_COMMON_NODE_H
 #define M2C_COMMON_NODE_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 #ifdef HAVE_LLVM

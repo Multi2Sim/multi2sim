@@ -948,6 +948,7 @@ AC_CONFIG_FILES([
 		src/driver/opencl-old/evergreen/Makefile
 		src/driver/opengl/Makefile
 
+		src/lib/class/Makefile
 		src/lib/esim/Makefile
 		src/lib/mhandle/Makefile
 		src/lib/util/Makefile

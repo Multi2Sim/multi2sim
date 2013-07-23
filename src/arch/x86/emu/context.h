@@ -24,7 +24,7 @@
 
 #include <arch/x86/asm/asm.h>
 #include <arch/x86/asm/inst.h>
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /* Forward declarations */

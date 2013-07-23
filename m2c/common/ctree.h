@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 #include "node.h"
 

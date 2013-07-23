@@ -20,7 +20,7 @@
 #ifndef DRIVER_COMMON_DRIVER_H
 #define DRIVER_COMMON_DRIVER_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /*
