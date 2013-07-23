@@ -70,5 +70,8 @@ int first_done_strategy_get_partition(void *inst, int id, int desired_groups, un
 
 void first_done_strategy_destroy(void *inst)
 {
-
+	struct first_done_strategy_info_t *info = (struct first_done_strategy_info_t *)inst;
+	partition_info_free(info->part);
+	free(info->dev_done);
+	free(info);
 }
