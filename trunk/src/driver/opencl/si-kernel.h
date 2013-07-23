@@ -28,16 +28,6 @@ struct si_ndrange_t;
 
 
 /*
- * Kernel List
- */
-
-extern struct list_t *opencl_si_kernel_list;
-
-void opencl_si_kernel_list_init(void);
-void opencl_si_kernel_list_done(void);
-
-
-/*
  * Kernel
  */
 
@@ -70,7 +60,7 @@ struct opencl_si_kernel_t
 	int func_uniqueid;  /* Id of kernel function */
 };
 
-struct opencl_si_kernel_t *opencl_si_kernel_create(
+struct opencl_si_kernel_t *opencl_si_kernel_create(int id,
 	struct opencl_si_program_t *program, char *name);
 void opencl_si_kernel_free(struct opencl_si_kernel_t *kernel);
 

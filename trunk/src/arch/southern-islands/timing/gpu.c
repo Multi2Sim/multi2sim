@@ -1313,13 +1313,13 @@ void SIGpuDumpSummary(Timing *self, FILE *f)
 int SIGpuRun(Timing *self)
 {
 	SIGpu *gpu = asSIGpu(self);
+	OpenclDriver *opencl_driver;
 
 	struct si_compute_unit_t *compute_unit;
 	struct si_ndrange_t *ndrange;
 	struct si_work_group_t *work_group;
 
 	int compute_unit_id;
-
 	long work_group_id;
 	
 	/* For efficiency when no Southern Islands emulation is selected, 
@@ -1329,6 +1329,7 @@ int SIGpuRun(Timing *self)
 		return FALSE;
 
 	ndrange = si_emu->ndrange;
+	opencl_driver = ndrange->opencl_driver;
 	assert(ndrange);
 
 	/* Allocate work-groups to compute units */
@@ -1353,17 +1354,13 @@ int SIGpuRun(Timing *self)
 
 	/* Stop if maximum number of GPU cycles exceeded */
 	if (si_emu_max_cycles && asTiming(si_gpu)->cycle >= 
-		si_emu_max_cycles)
-	{
+			si_emu_max_cycles)
 		esim_finish = esim_finish_si_max_cycles;
-	}
 
 	/* Stop if maximum number of GPU instructions exceeded */
 	if (si_emu_max_inst && asEmu(si_emu)->instructions >= 
-		si_emu_max_inst)
-	{
+			si_emu_max_inst)
 		esim_finish = esim_finish_si_max_inst;
-	}
 
 	/* Stop if there was a simulation stall */
 	if ((asTiming(si_gpu)->cycle-gpu->last_complete_cycle) > 
@@ -1379,8 +1376,8 @@ int SIGpuRun(Timing *self)
 		return TRUE;
 
 	/* If we're out of work, request more */
-	if (!list_count(si_emu->waiting_work_groups))
-		opencl_si_request_work(x86_emu);
+	if (opencl_driver && !si_emu->waiting_work_groups->count)
+		OpenclDriverRequestWork(opencl_driver);
 
 	/* Run one loop iteration on each busy compute unit */
 	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)

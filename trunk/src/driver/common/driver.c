@@ -24,8 +24,9 @@
  * Class 'Driver'
  */
 
-void DriverCreate(Driver *self)
+void DriverCreate(Driver *self, X86Emu *emu)
 {
+	self->emu = emu;
 }
 
 

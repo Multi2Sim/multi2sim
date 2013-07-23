@@ -30,6 +30,7 @@
 
 #include "emu.h"
 #include "isa.h"
+#include "ndrange.h"
 #include "opengl-bin-file.h"
 #include "wavefront.h"
 #include "work-group.h"
@@ -101,6 +102,7 @@ void SIEmuDumpSummary(Emu *self, FILE *f)
 int SIEmuRun(Emu *self)
 {
 	SIEmu *emu = asSIEmu(self);
+	OpenclDriver *opencl_driver;
 
 	struct si_ndrange_t *ndrange;
 	struct si_wavefront_t *wavefront;
@@ -123,6 +125,7 @@ int SIEmuRun(Emu *self)
 
 	assert(emu->ndrange);
 	ndrange = emu->ndrange;
+	opencl_driver = ndrange->opencl_driver;
 
 	/* Instantiate the next work-group */
 	work_group_id = (long)list_bottom(emu->running_work_groups);
@@ -150,8 +153,8 @@ int SIEmuRun(Emu *self)
 	si_work_group_free(work_group);
 
 	/* If there is not more work groups to run, let driver know */
-	if (!list_count(emu->waiting_work_groups))
-		opencl_si_request_work(x86_emu);
+	if (!emu->waiting_work_groups->count && opencl_driver)
+		OpenclDriverRequestWork(opencl_driver);
 
 	/* Still emulating */
 	return TRUE;

@@ -56,44 +56,6 @@ static void opencl_si_create_buffer_desc(unsigned int base_addr,
 	struct si_buffer_desc_t *buffer_desc);
 
 
-/*
- * Kernel List
- */
-
-
-struct list_t *opencl_si_kernel_list;
-
-void opencl_si_kernel_list_init(void)
-{
-	/* Already initialized */
-	if (opencl_si_kernel_list)
-		return;
-
-	/* Initialize and add one empty element */
-	opencl_si_kernel_list = list_create();
-	list_add(opencl_si_kernel_list, NULL);
-}
-
-
-void opencl_si_kernel_list_done(void)
-{
-	struct opencl_si_kernel_t *kernel;
-	int index;
-
-	/* Not initialized */
-	if (!opencl_si_kernel_list)
-		return;
-
-	/* Free list of Southern Islands kernels */
-	LIST_FOR_EACH(opencl_si_kernel_list, index)
-	{
-		kernel = list_get(opencl_si_kernel_list, index);
-		if (kernel)
-			opencl_si_kernel_free(kernel);
-	}
-	list_free(opencl_si_kernel_list);
-}
-
 
 /*
  * Kernel
@@ -608,8 +570,8 @@ static void opencl_si_kernel_load_metadata(struct opencl_si_kernel_t *kernel)
 }
 
 
-struct opencl_si_kernel_t *opencl_si_kernel_create(struct opencl_si_program_t *program,
-		char *name)
+struct opencl_si_kernel_t *opencl_si_kernel_create(int id,
+		struct opencl_si_program_t *program, char *name)
 {
 	struct opencl_si_kernel_t *kernel;
 	struct elf_file_t *elf_file;
@@ -621,14 +583,10 @@ struct opencl_si_kernel_t *opencl_si_kernel_create(struct opencl_si_program_t *p
 
 	/* Initialize */
 	kernel = xcalloc(1, sizeof(struct opencl_si_kernel_t));
+	kernel->id = id;
 	kernel->name = xstrdup(name);
 	kernel->program = program;
 	kernel->arg_list = list_create();
-
-	/* Insert in kernel list */
-	opencl_si_kernel_list_init();
-	list_add(opencl_si_kernel_list, kernel);
-	kernel->id = list_count(opencl_si_kernel_list) - 1;
 
 	/* Check that program has been built */
 	elf_file = program->elf_file;

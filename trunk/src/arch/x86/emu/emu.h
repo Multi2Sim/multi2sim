@@ -90,6 +90,9 @@ CLASS_BEGIN(X86Emu, Emu)
 	int finished_list_count;
 	int finished_list_max;
 
+	/* Drivers */
+	OpenclDriver *opencl_driver;
+
 CLASS_END(X86Emu)
 
 
