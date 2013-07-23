@@ -35,6 +35,26 @@
 #include "si-program.h"
 #include "si-kernel.h"
 
+
+/*
+ * Class 'OpenclDriver'
+ */
+
+void OpenclDriverCreate(OpenclDriver *self)
+{
+}
+
+
+void OpenclDriverDestroy(OpenclDriver *self)
+{
+}
+
+
+
+/*
+ * Public
+ */
+
 #define SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE (1024*1024)
 
 

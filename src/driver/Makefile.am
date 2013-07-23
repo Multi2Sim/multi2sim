@@ -1,4 +1,5 @@
 SUBDIRS = \
+	common \
 	cuda \
 	glu \
 	glut \
