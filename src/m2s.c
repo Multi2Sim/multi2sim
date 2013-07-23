@@ -1831,6 +1831,10 @@ static void m2s_init(void)
 	CLASS_REGISTER(X86Emu);
 	CLASS_REGISTER(X86Thread);
 
+	/* Drivers */
+	CLASS_REGISTER(Driver);
+	CLASS_REGISTER(OpenclDriver);
+
 	/* Compute simulation ID */
 	gettimeofday(&tv, NULL);
 	min_id = str_alnum_to_int("10000");

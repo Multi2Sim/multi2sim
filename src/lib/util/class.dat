@@ -44,6 +44,14 @@ CLASS(X86Core)
 
 
 /*
+ * Drivers
+ */
+
+CLASS(Driver)
+CLASS(OpenclDriver)
+
+
+/*
  * Multi2C Classes
  */
 

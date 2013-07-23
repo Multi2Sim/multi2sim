@@ -17,38 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DRIVER_OPENCL_OPENCL_H
-#define DRIVER_OPENCL_OPENCL_H
-
-#include <driver/common/driver.h>
-#include <lib/util/class.h>
+#include "driver.h"
 
 
 /*
- * Class 'CLDriver'
+ * Class 'Driver'
  */
 
-CLASS_BEGIN(OpenclDriver, Driver)
-
-CLASS_END(OpenclDriver)
-
-void OpenclDriverCreate(OpenclDriver *self);
-void OpenclDriverDestroy(OpenclDriver *self);
+void DriverCreate(Driver *self)
+{
+}
 
 
-/*
- * Public
- */
-
-#define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
-extern int opencl_debug_category;
-
-int opencl_abi_call(X86Context *ctx);
-
-void opencl_init(void);
-void opencl_done(void);
-
-void opencl_si_request_work(X86Emu *emu);
-
-#endif
+void DriverDestroy(Driver *self)
+{
+}
 
