@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 #include <arch/southern-islands/asm/asm.h>
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 struct si2bin_inst_t

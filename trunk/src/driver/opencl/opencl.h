@@ -21,7 +21,7 @@
 #define DRIVER_OPENCL_OPENCL_H
 
 #include <driver/common/driver.h>
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /*

@@ -20,7 +20,7 @@
 #ifndef ARCH_COMMON_EMU_H
 #define ARCH_COMMON_EMU_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /*

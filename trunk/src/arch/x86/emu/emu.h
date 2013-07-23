@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 #include <arch/common/emu.h>
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 /* Forward declarations */
 struct config_t;

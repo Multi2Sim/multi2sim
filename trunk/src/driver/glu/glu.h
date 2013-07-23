@@ -20,7 +20,7 @@
 #ifndef DRIVER_GLU_GLU_H
 #define DRIVER_GLU_GLU_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /*

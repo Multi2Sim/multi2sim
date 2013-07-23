@@ -20,7 +20,7 @@
 #ifndef ARCH_X86_EMU_UINST_H
 #define ARCH_X86_EMU_UINST_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /* Micro-instruction dependences.

@@ -20,7 +20,7 @@
 #ifndef X86_ARCH_TIMING_BPRED_H
 #define X86_ARCH_TIMING_BPRED_H
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 /* Forward declarations */
 struct x86_uop_t;

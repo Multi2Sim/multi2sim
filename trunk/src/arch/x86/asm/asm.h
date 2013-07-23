@@ -21,7 +21,7 @@
 #define X86_ASM_H
 
 #include <arch/common/asm.h>
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 /*

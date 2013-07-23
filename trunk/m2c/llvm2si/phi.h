@@ -22,7 +22,7 @@
 
 #include <llvm-c/Core.h>
 
-#include <lib/util/class.h>
+#include <lib/class/class.h>
 
 
 
