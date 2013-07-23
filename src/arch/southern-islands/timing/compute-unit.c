@@ -295,6 +295,9 @@ void si_compute_unit_map_work_group(struct si_compute_unit_t *compute_unit,
 void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
 	struct si_work_group_t *work_group)
 {
+	struct si_ndrange_t *ndrange = work_group->ndrange;
+	OpenclDriver *driver = ndrange->opencl_driver;
+
 	long work_group_id;
 
 	/* Add work group register access statistics to compute unit */
@@ -315,12 +318,12 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit,
 
 	work_group_id = work_group->id;
 	assert(list_index_of(si_emu->running_work_groups, 
-		(void*)work_group_id) >= 0);
+		(void*) work_group_id) >= 0);
 	list_remove(si_emu->running_work_groups, (void*)work_group_id);
 
-	if (!list_count(si_emu->running_work_groups) && 
-			!list_count(si_emu->waiting_work_groups))
-		opencl_si_request_work(x86_emu);
+	if (driver && !si_emu->running_work_groups->count &&
+			!si_emu->waiting_work_groups->count)
+		OpenclDriverRequestWork(driver);
 
 	/* If compute unit is not already in the available list, place
 	 * it there */

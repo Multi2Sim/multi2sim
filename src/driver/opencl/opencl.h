@@ -25,15 +25,30 @@
 
 
 /*
- * Class 'CLDriver'
+ * Class 'OpenclDriver'
  */
 
 CLASS_BEGIN(OpenclDriver, Driver)
 
+	/* List of Southern Islands programs and kernels */
+	struct list_t *si_program_list;
+	struct list_t *si_kernel_list;
+
+	struct opencl_si_kernel_t *kernel;
+	struct si_ndrange_t *ndrange;
+
+	int ready_for_work;
+	int wait_for_ndrange_completion;
+	int ndrange_complete;
+
 CLASS_END(OpenclDriver)
 
-void OpenclDriverCreate(OpenclDriver *self);
+void OpenclDriverCreate(OpenclDriver *self, X86Emu *emu);
 void OpenclDriverDestroy(OpenclDriver *self);
+
+void OpenclDriverRequestWork(OpenclDriver *self);
+
+
 
 
 /*
@@ -44,11 +59,6 @@ void OpenclDriverDestroy(OpenclDriver *self);
 extern int opencl_debug_category;
 
 int opencl_abi_call(X86Context *ctx);
-
-void opencl_init(void);
-void opencl_done(void);
-
-void opencl_si_request_work(X86Emu *emu);
 
 #endif
 

@@ -22,16 +22,6 @@
 
 
 /*
- * Program List
- */
-
-extern struct list_t *opencl_si_program_list;
-
-void opencl_si_program_list_init(void);
-void opencl_si_program_list_done(void);
-
-
-/*
  * Constant Buffer
  */
 
@@ -66,7 +56,7 @@ struct opencl_si_program_t
 	struct list_t *constant_buffer_list;
 };
 
-struct opencl_si_program_t *opencl_si_program_create(void);
+struct opencl_si_program_t *opencl_si_program_create(int id);
 void opencl_si_program_free(struct opencl_si_program_t *program);
 
 void opencl_si_program_set_binary(struct opencl_si_program_t *program,

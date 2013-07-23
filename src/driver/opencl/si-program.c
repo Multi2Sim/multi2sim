@@ -30,46 +30,6 @@
 #include "si-program.h"
 
 
-/*
- * Program List
- */
-
-
-struct list_t *opencl_si_program_list;
-
-void opencl_si_program_list_init(void)
-{
-	/* Already initialized */
-	if (opencl_si_program_list)
-		return;
-
-	/* Initialize and add one empty element */
-	opencl_si_program_list = list_create();
-	list_add(opencl_si_program_list, NULL);
-}
-
-
-void opencl_si_program_list_done(void)
-{
-	int index;
-	struct opencl_si_program_t *program;
-
-	/* Not initialized */
-	if (!opencl_si_program_list)
-		return;
-
-	/* Free list of Southern Islands programs */
-	LIST_FOR_EACH(opencl_si_program_list, index)
-	{
-		program = list_get(opencl_si_program_list, index);
-		if (program)
-			opencl_si_program_free(program);
-	}
-	list_free(opencl_si_program_list);
-}
-
-
-
 
 /*
  * Constant Buffer
@@ -155,17 +115,13 @@ static void opencl_si_program_initialize_constant_buffers(
 	}
 } 
 
-struct opencl_si_program_t *opencl_si_program_create(void)
+struct opencl_si_program_t *opencl_si_program_create(int id)
 {
 	struct opencl_si_program_t *program;
 
 	/* Initialize */
 	program = xcalloc(1, sizeof(struct opencl_si_program_t));
-
-	/* Insert in program list */
-	opencl_si_program_list_init();
-	list_add(opencl_si_program_list, program);
-	program->id = list_count(opencl_si_program_list) - 1;
+	program->id = id;
 
 	/* Return */
 	return program;
