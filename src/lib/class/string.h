@@ -46,7 +46,10 @@ void StringDestroy(String *self);
 void StringDump(Object *self, FILE *f);
 Object *StringCopy(Object *self);
 unsigned int StringHash(Object *self);
-int StringCompare(Object *self, Object *o);
+
+/* Compare two strings in alphabetical order, returning -1, 0, or 1 if the first
+ * string is less, equal, or greater than the second, respectively. */
+int StringCompare(Object *self, Object *object);
 
 /* Convert the string into an empty string */
 void StringClear(String *self);

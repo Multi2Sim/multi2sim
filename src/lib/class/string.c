@@ -69,6 +69,7 @@ void StringCreate(String *self, const char *str)
 
 	/* Virtual functions */
 	asObject(self)->Dump = StringDump;
+	asObject(self)->Compare = StringCompare;
 }
 
 
@@ -82,6 +83,15 @@ void StringDump(Object *self, FILE *f)
 {
 	String *s = asString(self);
 	fprintf(f, "%s", s->str);
+}
+
+
+int StringCompare(Object *self, Object *object)
+{
+	String *s1 = asString(self);
+	String *s2 = asString(object);
+
+	return strcmp(s1->str, s2->str);
 }
 
 
