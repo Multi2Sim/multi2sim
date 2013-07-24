@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LIB_UTIL_CLASS_H
-#define LIB_UTIL_CLASS_H
+#ifndef LIB_CLASS_CLASS_H
+#define LIB_CLASS_CLASS_H
 
 
 #include <assert.h>
@@ -93,6 +93,9 @@ struct _Object
 	/*** Virtual functions ***/
 
 	void (*Dump)(Object *self, FILE *f);
+	Object *(*Copy)(Object *self);
+	int (*Compare)(Object *self, Object *o);
+	unsigned int (*Hash)(Object *self);
 };
 
 extern struct class_t ObjectClass;
