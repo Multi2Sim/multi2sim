@@ -2873,27 +2873,34 @@ expr
 		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
-
-			value->val = LLVMBuildMul(cl2llvm_builder, 
-				lval->val, rval->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			if (type->sign)
+			{
+				rval->val = LLVMBuildSDiv(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name);
+			}
+			else
+			{
+				rval->val = LLVMBuildUDiv(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name);
+			}
+			rval->type->sign = type->sign;
+			rval->type->llvm_type = type->llvm_type;
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
-			value->val = LLVMBuildFMul(cl2llvm_builder, 
-					lval->val, rval->val, temp_var_name);
-			value->type->sign = type->sign;
-			value->type->llvm_type = type->llvm_type;
+			rval->val = LLVMBuildFDiv(cl2llvm_builder, 
+					op1->val, op2->val, temp_var_name);
+			rval->type->sign = type->sign;
+			rval->type->llvm_type = type->llvm_type;
 			break;
 
 		default:
 			
-			yyerror("invalid type of operands for addition");
+			yyerror("invalid type of operands for '/='");
 		}
-
+	
 		/* Cast result to type of lvalue and store */
 		value = llvm_type_cast(rval, lval->type);
 		
