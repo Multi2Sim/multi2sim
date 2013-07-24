@@ -28,6 +28,7 @@
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
 #include <m2c/si2bin/si2bin.h>
+#include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
@@ -637,24 +638,30 @@ void m2c_done(void)
 
 int main(int argc, char **argv)
 {
-	
-	
-	{
+	/*{
 		CLASS_REGISTER(String);
+		CLASS_REGISTER(List);
 		
-		String *s;
-		String *s2;
+		List *list;
 
-		s = new(String, "0123456789");
-		s2 = StringSubStr(s, 0, 0);
-		printf("'"), StringDump(asObject(s), stdout), printf("'\n");
-		printf("'"), StringDump(asObject(s2), stdout), printf("'\n");
-		delete(s);
-		delete(s2);
+		list = new(List);
+		ListAdd(list, asObject(new(String, "hello")));
+		ListAdd(list, asObject(new(String, "how")));
+		ListAdd(list, asObject(new(String, "are")));
+		ListAdd(list, asObject(new(String, "you")));
+		ListDump(asObject(list), stdout);
+
+		printf("Sorting list\n");
+
+		ListSort(list);
+		ListDump(asObject(list), stdout);
+
+		ListDeleteObjects(list);
+		delete(list);
 
 		mhandle_done();
 		exit(0);
-	}
+	}*/
 
 	/* Read command line */
 	m2c_pre_init();
