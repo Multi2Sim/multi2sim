@@ -6,6 +6,9 @@ libclass_a_SOURCES = \
 	class.dat \
 	class.h \
 	\
+	list.c \
+	list.h \
+	\
 	string.c \
 	string.h
 
