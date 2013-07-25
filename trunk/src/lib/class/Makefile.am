@@ -9,8 +9,8 @@ libclass_a_SOURCES = \
 	class.dat \
 	class.h \
 	\
-	linked-list.c \
-	linked-list.h \
+	list.c \
+	list.h \
 	\
 	string.c \
 	string.h

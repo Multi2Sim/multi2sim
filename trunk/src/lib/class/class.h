@@ -102,8 +102,8 @@ extern struct class_t ObjectClass;
 
 static inline int isObject(void *p)
 {
-	assert(((Object *) p)->__info.c);
-	assert(((Object *) p)->__info.c->id == ObjectClass.id);
+	assert(!p || ((Object *) p)->__info.c);
+	assert(!p || ((Object *) p)->__info.c->id == ObjectClass.id);
 	return 1;
 }
 

@@ -27,6 +27,9 @@
  * Class 'Array'
  */
 
+#define ARRAY_FOR_EACH(_array, _index) \
+	for ((_index) = 0; (_index) < (_array)->count; (_index)++)
+
 typedef enum
 {
 	ArrayErrOK = 0,
@@ -65,7 +68,7 @@ void ArrayDestroy(Array *self);
 void ArrayDump(Object *self, FILE *f);
 
 /* Dump the content of the array by calling each object's 'Dump' virtual method
- * and printing string 'first' intially, 'last' finally, and 'middle' between
+ * and printing string 'first' initially, 'last' finally, and 'middle' between
  * every pair of elements. */
 void ArrayDumpWithDelim(Array *self, FILE *f, const char *first,
 		const char *middle, const char *last);
