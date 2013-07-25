@@ -147,7 +147,16 @@ unsigned int class_compute_id(char *name)
 }
 
 
+static char *class_err_register =
+	"\tA class or any of its ancestors has not been register before instantiating\n"
+	"\tobjects of it. Please include a call to CLASS_REGISTER() for every class\n"
+	"\tyou use in your program.\n";
+
+#ifdef NDEBUG
 void *class_new(struct class_t *c)
+#else
+void *class_new(struct class_t *c, char *file, int line, char *name)
+#endif
 {
 	struct class_info_t *info;
 	struct class_info_t *child_info;
@@ -164,9 +173,15 @@ void *class_new(struct class_t *c)
 	{
 		/* Class must be registered */
 		if (!c->id)
-			panic("%s: class has not been registered "
-				" - use CLASS_REGISTER()",
-				__FUNCTION__);
+		{
+#ifdef NDEBUG
+			panic("%s: class not registered.\n%s",
+				__FUNCTION__, class_err_register);
+#else
+			panic("%s:%d: class '%s' (or ancestor) not registered.\n%s",
+				file, line, name, class_err_register);
+#endif
+		}
 
 		/* Get parent class info */
 		parent_info = c->parent ?

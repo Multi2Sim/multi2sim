@@ -633,9 +633,21 @@ void m2c_done(void)
 	debug_done();
 }
 
+//////////
+#include <lib/class/string.h>
 
 int main(int argc, char **argv)
 {
+	{
+		String *s;
+
+		s = new(String, "hello world\n");
+		asObject(s)->Dump(asObject(s), stdout);
+
+		mhandle_done();
+		exit(0);
+	}
+
 	/* Read command line */
 	m2c_pre_init();
 	m2c_read_command_line(argc, argv);
