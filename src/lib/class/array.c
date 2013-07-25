@@ -20,14 +20,14 @@
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 
-#include "list.h"
+#include "array.h"
 
 
 /*
- * Class 'List'
+ * Class 'Array'
  */
 
-static void ListGrow(List *self)
+static void ArrayGrow(Array *self)
 {
 	Object **new_array;
 	
@@ -54,7 +54,7 @@ static void ListGrow(List *self)
 }
 
 
-static int ListCompareObject(Object *o1, Object *o2)
+static int ArrayCompareObject(Object *o1, Object *o2)
 {
 	if (!o1->Compare)
 	{
@@ -66,7 +66,7 @@ static int ListCompareObject(Object *o1, Object *o2)
 
 
 #define ELEM(X) self->array[((X) + self->head) % self->size]
-static void ListSortRange(List *self, int lo, int hi)
+static void ArraySortRange(Array *self, int lo, int hi)
 {
 	Object *ptr;
 	Object *tmp;
@@ -77,9 +77,9 @@ static void ListSortRange(List *self, int lo, int hi)
 	ptr = ELEM(hi);
 	do
 	{
-		while (ListCompareObject(ELEM(i), ptr) < 0)
+		while (ArrayCompareObject(ELEM(i), ptr) < 0)
 			i++;
-		while (ListCompareObject(ELEM(j), ptr) > 0)
+		while (ArrayCompareObject(ELEM(j), ptr) > 0)
 			j--;
 		if (i <= j)
 		{
@@ -90,20 +90,20 @@ static void ListSortRange(List *self, int lo, int hi)
 		}
 	} while (i <= j);
 	if (lo < j)
-		ListSortRange(self, lo, j);
+		ArraySortRange(self, lo, j);
 	if (i < hi)
-		ListSortRange(self, i, hi);
+		ArraySortRange(self, i, hi);
 }
 
 
-void ListCreate(List *self)
+void ArrayCreate(Array *self)
 {
 	/* Default initial size is 8 */
-	ListCreateWithSize(self, 8);
+	ArrayCreateWithSize(self, 8);
 }
 
 
-void ListCreateWithSize(List *self, int size)
+void ArrayCreateWithSize(Array *self, int size)
 {
 	/* Minimum size */
 	if (size < 4)
@@ -114,23 +114,23 @@ void ListCreateWithSize(List *self, int size)
 	self->size = size;
 
 	/* Virtual functions */
-	asObject(self)->Dump = ListDump;
+	asObject(self)->Dump = ArrayDump;
 }
 
 
-void ListDestroy(List *self)
+void ArrayDestroy(Array *self)
 {
 	free(self->array);
 }
 
 
-void ListDump(Object *self, FILE *f)
+void ArrayDump(Object *self, FILE *f)
 {
-	ListDumpWithDelim(asList(self), f, "", "\n", "\n");
+	ArrayDumpWithDelim(asArray(self), f, "", "\n", "\n");
 }
 
 
-void ListDumpWithDelim(List *self, FILE *f, const char *first,
+void ArrayDumpWithDelim(Array *self, FILE *f, const char *first,
 		const char *middle, const char *last)
 {
 	int index;
@@ -149,16 +149,16 @@ void ListDumpWithDelim(List *self, FILE *f, const char *first,
 }
 
 
-void ListClear(List *self)
+void ArrayClear(Array *self)
 {
 	self->count = 0;
 	self->head = 0;
 	self->tail = 0;
-	self->error = ListErrOK;
+	self->error = ArrayErrOK;
 }
 
 
-void ListDeleteObjects(List *self)
+void ArrayDeleteObjects(Array *self)
 {
 	int index;
 	int i;
@@ -168,58 +168,58 @@ void ListDeleteObjects(List *self)
 			i = (i + 1) % self->size, index++)
 		delete(self->array[i]);
 
-	ListClear(self);
+	ArrayClear(self);
 }
 
 
-void ListAdd(List *self, Object *object)
+void ArrayAdd(Array *self, Object *object)
 {
-	/* Grow list if necessary */
+	/* Grow array if necessary */
 	if (self->count == self->size)
-		ListGrow(self);
+		ArrayGrow(self);
 
 	/* Add new element */
 	self->array[self->tail] = object;
 	self->tail = (self->tail + 1) % self->size;
 	self->count++;
-	self->error = ListErrOK;
+	self->error = ArrayErrOK;
 }
 
 
-Object *ListGet(List *self, int index)
+Object *ArrayGet(Array *self, int index)
 {
 	/* Check bounds */
 	if (index < 0 || index >= self->count)
 	{
-		self->error = ListErrBounds;
+		self->error = ArrayErrBounds;
 		return NULL;
 	}
 
 	/* Return element */
 	index = (index + self->head) % self->size;
-	self->error = ListErrOK;
+	self->error = ArrayErrOK;
 	return self->array[index];
 }
 
 
-void ListSet(List *self, int index, Object *object)
+void ArraySet(Array *self, int index, Object *object)
 {
 	/* Check bounds */
 	if (index < 0 || index >= self->count)
 	{
-		self->error = ListErrBounds;
+		self->error = ArrayErrBounds;
 		return;
 	}
 
 	/* Return element */
 	index = (index + self->head) % self->size;
 	self->array[index] = object;
-	self->error = ListErrOK;
+	self->error = ArrayErrOK;
 }
 
 
 #define INLIST(X) (((X) + self->size) % self->size)
-void ListInsert(List *self, int index, Object *object)
+void ArrayInsert(Array *self, int index, Object *object)
 {
 	int shiftcount;
 	int pos;
@@ -228,13 +228,13 @@ void ListInsert(List *self, int index, Object *object)
 	/* Check bounds */
 	if (index < 0 || index > self->count)
 	{
-		self->error = ListErrBounds;
+		self->error = ArrayErrBounds;
 		return;
 	}
 
 	/* Grow self if necessary */
 	if (self->count == self->size)
-		ListGrow(self);
+		ArrayGrow(self);
 
 	/* Choose whether to shift elements on the right increasing 'tail', or
 	 * shift elements on the left decreasing 'head'. */
@@ -258,17 +258,17 @@ void ListInsert(List *self, int index, Object *object)
 
 	self->array[(self->head + index) % self->size] = object;
 	self->count++;
-	self->error = ListErrOK;
+	self->error = ArrayErrOK;
 }
 
 
-int ListFind(List *self, Object *object)
+int ArrayFind(Array *self, Object *object)
 {
 	int pos;
 	int i;
 	
 	/* Search element */
-	self->error = ListErrOK;
+	self->error = ArrayErrOK;
 	for (i = 0, pos = self->head;
 			i < self->count;
 			i++, pos = (pos + 1) % self->size)
@@ -276,12 +276,12 @@ int ListFind(List *self, Object *object)
 			return i;
 	
 	/* Element not found */
-	self->error = ListErrNotFound;
+	self->error = ArrayErrNotFound;
 	return -1;
 }
 
 
-Object *ListRemove(List *self, int index)
+Object *ArrayRemove(Array *self, int index)
 {
 	Object *object;
 
@@ -292,7 +292,7 @@ Object *ListRemove(List *self, int index)
 	/* check bounds */
 	if (index < 0 || index >= self->count)
 	{
-		self->error = ListErrBounds;
+		self->error = ArrayErrBounds;
 		return NULL;
 	}
 
@@ -321,14 +321,14 @@ Object *ListRemove(List *self, int index)
 	}
 	
 	self->count--;
-	self->error = ListErrOK;
+	self->error = ArrayErrOK;
 	return object;
 }
 
 
-void ListSort(List *self)
+void ArraySort(Array *self)
 {
 	if (self->count)
-		ListSortRange(self, 0, self->count - 1);
+		ArraySortRange(self, 0, self->count - 1);
 }
 
