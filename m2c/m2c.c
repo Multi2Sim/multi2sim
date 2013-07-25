@@ -35,7 +35,6 @@
 #include <lib/util/string.h>
 
 
-
 /*
  * Global Variables
  */
@@ -637,31 +636,6 @@ void m2c_done(void)
 
 int main(int argc, char **argv)
 {
-	/*{
-		CLASS_REGISTER(String);
-		CLASS_REGISTER(List);
-		
-		List *list;
-
-		list = new(List);
-		ListAdd(list, asObject(new(String, "hello")));
-		ListAdd(list, asObject(new(String, "how")));
-		ListAdd(list, asObject(new(String, "are")));
-		ListAdd(list, asObject(new(String, "you")));
-		ListDump(asObject(list), stdout);
-
-		printf("Sorting list\n");
-
-		ListSort(list);
-		ListDump(asObject(list), stdout);
-
-		ListDeleteObjects(list);
-		delete(list);
-
-		mhandle_done();
-		exit(0);
-	}*/
-
 	/* Read command line */
 	m2c_pre_init();
 	m2c_read_command_line(argc, argv);

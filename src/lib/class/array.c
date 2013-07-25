@@ -59,7 +59,8 @@ static int ArrayCompareObject(Object *o1, Object *o2)
 	if (!o1->Compare)
 	{
 		ObjectDump(o1, stderr);
-		panic("virtual function 'Compare' not overridden");
+		panic("%s: virtual function 'Compare' not overridden",
+				__FUNCTION__);
 	}
 	return o1->Compare(o1, o2);
 }
