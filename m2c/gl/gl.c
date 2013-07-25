@@ -568,6 +568,7 @@ static char* gl_shader_file_read(const char* file_name, int *file_size)
 {
 	FILE* input ;
 	long size;
+	int read_bytes;
 	char *content;
 
 	input = fopen(file_name, "rb");
@@ -587,7 +588,9 @@ static char* gl_shader_file_read(const char* file_name, int *file_size)
 	if(content == NULL) 
 		return NULL;
 
-	fread(content, 1, (size_t)size, input);
+	read_bytes = fread(content, 1, (size_t)size, input);
+	if (read_bytes != size)
+		fatal("%s': error reading file contents", file_name);
 	if(ferror(input)) {
 		free(content);
 		return NULL;

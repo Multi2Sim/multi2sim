@@ -287,6 +287,7 @@ void glLinkProgram (GLuint program)
 	char *binary_name;
 	void *binary;
 	unsigned int size;
+	int bytes;
 	FILE *f;
 
 	/* Debug */
@@ -324,7 +325,9 @@ void glLinkProgram (GLuint program)
 
 	/* Read binary */
 	fseek(f, 0, SEEK_SET);
-	fread(binary, size, 1, f);
+	bytes = fread(binary, size, 1, f);
+	if (bytes != size)
+		fatal("%s': error reading file contents", binary_name);
 	fclose(f);
 	
 	/* Add to program object */
