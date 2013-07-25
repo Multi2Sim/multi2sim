@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "numa-partition-strategy.h"
 #include "partition-util.h"
 
@@ -21,7 +22,9 @@ int numa_strategy_get_partition(void *inst, int id, int desired_groups, unsigned
 {
 	struct numa_strategy_info_t *info = (struct numa_strategy_info_t *)inst;
 	unsigned int num_parts_left = info->part->groups[info->part_dim] - info->num_parts_assigned;
-	unsigned int size = round_up_not_more(num_parts_left, 2 * info->part->num_devices, num_parts_left);
+	unsigned int size = num_parts_left / (2 * info->part->num_devices);
+	if (size == 0 && num_parts_left != 0)
+		size = 1;
 
 	if (size != 0)
 	{

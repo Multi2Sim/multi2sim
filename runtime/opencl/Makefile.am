@@ -126,7 +126,13 @@ __top_builddir__lib_libm2s_opencl_la_SOURCES = \
 	numa-partition-strategy.h \
 	\
 	first-done-partition-strategy.c \
-	first-done-partition-strategy.h
+	first-done-partition-strategy.h \
+	\
+	same-latency-partition-strategy.c \
+	same-latency-partition-strategy.h \
+	\
+	partition-issue-log.c \
+	partition-issue-log.h
 
 AM_CFLAGS = -m32 -D_GNU_SOURCE
 AM_CCASFLAGS = -m32
