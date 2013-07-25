@@ -287,7 +287,7 @@ void glLinkProgram (GLuint program)
 
 	char *binary_name;
 	void *binary;
-	unsigned int size;
+	int size;
 
 	/* Debug */
 	opengl_debug("API call %s(%d)\n", __FUNCTION__, program);
@@ -313,7 +313,9 @@ void glLinkProgram (GLuint program)
 
 	/* Load binary */
 	binary = read_buffer(binary_name, &size);
-	
+	if (!binary)
+		fatal("%s\n", opengl_err_program_not_found);
+
 	/* Add to program object */
 	program_obj->binary = binary;
 	program_obj->binary_size = size;
