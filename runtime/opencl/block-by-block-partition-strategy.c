@@ -25,7 +25,13 @@ void *block_by_block_strategy_create(int num_devices, unsigned int dims, const u
 	else
 		info->divisions = atoi(div_str);
 
+
+
 	info->part_dim = pick_partition_dimension(dims, groups);
+
+	if (info->divisions > info->part->groups[info->part_dim])
+		info->divisions = info->part->groups[info->part_dim];
+	
 	return info;
 }
 

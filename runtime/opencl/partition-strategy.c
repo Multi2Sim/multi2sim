@@ -13,6 +13,7 @@
 #include "numa-partition-strategy.h"
 #include "block-by-block-partition-strategy.h"
 #include "first-done-partition-strategy.h"
+#include "same-latency-partition-strategy.h"
 
 /* forward declartion for default strategy. */
 void *default_strategy_create(int num_devices, unsigned int dims, const unsigned int *groups);
@@ -20,13 +21,14 @@ int default_strategy_get_partition(void *inst, int id, int desired_groups, unsig
 void default_strategy_destroy(void *inst);
 
 static struct opencl_partition_strategy strats[] = {
-	{default_strategy_create, default_strategy_get_partition, default_strategy_destroy},
-	{even_strategy_create, even_strategy_get_partition, even_strategy_destroy},
-	{relative_runtime_strategy_create, relative_runtime_strategy_get_partition, relative_runtime_strategy_destroy},
-	{throughput_overhead_strategy_create, throughput_overhead_strategy_get_partition, throughput_overhead_strategy_destroy},
-	{numa_strategy_create, numa_strategy_get_partition, numa_strategy_destroy},
-	{block_by_block_strategy_create, block_by_block_strategy_get_partition, block_by_block_strategy_destroy},
-	{first_done_strategy_create, first_done_strategy_get_partition, first_done_strategy_destroy}};
+/* 0 */	{default_strategy_create, default_strategy_get_partition, default_strategy_destroy},
+/* 1 */	{even_strategy_create, even_strategy_get_partition, even_strategy_destroy},
+/* 2 */	{relative_runtime_strategy_create, relative_runtime_strategy_get_partition, relative_runtime_strategy_destroy},
+/* 3 */	{throughput_overhead_strategy_create, throughput_overhead_strategy_get_partition, throughput_overhead_strategy_destroy},
+/* 4 */	{numa_strategy_create, numa_strategy_get_partition, numa_strategy_destroy},
+/* 5 */	{block_by_block_strategy_create, block_by_block_strategy_get_partition, block_by_block_strategy_destroy},
+/* 6 */	{first_done_strategy_create, first_done_strategy_get_partition, first_done_strategy_destroy},
+/* 7 */	{same_latency_strategy_create, same_latency_strategy_get_partition, same_latency_strategy_destroy}};
 
 const struct opencl_partition_strategy *get_strategy()
 {
