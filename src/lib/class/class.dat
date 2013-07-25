@@ -4,6 +4,7 @@
 
 CLASS(Array)
 CLASS(List)
+CLASS(ListIterator)
 CLASS(HashTable)
 CLASS(Heap)
 CLASS(IniFile)
