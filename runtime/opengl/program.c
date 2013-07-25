@@ -27,6 +27,7 @@
 #include "list.h"
 #include "linked-list.h"
 #include "mhandle.h"
+#include "misc.h"
 #include "program.h"
 #include "shader.h"
 
@@ -287,8 +288,6 @@ void glLinkProgram (GLuint program)
 	char *binary_name;
 	void *binary;
 	unsigned int size;
-	int bytes;
-	FILE *f;
 
 	/* Debug */
 	opengl_debug("API call %s(%d)\n", __FUNCTION__, program);
@@ -313,22 +312,7 @@ void glLinkProgram (GLuint program)
 				__FUNCTION__, opengl_err_program_compile);
 
 	/* Load binary */
-	f = fopen(binary_name, "rb");
-	if (!f)
-		fatal("%s: %s: cannot open file.\n%s", __FUNCTION__,
-			binary_name, opengl_err_program_not_found);
-	
-	/* Allocate buffer */
-	fseek(f, 0, SEEK_END);
-	size = ftell(f);
-	binary = xmalloc(size);
-
-	/* Read binary */
-	fseek(f, 0, SEEK_SET);
-	bytes = fread(binary, size, 1, f);
-	if (bytes != size)
-		fatal("%s': error reading file contents", binary_name);
-	fclose(f);
+	binary = read_buffer(binary_name, &size);
 	
 	/* Add to program object */
 	program_obj->binary = binary;
