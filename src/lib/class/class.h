@@ -177,7 +177,7 @@ void ObjectDump(Object *self, FILE *f);
 
 #define new_ctor(name, ctor, ...) \
 	({ \
-		name *__p = class_new(&name##Class); \
+		name *__p = __class_new(&name##Class, __FILE__, __LINE__, #name); \
 		name##ctor(__p, ##__VA_ARGS__); \
 		__p; \
 	})
@@ -193,7 +193,15 @@ extern struct class_t *class_list_tail;
 void class_init(void);
 void class_register(struct class_t *c);
 unsigned int class_compute_id(char *name);
+
+#ifdef NDEBUG
+#define __class_new(c, file, line, name) class_new(c)
 void *class_new(struct class_t *c);
+#else
+#define __class_new(c, file, line, name) class_new(c, file, line, name)
+void *class_new(struct class_t *c, char *file, int line, char *name);
+#endif
+
 void class_delete(void *p);
 int class_instance_of(void *p, struct class_t *c);
 
