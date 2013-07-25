@@ -18,24 +18,24 @@
  */
 
 #ifndef LIB_CLASS_LIST_H
-#define LIB_CLASS_LIST_H
+#define LIB_CLASS_ARRAY_H
 
 #include "class.h"
 
 
 /*
- * Class 'List'
+ * Class 'Array'
  */
 
 typedef enum
 {
-	ListErrOK = 0,
-	ListErrBounds,
-	ListErrNotFound,
+	ArrayErrOK = 0,
+	ArrayErrBounds,
+	ArrayErrNotFound,
 } ListError;
 
 
-CLASS_BEGIN(List, Object)
+CLASS_BEGIN(Array, Object)
 
 	/* Number of elements */
 	int count;
@@ -53,59 +53,59 @@ CLASS_BEGIN(List, Object)
 	/* Elements */
 	Object **array;
 
-CLASS_END(List)
+CLASS_END(Array)
 
 
-void ListCreate(List *self);
-void ListCreateWithSize(List *self, int size);
-void ListDestroy(List *self);
+void ArrayCreate(Array *self);
+void ArrayCreateWithSize(Array *self, int size);
+void ArrayDestroy(Array *self);
 
-/* Dump the content of the list by calling each object's 'Dump' virtual method
+/* Dump the content of the array by calling each object's 'Dump' virtual method
  * followed by a newline character. */
-void ListDump(Object *self, FILE *f);
+void ArrayDump(Object *self, FILE *f);
 
-/* Dump the content of the list by calling each object's 'Dump' virtual method
+/* Dump the content of the array by calling each object's 'Dump' virtual method
  * and printing string 'first' intially, 'last' finally, and 'middle' between
  * every pair of elements. */
-void ListDumpWithDelim(List *self, FILE *f, const char *first,
+void ArrayDumpWithDelim(Array *self, FILE *f, const char *first,
 		const char *middle, const char *last);
 
-/* Clear the content of the list. Freeing the elements that were contained
+/* Clear the content of the array. Freeing the elements that were contained
  * before the call is the responsibility of the caller. The call always succeeds
  * and updates the error code. */
-void ListClear(List *self);
+void ArrayClear(Array *self);
 
-/* Free all objects added to the list with a call to 'delete()', and clear the
+/* Free all objects added to the array with a call to 'delete()', and clear the
  * content of the list. This call always succeeds and updates the error code. */
-void ListDeleteObjects(List *self);
+void ArrayDeleteObjects(Array *self);
 
-/* Add an object at the end of the list. This call always succeeds and updates
+/* Add an object at the end of the array. This call always succeeds and updates
  * the error code. */
-void ListAdd(List *self, Object *object);
+void ArrayAdd(Array *self, Object *object);
 
 /* Obtain the element at position 'index'. If 'index' is out of bounds, NULL is
- * returned and the error code is set to 'ListErrBounds'. */
-Object *ListGet(List *self, int index);
+ * returned and the error code is set to 'ArrayErrBounds'. */
+Object *ArrayGet(Array *self, int index);
 
 /* Set the element at position 'index' to 'object'. If 'index' is out of bounds,
- * the error code is set to 'ListErrBounds'. */
-void ListSet(List *self, int index, Object *object);
+ * the error code is set to 'ArrayErrBounds'. */
+void ArraySet(Array *self, int index, Object *object);
 
 /* Insert element 'object' at position 'index'. If 'index' is less than 0 or
- * greater than 'List->count', the error code is set to 'ListErrBounds'. */
-void ListInsert(List *self, int index, Object *object);
+ * greater than 'Array->count', the error code is set to 'ArrayErrBounds'. */
+void ArrayInsert(Array *self, int index, Object *object);
 
-/* Return the index of the first occurrence of 'object' in the list. If not
- * found, -1 is returned and the error code is set to 'ListErrNotFound'. */
-int ListFind(List *self, Object *object);
+/* Return the index of the first occurrence of 'object' in the array. If not
+ * found, -1 is returned and the error code is set to 'ArrayErrNotFound'. */
+int ArrayFind(Array *self, Object *object);
 
 /* Remove the object at position 'index' and return it. If 'index' is out of
- * bounds, NULL is returned and the error code is set to 'ListErrBounds'. */
-Object *ListRemove(List *self, int index);
+ * bounds, NULL is returned and the error code is set to 'ArrayErrBounds'. */
+Object *ArrayRemove(Array *self, int index);
 
 /* Sort the content of the list using virtual function 'Compare' of the
  * contained objects. */
-void ListSort(List *self);
+void ArraySort(Array *self);
 
 #endif
 

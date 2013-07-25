@@ -2,12 +2,15 @@ lib_LIBRARIES = libclass.a
 
 libclass_a_SOURCES = \
 	\
+	array.c \
+	array.h \
+	\
 	class.c \
 	class.dat \
 	class.h \
 	\
-	list.c \
-	list.h \
+	linked-list.c \
+	linked-list.h \
 	\
 	string.c \
 	string.h

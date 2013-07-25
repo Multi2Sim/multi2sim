@@ -2,12 +2,12 @@
  * Built-in Classes
  */
 
-CLASS(String)
+CLASS(Array)
 CLASS(List)
-CLASS(LinkedList)
 CLASS(HashTable)
 CLASS(Heap)
 CLASS(IniFile)
+CLASS(String)
 
 
 /*
