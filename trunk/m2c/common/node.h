@@ -28,10 +28,6 @@
 #endif
 
 
-/* Forward declarations */
-struct linked_list_t;
-
-
 /*
  * Class 'Node'
  */
@@ -73,13 +69,13 @@ CLASS_BEGIN(Node, Object)
 	/* Control tree that the node belongs to */
 	CTree *ctree;
 
-	struct linked_list_t *succ_list;
-	struct linked_list_t *pred_list;
+	List *succ_list;
+	List *pred_list;
 
-	struct linked_list_t *forward_edge_list;
-	struct linked_list_t *back_edge_list;
-	struct linked_list_t *tree_edge_list;
-	struct linked_list_t *cross_edge_list;
+	List *forward_edge_list;
+	List *back_edge_list;
+	List *tree_edge_list;
+	List *cross_edge_list;
 
 	/* If the node is part of a higher-level abstract node, this field
 	 * points to it. If not, the field is NULL. */
@@ -119,10 +115,8 @@ void NodeDestroy(Node *self);
 void NodeDump(Object *self, FILE *f);
 
 /* Return true if 'node' is in the linked list of nodes passed as the second
- * argument. This function does not call 'linked_list_find'. Instead, it
- * traverses the list using a dedicated iterator, so that the current element of
- * the list is not lost. */
-int NodeInList(Node *self, struct linked_list_t *list);
+ * argument. The function does not affect the internal iterator of 'list'. */
+int NodeInList(Node *self, List *list);
 
 /* Try to create an edge between 'node' and 'node_dest'. If the edge already
  * exist, the function will ignore the call silently. */
@@ -238,7 +232,7 @@ CLASS_BEGIN(AbstractNode, Node)
 
 	/* List of function nodes associated with the abstract
  	 * node. Elements of type 'node_t'. */
-	struct linked_list_t *child_list;
+	List *child_list;
 
 CLASS_END(AbstractNode)
 
@@ -260,9 +254,9 @@ void AbstractNodeCompare(Node *self, Node *node);
  */
 
 /* Dumping lists of nodes */
-void NodeListDump(struct linked_list_t *list, FILE *f);
-void NodeListDumpBuf(struct linked_list_t *list, char *buf, int size);
-void NodeListDumpDetail(struct linked_list_t *list, FILE *f);
+void NodeListDump(List *list, FILE *f);
+void NodeListDumpBuf(List *list, char *buf, int size);
+void NodeListDumpDetail(List *list, FILE *f);
 
 
 

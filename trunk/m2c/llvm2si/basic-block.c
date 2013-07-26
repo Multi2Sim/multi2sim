@@ -21,6 +21,7 @@
 #include <m2c/common/ctree.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
 #include <lib/util/linked-list.h>
@@ -744,7 +745,7 @@ static void Llvm2siBasicBlockEmitPhi(Llvm2siBasicBlock *self,
 
 		/* Create 'phi' element and add it. */
 		phi = new(Llvm2siPhi, node, llvalue, arg);
-		linked_list_add(function->phi_list, phi);
+		ListAdd(function->phi_list, asObject(phi));
 	}
 }
 
