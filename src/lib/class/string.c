@@ -22,6 +22,7 @@
 
 #include <lib/mhandle/mhandle.h>
 
+#include "list.h"
 #include "string.h"
 
 
@@ -56,15 +57,15 @@ static void StringGrow(String *self, size_t new_length)
 		self->size <<= 1;
 	
 	/* Reallocate */
-	self->str = xrealloc(self->str, self->size);
+	self->text = xrealloc(self->text, self->size);
 }
 
 
-void StringCreate(String *self, const char *str)
+void StringCreate(String *self, const char *text)
 {
 	/* Initialize */
-	self->str = xstrdup(str ? str : "");
-	self->length = strlen(str);
+	self->text = xstrdup(text ? text : "");
+	self->length = strlen(text);
 	self->size = self->length + 1;
 
 	/* Virtual functions */
@@ -75,14 +76,14 @@ void StringCreate(String *self, const char *str)
 
 void StringDestroy(String *self)
 {
-	free(self->str);
+	free(self->text);
 }
 
 
 void StringDump(Object *self, FILE *f)
 {
 	String *s = asString(self);
-	fprintf(f, "%s", s->str);
+	fprintf(f, "%s", s->text);
 }
 
 
@@ -91,13 +92,13 @@ int StringCompare(Object *self, Object *object)
 	String *s1 = asString(self);
 	String *s2 = asString(object);
 
-	return strcmp(s1->str, s2->str);
+	return strcmp(s1->text, s2->text);
 }
 
 
 void StringClear(String *self)
 {
-	self->str[0] = '\0';
+	self->text[0] = '\0';
 	self->length = 0;
 }
 
@@ -130,12 +131,12 @@ void StringReplace(String *self, int pos, size_t count, const char *str)
 		StringGrow(self, new_length);
 
 	/* Shift tail of string */
-	memmove(self->str + pos + length, self->str + pos + count,
+	memmove(self->text + pos + length, self->text + pos + count,
 			self->length - pos - count + 1);
 	self->length = new_length;
 
 	/* Copy new string */
-	memmove(self->str + pos, str, length);
+	memmove(self->text + pos, str, length);
 }
 
 
@@ -208,12 +209,12 @@ String *StringSubStr(String *self, int pos, size_t count)
 		count = self->length - pos;
 
 	/* Temporarily truncate current string */
-	old_char = self->str[pos + count];
-	self->str[pos + count] = '\0';
+	old_char = self->text[pos + count];
+	self->text[pos + count] = '\0';
 
 	/* Create new string and restore current string */
-	new_str = new(String, self->str + pos);
-	self->str[pos + count] = old_char;
+	new_str = new(String, self->text + pos);
+	self->text[pos + count] = old_char;
 
 	/* Return new string */
 	return new_str;
@@ -224,7 +225,7 @@ void StringTrimLeft(String *self, const char *set)
 {
 	int pos = 0;
 
-	while (pos < self->length && CharInSet(self->str[pos], set))
+	while (pos < self->length && CharInSet(self->text[pos], set))
 		++pos;
 	StringErase(self, 0, pos);
 }
@@ -232,8 +233,8 @@ void StringTrimLeft(String *self, const char *set)
 
 void StringTrimRight(String *self, const char *set)
 {
-	while (self->length && CharInSet(self->str[self->length - 1], set))
-		self->str[--self->length] = '\0';
+	while (self->length && CharInSet(self->text[self->length - 1], set))
+		self->text[--self->length] = '\0';
 }
 
 
@@ -241,5 +242,44 @@ void StringTrim(String *self, const char *set)
 {
 	StringTrimLeft(self, set);
 	StringTrimRight(self, set);
+}
+
+
+List *StringTokenize(String *self, const char *set)
+{
+	List *list;
+	String *token;
+
+	int token_start;
+	int is_end;
+	int i;
+
+	/* Create list */
+	list = new(List);
+
+	/* Extract tokens */
+	token_start = -1;
+	for (i = 0; i <= self->length; i++)
+	{
+		/* End of string */
+		is_end = i == self->length;
+
+		/* Start a token */
+		if (!is_end && !CharInSet(self->text[i], set)
+				&& token_start == -1)
+			token_start = i;
+
+		/* End a token */
+		if (token_start > -1 && (is_end ||
+				CharInSet(self->text[i], set)))
+		{
+			token = StringSubStr(self, token_start, i - token_start);
+			ListAdd(list, asObject(token));
+			token_start = -1;
+		}
+	}
+
+	/* Return token list */
+	return list;
 }
 
