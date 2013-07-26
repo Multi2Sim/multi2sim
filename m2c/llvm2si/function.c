@@ -21,9 +21,9 @@
 #include <m2c/common/ctree.h>
 #include <m2c/si2bin/arg.h>
 #include <m2c/si2bin/inst.h>
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
@@ -335,7 +335,7 @@ void Llvm2siFunctionCreate(Llvm2siFunction *self, LLVMValueRef llfunction)
 	self->uav_list = list_create();
 	self->symbol_table = new(Llvm2siSymbolTable);
 	self->ctree = ctree = new(CTree, self->name);
-	self->phi_list = linked_list_create();
+	self->phi_list = new(List);
 
 	/* Create pre-defined nodes in control tree */
 	self->header_node = new(LeafNode, "header");
@@ -376,7 +376,7 @@ void Llvm2siFunctionDestroy(Llvm2siFunction *self)
 
 	/* Free list of 'phi' entries */
 	assert(!self->phi_list->count);
-	linked_list_free(self->phi_list);
+	delete(self->phi_list);
 
 	/* Rest */
 	delete(self->symbol_table);
@@ -391,7 +391,7 @@ void Llvm2siFunctionDump(Object *self, FILE *f)
 	Node *node;
 
 	Llvm2siFunctionArg *function_arg;
-	struct linked_list_t *node_list;
+	List *node_list;
 
 	int index;
 
@@ -410,12 +410,11 @@ void Llvm2siFunctionDump(Object *self, FILE *f)
 
 	/* Dump basic blocks */
 	fprintf(f, ".text\n");
-	node_list = linked_list_create();
+	node_list = new(List);
 	CTreeTraverse(function->ctree, node_list, NULL);
-	LINKED_LIST_FOR_EACH(node_list)
+	ListForEach(node_list, node, Node)
 	{
 		/* Skip abstract nodes */
-		node = linked_list_get(node_list);
 		if (!isLeafNode(node))
 			continue;
 
@@ -427,7 +426,7 @@ void Llvm2siFunctionDump(Object *self, FILE *f)
 		/* Dump code of basic block */
 		Llvm2siBasicBlockDump(asObject(basic_block), f);
 	}
-	linked_list_free(node_list);
+	delete(node_list);
 	fprintf(f, "\n");
 
 	/* Dump section '.data' */
@@ -619,7 +618,7 @@ void Llvm2siFunctionEmitArgs(Llvm2siFunction *self)
 void Llvm2siFunctionEmitBody(Llvm2siFunction *self)
 {
 	Llvm2siBasicBlock *basic_block;
-	struct linked_list_t *node_list;
+	List *node_list;
 
 	CTree *ctree;
 	Node *node;
@@ -636,14 +635,13 @@ void Llvm2siFunctionEmitBody(Llvm2siFunction *self)
 	/* Whether we use a pre- or a post-order traversal does not matter,
 	 * since we are only considering the leaf nodes.
 	 */
-	node_list = linked_list_create();
+	node_list = new(List);
 	CTreeTraverse(ctree, node_list, NULL);
 
 	/* Emit code for basic blocks */
-	LINKED_LIST_FOR_EACH(node_list)
+	ListForEach(node_list, node, Node)
 	{
 		/* Skip abstract nodes */
-		node = linked_list_get(node_list);
 		if (!isLeafNode(node))
 			continue;
 
@@ -657,8 +655,8 @@ void Llvm2siFunctionEmitBody(Llvm2siFunction *self)
 		Llvm2siBasicBlockEmit(basic_block, asLeafNode(node)->llbb);
 	}
 
-	/* Free structures */
-	linked_list_free(node_list);
+	/* Free */
+	delete(node_list);
 }
 
 
@@ -674,8 +672,8 @@ void Llvm2siFunctionEmitPhi(Llvm2siFunction *self)
 	while (self->phi_list->count)
 	{
 		/* Extract element from list */
-		linked_list_head(self->phi_list);
-		phi = linked_list_remove(self->phi_list);
+		ListHead(self->phi_list);
+		phi = asLlvm2siPhi(ListRemove(self->phi_list));
 
 		/* Get basic block */
 		node = asLeafNode(phi->src_node);
@@ -726,8 +724,8 @@ static void Llvm2siFunctionEmitIfThen(Llvm2siFunction *self, Node *node)
 	assert(isAbstractNode(node));
 	assert(asAbstractNode(node)->region == AbstractNodeIfThen);
 	assert(asAbstractNode(node)->child_list->count == 2);
-	if_node = linked_list_goto(asAbstractNode(node)->child_list, 0);
-	then_node = linked_list_goto(asAbstractNode(node)->child_list, 1);
+	if_node = asNode(ListGoto(asAbstractNode(node)->child_list, 0));
+	then_node = asNode(ListGoto(asAbstractNode(node)->child_list, 1));
 
 	/* Make sure roles match */
 	assert(if_node->role == node_role_if);
@@ -812,9 +810,9 @@ static void Llvm2siFunctionEmitIfThenElse(Llvm2siFunction *self, Node *node)
 	assert(isAbstractNode(node));
 	assert(asAbstractNode(node)->region == AbstractNodeIfThenElse);
 	assert(asAbstractNode(node)->child_list->count == 3);
-	if_node = linked_list_goto(asAbstractNode(node)->child_list, 0);
-	then_node = linked_list_goto(asAbstractNode(node)->child_list, 1);
-	else_node = linked_list_goto(asAbstractNode(node)->child_list, 2);
+	if_node = asNode(ListGoto(asAbstractNode(node)->child_list, 0));
+	then_node = asNode(ListGoto(asAbstractNode(node)->child_list, 1));
+	else_node = asNode(ListGoto(asAbstractNode(node)->child_list, 2));
 
 	/* Make sure roles match */
 	assert(if_node->role == node_role_if);
@@ -921,10 +919,10 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	assert(isAbstractNode(node));
 	assert(asAbstractNode(node)->region == AbstractNodeWhileLoop);
 	assert(asAbstractNode(node)->child_list->count == 4);
-	pre_node = linked_list_goto(asAbstractNode(node)->child_list, 0);
-	head_node = linked_list_goto(asAbstractNode(node)->child_list, 1);
-	tail_node = linked_list_goto(asAbstractNode(node)->child_list, 2);
-	exit_node = linked_list_goto(asAbstractNode(node)->child_list, 3);
+	pre_node = asNode(ListGoto(asAbstractNode(node)->child_list, 0));
+	head_node = asNode(ListGoto(asAbstractNode(node)->child_list, 1));
+	tail_node = asNode(ListGoto(asAbstractNode(node)->child_list, 2));
+	exit_node = asNode(ListGoto(asAbstractNode(node)->child_list, 3));
 
 	/* Make sure roles match */
 	assert(pre_node->role == node_role_pre);
@@ -1045,20 +1043,19 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 
 void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *self)
 {
-	struct linked_list_t *node_list;
+	List *node_list;
 	Node *node;
 
 	/* Emit control flow actions using a post-order traversal of the syntax
 	 * tree (not control-flow graph), from inner to outer control flow
 	 * structures. Which specific post-order traversal does not matter. */
-	node_list = linked_list_create();
+	node_list = new(List);
 	CTreeTraverse(self->ctree, NULL, node_list);
 
 	/* Traverse nodes */
-	LINKED_LIST_FOR_EACH(node_list)
+	ListForEach(node_list, node, Node)
 	{
 		/* Ignore leaf nodes */
-		node = linked_list_get(node_list);
 		if (isLeafNode(node))
 			continue;
 
@@ -1093,8 +1090,8 @@ void Llvm2siFunctionEmitControlFlow(Llvm2siFunction *self)
 		}
 	}
 
-	/* Free structures */
-	linked_list_free(node_list);
+	/* Free */
+	delete(node_list);
 }
 
 

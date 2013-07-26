@@ -27,7 +27,7 @@
  * Class 'List'
  */
 
-#define LIST_FOR_EACH(_list, _object, _class) \
+#define ListForEach(_list, _object, _class) \
 	for ((_object) = as##_class(ListHead((_list))); \
 		(_object); \
 		(_object) = as##_class(ListNext((_list))))
@@ -173,7 +173,7 @@ void ListSort(List *self);
  * Class 'ListIterator'
  */
 
-#define LIST_ITERATOR_FOR_EACH(_iterator, _object, _class) \
+#define ListIteratorForEach(_iterator, _object, _class) \
 	for ((_object) = as##_class(ListIteratorHead((_iterator))); \
 		(_object); \
 		(_object) = as##_class(ListIteratorNext((_iterator))))
@@ -238,6 +238,12 @@ Object *ListIteratorPrev(ListIterator *self);
  * position right past the end of the list, NULL is returned and the error code
  * of the iterator is set to 'ListErrEnd'. */
 Object *ListIteratorGoto(ListIterator *self, int index);
+
+/* Move iterator to the first occurrence of 'object' in the list and return the
+ * object. If the object is not in the list, return NULL and set the error code
+ * of the iterator to 'ListErrNotFound'. */
+Object *ListIteratorFind(ListIterator *self, Object *object);
+
 
 /* Return the object pointed to by the list iterator. If the iterator is
  * pointing past the list tail, NULL is returned and the error code of the

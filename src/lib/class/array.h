@@ -27,7 +27,7 @@
  * Class 'Array'
  */
 
-#define ARRAY_FOR_EACH(_array, _index) \
+#define ArrayForEach(_array, _index) \
 	for ((_index) = 0; (_index) < (_array)->count; (_index)++)
 
 typedef enum
@@ -35,7 +35,7 @@ typedef enum
 	ArrayErrOK = 0,
 	ArrayErrBounds,
 	ArrayErrNotFound,
-} ListError;
+} ArrayError;
 
 
 CLASS_BEGIN(Array, Object)
@@ -44,7 +44,7 @@ CLASS_BEGIN(Array, Object)
 	int count;
 
 	/* Error code */
-	ListError error;
+	ArrayError error;
 
 	/* Allocated size */
 	int size;

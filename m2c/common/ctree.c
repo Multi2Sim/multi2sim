@@ -17,12 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/config.h>
 #include <lib/util/debug.h>
 #include <lib/util/hash-table.h>
-#include <lib/util/linked-list.h>
 #include <lib/util/list.h>
 #include <lib/util/string.h>
 
@@ -39,7 +38,7 @@ int ctree_debug_category;
 
 /* List of control trees created during the parsing of the configuration file,
  * to keep track of loaded control trees. */
-static struct linked_list_t *ctree_list;
+static List *ctree_list;
 
 
 
@@ -55,12 +54,9 @@ static CTree *llvm2si_ctree_get(char *name)
 	CTree *ctree;
 
 	/* Search control tree */
-	LINKED_LIST_FOR_EACH(ctree_list)
-	{
-		ctree = linked_list_get(ctree_list);
+	ListForEach(ctree_list, ctree, CTree)
 		if (!strcmp(ctree->name, name))
 			return ctree;
-	}
 
 	/* Not found */
 	return NULL;
@@ -102,7 +98,7 @@ static void ctree_process_command(char *string)
 		/* Load control tree */
 		ctree = new(CTree, ctree_name);
 		CTreeReadFromConfig(ctree, ctree_config, ctree_name);
-		linked_list_add(ctree_list, ctree);
+		ListAdd(ctree_list, asObject(ctree));
 
 		/* Close */
 		config_free(ctree_config);
@@ -262,41 +258,40 @@ static void ctree_read_config(void)
 
 /* Recursive DFS traversal for a node. */
 static int CTreeDFSNode(CTree *self, Node *node,
-		struct linked_list_t *postorder_list, int time)
+		List *postorder_list, int time)
 {
 	Node *succ_node;
 
 	node->color = 1;  /* Gray */
 	node->preorder_id = time++;
-	LINKED_LIST_FOR_EACH(node->succ_list)
+	ListForEach(node->succ_list, succ_node, Node)
 	{
-		succ_node = linked_list_get(node->succ_list);
 		if (succ_node->color == 2)  /* Black */
 		{
 			/* Forward- or cross-edge */
 			if (node->preorder_id < succ_node->preorder_id)
-				linked_list_add(node->forward_edge_list,
-					succ_node);
+				ListAdd(node->forward_edge_list,
+					asObject(succ_node));
 			else
-				linked_list_add(node->cross_edge_list,
-					succ_node);
+				ListAdd(node->cross_edge_list,
+					asObject(succ_node));
 		}
 		else if (succ_node->color == 1)  /* Gray */
 		{
 			/* This is a back-edge */
-			linked_list_add(node->back_edge_list, succ_node);
+			ListAdd(node->back_edge_list, asObject(succ_node));
 		}
 		else  /* White */
 		{
 			/* This is a tree-edge */
-			linked_list_add(node->tree_edge_list, succ_node);
+			ListAdd(node->tree_edge_list, asObject(succ_node));
 			time = CTreeDFSNode(self, succ_node, postorder_list, time);
 		}
 	}
 	node->color = 2;  /* Black */
 	node->postorder_id = time++;
 	if (postorder_list)
-		linked_list_add(postorder_list, node);
+		ListAdd(postorder_list, asObject(node));
 	return time;
 }
 
@@ -307,7 +302,7 @@ static int CTreeDFSNode(CTree *self, Node *node,
  * We follow the algorithm presented in  http://www.personal.kent.edu/
  *    ~rmuhamma/Algorithms/MyAlgorithms/GraphAlgor/depthSearch.htm
  */
-static void CTreeDFS(CTree *self, struct linked_list_t *postorder_list)
+static void CTreeDFS(CTree *self, List *postorder_list)
 {
 	Node *node;
 
@@ -316,19 +311,18 @@ static void CTreeDFS(CTree *self, struct linked_list_t *postorder_list)
 
 	/* Clear postorder list */
 	if (postorder_list)
-		linked_list_clear(postorder_list);
+		ListClear(postorder_list);
 
 	/* Initialize nodes */
-	LINKED_LIST_FOR_EACH(self->node_list)
+	ListForEach(self->node_list, node, Node)
 	{
-		node = linked_list_get(self->node_list);
 		node->preorder_id = -1;
 		node->postorder_id = -1;
 		node->color = 0;  /* White */
-		linked_list_clear(node->back_edge_list);
-		linked_list_clear(node->cross_edge_list);
-		linked_list_clear(node->tree_edge_list);
-		linked_list_clear(node->forward_edge_list);
+		ListClear(node->back_edge_list);
+		ListClear(node->cross_edge_list);
+		ListClear(node->tree_edge_list);
+		ListClear(node->forward_edge_list);
 	}
 
 	/* Initiate recursion */
@@ -338,13 +332,13 @@ static void CTreeDFS(CTree *self, struct linked_list_t *postorder_list)
 
 /* Recursive helper function for natural loop discovery */
 static void CTreeReachUnderNode(CTree *self, Node *header_node,
-		Node *node, struct linked_list_t *reach_under_list)
+		Node *node, List *reach_under_list)
 {
 	Node *pred_node;
 
 	/* Label as visited and add node */
 	node->color = 1;
-	linked_list_add(reach_under_list, node);
+	ListAdd(reach_under_list, asObject(node));
 
 	/* Header reached */
 	if (node == header_node)
@@ -358,13 +352,10 @@ static void CTreeReachUnderNode(CTree *self, Node *header_node,
 		return;
 
 	/* Add predecessors recursively */
-	LINKED_LIST_FOR_EACH(node->pred_list)
-	{
-		pred_node = linked_list_get(node->pred_list);
+	ListForEach(node->pred_list, pred_node, Node)
 		if (!pred_node->color)
 			CTreeReachUnderNode(self, header_node, pred_node,
 					reach_under_list);
-	}
 }
 
 
@@ -373,30 +364,24 @@ static void CTreeReachUnderNode(CTree *self, Node *header_node,
  * doesn't go through the header, where the tail is a node that is connected to
  * the header with a back-edge. */
 static void CTreeReachUnder(CTree *self, Node *header_node,
-		struct linked_list_t *reach_under_list)
+		List *reach_under_list)
 {
 	Node *node;
 	Node *pred_node;
 
 	/* Reset output list */
-	linked_list_clear(reach_under_list);
+	ListClear(reach_under_list);
 
 	/* Initialize nodes */
-	LINKED_LIST_FOR_EACH(self->node_list)
-	{
-		node = linked_list_get(self->node_list);
+	ListForEach(self->node_list, node, Node)
 		node->color = 0;  /* Not visited */
-	}
 
 	/* For all back-edges entering 'header_node', follow edges backwards and
 	 * keep adding nodes. */
-	LINKED_LIST_FOR_EACH(header_node->pred_list)
-	{
-		pred_node = linked_list_get(header_node->pred_list);
+	ListForEach(header_node->pred_list, pred_node, Node)
 		if (NodeInList(header_node, pred_node->back_edge_list))
 			CTreeReachUnderNode(self, header_node, pred_node,
 					reach_under_list);
-	}
 }
 
 
@@ -405,7 +390,7 @@ static void CTreeReachUnder(CTree *self, Node *header_node,
  */
 static void CTreeFlattenBlock(CTree *self, AbstractNode *abs_node)
 {
-	struct linked_list_t *node_list;
+	List *node_list;
 
 	Node *in_node;
 	Node *out_node;
@@ -414,14 +399,14 @@ static void CTreeFlattenBlock(CTree *self, AbstractNode *abs_node)
 	FILE *f;
 
 	/* Initialize */
-	node_list = linked_list_create();
+	node_list = new(List);
 
 	/* Get nodes */
 	assert(!asNode(abs_node)->parent);
 	assert(abs_node->region == AbstractNodeBlock);
 	assert(abs_node->child_list->count == 2);
-	in_node = linked_list_goto(abs_node->child_list, 0);
-	out_node = linked_list_goto(abs_node->child_list, 1);
+	in_node = asNode(ListGoto(abs_node->child_list, 0));
+	out_node = asNode(ListGoto(abs_node->child_list, 1));
 
 	/* Remove existing connection between child nodes */
 	NodeDisconnect(in_node, out_node);
@@ -436,19 +421,18 @@ static void CTreeFlattenBlock(CTree *self, AbstractNode *abs_node)
 	{
 		/* Save child nodes */
 		assert(asAbstractNode(in_node)->region == AbstractNodeBlock);
-		LINKED_LIST_FOR_EACH(asAbstractNode(in_node)->child_list)
-			linked_list_add(node_list,
-				linked_list_get(asAbstractNode(in_node)->child_list));
+		ListForEach(asAbstractNode(in_node)->child_list, tmp_node, Node)
+			ListAdd(node_list, asObject(tmp_node));
 
 		/* Remove from parent node */
-		in_node = linked_list_find(abs_node->child_list, in_node);
+		in_node = asNode(ListFind(abs_node->child_list, asObject(in_node)));
 		assert(in_node);
-		linked_list_remove(abs_node->child_list);
+		ListRemove(abs_node->child_list);
 
 		/* Remove from control tree */
-		in_node = linked_list_find(self->node_list, in_node);
+		in_node = asNode(ListFind(self->node_list, asObject(in_node)));
 		assert(in_node);
-		linked_list_remove(self->node_list);
+		ListRemove(self->node_list);
 
 		/* Free node */
 		delete(in_node);
@@ -456,12 +440,12 @@ static void CTreeFlattenBlock(CTree *self, AbstractNode *abs_node)
 	else
 	{
 		/* Save node */
-		linked_list_add(node_list, in_node);
+		ListAdd(node_list, asObject(in_node));
 
 		/* Remove from children */
-		in_node = linked_list_find(abs_node->child_list, in_node);
+		in_node = asNode(ListFind(abs_node->child_list, asObject(in_node)));
 		assert(in_node);
-		linked_list_remove(abs_node->child_list);
+		ListRemove(abs_node->child_list);
 	}
 
 	/* Add elements of 'out_node' to 'node_list' */
@@ -469,19 +453,20 @@ static void CTreeFlattenBlock(CTree *self, AbstractNode *abs_node)
 			== AbstractNodeBlock)
 	{
 		/* Save child nodes */
-		LINKED_LIST_FOR_EACH(asAbstractNode(out_node)->child_list)
-			linked_list_add(node_list, linked_list_get(
-				asAbstractNode(out_node)->child_list));
+		ListForEach(asAbstractNode(out_node)->child_list, tmp_node, Node)
+			ListAdd(node_list, asObject(tmp_node));
 
 		/* Remove from parent node */
-		out_node = linked_list_find(abs_node->child_list, out_node);
+		out_node = asNode(ListFind(abs_node->child_list,
+				asObject(out_node)));
 		assert(out_node);
-		linked_list_remove(abs_node->child_list);
+		ListRemove(abs_node->child_list);
 
 		/* Remove from control tree */
-		out_node = linked_list_find(self->node_list, out_node);
+		out_node = asNode(ListFind(self->node_list,
+				asObject(out_node)));
 		assert(out_node);
-		linked_list_remove(self->node_list);
+		ListRemove(self->node_list);
 
 		/* Free node */
 		delete(out_node);
@@ -489,20 +474,20 @@ static void CTreeFlattenBlock(CTree *self, AbstractNode *abs_node)
 	else
 	{
 		/* Save node */
-		linked_list_add(node_list, out_node);
+		ListAdd(node_list, asObject(out_node));
 
 		/* Remove from children */
-		out_node = linked_list_find(abs_node->child_list, out_node);
+		out_node = asNode(ListFind(abs_node->child_list,
+				asObject(out_node)));
 		assert(out_node);
-		linked_list_remove(abs_node->child_list);
+		ListRemove(abs_node->child_list);
 	}
 
 	/* Adopt orphan nodes */
 	assert(!abs_node->child_list->count);
-	LINKED_LIST_FOR_EACH(node_list)
+	ListForEach(node_list, tmp_node, Node)
 	{
-		tmp_node = linked_list_get(node_list);
-		linked_list_add(abs_node->child_list, tmp_node);
+		ListAdd(abs_node->child_list, asObject(tmp_node));
 		tmp_node->parent = asNode(abs_node);
 	}
 
@@ -516,7 +501,7 @@ static void CTreeFlattenBlock(CTree *self, AbstractNode *abs_node)
 	}
 
 	/* Done */
-	linked_list_free(node_list);
+	delete(node_list);
 }
 
 
@@ -527,7 +512,7 @@ static void CTreeFlattenBlock(CTree *self, AbstractNode *abs_node)
  * Likewise, all outgoing edges from any node in the list will come from
  * 'node'.
  */
-static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
+static AbstractNode *CTreeReduce(CTree *self, List *node_list,
 		AbstractNodeRegion region)
 {
 	AbstractNode *abs_node;
@@ -537,10 +522,10 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 	Node *src_node;
 	Node *dest_node;
 
-	struct linked_list_t *out_edge_src_list;
-	struct linked_list_t *out_edge_dest_list;
-	struct linked_list_t *in_edge_src_list;
-	struct linked_list_t *in_edge_dest_list;
+	List *out_edge_src_list;
+	List *out_edge_dest_list;
+	List *in_edge_src_list;
+	List *in_edge_dest_list;
 
 	char name[MAX_STRING_SIZE];
 
@@ -556,11 +541,9 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 
 	/* All nodes in 'node_list' must be part of the control tree, and none
 	 * of them can have a parent yet. */
-	LINKED_LIST_FOR_EACH(node_list)
+	ListForEach(node_list, tmp_node, Node)
 	{
-		tmp_node = linked_list_get(node_list);
-		if (!NodeInList(tmp_node,
-				self->node_list))
+		if (!NodeInList(tmp_node, self->node_list))
 			panic("%s: node not in control tree",
 					__FUNCTION__);
 		if (tmp_node->parent)
@@ -596,8 +579,8 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 	cyclic_block = 0;
 	if (region == AbstractNodeBlock)
 	{
-		in_node = linked_list_goto(node_list, 0);
-		out_node = linked_list_goto(node_list, node_list->count - 1);
+		in_node = asNode(ListGoto(node_list, 0));
+		out_node = asNode(ListGoto(node_list, node_list->count - 1));
 		assert(in_node && out_node);
 		if (NodeInList(in_node, out_node->succ_list))
 		{
@@ -609,36 +592,31 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 	/* Create a list of incoming edges from the control tree into the
 	 * region given in 'node_list', and a list of outgoing edges from the
 	 * region in 'node_list' into the rest of the control tree. */
-	in_edge_src_list = linked_list_create();
-	in_edge_dest_list = linked_list_create();
-	out_edge_src_list = linked_list_create();
-	out_edge_dest_list = linked_list_create();
-	LINKED_LIST_FOR_EACH(node_list)
+	in_edge_src_list = new(List);
+	in_edge_dest_list = new(List);
+	out_edge_src_list = new(List);
+	out_edge_dest_list = new(List);
+	ListForEach(node_list, tmp_node, Node)
 	{
-		/* Get node in region 'node_list' */
-		tmp_node = linked_list_get(node_list);
-
 		/* Traverse incoming edges, and store those
 		 * that come from outside of 'node_list'. */
-		LINKED_LIST_FOR_EACH(tmp_node->pred_list)
+		ListForEach(tmp_node->pred_list, in_node, Node)
 		{
-			in_node = linked_list_get(tmp_node->pred_list);
 			if (!NodeInList(in_node, node_list))
 			{
-				linked_list_add(in_edge_src_list, in_node);
-				linked_list_add(in_edge_dest_list, tmp_node);
+				ListAdd(in_edge_src_list, asObject(in_node));
+				ListAdd(in_edge_dest_list, asObject(tmp_node));
 			}
 		}
 
 		/* Traverse outgoing edges, and store those
 		 * that go outside of 'node_list'. */
-		LINKED_LIST_FOR_EACH(tmp_node->succ_list)
+		ListForEach(tmp_node->succ_list, out_node, Node)
 		{
-			out_node = linked_list_get(tmp_node->succ_list);
 			if (!NodeInList(out_node, node_list))
 			{
-				linked_list_add(out_edge_src_list, tmp_node);
-				linked_list_add(out_edge_dest_list, out_node);
+				ListAdd(out_edge_src_list, asObject(tmp_node));
+				ListAdd(out_edge_dest_list, asObject(out_node));
 			}
 		}
 	}
@@ -646,10 +624,10 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 	/* Reconnect incoming edges to the new abstract node */
 	while (in_edge_src_list->count || in_edge_dest_list->count)
 	{
-		linked_list_head(in_edge_src_list);
-		linked_list_head(in_edge_dest_list);
-		src_node = linked_list_remove(in_edge_src_list);
-		dest_node = linked_list_remove(in_edge_dest_list);
+		ListHead(in_edge_src_list);
+		ListHead(in_edge_dest_list);
+		src_node = asNode(ListRemove(in_edge_src_list));
+		dest_node = asNode(ListRemove(in_edge_dest_list));
 		assert(src_node);
 		assert(dest_node);
 		NodeReconnectDest(src_node, dest_node, asNode(abs_node));
@@ -658,10 +636,10 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 	/* Reconnect outgoing edges from the new abstract node */
 	while (out_edge_src_list->count || out_edge_dest_list->count)
 	{
-		linked_list_head(out_edge_src_list);
-		linked_list_head(out_edge_dest_list);
-		src_node = linked_list_remove(out_edge_src_list);
-		dest_node = linked_list_remove(out_edge_dest_list);
+		ListHead(out_edge_src_list);
+		ListHead(out_edge_dest_list);
+		src_node = asNode(ListRemove(out_edge_src_list));
+		dest_node = asNode(ListRemove(out_edge_dest_list));
 		assert(src_node);
 		assert(dest_node);
 		NodeReconnectSource(src_node, dest_node, asNode(abs_node));
@@ -669,12 +647,11 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 
 	/* Add all nodes as child nodes of the new abstract node */
 	assert(!abs_node->child_list->count);
-	LINKED_LIST_FOR_EACH(node_list)
+	ListForEach(node_list, tmp_node, Node)
 	{
-		tmp_node = linked_list_get(node_list);
 		assert(!tmp_node->parent);
 		tmp_node->parent = asNode(abs_node);
-		linked_list_add(abs_node->child_list, tmp_node);
+		ListAdd(abs_node->child_list, asObject(tmp_node));
 	}
 
 	/* Special case for block regions: if a cyclic block was detected, now
@@ -689,10 +666,10 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 		self->entry_node = asNode(abs_node);
 
 	/* Free structures */
-	linked_list_free(in_edge_src_list);
-	linked_list_free(in_edge_dest_list);
-	linked_list_free(out_edge_src_list);
-	linked_list_free(out_edge_dest_list);
+	delete(in_edge_src_list);
+	delete(in_edge_dest_list);
+	delete(out_edge_src_list);
+	delete(out_edge_dest_list);
 
 	/* Special case for block regions: in order to avoid nested blocks,
 	 * block regions are flattened when we detect that one block contains
@@ -700,8 +677,8 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 	if (region == AbstractNodeBlock)
 	{
 		assert(node_list->count == 2);
-		in_node = linked_list_goto(node_list, 0);
-		out_node = linked_list_goto(node_list, 1);
+		in_node = asNode(ListGoto(node_list, 0));
+		out_node = asNode(ListGoto(node_list, 1));
 		assert(in_node && out_node);
 
 		if ((isAbstractNode(in_node) &&
@@ -725,8 +702,8 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
 
 		/* Get original nodes */
 		assert(node_list->count == 2);
-		head_node = asNode(linked_list_goto(node_list, 0));
-		tail_node = asNode(linked_list_goto(node_list, 1));
+		head_node = asNode(ListGoto(node_list, 0));
+		tail_node = asNode(ListGoto(node_list, 1));
 		assert(isLeafNode(head_node));
 		assert(head_node->role == node_role_head);
 		assert(tail_node->role == node_role_tail);
@@ -761,11 +738,11 @@ static AbstractNode *CTreeReduce(CTree *self, struct linked_list_t *node_list,
  * false and 'node_list' remains empty.
  * List 'node_list' is an output list. */
 static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
-		struct linked_list_t *node_list)
+		List *node_list)
 {
 
 	/* Reset output region */
-	linked_list_clear(node_list);
+	ListClear(node_list);
 
 
 	/*
@@ -780,15 +757,15 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 	{
 		Node *succ_node;
 
-		succ_node = linked_list_goto(node->succ_list, 0);
+		succ_node = asNode(ListGoto(node->succ_list, 0));
 		assert(succ_node);
 
 		if (node != succ_node &&
 				succ_node != self->entry_node &&
 				succ_node->pred_list->count == 1)
 		{
-			linked_list_add(node_list, node);
-			linked_list_add(node_list, succ_node);
+			ListAdd(node_list, asObject(node));
+			ListAdd(node_list, asObject(succ_node));
 			return AbstractNodeBlock;
 		}
 	}
@@ -803,8 +780,8 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 		Node *tmp_node;
 
 		/* Assume one order for 'then' and 'endif' blocks */
-		then_node = linked_list_goto(node->succ_list, 0);
-		endif_node = linked_list_goto(node->succ_list, 1);
+		then_node = asNode(ListGoto(node->succ_list, 0));
+		endif_node = asNode(ListGoto(node->succ_list, 1));
 		assert(then_node && endif_node);
 
 		/* Reverse them if necessary */
@@ -827,8 +804,8 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 				node != endif_node)
 		{
 			/* Create node list - order important! */
-			linked_list_add(node_list, node);
-			linked_list_add(node_list, then_node);
+			ListAdd(node_list, asObject(node));
+			ListAdd(node_list, asObject(then_node));
 
 			/* Set node roles */
 			node->role = node_role_if;
@@ -849,12 +826,12 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 		Node *then_succ_node;
 		Node *else_succ_node;
 
-		then_node = linked_list_goto(node->succ_list, 0);
-		else_node = linked_list_goto(node->succ_list, 1);
+		then_node = asNode(ListGoto(node->succ_list, 0));
+		else_node = asNode(ListGoto(node->succ_list, 1));
 		assert(then_node && else_node);
 
-		then_succ_node = linked_list_goto(then_node->succ_list, 0);
-		else_succ_node = linked_list_goto(else_node->succ_list, 0);
+		then_succ_node = asNode(ListGoto(then_node->succ_list, 0));
+		else_succ_node = asNode(ListGoto(else_node->succ_list, 0));
 
 		/* As opposed to the 'If-Then' region, we allow here the
 		 * 'endif_node' to be the same as 'node'. */
@@ -869,9 +846,9 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 			else_succ_node != self->entry_node)
 		{
 			/* Create list of nodes - notice order! */
-			linked_list_add(node_list, node);
-			linked_list_add(node_list, then_node);
-			linked_list_add(node_list, else_node);
+			ListAdd(node_list, asObject(node));
+			ListAdd(node_list, asObject(then_node));
+			ListAdd(node_list, asObject(else_node));
 
 			/* Assign roles */
 			node->role = node_role_if;
@@ -886,7 +863,7 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 	/*** 4. Loop ***/
 	if (NodeInList(node, node->succ_list))
 	{
-		linked_list_add(node_list, node);
+		ListAdd(node_list, asObject(node));
 		return AbstractNodeLoop;
 	}
 
@@ -911,15 +888,15 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 
 		/* Obtain head and tail nodes */
 		head_node = node;
-		tail_node = linked_list_goto(node_list, 0);
+		tail_node = asNode(ListGoto(node_list, 0));
 		if (tail_node == head_node)
-			tail_node = linked_list_goto(node_list, 1);
+			tail_node = asNode(ListGoto(node_list, 1));
 		assert(tail_node != head_node);
 
 		/* Obtain loop exit node */
-		exit_node = linked_list_goto(node->succ_list, 0);
+		exit_node = asNode(ListGoto(node->succ_list, 0));
 		if (exit_node == tail_node)
-			exit_node = linked_list_goto(node->succ_list, 1);
+			exit_node = asNode(ListGoto(node->succ_list, 1));
 		assert(exit_node != tail_node);
 
 		/* Check condition for while loop */
@@ -932,9 +909,9 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 		{
 			/* Create node list. The order is important, so we make
 			 * sure that head node is shown first */
-			linked_list_clear(node_list);
-			linked_list_add(node_list, head_node);
-			linked_list_add(node_list, tail_node);
+			ListClear(node_list);
+			ListAdd(node_list, asObject(head_node));
+			ListAdd(node_list, asObject(tail_node));
 
 			/* Set node roles */
 			head_node->role = node_role_head;
@@ -954,8 +931,8 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 			 * if the head condition is false. If edge head=>tail is
 			 * the second, it exists if the condition is true.
 			 */
-			linked_list_find(head_node->succ_list, tail_node);
-			assert(!head_node->succ_list->error_code);
+			ListFind(head_node->succ_list, asObject(tail_node));
+			assert(!head_node->succ_list->error);
 			head_node->exit_if_false = head_node->succ_list
 					->current_index == 0;
 			head_node->exit_if_true = head_node->succ_list
@@ -968,34 +945,28 @@ static AbstractNodeRegion CTreeRegion(CTree *self, Node *node,
 
 	
 	/* Nothing identified */
-	linked_list_clear(node_list);
+	ListClear(node_list);
 	return AbstractNodeRegionInvalid;
 }
 
 
 static void CTreeTraverseNode(CTree *self, Node *node,
-		struct linked_list_t *preorder_list,
-		struct linked_list_t *postorder_list)
+		List *preorder_list, List *postorder_list)
 {
 	Node *child_node;
 
 	/* Pre-order visit */
 	if (preorder_list)
-		linked_list_add(preorder_list, node);
+		ListAdd(preorder_list, asObject(node));
 
 	/* Visit children */
 	if (isAbstractNode(node))
-	{
-		LINKED_LIST_FOR_EACH(asAbstractNode(node)->child_list)
-		{
-			child_node = linked_list_get(asAbstractNode(node)->child_list);
+		ListForEach(asAbstractNode(node)->child_list, child_node, Node)
 			CTreeTraverseNode(self, child_node, preorder_list, postorder_list);
-		}
-	}
 
 	/* Post-order visit */
 	if (postorder_list)
-		linked_list_add(postorder_list, node);
+		ListAdd(postorder_list, asObject(node));
 }
 
 
@@ -1013,7 +984,7 @@ void CTreeCreate(CTree *self, char *name)
 
 	/* Initialize */
 	self->name = str_set(self->name, name);
-	self->node_list = linked_list_create();
+	self->node_list = new(List);
 	self->node_table = hash_table_create(0, 1);
 }
 
@@ -1021,7 +992,7 @@ void CTreeCreate(CTree *self, char *name)
 void CTreeDestroy(CTree *self)
 {
 	CTreeClear(self);
-	linked_list_free(self->node_list);
+	delete(self->node_list);
 	hash_table_free(self->node_table);
 	str_free(self->name);
 }
@@ -1029,7 +1000,7 @@ void CTreeDestroy(CTree *self)
 
 void CTreeDump(Object *self, FILE *f)
 {
-	struct linked_list_iter_t *iter;
+	ListIterator *iter;
 
 	CTree *ctree;
 	Node *node;
@@ -1040,10 +1011,9 @@ void CTreeDump(Object *self, FILE *f)
 			"|tree, =>entry)\n");
 	
 	/* Dump all nodes */
-	iter = linked_list_iter_create(ctree->node_list);
-	LINKED_LIST_ITER_FOR_EACH(iter)
+	iter = new(ListIterator, ctree->node_list);
+	ListIteratorForEach(iter, node, Node)
 	{
-		node = linked_list_iter_get(iter);
 		if (node == ctree->entry_node)
 			fprintf(f, "=>");
 
@@ -1051,7 +1021,7 @@ void CTreeDump(Object *self, FILE *f)
 		asObject(node)->Dump(asObject(node), f);
 		fprintf(f, "\n");
 	}
-	linked_list_iter_free(iter);
+	delete(iter);
 	fprintf(f, "\n");
 }
 
@@ -1060,7 +1030,7 @@ void CTreeAddNode(CTree *self, Node *node)
 {
 	/* Insert node in list */
 	assert(!NodeInList(node, self->node_list));
-	linked_list_add(self->node_list, node);
+	ListAdd(self->node_list, asObject(node));
 
 	/* Insert in hash table */
 	if (!hash_table_insert(self->node_table, node->name, node))
@@ -1075,9 +1045,7 @@ void CTreeAddNode(CTree *self, Node *node)
 
 void CTreeClear(CTree *self)
 {
-	LINKED_LIST_FOR_EACH(self->node_list)
-		delete(linked_list_get(self->node_list));
-	linked_list_clear(self->node_list);
+	ListDeleteObjects(self->node_list);
 	hash_table_clear(self->node_table);
 	self->entry_node = NULL;
 }
@@ -1090,8 +1058,8 @@ void CTreeStructuralAnalysis(CTree *self)
 	Node *node;
 	AbstractNode *abs_node;
 
-	struct linked_list_t *postorder_list;
-	struct linked_list_t *region_list;
+	List *postorder_list;
+	List *region_list;
 
 	FILE *f;
 
@@ -1100,20 +1068,20 @@ void CTreeStructuralAnalysis(CTree *self)
 			self->name);
 
 	/* Initialize */
-	region_list = linked_list_create();
+	region_list = new(List);
 
 	/* Obtain the DFS spanning tree first, and a post-order traversal of
 	 * the CFG in 'postorder_list'. This list will be used for progressive
 	 * reduction steps. */
-	postorder_list = linked_list_create();
+	postorder_list = new(List);
 	CTreeDFS(self, postorder_list);
 
 	/* Sharir's algorithm */
 	while (postorder_list->count)
 	{
 		/* Extract next node in post-order */
-		linked_list_head(postorder_list);
-		node = linked_list_remove(postorder_list);
+		ListHead(postorder_list);
+		node = asNode(ListRemove(postorder_list));
 		ctree_debug("Processing node '%s'\n", node->name);
 		assert(node);
 
@@ -1129,8 +1097,8 @@ void CTreeStructuralAnalysis(CTree *self)
 
 			/* Insert new abstract node in post-order list, to make
 			 * it be the next one to be processed. */
-			linked_list_head(postorder_list);
-			linked_list_insert(postorder_list, abs_node);
+			ListHead(postorder_list);
+			ListInsert(postorder_list, asObject(abs_node));
 
 			/* Debug */
 			f = debug_file(ctree_debug_category);
@@ -1140,8 +1108,8 @@ void CTreeStructuralAnalysis(CTree *self)
 	}
 
 	/* Free data structures */
-	linked_list_free(postorder_list);
-	linked_list_free(region_list);
+	delete(postorder_list);
+	delete(region_list);
 
 	/* Remember that we have run a structural analysis */
 	self->structural_analysis_done = 1;
@@ -1151,8 +1119,8 @@ void CTreeStructuralAnalysis(CTree *self)
 }
 
 
-void CTreeTraverse(CTree *self, struct linked_list_t *preorder_list,
-		struct linked_list_t *postorder_list)
+void CTreeTraverse(CTree *self, List *preorder_list,
+		List *postorder_list)
 {
 	FILE *f;
 
@@ -1163,9 +1131,9 @@ void CTreeTraverse(CTree *self, struct linked_list_t *preorder_list,
 
 	/* Clear lists */
 	if (preorder_list)
-		linked_list_clear(preorder_list);
+		ListClear(preorder_list);
 	if (postorder_list)
-		linked_list_clear(postorder_list);
+		ListClear(postorder_list);
 
 	/* Traverse tree recursively */
 	CTreeTraverseNode(self, self->entry_node, preorder_list,
@@ -1302,7 +1270,7 @@ Node *CTreeGetNode(CTree *self, char *name)
 }
 
 
-void CTreeGetNodeList(CTree *self, struct linked_list_t *node_list,
+void CTreeGetNodeList(CTree *self, List *node_list,
 		char *node_list_str)
 {
 	struct list_t *token_list;
@@ -1312,7 +1280,7 @@ void CTreeGetNodeList(CTree *self, struct linked_list_t *node_list,
 	int index;
 
 	/* Clear list */
-	linked_list_clear(node_list);
+	ListClear(node_list);
 
 	/* Extract nodes */
 	token_list = str_token_list_create(node_list_str, ", ");
@@ -1322,7 +1290,7 @@ void CTreeGetNodeList(CTree *self, struct linked_list_t *node_list,
 		node = CTreeGetNode(self, name);
 		if (!node)
 			fatal("%s: invalid node name", name);
-		linked_list_add(node_list, node);
+		ListAdd(node_list, asObject(node));
 	}
 	str_token_list_free(token_list);
 }
@@ -1344,10 +1312,8 @@ void CTreeWriteToConfig(CTree *self, struct config_t *config)
 	config_write_string(config, section, "Entry", self->entry_node->name);
 
 	/* Write information about the node */
-	LINKED_LIST_FOR_EACH(self->node_list)
+	ListForEach(self->node_list, node, Node)
 	{
-		/* Get node */
-		node = linked_list_get(self->node_list);
 		snprintf(section, sizeof section, "CTree.%s.Node.%s",
 				self->name, node->name);
 		if (config_section_exists(config, section))
@@ -1390,7 +1356,7 @@ void CTreeWriteToConfig(CTree *self, struct config_t *config)
 void CTreeReadFromConfig(CTree *self, struct config_t *config, char *name)
 {
 	struct list_t *token_list;
-	struct linked_list_iter_t *iter;
+	ListIterator *iter;
 	Node *node;
 
 	char section_str[MAX_STRING_SIZE];
@@ -1465,54 +1431,51 @@ void CTreeReadFromConfig(CTree *self, struct config_t *config, char *name)
 	}
 
 	/* Read node properties */
-	iter = linked_list_iter_create(self->node_list);
-	LINKED_LIST_ITER_FOR_EACH(iter)
+	iter = new(ListIterator, self->node_list);
+	ListIteratorForEach(iter, node, Node)
 	{
 		char *node_list_str;
 
-		struct linked_list_t *node_list;
+		List *node_list;
 		Node *tmp_node;
 
 		/* Get section name */
-		node = linked_list_iter_get(iter);
 		snprintf(section_str, sizeof section_str, "CTree.%s.Node.%s",
 				self->name, node->name);
 		section = section_str;
 
 		/* Successors */
 		node_list_str = config_read_string(config, section, "Succ", "");
-		node_list = linked_list_create();
+		node_list = new(List);
 		CTreeGetNodeList(self, node_list, node_list_str);
-		LINKED_LIST_FOR_EACH(node_list)
+		ListForEach(node_list, tmp_node, Node)
 		{
-			tmp_node = linked_list_get(node_list);
 			if (NodeInList(tmp_node, node->succ_list))
 				fatal("%s.%s: duplicate successor", self->name,
 						node->name);
 			NodeConnect(node, tmp_node);
 		}
-		linked_list_free(node_list);
+		delete(node_list);
 
 		/* Abstract node */
 		if (isAbstractNode(node))
 		{
 			/* Children */
 			node_list_str = config_read_string(config, section, "Child", "");
-			node_list = linked_list_create();
+			node_list = new(List);
 			CTreeGetNodeList(self, node_list, node_list_str);
-			LINKED_LIST_FOR_EACH(node_list)
+			ListForEach(node_list, tmp_node, Node)
 			{
-				tmp_node = linked_list_get(node_list);
 				tmp_node->parent = node;
 				if (NodeInList(tmp_node, asAbstractNode(node)->child_list))
 					fatal("%s.%s: duplicate child", self->name,
 							node->name);
-				linked_list_add(asAbstractNode(node)->child_list, tmp_node);
+				ListAdd(asAbstractNode(node)->child_list, asObject(tmp_node));
 			}
-			linked_list_free(node_list);
+			delete(node_list);
 		}
 	}
-	linked_list_iter_free(iter);
+	delete(iter);
 
 	/* Read entry node name */
 	snprintf(section_str, sizeof section_str, "CTree.%s", name);
@@ -1541,27 +1504,20 @@ void CTreeCompare(CTree *self, CTree *ctree2)
 				ctree2->name);
 	
 	/* Check that all nodes in tree 1 are in tree 2 */
-	LINKED_LIST_FOR_EACH(self->node_list)
-	{
-		node = linked_list_get(self->node_list);
+	ListForEach(self->node_list, node, Node)
 		if (!CTreeGetNode(ctree2, node->name))
 			fatal("node '%s.%s' not present in tree '%s'",
 				self->name, node->name, ctree2->name);
-	}
 
 	/* Check that all nodes in tree 2 are in tree 1 */
-	LINKED_LIST_FOR_EACH(ctree2->node_list)
-	{
-		node = linked_list_get(ctree2->node_list);
+	ListForEach(ctree2->node_list, node, Node)
 		if (!CTreeGetNode(self, node->name))
 			fatal("node '%s.%s' not present in tree '%s'",
 				ctree2->name, node->name, self->name);
-	}
 
 	/* Compare all nodes */
-	LINKED_LIST_FOR_EACH(self->node_list)
+	ListForEach(self->node_list, node, Node)
 	{
-		node = linked_list_get(self->node_list);
 		node2 = CTreeGetNode(ctree2, node->name);
 		assert(node2);
 		NodeCompare(node, node2);
@@ -1577,7 +1533,7 @@ void CTreeCompare(CTree *self, CTree *ctree2)
 void ctree_init(void)
 {
 	ctree_debug_category = debug_new_category(ctree_debug_file_name);
-	ctree_list = linked_list_create();
+	ctree_list = new(List);
 	ctree_read_config();
 }
 
@@ -1585,8 +1541,7 @@ void ctree_init(void)
 void ctree_done(void)
 {
 	/* Free list of control trees */
-	LINKED_LIST_FOR_EACH(ctree_list)
-		delete(linked_list_get(ctree_list));
-	linked_list_free(ctree_list);
+	ListDeleteObjects(ctree_list);
+	delete(ctree_list);
 }
 

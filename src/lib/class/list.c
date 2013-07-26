@@ -742,6 +742,33 @@ Object *ListIteratorGoto(ListIterator *self, int index)
 }
 
 
+Object *ListIteratorFind(ListIterator *self, Object *object)
+{
+	List *list = self->list;
+
+	/* Search object */
+	self->index = 0;
+	self->elem = list->head;
+	while (self->elem && self->elem->object != object)
+	{
+		self->index++;
+		self->elem = self->elem->next;
+	}
+
+	/* Not found */
+	if (!self->elem)
+	{
+		self->error = ListErrNotFound;
+		return NULL;
+	}
+
+	/* Found */
+	self->error = ListErrOK;
+	assert(self->elem);
+	return self->elem->object;
+}
+
+
 Object *ListIteratorGet(ListIterator *self)
 {
 	List *list = self->list;
