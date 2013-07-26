@@ -196,12 +196,15 @@ struct mod_t
 	long long hits;
 
 	long long reads;
+	long long coalesced_reads;
 	long long effective_reads;
 	long long effective_read_hits;
 	long long writes;
+	long long coalesced_writes;
 	long long effective_writes;
 	long long effective_write_hits;
 	long long nc_writes;
+	long long coalesced_nc_writes;
 	long long effective_nc_writes;
 	long long effective_nc_write_hits;
 	long long prefetches;

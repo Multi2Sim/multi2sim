@@ -376,6 +376,8 @@ void mem_system_dump_report(void)
 
 		/* Statistics */
 		fprintf(f, "Accesses = %lld\n", mod->accesses);
+		fprintf(f, "CoalescedAccesses = %lld\n", mod->coalesced_reads + 
+			mod->coalesced_writes + mod->coalesced_nc_writes);
 		fprintf(f, "Hits = %lld\n", mod->hits);
 		fprintf(f, "Misses = %lld\n", mod->accesses - mod->hits);
 		fprintf(f, "HitRatio = %.4g\n", mod->accesses ?
@@ -385,6 +387,7 @@ void mem_system_dump_report(void)
 			mod->nc_write_retries);
 		fprintf(f, "\n");
 		fprintf(f, "Reads = %lld\n", mod->reads);
+		fprintf(f, "CoalescedReads = %lld\n", mod->coalesced_reads);
 		fprintf(f, "ReadRetries = %lld\n", mod->read_retries);
 		fprintf(f, "BlockingReads = %lld\n", mod->blocking_reads);
 		fprintf(f, "NonBlockingReads = %lld\n", mod->non_blocking_reads);
@@ -392,6 +395,7 @@ void mem_system_dump_report(void)
 		fprintf(f, "ReadMisses = %lld\n", mod->reads - mod->read_hits);
 		fprintf(f, "\n");
 		fprintf(f, "Writes = %lld\n", mod->writes);
+		fprintf(f, "CoalescedWrites = %lld\n", mod->coalesced_writes);
 		fprintf(f, "WriteRetries = %lld\n", mod->write_retries);
 		fprintf(f, "BlockingWrites = %lld\n", mod->blocking_writes);
 		fprintf(f, "NonBlockingWrites = %lld\n", mod->non_blocking_writes);
@@ -399,6 +403,7 @@ void mem_system_dump_report(void)
 		fprintf(f, "WriteMisses = %lld\n", mod->writes - mod->write_hits);
 		fprintf(f, "\n");
 		fprintf(f, "NCWrites = %lld\n", mod->nc_writes);
+		fprintf(f, "CoalescedNCWrites = %lld\n", mod->coalesced_nc_writes);
 		fprintf(f, "NCWriteRetries = %lld\n", mod->nc_write_retries);
 		fprintf(f, "NCBlockingWrites = %lld\n", mod->blocking_nc_writes);
 		fprintf(f, "NCNonBlockingWrites = %lld\n", mod->non_blocking_nc_writes);
