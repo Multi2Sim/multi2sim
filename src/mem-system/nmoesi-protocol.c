@@ -147,7 +147,7 @@ void mod_handler_nmoesi_load(int event, void *data)
 		master_stack = mod_can_coalesce(mod, mod_access_load, stack->addr, stack);
 		if (master_stack)
 		{
-			mod->reads++;
+			mod->coalesced_reads++;
 			mod_coalesce(mod, master_stack, stack);
 			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_NMOESI_LOAD_FINISH);
 			return;
@@ -350,7 +350,7 @@ void mod_handler_nmoesi_store(int event, void *data)
 		master_stack = mod_can_coalesce(mod, mod_access_store, stack->addr, stack);
 		if (master_stack)
 		{
-			mod->writes++;
+			mod->coalesced_writes++;
 			mod_coalesce(mod, master_stack, stack);
 			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_NMOESI_STORE_FINISH);
 
@@ -534,7 +534,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		master_stack = mod_can_coalesce(mod, mod_access_nc_store, stack->addr, stack);
 		if (master_stack)
 		{
-			mod->nc_writes++;
+			mod->coalesced_nc_writes++;
 			mod_coalesce(mod, master_stack, stack);
 			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_NMOESI_NC_STORE_FINISH);
 			return;
