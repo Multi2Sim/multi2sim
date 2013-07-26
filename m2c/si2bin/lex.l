@@ -71,6 +71,9 @@ extern long offset;
 	return TOK_AMP;
 }
 
+"\\\n" {
+}
+
 ([ \t]*\n)* {
 	return TOK_NEW_LINE;
 }
