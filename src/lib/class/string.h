@@ -29,12 +29,12 @@
 
 CLASS_BEGIN(String, Object)
 
-	char *str;
+	char *text;
 
 	/* Number of characters */
 	size_t length;
 
-	/* Space allocated for buffer 'str' */
+	/* Space allocated for buffer 'text' */
 	size_t size;
 
 CLASS_END(String)
@@ -55,19 +55,19 @@ int StringCompare(Object *self, Object *object);
 void StringClear(String *self);
 
 /* Replace 'count' characters starting at position 'pos' by the string given in
- * 'str'. Negative values for 'pos' represent positions relative to the end of
+ * 'text'. Negative values for 'pos' represent positions relative to the end of
  * the string, where -1 is the last character. */
 void StringReplace(String *self, int pos, size_t count, const char *str);
 void StringReplaceFmt(String *self, int pos, size_t count, const char *fmt, ...)
 		__attribute__((format(printf, 4, 5)));
 
-/* Insert 'str' at position 'pos' of the string. Negative values for 'pos'
+/* Insert 'text' at position 'pos' of the string. Negative values for 'pos'
  * represent positions relative to the end of the string. */
 void StringInsert(String *self, int pos, const char *str);
 void StringInsertFmt(String *self, int pos, const char *fmt, ...)
 		__attribute__((format(printf, 3, 4)));
 
-/* Concatenate 'str' with the content of the string. */
+/* Concatenate 'text' with the content of the string. */
 void StringConcat(String *self, const char *str);
 void StringConcatFmt(String *self, const char *fmt, ...)
 		__attribute__((format(printf, 2, 3)));
@@ -87,6 +87,11 @@ String *StringSubStr(String *self, int pos, size_t count);
 void StringTrimLeft(String *self, const char *set);
 void StringTrimRight(String *self, const char *set);
 void StringTrim(String *self, const char *set);
+
+/* Create a list (and return it) with string representing all tokens. Argument
+ * 'set' is a string where each character is a possible separator. The caller is
+ * responsible for freeing all returned strings, as well as the list itself. */
+List *StringTokenize(String *self, const char *set);
 
 #endif
 
