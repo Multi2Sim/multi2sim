@@ -28,7 +28,6 @@
 
 
 /* Forward declarations */
-struct linked_list_t;
 struct llvm2si_node_t;
 struct si2bin_arg_t;
 
@@ -145,7 +144,7 @@ CLASS_BEGIN(Llvm2siFunction, Object)
 
 	/* List of elements found in LLVM 'phi' instructions during emission of
 	 * the function body. */
-	struct linked_list_t *phi_list;
+	List *phi_list;
 
 	/* While code is generated, this variable keeps track of the total
 	 * amount of bytes pushed into the stack for this function. */

@@ -27,8 +27,8 @@
 
 
 /* Forward declarations */
-struct linked_list_t;
 struct si2bin_inst_t;
+struct linked_list_t;
 
 
 /*

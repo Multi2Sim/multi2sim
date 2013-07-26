@@ -63,7 +63,7 @@ CLASS_BEGIN(CTree, Object)
 	unsigned int name_counter[AbstractNodeRegionCount];
 
 	/* Nodes are kept in a linked list and a hash table */
-	struct linked_list_t *node_list;
+	List *node_list;
 	struct hash_table_t *node_table;
 
 	/* Root node.
@@ -110,8 +110,7 @@ void CTreeStructuralAnalysis(CTree *ctree);
  * The function returns two lists with all tree nodes, listed in pre-order
  * and post-order, respectively. Either list can be NULL if that specific
  * ordering is of no interest to the caller. */
-void CTreeTraverse(CTree *ctree, struct linked_list_t *preorder_list,
-		struct linked_list_t *postorder_list);
+void CTreeTraverse(CTree *ctree, List *preorder_list, List *postorder_list);
 
 /* Read/write the control tree from/to an INI file */
 void CTreeWriteToConfig(CTree *ctree, struct config_t *config);

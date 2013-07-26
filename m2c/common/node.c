@@ -17,10 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <lib/class/list.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
-#include <lib/util/linked-list.h>
 #include <lib/util/string.h>
 
 #include "ctree.h"
@@ -88,7 +87,7 @@ void AbstractNodeCreate(AbstractNode *self, char *name, AbstractNodeRegion regio
 
 	/* Initialize */
 	self->region = region;
-	self->child_list = linked_list_create();
+	self->child_list = new(List);
 
 	/* Virtual functions */
 	asObject(self)->Dump = AbstractNodeDump;
@@ -98,7 +97,7 @@ void AbstractNodeCreate(AbstractNode *self, char *name, AbstractNodeRegion regio
 
 void AbstractNodeDestroy(AbstractNode *self)
 {
-	linked_list_free(self->child_list);
+	delete(self->child_list);
 }
 	
 	
@@ -142,9 +141,8 @@ void AbstractNodeCompare(Node *self, Node *node2)
 
 	/* Compare children */
 	differ = abs_node->child_list->count != abs_node2->child_list->count;
-	LINKED_LIST_FOR_EACH(abs_node->child_list)
+	ListForEach(abs_node->child_list, tmp_node, Node)
 	{
-		tmp_node = linked_list_get(abs_node->child_list);
 		tmp_node = CTreeGetNode(node2->ctree, tmp_node->name);
 		assert(tmp_node);
 		if (!NodeInList(tmp_node, abs_node2->child_list))
@@ -191,12 +189,12 @@ void NodeCreate(Node *self, char *name)
 {
 	/* Initialize */
 	self->name = str_set(self->name, name);
-	self->pred_list = linked_list_create();
-	self->succ_list = linked_list_create();
-	self->back_edge_list = linked_list_create();
-	self->forward_edge_list = linked_list_create();
-	self->cross_edge_list = linked_list_create();
-	self->tree_edge_list = linked_list_create();
+	self->pred_list = new(List);
+	self->succ_list = new(List);
+	self->back_edge_list = new(List);
+	self->forward_edge_list = new(List);
+	self->cross_edge_list = new(List);
+	self->tree_edge_list = new(List);
 	self->preorder_id = -1;
 	self->postorder_id = -1;
 
@@ -207,26 +205,26 @@ void NodeCreate(Node *self, char *name)
 
 void NodeDestroy(Node *self)
 {
-	linked_list_free(self->pred_list);
-	linked_list_free(self->succ_list);
-	linked_list_free(self->back_edge_list);
-	linked_list_free(self->forward_edge_list);
-	linked_list_free(self->tree_edge_list);
-	linked_list_free(self->cross_edge_list);
+	delete(self->pred_list);
+	delete(self->succ_list);
+	delete(self->back_edge_list);
+	delete(self->forward_edge_list);
+	delete(self->tree_edge_list);
+	delete(self->cross_edge_list);
 	self->name = str_free(self->name);
 }
 
 
-int NodeInList(Node *self, struct linked_list_t *list)
+int NodeInList(Node *self, List *list)
 {
-	struct linked_list_iter_t *iter;
-	int found;
+	ListIterator *iter;
+	Object *found;
 
-	iter = linked_list_iter_create(list);
-	found = linked_list_iter_find(iter, self);
-	linked_list_iter_free(iter);
+	iter = new(ListIterator, list);
+	found = ListIteratorFind(iter, asObject(self));
+	delete(iter);
 
-	return found;
+	return found != NULL;
 }
 
 
@@ -246,9 +244,8 @@ void NodeDump(Object *self, FILE *f)
 	/* List of successors */
 	fprintf(f, " succ={");
 	comma = "";
-	LINKED_LIST_FOR_EACH(node->succ_list)
+	ListForEach(node->succ_list, succ_node, Node)
 	{
-		succ_node = linked_list_get(node->succ_list);
 		fprintf(f, "%s", comma);
 		if (NodeInList(succ_node,
 				node->back_edge_list))
@@ -303,8 +300,8 @@ void NodeTryConnect(Node *self, Node *node_dest)
 
 	/* Add edge */
 	assert(!NodeInList(self, node_dest->pred_list));
-	linked_list_add(self->succ_list, node_dest);
-	linked_list_add(node_dest->pred_list, self);
+	ListAdd(self->succ_list, asObject(node_dest));
+	ListAdd(node_dest->pred_list, asObject(self));
 }
 
 
@@ -313,54 +310,52 @@ void NodeConnect(Node *self, Node *node_dest)
 #ifndef NDEBUG
 
 	/* Make sure that connection does not exist */
-	linked_list_find(self->succ_list, node_dest);
-	linked_list_find(node_dest->pred_list, self);
-	if (!self->succ_list->error_code ||
-			!node_dest->pred_list->error_code)
+	ListFind(self->succ_list, asObject(node_dest));
+	ListFind(node_dest->pred_list, asObject(self));
+	if (!self->succ_list->error || !node_dest->pred_list->error)
 		panic("%s: redundant connection between control tree nodes",
 				__FUNCTION__);
 #endif
 
 	/* Make connection */
-	linked_list_add(self->succ_list, node_dest);
-	linked_list_add(node_dest->pred_list, self);
+	ListAdd(self->succ_list, asObject(node_dest));
+	ListAdd(node_dest->pred_list, asObject(self));
 }
 
 
 void NodeTryDisconnect(Node *self, Node *node_dest)
 {
 	/* Check if connection exists */
-	linked_list_find(self->succ_list, node_dest);
-	linked_list_find(node_dest->pred_list, self);
+	ListFind(self->succ_list, asObject(node_dest));
+	ListFind(node_dest->pred_list, asObject(self));
 
 	/* Either both are present, or none */
-	assert((self->succ_list->error_code && node_dest->pred_list->error_code)
-			|| (!self->succ_list->error_code &&
-			!node_dest->pred_list->error_code));
+	assert((self->succ_list->error && node_dest->pred_list->error)
+			|| (!self->succ_list->error &&
+			!node_dest->pred_list->error));
 
 	/* No connection existed */
-	if (self->succ_list->error_code)
+	if (self->succ_list->error)
 		return;
 	
 	/* Remove existing connection */
-	linked_list_remove(self->succ_list);
-	linked_list_remove(node_dest->pred_list);
+	ListRemove(self->succ_list);
+	ListRemove(node_dest->pred_list);
 }
 
 
 void NodeDisconnect(Node *self, Node *node_dest)
 {
 	/* Make sure that connection exists */
-	linked_list_find(self->succ_list, node_dest);
-	linked_list_find(node_dest->pred_list, self);
-	if (self->succ_list->error_code ||
-			node_dest->pred_list->error_code)
+	ListFind(self->succ_list, asObject(node_dest));
+	ListFind(node_dest->pred_list, asObject(self));
+	if (self->succ_list->error || node_dest->pred_list->error)
 		panic("%s: invalid connection between control tree nodes",
 				__FUNCTION__);
 	
 	/* Remove it */
-	linked_list_remove(self->succ_list);
-	linked_list_remove(node_dest->pred_list);
+	ListRemove(self->succ_list);
+	ListRemove(node_dest->pred_list);
 }
 
 
@@ -371,23 +366,22 @@ void NodeReconnectDest(Node *src_node, Node *dest_node, Node *new_dest_node)
 		panic("%s: old and new nodes are the same", __FUNCTION__);
 
 	/* Connection must exist */
-	linked_list_find(src_node->succ_list, dest_node);
-	linked_list_find(dest_node->pred_list, src_node);
-	if (src_node->succ_list->error_code ||
-			dest_node->pred_list->error_code)
+	ListFind(src_node->succ_list, asObject(dest_node));
+	ListFind(dest_node->pred_list, asObject(src_node));
+	if (src_node->succ_list->error || dest_node->pred_list->error)
 		panic("%s: old edge does not exist", __FUNCTION__);
 
 	/* Remove old edge */
-	linked_list_remove(src_node->succ_list);
-	linked_list_remove(dest_node->pred_list);
+	ListRemove(src_node->succ_list);
+	ListRemove(dest_node->pred_list);
 
 	/* If new edge does not already exists, create it here. Notice that the
 	 * successor of 'src_node' will be inserted in the exact same position.
 	 * This behavior is critical for some uses of this function. */
 	if (!NodeInList(src_node, new_dest_node->pred_list))
 	{
-		linked_list_insert(src_node->succ_list, new_dest_node);
-		linked_list_add(new_dest_node->pred_list, src_node);
+		ListInsert(src_node->succ_list, asObject(new_dest_node));
+		ListAdd(new_dest_node->pred_list, asObject(src_node));
 	}
 }
 
@@ -399,23 +393,22 @@ void NodeReconnectSource(Node *src_node, Node *dest_node, Node *new_src_node)
 		panic("%s: old and new nodes are the same", __FUNCTION__);
 
 	/* Connection must exist */
-	linked_list_find(src_node->succ_list, dest_node);
-	linked_list_find(dest_node->pred_list, src_node);
-	if (src_node->succ_list->error_code ||
-			dest_node->pred_list->error_code)
+	ListFind(src_node->succ_list, asObject(dest_node));
+	ListFind(dest_node->pred_list, asObject(src_node));
+	if (src_node->succ_list->error || dest_node->pred_list->error)
 		panic("%s: old edge does not exist", __FUNCTION__);
 
 	/* Remove old edge */
-	linked_list_remove(src_node->succ_list);
-	linked_list_remove(dest_node->pred_list);
+	ListRemove(src_node->succ_list);
+	ListRemove(dest_node->pred_list);
 
 	/* If new edge does not already exists, create it here. Notice that the
 	 * predecessor of 'dst_node' will be inserted in the exact same position.
 	 * This behavior is critical for some uses of this function. */
 	if (!NodeInList(dest_node, new_src_node->succ_list))
 	{
-		linked_list_insert(dest_node->pred_list, new_src_node);
-		linked_list_add(new_src_node->succ_list, dest_node);
+		ListInsert(dest_node->pred_list, asObject(new_src_node));
+		ListAdd(new_src_node->succ_list, asObject(dest_node));
 	}
 }
 
@@ -433,16 +426,16 @@ void NodeInsertBefore(Node *self, Node *before)
 	/* Insert in common parent */
 	self->parent = asNode(parent);
 	assert(!NodeInList(self, parent->child_list));
-	linked_list_find(parent->child_list, before);
-	assert(!parent->child_list->error_code);
-	linked_list_insert(parent->child_list, self);
+	ListFind(parent->child_list, asObject(before));
+	assert(!parent->child_list->error);
+	ListInsert(parent->child_list, asObject(self));
 }
 
 
 void NodeInsertAfter(Node *self, Node *after)
 {
 	AbstractNode *parent;
-	struct linked_list_t *child_list;
+	List *child_list;
 
 	/* Check parent */
 	parent = asAbstractNode(after->parent);
@@ -454,10 +447,10 @@ void NodeInsertAfter(Node *self, Node *after)
 	self->parent = asNode(parent);
 	child_list = parent->child_list;
 	assert(!NodeInList(self, child_list));
-	linked_list_find(child_list, after);
-	assert(!child_list->error_code);
-	linked_list_next(child_list);
-	linked_list_insert(child_list, self);
+	ListFind(child_list, asObject(after));
+	assert(!child_list->error);
+	ListNext(child_list);
+	ListInsert(child_list, asObject(self));
 }
 
 
@@ -470,8 +463,8 @@ Node *NodeGetFirstLeaf(Node *self)
 	node = self;
 	while (isAbstractNode(node))
 	{
-		linked_list_head(asAbstractNode(node)->child_list);
-		child_node = linked_list_get(asAbstractNode(node)->child_list);
+		ListHead(asAbstractNode(node)->child_list);
+		child_node = asNode(ListGet(asAbstractNode(node)->child_list));
 		assert(child_node);
 		node = child_node;
 	}
@@ -491,8 +484,8 @@ Node *NodeGetLastLeaf(Node *self)
 	node = self;
 	while (isAbstractNode(node))
 	{
-		linked_list_tail(asAbstractNode(node)->child_list);
-		child_node = linked_list_get(asAbstractNode(node)->child_list);
+		ListTail(asAbstractNode(node)->child_list);
+		child_node = asNode(ListGet(asAbstractNode(node)->child_list));
 		assert(child_node);
 		node = child_node;
 	}
@@ -527,9 +520,8 @@ void NodeCompare(Node *self, Node *node2)
 
 	/* Compare successors */
 	differ = self->succ_list->count != node2->succ_list->count;
-	LINKED_LIST_FOR_EACH(self->succ_list)
+	ListForEach(self->succ_list, tmp_node, Node)
 	{
-		tmp_node = linked_list_get(self->succ_list);
 		tmp_node = CTreeGetNode(ctree2, tmp_node->name);
 		assert(tmp_node);
 		if (!NodeInList(tmp_node, node2->succ_list))
@@ -546,27 +538,26 @@ void NodeCompare(Node *self, Node *node2)
  * Non-Class Functions
  */
 
-void NodeListDump(struct linked_list_t *list, FILE *f)
+void NodeListDump(List *list, FILE *f)
 {
 	char *comma;
-	struct linked_list_iter_t *iter;
+	ListIterator *iter;
 	Node *node;
 
 	comma = "";
 	fprintf(f, "{");
-	iter = linked_list_iter_create(list);
-	LINKED_LIST_ITER_FOR_EACH(iter)
+	iter = new(ListIterator, list);
+	ListIteratorForEach(iter, node, Node)
 	{
-		node = linked_list_iter_get(iter);
 		fprintf(f, "%s%s", comma, node->name);
 		comma = ",";
 	}
-	linked_list_iter_free(iter);
+	delete(iter);
 	fprintf(f, "}");
 }
 
 
-void NodeListDumpBuf(struct linked_list_t *list, char *buf, int size)
+void NodeListDumpBuf(List *list, char *buf, int size)
 {
 	Node *node;
 
@@ -575,9 +566,7 @@ void NodeListDumpBuf(struct linked_list_t *list, char *buf, int size)
 		*buf = '\0';
 
 	/* Dump elements */
-	LINKED_LIST_FOR_EACH(list)
-	{
-		node = linked_list_get(list);
+	ListForEach(list, node, Node)
 		str_printf(&buf, &size, "%s ", node->name);
-	}
 }
+
