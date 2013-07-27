@@ -73,7 +73,11 @@ int same_latency_strategy_get_partition(void *inst, int id, int desired_groups, 
 				running[i] = info->devices[i].num_parts_running;
 				start[i] = info->devices[i].time.start;
 				assert(latency[i] > 0);
-				assert(start[i] > 0 && start[i] <= now);
+				if (start[i] <= 0 || start[i] > now)
+				{
+					fprintf(stderr, "Start: %lld.  Now: %lld\n", start[i], now);
+					abort();
+				}
 
 			}
 			work[1] = latency[0] * (parts_left + running[0]) - running[1] * latency[1] + start[0] - start[1];

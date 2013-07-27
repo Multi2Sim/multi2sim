@@ -50,7 +50,6 @@ int relative_runtime_strategy_get_partition(void *inst, int id, int desired_grou
 		return 0;
 
 	/* if the start has been set, update the speed */
-	now = get_time();
 	if (dev->start)
 		dev->speed = (float)dev->groups / (now - dev->start);
 
