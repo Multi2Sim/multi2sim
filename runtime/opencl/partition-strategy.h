@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 typedef void *(*opencl_strategy_create_t)(int num_devices, unsigned int dims, const unsigned int *groups);
-typedef int (*opencl_strategy_get_partition_t)(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count);
+typedef int (*opencl_strategy_get_partition_t)(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now);
 typedef void (*opencl_strategy_destroy_t)(void *inst);
 
 struct opencl_partition_strategy

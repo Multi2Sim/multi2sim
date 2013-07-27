@@ -31,13 +31,12 @@ void *same_latency_strategy_create(int num_devices, unsigned int dims, const uns
 }
 
 
-int same_latency_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
+int same_latency_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now)
 {
 	struct same_latency_strategy_info_t *info = (struct same_latency_strategy_info_t *)inst;
 	struct same_latency_device_t *device = info->devices + id;
 	unsigned int total_parts = info->part->groups[info->part_dim];
 	unsigned int parts_left = total_parts - info->num_parts_assigned;
-	long long now = get_time();
 	unsigned int size = 0;
 
 	device->num_parts_done += device->num_parts_running;

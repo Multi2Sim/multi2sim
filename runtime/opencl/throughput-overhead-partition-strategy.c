@@ -150,11 +150,10 @@ unsigned int to_partition_determine_planes(struct to_partition_info_t *info, str
 }
 
 
-int throughput_overhead_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
+int throughput_overhead_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now)
 {
 	int i;
 	unsigned int num_planes;
-	long long now = get_time();
 	struct to_partition_info_t *info = (struct to_partition_info_t *)inst;
 	struct to_device_info_t *device = info->devices + id;
 

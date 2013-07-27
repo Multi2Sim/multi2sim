@@ -35,7 +35,7 @@ void *relative_runtime_strategy_create(int num_devices, unsigned int dims, const
 	return info;
 }
 
-int relative_runtime_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
+int relative_runtime_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now)
 {
 	int i;
 	float total_speed;
@@ -44,7 +44,6 @@ int relative_runtime_strategy_get_partition(void *inst, int id, int desired_grou
 	unsigned int *pos;
 	struct relative_runtime_strategy_t *info = (struct relative_runtime_strategy_t *)inst;
 	struct per_device_info_t *dev = info->device_info + id;
-	long long now;
 	int found;
 
 	if (!info->groups_left)
