@@ -40,7 +40,7 @@ void *first_done_strategy_create(int num_devices, unsigned int dims, const unsig
 }
 
 
-int first_done_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
+int first_done_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now)
 {
 	struct first_done_strategy_info_t *info = (struct first_done_strategy_info_t *)inst;
 	unsigned int total_parts = info->part->groups[info->part_dim];

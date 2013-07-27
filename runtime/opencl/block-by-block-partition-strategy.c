@@ -36,7 +36,7 @@ void *block_by_block_strategy_create(int num_devices, unsigned int dims, const u
 }
 
 
-int block_by_block_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
+int block_by_block_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now)
 {
 	struct block_by_block_info_t *info = (struct block_by_block_info_t *)inst;
 	if (info->parts_assigned < info->divisions)

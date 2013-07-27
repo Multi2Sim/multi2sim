@@ -17,7 +17,7 @@
 
 /* forward declartion for default strategy. */
 void *default_strategy_create(int num_devices, unsigned int dims, const unsigned int *groups);
-int default_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count);
+int default_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now);
 void default_strategy_destroy(void *inst);
 
 static struct opencl_partition_strategy strats[] = {
@@ -69,7 +69,7 @@ void *default_strategy_create(int num_devices, unsigned int dims, const unsigned
 }
 
 
-int default_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
+int default_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now)
 {
 	int i;
 	struct default_strategy_info_t *info = (struct default_strategy_info_t *)inst;
