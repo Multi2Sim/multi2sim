@@ -59,7 +59,7 @@ void *even_strategy_create(int num_devices, unsigned int dims, const unsigned in
 }
 
 
-int even_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
+int even_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now)
 {
 	struct even_strategy_info_t *info = (struct even_strategy_info_t *)inst;
 	if (info->done[id] < even_strategy_parts_per_device)

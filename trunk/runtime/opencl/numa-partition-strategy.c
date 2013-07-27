@@ -18,7 +18,7 @@ void *numa_strategy_create(int num_devices, unsigned int dims, const unsigned in
 	return info;
 }
 
-int numa_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count)
+int numa_strategy_get_partition(void *inst, int id, int desired_groups, unsigned int *group_offset, unsigned int *group_count, long long now)
 {
 	struct numa_strategy_info_t *info = (struct numa_strategy_info_t *)inst;
 	unsigned int num_parts_left = info->part->groups[info->part_dim] - info->num_parts_assigned;

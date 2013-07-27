@@ -9,6 +9,7 @@
 #include "program.h"
 #include "union-device.h"
 #include "union-kernel.h"
+#include "partition-util-time.h"
 
 struct dispatch_info
 {
@@ -24,7 +25,7 @@ struct dispatch_info
 void *device_ndrange_dispatch(void *ptr)
 {
 	int i;
-
+	long long now;
 	struct dispatch_info *info = (struct dispatch_info *)ptr;
 	struct opencl_union_ndrange_t *ndrange = info->ndrange;
 
@@ -68,11 +69,12 @@ void *device_ndrange_dispatch(void *ptr)
 
 	/* Execute work groups until the ND-Range is complete */
 	pthread_mutex_lock(info->lock);
+	now = get_time();
 	while (get_strategy()->get_partition(
 		info->part, 
 		info->id,
 		info->device->arch_device_preferred_workgroups_func(
-			info->device), group_offset, group_count))
+			info->device), group_offset, group_count, now))
 	{
 		opencl_debug("[%s] running work groups (%d,%d,%d) to (%d,%d,%d)"
 			" on device %s", __FUNCTION__,
