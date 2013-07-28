@@ -28,6 +28,7 @@
 #include <m2c/frm2bin/frm2bin.h>
 #include <m2c/llvm2si/llvm2si.h>
 #include <m2c/si2bin/si2bin.h>
+#include <lib/class/array.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
@@ -565,8 +566,10 @@ void m2c_pre_init(void)
 void m2c_init(void)
 {
 	/* Classes */
+	CLASS_REGISTER(Array);
 	CLASS_REGISTER(List);
 	CLASS_REGISTER(ListIterator);
+	CLASS_REGISTER(String);
 	CLASS_REGISTER(Node);
 	CLASS_REGISTER(LeafNode);
 	CLASS_REGISTER(AbstractNode);
