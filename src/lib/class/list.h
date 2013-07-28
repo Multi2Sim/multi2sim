@@ -29,7 +29,7 @@
 
 #define ListForEach(_list, _object, _class) \
 	for ((_object) = as##_class(ListHead((_list))); \
-		(_object); \
+		!ListIsEnd((_list)); \
 		(_object) = as##_class(ListNext((_list))))
 
 typedef enum
@@ -175,7 +175,7 @@ void ListSort(List *self);
 
 #define ListIteratorForEach(_iterator, _object, _class) \
 	for ((_object) = as##_class(ListIteratorHead((_iterator))); \
-		(_object); \
+		!ListIteratorIsEnd((_iterator)); \
 		(_object) = as##_class(ListIteratorNext((_iterator))))
 
 CLASS_BEGIN(ListIterator, Object)
@@ -244,6 +244,9 @@ Object *ListIteratorGoto(ListIterator *self, int index);
  * of the iterator to 'ListErrNotFound'. */
 Object *ListIteratorFind(ListIterator *self, Object *object);
 
+/* Return true if the iterator points to the position past the end of the list.
+ * If so, set the error code of the iterator to 'ListErrEnd'. */
+int ListIteratorIsEnd(ListIterator *self);
 
 /* Return the object pointed to by the list iterator. If the iterator is
  * pointing past the list tail, NULL is returned and the error code of the

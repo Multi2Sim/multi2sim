@@ -110,7 +110,10 @@ void ListDumpWithDelim(List *self, FILE *f, const char *first,
 	fprintf(f, "%s", first);
 	for (elem = self->head; elem; elem = elem->next)
 	{
-		elem->object->Dump(elem->object, f);
+		if (elem->object)
+			elem->object->Dump(elem->object, f);
+		else
+			fprintf(f, "(nil)");
 		if (elem->next)
 			fprintf(f, "%s", middle);
 	}
@@ -145,10 +148,16 @@ void ListClear(List *self)
 
 void ListDeleteObjects(List *self)
 {
+	Object *object;
+
 	/* Remove and free all objects */
 	ListHead(self);
 	while (self->count)
-		delete(ListRemove(self));
+	{
+		object = ListRemove(self);
+		if (object)
+			delete(object);
+	}
 	
 	/* Always succeed */
 	self->error = ListErrOK;
@@ -766,6 +775,23 @@ Object *ListIteratorFind(ListIterator *self, Object *object)
 	self->error = ListErrOK;
 	assert(self->elem);
 	return self->elem->object;
+}
+
+
+int ListIteratorIsEnd(ListIterator *self)
+{
+	List *list = self->list;
+
+	/* End of list */
+	if (self->index == list->count)
+	{
+		self->error = ListErrEnd;
+		return 1;
+	}
+
+	/* Not the end */
+	self->error = ListErrOK;
+	return 0;
 }
 
 

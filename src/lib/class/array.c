@@ -142,7 +142,10 @@ void ArrayDumpWithDelim(Array *self, FILE *f, const char *first,
 			index < self->count;
 			i = (i + 1) % self->size, index++)
 	{
-		self->array[i]->Dump(self->array[i], f);
+		if (self->array[i])
+			self->array[i]->Dump(self->array[i], f);
+		else
+			fprintf(f, "(nil)");
 		if (index < self->count - 1)
 			fprintf(f, "%s", middle);
 	}
@@ -156,6 +159,7 @@ void ArrayClear(Array *self)
 	self->head = 0;
 	self->tail = 0;
 	self->error = ArrayErrOK;
+	self->index = 0;
 }
 
 
@@ -167,7 +171,8 @@ void ArrayDeleteObjects(Array *self)
 	for (i = self->head, index = 0;
 			index < self->count;
 			i = (i + 1) % self->size, index++)
-		delete(self->array[i]);
+		if (self->array[i])
+			delete(self->array[i]);
 
 	ArrayClear(self);
 }
@@ -184,6 +189,7 @@ void ArrayAdd(Array *self, Object *object)
 	self->tail = (self->tail + 1) % self->size;
 	self->count++;
 	self->error = ArrayErrOK;
+	self->index = self->count - 1;
 }
 
 
@@ -216,6 +222,7 @@ void ArraySet(Array *self, int index, Object *object)
 	index = (index + self->head) % self->size;
 	self->array[index] = object;
 	self->error = ArrayErrOK;
+	self->index = index;
 }
 
 
@@ -260,6 +267,7 @@ void ArrayInsert(Array *self, int index, Object *object)
 	self->array[(self->head + index) % self->size] = object;
 	self->count++;
 	self->error = ArrayErrOK;
+	self->index = index;
 }
 
 
@@ -323,6 +331,7 @@ Object *ArrayRemove(Array *self, int index)
 	
 	self->count--;
 	self->error = ArrayErrOK;
+	self->index = index;
 	return object;
 }
 
@@ -331,5 +340,100 @@ void ArraySort(Array *self)
 {
 	if (self->count)
 		ArraySortRange(self, 0, self->count - 1);
+}
+
+
+Object *ArrayHead(Array *self)
+{
+	/* Empty array */
+	if (!self->count)
+	{
+		self->error = ArrayErrEmpty;
+		return NULL;
+	}
+
+	/* Go to head */
+	self->error = ArrayErrOK;
+	self->index = 0;
+	
+	/* Return current object */
+	return self->array[0];
+}
+
+
+Object *ArrayTail(Array *self)
+{
+	/* Empty array */
+	if (!self->count)
+	{
+		self->error = ArrayErrEmpty;
+		return NULL;
+	}
+
+	/* Go to last element */
+	self->index = self->count - 1;
+	self->error = ArrayErrOK;
+
+	/* Return current object */
+	return self->array[self->index];
+}
+
+Object *ArrayNext(Array *self)
+{
+	/* Check bounds */
+	assert(self->index <= self->count);
+	if (self->index == self->count)
+	{
+		self->error = ArrayErrBounds;
+		return NULL;
+	}
+
+	/* Go to next element */
+	self->index++;
+	
+	/* End of list reached */
+	if (self->index == self->count)
+	{
+		self->error = ArrayErrEnd;
+		return NULL;
+	}
+
+	/* Return current object */
+	self->error = ArrayErrOK;
+	return self->array[self->index];
+}
+
+
+Object *ArrayPrev(Array *self)
+{
+	/* Check bounds */
+	if (!self->index)
+	{
+		self->error = ArrayErrBounds;
+		return NULL;
+	}
+
+	/* Move to previous element */
+	self->error = ArrayErrOK;
+	self->index--;
+
+	/* Return current object */
+	return self->array[self->index];
+}
+
+
+int ArrayIsEnd(Array *self)
+{
+	/* End of list */
+	assert(self->index <= self->count);
+	if (self->index == self->count)
+	{
+		self->error = ArrayErrEnd;
+		return 1;
+	}
+
+	/* Not the end */
+	self->error = ArrayErrOK;
+	return 0;
 }
 
