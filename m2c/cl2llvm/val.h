@@ -73,6 +73,15 @@ struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t *original_val, struct 
 
 void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct cl2llvm_val_t **new_val1, struct cl2llvm_val_t **new_val2);
 
-struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value);
+struct cl2llvm_val_t *cl2llvm_to_bool_ne_0(struct cl2llvm_val_t *value);
+
+struct cl2llvm_val_t *cl2llvm_to_bool_eq_0(struct cl2llvm_val_t *value);
+
+/* This function will take a bool and sign extend it to a specified bitwidth.
+   It will also perform i1 to floating point conversions if necessary. All vector
+   components that are equal to 1 will be converted to -1 in accordance with the 
+   OpenCL standard. */
+struct cl2llvm_val_t *cl2llvm_bool_ext(struct cl2llvm_val_t *bool_val,
+	struct cl2llvm_type_t *type);
 
 #endif
