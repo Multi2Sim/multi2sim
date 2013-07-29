@@ -24,8 +24,6 @@ enum si2bin_data_type_t
 {
 	si2bin_data_invalid = 0,
 
-	si2bin_data_int,
-	si2bin_data_short,
 	si2bin_data_float,
 	si2bin_data_word,
 	si2bin_data_half,
@@ -38,8 +36,6 @@ struct si2bin_data_t
 	
 	union
 	{
-		int int_value;
-		short short_value;
 		float float_value;
 		unsigned int word_value;
 		unsigned short half_value;
