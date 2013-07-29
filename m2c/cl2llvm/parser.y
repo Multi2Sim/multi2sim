@@ -1247,10 +1247,14 @@ if
 		/*Create if true block*/
 		snprintf(block_name, sizeof block_name,
 			"block_%d", block_count++);
-		LLVMBasicBlockRef if_true = LLVMAppendBasicBlock(cl2llvm_current_function->func, block_name);
+		LLVMBasicBlockRef if_true = LLVMAppendBasicBlock(
+			cl2llvm_current_function->func, block_name);
 		
 		/*evaluate expression*/
-		struct cl2llvm_val_t *bool_val =  cl2llvm_val_bool($3);
+		if (LLVMGetTypeKind($3->type->llvm_type) == LLVMVectorTypeKind)
+			cl2llvm_yyerror("expression must have arithmetic, enum "
+				"or pointer type");
+		struct cl2llvm_val_t *bool_val =  cl2llvm_to_bool_ne_0($3);
 		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, if_true, endif);
 		$<basic_block_ref>$ = endif;
 		
@@ -1327,7 +1331,11 @@ for_loop_header
 		/*Build for loop conditional*/
 		if ($6 != NULL)
 		{
-			bool_val = cl2llvm_val_bool($6);
+			if (LLVMGetTypeKind($6->type->llvm_type)
+				== LLVMVectorTypeKind)
+				cl2llvm_yyerror("expression must have "
+					"arithmetic, enum or pointer type");
+			bool_val = cl2llvm_to_bool_ne_0($6);
 			LLVMBuildCondBr(cl2llvm_builder, bool_val->val, 
 				$<llvm_for_blocks>5->for_stmt, $<llvm_for_blocks>5->for_end);	
 		}
@@ -1406,7 +1414,11 @@ for_loop_header
 		/*Build for loop conditional*/
 		if ($5 != NULL)
 		{
-			bool_val = cl2llvm_val_bool($5);
+			if (LLVMGetTypeKind($5->type->llvm_type)
+				== LLVMVectorTypeKind)
+				cl2llvm_yyerror("expression must have "
+					"arithmetic, enum or pointer type");
+			bool_val = cl2llvm_to_bool_ne_0($5);
 			LLVMBuildCondBr(cl2llvm_builder, bool_val->val, 
 				$<llvm_for_blocks>4->for_stmt, $<llvm_for_blocks>4->for_end);
 		}
@@ -1476,8 +1488,12 @@ do_while_loop
 	expr TOK_PAR_CLOSE TOK_SEMICOLON 
 	{
 		struct cl2llvm_val_t *bool_val;
-		
-		bool_val = cl2llvm_val_bool($7);
+	
+		if (LLVMGetTypeKind($7->type->llvm_type)
+			== LLVMVectorTypeKind)
+			cl2llvm_yyerror("expression must have "
+				"arithmetic, enum or pointer type");
+		bool_val = cl2llvm_to_bool_ne_0($7);
 		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $<llvm_while_blocks>2->while_stmt,
 			$<llvm_while_blocks>2->while_end);
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $<llvm_while_blocks>2->while_end);
@@ -1489,7 +1505,12 @@ while_loop
 	: TOK_WHILE TOK_PAR_OPEN while_block_init expr TOK_PAR_CLOSE
 	{
 		struct cl2llvm_val_t *bool_val;
-		bool_val = cl2llvm_val_bool($4);
+		
+		if (LLVMGetTypeKind($4->type->llvm_type)
+			== LLVMVectorTypeKind)
+			cl2llvm_yyerror("expression must have "
+				"arithmetic, enum or pointer type");
+		bool_val = cl2llvm_to_bool_ne_0($4);
 		LLVMBuildCondBr(cl2llvm_builder, bool_val->val, $3->while_stmt, $3->while_end);
 
 		LLVMPositionBuilderAtEnd(cl2llvm_builder, $3->while_stmt);
@@ -2041,12 +2062,11 @@ expr
 		struct cl2llvm_type_t *switch_type;
 		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *bool_val;
 		
-		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp_%d", temp_var_count++);
 
 		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
+		bool_val = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -2072,30 +2092,36 @@ expr
 			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
 		}
 		
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+		
 		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
-			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ,
+			bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ,
 				op1->val, op2->val, temp_var_name);
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFCmp(cl2llvm_builder,
+			bool_val->val = LLVMBuildFCmp(cl2llvm_builder,
 				LLVMRealOEQ, op1->val, op2->val, temp_var_name);
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
 
 			yyerror("invalid type of operands for equality");
 		}
+
+		/* Extend bits */
+		value = cl2llvm_bool_ext(bool_val, $1->type);
 
 		/* Free pointers */
 		if ($1 != op1)
@@ -2104,6 +2130,7 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_val_free(bool_val);
 		cl2llvm_type_free(type);
 		cl2llvm_type_free(switch_type);
 
@@ -2114,12 +2141,10 @@ expr
 		struct cl2llvm_type_t *switch_type;
 		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *bool_val;
 		
-		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp_%d", temp_var_count++);
-
 		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
+		bool_val = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -2144,31 +2169,37 @@ expr
 		{
 			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
 		}
+		
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
 
 		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
-			value->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE,
+			bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE,
 				op1->val, op2->val, temp_var_name);
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealONE, op1->val, op2->val, temp_var_name);
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
 
 			yyerror("invalid type of operands for addition");
 		}
+	
+		/* Extend bits */
+		value = cl2llvm_bool_ext(bool_val, $1->type);
 
 		/* Free pointers */
 		if ($1 != op1)
@@ -2177,6 +2208,7 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_val_free(bool_val);
 		cl2llvm_type_free(type);
 		cl2llvm_type_free(switch_type);
 
@@ -2188,12 +2220,11 @@ expr
 		struct cl2llvm_type_t *switch_type;
 		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *bool_val;
 		
-		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp_%d", temp_var_count++);
-
+	
 		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
+		bool_val = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -2218,6 +2249,9 @@ expr
 		{
 			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
 		}
+	
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
 
 		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
@@ -2225,34 +2259,37 @@ expr
 
 			if (type->sign)
 			{
-				value->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSLT, op1->val, op2->val, 
 					temp_var_name);
 			}
 			else
 			{
-				value->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntULT, op1->val, op2->val, 
 					temp_var_name);
 			}
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealOLT, op1->val, op2->val, temp_var_name);
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
 
 			yyerror("invalid type of operands for comparison");
 		}
+
+		/* Extend bits */
+		value = cl2llvm_bool_ext(bool_val, $1->type);
 
 		/* Free pointers */
 		if ($1 != op1)
@@ -2261,6 +2298,7 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_val_free(bool_val);
 		cl2llvm_type_free(type);
 		cl2llvm_type_free(switch_type);
 
@@ -2272,11 +2310,11 @@ expr
 		struct cl2llvm_type_t *switch_type;
 		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
-		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp_%d", temp_var_count++);
-
+		struct cl2llvm_val_t *bool_val;
+		
+	
 		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
+		bool_val = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -2301,6 +2339,9 @@ expr
 		{
 			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
 		}
+	
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
 
 		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
@@ -2308,34 +2349,37 @@ expr
 
 			if (type->sign)
 			{
-				value->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSGT, op1->val, op2->val, 
 					temp_var_name);
 			}
 			else
 			{
-				value->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntUGT, op1->val, op2->val, 
 					temp_var_name);
 			}
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealOGT, op1->val, op2->val, temp_var_name);
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
 
 			yyerror("invalid type of operands for comparison");
 		}
+
+		/* Extend bits */
+		value = cl2llvm_bool_ext(bool_val, $1->type);
 
 		/* Free pointers */
 		if ($1 != op1)
@@ -2344,6 +2388,7 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_val_free(bool_val);
 		cl2llvm_type_free(type);
 		cl2llvm_type_free(switch_type);
 
@@ -2354,11 +2399,11 @@ expr
 		struct cl2llvm_type_t *switch_type;
 		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
-		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp_%d", temp_var_count++);
-
+		struct cl2llvm_val_t *bool_val;
+		
+	
 		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
+		bool_val = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -2383,6 +2428,9 @@ expr
 		{
 			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
 		}
+	
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
 
 		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
@@ -2390,34 +2438,37 @@ expr
 
 			if (type->sign)
 			{
-				value->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSLE, op1->val, op2->val, 
 					temp_var_name);
 			}
 			else
 			{
-				value->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntULE, op1->val, op2->val, 
 					temp_var_name);
 			}
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealOLE, op1->val, op2->val, temp_var_name);
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
 
 			yyerror("invalid type of operands for comparison");
 		}
+	
+		/* Extend bits */
+		value = cl2llvm_bool_ext(bool_val, $1->type);
 
 		/* Free pointers */
 		if ($1 != op1)
@@ -2426,6 +2477,7 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_val_free(bool_val);
 		cl2llvm_type_free(type);
 		cl2llvm_type_free(switch_type);
 
@@ -2436,12 +2488,11 @@ expr
 		struct cl2llvm_type_t *switch_type;
 		struct cl2llvm_type_t *type;
 		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *bool_val;
 		
-		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp_%d", temp_var_count++);
-
+	
 		type = cl2llvm_type_create();
-		value = cl2llvm_val_create();
+		bool_val = cl2llvm_val_create();
 
 		struct cl2llvm_val_t *op1, *op2;
 		
@@ -2467,40 +2518,46 @@ expr
 			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
 		}
 
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+
 		switch (LLVMGetTypeKind(switch_type->llvm_type))
 		{
 		case LLVMIntegerTypeKind:
 
 			if (type->sign)
 			{
-				value->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntSGE, op1->val, op2->val, 
 					temp_var_name);
 			}
 			else
 			{
-				value->val = LLVMBuildICmp(cl2llvm_builder, 
+				bool_val->val = LLVMBuildICmp(cl2llvm_builder, 
 					LLVMIntUGE, op1->val, op2->val, 
 					temp_var_name);
 			}
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		case LLVMHalfTypeKind:
 		case LLVMFloatTypeKind:
 		case LLVMDoubleTypeKind:
 
-			value->val = LLVMBuildFCmp(cl2llvm_builder, 
+			bool_val->val = LLVMBuildFCmp(cl2llvm_builder, 
 				LLVMRealOGE, op1->val, op2->val, temp_var_name);
-			value->type->sign = 1;
-			value->type->llvm_type = LLVMInt1Type();
+			bool_val->type->sign = 1;
+			bool_val->type->llvm_type = LLVMInt1Type();
 			break;
 
 		default:
 
 			yyerror("invalid type of operands for comparison");
 		}
+	
+		/* Extend bits */
+		value = cl2llvm_bool_ext(bool_val, $1->type);
 
 		/* Free pointers */
 		if ($1 != op1)
@@ -2509,6 +2566,7 @@ expr
 			cl2llvm_val_free(op2);
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
+		cl2llvm_val_free(bool_val);
 		cl2llvm_type_free(type);
 		cl2llvm_type_free(switch_type);
 
@@ -2519,49 +2577,104 @@ expr
 		struct cl2llvm_val_t *bool1;
 		struct cl2llvm_val_t *bool2;
 		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *land_cond;
+		struct cl2llvm_type_t *type;
 		LLVMBasicBlockRef land_rhs;
 		LLVMBasicBlockRef land_end;
-		LLVMValueRef land_cond;
-
-		/* Create basic blocks */
-		land_rhs = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_rhs");
-		land_end = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_end");
-
-		/* Convert LHS to boolean value */
-		bool1 = cl2llvm_val_bool($1);
-
-		/* Create conditional branch. Branch will skip to end block if LHS
-		   is false */
-		LLVMBuildCondBr(cl2llvm_builder, bool1->val, land_rhs, land_end);
+		struct cl2llvm_val_t *op1, *op2;
 		
-		/* Move builder to RHS block */
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, land_rhs);
+		/* If one value is a vector */
+		if (LLVMGetTypeKind($1->type->llvm_type) == LLVMVectorTypeKind
+			|| LLVMGetTypeKind($3->type->llvm_type) == LLVMVectorTypeKind)
+		{
+			type = cl2llvm_type_create();
+			
+			type_unify($1, $3, &op1, &op2);
+			
+			if(op1 == $1)
+			{
+				type->llvm_type = op1->type->llvm_type;
+				type->sign = op1->type->sign;
+			}
+			else
+			{
+				type->llvm_type = op2->type->llvm_type;
+				type->sign = op2->type->sign;
+			}
 
-		/* Convert RHS to Bool */
-		bool2 = cl2llvm_val_bool($3);
+			/* Convert to bool */
+			bool1 = cl2llvm_to_bool_ne_0(op1);
+			bool2 = cl2llvm_to_bool_ne_0(op2);
 
-		/* Build branch to end block */
-		LLVMBuildBr(cl2llvm_builder, land_end);
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, land_end);
-
-		/* Position builder at end block */
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp_%d", temp_var_count++);
+			
+			/* Compare vectors */
+			land_cond = cl2llvm_val_create_w_init(LLVMBuildAnd(
+				cl2llvm_builder, bool1->val, bool2->val, temp_var_name), 0);
+			
+			/* Sign extend vector */
+			value = cl2llvm_bool_ext(land_cond, type);
 		
-		/* Build Phi node */
-		LLVMValueRef phi_vals[] = {LLVMConstInt(LLVMInt1Type(), 0, 0), bool2->val};
-		LLVMBasicBlockRef phi_blocks[] = {current_basic_block, land_rhs};
-		land_cond = LLVMBuildPhi(cl2llvm_builder, LLVMInt1Type(), "land_cond");
-		LLVMAddIncoming(land_cond, phi_vals, phi_blocks, 2);
+			/* Free pointers */
+			cl2llvm_type_free(type);
+			if ($1 != op1)
+				cl2llvm_val_free(op1);
+		else if ($3 != op2)
+				cl2llvm_val_free(op2);
 
-		/* Set current current basic block */
-		current_basic_block = land_end;
+		}
+		/* If neither value is a vector */
+		else
+		{
+			/* Create basic blocks */
+			land_rhs = LLVMAppendBasicBlock(
+				cl2llvm_current_function->func, "land_rhs");
+			land_end = LLVMAppendBasicBlock(
+				cl2llvm_current_function->func, "land_end");
 
-		value = cl2llvm_val_create_w_init(land_cond, 1);
+			/* Convert LHS to boolean value */
+			bool1 = cl2llvm_to_bool_ne_0($1);
 
+			/* Create conditional branch. Branch will skip to end block if LHS
+			   is false */
+			LLVMBuildCondBr(cl2llvm_builder, bool1->val, land_rhs, land_end);
+		
+			/* Move builder to RHS block */
+			LLVMPositionBuilderAtEnd(cl2llvm_builder, land_rhs);
+
+			/* Convert RHS to Bool */
+			bool2 = cl2llvm_to_bool_ne_0($3);
+
+			/* Build branch to end block */
+			LLVMBuildBr(cl2llvm_builder, land_end);
+			LLVMPositionBuilderAtEnd(cl2llvm_builder, land_end);
+
+			/* Position builder at end block */
+		
+			/* Build Phi node */
+			LLVMValueRef phi_vals[] = {LLVMConstInt(
+				LLVMInt1Type(), 0, 0), bool2->val};
+			LLVMBasicBlockRef phi_blocks[] = 
+				{current_basic_block, land_rhs};
+			land_cond = cl2llvm_val_create_w_init(
+				LLVMBuildPhi(cl2llvm_builder, 
+				LLVMInt1Type(), "land_cond"), 0);
+			LLVMAddIncoming(land_cond->val, phi_vals, phi_blocks, 2);
+			
+			/* sign extend */
+			value = cl2llvm_bool_ext(land_cond, $1->type);
+
+			/* Set current current basic block */
+			current_basic_block = land_end;
+
+		}
 		/* Free pointers */
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(bool1);
 		cl2llvm_val_free(bool2);
+		cl2llvm_val_free(land_cond);
 	
 		$$ = value;
 	}
@@ -2572,48 +2685,98 @@ expr
 		struct cl2llvm_val_t *value;
 		LLVMBasicBlockRef land_rhs;
 		LLVMBasicBlockRef land_end;
-		LLVMValueRef land_cond;
+		struct cl2llvm_val_t *land_cond;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *op1, *op2;
 
-		/* Create basic blocks */
-		land_rhs = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_rhs");
-		land_end = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_end");
 
-		/* Convert LHS to boolean value */
-		bool1 = cl2llvm_val_bool($1);
-
-		/* Create conditional branch. Branch will skip to end block if LHS
-		   is true */
-		LLVMBuildCondBr(cl2llvm_builder, bool1->val, land_end, land_rhs);
 		
-		/* Move builder to RHS block */
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, land_rhs);
+		/* If one value is a vector */
+		if (LLVMGetTypeKind($1->type->llvm_type) == LLVMVectorTypeKind
+			|| LLVMGetTypeKind($3->type->llvm_type) == LLVMVectorTypeKind)
+		{
+			type = cl2llvm_type_create();
+			
+			type_unify($1, $3, &op1, &op2);
+			
+			if(op1 == $1)
+			{
+				type->llvm_type = op1->type->llvm_type;
+				type->sign = op1->type->sign;
+			}
+			else
+			{
+				type->llvm_type = op2->type->llvm_type;
+				type->sign = op2->type->sign;
+			}
 
-		/* Convert RHS to Bool */
-		bool2 = cl2llvm_val_bool($3);
+			/* Convert to bool */
+			bool1 = cl2llvm_to_bool_ne_0(op1);
+			bool2 = cl2llvm_to_bool_ne_0(op2);
 
-		/* Build branch to end block */
-		LLVMBuildBr(cl2llvm_builder, land_end);
-
-		/* Position builder at end block */
-		LLVMPositionBuilderAtEnd(cl2llvm_builder, land_end);
+			snprintf(temp_var_name, sizeof temp_var_name,
+				"tmp_%d", temp_var_count++);
+			
+			/* Compare vectors */
+			land_cond = cl2llvm_val_create_w_init(LLVMBuildOr(
+				cl2llvm_builder, bool1->val, bool2->val, temp_var_name), 0);
+			
+			/* Sign extend vector */
+			value = cl2llvm_bool_ext(land_cond, type);
 		
-		/* Build Phi node */
-		LLVMValueRef phi_vals[] = {LLVMConstInt(LLVMInt1Type(), 1, 0), bool2->val};
-		LLVMBasicBlockRef phi_blocks[] = {current_basic_block, land_rhs};
-		land_cond = LLVMBuildPhi(cl2llvm_builder, LLVMInt1Type(), "land_cond");
-		LLVMAddIncoming(land_cond, phi_vals, phi_blocks, 2);
+			/* Free pointers */
+			cl2llvm_type_free(type);
+			if ($1 != op1)
+				cl2llvm_val_free(op1);
+		else if ($3 != op2)
+				cl2llvm_val_free(op2);
 
-		/* Set current current basic block */
-		current_basic_block = land_end;
+		}
+		/* If neither value is a vector */
+		else
+		{
+			/* Create basic blocks */
+			land_rhs = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_rhs");
+			land_end = LLVMAppendBasicBlock(cl2llvm_current_function->func, "land_end");
 
-		value = cl2llvm_val_create_w_init(land_cond, 1);
+			/* Convert LHS to boolean value */
+			bool1 = cl2llvm_to_bool_ne_0($1);
 
+			/* Create conditional branch. Branch will skip to end block if LHS
+			   is true */
+			LLVMBuildCondBr(cl2llvm_builder, bool1->val, land_end, land_rhs);
+		
+			/* Move builder to RHS block */
+			LLVMPositionBuilderAtEnd(cl2llvm_builder, land_rhs);
+
+			/* Convert RHS to Bool */
+			bool2 = cl2llvm_to_bool_ne_0($3);
+
+			/* Build branch to end block */
+			LLVMBuildBr(cl2llvm_builder, land_end);
+	
+			/* Position builder at end block */
+			LLVMPositionBuilderAtEnd(cl2llvm_builder, land_end);
+		
+			/* Build Phi node */
+			LLVMValueRef phi_vals[] = {LLVMConstInt(LLVMInt1Type(), 1, 0), bool2->val};
+			LLVMBasicBlockRef phi_blocks[] = {current_basic_block, land_rhs};
+			land_cond = cl2llvm_val_create_w_init(LLVMBuildPhi(
+				cl2llvm_builder, LLVMInt1Type(), "land_cond"), 0);
+			LLVMAddIncoming(land_cond->val, phi_vals, phi_blocks, 2);
+
+			/* Set current current basic block */
+			current_basic_block = land_end;
+
+			value = cl2llvm_val_create_w_init(land_cond->val, 1);
+		}
 		/* Free pointers */
 		cl2llvm_val_free($1);
 		cl2llvm_val_free($3);
 		cl2llvm_val_free(bool1);
 		cl2llvm_val_free(bool2);
-	
+		cl2llvm_val_free(land_cond);
+
 		$$ = value;
 	}
 	| lvalue TOK_EQUAL expr
@@ -3528,10 +3691,21 @@ expr
 
 	| TOK_LOGICAL_NEGATE expr
 	{
-		cl2llvm_yyerror("'!' not supported");
-		$$ = NULL;
-	}
+		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *bool_val;
+		
+		/* Convert $2 to bool */
+		bool_val = cl2llvm_to_bool_eq_0($2);
 
+		/* Convert bool back to type of $2 */
+		value = cl2llvm_bool_ext(bool_val, $2->type);
+
+		/* Free pointers */
+		cl2llvm_val_free($2);
+		cl2llvm_val_free(bool_val);
+
+		$$ = value;
+	}
 	| expr TOK_BITWISE_AND expr
 	{
 		struct cl2llvm_type_t *switch_type;
@@ -3792,37 +3966,276 @@ unary_expr
 		cl2llvm_val_free(one);
 		cl2llvm_val_free(value_plus_one);
 		cl2llvm_val_free(cast_one);
-		cl2llvm_val_free(lval);
+		cl2llvm_val_free($1);
 		cl2llvm_type_free(type);
 		cl2llvm_type_free(switch_type);
 
-		$$ = $1;
+		$$ = lval;
 
 	}
 	| TOK_INCREMENT lvalue %prec TOK_PREFIX
 	{	
-		cl2llvm_yyerror("pre-increment not supported");
-		$$ = NULL;
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value_plus_one;
+		struct cl2llvm_val_t *one;
+
+		/* Create constant one to add to variable */
+		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
+
+		type = cl2llvm_type_create_w_init(LLVMGetElementType(
+			$2->type->llvm_type), $2->type->sign);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
+			LLVMBuildLoad(cl2llvm_builder, $2->val, temp_var_name),
+			$2->type->sign);
+
+		/* Cast constant one to type of variable */
+		struct cl2llvm_val_t *cast_one = llvm_type_cast(one, type);
+	
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+		
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			value_plus_one = cl2llvm_val_create_w_init(
+				LLVMBuildAdd(cl2llvm_builder, lval->val, 
+				cast_one->val, temp_var_name), type->sign);
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value_plus_one = cl2llvm_val_create_w_init(
+				LLVMBuildFAdd(cl2llvm_builder, lval->val, 
+				cast_one->val, temp_var_name), type->sign);
+			break;
+
+		default:
+
+			yyerror("invalid type of operand for pre '++'");
+			value_plus_one = cl2llvm_val_create();
+		}
+		
+		LLVMBuildStore(cl2llvm_builder, value_plus_one->val, $2->val);
+		
+		cl2llvm_val_free(one);
+		cl2llvm_val_free($2);
+		cl2llvm_val_free(cast_one);
+		cl2llvm_val_free(lval);
+		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
+		$$ = value_plus_one;
 	}
 	| TOK_DECREMENT lvalue %prec TOK_PREFIX
 	{
-		cl2llvm_yyerror("pre decrement not supported");
-		$$ = NULL;
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value_minus_one;
+		struct cl2llvm_val_t *one;
+
+		/* Create constant one to add to variable */
+		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
+
+		type = cl2llvm_type_create_w_init(LLVMGetElementType(
+			$2->type->llvm_type), $2->type->sign);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
+			LLVMBuildLoad(cl2llvm_builder, $2->val, temp_var_name),
+			$2->type->sign);
+
+		/* Cast constant one to type of variable */
+		struct cl2llvm_val_t *cast_one = llvm_type_cast(one, type);
+	
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+		
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			value_minus_one = cl2llvm_val_create_w_init(
+				LLVMBuildSub(cl2llvm_builder, lval->val, 
+				cast_one->val, temp_var_name), type->sign);
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value_minus_one = cl2llvm_val_create_w_init(
+				LLVMBuildFSub(cl2llvm_builder, lval->val, 
+				cast_one->val, temp_var_name), type->sign);
+			break;
+
+		default:
+
+			yyerror("invalid type of operand for pre '--'");
+			value_minus_one = cl2llvm_val_create();
+		}
+		
+		LLVMBuildStore(cl2llvm_builder, value_minus_one->val, $2->val);
+		
+		cl2llvm_val_free(one);
+		cl2llvm_val_free($2);
+		cl2llvm_val_free(cast_one);
+		cl2llvm_val_free(lval);
+		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
+		$$ = value_minus_one;
+
 	}
 	| lvalue TOK_DECREMENT %prec TOK_POSTFIX
 	{
-		cl2llvm_yyerror("post decrement not supported");
-		$$ = NULL;
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_type_t *type;
+		struct cl2llvm_val_t *value_minus_one;
+		struct cl2llvm_val_t *one;
+
+		/* Create constant one to add to variable */
+		one = cl2llvm_val_create_w_init(LLVMConstInt(LLVMInt32Type(), 1, 0), 1);
+
+		type = cl2llvm_type_create_w_init(LLVMGetElementType(
+			$1->type->llvm_type), $1->type->sign);
+
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+		struct cl2llvm_val_t *lval = cl2llvm_val_create_w_init(
+			LLVMBuildLoad(cl2llvm_builder, $1->val, temp_var_name),
+			$1->type->sign);
+
+		/* Cast constant one to type of variable */
+		struct cl2llvm_val_t *cast_one = llvm_type_cast(one, type);
+	
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+		
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			value_minus_one = cl2llvm_val_create_w_init(
+				LLVMBuildSub(cl2llvm_builder, lval->val, 
+				cast_one->val, temp_var_name), type->sign);
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value_minus_one = cl2llvm_val_create_w_init(
+				LLVMBuildFSub(cl2llvm_builder, lval->val, 
+				cast_one->val, temp_var_name), type->sign);
+			break;
+
+		default:
+
+			yyerror("invalid type of operand for post '--'");
+			value_minus_one = cl2llvm_val_create();
+		}
+		
+		LLVMBuildStore(cl2llvm_builder, value_minus_one->val, $1->val);
+		
+		cl2llvm_val_free(one);
+		cl2llvm_val_free(value_minus_one);
+		cl2llvm_val_free(cast_one);
+		cl2llvm_val_free($1);
+		cl2llvm_type_free(type);
+		cl2llvm_type_free(switch_type);
+
+		$$ = lval;
+
 	}
-	| TOK_MINUS primary %prec TOK_PREFIX
+	| TOK_MINUS expr %prec TOK_PREFIX
 	{
-		cl2llvm_yyerror("unary minus not supported");
-		$$ = NULL;
+		struct cl2llvm_val_t *value;
+		struct cl2llvm_type_t *switch_type;
+		
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+		
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init($2->type->llvm_type, $2->type->sign);
+		if (LLVMGetTypeKind(switch_type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType($2->type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+
+			value = cl2llvm_val_create_w_init(
+				LLVMBuildNeg(cl2llvm_builder, $2->val, 
+				temp_var_name), $2->type->sign);
+			break;
+
+		case LLVMHalfTypeKind:
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+
+			value = cl2llvm_val_create_w_init(
+				LLVMBuildFNeg(cl2llvm_builder, $2->val, 
+				temp_var_name), $2->type->sign);
+			break;
+
+		default:
+
+			yyerror("invalid type of operand for unary '-'");
+			value = cl2llvm_val_create();
+		}
+		
+		/* Free pointers */
+		cl2llvm_val_free($2);
+		cl2llvm_type_free(switch_type);
+
+		$$ = value;
 	}
-	| TOK_PLUS primary %prec TOK_PREFIX
+	| TOK_PLUS expr %prec TOK_PREFIX
 	{
-		cl2llvm_yyerror("unary plus not supported");
-		$$ = NULL;
+		$$ = $2;
 	}
 	| TOK_PAR_OPEN type_spec TOK_PAR_CLOSE expr %prec TOK_PREFIX
 	{
@@ -3842,13 +4255,56 @@ unary_expr
 	}
 	| TOK_BITWISE_NOT expr
 	{
-		cl2llvm_yyerror("'~'not supported");
-		$$ = NULL;
+		struct cl2llvm_type_t *switch_type;
+		struct cl2llvm_val_t *value;
+		struct cl2llvm_val_t *neg_one;
+		struct cl2llvm_val_t *cast_neg_one;
+
+		value = cl2llvm_val_create();
+
+		/* Create a negative one value to use in the xor operation */
+		neg_one = cl2llvm_val_create_w_init(LLVMConstInt(
+			LLVMInt32Type(), -1, 0), 1);
+
+		/* Cast negative one to type of $2 */
+		cast_neg_one = llvm_type_cast(neg_one, $2->type);		
+
+		/* Create an object that will hold the type of the operands.
+		   This extra object is necessary since in the case of a vector 
+		   type, we are concerned with the type of its components, but the
+		   resultant type of the operation is a vector. */
+		switch_type = cl2llvm_type_create_w_init($2->type->llvm_type, $2->type->sign);
+		if (LLVMGetTypeKind($2->type->llvm_type) == LLVMVectorTypeKind)
+		{
+			switch_type->llvm_type = LLVMGetElementType($2->type->llvm_type);
+		}
+
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+			value->val = LLVMBuildXor(cl2llvm_builder, 
+				$2->val, cast_neg_one->val, temp_var_name);
+			value->type->sign = $2->type->sign;
+			value->type->llvm_type = $2->type->llvm_type;
+			break;
+
+
+		default:
+			
+			yyerror("Invalid type of operands for '~'.");
+		}
+
+		/* Free pointers */
+		cl2llvm_val_free($2);
+		cl2llvm_val_free(neg_one);
+		cl2llvm_val_free(cast_neg_one);
+		cl2llvm_type_free(switch_type);
+
+		$$ = value;
 	}
 	| TOK_BITWISE_AND lvalue %prec TOK_PREFIX
 	{
-		cl2llvm_yyerror("'&' not supported");
-		$$ = NULL;
+		$$ = $2;
 	}
 	;
 

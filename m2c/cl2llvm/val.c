@@ -75,7 +75,8 @@ void cl2llvm_val_free(struct cl2llvm_val_t *cl2llvm_val)
 	free(cl2llvm_val);
 }
 
-struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, struct cl2llvm_type_t *totype_w_sign)
+struct cl2llvm_val_t *llvm_type_cast(struct cl2llvm_val_t * original_val, 
+	struct cl2llvm_type_t *totype_w_sign)
 {
 	struct cl2llvm_val_t *llvm_val = cl2llvm_val_create();
 
@@ -924,13 +925,15 @@ void type_unify(struct cl2llvm_val_t *val1, struct cl2llvm_val_t *val2, struct c
 	cl2llvm_type_free(type);
 }
 
-struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
+/* This function returns an i1 1 if the value is not equal to 0 and 
+   an i1 0 if the value is equal to 0. */
+struct cl2llvm_val_t *cl2llvm_to_bool_ne_0(struct cl2llvm_val_t *value)
 {
-	LLVMValueRef index;
-	struct cl2llvm_val_t *elem_bool1;
-	struct cl2llvm_val_t *elem_bool2;
-	struct cl2llvm_val_t *elem_val;
+	LLVMValueRef const_zero;
+	LLVMValueRef zero_vec[16];
+	LLVMTypeRef switch_type;
 	int i;
+	int veclength;
 
 	struct cl2llvm_val_t *bool_val = cl2llvm_val_create_w_init(value->val, value->type->sign);
 	
@@ -938,104 +941,222 @@ struct cl2llvm_val_t *cl2llvm_val_bool(struct cl2llvm_val_t *value)
 	if (LLVMTypeOf(value->val) == LLVMInt1Type())
 		return bool_val;
 
-	/* If value is a vector convert each value to a bool and return true if
-	   every component is true. Otherwise, return false. */
+	/* If value is a vector create a vector of constant zeros, else
+	   create a scalar 0. */
 	if (LLVMGetTypeKind(value->type->llvm_type) == LLVMVectorTypeKind)
 	{
-		index = LLVMConstInt(LLVMInt32Type(), 0, 0);
+		switch_type = LLVMGetElementType(value->type->llvm_type);
 
-		snprintf(temp_var_name, sizeof temp_var_name,
-			"tmp_%d", temp_var_count++);
-
-		elem_val = cl2llvm_val_create_w_init(
-			LLVMBuildExtractElement(cl2llvm_builder, 
-			value->val, index, temp_var_name), 
-			value->type->sign);
-			
-		elem_bool1 = cl2llvm_val_bool(elem_val);
-
-		cl2llvm_val_free(elem_val);
-
-		for (i = 1; i < LLVMGetVectorSize(value->type->llvm_type); i++)
+		veclength = LLVMGetVectorSize(value->type->llvm_type);
+		switch (LLVMGetTypeKind(LLVMGetElementType(value->type->llvm_type)))
 		{
-			index = LLVMConstInt(LLVMInt32Type(), i, 0);
-
-			snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp_%d", temp_var_count++);
-
-			elem_val = cl2llvm_val_create_w_init(
-				LLVMBuildExtractElement(cl2llvm_builder, 
-				value->val, index, temp_var_name), 
-				value->type->sign);
+		case LLVMIntegerTypeKind:
+		
+			/* Create zero vector */
+			for (i = 0; i < veclength; i++)
+				zero_vec[i] = LLVMConstInt(switch_type, 0, 0);
+			break;
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+		case LLVMHalfTypeKind:
 			
-			elem_bool2 = cl2llvm_val_bool(elem_val);
-			
-			snprintf(temp_var_name, sizeof temp_var_name,
-				"tmp_%d", temp_var_count++);
-
-			elem_bool1->val = LLVMBuildAnd(cl2llvm_builder, elem_bool1->val, 
-				elem_bool2->val, temp_var_name);
-			cl2llvm_val_free(elem_val);
-
-			cl2llvm_val_free(elem_bool2);
+			/* Create zero vector */
+			for (i = 0; i < veclength; i++)
+				zero_vec[i] = LLVMConstReal(switch_type, 0);
+			break;
+		default:
+			cl2llvm_yyerror("unreachable code reached");
 		}
-		cl2llvm_val_free(bool_val);
-		bool_val = elem_bool1;
-		return bool_val;
+		const_zero = LLVMConstVector(zero_vec, veclength);
 	}
+	else if (LLVMGetTypeKind(value->type->llvm_type) == LLVMIntegerTypeKind)
+	{
+		const_zero = LLVMConstInt(value->type->llvm_type, 0, 0);
+		switch_type = value->type->llvm_type;
+	}
+	else if (LLVMGetTypeKind(value->type->llvm_type) == LLVMFloatTypeKind
+		|| LLVMGetTypeKind(value->type->llvm_type) == LLVMDoubleTypeKind
+		|| LLVMGetTypeKind(value->type->llvm_type) == LLVMHalfTypeKind)
+	{
+		const_zero = LLVMConstReal(value->type->llvm_type, 0);
+		switch_type = value->type->llvm_type;
+	}
+	/* Create comparison */
+	snprintf(temp_var_name, sizeof temp_var_name,
+		"tmp_%d", temp_var_count++);
+
+	switch (LLVMGetTypeKind(switch_type))
+	{
+	case LLVMFloatTypeKind:
+	case LLVMDoubleTypeKind:
+	case LLVMHalfTypeKind:
+
+		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
+			value->val, const_zero, temp_var_name);
+		break;
+	case LLVMIntegerTypeKind:
+
+		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
+			value->val, const_zero, temp_var_name);
+		break;
+	default:
+		cl2llvm_yyerror("unreachable code reached");
+		break;
+	}
+	bool_val->type->llvm_type = LLVMInt1Type();
+	bool_val->type->sign = 0;
+
+	return bool_val;
+}
+
+/* This function returns an i1 1 if the value is equal to 0 and 
+   an i1 0 if the value is not equal to 0. */
+struct cl2llvm_val_t *cl2llvm_to_bool_eq_0(struct cl2llvm_val_t *value)
+{
+	LLVMValueRef const_zero;
+	LLVMValueRef zero_vec[16];
+	int i;
+	int veclength;
+	LLVMTypeRef switch_type;
+	struct cl2llvm_val_t *bool_val = cl2llvm_val_create_w_init(value->val, value->type->sign);
+	
+	/* if value is i1 no conversion necessary */
+	if (LLVMTypeOf(value->val) == LLVMInt1Type())
+		return bool_val;
+
+	/* If value is a vector create a vector of constant zeros, else
+	   create a scalar 0. */
+	if (LLVMGetTypeKind(value->type->llvm_type) == LLVMVectorTypeKind)
+	{
+		veclength = LLVMGetVectorSize(value->type->llvm_type);
+		switch_type = LLVMGetElementType(value->type->llvm_type);
+
+		switch (LLVMGetTypeKind(switch_type))
+		{
+		case LLVMIntegerTypeKind:
+		
+			/* Create zero vector */
+			for (i = 0; i < veclength; i++)
+				zero_vec[i] = LLVMConstInt(switch_type, 0, 0);
+			break;
+		case LLVMFloatTypeKind:
+		case LLVMDoubleTypeKind:
+		case LLVMHalfTypeKind:
+			
+			/* Create zero vector */
+			for (i = 0; i < veclength; i++)
+				zero_vec[i] = LLVMConstReal(switch_type, 0);
+			break;
+		default:
+			cl2llvm_yyerror("unreachable code reached");
+		}
+		const_zero = LLVMConstVector(zero_vec, veclength);
+	}
+	else if (LLVMGetTypeKind(value->type->llvm_type) == LLVMIntegerTypeKind)
+	{
+		const_zero = LLVMConstInt(value->type->llvm_type, 0, 0);
+		switch_type = value->type->llvm_type;
+	}
+	else if (LLVMGetTypeKind(value->type->llvm_type) == LLVMFloatTypeKind
+		|| LLVMGetTypeKind(value->type->llvm_type) == LLVMDoubleTypeKind
+		|| LLVMGetTypeKind(value->type->llvm_type) == LLVMHalfTypeKind)
+	{
+		const_zero = LLVMConstReal(value->type->llvm_type, 0);
+		switch_type =  value->type->llvm_type;
+	}
+	/* Create comparison */
+	snprintf(temp_var_name, sizeof temp_var_name,
+		"tmp_%d", temp_var_count++);
+
+	switch (LLVMGetTypeKind(switch_type))
+	{
+	case LLVMFloatTypeKind:
+	case LLVMDoubleTypeKind:
+	case LLVMHalfTypeKind:
+
+		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealOEQ, 
+			value->val, const_zero, temp_var_name);
+		break;
+	case LLVMIntegerTypeKind:
+
+		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntEQ, 
+			value->val, const_zero, temp_var_name);
+		break;
+	default:
+		cl2llvm_yyerror("unreachable code reached");
+		break;
+	}
+	bool_val->type->llvm_type = LLVMInt1Type();
+	bool_val->type->sign = 0;
+
+	return bool_val;
+}
+
+/* This function will take a bool and sign extend it to a specified bitwidth.
+   It will also perform i1 to floating point conversions if necessary. All vector
+   components that are equal to 1 will be converted to -1 in accordance with the 
+   OpenCL standard. */
+struct cl2llvm_val_t *cl2llvm_bool_ext(struct cl2llvm_val_t *bool_val,
+	struct cl2llvm_type_t *type)
+{
+	struct cl2llvm_val_t *value;
+	struct cl2llvm_type_t *switch_type;
+	LLVMTypeRef totype;
+	int vec_length;
+
+	switch_type = cl2llvm_type_create_w_init(type->llvm_type, type->sign);
+
+	if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)		
+		switch_type->llvm_type = LLVMGetElementType(type->llvm_type);
+		
+
+	if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+	{
+		vec_length = LLVMGetVectorSize(type->llvm_type);
+		switch (LLVMGetTypeKind(switch_type->llvm_type))
+		{
+		case LLVMIntegerTypeKind:
+			totype = type->llvm_type;
+			break;
+		case LLVMFloatTypeKind:
+			totype = LLVMVectorType(LLVMInt32Type(), vec_length);
+			break;
+		case LLVMDoubleTypeKind:
+			totype = LLVMVectorType(LLVMInt64Type(), vec_length);
+			break;
+		case LLVMHalfTypeKind:
+			totype = LLVMVectorType(LLVMInt16Type(), vec_length);
+			break;
+		default:
+			cl2llvm_yyerror("unreachable code reached");
+			break;
+		}
+	}
+	else
+		totype = LLVMInt32Type();
+	
+	value = cl2llvm_val_create();
 
 	snprintf(temp_var_name, sizeof temp_var_name,
 		"tmp_%d", temp_var_count++);
 
-	if (LLVMTypeOf(value->val) == LLVMDoubleType())
-	{
-		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
-			value->val, LLVMConstReal(LLVMDoubleType(), 0),
-			temp_var_name);
-	}
-	else if (LLVMTypeOf(value->val) == LLVMFloatType())
-	{
-		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
-			value->val, LLVMConstReal(LLVMFloatType(), 0),
-			temp_var_name);
-	}
-	else if (LLVMTypeOf(value->val) == LLVMHalfType())
-	{
-		bool_val->val = LLVMBuildFCmp(cl2llvm_builder, LLVMRealONE, 
-			value->val, LLVMConstReal(LLVMHalfType(), 0),
-			temp_var_name);
-	}
-	else if (LLVMTypeOf(value->val) == LLVMInt64Type())
-	{
-		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
-			value->val, LLVMConstInt(LLVMInt64Type(), 0, 0),
-			temp_var_name);
-	}
-	else if (LLVMTypeOf(value->val) == LLVMInt32Type())
-	{
-		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
-			value->val, LLVMConstInt(LLVMInt32Type(), 0, 0),
-			temp_var_name);
-	}
-	else if (LLVMTypeOf(value->val) == LLVMInt16Type())
-	{
-		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
-			value->val, LLVMConstInt(LLVMInt16Type(), 0, 0),
-			temp_var_name);
-	}
-	else if (LLVMTypeOf(value->val) == LLVMInt8Type())
-	{
-		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
-			value->val, LLVMConstInt(LLVMInt8Type(), 0, 0),
-			temp_var_name);
-	}
-	else if (LLVMTypeOf(value->val) == LLVMInt1Type())
-	{
-		bool_val->val = LLVMBuildICmp(cl2llvm_builder, LLVMIntNE, 
-			value->val, LLVMConstInt(LLVMInt1Type(), 0, 0),
-			temp_var_name);
-	}
-	bool_val->type->llvm_type = LLVMTypeOf(bool_val->val);
-	return bool_val;
-}
+	/* Build sign extension */
+	value->val = LLVMBuildSExt(cl2llvm_builder, 
+		bool_val->val, totype, temp_var_name);	
+	value->type->llvm_type = totype;
+	value->type->sign = 1;
 
+	/* if value is a vector, change 1's to -1's */
+	if (LLVMGetTypeKind(type->llvm_type) == LLVMVectorTypeKind)
+	{
+		snprintf(temp_var_name, sizeof temp_var_name,
+			"tmp_%d", temp_var_count++);
+
+		value->val = LLVMBuildNeg(cl2llvm_builder, 
+			value->val, temp_var_name);
+	}
+
+	cl2llvm_type_free(switch_type);
+
+	return value;
+}
