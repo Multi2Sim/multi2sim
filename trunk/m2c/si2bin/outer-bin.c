@@ -194,18 +194,6 @@ void si2bin_outer_bin_generate(struct si2bin_outer_bin_t *outer_bin,
 					fatal("Type for .data element %d is not set", i);
 					break;
 
-				case si2bin_data_int:
-					elf_enc_buffer_write(rodata_buffer, 
-						&data->int_value, 
-						sizeof(int));
-					break;
-							
-				case si2bin_data_short:
-					elf_enc_buffer_write(rodata_buffer, 
-						&data->short_value, 
-						sizeof(short));
-					break;
-
 				case si2bin_data_float:
 					elf_enc_buffer_write(rodata_buffer, 
 						&data->float_value, 

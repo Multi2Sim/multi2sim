@@ -387,62 +387,10 @@ data_stmt
 	{
 		si2bin_id_free($1);
 	}
-	| TOK_INT_DECL int_vals
-	| TOK_SHORT_DECL short_vals
 	| TOK_FLOAT_DECL float_vals
 	| TOK_WORD_DECL word_vals
 	| TOK_HALF_DECL half_vals
 	| TOK_BYTE_DECL byte_vals
-	;
-
-int_vals
-	: 
-	| int_vals TOK_NEW_LINE
-	| int_vals TOK_DECIMAL TOK_COMMA
-	{
-		struct si2bin_data_t *data;
-		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_int;
-		data->int_value = $2;
-		
-		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
-	}
-	| int_vals TOK_DECIMAL
-	{
-		struct si2bin_data_t *data;
-		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_int;
-		data->int_value = $2;
-		
-		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
-	} TOK_NEW_LINE
-	;
-
-short_vals
-	: 
-	| short_vals TOK_NEW_LINE
-	| short_vals TOK_DECIMAL TOK_COMMA
-	{
-		struct si2bin_data_t *data;
-		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_short;
-		data->short_value = (short)$2;
-		
-		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
-	}
-	| short_vals TOK_DECIMAL
-	{
-		struct si2bin_data_t *data;
-		
-		data = si2bin_data_create();
-		data->data_type = si2bin_data_short;
-		data->short_value = (short)$2;
-		
-		si2bin_outer_bin_add_data(si2bin_outer_bin, data);
-	} TOK_NEW_LINE
 	;
 
 float_vals
