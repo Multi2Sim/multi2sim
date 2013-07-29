@@ -159,14 +159,6 @@ uav[0-9]+ {
 	return TOK_CONST;
 }
 
-".int" {
-	return TOK_INT_DECL;
-}
-
-".short" {
-	return TOK_SHORT_DECL;
-}
-
 ".float" {
 	return TOK_FLOAT_DECL;
 }
