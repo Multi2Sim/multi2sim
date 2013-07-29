@@ -17,153 +17,207 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
 
-#ifndef ARCH_KEPLER_ASM_ASM_H
+#define ARCH_KEPLER_ASM_ASM_H
 #define ARCH_KEPLER_ASM_ASM_H
 
+#include <ctype.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* 
+ * Kepler Disassembler
+ */
+
+#define kpl_reg_count 255
+
+void kpl_asm_init();
+void kpl_asm_done();
+void kpl_emu_disasm(char *path);
+
+/* 
+ * Structure of Instruction Format
+ */
 
 /* 1st level struct */
 
-
-#if 0
-struct kpl_fmt_general0_t // IADD, IMUL, DADD  
+struct kpl_fmt_general0_t 		/* BFE, POPC, IADD, IASCADD, IMNMX, SHR, IMUL, LOP, SHL, DMUL, DMNMX, FADD,
+					FMNMX, FMUL, DADD, SEL, P2R, RRO, MOV, F2F, F2I, I2F, I2I, FLO, DCHK, FCHK */  
 {
-	unsigned long long int scr0 : 5; /* 4:0 */
-	unsigned long long int src0 : 5; /* 9:5 */
-	unsigned long long int mod0 : 12; /* 21:10 */
-	unsigned long long int op0 : 9; /* 30:22 */
-	unsigned long long int src0_mod : 1; /* 31 */
-	unsigned long long int op1 : 2; /* 33:32 */
-	unsigned long long int dst : 8; /* 41:34 */
-	unsigned long long int src1 : 8; /* 49:42 */
-	unsigned long long int pred : 4; /* 53:50 */
-	unsigned long long int mod1 : 1; /* 54 */
-	unsigned long long int src1 : 9; /* 63:55 */	
+	unsigned long long int op0 	: 2; 	/* 1:0 */
+	unsigned long long int dst 	: 8; 	/* 9:2 */
+	unsigned long long int mod0 	: 8; 	/* 17:10 */
+	unsigned long long int pred 	: 4; 	/* 21:18 */
+	unsigned long long int s 	: 1; 	/* 22 */
+	unsigned long long int srcB 	: 9; 	/* 41:23 */
+	unsigned long long int mod1 	: 12;	/* 53:42 */
+	unsigned long long int op1 	: 9; 	/* 62:54 */
+	unsigned long long int srcB_mod	: 1; 	/* 63 */
 };
 
 
-struct kpl_fmt_general1_t // LD, ST
+struct kpl_fmt_general1_t 		/* BRA, JMX, JMP, JCAL, BRX, CAL, PRET, PLONGJMP, SSY, PBK */
 {
-	unsigned long long int offset0 : 22; /* 21:0 */
-	unsigned long long int mod0 : 7; /* 28:22 */
-	unsigned long long int op : 5; /* 33:29 */
-	unsigned long long int src : 8; /* 41:34 */
-	unsigned long long int dst : 8; /* 49:42 */	
-	unsigned long long int pred : 4; /* 53:50 */
-	unsigned long long int mod1 : 1; /* 54 */
-	unsigned long long int offset1 : 9; /* 63:55 */
+	unsigned long long int op0 	: 2; 	/* 1:0 */
+	unsigned long long int mod0 	: 16;	/* 17:2 */
+	unsigned long long int pred 	: 4; 	/* 21:18 */
+	unsigned long long int unused 	: 1; 	/* 22 */
+	unsigned long long int srcB 	: 21; 	/* 43:23 */
+	unsigned long long int mod1 	: 11;	/* 54:44 */
+	unsigned long long int op1 	: 9; 	/* 63:55 */
 };
 
-struct kpl_fmt_general2_t /* EXIT */
+struct kpl_fmt_general2_t 		/* GETCRSPTR, GETLMEMBASE, SETCRSPTR, SETLMEMBASE, EXIT, LONGJUMP, RET, KIL, 
+					BRK, CONT, RTT, SAM, RAM  */
 {    
-	unsigned long long int reserved0 : 23; /* 22:0 */
-	unsigned long long int offset0 : 11; /* 33:23 */
-	unsigned long long int mod0 : 5; /* 38:34 */
-	unsigned long long int mod1 : 1; /* 39 */
-	unsigned long long int pred : 4; /* 53:50 */
-	unsigned long long int reserved1 : 10; /* 63:54 */
+	unsigned long long int op0     	: 2; 	/* 1:0 */
+       	unsigned long long int mod     	: 8; 	/* 9:2 */
+       	unsigned long long int src     	: 8; 	/* 17:10 */
+       	unsigned long long int pred    	: 4; 	/* 21:18 */
+       	unsigned long long int unused   : 33; 	/* 54:22 */
+       	unsigned long long int op1     	: 9; 	/* 63:55 */
 };
 
-struct kpl_fmt_general3_t /* S2R */
+struct kpl_fmt_imm_t 			/* MOV32I, FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I, FMUL32I, IMUL32I  */
 {
-	unsigned long long int reserved0 : 22; /* 21:0 */
-	unsigned long long int op : 12; /* 33:22 */
-	unsigned long long int dst : 8; /* 41:34 */
-	unsigned long long int reserved1 : 8; /* 49:42 */
-	unsigned long long int pred : 4; /* 53:50 */
-	unsigned long long int mod : 1; /* 54 */
-	unsigned long long int src : 8; /* 62:55 */
-	unsigned long long int reserved2 : 1; /* 63 */
+        unsigned long long int op0      : 2; 	/* 1:0 */
+        unsigned long long int dst      : 8; 	/* 9:2 */
+        unsigned long long int mod0     : 8; 	/* 17:10 */
+        unsigned long long int pred     : 4; 	/* 21:18 */
+        unsigned long long int s        : 1; 	/* 22 */
+        unsigned long long int srcB     : 9; 	/* 54:23 */
+        unsigned long long int mod1    	: 6; 	/* 60:55 */
+        unsigned long long int op1 	: 3; 	/* 63:61 */
 };
 
-struct kpl_fmt_general4_t /* ISETP */
-{
-	unsigned long long int src : 10; /* 9:0 */
-	unsigned long long int pred3 : 4; /* 13:10 */
-	unsigned long long int mod : 9; /* 22:14 */
-	unsigned long long int op : 11; /* 33:23 */
-	unsigned long long int pred2 : 3; /* 36:34 */
-	unsigned long long int pred1 : 3; /* 39:37 */
-	unsigned long long int reserved : 2; /* 41:40 */
-	unsigned long long int dst : 8; /* 49:42 */
-	unsigned long long int pred0 : 4; /* 53:50 */
-	unsigned long long int mod : 1; /* 54 */
-	unsigned long long int src : 9; /* 63:55 */
-};
-
-struct kpl_fmt_general5_t /* BRA */
-{
-	unsigned long long int tgt : 14; /* 13:0 */
-	unsigned long long int mod : 1; /* 14 */
-	unsigned long long int reserved : 8; /* 22:15 */
-	unsigned long long int op : 11; /* 33:23 */
-	unsigned long long int mod : 5; /* 38:34 */
-	unsigned long long int tgt_mod : 1; /* 39 */
-	unsigned long long int mod : 2; /* 41:40 */
-	unsigned long long int reserved : 8; /* 49:42 */
-	unsigned long long int pred0 : 4; /* 53:50 */
-	unsigned long long int reserved : 1; /* 54 */
-	unsigned long long int tgt : 9; /* 63:55 */
-};
 
 /* 2nd level struct */
 
-struct kpl_fmt_general0_mod1_A_t /* IADD */
+struct kpl_fmt_general0_mod0_A_t 	/* BFE, POPC, IADD, IASCADD, IMNMX, SHR, IMUL, LOP, SHL, DMUL, DMNMX, FADD,
+                                	FMNMX, FMUL, DADD, SEL, P2R */
 {
-	unsigned long long int _reserved0 : 10; /* 9:0 */
-	unsigned long long int reserved2 : 4; /* 13:10 */
-	unsigned long long int x : 1; /* 14 */
-	unsigned long long int reserved3 : 3; /* 17:15 */
-	unsigned long long int cc : 1; /* 18 */
-	unsigned long long int mod : 2; /* 20:19 */
-	unsigned long long int sat : 1; /* 21 */
-	unsigned long long int _reserved1 : 42; /* 63:22 */
+	unsigned long long int reserved0: 10; 	/* 9:0 */
+	unsigned long long int srcA 	: 8; 	/* 17:10 */
+	unsigned long long int reserved1: 46;	/* 63:18 */
 };
 
-struct kpl_fmt_general0_mod1_B_t /* IMUL */
+struct kpl_fmt_general0_mod0_B_t 	/* RRO, MOV, F2F, F2I, I2F, I2I, FLO, DCHK, FCHK */
 {
-	unsigned long long int _reserved0 : 10; /* 9:0 */
-	unsigned long long int HI : 1; /* 10 */
-	unsigned long long int mod : 2; /* 12:11 */
-	unsigned long long int reserved2 : 5; /* 17:13 */
-	unsigned long long int cc : 1; /* 18 */
-	unsigned long long int reserved3: 3; /* 21:19 */
-	unsigned long long int _reserved1 : 42; /* 63:22 */
+        unsigned long long int reserved0: 10;   /* 9:0 */
+        unsigned long long int mod2     : 8;    /* 17:10 */
+        unsigned long long int reserved1: 46;   /* 63:18 */
 };
 
-struct kpl_fmt_general0_mod1_C_t /* DADD */
+struct kpl_fmt_general1_mod0_A_t 	/* JCAL, CAL, PRET */
 {
-	unsigned long long int _reserved0 : 10; /* 9:0 */
-	unsigned long long int mod0 : 2; /* 11:10 */
-	unsigned long long int reserved2 : 4; /* 15:12 */
-	unsigned long long int mod1 : 2; /* 17:16 */
-	unsigned long long int cc : 1; /* 18 */
-	unsigned long long int mod2 : 2; /* 20:19 */
-	unsigned long long int reserved3 : 1; /* 21 */
-	unsigned long long int _reserved1 : 42; /* 63:22 */
+	unsigned long long int reserved0: 2; 	/* 1:0 */
+	unsigned long long int unused0	: 5; 	/* 6:2 */
+	unsigned long long int srcB_mod : 1; 	/* 7 */
+	unsigned long long int noinc 	: 1; 	/* 8 */
+	unsigned long long int unused1	: 9; 	/* 17:9 */
+	unsigned long long int reserved1: 46; 	/* 63:18 */
+};
+
+struct kpl_fmt_general1_mod0_B_t        /* BRA, JMX, JMP, BRX */
+{
+        unsigned long long int reserved0: 2;    /* 1:0 */
+        unsigned long long int cc   	: 5;    /* 6:2 */
+        unsigned long long int srcB_mod : 1;    /* 7 */
+        unsigned long long int lmt    	: 1;    /* 8 */
+	unsigned long long int u	: 1;	/* 9 */
+        unsigned long long int srcB   	: 8;    /* 17:10 */
+        unsigned long long int reserved1: 46;   /* 63:18 */
+};
+
+struct kpl_fmt_general1_mod1_A_t        /* BRA, BRX, CAL, PRET */
+{
+        unsigned long long int reserved0: 44;  	/* 43:0 */
+        unsigned long long int srcB     : 2;    /* 45:44 */
+        unsigned long long int neg_srcB	: 1;    /* 46 */
+        unsigned long long int unused  	: 8;    /* 54:47 */
+        unsigned long long int reserved1: 9;   	/* 63:55 */
+};
+
+struct kpl_fmt_general1_mod1_B_t        /* JMP, JCAL */
+{
+        unsigned long long int reserved0: 44;   /* 43:0 */
+        unsigned long long int srcB   	: 11;    /* 54:44 */
+        unsigned long long int reserved1: 9;    /* 63:55 */
+};
+
+struct kpl_fmt_general1_mod1_C_t        /* JMX */
+{
+        unsigned long long int reserved0: 44;  	/* 43:0 */
+        unsigned long long int srcB     : 10;  	/* 53:44 */
+	unsigned long long int neg_srcB	: 1;	/* 54 */
+        unsigned long long int reserved1: 9;   	/* 63:55 */
+};
+
+struct kpl_fmt_general2_mod_A_t        	/* GETCRSPTR, GETLMEMBASE, SETCRSPTR, SETMEMLBASE */
+{
+        unsigned long long int reserved0: 2;   	/* 41:0 */
+        unsigned long long int dst     	: 8;    /* 9:2 */
+        unsigned long long int reserved1: 54;  	/* 63:10 */
+};
+
+struct kpl_fmt_general2_mod_B_t        	/* EXIT, LONGJUMP, RET, KIL, BRK, CONT, RTT, SAM, RAM */
+{
+        unsigned long long int reserved0: 2;  	/* 41:0 */
+        unsigned long long int cc  	: 8;    /* 6:2 */
+	unsigned long long int unused	: 3;	/* 9:7 */
+        unsigned long long int reserved1: 54;  	/* 63:10 */
+};
+
+/* Need to figure out how to re-label constant once I know what this field represents */
+struct kpl_fmt_imm_mod0_A_t        	/* MOV32I */
+{
+        unsigned long long int reserved0: 10;  	/* 9:0 */
+        unsigned long long int unused  	: 4;    /* 13:10 */
+	unsigned long long int constant	: 4;	/* 17:14 */     /* ????????????????? */
+        unsigned long long int reserved1: 46;  	/* 63:18 */
+};
+
+struct kpl_fmt_imm_mod0_B_t        	/* FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I, FMUL32I, IMUL32I */
+{
+        unsigned long long int reserved0: 10;  	/* 9:0 */
+	unsigned long long int src	: 8;	/* 17:10 */  
+        unsigned long long int reserved1: 46;  	/* 63:18 */
+};
+
+struct kpl_fmt_imm_mod1_A_t		/* MOV32I */
+{
+	unsigned long long int reserved0: 55;	/* 54:0 */
+	unsigned long long int op1	: 6;	/* 60:55 */
+	unsigned long long int reserved1: 3;	/* 63:61 */
 };
 
 
-struct kpl_fmt_general1_mod1_A_t /* LD, ST */
+struct kpl_fmt_imm_mod1_B_t		/* FADD32I, LOP32I, FFMA32I, IMAD32I, ISCADD32I */
 {
-	unsigned long long int _reserved0 : 22; /* 21:0 */
-	unsigned long long int mod0 : 1; /* 22 */
-	unsigned long long int E : 1; /* 23 */
-	unsigned long long int mod1 : 3; /* 26:24 */
-	unsigned long long int mod2 : 2; /* 28:27 */
-	unsigned long long int _reserved1 : 35; /* 63:29 */
-
+	unsigned long long int reserved0: 55;	/* 54:0 */
+	unsigned long long int cc	: 1;	/* 55 */
+	unsigned long long int mod2	: 5;	/* 60:56 */
+	unsigned long long int reserved1: 3;	/* 63:61 */
 };
 
-#endif
+struct kpl_fmt_imm_mod1_C_t		/* FMUL321, IMUL32I */
+{
+	unsigned long long int reserved0: 55;	/* 54:0 */
+	unsigned long long int cc	: 1;	/* 55 */
+	unsigned long long int mod2	: 3;	/* 58:56 */
+	unsigned long long int op1	: 2;	/* 60:59 */
+	unsigned long long int reserved1: 3;	/* 63:61 */
+};
+
 
 
 
 union kpl_inst_dword_t
 {
-        unsigned int bytes;
-
-
+        unsigned char as_uchar[8];
+	unsigned int as_uint[2];
+	unsigned long long as_dword;
 };
 
 
@@ -179,7 +233,6 @@ enum kpl_inst_opcode_t
 	/* Max */
         KPL_INST_COUNT
 };
-
 
 
 struct kpl_inst_info_t
@@ -221,16 +274,28 @@ void kpl_disasm_done(void);
 
 /* Read the content of '.cubin' file in 'filename' and disassemble its sections
  * containing Kepler ISA. */
-void kpl_disasm(char *file_name);
+void kpl_disasm(char *path);
 
 /* Disassemble the Kepler ISA contained in 'buf' of 'size' bytes. */
 void kpl_disasm_buffer(void *buf, int size);
 
-/* Decode the instruction in inst->dword.byte. The instruction information is
+/* Decode the instruction in buffer 'ptr'. The instruction information is
  * populated in inst->info. If the bytes represent an invalid instruction,
  * inst->info is set to NULL. */
-void kpl_inst_decode(struct kpl_inst_t *inst);
+void kpl_inst_decode(struct kpl_inst_t *inst, void *ptr);
 
 
-#endif
+/* Print the address of the instruction and the instruction in hex */
+void kpl_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr);
+
+/* Instruction dump */
+//void kpl_inst_dump(FILE *f, struct kpl_inst_t *inst);
+
+
+void kpl_inst_dump(FILE *f, char *str, int inst_str_size, void *inst_ptr,
+ 	unsigned int inst_index, unsigned int inst_addr,
+ 	unsigned int *print_symbol_address);
+
+
+
 
