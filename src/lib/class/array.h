@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LIB_CLASS_LIST_H
+#ifndef LIB_CLASS_ARRAY_H
 #define LIB_CLASS_ARRAY_H
 
 #include "class.h"
