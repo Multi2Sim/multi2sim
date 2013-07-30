@@ -41,7 +41,7 @@ struct si_ndrange_t *si_ndrange_create()
 
 	/* Instruction histogram */
 	if (si_emu_report_file)
-		ndrange->inst_histogram = xcalloc(SI_INST_COUNT, 
+		ndrange->inst_histogram = xcalloc(SIInstOpcodeCount, 
 			sizeof(unsigned int));
 
 	/* Return */

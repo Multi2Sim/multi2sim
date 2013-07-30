@@ -52,11 +52,11 @@ void si2bin_inst_info_init(void)
 	int i;
 
 	/* Initialize hash table and list */
-	si2bin_inst_info_list = list_create_with_size(SI_INST_COUNT);
-	si2bin_inst_info_table = hash_table_create(SI_INST_COUNT, 1);
+	si2bin_inst_info_list = list_create_with_size(SIInstOpcodeCount);
+	si2bin_inst_info_table = hash_table_create(SIInstOpcodeCount, 1);
 
 	/* Populate them */
-	for (i = 0; i < SI_INST_COUNT; i++)
+	for (i = 0; i < SIInstOpcodeCount; i++)
 	{
 		/* Instruction info from disassembler */
 		inst_info = &si_inst_info[i];

@@ -903,7 +903,7 @@ static void Llvm2siFunctionEmitWhileLoop(Llvm2siFunction *self, Node *node)
 	struct list_t *arg_list;
 	struct si2bin_inst_t *inst;
 
-	enum si_inst_opcode_t opcode;
+	SIInstOpcode opcode;
 
 	LLVMBasicBlockRef llbb;
 	LLVMValueRef llinst;

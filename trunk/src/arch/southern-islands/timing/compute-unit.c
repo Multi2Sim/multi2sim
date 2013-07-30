@@ -355,8 +355,8 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
 	struct si_wavefront_pool_entry_t *wavefront_pool_entry;
-	char inst_str[MAX_INST_STR_SIZE];
-	char inst_str_trimmed[MAX_INST_STR_SIZE];
+	char inst_str[MAX_STRING_SIZE];
+	char inst_str_trimmed[MAX_STRING_SIZE];
 
 	assert(active_fb < compute_unit->num_wavefront_pools);
 
@@ -475,7 +475,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit,
 		/* Trace */
 		if (si_tracing())
 		{
-			si_inst_dump(&wavefront->inst, wavefront->inst_size, 
+			SIInstDump(&wavefront->inst, wavefront->inst_size, 
 				wavefront->pc, 
 				wavefront->work_group->ndrange->inst_buffer + 
 				wavefront->pc, inst_str, sizeof inst_str);
@@ -557,7 +557,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 			assert(uop);
 
 			/* Only evaluate branch instructions */
-			if (uop->inst.info->fmt != SI_FMT_SOPP) 
+			if (uop->inst.info->fmt != SIInstFormatSOPP) 
 			{
 				list_index++;
 				continue;
@@ -626,17 +626,17 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 			assert(uop);
 
 			/* Only evaluate scalar instructions */
-			if (uop->inst.info->fmt != SI_FMT_SOPP && 
-				uop->inst.info->fmt != SI_FMT_SOP1 && 
-				uop->inst.info->fmt != SI_FMT_SOP2 && 
-				uop->inst.info->fmt != SI_FMT_SOPC && 
-				uop->inst.info->fmt != SI_FMT_SOPK && 
-				uop->inst.info->fmt != SI_FMT_SMRD)
+			if (uop->inst.info->fmt != SIInstFormatSOPP && 
+				uop->inst.info->fmt != SIInstFormatSOP1 && 
+				uop->inst.info->fmt != SIInstFormatSOP2 && 
+				uop->inst.info->fmt != SIInstFormatSOPC && 
+				uop->inst.info->fmt != SIInstFormatSOPK && 
+				uop->inst.info->fmt != SIInstFormatSMRD)
 			{	
 				list_index++;
 				continue;
 			}
-			if (uop->inst.info->fmt == SI_FMT_SOPP && 
+			if (uop->inst.info->fmt == SIInstFormatSOPP && 
 			    uop->inst.micro_inst.sopp.op > 1 && 
 				uop->inst.micro_inst.sopp.op < 10)
 			{
@@ -680,7 +680,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 					uop->wavefront->id, 
 					uop->id_in_wavefront);
 
-				if (uop->inst.info->fmt == SI_FMT_SMRD)
+				if (uop->inst.info->fmt == SIInstFormatSMRD)
 				{
 					uop->wavefront_pool_entry->
 						ready_next_cycle = 1;
@@ -714,11 +714,11 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 			assert(uop);
 
 			/* Only evaluate SIMD instructions */
-			if (uop->inst.info->fmt != SI_FMT_VOP2 && 
-				uop->inst.info->fmt != SI_FMT_VOP1 && 
-				uop->inst.info->fmt != SI_FMT_VOPC && 
-				uop->inst.info->fmt != SI_FMT_VOP3a && 
-				uop->inst.info->fmt != SI_FMT_VOP3b)
+			if (uop->inst.info->fmt != SIInstFormatVOP2 && 
+				uop->inst.info->fmt != SIInstFormatVOP1 && 
+				uop->inst.info->fmt != SIInstFormatVOPC && 
+				uop->inst.info->fmt != SIInstFormatVOP3a && 
+				uop->inst.info->fmt != SIInstFormatVOP3b)
 			{	
 				list_index++;
 				continue;
@@ -782,7 +782,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			if (uop->inst.info->fmt != SI_FMT_MTBUF)
+			if (uop->inst.info->fmt != SIInstFormatMTBUF)
 			{	
 				list_index++;
 				continue;
@@ -849,7 +849,7 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 			assert(uop);
 
 			/* Only evaluate LDS instructions */
-			if (uop->inst.info->fmt != SI_FMT_DS)
+			if (uop->inst.info->fmt != SIInstFormatDS)
 			{	
 				list_index++;
 				continue;
@@ -992,7 +992,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		{
 
 		/* Scalar ALU or Branch */
-		case SI_FMT_SOPP:
+		case SIInstFormatSOPP:
 		{
 			/* Branch Unit */
 			if (uop->inst.micro_inst.sopp.op > 1 &&
@@ -1089,10 +1089,10 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 
 			break;
 		}
-		case SI_FMT_SOP1:
-		case SI_FMT_SOP2:
-		case SI_FMT_SOPC:
-		case SI_FMT_SOPK:
+		case SIInstFormatSOP1:
+		case SIInstFormatSOP2:
+		case SIInstFormatSOPC:
+		case SIInstFormatSOPK:
 		{
 			/* Stall if max scalar instructions already issued */
 			assert(scalar_insts_issued <= 
@@ -1138,7 +1138,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		}
 
 		/* Scalar memory */
-		case SI_FMT_SMRD:
+		case SIInstFormatSMRD:
 		{
 			/* Stall if max scalar instructions already issued */
 			assert(scalar_insts_issued <= 
@@ -1187,11 +1187,11 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		}
 
 		/* Vector ALU */
-		case SI_FMT_VOP2:
-		case SI_FMT_VOP1:
-		case SI_FMT_VOPC:
-		case SI_FMT_VOP3a:
-		case SI_FMT_VOP3b:
+		case SIInstFormatVOP2:
+		case SIInstFormatVOP1:
+		case SIInstFormatVOPC:
+		case SIInstFormatVOP3a:
+		case SIInstFormatVOP3b:
 		{
 			/* Stall if max SIMD instructions already issued */
 			assert(simd_insts_issued <= 
@@ -1237,7 +1237,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		}
 
 		/* Vector memory */
-		case SI_FMT_MTBUF:
+		case SIInstFormatMTBUF:
 		{
 			/* Stall if max vector memory instructions already 
 			 * issued */
@@ -1288,7 +1288,7 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		}
 
 		/* Local Data Share */ 
-		case SI_FMT_DS:
+		case SIInstFormatDS:
 		{
 			/* Stall if max LDS instructions already issued */
 			assert(lds_insts_issued <= 

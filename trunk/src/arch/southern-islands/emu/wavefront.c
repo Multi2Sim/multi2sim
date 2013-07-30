@@ -20,6 +20,7 @@
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/debug.h>
+#include <lib/util/string.h>
 #include <mem-system/memory.h>
 
 #include "isa.h"
@@ -74,7 +75,7 @@ struct si_wavefront_t *si_wavefront_create(int wavefront_id,
 /* Helper function for initializing the wavefront. */
 void si_wavefront_sreg_init(struct si_wavefront_t *wavefront)
 {
-	union si_reg_t *sreg = &wavefront->sreg[0];
+	SIInstReg *sreg = &wavefront->sreg[0];
 
 	/* Integer inline constants. */
 	for(int i = 128; i < 193; i++)
@@ -116,7 +117,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	struct si_work_item_t *work_item;
 	SIInst *inst;
 
-	char inst_dump[MAX_INST_STR_SIZE];
+	char inst_dump[MAX_STRING_SIZE];
 
 	ndrange = wavefront->work_group->ndrange;
 
@@ -158,14 +159,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	{
 
 	/* Scalar ALU Instructions */
-	case SI_FMT_SOP1:
+	case SIInstFormatSOP1:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -185,14 +186,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_SOP2:
+	case SIInstFormatSOP2:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -212,14 +213,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_SOPP:
+	case SIInstFormatSOPP:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -247,14 +248,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_SOPC:
+	case SIInstFormatSOPC:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -274,14 +275,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_SOPK:
+	case SIInstFormatSOPK:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -302,14 +303,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	}
 
 	/* Scalar Memory Instructions */
-	case SI_FMT_SMRD:
+	case SIInstFormatSMRD:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -330,14 +331,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	}
 
 	/* Vector ALU Instructions */
-	case SI_FMT_VOP2:
+	case SIInstFormatVOP2:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -365,14 +366,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_VOP1:
+	case SIInstFormatVOP1:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -436,14 +437,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_VOPC:
+	case SIInstFormatVOPC:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -471,14 +472,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 	
-	case SI_FMT_VOP3a:
+	case SIInstFormatVOP3a:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -506,14 +507,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_VOP3b:
+	case SIInstFormatVOP3b:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -541,14 +542,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_DS:
+	case SIInstFormatDS:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -595,14 +596,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	}
 
 	/* Vector Memory Instructions */
-	case SI_FMT_MTBUF:
+	case SIInstFormatMTBUF:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -638,14 +639,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_MUBUF:
+	case SIInstFormatMUBUF:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 
@@ -689,14 +690,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
-	case SI_FMT_EXP:
+	case SIInstFormatEXP:
 	{
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump(inst, wavefront->inst_size, wavefront->pc,
+			SIInstDump(inst, wavefront->inst_size, wavefront->pc,
 					ndrange->inst_buffer + wavefront->pc,
-					inst_dump, MAX_INST_STR_SIZE);
+					inst_dump, sizeof inst_dump);
 			si_isa_debug("\n%s", inst_dump);
 		}
 

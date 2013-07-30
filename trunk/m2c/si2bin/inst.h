@@ -27,7 +27,7 @@
 
 struct si2bin_inst_t
 {
-	enum si_inst_opcode_t opcode;
+	SIInstOpcode opcode;
 	struct si2bin_inst_info_t *info;
 
 	/* List of arguments. Each element in the list is of type
@@ -48,7 +48,7 @@ struct si2bin_inst_t
 };
 
 
-/* Create a new instruction with an opcode of type 'enum si_inst_opcode_t', as
+/* Create a new instruction with an opcode of type 'enum SIInstOpcode', as
  * defined in the Southern Islands disassembler. The argument list in 'arg_list'
  * is composed of objects of type 'si2bin_arg_t'. All these objects, as well as
  * the argument list itself, will be freed internally when calling

@@ -30,12 +30,6 @@
 
 
 
-/* String lengths for printing assembly */
-#define MAX_OPERAND_STR_SIZE 11
-#define MAX_DAT_STR_SIZE 31
-
-
-
 /* 
  * Functions to print assembly output to file
  */
@@ -53,7 +47,7 @@ void operand_dump(char *str, int operand)
 	/* Assume operand in range. */
 	assert(operand >= 0 && operand <= 511);
 
-	int str_size = MAX_OPERAND_STR_SIZE;
+	int str_size = MAX_STRING_SIZE;
 	char *pstr = str;
 
 	if (operand <= 103)
@@ -102,7 +96,7 @@ void operand_dump_series(char *str, int operand, int operand_end)
 		return;
 	}
 
-	int str_size = MAX_OPERAND_STR_SIZE;
+	int str_size = MAX_STRING_SIZE;
 	char *pstr = str;
 
 	if (operand <= 103)
@@ -201,7 +195,7 @@ void operand_dump_exp(char *str, int operand)
 	/* Assume operand in range. */
 	assert(operand >= 0 && operand <= 63);
 
-	int str_size = MAX_OPERAND_STR_SIZE;
+	int str_size = MAX_STRING_SIZE;
 	char *pstr = str;
 
 	if (operand <= 7)
@@ -241,8 +235,8 @@ void operand_dump_exp(char *str, int operand)
 
 void line_dump(char *inst_str, unsigned int rel_addr, void *buf, char *line, int line_size, int inst_size)
 {
-	int dat_str_size = MAX_DAT_STR_SIZE;
-	char inst_dat_str[MAX_DAT_STR_SIZE];
+	int dat_str_size = MAX_STRING_SIZE;
+	char inst_dat_str[MAX_STRING_SIZE];
 	char *dat_str = &inst_dat_str[0];
 
 	if (inst_size == 4)
@@ -269,7 +263,19 @@ void line_dump(char *inst_str, unsigned int rel_addr, void *buf, char *line, int
 	}
 }
 
-void si_inst_SSRC_dump(SIInst *inst, unsigned int ssrc, 
+
+
+void SIInstCreate(SIInst *self)
+{
+}
+
+
+void SIInstDestroy(SIInst *self)
+{
+}
+
+
+void SIInstDump_SSRC(SIInst *inst, unsigned int ssrc, 
 	char *operand_str, char **inst_str, int str_size)
 {
 	if (ssrc == 0xFF)
@@ -284,7 +290,7 @@ void si_inst_SSRC_dump(SIInst *inst, unsigned int ssrc,
 	}
 }
 
-void si_inst_64_SSRC_dump(SIInst *inst, unsigned int ssrc, 
+void SIInstDump_64_SSRC(SIInst *inst, unsigned int ssrc, 
 	char *operand_str, char **inst_str, int str_size)
 {		
 	if (ssrc == 0xFF)
@@ -299,7 +305,7 @@ void si_inst_64_SSRC_dump(SIInst *inst, unsigned int ssrc,
 	}
 }
 
-void si_inst_VOP3_SRC_dump(SIInst *inst, unsigned int src, int neg, 
+void SIInstDump_VOP3_SRC(SIInst *inst, unsigned int src, int neg, 
 	char *operand_str, char **inst_str, int str_size)
 {
 	operand_dump(operand_str, src);
@@ -342,7 +348,7 @@ void si_inst_VOP3_SRC_dump(SIInst *inst, unsigned int src, int neg,
 	}
 }
 
-void si_inst_VOP3_64_SRC_dump(SIInst *inst, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size)
+void SIInstDump_VOP3_64_SRC(SIInst *inst, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size)
 {
 	operand_dump_series(operand_str, src, src + 1);
 	
@@ -383,7 +389,7 @@ void si_inst_VOP3_64_SRC_dump(SIInst *inst, unsigned int src, int neg, char *ope
 		}
 	}
 }
-void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str, 
+void SIInstDump_SERIES_VDATA(unsigned int vdata, int op, char *operand_str, 
 	char **inst_str, int str_size)
 {
 	int vdata_end;
@@ -419,7 +425,7 @@ void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str,
 	str_printf(inst_str, &str_size, "%s", operand_str);
 }
 
-void si_inst_MADDR_dump(SIInst *inst, char *operand_str, 
+void SIInstDump_MADDR(SIInst *inst, char *operand_str, 
 	char **inst_str, int str_size)
 {
 	/* soffset */
@@ -444,7 +450,7 @@ void si_inst_MADDR_dump(SIInst *inst, char *operand_str,
 			inst->micro_inst.mtbuf.offset);
 }
 
-void si_inst_DUG_dump(SIInst *inst, char *operand_str, 
+void SIInstDump_DUG(SIInst *inst, char *operand_str, 
 	char **inst_str, int str_size)
 {
 	/* DMASK */
@@ -460,18 +466,18 @@ void si_inst_DUG_dump(SIInst *inst, char *operand_str,
 		str_printf(inst_str, &str_size, " glc");
 }
 
-void si_inst_dump(SIInst *inst, unsigned int inst_size, 
+void SIInstDump(SIInst *self, unsigned int inst_size, 
 	unsigned int rel_addr, void *buf, char *line, int line_size)
 {
-	int str_size = MAX_INST_STR_SIZE;
+	int str_size = MAX_STRING_SIZE;
 	int token_len;
 	
-	char orig_inst_str[MAX_INST_STR_SIZE];
-	char orig_operand_str[MAX_OPERAND_STR_SIZE];
+	char orig_inst_str[MAX_STRING_SIZE];
+	char orig_operand_str[MAX_STRING_SIZE];
 	
 	char *operand_str = &orig_operand_str[0];
 	char *inst_str = &orig_inst_str[0];
-	char *fmt_str = inst->info->fmt_str;
+	char *fmt_str = self->info->fmt_str;
 
 	while (*fmt_str)
 	{
@@ -487,7 +493,7 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 		fmt_str++;
 		if (is_token(fmt_str, "WAIT_CNT", &token_len))
 		{	
-			struct si_fmt_sopp_t *sopp = &inst->micro_inst.sopp;
+			struct si_inst_format_sopp_t *sopp = &self->micro_inst.sopp;
 
 			unsigned int and = 0;
 			int vm_cnt = (sopp->simm16 & 0xF);
@@ -529,7 +535,7 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 		}
 		else if (is_token(fmt_str, "LABEL", &token_len))
 		{		
-			struct si_fmt_sopp_t *sopp = &inst->micro_inst.sopp;
+			struct si_inst_format_sopp_t *sopp = &self->micro_inst.sopp;
 	
 			short simm16 = sopp->simm16;
 			int se_simm = simm16;
@@ -539,98 +545,98 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 		}
 		else if (is_token(fmt_str, "SSRC0", &token_len))
 		{	
-			si_inst_SSRC_dump(inst, inst->micro_inst.sop2.ssrc0, 
+			SIInstDump_SSRC(self, self->micro_inst.sop2.ssrc0, 
 				operand_str, &inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "64_SSRC0", &token_len))
 		{
-			si_inst_64_SSRC_dump(inst, inst->micro_inst.sop2.ssrc0, 
+			SIInstDump_64_SSRC(self, self->micro_inst.sop2.ssrc0, 
 				operand_str, &inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "SSRC1", &token_len))
 		{
-			si_inst_SSRC_dump(inst, inst->micro_inst.sop2.ssrc1, 
+			SIInstDump_SSRC(self, self->micro_inst.sop2.ssrc1, 
 				operand_str, &inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "64_SSRC1", &token_len))
 		{
-			si_inst_64_SSRC_dump(inst, inst->micro_inst.sop2.ssrc1, 
+			SIInstDump_64_SSRC(self, self->micro_inst.sop2.ssrc1, 
 				operand_str, &inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "SDST", &token_len))
 		{	
 			operand_dump_scalar(operand_str, 
-				inst->micro_inst.sop2.sdst);
+				self->micro_inst.sop2.sdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "64_SDST", &token_len))
 		{
 			operand_dump_series_scalar(operand_str, 
-				inst->micro_inst.sop2.sdst, 
-				inst->micro_inst.sop2.sdst + 1);
+				self->micro_inst.sop2.sdst, 
+				self->micro_inst.sop2.sdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SIMM16", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "0x%04x", 
-				inst->micro_inst.sopk.simm16);
+				self->micro_inst.sopk.simm16);
 		}
 		else if (is_token(fmt_str, "SRC0", &token_len))
 		{
-			if (inst->micro_inst.vopc.src0 == 0xFF)
+			if (self->micro_inst.vopc.src0 == 0xFF)
 			{
 				str_printf(&inst_str, &str_size, "0x%08x", 
-					inst->micro_inst.vopc.lit_cnst);
+					self->micro_inst.vopc.lit_cnst);
 			}
 			else
 			{
 				operand_dump(operand_str, 
-					inst->micro_inst.vopc.src0);
+					self->micro_inst.vopc.src0);
 				str_printf(&inst_str, &str_size, "%s", 
 					operand_str);
 			}
 		}
 		else if (is_token(fmt_str, "64_SRC0", &token_len))
 		{
-			assert(inst->micro_inst.vopc.src0 != 0xFF);
+			assert(self->micro_inst.vopc.src0 != 0xFF);
 
 			operand_dump_series(operand_str, 
-				inst->micro_inst.vopc.src0, 
-				inst->micro_inst.vopc.src0 + 1);
+				self->micro_inst.vopc.src0, 
+				self->micro_inst.vopc.src0 + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VSRC1", &token_len))
 		{
 			operand_dump_vector(operand_str, 
-				inst->micro_inst.vopc.vsrc1);
+				self->micro_inst.vopc.vsrc1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "64_VSRC1", &token_len))
 		{
-			assert(inst->micro_inst.vopc.vsrc1 != 0xFF);
+			assert(self->micro_inst.vopc.vsrc1 != 0xFF);
 
 			operand_dump_series_vector(operand_str, 
-				inst->micro_inst.vopc.vsrc1, 
-				inst->micro_inst.vopc.vsrc1 + 1);
+				self->micro_inst.vopc.vsrc1, 
+				self->micro_inst.vopc.vsrc1 + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VDST", &token_len))
 		{
 			operand_dump_vector(operand_str, 
-				inst->micro_inst.vop1.vdst);
+				self->micro_inst.vop1.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "64_VDST", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
-				inst->micro_inst.vop1.vdst, 
-				inst->micro_inst.vop1.vdst + 1);
+				self->micro_inst.vop1.vdst, 
+				self->micro_inst.vop1.vdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SVDST", &token_len))
 		{
 			operand_dump_scalar(operand_str, 
-				inst->micro_inst.vop1.vdst);
+				self->micro_inst.vop1.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VOP3_64_SVDST", &token_len))
@@ -638,81 +644,81 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 			/* VOP3a compare operations use the VDST field to 
 			 * indicate the address of the scalar destination.*/
 			operand_dump_series_scalar(operand_str, 
-				inst->micro_inst.vop3a.vdst, 
-				inst->micro_inst.vop3a.vdst + 1);
+				self->micro_inst.vop3a.vdst, 
+				self->micro_inst.vop3a.vdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VOP3_VDST", &token_len))
 		{
 			operand_dump_vector(operand_str, 
-				inst->micro_inst.vop3a.vdst);
+				self->micro_inst.vop3a.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VOP3_64_VDST", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
-				inst->micro_inst.vop3a.vdst, 
-				inst->micro_inst.vop3a.vdst + 1);
+				self->micro_inst.vop3a.vdst, 
+				self->micro_inst.vop3a.vdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VOP3_64_SDST", &token_len))
 		{
 			operand_dump_series_scalar(operand_str, 
-				inst->micro_inst.vop3b.sdst, 
-				inst->micro_inst.vop3b.sdst + 1);
+				self->micro_inst.vop3b.sdst, 
+				self->micro_inst.vop3b.sdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VOP3_SRC0", &token_len))
 		{
-			si_inst_VOP3_SRC_dump(inst, 
-				inst->micro_inst.vop3a.src0, 1, operand_str, 
+			SIInstDump_VOP3_SRC(self, 
+				self->micro_inst.vop3a.src0, 1, operand_str, 
 				&inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "VOP3_64_SRC0", &token_len))
 		{
-			si_inst_VOP3_64_SRC_dump(inst, 
-				inst->micro_inst.vop3a.src0, 1, operand_str, 
+			SIInstDump_VOP3_64_SRC(self, 
+				self->micro_inst.vop3a.src0, 1, operand_str, 
 				&inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "VOP3_SRC1", &token_len))
 		{
-			si_inst_VOP3_SRC_dump(inst, 
-				inst->micro_inst.vop3a.src1, 2, operand_str, 
+			SIInstDump_VOP3_SRC(self, 
+				self->micro_inst.vop3a.src1, 2, operand_str, 
 				&inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "VOP3_64_SRC1", &token_len))
 		{
-			si_inst_VOP3_64_SRC_dump(inst, 
-				inst->micro_inst.vop3a.src1, 2, operand_str, 
+			SIInstDump_VOP3_64_SRC(self, 
+				self->micro_inst.vop3a.src1, 2, operand_str, 
 				&inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "VOP3_SRC2", &token_len))
 		{
-			si_inst_VOP3_SRC_dump(inst, inst->micro_inst.vop3a.src2, 
+			SIInstDump_VOP3_SRC(self, self->micro_inst.vop3a.src2, 
 				4, operand_str, &inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "VOP3_64_SRC2", &token_len))
 		{
-			si_inst_VOP3_64_SRC_dump(inst, 
-				inst->micro_inst.vop3a.src2, 4, operand_str, 
+			SIInstDump_VOP3_64_SRC(self, 
+				self->micro_inst.vop3a.src2, 4, operand_str, 
 				&inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "VOP3_OP16", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "%s", 
 				str_map_value(&si_inst_OP16_map, 
-					(inst->micro_inst.vop3a.op & 15)));
+					(self->micro_inst.vop3a.op & 15)));
 		}
 		else if (is_token(fmt_str, "VOP3_OP8", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "%s", 
 				str_map_value(&si_inst_OP8_map, 
-					(inst->micro_inst.vop3a.op & 15)));
+					(self->micro_inst.vop3a.op & 15)));
 		}
 		else if (is_token(fmt_str, "SMRD_SDST", &token_len))
 		{
 			operand_dump_scalar(operand_str, 
-				inst->micro_inst.smrd.sdst);
+				self->micro_inst.smrd.sdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SERIES_SDST", &token_len))
@@ -720,9 +726,9 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 			
 			/* The sbase field is missing the LSB, 
 			 * so multiply by 2 */
-			int sdst = inst->micro_inst.smrd.sdst;
+			int sdst = self->micro_inst.smrd.sdst;
 			int sdst_end;
-			int op = inst->micro_inst.smrd.op;
+			int op = self->micro_inst.smrd.op;
 
 			/* S_LOAD_DWORD */
 			if (IN_RANGE(op, 0, 4))
@@ -802,9 +808,9 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 			
 			/* The sbase field is missing the LSB, 
 			 * so multiply by 2 */
-			int sbase = inst->micro_inst.smrd.sbase * 2;
+			int sbase = self->micro_inst.smrd.sbase * 2;
 			int sbase_end;
-			int op = inst->micro_inst.smrd.op;
+			int op = self->micro_inst.smrd.op;
 
 			/* S_LOAD_DWORD */
 			if (IN_RANGE(op, 0, 4))
@@ -842,19 +848,19 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 		else if (is_token(fmt_str, "VOP2_LIT", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "0x%08x", 
-				inst->micro_inst.vop2.lit_cnst);
+				self->micro_inst.vop2.lit_cnst);
 		}
 		else if (is_token(fmt_str, "OFFSET", &token_len))
 		{
-			if (inst->micro_inst.smrd.imm)
+			if (self->micro_inst.smrd.imm)
 			{
 				str_printf(&inst_str, &str_size, "0x%02x", 
-					inst->micro_inst.smrd.offset);
+					self->micro_inst.smrd.offset);
 			}
 			else
 			{
 				operand_dump_scalar(operand_str, 
-					inst->micro_inst.smrd.offset);
+					self->micro_inst.smrd.offset);
 				str_printf(&inst_str, &str_size, "%s", 
 					operand_str);
 			}
@@ -862,71 +868,71 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 		else if (is_token(fmt_str, "DS_VDST", &token_len))
 		{
 			operand_dump_vector(operand_str, 
-				inst->micro_inst.ds.vdst);
+				self->micro_inst.ds.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "ADDR", &token_len))
 		{
 			operand_dump_vector(operand_str, 
-				inst->micro_inst.ds.addr);
+				self->micro_inst.ds.addr);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "DATA0", &token_len))
 		{
 			operand_dump_vector(operand_str, 
-				inst->micro_inst.ds.data0);
+				self->micro_inst.ds.data0);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "DATA1", &token_len))
 		{
 			operand_dump_vector(operand_str, 
-				inst->micro_inst.ds.data1);
+				self->micro_inst.ds.data1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "OFFSET0", &token_len))
 		{
-			if(inst->micro_inst.ds.offset0)
+			if(self->micro_inst.ds.offset0)
 			{
 				str_printf(&inst_str, &str_size, "offset0:%u ", 
-					inst->micro_inst.ds.offset0);
+					self->micro_inst.ds.offset0);
 			}
 		}
 		else if (is_token(fmt_str, "DS_SERIES_VDST", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
-				inst->micro_inst.ds.vdst, 
-				inst->micro_inst.ds.vdst+ 1);
+				self->micro_inst.ds.vdst, 
+				self->micro_inst.ds.vdst+ 1);
 			str_printf(&inst_str, &str_size, "%s", 
 				operand_str);
 		}
 		else if (is_token(fmt_str, "OFFSET1", &token_len))
 		{
-			if(inst->micro_inst.ds.offset1)
+			if(self->micro_inst.ds.offset1)
 			{
 				str_printf(&inst_str, &str_size, "offset1:%u ", 
-					inst->micro_inst.ds.offset1);
+					self->micro_inst.ds.offset1);
 			}
 		}
 		else if (is_token(fmt_str, "VINTRP_VDST", &token_len))
 		{
 			operand_dump_vector(operand_str, 
-				inst->micro_inst.vintrp.vdst);
+				self->micro_inst.vintrp.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VSRC_I_J", &token_len))
 		{
 			operand_dump_vector(operand_str, 
-				inst->micro_inst.vintrp.vsrc);
+				self->micro_inst.vintrp.vsrc);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "ATTR", &token_len))
 		{
 			str_printf(&inst_str, &str_size, "attr_%d", 
-				inst->micro_inst.vintrp.attr);
+				self->micro_inst.vintrp.attr);
 		}
 		else if (is_token(fmt_str, "ATTRCHAN", &token_len))
 		{
-			switch (inst->micro_inst.vintrp.attrchan)
+			switch (self->micro_inst.vintrp.attrchan)
 			{
 				case 0:
 					str_printf(&inst_str, &str_size, "x");
@@ -946,159 +952,159 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 		}
 		else if (is_token(fmt_str, "MU_SERIES_VDATA", &token_len))
 		{
-			si_inst_SERIES_VDATA_dump(inst->micro_inst.mubuf.vdata, 
-				inst->micro_inst.mubuf.op, operand_str, 
+			SIInstDump_SERIES_VDATA(self->micro_inst.mubuf.vdata, 
+				self->micro_inst.mubuf.op, operand_str, 
 				&inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "MU_GLC", &token_len))
 		{
-			if (inst->micro_inst.mubuf.glc)
+			if (self->micro_inst.mubuf.glc)
 				str_printf(&inst_str, &str_size, "glc");
 		}
 		else if (is_token(fmt_str, "VADDR", &token_len))
 		{
-			if (inst->micro_inst.mtbuf.offen && 
-				inst->micro_inst.mtbuf.idxen)
+			if (self->micro_inst.mtbuf.offen && 
+				self->micro_inst.mtbuf.idxen)
 			{
 				operand_dump_series_vector(operand_str, 
-					inst->micro_inst.mtbuf.vaddr, 
-					inst->micro_inst.mtbuf.vaddr + 1);
+					self->micro_inst.mtbuf.vaddr, 
+					self->micro_inst.mtbuf.vaddr + 1);
 				str_printf(&inst_str, &str_size, "%s", 
 					operand_str);
 			}
 			else
 			{
 				operand_dump_vector(operand_str, 
-					inst->micro_inst.mtbuf.vaddr);
+					self->micro_inst.mtbuf.vaddr);
 				str_printf(&inst_str, &str_size, "%s", 
 					operand_str);
 			}
 		}
 		else if (is_token(fmt_str, "MU_MADDR", &token_len))
 		{
-			si_inst_MADDR_dump(inst, operand_str, &inst_str, 
+			SIInstDump_MADDR(self, operand_str, &inst_str, 
 				str_size);
 		}
 		else if (is_token(fmt_str, "MT_SERIES_VDATA", &token_len))
 		{
-			si_inst_SERIES_VDATA_dump(inst->micro_inst.mtbuf.vdata, 
-				inst->micro_inst.mtbuf.op, operand_str, 
+			SIInstDump_SERIES_VDATA(self->micro_inst.mtbuf.vdata, 
+				self->micro_inst.mtbuf.op, operand_str, 
 				&inst_str, str_size);
 		}
 		else if (is_token(fmt_str, "SERIES_SRSRC", &token_len))
 		{
-			assert((inst->micro_inst.mtbuf.srsrc << 2) % 4 == 0);
+			assert((self->micro_inst.mtbuf.srsrc << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, 
-				inst->micro_inst.mtbuf.srsrc << 2, 
-				(inst->micro_inst.mtbuf.srsrc << 2) + 3);
+				self->micro_inst.mtbuf.srsrc << 2, 
+				(self->micro_inst.mtbuf.srsrc << 2) + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "MT_MADDR", &token_len))
 		{
-			si_inst_MADDR_dump(inst, operand_str, &inst_str, 
+			SIInstDump_MADDR(self, operand_str, &inst_str, 
 				str_size);
 		
 			/* Format */
 			str_printf(&inst_str, &str_size, " format:[%s,%s]",
 				str_map_value(&si_inst_buf_data_format_map, 
-					inst->micro_inst.mtbuf.dfmt),
+					self->micro_inst.mtbuf.dfmt),
 				str_map_value(&si_inst_buf_num_format_map, 
-					inst->micro_inst.mtbuf.nfmt));
+					self->micro_inst.mtbuf.nfmt));
 		}
 		else if (is_token(fmt_str, "MIMG_SERIES_VDATA", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
-				inst->micro_inst.mimg.vdata, 
-				inst->micro_inst.mimg.vdata + 3);
+				self->micro_inst.mimg.vdata, 
+				self->micro_inst.mimg.vdata + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "MIMG_VADDR", &token_len))
 		{
 			operand_dump_series_vector(operand_str, 
-				inst->micro_inst.mimg.vaddr, 
-				inst->micro_inst.mimg.vaddr + 3);
+				self->micro_inst.mimg.vaddr, 
+				self->micro_inst.mimg.vaddr + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "MIMG_SERIES_SRSRC", &token_len))
 		{
-			assert((inst->micro_inst.mimg.srsrc << 2) % 4 == 0);
+			assert((self->micro_inst.mimg.srsrc << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, 
-				inst->micro_inst.mimg.srsrc << 2, 
-				(inst->micro_inst.mimg.srsrc << 2) + 7);
+				self->micro_inst.mimg.srsrc << 2, 
+				(self->micro_inst.mimg.srsrc << 2) + 7);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "MIMG_DUG_SERIES_SRSRC", &token_len))
 		{
-			assert((inst->micro_inst.mimg.srsrc << 2) % 4 == 0);
+			assert((self->micro_inst.mimg.srsrc << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, 
-				inst->micro_inst.mimg.srsrc << 2, 
-				(inst->micro_inst.mimg.srsrc << 2) + 7);
+				self->micro_inst.mimg.srsrc << 2, 
+				(self->micro_inst.mimg.srsrc << 2) + 7);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 
-			/* Call si_inst_DUG_dump to print 
+			/* Call SIInstDump_DUG to print 
 			 * dmask, unorm, and glc */
-			si_inst_DUG_dump(inst, operand_str, &inst_str, 
+			SIInstDump_DUG(self, operand_str, &inst_str, 
 				str_size);
 		}
 		else if (is_token(fmt_str, "MIMG_SERIES_SSAMP", &token_len))
 		{
-			assert((inst->micro_inst.mimg.ssamp << 2) % 4 == 0);
+			assert((self->micro_inst.mimg.ssamp << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, 
-				inst->micro_inst.mimg.ssamp << 2, 
-				(inst->micro_inst.mimg.ssamp << 2) + 3);
+				self->micro_inst.mimg.ssamp << 2, 
+				(self->micro_inst.mimg.ssamp << 2) + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "MIMG_DUG_SERIES_SSAMP", 
 			&token_len))
 		{
-			assert((inst->micro_inst.mimg.ssamp << 2) % 4 == 0);
+			assert((self->micro_inst.mimg.ssamp << 2) % 4 == 0);
 			operand_dump_series_scalar(operand_str, 
-				inst->micro_inst.mimg.ssamp << 2, 
-				(inst->micro_inst.mimg.ssamp << 2) + 3);
+				self->micro_inst.mimg.ssamp << 2, 
+				(self->micro_inst.mimg.ssamp << 2) + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 			
-			/* Call si_inst_DUG_dump to print 
+			/* Call SIInstDump_DUG to print 
 			 * dmask, unorm, and glc */
-			si_inst_DUG_dump(inst, operand_str, &inst_str, 
+			SIInstDump_DUG(self, operand_str, &inst_str, 
 				str_size);
 		}
 		else if (is_token(fmt_str, "TGT", &token_len))
 		{
 			operand_dump_exp(operand_str, 
-				inst->micro_inst.exp.tgt);
+				self->micro_inst.exp.tgt);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "EXP_VSRCs", &token_len))
 		{
-			if (inst->micro_inst.exp.compr == 0 && 
-				(inst->micro_inst.exp.en && 0x0) == 0x0)
+			if (self->micro_inst.exp.compr == 0 && 
+				(self->micro_inst.exp.en && 0x0) == 0x0)
 			{
 				operand_dump_vector(operand_str, 
-					inst->micro_inst.exp.vsrc0);
+					self->micro_inst.exp.vsrc0);
 				str_printf(&inst_str, &str_size, 
 					"[%s ", operand_str);
 				operand_dump_vector(operand_str, 
-					inst->micro_inst.exp.vsrc1);
+					self->micro_inst.exp.vsrc1);
 				str_printf(&inst_str, &str_size, "%s ", 
 					operand_str);
 				operand_dump_vector(operand_str, 
-					inst->micro_inst.exp.vsrc2);
+					self->micro_inst.exp.vsrc2);
 				str_printf(&inst_str, &str_size, "%s ", 
 					operand_str);
 				operand_dump_vector(operand_str, 
-					inst->micro_inst.exp.vsrc3);
+					self->micro_inst.exp.vsrc3);
 				str_printf(&inst_str, &str_size, "%s]", 
 					operand_str);
 			}
-			else if (inst->micro_inst.exp.compr == 1 && 
-				(inst->micro_inst.exp.en && 0x0) == 0x0)
+			else if (self->micro_inst.exp.compr == 1 && 
+				(self->micro_inst.exp.en && 0x0) == 0x0)
 			{
 				operand_dump_vector(operand_str, 
-					inst->micro_inst.exp.vsrc0);
+					self->micro_inst.exp.vsrc0);
 				str_printf(&inst_str, &str_size, "[%s ", 
 					operand_str);
 				operand_dump_vector(operand_str, 
-					inst->micro_inst.exp.vsrc1);
+					self->micro_inst.exp.vsrc1);
 				str_printf(&inst_str, &str_size, "%s]", 
 					operand_str);
 			}
@@ -1114,16 +1120,23 @@ void si_inst_dump(SIInst *inst, unsigned int inst_size,
 }
 
 
+void SIInstClear(SIInst *self)
+{
+	self->info = NULL;
+	self->micro_inst.dword = 0;
+}
+
+
 int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 {
+	unsigned int inst_size;
 
-	/* Zero-out instruction structure */
-	memset(self, 0, sizeof(SIInst));
+	/* Initialize instruction */
+	SIInstClear(self);
 
-	/* All instructions will be at least 32-bits */
-	unsigned int inst_size = 4;
-
-	memcpy(&self->micro_inst, buf, inst_size);
+	/* Instruction is at least 4 bytes */
+	inst_size = 4;
+	self->micro_inst.word[0] = * (unsigned int *) buf;
 
 	/* Use the encoding field to determine the instruction type */
 	if (self->micro_inst.sopp.enc == 0x17F)
@@ -1156,7 +1169,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 			self->micro_inst.sopc.ssrc1 == 0xFF)
 		{
 			inst_size = 8;
-			memcpy(&self->micro_inst, buf, inst_size);
+			self->micro_inst.dword = * (unsigned long long *) buf;
 		}
 	}
 	else if (self->micro_inst.sop1.enc == 0x17D)
@@ -1175,8 +1188,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		if (self->micro_inst.sop1.ssrc0 == 0xFF)
 		{
 			inst_size = 8;
-			memcpy(&self->micro_inst, buf, inst_size);
-		}
+			self->micro_inst.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->micro_inst.sopk.enc == 0xB)
 	{
@@ -1208,8 +1220,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 			self->micro_inst.sop2.ssrc1 == 0xFF)
 		{
 			inst_size = 8;
-			memcpy(&self->micro_inst, buf, inst_size);
-		}
+			self->micro_inst.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->micro_inst.smrd.enc == 0x18)
 	{
@@ -1226,7 +1237,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	{
 		/* 64 bit instruction. */
 		inst_size = 8;
-		memcpy(&self->micro_inst, buf, inst_size);
+		self->micro_inst.dword = * (unsigned long long *) buf;
 
 		if (!si_inst_info_vop3[self->micro_inst.vop3a.op])
 		{
@@ -1256,8 +1267,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		if (self->micro_inst.vopc.src0 == 0xFF)
 		{
 			inst_size = 8;
-			memcpy(&self->micro_inst, buf, inst_size);
-		}
+			self->micro_inst.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->micro_inst.vop1.enc == 0x3F)
 	{
@@ -1275,8 +1285,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		if (self->micro_inst.vop1.src0 == 0xFF)
 		{
 			inst_size = 8;
-			memcpy(&self->micro_inst, buf, inst_size);
-		}
+			self->micro_inst.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->micro_inst.vop2.enc == 0x0)
 	{
@@ -1294,16 +1303,14 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 		if (self->micro_inst.vop2.src0 == 0xFF)
 		{
 			inst_size = 8;
-			memcpy(&self->micro_inst, buf, inst_size);
-		}
+			self->micro_inst.dword = * (unsigned long long *) buf;		}
 
 		/* Some opcodes define a 32-bit literal constant following
 		 * the instruction */
 		if (self->micro_inst.vop2.op == 32)
 		{
 			inst_size = 8;
-			memcpy(&self->micro_inst, buf, inst_size);
-		}
+			self->micro_inst.dword = * (unsigned long long *) buf;		}
 	}
 	else if (self->micro_inst.vintrp.enc == 0x32)
 	{
@@ -1321,8 +1328,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	{
 		/* 64 bit instruction. */
 		inst_size = 8;
-		memcpy(&self->micro_inst, buf, inst_size);
-
+		self->micro_inst.dword = * (unsigned long long *) buf;
 		if (!si_inst_info_ds[self->micro_inst.ds.op])
 		{
 			fatal("Unimplemented Instruction: DS:%d  "
@@ -1337,7 +1343,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	{
 		/* 64 bit instruction. */
 		inst_size = 8;
-		memcpy(&self->micro_inst, buf, inst_size);
+		self->micro_inst.dword = * (unsigned long long *) buf;
 
 		if (!si_inst_info_mtbuf[self->micro_inst.mtbuf.op])
 		{
@@ -1353,9 +1359,9 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	{
 		/* 64 bit instruction. */
 		inst_size = 8;
-		memcpy(&self->micro_inst, buf, inst_size);
+		self->micro_inst.dword = * (unsigned long long *) buf;
 
-		if(!si_inst_info_mubuf[self->micro_inst.mubuf.op])
+		if (!si_inst_info_mubuf[self->micro_inst.mubuf.op])
 		{
 			fatal("Unimplemented Instruction: MUBUF:%d  "
 				"// %08X: %08X %08X\n",
@@ -1370,7 +1376,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	{
 		/* 64 bit instruction. */
 		inst_size = 8;
-		memcpy(&self->micro_inst, buf, inst_size);
+		self->micro_inst.dword = * (unsigned long long *) buf;
 
 		if(!si_inst_info_mimg[self->micro_inst.mimg.op])
 		{
@@ -1387,7 +1393,7 @@ int SIInstDecode(SIInst *self, void *buf, unsigned int offset)
 	{
 		/* 64 bit instruction. */
 		inst_size = 8;
-		memcpy(&self->micro_inst, buf, inst_size);
+		self->micro_inst.dword = * (unsigned long long *) buf;
 
 		/* Export is the only instruction in its kind */
 		if (!si_inst_info_exp[0])

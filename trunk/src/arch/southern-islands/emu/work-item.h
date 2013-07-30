@@ -50,7 +50,7 @@ struct si_work_item_t
 	struct si_work_group_t *work_group;
 
 	/* Work-item state */
-	union si_reg_t vreg[256];  /* Vector general purpose registers */
+	SIInstReg vreg[256];  /* Vector general purpose registers */
 
 	/* Last global memory access */
 	unsigned int global_mem_access_addr;

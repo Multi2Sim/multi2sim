@@ -25,49 +25,54 @@
 #include <lib/class/class.h>
 
 
+
+/*
+ * Class 'SIInst'
+ */
+
 /* Microcode Formats
  * NOTE: Update string map 'si_inst_fmt_map' if new elements are added
  * to this enumeration. */
-enum si_fmt_enum
+typedef enum
 {
-	SI_FMT_NONE = 0,
+	SIInstFormatInvalid = 0,
 
 	/* Scalar ALU and Control Formats */
-	SI_FMT_SOP2,
-	SI_FMT_SOPK,
-	SI_FMT_SOP1,
-	SI_FMT_SOPC,
-	SI_FMT_SOPP,
+	SIInstFormatSOP2,
+	SIInstFormatSOPK,
+	SIInstFormatSOP1,
+	SIInstFormatSOPC,
+	SIInstFormatSOPP,
 
 	/* Scalar Memory Format */
-	SI_FMT_SMRD,
+	SIInstFormatSMRD,
 
 	/* Vector ALU Formats */
-	SI_FMT_VOP2,
-	SI_FMT_VOP1,
-	SI_FMT_VOPC,
-	SI_FMT_VOP3a,
-	SI_FMT_VOP3b,
+	SIInstFormatVOP2,
+	SIInstFormatVOP1,
+	SIInstFormatVOPC,
+	SIInstFormatVOP3a,
+	SIInstFormatVOP3b,
 
 	/* Vector Parameter Interpolation Format */
-	SI_FMT_VINTRP,
+	SIInstFormatVINTRP,
 
 	/* LDS/GDS Format */
-	SI_FMT_DS,
+	SIInstFormatDS,
 
 	/* Vector Memory Buffer Formats */
-	SI_FMT_MUBUF,
-	SI_FMT_MTBUF,
+	SIInstFormatMUBUF,
+	SIInstFormatMTBUF,
 	
 	/* Vector Memory Image Format */
-	SI_FMT_MIMG,
+	SIInstFormatMIMG,
 
 	/* Export Formats */
-	SI_FMT_EXP,
+	SIInstFormatEXP,
 
 	/* Max */
-	SI_FMT_COUNT
-};
+	SIInstFormatCount
+} SIInstFormat;
 
 
 
@@ -81,14 +86,7 @@ extern struct str_map_t si_inst_ssrc_map;
 extern struct str_map_t si_inst_OP16_map;
 extern struct str_map_t si_inst_OP8_map;
 
-
-
-
-/*
- * Structure of Microcode Format
- */
-
-struct si_fmt_sop2_t
+struct si_inst_format_sop2_t
 {
         unsigned int ssrc0    : 8;  /*   [7:0] */
         unsigned int ssrc1    : 8;  /*  [15:8] */
@@ -98,7 +96,7 @@ struct si_fmt_sop2_t
         unsigned int lit_cnst : 32; /* [63:32] */
 };
 
-struct si_fmt_sopk_t
+struct si_inst_format_sopk_t
 {
         unsigned int simm16 : 16;  /*  [15:0] */
         unsigned int sdst   : 7;   /* [22:16] */
@@ -106,7 +104,7 @@ struct si_fmt_sopk_t
         unsigned int enc    : 4;   /* [31:28] */
 };
 
-struct si_fmt_sop1_t
+struct si_inst_format_sop1_t
 {
         unsigned int ssrc0    : 8;  /*   [7:0] */
         unsigned int op       : 8;  /*  [15:8] */
@@ -115,7 +113,7 @@ struct si_fmt_sop1_t
         unsigned int lit_cnst : 32; /* [63:32] */
 };
 
-struct si_fmt_sopc_t
+struct si_inst_format_sopc_t
 {
         unsigned int ssrc0    : 8;  /*   [7:0] */
         unsigned int ssrc1    : 8;  /*  [15:8] */
@@ -124,14 +122,14 @@ struct si_fmt_sopc_t
         unsigned int lit_cnst : 32; /* [63:32] */
 };
 
-struct si_fmt_sopp_t
+struct si_inst_format_sopp_t
 {
         unsigned int simm16 : 16;  /*  [15:0] */
         unsigned int op     : 7;   /* [22:16] */
         unsigned int enc    : 9;   /* [31:23] */
 };
 
-struct si_fmt_smrd_t 
+struct si_inst_format_smrd_t 
 {
         unsigned int offset : 8;   /*   [7:0] */
         unsigned int imm    : 1;   /*      8  */
@@ -141,7 +139,7 @@ struct si_fmt_smrd_t
         unsigned int enc    : 5;   /* [31:27] */
 };
 
-struct si_fmt_vop2_t
+struct si_inst_format_vop2_t
 {
         unsigned int src0     : 9;   /*   [8:0] */
         unsigned int vsrc1    : 8;   /*  [16:9] */
@@ -151,7 +149,7 @@ struct si_fmt_vop2_t
         unsigned int lit_cnst : 32;  /* [63:32] */
 };
 
-struct si_fmt_vop1_t
+struct si_inst_format_vop1_t
 {
         unsigned int src0     : 9;   /*   [8:0] */
         unsigned int op       : 8;   /*  [16:9] */
@@ -160,7 +158,7 @@ struct si_fmt_vop1_t
         unsigned int lit_cnst : 32;  /* [63:32] */
 };
 
-struct si_fmt_vopc_t
+struct si_inst_format_vopc_t
 {
         unsigned int src0     : 9;   /*   [8:0] */
         unsigned int vsrc1    : 8;   /*  [16:9] */
@@ -169,7 +167,7 @@ struct si_fmt_vopc_t
         unsigned int lit_cnst : 32;  /* [63:32] */
 };
 
-struct si_fmt_vop3a_t
+struct si_inst_format_vop3a_t
 {
         unsigned int vdst     : 8;   /*   [7:0] */
         unsigned int abs      : 3;   /*  [10:8] */
@@ -184,7 +182,7 @@ struct si_fmt_vop3a_t
         unsigned int neg      : 3;   /* [63:60] */
 };
 
-struct si_fmt_vop3b_t
+struct si_inst_format_vop3b_t
 {
         unsigned int vdst     : 8;   /*   [7:0] */
         unsigned int sdst     : 7;   /*  [14:8] */
@@ -198,7 +196,7 @@ struct si_fmt_vop3b_t
         unsigned int neg      : 3;   /* [63:60] */
 };
 
-struct si_fmt_vintrp_t
+struct si_inst_format_vintrp_t
 {
         unsigned int vsrc     : 8;   /*   [7:0] */
         unsigned int attrchan : 2;   /*   [9:8] */
@@ -208,7 +206,7 @@ struct si_fmt_vintrp_t
         unsigned int enc      : 6;   /* [31:26] */
 };
 
-struct si_fmt_ds_t
+struct si_inst_format_ds_t
 {
         unsigned int offset0  : 8;   /*   [7:0] */
         unsigned int offset1  : 8;   /*  [15:8] */
@@ -222,7 +220,7 @@ struct si_fmt_ds_t
         unsigned int vdst     : 8;   /* [63:56] */
 };
 
-struct si_fmt_mtbuf_t
+struct si_inst_format_mtbuf_t
 {
         unsigned int offset   : 12;  /*  [11:0] */
         unsigned int offen    : 1;   /*     12  */
@@ -242,7 +240,7 @@ struct si_fmt_mtbuf_t
         unsigned int soffset  : 8;   /* [63:56] */
 };
 
-struct si_fmt_mubuf_t
+struct si_inst_format_mubuf_t
 {
         unsigned int offset    : 12;  /*  [11:0] */
         unsigned int offen     : 1;   /*     12  */
@@ -263,7 +261,7 @@ struct si_fmt_mubuf_t
         unsigned int soffset   : 8;   /* [63:56] */
 };
 
-struct si_fmt_mimg_t
+struct si_inst_format_mimg_t
 {
         unsigned int reserved0 : 8;   /*   [7:0] */
         unsigned int dmask     : 4;   /*  [11:8] */
@@ -283,7 +281,7 @@ struct si_fmt_mimg_t
         unsigned int reserved1  : 6;   /* [63:58] */
 };
 
-struct si_fmt_exp_t
+struct si_inst_format_exp_t
 {
         unsigned int en       : 4;   /*   [3:0] */
         unsigned int tgt      : 6;   /*   [9:4] */
@@ -301,42 +299,42 @@ struct si_fmt_exp_t
 
 
 extern struct str_map_t si_inst_category_map;
-enum si_inst_category_t
+typedef enum
 {
-	SI_INST_CAT_NONE = 0,
+	SIInstCategoryInvalid = 0,
 
 	/* Scalar ALU and Control Instructions */
-	SI_INST_CAT_SOP2,
-	SI_INST_CAT_SOPK,
-	SI_INST_CAT_SOP1,
-	SI_INST_CAT_SOPC,
-	SI_INST_CAT_SOPP,
+	SIInstCategorySOP2,
+	SIInstCategorySOPK,
+	SIInstCategorySOP1,
+	SIInstCategorySOPC,
+	SIInstCategorySOPP,
 
 	/* Scalar Memory Instruction */
-	SI_INST_CAT_SMRD,
+	SIInstCategorySMRD,
 
 	/* Vector ALU Instructions */
-	SI_INST_CAT_VOP2,
-	SI_INST_CAT_VOP1,
-	SI_INST_CAT_VOPC,
-	SI_INST_CAT_VOP3a,
-	SI_INST_CAT_VOP3b,
+	SIInstCategoryVOP2,
+	SIInstCategoryVOP1,
+	SIInstCategoryVOPC,
+	SIInstCategoryVOP3a,
+	SIInstCategoryVOP3b,
 
 	/* Vector Parameter Interpolation Instruction */
-	SI_INST_CAT_VINTRP,
+	SIInstCategoryVINTRP,
 
 	/* LDS/GDS Instruction */
-	SI_INST_CAT_DS,
+	SIInstCategoryDS,
 
 	/* Vector Memory Buffer Instructions */
-	SI_INST_CAT_MUBUF,
-	SI_INST_CAT_MTBUF,
+	SIInstCategoryMUBUF,
+	SIInstCategoryMTBUF,
 	
 	/* Vector Memory Image Instruction */
-	SI_INST_CAT_MIMG,
+	SIInstCategoryMIMG,
 
-	SI_INST_CAT_COUNT
-};
+	SIInstCategoryCount
+} SIInstCategory;
 
 
 extern struct str_map_t si_inst_special_reg_map;
@@ -393,17 +391,17 @@ enum si_inst_buf_num_format_t
 
 
 
-enum si_inst_flag_t
+typedef enum
 {
-	SI_INST_FLAG_NONE = 0x0000,
-	SI_INST_FLAG_OP8 = 0x0001,  /* Opcode represents 8 comparison instructions */
-	SI_INST_FLAG_OP16 = 0x0002  /* Opcode represents 16 comparison instructions */
-};
+	SIInstFlagNone = 0x0000,
+	SIInstFlagOp8 = 0x0001,  /* Opcode represents 8 comparison instructions */
+	SIInstFlagOp16 = 0x0002  /* Opcode represents 16 comparison instructions */
+} SIInstFlag;
 
 
-enum si_inst_opcode_t
+typedef enum
 {
-	SI_INST_NONE = 0,
+	SIInstOpcodeInvalid = 0,
 
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	SI_INST_##_name,
@@ -412,53 +410,56 @@ enum si_inst_opcode_t
 #undef DEFINST
 
 	/* Max */
-	SI_INST_COUNT
-};
+	SIInstOpcodeCount
+} SIInstOpcode;
 
 
 union si_inst_microcode_t
 {
-	char bytes[8];
+	unsigned char byte[8];
+	unsigned int word[2];
+	unsigned long long dword;
 
-	struct si_fmt_sop2_t sop2;
-	struct si_fmt_sopk_t sopk;
-	struct si_fmt_sop1_t sop1;
-	struct si_fmt_sopc_t sopc;
-	struct si_fmt_sopp_t sopp;
-	struct si_fmt_smrd_t smrd;
-	struct si_fmt_vop2_t vop2;
-	struct si_fmt_vop1_t vop1;
-	struct si_fmt_vopc_t vopc;
-	struct si_fmt_vop3a_t vop3a;
-	struct si_fmt_vop3b_t vop3b;
-	struct si_fmt_vintrp_t vintrp;
-	struct si_fmt_ds_t ds;
-	struct si_fmt_mubuf_t mubuf;
-	struct si_fmt_mtbuf_t mtbuf;
-	struct si_fmt_mimg_t mimg;
-	struct si_fmt_exp_t exp;
+	struct si_inst_format_sop2_t sop2;
+	struct si_inst_format_sopk_t sopk;
+	struct si_inst_format_sop1_t sop1;
+	struct si_inst_format_sopc_t sopc;
+	struct si_inst_format_sopp_t sopp;
+	struct si_inst_format_smrd_t smrd;
+	struct si_inst_format_vop2_t vop2;
+	struct si_inst_format_vop1_t vop1;
+	struct si_inst_format_vopc_t vopc;
+	struct si_inst_format_vop3a_t vop3a;
+	struct si_inst_format_vop3b_t vop3b;
+	struct si_inst_format_vintrp_t vintrp;
+	struct si_inst_format_ds_t ds;
+	struct si_inst_format_mubuf_t mubuf;
+	struct si_inst_format_mtbuf_t mtbuf;
+	struct si_inst_format_mimg_t mimg;
+	struct si_inst_format_exp_t exp;
 };
 
 
 struct si_inst_info_t
 {
-	enum si_inst_opcode_t inst;
-	enum si_inst_category_t category;
+	SIInstOpcode inst;
+	SIInstCategory category;
+
 	char *name;
 	char *fmt_str;
-	enum si_fmt_enum fmt;  /* Word formats */
+	SIInstFormat fmt;  /* Word formats */
 	int opcode;  /* Operation code */
-	enum si_inst_flag_t flags;  /* Flag bitmap */
+	SIInstFlag flags;  /* Flag bitmap */
 	int size;  /* Size of microcode inst (bytes) */
 };
 
 
 /* Table containing information for all instructions, filled out with the
  * fields found in 'asm.dat'. */
-extern struct si_inst_info_t si_inst_info[SI_INST_COUNT];
+extern struct si_inst_info_t si_inst_info[SIInstOpcodeCount];
 
 
-union si_reg_t
+typedef union
 {
 	signed int as_int;
 	unsigned int as_uint;
@@ -470,8 +471,7 @@ union si_reg_t
 	unsigned char as_ubyte[4];
 
 	float as_float;
-};
-
+} SIInstReg;
 
 
 CLASS_BEGIN(SIInst, Object)
@@ -483,18 +483,19 @@ CLASS_BEGIN(SIInst, Object)
 CLASS_END(SIInst)
 
 
+void SIInstCreate(SIInst *self);
+void SIInstDestroy(SIInst *self);
+
+void SIInstClear(SIInst *self);
 int SIInstDecode(SIInst *self, void *buf, unsigned int offset);
 
-/* Functions to dump individual instruction lines for decoded instructions. */
-#define MAX_INST_STR_SIZE 200
-
-void si_inst_dump(SIInst *inst, unsigned int inst_size, unsigned int rel_addr, void *buf, char *line, int line_size);
-void si_inst_SSRC_dump(SIInst *inst, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
-void si_inst_64_SSRC_dump(SIInst *inst, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
-void si_inst_VOP3_SRC_dump(SIInst *inst, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size);
-void si_inst_VOP3_64_SRC_dump(SIInst *inst, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size);
-void si_inst_SERIES_VDATA_dump(unsigned int vdata, int op, char *operand_str, char **inst_str, int str_size);
-void si_inst_MADDR_dump(SIInst *inst, char *operand_str, char **inst_str, int str_size);
-void si_inst_DUG_dump(SIInst *inst, char *operand_str, char **inst_str, int str_size);
+void SIInstDump(SIInst *self, unsigned int inst_size, unsigned int rel_addr, void *buf, char *line, int line_size);
+void SIInstDump_SSRC(SIInst *self, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_64_SSRC(SIInst *self, unsigned int ssrc, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_VOP3_SRC(SIInst *self, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_VOP3_64_SRC(SIInst *self, unsigned int src, int neg, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_SERIES_VDATA(unsigned int vdata, int op, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_MADDR(SIInst *self, char *operand_str, char **inst_str, int str_size);
+void SIInstDump_DUG(SIInst *self, char *operand_str, char **inst_str, int str_size);
 
 #endif

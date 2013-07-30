@@ -31,7 +31,7 @@
 #include "inst.h"
 
 
-struct si_inst_info_t si_inst_info[SI_INST_COUNT];
+struct si_inst_info_t si_inst_info[SIInstOpcodeCount];
 
 
 /* Pointers to 'si_inst_info' table indexed by instruction opcode */
@@ -57,24 +57,24 @@ struct str_map_t si_inst_fmt_map =
 {
 	18,
 	{
-		{ "<invalid>", SI_FMT_NONE },
-		{ "sop2", SI_FMT_SOP2 },
-		{ "sopk", SI_FMT_SOPK },
-		{ "sop1", SI_FMT_SOP1 },
-		{ "sopc", SI_FMT_SOPC },
-		{ "sopp", SI_FMT_SOPP },
-		{ "smrd", SI_FMT_SMRD },
-		{ "vop2", SI_FMT_VOP2 },
-		{ "vop1", SI_FMT_VOP1 },
-		{ "vopc", SI_FMT_VOPC },
-		{ "vop3a", SI_FMT_VOP3a },
-		{ "vop3b", SI_FMT_VOP3b },
-		{ "vintrp", SI_FMT_VINTRP },
-		{ "ds", SI_FMT_DS },
-		{ "mubuf", SI_FMT_MUBUF },
-		{ "mtbuf", SI_FMT_MTBUF },
-		{ "mimg", SI_FMT_MIMG },
-		{ "exp", SI_FMT_EXP }
+		{ "<invalid>", SIInstFormatInvalid },
+		{ "sop2", SIInstFormatSOP2 },
+		{ "sopk", SIInstFormatSOPK },
+		{ "sop1", SIInstFormatSOP1 },
+		{ "sopc", SIInstFormatSOPC },
+		{ "sopp", SIInstFormatSOPP },
+		{ "smrd", SIInstFormatSMRD },
+		{ "vop2", SIInstFormatVOP2 },
+		{ "vop1", SIInstFormatVOP1 },
+		{ "vopc", SIInstFormatVOPC },
+		{ "vop3a", SIInstFormatVOP3a },
+		{ "vop3b", SIInstFormatVOP3b },
+		{ "vintrp", SIInstFormatVINTRP },
+		{ "ds", SIInstFormatDS },
+		{ "mubuf", SIInstFormatMUBUF },
+		{ "mtbuf", SIInstFormatMTBUF },
+		{ "mimg", SIInstFormatMIMG },
+		{ "exp", SIInstFormatEXP }
 	}
 };
 
@@ -225,7 +225,7 @@ void si_disasm_init()
 	int i;
 
 	/* Type size assertions */
-	assert(sizeof(union si_reg_t) == 4);
+	assert(sizeof(SIInstReg) == 4);
 
 	/* Read information about all instructions */
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
@@ -233,7 +233,7 @@ void si_disasm_init()
 	info->inst = SI_INST_##_name; \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
-	info->fmt = SI_FMT_##_fmt; \
+	info->fmt = SIInstFormat##_fmt; \
 	info->opcode = _opcode; \
 	info->size = _size; \
 	info->flags = _flags;
@@ -241,60 +241,60 @@ void si_disasm_init()
 #undef DEFINST
 
 	/* Tables of pointers to 'si_inst_info' */
-	for (i = 1; i < SI_INST_COUNT; i++)
+	for (i = 1; i < SIInstOpcodeCount; i++)
 	{
 		info = &si_inst_info[i];
 
-		if (info->fmt == SI_FMT_SOPP)
+		if (info->fmt == SIInstFormatSOPP)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_SOPP_MAX_VALUE));
 			si_inst_info_sopp[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_SOPC)
+		else if (info->fmt == SIInstFormatSOPC)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_SOPC_MAX_VALUE));
 			si_inst_info_sopc[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_SOP1)
+		else if (info->fmt == SIInstFormatSOP1)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_SOP1_MAX_VALUE));
 			si_inst_info_sop1[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_SOPK)
+		else if (info->fmt == SIInstFormatSOPK)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_SOPK_MAX_VALUE));
 			si_inst_info_sopk[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_SOP2)
+		else if (info->fmt == SIInstFormatSOP2)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_SOP2_MAX_VALUE));
 			si_inst_info_sop2[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_SMRD) 
+		else if (info->fmt == SIInstFormatSMRD) 
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_SMRD_MAX_VALUE));
 			si_inst_info_smrd[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_VOP3a || info->fmt == SI_FMT_VOP3b)
+		else if (info->fmt == SIInstFormatVOP3a || info->fmt == SIInstFormatVOP3b)
 		{
 			int i;
 
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_VOP3_MAX_VALUE));
 			si_inst_info_vop3[info->opcode] = info;
-			if (info->flags & SI_INST_FLAG_OP8)
+			if (info->flags & SIInstFlagOp8)
 			{
 				for (i = 1; i < 8; i++)
 				{
@@ -302,7 +302,7 @@ void si_disasm_init()
 						info;
 				}
 			}
-			if (info->flags & SI_INST_FLAG_OP16)
+			if (info->flags & SIInstFlagOp16)
 			{
 				for (i = 1; i < 16; i++)
 				{
@@ -312,63 +312,63 @@ void si_disasm_init()
 			}
 			continue;
 		}
-		else if (info->fmt == SI_FMT_VOPC)
+		else if (info->fmt == SIInstFormatVOPC)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_VOPC_MAX_VALUE));
 			si_inst_info_vopc[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_VOP1)
+		else if (info->fmt == SIInstFormatVOP1)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_VOP1_MAX_VALUE));
 			si_inst_info_vop1[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_VOP2)
+		else if (info->fmt == SIInstFormatVOP2)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_VOP2_MAX_VALUE));
 			si_inst_info_vop2[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_VINTRP)
+		else if (info->fmt == SIInstFormatVINTRP)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_VINTRP_MAX_VALUE));
 			si_inst_info_vintrp[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_DS)
+		else if (info->fmt == SIInstFormatDS)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_DS_MAX_VALUE));
 			si_inst_info_ds[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_MTBUF)
+		else if (info->fmt == SIInstFormatMTBUF)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_MTBUF_MAX_VALUE));
 			si_inst_info_mtbuf[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_MUBUF)
+		else if (info->fmt == SIInstFormatMUBUF)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_MUBUF_MAX_VALUE));
 			si_inst_info_mubuf[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_MIMG)
+		else if (info->fmt == SIInstFormatMIMG)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_MIMG_MAX_VALUE));
 			si_inst_info_mimg[info->opcode] = info;
 			continue;
 		}
-		else if (info->fmt == SI_FMT_EXP)
+		else if (info->fmt == SIInstFormatEXP)
 		{
 			assert(IN_RANGE(info->opcode, 0, 
 				SI_INST_INFO_EXP_MAX_VALUE));
@@ -420,14 +420,14 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		inst_size = SIInstDecode(&inst, inst_buf, rel_addr);
 
 		/* If ENDPGM, break. */
-		if (inst.info->fmt == SI_FMT_SOPP && 
+		if (inst.info->fmt == SIInstFormatSOPP && 
 			inst.micro_inst.sopp.op == 1)
 		{
 			break;
 		}
 		/* If the instruction branches, insert the label into 
 		 * the sorted list. */
-		if (inst.info->fmt == SI_FMT_SOPP &&
+		if (inst.info->fmt == SIInstFormatSOPP &&
 			(inst.micro_inst.sopp.op >= 2 && 
 			 inst.micro_inst.sopp.op <= 9))
 		{
@@ -489,16 +489,16 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 
 
 		/* Dump the instruction */
-		int line_size = MAX_INST_STR_SIZE;
+		int line_size = MAX_STRING_SIZE;
 		char line[line_size];
 
-		si_inst_dump(&inst, inst_size, rel_addr, inst_buf, line, 
+		SIInstDump(&inst, inst_size, rel_addr, inst_buf, line, 
 			line_size);
 		fprintf(f, " %s", line);
 
 
 		/* Break at end of program. */
-		if (inst.info->fmt == SI_FMT_SOPP && 
+		if (inst.info->fmt == SIInstFormatSOPP && 
 			inst.micro_inst.sopp.op == 1)
 		{
 			break;

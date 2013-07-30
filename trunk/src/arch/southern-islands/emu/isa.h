@@ -109,7 +109,7 @@ void si_isa_done();
 
 /* Forward declaration */
 struct si_work_item_t;
-union si_reg_t;
+union SIInstReg;
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
 typedef void (*si_isa_inst_func_t)(struct si_work_item_t *work_item, SIInst *inst);
