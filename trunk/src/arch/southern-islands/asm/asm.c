@@ -228,13 +228,13 @@ void si_disasm_init()
 	assert(sizeof(SIInstReg) == 4);
 
 	/* Read information about all instructions */
-#define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
+#define DEFINST(_name, _fmt_str, _fmt, _op, _size, _flags) \
 	info = &si_inst_info[SI_INST_##_name]; \
-	info->inst = SI_INST_##_name; \
+	info->opcode = SI_INST_##_name; \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->fmt = SIInstFormat##_fmt; \
-	info->opcode = _opcode; \
+	info->op = _op; \
 	info->size = _size; \
 	info->flags = _flags;
 #include "asm.dat"
@@ -247,58 +247,58 @@ void si_disasm_init()
 
 		if (info->fmt == SIInstFormatSOPP)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOPP_MAX_VALUE));
-			si_inst_info_sopp[info->opcode] = info;
+			si_inst_info_sopp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOPC)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOPC_MAX_VALUE));
-			si_inst_info_sopc[info->opcode] = info;
+			si_inst_info_sopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOP1)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOP1_MAX_VALUE));
-			si_inst_info_sop1[info->opcode] = info;
+			si_inst_info_sop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOPK)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOPK_MAX_VALUE));
-			si_inst_info_sopk[info->opcode] = info;
+			si_inst_info_sopk[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSOP2)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SOP2_MAX_VALUE));
-			si_inst_info_sop2[info->opcode] = info;
+			si_inst_info_sop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatSMRD) 
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_SMRD_MAX_VALUE));
-			si_inst_info_smrd[info->opcode] = info;
+			si_inst_info_smrd[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVOP3a || info->fmt == SIInstFormatVOP3b)
 		{
 			int i;
 
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VOP3_MAX_VALUE));
-			si_inst_info_vop3[info->opcode] = info;
+			si_inst_info_vop3[info->op] = info;
 			if (info->flags & SIInstFlagOp8)
 			{
 				for (i = 1; i < 8; i++)
 				{
-					si_inst_info_vop3[info->opcode + i] = 
+					si_inst_info_vop3[info->op + i] = 
 						info;
 				}
 			}
@@ -306,7 +306,7 @@ void si_disasm_init()
 			{
 				for (i = 1; i < 16; i++)
 				{
-					si_inst_info_vop3[info->opcode + i] = 
+					si_inst_info_vop3[info->op + i] = 
 						info;
 				}
 			}
@@ -314,65 +314,65 @@ void si_disasm_init()
 		}
 		else if (info->fmt == SIInstFormatVOPC)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VOPC_MAX_VALUE));
-			si_inst_info_vopc[info->opcode] = info;
+			si_inst_info_vopc[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVOP1)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VOP1_MAX_VALUE));
-			si_inst_info_vop1[info->opcode] = info;
+			si_inst_info_vop1[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVOP2)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VOP2_MAX_VALUE));
-			si_inst_info_vop2[info->opcode] = info;
+			si_inst_info_vop2[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatVINTRP)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_VINTRP_MAX_VALUE));
-			si_inst_info_vintrp[info->opcode] = info;
+			si_inst_info_vintrp[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatDS)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_DS_MAX_VALUE));
-			si_inst_info_ds[info->opcode] = info;
+			si_inst_info_ds[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatMTBUF)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_MTBUF_MAX_VALUE));
-			si_inst_info_mtbuf[info->opcode] = info;
+			si_inst_info_mtbuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatMUBUF)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_MUBUF_MAX_VALUE));
-			si_inst_info_mubuf[info->opcode] = info;
+			si_inst_info_mubuf[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatMIMG)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_MIMG_MAX_VALUE));
-			si_inst_info_mimg[info->opcode] = info;
+			si_inst_info_mimg[info->op] = info;
 			continue;
 		}
 		else if (info->fmt == SIInstFormatEXP)
 		{
-			assert(IN_RANGE(info->opcode, 0, 
+			assert(IN_RANGE(info->op, 0, 
 				SI_INST_INFO_EXP_MAX_VALUE));
-			si_inst_info_exp[info->opcode] = info;
+			si_inst_info_exp[info->op] = info;
 			continue;
 		}
 		else 
@@ -421,17 +421,17 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 
 		/* If ENDPGM, break. */
 		if (inst.info->fmt == SIInstFormatSOPP && 
-			inst.micro_inst.sopp.op == 1)
+			inst.bytes.sopp.op == 1)
 		{
 			break;
 		}
 		/* If the instruction branches, insert the label into 
 		 * the sorted list. */
 		if (inst.info->fmt == SIInstFormatSOPP &&
-			(inst.micro_inst.sopp.op >= 2 && 
-			 inst.micro_inst.sopp.op <= 9))
+			(inst.bytes.sopp.op >= 2 && 
+			 inst.bytes.sopp.op <= 9))
 		{
-			short simm16 = inst.micro_inst.sopp.simm16;
+			short simm16 = inst.bytes.sopp.simm16;
 			int se_simm = simm16;
 			int label = rel_addr + (se_simm * 4) + 4;
 
@@ -499,7 +499,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 
 		/* Break at end of program. */
 		if (inst.info->fmt == SIInstFormatSOPP && 
-			inst.micro_inst.sopp.op == 1)
+			inst.bytes.sopp.op == 1)
 		{
 			break;
 		}

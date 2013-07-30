@@ -176,7 +176,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 		/* Only one work item executes the instruction */
 		work_item = wavefront->scalar_work_item;
-		(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -203,7 +203,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 		/* Only one work item executes the instruction */
 		work_item = wavefront->scalar_work_item;
-		(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -225,8 +225,8 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		}
 
 		/* Stats */
-		if (wavefront->inst.micro_inst.sopp.op > 1 &&
-			wavefront->inst.micro_inst.sopp.op < 10)
+		if (wavefront->inst.bytes.sopp.op > 1 &&
+			wavefront->inst.bytes.sopp.op < 10)
 		{
 			si_emu->branch_inst_count++;
 			wavefront->branch_inst_count++;
@@ -238,7 +238,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 		/* Only one work item executes the instruction */
 		work_item = wavefront->scalar_work_item;
-		(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -265,7 +265,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 		/* Only one work item executes the instruction */
 		work_item = wavefront->scalar_work_item;
-		(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -292,7 +292,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 		/* Only one work item executes the instruction */
 		work_item = wavefront->scalar_work_item;
-		(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -320,7 +320,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 		/* Only one work item executes the instruction */
 		work_item = wavefront->scalar_work_item;
-		(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+		(*si_isa_inst_func[inst->info->opcode])(work_item, inst);
 
 		if (debug_status(si_isa_debug_category))
 		{
@@ -353,7 +353,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			if(si_wavefront_work_item_active(wavefront, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->inst])(work_item,
+				(*si_isa_inst_func[inst->info->opcode])(work_item,
 					inst);
 			}
 		}
@@ -382,7 +382,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		wavefront->vector_alu_inst_count++;
 
 		/* Special case: V_READFIRSTLANE_B32 */
-		if (inst->micro_inst.vop1.op == 2)
+		if (inst->bytes.vop1.op == 2)
 		{
 			/* Instruction ignores execution mask and is only 
 			 * executed on one work item. Execute on the first 
@@ -392,7 +392,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			if (si_isa_read_sreg(work_item, SI_EXEC) == 0 && 
 				si_isa_read_sreg(work_item, SI_EXEC + 1) == 0)
 			{
-				(*si_isa_inst_func[inst->info->inst])(work_item,
+				(*si_isa_inst_func[inst->info->opcode])(work_item,
 					inst);
 			}
 			else {
@@ -406,7 +406,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 						work_item->id_in_wavefront))
 					{
 						(*si_isa_inst_func[
-						 	inst->info->inst])(
+						 	inst->info->opcode])(
 							work_item, inst);
 						break;
 					}
@@ -423,7 +423,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 				if(si_wavefront_work_item_active(wavefront, 
 					work_item->id_in_wavefront))
 				{
-					(*si_isa_inst_func[inst->info->inst])(
+					(*si_isa_inst_func[inst->info->opcode])(
 						work_item, inst);
 				}
 			}
@@ -459,7 +459,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			if(si_wavefront_work_item_active(wavefront, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->inst])(work_item,
+				(*si_isa_inst_func[inst->info->opcode])(work_item,
 					inst);
 			}
 		}
@@ -494,7 +494,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			if(si_wavefront_work_item_active(wavefront, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->inst])(work_item,
+				(*si_isa_inst_func[inst->info->opcode])(work_item,
 					inst);
 			}
 		}
@@ -529,7 +529,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			if(si_wavefront_work_item_active(wavefront, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->inst])(work_item,
+				(*si_isa_inst_func[inst->info->opcode])(work_item,
 					inst);
 			}
 		}
@@ -558,15 +558,15 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		wavefront->lds_inst_count++;
 
 		/* Record access type */
-		if ((inst->info->opcode >= 13 && inst->info->opcode < 16) ||
-			(inst->info->opcode >= 30 && inst->info->opcode < 32) ||
-			(inst->info->opcode >= 77 && inst->info->opcode < 80))
+		if ((inst->info->op >= 13 && inst->info->op < 16) ||
+			(inst->info->op >= 30 && inst->info->op < 32) ||
+			(inst->info->op >= 77 && inst->info->op < 80))
 		{
 			wavefront->lds_write = 1;
 		}
 		else if (
-			(inst->info->opcode >= 54 && inst->info->opcode < 61) ||
-			(inst->info->opcode >= 118 && inst->info->opcode < 120))
+			(inst->info->op >= 54 && inst->info->op < 61) ||
+			(inst->info->op >= 118 && inst->info->op < 120))
 		{
 			wavefront->lds_read = 1;
 		}
@@ -582,7 +582,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			if(si_wavefront_work_item_active(wavefront, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->inst])(work_item,
+				(*si_isa_inst_func[inst->info->opcode])(work_item,
 					inst);
 			}
 		}
@@ -612,9 +612,9 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		wavefront->vector_mem_inst_count++;
 
 		/* Record access type */
-		if (inst->info->opcode >= 0 && inst->info->opcode < 4)
+		if (inst->info->op >= 0 && inst->info->op < 4)
 			wavefront->vector_mem_read = 1;
-		else if (inst->info->opcode >= 4 && inst->info->opcode < 8)
+		else if (inst->info->op >= 4 && inst->info->op < 8)
 			wavefront->vector_mem_write = 1;
 		else 
 			fatal("%s: invalid mtbuf opcode", __FUNCTION__);
@@ -626,7 +626,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			if (si_wavefront_work_item_active(wavefront, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->inst])(work_item,
+				(*si_isa_inst_func[inst->info->opcode])(work_item,
 					inst);
 			}
 		}
@@ -655,13 +655,13 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		wavefront->vector_mem_inst_count++;
 
 		/* Record access type */
-		if ((inst->info->opcode >= 0 && inst->info->opcode < 4) ||
-			(inst->info->opcode >= 8 && inst->info->opcode < 15))
+		if ((inst->info->op >= 0 && inst->info->op < 4) ||
+			(inst->info->op >= 8 && inst->info->op < 15))
 		{
 			wavefront->vector_mem_read = 1;
 		}
-		else if ((inst->info->opcode >= 4 && inst->info->opcode < 8) ||
-			(inst->info->opcode >= 24 && inst->info->opcode < 30))
+		else if ((inst->info->op >= 4 && inst->info->op < 8) ||
+			(inst->info->op >= 24 && inst->info->op < 30))
 		{
 			wavefront->vector_mem_write = 1;
 		}
@@ -677,7 +677,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			if (si_wavefront_work_item_active(wavefront, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->inst])
+				(*si_isa_inst_func[inst->info->opcode])
 					(work_item, inst);
 			}
 		}
@@ -715,7 +715,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			if (si_wavefront_work_item_active(wavefront, 
 				work_item->id_in_wavefront))
 			{
-				(*si_isa_inst_func[inst->info->inst])
+				(*si_isa_inst_func[inst->info->opcode])
 					(work_item, inst);
 			}
 		}

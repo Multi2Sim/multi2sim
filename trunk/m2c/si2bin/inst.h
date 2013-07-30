@@ -21,7 +21,7 @@
 #define M2C_SI2BIN_INST_H
 
 #include <stdio.h>
-#include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/inst.h>
 #include <lib/class/class.h>
 
 
@@ -35,7 +35,7 @@ struct si2bin_inst_t
 	struct list_t *arg_list;
 
 	/* Instruction bytes generated */
-	union si_inst_microcode_t inst_bytes;
+	SIInstBytes inst_bytes;
 	int size;  /* Number of bytes */
 
 	/* For LLVM-to-SI back-end: basic block that the instruction
