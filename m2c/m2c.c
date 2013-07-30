@@ -29,6 +29,7 @@
 #include <m2c/llvm2si/llvm2si.h>
 #include <m2c/si2bin/si2bin.h>
 #include <lib/class/array.h>
+#include <lib/class/hash-table.h>
 #include <lib/class/list.h>
 #include <lib/class/string.h>
 #include <lib/mhandle/mhandle.h>
@@ -569,6 +570,7 @@ void m2c_init(void)
 	CLASS_REGISTER(Array);
 	CLASS_REGISTER(List);
 	CLASS_REGISTER(ListIterator);
+	CLASS_REGISTER(HashTable);
 	CLASS_REGISTER(String);
 	CLASS_REGISTER(Node);
 	CLASS_REGISTER(LeafNode);
@@ -642,6 +644,59 @@ void m2c_done(void)
 
 int main(int argc, char **argv)
 {
+#if 0
+	{
+		HashTable *table;
+		Object *object;
+
+		CLASS_REGISTER(String);
+		CLASS_REGISTER(HashTable);
+		CLASS_REGISTER(Node);
+		CLASS_REGISTER(List);
+
+		table = new(HashTable);
+
+		HashTableInsert(table, asObject(new(Node, "Node")), NULL);
+
+		HashTableSetCaseSensitive(table, 0);
+
+		HashTableInsertString(table, "hello", NULL);
+		printf("Inserted 'hello', error = %d\n", table->error);
+
+		HashTableInsertString(table, "how", NULL);
+		printf("Inserted 'how', error = %d\n", table->error);
+
+		object = HashTableGetString(table, "How");
+		printf("Value for 'How' is %p, error = %d\n", object, table->error);
+
+		object = HashTableSetString(table, "How", asObject(new(String, "How")));
+		printf("Set value for 'How' to 'How', error = %d\n", table->error);
+
+		object = HashTableGetString(table, "How");
+		printf("Value for 'How' is %p, error = %d\n", object, table->error);
+
+		HashTableInsertString(table, "are", NULL);
+		printf("Inserted 'are', error = %d\n", table->error);
+
+		HashTableInsertString(table, "you", NULL);
+		printf("Inserted 'you', error = %d\n", table->error);
+
+		HashTableRemoveString(table, "Are");
+		printf("Removed 'Are', error = %d\n", table->error);
+
+		HashTableRemoveString(table, "are");
+		printf("Removed 'are', error = %d\n", table->error);
+
+		HashTableDeleteObjects(table);
+
+
+		delete(table);
+		////////////////////
+		mhandle_done();
+		exit(0);
+	}
+#endif
+
 	/* Read command line */
 	m2c_pre_init();
 	m2c_read_command_line(argc, argv);

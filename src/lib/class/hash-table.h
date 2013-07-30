@@ -52,19 +52,32 @@ CLASS_BEGIN(HashTable, Object)
 	 * keys are of type 'String'. */
 	int case_sensitive;
 
+	/* Class of table keys. This value is set after the first insertion in
+	 * the table, and cleared when the last element is removed. Once a key
+	 * is inserted, the following keys must be of the same class. */
+	struct class_t *key_class;
+
 	/* Array of elements */
 	struct hash_table_elem_t **array;
 
-CLASS_END(HashTable)
+	/* Call-back functions used to clone, compare, and hash keys. */
+	Object *(*KeyClone)(Object *);
+	int (*KeyCompare)(Object *, Object *);
+	unsigned int (*KeyHash)(Object *);
 
+CLASS_END(HashTable)
 
 void HashTableCreate(HashTable *self);
 void HashTableCreateWithSize(HashTable *self, int size);
 void HashTableDestroy(HashTable *self);
 
 /* Clear the content of the hash table. The error code is set to
- * 'HashTableErrOK'. */
+ * 'HashTableErrOK'. Freeing the objects is a responsibility of the caller. */
 void HashTableClear(HashTable *self);
+
+/* Clear the content of the hash table and delete all objects by invoking their
+ * destructors. The error code is set to 'HashTableErrOK'. */
+void HashTableDeleteObjects(HashTable *self);
 
 /* Set a new value for the 'case_sensitive' flag. This function only has effect
  * if the keys used in the hash table are of type 'String'. The error code is
@@ -73,22 +86,34 @@ void HashTableSetCaseSensitive(HashTable *self, int case_sensitive);
 
 /* Insert a new object in the hash table. If 'key' already exists in the table,
  * the error code is set to 'HashTableErrDuplicate' and NULL is returned.
- * Otherwise, object 'data' is returned. */
+ * Otherwise, object 'data' is returned. Object 'key' is cloned internally, so
+ * the caller can manipulate the original instance without affecting the
+ * content of the table. Object 'data' is not cloned, so any change in the
+ * caller will affect the instance kept in the hash table.
+ * The second function covers the special common case where the key is a
+ * string. */
 Object *HashTableInsert(HashTable *self, Object *key, Object *data);
+Object *HashTableInsertString(HashTable *self, const char *key, Object *data);
 
 /* Set an existing element in the hash table to a new value. If 'key' is not
  * present in the table, set the error code to 'HashTableErrNotFound' and return
- * NULL. Otherwise, return 'data'. */
+ * NULL. Otherwise, return 'data'. The second version of the function can be
+ * used when the key is a string. */
 Object *HashTableSet(HashTable *self, Object *key, Object *data);
+Object *HashTableSetString(HashTable *self, const char *key, Object *data);
 
 /* Return the element associated with a key. If 'key' is not present in the
- * table, set the error code to 'HashTableErrNotFound' and return NULL. */
+ * table, set the error code to 'HashTableErrNotFound' and return NULL. The
+ * second version of the function can be used when the key is a string. */
 Object *HashTableGet(HashTable *self, Object *key);
+Object *HashTableGetString(HashTable *self, const char *key);
 
 /* Remove 'key' from the hash table and return the object associated with it. If
  * 'key' is not present in the table, set the error code to
- * 'HashTableErrNotFound' and return NULL. */
+ * 'HashTableErrNotFound' and return NULL. The second function dels with the
+ * common case where the key is a string. */
 Object *HashTableRemove(HashTable *self, Object *key);
+Object *HashTableRemoveString(HashTable *self, const char *key);
 
 #endif
 
