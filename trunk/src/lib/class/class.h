@@ -93,7 +93,7 @@ struct _Object
 	/*** Virtual functions ***/
 
 	void (*Dump)(Object *self, FILE *f);
-	Object *(*Copy)(Object *self);
+	Object *(*Clone)(Object *self);
 	int (*Compare)(Object *self, Object *o);
 	unsigned int (*Hash)(Object *self);
 };

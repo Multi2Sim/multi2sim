@@ -282,7 +282,7 @@ void X86AsmDisassembleBinary(X86Asm *self, char *path)
 	struct elf_buffer_t *buffer;
 	struct elf_symbol_t *symbol;
 
-	X86Inst inst;
+	X86Inst *inst;
 	int curr_sym;
 	int index;
 
@@ -292,7 +292,7 @@ void X86AsmDisassembleBinary(X86Asm *self, char *path)
 	elf_file = elf_file_create_from_path(path);
 
 	/* Initialize statically allocated instruction */
-	X86InstCreate(&inst, self);
+	inst = new(X86Inst, self);
 
 	/* Read sections */
 	LIST_FOR_EACH(elf_file->section_list, index)
@@ -319,11 +319,11 @@ void X86AsmDisassembleBinary(X86Asm *self, char *path)
 			/* Read instruction */
 			eip = section->header->sh_addr + buffer->pos;
 			ptr = elf_buffer_tell(buffer);
-			X86InstDecode(&inst, eip, ptr);
-			if (inst.size)
+			X86InstDecode(inst, eip, ptr);
+			if (inst->size)
 			{
-				elf_buffer_read(buffer, NULL, inst.size);
-				X86InstDumpBuf(&inst, str, MAX_STRING_SIZE);
+				elf_buffer_read(buffer, NULL, inst->size);
+				X86InstDumpBuf(inst, str, MAX_STRING_SIZE);
 			}
 			else
 			{
@@ -346,7 +346,7 @@ void X86AsmDisassembleBinary(X86Asm *self, char *path)
 			/* Hex dump of bytes 0..6 */
 			for (i = 0; i < 7; i++)
 			{
-				if (i < inst.size)
+				if (i < inst->size)
 					printf("%02x ", ptr[i]);
 				else
 					printf("   ");
@@ -356,10 +356,10 @@ void X86AsmDisassembleBinary(X86Asm *self, char *path)
 			printf("\t%s\n", str);
 
 			/* Hex dump of bytes 7..13 */
-			if (inst.size > 7)
+			if (inst->size > 7)
 			{
 				printf("%8x:\t", eip + 7);
-				for (i = 7; i < 14 && i < inst.size; i++)
+				for (i = 7; i < 14 && i < inst->size; i++)
 					printf("%02x ", ptr[i]);
 				printf("\n");
 			}
@@ -369,10 +369,8 @@ void X86AsmDisassembleBinary(X86Asm *self, char *path)
 		printf("\n");
 	}
 
-	/* Destroy static instruction */
-	X86InstDestroy(&inst);
-
-	/* Free ELF */
+	/* Done */
+	delete(inst);
 	elf_file_free(elf_file);
 }
 

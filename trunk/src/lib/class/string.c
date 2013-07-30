@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdarg.h>
 
 #include <lib/mhandle/mhandle.h>
@@ -67,16 +68,29 @@ void StringCreate(String *self, const char *text)
 	self->text = xstrdup(text ? text : "");
 	self->length = strlen(text);
 	self->size = self->length + 1;
+	self->case_sensitive = 1;
 
 	/* Virtual functions */
 	asObject(self)->Dump = StringDump;
 	asObject(self)->Compare = StringCompare;
+	asObject(self)->Hash = StringHash;
+	asObject(self)->Clone = StringClone;
 }
 
 
 void StringDestroy(String *self)
 {
 	free(self->text);
+}
+
+
+Object *StringClone(Object *self)
+{
+	String *string;
+
+	string = new(String, asString(self)->text);
+	StringSetCaseSensitive(string, asString(self)->case_sensitive);
+	return asObject(string);
 }
 
 
@@ -96,6 +110,57 @@ int StringCompare(Object *self, Object *object)
 }
 
 
+int StringCompareCase(Object *self, Object *object)
+{
+	String *s1 = asString(self);
+	String *s2 = asString(object);
+
+	return strcasecmp(s1->text, s2->text);
+}
+
+
+unsigned int StringHash(Object *self)
+{
+	char *text;
+
+	unsigned int c;
+	unsigned int hash;
+	unsigned int prime;
+
+	text = asString(self)->text;
+	hash = 5381;
+	prime = 16777619;
+	while (*text)
+	{
+		c = * (unsigned char *) text;
+		hash = (hash ^ c) * prime;
+		text++;
+	}
+	return hash;
+}
+
+
+unsigned int StringHashCase(Object *self)
+{
+	char *text;
+
+	unsigned int c;
+	unsigned int hash;
+	unsigned int prime;
+
+	text = asString(self)->text;
+	hash = 5381;
+	prime = 16777619;
+	while (*text)
+	{
+		c = tolower(* (unsigned char *) text);
+		hash = (hash ^ c) * prime;
+		text++;
+	}
+	return hash;
+}
+
+
 void StringClear(String *self)
 {
 	self->text[0] = '\0';
@@ -103,7 +168,7 @@ void StringClear(String *self)
 }
 
 
-void StringReplace(String *self, int pos, size_t count, const char *str)
+static void __StringReplace(String *self, int pos, size_t count, const char *str)
 {
 	int delta;
 	int length;
@@ -140,54 +205,54 @@ void StringReplace(String *self, int pos, size_t count, const char *str)
 }
 
 
-void StringReplaceFmt(String *self, int pos, size_t count, const char *fmt, ...)
+void StringReplace(String *self, int pos, size_t count, const char *fmt, ...)
 {
 	char buf[STRING_MAX_SIZE];
 	va_list va;
 
 	va_start(va, fmt);
 	vsnprintf(buf, sizeof buf, fmt, va);
-	StringReplace(self, pos, count, buf);
+	__StringReplace(self, pos, count, buf);
 }
 
 
-void StringInsert(String *self, int pos, const char *str)
+static void __StringInsert(String *self, int pos, const char *str)
 {
-	StringReplace(self, pos, 0, str);
+	__StringReplace(self, pos, 0, str);
 }
 
 
-void StringInsertFmt(String *self, int pos, const char *fmt, ...)
-{
-	char buf[STRING_MAX_SIZE];
-	va_list va;
-
-	va_start(va, fmt);
-	vsnprintf(buf, sizeof buf, fmt, va);
-	StringInsert(self, pos, buf);
-}
-
-
-void StringConcat(String *self, const char *str)
-{
-	StringReplace(self, self->length, 0, str);
-}
-
-
-void StringConcatFmt(String *self, const char *fmt, ...)
+void StringInsert(String *self, int pos, const char *fmt, ...)
 {
 	char buf[STRING_MAX_SIZE];
 	va_list va;
 
 	va_start(va, fmt);
 	vsnprintf(buf, sizeof buf, fmt, va);
-	StringConcat(self, buf);
+	__StringInsert(self, pos, buf);
+}
+
+
+static void __StringConcat(String *self, const char *str)
+{
+	__StringReplace(self, self->length, 0, str);
+}
+
+
+void StringConcat(String *self, const char *fmt, ...)
+{
+	char buf[STRING_MAX_SIZE];
+	va_list va;
+
+	va_start(va, fmt);
+	vsnprintf(buf, sizeof buf, fmt, va);
+	__StringConcat(self, buf);
 }
 
 
 void StringErase(String *self, int pos, size_t count)
 {
-	StringReplace(self, pos, count, "");
+	__StringReplace(self, pos, count, "");
 }
 
 
@@ -283,3 +348,18 @@ List *StringTokenize(String *self, const char *set)
 	return list;
 }
 
+
+void StringSetCaseSensitive(String *self, int case_sensitive)
+{
+	self->case_sensitive = case_sensitive;
+	if (case_sensitive)
+	{
+		asObject(self)->Compare = StringCompare;
+		asObject(self)->Hash = StringHash;
+	}
+	else
+	{
+		asObject(self)->Compare = StringCompareCase;
+		asObject(self)->Hash = StringHashCase;
+	}
+}
