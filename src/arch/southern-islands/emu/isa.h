@@ -88,20 +88,20 @@ extern char *err_si_isa_note;
 
 
 /* Macros for fast access of instruction words */
-#define SI_INST_SMRD		inst->micro_inst.smrd
-#define SI_INST_SOPP		inst->micro_inst.sopp
-#define SI_INST_SOPK		inst->micro_inst.sopk
-#define SI_INST_SOPC		inst->micro_inst.sopc
-#define SI_INST_SOP1		inst->micro_inst.sop1
-#define SI_INST_SOP2		inst->micro_inst.sop2
-#define SI_INST_VOP1		inst->micro_inst.vop1
-#define SI_INST_VOP2		inst->micro_inst.vop2
-#define SI_INST_VOPC		inst->micro_inst.vopc
-#define SI_INST_VOP3b		inst->micro_inst.vop3b
-#define SI_INST_VOP3a		inst->micro_inst.vop3a
-#define SI_INST_DS		inst->micro_inst.ds
-#define SI_INST_MTBUF		inst->micro_inst.mtbuf
-#define SI_INST_MUBUF		inst->micro_inst.mubuf
+#define SI_INST_SMRD		inst->bytes.smrd
+#define SI_INST_SOPP		inst->bytes.sopp
+#define SI_INST_SOPK		inst->bytes.sopk
+#define SI_INST_SOPC		inst->bytes.sopc
+#define SI_INST_SOP1		inst->bytes.sop1
+#define SI_INST_SOP2		inst->bytes.sop2
+#define SI_INST_VOP1		inst->bytes.vop1
+#define SI_INST_VOP2		inst->bytes.vop2
+#define SI_INST_VOPC		inst->bytes.vopc
+#define SI_INST_VOP3b		inst->bytes.vop3b
+#define SI_INST_VOP3a		inst->bytes.vop3a
+#define SI_INST_DS		inst->bytes.ds
+#define SI_INST_MTBUF		inst->bytes.mtbuf
+#define SI_INST_MUBUF		inst->bytes.mubuf
 
 
 void si_isa_init();

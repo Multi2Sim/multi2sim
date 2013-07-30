@@ -151,7 +151,7 @@ struct si2bin_inst_t *si2bin_inst_create_with_name(char *name, struct list_t *ar
 
 	/* Initialize opcode */
 	inst->info = info;
-	inst->opcode = info->inst_info->opcode;
+	inst->opcode = info->inst_info->op;
 
 	/* Return */
 	return inst;
@@ -249,7 +249,7 @@ void si2bin_inst_add_comment(struct si2bin_inst_t *inst, char *comment)
 
 void si2bin_inst_gen(struct si2bin_inst_t *inst)
 {
-	union si_inst_microcode_t *inst_bytes;
+	SIInstBytes *inst_bytes;
 	struct si_inst_info_t *inst_info;
 	struct si2bin_inst_info_t *info;
 
@@ -277,112 +277,112 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 	case SIInstFormatMTBUF:
 
 		inst_bytes->mtbuf.enc = 0x3a;
-		inst_bytes->mtbuf.op = inst_info->opcode;
+		inst_bytes->mtbuf.op = inst_info->op;
 		break;
 	
 	/* encoding in [:], op in [] */
 	case SIInstFormatMUBUF:
 		
 		inst_bytes->mubuf.enc = 0x38;
-		inst_bytes->mubuf.op = inst_info->opcode;
+		inst_bytes->mubuf.op = inst_info->op;
 		break;
 
 	/* encoding in [:], op in [] */
 	case SIInstFormatMIMG:
 		
 		inst_bytes->mimg.enc = 0x3c;
-		inst_bytes->mimg.op = inst_info->opcode;
+		inst_bytes->mimg.op = inst_info->op;
 		break;
 
 	/* encoding in [31:27], op in [26:22] */
 	case SIInstFormatSMRD:
 
 		inst_bytes->smrd.enc = 0x18;
-		inst_bytes->smrd.op = inst_info->opcode;
+		inst_bytes->smrd.op = inst_info->op;
 		break;
 	
 	/* encoding in [31:26], op in [25:28] */
 	case SIInstFormatDS:
 		
 		inst_bytes->ds.enc = 0x36;
-		inst_bytes->ds.op = inst_info->opcode;
+		inst_bytes->ds.op = inst_info->op;
 		break;
 
 	/* encoding in [31:23], op in [22:16] */
 	case SIInstFormatSOPC:
 		
 		inst_bytes->sopc.enc = 0x17e;
-		inst_bytes->sopc.op = inst_info->opcode;
+		inst_bytes->sopc.op = inst_info->op;
 		break;
 
 	/* encoding in [31:23], op in [15:8] */
 	case SIInstFormatSOP1:
 
 		inst_bytes->sop1.enc = 0x17d;
-		inst_bytes->sop1.op = inst_info->opcode;
+		inst_bytes->sop1.op = inst_info->op;
 		break;
 
 	/* encoding in [31:30], op in [29:23] */
 	case SIInstFormatSOP2:
 
 		inst_bytes->sop2.enc = 0x2;
-		inst_bytes->sop2.op = inst_info->opcode;
+		inst_bytes->sop2.op = inst_info->op;
 		break;
 
 	/* encoding in [31:23], op in [22:16] */
 	case SIInstFormatSOPP:
 
 		inst_bytes->sopp.enc = 0x17f;
-		inst_bytes->sopp.op = inst_info->opcode;
+		inst_bytes->sopp.op = inst_info->op;
 		break;
 	
 	/* encoding in [:], op in [] */
 	case SIInstFormatSOPK:
 		
 		inst_bytes->sopk.enc = 0xb;
-		inst_bytes->sopk.op = inst_info->opcode;
+		inst_bytes->sopk.op = inst_info->op;
 		break;
 
 	/* encoding in [:], op in [] */
 	case SIInstFormatVOPC:
 		
 		inst_bytes->vopc.enc = 0x3e;
-		inst_bytes->vopc.op = inst_info->opcode;
+		inst_bytes->vopc.op = inst_info->op;
 		break;
 
 	/* encoding in [31:25], op in [16:9] */
 	case SIInstFormatVOP1:
 
 		inst_bytes->vop1.enc = 0x3f;
-		inst_bytes->vop1.op = inst_info->opcode;
+		inst_bytes->vop1.op = inst_info->op;
 		break;
 
 	/* encoding in [31], op in [30:25] */
 	case SIInstFormatVOP2:
 
 		inst_bytes->vop2.enc = 0x0;
-		inst_bytes->vop2.op = inst_info->opcode;
+		inst_bytes->vop2.op = inst_info->op;
 		break;
 
 	/* encoding in [31:26], op in [25:17] */
 	case SIInstFormatVOP3a:
 
 		inst_bytes->vop3a.enc = 0x34;
-		inst_bytes->vop3a.op = inst_info->opcode;
+		inst_bytes->vop3a.op = inst_info->op;
 		break;
 
 	/* encoding in [31:26], op in [25:17] */
 	case SIInstFormatVOP3b:
 
 		inst_bytes->vop3a.enc = 0x34;
-		inst_bytes->vop3a.op = inst_info->opcode;
+		inst_bytes->vop3a.op = inst_info->op;
 		break;
 
 	/* encoding in [:], op in [] */
 	case SIInstFormatVINTRP:
 		
 		inst_bytes->vintrp.enc = 0x32;
-		inst_bytes->vintrp.op = inst_info->opcode;
+		inst_bytes->vintrp.op = inst_info->op;
 		break;
 
 	/* encoding in [:], op in [] */
@@ -603,7 +603,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 			}
 
 			/* Restriction in vector register range */
-			switch (inst_info->inst)
+			switch (inst_info->opcode)
 			{
 
 			case SI_INST_TBUFFER_LOAD_FORMAT_X:
@@ -685,7 +685,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 				si2bin_yyerror("base register must be multiple of 2");
 
 			/* Restrictions for high register */
-			switch (inst_info->inst)
+			switch (inst_info->opcode)
 			{
 
 			case SI_INST_S_LOAD_DWORDX2:
@@ -719,7 +719,7 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 		case si2bin_token_series_sdst:
 
 			/* Restrictions for high register */
-			switch (inst_info->inst)
+			switch (inst_info->opcode)
 			{
 
 			case SI_INST_S_LOAD_DWORDX2:

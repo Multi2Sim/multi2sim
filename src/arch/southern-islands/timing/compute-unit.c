@@ -562,8 +562,8 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 				list_index++;
 				continue;
 			}
-			if (uop->inst.micro_inst.sopp.op <= 1 || 
-				uop->inst.micro_inst.sopp.op >= 10)
+			if (uop->inst.bytes.sopp.op <= 1 || 
+				uop->inst.bytes.sopp.op >= 10)
 			{
 				list_index++;
 				continue;
@@ -637,8 +637,8 @@ void si_compute_unit_issue_oldest(struct si_compute_unit_t *compute_unit,
 				continue;
 			}
 			if (uop->inst.info->fmt == SIInstFormatSOPP && 
-			    uop->inst.micro_inst.sopp.op > 1 && 
-				uop->inst.micro_inst.sopp.op < 10)
+			    uop->inst.bytes.sopp.op > 1 && 
+				uop->inst.bytes.sopp.op < 10)
 			{
 				list_index++;
 				continue;
@@ -995,8 +995,8 @@ void si_compute_unit_issue_first(struct si_compute_unit_t *compute_unit,
 		case SIInstFormatSOPP:
 		{
 			/* Branch Unit */
-			if (uop->inst.micro_inst.sopp.op > 1 &&
-				uop->inst.micro_inst.sopp.op < 10)
+			if (uop->inst.bytes.sopp.op > 1 &&
+				uop->inst.bytes.sopp.op < 10)
 			{
 				/* Stall if max branch instructions 
 				 * already issued */
