@@ -214,7 +214,7 @@ struct opencl_command_t *opencl_command_create(
 	/* Completion event */
 	if (done_event_ptr)
 	{
-		command->done_event = opencl_event_create(command_queue);
+		command->done_event = opencl_event_create(command_queue, type);
 		*done_event_ptr = command->done_event;
 		if (clRetainEvent(*done_event_ptr) != CL_SUCCESS)
 			fatal("%s: clRetainEvent failed on done event", __FUNCTION__);
