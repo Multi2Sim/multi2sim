@@ -60,6 +60,12 @@ int first_done_strategy_get_partition(void *inst, int id, int desired_groups, un
 	else
 	{
 		unsigned int size = info->trial_num * total_parts / info->trial_den;
+		unsigned int left = total_parts - info->num_parts_assigned;
+		if (size == 0)
+			size = 1;
+
+		if (size > left)
+			size = left; /* could be zero again. that is ok. */
 		populate_partition_info(info->num_parts_assigned, size, info->part_dim, info->part, group_offset, group_count);
 		info->num_parts_assigned += size;
 		info->dev_done[id] = 1;
