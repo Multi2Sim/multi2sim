@@ -167,12 +167,25 @@ void partition_issue_log_verify(struct partition_issue_log_t *log, FILE *show_er
 				part_nd_address(kernel->num_dims, j, kernel->groups, cur);
 				
 				if (part_is_in_range(kernel->num_dims, cur, offset, size))
+				{
+					if (wg[j] == 1)
+					{
+						fprintf(stderr, "Kernel %d is doing the same work twice\n", i);
+						abort();
+					}	
 					wg[j] = 1;
+				}
 			}
 			entry++;
 		}
 		for (j = 0; j < num_wg; j++)
-			assert(wg[j] != 0);
+		{
+			if (wg[j] == 0)
+			{
+				fprintf(stderr, "Kernel number %d is incomplete. Missing %d\n", i, j);
+				abort();
+			}
+		}
 		
 		free(wg);
 	}
