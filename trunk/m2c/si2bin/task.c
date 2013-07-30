@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/inst.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/elf-encode.h>
 #include <lib/util/list.h>

@@ -25,6 +25,7 @@
 #include <src/driver/opengl/si-shader.h>
 
 #include "asm.h"
+#include "inst.h"
 #include "fetch-shader.h"
 
 

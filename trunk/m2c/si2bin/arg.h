@@ -20,7 +20,7 @@
 #ifndef M2C_SI2BIN_ARG_H
 #define M2C_SI2BIN_ARG_H
 
-#include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/inst.h>
 #include <lib/util/misc.h>
 
 #include <stdio.h>
