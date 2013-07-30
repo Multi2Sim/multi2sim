@@ -42,7 +42,7 @@ struct hash_table_elem_t
 };
 
 
-struct hash_table_elem_t *hash_table_elem_create(char *key, void *data)
+static struct hash_table_elem_t *hash_table_elem_create(char *key, void *data)
 {
 	struct hash_table_elem_t *elem;
 
@@ -56,7 +56,7 @@ struct hash_table_elem_t *hash_table_elem_create(char *key, void *data)
 }
 
 
-void hash_table_elem_free(struct hash_table_elem_t *elem)
+static void hash_table_elem_free(struct hash_table_elem_t *elem)
 {
 	free(elem->key);
 	free(elem);

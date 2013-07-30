@@ -68,7 +68,6 @@ void StringCreate(String *self, const char *text)
 	self->text = xstrdup(text ? text : "");
 	self->length = strlen(text);
 	self->size = self->length + 1;
-	self->case_sensitive = 1;
 
 	/* Virtual functions */
 	asObject(self)->Dump = StringDump;
@@ -89,7 +88,6 @@ Object *StringClone(Object *self)
 	String *string;
 
 	string = new(String, asString(self)->text);
-	StringSetCaseSensitive(string, asString(self)->case_sensitive);
 	return asObject(string);
 }
 
@@ -346,20 +344,4 @@ List *StringTokenize(String *self, const char *set)
 
 	/* Return token list */
 	return list;
-}
-
-
-void StringSetCaseSensitive(String *self, int case_sensitive)
-{
-	self->case_sensitive = case_sensitive;
-	if (case_sensitive)
-	{
-		asObject(self)->Compare = StringCompare;
-		asObject(self)->Hash = StringHash;
-	}
-	else
-	{
-		asObject(self)->Compare = StringCompareCase;
-		asObject(self)->Hash = StringHashCase;
-	}
 }

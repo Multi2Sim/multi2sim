@@ -37,11 +37,6 @@ CLASS_BEGIN(String, Object)
 	/* Space allocated for buffer 'text' */
 	size_t size;
 
-	/* Flag indicating whether this string will compare and hash in a case
-	 * sensitive manner. This flag is true by default. It should be modified
-	 * only with a call to function 'StringSetCaseSensitive'. */
-	int case_sensitive;
-
 CLASS_END(String)
 
 void StringCreate(String *self, const char *str);
