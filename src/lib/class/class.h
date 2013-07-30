@@ -177,14 +177,32 @@ void ObjectDump(Object *self, FILE *f);
 
 #define new_ctor(name, ctor, ...) \
 	({ \
-		name *__p = __class_new(&name##Class, __FILE__, __LINE__, #name); \
+		name *__p = xcalloc(1, name##Class.size); \
+		__class_new(__p, &name##Class, __FILE__, __LINE__, #name); \
 		name##ctor(__p, ##__VA_ARGS__); \
 		__p; \
 	})
 
 #define new(name, ...) new_ctor(name, Create, ##__VA_ARGS__)
 
-#define delete(var) class_delete((var))
+#define new_static_ctor(p, name, ctor, ...) \
+	{ \
+		name *__p = (p); \
+		__class_new(__p, &name##Class, __FILE__, __LINE__, #name); \
+		name##ctor(__p, ##__VA_ARGS__); \
+	}
+
+#define new_static(p, name, ...) \
+	new_static_ctor((p), name, Create, ##__VA_ARGS__)
+
+#define delete(p) \
+	{ \
+		void *__p = (p); \
+		class_delete(__p); \
+		free(__p); \
+	}
+
+#define delete_static(p) class_delete((p))
 
 
 extern struct class_t *class_list_head;
@@ -194,13 +212,19 @@ void class_init(void);
 void class_register(struct class_t *c);
 unsigned int class_compute_id(char *name);
 
+
 #ifdef NDEBUG
-#define __class_new(c, file, line, name) class_new(c)
-void *class_new(struct class_t *c);
+
+#define __class_new(p, c, file, line, name) class_new((p), c)
+void class_new(void *p, struct class_t *c);
+
 #else
-#define __class_new(c, file, line, name) class_new(c, file, line, name)
-void *class_new(struct class_t *c, char *file, int line, char *name);
+
+#define __class_new(p, c, file, line, name) class_new((p), c, file, line, name)
+void class_new(void *p, struct class_t *c, char *file, int line, char *name);
+
 #endif
+
 
 void class_delete(void *p);
 int class_instance_of(void *p, struct class_t *c);
