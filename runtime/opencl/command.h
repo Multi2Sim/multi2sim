@@ -29,14 +29,14 @@ typedef void (*opencl_command_func_t)(struct opencl_command_t *command);
 enum opencl_command_type_t
 {
 	opencl_command_invalid = 0,
-	opencl_command_nop,
-	opencl_command_end,
-	opencl_command_mem_read,
-	opencl_command_mem_write,
-	opencl_command_mem_copy,
-	opencl_command_map_buffer,
-	opencl_command_unmap_buffer,
-	opencl_command_launch_ndrange
+	opencl_command_nop = 1,
+	opencl_command_end = 2,
+	opencl_command_mem_read = CL_COMMAND_READ_BUFFER,
+	opencl_command_mem_write = CL_COMMAND_WRITE_BUFFER,
+	opencl_command_mem_copy = CL_COMMAND_COPY_BUFFER,
+	opencl_command_map_buffer = CL_COMMAND_MAP_BUFFER,
+	opencl_command_unmap_buffer = CL_COMMAND_UNMAP_MEM_OBJECT,
+	opencl_command_launch_ndrange = CL_COMMAND_NDRANGE_KERNEL
 };
 
 
