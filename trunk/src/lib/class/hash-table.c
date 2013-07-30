@@ -21,6 +21,7 @@
 #include <lib/util/debug.h>
 
 #include "hash-table.h"
+#include "string.h"
 
 
 /*
@@ -35,22 +36,21 @@ struct hash_table_elem_t
 };
 
 
-struct hash_table_elem_t *hash_table_elem_create(Object *key, Object *data)
+static struct hash_table_elem_t *hash_table_elem_create(void)
 {
 	struct hash_table_elem_t *elem;
 
 	/* Initialize */
 	elem = xcalloc(1, sizeof(struct hash_table_elem_t));
-	elem->key = key;
-	elem->data = data;
 
 	/* Return */
 	return elem;
 }
 
 
-void hash_table_elem_free(struct hash_table_elem_t *elem)
+static void hash_table_elem_free(struct hash_table_elem_t *elem)
 {
+	delete(elem->key);
 	free(elem);
 }
 
@@ -61,20 +61,35 @@ void hash_table_elem_free(struct hash_table_elem_t *elem)
  * Class 'HashTable'
  */
 
+static char *hash_table_err_virtual_functions =
+	"\tA class used as a key for a hash table must override virtual\n"
+	"\tfunctions 'Clone', 'Compare', and 'Hash'.\n";
+
+static char *hash_table_err_key_class =
+	"\tThe hash table accepts any class for its key. But once the first\n"
+	"\tkey is inserted, all following keys must be of the same class.\n";
+
+
 static struct hash_table_elem_t *HashTableFind(HashTable *self, Object *key,
 		int *index_ptr)
 {
 	struct hash_table_elem_t *elem;
 	int index;
 
+	/* Check availability of call-backs */
+	assert(self->key_class);
+	assert(self->KeyClone);
+	assert(self->KeyHash);
+	assert(self->KeyCompare);
+
 	/* Get index */
-	index = key->Hash(key) % self->size;
+	index = self->KeyHash(key) % self->size;
 	if (index_ptr)
 		*index_ptr = index;
 
 	/* Look for element */
 	for (elem = self->array[index]; elem; elem = elem->next)
-		if (!key->Compare(key, elem->key))
+		if (!self->KeyCompare(key, elem->key))
 			return elem;
 
 	/* Not found */
@@ -92,6 +107,13 @@ static void HashTableGrow(HashTable *self)
 	struct hash_table_elem_t *elem;
 
 	Object *key;
+
+	/* If we are growing, we must have some object in the table for sure.
+	 * We rely on the key call-backs for re-hashing. */
+	assert(self->key_class);
+	assert(self->KeyClone);
+	assert(self->KeyHash);
+	assert(self->KeyCompare);
 
 	/* Save old array */
 	old_size = self->size;
@@ -111,7 +133,7 @@ static void HashTableGrow(HashTable *self)
 
 			/* Insert in new vector */
 			key = elem->key;
-			index = key->Hash(key) % self->size;
+			index = self->KeyHash(key) % self->size;
 			elem->next = self->array[index];
 			self->array[index] = elem;
 		}
@@ -119,22 +141,6 @@ static void HashTableGrow(HashTable *self)
 
 	/* Free old vector */
 	free(old_array);
-}
-
-
-static void HashTableValidateKey(HashTable *self, Object *key)
-{
-#ifndef NDEBUG
-	/* Check for valid 'key' object */
-	if (!key->Clone || !key->Hash || !key->Compare)
-	{
-		fprintf(stderr, "key: ");
-		ObjectDump(key, stderr);
-		panic("%s: object 'key' must override virtual functions "
-				"'Clone', 'Compare', and 'Hash'",
-				__FUNCTION__);
-	}
-#endif
 }
 
 
@@ -178,6 +184,47 @@ void HashTableClear(HashTable *self)
 		}
 	}
 
+	/* Reset call-backs and key class */
+	self->key_class = NULL;
+	self->KeyClone = NULL;
+	self->KeyCompare = NULL;
+	self->KeyHash = NULL;
+
+	/* Reset count */
+	self->count = 0;
+	self->error = HashTableErrOK;
+}
+
+
+void HashTableDeleteObjects(HashTable *self)
+{
+	struct hash_table_elem_t *elem;
+	struct hash_table_elem_t *elem_next;
+
+	int i;
+
+	/* Free elements */
+	for (i = 0; i < self->size; i++)
+	{
+		while ((elem = self->array[i]))
+		{
+			/* Delete object */
+			if (elem->data)
+				delete(elem->data);
+
+			/* Free element */
+			elem_next = elem->next;
+			hash_table_elem_free(elem);
+			self->array[i] = elem_next;
+		}
+	}
+
+	/* Reset call-backs and key class */
+	self->key_class = NULL;
+	self->KeyClone = NULL;
+	self->KeyCompare = NULL;
+	self->KeyHash = NULL;
+
 	/* Reset count */
 	self->count = 0;
 	self->error = HashTableErrOK;
@@ -186,10 +233,25 @@ void HashTableClear(HashTable *self)
 
 void HashTableSetCaseSensitive(HashTable *self, int case_sensitive)
 {
-	/* Only allowed if hash table is empty */
+	/* Change key call-backs if table is not empty */
 	if (self->count)
-		panic("%s: only allowed for empty hash table",
-				__FUNCTION__);
+	{
+		if (self->key_class != &StringClass)
+			panic("%s: only allowed for string hash tables",
+					__FUNCTION__);
+
+		/* Set new key call-backs */
+		if (case_sensitive)
+		{
+			self->KeyCompare = StringCompare;
+			self->KeyHash = StringHash;
+		}
+		else
+		{
+			self->KeyCompare = StringCompareCase;
+			self->KeyHash = StringHashCase;
+		}
+	}
 	
 	/* Set new value */
 	self->case_sensitive = case_sensitive;
@@ -202,14 +264,53 @@ Object *HashTableInsert(HashTable *self, Object *key, Object *data)
 	struct hash_table_elem_t *elem;
 	int index;
 
-	/* Check valid key */
-	HashTableValidateKey(self, key);
+#ifndef NDEBUG
+	/* Check key class compatibility */
+	if (self->key_class)
+	{
+		if (class_of(key) != self->key_class)
+			panic("%s: key class mismatch ('%s' vs '%s').\n%s",
+					__FUNCTION__, class_of(key)->name,
+					self->key_class->name,
+					hash_table_err_key_class);
+	}
+	else
+	{
+		if (!key->Clone || !key->Hash || !key->Compare)
+		{
+			fprintf(stderr, "key: ");
+			ObjectDump(key, stderr);
+			panic("%s: invalid key class '%s'.\n%s",
+					__FUNCTION__, class_of(key)->name,
+					hash_table_err_virtual_functions);
+		}
+	}
+#endif
+
+	/* Store key class */
+	if (!self->key_class)
+	{
+		/* Set key call-backs */
+		self->key_class = class_of(key);
+		self->KeyClone = key->Clone;
+		self->KeyCompare = key->Compare;
+		self->KeyHash = key->Hash;
+
+		/* For the particular case where the keys are of type 'String'
+		 * and the hash table is characterized as case-insensitive, we
+		 * override the hash and compare key call-backs. */
+		if (!self->case_sensitive && isString(key))
+		{
+			self->KeyCompare = StringCompareCase;
+			self->KeyHash = StringHashCase;
+		}
+	}
 
 	/* Rehashing */
 	if (self->count >= self->size / 2)
 		HashTableGrow(self);
 
-	/* Element must not exists */
+	/* Element must not exist */
 	elem = HashTableFind(self, key, &index);
 	if (elem)
 	{
@@ -218,7 +319,9 @@ Object *HashTableInsert(HashTable *self, Object *key, Object *data)
 	}
 
 	/* Create element and insert at the head of collision list */
-	elem = hash_table_elem_create(key, data);
+	elem = hash_table_elem_create();
+	elem->key = self->KeyClone(key);
+	elem->data = data;
 	elem->next = self->array[index];
 	self->array[index] = elem;
 
@@ -232,12 +335,30 @@ Object *HashTableInsert(HashTable *self, Object *key, Object *data)
 }
 
 
+Object *HashTableInsertString(HashTable *self, const char *key, Object *data)
+{
+	Object *object;
+	String string;
+
+	new_static(&string, String, key);
+	object = HashTableInsert(self, asObject(&string), data);
+	delete_static(&string);
+
+	return object;
+}
+
+
 Object *HashTableSet(HashTable *self, Object *key, Object *data)
 {
 	struct hash_table_elem_t *elem;
 
-	/* Check valid key */
-	HashTableValidateKey(self, key);
+	/* If table is empty, don't even try to find it, since the key
+	 * call-backs are not available. */
+	if (!self->count)
+	{
+		self->error = HashTableErrNotFound;
+		return NULL;
+	}
 
 	/* Find element */
 	elem = HashTableFind(self, key, NULL);
@@ -254,12 +375,30 @@ Object *HashTableSet(HashTable *self, Object *key, Object *data)
 }
 
 
+Object *HashTableSetString(HashTable *self, const char *key, Object *data)
+{
+	String string;
+	Object *object;
+
+	new_static(&string, String, key);
+	object = HashTableSet(self, asObject(&string), data);
+	delete_static(&string);
+
+	return object;
+}
+
+
 Object *HashTableGet(HashTable *self, Object *key)
 {
 	struct hash_table_elem_t *elem;
 
-	/* Check valid key */
-	HashTableValidateKey(self, key);
+	/* If table is empty, don't even try to find it, since the key
+	 * call-backs are not available. */
+	if (!self->count)
+	{
+		self->error = HashTableErrNotFound;
+		return NULL;
+	}
 
 	/* Find element */
 	elem = HashTableFind(self, key, NULL);
@@ -275,6 +414,19 @@ Object *HashTableGet(HashTable *self, Object *key)
 }
 
 
+Object *HashTableGetString(HashTable *self, const char *key)
+{
+	String string;
+	Object *object;
+
+	new_static(&string, String, key);
+	object = HashTableGet(self, asObject(&string));
+	delete_static(&string);
+
+	return object;
+}
+
+
 Object *HashTableRemove(HashTable *self, Object *key)
 {
 	struct hash_table_elem_t *elem;
@@ -283,16 +435,21 @@ Object *HashTableRemove(HashTable *self, Object *key)
 	int index;
 	Object *data;
 
-	/* Check valid key */
-	HashTableValidateKey(self, key);
+	/* Table is empty. Don't even try to find the element, since the key
+	 * call-backs are not available. */
+	if (!self->count)
+	{
+		self->error = HashTableErrNotFound;
+		return NULL;
+	}
 
 	/* Find element */
-	index = key->Hash(key) % self->size;
+	index = self->KeyHash(key) % self->size;
 	elem_prev = NULL;
 	for (elem = self->array[index]; elem; elem = elem->next)
 	{
 		/* Check if it is this element */
-		if (!key->Compare(key, elem->key))
+		if (!self->KeyCompare(key, elem->key))
 			break;
 
 		/* Record previous element */
@@ -320,8 +477,29 @@ Object *HashTableRemove(HashTable *self, Object *key)
 	assert(self->count > 0);
 	self->count--;
 
+	/* Reset key class if hash table is empty */
+	if (!self->count)
+	{
+		self->key_class = NULL;
+		self->KeyClone = NULL;
+		self->KeyHash = NULL;
+		self->KeyCompare = NULL;
+	}
+
 	/* Return removed object */
 	self->error = HashTableErrOK;
 	return data;
 }
 
+
+Object *HashTableRemoveString(HashTable *self, const char *key)
+{
+	String string;
+	Object *object;
+
+	new_static(&string, String, key);
+	object = HashTableRemove(self, asObject(&string));
+	delete_static(&string);
+
+	return object;
+}
