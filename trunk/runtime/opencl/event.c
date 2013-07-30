@@ -34,7 +34,7 @@
  * Public Functions 
  */
 
-struct opencl_event_t *opencl_event_create(struct opencl_command_queue_t *command_queue)
+struct opencl_event_t *opencl_event_create(struct opencl_command_queue_t *command_queue, cl_command_type type)
 {
 	struct opencl_event_t *event;
 
@@ -44,6 +44,7 @@ struct opencl_event_t *opencl_event_create(struct opencl_command_queue_t *comman
 	event->command_queue = command_queue;
 	pthread_mutex_init(&event->mutex, NULL);
 	pthread_cond_init(&event->cond, NULL);
+	event->type = type;
 
 	/* Register OpenCL object */
 	opencl_object_create(event, OPENCL_OBJECT_EVENT,
@@ -194,8 +195,8 @@ cl_int clGetEventInfo(
 			return CL_SUCCESS;
 
 		case CL_EVENT_COMMAND_TYPE:
-			OPENCL_ARG_NOT_SUPPORTED(param_name);
-			return CL_SUCCESS;
+			return opencl_set_param(&event->type, sizeof event->type,
+				param_value_size, param_value, param_value_size_ret);
 
 		case CL_EVENT_COMMAND_EXECUTION_STATUS:
 			return opencl_set_param(&event->status, sizeof event->status,
@@ -237,7 +238,7 @@ cl_event clCreateUserEvent(
 	}
 
 	/* Initialize event */
-	event = opencl_event_create(NULL);
+	event = opencl_event_create(NULL, CL_COMMAND_USER);
 
 	/* Return event */
 	return event;

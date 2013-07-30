@@ -32,6 +32,7 @@ struct opencl_event_t
 
 	struct opencl_command_queue_t *command_queue;
 	struct opencl_context_t *context;
+	cl_command_type type;
 
 	/* Profiling Information */
 	cl_ulong time_queued;
@@ -42,7 +43,7 @@ struct opencl_event_t
 
 
 /* Create/free */
-struct opencl_event_t *opencl_event_create(struct opencl_command_queue_t *command_queue);
+struct opencl_event_t *opencl_event_create(struct opencl_command_queue_t *command_queue, cl_command_type type);
 void opencl_event_free(struct opencl_event_t *event);
 
 void opencl_event_set_status(struct opencl_event_t *event, cl_int status);
