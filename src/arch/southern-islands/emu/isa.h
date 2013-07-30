@@ -20,6 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_ISA_H
 
+#include <lib/class/class.h>
 
 enum si_isa_write_task_kind_t
 {
@@ -35,7 +36,7 @@ struct si_isa_write_task_t
 {
 	/* All */
 	enum si_isa_write_task_kind_t kind;
-	struct si_inst_t *inst;
+	SIInst *inst;
 
 	/* When 'kind' == SI_ISA_WRITE_TASK_WRITE_DEST */
 	int gpr, rel, chan, index_mode, write_mask;
@@ -111,7 +112,7 @@ struct si_work_item_t;
 union si_reg_t;
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-typedef void (*si_isa_inst_func_t)(struct si_work_item_t *work_item, struct si_inst_t *inst);
+typedef void (*si_isa_inst_func_t)(struct si_work_item_t *work_item, SIInst *inst);
 extern si_isa_inst_func_t *si_isa_inst_func;
 
 /* FIXME

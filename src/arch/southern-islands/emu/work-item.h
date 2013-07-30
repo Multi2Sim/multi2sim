@@ -20,7 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
-#include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/inst.h>
 
 
 #define SI_MAX_LDS_ACCESSES_PER_INST  2

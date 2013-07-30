@@ -40,6 +40,7 @@ CLASS(Emu)
 CLASS(Timing)
 
 CLASS(SIAsm)
+CLASS(SIInst)
 CLASS(SIEmu)
 CLASS(SIGpu)
 CLASS(SINDRange)

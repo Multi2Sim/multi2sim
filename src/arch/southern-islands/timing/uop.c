@@ -43,7 +43,7 @@ static struct repos_t *gpu_uop_repos;
 
 
 #if 0
-static void si_uop_add_src_idep(struct si_uop_t *uop, struct si_inst_t *inst, int src_idx)
+static void si_uop_add_src_idep(struct si_uop_t *uop, SIInst *inst, int src_idx)
 {
 	int sel, rel, chan, neg, abs;
 

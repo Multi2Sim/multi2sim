@@ -15,7 +15,11 @@ libasm_a_SOURCES = \
 	fetch-shader.c \
 	fetch-shader.h \
 	\
+	inst.c \
+	inst.h \
+	\
 	input.c \
 	input.h
+
 INCLUDES = @M2S_INCLUDES@
 

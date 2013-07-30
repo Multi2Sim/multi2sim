@@ -114,7 +114,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	struct si_ndrange_t *ndrange;
 	struct si_work_group_t *work_group;
 	struct si_work_item_t *work_item;
-	struct si_inst_t *inst;
+	SIInst *inst;
 
 	char inst_dump[MAX_INST_STR_SIZE];
 
@@ -142,9 +142,8 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	assert(!wavefront->finished);
 	
 	/* Grab the instruction at PC and update the pointer */
-	wavefront->inst_size = si_inst_decode(
-		ndrange->inst_buffer + wavefront->pc,
-		&wavefront->inst, 0);
+	wavefront->inst_size = SIInstDecode(&wavefront->inst,
+		ndrange->inst_buffer + wavefront->pc, 0);
 
 	/* Stats */
 	asEmu(si_emu)->instructions++;
