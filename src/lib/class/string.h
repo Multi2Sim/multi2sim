@@ -37,19 +37,32 @@ CLASS_BEGIN(String, Object)
 	/* Space allocated for buffer 'text' */
 	size_t size;
 
+	/* Flag indicating whether this string will compare and hash in a case
+	 * sensitive manner. This flag is true by default. It should be modified
+	 * only with a call to function 'StringSetCaseSensitive'. */
+	int case_sensitive;
+
 CLASS_END(String)
 
 void StringCreate(String *self, const char *str);
 void StringDestroy(String *self);
 
-/* Inherited from class 'Object' */
+/* Clone a string object */
+Object *StringClone(Object *self);
+
+/* Dump string into file descriptor */
 void StringDump(Object *self, FILE *f);
-Object *StringCopy(Object *self);
-unsigned int StringHash(Object *self);
 
 /* Compare two strings in alphabetical order, returning -1, 0, or 1 if the first
- * string is less, equal, or greater than the second, respectively. */
+ * string is less, equal, or greater than the second, respectively. The second
+ * version of the function does a case-insensitive comparison. */
 int StringCompare(Object *self, Object *object);
+int StringCompareCase(Object *self, Object *object);
+
+/* Calculate a 32-bit hash value for the string. The second version of the
+ * function provides a case-insensitive hash value. */
+unsigned int StringHash(Object *self);
+unsigned int StringHashCase(Object *self);
 
 /* Convert the string into an empty string */
 void StringClear(String *self);
@@ -57,19 +70,16 @@ void StringClear(String *self);
 /* Replace 'count' characters starting at position 'pos' by the string given in
  * 'text'. Negative values for 'pos' represent positions relative to the end of
  * the string, where -1 is the last character. */
-void StringReplace(String *self, int pos, size_t count, const char *str);
-void StringReplaceFmt(String *self, int pos, size_t count, const char *fmt, ...)
+void StringReplace(String *self, int pos, size_t count, const char *fmt, ...)
 		__attribute__((format(printf, 4, 5)));
 
 /* Insert 'text' at position 'pos' of the string. Negative values for 'pos'
  * represent positions relative to the end of the string. */
-void StringInsert(String *self, int pos, const char *str);
-void StringInsertFmt(String *self, int pos, const char *fmt, ...)
+void StringInsert(String *self, int pos, const char *fmt, ...)
 		__attribute__((format(printf, 3, 4)));
 
 /* Concatenate 'text' with the content of the string. */
-void StringConcat(String *self, const char *str);
-void StringConcatFmt(String *self, const char *fmt, ...)
+void StringConcat(String *self, const char *fmt, ...)
 		__attribute__((format(printf, 2, 3)));
 
 /* Erase 'count' characters starting at position 'pos' of the string. Negative
@@ -92,6 +102,10 @@ void StringTrim(String *self, const char *set);
  * 'set' is a string where each character is a possible separator. The caller is
  * responsible for freeing all returned strings, as well as the list itself. */
 List *StringTokenize(String *self, const char *set);
+
+/* Set a new value for the 'case_sensitive' flag, and update the virtual
+ * functions used to compare and hash the string. */
+void StringSetCaseSensitive(String *self, int case_sensitive);
 
 #endif
 

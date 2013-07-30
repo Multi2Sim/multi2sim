@@ -73,8 +73,8 @@ static void X86ContextDoCreate(X86Context *self, X86Emu *emu)
 	for (i = 0; i < num_nodes; i++)
 		bit_map_set(self->affinity, i, 1, 1);
 
-	/* Create statically allocated instruction */
-	X86InstCreate(&self->inst, emu->as);
+	/* Initialize statically allocate instruction */
+	new_static(&self->inst, X86Inst, emu->as);
 
 	/* Virtual functions */
 	asObject(self)->Dump = X86ContextDump;
@@ -198,7 +198,7 @@ void X86ContextDestroy(X86Context *self)
 			asEmu(emu)->instructions, self->pid);
 
 	/* Static instruction */
-	X86InstDestroy(&self->inst);
+	delete_static(&self->inst);
 }
 
 
