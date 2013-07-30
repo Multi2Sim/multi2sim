@@ -9,6 +9,9 @@ libclass_a_SOURCES = \
 	class.dat \
 	class.h \
 	\
+	hash-table.c \
+	hash-table.h \
+	\
 	list.c \
 	list.h \
 	\
