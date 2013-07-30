@@ -48,7 +48,7 @@ struct si2bin_inst_t *si2bin_inst_create(int opcode, struct list_t *arg_list)
 	inst->arg_list = arg_list;
 
 	/* Check valid opcode */
-	if (!IN_RANGE(opcode, 1, SI_INST_COUNT - 1))
+	if (!IN_RANGE(opcode, 1, SIInstOpcodeCount - 1))
 		fatal("%s: invalid opcode (%d)", __FUNCTION__, opcode);
 
 	/* Get instruction information */
@@ -203,7 +203,7 @@ void si2bin_inst_dump(struct si2bin_inst_t *inst, FILE *f)
 	/* Print words */
 	for (i = 0; i < inst->size / 4; i++)
 	{
-		word = * (int *) &inst->inst_bytes.bytes[i * 4];
+		word = * (int *) &inst->inst_bytes.byte[i * 4];
 		printf("\tword %d:  hex = { %08x },  bin = {", i, word);
 		for (j = 0; j < 32; j++)
 			printf("%s%d", j % 4 ? "" : " ", (word >> (31 - j)) & 1);
@@ -274,119 +274,119 @@ void si2bin_inst_gen(struct si2bin_inst_t *inst)
 	{
 
 	/* encoding in [31:26], op in [18:16] */
-	case SI_FMT_MTBUF:
+	case SIInstFormatMTBUF:
 
 		inst_bytes->mtbuf.enc = 0x3a;
 		inst_bytes->mtbuf.op = inst_info->opcode;
 		break;
 	
 	/* encoding in [:], op in [] */
-	case SI_FMT_MUBUF:
+	case SIInstFormatMUBUF:
 		
 		inst_bytes->mubuf.enc = 0x38;
 		inst_bytes->mubuf.op = inst_info->opcode;
 		break;
 
 	/* encoding in [:], op in [] */
-	case SI_FMT_MIMG:
+	case SIInstFormatMIMG:
 		
 		inst_bytes->mimg.enc = 0x3c;
 		inst_bytes->mimg.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31:27], op in [26:22] */
-	case SI_FMT_SMRD:
+	case SIInstFormatSMRD:
 
 		inst_bytes->smrd.enc = 0x18;
 		inst_bytes->smrd.op = inst_info->opcode;
 		break;
 	
 	/* encoding in [31:26], op in [25:28] */
-	case SI_FMT_DS:
+	case SIInstFormatDS:
 		
 		inst_bytes->ds.enc = 0x36;
 		inst_bytes->ds.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31:23], op in [22:16] */
-	case SI_FMT_SOPC:
+	case SIInstFormatSOPC:
 		
 		inst_bytes->sopc.enc = 0x17e;
 		inst_bytes->sopc.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31:23], op in [15:8] */
-	case SI_FMT_SOP1:
+	case SIInstFormatSOP1:
 
 		inst_bytes->sop1.enc = 0x17d;
 		inst_bytes->sop1.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31:30], op in [29:23] */
-	case SI_FMT_SOP2:
+	case SIInstFormatSOP2:
 
 		inst_bytes->sop2.enc = 0x2;
 		inst_bytes->sop2.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31:23], op in [22:16] */
-	case SI_FMT_SOPP:
+	case SIInstFormatSOPP:
 
 		inst_bytes->sopp.enc = 0x17f;
 		inst_bytes->sopp.op = inst_info->opcode;
 		break;
 	
 	/* encoding in [:], op in [] */
-	case SI_FMT_SOPK:
+	case SIInstFormatSOPK:
 		
 		inst_bytes->sopk.enc = 0xb;
 		inst_bytes->sopk.op = inst_info->opcode;
 		break;
 
 	/* encoding in [:], op in [] */
-	case SI_FMT_VOPC:
+	case SIInstFormatVOPC:
 		
 		inst_bytes->vopc.enc = 0x3e;
 		inst_bytes->vopc.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31:25], op in [16:9] */
-	case SI_FMT_VOP1:
+	case SIInstFormatVOP1:
 
 		inst_bytes->vop1.enc = 0x3f;
 		inst_bytes->vop1.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31], op in [30:25] */
-	case SI_FMT_VOP2:
+	case SIInstFormatVOP2:
 
 		inst_bytes->vop2.enc = 0x0;
 		inst_bytes->vop2.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31:26], op in [25:17] */
-	case SI_FMT_VOP3a:
+	case SIInstFormatVOP3a:
 
 		inst_bytes->vop3a.enc = 0x34;
 		inst_bytes->vop3a.op = inst_info->opcode;
 		break;
 
 	/* encoding in [31:26], op in [25:17] */
-	case SI_FMT_VOP3b:
+	case SIInstFormatVOP3b:
 
 		inst_bytes->vop3a.enc = 0x34;
 		inst_bytes->vop3a.op = inst_info->opcode;
 		break;
 
 	/* encoding in [:], op in [] */
-	case SI_FMT_VINTRP:
+	case SIInstFormatVINTRP:
 		
 		inst_bytes->vintrp.enc = 0x32;
 		inst_bytes->vintrp.op = inst_info->opcode;
 		break;
 
 	/* encoding in [:], op in [] */
-	case SI_FMT_EXP:
+	case SIInstFormatEXP:
 		
 		inst_bytes->exp.enc = 0x3e;
 		/* No opcode: only 1 instruction */
