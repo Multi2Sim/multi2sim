@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
+#include <arch/southern-islands/asm/asm.h>
 #include <arch/x86/emu/emu.h>
 #include <driver/opencl/opencl.h>
 #include <lib/mhandle/mhandle.h>

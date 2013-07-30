@@ -20,7 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WAVEFRONT_H
 
-#include <arch/southern-islands/asm/asm.h>
+#include <arch/southern-islands/asm/inst.h>
 
 
 struct si_wavefront_t
@@ -41,7 +41,7 @@ struct si_wavefront_t
 	unsigned int pc;
 
 	/* Current instruction */
-	struct si_inst_t inst;
+	SIInst inst;
 	int inst_size;
 
 	/* Pointer to work_items */
