@@ -710,7 +710,7 @@ text_stmt
 
 		/* Generate code */
 		si2bin_inst_gen(inst);
-		elf_enc_buffer_write(si2bin_entry->text_section_buffer, inst->inst_bytes.bytes, inst->size);
+		elf_enc_buffer_write(si2bin_entry->text_section_buffer, inst->inst_bytes.byte, inst->size);
 		
 		/* Dump Instruction Info */
 		//si2bin_inst_dump(inst, stdout);

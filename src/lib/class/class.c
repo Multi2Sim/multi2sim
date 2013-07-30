@@ -153,18 +153,14 @@ static char *class_err_register =
 	"\tyou use in your program.\n";
 
 #ifdef NDEBUG
-void *class_new(struct class_t *c)
+void class_new(void *p, struct class_t *c)
 #else
-void *class_new(struct class_t *c, char *file, int line, char *name)
+void class_new(void *p, struct class_t *c, char *file, int line, char *name)
 #endif
 {
 	struct class_info_t *info;
 	struct class_info_t *child_info;
 	struct class_info_t *parent_info;
-	void *p;
-
-	/* Allocate */
-	p = xcalloc(1, c->size);
 
 	/* Initialize 'class_info' fields */
 	child_info = NULL;
@@ -199,15 +195,19 @@ void *class_new(struct class_t *c, char *file, int line, char *name)
 		child_info = info;
 		info = parent_info;
 	} while (c);
-
-	/* Return */
-	return p;
 }
 
 
 void class_delete(void *p)
 {
 	struct class_info_t *info;
+
+#ifndef NDEBUG
+	/* Check for NULL pointer */
+	if (!p)
+		panic("%s: deleting NULL class instance",
+				__FUNCTION__);
+#endif
 
 	/* Find the child-most destructor */
 	info = &((Object *) p)->__info;
@@ -222,9 +222,6 @@ void class_delete(void *p)
 		info->c->destroy(p);
 		info = info->parent;
 	}
-
-	/* Free memory */
-	free(p);
 }
 
 
