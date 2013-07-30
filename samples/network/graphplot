@@ -24,15 +24,15 @@ TotalColors = 40
 
 ChartColors = [
 	[0.823, 0.411, 0.117], # Chocolate
-	[0.647, 0.164, 0.164], # Brown
+	[0.686, 0.933, 0.933], # PaleBlue 
 	[0.294, 0.000, 0.509], # Indigo
 	[0.000, 0.000, 0.803], # Dodge Blue
 	[0.501, 0.000, 0.501], # Purple
 	[0.000, 0.749, 1.000], # Deep Sky Blue
-	[0.603, 0.803, 0.196], # Yello Green
-	[0.486, 0.988, 0.000], # Lawn Green
-	[0.196, 0.803, 0.196], # Lime Green
-	[0.000, 0.501, 0.000]  # Green
+	[1.000, 0.078, 0.576], # Deep Pink
+	[1.000, 0.411, 0.705], # Hot Pink
+	[1.000, 0.713, 0.756], # Light Pink
+	[0.780, 0.082, 0.521] # Medium Violet Red
 ]
 GrayColors = [
 	[0.000, 0.000, 0.000],
@@ -49,10 +49,10 @@ GrayColors = [
 ]
 GradiantColor = [
 	[0.890, 0.890, 0.890], # Gray
-	[0.780, 0.082, 0.521], # Medium Violet Red
-	[1.000, 0.078, 0.576], # Deep Pink
-	[1.000, 0.411, 0.705], # Hot Pink
-	[1.000, 0.713, 0.756], # Light Pink
+	[0.000, 0.501, 0.000], # Green
+	[0.196, 0.803, 0.196], # Lime Green
+	[0.486, 0.988, 0.000], # Lawn Green
+	[0.596, 0.984, 0.596], # Pale Green
 	[0.941, 0.901, 0.549], # Khaki
 	[1.000, 1.000, 0.000], # Yellow
 	[1.000, 0.843, 0.000], # Light Orange 
@@ -62,7 +62,7 @@ GradiantColor = [
 ]
 # Global Variables
 
-GraphPlotName = "GraphPlot 1.0.3"
+GraphPlotName = "GraphPlot 1.0.4"
 Title = ""
 YRange = []
 XRange = []
@@ -70,7 +70,7 @@ XLabel = ""
 YLabel = ""
 YRangeDiff = 0.0
 XRangeDiff = 0.0
-Copyright = True
+Copyright = False 
 PaintColor = True 
 Legend = False
 Nodes = []
@@ -82,11 +82,11 @@ PageY1 = 0
 PageX2 = 0
 PageY2 = 0
 
-BoxH = 60
-BoxW = 12
+BoxH = 70
+BoxW = 18
 YLabelDistance = 50
 XLabelDistance = 50
-TitleHeight = 0
+TitleHeight = 35 
 # Plot parameters
 PlotOrigX = 100.0
 PlotOrigY = 500.0
@@ -99,7 +99,6 @@ Legendwidth = 60
 KeyHeight = 0
 XLabelHeight = 0
 GroupsHeight = 0
-TitleHeight = 0
 
 KeyRowHeight = 15.0
 KeyColumns = 2
@@ -366,7 +365,7 @@ def DrawTitle(f):
 
 def DrawLegend(f):
 	if Legend:
-		f.write("0 0 0 C Tb %f %f N " % (PlotOrigX - Legendwidth, PlotOrigY + PlotHeight - Legendwidth))
+		f.write("0 0 0 C Tbs %f %f N " % (PlotOrigX - Legendwidth, PlotOrigY + PlotHeight - Legendwidth))
 		f.write("(%s) Cshow stroke\n" % "Utilization")
 		for Color in range(0,11):
 			BoxX = PlotOrigX - Legendwidth - Legendwidth/2
@@ -376,7 +375,7 @@ def DrawLegend(f):
 			f.write("stroke\n")
 
 
-			f.write("0 0 0 C Tt %f %f N " % (BoxX - BoxW, BoxY + BoxH/20 ))
+			f.write("0 0 0 C Ts %f %f N " % (BoxX - BoxW, BoxY + BoxH/20 ))
 			f.write("(%d%%) Cshow stroke\n " % (Color * 10));
 
 				
@@ -402,8 +401,8 @@ def DrawNodes(f):
 			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
 				% (ChartColors[5][0], ChartColors[5][1], ChartColors[5][2], Center, PlotOrigY + Y, Width / 2))
 
-			f.write("0 0 0 C Tt %f %f N " % (PlotOrigX + X, PlotOrigY ++ Y + \
-				 (0.3 *(PlotHeight / (YRangeDiff + 2)))))
+			f.write("0 0 0 C Tsk %f %f N " % (PlotOrigX + X, PlotOrigY + Y - \
+				 (NodeWidthRatio * 0.1 *(PlotHeight / (YRangeDiff + 2)))))
 			f.write("(%s) Cshow stroke\n" % Node[0])
 		elif Node[1] == 1:
 
@@ -412,10 +411,10 @@ def DrawNodes(f):
 				% (Center, PlotOrigY + Y, Width / 2 + 0.5))
 
 			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
-				% (ChartColors[2][0], ChartColors[2][1], ChartColors[2][2], Center, PlotOrigY + Y, Width / 2))
+				% (ChartColors[1][0], ChartColors[1][1], ChartColors[1][2], Center, PlotOrigY + Y, Width / 2))
 
-			f.write("0 0 0 C Tt %f %f N " % (PlotOrigX + X, PlotOrigY + Y + \
-				(0.3 *(PlotHeight / (YRangeDiff + 2)))))
+			f.write("0 0 0 C Tss %f %f N " % (PlotOrigX + X, PlotOrigY + Y  \
+				- (SwitchWidthRatio * 0.1 *(PlotHeight / (YRangeDiff + 2)))))
 			f.write("(%s) Cshow stroke\n" % Node[0])
 		elif Node[1] == 2:
 			Width = PlotWidth * DummyWidthRatio / (max(XRangeDiff, YRangeDiff) + 1)
@@ -423,7 +422,7 @@ def DrawNodes(f):
 				% (Center, PlotOrigY + Y, Width / 2 + 0.5))
 
 			f.write("%f %f %f setrgbcolor %f %f %f 0 360 arc closepath fill stroke\n" \
-				% (ChartColors[7][0], ChartColors[7][1], ChartColors[7][2], Center, PlotOrigY + Y, Width / 2))
+				% (ChartColors[3][0], ChartColors[3][1], ChartColors[3][2], Center, PlotOrigY + Y, Width / 2))
 		
 		elif Node[1] == 3:
 			if Node[4] <= 10:
@@ -557,9 +556,12 @@ LTdef
 /Rshow {dup stringwidth pop neg 0 R show} def
 /Cshow {dup stringwidth pop -2 div 0 R show} def
 /Tt {/Times-Roman findfont 5 scalefont setfont} def
-/Ts {/Helvetica findfont 8 scalefont setfont} def
-/Tn {/Helvetica findfont 11 scalefont setfont} def
+/Ts {/Helvetica findfont 7 scalefont setfont} def
+/Tbs {/Helvetica findfont 11 scalefont setfont} def
+/Tn {/Helvetica findfont 9 scalefont setfont} def
 /Tb {/Times-Roman findfont 14 scalefont setfont} def
+/Tss {/Sans-serif findfont 10 scalefont setfont} def
+/Tsk {/Sans-serif findfont 7 scalefont setfont} def
 """)
 
 	f.write("""
@@ -653,13 +655,13 @@ def Plot(FileName):
 	
 	# Trailer
 	PageX1 = PlotOrigX - YLabelDistance - Legendwidth/2
-	PageY1 = PlotOrigY - XLabelDistance
+	PageY1 = PlotOrigY - XLabelDistance + TitleHeight 
 	PageX2 = PlotOrigX + PlotWidth + YLabelDistance + Legendwidth/2
-	PageY2 = PlotOrigY + PlotHeight + TitleHeight + 5
+	PageY2 = PlotOrigY + PlotHeight + 15
 	if YLabel != "":
 		PageX1 = PageX1 - 20
 	if Title != "":
-		PageY2 = PageY2 + 15
+		PageY1 = PageY1 - TitleHeight
 	if Legend:
 		PageX2 = PageX2 - Legendwidth
 		PageX1 = PageX1 - Legendwidth
@@ -698,7 +700,7 @@ The format of <datafile> is:
 
 Possible pairs key-value are:
 
-    Title = 'String'		String appearing over the plot.
+    Title = 'String'		String appearing under the plot.
     YRange = <MinY> <MaxY>	Starting and ending plotted y-coordinates.
     XLabel = 'String'		X-axis label.
     YLabel = 'String'		Y-axis label.
