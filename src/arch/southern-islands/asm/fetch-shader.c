@@ -58,17 +58,17 @@ static void si_fs_inst_free(struct si_fs_inst_t *inst)
 
 static void si_fs_inst_as_smrd(struct si_fs_inst_t *inst)
 {
-	struct si_inst_format_smrd_t *smrd;
+	SIInstBytesSMRD *smrd;
 
 	/* Allocate */
-	smrd = xcalloc(1, sizeof(struct si_inst_format_smrd_t));
+	smrd = xcalloc(1, sizeof(SIInstBytesSMRD));
 
 	/* Set instruction */
 	inst->data = smrd;
 	inst->size = 4;
 }
 
-static void si_fs_inst_set_smrd(struct si_inst_format_smrd_t *smrd,
+static void si_fs_inst_set_smrd(SIInstBytesSMRD *smrd,
 	unsigned int op, unsigned int sdst, unsigned int sbase, unsigned int imm, unsigned int offset)
 {
 	smrd->enc = 0x18; /* 0b11000 */
@@ -81,17 +81,17 @@ static void si_fs_inst_set_smrd(struct si_inst_format_smrd_t *smrd,
 
 static void si_fs_inst_as_vop1(struct si_fs_inst_t *inst)
 {
-	struct si_inst_format_vop1_t *vop1;
+	SIInstBytesVOP1 *vop1;
 
 	/* Allocate */
-	vop1 = xcalloc(1, sizeof(struct si_inst_format_vop1_t));
+	vop1 = xcalloc(1, sizeof(SIInstBytesVOP1));
 
 	/* Set instruction */
 	inst->data = vop1;
 	inst->size = 4;
 }
 
-static void si_fs_inst_set_vop1(struct si_inst_format_vop1_t *vop1,
+static void si_fs_inst_set_vop1(SIInstBytesVOP1 *vop1,
 	unsigned int vdst, unsigned int op, unsigned int src0)
 {
 	vop1->enc = 0x3F;
@@ -102,17 +102,17 @@ static void si_fs_inst_set_vop1(struct si_inst_format_vop1_t *vop1,
 
 static void si_fs_inst_as_vop2(struct si_fs_inst_t *inst)
 {
-	struct si_inst_format_vop2_t *vop2;
+	SIInstBytesVOP2 *vop2;
 
 	/* Allocate */
-	vop2 = xcalloc(1, sizeof(struct si_inst_format_vop2_t));
+	vop2 = xcalloc(1, sizeof(SIInstBytesVOP2));
 
 	/* Set instruction */
 	inst->data = vop2;
 	inst->size = 4;
 }
 
-static void si_fs_inst_set_vop2(struct si_inst_format_vop2_t *vop2,
+static void si_fs_inst_set_vop2(SIInstBytesVOP2 *vop2,
 	unsigned int op, unsigned int vdst, unsigned int vsrc1, unsigned int ssrc0)
 {
 	vop2->enc = 0;
@@ -124,17 +124,17 @@ static void si_fs_inst_set_vop2(struct si_inst_format_vop2_t *vop2,
 
 static void si_fs_inst_as_sopp(struct si_fs_inst_t *inst)
 {
-	struct si_inst_format_sopp_t *sopp;
+	SIInstBytesSOPP *sopp;
 
 	/* Allocate */
-	sopp = xcalloc(1, sizeof(struct si_inst_format_sopp_t));
+	sopp = xcalloc(1, sizeof(SIInstBytesSOPP));
 
 	/* Set instruction */
 	inst->data = sopp;
 	inst->size = 4;
 }
 
-static void si_fs_inst_set_sopp(struct si_inst_format_sopp_t *sopp,
+static void si_fs_inst_set_sopp(SIInstBytesSOPP *sopp,
 	unsigned int op, unsigned int simm)
 {
 	sopp->enc = 0x17F; 
@@ -144,17 +144,17 @@ static void si_fs_inst_set_sopp(struct si_inst_format_sopp_t *sopp,
 
 static void si_fs_inst_as_mtbuf(struct si_fs_inst_t *inst)
 {
-	struct si_inst_format_mtbuf_t *mtbuf;
+	SIInstBytesMTBUF *mtbuf;
 
 	/* Allocate */
-	mtbuf = xcalloc(1, sizeof(struct si_inst_format_mtbuf_t));
+	mtbuf = xcalloc(1, sizeof(SIInstBytesMTBUF));
 
 	/* Set instruction */
 	inst->data = mtbuf;
 	inst->size = 8;
 }
 
-static void si_fs_inst_set_mtbuf(struct si_inst_format_mtbuf_t *mtbuf,
+static void si_fs_inst_set_mtbuf(SIInstBytesMTBUF *mtbuf,
 	unsigned int soffset, unsigned int tfe, unsigned int slc, 
 	unsigned int srsrc, unsigned int vdata, unsigned int vaddr, 
 	unsigned int enc, unsigned int nfmt, unsigned int dfmt,
@@ -180,17 +180,17 @@ static void si_fs_inst_set_mtbuf(struct si_inst_format_mtbuf_t *mtbuf,
 
 static void si_fs_inst_as_sop1(struct si_fs_inst_t *inst)
 {
-	struct si_inst_format_sop1_t *sop1;
+	SIInstBytesSOP1 *sop1;
 
 	/* Allocate */
-	sop1 = xcalloc(1, sizeof(struct si_inst_format_sop1_t));
+	sop1 = xcalloc(1, sizeof(SIInstBytesSOP1));
 
 	/* Set instruction */
 	inst->data = sop1;
 	inst->size = 4;
 }
 
-static void si_fs_inst_set_sop1(struct si_inst_format_sop1_t *sop1,
+static void si_fs_inst_set_sop1(SIInstBytesSOP1 *sop1,
 	unsigned int sdst, unsigned int op, unsigned int ssrc0)
 {
 	sop1->enc = 0x17D;

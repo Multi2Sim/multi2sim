@@ -68,7 +68,7 @@ void si2bin_task_dump(struct si2bin_task_t *task, FILE *f)
 void si2bin_task_process(struct si2bin_task_t *task)
 {
 	struct si2bin_symbol_t *label;
-	union si_inst_microcode_t *inst;
+	SIInstBytes *inst;
 
 
 	/* Check whether symbol is resolved */
