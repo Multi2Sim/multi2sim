@@ -49,7 +49,7 @@ struct si_wavefront_t
 	struct si_work_item_t **work_items;  
 
 	/* Scalar registers */
-	union si_reg_t sreg[256];
+	SIInstReg sreg[256];
 
 	/* Flags updated during instruction execution */
 	unsigned int vector_mem_read : 1;

@@ -50,7 +50,7 @@ int si_isa_debug_category;
 void si_isa_init()
 {
 	/* Initialize */
-	si_isa_inst_func = xcalloc(SI_INST_COUNT, sizeof(si_isa_inst_func_t));
+	si_isa_inst_func = xcalloc(SIInstOpcodeCount, sizeof(si_isa_inst_func_t));
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	extern void si_isa_##_name##_impl(struct si_work_item_t *work_item, SIInst *inst); \
 	si_isa_inst_func[SI_INST_##_name] = si_isa_##_name##_impl;
@@ -185,7 +185,7 @@ void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg,
 {
 	unsigned int mask = 1;
 	unsigned int bitfield;
-	union si_reg_t new_field;
+	SIInstReg new_field;
 	if (work_item->id_in_wavefront < 32)
 	{
 		mask <<= work_item->id_in_wavefront;

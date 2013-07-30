@@ -377,7 +377,7 @@ static void Llvm2siBasicBlockEmitIcmp(Llvm2siBasicBlock *basic_block,
 	struct si2bin_inst_t *inst;
 	struct list_t *arg_list;
 
-	enum si_inst_opcode_t opcode;
+	SIInstOpcode opcode;
 
 	int num_operands;
 	int ret_sreg_series;
