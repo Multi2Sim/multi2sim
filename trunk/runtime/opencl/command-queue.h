@@ -31,7 +31,7 @@ struct opencl_command_t;
 struct opencl_command_queue_t
 {
 	struct opencl_device_t *device;
-
+	struct opencl_context_t *context;
 	/* List of commands - elements of type opencl_command_t */
 	struct list_t *command_list;
 	
