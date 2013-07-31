@@ -223,6 +223,7 @@ cl_command_queue clCreateCommandQueue(
 	/* Create command queue */
 	command_queue = opencl_command_queue_create();
 	command_queue->device = device;
+	command_queue->context = context;
 	command_queue->properties = properties;
 
 	/* Success */
@@ -263,8 +264,48 @@ cl_int clGetCommandQueueInfo(
 	void *param_value,
 	size_t *param_value_size_ret)
 {
-	__OPENCL_NOT_IMPL__
-	return 0;
+	struct opencl_object_t *object;
+	if (!opencl_object_verify(command_queue, OPENCL_OBJECT_COMMAND_QUEUE))
+		return CL_INVALID_COMMAND_QUEUE;
+	
+	switch (param_name)
+	{
+	case CL_QUEUE_CONTEXT:
+		return opencl_set_param(
+			&command_queue->context, 
+			sizeof command_queue->context,
+			param_value_size,
+			param_value,
+			param_value_size_ret);
+
+	case CL_QUEUE_DEVICE:
+		return opencl_set_param(
+			&command_queue->device,
+			sizeof command_queue->device,
+			param_value_size,
+			param_value,
+			param_value_size_ret);
+
+	case CL_QUEUE_REFERENCE_COUNT:
+		object = opencl_object_find(command_queue, OPENCL_OBJECT_COMMAND_QUEUE);
+		return opencl_set_param(
+			&object->ref_count,
+			sizeof object->ref_count,
+			param_value_size,
+			param_value,
+			param_value_size_ret);
+
+	case CL_QUEUE_PROPERTIES:
+		return opencl_set_param(
+			&command_queue->properties,
+			sizeof command_queue->properties,
+			param_value_size,
+			param_value,
+			param_value_size_ret);
+
+	default:
+		return CL_INVALID_VALUE;
+	}
 }
 
 
